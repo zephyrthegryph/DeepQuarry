@@ -32,6 +32,8 @@
 	TEST_ASSERT(!failure, failure)
 	// A topology-only change is not the capacitor's input.
 	C.sleep_until_keys(list(P, CHANGE_POWERNET_RATE|CHANGE_POWERNET_STATE))
+	// Let the brownout wake above finish landing before the window opens.
+	om_settle(C)
 	om_trace(C)
 	om_changed(P, CHANGE_POWERNET_TOPOLOGY)
 	om_test_ticks(4)

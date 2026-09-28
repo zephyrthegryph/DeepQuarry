@@ -182,12 +182,27 @@
 		else
 			thing.forceMove(drop)
 			thing.update_icon()
+	// A spill list may be src's whole contents (REF_SPILL_LIST(/obj/item/clothing,
+	// "contents")), which also holds its owned children: a suit's hood or a
+	// voidsuit's helmet lives inside it. Those are deleted in phase 4, not spilled.
+	var/list/owned_things
+	if(spill_list)
+		for(var/var_name in table["owned"])
+			var/datum/child = AM.vars[var_name]
+			if(child)
+				LAZYADD(owned_things, child)
+		for(var/var_name in table["owned_list"])
+			var/list/children = AM.vars[var_name]
+			if(islist(children))
+				LAZYADD(owned_things, children)
 	for(var/var_name in spill_list)
 		var/list/things = AM.vars[var_name]
 		if(!islist(things))
 			continue
 		for(var/atom/movable/thing in things.Copy())
 			if(thing.loc != AM || QDELETED(thing))
+				continue
+			if(owned_things && (thing in owned_things))
 				continue
 			if(things != AM.contents)
 				things -= thing

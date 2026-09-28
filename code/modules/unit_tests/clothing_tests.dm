@@ -73,6 +73,11 @@
 /datum/unit_test/all_clothing_shall_be_valid/proc/test_clothing(obj/item/clothing/C,obj/storage)
 	var/failed = FALSE
 
+	// Constraint parity (moved here from dq_constraint_parity/suit_storage so
+	// every clothing type is built once): no new suit storage.
+	if(dq_parity_gained_suit_storage(C))
+		TEST_FAIL("[C.type] has suit storage now; it had none")
+
 	// Do not test base-types
 	if(C.name == DEVELOPER_WARNING_NAME)
 		return FALSE
@@ -105,17 +110,20 @@
 	if(LAZYLEN(test_humans))
 		// Resolve which of the shared species can actually wear this item, honoring the
 		// include/exclude species_restricted convention.
-		var/list/body_types = test_humans.Copy()
+		// Speed: the equip path is species-agnostic, so unrestricted clothing is
+		// dressed on the human only (one equip instead of three). Vox/Teshari are
+		// dressed only when the item names them in an include list.
+		var/list/body_types = list(SPECIES_HUMAN)
 		var/list/fits = dq_fit_bodytypes(C)
 		if(length(fits))
 			if(fits[1] == "exclude")
+				if(SPECIES_HUMAN in fits)
+					body_types = list()
+			else
+				body_types = list()
 				for(var/B in test_humans)
 					if(B in fits)
-						body_types -= B
-			else
-				for(var/B in test_humans)
-					if(!(B in fits))
-						body_types -= B
+						body_types += B
 		for(var/B in body_types)
 			var/mob/living/carbon/human/H = test_humans[B]
 			// give it the item to see what worn icon it resolves; the signal fires inside equip.

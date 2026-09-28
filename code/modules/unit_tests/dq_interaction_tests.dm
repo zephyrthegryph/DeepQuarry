@@ -115,6 +115,8 @@
 		"robot_sensor_mode", "robot_recolour", "robot_toggle_vtec", // dq_ability_tests.dm
 		"robot_pick_shell", "robot_set_mail_tag", "robot_eject_cargo", // dq_ability_tests.dm
 		"robot_nom", "robot_mount", "robot_toggle_module_1", "robot_toggle_module_2", "robot_toggle_module_3", // dq_ability_tests.dm
+		"ship_emote_beyond", // dq_interaction_ship_emote_beyond below
+		"unit_test_secondary_wrench", // interaction_tests.dm: the secondary-dispatch fixture
 		"stacking_console_use", // code/modules/mining/machinery/machine_stacking.dm: needs a linked machine on the map, excluded from dq_i7_bulk_capture.dm's snapshot
 		// I7: verb-category and drag/enter ids without an `entry`, so the snapshot-coverage
 		// check (which requires `entry`) never sees them even when a snapshot exists.
@@ -470,3 +472,16 @@
 	TEST_ASSERT_EQUAL(interaction_screentip_text(H, machine, wrench), "Maintenance probe\nClick: Unsecure", "Use with a wrench")
 	var/obj/dq_interaction_probe/probe = allocate(/obj/dq_interaction_probe, T)
 	TEST_ASSERT_EQUAL(interaction_screentip_text(H, probe, null), "Interaction probe\nClick: High\nAlt-click: choose", "Use and a tied Alternate")
+
+/// The old Emote Beyond verb (`set src in oview(7)`): offered within sight of the helm, not past it.
+/datum/unit_test/dq_interaction_ship_emote_beyond
+
+/datum/unit_test/dq_interaction_ship_emote_beyond/Run()
+	var/turf/T = test_floor()
+	var/obj/machinery/computer/ship/navigation/helm = allocate(/obj/machinery/computer/ship/navigation, T)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	TEST_ASSERT(findtext(dq_resolution_text(interactions_for(H, helm, null)), "ship_emote_beyond"), "Emote Beyond is offered within sight of the helm")
+	var/turf/far = locate(T.x + 8, T.y, T.z)
+	if(far)
+		H.forceMove(far)
+		TEST_ASSERT(findtext(dq_resolution_text(interactions_for(H, helm, null)), "ship_emote_beyond:too far away"), "past seven tiles Emote Beyond is blocked as too far away")

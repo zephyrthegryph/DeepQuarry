@@ -21,14 +21,17 @@
 	of = /mob/living/carbon
 
 /mob/living/carbon
-	/// Biological time (om_clock_now(CLOCK_BIO), ds) of the germs stage's last roll.
-	var/germs_rolled_at = 0
+	/// Biological time (om_clock_now(CLOCK_BIO), ds) of the germs stage's last roll, or null
+	/// before the first. Not 0: a biology clock can legitimately read 0 (stopped from the start).
+	var/germs_rolled_at
 
 /datum/om/stage/life/germs/perform(mob/living/carbon/self, datum/om/frame/life/ctx)
 	// A 30% chance per Life cycle, charged for the biological time since the last roll (the
 	// stage idles and comes back on its rewake), so stasis stops the creep too.
 	var/now = om_clock_now(self, CLOCK_BIO)
-	var/cycles = self.germs_rolled_at ? clamp((now - self.germs_rolled_at) / LIFE_CYCLE, 1, GERM_CATCHUP_CYCLES) : 1
+	// Charged for elapsed biological time only: a roll with no bio time behind it (a rewake or
+	// frame while the clock is stopped by stasis) charges nothing, so re-runs cannot add creep.
+	var/cycles = !isnull(self.germs_rolled_at) ? clamp((now - self.germs_rolled_at) / LIFE_CYCLE, 0, GERM_CATCHUP_CYCLES) : 1
 	self.germs_rolled_at = now
 	if(self.germ_level >= GERM_LEVEL_AMBIENT)	//if you're just standing there, you shouldn't get more germs beyond an ambient level
 		return
@@ -44,7 +47,9 @@
 /datum/om/stage/life/germs/rewake_delay(mob/living/carbon/self)
 	return self.germ_level < GERM_LEVEL_AMBIENT ? GERM_RESAMPLE : 0
 
-REF_OWNED(/mob/living/carbon, list("ingested", "touching", "cozyloop"))
+// bloodstr is the same holder as /atom's owned `reagents` (deleted first, so this only lets go of it):
+// left set, it and the holder's my_atom would keep each other alive.
+REF_OWNED(/mob/living/carbon, list("ingested", "touching", "cozyloop", "bloodstr"))
 
 /mob/living/carbon/rejuvenate()
 	bloodstr.clear_reagents()

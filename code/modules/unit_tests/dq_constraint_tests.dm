@@ -47,6 +47,13 @@
 	var/nibble = values[copytext(hex, round((index - 1) / 4) + 1, round((index - 1) / 4) + 2)]
 	return (nibble & (1 << ((index - 1) % 4))) ? 1 : 0
 
+/// Whether `W` gained suit storage it didn't have when the parity fixture was
+/// captured (shared by the clothing sweep and the suit-storage parity test).
+/proc/dq_parity_gained_suit_storage(obj/item/W)
+	if(dq_parity_fixture()["suit"]["[W.type]"])
+		return FALSE
+	return dq_constraint(W, CONSTRAINT_SUIT_STORAGE) ? TRUE : FALSE
+
 /datum/unit_test/dq_constraint_parity
 	abstract_type = /datum/unit_test/dq_constraint_parity
 	priority = TEST_LONGER
@@ -117,10 +124,12 @@
 
 /datum/unit_test/dq_constraint_parity/suit_storage/Run()
 	run_holders("suit", "suit storage", PROC_REF(suit_storage_takes))
-	// And nothing that had no `allowed` list grew suit storage.
+	// And nothing that had no `allowed` list grew suit storage. Clothing is
+	// checked by all_clothing_shall_be_valid, which already builds every
+	// clothing type (dq_parity_check_no_new_suit_storage()); rigs are here.
 	var/turf/T = run_loc_floor_bottom_left
 	var/list/had = dq_parity_fixture()["suit"]
-	for(var/path in subtypesof(/obj/item/clothing) + subtypesof(/obj/item/rig))
+	for(var/path in subtypesof(/obj/item/rig))
 		if(had["[path]"])
 			continue
 		var/obj/item/W = dq_parity_make(path, T)

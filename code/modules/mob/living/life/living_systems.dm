@@ -421,18 +421,18 @@
 /// ones that don't (a disability, unconsciousness) topped up and heals ear damage.
 /datum/om/stage/life/disabilities/perform(mob/living/self, datum/om/frame/life/ctx)
 	SEND_SIGNAL(self, COMSIG_HANDLE_DISABILITIES)
-	//Eyes: blindness from disability or unconsciousness doesn't get better on its own
-	if(self.sdisabilities & BLIND || self.stat)
-		self.status_at_least(EFFECT_BLINDED, 1)
+	//Eyes: blindness from disability or unconsciousness doesn't get better on its own. It is an
+	// untimed hold while the cause lasts, not a one-cycle top-up: re-topping a timed status every
+	// frame raised a status change on the mob's own frame and kept it from ever parking.
+	life_disability_hold(self, EFFECT_BLINDED, "disability_blind", (self.sdisabilities & BLIND) || self.stat)
 	if(self.has_status(EFFECT_BLINDED))
 		self.throw_alert("blind", /atom/movable/screen/alert/blind)
 	else
 		self.clear_alert("blind")
 
 	//Ears
-	if(self.sdisabilities & DEAF)		//disabled-deaf, doesn't get better on its own
-		self.status_at_least(EFFECT_DEAFENED, 1)
-	else if(self.ear_damage < 100)
+	life_disability_hold(self, EFFECT_DEAFENED, "disability_deaf", self.sdisabilities & DEAF) //disabled-deaf, doesn't get better on its own
+	if(!(self.sdisabilities & DEAF) && self.ear_damage > 0 && self.ear_damage < 100)
 		// ear damage heals slowly over time, unless it is over 100
 		self.adjustEarDamage(-0.05, 0)
 
@@ -443,11 +443,31 @@
 		return FALSE
 	if(self._listen_lookup?[COMSIG_HANDLE_DISABILITIES])
 		return FALSE
-	if(self.stat || (self.sdisabilities & (BLIND | DEAF)))
+	if(!life_disability_hold_matches(self, EFFECT_BLINDED, "disability_blind", (self.sdisabilities & BLIND) || self.stat))
+		return FALSE
+	if(!life_disability_hold_matches(self, EFFECT_DEAFENED, "disability_deaf", self.sdisabilities & DEAF))
 		return FALSE
 	if(self.ear_damage > 0 && self.ear_damage < 100)
 		return FALSE
 	return !!self.alerts?["blind"] == self.has_status(EFFECT_BLINDED)
+
+/// Holds `effect_id` on `self` (keyed `key`, self-sourced) while `wanted`, releases it otherwise.
+/// Holding what is already held and releasing what isn't are no-ops, so no change is raised.
+/proc/life_disability_hold(mob/living/self, effect_id, key, wanted)
+	if(life_disability_hold_matches(self, effect_id, key, wanted))
+		return
+	if(wanted)
+		om_hold(self, effect_id, self, TRUE, key)
+	else
+		om_release(self, effect_id, self, key)
+
+/proc/life_disability_hold_matches(mob/living/self, effect_id, key, wanted)
+	var/datum/om/rec/rec = self.om_rec
+	var/held = FALSE
+	if(rec)
+		var/datum/om/effect/eff = om_registry().effect(effect_id)
+		held = !isnull(om_contrib_value(rec, eff.idx, self, key))
+	return held == !!wanted
 
 // --- Output -----------------------------------------------------------------------------------
 
@@ -575,6 +595,6 @@ OM_FIELD(/mob/living, glow_color, "#FFFFFF", CHANGE_MOB_CONDITIONS)
 OM_FIELD_TYPED(/mob/living, mob/living, tf_mob_holder, null, CHANGE_MOB_CONDITIONS)
 /// sdisabilities and ear_damage are /mob vars (every mob type writes them); Life reads them.
 OM_FIELD(/mob, sdisabilities, 0, CHANGE_MOB_STATUS)
-OM_FIELD(/mob, ear_damage, null, CHANGE_MOB_STATUS)
+OM_FIELD(/mob, ear_damage, 0, CHANGE_MOB_STATUS)
 /// Cult stuff.
 OM_FIELD(/mob/living/simple_mob, purge, 0, CHANGE_MOB_STATUS)

@@ -118,7 +118,19 @@
 	qdel(arm) // the work target is gone by the time the interruption lands
 	var/list/current = H.get_afflictions()
 	var/list/before = current.Copy()
-	H.surgical_step_interrupted(tool, step, surgeon, BP_L_ARM, 100, arm, arm, 0)
+	// The continuation takes its om task (run_surgical_step() runs it through om_task_start()).
+	var/datum/om/task/timed/surgical_step/task = new
+	task.actor = surgeon
+	task.target = H
+	task.receiver = H
+	task.tool = tool
+	task.surgery_step = step
+	task.zone = BP_L_ARM
+	task.cleanliness = 100
+	task.part = arm
+	task.work_target = arm
+	task.chance = 0
+	H.surgical_step_interrupted(task)
 	TEST_ASSERT(!(BP_L_ARM in H.surgery_zones_in_progress), "the zone lock is released on interruption")
 	for(var/datum/affliction/A as anything in H.get_afflictions())
 		TEST_ASSERT(A in before, "an interruption must not complicate: new affliction [A.type]")

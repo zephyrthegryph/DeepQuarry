@@ -107,6 +107,15 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	..()
 	src.flags = flags
 
+/// The id tables hold every atom the call touched as keys. A qdel'd context
+/// waits in the GC queue, so drop them now or those atoms carry a hidden
+/// reference (collapse's refcount check would see an outside holder).
+/datum/state_context/Destroy(force)
+	ids = null
+	by_id = null
+	pending = null
+	return ..()
+
 /datum/state_context/proc/refuse(reason)
 	LAZYADD(errors, reason)
 
@@ -454,13 +463,21 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 /datum/state_context/proc/create_children(atom/A, list/blob, id)
 	if(!(flags & STATE_CONTENTS) || !islist(blob[STATE_KEY_CONTENTS]))
 		return
+	// Deleting a removed thing can spill its own contents into A (a uniform's
+	// REF_SPILL_LIST drops its attached tie), so repeat until nothing
+	// Initialize made is left; the blob's children are not created yet.
 	var/list/removed = list()
-	for(var/atom/movable/existing as anything in A.contents)
-		if(ismob(existing))
-			continue
-		removed += existing
-	for(var/atom/movable/existing as anything in removed)
-		qdel(existing)
+	var/list/batch
+	do
+		batch = list()
+		for(var/atom/movable/existing as anything in A.contents)
+			if(ismob(existing) || QDELETED(existing))
+				continue
+			batch += existing
+		removed += batch
+		for(var/atom/movable/existing as anything in batch)
+			qdel(existing)
+	while(length(batch))
 	// Vars still pointing at the removed contents were set by Initialize; the
 	// delta sets them again if the saved object had them.
 	if(length(removed))

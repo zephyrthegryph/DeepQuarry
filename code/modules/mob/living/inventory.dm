@@ -193,7 +193,9 @@
 
 	return TRUE
 
-// TGUITODO: Don't forget to Destroy() these properly!
+// The mob owns its panel; the panel's host points back, so leaving it set would keep both alive.
+REF_OWNED(/mob/living, "inventory_panel")
+
 /datum/inventory_panel
 	var/mob/living/host
 	var/tgui_id = "InventoryPanel"

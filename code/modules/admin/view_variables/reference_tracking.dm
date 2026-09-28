@@ -34,10 +34,10 @@ GLOBAL_VAR_INIT(dq_refsearch_spent_ds, 0)
 /// diagnostics) runs with FIND_REF_NO_CHECK_TICK and can freeze the world for
 /// tens of seconds. Unbounded, a caller that keeps re-offering the same
 /// object hangs the suite, so each object is searched once, each type at most
-/// DQ_REFSEARCH_PER_TYPE times, and all searches together get
+/// DQ_REFSEARCH_PER_TYPE times (once: a second search of the same leaking type repeats the first one's answer at ~5-40 s each), and all searches together get
 /// DQ_REFSEARCH_BUDGET_DS of real time. Running out fails the run with a report
 /// instead of hanging it.
-#define DQ_REFSEARCH_PER_TYPE 3
+#define DQ_REFSEARCH_PER_TYPE 1
 #define DQ_REFSEARCH_BUDGET_DS (5 MINUTES)
 
 /proc/dq_refsearch_allowed(datum/D)

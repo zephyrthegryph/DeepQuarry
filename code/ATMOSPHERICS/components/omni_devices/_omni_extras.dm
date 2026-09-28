@@ -114,3 +114,5 @@
 			return GAS_CH4
 		else
 			return null
+
+REF_BACKLIST(/datum/omni_port, list("master" = "ports"))

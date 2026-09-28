@@ -401,7 +401,9 @@
 		om_test_ticks(1)
 		if(busy.steps)
 			break
-	om_test_ticks(MACHINE_PIPELINE_INTERVAL * 3 / world.tick_lag)
+	// Two intervals after the busy machine first steps: the idle one would have
+	// been stepped by then (was three, ~2 s of extra real-time wait).
+	om_test_ticks(MACHINE_PIPELINE_INTERVAL * 2 / world.tick_lag)
 	TEST_ASSERT_EQUAL(idle.steps, 0, "a fresh machine with no work was stepped")
 	TEST_ASSERT(om_pipe_parked(idle, /datum/om/pipeline/machine), "a fresh machine with no work did not park")
 	TEST_ASSERT(busy.steps > 0, "a machine whose start condition holds was not woken")

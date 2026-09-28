@@ -252,3 +252,10 @@
 
 /obj/machinery/atmospherics/pipe/manifold4w/hidden/purple
 	color = PIPE_COLOR_PURPLE
+
+/// Phase 1, after the shared topology teardown: let go of the arms and network wrappers the
+/// base unbind doesn't know about, so two doomed neighbours can't keep each other alive.
+/obj/machinery/atmospherics/pipe/manifold4w/lifecycle_unbind()
+	. = ..()
+	node3 = null
+	node4 = null

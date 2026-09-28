@@ -185,7 +185,7 @@ REF_OWNED_LIST(/datum/shuttle_destination, "routes")
 	current_destination_handle = om_handle(get_destination_by_type(starting_destination))
 	build_autopaths()
 
-REF_OWNED_LIST(/datum/shuttle_web_master, "destinations")
+REF_OWNED_LIST(/datum/shuttle_web_master, list("destinations", "autopaths"))
 
 /datum/shuttle_web_master/proc/build_destinations()
 	// First, instantiate all the destination subtypes relevant to this datum.

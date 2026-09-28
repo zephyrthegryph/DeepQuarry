@@ -84,7 +84,9 @@
 	TEST_ASSERT(length(H.organs), "freshly created human has no external organs")
 	var/list/snapshot = H.organs.Copy()
 	for(var/obj/item/organ/external/E as anything in H.organs)
-		snapshot |= E.internal_organs
+		// internal_organs is lazy: `snapshot |= null` would add a null entry.
+		if(E.internal_organs)
+			snapshot |= E.internal_organs
 	qdel(H)
 	TEST_ASSERT(QDELETED(H), "qdel(human) did not run Destroy()")
 	for(var/obj/item/organ/O as anything in snapshot)

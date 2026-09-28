@@ -196,7 +196,12 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 				continue
 			leaked++
 			leaked_types[AM.type] = (leaked_types[AM.type] || 0) + 1
-			qdel(AM)
+			// A leaked object whose Destroy() runtimes must not abort the release:
+			// the block would stay in_use forever and starve every later test.
+			try
+				qdel(AM)
+			catch(var/exception/E)
+				log_world("UNIT TEST LEAK: [test ? test.type : "?"] -- qdel of leaked [AM.type] runtimed during block release: [E]")
 
 		if(istype(T, /turf/open))
 			var/turf/open/OT = T

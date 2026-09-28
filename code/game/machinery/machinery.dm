@@ -136,6 +136,9 @@ Class Procs:
 	var/tmp/machine_wake_count = 0
 	/// The pending materialize_wakes() timer, or 0.
 	var/tmp/materialize_timer = 0
+	/// Set when the machine is told what to do (MACHINE_WAKE(), sleep_until_keys()) while its
+	/// materialize_wakes() is still pending: that direction replaces the declared start condition.
+	var/tmp/materialize_directed = FALSE
 	/// TRUE for a type whose machine_step() reconciles its state with its power: every power or
 	/// break change (power_change(), atom_break(), atom_fix()) runs one step.
 	var/step_on_power_change = FALSE
@@ -224,10 +227,15 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 /// declared start condition holds. Nothing else runs a machine at spawn.
 /obj/machinery/proc/materialize_wakes()
 	materialize_timer = 0
+	var/directed = materialize_directed
+	materialize_directed = FALSE
 	if(QDELETED(src))
 		return
 	arm_wakes()
-	if(step_start_condition())
+	// The start condition stands in for a first wake nobody gave. A machine already woken, or put
+	// to sleep on its keys, since it joined has had its first word: waking it again here would be
+	// a spurious wake of a machine whose input held steady.
+	if(!directed && step_start_condition())
 		MACHINE_WAKE(src)
 
 /// Arms what wakes this machine later (gas watches, change watches). Default: nothing to arm.
@@ -257,6 +265,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 		var/datum/om/frame/S = om_pipe_state(M, /datum/om/pipeline/machine)
 		if(S)
 			om_pipe_set_all(S, FALSE, 0)
+	if(M.materialize_timer)
+		M.materialize_directed = TRUE
 	om_wake(M, /datum/om/pipeline/machine)
 
 /// Ends `M`'s step work until the next MACHINE_WAKE(): its step stage idles and it parks.
@@ -726,6 +736,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 		return FALSE
 	if(!om_attached(src, /datum/om/pipeline/machine))
 		om_attach(src, /datum/om/pipeline/machine)
+	if(materialize_timer)
+		materialize_directed = TRUE
 	react_sleep_tokens = watches.Copy()
 	for(var/i = 1; i <= length(watches); i += 2)
 		om_watch(src, watches[i], watches[i + 1], /datum/om/pipeline/machine)

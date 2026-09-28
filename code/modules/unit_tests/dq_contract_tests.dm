@@ -789,7 +789,13 @@
 	var/mob/living/carbon/human/departing = subjects[1]
 	SEND_SIGNAL(departing, COMSIG_MOB_LOGOUT)
 	registry_leave(REGISTRY_PLAYERS, departing)
-	sleep(1)
+	// Reconciliation is deferred to an om_after(0) timer, which fires on the next scheduler slot
+	// (OM_SLOT_DS) and pass: not always inside one decisecond on a busy test world.
+	for(var/i in 1 to 40)
+		if(!length(SScontracts.pending_subject_reconciliations))
+			break
+		sleep(world.tick_lag)
+	TEST_ASSERT(!length(SScontracts.pending_subject_reconciliations), "the deferred logout reconciliation never ran")
 	TEST_ASSERT(QDELETED(conditional) || !(conditional in SScontracts.offered_contracts), "next-tick logout reconciliation retained an offer after the cohort left the player list")
 	for(var/mob/living/carbon/human/subject in subjects)
 		registry_leave(REGISTRY_PLAYERS, subject)

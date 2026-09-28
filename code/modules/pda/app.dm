@@ -7,6 +7,9 @@
 	var/category = "General"	// the category to list it in on the main menu
 	var/tmp/pda_handle	// if this is null, and the app is running code, something's gone wrong
 
+// The PDA holds its apps in `programs` and again as current_app/scanmode; `pda` must be let go or the two outlive each other.
+REF_BACKLIST(/datum/data/pda, list("pda" = "programs"))
+
 /datum/data/pda/proc/start()
 	return
 
