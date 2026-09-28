@@ -178,198 +178,32 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 
 	remove_layer(BODYPARTS_LAYER)
 
-	var/husk_color_mod = rgb(96,88,80)
-	var/hulk_color_mod = rgb(48,224,40)
-
-	var/husk = (src.has_mutation(HUSK))
-	var/fat = (src.has_mutation(FAT))
-	var/hulk = (src.has_mutation(HULK))
-	var/skeleton = (src.has_mutation(SKELETON))
-
-	robolimb_count = 0 //TODO, here, really tho?
-	robobody_count = 0
-
-	//CACHING: Generate an index key from visible bodyparts.
-	//0 = destroyed, 1 = normal, 2 = robotic, 3 = necrotic.
+	var/husk = has_mutation(HUSK)
+	var/fat = has_mutation(FAT)
+	var/hulk = has_mutation(HULK)
+	var/skeleton = has_mutation(SKELETON)
 
 	//Create a new, blank icon for our mob to use.
 	var/icon/stand_icon = new(species.icon_template ? species.icon_template : 'icons/mob/human.dmi', icon_state = "blank")
 
-	var/g = (gender == MALE ? "male" : "female")
-	var/icon_key = "[species.get_race_key(src)][g][s_tone][r_skin][g_skin][b_skin]"
-	if(lip_style)
-		icon_key += "[lip_style]"
-	else
-		icon_key += "nolips"
-	var/obj/item/organ/internal/eyes/eyes = internal_organs_by_name[O_EYES]
-	if(eyes)
-		icon_key += "[eyes.eye_rgb()]"
-	else
-		icon_key += "[r_eyes], [g_eyes], [b_eyes]"
-	var/obj/item/organ/external/head/head = organs_by_name[BP_HEAD]
-	if(head)
-		if(!istype(head, /obj/item/organ/external/stump))
-			if (species.selects_bodytype != SELECTS_BODYTYPE_FALSE)
-				var/headtype = GLOB.all_species[species.base_species]?.has_limbs[BP_HEAD]
-				var/obj/item/organ/external/head/headtypepath = headtype["path"]
-				if (headtypepath && !head.eye_icon_override)
-					head.eye_icon = initial(headtypepath.eye_icon)
-					head.eye_icon_location = initial(headtypepath.eye_icon_location)
-			icon_key += "[head.eye_icon]"
-	var/wholeicontransparent = TRUE
-	for(var/organ_tag in species.has_limbs)
-		var/obj/item/organ/external/part = organs_by_name[organ_tag]
-		if(isnull(part) || part.is_stump() || part.is_hidden_by_sprite_accessory()) //Allowing tails to prevent bodyparts rendering, granting more spriter freedom for taur/digitigrade stuff.
-			icon_key += "0"
-			continue
-		if(part)
-			wholeicontransparent &&= part.transparent
-			icon_key += "[part.data.get_species_race_key(part.owner)]"
-			icon_key += "[part.data.body_gender]"
-			icon_key += "[part.s_tone]"
-			if(part.s_col && part.s_col.len >= 3)
-				icon_key += "[rgb(part.s_col[1],part.s_col[2],part.s_col[3])]"
-			if(part.body_hair && part.h_col && part.h_col.len >= 3)
-				icon_key += "[rgb(part.h_col[1],part.h_col[2],part.h_col[3])]"
-				if(species.color_mult)
-					icon_key += "[ICON_MULTIPLY]"
-				else
-					icon_key += "[ICON_ADD]"
-			else
-				icon_key += "#000000"
+	var/list/key_result = body_icon_key()
+	var/icon_key = "[key_result[1]][husk ? 1 : 0][fat ? 1 : 0][hulk ? 1 : 0][skeleton ? 1 : 0]"
+	var/wholeicontransparent = key_result[2]
 
-			for(var/M in part.markings)
-				if (part.markings[M]["on"])
-					icon_key += "[M][part.markings[M]["color"]]"
-
-			if(part.nail_polish)
-				icon_key += "_[part.nail_polish.icon]_[part.nail_polish.icon_state]_[part.nail_polish.color]"
-
-			if(part.is_robotic())
-				icon_key += "2[part.model ? "-[part.model]": ""]"
-				robolimb_count++
-				if((part.robotic == ORGAN_ROBOT || part.robotic == ORGAN_LIFELIKE) && (part.organ_tag == BP_HEAD || part.organ_tag == BP_TORSO || part.organ_tag == BP_GROIN))
-					robobody_count ++
-			else if(part.status & ORGAN_DEAD)
-				icon_key += "3"
-			else
-				icon_key += "1"
-			if(part.transparent) //For better slime limbs. Avoids using solid var due to limb dropping.
-				icon_key += "_t"
-
-			if(istype(tail_style, /datum/sprite_accessory/tail/taur))
-				if(tail_style.clip_mask)
-					icon_key += tail_style.clip_mask_state
-
-			if(digitigrade && (part.organ_tag == BP_R_LEG  || part.organ_tag == BP_L_LEG || part.organ_tag == BP_R_FOOT || part.organ_tag == BP_L_FOOT))
-				icon_key += "_digi"
-
-			if(tail_style)
-				pixel_x = tail_style.mob_offset_x
-				pixel_y = tail_style.mob_offset_y
-				default_pixel_x = tail_style.mob_offset_x
-				default_pixel_y = tail_style.mob_offset_y
-
-			//icon_key addition for digitigrade switch
-			if(digitigrade && (part.organ_tag == BP_R_LEG  || part.organ_tag == BP_L_LEG || part.organ_tag == BP_R_FOOT || part.organ_tag == BP_L_FOOT))
-				icon_key += "_digi"
-
-	icon_key = "[icon_key][husk ? 1 : 0][fat ? 1 : 0][hulk ? 1 : 0][skeleton ? 1 : 0]"
-	var/icon/base_icon
-
-	if(GLOB.human_icon_cache[icon_key])
-		base_icon = GLOB.human_icon_cache[icon_key]
-	else
-		//BEGIN CACHED ICON GENERATION.
-		var/obj/item/organ/external/chest = get_organ(BP_TORSO)
-		base_icon = new(chest?.get_icon(skeleton, !wholeicontransparent))
-
-		var/apply_extra_transparency_leg = organs_by_name[BP_L_LEG] && organs_by_name[BP_R_LEG]
-		var/apply_extra_transparency_foot = organs_by_name[BP_L_FOOT] && organs_by_name[BP_R_FOOT]
-
-		var/icon/Cutter = null
-		var/icon_x_offset = 0
-		var/icon_y_offset = 0
-
-		if(istype(tail_style, /datum/sprite_accessory/tail/taur))	// Tail icon 'cookie cutters' are filled in where icons are preserved. We need to invert that.
-			if(tail_style.clip_mask)
-				Cutter = new(icon = (tail_style.clip_mask_icon ? tail_style.clip_mask_icon : tail_style.icon), icon_state = tail_style.clip_mask_state)
-
-				Cutter.Blend("#000000", ICON_MULTIPLY)	// Make it all black.
-
-				Cutter.SwapColor("#00000000", "#FFFFFFFF")	// Everywhere empty, make white.
-				Cutter.SwapColor("#000000FF", "#00000000")	// Everywhere black, make empty.
-
-				Cutter.Blend("#000000", ICON_MULTIPLY)	// Black again.
-
-				icon_x_offset = tail_style.offset_x
-				icon_y_offset = tail_style.offset_y
-
-		for(var/obj/item/organ/external/part in organs)
-			if(isnull(part) || part.is_stump() || part == chest || part.is_hidden_by_sprite_accessory()) //Allowing tails to prevent bodyparts rendering, granting more spriter freedom for taur/digitigrade stuff.
-				continue
-			var/icon/temp = new(part.get_icon(skeleton, !wholeicontransparent))
-
-			if((part.organ_tag in list(BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT)) && Cutter)
-				temp.Blend(Cutter, ICON_AND, x = icon_x_offset, y = icon_y_offset)
-
-			//That part makes left and right legs drawn topmost and lowermost when human looks WEST or EAST
-			//And no change in rendering for other parts (they icon_position is 0, so goes to 'else' part)
-			if(part.icon_position & (LEFT | RIGHT))
-				var/icon/temp2 = new(species.icon_template ? species.icon_template : 'icons/mob/human.dmi', icon_state = "blank")
-				temp2.Insert(new/icon(temp,dir=NORTH),dir=NORTH)
-				temp2.Insert(new/icon(temp,dir=SOUTH),dir=SOUTH)
-				if(!(part.icon_position & LEFT))
-					temp2.Insert(new/icon(temp,dir=EAST),dir=EAST)
-				if(!(part.icon_position & RIGHT))
-					temp2.Insert(new/icon(temp,dir=WEST),dir=WEST)
-				base_icon.Blend(temp2, ICON_OVERLAY)
-				temp2 = new(species.icon_template ? species.icon_template : 'icons/mob/human.dmi', icon_state = "blank")
-				if(part.icon_position & LEFT)
-					temp2.Insert(new/icon(temp,dir=EAST),dir=EAST)
-				if(part.icon_position & RIGHT)
-					temp2.Insert(new/icon(temp,dir=WEST),dir=WEST)
-				if (part.transparent && !wholeicontransparent) //apply a little (a lot) extra transparency to make it look better.
-					if ((istype(part, /obj/item/organ/external/leg) && apply_extra_transparency_leg) || (istype(part, /obj/item/organ/external/foot) && apply_extra_transparency_foot)) //maybe
-						temp2 += rgb(,,,30)
-				base_icon.Blend(temp2, ICON_UNDERLAY)
-			else if(part.icon_position & UNDER)
-				base_icon.Blend(temp, ICON_UNDERLAY)
-			else
-				base_icon.Blend(temp, ICON_OVERLAY)
-
-		if (wholeicontransparent) //because, I mean. It's basically never gonna happen that you'll have just one non-transparent limb but if you do your icon will look meh. Still good but meh, will have some areas with higher transparencies unless you're literally just a torso and a head
-			base_icon += rgb(,,,180)
-
-		if(!skeleton)
-			if(husk)
-				base_icon.ColorTone(husk_color_mod)
-			else if(hulk)
-				var/list/tone = rgb2num(hulk_color_mod)
-				base_icon.MapColors(rgb(tone[1],0,0),rgb(0,tone[2],0),rgb(0,0,tone[3]))
-
-		//Handle husk overlay.
-		if(husk && icon_exists(species.icobase, "overlay_husk"))
-			var/icon/mask = new(base_icon)
-			var/icon/husk_over = new(species.icobase,"overlay_husk")
-			mask.MapColors(0,0,0,1, 0,0,0,1, 0,0,0,1, 0,0,0,1, 0,0,0,0)
-			husk_over.Blend(mask, ICON_ADD)
-			base_icon.Blend(husk_over, ICON_OVERLAY)
-
+	var/icon/base_icon = GLOB.human_icon_cache[icon_key]
+	if(!base_icon)
+		base_icon = build_body_icon(wholeicontransparent, husk, hulk, skeleton)
 		GLOB.human_icon_cache[icon_key] = base_icon
-
-	// END CACHED ICON GENERATION. //
-	stand_icon.Blend(base_icon,ICON_OVERLAY)
+	stand_icon.Blend(base_icon, ICON_OVERLAY)
 
 	var/image/body = image(stand_icon)
-	if (body)
+	if(body)
 		body.layer = BODY_LAYER + BODYPARTS_LAYER
 		overlays_standing[BODYPARTS_LAYER] = body
 		apply_layer(BODYPARTS_LAYER)
 
 	icon = stand_icon
 
-	//tail
 	update_tail_showing()
 	update_wing_showing()
 	update_vore_belly_sprite()
@@ -378,6 +212,154 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 		var/datum/shadekin/SK = get_shadekin_state()
 		if(SK)
 			SK.recalc_values()
+
+/// The body icon cache key from the species, skin, eyes and every visible part, and whether
+/// every part is transparent: list(key, whole icon transparent). Also recounts prosthetic limbs
+/// and applies the tail's sprite offset.
+/mob/living/carbon/human/proc/body_icon_key()
+	robolimb_count = 0
+	robobody_count = 0
+
+	var/g = (gender == MALE ? "male" : "female")
+	var/icon_key = "[species.get_race_key(src)][g][s_tone][r_skin][g_skin][b_skin]"
+	icon_key += lip_style ? "[lip_style]" : "nolips"
+	var/obj/item/organ/internal/eyes/eyes = internal_organs_by_name[O_EYES]
+	if(eyes)
+		icon_key += "[eyes.eye_rgb()]"
+	else
+		icon_key += "[r_eyes], [g_eyes], [b_eyes]"
+	var/obj/item/organ/external/head/head = organs_by_name[BP_HEAD]
+	if(head && !istype(head, /obj/item/organ/external/stump))
+		if(species.selects_bodytype != SELECTS_BODYTYPE_FALSE)
+			var/headtype = GLOB.all_species[species.base_species]?.has_limbs[BP_HEAD]
+			var/obj/item/organ/external/head/headtypepath = headtype["path"]
+			if(headtypepath && !head.eye_icon_override)
+				head.eye_icon = initial(headtypepath.eye_icon)
+				head.eye_icon_location = initial(headtypepath.eye_icon_location)
+		icon_key += "[head.eye_icon]"
+
+	var/wholeicontransparent = TRUE
+	var/any_part = FALSE
+	for(var/organ_tag in species.has_limbs)
+		var/obj/item/organ/external/part = organs_by_name[organ_tag]
+		if(isnull(part) || part.is_stump() || part.is_hidden_by_sprite_accessory()) //Allowing tails to prevent bodyparts rendering, granting more spriter freedom for taur/digitigrade stuff.
+			icon_key += "0"
+			continue
+		any_part = TRUE
+		wholeicontransparent &&= part.transparent
+		icon_key += body_part_icon_key(part)
+		if(part.is_robotic())
+			robolimb_count++
+			if((part.robotic == ORGAN_ROBOT || part.robotic == ORGAN_LIFELIKE) && (part.organ_tag == BP_HEAD || part.organ_tag == BP_TORSO || part.organ_tag == BP_GROIN))
+				robobody_count++
+
+	if(tail_style && any_part)
+		pixel_x = tail_style.mob_offset_x
+		pixel_y = tail_style.mob_offset_y
+		default_pixel_x = tail_style.mob_offset_x
+		default_pixel_y = tail_style.mob_offset_y
+	return list(icon_key, wholeicontransparent)
+
+/// One visible part's share of the body icon key: species, colours, markings, polish and
+/// state (1 normal, 2 robotic, 3 necrotic), transparency, taur clip and digitigrade legs.
+/mob/living/carbon/human/proc/body_part_icon_key(obj/item/organ/external/part)
+	. = "[part.data.get_species_race_key(part.owner)][part.data.body_gender][part.s_tone]"
+	if(part.s_col && part.s_col.len >= 3)
+		. += "[rgb(part.s_col[1],part.s_col[2],part.s_col[3])]"
+	if(part.body_hair && part.h_col && part.h_col.len >= 3)
+		. += "[rgb(part.h_col[1],part.h_col[2],part.h_col[3])]"
+		. += species.color_mult ? "[ICON_MULTIPLY]" : "[ICON_ADD]"
+	else
+		. += "#000000"
+	for(var/M in part.markings)
+		if(part.markings[M]["on"])
+			. += "[M][part.markings[M]["color"]]"
+	if(part.nail_polish)
+		. += "_[part.nail_polish.icon]_[part.nail_polish.icon_state]_[part.nail_polish.color]"
+	if(part.is_robotic())
+		. += "2[part.model ? "-[part.model]": ""]"
+	else if(part.status & ORGAN_DEAD)
+		. += "3"
+	else
+		. += "1"
+	if(part.transparent) //For better slime limbs. Avoids using solid var due to limb dropping.
+		. += "_t"
+	if(istype(tail_style, /datum/sprite_accessory/tail/taur) && tail_style.clip_mask)
+		. += tail_style.clip_mask_state
+	if(digitigrade && (part.organ_tag in list(BP_R_LEG, BP_L_LEG, BP_R_FOOT, BP_L_FOOT)))
+		. += "_digi"
+
+/// A taur tail's leg "cookie cutter" (preserved areas inverted): list(icon, x offset, y offset), or null.
+/mob/living/carbon/human/proc/body_taur_cutter()
+	if(!istype(tail_style, /datum/sprite_accessory/tail/taur) || !tail_style.clip_mask)
+		return null
+	var/icon/Cutter = new(icon = (tail_style.clip_mask_icon ? tail_style.clip_mask_icon : tail_style.icon), icon_state = tail_style.clip_mask_state)
+	Cutter.Blend("#000000", ICON_MULTIPLY)	// Make it all black.
+	Cutter.SwapColor("#00000000", "#FFFFFFFF")	// Everywhere empty, make white.
+	Cutter.SwapColor("#000000FF", "#00000000")	// Everywhere black, make empty.
+	Cutter.Blend("#000000", ICON_MULTIPLY)	// Black again.
+	return list(Cutter, tail_style.offset_x, tail_style.offset_y)
+
+/// Compose the body icon from every visible part, then tint it for husk or hulk.
+/mob/living/carbon/human/proc/build_body_icon(wholeicontransparent, husk, hulk, skeleton)
+	var/obj/item/organ/external/chest = get_organ(BP_TORSO)
+	var/icon/base_icon = new(chest?.get_icon(skeleton, !wholeicontransparent))
+
+	var/apply_extra_transparency_leg = organs_by_name[BP_L_LEG] && organs_by_name[BP_R_LEG]
+	var/apply_extra_transparency_foot = organs_by_name[BP_L_FOOT] && organs_by_name[BP_R_FOOT]
+	var/list/cutter = body_taur_cutter()
+
+	for(var/obj/item/organ/external/part in organs)
+		if(part.is_stump() || part == chest || part.is_hidden_by_sprite_accessory()) //Allowing tails to prevent bodyparts rendering, granting more spriter freedom for taur/digitigrade stuff.
+			continue
+		var/icon/temp = new(part.get_icon(skeleton, !wholeicontransparent))
+
+		if(cutter && (part.organ_tag in list(BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT)))
+			temp.Blend(cutter[1], ICON_AND, x = cutter[2], y = cutter[3])
+
+		//That part makes left and right legs drawn topmost and lowermost when human looks WEST or EAST
+		//And no change in rendering for other parts (they icon_position is 0, so goes to 'else' part)
+		if(part.icon_position & (LEFT | RIGHT))
+			var/icon/temp2 = new(species.icon_template ? species.icon_template : 'icons/mob/human.dmi', icon_state = "blank")
+			temp2.Insert(new/icon(temp,dir=NORTH),dir=NORTH)
+			temp2.Insert(new/icon(temp,dir=SOUTH),dir=SOUTH)
+			if(!(part.icon_position & LEFT))
+				temp2.Insert(new/icon(temp,dir=EAST),dir=EAST)
+			if(!(part.icon_position & RIGHT))
+				temp2.Insert(new/icon(temp,dir=WEST),dir=WEST)
+			base_icon.Blend(temp2, ICON_OVERLAY)
+			temp2 = new(species.icon_template ? species.icon_template : 'icons/mob/human.dmi', icon_state = "blank")
+			if(part.icon_position & LEFT)
+				temp2.Insert(new/icon(temp,dir=EAST),dir=EAST)
+			if(part.icon_position & RIGHT)
+				temp2.Insert(new/icon(temp,dir=WEST),dir=WEST)
+			if(part.transparent && !wholeicontransparent) //apply a little (a lot) extra transparency to make it look better.
+				if((istype(part, /obj/item/organ/external/leg) && apply_extra_transparency_leg) || (istype(part, /obj/item/organ/external/foot) && apply_extra_transparency_foot))
+					temp2 += rgb(,,,30)
+			base_icon.Blend(temp2, ICON_UNDERLAY)
+		else if(part.icon_position & UNDER)
+			base_icon.Blend(temp, ICON_UNDERLAY)
+		else
+			base_icon.Blend(temp, ICON_OVERLAY)
+
+	if(wholeicontransparent) // A whole-slime body; a lone solid limb would look uneven, but that's rare.
+		base_icon += rgb(,,,180)
+
+	if(!skeleton)
+		if(husk)
+			base_icon.ColorTone(rgb(96,88,80))
+		else if(hulk)
+			var/list/tone = rgb2num(rgb(48,224,40))
+			base_icon.MapColors(rgb(tone[1],0,0),rgb(0,tone[2],0),rgb(0,0,tone[3]))
+
+	//Handle husk overlay.
+	if(husk && icon_exists(species.icobase, "overlay_husk"))
+		var/icon/mask = new(base_icon)
+		var/icon/husk_over = new(species.icobase,"overlay_husk")
+		mask.MapColors(0,0,0,1, 0,0,0,1, 0,0,0,1, 0,0,0,1, 0,0,0,0)
+		husk_over.Blend(mask, ICON_ADD)
+		base_icon.Blend(husk_over, ICON_OVERLAY)
+	return base_icon
 
 /mob/living/carbon/human/proc/update_skin()
 	if(QDESTROYING(src))
