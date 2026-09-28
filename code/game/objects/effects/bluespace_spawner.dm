@@ -14,8 +14,9 @@
 /obj/effect/bspawner/Initialize(mapload)
 	. = ..()
 	init_time = world.time
-	om_after(src, time_between_spawn, PROC_REF(spawn_due))
-	om_after(src, time_to_end, /datum/proc/qdel_self)
+
+DECLARE_START_TIMER(/obj/effect/bspawner, "time_between_spawn", PROC_REF(spawn_due))
+DECLARE_START_TIMER(/obj/effect/bspawner, "time_to_end", /datum/proc/qdel_self)
 
 /// One item every time_between_spawn (its timer re-arms) until time_to_end deletes it.
 /obj/effect/bspawner/proc/spawn_due()

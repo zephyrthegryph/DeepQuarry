@@ -15,16 +15,15 @@
 	var/obj/item/trap = null
 
 /obj/effect/mine/Initialize(mapload)
-	icon_state = "landmine_armed"
 	set_wires(new /datum/wires/mines(src))
 	. = ..()
-	if(ispath(trap))
-		trap = new trap(src)
 	register_dangerous_to_step()
 	if(camo_net)
 		alpha = 50
 
 DECLARE_REF(/obj/effect/mine, "trap", OWNED, null)
+DECLARE_DEFAULT_CHILD(/obj/effect/mine, "trap", null)
+DECLARE_APPEARANCE(/obj/effect/mine, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "landmine_armed")))
 
 /// Phase 2: leaves the dangerous-to-step index.
 /obj/effect/mine/lifecycle_dematerialize()

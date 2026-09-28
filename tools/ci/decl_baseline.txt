@@ -4,8 +4,6 @@ init_reagents	code/ATMOSPHERICS/components/unary/cold_sink.dm	create_reagents(12
 init_reagents	code/ATMOSPHERICS/components/unary/heat_source.dm	create_reagents(120)
 init_reagents	code/game/mecha/equipment/tools/extinguisher.dm	reagents.add_reagent(REAGENT_ID_FIREFOAM, max_water)
 init_reagents	code/game/mecha/equipment/tools/syringe_gun.dm	create_reagents(max_volume)
-init_reagents	code/game/objects/effects/chem/chemsmoke.dm	create_reagents(500)
-init_reagents	code/game/objects/effects/chem/coating.dm	create_reagents(100)
 init_reagents	code/game/objects/items/contraband.dm	reagents.add_reagent(reagent, picked_reagents[reagent])
 init_reagents	code/game/objects/items/fantasy_items.dm	create_reagents(300)
 init_reagents	code/game/objects/items/soap.dm	create_reagents(5)
@@ -48,10 +46,6 @@ init_reagents	code/game/objects/items/weapons/storage/fancy.dm	create_reagents(1
 init_reagents	code/game/objects/items/weapons/storage/fancy.dm	create_reagents(15 * storage_slots)
 init_reagents	code/game/objects/items/weapons/storage/mre.dm	reagents.add_reagent(seasoning, 1)
 init_reagents	code/game/objects/items/weapons/storage/uplink_kits.dm	pack.reagents.add_reagent(REAGENT_ID_TRICORDRAZINE, 15 * pack.storage_slots)
-init_reagents	code/game/objects/structures/mop_bucket.dm	create_reagents(300)
-init_reagents	code/game/objects/structures/watercloset.dm	create_reagents(reaction_volume)
-init_reagents	code/game/objects/structures/watercloset.dm	reagents.add_reagent(reagent_id, reaction_volume)
-init_reagents	code/game/objects/unit_testing.dm	create_reagents(5000,/datum/reagents/distilling)
 init_reagents	code/modules/blob2/core_chunk.dm	create_reagents(120)
 init_reagents	code/modules/clothing/accessories/rings.dm	create_reagents(15)
 init_reagents	code/modules/clothing/accessories/rings.dm	reagents.add_reagent(REAGENT_ID_CHLORALHYDRATE, 15) // Less than a sleepy-pen, but still enough to knock someone out
@@ -334,7 +328,6 @@ init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	src.air_contents.ad
 init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	src.air_contents.adjust_gas(GAS_CH4, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
 init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	air_contents.adjust_gas(GAS_PHORON, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
 init_gas	code/game/objects/items/weapons/tanks/tanks.dm	src.air_contents = new /datum/gas_mixture()
-init_gas	code/game/objects/structures/transit_tubes.dm	air_contents = new()
 init_gas	code/modules/recycling/disposal_machines.dm	air_contents = new(PRESSURE_TANK_VOLUME)
 init_registry	code/game/objects/effects/landmarks.dm	registry_join(REGISTRY_LATEJOIN, src)
 init_registry	code/game/objects/effects/landmarks.dm	registry_join(REGISTRY_LANDMARKS, src)
@@ -344,9 +337,6 @@ init_registry	code/game/objects/items/devices/radio/radio.dm	registry_join(REGIS
 init_registry	code/game/objects/items/devices/taperecorder.dm	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 init_registry	code/game/objects/items/devices/tvcamera.dm	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 init_registry	code/game/objects/items/devices/tvcamera.dm	registry_join(REGISTRY_LISTENING_OBJECTS, src)
-init_registry	code/game/objects/structures/ghost_pods/event.dm	registry_join(REGISTRY_GHOST_PODS, src)
-init_registry	code/game/objects/structures/ghost_pods/event.dm	registry_join(REGISTRY_GHOST_PODS, src)
-init_registry	code/game/objects/structures/ghost_pods/unified_ghost_hole.dm	registry_join(REGISTRY_GHOST_PODS, src)
 init_registry	code/game/turfs/simulated/fancy_shuttles.dm	GLOB.fancy_shuttles[fancy_shuttle_tag] = src
 init_registry	code/modules/holomap/mapper.dm	registry_join(REGISTRY_MAPPING_BEACONS, src)
 init_registry	code/modules/integrated_electronics/subtypes/input.dm	registry_join(REGISTRY_LISTENING_OBJECTS, src)
@@ -400,27 +390,17 @@ init_scheduling	code/game/machinery/bluespace_denier.dm	timerid = om_after(src, 
 init_scheduling	code/game/machinery/computer/guestpass.dm	om_task_periodic(src, PERIODIC_SLOW)
 init_scheduling	code/game/machinery/machinery.dm	om_task_periodic(src, PERIODIC_FAST)
 init_scheduling	code/game/mecha/mecha.dm	om_task_periodic(src, PERIODIC_SLOW)
-init_scheduling	code/game/objects/effects/alien/aliens.dm	om_task_periodic(src, PERIODIC_SLOW) // Only the node processes in a subsystem, the rest are process()'d by the node
-init_scheduling	code/game/objects/effects/anomalies/_anomalies.dm	om_task_periodic(src, PERIODIC_SLOW)
 init_scheduling	code/game/objects/effects/anomalies/_anomalies.dm	om_after(src, lifespan, PROC_REF(lifespan_over))
 init_scheduling	code/game/objects/effects/anomalies/anomalies_weather.dm	om_after(src, telegraph, PROC_REF(start_weather))
-init_scheduling	code/game/objects/effects/bluespace_spawner.dm	om_after(src, time_between_spawn, PROC_REF(spawn_due))
-init_scheduling	code/game/objects/effects/bluespace_spawner.dm	om_after(src, time_to_end, /datum/proc/qdel_self)
 init_scheduling	code/game/objects/effects/chem/foam.dm	om_after(src, 3 + metal * 3, PROC_REF(post_spread))
 init_scheduling	code/game/objects/effects/chem/foam.dm	om_after(src, 12 SECONDS, PROC_REF(pre_harden))
 init_scheduling	code/game/objects/effects/chem/foam.dm	om_after(src, 15 SECONDS, PROC_REF(harden))
 init_scheduling	code/game/objects/effects/chem/foam.dm	om_after(src, (lifetime + 1) * 2 SECONDS, PROC_REF(dissolve)) // the old lifetime: one per 2 s step
-init_scheduling	code/game/objects/effects/dark_growth.dm	om_task_periodic(src, PERIODIC_SLOW)
 init_scheduling	code/game/objects/effects/decals/Cleanable/humans.dm	om_after(src, DRYING_TIME * (amount+1), PROC_REF(dry))
-init_scheduling	code/game/objects/effects/decals/Cleanable/misc.dm	om_task_periodic(src, PERIODIC_SLOW)
 init_scheduling	code/game/objects/effects/decals/Cleanable/vore.dm	om_task_periodic(src, PERIODIC_SLOW)
-init_scheduling	code/game/objects/effects/effect_system.dm	om_task_periodic(src, PERIODIC_SLOW)
 init_scheduling	code/game/objects/effects/map_effects/beam_point.dm	om_after(src, initial_delay, PROC_REF(handle_beam_timer))
-init_scheduling	code/game/objects/effects/map_effects/map_effects.dm	om_task_periodic(src, PERIODIC_SLOW)
-init_scheduling	code/game/objects/effects/map_effects/radiation_emitter.dm	om_task_periodic(src, PERIODIC_SLOW)
 init_scheduling	code/game/objects/effects/prop/columnblast.dm	om_after(src, time_to_die - 0.2 SECONDS, PROC_REF(on_eruption), get_turf(src))
 init_scheduling	code/game/objects/effects/spiders.dm	om_after(src, egg_hatch_steps() * 2 SECONDS, PROC_REF(hatch))
-init_scheduling	code/game/objects/effects/spiders.dm	om_task_periodic(src, PERIODIC_SLOW)
 init_scheduling	code/game/objects/items/devices/communicator/communicator.dm	om_task_periodic(src, PERIODIC_SLOW)
 init_scheduling	code/game/objects/items/devices/communicator/communicator.dm	om_after(src, 5 SECONDS, PROC_REF(register_to_holder))
 init_scheduling	code/game/objects/items/devices/uplink.dm	om_after(src, offer_time, PROC_REF(next_offer)) //It seems like only the /hidden type actually makes use of this...
@@ -434,13 +414,8 @@ init_scheduling	code/game/objects/items/weapons/melee/energy.dm	om_after(src, 0,
 init_scheduling	code/game/objects/items/weapons/mop_deploy.dm	om_after(src, 0, PROC_REF(check_held))
 init_scheduling	code/game/objects/items/weapons/tools/weldingtool.dm	om_task_periodic(src, PERIODIC_SLOW)
 init_scheduling	code/game/objects/items/weapons/weaponry.dm	om_after(src, 2 SECONDS, PROC_REF(check_empty)) // a net that caught nobody goes away
-init_scheduling	code/game/objects/micro_event.dm	om_after(src, time_til_open, /datum/proc/qdel_self)
-init_scheduling	code/game/objects/mob_spawner.dm	om_task_periodic(src, PERIODIC_SLOW)
 init_scheduling	code/game/objects/structures/crates_lockers/closets/statue.dm	om_after(src, timer * 2 SECONDS, PROC_REF(release)) // the old countdown: one per 2 s step
 init_scheduling	code/game/objects/structures/gargoyle.dm	om_task_periodic(src, PERIODIC_SECOND)
-init_scheduling	code/game/objects/structures/ghost_pods/ghost_pods.dm	om_after(src, delay_to_self_open, PROC_REF(trigger))
-init_scheduling	code/game/objects/structures/props/nest.dm	om_task_periodic(src, PERIODIC_SLOW)
-init_scheduling	code/game/objects/structures/simple_doors.dm	om_task_periodic(src, PERIODIC_SLOW)
 init_scheduling	code/modules/assembly/infrared.dm	om_task_periodic(src, PERIODIC_SLOW)
 init_scheduling	code/modules/asset_cache/transports/asset_transport.dm	om_after(src, 1 SECONDS, PROC_REF(send_assets_slow), C, preload)
 init_scheduling	code/modules/blob/blob.dm	om_task_periodic(src, PERIODIC_SLOW)
@@ -523,7 +498,6 @@ init_visuals	code/game/objects/effects/decals/Cleanable/humans.dm	icon_state = "
 init_visuals	code/game/objects/effects/decals/cleanable.dm	src.icon_state = DEFAULTPICK(src.random_icon_states, null)
 init_visuals	code/game/objects/effects/decals/posters/posters.dm	icon_state = poster_decl.icon_state
 init_visuals	code/game/objects/effects/decals/warning_stripes.dm	T.add_overlay(I)
-init_visuals	code/game/objects/effects/mines.dm	icon_state = "landmine_armed"
 init_visuals	code/game/objects/effects/spiders.dm	icon_state = "stickyweb2"
 init_visuals	code/game/objects/effects/spiders.dm	icon_state = pick("cocoon1","cocoon2","cocoon3")
 init_visuals	code/game/objects/items/devices/taperecorder.dm	icon_state = "tape_[pick("white", "blue", "red", "yellow", "purple")]"
@@ -562,7 +536,6 @@ init_visuals	code/game/objects/items/weapons/tools/screwdriver.dm	icon_state = "
 init_visuals	code/game/objects/items/weapons/tools/wirecutters.dm	icon_state = "cutters"
 init_visuals	code/game/objects/items/weapons/tools/wirecutters.dm	icon_state = "cutters-b"
 init_visuals	code/game/objects/items/weapons/tools/wirecutters.dm	icon_state = "cutters-y"
-init_visuals	code/game/objects/mob_spawner.dm	icon_state = "tunnel_hole"
 init_visuals	code/game/objects/structures/barsign.dm	icon_state = pick(get_valid_states())
 init_visuals	code/game/objects/structures/crates_lockers/closets/secure/secure_closets.dm	add_overlay(IM)
 init_visuals	code/game/objects/structures/crates_lockers/closets/statue.dm	icon_state = "human_female"
@@ -598,13 +571,11 @@ init_visuals	code/game/objects/structures/gargoyle.dm	add_overlay(new_image)
 init_visuals	code/game/objects/structures/gargoyle.dm	add_overlay(H.overlays_standing[i])
 init_visuals	code/game/objects/structures/lattice.dm	icon_state = "latticeblank"
 init_visuals	code/game/objects/structures/loot_piles.dm	icon_state = DEFAULTPICK(icon_states_to_use, null)
-init_visuals	code/game/objects/structures/low_wall.dm	icon_state = "blank"
 init_visuals	code/game/objects/structures/mirror.dm	icon_state = "mirror_frame"
 init_visuals	code/game/objects/structures/props/alien_props.dm	icon_state = pick(possible_states)
 init_visuals	code/game/objects/structures/props/machines.dm	add_overlay("stamper_proc")
 init_visuals	code/game/objects/structures/props/machines.dm	add_overlay("stamper_but")
 init_visuals	code/game/objects/structures/props/machines.dm	icon_state = "nt_pod"
-init_visuals	code/game/objects/structures/reflectors.dm	icon_state = "reflector_base"
 init_visuals	code/game/objects/structures/reflectors.dm	add_overlay(deflector_overlay)
 init_visuals	code/game/objects/structures/salvageable.dm	icon_state = "machine[rand(0,6)]"
 init_visuals	code/game/objects/structures/salvageable.dm	icon_state = "computer[rand(0,7)]"
@@ -856,10 +827,8 @@ init_new_child	code/game/mecha/medical/odysseus.dm	hud = new /obj/item/clothing/
 init_new_child	code/game/mecha/space/hoverpod.dm	ion_trail = new /datum/effect/effect/system/ion_trail_follow()
 init_new_child	code/game/mecha/working/ripley.dm	orescanner = new /obj/item/mining_scanner
 init_new_child	code/game/objects/effects/anomalies/_anomalies.dm	anomaly_core = new anomaly_core(src)
-init_new_child	code/game/objects/effects/anomalies/_anomalies.dm	countdown = new(src)
 init_new_child	code/game/objects/effects/anomalies/anomalies_weather.dm	selected_weather = new selected_weather
 init_new_child	code/game/objects/effects/map_effects/effect_emitter.dm	effect_system = new effect_system_type()
-init_new_child	code/game/objects/effects/mines.dm	trap = new trap(src)
 init_new_child	code/game/objects/effects/misc.dm	light_spot = new
 init_new_child	code/game/objects/effects/particle_holder.dm	particles = new particle_path()
 init_new_child	code/game/objects/effects/shared_particle_holder.dm	particles = new particle_path()
@@ -979,14 +948,8 @@ init_new_child	code/game/objects/mob_spawner.dm	prox = new(src, range)
 init_new_child	code/game/objects/structures/droppod.dm	air = new
 init_new_child	code/game/objects/structures/extinguisher.dm	has_extinguisher = new/obj/item/extinguisher(src)
 init_new_child	code/game/objects/structures/fireaxe.dm	fireaxe = new /obj/item/material/twohanded/fireaxe()
-init_new_child	code/game/objects/structures/medical_stand.dm	tank = new spawn_type (src)
-init_new_child	code/game/objects/structures/medical_stand.dm	contained = new mask_type (src)
 init_new_child	code/game/objects/structures/mirror.dm	M = new(src, null)
 init_new_child	code/game/objects/structures/props/transmitter.dm	soundloop = new(list(src), FALSE)
-init_new_child	code/game/objects/structures/stool_bed_chair_nest/bed.dm	held = new /obj/item/roller(src)
-init_new_child	code/game/objects/structures/transit_tubes.dm	air_contents = new()
-init_new_child	code/game/objects/structures/trash_pile.dm	mouse_nest = new(src)
-init_new_child	code/game/objects/structures/watercloset.dm	bin = new bin(src)
 init_new_child	code/game/objects/structures/watercloset.dm	teleplumb_crystal = new /obj/item/bluespace_crystal(src)
 init_new_child	code/game/objects/structures/watercloset.dm	soundloop = new(list(src), FALSE)
 init_new_child	code/game/turfs/simulated/lava.dm	soundloop = new(list(src), FALSE)
@@ -1238,7 +1201,6 @@ destroy_drop	code/game/objects/structures/crates_lockers/closets/statue.dm	dump_
 destroy_drop	code/modules/recycling/disposal_mail.dm	for(var/atom/movable/AM in contents)
 destroy_drop	code/modules/ventcrawl/ventcrawl_atmospherics.dm	for(var/mob/living/M in contents_of(src)) //ventcrawling is serious business // ALLOW(latent): mobs are never latent
 destroy_drop	code/modules/vore/eating/belly_obj.dm	for(var/mob/observer/G in contents_of(src))
-destroy_effects	code/game/objects/effects/spiders.dm	src.visible_message(span_warning("\The [src] splits open."))
 destroy_effects	code/game/objects/micro_structures.dm	visible_message(span_warning("\The [src] collapses!"))
 destroy_effects	code/game/objects/micro_structures.dm	visible_message(span_warning("\The [thing] tumbles out!"))
 destroy_effects	code/game/objects/objs.dm	m.visible_message(span_notice("\The [m] tumbles out of \the [src]!"))

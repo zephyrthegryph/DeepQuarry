@@ -87,9 +87,7 @@
 	delay_to_self_open = 10 MINUTES
 	delay_to_try_again = 20 MINUTES
 
-/obj/structure/ghost_pod/automatic/Initialize(mapload)
-	. = ..()
-	om_after(src, delay_to_self_open, PROC_REF(trigger))
+DECLARE_START_TIMER(/obj/structure/ghost_pod/automatic, "delay_to_self_open", PROC_REF(trigger))
 
 /obj/structure/ghost_pod/automatic/trigger(mob/user)
 	. = ..()

@@ -325,10 +325,6 @@ DECLARE_INTERACTIONS(/obj/item/roller, \
 	icon_state = "rollerbed"
 	var/obj/item/roller/held
 
-/obj/item/roller_holder/Initialize(mapload)
-	. = ..()
-	held = new /obj/item/roller(src)
-
 DECLARE_INTERACTIONS(/obj/item/roller_holder, INTERACT_USE(null, PROC_REF(interaction_self)))
 
 /// Old attack_self.
@@ -455,3 +451,4 @@ DECLARE_INTERACTIONS(/obj/item/roller_holder, INTERACT_USE(null, PROC_REF(intera
 	to_chat(user, span_notice("You [anchored ? "secured" : "unsecured"] \the [src]!"))
 
 DECLARE_REF(/obj/item/roller_holder, "held", OWNED, null)
+DECLARE_DEFAULT_CHILD(/obj/item/roller_holder, "held", /obj/item/roller)

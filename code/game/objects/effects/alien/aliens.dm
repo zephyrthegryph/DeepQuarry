@@ -91,7 +91,8 @@
 
 	linked_node_handle = om_handle(src)
 
-	om_task_periodic(src, PERIODIC_SLOW) // Only the node processes in a subsystem, the rest are process()'d by the node
+// Only the node processes in a subsystem, the rest are process()'d by the node
+DECLARE_PERIODIC(/obj/effect/alien/weeds/node, PERIODIC_SLOW)
 
 /obj/effect/alien/weeds/proc/updateWeedOverlays()
 	cut_overlays()

@@ -94,9 +94,7 @@
 	icon_state = "redgate_hole"
 	icon_state_opened = "redgate_hole"
 
-/obj/structure/ghost_pod/ghost_activated/maintpred/redgate/Initialize(mapload)
-	. = ..()
-	registry_join(REGISTRY_GHOST_PODS, src)
+DECLARE_REGISTRY(/obj/structure/ghost_pod/ghost_activated/maintpred/redgate, REGISTRY_GHOST_PODS)
 
 /obj/structure/ghost_pod/ghost_activated/maint_lurker
 	name = "strange maintenance hole"
@@ -191,9 +189,7 @@
 	new_character.visible_message(span_warning("[new_character] appears to crawl out of somewhere."))
 	qdel(src)
 
-/obj/structure/ghost_pod/ghost_activated/maint_lurker/Initialize(mapload)
-	. = ..()
-	registry_join(REGISTRY_GHOST_PODS, src)
+DECLARE_REGISTRY(/obj/structure/ghost_pod/ghost_activated/maint_lurker, REGISTRY_GHOST_PODS)
 
 /// redspace variant
 
