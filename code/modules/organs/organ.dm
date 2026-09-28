@@ -60,15 +60,6 @@ REF_STATIC(/obj/item/organ, "assists_languages")
 	if(owner?.body)
 		for(var/datum/affliction/A as anything in owner.body.afflictions_at(src))
 			A.cure()
-	// Leave the body now, while `owner` still names it. Phase 4 nulls `owner`
-	// (REF_BACK below) before phase 7 moves us out of our slot, so the slot's
-	// own detach hook would find no owner and leave this part in the mob's
-	// organs/organs_by_name caches (code/modules/body/parts/attach.dm).
-	if(owner)
-		var/atom/holder = loc
-		var/list/entry = holder?.ledger?.entries[src]
-		if(entry && dq_part_attaching_slot(holder, entry[LEDGER_E_SLOT]))
-			on_detached(holder, entry[LEDGER_E_SLOT])
 	..()
 
 /obj/item/organ/proc/update_health()
