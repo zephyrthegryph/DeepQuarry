@@ -171,7 +171,6 @@
 	chassis.visible_message(span_info("[chassis] sweeps around with its ore scoop."))
 	occupant_message(span_info("You sweep around the area with the scoop."))
 	var/T = chassis.loc
-	//var/C = target.loc	//why are these backwards? we may never know -Pete
 	if(do_after_cooldown(target))
 		if(T == chassis.loc && src == chassis.selected)
 			for(var/obj/item/ore/ore in range(chassis,1))

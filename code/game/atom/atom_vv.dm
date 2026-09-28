@@ -16,10 +16,7 @@
 	VV_DROPDOWN_OPTION(VV_HK_TRIGGER_EMP, "EMP Pulse")
 	VV_DROPDOWN_OPTION(VV_HK_TRIGGER_EXPLOSION, "Explosion")
 	VV_DROPDOWN_OPTION(VV_HK_EDIT_FILTERS, "Edit Filters")
-	//VV_DROPDOWN_OPTION(VV_HK_EDIT_COLOR_MATRIX, "Edit Color as Matrix")
 	VV_DROPDOWN_OPTION(VV_HK_TEST_MATRIXES, "Test Matrices")
-	//if(greyscale_colors)
-	//	VV_DROPDOWN_OPTION(VV_HK_MODIFY_GREYSCALE, "Modify greyscale colors")
 
 /// Admin var-edit questions about an atom (vv_do_topic()).
 /datum/om/prompt/number/vv_edit
@@ -211,20 +208,16 @@
 			set_opacity(var_value)
 			. =  TRUE
 
-	//light_flags = old_light_flags
 	if(!isnull(.))
 		datum_flags |= DF_VAR_EDITED
 		return
 
-	//if(!GLOB.Debug2)
-	//	flags_1 |= ADMIN_SPAWNED_1
 
 	. = ..()
 
 	switch(var_name)
 		if(NAMEOF(src, color))
 			add_atom_colour(color, ADMIN_COLOUR_PRIORITY)
-			//update_appearance()
 			update_icon()
 
 /proc/vv_auto_rename(atom/target, newname)

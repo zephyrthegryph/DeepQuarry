@@ -472,7 +472,6 @@ DECLARE_INTERACTIONS(/turf, \
 	if(!istype(O))
 		return FALSE
 	LAZYADD(dangerous_objects, O)
-//	color = "#FF0000"
 
 // Similar to above, for when the dangerous object stops being dangerous/gets deleted/moved/etc.
 /turf/proc/unregister_dangerous_object(obj/O)
@@ -480,7 +479,6 @@ DECLARE_INTERACTIONS(/turf, \
 		return FALSE
 	LAZYREMOVE(dangerous_objects, O)
 	UNSETEMPTY(dangerous_objects) // This nulls the list var if it's empty.
-//	color = "#00FF00"
 
 /turf/occult_act(mob/living/user)
 	to_chat(user, span_cult("You consecrate the floor."))

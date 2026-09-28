@@ -185,7 +185,6 @@
 		if(owner_ref().current)
 			var/icon/I = get_flat_icon(owner_ref().current, dir=SOUTH, no_anim=TRUE)
 			var/image/IM = image(I, pixel_x = (32 - I.Width()))
-			//icon2base64(get_flat_icon(owner.current,dir=SOUTH,no_anim=TRUE))
 			add_overlay(IM)
 			qdel(I)
 

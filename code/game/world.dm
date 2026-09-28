@@ -308,17 +308,11 @@ GLOBAL_VAR(restart_counter)
 		GLOB.log_directory = "data/logs/[texttime]/round-"
 		if(GLOB.round_id)
 			GLOB.log_directory += "[GLOB.round_id]"
-			//GLOB.picture_logging_prefix += "R_[GLOB.round_id]_"
-			//GLOB.picture_log_directory += "[GLOB.round_id]"
 		else
 			var/timestamp = replacetext(time_stamp(), ":", ".")
 			GLOB.log_directory += "[timestamp]"
-			//GLOB.picture_log_directory += "[timestamp]"
-			//GLOB.picture_logging_prefix += "T_[timestamp]_"
 	else
 		GLOB.log_directory = "data/logs/[override_dir]"
-		//GLOB.picture_logging_prefix = "O_[override_dir]_"
-		//GLOB.picture_log_directory = "data/picture_logs/[override_dir]"
 
 	logger.init_logging()
 
@@ -584,8 +578,6 @@ GLOBAL_LIST_EMPTY(world_next_tick_callbacks)
 	if(check_hard_reboot())
 		log_world("World hard rebooted at [time_stamp()]")
 		shutdown_logging() // See comment below.
-		//QDEL_NULL(Tracy)
-		//QDEL_NULL(Debugger)
 		TgsEndProcess()
 		return ..()
 
@@ -636,7 +628,6 @@ GLOBAL_LIST_EMPTY(world_next_tick_callbacks)
 	s += span_bold("[station_name()]");
 	s += " ("
 	s += "<a href=\"https://\">" //Change this to wherever you want the hub to link to.
-//	s += "[GLOB.game_version]"
 	s += "Default"  //Replace this with something else. Or ever better, delete it and uncomment the game version.
 	s += "</a>"
 	s += ")"
@@ -706,7 +697,6 @@ GLOBAL_LIST_EMPTY(world_next_tick_callbacks)
 /world/proc/increase_max_x(new_maxx, map_load_z_cutoff = maxz)
 	if(new_maxx <= maxx)
 		return
-	// var/old_max = world.maxx
 	maxx = new_maxx
 	// if(!map_load_z_cutoff)
 	// 	return
@@ -723,7 +713,6 @@ GLOBAL_LIST_EMPTY(world_next_tick_callbacks)
 /world/proc/increase_max_y(new_maxy, map_load_z_cutoff = maxz)
 	if(new_maxy <= maxy)
 		return
-	// var/old_maxy = maxy
 	maxy = new_maxy
 	// if(!map_load_z_cutoff)
 	// 	return

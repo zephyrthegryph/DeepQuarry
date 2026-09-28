@@ -116,8 +116,6 @@ EXTEND_INTERACTIONS(/obj/effect/rune, \
 		return
 	if(!word1 || !word2 || !word3 || prob(user.injury_load(INJURY_CATEGORY_NEURAL)))
 		return fizzle(user)
-//		if(!src.visibility)
-//			src.visibility=1
 	if(word1 == GLOB.cultwords["travel"] && word2 == GLOB.cultwords["self"])
 		return teleport(src.word3, user)
 	if(word1 == GLOB.cultwords["see"] && word2 == GLOB.cultwords["blood"] && word3 == GLOB.cultwords["hell"])

@@ -265,9 +265,6 @@ REF_OWNED(/obj/item/paicard, list("radio", "multitool", "signaler", "screen_laye
 		if("wires")
 			if(!pai)
 				return FALSE
-			// WIRE_SIGNAL = 1
-			// WIRE_RECEIVE = 2
-			// WIRE_TRANSMIT = 4
 			switch(text2num(params["wires"]))
 				if(4)
 					radio.ToggleBroadcast()
@@ -870,7 +867,6 @@ DECLARE_INTERACTIONS(/obj/item/paicard, \
 	var/obj/item/paicard/paicard = null
 
 /obj/machinery/proc/insertpai(mob/user, obj/item/paicard/card)
-	//var/obj/item/paicard/card = I
 	var/mob/living/silicon/pai/AI = card.pai
 	if(paicard)
 		to_chat(user, span_notice("This bot is already under PAI Control!"))

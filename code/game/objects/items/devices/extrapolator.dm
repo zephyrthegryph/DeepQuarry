@@ -223,7 +223,6 @@ DECLARE_INTERACTIONS(/obj/item/extrapolator, \
 		return TRUE
 	if(EXTRAPOLATOR_ACT_CHECK(result, EXTRAPOLATOR_ACT_PRIORITY_ISOLATE))
 		isolate = TRUE
-	//var/list/advance_diseases = list()
 	if(!length(diseases))
 		to_chat(user, span_warning("[icon2html(src, user)] There are no valid diseases to make a culture from."))
 		return

@@ -1058,7 +1058,6 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 */
 	var/list/cultists = list() //also, wording for it is old wording for obscure rune, which is now hide-see-blood.
 	var/list/victims = list()
-//			var/list/cultboil = list(cultists-usr) //and for this words are destroy-see-blood.
 	for(var/mob/living/carbon/C in orange(1,src))
 		if(iscultist(C) && !C.stat)
 			cultists+=C

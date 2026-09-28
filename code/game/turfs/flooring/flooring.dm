@@ -53,7 +53,6 @@ GLOBAL_LIST_INIT(flooring_types, populate_flooring_types())
 	//Damage the floor can take before being destroyed
 	//var/health = 50
 
-	//var/removal_time = WORKTIME_FAST * 0.75
 
 	//Flooring Icon vars
 	var/smooth_nothing = FALSE //True/false only, optimisation

@@ -168,38 +168,26 @@ DECLARE_INTERACTIONS(/obj/item/mecha_parts/chassis, INTERACT_HAND_UNGATED(null, 
 /obj/item/mecha_parts/part/phazon_torso
 	name="Phazon Torso"
 	icon_state = "phazon_harness"
-	//construction_time = 300
-	//construction_cost = list(MAT_STEEL=35000,MAT_GLASS=10000,MAT_PHORON=20000)
 
 /obj/item/mecha_parts/part/phazon_head
 	name="Phazon Head"
 	icon_state = "phazon_head"
-	//construction_time = 200
-	//construction_cost = list(MAT_STEEL=15000,MAT_GLASS=5000,MAT_PHORON=10000)
 
 /obj/item/mecha_parts/part/phazon_left_arm
 	name="Phazon Left Arm"
 	icon_state = "phazon_l_arm"
-	//construction_time = 200
-	//construction_cost = list(MAT_STEEL=20000,MAT_PHORON=10000)
 
 /obj/item/mecha_parts/part/phazon_right_arm
 	name="Phazon Right Arm"
 	icon_state = "phazon_r_arm"
-	//construction_time = 200
-	//construction_cost = list(MAT_STEEL=20000,MAT_PHORON=10000)
 
 /obj/item/mecha_parts/part/phazon_left_leg
 	name="Phazon Left Leg"
 	icon_state = "phazon_l_leg"
-	//construction_time = 200
-	//construction_cost = list(MAT_STEEL=20000,MAT_PHORON=10000)
 
 /obj/item/mecha_parts/part/phazon_right_leg
 	name="Phazon Right Leg"
 	icon_state = "phazon_r_leg"
-	//construction_time = 200
-	//construction_cost = list(MAT_STEEL=20000,MAT_PHORON=10000)
 
 ///////// Odysseus
 

@@ -51,7 +51,6 @@
 
 	var/item_flags = 0 //Miscellaneous flags pertaining to equippable objects.
 
-	//var/heat_transfer_coefficient = 1 //0 prevents all transfers, 1 is invisible
 	var/gas_transfer_coefficient = 1 // for leaking gas from turf to mask and vice-versa (for masks right now, but at some point, i'd like to include space helmets)
 	var/permeability_coefficient = 1 // for chemicals/diseases
 	var/siemens_coefficient = 1 // for electrical admittance/conductance (electrocution checks and shit)
@@ -616,8 +615,6 @@
 	user.do_attack_animation(M)
 
 	add_fingerprint(user)
-	//if(CLUMSY_HARM_CHANCE(user))
-	//	M = user
 		/*
 		to_chat(M, span_warning("You stab yourself in the eye."))
 		M.sdisabilities |= BLIND

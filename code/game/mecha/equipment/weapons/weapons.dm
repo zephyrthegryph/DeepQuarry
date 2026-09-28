@@ -62,7 +62,6 @@ MATERIAL_MIX(/obj/item/mecha_parts/mecha_equipment/weapon, list(MAT_STEEL = 6000
 			set_ready_state(FALSE)
 	if(auto_rearm)
 		projectiles = projectiles_per_shot
-//	set_ready_state(FALSE)
 
 // redundant code removed. Fixes weapon lock on mob kill.
 	add_attack_logs(chassis?.slot_item(MECHA_SLOT_PILOT),target, "Fired exosuit weapon [src.name] (MANUAL)")

@@ -9,8 +9,6 @@
 	icon = 'icons/obj/artstuff.dmi'
 	icon_state = "easel"
 	density = TRUE
-	//resistance_flags = FLAMMABLE
-	//max_integrity = 60
 	var/obj/item/canvas/painting = null
 
 /obj/structure/easel/Initialize(mapload)
@@ -52,8 +50,6 @@
 	desc = "Draw out your soul on this canvas!"
 	icon = 'icons/obj/artstuff.dmi'
 	icon_state = "11x11"
-	//flags_1 = UNPAINTABLE_1
-	//resistance_flags = FLAMMABLE
 	var/width = 11
 	var/height = 11
 	var/list/grid

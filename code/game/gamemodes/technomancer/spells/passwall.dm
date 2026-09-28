@@ -21,7 +21,6 @@
 	if(!allowed_to_teleport())
 		to_chat(user, span_warning("You can't teleport here!"))
 		return 0
-//	if(isturf(hit_atom))
 
 	var/turf/T = get_turf(hit_atom)		//Turf we touched.
 	var/turf/our_turf = get_turf(user)	//Where we are.

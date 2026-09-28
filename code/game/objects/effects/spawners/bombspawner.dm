@@ -100,7 +100,6 @@ ADMIN_VERB(spawn_tanktransferbomb, R_SPAWN, "Instant TTV", "Spawn a tank transfe
 	icon = 'icons/mob/screen1.dmi'
 	icon_state = "x"
 
-//	var/assembly_type = /obj/item/assembly/signaler
 
 	//Note that the maximum amount of gas you can put in a 70L air tank at 1013.25 kPa and 519K is 16.44 mol.
 	var/phoron_amt = 0
@@ -118,7 +117,6 @@ ADMIN_VERB(spawn_tanktransferbomb, R_SPAWN, "Instant TTV", "Spawn a tank transfe
 	icon = 'icons/mob/screen1.dmi'
 	icon_state = "x"
 
-//	var/assembly_type = /obj/item/assembly/signaler
 
 	//Note that the maximum amount of gas you can put in a 70L air tank at 1013.25 kPa and 519K is 16.44 mol.
 /obj/effect/spawner/onetankbomb/full/Initialize(mapload) //just needs an assembly.
@@ -133,6 +131,5 @@ ADMIN_VERB(spawn_tanktransferbomb, R_SPAWN, "Instant TTV", "Spawn a tank transfe
 	icon = 'icons/mob/screen1.dmi'
 	icon_state = "x"
 
-//	var/assembly_type = /obj/item/assembly/signaler
 
 	//Note that the maximum amount of gas you can put in a 70L air tank at 1013.25 kPa and 519K is 16.44 mol.

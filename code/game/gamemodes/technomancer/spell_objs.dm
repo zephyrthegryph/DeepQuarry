@@ -11,7 +11,6 @@
 	throwforce = 0
 	force = 0
 	show_examine = FALSE
-//	var/mob/living/carbon/human/owner = null
 	var/owner_handle
 	var/obj/item/technomancer_core/core = null
 	var/cast_methods = null			// Controls how the spell is casted.
@@ -120,8 +119,6 @@
 		if(!core)
 			to_chat(owner_ref(), span_warning("You need a Core to do that."))
 			return INITIALIZE_HINT_QDEL
-//		if(istype(/obj/item/technomancer_core, owner.back))
-//			core = owner.back
 	update_icon()
 
 // Proc: Destroy()
@@ -258,7 +255,6 @@ DECLARE_INTERACTIONS(/obj/item/spell, \
 	if(!path || !ispath(path))
 		return 0
 
-	//var/obj/item/spell/S = new path(src)
 	var/obj/item/spell/S = new path(src)
 
 	//No hands needed for innate casts.

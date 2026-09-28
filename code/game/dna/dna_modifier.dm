@@ -565,8 +565,6 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/scan_consolenew, \
 			var/mob/living/carbon/WC = connected()?.get_occupant()
 			playsound(src, "keyboard", 40)
 			var/block = WC.dna.GetSESubBlock(selected_se_block,selected_se_subblock)
-			//var/original_block=block
-			//testing("Irradiating SE block [selected_se_block]:[selected_se_subblock] ([block])...")
 
 			irradiating = radiation_duration
 			var/lock_state = connected().locked
@@ -820,13 +818,11 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/scan_consolenew, \
 			else if(selected_se_block > DNA_SE_LENGTH/2 && selected_se_block < DNA_SE_LENGTH)
 				real_SE_block--
 
-		//testing("Irradiated SE block [real_SE_block]:[selected_se_subblock] ([original_block] now [block]) [(real_SE_block!=selected_se_block) ? "(SHIFTED)":""]!")
 		WC.dna.SetSESubBlock(real_SE_block,selected_se_subblock,block)
 		WC.apply_effect((radiation_intensity+radiation_duration), IRRADIATE, check_protection = 0)
 	else
 		WC.apply_effect(((radiation_intensity*2)+radiation_duration), IRRADIATE, check_protection = 0)
 		if	(prob(80-radiation_duration))
-			//testing("Random bad mut!")
 			randmutb(WC)
 			domutcheck(WC,null,MUTCHK_FORCED)
 			WC.UpdateAppearance()

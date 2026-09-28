@@ -18,7 +18,6 @@ Deployable items
 	icon_state = "barrier0"
 	max_integrity = 100
 	var/locked = 0.0
-//	req_access = list(ACCESS_MAINT_TUNNELS)
 
 /obj/machinery/deployable/barrier/Initialize(mapload)
 	. = ..()

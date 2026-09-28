@@ -192,7 +192,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/bodycam, INTERACT_USE(null, PRO
 
 /obj/item/clothing/accessory/bodycam/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
-	//user.set_machine(src)
 	show_bodycam_ui(user)
 
 // show_bodycam_ui body moved to code/modules/tvcamera_panel.dm (structured TGUI).

@@ -318,7 +318,6 @@ REF_OWNED(/obj/machinery/porta_turret, "spark_system")
 /obj/machinery/porta_turret/proc/setup()
 	var/obj/item/gun/energy/E = installation	//All energy-based weapons are applicable
 	var/obj/item/projectile/P = initial(E.projectile_type)
-	//var/obj/item/ammo_casing/shottype = E.projectile_type
 
 	projectile = P
 	if(!lethal_projectile)

@@ -45,8 +45,6 @@
 			add_overlay("tank_oxyg")
 		else if(istype(tank,/obj/item/tank/phoron))
 			add_overlay("tank_plasma")
-		//else if(istype(tank,/obj/item/tank/hydrogen))
-		//	add_overlay("tank_hydro")
 		else
 			add_overlay("tank_other")
 
@@ -259,7 +257,6 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 						breather().internal = tank
 						breather().internals?.icon_state = "internal1"
 					valve_opened = TRUE
-					//playsound(src, 'sound/effects/internals.ogg', 100, 1)
 					update_icon()
 					PERIODIC_START(src, PERIODIC_SLOW)
 		if ("Remove vessel")

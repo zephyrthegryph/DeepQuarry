@@ -96,7 +96,6 @@ DECLARE_INTERACTIONS(/obj/item/inflatable, INTERACT_SELF("Inflate", PROC_REF(inf
 
 /obj/structure/inflatable/proc/deflate()
 	playsound(src, 'sound/machines/hiss.ogg', 75, 1)
-	//to_chat(user, span_notice("You slowly deflate the inflatable wall."))
 	visible_message("[src] slowly deflates.")
 	om_after(src, 5 SECONDS, PROC_REF(deflate_finish))
 

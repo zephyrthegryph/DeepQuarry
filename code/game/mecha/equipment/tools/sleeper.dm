@@ -262,7 +262,6 @@
 	else
 		occupant_message(span_notice("Injecting [occupant] with [to_inject] units of [R.name]."))
 		src.mecha_log_message("Injecting [occupant] with [to_inject] units of [R.name].")
-		//SG.reagents.trans_id_to(occupant,R.id,to_inject)
 		SG.reagents.remove_reagent(R.id,to_inject)
 		occupant.reagents.add_reagent(R.id,to_inject)
 		update_equip_info()

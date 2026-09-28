@@ -13,7 +13,6 @@
 	if(isnull(cached_app))
 		cached_app = mutable_appearance('icons/obj/machines/research_vr.dmi', "material_insertion")
 		cached_app.color = material.icon_colour
-		// cached_app.alpha = material.alpha
 
 		apps[material] = cached_app
 	return cached_app

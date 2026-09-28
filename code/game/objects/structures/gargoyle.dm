@@ -75,8 +75,6 @@
 	if(H?.buckled_to())
 		var/atom/movable/_tmp_buck_10 = H?.buckled_to()
 		_tmp_buck_10.unbuckle_mob(H, TRUE)
-	//icon = H.icon
-	//copy_overlays(H)
 
 	//calculate our tints
 	var/list/RGB = rgb2num(tint)

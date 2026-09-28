@@ -69,8 +69,6 @@
 	return TRUE
 
 /obj/structure/lattice/proc/updateOverlays()
-	//if(!(istype(src.loc, /turf/space)))
-	//	qdel(src)
 	om_after(src, 1, PROC_REF(update_overlays_now))
 
 // Moves upgrading lattices to their own proc for other stuff to call. Also makes them instant.

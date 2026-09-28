@@ -70,8 +70,6 @@ EXTEND_INTERACTIONS(/obj/item/material/ashtray, INTERACT_ITEM(null, PROC_REF(ash
 					qdel(V)
 				consume(cig, user)
 				W = butt
-				//spawn(1)
-				//	TemperatureAct(150)
 			else if (cig.lit == 0)
 				to_chat(user, "You place [cig] in [src] without even smoking it. Why would you do that?")
 

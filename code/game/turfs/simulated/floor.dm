@@ -51,7 +51,6 @@
 	old_decals = current_decals
 
 /turf/simulated/floor/proc/set_flooring(datum/decl/flooring/newflooring, initializing)
-	//make_plating(defer_icon_update = 1)
 	if(is_plating() && !initializing) // Plating -> Flooring
 		swap_decals()
 	flooring = newflooring

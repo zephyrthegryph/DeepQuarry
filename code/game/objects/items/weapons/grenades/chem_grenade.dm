@@ -30,7 +30,6 @@ REF_OWNED_LIST(/obj/item/grenade/chem_grenade, "beakers")
 /obj/item/grenade/chem_grenade/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!stage || stage==1)
 		if(detonator)
-//				detonator.loc=src.loc
 			detonator.detached()
 			user.put_in_hands(detonator)
 			detonator=null

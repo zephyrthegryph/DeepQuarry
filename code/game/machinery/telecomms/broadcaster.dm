@@ -453,9 +453,7 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 
 		var/part_blackbox_c = "</span><b> \[[freq_text]\]</b> <span class='message'>" // Tweaked for security headsets -- TLE
 		var/blackbox_msg = "[part_a][part_b][name][part_blackbox_c][quotedmsg][part_d][part_e]"
-		//var/blackbox_admin_msg = "[part_a][M.name] (Real name: [M.real_name])[part_blackbox_b][quotedmsg][part_c]"
 
-		//BR.messages_admin += blackbox_admin_msg
 		if(istype(GLOB.blackbox))
 			switch(display_freq)
 				if(PUB_FREQ)
@@ -638,7 +636,6 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 
 		var/blackbox_msg = "[part_a][source][part_blackbox_b]\"[text]\"[part_c]"
 
-		//BR.messages_admin += blackbox_admin_msg
 		if(istype(GLOB.blackbox))
 			switch(display_freq)
 				if(PUB_FREQ)
@@ -728,7 +725,6 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 	for(var/obj/machinery/telecomms/receiver/R in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
 		R.receive_signal(signal)
 
-	//to_world_log("Level: [signal.data["level"]] - Done: [signal.data["done"]]")
 
 	return signal
 

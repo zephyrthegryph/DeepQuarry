@@ -197,7 +197,6 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 	data["amounts"] = amounts
 	data["hasOccupant"] = occupant ? 1 : 0
 	var/occupantData[0]
-	// var/crisis = 0
 	if(occupant)
 		occupantData["name"] = occupant.name
 		occupantData["stat"] = occupant.stat
@@ -282,8 +281,6 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 			var/injectable = occupant ? 1 : 0
 			var/overdosing = 0
 			var/caution = 0 // To make things clear that you're coming close to an overdose
-			// if(crisis && !(temp.id in emergency_chems))
-				// injectable = 0
 
 			if(occupant && occupant.reagents)
 				reagent_amount = occupant.reagents.get_reagent_amount(temp.id)

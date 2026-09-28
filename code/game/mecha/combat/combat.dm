@@ -2,11 +2,8 @@
 	force = 30
 	var/melee_cooldown = 10
 	var/melee_can_hit = 1
-	//var/list/destroyable_obj = list(/obj/mecha, /obj/structure/window, /obj/structure/grille, /turf/simulated/wall, /obj/structure/girder)
 	internal_damage_threshold = 50
 	maint_access = 0
-	//add_req_access = 0
-	//operation_req_access = list(ACCESS_HOS)
 	var/am = "d3c2fbcadca903a41161ccc9df9cf948"
 
 	max_hull_equip = 2

@@ -92,7 +92,6 @@ EXTEND_INTERACTIONS(/obj/item/stack/marker_beacon, \
 	desc = "A prismatic path illumination device. It is anchored in place and glowing steadily."
 	icon = 'icons/obj/lighting.dmi'
 	icon_state = "markerrandom"
-//	layer = BELOW_OPEN_DOOR_LAYER
 	anchored = TRUE
 	light_range = 2
 	light_power = 0.8

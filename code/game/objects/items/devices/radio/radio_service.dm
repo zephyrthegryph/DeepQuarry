@@ -159,7 +159,6 @@ GLOBAL_DATUM_INIT(radio_service, /datum/world_service/radio, new)
 /datum/radio_frequency/proc/add_listener(obj/device as obj, radio_filter as text|null)
 	if (!radio_filter)
 		radio_filter = RADIO_DEFAULT
-	//log_admin("add_listener(device=[device],radio_filter=[radio_filter]) frequency=[frequency]")
 	var/list/obj/devices_line = devices[radio_filter]
 	if (!devices_line)
 		devices_line = new

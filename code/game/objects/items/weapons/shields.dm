@@ -321,7 +321,6 @@ EXTEND_INTERACTIONS(/obj/item/shield/riot/tele, INTERACT_USE(null, PROC_REF(inte
 	brightness_on = 6
 	var/on = 0
 	var/light_applied
-	//var/light_overlay
 
 //POURPEL WHY U NO COVER
 

@@ -711,10 +711,8 @@ REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
 		else
 			if(L.bodytemperature < 288) // 15C
 				L.adjust_bodytemperature(10, max_temp = SHOWER_TEMP_NORMAL)
-				//L.adjust_bodytemperature(10)
 			if(L.bodytemperature > 298) // 25C
 				L.adjust_bodytemperature(-(10), min_temp = SHOWER_TEMP_NORMAL)
-				//L.adjust_bodytemperature(-10)
 
 /obj/effect/mist
 	name = "mist"

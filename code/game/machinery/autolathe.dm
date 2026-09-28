@@ -136,7 +136,6 @@ REF_OWNED(/obj/machinery/autolathe, list("print_sound", "materials"))
 /obj/machinery/autolathe/proc/AfterMaterialInsert(datum/source, datum/om/event/matcontainer_item_consumed/event)
 	EVENT_HANDLER
 	flick("autolathe_loading", src)//plays metal insertion animation
-	// use_power(min(1000, amount_inserted / 100))
 	SStgui.update_uis(src)
 
 /obj/machinery/autolathe/tgui_interact(mob/user, datum/tgui/ui)

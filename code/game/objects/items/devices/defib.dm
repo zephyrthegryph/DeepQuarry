@@ -680,7 +680,6 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 	desc = "A device that delivers powerful shocks to detachable jumper cables that are capable of reviving full body prosthetics."
 	icon_state = "jumperunit"
 	item_state = "defibunit"
-//	item_state = "jumperunit"
 	paddle_path = /obj/item/shockpaddles/linked/jumper
 
 /obj/item/defib_kit/jumper_kit/loaded

@@ -399,11 +399,9 @@
 
 /datum/material/flockium
 	name = MAT_FLOKIUM
-	//stack_type = /obj/item/stack/material/sandstone
 	icon_base = "flock"
 	icon_reinf = "flock"
 	icon_colour = "#FFFFFF"
-	//shard_type = SHARD_STONE_PIECE
 	density = 30 // weight renamed to density.
 	hardness = 200
 	protectiveness = 5 // 20%

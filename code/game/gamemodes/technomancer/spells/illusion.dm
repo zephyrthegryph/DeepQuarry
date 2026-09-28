@@ -70,7 +70,6 @@ REF_OWNED(/obj/item/spell/illusion, "illusion")
 		var/matrix/M = matrix()
 		M.Scale(0.5, 0.5)
 		temp_image.transform = M
-//		temp_image.pixel_y = 8
 		add_overlay(temp_image)
 
 /// LC-refs: copied -- an OM handle (om_handle()), so it reads null once that is deleted.

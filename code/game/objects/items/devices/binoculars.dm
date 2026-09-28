@@ -11,7 +11,6 @@
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
-	//MATERIAL_MIX(list(MAT_STEEL = 50, MAT_GLASS = 50))
 
 DECLARE_INTERACTIONS(/obj/item/binoculars, INTERACT_USE(null, PROC_REF(zoom)))
 

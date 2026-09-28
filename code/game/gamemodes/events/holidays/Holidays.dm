@@ -22,7 +22,6 @@ GLOBAL_LIST_EMPTY(Holiday) //Holidays are lists now, so we can have more than on
 
 	GLOB.Holiday = list()			// reset our switch now so we can recycle it as our Holiday name
 
-	//var/YY	=	text2num(time2text(world.timeofday, "YY")) 	// get the current year - unused currently but can be used for floating dates
 	var/MM	=	text2num(time2text(world.timeofday, "MM")) 	// get the current month
 	var/DD	=	text2num(time2text(world.timeofday, "DD")) 	// get the current day
 

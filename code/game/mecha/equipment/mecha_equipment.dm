@@ -151,8 +151,6 @@
 	return
 
 /obj/item/mecha_parts/mecha_equipment/proc/can_attach(obj/mecha/M as obj)
-	//if(M.equipment.len >= M.max_equip)
-	//	return 0
 	if(!allow_duplicate)
 		for(var/obj/item/mecha_parts/mecha_equipment/ME in M.equipment) //Exact duplicate components aren't allowed.
 			if(ME.type == src.type)
@@ -178,7 +176,6 @@
 	return 0
 
 /obj/item/mecha_parts/mecha_equipment/proc/attach(obj/mecha/M as obj)
-	//M.equipment += src
 	var/has_equipped = 0
 	if(equip_type == EQUIP_HULL && length(M.hull_equipment) < M.max_hull_equip && !has_equipped)
 		LAZYADD(M.hull_equipment, src)

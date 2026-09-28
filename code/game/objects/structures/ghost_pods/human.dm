@@ -121,7 +121,6 @@
 		H.change_appearance(APPEARANCE_ALL, H, check_species_whitelist = 1)
 	H.offer_spawn_rename()
 
-//	visible_message(span_alien("\The [src] [pick("gurgles", "seizes", "clangs")] before releasing \the [H]!"))
 
 	qdel(src)
 

@@ -982,7 +982,6 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 	return result
 
 /obj/mecha/Bump(atom/obstacle)
-//	src.inertia_dir = null
 	if(istype(obstacle, /mob))//First we check if it is a mob. Mechs mostly shouln't go through them, even while phasing.
 		var/mob/M = obstacle
 		M.Move(get_step(obstacle,src.dir))
@@ -1262,8 +1261,6 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 	var/obj/item/mecha_parts/component/armor/ArmC = internal_components[MECH_ARMOR]
 
 	var/temp_deflect_chance = deflect_chance
-	//var/temp_damage_minimum = damage_minimum //CHOMPremove
-	//var/temp_minimum_penetration = minimum_penetration //CHOMPremove
 	var/temp_fail_penetration_value = fail_penetration_value
 
 	if(!ArmC)
@@ -1305,7 +1302,6 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 				pass_damage_reduc_mod = temp_fail_penetration_value	//This will apply to reduce damage to 2/3 or 66% by default
 			else
 				src.occupant_message(span_notice("\The [A] manages to pierce \the [src] armor."))
-//				src.visible_message("\The [A] manages to pierce \the [src] armor")
 				pass_damage_reduc_mod = 1
 
 			for(var/obj/item/mecha_parts/mecha_equipment/ME in equipment)
@@ -1333,8 +1329,6 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 	var/obj/item/mecha_parts/component/armor/ArmC = internal_components[MECH_ARMOR]
 
 	var/temp_deflect_chance = deflect_chance
-	//var/temp_damage_minimum = damage_minimum //CHOMPremove
-	//var/temp_minimum_penetration = minimum_penetration //CHOMPremove
 	var/temp_fail_penetration_value = fail_penetration_value
 
 	if(!ArmC)
@@ -1380,7 +1374,6 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 
 		else	//You go through completely because you use AP. Nice.
 			src.occupant_message(span_notice("\The [Proj] manages to pierce \the [src] armor."))
-//			src.visible_message("\The [Proj] manages to pierce \the [src] armor")
 			pass_damage_reduc_mod = 1
 
 		pass_damage = (pass_damage_reduc_mod*pass_damage)//Apply damage reduction before usage.
@@ -1469,8 +1462,6 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 	var/obj/item/mecha_parts/component/armor/ArmC = internal_components[MECH_ARMOR]
 
 	var/temp_deflect_chance = deflect_chance
-	//var/temp_damage_minimum = damage_minimum //CHOMPremove
-	//var/temp_minimum_penetration = minimum_penetration	//CHOMPremove
 	var/temp_fail_penetration_value = fail_penetration_value
 
 	if(!ArmC)
@@ -2003,7 +1994,6 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 			to_chat(L, span_warning("You have other entities attached to yourself. Remove them first."))
 			return
 
-//	to_chat(user, "You start climbing into [src.name]")
 	if(get_equipment(/obj/item/mecha_parts/mecha_equipment/runningboard))
 		visible_message(span_notice("\The [user] is instantly lifted into [src.name] by the running board!"))
 		moved_inside(user)
@@ -2138,7 +2128,6 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 		update_icon()
 		set_dir(dir_in)
 
-		//src.zoom = 0
 
 		// Doesn't seem needed.
 		var/mob/living/_tmp_occ_6 = src?.slot_item(MECHA_SLOT_PILOT)
@@ -3007,7 +2996,6 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 	var/obj/item/mecha_parts/component/armor/ArmC = internal_components[MECH_ARMOR]
 
 	var/temp_deflect_chance = deflect_chance
-	//var/temp_damage_minimum = damage_minimum //CHOMPremove
 
 	if(!ArmC)
 		temp_deflect_chance = 1

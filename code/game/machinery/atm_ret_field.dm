@@ -187,7 +187,6 @@
 	opacity = 0
 	plane = MOB_PLANE
 	layer = ABOVE_MOB_LAYER
-	//mouse_opacity = 0
 	can_atmos_pass = ATMOS_PASS_NO
 	var/basestate = "arfg_field"
 

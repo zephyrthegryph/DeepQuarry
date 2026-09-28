@@ -31,7 +31,6 @@
 
 		// Sanity checks, don't skip.
 		if(!gene.can_activate(M,flags))
-			//testing("[M] - Failed to activate [gene.name] (can_activate fail).")
 			continue
 
 		// Current state
@@ -55,14 +54,12 @@
 					var/mob/living/carbon/human/H = M
 					if(TG.has_conflict(H.species.traits))
 						continue // The SE is on, but the gene is denied...
-				//testing("[gene.name] activated!")
 				gene.activate(M,connected,flags)
 				if(M)
 					LAZYDISTINCTADD(M.active_genes, gene.name) // Traitgenes Use name instead, cannot use type with dynamically setup traitgenes
 					M.update_icon = 1
 			// If Gene is NOT active:
 			else
-				//testing("[gene.name] deactivated!")
 				gene.deactivate(M,connected,flags)
 				if(M)
 					LAZYREMOVE(M.active_genes, gene.name) // Traitgenes Use name instead, cannot use type with dynamically setup traitgenes

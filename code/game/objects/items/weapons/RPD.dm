@@ -100,8 +100,6 @@ DECLARE_INTERACTIONS(/obj/item/pipe_dispenser, INTERACT_USE(null, PROC_REF(inter
 			recipes = GLOB.atmos_pipe_recipes
 		if(DISPOSALS_CATEGORY)
 			recipes = GLOB.disposal_pipe_recipes
-		// if(TRANSIT_CATEGORY)
-		// 	recipes = transit_tube_recipes
 	for(var/c in recipes)
 		var/list/cat = recipes[c]
 		var/list/r = list()
@@ -128,8 +126,6 @@ DECLARE_INTERACTIONS(/obj/item/pipe_dispenser, INTERACT_USE(null, PROC_REF(inter
 					recipe_static = first_disposal
 				if(ATMOS_CATEGORY)
 					recipe_static = first_atmos
-				// if(TRANSIT_CATEGORY)
-				// 	recipe = first_transit
 			p_dir = NORTH
 			playeffect = FALSE
 		if("piping_layer")

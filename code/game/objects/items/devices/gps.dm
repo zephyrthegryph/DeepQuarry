@@ -44,7 +44,6 @@ REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
 
 	if(holder_ref() && loc != holder_ref())
 		om_unhook(holder_ref(), /datum/om/event/movable_attempted_move, src)
-		//GLOB.dir_set_event.unregister(holder, src)
 		holder_ref().client?.screen -= compass
 		holder_handle = null
 
@@ -52,7 +51,6 @@ REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
 		holder_handle = om_handle(loc)
 		om_hook(holder_ref(), /datum/om/event/movable_attempted_move, src, PROC_REF(on_holder_moved))
 		dq_add_recursive_move(holder_ref())
-		//GLOB.dir_set_event.register(holder, src, PROC_REF(update_compass))
 
 	if(holder_ref() && tracking)
 		if(!is_in_processing_list)

@@ -501,10 +501,6 @@
 			qdel(to_despawn.mind.objectives)
 			to_despawn.mind.special_role = null
 
-		//else
-			//if(SSticker.mode.name == "AutoTraitor")
-				//var/datum/game_mode/traitor/autotraitor/current_mode = SSticker.mode
-				//current_mode.possible_traitors.Remove(to_despawn)
 
 		// Delete them from datacore.
 
@@ -696,7 +692,6 @@
 
 /obj/machinery/cryopod/robot/door/gateway/interaction_enter(mob/user, obj/item/held, datum/interaction/interaction)
 	. = ..()
-	//locate(/obj/machinery/computer/cryopod) in range(6,src)
 	for(var/obj/machinery/gateway/G in range(1,src))
 		G.icon_state = "on"
 	return .

@@ -844,7 +844,6 @@
 
 	plating_type = null
 
-	//build_type = /obj/item/stack/material/underplating
 
 	/* Eris features we lack on flooring decls
 	removal_time = 250

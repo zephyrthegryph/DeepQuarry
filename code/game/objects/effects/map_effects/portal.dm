@@ -296,12 +296,10 @@ REF_OWNED_LIST(/obj/effect/map_effect/portal/master, "portal_lines")
 /obj/effect/map_effect/portal/master/side_a
 	name = "portal master A"
 	icon_state = "portal_side_a"
-//	color = "#00FF00"
 
 /obj/effect/map_effect/portal/master/side_b
 	name = "portal master B"
 	icon_state = "portal_side_b"
-//	color = "#FF0000"
 
 // Portal lines extend out from the sides of portal masters,
 // They let portals be longer than 1x1.

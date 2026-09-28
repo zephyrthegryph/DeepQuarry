@@ -3,7 +3,6 @@
 	desc = "For the modern approach to smoking."
 	icon = 'icons/obj/ecig.dmi'
 	var/active = 0
-	//var/obj/item/cell/ec_cell = /obj/item/cell/device
 	var/cartridge_type = /obj/item/reagent_containers/ecig_cartridge/med_nicotine
 	var/obj/item/reagent_containers/ecig_cartridge/ec_cartridge // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 	w_class = ITEMSIZE_TINY

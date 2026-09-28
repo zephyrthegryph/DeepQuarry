@@ -25,7 +25,6 @@
 	set desc = "Force someone adjacent to lay an egg by squeezing into their lower body! Whilst their reaction may vary, this is certainly going to overwhelm them for a moment!"
 	set category = "Object"
 	set src in view(1)
-	//do_reagent_implant(usr)
 	if(!isliving(usr) || !usr.checkClickCooldown())
 		return
 

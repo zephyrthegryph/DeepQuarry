@@ -124,7 +124,6 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 /obj/machinery/hologram/holopad/see_emote(mob/living/M, text)
 	if(M)
 		for(var/mob/living/silicon/ai/master in masters)
-			//var/name_used = M.GetVoice()
 			var/rendered = span_game(span_say(span_italics("Holopad received, " + span_message("[text]"))))
 			//The lack of name_used is needed, because message already contains a name.  This is needed for simple mobs to emote properly.
 			master.show_message(rendered, 2)

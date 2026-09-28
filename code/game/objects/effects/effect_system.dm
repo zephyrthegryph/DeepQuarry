@@ -222,7 +222,6 @@ would spawn and follow the beaker, even if it is carried or thrown.
 
 /obj/effect/effect/smoke/bad
 	time_to_live = 600
-	//var/list/projectiles
 
 /obj/effect/effect/smoke/bad/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()

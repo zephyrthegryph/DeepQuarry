@@ -75,7 +75,6 @@ EXTEND_INTERACTIONS(/obj/item/grenade, \
 	om_after(src, det_time, PROC_REF(detonate))
 
 /obj/item/grenade/proc/detonate()
-//	playsound(src, 'sound/items/Welder2.ogg', 25, 1)
 	var/turf/T = get_turf(src)
 	if(T)
 		T.hotspot_expose(700,125)

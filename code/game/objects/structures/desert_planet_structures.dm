@@ -244,7 +244,6 @@
 	product = /obj/item/stack/material/log
 	product_amount = 50
 	max_integrity = 2000
-	//var/fruit
 
 /obj/structure/flora/tree/desert_planet/palmtreeb
 	icon_state = "palmtreeb"

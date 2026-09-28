@@ -249,7 +249,6 @@ EXTEND_INTERACTIONS(/obj/item/areaeditor/blueprints, INTERACT_USE("Read", PROC_R
 	if(equipping)
 		return ..()
 	..()
-	//clear_viewer()
 	if(length(areaColor_turfs))
 		seeAreaColors_remove_effect(user)
 	legend = FALSE

@@ -18,7 +18,6 @@
 
 	max_integrity = 100
 	var/stripe_color
-	//rad_resistance_modifier = 0.5
 
 	// blend_objects defined on subtypes
 	noblend_objects = list(/obj/machinery/door/window, /obj/machinery/door/firedoor)

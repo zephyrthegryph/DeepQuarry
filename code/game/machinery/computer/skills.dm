@@ -649,7 +649,6 @@
 			if("print_p")
 				if(!printing)
 					printing = TRUE
-					// playsound(loc, 'sound/goonstation/machines/printer_dotmatrix.ogg', 50, TRUE)
 					SStgui.update_uis(src)
 					om_after(src, 5 SECONDS, PROC_REF(print_finish))
 			else

@@ -1372,7 +1372,6 @@ DECLARE_INTERACTIONS(/obj/item/toy/owl, INTERACT_USE(null, PROC_REF(interaction_
 	if(COOLDOWN_FINISHED(src, cooldown)) //for the sanity of everyone
 		var/message = pick("You won't get away this time, Griffin!", "Stop right there, criminal!", "Hoot! Hoot!", "I am the night!")
 		to_chat(user, span_notice("You pull the string on the [src]."))
-		//playsound(src, 'sound/misc/hoot.ogg', 25, 1)
 		visible_message(span_danger("[message]"))
 		COOLDOWN_START(src, cooldown, 3 SECONDS)
 	return TRUE
@@ -1392,7 +1391,6 @@ DECLARE_INTERACTIONS(/obj/item/toy/griffin, INTERACT_USE(null, PROC_REF(interact
 	if(COOLDOWN_FINISHED(src, cooldown)) //for the sanity of everyone
 		var/message = pick("You can't stop me, Owl!", "My plan is flawless! The vault is mine!", "Caaaawwww!", "You will never catch me!")
 		to_chat(user, span_notice("You pull the string on the [src]."))
-		//playsound(src, 'sound/misc/caw.ogg', 25, 1)
 		visible_message(span_danger("[message]"))
 		COOLDOWN_START(src, cooldown, 3 SECONDS)
 	return TRUE

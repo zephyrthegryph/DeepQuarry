@@ -54,7 +54,6 @@
 
 	if(!on)
 		return
-	//to_world("[src] ([src.id]) - [signal.debug_print()]")
 	var/send_count = 0
 
 	signal.data["slow"] += rand(0, round(100 - (100 * get_integrity() / max_integrity)))

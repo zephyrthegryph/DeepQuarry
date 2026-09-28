@@ -5,7 +5,6 @@
 	cast_methods = CAST_MELEE
 	var/modifier_type = null
 	var/modifier_duration = null // Will last forever by default.  Final duration may differ due to 'spell power'
-//	var/spell_color = "#03A728"
 	var/spell_light_intensity = 2
 	var/spell_light_range = 3
 

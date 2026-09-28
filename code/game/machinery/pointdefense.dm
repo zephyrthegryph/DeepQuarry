@@ -59,7 +59,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 		if(!istype(PD))
 			return FALSE
 
-		//if(!lan || !lan.is_connected(PD))
 		if(PD.id_tag != id_tag)
 			return FALSE
 

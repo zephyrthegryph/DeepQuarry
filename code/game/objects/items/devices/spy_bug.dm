@@ -12,7 +12,6 @@
 	var/linkedmonitor_handle
 	var/brokentype = /obj/item/brokenbug
 
-//	var/obj/item/radio/bug/radio
 	var/obj/machinery/camera/bug/camera
 	var/camtype = /obj/machinery/camera/bug
 
@@ -21,7 +20,6 @@
 
 /obj/item/camerabug/Initialize(mapload)
 	. = ..()
-//	radio = new(src)
 	camera = new camtype(src)
 
 /obj/item/camerabug/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
@@ -152,7 +150,6 @@ DECLARE_INTERACTIONS(/obj/item/camerabug, \
 	item_state = "electronic"
 	w_class  = ITEMSIZE_SMALL
 
-//	var/obj/item/radio/bug/radio
 	var/selected_camera_handle
 	/// om_handle()s of the paired bugs' cameras (each camera is owned by its bug); read with paired_cameras().
 	var/list/camera_handles

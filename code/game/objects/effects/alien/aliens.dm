@@ -76,7 +76,6 @@
 	light_color = "#673972"
 
 	var/node_range = NODERANGE
-// var/set_color = "#321D37" // Removing coloration.
 
 /obj/effect/alien/weeds/node/Initialize(mapload, node, newcolor)
 	. = ..()

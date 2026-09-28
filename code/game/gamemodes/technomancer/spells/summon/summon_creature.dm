@@ -39,7 +39,6 @@
 
 /obj/item/spell/summon/summon_creature/on_summon(mob/living/simple_mob/summoned)
 	if(check_for_scepter())
-//		summoned.faction = FACTION_TECHNOMANCER
 		LAZYADD(summoned.friends, owner_ref())
 
 	// Makes their new pal big and strong, if they have spell power.

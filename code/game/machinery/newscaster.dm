@@ -103,13 +103,6 @@
 		NEWSCASTER.newsAlert(annoncement)
 		NEWSCASTER.update_icon()
 
-	// var/list/receiving_pdas = list()
-	// for (var/obj/item/pda/P in PDAs)
-	// 	if(!P.owner)
-	// 		continue
-	// 	if(P.toff)
-	// 		continue
-	// 	receiving_pdas += P
 
 	// spawn(0)	// get_receptions sleeps further down the line, spawn of elsewhere
 	// 	var/datum/receptions/receptions = get_receptions(null, receiving_pdas) // datums are not atoms, thus we have to assume the newscast network always has reception
@@ -118,7 +111,6 @@
 	// 		if(!(receptions.receiver_reception[PDA] & TELECOMMS_RECEPTION_RECEIVER))
 	// 			continue
 
-	// 		PDA.new_news(annoncement)
 
 /obj/machinery/newscaster
 	name = "newscaster"
@@ -390,10 +382,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 			return TRUE
 
 		if("submit_new_channel")
-			//var/list/existing_channels = list() //OBSOLETE
 			var/list/existing_authors = list()
 			for(var/datum/feed_channel/FC in GLOB.news_network.network_channels)
-				//existing_channels += FC.channel_name
 				if(FC.author == "\[REDACTED\]")
 					existing_authors += FC.backup_author
 				else
@@ -421,7 +411,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 			return TRUE
 
 		if("set_channel_receiving")
-			//var/list/datum/feed_channel/available_channels = list()
 			var/list/available_channels = list()
 			for(var/datum/feed_channel/F in GLOB.news_network.network_channels)
 				if((!F.locked || F.author == scanned_user) && !F.censored)

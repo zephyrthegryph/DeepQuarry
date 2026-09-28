@@ -32,7 +32,6 @@
 		"rad"=		1
 		)
 
-	//var/minimum_penetration = 0
 	var/fail_penetration_value = 0.66
 
 /obj/item/mecha_parts/component/armor/mining

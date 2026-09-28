@@ -95,7 +95,6 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/zippo/c4detonator, INTERACT_SELF(nul
 		base_state = icon_state
 		lit = TRUE
 		icon_state = "[base_state]1"
-		//item_state = "[base_state]on"
 		user.visible_message(span_rose("Without even breaking stride, \the [user] flips open \the [src] in one smooth movement."))
 
 	else if(lit && detonator_mode)
@@ -119,7 +118,6 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/zippo/c4detonator, INTERACT_SELF(nul
 		if("Close the lighter.")
 			lit = FALSE
 			icon_state = "[base_state]"
-			//item_state = "[base_state]"
 			user.visible_message(span_rose("You hear a quiet click, as \the [user] shuts off \the [src] without even looking at what they're doing."))
 
 

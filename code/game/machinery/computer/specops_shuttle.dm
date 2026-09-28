@@ -17,7 +17,6 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 	icon_screen = "syndishuttle"
 	light_color = "#00ffff"
 	req_access = list(ACCESS_CENT_SPECOPS)
-//	req_access = list(ACCESS_CENT_SPECOPS)
 	var/temp = null
 	var/hacked = 0
 	var/allowedtocall = 0
@@ -56,7 +55,6 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 	for(var/turf/T in dstturfs)
 					// find the turf to move things to
 		var/turf/D = locate(T.x, throwy - 1, 1)
-					//var/turf/E = get_step(D, SOUTH)
 		for(var/atom/movable/AM as mob|obj in contents_of(T))
 			AM.Move(D)
 		if(istype(T, /turf/simulated))
@@ -123,7 +121,6 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 	for(var/turf/T in dstturfs)
 					// find the turf to move things to
 		var/turf/D = locate(T.x, throwy - 1, 1)
-					//var/turf/E = get_step(D, SOUTH)
 		for(var/atom/movable/AM as mob|obj in contents_of(T))
 			AM.Move(D)
 		if(istype(T, /turf/simulated))

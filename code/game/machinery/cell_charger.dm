@@ -26,7 +26,6 @@
 
 	if(charging && !(stat & (BROKEN|NOPOWER)))
 		var/newlevel = 	round(charging.percent() * 4.0 / 99)
-		//to_world("nl: [newlevel]")
 
 		cut_overlays()
 		add_overlay("ccharger-o[newlevel]")

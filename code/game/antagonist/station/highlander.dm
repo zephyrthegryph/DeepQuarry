@@ -83,7 +83,6 @@ GLOBAL_DATUM(highlanders, /datum/antagonist/highlander)
 		GLOB.highlanders.add_antagonist(H.mind)
 
 /client/proc/only_one_delayed()
-	//send_to_playing_players(span_userdanger("Bagpipes begin to blare. You feel Scottish pride coming over you."))
 	message_admins(span_adminnotice("[key_name_admin(usr)] used (delayed) THERE CAN BE ONLY ONE!"))
 	log_admin("[key_name(usr)] used delayed THERE CAN BE ONLY ONE.")
 	om_after(src, 42 SECONDS, PROC_REF(only_one), TRUE)

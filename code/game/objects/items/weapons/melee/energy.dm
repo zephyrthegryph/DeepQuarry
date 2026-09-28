@@ -240,8 +240,6 @@ DECLARE_INTERACTIONS(/obj/item/melee/energy, \
 	active_armourpen = 65
 	active_throwforce = 35
 	active_w_class = ITEMSIZE_HUGE
-	//force = 40
-	//throwforce = 25
 	force = 20
 	armor_penetration = 20
 	throwforce = 10

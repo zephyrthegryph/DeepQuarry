@@ -59,13 +59,11 @@ EXTEND_INTERACTIONS(/obj/item/bork_medigun/linked, INTERACT_USE(null, PROC_REF(i
 		to_chat(user, span_warning("Target is not organic."))
 		return TRUE
 
-	//if(get_dist(user, target) > beam_range)
 	if(!(target in range(beam_range, user)) || (!(target in view(10, user)) && !(medigun_base_unit().smodule.get_rating() >= 5)))
 		to_chat(user, span_warning("You are too far away from \the [target] to heal them, Or they are not in view. Get closer."))
 		return TRUE
 
 	if(!isliving(target))
-		//to_chat(user, span_warning("\the [target] is not a valid target."))
 		return TRUE
 
 	if(!ishuman(target))

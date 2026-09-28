@@ -97,7 +97,6 @@ REF_OWNED(/obj/machinery/embedded_controller, "program")
 	flags = WALL_ITEM
 
 	var/id_tag
-	//var/radio_power_use = 50 //power used to xmit signals
 
 	var/frequency = AIRLOCK_FREQ
 	var/radio_filter = null

@@ -60,7 +60,6 @@ DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor
 
 /obj/structure/railing/proc/NeighborsCheck(UpdateNeighbors = 1)
 	check = 0
-	//if (!anchored) return
 	var/Rturn = turn(src.dir, -90)
 	var/Lturn = turn(src.dir, 90)
 

@@ -217,7 +217,6 @@ EXTEND_INTERACTIONS(/obj/item/tank/phoron, INTERACT_ITEM(null, PROC_REF(phoron_t
 	. = ..()
 	if(loc == user && (LINDA_GAS_AMT(air_contents, GAS_N2) < 10))
 		. += span_danger("The meter on \the [src] indicates you are almost out of nitrogen!")
-		//playsound(user, 'sound/effects/alert.ogg', 50, 1)
 
 /obj/item/tank/stasis/nitro_cryo // Synthmorph bags need to have initial pressure within safe bounds for human atmospheric pressure, but low temperature to stop unwanted degredation.
 	name = "stasis cryogenic nitrogen tank"
@@ -248,7 +247,6 @@ EXTEND_INTERACTIONS(/obj/item/tank/phoron, INTERACT_ITEM(null, PROC_REF(phoron_t
 	. = ..()
 	if(loc == user && (LINDA_GAS_AMT(air_contents, GAS_CH4) < 10))
 		. += span_danger("The meter on \the [src] indicates you are almost out of methane!")
-		//playsound(user, 'sound/effects/alert.ogg', 50, 1)
 
 /*
  * Emergency CO2
@@ -296,8 +294,6 @@ EXTEND_INTERACTIONS(/obj/item/tank/phoron, INTERACT_ITEM(null, PROC_REF(phoron_t
 	icon_state = "oxygen"
 	gauge_cap = 3
 	gauge_icon = "indicator_bigtank"
-// /obj/item/tank/oxygen/yellow
-// /obj/item/tank/oxygen/red
 
 /obj/item/tank/anesthetic
 	icon = 'icons/obj/tank_vr.dmi'

@@ -77,7 +77,6 @@
 	var/alarm_id = null
 	var/breach_detection = 1 // Whether to use automatic breach detection or not
 	var/frequency = PUMPS_FREQ
-	//var/skipprocess = 0 //Experimenting
 	var/alarm_frequency = ALERT_FREQ
 	var/remote_control = 0
 	var/rcon_setting = 2
@@ -592,7 +591,6 @@ REF_OWNED(/obj/machinery/alarm, "soundloop")
 	signal.data["sigtype"] = "command"
 
 	radio_connection().post_signal(src, signal, AIRALARM_AREA_FILTER(RADIO_FROM_AIRALARM, area_uid))
-//			to_world("Signal [command] Broadcasted to [target]")
 
 	return 1
 
@@ -930,7 +928,6 @@ REF_OWNED(/obj/machinery/alarm, "soundloop")
 			. = TRUE
 		if("mode")
 			mode = text2num(params["mode"])
-			// investigate_log("was turned to [get_mode_name(mode)] mode by [key_name(ui.user)]",INVESTIGATE_ATMOS)
 			apply_mode(ui.user)
 			. = TRUE
 		if("alarm")
@@ -968,7 +965,6 @@ REF_OWNED(/obj/machinery/alarm, "soundloop")
 		else
 			TLV[env][name] = round(value, 0.01)
 		clamp_tlv_values(env, name)
-		// investigate_log(" treshold value for [env]:[name] was set to [value] by [key_name(user)]",INVESTIGATE_ATMOS)
 		for(var/obj/machinery/alarm/AA in alarm_area_ref().air_alarms)
 			AA.own_TLV()
 			AA.TLV[env][name] = TLV[env][name]

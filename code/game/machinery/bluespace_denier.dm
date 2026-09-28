@@ -28,10 +28,8 @@
 	..()
 	if(!(stat & NOPOWER))
 		icon_state = "[base_state]1"
-//		sd_SetLuminosity(2)
 	else
 		icon_state = "[base_state]1-p"
-//		sd_SetLuminosity(0)
 
 //Let the AI trigger them directly.
 EXTEND_INTERACTIONS(/obj/machinery/bluespace_denier, INTERACT_SILICON("Pulse", PROC_REF(bluespace_denier_silicon_trigger)))

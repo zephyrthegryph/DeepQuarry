@@ -24,8 +24,6 @@
 
 /atom/movable/hand_gate(mob/living/user)
 	. = ..()
-//	if(can_buckle && buckled_mob)
-//		user_unbuckle_mob(user)
 
 	if(can_buckle && has_buckled_mobs())
 		var/list/mobs = src?.buckled_mob_list()
@@ -150,13 +148,11 @@
 				M.begin_instant_nom(user, L, M, M.vore_selected)
 
 	add_fingerprint(user)
-//	unbuckle_mob()
 
 	//can't buckle unless you share locs so try to move M to the obj.
 	if(M.loc != src.loc)
 		if(M.Adjacent(src) && user.Adjacent(src))
 			M.forceMove(get_turf(src))
-	//		step_towards(M, src)
 
 	. = buckle_mob(M, forced)
 	playsound(src.loc, 'sound/effects/seatbelt.ogg', 50, 1)

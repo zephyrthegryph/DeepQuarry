@@ -749,11 +749,9 @@ About the new airlock wires panel:
 		else
 			unlock()
 			to_chat(user, span_notice("The door bolts have been raised."))
-			// log_combat(user, src, "unbolted")
 	else
 		lock()
 		to_chat(user, span_warning("The door bolts have been dropped."))
-		// log_combat(user, src, "bolted")
 
 /obj/machinery/door/airlock/proc/user_toggle_open(mob/user)
 	if(!user_allowed(user))
@@ -952,7 +950,6 @@ About the new airlock wires panel:
 	da.anchored = TRUE
 	if(mineral)
 		da.glass = mineral
-		//else if(glass)
 	else if(glass && !da.glass)
 		da.glass = 1
 	da.state = 1
@@ -1381,7 +1378,6 @@ About the new airlock wires panel:
 /obj/machinery/door/airlock/scp
 	name = "SCP Access"
 	icon = 'icons/obj/doors/SCPdoor.dmi'
-	//req_one_access = list(access_maint_tunnels)
 	open_sound_powered = 'sound/machines/scp1o.ogg'
 	close_sound_powered = 'sound/machines/scp1c.ogg'
 

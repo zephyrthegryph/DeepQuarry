@@ -75,10 +75,8 @@
 	if(!(stat & NOPOWER) && disable == 0)
 
 		icon_state = "[base_state]"
-//		sd_SetLuminosity(2)
 	else
 		icon_state = "[base_state]-p"
-//		sd_SetLuminosity(0)
 
 /obj/machinery/sparker/screwdriver_act(mob/user, obj/item/tool)
 	add_fingerprint(user)

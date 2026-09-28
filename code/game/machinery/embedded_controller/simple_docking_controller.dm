@@ -66,12 +66,9 @@
 	post_signal(signal)
 
 ///datum/embedded_program/docking/simple/proc/signal_mech_sensor(command)
-//	signal_door(command)
-//	return
 
 /datum/embedded_program/docking/simple/proc/open_door()
 	if(memory["door_status"]["state"] == "closed")
-		//signal_mech_sensor("enable")
 		signal_door("secure_open")
 	else if(memory["door_status"]["lock"] == "unlocked")
 		signal_door("lock")
@@ -79,7 +76,6 @@
 /datum/embedded_program/docking/simple/proc/close_door()
 	if(memory["door_status"]["state"] == "open")
 		signal_door("secure_close")
-		//signal_mech_sensor("disable")
 	else if(memory["door_status"]["lock"] == "unlocked")
 		signal_door("lock")
 

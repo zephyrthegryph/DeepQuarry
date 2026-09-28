@@ -26,9 +26,7 @@
 		buf.dna=new
 		buf.types = datatype
 		buf.dna.ResetSE()
-		//testing("[name]: DNA2 SE blocks prior to SetValue: [english_list(buf.dna.SE)]")
 		SetValue(src.value)
-		//testing("[name]: DNA2 SE blocks after SetValue: [english_list(buf.dna.SE)]")
 	. = ..() // Traitgenes edit - Moved to init
 
 /obj/item/dnainjector/proc/GetRealBlock(selblock)

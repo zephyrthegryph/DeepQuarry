@@ -8,7 +8,6 @@
 
 	if(density)
 		can_open = WALL_OPENING
-		//flick("[material.icon_base]fwall_opening", src)
 		density = FALSE
 		blocks_air = ZONE_BLOCKED
 		update_icon()
@@ -20,7 +19,6 @@
 			SSair.mark_for_update(turf)
 	else
 		can_open = WALL_OPENING
-		//flick("[material.icon_base]fwall_closing", src)
 		density = TRUE
 		blocks_air = AIR_BLOCKED
 		update_icon()

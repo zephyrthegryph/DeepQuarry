@@ -212,7 +212,6 @@
 	VV_DROPDOWN_OPTION("", "---")
 	VV_DROPDOWN_OPTION(VV_HK_MASS_DEL_TYPE, "Delete all of type")
 	VV_DROPDOWN_OPTION(VV_HK_FAKE_CONVO, "Add Fake Prop Conversation")
-	//VV_DROPDOWN_OPTION(VV_HK_OSAY, "Object Say")
 
 /obj/vv_do_topic(list/href_list)
 	. = ..()

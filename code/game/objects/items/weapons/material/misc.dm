@@ -88,7 +88,6 @@ DECLARE_INTERACTIONS(/obj/item/material/snow/snowball, INTERACT_USE(null, PROC_R
 /obj/item/material/snow/snowball/reinforced
 	name = "snowball"
 	desc = "A well-formed and fun snowball. It looks kind of dangerous."
-	//icon_state = "reinf-snowball"
 	force_divisor = 0.20
 	thrown_force_divisor = 0.25
 
@@ -239,7 +238,6 @@ DECLARE_INTERACTIONS(/obj/item/material/whip, INTERACT_USE(null, PROC_REF(intera
 	injury_kind = INJURY_CUT
 	force_divisor = 0.7 //42 When Wielded in line with a sword
 	thrown_force_divisor = 0.1 // 2 when thrown with weight 20 (steel) since frankly its too bulk to throw
-	//holy = 1
 
 /obj/item/material/butterfly/saw/update_force()
 	if(active)

@@ -39,10 +39,8 @@
 	..()
 	if(!(stat & NOPOWER))
 		icon_state = "[base_state]1"
-//		sd_SetLuminosity(2)
 	else
 		icon_state = "[base_state]1-p"
-//		sd_SetLuminosity(0)
 
 //Don't want to render prison breaks impossible
 /obj/machinery/flasher/wirecutter_act(mob/user, obj/item/tool)

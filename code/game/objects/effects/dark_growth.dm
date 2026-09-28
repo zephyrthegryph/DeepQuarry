@@ -169,7 +169,6 @@ REF_BACKLIST(/obj/effect/dark, list("linked_node" = "children_effects"))
 		until_full_process = 4
 
 	for(var/obj/effect/dark/dark_tile as anything in children_effects)
-//		W.color = W.linked_node.set_color
 
 		dark_tile.light_check()
 		if(dark_tile.linked_node == src && prob(max(10, 60 - (length(children_effects)))))
