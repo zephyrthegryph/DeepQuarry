@@ -135,3 +135,17 @@
 		return ideal_air_type						//Whatever we want
 	else
 		return /datum/gas_mixture/belly_air 		//Default
+
+/// P2-S5: this species, or the species whose body shape it wears (custom species), is micro-carried.
+/datum/species/proc/is_micro_carry(mob/living/carbon/human/H)
+	if(micro_carry)
+		return TRUE
+	var/datum/species/shape = GLOB.all_species[get_bodytype(H)]
+	return shape && shape != src && shape.micro_carry
+
+/// P2-S5: the nutrition alert icon style for this human: synthetic bodies use the synth icons,
+/// everyone else their species' (or trait's) hunger_alert_style.
+/mob/living/carbon/human/proc/hunger_alert_style()
+	if(HAS_SYNTHETIC_BIOLOGY(src))
+		return HUNGER_ALERT_SYNTH
+	return species?.hunger_alert_style || HUNGER_ALERT_ORGANIC

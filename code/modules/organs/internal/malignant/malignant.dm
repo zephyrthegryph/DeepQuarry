@@ -60,10 +60,7 @@
 		return FALSE
 	if(!species)
 		return FALSE
-	if(species.name == SPECIES_VOX \
-	|| species.name == SPECIES_PROMETHEAN \
-	|| species.name == SPECIES_PROTEAN \
-	|| species.name == SPECIES_REPLICANT)
+	if(!species.can_host_malignant)
 		return FALSE
 	if(is_changeling(src))
 		return FALSE

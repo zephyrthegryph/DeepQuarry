@@ -463,7 +463,7 @@
 				var/mob/living/carbon/human/S = L
 				if(istype(S.species, /datum/species/skrell)) //Skrell ARE slimey.
 					fear_amount += 1
-				if(istype(S.species, /datum/species/shapeshifter/promethean))
+				if(S.species?.is_slime_bodied)
 					fear_amount += 4
 
 	return fear_amount

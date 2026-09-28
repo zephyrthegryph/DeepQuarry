@@ -4,6 +4,7 @@
 
 /datum/species/shapeshifter/replicant
 	name = SPECIES_REPLICANT
+	can_host_malignant = FALSE
 	name_plural = "Replicants"
 	primitive_form = SPECIES_MONKEY
 	unarmed_types = list(/datum/unarmed_attack/stomp, /datum/unarmed_attack/kick, /datum/unarmed_attack/claws, /datum/unarmed_attack/bite/sharp)
@@ -67,6 +68,7 @@
 
 /datum/species/shapeshifter/replicant/alpha
 	name = SPECIES_REPLICANT_ALPHA
+	can_host_malignant = TRUE
 	blurb = "The remnants of some lost or dead race's research. These seem caustic."
 
 	blood_color = "#55ff55"
@@ -104,6 +106,7 @@
 
 /datum/species/shapeshifter/replicant/beta
 	name = SPECIES_REPLICANT_BETA
+	can_host_malignant = TRUE
 	blurb = "The remnants of some lost or dead race's research. These seem elastic."
 
 	blood_color = "#C0C0C0"

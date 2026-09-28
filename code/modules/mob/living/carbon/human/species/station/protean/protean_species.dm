@@ -1,5 +1,6 @@
 /datum/species/protean
 	name =             SPECIES_PROTEAN
+	can_host_malignant = FALSE
 	name_plural =      "Proteans"
 	blurb =            "Sometimes very advanced civilizations will produce the ability to swap into manufactured, robotic bodies. And sometimes \
 						" + span_italics("VERY") + " advanced civilizations have the option of 'nanoswarm' bodies. Effectively a single robot body comprised \

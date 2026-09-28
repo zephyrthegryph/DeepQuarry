@@ -344,6 +344,17 @@
 	var/selects_bodytype = SELECTS_BODYTYPE_FALSE // Allows the species to choose from body types like custom species can, affecting suit fitting and etcetera as you would expect.
 
 	var/bloodsucker = FALSE // Allows safely getting nutrition from blood.
+	// P2-S5: species FACTS, read instead of comparing species names.
+	/// A gelatinous slime body: slime batons and extracts act on it like on a slime.
+	var/is_slime_bodied = FALSE
+	/// Radiation and mutation can grow malignant organs in this body.
+	var/can_host_malignant = TRUE
+	/// Which nutrition alert icons the HUD shows (HUNGER_ALERT_*). Synthetic bodies always show synth ones.
+	var/hunger_alert_style = HUNGER_ALERT_ORGANIC
+	/// Small enough to scoop up whenever its pickup preference allows, carried as a plush, and to slip through plastic flaps.
+	var/micro_carry = FALSE
+	/// Induced moods (berserk rage, tranquility, unholy hunger) don't take hold of this mind.
+	var/mood_immune = FALSE
 	var/bloodsucker_controlmode = "always loud" //Allows selecting between bloodsucker control modes. Always Loud corresponds to original implementation.
 
 	var/list/traits = list() // ALLOW(instance_list): d: per-mob trait selection; produceCopy() assigns it and genes Add/Remove in place

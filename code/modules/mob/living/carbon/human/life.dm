@@ -901,7 +901,6 @@
 		/datum/species/xenochimera,
 		/datum/species/xenomorph_hybrid,
 		/datum/species/xenos,
-		/datum/species/shapeshifter/promethean/avatar,
 	))
 	if(!self.environment_steady || !isturf(self.loc) || self.alerts?["pressure"])
 		return FALSE
@@ -912,6 +911,7 @@
 /datum/om/stage/life/environment/carbon/human/rewake_delay(mob/living/carbon/human/self)
 	return ENVIRONMENT_STEADY_RESAMPLE
 
+/// P2-F1: body vs environment, split into heat exchange, temperature harm and pressure harm.
 /datum/om/stage/life/environment/carbon/human/exchange(mob/living/carbon/human/self, datum/gas_mixture/environment)
 	self.environment_steady = FALSE
 	if(!environment)
@@ -927,174 +927,174 @@
 	var/pressure = environment.return_pressure()
 	var/adjusted_pressure = self.calculate_affecting_pressure(pressure)
 
-	// phoron contamination is offline under LINDA (no contamination
-	// flags/limits on GLOB.gas_data, the env.gas dict shape changed, and
-	// pl_effects is a no-op). Loop disabled until LINDA contamination is wired.
-
 	if(istype(self.loc, /turf/space)) //No FBPs overheating on space turfs inside mechs or people.
-		//Don't bother if the temperature drop is less than 0.1 anyways. Hopefully BYOND is smart enough to turn this constant expression into a constant
-		if(self.bodytemperature > (0.1 * HUMAN_HEAT_CAPACITY/(HUMAN_EXPOSED_SURFACE_AREA*STEFAN_BOLTZMANN_CONSTANT))**(1/4) + TCMB)
-			//Thermal radiation into space
-			var/heat_loss = HUMAN_EXPOSED_SURFACE_AREA * STEFAN_BOLTZMANN_CONSTANT * ((self.bodytemperature - TCMB)**4)
-			var/temperature_loss = heat_loss/HUMAN_HEAT_CAPACITY
-			self.adjust_bodytemperature(-(temperature_loss))
+		radiate_to_space(self)
 	else
-		var/loc_temp = T0C
-		if(istype(self.loc, /obj/mecha))
-			var/obj/mecha/M = self.loc
-			loc_temp =  M.get_interior_temperature()
-		else if(istype(self.loc, /obj/machinery/atmospherics/unary/cryo_cell))
-			var/obj/machinery/atmospherics/unary/cryo_cell/cc = self.loc
-			loc_temp = cc.air_contents.return_temperature()
-		else if(isbelly(self.loc))
-			var/obj/belly/b = self.loc
-			if(self.allowtemp)
-				loc_temp = b.bellytemperature
-			else
-				// The predator's body temperature, kept within this prey's comfort: harmless unless they opted into temperature play.
-				loc_temp = clamp(b.get_interior_temperature(), self.species.cold_discomfort_level, self.species.heat_discomfort_level)
-		else
-			loc_temp = environment.return_temperature()
-
+		var/loc_temp = location_temperature(self, environment)
 		if(adjusted_pressure < self.species.warning_high_pressure && adjusted_pressure > self.species.warning_low_pressure && abs(loc_temp - self.bodytemperature) < 20 && self.bodytemperature < self.species.heat_level_1 && self.bodytemperature > self.species.cold_level_1 && (!isbelly(self.loc) || !self.allowtemp))
 			self.clear_alert("pressure")
 			self.environment_steady = TRUE
 			return // Temperatures are within normal ranges, fuck all this processing. ~Ccomp
+		convect(self, loc_temp, environment)
 
-		//Body temperature adjusts depending on surrounding atmosphere based on your thermal protection (convection)
-		var/temp_adj = 0
-		if(loc_temp < self.bodytemperature)			//Place is colder than we are
-			var/thermal_protection = self.get_cold_protection(loc_temp) //This returns a 0 - 1 value, which corresponds to the percentage of protection based on what you're wearing and what you're exposed to.
-			if(thermal_protection < 0.99)	//For some reason, < 1 returns false if the value is 1.
-				temp_adj = (1-thermal_protection) * ((loc_temp - self.bodytemperature) / BODYTEMP_COLD_DIVISOR)	//this will be negative
-		else if (loc_temp > self.bodytemperature)			//Place is hotter than we are
-			var/thermal_protection = self.get_heat_protection(loc_temp) //This returns a 0 - 1 value, which corresponds to the percentage of protection based on what you're wearing and what you're exposed to.
-			if(thermal_protection < 0.99)	//For some reason, < 1 returns false if the value is 1.
-				temp_adj = (1-thermal_protection) * ((loc_temp - self.bodytemperature) / BODYTEMP_HEAT_DIVISOR)
-
-		//Use heat transfer as proportional to the gas density. However, we only care about the relative density vs standard 101 kPa/20 C air. Therefore we can use mole ratios
-		var/relative_density = environment.total_moles() / MOLES_CELLSTANDARD // XGM var → LINDA proc
-		self.adjust_bodytemperature(between(BODYTEMP_COOLING_MAX, temp_adj*relative_density, BODYTEMP_HEATING_MAX))
-
+	var/godmode = om_has(self, EFFECT_GODMODE)
 	if(isbelly(self.loc) && self.allowtemp)
+		belly_temperature_harm(self)
+	else if(!godmode) // Cancelled by a component
+		body_temperature_harm(self)
+	if(godmode)
+		return
+	pressure_harm(self, adjusted_pressure)
+
+/// Thermal radiation into space.
+/datum/om/stage/life/environment/carbon/human/proc/radiate_to_space(mob/living/carbon/human/self)
+	//Don't bother if the temperature drop is less than 0.1 anyways. Hopefully BYOND is smart enough to turn this constant expression into a constant
+	if(self.bodytemperature <= (0.1 * HUMAN_HEAT_CAPACITY/(HUMAN_EXPOSED_SURFACE_AREA*STEFAN_BOLTZMANN_CONSTANT))**(1/4) + TCMB)
+		return
+	var/heat_loss = HUMAN_EXPOSED_SURFACE_AREA * STEFAN_BOLTZMANN_CONSTANT * ((self.bodytemperature - TCMB)**4)
+	self.adjust_bodytemperature(-(heat_loss/HUMAN_HEAT_CAPACITY))
+
+/// The temperature the body is exposed to where it is (mech cabin, cryo cell, belly or the air).
+/datum/om/stage/life/environment/carbon/human/proc/location_temperature(mob/living/carbon/human/self, datum/gas_mixture/environment)
+	if(istype(self.loc, /obj/mecha))
+		var/obj/mecha/M = self.loc
+		return M.get_interior_temperature()
+	if(istype(self.loc, /obj/machinery/atmospherics/unary/cryo_cell))
+		var/obj/machinery/atmospherics/unary/cryo_cell/cc = self.loc
+		return cc.air_contents.return_temperature()
+	if(isbelly(self.loc))
 		var/obj/belly/b = self.loc
-		if(b.bellytemperature >= self.species.heat_discomfort_level) //A bit more easily triggered than normal, intentionally
-			var/heat_dam = 0
-			if(b.bellytemperature >= self.species.heat_level_1)
-				if(b.bellytemperature >= self.species.heat_level_2)
-					if(b.bellytemperature >= self.species.heat_level_3)
-						heat_dam = HEAT_DAMAGE_LEVEL_3
-						self.throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_MAX)
-					else
-						heat_dam = HEAT_DAMAGE_LEVEL_2
-						self.throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_MODERATE)
-				else
-					heat_dam = HEAT_DAMAGE_LEVEL_1
-					self.throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_LOW)
-			else
-				self.throw_alert("temp", /atom/movable/screen/alert/warm, HOT_ALERT_SEVERITY_LOW)
-			if(self.digestable && b.temperature_damage)
-				self.injure(INJURY_BURN, heat_dam, flags = INJURE_CONTINUOUS) // High body temperature
-		else if(b.bellytemperature <= self.species.cold_discomfort_level)
-			var/cold_dam = 0
-			if(b.bellytemperature <= self.species.cold_level_1)
-				if(b.bellytemperature <= self.species.cold_level_2)
-					if(b.bellytemperature <= self.species.cold_level_3)
-						cold_dam = COLD_DAMAGE_LEVEL_3
-						self.throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_MAX)
-					else
-						cold_dam = COLD_DAMAGE_LEVEL_2
-						self.throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_MODERATE)
-				else
-					cold_dam = COLD_DAMAGE_LEVEL_1
-					self.throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_LOW)
-			else
-				self.throw_alert("temp", /atom/movable/screen/alert/chilly, COLD_ALERT_SEVERITY_LOW)
-			if(self.digestable && b.temperature_damage)
-				self.injure(INJURY_FROSTBITE, cold_dam, flags = INJURE_CONTINUOUS) // Low body temperature
-		else self.clear_alert("temp")
+		if(self.allowtemp)
+			return b.bellytemperature
+		// The predator's body temperature, kept within this prey's comfort: harmless unless they opted into temperature play.
+		return clamp(b.get_interior_temperature(), self.species.cold_discomfort_level, self.species.heat_discomfort_level)
+	return environment.return_temperature()
 
-	// +/- 50 degrees from 310.15K is the 'safe' zone, where no damage is dealt.
-	else if(self.bodytemperature >= self.species.heat_discomfort_level)
-		//Body temperature is too hot.
-		if(om_has(self, EFFECT_GODMODE))
-			return 1	// Cancelled by a component
+/// Body temperature follows the surroundings through clothing (convection), scaled by gas density.
+/datum/om/stage/life/environment/carbon/human/proc/convect(mob/living/carbon/human/self, loc_temp, datum/gas_mixture/environment)
+	var/temp_adj = 0
+	if(loc_temp < self.bodytemperature)			//Place is colder than we are
+		var/thermal_protection = self.get_cold_protection(loc_temp) //This returns a 0 - 1 value, which corresponds to the percentage of protection based on what you're wearing and what you're exposed to.
+		if(thermal_protection < 0.99)	//For some reason, < 1 returns false if the value is 1.
+			temp_adj = (1-thermal_protection) * ((loc_temp - self.bodytemperature) / BODYTEMP_COLD_DIVISOR)	//this will be negative
+	else if (loc_temp > self.bodytemperature)			//Place is hotter than we are
+		var/thermal_protection = self.get_heat_protection(loc_temp) //This returns a 0 - 1 value, which corresponds to the percentage of protection based on what you're wearing and what you're exposed to.
+		if(thermal_protection < 0.99)	//For some reason, < 1 returns false if the value is 1.
+			temp_adj = (1-thermal_protection) * ((loc_temp - self.bodytemperature) / BODYTEMP_HEAT_DIVISOR)
 
+	//Use heat transfer as proportional to the gas density. However, we only care about the relative density vs standard 101 kPa/20 C air. Therefore we can use mole ratios
+	var/relative_density = environment.total_moles() / MOLES_CELLSTANDARD // XGM var → LINDA proc
+	self.adjust_bodytemperature(between(BODYTEMP_COOLING_MAX, temp_adj*relative_density, BODYTEMP_HEATING_MAX))
+
+/// Temperature play in a belly (the prey opted in): the belly's temperature against the species' levels.
+/datum/om/stage/life/environment/carbon/human/proc/belly_temperature_harm(mob/living/carbon/human/self)
+	var/obj/belly/b = self.loc
+	var/datum/species/S = self.species
+	var/belly_temp = b.bellytemperature
+	if(belly_temp >= S.heat_discomfort_level) //A bit more easily triggered than normal, intentionally
 		var/heat_dam = 0
-
-		// switch() can't access numbers inside variables, so we need to use some ugly if() spam ladder.
-		if(self.bodytemperature >= self.species.heat_level_1)
-			if(self.bodytemperature >= self.species.heat_level_2)
-				if(self.bodytemperature >= self.species.heat_level_3)
-					heat_dam = HEAT_DAMAGE_LEVEL_3
-					self.throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_MAX)
-				else
-					heat_dam = HEAT_DAMAGE_LEVEL_2
-					self.throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_MODERATE)
-			else
-				heat_dam = HEAT_DAMAGE_LEVEL_1
-				self.throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_LOW)
-
-		self.injure(INJURY_BURN, heat_dam, flags = INJURE_CONTINUOUS) // High body temperature
-
-	else if(self.bodytemperature <= self.species.cold_discomfort_level)
-		//Body temperature is too cold.
-
-		if(om_has(self, EFFECT_GODMODE))
-			return 1	// Cancelled by a component
-
-
-		if(!istype(self.loc, /obj/machinery/atmospherics/unary/cryo_cell))
-			var/cold_dam = 0
-			if(self.bodytemperature <= self.species.cold_level_1)
-				if(self.bodytemperature <= self.species.cold_level_2)
-					if(self.bodytemperature <= self.species.cold_level_3)
-						cold_dam = COLD_DAMAGE_LEVEL_3
-					else
-						cold_dam = COLD_DAMAGE_LEVEL_2
-				else
-					cold_dam = COLD_DAMAGE_LEVEL_1
-
+		if(belly_temp >= S.heat_level_3)
+			heat_dam = HEAT_DAMAGE_LEVEL_3
+			self.throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_MAX)
+		else if(belly_temp >= S.heat_level_2)
+			heat_dam = HEAT_DAMAGE_LEVEL_2
+			self.throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_MODERATE)
+		else if(belly_temp >= S.heat_level_1)
+			heat_dam = HEAT_DAMAGE_LEVEL_1
+			self.throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_LOW)
+		else
+			self.throw_alert("temp", /atom/movable/screen/alert/warm, HOT_ALERT_SEVERITY_LOW)
+		if(self.digestable && b.temperature_damage)
+			self.injure(INJURY_BURN, heat_dam, flags = INJURE_CONTINUOUS) // High body temperature
+	else if(belly_temp <= S.cold_discomfort_level)
+		var/cold_dam = 0
+		if(belly_temp <= S.cold_level_3)
+			cold_dam = COLD_DAMAGE_LEVEL_3
+			self.throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_MAX)
+		else if(belly_temp <= S.cold_level_2)
+			cold_dam = COLD_DAMAGE_LEVEL_2
+			self.throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_MODERATE)
+		else if(belly_temp <= S.cold_level_1)
+			cold_dam = COLD_DAMAGE_LEVEL_1
+			self.throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_LOW)
+		else
+			self.throw_alert("temp", /atom/movable/screen/alert/chilly, COLD_ALERT_SEVERITY_LOW)
+		if(self.digestable && b.temperature_damage)
 			self.injure(INJURY_FROSTBITE, cold_dam, flags = INJURE_CONTINUOUS) // Low body temperature
+	else
+		self.clear_alert("temp")
 
-	else self.clear_alert("temp")
+/// Body temperature outside the species' comfort band burns or freezes. +/- 50 degrees from
+/// 310.15K is the 'safe' zone, where no damage is dealt.
+/datum/om/stage/life/environment/carbon/human/proc/body_temperature_harm(mob/living/carbon/human/self)
+	var/datum/species/S = self.species
+	var/body_temp = self.bodytemperature
+	if(body_temp >= S.heat_discomfort_level)
+		var/heat_dam = 0
+		if(body_temp >= S.heat_level_3)
+			heat_dam = HEAT_DAMAGE_LEVEL_3
+			self.throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_MAX)
+		else if(body_temp >= S.heat_level_2)
+			heat_dam = HEAT_DAMAGE_LEVEL_2
+			self.throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_MODERATE)
+		else if(body_temp >= S.heat_level_1)
+			heat_dam = HEAT_DAMAGE_LEVEL_1
+			self.throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_LOW)
+		self.injure(INJURY_BURN, heat_dam, flags = INJURE_CONTINUOUS) // High body temperature
+	else if(body_temp <= S.cold_discomfort_level)
+		if(istype(self.loc, /obj/machinery/atmospherics/unary/cryo_cell))
+			return
+		var/cold_dam = 0
+		if(body_temp <= S.cold_level_3)
+			cold_dam = COLD_DAMAGE_LEVEL_3
+		else if(body_temp <= S.cold_level_2)
+			cold_dam = COLD_DAMAGE_LEVEL_2
+		else if(body_temp <= S.cold_level_1)
+			cold_dam = COLD_DAMAGE_LEVEL_1
+		self.injure(INJURY_FROSTBITE, cold_dam, flags = INJURE_CONTINUOUS) // Low body temperature
+	else
+		self.clear_alert("temp")
 
-	// Account for massive pressure differences.  Done by Polymorph
-	// Made it possible to actually have something that can protect against high pressure... Done by Errorage. Polymorph now has an axe sticking from his head for his previous hardcoded nonsense!
-	if(om_has(self, EFFECT_GODMODE))
-		return 1	// Cancelled by a component
-
-	if(adjusted_pressure >= self.species.hazard_high_pressure)
-		var/pressure_damage = min( ( (adjusted_pressure / self.species.hazard_high_pressure) -1 )*PRESSURE_DAMAGE_COEFFICIENT , MAX_HIGH_PRESSURE_DAMAGE)
+/// Crushing or decompressing pressure. Made it possible to actually have something that can
+/// protect against high pressure... Done by Errorage.
+/datum/om/stage/life/environment/carbon/human/proc/pressure_harm(mob/living/carbon/human/self, adjusted_pressure)
+	var/datum/species/S = self.species
+	if(adjusted_pressure >= S.hazard_high_pressure)
+		var/pressure_damage = min( ( (adjusted_pressure / S.hazard_high_pressure) -1 )*PRESSURE_DAMAGE_COEFFICIENT , MAX_HIGH_PRESSURE_DAMAGE)
 		if(self.stat == DEAD)
 			pressure_damage = pressure_damage/2
 		if(!istype(self.loc, /obj/structure/closet/body_bag/cryobag))
 			self.injure(INJURY_BLUNT, pressure_damage, flags = INJURE_CONTINUOUS) // Crushing pressure
 		self.throw_alert("pressure", /atom/movable/screen/alert/highpressure, 2)
-	else if(adjusted_pressure >= self.species.warning_high_pressure)
+	else if(adjusted_pressure >= S.warning_high_pressure)
 		self.throw_alert("pressure", /atom/movable/screen/alert/highpressure, 1)
-	else if(adjusted_pressure >= self.species.warning_low_pressure)
+	else if(adjusted_pressure >= S.warning_low_pressure)
 		self.clear_alert("pressure")
-	else if(adjusted_pressure >= self.species.hazard_low_pressure)
+	else if(adjusted_pressure >= S.hazard_low_pressure)
 		self.throw_alert("pressure", /atom/movable/screen/alert/lowpressure, 1)
+	else if(self.has_mutation(COLD_RESISTANCE) || istype(self.loc, /obj/structure/closet/body_bag/cryobag))
+		self.clear_alert("pressure")
 	else
-		if(!(self.has_mutation(COLD_RESISTANCE)) && !istype(self.loc, /obj/structure/closet/body_bag/cryobag))
-			if(!HAS_SYNTHETIC_BIOLOGY(self) || !self.nif || !self.nif.flag_check(NIF_O_PRESSURESEAL,NIF_FLAGS_OTHER))
-				var/pressure_damage = LOW_PRESSURE_DAMAGE
-				if(self.stat==DEAD)
-					pressure_damage = pressure_damage/2
-				self.injure(INJURY_BLUNT, pressure_damage, flags = INJURE_CONTINUOUS) // Decompression: ruptured capillaries and tissue
-				// Ebullition in the lungs: gas exchange fails even on internals,
-				// less the better the suit holds pressure.
-				var/exposure = (ONE_ATMOSPHERE - adjusted_pressure) / ONE_ATMOSPHERE
-				if(self.get_equipped_item(SLOT_ID_SUIT) && self.get_equipped_item(SLOT_ID_SUIT).min_pressure_protection && self.get_equipped_item(SLOT_ID_HEAD) && self.get_equipped_item(SLOT_ID_HEAD).min_pressure_protection)
-					exposure *= max(self.get_equipped_item(SLOT_ID_SUIT).min_pressure_protection, self.get_equipped_item(SLOT_ID_HEAD).min_pressure_protection) / ONE_ATMOSPHERE
-				self.body?.add_restriction(self, BF_GAS_EXCHANGE, clamp(1 - exposure, 0.1, 1), 4 SECONDS)
-			self.throw_alert("pressure", /atom/movable/screen/alert/lowpressure, 2)
-		else
-			self.clear_alert("pressure")
+		decompression(self, adjusted_pressure)
+		self.throw_alert("pressure", /atom/movable/screen/alert/lowpressure, 2)
 
-	return
+/// Hazardously low pressure: ruptured capillaries, and ebullition in the lungs. A NIF pressure
+/// seal protects a synthetic body.
+/datum/om/stage/life/environment/carbon/human/proc/decompression(mob/living/carbon/human/self, adjusted_pressure)
+	if(HAS_SYNTHETIC_BIOLOGY(self) && self.nif?.flag_check(NIF_O_PRESSURESEAL, NIF_FLAGS_OTHER))
+		return
+	var/pressure_damage = LOW_PRESSURE_DAMAGE
+	if(self.stat==DEAD)
+		pressure_damage = pressure_damage/2
+	self.injure(INJURY_BLUNT, pressure_damage, flags = INJURE_CONTINUOUS) // Decompression: ruptured capillaries and tissue
+	// Ebullition in the lungs: gas exchange fails even on internals,
+	// less the better the suit holds pressure.
+	var/exposure = (ONE_ATMOSPHERE - adjusted_pressure) / ONE_ATMOSPHERE
+	var/obj/item/suit = self.get_equipped_item(SLOT_ID_SUIT)
+	var/obj/item/helmet = self.get_equipped_item(SLOT_ID_HEAD)
+	if(suit?.min_pressure_protection && helmet?.min_pressure_protection)
+		exposure *= max(suit.min_pressure_protection, helmet.min_pressure_protection) / ONE_ATMOSPHERE
+	self.body?.add_restriction(self, BF_GAS_EXCHANGE, clamp(1 - exposure, 0.1, 1), 4 SECONDS)
 
 /datum/om/stage/life/thermoregulation
 	order = LIFE_PHASE_TAIL + 160
@@ -1277,9 +1277,41 @@
 //DO NOT run the statuses system from this proc: it runs after this one as long as this returns a true value.
 /datum/om/stage/life/status/carbon/human
 	of = /mob/living/carbon/human
+	wake_on = CHANGE_MOB_HEALTH | CHANGE_MOB_STATUS | CHANGE_MOB_STAT | CHANGE_MOB_EQUIPMENT | CHANGE_MOB_CLIENT
+	woken_by = "injure/mend and body invalidate; status setters (sleep, blindness, drowsiness); set_stat; equipment (blindfolds, rig visors); Login/Logout (SSD); its rewake for raw fear/tiredness writes"
 
+/// A24: the dead have nothing to update; the living idle while nothing in update_status() has
+/// work: conscious, no afflictions or pain, no status it tops up, senses intact, no fear or
+/// tiredness counting down.
+/datum/om/stage/life/status/carbon/human/idle(mob/living/carbon/human/self)
+	if(self.stat == DEAD)
+		return TRUE
+	if(self.stat != CONSCIOUS || HAS_TRAIT(self, TRAIT_CRITICAL_CONDITION))
+		return FALSE
+	var/datum/body/B = self.body
+	if(!B || LAZYLEN(B.afflictions) || B.dirty || self.current_pain() || self.oxygen_debt() || self.is_critical())
+		return FALSE
+	// blinded is reset every frame (type_pre) and set again here, so anything that blinds keeps it awake.
+	if(self.tiredness || self.fear || self.embedded_flag || self.resting || self.wearing_blindfold() || rig_visor_blinds(self))
+		return FALSE
+	if(self.has_status(EFFECT_SLEEPING) || self.has_status(EFFECT_DROWSY) || self.has_status(EFFECT_HALLUCINATING) || self.has_status(EFFECT_BLINDED) || self.has_status(EFFECT_DEAFENED))
+		return FALSE
+	if((self.sdisabilities & (BLIND | DEAF)) || self.ear_damage)
+		return FALSE
+	if(self.species.get_ssd(self) && !self.client && !self.teleop)
+		return FALSE
+	if(self.species.vision_organ)
+		var/obj/item/organ/vision = self.internal_organs_by_name[self.species.vision_organ]
+		if(!vision || vision.is_bruised())
+			return FALSE
+	return TRUE
+
+/// Raw fear / tiredness writes and slow drift are caught by the rewake.
+/datum/om/stage/life/status/carbon/human/rewake_delay(mob/living/carbon/human/self)
+	return self.stat == DEAD ? 0 : 5 SECONDS
+
+/// P2-F1: the status update, split into one proc per concern below.
 /datum/om/stage/life/status/carbon/human/update_status(mob/living/carbon/human/self)
-
 	if(om_has(self, EFFECT_GODMODE))
 		return 0	// Cancelled by a component
 
@@ -1287,168 +1319,181 @@
 	if(self.species.get_ssd(self) && !self.client && !self.teleop)
 		self.status_at_least(EFFECT_SLEEPING, 2)
 	if(self.stat == DEAD)	//DEAD. BROWN BREAD. SWIMMING WITH THE SPESS CARP
-		self.blinded = 1
-		self.status_set(EFFECT_MUTED, 0)
-		self.deaf_loop.stop() // CHOMPEnable: Ear Ringing/Deafness - Not sure if we need this, but, safety.
-	else				//ALIVE. LIGHTS ARE ON
-		// The body ticks afflictions, recomputes vitals once, and applies
-		// death (organ death) and unconsciousness (consciousness model).
-		self.body.life_tick()
+		dead_senses(self)
+		return 1
 
-		if(self.stat == DEAD)
-			self.blinded = 1
-			self.status_set(EFFECT_MUTED, 0)
-			self.deaf_loop.stop() // CHOMPEnable: Ear Ringing/Deafness - Not sure if we need this, but, safety.
-			return 1
+	//ALIVE. LIGHTS ARE ON
+	// The body ticks afflictions, recomputes vitals once, and applies
+	// death (organ death) and unconsciousness (consciousness model).
+	self.body.life_tick()
+	if(self.stat == DEAD)
+		dead_senses(self)
+		return 1
 
-		//UNCONSCIOUS. NO-ONE IS HOME
-		var/in_crit = FALSE
-		if(self.body.is_unconscious())
-			self.status_at_least(EFFECT_PARALYZED, 3)
-			self.status_at_least(EFFECT_SLEEPING, 3)
-			self.set_stat(UNCONSCIOUS)
-			self.blinded = TRUE
-			in_crit = TRUE
-			if(!HAS_TRAIT(self, TRAIT_CRITICAL_CONDITION))
-				ADD_TRAIT(self, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)
+	var/in_crit = update_consciousness(self)
+	update_hallucinations(self)
+	update_tiredness(self)
+	update_fear(self)
+	update_sleep(self, in_crit)
+	update_embedded(self)
+	update_sight(self)
+	update_hearing(self)
+	update_rest(self)
+	return 1
 
-		if(self.has_status(EFFECT_HALLUCINATING))
-			if(self.status_units(EFFECT_HALLUCINATING) >= HALLUCINATION_THRESHOLD && !(self.species.flags & (NO_POISON|IS_PLANT|NO_HALLUCINATION)) && !HAS_TRAIT(self, TRAIT_MADNESS_IMMUNE))
-				self.handle_hallucinations()
-				/* Stop spinning the view, it breaks too much.
-				if(client && prob(5))
-					client.dir = pick(2,4,8)
-					spawn(rand(20,50))
-						client.dir = 1
-				*/
+/datum/om/stage/life/status/carbon/human/proc/dead_senses(mob/living/carbon/human/self)
+	self.blinded = 1
+	self.status_set(EFFECT_MUTED, 0)
+	self.deaf_loop.stop() // Ear Ringing/Deafness - Not sure if we need this, but, safety.
 
+/// UNCONSCIOUS. NO-ONE IS HOME. Returns TRUE when the consciousness model has the body out.
+/datum/om/stage/life/status/carbon/human/proc/update_consciousness(mob/living/carbon/human/self)
+	if(!self.body.is_unconscious())
+		return FALSE
+	self.status_at_least(EFFECT_PARALYZED, 3)
+	self.status_at_least(EFFECT_SLEEPING, 3)
+	self.set_stat(UNCONSCIOUS)
+	self.blinded = TRUE
+	if(!HAS_TRAIT(self, TRAIT_CRITICAL_CONDITION))
+		ADD_TRAIT(self, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)
+	return TRUE
 
+/datum/om/stage/life/status/carbon/human/proc/update_hallucinations(mob/living/carbon/human/self)
+	if(!self.has_status(EFFECT_HALLUCINATING))
+		return
+	if(self.status_units(EFFECT_HALLUCINATING) >= HALLUCINATION_THRESHOLD && !(self.species.flags & (NO_POISON|IS_PLANT|NO_HALLUCINATION)) && !HAS_TRAIT(self, TRAIT_MADNESS_IMMUNE))
+		self.handle_hallucinations()
 
-		if(self.tiredness) //tiredness for vore drain
-			self.tiredness = (self.tiredness - 1)
-			if(self.tiredness >= 100)
-				self.status_at_least(EFFECT_SLEEPING, 5)
+/// Tiredness from vore drain wears off; very tired bodies fall asleep.
+/datum/om/stage/life/status/carbon/human/proc/update_tiredness(mob/living/carbon/human/self)
+	if(!self.tiredness)
+		return
+	self.tiredness = (self.tiredness - 1)
+	if(self.tiredness >= 100)
+		self.status_at_least(EFFECT_SLEEPING, 5)
 
-		if(self.fear)
-			self.fear = (self.fear - 1)
-			if(self.fear >= 80 && self.client?.prefs?.read_preference(/datum/preference/toggle/play_ambience))
-				if(COOLDOWN_FINISHED(self, fear_sound_cooldown))
-					self << sound('sound/effects/Heart Beat.ogg',0,0,0,25)
-					COOLDOWN_START(self, fear_sound_cooldown, 51 SECONDS)
-			if(self.fear >= 80 && !HAS_SYNTHETIC_BIOLOGY(self))
-				if(prob(1) && self.get_active_hand())
-					var/stuff_to_drop = self.get_active_hand()
-					self.drop_item()
-					self.visible_message(span_notice("\The [self] suddenly drops their [stuff_to_drop]."),span_warning("You drop your [stuff_to_drop]!"))
-				if(prob(5))
-					var/fear_self = pick(self.fear_message_self)
-					var/fear_other = pick(self.fear_message_other)
-					self.visible_message(span_notice("\The [self][fear_other]"),span_warning("[fear_self]"))
-			else if(self.fear >= 30 && !HAS_SYNTHETIC_BIOLOGY(self))
-				if(prob(2))
-					var/fear_self = pick(self.fear_message_self)
-					var/fear_other = pick(self.fear_message_other)
-					self.visible_message(span_notice("\The [self][fear_other]"),span_warning("[fear_self]"))
+/// Fear wears off; a frightened organic body shakes, drops things and shows it.
+/datum/om/stage/life/status/carbon/human/proc/update_fear(mob/living/carbon/human/self)
+	if(!self.fear)
+		return
+	self.fear = (self.fear - 1)
+	if(self.fear >= 80 && self.client?.prefs?.read_preference(/datum/preference/toggle/play_ambience))
+		if(COOLDOWN_FINISHED(self, fear_sound_cooldown))
+			self << sound('sound/effects/Heart Beat.ogg',0,0,0,25)
+			COOLDOWN_START(self, fear_sound_cooldown, 51 SECONDS)
+	if(!(self.biology() & BIOLOGY_ORGANIC))
+		return
+	if(self.fear >= 80)
+		if(prob(1) && self.get_active_hand())
+			var/stuff_to_drop = self.get_active_hand()
+			self.drop_item()
+			self.visible_message(span_notice("\The [self] suddenly drops their [stuff_to_drop]."),span_warning("You drop your [stuff_to_drop]!"))
+		if(prob(5))
+			fear_emote(self)
+	else if(self.fear >= 30 && prob(2))
+		fear_emote(self)
 
-		if(self.has_status(EFFECT_SLEEPING))
-			self.blinded = TRUE
-			self.set_stat(UNCONSCIOUS)
-			self.animate_tail_reset()
-			self.mend(TREAT_ANALGESIC, 3) // Sleep eases pain on top of its natural fading.
+/datum/om/stage/life/status/carbon/human/proc/fear_emote(mob/living/carbon/human/self)
+	var/fear_self = pick(self.fear_message_self)
+	var/fear_other = pick(self.fear_message_other)
+	self.visible_message(span_notice("\The [self][fear_other]"),span_warning("[fear_self]"))
 
-			if(self.has_status(EFFECT_SLEEPING))
-				if(prob(2))
-					if(prob(50))
-						self.mend(TREAT_TISSUE_REPAIR, 1)
-					else
-						self.mend(TREAT_BURN_CARE, 1)
-
-				self.handle_dreams()
-				// Nobody home (SSD, or no mind at all): the body stays asleep until a player returns.
-				if(!self.mind || !self.client)
-					self.status_at_least(EFFECT_SLEEPING, 1)
-				if(prob(2) && !self.is_critical() && !self.get_hallucination_state()?.get_fakecrit() && self.client)
-					self.emote("snore")
-		//CONSCIOUS
-		else if(!in_crit)
+/// Asleep: unconscious, pain eases, dreams and snores. Otherwise (and not knocked out) conscious.
+/datum/om/stage/life/status/carbon/human/proc/update_sleep(mob/living/carbon/human/self, in_crit)
+	if(!self.has_status(EFFECT_SLEEPING))
+		if(!in_crit)
 			self.set_stat(CONSCIOUS)
 			if(HAS_TRAIT(self, TRAIT_CRITICAL_CONDITION))
 				REMOVE_TRAIT(self, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)
+		return
+	self.blinded = TRUE
+	self.set_stat(UNCONSCIOUS)
+	self.animate_tail_reset()
+	self.mend(TREAT_ANALGESIC, 3) // Sleep eases pain on top of its natural fading.
+	if(!self.has_status(EFFECT_SLEEPING))
+		return
+	if(prob(2))
+		if(prob(50))
+			self.mend(TREAT_TISSUE_REPAIR, 1)
+		else
+			self.mend(TREAT_BURN_CARE, 1)
+	self.handle_dreams()
+	// Nobody home (SSD, or no mind at all): the body stays asleep until a player returns.
+	if(!self.mind || !self.client)
+		self.status_at_least(EFFECT_SLEEPING, 1)
+	if(prob(2) && !self.is_critical() && !self.get_hallucination_state()?.get_fakecrit() && self.client)
+		self.emote("snore")
 
-		//Periodically double-check embedded_flag
-		if(self.embedded_flag && !(self.life_tick % 10))
-			var/list/E
-			E = self.get_visible_implants(0)
-			if(!E.len)
-				self.embedded_flag = 0
+/// Periodically double-check embedded_flag.
+/datum/om/stage/life/status/carbon/human/proc/update_embedded(mob/living/carbon/human/self)
+	if(!self.embedded_flag || (self.life_tick % 10))
+		return
+	var/list/visible = self.get_visible_implants(0)
+	if(!length(visible) || !self.embedded_needs_process())
+		self.embedded_flag = 0
 
-		//Eyes
-		//Check rig first because it's two-check and other checks will override it.
-		if(istype(self.get_equipped_item(SLOT_ID_BACK),/obj/item/rig))
-			var/obj/item/rig/O = self.get_equipped_item(SLOT_ID_BACK)
-			if(O.helmet && O.helmet == self.get_equipped_item(SLOT_ID_HEAD) && (O.helmet.body_parts_covered & EYES))
-				if((O.offline && O.offline_vision_restriction == 2) || (!O.offline && O.vision_restriction == 2))
-					self.blinded = 1
+/// Eyes: a rig visor, the vision organ, disabilities and blindfolds.
+/datum/om/stage/life/status/carbon/human/proc/update_sight(mob/living/carbon/human/self)
+	//Check rig first because it's two-check and other checks will override it.
+	if(rig_visor_blinds(self))
+		self.blinded = 1
 
-		// Check everything else.
+	if(!self.species.vision_organ) // Presumably if a species has no vision organs, they see via some other means.
+		self.status_set(EFFECT_BLINDED, 0)
+		self.blinded = 0
+		self.status_set(EFFECT_BLURRY, 0)
+		self.clear_alert("blind")
+		return
+	var/obj/item/organ/vision = self.internal_organs_by_name[self.species.vision_organ]
+	if(!vision || vision.is_broken())   // Vision organs cut out or broken? Permablind.
+		self.status_set(EFFECT_BLINDED, 1)
+		self.blinded = 1
+		self.status_set(EFFECT_BLURRY, 1)
+		self.throw_alert("blind", /atom/movable/screen/alert/blind)
+		return
+	//You have the requisite organs
+	if(self.sdisabilities & BLIND) 	// Disabled-blind, doesn't get better on its own
+		self.blinded = 1
+		self.throw_alert("blind", /atom/movable/screen/alert/blind)
+	else if(self.has_status(EFFECT_BLINDED) || self.wearing_blindfold())	// Blindness wears off on its own; a blindfold also heals blur faster (status_rate())
+		self.blinded = 1
+		self.throw_alert("blind", /atom/movable/screen/alert/blind)
+	if(vision.is_bruised())   // Vision organs impaired? Permablurry.
+		self.status_at_least(EFFECT_BLURRY, 1)
 
-		//Periodically double-check embedded_flag
-		if(self.embedded_flag && !(self.life_tick % 10))
-			if(!self.embedded_needs_process())
-				self.embedded_flag = 0
-		//Vision
-		var/obj/item/organ/vision
-		if(self.species.vision_organ)
-			vision = self.internal_organs_by_name[self.species.vision_organ]
+/// A worn rig helmet whose visor restriction blinds.
+/datum/om/stage/life/status/carbon/human/proc/rig_visor_blinds(mob/living/carbon/human/self)
+	var/obj/item/rig/O = self.get_equipped_item(SLOT_ID_BACK)
+	if(!istype(O) || !O.helmet || O.helmet != self.get_equipped_item(SLOT_ID_HEAD) || !(O.helmet.body_parts_covered & EYES))
+		return FALSE
+	return (O.offline && O.offline_vision_restriction == 2) || (!O.offline && O.vision_restriction == 2)
 
-		if(!self.species.vision_organ) // Presumably if a species has no vision organs, they see via some other means.
-			self.status_set(EFFECT_BLINDED, 0)
-			self.blinded =    0
-			self.status_set(EFFECT_BLURRY, 0)
-			self.clear_alert("blind")
-		else if(!vision || vision.is_broken())   // Vision organs cut out or broken? Permablind.
-			self.status_set(EFFECT_BLINDED, 1)
-			self.blinded =    1
-			self.status_set(EFFECT_BLURRY, 1)
-			self.throw_alert("blind", /atom/movable/screen/alert/blind)
-		else //You have the requisite organs
-			if(self.sdisabilities & BLIND) 	// Disabled-blind, doesn't get better on its own
-				self.blinded =    1
-				self.throw_alert("blind", /atom/movable/screen/alert/blind)
-			else if(self.has_status(EFFECT_BLINDED) || self.wearing_blindfold())	// Blindness wears off on its own; a blindfold also heals blur faster (status_rate())
-				self.blinded =    1
-				self.throw_alert("blind", /atom/movable/screen/alert/blind)
-
-			//blurry sight
-			if(vision.is_bruised())   // Vision organs impaired? Permablurry.
-				self.status_at_least(EFFECT_BLURRY, 1)
-
-		//Ears
-		if(self.sdisabilities & DEAF)	//disabled-deaf, doesn't get better on its own
+/// Ears: disability deafness holds; ear damage heals, faster under earmuffs.
+/datum/om/stage/life/status/carbon/human/proc/update_hearing(mob/living/carbon/human/self)
+	if(self.sdisabilities & DEAF)	//disabled-deaf, doesn't get better on its own
+		self.status_at_least(EFFECT_DEAFENED, 1)
+		self.deaf_loop.start(skip_start_sound = TRUE) // Ear Ringing/Deafness
+	else if(!self.has_status(EFFECT_DEAFENED))	// deafness wears off on its own; ears don't heal meanwhile
+		if(self.get_ear_protection() >= 2)	//resting your ears with earmuffs heals ear damage faster
+			self.set_ear_damage(max(self.ear_damage-0.15, 0))
 			self.status_at_least(EFFECT_DEAFENED, 1)
-			self.deaf_loop.start(skip_start_sound = TRUE) // CHOMPEnable: Ear Ringing/Deafness
-		else if(!self.has_status(EFFECT_DEAFENED))	// deafness wears off on its own; ears don't heal meanwhile
-			if(self.get_ear_protection() >= 2)	//resting your ears with earmuffs heals ear damage faster
-				self.set_ear_damage(max(self.ear_damage-0.15, 0))
-				self.status_at_least(EFFECT_DEAFENED, 1)
-			else if(self.ear_damage < 25)	//ear damage heals slowly under this threshold. otherwise you'll need earmuffs
-				self.set_ear_damage(max(self.ear_damage-0.05, 0))
+		else if(self.ear_damage < 25)	//ear damage heals slowly under this threshold. otherwise you'll need earmuffs
+			self.set_ear_damage(max(self.ear_damage-0.05, 0))
 
-		//Resting eases pain faster than it fades on its own.
-		if(self.resting)
-			self.mend(TREAT_ANALGESIC, 2)
-
-		if (self.has_status(EFFECT_DROWSY))
-			self.status_at_least(EFFECT_BLURRY, 2)
-			if (prob(5))
-				self.status_at_least(EFFECT_SLEEPING, 1)
-				self.status_at_least(EFFECT_PARALYZED, 5)
-
-		// If you're dirty, your gloves will become dirty, too.
-		if(self.get_equipped_item(SLOT_ID_GLOVES) && self.germ_level > self.get_equipped_item(SLOT_ID_GLOVES).germ_level && prob(10))
-			self.get_equipped_item(SLOT_ID_GLOVES).germ_level += 1
-
-	return 1
+/// Resting eases pain; drowsiness blurs and nods off; dirt spreads to gloves.
+/datum/om/stage/life/status/carbon/human/proc/update_rest(mob/living/carbon/human/self)
+	//Resting eases pain faster than it fades on its own.
+	if(self.resting)
+		self.mend(TREAT_ANALGESIC, 2)
+	if(self.has_status(EFFECT_DROWSY))
+		self.status_at_least(EFFECT_BLURRY, 2)
+		if(prob(5))
+			self.status_at_least(EFFECT_SLEEPING, 1)
+			self.status_at_least(EFFECT_PARALYZED, 5)
+	// If you're dirty, your gloves will become dirty, too.
+	var/obj/item/gloves = self.get_equipped_item(SLOT_ID_GLOVES)
+	if(gloves && self.germ_level > gloves.germ_level && prob(10))
+		gloves.germ_level += 1
 
 /mob/living/carbon/human/set_stat(new_stat)
 	. = ..()
@@ -1457,7 +1502,26 @@
 
 /datum/om/stage/life/hud/carbon/human
 	of = /mob/living/carbon/human
+	woken_by = "Login; body invalidate; equipment; Moved; status setters; its rewake (overlays that fade, hud_updateflag bits set raw)"
 
+/// A24: nothing for others to see (no hud_updateflag) and nothing on our own screen that moves
+/// on its own: no client, or a settled conscious body with no fading overlay.
+/datum/om/stage/life/hud/carbon/human/idle(mob/living/carbon/human/self)
+	if(self.hud_updateflag || om_wants(self, /datum/om/event/before/mob_handle_hud))
+		return FALSE
+	if(!self.client)
+		return TRUE
+	if(self.stat != CONSCIOUS || self.is_critical() || self.oxygen_debt() || self.damageoverlaytemp)
+		return FALSE
+	if(self.tiredness || self.fear || self.blinded)
+		return FALSE
+	return !self.has_status(EFFECT_BLURRY) && !self.has_status(EFFECT_DRUGGED)
+
+/// Nutrition drains and darksight re-adapts slowly; hud_updateflag bits are set raw.
+/datum/om/stage/life/hud/carbon/human/rewake_delay(mob/living/carbon/human/self)
+	return 5 SECONDS
+
+/// P2-F1: the human screen, one proc per overlay family below.
 /datum/om/stage/life/hud/carbon/human/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	if(self.hud_updateflag) // update our mob's hud overlays, AKA what others see flaoting above our head
 		hud_list(self)
@@ -1473,170 +1537,130 @@
 			self.client.screen |= cam.client_huds
 
 	if(self.stat == DEAD) //Dead
-		if(!self.has_status(EFFECT_DRUGGED))		self.see_invisible = SEE_INVISIBLE_LEVEL_TWO
-
+		if(!self.has_status(EFFECT_DRUGGED))
+			self.see_invisible = SEE_INVISIBLE_LEVEL_TWO
 	else if(self.is_critical()) //Crit
-		//Critical damage passage overlay, deeper as vitality drains (0 at the crit line, -100 at the end).
-		var/severity = 0
-		switch(100 * (2 * self.vitality() - 1))
-			if(-20 to -10)			severity = 1
-			if(-30 to -20)			severity = 2
-			if(-40 to -30)			severity = 3
-			if(-50 to -40)			severity = 4
-			if(-60 to -50)			severity = 5
-			if(-70 to -60)			severity = 6
-			if(-80 to -70)			severity = 7
-			if(-90 to -80)			severity = 8
-			if(-95 to -90)			severity = 9
-			if(-INFINITY to -95)	severity = 10
-		self.overlay_fullscreen("crit", /atom/movable/screen/fullscreen/crit, severity)
+		crit_overlay(self)
 	else //Alive
 		self.clear_fullscreen("crit")
-		//Oxygen debt overlay
-		var/debt = self.oxygen_debt()
-		if(debt)
-			var/severity = 0
-			switch(debt)
-				if(10 to 20)		severity = 1
-				if(20 to 25)		severity = 2
-				if(25 to 30)		severity = 3
-				if(30 to 35)		severity = 4
-				if(35 to 40)		severity = 5
-				if(40 to 45)		severity = 6
-				if(45 to INFINITY)	severity = 7
-			self.overlay_fullscreen("oxy", /atom/movable/screen/fullscreen/oxy, severity)
-		else
-			self.clear_fullscreen("oxy")
-
-		//Fire and Brute damage overlay (BSSR)
-		var/hurtdamage = self.injury_load(INJURY_CATEGORY_PHYSICAL) + self.injury_load(INJURY_CATEGORY_THERMAL) + self.damageoverlaytemp
-		self.damageoverlaytemp = 0 // We do this so we can detect if someone hits us or not.
-		if(hurtdamage)
-			var/severity = 0
-			switch(hurtdamage)
-				if(10 to 25)		severity = 1
-				if(25 to 40)		severity = 2
-				if(40 to 55)		severity = 3
-				if(55 to 70)		severity = 4
-				if(70 to 85)		severity = 5
-				if(85 to INFINITY)	severity = 6
-			self.overlay_fullscreen("brute", /atom/movable/screen/fullscreen/brute, severity)
-		else
-			self.clear_fullscreen("brute")
-
-		//tiredness for drain vore
-		if(self.tiredness)
-			var/severity = 0
-			switch(self.tiredness)
-				if(10 to 20)		severity = 1
-				if(20 to 30)		severity = 2
-				if(30 to 45)		severity = 3
-				if(45 to 60)		severity = 4
-				if(60 to 75)		severity = 5
-				if(75 to 90)		severity = 6
-				if(90 to INFINITY)	severity = 7
-			self.overlay_fullscreen("tired", /atom/movable/screen/fullscreen/oxy, severity)
-		else
-			self.clear_fullscreen("tired")
-
-		if(self.fear)
-			var/severity = 0
-			switch(self.fear)
-				if(10 to 20)		severity = 1
-				if(20 to 30)		severity = 2
-				if(30 to 50)		severity = 3
-				if(50 to 70)		severity = 4
-				if(70 to 90)		severity = 5
-				if(90 to INFINITY)	severity = 6
-			self.overlay_fullscreen("fear", /atom/movable/screen/fullscreen/fear, severity)
-		else
-			self.clear_fullscreen("fear")
-
-
-		var/static/list/custom_species = list(SPECIES_CUSTOM, SPECIES_HANNER)
-		var/fat_alert = /atom/movable/screen/alert/fat
-		var/hungry_alert = /atom/movable/screen/alert/hungry
-		var/starving_alert = /atom/movable/screen/alert/starving
-
-		if(HAS_SYNTHETIC_BIOLOGY(self))
-			fat_alert = /atom/movable/screen/alert/fat/synth
-			hungry_alert = /atom/movable/screen/alert/hungry/synth
-			starving_alert = /atom/movable/screen/alert/starving/synth
-		else if(self.get_species() in custom_species)
-			var/datum/species/custom/C = self.species
-			if(/datum/trait/neutral/bloodsucker in C.traits)
-				fat_alert = /atom/movable/screen/alert/fat/vampire
-				hungry_alert = /atom/movable/screen/alert/hungry/vampire
-				starving_alert = /atom/movable/screen/alert/starving/vampire
-
-		switch(self.nutrition)
-			if(450 to INFINITY)
-				self.throw_alert("nutrition", fat_alert)
-			if(250 to 450)
-				self.clear_alert("nutrition")
-			if(150 to 250)
-				self.throw_alert("nutrition", hungry_alert)
-			else
-				self.throw_alert("nutrition", starving_alert)
-
-		if(self.blinded)
-			self.overlay_fullscreen("blind", /atom/movable/screen/fullscreen/blind)
-			self.throw_alert("blind", /atom/movable/screen/alert/blind)
-		else
-			self.clear_fullscreen("blind")
-			self.clear_alert("blind")
-
-		var/apply_nearsighted_overlay = FALSE
-		if(self.is_nearsighted())
-			apply_nearsighted_overlay = TRUE
-
-			if(self.get_equipped_item(SLOT_ID_EYES))
-				var/obj/item/clothing/glasses/G = self.get_equipped_item(SLOT_ID_EYES)
-				if(G.prescription)
-					apply_nearsighted_overlay = FALSE
-
-			if(self.nif && self.nif.flag_check(NIF_V_CORRECTIVE, NIF_FLAGS_VISION))
-				apply_nearsighted_overlay = FALSE
-
-		self.set_fullscreen(apply_nearsighted_overlay, "nearsighted", /atom/movable/screen/fullscreen/impaired, 1)
-
-		self.set_fullscreen(self.status_units(EFFECT_BLURRY), "blurry", /atom/movable/screen/fullscreen/blurry)
-		self.set_fullscreen(self.status_units(EFFECT_DRUGGED), "high", /atom/movable/screen/fullscreen/high)
-		if(self.has_status(EFFECT_DRUGGED))
-			self.throw_alert("high", /atom/movable/screen/alert/high)
-		else
-			self.clear_alert("high")
-
+		condition_overlays(self)
+		nutrition_alert(self)
+		sight_overlays(self)
 		if(!self.surrounding_belly() && !self.previewing_belly) // Belly fullscreens safety
 			self.clear_fullscreen("belly")
 			self.belly_overlay_tgui?.hide() // hide TGUI belly overlay
-
-		if(CONFIG_GET(flag/welder_vision))
-			var/found_welder
-			if(self.species.short_sighted)
-				found_welder = 1
-			else
-				if(istype(self.get_equipped_item(SLOT_ID_EYES), /obj/item/clothing/glasses/welding))
-					var/obj/item/clothing/glasses/welding/O = self.get_equipped_item(SLOT_ID_EYES)
-					if(!O.up)
-						found_welder = 1
-				if(!found_welder && self.nif && self.nif.flag_check(NIF_V_UVFILTER,NIF_FLAGS_VISION))	found_welder = 1
-				if(istype(self.get_equipped_item(SLOT_ID_EYES), /obj/item/clothing/glasses/sunglasses/thinblindfold))
-					found_welder = 1
-				if(!found_welder && istype(self.get_equipped_item(SLOT_ID_HEAD), /obj/item/clothing/head/welding))
-					var/obj/item/clothing/head/welding/O = self.get_equipped_item(SLOT_ID_HEAD)
-					if(!O.up)
-						found_welder = 1
-				if(!found_welder && istype(self.get_equipped_item(SLOT_ID_BACK), /obj/item/rig))
-					var/obj/item/rig/O = self.get_equipped_item(SLOT_ID_BACK)
-					if(O.helmet && O.helmet == self.get_equipped_item(SLOT_ID_HEAD) && (O.helmet.body_parts_covered & EYES))
-						if((O.offline && O.offline_vision_restriction == 1) || (!O.offline && O.vision_restriction == 1))
-							found_welder = 1
-				if(self.absorbed) found_welder = 1
-			if(found_welder)
-				self.claim_global_hud(GLOB.global_hud.darkMask)
+		if(CONFIG_GET(flag/welder_vision) && welder_vision(self))
+			self.claim_global_hud(GLOB.global_hud.darkMask)
 
 	self.reconcile_global_huds()
+
+/// Severity band of `value` against ascending `thresholds`: 0 below the first, n at or past the nth.
+/datum/om/stage/life/hud/carbon/human/proc/overlay_band(value, list/thresholds)
+	. = 0
+	for(var/threshold in thresholds)
+		if(value < threshold)
+			return
+		.++
+
+/// Critical damage passage overlay, deeper as vitality drains (0 at the crit line, -100 at the end).
+/datum/om/stage/life/hud/carbon/human/proc/crit_overlay(mob/living/carbon/human/self)
+	var/depth = -100 * (2 * self.vitality() - 1) // 0 at the crit line, 100 at the end
+	var/static/list/crit_bands = list(10, 20, 30, 40, 50, 60, 70, 80, 90, 95)
+	self.overlay_fullscreen("crit", /atom/movable/screen/fullscreen/crit, overlay_band(depth, crit_bands))
+
+/// Oxygen debt, injury, tiredness (drain vore) and fear overlays.
+/datum/om/stage/life/hud/carbon/human/proc/condition_overlays(mob/living/carbon/human/self)
+	var/static/list/oxy_bands = list(10, 20, 25, 30, 35, 40, 45)
+	var/static/list/hurt_bands = list(10, 25, 40, 55, 70, 85)
+	var/static/list/tired_bands = list(10, 20, 30, 45, 60, 75, 90)
+	var/static/list/fear_bands = list(10, 20, 30, 50, 70, 90)
+	var/debt = self.oxygen_debt()
+	if(debt)
+		self.overlay_fullscreen("oxy", /atom/movable/screen/fullscreen/oxy, overlay_band(debt, oxy_bands))
+	else
+		self.clear_fullscreen("oxy")
+
+	//Fire and Brute damage overlay (BSSR)
+	var/hurtdamage = self.injury_load(INJURY_CATEGORY_PHYSICAL) + self.injury_load(INJURY_CATEGORY_THERMAL) + self.damageoverlaytemp
+	self.damageoverlaytemp = 0 // We do this so we can detect if someone hits us or not.
+	if(hurtdamage)
+		self.overlay_fullscreen("brute", /atom/movable/screen/fullscreen/brute, overlay_band(hurtdamage, hurt_bands))
+	else
+		self.clear_fullscreen("brute")
+
+	if(self.tiredness)
+		self.overlay_fullscreen("tired", /atom/movable/screen/fullscreen/oxy, overlay_band(self.tiredness, tired_bands))
+	else
+		self.clear_fullscreen("tired")
+
+	if(self.fear)
+		self.overlay_fullscreen("fear", /atom/movable/screen/fullscreen/fear, overlay_band(self.fear, fear_bands))
+	else
+		self.clear_fullscreen("fear")
+
+/// Hunger alerts in the body's style (P2-S5: hunger_alert_style(), not a species name check).
+/datum/om/stage/life/hud/carbon/human/proc/nutrition_alert(mob/living/carbon/human/self)
+	var/static/list/alerts_by_style = list(
+		"[HUNGER_ALERT_ORGANIC]" = list(/atom/movable/screen/alert/fat, /atom/movable/screen/alert/hungry, /atom/movable/screen/alert/starving),
+		"[HUNGER_ALERT_SYNTH]" = list(/atom/movable/screen/alert/fat/synth, /atom/movable/screen/alert/hungry/synth, /atom/movable/screen/alert/starving/synth),
+		"[HUNGER_ALERT_VAMPIRE]" = list(/atom/movable/screen/alert/fat/vampire, /atom/movable/screen/alert/hungry/vampire, /atom/movable/screen/alert/starving/vampire),
+	)
+	var/list/alerts = alerts_by_style["[self.hunger_alert_style()]"] || alerts_by_style["[HUNGER_ALERT_ORGANIC]"]
+	switch(self.nutrition)
+		if(450 to INFINITY)
+			self.throw_alert("nutrition", alerts[1])
+		if(250 to 450)
+			self.clear_alert("nutrition")
+		if(150 to 250)
+			self.throw_alert("nutrition", alerts[2])
+		else
+			self.throw_alert("nutrition", alerts[3])
+
+/// Blindness, nearsightedness, blur and drug overlays.
+/datum/om/stage/life/hud/carbon/human/proc/sight_overlays(mob/living/carbon/human/self)
+	if(self.blinded)
+		self.overlay_fullscreen("blind", /atom/movable/screen/fullscreen/blind)
+		self.throw_alert("blind", /atom/movable/screen/alert/blind)
+	else
+		self.clear_fullscreen("blind")
+		self.clear_alert("blind")
+
+	var/apply_nearsighted_overlay = FALSE
+	if(self.is_nearsighted())
+		apply_nearsighted_overlay = TRUE
+		var/obj/item/clothing/glasses/G = self.get_equipped_item(SLOT_ID_EYES)
+		if(istype(G) && G.prescription)
+			apply_nearsighted_overlay = FALSE
+		if(self.nif && self.nif.flag_check(NIF_V_CORRECTIVE, NIF_FLAGS_VISION))
+			apply_nearsighted_overlay = FALSE
+	self.set_fullscreen(apply_nearsighted_overlay, "nearsighted", /atom/movable/screen/fullscreen/impaired, 1)
+
+	self.set_fullscreen(self.status_units(EFFECT_BLURRY), "blurry", /atom/movable/screen/fullscreen/blurry)
+	self.set_fullscreen(self.status_units(EFFECT_DRUGGED), "high", /atom/movable/screen/fullscreen/high)
+	if(self.has_status(EFFECT_DRUGGED))
+		self.throw_alert("high", /atom/movable/screen/alert/high)
+	else
+		self.clear_alert("high")
+
+/// Is anything dimming the view like a welding mask (short sight, welding gear, UV filter, rig visor)?
+/datum/om/stage/life/hud/carbon/human/proc/welder_vision(mob/living/carbon/human/self)
+	if(self.species.short_sighted || self.absorbed)
+		return TRUE
+	var/obj/item/clothing/glasses/welding/goggles = self.get_equipped_item(SLOT_ID_EYES)
+	if(istype(goggles) && !goggles.up)
+		return TRUE
+	if(self.nif && self.nif.flag_check(NIF_V_UVFILTER,NIF_FLAGS_VISION))
+		return TRUE
+	if(istype(self.get_equipped_item(SLOT_ID_EYES), /obj/item/clothing/glasses/sunglasses/thinblindfold))
+		return TRUE
+	var/obj/item/clothing/head/welding/mask = self.get_equipped_item(SLOT_ID_HEAD)
+	if(istype(mask) && !mask.up)
+		return TRUE
+	var/obj/item/rig/O = self.get_equipped_item(SLOT_ID_BACK)
+	if(istype(O) && O.helmet && O.helmet == self.get_equipped_item(SLOT_ID_HEAD) && (O.helmet.body_parts_covered & EYES))
+		if((O.offline && O.offline_vision_restriction == 1) || (!O.offline && O.vision_restriction == 1))
+			return TRUE
+	return FALSE
 
 /// Pain as a fraction of the pain that knocks this body out (1 = passing
 /// out from pain). Drives the HUD's softcrit / hardcrit indicators.
@@ -2134,169 +2158,193 @@
 	This proc below is only called when those HUD elements need to change as determined by the mobs hud_updateflag.
 */
 /datum/om/stage/life/hud/carbon/human/proc/hud_list(mob/living/carbon/human/self)
-	if (BITTEST(self.hud_updateflag, HEALTH_HUD))
-		var/image/holder = self.grab_hud(HEALTH_HUD)
-		var/image/health_us = self.grab_hud(HEALTH_VR_HUD)
-		if(self.stat == DEAD || (self.status_flags & FAKEDEATH))
-			holder.icon_state = "-100" 	// X_X
+	// P2-F1: one proc per HUD image; each redraws only when its bit is set.
+	var/flags = self.hud_updateflag
+	if (BITTEST(flags, HEALTH_HUD))
+		hud_health(self)
+	if (BITTEST(flags, LIFE_HUD))
+		hud_life(self)
+	if (BITTEST(flags, STATUS_HUD))
+		hud_status(self)
+	if (BITTEST(flags, ID_HUD))
+		hud_id(self)
+	if (BITTEST(flags, WANTED_HUD))
+		hud_wanted(self)
+	if (BITTEST(flags, IMPLOYAL_HUD) || BITTEST(flags, IMPCHEM_HUD) || BITTEST(flags, IMPTRACK_HUD))
+		hud_implants(self)
+	if (BITTEST(flags, SPECIALROLE_HUD))
+		hud_special_role(self)
+	if (BITTEST(flags, BACKUP_HUD))
+		hud_backup(self)
+	if (BITTEST(flags, VANTAG_HUD))
+		hud_vantag(self)
+	self.hud_updateflag = 0
+
+/// Health bar: vitality band, or dead.
+/datum/om/stage/life/hud/carbon/human/proc/hud_health(mob/living/carbon/human/self)
+	var/image/holder = self.grab_hud(HEALTH_HUD)
+	var/image/health_us = self.grab_hud(HEALTH_VR_HUD)
+	if(self.stat == DEAD || (self.status_flags & FAKEDEATH))
+		holder.icon_state = "-100" 	// X_X
+	else
+		holder.icon_state = vitality_hud_state(self)
+	if(self.block_hud)
+		holder.icon_state = "hudblank"
+	health_us.icon_state = holder.icon_state
+	self.apply_hud(HEALTH_HUD, holder)
+	self.apply_hud(HEALTH_VR_HUD, health_us)
+
+/// Life indicator: synthetic, dead or healthy.
+/datum/om/stage/life/hud/carbon/human/proc/hud_life(mob/living/carbon/human/self)
+	var/image/holder = self.grab_hud(LIFE_HUD)
+	if(HAS_SYNTHETIC_BIOLOGY(self))
+		holder.icon_state = "hudrobo"
+	else if(self.stat == DEAD || (self.status_flags & FAKEDEATH))
+		holder.icon_state = "huddead"
+	else
+		holder.icon_state = "hudhealthy"
+	if(self.block_hud)
+		holder.icon_state = "hudblank"
+	self.apply_hud(LIFE_HUD, holder)
+
+/// Medical status: synthetic, dead, ill (a known contagion) or healthy.
+/datum/om/stage/life/hud/carbon/human/proc/hud_status(mob/living/carbon/human/self)
+	var/image/holder = self.grab_hud(STATUS_HUD)
+	var/image/holder2 = self.grab_hud(STATUS_HUD_OOC)
+	var/image/status_r = self.grab_hud(STATUS_R_HUD)
+	if (HAS_SYNTHETIC_BIOLOGY(self))
+		holder.icon_state = "hudrobo"
+	else if(self.stat == DEAD || (self.status_flags & FAKEDEATH))
+		holder.icon_state = "huddead"
+		holder2.icon_state = "huddead"
+	else if(self.has_known_contagion())
+		holder.icon_state = "hudill"
+	else
+		holder.icon_state = "hudhealthy"
+		if(self.has_known_contagion())
+			holder2.icon_state = "hudill"
 		else
-			holder.icon_state = vitality_hud_state(self)
-		if(self.block_hud)
-			holder.icon_state = "hudblank"
-		health_us.icon_state = holder.icon_state
-		self.apply_hud(HEALTH_HUD, holder)
-		self.apply_hud(HEALTH_VR_HUD, health_us)
+			holder2.icon_state = "hudhealthy"
+	if(self.block_hud)
+		holder.icon_state = "hudblank"
+		holder2.icon_state = "hudblank"
 
-	if (BITTEST(self.hud_updateflag, LIFE_HUD))
-		var/image/holder = self.grab_hud(LIFE_HUD)
-		if(HAS_SYNTHETIC_BIOLOGY(self))
-			holder.icon_state = "hudrobo"
-		else if(self.stat == DEAD || (self.status_flags & FAKEDEATH))
-			holder.icon_state = "huddead"
-		else
-			holder.icon_state = "hudhealthy"
-		if(self.block_hud)
-			holder.icon_state = "hudblank"
-		self.apply_hud(LIFE_HUD, holder)
+	status_r.icon_state = holder.icon_state
+	self.apply_hud(STATUS_HUD, holder)
+	self.apply_hud(STATUS_R_HUD, status_r)
+	self.apply_hud(STATUS_HUD_OOC, holder2)
 
-	if (BITTEST(self.hud_updateflag, STATUS_HUD))
-
-		var/image/holder = self.grab_hud(STATUS_HUD)
-		var/image/holder2 = self.grab_hud(STATUS_HUD_OOC)
-		var/image/status_r = self.grab_hud(STATUS_R_HUD)
-		if (HAS_SYNTHETIC_BIOLOGY(self))
-			holder.icon_state = "hudrobo"
-		else if(self.stat == DEAD || (self.status_flags & FAKEDEATH))
-			holder.icon_state = "huddead"
-			holder2.icon_state = "huddead"
-		else if(self.has_known_contagion())
-			holder.icon_state = "hudill"
-		else
-			holder.icon_state = "hudhealthy"
-			if(self.has_known_contagion())
-				holder2.icon_state = "hudill"
-			else
-				holder2.icon_state = "hudhealthy"
-		if(self.block_hud)
-			holder.icon_state = "hudblank"
-			holder2.icon_state = "hudblank"
-
-		status_r.icon_state = holder.icon_state
-		self.apply_hud(STATUS_HUD, holder)
-		self.apply_hud(STATUS_R_HUD, status_r)
-		self.apply_hud(STATUS_HUD_OOC, holder2)
-
-	if (BITTEST(self.hud_updateflag, ID_HUD))
-		var/image/holder = self.grab_hud(ID_HUD)
-		if(self.get_equipped_item(SLOT_ID_ID))
-			var/obj/item/card/id/I = self.get_equipped_item(SLOT_ID_ID).GetID()
-			if(I)
-				holder.icon_state = "hud[ckey(GetJobName(I))]"
-			else
-				holder.icon_state = "hudunknown"
+/// Job icon from the worn ID.
+/datum/om/stage/life/hud/carbon/human/proc/hud_id(mob/living/carbon/human/self)
+	var/image/holder = self.grab_hud(ID_HUD)
+	if(self.get_equipped_item(SLOT_ID_ID))
+		var/obj/item/card/id/I = self.get_equipped_item(SLOT_ID_ID).GetID()
+		if(I)
+			holder.icon_state = "hud[ckey(GetJobName(I))]"
 		else
 			holder.icon_state = "hudunknown"
+	else
+		holder.icon_state = "hudunknown"
 
-		if(self.block_hud)
-			holder.icon_state = "hudblank"
-		self.apply_hud(ID_HUD, holder)
-
-	if (BITTEST(self.hud_updateflag, WANTED_HUD))
-		var/image/holder = self.grab_hud(WANTED_HUD)
+	if(self.block_hud)
 		holder.icon_state = "hudblank"
-		var/perpname = self.name
-		if(self.get_equipped_item(SLOT_ID_ID))
-			var/obj/item/card/id/I = self.get_equipped_item(SLOT_ID_ID).GetID()
-			if(I)
-				perpname = I.registered_name
+	self.apply_hud(ID_HUD, holder)
 
-		for(var/datum/data/record/E in GLOB.data_core.general)
-			if(E.fields["name"] == perpname)
-				for (var/datum/data/record/R in GLOB.data_core.security)
-					if((R.fields["id"] == E.fields["id"]) && (R.fields["criminal"] == "*Arrest*"))
-						holder.icon_state = "hudwanted"
-						break
-					else if((R.fields["id"] == E.fields["id"]) && (R.fields["criminal"] == "Incarcerated"))
-						holder.icon_state = "hudprisoner"
-						break
-					else if((R.fields["id"] == E.fields["id"]) && (R.fields["criminal"] == "Parolled"))
-						holder.icon_state = "hudparolled"
-						break
-					else if((R.fields["id"] == E.fields["id"]) && (R.fields["criminal"] == "Released"))
-						holder.icon_state = "hudreleased"
-						break
-		if(self.block_hud)
-			holder.icon_state = "hudblank"
-		self.apply_hud(WANTED_HUD, holder)
+/// Security record status for the worn ID's name.
+/datum/om/stage/life/hud/carbon/human/proc/hud_wanted(mob/living/carbon/human/self)
+	var/image/holder = self.grab_hud(WANTED_HUD)
+	holder.icon_state = "hudblank"
+	var/perpname = self.name
+	if(self.get_equipped_item(SLOT_ID_ID))
+		var/obj/item/card/id/I = self.get_equipped_item(SLOT_ID_ID).GetID()
+		if(I)
+			perpname = I.registered_name
 
-	if (  BITTEST(self.hud_updateflag, IMPLOYAL_HUD) \
-	   || BITTEST(self.hud_updateflag,  IMPCHEM_HUD) \
-	   || BITTEST(self.hud_updateflag, IMPTRACK_HUD))
-
-		var/image/holder1 = self.grab_hud(IMPTRACK_HUD)
-		var/image/holder2 = self.grab_hud(IMPLOYAL_HUD)
-		var/image/holder3 = self.grab_hud(IMPCHEM_HUD)
-
-		holder1.icon_state = "hudblank"
-		holder2.icon_state = "hudblank"
-		holder3.icon_state = "hudblank"
-
-		for(var/obj/item/implant/I in self)
-			if(I.implanted)
-				if(!I.malfunction)
-					if(istype(I,/obj/item/implant/tracking))
-						holder1.icon_state = "hud_imp_tracking"
-					if(istype(I,/obj/item/implant/loyalty))
-						holder2.icon_state = "hud_imp_loyal"
-					if(istype(I,/obj/item/implant/chem))
-						holder3.icon_state = "hud_imp_chem"
-
-		self.apply_hud(IMPTRACK_HUD, holder1)
-		self.apply_hud(IMPLOYAL_HUD, holder2)
-		self.apply_hud(IMPCHEM_HUD, holder3)
-
-	if (BITTEST(self.hud_updateflag, SPECIALROLE_HUD))
-		var/image/holder = self.grab_hud(SPECIALROLE_HUD)
+	for(var/datum/data/record/E in GLOB.data_core.general)
+		if(E.fields["name"] == perpname)
+			for (var/datum/data/record/R in GLOB.data_core.security)
+				if((R.fields["id"] == E.fields["id"]) && (R.fields["criminal"] == "*Arrest*"))
+					holder.icon_state = "hudwanted"
+					break
+				else if((R.fields["id"] == E.fields["id"]) && (R.fields["criminal"] == "Incarcerated"))
+					holder.icon_state = "hudprisoner"
+					break
+				else if((R.fields["id"] == E.fields["id"]) && (R.fields["criminal"] == "Parolled"))
+					holder.icon_state = "hudparolled"
+					break
+				else if((R.fields["id"] == E.fields["id"]) && (R.fields["criminal"] == "Released"))
+					holder.icon_state = "hudreleased"
+					break
+	if(self.block_hud)
 		holder.icon_state = "hudblank"
-		if(self.mind && self.mind.special_role)
-			if(GLOB.hud_icon_reference[self.mind.special_role])
-				holder.icon_state = GLOB.hud_icon_reference[self.mind.special_role]
-			else
-				holder.icon_state = "hudsyndicate"
-		self.apply_hud(SPECIALROLE_HUD, holder)
+	self.apply_hud(WANTED_HUD, holder)
 
-	//Backup implant hud status
-	if (BITTEST(self.hud_updateflag, BACKUP_HUD))
-		var/image/holder = self.grab_hud(BACKUP_HUD)
+/// Loyalty, tracking and chemical implants.
+/datum/om/stage/life/hud/carbon/human/proc/hud_implants(mob/living/carbon/human/self)
 
-		holder.icon_state = "hudblank"
+	var/image/holder1 = self.grab_hud(IMPTRACK_HUD)
+	var/image/holder2 = self.grab_hud(IMPLOYAL_HUD)
+	var/image/holder3 = self.grab_hud(IMPCHEM_HUD)
 
-		for(var/obj/item/organ/external/E in self.organs)
-			for(var/obj/item/implant/I in E.implants)
-				if(I.implanted && istype(I,/obj/item/implant/backup))
-					var/obj/item/implant/backup/B = I
-					if(!self.mind)
-						holder.icon_state = "hud_backup_nomind"
-					else if(!(self.mind.name in B.our_db().body_scans))
-						holder.icon_state = "hud_backup_nobody"
-					else
-						holder.icon_state = "hud_backup_norm"
-		if(self.block_hud)
-			holder.icon_state = "hudblank"
-		self.apply_hud(BACKUP_HUD, holder)
+	holder1.icon_state = "hudblank"
+	holder2.icon_state = "hudblank"
+	holder3.icon_state = "hudblank"
 
-	//Vore Antag Hud
-	if (BITTEST(self.hud_updateflag, VANTAG_HUD))
-		var/image/vantag = self.grab_hud(VANTAG_HUD)
-		if(self.vantag_pref)
-			vantag.icon_state = self.vantag_pref
+	for(var/obj/item/implant/I in self)
+		if(I.implanted)
+			if(!I.malfunction)
+				if(istype(I,/obj/item/implant/tracking))
+					holder1.icon_state = "hud_imp_tracking"
+				if(istype(I,/obj/item/implant/loyalty))
+					holder2.icon_state = "hud_imp_loyal"
+				if(istype(I,/obj/item/implant/chem))
+					holder3.icon_state = "hud_imp_chem"
+
+	self.apply_hud(IMPTRACK_HUD, holder1)
+	self.apply_hud(IMPLOYAL_HUD, holder2)
+	self.apply_hud(IMPCHEM_HUD, holder3)
+
+/// Antagonist role icon.
+/datum/om/stage/life/hud/carbon/human/proc/hud_special_role(mob/living/carbon/human/self)
+	var/image/holder = self.grab_hud(SPECIALROLE_HUD)
+	holder.icon_state = "hudblank"
+	if(self.mind && self.mind.special_role)
+		if(GLOB.hud_icon_reference[self.mind.special_role])
+			holder.icon_state = GLOB.hud_icon_reference[self.mind.special_role]
 		else
-			vantag.icon_state = "hudblank"
-		if(self.block_hud)
-			vantag.icon_state = "hudblank"
-		self.apply_hud(VANTAG_HUD, vantag)
+			holder.icon_state = "hudsyndicate"
+	self.apply_hud(SPECIALROLE_HUD, holder)
 
-	self.hud_updateflag = 0
+/// Backup implant: mind and body scan on record.
+/datum/om/stage/life/hud/carbon/human/proc/hud_backup(mob/living/carbon/human/self)
+	var/image/holder = self.grab_hud(BACKUP_HUD)
+
+	holder.icon_state = "hudblank"
+
+	for(var/obj/item/organ/external/E in self.organs)
+		for(var/obj/item/implant/I in E.implants)
+			if(I.implanted && istype(I,/obj/item/implant/backup))
+				var/obj/item/implant/backup/B = I
+				if(!self.mind)
+					holder.icon_state = "hud_backup_nomind"
+				else if(!(self.mind.name in B.our_db().body_scans))
+					holder.icon_state = "hud_backup_nobody"
+				else
+					holder.icon_state = "hud_backup_norm"
+	if(self.block_hud)
+		holder.icon_state = "hudblank"
+	self.apply_hud(BACKUP_HUD, holder)
+
+/// Vore antag preference.
+/datum/om/stage/life/hud/carbon/human/proc/hud_vantag(mob/living/carbon/human/self)
+	var/image/vantag = self.grab_hud(VANTAG_HUD)
+	if(self.vantag_pref)
+		vantag.icon_state = self.vantag_pref
+	else
+		vantag.icon_state = "hudblank"
+	if(self.block_hud)
+		vantag.icon_state = "hudblank"
+	self.apply_hud(VANTAG_HUD, vantag)
 
 /mob/living/carbon/human/on_fire_stack(seconds_per_tick, datum/status_effect/fire_handler/fire_stacks/fire_handler)
 	OM_EMIT(src, /datum/om/event/human_burning)

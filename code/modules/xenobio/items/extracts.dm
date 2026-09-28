@@ -226,7 +226,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 			to_chat(S, span_warning("An intense wave of relaxing calm is felt from inside, but you remain in control of yourself."))
 
 	for(var/mob/living/carbon/human/H in view(get_turf(holder.my_atom)))
-		if(H.species.name == SPECIES_PROMETHEAN)
+		if(H.species?.is_slime_bodied)
 			H.remove_body_effect(/datum/body_effect/berserk)
 			to_chat(H, span_warning("An intense wave of relaxing calm is felt from inside, but you remain in control of yourself."))
 
@@ -799,7 +799,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 			to_chat(S, span_warning("An intense wave of rage is felt from inside, but you remain in control of yourself."))
 
 	for(var/mob/living/carbon/human/H in view(get_turf(holder.my_atom)))
-		if(H.species.name == SPECIES_PROMETHEAN)
+		if(H.species?.is_slime_bodied)
 			H.apply_body_effect(/datum/body_effect/berserk, 30 SECONDS)
 			to_chat(H, span_warning("An intense wave of rage is felt from inside, but you remain in control of yourself."))
 

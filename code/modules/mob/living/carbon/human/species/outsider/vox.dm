@@ -1,5 +1,6 @@
 /datum/species/vox
 	name = SPECIES_VOX
+	can_host_malignant = FALSE
 	name_plural = "Vox"
 	icobase = 'icons/mob/human_races/r_vox_old.dmi'
 	deform = 'icons/mob/human_races/r_def_vox_old.dmi'

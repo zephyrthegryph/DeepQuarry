@@ -554,3 +554,8 @@
 #define PUSH_SOURCE_ROBOT_MODULE "robot_module"
 
 #define SPECIES_GREY_YW             "Grey"
+
+// P2-S5: nutrition alert icon styles (species.hunger_alert_style / human.hunger_alert_style()).
+#define HUNGER_ALERT_ORGANIC 1
+#define HUNGER_ALERT_SYNTH 2
+#define HUNGER_ALERT_VAMPIRE 3

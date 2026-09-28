@@ -4,6 +4,9 @@
 // ###
 // Species definition follows.
 /datum/species/shapeshifter/promethean/avatar
+	// Virtual bodies: not the real slime or its immunities.
+	is_slime_bodied = FALSE
+	can_host_malignant = TRUE
 
 	name =             SPECIES_VR
 	name_plural =      "Virtual Reality Avatars"

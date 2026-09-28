@@ -22,7 +22,7 @@
 		// Now for prommies.
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
-			if(H.species && H.species.name == SPECIES_PROMETHEAN)
+			if(H.species?.is_slime_bodied)
 				var/agony_to_apply = 60 - agonyforce
 				H.injure(INJURY_PAIN, agony_to_apply, source = src)
 
@@ -92,7 +92,7 @@ REMOVAL
 
 		if(ishuman(L))
 			var/mob/living/carbon/human/H = L
-			if(H.species && H.species.name == SPECIES_PROMETHEAN)
+			if(H.species?.is_slime_bodied)
 				if(agony == initial(agony)) // ??????
 					agony = round((14 * agony) - agony) //60-4 = 56, 56 / 4 = 14. Prior was flat 60 - agony of the beam to equate to 60.
 

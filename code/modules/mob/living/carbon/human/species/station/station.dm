@@ -534,6 +534,7 @@
 /datum/species/diona
 
 	name = SPECIES_DIONA
+	mood_immune = TRUE
 	name_plural = "Dionaea"
 	icobase = 'icons/mob/human_races/r_diona.dmi'
 	deform = 'icons/mob/human_races/r_def_plant.dmi'
@@ -1030,6 +1031,7 @@
 
 /datum/species/teshari
 	name = SPECIES_TESHARI
+	micro_carry = TRUE
 	name_plural = "Tesharii"
 	blurb = "A race of feathered raptors who developed alongside the Skrell, inhabiting \
 	the polar tundral regions outside of Skrell territory. Extremely fragile, they developed \

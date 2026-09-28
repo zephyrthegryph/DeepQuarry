@@ -582,6 +582,6 @@ DECLARE_INTERACTIONS(/obj/item/melee/robotic/baton, \
 	// Now for prommies.
 	if(ishuman(L))
 		var/mob/living/carbon/human/H = L
-		if(H.species && H.species.name == SPECIES_PROMETHEAN)
+		if(H.species?.is_slime_bodied)
 			H.injure(INJURY_PAIN, 35, source = src)
 	..()
