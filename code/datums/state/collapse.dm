@@ -48,6 +48,11 @@
 /// loc/contents rule above, or they cannot hold references to datums.
 GLOBAL_LIST_INIT(state_refscan_skip, list("vars", "loc", "locs", "contents", "vis_locs", "overlays", "underlays", "verbs", "filters", "type", "parent_type", "appearance"))
 
+/// Built-in list vars the scan reads as plain lists: they can hold references
+/// (a light spot in an owned effect's vis_contents), but indexing them by an
+/// object is a "bad index" runtime, so their entries have no associated value.
+GLOBAL_LIST_INIT(state_refscan_flat, list("vis_contents"))
+
 /**
  * The reasons this object cannot collapse into a latent entry, or an empty list.
  * `held_refs` is how many references the caller itself holds to src (its own
@@ -184,7 +189,7 @@ GLOBAL_LIST_INIT(state_refscan_skip, list("vars", "loc", "locs", "contents", "vi
 	if(!(rec in internal))
 		for(var/name in rec.vars)
 			if(!(name in GLOB.state_refscan_skip))
-				. += state_count_refs_in(rec.vars[name], movable, 0)
+				. += state_count_refs_in(rec.vars[name], movable, 0, (name in GLOB.state_refscan_flat))
 	for(var/datum/om/edge/edge as anything in rec.edges)
 		if(edge in internal)
 			continue
@@ -198,9 +203,11 @@ GLOBAL_LIST_INIT(state_refscan_skip, list("vars", "loc", "locs", "contents", "vi
 		for(var/name in holder.vars)
 			if(name in GLOB.state_refscan_skip)
 				continue
-			. += state_count_refs_in(holder.vars[name], node, 0)
+			. += state_count_refs_in(holder.vars[name], node, 0, (name in GLOB.state_refscan_flat))
 
-/proc/state_count_refs_in(value, datum/node, depth)
+/// `flat`: a built-in list with no associated values (vis_contents), where
+/// L[object] is a "bad index" runtime rather than null.
+/proc/state_count_refs_in(value, datum/node, depth, flat = FALSE)
 	if(value == node)
 		return 1
 	if(!islist(value) || depth > 4)
@@ -215,7 +222,7 @@ GLOBAL_LIST_INIT(state_refscan_skip, list("vars", "loc", "locs", "contents", "vi
 			.++
 		else if(islist(key))
 			. += state_count_refs_in(key, node, depth + 1)
-		if(!isnum(key) && !islist(key))
+		if(!flat && !isnum(key) && !islist(key))
 			var/assoc = L[key]
 			if(!isnull(assoc))
 				. += state_count_refs_in(assoc, node, depth + 1)
