@@ -248,7 +248,7 @@
 			. = TRUE
 		//Change the password - KEY REQUIRED
 		if("pass")
-			om_ask(ui.user, /datum/om/prompt/text, PROC_REF(current_key_entered), message = "Please enter the current decryption key.", requires = PROMPT_USABLE)
+			om_ask(ui.user, /datum/om/prompt/text, PROC_REF(current_key_entered), message = "Please enter the current decryption key.", requires = PROMPT_USABLE, ui_refresh = src, ui_refresh_if_true = TRUE)
 			. = TRUE
 		//Delete the log.
 		if("delete")
@@ -318,7 +318,7 @@
 			. = TRUE
 
 		if("addtoken")
-			om_ask(ui.user, /datum/om/prompt/text, PROC_REF(token_entered), title = "Token creation", message = "Enter text you want to be filtered out", requires = PROMPT_USABLE)
+			om_ask(ui.user, /datum/om/prompt/text, PROC_REF(token_entered), title = "Token creation", message = "Enter text you want to be filtered out", requires = PROMPT_USABLE, ui_refresh = src, ui_refresh_if_true = TRUE)
 			. = TRUE
 
 		if("deltoken")
@@ -336,9 +336,8 @@
 		return
 	if(linkedServer.decryptkey != dkey)
 		temp = incorrectkey
-		SStgui.update_uis(src)
-		return
-	om_ask(ask.answerer, /datum/om/prompt/text, PROC_REF(new_key_entered), message = "Please enter the new key (3 - 16 characters max):", max_length = 16, requires = PROMPT_USABLE)
+		return TRUE
+	om_ask(ask.answerer, /datum/om/prompt/text, PROC_REF(new_key_entered), message = "Please enter the new key (3 - 16 characters max):", max_length = 16, requires = PROMPT_USABLE, ui_refresh = src, ui_refresh_if_true = TRUE)
 
 /obj/machinery/computer/message_monitor/proc/new_key_entered(datum/om/prompt/text/ask)
 	var/newkey = trim(ask.text)
@@ -351,12 +350,12 @@
 	else if(newkey && newkey != "")
 		linkedServer.decryptkey = newkey
 	set_temp("NOTICE: Decryption key set.", "average")
-	SStgui.update_uis(src)
+	return TRUE
 
 /obj/machinery/computer/message_monitor/proc/token_entered(datum/om/prompt/text/ask)
 	if(linkedServer)
 		linkedServer.spamfilter += ask.text
-		SStgui.update_uis(src)
+		return TRUE
 
 /obj/machinery/computer/message_monitor/proc/set_temp(text = "", style = "info", update_now = FALSE)
 	temp = list(text = text, style = style)

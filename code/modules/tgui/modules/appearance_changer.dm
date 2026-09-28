@@ -162,7 +162,7 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 					return owner.change_skin_tone(new_s_tone)
 		if("skin_color")
 			if(can_change_skin_color(owner))
-				om_ask(ui.user, /datum/om/prompt/color/appearance, PROC_REF(appearance_color_picked), subject = src, ui_state = state, field = "skin_color", title = "Skin Color", message = "Choose your character's skin colour: ", default = rgb(owner.r_skin, owner.g_skin, owner.b_skin))
+				ask_color(ui.user, state, "skin_color", "Skin Color", "Choose your character's skin colour: ", rgb(owner.r_skin, owner.g_skin, owner.b_skin))
 		if("hair")
 			if(can_change(owner, APPEARANCE_HAIR) && (params["name"] in valid_hairstyles))
 				if(owner.change_hair(params["name"]))
@@ -179,10 +179,10 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 				return 1
 		if("hair_color")
 			if(can_change(owner, APPEARANCE_HAIR_COLOR))
-				om_ask(ui.user, /datum/om/prompt/color/appearance, PROC_REF(appearance_color_picked), subject = src, ui_state = state, field = "hair_color", title = "Hair Color", message = "Please select hair color.", default = rgb(owner.r_hair, owner.g_hair, owner.b_hair))
+				ask_color(ui.user, state, "hair_color", "Hair Color", "Please select hair color.", rgb(owner.r_hair, owner.g_hair, owner.b_hair))
 		if("hair_color_grad")
 			if(can_change(owner, APPEARANCE_HAIR_COLOR))
-				om_ask(ui.user, /datum/om/prompt/color/appearance, PROC_REF(appearance_color_picked), subject = src, ui_state = state, field = "hair_color_grad", title = "Hair Color", message = "Please select hair gradiant color.", default = rgb(owner.r_grad, owner.g_grad, owner.b_grad))
+				ask_color(ui.user, state, "hair_color_grad", "Hair Color", "Please select hair gradiant color.", rgb(owner.r_grad, owner.g_grad, owner.b_grad))
 		if("facial_hair")
 			if(can_change(owner, APPEARANCE_FACIAL_HAIR) && (params["name"] in valid_facial_hairstyles))
 				if(owner.change_facial_hair(params["name"]))
@@ -191,10 +191,10 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 					return 1
 		if("facial_hair_color")
 			if(can_change(owner, APPEARANCE_FACIAL_HAIR_COLOR))
-				om_ask(ui.user, /datum/om/prompt/color/appearance, PROC_REF(appearance_color_picked), subject = src, ui_state = state, field = "facial_hair_color", title = "Facial Hair Color", message = "Please select facial hair color.", default = rgb(owner.r_facial, owner.g_facial, owner.b_facial))
+				ask_color(ui.user, state, "facial_hair_color", "Facial Hair Color", "Please select facial hair color.", rgb(owner.r_facial, owner.g_facial, owner.b_facial))
 		if("eye_color")
 			if(can_change(owner, APPEARANCE_EYE_COLOR))
-				om_ask(ui.user, /datum/om/prompt/color/appearance, PROC_REF(appearance_color_picked), subject = src, ui_state = state, field = "eye_color", title = "Eye Color", message = "Please select eye color.", default = rgb(owner.r_eyes, owner.g_eyes, owner.b_eyes))
+				ask_color(ui.user, state, "eye_color", "Eye Color", "Please select eye color.", rgb(owner.r_eyes, owner.g_eyes, owner.b_eyes))
 		if("ear")
 			if(can_change(owner, APPEARANCE_ALL_HAIR))
 				var/datum/sprite_accessory/ears/instance = locate(params["ref"])
@@ -225,10 +225,10 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 				return TRUE
 		if("ears_color")
 			if(can_change(owner, APPEARANCE_HAIR_COLOR))
-				om_ask(ui.user, /datum/om/prompt/color/appearance, PROC_REF(appearance_color_picked), subject = src, ui_state = state, field = "ears_color", title = "Ear Color", message = "Please select ear color.", default = rgb(owner.r_ears, owner.g_ears, owner.b_ears))
+				ask_color(ui.user, state, "ears_color", "Ear Color", "Please select ear color.", rgb(owner.r_ears, owner.g_ears, owner.b_ears))
 		if("ears2_color")
 			if(can_change(owner, APPEARANCE_HAIR_COLOR))
-				om_ask(ui.user, /datum/om/prompt/color/appearance, PROC_REF(appearance_color_picked), subject = src, ui_state = state, field = "ears2_color", title = "2nd Ear Color", message = "Please select secondary ear color.", default = rgb(owner.r_ears2, owner.g_ears2, owner.b_ears2))
+				ask_color(ui.user, state, "ears2_color", "2nd Ear Color", "Please select secondary ear color.", rgb(owner.r_ears2, owner.g_ears2, owner.b_ears2))
 		if("ears_alpha")
 			var/new_alpha = clamp(params["ears_alpha"], 0, 255)
 			if(isnum(new_alpha) && can_still_topic(ui.user, state))
@@ -252,7 +252,7 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 				if(channel > length(owner.ear_secondary_colors))
 					return TRUE
 				var/existing = LAZYACCESS(owner.ear_secondary_colors, channel) || "#ffffff"
-				om_ask(ui.user, /datum/om/prompt/color/appearance, PROC_REF(appearance_color_picked), subject = src, ui_state = state, field = "ears_secondary_color", title = "2nd Ear Color", message = "Please select ear color.", default = existing, channel = channel)
+				ask_color(ui.user, state, "ears_secondary_color", "2nd Ear Color", "Please select ear color.", existing, channel = channel)
 		if("tail")
 			if(can_change(owner, APPEARANCE_ALL_HAIR))
 				var/datum/sprite_accessory/tail/instance = locate(params["ref"])
@@ -267,13 +267,13 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 				return TRUE
 		if("tail_color")
 			if(can_change(owner, APPEARANCE_HAIR_COLOR))
-				om_ask(ui.user, /datum/om/prompt/color/appearance, PROC_REF(appearance_color_picked), subject = src, ui_state = state, field = "tail_color", title = "Tail Color", message = "Please select tail color.", default = rgb(owner.r_tail, owner.g_tail, owner.b_tail))
+				ask_color(ui.user, state, "tail_color", "Tail Color", "Please select tail color.", rgb(owner.r_tail, owner.g_tail, owner.b_tail))
 		if("tail2_color")
 			if(can_change(owner, APPEARANCE_HAIR_COLOR))
-				om_ask(ui.user, /datum/om/prompt/color/appearance, PROC_REF(appearance_color_picked), subject = src, ui_state = state, field = "tail2_color", title = "2nd Tail Color", message = "Please select secondary tail color.", default = rgb(owner.r_tail2, owner.g_tail2, owner.b_tail2))
+				ask_color(ui.user, state, "tail2_color", "2nd Tail Color", "Please select secondary tail color.", rgb(owner.r_tail2, owner.g_tail2, owner.b_tail2))
 		if("tail3_color")
 			if(can_change(owner, APPEARANCE_HAIR_COLOR))
-				om_ask(ui.user, /datum/om/prompt/color/appearance, PROC_REF(appearance_color_picked), subject = src, ui_state = state, field = "tail3_color", title = "3rd Tail Color", message = "Please select tertiary tail color.", default = rgb(owner.r_tail3, owner.g_tail3, owner.b_tail3))
+				ask_color(ui.user, state, "tail3_color", "3rd Tail Color", "Please select tertiary tail color.", rgb(owner.r_tail3, owner.g_tail3, owner.b_tail3))
 		if("tail_alpha")
 			var/new_alpha = clamp(params["tail_alpha"], 0, 255)
 			if(isnum(new_alpha) && can_still_topic(ui.user, state))
@@ -297,13 +297,13 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 				return TRUE
 		if("wing_color")
 			if(can_change(owner, APPEARANCE_HAIR_COLOR))
-				om_ask(ui.user, /datum/om/prompt/color/appearance, PROC_REF(appearance_color_picked), subject = src, ui_state = state, field = "wing_color", title = "Wing Color", message = "Please select wing color.", default = rgb(owner.r_wing, owner.g_wing, owner.b_wing))
+				ask_color(ui.user, state, "wing_color", "Wing Color", "Please select wing color.", rgb(owner.r_wing, owner.g_wing, owner.b_wing))
 		if("wing2_color")
 			if(can_change(owner, APPEARANCE_HAIR_COLOR))
-				om_ask(ui.user, /datum/om/prompt/color/appearance, PROC_REF(appearance_color_picked), subject = src, ui_state = state, field = "wing2_color", title = "2nd Wing Color", message = "Please select secondary wing color.", default = rgb(owner.r_wing2, owner.g_wing2, owner.b_wing2))
+				ask_color(ui.user, state, "wing2_color", "2nd Wing Color", "Please select secondary wing color.", rgb(owner.r_wing2, owner.g_wing2, owner.b_wing2))
 		if("wing3_color")
 			if(can_change(owner, APPEARANCE_HAIR_COLOR))
-				om_ask(ui.user, /datum/om/prompt/color/appearance, PROC_REF(appearance_color_picked), subject = src, ui_state = state, field = "wing3_color", title = "3rd Wing Color", message = "Please select tertiary wing color.", default = rgb(owner.r_wing3, owner.g_wing3, owner.b_wing3))
+				ask_color(ui.user, state, "wing3_color", "3rd Wing Color", "Please select tertiary wing color.", rgb(owner.r_wing3, owner.g_wing3, owner.b_wing3))
 
 		if("wing_alpha")
 			var/new_alpha = clamp(params["wing_alpha"], 0, 255)
@@ -341,7 +341,7 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 							return TRUE
 					if (4) //color
 						var/current = markings[name_marking] ? markings[name_marking]["color"] : "#000000"
-						om_ask(ui.user, /datum/om/prompt/color/appearance, PROC_REF(appearance_color_picked), subject = src, ui_state = state, field = "marking", title = "Marking color", message = "Please select marking color", default = current, marking_name = name_marking)
+						ask_color(ui.user, state, "marking", "Marking color", "Please select marking color", current, marking_name = name_marking)
 		if("rotate_view")
 			owner.set_dir(turn(owner.dir, 90))
 			return TRUE
@@ -404,7 +404,7 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 					return TRUE
 		if("blood_color")
 			var/current = owner.species.blood_color ? owner.species.blood_color : "#A10808"
-			om_ask(ui.user, /datum/om/prompt/color/appearance, PROC_REF(appearance_color_picked), subject = src, ui_state = state, field = "blood_color", title = "Blood color", message = "Please select blood color", default = current)
+			ask_color(ui.user, state, "blood_color", "Blood color", "Please select blood color", current)
 		if("weight")
 			var/new_weight = act_ask(ui.user, action, params, ui, "a8", /datum/om/prompt/number, message = "Choose tbe character's relative body weight.\nThis measurement should be set relative to a normal 5'10'' person's body and not the actual size of the character.\n([WEIGHT_MIN]-[WEIGHT_MAX])", title = "Character Preference", max = WEIGHT_MAX, min = WEIGHT_MIN, round_entry = FALSE)
 			if(isnull(new_weight))
@@ -1090,6 +1090,7 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 /// A colour the appearance changer asks for; `field` is the tgui action it answers. Re-checked
 /// on the answer: the user can still work the changer.
 /datum/om/prompt/color/appearance
+	ui_refresh_if_true = TRUE
 	var/field
 	var/datum/tgui_state/ui_state
 	/// ears_secondary_color: the colour channel.
@@ -1097,12 +1098,22 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 	/// marking: the marking's name.
 	var/marking_name
 
+/// The changer's windows refresh when the answer proc reports a change.
+/datum/om/prompt/color/appearance/prepare()
+	. = ..()
+	ui_refresh = subject
+
 /datum/om/prompt/color/appearance/valid()
 	var/datum/tgui_module/appearance_changer/changer = subject
 	if(!picked_color || !changer.owner)
 		return "no change"
 	return changer.can_still_topic(answerer, ui_state) ? null : "not usable"
 
+/// Asks `user` for one of the changer's colours; the answer lands in appearance_color_picked().
+/datum/tgui_module/appearance_changer/proc/ask_color(mob/user, datum/tgui_state/state, field, title, message, default, channel, marking_name)
+	om_ask(user, /datum/om/prompt/color/appearance, PROC_REF(appearance_color_picked), subject = src, ui_state = state, field = field, title = title, message = message, default = default, channel = channel, marking_name = marking_name)
+
+/// TRUE when the colour changed something (the prompt then refreshes the changer's windows).
 /datum/tgui_module/appearance_changer/proc/appearance_color_picked(datum/om/prompt/color/appearance/ask)
 	var/channel = ask.channel
 	var/name_marking = ask.marking_name
@@ -1114,7 +1125,7 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 			if(owner.change_skin_color(r_skin, g_skin, b_skin))
 				update_dna(owner)
 				changed_hook(APPEARANCECHANGER_CHANGED_SKINCOLOR)
-				SStgui.update_uis(src)
+				return TRUE
 		if("hair_color")
 			var/r_hair = hex2num(copytext(ask.picked_color, 2, 4))
 			var/g_hair = hex2num(copytext(ask.picked_color, 4, 6))
@@ -1122,7 +1133,7 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 			if(owner.change_hair_color(r_hair, g_hair, b_hair))
 				update_dna(owner)
 				changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR)
-				SStgui.update_uis(src)
+				return TRUE
 		if("hair_color_grad")
 			var/r_grad = hex2num(copytext(ask.picked_color, 2, 4))
 			var/g_grad = hex2num(copytext(ask.picked_color, 4, 6))
@@ -1130,7 +1141,7 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 			if(owner.change_grad_color(r_grad, g_grad, b_grad))
 				update_dna(owner)
 				changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR)
-				SStgui.update_uis(src)
+				return TRUE
 		if("facial_hair_color")
 			var/r_facial = hex2num(copytext(ask.picked_color, 2, 4))
 			var/g_facial = hex2num(copytext(ask.picked_color, 4, 6))
@@ -1138,7 +1149,7 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 			if(owner.change_facial_hair_color(r_facial, g_facial, b_facial))
 				update_dna(owner)
 				changed_hook(APPEARANCECHANGER_CHANGED_F_HAIRCOLOR)
-				SStgui.update_uis(src)
+				return TRUE
 		if("eye_color")
 			var/r_eyes = hex2num(copytext(ask.picked_color, 2, 4))
 			var/g_eyes = hex2num(copytext(ask.picked_color, 4, 6))
@@ -1146,7 +1157,7 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 			if(owner.change_eye_color(r_eyes, g_eyes, b_eyes))
 				update_dna(owner)
 				changed_hook(APPEARANCECHANGER_CHANGED_EYES)
-				SStgui.update_uis(src)
+				return TRUE
 		if("ears_color")
 			owner.r_ears = hex2num(copytext(ask.picked_color, 2, 4))
 			owner.g_ears = hex2num(copytext(ask.picked_color, 4, 6))
@@ -1154,7 +1165,7 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 			update_dna(owner)
 			owner.update_hair()
 			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR)
-			SStgui.update_uis(src)
+			return TRUE
 		if("ears2_color")
 			owner.r_ears2 = hex2num(copytext(ask.picked_color, 2, 4))
 			owner.g_ears2 = hex2num(copytext(ask.picked_color, 4, 6))
@@ -1162,7 +1173,7 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 			update_dna(owner)
 			owner.update_hair()
 			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR)
-			SStgui.update_uis(src)
+			return TRUE
 		if("ears_secondary_color")
 			if(channel > length(owner.ear_secondary_colors))
 				return
@@ -1170,7 +1181,7 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 			update_dna(owner)
 			owner.update_hair()
 			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR)
-			SStgui.update_uis(src)
+			return TRUE
 		if("tail_color")
 			owner.r_tail = hex2num(copytext(ask.picked_color, 2, 4))
 			owner.g_tail = hex2num(copytext(ask.picked_color, 4, 6))
@@ -1178,7 +1189,7 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 			update_dna(owner)
 			owner.update_tail_showing()
 			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR)
-			SStgui.update_uis(src)
+			return TRUE
 		if("tail2_color")
 			owner.r_tail2 = hex2num(copytext(ask.picked_color, 2, 4))
 			owner.g_tail2 = hex2num(copytext(ask.picked_color, 4, 6))
@@ -1186,7 +1197,7 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 			update_dna(owner)
 			owner.update_tail_showing()
 			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR)
-			SStgui.update_uis(src)
+			return TRUE
 		if("tail3_color")
 			owner.r_tail3 = hex2num(copytext(ask.picked_color, 2, 4))
 			owner.g_tail3 = hex2num(copytext(ask.picked_color, 4, 6))
@@ -1194,7 +1205,7 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 			update_dna(owner)
 			owner.update_tail_showing()
 			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR)
-			SStgui.update_uis(src)
+			return TRUE
 		if("wing_color")
 			owner.r_wing = hex2num(copytext(ask.picked_color, 2, 4))
 			owner.g_wing = hex2num(copytext(ask.picked_color, 4, 6))
@@ -1202,7 +1213,7 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 			update_dna(owner)
 			owner.update_wing_showing()
 			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR)
-			SStgui.update_uis(src)
+			return TRUE
 		if("wing2_color")
 			owner.r_wing2 = hex2num(copytext(ask.picked_color, 2, 4))
 			owner.g_wing2 = hex2num(copytext(ask.picked_color, 4, 6))
@@ -1210,7 +1221,7 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 			update_dna(owner)
 			owner.update_wing_showing()
 			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR)
-			SStgui.update_uis(src)
+			return TRUE
 		if("wing3_color")
 			owner.r_wing3 = hex2num(copytext(ask.picked_color, 2, 4))
 			owner.g_wing3 = hex2num(copytext(ask.picked_color, 4, 6))
@@ -1218,13 +1229,13 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 			update_dna(owner)
 			owner.update_wing_showing()
 			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR)
-			SStgui.update_uis(src)
+			return TRUE
 		if("marking")
 			var/datum/sprite_accessory/marking/mark_datum = GLOB.body_marking_styles_list[name_marking]
 			if (owner.change_marking_color(mark_datum, ask.picked_color))
-				SStgui.update_uis(src)
+				return TRUE
 		if("blood_color")
 			if(can_change(owner, APPEARANCE_MISC))
 				owner.dna.blood_color = ask.picked_color
 				changed_hook(APPEARANCECHANGER_CHANGED_RACE)
-				SStgui.update_uis(src)
+				return TRUE
