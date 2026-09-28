@@ -52,8 +52,12 @@ EXTEND_INTERACTIONS(/obj/item/storage/part_replacer, INTERACT_ALT("Reskin", PROC
 		items += list("[reskin_option]" = item_image)
 	sortList(items)
 
-	var/pick = show_radial_menu(M, src, items, radius = 38, require_near = TRUE)
-	if(!pick)
+	om_ask(M, /datum/om/prompt/choice/radial, PROC_REF(reskin_chosen), choices = items, anchor = src, radius = 38, require_near = TRUE)
+
+/obj/item/storage/part_replacer/proc/reskin_chosen(datum/om/prompt/choice/radial/ask)
+	var/mob/M = ask.answerer
+	var/pick = ask.choice
+	if(!pick || reskin_ran)
 		return
 	if(!unique_reskin[pick])
 		return

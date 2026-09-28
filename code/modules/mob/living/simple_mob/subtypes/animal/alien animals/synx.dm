@@ -657,53 +657,49 @@
 	var/list/options = list("Body","Horns","Marks","Eyes")
 	for(var/option in options)
 		LAZYSET(options, option, new /image('icons/effects/synx_labels.dmi', option))
-	var/choice = show_radial_menu(src, src, options, radius = 60)
-	if(!choice || QDELETED(src) || src.incapacitated())
-		return FALSE
-	. = TRUE
-	switch(choice)
+	om_ask(src, /datum/om/prompt/choice/radial, PROC_REF(style_part_chosen), choices = options, anchor = src, radius = 60)
+
+/// First radial answer: offer the styles of the picked part.
+/mob/living/simple_mob/animal/synx/proc/style_part_chosen(datum/om/prompt/choice/radial/ask)
+	var/part = ask.choice
+	if(!part || QDELETED(src) || src.incapacitated())
+		return
+	var/list/options
+	var/state_prefix
+	switch(part)
 		if("Body")
 			options = body_styles
-			for(var/option in options)
-				var/image/I = new /image('icons/mob/synx_modular.dmi', "synx_body[option]", dir = 2)
-				LAZYSET(options, option, I)
-			choice = show_radial_menu(src, src, options, radius = 90)
-			if(!choice || QDELETED(src) || src.incapacitated())
-				return 0
-			om_ask(src, /datum/om/prompt/color/synx_part, PROC_REF(synx_part_color_chosen), title = "Body Color", message = "Pick body color:", default = overlay_colors["Body"], part = "Body", style_var = "body_style", style = choice)
-			return FALSE
+			state_prefix = "synx_body"
 		if("Horns")
 			options = horn_styles
-			for(var/option in options)
-				var/image/I = new /image('icons/mob/synx_modular.dmi', "synx_horns[option]", dir = 2)
-				LAZYSET(options, option, I)
-			choice = show_radial_menu(src, src, options, radius = 90)
-			if(!choice || QDELETED(src) || src.incapacitated())
-				return 0
-			om_ask(src, /datum/om/prompt/color/synx_part, PROC_REF(synx_part_color_chosen), title = "Horn Color", message = "Pick horn color:", default = overlay_colors["Horns"], part = "Horns", style_var = "horns", style = choice)
-			return FALSE
+			state_prefix = "synx_horns"
 		if("Marks")
 			options = marking_styles
-			for(var/option in options)
-				var/image/I = new /image('icons/mob/synx_modular.dmi', "synx_markings[option]", dir = 2)
-				LAZYSET(options, option, I)
-			choice = show_radial_menu(src, src, options, radius = 90)
-			if(!choice || QDELETED(src) || src.incapacitated())
-				return 0
-			om_ask(src, /datum/om/prompt/color/synx_part, PROC_REF(synx_part_color_chosen), title = "Marking Color", message = "Pick marking color:", default = overlay_colors["Marks"], part = "Marks", style_var = "markings", style = choice)
-			return FALSE
+			state_prefix = "synx_markings"
 		if("Eyes")
 			options = eye_styles
-			for(var/option in options)
-				var/image/I = new /image('icons/mob/synx_modular.dmi', "synx_eyes[option]", dir = 2)
-				LAZYSET(options, option, I)
-			choice = show_radial_menu(src, src, options, radius = 90)
-			if(!choice || QDELETED(src) || src.incapacitated())
-				return 0
+			state_prefix = "synx_eyes"
+		else
+			return
+	for(var/option in options)
+		var/image/I = new /image('icons/mob/synx_modular.dmi', "[state_prefix][option]", dir = 2)
+		LAZYSET(options, option, I)
+	om_ask(src, /datum/om/prompt/choice/radial, PROC_REF(style_chosen), choices = options, anchor = src, radius = 90, subject = part)
+
+/// Second radial answer: pick the colour for the chosen style.
+/mob/living/simple_mob/animal/synx/proc/style_chosen(datum/om/prompt/choice/radial/ask)
+	var/choice = ask.choice
+	if(!choice || QDELETED(src) || src.incapacitated())
+		return
+	switch(ask.subject)
+		if("Body")
+			om_ask(src, /datum/om/prompt/color/synx_part, PROC_REF(synx_part_color_chosen), title = "Body Color", message = "Pick body color:", default = overlay_colors["Body"], part = "Body", style_var = "body_style", style = choice)
+		if("Horns")
+			om_ask(src, /datum/om/prompt/color/synx_part, PROC_REF(synx_part_color_chosen), title = "Horn Color", message = "Pick horn color:", default = overlay_colors["Horns"], part = "Horns", style_var = "horns", style = choice)
+		if("Marks")
+			om_ask(src, /datum/om/prompt/color/synx_part, PROC_REF(synx_part_color_chosen), title = "Marking Color", message = "Pick marking color:", default = overlay_colors["Marks"], part = "Marks", style_var = "markings", style = choice)
+		if("Eyes")
 			om_ask(src, /datum/om/prompt/color/synx_part, PROC_REF(synx_part_color_chosen), title = "Eye Color", message = "Pick eye color:", default = overlay_colors["Eyes"], part = "Eyes", style_var = "eyes", style = choice)
-			return FALSE
-	if(.)
-		build_icons()
 
 /// The colour for a part picked in the customisation menu; the part's style is set with it.
 /datum/om/prompt/color/synx_part

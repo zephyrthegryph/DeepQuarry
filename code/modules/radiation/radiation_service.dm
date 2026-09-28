@@ -163,7 +163,7 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 			continue
 		profile_signal_dispatches++
 		OM_EMIT(target, /datum/om/event/before/in_range_of_irradiation, pulse_information, current_insulation)
-		if(HAS_TRAIT(target, TRAIT_IRRADIATED) || current_insulation <= pulse_information.threshold)
+		if(has_trait(target, TRAIT_IRRADIATED) || current_insulation <= pulse_information.threshold)
 			continue
 		var/perceived_chance = 100
 		var/target_pulse_strength = pulse_strength
@@ -217,10 +217,10 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 	if (!CAN_IRRADIATE(target))
 		return FALSE
 
-	if (HAS_TRAIT(target, TRAIT_IRRADIATED) && !HAS_TRAIT(target, TRAIT_BYPASS_EARLY_IRRADIATED_CHECK))
+	if (has_trait(target, TRAIT_IRRADIATED) && !has_trait(target, TRAIT_BYPASS_EARLY_IRRADIATED_CHECK))
 		return FALSE
 
-	if (HAS_TRAIT(target, TRAIT_RADIMMUNE))
+	if (has_trait(target, TRAIT_RADIMMUNE))
 		return FALSE
 
 	return TRUE
@@ -236,7 +236,7 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 		limb_count++
 		var/protected = FALSE
 		for(var/obj/item/clothing as anything in human.get_clothing_on_part(limb))
-			if(HAS_TRAIT(clothing, TRAIT_RADIATION_PROTECTED_CLOTHING))
+			if(has_trait(clothing, TRAIT_RADIATION_PROTECTED_CLOTHING))
 				protected = TRUE
 				break
 		// Deterministic: the limb counts as protected by the fraction its worn rad armour stops.

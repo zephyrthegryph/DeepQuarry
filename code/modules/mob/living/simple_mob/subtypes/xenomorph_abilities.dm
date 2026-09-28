@@ -29,10 +29,13 @@
 	var/list/options = list("Resin Door","Resin Membrane","Nest","Resin Wall","Weed Node")
 	for(var/option in options)
 		LAZYSET(options, option, image('icons/mob/xeno_screen.dmi', option))
-	var/choice = show_radial_menu(src, src, options, radius = 60)
+	om_ask(src, /datum/om/prompt/choice/radial, PROC_REF(xeno_build_chosen), choices = options, anchor = src, radius = 60)
+
+/// Radial answer for xeno_build(): start shaping the picked structure.
+/mob/living/simple_mob/xeno_ch/proc/xeno_build_chosen(datum/om/prompt/choice/radial/ask)
+	var/choice = ask.choice
 	if(!choice || QDELETED(src) || src.incapacitated())
-		return FALSE
-	. = TRUE
+		return
 
 	var/targetLoc = get_step(src, dir)
 

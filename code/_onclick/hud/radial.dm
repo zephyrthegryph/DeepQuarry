@@ -1,5 +1,4 @@
 #define NEXT_PAGE_ID "__next__"
-#define DEFAULT_CHECK_DELAY 20
 
 GLOBAL_LIST_EMPTY(radial_menus)
 
@@ -69,7 +68,7 @@ GLOBAL_LIST_EMPTY(radial_menus)
 
 /atom/movable/screen/radial/center/Click(location, control, params)
 	if(usr.client == parent().current_user())
-		parent().finished = TRUE
+		parent().close_menu()
 
 /datum/radial_menu
 	/// List of choice IDs
@@ -93,9 +92,6 @@ GLOBAL_LIST_EMPTY(radial_menus)
 	var/anchor_handle
 	var/image/menu_holder
 	var/finished = FALSE
-	var/datum/callback/custom_check_callback
-	var/next_check = 0
-	var/check_delay = DEFAULT_CHECK_DELAY
 
 	var/radius = 32
 	var/starting_angle = 0
@@ -328,16 +324,9 @@ GLOBAL_LIST_EMPTY(radial_menus)
 	if(current_user())
 		current_user().images -= menu_holder
 
-/datum/radial_menu/proc/wait(atom/user, atom/anchor, require_near = FALSE)
-	while (current_user() && !finished && !selected_choice)
-		if(require_near && !in_range(anchor, user))
-			return
-		if(custom_check_callback && COOLDOWN_FINISHED(src, next_check))
-			if(!custom_check_callback.Invoke())
-				return
-			else
-				COOLDOWN_START(src, next_check, check_delay)
-		stoplag(1) // ALLOW(scheduler): waits on the player's radial choice (prompt)
+/// The centre button: close without a choice.
+/datum/radial_menu/proc/close_menu()
+	finished = TRUE
 
 /// Phase 1: take the menu off the user's screen while its holder image (owned) still exists.
 /datum/radial_menu/lifecycle_unbind()
@@ -349,60 +338,9 @@ GLOBAL_LIST_EMPTY(radial_menus)
 	..()
 
 /// The menu's slices, centre button, holder image and check callback are its own.
-REF_OWNED(/datum/radial_menu, list("close_button", "menu_holder", "custom_check_callback"))
+REF_OWNED(/datum/radial_menu, list("close_button", "menu_holder"))
 
 REF_OWNED_LIST(/datum/radial_menu, list("elements"))
-
-/*
-	Presents radial menu to user anchored to anchor (or user if the anchor is currently in users screen)
-	Choices should be a list where list keys are movables or text used for element names and return value
-	and list values are movables/icons/images used for element icons
-*/
-/proc/show_radial_menu(mob/user, atom/anchor, list/choices, uniqueid, radius, datum/callback/custom_check, require_near = FALSE, tooltips = FALSE, no_repeat_close = FALSE, radial_slice_icon = "radial_slice", autopick_single_option = TRUE, entry_animation = TRUE, click_on_hover = FALSE, user_space = FALSE)
-	if(!user || !anchor || !length(choices))
-		return
-
-	if(length(choices)==1 && autopick_single_option)
-		return choices[1]
-
-	if(!uniqueid)
-		uniqueid = "defmenu_[REF(user)]_[REF(anchor)]"
-
-	if(GLOB.radial_menus[uniqueid])
-		if(!no_repeat_close)
-			var/datum/radial_menu/menu = GLOB.radial_menus[uniqueid]
-			menu.finished = TRUE
-		return
-
-	var/datum/radial_menu/menu = new
-	menu.entry_animation = entry_animation
-	GLOB.radial_menus[uniqueid] = menu
-	if(radius)
-		menu.radius = radius
-	if(istype(custom_check))
-		menu.custom_check_callback = custom_check
-	menu.anchor_handle = om_handle(user_space ? user : anchor)
-	menu.radial_slice_icon = radial_slice_icon
-	menu.check_screen_border(user) //Do what's needed to make it look good near borders or on hud
-	menu.set_choices(choices, tooltips, click_on_hover)
-	var/offset_x = 0
-	var/offset_y = 0
-	if (user_space)
-		var/turf/user_turf = get_turf(user)
-		var/turf/anchor_turf = get_turf(anchor)
-		offset_x = (anchor_turf.x - user_turf.x) * ICON_SIZE_X + anchor.pixel_x - user.pixel_x
-		offset_y = (anchor_turf.y - user_turf.y) * ICON_SIZE_Y + anchor.pixel_y - user.pixel_y
-	menu.show_to(user, offset_x, offset_y)
-	menu.wait(user, anchor, require_near)
-	var/answer = menu.selected_choice
-	qdel(menu)
-	GLOB.radial_menus -= uniqueid
-	if(require_near && !in_range(anchor, user))
-		return
-	if(istype(custom_check))
-		if(!custom_check.Invoke())
-			return
-	return answer
 
 /// Can be provided to choices in radial menus if you want to provide more information
 /datum/radial_menu_choice
@@ -418,7 +356,6 @@ REF_OWNED_LIST(/datum/radial_menu, list("elements"))
 REF_OWNED(/datum/radial_menu_choice, "image")
 
 #undef NEXT_PAGE_ID
-#undef DEFAULT_CHECK_DELAY
 
 /// LC-refs: the radial menu this element belongs to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /atom/movable/screen/radial/proc/parent() as /datum/radial_menu

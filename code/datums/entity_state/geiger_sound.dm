@@ -28,7 +28,7 @@ REF_VAR(/obj/item/geiger, OWNED, /datum/geiger_sound, geiger_sound)
 
 	om_hook(owner, /datum/om/event/before/in_range_of_irradiation, src, PROC_REF(on_pre_potential_irradiation))
 
-	ADD_TRAIT(owner, TRAIT_BYPASS_EARLY_IRRADIATED_CHECK, REF(src))
+	add_trait(owner, TRAIT_BYPASS_EARLY_IRRADIATED_CHECK, src)
 
 	if (isitem(owner))
 		var/atom/atom_parent = owner
@@ -43,7 +43,7 @@ REF_VAR(/obj/item/geiger, OWNED, /datum/geiger_sound, geiger_sound)
 		/datum/om/event/before/in_range_of_irradiation,
 	), src)
 
-	REMOVE_TRAIT(owner, TRAIT_BYPASS_EARLY_IRRADIATED_CHECK, REF(src))
+	remove_trait(owner, TRAIT_BYPASS_EARLY_IRRADIATED_CHECK, src)
 
 // owned state datum (was a component) unhooks and detaches from its owner.
 /datum/geiger_sound/lifecycle_prerelease()

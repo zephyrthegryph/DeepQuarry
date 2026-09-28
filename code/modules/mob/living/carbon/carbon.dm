@@ -418,7 +418,7 @@ REF_OWNED(/mob/living/carbon, "cozyloop")
 	stop_pulling()
 	to_chat(src, span_warning("You slipped on [slipped_on]!"))
 	playsound(src, 'sound/misc/slip.ogg', 50, 1, -3)
-	if(HAS_TRAIT(src, SLIP_REFLEX_TRAIT) && !lying)
+	if(has_trait(src, SLIP_REFLEX_TRAIT) && !lying)
 		if(COOLDOWN_FINISHED(src, next_emote))
 			src.emote("sflip")
 			return TRUE
@@ -667,7 +667,7 @@ REF_OWNED(/mob/living/carbon, "cozyloop")
 	// So people can take their own clothes off
 	if((burning_atom == src) || (burning_atom.loc == src))
 		return TRUE
-	if(HAS_TRAIT(src, TRAIT_RESISTHEAT) || HAS_TRAIT(src, TRAIT_RESISTHEATHANDS))
+	if(has_trait(src, TRAIT_RESISTHEAT) || has_trait(src, TRAIT_RESISTHEATHANDS))
 		return TRUE
 	if(get_equipped_item(SLOT_ID_GLOVES)?.max_heat_protection_temperature >= BURNING_ITEM_MINIMUM_TEMPERATURE)
 		return TRUE

@@ -174,6 +174,6 @@ NOTICE: Do not leave trailing commas!!!!
 	/obj/item/medigun_backpack
 
 /// Wrapper for adding clothing based traits
-#define ADD_CLOTHING_TRAIT(mob, trait) ADD_TRAIT(mob, trait, "[CLOTHING_TRAIT]_[REF(src)]")
+#define ADD_CLOTHING_TRAIT(mob, trait) add_trait(mob, trait, src)
 /// Wrapper for removing clothing based traits
-#define REMOVE_CLOTHING_TRAIT(mob, trait) REMOVE_TRAIT(mob, trait, "[CLOTHING_TRAIT]_[REF(src)]")
+#define REMOVE_CLOTHING_TRAIT(mob, trait) remove_trait(mob, trait, src)

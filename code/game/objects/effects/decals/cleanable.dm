@@ -10,7 +10,7 @@ generic_filth = TRUE means when the decal is saved, it will be switched out for 
 	layer = DIRTY_LAYER
 	var/persistent = FALSE
 	/// Diseases carried in it (blood, mucus, vomit), passed on by touch.
-	var/list/datum/disease/viruses
+	var/list/datum/affliction/contagion/viruses
 	var/generic_filth = FALSE
 	var/age = 0
 	var/list/random_icon_states

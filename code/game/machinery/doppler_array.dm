@@ -24,7 +24,7 @@
 	)
 	. = ..()
 	om_hook(OM_WORLD, /datum/om/event/world_explosion, src, PROC_REF(sense_explosion))
-	ADD_TRAIT(src, TRAIT_ALT_CLICK_BLOCKER, ROUNDSTART_TRAIT)
+	add_trait(src, TRAIT_ALT_CLICK_BLOCKER, ROUNDSTART_TRAIT)
 
 /obj/machinery/doppler_array/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

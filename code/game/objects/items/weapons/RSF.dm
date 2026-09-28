@@ -60,8 +60,11 @@ GLOBAL_LIST_INIT(robot_glass_options, list(
 		balloon_alert(user,"you are too far away.")
 		return
 
-	var/glass_choice = show_radial_menu(user, user, GLOB.robot_glass_options, radius = 40)
+	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(glass_chosen), choices = GLOB.robot_glass_options, anchor = user, radius = 40)
 
+/obj/item/rsf/proc/glass_chosen(datum/om/prompt/choice/radial/ask)
+	var/mob/user = ask.answerer
+	var/glass_choice = ask.choice
 	if(glass_choice)
 		balloon_alert(user, "container chosen: [glass_choice]")
 		glasstype_name = glass_choice
@@ -83,12 +86,16 @@ DECLARE_INTERACTIONS(/obj/item/rsf, \
 		"dice pack (gaming)" = image(icon = 'icons/obj/dice.dmi', icon_state = "magicdicebag"),
 		"paper" = image(icon = 'icons/obj/bureaucracy.dmi', icon_state = "paper"),
 		"pen" = image(icon = 'icons/obj/bureaucracy.dmi', icon_state = "pen"))
-	var/choice = show_radial_menu(user, user, options, radius = 40)
+	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(product_chosen), choices = options, anchor = user, radius = 40)
+	return TRUE
+
+/obj/item/rsf/proc/product_chosen(datum/om/prompt/choice/radial/ask)
+	var/mob/user = ask.answerer
+	var/choice = ask.choice
 	if(choice)
 		mode = choice
 		playsound(src, 'sound/effects/pop.ogg', 50, 0)
 		balloon_alert(user, "you will synthesize: [mode]")
-	return TRUE
 
 /obj/item/rsf/afterattack(atom/A, mob/user as mob, proximity)
 

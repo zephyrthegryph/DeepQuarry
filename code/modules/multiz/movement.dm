@@ -584,14 +584,14 @@
 				visible_message(span_warning("\The [src] falls from above and slams into \the [landing]!"), \
 					span_danger("You fall off and hit \the [landing]!"), \
 					"You hear something slam into \the [landing].")
-			if(HAS_TRAIT(src, TRAIT_HEAVY_LANDING))
+			if(has_trait(src, TRAIT_HEAVY_LANDING))
 				playsound(src, 'sound/effects/meteorimpact.ogg', 75, TRUE, 3)
 			else
 				playsound(src, "punch", 25, TRUE, -1)
 
 		// Because wounds heal rather quickly, 10 (the default for this proc) should be enough to discourage jumping off but not be enough to ruin you, at least for the first time.
 		// Hits 10 times, because apparently targeting individual limbs lets certain species survive the fall from atmosphere
-		if(HAS_TRAIT(src, TRAIT_HEAVY_LANDING))
+		if(has_trait(src, TRAIT_HEAVY_LANDING))
 			for(var/i = 1 to 10)
 				injure(INJURY_BLUNT, rand((damage_min * 2), (damage_max * 2)), ran_zone(), landing)
 			status_at_least(EFFECT_WEAKENED, 20)
@@ -754,11 +754,11 @@
 			var/tdamage
 			for(var/i = 1 to 5)	//Twice as less damage because cushioned fall, but both get damaged.
 				tdamage = rand(0, 5)
-				if(HAS_TRAIT(drop_mob, TRAIT_HEAVY_LANDING))
+				if(has_trait(drop_mob, TRAIT_HEAVY_LANDING))
 					tdamage = tdamage * 1.5
 				drop_mob.injure(INJURY_BLUNT, tdamage, ran_zone(), src)
 				injure(INJURY_BLUNT, tdamage, ran_zone(), drop_mob)
-			if(HAS_TRAIT(drop_mob, TRAIT_HEAVY_LANDING))
+			if(has_trait(drop_mob, TRAIT_HEAVY_LANDING))
 				drop_mob.visible_message(span_danger("\The [drop_mob] crashes down onto \the [src]!"))
 			else
 				drop_mob.visible_message(span_danger("\The [drop_mob] falls onto \the [src]!"))

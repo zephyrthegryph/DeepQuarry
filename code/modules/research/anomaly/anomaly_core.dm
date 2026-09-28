@@ -160,7 +160,7 @@ EXTEND_INTERACTIONS(/obj/item/assembly/signaler/anomaly, INTERACT_ITEM(null, PRO
 	if(..())
 		return
 	for(var/mob/living/nearby_living in view(get_turf(src), 2))
-		if(HAS_TRAIT(nearby_living, TRAIT_MADNESS_IMMUNE))
+		if(has_trait(nearby_living, TRAIT_MADNESS_IMMUNE))
 			continue
 
 		if(nearby_living.is_blind())

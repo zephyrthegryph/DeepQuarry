@@ -296,7 +296,7 @@
 
 /// Down from injury (unconscious from injury, or would be).
 /mob/living/proc/is_critical()
-	return stat == UNCONSCIOUS && HAS_TRAIT(src, TRAIT_CRITICAL_CONDITION)
+	return stat == UNCONSCIOUS && has_trait(src, TRAIT_CRITICAL_CONDITION)
 
 /// Toughness including body factors.
 /mob/living/proc/get_endurance()

@@ -198,6 +198,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	// internals slot (SLOT_DROP_HOLDER) is deleted by the core /atom/movable Destroy().
 	// Only a human stuck in the internals slot is put out by hand: it needs its view
 	// reset, which no slot policy does.
+	// ALLOW(latent): only materialized mobs are wanted here, and a mob is never a latent ledger entry
 	for(var/mob/living/carbon/human/H in contents)
 		H.forceMove(loc)
 		H.reset_perspective()

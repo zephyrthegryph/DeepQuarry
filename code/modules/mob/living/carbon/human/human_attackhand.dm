@@ -5,7 +5,7 @@
 	if(nif && nif.flag_check(NIF_C_HARDCLAWS,NIF_FLAGS_COMBAT))
 		return GLOB.unarmed_hardclaws
 	if(src.default_attack && src.default_attack.is_usable(src, target, hit_zone))
-		if(HAS_TRAIT(src, TRAIT_NONLETHAL_BLOWS))
+		if(has_trait(src, TRAIT_NONLETHAL_BLOWS))
 			var/datum/unarmed_attack/soft_type = src.default_attack.get_sparring_variant()
 			if(soft_type)
 				return soft_type
@@ -13,20 +13,20 @@
 	if(get_equipped_item(SLOT_ID_GLOVES))
 		var/obj/item/clothing/gloves/G = get_equipped_item(SLOT_ID_GLOVES)
 		if(istype(G) && G.special_attack && G.special_attack.is_usable(src, target, hit_zone))
-			if(HAS_TRAIT(src, TRAIT_NONLETHAL_BLOWS))
+			if(has_trait(src, TRAIT_NONLETHAL_BLOWS))
 				var/datum/unarmed_attack/soft_type = G.special_attack.get_sparring_variant()
 				if(soft_type)
 					return soft_type
 			return G.special_attack
 	if(src.default_attack && src.default_attack.is_usable(src, target, hit_zone))
-		if(HAS_TRAIT(src, TRAIT_NONLETHAL_BLOWS))
+		if(has_trait(src, TRAIT_NONLETHAL_BLOWS))
 			var/datum/unarmed_attack/soft_type = src.default_attack.get_sparring_variant()
 			if(soft_type)
 				return soft_type
 		return src.default_attack
 	for(var/datum/unarmed_attack/u_attack in species.unarmed_attacks)
 		if(u_attack.is_usable(src, target, hit_zone))
-			if(HAS_TRAIT(src, TRAIT_NONLETHAL_BLOWS))
+			if(has_trait(src, TRAIT_NONLETHAL_BLOWS))
 				var/datum/unarmed_attack/soft_variant = u_attack.get_sparring_variant()
 				if(soft_variant)
 					return soft_variant
@@ -127,7 +127,7 @@
 			return TRUE
 
 	//todo: make this whole CPR check into it's own individual proc instead of hogging up attack_hand_help_intent
-	if((istype(H) && HAS_TRAIT(src, TRAIT_CRITICAL_CONDITION) || stat == DEAD) && !on_fire && H != src) //Only humans can do CPR.
+	if((istype(H) && has_trait(src, TRAIT_CRITICAL_CONDITION) || stat == DEAD) && !on_fire && H != src) //Only humans can do CPR.
 		if(!H.check_has_mouth())
 			to_chat(H, span_danger("You don't have a mouth, you cannot perform CPR!"))
 			return FALSE
@@ -395,7 +395,7 @@
 			var/obj/item/clothing/accessory/G = H.get_equipped_item(SLOT_ID_GLOVES)
 			real_damage += G.punch_force
 			hit_kind = G.punch_injury_kind || hit_kind
-		if(HAS_TRAIT(H, TRAIT_NONLETHAL_BLOWS) && !attack.sharp && !attack.edge && !H.get_feralness())	//SO IT IS DECREED: PULLING PUNCHES WILL PREVENT THE ACTUAL DAMAGE FROM RINGS AND KNUCKLES, BUT NOT THE ADDED PAIN, BUT YOU CAN'T "PULL" A KNIFE
+		if(has_trait(H, TRAIT_NONLETHAL_BLOWS) && !attack.sharp && !attack.edge && !H.get_feralness())	//SO IT IS DECREED: PULLING PUNCHES WILL PREVENT THE ACTUAL DAMAGE FROM RINGS AND KNUCKLES, BUT NOT THE ADDED PAIN, BUT YOU CAN'T "PULL" A KNIFE
 			hit_kind = INJURY_PAIN
 			// if you're more resistant to physical blows, pulling punches won't make them more likely to down you. This makes species with both brute and pain modifiers double-dip, but I think that's fine
 			var/physical_resistance = incoming_injury_factor(INJURY_CATEGORY_PHYSICAL)
@@ -593,7 +593,7 @@
 	// standard CPR ahead: restart a body whose injuries are survivable, or oxygenate a living one
 	// A fibrillating or flatlined heart doesn't restart from compressions alone.
 	if(stat == DEAD && !body?.is_lethal() && has_cardiac_output() && vitality() > 0.5 && prob(10))
-		if(species.flags & NO_DEFIB) //TODO: Changee the NO_DEFIB species flag into a HAS_TRAIT() sometime.
+		if(species.flags & NO_DEFIB) //TODO: Changee the NO_DEFIB species flag into a has_trait() sometime.
 			to_chat(reviver, span_danger("You get the feeling [src] can't be revived by CPR alone."))
 			return // Handle no-defib species flag.
 		if(get_xenochimera_state())

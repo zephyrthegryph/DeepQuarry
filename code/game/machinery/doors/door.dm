@@ -178,7 +178,7 @@
 		M.last_bumped = world.time
 		if(M.restrained() && !check_access(null))
 			return
-		else if(HAS_TRAIT(M, TRAIT_AMBIENT_PEST_MOB) && !(M.ckey))
+		else if(has_trait(M, TRAIT_AMBIENT_PEST_MOB) && !(M.ckey))
 			return
 		else
 			bumpopen(M)

@@ -170,7 +170,7 @@
 	if(!on_fire)
 		return TRUE
 
-	var/decay_multiplier = 1 // HAS_TRAIT(owner, TRAIT_HUSK) ? 2 : 1 // husks decay twice as fast
+	var/decay_multiplier = 1 // has_trait(owner, TRAIT_HUSK) ? 2 : 1 // husks decay twice as fast
 	adjust_stacks(owner.fire_stack_decay_rate * decay_multiplier * seconds_between_ticks)
 
 	if(stacks <= 0)
@@ -252,7 +252,7 @@
  */
 
 /datum/status_effect/fire_handler/fire_stacks/proc/ignite(silent = FALSE)
-	if(HAS_TRAIT(owner, TRAIT_NOFIRE))
+	if(has_trait(owner, TRAIT_NOFIRE))
 		return FALSE
 
 	on_fire = TRUE
@@ -319,15 +319,15 @@
 	. = ..()
 	om_hook(owner, list(/datum/om/event/trait_gained, /datum/om/event/trait_lost), src, PROC_REF(on_owner_trait_changed))
 	update_wet_stack_modifier()
-	if(HAS_TRAIT(owner, TRAIT_SLIPPERY_WHEN_WET))
+	if(has_trait(owner, TRAIT_SLIPPERY_WHEN_WET))
 		become_slippery()
-	ADD_TRAIT(owner, TRAIT_IS_WET,  TRAIT_STATUS_EFFECT(id))
+	add_trait(owner, TRAIT_IS_WET,  TRAIT_STATUS_EFFECT(id))
 	owner.add_shared_particles(/particles/droplets)
 
 /datum/status_effect/fire_handler/wet_stacks/on_remove()
 	. = ..()
-	REMOVE_TRAIT(owner, TRAIT_IS_WET, TRAIT_STATUS_EFFECT(id))
-	if(HAS_TRAIT(owner, TRAIT_SLIPPERY_WHEN_WET))
+	remove_trait(owner, TRAIT_IS_WET, TRAIT_STATUS_EFFECT(id))
+	if(has_trait(owner, TRAIT_SLIPPERY_WHEN_WET))
 		no_longer_slippery()
 	owner.remove_shared_particles(/particles/droplets)
 
@@ -349,20 +349,20 @@
 			no_longer_slippery()
 
 /datum/status_effect/fire_handler/wet_stacks/proc/update_wet_stack_modifier()
-	stack_modifier = HAS_TRAIT(owner, TRAIT_WET_FOR_LONGER) ? -3.5 : -1
+	stack_modifier = has_trait(owner, TRAIT_WET_FOR_LONGER) ? -3.5 : -1
 
 /datum/status_effect/fire_handler/wet_stacks/proc/become_slippery()
 	// slipperiness = owner.AddComponent(/datum/component/slippery, 5 SECONDS, lube_flags = SLIPPERY_WHEN_LYING_DOWN|NO_SLIP_WHEN_WALKING|WEAK_SLIDE)
-	ADD_TRAIT(owner, TRAIT_NO_SLIP_WATER, TRAIT_STATUS_EFFECT(id))
+	add_trait(owner, TRAIT_NO_SLIP_WATER, TRAIT_STATUS_EFFECT(id))
 
 /datum/status_effect/fire_handler/wet_stacks/proc/no_longer_slippery()
-	REMOVE_TRAIT(owner, TRAIT_NO_SLIP_WATER, TRAIT_STATUS_EFFECT(id))
+	remove_trait(owner, TRAIT_NO_SLIP_WATER, TRAIT_STATUS_EFFECT(id))
 
 /datum/status_effect/fire_handler/wet_stacks/get_examine_text()
 	return "[owner.p_They()] look[owner.p_s()] a little soaked."
 
 /datum/status_effect/fire_handler/wet_stacks/tick(seconds_between_ticks)
-	var/decay = HAS_TRAIT(owner, TRAIT_WET_FOR_LONGER) ? -0.035 : -0.5
+	var/decay = has_trait(owner, TRAIT_WET_FOR_LONGER) ? -0.035 : -0.5
 	adjust_stacks(decay * seconds_between_ticks)
 	if(stacks <= 0)
 		qdel(src)

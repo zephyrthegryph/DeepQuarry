@@ -14,7 +14,7 @@
 /// (code/datums/rules/declarations.dm). Hotspots don't call this: they couple
 /// the objects on their tile to the burning gas (heat_objects.dm).
 /obj/fire_act(exposed_temperature, exposed_volume)
-	if(HAS_TRAIT(src, TRAIT_UNDERFLOOR) || !isnum(exposed_temperature))
+	if(has_trait(src, TRAIT_UNDERFLOOR) || !isnum(exposed_temperature))
 		return
 	// Heat reaches the holder's contents through its slots' paths (C2).
 	if(contents_count(src))

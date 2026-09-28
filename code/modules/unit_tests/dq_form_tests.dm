@@ -22,7 +22,7 @@
 	TEST_ASSERT(F.set_form(/datum/form/promethean_blob), "switching to the blob form should succeed")
 	TEST_ASSERT(istype(F.current, /datum/form/promethean_blob), "the blob form should be current")
 	TEST_ASSERT(isturf(H.loc), "the character must stay in the world while blobbed, not in nullspace")
-	TEST_ASSERT(HAS_TRAIT(H, TRAIT_FORM_HIDES_BODY), "the blob form draws itself instead of the body")
+	TEST_ASSERT(has_trait(H, TRAIT_FORM_HIDES_BODY), "the blob form draws itself instead of the body")
 	TEST_ASSERT(pain in H.body.afflictions, "afflictions must survive a form switch")
 
 	var/severity_before = pain.severity
@@ -34,7 +34,7 @@
 	TEST_ASSERT(life_test_started(H, /datum/om/pipeline/life), "the blobbed character keeps its life pipeline")
 
 	TEST_ASSERT(F.set_form(/datum/form/human), "switching back should succeed")
-	TEST_ASSERT(!HAS_TRAIT(H, TRAIT_FORM_HIDES_BODY), "the human form draws the body again")
+	TEST_ASSERT(!has_trait(H, TRAIT_FORM_HIDES_BODY), "the human form draws the body again")
 
 /// The slime form takes ×0.75 physical and ×2 thermal injury through the
 /// character's own body.

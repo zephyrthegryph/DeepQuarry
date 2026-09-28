@@ -651,7 +651,7 @@ ADMIN_VERB(AdminCreateVirus, R_SPAWN|R_EVENT, "Create Advanced Virus", "Create a
 			if(H.get_species() == SPECIES_UNATHI || H.get_species() == SPECIES_TAJARAN)
 				prefixes += list("Vermin ", "Zoo", "Maintenance ")
 				bodies += list("Rat", "Maint")
-		if(HAS_TRAIT(diseasesource, TRAIT_AMBIENT_PEST_MOB) && !istype(diseasesource, /mob/living/simple_mob/animal/passive/mouse/white/virology))
+		if(has_trait(diseasesource, TRAIT_AMBIENT_PEST_MOB) && !istype(diseasesource, /mob/living/simple_mob/animal/passive/mouse/white/virology))
 			prefixes += list("Vermin ", "Zoo", "Maintenance ")
 			bodies += list("Rat", "Maint")
 		else switch(diseasesource.type)
@@ -677,4 +677,4 @@ ADMIN_VERB(AdminCreateVirus, R_SPAWN|R_EVENT, "Create Advanced Virus", "Create a
 		if(3)
 			return "[pick(bodies)][pick(suffixes)]"
 
-REF_OWNED_LIST(/datum/disease/advance, "symptoms")
+REF_OWNED_LIST(/datum/affliction/contagion/engineered, "symptoms")

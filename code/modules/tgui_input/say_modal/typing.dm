@@ -6,7 +6,7 @@
 
 /** Creates a thinking indicator over the mob. Note: Prefs are checked in /client/proc/start_thinking() */
 /mob/proc/create_thinking_indicator()
-	if(active_thinking_indicator || active_typing_indicator || stat != CONSCIOUS || !HAS_TRAIT(src, TRAIT_THINKING_IN_CHARACTER))
+	if(active_thinking_indicator || active_typing_indicator || stat != CONSCIOUS || !has_trait(src, TRAIT_THINKING_IN_CHARACTER))
 		return FALSE
 	var/cur_bubble_appearance = custom_speech_bubble
 	if(!cur_bubble_appearance || cur_bubble_appearance == "default")
@@ -25,7 +25,7 @@
 
 /** Creates a typing indicator over the mob. Note: Prefs are checked in /client/proc/start_typing() */
 /mob/proc/create_typing_indicator()
-	if(active_typing_indicator || active_thinking_indicator || stat != CONSCIOUS || !HAS_TRAIT(src, TRAIT_THINKING_IN_CHARACTER))
+	if(active_typing_indicator || active_thinking_indicator || stat != CONSCIOUS || !has_trait(src, TRAIT_THINKING_IN_CHARACTER))
 		return FALSE
 	var/cur_bubble_appearance = custom_speech_bubble
 	if(!cur_bubble_appearance || cur_bubble_appearance == "default")
@@ -44,7 +44,7 @@
 
 /** Removes any indicators and marks the mob as not speaking IC. */
 /mob/proc/remove_all_indicators()
-	REMOVE_TRAIT(src, TRAIT_THINKING_IN_CHARACTER, CURRENTLY_TYPING_TRAIT)
+	remove_trait(src, TRAIT_THINKING_IN_CHARACTER, CURRENTLY_TYPING_TRAIT)
 	remove_thinking_indicator()
 	remove_typing_indicator()
 

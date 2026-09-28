@@ -583,8 +583,7 @@ REF_OWNED(/datum/protean_power, "button")
 
 /datum/protean_power/appearance_switch/activate(mob/living/carbon/human/H, datum/forms/protean/F)
 	var/datum/form/protean_blob/B = F.blob_form()
-	if(B.edit_appearance(H) && F.current == B)
-		F.refresh_appearance()
+	B.edit_appearance(H) // The answer procs refresh the worn appearance.
 
 /mob/living/carbon/human/proc/appearance_switch()
 	set name = "Switch Blob Appearance"

@@ -633,14 +633,18 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 	return TRUE
 
 /obj/mecha/proc/show_radial_occupant(mob/user)
-	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	var/list/choices = list(
 		"Toggle Airtank" = radial_image_airtoggle,
 		"Toggle Light" = radial_image_lighttoggle,
 		"View Stats" = radial_image_statpanel
 	)
 
-	var/choice = show_radial_menu(user, src, choices, custom_check = CALLBACK(src, PROC_REF(check_occupant_radial), user), require_near = TRUE, tooltips = TRUE)
+	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(occupant_option_chosen), choices = choices, anchor = src, require_near = TRUE, tooltips = TRUE)
+
+/obj/mecha/proc/occupant_option_chosen(datum/om/prompt/choice/radial/ask)
+	var/mob/user = ask.answerer
+	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
+	var/choice = ask.choice
 	if(!check_occupant_radial(user))
 		return
 	if(!choice)

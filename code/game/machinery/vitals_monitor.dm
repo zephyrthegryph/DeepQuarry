@@ -43,7 +43,7 @@
 		if(victim().stat != DEAD && !(victim().status_flags & FAKEDEATH))
 			var/obj/item/organ/internal/brain/brain = victim().internal_organs_by_name[O_BRAIN]
 			if(istype(brain))
-				if(victim().injury_load(INJURY_CATEGORY_NEURAL) || is_changeling(victim()) || HAS_TRAIT(victim(), UNIQUE_MINDSTRUCTURE))
+				if(victim().injury_load(INJURY_CATEGORY_NEURAL) || is_changeling(victim()) || has_trait(victim(), UNIQUE_MINDSTRUCTURE))
 					brain_activity = "anomalous"
 				else if(victim().stat == UNCONSCIOUS)
 					brain_activity = "weak"

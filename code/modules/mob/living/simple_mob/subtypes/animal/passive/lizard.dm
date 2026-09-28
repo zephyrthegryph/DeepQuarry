@@ -43,7 +43,7 @@
 	else
 		desc = "A cute, tiny, [body_color] lizard."
 
-	ADD_TRAIT(src, TRAIT_AMBIENT_PEST_MOB, ROUNDSTART_TRAIT)
+	add_trait(src, TRAIT_AMBIENT_PEST_MOB, ROUNDSTART_TRAIT)
 
 /mob/living/simple_mob/animal/passive/lizard/large
 	desc = "A cute, big lizard."

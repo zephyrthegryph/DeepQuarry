@@ -275,8 +275,8 @@
 
 /datum/trait/neutral/electrovore/apply(datum/species/S, mob/living/carbon/human/human)
 	..()
-	ADD_TRAIT(human, TRAIT_ELECTROVORE, ROUNDSTART_TRAIT)
-	ADD_TRAIT(human, TRAIT_ELECTROVORE_OBLIGATE, ROUNDSTART_TRAIT)
+	add_trait(human, TRAIT_ELECTROVORE, ROUNDSTART_TRAIT)
+	add_trait(human, TRAIT_ELECTROVORE_OBLIGATE, ROUNDSTART_TRAIT)
 
 /datum/trait/neutral/electrovore_freeform
 	name = "Electrovore"
@@ -290,7 +290,7 @@
 
 /datum/trait/neutral/electrovore_freeform/apply(datum/species/S, mob/living/carbon/human/human)
 	..()
-	ADD_TRAIT(human, TRAIT_ELECTROVORE, ROUNDSTART_TRAIT)
+	add_trait(human, TRAIT_ELECTROVORE, ROUNDSTART_TRAIT)
 
 /datum/trait/neutral/succubus_drain
 	name = "Succubus Drain"
@@ -1874,7 +1874,7 @@
 
 /datum/trait/neutral/strongimmunesystem/apply(datum/species/S, mob/living/carbon/human/H, trait_prefs)
 	..()
-	ADD_TRAIT(H, STRONG_IMMUNITY_TRAIT, ROUNDSTART_TRAIT)
+	add_trait(H, STRONG_IMMUNITY_TRAIT, ROUNDSTART_TRAIT)
 
 /datum/trait/neutral/hide
 	name = "Hide"
@@ -1929,7 +1929,7 @@
 
 /datum/trait/neutral/slip_reflex/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	ADD_TRAIT(H, SLIP_REFLEX_TRAIT, ROUNDSTART_TRAIT)
+	add_trait(H, SLIP_REFLEX_TRAIT, ROUNDSTART_TRAIT)
 
 /datum/trait/neutral/glowing_radiation
 	name = "Radioactive Glow"
@@ -1959,7 +1959,7 @@
 
 /datum/trait/neutral/abnormal_mind/apply(datum/species/S, mob/living/carbon/human/H, trait_prefs)
 	..()
-	ADD_TRAIT(H, UNIQUE_MINDSTRUCTURE, ROUNDSTART_TRAIT)
+	add_trait(H, UNIQUE_MINDSTRUCTURE, ROUNDSTART_TRAIT)
 
 /datum/trait/neutral/slobber
 	name = "Major Slobberer"
@@ -1971,7 +1971,7 @@
 
 /datum/trait/neutral/slobber/apply(datum/species/S, mob/living/carbon/human/human)
 	..()
-	ADD_TRAIT(human, TRAIT_SLOBBER, ROUNDSTART_TRAIT)
+	add_trait(human, TRAIT_SLOBBER, ROUNDSTART_TRAIT)
 
 /datum/trait/neutral/slip_prone
 	name = "Slip Prone (Vore)"

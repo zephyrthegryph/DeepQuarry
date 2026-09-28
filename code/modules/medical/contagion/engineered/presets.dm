@@ -47,7 +47,7 @@
 	. = FALSE
 	var/sickrisk = 1
 
-	if(HAS_TRAIT(src, STRONG_IMMUNITY_TRAIT)) // Don't bother (synthetic bodies refuse organic strains by biology)
+	if(has_trait(src, STRONG_IMMUNITY_TRAIT)) // Don't bother (synthetic bodies refuse organic strains by biology)
 		return
 
 	switch(get_species())

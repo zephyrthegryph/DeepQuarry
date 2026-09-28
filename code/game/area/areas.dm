@@ -480,7 +480,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 			H.status_adjust(EFFECT_STUNNED, 1) // No longer a supermassive long stun.
 // H.AdjustWeakened(3) // No longer weakens.
 		to_chat(mob, span_notice("The sudden appearance of gravity makes you fall to the floor!"))
-		if(HAS_TRAIT(H, TRAIT_UNLUCKY) && prob(50) && H.get_bodypart_name(BP_HEAD))
+		if(has_trait(H, TRAIT_UNLUCKY) && prob(50) && H.get_bodypart_name(BP_HEAD))
 			H.visible_message(span_warning("[H] falls to the ground from the sudden appearance of gravity, smashing [H.p_their()] head against the ground!"),span_warning("You smash your head into the ground as gravity appears!"))
 			H.injure(INJURY_BLUNT, 14, BP_HEAD, src)
 			playsound(H, 'sound/effects/tableheadsmash.ogg', 90, TRUE)

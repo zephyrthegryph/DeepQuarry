@@ -26,7 +26,7 @@
 
 /datum/trait/positive/unusual_running/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	ADD_TRAIT(H, UNUSUAL_RUNNING, ROUNDSTART_TRAIT)
+	add_trait(H, UNUSUAL_RUNNING, ROUNDSTART_TRAIT)
 
 /datum/trait/positive/punchdamage
 	name = "Strong Attacks"
@@ -452,11 +452,11 @@
 
 /datum/trait/positive/rad_immune/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	ADD_TRAIT(H, TRAIT_RADIMMUNE, ROUNDSTART_TRAIT)
+	add_trait(H, TRAIT_RADIMMUNE, ROUNDSTART_TRAIT)
 
 /datum/trait/positive/rad_immune/unapply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	REMOVE_TRAIT(H, TRAIT_RADIMMUNE, ROUNDSTART_TRAIT)
+	remove_trait(H, TRAIT_RADIMMUNE, ROUNDSTART_TRAIT)
 
 /datum/trait/positive/vibration_sense
 	name = "Vibration Sense"
@@ -856,8 +856,8 @@
 
 /datum/trait/positive/toxin_gut/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	ADD_TRAIT(H, INGESTED_TOXIN_IMMUNE, ROUNDSTART_TRAIT)
-	ADD_TRAIT(H, TRAIT_STRONG_STOMACH, ROUNDSTART_TRAIT)
+	add_trait(H, INGESTED_TOXIN_IMMUNE, ROUNDSTART_TRAIT)
+	add_trait(H, TRAIT_STRONG_STOMACH, ROUNDSTART_TRAIT)
 
 /datum/trait/positive/nobreathe
 	name = "Breathless"

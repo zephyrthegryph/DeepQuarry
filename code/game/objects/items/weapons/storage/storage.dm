@@ -102,7 +102,7 @@
 		return .
 	if(W.w_class >= holder.w_class && istype(W, /obj/item/storage))
 		return "it's a container as big as \the [holder]"
-	if(HAS_TRAIT(W, TRAIT_NODROP))
+	if(has_trait(W, TRAIT_NODROP))
 		return "\the [W] is stuck to your hand"
 	return null
 

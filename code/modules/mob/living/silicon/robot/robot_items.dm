@@ -635,9 +635,14 @@ DECLARE_INTERACTIONS(/obj/item/robo_dice, INTERACT_USE(null, PROC_REF(interactio
 		"roll d20"			= image(icon = DI, icon_state = "d2020"),
 		"roll d100"			= image(icon = DI, icon_state = "d10010"),
 	)
-	var/choice = show_radial_menu(user, user, dice_options, radius = 70)
+	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(die_chosen), choices = dice_options, anchor = user, radius = 70)
+	return TRUE
+
+/// Dice radial answer.
+/obj/item/robo_dice/proc/die_chosen(datum/om/prompt/choice/radial/ask)
+	var/mob/user = ask.answerer
 	var/sides = 0
-	switch(choice)
+	switch(ask.choice)
 		if("roll d4")
 			sides = 4
 		if("roll d6")

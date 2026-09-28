@@ -557,7 +557,7 @@
 		visible_message(span_vwarning("[src] licks [tasted]!"),span_notice("You lick [tasted]. They taste rather like [tasted.get_taste_message()]."),span_infoplain(span_bold("Slurp!")))
 		//balloon_alert_visible("licks [tasted]!", "tastes like [tasted.get_taste_message()]")
 	// This has already passed consent tests
-	if(HAS_TRAIT(src, TRAIT_SLOBBER))
+	if(has_trait(src, TRAIT_SLOBBER))
 		tasted.adjust_wet_stacks(2)
 
 /mob/living/proc/get_taste_message(allow_generic = 1)

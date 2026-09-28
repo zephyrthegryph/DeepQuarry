@@ -93,17 +93,16 @@ DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(in
 	for(var/Iname in integrated_tools_by_name)
 		options[Iname] = integrated_tool_images[Iname]
 
-	var/list/choice = list()
-	if(length(options) == 1)
-		for(var/key in options)
-			choice = key
-	else
-		choice = show_radial_menu(user, src, options, radius = 40, require_near = TRUE)
-	if(!choice)
-		return TRUE
-	cut_overlays()
-	assume_selected_item(integrated_tools_by_name[choice])
+	// A single tool is picked at once (autopick_single_option).
+	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(tool_chosen), choices = options, anchor = src, radius = 40, require_near = TRUE)
 	return TRUE
+
+/// Tool radial answer.
+/obj/item/robotic_multibelt/proc/tool_chosen(datum/om/prompt/choice/radial/ask)
+	if(!ask.choice)
+		return
+	cut_overlays()
+	assume_selected_item(integrated_tools_by_name[ask.choice])
 
 /obj/item/robotic_multibelt/proc/assume_selected_item(obj/item/chosen_item)
 	if(!chosen_item)

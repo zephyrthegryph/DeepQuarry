@@ -70,19 +70,46 @@
 	for(var/option in options)
 		LAZYSET(options, option, new /image('icons/effects/thinktank_labels.dmi', option))
 
-	var/choice = show_radial_menu(user, painting, options, radius = 42, require_near = TRUE)
-	if(!choice || QDELETED(src) || QDELETED(painting) || QDELETED(user) || user.incapacitated() || tank_module.loc != src)
+	om_ask(user, /datum/om/prompt/choice/radial/platform_paint, PROC_REF(paint_part_chosen), choices = options, anchor = painting, radius = 42, require_near = TRUE, painting = painting)
+	return TRUE
+
+/// What to paint on a platform, with the painter used. The painter is held as a handle.
+/datum/om/prompt/choice/radial/platform_paint
+	var/obj/item/floor_painter/painting
+
+/// Re-checks the old custom state after a paint radial answer.
+/mob/living/silicon/robot/platform/proc/paint_still_valid(datum/om/prompt/choice/radial/platform_paint/ask)
+	var/mob/user = ask.answerer
+	var/obj/item/robot_module/robot/platform/tank_module = module
+	if(!ask.choice || QDELETED(src) || QDELETED(ask.painting) || QDELETED(user) || user.incapacitated())
 		return FALSE
+	if(!istype(tank_module) || tank_module.loc != src)
+		return FALSE
+	return TRUE
 
-	if(choice == "Decal")
-		choice = null
-		options = list()
-		for(var/decal_name in tank_module.available_decals)
+/// First paint radial answer: a part, or "Decal" which opens the decal menu.
+/mob/living/silicon/robot/platform/proc/paint_part_chosen(datum/om/prompt/choice/radial/platform_paint/ask)
+	if(!paint_still_valid(ask))
+		return
+	if(ask.choice == "Decal")
+		var/obj/item/robot_module/robot/platform/tank_module = module
+		var/list/available = tank_module.available_decals
+		var/list/options = list()
+		for(var/decal_name in available)
 			LAZYSET(options, decal_name, new /image('icons/effects/thinktank_labels.dmi', decal_name))
-		choice = show_radial_menu(user, painting, options, radius = 42, require_near = TRUE)
-		if(!choice || QDELETED(src) || QDELETED(painting) || QDELETED(user) || user.incapacitated() || tank_module.loc != src)
-			return FALSE
+		om_ask(ask.answerer, /datum/om/prompt/choice/radial/platform_paint, PROC_REF(paint_decal_chosen), choices = options, anchor = ask.painting, radius = 42, require_near = TRUE, painting = ask.painting)
+		return
+	apply_paint(ask.choice, ask.painting)
 
+/// Decal radial answer.
+/mob/living/silicon/robot/platform/proc/paint_decal_chosen(datum/om/prompt/choice/radial/platform_paint/ask)
+	if(!paint_still_valid(ask))
+		return
+	apply_paint(ask.choice, ask.painting)
+
+/// Applies a paint choice. Returns TRUE if anything changed.
+/mob/living/silicon/robot/platform/proc/apply_paint(choice, obj/item/floor_painter/painting)
+	var/obj/item/robot_module/robot/platform/tank_module = module
 	. = TRUE
 	switch(choice)
 		if("Eyes")

@@ -415,65 +415,60 @@ I think I covered everything.
 	var/list/options = list("Underbelly","Body","Ears","Mane","Horns","Eyes")
 	for(var/option in options)
 		LAZYSET(options, option, image('icons/effects/bigdragon_labels.dmi', option))
-	var/choice = show_radial_menu(src, src, options, radius = 60)
-	if(!choice || QDELETED(src) || src.incapacitated())
-		return FALSE
-	. = TRUE
-	switch(choice)
+	om_ask(src, /datum/om/prompt/choice/radial, PROC_REF(style_part_chosen), choices = options, anchor = src, radius = 60)
+
+/// First radial answer: offer the styles of the picked part.
+/mob/living/simple_mob/vore/bigdragon/proc/style_part_chosen(datum/om/prompt/choice/radial/ask)
+	var/part = ask.choice
+	if(!part || QDELETED(src) || src.incapacitated())
+		return
+	var/list/options
+	switch(part)
 		if("Underbelly")
 			options = underbelly_styles
 			for(var/option in options)
 				var/image/I = image(icon, "dragon_under[option]", dir = 4, pixel_x = -48)
 				LAZYSET(options, option, I)
-			choice = show_radial_menu(src, src, options, radius = 90)
-			if(!choice || QDELETED(src) || src.incapacitated())
-				return 0
-			om_ask(src, /datum/om/prompt/color/bigdragon_overlay, PROC_REF(overlay_color_picked), message = "Pick underbelly color:", title = "Underbelly Color", default = overlay_colors["Underbelly"], overlay = "Underbelly", style = choice)
 		if("Body")
 			options = body_styles
 			for(var/option in options)
 				var/image/I = image(icon, "dragon_body[option]", dir = 4, pixel_x = -48)
 				LAZYSET(options, option, I)
-			choice = show_radial_menu(src, src, options, radius = 90)
-			if(!choice || QDELETED(src) || src.incapacitated())
-				return 0
-			om_ask(src, /datum/om/prompt/color/bigdragon_overlay, PROC_REF(overlay_color_picked), message = "Pick body color:", title = "Body Color", default = overlay_colors["Body"], overlay = "Body", style = choice)
 		if("Ears")
 			options = ear_styles
 			for(var/option in options)
 				var/image/I = image(icon, "dragon_ears[option]", dir = 4, pixel_x = -76, pixel_y = -50)
 				LAZYSET(options, option, I)
-			choice = show_radial_menu(src, src, options, radius = 90)
-			if(!choice || QDELETED(src) || src.incapacitated())
-				return 0
-			om_ask(src, /datum/om/prompt/color/bigdragon_overlay, PROC_REF(overlay_color_picked), message = "Pick ear color:", title = "Ear Color", default = overlay_colors["Ears"], overlay = "Ears", style = choice)
 		if("Mane")
 			options = mane_styles
 			for(var/option in options)
 				var/image/I = image(icon, "dragon_mane[option]", dir = 4, pixel_x = -76, pixel_y = -50)
 				LAZYSET(options, option, I)
-			choice = show_radial_menu(src, src, options, radius = 90)
-			if(!choice || QDELETED(src) || src.incapacitated())
-				return 0
-			om_ask(src, /datum/om/prompt/color/bigdragon_overlay, PROC_REF(overlay_color_picked), message = "Pick mane color:", title = "Mane Color", default = overlay_colors["Mane"], overlay = "Mane", style = choice)
 		if("Horns")
 			options = horn_styles
 			for(var/option in options)
 				var/image/I = image(icon, "dragon_horns[option]", dir = 4, pixel_x = -86, pixel_y = -50)
 				LAZYSET(options, option, I)
-			choice = show_radial_menu(src, src, options, radius = 90)
-			if(!choice || QDELETED(src) || src.incapacitated())
-				return 0
-			om_ask(src, /datum/om/prompt/color/bigdragon_overlay, PROC_REF(overlay_color_picked), message = "Pick horn color:", title = "Horn Color", default = overlay_colors["Horns"], overlay = "Horns", style = choice)
 		if("Eyes")
 			options = eye_styles
 			for(var/option in options)
 				var/image/I = image(icon, "dragon_eyes[option]", dir = 2, pixel_x = -48, pixel_y = -50)
 				LAZYSET(options, option, I)
-			choice = show_radial_menu(src, src, options, radius = 90)
-			if(!choice || QDELETED(src) || src.incapacitated())
-				return 0
-			om_ask(src, /datum/om/prompt/color/bigdragon_overlay, PROC_REF(overlay_color_picked), message = "Pick eye color:", title = "Eye Color", default = overlay_colors["Eyes"], overlay = "Eyes", style = choice)
+		else
+			return
+	om_ask(src, /datum/om/prompt/choice/radial, PROC_REF(style_chosen), choices = options, anchor = src, radius = 90, subject = part)
+
+/// Second radial answer: pick the colour for the chosen style.
+/mob/living/simple_mob/vore/bigdragon/proc/style_chosen(datum/om/prompt/choice/radial/ask)
+	var/choice = ask.choice
+	if(!choice || QDELETED(src) || src.incapacitated())
+		return
+	var/part = ask.subject
+	var/static/list/titles = list("Underbelly" = "Underbelly", "Body" = "Body", "Ears" = "Ear", "Mane" = "Mane", "Horns" = "Horn", "Eyes" = "Eye")
+	var/label = titles[part]
+	if(!label)
+		return
+	om_ask(src, /datum/om/prompt/color/bigdragon_overlay, PROC_REF(overlay_color_picked), message = "Pick [lowertext(label)] color:", title = "[label] Color", default = overlay_colors[part], overlay = part, style = choice)
 
 /// One of the dragon's overlay colours, picked after its style. The style lands with the colour.
 /datum/om/prompt/color/bigdragon_overlay

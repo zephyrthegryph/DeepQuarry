@@ -164,7 +164,7 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 	if(!user.checkClickCooldown())
 		return FALSE
 	user.setClickCooldown(1)
-	if(user.check_click_intercept(params, target) || HAS_TRAIT(user, TRAIT_NO_TRANSFORM))
+	if(user.check_click_intercept(params, target) || has_trait(user, TRAIT_NO_TRANSFORM))
 		return FALSE
 	if(user.client?.buildmode)
 		build_click(user, user.client.buildmode, params, target)

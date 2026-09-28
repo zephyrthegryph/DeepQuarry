@@ -183,14 +183,15 @@ REF_OWNED(/obj/machinery/portable_atmospherics/powered/reagent_distillery, list(
 	if(length(options) < 1)
 		return TRUE
 
-	var/list/choice = list()
-	if(length(options) == 1)
-		for(var/key in options)
-			choice = key
-	else
-		choice = show_radial_menu(user, src, options, require_near = !issilicon(user))
+	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(distillery_radial_chosen), choices = options, anchor = src, require_near = !issilicon(user))
+	return TRUE
 
-	switch(choice)
+/// Answer to interaction_distillery_radial().
+/obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/distillery_radial_chosen(datum/om/prompt/choice/radial/ask)
+	var/mob/user = ask.answerer
+	if(!user)
+		return
+	switch(ask.choice)
 		if("examine")
 			user.examinate(src)
 
@@ -248,14 +249,16 @@ REF_OWNED(/obj/machinery/portable_atmospherics/powered/reagent_distillery, list(
 		update_icon()
 		return FALSE
 
-	var/list/choice = list()
-	if(length(options) == 1)
-		for(var/key in options)
-			choice = key
-	else
-		choice = show_radial_menu(user, src, options, require_near = TRUE) // No telekinetics.
+	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(install_beaker_chosen), choices = options, anchor = src, require_near = TRUE, subject = W) // No telekinetics.
+	return TRUE
 
-	switch(choice)
+/// Answer to interaction_distillery_install_beaker(); ask.subject is the beaker.
+/obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/install_beaker_chosen(datum/om/prompt/choice/radial/ask)
+	var/mob/user = ask.answerer
+	var/obj/item/reagent_containers/glass/W = ask.subject
+	if(!user || !istype(W) || QDELETED(W) || W.loc != user || user.incapacitated() || !in_range(user, src))
+		return
+	switch(ask.choice)
 		if("install input")
 			if(!InputBeaker)
 				user.drop_from_inventory(W)

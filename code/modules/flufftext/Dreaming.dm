@@ -33,7 +33,7 @@
  */
 
 /mob/living/carbon/proc/handle_dreams()
-	if(!HAS_TRAIT(src, TRAIT_DREAMING) && prob(5))
+	if(!has_trait(src, TRAIT_DREAMING) && prob(5))
 		dream()
 
 /**
@@ -48,7 +48,7 @@
 
 	var/datum/dream/chosen_dream = pick_weight(GLOB.dreams)
 
-	ADD_TRAIT(src, TRAIT_DREAMING, DREAMING_SOURCE)
+	add_trait(src, TRAIT_DREAMING, DREAMING_SOURCE)
 	dream_sequence(chosen_dream.GenerateDream(src), chosen_dream)
 
 /**
@@ -64,7 +64,7 @@
 
 /mob/living/carbon/proc/dream_sequence(list/dream_fragments, datum/dream/current_dream)
 	if(stat != UNCONSCIOUS || stat == DEAD)
-		REMOVE_TRAIT(src, TRAIT_DREAMING, DREAMING_SOURCE)
+		remove_trait(src, TRAIT_DREAMING, DREAMING_SOURCE)
 		current_dream.OnDreamEnd(src)
 		return
 	var/next_message = dream_fragments[1]
@@ -82,7 +82,7 @@
 			status_adjust(EFFECT_SLEEPING, next_wait)
 		om_after(src, next_wait, PROC_REF(dream_sequence), dream_fragments, current_dream)
 	else
-		REMOVE_TRAIT(src, TRAIT_DREAMING, DREAMING_SOURCE)
+		remove_trait(src, TRAIT_DREAMING, DREAMING_SOURCE)
 		current_dream.OnDreamEnd(src)
 
 //-------------------------

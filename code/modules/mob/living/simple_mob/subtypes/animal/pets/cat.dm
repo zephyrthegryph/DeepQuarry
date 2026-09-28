@@ -95,7 +95,7 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 	. = ..()
 
 	if(.) // We're pals, but they might be a dirty mouse (or any other small fun to kill pest)...
-		if(HAS_TRAIT(L, TRAIT_AMBIENT_PEST_MOB))
+		if(has_trait(L, TRAIT_AMBIENT_PEST_MOB))
 			return FALSE // Cats and mice can never get along.
 
 /mob/living/simple_mob/animal/passive/cat/verb/become_friends()

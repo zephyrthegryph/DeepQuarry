@@ -58,7 +58,7 @@ REF_BACK(/datum/hallucinations, list("our_human" = "hallucinations"))
 // Traditional hallucinations
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 /mob/living/carbon/proc/handle_hallucinations()
-	if(get_hallucination_state() || !client || HAS_TRAIT(src, TRAIT_MADNESS_IMMUNE))
+	if(get_hallucination_state() || !client || has_trait(src, TRAIT_MADNESS_IMMUNE))
 		return
 	start_hallucinations(/datum/hallucinations)
 

@@ -44,7 +44,7 @@
 
 /mob/living/simple_mob/animal/passive/cockroach/Initialize(mapload)
 	. = ..()
-	ADD_TRAIT(src, TRAIT_AMBIENT_PEST_MOB, ROUNDSTART_TRAIT)
+	add_trait(src, TRAIT_AMBIENT_PEST_MOB, ROUNDSTART_TRAIT)
 
 //Deletes the body upon death
 /// Vanishes instead of dying.

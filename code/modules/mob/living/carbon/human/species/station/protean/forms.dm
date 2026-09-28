@@ -85,7 +85,7 @@ REF_HELD(/datum/forms, "current")
 		current.on_exit(src, H)
 	H.invalidate_factors()
 	clear_form_appearance(H)
-	REMOVE_TRAIT(H, TRAIT_FORM_HIDES_BODY, FORM_TRAIT)
+	remove_trait(H, TRAIT_FORM_HIDES_BODY, FORM_TRAIT)
 	H.holder_type = prior_holder_type
 
 // its form mobs are deleted after it detaches.
@@ -128,12 +128,12 @@ REF_HELD(/datum/forms, "current")
 		return
 	clear_form_appearance(H)
 	if(current.draws_body)
-		if(HAS_TRAIT(H, TRAIT_FORM_HIDES_BODY))
-			REMOVE_TRAIT(H, TRAIT_FORM_HIDES_BODY, FORM_TRAIT)
+		if(has_trait(H, TRAIT_FORM_HIDES_BODY))
+			remove_trait(H, TRAIT_FORM_HIDES_BODY, FORM_TRAIT)
 			H.regenerate_icons()
 		return
-	if(!HAS_TRAIT(H, TRAIT_FORM_HIDES_BODY))
-		ADD_TRAIT(H, TRAIT_FORM_HIDES_BODY, FORM_TRAIT)
+	if(!has_trait(H, TRAIT_FORM_HIDES_BODY))
+		add_trait(H, TRAIT_FORM_HIDES_BODY, FORM_TRAIT)
 		H.cut_overlays()
 	drawn_resting = H.resting
 	form_overlays = current.build_overlays(src, H)
@@ -242,14 +242,14 @@ REF_HELD(/datum/forms, "current")
 // A form that draws itself keeps the body layer cache up to date but does not
 // apply it; returning to a body-drawing form regenerates the icons.
 /mob/living/carbon/human/apply_layer(cache_index)
-	if(HAS_TRAIT(src, TRAIT_FORM_HIDES_BODY))
+	if(has_trait(src, TRAIT_FORM_HIDES_BODY))
 		return overlays_standing[cache_index]
 	return ..()
 
 // Shapeless forms scale with the mob but never rotate to lie down; they draw
 // their own resting states.
 /mob/living/carbon/human/update_transform(instant = FALSE)
-	if(!HAS_TRAIT(src, TRAIT_FORM_HIDES_BODY))
+	if(!has_trait(src, TRAIT_FORM_HIDES_BODY))
 		return ..()
 	var/matrix/M = matrix()
 	var/scale_x = size_multiplier * icon_scale_x

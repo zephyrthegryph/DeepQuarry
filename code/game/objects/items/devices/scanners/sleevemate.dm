@@ -154,7 +154,7 @@ DECLARE_INTERACTIONS(/obj/item/sleevemate, INTERACT_USE(null, PROC_REF(interacti
 	if(!H.ckey)
 		output += span_warning("No mind in that body") + " [stored_mind() != null ? "\[<a href='byond://?src=\ref[src];target=\ref[H];mindupload=1'>Upload</a>\]" : null]<br>"
 
-	else if(H.mind && (is_changeling(H) || (HAS_TRAIT(H, UNIQUE_MINDSTRUCTURE) || (ckey(H.mind.key) != H.ckey))))
+	else if(H.mind && (is_changeling(H) || (has_trait(H, UNIQUE_MINDSTRUCTURE) || (ckey(H.mind.key) != H.ckey))))
 		output += span_boldwarning("Incorrect mind-sleeve match or hiveminded neurological structure") + "<br>"
 
 	else if(H.mind && ckey(H.mind.key) == H.ckey)

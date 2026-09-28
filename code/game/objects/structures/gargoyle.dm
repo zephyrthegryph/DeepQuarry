@@ -202,7 +202,7 @@
 		gargoyle.lying_prev = initial_lying_prev
 		gargoyle.toggle_tail(wagging, FALSE)
 		gargoyle.toggle_wing(flapping, FALSE)
-	gargoyle.set_sdisabilities(gargoyle.sdisabilities & (~MUTE)) //why is there no ADD_TRAIT etc here that's actually ussssed
+	gargoyle.set_sdisabilities(gargoyle.sdisabilities & (~MUTE))
 	gargoyle.status_set(EFFECT_BLINDED, initial_blind)
 	gargoyle.status_set(EFFECT_SLEEPING, initial_sleep)
 	gargoyle.canmove = 1

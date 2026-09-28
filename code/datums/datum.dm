@@ -26,7 +26,6 @@
 	var/tmp/list/open_tguis // FIXME: open_uis
 
 	/// Status traits attached to this datum. associative list of the form: list(trait name (string) = list(source1, source2, source3,...))
-	var/tmp/list/_status_traits
 
 	/// Datum level flags
 	var/tmp/datum_flags = NONE

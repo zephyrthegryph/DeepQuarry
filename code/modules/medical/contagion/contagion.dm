@@ -238,7 +238,7 @@ REF_BACK(/datum/affliction/contagion, list("host" = null))
 		return 0
 	if(host.lying)
 		gain += CONTAGION_IMMUNE_BEDREST
-	if(HAS_TRAIT(host, STRONG_IMMUNITY_TRAIT))
+	if(has_trait(host, STRONG_IMMUNITY_TRAIT))
 		gain *= 2
 	return gain * immunogenicity
 

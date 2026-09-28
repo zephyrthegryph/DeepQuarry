@@ -20,7 +20,7 @@
 	else
 		if(user.incapacitated())
 			return FALSE
-		if(HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB))
+		if(has_trait(user, TRAIT_AMBIENT_PEST_MOB))
 			to_chat(user, span_notice("You are too tiny to do that!"))
 			return FALSE
 

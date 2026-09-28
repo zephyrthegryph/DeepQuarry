@@ -321,9 +321,14 @@ DECLARE_INTERACTIONS(/obj/item/taskmanager, INTERACT_USE(null, PROC_REF(interact
 		TM_MODE_SECURITY = radial_image_security
 	)
 
-	var/choice = show_radial_menu(user, src, choices, custom_check = CALLBACK(src, PROC_REF(check_menu), user), require_near = TRUE, tooltips = TRUE)
-	if(!(choice in choices) || !check_menu(user))
-		return TRUE
+	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(mode_chosen), choices = choices, anchor = src, require_near = TRUE, tooltips = TRUE)
+	return TRUE
+
+/obj/item/taskmanager/proc/mode_chosen(datum/om/prompt/choice/radial/ask)
+	var/mob/living/user = ask.answerer
+	var/choice = ask.choice
+	if(!(choice in ask.choices) || !check_menu(user))
+		return
 
 	mode = choice
 	scancount = 0
@@ -332,7 +337,6 @@ DECLARE_INTERACTIONS(/obj/item/taskmanager, INTERACT_USE(null, PROC_REF(interact
 	scanreq = rand(3,9)
 	to_chat(user, span_notice("Changed mode to '[choice]'."))
 	playsound(loc, 'sound/effects/pop.ogg', 50, 0)
-	return TRUE
 
 /obj/item/taskmanager/afterattack(atom/target, mob/user, proximity)
 	if(!proximity)

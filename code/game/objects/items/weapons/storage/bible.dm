@@ -58,17 +58,29 @@ EXTEND_INTERACTIONS(/obj/item/storage/bible, \
 			var/image/bible_image = image(icon = 'icons/obj/storage.dmi', icon_state = GLOB.biblestates[i])
 			skins += list("[GLOB.biblenames[i]]" = bible_image)
 
-		var/choice = show_radial_menu(user, src, skins, custom_check = CALLBACK(src, PROC_REF(check_menu), user), radius = 40, require_near = TRUE)
-		if(!choice)
-			return FALSE
-		var/bible_index = GLOB.biblenames.Find(choice)
-		if(!bible_index)
-			return FALSE
+		om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(skin_chosen), choices = skins, anchor = src, radius = 40, require_near = TRUE)
+		return TRUE
 
-		user.mind.my_religion.bible_icon_state = GLOB.biblestates[bible_index]
-		user.mind.my_religion.bible_item_state = GLOB.bibleitemstates[bible_index]
-		user.mind.my_religion.configured = TRUE
+	apply_religion(user)
+	return TRUE
 
+/obj/item/storage/bible/proc/skin_chosen(datum/om/prompt/choice/radial/ask)
+	var/mob/living/carbon/human/user = ask.answerer
+	if(!istype(user) || !user.mind?.my_religion || !check_menu(user))
+		return
+	var/choice = ask.choice
+	if(!choice)
+		return
+	var/bible_index = GLOB.biblenames.Find(choice)
+	if(!bible_index)
+		return
+
+	user.mind.my_religion.bible_icon_state = GLOB.biblestates[bible_index]
+	user.mind.my_religion.bible_item_state = GLOB.bibleitemstates[bible_index]
+	user.mind.my_religion.configured = TRUE
+	apply_religion(user)
+
+/obj/item/storage/bible/proc/apply_religion(mob/living/carbon/human/user)
 	deity_name = user.mind.my_religion.deity
 	name = user.mind.my_religion.bible_name
 	icon_state = user.mind.my_religion.bible_icon_state
