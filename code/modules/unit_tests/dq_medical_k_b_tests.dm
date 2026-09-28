@@ -188,3 +188,27 @@
 	O.germ_level = 0
 	O.adjust_germ_level(INFECTION_LEVEL_MAX * 2)
 	TEST_ASSERT_EQUAL(O.germ_level, INFECTION_LEVEL_MAX, "organs keep their infection clamp")
+
+/// A human that metabolises as a Promethean, for the species-table tests.
+/mob/living/carbon/human/dq_test_slime_tag
+
+/mob/living/carbon/human/dq_test_slime_tag/reagent_tag()
+	return IS_SLIME
+
+/// Species reagent effects as data: species_strength, inert_species and species_injuries_*.
+/datum/unit_test/dq_k_b_species_effect_tables
+
+/datum/unit_test/dq_k_b_species_effect_tables/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/dq_test_slime_tag/S = allocate(/mob/living/carbon/human/dq_test_slime_tag)
+	var/mob/living/carbon/human/dq_test_diona_tag/D = allocate(/mob/living/carbon/human/dq_test_diona_tag)
+	var/datum/reagent/mind = chemistry_service().chemical_reagents[REAGENT_ID_MINDBREAKER]
+	TEST_ASSERT_EQUAL(mind.species_mult(H), 1, "an unlisted species gets full strength")
+	TEST_ASSERT_EQUAL(mind.species_mult(S), 0.15, "a Promethean feels mindbreaker at ~1/6")
+	TEST_ASSERT(mind.inert_for(D), "diona are inert to a reagent's extras by default")
+	TEST_ASSERT(!mind.inert_for(H), "humans are not inert")
+	var/datum/reagent/kelo = chemistry_service().chemical_reagents[REAGENT_ID_KELOTANE]
+	kelo.apply_species_injuries(H, kelo.species_injuries_blood, 5)
+	TEST_ASSERT_EQUAL(H.injury_load(INJURY_CATEGORY_PHYSICAL), 0, "kelotane's species reaction spares humans")
+	kelo.apply_species_injuries(S, kelo.species_injuries_blood, 5)
+	TEST_ASSERT(S.injury_load(INJURY_CATEGORY_PHYSICAL) > 0, "kelotane bruises a Promethean's skeletal structure")
