@@ -192,4 +192,4 @@
 		cut_overlay(wet_overlay)
 		wet_overlay = null
 
-REF_OWNED(/turf/simulated, list("wet_overlay"))
+DECLARE_REF(/turf/simulated, "wet_overlay", OWNED, null)

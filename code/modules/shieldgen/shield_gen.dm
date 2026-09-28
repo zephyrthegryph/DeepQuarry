@@ -46,8 +46,8 @@
 	. = ..()
 	make_climbable()
 
-REF_OWNED(/obj/machinery/shield_gen, "shield_hum")
-REF_OWNED_LIST(/obj/machinery/shield_gen, "field")
+DECLARE_REF(/obj/machinery/shield_gen, "shield_hum", OWNED, null)
+DECLARE_REF(/obj/machinery/shield_gen, "field", OWNED_LIST, null)
 
 /obj/machinery/shield_gen/emag_act(remaining_charges, mob/user)
 	if(prob(75))

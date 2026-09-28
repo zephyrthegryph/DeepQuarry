@@ -4,7 +4,7 @@ section 3.5, doc/rewrite/lifecycle.md).
     Destroy() overrides   banned outright outside CORE_DESTROY_OWNERS (the core
                           chain /datum, /atom, /atom/movable, /client, and the
                           MC's /datum/controller tree). A type's teardown is a
-                          declaration (REF_*), a phase hook (lifecycle_unbind(),
+                          declaration (DECLARE_REF), a phase hook (lifecycle_unbind(),
                           lifecycle_dematerialize(), lifecycle_prerelease(),
                           destroy_effects()), its destroy hook on_destroy(), a
                           behaviour's on_entity_destroy(E), destroy_hint for the GC
@@ -130,7 +130,7 @@ def main(argv):
               % (destroy_total, len(destroy_counts), qdel_total, len(qdel_counts)))
         return 0
     for rel, number, what in destroy_sites:
-        print("%s:%d: %s -- Destroy() overrides are banned outside the core chain; use REF_* "
+        print("%s:%d: %s -- Destroy() overrides are banned outside the core chain; use DECLARE_REF "
               "declarations, a phase hook, on_destroy(), destroy_hint or lifecycle_keep() "
               "(code/datums/lifecycle/transaction.dm)" % (rel, number, what))
     failed = check_ceilings(

@@ -12,7 +12,8 @@
 	sparks.set_up(5, 0, src)
 	sparks.attach(loc)
 
-REF_OWNED(/obj/item/antag_spawner, list("sparks", "Q"))
+DECLARE_REF(/obj/item/antag_spawner, "sparks", OWNED, null)
+DECLARE_REF(/obj/item/antag_spawner, "Q", OWNED, null)
 /obj/item/antag_spawner/proc/spawn_antag(client/C, turf/T)
 	return
 

@@ -29,7 +29,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(debug_variables, (R_DEBUG|R_SERVER|R_ADMIN|R_SPAWN|R
 	owner_handle = om_handle(owner_client)
 
 // clears the client's cached panel (clients aren't datums).
-REF_BACK_HANDLE(/datum/view_variables_panel, list("owner_handle" = "dq_vv_panel"))
+DECLARE_REF(/datum/view_variables_panel, "owner_handle", BACK_HANDLE, "dq_vv_panel")
 
 /datum/view_variables_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_HOLDER)
@@ -212,7 +212,7 @@ REF_BACK_HANDLE(/datum/view_variables_panel, list("owner_handle" = "dq_vv_panel"
 	if(dq_vv_panel && dq_vv_panel.thing == thing)
 		SStgui.update_uis(dq_vv_panel)
 
-REF_OWNED(/client, "dq_vv_panel")
+DECLARE_REF(/client, "dq_vv_panel", OWNED, null)
 
 /// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/view_variables_panel/proc/owner() as /client

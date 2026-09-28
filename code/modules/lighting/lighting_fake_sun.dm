@@ -248,4 +248,5 @@ GLOBAL_LIST_EMPTY(fake_sunlight_zs)
 		)
 	)
 
-REF_OWNED(/obj/effect/fake_sun, list("sun", "visuals"))
+DECLARE_REF(/obj/effect/fake_sun, "sun", OWNED, null)
+DECLARE_REF(/obj/effect/fake_sun, "visuals", OWNED, null)

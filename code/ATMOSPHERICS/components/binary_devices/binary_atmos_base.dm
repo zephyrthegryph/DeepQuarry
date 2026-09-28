@@ -106,4 +106,7 @@
 	network1 = null
 	network2 = null
 
-REF_HELD(/obj/machinery/atmospherics/binary, list("air1", "air2", "network1", "network2"))
+DECLARE_REF(/obj/machinery/atmospherics/binary, "air1", HELD, null)
+DECLARE_REF(/obj/machinery/atmospherics/binary, "air2", HELD, null)
+DECLARE_REF(/obj/machinery/atmospherics/binary, "network1", HELD, null)
+DECLARE_REF(/obj/machinery/atmospherics/binary, "network2", HELD, null)

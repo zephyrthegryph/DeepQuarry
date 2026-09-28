@@ -27,7 +27,7 @@
 	. = ..()
 	our_db_static = GLOB.transcore_service.db_by_key(db_key)
 
-REF_SPILL(/obj/machinery/computer/transhuman/designer, "disk")
+DECLARE_REF(/obj/machinery/computer/transhuman/designer, "disk", SPILL, null)
 
 /obj/machinery/computer/transhuman/designer/dismantle()
 	if(disk)
@@ -96,9 +96,9 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/designer, \
 #undef MENU_SPECIFICRECORD
 #undef MENU_OOCNOTES
 
-REF_OWNED(/obj/machinery/computer/transhuman/designer, "designer_gui")
+DECLARE_REF(/obj/machinery/computer/transhuman/designer, "designer_gui", OWNED, null)
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/machinery/computer/transhuman/designer/proc/our_db() as /datum/transcore_db
 	return our_db_static
-REF_STATIC(/obj/machinery/computer/transhuman/designer, "our_db_static")
+DECLARE_REF(/obj/machinery/computer/transhuman/designer, "our_db_static", STATIC, null)

@@ -509,5 +509,5 @@
 	return istype(character_forms, /datum/forms/protean) ? character_forms : null
 
 // The cluster lives in the world on its own; Destroy() tells it we are gone.
-REF_HELD(/datum/forms/protean, "rig")
-REF_OWNED_LIST(/datum/protean_blob_style/layered, "layers")
+DECLARE_REF(/datum/forms/protean, "rig", HELD, null)
+DECLARE_REF(/datum/protean_blob_style/layered, "layers", OWNED_LIST, null)

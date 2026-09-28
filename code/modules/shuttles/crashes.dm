@@ -78,4 +78,4 @@
 		L.injure(INJURY_BLUNT, 10, ran_zone())
 		L.injure(INJURY_BLUNT, 15, ran_zone())
 
-REF_WEAK_LIST(/datum/shuttle, "crash_locations")
+DECLARE_REF(/datum/shuttle, "crash_locations", WEAK_LIST, null)

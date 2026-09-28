@@ -1,38 +1,36 @@
 """Declared-reference lint (roadmap L2, doc/rewrite/lifecycle.md section 4).
 
-Every object-typed var on a datum is declared as exactly one kind:
+Every object-typed var on a datum is declared as exactly one kind, in one form:
 
-    slot content        lives in a ledger slot (containment.md sec 2) -- not a
-                         var at all from this lint's point of view, so nothing
-                         to declare; skipped automatically (see NOTE below)
-    REF_OWNED            a non-contained child, deleted in phase 4 --
-                         declared_owned_vars()
-    REF_OWNED_LIST       a list of them -- declared_owned_list_vars()
-    REF_PAIR             two-sided, kept in sync by link_set()/link_clear() --
-                         declared_pair_vars()
-    REF_BACKLIST         membership in another object's list -- declared_backlist_vars()
-    REF_DEF              a frozen definition / registry object, never deleted --
-                         declared_def_vars(); implicit for types in DEF_TYPES
-                         (state_schema_lint.py), which need no declaration
-    REF_STATIC           a round-long singleton or shared flyweight held strongly,
-                         never cleared, never a leak -- declared_static_vars()
-    REF_TRANSIENT        a pooled type's per-use field, reset by pool_release() --
-                         declared_transient_vars(); an error on a type that isn't
-                         POOL_DECLAREd
-    handle               a text var holding om_handle(x) -- resolved on read, never cleaned
-    tmp cache            `tmp` (or `static`/`global`/`const`) -- scrubbed or shared,
-                         not a per-instance relationship at all
+    DECLARE_REF(/type, "var", KIND, OPT)      code/__defines/lifecycle.dm
+
+KIND is OWNED, OWNED_LIST, OWNED_VALUES, SPILL, SPILL_LIST, HELD, PAIR, BACKLIST,
+BACKLIST_HANDLE, BACK_HANDLE, BACK_VIA, LIST_BACK, DROP, QUEUE, BACK, KEEP, DEF,
+STATIC, WEAK_LIST or TRANSIENT (ref_kinds.REF_KINDS). Also accepted:
+
+    slot content        lives in a ledger slot -- not a var, never flagged
+    DEF_TYPES           a var typed as a frozen definition is an implicit DEF
+    handle              a text var holding om_handle(x)
+    tmp cache           `tmp`/`static`/`global`/`const`
+    declared cache      declared_cache_vars() (the OM's, with a CACHE_ON_* rule)
+
+TRANSIENT on a type that isn't POOL_DECLAREd is an error, and so is an unknown KIND.
+
+Suggestions. For each undeclared var the lint reads how the type's file writes it
+and suggests a kind: created with `new` or qdel'd (OWNED / OWNED_LIST /
+OWNED_VALUES), a partner written back (`var.x = src` -> PAIR, `var.list += src`
+-> BACKLIST), a singleton type (STATIC), moved into src (HELD), a list only
+appended to (WEAK_LIST), assigned from another type (`thing.var = ...` -> BACK),
+else an OM handle. It prints the DECLARE_REF line to add and why.
 
 This finds every var declared directly on a type (not inherited -- each var is
 only ever checked at the type that first declares it) whose declared type is
-an object reference, that isn't `tmp`/`static`/`global`/`const`, and checks whether the *same file* declares that type's
-declared_owned_vars() / declared_owned_list_vars() / declared_pair_vars() /
-declared_backlist_vars() mentioning the var by name. A var that isn't
-mentioned in any of those is undeclared.
+an object reference, that isn't `tmp`/`static`/`global`/`const`, and checks whether the *same file* has a DECLARE_REF line for that type naming the
+var. A var that isn't named is undeclared.
 
 NOTE: this can't see slot content (a slot holds a *thing*, not a *var* --
 membership lives in the ledger, code/datums/containment/ledger.dm), so a
-holder's contents never need a declared_*_vars() entry and are never flagged.
+holder's contents never need a DECLARE_REF and are never flagged.
 
 Medical, body, organs, surgery, protean and mind_body are included like
 everything else (doc sec 7). tools/ci/scheduler_lints.py's LC-refs count is
@@ -44,9 +42,8 @@ it; tools/ci/allow_annotations.py) and doesn't count.
 
 Object-keyed lists. An instance list var must not collect objects (as keys or
 values: `L[obj] = ...`, `L[key] = obj`, `L += obj`, `L |= obj`, `L = list(obj = ...)`)
-unless it is declared: an owned-children list (declared_owned_list_vars()), the
-list side of a backlist (named as the list var by some declared_backlist_vars()),
-or a declared cache (declared_cache_vars()). Relations and slots are not vars, and
+unless it is declared: a list kind (ref_kinds.OBJLIST_KINDS), the list side of a
+backlist (named as OPT by some BACKLIST declaration), or a declared cache (declared_cache_vars()). Relations and slots are not vars, and
 registries are global. "An object" is recognised syntactically: `src`, `usr`, a
 `new` expression, or a name the proc declares object-typed (an argument such as
 `mob/M`, a `var/obj/item/I` local, a `for(var/atom/A in ...)` loop var). These are
@@ -83,12 +80,8 @@ ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 EXCLUDED_DIRS = ()
 
 UNSAVED_MODS = {"tmp", "static", "global", "const", "final"}
-# The REF_* kinds, REF_VAR forms, pooled types and implicit REF_DEF types (ref_kinds.py).
-from ref_kinds import DECLARED_PROCS, REF_MACRO, REF_MACRO_PROC, is_def_type, is_pooled, ref_var_decl  # noqa: E402
-# Declarations that make an instance list var a legitimate holder of objects.
-OBJLIST_PROCS = ("declared_owned_list_vars", "declared_owned_value_vars", "declared_spill_list_vars", "declared_def_vars",
-                 "declared_static_vars", "declared_drop_vars", "declared_list_back_vars",
-                 "declared_cache_vars")
+# DECLARE_REF parsing, kinds, pooled types and implicit DEF types (ref_kinds.py).
+from ref_kinds import DECLARED_PROCS, OBJLIST_KINDS, ref_decl, is_def_type, is_pooled, is_static_type  # noqa: E402
 CACHE_ENTRY = re.compile(r'"(\w+)"\s*(=\s*(\S.*?))?\s*,?\s*$')
 CACHE_RULE = re.compile(r"^CACHE_ON_(CHANGE|EVENT|RELATION)\(")
 
@@ -100,7 +93,7 @@ PARAM = re.compile(r"^\s*(?:var/)?((?:\w+/)+)(\w+)")
 LIST_INDEX_WRITE = re.compile(r"^(?:src\.)?(\w+)\[(.+?)\]\s*=(?!=)\s*(.+)$")
 LIST_ADD = re.compile(r"^(?:src\.)?(\w+)\s*(?:\+=|\|=)\s*(.+)$")
 LIST_ASSIGN = re.compile(r"^(?:src\.)?(\w+)\s*=(?!=)\s*list\((.*)\)\s*$")
-BACKLIST_VALUE = re.compile(r'"\w+"\s*=\s*"(\w+)"')
+BACKLIST_VALUE = re.compile(r'^DECLARE_REF\([^,]+,\s*"\w+"\s*,\s*BACKLIST\s*,\s*"(\w+)"', re.M)
 
 OM_FIELD_TYPED = re.compile(r"^OM_FIELD_TYPED\(\s*(/[\w/]+)\s*,\s*([\w/]+)\s*,\s*(\w+)\s*,")
 # The machinery the four kinds are made of holds references by construction; its vars are not
@@ -148,7 +141,7 @@ def split_var(segs):
 
 def declared_names(body_lines):
     """Every quoted string literal across a proc body's lines (its declared
-    list of var names -- see the file header's declared_owned_vars() etc.)."""
+    declared_cache_vars() table)."""
     names = set()
     for line in body_lines:
         names.update(STRING_LIT.findall(line))
@@ -161,38 +154,38 @@ def scan_file(path):
         text = handle.read()
     raw_lines = code_only(text).split("\n")
     # Declared names are string literals, which code_only() blanks: pass 1
-    # reads the declared_*_vars() bodies from the raw text instead.
+    # reads the DECLARE_REF lines and cache bodies from the raw text instead.
     source_lines = text.split("\n")
 
-    # Pass 1: every declared_*_vars() proc body, by owner type, as the union
-    # of every quoted name across every such override for that type (a type
-    # may split REF_OWNED/REF_PAIR/etc. across several small overrides).
+    # Pass 1: every DECLARE_REF line and declared_cache_vars() body, by owner type.
     declared = {}  # owner type -> set of var names
     objlist_ok = set()  # list var names declared as holding objects (any type in the file)
     cache_errors = []
     cur_owner, cur_proc, capturing, cur_line = None, None, [], 0
 
     def close(owner, proc, body, line):
-        if proc == "declared_transient_vars" and declared_names(body) and not is_pooled(owner):
-            cache_errors.append("%s:%d: %s declares REF_TRANSIENT %s but is not a pooled type "
-                                "(POOL_DECLARE); transient fields exist only on pooled objects"
-                                % (rel, line, owner, ", ".join(sorted(declared_names(body)))))
-            return
+        """The declared_cache_vars() body of `owner` (the one hand-written table)."""
         declared.setdefault(owner, set()).update(declared_names(body))
-        if proc in OBJLIST_PROCS:
-            objlist_ok.update(declared_names(body))
-        if proc == "declared_backlist_vars":
-            for b in body:
-                BACKLIST_TARGETS.update(BACKLIST_VALUE.findall(b))
-        if proc == "declared_cache_vars":
-            for b in body:
-                m = CACHE_ENTRY.search(b.strip())
-                if not m or b.strip().startswith("//"):
-                    continue
-                rule = (m.group(3) or "").strip()
-                if not CACHE_RULE.match(rule):
-                    cache_errors.append("%s:%d: %s declares cache \"%s\" with no invalidation rule "
-                                        "(CACHE_ON_CHANGE/EVENT/RELATION)" % (rel, line, owner, m.group(1)))
+        objlist_ok.update(declared_names(body))
+        for b in body:
+            m = CACHE_ENTRY.search(b.strip())
+            if not m or b.strip().startswith("//"):
+                continue
+            rule = (m.group(3) or "").strip()
+            if not CACHE_RULE.match(rule):
+                cache_errors.append("%s:%d: %s declares cache \"%s\" with no invalidation rule "
+                                    "(CACHE_ON_CHANGE/EVENT/RELATION)" % (rel, line, owner, m.group(1)))
+
+    def declare(owner, var, kind, opt, line):
+        if kind == "TRANSIENT" and not is_pooled(owner):
+            cache_errors.append("%s:%d: %s declares %s TRANSIENT but is not a pooled type "
+                                "(POOL_DECLARE); transient fields exist only on pooled objects" % (rel, line, owner, var))
+            return
+        declared.setdefault(owner, set()).add(var)
+        if kind in OBJLIST_KINDS:
+            objlist_ok.add(var)
+        if kind == "BACKLIST":
+            BACKLIST_TARGETS.update(STRING_LIT.findall(opt))
 
     for no, raw in enumerate(source_lines, 1):
         if not raw.strip():
@@ -203,13 +196,16 @@ def scan_file(path):
             if cur_owner is not None:
                 close(cur_owner, cur_proc, capturing, cur_line)
                 cur_owner, capturing = None, []
-            m = REF_MACRO.match(stripped.rstrip())
-            if m:
-                close(m.group(2), REF_MACRO_PROC[m.group(1)], [m.group(3)], no)
-                continue
-            decl = ref_var_decl(stripped.rstrip())
-            if decl:
-                close(decl[0], REF_MACRO_PROC[decl[1]], ['"%s"' % decl[3]], no)
+            if stripped.startswith("DECLARE_REF("):
+                try:
+                    decl = ref_decl(stripped)
+                except ValueError as err:
+                    cache_errors.append("%s:%d: %s" % (rel, no, err))
+                    continue
+                if not decl:
+                    cache_errors.append("%s:%d: unreadable DECLARE_REF (one line: DECLARE_REF(/type, \"var\", KIND, OPT))" % (rel, no))
+                    continue
+                declare(decl[0], decl[1], decl[2], decl[3], no)
                 continue
             m = PROC_HEADER.match(stripped.rstrip())
             if m:
@@ -259,7 +255,7 @@ def scan_file(path):
             continue
         if name in declared.get(cur_type, ()):
             continue
-        # A frozen definition or registry object (DEF_TYPES): an implicit REF_DEF.
+        # A frozen definition or registry object (DEF_TYPES): an implicit DEF.
         if is_def_type(vtype):
             continue
         # Tasks, edges, records, ledgers and registries: see STRUCTURAL_TYPES.
@@ -271,10 +267,68 @@ def scan_file(path):
             continue
         if allowed(source_lines, no, "declared_refs"):
             continue
-        sites.append((rel, no, "%s var/%s/%s" % (cur_type, vtype.strip("/"), name)))
+        sites.append((rel, no, "%s var/%s/%s" % (cur_type, vtype.strip("/"), name)
+                      + "\n    " + suggest(cur_type, name, vtype, _is_list, raw_lines)))
     objs = [o for o in objlist_candidates(rel, raw_lines, objlist_ok)
             if not allowed(source_lines, o[1], "object_keyed_lists")]
     return rel, sites, cache_errors, objs
+
+
+def _proc_owner(header):
+    m = ANY_PROC_HEADER.match(header)
+    return m.group(1) if m else None
+
+
+def suggest(owner, name, vtype, is_list, raw_lines):
+    """A DECLARE_REF line for undeclared var `name` of `owner`, from its write
+    patterns in the same file (who assigns it, whether it is qdel'd), and why."""
+    n = re.escape(name)
+    own_lines, outside = [], []
+    cur = None
+    for raw in raw_lines:
+        if not raw.strip():
+            continue
+        if not raw[0].isspace():
+            cur = _proc_owner(raw.rstrip())
+            continue
+        text = raw.strip()
+        if cur and (cur == owner or cur.startswith(owner + "/")):
+            own_lines.append(text)
+        elif re.search(r"\w\." + n + r"\s*(=(?!=)|\+=|\|=)", text):
+            outside.append(text)
+    body = "\n".join(own_lines)
+
+    def line(kind, opt, why):
+        return 'suggest: DECLARE_REF(%s, "%s", %s, %s) -- %s' % (owner, name, kind, opt, why)
+
+    if re.search(r"QDEL_LIST_ASSOC_VAL\(\s*(src\.)?" + n + r"\s*\)", body):
+        return line("OWNED_VALUES", "null", "its values are qdel'd with QDEL_LIST_ASSOC_VAL")
+    if re.search(r"QDEL_(LAZY)?LIST\(\s*(src\.)?" + n + r"\s*\)", body) or (
+            is_list and re.search(r"\b" + n + r"\s*(\+=|\|=)\s*new\b", body)):
+        return line("OWNED_LIST", "null", "src fills it with new objects or qdels its members")
+    created = re.search(r"(^|\W)(src\.)?" + n + r"\s*=\s*new\b", body)
+    deleted = re.search(r"(QDEL_NULL|qdel)\(\s*(src\.)?" + n + r"\s*[,)]", body)
+    if created or deleted:
+        why = " and ".join(w for w, hit in (("src creates it with new", created), ("src qdels it", deleted)) if hit)
+        return line("OWNED", "null", why + "; it is deleted in phase 4")
+    m = re.search(r"\b" + n + r"\.(\w+)\s*=\s*src\b", body)
+    if m:
+        return line("PAIR", '"%s"' % m.group(1), "src sets %s.%s = src: both sides name each other" % (name, m.group(1)))
+    m = re.search(r"\b" + n + r"\.(\w+)\s*(\+=|\|=)\s*src\b|LAZY(?:ADD|OR)\(\s*" + n + r"\.(\w+)\s*,\s*src\s*\)", body)
+    if m:
+        their = m.group(1) or m.group(3)
+        return line("BACKLIST", '"%s"' % their, "src adds itself to %s.%s" % (name, their))
+    if vtype and is_static_type(vtype):
+        return line("STATIC", "null", "%s is a singleton/flyweight type (OM_STATIC_TYPE)" % vtype)
+    if re.search(r"\b" + n + r"\.forceMove\(\s*src\s*\)|\b" + n + r"\.loc\s*=\s*src\b", body):
+        return line("HELD", "null", "src moves it into its own contents")
+    if is_list and re.search(r"\b" + n + r"\s*(\+=|\|=)|LAZY(ADD|OR)\(\s*" + n + r"\b", body):
+        return line("WEAK_LIST", "null", "a list src appends others to but does not own; store om_handle()s")
+    if outside:
+        return line("BACK", "null", "another type assigns it (%s): a child naming its owner; "
+                    "set OPT to the owner's var naming us" % outside[0][:60])
+    return ("suggest: no ownership pattern found -- keep an om_handle() in a text var, make it tmp, "
+            'or declare its kind: DECLARE_REF(%s, "%s", KIND, OPT)' % (owner, name))
 
 
 def is_object_type(path):
@@ -385,7 +439,7 @@ def objlist_candidates(rel, raw_lines, objlist_ok):
     return out
 
 
-# List var names that some declared_backlist_vars() names as the owner's list
+# List var names that some BACKLIST declaration names as the owner's list
 # (filled by scan_file() pass 1; scan() runs pass 1 over every file first).
 BACKLIST_TARGETS = set()
 
@@ -403,7 +457,7 @@ def scan():
     for path in paths:
         with open(path, encoding="utf-8", errors="replace") as handle:
             text = handle.read()
-        if "declared_backlist_vars" in text or "REF_BACKLIST(" in text:
+        if "BACKLIST" in text:
             BACKLIST_TARGETS.update(BACKLIST_VALUE.findall(text))
     for path in paths:
         rel, sites, errors, objs = scan_file(path)
@@ -432,9 +486,12 @@ def main(argv):
         return 0
     failed = check_ceilings(
         "declared-refs", totals, {"undeclared": 0, "object_keyed": 0},
-        "Declare each new var as REF_OWNED/REF_OWNED_LIST/REF_PAIR/REF_BACKLIST "
-        "(code/datums/lifecycle/links.dm), tmp, or an OM handle; declare a new object-keyed list "
-        "(declared_owned_list_vars/backlist/declared_cache_vars) or key it by om_handle().")
+        "Declare each new object var with DECLARE_REF(/type, \"var\", KIND, OPT) "
+        "(code/__defines/lifecycle.dm; each site below carries a suggested kind), make it tmp, or "
+        "hold an OM handle; declare a new object-keyed list with a list kind or key it by om_handle().")
+    if failed:
+        for rel, number, what in sites:
+            print("%s:%d: undeclared %s" % (rel, number, what))
     for error in cache_errors:
         print("FAIL: " + error)
     return 1 if failed or cache_errors else 0

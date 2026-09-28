@@ -12,7 +12,7 @@
 	. = ..()
 	dummy_card = new dummy_card_type(src)
 
-REF_OWNED(/obj/item/card/robot, "dummy_card")
+DECLARE_REF(/obj/item/card/robot, "dummy_card", OWNED, null)
 
 /obj/item/card/robot/GetID()
 	return dummy_card

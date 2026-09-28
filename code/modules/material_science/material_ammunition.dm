@@ -52,12 +52,12 @@
 		var/datum/material/processed_alloy/processed = forged
 		examine_text += span_notice("Forged projectile stock: hardness [processed.hardness], density [processed.density], brittleness [processed.brittleness].")
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/item/ammo_casing/proc/forged_material() as /datum/material
 	return forged_material_static
-REF_STATIC(/obj/item/ammo_casing, "forged_material_static")
+DECLARE_REF(/obj/item/ammo_casing, "forged_material_static", STATIC, null)
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/item/ammo_magazine/proc/forged_material() as /datum/material
 	return forged_material_static
-REF_STATIC(/obj/item/ammo_magazine, "forged_material_static")
+DECLARE_REF(/obj/item/ammo_magazine, "forged_material_static", STATIC, null)

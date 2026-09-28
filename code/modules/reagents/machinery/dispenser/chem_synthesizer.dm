@@ -816,6 +816,6 @@
 #undef RECIPE_MAX_STRING
 #undef RECIPE_MAX_STEPS
 
-REF_HELD(/obj/machinery/chemical_synthesizer, "catalyst")
+DECLARE_REF(/obj/machinery/chemical_synthesizer, "catalyst", HELD, null)
 // Label -> installed cartridge (in contents); they go with the machine.
-REF_OWNED_VALUES(/obj/machinery/chemical_synthesizer, "cartridges")
+DECLARE_REF(/obj/machinery/chemical_synthesizer, "cartridges", OWNED_VALUES, null)

@@ -117,8 +117,8 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 		persist_nif_data(source)
 
 //Destructor cleans up references
-REF_OWNED(/obj/item/nif, "comm")
-REF_OWNED_LIST(/obj/item/nif, "nifsofts")
+DECLARE_REF(/obj/item/nif, "comm", OWNED, null)
+DECLARE_REF(/obj/item/nif, "nifsofts", OWNED_LIST, null)
 
 // the NIF unregisters from its human.
 /obj/item/nif/on_destroy(force)
@@ -764,4 +764,4 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 	//However, we currently don't need mid-round updating. Updates are done on death, round end, and exiting the round.
 	//addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(persist_nif_data), src), 20 SECONDS, TIMER_UNIQUE|TIMER_OVERRIDE|TIMER_DELETE_ME)
 
-REF_OWNED(/mob/living/carbon/human, "nif")
+DECLARE_REF(/mob/living/carbon/human, "nif", OWNED, null)

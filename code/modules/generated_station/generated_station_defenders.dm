@@ -93,7 +93,7 @@
 	director().defense_runtime_handle = om_handle(src)
 
 // its director forgets it.
-REF_BACK_HANDLE(/datum/generated_station_defense_runtime, list("director_handle" = "defense_runtime_handle"))
+DECLARE_REF(/datum/generated_station_defense_runtime, "director_handle", BACK_HANDLE, "defense_runtime_handle")
 
 
 /datum/generated_station_defense_runtime/proc/create_roster()
@@ -369,7 +369,7 @@ REF_BACK_HANDLE(/datum/generated_station_defense_runtime, list("director_handle"
 	station_defense.create_roster()
 	return TRUE
 
-REF_OWNED(/datum/expedition_site, "station_defense")
+DECLARE_REF(/datum/expedition_site, "station_defense", OWNED, null)
 
 /// LC-refs: the defender this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/generated_station_defender_agent/proc/defender() as /mob/living/simple_mob
@@ -393,7 +393,7 @@ REF_OWNED(/datum/expedition_site, "station_defense")
 
 
 
-REF_OWNED_LIST(/datum/generated_station_defense_runtime, "agents")
+DECLARE_REF(/datum/generated_station_defense_runtime, "agents", OWNED_LIST, null)
 
 /// Its defenders go with it, before phase 4 deletes the agents that name them.
 /datum/generated_station_defense_runtime/lifecycle_prerelease()

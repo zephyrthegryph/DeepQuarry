@@ -19,8 +19,8 @@
 	src.target_mind = target_mind
 	src.admin_user_handle = om_handle(admin_user)
 
-REF_PAIR(/datum/edit_memory_panel, list("target_mind" = "tgui_edit_memory_panel"))
-REF_PAIR(/datum/mind, list("tgui_edit_memory_panel" = "target_mind"))
+DECLARE_REF(/datum/edit_memory_panel, "target_mind", PAIR, "tgui_edit_memory_panel")
+DECLARE_REF(/datum/mind, "tgui_edit_memory_panel", PAIR, "target_mind")
 
 /datum/edit_memory_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN|R_FUN|R_EVENT)

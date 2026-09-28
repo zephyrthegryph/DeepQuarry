@@ -705,4 +705,4 @@ would spawn and follow the beaker, even if it is carried or thrown.
 /datum/effect/effect/system/steam_trail_follow/proc/oldposition() as /turf
 	return om_resolve(oldposition_handle)
 
-REF_HELD(/datum/effect/effect/system, "holder")
+DECLARE_REF(/datum/effect/effect/system, "holder", HELD, null)

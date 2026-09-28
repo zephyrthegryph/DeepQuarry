@@ -88,4 +88,4 @@
 	if(!ai_brain)
 		initialize_ai_brain()
 
-REF_OWNED(/mob/living, "ai_brain")
+DECLARE_REF(/mob/living, "ai_brain", OWNED, null)

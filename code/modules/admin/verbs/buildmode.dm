@@ -59,7 +59,7 @@
 	var/tmp/master_handle
 
 // Comes off its builder's screen: its holder's client, two handles away.
-REF_BACK_VIA(/obj/effect/bmode, list("master_handle.cl_handle" = "screen"))
+DECLARE_REF(/obj/effect/bmode, "master_handle.cl_handle", BACK_VIA, "screen")
 
 /obj/effect/bmode/builddir
 	icon_state = "build"
@@ -209,7 +209,10 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 /obj/effect/bmode/buildholder/Initialize(mapload)
 	. = ..()
 
-REF_OWNED(/obj/effect/bmode/buildholder, list("builddir", "buildhelp", "buildmode", "buildquit"))
+DECLARE_REF(/obj/effect/bmode/buildholder, "builddir", OWNED, null)
+DECLARE_REF(/obj/effect/bmode/buildholder, "buildhelp", OWNED, null)
+DECLARE_REF(/obj/effect/bmode/buildholder, "buildmode", OWNED, null)
+DECLARE_REF(/obj/effect/bmode/buildholder, "buildquit", OWNED, null)
 
 // AI mobs it selected are deselected.
 /obj/effect/bmode/buildholder/on_destroy(force)

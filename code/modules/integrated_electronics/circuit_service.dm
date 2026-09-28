@@ -100,4 +100,5 @@ GLOBAL_DATUM_INIT(circuit_service, /datum/world_service/circuit, new)
 		)
 
 // Prototype instances the service spawned once, keyed by path.
-REF_OWNED_VALUES(/datum/world_service/circuit, list("cached_components", "cached_assemblies"))
+DECLARE_REF(/datum/world_service/circuit, "cached_components", OWNED_VALUES, null)
+DECLARE_REF(/datum/world_service/circuit, "cached_assemblies", OWNED_VALUES, null)

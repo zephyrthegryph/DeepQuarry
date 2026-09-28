@@ -59,8 +59,8 @@
 		for(var/datum/stored_item/I as anything in item_records)
 			I.forget(thing)
 
-REF_OWNED(/obj/machinery/smartfridge, "soundloop")
-REF_OWNED_LIST(/obj/machinery/smartfridge, "item_records")
+DECLARE_REF(/obj/machinery/smartfridge, "soundloop", OWNED, null)
+DECLARE_REF(/obj/machinery/smartfridge, "item_records", OWNED_LIST, null)
 
 // a persistent fridge is forgotten by persistence.
 /obj/machinery/smartfridge/lifecycle_dematerialize()
@@ -433,4 +433,4 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 /// LC-refs: the attached this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/smartfridge/chemistry/chemvator/proc/attached() as /obj/machinery/smartfridge/chemistry/chemvator
 	return om_resolve(attached_handle)
-REF_BACK_HANDLE(/obj/machinery/smartfridge/chemistry/chemvator/down, list("attached_handle" = "attached_handle"))
+DECLARE_REF(/obj/machinery/smartfridge/chemistry/chemvator/down, "attached_handle", BACK_HANDLE, "attached_handle")

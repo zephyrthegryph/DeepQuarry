@@ -483,4 +483,4 @@
 		log_game("[key_name_admin(user)] has modified '[pda().id.registered_name]' 's ID with a pda timeclock.")
 		return TRUE
 
-REF_OWNED(/datum/data/pda/app/timeclock, "announce")
+DECLARE_REF(/datum/data/pda/app/timeclock, "announce", OWNED, null)

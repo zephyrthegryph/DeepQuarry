@@ -93,7 +93,7 @@
 	var/obj/item/reagent_containers/glass/beaker/vial/loaded_vial //Wow, what a name.
 	volume = 0
 
-REF_HELD(/obj/item/reagent_containers/hypospray/vial, "loaded_vial")
+DECLARE_REF(/obj/item/reagent_containers/hypospray/vial, "loaded_vial", HELD, null)
 
 /obj/item/reagent_containers/hypospray/vial/Initialize(mapload)
 	. = ..()

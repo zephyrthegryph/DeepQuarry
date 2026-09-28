@@ -98,4 +98,4 @@ DECLARE_INTERACTIONS(/obj/item/implantpad, \
 			T.id = clamp(T.id, 1, 1000)
 			return TRUE
 
-REF_HELD(/obj/item/implantpad, list("case"))
+DECLARE_REF(/obj/item/implantpad, "case", HELD, null)

@@ -26,7 +26,7 @@
 	. = ..()
 	active_beams = list()
 
-REF_OWNED_LIST(/obj/structure/cult/pylon/swarm, "active_beams")
+DECLARE_REF(/obj/structure/cult/pylon/swarm, "active_beams", OWNED_LIST, null)
 
 /obj/structure/cult/pylon/swarm/pylonhit(damage)
 	if(!isbroken)

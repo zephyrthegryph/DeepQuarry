@@ -25,7 +25,8 @@
 	my_shield.adjust_health(-200)
 	return
 
-REF_OWNED(/obj/item/mecha_parts/mecha_equipment/combat_shield, list("my_shield", "drone_overlay"))
+DECLARE_REF(/obj/item/mecha_parts/mecha_equipment/combat_shield, "my_shield", OWNED, null)
+DECLARE_REF(/obj/item/mecha_parts/mecha_equipment/combat_shield, "drone_overlay", OWNED, null)
 // the shield drone overlay comes off the chassis and its shields drop.
 /obj/item/mecha_parts/mecha_equipment/combat_shield/lifecycle_prerelease()
 	..()

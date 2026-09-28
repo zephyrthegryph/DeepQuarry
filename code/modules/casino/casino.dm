@@ -288,7 +288,7 @@ DECLARE_INTERACTIONS(/obj/item/roulette_ball/hollow, \
 	if(trapped && trapped.held_mob)
 		to_chat(trapped.held_mob, span_critical("THE WHOLE WORLD IS SENT WHIRLING AS THE ROULETTE SPINS!!!"))
 
-REF_SPILL(/obj/item/roulette_ball/hollow, "trapped")
+DECLARE_REF(/obj/item/roulette_ball/hollow, "trapped", SPILL, null)
 
 /obj/item/roulette_ball/cheat
 	cheatball = TRUE
@@ -997,7 +997,7 @@ REF_SPILL(/obj/item/roulette_ball/hollow, "trapped")
 	flick("[icon_state]-winning",src)
 	icon_state = "wheel_of_fortune"
 
-REF_HELD(/obj/structure/casino_table/roulette_table, list("ball"))
-REF_OWNED(/obj/structure/casino_table/roulette_table, list("confetti_spread"))
-REF_OWNED(/obj/machinery/wheel_of_fortune, list("confetti_spread"))
-REF_BACK(/obj/machinery/casinosentientprize_handler, list("selected_collar" = null))
+DECLARE_REF(/obj/structure/casino_table/roulette_table, "ball", HELD, null)
+DECLARE_REF(/obj/structure/casino_table/roulette_table, "confetti_spread", OWNED, null)
+DECLARE_REF(/obj/machinery/wheel_of_fortune, "confetti_spread", OWNED, null)
+DECLARE_REF(/obj/machinery/casinosentientprize_handler, "selected_collar", BACK, null)

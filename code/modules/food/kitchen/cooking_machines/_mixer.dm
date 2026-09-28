@@ -31,7 +31,7 @@ fundamental differences
 
 	mixer_loop = new(list(src), FALSE)
 
-REF_OWNED(/obj/machinery/appliance/mixer, "mixer_loop")
+DECLARE_REF(/obj/machinery/appliance/mixer, "mixer_loop", OWNED, null)
 
 //Mixers cannot-not do combining mode. So the default option is removed from this. A combine target must be chosen
 /obj/machinery/appliance/mixer/choose_output(mob/user, new_output)

@@ -538,7 +538,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/med_data, \
 #undef FIELD
 #undef MED_FIELD
 
-REF_HELD(/obj/machinery/computer/med_data, list("scan"))
+DECLARE_REF(/obj/machinery/computer/med_data, "scan", HELD, null)
 
 /// LC-refs: active1 -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/computer/med_data/proc/active1() as /datum/data/record

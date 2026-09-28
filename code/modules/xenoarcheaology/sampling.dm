@@ -177,9 +177,9 @@ DECLARE_INTERACTIONS(/obj/item/core_sampler, \
 	else
 		to_chat(user, span_warning("The core sampler is empty."))
 
-REF_OWNED(/obj/item/core_sampler, "filled_bag")
+DECLARE_REF(/obj/item/core_sampler, "filled_bag", OWNED, null)
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/item/rocksliver/proc/geological_data() as /datum/geosample
 	return geological_data_static
-REF_STATIC(/obj/item/rocksliver, "geological_data_static")
+DECLARE_REF(/obj/item/rocksliver, "geological_data_static", STATIC, null)

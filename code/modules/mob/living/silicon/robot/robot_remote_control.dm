@@ -235,4 +235,4 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 		new /mob/living/silicon/robot/ai_shell(get_turf(src))
 	return ..()
 
-REF_HELD(/mob/living/silicon/robot, "mainframe")
+DECLARE_REF(/mob/living/silicon/robot, "mainframe", HELD, null)

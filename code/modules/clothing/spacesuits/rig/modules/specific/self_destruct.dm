@@ -19,7 +19,7 @@
 	smoke = new /datum/effect/effect/system/smoke_spread/bad()
 	smoke.attach(src)
 
-REF_OWNED(/obj/item/rig_module/self_destruct, "smoke")
+DECLARE_REF(/obj/item/rig_module/self_destruct, "smoke", OWNED, null)
 
 /obj/item/rig_module/self_destruct/activate()
 	return

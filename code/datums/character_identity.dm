@@ -56,7 +56,7 @@
 	/// OM handle of the identity this mob embodies (its mind's, or its own). Read with identity().
 	var/identity_handle
 
-REF_OWNED(/mob/living, "own_identity")
+DECLARE_REF(/mob/living, "own_identity", OWNED, null)
 
 /// The identity of the character this mob embodies: its mind's when one is (or was) bound, else
 /// its own. Always non-null so readers never need to check.
@@ -179,4 +179,4 @@ REF_OWNED(/mob/living, "own_identity")
 /datum/character_identity/proc/dna() as /datum/dna
 	return om_resolve(dna_handle)
 
-REF_OWNED(/datum/mind, "identity")
+DECLARE_REF(/datum/mind, "identity", OWNED, null)

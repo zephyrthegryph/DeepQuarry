@@ -17,7 +17,7 @@
 	monitor = new(src)
 	monitor.core_tag = id_tag
 
-REF_OWNED(/obj/machinery/computer/fusion_core_control, "monitor")
+DECLARE_REF(/obj/machinery/computer/fusion_core_control, "monitor", OWNED, null)
 
 /obj/machinery/computer/fusion_core_control/declare_interactions(list/into)
 	into += list(

@@ -188,6 +188,7 @@
 /obj/effect/anomaly/weather/hail
 	selected_weather = /datum/anomalous_weather/hail
 
-REF_OWNED(/obj/effect/anomaly/weather, list("selected_weather"))
+DECLARE_REF(/obj/effect/anomaly/weather, "selected_weather", OWNED, null)
 
-REF_STATIC(/obj/effect/anomaly/weather, list("affected_areas", "affected_turfs"))
+DECLARE_REF(/obj/effect/anomaly/weather, "affected_areas", STATIC, null)
+DECLARE_REF(/obj/effect/anomaly/weather, "affected_turfs", STATIC, null)

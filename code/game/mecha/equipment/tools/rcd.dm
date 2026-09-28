@@ -13,7 +13,7 @@
 	my_rcd = new(src)
 	return ..()
 
-REF_OWNED(/obj/item/mecha_parts/mecha_equipment/tool/rcd, "my_rcd")
+DECLARE_REF(/obj/item/mecha_parts/mecha_equipment/tool/rcd, "my_rcd", OWNED, null)
 
 /obj/item/mecha_parts/mecha_equipment/tool/rcd/action(atom/target)
 	if(!action_checks(target) || get_dist(chassis, target) > 3)

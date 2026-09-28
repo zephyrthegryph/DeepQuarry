@@ -372,5 +372,6 @@ INITIALIZE_IMMEDIATE(/obj/effect/fancy_shuttle)
 /obj/effect/fancy_shuttle_floor_preview/escapepod
 	icon = 'icons/turf/fancy_shuttles/pod_preview.dmi'
 
-REF_OWNED(/obj/effect/fancy_shuttle, list("split_icon"))
-REF_OWNED(/turf/simulated/wall/fancy_shuttle, list("under_MA", "under_EM"))
+DECLARE_REF(/obj/effect/fancy_shuttle, "split_icon", OWNED, null)
+DECLARE_REF(/turf/simulated/wall/fancy_shuttle, "under_MA", OWNED, null)
+DECLARE_REF(/turf/simulated/wall/fancy_shuttle, "under_EM", OWNED, null)

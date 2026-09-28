@@ -24,7 +24,7 @@
 	if(camo_net)
 		alpha = 50
 
-REF_OWNED(/obj/effect/mine, "trap")
+DECLARE_REF(/obj/effect/mine, "trap", OWNED, null)
 
 /// Phase 2: leaves the dangerous-to-step index.
 /obj/effect/mine/lifecycle_dematerialize()
@@ -529,4 +529,4 @@ DECLARE_INTERACTIONS(/obj/item/mine, \
 	desc = "A small grey mine with 'BOOM' written on top, and an optical hazard warning on the side."
 	minetype = /obj/effect/mine/lasertag/all
 
-REF_HELD(/obj/item/mine, list("trap"))
+DECLARE_REF(/obj/item/mine, "trap", HELD, null)

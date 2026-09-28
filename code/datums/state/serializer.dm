@@ -110,7 +110,9 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 /// The id tables hold every atom the call touched as keys. A qdel'd context
 /// waits in the GC queue, so drop them now or those atoms carry a hidden
 /// reference (collapse's refcount check would see an outside holder).
-REF_DROP(/datum/state_context, list("ids", "by_id", "pending"))
+DECLARE_REF(/datum/state_context, "ids", DROP, null)
+DECLARE_REF(/datum/state_context, "by_id", DROP, null)
+DECLARE_REF(/datum/state_context, "pending", DROP, null)
 
 /datum/state_context/proc/refuse(reason)
 	LAZYADD(errors, reason)
@@ -423,7 +425,7 @@ REF_DROP(/datum/state_context, list("ids", "by_id", "pending"))
 	if(!(flags & STATE_CONTENTS) || !islist(blob[STATE_KEY_CONTENTS]))
 		return
 	// Deleting a removed thing can spill its own contents into A (a uniform's
-	// REF_SPILL_LIST drops its attached tie), so repeat until nothing
+	// DECLARE_REF(..., SPILL_LIST) drops its attached tie), so repeat until nothing
 	// Initialize made is left; the blob's children are not created yet.
 	var/list/removed = list()
 	var/list/batch

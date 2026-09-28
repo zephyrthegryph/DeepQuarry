@@ -558,4 +558,4 @@
 			return "SW"
 	return
 
-REF_OWNED(/obj/structure/transit_tube_pod, list("air_contents"))
+DECLARE_REF(/obj/structure/transit_tube_pod, "air_contents", OWNED, null)

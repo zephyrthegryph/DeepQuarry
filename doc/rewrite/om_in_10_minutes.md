@@ -65,17 +65,17 @@ An undeclared object-typed var fails lint. Pick the kind by who owns the target:
 
 | Kind | Declare | Use for |
 |---|---|---|
-| owned child | `REF_OWNED` / `REF_OWNED_LIST` / `REF_OWNED_VALUES`, or one-line `REF_VAR(type, OWNED, vartype, name)` | a datum I created and nothing else owns; deleted with me |
-| static | `REF_STATIC` (`REF_DEF` for `DEF_TYPES`, implicit) | singletons, services, materials, decls |
-| held | `REF_HELD` | something in my contents with no policy of its own |
-| pair | `REF_PAIR` via `link_set()` / `link_clear()` | two-sided links (sleeper and console) |
-| back | `REF_BACK(type, list("our_var" = "their_var"))` | a child naming its owner (ownership is a tree) |
-| backlist | `REF_BACKLIST` | my membership in another object's list |
+| owned child | `DECLARE_REF(type, "var", OWNED, null)` (or `OWNED_LIST` / `OWNED_VALUES`) | a datum I created and nothing else owns; deleted with me |
+| static | `DECLARE_REF(..., STATIC)` (`DECLARE_REF(..., DEF)` for `DEF_TYPES`, implicit) | singletons, services, materials, decls |
+| held | `DECLARE_REF(..., HELD)` | something in my contents with no policy of its own |
+| pair | `DECLARE_REF(..., PAIR)` via `link_set()` / `link_clear()` | two-sided links (sleeper and console) |
+| back | `DECLARE_REF(type, "our_var", BACK, "their_var")` | a child naming its owner (ownership is a tree) |
+| backlist | `DECLARE_REF(..., BACKLIST)` | my membership in another object's list |
 | handle | a text var: `om_handle(X)` / `om_resolve(h)` | another live entity whose lifetime someone else manages |
-| back via handle | `REF_BACK_HANDLE(type, list("owner_handle" = "panel"))`, `REF_BACKLIST_HANDLE(...)` | a partner I name by handle whose var or list names me back |
-| weak list | `REF_WEAK_LIST(type, list("names"))` + `WEAK_LIST_ADD` / `WEAK_LIST_REMOVE` / `WEAK_LIST_HAS` / `weak_list_live()` | a list of live entities I don't own (hearers, sensors, queued items) |
+| back via handle | `DECLARE_REF(type, "owner_handle", BACK_HANDLE, "panel")`, `DECLARE_REF(..., BACKLIST_HANDLE)` | a partner I name by handle whose var or list names me back |
+| weak list | `DECLARE_REF(type, "name", WEAK_LIST, null)` + `WEAK_LIST_ADD` / `WEAK_LIST_REMOVE` / `WEAK_LIST_HAS` / `weak_list_live()` | a list of live entities I don't own (hearers, sensors, queued items) |
 | cache | `declared_cache_vars()` with `CACHE_ON_CHANGE/EVENT/RELATION` | derivable data the core nulls when its rule fires |
-| pooled field | `REF_TRANSIENT` on a `POOL_DECLARE`d type | per-use fields of scratch objects |
+| pooled field | `DECLARE_REF(..., TRANSIENT)` on a `POOL_DECLARE`d type | per-use fields of scratch objects |
 
 Relations and slots (§7) are read through typed accessors (`M.buckled_to()`,
 `I.slot_item(slot)`). Sets of live instances are registries (`REGISTRY_MEMBERS(REGISTRY_X)`),

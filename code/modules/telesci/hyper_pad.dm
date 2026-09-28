@@ -34,7 +34,7 @@
 	set_light(3, 1, newcolor)
 
 // Its linked pads go with it.
-REF_OWNED_LIST(/obj/machinery/hyperpad/centre, "linked")
+DECLARE_REF(/obj/machinery/hyperpad/centre, "linked", OWNED_LIST, null)
 
 // leaves the pad map.
 /obj/machinery/hyperpad/centre/lifecycle_dematerialize()

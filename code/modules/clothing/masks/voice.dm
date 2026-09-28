@@ -39,4 +39,4 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/voice, \
 	. = ..()
 	changer = new(src)
 
-REF_OWNED(/obj/item/clothing/mask/gas/voice, "changer")
+DECLARE_REF(/obj/item/clothing/mask/gas/voice, "changer", OWNED, null)

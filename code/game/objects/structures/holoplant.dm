@@ -112,4 +112,4 @@
 /obj/machinery/holoplant/shipped/Initialize(mapload)
 	. = ..()
 
-REF_OWNED(/obj/machinery/holoplant, list("plant"))
+DECLARE_REF(/obj/machinery/holoplant, "plant", OWNED, null)

@@ -78,4 +78,6 @@
 /datum/lootpanel/proc/owner() as /client
 	return om_resolve(owner_handle)
 
-REF_OWNED_LIST(/datum/lootpanel, list("searchables", "to_image", "contents"))
+DECLARE_REF(/datum/lootpanel, "searchables", OWNED_LIST, null)
+DECLARE_REF(/datum/lootpanel, "to_image", OWNED_LIST, null)
+DECLARE_REF(/datum/lootpanel, "contents", OWNED_LIST, null)

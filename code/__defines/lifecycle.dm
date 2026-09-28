@@ -19,99 +19,91 @@
 #define LIFECYCLE_PHASE_NAME(id) (list("guard", "mind", "unbind", "dematerialize", "contents", "links", "teardown", "effects", "destroy", "scrub")[id])
 
 // ---- Declared references (L2, doc/rewrite/lifecycle.md §4) ----
-// One line next to the type replaces a hand-written Destroy() body. Each adds
-// to what the parent type declared (read once per type, links.dm).
-// NAMES is one var name or a list() of them; PAIRS/LISTS are assoc lists.
+// Every object-typed var a datum holds is declared once, next to its type:
+//
+//     DECLARE_REF(/obj/machinery/foo, "board", HELD, null)
+//     DECLARE_REF(/obj/item/part, "owner", BACK, "parts")
+//
+// VAR is the var name as a string (for BACK_VIA a "." path, for QUEUE a flag var
+// or LIFECYCLE_QUEUE_ALWAYS). KIND is one of the REFKIND_* names below, written
+// without the prefix. OPT is the kind's one argument (the partner's var for the
+// two-sided kinds, a getter for QUEUE) or null. Each REF adds one entry to the
+// type's declared_refs() table (links.dm), on top of what the parent type
+// declared; dq_lifecycle_link_table() caches it per type.
+#define DECLARE_REF(PATH, VAR, KIND, OPT) ##PATH/declared_refs() { return lifecycle_declare_ref(..(), REFKIND_##KIND, VAR, OPT); }
 
-/// Owned children, not contained: deleted in phase 4 (was QDEL_NULL in Destroy()).
-#define REF_OWNED(PATH, NAMES) ##PATH/declared_owned_vars() { . = ..(); . = (. || list()) + NAMES; }
-/// Owned lists of children: each member deleted in phase 4 (was QDEL_LIST in Destroy()).
-#define REF_OWNED_LIST(PATH, NAMES) ##PATH/declared_owned_list_vars() { . = ..(); . = (. || list()) + NAMES; }
-/// One inserted thing (a beaker, a card) spilled to the drop location in phase 3.
-#define REF_SPILL(PATH, NAMES) ##PATH/declared_spill_vars() { . = ..(); . = (. || list()) + NAMES; }
-/// A thing held in contents with no policy of its own (an installed board): the
-/// var is nulled if the thing is destroyed while inside.
-#define REF_HELD(PATH, NAMES) ##PATH/declared_held_vars() { . = ..(); . = (. || list()) + NAMES; }
-/// A list var's members spilled to the drop location in phase 3.
-#define REF_SPILL_LIST(PATH, NAMES) ##PATH/declared_spill_list_vars() { . = ..(); . = (. || list()) + NAMES; }
-/// Owned assoc lists whose values are children: deleted in phase 4 (was QDEL_LIST_ASSOC_VAL).
-#define REF_OWNED_VALUES(PATH, NAMES) ##PATH/declared_owned_value_vars() { . = ..(); . = (. || list()) + NAMES; }
-/// Pairs, our var -> the partner's var pointing back: nulled on both sides in phase 4.
-#define REF_PAIR(PATH, PAIRS) ##PATH/declared_pair_vars() { return lifecycle_merge_assoc(..(), PAIRS); }
-/// Back-lists, our var (the owner) -> the owner's list var we sit in: removed in phase 4.
-#define REF_BACKLIST(PATH, LISTS) ##PATH/declared_backlist_vars() { return lifecycle_merge_assoc(..(), LISTS); }
-/// Membership in a partner's list, where our var names the partner by OM handle:
-/// list("our_handle_var" = "their_list_var"), or a list of their list vars. Phase 4 removes us (or our handle) from it.
-#define REF_BACKLIST_HANDLE(PATH, LISTS) ##PATH/declared_backlist_handle_vars() { return lifecycle_merge_assoc(..(), LISTS); }
-/// A partner we name by OM handle whose var names us back (by reference or handle):
-/// list("our_handle_var" = "their_var"). Phase 4 nulls their var if it still names us.
-#define REF_BACK_HANDLE(PATH, BACKS) ##PATH/declared_back_handle_vars() { return lifecycle_merge_assoc(..(), BACKS); }
-/// A partner reached through a path of our vars, whose var(s) name us back:
-/// list("path" = "their_var"). The path is one var or several joined by "."
-/// ("master_handle.cl_handle"); each hop may hold a reference or an OM handle, and
-/// the end may be a /client. The value is a var name, a list of them, or
-/// list(/partner/type = name or names), applied only when the partner is that type
-/// (list("loc" = list(/obj/machinery = "component_parts"))). Phase 4 removes us
-/// (and our handle) from each named list var and nulls each other named var that
-/// names us. Our own vars are untouched. Replaces `partner()?.their_var = null` and
-/// `LAZYREMOVE(partner().list, src)` bodies where the partner isn't a plain var of ours.
-#define REF_BACK_VIA(PATH, PATHS) ##PATH/declared_back_via_vars() { return lifecycle_merge_assoc(..(), PATHS); }
-/// The owner side of a back-list: list("our_list" = "member_var"). Each member of our
-/// list (keys and assoc values; references or OM handles) whose named var(s) name us
-/// has them cleared as REF_BACK_VIA clears a partner's; the value takes the same
-/// forms. Then our list is dropped. Replaces `for(x in list) x.back = null` bodies.
-#define REF_LIST_BACK(PATH, LISTS) ##PATH/declared_list_back_vars() { return lifecycle_merge_assoc(..(), LISTS); }
-/// Vars just dropped (nulled) in phase 4: the target is not deleted, cut or told.
-/// For scratch tables keyed by other objects, and lists src was handed and may share
-/// with its caller (cutting those would empty someone else's list).
-#define REF_DROP(PATH, NAMES) ##PATH/declared_drop_vars() { . = ..(); . = (. || list()) + NAMES; }
-/// Membership in a global or subsystem list that isn't an OM registry (a work
-/// queue): list("flag_var" = /proc/getter). When src.flag_var is true (or the key is
-/// LIFECYCLE_QUEUE_ALWAYS) phase 4 removes src from the list the global proc returns
-/// (null-safe; a list of getters is allowed). The flag keeps a big queue from being
-/// scanned for objects that aren't in it.
-#define REF_QUEUE_MEMBER(PATH, QUEUES) ##PATH/declared_queue_vars() { return lifecycle_merge_assoc(..(), QUEUES); }
-/// REF_QUEUE_MEMBER key for a membership that holds for the object's whole life.
+// The kinds. Each is the key of its entry list in the link table.
+/// Owned child, not contained: deleted in phase 4 (was QDEL_NULL in Destroy()). OPT: null.
+#define REFKIND_OWNED "owned"
+/// Owned list of children: each member deleted in phase 4 (was QDEL_LIST). OPT: null.
+#define REFKIND_OWNED_LIST "owned_list"
+/// Owned assoc list whose values are children: deleted in phase 4 (was QDEL_LIST_ASSOC_VAL). OPT: null.
+#define REFKIND_OWNED_VALUES "owned_values"
+/// One inserted thing (a beaker, a card) spilled to the drop location in phase 3. OPT: null.
+#define REFKIND_SPILL "spill"
+/// A list var whose members spill to the drop location in phase 3. OPT: null.
+#define REFKIND_SPILL_LIST "spill_list"
+/// A thing held in contents with no policy of its own (an installed board): nulled if
+/// the thing is destroyed while inside, and dropped with the holder. OPT: null.
+#define REFKIND_HELD "held"
+/// Two-sided pair, nulled on both sides in phase 4 (link_set()/link_clear()).
+/// OPT: the partner's var pointing back.
+#define REFKIND_PAIR "pair"
+/// Membership in the owner's list: phase 4 removes src from it. OPT: the owner's list var.
+#define REFKIND_BACKLIST "backlist"
+/// Membership in a partner's list, where VAR names the partner by OM handle. OPT: the
+/// partner's list var, a list of them, or list(/partner/type = name(s)).
+#define REFKIND_BACKLIST_HANDLE "backlist_handle"
+/// A partner named by OM handle whose var names us back (by reference or handle).
+/// OPT: that var. Phase 4 nulls it if it still names us.
+#define REFKIND_BACK_HANDLE "back_handle"
+/// A partner reached through a path of our vars ("master_handle.cl_handle"; each hop a
+/// reference or OM handle, the end may be a /client). OPT: the partner's var(s) naming us
+/// -- a name, a list, or list(/partner/type = name(s)). Phase 4 removes us from each named
+/// list and nulls each other named var that names us. Our own vars are untouched.
+#define REFKIND_BACK_VIA "back_via"
+/// The owner side of a back-list: each member of our list (keys and assoc values,
+/// references or handles) stops naming us through OPT's var(s), then the list is dropped.
+#define REFKIND_LIST_BACK "list_back"
+/// Just dropped (nulled) in phase 4: not deleted, cut or told. For scratch tables keyed
+/// by other objects and lists src was handed and may share. OPT: null.
+#define REFKIND_DROP "drop"
+/// Membership in a global or subsystem list that isn't an OM registry. VAR is a flag var
+/// (or LIFECYCLE_QUEUE_ALWAYS); OPT is a global proc path, or a list of them, returning the
+/// list. Phase 4 removes src from each list while the flag is set.
+#define REFKIND_QUEUE "queue"
+/// Non-owning side of an owner/child pair: phase 4 nulls ours, and theirs if it still
+/// points at us. OPT: the owner's var pointing at us, or null. A child names its owner
+/// with BACK, never OWNED (ownership_cycle_lint.py).
+#define REFKIND_BACK "back"
+/// Deliberately left set after destruction (an id the GC report reads). Exempt from the
+/// destroy postcondition (leak_check.dm). OPT: null.
+#define REFKIND_KEEP "keep"
+/// A frozen definition or registry object that is never deleted (a /datum/decl, a
+/// techweb node): nothing to clear. Vars typed in DEF_TYPES (state_schema_lint.py) need
+/// no declaration at all. OPT: null.
+#define REFKIND_DEF "def"
+/// A strong reference to a round-long singleton, service or flyweight (a subsystem, a
+/// /datum/material, a seed). Held as the object itself, never an om_handle(): the holder
+/// may be what keeps a flyweight alive. Never cleared, never reported as a leak.
+/// tools/ci/handle_kinds_lint.py refuses a handle to an OM_STATIC_TYPE. OPT: null.
+#define REFKIND_STATIC "static"
+/// A list of OM handles naming live entities the holder neither owns nor keeps alive.
+/// Use WEAK_LIST_ADD / WEAK_LIST_REMOVE / WEAK_LIST_HAS / weak_list_live(). Phase 4 cuts
+/// the list without deleting members. OPT: null.
+#define REFKIND_WEAK_LIST "weak_list"
+/// A pooled type's (POOL_DECLARE) per-use field: pool_release() resets it to its initial
+/// value. Only valid on pooled types. OPT: null.
+#define REFKIND_TRANSIENT "transient"
+
+/// The VAR of a DECLARE_REF(PATH, VAR, QUEUE, getter) for a membership that holds for the object's whole life.
 #define LIFECYCLE_QUEUE_ALWAYS "*"
-
-/// Back-references, our var -> the var on the referenced object that points at
-/// us (or null): the non-owning side of an owner/child pair. Phase 4 nulls
-/// ours, and theirs if it still points at us. Ownership stays a tree: a child
-/// names its owner with REF_BACK, never REF_OWNED (ownership_cycle_lint.py).
-#define REF_BACK(PATH, BACKS) ##PATH/declared_back_vars() { return lifecycle_merge_assoc(..(), BACKS); }
-/// Vars deliberately left set after destruction (a shared, immortal singleton;
-/// an id the GC report reads). Exempt from the destroy postcondition
-/// (dq_lifecycle_leak_lines(), code/datums/lifecycle/leak_check.dm).
-#define REF_KEEP(PATH, NAMES) ##PATH/declared_keep_vars() { . = ..(); . = (. || list()) + NAMES; }
 
 /// Declared destruction effects (phase 6): DATA is a `new /datum/destroy_effects_data(...)`
 /// with named arguments, built once per type. Replaces message/sound/debris/
 /// neighbour-smoothing bodies in Destroy().
 #define DESTROY_EFFECTS(PATH, DATA) ##PATH/destroy_effects() { var/static/datum/destroy_effects_data/data = DATA; return data; }
 
-/// References to frozen definitions and registry objects that are never deleted
-/// (a /datum/material, a /datum/decl, a techweb node, an uplink category). The
-/// lint accepts them and destruction does nothing with them: there is nothing to
-/// clear, because the target outlives every holder. Vars whose declared type is in
-/// DEF_TYPES (tools/ci/state_schema_lint.py) need no declaration at all.
-#define REF_DEF(PATH, NAMES) ##PATH/declared_def_vars() { . = ..(); . = (. || list()) + NAMES; }
-/// Strong references to round-long singletons, services and flyweights (a subsystem,
-/// a /datum/material, a seed, a tgui_state, a techweb). The var holds the object
-/// itself -- never an om_handle() -- because the holder may be what keeps a
-/// flyweight alive (a diverged seed, an engineered material). Destruction never
-/// clears it and the leak check never reports it: the target outlives or is
-/// shared by every holder, and a holder going away just drops one reference.
-/// Ownership rule (doc/rewrite/object_model_core.md "Ownership"): every datum has
-/// exactly one owner; handles are only for other live entities whose lifetime
-/// something else manages. tools/ci/handle_kinds_lint.py refuses a handle var
-/// whose target type is marked OM_STATIC_TYPE.
-#define REF_STATIC(PATH, NAMES) ##PATH/declared_static_vars() { . = ..(); . = (. || list()) + NAMES; }
-/// Lists of other live entities the holder neither owns nor keeps alive (alarms a
-/// console monitors, sensors on a grid, hearers of a sound, queued items). Members
-/// are stored as OM handles, never references: add/remove/iterate only through
-/// WEAK_LIST_ADD / WEAK_LIST_REMOVE / WEAK_LIST_HAS / weak_list_live(), which resolve
-/// and prune dead entries. Destruction cuts the list (phase 4) without deleting members.
-#define REF_WEAK_LIST(PATH, NAMES) ##PATH/declared_weak_list_vars() { . = ..(); . = (. || list()) + NAMES; }
 /// Adds live entity X to weak list L (lazily created); a no-op for null or a deleted X.
 #define WEAK_LIST_ADD(L, X) do { var/__wl_h = om_handle(X); if(__wl_h) { LAZYOR(L, __wl_h); } } while(0)
 /// Removes X from weak list L; works while X is being destroyed (om_handle_of()).
@@ -120,27 +112,9 @@
 #define WEAK_LIST_HAS(L, X) (LAZYLEN(L) && (om_handle_of(X) in L))
 /// Marks PATH (and its subtypes) as a singleton / flyweight / definition type:
 /// instances are shared and live for the round, so references to them are
-/// REF_STATIC (or read from the registry at the use site), never handles.
+/// declared STATIC (or read from the registry at the use site), never handles.
 /// tools/ci/ref_kinds.py reads these lines; om_static_type() answers at runtime.
 #define OM_STATIC_TYPE(PATH) ##PATH/om_static_type() { return TRUE; }
-
-/// Fields of a pooled type (POOL_DECLARE) that belong to one use: pool_release()
-/// resets each to its initial value before the object goes back to its pool, so a
-/// forgotten clear can't leak a reference. Scalars may be listed too. The lint
-/// accepts object-typed REF_TRANSIENT vars only on pooled types.
-#define REF_TRANSIENT(PATH, NAMES) ##PATH/declared_transient_vars() { . = ..(); . = (. || list()) + NAMES; }
-
-// ---- One-place declarations: the var and its kind together ----
-// REF_VAR(/obj/machinery/foo, OWNED, /datum/bar, helper) declares
-// `/obj/machinery/foo/var/datum/bar/helper` and adds "helper" to the type's
-// REF_OWNED list. KIND is any single-name kind: OWNED, OWNED_LIST, OWNED_VALUES,
-// SPILL, SPILL_LIST, HELD, DEF, STATIC, TRANSIENT, WEAK_LIST, DROP. VARTYPE is the full type path (/list
-// for list kinds). The older REF_* forms keep working.
-#define REF_VAR(PATH, KIND, VARTYPE, NAME) ##PATH { var##VARTYPE/##NAME; } REF_##KIND(PATH, #NAME)
-/// REF_VAR for a pair: OTHER is the partner's var pointing back.
-#define REF_PAIR_VAR(PATH, VARTYPE, NAME, OTHER) ##PATH { var##VARTYPE/##NAME; } REF_PAIR(PATH, list(#NAME = OTHER))
-/// REF_VAR for a backlist: LIST_VAR is the owner's list var src sits in.
-#define REF_BACKLIST_VAR(PATH, VARTYPE, NAME, LIST_VAR) ##PATH { var##VARTYPE/##NAME; } REF_BACKLIST(PATH, list(#NAME = LIST_VAR))
 
 // ---- Object pools (code/datums/lifecycle/pool.dm, lifecycle.md §4.1) ----
 /// /datum/var/pool_state values. Null: the datum is not pooled.

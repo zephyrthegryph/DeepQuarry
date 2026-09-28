@@ -381,7 +381,7 @@
 	if(linkedServer() && user)
 		BruteForce(user)
 
-REF_OWNED(/obj/machinery/computer/message_monitor, list("spark_system"))
+DECLARE_REF(/obj/machinery/computer/message_monitor, "spark_system", OWNED, null)
 
 /// LC-refs: linkedServer -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/computer/message_monitor/proc/linkedServer() as /obj/machinery/message_server

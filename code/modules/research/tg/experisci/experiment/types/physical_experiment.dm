@@ -10,7 +10,8 @@
 	var/datum/experiment_handler/linked_experiment_handler
 
 // Its hooks on the scanned atom go with the core teardown.
-REF_BACK(/datum/experiment/physical, list("currently_scanned_atom" = null, "linked_experiment_handler" = null))
+DECLARE_REF(/datum/experiment/physical, "currently_scanned_atom", BACK, null)
+DECLARE_REF(/datum/experiment/physical, "linked_experiment_handler", BACK, null)
 
 /datum/experiment/physical/is_complete()
 	return completed

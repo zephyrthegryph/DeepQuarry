@@ -120,8 +120,10 @@
 /obj/machinery/maint_recycler/dismantle()
 	return FALSE //we don't want something as important as this to be able to be disassembled. it's a scene tool, technically.
 
-REF_SPILL(/obj/machinery/maint_recycler, "inserted_item")
-REF_OWNED(/obj/machinery/maint_recycler, list("hatch", "monitor_screen", "item_overlay"))
+DECLARE_REF(/obj/machinery/maint_recycler, "inserted_item", SPILL, null)
+DECLARE_REF(/obj/machinery/maint_recycler, "hatch", OWNED, null)
+DECLARE_REF(/obj/machinery/maint_recycler, "monitor_screen", OWNED, null)
+DECLARE_REF(/obj/machinery/maint_recycler, "item_overlay", OWNED, null)
 
 /obj/machinery/maint_recycler/Initialize(mapload)
 	. = ..()

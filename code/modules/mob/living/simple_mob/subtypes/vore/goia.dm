@@ -529,4 +529,4 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/zorgoia, \
 			goia_overlays["belly"] = input_style_list[20]
 			update_icon()
 
-REF_HELD(/mob/living/simple_mob/vore/zorgoia, "friend")
+DECLARE_REF(/mob/living/simple_mob/vore/zorgoia, "friend", HELD, null)

@@ -203,7 +203,7 @@
 
 /// Declared destruction effects (L3, doc/rewrite/lifecycle.md §2 phase 6,
 /// §5): message, sound, debris and neighbour update, applied by
-/// dq_lifecycle_effects() instead of a hand `visible_message()`/`playsound()`/
+/// phase 6 of destroy_transaction() (transaction.dm) instead of a hand `visible_message()`/`playsound()`/
 /// `new debris()` block in Destroy(). A type overrides destroy_effects()
 /// (transaction.dm) to return one, built once as a proc-local static (same
 /// pattern as slot_def singletons).

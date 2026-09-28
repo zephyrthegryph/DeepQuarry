@@ -50,10 +50,11 @@
 
 	rebuild_radial_images()
 
-REF_OWNED(/obj/item/perfect_tele, list("power_source", "spk"))
+DECLARE_REF(/obj/item/perfect_tele, "power_source", OWNED, null)
+DECLARE_REF(/obj/item/perfect_tele, "spk", OWNED, null)
 
 // its beacons forget it.
-REF_LIST_BACK(/obj/item/perfect_tele, list("beacons" = "tele_hand_handle"))
+DECLARE_REF(/obj/item/perfect_tele, "beacons", LIST_BACK, "tele_hand_handle")
 
 /obj/item/perfect_tele/update_icon()
 	if(!power_source)

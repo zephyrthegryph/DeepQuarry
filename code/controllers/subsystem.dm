@@ -355,12 +355,12 @@
 			return FALSE
 	. = ..()
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/controller/subsystem/proc/queue_next() as /datum/controller/subsystem
 	return queue_next_static
-REF_STATIC(/datum/controller/subsystem, "queue_next_static")
+DECLARE_REF(/datum/controller/subsystem, "queue_next_static", STATIC, null)
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/controller/subsystem/proc/queue_prev() as /datum/controller/subsystem
 	return queue_prev_static
-REF_STATIC(/datum/controller/subsystem, "queue_prev_static")
+DECLARE_REF(/datum/controller/subsystem, "queue_prev_static", STATIC, null)

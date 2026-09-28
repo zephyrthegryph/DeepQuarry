@@ -533,7 +533,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/trolley_tank, \
 /obj/vehicle/train/trolley_tank/on_reagent_change(changetype)
 	update_icon()
 
-REF_HELD(/obj/vehicle/train/engine, "key")
+DECLARE_REF(/obj/vehicle/train/engine, "key", HELD, null)
 
 /// Engine Menu requirements (old start/stop/remove_key verb toggling in turn_on/turn_off/key insert).
 /obj/vehicle/train/engine/proc/pred_engine_running(mob/actor, atom/target, obj/item/held)

@@ -75,4 +75,4 @@ GLOBAL_LIST_INIT(nymph_default_emotes, list(
 	if(prob(1))
 		D.emote(pick("scratch","jump","chirp","roll"))
 
-REF_SPILL(/mob/living/carbon/alien/diona, "hat")
+DECLARE_REF(/mob/living/carbon/alien/diona, "hat", SPILL, null)

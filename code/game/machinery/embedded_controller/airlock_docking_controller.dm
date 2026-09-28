@@ -58,7 +58,7 @@
 	airlock_program = A
 	airlock_program.master_prog = src
 
-REF_OWNED(/datum/embedded_program/docking/airlock, "airlock_program")
+DECLARE_REF(/datum/embedded_program/docking/airlock, "airlock_program", OWNED, null)
 
 /datum/embedded_program/docking/airlock/receive_user_command(command)
 	if (command == "toggle_override")
@@ -111,8 +111,8 @@ REF_OWNED(/datum/embedded_program/docking/airlock, "airlock_program")
 /datum/embedded_program/airlock/docking
 	var/datum/embedded_program/docking/airlock/master_prog
 
-REF_PAIR(/datum/embedded_program/airlock/docking, list("master_prog" = "airlock_program"))
-REF_PAIR(/datum/embedded_program/docking/airlock, list("airlock_program" = "master_prog"))
+DECLARE_REF(/datum/embedded_program/airlock/docking, "master_prog", PAIR, "airlock_program")
+DECLARE_REF(/datum/embedded_program/docking/airlock, "airlock_program", PAIR, "master_prog")
 
 /datum/embedded_program/airlock/docking/receive_user_command(command)
 	if (master_prog.undocked() || master_prog.override_enabled)	//only allow the port to be used as an airlock if nothing is docked here or the override is enabled
@@ -126,4 +126,5 @@ REF_PAIR(/datum/embedded_program/docking/airlock, list("airlock_program" = "mast
 	if (master_prog.undocked() || master_prog.override_enabled)	//only allow the port to be used as an airlock if nothing is docked here or the override is enabled
 		..(target)
 
-REF_OWNED(/obj/machinery/embedded_controller/radio/airlock/docking_port, list("airlock_program", "docking_program"))
+DECLARE_REF(/obj/machinery/embedded_controller/radio/airlock/docking_port, "airlock_program", OWNED, null)
+DECLARE_REF(/obj/machinery/embedded_controller/radio/airlock/docking_port, "docking_program", OWNED, null)

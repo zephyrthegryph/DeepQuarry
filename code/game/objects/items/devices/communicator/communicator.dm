@@ -380,9 +380,12 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 // Parameters: None
 // Description: Deletes all the voice mobs, disconnects all linked communicators, and cuts lists to allow successful qdel()
 // ITION: Remvovess any slotted in IDs before deleting
-REF_OWNED(/obj/item/communicator, list("camera", "exonet", "cam_screen", "cam_background"))
-REF_OWNED_LIST(/obj/item/communicator, "cam_plane_masters")
-REF_SPILL(/obj/item/communicator, "id") // a slotted ID card drops out
+DECLARE_REF(/obj/item/communicator, "camera", OWNED, null)
+DECLARE_REF(/obj/item/communicator, "exonet", OWNED, null)
+DECLARE_REF(/obj/item/communicator, "cam_screen", OWNED, null)
+DECLARE_REF(/obj/item/communicator, "cam_background", OWNED, null)
+DECLARE_REF(/obj/item/communicator, "cam_plane_masters", OWNED_LIST, null)
+DECLARE_REF(/obj/item/communicator, "id", SPILL, null)	// a slotted ID card drops out
 
 // its ID drops out, connected voices time out and its calls close.
 /obj/item/communicator/on_destroy(force)
@@ -455,4 +458,4 @@ REF_SPILL(/obj/item/communicator, "id") // a slotted ID card drops out
 #undef MANITAB
 #undef SETTTAB
 
-REF_OWNED(/mob/observer/dead, list("exonet"))
+DECLARE_REF(/mob/observer/dead, "exonet", OWNED, null)

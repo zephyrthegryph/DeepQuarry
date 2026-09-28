@@ -23,8 +23,8 @@
 	. = ..()
 	create_reagents(1000)
 
-REF_OWNED(/obj/item/grenade/chem_grenade, "detonator")
-REF_OWNED_LIST(/obj/item/grenade/chem_grenade, "beakers")
+DECLARE_REF(/obj/item/grenade/chem_grenade, "detonator", OWNED, null)
+DECLARE_REF(/obj/item/grenade/chem_grenade, "beakers", OWNED_LIST, null)
 
 /// Old attack_self.
 /obj/item/grenade/chem_grenade/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)

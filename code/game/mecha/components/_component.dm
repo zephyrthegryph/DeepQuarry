@@ -194,4 +194,4 @@ DECLARE_INTERACTIONS(/obj/item/mecha_parts/component, INTERACT_ITEM(null, PROC_R
 	return
 
 // Read by detach() in Destroy().
-REF_HELD(/obj/item/mecha_parts/component, "chassis")
+DECLARE_REF(/obj/item/mecha_parts/component, "chassis", HELD, null)

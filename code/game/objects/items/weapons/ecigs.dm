@@ -21,7 +21,7 @@
 	. = ..()
 	ec_cartridge = new cartridge_type(src)
 
-REF_OWNED(/obj/item/clothing/mask/smokable/ecig, "ec_cartridge")
+DECLARE_REF(/obj/item/clothing/mask/smokable/ecig, "ec_cartridge", OWNED, null)
 
 /obj/item/clothing/mask/smokable/ecig/examine(mob/user)
 	. = ..()

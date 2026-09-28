@@ -54,11 +54,11 @@
 
 	update()
 
-/// SSlighting's light source queue (REF_QUEUE_MEMBER).
+/// SSlighting's light source queue (DECLARE_REF(..., QUEUE)).
 /proc/lifecycle_lighting_sources_queue()
 	return SSlighting?.sources_queue
 
-REF_QUEUE_MEMBER(/datum/light_source, list("needs_update" = /proc/lifecycle_lighting_sources_queue))
+DECLARE_REF(/datum/light_source, "needs_update", QUEUE, /proc/lifecycle_lighting_sources_queue)
 
 // lighting engine: the source removes its light from the corners it lit.
 /datum/light_source/on_destroy(force)
@@ -313,9 +313,11 @@ REF_QUEUE_MEMBER(/datum/light_source, list("needs_update" = /proc/lifecycle_ligh
 #undef SETUP_CORNERS_CACHE
 
 // Membership in the atoms' light_sources lazylists (Destroy() also removes them by hand).
-REF_BACKLIST(/datum/light_source, list("source_atom" = "light_sources", "top_atom" = "light_sources"))
-REF_STATIC(/datum/light_source, list("source_turf", "pixel_turf"))
+DECLARE_REF(/datum/light_source, "source_atom", BACKLIST, "light_sources")
+DECLARE_REF(/datum/light_source, "top_atom", BACKLIST, "light_sources")
+DECLARE_REF(/datum/light_source, "source_turf", STATIC, null)
+DECLARE_REF(/datum/light_source, "pixel_turf", STATIC, null)
 // Corner -> strength; lighting corners are immortal, so keying by them strongly is safe on the hot path.
-REF_STATIC(/datum/light_source, "effect_str")
+DECLARE_REF(/datum/light_source, "effect_str", STATIC, null)
 
 

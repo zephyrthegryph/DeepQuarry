@@ -6,9 +6,7 @@
 /// is no outside reference to its object (collapse).
 /datum/var/tmp/datum/rule_binding/rule_binding
 
-/datum/declared_owned_vars()
-	. = ..()
-	. = (. || list()) + "rule_binding"
+DECLARE_REF(/datum, "rule_binding", OWNED, null)
 
 /proc/dq_rule_binding_of(datum/thing)
 	var/datum/rule_binding/binding = thing?.rule_binding
@@ -322,4 +320,4 @@
 			if(RULE_OP_REMOVE)
 				qdel(thing)
 
-REF_BACK(/datum/rule_binding, list("owner" = null))
+DECLARE_REF(/datum/rule_binding, "owner", BACK, null)

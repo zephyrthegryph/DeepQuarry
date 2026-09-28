@@ -359,4 +359,4 @@
 	. = ..()
 	src.air_contents.set_temperature(2.72)
 
-REF_OWNED(/obj/structure/reflector, list("deflector_overlay"))
+DECLARE_REF(/obj/structure/reflector, "deflector_overlay", OWNED, null)

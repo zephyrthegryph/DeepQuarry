@@ -1195,4 +1195,4 @@
 /obj/machinery/power/port_gen/step_start_condition()
 	return active
 
-REF_HELD(/obj/machinery/power/rtg/abductor, "cell")
+DECLARE_REF(/obj/machinery/power/rtg/abductor, "cell", HELD, null)

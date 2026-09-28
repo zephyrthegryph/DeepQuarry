@@ -7,7 +7,7 @@
 
 // ---- Fixtures ----
 
-/// Two types that REF_OWN each other: the shape of the old overmap mob/marker bug.
+/// Two types that DECLARE_REF(..., OWNED) each other: the shape of the old overmap mob/marker bug.
 /datum/dq_diag_owner_a
 	var/datum/dq_diag_owner_b/b
 
@@ -15,9 +15,9 @@
 	var/datum/dq_diag_owner_a/a
 
 // ALLOW(ownership_cycle): deliberate fixture for the runtime cycle check
-REF_OWNED(/datum/dq_diag_owner_a, "b")
+DECLARE_REF(/datum/dq_diag_owner_a, "b", OWNED, null)
 // ALLOW(ownership_cycle): deliberate fixture for the runtime cycle check
-REF_OWNED(/datum/dq_diag_owner_b, "a")
+DECLARE_REF(/datum/dq_diag_owner_b, "a", OWNED, null)
 
 /// A holder that deletes its members in Destroy() but keeps its list of them,
 /// while each member keeps a reference back: after both are deleted, neither
@@ -179,3 +179,37 @@ REF_OWNED(/datum/dq_diag_owner_b, "a")
 	TEST_ASSERT(isnull(fragile.loc), "and still leaves its turf")
 	TEST_ASSERT(fragile.gc_destroyed != GC_CURRENTLY_BEING_QDELETED, "and is handed to the GC, not left mid-destroy")
 	TEST_ASSERT(dq_diag_capture_has(capture, "destroy transaction of /obj/item/dq_diag_init_refuser/fragile"), "the runtime in its Destroy() was reported: [json_encode(capture)]")
+
+/// A plain (non-atom) datum whose destroy hook runtimes: the transaction aborts
+/// before phase 5, so only dq_lifecycle_finish_aborted() can tear down its OM state.
+/datum/dq_diag_aborted_plain
+
+/datum/dq_diag_aborted_plain/on_destroy(force)
+	..()
+	CRASH("dq_diag aborted plain")
+
+/datum/dq_diag_aborted_plain/proc/never_fires()
+	GLOB.dq_diag_aborted_timer_fired = TRUE
+
+GLOBAL_VAR_INIT(dq_diag_aborted_timer_fired, FALSE)
+
+/// Regression: an aborted destroy of a non-atom datum used to skip
+/// om_teardown_rest(), leaving live OM timers (and hooks, tasks) on a dead datum.
+/datum/unit_test/dq_lifecycle_diag_aborted_plain_teardown
+
+/datum/unit_test/dq_lifecycle_diag_aborted_plain_teardown/Run()
+	GLOB.dq_diag_aborted_timer_fired = FALSE
+	var/datum/dq_diag_aborted_plain/D = new
+	var/id = om_after(D, 1 SECONDS, TYPE_PROC_REF(/datum/dq_diag_aborted_plain, never_fires))
+	TEST_ASSERT(id, "the fixture has an OM timer")
+	var/datum/om/rec/rec = D.om_rec
+	TEST_ASSERT(rec && length(rec.timers), "the timer lives on the datum's record")
+	GLOB.dq_caught_capture = list()
+	qdel(D)
+	var/list/capture = GLOB.dq_caught_capture
+	GLOB.dq_caught_capture = null
+	TEST_ASSERT(dq_diag_capture_has(capture, "destroy transaction of /datum/dq_diag_aborted_plain"), "the runtime aborted the transaction: [json_encode(capture)]")
+	TEST_ASSERT(QDELETED(D), "the datum is still deleted")
+	TEST_ASSERT_NULL(D.om_rec, "its OM record was torn down")
+	TEST_ASSERT(rec.torn_down, "the record is marked torn down")
+	TEST_ASSERT(!length(rec.timers), "no timer survives on the dead datum")

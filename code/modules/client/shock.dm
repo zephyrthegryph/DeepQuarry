@@ -148,9 +148,9 @@
 			duration = text2num(params["duration"])
 			. = TRUE
 
-REF_OWNED(/client, "tgui_shocker")
+DECLARE_REF(/client, "tgui_shocker", OWNED, null)
 
-REF_OWNED(/datum/tgui_shock, "window")
+DECLARE_REF(/datum/tgui_shock, "window", OWNED, null)
 
 /// LC-refs: the client this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_shock/proc/client() as /client

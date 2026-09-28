@@ -12,7 +12,7 @@
 		welder = new weldertype(src)
 	on_tool_switch()
 
-REF_OWNED(/obj/item/tool/transforming, "welder")
+DECLARE_REF(/obj/item/tool/transforming, "welder", OWNED, null)
 
 /obj/item/tool/transforming/get_welder()
 	return welder

@@ -533,7 +533,7 @@
 		rec.sched.call_hook(rec, B, OM_HOOK_DESTROY)
 
 /// Lifecycle phase 5 (teardown): contributions both ways, behaviours
-/// (on_stop), deadlines, tasks. Called from dq_lifecycle_revoke_grants().
+/// (on_stop), deadlines, tasks. Called from dq_lifecycle_om_teardown().
 /proc/om_teardown_rest(datum/E)
 	var/datum/om/rec/rec = E.om_rec
 	if(!rec)

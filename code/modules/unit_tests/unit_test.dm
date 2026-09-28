@@ -472,7 +472,7 @@ GLOBAL_VAR(dq_test_select_names)
 	TEST_ASSERT(isfloorturf(run_loc_floor_top_right), "run_loc_floor_top_right was not a floor ([run_loc_floor_top_right])")
 
 /// Everything allocate() made is the test's to delete when it ends.
-REF_OWNED_LIST(/datum/unit_test, "allocated")
+DECLARE_REF(/datum/unit_test, "allocated", OWNED_LIST, null)
 
 /datum/unit_test/proc/Run()
 	TEST_FAIL("[type]/Run() called parent or not implemented")

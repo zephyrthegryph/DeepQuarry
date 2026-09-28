@@ -23,7 +23,7 @@
 	supported_types = list(/obj/machinery/door/airlock,/obj/structure/closet/crate/secure,/obj/structure/closet/secure_closet)
 	hack_state = new(src)
 
-REF_OWNED(/obj/item/multitool/hacktool, "hack_state")
+DECLARE_REF(/obj/item/multitool/hacktool, "hack_state", OWNED, null)
 
 // stops observing its known targets' destruction.
 /obj/item/multitool/hacktool/on_destroy(force)

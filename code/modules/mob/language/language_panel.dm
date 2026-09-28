@@ -89,4 +89,4 @@ GLOBAL_LIST_EMPTY(dq_languages_panels)
 	set src = usr
 	dq_open_languages_panel(src, src)
 
-REF_HELD(/datum/languages_panel, "host")
+DECLARE_REF(/datum/languages_panel, "host", HELD, null)

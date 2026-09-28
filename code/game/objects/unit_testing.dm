@@ -37,4 +37,4 @@
 	current_temp = LERP( D.temp_range[1], D.temp_range[2], temp_prog)
 	reagents.handle_reactions()
 
-REF_OWNED(/obj/distilling_tester, "GM")
+DECLARE_REF(/obj/distilling_tester, "GM", OWNED, null)

@@ -56,7 +56,8 @@
 	PERIODIC_STOP(src) //We do this so it doesn't start processing until it's first used.
 	update_icon()
 
-REF_OWNED(/obj/item/personal_shield_generator, list("active_weapon", "bcell"))
+DECLARE_REF(/obj/item/personal_shield_generator, "active_weapon", OWNED, null)
+DECLARE_REF(/obj/item/personal_shield_generator, "bcell", OWNED, null)
 
 /obj/item/personal_shield_generator/loaded //starts with a cell
 	bcell = /obj/item/cell/device/shield_generator/backpack

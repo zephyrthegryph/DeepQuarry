@@ -287,6 +287,12 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/chest, INTERACT_ITEM(null, PROC_REF(i
 		sabotaged = 1
 		return 1
 
-REF_HELD(/obj/item/robot_parts/chest, "cell")
-REF_HELD(/obj/item/robot_parts/head, list("flash1", "flash2"))
-REF_HELD(/obj/item/robot_parts/robot_suit, list("l_arm", "r_arm", "l_leg", "r_leg", "chest", "head"))
+DECLARE_REF(/obj/item/robot_parts/chest, "cell", HELD, null)
+DECLARE_REF(/obj/item/robot_parts/head, "flash1", HELD, null)
+DECLARE_REF(/obj/item/robot_parts/head, "flash2", HELD, null)
+DECLARE_REF(/obj/item/robot_parts/robot_suit, "l_arm", HELD, null)
+DECLARE_REF(/obj/item/robot_parts/robot_suit, "r_arm", HELD, null)
+DECLARE_REF(/obj/item/robot_parts/robot_suit, "l_leg", HELD, null)
+DECLARE_REF(/obj/item/robot_parts/robot_suit, "r_leg", HELD, null)
+DECLARE_REF(/obj/item/robot_parts/robot_suit, "chest", HELD, null)
+DECLARE_REF(/obj/item/robot_parts/robot_suit, "head", HELD, null)

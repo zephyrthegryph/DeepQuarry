@@ -28,7 +28,7 @@
 			table.computer = src
 			break
 
-REF_PAIR(/obj/machinery/computer/operating, list("table" = "computer"))
+DECLARE_REF(/obj/machinery/computer/operating, "table", PAIR, "computer")
 
 EXTEND_INTERACTIONS(/obj/machinery/computer/operating, \
 	INTERACT_HAND_UNGATED(null, TYPE_PROC_REF(/obj/machinery, interaction_open_ui_powered_fingerprint)), \
@@ -161,4 +161,4 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/operating, \
 
 #undef OP_COMPUTER_COOLDOWN
 
-REF_HELD(/obj/machinery/computer/operating, "victim")
+DECLARE_REF(/obj/machinery/computer/operating, "victim", HELD, null)

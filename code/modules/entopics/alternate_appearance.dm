@@ -103,7 +103,7 @@
 		return
 	AA.hide(hideFrom)
 
-REF_OWNED(/datum/alternate_appearance, "img")
+DECLARE_REF(/datum/alternate_appearance, "img", OWNED, null)
 
 /// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/alternate_appearance/proc/owner() as /atom

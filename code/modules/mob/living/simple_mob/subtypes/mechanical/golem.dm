@@ -58,7 +58,7 @@
 	core = new(src)
 	return ..()
 
-REF_OWNED(/mob/living/simple_mob/mechanical/technomancer_golem, "core")
+DECLARE_REF(/mob/living/simple_mob/mechanical/technomancer_golem, "core", OWNED, null)
 
 /mob/living/simple_mob/mechanical/technomancer_golem/unref_spell()
 	active_spell = null
@@ -167,4 +167,5 @@ REF_OWNED(/mob/living/simple_mob/mechanical/technomancer_golem, "core")
 	no traces of paint visible and any 'writing' visible is uncomprehendable, short term scan unable to translate."
 	value = CATALOGUER_REWARD_MEDIUM
 
-REF_HELD(/mob/living/simple_mob/mechanical/technomancer_golem, list("active_spell", "master"))
+DECLARE_REF(/mob/living/simple_mob/mechanical/technomancer_golem, "active_spell", HELD, null)
+DECLARE_REF(/mob/living/simple_mob/mechanical/technomancer_golem, "master", HELD, null)

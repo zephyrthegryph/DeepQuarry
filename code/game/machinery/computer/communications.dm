@@ -39,4 +39,4 @@
 	communications.tgui_interact(user)
 	return TRUE
 
-REF_OWNED(/obj/machinery/computer/communications, list("communications"))
+DECLARE_REF(/obj/machinery/computer/communications, "communications", OWNED, null)

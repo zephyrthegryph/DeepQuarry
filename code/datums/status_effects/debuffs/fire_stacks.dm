@@ -372,4 +372,4 @@
 /// BUBBER EDIT END
 
 
-REF_OWNED(/datum/status_effect/fire_handler/fire_stacks, "moblight")
+DECLARE_REF(/datum/status_effect/fire_handler/fire_stacks, "moblight", OWNED, null)

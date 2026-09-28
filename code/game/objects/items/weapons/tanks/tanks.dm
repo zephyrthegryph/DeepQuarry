@@ -70,7 +70,8 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 	src.air_contents.set_temperature(T20C)
 	update_gauge()
 
-REF_OWNED(/obj/item/tank, list("air_contents", "proxyassembly"))
+DECLARE_REF(/obj/item/tank, "air_contents", OWNED, null)
+DECLARE_REF(/obj/item/tank, "proxyassembly", OWNED, null)
 
 // a tank in a transfer valve leaves the valve.
 /obj/item/tank/on_destroy(force)
@@ -719,5 +720,5 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 
 #undef TANK_IDEAL_PRESSURE
 
-REF_PAIR(/obj/item/tankassemblyproxy, list("tank" = "proxyassembly"))
-REF_HELD(/obj/item/tankassemblyproxy, list("assembly"))
+DECLARE_REF(/obj/item/tankassemblyproxy, "tank", PAIR, "proxyassembly")
+DECLARE_REF(/obj/item/tankassemblyproxy, "assembly", HELD, null)

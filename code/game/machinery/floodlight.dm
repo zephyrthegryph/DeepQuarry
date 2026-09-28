@@ -177,4 +177,4 @@
 /obj/machinery/floodlight/step_start_condition()
 	return on
 
-REF_HELD(/obj/machinery/floodlight, list("cell"))
+DECLARE_REF(/obj/machinery/floodlight, "cell", HELD, null)

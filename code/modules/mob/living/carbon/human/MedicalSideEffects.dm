@@ -178,4 +178,4 @@
 			H.automatic_custom_emote(VISIBLE_MESSAGE, "shivers slightly.", check_stat = TRUE)
 			H.custom_pain("This itch makes it really hard to concentrate.",1)
 
-REF_OWNED_LIST(/mob/living/carbon/human, "side_effects")
+DECLARE_REF(/mob/living/carbon/human, "side_effects", OWNED_LIST, null)

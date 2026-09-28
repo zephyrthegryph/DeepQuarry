@@ -1,5 +1,5 @@
 /obj/var/datum/talking_atom/talking_atom // ALLOW(state_ref): owned: xenoarch speech state with mob refs
-REF_OWNED(/obj, list("talking_atom"))
+DECLARE_REF(/obj, "talking_atom", OWNED, null)
 
 /datum/talking_atom
 	var/list/heard_words = list() // ALLOW(instance_list): d: speech memory of a talking item, filled as it hears

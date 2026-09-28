@@ -45,8 +45,8 @@
 	nif = loc
 	nifsoft_handle = om_handle(soft)
 
-REF_PAIR(/obj/item/communicator/commlink, list("nif" = "comm"))
-REF_PAIR(/obj/item/nif, list("comm" = "nif"))
+DECLARE_REF(/obj/item/communicator/commlink, "nif", PAIR, "comm")
+DECLARE_REF(/obj/item/nif, "comm", PAIR, "nif")
 
 /obj/item/communicator/commlink/register_device(new_name)
 	owner = new_name

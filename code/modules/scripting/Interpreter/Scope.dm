@@ -23,4 +23,5 @@
 /datum/scope/proc/block_node() as /datum/node/BlockDefinition
 	return block_ref
 
-REF_BACK(/datum/scope, list("parent_ref" = null, "block_ref" = null))
+DECLARE_REF(/datum/scope, "parent_ref", BACK, null)
+DECLARE_REF(/datum/scope, "block_ref", BACK, null)

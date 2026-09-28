@@ -32,7 +32,8 @@
 				break
 	update_icon()
 
-REF_PAIR(/obj/structure/ladder, list("target_down" = "target_up", "target_up" = "target_down"))
+DECLARE_REF(/obj/structure/ladder, "target_down", PAIR, "target_up")
+DECLARE_REF(/obj/structure/ladder, "target_up", PAIR, "target_down")
 
 /obj/structure/ladder/attack_generic(mob/user)
 	//Simple Animal

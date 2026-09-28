@@ -68,12 +68,18 @@
 	. = ..()
 	med_analyzer = new /obj/item/healthanalyzer
 
-REF_OWNED(/obj/item/dogborg/sleeper, list("ore_bag", "med_analyzer"))
-// The synths are the module's (REF_OWNED_LIST "synths"); the patient is in our contents.
-REF_HELD(/obj/item/dogborg/sleeper, list("patient", "metal", "glass", "wood", "plastic", "water"))
-REF_BACK(/obj/item/dogborg/sleeper, list("hound" = null))
+DECLARE_REF(/obj/item/dogborg/sleeper, "ore_bag", OWNED, null)
+DECLARE_REF(/obj/item/dogborg/sleeper, "med_analyzer", OWNED, null)
+// The synths are the module's (DECLARE_REF(..., OWNED_LIST) "synths"); the patient is in our contents.
+DECLARE_REF(/obj/item/dogborg/sleeper, "patient", HELD, null)
+DECLARE_REF(/obj/item/dogborg/sleeper, "metal", HELD, null)
+DECLARE_REF(/obj/item/dogborg/sleeper, "glass", HELD, null)
+DECLARE_REF(/obj/item/dogborg/sleeper, "wood", HELD, null)
+DECLARE_REF(/obj/item/dogborg/sleeper, "plastic", HELD, null)
+DECLARE_REF(/obj/item/dogborg/sleeper, "water", HELD, null)
+DECLARE_REF(/obj/item/dogborg/sleeper, "hound", BACK, null)
 // Things in our contents spared from digestion; like everything else inside they go out with us.
-REF_SPILL_LIST(/obj/item/dogborg/sleeper, "items_preserved")
+DECLARE_REF(/obj/item/dogborg/sleeper, "items_preserved", SPILL_LIST, null)
 
 // the patient is let out.
 /obj/item/dogborg/sleeper/on_destroy(force)

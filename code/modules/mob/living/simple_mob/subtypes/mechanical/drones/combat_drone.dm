@@ -72,7 +72,8 @@
 	shields = new /obj/item/shield_projector/rectangle/automatic/drone(src)
 	return ..()
 
-REF_OWNED(/mob/living/simple_mob/mechanical/combat_drone, list("ion_trail", "shields"))
+DECLARE_REF(/mob/living/simple_mob/mechanical/combat_drone, "ion_trail", OWNED, null)
+DECLARE_REF(/mob/living/simple_mob/mechanical/combat_drone, "shields", OWNED, null)
 
 /mob/living/simple_mob/mechanical/combat_drone
 	delete_on_death = TRUE

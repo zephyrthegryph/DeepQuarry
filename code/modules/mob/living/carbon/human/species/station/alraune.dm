@@ -307,4 +307,4 @@
 /obj/item/organ/internal/fruitgland/life_step_idle()
 	return FALSE
 
-REF_BACK(/obj/item/organ/internal/fruitgland, list("organ_owner" = null))
+DECLARE_REF(/obj/item/organ/internal/fruitgland, "organ_owner", BACK, null)

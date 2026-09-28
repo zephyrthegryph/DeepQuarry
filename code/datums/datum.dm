@@ -57,22 +57,22 @@
 	..()
 
 /**
- * Default implementation of clean-up code.
+ * The base of the core Destroy() chain: phase 7 of destroy_transaction()
+ * (code/datums/lifecycle/transaction.dm). Only qdel() reaches it.
  *
- * This should be overridden to remove all references pointing to the object being destroyed, if
- * you do override it, make sure to call the parent and return its return value by default
+ * Do not override Destroy() in a type: tools/ci/lifecycle_counts_lint.py allows
+ * only the core chain (/datum, /atom, /atom/movable, /client, the MC). A type
+ * declares its references with DECLARE_REF (links, phase 4), puts domain
+ * consequences in on_destroy(), and sets destroy_hint for a different GC hint.
+ * Declared links and OM timers, hooks, tasks and behaviours are already gone
+ * by now (phases 4 and 5).
  *
- * Return an appropriate [QDEL_HINT][QDEL_HINT_QUEUE] to modify handling of your deletion;
- * in most cases this is [QDEL_HINT_QUEUE].
+ * This base clears the tag, closes the datum's tgui windows and, under
+ * REFERENCE_TRACKING, does the reference-finder bookkeeping.
  *
- * The base case is responsible for doing the following
- * * Erasing timers pointing to this datum
- * * Erasing compenents on this datum
- * * Dropping event hooks (lifecycle phase 4 does this: om_teardown_hooks())
- *
- * Returns [QDEL_HINT_QUEUE]
+ * Returns [QDEL_HINT_QUEUE] (or a reference-finding hint under REFERENCE_TRACKING).
  */
-// ALLOW(lifecycle): the base: timers, reactor and tgui.
+// ALLOW(lifecycle): the base of the core chain: tag, tgui and reference tracking.
 /datum/proc/Destroy(force = FALSE)
 	SHOULD_CALL_PARENT(TRUE)
 	SHOULD_NOT_SLEEP(TRUE)

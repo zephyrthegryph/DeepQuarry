@@ -19,7 +19,7 @@
 	my_tool.canremove = FALSE
 	return ..()
 
-REF_OWNED(/obj/item/mecha_parts/mecha_equipment/tool/powertool, "my_tool")
+DECLARE_REF(/obj/item/mecha_parts/mecha_equipment/tool/powertool, "my_tool", OWNED, null)
 
 /obj/item/mecha_parts/mecha_equipment/tool/powertool/action(atom/target)
 	if(!action_checks(target))

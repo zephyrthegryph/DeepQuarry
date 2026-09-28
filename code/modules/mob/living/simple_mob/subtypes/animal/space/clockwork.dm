@@ -95,4 +95,4 @@
 	icon_state = "ignis"
 	item_state = "ignis"
 
-REF_HELD(/mob/living/simple_mob/clockwork, "flee_target")
+DECLARE_REF(/mob/living/simple_mob/clockwork, "flee_target", HELD, null)

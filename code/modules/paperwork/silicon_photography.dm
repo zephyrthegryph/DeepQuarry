@@ -15,7 +15,7 @@
 /obj/item/camera/siliconcam/drone_camera //currently doesn't offer the verbs, thus cannot be used
 	name = "Drone photo camera"
 
-REF_OWNED_LIST(/obj/item/camera/siliconcam, "aipictures")
+DECLARE_REF(/obj/item/camera/siliconcam, "aipictures", OWNED_LIST, null)
 
 /obj/item/camera/siliconcam/proc/injectaialbum(obj/item/photo/p, sufix = "") //stores image information to a list similar to that of the datacore
 	p.forceMove(src)

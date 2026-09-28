@@ -311,4 +311,5 @@
 	else
 		return customer_account.debit(total_price, "Computer Manufacturer", "Purchase of [(devtype == 1) ? "laptop computer" : "tablet microcomputer"]", name)
 
-REF_OWNED(/obj/machinery/lapvend, list("fabricated_laptop", "fabricated_tablet"))
+DECLARE_REF(/obj/machinery/lapvend, "fabricated_laptop", OWNED, null)
+DECLARE_REF(/obj/machinery/lapvend, "fabricated_tablet", OWNED, null)

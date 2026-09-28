@@ -43,9 +43,9 @@
 	if(landmark_transition_tag)
 		landmark_transition_handle = om_handle(SSshuttles.get_landmark(landmark_transition_tag))
 
-// Its docking controllers are released: shuttle_docking_controller is REF_HELD and its
+// Its docking controllers are released: shuttle_docking_controller is DECLARE_REF(..., HELD) and its
 // qdeleting hook goes with the OM teardown; the active controller is a handle.
-REF_DROP(/datum/shuttle/autodock, "in_use")
+DECLARE_REF(/datum/shuttle/autodock, "in_use", DROP, null)
 
 /datum/shuttle/autodock/proc/set_docking_codes(code)
 	docking_codes = code
@@ -249,4 +249,4 @@ REF_DROP(/datum/shuttle/autodock, "in_use")
 	return om_resolve(landmark_transition_handle)
 
 // Owned by its docking console elsewhere; set_shuttle_docking_controller() tracks its deletion.
-REF_HELD(/datum/shuttle/autodock, list("shuttle_docking_controller"))
+DECLARE_REF(/datum/shuttle/autodock, "shuttle_docking_controller", HELD, null)

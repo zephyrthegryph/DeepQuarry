@@ -47,7 +47,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/fusion_core, REGISTRY_FUSION_CORES)
 	. = ..()
 	connect_to_network()
 
-REF_SPILL(/obj/machinery/power/fusion_core, "material_sample")
+DECLARE_REF(/obj/machinery/power/fusion_core, "material_sample", SPILL, null)
 
 /// Phase 2: fusion control consoles drop it.
 /obj/machinery/power/fusion_core/lifecycle_dematerialize()
@@ -273,4 +273,4 @@ REF_SPILL(/obj/machinery/power/fusion_core, "material_sample")
 	temp_dump()
 	temp_color()
 
-REF_OWNED(/obj/machinery/power/fusion_core, "owned_field")
+DECLARE_REF(/obj/machinery/power/fusion_core, "owned_field", OWNED, null)

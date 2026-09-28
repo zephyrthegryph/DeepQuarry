@@ -416,11 +416,11 @@
 	species_injuries_touch = shared[8]
 	return ..()
 
-REF_BACK(/datum/reagent, list("holder" = null))
+DECLARE_REF(/datum/reagent, "holder", BACK, null)
 
-// The holder link is a REF_BACK; `data` can hold live refs (blood's donor).
+// The holder link is a DECLARE_REF(..., BACK); `data` can hold live refs (blood's donor).
 // drops `data`.
-REF_DROP(/datum/reagent, "data")
+DECLARE_REF(/datum/reagent, "data", DROP, null)
 
 /// Called by [/datum/reagents/proc/conditional_update]
 /datum/reagent/proc/on_update(atom/A)

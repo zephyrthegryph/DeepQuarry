@@ -338,6 +338,9 @@
 	RequireInitialBridgeResponse()
 	return visibility
 
-REF_OWNED(/datum/tgs_api/v5, list("revision", "interop_version", "http_handler"))
+DECLARE_REF(/datum/tgs_api/v5, "revision", OWNED, null)
+DECLARE_REF(/datum/tgs_api/v5, "interop_version", OWNED, null)
+DECLARE_REF(/datum/tgs_api/v5, "http_handler", OWNED, null)
 
-REF_OWNED_LIST(/datum/tgs_api/v5, list("test_merges", "chat_channels"))
+DECLARE_REF(/datum/tgs_api/v5, "test_merges", OWNED_LIST, null)
+DECLARE_REF(/datum/tgs_api/v5, "chat_channels", OWNED_LIST, null)

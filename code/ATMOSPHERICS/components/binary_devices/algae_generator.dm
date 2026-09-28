@@ -351,4 +351,4 @@
 	if(air1)
 		om_watch_arm_condition(src, "gas", list(air1.arena_id()), GAS_DEPENDENCY_COMPOSITION, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
 
-REF_OWNED(/obj/machinery/atmospherics/binary/algae_farm, "internal")
+DECLARE_REF(/obj/machinery/atmospherics/binary/algae_farm, "internal", OWNED, null)

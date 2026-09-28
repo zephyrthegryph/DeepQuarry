@@ -190,7 +190,7 @@ DECLARE_INTERACTIONS(/obj/item/implanter, INTERACT_SELF("Toggle", PROC_REF(impla
 	imp = new /obj/item/implant/vrlanguage( src )
 	update()
 
-REF_HELD(/obj/item/implanter, list("imp"))
+DECLARE_REF(/obj/item/implanter, "imp", HELD, null)
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/implanter, \

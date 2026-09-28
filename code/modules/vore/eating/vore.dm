@@ -501,7 +501,7 @@
 /datum/vore_preferences/proc/patch_version(list/json_from_file,version)
 	return json_from_file
 
-REF_OWNED(/client, "prefs_vr")
+DECLARE_REF(/client, "prefs_vr", OWNED, null)
 
 /// LC-refs: the client this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/vore_preferences/proc/client() as /client

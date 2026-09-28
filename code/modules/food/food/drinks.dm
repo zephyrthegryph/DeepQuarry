@@ -41,7 +41,7 @@
 	return
 
 // micros inside drop out.
-REF_SPILL_LIST(/obj/item/reagent_containers/food/drinks, "food_inserted_micros")
+DECLARE_REF(/obj/item/reagent_containers/food/drinks, "food_inserted_micros", SPILL_LIST, null)
 
 /// Old attackby. FALSE falls to the food handling, as the old ..() did.
 /obj/item/reagent_containers/food/drinks/proc/drinks_item(mob/user, obj/item/W, datum/interaction/interaction)

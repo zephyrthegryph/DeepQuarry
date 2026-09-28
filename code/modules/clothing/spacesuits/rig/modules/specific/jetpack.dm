@@ -50,7 +50,7 @@
 	. = ..()
 	jets = new(src)
 
-REF_OWNED(/obj/item/rig_module/maneuvering_jets, "jets")
+DECLARE_REF(/obj/item/rig_module/maneuvering_jets, "jets", OWNED, null)
 
 /obj/item/rig_module/maneuvering_jets/installed()
 	..()

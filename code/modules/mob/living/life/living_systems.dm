@@ -638,4 +638,4 @@ OM_FIELD(/mob, ear_damage, 0, CHANGE_MOB_STATUS)
 /// Cult stuff.
 OM_FIELD(/mob/living/simple_mob, purge, 0, CHANGE_MOB_STATUS)
 
-REF_HELD(/mob/living, "tf_mob_holder")
+DECLARE_REF(/mob/living, "tf_mob_holder", HELD, null)

@@ -60,7 +60,7 @@
 
 	rebuild_overlay_lists(TRUE)
 
-REF_OWNED_VALUES(/obj/compass_holder, "compass_waypoints")
+DECLARE_REF(/obj/compass_holder, "compass_waypoints", OWNED_VALUES, null)
 
 /obj/compass_holder/proc/get_heading()
 	var/atom/A = loc?.loc // is there a get_holder_recursive() equivalent on Polaris?
@@ -124,4 +124,4 @@ REF_OWNED_VALUES(/obj/compass_holder, "compass_waypoints")
 	if(update_icon)
 		update_icon()
 
-REF_OWNED(/obj/compass_holder, "compass_heading_marker")
+DECLARE_REF(/obj/compass_holder, "compass_heading_marker", OWNED, null)

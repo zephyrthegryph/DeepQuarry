@@ -295,4 +295,4 @@
 		return FALSE
 	return TRUE
 
-REF_OWNED_LIST(/datum/unit_test/dq_latency_fuzz, "made")
+DECLARE_REF(/datum/unit_test/dq_latency_fuzz, "made", OWNED_LIST, null)

@@ -386,10 +386,10 @@ But for now, for what it's been used for, it works.
 /obj/effect/step_trigger/teleporter/landmark/proc/the_landmark() as /obj/effect/landmark
 	return om_resolve(the_landmark_handle)
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/effect/step_trigger/teleporter/planetary_fall/proc/planet() as /datum/planet
 	return planet_static
-REF_STATIC(/obj/effect/step_trigger/teleporter/planetary_fall, "planet_static")
+DECLARE_REF(/obj/effect/step_trigger/teleporter/planetary_fall, "planet_static", STATIC, null)
 
 /// LC-refs: target -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/effect/step_trigger/autostrip/proc/target_ref() as /obj/effect/autostriptarget

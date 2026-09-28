@@ -37,7 +37,7 @@
 	power_source = new(src)
 	update_icon() // So it starts with the full overlay.
 
-REF_OWNED(/obj/item/radio_jammer, "power_source")
+DECLARE_REF(/obj/item/radio_jammer, "power_source", OWNED, null)
 
 // a running jammer stops jamming.
 /obj/item/radio_jammer/on_destroy(force)

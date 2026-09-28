@@ -574,4 +574,4 @@ ADMIN_VERB(spawn_mail, R_SPAWN, "Spawn Mail", "Spawn mail for a specific player,
 	name = "important document"
 	icon_state = "paper_words"
 
-REF_HELD(/obj/item/mail_scanner, list("saved"))
+DECLARE_REF(/obj/item/mail_scanner, "saved", HELD, null)

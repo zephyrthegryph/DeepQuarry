@@ -49,7 +49,7 @@
 	controller = new(src)
 	add_glow()
 
-REF_OWNED(/obj/machinery/ion_engine, "controller")
+DECLARE_REF(/obj/machinery/ion_engine, "controller", OWNED, null)
 
 /obj/machinery/ion_engine/proc/add_glow()
 	var/image/i = image('icons/turf/shuttle_parts_vr.dmi', "ion_overlay")

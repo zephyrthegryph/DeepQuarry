@@ -245,10 +245,21 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 
 REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 
-REF_OWNED(/mob/living/silicon/ai, list("announcement", "psupply", "aiPDA", "aiCommunicator", "aiMulti", "aiRadio", "holo_icon", "track", "research"))
-REF_HELD(/mob/living/silicon/ai, list("camera", "hardware", "hack", "master_multicam"))
+DECLARE_REF(/mob/living/silicon/ai, "announcement", OWNED, null)
+DECLARE_REF(/mob/living/silicon/ai, "psupply", OWNED, null)
+DECLARE_REF(/mob/living/silicon/ai, "aiPDA", OWNED, null)
+DECLARE_REF(/mob/living/silicon/ai, "aiCommunicator", OWNED, null)
+DECLARE_REF(/mob/living/silicon/ai, "aiMulti", OWNED, null)
+DECLARE_REF(/mob/living/silicon/ai, "aiRadio", OWNED, null)
+DECLARE_REF(/mob/living/silicon/ai, "holo_icon", OWNED, null)
+DECLARE_REF(/mob/living/silicon/ai, "track", OWNED, null)
+DECLARE_REF(/mob/living/silicon/ai, "research", OWNED, null)
+DECLARE_REF(/mob/living/silicon/ai, "camera", HELD, null)
+DECLARE_REF(/mob/living/silicon/ai, "hardware", HELD, null)
+DECLARE_REF(/mob/living/silicon/ai, "hack", HELD, null)
+DECLARE_REF(/mob/living/silicon/ai, "master_multicam", HELD, null)
 // GLOB.default_ai_icon or one of the shared icon sets (a custom one is only ever held here).
-REF_STATIC(/mob/living/silicon/ai, "selected_sprite")
+DECLARE_REF(/mob/living/silicon/ai, "selected_sprite", STATIC, null)
 
 // the AI's eyes go with it: the active one and any other still linked to it (the eye
 // create_eyeobj() made before another took over, multicam eyes). Unlinked, they outlived it.
@@ -1112,4 +1123,4 @@ EXTEND_INTERACTIONS(/mob/living/silicon/ai, INTERACT_INSERT(/obj/item/aicard, PR
 /mob/living/silicon/ai/proc/hacking_done()
 	hacking = 0
 
-REF_BACK(/obj/machinery/ai_powersupply, list("powered_ai" = "psupply"))
+DECLARE_REF(/obj/machinery/ai_powersupply, "powered_ai", BACK, "psupply")

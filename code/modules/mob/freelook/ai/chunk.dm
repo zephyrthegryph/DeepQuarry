@@ -4,7 +4,7 @@
 // Allows the Eye to stream these chunks and know what it can and cannot see.
 
 /datum/chunk/camera
-	/// Cameras in range (REF_WEAK_LIST), revalidated (can_use(), range) on every acquireVisibleTurfs() pass.
+	/// Cameras in range (DECLARE_REF(..., WEAK_LIST)), revalidated (can_use(), range) on every acquireVisibleTurfs() pass.
 	var/list/cameras
 
 /datum/chunk/camera/acquireVisibleTurfs(list/visible)
@@ -44,4 +44,4 @@
 /mob/living/silicon/ai/proc/seen_camera_turfs()
 	return seen_turfs_in_range(src, world.view)
 
-REF_WEAK_LIST(/datum/chunk/camera, "cameras")
+DECLARE_REF(/datum/chunk/camera, "cameras", WEAK_LIST, null)

@@ -529,7 +529,7 @@
 	desc += "<br>This circuit's EPv2 address is: [exonet.address]"
 	node = get_exonet_node()
 
-REF_OWNED(/obj/item/integrated_circuit/input/EPv2, "exonet")
+DECLARE_REF(/obj/item/integrated_circuit/input/EPv2, "exonet", OWNED, null)
 
 /obj/item/integrated_circuit/input/EPv2/do_work()
 	var/target_address = get_pin_data(IC_INPUT, 1)

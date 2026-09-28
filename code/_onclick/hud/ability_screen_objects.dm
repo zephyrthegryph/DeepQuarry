@@ -21,10 +21,10 @@
 	else
 		message_admins("ERROR: ability_master's New() was not given an owner argument.  This is a bug.")
 
-REF_OWNED_LIST(/atom/movable/screen/movable/ability_master, "ability_objects")
+DECLARE_REF(/atom/movable/screen/movable/ability_master, "ability_objects", OWNED_LIST, null)
 
 // the mob's ability_master var points back at us; a master deleted on its own clears it.
-REF_BACK_HANDLE(/atom/movable/screen/movable/ability_master, list("my_mob_handle" = "ability_master"))
+DECLARE_REF(/atom/movable/screen/movable/ability_master, "my_mob_handle", BACK_HANDLE, "ability_master")
 
 /atom/movable/screen/movable/ability_master/MouseDrop()
 	if(showing)

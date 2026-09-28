@@ -4521,7 +4521,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_EQUAL(R.machine_step(), PROCESS_KILL, "recharger holding a full cell remained scheduled")
 	qdel(R)
 
-/// A recharger's REF_SPILL of "charging" drops the item on destroy and the spill
+/// A recharger's DECLARE_REF(..., SPILL) of "charging" drops the item on destroy and the spill
 /// hook refreshes its icon, as the recharger's old Destroy() did.
 /obj/item/cell/dq_spill_probe
 	var/refreshed = FALSE

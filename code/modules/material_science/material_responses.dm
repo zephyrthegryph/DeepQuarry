@@ -34,7 +34,8 @@
 
 /// The physical-response state of an item made of an engineered material (was the
 /// material_response component). Owned by the item; hooks its events with om_hook().
-REF_VAR(/obj/item, OWNED, /datum/material_response, material_response)
+/obj/item/var/datum/material_response/material_response // ALLOW(state_ref): owned child (DECLARE_REF OWNED); saved as before, the one-line REF_VAR form hid it from this lint
+DECLARE_REF(/obj/item, "material_response", OWNED, null)
 
 /datum/material_response
 	/// The item this state belongs to.
@@ -53,7 +54,7 @@ REF_VAR(/obj/item, OWNED, /datum/material_response, material_response)
 
 REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 
-REF_BACK(/datum/material_response, list("parent" = "material_response"))
+DECLARE_REF(/datum/material_response, "parent", BACK, "material_response")
 
 /datum/material_response/New(obj/item/new_parent, datum/material/material, _electrical_form, _medical_form, _armor_form, _tool_form)
 	. = ..()

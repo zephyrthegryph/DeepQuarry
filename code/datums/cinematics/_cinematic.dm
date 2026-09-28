@@ -55,7 +55,7 @@
 
 	src.special_callback = special_callback
 
-REF_OWNED(/datum/cinematic, "screen")
+DECLARE_REF(/datum/cinematic, "screen", OWNED, null)
 
 /// Actually goes through the process of showing the cinematic to the list of watchers.
 /datum/cinematic/proc/start_cinematic(list/watchers)
@@ -185,4 +185,4 @@ REF_OWNED(/datum/cinematic, "screen")
 
 #undef CINEMATIC_SOURCE
 
-REF_OWNED(/datum/cinematic, "special_callback")
+DECLARE_REF(/datum/cinematic, "special_callback", OWNED, null)

@@ -45,7 +45,7 @@ GLOBAL_LIST_EMPTY(generated_station_runtimes)
 	if(spec()?.id)
 		GLOB.generated_station_runtimes[spec().id] = src
 
-REF_OWNED_VALUES(/datum/generated_station_simulation, "departments")
+DECLARE_REF(/datum/generated_station_simulation, "departments", OWNED_VALUES, null)
 
 /// Phase 2: leaves the station runtime index.
 /datum/generated_station_simulation/lifecycle_dematerialize()
@@ -175,4 +175,4 @@ REF_OWNED_VALUES(/datum/generated_station_simulation, "departments")
 	return om_resolve(spec_handle)
 
 // areas the station materialization owns; the simulation is its child
-REF_STATIC(/datum/generated_station_simulation, "power_areas")
+DECLARE_REF(/datum/generated_station_simulation, "power_areas", STATIC, null)

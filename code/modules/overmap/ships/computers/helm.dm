@@ -317,7 +317,7 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 	if(.)
 		nav_tgui?.attempt_hook_up(sector)
 
-REF_OWNED(/obj/machinery/computer/ship/navigation, "nav_tgui")
+DECLARE_REF(/obj/machinery/computer/ship/navigation, "nav_tgui", OWNED, null)
 
 /obj/machinery/computer/ship/navigation/sync_linked(user)
 	return nav_tgui?.sync_linked()

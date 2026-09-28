@@ -104,4 +104,4 @@
 	eyeobj.acceleration = !eyeobj.acceleration
 	to_chat(usr, "Camera acceleration has been toggled [eyeobj.acceleration ? "on" : "off"].")
 
-REF_HELD(/mob/living/silicon/ai, "holo")
+DECLARE_REF(/mob/living/silicon/ai, "holo", HELD, null)

@@ -359,4 +359,5 @@ GLOBAL_LIST_INIT(interactions_by_type, init_interactions_by_type())
 	return
 
 // Compiled predicates are shared from the dq_predicate_for() registry.
-REF_STATIC(/datum/interaction, list("compiled", "compiled_selector"))
+DECLARE_REF(/datum/interaction, "compiled", STATIC, null)
+DECLARE_REF(/datum/interaction, "compiled_selector", STATIC, null)

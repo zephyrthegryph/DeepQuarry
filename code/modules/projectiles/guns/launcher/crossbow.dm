@@ -317,4 +317,4 @@ DECLARE_INTERACTIONS(/obj/item/crossbowframe, INTERACT_ITEM(null, PROC_REF(inter
 /obj/item/gun/launcher/crossbow/proc/cell() as /obj/item/cell
 	return om_resolve(cell_handle)
 
-REF_HELD(/obj/item/gun/launcher/crossbow, list("bolt"))
+DECLARE_REF(/obj/item/gun/launcher/crossbow, "bolt", HELD, null)

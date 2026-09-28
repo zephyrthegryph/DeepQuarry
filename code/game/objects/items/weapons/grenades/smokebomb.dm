@@ -16,7 +16,7 @@
 	smoke = new /datum/effect/effect/system/smoke_spread/bad()
 	smoke.attach(src)
 
-REF_OWNED(/obj/item/grenade/smokebomb, "smoke")
+DECLARE_REF(/obj/item/grenade/smokebomb, "smoke", OWNED, null)
 
 /obj/item/grenade/smokebomb/detonate()
 	start_effect_sprayer(smoke, smoke_strength, 'sound/effects/smoke.ogg', smoke_color)

@@ -56,7 +56,8 @@
 	ion_trail.set_up(src)
 	ion_trail.stop()
 
-REF_OWNED(/obj/item/uav, list("cell", "ion_trail"))
+DECLARE_REF(/obj/item/uav, "cell", OWNED, null)
+DECLARE_REF(/obj/item/uav, "ion_trail", OWNED, null)
 
 /obj/item/uav/examine(mob/user)
 	. = ..()

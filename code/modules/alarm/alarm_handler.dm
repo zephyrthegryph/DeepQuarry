@@ -16,7 +16,7 @@
 	if(!length(alarms))
 		return PROCESS_KILL
 
-REF_OWNED_LIST(/datum/alarm_handler, "alarms")
+DECLARE_REF(/datum/alarm_handler, "alarms", OWNED_LIST, null)
 
 /datum/alarm_handler/proc/triggerAlarm(atom/origin, atom/source, duration = 0, severity = 1, hidden = 0)
 	var/new_alarm
@@ -142,4 +142,4 @@ REF_OWNED_LIST(/datum/alarm_handler, "alarms")
 		visible_alarms.Add(A)
 	return visible_alarms
 
-REF_OWNED_VALUES(/datum/alarm_handler, "alarms_assoc")
+DECLARE_REF(/datum/alarm_handler, "alarms_assoc", OWNED_VALUES, null)

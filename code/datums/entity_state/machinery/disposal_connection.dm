@@ -9,7 +9,7 @@
 	var/obj/owner
 
 /obj/var/tmp/datum/disposal_system_connection/disposal_connection
-REF_OWNED(/obj, "disposal_connection")
+DECLARE_REF(/obj, "disposal_connection", OWNED, null)
 
 /// Gives src a disposal network connection (owned; deleted with src). Returns it.
 /obj/proc/add_disposal_connection(visibly_connects = TRUE)
@@ -28,7 +28,7 @@ REF_OWNED(/obj, "disposal_connection")
 	om_hook(owner, /datum/om/event/disposal_unlink, src, PROC_REF(unlink_from_trunk))
 	om_hook(owner, /datum/om/event/examine, src, PROC_REF(on_examine))
 
-REF_BACK(/datum/disposal_system_connection, list("owner" = "disposal_connection"))
+DECLARE_REF(/datum/disposal_system_connection, "owner", BACK, "disposal_connection")
 
 // Signal handling
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

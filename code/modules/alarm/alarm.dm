@@ -30,7 +30,7 @@
 	cameras()	// Sets up both cameras and last alarm area.
 	set_source_data(source, duration, severity, hidden)
 
-REF_OWNED_LIST(/datum/alarm, "sources")
+DECLARE_REF(/datum/alarm, "sources", OWNED_LIST, null)
 
 /// Ages its sources (the handler calls it every 2 s while it is up).
 /datum/alarm/proc/alarm_tick()

@@ -492,4 +492,4 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/pirate/shield, INTERACT_ITEM
 	pilot_type = /mob/living/simple_mob/humanoid/possessed/merc/feral	//Possessed rig suit piloting a mech. Tremble in fear
 	movement_shake_radius = 5
 
-REF_OWNED(/mob/living/simple_mob/humanoid/pirate/captain, "shields")
+DECLARE_REF(/mob/living/simple_mob/humanoid/pirate/captain, "shields", OWNED, null)

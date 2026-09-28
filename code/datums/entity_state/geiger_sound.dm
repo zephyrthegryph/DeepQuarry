@@ -7,12 +7,14 @@
 	var/wall_mounted = FALSE
 
 /// The geiger loop, owned: deleted with this datum.
-REF_VAR(/datum/geiger_sound, OWNED, /datum/looping_sound/geiger, sound)
+/datum/geiger_sound/var/datum/looping_sound/geiger/sound
+DECLARE_REF(/datum/geiger_sound, "sound", OWNED, null)
 
-REF_BACK(/datum/geiger_sound, list("owner" = "geiger_sound"))
+DECLARE_REF(/datum/geiger_sound, "owner", BACK, "geiger_sound")
 
 /// Owned: the active geiger sound loop while the counter is scanning.
-REF_VAR(/obj/item/geiger, OWNED, /datum/geiger_sound, geiger_sound)
+/obj/item/geiger/var/datum/geiger_sound/geiger_sound
+DECLARE_REF(/obj/item/geiger, "geiger_sound", OWNED, null)
 
 /datum/geiger_sound/New(atom/new_owner)
 	..()
@@ -143,4 +145,4 @@ REF_VAR(/obj/item/geiger, OWNED, /datum/geiger_sound, geiger_sound)
 /datum/looping_sound/geiger/proc/last_radiation_pulse() as /datum/radiation_pulse_information
 	return last_radiation_pulse_ref
 
-REF_HELD(/datum/looping_sound/geiger, "last_radiation_pulse_ref")
+DECLARE_REF(/datum/looping_sound/geiger, "last_radiation_pulse_ref", HELD, null)

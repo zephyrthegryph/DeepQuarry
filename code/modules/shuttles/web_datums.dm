@@ -21,7 +21,8 @@
 	one_way = _oneway
 
 // Leaves both endpoints' route lists.
-REF_BACKLIST_HANDLE(/datum/shuttle_route, list("start_handle" = "routes", "end_handle" = "routes"))
+DECLARE_REF(/datum/shuttle_route, "start_handle", BACKLIST_HANDLE, "routes")
+DECLARE_REF(/datum/shuttle_route, "end_handle", BACKLIST_HANDLE, "routes")
 
 /datum/shuttle_route/proc/get_other_side(datum/shuttle_destination/PoV)
 	if(PoV == start())
@@ -73,7 +74,7 @@ REF_BACKLIST_HANDLE(/datum/shuttle_route, list("start_handle" = "routes", "end_h
 		log_mapping("Web shuttle destination '[name]' could not find its landmark '[landmark_tag]'.") // Important error message
 	master_handle = om_handle(new_master)
 
-REF_OWNED_LIST(/datum/shuttle_destination, "routes")
+DECLARE_REF(/datum/shuttle_destination, "routes", OWNED_LIST, null)
 
 
 // This builds destination instances connected to this instance, recursively.
@@ -179,7 +180,8 @@ REF_OWNED_LIST(/datum/shuttle_destination, "routes")
 	current_destination_handle = om_handle(get_destination_by_type(starting_destination))
 	build_autopaths()
 
-REF_OWNED_LIST(/datum/shuttle_web_master, list("destinations", "autopaths"))
+DECLARE_REF(/datum/shuttle_web_master, "destinations", OWNED_LIST, null)
+DECLARE_REF(/datum/shuttle_web_master, "autopaths", OWNED_LIST, null)
 
 /datum/shuttle_web_master/proc/build_destinations()
 	// First, instantiate all the destination subtypes relevant to this datum.

@@ -39,7 +39,7 @@ GLOBAL_DATUM_INIT(news_data, /datum/lore/news, new)
 			station_newspaper_handle = om_handle(F)
 			break
 
-REF_OWNED(/datum/lore/news, "news_codex")
+DECLARE_REF(/datum/lore/news, "news_codex", OWNED, null)
 
 /// LC-refs: the station_newspaper this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/lore/news/proc/station_newspaper() as /datum/feed_channel

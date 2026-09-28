@@ -11,7 +11,7 @@
 	..()
 	reserved_frontage = list()
 
-REF_OWNED(/datum/generated_room_placement, "feature")
+DECLARE_REF(/datum/generated_room_placement, "feature", OWNED, null)
 
 /// Complete, inspectable result of resolving one room definition.
 /datum/generated_room_solution
@@ -44,7 +44,8 @@ REF_OWNED(/datum/generated_room_placement, "feature")
 	occupied = list()
 	issues = list()
 
-REF_OWNED_LIST(/datum/generated_room_solution, list("placements", "fragments"))
+DECLARE_REF(/datum/generated_room_solution, "placements", OWNED_LIST, null)
+DECLARE_REF(/datum/generated_room_solution, "fragments", OWNED_LIST, null)
 
 /datum/generated_room_solution/proc/tile_key(x, y)
 	return "[x],[y]"
@@ -62,7 +63,7 @@ REF_OWNED_LIST(/datum/generated_room_solution, list("placements", "fragments"))
 	var/rotation = 0
 	var/mirrored = FALSE
 
-REF_OWNED(/datum/generated_room_fragment_placement, "fragment")
+DECLARE_REF(/datum/generated_room_fragment_placement, "fragment", OWNED, null)
 
 /// Area types owned by a materialized station. Separate instances are created
 /// for every department so APC and alarm state cannot bleed between rooms.
@@ -263,7 +264,10 @@ REF_OWNED(/datum/generated_room_fragment_placement, "fragment")
 	/// the affected room, never discard an otherwise playable station.
 	var/strict_room_contracts = TRUE
 
-REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validation", "tile_plan", "result", "active_job"))
+DECLARE_REF(/datum/generated_station_materializer, "last_architecture_validation", OWNED, null)
+DECLARE_REF(/datum/generated_station_materializer, "tile_plan", OWNED, null)
+DECLARE_REF(/datum/generated_station_materializer, "result", OWNED, null)
+DECLARE_REF(/datum/generated_station_materializer, "active_job", OWNED, null)
 
 /datum/generated_station_materializer/proc/materialize(datum/generated_station_spec/new_spec, new_z, origin_x = 1, origin_y = 1, datum/flight_plan/flight_plan = null, fast_mode = FALSE)
 	var/datum/generated_station_materialization_job/job = new(src, flight_plan, fast_mode)
@@ -1560,10 +1564,19 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 	transit_area()?.power_change()
 	maintenance_area()?.power_change()
 
-REF_OWNED(/datum/generated_station_materialization, list("tile_plan", "service_validation"))
-REF_OWNED_LIST(/datum/generated_station_materialization, list("owned_furnishing_atoms", "modules", "room_solutions", "control_landmarks", "service_endpoints", "service_routes", "doors", "infrastructure"))
-REF_OWNED_VALUES(/datum/generated_station_materialization, list("department_areas", "module_areas"))
-REF_WEAK_LIST(/datum/generated_station_materialization, "furnishings")
+DECLARE_REF(/datum/generated_station_materialization, "tile_plan", OWNED, null)
+DECLARE_REF(/datum/generated_station_materialization, "service_validation", OWNED, null)
+DECLARE_REF(/datum/generated_station_materialization, "owned_furnishing_atoms", OWNED_LIST, null)
+DECLARE_REF(/datum/generated_station_materialization, "modules", OWNED_LIST, null)
+DECLARE_REF(/datum/generated_station_materialization, "room_solutions", OWNED_LIST, null)
+DECLARE_REF(/datum/generated_station_materialization, "control_landmarks", OWNED_LIST, null)
+DECLARE_REF(/datum/generated_station_materialization, "service_endpoints", OWNED_LIST, null)
+DECLARE_REF(/datum/generated_station_materialization, "service_routes", OWNED_LIST, null)
+DECLARE_REF(/datum/generated_station_materialization, "doors", OWNED_LIST, null)
+DECLARE_REF(/datum/generated_station_materialization, "infrastructure", OWNED_LIST, null)
+DECLARE_REF(/datum/generated_station_materialization, "department_areas", OWNED_VALUES, null)
+DECLARE_REF(/datum/generated_station_materialization, "module_areas", OWNED_VALUES, null)
+DECLARE_REF(/datum/generated_station_materialization, "furnishings", WEAK_LIST, null)
 
 /// LC-refs: the spec this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/generated_station_materializer/proc/spec() as /datum/generated_station_spec

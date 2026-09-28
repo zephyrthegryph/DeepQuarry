@@ -32,7 +32,7 @@
 	PERIODIC_START(src, PERIODIC_SLOW)
 
 // whatever phased inside comes back out on the turf.
-REF_SPILL_LIST(/obj/effect/phase_shift, "contents") // everything inside is put out
+DECLARE_REF(/obj/effect/phase_shift, "contents", SPILL_LIST, null)	// everything inside is put out
 
 /// Wears on whoever hides inside every 2 s; empty, it sleeps.
 /obj/effect/phase_shift/periodic_step()

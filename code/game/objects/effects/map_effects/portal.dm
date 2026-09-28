@@ -61,7 +61,7 @@ when portals are shortly lived, or when portals are made to be obvious with spec
 	var/portal_distance_x = 0 // How far the portal is from the left edge, in tiles.
 	var/portal_distance_y = 0 // How far the portal is from the top edge.
 
-REF_PAIR(/obj/effect/map_effect/portal, list("counterpart" = "counterpart"))
+DECLARE_REF(/obj/effect/map_effect/portal, "counterpart", PAIR, "counterpart")
 
 // Called when something touches the portal, and usually teleports them to the other side.
 /obj/effect/map_effect/portal/Crossed(atom/movable/AM)
@@ -149,7 +149,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/portal/master, REGISTRY_PORTAL_MASTER
 	make_visuals()
 	apply_offset()
 
-REF_OWNED_LIST(/obj/effect/map_effect/portal/master, "portal_lines")
+DECLARE_REF(/obj/effect/map_effect/portal/master, "portal_lines", OWNED_LIST, null)
 
 /obj/effect/map_effect/portal/master/proc/find_lines()
 	var/list/dirs_to_search = list( turn(dir, 90), turn(dir, -90) )
@@ -308,7 +308,7 @@ REF_OWNED_LIST(/obj/effect/map_effect/portal/master, "portal_lines")
 	name = "portal line"
 	var/obj/effect/map_effect/portal/master/my_master = null
 
-REF_BACKLIST(/obj/effect/map_effect/portal/line, list("my_master" = "portal_lines"))
+DECLARE_REF(/obj/effect/map_effect/portal/line, "my_master", BACKLIST, "portal_lines")
 
 /obj/effect/map_effect/portal/line/side_a
 	name = "portal line A"

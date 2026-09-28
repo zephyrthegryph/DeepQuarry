@@ -290,7 +290,7 @@
 
 	create_reagents(300)	// So we can have some liquids in bellies
 
-REF_BACKLIST(/obj/belly, list("owner" = "vore_organs"))
+DECLARE_REF(/obj/belly, "owner", BACKLIST, "vore_organs")
 
 // ghosts inside are let out.
 /obj/belly/on_destroy(force)
@@ -1253,10 +1253,10 @@ REF_BACKLIST(/obj/belly, list("owner" = "vore_organs"))
 #undef MAX_ENTRY_MESSAAGES
 #undef ENTRY_MESSAGE_INTERVAL
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/belly/proc/tail_to_change_to() as /datum/sprite_accessory/tail
 	return tail_to_change_to_static
-REF_STATIC(/obj/belly, "tail_to_change_to_static")
+DECLARE_REF(/obj/belly, "tail_to_change_to_static", STATIC, null)
 
 /// LC-refs: Is this belly creating an egg? -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/belly/proc/ownegg() as /obj/item/storage/vore_egg

@@ -229,7 +229,7 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 			recharge_locked = FALSE
 			..()
 
-REF_HELD(/obj/item/laser_pointer, list("diode"))
+DECLARE_REF(/obj/item/laser_pointer, "diode", HELD, null)
 
 /// LC-refs: pointer loc -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/laser_pointer/proc/pointer_loc() as /turf

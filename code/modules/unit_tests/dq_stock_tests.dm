@@ -27,7 +27,7 @@
 /datum/unit_test/dq_stock_vending
 	var/list/made = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
 
-REF_OWNED_LIST(/datum/unit_test/dq_stock_vending, "made")
+DECLARE_REF(/datum/unit_test/dq_stock_vending, "made", OWNED_LIST, null)
 
 /datum/unit_test/dq_stock_vending/Run()
 	var/turf/floor = dq_containment_floor()
@@ -103,7 +103,7 @@ REF_OWNED_LIST(/datum/unit_test/dq_stock_vending, "made")
 /datum/unit_test/dq_stock_smartfridge
 	var/list/made = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
 
-REF_OWNED_LIST(/datum/unit_test/dq_stock_smartfridge, "made")
+DECLARE_REF(/datum/unit_test/dq_stock_smartfridge, "made", OWNED_LIST, null)
 
 /datum/unit_test/dq_stock_smartfridge/Run()
 	var/turf/floor = dq_containment_floor()
@@ -163,7 +163,7 @@ REF_OWNED_LIST(/datum/unit_test/dq_stock_smartfridge, "made")
 /datum/unit_test/dq_stock_sheets
 	var/list/made = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
 
-REF_OWNED_LIST(/datum/unit_test/dq_stock_sheets, "made")
+DECLARE_REF(/datum/unit_test/dq_stock_sheets, "made", OWNED_LIST, null)
 
 /datum/unit_test/dq_stock_sheets/Run()
 	var/turf/floor = dq_containment_floor()

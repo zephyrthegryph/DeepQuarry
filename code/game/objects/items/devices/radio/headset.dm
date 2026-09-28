@@ -33,7 +33,8 @@
 	// (inherited from /obj/item/radio) does that, from the channels computed here.
 	recalculateChannels(TRUE, register = FALSE)
 
-REF_OWNED(/obj/item/radio/headset, list("keyslot1", "keyslot2"))
+DECLARE_REF(/obj/item/radio/headset, "keyslot1", OWNED, null)
+DECLARE_REF(/obj/item/radio/headset, "keyslot2", OWNED, null)
 
 /obj/item/radio/headset/list_channels(mob/user)
 	return list_secure_channels()
@@ -813,11 +814,11 @@ DECLARE_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encrypti
 	name = "explorer's bowman headset"
 	desc = "Bowman headset used by explorers for exploring. Access to the explorer channel."
 
-REF_OWNED(/obj/item/radio/headset/event, list("effect_overlay"))
+DECLARE_REF(/obj/item/radio/headset/event, "effect_overlay", OWNED, null)
 
 /// LC-refs: wearer -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/radio/headset/event/proc/wearer() as /mob/living/carbon/human
 	return om_resolve(wearer_handle)
 
 // The AI owns this radio through common_radio; myAi is the back reference.
-REF_BACK(/obj/item/radio/headset/heads/ai_integrated, list("myAi" = "common_radio"))
+DECLARE_REF(/obj/item/radio/headset/heads/ai_integrated, "myAi", BACK, "common_radio")

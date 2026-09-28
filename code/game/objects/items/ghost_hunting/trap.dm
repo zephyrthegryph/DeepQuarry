@@ -35,7 +35,7 @@
 		config_flags = EXPERIMENT_CONFIG_ALWAYS_ACTIVE, \
 		experiment_events = ghost_events)
 
-REF_OWNED(/obj/item/ghost_trap, "ghost_reporter")
+DECLARE_REF(/obj/item/ghost_trap, "ghost_reporter", OWNED, null)
 
 // a captured entity is released onto the turf.
 /obj/item/ghost_trap/on_destroy(force)

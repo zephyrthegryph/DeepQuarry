@@ -28,7 +28,7 @@
 	default_apply_parts()
 	update_icon()
 
-REF_OWNED(/obj/machinery/pipelayer, "W")
+DECLARE_REF(/obj/machinery/pipelayer, "W", OWNED, null)
 
 /obj/machinery/pipelayer/RefreshParts()
 	var/mb_rating = get_part_rating(/obj/item/stock_parts/matter_bin)

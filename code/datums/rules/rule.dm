@@ -429,16 +429,16 @@ GLOBAL_VAR_INIT(dq_rule_recording, FALSE)
 /datum/rule_trigger/proc/provider_b() as /datum/property_provider/domain
 	return om_resolve(provider_b_handle)
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/rule_compiler/proc/rule() as /datum/rule
 	return rule_static
-REF_STATIC(/datum/rule_compiler, "rule_static")
+DECLARE_REF(/datum/rule_compiler, "rule_static", STATIC, null)
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/rule_compiler/proc/registry() as /datum/property_registry
 	return registry_static
-REF_STATIC(/datum/rule_compiler, "registry_static")
+DECLARE_REF(/datum/rule_compiler, "registry_static", STATIC, null)
 
-REF_OWNED(/datum/rule, "predicate")
+DECLARE_REF(/datum/rule, "predicate", OWNED, null)
 
-REF_OWNED_LIST(/datum/rule, "triggers")
+DECLARE_REF(/datum/rule, "triggers", OWNED_LIST, null)

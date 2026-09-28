@@ -71,6 +71,6 @@
 	dq_news_panel_cache.tgui_interact(src)
 	client.seen_news = 1
 
-REF_OWNED(/mob/new_player, "dq_news_panel_cache")
-REF_BACK(/datum/news_panel, list("host" = "dq_news_panel_cache"))
-REF_HELD(/datum/news_panel, "channel")
+DECLARE_REF(/mob/new_player, "dq_news_panel_cache", OWNED, null)
+DECLARE_REF(/datum/news_panel, "host", BACK, "dq_news_panel_cache")
+DECLARE_REF(/datum/news_panel, "channel", HELD, null)

@@ -28,8 +28,8 @@ handles linking back and forth.
 	///Our own container when not linked to a silo (owned).
 	var/datum/material_container/local_container
 
-REF_BACK(/datum/remote_materials, list("owner" = null))
-REF_OWNED(/datum/remote_materials, "local_container")
+DECLARE_REF(/datum/remote_materials, "owner", BACK, null)
+DECLARE_REF(/datum/remote_materials, "local_container", OWNED, null)
 
 /datum/remote_materials/New(
 	atom/new_owner,

@@ -258,4 +258,4 @@
 	..()
 	hibernate_until_input_changes()
 
-REF_STATIC(/obj/machinery/atmospherics/trinary/atmos_filter, "radio_connection")
+DECLARE_REF(/obj/machinery/atmospherics/trinary/atmos_filter, "radio_connection", STATIC, null)

@@ -349,9 +349,11 @@ GLOBAL_LIST_EMPTY(radial_menus)
 	..()
 
 /// The menu's slices, centre button, holder image and check callback are its own.
-REF_OWNED(/datum/radial_menu, list("close_button", "menu_holder", "custom_check_callback"))
+DECLARE_REF(/datum/radial_menu, "close_button", OWNED, null)
+DECLARE_REF(/datum/radial_menu, "menu_holder", OWNED, null)
+DECLARE_REF(/datum/radial_menu, "custom_check_callback", OWNED, null)
 
-REF_OWNED_LIST(/datum/radial_menu, list("elements"))
+DECLARE_REF(/datum/radial_menu, "elements", OWNED_LIST, null)
 
 /*
 	Presents radial menu to user anchored to anchor (or user if the anchor is currently in users screen)
@@ -415,7 +417,7 @@ REF_OWNED_LIST(/datum/radial_menu, list("elements"))
 	/// If provided, will display an info button that will put this text in your chat
 	var/info
 
-REF_OWNED(/datum/radial_menu_choice, "image")
+DECLARE_REF(/datum/radial_menu_choice, "image", OWNED, null)
 
 #undef NEXT_PAGE_ID
 #undef DEFAULT_CHECK_DELAY

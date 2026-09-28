@@ -58,4 +58,4 @@
 	if(!glass)
 		updateVisibility(src, 0)
 
-REF_OWNED_LIST(/turf, "obfuscations")
+DECLARE_REF(/turf, "obfuscations", OWNED_LIST, null)

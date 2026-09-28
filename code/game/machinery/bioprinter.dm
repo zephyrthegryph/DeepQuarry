@@ -358,4 +358,4 @@ EXTEND_INTERACTIONS(/obj/machinery/organ_printer/flesh, INTERACT_ITEM(null, PROC
 	return FALSE
 // END FLESH ORGAN PRINTER
 
-REF_HELD(/obj/machinery/organ_printer, list("container"))
+DECLARE_REF(/obj/machinery/organ_printer, "container", HELD, null)

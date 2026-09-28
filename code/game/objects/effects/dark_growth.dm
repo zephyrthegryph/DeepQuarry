@@ -118,7 +118,7 @@
 		dark_tile.unlinked()
 	..()
 
-REF_BACKLIST(/obj/effect/dark, list("linked_node" = "children_effects"))
+DECLARE_REF(/obj/effect/dark, "linked_node", BACKLIST, "children_effects")
 
 /obj/effect/dark/proc/do_process()
 	//set background = 1

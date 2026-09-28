@@ -434,5 +434,8 @@
 
 #undef MORPH_COOLDOWN
 
-REF_HELD(/mob/living/simple_mob/vore/morph, list("form", "original_mind"))
-REF_HELD(/mob/living/simple_mob/vore/morph/dominated_prey, list("parent_morph", "prey_body", "prey_mind"))
+DECLARE_REF(/mob/living/simple_mob/vore/morph, "form", HELD, null)
+DECLARE_REF(/mob/living/simple_mob/vore/morph, "original_mind", HELD, null)
+DECLARE_REF(/mob/living/simple_mob/vore/morph/dominated_prey, "parent_morph", HELD, null)
+DECLARE_REF(/mob/living/simple_mob/vore/morph/dominated_prey, "prey_body", HELD, null)
+DECLARE_REF(/mob/living/simple_mob/vore/morph/dominated_prey, "prey_mind", HELD, null)

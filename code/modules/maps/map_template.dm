@@ -423,4 +423,4 @@ GLOBAL_LIST_EMPTY(map_templates_loaded)
 
 	return
 
-REF_OWNED(/datum/map_template, "cached_map")
+DECLARE_REF(/datum/map_template, "cached_map", OWNED, null)

@@ -182,7 +182,8 @@
 
 	return 1
 
-REF_OWNED_LIST(/obj/item/autopsy_scanner, list("wdata", "chemtraces"))
+DECLARE_REF(/obj/item/autopsy_scanner, "wdata", OWNED_LIST, null)
+DECLARE_REF(/obj/item/autopsy_scanner, "chemtraces", OWNED_LIST, null)
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/autopsy_scanner, \

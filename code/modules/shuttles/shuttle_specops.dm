@@ -200,4 +200,4 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/shuttle_control/specops, INTERACT_SI
 			var/obj/machinery/light/small/readylight/light = locate_within(T, /obj/machinery/light/small/readylight)
 			if(light) light.set_state(1)
 
-REF_OWNED(/datum/shuttle/autodock/ferry/specops, "announcer")
+DECLARE_REF(/datum/shuttle/autodock/ferry/specops, "announcer", OWNED, null)

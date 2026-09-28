@@ -38,8 +38,11 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 		dq_lifecycle_release_loc(D, aborted)
 	return hint
 
-/// What an aborted destroy transaction still owes: declared refs scrubbed,
-/// and a movable's contents deleted (as /atom/movable/Destroy() would have).
+/// What an aborted destroy transaction still owes: declared refs scrubbed, the
+/// datum out of the live world and its registries, its object-model state torn
+/// down (timers, hooks, tasks, behaviours: an atom's dematerialize() does this,
+/// any other datum needs dq_lifecycle_om_teardown()), OM handles released, and
+/// a movable's contents deleted (as /atom/movable/Destroy() would have).
 /proc/dq_lifecycle_finish_aborted(datum/D)
 	try
 		dq_lifecycle_scrub(D)
@@ -50,8 +53,9 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 			A.dematerialize()
 		else
 			D.leave_registries()
-		if(D.om_hid)
-			om_handle_release(D)
+		// Phase 5 may never have run: without this a non-atom kept live OM
+		// timers, hooks and tasks on a dead datum. Also releases OM handles.
+		dq_lifecycle_om_teardown(D)
 		if(ismovable(D))
 			var/atom/movable/AM = D
 			for(var/atom/movable/thing in contents_of(AM).Copy())
@@ -151,11 +155,11 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 	dq_lifecycle_time(trash, LIFECYCLE_PHASE_LINKS, tick)
 	DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_LINKS done")
 
-	// Phase 5: teardown. Processing (auto-stopped via
-	// periodic_pipe, set by PERIODIC_START), screens,
-	// clock callbacks (hook point, DQ Medical w6/k1) and grants (hook point).
-	// Timers, reactor, components, signals and tgui are already handled by
-	// /datum/Destroy() itself (phase 7) and are not duplicated here.
+	// Phase 5: teardown. Periodic work (PERIODIC_START), client screens,
+	// walk() loops, then the object-model teardown: OM timers, hooks, tasks,
+	// deadlines, grants and behaviours (om_teardown_rest()) and OM handles.
+	// /datum/Destroy() (phase 7) only clears the tag, closes tgui windows and
+	// does reference-tracking bookkeeping.
 	tick = world.tick_usage
 	dq_lifecycle_teardown(D)
 	dq_lifecycle_time(trash, LIFECYCLE_PHASE_TEARDOWN, tick)
@@ -212,7 +216,7 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 
 /// Phase 4, after on_destroy() and before the links clear: the dying movable
 /// leaves its holder's ledger slot now, so its on_unslotted() hooks (a body
-/// part's detach, which reads `owner`) run while REF_BACK vars still name their
+/// part's detach, which reads `owner`) run while BACK vars still name their
 /// partners. It keeps its loc until Destroy() (phase 7) moves it out; that
 /// move's note_exit() then finds no entry. The ledger never re-adopts it:
 /// sync() skips things being deleted.
@@ -251,10 +255,10 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 
 /// The type's destroy hook, run at the start of phase 4, right after
 /// lifecycle_prerelease() and before the links clear: contents are resolved
-/// (phase 3), but REF_BACK/BACKLIST/PAIR vars, owned children and OM handles
+/// (phase 3), but BACK/BACKLIST/PAIR vars, owned children and OM handles
 /// (om_handle_is) are all still live, so teardown can reach its owner and
 /// partners. The core Destroy() chain runs later, in phase 7. The place for domain consequences only:
-/// anything a REF_* declaration, lifecycle_unbind(), lifecycle_dematerialize(),
+/// anything a DECLARE_REF line, lifecycle_unbind(), lifecycle_dematerialize(),
 /// lifecycle_prerelease() or destroy_effects() expresses goes there instead.
 /// Always call ..(). Returns nothing: the GC hint is destroy_hint.
 /// Behaviours get the same hook as /datum/om/behaviour/proc/on_entity_destroy(E).
@@ -265,28 +269,28 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 // ---- Phase 1: unbind (hook point) ----
 
 /// Phase 1 (doc/rewrite/lifecycle.md §2): R10 entity bindings
-/// (vg_entity_unbind), heat bodies and pipe/cable topology, through a
-/// declared `bindings` table -- must precede dematerialize. Nothing in this
-/// track declares one yet; this is the hook the Rust/heat/atmos tracks land
-/// on, matching the ~20 atmos/heat Destroy() blocks and the heat release
-/// currently hard-ordered in /atom/Destroy the doc calls out to replace.
+/// (vg_entity_unbind), heat bodies and pipe/cable topology -- must precede
+/// dematerialize. Types override it
+/// to disconnect topology before the holder leaves the world (for example
+/// /obj/machinery/atmospherics/lifecycle_unbind() tears down its pipe
+/// connections). Must not sleep; call ..().
 /datum/proc/lifecycle_unbind()
 	return
 
 // ---- Phase 2: dematerialize (hook point) ----
 
-/// Phase 2: leave registries and drop rule bindings, same as today (most of
-/// this already happens through existing Destroy() bodies and signal
-/// handlers; L3's registry declarations replace the remaining `GLOB.x += src`
-/// sites over time). Hook point for now.
+/// Phase 2, for every datum, before a movable is released from its holder: the
+/// hook for a type's own indexes that are not OM registries (registries are
+/// left by dq_lifecycle_leave_registries() / an atom's dematerialize()). No
+/// type overrides it today; the default does nothing. Must not sleep.
 /datum/proc/lifecycle_dematerialize()
 	return
 
 // ---- Phase 5: teardown ----
 
 /// Ends any periodic work (PERIODIC_START, code/datums/om/periodic.dm),
-/// releases HUD/screen objects from any client they're shown to, and calls
-/// the clock and grants teardown hook points.
+/// releases HUD/screen objects from any client they're shown to, stops walk()
+/// loops, and tears down the datum's object-model state.
 /proc/dq_lifecycle_teardown(datum/D)
 	if(D.periodic_pipe)
 		periodic_stop(D)
@@ -296,8 +300,7 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 		// A walk_towards()/walk() loop keeps an internal BYOND reference.
 		if(ismovable(AT))
 			walk(AT, 0)
-	dq_lifecycle_clock_teardown(D)
-	dq_lifecycle_revoke_grants(D)
+	dq_lifecycle_om_teardown(D)
 
 /// Removes `src` from any client's `screen` list it is shown on. Default: a
 /// plain atom shows on nobody's screen. /obj/screen overrides this to leave
@@ -305,17 +308,11 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 /atom/proc/dq_lifecycle_release_screen()
 	return
 
-/// Clock teardown hook point (DQ Medical w6/k1): cancels callbacks owned by
-/// and targeting `D`. A no-op until that track lands `clock_teardown()`.
-/proc/dq_lifecycle_clock_teardown(datum/D)
-	return
-
-/// Grants auto-revoke hook point (P5, doc/rewrite/lifecycle.md §2 phase 5,
-/// §6): a granted ability/language/verb/factor whose source is `D` should
-/// revoke itself, following the pattern of a COMSIG_QDELETING handler owned
-/// by the grant's holder rather than the source cleaning up after itself. A
-/// no-op until that track lands.
-/proc/dq_lifecycle_revoke_grants(datum/D)
+/// The object-model teardown (phase 5, and an aborted transaction): every OM
+/// timer, deadline, hook, task, grant and behaviour `D` has
+/// (om_teardown_rest(), code/datums/om/entity.dm), then its OM handles stop
+/// resolving. Safe to call twice: both halves check their own state.
+/proc/dq_lifecycle_om_teardown(datum/D)
 	// Object model (code/datums/om/entity.dm): contributions and grants this
 	// datum holds anywhere, its own store, behaviours (on_stop), deadlines, tasks.
 	if(D.om_rec)
@@ -327,19 +324,15 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 // ---- Phase 6: effects ----
 
 /// Declared destroy_effects data (L3, doc/rewrite/lifecycle.md §5): message,
-/// sound, debris type, neighbour update. Nothing declares any yet (L4
-/// migrates real Destroy() effect bodies over); this reads the declaration
-/// when one exists.
+/// sound, debris type, neighbour update. Declared with DESTROY_EFFECTS(PATH,
+/// DATA); phase 6 of destroy_transaction() applies it (merged per turf under a
+/// batch). Null: no effects.
 /datum/proc/destroy_effects()
 	return null
 
-/proc/dq_lifecycle_effects(datum/D)
-	var/datum/destroy_effects_data/data = D.destroy_effects()
-	return data?.apply(D)
-
 // ---- Phase 8: scrub ----
 
-/// Nulls every declared REF_OWNED/REF_OWNED_LIST/REF_PAIR var still pointing
+/// Nulls every declared OWNED/OWNED_LIST/PAIR var still pointing
 /// somewhere (links.dm's phase-4 clear already emptied most of them; this
 /// catches whatever phase 7's leftover Destroy() set again) to break
 /// reference cycles, then does nothing else -- D is not parked anywhere,

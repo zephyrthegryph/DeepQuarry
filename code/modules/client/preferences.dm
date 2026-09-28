@@ -157,7 +157,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 		save_preferences()
 	save_character() // Save random character
 
-REF_OWNED_LIST(/datum/preferences, "middleware")
+DECLARE_REF(/datum/preferences, "middleware", OWNED_LIST, null)
 
 // in-flight character preview renders discard their result.
 /datum/preferences/on_destroy(force)
@@ -603,7 +603,7 @@ REF_OWNED_LIST(/datum/preferences, "middleware")
 
 	feedback_add_details("admin_verb","TCaptureCrystal") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-REF_OWNED(/datum/preferences, "savefile")
+DECLARE_REF(/datum/preferences, "savefile", OWNED, null)
 
 /// LC-refs: the client this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/preferences/proc/client() as /client

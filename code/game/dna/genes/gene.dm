@@ -50,7 +50,7 @@
 	var/datum/trait/linked_trait = null // Internal use, do not assign.
 	var/list/conflict_traits // Lazy. Cache known traits that don't work with this one, instead of doing it all at once, or EVERY time we do a mutation check
 
-REF_PAIR(/datum/gene/trait, list("linked_trait" = "linked_gene"))
+DECLARE_REF(/datum/gene/trait, "linked_trait", PAIR, "linked_gene")
 
 // Use these when displaying info to players
 /datum/gene/trait/proc/get_name()

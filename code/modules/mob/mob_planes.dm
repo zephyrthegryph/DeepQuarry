@@ -62,7 +62,7 @@
 
 	..()
 
-REF_OWNED_LIST(/datum/plane_holder, "plane_masters")
+DECLARE_REF(/datum/plane_holder, "plane_masters", OWNED_LIST, null)
 
 /datum/plane_holder/proc/set_vis(which = null, state = FALSE)
 	ASSERT(which)
@@ -268,5 +268,5 @@ REF_OWNED_LIST(/datum/plane_holder, "plane_masters")
 			my_mob.client.images -= GLOB.entopic_images
 // /mob/Destroy() cleanup of REGISTRY_MEMBERS(REGISTRY_ENTOPIC_USERS) folded into the canonical /mob/Destroy() in mob.dm
 
-REF_BACK(/datum/plane_holder, list("my_mob" = "plane_holder"))
-REF_BACK(/atom/movable/screen/plane_master/augmented, list("my_mob" = null))
+DECLARE_REF(/datum/plane_holder, "my_mob", BACK, "plane_holder")
+DECLARE_REF(/atom/movable/screen/plane_master/augmented, "my_mob", BACK, null)

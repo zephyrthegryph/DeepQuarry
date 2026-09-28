@@ -19,7 +19,7 @@
 	findsleeper()
 	return ..()
 
-REF_PAIR(/obj/machinery/sleep_console, list("sleeper" = "console"))
+DECLARE_REF(/obj/machinery/sleep_console, "sleeper", PAIR, "console")
 
 /// Sealed occupant slot (C8, containment.md §10, OM relations step 3): the
 /// sleeper's own field is the occupant's environment, same as before the
@@ -127,7 +127,7 @@ EXTEND_INTERACTIONS(/obj/machinery/sleep_console, \
 	default_apply_parts()
 	update_icon()
 
-REF_PAIR(/obj/machinery/sleeper, list("console" = "sleeper"))
+DECLARE_REF(/obj/machinery/sleeper, "console", PAIR, "sleeper")
 
 /obj/machinery/sleeper/RefreshParts(limited = 0)
 	var/man_rating = 0
@@ -587,4 +587,4 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 	. = ..()
 	RefreshParts(1)
 
-REF_HELD(/obj/machinery/sleeper, list("beaker"))
+DECLARE_REF(/obj/machinery/sleeper, "beaker", HELD, null)

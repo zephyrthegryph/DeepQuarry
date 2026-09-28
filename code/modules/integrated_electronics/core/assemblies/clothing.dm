@@ -237,7 +237,8 @@
 	wearer = null
 	..()
 
-REF_OWNED(/obj/item/clothing, list("IC", "action_circuit"))
+DECLARE_REF(/obj/item/clothing, "IC", OWNED, null)
+DECLARE_REF(/obj/item/clothing, "action_circuit", OWNED, null)
 
 /// LC-refs: the clothing this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/electronic_assembly/clothing/proc/clothing() as /obj/item/clothing

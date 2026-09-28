@@ -92,4 +92,4 @@
 	to_chat(owner_ref(), span_danger("Your shield fades due being used up!"))
 	qdel(src)
 
-REF_OWNED(/obj/item/spell/reflect, list("spark_system"))
+DECLARE_REF(/obj/item/spell/reflect, "spark_system", OWNED, null)

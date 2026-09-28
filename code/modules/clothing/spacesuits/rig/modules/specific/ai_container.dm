@@ -208,9 +208,9 @@
 	update_verb_holder()
 	return
 
-REF_OWNED(/obj/item/rig_module/ai_container, "verb_holder")
+DECLARE_REF(/obj/item/rig_module/ai_container, "verb_holder", OWNED, null)
 
-REF_HELD(/obj/item/rig_module/ai_container, "ai_card")
+DECLARE_REF(/obj/item/rig_module/ai_container, "ai_card", HELD, null)
 
 /// LC-refs: Direct reference to the actual mob held in the suit. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/rig_module/ai_container/proc/integrated_ai() as /mob

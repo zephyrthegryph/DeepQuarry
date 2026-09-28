@@ -420,4 +420,4 @@
 /datum/decl/mob_organ_names/borer
 	hit_zones = list("head", "central segment", "tail segment")
 
-REF_HELD(/mob/living/simple_mob/animal/borer, "host_brain")
+DECLARE_REF(/mob/living/simple_mob/animal/borer, "host_brain", HELD, null)

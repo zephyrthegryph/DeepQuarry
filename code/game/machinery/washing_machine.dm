@@ -35,7 +35,7 @@
 	default_apply_parts()
 	make_climbable()
 
-REF_SPILL_LIST(/obj/machinery/washing_machine, "washing")
+DECLARE_REF(/obj/machinery/washing_machine, "washing", SPILL_LIST, null)
 
 /obj/machinery/washing_machine/declare_interactions(list/into)
 	into += list(

@@ -22,7 +22,7 @@
 	/// Whether this works when the movable isn't directly located on a turf.
 	var/works_in_containers
 
-REF_BACK(/datum/connect_range, list("listener" = null))
+DECLARE_REF(/datum/connect_range, "listener", BACK, null)
 
 /datum/connect_range/New(datum/listener, atom/tracked, list/connections, range, works_in_containers = TRUE)
 	..()

@@ -335,4 +335,4 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/otie, \
 	say_maybe_target = list("Ruh?", "Waf?")
 	say_got_target = list("Rurrr!", "ROAR!", "MARR!", "RERR!", "RAHH!", "RAH!", "WARF!")
 
-REF_HELD(/mob/living/simple_mob/vore/otie, "friend")
+DECLARE_REF(/mob/living/simple_mob/vore/otie, "friend", HELD, null)

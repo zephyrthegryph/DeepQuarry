@@ -106,7 +106,7 @@
 	debug_mappers_list = REGISTRY_MEMBERS(REGISTRY_MAPPING_UNITS)
 	debug_beacons_list = REGISTRY_MEMBERS(REGISTRY_MAPPING_BEACONS)
 
-REF_OWNED(/obj/item/mapping_unit, "extras_holder")
+DECLARE_REF(/obj/item/mapping_unit, "extras_holder", OWNED, null)
 
 // its map display is torn down.
 /obj/item/mapping_unit/on_destroy(force)

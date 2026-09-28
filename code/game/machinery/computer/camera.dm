@@ -24,7 +24,7 @@
 /obj/machinery/computer/security/proc/get_default_networks()
 	. = using_map.station_networks.Copy()
 
-REF_OWNED(/obj/machinery/computer/security, "camera")
+DECLARE_REF(/obj/machinery/computer/security, "camera", OWNED, null)
 
 /obj/machinery/computer/security/tgui_interact(mob/user, datum/tgui/ui = null)
 	camera.tgui_interact(user, ui)
@@ -131,7 +131,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/computer/security/telescreen/entertainment, R
 	radio.canhear_range = world.view // Same as default sight range.
 	power_change()
 
-REF_OWNED(/obj/machinery/computer/security/telescreen/entertainment, list("pinboard", "radio"))
+DECLARE_REF(/obj/machinery/computer/security/telescreen/entertainment, "pinboard", OWNED, null)
+DECLARE_REF(/obj/machinery/computer/security/telescreen/entertainment, "radio", OWNED, null)
 
 // stops showing its feed.
 /obj/machinery/computer/security/telescreen/entertainment/on_destroy(force)

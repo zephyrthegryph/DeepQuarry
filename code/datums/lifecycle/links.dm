@@ -1,119 +1,37 @@
-// L2: the links framework (roadmap L track, doc/rewrite/lifecycle.md §4).
+// L2: the links framework (roadmap L track, doc/rewrite/lifecycle.md �4).
 //
 // Every object-typed var on a datum is declared as exactly one kind:
 //   - slot content            containment (ledger.dm/lifecycle.dm) -- not this file
-//   - REF_OWNED / REF_OWNED_LIST   a child that isn't contained, deleted in phase 4
-//   - REF_PAIR                 two-sided; link_set()/link_clear() keep both sides in sync
-//   - REF_BACKLIST             membership in another object's list, removed automatically
-//   - handle (om_handle())     the default for everything else -- resolved on read, never cleaned
+//   - DECLARE_REF(...) with a kind    one line per var, next to the type (code/__defines/lifecycle.dm
+//                              lists the kinds: OWNED, PAIR, BACK, HELD, STATIC, ...)
+//   - handle (om_handle())     resolved on read, never cleaned
 //   - tmp cache                recomputable; scrubbed in phase 8
-//   - REF_DEF                  a frozen definition or registry object: nothing to clear
-//   - REF_TRANSIENT            a pooled object's per-use field, reset by pool_release()
 //
-// A type declares its kinds by overriding one or more of the four procs
-// below, each returning a proc-local `var/static/list` (the usual pattern
-// for a per-type constant table this codebase can't express as a class var,
-// e.g. slot_def_types()). The per-type table is then built once, lazily, the
-// first time link_table_for() sees the type -- the same lazy-once-per-type
-// cache dq_slot_defs_for() already uses, which this codebase already treats
-// as its "boot-time" table pattern (built on first real use, not literally
-// during SSinit, so a type nobody ever destroys never pays for a table).
+// Each DECLARE_REF(PATH, VAR, KIND, OPT) line is an override of declared_refs() that
+// adds one entry on top of ..(), so a type's table holds its parents' entries
+// too. dq_lifecycle_link_table() builds that table once per type, lazily, the
+// first time it sees an instance -- the same lazy-once-per-type cache
+// dq_slot_defs_for() uses, so a type nobody ever destroys never pays for one.
 //
-// The lint (tools/ci/declared_refs_lint.py) is what actually enforces "every
-// object-typed var is declared as exactly one kind" -- checked statically
-// against these four procs plus slot_def_types(), ratcheted, with DQ
-// Medical's areas (body, organs, afflictions, surgery, protean) allow-listed
-// until they convert (doc §4, §7).
+// tools/ci/declared_refs_lint.py enforces "every object-typed var is declared
+// as exactly one kind" statically, and suggests a kind for an undeclared var.
 
-/// Names of `src`'s own (not contained) child object vars: each is QDEL_NULL'd
-/// in phase 4, then (defensively) nulled again in phase 8 if leftover
-/// Destroy() re-set one. Var names only -- resolved with vars[] at phase time.
-/datum/proc/declared_owned_vars()
+/// The type's declared references: kind (a REFKIND_* key) -> assoc of var name ->
+/// the kind's OPT. Built by the DECLARE_REF() lines on the type and its parents, each adding
+/// one entry on top of ..(). Read it through dq_lifecycle_link_table(), which caches
+/// it per type; never override it by hand.
+/datum/proc/declared_refs()
 	return null
 
-/// Names of `src`'s own list vars of children: each is QDEL_LIST'd in phase 4.
-/datum/proc/declared_owned_list_vars()
-	return null
-
-/// Names of `src`'s own assoc list vars whose *values* are children (keyed by
-/// id): each value is deleted in phase 4 (was QDEL_LIST_ASSOC_VAL).
-/datum/proc/declared_owned_value_vars()
-	return null
-
-/// Assoc: our var name -> the *other* object's var name that points back to
-/// us. Declaring this on both sides (A's entry says "b_var", B's says
-/// "a_var") is what makes link_set()/link_clear() find the reciprocal var
-/// without walking every var on the other object. A pair var not currently
-/// set is simply null; declaring it costs nothing until it's used.
-/datum/proc/declared_pair_vars()
-	return null
-
-/// Assoc: our var name (a reference to the object whose list we're a member
-/// of) -> that object's list var name. Phase 4 removes `src` from
-/// `owner.vars[list_var]` for each declared entry whose owner var is set.
-/datum/proc/declared_backlist_vars()
-	return null
-
-/// Assoc: our var holding an OM HANDLE to the owner -> the owner's list var
-/// that holds us (REF_BACKLIST_HANDLE). Phase 4 resolves the handle and removes
-/// us (or our handle) from that list; the handle var itself is left (text).
-/datum/proc/declared_backlist_handle_vars()
-	return null
-
-/// Assoc: our var holding an OM HANDLE to a partner -> the partner's var that
-/// names us back (REF_BACK_HANDLE). Phase 4 resolves the handle and nulls the
-/// partner's var if it still names us, by reference or by handle.
-/datum/proc/declared_back_handle_vars()
-	return null
-
-/// Assoc: a path to a partner -> the partner's var(s) that name us (REF_BACK_VIA).
-/// The path is one var name or several joined by "." ("master_handle.cl_handle"),
-/// read hop by hop from src; each hop may hold a reference or an OM handle. The
-/// value is a var name, a list of them, or list(/partner/type = name or names)
-/// (lifecycle_backlist_handle_lists()). Phase 4 finds the partner and, for each
-/// named var: a list loses us (and our handle); anything else naming us (by
-/// reference or handle) is nulled. Our own vars are left alone.
-/datum/proc/declared_back_via_vars()
-	return null
-
-/// Assoc: our list var -> the member var(s) that name us back (REF_LIST_BACK): the
-/// owner side of a back-list. Phase 4 visits each member (keys and assoc values,
-/// references or OM handles) and, for each named var, removes us from it if it is a
-/// list or nulls it if it names us. The list itself is dropped once the links clear.
-/datum/proc/declared_list_back_vars()
-	return null
-
-/// Names of `src`'s vars simply dropped in phase 4 (REF_DROP): the target is not
-/// deleted, not cut and not told. For scratch tables keyed by other objects and
-/// lists src was handed (and may share), which only must stop pinning their contents.
-/datum/proc/declared_drop_vars()
-	return null
-
-/// Assoc: a var of src that says whether src is queued (or LIFECYCLE_QUEUE_ALWAYS)
-/// -> a global proc path, or a list of them, returning the list src sits in
-/// (REF_QUEUE_MEMBER): a subsystem work queue, or a global list that isn't an OM
-/// registry. Phase 4 removes src from each list whose flag var is set.
-/datum/proc/declared_queue_vars()
-	return null
-
-/// Names of `src`'s vars holding one inserted thing (a beaker, a card, a
-/// charging cell) that goes back to the room when src is destroyed: phase 3
-/// moves it to src's drop location if it is still inside src. The one-thing
-/// SPILL slot, for holders that have no ledger slots.
-/datum/proc/declared_spill_vars()
-	return null
-
-/// Names of `src`'s vars that name a thing it holds in its contents without a
-/// destroy policy of their own (a machine's installed board). Like the owned
-/// and spill vars, they are nulled when that thing is destroyed while still
-/// inside src (dq_lifecycle_release_from_holder()).
-/datum/proc/declared_held_vars()
-	return null
-
-/// Names of `src`'s weak list vars (REF_WEAK_LIST): lists of OM handles naming
-/// other live entities src doesn't own. Phase 4 cuts them; members are untouched.
-/datum/proc/declared_weak_list_vars()
-	return null
+/// DECLARE_REF() plumbing: `parent` (a fresh table from ..(), or null) with `kind`'s entry
+/// `name` = `opt` added. A later REF for the same var and kind replaces the earlier.
+/proc/lifecycle_declare_ref(list/parent, kind, name, opt)
+	. = parent || list()
+	var/list/entries = .[kind]
+	if(!entries)
+		entries = list()
+		.[kind] = entries
+	entries[name] = opt
 
 /// Runs in the destroy transaction just before phase 4 (links) nulls, deletes and
 /// unlinks the declared vars: the place for teardown that must still read them
@@ -122,7 +40,7 @@
 /datum/proc/lifecycle_prerelease()
 	return
 
-/// The live entities weak list `L` (REF_WEAK_LIST) names, in order. Prunes the
+/// The live entities weak list `L` (DECLARE_REF(..., WEAK_LIST)) names, in order. Prunes the
 /// handles of deleted members from `L` in place.
 /proc/weak_list_live(list/L)
 	. = list()
@@ -138,21 +56,6 @@
 	if(dead)
 		L -= dead
 
-/// Names of `src`'s list vars whose members spill the same way.
-/datum/proc/declared_spill_list_vars()
-	return null
-
-/// Assoc: our var name -> the var on the object it names that points back
-/// at us (or null). The non-owning side of an owner/child pair (REF_BACK):
-/// phase 4 nulls ours and, if it still points at us, theirs.
-/datum/proc/declared_back_vars()
-	return null
-
-/// Names of `src`'s vars deliberately left set after destruction (REF_KEEP):
-/// exempt from the destroy postcondition (leak_check.dm).
-/datum/proc/declared_keep_vars()
-	return null
-
 /// Assoc: our cache var name -> its invalidation rule, CACHE_ON_CHANGE(bits),
 /// CACHE_ON_EVENT(path) or CACHE_ON_RELATION(path) (code/__DEFINES/om.dm). A
 /// cache may hold object references; the object-model core nulls it when the
@@ -161,72 +64,37 @@
 /datum/proc/declared_cache_vars()
 	return null
 
-/// Names of `src`'s vars that point at frozen definitions or registry objects
-/// (REF_DEF): never deleted, so destruction leaves them alone. Read by the lint
-/// and by tests; nothing at runtime needs them.
-/datum/proc/declared_def_vars()
-	return null
-
-/// Names of `src`'s vars that hold round-long singletons or flyweights strongly
-/// (REF_STATIC): never cleared by destruction, never reported by the leak check.
-/datum/proc/declared_static_vars()
-	return null
-
 /// TRUE for a singleton / flyweight / definition type (OM_STATIC_TYPE): what a
 /// handle may never point at (tools/ci/handle_kinds_lint.py).
 /datum/proc/om_static_type()
 	return FALSE
 
-/// Names of a pooled type's per-use fields (REF_TRANSIENT): pool_release()
-/// resets each to its initial value (code/datums/lifecycle/pool.dm).
-/datum/proc/declared_transient_vars()
-	return null
-
-/// `D`'s declared_*_vars() results, cached per type on first use (see file
-/// header): a type's declarations are proc-local statics, so every instance
-/// of it answers identically, but they can only be *called* on a real,
-/// already-constructed instance -- exactly how dq_slot_defs_for(atom/holder)
-/// already caches slot_def_types() by the instance's type, not by
-/// instantiating a throwaway. `.owned`, `.owned_list`, `.pair`, `.backlist`
-/// -- each the list/assoc that type declared, or null.
+/// `D`'s declared_refs() table, cached per type on first use (see file header):
+/// every instance of a type answers identically, but the proc can only be called
+/// on a real instance -- the same way dq_slot_defs_for(atom/holder) caches
+/// slot_def_types() by the instance's type. Keyed by REFKIND_* ("owned", "pair",
+/// ...); each entry is an assoc of var name -> OPT, or absent.
 /proc/dq_lifecycle_link_table(datum/D)
 	var/static/list/cache = list()
 	var/key = D.type
 	var/list/table = cache[key]
 	if(isnull(table))
-		table = list(
-			"owned" = D.declared_owned_vars(),
-			"owned_list" = D.declared_owned_list_vars(),
-			"owned_values" = D.declared_owned_value_vars(),
-			"pair" = D.declared_pair_vars(),
-			"backlist" = D.declared_backlist_vars(),
-			"backlist_handle" = D.declared_backlist_handle_vars(),
-			"back_handle" = D.declared_back_handle_vars(),
-			"spill" = D.declared_spill_vars(),
-			"spill_list" = D.declared_spill_list_vars(),
-			"held" = D.declared_held_vars(),
-			"back" = D.declared_back_vars(),
-			"keep" = D.declared_keep_vars(),
-			"static" = D.declared_static_vars(),
-			"weak_list" = D.declared_weak_list_vars(),
-			"back_via" = D.declared_back_via_vars(),
-			"list_back" = D.declared_list_back_vars(),
-			"drop" = D.declared_drop_vars(),
-			"queue" = D.declared_queue_vars(),
-		)
+		table = D.declared_refs() || list()
 		// A declaration naming a var the type no longer has (the var was
-		// removed, the REF_* line wasn't) would runtime on D.vars[name] in the
+		// removed, the DECLARE_REF line wasn't) would runtime on D.vars[name] in the
 		// middle of a destroy transaction, abandoning it half done. Drop it
 		// here, once per type, loudly.
+		// DEF/STATIC/TRANSIENT entries are only read by the lints and pool.dm.
+		var/static/list/unchecked = list(REFKIND_DEF = TRUE, REFKIND_STATIC = TRUE, REFKIND_TRANSIENT = TRUE)
 		for(var/kind in table)
 			var/list/names = table[kind]
-			if(!length(names))
+			if(!length(names) || unchecked[kind])
 				continue
 			for(var/name in names.Copy())
 				var/checked = name
-				if(kind == "queue" && name == LIFECYCLE_QUEUE_ALWAYS)
+				if(kind == REFKIND_QUEUE && name == LIFECYCLE_QUEUE_ALWAYS)
 					continue
-				if(kind == "back_via") // a path: its first hop must be ours
+				if(kind == REFKIND_BACK_VIA) // a path: its first hop must be ours
 					var/dot = findtext(name, ".")
 					if(dot)
 						checked = copytext(name, 1, dot)
@@ -251,9 +119,9 @@
 	for(var/key in holder_keys)
 		for(var/var_name in table[key])
 			if(holder.vars[var_name] == AM)
-				holder.vars[var_name] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
+				holder.vars[var_name] = null // ALLOW(api): DECLARE_REF link plumbing: clears/pairs the declared var named by the link
 
-/// Phase 3, for declared spill vars (REF_SPILL/REF_SPILL_LIST): each thing
+/// Phase 3, for declared spill vars (DECLARE_REF(..., SPILL)/DECLARE_REF(..., SPILL_LIST)): each thing
 /// still inside `AM` goes to its drop location. When that location is itself
 /// being destroyed in the same batch, the thing is simply deleted with it.
 /// The spill hook: a thing that lands refreshes its icon, since its sprite may
@@ -271,14 +139,14 @@
 		var/atom/movable/thing = AM.vars[var_name]
 		if(!ismovable(thing) || thing.loc != AM || QDELETED(thing))
 			continue
-		AM.vars[var_name] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
+		AM.vars[var_name] = null // ALLOW(api): DECLARE_REF link plumbing: clears/pairs the declared var named by the link
 		if(doomed)
 			qdel(thing)
 		else
 			thing.forceMove(drop)
 			thing.update_icon()
-	// A spill list may be src's whole contents (REF_SPILL_LIST(/obj/item/clothing,
-	// "contents")), which also holds its owned children: a suit's hood or a
+	// A spill list may be src's whole contents (DECLARE_REF(/obj/item/clothing,
+	// "contents", SPILL_LIST, null)), which also holds its owned children: a suit's hood or a
 	// voidsuit's helmet lives inside it. Those are deleted in phase 4, not spilled.
 	var/list/owned_things
 	if(spill_list)
@@ -320,18 +188,17 @@
 	if(!table)
 		return
 	// Partners found through a path, and the members of our back-lists, are told
-	// first: the vars they are reached through (a REF_HELD part, an owned list) are
+	// first: the vars they are reached through (a DECLARE_REF(..., HELD) part, an owned list) are
 	// nulled or emptied below.
 	if(table["back_via"] || table["list_back"])
 		dq_lifecycle_clear_found_partners(D, table)
 	var/list/owned = table["owned"]
 	for(var/var_name in owned)
 		var/datum/child = D.vars[var_name]
-		D.vars[var_name] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
+		D.vars[var_name] = null // ALLOW(api): DECLARE_REF link plumbing: clears/pairs the declared var named by the link
 		// A typed var may still hold a type path (never materialized) or a list.
 		if(isdatum(child))
 			dq_lifecycle_check_owner_cycle(D, var_name, child)
-		// A typed var may still hold a type path (never materialized) or a list.
 		// An owned child already being destroyed (two objects that own each
 		// other, like an overmap mob and its marker) is only let go: its own
 		// transaction is further up this stack, and qdel() on it again is the
@@ -340,11 +207,11 @@
 			if(GLOB.dq_lifecycle_trace_depth)
 				log_world("LIFECYCLE_TRACE: [D.type] [ref(D)] links: deleting owned [var_name] ([child.type])")
 			qdel(child)
-	// Held vars (REF_HELD) are let go with their holder: the thing is deleted with the
+	// Held vars (DECLARE_REF(..., HELD)) are let go with their holder: the thing is deleted with the
 	// holder's contents or lives on elsewhere, and a deleted holder still naming it
 	// (a mob's focus on itself, an installed part) is a reference nothing would clear.
 	for(var/var_name in table["held"])
-		D.vars[var_name] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
+		D.vars[var_name] = null // ALLOW(api): DECLARE_REF link plumbing: clears/pairs the declared var named by the link
 	if(GLOB.dq_lifecycle_trace_depth)
 		log_world("LIFECYCLE_TRACE: [D.type] [ref(D)] links: owned vars done")
 	var/list/owned_list = table["owned_list"]
@@ -382,14 +249,14 @@
 		var/datum/partner = D.vars[our_var]
 		if(batch && partner && batch.doomed[partner])
 			// Both ends doomed: the partner's own clear drops its side.
-			D.vars[our_var] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
+			D.vars[our_var] = null // ALLOW(api): DECLARE_REF link plumbing: clears/pairs the declared var named by the link
 			batch.edges_dropped++
 			continue
 		link_clear(D, our_var)
 	var/list/backlist = table["backlist"]
 	for(var/our_var in backlist)
 		var/datum/owner = D.vars[our_var]
-		D.vars[our_var] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
+		D.vars[our_var] = null // ALLOW(api): DECLARE_REF link plumbing: clears/pairs the declared var named by the link
 		if(batch && owner && batch.doomed[owner])
 			batch.edges_dropped++
 			continue // the owner's list goes with it
@@ -420,7 +287,7 @@
 			continue
 		var/theirs = partner.vars[their_var]
 		if(theirs == D || (istext(theirs) && om_handle_is(theirs, D)))
-			partner.vars[their_var] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
+			partner.vars[their_var] = null // ALLOW(api): DECLARE_REF link plumbing: clears/pairs the declared var named by the link
 	var/list/queues = table["queue"]
 	for(var/flag in queues)
 		if(flag != LIFECYCLE_QUEUE_ALWAYS && !D.vars[flag])
@@ -431,12 +298,12 @@
 			if(islist(Q))
 				Q.Remove(D)
 	for(var/var_name in table["drop"])
-		D.vars[var_name] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
+		D.vars[var_name] = null // ALLOW(api): DECLARE_REF link plumbing: clears/pairs the declared var named by the link
 	for(var/var_name in table["list_back"])
 		if(var_name != "contents")
-			D.vars[var_name] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
+			D.vars[var_name] = null // ALLOW(api): DECLARE_REF link plumbing: clears/pairs the declared var named by the link
 
-/// Reads a REF_BACK_VIA path ("a" or "a.b.c") from `D`: each hop is a var of the
+/// Reads a DECLARE_REF(..., BACK_VIA) path ("a" or "a.b.c") from `D`: each hop is a var of the
 /// object reached so far, holding a reference or an OM handle. Null when a hop is
 /// missing, unset or no longer resolves, or when the path leads back to `D`.
 /// The result may be a /client (clients aren't datums but have vars).
@@ -470,9 +337,9 @@
 		if(h)
 			L.Remove(h)
 	else if(theirs == D || (h && theirs == h))
-		partner.vars[their_var] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
+		partner.vars[their_var] = null // ALLOW(api): DECLARE_REF link plumbing: clears/pairs the declared var named by the link
 
-/// Phase 4, REF_BACK_VIA and REF_LIST_BACK: every partner `D` reaches through a
+/// Phase 4, DECLARE_REF(..., BACK_VIA) and DECLARE_REF(..., LIST_BACK): every partner `D` reaches through a
 /// declared path, and every member of `D`'s declared back-lists, stops naming it.
 /proc/dq_lifecycle_clear_found_partners(datum/D, list/table)
 	var/datum/destroy_batch/batch = GLOB.dq_destroy_batch
@@ -506,7 +373,7 @@
 					lifecycle_unname(member, their_var, D, h)
 
 
-/// The partner's list var names a REF_BACKLIST_HANDLE value picks for `owner`:
+/// The partner's list var names a DECLARE_REF(..., BACKLIST_HANDLE) value picks for `owner`:
 /// a name, a list of names, or list(/partner/type = name or names) keyed by the
 /// partner's type (the first type `owner` is).
 /proc/lifecycle_backlist_handle_lists(datum/owner, list_vars)
@@ -529,7 +396,7 @@
 	if(!table)
 		return
 	for(var/var_name in table["owned"])
-		D.vars[var_name] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
+		D.vars[var_name] = null // ALLOW(api): DECLARE_REF link plumbing: clears/pairs the declared var named by the link
 	// A destroyed object holds nothing: held things (a datum has no contents, so
 	// phase 2 never released them) and the emptied owned lists are dropped too.
 	// `contents` is built in and can't be nulled.
@@ -537,75 +404,67 @@
 	for(var/key in drop_keys)
 		for(var/var_name in table[key])
 			if(var_name != "contents")
-				D.vars[var_name] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
+				D.vars[var_name] = null // ALLOW(api): DECLARE_REF link plumbing: clears/pairs the declared var named by the link
 	for(var/our_var in table["back"])
 		dq_lifecycle_clear_back(D, our_var, table["back"][our_var])
 	for(var/var_name in table["pair"])
 		if(D.vars[var_name])
 			link_clear(D, var_name)
 
-/// Sets a REF_PAIR both ways: `A.vars[var_a] = B`, `B.vars[var_b] = A`,
+/// Sets a DECLARE_REF(..., PAIR) both ways: `A.vars[var_a] = B`, `B.vars[var_b] = A`,
 /// clearing whatever either side pointed to first. Both types must declare
-/// `var_a`/`var_b` as a matched declared_pair_vars() entry.
+/// `var_a`/`var_b` as a matched DECLARE_REF(..., PAIR, ...) entry.
 /proc/link_set(datum/A, var_a, datum/B, var_b)
 	link_clear(A, var_a)
 	link_clear(B, var_b)
-	A.vars[var_a] = B // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
-	B.vars[var_b] = A // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
+	A.vars[var_a] = B // ALLOW(api): DECLARE_REF link plumbing: clears/pairs the declared var named by the link
+	B.vars[var_b] = A // ALLOW(api): DECLARE_REF link plumbing: clears/pairs the declared var named by the link
 
-/// Clears a REF_PAIR from `A`'s side: nulls `A.vars[var_a]`, and, if it
+/// Clears a DECLARE_REF(..., PAIR) from `A`'s side: nulls `A.vars[var_a]`, and, if it
 /// pointed somewhere, finds that object's declared reciprocal var (from its
-/// own declared_pair_vars()) and nulls it too. Safe to call on an already
+/// own PAIR declarations) and nulls it too. Safe to call on an already
 /// null pair.
 /proc/link_clear(datum/A, var_a)
 	var/datum/other = A.vars[var_a]
-	A.vars[var_a] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
+	A.vars[var_a] = null // ALLOW(api): DECLARE_REF link plumbing: clears/pairs the declared var named by the link
 	if(!other)
 		return
-	var/list/other_pairs = dq_lifecycle_link_table(other)["pair"]
+	var/list/other_pairs = dq_lifecycle_link_table(other)[REFKIND_PAIR]
 	for(var/their_var in other_pairs)
 		if(other.vars[their_var] == A)
-			other.vars[their_var] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
+			other.vars[their_var] = null // ALLOW(api): DECLARE_REF link plumbing: clears/pairs the declared var named by the link
 			return
 
 /// Adds `member` to `owner.vars[list_var]` and sets `member.vars[owner_var] = owner`,
 /// so phase 4 removes it automatically on either side's destruction. Both
-/// types must declare `owner_var` in declared_backlist_vars(): member's
-/// entry is `owner_var -> list_var`.
+/// types must declare it: member's DECLARE_REF(..., owner_var, BACKLIST, list_var).
 /proc/link_backlist_add(datum/member, owner_var, datum/owner, list_var)
-	member.vars[owner_var] = owner // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
+	member.vars[owner_var] = owner // ALLOW(api): DECLARE_REF link plumbing: clears/pairs the declared var named by the link
 	var/list/L = owner.vars[list_var]
 	if(!L)
 		L = list()
-		owner.vars[list_var] = L // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
+		owner.vars[list_var] = L // ALLOW(api): DECLARE_REF link plumbing: clears/pairs the declared var named by the link
 	L |= member
 
 /// Removes `member` from the back-list side, without waiting for either
 /// object's destruction.
 /proc/link_backlist_remove(datum/member, owner_var)
 	var/datum/owner = member.vars[owner_var]
-	member.vars[owner_var] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
+	member.vars[owner_var] = null // ALLOW(api): DECLARE_REF link plumbing: clears/pairs the declared var named by the link
 	if(!owner)
 		return
 	// owner_var is member's var name, not owner's -- the list var lives on
-	// declared_backlist_vars() the way member declared it, which is the
+	// member's BACKLIST declaration, the way member declared it, which is the
 	// contract: member says "my owner_var points at the list named X on my
 	// owner's type". Read X from member's own declaration.
-	var/list/member_backlist = dq_lifecycle_link_table(member)["backlist"]
+	var/list/member_backlist = dq_lifecycle_link_table(member)[REFKIND_BACKLIST]
 	var/list_var = member_backlist?[owner_var]
 	if(!list_var)
 		return
 	var/list/L = owner.vars[list_var]
 	L?.Remove(member)
 
-/// REF_PAIR/REF_BACKLIST helper: the parent type's assoc declaration plus
-/// `extra`, as a new list (the parent's is a shared per-type table).
-/proc/lifecycle_merge_assoc(list/parent, list/extra)
-	. = parent ? parent.Copy() : list()
-	for(var/key in extra)
-		.[key] = extra[key]
-
-/// REF_BACK: nulls `D.vars[our_var]` and, when `their_var` is named and the
+/// DECLARE_REF(..., BACK): nulls `D.vars[our_var]` and, when `their_var` is named and the
 /// object it pointed at still points back at D through it, that too.
 /proc/dq_lifecycle_clear_back(datum/D, our_var, their_var)
 	var/datum/other = D.vars[our_var]
@@ -635,18 +494,18 @@ GLOBAL_VAR(dq_lifecycle_report_capture)
 
 /// Ownership must be a tree. Called for each owned child as phase 4 lets it
 /// go: if the child owns `D` back through any declared owned var, two types
-/// REF_OWN each other (tools/ci/ownership_cycle_lint.py is the static half;
+/// DECLARE_REF(..., OWNED) each other (tools/ci/ownership_cycle_lint.py is the static half;
 /// this catches untyped vars and declarations written as procs). The release
 /// of an already-deleting child (above) keeps it from crashing; this makes it
-/// loud. One side should own, the other name it with REF_BACK.
+/// loud. One side should own, the other name it with DECLARE_REF(..., BACK).
 /proc/dq_lifecycle_check_owner_cycle(datum/D, var_name, datum/child)
 	var/list/child_table = dq_lifecycle_link_table(child)
 	for(var/child_var in child_table["owned"])
 		if(child.vars[child_var] == D)
-			dq_lifecycle_report("LIFECYCLE OWNERSHIP CYCLE: [D.type].[var_name] owns [child.type], and [child.type].[child_var] owns [D.type] back. Ownership must be a tree: make one side REF_BACK.")
+			dq_lifecycle_report("LIFECYCLE OWNERSHIP CYCLE: [D.type].[var_name] owns [child.type], and [child.type].[child_var] owns [D.type] back. Ownership must be a tree: make one side DECLARE_REF(..., BACK).")
 			return
 	for(var/child_var in child_table["owned_list"])
 		var/list/L = child.vars[child_var]
 		if(islist(L) && (D in L))
-			dq_lifecycle_report("LIFECYCLE OWNERSHIP CYCLE: [D.type].[var_name] owns [child.type], and [child.type].[child_var] (owned list) owns [D.type] back. Ownership must be a tree: make one side REF_BACK.")
+			dq_lifecycle_report("LIFECYCLE OWNERSHIP CYCLE: [D.type].[var_name] owns [child.type], and [child.type].[child_var] (owned list) owns [D.type] back. Ownership must be a tree: make one side DECLARE_REF(..., BACK).")
 			return

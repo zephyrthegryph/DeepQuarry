@@ -30,7 +30,7 @@
 
 	var/one_time = FALSE
 
-REF_BACK(/datum/transhuman/mind_record, list("mind_ref" = null))
+DECLARE_REF(/datum/transhuman/mind_record, "mind_ref", BACK, null)
 
 /datum/transhuman/mind_record/New(datum/mind/mind, mob/living/carbon/human/M, add_to_db = TRUE, one_time = FALSE, database_key)
 	ASSERT(mind)
@@ -106,8 +106,9 @@ REF_BACK(/datum/transhuman/mind_record, list("mind_ref" = null))
 	else if(ishuman(copyfrom))
 		init_from_mob(copyfrom, add_to_db, ckeylock)
 
-REF_OWNED(/datum/transhuman/body_record, "mydna")
-REF_BACK(/datum/transhuman/body_record, list("client_ref" = null, "mind_ref" = null))
+DECLARE_REF(/datum/transhuman/body_record, "mydna", OWNED, null)
+DECLARE_REF(/datum/transhuman/body_record, "client_ref", BACK, null)
+DECLARE_REF(/datum/transhuman/body_record, "mind_ref", BACK, null)
 
 // Records ask for a hard delete: there is no easy way to clear references to this in REGISTRY_MEMBERS(REGISTRY_MACHINES) etc.
 /datum/transhuman/body_record

@@ -291,7 +291,7 @@
 	region_id = id
 	..()
 
-REF_OWNED(/datum/material_power_overlay, "material_graph")
+DECLARE_REF(/datum/material_power_overlay, "material_graph", OWNED, null)
 
 /datum/material_power_overlay/lifecycle_unbind()
 	. = ..()

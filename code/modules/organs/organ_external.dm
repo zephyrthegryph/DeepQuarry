@@ -97,9 +97,11 @@
 
 	special_handling = TRUE
 
-REF_OWNED(/obj/item/organ/external, list("mob_icon", "hud_damage_image"))
-REF_HELD(/obj/item/organ/external, "splinted")
-REF_BACK(/obj/item/organ/external, list("parent" = null, "applied_pressure" = null))
+DECLARE_REF(/obj/item/organ/external, "mob_icon", OWNED, null)
+DECLARE_REF(/obj/item/organ/external, "hud_damage_image", OWNED, null)
+DECLARE_REF(/obj/item/organ/external, "splinted", HELD, null)
+DECLARE_REF(/obj/item/organ/external, "parent", BACK, null)
+DECLARE_REF(/obj/item/organ/external, "applied_pressure", BACK, null)
 
 // child limbs and internal organs go with it; it leaves its owner's organ tables.
 /obj/item/organ/external/on_destroy(force)

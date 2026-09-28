@@ -77,9 +77,9 @@ GLOBAL_LIST_INIT(dq_parachuting_by_type, list(
 	var/tmp/hovering_is_set = FALSE
 	var/tmp/hovering_value = FALSE
 
-REF_OWNED(/atom/movable, "cloak_selfimage")
+DECLARE_REF(/atom/movable, "cloak_selfimage", OWNED, null)
 // Lights affecting this movable, keyed by the light; dropped with the movable (the light side may be dying too).
-REF_BACK(/atom/movable, list("dynamic_lights_affecting" = null))
+DECLARE_REF(/atom/movable, "dynamic_lights_affecting", BACK, null)
 
 // ---- Helpers (global procs to avoid /atom/movable proc-table bloat). ----
 

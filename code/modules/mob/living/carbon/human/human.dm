@@ -82,7 +82,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_ALT_FARMANIMALS)
 
 REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 
-// organs are deleted from a snapshot; the nif (REF_OWNED) and blood vessel go with the body.
+// organs are deleted from a snapshot; the nif (DECLARE_REF(..., OWNED)) and blood vessel go with the body.
 /mob/living/carbon/human/on_destroy(force)
 	// Each organ's Destroy() removes itself (and qdels its children/internals)
 	// out of src.organs, so iterating the live list skips entries — skipped
@@ -2004,6 +2004,6 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	create_new_area(usr)
 	return
 
-REF_HELD(/mob/living/carbon/human, "wearing_rig")
+DECLARE_REF(/mob/living/carbon/human, "wearing_rig", HELD, null)
 // Each side effect is created for this human and kept only here and by its finish() timer.
-REF_OWNED_LIST(/mob/living/carbon/human, "genetic_side_effects")
+DECLARE_REF(/mob/living/carbon/human, "genetic_side_effects", OWNED_LIST, null)

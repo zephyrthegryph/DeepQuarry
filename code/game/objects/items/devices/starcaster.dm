@@ -76,7 +76,7 @@ DECLARE_INTERACTIONS(/obj/item/starcaster_news, INTERACT_USE(null, PROC_REF(inte
 			. = TRUE
 			show_archived = !show_archived
 
-/// REF_OWNED: created for and owned by this holder; deleted with it.
+/// DECLARE_REF(..., OWNED): created for and owned by this holder; deleted with it.
 /obj/item/starcaster_news/proc/loaded_article() as /datum/computer_file/data/news_article
 	return loaded_article_owned
-REF_OWNED(/obj/item/starcaster_news, "loaded_article_owned")
+DECLARE_REF(/obj/item/starcaster_news, "loaded_article_owned", OWNED, null)

@@ -241,4 +241,4 @@
 	update_icon()
 	return TRUE
 
-REF_HELD(/obj/machinery/reagentgrinder, "beaker")
+DECLARE_REF(/obj/machinery/reagentgrinder, "beaker", HELD, null)

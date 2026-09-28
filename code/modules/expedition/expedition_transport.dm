@@ -30,7 +30,7 @@
 	var/tmp/site_handle
 
 // its site forgets its sector.
-REF_BACK_HANDLE(/obj/effect/overmap/visitable/sector/expedition, list("site_handle" = "overmap_sector_handle"))
+DECLARE_REF(/obj/effect/overmap/visitable/sector/expedition, "site_handle", BACK_HANDLE, "overmap_sector_handle")
 
 /obj/effect/shuttle_landmark/automatic/clearing/expedition
 	name = "Expedition Landing Zone"
@@ -49,17 +49,17 @@ REF_BACK_HANDLE(/obj/effect/overmap/visitable/sector/expedition, list("site_hand
 			site().participants |= L
 
 // its site forgets its landing waypoint.
-REF_BACK_HANDLE(/obj/effect/shuttle_landmark/automatic/clearing/expedition, list("site_handle" = "landing_waypoint"))
+DECLARE_REF(/obj/effect/shuttle_landmark/automatic/clearing/expedition, "site_handle", BACK_HANDLE, "landing_waypoint")
 
 /obj/machinery/computer/shuttle_control/explore
 	/// Site currently assigned to this craft.
 	var/tmp/active_expedition_handle
 	var/next_expedition_plot = 0
 
-REF_OWNED(/obj/machinery/computer/shuttle_control/explore, "flight_operations_ui")
+DECLARE_REF(/obj/machinery/computer/shuttle_control/explore, "flight_operations_ui", OWNED, null)
 
 // its expedition forgets its origin console.
-REF_BACK_HANDLE(/obj/machinery/computer/shuttle_control/explore, list("active_expedition_handle" = "origin_console_handle"))
+DECLARE_REF(/obj/machinery/computer/shuttle_control/explore, "active_expedition_handle", BACK_HANDLE, "origin_console_handle")
 
 /obj/machinery/computer/shuttle_control/explore/proc/expedition_data()
 	if(!active_expedition() || QDELETED(active_expedition()))

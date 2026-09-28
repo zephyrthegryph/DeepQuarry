@@ -56,4 +56,4 @@
 		return 1
 	return 0
 
-REF_OWNED(/obj/item/spell/shield, list("spark_system"))
+DECLARE_REF(/obj/item/spell/shield, "spark_system", OWNED, null)

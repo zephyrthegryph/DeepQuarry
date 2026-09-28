@@ -489,4 +489,4 @@ DECLARE_INTERACTIONS(/obj/item/glamour_unstable, \
 		uncloak()
 		visible_message(span_infoplain(span_bold("\The [src]") + " appears as if from thin air."))
 
-REF_HELD(/obj/item/glamour_face, "homunculus")
+DECLARE_REF(/obj/item/glamour_face, "homunculus", HELD, null)

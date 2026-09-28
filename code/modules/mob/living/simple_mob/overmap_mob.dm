@@ -56,11 +56,11 @@
 		color = initial(parent.color)
 		desc = initial(parent.desc)
 
-// Ownership is a tree: the mob owns its marker (REF_OWNED child_om_marker);
+// Ownership is a tree: the mob owns its marker (DECLARE_REF(..., OWNED) child_om_marker);
 // the marker's `parent` is only the way back, nulled on both sides when the
-// marker goes. Both used to REF_OWN each other, and destroying either qdel'd
+// marker goes. Both used to DECLARE_REF(..., OWNED) each other, and destroying either qdel'd
 // the other twice (a CRASH the OM trampoline's catch hid).
-REF_BACK(/obj/effect/overmap/visitable/simplemob, list("parent" = "child_om_marker"))
+DECLARE_REF(/obj/effect/overmap/visitable/simplemob, "parent", BACK, "child_om_marker")
 
 /obj/effect/overmap/visitable/simplemob/get_scan_data(mob/user)
 	if(!known)
@@ -143,7 +143,7 @@ REF_BACK(/obj/effect/overmap/visitable/simplemob, list("parent" = "child_om_mark
 		if(!QDELETED(C))
 			om_link(src, C, /datum/om/relation/overmap_mob_marker)
 
-REF_OWNED(/mob/living/simple_mob/vore/overmap, "child_om_marker")
+DECLARE_REF(/mob/living/simple_mob/vore/overmap, "child_om_marker", OWNED, null)
 
 /// Overmap mob -> the marker that shows it. A marker destroyed on its own (not
 /// by its mob, which owns it) takes the mob with it: the mob is invisible and
@@ -194,11 +194,11 @@ REF_OWNED(/mob/living/simple_mob/vore/overmap, "child_om_marker")
 		color = initial(parent.color)
 		desc = initial(parent.desc)
 
-// Ownership is a tree: the mob owns its marker (REF_OWNED child_om_marker);
+// Ownership is a tree: the mob owns its marker (DECLARE_REF(..., OWNED) child_om_marker);
 // the marker's `parent` is only the way back, nulled on both sides when the
-// marker goes. Both used to REF_OWN each other, and destroying either qdel'd
+// marker goes. Both used to DECLARE_REF(..., OWNED) each other, and destroying either qdel'd
 // the other twice (a CRASH the OM trampoline's catch hid).
-REF_BACK(/obj/effect/overmap/visitable/ship/simplemob, list("parent" = "child_om_marker"))
+DECLARE_REF(/obj/effect/overmap/visitable/ship/simplemob, "parent", BACK, "child_om_marker")
 
 /obj/effect/overmap/visitable/ship/simplemob/get_scan_data(mob/user)
 	if(!known)
@@ -219,5 +219,5 @@ REF_BACK(/obj/effect/overmap/visitable/ship/simplemob, list("parent" = "child_om
 	set_dir(parent.dir)
 
 // Type paths, never instances.
-REF_STATIC(/obj/effect/overmap/visitable/simplemob, "parent_mob_type")
-REF_STATIC(/obj/effect/overmap/visitable/ship/simplemob, "parent_mob_type")
+DECLARE_REF(/obj/effect/overmap/visitable/simplemob, "parent_mob_type", STATIC, null)
+DECLARE_REF(/obj/effect/overmap/visitable/ship/simplemob, "parent_mob_type", STATIC, null)

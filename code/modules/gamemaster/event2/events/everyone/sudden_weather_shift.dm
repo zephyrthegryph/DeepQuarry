@@ -44,7 +44,7 @@
 	log_game("Sudden weather shift event is now changing [chosen_planet().name]'s weather to [new_weather].")
 	chosen_planet().weather_holder.change_weather(new_weather)
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/event2/event/sudden_weather_shift/proc/chosen_planet() as /datum/planet
 	return chosen_planet_static
-REF_STATIC(/datum/event2/event/sudden_weather_shift, "chosen_planet_static")
+DECLARE_REF(/datum/event2/event/sudden_weather_shift, "chosen_planet_static", STATIC, null)

@@ -56,7 +56,7 @@ start from nothing.
 | Piece | Where | Becomes |
 |---|---|---|
 | Containment ledger, slots, latent state | `code/datums/containment/` (C1–C11) | the ownership layer (§4) |
-| Destroy transaction, links, verbs | `rewrite/ledger-joint`: `code/datums/lifecycle/transaction.dm`, `links.dm`, `verbs.dm` (LC1–LC3) | the destroy pipeline (§14); `REF_*` links become relation kinds |
+| Destroy transaction, links, verbs | `rewrite/ledger-joint`: `code/datums/lifecycle/transaction.dm`, `links.dm`, `verbs.dm` (LC1–LC3) | the destroy pipeline (§14); `DECLARE_REF` links become relation kinds |
 | Grants | `rewrite/grants`: `code/datums/grants/` | one relation kind with apply/unapply hooks (§5.6) |
 | Abilities (P5) | `code/datums/abilities/ability.dm` | behaviours granted through grants |
 | Compact interactions (I7) | `code/datums/interactions/` | archetype interaction tables (§6) |
@@ -913,7 +913,7 @@ differential tests (old against new on the same inputs), not by inspection.
 
 | Track | Scope | Depends on |
 |---|---|---|
-| **A: Kinds, ownership, relations** | `object_kind`; the ledger generalised to datum slots; relation kinds (light and rich edges, shapes, `holds_while`, hooks, lifetime policies); `link`/`unlink`/`linked`; derived spatial relations; `REF_*` from LC2 re-expressed as relation kinds; grants re-expressed as a relation kind; destroy-pipeline changes (§14) | LC1–LC3 (built) |
+| **A: Kinds, ownership, relations** | `object_kind`; the ledger generalised to datum slots; relation kinds (light and rich edges, shapes, `holds_while`, hooks, lifetime policies); `link`/`unlink`/`linked`; derived spatial relations; `DECLARE_REF` from LC2 re-expressed as relation kinds; grants re-expressed as a relation kind; destroy-pipeline changes (§14) | LC1–LC3 (built) |
 | **B: Scheduler** | wakes; owned timers; Poisson timers; the watch evaluator (DM side; Rust side from `rust_architecture.md`); rate fields and contributions; periodic behaviours with staggering; tasks and prompts with stamps; the test clock; the missed-wake audit; MC integration on the Rust reactor | A (edges) |
 | **C: Archetypes and behaviours** | `declare()` builder; archetype build and validation; bundles; behaviour singletons, config, interfaces, state machines; requirement types and the `/datum/check` library with dependency capture and messages; typed events with static dispatch, phases, delivery modes and bubbling | A; B for triggers |
 | **D: Startup quick wins** | build-time assets; lazy wiki; batched post-load init passes; bench before and after | none; can start now |

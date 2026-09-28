@@ -93,4 +93,4 @@
 		if(riftimage)
 			qdel(riftimage)
 
-REF_OWNED(/mob, list("riftimage"))
+DECLARE_REF(/mob, "riftimage", OWNED, null)

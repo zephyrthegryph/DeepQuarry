@@ -43,8 +43,8 @@
 	. = ..()
 	update_icon()
 
-REF_OWNED_LIST(/obj/item/reagent_containers/syringe, "viruses")
-REF_OWNED(/obj/item/reagent_containers/syringe, "filling")
+DECLARE_REF(/obj/item/reagent_containers/syringe, "viruses", OWNED_LIST, null)
+DECLARE_REF(/obj/item/reagent_containers/syringe, "filling", OWNED, null)
 
 /obj/item/reagent_containers/syringe/periodic_step()
 	dirtiness = min(dirtiness + targets.len,75)

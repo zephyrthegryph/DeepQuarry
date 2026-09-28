@@ -342,7 +342,7 @@
 	var/reservation_key
 	var/reserved_account = 0
 
-REF_OWNED(/datum/cargo_market_bid, "profile")
+DECLARE_REF(/datum/cargo_market_bid, "profile", OWNED, null)
 
 /datum/cargo_market_bid/proc/remaining_units()
 	return max(0, target_units - fulfilled_units)
@@ -1085,8 +1085,10 @@ REF_OWNED(/datum/cargo_market_bid, "profile")
 		"is_auditor" = is_auditor,
 	)
 
-REF_OWNED_LIST(/datum/world_service/supply, "market_transactions")
+DECLARE_REF(/datum/world_service/supply, "market_transactions", OWNED_LIST, null)
 
-REF_OWNED_VALUES(/datum/world_service/supply, list("market_counterparties", "market_listings", "market_bids"))
+DECLARE_REF(/datum/world_service/supply, "market_counterparties", OWNED_VALUES, null)
+DECLARE_REF(/datum/world_service/supply, "market_listings", OWNED_VALUES, null)
+DECLARE_REF(/datum/world_service/supply, "market_bids", OWNED_VALUES, null)
 
-REF_STATIC(/datum/cargo_market_listing, list("pack"))
+DECLARE_REF(/datum/cargo_market_listing, "pack", STATIC, null)

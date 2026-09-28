@@ -40,11 +40,11 @@
 // Lighting engine: only a forced qdel() deletes a lighting object.
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lighting_object)
 
-/// SSlighting's lighting object queue (REF_QUEUE_MEMBER).
+/// SSlighting's lighting object queue (DECLARE_REF(..., QUEUE)).
 /proc/lifecycle_lighting_objects_queue()
 	return SSlighting?.objects_queue
 
-REF_QUEUE_MEMBER(/datum/lighting_object, list("needs_update" = /proc/lifecycle_lighting_objects_queue))
+DECLARE_REF(/datum/lighting_object, "needs_update", QUEUE, /proc/lifecycle_lighting_objects_queue)
 
 // The turf's overlay resets.
 /datum/lighting_object/on_destroy(force)
@@ -144,7 +144,7 @@ REF_QUEUE_MEMBER(/datum/lighting_object, list("needs_update" = /proc/lifecycle_l
 			affected_turf.underlays |= current_underlay
 
 // Held, not owned: Destroy() takes the underlay back off the turf (and may refuse deletion).
-REF_HELD(/datum/lighting_object, "current_underlay")
+DECLARE_REF(/datum/lighting_object, "current_underlay", HELD, null)
 
 // Turfs are never deleted; Destroy() (forced only) resets the turf itself.
-REF_STATIC(/datum/lighting_object, list("affected_turf"))
+DECLARE_REF(/datum/lighting_object, "affected_turf", STATIC, null)

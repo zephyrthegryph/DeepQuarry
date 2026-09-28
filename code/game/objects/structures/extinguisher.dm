@@ -134,4 +134,4 @@
 	icon = 'icons/obj/closet.dmi'
 	icon_state = "oldextinguisher" // map preview sprite
 
-REF_HELD(/obj/structure/extinguisher_cabinet, list("has_extinguisher"))
+DECLARE_REF(/obj/structure/extinguisher_cabinet, "has_extinguisher", HELD, null)

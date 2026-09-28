@@ -64,9 +64,7 @@
 /// An atom owns its wiring: the destroy transaction's links phase deletes it
 /// (lifecycle.md section 4), so no Destroy() override hand-deletes `wires`.
 /// Salvaged from Codex's main-tree wires-ownership work onto the links framework.
-/atom/declared_owned_vars()
-	. = ..()
-	. = (. || list()) + "wires"
+DECLARE_REF(/atom, "wires", OWNED, null)
 
 /atom/Destroy()
 	// ---- L2 lifecycle: leave the live world (state.md section 6). ----
@@ -713,4 +711,9 @@ GLOBAL_LIST_EMPTY(icon_dimensions)
 /atom/proc/set_base_color(new_color)
 	color = new_color
 
-REF_OWNED(/atom, list("forensic_data", "reagents", "wires", "forensic_data", "reagents", "wires"))
+DECLARE_REF(/atom, "forensic_data", OWNED, null)
+DECLARE_REF(/atom, "reagents", OWNED, null)
+DECLARE_REF(/atom, "wires", OWNED, null)
+DECLARE_REF(/atom, "forensic_data", OWNED, null)
+DECLARE_REF(/atom, "reagents", OWNED, null)
+DECLARE_REF(/atom, "wires", OWNED, null)

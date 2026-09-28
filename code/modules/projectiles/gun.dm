@@ -150,7 +150,7 @@
 	// Initialise the firemode selector.
 	firemode_selector  = new /datum/gun_firemode_selector(src)
 
-REF_OWNED(/obj/item/gun, "firemode_selector")
+DECLARE_REF(/obj/item/gun, "firemode_selector", OWNED, null)
 
 /obj/item/gun/update_twohanding()
 	if(one_handed_penalty)
@@ -846,7 +846,7 @@ EXTEND_INTERACTIONS(/obj/item/gun, \
 
 	..()
 
-REF_HELD(/obj/item/gun, "attached_lock")
+DECLARE_REF(/obj/item/gun, "attached_lock", HELD, null)
 
 /// LC-refs: the auto_target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/gun/proc/auto_target()

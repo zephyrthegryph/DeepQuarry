@@ -12,8 +12,8 @@
 	..()
 	src.owner_admin = owner_admin
 
-REF_PAIR(/datum/player_panel, list("owner_admin" = "tgui_player_panel"))
-REF_PAIR(/datum/admins, list("tgui_player_panel" = "owner_admin"))
+DECLARE_REF(/datum/player_panel, "owner_admin", PAIR, "tgui_player_panel")
+DECLARE_REF(/datum/admins, "tgui_player_panel", PAIR, "owner_admin")
 
 /datum/player_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_HOLDER)

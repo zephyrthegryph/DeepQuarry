@@ -31,4 +31,6 @@
 	station_map.add_overlay(legend)
 
 
-REF_OWNED(/datum/station_holomap, list("station_map", "cursor", "legend"))
+DECLARE_REF(/datum/station_holomap, "station_map", OWNED, null)
+DECLARE_REF(/datum/station_holomap, "cursor", OWNED, null)
+DECLARE_REF(/datum/station_holomap, "legend", OWNED, null)

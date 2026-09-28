@@ -73,7 +73,7 @@
 			LAZYADD(A.all_doors, src)
 			areas_added += A
 
-REF_BACKLIST(/obj/machinery/door/firedoor, list("turbolift_floor" = "doors"))
+DECLARE_REF(/obj/machinery/door/firedoor, "turbolift_floor", BACKLIST, "doors")
 
 /// Phase 2: leaves the door lists of every area it guards.
 /obj/machinery/door/firedoor/lifecycle_dematerialize()
@@ -670,4 +670,4 @@ REF_BACKLIST(/obj/machinery/door/firedoor, list("turbolift_floor" = "doors"))
 	..()
 	hibernate_until_air_changes()
 
-REF_STATIC(/obj/machinery/door/firedoor, "areas_added")
+DECLARE_REF(/obj/machinery/door/firedoor, "areas_added", STATIC, null)

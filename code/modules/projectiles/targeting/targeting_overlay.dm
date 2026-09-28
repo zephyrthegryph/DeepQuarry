@@ -85,7 +85,7 @@
 	..()
 	update_aiming()
 
-REF_BACKLIST(/obj/aiming_overlay, list("aiming_at" = "aimed"))
+DECLARE_REF(/obj/aiming_overlay, "aiming_at", BACKLIST, "aimed")
 
 /obj/aiming_overlay/proc/update_aiming_deferred()
 	om_after(src, 0, PROC_REF(update_aiming))

@@ -214,7 +214,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 		valid_types += BT
 	return pick(valid_types)
 
-REF_OWNED(/obj/structure/blob/core, "Q")
+DECLARE_REF(/obj/structure/blob/core, "Q", OWNED, null)
 
 /// LC-refs: Whoever is set to be controlling the blob. Used when the blob is created. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/structure/blob/core/proc/controller() as /client

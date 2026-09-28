@@ -155,7 +155,7 @@
 	last_piece_handle = om_handle(NC)
 	return 1
 
-REF_HELD(/obj/machinery/cablelayer, list("cable"))
+DECLARE_REF(/obj/machinery/cablelayer, "cable", HELD, null)
 
 /// LC-refs: last piece -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/cablelayer/proc/last_piece() as /obj/structure/cable

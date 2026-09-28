@@ -71,4 +71,4 @@
 		pinned_target = null
 	return TRUE
 
-REF_HELD(/obj/structure/target_stake, list("pinned_target"))
+DECLARE_REF(/obj/structure/target_stake, "pinned_target", HELD, null)

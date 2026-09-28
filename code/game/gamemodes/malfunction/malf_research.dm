@@ -67,9 +67,9 @@
 /datum/malf_research/proc/owner_ref() as /mob/living/silicon/ai
 	return om_resolve(owner_handle)
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/malf_research/proc/get_focus() as /datum/malf_research_ability
 	return focus_static
-REF_STATIC(/datum/malf_research, "focus_static")
+DECLARE_REF(/datum/malf_research, "focus_static", STATIC, null)
 
-REF_OWNED_LIST(/datum/malf_research, "available_abilities")
+DECLARE_REF(/datum/malf_research, "available_abilities", OWNED_LIST, null)

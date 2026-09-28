@@ -61,7 +61,8 @@
 	default_apply_parts()
 	RefreshParts()
 
-REF_OWNED(/obj/machinery/autolathe, list("print_sound", "materials"))
+DECLARE_REF(/obj/machinery/autolathe, "print_sound", OWNED, null)
+DECLARE_REF(/obj/machinery/autolathe, "materials", OWNED, null)
 
 /obj/machinery/autolathe/examine(mob/user)
 	. = ..()
@@ -570,7 +571,7 @@ REF_OWNED(/obj/machinery/autolathe, list("print_sound", "materials"))
 	if(om_busy(src))
 		icon_state = "[icon_state]_work"
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/machinery/autolathe/proc/stored_research() as /datum/techweb/autounlocking
 	return stored_research_static
-REF_STATIC(/obj/machinery/autolathe, "stored_research_static")
+DECLARE_REF(/obj/machinery/autolathe, "stored_research_static", STATIC, null)

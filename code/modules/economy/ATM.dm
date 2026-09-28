@@ -43,7 +43,7 @@ log transactions
 	spark_system.set_up(5, 0, src)
 	spark_system.attach(src)
 
-REF_OWNED(/obj/machinery/atm, "spark_system")
+DECLARE_REF(/obj/machinery/atm, "spark_system", OWNED, null)
 
 /obj/machinery/atm/machine_step()
 	if(stat & NOPOWER)

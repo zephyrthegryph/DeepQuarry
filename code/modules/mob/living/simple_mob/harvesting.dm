@@ -47,4 +47,4 @@
 	return
 
 // A tool type path, never an instance.
-REF_STATIC(/mob/living/simple_mob, "harvest_tool")
+DECLARE_REF(/mob/living/simple_mob, "harvest_tool", STATIC, null)

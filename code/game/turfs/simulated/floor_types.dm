@@ -449,13 +449,13 @@ EXTEND_INTERACTIONS(/turf/simulated/shuttle/plating/airless/carry, INTERACT_ITEM
 	icon_state = "floor"
 	set_light(0,0,"#ffffff")
 
-REF_OWNED(/obj/landed_holder, list("turf_image"))
+DECLARE_REF(/obj/landed_holder, "turf_image", OWNED, null)
 
 /// LC-refs: my turf -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/landed_holder/proc/my_turf() as /turf/simulated/shuttle
 	return om_resolve(my_turf_handle)
 
-REF_OWNED(/turf/simulated/shuttle, "landed_holder_ref")
+DECLARE_REF(/turf/simulated/shuttle, "landed_holder_ref", OWNED, null)
 
 /// The landed holder this floor owns (landed_holder_ref), or null.
 /turf/simulated/shuttle/proc/landed_holder() as /obj/landed_holder

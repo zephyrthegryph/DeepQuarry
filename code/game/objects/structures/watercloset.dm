@@ -501,7 +501,8 @@
 	reagents.add_reagent(reagent_id, reaction_volume)
 	soundloop = new(list(src), FALSE)
 
-REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
+DECLARE_REF(/obj/machinery/shower, "soundloop", OWNED, null)
+DECLARE_REF(/obj/machinery/shower, "reagents", OWNED, null)
 
 /obj/structure/toilet/crowbar_act(mob/user, obj/item/I)
 	to_chat(user, span_notice("You start to [cistern ? "replace the lid on the cistern" : "lift the lid off the cistern"]."))
@@ -1342,9 +1343,9 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/galaxy, INTERACT_USE("Squeeze
 	B.special_entrance_sound = 'sound/machines/blender.ogg'
 	B.recycling = TRUE
 
-REF_HELD(/obj/structure/toilet, list("teleplumb_crystal"))
+DECLARE_REF(/obj/structure/toilet, "teleplumb_crystal", HELD, null)
 
-REF_OWNED(/obj/structure/toilet, list("bin"))
+DECLARE_REF(/obj/structure/toilet, "bin", OWNED, null)
 
 /// LC-refs: muffinmonster -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/structure/biowaste_tank/proc/muffinmonster() as /mob/living/simple_mob/vore/aggressive/corrupthound

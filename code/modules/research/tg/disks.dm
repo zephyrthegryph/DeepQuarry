@@ -48,7 +48,7 @@ MATERIAL_MIX(/obj/item/disk/design_disk, list(MAT_STEEL = 30, MAT_GLASS = 10))
 /obj/item/disk/design_disk/proc/on_upload(datum/techweb/stored_research, atom/research_source)
 	return
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/item/disk/tech_disk/proc/stored_research() as /datum/techweb
 	return stored_research_static
-REF_STATIC(/obj/item/disk/tech_disk, "stored_research_static")
+DECLARE_REF(/obj/item/disk/tech_disk, "stored_research_static", STATIC, null)

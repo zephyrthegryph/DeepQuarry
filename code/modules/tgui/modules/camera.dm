@@ -5,7 +5,9 @@
 	var/atom/movable/screen/background/cam_foreground
 	var/atom/movable/screen/skybox/local_skybox
 
-REF_OWNED(/atom/movable/screen/map_view_tg/camera, list("cam_background", "cam_foreground", "local_skybox"))
+DECLARE_REF(/atom/movable/screen/map_view_tg/camera, "cam_background", OWNED, null)
+DECLARE_REF(/atom/movable/screen/map_view_tg/camera, "cam_foreground", OWNED, null)
+DECLARE_REF(/atom/movable/screen/map_view_tg/camera, "local_skybox", OWNED, null)
 
 /atom/movable/screen/map_view_tg/camera/generate_view(map_key)
 	. = ..()
@@ -88,7 +90,7 @@ REF_OWNED(/atom/movable/screen/map_view_tg/camera, list("cam_background", "cam_f
 	cam_screen_tg = new
 	cam_screen_tg.generate_view(map_name)
 
-REF_OWNED(/datum/tgui_module/camera, "cam_screen_tg")
+DECLARE_REF(/datum/tgui_module/camera, "cam_screen_tg", OWNED, null)
 
 /datum/tgui_module/camera/tgui_interact(mob/user, datum/tgui/ui = null)
 	if(!user.client)

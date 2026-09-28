@@ -229,4 +229,8 @@
 		network.mark_dirty()
 
 // Topology links and the (possibly network-shared) air slot: Destroy() hands the gas back and severs each side.
-REF_HELD(/datum/pipeline, list("air", "members", "edges", "network", "network_memberships"))
+DECLARE_REF(/datum/pipeline, "air", HELD, null)
+DECLARE_REF(/datum/pipeline, "members", HELD, null)
+DECLARE_REF(/datum/pipeline, "edges", HELD, null)
+DECLARE_REF(/datum/pipeline, "network", HELD, null)
+DECLARE_REF(/datum/pipeline, "network_memberships", HELD, null)

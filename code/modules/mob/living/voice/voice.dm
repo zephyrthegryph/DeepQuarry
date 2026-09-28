@@ -151,4 +151,4 @@
 	no_vore = TRUE
 	can_pain_emote = FALSE
 
-REF_HELD(/mob/living/voice, "comm")
+DECLARE_REF(/mob/living/voice, "comm", HELD, null)

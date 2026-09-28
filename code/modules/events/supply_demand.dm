@@ -355,4 +355,4 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 		LAZYADD(required_items, new /datum/supply_demand_order/thing(chosen_qty, chosen_path))
 	return
 
-REF_OWNED(/datum/supply_demand_order/gas, "mixture")
+DECLARE_REF(/datum/supply_demand_order/gas, "mixture", OWNED, null)

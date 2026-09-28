@@ -372,7 +372,8 @@ DECLARE_INTERACTIONS(/obj/item/xenoarch_multi_tool, \
 /obj/item/xenoarch_multi_tool/proc/xenoarch_multi_tool_verb_scan(mob/user, obj/item/held, datum/interaction/interaction)
 	anomaly_scanner.interact(user)
 
-REF_OWNED(/obj/item/xenoarch_multi_tool, list("anomaly_scanner", "depth_scanner"))
+DECLARE_REF(/obj/item/xenoarch_multi_tool, "anomaly_scanner", OWNED, null)
+DECLARE_REF(/obj/item/xenoarch_multi_tool, "depth_scanner", OWNED, null)
 
 /// LC-refs: the target_radio this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/beacon_locator/proc/target_radio() as /obj/item/radio

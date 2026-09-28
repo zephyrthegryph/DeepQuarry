@@ -41,7 +41,7 @@
 	input_level = max_transfer_rate
 	output_level = max_transfer_rate
 
-REF_OWNED_LIST(/obj/machinery/power/smes/batteryrack, "internal_cells")
+DECLARE_REF(/obj/machinery/power/smes/batteryrack, "internal_cells", OWNED_LIST, null)
 
 /obj/machinery/power/smes/batteryrack/check_terminals()
 	return TRUE // we don't necessarily need terminals

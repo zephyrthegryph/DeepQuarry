@@ -130,4 +130,4 @@ DECLARE_INTERACTIONS(/obj/item/makeover, INTERACT_USE(null, PROC_REF(interaction
 			E.change_eye_color()
 	return TRUE
 
-REF_OWNED(/obj/item/makeover, "M")
+DECLARE_REF(/obj/item/makeover, "M", OWNED, null)

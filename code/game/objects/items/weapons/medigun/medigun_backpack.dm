@@ -307,7 +307,11 @@
 		slaser = new slaser(src)
 	update_icon()
 
-REF_OWNED(/obj/item/medigun_backpack, list("bcell", "smodule", "smanipulator", "scapacitor", "slaser"))
+DECLARE_REF(/obj/item/medigun_backpack, "bcell", OWNED, null)
+DECLARE_REF(/obj/item/medigun_backpack, "smodule", OWNED, null)
+DECLARE_REF(/obj/item/medigun_backpack, "smanipulator", OWNED, null)
+DECLARE_REF(/obj/item/medigun_backpack, "scapacitor", OWNED, null)
+DECLARE_REF(/obj/item/medigun_backpack, "slaser", OWNED, null)
 
 /obj/item/medigun_backpack/proc/get_medigun()
 	return tethered_handheld()
@@ -588,4 +592,5 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 /obj/item/medigun_backpack/proc/checked_use(charge_amt)
 	return (bcell && bcell.checked_use(charge_amt))
 
-REF_HELD(/obj/item/medigun_backpack, list("ccell", "sbin"))
+DECLARE_REF(/obj/item/medigun_backpack, "ccell", HELD, null)
+DECLARE_REF(/obj/item/medigun_backpack, "sbin", HELD, null)

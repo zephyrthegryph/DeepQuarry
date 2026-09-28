@@ -29,7 +29,7 @@
 	curr_health = max_health
 	stability = ANOMALY_STABLE
 
-REF_OWNED(/datum/anomaly_stats, "modifier")
+DECLARE_REF(/datum/anomaly_stats, "modifier", OWNED, null)
 
 /datum/anomaly_stats/proc/randomize_particle_types()
 	var/list/particles = list(ANOMALY_PARTICLE_SIGMA, ANOMALY_PARTICLE_DELTA, ANOMALY_PARTICLE_ZETA, ANOMALY_PARTICLE_EPSILON)

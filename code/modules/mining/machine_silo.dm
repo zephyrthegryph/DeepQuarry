@@ -283,4 +283,4 @@
 		msg += "[amount < 0 ? "-" : "+"][val] [M.name]"
 	return msg.Join()
 
-REF_OWNED(/obj/machinery/ore_silo, "materials")
+DECLARE_REF(/obj/machinery/ore_silo, "materials", OWNED, null)

@@ -18,7 +18,8 @@
 	/// Hooks the turfs in range of the host (owned).
 	var/datum/connect_range/range_connector
 
-REF_OWNED(/datum/proximity_monitor, list("containers_connector", "range_connector"))
+DECLARE_REF(/datum/proximity_monitor, "containers_connector", OWNED, null)
+DECLARE_REF(/datum/proximity_monitor, "range_connector", OWNED, null)
 
 /datum/proximity_monitor/New(atom/_host, range, _ignore_if_not_on_turf = TRUE)
 	ignore_if_not_on_turf = _ignore_if_not_on_turf

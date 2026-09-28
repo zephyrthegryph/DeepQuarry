@@ -43,7 +43,7 @@
 	paint_color = rgb(rand(1,255),rand(1,255),rand(1,255))
 	. = ..()
 
-REF_OWNED(/obj/vehicle/train/engine/quadbike, "soundloop")
+DECLARE_REF(/obj/vehicle/train/engine/quadbike, "soundloop", OWNED, null)
 
 /obj/item/key/quadbike
 	name = "key"

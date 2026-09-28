@@ -112,4 +112,4 @@
 		chambered.activate(null)
 	return chambered
 
-REF_OWNED(/obj/item/gun/launcher/confetti_cannon, "chambered")
+DECLARE_REF(/obj/item/gun/launcher/confetti_cannon, "chambered", OWNED, null)

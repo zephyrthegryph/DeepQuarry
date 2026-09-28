@@ -71,9 +71,7 @@ GLOBAL_DATUM_INIT(radio_service, /datum/world_service/radio, new)
 	var/list/datum/radio_frequency/frequencies = list() // ALLOW(instance_list): d: world service singleton
 
 /// The service owns its frequencies (keyed by frequency text).
-/datum/world_service/radio/declared_owned_value_vars()
-	var/static/list/names = list("frequencies")
-	return names
+DECLARE_REF(/datum/world_service/radio, "frequencies", OWNED_VALUES, null)
 
 /datum/world_service/radio/initialize()
 	if(initialized)

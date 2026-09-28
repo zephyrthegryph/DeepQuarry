@@ -2,7 +2,7 @@
 //
 // Every datum has exactly one owner. Instances of the types below are owned by a
 // registry, a subsystem or the round itself and are shared by everything that
-// uses them, so a reference to one is REF_STATIC (a strong var, never cleared,
+// uses them, so a reference to one is DECLARE_REF(..., STATIC) (a strong var, never cleared,
 // never a leak) or, better, no var at all: read it from the registry at the use
 // site. An om_handle() to one of these is refused by tools/ci/handle_kinds_lint.py.
 //

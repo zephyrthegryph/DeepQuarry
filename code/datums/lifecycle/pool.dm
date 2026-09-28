@@ -3,10 +3,10 @@
 // A pooled type is declared once, next to the type:
 //
 //     POOL_DECLARE(/datum/damage_packet)
-//     REF_TRANSIENT(/datum/damage_packet, list("source", "attacker", "weapon", "zone"))
+//     DECLARE_REF(/datum/damage_packet, "source", TRANSIENT, null)  (one line per field)
 //
 // Take one with pool_take(type), give it back with pool_release(obj) or
-// obj.release(). Release resets every REF_TRANSIENT field to its initial value
+// obj.release(). Release resets every DECLARE_REF(..., TRANSIENT) field to its initial value
 // from the declaration, so no hand-written clearing can forget a reference.
 // Releasing twice crashes. Pooled objects refuse a normal qdel (POOL_DECLARE
 // overrides Destroy()).
@@ -35,7 +35,7 @@ GLOBAL_VAR_INIT(pool_poison, FALSE)
 	var/pool_type
 	/// Released objects waiting to be taken again. The pool owns them.
 	var/list/free = list() // ALLOW(instance_list): one pool per pooled type (a handful per round), always used as the free list
-	/// The type's REF_TRANSIENT names, read once from the first instance.
+	/// The type's DECLARE_REF(..., TRANSIENT) names, read once from the first instance.
 	var/list/transient
 	var/created = 0
 	var/taken = 0
@@ -47,7 +47,7 @@ GLOBAL_VAR_INIT(pool_poison, FALSE)
 	var/use_after_release = 0
 	var/refused_qdels = 0
 
-REF_OWNED_LIST(/datum/object_pool, list("free"))
+DECLARE_REF(/datum/object_pool, "free", OWNED_LIST, null)
 
 /datum/object_pool/New(pool_type)
 	src.pool_type = pool_type
@@ -81,7 +81,7 @@ REF_OWNED_LIST(/datum/object_pool, list("free"))
 			CRASH("pool_take: [type] is not declared with POOL_DECLARE.")
 		pool.created++
 		if(isnull(pool.transient))
-			pool.transient = D.declared_transient_vars() || list()
+			pool.transient = dq_lifecycle_link_table(D)[REFKIND_TRANSIENT] || list()
 	D.pool_state = POOL_STATE_TAKEN
 	pool.taken++
 	pool.out++
@@ -89,7 +89,7 @@ REF_OWNED_LIST(/datum/object_pool, list("free"))
 		pool.peak_out = pool.out
 	return D
 
-/// Give `D` back: reset its REF_TRANSIENT fields and put it in its pool (or
+/// Give `D` back: reset its DECLARE_REF(..., TRANSIENT) fields and put it in its pool (or
 /// poison it). Releasing an object that isn't taken crashes.
 /proc/pool_release(datum/D)
 	if(!D)
@@ -100,7 +100,7 @@ REF_OWNED_LIST(/datum/object_pool, list("free"))
 			pool.double_releases++
 		CRASH("pool_release: [D.type] released while not taken (state [isnull(D.pool_state) ? "unpooled" : D.pool_state]).")
 	for(var/name in pool.transient)
-		D.vars[name] = initial(D.vars[name]) // ALLOW(api): pool_release(): resets the REF_TRANSIENT vars named by the declaration
+		D.vars[name] = initial(D.vars[name]) // ALLOW(api): pool_release(): resets the DECLARE_REF(..., TRANSIENT) vars named by the declaration
 	pool.released++
 	pool.out--
 	if(GLOB.pool_poison)

@@ -996,7 +996,8 @@
 		return allergies
 	return null
 
-REF_OWNED(/datum/species, "hud")
-REF_OWNED_LIST(/datum/species, "unarmed_attacks")
+DECLARE_REF(/datum/species, "hud", OWNED, null)
+DECLARE_REF(/datum/species, "unarmed_attacks", OWNED_LIST, null)
 // An icon file and a trail type path.
-REF_STATIC(/datum/species, list("icon_template", "move_trail"))
+DECLARE_REF(/datum/species, "icon_template", STATIC, null)
+DECLARE_REF(/datum/species, "move_trail", STATIC, null)

@@ -24,7 +24,9 @@
 	attacker = packet.attacker
 	weapon = packet.weapon
 
-REF_HELD(/datum/dq_packet_record, list("source", "attacker", "weapon"))
+DECLARE_REF(/datum/dq_packet_record, "source", HELD, null)
+DECLARE_REF(/datum/dq_packet_record, "attacker", HELD, null)
+DECLARE_REF(/datum/dq_packet_record, "weapon", HELD, null)
 
 /// Only `kind` carries damage, and exactly `amount` of it.
 /datum/dq_packet_record/proc/only(kind, amount)
@@ -54,7 +56,7 @@ REF_HELD(/datum/dq_packet_record, list("source", "attacker", "weapon"))
 	last = new(packet)
 	return 0
 
-REF_OWNED(/obj/machinery/dq_damage_probe, "last")
+DECLARE_REF(/obj/machinery/dq_damage_probe, "last", OWNED, null)
 
 /// A mob that records packets instead of being injured.
 /mob/living/simple_mob/dq_damage_probe
@@ -71,7 +73,7 @@ REF_OWNED(/obj/machinery/dq_damage_probe, "last")
 	last = new(packet)
 	return 0
 
-REF_OWNED(/mob/living/simple_mob/dq_damage_probe, "last")
+DECLARE_REF(/mob/living/simple_mob/dq_damage_probe, "last", OWNED, null)
 
 /datum/unit_test/dq_damage_packet
 	abstract_type = /datum/unit_test/dq_damage_packet

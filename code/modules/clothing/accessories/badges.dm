@@ -300,7 +300,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/sheriff, INTERACT_USE("Fl
 	update_state(current_film.state)
 	PERIODIC_START(src, PERIODIC_SLOW)
 
-REF_OWNED(/obj/item/clothing/accessory/dosimeter, "current_film")
+DECLARE_REF(/obj/item/clothing/accessory/dosimeter, "current_film", OWNED, null)
 
 /obj/item/clothing/accessory/dosimeter/periodic_step()
 	check_holder()

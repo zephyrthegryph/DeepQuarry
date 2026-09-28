@@ -8,7 +8,7 @@
 
 	light_color = COLOR_BLUE
 
-REF_BACKLIST(/obj/effect/fusion_particle_catcher, list("parent" = "particle_catchers"))
+DECLARE_REF(/obj/effect/fusion_particle_catcher, "parent", BACKLIST, "particle_catchers")
 
 /obj/effect/fusion_particle_catcher/proc/SetSize(newsize)
 	name = "collector [newsize]"

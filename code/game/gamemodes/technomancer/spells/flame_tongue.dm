@@ -21,7 +21,7 @@
 	welder = new /obj/item/weldingtool/spell(src)
 	welder.setWelding(1)
 
-REF_OWNED(/obj/item/spell/flame_tongue, "welder")
+DECLARE_REF(/obj/item/spell/flame_tongue, "welder", OWNED, null)
 
 /obj/item/weldingtool/spell
 	name = "flame"

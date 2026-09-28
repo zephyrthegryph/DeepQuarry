@@ -51,4 +51,4 @@
 	high_color = "#A020F0"
 	low_color = "#A020F0"
 
-REF_OWNED(/mob/living/simple_mob/mechanical/hivebot/precusor, "shields")
+DECLARE_REF(/mob/living/simple_mob/mechanical/hivebot/precusor, "shields", OWNED, null)

@@ -32,7 +32,7 @@
 	soundloop.start()
 	return ..()
 
-REF_OWNED(/turf/simulated/floor/lava, "soundloop")
+DECLARE_REF(/turf/simulated/floor/lava, "soundloop", OWNED, null)
 
 /turf/simulated/floor/lava/make_outdoors()
 	..()

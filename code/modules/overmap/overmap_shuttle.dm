@@ -195,4 +195,4 @@ DECLARE_INTERACTIONS(/obj/structure/fuel_port, \
 	return om_resolve(myship_handle)
 
 /// LC-refs: a fuel port sits in its shuttle's fuel_ports; deleting it leaves the list.
-REF_BACKLIST(/obj/structure/fuel_port, list("parent_shuttle" = "fuel_ports"))
+DECLARE_REF(/obj/structure/fuel_port, "parent_shuttle", BACKLIST, "fuel_ports")

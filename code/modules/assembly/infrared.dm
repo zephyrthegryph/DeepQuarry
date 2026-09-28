@@ -183,4 +183,4 @@ MATERIAL_MIX(/obj/item/assembly/infra, list(MAT_STEEL = 1000, MAT_GLASS = 500))
 /obj/effect/beam/i_beam/proc/master() as /obj/item/assembly/infra
 	return om_resolve(master_handle)
 
-REF_OWNED_LIST(/obj/item/assembly/infra, list("i_beams"))
+DECLARE_REF(/obj/item/assembly/infra, "i_beams", OWNED_LIST, null)

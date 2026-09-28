@@ -508,5 +508,6 @@ EXTEND_INTERACTIONS(/obj/mecha/combat/fighter/gunpod, INTERACT_ITEM("Paint strip
 
 #undef NOGRAV_FIGHTER_DAMAGE
 
-REF_OWNED(/obj/mecha/combat/fighter, list("ion_trail"))
-REF_OWNED(/obj/mecha/combat/fighter/gunpod, list("stripe1_overlay", "stripe2_overlay"))
+DECLARE_REF(/obj/mecha/combat/fighter, "ion_trail", OWNED, null)
+DECLARE_REF(/obj/mecha/combat/fighter/gunpod, "stripe1_overlay", OWNED, null)
+DECLARE_REF(/obj/mecha/combat/fighter/gunpod, "stripe2_overlay", OWNED, null)

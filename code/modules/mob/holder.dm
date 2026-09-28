@@ -420,5 +420,5 @@ DECLARE_INTERACTIONS(/obj/item/holder, INTERACT_ITEM(null, PROC_REF(interaction_
 	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, /obj/item/storage/backpack)
 	return list(HOLD_ONLY(stores))
 
-REF_HELD(/obj/item/holder, "held_mob")
-REF_OWNED(/obj/item/holder, "original_transform")
+DECLARE_REF(/obj/item/holder, "held_mob", HELD, null)
+DECLARE_REF(/obj/item/holder, "original_transform", OWNED, null)

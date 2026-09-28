@@ -164,7 +164,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 /// holding the handle was its only owner. Reported once per type, with a stack
 /// trace naming the reader; a runtime, so a test run fails.
 /proc/om_handle_collected_report(target_type)
-	dq_lifecycle_report("HANDLE TARGET COLLECTED WITHOUT QDEL: a handle to [target_type || "an unknown type"] outlived its target, which was freed without qdel() -- the var holding it must be REF_OWNED/REF_HELD, not a handle (see the stack for the reader)")
+	dq_lifecycle_report("HANDLE TARGET COLLECTED WITHOUT QDEL: a handle to [target_type || "an unknown type"] outlived its target, which was freed without qdel() -- the var holding it must be DECLARE_REF(..., OWNED)/DECLARE_REF(..., HELD), not a handle (see the stack for the reader)")
 
 /proc/om_handle_release(datum/D)
 	var/id = D.om_hid

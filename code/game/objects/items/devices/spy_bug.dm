@@ -282,7 +282,7 @@ DECLARE_INTERACTIONS(/obj/item/bug_monitor, \
 	name = "DV-136ZB #[rand(1000,9999)]"
 	c_tag = name
 
-REF_OWNED(/obj/item/camerabug, list("camera"))
+DECLARE_REF(/obj/item/camerabug, "camera", OWNED, null)
 
 /// LC-refs: linkedmonitor -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/camerabug/proc/linkedmonitor() as /obj/item/bug_monitor

@@ -110,7 +110,7 @@
 
 	start_time = world.time
 
-REF_OWNED(/datum/thrownthing, list("callback"))
+DECLARE_REF(/datum/thrownthing, "callback", OWNED, null)
 
 /// Phase 2: the throw leaves the throwing lane (the throw_of unlink clears the movable's `throwing`).
 /datum/thrownthing/lifecycle_dematerialize()

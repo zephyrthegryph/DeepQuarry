@@ -14,7 +14,7 @@
 		overmind.resource_blobs += src
 	return ..()
 
-REF_BACKLIST(/obj/structure/blob/resource, list("overmind" = "resource_blobs"))
+DECLARE_REF(/obj/structure/blob/resource, "overmind", BACKLIST, "resource_blobs")
 
 /obj/structure/blob/resource/pulsed()
 	. = ..()

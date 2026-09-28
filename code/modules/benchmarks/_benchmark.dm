@@ -478,4 +478,4 @@
 		by_var[name] += len + 1
 
 // Keyed by subsystems (singletons).
-REF_STATIC(/datum/benchmark, "window_subsystem_fires")
+DECLARE_REF(/datum/benchmark, "window_subsystem_fires", STATIC, null)

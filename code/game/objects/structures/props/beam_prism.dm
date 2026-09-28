@@ -31,7 +31,7 @@
 	if(degrees_from_north)
 		animate(src, transform = turn(NORTH, degrees_from_north), time = 3)
 
-REF_BACKLIST(/obj/structure/prop/prism, list("remote_dial" = "my_turrets"))
+DECLARE_REF(/obj/structure/prop/prism, "remote_dial", BACKLIST, "my_turrets")
 
 /obj/structure/prop/prism/proc/reset_rotation()
 	var/degrees_to_rotate = -1 * degrees_from_north
@@ -302,7 +302,7 @@ REF_BACKLIST(/obj/structure/prop/prism, list("remote_dial" = "my_turrets"))
 			P.remote_dial = src
 
 // its turrets forget the dial.
-REF_LIST_BACK(/obj/structure/prop/prismcontrol, list("my_turrets" = "remote_dial"))
+DECLARE_REF(/obj/structure/prop/prismcontrol, "my_turrets", LIST_BACK, "remote_dial")
 
 /// The second half of a two-stage turn.
 /obj/structure/prop/prism/proc/rotate_second_stage(rotate_degrees)

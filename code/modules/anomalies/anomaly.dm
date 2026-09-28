@@ -8,7 +8,8 @@
 	item_flags = NOBLUDGEON
 
 /// Owned: lets us delete anomalies we hit (was the effect_remover component).
-REF_VAR(/obj/item/anomaly_neutralizer, OWNED, /datum/effect_remover, effect_remover)
+/obj/item/anomaly_neutralizer/var/datum/effect_remover/effect_remover
+DECLARE_REF(/obj/item/anomaly_neutralizer, "effect_remover", OWNED, null)
 
 /obj/item/anomaly_neutralizer/Initialize(mapload)
 	. = ..()

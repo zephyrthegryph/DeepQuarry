@@ -35,7 +35,7 @@ MATERIAL_MIX(/obj/item/suit_cooling_unit, list(MAT_STEEL = 15000, MAT_GLASS = 35
 	if(ispath(cell))
 		cell = new cell(src)
 
-REF_OWNED(/obj/item/suit_cooling_unit, "cell")
+DECLARE_REF(/obj/item/suit_cooling_unit, "cell", OWNED, null)
 
 /obj/item/suit_cooling_unit/periodic_step()
 	if (!on || !cell)

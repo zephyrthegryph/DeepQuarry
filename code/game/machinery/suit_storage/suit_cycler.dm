@@ -594,14 +594,15 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	apply_paintjob()
 	finished_job(user)
 
-REF_HELD(/obj/machinery/suit_cycler, list("suit", "helmet"))
+DECLARE_REF(/obj/machinery/suit_cycler, "suit", HELD, null)
+DECLARE_REF(/obj/machinery/suit_cycler, "helmet", HELD, null)
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/machinery/suit_cycler/proc/target_department() as /datum/suit_cycler_choice/department
 	return target_department_static
-REF_STATIC(/obj/machinery/suit_cycler, "target_department_static")
+DECLARE_REF(/obj/machinery/suit_cycler, "target_department_static", STATIC, null)
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/machinery/suit_cycler/proc/target_species() as /datum/suit_cycler_choice/species
 	return target_species_static
-REF_STATIC(/obj/machinery/suit_cycler, "target_species_static")
+DECLARE_REF(/obj/machinery/suit_cycler, "target_species_static", STATIC, null)

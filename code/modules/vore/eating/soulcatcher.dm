@@ -67,7 +67,7 @@
 	target.soulgem = src
 
 // Cleaning up our refs before deletion
-REF_OWNED_LIST(/obj/soulgem, "brainmobs")
+DECLARE_REF(/obj/soulgem, "brainmobs", OWNED_LIST, null)
 
 // Sends messages to the owner of the soulcatcher
 /obj/soulgem/proc/notify_holder(message)

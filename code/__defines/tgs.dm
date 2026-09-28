@@ -618,10 +618,15 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-REF_OWNED(/datum/tgs_chat_user, list("channel"))
+DECLARE_REF(/datum/tgs_chat_user, "channel", OWNED, null)
 
-REF_OWNED(/datum/tgs_message_content, list("embed"))
+DECLARE_REF(/datum/tgs_message_content, "embed", OWNED, null)
 
-REF_OWNED(/datum/tgs_chat_embed/structure, list("image", "thumbnail", "video", "footer", "provider", "author"))
+DECLARE_REF(/datum/tgs_chat_embed/structure, "image", OWNED, null)
+DECLARE_REF(/datum/tgs_chat_embed/structure, "thumbnail", OWNED, null)
+DECLARE_REF(/datum/tgs_chat_embed/structure, "video", OWNED, null)
+DECLARE_REF(/datum/tgs_chat_embed/structure, "footer", OWNED, null)
+DECLARE_REF(/datum/tgs_chat_embed/structure, "provider", OWNED, null)
+DECLARE_REF(/datum/tgs_chat_embed/structure, "author", OWNED, null)
 
-REF_OWNED_LIST(/datum/tgs_chat_embed/structure, list("fields"))
+DECLARE_REF(/datum/tgs_chat_embed/structure, "fields", OWNED_LIST, null)

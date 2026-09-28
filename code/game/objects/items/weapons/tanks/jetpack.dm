@@ -29,7 +29,7 @@
 	ion_trail = new /datum/effect/effect/system/ion_trail_follow()
 	ion_trail.set_up(src)
 
-REF_OWNED(/obj/item/tank/jetpack, "ion_trail")
+DECLARE_REF(/obj/item/tank/jetpack, "ion_trail", OWNED, null)
 
 /obj/item/tank/jetpack/examine(mob/user)
 	. = ..()

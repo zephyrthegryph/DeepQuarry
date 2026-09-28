@@ -395,7 +395,7 @@ GLOBAL_LIST_EMPTY(fruit_icon_cache)
 		GLOB.fruit_icon_cache["slice-[rind_colour]"] = I
 	add_overlay(GLOB.fruit_icon_cache["slice-[rind_colour]"])
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/item/reagent_containers/food/snacks/grown/proc/seed() as /datum/seed
 	return seed_static
-REF_STATIC(/obj/item/reagent_containers/food/snacks/grown, "seed_static")
+DECLARE_REF(/obj/item/reagent_containers/food/snacks/grown, "seed_static", STATIC, null)

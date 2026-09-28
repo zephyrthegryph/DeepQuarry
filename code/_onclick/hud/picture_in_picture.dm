@@ -185,4 +185,9 @@
 /atom/movable/screen/movable/pic_in_pic/proc/center() as /atom
 	return om_resolve(center_handle)
 
-REF_OWNED(/atom/movable/screen/movable/pic_in_pic, list("button_x", "button_expand", "button_shrink", "button_pop", "popup_screen", "standard_background"))
+DECLARE_REF(/atom/movable/screen/movable/pic_in_pic, "button_x", OWNED, null)
+DECLARE_REF(/atom/movable/screen/movable/pic_in_pic, "button_expand", OWNED, null)
+DECLARE_REF(/atom/movable/screen/movable/pic_in_pic, "button_shrink", OWNED, null)
+DECLARE_REF(/atom/movable/screen/movable/pic_in_pic, "button_pop", OWNED, null)
+DECLARE_REF(/atom/movable/screen/movable/pic_in_pic, "popup_screen", OWNED, null)
+DECLARE_REF(/atom/movable/screen/movable/pic_in_pic, "standard_background", OWNED, null)

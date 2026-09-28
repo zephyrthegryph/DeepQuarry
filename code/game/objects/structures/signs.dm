@@ -1633,7 +1633,7 @@
 	P.flagtype = type
 	consume(src, user)
 
-REF_PAIR(/obj/structure/sign/flag, list("linked_flag" = "linked_flag"))
+DECLARE_REF(/obj/structure/sign/flag, "linked_flag", PAIR, "linked_flag")
 
 /obj/structure/sign/flag/ex_act(severity)
 	. = ..()

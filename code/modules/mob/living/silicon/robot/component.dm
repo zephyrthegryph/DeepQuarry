@@ -37,7 +37,7 @@
 	owner = R
 	slot = new_slot
 
-REF_OWNED(/datum/robot_component, "wrapped")
+DECLARE_REF(/datum/robot_component, "wrapped", OWNED, null)
 
 /// Put `part` into this slot. Afflictions the part carried rejoin the body here.
 /datum/robot_component/proc/install(obj/item/part)
@@ -370,9 +370,10 @@ REF_OWNED(/datum/robot_component, "wrapped")
 	..()
 	holder = part
 
-REF_VAR(/obj/item, OWNED, /datum/carried_afflictions, carried_afflictions)
-REF_OWNED_LIST(/datum/carried_afflictions, "afflictions")
-REF_BACK(/datum/carried_afflictions, list("holder" = "carried_afflictions"))
+/obj/item/var/datum/carried_afflictions/carried_afflictions // ALLOW(state_ref): owned child (DECLARE_REF OWNED); saved as before, the one-line REF_VAR form hid it from this lint
+DECLARE_REF(/obj/item, "carried_afflictions", OWNED, null)
+DECLARE_REF(/datum/carried_afflictions, "afflictions", OWNED_LIST, null)
+DECLARE_REF(/datum/carried_afflictions, "holder", BACK, "carried_afflictions")
 
 /datum/carried_afflictions/proc/take(list/incoming)
 	for(var/datum/affliction/A as anything in incoming)
@@ -518,4 +519,4 @@ REF_BACK(/datum/carried_afflictions, list("holder" = "carried_afflictions"))
 	color = COLOR_OFF_WHITE
 
 // owner is the robot whose components list holds this component.
-REF_BACK(/datum/robot_component, list("owner" = null))
+DECLARE_REF(/datum/robot_component, "owner", BACK, null)

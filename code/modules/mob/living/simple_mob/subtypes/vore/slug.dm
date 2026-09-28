@@ -238,4 +238,4 @@
 		return TRUE
 	return .
 
-REF_STATIC(/obj/effect/slug_glue, "my_turf")
+DECLARE_REF(/obj/effect/slug_glue, "my_turf", STATIC, null)

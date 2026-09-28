@@ -375,7 +375,7 @@
 		else
 			O.moveToNullspace()
 		new_machine.component_parts += O
-	components = null // the parts are the new machine's now (REF_OWNED_LIST on both)
+	components = null // the parts are the new machine's now (DECLARE_REF(..., OWNED_LIST) on both)
 
 	circuit.moveToNullspace()
 	circuit.move_into(new_machine, CONTAINER_SLOT_INTERNALS)

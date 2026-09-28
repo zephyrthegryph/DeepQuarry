@@ -194,7 +194,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 /obj/machinery/on_destroy(force)
 	cancel_sleep_keys()
 	om_watch_disarm_all(src)
-	// The installed board is REF_OWNED (phase 4 deletes it); every other leftover in the
+	// The installed board is DECLARE_REF(..., OWNED) (phase 4 deletes it); every other leftover in the
 	// internals slot (SLOT_DROP_HOLDER) is deleted by the core /atom/movable Destroy().
 	// Only a human stuck in the internals slot is put out by hand: it needs its view
 	// reset, which no slot policy does.
@@ -778,6 +778,6 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 	if(ask.text)
 		vars[ask.var_name] = ask.text
 
-REF_OWNED(/obj/machinery, list("circuit"))
+DECLARE_REF(/obj/machinery, "circuit", OWNED, null)
 
-REF_OWNED_LIST(/obj/machinery, "component_parts")
+DECLARE_REF(/obj/machinery, "component_parts", OWNED_LIST, null)

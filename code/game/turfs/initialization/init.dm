@@ -10,4 +10,4 @@
 		for(var/turf/simulated/T in area_contents_of_type(src, /turf/simulated))
 			turf_initializer.InitializeTurf(T)
 
-REF_OWNED(/area, list("turf_initializer"))
+DECLARE_REF(/area, "turf_initializer", OWNED, null)

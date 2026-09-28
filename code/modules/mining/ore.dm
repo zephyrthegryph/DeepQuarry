@@ -235,4 +235,4 @@ DECLARE_INTERACTIONS(/obj/item/ore, INTERACT_ITEM(null, PROC_REF(interaction_ite
 	if(isturf(loc))
 		qdel(src)
 
-REF_OWNED(/obj/item/ore, "geologic_data")
+DECLARE_REF(/obj/item/ore, "geologic_data", OWNED, null)

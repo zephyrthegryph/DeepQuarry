@@ -143,4 +143,4 @@
 	return data
 
 // The global alarm handler singletons.
-REF_STATIC(/datum/tgui_module/alarm_monitor, "alarm_handlers")
+DECLARE_REF(/datum/tgui_module/alarm_monitor, "alarm_handlers", STATIC, null)

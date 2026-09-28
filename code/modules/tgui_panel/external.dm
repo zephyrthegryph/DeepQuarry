@@ -46,4 +46,4 @@
 		var/datum/tgui_window/window = tgui_windows[window_id]
 		window.reinitialize()
 
-REF_OWNED(/client, "tgui_panel")
+DECLARE_REF(/client, "tgui_panel", OWNED, null)

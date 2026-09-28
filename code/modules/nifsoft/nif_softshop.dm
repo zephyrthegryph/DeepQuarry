@@ -27,7 +27,7 @@
 	. = ..()
 	.["chargesMoney"] = TRUE
 
-REF_OWNED(/obj/machinery/vending/nifsoft_shop, "entopic")
+DECLARE_REF(/obj/machinery/vending/nifsoft_shop, "entopic", OWNED, null)
 
 /obj/machinery/vending/nifsoft_shop/power_change()
 	..()

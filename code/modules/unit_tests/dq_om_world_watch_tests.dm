@@ -337,11 +337,9 @@
 /datum/world_test_gauge/New(cell)
 	watch = om_world_on_change(src, WORLD_PROBE(cell), CH_BIT(CH_PROBE_PRESSURE), PROC_REF(on_pressure))
 
-REF_OWNED(/datum/world_test_gauge, "watch")
+DECLARE_REF(/datum/world_test_gauge, "watch", OWNED, null)
 
-/datum/world_test_gauge/declared_owned_vars()
-	. = ..()
-	. = (. || list()) + "watch"
+DECLARE_REF(/datum/world_test_gauge, "watch", OWNED, null)
 
 /datum/world_test_gauge/proc/on_pressure(datum/native_watch/world/W, reason, source, source_kind)
 	last_pressure = source

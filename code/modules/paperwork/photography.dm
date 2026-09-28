@@ -370,4 +370,5 @@ DECLARE_INTERACTIONS(/obj/item/camera, \
 	icon_state = icon_on
 	on = 1
 
-REF_OWNED(/obj/item/photo, list("img", "tiny"))
+DECLARE_REF(/obj/item/photo, "img", OWNED, null)
+DECLARE_REF(/obj/item/photo, "tiny", OWNED, null)

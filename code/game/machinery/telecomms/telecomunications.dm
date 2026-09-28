@@ -161,7 +161,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 			soundloop.mid_length = 30
 	soundloop.start()
 
-REF_OWNED(/obj/machinery/telecomms, "soundloop")
+DECLARE_REF(/obj/machinery/telecomms, "soundloop", OWNED, null)
 
 /// Phase 2: every other telecomms machine drops its link to this one.
 /obj/machinery/telecomms/lifecycle_dematerialize()
@@ -709,4 +709,5 @@ REF_OWNED(/obj/machinery/telecomms, "soundloop")
 /obj/machinery/telecomms/step_start_condition()
 	return on
 
-REF_OWNED(/obj/machinery/telecomms/server, list("Compiler", "server_radio"))
+DECLARE_REF(/obj/machinery/telecomms/server, "Compiler", OWNED, null)
+DECLARE_REF(/obj/machinery/telecomms/server, "server_radio", OWNED, null)

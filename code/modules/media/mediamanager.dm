@@ -126,7 +126,7 @@
 	ASSERT(istype(C))
 	src.owner_handle = om_handle(C)
 
-// ALLOW(lifecycle): closes its media window before phase 4 deletes it (REF_OWNED).
+// ALLOW(lifecycle): closes its media window before phase 4 deletes it (DECLARE_REF(..., OWNED)).
 /datum/media_manager/lifecycle_unbind()
 	media_window?.close()
 	return ..()
@@ -212,9 +212,9 @@
 #undef MP_DEBUG
 #endif
 
-REF_OWNED(/client, "media")
+DECLARE_REF(/client, "media", OWNED, null)
 
-REF_OWNED(/datum/media_manager, "media_window")
+DECLARE_REF(/datum/media_manager, "media_window", OWNED, null)
 
 /// LC-refs: the media_source this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /area/proc/media_source() as /obj/machinery/media

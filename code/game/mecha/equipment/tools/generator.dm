@@ -20,7 +20,7 @@
 	. = ..()
 	fuel = new fuel_type(src)
 
-REF_OWNED(/obj/item/mecha_parts/mecha_equipment/generator, "fuel")
+DECLARE_REF(/obj/item/mecha_parts/mecha_equipment/generator, "fuel", OWNED, null)
 
 /obj/item/mecha_parts/mecha_equipment/generator/periodic_step()
 	if(!chassis)

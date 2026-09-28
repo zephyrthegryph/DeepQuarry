@@ -1421,9 +1421,10 @@
 	var/mob/living/owner
 	var/atom/movable/screen/vore_panel/screen_icon
 
-REF_VAR(/mob/living, OWNED, /datum/vore_panel_button, vore_panel_button)
-REF_OWNED(/datum/vore_panel_button, "screen_icon")
-REF_BACK(/datum/vore_panel_button, list("owner" = "vore_panel_button"))
+/mob/living/var/datum/vore_panel_button/vore_panel_button
+DECLARE_REF(/mob/living, "vore_panel_button", OWNED, null)
+DECLARE_REF(/datum/vore_panel_button, "screen_icon", OWNED, null)
+DECLARE_REF(/datum/vore_panel_button, "owner", BACK, "vore_panel_button")
 
 /datum/vore_panel_button/New(mob/living/M)
 	..()
