@@ -48,10 +48,14 @@ export type DiagnosisVitals = {
   bloodPercent?: number | null;
 };
 
+export type DiagnosisPartKind = 'external' | 'internal';
+
 export type DiagnosisPart = {
   name: string;
+  kind?: DiagnosisPartKind;
   band: DiagnosisBand;
   flags: string[];
+  implants?: string[] | null;
 };
 
 export type DiagnosisHint = {

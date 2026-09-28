@@ -355,7 +355,7 @@
 		var/obj/item/organ/internal/O = internal_organs_by_name?[tag]
 		if(!O)
 			continue
-		if(O.robotic >= ORGAN_ROBOT)
+		if(O.is_robotic())
 			continue
 		var/per_tick
 		switch(tag)
@@ -375,7 +375,7 @@
 	// translocation → systemic infection.
 	if(scale > 0)
 		var/obj/item/organ/internal/intestine/gut = internal_organs_by_name?[O_INTESTINE]
-		if(gut && gut.robotic < ORGAN_ROBOT)
+		if(gut && !gut.is_robotic())
 			gut.adjust_germ_level(round(1 + 3 * scale))
 
 

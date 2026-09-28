@@ -17,12 +17,8 @@
 /datum/trait_state/nutrition_size_change/life_tick()
 	if(QDELETED(owner))
 		return
-	if(owner.stat == DEAD)
-		return
-	if(owner.inStasisNow())
-		return
 	if(owner.nutrition <= 0 && grow_mode == GROWMODE_SHRINK && owner.size_multiplier > RESIZE_TINY)
-		owner.nutrition = 0.1
+		owner.set_nutrition(0.1)
 	if(owner.nutrition <= 0)
 		return
 	// Time to change size!
@@ -48,3 +44,5 @@
 /datum/om/stage/life/trait/nutrition_size_change
 	name = "nutrition size change"
 	state_type = /datum/trait_state/nutrition_size_change
+	// P2-S6: paused stasis frames and dead bodies skip it.
+	run_if = LIFE_RUN_IF_LIVE_BIOLOGY

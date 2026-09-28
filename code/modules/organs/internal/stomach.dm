@@ -55,10 +55,6 @@
 
 	organ_verbs = list(/mob/living/carbon/human/proc/reagent_purge, /mob/living/carbon/human/proc/synth_reag_toggle) // +
 
-/obj/item/organ/internal/stomach/machine/handle_organ_proc_special()
-	. = ..()
-	apply_robobody_heat()
-
 /* // Removal - normal chem processing
 		if(ishuman(owner))
 			var/mob/living/carbon/human/H = owner

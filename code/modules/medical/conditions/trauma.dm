@@ -420,6 +420,8 @@
 /datum/affliction/wound_infection
 	name = "wound infection"
 	category = "Infection"
+	// A badly infected wound is plain to see (examine reads it from the glance diagnosis).
+	presentation = PRESENT_VISIBLE | PRESENT_SURFACE | PRESENT_INTERNAL | PRESENT_LAB
 	clinical_description = "Bacterial colonisation of an open wound. The dirtier the wound was when it was inflicted, the faster the infection takes hold."
 	progression_rate = 0.5
 	// Debridement (resection) cuts the colonised tissue out.

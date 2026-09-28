@@ -34,8 +34,6 @@ GLOBAL_LIST_INIT(gurgled_overlays, list(
 		cleandesc = src.desc
 		name = "[gurgleflavor] [cleanname]"
 		desc = "[cleandesc] It seems to be covered in ominously foul residue and needs a wash."
-//		for(var/obj/item/O in contents)			//Yeah, no. This contaminates stuff that should never be contaminated in places that should not be reached. Handle it for specific cases instead.
-//			O.gurgle_contaminate(item_storage, contamination_flavor, contamination_color)
 		return TRUE
 
 /obj/item/proc/can_gurgle()

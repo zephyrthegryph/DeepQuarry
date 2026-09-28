@@ -122,8 +122,6 @@
 	attack_verb = list("bit")
 	attack_sound = 'sound/weapons/bite.ogg'
 	damage = 0
-	//sharp = TRUE //Enable if you want bites to make people bleed.
-	//germ_increase = 10 //Amount of germs each bite will give to the person.
 
 /datum/unarmed_attack/bite/event1
 

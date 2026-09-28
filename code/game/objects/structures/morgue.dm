@@ -39,7 +39,7 @@ REF_OWNED(/obj/structure/morgue, "connected")
 			src.icon_state = "morgue2"
 			get_occupants()
 			for (var/mob/living/carbon/human/H in occupants)
-				if(H.isSynthetic() || H.suiciding || !H.ckey || !H.client || (H.has_mutation(NOCLONE)) || (H.species && H.species.flags & NO_SLEEVE))
+				if(HAS_SYNTHETIC_BIOLOGY(H) || H.suiciding || !H.ckey || !H.client || (H.has_mutation(NOCLONE)) || (H.species && H.species.flags & NO_SLEEVE))
 					src.icon_state = "morgue2"
 					break
 				else

@@ -63,6 +63,38 @@
 	///This is for chemicals that don't have any special touch effects.
 	var/dermal_absorption = 0
 
+	// P2-S13: species gates as data. SPECIES_TAG_BIT(IS_*) masks of species this
+	// reagent does nothing to by that route (the affect_* proc is not called).
+	// Numbers, not lists: reagent datums are instanced per holder.
+	var/immune_species_blood = 0
+	var/immune_species_ingest = 0
+	var/immune_species_touch = 0
+
+/// Does `owner`'s species ignore this reagent by metabolism route `route_class`
+/// (CHEM_*)? Null route: every route.
+/datum/reagent/proc/species_immune(mob/living/owner, route_class = null)
+	var/tag = owner?.reagent_tag()
+	if(isnull(tag))
+		return FALSE
+	var/mask
+	switch(route_class)
+		if(CHEM_BLOOD)
+			mask = immune_species_blood
+		if(CHEM_INGEST)
+			mask = immune_species_ingest
+		if(CHEM_TOUCH)
+			mask = immune_species_touch
+		else
+			mask = immune_species_blood & immune_species_ingest & immune_species_touch
+	return (mask & SPECIES_TAG_BIT(tag)) ? TRUE : FALSE
+
+/// The one species/biology gate for a reagent's own effects: the amount that
+/// acts on `owner` by `route_class`, 0 when the species ignores it.
+/datum/reagent/proc/effective_dose(mob/living/owner, amount, route_class = null)
+	if(!owner || amount <= 0)
+		return 0
+	return species_immune(owner, route_class) ? 0 : amount
+
 /datum/reagent/proc/remove_self(amount) // Shortcut
 	if(holder)
 		holder.remove_reagent(id, amount)
@@ -83,7 +115,7 @@
 		return
 	if(!affects_dead && M.stat == DEAD && !M.has_body_effect(/datum/body_effect/bloodpump_corpse))
 		return
-	if(M.isSynthetic() && (!M.synth_reag_processing || !affects_robots))
+	if(HAS_SYNTHETIC_BIOLOGY(M) && (!M.synth_reag_processing || !affects_robots))
 		return
 	if(!istype(location))
 		return
@@ -105,7 +137,7 @@
 
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
-			if(!H.isSynthetic())
+			if(!HAS_SYNTHETIC_BIOLOGY(H))
 				if(H.species.has_organ[O_HEART] && (active_metab.metabolism_class == CHEM_BLOOD))
 					var/obj/item/organ/internal/heart/Pump = H.internal_organs_by_name[O_HEART]
 					if(!Pump)
@@ -178,16 +210,20 @@
 	if(M.species.medallergens & medallergen_type) // Medical allergies don't gain ANY benefits (the reaction is a body factor)...
 		remove_self(removed)
 		return
-	switch(active_metab.metabolism_class)
-		if(CHEM_BLOOD)
-			affect_blood(M, alien, removed)
-		if(CHEM_INGEST)
-			if(istype(src, /datum/reagent/toxin) && HAS_TRAIT(M, INGESTED_TOXIN_IMMUNE))
-				remove_self(removed)
-				return
-			affect_ingest(M, alien, removed * ingest_abs_mult)
-		if(CHEM_TOUCH)
-			affect_touch(M, alien, removed)
+	// P2-S13: the species gate is data (`species_immunity`), applied once here
+	// instead of re-decided inside every affect_* proc.
+	var/route_class = active_metab.metabolism_class
+	if(effective_dose(M, removed, route_class) > 0)
+		switch(route_class)
+			if(CHEM_BLOOD)
+				affect_blood(M, alien, removed)
+			if(CHEM_INGEST)
+				if(istype(src, /datum/reagent/toxin) && HAS_TRAIT(M, INGESTED_TOXIN_IMMUNE))
+					remove_self(removed)
+					return
+				affect_ingest(M, alien, removed * ingest_abs_mult)
+			if(CHEM_TOUCH)
+				affect_touch(M, alien, removed)
 	on_mob_metabolize(M, location)
 	if(overdose && (volume > overdose * M?.species.chemOD_threshold) && (active_metab.metabolism_class != CHEM_TOUCH || can_overdose_touch))
 		overdose(M, alien, removed)

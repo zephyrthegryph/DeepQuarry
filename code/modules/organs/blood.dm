@@ -48,7 +48,7 @@ REF_OWNED(/mob/living/carbon/human, "vessel")
 			B.data = list(	"donor"=src,"viruses"=null,"species"=species.name,"blood_DNA"=dna.unique_enzymes,"blood_colour"= species.get_blood_colour(src),"blood_type"=dna.b_type,	\
 							"resistances"=null,"trace_chem"=null, "virus2" = null, REAGENT_ID_ANTIBODIES = list(), "blood_name" = species.get_blood_name(src))
 
-			if(isSynthetic())
+			if(HAS_SYNTHETIC_BIOLOGY(src))
 				B.data["species"] = "synthetic"
 
 			B.data["changeling"] = (!isnull(mind) && is_changeling(mind)) || species?.ambulant_blood || HAS_TRAIT(src, TRAIT_REDSPACE_CORRUPTED)
@@ -162,7 +162,7 @@ REF_OWNED(/mob/living/carbon/human, "vessel")
 	for(var/obj/item/organ/external/temp in organs_to_check)
 
 		///First, we make sure it's not robotic.
-		if(temp.robotic >= ORGAN_ROBOT)
+		if(temp.is_robotic())
 			continue
 		///A tourniquet above the limb stops every bleed below it.
 		if(temp.flow_occluded())
@@ -446,7 +446,7 @@ REF_OWNED(/mob/living/carbon/human, "vessel")
 
 	if(ishuman(source))
 		var/mob/living/carbon/human/M = source
-		if(M.isSynthetic()) synth = 1
+		if(HAS_SYNTHETIC_BIOLOGY(M)) synth = 1
 		source = M.get_blood(M.vessel)
 
 	//Someone fed us a weird source. Let's log it.

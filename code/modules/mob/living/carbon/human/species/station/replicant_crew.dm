@@ -1,5 +1,6 @@
 /datum/species/shapeshifter/replicant/crew
 	name = SPECIES_REPLICANT_CREW
+	can_host_malignant = TRUE
 	blurb = "Replicants are one of the few remaining living examples of precursor technology. \
 	While their origins remain unknown, they are a facsimile of organic life held together by amalgamate, \
 	rubbery flesh and anomalous organs. Whilst their original purpose is speculated to be used through cortical \

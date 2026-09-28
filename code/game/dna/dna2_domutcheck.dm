@@ -6,7 +6,7 @@
 
 /proc/domutcheck(mob/living/M, connected=null, flags=0)
 	// Traitgenes NO_DNA and Synthetics cannot be mutated
-	if(M.isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(M))
 		return
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M

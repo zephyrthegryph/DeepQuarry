@@ -16,7 +16,8 @@
 //   - breathing (so oxygen debt stops accumulating)            the breathing stage
 //   - blood loss and regeneration                              the blood stage
 //   - the human live/dead stages (organs, defib timer, ...)    run_if NOT_OF(FACT("in_stasis"))
-// Those read the paused flag through inStasisNow() / ctx.fact("in_stasis"), never the clock.
+// P2-S6: every one of those declares run_if NOT_OF(FACT("in_stasis")), so the pipeline skips
+// paused frames and no system asks. inStasisNow() remains for code outside the life pipeline.
 // So at stasis 0.9 everything runs at 10% speed; at 1 it stops. BF_STASIS stays a factor
 // for diagnosis readouts; nothing in the life pipeline reads it.
 

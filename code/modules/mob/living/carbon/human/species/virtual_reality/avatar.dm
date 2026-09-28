@@ -4,6 +4,9 @@
 // ###
 // Species definition follows.
 /datum/species/shapeshifter/promethean/avatar
+	// Virtual bodies: not the real slime or its immunities.
+	is_slime_bodied = FALSE
+	can_host_malignant = TRUE
 
 	name =             SPECIES_VR
 	name_plural =      "Virtual Reality Avatars"
@@ -103,7 +106,6 @@
 		total_damage = H.injury_load(INJURY_CATEGORY_PHYSICAL) + H.injury_load(INJURY_CATEGORY_THERMAL) + H.oxygen_debt() + H.injury_load(INJURY_CATEGORY_TOXIC)
 
 	// Move the mind back to the original mob
-//	vr_holder.Sleeping(1)
 	src.mind.transfer_to(vr_holder)
 	to_chat(vr_holder, span_notice("You black out for a moment, and wake to find yourself back in your own body."))
 	// Two-thirds damage is transferred as agony for /humans

@@ -265,7 +265,7 @@ default behaviour is:
 	var/area/A = get_area(src)
 	if(forced || (lying && !src?.buckled_to() && pull_damage() && A.get_gravity() && (prob(injury_load(INJURY_CATEGORY_PHYSICAL) * 200 / max(1, get_endurance())))))
 		injure(INJURY_BLUNT, 2, null, dragger)
-		visible_message(span_danger("\The [src]'s [isSynthetic() ? "state" : "wounds"] worsen terribly from being dragged!"), runemessage = "is dragged, wounds worsening!")
+		visible_message(span_danger("\The [src]'s [HAS_SYNTHETIC_BIOLOGY(src) ? "state" : "wounds"] worsen terribly from being dragged!"), runemessage = "is dragged, wounds worsening!")
 		return TRUE
 
 /mob/living/Moved(atom/oldloc, direct, forced, movetime)

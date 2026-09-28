@@ -34,8 +34,7 @@
 	if(C.suiciding)
 		C.suiciding = FALSE
 
-	if(C.does_not_breathe)
-		C.does_not_breathe = FALSE	//This means they don't autoheal the oxy damage from the next step
+	C.set_does_not_breathe(FALSE)	//This means they don't autoheal the oxy damage from the next step
 
 	if(C.stat != DEAD)
 		C.add_oxygen_debt(PHYSIOLOGY_DEBT_MAX, "changeling fake death")

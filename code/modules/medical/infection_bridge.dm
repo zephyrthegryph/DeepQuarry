@@ -16,7 +16,7 @@
 /obj/item/organ/proc/dq_bridge_germ_to_condition()
 	if(!owner || !ishuman(owner))
 		return
-	if(robotic >= ORGAN_ROBOT)
+	if(is_robotic())
 		return
 	for(var/datum/affliction_trigger/infection/c as anything in affliction_triggers_of_kind("/datum/affliction_trigger/infection"))
 		// A null organ on the cause means "any organ".

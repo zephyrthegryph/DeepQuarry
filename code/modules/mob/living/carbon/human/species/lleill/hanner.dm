@@ -93,9 +93,6 @@
 		/mob/living/proc/set_size,
 		/mob/living/carbon/human/proc/shapeshifter_copy_body,
 		/mob/living/carbon/human/proc/shapeshifter_regenerate,
-//		/mob/living/carbon/human/proc/lleill_contact,
-//		/mob/living/carbon/human/proc/lleill_alchemy,
-//		/mob/living/carbon/human/proc/hanner_beast_form
 		)
 
 	valid_transform_species = list(SPECIES_HUMAN, SPECIES_HUMAN_VATBORN, SPECIES_UNATHI, SPECIES_TAJARAN, SPECIES_SKRELL, SPECIES_ALTEVIAN, SPECIES_TESHARI, SPECIES_MONKEY, SPECIES_LLEILL, SPECIES_VULPKANIN, SPECIES_ZORREN_HIGH, SPECIES_RAPALA, SPECIES_NEVREAN, SPECIES_VASILISSAN, SPECIES_AKULA)

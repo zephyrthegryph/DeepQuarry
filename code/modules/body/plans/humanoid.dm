@@ -42,12 +42,15 @@
 /datum/body/humanoid/biology_of(location)
 	var/obj/item/organ/O = location
 	if(istype(O))
-		if(O.robotic == ORGAN_NANOFORM)
-			return BIOLOGY_NANOFORM
-		if(O.robotic >= ORGAN_ROBOT)
-			return BIOLOGY_SYNTHETIC
-		return BIOLOGY_ORGANIC
-	return owner.isSynthetic() ? BIOLOGY_SYNTHETIC : BIOLOGY_ORGANIC
+		return O.biology()
+	// C10: systemic biology is the torso's biology, read from the body, so a
+	// full-body prosthesis is synthetic and an assisted torso is not.
+	var/mob/living/carbon/human/H = owner
+	var/obj/item/organ/torso = H.organs_by_name?[BP_TORSO]
+	if(torso)
+		return torso.biology()
+	// No torso yet (mid species setup): the chassis model is the only record.
+	return H.synthetic ? BIOLOGY_SYNTHETIC : BIOLOGY_ORGANIC
 
 /datum/body/humanoid/injury_multiplier(kind, location)
 	var/mob/living/carbon/human/H = owner
@@ -219,7 +222,7 @@
 	for(var/datum/affliction/A as anything in afflictions)
 		raw_pain += A.pain_contribution()
 	for(var/obj/item/organ/external/E as anything in H.organs)
-		if(E.robotic >= ORGAN_ROBOT || !E.organ_can_feel_pain())
+		if(E.is_robotic() || !E.organ_can_feel_pain())
 			continue
 		raw_pain += PAIN_PER_LIMB_DAMAGE * (E.get_trauma() + E.get_burn())
 		if(E.is_broken())
@@ -286,7 +289,7 @@
 // --- Human helpers ------------------------------------------------------------------------
 
 /mob/living/carbon/human/proc/dq_feels_pain()
-	return can_feel_pain() || (isSynthetic() && synth_cosmetic_pain)
+	return can_feel_pain() || (HAS_SYNTHETIC_BIOLOGY(src) && synth_cosmetic_pain)
 
 /// Visible limb mutation tracks genetic damage.
 /mob/living/carbon/human/proc/dq_genetic_damage_mutations(amount)
@@ -327,6 +330,11 @@
 		acc = body_factor_accumulate(acc, H.species.factor_baseline)
 		for(var/alist/table as anything in H.species.granted_factors)
 			acc = body_factor_accumulate(acc, table)
+		// P2-S4: the NO_PAIN species flag is a grant of BF_PAIN_IMMUNITY, so every
+		// can_feel_pain() caller (and any factor reader) sees it the same way.
+		if(H.species.flags & NO_PAIN)
+			var/static/alist/no_pain_grant = alist(BF_PAIN_IMMUNITY = 1)
+			acc = body_factor_accumulate(acc, no_pain_grant)
 	var/datum/form/F = H.current_form()
 	if(F)
 		acc = body_factor_accumulate(acc, F.factors)

@@ -178,8 +178,6 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 	languages = AI.languages.Copy()
 	speech_synthesizer_langs = AI.speech_synthesizer_langs.Copy()
 	if(radio && AI.aiRadio) //AI keeps all channels, including Syndie if it is an Infiltrator.
-//		if(AI.radio.syndie)
-//			radio.make_syndie()
 		radio.subspace_transmission = TRUE
 		radio.channels = AI.aiRadio.channels
 
@@ -190,8 +188,6 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 /mob/living/silicon/robot/proc/undeploy(message)
 	if(!deployed || !mind || !mainframe)
 		return
-//	mainframe.redeploy_action.Grant(mainframe)
-//	mainframe.redeploy_action.last_used_shell = src
 	if(message)
 		to_chat(src, span_notice(message))
 	mind.transfer_to(mainframe)
@@ -201,13 +197,10 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 	mainframe.teleop = null
 	mainframe.deployed_shell = null
 	SetName("[modtype] AI Shell [num2text(ident)]")
-//	undeployment_action.Remove(src)
 	if(radio) //Return radio to normal
 		radio.recalculateChannels()
 	if(!QDELETED(camera))
 		camera.c_tag = real_name	//update the camera name too
-//	diag_hud_set_aishell()
-//	mainframe.diag_hud_set_deployed()
 	if(mainframe.laws)
 		mainframe.laws.show_laws(mainframe) //Always remind the AI when switching
 	mainframe = null

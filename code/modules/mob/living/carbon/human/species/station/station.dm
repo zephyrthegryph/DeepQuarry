@@ -534,6 +534,7 @@
 /datum/species/diona
 
 	name = SPECIES_DIONA
+	mood_immune = TRUE
 	name_plural = "Dionaea"
 	icobase = 'icons/mob/human_races/r_diona.dmi'
 	deform = 'icons/mob/human_races/r_def_plant.dmi'
@@ -559,7 +560,8 @@
 	min_age = 18
 	max_age = 300
 
-	species_component = list(/datum/trait_state/radiation_effects/diona)
+	// P2-D7: light feeding and healing through the shared photosynthesis trait.
+	species_component = list(/datum/trait_state/radiation_effects/diona, /datum/trait_state/photosynth/diona)
 
 	economic_modifier = 10
 
@@ -654,7 +656,7 @@
 	if(H.mind)
 		H.mind.transfer_to(S)
 
-	if(H.isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(H))
 		H.visible_message(span_danger("\The [H] collapses into parts, revealing a solitary diona nymph at the core."))
 
 		H.species = GLOB.all_species[SPECIES_HUMAN] // This is hard-set to default the body to a normal FBP, without changing anything.
@@ -676,39 +678,6 @@
 			qdel(D)
 
 	H.visible_message(span_danger("\The [H] splits apart with a wet slithering noise!"))
-
-/datum/species/diona/environment_effects(mob/living/carbon/human/H)
-	if(H.inStasisNow())
-		return
-
-	var/obj/item/organ/internal/diona/node/light_organ = locate_in_list(H.internal_organs, /obj/item/organ/internal/diona/node)
-
-	if(light_organ && !light_organ.is_broken())
-		var/light_amount = 0 //how much light there is in the place, affects receiving nutrition and healing
-		if(isturf(H.loc)) //else, there's considered to be no light
-			var/turf/T = H.loc
-			light_amount = T.get_lumcount() * 10
-		// Don't overfeed, just make them full without going over.
-		if((H.nutrition + light_amount) < initial(H.nutrition))
-			H.adjust_nutrition(light_amount)
-		H.shock_stage -= light_amount
-
-		if(light_amount >= 3) //if there's enough light, heal
-			H.mend(TREAT_TISSUE_REPAIR, round(light_amount/2))
-			H.mend(TREAT_BURN_CARE, round(light_amount/2))
-			H.mend(TREAT_ANTITOXIN, light_amount)
-			H.mend(TREAT_OXYGENATION, light_amount)
-			//TODO: heal wounds, heal broken limbs.
-
-	else if(H.nutrition < 200)
-		H.injure(INJURY_BLUNT, 2) // Starving tissue withers
-
-		//traumatic_shock is updated every tick, incrementing that is pointless - shock_stage is the counter.
-		//Not that it matters much for diona, who have NO_PAIN.
-		H.shock_stage++
-	..()
-
-
 
 /datum/species/sergal
 	name = SPECIES_SERGAL
@@ -1062,6 +1031,7 @@
 
 /datum/species/teshari
 	name = SPECIES_TESHARI
+	micro_carry = TRUE
 	name_plural = "Tesharii"
 	blurb = "A race of feathered raptors who developed alongside the Skrell, inhabiting \
 	the polar tundral regions outside of Skrell territory. Extremely fragile, they developed \
@@ -1571,7 +1541,7 @@
 		if(H.bodytemperature <= 99) //Insanely cold.
 			coldshock = 16
 			H.status_set(EFFECT_BLURRY, 5)
-		H.shock_stage = min(H.shock_stage + coldshock, 160) //cold hurts and gives them pain messages, eventually weakening and paralysing, but doesn't damage.
+		H.adjust_shock(coldshock, "spider cold") //cold hurts and gives them pain messages, eventually weakening and paralysing, but doesn't damage.
 	..()
 
 /datum/species/werebeast
@@ -1726,13 +1696,13 @@
 		H.injure(INJURY_BLUNT, LOW_PRESSURE_DAMAGE) // Decompression
 	//they handle areas where they can't breathe better than most, but it still lowers their effective health as well as all the other bad stuff that comes with unbreathable environments
 	if(H.oxygen_debt() >= 50)
-		H.does_not_breathe = TRUE
+		H.set_does_not_breathe(TRUE)
 
 	//Cold hurts and gives them pain messages, eventually weakening and paralysing, but doesn't damage or trigger feral.
 	//NB: 'body_temperature' used here is the 'setpoint' species var
 	var/temp_diff = body_temperature - H.bodytemperature
 	if(temp_diff >= 50)
-		H.shock_stage = min(H.shock_stage + (temp_diff/20), 160) // Divided by 20 is the same as previous numbers, but a full scale
+		H.adjust_shock(temp_diff/20, "xenochimera cold") // Divided by 20 is the same as previous numbers, but a full scale
 		H.status_at_least(EFFECT_BLURRY, 5)
 	..()
 
@@ -1967,8 +1937,7 @@
 		if(!regenerate(H))
 			var/obj/item/organ/internal/xenos/plasmavessel/P = H.internal_organs_by_name[O_PLASMA]
 			if(istype(P))
-				P.stored_plasma += weeds_plasma_rate
-				P.stored_plasma = min(max(P.stored_plasma,0),P.max_plasma)
+				P.adjust_plasma(weeds_plasma_rate)
 	..()
 
 /datum/species/xenomorph_hybrid/proc/regenerate(mob/living/carbon/human/H)
@@ -2078,7 +2047,6 @@
 
 	if(O)
 		visible_message(span_warning(span_bold("[src] vomits up a thick purple substance and begins to shape it!")), span_alium("You shape a [choice]."))
-//		O.color = "#321D37" // Adding predefined colour icons.
 		playsound(src, 'sound/effects/blobattack.ogg', 40, 1)
 
 	return

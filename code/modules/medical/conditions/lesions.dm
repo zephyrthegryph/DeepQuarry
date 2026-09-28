@@ -207,7 +207,7 @@
 /// Is this lesion on an organic brain past BRAIN_SALVAGE_FRACTION?
 /datum/affliction/lesion/proc/on_swollen_brain()
 	var/obj/item/organ/internal/brain/B = location
-	return istype(B) && B.robotic < ORGAN_ROBOT && B.max_damage && B.damage >= B.max_damage * BRAIN_SALVAGE_FRACTION
+	return istype(B) && !B.is_robotic() && B.max_damage && B.damage >= B.max_damage * BRAIN_SALVAGE_FRACTION
 
 /// The one lesion on brain `B` that carries its swelling: the ischemic
 /// injury if there is one, else the first lesion.
@@ -292,7 +292,7 @@
 /// it: the ischemic injury if there is one, else the first lesion.
 /datum/affliction/lesion/proc/secondary_injury()
 	var/obj/item/organ/internal/brain/B = location
-	if(!istype(B) || B.robotic >= ORGAN_ROBOT || !B.max_damage)
+	if(!istype(B) || B.is_robotic() || !B.max_damage)
 		return
 	var/fraction = B.damage / B.max_damage
 	if(fraction < BRAIN_SALVAGE_FRACTION)
@@ -514,7 +514,7 @@
 
 
 // --- Synthetic kinds ------------------------------------------------------------
-// Prosthetic organs (robotic >= ORGAN_ROBOT) take component faults, repaired by
+// Prosthetic organs (is_robotic()) take component faults, repaired by
 // plating / wiring work or a system restore. They never self-heal.
 
 /datum/affliction/lesion/synthetic

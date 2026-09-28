@@ -21,8 +21,6 @@ export type occupant = {
   colourblind: BooleanLike;
   reagents: reagent[];
   ingested: reagent[];
-  extOrgan: externalOrgan[];
-  intOrgan: internalOrgan[];
   blind: BooleanLike;
   nearsighted: BooleanLike;
   brokenspine: BooleanLike;
@@ -39,33 +37,3 @@ export type occupant = {
 };
 
 type reagent = { name: string; amount: number; overdose: BooleanLike };
-
-export type internalOrgan = {
-  name: string;
-  desc?: string | null;
-  germ_level?: number;
-  injuryBand?: DamageBand;
-  robotic: BooleanLike;
-  dead: BooleanLike;
-  inflamed: BooleanLike;
-  missing: BooleanLike;
-};
-
-export type externalOrgan = {
-  name: string;
-  open: BooleanLike;
-  germ_level: number;
-  injuryBand: DamageBand;
-  implants: { name: string; known: BooleanLike }[];
-  implants_len: number;
-  status: {
-    destroyed: BooleanLike;
-    broken: string;
-    robotic: BooleanLike;
-    splinted: BooleanLike;
-    bleeding: BooleanLike;
-    dead: BooleanLike;
-  };
-  lungRuptured: BooleanLike;
-  internalBleeding: BooleanLike;
-};

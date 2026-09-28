@@ -22,7 +22,7 @@
 		gridstatus = 3
 	if(H)
 		for(var/obj/item/organ/org in H.internal_organs)
-			if(org.robotic >= ORGAN_ROBOT)
+			if(org.is_robotic())
 				continue
 			if(org.status & ORGAN_BLEEDING)
 				inner_bleeding = TRUE

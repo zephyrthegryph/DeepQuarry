@@ -16,8 +16,6 @@
 	you select and set this species as your species. Please look at the VORE tab if you select this species."
 	catalogue_data = list(/datum/category_item/catalogue/fauna/custom_species)
 
-	// male_scream_sound = null // These are going to be a hassle for custom species if not null
-	// female_scream_sound = null //
 
 	name_language = null // Use the first-name last-name generator rather than a language scrambler
 	min_age = 18
@@ -86,11 +84,6 @@
 	H.hunger_rate = H.species.hunger_factor
 
 // Stub species overrides for shoving trait abilities into
-
-//Called during handle_environment in Life() ticks.
-// Return: Not used.
-/datum/species/custom/environment_effects(mob/living/carbon/human/H)
-	return ..()
 
 //Called when spawning to equip them with special things.
 /datum/species/custom/equip_survival_gear(mob/living/carbon/human/H, extendedtank = 0, comprehensive = 0)

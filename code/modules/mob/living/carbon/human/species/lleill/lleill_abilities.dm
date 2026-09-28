@@ -416,10 +416,10 @@
 /mob/living/carbon/human/proc/lleill_contact_done(mob/living/carbon/human/chosen_target)
 	src.visible_message(span_infoplain(span_bold("\The [src]") + " and \the [chosen_target] complete their contact."))
 	species.lleill_energy = species.lleill_energy_max
-	nutrition += (chosen_target.nutrition / 2)
+	adjust_nutrition((chosen_target.nutrition / 2))
 	to_chat(src, span_warning("You feel revitalised."))
 	chosen_target.tiredness += 70
-	chosen_target.nutrition = max((chosen_target.nutrition / 2),75)
+	chosen_target.set_nutrition(max((chosen_target.nutrition / 2),75))
 	chosen_target.remove_blood(40) //removes enough blood to make them feel a bit woozy, mostly just for flavour
 	chosen_target.status_adjust(EFFECT_BLURRY, 20)
 	to_chat(chosen_target, span_warning("You feel considerably weakened for the moment."))

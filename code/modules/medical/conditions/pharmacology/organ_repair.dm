@@ -14,21 +14,20 @@
 	caused_by_chems = list(REAGENT_ID_PERIDAXON = 10)
 	caused_by_chems_organ = O_BRAIN
 
-/datum/affliction/overdose/peridaxon/get_stages()
-	var/static/list/S = overdose_stages(
-		chem_stage(list(/datum/affliction_symptom/jittery = 60), 1, 1),
-		chem_stage(list(
+/datum/affliction/overdose/peridaxon
+	overdose_stage_data = list(
+		list(list(/datum/affliction_symptom/jittery = 60), 1, 1),
+		list(list(
 			/datum/affliction_symptom/confusion = 70,
 			/datum/affliction_symptom/jittery   = 50,
 			/datum/affliction_symptom/headache  = 40,
 		), 1, 2),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/confusion = 95,
 			/datum/affliction_symptom/jittery   = 80,
 			/datum/affliction_symptom/headache  = 60,
 		), 2, 3),
 	)
-	return S
 
 /datum/affliction/overdose/imidazoline
 	name = "imidazoline overdose"
@@ -42,23 +41,22 @@
 	caused_by_chems = list(REAGENT_ID_IMIDAZOLINE = 20)
 	caused_by_chems_organ = O_EYES
 
-/datum/affliction/overdose/imidazoline/get_stages()
-	var/static/list/S = overdose_stages(
-		chem_stage(list(
+/datum/affliction/overdose/imidazoline
+	overdose_stage_data = list(
+		list(list(
 			/datum/affliction_symptom/blurred_vision = 55,
 			/datum/affliction_symptom/cloudy_eye     = 40,
 		), 1, 1),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/blurred_vision = 80,
 			/datum/affliction_symptom/cloudy_eye     = 50,
 		), 1, 2),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/blurred_vision      = 95,
 			/datum/affliction_symptom/cloudy_eye          = 80,
 			/datum/affliction_symptom/pupillary_asymmetry = 60,
 		), 2, 3),
 	)
-	return S
 
 /datum/affliction/overdose/osteodaxon
 	name = "osteodaxon overdose"
@@ -73,26 +71,25 @@
 	caused_by_chems = list(REAGENT_ID_OSTEODAXON = 15)
 	caused_by_chems_organ = BP_TORSO
 
-/datum/affliction/overdose/osteodaxon/get_stages()
-	var/static/list/S = overdose_stages(
-		chem_stage(list(
+/datum/affliction/overdose/osteodaxon
+	overdose_stage_data = list(
+		list(list(
 			/datum/affliction_symptom/throbbing_pain = 55,
 			/datum/affliction_symptom/fatigue        = 45,
 			/datum/affliction_symptom/unsteady_gait  = 35,
 		), 1, 1),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/throbbing_pain = 75,
 			/datum/affliction_symptom/fatigue        = 65,
 			/datum/affliction_symptom/unsteady_gait  = 50,
 		), 1, 2),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/throbbing_pain = 90,
 			/datum/affliction_symptom/fatigue        = 85,
 			/datum/affliction_symptom/unsteady_gait  = 75,
 			/datum/affliction_symptom/limb_weakness  = 50,
 		), 2, 3),
 	)
-	return S
 
 /datum/affliction/overdose/respirodaxon
 	name = "respirodaxon overdose"
@@ -106,23 +103,22 @@
 	caused_by_chems = list(REAGENT_ID_RESPIRODAXON = 10)
 	caused_by_chems_organ = O_LUNGS
 
-/datum/affliction/overdose/respirodaxon/get_stages()
-	var/static/list/S = overdose_stages(
-		chem_stage(list(
+/datum/affliction/overdose/respirodaxon
+	overdose_stage_data = list(
+		list(list(
 			/datum/affliction_symptom/wet_cough    = 60,
 			/datum/affliction_symptom/short_breath = 50,
 		), 1, 1),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/labored_breathing = 75,
 			/datum/affliction_symptom/wet_cough         = 60,
 		), 1, 2, list("factors" = alist(BF_O2_SAT = -6))),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/labored_breathing = 95,
 			/datum/affliction_symptom/wet_cough         = 80,
 			/datum/affliction_symptom/cyanosis          = 60,
 		), 2, 3, list("factors" = alist(BF_O2_SAT = -14, BF_RESP_RATE = -4), "always_spawns" = list(/datum/affliction/respiratory_failure))),
 	)
-	return S
 
 /datum/affliction/overdose/cordradaxon
 	name = "cordradaxon overdose"
@@ -137,20 +133,19 @@
 	caused_by_chems = list(REAGENT_ID_CORDRADAXON = 10)
 	caused_by_chems_organ = O_HEART
 
-/datum/affliction/overdose/cordradaxon/get_stages()
-	var/static/list/S = overdose_stages(
-		chem_stage(list(/datum/affliction_symptom/palpitations = 60), 0, 1, list("factors" = alist(BF_HEART_RATE = 10))),
-		chem_stage(list(
+/datum/affliction/overdose/cordradaxon
+	overdose_stage_data = list(
+		list(list(/datum/affliction_symptom/palpitations = 60), 0, 1, list("factors" = alist(BF_HEART_RATE = 10))),
+		list(list(
 			/datum/affliction_symptom/palpitations     = 85,
 			/datum/affliction_symptom/sharp_chest_pain = 50,
 		), 1, 2, list("factors" = alist(BF_HEART_RATE = 20))),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/palpitations        = 100,
 			/datum/affliction_symptom/sharp_chest_pain    = 80,
 			/datum/affliction_symptom/chest_pain_crushing = 50,
 		), 2, 3, list("factors" = alist(BF_HEART_RATE = 35), "always_spawns" = list(/datum/affliction/chem_interaction/tachycardia_chem))),
 	)
-	return S
 
 /datum/affliction/overdose/hepanephrodaxon
 	name = "hepanephrodaxon overdose"
@@ -165,25 +160,24 @@
 	caused_by_chems = list(REAGENT_ID_HEPANEPHRODAXON = 10)
 	caused_by_chems_organ = O_LIVER
 
-/datum/affliction/overdose/hepanephrodaxon/get_stages()
-	var/static/list/S = overdose_stages(
-		chem_stage(list(
+/datum/affliction/overdose/hepanephrodaxon
+	overdose_stage_data = list(
+		list(list(
 			/datum/affliction_symptom/nausea  = 55,
 			/datum/affliction_symptom/fatigue = 50,
 		), 1, 1),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/nausea   = 75,
 			/datum/affliction_symptom/fatigue  = 70,
 			/datum/affliction_symptom/jaundice = 40,
 		), 2, 3),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/nausea               = 90,
 			/datum/affliction_symptom/fatigue              = 90,
 			/datum/affliction_symptom/jaundice             = 75,
 			/datum/affliction_symptom/abdominal_tenderness = 55,
 		), 3, 4),
 	)
-	return S
 
 /datum/affliction/overdose/gastirodaxon
 	name = "gastirodaxon overdose"
@@ -197,20 +191,19 @@
 	caused_by_chems = list(REAGENT_ID_GASTIRODAXON = 10)
 	caused_by_chems_organ = O_LIVER
 
-/datum/affliction/overdose/gastirodaxon/get_stages()
-	var/static/list/S = overdose_stages(
-		chem_stage(list(/datum/affliction_symptom/nausea = 60), 1, 1),
-		chem_stage(list(
+/datum/affliction/overdose/gastirodaxon
+	overdose_stage_data = list(
+		list(list(/datum/affliction_symptom/nausea = 60), 1, 1),
+		list(list(
 			/datum/affliction_symptom/nausea         = 80,
 			/datum/affliction_symptom/throbbing_pain = 55,
 		), 1, 2),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/nausea               = 95,
 			/datum/affliction_symptom/throbbing_pain       = 80,
 			/datum/affliction_symptom/abdominal_tenderness = 65,
 		), 2, 3),
 	)
-	return S
 
 /datum/affliction/overdose/rezadone
 	name = "rezadone overdose"
@@ -225,25 +218,24 @@
 	caused_by_chems = list(REAGENT_ID_REZADONE = 20)
 	caused_by_chems_organ = BP_TORSO
 
-/datum/affliction/overdose/rezadone/get_stages()
-	var/static/list/S = overdose_stages(
-		chem_stage(list(
+/datum/affliction/overdose/rezadone
+	overdose_stage_data = list(
+		list(list(
 			/datum/affliction_symptom/fatigue = 55,
 			/datum/affliction_symptom/nausea  = 40,
 		), 1, 1),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/confusion = 60,
 			/datum/affliction_symptom/fatigue   = 70,
 			/datum/affliction_symptom/nausea    = 50,
 		), 1, 2),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/confusion           = 80,
 			/datum/affliction_symptom/fatigue             = 85,
 			/datum/affliction_symptom/nausea              = 70,
 			/datum/affliction_symptom/genetic_instability = 60,
 		), 2, 3, list("always_spawns" = list(/datum/affliction/genetic_damage))),
 	)
-	return S
 
 /datum/affliction/overdose/ryetalyn
 	name = "ryetalyn overdose"
@@ -257,20 +249,19 @@
 	caused_by_chems = list(REAGENT_ID_RYETALYN = 20)
 	caused_by_chems_organ = O_LIVER
 
-/datum/affliction/overdose/ryetalyn/get_stages()
-	var/static/list/S = overdose_stages(
-		chem_stage(list(
+/datum/affliction/overdose/ryetalyn
+	overdose_stage_data = list(
+		list(list(
 			/datum/affliction_symptom/fatigue = 55,
 			/datum/affliction_symptom/nausea  = 40,
 		), 1, 1),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/fatigue = 75,
 			/datum/affliction_symptom/nausea  = 50,
 		), 1, 2),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/fatigue             = 90,
 			/datum/affliction_symptom/nausea              = 70,
 			/datum/affliction_symptom/genetic_instability = 60,
 		), 2, 3, list("always_spawns" = list(/datum/affliction/genetic_damage))),
 	)
-	return S

@@ -66,6 +66,12 @@
 #define BIOLOGY_SYNTHETIC (1<<1)
 #define BIOLOGY_NANOFORM  (1<<2)
 #define BIOLOGY_ALL       (BIOLOGY_ORGANIC | BIOLOGY_SYNTHETIC | BIOLOGY_NANOFORM)
+/// Non-organic bodies: machines and nanite swarms (the old "is synthetic" question).
+#define BIOLOGY_INORGANIC (BIOLOGY_SYNTHETIC | BIOLOGY_NANOFORM)
+/// Is this mob's SYSTEMIC biology synthetic (or nanoform)? One source of truth:
+/// `mob.biology()`, which reads the body (P2-S1). For a single part use
+/// `body.biology_of(part)`; for a human's cosmetic chassis use `robolimb_model()`.
+#define HAS_SYNTHETIC_BIOLOGY(M) (((M).biology() & BIOLOGY_INORGANIC) != 0)
 
 // --- Treatment tags --------------------------------------------------------------
 // Healing MECHANISMS. Strings: they are association-list keys (DM forbids
@@ -209,6 +215,9 @@
 // Reference dose for chemical treatment scaling, and its cap multiple.
 #define DQ_CHEM_STANDARD_DOSE 10
 #define DQ_CHEM_DOSE_CAP 4.0
+/// Dose-scale width of one factor band (C12): body factors are recomputed when a
+/// factor reagent's dose crosses a band (1u at the standard dose), not every tick.
+#define DQ_CHEM_FACTOR_BAND 0.1
 /// A reagent burst that closes a fracture or arterial bleed outright (mend() amount).
 #define DQ_REAGENT_KNIT_AMOUNT 100
 /// Hemostatic treatment level that alone arrests a growing internal bleed (D18a).

@@ -223,9 +223,9 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 /obj/item/shockpaddles/proc/can_defib(mob/living/carbon/human/H) //This is checked before doing the defib operation
 	if((H.species.flags & NO_DEFIB))
 		return "buzzes, \"Incompatible physiology. Operation aborted.\""
-	else if(H.isSynthetic() && !use_on_synthetic)
+	else if(HAS_SYNTHETIC_BIOLOGY(H) && !use_on_synthetic)
 		return "buzzes, \"Synthetic Body. Operation aborted.\""
-	else if(!H.isSynthetic() && use_on_synthetic)
+	else if(!HAS_SYNTHETIC_BIOLOGY(H) && use_on_synthetic)
 		return "buzzes, \"Organic Body. Operation aborted.\""
 
 	// Rhythm analysis: only VF (or an unstable tachyarrhythmia) is shockable.
@@ -259,7 +259,7 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 	// restored circulation repays the debt, and the shock deals with the toxins.
 	var/structural_damage = H.injury_load(INJURY_CATEGORY_PHYSICAL) + H.injury_load(INJURY_CATEGORY_THERMAL) + H.injury_load(INJURY_CATEGORY_GENETIC)
 	var/too_damaged = structural_damage >= 2 * H.get_endurance()
-	if(too_damaged && H.isSynthetic())
+	if(too_damaged && HAS_SYNTHETIC_BIOLOGY(H))
 		return "buzzes, \"Resuscitation failed - Severe damage detected. Begin damage restoration before further attempts.\""
 
 	else if(too_damaged) //They need to be healed first.

@@ -464,7 +464,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/scan_consolenew, \
 		occupantData["isViableSubject"] = 1
 		// Traitgenes NO_DNA and Synthetics cannot be mutated
 		var/allowed = TRUE
-		if(WC.isSynthetic())
+		if(HAS_SYNTHETIC_BIOLOGY(WC))
 			allowed = FALSE
 		if(ishuman(WC))
 			var/mob/living/carbon/human/H = WC

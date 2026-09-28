@@ -70,7 +70,7 @@
 	for(var/atom/movable/AM in things_to_siphon)
 		if(ishuman(AM)) // We can drain FBPs, so we can skip the test below.
 			var/mob/living/carbon/human/H = AM
-			if(H.isSynthetic())
+			if(HAS_SYNTHETIC_BIOLOGY(H))
 				continue
 		if(AM.drain_power(1) <= 0) // This checks if whatever's in the list can be drained from.
 			things_to_siphon.Remove(AM)
@@ -119,10 +119,10 @@
 		if(ishuman(siphoning))
 			var/mob/living/carbon/human/H = siphoning
 			// Let's drain from FBPs.  Note that it is possible for the caster to drain themselves if they are an FBP and desperate.
-			if(H.isSynthetic())
+			if(HAS_SYNTHETIC_BIOLOGY(H))
 				var/nutrition_to_steal = flow_remaining * 0.025 // Should steal about 25 nutrition per second by default.
 				var/old_nutrition = H.nutrition
-				H.nutrition = max(H.nutrition - nutrition_to_steal, 0)
+				H.set_nutrition(max(H.nutrition - nutrition_to_steal, 0))
 				var/nutrition_delta = old_nutrition - H.nutrition
 				charge_to_give += nutrition_delta * SIPHON_FBP_TO_ENERGY
 				flow_remaining = flow_remaining - nutrition_to_steal / 0.025
@@ -141,7 +141,7 @@
 		give_energy(charge_to_give)
 		to_chat(user, span_notice("Stolen [charge_to_give * CELLRATE] kJ and converted to [charge_to_give] Core energy."))
 		if( (core.max_energy - core.energy) < charge_to_give ) // We have some overflow, if this is true.
-			if(user.isSynthetic()) // Let's do something with it, if we're a robot.
+			if(HAS_SYNTHETIC_BIOLOGY(user)) // Let's do something with it, if we're a robot.
 				charge_to_give = charge_to_give - (core.max_energy - core.energy)
 				user.adjust_nutrition(charge_to_give / SIPHON_FBP_TO_ENERGY)
 				to_chat(user, span_notice("Redirected energy to internal microcell."))

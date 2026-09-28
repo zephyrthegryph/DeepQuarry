@@ -65,9 +65,6 @@
 	if(myid)
 		return myid.GetID()
 
-/mob/living/proc/instasis()
-	return inStasisNow()
-
 // Respects move cooldowns as if it had a client.
 // Also tries to avoid being superdumb with moving into certain tiles (unless that's desired).
 /mob/living/proc/IMove(turf/newloc, safety = TRUE)

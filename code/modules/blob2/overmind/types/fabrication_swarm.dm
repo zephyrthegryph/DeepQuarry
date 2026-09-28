@@ -37,7 +37,7 @@
 /datum/blob_type/fabrication_swarm/on_chunk_tick(obj/item/blobcore_chunk/B)
 	var/turf/T = get_turf(B)
 	for(var/mob/living/L in view(world.view, T))
-		if(L.stat != DEAD && L.isSynthetic())
+		if(L.stat != DEAD && HAS_SYNTHETIC_BIOLOGY(L))
 			L.mend(TREAT_PLATING_REPAIR, 1)
 			L.mend(TREAT_WIRING_REPAIR, 1)
 	return

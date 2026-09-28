@@ -603,8 +603,8 @@
 		for(var/name in result_names())
 			record("[prefix].[name]", null)
 		return
-	pred.nutrition = 300
-	prey.nutrition = 300
+	pred.set_nutrition(300)
+	prey.set_nutrition(300)
 	if(mode_id == "heal")
 		prey.injure(INJURY_BLUNT, BALANCE_DIGEST_HEAL_INJURY, BP_TORSO)
 		live(prey)

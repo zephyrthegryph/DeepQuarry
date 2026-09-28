@@ -130,7 +130,7 @@
 	return (actor.nutrition > 1000) || "you have nothing to purge"
 
 /mob/living/silicon/robot/proc/dq_do_purge_nutrition(mob/actor, obj/item/held, datum/interaction/ability/interaction)
-	nutrition = 1000
+	set_nutrition(1000)
 	to_chat(src, span_warning("You have purged most of the nutrition lingering in your systems."))
 	return TRUE
 

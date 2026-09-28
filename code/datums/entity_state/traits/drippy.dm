@@ -15,10 +15,6 @@
 		return
 	if(isbelly(living_guy.loc))
 		return
-	if(living_guy.stat == DEAD)
-		return
-	if(living_guy.inStasisNow())
-		return
 	var/turf/T = get_turf(living_guy.loc)
 	if(!isturf(T))
 		return
@@ -66,3 +62,5 @@
 /datum/om/stage/life/trait/drippy
 	name = "drippy"
 	state_type = /datum/trait_state/drippy
+	// P2-S6: paused stasis frames and dead bodies skip it.
+	run_if = LIFE_RUN_IF_PLACED_LIVE_BIOLOGY

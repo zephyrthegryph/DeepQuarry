@@ -289,7 +289,6 @@
 	name = "0-P0SSm"
 	sprite_icon = 'icons/mob/robot/possumborg.dmi'
 	sprite_icon_state = "possjani"
-	//has_vore_belly_resting_sprites = TRUE
 	has_eye_light_sprites = TRUE
 	has_dead_sprite_overlay = FALSE
 	rest_sprite_options = list("Default")

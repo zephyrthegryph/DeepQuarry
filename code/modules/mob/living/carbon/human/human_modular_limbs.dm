@@ -10,7 +10,7 @@
 // Does this bodypart count as a modular limb, and if so, what kind?
 /obj/item/organ/external/proc/get_modular_limb_category()
 	. = MODULAR_BODYPART_INVALID
-	if(robotic >= ORGAN_ROBOT && model)
+	if(is_robotic() && model)
 		var/datum/robolimb/manufacturer = GLOB.all_robolimbs[model]
 		if(!isnull(manufacturer?.modular_bodyparts))
 			. = manufacturer.modular_bodyparts

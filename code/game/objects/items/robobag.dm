@@ -73,7 +73,7 @@ REF_OWNED(/obj/structure/closet/body_bag/cryobag/robobag, "corptag")
 	..()
 	if(ishuman(AM))
 		var/mob/living/carbon/human/H = AM
-		if(H.isSynthetic())
+		if(HAS_SYNTHETIC_BIOLOGY(H))
 			if(!H.treatment_demand(/datum/diagnostic_profile/robot_analyzer)?[TREAT_SYSTEM_RESTORE])	// We don't exactly care about the bag being 'used' when containing a synth, unless it's got work.
 				used = FALSE
 			else
@@ -123,7 +123,7 @@ REF_OWNED(/obj/structure/closet/body_bag/cryobag/robobag, "corptag")
 		L.mend(TREAT_SYSTEM_RESTORE, rand(1,5))
 
 /datum/body_effect/fbp_debug/can_apply(mob/living/L)
-	if(!L.isSynthetic())
+	if(!HAS_SYNTHETIC_BIOLOGY(L))
 		return FALSE
 	return TRUE
 

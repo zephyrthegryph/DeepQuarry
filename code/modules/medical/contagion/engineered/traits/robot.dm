@@ -15,7 +15,6 @@
 
 	var/replaceorgans = FALSE
 	var/replacebody = FALSE
-	//var/robustbits = FALSE
 
 	threshold_descs = list(
 		"Stage Speed 4" = "The virus will replace the host's organic organs with mundane, biometallic versions.",
@@ -67,7 +66,7 @@
 
 	if(replaceorgans)
 		var/obj/item/organ/internal/O = pick(H.internal_organs)
-		if(O.robotic >= ORGAN_ROBOT)
+		if(O.is_robotic())
 			return FALSE
 		switch(O.type)
 			if(/obj/item/organ/internal/brain)
@@ -120,7 +119,7 @@
 				return TRUE
 	if(replacebody) // No need to overcomplicate this one
 		var/obj/item/organ/external/O = pick(H.organs)
-		if(O.robotic >= ORGAN_ROBOT)
+		if(O.is_robotic())
 			return FALSE
 		if(O)
 			O.robotize()

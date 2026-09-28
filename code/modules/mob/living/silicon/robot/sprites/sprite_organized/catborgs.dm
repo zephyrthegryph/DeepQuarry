@@ -297,7 +297,6 @@
 	has_glow_sprites = TRUE
 	sprite_decals = list("decals")
 	is_whitelisted = FALSE //Putting this here as a declaration that it is NOT whitelisted.
-	// whitelist_ckey = "cameron653" //The owner of the character.
 	// There is only one version of this borg, so it gets all the departments.
 	// Feel free to recolor it if you want to make it have specific sprites for specific departments.
 	module_type = list("Standard", "Engineering", "Surgeon", "Crisis", "Miner", "Janitor", "Service", "Clerical", "Security", "Research")

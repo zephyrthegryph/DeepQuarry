@@ -98,7 +98,7 @@
 /datum/reagent/blood/affect_touch(mob/living/carbon/M, alien, removed)
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		if(H.isSynthetic())
+		if(HAS_SYNTHETIC_BIOLOGY(H))
 			return
 	if(alien == IS_SLIME)
 		affect_ingest(M, alien, removed)
@@ -165,7 +165,7 @@
 		affect_ingest(M, alien, removed)
 		return
 
-	if(M.isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(M))
 		return
 
 	if(ishuman(M))
@@ -176,7 +176,7 @@
 		if(recipient && blood_incompatible(data["blood_type"], recipient.data["blood_type"], data["species"], recipient.data["species"]))
 			H.inject_blood(src, removed * volume_mod)
 
-			if(!H.isSynthetic() && data["species"] == "synthetic")	// Remember not to inject oil into your veins, it's bad for you.
+			if(!HAS_SYNTHETIC_BIOLOGY(H) && data["species"] == "synthetic")	// Remember not to inject oil into your veins, it's bad for you.
 				H.reagents.add_reagent(REAGENT_ID_TOXIN, removed * 1.5)
 			return
 

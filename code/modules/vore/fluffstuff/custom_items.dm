@@ -400,7 +400,6 @@ EXTEND_INTERACTIONS(/obj/item/flag, INTERACT_USE("Wave", PROC_REF(flag_wave_self
 /obj/item/fluff/id_kit_mime/afterattack(obj/O, mob/user as mob)
 	var/new_icon = "mime"
 	if(istype(O,/obj/item/card/id) && O.icon_state != new_icon)
-		//O.icon = icon // just in case we're using custom sprite paths with fluff items.
 		O.icon_state = new_icon // Changes the icon without changing the access.
 		playsound(src, 'sound/items/polaroid2.ogg', 100, 1)
 		user.visible_message(span_warning(" [user] reprints their ID."))
@@ -860,7 +859,6 @@ EXTEND_INTERACTIONS(/obj/item/fluff/dragor_dot, INTERACT_USE(null, PROC_REF(drag
 	desc = "This is Ruda Lizden's personal Detective's badge. The polish is dull, as if it's simply been huffed upon and wiped against a coat. Labeled 'Hisstective.'"
 	icon = 'icons/vore/custom_items_vr.dmi'
 	icon_state = "hisstective_badge"
-	//slot_flags = SLOT_TIE | SLOT_BELT
 	fluff_badge = TRUE
 
 /obj/item/clothing/accessory/badge/holo/detective/ruda/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
@@ -1343,7 +1341,6 @@ EXTEND_INTERACTIONS(/obj/item/rig/nikki, INTERACT_ITEM(null, PROC_REF(nikki_rig_
 	icon = 'icons/vore/custom_items_vr.dmi'
 	storage_slots = 7
 	icon_type = "charlotte"
-	//brand = "\improper Professional 120"
 	w_class = ITEMSIZE_TINY
 	starts_with = list(/obj/item/clothing/mask/smokable/cigarette = 7)
 
@@ -1446,7 +1443,6 @@ EXTEND_INTERACTIONS(/obj/item/rig/nikki, INTERACT_ITEM(null, PROC_REF(nikki_rig_
 	M.add_language(LANGUAGE_DAEMON)
 	M.add_language(LANGUAGE_ENOCHIAN)
 	M.add_language(LANGUAGE_VESPINAE)
-//	M.add_language(LANGUAGE_SLAVIC)
 	M.add_language(LANGUAGE_DRUDAKAR)
 	M.add_language(LANGUAGE_SPACER)
 	M.add_language(LANGUAGE_TAVAN)

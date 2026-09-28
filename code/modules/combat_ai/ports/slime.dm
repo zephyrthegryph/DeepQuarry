@@ -67,7 +67,7 @@ REF_OWNED(/mob/living/simple_mob/slime/xenobio, "slime_state")
 	for(var/mob/living/M as anything in candidates)
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
-			if(H.species && H.species.name == SPECIES_PROMETHEAN && state && !(H in state.grudges))
+			if(H.species?.is_slime_bodied && state && !(H in state.grudges))
 				continue
 		filtered += M
 	if(!length(filtered))

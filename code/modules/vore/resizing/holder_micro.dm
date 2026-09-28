@@ -13,7 +13,7 @@
 /obj/item/holder/micro/Initialize(mapload, mob/held)
 	. = ..()
 	var/mob/living/carbon/human/H = held_mob
-	if(istype(H) && H.species.get_bodytype() == SPECIES_TESHARI)
+	if(istype(H) && H.species.is_micro_carry(H))
 		item_icons = list(
 					slot_l_hand_str = 'icons/mob/items/lefthand_toys.dmi',
 					slot_r_hand_str = 'icons/mob/items/righthand_toys.dmi',
@@ -29,7 +29,7 @@
 /obj/item/holder/micro/make_worn_icon(body_type,slot_name,inhands,default_icon,default_layer,icon/clip_mask = null)
 	var/mob/living/carbon/human/H = held_mob
 	// Only proceed if dealing with a tesh (or something shaped like a tesh)
-	if(istype(H) && H.species.get_bodytype() == SPECIES_TESHARI)
+	if(istype(H) && H.species.is_micro_carry(H))
 		var/colortemp = color //save original color var to a temp var
 		//convert numerical RGB to Hex #000000 format - is this necessary?
 		//then 'inject' changed color (from skin color) into original proc call

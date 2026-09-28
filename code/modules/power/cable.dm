@@ -465,7 +465,7 @@ DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interact
 		var/mob/living/carbon/human/H = A
 		var/obj/item/organ/external/S = H.organs_by_name[user.zone_sel.selecting]
 
-		if(!S || S.robotic < ORGAN_ROBOT || S.open == 3)
+		if(!S || !S.is_robotic() || S.open == 3)
 			return ..()
 
 		// No welding nanoform limbs

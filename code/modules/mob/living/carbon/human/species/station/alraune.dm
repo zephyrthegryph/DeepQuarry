@@ -1,6 +1,6 @@
 /datum/species/alraune
 	name = SPECIES_ALRAUNE
-	skin_breathing = TRUE
+	breath_profile_type = /datum/breath_profile/skin
 	name_plural = "Alraunes"
 	unarmed_types = list(/datum/unarmed_attack/stomp, /datum/unarmed_attack/kick, /datum/unarmed_attack/punch, /datum/unarmed_attack/bite)
 	species_language = LANGUAGE_ENOCHIAN
@@ -19,8 +19,6 @@
 	base_species = SPECIES_ALRAUNE
 	selects_bodytype = SELECTS_BODYTYPE_CUSTOM
 
-	// male_scream_sound = null //
-	// female_scream_sound = null //
 	wikilink="https://wiki.chompstation13.net/index.php?title=Alraune" // add wiki link
 
 	body_temperature = T20C
@@ -99,211 +97,9 @@
 		A_FRUIT =    /obj/item/organ/internal/fruitgland,
 		)
 
+	// P2-D7: light feeds and (with CO2 from the skin breath) heals; one shared trait.
+	species_component = list(/datum/trait_state/photosynth/alraune)
 
-/datum/species/alraune/environment_effects(mob/living/carbon/human/H)
-	if(H.inStasisNow()) // if they're in stasis, they won't need this stuff.
-		return
-
-	//They don't have lungs so breathe() will just return. Instead, they breathe through their skin.
-	//This is mostly normal breath code with some tweaks that apply to their particular biology.
-
-	var/datum/gas_mixture/breath = null
-	var/fullysealed = FALSE //are they covered in a sealed suit or not
-
-	if(H.get_equipped_item(SLOT_ID_SUIT) && (H.get_equipped_item(SLOT_ID_SUIT).min_pressure_protection < hazard_low_pressure) && H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).min_pressure_protection < hazard_low_pressure))
-		//if they're wearing a fully sealed suit, their internals take priority.
-		breath = H.get_breath_from_internal()
-		fullysealed = TRUE
-	else
-		// find out if local gas mixture is enough to override use of internals
-		// if pressure is low enough, they can still breathe from internals without a suit
-		// P2-F9: no loc (nullspace, being moved) means no air, not a runtime.
-		var/datum/gas_mixture/environment = H.loc?.return_air()
-		var/envpressure = environment ? environment.return_pressure() : 0
-		if(envpressure < hazard_low_pressure)
-			breath = H.get_breath_from_internal()
-
-	if(!breath) //No breath from internals so let's try to get air from our location
-		// cut-down version of get_breath_from_environment - notably, gas masks provide no benefit
-		var/datum/gas_mixture/environment2
-		if(H.loc)
-			environment2 = H.loc.return_air_for_internal_lifeform(H)
-
-		if(environment2)
-			breath = environment2.remove_volume(BREATH_VOLUME)
-			var/datum/om/stage/life/breathing/carbon/breathing = om_stage_for(H, /datum/om/stage/life/breathing)
-			breathing.inhale_smoke(H, environment2) //handle chemical smoke while we're at it
-
-	// NOW a crude copypasta of handle_breath. Leaving some things out that don't apply to plants.
-	if(H.does_not_breathe)
-		H.failed_last_breath = 0
-		return ..()// if somehow they don't breathe, abort breathing.
-
-	// The breath's quality goes to the physiology, which decides whether the plant suffocates.
-	if(!breath || (xgm_total_moles(breath) == 0)) // xgm_total_moles bridges XGM-var/LINDA-proc gap
-		H.failed_last_breath = 1
-		H.body?.set_breath_quality(0)
-
-		H.throw_alert("pressure", /atom/movable/screen/alert/lowpressure)
-
-		return ..() // skip air processing if there's no air
-	else
-		H.clear_alert("pressure")
-
-	// now into the good stuff
-
-	//var/safe_pressure_min = species.minimum_breath_pressure // Minimum safe partial pressure of breathable gas in kPa
-	//just replace safe_pressure_min with minimum_breath_pressure, no need to declare a new var
-
-	var/safe_exhaled_max = 10
-	var/safe_toxins_max = 0.2
-	var/SA_para_min = 1
-	var/SA_sleep_min = 5
-	var/inhaled_gas_used = 0
-
-	var/breath_total = xgm_total_moles(breath) // cache total_moles for repeated use
-	var/breath_pressure = (breath_total*R_IDEAL_GAS_EQUATION*breath.return_temperature())/BREATH_VOLUME
-
-	var/inhaling
-	var/poison
-	var/exhaling
-
-	var/failed_inhale = 0
-	var/failed_exhale = 0
-	var/quality = 1
-
-	inhaling = LINDA_GAS_AMT(breath, GAS_CO2)
-	poison = LINDA_GAS_AMT(breath, poison_type)
-	exhaling = LINDA_GAS_AMT(breath, exhale_type)
-
-	var/inhale_pp = (inhaling/breath_total)*breath_pressure // was breath.total_moles
-	var/toxins_pp = (poison/breath_total)*breath_pressure
-	var/exhaled_pp = (exhaling/breath_total)*breath_pressure
-
-	// Not enough to breathe
-	if((inhale_pp + exhaled_pp) < minimum_breath_pressure) //they can breathe either oxygen OR CO2
-		if(prob(20))
-			H.emote("gasp")
-
-		quality = clamp((inhale_pp + exhaled_pp) / minimum_breath_pressure, 0, 1)
-		failed_inhale = 1
-
-		H.throw_alert("oxy", /atom/movable/screen/alert/not_enough_co2)
-	else
-		// We're in safe limits
-		H.clear_alert("oxy")
-
-	inhaled_gas_used = inhaling/6
-	breath.adjust_gas(GAS_CO2, -inhaled_gas_used, update = 0) //update afterwards
-	breath.adjust_gas_temp(exhale_type, inhaled_gas_used, H.bodytemperature, update = 0) //update afterwards
-
-	//Now we handle CO2.
-	if(inhale_pp > safe_exhaled_max * 0.7) // For a human, this would be too much exhaled gas in the air. But plants don't care.
-		H.throw_alert("co2", /atom/movable/screen/alert/too_much_co2/plant) // Give them the alert on the HUD. They'll be aware when the good stuff is present.
-	else
-		H.clear_alert("co2")
-
-	//do the CO2 buff stuff here
-
-	var/co2buff = 0
-	if(inhaling)
-		co2buff = (CLAMP(inhale_pp, 0, minimum_breath_pressure))/minimum_breath_pressure //returns a value between 0 and 1.
-
-	var/light_amount = fullysealed ? H.getlightlevel() : H.getlightlevel()/5 // if they're covered, they're not going to get much light on them.
-
-	if(co2buff && !H.injury_load(INJURY_CATEGORY_TOXIC) && light_amount >= 0.1) //if there's enough light and CO2 and you're not poisoned, heal. Note if you're wearing a sealed suit your heal rate will suck.
-		H.mend(TREAT_TISSUE_REPAIR, light_amount * co2buff * 2) //at a full partial pressure of CO2 and full light, you'll only heal half as fast as diona.
-		H.mend(TREAT_BURN_CARE, light_amount * co2buff) //this won't let you tank environmental damage from fire. MAYBE cold until your body temp drops.
-
-	if(H.nutrition < (200 + 400*co2buff)) //if no CO2, a fully lit tile gives them 1/tick up to 200. With CO2, potentially up to 600.
-		H.adjust_nutrition(light_amount*(1+co2buff*5))
-
-	// Too much poison in the air.
-	if(toxins_pp > safe_toxins_max)
-		var/ratio = (poison/safe_toxins_max) * 10
-		if(H.reagents)
-			H.reagents.add_reagent(REAGENT_ID_TOXIN, CLAMP(ratio, MIN_TOXIN_DAMAGE, MAX_TOXIN_DAMAGE))
-			breath.adjust_gas(poison_type, -poison/6, update = 0) //update after
-		H.throw_alert("tox_in_air", /atom/movable/screen/alert/tox_in_air)
-	else
-		H.clear_alert("tox_in_air")
-
-	// If there's some other shit in the air lets deal with it here.
-	if(LINDA_GAS_AMT(breath, GAS_N2O)) // string "sleeping_agent" doesn't exist as a LINDA gas id; GAS_N2O = "n2o" is the real id
-		var/SA_pp = (LINDA_GAS_AMT(breath, GAS_N2O) / breath_total) * breath_pressure
-
-		// Enough to make us paralysed for a bit
-		if(SA_pp > SA_para_min)
-
-			// 3 gives them one second to wake up and run away a bit!
-			H.status_at_least(EFFECT_PARALYZED, 3)
-
-			// Enough to make us sleep as well
-			if(SA_pp > SA_sleep_min)
-				H.status_at_least(EFFECT_SLEEPING, 5)
-
-		// There is sleeping gas in their lungs, but only a little, so give them a bit of a warning
-		else if(SA_pp > 0.15)
-			if(prob(20))
-				H.emote(pick("giggle", "laugh"))
-		breath.adjust_gas(GAS_N2O, -LINDA_GAS_AMT(breath, GAS_N2O)/6, update = 0) // update after // was "sleeping_agent" string (XGM); LINDA uses GAS_N2O = "n2o"
-
-	// Were we able to breathe?
-	H.failed_last_breath = (failed_inhale || failed_exhale) ? 1 : 0
-	H.body?.set_breath_quality(quality)
-
-
-	// Hot air hurts :(
-	var/breath_temperature = breath.return_temperature()
-	if((breath_temperature < breath_cold_level_1 || breath_temperature > breath_heat_level_1) && !(H.has_mutation(COLD_RESISTANCE)))
-
-		if(breath_temperature <= breath_cold_level_1)
-			if(prob(20))
-				to_chat(H, span_danger("You feel icicles forming on your skin!"))
-		else if(breath_temperature >= breath_heat_level_1)
-			if(prob(20))
-				to_chat(H, span_danger("You feel yourself smouldering in the heat!"))
-
-		var/bodypart = pick(BP_L_FOOT,BP_R_FOOT,BP_L_LEG,BP_R_LEG,BP_L_ARM,BP_R_ARM,BP_L_HAND,BP_R_HAND,BP_TORSO,BP_GROIN,BP_HEAD)
-		if(breath_temperature >= breath_heat_level_1)
-			if(breath_temperature < breath_heat_level_2)
-				H.injure(INJURY_BURN, HEAT_GAS_DAMAGE_LEVEL_1, bodypart)
-			else if(breath_temperature < breath_heat_level_3)
-				H.injure(INJURY_BURN, HEAT_GAS_DAMAGE_LEVEL_2, bodypart)
-			else
-				H.injure(INJURY_BURN, HEAT_GAS_DAMAGE_LEVEL_3, bodypart)
-
-		else if(breath_temperature <= breath_cold_level_1)
-			if(breath_temperature > breath_cold_level_2)
-				H.injure(INJURY_FROSTBITE, COLD_GAS_DAMAGE_LEVEL_1, bodypart)
-			else if(breath_temperature > breath_cold_level_3)
-				H.injure(INJURY_FROSTBITE, COLD_GAS_DAMAGE_LEVEL_2, bodypart)
-			else
-				H.injure(INJURY_FROSTBITE, COLD_GAS_DAMAGE_LEVEL_3, bodypart)
-
-
-		//breathing in hot/cold air also heats/cools you a bit
-		var/temp_adj = breath_temperature - H.bodytemperature
-		if (temp_adj < 0)
-			temp_adj /= (BODYTEMP_COLD_DIVISOR * 5)	//don't raise temperature as much as if we were directly exposed
-		else
-			temp_adj /= (BODYTEMP_HEAT_DIVISOR * 5)	//don't raise temperature as much as if we were directly exposed
-
-		var/relative_density = xgm_total_moles(breath) / (MOLES_CELLSTANDARD * BREATH_PERCENTAGE) // total_moles is a proc in LINDA, use xgm_total_moles helper
-		temp_adj *= relative_density
-
-		if (temp_adj > BODYTEMP_HEATING_MAX) temp_adj = BODYTEMP_HEATING_MAX
-		if (temp_adj < BODYTEMP_COOLING_MAX) temp_adj = BODYTEMP_COOLING_MAX
-		//to_world("Breath: [breath.temperature], [src]: [bodytemperature], Adjusting: [temp_adj]")
-		H.adjust_bodytemperature(temp_adj)
-
-	else if(breath_temperature >= heat_discomfort_level)
-		get_environment_discomfort(H,"heat") // P2-F9: the mob, not the species datum
-	else if(breath_temperature <= cold_discomfort_level)
-		get_environment_discomfort(H,"cold")
-
-	// breath.update_values() removed; no-op under LINDA.
-	..()
 
 /obj/item/organ/internal/brain/alraune
 	icon = 'icons/mob/species/alraune/organs.dmi'
@@ -423,7 +219,6 @@
 	fruit_gland.fruit_type = ask.choice
 	add_verb(src, /mob/living/carbon/human/proc/alraune_fruit_pick)
 	add_verb(src, /mob/living/carbon/human/proc/alraune_fruit_reagent)
-	// remove_verb(src, /mob/living/carbon/human/proc/alraune_fruit_select)
 	fruit_gland.organ_owner = src
 	fruit_gland.emote_descriptor = list("fruit right off of [fruit_gland.organ_owner]!", "a fruit from [fruit_gland.organ_owner]!")
 
@@ -433,7 +228,6 @@
 	set category = "Object"
 	set src in view(1)
 
-	//do_reagent_implant(usr)
 	if(!isliving(usr) || !usr.checkClickCooldown())
 		return
 

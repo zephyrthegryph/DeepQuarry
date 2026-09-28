@@ -790,7 +790,7 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 
 /mob/living/proc/calculate_composition() // moved from devour.dm on aurora's side
 	if (!composition_reagent)//if no reagent has been set, then we'll set one
-		if (isSynthetic())
+		if (HAS_SYNTHETIC_BIOLOGY(src))
 			src.composition_reagent = REAGENT_ID_IRON
 		else
 			if(istype(src, /mob/living/carbon/human/diona) || istype(src, /mob/living/carbon/alien/diona))

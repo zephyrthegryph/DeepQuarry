@@ -22,9 +22,6 @@
 
 	can_be_drop_prey = FALSE
 
-/mob/living/simple_mob/mechanical/isSynthetic()
-	return TRUE
-
 /mob/living/simple_mob/mechanical/speech_bubble_appearance()
 	return faction != "neutral" ? "synthetic_evil" : "machine"
 

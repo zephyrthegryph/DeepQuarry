@@ -26,7 +26,7 @@
 					var/obj/item/organ/checklimb = L.organs_by_name[parent_organ]
 					if(checklimb)
 						// valid limb, check if organic!
-						if(checklimb.status == 0 && checklimb.robotic < ORGAN_ROBOT)
+						if(checklimb.status == 0 && !checklimb.is_robotic())
 							return ..(mapload, internal)
 		else
 			parent_organ = force_location
@@ -56,14 +56,11 @@
 		return FALSE
 	if(is_dead())
 		return FALSE
-	if(isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(src))
 		return FALSE
 	if(!species)
 		return FALSE
-	if(species.name == SPECIES_VOX \
-	|| species.name == SPECIES_PROMETHEAN \
-	|| species.name == SPECIES_PROTEAN \
-	|| species.name == SPECIES_REPLICANT)
+	if(!species.can_host_malignant)
 		return FALSE
 	if(is_changeling(src))
 		return FALSE
@@ -81,7 +78,6 @@
 /obj/item/organ/internal/malignant/tumor
 	name = "tumor"
 	icon_state = "tumor"
-	//dead_icon = "tumor-dead"
 
 	var/stage = 1
 	var/stage_progress = 0
@@ -553,7 +549,6 @@ EXTEND_INTERACTIONS(/obj/item/organ/internal/malignant/tumor/moneyorgan, INTERAC
 // honks and tells you jokes in your head
 /obj/item/organ/internal/malignant/parasite/honker
 	name = "honkworm"
-	//icon_state = "honker"
 	feedchance = 4
 	feedmodmin = 2
 	feedmodmax = 3

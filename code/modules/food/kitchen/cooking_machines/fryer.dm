@@ -224,17 +224,19 @@ REF_OWNED(/obj/machinery/appliance/cooker/fryer, list("fry_loop", "oil"))
 	if(ishuman(victim) && user.zone_sel.selecting != BP_GROIN && user.zone_sel.selecting != BP_TORSO)
 		var/mob/living/carbon/human/H = victim
 		E = H.get_organ(user.zone_sel.selecting)
-		if(!E || E.data.get_species_flags() & NO_PAIN)
+		if(!E)
 			nopain = 2
-		else if(E.robotic >= ORGAN_ROBOT)
+		else if(E.is_robotic())
 			nopain = 1
+		else if(!H.can_feel_pain(E))
+			nopain = 2
 
 	user.visible_message(span_danger("\The [user] shoves \the [victim][E ? "'s [E.name]" : ""] into \the [src]!"))
 	if (damage > 0)
 		if(E)
 			if(E.children && E.children.len)
 				for(var/obj/item/organ/external/child in E.children)
-					if(nopain && nopain < 2 && !(child.robotic >= ORGAN_ROBOT))
+					if(nopain && nopain < 2 && !(child.is_robotic()))
 						nopain = 0
 					victim.injure(INJURY_BURN, damage, child.organ_tag, source = src)
 					damage -= (damage*0.5)//IF someone's arm is plunged in, the hand should take most of it

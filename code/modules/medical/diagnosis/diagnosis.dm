@@ -37,7 +37,7 @@
 
 	/// /datum/diagnosis_finding, most severe first. Lazy.
 	var/list/findings
-	/// Per-part integrity: list(list("name", "band", "flags" = list(...))). Lazy.
+	/// Per-part integrity: list(list("name", "kind" = DIAG_PART_*, "band", "flags" = list(...), "implants" = list(...) or null)). Lazy.
 	var/list/parts
 	/// TREAT_* -> DIAG_BAND_* urgency, when the profile gives hints. Lazy.
 	var/list/hints

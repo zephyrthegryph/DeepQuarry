@@ -22,7 +22,7 @@
 				else
 					need_amend |= L
 			if(LAZYLEN(need_amend))
-				if(V.robotic < ORGAN_ASSISTED)
+				if(V.is_organic())
 					V.mechassist()
 				for(var/L in need_amend)
 					V.add_assistable_langs(L)

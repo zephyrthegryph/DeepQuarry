@@ -461,7 +461,7 @@
 	H.status_set(EFFECT_SLEEPING, 5)
 	TEST_ASSERT_EQUAL(H.body.regeneration_level(), awake * REGENERATION_SLEEP_MULT, "sleep should speed natural regeneration")
 	H.status_set(EFFECT_SLEEPING, 0)
-	H.nutrition = REGENERATION_STARVING_NUTRITION - 1
+	H.set_nutrition(REGENERATION_STARVING_NUTRITION - 1)
 	TEST_ASSERT_EQUAL(H.body.regeneration_level(), 0, "a starving body should not regenerate")
 
 /// Afflictions are indexed by location, and the index follows their lifecycle.

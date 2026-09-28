@@ -394,7 +394,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/energy, \
 
 /obj/item/melee/energy/sword/ionic_rapier/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
 	. = ..()
-	if(target.isSynthetic() && active)
+	if(HAS_SYNTHETIC_BIOLOGY(target) && active)
 		// Do some extra damage.  Not a whole lot more since emp_act() is pretty nasty on FBPs already.
 		target.emp_act(EMP_LIGHT) // A weaker severity is used because this has infinite uses.
 		playsound(target, 'sound/effects/EMPulse.ogg', 100, 1)

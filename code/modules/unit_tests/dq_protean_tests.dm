@@ -110,7 +110,7 @@
 	// The cell loses a little to its material delivery efficiency on top of the draw.
 	TEST_ASSERT(abs((charge_before - R.cell.charge) - 100) < 1, "the draw should take its units from the cell ([charge_before - R.cell.charge])")
 	TEST_ASSERT(!R.draw_power(ROBOT_CELL_JOULES(R.cell.maxcharge * 2), src), "an all-or-nothing draw can't overdraw")
-	H.nutrition = 1000
+	H.set_nutrition(1000)
 	var/stored = R.recharge_from(H)
 	TEST_ASSERT(stored > 0, "the swarm should recharge its cluster")
 	TEST_ASSERT(H.nutrition < 1000, "recharging should cost nutrition")

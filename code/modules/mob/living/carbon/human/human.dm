@@ -52,8 +52,7 @@
 		if(mind)
 			mind.name = real_name
 
-	nutrition = rand(200,400)
-
+	set_nutrition(rand(200,400))
 	. = ..()
 
 	hide_underwear.Cut()
@@ -194,9 +193,6 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 			else
 				var/atom/target = get_edge_target_turf(src, get_dir(src, get_step_away(src, src)))
 				throw_at(target, 200, 4)
-			//return
-//				var/atom/target = get_edge_target_turf(user, get_dir(src, get_step_away(user, src)))
-				//user.throw_at(target, 200, 4)
 
 		if (2.0)
 			if (!shielded)
@@ -407,282 +403,13 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 
 /mob/living/carbon/human/Topic(href, href_list)
 	if (href_list["mach_close"]) // This is horrible.
-		// legacy browse(null) close removed; see /mob/Topic.
 		unset_machine()
 
 	if(href_list["item"])
 		log_runtime(EXCEPTION("Warning: human/Topic was called with item [href_list["item"]], but the item Topic is deprecated!"))
-		// handle_strip(href_list["item"],usr)
 
-	if (href_list["criminal"])
-		if(hasHUD(usr,"security"))
-
-			var/modified = 0
-			var/perpname = "wot"
-			var/obj/item/card/id/I = GetIdCard()
-			if(I)
-				perpname = I.registered_name
-			else
-				perpname = name
-
-			if(perpname)
-				for (var/datum/data/record/E in GLOB.data_core.general)
-					if (E.fields["name"] == perpname)
-						for (var/datum/data/record/R in GLOB.data_core.security)
-							if (R.fields["id"] == E.fields["id"])
-
-								modified = 1
-								om_ask(usr, /datum/om/prompt/choice/hud_status, PROC_REF(hud_criminal_status_chosen), message = "Specify a new criminal status for this person.", title = "Security HUD", choices = list("None", "*Arrest*", "Incarcerated", "Parolled", "Released", "Cancel"), record = R, hud_type = "security")
-								break
-
-			if(!modified)
-				to_chat(usr, span_filter_notice("[span_red("Unable to locate a data core entry for this person.")]"))
-
-	if (href_list["secrecord"])
-		if(hasHUD(usr,"security"))
-			var/perpname = "wot"
-			var/read = 0
-
-			var/obj/item/card/id/I = GetIdCard()
-			if(I)
-				perpname = I.registered_name
-			else
-				perpname = name
-			for (var/datum/data/record/E in GLOB.data_core.general)
-				if (E.fields["name"] == perpname)
-					for (var/datum/data/record/R in GLOB.data_core.security)
-						if (R.fields["id"] == E.fields["id"])
-							if(hasHUD(usr,"security"))
-								var/list/security_hud_text = list()
-								security_hud_text += span_bold("Name:") + " [R.fields["name"]]	" + span_bold("Criminal Status:") + " [R.fields["criminal"]]"
-								security_hud_text += span_bold("Species:") + " [R.fields["species"]]"
-								security_hud_text += span_bold("Minor Crimes:") + " [R.fields["mi_crim"]]"
-								security_hud_text += span_bold("Details:") + " [R.fields["mi_crim_d"]]"
-								security_hud_text += span_bold("Major Crimes:") + " [R.fields["ma_crim"]]"
-								security_hud_text += span_bold("Details:") + " [R.fields["ma_crim_d"]]"
-								security_hud_text += span_bold("Notes:") + " [R.fields["notes"]]"
-								security_hud_text += "<a href='byond://?src=\ref[src];secrecordComment=`'>\[View Comment Log\]</a>"
-								to_chat(usr, span_filter_notice("[jointext(security_hud_text, "<br>")]"))
-								read = 1
-
-			if(!read)
-				to_chat(usr, span_filter_notice("[span_red("Unable to locate a data core entry for this person.")]"))
-
-	if (href_list["secrecordComment"])
-		if(hasHUD(usr,"security"))
-			var/perpname = "wot"
-			var/read = 0
-
-			var/obj/item/card/id/I = GetIdCard()
-			if(I)
-				perpname = I.registered_name
-			else
-				perpname = name
-			for (var/datum/data/record/E in GLOB.data_core.general)
-				if (E.fields["name"] == perpname)
-					for (var/datum/data/record/R in GLOB.data_core.security)
-						if (R.fields["id"] == E.fields["id"])
-							if(hasHUD(usr,"security"))
-								read = 1
-								var/counter = 1
-								while(R.fields[text("com_[]", counter)])
-									to_chat(usr, "[R.fields[text("com_[]", counter)]]")
-									counter++
-								if (counter == 1)
-									to_chat(usr, span_filter_notice("No comment found."))
-								to_chat(usr, span_filter_notice("<a href='byond://?src=\ref[src];secrecordadd=`'>\[Add comment\]</a>"))
-
-			if(!read)
-				to_chat(usr, span_filter_notice("[span_red("Unable to locate a data core entry for this person.")]"))
-
-	if (href_list["secrecordadd"])
-		if(hasHUD(usr,"security"))
-			var/perpname = "wot"
-			var/obj/item/card/id/I = GetIdCard()
-			if(I)
-				perpname = I.registered_name
-			else
-				perpname = name
-			for (var/datum/data/record/E in GLOB.data_core.general)
-				if (E.fields["name"] == perpname)
-					for (var/datum/data/record/R in GLOB.data_core.security)
-						if (R.fields["id"] == E.fields["id"])
-							if(hasHUD(usr,"security"))
-								hud_ask_comment(usr, R, "security", "Sec. records", MAX_MESSAGE_LEN)
-								return
-
-	if (href_list["medical"])
-		if(hasHUD(usr,"medical"))
-			var/perpname = "wot"
-			var/modified = 0
-
-			var/obj/item/card/id/I = GetIdCard()
-			if(I)
-				perpname = I.registered_name
-			else
-				perpname = name
-
-			for (var/datum/data/record/E in GLOB.data_core.general)
-				if (E.fields["name"] == perpname)
-					for (var/datum/data/record/R in GLOB.data_core.general)
-						if (R.fields["id"] == E.fields["id"])
-
-							modified = 1
-							om_ask(usr, /datum/om/prompt/choice/hud_status, PROC_REF(hud_medical_status_chosen), message = "Specify a new medical status for this person.", title = "Medical HUD", choices = list("*SSD*", "*Deceased*", "Physically Unfit", "Active", "Disabled", "Cancel"), record = R, hud_type = "medical")
-							break
-
-			if(!modified)
-				to_chat(usr, span_filter_notice("[span_red("Unable to locate a data core entry for this person.")]"))
-
-	if (href_list["medrecord"])
-		if(hasHUD(usr,"medical"))
-			var/perpname = "wot"
-			var/read = 0
-
-			var/obj/item/card/id/I = GetIdCard()
-			if(I)
-				perpname = I.registered_name
-			else
-				perpname = name
-			for (var/datum/data/record/E in GLOB.data_core.general)
-				if (E.fields["name"] == perpname)
-					for (var/datum/data/record/R in GLOB.data_core.medical)
-						if (R.fields["id"] == E.fields["id"])
-							if(hasHUD(usr,"medical"))
-								var/list/medical_hud_text = list()
-								medical_hud_text += span_bold("Name:") + " [R.fields["name"]]	" + span_bold("Blood Type:") + " [R.fields["b_type"]]	" + span_bold("Blood Basis:") + " [R.fields["blood_reagent"]]"
-								medical_hud_text += span_bold("Species:") + " [R.fields["species"]]"
-								medical_hud_text += span_bold("DNA:") + " [R.fields["b_dna"]]"
-								medical_hud_text += span_bold("Minor Disabilities:") + " [R.fields["mi_dis"]]"
-								medical_hud_text += span_bold("Details:") + " [R.fields["mi_dis_d"]]"
-								medical_hud_text += span_bold("Major Disabilities:") + " [R.fields["ma_dis"]]"
-								medical_hud_text += span_bold("Details:") + " [R.fields["ma_dis_d"]]"
-								medical_hud_text += span_bold("Notes:") + " [R.fields["notes"]]"
-								medical_hud_text += "<a href='byond://?src=\ref[src];medrecordComment=`'>\[View Comment Log\]</a>"
-								to_chat(usr, span_filter_notice("[jointext(medical_hud_text, "<br>")]"))
-								read = 1
-
-			if(!read)
-				to_chat(usr, span_filter_notice("[span_red("Unable to locate a data core entry for this person.")]"))
-
-	if (href_list["medrecordComment"])
-		if(hasHUD(usr,"medical"))
-			var/perpname = "wot"
-			var/read = 0
-
-			var/obj/item/card/id/I = GetIdCard()
-			if(I)
-				perpname = I.registered_name
-			else
-				perpname = name
-			for (var/datum/data/record/E in GLOB.data_core.general)
-				if (E.fields["name"] == perpname)
-					for (var/datum/data/record/R in GLOB.data_core.medical)
-						if (R.fields["id"] == E.fields["id"])
-							if(hasHUD(usr,"medical"))
-								read = 1
-								var/counter = 1
-								while(R.fields[text("com_[]", counter)])
-									to_chat(usr, "[R.fields[text("com_[]", counter)]]")
-									counter++
-								if (counter == 1)
-									to_chat(usr, span_filter_notice("No comment found."))
-								to_chat(usr, span_filter_notice("<a href='byond://?src=\ref[src];medrecordadd=`'>\[Add comment\]</a>"))
-
-			if(!read)
-				to_chat(usr, span_filter_notice("[span_red("Unable to locate a data core entry for this person.")]"))
-
-	if (href_list["medrecordadd"])
-		if(hasHUD(usr,"medical"))
-			var/perpname = "wot"
-			var/obj/item/card/id/I = GetIdCard()
-			if(I)
-				perpname = I.registered_name
-			else
-				perpname = name
-			for (var/datum/data/record/E in GLOB.data_core.general)
-				if (E.fields["name"] == perpname)
-					for (var/datum/data/record/R in GLOB.data_core.medical)
-						if (R.fields["id"] == E.fields["id"])
-							if(hasHUD(usr,"medical"))
-								hud_ask_comment(usr, R, "medical", "Med. records", MAX_MESSAGE_LEN)
-								return
-
-	if (href_list["emprecord"])
-		if(hasHUD(usr,"best"))
-			var/perpname = "wot"
-			var/read = 0
-
-			var/obj/item/card/id/I = GetIdCard()
-			if(I)
-				perpname = I.registered_name
-			else
-				perpname = name
-			for (var/datum/data/record/E in GLOB.data_core.general)
-				if (E.fields["name"] == perpname)
-					for (var/datum/data/record/R in GLOB.data_core.general)
-						if (R.fields["id"] == E.fields["id"])
-							if(hasHUD(usr,"best"))
-								var/list/emp_hud_text = list()
-								emp_hud_text += span_bold("Name:") + " [R.fields["name"]]"
-								emp_hud_text += span_bold("Species:") + " [R.fields["species"]]"
-								emp_hud_text += span_bold("Assignment:") + " [R.fields["real_rank"]] ([R.fields["rank"]])"
-								emp_hud_text += span_bold("Home System:") + " [R.fields["home_system"]]"
-								emp_hud_text += span_bold("Birthplace:") + " [R.fields["birthplace"]]"
-								emp_hud_text += span_bold("Citizenship:") + " [R.fields["citizenship"]]"
-								emp_hud_text += span_bold("Primary Employer:") + " [R.fields["faction"]]"
-								emp_hud_text += span_bold("Religious Beliefs:") + " [R.fields["religion"]]"
-								emp_hud_text += span_bold("Known Languages:") + " [R.fields["languages"]]"
-								emp_hud_text += span_bold("Notes:") + " [R.fields["notes"]]"
-								emp_hud_text += "<a href='byond://?src=\ref[src];emprecordComment=`'>\[View Comment Log\]</a>"
-								to_chat(usr, span_filter_notice("[jointext(emp_hud_text, "<br>")]"))
-								read = 1
-
-			if(!read)
-				to_chat(usr, span_filter_notice("[span_red("Unable to locate a data core entry for this person.")]"))
-
-	if (href_list["emprecordComment"])
-		if(hasHUD(usr,"best"))
-			var/perpname = "wot"
-			var/read = 0
-
-			var/obj/item/card/id/I = GetIdCard()
-			if(I)
-				perpname = I.registered_name
-			else
-				perpname = name
-			for (var/datum/data/record/E in GLOB.data_core.general)
-				if (E.fields["name"] == perpname)
-					for (var/datum/data/record/R in GLOB.data_core.general)
-						if (R.fields["id"] == E.fields["id"])
-							if(hasHUD(usr,"best"))
-								read = 1
-								var/counter = 1
-								while(R.fields[text("com_[]", counter)])
-									to_chat(usr, "[R.fields[text("com_[]", counter)]]")
-									counter++
-								if (counter == 1)
-									to_chat(usr, span_filter_notice("No comment found."))
-								to_chat(usr, span_filter_notice("<a href='byond://?src=\ref[src];emprecordadd=`'>\[Add comment\]</a>"))
-
-			if(!read)
-				to_chat(usr, span_filter_notice("[span_red("Unable to locate a data core entry for this person.")]"))
-
-	if (href_list["emprecordadd"])
-		if(hasHUD(usr,"best"))
-			var/perpname = "wot"
-			var/obj/item/card/id/I = GetIdCard()
-			if(I)
-				perpname = I.registered_name
-			else
-				perpname = name
-			for (var/datum/data/record/E in GLOB.data_core.general)
-				if (E.fields["name"] == perpname)
-					for (var/datum/data/record/R in GLOB.data_core.general)
-						if (R.fields["id"] == E.fields["id"])
-							if(hasHUD(usr,"best"))
-								hud_ask_comment(usr, R, "best", "Emp. records", MAX_RECORD_LENGTH)
-								return
+	if(hud_record_topic(usr, href_list))
+		return
 
 	if (href_list["lookitem"])
 		var/obj/item/I = locate(href_list["lookitem"])
@@ -702,19 +429,143 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 		src.examinate(M)
 
 	if (href_list["flavor_change"])
-		switch(href_list["flavor_change"])
-			if("done")
-				// flavor_changes is TGUI now; close via SStgui
-				SStgui.close_uis(src)
-				return
-			if("general")
-				om_ask(usr, /datum/om/prompt/text/flavor_part, PROC_REF(flavor_part_entered), message = "Update the general description of your character. This will be shown regardless of clothing.", default = html_decode(LAZYACCESS(flavor_texts, href_list["flavor_change"])), part = href_list["flavor_change"])	//Separating out OOC notes
-				return
-			else
-				om_ask(usr, /datum/om/prompt/text/flavor_part, PROC_REF(flavor_part_entered), message = "Update the flavor text for your [href_list["flavor_change"]].", default = html_decode(LAZYACCESS(flavor_texts, href_list["flavor_change"])), part = href_list["flavor_change"])
-				return
+		flavor_change_topic(usr, href_list["flavor_change"])
+		return
 	..()
-	return
+
+/// The flavor text editor's links: close it, or edit one part.
+/mob/living/carbon/human/proc/flavor_change_topic(mob/user, part)
+	switch(part)
+		if("done")
+			// flavor_changes is TGUI now; close via SStgui
+			SStgui.close_uis(src)
+		if("general")
+			om_ask(user, /datum/om/prompt/text/flavor_part, PROC_REF(flavor_part_entered), message = "Update the general description of your character. This will be shown regardless of clothing.", default = html_decode(LAZYACCESS(flavor_texts, part)), part = part)	//Separating out OOC notes
+		else
+			om_ask(user, /datum/om/prompt/text/flavor_part, PROC_REF(flavor_part_entered), message = "Update the flavor text for your [part].", default = html_decode(LAZYACCESS(flavor_texts, part)), part = part)
+
+// --- HUD record links (examine) --------------------------------------------------
+// Each HUD reads and writes one record set. The status link edits the "status" set (the
+// medical status lives on the general record), the rest the "records" set.
+
+/// HUD type -> list(href prefix, records set, status set, title, comment length).
+/mob/living/carbon/human/proc/hud_record_kinds()
+	var/static/list/kinds = list(
+		"security" = list("sec", "security", "security", "Sec. records", MAX_MESSAGE_LEN),
+		"medical" = list("med", "medical", "general", "Med. records", MAX_MESSAGE_LEN),
+		"best" = list("emp", "general", "general", "Emp. records", MAX_RECORD_LENGTH),
+	)
+	return kinds
+
+/// Handle a HUD record link. TRUE when the link was an "add comment" one (Topic stops there).
+/mob/living/carbon/human/proc/hud_record_topic(mob/user, list/href_list)
+	if(href_list["criminal"] && hasHUD(user, "security"))
+		hud_topic_status(user, "security")
+	if(href_list["medical"] && hasHUD(user, "medical"))
+		hud_topic_status(user, "medical")
+	var/list/kinds = hud_record_kinds()
+	for(var/hud_type in kinds)
+		var/prefix = kinds[hud_type][1]
+		if(href_list["[prefix]record"] && hasHUD(user, hud_type))
+			hud_topic_show_record(user, hud_type)
+		if(href_list["[prefix]recordComment"] && hasHUD(user, hud_type))
+			hud_topic_show_comments(user, hud_type)
+		if(href_list["[prefix]recordadd"] && hasHUD(user, hud_type))
+			var/datum/data/record/R = hud_find_record(kinds[hud_type][2])
+			if(R)
+				hud_ask_comment(user, R, hud_type, kinds[hud_type][4], kinds[hud_type][5])
+				return TRUE
+	return FALSE
+
+/// Our record in data core set `set_name` ("general", "security" or "medical"), matched through
+/// the general record of our ID's name (else our name).
+/mob/living/carbon/human/proc/hud_find_record(set_name)
+	var/obj/item/card/id/I = GetIdCard()
+	var/perpname = I ? I.registered_name : name
+	if(!perpname)
+		return null
+	var/list/records
+	switch(set_name)
+		if("security")
+			records = GLOB.data_core.security
+		if("medical")
+			records = GLOB.data_core.medical
+		else
+			records = GLOB.data_core.general
+	for(var/datum/data/record/E in GLOB.data_core.general)
+		if(E.fields["name"] != perpname)
+			continue
+		for(var/datum/data/record/R in records)
+			if(R.fields["id"] == E.fields["id"])
+				return R
+	return null
+
+/mob/living/carbon/human/proc/hud_no_record(mob/user)
+	to_chat(user, span_filter_notice("[span_red("Unable to locate a data core entry for this person.")]"))
+
+/// The criminal (security) or physical (medical) status picker.
+/mob/living/carbon/human/proc/hud_topic_status(mob/user, hud_type)
+	var/datum/data/record/R = hud_find_record(hud_record_kinds()[hud_type][3])
+	if(!R)
+		hud_no_record(user)
+		return
+	if(hud_type == "security")
+		om_ask(user, /datum/om/prompt/choice/hud_status, PROC_REF(hud_criminal_status_chosen), message = "Specify a new criminal status for this person.", title = "Security HUD", choices = list("None", "*Arrest*", "Incarcerated", "Parolled", "Released", "Cancel"), record = R, hud_type = "security")
+	else
+		om_ask(user, /datum/om/prompt/choice/hud_status, PROC_REF(hud_medical_status_chosen), message = "Specify a new medical status for this person.", title = "Medical HUD", choices = list("*SSD*", "*Deceased*", "Physically Unfit", "Active", "Disabled", "Cancel"), record = R, hud_type = "medical")
+
+/// Print the record `hud_type` reads.
+/mob/living/carbon/human/proc/hud_topic_show_record(mob/user, hud_type)
+	var/list/kind = hud_record_kinds()[hud_type]
+	var/datum/data/record/R = hud_find_record(kind[2])
+	if(!R)
+		hud_no_record(user)
+		return
+	var/list/text = list()
+	switch(hud_type)
+		if("security")
+			text += span_bold("Name:") + " [R.fields["name"]]	" + span_bold("Criminal Status:") + " [R.fields["criminal"]]"
+			text += span_bold("Species:") + " [R.fields["species"]]"
+			text += span_bold("Minor Crimes:") + " [R.fields["mi_crim"]]"
+			text += span_bold("Details:") + " [R.fields["mi_crim_d"]]"
+			text += span_bold("Major Crimes:") + " [R.fields["ma_crim"]]"
+			text += span_bold("Details:") + " [R.fields["ma_crim_d"]]"
+		if("medical")
+			text += span_bold("Name:") + " [R.fields["name"]]	" + span_bold("Blood Type:") + " [R.fields["b_type"]]	" + span_bold("Blood Basis:") + " [R.fields["blood_reagent"]]"
+			text += span_bold("Species:") + " [R.fields["species"]]"
+			text += span_bold("DNA:") + " [R.fields["b_dna"]]"
+			text += span_bold("Minor Disabilities:") + " [R.fields["mi_dis"]]"
+			text += span_bold("Details:") + " [R.fields["mi_dis_d"]]"
+			text += span_bold("Major Disabilities:") + " [R.fields["ma_dis"]]"
+			text += span_bold("Details:") + " [R.fields["ma_dis_d"]]"
+		else
+			text += span_bold("Name:") + " [R.fields["name"]]"
+			text += span_bold("Species:") + " [R.fields["species"]]"
+			text += span_bold("Assignment:") + " [R.fields["real_rank"]] ([R.fields["rank"]])"
+			text += span_bold("Home System:") + " [R.fields["home_system"]]"
+			text += span_bold("Birthplace:") + " [R.fields["birthplace"]]"
+			text += span_bold("Citizenship:") + " [R.fields["citizenship"]]"
+			text += span_bold("Primary Employer:") + " [R.fields["faction"]]"
+			text += span_bold("Religious Beliefs:") + " [R.fields["religion"]]"
+			text += span_bold("Known Languages:") + " [R.fields["languages"]]"
+	text += span_bold("Notes:") + " [R.fields["notes"]]"
+	text += "<a href='byond://?src=\ref[src];[kind[1]]recordComment=`'>\[View Comment Log\]</a>"
+	to_chat(user, span_filter_notice("[jointext(text, "<br>")]"))
+
+/// Print the comment log of the record `hud_type` reads.
+/mob/living/carbon/human/proc/hud_topic_show_comments(mob/user, hud_type)
+	var/list/kind = hud_record_kinds()[hud_type]
+	var/datum/data/record/R = hud_find_record(kind[2])
+	if(!R)
+		hud_no_record(user)
+		return
+	var/counter = 1
+	while(R.fields["com_[counter]"])
+		to_chat(user, "[R.fields["com_[counter]"]]")
+		counter++
+	if(counter == 1)
+		to_chat(user, span_filter_notice("No comment found."))
+	to_chat(user, span_filter_notice("<a href='byond://?src=\ref[src];[kind[1]]recordadd=`'>\[Add comment\]</a>"))
 
 /// Editing one flavor text part. Re-checked on the answer: it's your own.
 /datum/om/prompt/text/flavor_part
@@ -1303,7 +1154,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 					custom_pain(msg, 40)
 
 				injure(INJURY_CUT, rand(1,3), organ.organ_tag, O)
-				if(!(organ.robotic >= ORGAN_ROBOT) && (should_have_organ(O_HEART))) //There is no blood in protheses.
+				if(!(organ.is_robotic()) && (should_have_organ(O_HEART))) //There is no blood in protheses.
 					organ.status |= ORGAN_BLEEDING
 
 /mob/living/carbon/human/verb/check_pulse()
@@ -1841,7 +1692,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	else if(organ_check in list(O_LIVER, O_KIDNEYS))
 		affecting = organs_by_name[BP_GROIN]
 
-	if(affecting && (affecting.robotic >= ORGAN_ROBOT))
+	if(affecting && (affecting.is_robotic()))
 		return 0
 	return (species && species.has_organ[organ_check])
 
@@ -1867,7 +1718,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	return FALSE
 
 /mob/living/carbon/human/can_feel_pain(obj/item/organ/check_organ)
-	if(isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(src))
 		return 0
 	if(loc?.numbs_pain_of(src))
 		return FALSE
@@ -1877,7 +1728,8 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 		if(!istype(check_organ))
 			return 0
 		return check_organ.organ_can_feel_pain()
-	return !(species.flags & NO_PAIN)
+	// NO_PAIN reaches here as BF_PAIN_IMMUNITY (species grant, humanoid factors).
+	return !(species?.flags & NO_PAIN)
 
 /mob/living/carbon/human/is_sentient()
 	if(get_FBP_type() == FBP_DRONE)
@@ -2066,9 +1918,6 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 /mob/living/carbon/human/vv_get_dropdown()
 	. = ..()
 	VV_DROPDOWN_OPTION("", "---------")
-	//VV_DROPDOWN_OPTION(VV_HK_COPY_OUTFIT, "Copy Outfit")
-	//VV_DROPDOWN_OPTION(VV_HK_MOD_MUTATIONS, "Add/Remove Mutation")
-	//VV_DROPDOWN_OPTION(VV_HK_MOD_QUIRKS, "Add/Remove Quirks")
 	VV_DROPDOWN_OPTION(VV_HK_SET_SPECIES, "Set Species")
 	VV_DROPDOWN_OPTION(VV_HK_TURN_MONKEY, "Make Monkey")
 	VV_DROPDOWN_OPTION(VV_HK_TURN_ALIEN, "Make Alien")
@@ -2076,166 +1925,28 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	VV_DROPDOWN_OPTION(VK_HK_TURN_AI, "Make AI")
 	VV_DROPDOWN_OPTION(VK_HK_TURN_ROBOT, "Make Robot")
 
-	//VV_DROPDOWN_OPTION(VV_HK_PURRBATION, "Toggle Purrbation")
-	//VV_DROPDOWN_OPTION(VV_HK_APPLY_DNA_INFUSION, "Apply DNA Infusion")
-	//VV_DROPDOWN_OPTION(VV_HK_TURN_INTO_MMI, "Turn into MMI")
-
 /mob/living/carbon/human/vv_do_topic(list/href_list)
 	. = ..()
-
 	if(!.)
 		return
-
-	/*
-	if(href_list[VV_HK_COPY_OUTFIT])
-		if(!check_rights(R_SPAWN))
-			return
-		copy_outfit()
-
-	if(href_list[VV_HK_MOD_MUTATIONS])
-		if(!check_rights(R_SPAWN))
-			return
-		var/list/options = list("Clear"="Clear")
-		for(var/x in subtypesof(/datum/mutation))
-			var/datum/mutation/mut = x
-			var/name = initial(mut.name)
-			options[dna.check_mutation(mut) ? "[name] (Remove)" : "[name] (Add)"] = mut
-		var/result = tgui_input_list(usr, "Choose mutation to add/remove","Mutation Mod", sort_list(options))
-		if(result)
-			if(result == "Clear")
-				for(var/datum/mutation/mutation as anything in dna.mutations)
-					dna.remove_mutation(mutation, mutation.sources)
-			else
-				var/mut = options[result]
-				if(dna.check_mutation(mut))
-					var/datum/mutation/mutation = dna.get_mutation(mut)
-					dna.remove_mutation(mut, mutation.sources)
-				else
-					dna.add_mutation(mut, MUTATION_SOURCE_VV)
-
-	if(href_list[VV_HK_MOD_QUIRKS])
-		if(!check_rights(R_SPAWN))
-			return
-		var/list/options = list("Clear"="Clear")
-		for(var/type in subtypesof(/datum/quirk))
-			var/datum/quirk/quirk_type = type
-			if(initial(quirk_type.abstract_parent_type) == type)
-				continue
-			var/qname = initial(quirk_type.name)
-			options[has_quirk(quirk_type) ? "[qname] (Remove)" : "[qname] (Add)"] = quirk_type
-		var/result = tgui_input_list(usr, "Choose quirk to add/remove","Quirk Mod", sort_list(options))
-		if(result)
-			if(result == "Clear")
-				for(var/datum/quirk/q in quirks)
-					remove_quirk(q.type)
-			else
-				var/T = options[result]
-				if(has_quirk(T))
-					remove_quirk(T)
-				else
-					add_quirk(T)
-	*/
 
 	if(href_list[VV_HK_SET_SPECIES])
 		if(!check_rights(R_SPAWN))
 			return
 		om_ask(usr, /datum/om/prompt/choice, PROC_REF(vv_species_chosen), message = "Please choose a new species", title = "Species", choices = sortTim(GLOB.all_species, GLOBAL_PROC_REF(cmp_text_asc)), requires = PROMPT_ADMIN(R_SPAWN))
 
-	if(href_list[VV_HK_TURN_MONKEY])
-		if(!check_rights(R_SPAWN))	return
-		vv_confirm_transform(usr, "monkey")
-
-	if(href_list[VV_HK_TURN_ALIEN])
-		if(!check_rights(R_SPAWN))	return
-		vv_confirm_transform(usr, "alien")
-
 	if(href_list[VK_HK_TURN_SKELETON])
 		if(!check_rights(R_FUN))
 			return
-
-		var/mob/living/carbon/human/H = src
-		if(!istype(H))
-			to_chat(usr, "This can only be used on instances of type /mob/living/carbon/human")
-			return
-
-		H.ChangeToSkeleton()
+		ChangeToSkeleton()
 		href_list[VV_HK_DATUM_REFRESH] = "\ref[src]"
 
-	if(href_list[VK_HK_TURN_AI])
-		if(!check_rights(R_SPAWN))
-			return
-
-		var/mob/living/carbon/human/H = src
-		if(!istype(H))
-			to_chat(usr, "This can only be done to instances of type /mob/living/carbon/human")
-			return
-
-		vv_confirm_transform(usr, "ai")
-
-	if(href_list[VK_HK_TURN_ROBOT])
-		if(!check_rights(R_SPAWN))	return
-		vv_confirm_transform(usr, "robot")
-
-	/*
-	if(href_list[VV_HK_PURRBATION])
-		if(!check_rights(R_SPAWN))
-			return
-		if(!ishuman(src))
-			to_chat(usr, "This can only be done to human species at the moment.")
-			return
-		var/success = purrbation_toggle(src)
-		if(success)
-			to_chat(usr, "Put [src] on purrbation.")
-			log_admin("[key_name(usr)] has put [key_name(src)] on purrbation.")
-			var/msg = span_notice("[key_name_admin(usr)] has put [key_name(src)] on purrbation.")
-			message_admins(msg)
-			admin_ticket_log(src, msg)
-		else
-			to_chat(usr, "Removed [src] from purrbation.")
-			log_admin("[key_name(usr)] has removed [key_name(src)] from purrbation.")
-			var/msg = span_notice("[key_name_admin(usr)] has removed [key_name(src)] from purrbation.")
-			message_admins(msg)
-			admin_ticket_log(src, msg)
-
-	if(href_list[VV_HK_APPLY_DNA_INFUSION])
-		if(!check_rights(R_SPAWN))
-			return
-		if(!ishuman(src))
-			to_chat(usr, "This can only be done to human species.")
-			return
-		var/result = usr.client.grant_dna_infusion(src)
-		if(result)
-			to_chat(usr, "Successfully applied DNA Infusion [result] to [src].")
-			log_admin("[key_name(usr)] has applied DNA Infusion [result] to [key_name(src)].")
-		else
-			to_chat(usr, "Failed to apply DNA Infusion to [src].")
-			log_admin("[key_name(usr)] failed to apply a DNA Infusion to [key_name(src)].")
-
-	if(href_list[VV_HK_TURN_INTO_MMI])
-		if(!check_rights(R_DEBUG))
-			return
-
-		var/result = tgui_alert(usr, "This will delete the mob, are you sure?", "Turn into MMI", list("Yes", "No"))
-		if(result != "Yes")
-			return
-
-		var/obj/item/organ/brain/target_brain = get_organ_slot(ORGAN_SLOT_BRAIN)
-
-		if(isnull(target_brain))
-			to_chat(usr, "This mob has no brain to insert into an MMI.")
-			return
-
-		var/obj/item/mmi/new_mmi = new(get_turf(src))
-
-		target_brain.Remove(src)
-		new_mmi.force_brain_into(target_brain)
-
-		to_chat(usr, "Turned [src] into an MMI.")
-		log_admin("[key_name(usr)] turned [key_name_and_tag(src)] into an MMI.")
-
-		qdel(src)
-	*/
-
+	var/static/list/transforms = list(VV_HK_TURN_MONKEY = "monkey", VV_HK_TURN_ALIEN = "alien", VK_HK_TURN_AI = "ai", VK_HK_TURN_ROBOT = "robot")
+	for(var/hk in transforms)
+		if(href_list[hk])
+			if(!check_rights(R_SPAWN))
+				return
+			vv_confirm_transform(usr, transforms[hk])
 
 /mob/living/carbon/human/proc/vv_species_chosen(datum/om/prompt/choice/ask)
 	var/mob/user = ask.answerer

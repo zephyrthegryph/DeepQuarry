@@ -163,7 +163,7 @@
 
 	else
 		var/mob/living/carbon/human/H = L
-		if(H.species.name == "Diona")
+		if(H.species?.mood_immune)
 			to_chat(L, span_warning("You feel strange for a moment, but it passes."))
 			return FALSE // Happy trees aren't affected by incredible hunger.
 

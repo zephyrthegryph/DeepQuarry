@@ -129,7 +129,7 @@
 
 //DIONA ORGANS.
 /obj/item/organ/external/diona/removed()
-	if(robotic >= ORGAN_ROBOT)
+	if(is_robotic())
 		return ..()
 	var/mob/living/carbon/human/H = owner
 	..()
@@ -145,7 +145,7 @@
 	organ_tag = "special" // Turns into a nymph instantly, no transplanting possible.
 
 /obj/item/organ/internal/diona/removed(mob/living/user, skip_nymph)
-	if(robotic >= ORGAN_ROBOT)
+	if(is_robotic())
 		return ..()
 	var/mob/living/carbon/human/H = owner
 	..()
@@ -216,7 +216,7 @@
 
 /obj/item/organ/internal/brain/cephalon/Initialize(mapload)
 	. = ..()
-	if(!owner?.isSynthetic())
+	if(!owner || !HAS_SYNTHETIC_BIOLOGY(owner))
 		vital = FALSE
 
 /obj/item/organ/internal/brain/cephalon/robotize()
@@ -229,7 +229,7 @@
 	return
 
 /obj/item/organ/internal/brain/cephalon/removed(mob/living/user, skip_nymph)
-	if(robotic >= ORGAN_ROBOT)
+	if(is_robotic())
 		return ..()
 	var/mob/living/carbon/human/H = owner
 	..()

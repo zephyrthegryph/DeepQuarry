@@ -6,8 +6,6 @@
 	desc = "Allows you to move faster on average than baseline."
 	cost = 4
 	factors = alist(BF_SLOWDOWN = -0.5)
-//	banned_species = list(SPECIES_ALRAUNE, SPECIES_SHADEKIN_CREW, SPECIES_TESHARI, SPECIES_TAJARAN, SPECIES_DIONA, SPECIES_UNATHI) //Either not applicable or buffs ruin species flavour/balance
-//	custom_only = FALSE //Keeping these in comments in case we decide to open them up in future, so the species are already organised.
 
 	// Traitgenes Replaces /datum/trait/positive/superpower_increaserun, made into a genetrait
 	is_genetrait = TRUE
@@ -178,7 +176,6 @@
 	desc = "Adds 20% resistance to brute damage sources."
 	cost = 2
 	factors = alist(BF_INCOMING_PHYSICAL = 0.8)
-	//excludes = list(/datum/trait/positive/minor_burn_resist,/datum/trait/positive/burn_resist) //CHOMP disable, this is already handled in positive_ch.dm
 
 /datum/trait/positive/minor_burn_resist
 	name = "Burn Resist, Minor"
@@ -191,7 +188,6 @@
 	desc = "Adds 20% resistance to burn damage sources."
 	cost = 2
 	factors = alist(BF_INCOMING_THERMAL = 0.8)
-	//excludes = list(/datum/trait/positive/minor_brute_resist,/datum/trait/positive/brute_resist) //CHOMP disable, this is already handled in positive_ch.dm
 
 
 
@@ -249,7 +245,6 @@
 	name = "Weaver"
 	desc = "You can produce silk and create various articles of clothing and objects."
 	cost = 2
-	// allowed_species = list(SPECIES_HANNER, SPECIES_CUSTOM) //So it only shows up for custom species and hanner //
 
 	custom_only = FALSE
 	has_preferences = list("silk_production" = list(TRAIT_PREF_TYPE_BOOLEAN, "Silk production on spawn", TRAIT_NO_VAREDIT_TARGET), \
@@ -296,7 +291,6 @@
 	name = "Cocoon Spinner"
 	desc = "Allows you to build a cocoon around yourself, using it to transform your body if you desire."
 	cost = 1
-// allowed_species = list(SPECIES_HANNER, SPECIES_CUSTOM) //So it only shows up for custom species and hanner It's a roleplay trait. Will things explode if more folks have it?
 	custom_only = FALSE
 	excludes = list(/datum/trait/positive/weaver)
 
@@ -881,7 +875,7 @@
 
 /datum/trait/positive/nobreathe/apply(datum/species/S, mob/living/carbon/human/H)
 	..()
-	H.does_not_breathe = 1
+	H.set_does_not_breathe(TRUE)
 	var/obj/item/organ/internal/breathy = H.internal_organs_by_name[O_LUNGS]
 	if(!breathy)
 		return
@@ -1000,7 +994,6 @@
 /datum/trait/positive/endurance_high
 	cost = 3
 	excludes = list(/datum/trait/positive/endurance_very_high, /datum/trait/positive/endurance_extremely_high) // Increased Endurance.
-	// excludes = list(/datum/trait/positive/brute_resist, /datum/trait/positive/minor_brute_resist, /datum/trait/positive/minor_burn_resist, /datum/trait/positive/burn_resist)
 	// Tankiness at the cost of severe downsides should be allowed - we have a large number of negatives that hurt hard, but you can't take many positives.
 
 /datum/trait/positive/burn_resist_plus

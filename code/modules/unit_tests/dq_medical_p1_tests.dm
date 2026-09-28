@@ -125,7 +125,7 @@
 
 /datum/unit_test/dq_p1_b23_lipostipo_feeds/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	H.nutrition = 100
+	H.set_nutrition(100)
 	var/weight = H.weight
 	var/datum/reagent/R = GLOB.chemistry_service.chemical_reagents[REAGENT_ID_LIPOSTIPO]
 	R.affect_blood(H, null, 0.2)
@@ -166,7 +166,7 @@
 
 /datum/unit_test/dq_p1_b18_drink_nutrition/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	H.nutrition = 100
+	H.set_nutrition(100)
 	var/datum/reagent/drink/R = GLOB.chemistry_service.chemical_reagents[REAGENT_ID_ORANGEJUICE]
 	var/removed = 1
 	var/expected = 100 + R.nutriment_factor * removed * H.species.organic_food_coeff
@@ -467,4 +467,8 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	H.set_species(SPECIES_ALRAUNE)
 	H.moveToNullspace()
-	H.species.environment_effects(H) // must not runtime on a null loc
+	// P2-D8: skin breathing is the alraune breath profile, taken by the breathing stage.
+	var/datum/breath_profile/skin/P = H.breath_profile()
+	TEST_ASSERT(istype(P), "an alraune breathes through its skin")
+	var/datum/om/stage/life/breathing/carbon/breathing = om_stage_for(H, /datum/om/stage/life/breathing)
+	P.take_breath(H, breathing) // must not runtime on a null loc

@@ -485,22 +485,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 
 	//Belly is entirely empty
 	if(!length(touchable_items))
-		var/finisher = pick(
-			'sound/vore/death1.ogg',
-			'sound/vore/death2.ogg',
-			'sound/vore/death3.ogg',
-			'sound/vore/death4.ogg',
-			'sound/vore/death5.ogg',
-			'sound/vore/death6.ogg',
-			'sound/vore/death7.ogg',
-			'sound/vore/death8.ogg',
-			'sound/vore/death9.ogg',
-			'sound/vore/death10.ogg')
-		playsound(src, finisher, vol = 100, vary = 1, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
-		to_chat(hound, span_notice("Your [src.name] is now clean. Ending self-cleaning cycle."))
-		cleaning = 0
-		update_patient()
-		playsound(src, 'sound/machines/ding.ogg', vol = 100, vary = 1, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
+		finish_clean_cycle()
 		return
 
 	if(prob(20))
@@ -519,124 +504,150 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 			'sound/vore/digest12.ogg')
 		playsound(src, churnsound, vol = 100, vary = 1, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
 	//If the timing is right, and there are items to be touched
-	if(SSair.times_fired%3==1 && length(touchable_items))
-
+	if(SSair.times_fired%3==1)
 		// digest_brute / digest_burn are rates per BELLY_BASELINE_TICK, applied as
 		// continuous harm for the time since the last digestion pass.
 		var/delta_factor = last_digest_time ? clamp((world.time - last_digest_time) / BELLY_BASELINE_TICK, 0, DOGBORG_DIGEST_MAX_CATCHUP) : 1
 		last_digest_time = world.time
 
 		//Burn all the mobs or add them to the exclusion list
-		var/volume = 0
 		for(var/mob/living/T in (touchable_items))
 			touchable_items -= T //Exclude mobs from loose item picking.
-			if(om_has(T, EFFECT_GODMODE))
-				items_preserved |= T
-			else if(!T.digestable)
-				items_preserved |= T
-			else
-				var/damage_gain = T.injure(INJURY_DIGESTION, digest_brute * digest_multiplier * delta_factor, null, hound, flags = INJURE_CONTINUOUS)
-				damage_gain += T.injure(INJURY_CORROSIVE, digest_burn * digest_multiplier * delta_factor, null, hound, flags = INJURE_CONTINUOUS)
-				hound.adjust_nutrition(2.5 * damage_gain) //drain(-25 * damage_gain) //25*total loss as with voreorgan stats.
-				if(water)
-					water.add_charge(damage_gain)
-				if(T.stat == DEAD)
-					if(ishuman(T))
-						log_admin("[key_name(hound)] has digested [key_name(T)] with a cyborg belly. ([hound ? "<a href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[hound.x];Y=[hound.y];Z=[hound.z]'>JMP</a>" : "null"])")
-					to_chat(hound, span_notice("You feel your belly slowly churn around [T], breaking them down into a soft slurry to be used as power for your systems."))
-					to_chat(T, span_notice("You feel [hound]'s belly slowly churn around your form, breaking you down into a soft slurry to be used as power for [hound]'s systems."))
-					var/deathsound = pick(
-						'sound/vore/death1.ogg',
-						'sound/vore/death2.ogg',
-						'sound/vore/death3.ogg',
-						'sound/vore/death4.ogg',
-						'sound/vore/death5.ogg',
-						'sound/vore/death6.ogg',
-						'sound/vore/death7.ogg',
-						'sound/vore/death8.ogg',
-						'sound/vore/death9.ogg',
-						'sound/vore/death10.ogg')
-					playsound(src, deathsound, vol = 100, vary = 1, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
-					if(is_vore_predator(T))
-						for(var/obj/belly/B as anything in T.vore_organs)
-							for(var/atom/movable/thing in B)
-								thing.forceMove(src)
-								if(ismob(thing))
-									to_chat(thing, span_filter_notice("As [T] melts away around you, you find yourself in [hound]'s [name]."))
-					for(var/obj/item/I in contents_of(T))
-						if(istype(I,/obj/item/organ/internal/mmi_holder/posibrain))
-							var/obj/item/organ/internal/mmi_holder/MMI = I
-							var/atom/movable/brain = MMI.removed()
-							if(brain)
-								hound.remove_from_mob(brain,src)
-								brain.forceMove(src)
-								items_preserved |= brain
-						else
-							T.drop_from_inventory(I, src)
-					if(ishuman(T))
-						var/mob/living/carbon/human/Prey = T
-						volume = (Prey.bloodstr.total_volume + Prey.ingested.total_volume + Prey.touching.total_volume + Prey.weight) * Prey.size_multiplier
-					if(water)
-						water.add_charge(volume)
-					if(T.reagents)
-						volume = T.reagents.total_volume
-						if(water)
-							water.add_charge(volume)
-					if(T.ckey)
-						GLOB.prey_digested_roundstat++
-					if(patient == T)
-						patient_laststat = null
-						patient = null
-					T.mind?.vore_death = TRUE
-					qdel(T)
+			digest_occupant(T, delta_factor)
 
 		//Pick a random item to deal with (if there are any)
 		if(length(touchable_items))
-			var/atom/target = pick(touchable_items)
-
-			//Handle the target being anything but a /mob/living
-			var/obj/item/T = target
-			if(istype(T))
-				if(T.reagents)
-					volume = T.reagents.total_volume
-				var/is_trash = istype(T, /obj/item/trash)
-				var/digested = T.digest_act(item_storage = src)
-				if(!digested)
-					items_preserved |= T
-				else
-					if(volume && water)
-						water.add_charge(volume)
-					var/list/item_matter = T.material_totals()
-					if(recycles && length(item_matter))
-						for(var/material in item_matter)
-							var/total_material = item_matter[material]
-							if(istype(T,/obj/item/stack))
-								var/obj/item/stack/stack = T
-								total_material *= stack.get_amount()
-							if(material == MAT_STEEL && metal)
-								metal.add_charge(total_material)
-							if(material == MAT_GLASS && glass)
-								glass.add_charge(total_material)
-							if(decompiler)
-								if(material == MAT_PLASTIC && plastic)
-									plastic.add_charge(total_material)
-								if(material == MAT_WOOD && wood)
-									wood.add_charge(total_material)
-					var/datum/experiment_handler/handler = get_experiment_handler()
-					if(analyzer && handler)
-						techweb_item_generate_points(T, handler.linked_web())
-						OM_EMIT(src, /datum/om/event/machinery_destructive_scan, T)
-					if(is_trash)
-						hound.adjust_nutrition(digested)
-					else
-						hound.adjust_nutrition(5 * digested)  //drain(-50 * digested)
-			else if(istype(target,/obj/effect/decal/remains))
-				qdel(target)
-				hound.adjust_nutrition(10) //drain(-100)
-			else
-				items_preserved |= target
+			digest_loose_item(pick(touchable_items))
 		update_patient()
-	return
+
+/// The belly is empty: announce it and stop cleaning.
+/obj/item/dogborg/sleeper/proc/finish_clean_cycle()
+	var/finisher = pick(
+		'sound/vore/death1.ogg',
+		'sound/vore/death2.ogg',
+		'sound/vore/death3.ogg',
+		'sound/vore/death4.ogg',
+		'sound/vore/death5.ogg',
+		'sound/vore/death6.ogg',
+		'sound/vore/death7.ogg',
+		'sound/vore/death8.ogg',
+		'sound/vore/death9.ogg',
+		'sound/vore/death10.ogg')
+	playsound(src, finisher, vol = 100, vary = 1, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
+	to_chat(hound, span_notice("Your [src.name] is now clean. Ending self-cleaning cycle."))
+	cleaning = 0
+	update_patient()
+	playsound(src, 'sound/machines/ding.ogg', vol = 100, vary = 1, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
+
+/// One digestion pass on a living occupant; indigestible ones are preserved.
+/obj/item/dogborg/sleeper/proc/digest_occupant(mob/living/T, delta_factor)
+	if(om_has(T, EFFECT_GODMODE) || !T.digestable)
+		items_preserved |= T
+		return
+	var/damage_gain = T.injure(INJURY_DIGESTION, digest_brute * digest_multiplier * delta_factor, null, hound, flags = INJURE_CONTINUOUS)
+	damage_gain += T.injure(INJURY_CORROSIVE, digest_burn * digest_multiplier * delta_factor, null, hound, flags = INJURE_CONTINUOUS)
+	hound.adjust_nutrition(2.5 * damage_gain) //25*total loss as with voreorgan stats.
+	if(water)
+		water.add_charge(damage_gain)
+	if(T.stat == DEAD)
+		dissolve_occupant(T)
+
+/// A digested occupant: release its prey and belongings, bank its volume, delete it.
+/obj/item/dogborg/sleeper/proc/dissolve_occupant(mob/living/T)
+	if(ishuman(T))
+		log_admin("[key_name(hound)] has digested [key_name(T)] with a cyborg belly. ([hound ? "<a href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[hound.x];Y=[hound.y];Z=[hound.z]'>JMP</a>" : "null"])")
+	to_chat(hound, span_notice("You feel your belly slowly churn around [T], breaking them down into a soft slurry to be used as power for your systems."))
+	to_chat(T, span_notice("You feel [hound]'s belly slowly churn around your form, breaking you down into a soft slurry to be used as power for [hound]'s systems."))
+	var/deathsound = pick(
+		'sound/vore/death1.ogg',
+		'sound/vore/death2.ogg',
+		'sound/vore/death3.ogg',
+		'sound/vore/death4.ogg',
+		'sound/vore/death5.ogg',
+		'sound/vore/death6.ogg',
+		'sound/vore/death7.ogg',
+		'sound/vore/death8.ogg',
+		'sound/vore/death9.ogg',
+		'sound/vore/death10.ogg')
+	playsound(src, deathsound, vol = 100, vary = 1, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
+	if(is_vore_predator(T))
+		for(var/obj/belly/B as anything in T.vore_organs)
+			for(var/atom/movable/thing in B)
+				thing.forceMove(src)
+				if(ismob(thing))
+					to_chat(thing, span_filter_notice("As [T] melts away around you, you find yourself in [hound]'s [name]."))
+	for(var/obj/item/I in contents_of(T))
+		if(istype(I,/obj/item/organ/internal/mmi_holder/posibrain))
+			var/obj/item/organ/internal/mmi_holder/MMI = I
+			var/atom/movable/brain = MMI.removed()
+			if(brain)
+				hound.remove_from_mob(brain,src)
+				brain.forceMove(src)
+				items_preserved |= brain
+		else
+			T.drop_from_inventory(I, src)
+	var/volume = 0
+	if(ishuman(T))
+		var/mob/living/carbon/human/Prey = T
+		volume = (Prey.bloodstr.total_volume + Prey.ingested.total_volume + Prey.touching.total_volume + Prey.weight) * Prey.size_multiplier
+	if(water)
+		water.add_charge(volume)
+	if(T.reagents)
+		volume = T.reagents.total_volume
+		if(water)
+			water.add_charge(volume)
+	if(T.ckey)
+		GLOB.prey_digested_roundstat++
+	if(patient == T)
+		patient_laststat = null
+		patient = null
+	T.mind?.vore_death = TRUE
+	qdel(T)
+
+/// Digest (or preserve) one loose item or remains.
+/obj/item/dogborg/sleeper/proc/digest_loose_item(atom/target)
+	//Handle the target being anything but a /mob/living
+	var/obj/item/T = target
+	if(istype(T))
+		var/volume = 0
+		if(T.reagents)
+			volume = T.reagents.total_volume
+		var/is_trash = istype(T, /obj/item/trash)
+		var/digested = T.digest_act(item_storage = src)
+		if(!digested)
+			items_preserved |= T
+		else
+			if(volume && water)
+				water.add_charge(volume)
+			var/list/item_matter = T.material_totals()
+			if(recycles && length(item_matter))
+				for(var/material in item_matter)
+					var/total_material = item_matter[material]
+					if(istype(T,/obj/item/stack))
+						var/obj/item/stack/stack = T
+						total_material *= stack.get_amount()
+					if(material == MAT_STEEL && metal)
+						metal.add_charge(total_material)
+					if(material == MAT_GLASS && glass)
+						glass.add_charge(total_material)
+					if(decompiler)
+						if(material == MAT_PLASTIC && plastic)
+							plastic.add_charge(total_material)
+						if(material == MAT_WOOD && wood)
+							wood.add_charge(total_material)
+			var/datum/experiment_handler/handler = get_experiment_handler()
+			if(analyzer && handler)
+				techweb_item_generate_points(T, handler.linked_web())
+				OM_EMIT(src, /datum/om/event/machinery_destructive_scan, T)
+			if(is_trash)
+				hound.adjust_nutrition(digested)
+			else
+				hound.adjust_nutrition(5 * digested)  //drain(-50 * digested)
+	else if(istype(target,/obj/effect/decal/remains))
+		qdel(target)
+		hound.adjust_nutrition(10) //drain(-100)
+	else
+		items_preserved |= target
 
 /obj/item/dogborg/sleeper/periodic_step()
 	if(!istype(src.loc,/mob/living/silicon/robot))

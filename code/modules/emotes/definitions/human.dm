@@ -1,5 +1,5 @@
 /datum/decl/emote/human/mob_can_use(mob/living/carbon/human/user)
-	return ..() && (istype(user))//What does a mouth have to do with wagging?? && user.check_has_mouth() && !user.isSynthetic())
+	return ..() && (istype(user))//What does a mouth have to do with wagging?? && user.check_has_mouth() && !HAS_SYNTHETIC_BIOLOGY(user))
 
 /datum/decl/emote/human/deathgasp
 	key = "deathgasp"

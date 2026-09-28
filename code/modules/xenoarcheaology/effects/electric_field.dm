@@ -34,7 +34,7 @@
 		var/weakness = GetAnomalySusceptibility(L)
 		if(!weakness) //We have protection on!
 			continue
-		if(L.isSynthetic())
+		if(HAS_SYNTHETIC_BIOLOGY(L))
 			to_chat(L, span_danger("ERROR: Electrical fault detected!"))
 			L.status_adjust(EFFECT_STUTTERING, 3)
 
@@ -79,7 +79,7 @@
 		var/weakness = GetAnomalySusceptibility(L)
 		if(!weakness) //We have protection on!
 			continue
-		if(L.isSynthetic())
+		if(HAS_SYNTHETIC_BIOLOGY(L))
 			to_chat(L, span_danger("ERROR: Electrical fault detected!"))
 			L.status_adjust(EFFECT_STUTTERING, 3)
 
@@ -124,7 +124,7 @@
 		var/weakness = GetAnomalySusceptibility(L)
 		if(!weakness) //We have protection on!
 			continue
-		if(L.isSynthetic())
+		if(HAS_SYNTHETIC_BIOLOGY(L))
 			to_chat(L, span_danger("ERROR: Electrical fault detected!"))
 			L.status_adjust(EFFECT_STUTTERING, 3)
 

@@ -137,7 +137,7 @@ REF_BACK(/datum/transhuman/body_record, list("client_ref" = null, "mind_ref" = n
 			locked = TRUE
 
 	//General stuff about them
-	synthetic = M.isSynthetic()
+	synthetic = HAS_SYNTHETIC_BIOLOGY(M)
 	speciesname = M.custom_species ? M.custom_species : null
 	bodygender = M.gender
 	sizemult = M.size_multiplier

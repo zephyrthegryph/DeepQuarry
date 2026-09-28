@@ -29,7 +29,7 @@
 	for(var/mob/living/carbon/human/H in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(respect_z && !(H.z in using_map.station_levels))
 			continue
-		if(ignore_synths && H.isSynthetic() && H.get_FBP_type() != FBP_CYBORG)
+		if(ignore_synths && HAS_SYNTHETIC_BIOLOGY(H) && H.get_FBP_type() != FBP_CYBORG)
 			continue
 		if(H.species.name == species_name)
 			if(assess_player_activity(H) >= cutoff)

@@ -341,8 +341,6 @@ GLOBAL_DATUM(basic_robolimb, /datum/robolimb)
 	blood_color = "#CCCCCC"
 	blood_name = "coolant"
 	speech_bubble_appearance = "normal"
-	// robo_brute_mod = 1.1 //
-	// robo_burn_mod = 1.1 //
 	modular_bodyparts = MODULAR_BODYPART_PROSTHETIC // remove the restrictions
 
 /datum/robolimb/veymed_skrell
@@ -356,8 +354,6 @@ GLOBAL_DATUM(basic_robolimb, /datum/robolimb)
 	blood_color = "#4451cf"
 	blood_name = "coolant"
 	speech_bubble_appearance = "normal"
-	// robo_brute_mod = 1.05 //
-	// robo_burn_mod = 1.05 //
 	modular_bodyparts = MODULAR_BODYPART_PROSTHETIC // remove the restrictions
 
 /datum/robolimb/wardtakahashi
@@ -653,7 +649,6 @@ GLOBAL_DATUM(basic_robolimb, /datum/robolimb)
 	parts = list(BP_HEAD)
 
 ///obj/item/disk/limb/braincase
-//	company = "cortexCases - MMI"
 
 /datum/robolimb/posicase
 	company = "cortexCases - Posi"
@@ -663,7 +658,6 @@ GLOBAL_DATUM(basic_robolimb, /datum/robolimb)
 	parts = list(BP_HEAD)
 
 ///obj/item/disk/limb/posicase
-//	company = "cortexCases - Posi"
 
 /datum/robolimb/antares
 	company = "Antares Robotics"
@@ -673,7 +667,6 @@ GLOBAL_DATUM(basic_robolimb, /datum/robolimb)
 	monitor_styles = STANDARD_MONITOR_STYLES
 
 ///obj/item/disk/limb/antares
-//	company = "Antares Robotics"
 
 /datum/robolimb/replika
 	company = "Replikant"

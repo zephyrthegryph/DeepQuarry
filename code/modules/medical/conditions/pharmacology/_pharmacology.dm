@@ -48,6 +48,35 @@
 	subcategory = "Overdose"
 	progression_rate = 0
 	chem_scaling = TRUE
+	/// P2-D5: the Mild -> Severe -> Critical table as data, built once per type
+	/// by the generic get_stages(). Three entries, each
+	/// list(symptom_pool, min_symptoms, max_symptoms[, extra stage keys]).
+	var/list/overdose_stage_data
+
+/// One generic builder for every overdose: `overdose_stage_data` becomes the
+/// stage table, cached per type (the per-type get_stages() copies are gone).
+/datum/affliction/overdose/get_stages()
+	var/static/list/tables_by_type = list()
+	if(type in tables_by_type)
+		return tables_by_type[type]
+	var/list/table = build_overdose_stage_table(overdose_stage_data)
+	tables_by_type[type] = table
+	return table
+
+/// Stage table from overdose data, or null for malformed data (logged).
+/proc/build_overdose_stage_table(list/data)
+	if(!length(data))
+		return null
+	if(length(data) != 3)
+		stack_trace("overdose stage data needs exactly three stages, got [length(data)]")
+		return null
+	var/list/stages = list()
+	for(var/list/entry as anything in data)
+		if(!islist(entry) || length(entry) < 3)
+			stack_trace("malformed overdose stage entry")
+			return null
+		stages += list(chem_stage(entry[1], entry[2], entry[3], length(entry) >= 4 ? entry[4] : null))
+	return overdose_stages(stages[1], stages[2], stages[3])
 
 /// One stage of a staged pharmacological condition: its symptom pool, how
 /// many of those symptoms show, and any other stage keys (organ damage,

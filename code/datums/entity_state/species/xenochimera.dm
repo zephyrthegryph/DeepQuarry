@@ -57,7 +57,7 @@ REF_VAR(/mob/living/carbon/human, OWNED, /datum/xenochimera, xenochimera)
 	if(revive_ready == REVIVING_NOW || revive_ready == REVIVING_DONE)
 		owner.status_set(EFFECT_STUNNED, 5)
 		owner.canmove = 0
-		owner.does_not_breathe = TRUE
+		owner.set_does_not_breathe(TRUE)
 		if(prob(2)) // 2% chance of playing squelchy noise while reviving, which is run roughly every 2 seconds/tick while regenerating.
 			playsound(owner, pick(regen_sounds), 30)
 			owner.visible_message(span_danger("<p>" + span_huge("[owner.name]'s motionless form shudders grotesquely, rippling unnaturally.") + "</p>"))
@@ -70,7 +70,7 @@ REF_VAR(/mob/living/carbon/human, OWNED, /datum/xenochimera, xenochimera)
 
 /datum/xenochimera/proc/trigger_revival(from_save_slot)
 	ASSERT(revival_record)
-	if(owner.isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(owner))
 		revival_record.revive_xenochimera(owner,TRUE,from_save_slot)
 	else
 		revival_record.revive_xenochimera(owner,FALSE,from_save_slot)
@@ -150,7 +150,7 @@ REF_VAR(/mob/living/carbon/human, OWNED, /datum/xenochimera, xenochimera)
 			return
 
 		//If they lose enough health to hit softcrit, the shock life system will keep resetting this. Otherwise, pissed off critters will lose shock faster than they gain it.
-		owner.shock_stage = max(owner.shock_stage-(feral/20), 0)
+		owner.adjust_shock(-(feral/20), "feral")
 
 		//Handle light/dark areas
 		var/turf/T = get_turf(owner)
@@ -415,7 +415,7 @@ REF_VAR(/mob/living/carbon/human, OWNED, /datum/xenochimera, xenochimera)
 			return
 		var/list/organ_data = client.prefs.read_preference(/datum/preference/organ_data)
 		var/slot_is_synth = (organ_data && (O_BRAIN in organ_data) && organ_data[O_BRAIN])
-		if(slot_is_synth && !isSynthetic()) // Prevents some pretty weird situations
+		if(slot_is_synth && !HAS_SYNTHETIC_BIOLOGY(src)) // Prevents some pretty weird situations
 			to_chat(src,span_warning("Cannot apply character appearance. [slot_is_synth ? "The slot's character is synthetic." : "The slot's character is organic."] Slot must match the current body's synthetic state. Please try another character."))
 			return
 		from_slot = "You'll hatch using [client.prefs.read_preference(/datum/preference/name/real_name)]'s appearance"
@@ -426,7 +426,7 @@ REF_VAR(/mob/living/carbon/human, OWNED, /datum/xenochimera, xenochimera)
 	if(confirm == "Yes")
 
 		///This makes xenochimera shoot out their robotic limbs if they're not a FBP.
-		if(!isSynthetic()) //If we aren't repairing robotic limbs (FBP) we reject any robot limbs we have and kick them out!
+		if(!HAS_SYNTHETIC_BIOLOGY(src)) //If we aren't repairing robotic limbs (FBP) we reject any robot limbs we have and kick them out!
 			for(var/O in organs_by_name)
 				var/obj/item/organ/external/organ = organs_by_name[O]
 				if(!istype(organ, /obj/item/organ/external))
@@ -443,7 +443,7 @@ REF_VAR(/mob/living/carbon/human, OWNED, /datum/xenochimera, xenochimera)
 		if(stat == DEAD)
 			//Reviving from ded takes extra nutrition - if it isn't provided from outside sources, it comes from you
 			if(!hasnutriment())
-				nutrition=nutrition * 0.75
+				set_nutrition(nutrition * 0.75)
 				// sickness_duration = 20 MINUTES //
 			has_braindamage = TRUE
 
@@ -473,7 +473,7 @@ REF_VAR(/mob/living/carbon/human, OWNED, /datum/xenochimera, xenochimera)
 	owner.species.update_vore_belly_def_variant()
 
 	if(!uninjured)
-		owner.nutrition = old_nutrition * 0.5
+		owner.set_nutrition(old_nutrition * 0.5)
 		//Drop everything
 		for(var/obj/item/W in owner)
 			owner.drop_from_inventory(W)
@@ -485,10 +485,10 @@ REF_VAR(/mob/living/carbon/human, OWNED, /datum/xenochimera, xenochimera)
 		owner.visible_message(span_danger(span_huge("The lifeless husk of [owner] bursts open, revealing a new, intact copy in the pool of viscera."))) //Bloody hell...
 		playsound(T, 'sound/effects/mob_effects/xenochimera/hatch.ogg', 50)
 	else //lower cost for doing a quick cosmetic revive
-		owner.nutrition = old_nutrition * 0.9
+		owner.set_nutrition(old_nutrition * 0.9)
 
 	//Unfreeze some things
-	owner.does_not_breathe = FALSE
+	owner.set_does_not_breathe(FALSE)
 	owner.update_canmove()
 	owner.status_adjust(EFFECT_STUNNED, 2)
 

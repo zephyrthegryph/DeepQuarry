@@ -320,7 +320,7 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 			install_done = world.time + 15 MINUTES // Install time from 35 minutes to 15 minutes.
 			owner_key = human.ckey
 			notify("Adapting to new user...")
-			om_after(src, 5 SECONDS, PROC_REF(notify), "Adjoining optic [human.isSynthetic() ? "interface" : "nerve"], please be patient.", TRUE)
+			om_after(src, 5 SECONDS, PROC_REF(notify), "Adjoining optic [HAS_SYNTHETIC_BIOLOGY(human) ? "interface" : "nerve"], please be patient.", TRUE)
 		else
 			notify("You are not an authorized user for this device. Please contact [owner].",TRUE)
 			unimplant(human)
@@ -452,7 +452,7 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 
 	if(human)
 		var/applies_to = initial(path.applies_to)
-		var/synth = human.isSynthetic()
+		var/synth = HAS_SYNTHETIC_BIOLOGY(human)
 		if(synth && !(applies_to & NIF_SYNTHETIC))
 			notify("The software \"[initial(path.name)]\" is not supported on your chassis type.",TRUE)
 			return FALSE
@@ -471,7 +471,7 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 
 	if(human)
 		var/applies_to = new_soft.applies_to
-		var/synth = human.isSynthetic()
+		var/synth = HAS_SYNTHETIC_BIOLOGY(human)
 		if(synth && !(applies_to & NIF_SYNTHETIC))
 			notify("The software \"[new_soft]\" is not supported on your chassis type.",TRUE)
 			return FALSE
@@ -519,7 +519,7 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 	if(human)
 		if(prob(5)) human.visible_message(span_notice("\The [human] [pick(GLOB.nif_look_messages)]."))
 		var/applies_to = soft.applies_to
-		var/synth = human.isSynthetic()
+		var/synth = HAS_SYNTHETIC_BIOLOGY(human)
 		if(synth && !(applies_to & NIF_SYNTHETIC))
 			notify("The software \"[soft]\" is not supported on your chassis type and will be uninstalled.",TRUE)
 			uninstall(soft)
@@ -706,7 +706,7 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 	var/mob/living/carbon/human/U = user
 	var/mob/living/carbon/human/T = M
 
-	if(istype(T.species,/datum/species/shapeshifter/promethean) && target_zone == BP_TORSO)
+	if(T.species?.is_slime_bodied && target_zone == BP_TORSO)
 		if(T.get_equipped_item(SLOT_ID_UNIFORM) || T.get_equipped_item(SLOT_ID_SUIT))
 			to_chat(user,span_warning("Remove any clothing they have on, as it might interfere!"))
 			return ITEM_INTERACT_FAILURE

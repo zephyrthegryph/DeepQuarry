@@ -3,7 +3,6 @@
 	if(has_status(EFFECT_MUTED))
 		return
 
-	// message = sanitize(message) // This causes.... so many more problems then it fixes. Also should just be handled in the super function
 
 	if(!(container && container.can_speak))
 		return //Certain objects can speak, like MMIs. Most others cannot. -Q

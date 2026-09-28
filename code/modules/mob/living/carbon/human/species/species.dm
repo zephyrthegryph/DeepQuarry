@@ -98,7 +98,6 @@
 	var/pain_volume = 50 // Self-explanatory, define this separately on your species if the sound files are louder.
 	var/gasp_volume = 50 // Self-explanatory, define this separately on your species if the sound files are louder.
 	var/death_volume = 50 // Self-explanatory, define this separately on your species if the sound files are louder.
-	// var/species_sounds_herm // If you want a custom sound played for other genders, just add them like so
 
 	var/footstep = FOOTSTEP_MOB_HUMAN
 	var/list/special_step_sounds = null
@@ -331,14 +330,12 @@
 	var/sort_hint = SPECIES_SORT_NORMAL
 	//This is so that if a race is using the chimera revive they can't use it more than once.
 	//Shouldn't really be seen in play too often, but it's case an admin event happens and they give a non chimera the chimera revive. Only one person can use the chimera revive at a time per race.
-	//var/reviving = 0 //commented out 'cause moved to mob
 
 	var/organic_food_coeff = 1
 	var/synthetic_food_coeff = 0
 	var/robo_ethanol_proc = 0 //can we get fuel from booze, as a synth?
 	var/robo_ethanol_drunk = 0 //can we get *drunk* from booze, as a synth?
 	var/digestion_efficiency = 1 //VORE specific digestion var
-	//var/vore_numbing = 0
 	var/metabolism = 0.0015
 	var/lightweight = FALSE //Oof! Nonhelpful bump stumbles.
 	var/trashcan = FALSE //It's always sunny in the wrestling ring.
@@ -347,6 +344,17 @@
 	var/selects_bodytype = SELECTS_BODYTYPE_FALSE // Allows the species to choose from body types like custom species can, affecting suit fitting and etcetera as you would expect.
 
 	var/bloodsucker = FALSE // Allows safely getting nutrition from blood.
+	// P2-S5: species FACTS, read instead of comparing species names.
+	/// A gelatinous slime body: slime batons and extracts act on it like on a slime.
+	var/is_slime_bodied = FALSE
+	/// Radiation and mutation can grow malignant organs in this body.
+	var/can_host_malignant = TRUE
+	/// Which nutrition alert icons the HUD shows (HUNGER_ALERT_*). Synthetic bodies always show synth ones.
+	var/hunger_alert_style = HUNGER_ALERT_ORGANIC
+	/// Small enough to scoop up whenever its pickup preference allows, carried as a plush, and to slip through plastic flaps.
+	var/micro_carry = FALSE
+	/// Induced moods (berserk rage, tranquility, unholy hunger) don't take hold of this mind.
+	var/mood_immune = FALSE
 	var/bloodsucker_controlmode = "always loud" //Allows selecting between bloodsucker control modes. Always Loud corresponds to original implementation.
 
 	var/list/traits = list() // ALLOW(instance_list): d: per-mob trait selection; produceCopy() assigns it and genes Add/Remove in place
@@ -441,7 +449,7 @@
 /datum/species/proc/equip_survival_gear(mob/living/carbon/human/H,extendedtank = 0,comprehensive = 0)
 	var/boxtype = /obj/item/storage/box/survival //Default survival box
 
-	var/synth = H.isSynthetic()
+	var/synth = HAS_SYNTHETIC_BIOLOGY(H)
 
 	//Empty box for synths
 	if(synth)
@@ -919,11 +927,8 @@
 //We REALLY don't need to go through every variable. Doing so makes this lag like hell on 515
 /datum/species/proc/copy_variables(datum/species/S, list/whitelist)
 	//List of variables to ignore, trying to copy type will runtime.
-	//var/list/blacklist = list(BLACKLISTED_COPY_VARS)
 	//Makes thorough copy of species datum.
 	for(var/i in whitelist)
-		//if(!(i in S.vars)) // This check SOUNDS like a good idea, until you realize it loops over every var in base datum + species datum + byond builtin vars for EACH var in the whitelist. All the vars in whitelist are in the base species datum anyway, so this is unneeded.
-		//	continue
 		if(S.vars[i] != vars[i] && !islist(vars[i])) //If vars are same, no point in copying.
 			S.vars[i] = vars[i] // ALLOW(api): species copy and shared-list interning
 

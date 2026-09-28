@@ -77,7 +77,7 @@ Bonus
 			if(prob(base_message_chance))
 				to_chat(H, span_notice("[pick("You feel nervous...", "You feel anxious.", "You feel like everything is moving in slow motion.")]"))
 			if(H.nutrition > 150 - (30 * power))
-				H.nutrition = max(150 - (30 * power), H.nutrition - (2 * power))
+				H.set_nutrition(max(150 - (30 * power), H.nutrition - (2 * power)))
 			if(prob(25))
 				H.status_adjust(EFFECT_JITTERY, 2 * power)
 			if(clearacc)

@@ -17,7 +17,7 @@
 	if(!T)
 		return
 
-	if(!istype(T) || T.isSynthetic())
+	if(!istype(T) || HAS_SYNTHETIC_BIOLOGY(T))
 		to_chat(src, span_warning("\The [T] is not compatible with our biology."))
 		return FALSE
 

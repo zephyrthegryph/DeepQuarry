@@ -997,7 +997,7 @@
 	if(part_mult > 1)
 		cool_rotations += (cool_rotations * (part_mult - 1)) / 4
 	power_gen = cool_rotations
-	runner.nutrition -= nutrition_drain
+	runner.adjust_nutrition(-(nutrition_drain))
 
 /obj/item/circuitboard/machine/reg_d
 	name = T_BOARD("D-Type-REG")

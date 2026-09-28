@@ -308,7 +308,7 @@
 /// Biological state a rejuvenate resets. Body plans without that biology (borgs) override it.
 /mob/living/proc/rejuvenate_physiology()
 	clear_radiation()
-	nutrition = 400
+	set_nutrition(400)
 	set_bodytemperature(T20C)
 
 /mob/living/proc/UpdateDamageIcon()
@@ -547,7 +547,7 @@
 	// Hurt liver means throwing up blood
 	if(!blood && ishuman(src))
 		var/mob/living/carbon/human/H = src
-		if(!H.isSynthetic())
+		if(!HAS_SYNTHETIC_BIOLOGY(H))
 			var/obj/item/organ/internal/liver/L = LAZYACCESS(H.internal_organs_by_name, O_LIVER)
 			if(!L || L.is_broken())
 				blood = TRUE
@@ -556,7 +556,7 @@
 		status_at_least(EFFECT_STUNNED, stun)
 
 	// Vomiting while unconscious: the patient aspirates it.
-	if(ishuman(src) && stat != CONSCIOUS && !isSynthetic())
+	if(ishuman(src) && stat != CONSCIOUS && !HAS_SYNTHETIC_BIOLOGY(src))
 		body?.afflict(/datum/affliction/airway_obstruction)
 
 	playsound(get_turf(src), 'sound/effects/splat.ogg', 50, 1)
@@ -564,11 +564,11 @@
 	var/vomit_type = NONE
 	var/mob/living/carbon/human/H = src
 
-	if(isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(src))
 		vomit_type = VOMIT_NANITE
-	else if(ishuman(src) && H.ingested.has_reagent(REAGENT_ID_PHORON) && !isSynthetic())
+	else if(ishuman(src) && H.ingested.has_reagent(REAGENT_ID_PHORON) && !HAS_SYNTHETIC_BIOLOGY(src))
 		vomit_type = VOMIT_PURPLE
-	else if(injury_load(INJURY_CATEGORY_TOXIC) && !isSynthetic())
+	else if(injury_load(INJURY_CATEGORY_TOXIC) && !HAS_SYNTHETIC_BIOLOGY(src))
 		vomit_type = VOMIT_TOXIC
 
 	if(!blood)
@@ -703,7 +703,7 @@
 	return
 
 /mob/living/proc/can_feel_pain(check_organ)
-	if(isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(src))
 		return FALSE
 	return TRUE
 
@@ -926,11 +926,24 @@
 /mob/living/proc/dirties_floor()	// If we ever decide to add fancy conditionals for making dirty floors (floating, etc), here's the proc.
 	return makes_dirt
 
+/// Affected by airborne agents (smoke, choking): a breathing, non-synthetic body (P2-S7: breathes()).
 /mob/living/proc/needs_to_breathe()
-	return !isSynthetic()
+	return breathes() && !HAS_SYNTHETIC_BIOLOGY(src)
 
+/// Shift nutrition by `amount`, clamped to [0, max_nutrition]. With
+/// set_nutrition(), the ONLY writers of `nutrition` (P2-S11).
 /mob/living/proc/adjust_nutrition(amount)
+	if(!amount || !isnum(amount))
+		return 0
+	var/old = nutrition
 	nutrition = between(0, nutrition + amount, max_nutrition)
+	return nutrition - old
+
+/// Set nutrition to `value`, clamped to [0, max_nutrition].
+/mob/living/proc/set_nutrition(value)
+	if(!isnum(value))
+		return 0
+	return adjust_nutrition(value - nutrition)
 
 /mob/living/proc/nutrition_percent()
 	return 100 * nutrition / max_nutrition

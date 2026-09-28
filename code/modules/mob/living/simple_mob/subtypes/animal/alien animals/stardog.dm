@@ -117,7 +117,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/overmap/stardog, INTERACT_HAND_U
 	..()
 	if(self.admin_override)
 		self.affinity = 9999
-		self.nutrition = 9999
+		self.set_nutrition(9999)
 	if(self.devourable)	//This will cause problems probably so please do not eat the dog
 		self.devourable = FALSE
 		self.digestable = FALSE

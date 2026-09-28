@@ -73,7 +73,7 @@
 
 	// Traitgenes edit begin - NO_DNA and Synthetics cannot be mutated
 	var/allow = TRUE
-	if(M.isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(M))
 		allow = FALSE
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M

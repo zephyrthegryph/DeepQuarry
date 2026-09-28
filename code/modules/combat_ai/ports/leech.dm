@@ -125,7 +125,7 @@
 	if(!ishuman(threat))
 		return null
 	var/mob/living/carbon/human/H = threat
-	if(H.isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(H))
 		return null
 	if(!SL.can_special_attack(H))
 		return null
@@ -168,7 +168,7 @@
 	if(!ishuman(threat))
 		return null
 	var/mob/living/carbon/human/H = threat
-	if(H.isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(H))
 		return null
 	if(!SL.can_special_attack(H))
 		return null

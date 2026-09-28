@@ -1,6 +1,8 @@
 // Species definition follows.
 /datum/species/shapeshifter/promethean
 	name =             SPECIES_PROMETHEAN
+	is_slime_bodied = TRUE
+	can_host_malignant = FALSE
 	name_plural =      "Prometheans"
 	blurb =            "Prometheans (Macrolimus artificialis) are a species of artificially-created gelatinous humanoids, \
 	chiefly characterized by their primarily liquid bodies and ability to change their bodily shape and color in order to  \

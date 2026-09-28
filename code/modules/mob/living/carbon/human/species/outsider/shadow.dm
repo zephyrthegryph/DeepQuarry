@@ -12,8 +12,6 @@
 	siemens_coefficient = 0
 
 	// No sounds for this species
-	// male_scream_sound = null // It has no mouth yet it must scream
-	// female_scream_sound = null //
 
 	blood_color = "#CCCCCC"
 	flesh_color = "#AAAAAA"

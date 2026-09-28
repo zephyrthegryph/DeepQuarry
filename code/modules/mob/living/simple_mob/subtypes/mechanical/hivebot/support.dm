@@ -26,7 +26,7 @@
 	for(var/mob/living/L in range(4, self))
 		if(L == self)
 			continue // Don't buff ourselves.
-		if(self.IIsAlly(L) && L.isSynthetic()) // Don't buff enemies.
+		if(self.IIsAlly(L) && HAS_SYNTHETIC_BIOLOGY(L)) // Don't buff enemies.
 			L.apply_body_effect(/datum/body_effect/aura/hivebot_commander_buff, null, self)
 
 // Modifier added to friendly hivebots nearby.

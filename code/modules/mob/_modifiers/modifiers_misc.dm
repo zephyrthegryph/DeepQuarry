@@ -99,7 +99,7 @@ the artifact triggers the rage.
 	if(ishuman(L))
 		var/mob/living/carbon/human/H = L
 		L.set_body_effect_state(type, H.shock_stage)
-		H.shock_stage = 0
+		H.set_shock(0, "berserk")
 
 /datum/body_effect/berserk/on_end(mob/living/L, expired)
 	var/last_shock_stage = L.body_effect_state(type) || 0
@@ -113,7 +113,7 @@ the artifact triggers the rage.
 
 		if(ishuman(L))
 			var/mob/living/carbon/human/H = L
-			H.shock_stage = last_shock_stage
+			H.set_shock(last_shock_stage, "berserk end")
 
 /datum/body_effect/berserk/can_apply(mob/living/L, suppress_failure = FALSE)
 	if(L.stat)
@@ -129,13 +129,13 @@ the artifact triggers the rage.
 			to_chat(L, span_warning("You recently berserked, and cannot do so again while exhausted."))
 		return FALSE // On cooldown.
 
-	if(L.isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(L))
 		L.apply_body_effect(/datum/body_effect/berserk_synthetic, 30 SECONDS)
 		return FALSE // Borgs can get angry but their metal shell can't be pushed harder by just being mad. Same for Posibrains.
 
 	if(ishuman(L))
 		var/mob/living/carbon/human/H = L
-		if(H.species.name == "Diona")
+		if(H.species?.mood_immune)
 			to_chat(L, span_warning("You feel strange for a moment, but it passes."))
 			return FALSE // Happy trees aren't affected by blood rages.
 

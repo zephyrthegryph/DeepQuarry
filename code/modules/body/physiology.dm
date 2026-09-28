@@ -379,9 +379,9 @@ REF_BACK(/datum/physiology, list("body" = "physiology"))
 // --- Humanoid physiology -----------------------------------------------------------------------
 
 /datum/species
-	/// Breathes through the skin (alraunes): no lungs, but the species' own
-	/// breathing still reports breath quality to the physiology.
-	var/skin_breathing = FALSE
+	/// P2-S7/D8: a /datum/breath_profile subtype when this species doesn't breathe through
+	/// lungs (alraunes: /datum/breath_profile/skin). Null: lungs, if the species has them.
+	var/breath_profile_type
 
 /datum/physiology/humanoid
 	/// Does this body breathe at all (lungs, and a species that needs them)?
@@ -394,8 +394,9 @@ REF_BACK(/datum/physiology, list("body" = "physiology"))
 	if(!istype(H) || !H.species)
 		return FALSE
 	demand = body.get_factor(BF_DEMAND)
-	var/skin = H.species.skin_breathing
-	breathes = (skin || H.should_have_organ(O_LUNGS)) && !H.does_not_breathe && !(H.has_mutation(mNobreath))
+	var/datum/breath_profile/profile = body.breath_profile()
+	breathes = !!profile
+	var/skin = profile && !profile.uses_lungs
 	circulates = H.should_have_organ(O_HEART)
 
 	var/o2 = 1
@@ -480,7 +481,7 @@ REF_BACK(/datum/physiology, list("body" = "physiology"))
 	if(!H.should_have_organ(O_BRAIN))
 		return
 	var/obj/item/organ/internal/brain/B = H.internal_organs_by_name[O_BRAIN]
-	if(!istype(B) || B.robotic >= ORGAN_ROBOT)
+	if(!istype(B) || B.is_robotic())
 		return
 	var/rate = DQ_HYPOXIA_BRAIN_RATE * clamp((oxygen_debt - DQ_HYPOXIA_BRAIN_DAMAGE) / (AFFLICTION_SEVERITY_TERMINAL - DQ_HYPOXIA_BRAIN_DAMAGE), 0, 1)
 	if(body.get_factor(BF_STABILIZATION))
@@ -555,15 +556,14 @@ REF_BACK(/datum/physiology, list("body" = "physiology"))
 	order = LIFE_PHASE_BODY + 85
 	name = "physiology"
 	wake_on = CHANGE_MOB_HEALTH
-	run_if = LIFE_RUN_IF_PLACED_ALIVE
+	// P2-S6: oxygen debt stops on a paused (stasis) frame; the pipeline skips the stage.
+	run_if = LIFE_RUN_IF_PLACED_LIVE_BIOLOGY
 
 /datum/om/stage/life/physiology/applies(mob/living/self)
 	var/datum/body/proto = self.body_type
 	return !!initial(proto.physiology_type)
 
 /datum/om/stage/life/physiology/perform(mob/living/self, datum/om/frame/life/ctx)
-	if(ctx.fact("in_stasis"))
-		return
 	self.body?.physiology_tick(ctx.dt)
 
 /// Settled: no oxygen debt, no shortfall, nothing stale, and no support that lapses by a

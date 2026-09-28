@@ -231,7 +231,7 @@
 	if(!dna || !species)
 		return
 	// Traitgenes NO_DNA and Synthetics cannot be mutated
-	if(isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(src))
 		return
 	if(species.flags & NO_DNA)
 		return
@@ -244,7 +244,6 @@
 				continue
 			var/datum/gene/trait/gene = T.linked_gene
 			dna.SetSEState(gene.block, TRUE, TRUE)
-			// testing("[gene.name] Setup activated!")
 		dna.UpdateSE()
 	var/flgs = MUTCHK_FORCED
 	if(hide_message)

@@ -95,9 +95,10 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_NO
 	industrial_use = REFINERYEXPORT_REASON_BIOHAZARD
 
+/datum/reagent/toxin/neurotoxic_protein
+	immune_species_blood = SPECIES_TAG_BIT(IS_CHIMERA) // P2-S13
+
 /datum/reagent/toxin/neurotoxic_protein/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_CHIMERA)
-		return
 	..()
 	if(alien != IS_DIONA)
 		if(M.canmove && !M.restrained() && istype(M.loc, /turf/space))
@@ -430,9 +431,10 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_MASSINDUSTRY
 	industrial_use = REFINERYEXPORT_REASON_MEDSCI
 
+/datum/reagent/lichpowder
+	immune_species_touch = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/lichpowder/affect_touch(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
 	if(!(M.status_flags & FAKEDEATH))
 		M.emote("deathgasp")
 		M.tod = stationtime2text()
@@ -638,9 +640,10 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_UNWANTED
 	industrial_use = REFINERYEXPORT_REASON_BIOHAZARD
 
+/datum/reagent/condensedcapsaicin/venom
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/condensedcapsaicin/venom/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
 	if(prob(50))
 		M.injure(INJURY_TOXIN, 0.5 * removed, source = src)
 	if(prob(50))
@@ -665,9 +668,10 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_MEDSCI
 
+/datum/reagent/lexorin
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/lexorin/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
 	if(alien == IS_SLIME)
 		M.apply_effect(5, AGONY, 0)
 		M.injure(INJURY_TOXIN, 3 * removed, source = src)
@@ -701,7 +705,7 @@
 
 /datum/reagent/mutagen/affect_blood(mob/living/carbon/M, alien, removed)
 
-	if(M.isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(M))
 		return
 
 	if(ishuman(M))
@@ -740,9 +744,10 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_COMMON
 	industrial_use = REFINERYEXPORT_REASON_MATSCI
 
+/datum/reagent/slimejelly
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/slimejelly/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
 	if(alien == IS_SLIME) //Partially made of the stuff. Why would it hurt them?
 		if(prob(75))
 			// Random species-gated bursts: can't be a continuous tag, so it mends directly.
@@ -772,10 +777,10 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_MEDSCI
 
-/datum/reagent/soporific/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
+/datum/reagent/soporific
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
 
+/datum/reagent/soporific/affect_blood(mob/living/carbon/M, alien, removed)
 	var/threshold = 1
 	if(M.species.chem_strength_tox > 0) //Closer to 0 means they're more resistant to toxins. Higher than 1 means they're weaker to toxins.
 		threshold /= M.species.chem_strength_tox
@@ -824,10 +829,10 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_MEDSCI
 
-/datum/reagent/chloralhydrate/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
+/datum/reagent/chloralhydrate
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
 
+/datum/reagent/chloralhydrate/affect_blood(mob/living/carbon/M, alien, removed)
 	var/threshold = 1
 	if(M.species.chem_strength_tox > 0) //Closer to 0 means they're more resistant to toxins. Higher than 1 means they're weaker to toxins.
 		threshold /= M.species.chem_strength_tox
@@ -908,9 +913,10 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_UNWANTED
 	industrial_use = REFINERYEXPORT_REASON_BIOHAZARD
 
+/datum/reagent/serotrotium/venom
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/serotrotium/venom/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
 	if(prob(30))
 		if(prob(25))
 			M.emote(pick("shiver", "blink_r"))
@@ -930,9 +936,10 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_MEDSCI
 
+/datum/reagent/cryptobiolin
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/cryptobiolin/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
 	var/drug_strength = 4
 	if(M.species.chem_strength_tox > 0) //Closer to 0 means they're more resistant to toxins. Higher than 1 means they're weaker to toxins.
 		drug_strength *= M.species.chem_strength_tox
@@ -956,9 +963,10 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_WEAPONS
 
+/datum/reagent/impedrezene
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/impedrezene/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
 	M.status_adjust(EFFECT_JITTERY, -5)
 	if(prob(80))
 		M.injure(INJURY_NEURAL, 0.1 * removed, source = src)
@@ -980,10 +988,10 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_WEAPONS
 
-/datum/reagent/mindbreaker/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
+/datum/reagent/mindbreaker
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
 
+/datum/reagent/mindbreaker/affect_blood(mob/living/carbon/M, alien, removed)
 	var/drug_strength = 100
 	if(M.species.chem_strength_tox > 0) //Closer to 0 means they're more resistant to toxins. Higher than 1 means they're weaker to toxins.
 		drug_strength *= M.species.chem_strength_tox //Ex: If you have a CST of 0.01 (100x resistant) drug_strength would = 10000
@@ -1010,7 +1018,7 @@
 	industrial_use = REFINERYEXPORT_REASON_MATSCI
 
 /datum/reagent/slimetoxin/affect_blood(mob/living/carbon/M, alien, removed)
-	if(M.isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(M))
 		return
 
 	var/mob/living/carbon/human/H = M
@@ -1040,7 +1048,7 @@
 	industrial_use = REFINERYEXPORT_REASON_MATSCI
 
 /datum/reagent/aslimetoxin/affect_blood(mob/living/carbon/M, alien, removed)
-	if(M.isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(M))
 		return
 
 	var/mob/living/carbon/human/H = M

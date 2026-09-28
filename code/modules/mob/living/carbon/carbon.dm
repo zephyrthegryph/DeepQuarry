@@ -443,14 +443,9 @@ REF_OWNED(/mob/living/carbon, "cozyloop")
 /mob/living/carbon/can_feel_pain(check_organ)
 	if(!species)
 		return 0
-	if(isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(src))
 		return 0
 	return !(species.flags & NO_PAIN)
-
-/mob/living/carbon/needs_to_breathe()
-	if(does_not_breathe || (has_mutation(mNobreath)))
-		return FALSE
-	return ..()
 
 /mob/living/carbon/proc/update_handcuffed()
 	if(get_equipped_item(SLOT_ID_HANDCUFFED))

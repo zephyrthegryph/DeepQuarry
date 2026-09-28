@@ -1,5 +1,6 @@
 /datum/species/vox
 	name = SPECIES_VOX
+	can_host_malignant = FALSE
 	name_plural = "Vox"
 	icobase = 'icons/mob/human_races/r_vox_old.dmi'
 	deform = 'icons/mob/human_races/r_def_vox_old.dmi'
@@ -23,7 +24,6 @@
 	wikilink="https://wiki.chompstation13.net/index.php?title=Vox"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/vox)
 
-//	taste_sensitivity = TASTE_DULL
 	min_age = 18
 
 	factor_baseline = alist(BF_SLOWDOWN = -0.5)

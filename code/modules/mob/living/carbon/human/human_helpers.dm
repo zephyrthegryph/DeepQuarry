@@ -105,9 +105,10 @@
 	else
 		return get_gender()
 
-// This is the 'mechanical' check for synthetic-ness, not appearance
-// Returns the company that made the synthetic
-/mob/living/carbon/human/isSynthetic()
+// Cosmetic chassis model (the torso manufacturer) of a full-body prosthesis,
+// or null. Data for icons, blood colour and speech bubbles; NOT a biology
+// question (use HAS_SYNTHETIC_BIOLOGY() / biology() for that).
+/mob/living/carbon/human/proc/robolimb_model()
 	return synthetic
 
 // Would an onlooker know this person is synthetic?
@@ -131,7 +132,7 @@
 
 // Returns a string based on what kind of brain the FBP has.
 /mob/living/carbon/human/proc/get_FBP_type()
-	if(!isSynthetic())
+	if(!HAS_SYNTHETIC_BIOLOGY(src))
 		return FBP_NONE
 	var/obj/item/organ/internal/brain/B
 	B = internal_organs_by_name[O_BRAIN]
@@ -149,7 +150,7 @@
 
 /mob/living/carbon/human/make_hud_overlays()
 	hud_list[HEALTH_HUD]      = gen_hud_image(GLOB.ingame_hud_med, src, "100", plane = PLANE_CH_HEALTH)
-	if(isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(src))
 		hud_list[STATUS_HUD]  = gen_hud_image(GLOB.ingame_hud, src, "hudrobo", plane = PLANE_CH_STATUS)
 		hud_list[LIFE_HUD]	  = gen_hud_image(GLOB.ingame_hud, src, "hudrobo", plane = PLANE_CH_LIFE)
 	else
@@ -361,26 +362,77 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 	//does not really need to happen, that kinda thing will only happen when putting another person's limb onto your own body
 	return sorted
 
-/mob/living/carbon/human/proc/transform_into_other_human(mob/living/carbon/human/character, copy_name, copy_flavour = TRUE, convert_to_prosthetics = FALSE, apply_bloodtype = TRUE)
-	/*
-	name, nickname, flavour, OOC notes
-	gender, sex
-	custom species name, custom bodytype, weight, scale, scaling center, sound type, sound freq
-	custom say verbs
-	ears, wings, tail, hair, facial hair
-	ears colors, wings colors, tail colors
-	body color, prosthetics (if they're a protean) (convert to DSI if protean and not prosthetic), eye color, hair color etc
-	markings
-	custom synth markings toggle, custom synth color toggle
-	digitigrade
-	blood color
-	*/
-	if (copy_name)
+/// What transform_into_other_human() copies besides appearance (P2-F6).
+/datum/human_transform_options
+	/// Take the target's name and nickname.
+	var/copy_name = FALSE
+	/// Take the target's flavour text.
+	var/copy_flavour = TRUE
+	/// Rebuild our limbs as prostheses matching the target (proteans).
+	var/convert_to_prosthetics = FALSE
+	/// Take the target's blood type. An incompatible type kills on transfusion.
+	var/apply_bloodtype = TRUE
+
+/datum/human_transform_options/New(copy_name = FALSE, copy_flavour = TRUE, convert_to_prosthetics = FALSE, apply_bloodtype = TRUE)
+	..()
+	src.copy_name = copy_name
+	src.copy_flavour = copy_flavour
+	src.convert_to_prosthetics = convert_to_prosthetics
+	src.apply_bloodtype = apply_bloodtype
+
+/// Take `character`'s appearance: identity, colours, appendages, markings, physique and
+/// custom species text. `options` (a /datum/human_transform_options, default when null)
+/// says what else is copied.
+/mob/living/carbon/human/proc/transform_into_other_human(mob/living/carbon/human/character, datum/human_transform_options/options)
+	if(!options)
+		options = new /datum/human_transform_options
+	if(options.copy_name)
 		name = character.name
 		nickname = character.nickname
 	gender = character.gender
 	identifying_gender = character.identifying_gender
 
+	copy_colours_from(character)
+	if(options.apply_bloodtype)
+		dna?.b_type = character.dna ? character.dna.b_type : DEFAULT_BLOOD_TYPE
+	copy_appendages_from(character)
+
+	var/bodytype = character.species?.get_bodytype()
+	if(options.convert_to_prosthetics)
+		convert_limbs_to_prosthetics_like(character, bodytype)
+
+	for(var/N in character.organs_by_name)
+		var/obj/item/organ/external/O = organs_by_name[N]
+		var/obj/item/organ/external/I = character.organs_by_name[N]
+		O.markings = I.markings?.Copy()
+	markings_len = character.markings_len
+
+	if(options.copy_flavour)
+		flavor_texts = character.flavor_texts?.Copy()
+
+	copy_physique_from(character)
+	species?.blood_color = character.species?.blood_color
+
+	dna?.base_species = bodytype
+	species?.base_species = bodytype
+	species?.vanity_base_fit = bodytype
+	if(istype(species, /datum/species/shapeshifter))
+		GLOB.wrapped_species_by_ref["\ref[src]"] = bodytype
+
+	custom_species	= character.custom_species
+	custom_say		= character.custom_say
+	custom_ask		= character.custom_ask
+	custom_whisper	= character.custom_whisper
+	custom_exclaim	= character.custom_exclaim
+
+	digitigrade = character.digitigrade
+
+	dna?.ResetUIFrom(src)
+	force_update_limbs()
+	regenerate_icons()
+
+/// Eye, hair, gradient, skin and synthetic colours.
+/mob/living/carbon/human/proc/copy_colours_from(mob/living/carbon/human/character)
 	r_eyes = character.r_eyes
 	g_eyes = character.g_eyes
 	b_eyes = character.b_eyes
@@ -399,18 +451,16 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 	g_skin = character.g_skin
 	b_skin = character.b_skin
 	s_tone = character.s_tone
-	h_style = character.h_style
 	grad_style = character.grad_style
-	f_style = character.f_style
-	grad_style = character.grad_style
-	if(apply_bloodtype)
-		dna?.b_type = character.dna ? character.dna.b_type : DEFAULT_BLOOD_TYPE //This actually just straight up kills whoever uses it if the blood types aren't compatible on TF
 	synth_color = character.synth_color
 	r_synth = character.r_synth
 	g_synth = character.g_synth
 	b_synth = character.b_synth
 	synth_markings = character.synth_markings
 
+
+/// Ears, tail and wings with their colours.
+/mob/living/carbon/human/proc/copy_appendages_from(mob/living/carbon/human/character)
 	ear_style = character.ear_style
 	r_ears = character.r_ears
 	b_ears = character.b_ears
@@ -450,41 +500,32 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 	g_wing3 = character.g_wing3
 	a_wing = character.a_wing
 
+/// Robotize our limbs to match `character`'s: its prosthetic models, else the DSI body for
+/// `bodytype`. Parents go before children so a limb is never robotized under an organic parent.
+/mob/living/carbon/human/proc/convert_limbs_to_prosthetics_like(mob/living/carbon/human/character, bodytype)
+	var/list/organs_to_edit = list()
+	for (var/name in list(BP_TORSO, BP_HEAD, BP_GROIN, BP_L_ARM, BP_R_ARM, BP_L_HAND, BP_R_HAND, BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT))
+		var/obj/item/organ/external/O = character.organs_by_name[name]
+		if (O)
+			var/x = organs_to_edit.Find(O.parent_organ)
+			if (x == 0)
+				organs_to_edit += name
+			else
+				organs_to_edit.Insert(x+(O.is_nanoform() ? 1 : 0), name)
+	for(var/name in organs_to_edit)
+		var/obj/item/organ/external/I = character.organs_by_name[name]
+		var/obj/item/organ/external/O = organs_by_name[name]
+		if(O)
+			if(I.is_robotic())
+				O.robotize(I.model)
+			else
+				var/dsi_company = GLOB.dsi_to_species[bodytype]
+				if (!dsi_company)
+					dsi_company = "DSI - Adaptive"
+				O.robotize(dsi_company)
 
-	var/bodytype = character.species?.get_bodytype()
-
-	if (convert_to_prosthetics) //should only really be run for proteans
-		var/list/organs_to_edit = list()
-		for (var/name in list(BP_TORSO, BP_HEAD, BP_GROIN, BP_L_ARM, BP_R_ARM, BP_L_HAND, BP_R_HAND, BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT))
-			var/obj/item/organ/external/O = character.organs_by_name[name]
-			if (O)
-				var/x = organs_to_edit.Find(O.parent_organ)
-				if (x == 0)
-					organs_to_edit += name
-				else
-					organs_to_edit.Insert(x+(O.robotic == ORGAN_NANOFORM ? 1 : 0), name)
-		for(var/name in organs_to_edit)
-			var/obj/item/organ/external/I = character.organs_by_name[name]
-			var/obj/item/organ/external/O = organs_by_name[name]
-			if(O)
-				if(I.robotic >= ORGAN_ROBOT)
-					O.robotize(I.model)
-				else
-					var/dsi_company = GLOB.dsi_to_species[bodytype]
-					if (!dsi_company)
-						dsi_company = "DSI - Adaptive"
-					O.robotize(dsi_company)
-
-	for(var/N in character.organs_by_name)
-		var/obj/item/organ/external/O = organs_by_name[N]
-		var/obj/item/organ/external/I = character.organs_by_name[N]
-		O.markings = I.markings?.Copy()
-
-	markings_len = character.markings_len
-
-	if (copy_flavour)
-		flavor_texts = character.flavor_texts?.Copy()
-
+/// Weight, size, voice and sprite offsets.
+/mob/living/carbon/human/proc/copy_physique_from(mob/living/carbon/human/character)
 	weight			= character.weight
 	weight_gain		= character.weight_gain
 	weight_loss		= character.weight_loss
@@ -498,23 +539,3 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 		update_transform()
 	resize(character.size_multiplier, animate = TRUE, ignore_prefs = TRUE)
 	voice_sounds_list = character.voice_sounds_list
-
-	species?.blood_color = character.species?.blood_color
-
-	dna?.base_species = bodytype
-	species?.base_species = bodytype
-	species?.vanity_base_fit = bodytype
-	if (istype(species, /datum/species/shapeshifter))
-		GLOB.wrapped_species_by_ref["\ref[src]"] = bodytype
-
-	custom_species	= character.custom_species
-	custom_say		= character.custom_say
-	custom_ask		= character.custom_ask
-	custom_whisper	= character.custom_whisper
-	custom_exclaim	= character.custom_exclaim
-
-	digitigrade = character.digitigrade
-
-	dna?.ResetUIFrom(src)
-	force_update_limbs()
-	regenerate_icons()

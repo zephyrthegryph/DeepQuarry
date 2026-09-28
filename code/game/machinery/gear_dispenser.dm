@@ -103,7 +103,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 		voidsuit.refit_for_species(user.species?.get_bodytype()) // does helmet and boots if they're attached
 
 	if(life_support)
-		if(user.isSynthetic())
+		if(HAS_SYNTHETIC_BIOLOGY(user))
 			if(voidsuit.cooler)
 				log_world("## ERROR [src] created a voidsuit [voidsuit] and wants to add a suit cooler but it already has one")
 			else

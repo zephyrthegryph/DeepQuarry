@@ -17,8 +17,6 @@
 
 /obj/item/disk/limb/eggnerdltd
 	company = "Eggnerd Prototyping Ltd."
-//	icon = 'icons/obj/items.dmi'
-//	icon_state = "verkdisk"
 
 //////////////// General VS-only ones /////////////////
 /datum/robolimb/talon //They're buildable by default due to being extremely basic.

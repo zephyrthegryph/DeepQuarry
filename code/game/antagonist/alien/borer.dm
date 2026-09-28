@@ -46,7 +46,7 @@ GLOBAL_DATUM(borers, /datum/antagonist/borer)
 		for(var/mob/living/carbon/human/H in REGISTRY_MEMBERS(REGISTRY_MOBS))
 			if(H.stat != DEAD && !H.has_brain_worms())
 				var/obj/item/organ/external/head = H.get_organ(BP_HEAD)
-				if(head && !(head.robotic >= ORGAN_ROBOT))
+				if(head && !(head.is_robotic()))
 					host = H
 					break
 		if(istype(host))

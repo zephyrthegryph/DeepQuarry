@@ -97,7 +97,8 @@ REF_STATIC(/obj/item/organ, "assists_languages")
 /obj/item/organ/proc/set_initial_meat()
 	if(owner)
 		if(!meat_type)
-			if(owner.isSynthetic())
+			// D25: the part's own biology decides what it's made of, not the owner's.
+			if(is_robotic())
 				meat_type = /obj/item/stack/material/steel
 			else if(ishuman(owner))
 				var/mob/living/carbon/human/H = owner
@@ -115,8 +116,38 @@ REF_STATIC(/obj/item/organ, "assists_languages")
 		forensic_data?.clear_blooddna()
 		add_blooddna_organ(data)
 
+// --- Construction predicates (P2-S2) ------------------------------------------
+// One vocabulary for "what is this part built from?" instead of raw
+// `robotic >= ORGAN_*` comparisons with mixed thresholds.
+
+/// Fully prosthetic: robot, lifelike or nanoform. No pulse, no blood, repaired
+/// with tools rather than medicine.
+/obj/item/organ/proc/is_robotic()
+	return robotic >= ORGAN_ROBOT
+
+/// Has any mechanical component: assisted (pacemaker-style) or fully robotic.
+/obj/item/organ/proc/is_assisted()
+	return robotic >= ORGAN_ASSISTED
+
+/// Made of nanites (protean).
+/obj/item/organ/proc/is_nanoform()
+	return robotic >= ORGAN_NANOFORM
+
+/// Plain flesh: no mechanical parts at all.
+/obj/item/organ/proc/is_organic()
+	return robotic < ORGAN_ASSISTED
+
+/// The part's biology (BIOLOGY_* flag) for afflictions and treatment tags.
+/// Assisted parts are still organic tissue.
+/obj/item/organ/proc/biology()
+	if(is_nanoform())
+		return BIOLOGY_NANOFORM
+	if(is_robotic())
+		return BIOLOGY_SYNTHETIC
+	return BIOLOGY_ORGANIC
+
 /obj/item/organ/proc/die()
-	if(robotic < ORGAN_ROBOT)
+	if(!is_robotic())
 		status |= ORGAN_DEAD
 	saturate_damage()
 	PERIODIC_STOP(src)
@@ -130,7 +161,7 @@ REF_STATIC(/obj/item/organ, "assists_languages")
 /obj/item/organ/proc/saturate_damage()
 	damage = max_damage
 
-/obj/item/organ/proc/adjust_germ_level(amount)		// Unless you're setting germ level directly to 0, use this proc instead
+/obj/item/organ/adjust_germ_level(amount)		// Unless you're setting germ level directly to 0, use this proc instead
 	germ_level = CLAMP(germ_level + amount, 0, INFECTION_LEVEL_MAX)
 
 /obj/item/organ/periodic_step()
@@ -154,7 +185,7 @@ REF_STATIC(/obj/item/organ, "assists_languages")
 		tick_detached_afflictions()
 
 	//Process infections
-	if(robotic >= ORGAN_ROBOT || (istype(owner) && (owner.species && (owner.species.flags & (IS_PLANT | NO_INFECT)))))
+	if(is_robotic() || (istype(owner) && (owner.species && (owner.species.flags & (IS_PLANT | NO_INFECT)))))
 		germ_level = 0
 		return
 
@@ -226,7 +257,7 @@ REF_STATIC(/obj/item/organ, "assists_languages")
 //A little wonky: internal organs stop calling this (they return early in process) when dead, but external ones cause further damage when dead
 /obj/item/organ/proc/handle_germ_effects()
 	//** Handle the effects of infections
-	if(robotic >= ORGAN_ROBOT) //Just in case!
+	if(is_robotic()) //Just in case!
 		germ_level = 0
 		return 0
 
@@ -238,14 +269,6 @@ REF_STATIC(/obj/item/organ, "assists_languages")
 	// progression, and necrosis-by-germs (still ticks below), but the
 	// damage-doing side is now a condition that presents with symptoms,
 	// can cascade, and reacts to specific reagents.
-	//
-	// Original upstream behavior preserved for reference:
-	//   if((status & ORGAN_DEAD) && antibiotics < ANTIBIO_OD && germ_level >= INFECTION_LEVEL_TWO)
-	//       infection_damage = CLAMP(round((germ_level - INFECTION_LEVEL_TWO)/1000), 0.25, 1)
-	//   else if(germ_level > INFECTION_LEVEL_TWO && antibiotics < ANTIBIO_OD)
-	//       infection_damage = CLAMP(round((germ_level - INFECTION_LEVEL_TWO)/1000), 0, 0.1)
-	//   if(infection_damage)
-	//       owner.injure(INJURY_TOXIN, infection_damage)
 
 	if (germ_level > 0 && germ_level < INFECTION_LEVEL_ONE/2 && prob(30))
 		adjust_germ_level(-antibiotics)
@@ -265,8 +288,6 @@ REF_STATIC(/obj/item/organ, "assists_languages")
 	//Level 1 qualifies for specific organ processing effects
 	if(germ_level >= INFECTION_LEVEL_ONE)
 		. = 1 //Organ qualifies for effect-specific processing
-		//var/fever_temperature = (owner.species.heat_level_1 - owner.species.body_temperature - 5)* min(germ_level/INFECTION_LEVEL_TWO, 1) + owner.species.body_temperature
-		//owner.bodytemperature += between(0, (fever_temperature - T20C)/BODYTEMP_COLD_DIVISOR + 1, fever_temperature - owner.bodytemperature)
 		var/fever_temperature = owner?.species.heat_discomfort_level * 1.10 //Heat discomfort level plus 10%
 		if(owner?.bodytemperature < fever_temperature)
 			owner?.adjust_bodytemperature(min(0.2,(fever_temperature - owner?.bodytemperature) / 10)) //Will usually climb by 0.2, else 10% of the difference if less
@@ -399,9 +420,9 @@ REF_STATIC(/obj/item/organ, "assists_languages")
 /obj/item/organ/proc/shed_mismatched_afflictions()
 	if(!owner?.body)
 		return
-	var/biology = owner.body.biology_of(src)
+	var/part_biology = owner.body.biology_of(src)
 	for(var/datum/affliction/A as anything in afflictions_here())
-		if(!(A.biology & biology))
+		if(!(A.biology & part_biology))
 			log_game("BODY: [key_name(owner)] [A.type] cured on [name]: biology changed.")
 			A.cure()
 
@@ -422,7 +443,7 @@ REF_STATIC(/obj/item/organ, "assists_languages")
 	for(var/obj/O as anything in contents_of(src))
 		O.emp_act(severity, recursive)
 
-	if(!(robotic >= ORGAN_ASSISTED))
+	if(!(is_assisted()))
 		return
 	for(var/i = 1; i <= robotic; i++)
 		switch (severity)
@@ -514,7 +535,7 @@ REF_STATIC(/obj/item/organ, "assists_languages")
 
 /obj/item/organ/proc/bitten(mob/user)
 
-	if(robotic >= ORGAN_ROBOT)
+	if(is_robotic())
 		return
 
 	to_chat(user, span_notice("You take an experimental bite out of \the [src]."))
@@ -542,7 +563,7 @@ REF_STATIC(/obj/item/organ, "assists_languages")
 		return FALSE
 
 	// Convert it to an edible form, yum yum.
-	if(!(robotic >= ORGAN_ROBOT) && IS_HELPING(user) && user.zone_sel.selecting == O_MOUTH)
+	if(!(is_robotic()) && IS_HELPING(user) && user.zone_sel.selecting == O_MOUTH)
 		bitten(user)
 		return TRUE
 	return FALSE
@@ -583,7 +604,7 @@ DECLARE_INTERACTIONS(/obj/item/organ, \
 		if(istype(O, /obj/machinery/gibber))	// The great equalizer.
 			return TRUE
 
-		if(robotic >= ORGAN_ROBOT)
+		if(is_robotic())
 			if(O.has_tool_quality(TOOL_SCREWDRIVER))
 				return TRUE
 
@@ -621,7 +642,7 @@ DECLARE_INTERACTIONS(/obj/item/organ, \
 
 /obj/item/organ/proc/butcher_done(mob/living/user, atom/newtarget)
 	if(user)
-		if(robotic >= ORGAN_ROBOT)
+		if(is_robotic())
 			user?.visible_message(span_warning("[user] disassembles \the [src]."))
 
 		else
@@ -689,10 +710,16 @@ DECLARE_INTERACTIONS(/obj/item/organ, \
 /obj/item/organ/proc/handle_organ_proc_special()	// Called when processed.
 	return
 
-// Shared heat output from robotic body parts, used by machine organs that run hot.
+/// Kelvin of waste heat per robotic core part (torso, groin, head) per organ tick.
+#define ROBOBODY_WASTE_HEAT_PER_PART 0.5
+
+/// Waste heat from a robotic chassis. ONE writer (D25): only the machine power
+/// cell calls this; heatsinks dissipate it.
 /obj/item/organ/proc/apply_robobody_heat()
 	if(owner && owner.is_alive())
-		owner.adjust_bodytemperature(round(owner.robobody_count * 0.25, 0.1))
+		owner.adjust_bodytemperature(round(owner.robobody_count * ROBOBODY_WASTE_HEAT_PER_PART, 0.1))
+
+#undef ROBOBODY_WASTE_HEAT_PER_PART
 
 /obj/item/organ/proc/check_verb_compatability()		// Used for determining if an organ should give or remove its verbs. I.E., FBP part in a human, no verbs. If true, keep or add.
 	if(owner)
@@ -702,10 +729,10 @@ DECLARE_INTERACTIONS(/obj/item/organ, \
 			if(!O)	// Parent limb is missing; nothing to be compatible with.
 				return FALSE
 			if(forgiving_class)
-				if(O.robotic <= ORGAN_ASSISTED && robotic <= ORGAN_LIFELIKE)	// Parent is organic or assisted, we are at most synthetic.
+				if(!O.is_robotic() && robotic <= ORGAN_LIFELIKE)	// Parent is organic or assisted, we are at most synthetic.
 					return TRUE
 
-				if(O.robotic >= ORGAN_ROBOT && robotic >= ORGAN_ASSISTED)		// Parent is synthetic, and we are biosynthetic at least.
+				if(O.is_robotic() && is_assisted())		// Parent is synthetic, and we are biosynthetic at least.
 					return TRUE
 
 			if(!target_parent_classes || !target_parent_classes.len)	// Default checks, if we're not looking for a Specific type.
@@ -713,10 +740,10 @@ DECLARE_INTERACTIONS(/obj/item/organ, \
 				if(O.robotic == robotic)	// Same thing, we're fine.
 					return TRUE
 
-				if(O.robotic < ORGAN_ROBOT && robotic < ORGAN_ROBOT)
+				if(!O.is_robotic() && !is_robotic())
 					return TRUE
 
-				if(O.robotic > ORGAN_ASSISTED && robotic > ORGAN_ASSISTED)
+				if(O.is_robotic() && is_robotic())
 					return TRUE
 
 			else

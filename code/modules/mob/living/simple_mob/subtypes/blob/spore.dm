@@ -105,7 +105,7 @@ REF_HELD(/mob/living/simple_mob/blob/spore, "infested")
 		for(var/mob/living/carbon/human/H in view(self,1))
 			if(H.stat != DEAD) // We want zombies.
 				continue
-			if(H.isSynthetic()) // Not philosophical zombies.
+			if(HAS_SYNTHETIC_BIOLOGY(H)) // Not philosophical zombies.
 				continue
 			self.infest(H)
 			break

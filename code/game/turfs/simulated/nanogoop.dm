@@ -98,7 +98,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 		if("On")
 			if(!targets)
 				return
-			if(checker.isSynthetic())
+			if(HAS_SYNTHETIC_BIOLOGY(checker))
 				to_chat(checker, span_warning("With you in control, \the [src] will not attempt to recycle your body, no matter the setting you pick"))
 			else
 				to_chat(checker, span_warning("You realize there is no way for the simplistic [src] to ignore your form, if you set it to recycle."))
@@ -208,7 +208,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 				return FALSE
 		if(ishuman(targetmob))
 			var/mob/living/carbon/human/targethuman = targetmob
-			if(targethuman.isSynthetic())
+			if(HAS_SYNTHETIC_BIOLOGY(targethuman))
 				if(!digest_synth)
 					return FALSE
 				if(targetmob == nutrienttarget)
@@ -308,8 +308,8 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 	if(nutrienttarget)
 		if(ishuman(nutrienttarget))
 			var/mob/living/carbon/human/targetcarbon = nutrienttarget
-			if(targetcarbon.isSynthetic())
-				targetcarbon.nutrition = targetcarbon.nutrition+(10 * amt * (1-min(targetcarbon.species.synthetic_food_coeff, 0.9)))
+			if(HAS_SYNTHETIC_BIOLOGY(targetcarbon))
+				targetcarbon.set_nutrition(targetcarbon.nutrition+(10 * amt * (1-min(targetcarbon.species.synthetic_food_coeff, 0.9))))
 				return
 	if(isrobot(nutrienttarget))
 		var/mob/living/silicon/robot/targetrobot = nutrienttarget

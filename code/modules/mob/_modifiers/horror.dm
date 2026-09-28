@@ -28,7 +28,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	//mob_overlay_state = "redspace_aura" //Let's be secretive~
 
 /datum/body_effect/redspace_drain/can_apply(mob/living/L, suppress_output = TRUE)
-	if(ishuman(L) && !L.isSynthetic() && L.lastarea && is_type_in_list(L.lastarea, GLOB.redspace_areas))
+	if(ishuman(L) && !HAS_SYNTHETIC_BIOLOGY(L) && L.lastarea && is_type_in_list(L.lastarea, GLOB.redspace_areas))
 		return TRUE
 	return FALSE
 
@@ -68,7 +68,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 		return
 
 	//The dangerous health effects.
-	unfortunate_soul.nutrition = max(0, unfortunate_soul.nutrition - 5) //Your nutrition is being sapped faster than usual.
+	unfortunate_soul.set_nutrition(max(0, unfortunate_soul.nutrition - 5)) //Your nutrition is being sapped faster than usual.
 	if(unfortunate_soul.life_tick % 100 == 0)// Once every 100 ticks, we mutate some organs.
 		choose_organs(unfortunate_soul)
 		become_drippy(unfortunate_soul)
@@ -265,7 +265,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	on_expired_text = null
 
 /datum/body_effect/redspace_drain/lesser/can_apply(mob/living/L, suppress_output = TRUE)
-	if(ishuman(L) && !L.isSynthetic())
+	if(ishuman(L) && !HAS_SYNTHETIC_BIOLOGY(L))
 		return TRUE
 	return FALSE
 
@@ -377,7 +377,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	return state?.speech_name
 
 /datum/body_effect/redspace_corruption/can_apply(mob/living/L, suppress_output = TRUE)
-	if(ishuman(L) && !L.isSynthetic())
+	if(ishuman(L) && !HAS_SYNTHETIC_BIOLOGY(L))
 		if(L.mind?.assigned_role == JOB_CHAPLAIN)
 			return FALSE
 		return TRUE

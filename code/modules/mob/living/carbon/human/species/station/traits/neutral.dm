@@ -235,7 +235,7 @@
 
 	cost = 0
 	custom_only = FALSE
-	var_changes = list("organic_food_coeff" = 0, "bloodsucker" = TRUE) //The verb is given in human.dm
+	var_changes = list("organic_food_coeff" = 0, "bloodsucker" = TRUE, "hunger_alert_style" = HUNGER_ALERT_VAMPIRE) //The verb is given in human.dm
 	excludes = list(/datum/trait/neutral/bloodsucker_freeform, /datum/trait/positive/bloodsucker_plus)
 
 /datum/trait/neutral/bloodsucker/apply(datum/species/S,mob/living/carbon/human/H)

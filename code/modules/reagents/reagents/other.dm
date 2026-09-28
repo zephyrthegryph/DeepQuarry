@@ -221,9 +221,9 @@
 	M.fire_stacks = 0
 	M.mend(TREAT_ANTITOXIN, 100)
 	if(M.bodytemperature > BODYTEMP_NORMAL)
-		M.set_bodytemperature(max(BODYTEMP_NORMAL, M.bodytemperature - (40 * TEMPERATURE_DAMAGE_COEFFICIENT)))
+		M.adjust_bodytemperature(-(40 * TEMPERATURE_DAMAGE_COEFFICIENT), min_temp = BODYTEMP_NORMAL)
 	else if(M.bodytemperature < 311)
-		M.set_bodytemperature(min(BODYTEMP_NORMAL, M.bodytemperature + (40 * TEMPERATURE_DAMAGE_COEFFICIENT)))
+		M.adjust_bodytemperature(40 * TEMPERATURE_DAMAGE_COEFFICIENT, max_temp = BODYTEMP_NORMAL)
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		var/wound_heal = 5
@@ -371,9 +371,10 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_COMMON
 	industrial_use = REFINERYEXPORT_REASON_MEDSCI
 
+/datum/reagent/adrenaline
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/adrenaline/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
 	M.status_set(EFFECT_PARALYZED, 0)
 	M.status_set(EFFECT_WEAKENED, 0)
 	M.injure(INJURY_TOXIN, rand(3), source = src)
@@ -700,7 +701,7 @@
 	coolant_modifier = 2 // In the name
 
 /datum/reagent/coolant/affect_blood(mob/living/carbon/M, alien, removed)
-	if(M.isSynthetic() && ishuman(M))
+	if(HAS_SYNTHETIC_BIOLOGY(M) && ishuman(M))
 		var/mob/living/carbon/human/H = M
 
 		var/datum/reagent/blood/coolant = H.get_blood(H.vessel)
@@ -1026,12 +1027,12 @@
 				if(prob(9)) to_chat(M, span_warning("You can't help but want to touch yourself then and now!"))
 		data["count"]++
 	holder.remove_reagent(src.id, 0.2)
-	//..()
 	return
 
+/datum/reagent/benzilate
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/benzilate/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
 	var/drug_strength = 12
 	if(alien == IS_SKRELL)
 		drug_strength = drug_strength * 0.6

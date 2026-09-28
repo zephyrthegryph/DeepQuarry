@@ -1,67 +1,13 @@
 /mob/living/carbon/human/examine(mob/user)
-	SHOULD_CALL_PARENT(FALSE)
-	// . = ..() //Note that we don't call parent. We build the list by ourselves.
-
-	var/skip_gear = 0
-	var/skip_body = 0
+	SHOULD_CALL_PARENT(FALSE) // We build the list ourselves.
 
 	if(alpha <= EFFECTIVE_INVIS)
 		return src.loc.examine(user) // Returns messages as if they examined wherever the human was
 
 	var/looks_synth = looksSynthetic()
-
-	//exosuits and helmets obscure our view and stuff.
-	if(get_equipped_item(SLOT_ID_SUIT))
-		if(get_equipped_item(SLOT_ID_SUIT).flags_inv & HIDESUITSTORAGE)
-			skip_gear |= EXAMINE_SKIPSUITSTORAGE
-
-		if(get_equipped_item(SLOT_ID_SUIT).flags_inv & HIDEJUMPSUIT)
-			skip_body |= EXAMINE_SKIPARMS | EXAMINE_SKIPLEGS | EXAMINE_SKIPBODY | EXAMINE_SKIPGROIN
-			skip_gear |= EXAMINE_SKIPJUMPSUIT | EXAMINE_SKIPTIE | EXAMINE_SKIPHOLSTER
-
-		else if(get_equipped_item(SLOT_ID_SUIT).flags_inv & HIDETIE)
-			skip_gear |= EXAMINE_SKIPTIE | EXAMINE_SKIPHOLSTER
-
-		else if(get_equipped_item(SLOT_ID_SUIT).flags_inv & HIDEHOLSTER)
-			skip_gear |= EXAMINE_SKIPHOLSTER
-
-		if(get_equipped_item(SLOT_ID_SUIT).flags_inv & HIDESHOES)
-			skip_gear |= EXAMINE_SKIPSHOES
-			skip_body |= EXAMINE_SKIPFEET
-
-		if(get_equipped_item(SLOT_ID_SUIT).flags_inv & HIDEGLOVES)
-			skip_gear |= EXAMINE_SKIPGLOVES
-			skip_body |= EXAMINE_SKIPHANDS
-
-	if(get_equipped_item(SLOT_ID_UNIFORM))
-		if(get_equipped_item(SLOT_ID_UNIFORM).body_parts_covered & LEGS)
-			skip_body |= EXAMINE_SKIPLEGS
-		if(get_equipped_item(SLOT_ID_UNIFORM).body_parts_covered & ARMS)
-			skip_body |= EXAMINE_SKIPARMS
-		if(get_equipped_item(SLOT_ID_UNIFORM).body_parts_covered & UPPER_TORSO)
-			skip_body |= EXAMINE_SKIPBODY
-		if(get_equipped_item(SLOT_ID_UNIFORM).body_parts_covered & LOWER_TORSO)
-			skip_body |= EXAMINE_SKIPGROIN
-
-	if(get_equipped_item(SLOT_ID_GLOVES) && (get_equipped_item(SLOT_ID_GLOVES).body_parts_covered & HANDS))
-		skip_body |= EXAMINE_SKIPHANDS
-
-	if(get_equipped_item(SLOT_ID_SHOES) && (get_equipped_item(SLOT_ID_SHOES).body_parts_covered & FEET))
-		skip_body |= EXAMINE_SKIPFEET
-
-	if(get_equipped_item(SLOT_ID_HEAD))
-		if(get_equipped_item(SLOT_ID_HEAD).flags_inv & HIDEMASK)
-			skip_gear |= EXAMINE_SKIPMASK
-		if(get_equipped_item(SLOT_ID_HEAD).flags_inv & HIDEEYES)
-			skip_gear |= EXAMINE_SKIPEYEWEAR
-			skip_body |= EXAMINE_SKIPEYES
-		if(get_equipped_item(SLOT_ID_HEAD).flags_inv & HIDEEARS)
-			skip_gear |= EXAMINE_SKIPEARS
-		if(get_equipped_item(SLOT_ID_HEAD).flags_inv & HIDEFACE)
-			skip_body |= EXAMINE_SKIPFACE
-
-	if(get_equipped_item(SLOT_ID_MASK) && (get_equipped_item(SLOT_ID_MASK).flags_inv & HIDEFACE))
-		skip_body |= EXAMINE_SKIPFACE
+	var/list/coverage = examine_coverage()
+	var/skip_gear = coverage[1]
+	var/skip_body = coverage[2]
 
 	//This is what hides what
 	var/list/hidden = list(
@@ -77,195 +23,236 @@
 		BP_L_LEG = skip_body & EXAMINE_SKIPLEGS,
 		BP_R_LEG = skip_body & EXAMINE_SKIPLEGS)
 
-	var/name_ender = ""
-	if(!((skip_gear & EXAMINE_SKIPJUMPSUIT) && (skip_body & EXAMINE_SKIPFACE)))
-		if(custom_species)
-			name_ender = ", a " + span_bold("[src.custom_species]")
-		else if(looks_synth)
-			var/use_gender = "a synthetic"
-			if(gender == MALE)
-				use_gender = "an android"
-			else if(gender == FEMALE)
-				use_gender = "a gynoid"
+	var/list/msg = list("This is [icon2html(src, user.client)] <EM>[src.name]</EM>[examine_name_ender(skip_gear, skip_body, looks_synth)]")
+	msg += examine_gear_lines(user, skip_gear, skip_body)
+	msg += examine_status_lines(user, hidden)
+	var/list/limb_result = examine_limb_lines(user, hidden, looks_synth)
+	msg += limb_result[1]
+	var/applying_pressure = limb_result[2]
+	msg += examine_diagnosis_lines()
+	msg += examine_record_lines(user)
+	msg += examine_profile_lines()
 
-			name_ender = ", " + span_bold(span_gray("[use_gender]!")) + "[species.get_additional_examine_text(src)]"
+	msg = list(span_info(jointext(msg, "<br>")))
+	if(applying_pressure)
+		msg += applying_pressure
 
-		else if(species.name != "Human")
-			name_ender = ", " + span_bold("<font color='[species.get_flesh_colour(src)]'>\a [species.get_examine_name()]!</font>") + "[species.get_additional_examine_text(src)]"
+	if(pose)
+		if(!findtext(pose, regex("\[.?!]$"))) // Will be zero if the last character is not a member of [.?!]
+			pose = addtext(pose,".") //Makes sure all emotes end with a period.
+		msg += "<br>[p_They()] [pose]" //<br> intentional, extra gap.
 
-	var/list/msg = list("This is [icon2html(src, user.client)] <EM>[src.name]</EM>[name_ender]")
+	return msg
 
-	//uniform
-	if(get_equipped_item(SLOT_ID_UNIFORM) && !(skip_gear & EXAMINE_SKIPJUMPSUIT) && get_equipped_item(SLOT_ID_UNIFORM).show_examine)
-		//Ties
+/// What worn gear hides: list(EXAMINE_SKIP* gear flags, EXAMINE_SKIP* body flags).
+/mob/living/carbon/human/proc/examine_coverage()
+	var/skip_gear = 0
+	var/skip_body = 0
+	//exosuits and helmets obscure our view and stuff.
+	var/obj/item/suit = get_equipped_item(SLOT_ID_SUIT)
+	if(suit)
+		if(suit.flags_inv & HIDESUITSTORAGE)
+			skip_gear |= EXAMINE_SKIPSUITSTORAGE
+		if(suit.flags_inv & HIDEJUMPSUIT)
+			skip_body |= EXAMINE_SKIPARMS | EXAMINE_SKIPLEGS | EXAMINE_SKIPBODY | EXAMINE_SKIPGROIN
+			skip_gear |= EXAMINE_SKIPJUMPSUIT | EXAMINE_SKIPTIE | EXAMINE_SKIPHOLSTER
+		else if(suit.flags_inv & HIDETIE)
+			skip_gear |= EXAMINE_SKIPTIE | EXAMINE_SKIPHOLSTER
+		else if(suit.flags_inv & HIDEHOLSTER)
+			skip_gear |= EXAMINE_SKIPHOLSTER
+		if(suit.flags_inv & HIDESHOES)
+			skip_gear |= EXAMINE_SKIPSHOES
+			skip_body |= EXAMINE_SKIPFEET
+		if(suit.flags_inv & HIDEGLOVES)
+			skip_gear |= EXAMINE_SKIPGLOVES
+			skip_body |= EXAMINE_SKIPHANDS
+
+	var/obj/item/uniform = get_equipped_item(SLOT_ID_UNIFORM)
+	if(uniform)
+		if(uniform.body_parts_covered & LEGS)
+			skip_body |= EXAMINE_SKIPLEGS
+		if(uniform.body_parts_covered & ARMS)
+			skip_body |= EXAMINE_SKIPARMS
+		if(uniform.body_parts_covered & UPPER_TORSO)
+			skip_body |= EXAMINE_SKIPBODY
+		if(uniform.body_parts_covered & LOWER_TORSO)
+			skip_body |= EXAMINE_SKIPGROIN
+
+	var/obj/item/gloves = get_equipped_item(SLOT_ID_GLOVES)
+	if(gloves && (gloves.body_parts_covered & HANDS))
+		skip_body |= EXAMINE_SKIPHANDS
+
+	var/obj/item/shoes = get_equipped_item(SLOT_ID_SHOES)
+	if(shoes && (shoes.body_parts_covered & FEET))
+		skip_body |= EXAMINE_SKIPFEET
+
+	var/obj/item/head = get_equipped_item(SLOT_ID_HEAD)
+	if(head)
+		if(head.flags_inv & HIDEMASK)
+			skip_gear |= EXAMINE_SKIPMASK
+		if(head.flags_inv & HIDEEYES)
+			skip_gear |= EXAMINE_SKIPEYEWEAR
+			skip_body |= EXAMINE_SKIPEYES
+		if(head.flags_inv & HIDEEARS)
+			skip_gear |= EXAMINE_SKIPEARS
+		if(head.flags_inv & HIDEFACE)
+			skip_body |= EXAMINE_SKIPFACE
+
+	var/obj/item/mask = get_equipped_item(SLOT_ID_MASK)
+	if(mask && (mask.flags_inv & HIDEFACE))
+		skip_body |= EXAMINE_SKIPFACE
+	return list(skip_gear, skip_body)
+
+/// ", a <species>" after the name, when the face or uniform shows it.
+/mob/living/carbon/human/proc/examine_name_ender(skip_gear, skip_body, looks_synth)
+	if((skip_gear & EXAMINE_SKIPJUMPSUIT) && (skip_body & EXAMINE_SKIPFACE))
+		return ""
+	if(custom_species)
+		return ", a " + span_bold("[src.custom_species]")
+	if(looks_synth)
+		var/use_gender = "a synthetic"
+		if(gender == MALE)
+			use_gender = "an android"
+		else if(gender == FEMALE)
+			use_gender = "a gynoid"
+		return ", " + span_bold(span_gray("[use_gender]!")) + "[species.get_additional_examine_text(src)]"
+	if(species.name != "Human")
+		return ", " + span_bold("<font color='[species.get_flesh_colour(src)]'>\a [species.get_examine_name()]!</font>") + "[species.get_additional_examine_text(src)]"
+	return ""
+
+/// One worn-item line: "<lead> <icon> <item><where>.<extra>", or a warning when the item is stained.
+/mob/living/carbon/human/proc/examine_worn_line(obj/item/I, mob/user, lead, where, extra = "")
+	var/link = "<a href='byond://?src=\ref[src];lookitem_desc_only=\ref[I]'>"
+	if(I.forensic_data?.has_blooddna())
+		var/stain = (dq_get_blood_color(I) != "#030303") ? "blood" : "oil"
+		return span_warning("[lead] [icon2html(I, user.client)] [I.gender == PLURAL ? "some" : "a"] [stain]-stained [link][I.name]</a>[where]![extra]")
+	return "[lead] [icon2html(I, user.client)] [link]\a [I]</a>[where].[extra]"
+
+/// ". Attached to it is ..." for a garment's visible accessories.
+/mob/living/carbon/human/proc/examine_accessory_text(list/accessories, skip_holsters = FALSE, linked = TRUE)
+	if(!LAZYLEN(accessories))
+		return null
+	var/list/accessory_descs = list()
+	for(var/obj/item/clothing/accessory/A in accessories)
+		if(skip_holsters)
+			if(A.show_examine && !istype(A, /obj/item/clothing/accessory/holster)) // If we're supposed to skip holsters, actually skip them
+				accessory_descs += "\a [A]"
+		else if(!linked || (A.concealed_holster == 0 && A.show_examine))
+			accessory_descs += "<a href='byond://?src=\ref[src];lookitem_desc_only=\ref[A]'>\a [A]</a>"
+	return ". Attached to it is [lowertext(english_list(accessory_descs))]."
+
+/// Lines for everything worn or held that isn't hidden.
+/mob/living/carbon/human/proc/examine_gear_lines(mob/user, skip_gear, skip_body)
+	. = list()
+	var/obj/item/I
+
+	I = get_equipped_item(SLOT_ID_UNIFORM)
+	if(I && !(skip_gear & EXAMINE_SKIPJUMPSUIT) && I.show_examine)
 		var/tie_msg
-		if(istype(get_equipped_item(SLOT_ID_UNIFORM),/obj/item/clothing/under) && !(skip_gear & EXAMINE_SKIPTIE))
-			var/obj/item/clothing/under/U = get_equipped_item(SLOT_ID_UNIFORM)
-			if(LAZYLEN(U.accessories))
-				tie_msg += ". Attached to it is"
-				var/list/accessory_descs = list()
-				if(skip_gear & EXAMINE_SKIPHOLSTER)
-					for(var/obj/item/clothing/accessory/A in U.accessories)
-						if(A.show_examine && !istype(A, /obj/item/clothing/accessory/holster)) // If we're supposed to skip holsters, actually skip them
-							accessory_descs += "\a [A]"
-				else
-					for(var/obj/item/clothing/accessory/A in U.accessories)
-						if(A.concealed_holster == 0 && A.show_examine)
-							accessory_descs += "<a href='byond://?src=\ref[src];lookitem_desc_only=\ref[A]'>\a [A]</a>"
+		if(istype(I, /obj/item/clothing/under) && !(skip_gear & EXAMINE_SKIPTIE))
+			var/obj/item/clothing/under/U = I
+			tie_msg = examine_accessory_text(U.accessories, skip_holsters = (skip_gear & EXAMINE_SKIPHOLSTER))
+		. += examine_worn_line(I, user, "[p_Theyre()] wearing", "", tie_msg)
 
-				tie_msg += " [lowertext(english_list(accessory_descs))]."
-		if(get_equipped_item(SLOT_ID_UNIFORM).forensic_data?.has_blooddna())
-			msg += span_warning("[p_Theyre()] wearing [icon2html(get_equipped_item(SLOT_ID_UNIFORM),user.client)] [get_equipped_item(SLOT_ID_UNIFORM).gender==PLURAL?"some":"a"] [(dq_get_blood_color(get_equipped_item(SLOT_ID_UNIFORM)) != "#030303") ? "blood" : "oil"]-stained <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_UNIFORM)]'>[get_equipped_item(SLOT_ID_UNIFORM).name]</a>![tie_msg]")
-		else
-			msg += "[p_Theyre()] wearing [icon2html(get_equipped_item(SLOT_ID_UNIFORM),user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_UNIFORM)]'>\a [get_equipped_item(SLOT_ID_UNIFORM)]</a>.[tie_msg]"
+	I = get_equipped_item(SLOT_ID_HEAD)
+	if(I && !(skip_gear & EXAMINE_SKIPHELMET) && I.show_examine)
+		. += examine_worn_line(I, user, "[p_Theyre()] wearing", " on [p_their()] head")
 
-	//head
-	if(get_equipped_item(SLOT_ID_HEAD) && !(skip_gear & EXAMINE_SKIPHELMET) && get_equipped_item(SLOT_ID_HEAD).show_examine)
-		if(get_equipped_item(SLOT_ID_HEAD).forensic_data?.has_blooddna())
-			msg += span_warning("[p_Theyre()] wearing [icon2html(get_equipped_item(SLOT_ID_HEAD),user.client)] [get_equipped_item(SLOT_ID_HEAD).gender==PLURAL?"some":"a"] [(dq_get_blood_color(get_equipped_item(SLOT_ID_HEAD)) != "#030303") ? "blood" : "oil"]-stained <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_HEAD)]'>[get_equipped_item(SLOT_ID_HEAD).name]</a> on [p_their()] head!")
-		else
-			msg += "[p_Theyre()] wearing [icon2html(get_equipped_item(SLOT_ID_HEAD),user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_HEAD)]'>\a [get_equipped_item(SLOT_ID_HEAD)]</a> on [p_their()] head."
-
-	//suit/armour
-	if(get_equipped_item(SLOT_ID_SUIT))
+	var/obj/item/suit = get_equipped_item(SLOT_ID_SUIT)
+	if(suit)
 		var/tie_msg
-		if(istype(get_equipped_item(SLOT_ID_SUIT),/obj/item/clothing/suit))
-			var/obj/item/clothing/suit/U = get_equipped_item(SLOT_ID_SUIT)
-			if(LAZYLEN(U.accessories))
-				tie_msg += ". Attached to it is"
-				var/list/accessory_descs = list()
-				for(var/accessory in U.accessories)
-					accessory_descs += "<a href='byond://?src=\ref[src];lookitem_desc_only=\ref[accessory]'>\a [accessory]</a>"
-				tie_msg += " [lowertext(english_list(accessory_descs))]."
+		if(istype(suit, /obj/item/clothing/suit))
+			var/obj/item/clothing/suit/S = suit
+			tie_msg = examine_accessory_text(S.accessories, linked = FALSE)
+		. += examine_worn_line(suit, user, "[p_Theyre()] wearing", "", tie_msg)
+		I = get_equipped_item(SLOT_ID_SUIT_STORAGE)
+		if(I && !(skip_gear & EXAMINE_SKIPSUITSTORAGE) && I.show_examine)
+			. += examine_worn_line(I, user, "[p_Theyre()] carrying", " on [p_their()] [suit.name]")
 
-		if(get_equipped_item(SLOT_ID_SUIT).forensic_data?.has_blooddna())
-			msg += span_warning("[p_Theyre()] wearing [icon2html(get_equipped_item(SLOT_ID_SUIT),user.client)] [get_equipped_item(SLOT_ID_SUIT).gender==PLURAL?"some":"a"] [(dq_get_blood_color(get_equipped_item(SLOT_ID_SUIT)) != "#030303") ? "blood" : "oil"]-stained <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_SUIT)]'>[get_equipped_item(SLOT_ID_SUIT).name]</a>![tie_msg]")
-		else
-			msg += "[p_Theyre()] wearing [icon2html(get_equipped_item(SLOT_ID_SUIT),user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_SUIT)]'>\a [get_equipped_item(SLOT_ID_SUIT)]</a>.[tie_msg]"
+	I = get_equipped_item(SLOT_ID_BACK)
+	if(I && !(skip_gear & EXAMINE_SKIPBACKPACK) && I.show_examine)
+		. += examine_worn_line(I, user, "[p_They()] [p_have()]", " on [p_their()] back")
 
-		//suit/armour storage
-		if(get_equipped_item(SLOT_ID_SUIT_STORAGE) && !(skip_gear & EXAMINE_SKIPSUITSTORAGE) && get_equipped_item(SLOT_ID_SUIT_STORAGE).show_examine)
-			if(get_equipped_item(SLOT_ID_SUIT_STORAGE).forensic_data?.has_blooddna())
-				msg += span_warning("[p_Theyre()] carrying [icon2html(get_equipped_item(SLOT_ID_SUIT_STORAGE),user.client)] [get_equipped_item(SLOT_ID_SUIT_STORAGE).gender==PLURAL?"some":"a"] [(dq_get_blood_color(get_equipped_item(SLOT_ID_SUIT_STORAGE)) != "#030303") ? "blood" : "oil"]-stained <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_SUIT_STORAGE)]'>[get_equipped_item(SLOT_ID_SUIT_STORAGE).name]</a> on [p_their()] [get_equipped_item(SLOT_ID_SUIT).name]!")
-			else
-				msg += "[p_Theyre()] carrying [icon2html(get_equipped_item(SLOT_ID_SUIT_STORAGE),user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_SUIT_STORAGE)]'>\a [get_equipped_item(SLOT_ID_SUIT_STORAGE)]</a> on [p_their()] [get_equipped_item(SLOT_ID_SUIT).name]."
+	I = get_equipped_item(SLOT_ID_HAND_L)
+	if(I && I.show_examine)
+		. += examine_worn_line(I, user, "[p_Theyre()] holding", " in [p_their()] left hand")
 
-	//back
-	if(get_equipped_item(SLOT_ID_BACK) && !(skip_gear & EXAMINE_SKIPBACKPACK) && get_equipped_item(SLOT_ID_BACK).show_examine)
-		if(get_equipped_item(SLOT_ID_BACK).forensic_data?.has_blooddna())
-			msg += span_warning("[p_They()] [p_have()] [icon2html(get_equipped_item(SLOT_ID_BACK),user.client)] [get_equipped_item(SLOT_ID_BACK).gender==PLURAL?"some":"a"] [(dq_get_blood_color(get_equipped_item(SLOT_ID_BACK)) != "#030303") ? "blood" : "oil"]-stained <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_BACK)]'>[get_equipped_item(SLOT_ID_BACK)]</a> on [p_their()] back.")
-		else
-			msg += "[p_They()] [p_have()] [icon2html(get_equipped_item(SLOT_ID_BACK),user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_BACK)]'>\a [get_equipped_item(SLOT_ID_BACK)]</a> on [p_their()] back."
+	I = get_equipped_item(SLOT_ID_HAND_R)
+	if(I && I.show_examine)
+		. += examine_worn_line(I, user, "[p_Theyre()] holding", " in [p_their()] right hand")
 
-	//left hand
-	if(get_equipped_item(SLOT_ID_HAND_L) && get_equipped_item(SLOT_ID_HAND_L).show_examine)
-		if(get_equipped_item(SLOT_ID_HAND_L).forensic_data?.has_blooddna())
-			msg += span_warning("[p_Theyre()] holding [icon2html(get_equipped_item(SLOT_ID_HAND_L),user.client)] [get_equipped_item(SLOT_ID_HAND_L).gender==PLURAL?"some":"a"] [(dq_get_blood_color(get_equipped_item(SLOT_ID_HAND_L)) != "#030303") ? "blood" : "oil"]-stained <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_HAND_L)]'>[get_equipped_item(SLOT_ID_HAND_L).name]</a> in [p_their()] left hand!")
-		else
-			msg += "[p_Theyre()] holding [icon2html(get_equipped_item(SLOT_ID_HAND_L),user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_HAND_L)]'>\a [get_equipped_item(SLOT_ID_HAND_L)]</a> in [p_their()] left hand."
-
-	//right hand
-	if(get_equipped_item(SLOT_ID_HAND_R) && get_equipped_item(SLOT_ID_HAND_R).show_examine)
-		if(get_equipped_item(SLOT_ID_HAND_R).forensic_data?.has_blooddna())
-			msg += span_warning("[p_Theyre()] holding [icon2html(get_equipped_item(SLOT_ID_HAND_R),user.client)] [get_equipped_item(SLOT_ID_HAND_R).gender==PLURAL?"some":"a"] [(dq_get_blood_color(get_equipped_item(SLOT_ID_HAND_R)) != "#030303") ? "blood" : "oil"]-stained <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_HAND_R)]'>[get_equipped_item(SLOT_ID_HAND_R).name]</a> in [p_their()] right hand!")
-		else
-			msg += "[p_Theyre()] holding [icon2html(get_equipped_item(SLOT_ID_HAND_R),user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_HAND_R)]'>\a [get_equipped_item(SLOT_ID_HAND_R)]</a> in [p_their()] right hand."
-
-	//gloves
-	if(get_equipped_item(SLOT_ID_GLOVES) && !(skip_gear & EXAMINE_SKIPGLOVES) && get_equipped_item(SLOT_ID_GLOVES).show_examine)
+	I = get_equipped_item(SLOT_ID_GLOVES)
+	if(I && !(skip_gear & EXAMINE_SKIPGLOVES) && I.show_examine)
 		var/gloves_acc_msg
-		if(istype(get_equipped_item(SLOT_ID_GLOVES),/obj/item/clothing/gloves))
-			var/obj/item/clothing/gloves/G = get_equipped_item(SLOT_ID_GLOVES)
-			if(LAZYLEN(G.accessories))
-				gloves_acc_msg += ". Attached to it is"
-				var/list/accessory_descs = list()
-				for(var/obj/item/clothing/accessory/A in G.accessories)
-					accessory_descs += "<a href='byond://?src=\ref[src];lookitem_desc_only=\ref[A]'>\a [A]</a>"
-
-				gloves_acc_msg += " [lowertext(english_list(accessory_descs))]."
-		if(get_equipped_item(SLOT_ID_GLOVES).forensic_data?.has_blooddna())
-			msg += span_warning("[p_They()] [p_have()] [icon2html(get_equipped_item(SLOT_ID_GLOVES),user.client)] [get_equipped_item(SLOT_ID_GLOVES).gender==PLURAL?"some":"a"] [(dq_get_blood_color(get_equipped_item(SLOT_ID_GLOVES)) != "#030303") ? "blood" : "oil"]-stained <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_GLOVES)]'>[get_equipped_item(SLOT_ID_GLOVES).name]</a> on [p_their()] hands![gloves_acc_msg]")
-		else
-			msg += "[p_They()] [p_have()] [icon2html(get_equipped_item(SLOT_ID_GLOVES),user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_GLOVES)]'>\a [get_equipped_item(SLOT_ID_GLOVES)]</a> on [p_their()] hands.[gloves_acc_msg]"
-
+		if(istype(I, /obj/item/clothing/gloves))
+			var/obj/item/clothing/gloves/G = I
+			gloves_acc_msg = examine_accessory_text(G.accessories, linked = FALSE)
+		. += examine_worn_line(I, user, "[p_They()] [p_have()]", " on [p_their()] hands", gloves_acc_msg)
 	else if(forensic_data?.has_blooddna() && !(skip_body & EXAMINE_SKIPHANDS))
-		msg += span_warning("[p_They()] [p_have()] [(hand_blood_color != SYNTH_BLOOD_COLOUR) ? "blood" : "oil"]-stained hands!")
+		. += span_warning("[p_They()] [p_have()] [(hand_blood_color != SYNTH_BLOOD_COLOUR) ? "blood" : "oil"]-stained hands!")
 
-	//handcuffed?
-	if(get_equipped_item(SLOT_ID_HANDCUFFED) && get_equipped_item(SLOT_ID_HANDCUFFED).show_examine)
-		if(istype(get_equipped_item(SLOT_ID_HANDCUFFED), /obj/item/handcuffs/cable))
-			msg += span_warning("[p_Theyre()] [icon2html(get_equipped_item(SLOT_ID_HANDCUFFED),user.client)] restrained with cable!")
+	I = get_equipped_item(SLOT_ID_HANDCUFFED)
+	if(I && I.show_examine)
+		if(istype(I, /obj/item/handcuffs/cable))
+			. += span_warning("[p_Theyre()] [icon2html(I, user.client)] restrained with cable!")
 		else
-			msg += span_warning("[p_Theyre()] [icon2html(get_equipped_item(SLOT_ID_HANDCUFFED),user.client)] handcuffed!")
+			. += span_warning("[p_Theyre()] [icon2html(I, user.client)] handcuffed!")
 
-	//BUCKLED(src)
-	if(src?.buckled_to())
-		msg += span_warning("[p_Theyre()] [icon2html(src?.buckled_to(),user.client)] src?.buckled_to() to [src?.buckled_to()]!")
+	var/atom/buckled_thing = buckled_to()
+	if(buckled_thing)
+		. += span_warning("[p_Theyre()] [icon2html(buckled_thing, user.client)] buckled to [buckled_thing]!")
 
-	//belt
-	if(get_equipped_item(SLOT_ID_BELT) && !(skip_gear & EXAMINE_SKIPBELT) && get_equipped_item(SLOT_ID_BELT).show_examine)
-		if(get_equipped_item(SLOT_ID_BELT).forensic_data?.has_blooddna())
-			msg += span_warning("[p_They()] [p_have()] [icon2html(get_equipped_item(SLOT_ID_BELT),user.client)] [get_equipped_item(SLOT_ID_BELT).gender==PLURAL?"some":"a"] [(dq_get_blood_color(get_equipped_item(SLOT_ID_BELT)) != "#030303") ? "blood" : "oil"]-stained <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_BELT)]'>[get_equipped_item(SLOT_ID_BELT).name]</a> about [p_their()] waist!")
-		else
-			msg += "[p_They()] [p_have()] [icon2html(get_equipped_item(SLOT_ID_BELT),user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_BELT)]'>\a [get_equipped_item(SLOT_ID_BELT)]</a> about [p_their()] waist."
+	I = get_equipped_item(SLOT_ID_BELT)
+	if(I && !(skip_gear & EXAMINE_SKIPBELT) && I.show_examine)
+		. += examine_worn_line(I, user, "[p_They()] [p_have()]", " about [p_their()] waist")
 
-	//shoes
-	if(get_equipped_item(SLOT_ID_SHOES) && !(skip_gear & EXAMINE_SKIPSHOES) && get_equipped_item(SLOT_ID_SHOES).show_examine)
-		if(get_equipped_item(SLOT_ID_SHOES).forensic_data?.has_blooddna())
-			msg += span_warning("[p_Theyre()] wearing [icon2html(get_equipped_item(SLOT_ID_SHOES),user.client)] [get_equipped_item(SLOT_ID_SHOES).gender==PLURAL?"some":"a"] [(dq_get_blood_color(get_equipped_item(SLOT_ID_SHOES)) != "#030303") ? "blood" : "oil"]-stained <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_SHOES)]'>[get_equipped_item(SLOT_ID_SHOES).name]</a> on [p_their()] feet!")
-		else
-			msg += "[p_Theyre()] wearing [icon2html(get_equipped_item(SLOT_ID_SHOES),user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_SHOES)]'>\a [get_equipped_item(SLOT_ID_SHOES)]</a> on [p_their()] feet."
+	I = get_equipped_item(SLOT_ID_SHOES)
+	if(I && !(skip_gear & EXAMINE_SKIPSHOES) && I.show_examine)
+		. += examine_worn_line(I, user, "[p_Theyre()] wearing", " on [p_their()] feet")
 	else if(feet_blood_DNA && !(skip_body & EXAMINE_SKIPHANDS))
-		msg += span_warning("[p_They()] [p_have()] [(feet_blood_color != SYNTH_BLOOD_COLOUR) ? "blood" : "oil"]-stained feet!")
+		. += span_warning("[p_They()] [p_have()] [(feet_blood_color != SYNTH_BLOOD_COLOUR) ? "blood" : "oil"]-stained feet!")
 
-	//mask
-	if(get_equipped_item(SLOT_ID_MASK) && !(skip_gear & EXAMINE_SKIPMASK) && get_equipped_item(SLOT_ID_MASK).show_examine)
-		var/descriptor = "on [p_their()] face"
-		if(istype(get_equipped_item(SLOT_ID_MASK), /obj/item/grenade) && check_has_mouth())
-			descriptor = "in [p_their()] mouth"
+	I = get_equipped_item(SLOT_ID_MASK)
+	if(I && !(skip_gear & EXAMINE_SKIPMASK) && I.show_examine)
+		var/descriptor = " on [p_their()] face"
+		if(istype(I, /obj/item/grenade) && check_has_mouth())
+			descriptor = " in [p_their()] mouth"
+		. += examine_worn_line(I, user, "[p_They()] [p_have()]", descriptor)
 
-		if(get_equipped_item(SLOT_ID_MASK).forensic_data?.has_blooddna())
-			msg += span_warning("[p_They()] [p_have()] [icon2html(get_equipped_item(SLOT_ID_MASK),user.client)] [get_equipped_item(SLOT_ID_MASK).gender==PLURAL?"some":"a"] [(dq_get_blood_color(get_equipped_item(SLOT_ID_MASK)) != "#030303") ? "blood" : "oil"]-stained <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_MASK)]'>[get_equipped_item(SLOT_ID_MASK).name]</a> [descriptor]!")
-		else
-			msg += "[p_They()] [p_have()] [icon2html(get_equipped_item(SLOT_ID_MASK),user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_MASK)]'>\a [get_equipped_item(SLOT_ID_MASK)]</a> [descriptor]."
+	I = get_equipped_item(SLOT_ID_EYES)
+	if(I && !(skip_gear & EXAMINE_SKIPEYEWEAR) && I.show_examine)
+		. += examine_worn_line(I, user, "[p_They()] [p_have()]", " covering [p_their()] eyes")
 
-	//eyes
-	if(get_equipped_item(SLOT_ID_EYES) && !(skip_gear & EXAMINE_SKIPEYEWEAR) && get_equipped_item(SLOT_ID_EYES).show_examine)
-		if(get_equipped_item(SLOT_ID_EYES).forensic_data?.has_blooddna())
-			msg += span_warning("[p_They()] [p_have()] [icon2html(get_equipped_item(SLOT_ID_EYES),user.client)] [get_equipped_item(SLOT_ID_EYES).gender==PLURAL?"some":"a"] [(dq_get_blood_color(get_equipped_item(SLOT_ID_EYES)) != "#030303") ? "blood" : "oil"]-stained <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_EYES)]'>[get_equipped_item(SLOT_ID_EYES)]</a> covering [p_their()] eyes!")
-		else
-			msg += "[p_They()] [p_have()] [icon2html(get_equipped_item(SLOT_ID_EYES),user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_EYES)]'>\a [get_equipped_item(SLOT_ID_EYES)]</a> covering [p_their()] eyes."
+	I = get_equipped_item(SLOT_ID_EAR_L)
+	if(I && !(skip_gear & EXAMINE_SKIPEARS) && I.show_examine)
+		. += "[p_They()] [p_have()] [icon2html(I, user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[I]'>\a [I]</a> on [p_their()] left ear."
 
-	//left ear
-	if(get_equipped_item(SLOT_ID_EAR_L) && !(skip_gear & EXAMINE_SKIPEARS) && get_equipped_item(SLOT_ID_EAR_L).show_examine)
-		msg += "[p_They()] [p_have()] [icon2html(get_equipped_item(SLOT_ID_EAR_L),user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_EAR_L)]'>\a [get_equipped_item(SLOT_ID_EAR_L)]</a> on [p_their()] left ear."
+	I = get_equipped_item(SLOT_ID_EAR_R)
+	if(I && !(skip_gear & EXAMINE_SKIPEARS) && I.show_examine)
+		. += "[p_They()] [p_have()] [icon2html(I, user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[I]'>\a [I]</a> on [p_their()] right ear."
 
-	//right ear
-	if(get_equipped_item(SLOT_ID_EAR_R) && !(skip_gear & EXAMINE_SKIPEARS) && get_equipped_item(SLOT_ID_EAR_R).show_examine)
-		msg += "[p_They()] [p_have()] [icon2html(get_equipped_item(SLOT_ID_EAR_R),user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_EAR_R)]'>\a [get_equipped_item(SLOT_ID_EAR_R)]</a> on [p_their()] right ear."
+	I = get_equipped_item(SLOT_ID_ID)
+	if(I && I.show_examine)
+		. += "[p_Theyre()] wearing [icon2html(I, user.client)]<a href='byond://?src=\ref[src];lookitem_desc_only=\ref[I]'>\a [I]</a>."
 
-	//ID
-	if(get_equipped_item(SLOT_ID_ID) && get_equipped_item(SLOT_ID_ID).show_examine)
-		msg += "[p_Theyre()] wearing [icon2html(get_equipped_item(SLOT_ID_ID),user.client)]<a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_ID)]'>\a [get_equipped_item(SLOT_ID_ID)]</a>."
-
-	//Jitters
+/// Jitters, splints, vore and size lines, responsiveness, fire and SSD.
+/mob/living/carbon/human/proc/examine_status_lines(mob/user, list/hidden)
+	. = list()
 	var/jitter = status_units(EFFECT_JITTERY)
-	if(jitter)
-		if(jitter >= 300)
-			msg += span_boldwarning("[p_Theyre()] convulsing violently!")
-		else if(jitter >= 200)
-			msg += span_warning("[p_Theyre()] extremely jittery.")
-		else if(jitter >= 100)
-			msg += span_warning("[p_Theyre()] twitching ever so slightly.")
+	if(jitter >= 300)
+		. += span_boldwarning("[p_Theyre()] convulsing violently!")
+	else if(jitter >= 200)
+		. += span_warning("[p_Theyre()] extremely jittery.")
+	else if(jitter >= 100)
+		. += span_warning("[p_Theyre()] twitching ever so slightly.")
 
-	//splints
 	for(var/organ in BP_ALL)
 		var/obj/item/organ/external/o = get_organ(organ)
 		if(o && o.splinted && o.splinted.loc == o)
-			msg += span_warning("[p_They()] [p_have()] \a [o.splinted] on [p_their()] [o.name]!")
+			. += span_warning("[p_They()] [p_have()] \a [o.splinted] on [p_their()] [o.name]!")
 
 	if(suiciding)
-		msg += span_warning("[p_They()] appears to have commited suicide... there is no hope of recovery.")
+		. += span_warning("[p_They()] appears to have commited suicide... there is no hope of recovery.")
 
 	var/list/vorestrings = list()
 	vorestrings += examine_weight()
@@ -279,177 +266,165 @@
 	for(var/entry in vorestrings)
 		if(entry == "" || entry == null)
 			vorestrings -= entry
-	msg += vorestrings
+	. += vorestrings
 
 	if(has_mutation(mSmallsize))
-		msg += "[p_Theyre()] very short!"
+		. += "[p_Theyre()] very short!"
 
-	if (src.stat || (status_flags & FAKEDEATH))
-		msg += span_warning("[p_Theyre()] not responding to anything around [p_them()] and seems to be asleep.")
+	if(src.stat || (status_flags & FAKEDEATH))
+		. += span_warning("[p_Theyre()] not responding to anything around [p_them()] and seems to be asleep.")
 		var/obj/item/organ/internal/lungs/L = internal_organs_by_name[O_LUNGS]
 		if(((stat == DEAD || losebreath || !L || (status_flags & FAKEDEATH)) && get_dist(user, src) <= 3))
-			msg += span_warning("[p_They()] [user.p_do()] not appear to be breathing.")
+			. += span_warning("[p_They()] [user.p_do()] not appear to be breathing.")
 		if(ishuman(user) && !user.stat && Adjacent(user))
 			user.visible_message(span_infoplain(span_bold("[user]") + " checks [src]'s pulse."), span_infoplain("You check [src]'s pulse."))
 		om_after(src, 15, PROC_REF(pulse_check_result), user)
 
 	if(fire_stacks)
-		msg += "[p_Theyre()] covered in some liquid."
+		. += "[p_Theyre()] covered in some liquid."
 	if(on_fire)
-		msg += span_warning("[p_Theyre()] on fire!.")
+		. += span_warning("[p_Theyre()] on fire!.")
 
+	. += examine_ssd_lines()
+
+/// Sleep-disorder, AFK and disconnect lines.
+/mob/living/carbon/human/proc/examine_ssd_lines()
+	. = list()
 	var/ssd_msg = species.get_ssd(src)
-	if(ssd_msg && (!should_have_organ(O_BRAIN) || has_brain()) && stat != DEAD && !(status_flags & FAKEDEATH))
-		if(!key)
-			msg += span_deadsay("[p_Theyre()] [ssd_msg]. It doesn't look like [p_theyre()] waking up anytime soon.")
-		else if(!client)
-			msg += span_deadsay("[p_Theyre()] [ssd_msg].")
-		if(client && away_from_keyboard && manual_afk)
-			msg += "\[Away From Keyboard for [round((client.inactivity/10)/60)] minutes\]"
-		else if(client && ((client.inactivity / 10) / 60 > 10)) //10 Minutes
-			msg += "\[Inactive for [round((client.inactivity/10)/60)] minutes\]"
-		else if(disconnect_time)
-			msg += "\[Disconnected/ghosted [round(((world.realtime - disconnect_time)/10)/60)] minutes ago\]"
+	if(!ssd_msg || (should_have_organ(O_BRAIN) && !has_brain()) || stat == DEAD || (status_flags & FAKEDEATH))
+		return
+	if(!key)
+		. += span_deadsay("[p_Theyre()] [ssd_msg]. It doesn't look like [p_theyre()] waking up anytime soon.")
+	else if(!client)
+		. += span_deadsay("[p_Theyre()] [ssd_msg].")
+	if(client && away_from_keyboard && manual_afk)
+		. += "\[Away From Keyboard for [round((client.inactivity/10)/60)] minutes\]"
+	else if(client && ((client.inactivity / 10) / 60 > 10)) //10 Minutes
+		. += "\[Inactive for [round((client.inactivity/10)/60)] minutes\]"
+	else if(disconnect_time)
+		. += "\[Disconnected/ghosted [round(((world.realtime - disconnect_time)/10)/60)] minutes ago\]"
 
+/// Visible limb state: missing limbs and stumps, prostheses, wounds, dislocations, fractures,
+/// necrosis, bleeding and protruding implants. Infection is not read here: it reaches examine
+/// as the glance diagnosis' signs. Returns list(lines, applying-pressure line).
+/mob/living/carbon/human/proc/examine_limb_lines(mob/user, list/hidden, looks_synth)
 	var/list/wound_flavor_text = list()
 	var/list/is_bleeding = list()
 	var/applying_pressure = ""
 
 	for(var/organ_tag in species.has_limbs)
-
 		var/list/organ_data = species.has_limbs[organ_tag]
 		var/organ_descriptor = organ_data["descriptor"]
-
 		var/obj/item/organ/external/E = organs_by_name[organ_tag]
 		if(!E)
 			wound_flavor_text["[organ_descriptor]"] = span_boldwarning("[p_Theyre()] missing [p_their()] [organ_descriptor].")
 		else if(E.is_stump())
 			wound_flavor_text["[organ_descriptor]"] = span_boldwarning("[p_They()] [p_have()] a stump where [p_their()] [organ_descriptor] should be.")
-		else
-			continue
 
 	for(var/obj/item/organ/external/temp in organs)
-		if(temp)
-			if((temp.organ_tag in hidden) && hidden[temp.organ_tag])
-				continue //Organ is hidden, don't talk about it
-			if(temp.status & ORGAN_DESTROYED)
-				wound_flavor_text["[temp.name]"] = span_boldwarning("[p_Theyre()] missing [p_their()] [temp.name].")
-				continue
+		if((temp.organ_tag in hidden) && hidden[temp.organ_tag])
+			continue //Organ is hidden, don't talk about it
+		if(temp.status & ORGAN_DESTROYED)
+			wound_flavor_text["[temp.name]"] = span_boldwarning("[p_Theyre()] missing [p_their()] [temp.name].")
+			continue
 
-			if(!looks_synth && temp.robotic == ORGAN_ROBOT)
-				if(!(temp.get_trauma() + temp.get_burn()))
-					wound_flavor_text["[temp.name]"] = "[p_They()] [p_have()] a [temp.name]."
-				else
-					wound_flavor_text["[temp.name]"] = span_warning("[p_They()] [p_have()] a [temp.name] with [temp.get_wounds_desc()]!")
-				continue
-			else if(length(temp.get_wounds()) || temp.open)
-				if(temp.is_stump() && temp.parent_organ && organs_by_name[temp.parent_organ])
-					var/obj/item/organ/external/parent = organs_by_name[temp.parent_organ]
-					wound_flavor_text["[temp.name]"] = span_warning("[p_They()] [p_have()] [temp.get_wounds_desc()] on [p_their()] [parent.name].")
-				else
-					wound_flavor_text["[temp.name]"] = span_warning("[p_They()] [p_have()] [temp.get_wounds_desc()] on [p_their()] [temp.name].")
+		if(!looks_synth && temp.robotic == ORGAN_ROBOT)
+			if(!(temp.get_trauma() + temp.get_burn()))
+				wound_flavor_text["[temp.name]"] = "[p_They()] [p_have()] a [temp.name]."
 			else
-				wound_flavor_text["[temp.name]"] = ""
-			if(temp.dislocated == 1)
-				wound_flavor_text["[temp.name]"] += span_warning("[p_Their()] [temp.joint] is dislocated!")
-			if(temp.get_trauma() > temp.min_broken_damage || temp.is_fractured() || (temp.status & ORGAN_MUTATED))
-				wound_flavor_text["[temp.name]"] += span_warning("[p_Their()] [temp.name] is dented and swollen!")
+				wound_flavor_text["[temp.name]"] = span_warning("[p_They()] [p_have()] a [temp.name] with [temp.get_wounds_desc()]!")
+			continue
+		else if(length(temp.get_wounds()) || temp.open)
+			if(temp.is_stump() && temp.parent_organ && organs_by_name[temp.parent_organ])
+				var/obj/item/organ/external/parent = organs_by_name[temp.parent_organ]
+				wound_flavor_text["[temp.name]"] = span_warning("[p_They()] [p_have()] [temp.get_wounds_desc()] on [p_their()] [parent.name].")
+			else
+				wound_flavor_text["[temp.name]"] = span_warning("[p_They()] [p_have()] [temp.get_wounds_desc()] on [p_their()] [temp.name].")
+		else
+			wound_flavor_text["[temp.name]"] = ""
+		if(temp.dislocated == 1)
+			wound_flavor_text["[temp.name]"] += span_warning("[p_Their()] [temp.joint] is dislocated!")
+		if(temp.get_trauma() > temp.min_broken_damage || temp.is_fractured() || (temp.status & ORGAN_MUTATED))
+			wound_flavor_text["[temp.name]"] += span_warning("[p_Their()] [temp.name] is dented and swollen!")
+		if(temp.status & ORGAN_DEAD)
+			wound_flavor_text["[temp.name]"] += span_warning("[p_Their()] [temp.name] looks rotten!")
+		if(temp.status & ORGAN_BLEEDING)
+			is_bleeding["[temp.name]"] += span_danger("[p_Their()] [temp.name] is bleeding!")
+		if(temp.applied_pressure == src)
+			applying_pressure = span_info("[p_They()] is applying pressure to [p_their()] [temp.name].")
 
-			if(temp.germ_level > INFECTION_LEVEL_TWO && !(temp.status & ORGAN_DEAD))
-				wound_flavor_text["[temp.name]"] += span_warning("[p_Their()] [temp.name] looks very infected!")
-			else if(temp.status & ORGAN_DEAD)
-				wound_flavor_text["[temp.name]"] += span_warning("[p_Their()] [temp.name] looks rotten!")
-
-			if(temp.status & ORGAN_BLEEDING)
-				is_bleeding["[temp.name]"] += span_danger("[p_Their()] [temp.name] is bleeding!")
-
-			if(temp.applied_pressure == src)
-				applying_pressure = span_info("[p_They()] is applying pressure to [p_their()] [temp.name].")
-
+	var/list/lines = list()
 	for(var/limb in wound_flavor_text)
-		var/flavor = wound_flavor_text[limb]
-		if(flavor)
-			msg += flavor
+		if(wound_flavor_text[limb])
+			lines += wound_flavor_text[limb]
 	for(var/limb in is_bleeding)
-		var/blood = is_bleeding[limb]
-		if(blood)
-			msg += blood
+		if(is_bleeding[limb])
+			lines += is_bleeding[limb]
 	for(var/implant in get_visible_implants(0))
-		msg += span_danger("[src] [user.p_have()] \a [implant] sticking out of [p_their()] flesh!")
+		lines += span_danger("[src] [user.p_have()] \a [implant] sticking out of [p_their()] flesh!")
 	if(digitalcamo)
-		msg += "[p_Theyre()] repulsively uncanny!"
+		lines += "[p_Theyre()] repulsively uncanny!"
+	return list(lines, applying_pressure)
 
-	// What the naked eye sees: the glance diagnosis profile (bleeding,
-	// pallor, blue lips, laboured breathing). Patient-only sensations
-	// (pain, dizziness) stay hidden.
+/// What the naked eye sees: the glance diagnosis profile's signs (bleeding, pallor, blue lips,
+/// laboured breathing, visible infection). Patient-only sensations (pain, dizziness) stay hidden.
+/mob/living/carbon/human/proc/examine_diagnosis_lines()
+	. = list()
 	var/datum/diagnosis/glance = diagnose(/datum/diagnostic_profile/glance)
 	for(var/line in glance?.examine_lines())
-		msg += span_warning(line)
+		. += span_warning(line)
+	for(var/datum/diagnosis_finding/F as anything in glance?.findings_of(DIAG_FINDING_CONDITION))
+		if(F.location && ispath(F.source_type, /datum/affliction/wound_infection) && _dq_band_rank(F.band) >= _dq_band_rank(DIAG_BAND_MODERATE))
+			. += span_warning("[p_Their()] [F.location] looks very infected!")
 	qdel(glance)
 
+/// The name records are filed under: the worn ID's, else ours.
+/mob/living/carbon/human/proc/examine_record_name()
+	var/obj/item/worn_id = get_equipped_item(SLOT_ID_ID)
+	if(istype(worn_id, /obj/item/card/id))
+		var/obj/item/card/id/I = worn_id
+		return I.registered_name
+	if(istype(worn_id, /obj/item/pda))
+		var/obj/item/pda/P = worn_id
+		return P.owner
+	return name
+
+/// Security, medical and employment record links for HUD wearers.
+/mob/living/carbon/human/proc/examine_record_lines(mob/user)
+	. = list()
 	if(hasHUD(user,"security"))
-		var/perpname = name
+		var/perpname = examine_record_name()
 		var/criminal = "None"
-
-		if(get_equipped_item(SLOT_ID_ID))
-			if(istype(get_equipped_item(SLOT_ID_ID), /obj/item/card/id))
-				var/obj/item/card/id/I = get_equipped_item(SLOT_ID_ID)
-				perpname = I.registered_name
-			else if(istype(get_equipped_item(SLOT_ID_ID), /obj/item/pda))
-				var/obj/item/pda/P = get_equipped_item(SLOT_ID_ID)
-				perpname = P.owner
-
-		for (var/datum/data/record/R in GLOB.data_core.security)
+		for(var/datum/data/record/R in GLOB.data_core.security)
 			if(R.fields["name"] == perpname)
 				criminal = R.fields["criminal"]
-
-		msg += "Criminal status: <a href='byond://?src=\ref[src];criminal=1'>\[[criminal]\]</a>"
-		msg += "Security records: <a href='byond://?src=\ref[src];secrecord=`'>\[View\]</a>  <a href='byond://?src=\ref[src];secrecordadd=`'>\[Add comment\]</a>"
+		. += "Criminal status: <a href='byond://?src=\ref[src];criminal=1'>\[[criminal]\]</a>"
+		. += "Security records: <a href='byond://?src=\ref[src];secrecord=`'>\[View\]</a>  <a href='byond://?src=\ref[src];secrecordadd=`'>\[Add comment\]</a>"
 
 	if(hasHUD(user,"medical"))
-		var/perpname = name
+		var/perpname = examine_record_name()
 		var/medical = "None"
-
-		if(get_equipped_item(SLOT_ID_ID))
-			if(istype(get_equipped_item(SLOT_ID_ID), /obj/item/card/id))
-				var/obj/item/card/id/I = get_equipped_item(SLOT_ID_ID)
-				perpname = I.registered_name
-			else if(istype(get_equipped_item(SLOT_ID_ID), /obj/item/pda))
-				var/obj/item/pda/P = get_equipped_item(SLOT_ID_ID)
-				perpname = P.owner
-
-		for (var/datum/data/record/R in GLOB.data_core.medical)
-			if (R.fields["name"] == perpname)
+		for(var/datum/data/record/R in GLOB.data_core.medical)
+			if(R.fields["name"] == perpname)
 				medical = R.fields["p_stat"]
-
-		msg += "Physical status: <a href='byond://?src=\ref[src];medical=1'>\[[medical]\]</a>"
-		msg += "Medical records: <a href='byond://?src=\ref[src];medrecord=`'>\[View\]</a> <a href='byond://?src=\ref[src];medrecordadd=`'>\[Add comment\]</a>"
+		. += "Physical status: <a href='byond://?src=\ref[src];medical=1'>\[[medical]\]</a>"
+		. += "Medical records: <a href='byond://?src=\ref[src];medrecord=`'>\[View\]</a> <a href='byond://?src=\ref[src];medrecordadd=`'>\[Add comment\]</a>"
 
 	if(hasHUD(user,"best"))
-		msg += "Employment records: <a href='byond://?src=\ref[src];emprecord=`'>\[View\]</a> <a href='byond://?src=\ref[src];emprecordadd=`'>\[Add comment\]</a>"
+		. += "Employment records: <a href='byond://?src=\ref[src];emprecord=`'>\[View\]</a> <a href='byond://?src=\ref[src];emprecordadd=`'>\[Add comment\]</a>"
 
-
+/// Flavour text, custom link, OOC notes and vore preference links.
+/mob/living/carbon/human/proc/examine_profile_lines()
+	. = list()
 	var/flavor_text = print_flavor_text()
 	if(flavor_text)
 		flavor_text = replacetext(flavor_text, "||", "")
-		msg += "[flavor_text]"
-
+		. += "[flavor_text]"
 	if(custom_link)
-		msg += "Custom link: " + span_linkify("[custom_link]")
-
+		. += "Custom link: " + span_linkify("[custom_link]")
 	if(identity().ooc_notes)
-		msg += "OOC Notes: <a href='byond://?src=\ref[src];ooc_notes=1'>\[View\]</a> - <a href='byond://?src=\ref[src];print_ooc_notes_chat=1'>\[Print\]</a>"
-	msg += "<a href='byond://?src=\ref[src];vore_prefs=1'>\[Mechanical Vore Preferences\]</a>"
-	msg = list(span_info(jointext(msg, "<br>")))
-	if(applying_pressure)
-		msg += applying_pressure
-
-	if(pose)
-		if(!findtext(pose, regex("\[.?!]$"))) // Will be zero if the last character is not a member of [.?!]
-			pose = addtext(pose,".") //Makes sure all emotes end with a period.
-		msg += "<br>[p_They()] [pose]" //<br> intentional, extra gap.
-
-	return msg
+		. += "OOC Notes: <a href='byond://?src=\ref[src];ooc_notes=1'>\[View\]</a> - <a href='byond://?src=\ref[src];print_ooc_notes_chat=1'>\[Print\]</a>"
+	. += "<a href='byond://?src=\ref[src];vore_prefs=1'>\[Mechanical Vore Preferences\]</a>"
 
 //Helper procedure. Called by /mob/living/carbon/human/examine() and /mob/living/carbon/human/Topic() to determine HUD access to security and medical records.
 /proc/hasHUD(mob/M as mob, hudtype)

@@ -32,9 +32,6 @@
 		return L.mob_size <= MOB_MINISCULE
 	return 0
 
-/mob/living/silicon/isSynthetic()
-	return 1
-
 /mob/proc/isMonkey()
 	return 0
 

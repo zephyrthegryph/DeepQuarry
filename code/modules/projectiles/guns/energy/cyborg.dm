@@ -402,7 +402,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/robotic/blade, \
 
 /obj/item/melee/robotic/blade/ionic/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
 	. = ..()
-	if(target.isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(target))
 		// Do some extra damage.  Not a whole lot more since emp_act() is pretty nasty on FBPs already.
 		target.emp_act(3) // A weaker severity is used because this has infinite uses.
 		playsound(target, 'sound/effects/EMPulse.ogg', 100, 1)
@@ -582,6 +582,6 @@ DECLARE_INTERACTIONS(/obj/item/melee/robotic/baton, \
 	// Now for prommies.
 	if(ishuman(L))
 		var/mob/living/carbon/human/H = L
-		if(H.species && H.species.name == SPECIES_PROMETHEAN)
+		if(H.species?.is_slime_bodied)
 			H.injure(INJURY_PAIN, 35, source = src)
 	..()

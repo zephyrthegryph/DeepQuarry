@@ -93,8 +93,10 @@
 		canmove = 0
 	return canmove
 
-/mob/living/carbon/brain/isSynthetic()
-	return istype(loc, /obj/item/mmi)
+/// A brain in a man-machine interface is housed in a machine: its systemic
+/// biology is the housing's.
+/mob/living/carbon/brain/biology()
+	return istype(loc, /obj/item/mmi) ? BIOLOGY_SYNTHETIC : ..()
 
 /mob/living/carbon/brain/runechat_holder(datum/chatmessage/CM)
 	if(isturf(loc))

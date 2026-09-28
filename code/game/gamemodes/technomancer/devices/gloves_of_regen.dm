@@ -55,15 +55,15 @@
 
 	// Organic treatment tags: synthetic parts are left alone (and don't cost nutrition).
 	if(H.mend(TREAT_TISSUE_REPAIR, 0.1))
-		H.nutrition = max(H.nutrition - 10, 0)
+		H.set_nutrition(max(H.nutrition - 10, 0))
 	if(H.mend(TREAT_BURN_CARE, 0.1))
-		H.nutrition = max(H.nutrition - 10, 0)
+		H.set_nutrition(max(H.nutrition - 10, 0))
 	if(H.mend(TREAT_ANTITOXIN, 0.1))
-		H.nutrition = max(H.nutrition - 10, 0)
+		H.set_nutrition(max(H.nutrition - 10, 0))
 	if(H.mend(TREAT_OXYGENATION, 0.1))
-		H.nutrition = max(H.nutrition - 10, 0)
+		H.set_nutrition(max(H.nutrition - 10, 0))
 	if(H.mend(TREAT_GENETIC_REPAIR, 0.1))
-		H.nutrition = max(H.nutrition - 20, 0)
+		H.set_nutrition(max(H.nutrition - 20, 0))
 
 /obj/item/clothing/gloves/regen/equipped(mob/user, slot)
 	. = ..()

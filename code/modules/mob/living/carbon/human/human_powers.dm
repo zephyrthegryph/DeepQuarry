@@ -206,7 +206,7 @@
 
 	output += "Internal Temperature: [convert_k2c(bodytemperature)] Degrees Celsius\n"
 
-	if(isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(src))
 		output += "Current Battery Charge: [nutrition]\n"
 
 		var/toxDam = injury_load(INJURY_CATEGORY_TOXIC)
@@ -216,14 +216,14 @@
 			output += "System Instability: " + span_green("OK") + "\n"
 
 	for(var/obj/item/organ/external/EO in organs)
-		if(EO.robotic >= ORGAN_ASSISTED)
+		if(EO.is_assisted())
 			if(EO.get_trauma() || EO.get_burn())
 				output += "[EO.name] - " + span_warning("[EO.get_burn() + EO.get_trauma() > EO.min_broken_damage ? "Heavy Damage" : "Light Damage"]") + "\n" // Makes robotic limb damage scalable
 			else
 				output += "[EO.name] - " + span_green("OK") + "\n"
 
 	for(var/obj/item/organ/IO in internal_organs)
-		if(IO.robotic >= ORGAN_ASSISTED)
+		if(IO.is_assisted())
 			if(IO.damage)
 				output += "[IO.name] - " + span_warning("[IO.damage > 10 ? "Heavy Damage" : "Light Damage"]") + "\n"
 			else
@@ -302,7 +302,7 @@
 	adjust_nutrition(-200)
 
 	for(var/obj/item/organ/internal/I in internal_organs)
-		if(I.robotic >= ORGAN_ROBOT) // No free robofix.
+		if(I.is_robotic()) // No free robofix.
 			continue
 		if(I.damage > 0)
 			mend(TREAT_RESTORATION, 30, I) //Repair functionally half of a dead internal organ.

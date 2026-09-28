@@ -104,6 +104,11 @@
 		original_atom.Cut()
 	return ..()
 
+/// Shift this atom's surface germ count (never below 0). Organs override it
+/// with their infection clamp. The one writer for reagents and cleaning (P2-K5).
+/atom/proc/adjust_germ_level(amount)
+	germ_level = max(0, germ_level + amount)
+
 /atom/proc/reveal_blood()
 	return
 

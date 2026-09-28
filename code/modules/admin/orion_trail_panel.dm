@@ -44,7 +44,7 @@
 		playsound(src, 'sound/arcade/ori_fail.ogg', 50, 1, extrarange = -3, falloff = 0.1, ignore_walls = FALSE)
 		if(emagged)
 			if(food <= 0)
-				user.nutrition = 0
+				user.set_nutrition(0)
 				to_chat(user, span_danger(span_large("Your body instantly contracts to that of one who has not eaten in months. Agonizing cramps seize you as you fall to the floor.")))
 			if(fuel <= 0)
 				user.adjust_fire_stacks(5)

@@ -89,7 +89,7 @@
 	if(!.)
 		var/has_organ = FALSE
 		var/obj/item/organ/internal/O = H.get_active_hand()
-		if(istype(O) && O.robotic < ORGAN_ROBOT && !(O.status & ORGAN_DEAD))
+		if(istype(O) && !O.is_robotic() && !(O.status & ORGAN_DEAD))
 			has_organ = TRUE
 		return has_organ
 
@@ -253,7 +253,7 @@
 
 	if(!(src.Adjacent(M))) return
 
-	if(!istype(M) || M.isSynthetic())
+	if(!istype(M) || HAS_SYNTHETIC_BIOLOGY(M))
 		to_chat(user, "\The [M] cannot be infested.")
 		return
 
@@ -261,7 +261,7 @@
 		var/mob/living/carbon/human/H = M
 
 		var/obj/item/organ/external/E = H.organs_by_name[infest_target]
-		if(!E || E.is_stump() || E.robotic >= ORGAN_ROBOT)
+		if(!E || E.is_stump() || E.is_robotic())
 			to_chat(src,"\The [H] does not have an infestable [infest_target]!")
 			return
 
@@ -377,12 +377,12 @@
 
 	var/mob/living/carbon/human/H = L
 
-	if(!istype(H) || H.isSynthetic())
+	if(!istype(H) || HAS_SYNTHETIC_BIOLOGY(H))
 		to_chat(user, span_warning("You cannot inject this target..."))
 		return
 
 	var/obj/item/organ/external/E = H.organs_by_name[infest_target]
-	if(!E || E.is_stump() || E.robotic >= ORGAN_ROBOT)
+	if(!E || E.is_stump() || E.is_robotic())
 		to_chat(src,"\The [H] does not have an infestable [infest_target]!")
 		return
 

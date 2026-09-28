@@ -72,11 +72,11 @@
 		return
 	if(resting)
 		natural_mend(10)
-		nutrition -= 50
+		adjust_nutrition(-(50))
 		heal_countdown = 5
 		return
 	natural_mend(1)
-	nutrition -= 5
+	adjust_nutrition(-(5))
 	heal_countdown = 5
 
 /// Natural regeneration: physical injury first, then burns. Mechanical mobs
@@ -107,6 +107,8 @@
 /datum/om/stage/life/environment/simple_mob
 	of = /mob/living/simple_mob
 	woken_by = "Moved; injure; its own timer for air changing in place"
+	// P2-S6: stasis pauses the air exchange; the pipeline skips paused frames.
+	run_if = LIFE_RUN_IF_PLACED_UNPAUSED
 
 /// Idle while the air is survivable and the body has nothing for it to treat. Air that
 /// changes in place (a breach) is caught by a slow timer: atmos has no per-mob signal yet.
@@ -149,9 +151,6 @@
 
 /// Handle interacting with and taking damage from atmos.
 /datum/om/stage/life/environment/simple_mob/exchange(mob/living/simple_mob/self, datum/gas_mixture/environment)
-
-	if(self.inStasisNow())
-		return 1 // return early to skip atmos checks
 	if(self.is_incorporeal())
 		return 1
 

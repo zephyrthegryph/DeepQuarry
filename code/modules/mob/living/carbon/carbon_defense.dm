@@ -145,7 +145,7 @@
 /mob/living/carbon/proc/on_injured(kind, amount, zone, atom/source, flags)
 	if(flags & INJURE_SILENT)
 		return
-	if(!(can_feel_pain() || (isSynthetic() && synth_cosmetic_pain)))
+	if(!(can_feel_pain() || (HAS_SYNTHETIC_BIOLOGY(src) && synth_cosmetic_pain)))
 		return
 	injury_pain_noise(amount)
 

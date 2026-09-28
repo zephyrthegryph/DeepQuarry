@@ -69,7 +69,7 @@ DECLARE_INTERACTIONS(/obj/item/deadringer, INTERACT_USE(null, PROC_REF(interacti
 	return
 
 /obj/item/deadringer/proc/makeacorpse(mob/living/carbon/human/H)
-	if(H.isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(H))
 		return
 	corpse_handle = om_handle(new /mob/living/carbon/human(H.loc))
 	QDEL_SWAP(corpse().dna,H.dna.Clone())
@@ -165,7 +165,7 @@ DECLARE_INTERACTIONS(/obj/item/deadringer, INTERACT_USE(null, PROC_REF(interacti
 			if(H.injury_load(INJURY_CATEGORY_PHYSICAL) > bruteloss_prev || H.injury_load(INJURY_CATEGORY_THERMAL) > fireloss_prev)
 				deathprevent()
 				activated = 0
-				if(watchowner().isSynthetic())
+				if(HAS_SYNTHETIC_BIOLOGY(watchowner()))
 					to_chat(watchowner(), span_blue("You fade into nothingness! [src]'s screen blinks, being unable to copy your synthetic body!"))
 				else
 					to_chat(watchowner(), span_blue("You fade into nothingness, leaving behind a fake body!"))

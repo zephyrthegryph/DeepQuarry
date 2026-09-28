@@ -46,7 +46,7 @@
 				data -= taste
 
 /datum/reagent/nutriment/affect_blood(mob/living/carbon/M, alien, removed)
-	if(!injectable && alien != IS_SLIME && alien != IS_CHIMERA && !M.isSynthetic())
+	if(!injectable && alien != IS_SLIME && alien != IS_CHIMERA && !HAS_SYNTHETIC_BIOLOGY(M))
 		M.injure(INJURY_TOXIN, 0.1 * removed, source = src)
 		return
 	affect_ingest(M, alien, removed) // B18: this already feeds every body; no second add
@@ -59,7 +59,7 @@
 		if(IS_CHIMERA) removed *= 0.25
 	if(issmall(M)) removed *= 2 // Small bodymass, more effect from lower volume.
 	// s Start
-	if(!M.isSynthetic())
+	if(!HAS_SYNTHETIC_BIOLOGY(M))
 		if(!(M.species.allergens & allergen_type) && !(M.species.medallergens & medallergen_type))	//assuming it doesn't cause a horrible reaction, we'll be ok!
 			// Nutriment's light tissue repair is its treatment_tags profile.
 			M.adjust_nutrition(((nutriment_factor + M.food_preference(allergen_type)) * removed) * M.species.organic_food_coeff) //RS edit
@@ -627,7 +627,7 @@
 
 /datum/reagent/nutriment/durian/touch_mob(mob/M, amount)
 	..()
-	if(iscarbon(M) && !M.isSynthetic())
+	if(iscarbon(M) && !HAS_SYNTHETIC_BIOLOGY(M))
 		var/message = pick("Oh god, it smells disgusting here.", "What is that stench?", "That's an awful odor.")
 		to_chat(M, span_alien("[message]"))
 		if(prob(CLAMP(amount, 5, 90)))
@@ -793,17 +793,19 @@
 	industrial_use = REFINERYEXPORT_REASON_FOOD
 	coolant_modifier = 2.5
 
+/datum/reagent/frostoil
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/frostoil/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
 	warm_body(M, -10 * TEMPERATURE_DAMAGE_COEFFICIENT, removed, min_temp = min(M.bodytemperature, 215))
 	if(prob(1))
 		M.emote("shiver")
 	holder.remove_reagent(REAGENT_ID_CAPSAICIN, 5)
 
+/datum/reagent/frostoil
+	immune_species_ingest = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/frostoil/affect_ingest(mob/living/carbon/M, alien, removed) // Eating frostoil now acts like capsaicin. Wee!
-	if(alien == IS_DIONA)
-		return
 	if(alien == IS_ALRAUNE) // It wouldn't affect plants that much.
 		if(prob(5))
 			to_chat(M, span_rose("You feel a chilly, tingling sensation in your mouth."))
@@ -848,9 +850,10 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_COMMON
 	industrial_use = REFINERYEXPORT_REASON_WEAPONS
 
+/datum/reagent/capsaicin
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/capsaicin/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
 	M.injure(INJURY_TOXIN, 0.5 * removed, source = src)
 
 /datum/reagent/capsaicin/affect_ingest(mob/living/carbon/M, alien, removed)
@@ -1656,23 +1659,16 @@
 		return
 	..()
 
-	// if(alien == IS_TAJARA) //
-		//M.make_jittery(4) //extra sensitive to caffine
 	if(adj_temp > 0)
 		holder.remove_reagent(REAGENT_ID_FROSTOIL, 10 * removed)
 
 /datum/reagent/drink/coffee/affect_blood(mob/living/carbon/M, alien, removed)
 	..()
 
-	//if(alien == IS_TAJARA)
-		//M.make_jittery(4)
-		//return
 
 /datum/reagent/drink/coffee/overdose(mob/living/carbon/M, alien)
 	if(alien == IS_DIONA)
 		return
-	//if(alien == IS_TAJARA)
-		// M.apply_effect(3, STUTTER) // end
 	M.status_adjust(EFFECT_JITTERY, 5)
 
 /datum/reagent/drink/coffee/handle_addiction(mob/living/carbon/M, alien)
@@ -2647,7 +2643,6 @@
 
 	glass_name = REAGENT_ENTDRAUGHT
 	glass_desc = "You can almost smell the tranquility emanating from this."
-	//allergen_type = ALLERGEN_FRUIT Sorry to break the news, chief. Honey is not a fruit.
 
 /datum/reagent/drink/love_potion
 	name = REAGENT_LOVEPOTION
@@ -3079,7 +3074,7 @@
 
 /datum/reagent/ethanol/beer/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
-	if(M.species.robo_ethanol_drunk || !(M.isSynthetic()))
+	if(M.species.robo_ethanol_drunk || !(HAS_SYNTHETIC_BIOLOGY(M)))
 		if(alien == IS_DIONA)
 			return
 		M.adjust_nutrition((M.food_preference(allergen_type) / 2) * removed) //RS edit
@@ -3143,7 +3138,7 @@
 	..()
 	if(alien == IS_DIONA)
 		return
-	if(M.species.robo_ethanol_drunk || !(M.isSynthetic()))
+	if(M.species.robo_ethanol_drunk || !(HAS_SYNTHETIC_BIOLOGY(M)))
 		M.status_adjust(EFFECT_DIZZY, 5)
 
 /datum/reagent/ethanol/firepunch
@@ -3178,7 +3173,7 @@
 	allergen_type = ALLERGEN_COFFEE|ALLERGEN_STIMULANT //Contains coffee or is made from coffee
 
 /datum/reagent/ethanol/coffee/affect_ingest(mob/living/carbon/M, alien, removed)
-	if(!(M.isSynthetic()))
+	if(!(HAS_SYNTHETIC_BIOLOGY(M)))
 		if(alien == IS_DIONA)
 			return
 		..()
@@ -3188,20 +3183,14 @@
 		if(M.bodytemperature > BODYTEMP_NORMAL)
 			drive_body_temperature(M, BODYTEMP_NORMAL, 5 * TEMPERATURE_DAMAGE_COEFFICIENT, removed)
 
-		//if(alien == IS_TAJARA)
-			//M.make_jittery(4) //extra sensitive to caffine
 
 /datum/reagent/ethanol/coffee/affect_blood(mob/living/carbon/M, alien, removed)
-	//if(alien == IS_TAJARA)
-		//M.make_jittery(4)
-		//return
+	return // Coffee liqueur has no blood effect of its own.
 
 /datum/reagent/ethanol/coffee/overdose(mob/living/carbon/M, alien)
 	if(alien == IS_DIONA)
 		return
-	//if(alien == IS_TAJARA)
-		// M.apply_effect(3, STUTTER) // end
-	if(!(M.isSynthetic()))
+	if(!(HAS_SYNTHETIC_BIOLOGY(M)))
 		M.status_adjust(EFFECT_JITTERY, 5)
 
 /datum/reagent/ethanol/coffee/kahlua
@@ -3215,7 +3204,6 @@
 
 	glass_name = "RR coffee liquor"
 	glass_desc = "A widely known, Mexican coffee-flavored liqueur. In production since 1936!"
-//	glass_desc = "DAMN, THIS THING LOOKS ROBUST" //If this isn't what our players should talk like, it isn't what our game should say to them.
 
 /datum/reagent/ethanol/melonliquor
 	name = REAGENT_MELONLIQUOR
@@ -3307,7 +3295,7 @@
 /datum/reagent/ethanol/thirteenloko/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
 
-	if(!(M.isSynthetic()))
+	if(!(HAS_SYNTHETIC_BIOLOGY(M)))
 		if(alien == IS_DIONA)
 			return
 		M.status_adjust(EFFECT_DROWSY, -7)
@@ -3343,7 +3331,7 @@
 
 /datum/reagent/ethanol/vodka/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
-	if(!(M.isSynthetic()))
+	if(!(HAS_SYNTHETIC_BIOLOGY(M)))
 		M.purge_radiation(1 * removed) // purges radiation; apply_effect(IRRADIATE) here added it back (P2-F8)
 
 /datum/reagent/ethanol/whiskey
@@ -3414,7 +3402,7 @@
 /datum/reagent/ethanol/pwine/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
 
-	if(!(M.isSynthetic()))
+	if(!(HAS_SYNTHETIC_BIOLOGY(M)))
 		if(dose > 30)
 			M.injure(INJURY_TOXIN, 2 * removed, source = src)
 		if(dose > 60 && ishuman(M) && prob(5))
@@ -3618,7 +3606,7 @@
 /datum/reagent/ethanol/beepsky_smash/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
 
-	if(M.species.robo_ethanol_drunk || !(M.isSynthetic()))
+	if(M.species.robo_ethanol_drunk || !(HAS_SYNTHETIC_BIOLOGY(M)))
 		M.status_at_least(EFFECT_STUNNED, 2)
 
 /datum/reagent/ethanol/bilk
@@ -4037,7 +4025,7 @@
 /datum/reagent/ethanol/neurotoxin/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
 
-	if(M.species.robo_ethanol_drunk || !(M.isSynthetic()))
+	if(M.species.robo_ethanol_drunk || !(HAS_SYNTHETIC_BIOLOGY(M)))
 		M.status_at_least(EFFECT_WEAKENED, 3)
 
 /datum/reagent/ethanol/patron
@@ -4094,8 +4082,6 @@
 
 /datum/reagent/ethanol/screwdrivercocktail/on_mob_life(mob/living/carbon/drinker, seconds_per_tick, metabolization_ratio)
 	. = ..()
-//	var/obj/item/organ/internal/liver/liver = drinker.internal_organs_by_name[O_LIVER]
-//	if(HAS_TRAIT(liver, TRAIT_ENGINEER_METABOLISM))
 	ADD_TRAIT(drinker, TRAIT_HALT_RADIATION_EFFECTS, "[type]")
 	if (HAS_TRAIT(drinker, TRAIT_IRRADIATED))
 		// Only while irradiated, a gate a continuous tag can't express: mends directly.
@@ -4308,7 +4294,7 @@
 /datum/reagent/ethanol/unathiliquor/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
 
-	if(M.species.robo_ethanol_drunk || !(M.isSynthetic()))
+	if(M.species.robo_ethanol_drunk || !(HAS_SYNTHETIC_BIOLOGY(M)))
 		if(alien == IS_DIONA)
 			return
 
@@ -4855,7 +4841,7 @@
 /datum/reagent/ethanol/godka/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
 
-	if(!(M.isSynthetic()))
+	if(!(HAS_SYNTHETIC_BIOLOGY(M)))
 		M.purge_radiation(5 * removed) // purges radiation (P2-F8)
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
@@ -5025,7 +5011,7 @@
 /datum/reagent/ethanol/deathbell/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
 
-	if(M.species.robo_ethanol_drunk || !(M.isSynthetic()))
+	if(M.species.robo_ethanol_drunk || !(HAS_SYNTHETIC_BIOLOGY(M)))
 		if(dose * strength >= strength) // Early warning
 			M.status_adjust(EFFECT_DIZZY, 24) // Intentionally higher than normal to compensate for it's previous effects.
 		if(dose * strength >= strength * 2.5) // Slurring takes longer. Again, intentional.
@@ -5154,7 +5140,7 @@
 /datum/reagent/ethanol/burnout/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
 	// Deathbell effects.
-	if(M.species.robo_ethanol_drunk || !(M.isSynthetic()))
+	if(M.species.robo_ethanol_drunk || !(HAS_SYNTHETIC_BIOLOGY(M)))
 		if(dose * strength >= strength)
 			M.status_adjust(EFFECT_DIZZY, 24)
 		if(dose * strength >= strength * 2.5)
@@ -5189,7 +5175,7 @@
 /datum/reagent/ethanol/monstertamer/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
 
-	if(!(M.isSynthetic()))
+	if(!(HAS_SYNTHETIC_BIOLOGY(M)))
 		if(M.species.organic_food_coeff) //it's still food!
 			switch(alien)
 				if(IS_DIONA) //Diona don't get any nutrition from nutriment or protein.
@@ -5292,7 +5278,7 @@
 	..()
 	M.status_at_least(EFFECT_STUNNED, 2)
 
-	if(M.species.robo_ethanol_drunk || !(M.isSynthetic()))
+	if(M.species.robo_ethanol_drunk || !(HAS_SYNTHETIC_BIOLOGY(M)))
 		if(dose * strength >= strength) // Early warning
 			M.status_adjust(EFFECT_DIZZY, 24) // Intentionally higher than normal to compensate for it's previous effects.
 		if(dose * strength >= strength * 2.5) // Slurring takes longer. Again, intentional.
@@ -5382,7 +5368,7 @@
 /datum/reagent/ethanol/russianroulette/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
 
-	if(M.species.robo_ethanol_drunk || !(M.isSynthetic()))
+	if(M.species.robo_ethanol_drunk || !(HAS_SYNTHETIC_BIOLOGY(M)))
 		M.status_at_least(EFFECT_STUNNED, 2)
 
 /datum/reagent/ethanol/lovemaker
@@ -5540,7 +5526,7 @@
 /datum/reagent/ethanol/hairoftherat/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
 
-	if(!(M.isSynthetic()))
+	if(!(HAS_SYNTHETIC_BIOLOGY(M)))
 		if(M.species.organic_food_coeff) //it's still food!
 			switch(alien)
 				if(IS_DIONA) //Diona don't get any nutrition from nutriment or protein.
@@ -5548,13 +5534,13 @@
 				if(IS_SKRELL)
 					M.injure(INJURY_TOXIN, 0.25 * removed, source = src)  //Equivalent to half as much protein, since it's half protein.
 				if(IS_TESHARI)
-					M.nutrition += (alt_nutriment_factor * 1.2 * removed) //Give them the same nutrition they would get from protein.
+					M.adjust_nutrition((alt_nutriment_factor * 1.2 * removed)) //Give them the same nutrition they would get from protein.
 				if(IS_UNATHI)
-					M.nutrition += (alt_nutriment_factor * 1.125 * removed) //Give them the same nutrition they would get from protein.
+					M.adjust_nutrition((alt_nutriment_factor * 1.125 * removed)) //Give them the same nutrition they would get from protein.
 					//Takes into account the 0.5 factor for all nutriment which is applied on top of the 2.25 factor for protein.
 				//Chimera don't need their own case here since their factors for nutriment and protein cancel out.
 				else
-					M.nutrition += (alt_nutriment_factor * removed)
+					M.adjust_nutrition((alt_nutriment_factor * removed))
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
 			var/datum/xenochimera/xc = M.get_xenochimera_state()
@@ -5569,7 +5555,7 @@
 	..()
 	if(M.species.organic_food_coeff)
 		if(alien == IS_SLIME || alien == IS_CHIMERA) //slimes and chimera can get nutrition from injected nutriment and protein
-			M.nutrition += (alt_nutriment_factor * removed)
+			M.adjust_nutrition((alt_nutriment_factor * removed))
 
 //////////////////////Bepis Drinks (04/29/2021)//////////////////////
 
@@ -5640,7 +5626,7 @@
 
 /datum/reagent/nutriment/protein/brainzsnax/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
-	if(prob(5) && !(alien == IS_CHIMERA || alien == IS_SLIME || alien == IS_PLANT || alien == IS_DIONA || alien == IS_SHADEKIN && !M.isSynthetic()))
+	if(prob(5) && !(alien == IS_CHIMERA || alien == IS_SLIME || alien == IS_PLANT || alien == IS_DIONA || alien == IS_SHADEKIN && !HAS_SYNTHETIC_BIOLOGY(M)))
 		M.injure(INJURY_NEURAL, removed, source = src) //Any other species risks prion disease.
 		M.status_at_least(EFFECT_CONFUSED, 5)
 		M.status_at_least(EFFECT_HALLUCINATING, 25)
@@ -5911,7 +5897,7 @@
 			var/mob/living/carbon/human/H = M
 			var/obj/item/organ/internal/eyes/E = H.internal_organs_by_name[O_EYES]
 			if(istype(E))
-				if(E.robotic >= ORGAN_ROBOT)
+				if(E.is_robotic())
 					return
 				if(E.damage < 100)
 					H.injure(INJURY_BLUNT, 1 * removed, E, src, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
@@ -5927,7 +5913,7 @@
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		for(var/obj/item/organ/internal/I in H.internal_organs)
-			if(I.robotic >= ORGAN_ROBOT || !(I.organ_tag in list(O_HEART)))
+			if(I.is_robotic() || !(I.organ_tag in list(O_HEART)))
 				continue
 			if(I.damage < 100 && prob(10))
 				H.injure(INJURY_TOXIN, 0.2 * removed, I, src, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
@@ -6126,9 +6112,10 @@
 	cup_name = "Medicinal tea cup"
 	color = "#00FF00"
 
+/datum/reagent/drink/tea/dyloteane
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/drink/tea/dyloteane/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
 	if(M.ingested)
 		for(var/datum/reagent/R in M.ingested.reagent_list)
 			if(istype(R, /datum/reagent/ethanol))
@@ -6220,9 +6207,10 @@
 	glass_name = REAGENT_ID_HIGHPOWER
 	glass_desc = "A strange, softly crackling drink, smelling just like lightning's just struck, twice. It's rather difficult to make this without busting the lights."
 
+/datum/reagent/drink/highpower
+	immune_species_ingest = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/drink/highpower/affect_ingest(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
 	if(prob(5))
 		M.say("!skin's crackles with energy and seems to be in pain.")
 		M.custom_pain("You feel painful electricity running through your body, like adrenaline, and like your blood's boiling!",30)
@@ -6247,7 +6235,7 @@
 	if(alien == IS_SLIME)
 		M.status_adjust(EFFECT_JITTERY, 4) //Hyperactive fluid pumping results in unstable 'skeleton', resulting in vibration.
 		if(dose >= 5)
-			M.nutrition = (M.nutrition - (removed * 2)) //Sadly this movement starts burning food in higher doses.
+			M.set_nutrition((M.nutrition - (removed * 2))) //Sadly this movement starts burning food in higher doses.
 	..()
 	if(prob(5))
 		M.emote(pick("twitch", "blink_r", "shiver", "weh", "weh", "weh")) // weh - Jack
@@ -6265,10 +6253,10 @@
 	glass_name = REAGENT_BOOKWYRM
 	glass_desc = "A cold lime mint drink. Dont drink to much or you might fall asleep."
 
-/datum/reagent/ethanol/bookwyrm/affect_ingest(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
+/datum/reagent/ethanol/bookwyrm
+	immune_species_ingest = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
 
+/datum/reagent/ethanol/bookwyrm/affect_ingest(mob/living/carbon/M, alien, removed)
 	var/threshold = 1
 	if(alien == IS_SKRELL)
 		threshold = 1.2
