@@ -1,11 +1,8 @@
 /// Electrovore interaction for power cells (was /datum/element/electrovoreable, added to
-/// every cell). A plain override of the cell's attack_self: the handler has no state.
-/obj/item/cell/attack_self(mob/user, modifiers)
-	. = ..()
-	if(.)
-		return
-	if(electrovore_attack_self(user) & COMPONENT_CANCEL_ATTACK_CHAIN)
-		return TRUE
+/// every cell). A self-use interaction declared on /obj/item/cell (power/cell.dm); FALSE
+/// moves on to the next self-use, so non-electrovores fall through.
+/obj/item/cell/proc/interaction_electrovore(mob/user, obj/item/held, datum/interaction/interaction)
+	return (electrovore_attack_self(user) & COMPONENT_CANCEL_ATTACK_CHAIN) ? TRUE : FALSE
 
 /// Electrovores charge (help, obligate) or drain (harm) the cell by hand.
 /obj/item/cell/proc/electrovore_attack_self(mob/user)

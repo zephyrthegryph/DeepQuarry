@@ -379,8 +379,8 @@ SUBSYSTEM_DEF(tgui)
 		var/datum/tgui_window/window = client.tgui_windows[window_id]
 		if(window)
 			// Drop any UI still attached so it does not keep a dead window around.
-			if(window.locked_by)
-				window.locked_by.close(can_be_suspended = FALSE)
+			if(window.locked_by())
+				window.locked_by().close(can_be_suspended = FALSE)
 			window.release_lock()
 			window.status = TGUI_WINDOW_CLOSED
 			window.message_queue = null

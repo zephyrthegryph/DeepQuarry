@@ -467,7 +467,7 @@
 	slot = ACCESSORY_SLOT_INSIGNIA // snowflakey, i know, shut up
 	item_flags = FLEXIBLEMATERIAL
 	var/breath_masked = FALSE
-	var/obj/item/clothing/mask/breath/breathmask // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/breathmask_handle
 	actions_types = list(/datum/action/item_action/pull_on_gaiter)
 	special_handling = TRUE
 

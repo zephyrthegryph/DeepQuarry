@@ -236,3 +236,7 @@ DECLARE_INTERACTIONS(/obj/item/cannonframe, INTERACT_ITEM(null, PROC_REF(interac
 	else
 		return FALSE
 	return INTERACTION_HANDLED_PASS
+
+/// LC-refs: Tank of gas for use in firing the cannon. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/gun/launcher/pneumatic/proc/tank() as /obj/item/tank
+	return om_resolve(tank_handle)

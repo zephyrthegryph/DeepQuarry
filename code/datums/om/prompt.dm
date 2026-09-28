@@ -636,8 +636,8 @@
 	qdel(src)
 
 /datum/tgui_input_colormatrix/om/Destroy(force)
-	if(was_path && target)
-		qdel(target)
+	if(was_path && target())
+		qdel(target())
 	return ..()
 
 /// kind "bitfield": the flag checkboxes. Submit answers the value; cancel or close cancels.

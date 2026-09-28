@@ -484,7 +484,7 @@
 	// still collected so a stale page's errors remain visible.
 	var/reported_document = href_list?["document_id"]
 	if(document_id && reported_document && reported_document != document_id && type != "log")
-		log_tgui(client, "Ignored [type] from stale document [reported_document]; current document is [document_id].", window = src)
+		log_tgui(client(), "Ignored [type] from stale document [reported_document]; current document is [document_id].", window = src)
 		return
 	// A reusable shell's browser keeps retrying `suspend` until the server confirms
 	// it. If the shell was reacquired by a new UI in the meantime, that retry must
@@ -492,7 +492,7 @@
 	if(type == "suspend")
 		var/suspend_generation = text2num("[payload?["generation"]]")
 		if(suspend_generation && suspend_generation != generation)
-			log_tgui(client, "Ignored stale suspend for generation [suspend_generation]; current generation is [generation].", window = src)
+			log_tgui(client(), "Ignored stale suspend for generation [suspend_generation]; current generation is [generation].", window = src)
 			return
 	// Status can be READY if user has refreshed the window.
 	if(type == "ready" && status == TGUI_WINDOW_READY)
@@ -602,7 +602,7 @@
  */
 /datum/tgui_window/proc/accept_perf_telemetry()
 	#ifndef TGUI_DEV_DIAGNOSTICS
-	if(client?.address != "127.0.0.1" && client?.address != "::1")
+	if(client()?.address != "127.0.0.1" && client()?.address != "::1")
 		return FALSE
 	#endif
 	if(!COOLDOWN_FINISHED(src, perf_log_cooldown))
@@ -654,7 +654,7 @@
 		var/final_payload = chunks.Join()
 		remove_oversized_payload(payload_id)
 		if (!rustg_json_is_valid(final_payload))
-			log_tgui(client, "Error: Invalid JSON in reassembled oversized payload", window = src)
+			log_tgui(client(), "Error: Invalid JSON in reassembled oversized payload", window = src)
 			return
 		on_message(message_type, json_decode(final_payload), list("type" = message_type, "payload" = final_payload, "tgui" = TRUE, "window_id" = id))
 	else

@@ -249,7 +249,7 @@ REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, list("print_sound", "rmat"))
 		return FALSE
 
 	rmat.use_materials(D.materials, component_coeff, 1, "built", "[D.name]")
-	being_built_handle = om_handle(D)
+	being_built = D
 	current_producer_account = producer_account
 	build_finish = world.time + get_construction_time_w_coeff(initial(D.construction_time))
 	build_start = world.time
@@ -307,7 +307,7 @@ REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, list("print_sound", "rmat"))
 	built_part.set_economic_provenance(DEPARTMENT_RESEARCH, max(25, dispensed_design.construction_time), current_producer_account)
 	current_producer_account = 0
 
-	being_built_handle = null
+	being_built = null
 
 	var/turf/exit = get_step(src, drop_direction)
 	if(exit.density)
@@ -585,6 +585,6 @@ REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, list("print_sound", "rmat"))
 
 /// LC-refs: the being_built this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/mecha_part_fabricator_tg/proc/being_built() as /datum/design_techweb
-	return om_resolve(being_built_handle)
+	return being_built
 
 REF_HELD(/obj/machinery/mecha_part_fabricator_tg, "stored_part")

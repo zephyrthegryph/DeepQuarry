@@ -341,7 +341,7 @@
 			return ITEM_INTERACT_SUCCESS
 	..()
 
-DECLARE_INTERACTIONS(/obj/item/cell, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+DECLARE_INTERACTIONS(/obj/item/cell, INTERACT_ITEM(null, PROC_REF(interaction_item)), INTERACT_SELF(null, PROC_REF(interaction_electrovore)))
 
 /// Old attackby.
 /obj/item/cell/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)

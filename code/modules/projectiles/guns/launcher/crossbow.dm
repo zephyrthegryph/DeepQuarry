@@ -309,3 +309,7 @@ DECLARE_INTERACTIONS(/obj/item/crossbowframe, INTERACT_ITEM(null, PROC_REF(inter
 	else
 		return FALSE
 	return INTERACTION_HANDLED_PASS
+
+/// LC-refs: Used for firing superheated rods. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/gun/launcher/crossbow/proc/cell() as /obj/item/cell
+	return om_resolve(cell_handle)

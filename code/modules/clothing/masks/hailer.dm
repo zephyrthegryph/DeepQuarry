@@ -6,7 +6,7 @@
 	armor_spec = "melee=10;bullet=10;laser=10;bio=55"
 	actions_types = list(/datum/action/item_action/halt)
 	body_parts_covered = FACE
-	var/obj/item/hailer/hailer // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/hailer_handle
 	var/cooldown = 0
 	var/phrase = 1
 	var/aggressiveness = 1

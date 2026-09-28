@@ -3,4 +3,4 @@
 # line. A site with `// ALLOW(lifecycle): <reason>` doesn't count at all.
 # Lower after a sweep: `python tools/ci/lifecycle_counts_lint.py --update`.
 destroy 2
-qdel 2126
+qdel 2041

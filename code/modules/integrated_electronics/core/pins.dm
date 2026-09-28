@@ -162,7 +162,7 @@ list[](
 	return null
 
 /datum/integrated_io/proc/typed_value_entered(mob/user, datum/om/prompt/P)
-	if(!holder?.check_interactivity(user))
+	if(!holder()?.check_interactivity(user))
 		return
 	var/new_data = null
 	switch(P.get("type"))

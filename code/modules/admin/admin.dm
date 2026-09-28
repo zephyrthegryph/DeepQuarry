@@ -834,9 +834,9 @@ ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this mach
 /datum/admins/var/obj/item/paper/admin/faxreply // var to hold fax replies in
 
 /datum/admins/proc/faxCallback(obj/item/paper/admin/P, obj/machinery/photocopier/faxmachine/destination)
-	om_prompt_sequence(src, owner, list(
+	om_prompt_sequence(src, owner(), list(
 		list("key" = "title", "kind" = "text", "message" = "Pick a title for the report", "title" = "Title", "optional" = TRUE),
-		P.sender ? null : list("key" = "stamp", "message" = "Would you like the fax stamped?", "title" = "Stamped?", "choices" = list("Yes", "No"), "optional" = TRUE),
+		P.sender() ? null : list("key" = "stamp", "message" = "Would you like the fax stamped?", "title" = "Stamped?", "choices" = list("Yes", "No"), "optional" = TRUE),
 	), PROC_REF(fax_answered), list("data" = list("paper" = P, "destination" = destination)))
 
 /datum/admins/proc/fax_answered(mob/admin, datum/om/prompt/ask)

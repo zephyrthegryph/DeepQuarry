@@ -981,7 +981,7 @@ REF_OWNED(/obj/item/rig, list("power_system", "spark_system", "boots", "chest", 
 	var/power_cost = 50
 	if(!ai_moving)
 		power_cost = 20
-	draw_power(power_cost / CELLRATE, wearer, partial = TRUE)
+	draw_power(power_cost / CELLRATE, wearer(), partial = TRUE)
 	wearer().Move(get_step(get_turf(wearer()),direction),direction)
 
 // This returns the rig if you are contained inside one, but not if you are wearing it

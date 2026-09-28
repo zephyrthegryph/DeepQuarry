@@ -64,15 +64,15 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 /// Fetches the current page's database rows (om_io: nothing waits); tgui_data shows what has
 /// arrived and the rest as loading.
 /datum/permissions_panel/proc/refresh_db()
-	if(!holder || !SSdbcore.IsConnected())
+	if(!holder() || !SSdbcore.IsConnected())
 		return
 	db_rows = null
-	switch(holder.dq_perms_page)
+	switch(holder().dq_perms_page)
 		if(PERMISSIONS_PAGE_RANKS, PERMISSIONS_PAGE_HOUSEKEEPING)
 			om_sql_view(src, "admins", "SELECT IFNULL((SELECT ckey FROM [format_table_name("erro_player")] WHERE [format_table_name("erro_player")].ckey = [format_table_name("admin")].ckey), ckey), [format_table_name("admin")].`rank` FROM [format_table_name("admin")]", PROC_REF(sql_rows_arrived))
 			om_sql_view(src, "ranks", "SELECT rank, flags, exclude_flags, can_edit_flags FROM [format_table_name("admin_ranks")]", PROC_REF(sql_rows_arrived))
 		if(PERMISSIONS_PAGE_LOGGING)
-			var/list/filter = list("target" = holder.dq_perms_log_target, "adminckey" = holder.dq_perms_log_actor, "operation" = holder.dq_perms_log_operation)
+			var/list/filter = list("target" = holder().dq_perms_log_target, "adminckey" = holder().dq_perms_log_actor, "operation" = holder().dq_perms_log_operation)
 			om_sql_view(src, "log_count", {"
 				SELECT COUNT(id) FROM [format_table_name("admin_log")]
 				WHERE target LIKE CONCAT('%',:target,'%')
@@ -80,7 +80,7 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 					AND (:operation IS NULL OR operation = :operation)
 				"}, filter, PROC_REF(sql_rows_arrived))
 			var/list/search_args = filter.Copy()
-			search_args["skip"] = PERMISSIONS_LOGS_PER_PAGE * holder.dq_perms_log_page
+			search_args["skip"] = PERMISSIONS_LOGS_PER_PAGE * holder().dq_perms_log_page
 			search_args["take"] = PERMISSIONS_LOGS_PER_PAGE
 			om_sql_view(src, "log_search", {"
 				SELECT
@@ -102,10 +102,10 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 /// The rows arrive for whoever still has the panel and the rights to see it.
 /datum/permissions_panel/proc/sql_rows_arrived(list/result, error, key)
 	var/list/rows = om_sql_view_rows(result, error, key, src)
-	if(!holder?.owner || !check_rights_for(holder.owner, R_PERMISSIONS))
+	if(!holder()?.owner() || !check_rights_for(holder().owner(), R_PERMISSIONS))
 		return
 	if(error)
-		to_chat(holder.owner, span_danger("A SQL error occurred during this operation, check the server logs."), confidential = TRUE)
+		to_chat(holder().owner(), span_danger("A SQL error occurred during this operation, check the server logs."), confidential = TRUE)
 	LAZYSET(db_rows, key, rows || list())
 	SStgui.update_uis(src)
 

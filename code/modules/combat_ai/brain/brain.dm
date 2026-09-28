@@ -164,7 +164,7 @@ REF_OWNED(/datum/ai_brain, "model")
 	// Only hibernate when nothing idle wants to run and no one-shot walk is
 	// queued. A brain with an idle behavior scoring > 0 (or cooling down
 	// toward one) stays on the slow cadence so it actually gets to act.
-	if(!idle_pending && !destination)
+	if(!idle_pending && !destination())
 		hibernate_calm()
 
 /// Tactical tick. Fast — 250ms. Runs while a threat exists OR while a

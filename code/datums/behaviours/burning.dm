@@ -103,7 +103,7 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 	if(QDELETED(src) || isnull(heat_body))
 		return
 	vg_heat_body_power(heat_body, 0)
-	if(isnull(heat_fire_turf))
+	if(isnull(om_resolve(heat_fire_turf_handle)))
 		vg_heat_body_keep(heat_body, FALSE)
 
 /// The object cooled below the burn-out temperature (burn_cool_watch).

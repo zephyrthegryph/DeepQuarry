@@ -1235,7 +1235,7 @@
 					var/mob/living/body_backup = T.body_backup
 					if(ishuman(body_backup))
 						var/mob/living/carbon/human/H = body_backup
-						H.reform_restore("reformed in [host]", host)
+						H.reform_restore("reformed in [host()]", host())
 					else
 						body_backup.revive()
 					body_backup.forceMove(T.loc)
@@ -1298,7 +1298,7 @@
 						mmi_host.release_mind(body_backup, "reformed by [key_name(user)]")
 						//You've hopefully already named yourself, so... not implementing that bit.
 						var/mob/living/carbon/human/H = body_backup
-						H.reform_restore("reformed around [MMI] in [host]", host)
+						H.reform_restore("reformed around [MMI] in [host()]", host())
 					MMI.body_backup = null
 			return TRUE
 		if("Health")

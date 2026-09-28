@@ -59,7 +59,7 @@
 	params[P.get("key")] = answer
 	params["om_reentry"] = TRUE
 	usr = user // tgui_act() handlers may read usr, as they do when the user clicks.
-	if(E.tgui_act(P.get("action"), params, ui, ui.state))
+	if(E.tgui_act(P.get("action"), params, ui, ui.state()))
 		SStgui.update_uis(E)
 
 // ---------------------------------------------------------------- admin verbs

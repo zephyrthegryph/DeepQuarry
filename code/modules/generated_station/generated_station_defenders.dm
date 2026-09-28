@@ -32,7 +32,7 @@
 /// A null or deleted defender must never read as "alive"; `defender?.stat < DEAD`
 /// evaluates `null < DEAD` and is TRUE for a missing mob.
 /datum/generated_station_defender_agent/proc/is_active()
-	return defender && !QDELETED(defender) && defender.stat < DEAD
+	return defender() && !QDELETED(defender()) && defender().stat < DEAD
 
 /datum/generated_station_defender_agent/proc/on_damage(datum/source, amount, damage_type, atom/attacker)
 	SIGNAL_HANDLER
@@ -175,7 +175,7 @@
 /// Cameras, relays, doors, and other event producers call this directly. Detection
 /// remains local if data or AI coordination is unavailable.
 /datum/generated_station_defense_runtime/proc/notify_sensor_contact(department_id, atom/contact, source_kind = "sensor", confidence = 80, issue_response = TRUE)
-	if(!contact || !director || !(department_id in director().local_knowledge))
+	if(!contact || !director() || !(department_id in director().local_knowledge))
 		return null
 	var/datum/generated_station_knowledge_report/report = director().submit_report(department_id, REF(contact), "hostile-contact", "[source_kind] detected a hostile.", confidence, GENERATED_STATION_CONTACT_LIFETIME)
 	if(!report)
@@ -193,7 +193,7 @@
 /datum/generated_station_defense_runtime/proc/contact_expired(report_id, department_id)
 	if(!director() || QDELETED(src))
 		return
-	if(director.reports?[report_id])
+	if(director().reports?[report_id])
 		return
 	director().set_alert(GENERATED_STATION_ALERT_BLUE, department_id)
 	om_after(src, GENERATED_STATION_SEARCH_DURATION, PROC_REF(return_to_green), department_id)
@@ -265,9 +265,9 @@
 		return
 	casualties++
 	var/department_id = agent.department_id
-	var/datum/generated_station_squad/squad = director?.squads?[agent.squad_id]
-	if(squad && agent.defender)
-		squad.member_ids -= REF(agent.defender)
+	var/datum/generated_station_squad/squad = director()?.squads?[agent.squad_id]
+	if(squad && agent.defender())
+		squad.member_ids -= REF(agent.defender())
 	director()?.unregister_defender(agent.defender())
 	agents -= agent
 	qdel(agent)
@@ -275,7 +275,7 @@
 		om_after(src, 10 SECONDS, PROC_REF(spawn_reinforcement), "security-1")
 
 /datum/generated_station_defense_runtime/proc/spawn_reinforcement(department_id)
-	if(!director || QDELETED(src))
+	if(!director() || QDELETED(src))
 		return FALSE
 	var/turf/spawn_turf = generated_station_defender_spawn_turf(department_turfs[department_id])
 	var/squad_id = squads_by_department[department_id]

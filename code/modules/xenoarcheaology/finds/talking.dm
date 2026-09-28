@@ -104,3 +104,7 @@
 	for(var/mob/M in listening)
 		to_chat(M, "[icon2html(holder_atom(),M.client)] " + span_bold("[holder_atom()] reverberates") +" , \"[span_blue(msg)]\"")
 	COOLDOWN_START(src, talk_cooldown, talk_interval)
+
+/// LC-refs: the holder_atom this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/talking_atom/proc/holder_atom() as /atom
+	return om_resolve(holder_atom_handle)

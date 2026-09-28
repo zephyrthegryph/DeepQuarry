@@ -33,7 +33,7 @@
 	return 1
 
 /obj/item/rig_module/voice/proc/voice_choice_made(mob/user, choice, datum/om/prompt/ask)
-	if(!holder || holder.wearer != user)
+	if(!holder || holder.wearer() != user)
 		return
 	switch(choice)
 		if("Enable")
@@ -48,9 +48,9 @@
 			om_prompt(src, user, list("kind" = "text", "message" = "Please enter a new name.", "title" = "Change name", "default" = voice_holder.voice, "max_length" = MAX_NAME_LEN, "requires" = PROMPT_CONSCIOUS), PROC_REF(voice_name_entered))
 
 /obj/item/rig_module/voice/proc/voice_name_entered(mob/user, raw_choice, datum/om/prompt/ask)
-	if(!raw_choice || !holder || holder.wearer != user)
+	if(!raw_choice || !holder || holder.wearer() != user)
 		return
-
-REF_OWNED(/obj/item/rig_module/voice, "voice_holder")
 	voice_holder.voice = raw_choice
 	to_chat(user, span_blue("You are now mimicking <B>[voice_holder.voice]</B>."))
+
+REF_OWNED(/obj/item/rig_module/voice, "voice_holder")

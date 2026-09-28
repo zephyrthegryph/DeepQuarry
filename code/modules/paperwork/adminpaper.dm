@@ -179,3 +179,15 @@
 /// The signature the admin gave for the [sign] tags of their last write.
 /obj/item/paper/admin/get_signature(obj/item/pen/P, mob/user)
 	return admin_signature || "Anonymous"
+
+/// LC-refs: the admindatum this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/paper/admin/proc/admindatum() as /datum/admins
+	return om_resolve(admindatum_handle)
+
+/// LC-refs: the sender this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/paper/admin/proc/sender() as /mob
+	return om_resolve(sender_handle)
+
+/// LC-refs: the destination this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/paper/admin/proc/destination() as /obj/machinery/photocopier/faxmachine
+	return om_resolve(destination_handle)

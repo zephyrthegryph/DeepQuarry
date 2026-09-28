@@ -109,7 +109,7 @@
 		drain_complete(H)
 		return
 
-	holder.add_power(target_drained, interfaced_with)
+	holder.add_power(target_drained, interfaced_with())
 	total_power_drained += target_drained
 
 	return

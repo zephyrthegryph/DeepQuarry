@@ -158,8 +158,8 @@
 	if (prob(15))	M.status_at_least(EFFECT_WEAKENED, 5)
 	M.injure(INJURY_BLUNT, 8, BP_HEAD, src)
 	visible_message(span_danger("[G?.grab_assailant()] slams [G?.grab_target()]'s face against \the [src]!"))
-	if(material)
-		playsound(src, material.tableslam_noise, 50, 1)
+	if(material())
+		playsound(src, material().tableslam_noise, 50, 1)
 	else
 		playsound(src, 'sound/weapons/tablehit1.ogg', 50, 1)
 	last_break_shards = null

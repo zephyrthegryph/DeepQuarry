@@ -283,8 +283,7 @@ the variant loader and map aliases.
   `laserhit`, `get_ultimate_mob`, `isinspace`), 1 on `/obj`
   (`analyze_gases`, now `analyze_gases_by(tool, target, user)`) and 3 on
   `/mob` (`quest_from_above`, `safe_animal`, `artifact_spawn_debug_tool`).
-  There is no lint or ceiling on the number of procs declared on a base type
-  (the old `base_proc_lint.py` ratchet was removed as unhelpful); a rarely
+  Nothing lints procs on base types or global versus type procs; a rarely
   used proc still costs memory per subtype, so prefer a global proc or a
   helper datum when it fits.
 

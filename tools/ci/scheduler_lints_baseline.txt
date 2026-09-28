@@ -6,10 +6,10 @@ addtimer 0
 invoke_async 0
 do_after 0
 sleep 0
-stoplag 2
-prompts 10
+stoplag 0
+prompts 0
 set_waitfor 0
 weakref 0
-del 13
+del 0
 blocking_builtins 0
-lc_refs 2683
+lc_refs 746

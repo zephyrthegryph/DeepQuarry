@@ -38,7 +38,7 @@
 			item_overlay_appearance = null
 		return
 
-	var/atom/movable/muse = target
+	var/atom/movable/muse = action_target()
 	if(!istype(muse))
 		return
 

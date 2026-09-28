@@ -743,8 +743,8 @@ REF_OWNED(/obj/effect/bmode/buildholder, list("builddir", "buildhelp", "buildmod
 			return list("key" = "value", "kind" = "list", "message" = "Enter variable value:", "title" = "Value", "choices" = world)
 
 /obj/effect/bmode/buildmode/proc/edit_answered(mob/user, datum/om/prompt/ask)
-	master.buildmode.varholder = ask.get("var")
-	master.buildmode.valueholder = ask.get("value")
+	master().buildmode.varholder = ask.get("var")
+	master().buildmode.valueholder = ask.get("value")
 	log_admin("BUILDMODE: [key_name(user)] set var-edit: [valueholder].")
 
 /obj/effect/bmode/buildmode/proc/ask_area_name(mob/user, datum/om/prompt/ask)

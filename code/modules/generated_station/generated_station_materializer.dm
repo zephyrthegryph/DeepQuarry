@@ -329,10 +329,10 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 	nodes_by_id = list()
 	department_areas = list()
 	module_areas = list()
-	transit_area = generated_station_create_area(/area/generated_station/transit)
+	transit_area_handle = om_handle(generated_station_create_area(/area/generated_station/transit))
 	transit_area().station_id = spec().id
 	transit_area().name = "[spec().name] Transit"
-	maintenance_area = generated_station_create_area(/area/generated_station/maintenance)
+	maintenance_area_handle = om_handle(generated_station_create_area(/area/generated_station/maintenance))
 	maintenance_area().station_id = spec().id
 	maintenance_area().name = "[spec().name] Maintenance"
 	result = new
@@ -562,8 +562,8 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 						// ChangeArea() crashes on a null area. A floor whose planned
 						// owner never received an area still needs a pressurised,
 						// powered home; fold it into shared circulation and record it.
-						owner_area = maintenance_area || transit_area
-						log_world("Generated station [spec.id]: floor [intent.local_x],[intent.local_y] owned by [intent.owner_id]/[intent.zone_id] has no area; assigned to [owner_area].")
+						owner_area = maintenance_area() || transit_area()
+						log_world("Generated station [spec().id]: floor [intent.local_x],[intent.local_y] owned by [intent.owner_id]/[intent.zone_id] has no area; assigned to [owner_area].")
 						result.degradation_events += "floor [intent.local_x],[intent.local_y] fell back to [owner_area.name]"
 					ChangeArea(T, owner_area)
 					result.floor_count++
@@ -1606,4 +1606,4 @@ REF_OWNED(/datum/generated_station_materialization, list("tile_plan", "service_v
 /// LC-refs: the transit_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/generated_station_materializer/proc/transit_area() as /area/generated_station/transit
 	return om_resolve(transit_area_handle)
-	maintenance_area?.power_change()
+	maintenance_area()?.power_change()

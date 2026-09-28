@@ -112,3 +112,7 @@ DECLARE_INTERACTIONS(/obj/structure/meteorite, INTERACT_ITEM(null, PROC_REF(inte
 		om_do_after(M, P.digspeed*3, src, src, PROC_REF(break_apart_done), list(M))
 		return INTERACTION_HANDLED_PASS
 	return INTERACTION_HANDLED_PASS
+
+/// LC-refs: the strike_target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/event/meteor_strike/proc/strike_target() as /turf
+	return om_resolve(strike_target_handle)

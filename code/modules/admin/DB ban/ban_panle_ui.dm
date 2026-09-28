@@ -198,7 +198,7 @@
 
 /datum/tgui_ban_panel/proc/sql_rows_arrived(list/result, error, key)
 	var/list/rows = om_sql_view_rows(result, error, key, src)
-	if(!holder || !check_rights_for(holder, R_BAN))
+	if(!holder() || !check_rights_for(holder(), R_BAN))
 		return
 	var/list/all_bans = list()
 	var/now = time2text(world.realtime, "YYYY-MM-DD hh:mm:ss") // MUST BE the same format as SQL gives us the dates in, and MUST be least to most specific (i.e. year, month, day not day, month, year)

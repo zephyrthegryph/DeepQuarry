@@ -111,7 +111,7 @@
 	// belongs to whichever UI locked it. An unlocked READY dedicated window
 	// (tooltip, media panel, ...) whose previous UI went away simply registers the
 	// new UI against its live page instead of stranding the page with no owner.
-	if(window() && window().status > TGUI_WINDOW_LOADING && (window.pooled || window.locked))
+	if(window() && window().status > TGUI_WINDOW_LOADING && (window().pooled || window().locked))
 		return FALSE
 	process_status()
 	if(status < STATUS_UPDATE)
@@ -236,7 +236,7 @@
 		window().close(can_be_suspended, logout)
 		// Either side may already be gone (deleted src_object, deleted mob);
 		// SStgui.on_close must still run so the UI leaves all_uis.
-		if(!QDELETED(src_object))
+		if(!QDELETED(src_object()))
 			src_object().tgui_close(user)
 		SStgui.on_close(src)
 
@@ -413,14 +413,14 @@
 /datum/tgui/process(force = FALSE)
 	if(closing)
 		return
-	if(QDELETED(src_object) || QDELETED(window))
+	if(QDELETED(src_object()) || QDELETED(window()))
 		close(can_be_suspended = FALSE)
 		return
 	// A persistent UI on a dedicated window (tooltip, media panel) outlives the
 	// mob it was opened against: follow the client to its current mob rather than
 	// tearing the page down with the dead mob.
-	if(QDELETED(user) && !closeable && !window.pooled)
-		var/mob/current_mob = window.client?.mob
+	if(QDELETED(user) && !closeable && !window().pooled)
+		var/mob/current_mob = window().client()?.mob
 		if(QDELETED(current_mob) || !SStgui.transfer_ui(src, current_mob))
 			close(can_be_suspended = FALSE)
 			return
