@@ -326,29 +326,37 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	TEST_ASSERT(QDELETED(B), "B, qdel'd re-entrantly from A's own qdeleting hook, is gone too")
 	TEST_ASSERT_NULL(A.partner, "A's own side is null (either its own phase 4, or B's phase 4 racing it, leaves no dangling ref)")
 
-// ---- Tests: scrub (phase 8) catches a leftover Destroy() re-set ----
+// ---- Tests: scrub (phase 8) catches a re-set after the links phase ----
 
 /datum/dq_destroy_transaction_scrub_fixture
 	var/datum/dq_destroy_transaction_pair_fixture/partner
+	var/reset_after_links = FALSE
 
 /datum/dq_destroy_transaction_scrub_fixture/declared_pair_vars()
 	var/static/list/vars = list("partner" = "partner")
 	return vars
 
-/datum/dq_destroy_transaction_scrub_fixture/on_destroy(force)
-	// on_destroy runs at the start of phase 4, before the links clear.
-	// Re-setting the declared pair var here simulates teardown that assigns it
-	// by hand; phases 4 and 8 must still leave it null so nothing keeps this
-	// alive past its own death.
-	partner = new /datum/dq_destroy_transaction_pair_fixture
-	..()
+/// Re-sets the fixture's declared pair var from phase 6 (effects), after phase 4
+/// cleared it: only phase 8's scrub can null it again.
+/datum/destroy_effects_data/dq_destroy_transaction_scrub_reset
+
+/datum/destroy_effects_data/dq_destroy_transaction_scrub_reset/apply(datum/D)
+	var/datum/dq_destroy_transaction_scrub_fixture/fixture = D
+	fixture.partner = new /datum/dq_destroy_transaction_pair_fixture
+	fixture.reset_after_links = TRUE
+	return null
+
+/datum/dq_destroy_transaction_scrub_fixture/destroy_effects()
+	var/static/datum/destroy_effects_data/dq_destroy_transaction_scrub_reset/data = new
+	return data
 
 /datum/unit_test/dq_destroy_transaction_scrub_catches_leftover_reset
 
 /datum/unit_test/dq_destroy_transaction_scrub_catches_leftover_reset/Run()
 	var/datum/dq_destroy_transaction_scrub_fixture/fixture = allocate(/datum/dq_destroy_transaction_scrub_fixture)
 	qdel(fixture)
-	TEST_ASSERT_NULL(fixture.partner, "phase 8 nulled the declared pair var Destroy() (phase 7) re-set")
+	TEST_ASSERT(fixture.reset_after_links, "phase 6 re-set the pair var after phase 4 cleared it")
+	TEST_ASSERT_NULL(fixture.partner, "phase 8 nulled the declared pair var re-set after the links phase")
 
 // ---- Tests: mass delete, no leaks ----
 

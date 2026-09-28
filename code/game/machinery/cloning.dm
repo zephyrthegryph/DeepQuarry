@@ -66,7 +66,6 @@
 // its containers drop out and the growing clone is ejected.
 /obj/machinery/clonepod/on_destroy(force)
 	for(var/obj/container in containers)
-		om_unhook(container, /datum/om/event/qdeleting, src)
 		container.forceMove(get_turf(src))
 	LAZYCLEARLIST(containers)
 	locked = FALSE

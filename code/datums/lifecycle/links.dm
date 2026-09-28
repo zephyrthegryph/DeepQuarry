@@ -346,12 +346,27 @@
 			continue
 		var/list_vars = backlist_handle[our_var]
 		var/h = om_handle_of(D)
-		for(var/list_var in islist(list_vars) ? list_vars : list(list_vars))
+		for(var/list_var in lifecycle_backlist_handle_lists(owner, list_vars))
 			var/list/L = owner.vars[list_var]
 			if(L)
 				L.Remove(D)
 				if(h)
 					L.Remove(h)
+
+/// The partner's list var names a REF_BACKLIST_HANDLE value picks for `owner`:
+/// a name, a list of names, or list(/partner/type = name or names) keyed by the
+/// partner's type (the first type `owner` is).
+/proc/lifecycle_backlist_handle_lists(datum/owner, list_vars)
+	if(!islist(list_vars))
+		return list(list_vars)
+	var/list/choices = list_vars
+	if(length(choices) && ispath(choices[1]))
+		for(var/partner_type in choices)
+			if(istype(owner, partner_type))
+				var/picked = choices[partner_type]
+				return islist(picked) ? picked : list(picked)
+		return list()
+	return choices
 
 /// Nulls whatever a declared owned/pair var still points to, without
 /// deleting anything (phase 8: the owned children are already gone by now;

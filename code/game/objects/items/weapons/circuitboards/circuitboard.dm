@@ -26,7 +26,6 @@
 	return ..() + list("board_type" = /datum/state_codec/frame_type)
 
 REF_OWNED(/obj/item/circuitboard, "board_type")
-REF_HELD(/obj/machinery, "circuit")
 
 //Called when the circuitboard is used to contruct a new machine.
 /obj/item/circuitboard/proc/construct(obj/machinery/M)

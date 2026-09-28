@@ -40,15 +40,12 @@
 		return INITIALIZE_HINT_QDEL
 	update_nearby_tiles()
 
-// leaves its generator's field; neighbouring fields redraw.
+// Leaves its generator's field (a shield generator or a forcefield artifact).
+REF_BACKLIST_HANDLE(/obj/effect/energy_field, list("my_gen_handle" = list(/obj/machinery/shield_gen = "field", /datum/artifact_effect/forcefield = "created_field")))
+
+// Neighbouring fields redraw.
 /obj/effect/energy_field/on_destroy(force)
 	update_nearby_tiles()
-	if(my_gen())
-		if(istype(my_gen(), /obj/machinery/shield_gen))
-			LAZYREMOVE(my_gen().field, src)
-		else if(istype(my_gen(), /datum/artifact_effect/forcefield))
-			var/datum/artifact_effect/forcefield/AE = my_gen()
-			LAZYREMOVE(AE.created_field, src)
 	var/turf/current_loc = get_turf(src)
 	..()
 	for(var/direction in GLOB.cardinal)
