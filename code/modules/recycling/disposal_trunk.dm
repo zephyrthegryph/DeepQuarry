@@ -1,7 +1,7 @@
 //a trunk joining to a disposal bin or outlet on the same turf
 /obj/structure/disposalpipe/trunk
 	icon_state = "pipe-t"
-	var/tmp/linked_handle	// The linked atom. It should have a /datum/component/disposal_connection to handle receiving disposal packets.
+	var/tmp/linked_handle	// The linked atom. It should have a disposal system connection to handle receiving disposal packets.
 
 /obj/structure/disposalpipe/trunk/Initialize(mapload)
 	..()
@@ -14,7 +14,7 @@
 // ALLOW(lifecycle): its linked machine unlinks.
 /obj/structure/disposalpipe/trunk/Destroy()
 	if(linked()) //Linked to something, better unlink.
-		SEND_SIGNAL(linked(), COMSIG_DISPOSAL_UNLINK)
+		OM_EMIT(linked(), /datum/om/event/disposal_unlink)
 		linked_handle = null
 	. = ..()
 
@@ -43,7 +43,7 @@ DECLARE_INTERACTIONS(/obj/structure/disposalpipe/trunk, INTERACT_ITEM(null, PROC
 		return ..()		// so do base transfer proc
 
 	if(linked())
-		if(SEND_SIGNAL(src, COMSIG_DISPOSAL_SEND, H))
+		if(OM_EMIT(src, /datum/om/event/before/disposal_send, H))
 			return //Sent, and handled. Our job is done.
 
 	pipe_expel(H, get_turf(src), 0) // expel at turf if nothing handled it
@@ -57,6 +57,6 @@ DECLARE_INTERACTIONS(/obj/structure/disposalpipe/trunk, INTERACT_ITEM(null, PROC
 	else
 		return 0
 
-/// LC-refs: The linked atom. It should have a /datum/component/disposal_connection to handle receiving disposal packets. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// LC-refs: The linked atom. It should have a disposal system connection to handle receiving disposal packets. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/structure/disposalpipe/trunk/proc/linked() as /atom
 	return om_resolve(linked_handle)

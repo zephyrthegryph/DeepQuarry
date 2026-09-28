@@ -17,7 +17,7 @@
 	cooldown = 0
 	// Fires every fast tick once primary_threat exists; the score gating
 	// keeps it from running unless we just attacked.
-	eval_triggers = list(COMSIG_DQAI_TARGET_CHANGED)
+	eval_triggers = list(DQAI_TRIGGER_TARGET_CHANGED)
 
 /datum/ai_behavior/evasive_juke/evaluate(datum/ai_brain/brain, atom/source)
 	// Only relevant immediately after a melee strike.
@@ -51,7 +51,7 @@
 	name = "kite"
 	priority_class = DQ_BEHAVIOR_PRIORITY_INTERRUPT
 	target_kind = DQ_TARGET_MOB
-	eval_triggers = list(COMSIG_DQAI_TARGET_CHANGED)
+	eval_triggers = list(DQAI_TRIGGER_TARGET_CHANGED)
 	/// Tile distance below which we want to back off.
 	var/kite_distance = 4
 
@@ -90,7 +90,7 @@
 	name = "hit and run"
 	priority_class = DQ_BEHAVIOR_PRIORITY_INTERRUPT
 	target_kind = DQ_TARGET_MOB
-	eval_triggers = list(COMSIG_DQAI_TARGET_CHANGED)
+	eval_triggers = list(DQAI_TRIGGER_TARGET_CHANGED)
 	cooldown = 5 SECONDS
 
 /datum/ai_behavior/hit_and_run/evaluate(datum/ai_brain/brain, atom/source)
@@ -138,7 +138,7 @@
 	name = "pack retreat"
 	priority_class = DQ_BEHAVIOR_PRIORITY_INTERRUPT
 	target_kind = DQ_TARGET_MOB
-	eval_triggers = list(COMSIG_DQAI_LOW_HEALTH, COMSIG_DQAI_DAMAGE_TAKEN)
+	eval_triggers = list(DQAI_TRIGGER_LOW_HEALTH, DQAI_TRIGGER_DAMAGE_TAKEN)
 	cooldown = 3 SECONDS
 
 /datum/ai_behavior/pack_retreat/evaluate(datum/ai_brain/brain, atom/source)

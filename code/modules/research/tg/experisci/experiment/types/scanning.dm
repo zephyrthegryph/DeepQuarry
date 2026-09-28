@@ -81,7 +81,7 @@
  * Arguments:
  * * target - The atom to attempt to scan
  */
-/datum/experiment/scanning/perform_experiment_actions(datum/component/experiment_handler/experiment_handler, atom/target)
+/datum/experiment/scanning/perform_experiment_actions(datum/experiment_handler/experiment_handler, atom/target)
 	var/contributing_index_value = experiment_requirements(experiment_handler, target)
 	if (!isnull(contributing_index_value))
 		if(traits & EXPERIMENT_TRAIT_TYPECACHE)
@@ -93,7 +93,7 @@
 		do_after_experiment(target, contributing_index_value)
 		return TRUE
 
-/datum/experiment/scanning/actionable(datum/component/experiment_handler/experiment_handler, atom/target)
+/datum/experiment/scanning/actionable(datum/experiment_handler/experiment_handler, atom/target)
 	return ..() && !isnull(experiment_requirements(experiment_handler, target))
 
 /**
@@ -104,7 +104,7 @@
  * Arguments:
  * * target - The atom to attempt to scan
  */
-/datum/experiment/scanning/proc/experiment_requirements(datum/component/experiment_handler/experiment_handler, atom/target)
+/datum/experiment/scanning/proc/experiment_requirements(datum/experiment_handler/experiment_handler, atom/target)
 	var/destructive = (traits & EXPERIMENT_TRAIT_DESTRUCTIVE)
 	for (var/req_atom in required_atoms)
 		if (!istype(target, req_atom))
@@ -129,7 +129,7 @@
  * * target - The atom being scanned
  * * typepath - The typepath (selected index) of the target atom
  */
-/datum/experiment/scanning/proc/final_contributing_index_checks(datum/component/experiment_handler/experiment_handler, atom/target, typepath)
+/datum/experiment/scanning/proc/final_contributing_index_checks(datum/experiment_handler/experiment_handler, atom/target, typepath)
 	return TRUE
 
 /**

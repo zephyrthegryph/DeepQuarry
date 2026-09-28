@@ -55,7 +55,7 @@
 
 /datum/unit_test/dq_protean_dormancy_without_rig/Run()
 	var/mob/living/carbon/human/H = make_protean_with_rig()
-	var/datum/component/forms/protean/F = H.GetComponent(/datum/component/forms/protean)
+	var/datum/forms/protean/F = H.get_protean_forms()
 	TEST_ASSERT(F.enter_rig(), "the protean should fold into its cluster")
 	H.injure(INJURY_BLUNT, 1000, BP_TORSO, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	var/datum/affliction/core_dormancy/D = H.body.find_affliction(/datum/affliction/core_dormancy)
@@ -78,7 +78,7 @@
 
 /datum/unit_test/dq_protean_dormancy_stays_contained/Run()
 	var/mob/living/carbon/human/H = make_protean_with_rig()
-	var/datum/component/forms/protean/F = H.GetComponent(/datum/component/forms/protean)
+	var/datum/forms/protean/F = H.get_protean_forms()
 	var/obj/structure/closet/closet = allocate(/obj/structure/closet, test_floor())
 	H.forceMove(closet)
 	var/atom/rig_loc = F.rig.loc
@@ -93,11 +93,11 @@
 
 /datum/unit_test/dq_set_species_removes_components/Run()
 	var/mob/living/carbon/human/H = make_protean_with_rig()
-	var/datum/component/forms/protean/F = H.GetComponent(/datum/component/forms/protean)
+	var/datum/forms/protean/F = H.get_protean_forms()
 	TEST_ASSERT(F.enter_rig(), "the protean should fold into its cluster")
 	H.set_species(SPECIES_HUMAN)
 	TEST_ASSERT(isturf(H.loc), "the protean unfolds before its species changes")
-	TEST_ASSERT_NULL(H.GetComponent(/datum/component/forms/protean), "a human keeps no protean forms component")
+	TEST_ASSERT_NULL(H.get_protean_forms(), "a human keeps no protean forms")
 
 /// Losing brain tissue kills an MMI's view; an empty view doesn't block a new brain.
 /datum/unit_test/dq_mmi_tissue_loss_kills_view
@@ -120,7 +120,7 @@
 
 	// An empty view left behind doesn't block a new brain.
 	var/obj/item/mmi/empty = allocate(/obj/item/mmi)
-	var/datum/component/mind_host/host = get_mind_host(empty)
+	var/datum/mind_host/host = get_mind_host(empty)
 	host.receive_mind(null, "unit test empty view")
 	TEST_ASSERT_NOTNULL(empty.get_occupant(), "the MMI has an empty view")
 	var/mob/living/carbon/human/H2 = allocate(/mob/living/carbon/human)

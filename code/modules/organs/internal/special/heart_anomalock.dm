@@ -31,13 +31,13 @@ REF_OWNED(/obj/item/organ/internal/heart/machine/anomalock, "core")
 		add_lightning_overlay(30 SECONDS)
 		playsound(owner, 'sound/machines/defib_zap.ogg', 50, TRUE, -1)
 		owner.emp_protection_flags |= EMP_PROTECT_SELF|EMP_PROTECT_CONTENTS
-		RegisterSignal(owner, SIGNAL_ADDTRAIT(TRAIT_CRITICAL_CONDITION), PROC_REF(activate_survival))
-		RegisterSignal(owner, COMSIG_ATOM_EMP_ACT, PROC_REF(on_emp_act))
+		om_hook(owner, /datum/om/event/trait_gained, src, PROC_REF(on_owner_trait_gained))
+		om_hook(owner, /datum/om/event/atom_emp_act, src, PROC_REF(on_emp_act))
 
 	if(removed)
 		clear_lightning_overlay(owner)
-		UnregisterSignal(owner, SIGNAL_ADDTRAIT(TRAIT_CRITICAL_CONDITION))
-		UnregisterSignal(owner, COMSIG_ATOM_EMP_ACT)
+		om_unhook(owner, /datum/om/event/trait_gained, src)
+		om_unhook(owner, /datum/om/event/atom_emp_act, src)
 		owner.emp_protection_flags &= ~(EMP_PROTECT_SELF|EMP_PROTECT_CONTENTS)
 		tesla_zap(owner, 10, 2500, current_jumps = 5)
 		expire(0)
@@ -58,8 +58,14 @@ REF_OWNED(/obj/item/organ/internal/heart/machine/anomalock, "core")
 		om_cancel_timer(src, lightning_timer)
 	lightning_overlay = null
 
+/// Event wrapper: the owner gained a trait; only critical condition triggers survival mode.
+/obj/item/organ/internal/heart/machine/anomalock/proc/on_owner_trait_gained(mob/living/carbon/source, datum/om/event/trait_gained/event)
+	EVENT_HANDLER
+	if(event.trait != TRAIT_CRITICAL_CONDITION)
+		return
+	activate_survival(source)
+
 /obj/item/organ/internal/heart/machine/anomalock/proc/activate_survival(mob/living/carbon/organ_owner)
-	SIGNAL_HANDLER
 	if(!COOLDOWN_FINISHED(src, survival_cooldown))
 		return FALSE
 
@@ -73,8 +79,8 @@ REF_OWNED(/obj/item/organ/internal/heart/machine/anomalock, "core")
 	balloon_alert(organ_owner, "your heart strengthtens")
 	playsound(owner, 'sound/machines/defib_zap.ogg', 40)
 
-/obj/item/organ/internal/heart/machine/anomalock/proc/on_emp_act(severity, recursive)
-	SIGNAL_HANDLER
+/obj/item/organ/internal/heart/machine/anomalock/proc/on_emp_act(datum/source, datum/om/event/atom_emp_act/event)
+	EVENT_HANDLER
 	add_lightning_overlay(10 SECONDS)
 
 EXTEND_INTERACTIONS(/obj/item/organ/internal/heart/machine/anomalock, INTERACT_ITEM(null, PROC_REF(anomalock_interaction_item)))

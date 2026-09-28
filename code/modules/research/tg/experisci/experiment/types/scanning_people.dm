@@ -12,7 +12,7 @@
 	required_atoms = list(/mob/living/carbon/human = required_count)
 	return ..()
 
-/datum/experiment/scanning/people/final_contributing_index_checks(datum/component/experiment_handler/experiment_handler, atom/target, typepath)
+/datum/experiment/scanning/people/final_contributing_index_checks(datum/experiment_handler/experiment_handler, atom/target, typepath)
 	. = ..()
 	if(!.)
 		return FALSE
@@ -21,7 +21,7 @@
 	return is_valid_scan_target(target, experiment_handler)
 
 /// Checks that the passed mob is valid human to scan
-/datum/experiment/scanning/people/proc/is_valid_scan_target(mob/living/carbon/human/check, datum/component/experiment_handler/experiment_handler)
+/datum/experiment/scanning/people/proc/is_valid_scan_target(mob/living/carbon/human/check, datum/experiment_handler/experiment_handler)
 	SHOULD_CALL_PARENT(TRUE)
 	if(!mind_required || !isnull(check.mind))
 		return TRUE

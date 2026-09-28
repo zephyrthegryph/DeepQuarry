@@ -134,9 +134,9 @@
 /datum/unit_test/dq_damage_packet/injure_mapping
 	var/list/seen
 
-/datum/unit_test/dq_damage_packet/injure_mapping/proc/on_injure(mob/living/source, kind, list/amount_ref, zone, atom/injury_source, flags)
-	SIGNAL_HANDLER
-	seen += list(list(kind, flags))
+/datum/unit_test/dq_damage_packet/injure_mapping/proc/on_injure(mob/living/source, datum/om/event/before/living_injure/event)
+	EVENT_HANDLER
+	seen += list(list(event.kind, event.flags))
 
 /datum/unit_test/dq_damage_packet/injure_mapping/Run()
 	var/static/list/expected = list(
@@ -144,7 +144,7 @@
 		INJURY_CORROSIVE, INJURY_TOXIN, INJURY_RADIATION, INJURY_ELECTRIC, INJURY_BLUNT, INJURY_PAIN,
 	)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	RegisterSignal(H, COMSIG_LIVING_INJURE, PROC_REF(on_injure))
+	om_hook(H, /datum/om/event/before/living_injure, src, PROC_REF(on_injure))
 	for(var/kind in 1 to DAMAGE_KIND_COUNT)
 		seen = list()
 		var/datum/damage_packet/packet = damage_packet(null, null, null, BP_TORSO, DAMAGE_PACKET_SILENT | DAMAGE_PACKET_PROJECTILE)
@@ -163,7 +163,7 @@
 	H.receive_damage(packet)
 	packet.release()
 	TEST_ASSERT(!(seen[1][2] & INJURE_ARMORED), "an unarmoured packet should skip armour")
-	UnregisterSignal(H, COMSIG_LIVING_INJURE)
+	om_unhook(H, /datum/om/event/before/living_injure, src)
 
 
 /// Objects: physical kinds are brute, thermal and corrosive are burn, the

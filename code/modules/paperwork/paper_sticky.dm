@@ -108,11 +108,11 @@ DECLARE_INTERACTIONS(/obj/item/sticky_pad, \
 
 /obj/item/paper/sticky/Initialize(mapload)
 	. = ..()
-	AddComponent(/datum/component/recursive_move)
-	RegisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE, /obj/item/paper/sticky/proc/reset_persistence_tracking)
+	dq_add_recursive_move(src)
+	om_hook(src, /datum/om/event/movable_attempted_move, src, PROC_REF(reset_persistence_tracking))
 
 /obj/item/paper/sticky/proc/reset_persistence_tracking()
-	SIGNAL_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	SSpersistence.forget_value(src, /datum/persistent/paper/sticky)
 	pixel_x = 0
 	pixel_y = 0
@@ -120,7 +120,7 @@ DECLARE_INTERACTIONS(/obj/item/sticky_pad, \
 // ALLOW(lifecycle): persistence stops tracking it.
 /obj/item/paper/sticky/Destroy()
 	reset_persistence_tracking()
-	UnregisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE)
+	om_unhook(src, /datum/om/event/movable_attempted_move, src)
 	. = ..()
 
 /obj/item/paper/sticky/update_icon()

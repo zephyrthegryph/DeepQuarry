@@ -26,10 +26,21 @@
 	var/monitor_stored_energy = 0
 
 /datum/material_service/proc/register_diagnostics()
-	RegisterSignal(owner(), COMSIG_ATOM_SECONDARY_TOOL_ACT(TOOL_MULTITOOL), PROC_REF(inspect_with_tool))
-	RegisterSignal(owner(), COMSIG_ATOM_SECONDARY_TOOL_ACT(TOOL_SCREWDRIVER), PROC_REF(open_service_cover))
-	RegisterSignal(owner(), COMSIG_ATOM_ATTACKBY, PROC_REF(replace_with_stock))
-	RegisterSignal(owner(), COMSIG_ATOM_EXAMINE, PROC_REF(examine_service))
+	om_hook(owner(), /datum/om/event/before/atom_tool_act, src, PROC_REF(on_tool_act))
+	om_hook(owner(), /datum/om/event/before/attackby, src, PROC_REF(replace_with_stock))
+	om_hook(owner(), /datum/om/event/examine, src, PROC_REF(examine_service))
+
+/// Secondary multitool / screwdriver use on the owner.
+/datum/material_service/proc/on_tool_act(datum/source, datum/om/event/before/atom_tool_act/event)
+	EVENT_HANDLER
+	if(!event.secondary)
+		return NONE
+	switch(event.tool_quality)
+		if(TOOL_MULTITOOL)
+			return inspect_with_tool(source, event.user, event.tool)
+		if(TOOL_SCREWDRIVER)
+			return open_service_cover(source, event.user, event.tool)
+	return NONE
 
 /obj/proc/material_diagnostics_tool_act(mob/user, obj/item/tool)
 	if(!has_functional_construction() || !tool?.has_tool_quality(TOOL_MULTITOOL))
@@ -40,13 +51,14 @@
 	return service.inspect_with_tool(src, user, tool)
 
 /datum/material_service/proc/unregister_diagnostics()
-	UnregisterSignal(owner(), list(COMSIG_ATOM_SECONDARY_TOOL_ACT(TOOL_MULTITOOL), COMSIG_ATOM_SECONDARY_TOOL_ACT(TOOL_SCREWDRIVER), COMSIG_ATOM_ATTACKBY, COMSIG_ATOM_EXAMINE))
+	om_unhook(owner(), list(/datum/om/event/before/atom_tool_act, /datum/om/event/before/attackby, /datum/om/event/examine), src)
 	monitor_tool = null
 	monitor_user = null
 	last_reading = null
 
-/datum/material_service/proc/examine_service(datum/source, mob/user, list/text)
-	SIGNAL_HANDLER
+/datum/material_service/proc/examine_service(datum/source, datum/om/event/examine/event)
+	EVENT_HANDLER
+	var/list/text = event.texts
 	text += span_notice("[summary()] Right-click with a multitool to measure operation; right-click with a screwdriver to open the service cover.")
 	if(maintenance_open)
 		text += span_notice("The service cover is open. Replacement material stock can be fitted to an individual component.")
@@ -65,7 +77,7 @@
 	return TRUE
 
 /datum/material_service/proc/inspect_with_tool(datum/source, mob/user, obj/item/tool)
-	SIGNAL_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	if(!user.Adjacent(owner()) || !tool?.has_tool_quality(TOOL_MULTITOOL))
 		return ITEM_INTERACT_BLOCKING
 	monitor_tool = om_handle(tool)
@@ -81,7 +93,7 @@
 	return ITEM_INTERACT_SUCCESS
 
 /datum/material_service/proc/open_service_cover(datum/source, mob/user, obj/item/tool)
-	SIGNAL_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	if(!can_service(user))
 		to_chat(user, span_warning("The assembly must be accessible and stopped before opening its service cover."))
 		return ITEM_INTERACT_BLOCKING
@@ -89,8 +101,10 @@
 	owner().visible_message(span_notice("[user] [maintenance_open ? "opens" : "closes"] [owner()]'s service cover."))
 	return ITEM_INTERACT_SUCCESS
 
-/datum/material_service/proc/replace_with_stock(datum/source, obj/item/item, mob/user, list/modifiers)
-	SIGNAL_HANDLER
+/datum/material_service/proc/replace_with_stock(datum/source, datum/om/event/before/attackby/event)
+	EVENT_HANDLER
+	var/obj/item/item = event.item
+	var/mob/user = event.user
 	if(!maintenance_open || !istype(item, /obj/item/stack/material))
 		return NONE
 	INVOKE_ASYNC(src, PROC_REF(fit_stock), item, user) // ALLOW(scheduler): callee prompts (tgui_input_list)

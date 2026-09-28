@@ -60,8 +60,8 @@
 
 	var/attached = 0
 	var/detached = 0
-	RegisterSignal(H, COMSIG_BODY_PART_DETACHED, PROC_REF(dq_count_detached))
-	RegisterSignal(recipient, COMSIG_BODY_PART_ATTACHED, PROC_REF(dq_count_attached))
+	om_hook(H, /datum/om/event/body_part_detached, src, PROC_REF(dq_count_detached))
+	om_hook(recipient, /datum/om/event/body_part_attached, src, PROC_REF(dq_count_attached))
 
 	arm.droplimb(TRUE, DROPLIMB_EDGE)
 	TEST_ASSERT(isturf(arm.loc), "the severed arm lies on the floor")
@@ -94,12 +94,12 @@
 
 /datum/unit_test/var/dq_part_signal_count = 0
 
-/datum/unit_test/proc/dq_count_detached(datum/source, obj/item/organ/part)
-	SIGNAL_HANDLER
+/datum/unit_test/proc/dq_count_detached(datum/source, datum/om/event/body_part_detached/event)
+	EVENT_HANDLER
 	dq_part_signal_count++
 
-/datum/unit_test/proc/dq_count_attached(datum/source, obj/item/organ/part)
-	SIGNAL_HANDLER
+/datum/unit_test/proc/dq_count_attached(datum/source, datum/om/event/body_part_attached/event)
+	EVENT_HANDLER
 	dq_part_signal_count++
 
 /// A blunt sever destroys the limb; what was inside it is flung out through

@@ -49,7 +49,7 @@
 	priority_class = DQ_BEHAVIOR_PRIORITY_INTERRUPT
 	target_kind = DQ_TARGET_NONE
 	no_threat_required = TRUE
-	eval_triggers = list(COMSIG_DQAI_DAMAGE_TAKEN)
+	eval_triggers = list(DQAI_TRIGGER_DAMAGE_TAKEN)
 	cooldown = 1 SECOND
 
 /datum/ai_behavior/solargrub_break_free/applicable_to(mob/living/owner)

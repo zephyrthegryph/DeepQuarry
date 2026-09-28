@@ -180,7 +180,7 @@
 			var/obj/machinery/artifact/A = scanned_obj
 			var/out = "Anomalous alien device - composed of an unknown alloy.<br><br>"
 
-			var/datum/component/artifact_master/AMast = A.artifact_master
+			var/datum/artifact_master/AMast = A.artifact_master
 			var/datum/artifact_effect/AEff = AMast?.get_primary()
 
 			if(istype(AEff))
@@ -196,7 +196,7 @@
 			return out
 		else
 
-			var/datum/component/artifact_master/ScannedMaster = scanned_obj.GetComponent(/datum/component/artifact_master)
+			var/datum/artifact_master/ScannedMaster = scanned_obj.artifact_master
 
 			if(istype(ScannedMaster))
 				var/out = "Anomalous reality warp - Object has been altered to disobey known laws of physics.<br><br>"

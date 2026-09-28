@@ -80,7 +80,7 @@
 
 /datum/event2/event/mob_spawning/proc/spawn_one_mob(new_loc, mob_type)
 	var/mob/living/simple_mob/M = new mob_type(new_loc)
-	RegisterSignal(M, COMSIG_OBSERVER_DESTROYED, PROC_REF(on_mob_destruction))
+	om_hook(M, /datum/om/event/qdeleting, src, PROC_REF(on_mob_destruction))
 	LAZYADD(spawned_mobs, M)
 	return M
 
@@ -92,7 +92,8 @@
 			. += 1
 
 // If simple_mob is bomphed, remove it from the list.
-/datum/event2/event/mob_spawning/proc/on_mob_destruction(mob/M)
-	SIGNAL_HANDLER
+/datum/event2/event/mob_spawning/proc/on_mob_destruction(datum/source, datum/om/event/qdeleting/event)
+	EVENT_HANDLER
+	var/mob/M = source
 	LAZYREMOVE(spawned_mobs, M)
-	UnregisterSignal(M, COMSIG_OBSERVER_DESTROYED)
+	om_unhook(M, /datum/om/event/qdeleting, src)

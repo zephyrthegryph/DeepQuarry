@@ -873,12 +873,6 @@
 	if(become_anomalous)
 		become_anomalous()
 
-// ALLOW(lifecycle): its artifact master component is removed.
+// ALLOW(lifecycle): its artifact master is owned by /atom/var/artifact_master and deleted with it.
 /obj/item/archaeological_find/Destroy()
-	if(src.is_anomalous())
-		var/datum/component/artifact_master/arti_mstr = GetComponent(/datum/component/artifact_master)
-		arti_mstr.RemoveComponent()
-		if(!QDELETED(arti_mstr))
-			qdel(arti_mstr)
-
 	. = ..()

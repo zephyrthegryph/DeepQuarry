@@ -217,7 +217,7 @@
 	// An unregistered design ID means SSresearch state is inconsistent with what is being unlocked.
 	if(design.id != DESIGN_ID_IGNORE && !SSresearch.techweb_designs[design.id])
 		CRASH("add_design called with unregistered design ID '[design.id]' ([design.type]) on techweb '[id]' — design is not in SSresearch.techweb_designs")
-	SEND_SIGNAL(src, COMSIG_TECHWEB_ADD_DESIGN, design, custom)
+	OM_EMIT(src, /datum/om/event/techweb_add_design, design, custom)
 	if(custom)
 		LAZYSET(custom_designs, design.id, TRUE)
 
@@ -239,7 +239,7 @@
 		return FALSE
 	if(LAZYACCESS(custom_designs, design.id) && !custom)
 		return FALSE
-	SEND_SIGNAL(src, COMSIG_TECHWEB_REMOVE_DESIGN, design, custom)
+	OM_EMIT(src, /datum/om/event/techweb_remove_design, design, custom)
 	LAZYREMOVE(custom_designs, design.id)
 	LAZYREMOVE(researched_designs, design.id)
 	return TRUE

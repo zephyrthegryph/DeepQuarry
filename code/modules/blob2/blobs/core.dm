@@ -176,7 +176,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 	var/client/C = null
 	if(!new_overmind)
 		Q = new /datum/ghost_query/blob()
-		RegisterSignal(Q, COMSIG_GHOST_QUERY_COMPLETE, PROC_REF(get_winner))
+		om_hook(Q, /datum/om/event/ghost_query_complete, src, PROC_REF(get_winner))
 		Q.query()
 
 	else
@@ -184,14 +184,14 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 		overmind_creation(C)
 	controller_handle = null //Controller has been set. Let's null it now.
 
-/obj/structure/blob/core/proc/get_winner()
-	SIGNAL_HANDLER
+/obj/structure/blob/core/proc/get_winner(datum/source, datum/om/event/ghost_query_complete/event)
+	EVENT_HANDLER
 	if(Q && Q.candidates.len) //Q should NEVER get deleted but...whatever, sanity.
 		var/mob/observer/dead/D = Q.candidates[1]
 		var/client/C
 		C = D.client
 		overmind_creation(C)
-	UnregisterSignal(Q, COMSIG_GHOST_QUERY_COMPLETE)
+	om_unhook(Q, /datum/om/event/ghost_query_complete, src)
 	QDEL_NULL(Q) //get rid of the query
 
 /obj/structure/blob/core/proc/overmind_creation(client/new_overmind)

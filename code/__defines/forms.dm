@@ -1,12 +1,9 @@
 // Forms: one character mob, several bodies' worth of appearance and capability.
 // See doc/mob_life_architecture.md §6 and code/modules/mob/living/carbon/human/species/station/protean/forms.dm.
 
-/// From /datum/component/forms/proc/set_form(): (datum/form/old_form, datum/form/new_form)
-#define COMSIG_FORM_CHANGED "form_changed"
-
 /// The current form draws its own appearance; the human body layers are not applied.
 #define TRAIT_FORM_HIDES_BODY "form_hides_body"
-/// Trait source for everything the forms component grants.
+/// Trait source for everything the forms datum grants.
 #define FORM_TRAIT "form"
 
 // Form flags. A power lists the forms it can be used from.

@@ -52,10 +52,10 @@
 
 		PERIODIC_START(src, PERIODIC_SLOW)
 
-/obj/item/blobcore_chunk/proc/call_chunk_unique()
-	SIGNAL_HANDLER
+/obj/item/blobcore_chunk/proc/call_chunk_unique(datum/source, datum/om/event/event)
+	EVENT_HANDLER
 	if(blob_type)
-		blob_type.chunk_unique(src, args)
+		blob_type.chunk_unique(src, list(source))
 	return
 
 /obj/item/blobcore_chunk/proc/get_carrier(atom/target)

@@ -8,7 +8,7 @@
 	/// The efficiency coefficient. Material costs and print times are multiplied by this number;
 	var/efficiency_coeff = 1
 	/// The material storage used by this fabricator.
-	var/datum/component/remote_materials/materials
+	var/datum/remote_materials/materials
 	/// Which departments are allowed to process this design
 	var/allowed_department_flags = ALL
 	/// Icon state when production has started
@@ -32,11 +32,11 @@ REF_DEF(/obj/machinery/rnd/production, list("cached_designs"))
 
 /obj/machinery/rnd/production/Initialize(mapload)
 	print_sound = new(list(src), FALSE)
-	materials = AddComponent(
-		/datum/component/remote_materials, \
+	materials = new /datum/remote_materials(
+		src, \
 		mapload, \
-		mat_container_signals = list( \
-			COMSIG_MATCONTAINER_ITEM_CONSUMED = TYPE_PROC_REF(/obj/machinery/rnd/production, local_material_insert)
+		mat_container_events = list( \
+			(/datum/om/event/matcontainer_item_consumed) = TYPE_PROC_REF(/obj/machinery/rnd/production, local_material_insert)
 		) \
 	)
 
@@ -48,7 +48,7 @@ REF_DEF(/obj/machinery/rnd/production, list("cached_designs"))
 	RefreshParts()
 	update_icon()
 
-REF_OWNED(/obj/machinery/rnd/production, "print_sound")
+REF_OWNED(/obj/machinery/rnd/production, list("print_sound", "materials"))
 
 /obj/machinery/rnd/production/update_icon()
 	cut_overlays()
@@ -78,16 +78,12 @@ REF_OWNED(/obj/machinery/rnd/production, "print_sound")
 
 /obj/machinery/rnd/production/connect_techweb(datum/techweb/new_techweb)
 	if(stored_research)
-		UnregisterSignal(stored_research, list(COMSIG_TECHWEB_ADD_DESIGN, COMSIG_TECHWEB_REMOVE_DESIGN))
+		om_unhook(stored_research, list(/datum/om/event/techweb_add_design, /datum/om/event/techweb_remove_design), src)
 	return ..()
 
 /obj/machinery/rnd/production/on_connected_techweb()
 	. = ..()
-	RegisterSignals(
-		stored_research,
-		list(COMSIG_TECHWEB_ADD_DESIGN, COMSIG_TECHWEB_REMOVE_DESIGN),
-		TYPE_PROC_REF(/obj/machinery/rnd/production, on_techweb_update)
-	)
+	om_hook(stored_research, list(/datum/om/event/techweb_add_design, /datum/om/event/techweb_remove_design), src, TYPE_PROC_REF(/obj/machinery/rnd/production, on_techweb_update))
 	update_designs()
 
 /// Updates the list of designs this fabricator can print.
@@ -115,8 +111,8 @@ REF_OWNED(/obj/machinery/rnd/production, "print_sound")
 
 	update_static_data_for_all_viewers()
 
-/obj/machinery/rnd/production/proc/on_techweb_update()
-	SIGNAL_HANDLER
+/obj/machinery/rnd/production/proc/on_techweb_update(datum/source, datum/om/event/event)
+	EVENT_HANDLER
 
 	if(!techweb_updating) //so we batch these updates together
 		techweb_updating = TRUE
@@ -162,10 +158,10 @@ REF_OWNED(/obj/machinery/rnd/production, "print_sound")
 	flick_overlay_view_atom(mutable_appearance('icons/obj/machines/research_vr.dmi', "protolathe_progress"), 1 SECONDS)
 
 ///When materials are instered into local storage
-/obj/machinery/rnd/production/proc/local_material_insert(container, obj/item/item_inserted, last_inserted_id, list/mats_consumed, amount_inserted, atom/context)
-	SIGNAL_HANDLER
+/obj/machinery/rnd/production/proc/local_material_insert(datum/source, datum/om/event/matcontainer_item_consumed/event)
+	EVENT_HANDLER
 
-	process_item(item_inserted, mats_consumed, amount_inserted)
+	process_item(event.item, event.mats_consumed, event.material_amount)
 
 /obj/machinery/rnd/production/RefreshParts()
 	. = ..()
@@ -276,7 +272,7 @@ REF_OWNED(/obj/machinery/rnd/production, "print_sound")
 
 // Shared: loaded materials (>= 1 sheet) offered in a lathe's per-design material
 // picker. Used by both the protolathe family and the autolathe.
-/proc/lathe_material_choice_list(datum/component/material_container/cont)
+/proc/lathe_material_choice_list(datum/material_container/cont)
 	var/list/out = list()
 	if(!istype(cont))
 		return out

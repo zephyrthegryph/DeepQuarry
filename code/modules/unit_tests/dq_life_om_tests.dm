@@ -392,8 +392,8 @@
 /datum/unit_test/dq_life_trait_stage_follows_component/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(!(/datum/om/stage/life/trait/photosynth in life_test_stage_types(H)), "a plain human has no photosynthesis stage")
-	var/datum/component/photosynth/P = H.AddComponent(/datum/component/photosynth)
-	TEST_ASSERT_NOTNULL(P, "the photosynthesis component should attach")
+	var/datum/trait_state/photosynth/P = H.add_trait_state(/datum/trait_state/photosynth)
+	TEST_ASSERT_NOTNULL(P, "the photosynthesis trait state should attach")
 	var/list/types = life_test_stage_types(H)
 	TEST_ASSERT(/datum/om/stage/life/trait/photosynth in types, "attaching the component should add its trait stage")
 	TEST_ASSERT(life_test_in_order(types, list(/datum/om/stage/life/type_pre/carbon/human, /datum/om/stage/life/trait/photosynth, /datum/om/stage/life/upkeep)), "trait stages run where the old Life signal fired")
@@ -861,7 +861,7 @@
 	// Dizziness: 3 points per cycle, 15 while resting, capped at 1000.
 	H.status_adjust(EFFECT_DIZZY, 5000)
 	TEST_ASSERT_EQUAL(H.status_units(EFFECT_DIZZY), 1000, "dizziness is capped at 1000 points")
-	TEST_ASSERT_NOTNULL(H.GetComponent(/datum/component/dizzy_shake), "the shake follows the status (its on_start hook)")
+	TEST_ASSERT(om_attached(H, /datum/om/behaviour/dizzy_shake), "the shake follows the status (its on_start hook)")
 	H.status_set(EFFECT_DIZZY, 30)
 	scheduler_advance(LIFE_CYCLE_SECONDS + 0.1)
 	TEST_ASSERT_EQUAL(H.status_units(EFFECT_DIZZY), 27, "dizziness: 3 points per cycle")
@@ -872,7 +872,7 @@
 	TEST_ASSERT_EQUAL(H.status_units(EFFECT_DIZZY), 12, "dizziness: 15 points per cycle while resting")
 	H.resting = FALSE
 	H.status_end(EFFECT_DIZZY)
-	TEST_ASSERT_NULL(H.GetComponent(/datum/component/dizzy_shake), "the shake ends with the status (its on_end hook)")
+	TEST_ASSERT(!om_attached(H, /datum/om/behaviour/dizzy_shake), "the shake ends with the status (its on_end hook)")
 
 	// Alerts follow the status, with no stage maintaining them.
 	H.status_at_least(EFFECT_CONFUSED, 1)
@@ -1004,18 +1004,18 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	om_suspend(H, H)
-	RegisterSignal(H, COMSIG_LIVING_STATUS_STUN, PROC_REF(veto))
+	om_hook(H, /datum/om/event/living_status_stun, src, PROC_REF(veto))
 	H.status_at_least(EFFECT_STUNNED, 2)
 	TEST_ASSERT(!H.has_status(EFFECT_STUNNED), "a vetoed increase doesn't land")
 	TEST_ASSERT_EQUAL(vetoes, 1, "the row's signal was sent once")
 	H.status_at_least(EFFECT_SLURRING, 2)
 	TEST_ASSERT(H.has_status(EFFECT_SLURRING), "a status without a signal isn't vetoed")
-	UnregisterSignal(H, COMSIG_LIVING_STATUS_STUN)
+	om_unhook(H, /datum/om/event/living_status_stun, src)
 	H.status_at_least(EFFECT_STUNNED, 2)
 	TEST_ASSERT(H.has_status(EFFECT_STUNNED), "without the veto it lands")
 
-/datum/unit_test/life_om/status_signal_veto/proc/veto(datum/source, amount)
-	SIGNAL_HANDLER
+/datum/unit_test/life_om/status_signal_veto/proc/veto(datum/source, datum/om/event/living_status_stun/event)
+	EVENT_HANDLER
 	vetoes++
 	return COMPONENT_NO_STUN
 

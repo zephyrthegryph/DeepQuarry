@@ -77,18 +77,18 @@
 	if(shuttle_docking_controller == controller)
 		return
 	if(shuttle_docking_controller)
-		UnregisterSignal(shuttle_docking_controller, COMSIG_QDELETING)
+		om_unhook(shuttle_docking_controller, /datum/om/event/qdeleting, src)
 	shuttle_docking_controller = controller
 	if(shuttle_docking_controller)
-		RegisterSignal(shuttle_docking_controller, COMSIG_QDELETING, PROC_REF(docking_controller_deleted))
+		om_hook(shuttle_docking_controller, /datum/om/event/qdeleting, src, PROC_REF(docking_controller_deleted))
 
 /// The active controller is an OM handle: it reads null once the controller is deleted, so it
-/// needs no QDELETING registration.
+/// needs no qdeleting hook.
 /datum/shuttle/autodock/proc/set_active_docking_controller(datum/embedded_program/docking/controller)
 	active_docking_controller_handle = om_handle(controller)
 
-/datum/shuttle/autodock/proc/docking_controller_deleted(datum/source)
-	SIGNAL_HANDLER
+/datum/shuttle/autodock/proc/docking_controller_deleted(datum/source, datum/om/event/qdeleting/event)
+	EVENT_HANDLER
 	if(shuttle_docking_controller == source)
 		shuttle_docking_controller = null
 /*

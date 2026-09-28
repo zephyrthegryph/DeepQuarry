@@ -5224,7 +5224,7 @@
 					M.adjust_nutrition(alt_nutriment_factor * removed)
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
-			var/datum/component/xenochimera/xc = M.get_xenochimera_component()
+			var/datum/xenochimera/xc = M.get_xenochimera_component()
 			if(xc && xc.feral > 0 && H.nutrition > 150 && H.traumatic_shock < 20 && H.status_units(EFFECT_JITTERY) < 100) //Same check as feral triggers to stop them immediately re-feralling
 				xc.feral -= removed * 3 // should calm them down quick, provided they're actually in a state to STAY calm.
 				if (xc.feral <=0) //check if they're unferalled
@@ -5575,7 +5575,7 @@
 					M.nutrition += (alt_nutriment_factor * removed)
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
-			var/datum/component/xenochimera/xc = M.get_xenochimera_component()
+			var/datum/xenochimera/xc = M.get_xenochimera_component()
 			if(xc && xc.feral > 0 && H.nutrition > 100 && H.traumatic_shock < min(60, H.nutrition/10) && H.status_units(EFFECT_JITTERY) < 100) // same check as feral triggers to stop them immediately re-feralling
 				xc.feral -= removed * 3 // should calm them down quick, provided they're actually in a state to STAY calm.
 				if (xc.feral <=0) //check if they're unferalled
@@ -5665,7 +5665,7 @@
 
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		var/datum/component/xenochimera/xc = M.get_xenochimera_component()
+		var/datum/xenochimera/xc = M.get_xenochimera_component()
 		if(xc && xc.feral > 0 && H.nutrition > 150 && H.traumatic_shock < 20 && H.status_units(EFFECT_JITTERY) < 100) //Same check as feral triggers to stop them immediately re-feralling
 			xc.feral -= removed * 3 //Should calm them down quick, provided they're actually in a state to STAY calm.
 			if(xc.feral <=0) //Check if they're unferalled

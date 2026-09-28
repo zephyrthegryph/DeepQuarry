@@ -182,7 +182,7 @@
 	name = "emergency invisibility"
 	priority_class = DQ_BEHAVIOR_PRIORITY_INTERRUPT
 	target_kind = DQ_TARGET_MOB
-	eval_triggers = list(COMSIG_DQAI_DAMAGE_TAKEN, COMSIG_DQAI_LOW_HEALTH)
+	eval_triggers = list(DQAI_TRIGGER_DAMAGE_TAKEN, DQAI_TRIGGER_LOW_HEALTH)
 	/// How long the dragon stays cloaked after panicking (legacy spawn(60 SECONDS)).
 	var/cloak_duration = 1 MINUTE
 	/// How far it flings itself away on activation.

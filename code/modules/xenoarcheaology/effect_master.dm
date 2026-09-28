@@ -16,17 +16,24 @@
 #define TOXIN_PATH /datum/reagent/toxin
 
 /atom/proc/is_anomalous()
-	return (GetComponent(/datum/component/artifact_master))
+	return artifact_master
 
 /atom/proc/become_anomalous()
 	if(!is_anomalous())
-		AddComponent(/datum/component/artifact_master)
+		new /datum/artifact_master(src)
 
-/datum/component/artifact_master
+/// Creates the artifact master of `master_type` for `A` unless it already has one; returns A's master.
+/proc/make_artifact_master(atom/A, master_type = /datum/artifact_master)
+	if(!A.artifact_master)
+		new master_type(A)
+	return A.artifact_master
+
+/// The artifact state of an anomalous atom (was the artifact_master component). Owned by it.
+REF_VAR(/atom, OWNED, /datum/artifact_master, artifact_master)
+
+/datum/artifact_master
 	var/tmp/holder_handle
 	var/list/my_effects
-
-	dupe_type = /datum/component/artifact_master
 
 	var/effect_generation_chance = 100
 
@@ -39,13 +46,13 @@
 	var/static/list/volatile_reagents = list(PHORON_PATH, HYDROPHORON_PATH, THERMITE_PATH)
 	var/static/list/toxic_reagents = list(TOXIN_PATH)
 
-/datum/component/artifact_master/New()
+/datum/artifact_master/New(atom/new_holder)
 	. = ..()
-	holder_handle = om_handle(parent)
-
-	if(!holder())
+	if(!istype(new_holder) || new_holder.artifact_master)
 		qdel(src)
 		return
+	holder_handle = om_handle(new_holder)
+	new_holder.artifact_master = src
 
 	my_effects = list()
 
@@ -55,7 +62,7 @@
 	return
 
 // This handles the randomization for large artifacts. This allows them to spawn in and do the 50/50 to see if they'll be activated or not.
-/datum/component/artifact_master/proc/do_large_randomization()
+/datum/artifact_master/proc/do_large_randomization()
 	for(var/datum/artifact_effect/my_effect in my_effects)
 		if(my_effect.can_start_activated && prob(50))
 			my_effect.ToggleActivate(TRUE, TRUE)
@@ -69,42 +76,23 @@
  * Why would you do this to us
  */
 
-/datum/component/artifact_master/proc/DoRegistry()
-//Melee Hit
-	RegisterSignal(holder(), COMSIG_ATOM_ATTACKBY, /datum/component/artifact_master/proc/on_attackby, override = FALSE)
-//Explosions
-	RegisterSignal(holder(), COMSIG_ATOM_EX_ACT, /datum/component/artifact_master/proc/on_exact, override = FALSE)
-//Bullets
-	RegisterSignal(holder(), COMSIG_ATOM_BULLET_ACT, /datum/component/artifact_master/proc/on_bullet, override = FALSE)
+/datum/artifact_master/proc/DoRegistry()
+	var/atom/H = holder()
+	om_hook(H, /datum/om/event/before/attackby, src, PROC_REF(on_attackby))
+	om_hook(H, /datum/om/event/before/atom_ex_act, src, PROC_REF(on_exact))
+	om_hook(H, /datum/om/event/before/atom_bullet_act, src, PROC_REF(on_bullet))
+	om_hook(H, /datum/om/event/before/attack_hand, src, PROC_REF(on_attack_hand))
+	om_hook(H, /datum/om/event/before/movable_bump, src, PROC_REF(on_bump))
+	om_hook(H, /datum/om/event/atom_bumped, src, PROC_REF(on_bumped))
+	om_hook(H, /datum/om/event/moved, src, PROC_REF(on_moved))
+	om_hook(H, /datum/om/event/reagent_expose_obj, src, PROC_REF(on_reagent))
 
-//Attackhand
-	RegisterSignal(holder(), COMSIG_ATOM_ATTACK_HAND, /datum/component/artifact_master/proc/on_attack_hand, override = FALSE)
+/datum/artifact_master/proc/do_unregister()
+	var/atom/H = holder()
+	if(H)
+		om_unhook(H, null, src)
 
-//Bumped / Bumping
-	RegisterSignal(holder(), COMSIG_MOVABLE_BUMP, /datum/component/artifact_master/proc/on_bump, override = FALSE)
-	RegisterSignal(holder(), COMSIG_ATOM_BUMPED, /datum/component/artifact_master/proc/on_bumped, override = FALSE)
-
-//Moved
-	RegisterSignal(holder(), COMSIG_MOVABLE_MOVED, /datum/component/artifact_master/proc/on_moved, override = FALSE)
-
-//Splashed with a reagent.
-	RegisterSignal(holder(), COMSIG_REAGENT_EXPOSE_OBJ, /datum/component/artifact_master/proc/on_reagent, override = FALSE)
-
-/*
- *
- */
-
-/datum/component/artifact_master/proc/do_unregister()
-	UnregisterSignal(holder(), COMSIG_ATOM_ATTACKBY)
-	UnregisterSignal(holder(), COMSIG_ATOM_EX_ACT)
-	UnregisterSignal(holder(), COMSIG_ATOM_BULLET_ACT)
-	UnregisterSignal(holder(), COMSIG_ATOM_ATTACK_HAND)
-	UnregisterSignal(holder(), COMSIG_MOVABLE_BUMP)
-	UnregisterSignal(holder(), COMSIG_ATOM_BUMPED)
-	UnregisterSignal(holder(), COMSIG_MOVABLE_MOVED)
-	UnregisterSignal(holder(), COMSIG_REAGENT_EXPOSE_OBJ)
-
-/datum/component/artifact_master/proc/get_active_effects()
+/datum/artifact_master/proc/get_active_effects()
 	var/list/active_effects = list()
 	for(var/datum/artifact_effect/my_effect in my_effects)
 		if(my_effect.activated)
@@ -112,14 +100,14 @@
 
 	return active_effects
 
-/datum/component/artifact_master/proc/get_all_effects()
+/datum/artifact_master/proc/get_all_effects()
 	var/list/effects = list()
 	for(var/datum/artifact_effect/my_effect in my_effects)
 		effects |= my_effect
 
 	return effects
 
-/datum/component/artifact_master/proc/add_effect()
+/datum/artifact_master/proc/add_effect()
 	var/effect_type = rerun_prompt(usr, "k123", list("kind" = "list", "message" = "What type do you want?", "title" = "Effect Type", "choices" = subtypesof(/datum/artifact_effect)), PROC_REF(add_effect), args)
 	if(isnull(effect_type))
 		return
@@ -132,7 +120,7 @@
 			to_chat(usr, span_filter_notice("This effect can not be applied to this atom type."))
 			qdel(my_effect)
 
-/datum/component/artifact_master/proc/remove_effect()
+/datum/artifact_master/proc/remove_effect()
 	var/to_remove_effect = rerun_prompt(usr, "k134", list("kind" = "list", "message" = "What effect do you want to remove?", "title" = "Remove Effect", "choices" = my_effects), PROC_REF(remove_effect), args)
 	if(isnull(to_remove_effect))
 		return
@@ -143,8 +131,11 @@
 		qdel(AE)
 
 // ALLOW(lifecycle): its effects go with it.
-/datum/component/artifact_master/Destroy()
+/datum/artifact_master/Destroy()
 	do_unregister()
+	var/atom/H = holder()
+	if(H?.artifact_master == src)
+		H.artifact_master = null
 	holder_handle = null
 	for(var/datum/artifact_effect/AE in my_effects)
 		AE.master_handle = null
@@ -153,7 +144,7 @@
 
 	. = ..()
 
-/datum/component/artifact_master/proc/do_setup()
+/datum/artifact_master/proc/do_setup()
 	if(LAZYLEN(make_effects))
 		for(var/path in make_effects)
 			var/datum/artifact_effect/new_effect = new path(src)
@@ -165,7 +156,7 @@
 
 	DoRegistry()
 
-/datum/component/artifact_master/proc/generate_effects()
+/datum/artifact_master/proc/generate_effects()
 	// Use a proc-local static registry rather than calling subtypesof() on every iteration.
 	// The registry is built once on first use: all subtypes of /datum/artifact_effect
 	// that are NOT in GLOB.blacklisted_artifact_effects. This eliminates the O(n*subtypes)
@@ -212,10 +203,10 @@
 
 		effect_generation_chance = round(effect_generation_chance)
 
-/datum/component/artifact_master/proc/get_holder()	// Returns the holder.
+/datum/artifact_master/proc/get_holder()	// Returns the holder.
 	return holder()
 
-/datum/component/artifact_master/proc/get_primary()
+/datum/artifact_master/proc/get_primary()
 	if(LAZYLEN(my_effects))
 		return my_effects[1]
 	return FALSE
@@ -224,9 +215,9 @@
  * Trigger code.
  */
 
-/datum/component/artifact_master/proc/on_exact()
-	SIGNAL_HANDLER
-	var/severity = args[2]
+/datum/artifact_master/proc/on_exact(datum/source, datum/om/event/before/atom_ex_act/event)
+	EVENT_HANDLER
+	var/severity = event.severity
 	var/triggered = FALSE
 	for(var/datum/artifact_effect/my_effect in my_effects)
 		switch(severity)
@@ -248,9 +239,9 @@
 
 	return
 
-/datum/component/artifact_master/proc/on_bullet()
-	SIGNAL_HANDLER
-	var/obj/item/projectile/P = args[2]
+/datum/artifact_master/proc/on_bullet(datum/source, datum/om/event/before/atom_bullet_act/event)
+	EVENT_HANDLER
+	var/obj/item/projectile/P = event.projectile
 	var/triggered = FALSE
 	for(var/datum/artifact_effect/my_effect in my_effects)
 		if(istype(P,/obj/item/projectile/bullet))
@@ -270,9 +261,9 @@
 
 	return
 
-/datum/component/artifact_master/proc/on_bump()
-	SIGNAL_HANDLER
-	var/atom/bumped = args[2]
+/datum/artifact_master/proc/on_bump(datum/source, datum/om/event/before/movable_bump/event)
+	EVENT_HANDLER
+	var/atom/bumped = event.atom
 	var/warn = FALSE
 	for(var/datum/artifact_effect/my_effect in my_effects)
 		if(isitem(bumped))
@@ -294,9 +285,13 @@
 	if(warn && isliving(bumped))
 		to_chat(bumped, span_filter_notice(span_bold("You accidentally touch \the [holder()] as it hits you.")))
 
-/datum/component/artifact_master/proc/on_bumped()
-	SIGNAL_HANDLER
-	var/atom/movable/M = args[2]
+/datum/artifact_master/proc/on_bumped(datum/source, datum/om/event/atom_bumped/event)
+	EVENT_HANDLER
+	bumped_by(event.bumped)
+
+/// Something bumped (or is pulling) the holder.
+/datum/artifact_master/proc/bumped_by(atom/movable/M)
+	SHOULD_NOT_SLEEP(TRUE)
 	var/warn = FALSE
 	for(var/datum/artifact_effect/my_effect in my_effects)
 		if(isitem(M))
@@ -318,9 +313,9 @@
 	if(warn && isliving(M))
 		to_chat(M, span_filter_notice(span_bold("You accidentally touch \the [holder()].")))
 
-/datum/component/artifact_master/proc/on_attack_hand()
-	SIGNAL_HANDLER
-	var/mob/living/user = args[2]
+/datum/artifact_master/proc/on_attack_hand(datum/source, datum/om/event/before/attack_hand/event)
+	EVENT_HANDLER
+	var/mob/living/user = event.user
 	if(!istype(user))
 		return
 
@@ -347,9 +342,9 @@
 	else
 		to_chat(user, span_filter_notice(span_bold("You touch [holder()],") + " [pick("but nothing of note happens","but nothing happens","but nothing interesting happens","but you notice nothing different","but nothing seems to have happened")]."))
 
-/datum/component/artifact_master/proc/on_attackby()
-	SIGNAL_HANDLER
-	var/obj/item/W = args[2]
+/datum/artifact_master/proc/on_attackby(datum/source, datum/om/event/before/attackby/event)
+	EVENT_HANDLER
+	var/obj/item/W = event.item
 
 	for(var/datum/artifact_effect/my_effect in my_effects)
 		//If we were splashed by a reagent, let's check to see if we have a trigger for that.
@@ -398,12 +393,12 @@
 			if (my_effect.trigger == TRIGGER_FORCE && W.force >= 10)
 				my_effect.ToggleActivate()
 
-/datum/component/artifact_master/proc/on_reagent()
-	SIGNAL_HANDLER
+/datum/artifact_master/proc/on_reagent(datum/source, datum/om/event/reagent_expose_obj/event)
+	EVENT_HANDLER
 	//A strange bug here is that, when a reagent is splashed on an artifact, it calls this proc twice.
 	//Why? I have no clue. I only accidentally stumbled upon it during debugging!
 	//I left one of the debug logs commented out so others can confirm this.
-	var/datum/reagent/touching = args[2]
+	var/datum/reagent/touching = event.reagent
 	var/T = touching.type //What type of reagent is being splashed on it?
 
 	for(var/datum/artifact_effect/my_effect in my_effects)
@@ -420,13 +415,13 @@
 			if(my_effect.trigger == TRIGGER_TOXIN)
 				my_effect.ToggleActivate()
 
-/datum/component/artifact_master/proc/on_moved()
-	SIGNAL_HANDLER
+/datum/artifact_master/proc/on_moved(datum/source, datum/om/event/moved/event)
+	EVENT_HANDLER
 	for(var/datum/artifact_effect/my_effect in my_effects)
 		if(my_effect)
 			my_effect.UpdateMove()
 
-/datum/component/artifact_master/periodic_step()
+/datum/artifact_master/periodic_step()
 	if(!holder())	// Some instances can be created and rapidly lose their holder, if they are destroyed rapidly on creation. IE, during excavation.
 		PERIODIC_STOP(src)
 		if(!QDELETED(src))
@@ -440,7 +435,7 @@
 	if(istype(holder(), /atom/movable))
 		var/atom/movable/HA = holder()
 		if(HA?.pulled_by_mob())
-			on_bumped(holder(), HA?.pulled_by_mob())
+			bumped_by(HA?.pulled_by_mob())
 
 	for(var/datum/artifact_effect/my_effect in my_effects)
 		if(my_effect)
@@ -482,11 +477,11 @@
 #undef TOXIN_PATH
 
 /// What a mob bumping into an artifact wears on its hands.
-/datum/component/artifact_master/proc/bumper_gloves(mob/M)
+/datum/artifact_master/proc/bumper_gloves(mob/M)
 	return M.get_equipped_item(SLOT_ID_GLOVES)
 
 /// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
-/datum/component/artifact_master/proc/holder() as /atom
+/datum/artifact_master/proc/holder() as /atom
 	return om_resolve(holder_handle)
 
-REF_OWNED_LIST(/datum/component/artifact_master, "my_effects")
+REF_OWNED_LIST(/datum/artifact_master, "my_effects")

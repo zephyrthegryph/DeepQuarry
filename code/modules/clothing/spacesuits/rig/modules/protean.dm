@@ -16,7 +16,7 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 
 /// Protean modules only work on someone else.
 /obj/item/rig_module/protean/proc/wearer_is_protean(mob/living/carbon/human/H)
-	return !!H?.GetComponent(/datum/component/forms/protean)
+	return !!H?.get_protean_forms()
 
 /obj/item/rig_module/protean/syphon
 	name = "Protean Metabolic Syphon"

@@ -24,7 +24,7 @@
 	///Highest-intensity light affecting us, which determines our visibility.
 	var/tmp/affecting_dynamic_lumi = 0
 	///Lazylist to keep track on the sources of illumination.
-	// affected_dynamic_lights moved to /datum/component/movable_state
+	// affected_dynamic_lights lives in code/datums/sparse_vars/movable_misc.dm
 	///Either FALSE, [EMISSIVE_BLOCK_GENERIC], or [EMISSIVE_BLOCK_UNIQUE]
 	var/blocks_emissive = EMISSIVE_BLOCK_NONE
 	///Internal holder for emissive blocker object, do not use directly use blocks_emissive
@@ -149,7 +149,7 @@
 		return
 	. = light_power
 	light_power = new_power
-	SEND_SIGNAL(src, COMSIG_ATOM_UPDATE_LIGHT_POWER, .)
+	OM_EMIT(src, /datum/om/event/atom_update_light_power, .)
 
 /// Setter for the light range of this atom.
 /atom/proc/set_light_range(new_range)
@@ -157,7 +157,7 @@
 		return
 	. = light_range
 	light_range = new_range
-	SEND_SIGNAL(src, COMSIG_ATOM_UPDATE_LIGHT_RANGE, .)
+	OM_EMIT(src, /datum/om/event/atom_update_light_range, .)
 
 /// Setter for the light color of this atom.
 /atom/proc/set_light_color(new_color)
@@ -165,7 +165,7 @@
 		return
 	. = light_color
 	light_color = new_color
-	SEND_SIGNAL(src, COMSIG_ATOM_UPDATE_LIGHT_COLOR, .)
+	OM_EMIT(src, /datum/om/event/atom_update_light_color, .)
 
 /// Setter for whether or not this atom's light is on.
 /atom/proc/set_light_on(new_value)
@@ -173,7 +173,7 @@
 		return
 	. = light_on
 	light_on = new_value
-	SEND_SIGNAL(src, COMSIG_ATOM_UPDATE_LIGHT_ON, .)
+	OM_EMIT(src, /datum/om/event/atom_update_light_on, .)
 
 /// Setter for the light flags of this atom.
 /atom/proc/set_light_flags(new_value)
@@ -181,7 +181,7 @@
 		return
 	. = light_flags
 	light_flags = new_value
-	SEND_SIGNAL(src, COMSIG_ATOM_UPDATE_LIGHT_FLAGS, .)
+	OM_EMIT(src, /datum/om/event/atom_update_light_flags, .)
 
 ///Keeps track of the sources of dynamic luminosity and updates our visibility with the highest.
 /atom/movable/proc/update_dynamic_luminosity()

@@ -40,7 +40,7 @@
 	listener.watch(M)
 	TEST_ASSERT(M.death(), "the first death() should report the transition")
 	TEST_ASSERT(!M.death(), "a second death() should report no transition")
-	TEST_ASSERT_EQUAL(listener.deaths, 1, "COMSIG_MOB_DEATH is sent once across two death() calls")
+	TEST_ASSERT_EQUAL(listener.deaths, 1, "mob_death is emitted once across two death() calls")
 	TEST_ASSERT_EQUAL(listener.finals, 1, "the final hook runs once across two death() calls")
 	qdel(listener)
 

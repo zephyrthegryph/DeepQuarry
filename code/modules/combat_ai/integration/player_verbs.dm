@@ -36,8 +36,11 @@
 // verb list of every wild simple_mob in the round.
 // ---------------------------------------------------------------------------
 
+/datum/ai_brain/proc/on_holder_login_event(mob/source, datum/om/event/mob_login/event)
+	EVENT_HANDLER
+	on_holder_login(source)
+
 /datum/ai_brain/proc/on_holder_login(mob/source)
-	SIGNAL_HANDLER
 	if(source && istype(source, /mob/living))
 		add_verb(source, /mob/living/proc/dq_use_combat_move)
 

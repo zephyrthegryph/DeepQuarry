@@ -415,14 +415,14 @@
 	var/last_old_severity
 	var/removals = 0
 
-/datum/dq_test_signal_counter/proc/on_severity_changed(datum/source, datum/affliction/A, old_severity)
-	SIGNAL_HANDLER
+/datum/dq_test_signal_counter/proc/on_severity_changed(datum/source, datum/om/event/affliction_severity_changed/event)
+	EVENT_HANDLER
 	severity_changes++
-	last_old_severity = old_severity
+	last_old_severity = event.old_severity
 
-/datum/dq_test_signal_counter/proc/on_afflictions_changed(datum/source, datum/affliction/A, added)
-	SIGNAL_HANDLER
-	if(!added)
+/datum/dq_test_signal_counter/proc/on_afflictions_changed(datum/source, datum/om/event/body_afflictions_changed/event)
+	EVENT_HANDLER
+	if(!event.added)
 		removals++
 
 /// The treatment snapshot is built once and reused until reagents change;
@@ -479,13 +479,13 @@
 	H.fully_heal()
 	TEST_ASSERT(!length(H.body.afflictions_by_location?[arm]), "cured afflictions should leave the index")
 
-/// Severity changes are published as COMSIG_AFFLICTION_SEVERITY_CHANGED.
+/// Severity changes are published as the affliction_severity_changed event.
 /datum/unit_test/dq_body_severity_signal
 
 /datum/unit_test/dq_body_severity_signal/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/datum/dq_test_signal_counter/counter = new
-	counter.RegisterSignal(H, COMSIG_AFFLICTION_SEVERITY_CHANGED, TYPE_PROC_REF(/datum/dq_test_signal_counter, on_severity_changed))
+	om_hook(H, /datum/om/event/affliction_severity_changed, counter, TYPE_PROC_REF(/datum/dq_test_signal_counter, on_severity_changed))
 	var/datum/affliction/A = H.body.afflict(/datum/affliction/toxic_poisoning, null, 40)
 	TEST_ASSERT(counter.severity_changes >= 1, "setting severity should signal")
 	A.adjust_severity(-10)
@@ -500,7 +500,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/datum/affliction/A = H.body.afflict(/datum/affliction/toxic_poisoning, null, 30)
 	var/datum/dq_test_signal_counter/counter = new
-	counter.RegisterSignal(H, COMSIG_BODY_AFFLICTIONS_CHANGED, TYPE_PROC_REF(/datum/dq_test_signal_counter, on_afflictions_changed))
+	om_hook(H, /datum/om/event/body_afflictions_changed, counter, TYPE_PROC_REF(/datum/dq_test_signal_counter, on_afflictions_changed))
 	var/datum/body/B = H.body
 	H.body = null
 	qdel(B)

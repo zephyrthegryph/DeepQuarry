@@ -221,7 +221,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/transhuman/autoresleever, REGISTRY_AUTORESLEE
 		if(def_lang)
 			new_character.default_language = def_lang
 
-	SEND_SIGNAL(new_character, COMSIG_HUMAN_DNA_FINALIZED)
+	OM_EMIT(new_character, /datum/om/event/human_dna_finalized)
 
 	//If desired, apply equipment.
 	if(equip_body)

@@ -66,17 +66,17 @@
 	return !is_complete()
 
 ///Called when the experiment is selected by an experiment handler, for specific signals and the such.
-/datum/experiment/proc/on_selected(datum/component/experiment_handler/experiment_handler)
+/datum/experiment/proc/on_selected(datum/experiment_handler/experiment_handler)
 	return
 
 ///Called when the opposite happens.
-/datum/experiment/proc/on_unselected(datum/component/experiment_handler/experiment_handler)
+/datum/experiment/proc/on_unselected(datum/experiment_handler/experiment_handler)
 	return
 
 /**
  * Proc that tries to perform the experiment, and then checks if its completed.
  */
-/datum/experiment/proc/perform_experiment(datum/component/experiment_handler/experiment_handler, ...)
+/datum/experiment/proc/perform_experiment(datum/experiment_handler/experiment_handler, ...)
 	var/action_successful = perform_experiment_actions(arglist(args))
 	// playsound(src, SFX_INDUSTRIAL_SCAN, 20, TRUE, -2, TRUE, FALSE)
 	if(is_complete())
@@ -89,13 +89,13 @@
  * This proc should be overridden such that the experiment will be actioned
  * with some defined arguments
  */
-/datum/experiment/proc/perform_experiment_actions(datum/component/experiment_handler/experiment_handler, ...)
+/datum/experiment/proc/perform_experiment_actions(datum/experiment_handler/experiment_handler, ...)
 	return
 
 /**
  * Called when you complete an experiment, makes sure the techwebs knows the experiment was finished, and tells everyone it happend, yay!
  */
-/datum/experiment/proc/finish_experiment(datum/component/experiment_handler/experiment_handler)
+/datum/experiment/proc/finish_experiment(datum/experiment_handler/experiment_handler)
 	completed = TRUE
 	experiment_handler.selected_experiment_handle = null
 	var/announcetext = experiment_handler.linked_web().complete_experiment(src)

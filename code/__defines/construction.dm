@@ -104,7 +104,7 @@
 
 	. = new target.type(target.drop_location(), amount)
 
-//Special return values of [/datum/component/material_container/insert_item]
+//Special return values of [/datum/material_container/insert_item]
 /// No material was found inside them item
 #define MATERIAL_INSERT_ITEM_NO_MATS -1
 /// The container does not have the space for the item

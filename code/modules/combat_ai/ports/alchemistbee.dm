@@ -204,7 +204,7 @@
 	name = "alchemist backpedal"
 	priority_class = DQ_BEHAVIOR_PRIORITY_INTERRUPT
 	target_kind = DQ_TARGET_MOB
-	eval_triggers = list(COMSIG_DQAI_TARGET_CHANGED)
+	eval_triggers = list(DQAI_TRIGGER_TARGET_CHANGED)
 	cooldown = 1 SECOND
 
 /datum/ai_behavior/alchemistbee_aoe_backpedal/applicable_to(mob/living/owner)

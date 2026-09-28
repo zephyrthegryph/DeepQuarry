@@ -105,12 +105,12 @@
 	var/lost_signals = 0
 	var/restored_signals = 0
 
-/datum/unit_test/dq_power_apc_cycle/proc/on_lost(datum/source)
-	SIGNAL_HANDLER
+/datum/unit_test/dq_power_apc_cycle/proc/on_lost(datum/source, datum/om/event/machinery_power_lost/event)
+	EVENT_HANDLER
 	lost_signals++
 
-/datum/unit_test/dq_power_apc_cycle/proc/on_restored(datum/source)
-	SIGNAL_HANDLER
+/datum/unit_test/dq_power_apc_cycle/proc/on_restored(datum/source, datum/om/event/machinery_power_restored/event)
+	EVENT_HANDLER
 	restored_signals++
 
 /// One power step as the game runs it: DM's loads and topology in, one
@@ -136,8 +136,8 @@
 	var/obj/machinery/power/terminal/T = A.terminal
 	var/old_charge = A.cell.charge
 	var/obj/machinery/M = allocate(/obj/machinery, get_turf(A))
-	RegisterSignal(M, COMSIG_MACHINERY_POWER_LOST, PROC_REF(on_lost))
-	RegisterSignal(M, COMSIG_MACHINERY_POWER_RESTORED, PROC_REF(on_restored))
+	om_hook(M, /datum/om/event/machinery_power_lost, src, PROC_REF(on_lost))
+	om_hook(M, /datum/om/event/machinery_power_restored, src, PROC_REF(on_restored))
 	M.power_change()
 
 	// Cut off, nearly empty, with a load.
@@ -162,7 +162,7 @@
 			break
 	TEST_ASSERT(drained, "an empty isolated APC kept its area powered")
 	TEST_ASSERT(M.stat & NOPOWER, "a machine in the dark area still has power")
-	TEST_ASSERT(lost_signals, "the machine never heard COMSIG_MACHINERY_POWER_LOST")
+	TEST_ASSERT(lost_signals, "the machine never heard machinery_power_lost")
 	TEST_ASSERT(A.charging == 0, "an isolated APC claims to charge")
 	var/low = A.cell.charge
 
@@ -177,7 +177,7 @@
 			break
 	TEST_ASSERT(restored, "the APC did not restore and charge once supply returned")
 	TEST_ASSERT(!(M.stat & NOPOWER), "the machine did not get its power back")
-	TEST_ASSERT(restored_signals, "the machine never heard COMSIG_MACHINERY_POWER_RESTORED")
+	TEST_ASSERT(restored_signals, "the machine never heard machinery_power_restored")
 	dq_power_test_step()
 	TEST_ASSERT(A.cell.charge > low, "the cell did not charge ([A.cell.charge] after [low])")
 	TEST_ASSERT(!machine_stepping(A), "the APC polled during the cycle")
@@ -187,7 +187,7 @@
 	A.cell.charge = old_charge
 	A.sync_cell_charge()
 	A.update()
-	UnregisterSignal(M, list(COMSIG_MACHINERY_POWER_LOST, COMSIG_MACHINERY_POWER_RESTORED))
+	om_unhook(M, list(/datum/om/event/machinery_power_lost, /datum/om/event/machinery_power_restored), src)
 	GLOB.machine_service.process_power()
 
 /// A settled APC and an idle SMES neither poll nor hear from Rust.

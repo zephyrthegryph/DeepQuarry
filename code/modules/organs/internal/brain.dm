@@ -88,7 +88,7 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 /obj/item/organ/internal/brain/Initialize(mapload)
 	. = ..()
 	defib_timer = (CONFIG_GET(number/defib_timer) MINUTES) / 2 // // Time vars measure things in ticks. Life tick happens every ~2 seconds, therefore dividing by 20
-	AddComponent(/datum/component/mind_host, src)
+	make_mind_host(src)
 
 /// THE brain-death decision. A brain at 100% damage, or a dead organ, cannot
 /// be defibrillated or treated back: the person needs a resleeve. Defib,
@@ -122,17 +122,17 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 		borer.detatch() //Should remove borer if the brain is removed - RR
 
 	if(owner?.mind)
-		var/datum/component/mind_host/host = get_mind_host(src)
+		var/datum/mind_host/host = get_mind_host(src)
 		var/mob/living/carbon/brain/view = host.receive_mind(owner.mind, "brain removed from [owner]")
 		to_chat(view, span_notice("You feel slightly disoriented. That's normal when you're just  [initial(name)]."))
-		SEND_GLOBAL_SIGNAL(COMSIG_GLOB_BRAIN_REMOVED, view)
+		OM_EMIT_WORLD(/datum/om/event/world_brain_removed, view)
 
 	..()
 	hosted_view()?.refresh_host_status()
 
 /obj/item/organ/internal/brain/replaced(mob/living/target)
 
-	var/datum/component/mind_host/host = get_mind_host(src)
+	var/datum/mind_host/host = get_mind_host(src)
 	if(host?.hosted_mind())
 		if(target.key)
 			target.ghostize()
@@ -189,7 +189,7 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 	// The core hosts the promethean's mind; the new body is grown from the
 	// character's identity (its DNA reference, persistent traits, languages
 	// and flavour follow the mind when it moves in).
-	var/datum/component/mind_host/host = get_mind_host(src)
+	var/datum/mind_host/host = get_mind_host(src)
 	var/datum/mind/clonemind = host?.hosted_mind()
 	if(!clonemind)
 		return 0
@@ -224,7 +224,7 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 	for(var/modifier_type in identity.genetic_modifiers)
 		H.add_modifier(modifier_type)
 
-	SEND_SIGNAL(H, COMSIG_HUMAN_DNA_FINALIZED)
+	OM_EMIT(H, /datum/om/event/human_dna_finalized)
 
 	qdel(src)
 	return 1

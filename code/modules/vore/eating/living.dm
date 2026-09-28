@@ -1373,45 +1373,60 @@
 						to_chat(src, span_chatexport("[msg]"))
 
 /**
- * Small helper component to manage the vore panel HUD icon
+ * Small helper datum to manage the vore panel HUD icon (was /datum/component/vore_panel).
+ * Owned by the mob's `vore_panel_button` var.
  */
-/datum/component/vore_panel
+/datum/vore_panel_button
+	var/mob/living/owner
 	var/atom/movable/screen/vore_panel/screen_icon
 
-/datum/component/vore_panel/Initialize()
-	if(!isliving(parent))
-		return COMPONENT_INCOMPATIBLE
-	. = ..()
+REF_VAR(/mob/living, OWNED, /datum/vore_panel_button, vore_panel_button)
+REF_OWNED(/datum/vore_panel_button, "screen_icon")
+REF_BACK(/datum/vore_panel_button, list("owner" = "vore_panel_button"))
 
-/datum/component/vore_panel/RegisterWithParent()
-	. = ..()
-	RegisterSignal(parent, COMSIG_MOB_CLIENT_LOGIN, PROC_REF(create_mob_button))
-	var/mob/living/owner = parent
+/datum/vore_panel_button/New(mob/living/M)
+	..()
+	owner = M
+	om_hook(owner, /datum/om/event/mob_client_login, src, PROC_REF(on_client_login))
 	if(owner.client)
-		create_mob_button(parent)
+		create_mob_button(owner)
 	add_verb(owner, /mob/proc/insidePanel)
 	if(!owner.vorePanel)
 		owner.vorePanel = new(owner)
 
-/datum/component/vore_panel/UnregisterFromParent()
-	. = ..()
-	UnregisterSignal(parent, COMSIG_MOB_CLIENT_LOGIN)
-	var/mob/living/owner = parent
+/datum/vore_panel_button/Destroy(force)
+	var/mob/living/M = owner
+	if(M)
+		om_unhook(M, /datum/om/event/mob_client_login, src)
 	if(screen_icon)
-		owner?.client?.screen -= screen_icon
-		UnregisterSignal(screen_icon, COMSIG_CLICK)
-		var/datum/hud/HUD = owner?.hud_used
+		M?.client?.screen -= screen_icon
+		om_unhook(screen_icon, /datum/om/event/click, src)
+		var/datum/hud/HUD = M?.hud_used
 		LAZYREMOVE(HUD?.other_important, screen_icon)
 		QDEL_NULL(screen_icon)
-	remove_verb(owner, /mob/proc/insidePanel)
-	QDEL_NULL(owner.vorePanel)
+	if(M)
+		remove_verb(M, /mob/proc/insidePanel)
+		QDEL_NULL(M.vorePanel)
+		if(M.vore_panel_button == src)
+			M.vore_panel_button = null
+	owner = null
+	return ..()
 
-/datum/component/vore_panel/proc/create_mob_button(mob/user)
-	SIGNAL_HANDLER
+/// Gives the mob its vore panel HUD button if it has none.
+/mob/living/proc/add_vore_panel_button()
+	if(!vore_panel_button)
+		vore_panel_button = new /datum/vore_panel_button(src)
+	return vore_panel_button
+
+/datum/vore_panel_button/proc/on_client_login(datum/source, datum/om/event/mob_client_login/event)
+	EVENT_HANDLER
+	create_mob_button(source)
+
+/datum/vore_panel_button/proc/create_mob_button(mob/user)
 	var/datum/hud/HUD = user.hud_used
 	if(!screen_icon)
 		screen_icon = new()
-		RegisterSignal(screen_icon, COMSIG_CLICK, PROC_REF(vore_panel_click))
+		om_hook(screen_icon, /datum/om/event/click, src, PROC_REF(vore_panel_click))
 	if(ispAI(user))
 		screen_icon.icon = 'icons/mob/pai_hud.dmi'
 		screen_icon.screen_loc = ui_acti
@@ -1424,11 +1439,11 @@
 	LAZYADD(HUD.other_important, screen_icon)
 	user.client?.screen += screen_icon
 
-/datum/component/vore_panel/proc/vore_panel_click(source, location, control, params, user)
-	SIGNAL_HANDLER
-	var/mob/living/owner = user
-	if(istype(owner) && owner.vorePanel)
-		INVOKE_ASYNC(owner, TYPE_PROC_REF(/mob/living, insidePanel), owner) // ALLOW(scheduler): tgui_interact may block on asset/window setup
+/datum/vore_panel_button/proc/vore_panel_click(datum/source, datum/om/event/click/event)
+	EVENT_HANDLER
+	var/mob/living/clicker = event.user
+	if(istype(clicker) && clicker.vorePanel)
+		INVOKE_ASYNC(clicker, TYPE_PROC_REF(/mob/living, insidePanel), clicker) // ALLOW(scheduler): tgui_interact may block on asset/window setup
 /**
  * Screen object for vore panel
  */

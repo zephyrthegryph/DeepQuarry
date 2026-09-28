@@ -405,7 +405,7 @@
 
 /obj/item/clothing/shoes/mech_shoes/Initialize(mapload)
 	.=..()
-	LoadComponent(/datum/component/squeak, squeak_sound, 15*step_volume_mod)
+	make_squeaky(squeak_sound, 15*step_volume_mod)
 
 /obj/item/clothing/shoes/mech_shoes/light
 	name = "light mech shoes"
@@ -434,7 +434,7 @@
 
 /obj/item/clothing/shoes/clown_shoes/Initialize(mapload)
 	.=..()
-	LoadComponent(/datum/component/squeak, squeak_sound, 20*step_volume_mod)
+	make_squeaky(squeak_sound, 20*step_volume_mod)
 
 /obj/item/clothing/shoes/dry_galoshes
 	desc = "A pair of purple rubber boots, designed to prevent slipping on wet surfaces while also drying them."
@@ -453,4 +453,4 @@
 
 /obj/item/clothing/shoes/dry_galoshes/Initialize(mapload)
 	.=..()
-	LoadComponent(/datum/component/dry)
+	om_attach(src, /datum/om/behaviour/dry)

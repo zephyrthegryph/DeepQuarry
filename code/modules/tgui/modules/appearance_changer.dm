@@ -101,8 +101,8 @@
 	. = ..()
 	if(owner() == user || !customize_usr)
 		close_ui()
-		UnregisterSignal(owner(), COMSIG_MOVABLE_ATTEMPTED_MOVE)
-		SEND_SIGNAL(owner(), COMSIG_HUMAN_DNA_FINALIZED) // Update any components using our saved appearance
+		om_unhook(owner(), /datum/om/event/movable_attempted_move, src)
+		OM_EMIT(owner(), /datum/om/event/human_dna_finalized) // Update any components using our saved appearance
 		owner_handle = null
 		last_camera_turf_handle = null
 		cut_data()
@@ -709,8 +709,8 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 	if(!owner() || !owner().species) //We tried to update our UI and no longer have an owner!
 		return
 	if(!ui)
-		owner().AddComponent(/datum/component/recursive_move)
-		RegisterSignal(owner(), COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(update_active_camera_screen), TRUE)
+		dq_add_recursive_move(owner())
+		om_hook(owner(), /datum/om/event/movable_attempted_move, src, PROC_REF(update_active_camera_screen))
 		// Register map objects
 		user.client.register_map_obj(cam_screen)
 		for(var/plane in cam_plane_masters)
@@ -925,8 +925,8 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 		data["facial_hair_color"] = rgb(owner().r_facial, owner().g_facial, owner().b_facial)
 	return data
 
-/datum/tgui_module/appearance_changer/proc/update_active_camera_screen()
-	SIGNAL_HANDLER
+/datum/tgui_module/appearance_changer/proc/update_active_camera_screen(datum/source, datum/om/event/movable_attempted_move/event)
+	EVENT_HANDLER
 	cam_screen.vis_contents = list(owner()) // Copied from the vore version.
 	cam_background.icon_state = "clear"
 	cam_background.fill_rect(1, 1, 1, 1)
@@ -1066,7 +1066,7 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 	if(!QDELETED(src))
 		qdel(src)
 
-/datum/tgui_module/appearance_changer/vore/update_active_camera_screen()
+/datum/tgui_module/appearance_changer/vore/update_active_camera_screen(datum/source, datum/om/event/movable_attempted_move/event)
 	cam_screen.vis_contents = list(owner())
 	cam_background.icon_state = "clear"
 	cam_background.fill_rect(1, 1, 1, 1)
@@ -1176,7 +1176,7 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 /datum/tgui_module/appearance_changer/body_designer/proc/make_fake_owner()
 	// checks for monkey to tell if on the menu
 	if(owner())
-		UnregisterSignal(owner(), COMSIG_MOVABLE_ATTEMPTED_MOVE)
+		om_unhook(owner(), /datum/om/event/movable_attempted_move, src)
 		QDEL_NULL(mannequin)
 		owner_handle = null
 	mannequin = new /mob/living/carbon/human(src)
@@ -1185,12 +1185,12 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 	owner().species.produceCopy(owner().species.traits.Copy(),owner(),null,FALSE)
 	owner().invisibility = INVISIBILITY_ABSTRACT
 	// Add listeners back
-	owner().AddComponent(/datum/component/recursive_move)
-	RegisterSignal(owner(), COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(update_active_camera_screen), TRUE)
+	dq_add_recursive_move(owner())
+	om_hook(owner(), /datum/om/event/movable_attempted_move, src, PROC_REF(update_active_camera_screen))
 
 /datum/tgui_module/appearance_changer/body_designer/proc/load_record_to_body(datum/transhuman/body_record/current_project)
 	if(owner())
-		UnregisterSignal(owner(), COMSIG_MOVABLE_ATTEMPTED_MOVE)
+		om_unhook(owner(), /datum/om/event/movable_attempted_move, src)
 		QDEL_NULL(mannequin)
 		owner_handle = null
 	mannequin = current_project.produce_human_mob(src,FALSE,FALSE,"Designer [rand(999)]")
@@ -1204,8 +1204,8 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 	if(current_project.speciesname)
 		owner().custom_species = current_project.speciesname
 	// Add listeners back
-	owner().AddComponent(/datum/component/recursive_move)
-	RegisterSignal(owner(), COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(update_active_camera_screen), TRUE)
+	dq_add_recursive_move(owner())
+	om_hook(owner(), /datum/om/event/movable_attempted_move, src, PROC_REF(update_active_camera_screen))
 
 /datum/tgui_module/appearance_changer/self_deleting
 /datum/tgui_module/appearance_changer/self_deleting/tgui_close(mob/user)

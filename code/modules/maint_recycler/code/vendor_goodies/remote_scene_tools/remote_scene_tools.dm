@@ -45,27 +45,26 @@ why aren't these accessories?
 
 	worn_mob_handle = om_handle(mob)
 
-	RegisterSignal(mob, COMSIG_MOB_LOGIN, PROC_REF(worn_mob_logged_in))
-	RegisterSignal(mob, COMSIG_MOB_LOGOUT, PROC_REF(worn_mob_logged_out))
+	om_hook(mob, /datum/om/event/mob_login, src, PROC_REF(worn_mob_logged_in))
+	om_hook(mob, /datum/om/event/mob_logout, src, PROC_REF(worn_mob_logged_out))
 	transmit_emote(src, span_notice("\The [src] has been put on by [mob]!"))
 
 /obj/item/remote_scene_tool/proc/unregister_from_mob(mob)
 	if(worn_mob() == null) return
-	UnregisterSignal(worn_mob(), COMSIG_MOB_LOGIN)
-	UnregisterSignal(worn_mob(), COMSIG_MOB_LOGOUT)
+	om_unhook(worn_mob(), list(/datum/om/event/mob_login, /datum/om/event/mob_logout), src)
 	worn_mob_handle = null
 	transmit_emote(src, span_warning("\The [src]'s wearer has removed it!"))
 
 //called when the mob wearing this item logs out
-/obj/item/remote_scene_tool/proc/worn_mob_logged_out()
-	SIGNAL_HANDLER
+/obj/item/remote_scene_tool/proc/worn_mob_logged_out(datum/source, datum/om/event/mob_logout/event)
+	EVENT_HANDLER
 	if(!linked())
 		return
 	transmit_emote(src, span_warning("\The [src]'s wearer has gone SSD!"))
 	linked()?.linked_updated()
 
-/obj/item/remote_scene_tool/proc/worn_mob_logged_in()
-	SIGNAL_HANDLER
+/obj/item/remote_scene_tool/proc/worn_mob_logged_in(datum/source, datum/om/event/mob_login/event)
+	EVENT_HANDLER
 	//called when the mob wearing this item logs in
 	if(!linked())
 		return
@@ -103,10 +102,10 @@ why aren't these accessories?
 
 /obj/item/remote_scene_tool/Initialize(mapload)
 	. = ..()
-	RegisterSignal(src, COMSIG_ATOM_ENTERING, PROC_REF(check_loc))
+	om_hook(src, /datum/om/event/atom_entering, src, PROC_REF(check_loc))
 
-/obj/item/remote_scene_tool/proc/check_loc(atom/movable/mover, atom/old_loc, atom/new_loc)
-	SIGNAL_HANDLER
+/obj/item/remote_scene_tool/proc/check_loc(atom/movable/mover, datum/om/event/atom_entering/event)
+	EVENT_HANDLER
 	om_after(src, 1, PROC_REF(delayed_loc_check))
 
 /obj/item/remote_scene_tool/proc/delayed_loc_check()
@@ -141,7 +140,7 @@ why aren't these accessories?
 	if(linked())
 		linked().linked_handle = null //clear out the other side
 		linked_handle = null
-	UnregisterSignal(src, COMSIG_ATOM_ENTERING)
+	om_unhook(src, /datum/om/event/atom_entering, src)
 	unregister_from_mob(worn_mob())
 
 /obj/item/remote_scene_tool/examine(mob/user)

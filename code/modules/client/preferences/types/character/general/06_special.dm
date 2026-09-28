@@ -8,7 +8,7 @@
 	return "#E0EFF0"
 
 /datum/preference/color/living/flicker_color/apply_to_living(mob/living/target, value)
-	var/datum/component/shadekin/our_SK = target.get_shadekin_component()
+	var/datum/shadekin/our_SK = target.get_shadekin_component()
 	if(our_SK)
 		our_SK.flicker_color = value
 
@@ -24,7 +24,7 @@
 	return 10
 
 /datum/preference/numeric/living/flicker_time/apply_to_living(mob/living/target, value)
-	var/datum/component/shadekin/our_SK = target.get_shadekin_component()
+	var/datum/shadekin/our_SK = target.get_shadekin_component()
 	if(our_SK)
 		our_SK.flicker_time = value
 
@@ -40,7 +40,7 @@
 	return 0
 
 /datum/preference/numeric/living/flicker_break_chance/apply_to_living(mob/living/target, value)
-	var/datum/component/shadekin/our_SK = target.get_shadekin_component()
+	var/datum/shadekin/our_SK = target.get_shadekin_component()
 	if(our_SK)
 		our_SK.flicker_break_chance = value
 
@@ -56,7 +56,7 @@
 	return 4
 
 /datum/preference/numeric/living/flicker_distance/apply_to_living(mob/living/target, value)
-	var/datum/component/shadekin/our_SK = target.get_shadekin_component()
+	var/datum/shadekin/our_SK = target.get_shadekin_component()
 	if(our_SK)
 		our_SK.flicker_distance = value
 
@@ -67,7 +67,7 @@
 	savefile_identifier = PREFERENCE_PLAYER
 
 /datum/preference/toggle/living/dark_retreat_toggle/apply_to_living(mob/living/target, value)
-	var/datum/component/shadekin/our_SK = target.get_shadekin_component()
+	var/datum/shadekin/our_SK = target.get_shadekin_component()
 	if(our_SK)
 		our_SK.no_retreat = value
 
@@ -78,7 +78,7 @@
 	savefile_identifier = PREFERENCE_PLAYER
 
 /datum/preference/toggle/living/shadekin_nutrition_conversion/apply_to_living(mob/living/target, value)
-	var/datum/component/shadekin/our_SK = target.get_shadekin_component()
+	var/datum/shadekin/our_SK = target.get_shadekin_component()
 	if(our_SK)
 		our_SK.nutrition_energy_conversion = value
 
@@ -89,6 +89,6 @@
 	savefile_identifier = PREFERENCE_PLAYER
 
 /datum/preference/toggle/living/shadekin_hide_voice_in_phase/apply_to_living(mob/living/target, value)
-	var/datum/component/shadekin/our_SK = target.get_shadekin_component()
+	var/datum/shadekin/our_SK = target.get_shadekin_component()
 	if(our_SK)
 		our_SK.hide_voice_in_phase = value

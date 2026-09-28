@@ -1,7 +1,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // Hallucination events
 /////////////////////////////////////////////////////////////////////////////////////////////////////
-/datum/component/hallucinations/proc/event_hudscrew()
+/datum/hallucinations/proc/event_hudscrew()
 	PROTECTED_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	//Screwy HUD
@@ -14,7 +14,7 @@
 							))
 	om_after(src, rand(15,35) SECONDS, PROC_REF(clear_screwyhud))
 
-/datum/component/hallucinations/proc/event_painmessage()
+/datum/hallucinations/proc/event_painmessage()
 	PROTECTED_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	//Fake pain messages
@@ -43,7 +43,7 @@
 		our_human.status_adjust(EFFECT_JITTERY, 120)
 	to_chat(our_human, span_danger(pick(pain_message)))
 
-/datum/component/hallucinations/proc/event_fake_item()
+/datum/hallucinations/proc/event_fake_item()
 	PROTECTED_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	//Strange items
@@ -100,7 +100,7 @@
 	our_human.client.screen += CI
 	om_after(src, rand(10,25) SECONDS, PROC_REF(remove_hallucination_item))
 
-/datum/component/hallucinations/proc/remove_hallucination_item()
+/datum/hallucinations/proc/remove_hallucination_item()
 	// I can't manage this with /image/client_only due to screenloc, so key-value OM handle pair it is! Called on both timer and destroying this component.
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -113,7 +113,7 @@
 	qdel(itm)
 	halitem.Cut()
 
-/datum/component/hallucinations/proc/event_strange_sound()
+/datum/hallucinations/proc/event_strange_sound()
 	PROTECTED_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 
@@ -161,12 +161,12 @@
 
 	our_human.playsound_local(get_turf(our_human), send_sound, vol = 75, channel = CHANNEL_AMBIENCE_FORCED)
 
-/datum/component/hallucinations/proc/secondary_sound(sound_path)
+/datum/hallucinations/proc/secondary_sound(sound_path)
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	our_human.playsound_local(get_turf(our_human), sound_path, vol = 75, channel = CHANNEL_AMBIENCE_FORCED)
 
-/datum/component/hallucinations/proc/event_flash_environmental_threats()
+/datum/hallucinations/proc/event_flash_environmental_threats()
 	PROTECTED_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	//Flashes of danger
@@ -196,7 +196,7 @@
 	CI.append_client(our_human.client)
 	om_qdel_after(CI, rand(1,5) SECONDS) //Only seen for a brief moment.
 
-/datum/component/hallucinations/proc/event_flash_monsters()
+/datum/hallucinations/proc/event_flash_monsters()
 	PROTECTED_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	//Flashes of danger
@@ -225,7 +225,7 @@
 	CI.append_client(our_human.client)
 	om_qdel_after(CI, rand(5,8) SECONDS) //Only seen for a brief moment.
 
-/datum/component/hallucinations/proc/event_sleeping()
+/datum/hallucinations/proc/event_sleeping()
 	PROTECTED_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	//Fake death
@@ -235,17 +235,17 @@
 	hal_screwyhud = HUD_HALLUCINATION_CRIT
 	om_after(src, rand(5,10) SECONDS, PROC_REF(reset_hallucination_sleeping))
 
-/datum/component/hallucinations/proc/clear_screwyhud()
+/datum/hallucinations/proc/clear_screwyhud()
 	hal_screwyhud = HUD_HALLUCINATION_NONE
 
-/datum/component/hallucinations/proc/reset_hallucination_sleeping()
+/datum/hallucinations/proc/reset_hallucination_sleeping()
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	our_human.status_set(EFFECT_SLEEPING, 0)
 	hal_crit = FALSE
 	hal_screwyhud = HUD_HALLUCINATION_NONE
 
-/datum/component/hallucinations/proc/event_attacker()
+/datum/hallucinations/proc/event_attacker()
 	PROTECTED_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	var/attacker = our_human.create_hallucination_attacker(forced_type = /obj/effect/fake_attacker/human/attacker) // Currently just uses the attacker type for now, remove argument to use any other subtype
@@ -255,7 +255,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // Xenochimera feral events
 /////////////////////////////////////////////////////////////////////////////////////////////////////
-/datum/component/hallucinations/proc/event_hunger()
+/datum/hallucinations/proc/event_hunger()
 	PROTECTED_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	//food
@@ -296,7 +296,7 @@
 	CI.append_client(our_human.client)
 	om_qdel_after(CI, rand(5,8) SECONDS) //Only seen for a brief moment.
 
-/datum/component/hallucinations/proc/event_hear_voices()
+/datum/hallucinations/proc/event_hear_voices()
 	PROTECTED_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	//hear voices. Could make the voice pick from nearby creatures, but nearby creatures make feral hallucinations rare so don't bother.

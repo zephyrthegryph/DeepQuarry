@@ -32,8 +32,8 @@
 	held = null
 	return ..()
 
-/datum/dq_state_holder/proc/on_signal()
-	SIGNAL_HANDLER
+/datum/dq_state_holder/proc/on_signal(datum/source, datum/om/event/qdeleting/event)
+	EVENT_HANDLER
 	return
 
 /// Returns the canonical text of a full serialization, or null with the errors in `errors`.
@@ -226,14 +226,14 @@
 	TEST_ASSERT_EQUAL(length(blockers), 0, "releasing the outside reference should unblock: [jointext(blockers, "; ")]")
 
 	var/datum/dq_state_holder/listener = new
-	listener.RegisterSignal(box, COMSIG_QDELETING, TYPE_PROC_REF(/datum/dq_state_holder, on_signal))
+	om_hook(box, /datum/om/event/qdeleting, listener, TYPE_PROC_REF(/datum/dq_state_holder, on_signal))
 	blockers = box.state_collapse_blockers(1)
 	var/found_signal = FALSE
 	for(var/reason in blockers)
-		if(findtext(reason, "listens"))
+		if(findtext(reason, "hooks"))
 			found_signal = TRUE
-	TEST_ASSERT(found_signal, "a signal registration from outside should block collapse: [jointext(blockers, "; ")]")
-	listener.UnregisterSignal(box, COMSIG_QDELETING)
+	TEST_ASSERT(found_signal, "an event hook from outside should block collapse: [jointext(blockers, "; ")]")
+	om_unhook(box, /datum/om/event/qdeleting, listener)
 	qdel(listener)
 
 	var/obj/item/paper/timed = new(test_floor())

@@ -21,7 +21,7 @@
 	if(primary_threat)
 		var/old = primary_threat
 		primary_threat = null
-		SEND_SIGNAL(holder, COMSIG_DQAI_TARGET_LOST, old)
+		OM_EMIT(holder, /datum/om/event/dqai_target_lost, old)
 		if(active_behavior_type)
 			stop_active(DQ_BEHAVIOR_STOP_INTERRUPTED)
 		invalidate_selection()
@@ -110,7 +110,7 @@
 	if(!primary_threat)
 		var/mob/old = primary_threat
 		primary_threat = attacker
-		SEND_SIGNAL(holder, COMSIG_DQAI_TARGET_CHANGED, attacker, old)
+		OM_EMIT(holder, /datum/om/event/dqai_target_changed, attacker, old)
 	invalidate_selection()
 
 // ---------------------------------------------------------------------------

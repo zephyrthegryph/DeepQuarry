@@ -110,3 +110,21 @@
 
 // ---- from signals_vore.dm
 #define CANCEL_STUMBLED_INTO	(1<<0)
+
+// ---- from signals_mob_main.dm (were COMSIG_COMPONENT_HANDLED_HUD / _HEALTH_ICON)
+/// before/mob_handle_hud: a listener drew the HUD; skip the default.
+#define HUD_EVENT_HANDLED (1<<0)
+/// before/mob_handle_hud_health_icon: a listener set the health icon; skip the default.
+#define HEALTH_ICON_EVENT_HANDLED (1<<0)
+
+// ---- from signals_radiation.dm (was COMSIG_GEIGER_COUNTER_SCAN_SUCCESSFUL)
+/// before/geiger_counter_scan: a listener reported the scan; skip the default readout.
+#define GEIGER_COUNTER_SCAN_SUCCESSFUL (1<<0)
+
+// ---- from dcs/declarations.dm (conflict_checking behaviour ids)
+#ifndef CONFLICT_ELEMENT_CRUSHER
+#define CONFLICT_ELEMENT_CRUSHER "crusher"
+#endif
+#ifndef CONFLICT_ELEMENT_KA
+#define CONFLICT_ELEMENT_KA "kinetic_accelerator"
+#endif

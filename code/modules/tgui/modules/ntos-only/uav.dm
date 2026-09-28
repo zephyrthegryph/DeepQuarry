@@ -86,7 +86,7 @@
 			if(!current_uav())
 				return FALSE
 			else if(current_uav().toggle_power())
-				SEND_SIGNAL(src,COMSIG_REMOTE_VIEW_CLEAR)
+				OM_EMIT(src, /datum/om/event/remote_view_clear)
 				return TRUE
 
 /datum/tgui_module/uav/proc/set_current(obj/item/uav/U)
@@ -95,23 +95,23 @@
 
 	signal_strength = 0
 	if(current_uav())
-		UnregisterSignal(current_uav(), COMSIG_MOVABLE_Z_CHANGED)
+		om_unhook(current_uav(), /datum/om/event/before/movable_z_changed, src)
 	current_uav_handle = om_handle(U)
 	if(U)
-		RegisterSignal(U, COMSIG_MOVABLE_Z_CHANGED, PROC_REF(current_uav_changed_z))
-	SEND_SIGNAL(src,COMSIG_REMOTE_VIEW_CLEAR)
+		om_hook(U, /datum/om/event/before/movable_z_changed, src, PROC_REF(current_uav_changed_z))
+	OM_EMIT(src, /datum/om/event/remote_view_clear)
 
 /datum/tgui_module/uav/proc/clear_current()
 	if(!current_uav())
 		return
 
-	UnregisterSignal(current_uav(), COMSIG_MOVABLE_Z_CHANGED)
+	om_unhook(current_uav(), /datum/om/event/before/movable_z_changed, src)
 	signal_strength = 0
 	current_uav_handle = null
-	SEND_SIGNAL(src,COMSIG_REMOTE_VIEW_CLEAR)
+	OM_EMIT(src, /datum/om/event/remote_view_clear)
 
-/datum/tgui_module/uav/proc/current_uav_changed_z(old_z, new_z)
-	SIGNAL_HANDLER
+/datum/tgui_module/uav/proc/current_uav_changed_z(datum/source, datum/om/event/before/movable_z_changed/event)
+	EVENT_HANDLER
 	signal_strength = get_signal_to(current_uav())
 	if(!signal_strength)
 		clear_current()
@@ -198,13 +198,13 @@
 	override_health_hud = TRUE
 	var/original_health_hud_icon
 
-/datum/remote_view_config/uav_control/handle_relay_movement( datum/component/remote_view/owner_component, mob/host_mob, direction)
+/datum/remote_view_config/uav_control/handle_relay_movement( datum/remote_view/owner_component, mob/host_mob, direction)
 	var/datum/tgui_module/uav/tgui_owner = owner_component.get_coordinator()
 	if(tgui_owner?.current_uav())
 		return tgui_owner.current_uav().relaymove(host_mob, direction, tgui_owner.signal_strength)
 	return FALSE
 
-/datum/remote_view_config/uav_control/handle_apply_visuals( datum/component/remote_view/owner_component, mob/host_mob)
+/datum/remote_view_config/uav_control/handle_apply_visuals( datum/remote_view/owner_component, mob/host_mob)
 	var/datum/tgui_module/uav/tgui_owner = owner_component.get_coordinator()
 	if(!tgui_owner)
 		return
@@ -219,23 +219,23 @@
 	else
 		host_mob.clear_fullscreen("whitenoise", 0)
 
-/datum/remote_view_config/uav_control/handle_remove_visuals( datum/component/remote_view/owner_component, mob/host_mob)
+/datum/remote_view_config/uav_control/handle_remove_visuals( datum/remote_view/owner_component, mob/host_mob)
 	// Clear hud
 	host_mob.clear_fullscreen("fishbed",0)
 	host_mob.clear_fullscreen("scanlines",0)
 	host_mob.clear_fullscreen("whitenoise",0)
 
 // We are responsible for restoring the health UI's icons on removal
-/datum/remote_view_config/uav_control/attached_to_mob( datum/component/remote_view/owner_component, mob/host_mob)
+/datum/remote_view_config/uav_control/attached_to_mob( datum/remote_view/owner_component, mob/host_mob)
 	original_health_hud_icon = host_mob.healths?.icon
 
-/datum/remote_view_config/uav_control/detatch_from_mob( datum/component/remote_view/owner_component, mob/host_mob)
+/datum/remote_view_config/uav_control/detatch_from_mob( datum/remote_view/owner_component, mob/host_mob)
 	if(host_mob.healths && original_health_hud_icon)
 		host_mob.healths.icon = original_health_hud_icon
 		host_mob.healths.appearance = null
 
 // Show the uav health instead of the mob's while it is viewing
-/datum/remote_view_config/uav_control/handle_hud_health( datum/component/remote_view/owner_component, mob/host_mob)
+/datum/remote_view_config/uav_control/handle_hud_health( datum/remote_view/owner_component, mob/host_mob)
 	var/datum/tgui_module/uav/tgui_owner = owner_component.get_coordinator()
 
 	var/mutable_appearance/MA = new (host_mob.healths)
@@ -263,7 +263,7 @@
 
 	host_mob.healths.icon_state = "blank"
 	host_mob.healths.appearance = MA
-	return COMSIG_COMPONENT_HANDLED_HEALTH_ICON
+	return HEALTH_ICON_EVENT_HANDLED
 
 /// LC-refs: The UAV we're watching -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_module/uav/proc/current_uav() as /obj/item/uav

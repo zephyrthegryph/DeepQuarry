@@ -114,11 +114,6 @@ DECLARE_INTERACTIONS(/obj/item/instrument, INTERACT_USE(null, PROC_REF(interacti
 	force = 0
 	attack_verb = list("played", "jazzed", "trumpeted", "mourned", "dooted", "spooked")
 
-/*
-/obj/item/instrument/trumpet/spectral/Initialize(mapload)
-	. = ..()
-	AddComponent(/datum/component/spooky)
-*/
 /obj/item/instrument/trumpet/spectral/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	playsound (src, 'sound/runtime/instruments/trombone/En4.mid', 100,1,-1)
 	..()
@@ -136,12 +131,6 @@ DECLARE_INTERACTIONS(/obj/item/instrument, INTERACT_USE(null, PROC_REF(interacti
 	force = 0
 	attack_verb = list("played", "jazzed", "saxed", "mourned", "dooted", "spooked")
 
-/*
-/obj/item/instrument/saxophone/spectral/Initialize(mapload)
-	. = ..()
-	AddComponent(/datum/component/spooky)
-*/
-
 /obj/item/instrument/saxophone/spectral/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	playsound (src, 'sound/runtime/instruments/saxophone/En4.mid', 100,1,-1)
 	..()
@@ -158,12 +147,6 @@ DECLARE_INTERACTIONS(/obj/item/instrument, INTERACT_USE(null, PROC_REF(interacti
 	icon_state = "trombone"
 	force = 0
 	attack_verb = list("played", "jazzed", "tromboneed", "mourned", "dooted", "spooked")
-
-/*
-/obj/item/instrument/trombone/spectral/Initialize(mapload)
-	. = ..()
-	AddComponent(/datum/component/spooky)
-*/
 
 /obj/item/instrument/trombone/spectral/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	playsound (src, 'sound/runtime/instruments/trombone/Cn4.mid', 100,1,-1)
@@ -184,23 +167,6 @@ DECLARE_INTERACTIONS(/obj/item/instrument, INTERACT_USE(null, PROC_REF(interacti
 	slot_flags = SLOT_MASK
 	force = 5
 	w_class = ITEMSIZE_SMALL
-/*
-	actions_types = list(/datum/action/item_action/instrument)
-
-/obj/item/instrument/harmonica/proc/handle_speech(datum/source, list/speech_args)
-	SIGNAL_HANDLER
-	if(song.playing && ismob(loc))
-		to_chat(loc, span_warning("You stop playing the harmonica to talk..."))
-		song.playing = FALSE
-
-/obj/item/instrument/harmonica/equipped(mob/M, slot)
-	. = ..()
-	RegisterSignal(M, COMSIG_MOB_SAY, PROC_REF(handle_speech))
-
-/obj/item/instrument/harmonica/dropped(mob/M)
-	. = ..()
-	UnregisterSignal(M, COMSIG_MOB_SAY)
-*/
 /obj/item/instrument/bikehorn
 	name = "gilded bike horn"
 	desc = "An exquisitely decorated bike horn, capable of honking in a variety of notes."

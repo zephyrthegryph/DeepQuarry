@@ -22,7 +22,7 @@
 #define PROP_SOURCE_TYPE "type"
 #define PROP_SOURCE_MATERIAL "material"
 #define PROP_SOURCE_DOMAIN "domain"
-#define PROP_SOURCE_COMPONENT "component"
+#define PROP_SOURCE_BEHAVIOUR "behaviour"
 #define PROP_SOURCE_EQUIPMENT "equipment"
 
 // SI units. The first six mirror the newtypes in verdigris/core/src/units.rs

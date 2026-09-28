@@ -85,7 +85,7 @@ GLOBAL_DATUM_INIT(input_router, /datum/input_router, new)
 
 /atom/Click(location, control, params) // This is their reaction to being clicked on (standard proc)
 	if(src)
-		SEND_SIGNAL(src, COMSIG_CLICK, location, control, params, usr)
+		OM_EMIT(src, /datum/om/event/click, location, control, params, usr)
 		usr.ClickOn(src, params)
 
 /atom/DblClick(location, control, params)

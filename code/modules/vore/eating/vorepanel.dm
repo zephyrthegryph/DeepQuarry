@@ -1256,7 +1256,7 @@
 			else if(istype(target,/obj/item/mmi)) // A good bit of repeated code, sure, but... cleanest way to do this.
 				var/obj/item/mmi/MMI = target
 				var/mob/living/carbon/brain/mmi_occupant = MMI.get_occupant()
-				var/datum/component/mind_host/mmi_host = get_mind_host(MMI)
+				var/datum/mind_host/mmi_host = get_mind_host(MMI)
 				if(!ismob(MMI.body_backup) || !mmi_occupant?.mind || GLOB.prevent_respawns.Find(mmi_occupant.mind.name))
 					to_chat(user,span_warning("They don't seem to be reformable!"))
 					return TRUE

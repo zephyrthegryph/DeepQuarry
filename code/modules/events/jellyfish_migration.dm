@@ -70,7 +70,7 @@
 // Spawn a single jellyfish at given location.
 /datum/event/jellyfish_migration/proc/spawn_one_jellyfish(loc)
 	var/mob/living/simple_mob/animal/M = new /mob/living/simple_mob/vore/alienanimals/space_jellyfish(loc)
-	RegisterSignal(M, COMSIG_OBSERVER_DESTROYED, PROC_REF(on_jellyfish_destruction))
+	om_hook(M, /datum/om/event/qdeleting, src, PROC_REF(on_jellyfish_destruction))
 	LAZYADD(spawned_jellyfish, M)
 	return M
 
@@ -82,10 +82,11 @@
 			. += 1
 
 // If jellyfish is bomphed, remove it from the list.
-/datum/event/jellyfish_migration/proc/on_jellyfish_destruction(mob/M)
-	SIGNAL_HANDLER
+/datum/event/jellyfish_migration/proc/on_jellyfish_destruction(datum/source, datum/om/event/qdeleting/event)
+	EVENT_HANDLER
+	var/mob/M = source
 	LAZYREMOVE(spawned_jellyfish, M)
-	UnregisterSignal(M, COMSIG_OBSERVER_DESTROYED)
+	om_unhook(M, /datum/om/event/qdeleting, src)
 
 /datum/event/jellyfish_migration/end()
 	. = ..()

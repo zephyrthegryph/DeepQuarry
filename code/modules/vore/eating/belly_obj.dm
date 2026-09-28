@@ -739,7 +739,7 @@ REF_BACKLIST(/obj/belly, list("owner" = "vore_organs"))
 				R.mmi.forceMove(src)
 				LAZYOR(items_preserved, R.mmi)
 				hasMMI = R.mmi
-				var/datum/component/mind_host/mmi_host = get_mind_host(hasMMI)
+				var/datum/mind_host/mmi_host = get_mind_host(hasMMI)
 				var/mob/living/carbon/brain/view = mmi_host.receive_mind(M.mind, "cyborg [R] digested")
 				view.remove_language(LANGUAGE_ROBOT_TALK)
 				R.mmi = null

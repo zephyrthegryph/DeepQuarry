@@ -40,7 +40,7 @@
 	/// Body factors (BF_* -> value) granted to the species, like a trait's.
 	var/alist/factors
 
-	/// Optional component to attach on grant / detach on revoke.
+	/// Optional per-mob state (a /datum/trait_state path, see species_state_add()) to add on grant / remove on revoke.
 	var/added_component_path = null
 
 	/// Sort priority used by the React tree layout to order perks within a tier.
@@ -61,14 +61,12 @@
 	var/tree_y = null
 
 /datum/perk/proc/grant(mob/living/carbon/human/target, datum/preferences/preferences)
-	if(added_component_path && !target.GetComponent(added_component_path))
-		target.AddComponent(added_component_path)
+	if(added_component_path && !species_state_has(target, added_component_path))
+		species_state_add(target, added_component_path)
 
 /datum/perk/proc/revoke(mob/living/carbon/human/target, datum/preferences/preferences)
-	if(added_component_path)
-		var/datum/component/C = target.GetComponent(added_component_path)
-		if(C)
-			qdel(C)
+	if(added_component_path && species_state_has(target, added_component_path))
+		species_state_remove(target, added_component_path)
 
 /// Apply this perk's var_changes and body factors to the synthesized species.
 /datum/perk/proc/apply_var_changes(datum/species/S)

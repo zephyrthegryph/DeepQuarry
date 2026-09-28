@@ -453,7 +453,7 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 	var/sdepth = A.storage_depth_turf()
 	if(isturf(A) || isturf(A.loc) || (sdepth <= MAX_STORAGE_REACH))
 		if(A.Adjacent(user) || (W && W.attack_can_reach(user, A, W.reach))) // see adjacent.dm, allows robots to use ranged melee weapons
-			SEND_SIGNAL(user, COMSIG_ROBOT_ITEM_ATTACK, W, user, params) // we ATTEMPTED to attack someone.
+			OM_EMIT(user, /datum/om/event/before/robot_item_attack, W, user, params) // we ATTEMPTED to attack someone.
 			var/resolved = W.resolve_attackby(A, user, click_parameters = params)
 			if(!ITEM_INTERACT_CONSUMED(resolved) && A && W)
 				W.afterattack(A, user, 1, params)

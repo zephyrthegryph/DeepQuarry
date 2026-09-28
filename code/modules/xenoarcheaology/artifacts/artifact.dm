@@ -15,7 +15,8 @@
 
 	var/predefined_icon_num
 
-	var/datum/component/artifact_master/artifact_master = /datum/component/artifact_master
+	/// The artifact master type created at Initialize (the instance lives in /atom/var/artifact_master).
+	var/artifact_master_type = /datum/artifact_master
 
 /// Air too hot: it breaks. Otherwise it sleeps on a watch of its tile's air crossing
 /// ARTIFACT_HEAT_BREAK (and re-arms when moved).
@@ -38,22 +39,11 @@
 	if(isturf(loc) && !QDELETED(src))
 		MACHINE_WAKE(src)
 
-// ALLOW(lifecycle): its artifact master component is removed.
-/obj/machinery/artifact/Destroy()
-	if(artifact_master)
-		var/datum/component/artifact_master/arti_mstr = artifact_master
-		arti_mstr.RemoveComponent()
-		artifact_master = null
-		if(!QDELETED(arti_mstr))
-			qdel(arti_mstr)
-	. = ..()
 
 /obj/machinery/artifact/Initialize(mapload)
 
-	if(ispath(artifact_master))
-		AddComponent(artifact_master)
-
-		artifact_master = GetComponent(artifact_master)
+	if(artifact_master_type)
+		make_artifact_master(src, artifact_master_type)
 
 	if(!istype(artifact_master))
 		return
@@ -95,7 +85,7 @@
 /obj/machinery/artifact/update_icon()
 	..()
 
-	if(LAZYLEN(artifact_master.get_active_effects()))
+	if(LAZYLEN(artifact_master?.get_active_effects()))
 		icon_state = "ano[icon_num]1"
 	else
 		icon_state = "ano[icon_num]0"
@@ -103,4 +93,3 @@
 /obj/machinery/artifact
 	icon = 'icons/obj/xenoarchaeology.dmi'
 
-REF_OWNED(/obj/machinery/artifact, "artifact_master")

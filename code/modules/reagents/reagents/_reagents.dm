@@ -72,7 +72,7 @@
 	return
 
 /datum/reagent/proc/touch_obj(obj/O, amount) // Acid melting, cleaner cleaning, etc
-	SEND_SIGNAL(O, COMSIG_REAGENT_EXPOSE_OBJ, src, amount)
+	OM_EMIT(O, /datum/om/event/reagent_expose_obj, src, amount)
 	return
 
 /datum/reagent/proc/touch_turf(turf/T, amount) // Cleaner cleaning, lube lubbing, etc, all go here

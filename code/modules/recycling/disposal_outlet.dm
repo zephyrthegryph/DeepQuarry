@@ -21,14 +21,14 @@
 	update_target()
 
 	var/obj/structure/disposalpipe/trunk/trunk = locate_on(get_turf(src), /obj/structure/disposalpipe/trunk)
-	AddComponent(/datum/component/disposal_system_connection)
-	RegisterSignal(src, COMSIG_DISPOSAL_RECEIVE, PROC_REF(packet_expel))
+	add_disposal_connection()
+	om_hook(src, /datum/om/event/disposal_receive, src, PROC_REF(on_disposal_receive))
 	if(trunk)
-		SEND_SIGNAL(src, COMSIG_DISPOSAL_LINK, trunk)
+		OM_EMIT(src, /datum/om/event/disposal_link, trunk)
 
 // ALLOW(lifecycle): it unlinks from its trunk.
 /obj/structure/disposaloutlet/Destroy()
-	SEND_SIGNAL(src, COMSIG_DISPOSAL_UNLINK) //Just to be safe.
+	OM_EMIT(src, /datum/om/event/disposal_unlink) //Just to be safe.
 	target_handle = null
 	. = ..()
 
@@ -59,7 +59,7 @@ DECLARE_INTERACTIONS(/obj/structure/disposaloutlet, INTERACT_ITEM(null, PROC_REF
 	if(!src)
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, "You sliced the floorweld off the disposal outlet.")
-	SEND_SIGNAL(src, COMSIG_DISPOSAL_UNLINK)
+	OM_EMIT(src, /datum/om/event/disposal_unlink)
 	var/obj/structure/disposalconstruct/C = new(src.loc)
 	transfer_fingerprints_to(C)
 	C.set_dir(dir)
@@ -79,8 +79,14 @@ DECLARE_INTERACTIONS(/obj/structure/disposaloutlet, INTERACT_ITEM(null, PROC_REF
 	to_chat(user, span_notice("You set the range on the [src] to [new_range] tiles."))
 	return ITEM_INTERACT_SUCCESS
 
+
+/// Hooked on our own disposal_receive event.
+/obj/structure/disposaloutlet/proc/on_disposal_receive(datum/source, datum/om/event/disposal_receive/event)
+	EVENT_HANDLER
+	packet_expel(source, event.items, event.gas)
+
 /obj/structure/disposaloutlet/proc/packet_expel(datum/source, list/received_items, datum/gas_mixture/gas)
-	SIGNAL_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 
 	flick("outlet-open", src)
 	if((start_eject + 30) < world.time) // ALLOW(cooldown): eject progress

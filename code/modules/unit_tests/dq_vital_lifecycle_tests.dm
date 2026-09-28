@@ -10,28 +10,28 @@
 	var/revivals = 0
 	var/datum/last_revive_source
 	var/last_revive_reason
-	/// stat seen when COMSIG_MOB_DEATH arrived (the transition must already have happened).
+	/// stat seen when mob_death arrived (the transition must already have happened).
 	var/stat_at_death
 
 /datum/dq_vital_listener/proc/watch(mob/living/L)
-	RegisterSignal(L, COMSIG_MOB_DEATH, PROC_REF(on_death))
-	RegisterSignal(L, COMSIG_LIVING_DEATH_FINAL, PROC_REF(on_final))
-	RegisterSignal(L, COMSIG_LIVING_REVIVED, PROC_REF(on_revived))
+	om_hook(L, /datum/om/event/mob_death, src, PROC_REF(on_death))
+	om_hook(L, /datum/om/event/living_death_final, src, PROC_REF(on_final))
+	om_hook(L, /datum/om/event/living_revived, src, PROC_REF(on_revived))
 
-/datum/dq_vital_listener/proc/on_death(mob/living/source, gibbed)
-	SIGNAL_HANDLER
+/datum/dq_vital_listener/proc/on_death(mob/living/source, datum/om/event/mob_death/event)
+	EVENT_HANDLER
 	deaths++
 	stat_at_death = source.stat
 
-/datum/dq_vital_listener/proc/on_final(mob/living/source, gibbed)
-	SIGNAL_HANDLER
+/datum/dq_vital_listener/proc/on_final(mob/living/source, datum/om/event/living_death_final/event)
+	EVENT_HANDLER
 	finals++
 
-/datum/dq_vital_listener/proc/on_revived(mob/living/source, datum/revive_source, reason)
-	SIGNAL_HANDLER
+/datum/dq_vital_listener/proc/on_revived(mob/living/source, datum/om/event/living_revived/event)
+	EVENT_HANDLER
 	revivals++
-	last_revive_source = revive_source
-	last_revive_reason = reason
+	last_revive_source = event.source
+	last_revive_reason = event.reason
 
 // --- Death pipeline ------------------------------------------------------------------------
 
@@ -47,13 +47,13 @@
 	TEST_ASSERT(H in REGISTRY_MEMBERS(REGISTRY_DEAD_MOBS), "a dead mob is on the dead list")
 	TEST_ASSERT(!(H in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS)), "a dead mob is off the living list")
 	TEST_ASSERT(H.timeofdeath > 0, "death() records the time of death")
-	TEST_ASSERT_EQUAL(listener.stat_at_death, DEAD, "COMSIG_MOB_DEATH is sent after the stat transition")
-	TEST_ASSERT_EQUAL(listener.deaths, 1, "COMSIG_MOB_DEATH is sent once")
-	TEST_ASSERT_EQUAL(listener.finals, 1, "COMSIG_LIVING_DEATH_FINAL is sent once")
+	TEST_ASSERT_EQUAL(listener.stat_at_death, DEAD, "mob_death is emitted after the stat transition")
+	TEST_ASSERT_EQUAL(listener.deaths, 1, "mob_death is emitted once")
+	TEST_ASSERT_EQUAL(listener.finals, 1, "living_death_final is emitted once")
 	qdel(listener)
 
 /// delete_on_death rides the pipeline's final hook: the mob is deleted after every listener
-/// (COMSIG_LIVING_DEATH_FINAL included) has run, never by a stat change.
+/// (living_death_final included) has run, never by a stat change.
 /datum/unit_test/dq_death_final_hook_deletes_on_death
 
 /datum/unit_test/dq_death_final_hook_deletes_on_death/Run()
@@ -80,8 +80,8 @@
 	TEST_ASSERT(!M.death(), "a second death() must report no transition")
 	TEST_ASSERT(!M.death(TRUE), "a gibbed repeat is refused too")
 	TEST_ASSERT_EQUAL(M.timeofdeath, first_time, "a repeated death() must not move the time of death")
-	TEST_ASSERT_EQUAL(listener.deaths, 1, "COMSIG_MOB_DEATH must not repeat")
-	TEST_ASSERT_EQUAL(listener.finals, 1, "COMSIG_LIVING_DEATH_FINAL must not repeat")
+	TEST_ASSERT_EQUAL(listener.deaths, 1, "mob_death must not repeat")
+	TEST_ASSERT_EQUAL(listener.finals, 1, "living_death_final must not repeat")
 	qdel(listener)
 
 /// replace_death() takes over before any side effect: the cockroach vanishes, never DEAD.
@@ -135,7 +135,7 @@
 	TEST_ASSERT(H in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS), "a revived mob is on the living list")
 	TEST_ASSERT(!(H in REGISTRY_MEMBERS(REGISTRY_DEAD_MOBS)), "a revived mob is off the dead list")
 	TEST_ASSERT_EQUAL(H.timeofdeath, 0, "revival clears the time of death")
-	TEST_ASSERT_EQUAL(listener.revivals, 1, "COMSIG_LIVING_REVIVED is sent once")
+	TEST_ASSERT_EQUAL(listener.revivals, 1, "living_revived is emitted once")
 	TEST_ASSERT_EQUAL(listener.last_revive_source, paddles, "the signal carries the source")
 	TEST_ASSERT_EQUAL(listener.last_revive_reason, "unit test", "the signal carries the reason")
 	TEST_ASSERT(H.death(), "a revived mob can die again through the pipeline")
@@ -279,16 +279,16 @@
 
 /datum/unit_test/dq_vital_predicates_dying/Run()
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse)
-	RegisterSignal(M, COMSIG_LIVING_BODY_STATUS, PROC_REF(keep_alive))
+	om_hook(M, /datum/om/event/before/living_body_status, src, PROC_REF(keep_alive))
 	M.injure(INJURY_BLUNT, M.get_endurance() * 3, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	TEST_ASSERT(M.is_alive(), "the keep-alive should hold off death while lethally hurt")
 	TEST_ASSERT(M.body.is_lethal(), "the injuries are lethal")
 	TEST_ASSERT(M.is_dying(), "alive with lethal injuries is dying")
 	TEST_ASSERT_EQUAL(M.vital_band(), VITAL_BAND_DYING, "the dying band")
-	UnregisterSignal(M, COMSIG_LIVING_BODY_STATUS)
+	om_unhook(M, /datum/om/event/before/living_body_status, src)
 
-/datum/unit_test/dq_vital_predicates_dying/proc/keep_alive(mob/living/source)
-	SIGNAL_HANDLER
+/datum/unit_test/dq_vital_predicates_dying/proc/keep_alive(mob/living/source, datum/om/event/before/living_body_status/event)
+	EVENT_HANDLER
 	return COMPONENT_BODY_KEEP_ALIVE
 
 #endif

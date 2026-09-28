@@ -43,7 +43,7 @@
 	var/tmp/stored_research_handle
 
 	/// Reference to a remote material inventory, such as an ore silo.
-	var/datum/component/remote_materials/rmat
+	var/datum/remote_materials/rmat
 
 	/// All designs in the techweb that can be fabricated by this machine, since the last update.
 	var/list/datum/design_techweb/cached_designs
@@ -63,11 +63,11 @@ REF_VAR(/obj/machinery/mecha_part_fabricator_tg, DEF, /datum/design_techweb, bei
 
 /obj/machinery/mecha_part_fabricator_tg/Initialize(mapload)
 	print_sound = new(list(src), FALSE)
-	rmat = AddComponent( \
-		/datum/component/remote_materials, \
+	rmat = new /datum/remote_materials( \
+		src, \
 		mapload, \
-		mat_container_signals = list( \
-			COMSIG_MATCONTAINER_ITEM_CONSUMED = TYPE_PROC_REF(/obj/machinery/mecha_part_fabricator_tg, AfterMaterialInsert) \
+		mat_container_events = list( \
+			(/datum/om/event/matcontainer_item_consumed) = TYPE_PROC_REF(/obj/machinery/mecha_part_fabricator_tg, on_material_insert) \
 		))
 	cached_designs = list()
 	illegal_local_designs = list()
@@ -86,21 +86,17 @@ REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, list("print_sound", "rmat"))
 
 /obj/machinery/mecha_part_fabricator_tg/proc/connect_techweb(datum/techweb/new_techweb)
 	if(stored_research())
-		UnregisterSignal(stored_research(), list(COMSIG_TECHWEB_ADD_DESIGN, COMSIG_TECHWEB_REMOVE_DESIGN))
+		om_unhook(stored_research(), list(/datum/om/event/techweb_add_design, /datum/om/event/techweb_remove_design), src)
 	stored_research_handle = om_handle(new_techweb)
 	if(!isnull(stored_research()))
 		on_connected_techweb()
 
 /obj/machinery/mecha_part_fabricator_tg/proc/on_connected_techweb()
-	RegisterSignals(
-		stored_research(),
-		list(COMSIG_TECHWEB_ADD_DESIGN, COMSIG_TECHWEB_REMOVE_DESIGN),
-		PROC_REF(on_techweb_update)
-	)
+	om_hook(stored_research(), list(/datum/om/event/techweb_add_design, /datum/om/event/techweb_remove_design), src, PROC_REF(on_techweb_update))
 	update_menu_tech()
 
-/obj/machinery/mecha_part_fabricator_tg/proc/on_techweb_update()
-	SIGNAL_HANDLER
+/obj/machinery/mecha_part_fabricator_tg/proc/on_techweb_update(datum/source, datum/om/event/event)
+	EVENT_HANDLER
 
 	// We're probably going to get more than one update (design) at a time, so batch
 	// them together.
@@ -234,7 +230,7 @@ REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, list("print_sound", "rmat"))
 			atom_say("Warning. Exit port obstructed. Please clear obstructions or reorient machine, then retry.")
 		return FALSE
 
-	var/datum/component/material_container/materials = rmat.mat_container()
+	var/datum/material_container/materials = rmat.mat_container()
 	if (!materials)
 		if(verbose)
 			atom_say("No access to material storage, please contact the quartermaster.")
@@ -539,6 +535,11 @@ REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, list("print_sound", "rmat"))
 			return TRUE
 
 	return FALSE
+
+/// Local material container hook (/datum/om/event/matcontainer_item_consumed).
+/obj/machinery/mecha_part_fabricator_tg/proc/on_material_insert(datum/source, datum/om/event/matcontainer_item_consumed/event)
+	EVENT_HANDLER
+	AfterMaterialInsert(event.item, event.primary_mat, event.material_amount)
 
 /obj/machinery/mecha_part_fabricator_tg/proc/AfterMaterialInsert(item_inserted, id_inserted, amount_inserted)
 	// var/datum/material/M = id_inserted // Not used atm.

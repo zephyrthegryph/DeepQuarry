@@ -44,20 +44,21 @@
 	var/quality_acted_calls = 0
 	var/last_acted_quality
 
-/datum/unit_test/modern_tool_interaction_dispatch/proc/on_tool_acted(datum/source, atom/target, mob/user, tool_quality, list/modifiers)
-	SIGNAL_HANDLER
+/datum/unit_test/modern_tool_interaction_dispatch/proc/on_tool_acted(datum/source, datum/om/event/item_tool_acted/event)
+	EVENT_HANDLER
 	tool_acted_calls++
-	last_acted_quality = tool_quality
+	last_acted_quality = event.tool_quality
 
-/datum/unit_test/modern_tool_interaction_dispatch/proc/on_quality_acted(datum/source, atom/target, mob/user, list/modifiers)
-	SIGNAL_HANDLER
-	quality_acted_calls++
+/datum/unit_test/modern_tool_interaction_dispatch/proc/on_quality_acted(datum/source, datum/om/event/tool_atom_acted/event)
+	EVENT_HANDLER
+	if(event.tool_quality == TOOL_WRENCH && !event.secondary)
+		quality_acted_calls++
 
 /datum/unit_test/modern_tool_interaction_dispatch/Run()
 	var/atom/movable/unit_test_interaction_target/target = new
 	var/obj/item/unit_test_interaction_tool/tool = new
-	RegisterSignal(tool, COMSIG_ITEM_TOOL_ACTED, PROC_REF(on_tool_acted))
-	RegisterSignal(tool, COMSIG_TOOL_ATOM_ACTED_PRIMARY(TOOL_WRENCH), PROC_REF(on_quality_acted))
+	om_hook(tool, /datum/om/event/item_tool_acted, src, PROC_REF(on_tool_acted))
+	om_hook(tool, /datum/om/event/tool_atom_acted, src, PROC_REF(on_quality_acted))
 
 	var/primary_result = target.item_interaction(null, tool, list())
 	TEST_ASSERT(primary_result & ITEM_INTERACT_SUCCESS, "Primary tool interaction did not report success.")
@@ -103,7 +104,7 @@
 	TEST_ASSERT_EQUAL(target.attackby_calls, previous_attackby_calls + 1, "SKIP_TO_ATTACK did not enter the attackby fallback exactly once.")
 	TEST_ASSERT(!(skip_result & ITEM_INTERACT_SKIP_TO_ATTACK), "SKIP_TO_ATTACK leaked past the attackby fallback instead of returning attackby's result.")
 
-	UnregisterSignal(tool, list(COMSIG_ITEM_TOOL_ACTED, COMSIG_TOOL_ATOM_ACTED_PRIMARY(TOOL_WRENCH)))
+	om_unhook(tool, list(/datum/om/event/item_tool_acted, /datum/om/event/tool_atom_acted), src)
 	qdel(target)
 	qdel(tool)
 

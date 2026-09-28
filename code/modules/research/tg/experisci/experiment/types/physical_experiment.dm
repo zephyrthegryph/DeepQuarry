@@ -7,7 +7,7 @@
 	/// The atom that is currently being watched by this experiment
 	var/atom/currently_scanned_atom
 	/// Linked experiment handler
-	var/datum/component/experiment_handler/linked_experiment_handler
+	var/datum/experiment_handler/linked_experiment_handler
 
 // ALLOW(lifecycle): stops tracking its scanned atom's events.
 /datum/experiment/physical/Destroy()
@@ -20,7 +20,7 @@
 /datum/experiment/physical/is_complete()
 	return completed
 
-/datum/experiment/physical/perform_experiment_actions(datum/component/experiment_handler/experiment_handler, atom/target)
+/datum/experiment/physical/perform_experiment_actions(datum/experiment_handler/experiment_handler, atom/target)
 	if(currently_scanned_atom)
 		unregister_events()
 	currently_scanned_atom = target

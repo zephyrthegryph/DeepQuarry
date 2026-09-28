@@ -16,10 +16,10 @@
 	update_neighbours()
 	update_icon()
 
-	AddComponent(/datum/component/hose_connector/input)
-	AddComponent(/datum/component/hose_connector/input)
-	AddComponent(/datum/component/hose_connector/input)
-	AddComponent(/datum/component/hose_connector/output)
+	add_hose_connector(/datum/hose_connector/input)
+	add_hose_connector(/datum/hose_connector/input)
+	add_hose_connector(/datum/hose_connector/input)
+	add_hose_connector(/datum/hose_connector/output)
 
 	make_climbable()
 

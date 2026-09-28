@@ -3,8 +3,8 @@
 	A framework for replacing an atom (and it's overlays) with an override = 1 image, that's less shit!
 
 	alternate_appearances and viewing_alternate_appearances vars previously
-	on /atom have been moved to /datum/component/alt_appearances_owner and
-	/datum/component/alt_appearances_viewer in .../components/.
+	on /atom are now the lazy alt_appearances_owned and
+	alt_appearances_viewing vars (code/datums/sparse_vars/alt_appearance.dm).
 	Helpers (dq_get_alt_appearances, etc.) are global procs so we don't bloat
 	/atom's proc-table with new instance methods.
 */

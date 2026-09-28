@@ -241,7 +241,7 @@ DECLARE_INTERACTIONS(/obj/item/camera_bug, INTERACT_USE(null, PROC_REF(interacti
 			break
 	if (user.stat == 2) return TRUE
 
-	user.AddComponent(/datum/component/remote_view/item_zoom, focused_on = target, vconfig_path = /datum/remote_view_config/camera_standard, our_item = src, viewsize = null, tileoffset = 0, show_visible_messages = FALSE)
+	user.begin_remote_view(/datum/remote_view/item_zoom, target, null, /datum/remote_view_config/camera_standard, src, 0, FALSE)
 	return TRUE
 
 /obj/item/pai_cable

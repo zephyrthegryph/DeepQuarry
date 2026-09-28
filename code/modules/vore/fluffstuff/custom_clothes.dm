@@ -2640,7 +2640,7 @@ End */
 
 
 	if(!toggled)
-		AddComponent(/datum/component/reactive_icon_update/clothing, \
+		add_reactive_icon(/datum/reactive_icon_update/clothing, \
 		icon_prefix = "_corrupted", \
 		directions = list(NORTH,EAST,SOUTH,WEST,SOUTHWEST,SOUTHEAST,NORTHWEST,NORTHEAST), \
 		range = 3, \
@@ -2648,9 +2648,8 @@ End */
 		toggled = TRUE
 		to_chat(user, span_info("The coat's eyes open."))
 	else
-		var/datum/component/reactive_icon_update/clothing/reactive_component = GetComponent(/datum/component/reactive_icon_update/clothing)
-		if(reactive_component)
-			qdel(reactive_component)
+		if(reactive_icon)
+			qdel(reactive_icon)
 		toggled = FALSE
 		icon_state = initial(icon_state)
 		item_state = initial(item_state)

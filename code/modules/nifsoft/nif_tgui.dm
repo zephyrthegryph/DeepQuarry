@@ -19,43 +19,53 @@
 	var/tmp/menu_handle
 
 /**
- * Small helper component to manage the HUD icon
+ * Small helper datum to manage the HUD icon (was /datum/component/nif_menu).
+ * Held by the NIF through `menu_handle`; hooks the implanted mob and goes away with it.
  */
-/datum/component/nif_menu
+/datum/nif_menu
+	var/mob/owner
 	var/atom/movable/screen/nif/screen_icon
 
-/datum/component/nif_menu/Initialize()
-	if(!ismob(parent))
-		return COMPONENT_INCOMPATIBLE
-	. = ..()
+REF_OWNED(/datum/nif_menu, "screen_icon")
+REF_BACK(/datum/nif_menu, list("owner" = null))
 
-REF_OWNED(/datum/component/nif_menu, "screen_icon")
-
-/datum/component/nif_menu/RegisterWithParent()
-	. = ..()
-	RegisterSignal(parent, COMSIG_MOB_CLIENT_LOGIN, PROC_REF(create_mob_button))
-	var/mob/owner = parent
+/datum/nif_menu/New(mob/M)
+	..()
+	if(!ismob(M))
+		log_runtime("nif_menu created without a mob owner ([M]).")
+		return
+	owner = M
+	om_hook(owner, /datum/om/event/mob_client_login, src, PROC_REF(on_client_login))
+	om_hook(owner, /datum/om/event/qdeleting, src, PROC_REF(on_owner_qdeleting))
 	if(owner.client)
-		create_mob_button(parent)
+		create_mob_button(owner)
 
-/datum/component/nif_menu/UnregisterFromParent()
-	. = ..()
-	UnregisterSignal(parent, COMSIG_MOB_CLIENT_LOGIN)
-	if(ismob(parent))
-		var/mob/owner = parent
+/datum/nif_menu/Destroy(force)
+	if(owner)
+		om_unhook(owner, list(/datum/om/event/mob_client_login, /datum/om/event/qdeleting), src)
 		if(screen_icon)
-			owner?.client?.screen -= screen_icon
-			UnregisterSignal(screen_icon, COMSIG_CLICK)
-			QDEL_NULL(screen_icon)
-		if(ishuman(parent))
+			owner.client?.screen -= screen_icon
+		if(ishuman(owner))
 			remove_verb(owner, /mob/living/carbon/human/proc/nif_menu)
+	if(screen_icon)
+		om_unhook(screen_icon, /datum/om/event/click, src)
+		QDEL_NULL(screen_icon)
+	owner = null
+	return ..()
 
-/datum/component/nif_menu/proc/create_mob_button(mob/user)
-	SIGNAL_HANDLER
+/datum/nif_menu/proc/on_owner_qdeleting(datum/source, datum/om/event/qdeleting/event)
+	EVENT_HANDLER
+	qdel(src)
+
+/datum/nif_menu/proc/on_client_login(datum/source, datum/om/event/mob_client_login/event)
+	EVENT_HANDLER
+	create_mob_button(source)
+
+/datum/nif_menu/proc/create_mob_button(mob/user)
 	var/datum/hud/HUD = user.hud_used
 	if(!screen_icon)
 		screen_icon = new()
-		RegisterSignal(screen_icon, COMSIG_CLICK, PROC_REF(nif_menu_click))
+		om_hook(screen_icon, /datum/om/event/click, src, PROC_REF(nif_menu_click))
 	screen_icon.icon = HUD.ui_style
 	screen_icon.color = HUD.ui_color
 	screen_icon.alpha = HUD.ui_alpha
@@ -64,11 +74,11 @@ REF_OWNED(/datum/component/nif_menu, "screen_icon")
 
 	add_verb(user, /mob/living/carbon/human/proc/nif_menu)
 
-/datum/component/nif_menu/proc/nif_menu_click(source, location, control, params, user)
-	SIGNAL_HANDLER
-	var/mob/living/carbon/human/H = user
+/datum/nif_menu/proc/nif_menu_click(datum/source, datum/om/event/click/event)
+	EVENT_HANDLER
+	var/mob/living/carbon/human/H = event.user
 	if(istype(H) && H.nif)
-		INVOKE_ASYNC(H.nif, PROC_REF(tgui_interact), user) // ALLOW(scheduler): tgui_interact may block on asset/window setup
+		INVOKE_ASYNC(H.nif, PROC_REF(tgui_interact), H) // ALLOW(scheduler): tgui_interact may block on asset/window setup
 
 /**
  * Screen object for NIF menu access
@@ -182,5 +192,5 @@ REF_OWNED(/datum/component/nif_menu, "screen_icon")
 			return TRUE
 
 /// LC-refs: the menu this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
-/obj/item/nif/proc/menu() as /datum/component/nif_menu
+/obj/item/nif/proc/menu() as /datum/nif_menu
 	return om_resolve(menu_handle)

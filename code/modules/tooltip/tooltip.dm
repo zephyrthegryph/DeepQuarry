@@ -86,8 +86,8 @@
 		return FALSE
 
 	if(!isnull(last_target()))
-		UnregisterSignal(last_target(), COMSIG_QDELETING)
-	RegisterSignal(thing, COMSIG_QDELETING, PROC_REF(on_target_qdel))
+		om_unhook(last_target(), /datum/om/event/qdeleting, src)
+	om_hook(thing, /datum/om/event/qdeleting, src, PROC_REF(on_target_qdel))
 	last_target_handle = om_handle(thing)
 	_revision++
 	queueHide = FALSE
@@ -150,8 +150,8 @@
 		do_hide(hide_revision)
 	return TRUE
 
-/datum/tooltip/proc/on_target_qdel()
-	SIGNAL_HANDLER
+/datum/tooltip/proc/on_target_qdel(datum/source, datum/om/event/qdeleting/event)
+	EVENT_HANDLER
 	hide()
 	last_target_handle = null
 
@@ -163,7 +163,7 @@
 	if(!owner())
 		return
 	if(last_target())
-		UnregisterSignal(last_target(), COMSIG_QDELETING)
+		om_unhook(last_target(), /datum/om/event/qdeleting, src)
 	last_target_handle = null
 	_visible = FALSE
 	SStgui.update_uis(src)

@@ -142,24 +142,24 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 			continue
 		if(istype(target_atom, /obj/machinery/power/rad_collector))
 			profile_signal_dispatches++
-			SEND_SIGNAL(target_atom, COMSIG_IN_RANGE_OF_IRRADIATION, pulse_information, 1)
+			OM_EMIT(target_atom, /datum/om/event/before/in_range_of_irradiation, pulse_information, 1)
 			continue
 		if(istype(target_atom, /obj/item/geiger))
 			profile_signal_dispatches++
-			SEND_SIGNAL(target_atom, COMSIG_IN_RANGE_OF_IRRADIATION, pulse_information, current_insulation)
+			OM_EMIT(target_atom, /datum/om/event/before/in_range_of_irradiation, pulse_information, current_insulation)
 			continue
 
 		if(istype(target_atom, /obj/item))
 			if(current_insulation > pulse_information.threshold)
 				profile_signal_dispatches++
-				SEND_SIGNAL(target_atom, COMSIG_IN_RANGE_OF_IRRADIATION, pulse_information, current_insulation)
+				OM_EMIT(target_atom, /datum/om/event/before/in_range_of_irradiation, pulse_information, current_insulation)
 			continue
 
 		var/mob/living/target = target_atom
 		if(!istype(target) || !can_irradiate_basic(target))
 			continue
 		profile_signal_dispatches++
-		SEND_SIGNAL(target, COMSIG_IN_RANGE_OF_IRRADIATION, pulse_information, current_insulation)
+		OM_EMIT(target, /datum/om/event/before/in_range_of_irradiation, pulse_information, current_insulation)
 		if(HAS_TRAIT(target, TRAIT_IRRADIATED) || current_insulation <= pulse_information.threshold)
 			continue
 		var/perceived_chance = 100
@@ -206,7 +206,6 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 		return FALSE
 	target.radiation += round(strength * rad_vulnerability, 0.1)
 
-//	target.AddComponent(/datum/component/irradiated)
 	return TRUE
 
 /// Returns whether or not the target can be irradiated by any means.

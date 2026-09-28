@@ -20,11 +20,11 @@
 	return INITIALIZE_HINT_LATELOAD
 
 /obj/item/experi_scanner/LateInitialize()
-	var/static/list/handheld_signals = list(
-		COMSIG_ITEM_PRE_ATTACK = TYPE_PROC_REF(/datum/component/experiment_handler, try_run_handheld_experiment),
+	var/static/list/handheld_events = list(
+		/datum/om/event/before/item_pre_attack = TYPE_PROC_REF(/datum/experiment_handler, try_run_handheld_experiment),
 	)
-	AddComponent(/datum/component/experiment_handler, \
+	new /datum/experiment_handler(src, \
 		allowed_experiments = list(/datum/experiment/scanning, /datum/experiment/physical), \
 		disallowed_traits = EXPERIMENT_TRAIT_DESTRUCTIVE, \
-		experiment_signals = handheld_signals, \
+		experiment_events = handheld_events, \
 	)

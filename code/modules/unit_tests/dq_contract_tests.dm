@@ -787,7 +787,7 @@
 	))
 	TEST_ASSERT(conditional in SScontracts.offered_contracts, "three-person therapeutic offer was not published")
 	var/mob/living/carbon/human/departing = subjects[1]
-	SEND_SIGNAL(departing, COMSIG_MOB_LOGOUT)
+	OM_EMIT(departing, /datum/om/event/mob_logout)
 	registry_leave(REGISTRY_PLAYERS, departing)
 	sleep(1)
 	TEST_ASSERT(QDELETED(conditional) || !(conditional in SScontracts.offered_contracts), "next-tick logout reconciliation retained an offer after the cohort left the player list")
@@ -815,7 +815,7 @@
 	var/mob/living/carbon/human/subject = new(run_loc_floor_bottom_left)
 	subject.real_name = "Test Subject"
 	var/obj/item/paper/consent = create_contract_document(run_loc_floor_bottom_left, "test consent", "<b>Subject signature:</b> <span class=\"paper_field\"></span>", trial.id, CONTRACT_DOCUMENT_CLINICAL_CASE, CONTRACT_FAX_VEYMED, list("issuer_account" = owner.account_number))
-	var/datum/component/contract_document/consent_component = consent.GetComponent(/datum/component/contract_document)
+	var/datum/contract_document/consent_component = consent.contract_document
 	consent.on_field_written(subject, 1, null)
 	TEST_ASSERT(consent_component.payload["subject_ref"], "writing in the ordinary paper signature field did not register the signature")
 	var/datum/contract_subject_identity/identity = SScontracts.subject_identity(subject)
@@ -866,7 +866,7 @@
 	TEST_ASSERT(trial.print_consent_revocation(test_turf, identity.id, owner.account_number), "submitted participant could not obtain a withdrawal form")
 	var/obj/item/paper/submitted_withdrawal
 	for(var/obj/item/paper/page in turf_contents_of_type(test_turf, /obj/item/paper))
-		var/datum/component/contract_document/document = page.GetComponent(/datum/component/contract_document)
+		var/datum/contract_document/document = page.contract_document
 		if(document?.contract_id == trial.id && document.document_kind == CONTRACT_DOCUMENT_CONSENT_REVOCATION && document.payload["subject_id"] == identity.id)
 			submitted_withdrawal = page
 			break
@@ -885,7 +885,7 @@
 	TEST_ASSERT(trial.print_consent_revocation(test_turf, withdrawing_identity.id, owner.account_number), "unsubmitted participant could not obtain a withdrawal form")
 	var/obj/item/paper/unsubmitted_withdrawal
 	for(var/obj/item/paper/page in turf_contents_of_type(test_turf, /obj/item/paper))
-		var/datum/component/contract_document/document = page.GetComponent(/datum/component/contract_document)
+		var/datum/contract_document/document = page.contract_document
 		if(document?.contract_id == trial.id && document.document_kind == CONTRACT_DOCUMENT_CONSENT_REVOCATION && document.payload["subject_id"] == withdrawing_identity.id)
 			unsubmitted_withdrawal = page
 			break
@@ -972,7 +972,7 @@
 	TEST_ASSERT(trial.print_consent_revocation(test_turf, grace_identity.id, owner.account_number), "participant could not print a withdrawal during evidence grace")
 	var/obj/item/paper/grace_withdrawal
 	for(var/obj/item/paper/page in turf_contents_of_type(test_turf, /obj/item/paper))
-		var/datum/component/contract_document/document = page.GetComponent(/datum/component/contract_document)
+		var/datum/contract_document/document = page.contract_document
 		if(document?.contract_id == trial.id && document.document_kind == CONTRACT_DOCUMENT_CONSENT_REVOCATION && document.payload["subject_id"] == grace_identity.id)
 			grace_withdrawal = page
 			break
@@ -1051,7 +1051,7 @@
 	var/obj/item/paper/consent
 	var/obj/item/paper/narrative
 	for(var/obj/item/paper/page in turf_contents_of_type(test_turf, /obj/item/paper))
-		var/datum/component/contract_document/document = page.GetComponent(/datum/component/contract_document)
+		var/datum/contract_document/document = page.contract_document
 		if(document?.contract_id != report.id)
 			continue
 		if(document.document_kind == CONTRACT_DOCUMENT_RARE_CASE_CONSENT)
@@ -1112,7 +1112,7 @@
 	TEST_ASSERT(report.print_case_forms(test_turf), "rare-case withdrawal forms could not be printed")
 	var/obj/item/paper/consent
 	for(var/obj/item/paper/page in turf_contents_of_type(test_turf, /obj/item/paper))
-		var/datum/component/contract_document/document = page.GetComponent(/datum/component/contract_document)
+		var/datum/contract_document/document = page.contract_document
 		if(document?.contract_id == report.id && document.document_kind == CONTRACT_DOCUMENT_RARE_CASE_CONSENT)
 			consent = page
 			break
@@ -1121,7 +1121,7 @@
 	TEST_ASSERT(report.print_consent_revocation(test_turf), "rare-case patient could not obtain a withdrawal form")
 	var/obj/item/paper/withdrawal
 	for(var/obj/item/paper/page in turf_contents_of_type(test_turf, /obj/item/paper))
-		var/datum/component/contract_document/document = page.GetComponent(/datum/component/contract_document)
+		var/datum/contract_document/document = page.contract_document
 		if(document?.contract_id == report.id && document.document_kind == CONTRACT_DOCUMENT_CONSENT_REVOCATION)
 			withdrawal = page
 			break

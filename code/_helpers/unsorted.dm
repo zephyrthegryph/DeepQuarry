@@ -780,7 +780,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 						if(O.light_system == STATIC_LIGHT)
 							O.update_light()
 						else
-							var/datum/component/overlay_lighting/OL = O.GetComponent(/datum/component/overlay_lighting)
+							var/datum/overlay_lighting/OL = O.overlay_light
 							OL?.on_parent_moved(O, T, O.dir, TRUE)
 						if(z_level_change) // The objects still need to know if their z-level changed.
 							O.onTransitZ(T.z, X.z)

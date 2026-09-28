@@ -614,7 +614,7 @@
 			if(istype(hit_turf))
 				hit_turf.break_tile()
 //Using /atom/movable instead of /obj/item because I'm not sure what all humans can pick up or wear
-// dq_get_parachute(src), dq_get_hovering(src), dq_get_softfall(src), dq_get_parachuting(src) moved to /datum/component/movable_state
+// dq_get_parachute(src), dq_get_hovering(src), dq_get_softfall(src), dq_get_parachuting(src) live in code/datums/sparse_vars/movable_misc.dm
 
 /atom/movable/proc/isParachute()
 	return dq_get_parachute(src)

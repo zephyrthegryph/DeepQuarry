@@ -66,8 +66,8 @@
 	if(istype(shuttle_datum,/datum/shuttle/autodock/overmap))
 		var/datum/shuttle/autodock/overmap/oms = shuttle_datum
 		oms.myship_handle = om_handle(src)
-	RegisterSignal(shuttle_datum, COMSIG_OBSERVER_SHUTTLE_PRE_MOVE, PROC_REF(pre_shuttle_jump))
-	RegisterSignal(shuttle_datum, COMSIG_OBSERVER_SHUTTLE_MOVED, PROC_REF(on_shuttle_jump))
+	om_hook(shuttle_datum, /datum/om/event/observer_shuttle_pre_move, src, PROC_REF(pre_shuttle_jump))
+	om_hook(shuttle_datum, /datum/om/event/observer_shuttle_moved, src, PROC_REF(on_shuttle_jump))
 	on_landing(landmark, shuttle_datum.current_location()) // We "land" at round start to properly place ourselves on the overmap.
 
 //
@@ -118,7 +118,7 @@
 	core_landmark = master
 	name = _name
 	landmark_tag = master.shuttle_name + _name
-	RegisterSignal(master, COMSIG_OBSERVER_DESTROYED, /datum/proc/qdel_self)
+	om_hook(master, /datum/om/event/qdeleting, src, TYPE_PROC_REF(/datum, qdel_self))
 	. = ..()
 
 REF_BACKLIST(/obj/effect/shuttle_landmark/visiting_shuttle, list("core_landmark" = "visitors"))
@@ -135,28 +135,31 @@ REF_BACKLIST(/obj/effect/shuttle_landmark/visiting_shuttle, list("core_landmark"
 
 /obj/effect/shuttle_landmark/visiting_shuttle/shuttle_arrived(datum/shuttle/shuttle)
 	LAZYSET(core_landmark.visitors, src, shuttle)
-	RegisterSignal(shuttle, COMSIG_OBSERVER_SHUTTLE_MOVED, PROC_REF(shuttle_left))
+	om_hook(shuttle, /datum/om/event/observer_shuttle_moved, src, PROC_REF(shuttle_left))
 
-/obj/effect/shuttle_landmark/visiting_shuttle/proc/shuttle_left(datum/shuttle/shuttle, obj/effect/shuttle_landmark/old_landmark, obj/effect/shuttle_landmark/new_landmark)
-	SIGNAL_HANDLER
-	if(old_landmark == src)
-		UnregisterSignal(shuttle, COMSIG_OBSERVER_SHUTTLE_MOVED)
+/obj/effect/shuttle_landmark/visiting_shuttle/proc/shuttle_left(datum/shuttle/shuttle, datum/om/event/observer_shuttle_moved/event)
+	EVENT_HANDLER
+	if(event.old_location == src)
+		om_unhook(shuttle, /datum/om/event/observer_shuttle_moved, src)
 		LAZYREMOVE(core_landmark.visitors, src)
 
 //
 // More ship procs
 //
 
-/obj/effect/overmap/visitable/ship/landable/proc/pre_shuttle_jump(datum/shuttle/given_shuttle, obj/effect/shuttle_landmark/from, obj/effect/shuttle_landmark/into)
-	SIGNAL_HANDLER
+/obj/effect/overmap/visitable/ship/landable/proc/pre_shuttle_jump(datum/shuttle/given_shuttle, datum/om/event/observer_shuttle_pre_move/event)
+	EVENT_HANDLER
+	var/obj/effect/shuttle_landmark/into = event.destination
 	if(given_shuttle != SSshuttles.shuttles[shuttle])
 		return
 	if(into == landmark)
 		setup_overmap_location() // They're coming boys, better actually exist!
-		UnregisterSignal(SSshuttles.shuttles[shuttle], COMSIG_OBSERVER_SHUTTLE_PRE_MOVE)
+		om_unhook(SSshuttles.shuttles[shuttle], /datum/om/event/observer_shuttle_pre_move, src)
 
-/obj/effect/overmap/visitable/ship/landable/proc/on_shuttle_jump(datum/shuttle/given_shuttle, obj/effect/shuttle_landmark/from, obj/effect/shuttle_landmark/into)
-	SIGNAL_HANDLER
+/obj/effect/overmap/visitable/ship/landable/proc/on_shuttle_jump(datum/shuttle/given_shuttle, datum/om/event/observer_shuttle_moved/event)
+	EVENT_HANDLER
+	var/obj/effect/shuttle_landmark/from = event.old_location
+	var/obj/effect/shuttle_landmark/into = event.destination
 	if(given_shuttle != SSshuttles.shuttles[shuttle])
 		return
 	var/datum/shuttle/autodock/auto = given_shuttle

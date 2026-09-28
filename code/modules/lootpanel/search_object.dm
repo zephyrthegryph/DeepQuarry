@@ -23,16 +23,16 @@
 		path = item.type
 
 	if(isturf(item))
-		RegisterSignal(item, COMSIG_TURF_CHANGE, PROC_REF(on_turf_change))
+		om_hook(item, /datum/om/event/turf_change, src, PROC_REF(on_turf_change))
 	else
 		// Lest we find ourselves here again, this is intentionally stupid.
 		// It tracks items going out and user actions, otherwise they can refresh the lootpanel.
 		// If this is to be made to track everything, we'll need to make a new signal to specifically create/delete a search object
-		RegisterSignals(item, list(
-			COMSIG_ITEM_PICKUP,
-			COMSIG_MOVABLE_MOVED,
-			COMSIG_QDELETING,
-			), PROC_REF(on_item_moved))
+		om_hook(item, list(
+			/datum/om/event/item_pickup,
+			/datum/om/event/moved,
+			/datum/om/event/qdeleting,
+			), src, PROC_REF(on_item_moved))
 
 	// Icon generation conditions //////////////
 	// Condition 1: Icon is complex
@@ -63,8 +63,8 @@
 	icon = costly_icon2html(item(), owner, sourceonly = TRUE)
 
 /// Parent item has been altered, search object no longer valid
-/datum/search_object/proc/on_item_moved(atom/source)
-	SIGNAL_HANDLER
+/datum/search_object/proc/on_item_moved(atom/source, datum/om/event/event)
+	EVENT_HANDLER
 
 	if(QDELETED(src))
 		return
@@ -72,8 +72,9 @@
 	qdel(src)
 
 /// Parent tile has been altered, entire search needs reset
-/datum/search_object/proc/on_turf_change(turf/source, path, list/new_baseturfs, flags, list/post_change_callbacks)
-	SIGNAL_HANDLER
+/datum/search_object/proc/on_turf_change(turf/source, datum/om/event/turf_change/event)
+	EVENT_HANDLER
+	var/list/post_change_callbacks = event.post_change_callbacks
 
 	post_change_callbacks += CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(qdel), src)
 

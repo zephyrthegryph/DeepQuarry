@@ -3,11 +3,11 @@
 	desc = "A large alien device."
 	icon = 'icons/obj/xenoarchaeology.dmi' //CHOMP Fix
 
-	artifact_master = /datum/component/artifact_master/hungry_statue
+	artifact_master_type = /datum/artifact_master/hungry_statue
 
 	predefined_icon_num = 14
 
-/datum/component/artifact_master/hungry_statue
+/datum/artifact_master/hungry_statue
 	make_effects = list(
 		/datum/artifact_effect/animate_anomaly,
 		/datum/artifact_effect/vampire

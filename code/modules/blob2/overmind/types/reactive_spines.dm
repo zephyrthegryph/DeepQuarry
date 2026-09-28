@@ -54,11 +54,11 @@
 	return
 
 /datum/blob_type/reactive_spines/chunk_setup(obj/item/blobcore_chunk/B)
-	B.RegisterSignal(GLOB.mob_service, COMSIG_OBSERVER_GLOBALMOVED, /obj/item/blobcore_chunk/proc/call_chunk_unique)
+	om_hook(GLOB.mob_service, /datum/om/event/observer_globalmoved, B, TYPE_PROC_REF(/obj/item/blobcore_chunk, call_chunk_unique))
 	return
 
-//I'm putting this here so everybody knows that it's this shitty code that is why that comsig exists.
-//I'm just reimplementing the way it worked before but with comsigs. I don't have the patience to refactor this.
+//I'm putting this here so everybody knows that it's this shitty code that is why that event exists.
+//I'm just reimplementing the way it worked before but with events. I don't have the patience to refactor this.
 /mob/living/Moved()
 	. = ..()
-	SEND_SIGNAL(GLOB.mob_service, COMSIG_OBSERVER_GLOBALMOVED)
+	OM_EMIT(GLOB.mob_service, /datum/om/event/observer_globalmoved)

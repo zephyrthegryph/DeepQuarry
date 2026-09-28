@@ -16,10 +16,10 @@
 		(medical_form && (antimicrobial_activity || hemostatic_activity || biocompatibility || reagent_porosity)) || \
 		(armor_form && (reactive_energy_capacity || shape_recovery_rate || phase_change_capacity)) || \
 		(tool_form && (shape_recovery_rate || piezoelectric_coefficient || reagent_porosity))
-	var/datum/component/material_response/existing = item.GetComponent(/datum/component/material_response)
+	var/datum/material_response/existing = item.material_response
 	if(existing)
 		// Reconfiguration changes the source material without replacing the
-		// component and refilling its stored energy reservoirs.
+		// response state and refilling its stored energy reservoirs.
 		existing.material_id = name
 		existing.electrical_form = electrical_form
 		existing.medical_form = medical_form
@@ -30,10 +30,15 @@
 		if(electrical_form && (radiovoltaic_efficiency || scintillation_efficiency))
 			registry_join(REGISTRY_RADIOVOLTAIC_ITEMS, item)
 	else if(needs_response)
-		item.AddComponent(/datum/component/material_response, src, electrical_form, medical_form, armor_form, tool_form)
+		new /datum/material_response(item, src, electrical_form, medical_form, armor_form, tool_form)
 
-/datum/component/material_response
-	dupe_mode = COMPONENT_DUPE_UNIQUE
+/// The physical-response state of an item made of an engineered material (was the
+/// material_response component). Owned by the item; hooks its events with om_hook().
+REF_VAR(/obj/item, OWNED, /datum/material_response, material_response)
+
+/datum/material_response
+	/// The item this state belongs to.
+	var/obj/item/parent
 	var/material_id
 	var/electrical_form = FALSE
 	var/medical_form = FALSE
@@ -48,10 +53,16 @@
 
 REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 
-/datum/component/material_response/Initialize(datum/material/material, _electrical_form, _medical_form, _armor_form, _tool_form)
+REF_BACK(/datum/material_response, list("parent" = "material_response"))
+
+/datum/material_response/New(obj/item/new_parent, datum/material/material, _electrical_form, _medical_form, _armor_form, _tool_form)
 	. = ..()
-	if(!isitem(parent) || !istype(material))
-		return COMPONENT_INCOMPATIBLE
+	if(!isitem(new_parent) || !istype(material) || new_parent.material_response)
+		log_runtime("material_response: cannot attach to [new_parent] ([material]); discarded")
+		qdel(src)
+		return
+	parent = new_parent
+	new_parent.material_response = src
 	material_id = material.name
 	electrical_form = !!_electrical_form
 	medical_form = !!_medical_form
@@ -65,29 +76,28 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 		item.create_reagents(material.reagent_porosity)
 	if(electrical_form && (material.radiovoltaic_efficiency > 0 || material.scintillation_efficiency > 0))
 		registry_join(REGISTRY_RADIOVOLTAIC_ITEMS, parent)
+	om_hook(parent, /datum/om/event/examine, src, PROC_REF(on_examine))
+	om_hook(parent, /datum/om/event/before/atom_take_damage, src, PROC_REF(on_take_damage))
+	om_hook(parent, /datum/om/event/before/atom_pre_emp_act, src, PROC_REF(on_pre_emp))
+	om_hook(parent, /datum/om/event/atom_fire_act, src, PROC_REF(on_fire))
+	om_hook(parent, /datum/om/event/atom_propagate_rad_pulse, src, PROC_REF(on_propagated_radiation))
+	om_hook(parent, /datum/om/event/before/in_range_of_irradiation, src, PROC_REF(on_radiation))
+	om_hook(parent, /datum/om/event/before/attackby, src, PROC_REF(on_attackby))
+	om_hook(parent, /datum/om/event/material_surgery, src, PROC_REF(on_surgery))
 
-/// Phase 2: the parent leaves the radiovoltaic items.
-/datum/component/material_response/lifecycle_dematerialize()
-	. = ..()
-	registry_leave(REGISTRY_RADIOVOLTAIC_ITEMS, parent)
+/datum/material_response/Destroy()
+	if(parent)
+		registry_leave(REGISTRY_RADIOVOLTAIC_ITEMS, parent)
+		om_unhook(parent, null, src)
+		if(parent.material_response == src)
+			parent.material_response = null
+		parent = null
+	return ..()
 
-/datum/component/material_response/RegisterWithParent()
-	RegisterSignal(parent, COMSIG_ATOM_EXAMINE, PROC_REF(on_examine))
-	RegisterSignal(parent, COMSIG_ATOM_TAKE_DAMAGE, PROC_REF(on_take_damage))
-	RegisterSignal(parent, COMSIG_ATOM_PRE_EMP_ACT, PROC_REF(on_pre_emp))
-	RegisterSignal(parent, COMSIG_ATOM_FIRE_ACT, PROC_REF(on_fire))
-	RegisterSignal(parent, COMSIG_ATOM_PROPAGATE_RAD_PULSE, PROC_REF(on_propagated_radiation))
-	RegisterSignal(parent, COMSIG_IN_RANGE_OF_IRRADIATION, PROC_REF(on_radiation))
-	RegisterSignal(parent, COMSIG_ATOM_ATTACKBY, PROC_REF(on_attackby))
-	RegisterSignal(parent, COMSIG_MATERIAL_SURGERY, PROC_REF(on_surgery))
-
-/datum/component/material_response/UnregisterFromParent()
-	UnregisterSignal(parent, list(COMSIG_ATOM_EXAMINE, COMSIG_ATOM_TAKE_DAMAGE, COMSIG_ATOM_PRE_EMP_ACT, COMSIG_ATOM_FIRE_ACT, COMSIG_ATOM_PROPAGATE_RAD_PULSE, COMSIG_IN_RANGE_OF_IRRADIATION, COMSIG_ATOM_ATTACKBY, COMSIG_MATERIAL_SURGERY))
-
-/datum/component/material_response/proc/material() as /datum/material
+/datum/material_response/proc/material() as /datum/material
 	return get_material_by_name(material_id)
 
-/datum/component/material_response/proc/ambient_temperature()
+/datum/material_response/proc/ambient_temperature()
 	var/obj/assembly = parent
 	if(assembly.material_service)
 		return assembly.material_service.temperature
@@ -95,7 +105,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 	var/datum/gas_mixture/air = turf?.return_air()
 	return air ? air.return_temperature() : T20C
 
-/datum/component/material_response/proc/settle_cell_energy()
+/datum/material_response/proc/settle_cell_energy()
 	var/obj/item/cell/cell = parent
 	var/datum/material/material = material()
 	if(!electrical_form || !istype(cell) || !material)
@@ -110,8 +120,9 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 	last_energy_settlement = now
 	return generated > 0 ? cell.give(min(generated, cell.amount_missing())) : 0
 
-/datum/component/material_response/proc/on_examine(datum/source, mob/user, list/examine_text)
-	SIGNAL_HANDLER
+/datum/material_response/proc/on_examine(datum/source, datum/om/event/examine/event)
+	EVENT_HANDLER
+	var/list/examine_text = event.texts
 	settle_cell_energy()
 	var/datum/material/material = material()
 	if(!material)
@@ -124,8 +135,8 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 	if(material.phase_change_capacity > 0 && armor_form)
 		examine_text += span_notice("Thermal buffer: [round(stored_phase_energy)]/[round(material.phase_change_capacity)] J.")
 
-/datum/component/material_response/proc/on_take_damage(datum/source, damage_amount, damage_type, damage_flag, sound_effect, attack_dir, armour_penetration)
-	SIGNAL_HANDLER
+/datum/material_response/proc/on_take_damage(datum/source, datum/om/event/before/atom_take_damage/event)
+	EVENT_HANDLER
 	var/datum/material/material = material()
 	if(!material)
 		return
@@ -133,14 +144,14 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 		var/obj/item/item = parent
 		om_after(item, 1 SECOND, TYPE_PROC_REF(/atom, repair_damage), max(1, round(material.shape_recovery_rate)))
 
-/datum/component/material_response/proc/on_pre_emp(datum/source, severity)
-	SIGNAL_HANDLER
+/datum/material_response/proc/on_pre_emp(datum/source, datum/om/event/before/atom_pre_emp_act/event)
+	EVENT_HANDLER
 	var/datum/material/material = material()
 	if(electrical_form && material?.critical_temperature > 0 && ambient_temperature() < material.critical_temperature)
 		return EMP_PROTECT_SELF
 
-/datum/component/material_response/proc/on_fire(datum/source, exposed_temperature, exposed_volume)
-	SIGNAL_HANDLER
+/datum/material_response/proc/on_fire(datum/source, datum/om/event/atom_fire_act/event)
+	EVENT_HANDLER
 	var/datum/material/material = material()
 	if(!material || !armor_form || material.phase_change_capacity <= 0)
 		return
@@ -155,15 +166,16 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 		air.add_thermal_energy(-absorbed)
 		stored_phase_energy += absorbed
 
-/datum/component/material_response/proc/on_propagated_radiation(datum/source, atom/pulse_source)
-	SIGNAL_HANDLER
+/datum/material_response/proc/on_propagated_radiation(datum/source, datum/om/event/atom_propagate_rad_pulse/event)
+	EVENT_HANDLER
 	apply_radiation_energy(25)
 
-/datum/component/material_response/proc/on_radiation(datum/source, datum/radiation_pulse_information/pulse_information)
-	SIGNAL_HANDLER
+/datum/material_response/proc/on_radiation(datum/source, datum/om/event/before/in_range_of_irradiation/event)
+	EVENT_HANDLER
+	var/datum/radiation_pulse_information/pulse_information = event.pulse_information
 	apply_radiation_energy(pulse_information?.strength || 1)
 
-/datum/component/material_response/proc/apply_radiation_energy(strength)
+/datum/material_response/proc/apply_radiation_energy(strength)
 	var/datum/material/material = material()
 	if(!material || !electrical_form)
 		return
@@ -177,7 +189,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 			om_cancel_timer(src, scintillation_timer)
 		scintillation_timer = om_after(src, 5 SECONDS, PROC_REF(end_scintillation))
 
-/datum/component/material_response/proc/end_scintillation()
+/datum/material_response/proc/end_scintillation()
 	scintillation_timer = null
 	var/obj/item/item = parent
 	var/datum/material/material = material()
@@ -189,8 +201,10 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 	else
 		item.set_light(0)
 
-/datum/component/material_response/proc/on_attackby(datum/source, obj/item/weapon, mob/living/user, list/modifiers)
-	SIGNAL_HANDLER
+/datum/material_response/proc/on_attackby(datum/source, datum/om/event/before/attackby/event)
+	EVENT_HANDLER
+	var/obj/item/weapon = event.item
+	var/mob/living/user = event.user
 	var/datum/material/material = material()
 	if(!material)
 		return
@@ -210,7 +224,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 	if(transferred)
 		to_chat(user, span_notice("[parent]'s open pores absorb [transferred] units from [weapon]."))
 
-/datum/component/material_response/proc/respond_to_impact(atom/cause)
+/datum/material_response/proc/respond_to_impact(atom/cause)
 	var/datum/material/material = material()
 	var/obj/item/item = parent
 	if(!material || !istype(item))
@@ -224,8 +238,11 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 	if(material.reagent_porosity > 0 && item.reagents?.total_volume && isliving(cause))
 		item.reagents.trans_to(cause, min(2, item.reagents.total_volume))
 
-/datum/component/material_response/proc/on_surgery(datum/source, mob/living/carbon/human/target, target_zone, successful)
-	SIGNAL_HANDLER
+/datum/material_response/proc/on_surgery(datum/source, datum/om/event/material_surgery/event)
+	EVENT_HANDLER
+	var/mob/living/carbon/human/target = event.patient
+	var/target_zone = event.zone
+	var/successful = event.success
 	if(!successful || !medical_form || !istype(target))
 		return
 	var/datum/material/material = material()
@@ -242,7 +259,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 	if(material.biocompatibility > 0 && affected.get_trauma() + affected.get_burn() > 0)
 		target.mend(TREAT_TISSUE_REPAIR, max(1, round(material.biocompatibility / 20)), target_zone)
 
-/datum/component/material_response/proc/absorb_reactive_hit(damage)
+/datum/material_response/proc/absorb_reactive_hit(damage)
 	if(!armor_form || damage <= 0 || stored_reactive_energy <= 0)
 		return FALSE
 	var/energy_cost = damage * 50
@@ -275,16 +292,13 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 	return result
 
 /obj/item/proc/material_response_impact(turf/where, atom/cause)
-	var/datum/component/material_response/component = GetComponent(/datum/component/material_response)
-	component?.respond_to_impact(cause)
+	material_response?.respond_to_impact(cause)
 
 /obj/item/proc/material_reactive_absorb(damage)
-	var/datum/component/material_response/component = GetComponent(/datum/component/material_response)
-	return component?.absorb_reactive_hit(damage) || FALSE
+	return material_response?.absorb_reactive_hit(damage) || FALSE
 
 /obj/item/proc/material_cell_use_cost(amount)
-	var/datum/component/material_response/component = GetComponent(/datum/component/material_response)
-	component?.settle_cell_energy()
+	material_response?.settle_cell_energy()
 	// Superconductors eliminate conductor loss; they do not multiply stored
 	// energy. Throughput and heat are handled by the cell's conductor role.
 	return amount

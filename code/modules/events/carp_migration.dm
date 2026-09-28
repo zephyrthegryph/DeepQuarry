@@ -74,7 +74,7 @@
 // Spawn a single carp at given location.
 /datum/event/carp_migration/proc/spawn_one_carp(loc)
 	var/mob/living/simple_mob/animal/carp_to_spawn = new /mob/living/simple_mob/animal/space/carp/event(loc)
-	RegisterSignal(carp_to_spawn, COMSIG_OBSERVER_DESTROYED, PROC_REF(on_carp_destruction))
+	om_hook(carp_to_spawn, /datum/om/event/qdeleting, src, PROC_REF(on_carp_destruction))
 	LAZYADD(spawned_carp, carp_to_spawn)
 	return carp_to_spawn
 
@@ -86,10 +86,10 @@
 			. += 1
 
 // If carp is bomphed, remove it from the list.
-/datum/event/carp_migration/proc/on_carp_destruction(datum/source, mob/carp_to_remove)
-	SIGNAL_HANDLER
+/datum/event/carp_migration/proc/on_carp_destruction(mob/carp_to_remove, datum/om/event/qdeleting/event)
+	EVENT_HANDLER
 	LAZYREMOVE(spawned_carp, carp_to_remove)
-	UnregisterSignal(carp_to_remove, COMSIG_OBSERVER_DESTROYED)
+	om_unhook(carp_to_remove, /datum/om/event/qdeleting, src)
 
 /datum/event/carp_migration/end()
 	. = ..()

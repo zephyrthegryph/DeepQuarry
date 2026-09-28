@@ -173,5 +173,5 @@
 		if(!ally.ai_brain)
 			continue
 		ally.ai_brain.add_personal(target, DQ_DISPOSITION_HOSTILE, 60 SECONDS, "pack rally")
-		SEND_SIGNAL(ally, COMSIG_DQAI_ALLY_DISTRESS, K, target)
+		OM_EMIT(ally, /datum/om/event/dqai_ally_distress, K, target)
 	return DQ_BEHAVIOR_DONE

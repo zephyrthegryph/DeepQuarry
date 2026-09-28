@@ -90,7 +90,7 @@
 	// pick_and_run skips it whenever primary_threat == null, which is exactly
 	// the state it needs to fire in.
 	no_threat_required = TRUE
-	eval_triggers = list(COMSIG_DQAI_DAMAGE_TAKEN)
+	eval_triggers = list(DQAI_TRIGGER_DAMAGE_TAKEN)
 	cooldown = 1 SECOND
 
 /datum/ai_behavior/retaliate_to_attacker/evaluate(datum/ai_brain/brain, atom/source)
@@ -109,6 +109,6 @@
 	var/mob/old = brain.primary_threat
 	brain.primary_threat = target
 	if(old != target)
-		SEND_SIGNAL(brain.holder, COMSIG_DQAI_TARGET_CHANGED, target, old)
+		OM_EMIT(brain.holder, /datum/om/event/dqai_target_changed, target, old)
 	brain.invalidate_selection()
 	return DQ_BEHAVIOR_DONE
