@@ -31,7 +31,6 @@
 			if (sdepth > MAX_STORAGE_REACH)
 				return	//too deeply nested to access
 
-			var/obj/item/storage/U = I.loc
 			user.client.screen -= I
 			I.moveToNullspace()
 		else if(user.item_is_in_hands(I))
