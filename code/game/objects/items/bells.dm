@@ -62,9 +62,9 @@ DECLARE_INTERACTIONS(/obj/item/deskbell, \
 				add_fingerprint(user)
 
 		if("pick up")
-			// The old flow fell through to the default pickup; do it explicitly now.
-			if(isturf(loc) && !anchored && user.Adjacent(src))
-				user.put_in_hands(src)
+			// The standard hand pickup (the item's "Pick up" interaction), with all its checks.
+			if(isliving(user) && user.Adjacent(src))
+				pick_up_by_hand(user)
 
 /obj/item/deskbell/proc/ring(mob/user)
 	if(IS_HARMING(user))

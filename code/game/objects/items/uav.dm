@@ -97,9 +97,9 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 		// Can pick up when off or packed
 		if("Pick Up")
 			if(state == UAV_OFF || state == UAV_PACKED)
-				// The old flow fell through to the default pickup; do it explicitly now.
-				if(user.Adjacent(src))
-					user.put_in_hands(src)
+				// The standard hand pickup (the item's "Pick up" interaction), with all its checks.
+				if(isliving(user) && user.Adjacent(src))
+					pick_up_by_hand(user)
 			else
 				to_chat(user,span_warning("Turn [nickname] off or pack it first!"))
 		// Can disasemble or reassemble from packed or off (and this one takes time)
