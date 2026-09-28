@@ -141,19 +141,21 @@
 
 	if(!ignore_inhands) update_held_icon()
 
-/obj/item/gun/energy/stunrevolver/detective/verb/rename_gun()
-	set name = "Name Gun"
-	set category = "Object"
-	set desc = "Rename your gun. If you're Security."
+EXTEND_INTERACTIONS(/obj/item/gun/energy/stunrevolver/detective, \
+	INTERACT_VERB("Name Gun", PROC_REF(det_stunrevolver_verb_rename), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Resprite gun", PROC_REF(det_stunrevolver_verb_reskin), REQ_IN_INVENTORY), \
+)
 
-	var/mob/M = usr
+/// Old Name Gun verb: Rename your gun. If you're Security.
+/obj/item/gun/energy/stunrevolver/detective/proc/det_stunrevolver_verb_rename(mob/user, obj/item/held, datum/interaction/interaction)
+	var/mob/M = user
 	if(!M.mind)	return 0
 	var/job = M.mind.assigned_role
 	if(job != JOB_DETECTIVE  && job != JOB_SECURITY_OFFICER && job != JOB_WARDEN  && job != JOB_HEAD_OF_SECURITY )
 		to_chat(M, span_notice("You don't feel cool enough to name this gun, chump."))
 		return 0
 
-	var/_answer_k156 = rerun_prompt(M, "k156", list("kind" = "text", "message" = "What do you want to name the gun?", "title" = "Rename Gun", "max_length" = MAX_NAME_LEN, "encode" = FALSE), VERB_REF(rename_gun), args)
+	var/_answer_k156 = rerun_prompt(M, "k156", list("kind" = "text", "message" = "What do you want to name the gun?", "title" = "Rename Gun", "max_length" = MAX_NAME_LEN, "encode" = FALSE), PROC_REF(det_stunrevolver_verb_rename), args)
 	if(isnull(_answer_k156))
 		return
 	var/input = sanitizeSafe(_answer_k156)
@@ -163,12 +165,9 @@
 		to_chat(M, "You name the gun [input]. Say hello to your new friend.")
 		return 1
 
-/obj/item/gun/energy/stunrevolver/detective/verb/reskin_gun()
-	set name = "Resprite gun"
-	set category = "Object"
-	set desc = "Click to choose a sprite for your gun."
-
-	var/mob/M = usr
+/// Old Resprite gun verb: Click to choose a sprite for your gun.
+/obj/item/gun/energy/stunrevolver/detective/proc/det_stunrevolver_verb_reskin(mob/user, obj/item/held, datum/interaction/interaction)
+	var/mob/M = user
 	var/list/options = list()
 	options["Lawson Arms LAEP20"] = "stunrevolver"
 	options["Lawson Arms LTX1020"] = "vinstunrevolver"
@@ -177,7 +176,7 @@
 	options["Lawson Arms LTX1020 (Stainless)"] = "stainstunrevolver"
 	options["Lawson Arms LTX1020 (Ace)"] = "snubstunrevolver"
 	options["Lawson Arms LTX1020 (Gold)"] = "goldstunrevolver"
-	var/choice = rerun_prompt(M, "k177", list("kind" = "list", "message" = "Choose your sprite!", "title" = "Resprite Gun", "choices" = options), VERB_REF(reskin_gun), args)
+	var/choice = rerun_prompt(M, "k177", list("kind" = "list", "message" = "Choose your sprite!", "title" = "Resprite Gun", "choices" = options), PROC_REF(det_stunrevolver_verb_reskin), args)
 	if(isnull(choice))
 		return
 	if(src && choice && !M.stat && in_range(M,src))

@@ -396,12 +396,14 @@ REF_PAIR(/mob/living/simple_mob/vore/overmap/stardog, list("control_node" = "hos
 EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/fur, \
 	INTERACT_ITEM("Nothing", PROC_REF(turf_ignore_item)), \
 	INTERACT_HAND_UNGATED("Pet", PROC_REF(fur_pet)), \
+	INTERACT_VERB("Pet Fur", PROC_REF(fur_verb_pet)), \
+	INTERACT_VERB("Emote Beyond", PROC_REF(fur_verb_emote_beyond)), \
 )
 
 /// Old attack_hand: the turf's own touch, then petting.
 /turf/simulated/floor/outdoors/fur/proc/fur_pet(mob/user, obj/item/held, datum/interaction/interaction)
 	turf_hand(user, held, interaction)
-	pet()
+	fur_verb_pet(user)
 	return TRUE
 
 /turf/simulated/floor/outdoors/fur/ex_act(severity)
@@ -444,13 +446,9 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/fur, \
 		else
 			tree.color = color
 
-/turf/simulated/floor/outdoors/fur/verb/pet()
-	set name = "Pet Fur"
-	set desc = "Pet the fur!"
-	set category = "IC.Stardog"
-	set src in oview(1)
-
-	usr.visible_message(span_notice("\The [usr] pets \the [src]."), span_notice("You pet \the [src]."), runemessage = "pet pat...")
+/// Old Pet Fur verb: Pet the fur!
+/turf/simulated/floor/outdoors/fur/proc/fur_verb_pet(mob/user, obj/item/held, datum/interaction/interaction)
+	user.visible_message(span_notice("\The [user] pets \the [src]."), span_notice("You pet \the [src]."), runemessage = "pet pat...")
 	var/obj/effect/overmap/visitable/ship/simplemob/stardog/s = get_overmap_sector(z)
 
 	if(s && istype(s, /obj/effect/overmap/visitable/ship/simplemob/stardog))
@@ -459,22 +457,15 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/fur, \
 		if(m.affinity >= 10 && prob(5))
 			m.visible_message("\The [m]'s tail wags happily!")
 
-/turf/simulated/floor/outdoors/fur/verb/emote_beyond(message as message)	//Now even the stars will know your sin.
-	set name = "Emote Beyond"
-	set desc = "Emote to those beyond the fur!"
-	set category = "IC.Chat"
-	set src in oview(1)
-
-	if(!isliving(usr))
+/// Old Emote Beyond verb: Emote to those beyond the fur!
+/turf/simulated/floor/outdoors/fur/proc/fur_verb_emote_beyond(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!isliving(user))
 		return
-	var/mob/living/L = usr
+	var/mob/living/L = user
 	if(L.client.prefs.muted & MUTE_IC)
 		to_chat(L, span_warning("You cannot speak in IC (muted)."))
 		return
-	if (!message)
-		om_prompt(src, L, list("kind" = "text", "message" = "Type a message to emote.", "title" = "Emote Beyond", "encode" = FALSE), PROC_REF(emote_beyond_entered))
-		return
-	emote_beyond_entered(L, message)
+	om_prompt(src, L, list("kind" = "text", "message" = "Type a message to emote.", "title" = "Emote Beyond", "encode" = FALSE), PROC_REF(emote_beyond_entered))
 
 /turf/simulated/floor/outdoors/fur/proc/emote_beyond_entered(mob/living/L, message, datum/om/prompt/ask)
 	message = sanitize_or_reflect(message,L)

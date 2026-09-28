@@ -614,12 +614,10 @@ REF_OWNED_LIST(/obj/item/gripper, "pockets")
 		drop_item(user)
 	return TRUE
 
-/obj/item/gripper/verb/drop_gripper_item()
+EXTEND_INTERACTIONS(/obj/item/gripper, INTERACT_VERB("Drop Item", PROC_REF(gripper_verb_drop), REQ_IN_INVENTORY))
 
-	set name = "Drop Item"
-	set desc = "Release an item from your magnetic gripper."
-	set category = "Abilities.Silicon"
-
+/// Old Drop Item verb: Release an item from your magnetic gripper.
+/obj/item/gripper/proc/gripper_verb_drop(mob/user, obj/item/held, datum/interaction/interaction)
 	drop_item(src.loc)
 
 //Different types of grippers!

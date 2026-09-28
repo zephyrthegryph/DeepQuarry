@@ -12,25 +12,34 @@
 		return 1
 	return T.straight_table_check(direction)
 
-/obj/structure/table/verb/do_flip()
-	set name = "Flip table"
-	set desc = "Flips a non-reinforced table"
-	set category = "Object"
-	set src in oview(1)
+/// FALSE on tables that can never be flipped by hand (racks, fixed decorative tables): no Flip/Put back menu entries.
+/obj/structure/table/var/can_flip_verb = TRUE
 
+EXTEND_INTERACTIONS(/obj/structure/table, \
+	INTERACT_VERB("Flip table", PROC_REF(table_verb_flip), REQ_ON(PRED_TARGET, /obj/structure/table/proc/pred_can_flip, "it is already flipped")), \
+	INTERACT_VERB("Put table back", PROC_REF(table_verb_put_back), REQ_ON(PRED_TARGET, /obj/structure/table/proc/pred_can_put_back, "it is not flipped")), \
+)
 
-	if (!can_touch(usr) || HAS_TRAIT(usr, TRAIT_AMBIENT_PEST_MOB))
+/// Requirement for Flip table: replaces the old verb that flip()/unflip() added and removed.
+/obj/structure/table/proc/pred_can_flip(mob/actor, atom/target, obj/item/held)
+	return can_flip_verb && flipped == 0
+
+/// Requirement for Put table back: the old do_put verb was only present while flipped.
+/obj/structure/table/proc/pred_can_put_back(mob/actor, atom/target, obj/item/held)
+	return can_flip_verb && flipped == 1
+
+/// Old Flip table verb: flips a non-reinforced table.
+/obj/structure/table/proc/table_verb_flip(mob/user, obj/item/held, datum/interaction/interaction)
+	if (!can_touch(user) || HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB))
 		return
 
-	if(flipped < 0 || !flip(get_cardinal_dir(usr,src)))
-		to_chat(usr, span_notice("It won't budge."))
+	if(flipped < 0 || !flip(get_cardinal_dir(user,src)))
+		to_chat(user, span_notice("It won't budge."))
 		return
 
-	usr.visible_message(span_warning("[usr] flips \the [src]!"))
+	user.visible_message(span_warning("[user] flips \the [src]!"))
 
-	SEND_SIGNAL(src, COMSIG_CLIMBABLE_SHAKE_CLIMBERS, usr)
-
-	return
+	SEND_SIGNAL(src, COMSIG_CLIMBABLE_SHAKE_CLIMBERS, user)
 
 /obj/structure/table/proc/unflipping_check(direction)
 
@@ -55,26 +64,19 @@
 				return 0
 	return 1
 
-/obj/structure/table/proc/do_put()
-	set name = "Put table back"
-	set desc = "Puts flipped table back"
-	set category = "Object"
-	set src in oview(1)
-
-	if (!can_touch(usr))
+/// Old Put table back verb: puts a flipped table back.
+/obj/structure/table/proc/table_verb_put_back(mob/user, obj/item/held, datum/interaction/interaction)
+	if (!can_touch(user))
 		return
 
 	if (!unflipping_check())
-		to_chat(usr, span_notice("It won't budge."))
+		to_chat(user, span_notice("It won't budge."))
 		return
 	unflip()
 
 /obj/structure/table/proc/flip(direction)
 	if( !straight_table_check(turn(direction,90)) || !straight_table_check(turn(direction,-90)) )
 		return 0
-
-	verbs -=/obj/structure/table/verb/do_flip
-	verbs +=/obj/structure/table/proc/do_put
 
 	var/list/targets = list(get_step(src,dir),get_step(src,turn(dir, 45)),get_step(src,turn(dir, -45)))
 	for (var/atom/movable/A in get_turf(src))
@@ -99,9 +101,6 @@
 	return 1
 
 /obj/structure/table/proc/unflip()
-	verbs -=/obj/structure/table/proc/do_put
-	verbs +=/obj/structure/table/verb/do_flip
-
 	reset_plane_and_layer()
 	flipped = 0
 	//climbable = initial(climbable)

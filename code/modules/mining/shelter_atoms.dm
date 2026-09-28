@@ -193,15 +193,15 @@
 	return ..()
 
 // Allows resetting the capsule if the wrong template is chosen.
-/obj/item/survivalcapsule/superpose/verb/resetpod()
-	set name = "Reset Active Pod"
-	set desc = "Resets the pod back to factory settings."
-	set category = "Object"
+EXTEND_INTERACTIONS(/obj/item/survivalcapsule/superpose, INTERACT_VERB("Reset Active Pod", PROC_REF(superpose_capsule_verb_reset), REQ_IN_INVENTORY))
+
+/// Old Reset Active Pod verb: Resets the pod back to factory settings.
+/obj/item/survivalcapsule/superpose/proc/superpose_capsule_verb_reset(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!used)
 		template_id = null
 		template = null // Important to reset both, otherwise the template cannot be reset once the pod has been deployed.
 		unique_id = null
-		to_chat(usr, span_notice("You reset the pod's selection."))
+		to_chat(user, span_notice("You reset the pod's selection."))
 
 /obj/item/survivalcapsule/superpose/shuttle
 	name = "superposed surfluid shuttle capsule"
@@ -771,6 +771,7 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 	icon_state = "table"
 	can_reinforce = FALSE
 	can_plate = FALSE
+	can_flip_verb = FALSE
 
 /obj/structure/table/survival_pod/update_icon()
 	icon_state = "table"
@@ -778,8 +779,6 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 /obj/structure/table/survival_pod/Initialize(mapload)
 	material = get_material_by_name(MAT_STEEL)
 	. = ..()
-	verbs -= /obj/structure/table/verb/do_flip
-	verbs -= /obj/structure/table/proc/do_put
 
 /obj/structure/table/survival_pod/dismantle(obj/item/tool/wrench/W, mob/user)
 	to_chat(user, span_warning("You cannot dismantle \the [src]."))

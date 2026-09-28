@@ -39,6 +39,7 @@
 EXTEND_INTERACTIONS(/obj/item/reagent_containers/cooking_container, \
 	INTERACT_ITEM(null, PROC_REF(cooking_container_interaction_item)), \
 	INTERACT_ALT("Empty container", PROC_REF(cooking_container_interaction_empty)), \
+	INTERACT_VERB("Empty Container", PROC_REF(cooking_container_verb_empty)), \
 )
 
 /// Old attackby.
@@ -65,13 +66,10 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/cooking_container, \
 			return INTERACTION_HANDLED_PASS
 	return INTERACTION_HANDLED_PASS
 
-/obj/item/reagent_containers/cooking_container/verb/empty()
-	set src in oview(1)
-	set name = "Empty Container"
-	set category = "Object"
-	set desc = "Removes items from the container, excluding reagents."
-
-	do_empty(usr)
+/// Old Empty Container verb: removes items from the container, excluding reagents.
+/obj/item/reagent_containers/cooking_container/proc/cooking_container_verb_empty(mob/user, obj/item/held, datum/interaction/interaction)
+	do_empty(user)
+	return TRUE
 
 /obj/item/reagent_containers/cooking_container/proc/do_empty(mob/user)
 	if (!isliving(user))

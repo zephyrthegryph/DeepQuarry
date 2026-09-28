@@ -9,12 +9,12 @@
 	var/min_transfer_amount = 5
 	var/volume = 30
 	var/list/starts_with
+	/// FALSE hides the Set transfer amount Menu entry (sprays, canisters), as the old verbs -= set_APTFT did.
+	var/transfer_amount_verb = TRUE
 
-/obj/item/reagent_containers/verb/set_APTFT() //set amount_per_transfer_from_this
-	set name = "Set transfer amount"
-	set category = "Object"
-	set src in range(0)
-	var/N = rerun_prompt(usr, "a1", list("kind" = "number", "message" = "Amount per transfer from this: ([min_transfer_amount]-[max_transfer_amount])", "title" = "[src]", "default" = amount_per_transfer_from_this, "max" = max_transfer_amount, "min" = min_transfer_amount), VERB_REF(set_APTFT), args)
+/// Old Set transfer amount verb.
+/obj/item/reagent_containers/proc/reagent_container_verb_set_transfer(mob/user, obj/item/held, datum/interaction/interaction)
+	var/N = rerun_prompt(user, "a1", list("kind" = "number", "message" = "Amount per transfer from this: ([min_transfer_amount]-[max_transfer_amount])", "title" = "[src]", "default" = amount_per_transfer_from_this, "max" = max_transfer_amount, "min" = min_transfer_amount), PROC_REF(reagent_container_verb_set_transfer), args)
 	if(isnull(N))
 		return
 	if(N)
@@ -22,8 +22,6 @@
 
 /obj/item/reagent_containers/Initialize(mapload)
 	. = ..()
-	if(!max_transfer_amount)
-		src.verbs -= /obj/item/reagent_containers/verb/set_APTFT
 	create_reagents(volume)
 
 	if(starts_with)
@@ -177,7 +175,14 @@
 			B.changling_blood_test(reagents)
 
 // EXTEND (not DECLARE) so the many subtypes that DECLARE their own specs keep this one.
-EXTEND_INTERACTIONS(/obj/item/reagent_containers, INTERACT_ALT("Set transfer amount", PROC_REF(transfer_amount_alt)))
+EXTEND_INTERACTIONS(/obj/item/reagent_containers, \
+	INTERACT_ALT("Set transfer amount", PROC_REF(transfer_amount_alt)), \
+	INTERACT_VERB("Set transfer amount", PROC_REF(reagent_container_verb_set_transfer), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/reagent_containers/proc/pred_can_set_transfer, "its transfer amount is fixed")), \
+)
+
+/// Requirement for the Set transfer amount Menu entry (old verb, removed on Initialize when it did not apply).
+/obj/item/reagent_containers/proc/pred_can_set_transfer(mob/actor, atom/target, obj/item/held)
+	return transfer_amount_verb && max_transfer_amount
 
 /// Old click_alt. It ran the default alt-click first, so this always returns FALSE to let it follow.
 /obj/item/reagent_containers/proc/transfer_amount_alt(mob/user, obj/item/held, datum/interaction/interaction)

@@ -71,6 +71,7 @@
 EXTEND_INTERACTIONS(/obj/item/ammo_magazine/smart, \
 	INTERACT_ITEM(null, PROC_REF(smart_interaction_item)), \
 	INTERACT_HAND_UNGATED(null, PROC_REF(smart_interaction_hand)), \
+	INTERACT_VERB("Clear Ammo Data", PROC_REF(smartmag_verb_clear_data), REQ_IN_INVENTORY), \
 )
 
 /// Old attackby. FALSE goes on to the magazine's, as its ..() did.
@@ -210,15 +211,12 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/smart, \
 	return 0
 
 // This verb clears out the smart mag's copied data, but only if it's empty
-/obj/item/ammo_magazine/smart/verb/clear_ammo_data()
-	set name = "Clear Ammo Data"
-	set category = "Object"
-	set src in usr
-
+/// Old Clear Ammo Data verb.
+/obj/item/ammo_magazine/smart/proc/smartmag_verb_clear_data(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!isliving(src.loc))	// Needs to be in your hands to reset
 		return
 
-	var/mob/living/carbon/human/H = usr
+	var/mob/living/carbon/human/H = user
 	if(!istype(H))
 		return
 	if(H.stat)

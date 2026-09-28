@@ -309,18 +309,17 @@
 	playsound(src, 'sound/weapons/targeton.ogg', 50, 1)
 	user.update_mob_action_buttons()
 
-/obj/item/gun/projectile/shotgun/compact/verb/verb_toggle_stock()
-	set category = "Object"
-	set name = "Toggle stock"
-	set src in usr
+EXTEND_INTERACTIONS(/obj/item/gun/projectile/shotgun/compact, INTERACT_VERB("Toggle stock", PROC_REF(compact_shotgun_verb_toggle_stock), REQ_IN_INVENTORY))
 
-	if(issilicon(usr))
+/// Old Toggle stock verb.
+/obj/item/gun/projectile/shotgun/compact/proc/compact_shotgun_verb_toggle_stock(mob/user, obj/item/held, datum/interaction/interaction)
+	if(issilicon(user))
 		return
 
-	if (isliving(usr))
+	if (isliving(user))
 		toggle_stock()
 	else
-		to_chat(usr, span_notice("You cannot do this in your current state."))
+		to_chat(user, span_notice("You cannot do this in your current state."))
 
 /obj/item/gun/projectile/shotgun/compact/ui_action_click(mob/unused_user, actiontype)
 	var/mob/living/user = loc

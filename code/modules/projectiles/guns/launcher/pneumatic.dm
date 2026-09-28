@@ -35,16 +35,14 @@
 	item_storage.max_storage_space = max_storage_space
 	item_storage.use_sound = null
 
-/obj/item/gun/launcher/pneumatic/verb/set_pressure() //set amount of tank pressure.
-	set name = "Set Valve Pressure"
-	set category = "Object"
-	set src in range(0)
-	var/N = rerun_prompt(usr, "k42", list("kind" = "list", "message" = "Percentage of tank used per shot:", "title" = "[src]", "choices" = possible_pressure_amounts), VERB_REF(set_pressure), args)
+/// Old Set Valve Pressure verb.
+/obj/item/gun/launcher/pneumatic/proc/pneumatic_verb_set_pressure(mob/user, obj/item/held, datum/interaction/interaction)
+	var/N = rerun_prompt(user, "k42", list("kind" = "list", "message" = "Percentage of tank used per shot:", "title" = "[src]", "choices" = possible_pressure_amounts), PROC_REF(pneumatic_verb_set_pressure), args)
 	if(isnull(N))
 		return
 	if (N)
 		pressure_setting = N
-		to_chat(usr, "You dial the pressure valve to [pressure_setting]%.")
+		to_chat(user, "You dial the pressure valve to [pressure_setting]%.")
 
 /obj/item/gun/launcher/pneumatic/proc/eject_tank(mob/user) //Remove the tank.
 	if(!tank)
@@ -66,7 +64,10 @@
 	else
 		to_chat(user, "There is nothing to remove in \the [src].")
 
-DECLARE_INTERACTIONS(/obj/item/gun/launcher/pneumatic, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+DECLARE_INTERACTIONS(/obj/item/gun/launcher/pneumatic, \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_VERB("Set Valve Pressure", PROC_REF(pneumatic_verb_set_pressure), REQ_IN_INVENTORY), \
+)
 
 /// Old attack_hand.
 /obj/item/gun/launcher/pneumatic/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)

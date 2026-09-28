@@ -10,7 +10,10 @@
 	var/exact = FALSE
 	var/sediment_scan = TRUE
 
-DECLARE_INTERACTIONS(/obj/item/mining_scanner, INTERACT_USE(null, PROC_REF(interaction_self)))
+DECLARE_INTERACTIONS(/obj/item/mining_scanner, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_VERB("Toggle Sediment Scan", PROC_REF(mining_scanner_verb_toggle_sediment)), \
+)
 
 /// Old attack_self.
 /obj/item/mining_scanner/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
@@ -23,12 +26,9 @@ DECLARE_INTERACTIONS(/obj/item/mining_scanner, INTERACT_USE(null, PROC_REF(inter
 /obj/item/mining_scanner/proc/sweep_done(mob/user)
 	ScanTurf(get_turf(user), user)
 
-/obj/item/mining_scanner/verb/toggle_sediment_scan()
-	set name = "Toggle Sediment Scan"
-	set category = "Object"
-	set src in view(1)
-
-	to_chat(usr, span_notice("\The [src] will [sediment_scan ? "no longer" : "now"] scan for reagents."))
+/// Old Toggle Sediment Scan verb.
+/obj/item/mining_scanner/proc/mining_scanner_verb_toggle_sediment(mob/user, obj/item/held, datum/interaction/interaction)
+	to_chat(user, span_notice("\The [src] will [sediment_scan ? "no longer" : "now"] scan for reagents."))
 	sediment_scan = !sediment_scan
 
 /obj/item/mining_scanner/proc/ScanTurf(atom/target, mob/user)
@@ -112,19 +112,21 @@ DECLARE_INTERACTIONS(/obj/item/mining_scanner, INTERACT_USE(null, PROC_REF(inter
 	scan_time = 0.5 SECONDS
 	exact = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/mining_scanner/advanced, INTERACT_ALT(null, PROC_REF(interaction_alt)))
+EXTEND_INTERACTIONS(/obj/item/mining_scanner/advanced, \
+	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+	INTERACT_VERB("Set Scanner Range", PROC_REF(adv_mining_scanner_verb_range), REQ_IN_INVENTORY), \
+)
 
 /// Old click_alt.
 /obj/item/mining_scanner/advanced/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
-	change_size()
+	adv_mining_scanner_verb_range(user)
 	return TRUE
 
-/obj/item/mining_scanner/advanced/verb/change_size()
-	set name = "Set Scanner Range"
-	set category = "Object"
-	var/custom_range = rerun_prompt(usr, "k120", list("kind" = "list", "message" = "Scanner Range", "title" = "Pick a range to scan. ", "choices" = list(0,1,2,3,4,5,6,7)), VERB_REF(change_size), args)
+/// Old Set Scanner Range verb.
+/obj/item/mining_scanner/advanced/proc/adv_mining_scanner_verb_range(mob/user, obj/item/held, datum/interaction/interaction)
+	var/custom_range = rerun_prompt(user, "k120", list("kind" = "list", "message" = "Scanner Range", "title" = "Pick a range to scan. ", "choices" = list(0,1,2,3,4,5,6,7)), PROC_REF(adv_mining_scanner_verb_range), args)
 	if(isnull(custom_range))
 		return
 	if(custom_range)
 		range = custom_range
-		to_chat(usr, span_notice("Scanner will now look up to [range] tile(s) away."))
+		to_chat(user, span_notice("Scanner will now look up to [range] tile(s) away."))

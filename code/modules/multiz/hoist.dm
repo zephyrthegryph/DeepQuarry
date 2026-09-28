@@ -165,7 +165,10 @@ REF_OWNED(/obj/structure/hoist, "source_hook")
 /obj/structure/hoist
 	silicon_use = ROBOT_USE_HAND
 
-DECLARE_INTERACTIONS(/obj/structure/hoist, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+DECLARE_INTERACTIONS(/obj/structure/hoist, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
+	INTERACT_VERB("Collapse Hoist", PROC_REF(hoist_verb_collapse)), \
+)
 
 /// Old attack_hand.
 /obj/structure/hoist/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
@@ -212,22 +215,19 @@ DECLARE_INTERACTIONS(/obj/structure/hoist, INTERACT_HAND_UNGATED(null, PROC_REF(
 /obj/structure/hoist/proc/collapse_kit()
 	replace_with(src, /obj/item/hoist_kit)
 
-/obj/structure/hoist/verb/collapse_hoist()
-	set name = "Collapse Hoist"
-	set category = "Object"
-	set src in range(1)
-
-	if (!(ishuman(usr) || issilicon(usr)))
+/// Old Collapse Hoist verb.
+/obj/structure/hoist/proc/hoist_verb_collapse(mob/user, obj/item/held, datum/interaction/interaction)
+	if (!(ishuman(user) || issilicon(user)))
 		return
 
-	if (isobserver(usr) || usr.incapacitated())
+	if (isobserver(user) || user.incapacitated())
 		return
-	if (!usr.IsAdvancedToolUser()) // thanks nanacode
-		to_chat(usr, span_notice("You stare cluelessly at \the [src]."))
+	if (!user.IsAdvancedToolUser()) // thanks nanacode
+		to_chat(user, span_notice("You stare cluelessly at \the [src]."))
 		return
 
 	if (hoistee)
-		to_chat(usr, span_notice("You cannot collapse the hoist with \the [hoistee] attached!"))
+		to_chat(user, span_notice("You cannot collapse the hoist with \the [hoistee] attached!"))
 		return
 	collapse_kit()
 

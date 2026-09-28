@@ -143,10 +143,6 @@
 
 	if(dna_lock)
 		attached_lock = new /obj/item/dnalockingchip(src)
-	if(!dna_lock)
-		verbs -= /obj/item/gun/verb/remove_dna
-		verbs -= /obj/item/gun/verb/give_dna
-		verbs -= /obj/item/gun/verb/allow_dna
 
 	if(sel_mode <= length(firemodes))
 		var/datum/firemode/new_mode = LAZYACCESS(firemodes, sel_mode)
@@ -303,6 +299,9 @@ REF_OWNED(/obj/item/gun, "firemode_selector")
 EXTEND_INTERACTIONS(/obj/item/gun, \
 	INTERACT_ITEM("Fit", PROC_REF(gun_item)), \
 	INTERACT_SELF("Operate", PROC_REF(gun_self)), \
+	INTERACT_VERB("Give DNA", PROC_REF(gun_verb_give_dna), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/gun/proc/pred_has_dna_lock, "it has no DNA lock")), \
+	INTERACT_VERB("Remove DNA", PROC_REF(gun_verb_remove_dna), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/gun/proc/pred_has_dna_lock, "it has no DNA lock")), \
+	INTERACT_VERB("Toggle DNA Samples Allowance", PROC_REF(gun_verb_allow_dna), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/gun/proc/pred_has_dna_lock, "it has no DNA lock")), \
 )
 
 /**
@@ -320,9 +319,6 @@ EXTEND_INTERACTIONS(/obj/item/gun, \
 		A.loc = src
 		attached_lock = A
 		dna_lock = 1
-		verbs += /obj/item/gun/verb/remove_dna
-		verbs += /obj/item/gun/verb/give_dna
-		verbs += /obj/item/gun/verb/allow_dna
 		return
 
 	return FALSE
@@ -339,9 +335,6 @@ EXTEND_INTERACTIONS(/obj/item/gun, \
 	user.put_in_hands(attached_lock)
 	dna_lock = FALSE
 	attached_lock = null
-	verbs -= /obj/item/gun/verb/remove_dna
-	verbs -= /obj/item/gun/verb/give_dna
-	verbs -= /obj/item/gun/verb/allow_dna
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/gun/emag_act(remaining_charges, mob/user)

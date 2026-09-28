@@ -209,14 +209,13 @@
 	one_handed_penalty = 70
 	fire_sound = "sound/weapons/serdy/sks.ogg"
 
-/obj/item/gun/projectile/automatic/serdy/hunter/ui_action_click()
-	scope()
+/obj/item/gun/projectile/automatic/serdy/hunter/ui_action_click(mob/user, actiontype)
+	serdy_hunter_verb_scope(user)
 
-/obj/item/gun/projectile/automatic/serdy/hunter/verb/scope()
-	set category = "Object"
-	set name = "Use Scope"
-	set popup_menu = 1
+EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hunter, INTERACT_VERB("Use Scope", PROC_REF(serdy_hunter_verb_scope), REQ_IN_INVENTORY))
 
+/// Old Use Scope verb.
+/obj/item/gun/projectile/automatic/serdy/hunter/proc/serdy_hunter_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
 	toggle_scope(2.0)
 
 // AR Variants
@@ -454,14 +453,13 @@
 	scoped_accuracy = 50
 	one_handed_penalty = 70
 
-/obj/item/gun/projectile/automatic/serdy/mosin/scoped/ui_action_click()
-	scope()
+/obj/item/gun/projectile/automatic/serdy/mosin/scoped/ui_action_click(mob/user, actiontype)
+	serdy_mosin_verb_scope(user)
 
-/obj/item/gun/projectile/automatic/serdy/mosin/scoped/verb/scope()
-	set category = "Object"
-	set name = "Use Scope"
-	set popup_menu = 1
+EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/mosin/scoped, INTERACT_VERB("Use Scope", PROC_REF(serdy_mosin_verb_scope), REQ_IN_INVENTORY))
 
+/// Old Use Scope verb.
+/obj/item/gun/projectile/automatic/serdy/mosin/scoped/proc/serdy_mosin_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
 	toggle_scope(2.0)
 
 /obj/item/gun/projectile/automatic/serdy/type901
@@ -521,14 +519,13 @@
 	sound_chamber = 'sound/weapons/ballistics/boltactionclose.ogg'
 	fire_sound = "sound/weapons/serdy/sks.ogg"
 
-/obj/item/gun/projectile/automatic/serdy/awp/ui_action_click()
-	scope()
+/obj/item/gun/projectile/automatic/serdy/awp/ui_action_click(mob/user, actiontype)
+	serdy_awp_verb_scope(user)
 
-/obj/item/gun/projectile/automatic/serdy/awp/verb/scope()
-	set category = "Object"
-	set name = "Use Scope"
-	set popup_menu = 1
+EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/awp, INTERACT_VERB("Use Scope", PROC_REF(serdy_awp_verb_scope), REQ_IN_INVENTORY))
 
+/// Old Use Scope verb.
+/obj/item/gun/projectile/automatic/serdy/awp/proc/serdy_awp_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
 	toggle_scope(2.0)
 
 /obj/item/gun/projectile/automatic/serdy/hectate
@@ -558,14 +555,13 @@
 	fire_sound = "sound/weapons/serdy/sks.ogg"
 
 
-/obj/item/gun/projectile/automatic/serdy/hectate/ui_action_click()
-	scope()
+/obj/item/gun/projectile/automatic/serdy/hectate/ui_action_click(mob/user, actiontype)
+	serdy_hectate_verb_scope(user)
 
-/obj/item/gun/projectile/automatic/serdy/hectate/verb/scope()
-	set category = "Object"
-	set name = "Use Scope"
-	set popup_menu = 1
+EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hectate, INTERACT_VERB("Use Scope", PROC_REF(serdy_hectate_verb_scope), REQ_IN_INVENTORY))
 
+/// Old Use Scope verb.
+/obj/item/gun/projectile/automatic/serdy/hectate/proc/serdy_hectate_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
 	toggle_scope(2.0)
 
 /obj/item/gun/projectile/automatic/serdy/memegun

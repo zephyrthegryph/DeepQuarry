@@ -15,7 +15,10 @@
 
 REF_OWNED(/obj/item/assembly/electronic_assembly, "EA")
 
-EXTEND_INTERACTIONS(/obj/item/assembly/electronic_assembly, INTERACT_ITEM(null, PROC_REF(electronic_assembly_interaction_item)))
+EXTEND_INTERACTIONS(/obj/item/assembly/electronic_assembly, \
+	INTERACT_ITEM(null, PROC_REF(electronic_assembly_interaction_item)), \
+	INTERACT_VERB("Open/Close Device Assembly", PROC_REF(device_assembly_verb_toggle), REQ_IN_INVENTORY), \
+)
 
 /// Old attackby.
 /obj/item/assembly/electronic_assembly/proc/electronic_assembly_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
@@ -66,13 +69,9 @@ EXTEND_INTERACTIONS(/obj/item/assembly/electronic_assembly, INTERACT_ITEM(null, 
 		for(var/obj/item/integrated_circuit/IC in EA.contents)
 			. += IC.external_examine(user)
 
-/obj/item/assembly/electronic_assembly/verb/toggle()
-	set src in usr
-	set category = "Object"
-	set name = "Open/Close Device Assembly"
-	set desc = "Open or close device assembly!"
-
-	toggle_open(usr)
+/// Old Open/Close Device Assembly verb: Open or close device assembly!
+/obj/item/assembly/electronic_assembly/proc/device_assembly_verb_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+	toggle_open(user)
 
 /obj/item/electronic_assembly/device
 	name = "electronic device"

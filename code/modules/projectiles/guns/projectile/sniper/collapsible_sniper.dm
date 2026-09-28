@@ -2,11 +2,10 @@
 
 /obj/item/gun/projectile/heavysniper/collapsible
 
-/obj/item/gun/projectile/heavysniper/collapsible/verb/take_down()
-	set category = "Object"
-	set name = "Disassemble Rifle"
+EXTEND_INTERACTIONS(/obj/item/gun/projectile/heavysniper/collapsible, INTERACT_VERB("Disassemble Rifle", PROC_REF(collapsible_sniper_verb_take_down), REQ_IN_INVENTORY))
 
-	var/mob/living/carbon/human/user = usr
+/// Old Disassemble Rifle verb.
+/obj/item/gun/projectile/heavysniper/collapsible/proc/collapsible_sniper_verb_take_down(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
 	if(user.stat)
 		return
 

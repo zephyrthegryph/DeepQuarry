@@ -450,11 +450,14 @@ DECLARE_INTERACTIONS(/obj/item/form_printer, INTERACT_USE(null, PROC_REF(interac
 /obj/item/borg/combat/shield/Initialize(mapload)
 	. = ..()
 
-DECLARE_INTERACTIONS(/obj/item/borg/combat/shield, INTERACT_USE(null, PROC_REF(interaction_self)))
+DECLARE_INTERACTIONS(/obj/item/borg/combat/shield, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_VERB("Set shield level", PROC_REF(borg_shield_verb_set_level), REQ_IN_INVENTORY), \
+)
 
 /// Old attack_self.
 /obj/item/borg/combat/shield/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
-	set_shield_level()
+	borg_shield_verb_set_level(user)
 	return TRUE
 
 /// Cools its flash count or recovers from an overload every 2 s while either is pending (a flash
@@ -493,12 +496,9 @@ DECLARE_INTERACTIONS(/obj/item/borg/combat/shield, INTERACT_USE(null, PROC_REF(i
 	overload_time = world.time
 	PERIODIC_START(src, PERIODIC_SLOW)
 
-/obj/item/borg/combat/shield/verb/set_shield_level()
-	set name = "Set shield level"
-	set category = "Object"
-	set src in range(0)
-
-	om_prompt(src, usr, list("kind" = "list", "message" = "How much damage should the shield absorb?", "title" = "Shield Level", "choices" = list("5","10","25","50","75","100"), "requires" = PROMPT_HELD), PROC_REF(shield_level_chosen))
+/// Old Set shield level verb.
+/obj/item/borg/combat/shield/proc/borg_shield_verb_set_level(mob/user, obj/item/held, datum/interaction/interaction)
+	om_prompt(src, user, list("kind" = "list", "message" = "How much damage should the shield absorb?", "title" = "Shield Level", "choices" = list("5","10","25","50","75","100"), "requires" = PROMPT_HELD), PROC_REF(shield_level_chosen))
 
 /obj/item/borg/combat/shield/proc/shield_level_chosen(mob/user, N, datum/om/prompt/ask)
 	shield_level = text2num(N)/100

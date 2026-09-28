@@ -109,6 +109,7 @@ DECLARE_INTERACTIONS(/obj/item/dice, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+	INTERACT_VERB("Set Face", PROC_REF(dice_verb_set_face)), \
 )
 
 /// Old attack_self.
@@ -140,14 +141,9 @@ DECLARE_INTERACTIONS(/obj/item/dice, \
 								span_notice("You throw [src]. It lands on a [result]. [comment]"), \
 								span_notice("You hear [src] landing on a [result]. [comment]"))
 
-/obj/item/dice/verb/set_dice_verb()
-	set category = "Object"
-	set name = "Set Face"
-	set desc = "Turn the dice to a specific face."
-	set src in view(1)
-
-	var/mob/living/carbon/user = usr
-	if(!istype(user))
+/// Old Set Face verb: Turn the dice to a specific face.
+/obj/item/dice/proc/dice_verb_set_face(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!iscarbon(user))
 		return
 
 	set_dice(user)
@@ -223,7 +219,11 @@ DECLARE_INTERACTIONS(/obj/item/dice, \
 		)
 	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
-EXTEND_INTERACTIONS(/obj/item/storage/dicecup, INTERACT_USE("Shake", PROC_REF(interaction_shake)))
+EXTEND_INTERACTIONS(/obj/item/storage/dicecup, \
+	INTERACT_USE("Shake", PROC_REF(interaction_shake)), \
+	INTERACT_VERB("Peek at Dice", PROC_REF(dicecup_verb_peek), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Reveal Dice", PROC_REF(dicecup_verb_reveal), REQ_IN_INVENTORY), \
+)
 
 /// Old attack_self: after the storage's own self-use, shake the cup.
 /obj/item/storage/dicecup/proc/interaction_shake(mob/user, obj/item/held, datum/interaction/interaction)
@@ -244,21 +244,14 @@ EXTEND_INTERACTIONS(/obj/item/storage/dicecup, INTERACT_USE("Shake", PROC_REF(in
 		var/obj/item/dice/D = I
 		to_chat(viewer, "The [D.name] shows a [D.result].")
 
-/obj/item/storage/dicecup/verb/peekAtDice()
-	set category = "Object"
-	set name = "Peek at Dice"
-	set desc = "Peek at the dice under your cup."
+/// Old Peek at Dice verb: Peek at the dice under your cup.
+/obj/item/storage/dicecup/proc/dicecup_verb_peek(mob/user, obj/item/held, datum/interaction/interaction)
+	revealDice(user)
 
-	revealDice(usr)
-
-/obj/item/storage/dicecup/verb/revealDiceHand()
-
-	set category = "Object"
-	set name = "Reveal Dice"
-	set desc = "Reveal the dice hidden under your cup."
-
-	for(var/mob/living/player in viewers(3))
-		to_chat(player, "[usr] reveals their dice.")
+/// Old Reveal Dice verb: Reveal the dice hidden under your cup.
+/obj/item/storage/dicecup/proc/dicecup_verb_reveal(mob/user, obj/item/held, datum/interaction/interaction)
+	for(var/mob/living/player in viewers(3, user))
+		to_chat(player, "[user] reveals their dice.")
 		revealDice(player)
 
 

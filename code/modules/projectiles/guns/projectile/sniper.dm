@@ -67,13 +67,12 @@
 	..()
 
 /obj/item/gun/projectile/heavysniper/ui_action_click(mob/user, actiontype)
-	scope()
+	heavysniper_verb_scope(user)
 
-/obj/item/gun/projectile/heavysniper/verb/scope()
-	set category = "Object"
-	set name = "Use Scope"
-	set popup_menu = 1
+EXTEND_INTERACTIONS(/obj/item/gun/projectile/heavysniper, INTERACT_VERB("Use Scope", PROC_REF(heavysniper_verb_scope), REQ_IN_INVENTORY))
 
+/// Old Use Scope verb.
+/obj/item/gun/projectile/heavysniper/proc/heavysniper_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
 	toggle_scope(2.0)
 
 ////////////// Dragunov Sniper Rifle //////////////
@@ -105,11 +104,10 @@
 		icon_state = "SVD-empty"
 
 /obj/item/gun/projectile/SVD/ui_action_click(mob/user, actiontype)
-	scope()
+	svd_verb_scope(user)
 
-/obj/item/gun/projectile/SVD/verb/scope()
-	set category = "Object"
-	set name = "Use Scope"
-	set popup_menu = 1
+EXTEND_INTERACTIONS(/obj/item/gun/projectile/SVD, INTERACT_VERB("Use Scope", PROC_REF(svd_verb_scope), REQ_IN_INVENTORY))
 
+/// Old Use Scope verb.
+/obj/item/gun/projectile/SVD/proc/svd_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
 	toggle_scope(2.0)

@@ -229,14 +229,13 @@
 		list(mode_name="sniper", fire_delay=35, move_delay=4, projectile_type=/obj/item/projectile/beam/phaser/heavy, modifystate="riflekill", charge_cost = 100), // Reduced cost
 	)
 
-/obj/item/gun/energy/locked/frontier/rifle/ui_action_click()
-	scope()
+/obj/item/gun/energy/locked/frontier/rifle/ui_action_click(mob/user, actiontype)
+	frontier_rifle_verb_scope(user)
 
-/obj/item/gun/energy/locked/frontier/rifle/verb/scope()
-	set category = "Object"
-	set name = "Use Scope"
-	set popup_menu = 1
+EXTEND_INTERACTIONS(/obj/item/gun/energy/locked/frontier/rifle, INTERACT_VERB("Use Scope", PROC_REF(frontier_rifle_verb_scope), REQ_IN_INVENTORY))
 
+/// Old Use Scope verb.
+/obj/item/gun/energy/locked/frontier/rifle/proc/frontier_rifle_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
 	toggle_scope(2.0)
 
 /obj/item/gun/energy/locked/frontier/rifle/update_icon()

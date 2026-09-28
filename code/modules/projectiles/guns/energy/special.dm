@@ -102,12 +102,11 @@
 		return
 	..()
 
-/obj/item/gun/energy/floragun/verb/select_gene()
-	set name = "Select Gene"
-	set category = "Object"
-	set src in view(1)
+EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", PROC_REF(floragun_verb_select_gene)))
 
-	var/genemask = rerun_prompt(usr, "k108", list("kind" = "list", "message" = "Choose a gene to modify.", "title" = "Gene Choice", "choices" = SSplants.plant_gene_datums), VERB_REF(select_gene), args)
+/// Old Select Gene verb.
+/obj/item/gun/energy/floragun/proc/floragun_verb_select_gene(mob/user, obj/item/held, datum/interaction/interaction)
+	var/genemask = rerun_prompt(user, "k108", list("kind" = "list", "message" = "Choose a gene to modify.", "title" = "Gene Choice", "choices" = SSplants.plant_gene_datums), PROC_REF(floragun_verb_select_gene), args)
 	if(isnull(genemask))
 		return
 
@@ -116,7 +115,7 @@
 
 	gene = SSplants.plant_gene_datums[genemask]
 
-	to_chat(usr, span_info("You set the [src]'s targeted genetic area to [genemask]."))
+	to_chat(user, span_info("You set the [src]'s targeted genetic area to [genemask]."))
 
 	return
 

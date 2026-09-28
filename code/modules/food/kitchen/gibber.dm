@@ -82,6 +82,7 @@ EXTEND_INTERACTIONS(/obj/machinery/gibber, \
 	INTERACT_HAND_UNGATED("Start gibbing", PROC_REF(gibber_interaction_hand)), \
 	INTERACT_ITEM(null, PROC_REF(gibber_interaction_item)), \
 	INTERACT_DRAG("Put inside", PROC_REF(gibber_interaction_drag)), \
+	INTERACT_VERB("Empty Gibber", PROC_REF(gibber_verb_eject)), \
 )
 
 /// Old attack_hand.
@@ -162,16 +163,13 @@ EXTEND_INTERACTIONS(/obj/machinery/gibber, \
 	user.visible_message(span_danger("[user] stuffs [victim] into the gibber!"))
 	update_icon()
 
-/obj/machinery/gibber/verb/eject()
-	set category = "Object"
-	set name = "Empty Gibber"
-	set src in oview(1)
-
-	if (usr.stat != 0)
-		return
+/// Old Empty Gibber verb.
+/obj/machinery/gibber/proc/gibber_verb_eject(mob/user, obj/item/held, datum/interaction/interaction)
+	if (user.stat != 0)
+		return TRUE
 	src.go_out()
-	add_fingerprint(usr)
-	return
+	add_fingerprint(user)
+	return TRUE
 
 /obj/machinery/gibber/proc/go_out()
 	var/mob/living/occupant = src?.slot_item(OCCUPANT_SLOT_GIBBER)

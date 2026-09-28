@@ -120,15 +120,15 @@
 	invisibility = (intact && level==1) ? INVISIBILITY_ABSTRACT: INVISIBILITY_NONE	// hide if floor is intact
 	update()
 
-/obj/structure/disposalconstruct/verb/flip()
-	set category = "Object"
-	set name = "Flip Pipe"
-	set src in view(1)
-	if(usr.stat)
+EXTEND_INTERACTIONS(/obj/structure/disposalconstruct, INTERACT_VERB("Flip Pipe", PROC_REF(disposalconstruct_verb_flip)))
+
+/// Old Flip Pipe verb.
+/obj/structure/disposalconstruct/proc/disposalconstruct_verb_flip(mob/user, obj/item/held, datum/interaction/interaction)
+	if(user.stat)
 		return
 
 	if(anchored)
-		to_chat(usr, "You must unfasten the pipe before flipping it.")
+		to_chat(user, "You must unfasten the pipe before flipping it.")
 		return
 
 	do_a_flip()

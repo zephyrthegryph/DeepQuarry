@@ -302,26 +302,23 @@
 /obj/item/paper/proc/on_field_written(mob/living/user, field_id, obj/item/pen/writing_implement)
 	return
 
-/obj/item/paper/verb/rename()
-	set name = "Rename paper"
-	set category = "Object"
-	set src in usr
-
-	if(CLUMSY_FAIL_CHANCE(usr))
-		to_chat(usr, span_warning("You cut yourself on the paper."))
+/// Old Rename paper verb.
+/obj/item/paper/proc/paper_verb_rename(mob/user, obj/item/held, datum/interaction/interaction)
+	if(CLUMSY_FAIL_CHANCE(user))
+		to_chat(user, span_warning("You cut yourself on the paper."))
 		return
-	var/_answer_k309 = rerun_prompt(usr, "k309", list("kind" = "text", "message" = "What would you like to label the paper?", "title" = "Paper Labelling", "max_length" = MAX_NAME_LEN, "encode" = FALSE), VERB_REF(rename), args)
+	var/_answer_k309 = rerun_prompt(user, "k309", list("kind" = "text", "message" = "What would you like to label the paper?", "title" = "Paper Labelling", "max_length" = MAX_NAME_LEN, "encode" = FALSE), PROC_REF(paper_verb_rename), args)
 	if(isnull(_answer_k309))
 		return
 	var/n_name = sanitizeSafe(_answer_k309, MAX_NAME_LEN)
 
-	// We check loc one level up, so we can rename in clipboards and such. See also: /obj/item/photo/rename()
-	if((loc == usr || loc.loc && loc.loc == usr) && usr.stat == 0 && n_name)
+	// We check loc one level up, so we can rename in clipboards and such. See also: /obj/item/photo/photo_verb_rename()
+	if((loc == user || loc.loc && loc.loc == user) && user.stat == 0 && n_name)
 		name = n_name
 		if(n_name != "paper")
 			desc = "This is a paper titled '" + name + "'."
 
-		add_fingerprint(usr)
+		add_fingerprint(user)
 	return
 
 /// Old attack_self: read it, or crumple it in combat mode.
@@ -560,6 +557,7 @@ DECLARE_INTERACTIONS(/obj/item/paper, \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 	INTERACT_ALT("Fold into a plane", PROC_REF(interaction_fold_plane)), \
 	INTERACT_SILICON("Read", PROC_REF(paper_silicon_read)), \
+	INTERACT_VERB("Rename paper", PROC_REF(paper_verb_rename), REQ_IN_INVENTORY), \
 )
 
 /// Old attackby.

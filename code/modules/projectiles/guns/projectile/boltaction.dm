@@ -144,12 +144,13 @@
 	pump_animation = "scoped-boltaction-cycling"
 
 /obj/item/gun/projectile/shotgun/pump/rifle/ui_action_click(mob/user, actiontype)
-	scope()
+	pump_rifle_verb_scope(user)
 
-/obj/item/gun/projectile/shotgun/pump/rifle/verb/scope()
-	set category = "Object"
-	set name = "Use Scope"
-	set popup_menu = 1
+EXTEND_INTERACTIONS(/obj/item/gun/projectile/shotgun/pump/rifle, INTERACT_VERB("Use Scope", PROC_REF(pump_rifle_verb_scope), REQ_IN_INVENTORY))
+
+/// Old Use Scope verb.
+/obj/item/gun/projectile/shotgun/pump/rifle/proc/pump_rifle_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
+
 
 
 /obj/item/gun/projectile/shotgun/pump/rifle/vox_hunting

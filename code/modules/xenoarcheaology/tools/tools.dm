@@ -349,25 +349,25 @@ DECLARE_INTERACTIONS(/obj/item/beacon_locator, INTERACT_USE("Open", PROC_REF(int
 	anomaly_scanner = new/obj/item/ano_scanner(src)
 	depth_scanner = new/obj/item/depth_scanner(src)
 
-DECLARE_INTERACTIONS(/obj/item/xenoarch_multi_tool, INTERACT_USE(null, PROC_REF(interaction_self)))
+DECLARE_INTERACTIONS(/obj/item/xenoarch_multi_tool, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_VERB("Swap Functionality", PROC_REF(xenoarch_multi_tool_verb_swap), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Scan for Anomalies", PROC_REF(xenoarch_multi_tool_verb_scan), REQ_IN_INVENTORY), \
+)
 
 /// Old attack_self.
 /obj/item/xenoarch_multi_tool/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	depth_scanner.tgui_interact(user)
 	return TRUE
 
-/obj/item/xenoarch_multi_tool/verb/swap_settings()
-	var/mob/living/user = usr
-	set name = "Swap Functionality"
-	set desc = "Swap between the scanning and measuring functionality.."
+/// Old Swap Functionality verb: Swap between the scanning and measuring functionality..
+/obj/item/xenoarch_multi_tool/proc/xenoarch_multi_tool_verb_swap(mob/user, obj/item/held, datum/interaction/interaction)
 	mode = !mode
 	if(mode)
 		to_chat(user, "The device will now scan for artifacts.")
 	else
 		to_chat(user, "The device will now measure depth dug.")
 
-/obj/item/xenoarch_multi_tool/verb/scan_for_anomalies()
-	var/mob/living/user = usr
-	set name = "Scan for Anomalies"
-	set desc = "Scan for artifacts and anomalies within your vicinity."
+/// Old Scan for Anomalies verb: Scan for artifacts and anomalies within your vicinity.
+/obj/item/xenoarch_multi_tool/proc/xenoarch_multi_tool_verb_scan(mob/user, obj/item/held, datum/interaction/interaction)
 	anomaly_scanner.interact(user)

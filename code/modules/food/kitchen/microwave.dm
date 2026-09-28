@@ -122,6 +122,7 @@ REF_OWNED(/obj/machinery/microwave, "soundloop")
 EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 	INTERACT_ITEM(null, PROC_REF(microwave_interaction_item)), \
 	INTERACT_HAND_UNGATED(null, PROC_REF(microwave_interaction_hand)), \
+	INTERACT_VERB("Eject content", PROC_REF(microwave_verb_eject)), \
 )
 
 /// Old attackby.
@@ -568,16 +569,15 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 	ffuu.reagents.add_reagent(REAGENT_ID_TOXIN, amount/10)
 	return ffuu
 
-/obj/machinery/microwave/verb/Eject()
-	set src in oview(1)
-	set category = "Object"
-	set name = "Eject content"
-	usr.visible_message(
-	span_notice("[usr] tries to open [src] and remove its contents.") ,
+/// Old Eject content verb.
+/obj/machinery/microwave/proc/microwave_verb_eject(mob/user, obj/item/held, datum/interaction/interaction)
+	user.visible_message(
+	span_notice("[user] tries to open [src] and remove its contents.") ,
 	span_notice("You try to open [src] and remove its contents.")
 	)
 
-	om_do_after(usr, 1 SECOND, src, src, PROC_REF(eject_done), list(usr))
+	om_do_after(user, 1 SECOND, src, src, PROC_REF(eject_done), list(user))
+	return TRUE
 
 /obj/machinery/microwave/proc/eject_done(mob/user)
 	if(operating)

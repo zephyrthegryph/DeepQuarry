@@ -19,10 +19,7 @@
 	var/spray_size = 3
 	var/static/list/spray_sizes = list(1,3)
 	volume = 250
-
-/obj/item/reagent_containers/spray/Initialize(mapload)
-	. = ..()
-	src.verbs -= /obj/item/reagent_containers/verb/set_APTFT
+	transfer_amount_verb = FALSE
 
 /obj/item/reagent_containers/spray/afterattack(atom/A as mob|obj, mob/user as mob, proximity)
 	if(istype(A, /obj/item/storage) || istype(A, /obj/structure/table) || istype(A, /obj/structure/closet) || istype(A, /obj/item/reagent_containers) || istype(A, /obj/structure/sink) || istype(A, /obj/structure/janitorialcart))
@@ -72,20 +69,18 @@
 	if(loc == user)
 		. += "[round(reagents.total_volume)] units left."
 
-/obj/item/reagent_containers/spray/verb/empty()
+EXTEND_INTERACTIONS(/obj/item/reagent_containers/spray, INTERACT_VERB("Empty Spray Bottle", PROC_REF(spray_verb_empty), REQ_IN_INVENTORY))
 
-	set name = "Empty Spray Bottle"
-	set category = "Object"
-	set src in usr
-
-	var/_answer_a1 = rerun_prompt(usr, "a1", list("message" = "Are you sure you want to empty that?", "title" = "Empty Bottle:", "choices" = list("Yes", "No")), VERB_REF(empty), args)
+/// Old Empty Spray Bottle verb.
+/obj/item/reagent_containers/spray/proc/spray_verb_empty(mob/user, obj/item/held, datum/interaction/interaction)
+	var/_answer_a1 = rerun_prompt(user, "a1", list("message" = "Are you sure you want to empty that?", "title" = "Empty Bottle:", "choices" = list("Yes", "No")), PROC_REF(spray_verb_empty), args)
 	if(isnull(_answer_a1))
 		return
 	if (_answer_a1 != "Yes")
 		return
-	if(isturf(usr.loc))
-		balloon_alert(usr, "emptied \the [src] onto the floor.")
-		reagents.splash(usr.loc, reagents.total_volume)
+	if(isturf(user.loc))
+		balloon_alert(user, "emptied \the [src] onto the floor.")
+		reagents.splash(user.loc, reagents.total_volume)
 
 //space cleaner
 /obj/item/reagent_containers/spray/cleaner

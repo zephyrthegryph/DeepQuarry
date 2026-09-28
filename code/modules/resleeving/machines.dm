@@ -374,6 +374,8 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/resleever, \
 	INTERACT_HAND_UNGATED(null, PROC_REF(resleever_interaction_hand)), \
 	INTERACT_ITEM(null, PROC_REF(resleever_interaction_item)), \
 	INTERACT_DRAG("Put inside", PROC_REF(resleever_interaction_drag)), \
+	INTERACT_VERB("EJECT Occupant", PROC_REF(resleever_verb_eject)), \
+	INTERACT_VERB("Move INSIDE", PROC_REF(resleever_verb_move_inside)), \
 )
 
 /// Old attack_hand.
@@ -563,23 +565,19 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/resleever, \
 	icon_state = "implantchair_on"
 	return 1
 
-/obj/machinery/transhuman/resleever/verb/get_out()
-	set name = "EJECT Occupant"
-	set category = "Object"
-	set src in oview(1)
-	if(usr.stat != 0)
+/// Old EJECT Occupant verb.
+/obj/machinery/transhuman/resleever/proc/resleever_verb_eject(mob/user, obj/item/held, datum/interaction/interaction)
+	if(user.stat != 0)
 		return
 	go_out()
-	add_fingerprint(usr)
+	add_fingerprint(user)
 	return
 
-/obj/machinery/transhuman/resleever/verb/move_inside()
-	set name = "Move INSIDE"
-	set category = "Object"
-	set src in oview(1)
-	if(usr.stat != 0 || stat & (NOPOWER|BROKEN))
+/// Old Move INSIDE verb.
+/obj/machinery/transhuman/resleever/proc/resleever_verb_move_inside(mob/user, obj/item/held, datum/interaction/interaction)
+	if(user.stat != 0 || stat & (NOPOWER|BROKEN))
 		return
-	put_mob(usr)
+	put_mob(user)
 	return
 
 /// The fresh clone may be ejected now.

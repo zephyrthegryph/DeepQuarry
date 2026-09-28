@@ -293,7 +293,10 @@ EXTEND_INTERACTIONS(/obj/item/pen/blade, INTERACT_ALT("Toggle blade", PROC_REF(i
 	var/signature = ""
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/pen/chameleon, INTERACT_USE("Set signature", PROC_REF(interaction_signature)))
+EXTEND_INTERACTIONS(/obj/item/pen/chameleon, \
+	INTERACT_USE("Set signature", PROC_REF(interaction_signature)), \
+	INTERACT_VERB("Change Pen Colour", PROC_REF(chameleon_pen_verb_colour), REQ_IN_INVENTORY), \
+)
 
 /// Old attack_self.
 /obj/item/pen/chameleon/proc/interaction_signature(mob/user, obj/item/held, datum/interaction/interaction)
@@ -319,12 +322,10 @@ EXTEND_INTERACTIONS(/obj/item/pen/chameleon, INTERACT_USE("Set signature", PROC_
 /obj/item/pen/chameleon/get_signature(mob/user)
 	return signature ? signature : "Anonymous"
 
-/obj/item/pen/chameleon/verb/set_colour()
-	set name = "Change Pen Colour"
-	set category = "Object"
-
+/// Old Change Pen Colour verb.
+/obj/item/pen/chameleon/proc/chameleon_pen_verb_colour(mob/user, obj/item/held, datum/interaction/interaction)
 	var/list/possible_colours = list ("Yellow", "Green", "Pink", "Blue", "Orange", "Cyan", "Red", "Invisible", "Black")
-	var/selected_type = rerun_prompt(usr, "k314", list("kind" = "list", "message" = "Pick new colour.", "title" = "Pen Colour", "choices" = possible_colours), VERB_REF(set_colour), args)
+	var/selected_type = rerun_prompt(user, "k314", list("kind" = "list", "message" = "Pick new colour.", "title" = "Pen Colour", "choices" = possible_colours), PROC_REF(chameleon_pen_verb_colour), args)
 	if(isnull(selected_type))
 		return
 
@@ -348,7 +349,7 @@ EXTEND_INTERACTIONS(/obj/item/pen/chameleon, INTERACT_USE("Set signature", PROC_
 				colour = COLOR_WHITE
 			else
 				colour = COLOR_BLACK
-		to_chat(usr, span_info("You select the [lowertext(selected_type)] ink container."))
+		to_chat(user, span_info("You select the [lowertext(selected_type)] ink container."))
 
 
 /*

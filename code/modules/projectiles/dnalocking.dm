@@ -11,6 +11,10 @@
 	var/controller_lock = 0			//whether or not the gun is locked by the primar controller, 0 or 1, at 1 it is locked and does not allow
 	var/exploding = 0
 
+/// Requirement for the DNA lock Menu entries: replaces the verbs gun.dm added and removed with the lock.
+/obj/item/gun/proc/pred_has_dna_lock(mob/actor, atom/target, obj/item/held)
+	return dna_lock && attached_lock
+
 /obj/item/gun/proc/get_dna(mob/user)
 	var/mob/living/M = user
 	if(!istype(M) || !M.dna)
@@ -36,11 +40,9 @@
 		to_chat(M, span_warning("\The [src] buzzes and displays a locked symbol. It is not allowing DNA samples at this time."))
 		return FALSE
 
-/obj/item/gun/verb/give_dna()
-	set name = "Give DNA"
-	set category = "Object"
-	set src in usr
-	get_dna(usr)
+/// Old Give DNA verb.
+/obj/item/gun/proc/gun_verb_give_dna(mob/user, obj/item/held, datum/interaction/interaction)
+	get_dna(user)
 
 /obj/item/gun/proc/clear_dna(mob/user)
 	var/mob/living/M = user
@@ -60,11 +62,9 @@
 		to_chat(M, span_warning("\The [src] buzzes and displays a locked symbol. It is not allowing DNA modifcation at this time."))
 		return FALSE
 
-/obj/item/gun/verb/remove_dna()
-	set name = "Remove DNA"
-	set category = "Object"
-	set src in usr
-	clear_dna(usr)
+/// Old Remove DNA verb.
+/obj/item/gun/proc/gun_verb_remove_dna(mob/user, obj/item/held, datum/interaction/interaction)
+	clear_dna(user)
 
 /obj/item/gun/proc/toggledna(mob/user)
 	var/mob/living/M = user
@@ -78,11 +78,9 @@
 	else
 		to_chat(M, span_warning("\The [src] buzzes and displays an invalid user symbol."))
 
-/obj/item/gun/verb/allow_dna()
-	set name = "Toggle DNA Samples Allowance"
-	set category = "Object"
-	set src in usr
-	toggledna(usr)
+/// Old Toggle DNA Samples Allowance verb.
+/obj/item/gun/proc/gun_verb_allow_dna(mob/user, obj/item/held, datum/interaction/interaction)
+	toggledna(user)
 
 /obj/item/gun/proc/authorized_user(mob/user)
 	if(!attached_lock.stored_dna || !length(attached_lock.stored_dna))

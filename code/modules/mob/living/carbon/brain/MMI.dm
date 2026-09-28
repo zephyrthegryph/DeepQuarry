@@ -60,29 +60,26 @@
 	icon_state = "mmi_full"
 	locked = 1
 
-/obj/item/mmi/verb/toggle_radio()
-	set name = "Toggle Brain Radio"
-	set desc = "Enables or disables the integrated brain radio, which is only usable outside of a body."
-	set category = "Object"
-	set src in usr
-	set popup_menu = 1
-	if(!usr.canmove || usr.stat || usr.restrained())
+/// Old Toggle Brain Radio verb: Enables or disables the integrated brain radio, which is only usable outside of a body.
+/obj/item/mmi/proc/mmi_verb_toggle_radio(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!user.canmove || user.stat || user.restrained())
 		return 0
 
 	if (radio.radio_enabled == 1)
 		radio.radio_enabled = 0
-		to_chat (usr, "You have disabled the [src]'s radio.")
+		to_chat (user, "You have disabled the [src]'s radio.")
 		to_chat (get_occupant(), "Your radio has been disabled.")
 	else if (radio.radio_enabled == 0)
 		radio.radio_enabled = 1
-		to_chat (usr, "You have enabled the [src]'s radio.")
+		to_chat (user, "You have enabled the [src]'s radio.")
 		to_chat (get_occupant(), "Your radio has been enabled.")
 	else
-		to_chat (usr, "You were unable to toggle the [src]'s radio.")
+		to_chat (user, "You were unable to toggle the [src]'s radio.")
 
 DECLARE_INTERACTIONS(/obj/item/mmi, \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 	INTERACT_SELF("Upend", PROC_REF(mmi_self)), \
+	INTERACT_VERB("Toggle Brain Radio", PROC_REF(mmi_verb_toggle_radio), REQ_IN_INVENTORY), \
 )
 
 /// Old attackby.

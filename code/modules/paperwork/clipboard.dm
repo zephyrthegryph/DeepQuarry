@@ -165,10 +165,10 @@ DECLARE_INTERACTIONS(/obj/item/clipboard, \
 		if("rename")
 			if(istype(O, /obj/item/paper))
 				var/obj/item/paper/p = O
-				p.rename()
+				p.paper_verb_rename(usr)
 			else if(istype(O, /obj/item/photo))
 				var/obj/item/photo/ph = O
-				ph.rename()
+				ph.photo_verb_rename(usr)
 			return TRUE
 		if("open")
 			switch(params["kind"])
