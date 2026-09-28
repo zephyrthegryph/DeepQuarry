@@ -176,15 +176,7 @@
 /datum/surgical_step/organ/install_mmi/perform(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/work_target)
 	var/obj/item/mmi/M = tool
 	user.drop_from_inventory(M)
-	// Born in the target, the holder takes the brain slot in its limb.
-	if(istype(M, /obj/item/mmi/digital/posibrain/nano))
-		new /obj/item/organ/internal/mmi_holder/posibrain/nano(target, 1, M)
-	else if(istype(M, /obj/item/mmi/digital/posibrain))
-		new /obj/item/organ/internal/mmi_holder/posibrain(target, 1, M)
-	else if(istype(M, /obj/item/mmi/digital/robot))
-		new /obj/item/organ/internal/mmi_holder/robot(target, 1, M)
-	else
-		new /obj/item/organ/internal/mmi_holder(target, 1, M)
+	install_mmi_holder(target, M)
 	var/datum/mind_host/host = get_mind_host(M)
 	host?.release_mind(target, "MMI installed into [target] by [key_name(user)]")
 	log_game("SURGERY: [key_name(user)] installed [M] into [key_name(target)]")

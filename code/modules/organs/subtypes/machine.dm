@@ -48,9 +48,22 @@ REF_OWNED(/obj/item/organ/internal/mmi_holder, "stored_mmi")
 		return
 	if(installed)
 		stored_mmi = installed
+		installed.forceMove(src)
 	else
 		stored_mmi = new brain_type(src)
 	return INITIALIZE_HINT_LATELOAD
+
+/// THE way an MMI goes into a human's brain slot (surgery, vore reform): born in `target`, a
+/// holder of the MMI's kind takes the slot and stores `M`. Returns the holder.
+/proc/install_mmi_holder(mob/living/carbon/human/target, obj/item/mmi/M)
+	var/holder_type = /obj/item/organ/internal/mmi_holder
+	if(istype(M, /obj/item/mmi/digital/posibrain/nano))
+		holder_type = /obj/item/organ/internal/mmi_holder/posibrain/nano
+	else if(istype(M, /obj/item/mmi/digital/posibrain))
+		holder_type = /obj/item/organ/internal/mmi_holder/posibrain
+	else if(istype(M, /obj/item/mmi/digital/robot))
+		holder_type = /obj/item/organ/internal/mmi_holder/robot
+	return new holder_type(target, 1, M)
 
 /obj/item/organ/internal/mmi_holder/LateInitialize()
 	update_from_mmi()
