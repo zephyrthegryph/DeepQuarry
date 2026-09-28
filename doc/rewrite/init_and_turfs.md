@@ -794,6 +794,45 @@ site). Instead of `materialize()` per atom:
 what it does today (APCs finding their area, crates collecting contents) is
 chunk-level work that the chunk already has in hand.
 
+### 3.3a Chunked materialize (track 4d, built on rewrite/boot-init)
+
+Every `SSatoms.InitializeAtoms()` call is one `/datum/materialize_batch` frame
+(`code/controllers/subsystems/atoms_batch.dm`). The frame initializes its atoms
+in chunks of `MATERIALIZE_CHUNK_SIZE` (512) and may yield to the MC only between
+two chunks (`batch_yield_point()`: when clients are connected and the tick is
+spent; never in unit-test builds unless a test sets `batch_yield_probe`). Each
+atom still materializes right after its own Initialize(), so registrations keep
+their old timing.
+
+Deferred work is generic: a caller queues with
+`SSatoms.batch_defer(BATCH_WORK_<kind>, thing)` (FALSE when no frame runs, so
+the caller does the work at once) and drops it with `batch_undefer()`.
+`flush_batch_work()` runs each kind once when the owning frame closes, in
+`BATCH_WORK_*` order. Today the kinds are wall smoothing and cable binds; a new
+per-batch bulk bind adds a define and a `switch` case.
+
+Ordering rules the frames keep (the unit tests in
+`dq_materialize_batch_tests.dm` check each):
+
+1. Atoms initialize in the caller's order (areas, turfs, then movables for a
+   template). A yield never reorders or skips one.
+2. A frame's LateInitialize() calls run after every atom of that frame has
+   initialized.
+3. Deferred work flushes once, when its owner closes, before that frame's
+   LateInitialize() calls (walls, then cables).
+4. A frame opened while another runs (a nested call from inside a running
+   batch) joins it: its deferred work goes to the running frame's owner, as the
+   old shared lists did. Its own late loaders run when it closes.
+5. While a frame sleeps at a yield no frame is active. Atoms other code
+   creates meanwhile initialize and bind at once instead of queueing into the
+   sleeping frame (the old lists stayed set across `stoplag()`), and a frame
+   opened meanwhile owns its own work.
+
+Boot air registration (`SSair.setup_allturfs()`) is unchanged: it registers
+every turf in 8192-turf bulk calls after SSatoms. Folding it into the frames
+(sec 6 row 8) is a new `BATCH_WORK_*` kind once runtime template turfs register
+through it too.
+
 ### 3.4 Interaction-only setup deferred to first use
 
 Setup that matters only when someone interacts: storage UI state, radio
@@ -848,8 +887,21 @@ their dust appearance from a flat index and share one immutable-air lookup;
 - **Rule bindings.** One shared `/datum/rule_type_table` per rule list.
   Per-object state is three bitmasks plus one flat token list.
 
+**boot-init:**
+- **Initialize-free obj types.** `/atom/movable`, `/obj`, `/obj/effect` and
+  `/obj/structure` keep their Initialize() work in shared setup procs that
+  `table_initialize()` also runs. `tools/ci/init_table_candidates.py` finds
+  every effect or structure type whose whole Initialize chain is one of those
+  (no override on it, its subtypes, or any other ancestor) and generates
+  `code/game/atom/init_from_table_types.dm`: 295 types, 822 with subtypes
+  (signs, props, decals, overlays, step triggers, salvage, ...). Rerun it with
+  `--write` after adding or removing overrides; the lint's
+  `table_init_overrides` ceiling of 0 catches a listed type that gains one.
+- No forwarding-only overrides were left to delete (k-boot removed them).
+  Converting Initialize() bodies into declarations (starting reagents,
+  appearance tables, owned children) belongs to the declarative-lifecycle wave.
+
 Not done:
-- Initialize-free obj types (decals, step triggers, emissive blockers).
 - Appearance caches for floors and windows.
 - Material facts for anything but walls.
 

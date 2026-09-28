@@ -114,7 +114,9 @@ SUBSYSTEM_DEF(atoms)
 /// Exists solely so a runtime in the creation logic doesn't cause initialized to totally break.
 /datum/controller/subsystem/atoms/proc/CreateAtoms(datum/materialize_batch/batch, list/atoms)
 	var/list/mapload_arg = list(TRUE)
+	#ifdef TESTING
 	var/count = 0
+	#endif
 
 	if(atoms)
 		var/total = length(atoms)
@@ -127,7 +129,9 @@ SUBSYSTEM_DEF(atoms)
 					PROFILE_INIT_ATOM_BEGIN()
 					InitAtom(A, TRUE, mapload_arg)
 					PROFILE_INIT_ATOM_END(A)
+					#ifdef TESTING
 					count++
+					#endif
 			batch.chunks++
 			index = chunk_end + 1
 			if(index <= total)
@@ -139,7 +143,9 @@ SUBSYSTEM_DEF(atoms)
 				PROFILE_INIT_ATOM_BEGIN()
 				InitAtom(A, FALSE, mapload_arg)
 				PROFILE_INIT_ATOM_END(A)
+				#ifdef TESTING
 				count++
+				#endif
 				if(++in_chunk >= MATERIALIZE_CHUNK_SIZE)
 					in_chunk = 0
 					batch.chunks++
@@ -147,7 +153,9 @@ SUBSYSTEM_DEF(atoms)
 		if(in_chunk)
 			batch.chunks++
 
+	#ifdef TESTING
 	testing("Initialized [count] atoms in [batch.chunks] chunks, [batch.yields] yields")
+	#endif
 
 /datum/controller/subsystem/atoms/proc/map_loader_begin(source)
 	set_tracked_initalized(INITIALIZATION_INSSATOMS, source)
