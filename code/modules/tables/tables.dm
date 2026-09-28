@@ -20,8 +20,8 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 	/// Transient hand-off: shards produced by the most recent break_to_parts(), read
 	/// by callers (e.g. tableslam) that previously consumed take_damage()'s return.
 	var/list/last_break_shards
-	var/datum/material/material = null
-	var/datum/material/reinforced = null
+	var/material_handle
+	var/reinforced_handle
 
 	// Gambling tables. I'd prefer reinforced with carpet/felt/cloth/whatever, but AFAIK it's either harder or impossible to get /obj/item/stack/material of those.
 	// Convert if/when you can easily get stacks of these.
@@ -33,13 +33,13 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 
 /obj/structure/table/proc/update_material()
 	var/old_max = max_integrity
-	if(!material)
+	if(!material())
 		max_integrity = 10
 	else
-		max_integrity = material.integrity / 2
+		max_integrity = material().integrity / 2
 
-		if(reinforced)
-			max_integrity += reinforced.integrity / 2
+		if(reinforced())
+			max_integrity += reinforced().integrity / 2
 
 	// Preserve absolute damage accrued so far when the max changes (mirrors the old
 	// `health += maxhealth - old_maxhealth` behaviour).
@@ -47,9 +47,9 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 
 /obj/structure/table/take_damage(damage_amount, damage_type = BRUTE, damage_flag, sound_effect = TRUE, attack_dir, armour_penetration = 0)
 	// If the table is made of a brittle material, and is *not* reinforced with a non-brittle material, damage is multiplied by TABLE_BRITTLE_MATERIAL_MULTIPLIER
-	if(material && material.is_brittle())
-		if(reinforced)
-			if(reinforced.is_brittle())
+	if(material() && material().is_brittle())
+		if(reinforced())
+			if(reinforced().is_brittle())
 				damage_amount *= TABLE_BRITTLE_MATERIAL_MULTIPLIER
 		else
 			damage_amount *= TABLE_BRITTLE_MATERIAL_MULTIPLIER
@@ -84,15 +84,15 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 
 // LIFECYCLE: neighbouring tables re-smooth without it.
 /obj/structure/table/Destroy()
-	material = null
-	reinforced = null
+	material_handle = null
+	reinforced_handle = null
 	update_connections(1) // Update tables around us to ignore us (material=null forces no connections)
 	for(var/obj/structure/table/T in oview(src, 1))
 		T.update_icon()
 	. = ..()
 
 /obj/structure/table/attackby(obj/item/W, mob/user)
-	if(!carpeted && material && istype(W, /obj/item/stack/tile/carpet))
+	if(!carpeted && material() && istype(W, /obj/item/stack/tile/carpet))
 		var/obj/item/stack/tile/carpet/C = W
 		if(C.use(1))
 			user.visible_message(span_infoplain(span_bold("\The [user]") + " adds \the [C] to \the [src]."),
@@ -104,14 +104,14 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 		else
 			to_chat(user, span_warning("You don't have enough carpet!"))
 
-	if(!material && can_plate && istype(W, /obj/item/stack/material))
+	if(!material() && can_plate && istype(W, /obj/item/stack/material))
 		common_material_add(W, user, "plat", PROC_REF(plating_done))
 		return 1
 
 	return ..()
 
 /obj/structure/table/screwdriver_act(mob/user, obj/item/tool)
-	if(!reinforced)
+	if(!reinforced())
 		return ITEM_INTERACT_BLOCKING
 	remove_reinforced(tool, user)
 	return ITEM_INTERACT_SUCCESS
@@ -126,9 +126,9 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/table/wrench_act(mob/user, obj/item/tool)
-	if(carpeted || reinforced)
+	if(carpeted || reinforced())
 		return ITEM_INTERACT_BLOCKING
-	if(material)
+	if(material())
 		remove_material(tool, user)
 		return ITEM_INTERACT_SUCCESS
 	dismantle(tool, user)
@@ -162,7 +162,7 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 
 /obj/structure/table/attack_generic(mob/user as mob, damage)
 	if(damage >= 10)
-		if(reinforced && prob(70))
+		if(reinforced() && prob(70))
 			visible_message(span_danger("\The [user] smashes against \the [src]!"))
 			receive_generic_attack(user, damage / 2)
 			user.do_attack_animation(src)
@@ -176,7 +176,7 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 	return ..()
 
 /obj/structure/table/proc/reinforce_table(obj/item/stack/material/S, mob/user)
-	if(reinforced)
+	if(reinforced())
 		to_chat(user, span_warning("\The [src] is already reinforced!"))
 		return
 
@@ -184,7 +184,7 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 		to_chat(user, span_warning("\The [src] cannot be reinforced!"))
 		return
 
-	if(!material)
+	if(!material())
 		to_chat(user, span_warning("Plate \the [src] before reinforcing it!"))
 		return
 
@@ -195,31 +195,31 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 	common_material_add(S, user, "reinforc", PROC_REF(reinforcing_done))
 
 /obj/structure/table/proc/plating_done(datum/material/M)
-	if(material)
+	if(material())
 		return
-	material = M
+	material_handle = om_handle(M)
 	update_connections(1)
 	update_icon()
 	update_desc()
 	update_material()
 
 /obj/structure/table/proc/reinforcing_done(datum/material/M)
-	if(reinforced)
+	if(reinforced())
 		return
-	reinforced = M
+	reinforced_handle = om_handle(M)
 	update_desc()
 	update_icon()
 	update_material()
 
 /obj/structure/table/proc/update_desc()
-	if(material)
-		name = "[material.display_name] table"
+	if(material())
+		name = "[material().display_name] table"
 	else
 		name = "table frame"
 
-	if(reinforced)
+	if(reinforced())
 		name = "reinforced [name]"
-		desc = "[initial(desc)] This one seems to be reinforced with [reinforced.display_name]."
+		desc = "[initial(desc)] This one seems to be reinforced with [reinforced().display_name]."
 	else
 		desc = initial(desc)
 
@@ -275,12 +275,12 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 								span_notice("You remove the [M.display_name] [what] from \the [src]."))
 	new M.stack_type(src.loc)
 	if(which == "reinforced")
-		reinforced = null
+		reinforced_handle = null
 		update_desc()
 		update_icon()
 		update_material()
 		return
-	material = null
+	material_handle = null
 	update_connections(TRUE)
 	update_icon()
 	for(var/obj/structure/table/table in oview(src, 1))
@@ -289,10 +289,10 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 	update_material()
 
 /obj/structure/table/proc/remove_reinforced(obj/item/S, mob/user)
-	common_material_remove(user, reinforced, 40, "reinforcements", "screws", S, "reinforced")
+	common_material_remove(user, reinforced(), 40, "reinforcements", "screws", S, "reinforced")
 
 /obj/structure/table/proc/remove_material(obj/item/W, mob/user)
-	common_material_remove(user, material, 20, "plating", "bolts", W, "material")
+	common_material_remove(user, material(), 20, "plating", "bolts", W, "material")
 
 /obj/structure/table/proc/dismantle(obj/item/W, mob/user)
 	if(om_busy(src)) return
@@ -318,17 +318,17 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 /obj/structure/table/proc/break_to_parts(full_return = 0)
 	var/list/shards = list()
 	var/obj/item/material/shard/S = null
-	if(reinforced)
-		if(reinforced.stack_type && (full_return || prob(20)))
-			reinforced.place_sheet(loc, 1)
+	if(reinforced())
+		if(reinforced().stack_type && (full_return || prob(20)))
+			reinforced().place_sheet(loc, 1)
 		else
-			S = reinforced.place_shard(loc)
+			S = reinforced().place_shard(loc)
 			if(S) shards += S
-	if(material)
-		if(material.stack_type && (full_return || prob(20)))
-			material.place_sheet(loc, 1)
+	if(material())
+		if(material().stack_type && (full_return || prob(20)))
+			material().place_sheet(loc, 1)
 		else
-			S = material.place_shard(loc)
+			S = material().place_shard(loc)
 			if(S) shards += S
 	if(carpeted && (full_return || prob(50))) // Higher chance to get the carpet back intact, since there's no non-intact option
 		new carpeted_type(src.loc)
@@ -379,17 +379,17 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 			add_overlay(I)
 
 		// Standard table image
-		if(material)
+		if(material())
 			for(var/i = 1 to 4)
 				var/connect = connections?[i] || 0
-				var/image/I = get_table_image(icon, "[material.table_icon_base]_[connect]", 1<<(i-1), material.icon_colour, 255 * material.opacity)
+				var/image/I = get_table_image(icon, "[material().table_icon_base]_[connect]", 1<<(i-1), material().icon_colour, 255 * material().opacity)
 				add_overlay(I)
 
 		// Reinforcements
-		if(reinforced)
+		if(reinforced())
 			for(var/i = 1 to 4)
 				var/connect = connections?[i] || 0
-				var/image/I = get_table_image(icon, "[reinforced.icon_reinf]_[connect]", 1<<(i-1), reinforced.icon_colour, 255 * reinforced.opacity)
+				var/image/I = get_table_image(icon, "[reinforced().icon_reinf]_[connect]", 1<<(i-1), reinforced().icon_colour, 255 * reinforced().opacity)
 				add_overlay(I)
 
 		if(carpeted)
@@ -403,7 +403,7 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 		var/tabledirs = 0
 		for(var/direction in list(turn(dir,90), turn(dir,-90)) )
 			var/obj/structure/table/T = locate(/obj/structure/table ,get_step(src,direction))
-			if (T && T.flipped == 1 && T.dir == src.dir && material && T.material && T.material.name == material.name)
+			if (T && T.flipped == 1 && T.dir == src.dir && material() && T.material() && T.material().name == material().name)
 				type++
 				tabledirs |= direction
 
@@ -415,19 +415,19 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 				type += "+"
 
 		icon_state = "flip[type]"
-		if(material)
-			var/image/I = image(icon, "[material.table_icon_base]_flip[type]")
-			I.color = material.icon_colour
-			I.alpha = 255 * material.opacity
+		if(material())
+			var/image/I = image(icon, "[material().table_icon_base]_flip[type]")
+			I.color = material().icon_colour
+			I.alpha = 255 * material().opacity
 			add_overlay(I)
-			name = "[material.display_name] table"
+			name = "[material().display_name] table"
 		else
 			name = "table frame"
 
-		if(reinforced)
-			var/image/I = image(icon, "[reinforced.icon_reinf]_flip[type]")
-			I.color = reinforced.icon_colour
-			I.alpha = 255 * reinforced.opacity
+		if(reinforced())
+			var/image/I = image(icon, "[reinforced().icon_reinf]_flip[type]")
+			I.color = reinforced().icon_colour
+			I.alpha = 255 * reinforced().opacity
 			add_overlay(I)
 
 		if(carpeted)
@@ -489,3 +489,11 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 #undef CORNER_COUNTERCLOCKWISE
 #undef CORNER_DIAGONAL
 #undef CORNER_CLOCKWISE
+
+/// LC-refs: the material this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/structure/table/proc/material() as /datum/material
+	return om_resolve(material_handle)
+
+/// LC-refs: the reinforced this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/structure/table/proc/reinforced() as /datum/material
+	return om_resolve(reinforced_handle)

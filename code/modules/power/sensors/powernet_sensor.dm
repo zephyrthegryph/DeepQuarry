@@ -122,8 +122,8 @@
 	data["areas"] = list()
 	if(powernet)
 		for(var/obj/machinery/power/terminal/term in powernet.nodes)
-			if(istype(term.master, /obj/machinery/power/apc))
-				var/obj/machinery/power/apc/A = term.master
+			if(istype(term.master(), /obj/machinery/power/apc))
+				var/obj/machinery/power/apc/A = term.master()
 				if(istype(A))
 					var/cell_charge
 					if(!A.cell)
@@ -175,8 +175,8 @@
 
 	var/list/L = list()
 	for(var/obj/machinery/power/terminal/term in powernet.nodes)
-		if(istype(term.master, /obj/machinery/power/apc))
-			var/obj/machinery/power/apc/A = term.master
+		if(istype(term.master(), /obj/machinery/power/apc))
+			var/obj/machinery/power/apc/A = term.master()
 			L += A
 
 	return L

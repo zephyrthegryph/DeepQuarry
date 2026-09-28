@@ -34,7 +34,7 @@
 		name = "inert [initial(name)]"
 
 	else
-		blob_type = parentblob
+		blob_type = new parentblob.type
 		name = "[blob_type.name] [initial(name)]"
 
 	if(blob_type)
@@ -106,7 +106,10 @@
 			blob_type.faction = newfaction
 
 		var/obj/structure/blob/core/NC = new (get_turf(src))
-		NC.overmind.blob_type = blob_type
+		// The new overmind gets its own instance: this chunk keeps (and deletes) its own.
+		var/datum/blob_type/copy = new blob_type.type
+		copy.faction = blob_type.faction
+		NC.overmind.blob_type = copy
 		NC.overmind.blob_core().update_icon()
 		return TRUE
 
@@ -146,3 +149,6 @@
 		chunk.can_genesis = FALSE
 	else
 		chunk.visible_message(span_warning("[chunk] shifts strangely, but falls still."))
+
+// LC-refs: the chunk owns its own blob type instance (the overmind's is deleted with the overmind).
+REF_OWNED(/obj/item/blobcore_chunk, "blob_type")

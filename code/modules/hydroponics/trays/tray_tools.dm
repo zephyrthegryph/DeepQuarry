@@ -98,7 +98,7 @@ REF_OWNED(/obj/item/analyzer/plant_analyzer, "last_seed")
 	else if(istype(target,/obj/item/seeds))
 
 		var/obj/item/seeds/S = target
-		grown_seed = S.seed
+		grown_seed = S.seed()
 
 	else if(istype(target,/obj/machinery/portable_atmospherics/hydroponics))
 

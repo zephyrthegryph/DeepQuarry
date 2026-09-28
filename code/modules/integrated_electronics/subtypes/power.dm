@@ -38,7 +38,7 @@
 
 	var/atom/movable/AM = get_pin_data_as_type(IC_INPUT, 1, /atom/movable)
 	if(AM)
-		if(!assembly)
+		if(!assembly())
 			return FALSE // Pointless to do everything else if there's no battery to draw from.
 
 		var/obj/item/cell/cell = null
@@ -54,13 +54,13 @@
 			var/turf/A = get_turf(src)
 			var/turf/B = get_turf(AM)
 			if(A.Adjacent(B))
-				if(AM.loc != assembly)
+				if(AM.loc != assembly())
 					transfer_amount *= 0.8 // Losses due to distance.
 
 				if(cell.fully_charged())
 					return FALSE
 
-				if(transfer_amount && assembly.draw_power(amount_to_move)) // CELLRATE is already handled in draw_power()
+				if(transfer_amount && assembly().draw_power(amount_to_move)) // CELLRATE is already handled in draw_power()
 					cell.give(transfer_amount * CELLRATE)
 				AM.update_icon()
 
@@ -85,5 +85,5 @@
 			var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
 			sparks.set_up(3, 0, get_turf(src))
 			sparks.start()
-			visible_message(span_warning("\The [assembly] makes some sparks!"))
+			visible_message(span_warning("\The [assembly()] makes some sparks!"))
 			qdel(sparks)

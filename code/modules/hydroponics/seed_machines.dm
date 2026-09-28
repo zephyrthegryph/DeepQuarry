@@ -120,7 +120,7 @@ REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
 
 /obj/machinery/botany/proc/interaction_load_seed(mob/user, obj/item/W, datum/interaction/interaction)
 	var/obj/item/seeds/S = W
-	if(S.seed && S.seed.get_trait(TRAIT_IMMUTABLE) > 0)
+	if(S.seed() && S.seed().get_trait(TRAIT_IMMUTABLE) > 0)
 		to_chat(user, span_filter_notice("That seed is not compatible with our genetics technology."))
 	else
 		user.drop_from_inventory(W)
@@ -242,10 +242,10 @@ REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
 				return
 			seed.forceMove(get_turf(src))
 
-			if(seed.seed.name == "new line" || isnull(SSplants.seeds[seed.seed.name]))
-				seed.seed.uid = SSplants.seeds.len + 1
-				seed.seed.name = "[seed.seed.uid]"
-				SSplants.seeds[seed.seed.name] = seed.seed
+			if(seed.seed().name == "new line" || isnull(SSplants.seeds[seed.seed().name]))
+				seed.seed().uid = SSplants.seeds.len + 1
+				seed.seed().name = "[seed.seed().uid]"
+				SSplants.seeds[seed.seed().name] = seed.seed()
 
 			seed.update_seed()
 			visible_message("[icon2html(src,viewers(src))] [src] beeps and spits out [seed].")
@@ -273,8 +273,8 @@ REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
 			last_action = world.time
 			active = 1
 
-			if(seed && seed.seed)
-				genetics_handle = om_handle(seed.seed)
+			if(seed && seed.seed())
+				genetics_handle = om_handle(seed.seed())
 				degradation = 0
 
 			consume(seed)
@@ -372,9 +372,9 @@ REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
 			last_action = world.time
 			active = 1
 
-			if(!isnull(SSplants.seeds[seed.seed.name]))
-				seed.seed = seed.seed.diverge(1)
-				seed.seed_type = seed.seed.name
+			if(!isnull(SSplants.seeds[seed.seed().name]))
+				seed.seed_handle = om_handle(seed.seed().diverge(1))
+				seed.seed_type = seed.seed().name
 				seed.update_seed()
 
 			if(prob(seed.modified))
@@ -382,7 +382,7 @@ REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
 				seed.modified = 101
 
 			for(var/datum/plantgene/gene in loaded_disk.genes)
-				seed.seed.apply_gene(gene)
+				seed.seed().apply_gene(gene)
 				seed.modified += rand(5,10)
 			return TRUE
 

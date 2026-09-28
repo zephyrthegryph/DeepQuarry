@@ -173,7 +173,7 @@
 	#define ARTIFACTSPAWNNUM_LOWER 1
 	#define ARTIFACTSPAWNNUM_UPPER 1 //Replace with difficulty-based ones.
 
-	if(!M.mineral && prob(GLOB.rm_controller.diffstep_chances[GLOB.rm_controller.diffstep])) //Difficulty translates directly into ore chance
+	if(!M.mineral() && prob(GLOB.rm_controller.diffstep_chances[GLOB.rm_controller.diffstep])) //Difficulty translates directly into ore chance
 		GLOB.rm_controller.dbg("ZM(par): Adding mineral to [M.x],[M.y].")
 		if(GLOB.rm_controller.diffstep >= 3)
 			M.turf_resource_types |= TURF_HAS_RARE_ORE

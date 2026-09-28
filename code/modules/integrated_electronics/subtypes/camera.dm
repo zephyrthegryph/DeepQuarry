@@ -52,7 +52,7 @@ REF_OWNED(/obj/item/integrated_circuit/output/video_camera, "camera")
 	if(!camera)
 		return
 	var/should_be_active = get_pin_data(IC_INPUT, 2)
-	if(should_be_active && assembly?.battery?.charge)
+	if(should_be_active && assembly()?.battery?.charge)
 		if(!camera.status)
 			camera.set_status(TRUE)
 		power_draw_idle = initial(power_draw_idle)
@@ -132,7 +132,7 @@ REF_OWNED(/obj/item/integrated_circuit/output/video_camera, "camera")
 /obj/machinery/camera/intcircuit/can_use()
 	// Ensures circuit is in a powered assembly to work.
 	var/obj/item/integrated_circuit/output/video_camera/parent = loc
-	if(istype(parent) && parent.assembly?.battery?.charge)
+	if(istype(parent) && parent.assembly()?.battery?.charge)
 		return TRUE
 	return FALSE
 
@@ -172,7 +172,7 @@ REF_OWNED(/obj/item/integrated_circuit/input/video_camera_input, "camera_module"
 	// Check if any cameras are actually available
 	var/any_available = FALSE
 	for(var/obj/item/integrated_circuit/output/video_camera/cam_circuit in paired_cameras)
-		if(cam_circuit.assembly && cam_circuit.camera?.can_use())
+		if(cam_circuit.assembly() && cam_circuit.camera?.can_use())
 			any_available = TRUE
 			break
 	if(!any_available)
@@ -224,7 +224,7 @@ REF_OWNED(/obj/item/integrated_circuit/input/video_camera_input, "camera_module"
 	if(!owner_circuit())
 		return D
 	for(var/obj/item/integrated_circuit/output/video_camera/cam_circuit in owner_circuit().paired_cameras)
-		if(!cam_circuit.assembly) // Skip circuits not in assemblies
+		if(!cam_circuit.assembly()) // Skip circuits not in assemblies
 			continue
 		var/obj/machinery/camera/intcircuit/C = cam_circuit.camera
 		if(C && C.c_tag)

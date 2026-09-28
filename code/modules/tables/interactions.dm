@@ -32,10 +32,10 @@
 		return 1
 	if (get_dist(P.starting, loc) <= 1) //Tables won't help you if people are THIS close
 		return 1
-	if (get_turf(P.original) == cover)
+	if (get_turf(P.original()) == cover)
 		var/chance = 20
-		if (ismob(P.original))
-			var/mob/M = P.original
+		if (ismob(P.original()))
+			var/mob/M = P.original()
 			if (M.lying)
 				chance += 20				//Lying down lets you catch less bullets
 		if(flipped==1)
@@ -101,8 +101,8 @@
 					if (prob(15))	M.status_at_least(EFFECT_WEAKENED, 5)
 					M.injure(INJURY_BLUNT, 8, BP_HEAD, src)
 					visible_message(span_danger("[G?.grab_assailant()] slams [G?.grab_target()]'s face against \the [src]!"))
-					if(material)
-						playsound(src, material.tableslam_noise, 50, 1)
+					if(material())
+						playsound(src, material().tableslam_noise, 50, 1)
 					else
 						playsound(src, 'sound/weapons/tablehit1.ogg', 50, 1)
 					last_break_shards = null
@@ -155,7 +155,7 @@
 		break_to_parts()
 		return
 
-	if(can_plate && !material)
+	if(can_plate && !material())
 		to_chat(user, span_warning("There's nothing to put \the [W] on! Try adding plating to \the [src] first."))
 		return
 

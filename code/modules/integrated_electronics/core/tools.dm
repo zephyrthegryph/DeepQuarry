@@ -175,11 +175,11 @@
 
 /obj/item/multitool
 	var/accepting_refs
-	var/datum/integrated_io/selected_io = null
+	var/selected_io_handle
 	var/mode = 0
 
 /obj/item/multitool/update_icon()
-	if(selected_io)
+	if(selected_io())
 		if(buffer || connecting || connectable)
 			icon_state = "multitool_tracking"
 		else
@@ -199,27 +199,27 @@
 		to_chat(user, span_warning("\The [io.holder()] needs to be secured inside an assembly first."))
 		return
 
-	if(selected_io)
-		if(io == selected_io)
-			to_chat(user, span_warning("Wiring \the [selected_io.holder()]'s [selected_io.name] into itself is rather pointless."))
+	if(selected_io())
+		if(io == selected_io())
+			to_chat(user, span_warning("Wiring \the [selected_io().holder()]'s [selected_io().name] into itself is rather pointless."))
 			return
-		if(io.io_type != selected_io.io_type)
-			to_chat(user, span_warning("Those two types of channels are incompatible. The first is a [selected_io.io_type], \
+		if(io.io_type != selected_io().io_type)
+			to_chat(user, span_warning("Those two types of channels are incompatible. The first is a [selected_io().io_type], \
 			while the second is a [io.io_type]."))
 			return
-		if(io.holder().assembly && io.holder().assembly != selected_io.holder().assembly)
-			to_chat(user, span_warning("Both \the [io.holder()] and \the [selected_io.holder()] need to be inside the same assembly."))
+		if(io.holder().assembly && io.holder().assembly != selected_io().holder().assembly)
+			to_chat(user, span_warning("Both \the [io.holder()] and \the [selected_io().holder()] need to be inside the same assembly."))
 			return
-		LAZYOR(selected_io.linked, io)
-		LAZYOR(io.linked, selected_io)
+		LAZYOR(selected_io().linked, io)
+		LAZYOR(io.linked, selected_io())
 
-		to_chat(user, span_notice("You connect \the [selected_io.holder()]'s [selected_io.name] to \the [io.holder()]'s [io.name]."))
-		selected_io.holder().interact(user) // This is to update the UI.
-		selected_io = null
+		to_chat(user, span_notice("You connect \the [selected_io().holder()]'s [selected_io().name] to \the [io.holder()]'s [io.name]."))
+		selected_io().holder().interact(user) // This is to update the UI.
+		selected_io_handle = null
 
 	else
-		selected_io = io
-		to_chat(user, span_notice("You link \the multitool to \the [selected_io.holder()]'s [selected_io.name] data channel."))
+		selected_io_handle = om_handle(io)
+		to_chat(user, span_notice("You link \the multitool to \the [selected_io().holder()]'s [selected_io().name] data channel."))
 
 	update_icon()
 
@@ -560,3 +560,7 @@
 				new IC.type(src)
 	make_exact_fit()
 	. = ..()
+
+/// LC-refs: the selected_io this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/multitool/proc/selected_io() as /datum/integrated_io
+	return om_resolve(selected_io_handle)

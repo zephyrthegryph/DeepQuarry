@@ -233,7 +233,7 @@ REF_OWNED(/obj/machinery/portable_atmospherics/hydroponics, list("temp_chem_hold
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/plant_seeds(obj/item/seeds/S)
 	lastproduce = 0
-	seed = S.seed //Grab the seed datum.
+	seed = S.seed() //Grab the seed datum.
 	dead = 0
 	age = 1
 	//Snowflakey, maybe move this to the seed datum
@@ -579,12 +579,12 @@ REF_OWNED(/obj/machinery/portable_atmospherics/hydroponics, list("temp_chem_hold
 			var/obj/item/seeds/S = O
 			user.remove_from_mob(O)
 
-			if(!S.seed)
+			if(!S.seed())
 				to_chat(user, span_filter_notice("The packet seems to be empty. You throw it away."))
 				consume(O, user)
 				return TRUE
 
-			to_chat(user, span_filter_notice("You plant the [S.seed.seed_name] [S.seed.seed_noun]."))
+			to_chat(user, span_filter_notice("You plant the [S.seed().seed_name] [S.seed().seed_noun]."))
 			plant_seeds(S)
 
 		else

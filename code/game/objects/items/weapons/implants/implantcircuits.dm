@@ -11,7 +11,7 @@
 /obj/item/implant/integrated_circuit/Initialize(mapload)
 	. = ..()
 	IC = new(src)
-	IC.implant = src
+	IC.implant_handle = om_handle(src)
 
 REF_OWNED(/obj/item/implant/integrated_circuit, "IC")
 

@@ -34,11 +34,11 @@
 
 	if(istype(station))
 		station.com = hub
-		teleport_control.hub = hub
+		teleport_control.hub_handle = om_handle(hub)
 
 	if(istype(hub))
 		hub.com = src
-		teleport_control.station = station
+		teleport_control.station_handle = om_handle(station)
 
 REF_OWNED(/obj/machinery/computer/teleporter, "teleport_control")
 
@@ -90,7 +90,7 @@ REF_OWNED(/obj/machinery/computer/teleporter, "teleport_control")
 		else
 			for(var/mob/O in hearers(src, null))
 				O.show_message(span_notice("Locked In"), 2)
-			teleport_control.locked = L
+			teleport_control.locked_handle = om_handle(L)
 			one_time_use = 1
 
 		add_fingerprint(user)
@@ -156,7 +156,7 @@ REF_OWNED(/obj/machinery/computer/teleporter, "teleport_control")
 
 // LIFECYCLE: the teleporter console forgets its hub.
 /obj/machinery/teleport/hub/Destroy()
-	com?.teleport_control.hub = null
+	com?.teleport_control.hub_handle = null
 	com = null
 	return ..()
 
@@ -169,7 +169,7 @@ REF_OWNED(/obj/machinery/computer/teleporter, "teleport_control")
 /obj/machinery/teleport/hub/proc/teleport(atom/movable/M as mob|obj)
 	if(!com)
 		return
-	if(!com.teleport_control.locked)
+	if(!com.teleport_control.locked())
 		for(var/mob/O in hearers(src, null))
 			O.show_message(span_warning("Failure: Cannot authenticate locked on coordinates. Please reinstate coordinate matrix."))
 		return
@@ -185,11 +185,11 @@ REF_OWNED(/obj/machinery/computer/teleporter, "teleport_control")
 		if(prob(5) && !accurate) //oh dear a problem, put em in deep space
 			do_teleport(M, locate(rand((2*TRANSITIONEDGE), world.maxx - (2*TRANSITIONEDGE)), rand((2*TRANSITIONEDGE), world.maxy - (2*TRANSITIONEDGE)), 3), 2)
 		else
-			do_teleport(M, com.teleport_control.locked) //dead-on precision
+			do_teleport(M, com.teleport_control.locked()) //dead-on precision
 
 		if(com.one_time_use) //Make one-time-use cards only usable one time!
 			com.one_time_use = 0
-			com.teleport_control.locked = null
+			com.teleport_control.locked_handle = null
 	else
 		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 		s.set_up(5, 1, src)
@@ -223,7 +223,7 @@ REF_OWNED(/obj/machinery/computer/teleporter, "teleport_control")
 
 // LIFECYCLE: the teleporter console forgets its station.
 /obj/machinery/teleport/station/Destroy()
-	com?.com?.teleport_control.station = null
+	com?.com?.teleport_control.station_handle = null
 	com = null
 	return ..()
 

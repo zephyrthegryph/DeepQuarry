@@ -380,24 +380,24 @@ REF_BACKLIST(/obj/effect/directional_shield, list("projector" = "active_shields"
 	offset_from_center = 1 //Snug against the exosuit.
 	max_integrity = 200
 
-	var/obj/mecha/my_mecha = null
-	var/obj/item/mecha_parts/mecha_equipment/combat_shield/my_tool = null
+	var/my_mecha_handle
+	var/my_tool_handle
 	special_handling = TRUE
 
 /obj/item/shield_projector/line/exosuit/periodic_step()
 	..()
-	if((my_tool && loc != my_tool) && (my_mecha && loc != my_mecha))
-		forceMove(my_tool)
+	if((my_tool() && loc != my_tool()) && (my_mecha() && loc != my_mecha()))
+		forceMove(my_tool())
 	if(active)
-		my_tool.set_ready_state(FALSE)
-		if(my_mecha.has_charge(my_tool.energy_drain * 50)) //Stops at around 1000 charge.
-			my_mecha.use_power(my_tool.energy_drain)
+		my_tool().set_ready_state(FALSE)
+		if(my_mecha().has_charge(my_tool().energy_drain * 50)) //Stops at around 1000 charge.
+			my_mecha().use_power(my_tool().energy_drain)
 		else
 			destroy_shields()
-			my_tool.set_ready_state(TRUE)
-			my_tool.log_message("Power lost.", LOG_GAME)
+			my_tool().set_ready_state(TRUE)
+			my_tool().log_message("Power lost.", LOG_GAME)
 	else
-		my_tool.set_ready_state(TRUE)
+		my_tool().set_ready_state(TRUE)
 
 /obj/item/shield_projector/line/exosuit/attack_self(mob/living/user)
 	. = ..(user)
@@ -419,7 +419,15 @@ REF_BACKLIST(/obj/effect/directional_shield, list("projector" = "active_shields"
 
 /obj/item/shield_projector/line/exosuit/adjust_health(amount)
 	..()
-	my_mecha.use_power(my_tool.energy_drain)
+	my_mecha().use_power(my_tool().energy_drain)
 	if(!active && get_integrity() < shield_regen_amount)
-		my_tool.log_message("Shield overloaded.", LOG_GAME)
-		my_mecha.use_power(my_tool.energy_drain * 4)
+		my_tool().log_message("Shield overloaded.", LOG_GAME)
+		my_mecha().use_power(my_tool().energy_drain * 4)
+
+/// LC-refs: the my_mecha this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/shield_projector/line/exosuit/proc/my_mecha() as /obj/mecha
+	return om_resolve(my_mecha_handle)
+
+/// LC-refs: the my_tool this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/shield_projector/line/exosuit/proc/my_tool() as /obj/item/mecha_parts/mecha_equipment/combat_shield
+	return om_resolve(my_tool_handle)

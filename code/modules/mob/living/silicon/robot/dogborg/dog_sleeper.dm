@@ -340,7 +340,7 @@ REF_OWNED(/obj/item/dogborg/sleeper, list("ore_bag", "med_analyzer"))
 		"deliveryslot_3" = (deliveryslot_3 || list()),
 		"items_preserved" = items_preserved,
 		"has_destructive_analyzer" = analyzer,
-		"techweb_name" = handler?.linked_web ? "[handler.linked_web.id] / [handler.linked_web.organization]" : null
+		"techweb_name" = handler?.linked_web() ? "[handler.linked_web().id] / [handler.linked_web().organization]" : null
 	)
 	return data
 /obj/item/dogborg/sleeper/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
@@ -607,7 +607,7 @@ REF_OWNED(/obj/item/dogborg/sleeper, list("ore_bag", "med_analyzer"))
 									wood.add_charge(total_material)
 					var/datum/component/experiment_handler/handler = get_experiment_handler()
 					if(analyzer && handler)
-						techweb_item_generate_points(T, handler.linked_web)
+						techweb_item_generate_points(T, handler.linked_web())
 						SEND_SIGNAL(src, COMSIG_MACHINERY_DESTRUCTIVE_SCAN, T)
 					if(is_trash)
 						hound.adjust_nutrition(digested)

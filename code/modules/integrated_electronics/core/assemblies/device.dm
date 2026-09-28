@@ -81,8 +81,8 @@ REF_OWNED(/obj/item/assembly/electronic_assembly, "EA")
 	. = ..()
 	var/obj/item/integrated_circuit/built_in/device_input/input = new(src)
 	var/obj/item/integrated_circuit/built_in/device_output/output = new(src)
-	input.assembly = src
-	output.assembly = src
+	input.assembly_handle = om_handle(src)
+	output.assembly_handle = om_handle(src)
 
 // LIFECYCLE: its holder device forgets the assembly.
 /obj/item/electronic_assembly/device/Destroy()

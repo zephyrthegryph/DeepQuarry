@@ -23,8 +23,8 @@
 	activators = list("pulse attached" = IC_PINTYPE_PULSE_IN)
 
 /obj/item/integrated_circuit/built_in/device_output/do_work()
-	if(istype(assembly, /obj/item/electronic_assembly/device))
-		var/obj/item/electronic_assembly/device/device = assembly
+	if(istype(assembly(), /obj/item/electronic_assembly/device))
+		var/obj/item/electronic_assembly/device/device = assembly()
 		device.holder().pulse()
 
 // Triggered when clothing assembly's hud button is clicked (or used inhand).
@@ -54,7 +54,7 @@
 	var/datum/integrated_io/I = inputs[1]
 	speaker_output = I.data
 
-	var/obj/item/clothing/ears/circuitry/ep = assembly.loc
+	var/obj/item/clothing/ears/circuitry/ep = assembly().loc
 	var/mob/wearer = om_resolve(ep.wearer)
 	if(wearer && ismob(wearer)) // Only allow the wearer to hear the earpiece exclusive speaker
 		to_chat(wearer, span_notice("[icon2html(ep, wearer.client)] [speaker_output]"))

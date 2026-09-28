@@ -33,9 +33,9 @@
 
 	age = rand(1, 999)
 
-	if(container.mineral)
-		if(islist(container.mineral.xarch_ages))
-			var/list/ages = container.mineral.xarch_ages
+	if(container.mineral())
+		if(islist(container.mineral().xarch_ages))
+			var/list/ages = container.mineral().xarch_ages
 			if(ages["thousand"])
 				age_thousand = rand(1, ages["thousand"])
 			if(ages["million"])
@@ -45,8 +45,8 @@
 					age_billion = rand(ages["billion_lower"], ages["billion"])
 				else
 					age_billion = rand(1, ages["billion"])
-		if(container.mineral.xarch_source_mineral)
-			source_mineral = container.mineral.xarch_source_mineral
+		if(container.mineral().xarch_source_mineral)
+			source_mineral = container.mineral().xarch_source_mineral
 
 	if(prob(75))
 		LAZYSET(find_presence, REAGENT_ID_PHOSPHORUS, rand(1, 500) / 100)

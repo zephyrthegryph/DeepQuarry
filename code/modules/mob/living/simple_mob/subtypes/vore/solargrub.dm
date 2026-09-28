@@ -94,8 +94,8 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 			self.charge = self.charge + (self.powerdraw/1000) //This adds raw powerdraw to charge(Charge is in Ks as in 1 = 1000)
 			var/apc_drain_rate = 750 //Going to see if grubs are better as a minimal bother. previous value : 4000
 			for(var/obj/machinery/power/terminal/T in self.PN.nodes)
-				if(istype(T.master, /obj/machinery/power/apc))
-					var/obj/machinery/power/apc/A = T.master
+				if(istype(T.master(), /obj/machinery/power/apc))
+					var/obj/machinery/power/apc/A = T.master()
 					if(A.operating && A.cell)
 						var/cur_charge = A.cell.charge / CELLRATE
 						var/drain_val = min(apc_drain_rate, cur_charge)

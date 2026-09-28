@@ -50,7 +50,7 @@ GLOBAL_LIST_INIT(all_integrated_circuits, initialize_integrated_circuits_list())
 	icon = 'icons/obj/integrated_electronics/electronic_components.dmi'
 	icon_state = "template"
 	w_class = ITEMSIZE_TINY
-	var/obj/item/electronic_assembly/assembly = null // Reference to the assembly holding this circuit, if any.
+	var/assembly_handle	// Reference to the assembly holding this circuit, if any.
 	var/extended_desc = null
 	var/list/inputs = list()
 	var/list/inputs_default			// Assoc list which will fill a pin with data upon creation.  e.g. "2" = 0 will set input pin 2 to equal 0 instead of null.
@@ -73,3 +73,7 @@ GLOBAL_LIST_INIT(all_integrated_circuits, initialize_integrated_circuits_list())
 	var/displayed_name = ""
 	var/allow_multitool = 1			// Allows additional multitool functionality
 									// Used as a global var, (Do not set manually in children).
+
+/// LC-refs: Reference to the assembly holding this circuit, if any. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/integrated_circuit/proc/assembly() as /obj/item/electronic_assembly
+	return om_resolve(assembly_handle)

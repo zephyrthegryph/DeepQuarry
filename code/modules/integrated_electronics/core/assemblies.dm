@@ -180,11 +180,11 @@
 				return
 
 			var/obj/item/integrated_circuit/holder1 = pin1.holder()
-			if(!istype(holder1) || holder1.loc != src || holder1.assembly != src)
+			if(!istype(holder1) || holder1.loc != src || holder1.assembly() != src)
 				return
 
 			var/obj/item/integrated_circuit/holder2 = pin2.holder()
-			if(!istype(holder2) || holder2.loc != src || holder2.assembly != src)
+			if(!istype(holder2) || holder2.loc != src || holder2.assembly() != src)
 				return
 
 			// Wiring the same pin will unwire it
@@ -203,7 +203,7 @@
 				return
 
 			var/obj/item/integrated_circuit/holder1 = pin1.holder()
-			if(!istype(holder1) || holder1.loc != src || holder1.assembly != src)
+			if(!istype(holder1) || holder1.loc != src || holder1.assembly() != src)
 				return
 
 			for(var/datum/integrated_io/other as anything in pin1.linked)
@@ -330,14 +330,14 @@
 	if(!IC.forceMove(src))
 		return FALSE
 
-	IC.assembly = src
+	IC.assembly_handle = om_handle(src)
 
 	return TRUE
 
 // Non-interactive version of above that always succeeds, intended for build-in circuits that get added on assembly initialization.
 /obj/item/electronic_assembly/proc/force_add_circuit(obj/item/integrated_circuit/IC)
 	IC.forceMove(src)
-	IC.assembly = src
+	IC.assembly_handle = om_handle(src)
 
 /obj/item/electronic_assembly/afterattack(atom/target, mob/user, proximity)
 	var/scanned = FALSE

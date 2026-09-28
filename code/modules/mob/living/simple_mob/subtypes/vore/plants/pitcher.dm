@@ -304,7 +304,7 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 	reagents.add_reagent(REAGENT_ID_PARALYZE_FLUID, 5) // Something worth harvesting the fruits for.
 	bitesize = 1
 	pit = new /obj/item/seeds/pitcherseed(src.contents)
-	seed = pit.seed
+	seed = pit.seed()
 
 /obj/item/reagent_containers/food/snacks/pitcher_fruit/afterattack(obj/O as obj, mob/user as mob, proximity)
 	if(istype(O,/obj/machinery/microwave))

@@ -81,7 +81,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	//Targetting
 	var/yo = null
 	var/xo = null
-	var/atom/original = null // the original target clicked
+	var/original_handle	// the original target clicked
 	var/turf/starting = null // the projectile's starting turf
 	var/list/permutated = list() // we've passed through these atoms, don't try to hit them again
 	var/p_x = 16
@@ -245,8 +245,8 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 			step_towards(src, T)
 			hitscan_last_handle = om_handle(loc)
 			after_move()
-		if(can_hit_target(original, permutated))
-			Bump(original)
+		if(can_hit_target(original(), permutated))
+			Bump(original())
 	if(!hitscanning && !forcemoved && trajectory)
 		pixel_x = trajectory.return_px() - trajectory.mpx * trajectory_multiplier * GLOB.projectile_iterations_per_move
 		pixel_y = trajectory.return_py() - trajectory.mpy * trajectory_multiplier * GLOB.projectile_iterations_per_move
@@ -259,7 +259,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	..()
 	if(isliving(AM) && !(pass_flags & PASSMOB))
 		var/mob/living/L = AM
-		if(can_hit_target(L, permutated, (AM == original)))
+		if(can_hit_target(L, permutated, (AM == original())))
 			Bump(AM)
 			if(dephasing)
 				L.phase_in() //If the mob is phased, dephase them. If they're not phased, this does nothing.
@@ -387,8 +387,8 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	if(temporary_unstoppable_movement)
 		temporary_unstoppable_movement = FALSE
 		DISABLE_BITFIELD(movement_type, UNSTOPPABLE)
-	if(fired && can_hit_target(original, permutated, TRUE))
-		Bump(original)
+	if(fired && can_hit_target(original(), permutated, TRUE))
+		Bump(original())
 
 /obj/item/projectile/proc/after_z_change(atom/olcloc, atom/newloc)
 
@@ -421,7 +421,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	forceMove(get_turf(source))
 	trajectory_ignore_forcemove = FALSE
 	starting = curloc
-	original = target
+	original_handle = om_handle(target)
 	if(targloc)
 		yo = targloc.y - curloc.y
 		xo = targloc.x - curloc.x
@@ -479,7 +479,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	if(!source)
 		source = get_turf(src)
 	starting = get_turf(source)
-	original = target
+	original_handle = om_handle(target)
 	setAngle(Get_Angle(source, target))
 
 // LIFECYCLE: a hitscan finalizes its tracers; its casing forgets it.
@@ -755,7 +755,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	// These ONLY matter if the mob you are attacking has evasion OR if it's coming from a non-living attacker (Mines/Turrets)
 	// The get_zone_with_miss_chance() proc is HIGHLY variable and can be changed server to server with multiple simple var switches built in without having to do specialty code or multiple edits.
 	var/miss_chance = (-accuracy + miss_modifier) //Chance to miss the target. Higher
-	var/hit_zone = get_zone_with_miss_chance(def_zone, target_mob, miss_chance, ranged_attack=(distance > 1 || original != target_mob), force_hit = !can_miss, attacker = firer) //if the projectile hits a target we weren't originally aiming at then retain the chance to miss
+	var/hit_zone = get_zone_with_miss_chance(def_zone, target_mob, miss_chance, ranged_attack=(distance > 1 || original() != target_mob), force_hit = !can_miss, attacker = firer) //if the projectile hits a target we weren't originally aiming at then retain the chance to miss
 
 	var/result = PROJECTILE_FORCE_MISS
 	if(hit_zone)
@@ -814,7 +814,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 		om_qdel_after(src, 1)
 		return //fire returns nothing, so neither do we need to
 
-	original = target
+	original_handle = om_handle(target)
 	def_zone = check_zone(target_zone)
 	firer = user
 	var/direct_target
@@ -866,7 +866,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	return launch_projectile(target, target_zone, user, params, angle_override, forced_spread)
 
 /obj/item/projectile/proc/launch_projectile_from_turf(atom/target, target_zone, mob/user, params, angle_override, forced_spread = 0)
-	original = target
+	original_handle = om_handle(target)
 	def_zone = check_zone(target_zone)
 	firer = user
 	var/direct_target
@@ -915,7 +915,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 				// Effect goes where the projectile 'stopped'.
 				hit_x = A.pixel_x + trajectory.return_px()
 				hit_y = A.pixel_y + trajectory.return_py()
-			else if(A == original)
+			else if(A == original())
 				// Otherwise it goes where the person who fired clicked.
 				hit_x = A.pixel_x + p_x - 16
 				hit_y = A.pixel_y + p_y - 16
@@ -967,3 +967,7 @@ REF_OWNED(/obj/item/projectile, list("trajectory", "beam_components"))
 /// LC-refs: the my_case this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/projectile/proc/my_case() as /obj/item/ammo_casing
 	return om_resolve(my_case_handle)
+
+/// LC-refs: the original target clicked -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/projectile/proc/original() as /atom
+	return om_resolve(original_handle)

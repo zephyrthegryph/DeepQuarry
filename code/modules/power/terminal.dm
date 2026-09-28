@@ -8,7 +8,7 @@
 	icon_state = "term"
 	desc = "It's an underfloor wiring terminal for power equipment."
 	level = 1
-	var/obj/machinery/power/master = null
+	var/master_handle
 	anchored = TRUE
 	plane = PLATING_PLANE
 	layer = WIRES_LAYER+0.01
@@ -20,9 +20,9 @@
 
 // LIFECYCLE: its master disconnects the terminal.
 /obj/machinery/power/terminal/Destroy()
-	if(master)
-		master.disconnect_terminal(src)
-		master = null
+	if(master())
+		master().disconnect_terminal(src)
+		master_handle = null
 	return ..()
 
 /obj/machinery/power/terminal/hide(i)
@@ -33,5 +33,9 @@
 	return 1
 
 /obj/machinery/power/terminal/overload(obj/machinery/power/source)
-	if(master)
-		master.overload(source)
+	if(master())
+		master().overload(source)
+
+/// LC-refs: the master this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/power/terminal/proc/master() as /obj/machinery/power
+	return om_resolve(master_handle)

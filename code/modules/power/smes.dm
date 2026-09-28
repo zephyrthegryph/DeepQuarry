@@ -146,7 +146,7 @@ REF_OWNED(/obj/machinery/power/smes, "soundloop")
 // LIFECYCLE: its terminals lose their master.
 /obj/machinery/power/smes/Destroy()
 	for(var/obj/machinery/power/terminal/T in terminals)
-		T.master = null
+		T.master_handle = null
 	terminals = null
 	return ..()
 
@@ -154,9 +154,9 @@ REF_OWNED(/obj/machinery/power/smes, "soundloop")
 	for(var/d in GLOB.cardinal)
 		var/turf/T = get_step(src, d)
 		for(var/obj/machinery/power/terminal/smes_input/term in T)
-			if(term && term.dir == turn(d, 180) && !term.master)
+			if(term && term.dir == turn(d, 180) && !term.master())
 				LAZYOR(terminals, term)
-				term.master = src
+				term.master_handle = om_handle(src)
 				term.connect_to_network(FALSE)
 	power_sync()
 
@@ -167,7 +167,7 @@ REF_OWNED(/obj/machinery/power/smes, "soundloop")
 
 /obj/machinery/power/smes/disconnect_terminal(obj/machinery/power/terminal/term)
 	LAZYREMOVE(terminals, term)
-	term.master = null
+	term.master_handle = null
 	power_sync()
 
 /obj/machinery/power/smes/power_registered()
@@ -337,7 +337,7 @@ REF_OWNED(/obj/machinery/power/smes, "soundloop")
 		return
 	var/obj/machinery/power/terminal/smes_input/term = new(tempLoc)
 	term.set_dir(tempDir)
-	term.master = src
+	term.master_handle = om_handle(src)
 	term.connect_to_network()
 	LAZYOR(terminals, term)
 	power_sync()
@@ -459,7 +459,7 @@ REF_OWNED(/obj/machinery/power/smes, "soundloop")
 	building_terminal = TRUE
 	var/obj/machinery/power/terminal/term
 	for(var/obj/machinery/power/terminal/candidate in get_turf(user))
-		if(candidate.master == src)
+		if(candidate.master() == src)
 			term = candidate
 			break
 	if(!term)

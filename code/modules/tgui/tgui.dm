@@ -44,7 +44,7 @@
 	/// The map z-level to display.
 	var/map_z_level = 1
 	/// The Parent UI
-	var/datum/tgui/parent_ui
+	var/parent_ui_handle
 	/// Children of this UI
 	var/list/children = list()
 	/// Any partial packets that we have received from TGUI, waiting to be sent
@@ -75,7 +75,7 @@
 	if(title)
 		src.title = title
 	src.state_handle = om_handle(src_object.tgui_state())
-	src.parent_ui = parent_ui
+	src.parent_ui_handle = om_handle(parent_ui)
 	if(parent_ui)
 		parent_ui.children += src
 	// Deprecated
@@ -239,9 +239,9 @@
 	user.unset_machine()
 
 	state_handle = null
-	if(parent_ui)
-		parent_ui.children -= src
-	parent_ui = null
+	if(parent_ui())
+		parent_ui().children -= src
+	parent_ui_handle = null
 	qdel(src)
 
 /**
@@ -421,7 +421,7 @@
 		return
 	// Update through a normal call to ui_interact
 	if(status != STATUS_DISABLED && (autoupdate || force))
-		src_object().tgui_interact(user, src, parent_ui)
+		src_object().tgui_interact(user, src, parent_ui())
 		return
 	// Update status only
 	var/needs_update = process_status()
@@ -440,8 +440,8 @@
 	var/prev_status = status
 	if(src_object())
 		status = src_object().tgui_status(user, state())
-	if(parent_ui)
-		status = min(status, parent_ui.status)
+	if(parent_ui())
+		status = min(status, parent_ui().status)
 	return prev_status != status
 
 /datum/tgui/proc/set_map_z_level(nz)
@@ -524,3 +524,7 @@
 /// LC-refs: the state this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui/proc/state() as /datum/tgui_state
 	return om_resolve(state_handle)
+
+/// LC-refs: the parent_ui this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui/proc/parent_ui() as /datum/tgui
+	return om_resolve(parent_ui_handle)

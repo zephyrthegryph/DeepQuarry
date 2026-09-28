@@ -175,3 +175,4 @@
 	color = _color
 
 REF_OWNED(/obj/item/nailpolish, list("top_underlay", "color_underlay"))
+REF_OWNED(/obj/item/organ/external, "nail_polish")

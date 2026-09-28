@@ -52,11 +52,11 @@
 	idc = new(src)
 
 /obj/item/integrated_circuit/smart/advanced_pathfinder/do_work()
-	if(!assembly)
+	if(!assembly())
 		activate_pin(3)
 		return
 	//idc.access = assembly.access_card.access
-	var/turf/a_loc = get_turf(assembly)
+	var/turf/a_loc = get_turf(assembly())
 
 	var/turf/target_turf = locate(get_pin_data(IC_INPUT, 1), get_pin_data(IC_INPUT, 2), a_loc.z)
 	var/list/P = SSpathfinder.default_circuit_pathfinding(src, target_turf, 0, 200)
@@ -136,7 +136,7 @@
 			activate_pin(2)
 			return
 		goal = last_known_position()
-	var/list/path = AStar(start, goal, /turf/proc/AdjacentTurfsWithAccess, /turf/proc/Distance, 0, 30, id = assembly)
+	var/list/path = AStar(start, goal, /turf/proc/AdjacentTurfsWithAccess, /turf/proc/Distance, 0, 30, id = assembly())
 	if(path && path.len > 1)
 		var/turf/next = path[2] // path[1] is current location
 		var/desired_dir = get_dir(start, next)
@@ -217,7 +217,7 @@
 	var/desired_dir
 
 	// Calculate path to either current position or last known position
-	var/list/path = AStar(start, goal, /turf/proc/AdjacentTurfsWithAccess, /turf/proc/Distance, 0, 30, id = assembly)
+	var/list/path = AStar(start, goal, /turf/proc/AdjacentTurfsWithAccess, /turf/proc/Distance, 0, 30, id = assembly())
 	if(path && path.len > 1)
 		var/turf/next = path[2]
 		desired_dir = get_dir(start, next)
@@ -229,8 +229,8 @@
 	push_data()
 
 	// Move the assembly
-	if(assembly && !assembly.anchored && assembly.can_move())
-		var/move_result = step(assembly, desired_dir)
+	if(assembly() && !assembly().anchored && assembly().can_move())
+		var/move_result = step(assembly(), desired_dir)
 		if(move_result)
 			activate_pin(2)
 		else

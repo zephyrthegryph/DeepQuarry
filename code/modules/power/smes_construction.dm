@@ -312,8 +312,8 @@ REF_OWNED(/obj/machinery/power/smes/buildable, "wires")
 		return
 
 	for(var/obj/machinery/power/terminal/T in powernet.nodes)
-		if(istype(T.master, /obj/machinery/power/apc))
-			var/obj/machinery/power/apc/A = T.master
+		if(istype(T.master(), /obj/machinery/power/apc))
+			var/obj/machinery/power/apc/A = T.master()
 			if (prob(overload_chance))
 				A.overload_lighting()
 			if (prob(failure_chance))

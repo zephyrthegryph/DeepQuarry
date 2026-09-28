@@ -13,7 +13,7 @@
 	var/pages = 0
 	var/curr_page = 0
 	var/list/datum/feed_channel/news_content
-	var/datum/feed_message/important_message = null
+	var/important_message_handle
 	var/scribble=""
 	var/scribble_page = null
 	drop_sound = 'sound/items/drop/wrapper.ogg'
@@ -65,10 +65,10 @@
 			"messages" = msgs,
 		))
 	data["channels"] = chs
-	if(important_message)
+	if(important_message())
 		data["wanted"] = list(
-			"author" = important_message.author,
-			"body" = important_message.body,
+			"author" = important_message().author,
+			"body" = important_message().body,
 		)
 	else
 		data["wanted"] = null
@@ -114,3 +114,7 @@
 			scribble = s
 			attack_self(user)
 		return
+
+/// LC-refs: the important_message this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/newspaper/proc/important_message() as /datum/feed_message
+	return om_resolve(important_message_handle)

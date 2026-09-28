@@ -30,7 +30,7 @@
 	spawn_flags = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 
 /obj/item/integrated_circuit/input/reference_grabber/afterattack(atom/target, mob/user, proximity_flag, click_parameters)
-	if(!assembly || user.get_active_hand() != assembly)
+	if(!assembly() || user.get_active_hand() != assembly())
 		activate_pin(2) // Failure pin, not in assembly, or not held.
 		return
 
@@ -277,9 +277,9 @@
 /obj/item/integrated_circuit/input/local_locator/do_work()
 	var/datum/integrated_io/O = outputs[1]
 	O.data = null
-	if(assembly)
-		if(isliving(assembly.loc)) // Now check if someone's holding us.
-			O.data = ic_ref(assembly.loc)
+	if(assembly())
+		if(isliving(assembly().loc)) // Now check if someone's holding us.
+			O.data = ic_ref(assembly().loc)
 
 	O.push_data()
 
@@ -741,13 +741,13 @@ REF_OWNED(/obj/item/integrated_circuit/input/EPv2, "exonet")
 	set_pin_data(IC_OUTPUT, 1, null)
 	set_pin_data(IC_OUTPUT, 2, null)
 	set_pin_data(IC_OUTPUT, 3, null)
-	set_pin_data(IC_OUTPUT, 4, ic_ref(assembly))
-	if(assembly)
-		if(assembly.battery)
+	set_pin_data(IC_OUTPUT, 4, ic_ref(assembly()))
+	if(assembly())
+		if(assembly().battery)
 
-			set_pin_data(IC_OUTPUT, 1, assembly.battery.charge)
-			set_pin_data(IC_OUTPUT, 2, assembly.battery.maxcharge)
-			set_pin_data(IC_OUTPUT, 3, 100*assembly.battery.charge/assembly.battery.maxcharge)
+			set_pin_data(IC_OUTPUT, 1, assembly().battery.charge)
+			set_pin_data(IC_OUTPUT, 2, assembly().battery.maxcharge)
+			set_pin_data(IC_OUTPUT, 3, 100*assembly().battery.charge/assembly.battery.maxcharge)
 	push_data()
 	activate_pin(2)
 

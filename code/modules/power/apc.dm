@@ -327,7 +327,7 @@ REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 /obj/machinery/power/apc/proc/make_terminal()
 	terminal = new /obj/machinery/power/terminal(loc)
 	terminal.set_dir(dir)
-	terminal.master = src
+	terminal.master_handle = om_handle(src)
 
 /obj/machinery/power/apc/proc/init()
 	has_electronics = APC_HAS_ELECTRONICS_SECURED // installed and secured
@@ -1104,7 +1104,7 @@ REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 
 /obj/machinery/power/apc/disconnect_terminal(obj/machinery/power/terminal/term)
 	if(terminal)
-		terminal.master = null
+		terminal.master_handle = null
 		terminal = null
 	wake_for_power_dependency()
 

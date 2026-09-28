@@ -8,11 +8,11 @@
 	var/Compiler_handle
 
 /datum/n_Interpreter/TCS_Interpreter/HandleError(datum/runtimeError/e)
-	Compiler().Holder.add_entry(e.ToString(), "Execution Error")
+	Compiler().Holder().add_entry(e.ToString(), "Execution Error")
 
 /datum/TCS_Compiler
 	var/datum/n_Interpreter/TCS_Interpreter/interpreter
-	var/obj/machinery/telecomms/server/Holder	// the server that is running the code
+	var/Holder_handle	// the server that is running the code
 	var/ready = 1 // 1 if ready to run code
 
 	/** Proc: Compile
@@ -226,7 +226,7 @@
 		return STEP_FAIL("gone")
 	apply_signal(signal)
 	if(T.relay)
-		Holder?.relay_signal(signal)
+		Holder()?.relay_signal(signal)
 	return STEP_DONE
 
 /datum/TCS_Compiler/proc/script_cancelled(datum/om/task/T)
@@ -333,3 +333,7 @@ REF_OWNED(/datum/TCS_Compiler, "interpreter")
 /// LC-refs: the Compiler this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/n_Interpreter/TCS_Interpreter/proc/Compiler() as /datum/TCS_Compiler
 	return om_resolve(Compiler_handle)
+
+/// LC-refs: the server that is running the code -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/TCS_Compiler/proc/Holder() as /obj/machinery/telecomms/server
+	return om_resolve(Holder_handle)

@@ -10,8 +10,8 @@
 	var/obj/occupied = can_climb_turf(src)
 	if(occupied)
 		return ..()
-	if(material)
-		playsound(src, material.tableslam_noise, 25, 1, -1)
+	if(material())
+		playsound(src, material().tableslam_noise, 25, 1, -1)
 	else
 		playsound(src, 'sound/weapons/tablehit1.ogg', 25, 1, -1)
 	visible_message(span_warning("[M] flopped onto \the [src]!"))

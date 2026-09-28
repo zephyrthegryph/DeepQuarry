@@ -2,18 +2,18 @@
 	name = "Teleporter Control"
 	tgui_id = "Teleporter"
 	var/locked_name = "Not Locked"
-	var/obj/item/locked = null
-	var/obj/machinery/teleport/station/station = null
-	var/obj/machinery/teleport/hub/hub = null
+	var/locked_handle
+	var/station_handle
+	var/hub_handle
 
 /datum/tgui_module/teleport_control/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = ..()
 
 	data["locked_name"] = locked_name || "No Target"
-	data["station_connected"] = !!station
-	data["hub_connected"] = !!hub
-	data["calibrated"] = hub?.accurate
-	data["teleporter_on"] = station?.engaged
+	data["station_connected"] = !!station()
+	data["hub_connected"] = !!hub()
+	data["calibrated"] = hub()?.accurate
+	data["teleporter_on"] = station()?.engaged
 
 	return data
 
@@ -65,21 +65,33 @@
 			if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
 				return FALSE
 
-			locked = L[desc]
+			locked_handle = om_handle(L[desc])
 			locked_name = desc
 			return TRUE
 
 		if("test_fire")
-			station?.testfire()
+			station()?.testfire()
 			return TRUE
 
 		if("toggle_on")
-			if(!station)
+			if(!station())
 				return FALSE
 
-			if(station.engaged)
-				station.disengage(ui.user)
+			if(station().engaged)
+				station().disengage(ui.user)
 			else
-				station.engage(ui.user)
+				station().engage(ui.user)
 
 			return TRUE
+
+/// LC-refs: the locked this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_module/teleport_control/proc/locked() as /obj/item
+	return om_resolve(locked_handle)
+
+/// LC-refs: the station this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_module/teleport_control/proc/station() as /obj/machinery/teleport/station
+	return om_resolve(station_handle)
+
+/// LC-refs: the hub this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_module/teleport_control/proc/hub() as /obj/machinery/teleport/hub
+	return om_resolve(hub_handle)

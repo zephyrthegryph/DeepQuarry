@@ -299,8 +299,8 @@ REF_OWNED(/obj/machinery/power/generator, "soundloop")
 
 	var/list/powernet_union = LAZYCOPY(powernet.nodes)
 	for(var/obj/machinery/power/terminal/T in powernet.nodes)
-		if(T.master && istype(T.master, /obj/machinery/power/smes))
-			var/obj/machinery/power/smes/S = T.master
+		if(T.master() && istype(T.master(), /obj/machinery/power/smes))
+			var/obj/machinery/power/smes/S = T.master()
 			if(length(S.powernet.nodes)) powernet_union |= S.powernet.nodes
 
 	var/found_grid_checker = FALSE

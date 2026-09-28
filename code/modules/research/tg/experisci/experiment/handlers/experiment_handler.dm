@@ -7,7 +7,7 @@
  */
 /datum/component/experiment_handler
 	/// Holds the currently linked techweb to get experiments from
-	var/datum/techweb/linked_web
+	var/linked_web_handle
 	/// Holds the currently selected experiment
 	var/selected_experiment_handle
 	/// Holds the list of types of experiments that this experiment_handler can interact with
@@ -91,14 +91,14 @@ REGISTRY_MEMBERSHIP(/datum/component/experiment_handler, REGISTRY_EXPERIMENT_HAN
 	// Check that there is actually an experiment selected
 	if (selected_experiment() == null && !(config_flags & EXPERIMENT_CONFIG_ALWAYS_ACTIVE))
 		return
-	if (!linked_web)
+	if (!linked_web())
 		return
 
 	// Determine if this experiment is actionable with this target
 	var/list/arguments = list(src)
 	arguments = args.len > 1 ? arguments + args.Copy(2) : arguments
 	if (config_flags & EXPERIMENT_CONFIG_ALWAYS_ACTIVE)
-		for (var/datum/experiment/experiment in linked_web.available_experiments)
+		for (var/datum/experiment/experiment in linked_web().available_experiments)
 			if (experiment.actionable(arglist(arguments)))
 				return TRUE
 	else
@@ -176,7 +176,7 @@ REGISTRY_MEMBERSHIP(/datum/component/experiment_handler, REGISTRY_EXPERIMENT_HAN
  */
 /datum/component/experiment_handler/proc/announce_message_to_all(message)
 	for(var/datum/component/experiment_handler/experi_handler as anything in REGISTRY_MEMBERS(REGISTRY_EXPERIMENT_HANDLERS))
-		if(experi_handler.linked_web != linked_web)
+		if(experi_handler.linked_web() != linked_web())
 			continue
 		var/atom/movable/experi_parent = experi_handler.parent
 		experi_parent.atom_say(message)
@@ -207,7 +207,7 @@ REGISTRY_MEMBERSHIP(/datum/component/experiment_handler, REGISTRY_EXPERIMENT_HAN
 	// attempt to action every experiment that is available to this handler.
 	if (config_flags & EXPERIMENT_CONFIG_ALWAYS_ACTIVE)
 		var/any_success
-		for (var/datum/experiment/experiment in linked_web.available_experiments)
+		for (var/datum/experiment/experiment in linked_web().available_experiments)
 			// Because this checks any experiment, we have to ensure it is allowable to be selected with can_select_experiment(...)
 			// this handles the handler's blacklist, whitelist, etc (potentially refactor this in the future if possible because this could be expensive)
 			if (can_select_experiment(experiment) && experiment.actionable(arglist(arguments)) && experiment.perform_experiment(arglist(arguments)))
@@ -256,11 +256,11 @@ REGISTRY_MEMBERSHIP(/datum/component/experiment_handler, REGISTRY_EXPERIMENT_HAN
  * * new_web - The new techweb to link to
  */
 /datum/component/experiment_handler/proc/link_techweb(datum/techweb/new_web)
-	if (new_web == linked_web)
+	if (new_web == linked_web())
 		return
 	selected_experiment()?.on_unselected(src)
 	selected_experiment_handle = null
-	linked_web = new_web
+	linked_web_handle = om_handle(new_web)
 
 /**
  * Unlinks this handler from the selected techweb
@@ -268,7 +268,7 @@ REGISTRY_MEMBERSHIP(/datum/component/experiment_handler, REGISTRY_EXPERIMENT_HAN
 /datum/component/experiment_handler/proc/unlink_techweb()
 	selected_experiment()?.on_unselected(src)
 	selected_experiment_handle = null
-	linked_web = null
+	linked_web_handle = null
 
 /**
  * Attempts to link this experiment_handler to a provided experiment
@@ -305,7 +305,7 @@ REGISTRY_MEMBERSHIP(/datum/component/experiment_handler, REGISTRY_EXPERIMENT_HAN
 		return FALSE
 
 	// Check that this experiment is visible currently
-	if (!(experiment in linked_web?.available_experiments))
+	if (!(experiment in linked_web()?.available_experiments))
 		return FALSE
 
 	// Check that this experiment type isn't blacklisted
@@ -337,7 +337,7 @@ REGISTRY_MEMBERSHIP(/datum/component/experiment_handler, REGISTRY_EXPERIMENT_HAN
 	.["techwebs"] = list()
 	for (var/datum/techweb/techwebs as anything in SSresearch.techwebs)
 		if(!length(techwebs.techweb_servers)) //no servers, we don't care
-			if(techwebs == linked_web) //disconnect if OUR techweb lost their servers.
+			if(techwebs == linked_web()) //disconnect if OUR techweb lost their servers.
 				unlink_techweb()
 			continue
 		if(!length(SSresearch.find_valid_servers(get_turf(parent), techwebs)))
@@ -345,14 +345,14 @@ REGISTRY_MEMBERSHIP(/datum/component/experiment_handler, REGISTRY_EXPERIMENT_HAN
 		var/list/data = list(
 			web_id = techwebs.id,
 			web_org = techwebs.organization,
-			selected = (techwebs == linked_web),
+			selected = (techwebs == linked_web()),
 			ref = REF(techwebs),
 			all_servers = (techwebs.techweb_servers || list()),
 		)
 		.["techwebs"] += list(data)
 	.["experiments"] = list()
-	if (linked_web)
-		for (var/datum/experiment/experiment as anything in linked_web.available_experiments)
+	if (linked_web())
+		for (var/datum/experiment/experiment as anything in linked_web().available_experiments)
 			if(!can_select_experiment(experiment))
 				continue
 			var/list/data = list(
@@ -399,3 +399,7 @@ REF_OWNED(/datum/component/experiment_handler, "start_experiment_callback")
 /// LC-refs: the selected_experiment this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/component/experiment_handler/proc/selected_experiment() as /datum/experiment
 	return om_resolve(selected_experiment_handle)
+
+/// LC-refs: the linked_web this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/component/experiment_handler/proc/linked_web() as /datum/techweb
+	return om_resolve(linked_web_handle)

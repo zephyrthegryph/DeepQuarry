@@ -723,7 +723,7 @@ REF_OWNED(/obj/machinery/alarm, list("wires", "soundloop"))
 	var/list/data = list(
 		"locked" = locked,
 		"siliconUser" = siliconaccess(user) || (isobserver(user) && is_admin(user)),
-		"remoteUser" = !!ui.parent_ui,
+		"remoteUser" = !!ui.parent_ui(),
 		"danger_level" = danger_level,
 		"target_temperature" = "[target_temperature - T0C]C",
 		"rcon" = rcon_setting,

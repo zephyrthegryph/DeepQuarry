@@ -27,7 +27,7 @@
 		to_chat(user, span_warning("This area already has an APC."))
 		return //only one APC per area
 	for(var/obj/machinery/power/terminal/T in loc)
-		if (T.master)
+		if (T.master())
 			to_chat(user, span_warning("There is another network terminal here."))
 			return
 		else

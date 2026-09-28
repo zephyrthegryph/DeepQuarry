@@ -18,7 +18,7 @@
 	. = ..()
 	my_shield = new my_shield_type
 	my_shield.shield_regen_delay = equip_cooldown
-	my_shield.my_tool = src
+	my_shield.my_tool_handle = om_handle(src)
 
 /obj/item/mecha_parts/mecha_equipment/combat_shield/critfail()
 	..()
@@ -44,7 +44,7 @@ REF_OWNED(/obj/item/mecha_parts/mecha_equipment/combat_shield, "my_shield")
 	..()
 	if(chassis)
 		my_shield.update_integrity(0)
-		my_shield.my_mecha = chassis
+		my_shield.my_mecha_handle = om_handle(chassis)
 		my_shield.forceMove(chassis)
 	return
 
@@ -52,7 +52,7 @@ REF_OWNED(/obj/item/mecha_parts/mecha_equipment/combat_shield, "my_shield")
 	chassis.cut_overlay(drone_overlay)
 	..()
 	my_shield.destroy_shields()
-	my_shield.my_mecha = null
+	my_shield.my_mecha_handle = null
 	my_shield.repair_damage(my_shield.max_integrity)
 	my_shield.forceMove(src)
 	return

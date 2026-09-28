@@ -8,12 +8,12 @@
 /datum/seed_pile/New(obj/item/seeds/O, ID)
 	name = O.name
 	amount = 1
-	seed_type_handle = om_handle(O.seed)
+	seed_type_handle = om_handle(O.seed())
 	seeds += O
 	src.ID = ID
 
 /datum/seed_pile/proc/matches(obj/item/seeds/O)
-	if (O.seed == seed_type())
+	if (O.seed() == seed_type())
 		return 1
 	return 0
 
