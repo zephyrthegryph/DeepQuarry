@@ -631,6 +631,7 @@ REF_OWNED(/obj/machinery/light, "cell")
 /obj/machinery/light/declare_interactions(list/into)
 	var/static/list/actor_specs = list(
 		INTERACT_SILICON("Toggle emergency lights", PROC_REF(light_silicon_toggle_emergency)),
+		INTERACT_TK("Remove bulb", PROC_REF(light_tk_remove)),
 	)
 	for(var/actor_spec in actor_specs)
 		into += dq_interaction_from_spec(type, actor_spec)
@@ -964,10 +965,11 @@ REF_OWNED(/obj/machinery/light, "cell")
 		update()
 	return TRUE
 
-/obj/machinery/light/attack_tk(mob/user)
+/// Old attack_tk: pull the bulb out at range into a telekinetic grab.
+/obj/machinery/light/proc/light_tk_remove(mob/user, obj/item/held, datum/interaction/interaction)
 	if(status == LIGHT_EMPTY)
 		to_chat(user, "There is no [get_fitting_name()] in this light.")
-		return
+		return TRUE
 
 	to_chat(user, "You telekinetically remove the light [get_fitting_name()].")
 	var/obj/item/light/B = bulb()
@@ -979,6 +981,7 @@ REF_OWNED(/obj/machinery/light, "cell")
 	O.focus_object(B)
 	B.update_icon()
 	remove_bulb()
+	return TRUE
 
 // break the light and make sparks if was on
 

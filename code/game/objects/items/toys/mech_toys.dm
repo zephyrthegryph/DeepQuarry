@@ -116,6 +116,7 @@
 DECLARE_INTERACTIONS(/obj/item/toy/mecha, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_TK(null, PROC_REF(interaction_tk)), \
 )
 
 /// Old attack_self.
@@ -182,13 +183,14 @@ EXTEND_INTERACTIONS(/obj/item/toy/mecha, INTERACT_HAND_DEFAULT("Pick up", PROC_R
 	..()
 
 /**
- * Overrides attack_tk - Sorry, you have to be face to face to initiate a battle, it's good sportsmanship
+ * Old attack_tk - Sorry, you have to be face to face to initiate a battle, it's good sportsmanship
  */
-/obj/item/toy/mecha/attack_tk(mob/user)
+/obj/item/toy/mecha/proc/interaction_tk(mob/user, obj/item/held, datum/interaction/interaction)
 	if(COOLDOWN_FINISHED(src, timer))
 		to_chat(user, span_notice("You telekinetically play with [src]."))
 		COOLDOWN_START(src, timer, cooldown)
 		playsound(user, 'sound/mecha/mechstep.ogg', 20, TRUE)
+	return TRUE
 
 /**
  * Resets the request for battle.

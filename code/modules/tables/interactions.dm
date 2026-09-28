@@ -176,6 +176,3 @@
 				M.embed(S, def_zone = BP_HEAD)
 	consume(G, user)
 	return TRUE
-
-/obj/structure/table/attack_tk() // no telehulk sorry
-	return

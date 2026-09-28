@@ -267,6 +267,7 @@
 		/datum/interaction/machine_item/door_use_item,
 		/datum/interaction/machine_hand/door_use,
 	)
+	into += dq_interaction_from_spec(type, INTERACT_TK(null, PROC_REF(interaction_door_tk)))
 	..()
 
 /datum/interaction/machine_hand/door_use
@@ -278,10 +279,9 @@
 	try_to_activate_door(user)
 	return TRUE
 
-/obj/machinery/door/attack_tk(mob/user)
-	if(requiresID() && !allowed(null))
-		return
-	..()
+/// Old attack_tk: an ID-locked door ignores telekinesis; otherwise the default telekinetic poke.
+/obj/machinery/door/proc/interaction_door_tk(mob/user, obj/item/held, datum/interaction/interaction)
+	return requiresID() && !allowed(null)
 
 /datum/interaction/machine_item/door_use_item
 	id = "door_use_item"

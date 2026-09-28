@@ -143,6 +143,7 @@
 /obj/machinery/portable_atmospherics/hydroponics/declare_interactions(list/into)
 	var/static/list/actor_specs = list(
 		INTERACT_OBSERVER("Harvest", PROC_REF(hydroponics_ghost_harvest)),
+		INTERACT_TK("Harvest", PROC_REF(hydroponics_tk_harvest)),
 	)
 	for(var/actor_spec in actor_specs)
 		into += dq_interaction_from_spec(type, actor_spec)
@@ -688,11 +689,13 @@ REF_OWNED(/obj/machinery/portable_atmospherics/hydroponics, "temp_chem_holder")
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/portable_atmospherics/hydroponics/attack_tk(mob/user)
+/// Old attack_tk: clear a dead plant or harvest a ripe one at range.
+/obj/machinery/portable_atmospherics/hydroponics/proc/hydroponics_tk_harvest(mob/user, obj/item/held, datum/interaction/interaction)
 	if(dead)
 		remove_dead(user)
 	else if(harvest)
 		harvest(user)
+	return TRUE
 
 /datum/interaction/machine_hand/ungated/hydroponics_interact
 	id = "hydroponics_interact"
