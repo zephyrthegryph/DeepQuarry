@@ -743,6 +743,23 @@ if $grep -n 'vg_[a-z0-9_]+\([^)]*"\[' "${code_files[@]}" \
 	FAILED=1
 fi;
 
+part "legacy equip restriction vars"
+# can_hold / cant_hold / species_restricted were replaced by the property
+# registry: predicates (code/datums/properties/predicates.dm) and constraints
+# (code/datums/properties/constraints.dm, fit_constraint()). Declare a
+# constraint instead of reintroducing the old lists.
+if $grep -n '\b(can_hold|cant_hold|species_restricted)\b' "${code_files[@]}" \
+	| $grep -v ':\s*//|:\s*\*'; then
+	echo
+	echo -e "${RED}ERROR: legacy can_hold/cant_hold/species_restricted. Use the property registry's predicates and constraints (code/datums/properties/).${NC}"
+	FAILED=1
+fi;
+# Equip fitness goes through dq_item_fits_slot_flags() and the wearable
+# constraints. Raw `slot_flags &` reads outside code/datums/properties are
+# ratcheted: the two left are examine text (armor.dm) and the two-ear
+# placeholder (human/inventory.dm), neither an equip check.
+(num=`{ $grep -n 'slot_flags\s*&[^=]' "${code_files[@]}" || true; } | $grep -v '^code/datums/properties/' | $grep -v ':\s*//' | wc -l`; echo "$num raw slot_flags reads (expecting 2 or less)"; [ $num -le 2 ]) || { echo -e "${RED}ERROR: new raw slot_flags check. Use dq_item_fits_slot_flags() / the wearable constraints.${NC}"; FAILED=1; }
+
 part "html tag matching"
 #Checking for missed tags
 python tools/TagMatcher/tag-matcher.py code
