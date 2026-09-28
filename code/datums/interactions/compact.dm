@@ -101,8 +101,8 @@
 	// The entry base types' own requirements (entries.dm): a compact spec lists only
 	// what it adds, so an item's self-use still needs it in hand and the rest need reach.
 	var/list/base_requires
-	if(kind == INTERACT_KIND_USE)
-		base_requires = ispath(owner_type, /obj/item) ? list(REQ_TARGET_IN_HAND) : list()
+	if(kind == INTERACT_KIND_USE || kind == INTERACT_KIND_SELF)
+		base_requires = ispath(owner_type, /obj/item) ? list(REQ_SELF_USE_REACH) : list()
 	else
 		base_requires = list(REQ_INTERACTION_REACH)
 	requires = base_requires + (requires || list())
@@ -111,6 +111,9 @@
 			entry = INTERACTION_ENTRY_SELF
 			category = INTERACTION_CAT_TOGGLE
 			always_handled = TRUE
+		if(INTERACT_KIND_SELF)
+			entry = INTERACTION_ENTRY_SELF
+			category = INTERACTION_CAT_TOGGLE
 		if(INTERACT_KIND_HAND)
 			entry = INTERACTION_ENTRY_HAND
 			category = INTERACTION_CAT_OPEN

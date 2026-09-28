@@ -395,3 +395,12 @@ GLOBAL_LIST_EMPTY(interaction_entry_click_params)
 	if(issilicon(actor) && (target.silicon_use & (SILICON_USE_HAND | ROBOT_USE_HAND)))
 		return TRUE
 	return FALSE
+
+/// Requirement clause REQ_SELF_USE_REACH: the item is in one of the actor's hands, or attack_self()
+/// already dispatched it (its callers decided that themselves: action buttons, anchored items).
+/proc/dq_interaction_self_reach(mob/actor, atom/target, obj/item/held)
+	if(!actor || !target)
+		return FALSE
+	if(GLOB.interaction_entry_actors[actor])
+		return TRUE
+	return actor.get_active_hand() == target || actor.get_inactive_hand() == target

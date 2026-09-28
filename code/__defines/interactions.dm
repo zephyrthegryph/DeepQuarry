@@ -69,6 +69,10 @@
 /// or already dispatched by the legacy entry (which decided reach itself: telekinesis, the AI).
 #define REQ_INTERACTION_REACH REQ_PROC(/proc/dq_interaction_reach, "too far away")
 
+/// Requirement: a held item's self-use. In hand; or already dispatched by attack_self(), whose
+/// callers decided that themselves (a worn item's action button, an anchored item's touch).
+#define REQ_SELF_USE_REACH REQ_PROC(/proc/dq_interaction_self_reach, "not in your hand")
+
 /// use_tool() and pay_cost(): the job is a timed action that has started; its on_done runs later.
 #define USE_TOOL_PENDING 2
 /// Internal to /datum/interaction/proc/attempt(): no result yet.
@@ -95,9 +99,13 @@
 #define INTERACT_KIND_ALT "alt"
 #define INTERACT_KIND_HAND_UNGATED "hand_ungated"
 #define INTERACT_KIND_DRAG "drag"
+#define INTERACT_KIND_SELF "self"
 
 /// Self-use (old attack_self): the held item used on itself. `effect(actor, held, interaction)`.
 #define INTERACT_USE(name, effect, requires...) list(INTERACT_KIND_USE, name, effect, list(requires))
+/// Self-use whose effect's return counts (old attack_self that fell through to its parent's with `return ..()`):
+/// FALSE moves on to the next self-use candidate (an ancestor's). `effect(actor, held, interaction)`.
+#define INTERACT_SELF(name, effect, requires...) list(INTERACT_KIND_SELF, name, effect, list(requires))
 /// Touched with an empty hand, or a silicon's Use (old attack_hand). `effect(actor, held, interaction)`.
 #define INTERACT_HAND(name, effect, requires...) list(INTERACT_KIND_HAND, name, effect, list(requires))
 /// Touched with an empty hand, ahead of the type's hand_gate() (old attack_hand that never called ..():
