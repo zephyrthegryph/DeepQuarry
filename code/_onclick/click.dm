@@ -32,10 +32,11 @@
 	proximity_flag is not currently passed to attack_hand, and is instead used
 	in human click code to allow glove touches only at melee range.
 */
-/mob/proc/UnarmedAttack(atom/A, proximity_flag)
+/// `stance` is the input's stance (the adapter reads it once: input_stance()).
+/mob/proc/UnarmedAttack(atom/A, proximity_flag, stance = I_HURT)
 	return
 
-/mob/living/UnarmedAttack(atom/A, proximity_flag)
+/mob/living/UnarmedAttack(atom/A, proximity_flag, stance = I_HURT)
 
 	if(is_incorporeal())
 		return 0
@@ -61,9 +62,10 @@
 	for things like ranged glove touches, spitting alien acid/neurotoxin,
 	animals lunging, etc.
 */
-/mob/proc/RangedAttack(atom/A, params)
+/// `stance` is the input's stance (the adapter reads it once: input_stance()).
+/mob/proc/RangedAttack(atom/A, params, stance = I_HURT)
 	if(!mutation_count()) return
-	if((has_mutation(LASER_EYES)) && IS_HARMING(src))
+	if((has_mutation(LASER_EYES)) && stance == I_HURT)
 		LaserEyes(A) // moved into a proc below
 	else if(has_telegrip())
 		var/datum/input_adapter/telekinesis/telekinesis = INPUT_ADAPTER(telekinesis)

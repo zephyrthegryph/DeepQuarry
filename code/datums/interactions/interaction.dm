@@ -61,6 +61,11 @@
 	/// Clauses that pick this interaction: when one fails the player didn't mean it, so an entry
 	/// falls through to the next candidate (as a legacy `if` fell through to `..()`). Listed in the Menu as blocked.
 	var/list/offered_when
+	/// I_HELP, I_DISARM, I_GRAB or I_HURT: the stance this interaction answers, or null for any.
+	/// The resolver offers it only when the actor's input has that stance (a selector clause),
+	/// so the interaction that runs carries the intent: its effect reads `interaction.stance`.
+	/// Hostile stances (harm, disarm) also tag it INTERACTION_TAG_HOSTILE (combat mode ranking).
+	var/stance
 	/// For entries: whether the input is used up when it runs. FALSE mirrors a legacy handler that returned
 	/// nothing, after which the item's afterattack (or the alt-click loot panel) still ran.
 	var/consumes_input = TRUE
@@ -72,9 +77,20 @@
 	/// The compiled selector (tool, held_type, offered_when), made on first use.
 	var/tmp/datum/predicate/compiled_selector
 
-/// The clauses that say whether the player meant this interaction: tool, held type, offered_when.
+/datum/interaction/New()
+	..()
+	apply_stance_tags()
+
+/// A hostile stance makes the interaction hostile: the resolver ranks it by combat mode.
+/datum/interaction/proc/apply_stance_tags()
+	if(STANCE_IS_HOSTILE(stance) && !(INTERACTION_TAG_HOSTILE in tags))
+		tags = (tags || list()) + INTERACTION_TAG_HOSTILE
+
+/// The clauses that say whether the player meant this interaction: stance, tool, held type, offered_when.
 /datum/interaction/proc/selector_spec()
 	var/list/spec = list()
+	if(stance)
+		spec += list(dq_stance_clause(stance))
 	if(tool)
 		spec += list(REQ_TOOL_TIER(tool, tool_tier))
 	if(held_type)

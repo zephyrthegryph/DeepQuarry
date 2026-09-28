@@ -68,7 +68,7 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = 'so
 	else
 		. += overmind.blob_type.desc
 
-/obj/structure/blob/get_description_info(list/additional_information)
+/obj/structure/blob/get_mechanics_info(list/additional_information)
 	if(overmind)
 		return overmind.blob_type.effect_desc
 	return ..()

@@ -236,7 +236,7 @@ REF_STATIC(/obj/item/organ, "assists_languages")
 		if(INFECTION_LEVEL_THREE to INFINITY)
 			. += span_bolddanger("Necrosis has set in.")
 
-/obj/item/organ/get_description_info(list/additional_information)
+/obj/item/organ/get_mechanics_info(list/additional_information)
 	if(!additional_information)
 		additional_information = list()
 	if(butcherable && meat_type)

@@ -341,21 +341,6 @@ if $grep -n '\.is_(screwdriver|wrench|crowbar|wirecutter|multitool|welder)\(\)' 
 	FAILED=1
 fi;
 
-part "combat mode: a_intent"
-# Intents were replaced by combat mode (roadmap I6, doc/rewrite/interactions.md §12).
-# Read what a Use does with IS_HELPING/IS_HARMING/IS_DISARMING/IS_GRABBING or
-# use_stance(), and set it with set_combat_mode()/set_use_stance(). `a_intent`
-# survives only as a read-only mirror (code/modules/mob/combat_mode.dm) for
-# files other work owns and has not converted yet: the tool *_act procs I4 is
-# migrating.
-# These must not grow; delete an entry once its file is converted.
-a_intent_allowlist='code/modules/mob/combat_mode\.dm|code/game/machinery/doors/(airlock|windowdoor)\.dm|code/game/mecha/mecha\.dm|code/game/objects/items/devices/spy_bug\.dm|code/game/objects/structures/window\.dm|code/modules/maintenance_panels/maintenance_panel\.dm|code/modules/mob/living/silicon/robot/robot\.dm'
-if $grep -n '\ba_intent\b' "${code_files[@]}" | grep -vE "^($a_intent_allowlist):"; then
-	echo
-	echo -e "${RED}ERROR: a_intent is gone. Use combat mode: IS_HARMING(M), IS_HELPING(M), IS_DISARMING(M), IS_GRABBING(M) or M.use_stance() to read it, and set_combat_mode()/set_use_stance() to set it (code/__defines/combat_mode.dm).${NC}"
-	FAILED=1
-fi;
-
 part "interactions: no legacy handlers or object verbs (I7)"
 # Every input is an interaction (roadmap I7, doc/rewrite/interactions.md section 13):
 # no type overrides attackby, attack_hand, attack_self, click_alt or MouseDrop_T (the
@@ -367,11 +352,6 @@ i7_verb_allowlist='code/game/mecha/equipment/tools/(passenger|sleeper)\.dm|code/
 if $grep -n "^/(obj|turf)(/[A-Za-z0-9_]+)*/verb/[A-Za-z0-9_]+\(" "${code_files[@]}" | grep -vE "^(code/modules/unit_tests/|$i7_verb_allowlist):"; then
 	echo
 	echo -e "${RED}ERROR: object verbs are interactions now. Declare an INTERACT_VERB (code/__defines/interactions.dm) instead.${NC}"
-	FAILED=1
-fi;
-if $grep -n '^\s*description_info\s*=' "${code_files[@]}" | grep -E "^code/(game/machinery|ATMOSPHERICS|modules/power)/" | grep -vE "^code/game/machinery/protean_reconstitutor\.dm"; then
-	echo
-	echo -e "${RED}ERROR: description_info in machinery. Examine text is generated from the interactions.${NC}"
 	FAILED=1
 fi;
 

@@ -13,7 +13,7 @@
 
 	Otherwise pretty standard.
 */
-/mob/living/carbon/human/UnarmedAttack(atom/A, proximity)
+/mob/living/carbon/human/UnarmedAttack(atom/A, proximity, stance = I_HURT)
 
 	if(!..())
 		return
@@ -22,7 +22,7 @@
 	// If the gloves do anything, have them return 1 to stop
 	// normal attack_hand() here.
 	var/obj/item/clothing/gloves/G = get_equipped_item(SLOT_ID_GLOVES) // not typecast specifically enough in defines
-	if(istype(G) && G.Touch(A,1))
+	if(istype(G) && G.Touch(A, 1, stance))
 		return
 
 	A.attack_hand(src)
@@ -61,14 +61,14 @@
 			return TRUE
 	return ..()
 
-/mob/living/carbon/human/RangedAttack(atom/A)
+/mob/living/carbon/human/RangedAttack(atom/A, params, stance = I_HURT)
 	if(!get_equipped_item(SLOT_ID_GLOVES) && !mutation_count() && !spitting)
 		return
 	var/obj/item/clothing/gloves/G = get_equipped_item(SLOT_ID_GLOVES)
-	if((has_mutation(LASER_EYES)) && IS_HARMING(src))
+	if((has_mutation(LASER_EYES)) && stance == I_HURT)
 		LaserEyes(A) // moved into a proc below
 
-	else if(istype(G) && G.Touch(A,0)) // for magic gloves
+	else if(istype(G) && G.Touch(A, 0, stance)) // for magic gloves
 		return
 
 	else if(has_telegrip())
@@ -94,7 +94,7 @@
 /mob/living/carbon/alien/RestrainedClickOn(atom/A)
 	return
 
-/mob/living/carbon/alien/UnarmedAttack(atom/A, proximity)
+/mob/living/carbon/alien/UnarmedAttack(atom/A, proximity, stance = I_HURT)
 
 	if(!..())
 		return 0

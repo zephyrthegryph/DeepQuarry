@@ -1593,7 +1593,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/teppi, INTERACT_USE("Squeeze", PROC_RE
 	icon_state = "seal-signet"
 	drop_sound = 'sound/items/drop/ring.ogg'
 
-/obj/item/clothing/gloves/ring/buzzer/toy/Touch(atom/A, proximity)
+/obj/item/clothing/gloves/ring/buzzer/toy/Touch(atom/A, proximity, stance = I_HURT)
 	if(proximity && istype(usr, /mob/living/carbon/human))
 
 		return zap(usr, A, proximity)
@@ -1736,7 +1736,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/borgplushie/drake, INTERACT_ALT(null, 
 	if (lights_glowing)
 		add_overlay(emissive_appearance(icon, "[icon_state]-lights"))
 
-/obj/item/toy/plushie/borgplushie/drake/get_description_info(list/additional_information)
+/obj/item/toy/plushie/borgplushie/drake/get_mechanics_info(list/additional_information)
 	return "The lights on the plushie can be toggled [lights_glowing ? "off" : "on"] by alt-clicking on it."
 
 /obj/item/toy/plushie/borgplushie/drake/sec

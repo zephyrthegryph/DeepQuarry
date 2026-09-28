@@ -46,7 +46,7 @@
 		else
 			return "It's difficult to tell how much it'll influence your speed."
 
-/obj/item/clothing/get_description_info(list/additional_information)
+/obj/item/clothing/get_mechanics_info(list/additional_information)
 	var/armor_stats = description_info + "\
 	<br>"
 

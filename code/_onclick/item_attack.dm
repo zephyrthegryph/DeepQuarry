@@ -190,21 +190,28 @@ GLOBAL_LIST_EMPTY(interaction_entry_attack_modifier)
 		GLOB.interaction_entry_attack_modifier[actor] = saved
 
 /**
- * Every living mob's defaults, after everything else it offers: an empty hand
- * touches it (help, disarm, grab or punch, by the actor's stance: unarmed_touch()),
- * and an item hits it (hit_with_item()).
+ * Every living mob's defaults, after everything else it offers. Each is declared
+ * per stance, so the one that runs carries the intent: an empty hand helps,
+ * disarms, grabs or punches it (unarmed_touch()), and an item is used on it, or
+ * disarms, grabs or hits with it (hit_with_item()).
  */
 /mob/living/declare_interactions(list/into)
 	..()
 	var/static/list/default_specs = list(
-		INTERACT_HAND_DEFAULT("Touch", PROC_REF(interaction_touch)),
-		INTERACT_ITEM_DEFAULT("Attack", PROC_REF(interaction_hit)),
+		INTERACT_HAND_DEFAULT_AS(I_HELP, "Help", PROC_REF(interaction_touch)),
+		INTERACT_HAND_DEFAULT_AS(I_DISARM, "Shove", PROC_REF(interaction_touch)),
+		INTERACT_HAND_DEFAULT_AS(I_GRAB, "Take hold", PROC_REF(interaction_touch)),
+		INTERACT_HAND_DEFAULT_AS(I_HURT, "Punch", PROC_REF(interaction_touch)),
+		INTERACT_ITEM_DEFAULT_AS(I_HELP, "Use on", PROC_REF(interaction_hit)),
+		INTERACT_ITEM_DEFAULT_AS(I_DISARM, "Shove with", PROC_REF(interaction_hit)),
+		INTERACT_ITEM_DEFAULT_AS(I_GRAB, "Hold with", PROC_REF(interaction_hit)),
+		INTERACT_ITEM_DEFAULT_AS(I_HURT, "Hit", PROC_REF(interaction_hit)),
 	)
 	for(var/spec in default_specs)
 		into += dq_interaction_from_spec(/mob/living, spec)
 
 /mob/living/proc/interaction_touch(mob/living/user, obj/item/held, datum/interaction/interaction)
-	unarmed_touch(user)
+	unarmed_touch(user, interaction.stance)
 	return TRUE
 
 /// Signal listeners first (a nanoform's held body), then the hit. A hit that didn't use the input lets afterattack follow.
@@ -212,18 +219,18 @@ GLOBAL_LIST_EMPTY(interaction_entry_attack_modifier)
 	if(om_wants(src, /datum/om/event/before/attackby) && om_emit(src, new /datum/om/event/before/attackby(I, user, dq_interaction_click_params(user))) == EVENT_VETO)
 		return INTERACTION_HANDLED_PASS
 	var/modifier = GLOB.interaction_entry_attack_modifier[user]
-	return hit_with_item(I, user, isnull(modifier) ? 1 : modifier) ? TRUE : INTERACTION_HANDLED_PASS
+	return hit_with_item(I, user, isnull(modifier) ? 1 : modifier, interaction.stance) ? TRUE : INTERACTION_HANDLED_PASS
 
-/// An empty-hand touch on this mob; mob types extend it (their unarmed combat). The base reacts for the AI and thorns.
-/mob/living/proc/unarmed_touch(mob/living/user)
+/// An empty-hand touch on this mob in `stance` (I_HELP, I_DISARM, I_GRAB or I_HURT); mob types extend it (their unarmed combat). The base reacts for the AI and thorns.
+/mob/living/proc/unarmed_touch(mob/living/user, stance = I_HELP)
 	return
 
-/// Hit with an item: surgery, vore, then the attack (a phased swing in combat mode).
-/mob/living/proc/hit_with_item(obj/item/I, mob/user, attack_modifier = 1)
+/// Hit with an item in `stance`: surgery, vore, then the attack (a phased swing when hostile).
+/mob/living/proc/hit_with_item(obj/item/I, mob/user, attack_modifier = 1, stance = I_HURT)
 	if(!ismob(user))
 		return FALSE
 
-	if(can_operate(src, user) && I.do_surgery(src,user))
+	if(can_operate(src, user, stance) && I.do_surgery(src,user))
 		return TRUE
 
 	if(vore_attackby(I, user)) // The vore, of course.
@@ -232,14 +239,14 @@ GLOBAL_LIST_EMPTY(interaction_entry_attack_modifier)
 	// Phased melee: a harm-intent attack with a real weapon winds up, telegraphs its swing
 	// tiles, then resolves (see code/modules/mob/living/melee_swing.dm). Diverts the instant
 	// attack. Non-harm intents, unarmed, and item-use on objects never reach this branch.
-	if(isliving(user) && IS_HARMING(user) && I.force && !(I.flags & NOBLUDGEON))
+	if(isliving(user) && stance == I_HURT && I.force && !(I.flags & NOBLUDGEON))
 		var/mob/living/attacker = user
 		if(attacker.is_swinging)
 			return FALSE // already mid-swing — ignore the queued attack click
 		attacker.begin_melee_swing(src, I)
 		return ITEM_INTERACT_SUCCESS // suppress afterattack; the swing resolves through I.attack() itself
 
-	return I.attack(src, user, user.zone_sel?.selecting || BP_TORSO, attack_modifier)
+	return I.attack(src, user, user.zone_sel?.selecting || BP_TORSO, attack_modifier, stance)
 
 // Used to get how fast a mob should attack, and influences click delay.
 // This is just for inheritence.
@@ -256,14 +263,16 @@ GLOBAL_LIST_EMPTY(interaction_entry_attack_modifier)
 
 // Proximity_flag is 1 if this afterattack was called on something adjacent, in your square, or on your person.
 // Click parameters is the params string from byond Click() code, see that documentation.
-/obj/item/proc/afterattack(atom/target, mob/user, proximity_flag, click_parameters)
+// `stance` is the input's stance (the adapter reads it once: input_stance()); I_HURT when a machine or AI fires it.
+/obj/item/proc/afterattack(atom/target, mob/user, proximity_flag, click_parameters, stance = I_HURT)
 	return
 
 //I would prefer to rename this attack_as_weapon(), but that would involve touching hundreds of files.
-/obj/item/proc/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
+/// Used as a weapon on M in `stance`, the stance of the interaction that swung it (a mob's per-stance item defaults).
+/obj/item/proc/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	if(!force || (flags & NOBLUDGEON))
 		return ITEM_INTERACT_FAILURE
-	if(M == user && !IS_HARMING(user))
+	if(M == user && stance != I_HURT)
 		return ITEM_INTERACT_FAILURE
 	if(M.is_incorporeal()) // No attacking phased entities :)
 		return ITEM_INTERACT_FAILURE
@@ -273,7 +282,7 @@ GLOBAL_LIST_EMPTY(interaction_entry_attack_modifier)
 	M.lastattacker = user
 
 	if(!no_attack_log)
-		add_attack_logs(user,M,"attacked with [name] (STANCE: [uppertext(user.use_stance())]) (KIND: [injury_kind_name(injury_kind)])")
+		add_attack_logs(user,M,"attacked with [name] (STANCE: [uppertext(stance)]) (KIND: [injury_kind_name(injury_kind)])")
 	/////////////////////////
 
 	// A phased melee swing (melee_swing.dm) resolves its hits THROUGH this proc so

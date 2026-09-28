@@ -336,7 +336,7 @@ REF_SPILL_LIST(/obj/item/clothing/gloves, "contents")
 		M.update_inv_gloves()
 
 // Called just before an attack_hand(), in mob/UnarmedAttack()
-/obj/item/clothing/gloves/proc/Touch(atom/A, proximity)
+/obj/item/clothing/gloves/proc/Touch(atom/A, proximity, stance = I_HURT)
 	return 0 // return 1 to cancel attack_hand()
 
 /obj/item/clothing/gloves/wash()

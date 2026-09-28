@@ -109,7 +109,7 @@
 	if(gave && victim)
 		victim.equip_to_slot(mine, slot)
 
-/obj/item/clothing/gloves/sterile/thieves/Touch(atom/A, proximity)
+/obj/item/clothing/gloves/sterile/thieves/Touch(atom/A, proximity, stance = I_HURT)
 	if(proximity && ishuman(usr) && ishuman(A))
 		om_flow_start(/datum/om/flow/pickpocket, usr, A)
 		return 1
@@ -136,7 +136,7 @@ REF_OWNED(/obj/item/clothing/gloves/ring/buzzer, "battery")
 	if(!battery)
 		battery = new battery_type(src)
 
-/obj/item/clothing/gloves/ring/buzzer/Touch(atom/A, proximity)
+/obj/item/clothing/gloves/ring/buzzer/Touch(atom/A, proximity, stance = I_HURT)
 	if(proximity && istype(usr, /mob/living/carbon/human))
 		return zap(usr, A, proximity)
 	return 0

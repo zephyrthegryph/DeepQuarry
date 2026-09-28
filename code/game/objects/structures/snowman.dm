@@ -16,8 +16,7 @@
 	id = "snowman_crush"
 	name = "Crush"
 	effect = /obj/structure/snowman/proc/interaction_crush
-	offered_when = list(REQ_HARMING)
-	tags = list(INTERACTION_TAG_HOSTILE)
+	stance = I_HURT
 
 /obj/structure/snowman/proc/interaction_crush(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_notice("In one hit, [src] easily crumples into a pile of snow. You monster."))

@@ -103,14 +103,11 @@
 //		.["holographic"] = "It looks like a hologram."
 
 
-/obj/item/get_description_info(list/additional_information)
+/obj/item/get_mechanics_info(list/additional_information)
 	var/list/weapon_stats = list()
 
 	if(LAZYLEN(additional_information))
 		weapon_stats += additional_information
-
-	if(description_info)
-		weapon_stats += description_info
 
 	if(force)
 		weapon_stats += "If used in melee, it deals [describe_power(src)] [sharp ? "sharp" : "blunt"] damage, [describe_penetration(src)], and has [describe_speed(src)]."
@@ -132,7 +129,5 @@
 		if(index != weapon_stats.len)
 			msg += "\n"
 		assembled_string += msg
-		if(msg == description_info) //keeping the formatting as identical as I can
-			assembled_string += "<br>"
 
 	return assembled_string

@@ -72,8 +72,7 @@ DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interact
 /datum/interaction/machine_item/floor_light_harm
 	id = "floor_light_harm"
 	name = "Hit"
-	offered_when = list(REQ_COMBAT_MODE)
-	tags = list(INTERACTION_TAG_HOSTILE)
+	stance = I_HURT
 	consumes_input = FALSE
 	effect = /obj/machinery/floor_light/proc/interaction_harm
 

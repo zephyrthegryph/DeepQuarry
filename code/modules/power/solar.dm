@@ -78,8 +78,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	name = "Strike"
 	category = INTERACTION_CAT_ATTACK
 	held_type = /obj/item
-	offered_when = list(REQ_COMBAT_MODE)
-	tags = list(INTERACTION_TAG_HOSTILE)
+	stance = I_HURT
 	effect = /obj/machinery/power/solar/proc/interaction_strike
 
 /obj/machinery/power/solar/proc/interaction_strike(mob/user, obj/item/held, datum/interaction/interaction)

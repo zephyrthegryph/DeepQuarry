@@ -7,27 +7,21 @@
 //   Use (the Disarm and Grab keys, or the Menu). AI brains may hold a variant
 //   as their chosen special attack.
 //
-// The I_* values name the four outcomes a Use can have. use_stance() returns
-// one of them; the IS_* macros below test for one.
+// The I_* values name the four stances a Use can have (help, disarm, grab, harm).
+// Interactions declare one (`/datum/interaction/var/stance`, the INTERACT_*_AS
+// compact shapes): the resolver offers a stance-declared interaction only when
+// it matches the actor's input, so the interaction that runs carries the intent.
+// Effects read `interaction.stance`; code an interaction calls into takes a
+// `stance` argument. Only the input layer reads the mob's state, through
+// /mob/proc/input_stance() (tools/ci/stance_examine_lint.py keeps it there).
 
 /// The Disarm variant of a Use.
 #define ATTACK_VARIANT_DISARM "disarm"
 /// The Grab variant of a Use.
 #define ATTACK_VARIANT_GRAB "grab"
 
-/// A Use with combat mode off and no variant: help and neutral outcomes.
-#define IS_HELPING(M) (!(M).combat_mode && !(M).attack_variant)
-/// A Use with combat mode on and no variant: the harm outcome.
-#define IS_HARMING(M) ((M).combat_mode && !(M).attack_variant)
-/// The Disarm variant.
-#define IS_DISARMING(M) ((M).attack_variant == ATTACK_VARIANT_DISARM)
-/// The Grab variant.
-#define IS_GRABBING(M) ((M).attack_variant == ATTACK_VARIANT_GRAB)
-
-/// Interaction requirement: the actor has combat mode on.
-#define REQ_COMBAT_MODE REQ_ON(PRED_ACTOR, /mob/proc/pred_combat_mode, "combat mode is off")
-/// Interaction requirement: the actor has combat mode off.
-#define REQ_NO_COMBAT_MODE REQ_ON(PRED_ACTOR, /mob/proc/pred_no_combat_mode, "combat mode is on")
+/// Whether a stance is hostile: the resolver ranks hostile interactions by combat mode.
+#define STANCE_IS_HOSTILE(stance) ((stance) == I_HURT || (stance) == I_DISARM)
 
 /// How far combat mode moves a hostile interaction up (on) or down (off) the resolver's order.
 #define COMBAT_MODE_PRIORITY_SHIFT 1000
@@ -38,8 +32,3 @@
 #define COMBAT_GRAB_BINDING "combat_grab"
 
 /// From /mob/proc/set_combat_mode(): (new_mode)
-
-/// Selector clause: the actor's Use is the harm outcome (IS_HARMING).
-#define REQ_HARMING REQ_PROC(/proc/dq_pred_harming, "combat mode is off")
-/// Selector clause: the actor's Use is the help outcome (IS_HELPING).
-#define REQ_HELPING REQ_PROC(/proc/dq_pred_helping, "combat mode is on")
