@@ -478,6 +478,32 @@ if [ "$fire_act_count" -gt "$fire_act_max" ]; then
 	FAILED=1
 fi;
 
+part "damage: ratchet on non-turf ex_act() overrides (D5)"
+# Explosions reach objects as a blast packet from /obj/ex_act() (receive_explosion():
+# a fraction of max_integrity, then armour). Tune max_integrity, armour or
+# resistance_flags = BOMB_PROOF instead of a severity ladder. Remaining overrides
+# carry orthogonal effects (spawning, detonating, draining) or separate pools
+# (blobs, plants, shields, modular computers, mobs). This count may only go down.
+ex_act_max=66
+ex_act_count=$($grep -c '^/(atom|obj|mob|area)[A-Za-z0-9_/]*/ex_act\(' "${code_files[@]}" | awk -F: '{s += $NF} END {print s + 0}')
+if [ "$ex_act_count" -gt "$ex_act_max" ]; then
+	echo
+	echo -e "${RED}ERROR: $ex_act_count non-turf ex_act() overrides (ratchet: $ex_act_max). Let the blast packet land (max_integrity, armour, BOMB_PROOF); keep only orthogonal effects and chain to ..().${NC}"
+	FAILED=1
+fi;
+
+part "damage: ratchet on atom_break()/set_broken() overrides (D4)"
+# Breaking is declared: integrity_failure, broken_icon_state, and the base
+# /obj/machinery break (BROKEN, signal, icon). Override only for genuinely
+# unique behaviour. This count may only go down.
+atom_break_max=18
+atom_break_count=$($grep -c '^/[A-Za-z0-9_/]*/(atom_break|set_broken)\(' "${code_files[@]}" | awk -F: '{s += $NF} END {print s + 0}')
+if [ "$atom_break_count" -gt "$atom_break_max" ]; then
+	echo
+	echo -e "${RED}ERROR: $atom_break_count atom_break()/set_broken() overrides (ratchet: $atom_break_max). Declare integrity_failure / broken_icon_state instead.${NC}"
+	FAILED=1
+fi;
+
 part "weapon vocabulary: injury kinds, not damage types"
 # Weapons, projectiles, blobs, unarmed and animal attacks declare what they
 # inflict as INJURY_* kinds (`injury_kind`, or an `injury_kinds` alist for a

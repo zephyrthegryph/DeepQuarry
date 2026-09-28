@@ -80,6 +80,7 @@
 
 /obj/effect/dummy/spell_jaunt
 	name = "water"
+	resistance_flags = BOMB_PROOF
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "nothing"
 	var/canmove = 1
@@ -107,8 +108,6 @@ REF_SPILL_LIST(/obj/effect/dummy/spell_jaunt, "contents")
 	src.canmove = 0
 	om_after(src, 2, PROC_REF(allow_move))
 
-/obj/effect/dummy/spell_jaunt/ex_act(blah)
-	return
 /obj/effect/dummy/spell_jaunt/bullet_act(blah)
 	return
 
