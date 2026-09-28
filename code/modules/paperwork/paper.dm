@@ -44,6 +44,9 @@
 	/// The registered evidence id this sheet carries and retains while it exists
 	/// (a scan printout, a signed form). Released when the paper is destroyed.
 	var/carried_evidence_id
+	/// The contract paperwork state of a paper (was the contract_document
+	/// component; code/modules/contracts/medical_trial_side_contracts.dm). Owned by the paper.
+	var/datum/contract_document/contract_document
 	/// Machine-readable freight routing attached by a crate ledger. Visible text
 	/// remains ordinary editable paper; this signed payload is invalidated if the
 	/// paper or sealed cargo changes.
@@ -910,3 +913,5 @@ DECLARE_INTERACTIONS(/obj/item/paper, \
 	if(carried_evidence_id)
 		SScontracts?.release_evidence(carried_evidence_id)
 		carried_evidence_id = null
+
+DECLARE_REF(/obj/item/paper, "contract_document", OWNED, null)
