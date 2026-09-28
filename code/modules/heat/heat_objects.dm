@@ -175,3 +175,49 @@
 	visible_message(span_danger("\The [src] cooks off!"))
 	P.launch_projectile_from_turf(get_step(T, pick(GLOB.alldirs)))
 
+
+// ------------------------------------------------------ machine heat (H4)
+
+/obj/machinery
+	/// Declared heat output, watts, while the machine runs (current_heat_output()).
+	/// The power goes into the machine's heat body, which passes it to its
+	/// surroundings; above its heat limit the overheating rule damages it.
+	var/heat_output = 0
+	/// Declared heat dissipation: conductance to the surroundings, W/K. Null
+	/// keeps the default. Sets how far above ambient heat_output runs it.
+	var/heat_dissipation
+	/// Watts currently fed to the heat body by set_heat_output().
+	var/tmp/heat_output_now = 0
+
+/obj/machinery/thermal_properties()
+	. = ..()
+	if(heat_dissipation)
+		.[THERMAL_CONDUCTANCE] = heat_dissipation
+
+/// Watts the machine emits right now. Subtypes scale it by load.
+/obj/machinery/proc/current_heat_output()
+	if(!heat_output || !use_power || (stat & (NOPOWER|BROKEN)))
+		return 0
+	return heat_output
+
+/// Re-reads current_heat_output(). power_change() calls it; call it when load changes.
+/obj/machinery/proc/update_heat_output()
+	if(!heat_output && !heat_output_now)
+		return
+	set_heat_output(current_heat_output())
+
+/// Feeds `watts` into the heat body; the body is kept while it emits.
+/obj/machinery/proc/set_heat_output(watts)
+	watts = max(watts, 0)
+	if(watts == heat_output_now && (!watts || !isnull(heat_body)))
+		return
+	if(watts)
+		if(!create_heat_body(TRUE))
+			heat_output_now = 0
+			return
+		vg_heat_body_keep(heat_body, TRUE)
+		vg_heat_body_power(heat_body, watts)
+	else if(!isnull(heat_body))
+		vg_heat_body_power(heat_body, 0)
+		vg_heat_body_keep(heat_body, FALSE)
+	heat_output_now = watts

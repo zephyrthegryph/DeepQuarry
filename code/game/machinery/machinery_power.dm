@@ -46,6 +46,7 @@
 		return FALSE
 	OM_CHANGED(src, CHANGE_MACHINE_POWER) // dm-health: tracked(CHANGE_MACHINE_POWER)
 	SEND_SIGNAL(src, (stat & NOPOWER) ? COMSIG_MACHINERY_POWER_LOST : COMSIG_MACHINERY_POWER_RESTORED)
+	update_heat_output()
 	return TRUE
 
 // Get the amount of power this machine will consume each cycle.  Override by experts only!

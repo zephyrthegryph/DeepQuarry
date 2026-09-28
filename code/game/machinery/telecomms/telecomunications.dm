@@ -34,6 +34,9 @@
 	var/on = 1
 	max_integrity = 100
 	var/produces_heat = 1	//whether the machine will produce heat when on.
+	heat_output = 1 // scaled by current_heat_output()
+	/// Dissipates its idle heat a few kelvin above the room.
+	heat_dissipation = 200
 	var/delay = 10 // how many process() ticks to delay per heat
 	var/long_range_link = 0	// Can you link it across Z levels or on the otherside of the map? (Relay & Hub)
 	var/hide = 0				// Is it a hidden machine?
@@ -41,8 +44,8 @@
 
 	var/datum/looping_sound/tcomms/soundloop
 	var/noisy = TRUE
-	/// Telecomms thermal wear and idle heat are slow physical processes. They do
-	/// not justify keeping every network node in the two-second machinery roster.
+	/// Traffic decay and the heat level it sets are slow; they do not justify
+	/// keeping every network node in the two-second machinery roster.
 	var/thermal_timer
 	var/last_thermal_check
 
@@ -207,11 +210,8 @@ REF_OWNED(/obj/machinery/telecomms, "soundloop")
 		thermal_timer = null
 	var/power_changed = update_power()
 
-	// Preserve the former per-fire probabilities while doing the work once per
-	// thermal interval. Heat itself was emitted once per eleven old fires.
 	var/elapsed_cycles = last_thermal_check ? max(round((world.time - last_thermal_check) / max(MACHINE_SERVICE_INTERVAL, 1)), 1) : 1
 	last_thermal_check = world.time
-	checkheat(elapsed_cycles)
 
 	// Power transitions are the only process-time state that changes this icon.
 	// Reassigning icon_state every machinery tick is surprisingly expensive,
@@ -221,6 +221,7 @@ REF_OWNED(/obj/machinery/telecomms, "soundloop")
 
 	if(traffic > 0)
 		traffic = max(traffic - netspeed * elapsed_cycles, 0)
+	update_heat_output()
 	schedule_thermal_check()
 	return PROCESS_KILL
 
@@ -251,53 +252,14 @@ REF_OWNED(/obj/machinery/telecomms, "soundloop")
 			var/duration = (300 * 10)/severity
 			om_after(src, rand(duration - 20, duration + 20), PROC_REF(emp_recover)) // Takes a long time for the machines to reboot.
 
-/obj/machinery/telecomms/proc/checkheat(elapsed_cycles = 1)
-	if(QDELETED(src))
-		return
-	// Checks heat from the environment and applies any integrity damage
-	var/datum/gas_mixture/environment = loc.return_air()
-	var/damage_chance = 0                           // Percent based chance of applying 1 integrity damage this tick
-	switch(environment.return_temperature())
-		if((T0C + 40) to (T0C + 70))                // 40C-70C, minor overheat, 10% chance of taking damage
-			damage_chance = 10
-		if((T0C + 70) to (T0C + 130))				// 70C-130C, major overheat, 25% chance of taking damage
-			damage_chance = 25
-		if((T0C + 130) to (T0C + 200))              // 130C-200C, dangerous overheat, 50% chance of taking damage
-			damage_chance = 50
-		if((T0C + 200) to INFINITY)					// More than 200C, INFERNO. Takes damage every tick.
-			damage_chance = 100
-	var/accumulated_damage_chance = damage_chance ? 100 * (1 - ((100 - damage_chance) / 100) ** elapsed_cycles) : 0
-	if (accumulated_damage_chance && prob(accumulated_damage_chance))
-		take_damage(1, BURN, FIRE, FALSE)
+/// Telecomms heat: idle_power_usage while on, 30% with no traffic. It goes
+/// through the machine's heat body (heat_objects.dm); overheating is the
+/// overheating rule at the telecomms heat limit (temperature_thresholds.dm).
+/obj/machinery/telecomms/current_heat_output()
+	if(!produces_heat || !on || !use_power || (stat & (NOPOWER|BROKEN)))
+		return 0
+	return traffic > 0 ? idle_power_usage : idle_power_usage * 0.3
 
-	if(on)
-		produce_heat()
-
-/obj/machinery/telecomms/proc/produce_heat()
-	if (!produces_heat)
-		return
-
-	if (!use_power)
-		return
-
-	if(!(stat & (NOPOWER|BROKEN)))
-		var/turf/simulated/L = loc
-		if(istype(L))
-			var/datum/gas_mixture/env = L.return_air()
-
-			var/transfer_moles = 0.25 * env.total_moles()
-
-			var/datum/gas_mixture/removed = env.remove(transfer_moles)
-
-			if(removed)
-
-				var/heat_produced = idle_power_usage	//obviously can't produce more heat than the machine draws from it's power source
-				if (traffic <= 0)
-					heat_produced *= 0.30	//if idle, produce less heat.
-
-				removed.add_thermal_energy(heat_produced)
-
-			env.merge(removed)
 /*
 	The receiver idles and receives messages from subspace-compatible radio equipment;
 	primarily headsets. They then just relay this information to all linked devices,

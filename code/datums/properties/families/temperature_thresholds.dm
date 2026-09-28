@@ -109,6 +109,15 @@
 	value = T0C + 1600
 	overrides = list(/datum/property_provider/material/melting_point)
 
+/// Telecomms equipment starts failing above 50 C (was the room-temperature
+/// damage ladder in checkheat()).
+/datum/property_provider/constant/telecomms_melting_point
+	property = PROP_MELTING_POINT
+	applies_to = /obj/machinery/telecomms
+	unit = PROP_UNIT_KELVIN
+	value = T0C + 50
+	overrides = list(/datum/property_provider/material/melting_point)
+
 /datum/property_def/max_heat_protection
 	id = PROP_MAX_HEAT_PROTECTION
 	name = "Heat protection"
