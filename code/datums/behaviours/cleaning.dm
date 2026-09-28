@@ -1,18 +1,9 @@
-/datum/element/cleaning
+/// Cleans the tile a movable moves onto (was /datum/element/cleaning). A shared behaviour
+/// singleton on the moved event. Attach with om_attach(AM, /datum/om/behaviour/cleaning).
+/datum/om/behaviour/cleaning
+	handles = list(/datum/om/event/moved)
 
-/datum/element/cleaning/Attach(datum/target)
-	. = ..()
-	if(!ismovable(target))
-		return ELEMENT_INCOMPATIBLE
-	RegisterSignal(target, COMSIG_MOVABLE_MOVED, PROC_REF(clean))
-
-/datum/element/cleaning/Detach(datum/target)
-	. = ..()
-	UnregisterSignal(target, COMSIG_MOVABLE_MOVED)
-
-/datum/element/cleaning/proc/clean(datum/source)
-	SIGNAL_HANDLER
-
+/datum/om/behaviour/cleaning/on_moved(atom/movable/source, datum/om/event/moved/event)
 	var/atom/movable/AM = source
 	var/turf/tile = AM.loc
 	if(!isturf(tile))
