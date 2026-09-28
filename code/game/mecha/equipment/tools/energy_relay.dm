@@ -34,20 +34,19 @@
 
 /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/detach()
 	om_task_periodic_stop(src)
-//	chassis.proc_res["dynusepower"] = null
-	LAZYSET(chassis.proc_res, "dyngetcharge", null)
+	if(chassis?.energy_relay == src)
+		chassis.energy_relay = null
 	..()
 	return
 
 /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/attach(obj/mecha/M)
 	..()
-	LAZYSET(chassis.proc_res, "dyngetcharge", src)
-//	chassis.proc_res["dynusepower"] = src
+	chassis.energy_relay = src
 	return
 
 /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/can_attach(obj/mecha/M)
 	if(..())
-		if(!LAZYACCESS(M.proc_res, "dyngetcharge"))// && !LAZYACCESS(M.proc_res, "dynusepower"))
+		if(!M.energy_relay)
 			return 1
 	return 0
 

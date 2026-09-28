@@ -267,7 +267,7 @@
 	return TRUE
 
 /obj/mecha/proc/weld_strike(mob/actor, obj/item/held, datum/interaction/interaction)
-	call((LAZYACCESS(proc_res, "dynattackby")||src), "dynattackby")(held, actor)
+	dynattackby(held, actor)
 	return TRUE
 
 /// Patches 10 integrity: the frame first, then the hull, then the armour plates.

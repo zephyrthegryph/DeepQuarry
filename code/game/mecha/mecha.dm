@@ -29,7 +29,10 @@
 	var/add_req_access = 1
 	var/maint_access = 1
 	var/dna								//Dna-locking the mech
-	var/list/proc_res 			//Stores proc owners, like proc_res["functionname"] = owner reference
+	/// The active ion jetpack; when set, movement goes through its dyndomove().
+	var/obj/item/mecha_parts/mecha_equipment/tool/jetpack/active_jetpack
+	/// The attached energy relay; when set, charge reads go through its dyngetcharge().
+	var/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/energy_relay
 	var/datum/effect/effect/system/spark_spread/spark_system
 	var/lights = 0
 	var/lights_power = 6
@@ -779,7 +782,9 @@ DECLARE_REF(/obj/mecha, "minihud", PAIR, "owner_mech")
 
 /obj/mecha/proc/domove(direction)
 
-	return call((LAZYACCESS(proc_res, "dyndomove")||src), "dyndomove")(direction)
+	if(active_jetpack)
+		return active_jetpack.dyndomove(direction)
+	return dyndomove(direction)
 
 /obj/mecha/proc/get_step_delay()
 	var/tally = 0
@@ -2561,14 +2566,16 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 	return (get_charge()>=amount)
 
 /obj/mecha/proc/get_charge()
-	return call((LAZYACCESS(proc_res, "dyngetcharge")||src), "dyngetcharge")()
+	if(energy_relay)
+		return energy_relay.dyngetcharge()
+	return dyngetcharge()
 
 /obj/mecha/proc/dyngetcharge()//returns null if no powercell, else returns cell.charge
 	if(!src.cell) return
 	return max(0, src.cell.charge)
 
 /obj/mecha/proc/use_power(amount)
-	return call((LAZYACCESS(proc_res, "dynusepower")||src), "dynusepower")(amount)
+	return dynusepower(amount)
 
 /obj/mecha/proc/dynusepower(amount)
 	update_cell_alerts()
@@ -2762,6 +2769,8 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 DECLARE_REF(/obj/mecha, "spark_system", OWNED, null)
 DECLARE_REF(/obj/mecha, "smoke_system", OWNED, null)
 DECLARE_REF(/obj/mecha, "radio", OWNED, null)
+DECLARE_REF(/obj/mecha, "active_jetpack", HELD, null)
+DECLARE_REF(/obj/mecha, "energy_relay", HELD, null)
 DECLARE_REF(/obj/mecha, "eject_action", OWNED, null)
 DECLARE_REF(/obj/mecha, "internals_action", OWNED, null)
 DECLARE_REF(/obj/mecha, "lights_action", OWNED, null)
