@@ -83,7 +83,8 @@
 	B.transferlocation = B2.name
 	B.relay_resist(prey)
 	TEST_ASSERT_EQUAL(prey.loc, B2, "a sure transfer should move the prey to the second belly")
-	TEST_ASSERT_EQUAL(dq_path_slot_of(B2, prey)?.slot_id, BELLY_SLOT_INTERIOR, "the transfer should land in the second belly's slot")
+	var/datum/om/relation/slot/prey_slot = dq_path_slot_of(B2, prey)
+	TEST_ASSERT_EQUAL(prey_slot?.slot_id, BELLY_SLOT_INTERIOR, "the transfer should land in the second belly's slot")
 	TEST_ASSERT_NULL(B.cycle_token, "the emptied belly should stop cycling")
 	TEST_ASSERT(B2.cycle_token, "the occupied second belly should cycle")
 

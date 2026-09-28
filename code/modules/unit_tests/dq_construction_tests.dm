@@ -378,7 +378,8 @@
 	TEST_ASSERT_EQUAL(wreck.salvage_num, 0, "the welder cuts until the salvage runs out")
 	var/datum/interaction/construction/cut = dq_edge(wreck, "wreck>wreck:welder")
 	TEST_ASSERT(cut.why_not(H, wreck, welder), "and then can't cut any more")
-	TEST_ASSERT_EQUAL(construction_graph_of(wreck).state_of(wreck), "wreck", "still a wreck")
+	var/datum/construction_graph/wreck_graph = construction_graph_of(wreck)
+	TEST_ASSERT_EQUAL(wreck_graph.state_of(wreck), "wreck", "still a wreck")
 
 // ---- Girders ----
 

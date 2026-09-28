@@ -63,7 +63,8 @@ MATERIAL_MIX(/obj/item/dq_matter_test, list(MAT_STEEL = 100, MAT_GLASS = 50))
 	return null
 
 /datum/unit_test/dq_matter_type_totals_match_snapshot/Run()
-	var/list/changes = dq_matter_snapshot_changes().Copy()
+	var/list/snapshot_changes = dq_matter_snapshot_changes()
+	var/list/changes = snapshot_changes.Copy()
 	var/list/fixes = dq_matter_snapshot_fixes()
 	for(var/path in fixes)
 		changes[path] = fixes[path]

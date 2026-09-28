@@ -125,7 +125,7 @@
 
 /// Makes PATH a pooled type: take one with pool_take(PATH), give it back with
 /// pool_release(obj) or obj.release(). Pooled objects refuse a normal qdel.
-#define POOL_DECLARE(PATH) ##PATH { is_pooled() { return TRUE; } proc/release() { pool_release(src); } Destroy(force) { if(!force) { pool_refused_qdel(src); return QDEL_HINT_LETMELIVE; } return ..(); } }
+#define POOL_DECLARE(PATH) PATH/is_pooled() { return TRUE; }; PATH/proc/release() { pool_release(src); }; PATH/Destroy(force) { if(!force) { pool_refused_qdel(src); return QDEL_HINT_LETMELIVE; } return ..(); }
 
 /// First line of a pooled type's procs: crashes when the object was released
 /// (poisoned) or is sitting in the pool, catching use after release.

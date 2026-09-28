@@ -22,7 +22,8 @@
 	TEST_ASSERT_EQUAL(A.canonical, "melee=40;bullet=30", "canonical text keeps the key order")
 	TEST_ASSERT_EQUAL(dq_armor(null), dq_armor_none(), "no values is the empty armour")
 	TEST_ASSERT_EQUAL(dq_armor_from_spec(""), dq_armor_none(), "an empty spec is the empty armour")
-	TEST_ASSERT(dq_armor_none().is_empty(), "the empty armour has nothing")
+	var/datum/armor/none = dq_armor_none()
+	TEST_ASSERT(none.is_empty(), "the empty armour has nothing")
 	TEST_ASSERT_EQUAL(A.with(LASER, 20), dq_armor(list(MELEE = 40, BULLET = 30, LASER = 20)), "with() interns its result")
 	TEST_ASSERT_EQUAL(A.with(BULLET, 0), dq_armor(list(MELEE = 40)), "with() a zero drops the key")
 	TEST_ASSERT_EQUAL(A.add(dq_armor(list(MELEE = 5, BIO = 10))), dq_armor(list(MELEE = 45, BULLET = 30, BIO = 10)), "add() sums key by key")
@@ -162,7 +163,8 @@
 	soaked = plate.soak(INJURY_CUT, 10, 100)
 	TEST_ASSERT_EQUAL(soaked[ARMOR_SOAK_KIND], INJURY_CUT, "full penetration keeps the edge")
 	TEST_ASSERT_EQUAL(soaked[ARMOR_SOAK_AMOUNT], 10, "and the whole cut")
-	soaked = dq_armor_none().soak(INJURY_PIERCE, 10, 0)
+	var/datum/armor/no_armor = dq_armor_none()
+	soaked = no_armor.soak(INJURY_PIERCE, 10, 0)
 	TEST_ASSERT_EQUAL(soaked[ARMOR_SOAK_KIND], INJURY_PIERCE, "no armour keeps the point")
 	soaked = plate.soak(INJURY_BLUNT, 10, 0, -50)
 	TEST_ASSERT(dq_near(soaked[ARMOR_SOAK_AMOUNT], 5), "a -50 body factor bonus takes armour off ([soaked[ARMOR_SOAK_AMOUNT]])")
@@ -262,8 +264,9 @@
 		TEST_ASSERT_EQUAL(R, dq_impact_response_for_material(M), "[name]'s response is interned")
 
 	var/datum/material/plasteel = GLOB.name_to_material[MAT_PLASTEEL]
-	TEST_ASSERT(dq_impact_response_for_material(plasteel).factor(DAMAGE_BLUNT) < 1, "plasteel shrugs off some of a blow")
-	TEST_ASSERT(dq_impact_response_for_material(plasteel).factor(DAMAGE_THERMAL) < 1, "plasteel resists heat")
+	var/datum/impact_response/plasteel_response = dq_impact_response_for_material(plasteel)
+	TEST_ASSERT(plasteel_response.factor(DAMAGE_BLUNT) < 1, "plasteel shrugs off some of a blow")
+	TEST_ASSERT(plasteel_response.factor(DAMAGE_THERMAL) < 1, "plasteel resists heat")
 
 	// On a real object: a plasteel knife loses less to a blow than a steel one.
 	var/obj/item/material/knife/steel_knife = allocate(/obj/item/material/knife, null, MAT_STEEL)
@@ -271,7 +274,7 @@
 	TEST_ASSERT_EQUAL(steel_knife.impact_factor(DAMAGE_BLUNT), 1, "a steel knife takes a blow in full")
 	var/before = plasteel_knife.get_integrity()
 	plasteel_knife.deal_damage(DAMAGE_BLUNT, 10)
-	var/expected = round(10 * dq_impact_response_for_material(plasteel).factor(DAMAGE_BLUNT), DAMAGE_PRECISION)
+	var/expected = round(10 * plasteel_response.factor(DAMAGE_BLUNT), DAMAGE_PRECISION)
 	TEST_ASSERT(dq_near(before - plasteel_knife.get_integrity(), expected), "a plasteel knife takes [expected] of a 10 blow, took [before - plasteel_knife.get_integrity()]")
 
 	// Items read the same numbers through P1 properties.

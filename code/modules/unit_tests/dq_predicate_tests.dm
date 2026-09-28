@@ -92,6 +92,7 @@
 	return null
 
 /datum/unit_test/proc/dq_pred(list/spec, label = "test")
+	RETURN_TYPE(/datum/predicate)
 	var/datum/predicate/P = new
 	P.name = label
 	P.spec = spec
