@@ -121,7 +121,7 @@
 /obj/effect/blob/proc/pulse_on(forceLeft, list/dirs)
 	var/pushDir = pick(dirs)
 	var/turf/T = get_step(src, pushDir)
-	var/obj/effect/blob/B = (locate_within(T, ))
+	var/obj/effect/blob/B = (locate_within(T, /obj/effect/blob))
 	if(!B)
 		if(prob(get_integrity()))
 			expand(T)

@@ -448,7 +448,7 @@
 	return TRUE
 
 /mob/living/proc/get_restraining_bolt()
-	var/obj/item/implant/restrainingbolt/RB = locate_within(src, )
+	var/obj/item/implant/restrainingbolt/RB = locate_within(src, /obj/item/implant/restrainingbolt)
 	if(RB)
 		if(!RB.malfunction)
 			return TRUE

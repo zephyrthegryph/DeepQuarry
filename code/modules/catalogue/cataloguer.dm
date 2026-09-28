@@ -203,7 +203,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 		if(contributers.len)
 			for(var/mob/M in contributers)
 				var/list/things = M.GetAllContents(3) // Depth of two should reach into bags but just in case lets make it three.
-				var/obj/item/cataloguer/other_cataloguer = locate_in_list(things, ) // If someone has two or more scanners this only adds points to one.
+				var/obj/item/cataloguer/other_cataloguer = locate_in_list(things, /obj/item/cataloguer) // If someone has two or more scanners this only adds points to one.
 				if(other_cataloguer)
 					to_chat(M, span_notice("Gained [points_gained] points from \the [user]'s scan of \the [target]."))
 					other_cataloguer.adjust_points(points_gained)

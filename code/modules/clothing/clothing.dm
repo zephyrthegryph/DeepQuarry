@@ -1123,7 +1123,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, \
 
 /// Old holster verb the holster added to the uniform: holster or draw with the attached holster.
 /obj/item/clothing/under/proc/under_holster_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	var/obj/item/clothing/accessory/holster/H = locate_in_list(accessories, )
+	var/obj/item/clothing/accessory/holster/H = locate_in_list(accessories, /obj/item/clothing/accessory/holster)
 	if(H)
 		H.holster_quick_holster_verb(user)
 

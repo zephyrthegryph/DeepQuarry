@@ -682,7 +682,7 @@
 	if(H.inStasisNow())
 		return
 
-	var/obj/item/organ/internal/diona/node/light_organ = locate_in_list(H.internal_organs, )
+	var/obj/item/organ/internal/diona/node/light_organ = locate_in_list(H.internal_organs, /obj/item/organ/internal/diona/node)
 
 	if(light_organ && !light_organ.is_broken())
 		var/light_amount = 0 //how much light there is in the place, affects receiving nutrition and healing

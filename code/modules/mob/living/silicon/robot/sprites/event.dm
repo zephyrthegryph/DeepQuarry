@@ -25,7 +25,7 @@
 	if(!has_custom_equipment_sprites)
 		return
 
-	var/obj/item/shockpaddles/robot/SP = locate_in_list(module.modules, )
+	var/obj/item/shockpaddles/robot/SP = locate_in_list(module.modules, /obj/item/shockpaddles/robot)
 	if(SP)
 		SP.name = "paws of life"
 		SP.desc = "Zappy paws. For fixing cardiac arrest."

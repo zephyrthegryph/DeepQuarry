@@ -270,7 +270,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/flag, \
 
 /// Old attack_self: plant a flag.
 /obj/item/stack/flag/proc/flag_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/obj/item/stack/flag/F = locate_within(get_turf(src), )
+	var/obj/item/stack/flag/F = locate_within(get_turf(src), /obj/item/stack/flag)
 
 	var/turf/T = get_turf(src)
 	if(!T || !ismineralturf(T))
@@ -328,7 +328,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/lightpole, INTERACT_USE("Plant", PROC_REF(li
 	if(!T || (!istype(T,/turf/simulated/mineral) && !istype(T,/turf/simulated/floor/outdoors) && !istype(T,/turf/simulated/floor/snow) && !istype(T,/turf/snow)))
 		to_chat(user, span_warning("The light won't stand up in this terrain."))
 		return TRUE
-	var/obj/structure/trailblazer/F = locate_within(get_turf(src), )
+	var/obj/structure/trailblazer/F = locate_within(get_turf(src), /obj/structure/trailblazer)
 	if(F)
 		to_chat(user, span_warning("There is already a light here."))
 		return TRUE

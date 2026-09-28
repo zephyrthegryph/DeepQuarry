@@ -226,7 +226,7 @@
 	var/obj/item/implant/restrainingbolt/RB
 
 	for(var/obj/item/organ/external/EX in organs)
-		RB = locate_in_list(EX, )
+		RB = locate_in_list(EX, /obj/item/implant/restrainingbolt)
 		if(istype(RB) && !(RB.malfunction))
 			break
 

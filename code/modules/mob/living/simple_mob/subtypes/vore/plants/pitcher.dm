@@ -223,7 +223,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pitcher_plant, \
 		consume(O, user)
 		return TRUE
 	if(istype(O, /obj/item/stack/cable_coil)) //How to free people without killing the pitcher. I guess cable is SS13 rope.
-		var/mob/living/carbon/human/H = locate_within(vore_selected, ) //Only works for carbons, RIP mice. Should pick the first human the code finds.
+		var/mob/living/carbon/human/H = locate_within(vore_selected, /mob/living/carbon/human) //Only works for carbons, RIP mice. Should pick the first human the code finds.
 		if(!H)
 			to_chat(user, span_infoplain("The pitcher is empty."))
 		else

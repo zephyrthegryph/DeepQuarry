@@ -112,7 +112,7 @@
 	if(!has_custom_equipment_sprites)
 		return
 
-	var/obj/item/shockpaddles/robot/jumper/J = locate_in_list(module.modules, )
+	var/obj/item/shockpaddles/robot/jumper/J = locate_in_list(module.modules, /obj/item/shockpaddles/robot/jumper)
 	if(J)
 		J.name = "jumper paws"
 		J.desc = "Zappy paws. For rebooting a full body prostetic."
@@ -166,7 +166,7 @@
 	if(!has_custom_equipment_sprites)
 		return
 
-	var/obj/item/shockpaddles/robot/jumper/J = locate_in_list(module.modules, )
+	var/obj/item/shockpaddles/robot/jumper/J = locate_in_list(module.modules, /obj/item/shockpaddles/robot/jumper)
 	if(J)
 		J.name = "jumper paws"
 		J.desc = "Zappy paws. For rebooting a full body prostetic."

@@ -236,7 +236,7 @@ REF_OWNED(/obj/machinery/portable_atmospherics/hydroponics, list("temp_chem_hold
 // Give the seeds time to initialize itself
 /obj/machinery/portable_atmospherics/hydroponics/LateInitialize()
 	. = ..()
-	var/obj/item/seeds/S = locate_within(loc, )
+	var/obj/item/seeds/S = locate_within(loc, /obj/item/seeds)
 	if(S)
 		plant_seeds(S)
 

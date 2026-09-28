@@ -367,7 +367,7 @@
 		to_chat(src, span_danger("You cannot do that in your current state."))
 		return
 
-	var/obj/item/grab/G = locate_within(src, )
+	var/obj/item/grab/G = locate_within(src, /obj/item/grab)
 	if(!G || !istype(G))
 		to_chat(src, span_danger("You are not grabbing anyone."))
 		return

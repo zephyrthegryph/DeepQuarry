@@ -156,7 +156,7 @@ REF_OWNED(/mob/living/simple_mob/mechanical/mining_drone, list("ion_trail", "shi
 		if(contents_count(self.my_storage) >= self.my_storage.max_storage_space)
 			self.visible_message(span_infoplain(span_bold("\The [self]") + " emits a shrill beep, indicating its storage is full."))
 
-		var/obj/structure/ore_box/OB = locate_in_list(view(2, self), )
+		var/obj/structure/ore_box/OB = locate_in_list(view(2, self), /obj/structure/ore_box)
 
 		if(istype(OB) && self.my_storage && contents_count(self.my_storage))
 			self.Beam(OB, icon_state = "rped_upgrade", time = 1 SECONDS)

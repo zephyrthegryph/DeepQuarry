@@ -469,19 +469,19 @@ REF_OWNED_LIST(/datum/preferences, "middleware")
 
 	// Cross-pref orchestration that the per-pref apply() can't express alone.
 	if(copy_name)
-		var/datum/preference_apply_hook/name_sanitization/name_hook = locate_in_list(GLOB.preference_apply_hooks, )
+		var/datum/preference_apply_hook/name_sanitization/name_hook = locate_in_list(GLOB.preference_apply_hooks, /datum/preference_apply_hook/name_sanitization)
 		if(name_hook)
 			name_hook.apply(character, src)
 
-	var/datum/preference_apply_hook/gender/gender_hook = locate_in_list(GLOB.preference_apply_hooks, )
+	var/datum/preference_apply_hook/gender/gender_hook = locate_in_list(GLOB.preference_apply_hooks, /datum/preference_apply_hook/gender)
 	if(gender_hook)
 		gender_hook.apply(character, src)
 
-	var/datum/preference_apply_hook/accessories/accessory_hook = locate_in_list(GLOB.preference_apply_hooks, )
+	var/datum/preference_apply_hook/accessories/accessory_hook = locate_in_list(GLOB.preference_apply_hooks, /datum/preference_apply_hook/accessories)
 	if(accessory_hook)
 		accessory_hook.apply(character, src)
 
-	var/datum/preference_apply_hook/markings/markings_hook = locate_in_list(GLOB.preference_apply_hooks, )
+	var/datum/preference_apply_hook/markings/markings_hook = locate_in_list(GLOB.preference_apply_hooks, /datum/preference_apply_hook/markings)
 	if(markings_hook)
 		markings_hook.apply(character, src)
 

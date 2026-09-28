@@ -339,7 +339,7 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 
 /mob/living/bot/proc/getPatrolTurf()
 	var/minDist = INFINITY
-	var/obj/machinery/navbeacon/targ = locate_within(get_turf(src), )
+	var/obj/machinery/navbeacon/targ = locate_within(get_turf(src), /obj/machinery/navbeacon)
 
 	if(!targ)
 		for(var/obj/machinery/navbeacon/N in REGISTRY_MEMBERS(REGISTRY_NAVBEACONS))

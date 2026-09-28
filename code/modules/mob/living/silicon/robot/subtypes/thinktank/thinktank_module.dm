@@ -107,6 +107,6 @@
 
 /obj/item/robot_module/robot/platform/cargo/respawn_consumable(mob/living/silicon/robot/R, rate)
 	. = ..()
-	var/obj/item/packageWrap/wrapper = locate_in_list(modules, )
+	var/obj/item/packageWrap/wrapper = locate_in_list(modules, /obj/item/packageWrap)
 	if(wrapper.amount < initial(wrapper.amount))
 		wrapper.amount++

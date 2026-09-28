@@ -458,7 +458,7 @@ REF_OWNED(/obj/machinery/mining/drill, list("faultreporter", "cell"))
 	effect = /obj/machinery/mining/drill/proc/interaction_unload
 
 /obj/machinery/mining/drill/proc/interaction_unload(mob/user, obj/item/held, datum/interaction/interaction)
-	var/obj/structure/ore_box/B = locate_in_list(orange(1), )
+	var/obj/structure/ore_box/B = locate_in_list(orange(1), /obj/structure/ore_box)
 	if(B)
 		for(var/ore in stored_ore)
 			if(stored_ore[ore] > 0)

@@ -41,11 +41,11 @@
 				self.udder.add_reagent(REAGENT_ID_MILK, rand(5, 10))
 
 		if(locate_in_list(self.loc, /obj/effect/plant))
-			var/obj/effect/plant/SV = locate_in_list(self.loc, )
+			var/obj/effect/plant/SV = locate_in_list(self.loc, /obj/effect/plant)
 			SV.die_off(1)
 
 		if(locate_in_list(self.loc, /obj/machinery/portable_atmospherics/hydroponics/soil/invisible))
-			var/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/SP = locate_in_list(self.loc, )
+			var/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/SP = locate_in_list(self.loc, /obj/machinery/portable_atmospherics/hydroponics/soil/invisible)
 			qdel(SP)
 
 		if(!self?.pulled_by_mob())

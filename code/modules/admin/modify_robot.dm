@@ -75,7 +75,7 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 			.["model_options"] = module_options
 			// Data for the upgrade options
 			.["target"] += get_upgrades()
-			var/obj/item/gun/energy/kinetic_accelerator/kin = locate_in_list(target().module.modules, )
+			var/obj/item/gun/energy/kinetic_accelerator/kin = locate_in_list(target().module.modules, /obj/item/gun/energy/kinetic_accelerator)
 			if(kin)
 				.["target"]["pka"] += get_pka(kin)
 			for(var/obj/item/robotic_multibelt/multibelt in target().module.modules)
@@ -292,12 +292,12 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 			return TRUE
 		if("install_modkit")
 			var/new_modkit = text2path(params["modkit"])
-			var/obj/item/gun/energy/kinetic_accelerator/kin = locate_in_list(target().module.modules, )
+			var/obj/item/gun/energy/kinetic_accelerator/kin = locate_in_list(target().module.modules, /obj/item/gun/energy/kinetic_accelerator)
 			var/obj/item/borg/upgrade/modkit/M = new new_modkit(null)
 			M.install(kin, target())
 			return TRUE
 		if("remove_modkit")
-			var/obj/item/gun/energy/kinetic_accelerator/kin = locate_in_list(target().module.modules, )
+			var/obj/item/gun/energy/kinetic_accelerator/kin = locate_in_list(target().module.modules, /obj/item/gun/energy/kinetic_accelerator)
 			var/obj/item/rem_kit = locate(params["modkit"])
 			LAZYREMOVE(kin.modkits, rem_kit)
 			qdel(rem_kit)

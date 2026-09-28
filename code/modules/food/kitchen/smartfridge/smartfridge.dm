@@ -318,7 +318,7 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 
 /obj/machinery/smartfridge/proc/throw_item()
 	var/obj/throw_item = null
-	var/mob/living/target = locate_in_list(view(7,src), )
+	var/mob/living/target = locate_in_list(view(7,src), /mob/living)
 	if(!target)
 		return FALSE
 

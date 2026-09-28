@@ -122,7 +122,7 @@ Bonus
 
 	place = safepick(destination)
 
-	var/mob/living/unlucky = locate_in_list(place, )
+	var/mob/living/unlucky = locate_in_list(place, /mob/living)
 
 	if(unlucky)
 		if(can_spontaneous_vore(unlucky, mob))
