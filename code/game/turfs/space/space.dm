@@ -38,15 +38,15 @@
 	else if(x == world.maxx || forced_dirs & EAST)
 		edge |= EAST
 
-	var/datum/world_service/skybox/skybox = skybox_service()
 	if(edge) //Magic edges
-		appearance = skybox.mapedge_cache["[edge]"]
+		appearance = skybox_service().mapedge_cache["[edge]"]
 	else //Dust
 		var/dust = ((x + y) ^ ~(x * y) + z) % 25
-		if(dust >= 0 && dust < length(skybox.dust_by_index))
-			appearance = skybox.dust_by_index[dust + 1]
+		var/list/dust_by_index = skybox_service().dust_by_index
+		if(dust >= 0 && dust < length(dust_by_index))
+			appearance = dust_by_index[dust + 1]
 		else
-			appearance = skybox.dust_cache["[dust]"]
+			appearance = skybox_service().dust_cache["[dust]"]
 
 	return ..()
 
