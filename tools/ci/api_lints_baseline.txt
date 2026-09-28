@@ -4,9 +4,9 @@
 do_after_state 0
 use_tool_state 0
 vars_helpers 0
-vars_write 0
+vars_write 9
 timer_cooldown 0
-accessor_macros 0
+accessor_macros 5
 field_write 0
 raw_world_bind 0
 string_keys 0

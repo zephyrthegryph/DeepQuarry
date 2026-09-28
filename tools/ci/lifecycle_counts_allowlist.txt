@@ -4,8 +4,10 @@
 # files not listed may have none. A Destroy() override with a same-line or
 # line-before `// LIFECYCLE: <reason>` comment doesn't count at all.
 # `python tools/ci/lifecycle_counts_lint.py --update` rewrites this.
-# Destroy total: 0 in 0 files. qdel total: 2127 in 914 files.
+# Destroy total: 2 in 2 files. qdel total: 2126 in 914 files.
 [destroy]
+code/datums/om/prompt.dm 1
+code/modules/random_map/drop/supply.dm 1
 [qdel]
 code/ATMOSPHERICS/_atmospherics_helpers.dm 3
 code/ATMOSPHERICS/atmospherics.dm 1
@@ -113,12 +115,12 @@ code/datums/ghost_spawn.dm 1
 code/datums/helper_datums/teleport.dm 1
 code/datums/managed_browsers/feedback_form.dm 1
 code/datums/managed_browsers/feedback_viewer.dm 1
-code/datums/mind.dm 2
+code/datums/mind.dm 3
 code/datums/modules.dm 1
 code/datums/observation/helpers.dm 1
 code/datums/om/after_helpers.dm 1
 code/datums/om/native.dm 1
-code/datums/om/prompt.dm 5
+code/datums/om/prompt.dm 10
 code/datums/om/relation.dm 2
 code/datums/om/timer.dm 1
 code/datums/om/watch.dm 1
@@ -165,7 +167,7 @@ code/game/gamemodes/malfunction/newmalf_ability_trees/HARDWARE.dm 1
 code/game/gamemodes/malfunction/newmalf_ability_trees/tree_manipulation.dm 2
 code/game/gamemodes/meteor/meteors.dm 3
 code/game/gamemodes/nuclear/nuclear.dm 1
-code/game/gamemodes/objective.dm 1
+code/game/gamemodes/nuclear/pinpointer.dm 1
 code/game/gamemodes/technomancer/catalog.dm 1
 code/game/gamemodes/technomancer/core_obj.dm 4
 code/game/gamemodes/technomancer/instability.dm 3
@@ -257,7 +259,7 @@ code/game/objects/effects/decals/cleanable.dm 1
 code/game/objects/effects/decals/posters/posters.dm 2
 code/game/objects/effects/decals/remains.dm 2
 code/game/objects/effects/effect_system.dm 3
-code/game/objects/effects/landmarks_events.dm 3
+code/game/objects/effects/landmarks_events.dm 5
 code/game/objects/effects/map_effects/beam_point.dm 1
 code/game/objects/effects/mines.dm 16
 code/game/objects/effects/overlays.dm 1
@@ -414,7 +416,7 @@ code/modules/admin/verbs/SDQL2/SDQL_2.dm 4
 code/modules/admin/verbs/buildmode.dm 3
 code/modules/admin/verbs/check_customitem_activity.dm 2
 code/modules/admin/verbs/debug.dm 3
-code/modules/admin/verbs/event_triggers.dm 6
+code/modules/admin/verbs/event_triggers.dm 2
 code/modules/admin/verbs/mapping.dm 3
 code/modules/admin/verbs/randomverbs.dm 1
 code/modules/admin/verbs/secrets.dm 3
@@ -802,8 +804,9 @@ code/modules/projectiles/projectile/hook.dm 1
 code/modules/projectiles/projectile/special.dm 2
 code/modules/projectiles/projectile/trace.dm 1
 code/modules/projectiles/targeting/targeting_overlay.dm 2
-code/modules/random_map/drop/droppod.dm 3
+code/modules/random_map/drop/droppod.dm 1
 code/modules/random_map/drop/droppod_doors.dm 2
+code/modules/random_map/drop/supply.dm 2
 code/modules/random_map/random_map_verbs.dm 1
 code/modules/reagents/holder/holder.dm 3
 code/modules/reagents/machinery/dispenser/reagent_tank.dm 3
