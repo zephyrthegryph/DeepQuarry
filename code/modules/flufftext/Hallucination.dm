@@ -10,9 +10,9 @@ Strange audio (should be rare) (done)
 Gunshots/explosions/opening doors/less rare audio (done)
 */
 
-/datum/component/hallucinations
-	dupe_mode = COMPONENT_DUPE_UNIQUE // First come first serve
-
+/// Active hallucinations on a carbon (was /datum/component/hallucinations). Owned by the
+/// mob's `hallucinations` var; one at a time, first come first serve.
+/datum/hallucinations
 	VAR_PRIVATE/mob/living/carbon/human/our_human = null
 	/// The flash-of-danger image this event made and owns; nulled when it is deleted.
 	VAR_PRIVATE/image/client_only/halimage
@@ -23,16 +23,20 @@ Gunshots/explosions/opening doors/less rare audio (done)
 	VAR_PRIVATE/hal_crit = FALSE
 	VAR_PRIVATE/hal_screwyhud = HUD_HALLUCINATION_NONE
 
-/datum/component/hallucinations/Initialize()
-	if(!ishuman(parent))
-		return COMPONENT_INCOMPATIBLE
-	our_human = parent
+REF_VAR(/mob/living/carbon, OWNED, /datum/hallucinations, hallucinations)
+REF_BACK(/datum/hallucinations, list("our_human" = "hallucinations"))
+
+/datum/hallucinations/New(mob/living/carbon/human/H)
+	..()
+	our_human = H
 	make_timer()
 
 // ALLOW(lifecycle): a held hallucination item is removed.
-/datum/component/hallucinations/Destroy(force)
+/datum/hallucinations/Destroy(force)
 	if(halitem.len)
 		remove_hallucination_item()
+	if(our_human?.hallucinations == src)
+		our_human.hallucinations = null
 	our_human = null
 	// Images are not datums: deleting one takes it off every client.images and nulls these vars.
 	if(halbody)
@@ -43,15 +47,15 @@ Gunshots/explosions/opening doors/less rare audio (done)
 	halimage = null
 	. = ..()
 
-/datum/component/hallucinations/proc/make_timer()
+/datum/hallucinations/proc/make_timer()
 	PROTECTED_PROC(TRUE)
 	om_after(src, ((rand(20,50) SECONDS) / (min(our_human.status_units(EFFECT_HALLUCINATING),100)/25)), PROC_REF(trigger))
 
-/datum/component/hallucinations/proc/get_fakecrit()
+/datum/hallucinations/proc/get_fakecrit()
 	SHOULD_NOT_OVERRIDE(TRUE)
 	return hal_crit
 
-/datum/component/hallucinations/proc/get_hud_state()
+/datum/hallucinations/proc/get_hud_state()
 	SHOULD_NOT_OVERRIDE(TRUE)
 	return hal_screwyhud
 
@@ -59,15 +63,22 @@ Gunshots/explosions/opening doors/less rare audio (done)
 // Traditional hallucinations
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 /mob/living/carbon/proc/handle_hallucinations()
-	if(get_hallucination_component() || !client || HAS_TRAIT(src, TRAIT_MADNESS_IMMUNE))
+	if(get_hallucination_state() || !client || HAS_TRAIT(src, TRAIT_MADNESS_IMMUNE))
 		return
-	LoadComponent(/datum/component/hallucinations)
+	start_hallucinations(/datum/hallucinations)
 
-/mob/living/carbon/proc/get_hallucination_component()
-	RETURN_TYPE(/datum/component/hallucinations)
-	return GetComponent(/datum/component/hallucinations)
+/// Starts a hallucination run of `hallucination_type` unless one is already running. Humans only.
+/mob/living/carbon/proc/start_hallucinations(hallucination_type = /datum/hallucinations)
+	if(hallucinations || !ishuman(src))
+		return hallucinations
+	hallucinations = new hallucination_type(src)
+	return hallucinations
 
-/datum/component/hallucinations/proc/trigger()
+/mob/living/carbon/proc/get_hallucination_state()
+	RETURN_TYPE(/datum/hallucinations)
+	return hallucinations
+
+/datum/hallucinations/proc/trigger()
 	PROTECTED_PROC(TRUE)
 	if(QDELETED(our_human))
 		qdel(src)
@@ -81,7 +92,7 @@ Gunshots/explosions/opening doors/less rare audio (done)
 	handle_hallucinating()
 	make_timer()
 
-/datum/component/hallucinations/proc/handle_hallucinating()
+/datum/hallucinations/proc/handle_hallucinating()
 	PROTECTED_PROC(TRUE)
 	var/halpick = rand(1,100)
 	switch(halpick)
@@ -110,26 +121,26 @@ Gunshots/explosions/opening doors/less rare audio (done)
 // Unlike normal hallucinations this one is triggered from handle_feral randomly.
 // So it destroys itself after it triggers, freeing up space for the next run of it.
 /////////////////////////////////////////////////////////////////////////////////////////////////////
-/datum/component/hallucinations/xenochimera/make_timer()
-	var/datum/component/xenochimera/XC = our_human.GetComponent(/datum/component/xenochimera)
+/datum/hallucinations/xenochimera/make_timer()
+	var/datum/xenochimera/XC = our_human.xenochimera
 	var/F = XC ? (XC.feral / 10) : 1
 	om_after(src, ((rand(20,50) SECONDS) / F), PROC_REF(trigger))
 
-/datum/component/hallucinations/xenochimera/trigger()
+/datum/hallucinations/xenochimera/trigger()
 	if(QDELETED(our_human))
 		qdel(src)
 		return
 	if(!our_human.client)
 		qdel(src)
 		return
-	var/datum/component/xenochimera/XC = our_human.GetComponent(/datum/component/xenochimera)
+	var/datum/xenochimera/XC = our_human.xenochimera
 	if(!XC || XC.feral < XENOCHIFERAL_THRESHOLD)
 		qdel(src)
 		return
 	handle_hallucinating()
 	om_qdel_after(src, rand(3,9)SECONDS)
 
-/datum/component/hallucinations/xenochimera/handle_hallucinating()
+/datum/hallucinations/xenochimera/handle_hallucinating()
 	var/halpick = rand(1,100)
 	switch(halpick)
 		if(0 to 15) //15% chance

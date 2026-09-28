@@ -16,11 +16,9 @@
 
 /turf/Entered(atom/movable/am, atom/old_loc)
 	. = ..()
-	// Only build the handle when something listens: test and bench builds
-	// evaluate signal arguments eagerly (SIGNAL_ARG_CHECKS), and every mapped
-	// object entering its turf at init made one.
-	if(_listen_lookup?[COMSIG_OBSERVER_TURF_ENTERED])
-		SEND_SIGNAL(src, COMSIG_OBSERVER_TURF_ENTERED, om_handle(am), old_loc)
+	// OM_EMIT only builds the event (and the handle) when something listens;
+	// every mapped object entering its turf at init would otherwise make one.
+	OM_EMIT(src, /datum/om/event/observer_turf_entered, om_handle(am), old_loc)
 
 /turf/Exited(atom/movable/am, atom/new_loc)
 	. = ..()

@@ -21,10 +21,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/rad_collector, REGISTRY_RAD_COLLECTORS)
 /obj/machinery/power/rad_collector/Initialize(mapload)
 	. = ..()
 	make_climbable()
-	RegisterSignal(src, COMSIG_IN_RANGE_OF_IRRADIATION, PROC_REF(process_rads))
+	om_hook(src, /datum/om/event/before/in_range_of_irradiation, src, PROC_REF(process_rads))
 
-/obj/machinery/power/rad_collector/proc/process_rads(datum/source, datum/radiation_pulse_information/pulse_information)
-	SIGNAL_HANDLER
+/obj/machinery/power/rad_collector/proc/process_rads(datum/source, datum/om/event/before/in_range_of_irradiation/event)
+	EVENT_HANDLER
+	var/datum/radiation_pulse_information/pulse_information = event.pulse_information
 	//so that we don't zero out the meter if the SM is processed first.
 	last_power = last_power_new
 	last_power_new = 0

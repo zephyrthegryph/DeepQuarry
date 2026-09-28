@@ -179,7 +179,7 @@
 				return FALSE
 			if(detailed_account_view())
 				detailed_account_view().suspended = !detailed_account_view().suspended
-				SEND_GLOBAL_SIGNAL(COMSIG_GLOB_PAYMENT_ACCOUNT_STATUS, detailed_account_view())
+				OM_EMIT_WORLD(/datum/om/event/world_payment_account_status, detailed_account_view())
 
 		if("finalise_create_account")
 			var/account_name = params["holder_name"]

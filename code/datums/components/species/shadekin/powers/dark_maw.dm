@@ -26,13 +26,13 @@
 	return (T.get_lumcount() < 0.5) || "there is too much light here for your trap to last"
 
 /mob/living/proc/dq_dark_maw_afford(mob/living/actor, atom/target, obj/item/held)
-	var/datum/component/shadekin/SK = actor.get_shadekin_component()
+	var/datum/shadekin/SK = actor.get_shadekin_state()
 	if(!SK)
 		return "you aren't shadekin"
 	return (SK.shadekin_get_energy() >= 20) || "not enough energy for that ability"
 
 /mob/living/proc/dq_do_dark_maw(mob/living/actor, obj/item/held, datum/interaction/ability/interaction)
-	var/datum/component/shadekin/SK = actor.get_shadekin_component()
+	var/datum/shadekin/SK = actor.get_shadekin_state()
 	if(!SK)
 		return FALSE
 	if(SK.in_phase)
@@ -50,7 +50,7 @@
 	effect = /mob/living/proc/dq_do_clear_dark_maws
 
 /mob/living/proc/dq_do_clear_dark_maws(mob/living/actor, obj/item/held, datum/interaction/ability/interaction)
-	var/datum/component/shadekin/SK = actor.get_shadekin_component()
+	var/datum/shadekin/SK = actor.get_shadekin_state()
 	if(!SK)
 		return FALSE
 	for(var/obj/effect/abstract/dark_maw/dm as anything in SK.active_dark_maws)
@@ -68,14 +68,14 @@
 	. = ..()
 	if(!isturf(loc))
 		return INITIALIZE_HINT_QDEL
-	var/datum/component/shadekin/SK
+	var/datum/shadekin/SK
 	if(user && isliving(user))
 		owner_handle = om_handle(user)
 		if(owner().vore_selected)
 			target_handle = om_handle(owner().vore_selected)
-		RegisterSignal(owner(), COMSIG_QDELETING, PROC_REF(drop_everything_and_delete))
+		om_hook(owner(), /datum/om/event/qdeleting, src, PROC_REF(drop_everything_and_delete))
 		has_signal = TRUE
-		SK = owner().get_shadekin_component()
+		SK = owner().get_shadekin_state()
 
 	var/turf/T = loc
 	if(T.get_lumcount() >= 0.5)
@@ -104,13 +104,13 @@
 		PERIODIC_START(src, PERIODIC_SLOW)
 
 ///Called when we get a signal that our owner is being qdel'd
-/obj/effect/abstract/dark_maw/proc/drop_everything_and_delete()
-	SIGNAL_HANDLER
+/obj/effect/abstract/dark_maw/proc/drop_everything_and_delete(datum/source, datum/om/event/qdeleting/event)
+	EVENT_HANDLER
 	qdel(src)
 
-// ALLOW(lifecycle): leaves its shadekin's maw list (the component lives on the owner, not in a var).
+// ALLOW(lifecycle): leaves its shadekin's maw list (the shadekin datum lives on the owner, not in a var).
 /obj/effect/abstract/dark_maw/Destroy()
-	var/datum/component/shadekin/SK = owner()?.get_shadekin_component()
+	var/datum/shadekin/SK = owner()?.get_shadekin_state()
 	if(SK)
 		LAZYREMOVE(SK.active_dark_maws, src)
 	return ..()
@@ -187,7 +187,7 @@
 /obj/effect/energy_net/dark/user_unbuckle_mob(mob/living/buckled_mob, mob/user)
 	if(isliving(user))
 		var/mob/living/unbuckler = user
-		var/datum/component/shadekin/SK = unbuckler.get_shadekin_component()
+		var/datum/shadekin/SK = unbuckler.get_shadekin_state()
 		if(SK)
 			visible_message(span_danger("[user] dissipates \the [src] with a touch!"))
 			unbuckle_mob(buckled_mob)

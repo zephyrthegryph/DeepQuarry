@@ -12,7 +12,7 @@
 	. = ..()
 	.[1] = EXPERIMENT_PROG_INT("Scan samples of the following machines built with parts of tier [required_tier] or better.", points, required_points)[1]
 
-/datum/experiment/scanning/points/machinery_tiered_scan/final_contributing_index_checks(datum/component/experiment_handler/experiment_handler, atom/target, typepath)
+/datum/experiment/scanning/points/machinery_tiered_scan/final_contributing_index_checks(datum/experiment_handler/experiment_handler, atom/target, typepath)
 	. = ..()
 	if(!.)
 		return FALSE
@@ -45,7 +45,7 @@
 	var/obj/item/stock_parts/part_type = required_stock_part
 	.[1] = EXPERIMENT_PROG_INT("Scan samples of the following machines upgraded with \a [initial(part_type.name)] to accumulate enough points to complete this experiment.", points, required_points)[1]
 
-/datum/experiment/scanning/points/machinery_pinpoint_scan/final_contributing_index_checks(datum/component/experiment_handler/experiment_handler, atom/target, typepath)
+/datum/experiment/scanning/points/machinery_pinpoint_scan/final_contributing_index_checks(datum/experiment_handler/experiment_handler, atom/target, typepath)
 	. = ..()
 	if(!.)
 		return FALSE

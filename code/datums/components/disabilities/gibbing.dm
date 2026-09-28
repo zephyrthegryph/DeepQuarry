@@ -1,40 +1,32 @@
-/datum/component/gibbing_disability
-	var/gutdeathpressure = 0
-	var/death_time = FALSE
-	dupe_mode = COMPONENT_DUPE_UNIQUE
+/// Was /datum/component/gibbing_disability: a perk-granted disability ticking on the disabilities life stage.
+/datum/om/behaviour/disability/gibbing
 
-/datum/component/gibbing_disability/Initialize()
-	if (!isliving(parent))
-		return COMPONENT_INCOMPATIBLE
+/mob/living
+	/// Gibbing disability: pressure built up so far (was the component's gutdeathpressure).
+	var/disability_gut_pressure = 0
+	/// Gibbing disability: 0 until the end starts, then counts the final emotes (was death_time).
+	var/disability_death_time = FALSE
 
-	RegisterSignal(owner(), COMSIG_HANDLE_DISABILITIES, PROC_REF(process_component))
+/datum/om/behaviour/disability/gibbing/disability_tick(mob/living/owner)
 
-/datum/component/gibbing_disability/proc/process_component()
-	SIGNAL_HANDLER
-
-	if(QDELETED(parent))
+	if(QDELETED(owner))
 		return
-	if(isbelly(owner().loc))
+	if(isbelly(owner.loc))
 		return
-	if(owner().transforming)
+	if(owner.transforming)
 		return
-	if(death_time)
-		if(death_time < 4)
-			owner().emote(pick("whimper","belch","shiver"))
-			death_time++
+	if(owner.disability_death_time)
+		if(owner.disability_death_time < 4)
+			owner.emote(pick("whimper","belch","shiver"))
+			owner.disability_death_time++
 			return
 		else
-			owner().emote(pick("belch"))
-			owner().gib()
+			owner.emote(pick("belch"))
+			owner.gib()
 			return
-	gutdeathpressure += 0.01
-	if(gutdeathpressure > 0 && prob(gutdeathpressure))
-		owner().emote(pick("whimper","belch","belch","belch","choke","shiver"))
-		owner().status_at_least(EFFECT_WEAKENED, gutdeathpressure / 3)
-	if((gutdeathpressure/3) >= 1 && prob(gutdeathpressure/3))
-		death_time = TRUE
-
-
-/// LC-refs: the afflicted mob (our parent) (was a var copying parent).
-/datum/component/gibbing_disability/proc/owner() as /mob/living
-	return parent
+	owner.disability_gut_pressure += 0.01
+	if(owner.disability_gut_pressure > 0 && prob(owner.disability_gut_pressure))
+		owner.emote(pick("whimper","belch","belch","belch","choke","shiver"))
+		owner.status_at_least(EFFECT_WEAKENED, owner.disability_gut_pressure / 3)
+	if((owner.disability_gut_pressure/3) >= 1 && prob(owner.disability_gut_pressure/3))
+		owner.disability_death_time = TRUE

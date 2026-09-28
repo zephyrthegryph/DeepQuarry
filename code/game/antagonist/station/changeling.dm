@@ -14,7 +14,7 @@
 
 /datum/antagonist/changeling/get_special_objective_text(datum/mind/player)
 	if(player.current)
-		var/datum/component/antag/changeling/comp = player.current.GetComponent(/datum/component/antag/changeling)
+		var/datum/changeling/comp = player.current.get_changeling_state()
 		if(comp)
 			return "<br><b>Changeling ID:</b> [comp.changelingID].<br><b>Genomes Absorbed:</b> [comp.absorbedcount]"
 
@@ -24,13 +24,15 @@
 
 /datum/antagonist/changeling/remove_antagonist(datum/mind/player, show_message, implanted)
 	. = ..()
-	var/datum/component/antag/changeling/comp = player.current.GetComponent(/datum/component/antag/changeling)
+	var/datum/changeling/comp = player.current.get_changeling_state()
 	if(comp)
-		comp.owner().remove_changeling_powers()
-		remove_verb(comp.owner(), /mob/proc/EvolutionMenu)
-		comp.RemoveComponent()
-		if(comp.owner().mind)
-			comp.owner().mind.antag_holder.changeling_handle = null
+		var/mob/living/ling_mob = comp.owner
+		ling_mob.remove_changeling_powers()
+		remove_verb(ling_mob, /mob/proc/EvolutionMenu)
+		ling_mob.changeling_state = null
+		if(ling_mob.mind)
+			ling_mob.mind.antag_holder.changeling_handle = null
+		qdel(comp)
 
 /datum/antagonist/changeling/create_objectives(datum/mind/changeling)
 	if(!..())
@@ -94,7 +96,7 @@
 /datum/antagonist/changeling/print_player_full(datum/mind/player)
 	var/text = print_player_lite(player)
 
-	var/datum/component/antag/changeling/comp = player.current.GetComponent(/datum/component/antag/changeling)
+	var/datum/changeling/comp = player.current.get_changeling_state()
 	if(comp)
 		text += " (had [comp.max_geneticpoints] genomes)"
 		text += "<br>Bought [english_list(comp.purchased_powers_history)]."

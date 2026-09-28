@@ -15,7 +15,7 @@
  *
  * That covers the parts that genuinely work:
  *   - the cinematic datum is constructed,
- *   - start_cinematic() broadcasts COMSIG_GLOB_PLAY_CINEMATIC with that datum,
+ *   - start_cinematic() emits world_play_cinematic with that datum,
  *   - the broadcast carries the correct /datum/cinematic/nuke/self_destruct type
  *     (the same type the self-destruct branch of explode() plays).
  *
@@ -35,16 +35,16 @@
 	var/old_paused = SSticker.roundend_check_paused
 	SSticker.roundend_check_paused = TRUE
 
-	RegisterSignal(SSdcs, COMSIG_GLOB_PLAY_CINEMATIC, PROC_REF(check_cinematic))
+	om_hook(OM_WORLD, /datum/om/event/before/world_play_cinematic, src, PROC_REF(check_cinematic))
 
 	// Drive the exact production entry point the nuke self-destruct uses. Empty
 	// watcher list => no client show_to path is exercised (that path is NOT
-	// IMPLEMENTED). The COMSIG_GLOB_PLAY_CINEMATIC broadcast fires synchronously
+	// IMPLEMENTED). The world_play_cinematic event fires synchronously
 	// inside start_cinematic before any sleeps, so check_cinematic runs before
 	// play_cinematic() returns.
 	var/datum/cinematic/nuke/self_destruct/playing = play_cinematic(/datum/cinematic/nuke/self_destruct, list())
 
-	UnregisterSignal(SSdcs, COMSIG_GLOB_PLAY_CINEMATIC)
+	om_unhook(OM_WORLD, /datum/om/event/before/world_play_cinematic, src)
 	SSticker.roundend_check_paused = old_paused
 
 	TEST_ASSERT_NOTNULL(playing, "play_cinematic() did not return a cinematic datum.")
@@ -53,7 +53,7 @@
 
 	switch(cinematic_playing)
 		if(NOT_PLAYING_ANIMATION)
-			TEST_FAIL("COMSIG_GLOB_PLAY_CINEMATIC was never broadcast when a nuke cinematic was started.")
+			TEST_FAIL("world_play_cinematic was never emitted when a nuke cinematic was started.")
 
 		if(PLAYING_INCORRECT_NUKE_ANIMATION)
 			TEST_FAIL("An incorrect cinematic was broadcast. (Expected: /datum/cinematic/nuke/self_destruct, Got: [cinematic_playing_type])")
@@ -64,8 +64,9 @@
 	// would fire clean_up_cinematic on an already-deleted cinematic.
 
 /// Used to track whenever a cinematic starts playing, so we can check if it's the right one.
-/datum/unit_test/nuke_cinematic/proc/check_cinematic(datum/source, datum/cinematic/playing)
-	SIGNAL_HANDLER
+/datum/unit_test/nuke_cinematic/proc/check_cinematic(datum/source, datum/om/event/before/world_play_cinematic/event)
+	EVENT_HANDLER
+	var/datum/cinematic/playing = event.new_cinematic
 
 	cinematic_playing_type = playing.type
 	if(istype(playing, /datum/cinematic/nuke/self_destruct))

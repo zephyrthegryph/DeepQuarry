@@ -4,8 +4,12 @@
 #define MEDICAL_SIDE_AUTOPSY "corpse_autopsy"
 #define MEDICAL_SIDE_SAMPLE_AMOUNT 3
 
-/datum/component/contract_document
-	dupe_mode = COMPONENT_DUPE_UNIQUE
+/// The contract paperwork state of a paper (was the contract_document component). Owned by the paper.
+REF_VAR(/obj/item/paper, OWNED, /datum/contract_document, contract_document)
+
+/datum/contract_document
+	/// The paper this document state belongs to.
+	var/obj/item/paper/holder
 	var/contract_id
 	var/document_kind
 	var/destination
@@ -13,14 +17,25 @@
 	var/list/payload
 	var/evidence_id
 
-/datum/component/contract_document/Initialize(_contract_id, _document_kind, _destination, list/_payload)
-	if(!istype(parent, /obj/item/paper))
-		return COMPONENT_INCOMPATIBLE
+REF_BACK(/datum/contract_document, list("holder" = "contract_document"))
+
+/datum/contract_document/New(obj/item/paper/new_holder, _contract_id, _document_kind, _destination, list/_payload)
+	. = ..()
+	if(!istype(new_holder))
+		log_runtime("contract_document: cannot attach to [new_holder]; discarded")
+		qdel(src)
+		return
+	if(new_holder.contract_document)
+		// Unique: the existing document state is kept.
+		qdel(src)
+		return
+	holder = new_holder
+	new_holder.contract_document = src
 	contract_id = _contract_id
 	document_kind = _document_kind
 	destination = _destination
 	payload = _payload?.Copy() || list()
-	evidence_id = SScontracts.register_evidence(CONTRACT_EVIDENCE_DOCUMENT, payload["subject_id"], payload["issuer_account"], parent, list(
+	evidence_id = SScontracts.register_evidence(CONTRACT_EVIDENCE_DOCUMENT, payload["subject_id"], payload["issuer_account"], holder, list(
 		"contract_id" = contract_id,
 		"document_kind" = document_kind,
 		"destination" = destination,
@@ -33,20 +48,23 @@
 		"document_kind" = document_kind,
 		"destination" = destination,
 		"evidence_ids" = list(evidence_id),
-	), "document-created:[evidence_id]", parent)
+	), "document-created:[evidence_id]", holder)
 
 // ALLOW(lifecycle): releases its evidence id.
-/datum/component/contract_document/Destroy()
+/datum/contract_document/Destroy()
 	SScontracts?.release_evidence(evidence_id)
 	evidence_id = null
 	payload = null
+	if(holder?.contract_document == src)
+		holder.contract_document = null
+	holder = null
 	return ..()
 
 /proc/create_contract_document(atom/location, document_name, document_info, contract_id, document_kind, destination, list/payload)
 	var/obj/item/paper/document = new(location)
 	document.name = document_name
 	document.info = document_info
-	document.AddComponent(/datum/component/contract_document, contract_id, document_kind, destination, payload)
+	new /datum/contract_document(document, contract_id, document_kind, destination, payload)
 	return document
 
 /datum/contract/medical_trial_personal
@@ -297,7 +315,7 @@
 
 /obj/item/paper/on_signature(mob/living/user, signature)
 	. = ..()
-	var/datum/component/contract_document/document = GetComponent(/datum/component/contract_document)
+	var/datum/contract_document/document = contract_document
 	if(document?.document_kind == CONTRACT_DOCUMENT_CLINICAL_CASE)
 		document.register_clinical_signature(src, user, signature)
 	else if(document?.document_kind == CONTRACT_DOCUMENT_RARE_CASE_CONSENT)
@@ -307,7 +325,7 @@
 
 /obj/item/paper/on_field_written(mob/living/user, field_id, obj/item/pen/writing_implement)
 	. = ..()
-	var/datum/component/contract_document/document = GetComponent(/datum/component/contract_document)
+	var/datum/contract_document/document = contract_document
 	if(document?.document_kind == CONTRACT_DOCUMENT_CLINICAL_CASE && field_id == 1)
 		document.register_clinical_signature(src, user, get_signature(writing_implement, user))
 	else if(document?.document_kind == CONTRACT_DOCUMENT_RARE_CASE_CONSENT && field_id == 1)
@@ -323,7 +341,7 @@
 	else if(document?.document_kind == CONTRACT_DOCUMENT_AGENT_CHARTER)
 		document.register_agent_approach_signature(src, user, field_id)
 
-/datum/component/contract_document/proc/register_clinical_signature(obj/item/paper/paper, mob/living/carbon/human/subject, signature)
+/datum/contract_document/proc/register_clinical_signature(obj/item/paper/paper, mob/living/carbon/human/subject, signature)
 	var/datum/contract/medical_trial/trial = SScontracts.contracts_by_id[contract_id]
 	if(payload["subject_id"] || !istype(subject) || !istype(trial) || trial.state != CONTRACT_ACTIVE)
 		return FALSE
@@ -355,7 +373,7 @@
 	), "document-signed:[evidence_id]", paper, subject, subject)
 	return TRUE
 
-/datum/component/contract_document/proc/register_consent_revocation(obj/item/paper/paper, mob/living/carbon/human/subject)
+/datum/contract_document/proc/register_consent_revocation(obj/item/paper/paper, mob/living/carbon/human/subject)
 	if(payload["signed"] || !istype(subject) || SScontracts.subject_identity(subject)?.id != payload["subject_id"])
 		return FALSE
 	payload["signed"] = TRUE
@@ -392,7 +410,7 @@
 		return FALSE
 	if(destination == CONTRACT_FAX_ENGINEERING)
 		return process_engineering_measurement_fax(paper, sender_account, sender)
-	var/datum/component/contract_document/document = paper.GetComponent(/datum/component/contract_document)
+	var/datum/contract_document/document = paper.contract_document
 	if(!document)
 		return FALSE
 	var/datum/contract/medical_trial/trial = SScontracts.contracts_by_id[document.contract_id]
@@ -442,10 +460,10 @@
 
 /proc/process_medical_trial_evidence_packet(obj/item/paper_bundle/packet, sender_account, mob/living/sender)
 	var/obj/item/paper/consent
-	var/datum/component/contract_document/consent_document
+	var/datum/contract_document/consent_document
 	var/list/scan_reports = list()
 	for(var/obj/item/paper/page in packet.pages)
-		var/datum/component/contract_document/document = page.GetComponent(/datum/component/contract_document)
+		var/datum/contract_document/document = page.contract_document
 		if(document?.document_kind == CONTRACT_DOCUMENT_CLINICAL_CASE && document.destination == CONTRACT_FAX_VEYMED)
 			if(consent)
 				to_chat(sender, span_warning("VeyMed rejects the packet: submit one subject's consent and scans per bundle."))
@@ -540,7 +558,7 @@
 /proc/process_contract_export_payload(atom/movable/shipment)
 	var/list/all_contents = contract_export_contents(shipment)
 	for(var/obj/item/paper/paper in all_contents)
-		var/datum/component/contract_document/manifest = paper.GetComponent(/datum/component/contract_document)
+		var/datum/contract_document/manifest = paper.contract_document
 		if(manifest?.document_kind != CONTRACT_DOCUMENT_MANIFEST || manifest.submitted)
 			continue
 		var/datum/contract/medical_trial_personal/contract = SScontracts.contracts_by_id[manifest.payload["side_contract_id"]]

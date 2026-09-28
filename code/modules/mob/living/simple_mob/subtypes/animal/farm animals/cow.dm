@@ -29,7 +29,7 @@
 	udder = new(50)
 	udder.my_atom = src
 
-	AddComponent(/datum/component/hose_connector/output/cow) // Moo?
+	add_hose_connector(/datum/hose_connector/output/cow) // Moo?
 
 /mob/living/simple_mob/animal/passive/cow/attackby(obj/item/O as obj, mob/user as mob)
 	var/obj/item/reagent_containers/glass/G = O

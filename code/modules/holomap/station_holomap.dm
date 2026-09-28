@@ -127,10 +127,10 @@
 
 			watching_mob_handle = om_handle(user)
 			MACHINE_WAKE(src)
-			watching_mob().AddComponent(/datum/component/recursive_move)
-			RegisterSignal(watching_mob(), COMSIG_MOVABLE_ATTEMPTED_MOVE, /obj/machinery/station_map/proc/checkPosition)
+			dq_add_recursive_move(watching_mob())
+			om_hook(watching_mob(), /datum/om/event/movable_attempted_move, src, PROC_REF(checkPosition))
 			//GLOB.dir_set_event.register(watching_mob, src, /obj/machinery/station_map/proc/checkPosition)
-			RegisterSignal(watching_mob(), COMSIG_OBSERVER_DESTROYED, /obj/machinery/station_map/proc/stopWatching)
+			om_hook(watching_mob(), /datum/om/event/qdeleting, src, PROC_REF(on_watcher_deleted))
 			update_use_power(USE_POWER_ACTIVE)
 
 			if(bogus)
@@ -149,20 +149,23 @@
 		return PROCESS_KILL
 
 /obj/machinery/station_map/proc/checkPosition()
-	SIGNAL_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	if(!watching_mob() || (watching_mob().loc != loc) || (dir != watching_mob().dir))
 		stopWatching()
 
+/obj/machinery/station_map/proc/on_watcher_deleted(datum/source, datum/om/event/qdeleting/event)
+	EVENT_HANDLER
+	stopWatching()
+
 /obj/machinery/station_map/proc/stopWatching()
-	SIGNAL_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	if(watching_mob())
 		if(watching_mob().client)
 			animate(holomap_datum.station_map, alpha = 0, time = 5, easing = LINEAR_EASING)
 			var/mob/M = watching_mob()
 			om_after(M, 5, /proc/remove_client_image, M, holomap_datum.station_map) //we give it time to fade out
-		UnregisterSignal(watching_mob(), COMSIG_MOVABLE_ATTEMPTED_MOVE)
+		om_unhook(watching_mob(), list(/datum/om/event/movable_attempted_move, /datum/om/event/qdeleting), src)
 		//GLOB.dir_set_event.unregister(watching_mob, src)
-		UnregisterSignal(watching_mob(), COMSIG_OBSERVER_DESTROYED)
 	watching_mob_handle = null
 	update_use_power(USE_POWER_IDLE)
 

@@ -10,21 +10,21 @@
 	/// List of all connected components that are on hold from accessing materials.
 	var/list/holds
 	/// List of all components that are sharing ores with this silo.
-	var/list/datum/component/remote_materials/ore_connected_machines
+	var/list/datum/remote_materials/ore_connected_machines
 	/// Material Container
-	var/datum/component/material_container/materials
+	var/datum/material_container/materials
 
 /obj/machinery/ore_silo/Initialize(mapload)
 	. = ..()
 
-	materials = AddComponent( \
-		/datum/component/material_container, \
+	materials = new /datum/material_container( \
+		src, \
 		subtypesof(/datum/material), \
 		INFINITY, \
 		MATCONTAINER_EXAMINE, \
-		container_signals = list( \
-			COMSIG_MATCONTAINER_ITEM_CONSUMED = TYPE_PROC_REF(/obj/machinery/ore_silo, on_item_consumed), \
-			COMSIG_MATCONTAINER_STACK_RETRIEVED = TYPE_PROC_REF(/obj/machinery/ore_silo, log_sheets_ejected), \
+		container_events = list( \
+			(/datum/om/event/matcontainer_item_consumed) = TYPE_PROC_REF(/obj/machinery/ore_silo, on_item_consumed), \
+			(/datum/om/event/matcontainer_stack_retrieved) = TYPE_PROC_REF(/obj/machinery/ore_silo, log_sheets_ejected), \
 		), \
 		allowed_items = /obj/item/stack \
 	)
@@ -37,7 +37,7 @@
 	if(GLOB.ore_silo_default == src)
 		GLOB.ore_silo_default = null
 
-	for(var/datum/component/remote_materials/mats as anything in ore_connected_machines)
+	for(var/datum/remote_materials/mats as anything in ore_connected_machines)
 		mats.disconnect()
 
 	ore_connected_machines = null
@@ -52,13 +52,19 @@
 	if(panel_open)
 		. += span_notice("The whole machine can be [span_bold("pried")] apart.")
 
-/obj/machinery/ore_silo/proc/on_item_consumed(datum/component/material_container/container, obj/item/item_inserted, last_inserted_id, mats_consumed, amount_inserted, atom/context)
-	SIGNAL_HANDLER
+/obj/machinery/ore_silo/proc/on_item_consumed(datum/material_container/container, datum/om/event/matcontainer_item_consumed/event)
+	EVENT_HANDLER
+	var/obj/item/item_inserted = event.item
+	var/mats_consumed = event.mats_consumed
+	var/amount_inserted = event.material_amount
+	var/atom/context = event.context
 
 	silo_log(context, "deposited", amount_inserted, item_inserted.name, mats_consumed)
 
-/obj/machinery/ore_silo/proc/log_sheets_ejected(datum/component/material_container/container, obj/item/stack/material/sheets, atom/context)
-	SIGNAL_HANDLER
+/obj/machinery/ore_silo/proc/log_sheets_ejected(datum/material_container/container, datum/om/event/matcontainer_stack_retrieved/event)
+	EVENT_HANDLER
+	var/obj/item/stack/material/sheets = event.new_stack
+	var/atom/context = event.context
 
 	silo_log(context, "ejected", -sheets.amount, "[sheets.singular_name]", list(GET_MATERIAL_REF(sheets.default_type) = sheets.amount * SHEET_MATERIAL_AMOUNT))
 
@@ -100,8 +106,8 @@
 	data["materials"] = materials.tgui_data(user)
 
 	data["machines"] = list()
-	for(var/datum/component/remote_materials/remote as anything in ore_connected_machines)
-		var/atom/parent = remote.parent
+	for(var/datum/remote_materials/remote as anything in ore_connected_machines)
+		var/atom/parent = remote.owner
 		data["machines"] += list(
 			list(
 				"icon" = icon2base64(icon(initial(parent.icon), initial(parent.icon_state), frame = 1)),
@@ -142,7 +148,7 @@
 			if(isnull(index))
 				return
 
-			var/datum/component/remote_materials/remote = LAZYACCESS(ore_connected_machines, index)
+			var/datum/remote_materials/remote = LAZYACCESS(ore_connected_machines, index)
 			if(isnull(remote))
 				return
 
@@ -158,7 +164,7 @@
 			if(isnull(index))
 				return
 
-			var/datum/component/remote_materials/remote = LAZYACCESS(ore_connected_machines, index)
+			var/datum/remote_materials/remote = LAZYACCESS(ore_connected_machines, index)
 			if(isnull(remote))
 				return
 

@@ -8,7 +8,7 @@
 	name = "threaten"
 	priority_class = DQ_BEHAVIOR_PRIORITY_NORMAL
 	target_kind = DQ_TARGET_MOB
-	eval_triggers = list(COMSIG_DQAI_TARGET_CHANGED)
+	eval_triggers = list(DQAI_TRIGGER_TARGET_CHANGED)
 	cooldown = 20 SECONDS
 
 	var/static/list/threats = list(
@@ -45,7 +45,7 @@
 	name = "call for help"
 	priority_class = DQ_BEHAVIOR_PRIORITY_NORMAL
 	target_kind = DQ_TARGET_MOB
-	eval_triggers = list(COMSIG_DQAI_DAMAGE_TAKEN)
+	eval_triggers = list(DQAI_TRIGGER_DAMAGE_TAKEN)
 	cooldown = 30 SECONDS
 
 /datum/ai_behavior/call_for_help/evaluate(datum/ai_brain/brain, atom/source)
@@ -68,5 +68,5 @@
 		if(!ally.ai_brain)
 			continue
 		ally.ai_brain.add_personal(target, DQ_DISPOSITION_HOSTILE, 60 SECONDS, "ally distress")
-		SEND_SIGNAL(ally, COMSIG_DQAI_ALLY_DISTRESS, owner, target)
+		OM_EMIT(ally, /datum/om/event/dqai_ally_distress, owner, target)
 	return DQ_BEHAVIOR_DONE

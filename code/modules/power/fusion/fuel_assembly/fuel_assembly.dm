@@ -19,7 +19,6 @@
 	radiate()
 
 /obj/item/fuel_assembly/proc/radiate()
-	SIGNAL_HANDLER
 	if(active)
 		return
 	if(!COOLDOWN_FINISHED(src, event_cooldown))

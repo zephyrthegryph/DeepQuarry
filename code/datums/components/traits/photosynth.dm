@@ -1,22 +1,11 @@
-// If a mob has this component, every life tick it will gain nutrition if it's standing in light up to nutrition_max.
-// Extremely good tutorial component if you need an example with no special bells and whistles, and no "gotcha" behaviors.
-/datum/component/photosynth
+// If a mob has this trait state, every life tick it will gain nutrition if it's standing in light up to nutrition_max.
+// Extremely good tutorial trait state if you need an example with no special bells and whistles, and no "gotcha" behaviors.
+/datum/trait_state/photosynth
+	life_stage = /datum/om/stage/life/trait/photosynth
 	var/nutrition_max = 1000
 
-/datum/component/photosynth/Initialize()
-	if(!isliving(parent))
-		return COMPONENT_INCOMPATIBLE
-
-/datum/component/photosynth/RegisterWithParent()
-	om_stage_add(parent, /datum/om/stage/life/trait/photosynth)
-
-/datum/component/photosynth/UnregisterFromParent()
-	om_stage_remove(parent, /datum/om/stage/life/trait/photosynth)
-
-/datum/component/photosynth/proc/process_component()
-	SIGNAL_HANDLER
-	var/mob/living/owner = parent
-	if(QDELETED(parent))
+/datum/trait_state/photosynth/life_tick()
+	if(QDELETED(owner))
 		return
 	if(owner.stat == DEAD)
 		return
@@ -34,7 +23,4 @@
 /// Trait system: photosynthesis. Was a COMSIG_LIVING_LIFE listener.
 /datum/om/stage/life/trait/photosynth
 	name = "photosynth"
-	component_type = /datum/component/photosynth
-
-/datum/om/stage/life/trait/photosynth/tick_component(mob/living/self, datum/component/photosynth/component)
-	component.process_component()
+	state_type = /datum/trait_state/photosynth

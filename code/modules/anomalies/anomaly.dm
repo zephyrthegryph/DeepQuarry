@@ -7,10 +7,13 @@
 	slot_flags = SLOT_BELT
 	item_flags = NOBLUDGEON
 
+/// Owned: lets us delete anomalies we hit (was the effect_remover component).
+REF_VAR(/obj/item/anomaly_neutralizer, OWNED, /datum/effect_remover, effect_remover)
+
 /obj/item/anomaly_neutralizer/Initialize(mapload)
 	. = ..()
 
-	AddComponent(/datum/component/effect_remover, \
+	effect_remover = new /datum/effect_remover(src, \
 		success_feedback = "You neutralize %THEEFFECT with %THEWEAPON, frying its circuitry in the process.", \
 		on_clear_callback = CALLBACK(src, PROC_REF(on_anomaly_neutralized)), \
 		effects_we_clear = list(/obj/effect/anomaly))

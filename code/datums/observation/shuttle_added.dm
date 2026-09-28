@@ -14,4 +14,4 @@
 /datum/controller/subsystem/shuttles/initialize_shuttle()
 	. = ..()
 	if(.)
-		SEND_SIGNAL(SSshuttles,COMSIG_OBSERVER_SHUTTLE_ADDED,.)
+		OM_EMIT(SSshuttles, /datum/om/event/observer_shuttle_added, .)

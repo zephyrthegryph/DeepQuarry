@@ -103,14 +103,28 @@ lazylist instead. For per-subtype constant tables (which DM can't express as a
 ### 3c. Lifecycle / hard-delete prevention
 
 - Prefer `Initialize(mapload, ...)` over `New()` for atoms; `return ..()`.
-- `Destroy()` must null held refs, `UnregisterSignal`, cancel timers/callbacks,
-  remove from global tracking, then `return ..()`. Return the right `QDEL_HINT_*`.
+- `Destroy()` must null held refs, cancel timers/callbacks, remove from global
+  tracking, then `return ..()`. Return the right `QDEL_HINT_*`. Event hooks
+  (`om_hook`) drop themselves when either end is deleted.
 - Always `qdel()`, never `del()`.
 
-### 3d. Signals & callbacks
+### 3d. Events & callbacks (OM events; the DCS is gone)
 
-- Every signal handler's first line is `SIGNAL_HANDLER`; it must not sleep — hand
-  slow work to `INVOKE_ASYNC`.
+There are no signals, components or elements (`RegisterSignal`, `SEND_SIGNAL`,
+`AddComponent`, `AddElement`, `COMSIG_*` are deleted and `tools/ci/dcs_lints.py`
+bans them). See `doc/rewrite/object_model_core.md` §10:
+- An event is a typed `/datum/om/event/x` (payload in vars). Send it with
+  `OM_EMIT(entity, /datum/om/event/x, args...)`, which allocates nothing when no one
+  listens and returns the ORed handler results. World-wide events go to `OM_WORLD`.
+- A refusable or result-returning event is a `/datum/om/event/before/x`.
+- Logic on an entity is a behaviour (`/datum/om/behaviour/x`, `handles = list(...)`,
+  `om_attach()`), with its state on the entity; big or plural state is an owned datum
+  in a declared var.
+- A datum reacting to another entity's event hooks it:
+  `om_hook(source, /datum/om/event/x, src, PROC_REF(on_x))`; `om_unhook()` removes it,
+  and deleting either end drops it.
+- Every event handler's first line is `EVENT_HANDLER`; it must not sleep.
+- Deferred or state-driven reactions use a channel, a watch or `om_after()`.
 - Pass procs via `PROC_REF()` / `TYPE_PROC_REF()` / `GLOBAL_PROC_REF()`, never a
   bare string proc name.
 
@@ -250,8 +264,8 @@ Valid prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`,
 
 - [ ] New `.dm` files `#include`d in `deepquarry.dme`.
 - [ ] Absolute type/proc paths only; no `:` operator on subtype access.
-- [ ] `Destroy()` nulls refs / unregisters signals / returns the right `QDEL_HINT_*`.
-- [ ] Signal handlers start with `SIGNAL_HANDLER`; callbacks use the `*_PROC_REF` macros.
+- [ ] `Destroy()` nulls refs / cancels timers / returns the right `QDEL_HINT_*`.
+- [ ] Event handlers start with `EVENT_HANDLER`; callbacks use the `*_PROC_REF` macros.
 - [ ] Time args use `SECONDS`/`MINUTES`/`HOURS`.
 - [ ] DreamChecker (`SpacemanDMM`) passes locally.
 - [ ] `bash tools/ci/check_ratchets.sh` passes; any kept site has `// ALLOW(<lint>): <reason>`.

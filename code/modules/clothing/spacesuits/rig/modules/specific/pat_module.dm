@@ -28,8 +28,8 @@
 
 	var/mob/living/carbon/human/H = holder.wearer()
 	to_chat(H,span_notice("You activate the P.A.T. module."))
-	H.AddComponent(/datum/component/recursive_move)
-	RegisterSignal(H, COMSIG_MOVABLE_ATTEMPTED_MOVE, /obj/item/rig_module/pat_module/proc/boop)
+	dq_add_recursive_move(H)
+	om_hook(H, /datum/om/event/movable_attempted_move, src, PROC_REF(boop))
 
 /obj/item/rig_module/pat_module/deactivate()
 	if(!..())
@@ -37,10 +37,13 @@
 
 	var/mob/living/carbon/human/H = holder.wearer()
 	to_chat(H,span_notice("Your disable the P.A.T. module."))
-	UnregisterSignal(H, COMSIG_MOVABLE_ATTEMPTED_MOVE)
+	om_unhook(H, /datum/om/event/movable_attempted_move, src)
 
-/obj/item/rig_module/pat_module/proc/boop(mob/living/carbon/human/user,turf/To,turf/Tn)
-	SIGNAL_HANDLER
+/obj/item/rig_module/pat_module/proc/boop(datum/source, datum/om/event/movable_attempted_move/event)
+	EVENT_HANDLER
+	var/mob/living/carbon/human/user = source
+	var/turf/To = event.old_loc
+	var/turf/Tn = event.new_loc
 	if(!istype(user) || !istype(To) || !istype(Tn))
 		deactivate() //They were picked up or something, or put themselves in a locker, who knows. Just turn off.
 		return

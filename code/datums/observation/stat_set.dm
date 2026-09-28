@@ -21,7 +21,7 @@
 	. = ..()
 	if(stat != old_stat)
 		om_changed(src, CHANGE_MOB_STAT)
-		SEND_SIGNAL(src, COMSIG_MOB_STATCHANGE, old_stat, new_stat)
+		OM_EMIT(src, /datum/om/event/mob_statchange, new_stat, old_stat)
 
 		if(isbelly(src.loc))
 			var/obj/belly/ourbelly = src.loc

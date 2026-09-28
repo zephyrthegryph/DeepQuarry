@@ -366,7 +366,7 @@
 	var/list/food_preference //RS edit. Lazy.
 	var/food_preference_bonus = 0
 
-	var/list/species_component // The component that this species uses. Example: Xenochimera use /datum/component/xenochimera
+	var/list/species_component // Per-mob state this species adds: /datum/trait_state, /datum/forms, /datum/shadekin or /datum/xenochimera paths.
 	var/component_requires_late_recalc = FALSE // If TRUE, the component will do special recalculation stuff at the end of update_icons_body()
 
 	// For Lleill and Hanner
@@ -815,21 +815,64 @@
 	for(var/u_type in unarmed_types)
 		unarmed_attacks += new u_type()
 
+/// Gives `H` this species' per-mob state: /datum/trait_state paths, a /datum/forms type,
+/// /datum/shadekin and /datum/xenochimera.
 /datum/species/proc/apply_components(mob/living/carbon/human/H)
 	if(LAZYLEN(species_component))
 		for(var/component in species_component)
-			H.LoadComponent(component)
+			species_state_add(H, component)
 
 /// Remove this species' components that `next` doesn't also use (species change).
 /datum/species/proc/remove_components(mob/living/carbon/human/H, datum/species/next)
 	for(var/component in species_component)
 		if(next && (component in next.species_component))
 			continue
-		var/datum/component/C = H.GetComponent(component)
-		if(!C)
+		if(!species_state_has(H, component))
 			continue
 		log_game("SPECIES: removing [component] from [key_name(H)] on species change [name] -> [next?.name].")
-		qdel(C)
+		species_state_remove(H, component)
+
+/// Adds one species_component entry to `H`.
+/proc/species_state_add(mob/living/carbon/human/H, path)
+	if(ispath(path, /datum/trait_state))
+		return H.add_trait_state(path)
+	if(ispath(path, /datum/forms))
+		return H.add_forms(path)
+	if(ispath(path, /datum/shadekin))
+		return H.add_shadekin(path)
+	if(ispath(path, /datum/xenochimera))
+		return H.add_xenochimera()
+	log_game("SPECIES: unknown species state [path] for [key_name(H)]; ignored.")
+	return null
+
+/// TRUE when `H` holds the state for one species_component entry.
+/proc/species_state_has(mob/living/carbon/human/H, path)
+	if(ispath(path, /datum/trait_state))
+		return !!H.get_trait_state(path)
+	if(ispath(path, /datum/forms))
+		return istype(H.character_forms, path)
+	if(ispath(path, /datum/shadekin))
+		return istype(H.shadekin, path)
+	if(ispath(path, /datum/xenochimera))
+		return !!H.xenochimera
+	return FALSE
+
+/// Removes the state for one species_component entry from `H`.
+/proc/species_state_remove(mob/living/carbon/human/H, path)
+	if(ispath(path, /datum/trait_state))
+		return H.remove_trait_state(path)
+	if(ispath(path, /datum/forms))
+		return H.remove_forms(path)
+	if(ispath(path, /datum/shadekin))
+		if(istype(H.shadekin, path))
+			H.remove_shadekin()
+			return TRUE
+		return FALSE
+	if(ispath(path, /datum/xenochimera))
+		if(H.xenochimera)
+			H.remove_xenochimera()
+			return TRUE
+	return FALSE
 
 /datum/species/proc/produceCopy(list/traits, mob/living/carbon/human/H, custom_base, reset_dna = TRUE) // Traitgenes reset_dna flag required, or genes get reset on resleeve
 	ASSERT(src)

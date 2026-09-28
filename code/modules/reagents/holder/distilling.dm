@@ -6,7 +6,7 @@
 /datum/reagents/distilling/supports_belly_reagents()
 	return FALSE
 
-/// Distilling holders do not send COMSIG_REAGENTS_HOLDER_REACTED.
+/// Distilling holders do not emit reagents_holder_reacted.
 /datum/reagents/distilling/on_reactions_handled(list/effect_reactions)
 	return
 

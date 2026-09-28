@@ -13,7 +13,7 @@
 	set name = "Electric Lockpick (5 + 10/use)"
 	set desc = "Bruteforces open most electrical locking systems, at 10 chemicals per use."
 
-	var/datum/component/antag/changeling/changeling = changeling_power(5,0,100,CONSCIOUS)
+	var/datum/changeling/changeling = changeling_power(5,0,100,CONSCIOUS)
 
 	var/obj/held_item = get_active_hand()
 
@@ -66,7 +66,7 @@
 		return
 	if(!proximity)
 		return
-	var/datum/component/antag/changeling/ling_datum = is_changeling(user)
+	var/datum/changeling/ling_datum = is_changeling(user)
 	if(!ling_datum)
 		return
 

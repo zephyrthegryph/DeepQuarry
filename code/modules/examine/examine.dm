@@ -139,8 +139,7 @@
 		return TRUE
 	if(isobserver(src)) //We're an observer. We always are able to see stuff antags see.
 		return TRUE
-	var/datum/component/antag/comp = GetComponent(/datum/component/antag)
-	if(comp)
+	if(get_changeling_state())
 		return TRUE
 	return FALSE
 

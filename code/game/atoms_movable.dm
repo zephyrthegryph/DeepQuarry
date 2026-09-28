@@ -13,7 +13,7 @@
 	var/tmp/throw_source_handle
 	var/throw_speed = 2
 	var/throw_range = 7
-	// moved_recently moved to /datum/component/movable_state
+	// moved_recently lives in code/datums/sparse_vars/movable_misc.dm
 	var/item_state = null // Used to specify the item state for the on-mob overlays.
 	var/icon_scale_x = DEFAULT_ICON_SCALE_X // Used to scale icons up or down horizonally in update_transform().
 	var/icon_scale_y = DEFAULT_ICON_SCALE_Y // Used to scale icons up or down vertically in update_transform().
@@ -26,11 +26,11 @@
 	var/does_spin = TRUE // Does the atom spin when thrown (of course it does :P)
 	var/movement_type = NONE
 
-	// dq_get_cloaked(src) moved to /datum/component/movable_state
-	// cloaked_selfimage moved to /datum/component/movable_state
-	// belly_cycles moved to /datum/component/movable_state
+	// dq_get_cloaked(src) lives in code/datums/sparse_vars/movable_misc.dm
+	// cloaked_selfimage lives in code/datums/sparse_vars/movable_misc.dm
+	// belly_cycles lives in code/datums/sparse_vars/movable_misc.dm
 	var/autotransferable = TRUE // Toggle for autotransfer mechanics.
-	// recursive_listeners moved to /datum/component/movable_state
+	// recursive_listeners lives in code/datums/sparse_vars/movable_misc.dm
 	var/listening_recursive = NON_LISTENING_ATOM
 	var/unacidable = TRUE
 
@@ -51,7 +51,7 @@
 			em_block = new(null, src)
 			// Note, this should be refactored to drop priority overlays
 			add_overlay(list(em_block), TRUE)
-			RegisterSignal(em_block, COMSIG_QDELETING, PROC_REF(emblocker_gc))
+			om_hook(em_block, /datum/om/event/qdeleting, src, PROC_REF(emblocker_gc))
 	else
 		var/mutable_appearance/gen_emissive_blocker = mutable_appearance(icon, icon_state, plane = PLANE_EMISSIVE, alpha = src.alpha)
 		gen_emissive_blocker.color = GLOB.em_block_color
@@ -66,9 +66,9 @@
 		update_transform()
 	switch(light_system)
 		if(MOVABLE_LIGHT)
-			AddComponent(/datum/component/overlay_lighting, starts_on = light_on)
+			add_overlay_lighting(src, starts_on = light_on)
 		if(MOVABLE_LIGHT_DIRECTIONAL)
-			AddComponent(/datum/component/overlay_lighting, is_directional = TRUE, starts_on = light_on)
+			add_overlay_lighting(src, is_directional = TRUE, starts_on = light_on)
 
 /// World registration moved out of Initialize() (L2): radiation shielding,
 /// static lighting and recursive listening reach outside the object.
@@ -127,7 +127,7 @@
 		stack_trace("[type] still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them")
 	if(em_block)
 		cut_overlay(em_block)
-		UnregisterSignal(em_block, COMSIG_QDELETING)
+		om_unhook(em_block, /datum/om/event/qdeleting, src)
 		QDEL_NULL(em_block)
 	// Leave the turf's opacity_sources while loc is still valid.
 	stop_blocking_light()
@@ -166,7 +166,7 @@
 	if(!loc || !newloc)
 		return FALSE
 
-	if(SEND_SIGNAL(src, COMSIG_MOVABLE_PRE_MOVE, newloc, direct, movetime) & COMPONENT_MOVABLE_BLOCK_PRE_MOVE)
+	if(OM_EMIT(src, /datum/om/event/before/movable_pre_move, newloc, direct, movetime) & COMPONENT_MOVABLE_BLOCK_PRE_MOVE)
 		return FALSE
 
 	// Store this early before we might move, it's used several places
@@ -307,7 +307,6 @@
 
 ///Called after a successful Move(). By this point, we've already moved
 /atom/movable/proc/Moved(atom/old_loc, direction, forced = FALSE, movetime)
-	SEND_SIGNAL(src, COMSIG_MOVABLE_MOVED, old_loc, direction, forced, movetime)
 	if(blocks_light)
 		light_blocking_moved(old_loc)
 	om_emit_moved(src, old_loc, direction, forced)
@@ -372,7 +371,7 @@
 		if(QDELETED(A))
 			return
 
-	SEND_SIGNAL(src, COMSIG_MOVABLE_BUMP, A)
+	OM_EMIT(src, /datum/om/event/before/movable_bump, A)
 
 	A.Bumped(src)
 	A.last_bumped = world.time
@@ -500,7 +499,7 @@
 		return TRUE
 
 /atom/movable/proc/onTransitZ(old_z,new_z)
-	SEND_SIGNAL(src, COMSIG_MOVABLE_Z_CHANGED, old_z, new_z)
+	OM_EMIT(src, /datum/om/event/before/movable_z_changed, old_z, new_z)
 	for(var/atom/movable/AM as anything in src) // Notify contents of Z-transition. This can be overridden IF we know the items contents do not care.
 		AM.onTransitZ(old_z,new_z)
 
@@ -528,7 +527,7 @@
 
 //called when src is thrown into hit_atom
 /atom/movable/proc/throw_impact(atom/hit_atom, datum/thrownthing/throwingdatum)
-	SEND_SIGNAL(src, COMSIG_MOVABLE_IMPACT, hit_atom, throwingdatum)
+	OM_EMIT(src, /datum/om/event/movable_impact, hit_atom, throwingdatum)
 	if(isliving(hit_atom))
 		var/mob/living/M = hit_atom
 		if(M?.buckled_to() == src)
@@ -769,9 +768,9 @@
 /atom/movable/proc/get_cell()
 	return
 
-/atom/movable/proc/emblocker_gc(datum/source)
-	SIGNAL_HANDLER
-	UnregisterSignal(source, COMSIG_QDELETING)
+/atom/movable/proc/emblocker_gc(datum/source, datum/om/event/qdeleting/event)
+	EVENT_HANDLER
+	om_unhook(source, /datum/om/event/qdeleting, src)
 	cut_overlay(source)
 	if(em_block == source)
 		em_block = null

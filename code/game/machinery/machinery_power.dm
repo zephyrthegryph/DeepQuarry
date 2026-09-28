@@ -45,7 +45,10 @@
 	if(stat == oldstat)
 		return FALSE
 	OM_CHANGED(src, CHANGE_MACHINE_POWER) // dm-health: tracked(CHANGE_MACHINE_POWER)
-	SEND_SIGNAL(src, (stat & NOPOWER) ? COMSIG_MACHINERY_POWER_LOST : COMSIG_MACHINERY_POWER_RESTORED)
+	if(stat & NOPOWER)
+		OM_EMIT(src, /datum/om/event/machinery_power_lost)
+	else
+		OM_EMIT(src, /datum/om/event/machinery_power_restored)
 	return TRUE
 
 // Get the amount of power this machine will consume each cycle.  Override by experts only!
@@ -83,8 +86,8 @@
 	// only add this if we init on a non-turf (and non-null)
 	if(!recursive_set && loc && !isturf(loc))
 		recursive_set = TRUE
-		AddComponent(/datum/component/recursive_move)
-		RegisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(update_power_on_move)) //we only need this for recursive moving
+		dq_add_recursive_move(src)
+		om_hook(src, /datum/om/event/movable_attempted_move, src, PROC_REF(update_power_on_move)) //we only need this for recursive moving
 	var/power = POWER_CONSUMPTION
 	REPORT_POWER_CONSUMPTION_CHANGE(0, power)
 	power_init_complete = TRUE
@@ -94,10 +97,6 @@
 // Or in Destroy at all, but especially after the ..().
 // ALLOW(lifecycle): the base machine: its power draw leaves the area budget.
 /obj/machinery/Destroy()
-	/*
-	if(ismovable(loc))
-		UnregisterSignal(loc, COMSIG_MOVABLE_ATTEMPTED_MOVE) // Unregister just in case
-	*/
 	var/power = POWER_CONSUMPTION
 	REPORT_POWER_CONSUMPTION_CHANGE(power, 0)
 	if(power_subscriber)
@@ -113,11 +112,13 @@
 	// only add this if we move into a non-turf (not null) and we've never been given recursive move handling
 	if(!recursive_set && loc && !isturf(loc))
 		recursive_set = TRUE
-		AddComponent(/datum/component/recursive_move)
-		RegisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(update_power_on_move)) //we only need this for recursive moving
+		dq_add_recursive_move(src)
+		om_hook(src, /datum/om/event/movable_attempted_move, src, PROC_REF(update_power_on_move)) //we only need this for recursive moving
 
-/obj/machinery/proc/update_power_on_move(atom/movable/mover, atom/old_loc, atom/new_loc)
-	SIGNAL_HANDLER
+/obj/machinery/proc/update_power_on_move(atom/movable/mover, datum/om/event/movable_attempted_move/event)
+	EVENT_HANDLER
+	var/atom/old_loc = event.old_loc
+	var/atom/new_loc = event.new_loc
 	var/area/old_area = get_area(old_loc)
 	var/area/new_area = get_area(new_loc)
 	if(old_area != new_area)

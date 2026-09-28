@@ -16,15 +16,15 @@
 	. = ..()
 	fix_calls++
 
-/// COMSIG_MACHINERY_BROKEN listener.
+/// machinery_broken event listener.
 /datum/dq_breakpoint_listener
 	var/heard = 0
 	var/last_flag
 
-/datum/dq_breakpoint_listener/proc/on_broken(obj/machinery/source, damage_flag)
-	SIGNAL_HANDLER
+/datum/dq_breakpoint_listener/proc/on_broken(obj/machinery/source, datum/om/event/machinery_broken/event)
+	EVENT_HANDLER
 	heard++
-	last_flag = damage_flag
+	last_flag = event.damage_flag
 
 // ---- The rules are declared and picked up by the generator ----
 
@@ -64,7 +64,7 @@
 	var/turf/T = test_floor()
 	var/datum/dq_breakpoint_listener/listener = new
 	var/obj/machinery/dq_breakpoint_probe/probe = allocate(/obj/machinery/dq_breakpoint_probe, T)
-	listener.RegisterSignal(probe, COMSIG_MACHINERY_BROKEN, TYPE_PROC_REF(/datum/dq_breakpoint_listener, on_broken))
+	om_hook(probe, /datum/om/event/machinery_broken, listener, TYPE_PROC_REF(/datum/dq_breakpoint_listener, on_broken))
 	TEST_ASSERT(dq_rule_binding_of(probe), "a machine with a breaking point subscribes its rules")
 
 	probe.take_damage(40, BRUTE, MELEE, FALSE)
@@ -72,7 +72,7 @@
 	probe.take_damage(20, BRUTE, MELEE, FALSE)
 	TEST_ASSERT(probe.stat & BROKEN, "crossing the breaking point sets BROKEN in the same call")
 	TEST_ASSERT_EQUAL(probe.break_calls, 1, "atom_break ran once")
-	TEST_ASSERT_EQUAL(listener.heard, 1, "COMSIG_MACHINERY_BROKEN was sent once")
+	TEST_ASSERT_EQUAL(listener.heard, 1, "machinery_broken was sent once")
 	TEST_ASSERT_EQUAL(listener.last_flag, MELEE, "with the damage flag")
 	probe.take_damage(10, BRUTE, MELEE, FALSE)
 	dq_rx_flush()
@@ -113,13 +113,13 @@
 	for(var/path in list(/obj/machinery/computer, /obj/machinery/door/airlock, /obj/machinery/station_map, /obj/machinery/camera))
 		var/obj/machinery/machine = allocate(path, T)
 		listener.heard = 0
-		listener.RegisterSignal(machine, COMSIG_MACHINERY_BROKEN, TYPE_PROC_REF(/datum/dq_breakpoint_listener, on_broken))
+		om_hook(machine, /datum/om/event/machinery_broken, listener, TYPE_PROC_REF(/datum/dq_breakpoint_listener, on_broken))
 		TEST_ASSERT(machine.atom_break(), "[path]: breaks")
 		TEST_ASSERT(machine.stat & BROKEN, "[path]: BROKEN is set")
 		TEST_ASSERT_EQUAL(listener.heard, 1, "[path]: the signal is sent")
 		TEST_ASSERT(machine.atom_fix(), "[path]: is fixed")
 		TEST_ASSERT(!(machine.stat & BROKEN), "[path]: BROKEN is cleared")
-		listener.UnregisterSignal(machine, COMSIG_MACHINERY_BROKEN)
+		om_unhook(machine, /datum/om/event/machinery_broken, listener)
 		qdel(machine)
 	qdel(listener)
 

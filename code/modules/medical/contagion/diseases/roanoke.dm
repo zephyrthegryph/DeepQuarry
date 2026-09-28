@@ -89,7 +89,7 @@
 				M.process_organs(TRUE) //Force an update so we start processing the internal bleeding.
 
 			if(M.stat == DEAD || M.allow_spontaneous_tf)
-				M.LoadComponent(/datum/component/xenochimera)
+				M.add_xenochimera()
 				cure()
 	return
 

@@ -1,5 +1,3 @@
-#define SIGNAL_ADDTRAIT(trait_ref) "addtrait [trait_ref]"
-#define SIGNAL_REMOVETRAIT(trait_ref) "removetrait [trait_ref]"
 
 // trait accessor defines
 #define ADD_TRAIT(target, trait, source) \
@@ -9,14 +7,14 @@
 			target._status_traits = list(); \
 			_L = target._status_traits; \
 			_L[trait] = list(source); \
-			SEND_SIGNAL(target, SIGNAL_ADDTRAIT(trait), trait); \
+			OM_EMIT(target, /datum/om/event/trait_gained, trait); \
 		} else { \
 			_L = target._status_traits; \
 			if (_L[trait]) { \
 				_L[trait] |= list(source); \
 			} else { \
 				_L[trait] = list(source); \
-				SEND_SIGNAL(target, SIGNAL_ADDTRAIT(trait), trait); \
+				OM_EMIT(target, /datum/om/event/trait_gained, trait); \
 			} \
 		} \
 	} while (0)
@@ -37,7 +35,7 @@
 			};\
 			if (!length(_L[trait])) { \
 				_L -= trait; \
-				SEND_SIGNAL(target, SIGNAL_REMOVETRAIT(trait), trait); \
+				OM_EMIT(target, /datum/om/event/trait_lost, trait); \
 			}; \
 			if (!length(_L)) { \
 				target._status_traits = null \
@@ -61,7 +59,7 @@
 			};\
 			if (!length(_traits_list[trait])) { \
 				_traits_list -= trait; \
-				SEND_SIGNAL(target, SIGNAL_REMOVETRAIT(trait), trait); \
+				OM_EMIT(target, /datum/om/event/trait_lost, trait); \
 			}; \
 			if (!length(_traits_list)) { \
 				target._status_traits = null \
@@ -77,7 +75,7 @@
 				_L[_T] &= _S;\
 				if (!length(_L[_T])) { \
 					_L -= _T; \
-					SEND_SIGNAL(target, SIGNAL_REMOVETRAIT(_T), _T); \
+					OM_EMIT(target, /datum/om/event/trait_lost, _T); \
 					}; \
 				};\
 			if (!length(_L)) { \
@@ -100,7 +98,7 @@
 				_L[_T] -= _S;\
 				if (!length(_L[_T])) { \
 					_L -= _T; \
-					SEND_SIGNAL(target, SIGNAL_REMOVETRAIT(_T)); \
+					OM_EMIT(target, /datum/om/event/trait_lost, _T); \
 					}; \
 				};\
 			if (!length(_L)) { \

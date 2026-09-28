@@ -369,13 +369,13 @@
 
 /obj/item/integrated_circuit/output/holographic_projector/Initialize(mapload)
 	. = ..()
-	AddComponent(/datum/component/recursive_move)
-	RegisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(on_moved))
+	dq_add_recursive_move(src)
+	om_hook(src, /datum/om/event/movable_attempted_move, src, PROC_REF(on_moved))
 
 // ALLOW(lifecycle): its hologram goes with it.
 /obj/item/integrated_circuit/output/holographic_projector/Destroy()
 	destroy_hologram()
-	UnregisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE)
+	om_unhook(src, /datum/om/event/movable_attempted_move, src)
 	return ..()
 
 /obj/item/integrated_circuit/output/holographic_projector/do_work()
@@ -464,8 +464,8 @@
 	if(hologram)
 		update_hologram()
 
-/obj/item/integrated_circuit/output/holographic_projector/proc/on_moved()
-	SIGNAL_HANDLER
+/obj/item/integrated_circuit/output/holographic_projector/proc/on_moved(datum/source, datum/om/event/movable_attempted_move/event)
+	EVENT_HANDLER
 	if(hologram)
 		update_hologram_position()
 

@@ -1,11 +1,10 @@
-///Returns the shadekin component of the given mob
-/mob/living/proc/get_shadekin_component()
-	var/datum/component/shadekin/SK = GetComponent(/datum/component/shadekin)
-	if(SK)
-		return SK
+///Returns the shadekin state datum of the given mob (null if not shadekin)
+/mob/living/proc/get_shadekin_state()
+	RETURN_TYPE(/datum/shadekin)
+	return shadekin
 
 ///Handles the shadekin's HUD updates.
-/datum/component/shadekin/proc/update_shadekin_hud()
+/datum/shadekin/proc/update_shadekin_hud()
 	var/turf/T = get_turf(owner)
 	if(owner.shadekin_display)
 		var/l_icon = 0
@@ -43,7 +42,7 @@
 	return
 
 ///For simplekin or those that have a pre-defined eye color
-/datum/component/shadekin/proc/set_eye_energy()
+/datum/shadekin/proc/set_eye_energy()
 	if(!eye_color_influences_energy)
 		return
 	switch(eye_color)
@@ -68,7 +67,7 @@
 			nutrition_conversion_scaling = 1.5
 
 ///Sets our eye color.
-/datum/component/shadekin/proc/set_shadekin_eyecolor()
+/datum/shadekin/proc/set_shadekin_eyecolor()
 	if(!ishuman(owner))
 		return eye_color //revert to default if we're not a human
 
@@ -114,7 +113,7 @@
 //wait, it's all light?
 ///Allows setting the light and darkness gain.
 ///@Args: light_gain, dark_gain
-/datum/component/shadekin/proc/set_light_and_darkness(light_gain, dark_gain)
+/datum/shadekin/proc/set_light_and_darkness(light_gain, dark_gain)
 	if(light_gain)
 		energy_light = light_gain
 	if(dark_gain)
@@ -125,34 +124,34 @@
 
 /// Returns the shadekin's current energy.
 /// Returns max_energy if dark_energy_infinite is set to TRUE.
-/datum/component/shadekin/proc/shadekin_get_energy()
+/datum/shadekin/proc/shadekin_get_energy()
 	if(dark_energy_infinite)
 		return max_dark_energy
 	return dark_energy
 
 /// Returns the shadekin's maximum energy.
-/datum/component/shadekin/proc/shadekin_get_max_energy()
+/datum/shadekin/proc/shadekin_get_max_energy()
 	return max_dark_energy
 
 ///Sets the shadekin's energy TO the given value.
-/datum/component/shadekin/proc/shadekin_set_energy(new_energy)
+/datum/shadekin/proc/shadekin_set_energy(new_energy)
 	if(!isnum(new_energy))
 		return
 	dark_energy = CLAMP(new_energy, 0, max_dark_energy)
 
 ///Sets the shadekin's maximum energy.
-/datum/component/shadekin/proc/shadekin_set_max_energy(new_max_energy)
+/datum/shadekin/proc/shadekin_set_max_energy(new_max_energy)
 	if(!isnum(new_max_energy))
 		return //No.
 	max_dark_energy = new_max_energy
 
 ///Adjusts the shadekin's energy by the given amount.
-/datum/component/shadekin/proc/shadekin_adjust_energy(amount)
+/datum/shadekin/proc/shadekin_adjust_energy(amount)
 	if(!isnum(amount))
 		return //No
 	shadekin_set_energy(dark_energy + amount)
 
-/datum/component/shadekin/proc/handle_nutrition_conversion(current_gains)
+/datum/shadekin/proc/handle_nutrition_conversion(current_gains)
 	if(!nutrition_energy_conversion)
 		return current_gains
 	if(shadekin_get_energy() == 100 && current_gains > 0)
@@ -164,7 +163,7 @@
 		current_gains += nutrition_conversion_scaling
 	return current_gains
 
-/datum/component/shadekin/proc/attack_dephase(turf/T = null, atom/dephaser)
+/datum/shadekin/proc/attack_dephase(turf/T = null, atom/dephaser)
 	// no assigned dephase-target, just use our own
 	if(!T)
 		T = get_turf(owner)
@@ -186,21 +185,21 @@
 	owner.status_at_least(EFFECT_WEAKENED, 3)
 
 /mob/living/carbon/human/is_incorporeal()
-	var/datum/component/shadekin/SK = get_shadekin_component()
+	var/datum/shadekin/SK = get_shadekin_state()
 	if(SK && SK.in_phase) //Shadekin
 		return TRUE
 	return ..()
 
 ///Proc that takes in special considerations, such as 'no abilities in VR' and the such
 ///Returns TRUE if we try to do something forbidden
-/datum/component/shadekin/proc/special_considerations(allow_vr)
+/datum/shadekin/proc/special_considerations(allow_vr)
 	if(!allow_vr && istype(get_area(owner), /area/vr))
 		to_chat(owner, span_danger("The VR systems cannot comprehend this power! This is useless to you!"))
 		return TRUE
 	return FALSE
 
-///Gets late-load preferences for the shadekin component. Used when the component is applied post-spawn.
-/datum/component/shadekin/lateload_pref_data()
+///Gets late-load preferences for the shadekin datum. Used when it is applied post-spawn (manual add).
+/datum/shadekin/proc/lateload_pref_data()
 	if(owner.client)
 		flicker_color = owner.read_preference(/datum/preference/color/living/flicker_color)
 		flicker_time = owner.read_preference(/datum/preference/numeric/living/flicker_time)

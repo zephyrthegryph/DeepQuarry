@@ -14,14 +14,13 @@
 	department_id = new_department_id
 	squad_id = new_squad_id
 	home_handle = om_handle(new_home)
-	RegisterSignal(defender(), GENERATED_STATION_DEFENDER_DAMAGE_SIGNAL, PROC_REF(on_damage))
-	RegisterSignal(defender(), COMSIG_MOB_DEATH, PROC_REF(on_death))
+	om_hook(defender(), /datum/om/event/dqai_damage_taken, src, PROC_REF(on_damage))
+	om_hook(defender(), /datum/om/event/mob_death, src, PROC_REF(on_death))
 
 // ALLOW(lifecycle): its director unregisters the defender.
 /datum/generated_station_defender_agent/Destroy()
 	if(defender())
-		UnregisterSignal(defender(), GENERATED_STATION_DEFENDER_DAMAGE_SIGNAL)
-		UnregisterSignal(defender(), COMSIG_MOB_DEATH)
+		om_unhook(defender(), list(/datum/om/event/dqai_damage_taken, /datum/om/event/mob_death), src)
 		runtime()?.director()?.unregister_defender(defender())
 	defender_handle = null
 	runtime_handle = null
@@ -34,16 +33,17 @@
 /datum/generated_station_defender_agent/proc/is_active()
 	return defender() && !QDELETED(defender()) && defender().stat < DEAD
 
-/datum/generated_station_defender_agent/proc/on_damage(datum/source, amount, damage_type, atom/attacker)
-	SIGNAL_HANDLER
+/datum/generated_station_defender_agent/proc/on_damage(datum/source, datum/om/event/dqai_damage_taken/event)
+	EVENT_HANDLER
+	var/atom/attacker = event.attacker
 	if(attacker)
 		last_contact = om_handle(attacker)
 		runtime()?.report_contact(src, attacker)
 	if(defender() && defender().vitality() <= GENERATED_STATION_DEFENDER_RETREAT_HEALTH)
 		runtime()?.retreat_agent(src)
 
-/datum/generated_station_defender_agent/proc/on_death(datum/source, gibbed)
-	SIGNAL_HANDLER
+/datum/generated_station_defender_agent/proc/on_death(datum/source, datum/om/event/mob_death/event)
+	EVENT_HANDLER
 	runtime()?.on_casualty(src)
 
 /datum/generated_station_defender_agent/proc/apply_order(datum/generated_station_order/order, datum/generated_station_knowledge_report/report)

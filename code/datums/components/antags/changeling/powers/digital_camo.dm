@@ -13,7 +13,7 @@
 	set name = "Toggle Digital Camoflague"
 	set desc = "The AI can no longer track us, but we will look different if examined.  Has a constant cost while active."
 
-	var/datum/component/antag/changeling/changeling = changeling_power()
+	var/datum/changeling/changeling = changeling_power()
 	if(!changeling)
 		return 0
 
@@ -32,7 +32,7 @@
 /// Digital camouflage costs a chemical every 4 seconds while it lasts.
 /mob/proc/changeling_camo_drain()
 	var/mob/living/carbon/human/C = src
-	var/datum/component/antag/changeling/changeling = is_changeling(src)
+	var/datum/changeling/changeling = is_changeling(src)
 	if(!istype(C) || !C.digitalcamo || !C.mind || !changeling)
 		return
 	changeling.chem_charges = max(changeling.chem_charges - 1, 0)

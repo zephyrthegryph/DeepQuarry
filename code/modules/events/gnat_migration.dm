@@ -70,7 +70,7 @@
 // Spawn a single gnat at given location.
 /datum/event/gnat_migration/proc/spawn_one_gnat(loc)
 	var/mob/living/simple_mob/animal/M = new /mob/living/simple_mob/animal/space/gnat(loc)
-	RegisterSignal(M, COMSIG_OBSERVER_DESTROYED, PROC_REF(on_gnat_destruction))
+	om_hook(M, /datum/om/event/qdeleting, src, PROC_REF(on_gnat_destruction))
 	LAZYADD(spawned_gnat, M)
 	return M
 
@@ -82,10 +82,10 @@
 			. += 1
 
 // If gnat is bomphed, remove it from the list.
-/datum/event/gnat_migration/proc/on_gnat_destruction(mob/M)
-	SIGNAL_HANDLER
+/datum/event/gnat_migration/proc/on_gnat_destruction(mob/M, datum/om/event/qdeleting/event)
+	EVENT_HANDLER
 	LAZYREMOVE(spawned_gnat, M)
-	UnregisterSignal(M, COMSIG_OBSERVER_DESTROYED)
+	om_unhook(M, /datum/om/event/qdeleting, src)
 
 /datum/event/gnat_migration/end()
 	. = ..()

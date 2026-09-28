@@ -16,7 +16,7 @@
 
 /datum/unit_test/dq_protean_folded_lethal_goes_dormant/Run()
 	var/mob/living/carbon/human/H = make_protean_with_rig()
-	var/datum/component/forms/protean/F = H.GetComponent(/datum/component/forms/protean)
+	var/datum/forms/protean/F = H.get_protean_forms()
 	var/obj/item/rig/protean/R = F.rig
 	TEST_ASSERT_NOTNULL(R, "the protean should own its rig")
 	TEST_ASSERT(F.enter_rig(), "folding voluntarily should succeed")
@@ -43,7 +43,7 @@
 
 /datum/unit_test/dq_protean_dormant_rig_is_inert/Run()
 	var/mob/living/carbon/human/H = make_protean_with_rig()
-	var/datum/component/forms/protean/F = H.GetComponent(/datum/component/forms/protean)
+	var/datum/forms/protean/F = H.get_protean_forms()
 	var/obj/item/rig/protean/R = F.rig
 	R.set_armor_value("melee", 40)
 	R.chest.set_armor_value("melee", 40)
@@ -74,7 +74,7 @@
 
 /datum/unit_test/dq_protean_rig_hits_land_on_body/Run()
 	var/mob/living/carbon/human/H = make_protean_with_rig()
-	var/datum/component/forms/protean/F = H.GetComponent(/datum/component/forms/protean)
+	var/datum/forms/protean/F = H.get_protean_forms()
 	var/obj/item/rig/protean/R = F.rig
 	var/integrity_before = R.get_integrity()
 
@@ -102,7 +102,7 @@
 
 /datum/unit_test/dq_protean_rig_power_ledger/Run()
 	var/mob/living/carbon/human/H = make_protean_with_rig()
-	var/datum/component/forms/protean/F = H.GetComponent(/datum/component/forms/protean)
+	var/datum/forms/protean/F = H.get_protean_forms()
 	var/obj/item/rig/protean/R = F.rig
 	TEST_ASSERT_NOTNULL(R.cell, "the cluster should have a cell")
 	var/charge_before = R.cell.charge
@@ -144,7 +144,7 @@
 	TEST_ASSERT_NULL(H.body.find_affliction(/datum/affliction/nanite/cohesion_loss), "revival rebuilds cohesion")
 	TEST_ASSERT(contamination in H.body.afflictions, "revival must not clear contamination")
 	TEST_ASSERT(arm.get_trauma() > 0, "revival must not repair a limb it didn't rebuild")
-	var/datum/component/forms/protean/F = H.GetComponent(/datum/component/forms/protean)
+	var/datum/forms/protean/F = H.get_protean_forms()
 	TEST_ASSERT(!F.rig.inert, "the cluster wakes with its protean")
 
 /// Nanite biology answers only to the nanite mechanisms.
@@ -181,7 +181,7 @@
 /datum/unit_test/dq_nanite_refactory_depletion/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human/protean)
 	var/datum/body/humanoid/nanoform/B = H.body
-	var/datum/component/forms/protean/F = H.GetComponent(/datum/component/forms/protean)
+	var/datum/forms/protean/F = H.get_protean_forms()
 	var/obj/item/organ/internal/nano/refactory/R = H.nano_get_refactory()
 	R.consume_stored_material(MAT_STEEL, R.get_stored_material(MAT_STEEL))
 	F.set_form(/datum/form/protean_blob)
@@ -226,7 +226,7 @@
 
 /datum/unit_test/dq_nanite_form_strain/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human/protean, test_floor())
-	var/datum/component/forms/protean/F = H.GetComponent(/datum/component/forms/protean)
+	var/datum/forms/protean/F = H.get_protean_forms()
 	TEST_ASSERT(F.set_form(/datum/form/protean_blob), "the first switch should succeed")
 	TEST_ASSERT(F.set_form(/datum/form/human), "the second switch should succeed")
 	var/datum/affliction/A = H.body.find_affliction(/datum/affliction/nanite/form_strain)

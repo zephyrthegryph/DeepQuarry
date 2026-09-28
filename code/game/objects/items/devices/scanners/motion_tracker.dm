@@ -16,7 +16,7 @@
 	drop_sound = 'sound/items/drop/device.ogg'
 
 /obj/item/motiontracker/Initialize(mapload)
-	RegisterSignal(GLOB.motiontracker_service, COMSIG_MOVABLE_MOTIONTRACKER, PROC_REF(handle_motion_tracking))
+	om_hook(GLOB.motiontracker_service, /datum/om/event/movable_motiontracker, src, PROC_REF(handle_motion_tracking))
 	. = ..()
 	if(ismob(loc))
 		var/mob/M = loc
@@ -29,11 +29,11 @@
 		M.motiontracker_unsubscribe()
 	. = ..()
 
-/obj/item/motiontracker/proc/handle_motion_tracking(mob/source, RW, turf/T)
-	SIGNAL_HANDLER
+/obj/item/motiontracker/proc/handle_motion_tracking(datum/source, datum/om/event/movable_motiontracker/event)
+	EVENT_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
-	var/atom/echo_source = om_resolve(RW)
+	var/atom/echo_source = om_resolve(event.handle)
 	var/atom/scan_pos = src
 	if(!isturf(loc))
 		scan_pos = loc

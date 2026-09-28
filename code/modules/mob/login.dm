@@ -50,7 +50,7 @@
 	disconnect_time = null // ition: clear the disconnect time
 	sight |= SEE_SELF
 	..()
-	SEND_SIGNAL(src, COMSIG_MOB_LOGIN)
+	OM_EMIT(src, /datum/om/event/mob_login)
 
 	client.perspective = MOB_PERSPECTIVE
 	client.eye = src
@@ -97,7 +97,7 @@
 			CB.Invoke()
 
 	log_mob_tag(src, "TAG: [tag] NEW OWNER: [key_name(src)]")
-	SEND_SIGNAL(src, COMSIG_MOB_CLIENT_LOGIN, client)
+	OM_EMIT(src, /datum/om/event/mob_client_login, client)
 	client.init_verbs()
 
 	set_listening(LISTENING_PLAYER)
@@ -108,7 +108,7 @@
 		to_chat(src, "<h2 class='alert'>A custom event is taking place. OOC Info:</h2>")
 		to_chat(src, span_alert("[GLOB.custom_event_msg]") + "\n")
 
-	// viewing_alternate_appearances moved to /datum/component/alt_appearances_viewer
+	// viewing_alternate_appearances is /atom/var/alt_appearances_viewing
 	var/list/viewing = dq_get_viewing_alt_appearances(src)
 	if(viewing && viewing.len)
 		for(var/datum/alternate_appearance/AA in viewing)

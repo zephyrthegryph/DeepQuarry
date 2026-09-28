@@ -1,4 +1,6 @@
-/datum/component/xenochimera
+/// Xenochimera species state (feralness, regeneration). An owned plain datum held in
+/// /mob/living/carbon/human/var/xenochimera; formerly a component.
+/datum/xenochimera
 	VAR_PRIVATE/laststress = 0
 	VAR_PRIVATE/mob/living/carbon/human/owner
 	var/feral = 0
@@ -13,38 +15,50 @@
 	)
 	VAR_PRIVATE/datum/transhuman/body_record/revival_record
 
-/datum/component/xenochimera/Initialize()
-	if(!ishuman(parent))
-		return COMPONENT_INCOMPATIBLE
-	owner = parent
-	RegisterSignal(owner, COMSIG_XENOCHIMERA_COMPONENT, PROC_REF(handle_comp))
-	RegisterSignal(owner, COMSIG_HUMAN_DNA_FINALIZED, PROC_REF(handle_record))
+/datum/xenochimera/New(mob/living/carbon/human/new_owner)
+	..()
+	if(!ishuman(new_owner))
+		log_runtime("XENOCHIMERA: /datum/xenochimera created for non-human [new_owner] ([new_owner?.type]); ignoring.")
+		return
+	owner = new_owner
+	om_hook(owner, /datum/om/event/human_dna_finalized, src, PROC_REF(on_dna_finalized))
 	if(owner.dna)
 		handle_record()
 	add_verb(owner, /mob/living/carbon/human/proc/reconstitute_form)
 
-REF_OWNED(/datum/component/xenochimera, "revival_record")
+REF_OWNED(/datum/xenochimera, "revival_record")
+REF_BACK(/datum/xenochimera, list("owner" = "xenochimera"))
+REF_VAR(/mob/living/carbon/human, OWNED, /datum/xenochimera, xenochimera)
 
-// ALLOW(lifecycle): the owner loses the reconstitute verb.
-/datum/component/xenochimera/Destroy(force)
-	remove_verb(owner, /mob/living/carbon/human/proc/reconstitute_form)
+// ALLOW(lifecycle): the owner loses the reconstitute verb and its pointer to us.
+/datum/xenochimera/Destroy(force)
+	if(owner)
+		remove_verb(owner, /mob/living/carbon/human/proc/reconstitute_form)
+		om_unhook_all(src)
+		if(owner.xenochimera == src)
+			owner.xenochimera = null
+	owner = null
+	QDEL_NULL(revival_record)
 	. = ..()
 
-/datum/component/xenochimera/proc/handle_record()
-	SIGNAL_HANDLER
+/datum/xenochimera/proc/on_dna_finalized(datum/source, datum/om/event/human_dna_finalized/event)
+	EVENT_HANDLER
+	handle_record()
+
+/datum/xenochimera/proc/handle_record()
 	if(QDELETED(owner))
 		return
 	QDEL_NULL(revival_record)
 	revival_record = new(owner)
 
-/datum/component/xenochimera/proc/handle_comp()
-	SIGNAL_HANDLER
+/// Ticked from the human species_components life stage.
+/datum/xenochimera/proc/handle_comp()
 	if(QDELETED(owner))
 		return
 	handle_feralness()
 	handle_regeneration()
 
-/datum/component/xenochimera/proc/handle_regeneration()
+/datum/xenochimera/proc/handle_regeneration()
 	if(revive_ready == REVIVING_NOW || revive_ready == REVIVING_DONE)
 		owner.status_set(EFFECT_STUNNED, 5)
 		owner.canmove = 0
@@ -55,11 +69,11 @@ REF_OWNED(/datum/component/xenochimera, "revival_record")
 		if(!owner.lying)
 			owner.lay_down()
 
-/datum/component/xenochimera/proc/set_revival_delay(time)
+/datum/xenochimera/proc/set_revival_delay(time)
 	revive_ready = REVIVING_NOW
 	revive_finished = (world.time + time SECONDS) // When do we finish reviving? Allows us to find out when we're done, called by the alert currently.
 
-/datum/component/xenochimera/proc/trigger_revival(from_save_slot)
+/datum/xenochimera/proc/trigger_revival(from_save_slot)
 	ASSERT(revival_record)
 	if(owner.isSynthetic())
 		revival_record.revive_xenochimera(owner,TRUE,from_save_slot)
@@ -68,7 +82,7 @@ REF_OWNED(/datum/component/xenochimera, "revival_record")
 	if(from_save_slot)
 		handle_record() // Update record
 
-/datum/component/xenochimera/proc/handle_feralness()
+/datum/xenochimera/proc/handle_feralness()
 	//first, calculate how stressed the chimera is
 
 	//Low-ish nutrition has messages and can eventually cause feralness
@@ -218,7 +232,7 @@ REF_OWNED(/datum/component/xenochimera, "revival_record")
 	// HUD update time
 	update_xenochimera_hud(danger, feral_state)
 
-/datum/component/xenochimera/proc/update_xenochimera_hud(danger, feral)
+/datum/xenochimera/proc/update_xenochimera_hud(danger, feral)
 	if(owner.xenochimera_danger_display)
 		owner.xenochimera_danger_display.invisibility = INVISIBILITY_NONE
 		if(danger && feral)
@@ -232,7 +246,7 @@ REF_OWNED(/datum/component/xenochimera, "revival_record")
 
 	return
 
-/datum/component/xenochimera/proc/go_feral(stress, cause)
+/datum/xenochimera/proc/go_feral(stress, cause)
 	// Going feral due to hunger
 	if(cause == "hunger")
 		to_chat(owner,span_danger(span_large("Something in your mind flips, your instincts taking over, no longer able to fully comprehend your surroundings as survival becomes your primary concern - you must feed, survive, there is nothing else. Hunt. Eat. Hide. Repeat.")))
@@ -263,10 +277,10 @@ REF_OWNED(/datum/component/xenochimera, "revival_record")
 	if(!owner.stat)
 		owner.emote("twitch")
 
-/datum/component/xenochimera/proc/handle_feral()
-	if(QDELETED(owner) || owner.get_hallucination_component() || !owner.client || feral < XENOCHIFERAL_THRESHOLD)
+/datum/xenochimera/proc/handle_feral()
+	if(QDELETED(owner) || owner.get_hallucination_state() || !owner.client || feral < XENOCHIFERAL_THRESHOLD)
 		return
-	owner.LoadComponent(/datum/component/hallucinations/xenochimera)
+	owner.start_hallucinations(/datum/hallucinations/xenochimera)
 
 /atom/movable/screen/xenochimera
 	icon = 'icons/mob/chimerahud.dmi'
@@ -280,7 +294,7 @@ REF_OWNED(/datum/component/xenochimera, "revival_record")
 /mob/living/carbon/human/proc/reconstitute_form() //Scree's race ability.in exchange for: No cloning.
 	set name = "Reconstitute Form"
 	set category = "Abilities.Xenochimera"
-	var/datum/component/xenochimera/xc = get_xenochimera_component()
+	var/datum/xenochimera/xc = get_xenochimera_state()
 	if(!xc)
 		return
 	if(is_incorporeal())
@@ -306,7 +320,7 @@ REF_OWNED(/datum/component/xenochimera, "revival_record")
 		if(confirm == "Yes")
 			xc.chimera_regenerate()
 
-/datum/component/xenochimera/proc/chimera_regenerate()
+/datum/xenochimera/proc/chimera_regenerate()
 	if(!owner)
 		return
 	//If they're already regenerating
@@ -350,7 +364,7 @@ REF_OWNED(/datum/component/xenochimera, "revival_record")
 	owner.lying = TRUE
 	// open_appearance_editor()
 
-/datum/component/xenochimera/proc/chimera_regenerate_nutrition()
+/datum/xenochimera/proc/chimera_regenerate_nutrition()
 	if(!owner)
 		return
 	//Slightly different flavour messages
@@ -364,7 +378,7 @@ REF_OWNED(/datum/component/xenochimera, "revival_record")
 	owner.clear_alert("regen")
 	owner.throw_alert("hatch", /atom/movable/screen/alert/xenochimera/readytohatch)
 
-/datum/component/xenochimera/proc/chimera_regenerate_ready()
+/datum/xenochimera/proc/chimera_regenerate_ready()
 	if(!owner)
 		return
 	// check to see if they've been fixed by outside forces in the meantime such as defibbing
@@ -386,7 +400,7 @@ REF_OWNED(/datum/component/xenochimera, "revival_record")
 /mob/living/carbon/human/proc/hatch()
 	set name = "Hatch"
 	set category = "Abilities.Xenochimera"
-	var/datum/component/xenochimera/xc = get_xenochimera_component()
+	var/datum/xenochimera/xc = get_xenochimera_state()
 	if(!xc)
 		return
 	if(xc.revive_ready != REVIVING_DONE)
@@ -447,7 +461,7 @@ REF_OWNED(/datum/component/xenochimera, "revival_record")
 			// apply_body_effect(/datum/body_effect/resleeving_sickness/chimera, sickness_duration) //
 			injure(INJURY_NEURAL, 5) // if they're reviving from dead, they come back with 5 brain damage on top of whatever's unhealed.
 
-/datum/component/xenochimera/proc/chimera_hatch(from_save_slot)
+/datum/xenochimera/proc/chimera_hatch(from_save_slot)
 	if(!owner)
 		return
 
@@ -499,11 +513,25 @@ REF_OWNED(/datum/component/xenochimera, "revival_record")
 
 ///This is bad and should not be done this way, but xenochimera was hardcoded in SO many places that it's going to be a hassle to completely undo.
 /mob/proc/get_feralness()
-	var/datum/component/xenochimera/xc = GetComponent(/datum/component/xenochimera)
+	var/datum/xenochimera/xc = get_xenochimera_state()
 	if(xc)
 		return xc.feral
 
-/mob/proc/get_xenochimera_component()
-	var/datum/component/xenochimera/xc = GetComponent(/datum/component/xenochimera)
-	if(xc)
-		return xc
+/mob/proc/get_xenochimera_state()
+	RETURN_TYPE(/datum/xenochimera)
+	return null
+
+/mob/living/carbon/human/get_xenochimera_state()
+	return xenochimera
+
+/// Gives this human the xenochimera state datum (or returns the existing one). Replaces the old xenochimera component load.
+/mob/living/carbon/human/proc/add_xenochimera()
+	RETURN_TYPE(/datum/xenochimera)
+	if(xenochimera)
+		return xenochimera
+	xenochimera = new /datum/xenochimera(src)
+	return xenochimera
+
+/// Removes the xenochimera state datum, if any.
+/mob/living/carbon/human/proc/remove_xenochimera()
+	QDEL_NULL(xenochimera)

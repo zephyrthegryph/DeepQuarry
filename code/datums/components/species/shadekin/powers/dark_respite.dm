@@ -22,7 +22,7 @@
 	effect = /mob/living/proc/dq_do_dark_respite
 
 /mob/living/proc/dq_pred_not_shifted(mob/living/actor, atom/target, obj/item/held)
-	var/datum/component/shadekin/SK = actor.get_shadekin_component()
+	var/datum/shadekin/SK = actor.get_shadekin_state()
 	if(!SK)
 		return "you aren't shadekin"
 	return !SK.in_phase || "you can't use that while phase shifted"
@@ -31,7 +31,7 @@
 	return istype(get_area(actor), /area/shadekin) || "you can only trigger Dark Respite in the Dark"
 
 /mob/living/proc/dq_pred_respite_not_cooling_down(mob/living/actor, atom/target, obj/item/held)
-	var/datum/component/shadekin/SK = actor.get_shadekin_component()
+	var/datum/shadekin/SK = actor.get_shadekin_state()
 	if(!SK)
 		return "you aren't shadekin"
 	return !SK.in_dark_respite || "you can't use that so soon after an emergency warp"
@@ -40,7 +40,7 @@
 /// one the player started can. Always TRUE when no respite is running (there's
 /// nothing to end - dq_do_dark_respite then starts a fresh one).
 /mob/living/proc/dq_pred_respite_endable(mob/living/actor, atom/target, obj/item/held)
-	var/datum/component/shadekin/SK = actor.get_shadekin_component()
+	var/datum/shadekin/SK = actor.get_shadekin_state()
 	if(!SK)
 		return "you aren't shadekin"
 	if(!actor.has_modifier_of_type(/datum/modifier/dark_respite))
@@ -49,7 +49,7 @@
 
 /// Toggles Dark Respite: ends a running one, or starts one.
 /mob/living/proc/dq_do_dark_respite(mob/living/actor, obj/item/held, datum/interaction/ability/interaction)
-	var/datum/component/shadekin/SK = actor.get_shadekin_component()
+	var/datum/shadekin/SK = actor.get_shadekin_state()
 	if(!SK)
 		return FALSE
 	if(actor.has_modifier_of_type(/datum/modifier/dark_respite))
@@ -68,7 +68,7 @@
 
 // Override this for special effects when it gets added to the mob.
 /datum/modifier/dark_respite/on_applied()
-	SK_handle = om_handle(holder.get_shadekin_component())
+	SK_handle = om_handle(holder.get_shadekin_state())
 	if(!SK())
 		expire()
 	return
@@ -123,6 +123,6 @@
 /datum/modifier/dark_respite/on_expire()
 	SK_handle = null
 
-/// LC-refs: the holder's shadekin component -- an OM handle (om_handle()), so it reads null once that is deleted.
-/datum/modifier/dark_respite/proc/SK() as /datum/component/shadekin
+/// LC-refs: the holder's shadekin datum -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/modifier/dark_respite/proc/SK() as /datum/shadekin
 	return om_resolve(SK_handle)

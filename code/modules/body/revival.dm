@@ -131,7 +131,7 @@
 	refresh_vision()
 	update_icon()
 	// set_stat() raised CHANGE_MOB_STAT, which wakes every Life stage (LIFE_WAKE_ALL).
-	SEND_SIGNAL(src, COMSIG_LIVING_REVIVED, source, reason)
+	OM_EMIT(src, /datum/om/event/living_revived, source, reason)
 	log_game("REVIVE: [key_name(src)] by [source ? "[source] ([source.type])" : "nothing"] ([reason]) at [AREACOORD(src)].")
 	return TRUE
 

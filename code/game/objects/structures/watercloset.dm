@@ -35,7 +35,7 @@
 	. = ..()
 	open = round(rand(0, 1))
 	update_icon()
-	AddComponent(/datum/component/hose_connector/endless_drain) // Cannot suck from toilet... for obvious reasons.
+	add_hose_connector(/datum/hose_connector/endless_drain) // Cannot suck from toilet... for obvious reasons.
 
 	if(ispath(bin))
 		bin = new bin(src)
@@ -47,10 +47,10 @@
 
 	// Non-bluespace plumbing. For POIs and player construction n' stuff.
 	var/obj/structure/disposalpipe/trunk/trunk = locate_on(get_turf(src), /obj/structure/disposalpipe/trunk)
-	AddComponent(/datum/component/disposal_system_connection, FALSE, FALSE) //Dont show our disposal connection, and we want to handle failed flushes on our own.
-	RegisterSignal(src, COMSIG_DISPOSAL_RECEIVE, PROC_REF(toilet_reflux))
+	add_disposal_connection(FALSE) //Dont show our disposal connection, and we want to handle failed flushes on our own.
+	om_hook(src, /datum/om/event/disposal_receive, src, PROC_REF(toilet_reflux))
 	if(trunk)
-		SEND_SIGNAL(src, COMSIG_DISPOSAL_LINK, trunk)
+		OM_EMIT(src, /datum/om/event/disposal_link, trunk)
 
 // ALLOW(lifecycle): non-basic bins, the teleplumb crystal and flushed objects drop out.
 /obj/structure/toilet/Destroy()
@@ -352,7 +352,7 @@
 				flushed.forceMove(teleplumb_dest)
 
 	var/datum/gas_mixture/air_contents = new(1) //1 liter of nothing, ig.
-	if(SEND_SIGNAL(src, COMSIG_DISPOSAL_FLUSH, to_send, air_contents))
+	if(OM_EMIT(src, /datum/om/event/before/disposal_flush, to_send, air_contents))
 		for(var/atom/movable/flushed in to_send)
 			if(isliving(flushed))
 				var/mob/living/m = flushed
@@ -369,8 +369,10 @@
 	panic_mult = initial(panic_mult)
 	currently_held_objects = list() //Clear the list.
 
-/obj/structure/toilet/proc/toilet_reflux(datum/source, list/received_items, datum/gas_mixture/gas)
-	SIGNAL_HANDLER
+/obj/structure/toilet/proc/toilet_reflux(datum/source, datum/om/event/disposal_receive/event)
+	EVENT_HANDLER
+	var/list/received_items = event.items
+	var/datum/gas_mixture/gas = event.gas
 	var/turf/T = get_turf(src)
 	T.assume_air(gas)
 
@@ -1009,8 +1011,8 @@ REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
 
 /obj/structure/sink/Initialize(mapload)
 	. = ..()
-	AddComponent(/datum/component/hose_connector/endless_source/water)
-	AddComponent(/datum/component/hose_connector/endless_drain)
+	add_hose_connector(/datum/hose_connector/endless_source/water)
+	add_hose_connector(/datum/hose_connector/endless_drain)
 
 /// Old MouseDrop_T: tip a dragged open container out into the sink.
 /datum/interaction/entry_drag/sink_empty

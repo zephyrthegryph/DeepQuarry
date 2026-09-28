@@ -1,9 +1,9 @@
 /mob/living/proc/get_visible_name()
-	// Only allocate the signal payload list when a handler is actually registered.
+	// Only allocate the event payload list when a handler is actually hooked.
 	// This proc runs every Life() tick per human; the list(null) alloc is otherwise wasted.
-	if(_listen_lookup?[COMSIG_HUMAN_GET_VISIBLE_NAME])
+	if(om_wants(src, /datum/om/event/before/human_get_visible_name))
 		var/list/name_data = list(null)
-		if(SEND_SIGNAL(src, COMSIG_HUMAN_GET_VISIBLE_NAME, name_data) & COMPONENT_VISIBLE_NAME_CHANGED)
+		if(OM_EMIT(src, /datum/om/event/before/human_get_visible_name, name_data) & COMPONENT_VISIBLE_NAME_CHANGED)
 			return name_data[1]
 
 	if(real_name)
@@ -31,7 +31,7 @@
 
 	if(ai_brain)
 		ai_brain.holder = null
-		ai_brain.UnregisterSignal(src,COMSIG_MOB_STATCHANGE)
+		om_unhook(src, /datum/om/event/mob_statchange, ai_brain)
 		//legacy faction_friends list cleanup removed — the modern
 		// brain stores relationships as OM handles in personal[], which
 		// invalidate automatically when the referenced mob qdels.
@@ -279,8 +279,8 @@
 	if(ai_brain) // AI gets told to sleep when killed. Since they're not dead anymore, wake it up.
 		ai_brain.go_wake()
 
-	SEND_SIGNAL(src, COMSIG_HUMAN_DNA_FINALIZED)
-	SEND_SIGNAL(src, COMSIG_LIVING_AHEAL)
+	OM_EMIT(src, /datum/om/event/human_dna_finalized)
+	OM_EMIT(src, /datum/om/event/living_aheal)
 
 /mob/living/proc/rejuvenate()
 	if(reagents)
@@ -1060,40 +1060,54 @@
 	refresh_vision()
 
 /**
- * Small helper component to manage the character setup HUD icon
+ * Small helper datum to manage the character setup HUD icon (was
+ * /datum/component/character_setup). Owned by the mob's `character_setup_button` var.
  */
-/datum/component/character_setup
+/datum/character_setup_button
+	var/mob/living/owner
 	var/atom/movable/screen/character_setup/screen_icon
 
-/datum/component/character_setup/Initialize()
-	if(!ismob(parent))
-		return COMPONENT_INCOMPATIBLE
-	. = ..()
+REF_VAR(/mob/living, OWNED, /datum/character_setup_button, character_setup_button)
+REF_OWNED(/datum/character_setup_button, "screen_icon")
+REF_BACK(/datum/character_setup_button, list("owner" = "character_setup_button"))
 
-/datum/component/character_setup/RegisterWithParent()
-	. = ..()
-	RegisterSignal(parent, COMSIG_MOB_CLIENT_LOGIN, PROC_REF(create_mob_button))
-	var/mob/owner = parent
+/datum/character_setup_button/New(mob/living/M)
+	..()
+	owner = M
+	om_hook(owner, /datum/om/event/mob_client_login, src, PROC_REF(on_client_login))
 	if(owner.client)
-		create_mob_button(parent)
+		create_mob_button(owner)
 
-/datum/component/character_setup/UnregisterFromParent()
-	. = ..()
-	UnregisterSignal(parent, COMSIG_MOB_CLIENT_LOGIN)
-	var/mob/owner = parent
+// ALLOW(lifecycle): owned state datum (was a component) unhooks and detaches from its owner.
+/datum/character_setup_button/Destroy(force)
+	if(owner)
+		om_unhook(owner, /datum/om/event/mob_client_login, src)
 	if(screen_icon)
 		owner?.client?.screen -= screen_icon
-		UnregisterSignal(screen_icon, COMSIG_CLICK)
+		om_unhook(screen_icon, /datum/om/event/click, src)
 		var/datum/hud/HUD = owner?.hud_used
 		LAZYREMOVE(HUD?.other_important, screen_icon)
 		QDEL_NULL(screen_icon)
+	if(owner?.character_setup_button == src)
+		owner.character_setup_button = null
+	owner = null
+	return ..()
 
-/datum/component/character_setup/proc/create_mob_button(mob/user)
-	SIGNAL_HANDLER
+/// Gives the mob its character setup HUD button if it has none.
+/mob/living/proc/add_character_setup_button()
+	if(!character_setup_button)
+		character_setup_button = new /datum/character_setup_button(src)
+	return character_setup_button
+
+/datum/character_setup_button/proc/on_client_login(datum/source, datum/om/event/mob_client_login/event)
+	EVENT_HANDLER
+	create_mob_button(source)
+
+/datum/character_setup_button/proc/create_mob_button(mob/user)
 	var/datum/hud/HUD = user.hud_used
 	if(!screen_icon)
 		screen_icon = new()
-		RegisterSignal(screen_icon, COMSIG_CLICK, PROC_REF(character_setup_click))
+		om_hook(screen_icon, /datum/om/event/click, src, PROC_REF(character_setup_click))
 	if(ispAI(user))
 		screen_icon.icon = 'icons/mob/pai_hud.dmi'
 		screen_icon.screen_loc = ui_acti
@@ -1106,11 +1120,11 @@
 	LAZYADD(HUD.other_important, screen_icon)
 	user.client?.screen += screen_icon
 
-/datum/component/character_setup/proc/character_setup_click(source, location, control, params, user)
-	SIGNAL_HANDLER
-	var/mob/owner = user
-	if(owner.client?.prefs)
-		INVOKE_ASYNC(owner.client.prefs, TYPE_PROC_REF(/datum/preferences, ShowChoices), owner) // ALLOW(scheduler): ShowChoices opens tgui (asset/window setup)
+/datum/character_setup_button/proc/character_setup_click(datum/source, datum/om/event/click/event)
+	EVENT_HANDLER
+	var/mob/clicker = event.user
+	if(clicker?.client?.prefs)
+		INVOKE_ASYNC(clicker.client.prefs, TYPE_PROC_REF(/datum/preferences, ShowChoices), clicker) // ALLOW(scheduler): ShowChoices opens tgui (asset/window setup)
 
 /**
  * Screen object for vore panel

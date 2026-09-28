@@ -729,7 +729,6 @@ REF_OWNED(/obj/machinery/power/supermatter, "soundloop")
 	message_admins("Broken SM shard created at ([x],[y],[z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)")
 
 /obj/item/broken_sm/proc/radiate()
-	SIGNAL_HANDLER
 	if(active)
 		return
 	if(!COOLDOWN_FINISHED(src, event_cooldown))

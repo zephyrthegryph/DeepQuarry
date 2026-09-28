@@ -47,8 +47,8 @@
 	// --- Personal relationships. Lazylist. ---
 	var/list/personal = null             // OM handle => list("disp", "expires")
 
-	// --- Signal subscriptions ---
-	var/list/subscribed_signals = null   // signal_type => list(behavior_typepath, ...)
+	// --- Behavior trigger subscriptions ---
+	var/list/subscribed_signals = null   // DQAI_TRIGGER_* => list(behavior_typepath, ...)
 
 	// --- Tactical state (read by behaviors) ---
 	var/last_attack_at = 0           // world.time of the most recent successful attack tick
@@ -76,11 +76,11 @@
 	target_selector_chain = list(/datum/target_selector/closest)
 	home_turf_handle = om_handle(get_turf(owner))
 	manage_processing(DQAI_PROCESSING)
-	RegisterSignal(holder, COMSIG_MOB_STATCHANGE, PROC_REF(on_stat_change))
-	RegisterSignal(holder, COMSIG_LIVING_INJURED, PROC_REF(on_holder_injured))
+	om_hook(holder, /datum/om/event/mob_statchange, src, PROC_REF(on_stat_change))
+	om_hook(holder, /datum/om/event/living_injured, src, PROC_REF(on_holder_injured))
 	// Lazily add the player-castable-moves dispatcher verb on login — avoids
 	// bloating the verbs list of every wild simple_mob in the round.
-	RegisterSignal(holder, COMSIG_MOB_LOGIN, PROC_REF(on_holder_login))
+	om_hook(holder, /datum/om/event/mob_login, src, PROC_REF(on_holder_login_event))
 	if(holder.client)
 		on_holder_login(holder)
 	rebuild_behaviors()
@@ -418,7 +418,7 @@ REF_OWNED(/datum/ai_brain, "model")
 	if(new_threat != primary_threat)
 		var/old = primary_threat
 		primary_threat = new_threat
-		SEND_SIGNAL(holder, COMSIG_DQAI_TARGET_CHANGED, new_threat, old)
+		OM_EMIT(holder, /datum/om/event/dqai_target_changed, new_threat, old)
 		sync_fast_processing()
 
 /// Shared "we no longer have a threat" path: clears the slot, signals, stops
@@ -428,7 +428,7 @@ REF_OWNED(/datum/ai_brain, "model")
 	var/old = primary_threat
 	primary_threat = null
 	if(holder)
-		SEND_SIGNAL(holder, COMSIG_DQAI_TARGET_LOST, old)
+		OM_EMIT(holder, /datum/om/event/dqai_target_lost, old)
 	if(active_behavior_type)
 		stop_active(DQ_BEHAVIOR_STOP_INTERRUPTED)
 	sync_fast_processing()
@@ -544,11 +544,13 @@ REF_OWNED(/datum/ai_brain, "model")
 		entry["charges"] -= 1
 
 // ---------------------------------------------------------------------------
-// Signal handlers.
+// Event handlers.
 // ---------------------------------------------------------------------------
 
-/datum/ai_brain/proc/on_stat_change(mob, old_stat, new_stat)
-	SIGNAL_HANDLER
+/datum/ai_brain/proc/on_stat_change(datum/source, datum/om/event/mob_statchange/event)
+	EVENT_HANDLER
+	var/old_stat = event.old_stat
+	var/new_stat = event.new_stat
 	if(new_stat >= DEAD)
 		manage_processing(0)
 		stop_active(DQ_BEHAVIOR_STOP_INTERRUPTED)
@@ -565,12 +567,12 @@ REF_OWNED(/datum/ai_brain, "model")
 		if(!primary_threat)
 			var/mob/old = primary_threat
 			primary_threat = attacker
-			SEND_SIGNAL(holder, COMSIG_DQAI_TARGET_CHANGED, attacker, old)
-	SEND_SIGNAL(holder, COMSIG_DQAI_DAMAGE_TAKEN, amount, injury_kind, attacker)
-	dispatch_behavior_signal(COMSIG_DQAI_DAMAGE_TAKEN, amount, injury_kind, attacker)
+			OM_EMIT(holder, /datum/om/event/dqai_target_changed, attacker, old)
+	OM_EMIT(holder, /datum/om/event/dqai_damage_taken, amount, injury_kind, attacker)
+	dispatch_behavior_signal(DQAI_TRIGGER_DAMAGE_TAKEN, amount, injury_kind, attacker)
 	var/wellness = holder.vitality()
 	if(wellness <= DQ_LOW_HP_THRESHOLD)
-		dispatch_behavior_signal(COMSIG_DQAI_LOW_HEALTH, wellness)
+		dispatch_behavior_signal(DQAI_TRIGGER_LOW_HEALTH, wellness)
 	invalidate_selection()
 
 /// Forwards a behavior signal to every subscribed behavior. `args` after

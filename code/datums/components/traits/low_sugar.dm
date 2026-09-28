@@ -1,24 +1,13 @@
-///Component that gives negative effects when at low nutrition.
-/datum/component/diabetic
+///Trait state that gives negative effects when at low nutrition.
+/datum/trait_state/diabetic
+	life_stage = /datum/om/stage/life/trait/diabetic
 	var/nutrition_threshold = 200
 	var/nutrition_weak = 100
 	var/nutrition_danger = 50
 	var/nutrition_critical = 25
 
-/datum/component/diabetic/Initialize()
-
-	if(!isliving(parent))
-		return COMPONENT_INCOMPATIBLE
-
-/datum/component/diabetic/RegisterWithParent()
-	om_stage_add(parent, /datum/om/stage/life/trait/diabetic)
-
-/datum/component/diabetic/UnregisterFromParent()
-	om_stage_remove(parent, /datum/om/stage/life/trait/diabetic)
-
-/datum/component/diabetic/proc/process_component()
-	SIGNAL_HANDLER
-	var/mob/living/living_guy = parent
+/datum/trait_state/diabetic/life_tick()
+	var/mob/living/living_guy = owner
 	if(living_guy.nutrition > nutrition_threshold || isbelly(living_guy.loc))
 		return
 	if((living_guy.nutrition < nutrition_threshold) && prob(5))
@@ -40,7 +29,4 @@
 /// Trait system: low blood sugar. Was a COMSIG_LIVING_LIFE listener.
 /datum/om/stage/life/trait/diabetic
 	name = "diabetic"
-	component_type = /datum/component/diabetic
-
-/datum/om/stage/life/trait/diabetic/tick_component(mob/living/self, datum/component/diabetic/component)
-	component.process_component()
+	state_type = /datum/trait_state/diabetic

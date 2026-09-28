@@ -232,13 +232,13 @@
 
 /obj/item/reagent_containers/spray/chemsprayer/hosed/Initialize(mapload)
 	. = ..()
-	AddComponent(/datum/component/recursive_move)
-	AddComponent(/datum/component/hose_connector/input)
-	RegisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE, /obj/item/reagent_containers/spray/chemsprayer/hosed/proc/update_hose)
+	dq_add_recursive_move(src)
+	add_hose_connector(/datum/hose_connector/input)
+	om_hook(src, /datum/om/event/movable_attempted_move, src, PROC_REF(update_hose))
 
-/obj/item/reagent_containers/spray/chemsprayer/hosed/proc/update_hose(atom/source, atom/oldloc, direction, forced, list/old_locs, momentum_change)
-	SIGNAL_HANDLER
-	for(var/datum/component/hose_connector/HC in GetComponents(/datum/component/hose_connector))
+/obj/item/reagent_containers/spray/chemsprayer/hosed/proc/update_hose(atom/source, datum/om/event/movable_attempted_move/event)
+	EVENT_HANDLER
+	for(var/datum/hose_connector/HC as anything in get_hose_connectors())
 		HC.update_hose_beam()
 
 /obj/item/reagent_containers/spray/chemsprayer/hosed/update_icon()
@@ -249,7 +249,7 @@
 	if(!hose_overlay)
 		hose_overlay = new/icon(icon, "[icon_state]+hose")
 
-	for(var/datum/component/hose_connector/HC in GetComponents(/datum/component/hose_connector))
+	for(var/datum/hose_connector/HC as anything in get_hose_connectors())
 		if(HC.get_pairing())
 			add_overlay(hose_overlay)
 			break

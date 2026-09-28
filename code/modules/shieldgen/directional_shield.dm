@@ -101,8 +101,8 @@ REF_BACKLIST(/obj/effect/directional_shield, list("projector" = "active_shields"
 
 /obj/item/shield_projector/Initialize(mapload)
 	max_integrity = max_integrity
-	AddComponent(/datum/component/recursive_move)
-	RegisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(moved_event))
+	dq_add_recursive_move(src)
+	om_hook(src, /datum/om/event/movable_attempted_move, src, PROC_REF(moved_event))
 	if(always_on)
 		om_after(src, 0, PROC_REF(create_shields))
 	return ..()
@@ -110,11 +110,11 @@ REF_BACKLIST(/obj/effect/directional_shield, list("projector" = "active_shields"
 // ALLOW(lifecycle): its shields come down.
 /obj/item/shield_projector/Destroy()
 	destroy_shields()
-	UnregisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE)
+	om_unhook(src, /datum/om/event/movable_attempted_move, src)
 	return ..()
 
-/obj/item/shield_projector/proc/moved_event()
-	SIGNAL_HANDLER
+/obj/item/shield_projector/proc/moved_event(datum/source, datum/om/event/movable_attempted_move/event)
+	EVENT_HANDLER
 	update_shield_positions()
 
 /obj/item/shield_projector/proc/create_shield(newloc, new_dir)
@@ -138,7 +138,7 @@ REF_BACKLIST(/obj/effect/directional_shield, list("projector" = "active_shields"
 	active = FALSE
 
 /obj/item/shield_projector/proc/update_shield_positions()
-	SIGNAL_HANDLER
+	EVENT_HANDLER
 	for(var/obj/effect/directional_shield/S in active_shields)
 		S.relocate()
 

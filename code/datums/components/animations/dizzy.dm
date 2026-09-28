@@ -2,50 +2,57 @@
 dizzy shake - wiggles the client's pixel offset while the mob is dizzy.
 
 Dizziness itself is the EFFECT_DIZZY status (0-1000 points, below 100 is not dizzy), which wears
-off on its own: 3 points per LIFE_CYCLE, 15 while resting. The mob adds this component when the
-status starts and deletes it when it ends (the status row's on_start/on_end hooks).
+off on its own: 3 points per LIFE_CYCLE, 15 while resting. The mob attaches this behaviour when the
+status starts and detaches it when it ends (the status row's on_start/on_end hooks).
+(Was /datum/component/dizzy_shake; its state lives on the mob.)
 */
 
-/datum/component/dizzy_shake
-	/// Whether the owner was resting when the status's rate was last checked.
-	var/was_resting
+/datum/om/behaviour/dizzy_shake
+	handles = list(/datum/om/event/mob_death)
 
-/datum/component/dizzy_shake/Initialize()
-	if (!ismob(parent))
-		return COMPONENT_INCOMPATIBLE
-	was_resting = owner().resting
-	RegisterSignal(owner(), COMSIG_MOB_DEATH, PROC_REF(mob_death))
-	om_after(src, 1, PROC_REF(handle_tick)) // Needs to be a LOT faster than life ticks
+/mob
+	/// Dizzy shake: whether the mob was resting when the status's rate was last checked.
+	var/dizzy_was_resting
+	/// Dizzy shake: the running om_after() timer id, 0 when not shaking.
+	var/dizzy_shake_timer = 0
 
-/datum/component/dizzy_shake/proc/handle_tick()
-	if(QDELETED(parent))
+/datum/om/behaviour/dizzy_shake/on_start(mob/M)
+	if(!ismob(M))
+		return
+	M.dizzy_was_resting = M.resting
+	M.dizzy_shake_timer = om_after(M, 1, TYPE_PROC_REF(/mob, dizzy_shake_tick)) // Needs to be a LOT faster than life ticks
+
+/datum/om/behaviour/dizzy_shake/on_stop(mob/M)
+	if(!ismob(M))
+		return
+	if(M.dizzy_shake_timer)
+		om_cancel_timer(M, M.dizzy_shake_timer)
+		M.dizzy_shake_timer = 0
+	// The shaken client's view offset resets.
+	if(M.client)
+		M.client.pixel_x = 0
+		M.client.pixel_y = 0
+
+/datum/om/behaviour/dizzy_shake/on_event(mob/M, datum/om/event/event)
+	if(istype(event, /datum/om/event/mob_death) && ismob(M))
+		M.status_end(EFFECT_DIZZY)
+
+/mob/proc/dizzy_shake_tick()
+	dizzy_shake_timer = 0
+	if(QDELETED(src) || !om_attached(src, /datum/om/behaviour/dizzy_shake))
 		return
 
 	// Resting wears dizziness off faster.
-	if(owner().resting != was_resting)
-		was_resting = owner().resting
-		owner().status_rate_check(EFFECT_DIZZY)
+	if(resting != dizzy_was_resting)
+		dizzy_was_resting = resting
+		status_rate_check(EFFECT_DIZZY)
 
 	// Handle wobbles
-	var/dizziness = owner().status_units(EFFECT_DIZZY)
-	if(dizziness > 100 && owner().client)
+	var/dizziness = status_units(EFFECT_DIZZY)
+	if(dizziness > 100 && client)
 		var/amplitude = dizziness*(sin(dizziness * 0.044 * world.time) + 1) / 70
-		owner().client.pixel_x = amplitude * sin(0.008 * dizziness * world.time)
-		owner().client.pixel_y = amplitude * cos(0.008 * dizziness * world.time)
+		client.pixel_x = amplitude * sin(0.008 * dizziness * world.time)
+		client.pixel_y = amplitude * cos(0.008 * dizziness * world.time)
 
-	om_after(src, 1, PROC_REF(handle_tick))
-
-/datum/component/dizzy_shake/proc/mob_death()
-	SIGNAL_HANDLER
-	owner().status_end(EFFECT_DIZZY)
-
-// ALLOW(lifecycle): the shaken client's view offset resets.
-/datum/component/dizzy_shake/Destroy(force = FALSE)
-	if(owner().client)
-		owner().client.pixel_x = 0
-		owner().client.pixel_y = 0
-	. = ..()
-
-/// LC-refs: the dizzy mob (our parent) (was a var copying parent).
-/datum/component/dizzy_shake/proc/owner() as /mob
-	return parent
+	if(om_attached(src, /datum/om/behaviour/dizzy_shake))
+		dizzy_shake_timer = om_after(src, 1, TYPE_PROC_REF(/mob, dizzy_shake_tick))

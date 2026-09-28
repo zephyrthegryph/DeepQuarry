@@ -1,7 +1,8 @@
-///The schizophrenia / 'episodic hallucinations' trait, but componentized.
+///The schizophrenia / 'episodic hallucinations' trait, as a trait state.
 ///There is a lot of math that I don't even want to try to fathom in this.
 ///There was also almost 0 commentation.
-/datum/component/schizophrenia
+/datum/trait_state/schizophrenia
+	life_stage = /datum/om/stage/life/trait/schizophrenia
 	///The maximum amount of hallucinations we can have.
 	var/hallucination_max = 60
 	///The amount of hallucinations to increase by each tick during an episode.
@@ -22,22 +23,16 @@
 	//Holds the info if we're in an episode, when then next one will begin, and when it will end.
 	var/list/episode = list("in_episode" = FALSE) // ALLOW(instance_list): d: edited in place per instance (21 writers)
 
-/datum/component/schizophrenia/Initialize()
-	if(!ishuman(parent))
-		return COMPONENT_INCOMPATIBLE
+/datum/trait_state/schizophrenia/setup()
+	if(!ishuman(owner))
+		return FALSE
 	episode["next_episode_begin"] = world.time + 6000
 	episode["next_episode_end"] = world.time + 9000
+	return TRUE
 
-/datum/component/schizophrenia/RegisterWithParent()
-	om_stage_add(parent, /datum/om/stage/life/trait/schizophrenia)
-
-/datum/component/schizophrenia/UnregisterFromParent()
-	om_stage_remove(parent, /datum/om/stage/life/trait/schizophrenia)
-
-/datum/component/schizophrenia/proc/process_component()
-	SIGNAL_HANDLER
-	var/mob/living/carbon/human/human_guy = parent
-	if(QDELETED(parent))
+/datum/trait_state/schizophrenia/life_tick()
+	var/mob/living/carbon/human/human_guy = owner
+	if(QDELETED(human_guy))
 		return
 	///How much medication we currently have in our system.
 	var/med_vol = get_med_volume(human_guy)
@@ -75,7 +70,7 @@
 			human_guy.status_set(EFFECT_HALLUCINATING, min(hallucination_max,human_guy.status_units(EFFECT_HALLUCINATING) + hallucination_increase))
 
 ///Checks to see if we have tercozolam in our systeem and returns how much if so.
-/datum/component/schizophrenia/proc/get_med_volume(mob/living/carbon/human/human_guy)
+/datum/trait_state/schizophrenia/proc/get_med_volume(mob/living/carbon/human/human_guy)
 	var/total_vol = 0
 	for(var/datum/reagent/reagent in human_guy.bloodstr.reagent_list)
 		if(istype(reagent,/datum/reagent/tercozolam))
@@ -88,7 +83,4 @@
 /// Trait system: hallucination episodes. Was a COMSIG_LIVING_LIFE listener.
 /datum/om/stage/life/trait/schizophrenia
 	name = "schizophrenia"
-	component_type = /datum/component/schizophrenia
-
-/datum/om/stage/life/trait/schizophrenia/tick_component(mob/living/self, datum/component/schizophrenia/component)
-	component.process_component()
+	state_type = /datum/trait_state/schizophrenia

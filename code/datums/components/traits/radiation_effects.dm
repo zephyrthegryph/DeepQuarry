@@ -1,8 +1,10 @@
 
-/* Component that handles species effects for mobs/species when they are afflicted with radiation.
+/* Trait state that handles species effects for mobs/species when they are afflicted with radiation.
  * Allows for glowing, healing, contamination, and immunity.
  */
-/datum/component/radiation_effects
+/datum/trait_state/radiation_effects
+	life_stage = /datum/om/stage/life/trait/radiation_glow
+	unique_type = /datum/trait_state/radiation_effects
 
 	///If we show the user the radiation panel.
 	var/show_panel = TRUE
@@ -72,13 +74,10 @@
 	///If we use a toony glow instead of a more emmissive one.
 	var/toony = FALSE
 
-	dupe_mode = COMPONENT_DUPE_UNIQUE
-	dupe_type = /datum/component/radiation_effects
+/datum/trait_state/radiation_effects/setup(glows, radiation_glow_minor_threshold, contamination, contamination_strength, radiation_color, intensity_mod, range_mod, radiation_immunity, radiation_healing, radiation_dissipation, radiation_nutrition, radiation_nutrition_cap, glow_toggle, nutrition_toggle, toony)
 
-/datum/component/radiation_effects/Initialize(glows, radiation_glow_minor_threshold, contamination, contamination_strength, radiation_color, intensity_mod, range_mod, radiation_immunity, radiation_healing, radiation_dissipation, radiation_nutrition, radiation_nutrition_cap, glow_toggle, nutrition_toggle, toony)
-
-	if(!isliving(parent))
-		return COMPONENT_INCOMPATIBLE
+	if(!isliving(owner))
+		return FALSE
 	if(glows)
 		src.glows = glows
 	if(glow_toggle)
@@ -115,36 +114,35 @@
 		src.damage_multiplier = damage_multiplier
 
 	if(show_panel)
-		add_verb(parent, /mob/living/proc/radiation_control_panel)
+		add_verb(owner, /mob/living/proc/radiation_control_panel)
 
 	if(toony)
 		src.toony = toony
+	return TRUE
 
-// ALLOW(lifecycle): removes the control-panel verb and the radiation glow filter.
-/datum/component/radiation_effects/Destroy(force)
-	var/atom/movable/parent_movable = parent
+/datum/trait_state/radiation_effects/attach()
+	..()
+	om_hook(owner, /datum/om/event/before/handle_radiation, src, PROC_REF(on_handle_radiation))
+	om_hook(owner, /datum/om/event/before/living_irradiate_effect, src, PROC_REF(on_irradiate_effect))
+	om_hook(owner, /datum/om/event/before/geiger_counter_scan, src, PROC_REF(on_geiger_counter_scan))
+
+/// Removes the control-panel verb and the radiation glow filter.
+/datum/trait_state/radiation_effects/detach()
+	var/atom/movable/parent_movable = owner
 	if(show_panel)
-		remove_verb(parent, /mob/living/proc/radiation_control_panel)
+		remove_verb(owner, /mob/living/proc/radiation_control_panel)
 
 	if(istype(parent_movable))//For the toony glow.
 		var/filter = parent_movable.get_filter("rad_glow")
 		if(filter)
 			parent_movable.remove_filter("rad_glow")
-	return ..()
+	..()
 
-/datum/component/radiation_effects/RegisterWithParent()
-	RegisterSignal(parent, COMSIG_HANDLE_RADIATION, PROC_REF(process_component))
-	om_stage_add(parent, /datum/om/stage/life/trait/radiation_glow)
-	RegisterSignal(parent, COMSIG_LIVING_IRRADIATE_EFFECT, PROC_REF(handle_irradiate_effect))
-	RegisterSignal(parent, COMSIG_GEIGER_COUNTER_SCAN, PROC_REF(on_geiger_counter_scan))
+/datum/trait_state/radiation_effects/life_tick()
+	process_glow()
 
-/datum/component/radiation_effects/UnregisterFromParent()
-	UnregisterSignal(parent, list(COMSIG_HANDLE_RADIATION, COMSIG_LIVING_IRRADIATE_EFFECT))
-	om_stage_remove(parent, /datum/om/stage/life/trait/radiation_glow)
-
-/datum/component/radiation_effects/proc/process_glow()
-	SIGNAL_HANDLER
-	var/mob/living/living_guy = parent
+/datum/trait_state/radiation_effects/proc/process_glow()
+	var/mob/living/living_guy = owner
 	if(!glows)
 		if(living_guy.glow_override) //Toggled glow off while we were still actively glowing.
 			living_guy.set_glow_override(FALSE)
@@ -168,15 +166,18 @@
 			if(!filter)
 				create_toony_glow()
 
+/datum/trait_state/radiation_effects/proc/on_handle_radiation(datum/source, datum/om/event/before/handle_radiation/event)
+	EVENT_HANDLER
+	return process_component()
+
 ///Handles the radiation removal, immunity, and healing effects.
-/datum/component/radiation_effects/proc/process_component()
-	SIGNAL_HANDLER
-	var/mob/living/living_guy = parent
+/datum/trait_state/radiation_effects/proc/process_component()
+	var/mob/living/living_guy = owner
 	if(living_guy.radiation > RADIATION_CAP || living_guy.radiation < 0 || living_guy.accumulated_rads > RADIATION_CAP || living_guy.accumulated_rads < 0)
 		living_guy.radiation = CLAMP(living_guy.radiation, 0, RADIATION_CAP)
 		living_guy.accumulated_rads = CLAMP(living_guy.accumulated_rads, 0, RADIATION_CAP)
 
-	if(QDELETED(parent))
+	if(QDELETED(owner))
 		return
 
 	//Radiation calculation, done here since contamination uses it
@@ -189,7 +190,7 @@
 		return
 
 	if(ishuman(living_guy))
-		var/mob/living/carbon/human/human_guy = parent
+		var/mob/living/carbon/human/human_guy = owner
 		rad_removal_mod = human_guy.species.rad_removal_mod
 	//End of the calculation.
 
@@ -251,8 +252,11 @@
 		living_guy.accumulated_rads = CLAMP(living_guy.accumulated_rads, 0, RADIATION_CAP)
 		return COMPONENT_BLOCK_LIVING_RADIATION
 
-/datum/component/radiation_effects/proc/handle_irradiate_effect(mob/living/living_guy, effect, effecttype, blocked, check_protection, rad_protection)
-	SIGNAL_HANDLER
+/datum/trait_state/radiation_effects/proc/on_irradiate_effect(mob/living/living_guy, datum/om/event/before/living_irradiate_effect/event)
+	EVENT_HANDLER
+	return handle_irradiate_effect(living_guy, event.effect, event.stun, event.blocked, event.check_protection, event.rad_protection)
+
+/datum/trait_state/radiation_effects/proc/handle_irradiate_effect(mob/living/living_guy, effect, effecttype, blocked, check_protection, rad_protection)
 	///If we're not contaminating, don't worry about this. Proceed like normal.
 	if(!contamination || (contamination && living_guy.radiation < contamination_threshold))
 		//to_chat(world, "Radiation like normal. Current rads = [living_guy.radiation]. Amount of rads being added = [effect].")
@@ -260,7 +264,7 @@
 
 	var/rad_removal_mod = 1
 	if(ishuman(living_guy))
-		var/mob/living/carbon/human/human_guy = parent
+		var/mob/living/carbon/human/human_guy = owner
 		rad_removal_mod = human_guy.species.rad_removal_mod
 
 	var/radiation_offput = ((living_guy.radiation * 0.04) * contamination_strength * rad_removal_mod)
@@ -276,7 +280,7 @@
 		return COMPONENT_BLOCK_IRRADIATION
 
 ///TGUI below here
-/datum/component/radiation_effects/tgui_interact(mob/user, datum/tgui/ui)
+/datum/trait_state/radiation_effects/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
 		ui = new(user, src, "RadiationConfig", "Radiation Config")
@@ -287,15 +291,15 @@
 	set desc = "Allows you to adjust the settings of various radioactive settings!"
 	set category = "Abilities.Radiation"
 
-	var/datum/component/radiation_effects/rad = get_radiation_component()
+	var/datum/trait_state/radiation_effects/rad = get_radiation_state()
 	if(!rad)
-		to_chat(src, span_warning("You don't have the radiation component! This is a bug! Please report this to a maintainer."))
+		to_chat(src, span_warning("You don't have the radiation trait! This is a bug! Please report this to a maintainer."))
 		return FALSE
 
 	rad.tgui_interact(src)
 
-/datum/component/radiation_effects/tgui_data(mob/user)
-	var/mob/living/living_guy = parent
+/datum/trait_state/radiation_effects/tgui_data(mob/user)
+	var/mob/living/living_guy = owner
 	var/data = list(
 		"glowing" = glows,
 		"radiation_color" = radiation_color,
@@ -308,7 +312,7 @@
 
 	return data
 
-/datum/component/radiation_effects/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
+/datum/trait_state/radiation_effects/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	if(..())
 		return TRUE
 
@@ -321,22 +325,22 @@
 			return TRUE
 		if("toggle_glow")
 			glows = !glows
-			to_chat(parent, span_info("You are [glows ? "now" : "no longer"] glowing."))
+			to_chat(owner, span_info("You are [glows ? "now" : "no longer"] glowing."))
 			return FALSE
 		if("toggle_nutrition")
 			radiation_nutrition = !radiation_nutrition
-			to_chat(parent, span_info("You are [radiation_nutrition ? "now" : "no longer"] gaining nutrition from radiation."))
+			to_chat(owner, span_info("You are [radiation_nutrition ? "now" : "no longer"] gaining nutrition from radiation."))
 			return FALSE
 
-/datum/component/radiation_effects/proc/create_toony_glow()
-	var/atom/movable/parent_movable = parent
+/datum/trait_state/radiation_effects/proc/create_toony_glow()
+	var/atom/movable/parent_movable = owner
 	if (!istype(parent_movable))
 		return
 
 	parent_movable.add_filter("rad_glow", 2, list("type" = "outline", "color" = "#39ff1430", "size" = 2))
 	om_after(src, rand(0.1 SECONDS, 1.9 SECONDS), PROC_REF(toony_glow_loop), parent_movable) // Things should look uneven
 
-/datum/component/radiation_effects/proc/toony_glow_loop(atom/movable/parent_movable)
+/datum/trait_state/radiation_effects/proc/toony_glow_loop(atom/movable/parent_movable)
 	var/filter = parent_movable.get_filter("rad_glow")
 	if (!filter)
 		return
@@ -344,28 +348,30 @@
 	animate(filter, alpha = 110, time = 1.5 SECONDS, loop = -1)
 	animate(alpha = 40, time = 2.5 SECONDS)
 
-/datum/component/radiation_effects/proc/on_geiger_counter_scan(mob/living/living_source, mob/user, obj/item/geiger/geiger_counter)
-	SIGNAL_HANDLER
+/datum/trait_state/radiation_effects/proc/on_geiger_counter_scan(mob/living/living_source, datum/om/event/before/geiger_counter_scan/event)
+	EVENT_HANDLER
+	var/mob/user = event.user
+	var/obj/item/geiger/geiger_counter = event.geiger_counter
 	if(living_source.radiation > 0)
 		if(contamination && living_source.radiation > contamination_threshold) //Are we spreading radiation?
 			to_chat(user, span_bolddanger("[icon2html(geiger_counter, user)] Subject is irradiated and offputting radiation."))
 		else
 			to_chat(user, span_bolddanger("[icon2html(geiger_counter, user)] Subject is irradiated."))
+		return GEIGER_COUNTER_SCAN_SUCCESSFUL
 
-/mob/living/proc/get_radiation_component()
-	var/datum/component/radiation_effects/rad = GetComponent(/datum/component/radiation_effects)
-	if(rad)
-		return rad
+/mob/living/proc/get_radiation_state()
+	RETURN_TYPE(/datum/trait_state/radiation_effects)
+	return get_trait_state(/datum/trait_state/radiation_effects)
 
 //Subtypes
 
 // Promethean
-/datum/component/radiation_effects/promethean
+/datum/trait_state/radiation_effects/promethean
 	radiation_immunity = TRUE
 	radiation_nutrition = TRUE
 
 // Shadekin
-/datum/component/radiation_effects/shadekin
+/datum/trait_state/radiation_effects/shadekin
 	glows = FALSE
 	glow_toggle = FALSE
 
@@ -374,7 +380,7 @@
 	radiation_nutrition = TRUE
 
 // Black Eyed Shadekin
-/datum/component/radiation_effects/besk
+/datum/trait_state/radiation_effects/besk
 	show_panel = FALSE
 	glows = FALSE
 	glow_toggle = FALSE
@@ -383,7 +389,7 @@
 	damage_multiplier = 0.25
 
 // Diona
-/datum/component/radiation_effects/diona
+/datum/trait_state/radiation_effects/diona
 	glows = FALSE
 	glow_toggle = FALSE
 
@@ -391,7 +397,7 @@
 	radiation_healing = TRUE
 	radiation_nutrition = TRUE
 
-/datum/component/radiation_effects/radiation_immune
+/datum/trait_state/radiation_effects/radiation_immune
 	show_panel = FALSE
 	glows = FALSE
 	glow_toggle = FALSE
@@ -400,7 +406,4 @@
 /// Trait system: radiation glow. Was a COMSIG_LIVING_LIFE listener.
 /datum/om/stage/life/trait/radiation_glow
 	name = "radiation glow"
-	component_type = /datum/component/radiation_effects
-
-/datum/om/stage/life/trait/radiation_glow/tick_component(mob/living/self, datum/component/radiation_effects/component)
-	component.process_glow()
+	state_type = /datum/trait_state/radiation_effects

@@ -52,7 +52,7 @@
 		return
 	combat_mode = new_mode
 	sync_use_stance()
-	SEND_SIGNAL(src, COMSIG_MOB_COMBAT_MODE_CHANGED, new_mode)
+	OM_EMIT(src, /datum/om/event/mob_combat_mode_changed, new_mode)
 	update_combat_mode_hud()
 
 /// Sets the attack variant (an ATTACK_VARIANT_* or null).

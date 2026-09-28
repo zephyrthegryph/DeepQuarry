@@ -223,13 +223,13 @@
 	icon_dead = "dreameel-dead"
 	movement_cooldown = -1			// Lower is faster.
 	attacktext = list("bitten") // "You are [attacktext] by the mob!"
-	var/artifact_master = /datum/component/artifact_master/dreameel
+	var/artifact_master_type = /datum/artifact_master/dreameel
 	evolve = "/mob/living/simple_mob/vore/spacecritter/dreameel/nightmare"
 	feed = "/obj/item/reagent_containers/food/snacks/carpmeat"
 	evolvekey = "/obj/item/stack/material/phoron"
 	copy = "/mob/living/simple_mob/vore/spacecritter/dreameel"
 
-/datum/component/artifact_master/dreameel
+/datum/artifact_master/dreameel
 	make_effects = list(
 		/datum/artifact_effect/gas/sleeping
 	)
@@ -243,9 +243,9 @@
 	movement_cooldown = -5
 	color = "#9933FF"
 
-	artifact_master = /datum/component/artifact_master/nightmare
+	artifact_master_type = /datum/artifact_master/nightmare
 
-/datum/component/artifact_master/nightmare
+/datum/artifact_master/nightmare
 	make_effects = list(
 		/datum/artifact_effect/gas/phoron
 	)
@@ -259,14 +259,14 @@
 	icon_dead = "gravityshell-dead"
 	movement_cooldown = 5			// Lower is faster.
 	armor_spec = "melee=14;bullet=14;laser=14;energy=14;bio=100;rad=100"
-	var/artifact_master = /datum/component/artifact_master/gravity
+	var/artifact_master_type = /datum/artifact_master/gravity
 
 	evolve = "/mob/living/simple_mob/vore/spacecritter/gravityshell/cleanse"
 	feed = "/obj/item/stack/material/concrete"
 	evolvekey = "/obj/item/stack/material/tritium"
 	copy = "/mob/living/simple_mob/vore/spacecritter/gravityshell"
 
-/datum/component/artifact_master/gravity
+/datum/artifact_master/gravity
 	make_effects = list(
 		/datum/artifact_effect/extreme/gravity_wave
 	)
@@ -274,12 +274,12 @@
 /mob/living/simple_mob/vore/spacecritter/gravityshell/cleanse
 	size_multiplier = 0.5
 	endurance = 75
-	artifact_master = /datum/component/artifact_master/gasoxy
+	artifact_master_type = /datum/artifact_master/gasoxy
 	icon_state = "cleanseshell"
 	icon_living = "cleanseshell"
 	icon_dead = "cleanseshell-dead"
 
-/datum/component/artifact_master/gasoxy
+/datum/artifact_master/gasoxy
 	make_effects = list(
 		/datum/artifact_effect/gas/oxy
 	)

@@ -1,8 +1,9 @@
-/datum/component/hose_connector
+/// A reagent hose socket on an atom. Plain datum owned by its carrier's `hose_connectors` list
+/// (several per carrier). Create with carrier.add_hose_connector(type, name).
+/datum/hose_connector
 	var/name = ""
-	dupe_mode = COMPONENT_DUPE_ALLOWED
 	VAR_PROTECTED/force_name = FALSE // If it gets doesn't do automatic naming
-	VAR_PROTECTED/obj/carrier = null
+	VAR_PROTECTED/atom/movable/carrier = null
 	VAR_PROTECTED/flow_direction = HOSE_NEUTRAL
 	VAR_PROTECTED/datum/hose/my_hose = null
 	VAR_PROTECTED/connector_number = 0
@@ -11,8 +12,30 @@
 	var/datum/reagents/reagents = null
 	var/makes_gurgles = TRUE
 
-/datum/component/hose_connector/Initialize(set_unique_name = null)
-	carrier = parent
+/// Carrier's hose sockets (/datum/hose_connector), owned: deleted with the carrier.
+/atom/movable/var/list/hose_connectors
+REF_OWNED_LIST(/atom/movable, "hose_connectors")
+
+/// Adds a hose connector of `connector_type` to src. Returns it, or null when src can't carry that type.
+/atom/movable/proc/add_hose_connector(connector_type, set_unique_name = null)
+	RETURN_TYPE(/datum/hose_connector)
+	var/datum/hose_connector/HC = new connector_type()
+	if(!HC.attach(src, set_unique_name))
+		log_world("hose_connector: [connector_type] refused carrier [src] ([type])")
+		qdel(HC)
+		return null
+	return HC
+
+/// Src's hose connectors that are `connector_type` (or subtypes). Always a list.
+/atom/movable/proc/get_hose_connectors(connector_type = /datum/hose_connector)
+	. = list()
+	for(var/datum/hose_connector/HC as anything in hose_connectors)
+		if(istype(HC, connector_type))
+			. += HC
+
+/// Binds to `new_carrier`. FALSE when the carrier is incompatible.
+/datum/hose_connector/proc/attach(atom/movable/new_carrier, set_unique_name = null)
+	carrier = new_carrier
 	reagents = new /datum/reagents(60, src)
 	// Handle uniquely named connectors
 	if(set_unique_name)
@@ -20,43 +43,52 @@
 		force_name = TRUE
 	else if(!force_name)
 		name = "[flow_direction] hose connector"
-	// Setup signaling
-	var/list/CL = carrier.GetComponents(type)
-	connector_number = CL.len + 1
-	RegisterSignal(carrier, COMSIG_ATOM_EXAMINE, PROC_REF(on_examine))
-	RegisterSignal(carrier, COMSIG_MOVABLE_MOVED, PROC_REF(move_react))
-	RegisterSignal(carrier, COMSIG_HOSE_FORCEPUMP, PROC_REF(force_pump))
+	var/list/CL = carrier.get_hose_connectors(type)
+	var/same = 0
+	for(var/datum/hose_connector/other as anything in CL)
+		if(other.type == type)
+			same++
+	connector_number = same + 1
+	LAZYADD(carrier.hose_connectors, src)
+	om_hook(carrier, /datum/om/event/examine, src, PROC_REF(on_examine))
+	om_hook(carrier, /datum/om/event/moved, src, PROC_REF(move_react))
+	om_hook(carrier, /datum/om/event/hose_forcepump, src, PROC_REF(on_force_pump))
 	carrier.verbs |= /atom/proc/disconnect_hose
 
 	// A disconnected, empty connector has no time-based work. connect() wakes it.
 	if(my_hose || reagents.total_volume)
 		PERIODIC_START(src, PERIODIC_SLOW)
+	return TRUE
 
-REF_OWNED(/datum/component/hose_connector, list("my_hose", "reagents"))
+REF_OWNED(/datum/hose_connector, list("my_hose", "reagents"))
+REF_BACK(/datum/hose_connector, list("carrier" = null))
 
 // ALLOW(lifecycle): the carrier loses its disconnect verb.
-/datum/component/hose_connector/Destroy()
-	carrier.verbs -= /atom/proc/disconnect_hose
+/datum/hose_connector/Destroy()
+	if(carrier)
+		carrier.verbs -= /atom/proc/disconnect_hose
+		LAZYREMOVE(carrier.hose_connectors, src)
+	om_unhook_all(src)
 	. = ..()
 
-/datum/component/hose_connector/proc/get_carrier()
+/datum/hose_connector/proc/get_carrier()
 	RETURN_TYPE(/atom)
 	return carrier
 
-/datum/component/hose_connector/proc/get_hose()
+/datum/hose_connector/proc/get_hose()
 	RETURN_TYPE(/datum/hose)
 	return my_hose
 
-/datum/component/hose_connector/proc/get_flow_direction()
+/datum/hose_connector/proc/get_flow_direction()
 	return flow_direction
 
-/datum/component/hose_connector/proc/get_id()
+/datum/hose_connector/proc/get_id()
 	return "[name] #[connector_number]"
 
-/datum/component/hose_connector/proc/connected_reagents()
+/datum/hose_connector/proc/connected_reagents()
 	return carrier.reagents
 
-/datum/component/hose_connector/periodic_step()
+/datum/hose_connector/periodic_step()
 	// Return reagents to source if no hose, lossy to avoid exploits
 	if(!my_hose)
 		if(reagents.total_volume)
@@ -70,22 +102,25 @@ REF_OWNED(/datum/component/hose_connector, list("my_hose", "reagents"))
 		return
 	handle_pump(connected_to)
 
-/datum/component/hose_connector/proc/handle_pump(datum/reagents/connected_to)
+/datum/hose_connector/proc/handle_pump(datum/reagents/connected_to)
 	PROTECTED_PROC(TRUE)
 	ASSERT(connected_to)
 	// Drain our connector back into tank, and then fill it randomly. The hose handles swapping.
 	reagents.trans_to_holder(connected_to, reagents.maximum_volume)
 	connected_to.trans_to_holder(reagents, rand(1,reagents.maximum_volume))
 
-/datum/component/hose_connector/proc/force_pump()
-	SIGNAL_HANDLER
+/datum/hose_connector/proc/on_force_pump(datum/source, datum/om/event/hose_forcepump/event)
+	EVENT_HANDLER
+	force_pump()
+
+/datum/hose_connector/proc/force_pump()
 	if(!my_hose)
 		return
 	periodic_step()
 	if(makes_gurgles && prob(5))
 		carrier.visible_message(span_infoplain(span_bold("\The [carrier]") + " gurgles as it pumps fluid."))
 
-/datum/component/hose_connector/proc/valid_connection(datum/component/hose_connector/C)
+/datum/hose_connector/proc/valid_connection(datum/hose_connector/C)
 	if(istype(C))
 		if(C.my_hose)
 			return FALSE
@@ -95,34 +130,34 @@ REF_OWNED(/datum/component/hose_connector, list("my_hose", "reagents"))
 			return TRUE
 	return FALSE
 
-/datum/component/hose_connector/proc/disconnect_action(user)
+/datum/hose_connector/proc/disconnect_action(user)
 	if(carrier.Adjacent(user))
 		carrier.visible_message("[user] disconnects \the hose from \the [carrier].")
 		my_hose.disconnect(user)
 		QDEL_NULL(my_hose)
 
-/datum/component/hose_connector/proc/connect(datum/hose/H = null)
+/datum/hose_connector/proc/connect(datum/hose/H = null)
 	my_hose = H
 	if(my_hose)
 		PERIODIC_START(src, PERIODIC_SLOW)
 
 /// Connects a hose to `target`, using `distancetonode` of `tubing` when done. An inflation end
 /// is a timed action first (inflation_setup()); either way setup_hoses_finish() connects.
-/datum/component/hose_connector/proc/setup_hoses(datum/component/hose_connector/target, distancetonode, mob/user, obj/item/stack/tubing)
+/datum/hose_connector/proc/setup_hoses(datum/hose_connector/target, distancetonode, mob/user, obj/item/stack/tubing)
 	if(!target || QDELETED(target))
 		to_chat(user,span_danger("What you were connecting to has stopped existing! Ohno!"))
 		return FALSE
 
 	// Logic for handling two mobs at once would be a mess of option selections and prefs...
-	if(istype(src,/datum/component/hose_connector/inflation) && istype(target,/datum/component/hose_connector/inflation))
+	if(istype(src,/datum/hose_connector/inflation) && istype(target,/datum/hose_connector/inflation))
 		to_chat(user,span_notice("Nothing would flow between \the [get_carrier()] and \the [target.get_carrier()] without anything to pump it!"))
 		return FALSE
 
 	// Check for vore inflation connectors.
-	if(istype(src,/datum/component/hose_connector/inflation) || istype(target,/datum/component/hose_connector/inflation))
+	if(istype(src,/datum/hose_connector/inflation) || istype(target,/datum/hose_connector/inflation))
 		// Handle the connection target once we setup the hose. Needs to be done like this as either ends can be the inflation connector
 		// Also has to be done on finalize, as players would be able to click one then the other, then potentially drop or do other stuff with the hose!
-		var/datum/component/hose_connector/inflation/I = src
+		var/datum/hose_connector/inflation/I = src
 		if(istype(I))
 			return I.inflation_setup(user, target, src, target, distancetonode, tubing)
 		I = target
@@ -134,7 +169,7 @@ REF_OWNED(/datum/component/hose_connector, list("my_hose", "reagents"))
 	to_chat(user, span_notice("You connect the [src] to \the [target]."))
 	return setup_hoses_finish(target, distancetonode, user, tubing)
 
-/datum/component/hose_connector/proc/setup_hoses_finish(datum/component/hose_connector/target, distancetonode, mob/user, obj/item/stack/tubing)
+/datum/hose_connector/proc/setup_hoses_finish(datum/hose_connector/target, distancetonode, mob/user, obj/item/stack/tubing)
 	// Handle invalid vorebellies, has to be done after inflation_setup()
 	if(!src.connected_reagents())
 		to_chat(user,span_warning("\The [get_carrier()] doesn't seem ready to connect yet."))
@@ -149,23 +184,24 @@ REF_OWNED(/datum/component/hose_connector, list("my_hose", "reagents"))
 	tubing?.use(distancetonode)
 	return TRUE
 
-/datum/component/hose_connector/proc/get_pairing()
-	RETURN_TYPE(/datum/component/hose_connector)
+/datum/hose_connector/proc/get_pairing()
+	RETURN_TYPE(/datum/hose_connector)
 	if(my_hose)
 		return my_hose.get_pairing(src)
 	return null
 
-/datum/component/hose_connector/proc/remove_hose()
+/datum/hose_connector/proc/remove_hose()
 	my_hose = null
 	// Flush the connector immediately, then leave the object subsystem. There is
 	// no reason to wait up to one SSobj period merely to discover disconnection.
 	periodic_step()
 	PERIODIC_STOP(src)
 
-/datum/component/hose_connector/proc/on_examine(datum/source, mob/user, list/examine_texts)
-	SIGNAL_HANDLER
-	var/datum/component/hose_connector/hose_pair = my_hose?.get_pairing(src)
-	if(istype(hose_pair,/datum/component/hose_connector/inflation))
+/datum/hose_connector/proc/on_examine(datum/source, datum/om/event/examine/event)
+	EVENT_HANDLER
+	var/list/examine_texts = event.texts
+	var/datum/hose_connector/hose_pair = my_hose?.get_pairing(src)
+	if(istype(hose_pair,/datum/hose_connector/inflation))
 		hose_pair = "\the [hose_pair.name]" // Slightly different, so it shows the belly attached
 	else if(hose_pair)
 		hose_pair = "\the [hose_pair.get_carrier()]"
@@ -173,11 +209,11 @@ REF_OWNED(/datum/component/hose_connector, list("my_hose", "reagents"))
 		hose_pair = "nothing"
 	examine_texts += span_notice("[name] #[connector_number] is [my_hose ? "connected to [hose_pair]" : "disconnected"].")
 
-/datum/component/hose_connector/proc/move_react(atom/source, atom/oldloc, direction, forced, list/old_locs, momentum_change)
-	SIGNAL_HANDLER
+/datum/hose_connector/proc/move_react(atom/source, datum/om/event/moved/event)
+	EVENT_HANDLER
 	update_hose_beam()
 
-/datum/component/hose_connector/proc/update_hose_beam()
+/datum/hose_connector/proc/update_hose_beam()
 	if(!my_hose || !my_hose.has_pairing(src))
 		return
 	// Handle distance check if too far
@@ -194,7 +230,10 @@ REF_OWNED(/datum/component/hose_connector, list("my_hose", "reagents"))
 	set category = "Object"
 
 	var/list/available_sockets = list()
-	for(var/datum/component/hose_connector/HC in GetComponents(/datum/component/hose_connector))
+	var/atom/movable/AM = src
+	if(!istype(AM))
+		return
+	for(var/datum/hose_connector/HC as anything in AM.get_hose_connectors())
 		if(HC.get_hose())
 			available_sockets[HC.get_id()] = HC
 	if(!LAZYLEN(available_sockets))
@@ -202,14 +241,14 @@ REF_OWNED(/datum/component/hose_connector, list("my_hose", "reagents"))
 
 	if(available_sockets.len == 1)
 		var/key = available_sockets[1]
-		var/datum/component/hose_connector/AC = available_sockets[key]
+		var/datum/hose_connector/AC = available_sockets[key]
 		AC.disconnect_action(usr)
 	else
 		var/choice = rerun_prompt(usr, "a1", list("kind" = "list", "message" = "Select a target hose connector.", "title" = "Socket Disconnect", "choices" = available_sockets), PROC_REF(disconnect_hose), args)
 		if(isnull(choice))
 			return
 		if(choice)
-			var/datum/component/hose_connector/AC = available_sockets[choice]
+			var/datum/hose_connector/AC = available_sockets[choice]
 			AC.disconnect_action(usr)
 
 /*
@@ -217,73 +256,73 @@ REF_OWNED(/datum/component/hose_connector, list("my_hose", "reagents"))
  */
 
 /// Pumps reagents out of carrier
-/datum/component/hose_connector/input
+/datum/hose_connector/input
 	name = "hose input"
 	flow_direction = HOSE_INPUT
 
-/datum/component/hose_connector/input/handle_pump(datum/reagents/connected_to)
+/datum/hose_connector/input/handle_pump(datum/reagents/connected_to)
 	ASSERT(connected_to)
 	reagents.trans_to_holder(connected_to, reagents.maximum_volume)
 
 /// Pumps reagents into carrier
-/datum/component/hose_connector/output
+/datum/hose_connector/output
 	name = "hose output"
 	flow_direction = HOSE_OUTPUT
 
-/datum/component/hose_connector/output/handle_pump(datum/reagents/connected_to)
+/datum/hose_connector/output/handle_pump(datum/reagents/connected_to)
 	ASSERT(connected_to)
 	connected_to.trans_to_holder(reagents, reagents.maximum_volume)
 
 /// Endless source, produces a reagent and pumps it out forever. Does not require attached object to have reagents.
-/datum/component/hose_connector/endless_source
+/datum/hose_connector/endless_source
 	name = "source connector"
 	force_name = TRUE
 	flow_direction = HOSE_OUTPUT
 	var/reagent_id = null
 
-/datum/component/hose_connector/endless_source/connected_reagents()
+/datum/hose_connector/endless_source/connected_reagents()
 	if(!carrier)
 		return null
 	return reagents // Ourselves, not our carrier
 
-/datum/component/hose_connector/endless_source/handle_pump(datum/reagents/connected_to)
+/datum/hose_connector/endless_source/handle_pump(datum/reagents/connected_to)
 	ASSERT(connected_to)
 	connected_to.add_reagent(reagent_id,5)
 
-/datum/component/hose_connector/endless_source/water
+/datum/hose_connector/endless_source/water
 	reagent_id = REAGENT_ID_WATER
 
 /// Endless drain, removes reagents from existance
-/datum/component/hose_connector/endless_drain
+/datum/hose_connector/endless_drain
 	name = "drain connector"
 	force_name = TRUE
 	flow_direction = HOSE_INPUT
 
-/datum/component/hose_connector/endless_drain/connected_reagents()
+/datum/hose_connector/endless_drain/connected_reagents()
 	if(!carrier)
 		return null
 	return reagents // Ourselves, not our carrier
 
-/datum/component/hose_connector/endless_drain/handle_pump(datum/reagents/connected_to)
+/datum/hose_connector/endless_drain/handle_pump(datum/reagents/connected_to)
 	ASSERT(connected_to)
 	connected_to.clear_reagents()
 
 /// Moo, needed because it has a seperate reagent container as udder.
-/datum/component/hose_connector/output/cow
+/datum/hose_connector/output/cow
 	name = "Udder"
 	force_name = TRUE
 	makes_gurgles = FALSE
 
-/datum/component/hose_connector/output/cow/connected_reagents()
+/datum/hose_connector/output/cow/connected_reagents()
 	var/mob/living/simple_mob/animal/passive/cow/C = carrier
 	return C.udder
 
 /// Only allows oil to be inserted
-/datum/component/hose_connector/input/fryer
+/datum/hose_connector/input/fryer
 	name = "Oil Storage"
 	force_name = TRUE
 
-/datum/component/hose_connector/input/fryer/handle_pump(datum/reagents/oil_reagents/connected_to)
+/datum/hose_connector/input/fryer/handle_pump(datum/reagents/oil_reagents/connected_to)
 	ASSERT(connected_to)
 	if(connected_to.total_volume >= connected_to.optimal_oil) //Don't overfill it.
 		return
@@ -295,6 +334,6 @@ REF_OWNED(/datum/component/hose_connector, list("my_hose", "reagents"))
 			if(connected_to.total_volume >= connected_to.optimal_oil)
 				break
 
-/datum/component/hose_connector/input/fryer/connected_reagents()
+/datum/hose_connector/input/fryer/connected_reagents()
 	var/obj/machinery/appliance/cooker/fryer/our_fryer = carrier
 	return our_fryer.oil

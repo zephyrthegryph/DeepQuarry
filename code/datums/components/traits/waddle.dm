@@ -1,4 +1,4 @@
-/datum/component/waddle_trait
+/datum/trait_state/waddle_trait
 
 	var/waddling = 1
 	var/waddle_z = 4
@@ -6,16 +6,19 @@
 	var/waddle_max = 12
 	var/waddle_time = 2
 
-/datum/component/waddle_trait/Initialize()
-	if (!isobj(parent) && !ismob(parent))
-		return COMPONENT_INCOMPATIBLE
-	if(isliving(parent))
-		add_verb(parent, /mob/living/proc/waddle_adjust)
-		//add_verb(living_owner(), /mob/living/proc/waddle_debug)
-	RegisterSignal(our_atom(), COMSIG_MOVABLE_MOVED, PROC_REF(handle_comp))
+/datum/trait_state/waddle_trait/setup()
+	if(!isliving(owner))
+		return FALSE
+	add_verb(owner, /mob/living/proc/waddle_adjust)
+	//add_verb(living_owner(), /mob/living/proc/waddle_debug)
+	return TRUE
 
-/datum/component/waddle_trait/proc/handle_comp()
-	SIGNAL_HANDLER
+/datum/trait_state/waddle_trait/attach()
+	..()
+	om_hook(owner, /datum/om/event/moved, src, PROC_REF(handle_comp))
+
+/datum/trait_state/waddle_trait/proc/handle_comp(datum/source, datum/om/event/moved/event)
+	EVENT_HANDLER
 	if (QDELETED(our_atom()))
 		return
 	//Living owner only. No waddling while downed.
@@ -25,17 +28,17 @@
 	if(waddling)
 		waddle_waddle(our_atom())
 
-// ALLOW(lifecycle): the owner loses the waddle verb.
-/datum/component/waddle_trait/Destroy(force = FALSE)
+/// The owner loses the waddle verb.
+/datum/trait_state/waddle_trait/detach()
 	if(living_owner())
 		remove_verb(living_owner(), /mob/living/proc/waddle_adjust)
-	. = ..()
+	..()
 
 /mob/living/verb/toggle_waddle()
 	set name = "Toggle or Enable Waddling"
 	set desc = "Allows you to toggle if you want to walk with a waddle or not!"
 	set category = "Preferences.Character"
-	var/datum/component/waddle_trait/comp = LoadComponent(/datum/component/waddle_trait)
+	var/datum/trait_state/waddle_trait/comp = add_trait_state(/datum/trait_state/waddle_trait)
 	if(comp)
 		comp.waddling = !comp.waddling
 		to_chat(src, span_warning("You will [ (comp.waddling) ? "now" : "no longer"] waddle."))
@@ -44,7 +47,7 @@
 	set name = "WADDLE DEBUG"
 	set desc = "Allows you to debug waddling!!"
 	set category = "Preferences.Character"
-	var/datum/component/waddle_trait/comp = GetComponent(/datum/component/waddle_trait)
+	var/datum/trait_state/waddle_trait/comp = get_trait_state(/datum/trait_state/waddle_trait)
 	if(comp)
 		var/Z = rerun_prompt(src, "a1", list("kind" = "number", "message" = "Desired Z.", "title" = "Set Z", "default" = 0.5, "min" = -INFINITY, "round" = FALSE), PROC_REF(waddle_debug), args)
 		if(isnull(Z))
@@ -68,7 +71,7 @@
 	set name = "Waddle Adjust"
 	set desc = "Allows you to adjust your waddling."
 	set category = "Preferences.Character"
-	var/datum/component/waddle_trait/comp = GetComponent(/datum/component/waddle_trait)
+	var/datum/trait_state/waddle_trait/comp = get_trait_state(/datum/trait_state/waddle_trait)
 	if(comp)
 		var/Z_height = rerun_prompt(src, "a5", list("kind" = "number", "message" = "Put the desired waddle height. (5 is default. 0 min 40 max)", "title" = "Set Height", "default" = 5, "max" = 40, "min" = 0), PROC_REF(waddle_adjust), args)
 		if(isnull(Z_height))
@@ -106,7 +109,7 @@
 		to_chat(src, span_notice("You have set your waddle height to [comp.waddle_z*10], your back lean to [comp.waddle_min], your forward lean to [comp.waddle_max] and your waddle time to [comp.waddle_time*10]! You will now waddle!"))
 		comp.waddling = 1 //Activate it!
 
-/datum/component/waddle_trait/proc/waddle_waddle(atom/movable/target)
+/datum/trait_state/waddle_trait/proc/waddle_waddle(atom/movable/target)
 	var/prev_pixel_z = our_atom().pixel_z
 
 	animate(target, pixel_z = target.pixel_z + waddle_z, time = 0)
@@ -114,10 +117,10 @@
 	animate(pixel_z = prev_pixel_z, transform = turn(target.transform, pick(waddle_min, 0, waddle_max)), time=waddle_time)
 	animate(transform = prev_transform, time = 0)
 
-/// LC-refs: the waddling atom (our parent) (was a var copying parent).
-/datum/component/waddle_trait/proc/our_atom() as /atom/movable
-	return parent
+/// LC-refs: the waddling mob (our owner).
+/datum/trait_state/waddle_trait/proc/our_atom() as /atom/movable
+	return owner
 
-/// LC-refs: our parent when it is a living mob (was a var copying it).
-/datum/component/waddle_trait/proc/living_owner() as /mob/living
-	return isliving(parent) ? parent : null
+/// LC-refs: our owner (always a living mob now).
+/datum/trait_state/waddle_trait/proc/living_owner() as /mob/living
+	return owner

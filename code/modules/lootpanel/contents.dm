@@ -1,6 +1,6 @@
 /// Adds the item to searchables and to_image (if needed)
 /datum/lootpanel/proc/add_to_index(datum/search_object/index)
-	RegisterSignal(index, COMSIG_QDELETING, PROC_REF(on_searchable_deleted))
+	om_hook(index, /datum/om/event/qdeleting, src, PROC_REF(on_searchable_deleted))
 	if(isnull(index.icon))
 		LAZYADD(to_image, index)
 
@@ -50,5 +50,5 @@
 		if(QDELETED(index))
 			continue
 
-		UnregisterSignal(index, COMSIG_QDELETING)
+		om_unhook(index, /datum/om/event/qdeleting, src)
 		qdel(index)

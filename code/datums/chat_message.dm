@@ -107,7 +107,8 @@ REF_OWNED(/datum/chatmessage, list("message", "finish_callback"))
 
 	// Register client who owns this message
 	owned_by_handle = om_handle(owner.client)
-	RegisterSignal(owned_by(), COMSIG_QDELETING, PROC_REF(unregister_qdel_self)) // this should only call owned_by if the client is destroyed
+	// Clients cannot be hooked: a vanished client leaves owned_by() null and the
+	// message is dropped by its om_qdel_after() lifespan timer.
 
 	var/extra_length = owned_by().prefs?.read_preference(/datum/preference/toggle/runechat_long_messages)
 	var/maxlen = extra_length ? CHAT_MESSAGE_EXT_LENGTH : CHAT_MESSAGE_LENGTH
@@ -209,7 +210,7 @@ REF_OWNED(/datum/chatmessage, list("message", "finish_callback"))
 	if(!owned_by())
 		qdel(src)
 		return
-	RegisterSignal(message_loc(), COMSIG_QDELETING, PROC_REF(qdel_self))
+	om_hook(message_loc(), /datum/om/event/qdeleting, src, TYPE_PROC_REF(/datum, qdel_self))
 	if(owned_by().seen_messages)
 		var/idx = 1
 		var/combined_height = approx_lines
@@ -297,12 +298,6 @@ REF_OWNED(/datum/chatmessage, list("message", "finish_callback"))
 
 	// Register with the runechat SS to handle destruction
 	om_qdel_after(src, lifespan + CHAT_MESSAGE_GRACE_PERIOD)
-
-/datum/chatmessage/proc/unregister_qdel_self()  // this should only call owned_by if the client is destroyed
-	SIGNAL_HANDLER
-	UnregisterSignal(owned_by(), COMSIG_QDELETING)
-	owned_by_handle = null
-	qdel_self()
 
 /datum/chatmessage/proc/get_current_alpha(time_spent)
 	if(time_spent < CHAT_MESSAGE_SPAWN_TIME)

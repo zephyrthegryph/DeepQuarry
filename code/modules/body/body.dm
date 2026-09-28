@@ -119,7 +119,7 @@ REF_OWNED_LIST(/datum/body, "supports")
 	// Interference markers live on afflictions: the snapshot folds them in.
 	invalidate(BODY_DIRTY_VITALS | BODY_DIRTY_TREATMENT | BODY_DIRTY_FACTORS)
 	A.on_added()
-	SEND_SIGNAL(owner, COMSIG_BODY_AFFLICTIONS_CHANGED, A, TRUE)
+	OM_EMIT(owner, /datum/om/event/body_afflictions_changed, A, TRUE)
 	return TRUE
 
 /// The only way an affliction leaves a body (cure, organ removal, heal-all).
@@ -134,7 +134,7 @@ REF_OWNED_LIST(/datum/body, "supports")
 	A.on_removed()
 	A.body = null
 	A.owner = null
-	SEND_SIGNAL(owner, COMSIG_BODY_AFFLICTIONS_CHANGED, A, FALSE)
+	OM_EMIT(owner, /datum/om/event/body_afflictions_changed, A, FALSE)
 	return TRUE
 
 /// First affliction of exactly `affliction_type` (optionally at `location`).
@@ -387,7 +387,7 @@ REF_OWNED_LIST(/datum/body, "supports")
 /datum/body/proc/evaluate_status()
 	if(owner.is_dead() || om_has(owner, EFFECT_GODMODE))
 		return
-	if(SEND_SIGNAL(owner, COMSIG_LIVING_BODY_STATUS) & COMPONENT_BODY_KEEP_ALIVE)
+	if(OM_EMIT(owner, /datum/om/event/before/living_body_status) & COMPONENT_BODY_KEEP_ALIVE)
 		if(HAS_TRAIT(owner, TRAIT_CRITICAL_CONDITION))
 			REMOVE_TRAIT(owner, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)
 		return
@@ -402,7 +402,7 @@ REF_OWNED_LIST(/datum/body, "supports")
 		return FALSE
 	if(!is_lethal())
 		return FALSE
-	if(SEND_SIGNAL(owner, COMSIG_LIVING_BODY_STATUS) & COMPONENT_BODY_KEEP_ALIVE)
+	if(OM_EMIT(owner, /datum/om/event/before/living_body_status) & COMPONENT_BODY_KEEP_ALIVE)
 		return FALSE
 	owner.death()
 	return TRUE
@@ -414,7 +414,7 @@ REF_OWNED_LIST(/datum/body, "supports")
 	return FALSE
 
 /datum/body/proc/is_unconscious()
-	if(SEND_SIGNAL(owner, COMSIG_LIVING_BODY_STATUS) & COMPONENT_BODY_KEEP_ALIVE)
+	if(OM_EMIT(owner, /datum/om/event/before/living_body_status) & COMPONENT_BODY_KEEP_ALIVE)
 		return FALSE
 	ensure_vitals()
 	return consciousness <= CONSCIOUSNESS_THRESHOLD

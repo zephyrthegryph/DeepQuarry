@@ -28,7 +28,7 @@
 
 /// TRUE if `actor` can afford the flat 50-energy cost, else a reason.
 /mob/living/proc/dq_regenerate_other_afford(mob/living/actor, atom/target, obj/item/held)
-	var/datum/component/shadekin/SK = actor.get_shadekin_component()
+	var/datum/shadekin/SK = actor.get_shadekin_state()
 	if(!SK)
 		return "you aren't shadekin"
 	return (SK.shadekin_get_energy() >= 50) || "not enough energy for that ability"
@@ -36,7 +36,7 @@
 /// Mends `src` (the target), announced by `actor` (the healer).
 /mob/living/proc/dq_do_regenerate_other(mob/actor, obj/item/held, datum/interaction/ability/interaction)
 	var/mob/living/L = actor
-	var/datum/component/shadekin/SK = L.get_shadekin_component()
+	var/datum/shadekin/SK = L.get_shadekin_state()
 	if(!SK)
 		return FALSE
 	SK.shadekin_adjust_energy(-50)

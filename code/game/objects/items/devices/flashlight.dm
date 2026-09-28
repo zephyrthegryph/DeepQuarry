@@ -240,7 +240,7 @@ DECLARE_INTERACTIONS(/obj/item/flashlight, \
 	if(!on)
 		return
 	if(light_system == MOVABLE_LIGHT_DIRECTIONAL)
-		var/datum/component/overlay_lighting/OL = GetComponent(/datum/component/overlay_lighting)
+		var/datum/overlay_lighting/OL = overlay_light
 		if(!OL)
 			return
 		var/turf/T = get_turf(target)
@@ -256,7 +256,7 @@ DECLARE_INTERACTIONS(/obj/item/flashlight, \
 	flickering = TRUE
 	var/original_color = light_color
 	var/original_on = on
-	var/datum/component/overlay_lighting/OL = GetComponent(/datum/component/overlay_lighting) //BEWARE, ESOTERIC BULLSHIT HERE.
+	var/datum/overlay_lighting/OL = overlay_light //BEWARE, ESOTERIC BULLSHIT HERE.
 	if(flicker_color && light_color != flicker_color)
 		set_light_color(flicker_color)
 		OL.directional_atom.color = flicker_color
@@ -269,7 +269,7 @@ DECLARE_INTERACTIONS(/obj/item/flashlight, \
 /// original_on is if we were originally on or not.
 /// OL is our overlay for lighting.
 /// ticker is how many times we have flickered so far.
-/obj/item/flashlight/proc/do_flicker(amount = rand(10, 20), flicker_color, original_color, original_on, datum/component/overlay_lighting/OL, ticker)
+/obj/item/flashlight/proc/do_flicker(amount = rand(10, 20), flicker_color, original_color, original_on, datum/overlay_lighting/OL, ticker)
 	if(ticker >= amount) //We have flickered enough times. Terminate the cycle.
 		finish_flicker(original_color, original_on, OL)
 		return
@@ -279,7 +279,7 @@ DECLARE_INTERACTIONS(/obj/item/flashlight, \
 		playsound(src, 'sound/effects/light_flicker.ogg', 50, 1)
 	om_after(src, rand(5,15), PROC_REF(do_flicker), amount, flicker_color, original_color, original_on, OL, ++ticker)
 
-/obj/item/flashlight/proc/finish_flicker(original_color, original_on, datum/component/overlay_lighting/OL)
+/obj/item/flashlight/proc/finish_flicker(original_color, original_on, datum/overlay_lighting/OL)
 	set_light_color(original_color)
 	OL.directional_atom?.color = original_color
 	on = original_on

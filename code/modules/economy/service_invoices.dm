@@ -170,7 +170,7 @@
 		invoice.verified_item_count++
 		if(istype(sale_item, /obj/item))
 			var/customer_department = customer?.department_id
-			sale_item.AddComponent(/datum/component/economic_adoption, invoice.id, customer?.account_number, customer_department, provider.department_id, credited_value)
+			new /datum/economic_adoption(sale_item, invoice.id, customer?.account_number, customer_department, provider.department_id, credited_value)
 		remaining_personal_payment -= credited_value
 		remaining_by_name[sale_item.name]--
 	service_invoices += invoice
@@ -279,9 +279,10 @@
 		if(QDELETED(sale_item) || sale_item.economic_sale_invoice_id != invoice.id)
 			continue
 		sale_item.economic_sale_invoice_id = 0
-		var/datum/component/economic_adoption/adoption = sale_item.GetComponent(/datum/component/economic_adoption)
-		if(adoption)
-			qdel(adoption)
+		if(isitem(sale_item))
+			var/obj/item/sold_item = sale_item
+			if(sold_item.economic_adoption)
+				qdel(sold_item.economic_adoption)
 	record_currency_refund(invoice.amount, FALSE)
 	emit_contract_event(CONTRACT_EVENT_SERVICE_INVOICE_CHANGED, list(
 		"actor_account" = invoice.customer_account_number,
@@ -302,12 +303,15 @@
 	return TRUE
 
 /// Marks the first real use of a purchased, station-fabricated item. Checkout
-/// proves delivery; this component proves that its customer actually tried to
-/// use it. It observes the ordinary item interaction signals and publishes one
+/// proves delivery; this state (owned by the item) proves that its customer actually tried to
+/// use it. It observes the ordinary item interaction events and publishes one
 /// reversible physical fact rather than teaching individual item types about
 /// contracts.
-/datum/component/economic_adoption
-	dupe_mode = COMPONENT_DUPE_UNIQUE
+REF_VAR(/obj/item, OWNED, /datum/economic_adoption, economic_adoption)
+
+/datum/economic_adoption
+	/// The purchased item.
+	var/obj/item/parent
 	var/invoice_id
 	var/customer_account
 	var/customer_department
@@ -315,26 +319,45 @@
 	var/value
 	var/adopted = FALSE
 
-/datum/component/economic_adoption/Initialize(_invoice_id, _customer_account, _customer_department, _provider_department, _value)
-	if(!istype(parent, /obj/item) || !_invoice_id || !_customer_account || !_customer_department || !_provider_department || _value <= 0)
-		return COMPONENT_INCOMPATIBLE
+REF_BACK(/datum/economic_adoption, list("parent" = "economic_adoption"))
+
+/datum/economic_adoption/New(obj/item/new_parent, _invoice_id, _customer_account, _customer_department, _provider_department, _value)
+	. = ..()
+	if(!istype(new_parent) || !_invoice_id || !_customer_account || !_customer_department || !_provider_department || _value <= 0)
+		qdel(src)
+		return
+	if(new_parent.economic_adoption)
+		// Unique: the existing adoption record is kept.
+		qdel(src)
+		return
+	parent = new_parent
+	new_parent.economic_adoption = src
 	invoice_id = _invoice_id
 	customer_account = _customer_account
 	customer_department = _customer_department
 	provider_department = _provider_department
 	value = _value
-	RegisterSignal(parent, COMSIG_ITEM_ATTACK_SELF, PROC_REF(on_attack_self))
-	RegisterSignal(parent, COMSIG_ITEM_ATTACK, PROC_REF(on_attack))
+	om_hook(parent, /datum/om/event/before/attack_self, src, PROC_REF(on_attack_self))
+	om_hook(parent, /datum/om/event/item_attack, src, PROC_REF(on_attack))
 
-/datum/component/economic_adoption/proc/on_attack_self(obj/item/source, mob/user)
-	SIGNAL_HANDLER
-	record_use(user)
+// ALLOW(lifecycle): owned state datum (was a component) unhooks and detaches from its owner.
+/datum/economic_adoption/Destroy()
+	if(parent)
+		om_unhook(parent, null, src)
+		if(parent.economic_adoption == src)
+			parent.economic_adoption = null
+		parent = null
+	return ..()
 
-/datum/component/economic_adoption/proc/on_attack(obj/item/source, mob/living/target, mob/living/user)
-	SIGNAL_HANDLER
-	record_use(user)
+/datum/economic_adoption/proc/on_attack_self(obj/item/source, datum/om/event/before/attack_self/event)
+	EVENT_HANDLER
+	record_use(event.user)
 
-/datum/component/economic_adoption/proc/record_use(mob/user)
+/datum/economic_adoption/proc/on_attack(obj/item/source, datum/om/event/item_attack/event)
+	EVENT_HANDLER
+	record_use(event.user)
+
+/datum/economic_adoption/proc/record_use(mob/user)
 	if(adopted || !user)
 		return FALSE
 	var/datum/money_account/account = contract_account_for_mob(user)
@@ -344,7 +367,7 @@
 	publish_adoption(user, TRUE)
 	return TRUE
 
-/datum/component/economic_adoption/proc/publish_adoption(mob/user, active)
+/datum/economic_adoption/proc/publish_adoption(mob/user, active)
 	var/obj/item/item = parent
 	return emit_contract_event(CONTRACT_EVENT_EQUIPMENT_ADOPTED, list(
 		"actor_account" = customer_account,

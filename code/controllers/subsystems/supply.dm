@@ -514,7 +514,7 @@ SUBSYSTEM_DEF(supply)
 //Selling
 /datum/controller/subsystem/supply/proc/sell()
 	// Loop over each area in the supply shuttle
-	SEND_GLOBAL_SIGNAL(COMSIG_GLOB_SUPPLY_SHUTTLE_DEPART, shuttle.shuttle_area)
+	OM_EMIT_WORLD(/datum/om/event/world_supply_shuttle_depart, shuttle.shuttle_area)
 	for(var/area/subarea in shuttle.shuttle_area)
 		for(var/atom/movable/MA in subarea)
 			if(MA.anchored)

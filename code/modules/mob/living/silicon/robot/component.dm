@@ -5,7 +5,7 @@
 //
 // A component stores no damage numbers: its damage IS the load afflictions
 // the body has located on it (plans/machine.dm). A removed part carries its
-// afflictions away on the item (/datum/component/carried_afflictions) and
+// afflictions away on the item (/datum/carried_afflictions) and
 // brings them back when it is installed again, so damage is never erased.
 
 /datum/robot_component
@@ -167,8 +167,9 @@ REF_OWNED(/datum/robot_component, "wrapped")
 		B.remove_affliction(A)
 		A.location = null
 	if(wrapped && !QDELETED(wrapped))
-		var/datum/component/carried_afflictions/carried = wrapped.AddComponent(/datum/component/carried_afflictions)
-		carried?.take(leaving)
+		if(!wrapped.carried_afflictions)
+			wrapped.carried_afflictions = new /datum/carried_afflictions(wrapped)
+		wrapped.carried_afflictions.take(leaving)
 	else
 		QDEL_LIST(leaving)
 	B.on_status_changed()
@@ -178,12 +179,12 @@ REF_OWNED(/datum/robot_component, "wrapped")
 	var/datum/body/simple/machine/robot/B = get_robot_body()
 	if(!B || !wrapped)
 		return
-	var/datum/component/carried_afflictions/carried = wrapped.GetComponent(/datum/component/carried_afflictions)
+	var/datum/carried_afflictions/carried = wrapped.carried_afflictions
 	if(!carried)
 		return
 	for(var/datum/affliction/A as anything in carried.release())
 		B.add_affliction(A, src)
-	qdel(carried)
+	QDEL_NULL(wrapped.carried_afflictions)
 	B.on_status_changed()
 
 // --- Function -------------------------------------------------------------------
@@ -358,27 +359,32 @@ REF_OWNED(/datum/robot_component, "wrapped")
 // --- Carried afflictions ------------------------------------------------------------
 // Holds a removed part's afflictions while it sits outside a robot.
 
-/datum/component/carried_afflictions
-	dupe_mode = COMPONENT_DUPE_UNIQUE
+// Owned by the item's `carried_afflictions` var (was /datum/component/carried_afflictions).
+
+/datum/carried_afflictions
+	/// The removed part carrying them.
+	var/obj/item/holder
 	var/list/afflictions
 
-/datum/component/carried_afflictions/Initialize()
-	if(!isitem(parent))
-		return COMPONENT_INCOMPATIBLE
+/datum/carried_afflictions/New(obj/item/part)
+	..()
+	holder = part
 
-REF_OWNED_LIST(/datum/component/carried_afflictions, "afflictions")
+REF_VAR(/obj/item, OWNED, /datum/carried_afflictions, carried_afflictions)
+REF_OWNED_LIST(/datum/carried_afflictions, "afflictions")
+REF_BACK(/datum/carried_afflictions, list("holder" = "carried_afflictions"))
 
-/datum/component/carried_afflictions/proc/take(list/incoming)
+/datum/carried_afflictions/proc/take(list/incoming)
 	for(var/datum/affliction/A as anything in incoming)
 		LAZYADD(afflictions, A)
 
 /// Hand the afflictions back and forget them.
-/datum/component/carried_afflictions/proc/release()
+/datum/carried_afflictions/proc/release()
 	. = afflictions || list()
 	afflictions = null
 
 /// Structural load the part carries (examine, installing checks).
-/datum/component/carried_afflictions/proc/carried_load()
+/datum/carried_afflictions/proc/carried_load()
 	. = 0
 	for(var/datum/affliction/A as anything in afflictions)
 		if(istype(A, /datum/affliction/load))
@@ -414,8 +420,7 @@ REF_OWNED_LIST(/datum/component/carried_afflictions, "afflictions")
 
 /obj/item/robot_parts/robot_component/examine(mob/user)
 	. = ..()
-	var/datum/component/carried_afflictions/carried = GetComponent(/datum/component/carried_afflictions)
-	var/load = carried?.carried_load()
+	var/load = carried_afflictions?.carried_load()
 	if(load)
 		. += span_warning("It is damaged ([round(load / max(max_damage, 1) * 100)]% worn).")
 

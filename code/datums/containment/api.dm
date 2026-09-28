@@ -64,7 +64,7 @@
 		var/cost = def.cost(holder, thing)
 		if(dest.used[id] + def.latent_used(holder) + cost > def.capacity_for(holder))
 			return "there's no room for it"
-	if(SEND_SIGNAL(holder, COMSIG_SLOT_PRE_INSERT, thing, id, actor) & COMPONENT_SLOT_BLOCK)
+	if(OM_EMIT(holder, /datum/om/event/before/slot_pre_insert, thing, id, actor) & COMPONENT_SLOT_BLOCK)
 		return "it won't go in"
 	return null
 
@@ -80,7 +80,7 @@
 	. = def.removal_refusal(source, thing, actor)
 	if(.)
 		return .
-	if(SEND_SIGNAL(source, COMSIG_SLOT_PRE_REMOVE, thing, entry[LEDGER_E_SLOT], actor) & COMPONENT_SLOT_BLOCK)
+	if(OM_EMIT(source, /datum/om/event/before/slot_pre_remove, thing, entry[LEDGER_E_SLOT], actor) & COMPONENT_SLOT_BLOCK)
 		return "it won't come out"
 	return null
 

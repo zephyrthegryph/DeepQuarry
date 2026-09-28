@@ -18,7 +18,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/dark_portal/minion, REGISTRY_DARKPORTAL_MINIO
 		return
 	if(isliving(M))
 		var/mob/living/to_check = M
-		var/datum/component/shadekin/SK = to_check.GetComponent(/datum/component/shadekin)
+		var/datum/shadekin/SK = to_check.shadekin
 		if(SK && SK.in_dark_respite)
 			to_chat(M, span_warning("You can't go through this portal so soon after an emergency warp!"))
 			to_check.status_at_least(EFFECT_STUNNED, 10)
@@ -55,7 +55,7 @@ DECLARE_INTERACTIONS(/obj/structure/dark_portal/hub, INTERACT_HAND_UNGATED(null,
 /obj/structure/dark_portal/hub/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(!isliving(user))
 		return TRUE
-	var/datum/component/shadekin/SK = user.GetComponent(/datum/component/shadekin)
+	var/datum/shadekin/SK = user.get_shadekin_state()
 	if(SK)
 		if(SK.in_dark_respite)
 			to_chat(user, span_warning("You can't use this so soon after an emergency warp!"))
@@ -149,7 +149,7 @@ DECLARE_INTERACTIONS(/obj/structure/dark_portal/minion, INTERACT_HAND_UNGATED(nu
 /obj/structure/dark_portal/minion/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(!isliving(user))
 		return TRUE
-	var/datum/component/shadekin/SK = user.GetComponent(/datum/component/shadekin)
+	var/datum/shadekin/SK = user.get_shadekin_state()
 	if(SK)
 		if(SK.in_dark_respite)
 			to_chat(user, span_warning("You can't use this so soon after an emergency warp!"))

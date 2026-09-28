@@ -6,13 +6,8 @@
 		if(!key)	//key and mind have become seperated.
 			mind.active = 0	//This is to stop say, a mind.transfer_to call on a corpse causing a ghost to re-enter its body.
 
-	var/datum/component/character_setup/cs = GetComponent(/datum/component/character_setup)
-	if(cs)
-		qdel(cs)
-
-	var/datum/component/vore_panel/vp = GetComponent(/datum/component/vore_panel)
-	if(vp)
-		qdel(vp)
+	QDEL_NULL(character_setup_button)
+	QDEL_NULL(vore_panel_button)
 
 	om_after(src, 15 SECONDS, PROC_REF(logout_wake_ai)) //15 seconds to get back into the mob before it goes wild
 

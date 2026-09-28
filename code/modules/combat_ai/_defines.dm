@@ -66,21 +66,23 @@
 #define DQ_TARGET_SELF  4
 
 // ---------------------------------------------------------------------------
-// Signals emitted on the mob by the brain framework. Behaviors can subscribe
-// to these via their eval_triggers list to re-evaluate only when relevant.
+// Behavior trigger keys. The brain dispatches these to behaviors that list them
+// in eval_triggers, so they re-evaluate only when relevant. The brain also emits
+// the matching OM events on the mob (/datum/om/event/dqai_damage_taken,
+// dqai_target_lost, dqai_target_changed, dqai_ally_distress) for other listeners.
 // ---------------------------------------------------------------------------
-#define COMSIG_DQAI_DAMAGE_TAKEN     "dqai_damage_taken"      // (amount, injury_kind, source_mob)
-#define COMSIG_DQAI_TARGET_LOST      "dqai_target_lost"       // (old_target)
-#define COMSIG_DQAI_TARGET_CHANGED   "dqai_target_changed"    // (new_target, old_target)
-#define COMSIG_DQAI_ALLY_DISTRESS    "dqai_ally_distress"     // (ally, attacker)
-#define COMSIG_DQAI_LOW_HEALTH       "dqai_low_health"        // (hp_fraction)
+#define DQAI_TRIGGER_DAMAGE_TAKEN     "dqai_damage_taken"      // (amount, injury_kind, source_mob)
+#define DQAI_TRIGGER_TARGET_LOST      "dqai_target_lost"       // (old_target)
+#define DQAI_TRIGGER_TARGET_CHANGED   "dqai_target_changed"    // (new_target, old_target)
+#define DQAI_TRIGGER_ALLY_DISTRESS    "dqai_ally_distress"     // (ally, attacker)
+#define DQAI_TRIGGER_LOW_HEALTH       "dqai_low_health"        // (hp_fraction)
 
 // ---------------------------------------------------------------------------
 // Misc helpers / tuning.
 // ---------------------------------------------------------------------------
 // How long personal relationship entries last by default if duration is unset.
 #define DQ_PERSONAL_DEFAULT_DURATION (30 SECONDS)
-// At or below this vitality() fraction (0..1 wellness), COMSIG_DQAI_LOW_HEALTH fires.
+// At or below this vitality() fraction (0..1 wellness), DQAI_TRIGGER_LOW_HEALTH is dispatched.
 #define DQ_LOW_HP_THRESHOLD 0.4
 // World model perception refresh interval (in slow ticks). 1 = every slow tick.
 #define DQ_PERCEPTION_REFRESH_RATE 1

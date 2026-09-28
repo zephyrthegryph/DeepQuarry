@@ -52,7 +52,7 @@
 		return
 	if(owner)
 		LAZYADD(owner.status_effects, src)
-		RegisterSignal(owner, COMSIG_LIVING_AHEAL, PROC_REF(remove_effect_on_heal))
+		om_hook(owner, /datum/om/event/living_aheal, src, PROC_REF(remove_effect_on_heal))
 
 	if(duration == INFINITY)
 		// we will optionally allow INFINITY, because i imagine it'll be convenient in some places,
@@ -190,8 +190,8 @@ REF_OWNED(/datum/status_effect, "particle_effect")
 	return 0
 
 /// Signal proc for [COMSIG_LIVING_POST_FULLY_HEAL] to remove us on fullheal
-/datum/status_effect/proc/remove_effect_on_heal(datum/source) //heal_flags)
-	SIGNAL_HANDLER
+/datum/status_effect/proc/remove_effect_on_heal(datum/source, datum/om/event/living_aheal/event)
+	EVENT_HANDLER
 
 	if(!remove_on_fullheal)
 		return

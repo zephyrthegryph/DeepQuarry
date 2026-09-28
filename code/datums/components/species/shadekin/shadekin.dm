@@ -1,7 +1,8 @@
 //See comp_helpers.dm for helper procs.
-/datum/component/shadekin
+/// Shadekin state (energy, phasing, powers). An owned plain datum held in
+/// /mob/living/var/shadekin (one per mob); formerly a component. Add with add_shadekin().
+/datum/shadekin
 	VAR_PRIVATE/mob/living/owner
-	dupe_mode = COMPONENT_DUPE_UNIQUE
 
 	//Energy Vars
 	///How much energy we have RIGHT NOW
@@ -69,7 +70,7 @@
 
 	//Ability Vars
 	///Ability ids (code/datums/abilities/ability.dm) this variant grants while
-	///the component is attached: the source-tracked grant API, revoked in
+	///the datum is held: the source-tracked grant API, revoked in
 	///Destroy(). Every shadekin gets phase shift, regenerate other and create
 	///shade; phase_only and full override this to add or remove ids.
 	var/list/shadekin_granted_abilities = list(ABILITY_ID_SHADEKIN_PHASE_SHIFT, ABILITY_ID_SHADEKIN_REGENERATE_OTHER, ABILITY_ID_SHADEKIN_CREATE_SHADE) // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
@@ -80,37 +81,38 @@
 	///For downstream. Enables some extra verbs. Causes things to drop in hand when you phase.
 	var/extended_kin = FALSE
 
-/datum/component/shadekin/phase_only
+/datum/shadekin/phase_only
 	shadekin_granted_abilities = list(ABILITY_ID_SHADEKIN_PHASE_SHIFT)
 
-/datum/component/shadekin/full
+/datum/shadekin/full
 	shadekin_granted_abilities = list(ABILITY_ID_SHADEKIN_PHASE_SHIFT, ABILITY_ID_SHADEKIN_REGENERATE_OTHER, ABILITY_ID_SHADEKIN_CREATE_SHADE, ABILITY_ID_SHADEKIN_DARK_RESPITE, ABILITY_ID_SHADEKIN_DARK_TUNNELING, ABILITY_ID_SHADEKIN_DARK_MAW, "shadekin_clear_dark_maws")
 	extended_kin = TRUE
 	drop_items_on_phase = TRUE
 	camera_counts_as_watcher = TRUE
 
-/datum/component/shadekin/full/rakshasa
+/datum/shadekin/full/rakshasa
 	flicker_time = 0 //Rakshasa don't flicker lights when they phase in.
 	dark_energy_infinite = TRUE
 	normal_phase = FALSE
 
-/datum/component/shadekin/Initialize()
-	//normal component bs
-	if(!isliving(parent) || issilicon(parent))
-		return COMPONENT_INCOMPATIBLE
-	owner = parent
-	if(ishuman(owner))
-		RegisterSignal(owner, COMSIG_SHADEKIN_COMPONENT, PROC_REF(handle_comp)) //Happens every species tick.
-	else
+/datum/shadekin/New(mob/living/new_owner, manual = FALSE)
+	..()
+	if(!isliving(new_owner) || issilicon(new_owner))
+		log_runtime("SHADEKIN: [type] created for incompatible [new_owner] ([new_owner?.type]); ignoring.")
+		return
+	owner = new_owner
+	owner.shadekin = src
+	if(!ishuman(owner))
 		om_stage_add(owner, /datum/om/stage/life/trait/shadekin) //Happens every life tick (mobs)
+	//Humans are ticked by the species_components life stage instead.
 
-	// Register voice/name signal handlers
-	RegisterSignal(owner, COMSIG_HUMAN_GET_VOICE, PROC_REF(on_get_voice))
-	RegisterSignal(owner, COMSIG_HUMAN_GET_ALT_NAME, PROC_REF(on_get_alt_name))
-	RegisterSignal(owner, COMSIG_HUMAN_GET_VISIBLE_NAME, PROC_REF(on_get_visible_name))
+	// Voice/name hooks
+	om_hook(owner, /datum/om/event/before/human_get_voice, src, PROC_REF(on_get_voice))
+	om_hook(owner, /datum/om/event/before/human_get_alt_name, src, PROC_REF(on_get_alt_name))
+	om_hook(owner, /datum/om/event/before/human_get_visible_name, src, PROC_REF(on_get_visible_name))
 
-	// This component is the source for every ability it grants
-	// (code/datums/abilities/ability.dm); revoked with the component in
+	// This datum is the source for every ability it grants
+	// (code/datums/abilities/ability.dm); revoked with it in
 	// Destroy() below, whatever kind of shadekin this is.
 	for(var/ability_id in shadekin_granted_abilities)
 		owner.grant_ability(ability_id, src)
@@ -124,35 +126,58 @@
 	//Misc stuff we need to do
 	add_verb(owner, /mob/living/proc/shadekin_control_panel)
 
-REF_OWNED_LIST(/datum/component/shadekin, "active_dark_maws")
+	if(manual)
+		lateload_pref_data()
+
+REF_OWNED_LIST(/datum/shadekin, "active_dark_maws")
+REF_BACK(/datum/shadekin, list("owner" = "shadekin"))
+REF_VAR(/mob/living, OWNED, /datum/shadekin, shadekin)
+
+/// Gives this mob shadekin state of `path` (or returns the existing one, like LoadComponent did).
+/mob/living/proc/add_shadekin(path = /datum/shadekin, manual = FALSE)
+	RETURN_TYPE(/datum/shadekin)
+	if(shadekin)
+		return shadekin
+	var/datum/shadekin/SK = new path(src, manual)
+	if(shadekin != SK) //incompatible mob
+		qdel(SK)
+		return null
+	return SK
+
+/// Removes this mob's shadekin state, if any.
+/mob/living/proc/remove_shadekin()
+	QDEL_NULL(shadekin)
 
 // ALLOW(lifecycle): revokes its granted abilities, trait stage and verbs; hides the owner's energy hud.
-/datum/component/shadekin/Destroy(force)
+/datum/shadekin/Destroy(force)
 	if(owner)
 		for(var/ability_id in shadekin_granted_abilities)
 			owner.revoke_ability(ability_id, src)
-	if(!ishuman(owner))
-		om_stage_remove(owner, /datum/om/stage/life/trait/shadekin)
-	remove_verb(owner, /mob/living/proc/shadekin_control_panel)
-	if(owner && !QDELING(owner) && owner.shadekin_display)
-		owner.shadekin_display.invisibility = INVISIBILITY_ABSTRACT
+		if(!ishuman(owner))
+			om_stage_remove(owner, /datum/om/stage/life/trait/shadekin)
+		remove_verb(owner, /mob/living/proc/shadekin_control_panel)
+		if(!QDELING(owner) && owner.shadekin_display)
+			owner.shadekin_display.invisibility = INVISIBILITY_ABSTRACT
+		om_unhook_all(src)
+		if(owner.shadekin == src)
+			owner.shadekin = null
+	owner = null
 	. = ..()
 
-/datum/component/shadekin/proc/recalc_values()
+/datum/shadekin/proc/recalc_values()
 	set_shadekin_eyecolor() //Gets what eye color we are.
 	set_eye_energy() //Sets the energy values based on our eye color.
 
-///Handles the component running.
-/datum/component/shadekin/proc/handle_comp()
-	SIGNAL_HANDLER
-	if(QDELETED(parent))
+///Handles the shadekin ticking (species_components stage for humans, trait stage for mobs).
+/datum/shadekin/proc/handle_comp()
+	if(QDELETED(owner))
 		return
 	if(owner.stat == DEAD) //dead, don't process.
 		return
 	handle_shade()
 
 ///Handles the shadekin's energy gain and loss.
-/datum/component/shadekin/proc/handle_shade()
+/datum/shadekin/proc/handle_shade()
 	//Shifted kin don't gain/lose energy (and save time if we're at the cap)
 	var/darkness = 1
 	var/dark_gains = 0
@@ -196,7 +221,7 @@ REF_OWNED_LIST(/datum/component/shadekin, "active_dark_maws")
 	//Update huds
 	update_shadekin_hud()
 
-/datum/component/shadekin/proc/calculate_stun()
+/datum/shadekin/proc/calculate_stun()
 	var/stun_time = 3
 	if(flicker_time > 0)
 		stun_time -= min(flicker_time / 5, 1)
@@ -207,18 +232,18 @@ REF_OWNED_LIST(/datum/component/shadekin, "active_dark_maws")
 	return stun_time
 
 ///Sees if the savefile we have selected in CHARACTER SETUP is the same as our ACTIVE CHARACTER savefile.
-/datum/component/shadekin/proc/correct_savefile_selected()
+/datum/shadekin/proc/correct_savefile_selected()
 	if(owner.client.prefs.default_slot == owner.mind.loaded_from_slot)
 		return TRUE
 	return FALSE
 
-/datum/component/shadekin/tgui_interact(mob/user, datum/tgui/ui)
+/datum/shadekin/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
 		ui = new(user, src, "ShadekinConfig", "Shadekin Config")
 		ui.open()
 
-/datum/component/shadekin/tgui_data(mob/user)
+/datum/shadekin/tgui_data(mob/user)
 	var/data = list(
 		"stun_time" = calculate_stun(),
 		"flicker_time" = flicker_time,
@@ -234,11 +259,11 @@ REF_OWNED_LIST(/datum/component/shadekin, "active_dark_maws")
 
 	return data
 
-/datum/component/shadekin/tgui_close(mob/user)
+/datum/shadekin/tgui_close(mob/user)
 	SScharacter_setup.queue_preferences_save(user?.client?.prefs)
 	. = ..()
 
-/datum/component/shadekin/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
+/datum/shadekin/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	if(..())
 		return TRUE
 
@@ -288,16 +313,18 @@ REF_OWNED_LIST(/datum/component/shadekin, "active_dark_maws")
 			ui.user.write_preference_directly(/datum/preference/toggle/living/shadekin_hide_voice_in_phase, new_voice_hide, WRITE_PREF_MANUAL, save_to_played_slot = TRUE)
 
 /// Signal handler for GetVoice()
-/datum/component/shadekin/proc/on_get_voice(mob/living/carbon/human/source, list/voice_data)
-	SIGNAL_HANDLER
+/datum/shadekin/proc/on_get_voice(mob/living/carbon/human/source, datum/om/event/before/human_get_voice/event)
+	EVENT_HANDLER
+	var/list/voice_data = event.voice_data
 
 	if(in_phase && hide_voice_in_phase)
 		voice_data[1] = "Something"
 		return COMPONENT_VOICE_CHANGED
 
 /// Signal handler for GetAltName()
-/datum/component/shadekin/proc/on_get_alt_name(mob/living/carbon/human/source, list/name_data)
-	SIGNAL_HANDLER
+/datum/shadekin/proc/on_get_alt_name(mob/living/carbon/human/source, datum/om/event/before/human_get_alt_name/event)
+	EVENT_HANDLER
+	var/list/name_data = event.name_data
 
 	if(in_phase && hide_voice_in_phase)
 		name_data[1] = ""
@@ -309,8 +336,9 @@ REF_OWNED_LIST(/datum/component/shadekin, "active_dark_maws")
 		return COMPONENT_ALT_NAME_CHANGED
 
 /// Signal handler for get_visible_name()
-/datum/component/shadekin/proc/on_get_visible_name(mob/living/source, list/name_data)
-	SIGNAL_HANDLER
+/datum/shadekin/proc/on_get_visible_name(mob/living/source, datum/om/event/before/human_get_visible_name/event)
+	EVENT_HANDLER
+	var/list/name_data = event.identity
 
 	if(in_phase && hide_voice_in_phase)
 		name_data[1] = "Something"
@@ -321,7 +349,7 @@ REF_OWNED_LIST(/datum/component/shadekin, "active_dark_maws")
 	set desc = "Allows you to adjust the settings of various shadekin settings!"
 	set category = "Abilities.Shadekin"
 
-	var/datum/component/shadekin/SK = get_shadekin_component()
+	var/datum/shadekin/SK = get_shadekin_state()
 	if(!SK)
 		to_chat(src, span_warning("Only a shadekin can use that!"))
 		return FALSE
@@ -331,7 +359,6 @@ REF_OWNED_LIST(/datum/component/shadekin, "active_dark_maws")
 /// Trait system: shadekin energy for non-human mobs. Was a COMSIG_LIVING_LIFE listener.
 /datum/om/stage/life/trait/shadekin
 	name = "shadekin"
-	component_type = /datum/component/shadekin
 
-/datum/om/stage/life/trait/shadekin/tick_component(mob/living/self, datum/component/shadekin/component)
-	component.handle_comp()
+/datum/om/stage/life/trait/shadekin/perform(mob/living/self, datum/om/frame/life/ctx)
+	self.shadekin?.handle_comp()

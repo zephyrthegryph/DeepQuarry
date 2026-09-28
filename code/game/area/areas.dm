@@ -279,8 +279,8 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 
 // Called once per area channel change (the APC's Rust power event). Lights and
 // other reactor subscribers hear the key; subscribed machines re-check their
-// power, and the base power_change() sends COMSIG_MACHINERY_POWER_LOST or
-// COMSIG_MACHINERY_POWER_RESTORED when it flips.
+// power, and the base power_change() emits machinery_power_lost or
+// machinery_power_restored when it flips.
 /area/proc/power_change()
 	om_changed(src, CHANGE_AREA_POWER)
 	for(var/obj/machinery/M as anything in power_machines)
@@ -590,7 +590,7 @@ GLOBAL_DATUM(spoiler_obfuscation_image, /image)
 		return
 	if(check_rights_for(ourmob.client, R_HOLDER)) //If we're an admin, we don't get affected by phase blockers.
 		return
-	var/datum/component/shadekin/SK = ourmob.get_shadekin_component()
+	var/datum/shadekin/SK = ourmob.get_shadekin_state()
 	if(SK && SK.in_phase)
 		SK.attack_dephase(ourmob.loc, src)
 

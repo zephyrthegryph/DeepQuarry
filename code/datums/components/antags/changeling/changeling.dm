@@ -1,4 +1,4 @@
-///Changeling component.
+///Changeling antag state (owned plain datum held by the living mob).
 ///Stores changeling powers, changeling recharge thingie, changeling absorbed DNA and changeling ID (for changeling hivemind)
 GLOBAL_LIST_INIT(possible_changeling_IDs,list("Alpha","Beta","Chi","Delta","Epsilon","Eta","Gamma","Iota","Kappa","Lambda","Mu","Nu","Omega","Omicron","Phi","Pi","Psi","Rho","Sigma","Tau","Theta","Upsilon","Xi","Zeta")) //ALPHABETICAL ORDER.
 
@@ -20,7 +20,9 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 	var/allowduringlesserform = FALSE
 	var/genomecost = 500000 // Cost for the changeling to evolve this power.
 
-/datum/component/antag/changeling
+/// Changeling antag state. Owned by the changeling mob (/mob/living var changeling_state); the mind keeps an OM handle.
+/datum/changeling
+	var/mob/living/owner
 	var/list/datum/absorbed_dna/absorbed_dna = list() // ALLOW(instance_list): d: changeling state; starts with the changeling's own DNA
 	var/list/absorbed_languages // Necessary because of set_species stuff
 	var/absorbedcount = 0
@@ -45,7 +47,6 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 	var/list/purchased_powers_history //Used for round-end report, includes respec uses too.
 	var/thermal_sight = FALSE	// Is our Vision Augmented? With thermals?
 	var/datum/changeling_panel/power_panel //Our changeling eveolution panel. Generated the first time we try to open the panel.
-	dupe_mode = COMPONENT_DUPE_UNIQUE //Only the first changeling application survives!
 	var/cooldown_time = 1 SECOND // Sting anti-spam.
 	COOLDOWN_DECLARE(sting_cooldown) // world.time when we used last used a power.
 	var/list/changeling_cooldowns = list( // ALLOW(instance_list): d: edited in place per instance (1 writers)
@@ -59,7 +60,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 ///Checks if a mind or a mob is a changeling.
 ///Checks to see if the thing fed to it is a changeling first, then does some deeper searching.
 /proc/is_changeling(mob/M)
-	var/datum/component/antag/changeling/changeling = (M.GetComponent(/datum/component/antag/changeling))
+	var/datum/changeling/changeling = ismob(M) ? M.get_changeling_state() : null
 	if(changeling) // Whatever we fed it is a changeling. Return it.
 		return changeling
 
@@ -67,7 +68,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 	if(istype(M, /datum/mind)) //Fed a mind and we failed.
 		var/datum/mind/our_mind = M
 		if(our_mind.current)
-			changeling = (our_mind.current.GetComponent(/datum/component/antag/changeling)) //Check to see if the mob we are currently inhabiting is a changeling.
+			changeling = our_mind.current.get_changeling_state() //Check to see if the mob we are currently inhabiting is a changeling.
 	else //Fed it a mob and we failed
 		if(M.mind)
 			changeling = M.mind.antag_holder.changeling() //Check our mind's antag holder.
@@ -76,26 +77,27 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 ///Handles the cooldown for the power. Returns TRUE if the cooldown has passed. FALSE if it's still on cooldown.
 ///This is just a general anti-spam thing and not really a true cooldown
 
-/datum/component/antag/changeling/proc/check_cooldown()
+/datum/changeling/proc/check_cooldown()
 	if(COOLDOWN_FINISHED(src, sting_cooldown))
 		return TRUE
 	return FALSE
 
-/datum/component/antag/changeling/proc/set_sting_cooldown()
+/datum/changeling/proc/set_sting_cooldown()
 	COOLDOWN_START(src, sting_cooldown, cooldown_time)
 
-/datum/component/antag/changeling/proc/get_cooldown(id)
+/datum/changeling/proc/get_cooldown(id)
 	return changeling_cooldowns[id]
 
-/datum/component/antag/changeling/proc/set_cooldown(id, cooldown_time)
+/datum/changeling/proc/set_cooldown(id, cooldown_time)
 	changeling_cooldowns[id] = world.time + cooldown_time
 
-/datum/component/antag/changeling/proc/is_on_cooldown(id)
+/datum/changeling/proc/is_on_cooldown(id)
 	return (world.time < changeling_cooldowns[id])
 
-/datum/component/antag/changeling/Initialize()
+/datum/changeling/New(mob/living/new_owner)
 	..()
-	if(owner())
+	owner = new_owner
+	if(owner)
 		if(GLOB.possible_changeling_IDs.len)
 			changelingID = pick(GLOB.possible_changeling_IDs)
 			GLOB.possible_changeling_IDs -= changelingID
@@ -103,31 +105,28 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 		else
 			changelingID = "[rand(1,999)]"
 
-		add_verb(owner(),/mob/proc/EvolutionMenu)
-		add_verb(owner(),/mob/proc/changeling_respec)
-		owner().add_language("Changeling")
+		add_verb(owner,/mob/proc/EvolutionMenu)
+		add_verb(owner,/mob/proc/changeling_respec)
+		owner.add_language("Changeling")
 
-///This is a component that is referenced to by the mind, so it should never be deleted
-// ALLOW(lifecycle): antag state refuses deletion unless forced.
-/datum/component/antag/changeling/Destroy(force = FALSE)
-	if(!force)
-		return QDEL_HINT_LETMELIVE
+// ALLOW(lifecycle): owned state datum (was a component) unhooks and detaches from its owner.
+/datum/changeling/Destroy(force = FALSE)
+	owner = null
 	return ..()
-	//Old code from when it did destroy itself.
 
 //Former /datum/changeling procs
-/datum/component/antag/changeling/proc/regenerate()
+/datum/changeling/proc/regenerate()
 	chem_charges = min(max(0, chem_charges+chem_recharge_rate), chem_storage)
 	geneticdamage = max(0, geneticdamage-1)
 
-/datum/component/antag/changeling/proc/GetDNA(dna_owner)
+/datum/changeling/proc/GetDNA(dna_owner)
 	for(var/datum/absorbed_dna/DNA in absorbed_dna)
 		if(dna_owner == DNA.name)
 			return DNA
 
 //Former /mob procs
 /mob/proc/absorbDNA(datum/absorbed_dna/newDNA)
-	var/datum/component/antag/changeling/comp = is_changeling(src)
+	var/datum/changeling/comp = is_changeling(src)
 	if(!comp)
 		return
 
@@ -145,7 +144,14 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 	if(!mind)
 		return
 	//The current mob is made a changeling AND the mind is made a changeling.
-	var/datum/component/antag/changeling/comp = LoadComponent(/datum/component/antag/changeling, TRUE)
+	var/datum/changeling/comp = get_changeling_state()
+	if(!comp)
+		if(!isliving(src)) // Changeling state only lives on /mob/living (was COMPONENT_INCOMPATIBLE).
+			log_world("make_changeling: [src] ([type]) is not a living mob; no changeling state created.")
+			return
+		var/mob/living/living_self = src
+		comp = new /datum/changeling(living_self)
+		living_self.changeling_state = comp
 	mind.antag_holder.changeling_handle = om_handle(comp)
 	var/lesser_form = !ishuman(src)
 
@@ -157,7 +163,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 	for(var/datum/power/changeling/P in GLOB.powerinstances)
 		if(!P.genomecost) // Is it free?
 			if(!(P in comp.purchased_powers)) // Do we not have it already?
-				comp.purchasePower(comp.owner(), P.name, 0)// Purchase it. Don't remake our verbs, we're doing it after this.
+				comp.purchasePower(comp.owner, P.name, 0)// Purchase it. Don't remake our verbs, we're doing it after this.
 
 	for(var/datum/power/changeling/P in comp.purchased_powers)
 		if(P.isVerb)
@@ -199,7 +205,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 /mob/proc/remove_changeling_powers()
 	if(!mind)
 		return
-	var/datum/component/antag/changeling/comp = is_changeling(src)
+	var/datum/changeling/comp = is_changeling(src)
 	if(!comp)
 		return
 	for(var/datum/power/changeling/P in comp.purchased_powers)
@@ -215,7 +221,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 	if(!src.mind)		return
 	if(!isliving(src))	return
 
-	var/datum/component/antag/changeling/comp = is_changeling(src)
+	var/datum/changeling/comp = is_changeling(src)
 	if(!comp)
 		log_world("[src] used a changeling verb but is not a changeling.")
 		return
@@ -265,7 +271,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 
 //Handles the general sting code to reduce on copypasta (seeming as somebody decided to make SO MANY dumb abilities)
 /mob/proc/changeling_sting(required_chems=0, verb_path)
-	var/datum/component/antag/changeling/comp = changeling_power(required_chems)
+	var/datum/changeling/comp = changeling_power(required_chems)
 	if(!comp)
 		return
 	if(!comp.check_cooldown())
@@ -297,7 +303,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 	comp.set_sting_cooldown()
 
 	to_chat(src, span_notice("We stealthily sting [T]."))
-	var/datum/component/antag/changeling/target_comp = is_changeling(T)
+	var/datum/changeling/target_comp = is_changeling(T)
 	if(!T.mind || !target_comp)
 		return T	//T will be affected by the sting
 	to_chat(T, span_warning("You feel a tiny prick.")) //Stings on other lings have no effect, but they know you're a ling, too.
@@ -350,7 +356,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 	set category = "Changeling"
 	set desc = "Adapt yourself carefully."
 
-	var/datum/component/antag/changeling/comp = is_changeling(src)
+	var/datum/changeling/comp = is_changeling(src)
 	if(!comp)
 		to_chat(src, "You are not a changeling!")
 		return
@@ -364,7 +370,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 	comp.power_panel.tgui_interact(src)
 
 ///Purchasing a power. Called by the Evolution Panel.
-/datum/component/antag/changeling/proc/purchasePower(mob/owner, Pname, remake_verbs = 1)
+/datum/changeling/proc/purchasePower(mob/owner, Pname, remake_verbs = 1)
 
 	var/datum/power/changeling/Thepower = Pname
 
@@ -476,14 +482,25 @@ DECLARE_INTERACTIONS(/obj/item/changeling_debug, INTERACT_USE(null, PROC_REF(int
 
 	switch(action)
 		if("evolve_power")
-			comp().purchasePower(comp().owner(), params["val"]) //The power must be the power's NAME.
+			comp().purchasePower(comp().owner, params["val"]) //The power must be the power's NAME.
 			return TRUE
 	return TRUE
 
 /// LC-refs: the changeling this panel shows -- an OM handle (om_handle()), so it reads null once that is deleted.
-/datum/changeling_panel/proc/comp() as /datum/component/antag/changeling
+/datum/changeling_panel/proc/comp() as /datum/changeling
 	return om_resolve(comp_handle)
 
-REF_OWNED_LIST(/datum/component/antag/changeling, "absorbed_dna")
+/// The mob's changeling state, if any (only living mobs can hold it).
+/mob/proc/get_changeling_state() as /datum/changeling
+	return null
 
-REF_OWNED(/datum/component/antag/changeling, "power_panel")
+/mob/living/get_changeling_state()
+	return changeling_state
+
+REF_VAR(/mob/living, OWNED, /datum/changeling, changeling_state)
+
+REF_BACK(/datum/changeling, list("owner" = "changeling_state"))
+
+REF_OWNED_LIST(/datum/changeling, "absorbed_dna")
+
+REF_OWNED(/datum/changeling, "power_panel")

@@ -31,18 +31,11 @@
 /// Flags for state_serialize() / state_materialize() / state_apply().
 /// Serialize the object's contents as children (refused for mobs).
 #define STATE_CONTENTS (1<<0)
-/// Serialize components whose state_mode is STATE_COMPONENT_SAVE.
+/// Read back legacy component blobs (saves made before the DCS was deleted) into the
+/// entity state that replaced those components (GLOB.state_legacy_component_vars).
 #define STATE_COMPONENTS (1<<1)
-/// Everything: contents and components. What latent entries use.
+/// Everything: contents and legacy component blobs. What latent entries use.
 #define STATE_FULL (STATE_CONTENTS|STATE_COMPONENTS)
-
-/// /datum/component/var/state_mode: what the serializer does with a component.
-/// The object is refused while it has this component (relationships, running behaviour).
-#define STATE_COMPONENT_REFUSE 0
-/// The component is saved as its type plus its saved vars, and re-added on materialize.
-#define STATE_COMPONENT_SAVE 1
-/// The component is derived state (a cache) and is dropped; it is rebuilt on demand.
-#define STATE_COMPONENT_DERIVED 2
 
 /// Default schema version of every type. Bump a type's state_version and add a
 /// state_migrate() step when one of its saved vars is renamed, removed or changes meaning.

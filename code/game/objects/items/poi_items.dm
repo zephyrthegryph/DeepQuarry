@@ -43,7 +43,6 @@
 	..()
 
 /obj/item/poi/pascalb/proc/radiate()
-	SIGNAL_HANDLER
 	if(active)
 		return
 	if(!COOLDOWN_FINISHED(src, event_cooldown))
@@ -133,7 +132,6 @@
 	..()
 
 /obj/item/poi/brokenoldreactor/proc/radiate()
-	SIGNAL_HANDLER
 	if(active)
 		return
 	if(!COOLDOWN_FINISHED(src, event_cooldown))

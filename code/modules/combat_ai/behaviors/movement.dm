@@ -8,7 +8,7 @@
 	name = "approach"
 	priority_class = DQ_BEHAVIOR_PRIORITY_NORMAL
 	target_kind = DQ_TARGET_MOB
-	eval_triggers = list(COMSIG_DQAI_TARGET_CHANGED)
+	eval_triggers = list(DQAI_TRIGGER_TARGET_CHANGED)
 	cooldown = 0
 
 /datum/ai_behavior/approach_threat/evaluate(datum/ai_brain/brain, atom/source)
@@ -71,7 +71,7 @@
 	name = "flee"
 	priority_class = DQ_BEHAVIOR_PRIORITY_INTERRUPT
 	target_kind = DQ_TARGET_MOB
-	eval_triggers = list(COMSIG_DQAI_LOW_HEALTH, COMSIG_DQAI_DAMAGE_TAKEN)
+	eval_triggers = list(DQAI_TRIGGER_LOW_HEALTH, DQAI_TRIGGER_DAMAGE_TAKEN)
 	cooldown = 3 SECONDS
 
 /datum/ai_behavior/flee_low_hp/evaluate(datum/ai_brain/brain, atom/source)

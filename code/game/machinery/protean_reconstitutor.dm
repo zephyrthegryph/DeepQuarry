@@ -304,9 +304,9 @@
 			if(def_lang)
 				P.default_language = def_lang
 
-		SEND_SIGNAL(P, COMSIG_HUMAN_DNA_FINALIZED)
+		OM_EMIT(P, /datum/om/event/human_dna_finalized)
 
-		var/datum/component/mind_host/core_host = get_mind_host(protean_brain)
+		var/datum/mind_host/core_host = get_mind_host(protean_brain)
 		core_host.release_mind(P, "protean reconstitution")
 		protean_brain.forceMove(BR)
 	if(index < length(organs))

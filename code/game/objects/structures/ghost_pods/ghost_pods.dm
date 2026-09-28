@@ -26,22 +26,22 @@
 		log_and_message_admins(adminalert)
 	busy = TRUE
 	Q = new ghost_query_type()
-	RegisterSignal(Q, COMSIG_GHOST_QUERY_COMPLETE, PROC_REF(get_winner))
+	om_hook(Q, /datum/om/event/ghost_query_complete, src, PROC_REF(get_winner))
 	Q.query()
 
-/obj/structure/ghost_pod/proc/get_winner()
-	SIGNAL_HANDLER
+/obj/structure/ghost_pod/proc/get_winner(datum/source, datum/om/event/ghost_query_complete/event)
+	EVENT_HANDLER
 	busy = FALSE
 	if(length(Q.candidates))
 		var/mob/observer/dead/D = Q.candidates[1]
-		UnregisterSignal(Q, COMSIG_GHOST_QUERY_COMPLETE)
+		om_unhook(Q, /datum/om/event/ghost_query_complete, src)
 		QDEL_NULL(Q) //get rid of the query
 		create_occupant(D)
 		return
 
 	if(delay_to_try_again)
 		om_after(src, delay_to_try_again, PROC_REF(trigger))
-	UnregisterSignal(Q, COMSIG_GHOST_QUERY_COMPLETE)
+	om_unhook(Q, /datum/om/event/ghost_query_complete, src)
 	QDEL_NULL(Q) //get rid of the query
 
 // Override this to create whatever mob you need. Be sure to call ..() if you don't want it to make infinite mobs.

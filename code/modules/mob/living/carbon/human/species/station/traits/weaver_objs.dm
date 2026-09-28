@@ -60,8 +60,8 @@
 	icon_state = pick(possible_icon_states)
 
 /obj/effect/weaversilk/wall/CanPass(atom/movable/mover, turf/target)
-	var/datum/component/weaver/comp = mover.GetComponent(/datum/component/weaver) //only spooders can move on by
-	if(comp)
+	var/mob/living/L = mover
+	if(istype(L) && L.get_weaver_state()) //only spooders can move on by
 		return TRUE
 	return FALSE
 
@@ -104,11 +104,10 @@ EXTEND_INTERACTIONS(/obj/structure/bed/double/weaversilk_nest, \
 /obj/effect/weaversilk/trap/Crossed(atom/movable/AM as mob|obj)
 	if(AM.is_incorporeal())
 		return
-	var/datum/component/weaver/comp = AM.GetComponent(/datum/component/weaver)
-	if(comp)
+	var/mob/living/L = AM
+	if(istype(L) && L.get_weaver_state())
 		return
 	if(isliving(AM) && trap_active)
-		var/mob/living/L = AM
 		if(L.m_intent == I_RUN)
 			L.visible_message(
 				span_danger("[L] steps on \the [src]."),

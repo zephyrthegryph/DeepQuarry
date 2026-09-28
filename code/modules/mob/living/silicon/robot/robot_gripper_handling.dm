@@ -31,13 +31,13 @@
 		our_robot.playsound_local(get_turf(our_robot), 'sound/machines/click2.ogg', 50)
 
 ///Stops the gripper from being used multiple times when we're performing a do_after
-/obj/item/gripper/proc/begin_using()
-	SIGNAL_HANDLER
+/obj/item/gripper/proc/begin_using(datum/source, datum/om/event/do_after_began/event)
+	EVENT_HANDLER
 	gripper_in_use = TRUE
 
 ///Allows use of the gripper (and lets go of the item) after do_after is completed. Lets go if the wrapped item is no longer in our borg's contents (items get moved into the borgs contents when using the gripper)
-/obj/item/gripper/proc/end_using()
-	SIGNAL_HANDLER
+/obj/item/gripper/proc/end_using(datum/source, datum/om/event/do_after_ended/event)
+	EVENT_HANDLER
 	gripper_in_use = FALSE
 	var/obj/item/wrapped = get_wrapped_item()
 	if(!wrapped)

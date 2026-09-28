@@ -17,7 +17,7 @@
 	var/varchange_type = TRAIT_VARCHANGE_ALWAYS_OVERRIDE	//Mostly used for non-custom species.
 	var/has_preferences //if set, should be a list of the preferences for this trait in the format: list("identifier/name of var to edit" = list(typeofpref, "text to display in prefs", TRAIT_NO_VAREDIT_TARGET/TRAIT_VAREDIT_TARGET_SPECIES/etc, (optional: default value)), etc) typeofpref should follow the defines in _traits.dm (eg. TRAIT_PREF_TYPE_BOOLEAN)
 	var/special_env = FALSE
-	var/added_component_path		//What component this trait applies, if any.
+	var/added_component_path		//What per-mob state (a /datum/trait_state path, see species_state_add()) this trait applies, if any.
 	var/added_behaviour_path		//What OM behaviour this trait attaches, if any.
 
 
@@ -80,8 +80,8 @@
 	add_verb(H, /mob/living/carbon/human/proc/trait_tutorial)
 	if(special_env)
 		LAZYADD(S.env_traits, src)
-	if(added_component_path && !H.GetComponent(added_component_path))
-		H.AddComponent(added_component_path)
+	if(added_component_path && !species_state_has(H, added_component_path))
+		species_state_add(H, added_component_path)
 	if(added_behaviour_path)
 		om_attach(H, added_behaviour_path)
 	return
@@ -119,18 +119,17 @@
 	if(added_behaviour_path && H)
 		om_detach(H, added_behaviour_path)
 	if(added_component_path)
-		var/datum/component/C = H.GetComponent(added_component_path)
-		if(C)
+		if(species_state_has(H, added_component_path))
 			if(LAZYLEN(S.species_component))
 				//Species_component is a list of paths.
 				for(var/checked_species_component in S.species_component)
-					//Ex: ACP = /datum/component/radioactive/type2 CSC = /datum/component/radioactive. This returns.
+					//Ex: ACP = /datum/trait_state/radioactive/type2 CSC = /datum/trait_state/radioactive. This returns.
 					if(ispath(added_component_path, checked_species_component))
 						return
-					//Ex: ACP = /datum/component/radioactive CSC = /datum/component/radioactive/shadekin. This passes.
+					//Ex: ACP = /datum/trait_state/radioactive CSC = /datum/trait_state/radioactive/shadekin. This passes.
 					if(ispath(checked_species_component, added_component_path))
 						return
-			qdel(C)
+			species_state_remove(H, added_component_path)
 	return
 
 /datum/trait/proc/send_message(mob/living/carbon/human/H, enabled)

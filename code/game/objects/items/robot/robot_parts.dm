@@ -207,7 +207,7 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/robot_suit, INTERACT_ITEM(null, PROC_
 			O.custom_name = created_name
 			O.updatename("Default")
 
-			var/datum/component/mind_host/host = get_mind_host(M)
+			var/datum/mind_host/host = get_mind_host(M)
 			if(host?.release_mind(O, "borged by [key_name(user)]"))
 				if(O.mind && O.mind.special_role)
 					O.mind.store_memory("In case you look at this after being borged, the objectives are only here until I find a way to make them not show up for you, as I can't simply delete them without screwing up round-end reporting. --NeoFite")

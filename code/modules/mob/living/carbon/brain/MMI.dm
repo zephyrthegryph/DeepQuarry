@@ -24,7 +24,7 @@
 /obj/item/mmi/Initialize(mapload)
 	. = ..()
 	radio = new(src)//Spawns a radio inside the MMI.
-	AddComponent(/datum/component/mind_host)
+	make_mind_host()
 
 /// The occupant view mob (the hosted mind lives there), if any.
 /obj/item/mmi/proc/get_occupant()
@@ -37,13 +37,13 @@
 		B.preserved = TRUE
 		if(B.loc != src)
 			B.forceMove(src)
-	var/datum/component/mind_host/host = get_mind_host(src)
+	var/datum/mind_host/host = get_mind_host(src)
 	host?.set_tissue(B)
 
 /// Make this MMI hold `L`'s character (by reference). With `move_mind`, `L`'s
 /// mind comes along too; otherwise the mind is expected elsewhere (a borg).
 /obj/item/mmi/proc/take_identity(mob/living/L, move_mind = FALSE)
-	var/datum/component/mind_host/host = get_mind_host(src)
+	var/datum/mind_host/host = get_mind_host(src)
 	var/mob/living/carbon/brain/view = host.receive_mind(move_mind ? L.mind : null, "[L] placed into [src]")
 	view.bind_identity(L.mind ? L.mind.get_identity() : L.identity())
 	update_occupied_state()
@@ -122,7 +122,7 @@ DECLARE_INTERACTIONS(/obj/item/mmi, INTERACT_ITEM(null, PROC_REF(interaction_ite
 /// Seat a removed brain: the organ becomes the tissue and its view (with the
 /// mind) moves into this MMI. Nothing is copied.
 /obj/item/mmi/proc/insert_brain(obj/item/organ/internal/brain/B, reason = "brain inserted")
-	var/datum/component/mind_host/host = get_mind_host(src)
+	var/datum/mind_host/host = get_mind_host(src)
 	if(host.view && !host.view.mind && !brainobj)
 		log_game("MIND: [src] discarded its empty view to seat [B]: [reason]")
 		host.discard_view()
@@ -158,7 +158,7 @@ DECLARE_INTERACTIONS(/obj/item/mmi, INTERACT_ITEM(null, PROC_REF(interaction_ite
 	else
 		brain.moveToNullspace()
 	// The view moves to the organ before the MMI lets go of its tissue, so it is never tissue-less.
-	var/datum/component/mind_host/brain_host = get_mind_host(brain)
+	var/datum/mind_host/brain_host = get_mind_host(brain)
 	brain_host.adopt_view(get_mind_host(src), reason)
 	set_brain(null)
 	update_occupied_state()
@@ -181,7 +181,7 @@ DECLARE_INTERACTIONS(/obj/item/mmi, INTERACT_ITEM(null, PROC_REF(interaction_ite
 		borg.mmi = null
 	QDEL_NULL(radio)
 	// The occupant goes first: deleting the tissue under a live view would kill it for nothing.
-	var/datum/component/mind_host/host = get_mind_host(src)
+	var/datum/mind_host/host = get_mind_host(src)
 	host?.discard_view()
 	if(brainobj)
 		QDEL_NULL(brainobj)
@@ -221,7 +221,7 @@ DECLARE_INTERACTIONS(/obj/item/mmi, INTERACT_ITEM(null, PROC_REF(interaction_ite
 /obj/item/mmi/digital/Initialize(mapload)
 	. = ..()
 	// A synthetic mind host: an empty view waits for a mind, with no tissue.
-	var/datum/component/mind_host/host = get_mind_host(src)
+	var/datum/mind_host/host = get_mind_host(src)
 	var/mob/living/carbon/brain/view = host.receive_mind(null, "[src] booted")
 //	view.add_language(LANGUAGE_ROBOT_TALK)//No binary without a binary communication device
 	view.add_language(LANGUAGE_GALCOM)
@@ -279,17 +279,17 @@ EXTEND_INTERACTIONS(/obj/item/mmi/digital, INTERACT_ITEM(null, PROC_REF(digital_
 	searching = 1
 
 	Q = new ghost_query_type()
-	RegisterSignal(Q, COMSIG_GHOST_QUERY_COMPLETE, PROC_REF(get_winner))
+	om_hook(Q, /datum/om/event/ghost_query_complete, src, PROC_REF(get_winner))
 	Q.query()
 
-/obj/item/mmi/digital/proc/get_winner()
-	SIGNAL_HANDLER
+/obj/item/mmi/digital/proc/get_winner(datum/source, datum/om/event/ghost_query_complete/event)
+	EVENT_HANDLER
 	if(Q && Q.candidates.len) //Q should NEVER get deleted but...whatever, sanity.
 		var/mob/observer/dead/D = Q.candidates[1]
 		transfer_personality(D)
 	else
 		reset_search()
-	UnregisterSignal(Q, COMSIG_GHOST_QUERY_COMPLETE)
+	om_unhook(Q, /datum/om/event/ghost_query_complete, src)
 	QDEL_NULL(Q) //get rid of the query
 
 /obj/item/mmi/digital/proc/reset_search() //We give the players sixty seconds to decide, then reset the timer.
@@ -387,7 +387,7 @@ EXTEND_INTERACTIONS(/obj/item/mmi/digital, INTERACT_ITEM(null, PROC_REF(digital_
 
 /obj/item/mmi/inert/Initialize(mapload)
 	. = ..()
-	qdel(GetComponent(/datum/component/mind_host))
+	QDEL_NULL(mind_host)
 
 // This is a 'fake' MMI that is used to let AIs control borg shells directly.
 // This doesn't inherit from /digital because all that does is add ghost pulling capabilities, which this thing won't need.

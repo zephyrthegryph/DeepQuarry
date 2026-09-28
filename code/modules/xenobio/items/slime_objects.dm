@@ -187,7 +187,6 @@ DECLARE_INTERACTIONS(/obj/item/slime_crystal, INTERACT_USE(null, PROC_REF(intera
 	radiate()
 
 /obj/item/slime_irradiator/proc/radiate()
-	SIGNAL_HANDLER
 	if(active)
 		return
 	if(!COOLDOWN_FINISHED(src, event_cooldown))

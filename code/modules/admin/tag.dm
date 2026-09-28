@@ -10,12 +10,12 @@
 		return
 
 	LAZYADD(tagged_datums, target_datum)
-	RegisterSignal(target_datum, COMSIG_QDELETING, PROC_REF(handle_tagged_del), override = TRUE)
+	om_hook(target_datum, /datum/om/event/qdeleting, src, PROC_REF(handle_tagged_del))
 	to_chat(owner(), span_notice("[target_datum] has been tagged."))
 
 /// Get ahead of the curve with deleting
-/datum/admins/proc/handle_tagged_del(datum/source)
-	SIGNAL_HANDLER
+/datum/admins/proc/handle_tagged_del(datum/source, datum/om/event/qdeleting/event)
+	EVENT_HANDLER
 
 	if(owner())
 		to_chat(owner(), span_boldnotice("Tagged datum [source] ([source.type]) has been deleted."))

@@ -74,9 +74,10 @@ GLOBAL_VAR(dq_lifecycle_snapshot_var_keys)
 			snapshot["radio [frequency_text] [radio_filter]"] = length(devices)
 	for(var/id in GLOB.registries)
 		snapshot["registry [id]"] = REGISTRY_COUNT(id)
-	for(var/signal in SSdcs._listen_lookup)
-		var/listeners = SSdcs._listen_lookup[signal]
-		snapshot["global signal [signal]"] = islist(listeners) ? length(listeners) : 1
+	var/list/world_hooks = OM_WORLD.om_rec?.hooks_in
+	for(var/event_path in world_hooks)
+		var/list/hooks = world_hooks[event_path]
+		snapshot["world hook [event_path]"] = length(hooks) / 2
 	return snapshot
 
 /// The keys whose sizes differ between two snapshots, as readable lines.

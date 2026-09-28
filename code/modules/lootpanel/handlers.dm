@@ -1,6 +1,6 @@
 /// On searchables change, either reset or update
-/datum/lootpanel/proc/on_searchable_deleted(datum/search_object/source)
-	SIGNAL_HANDLER
+/datum/lootpanel/proc/on_searchable_deleted(datum/search_object/source, datum/om/event/qdeleting/event)
+	EVENT_HANDLER
 
 	searchables -= source
 	LAZYREMOVE(to_image, source)

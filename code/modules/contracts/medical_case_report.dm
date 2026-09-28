@@ -77,7 +77,7 @@
 	var/consent_info = consent_time ? "<h2>VeyMed Certified Replacement Consent</h2><b>Patient:</b> [target_name]<br><b>Observed condition:</b> [target_condition_name]<br><b>Status:</b> Consent previously registered with the case registry." : "<h2>VeyMed Clinical Case Registry Consent</h2><b>Patient:</b> [target_name]<br><b>Observed condition:</b> [target_condition_name]<br><br>The signatory authorizes transmission of relevant conditions, treatment history, body-scanner findings, and outcome observations for this case report.<br><br><b>Patient signature:</b> <span class=\"paper_field\"></span>"
 	var/obj/item/paper/consent = create_contract_document(location, "case registry consent - [target_name]", consent_info, id, CONTRACT_DOCUMENT_RARE_CASE_CONSENT, CONTRACT_FAX_CASE_REGISTRY, list("issuer_account" = issuer_account, "subject_ref" = target_ref, "subject_id" = target_ref, "signed" = !!consent_time, "signature_time" = consent_time))
 	if(consent_time)
-		var/datum/component/contract_document/consent_document = consent.GetComponent(/datum/component/contract_document)
+		var/datum/contract_document/consent_document = consent.contract_document
 		SScontracts.bind_evidence_subject(consent_document.evidence_id, target_ref)
 		audit(CONTRACT_AUDIT_RECOVERY, "Issued certified replacement case forms for [target_name].")
 	var/report_info = "<h2>Rare Clinical Case Narrative</h2><b>Patient:</b> [target_name]<br><b>Condition:</b> [target_condition_name]<br><br><b>Treatment performed:</b> <span class=\"paper_field\"></span><br><br><b>Clinical outcome and complications:</b> <span class=\"paper_field\"></span>"
@@ -109,7 +109,7 @@
 	audit(CONTRACT_AUDIT_PROGRESS, "[target_name] withdrew consent; the unsubmitted case report was cancelled without penalty.")
 	return cancel("The patient withdrew consent before the clinical record was submitted.")
 
-/datum/component/contract_document/proc/register_rare_case_signature(obj/item/paper/paper, mob/living/carbon/human/subject)
+/datum/contract_document/proc/register_rare_case_signature(obj/item/paper/paper, mob/living/carbon/human/subject)
 	var/datum/contract/medical_case_report/report = SScontracts.contracts_by_id[contract_id]
 	if(payload["signed"] || !istype(subject) || !istype(report) || !report.register_consent(paper, subject))
 		return FALSE
@@ -131,7 +131,7 @@
 	), "document-signed:[evidence_id]", paper, subject, subject)
 	return TRUE
 
-/datum/component/contract_document/proc/register_rare_case_narrative_field(field_id)
+/datum/contract_document/proc/register_rare_case_narrative_field(field_id)
 	if(!isnum(field_id) || field_id < 1)
 		return FALSE
 	LAZYINITLIST(payload["completed_fields"])
@@ -194,12 +194,12 @@
 	return null
 
 /proc/process_rare_case_evidence_packet(obj/item/paper_bundle/packet, sender_account, mob/living/sender)
-	var/datum/component/contract_document/consent_document
+	var/datum/contract_document/consent_document
 	var/obj/item/paper/narrative
-	var/datum/component/contract_document/narrative_document
+	var/datum/contract_document/narrative_document
 	var/list/scans = list()
 	for(var/obj/item/paper/page in packet.pages)
-		var/datum/component/contract_document/document = page.GetComponent(/datum/component/contract_document)
+		var/datum/contract_document/document = page.contract_document
 		if(document?.document_kind == CONTRACT_DOCUMENT_RARE_CASE_CONSENT)
 			if(consent_document)
 				to_chat(sender, span_warning("The case registry rejects the packet: submit exactly one consent form."))

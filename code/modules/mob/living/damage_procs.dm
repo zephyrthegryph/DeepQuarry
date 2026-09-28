@@ -21,7 +21,7 @@
 			// P2-F7: check_protection is honoured: callers that pass 0 (DNA scanners and
 			// injectors dosing from inside the suit) skip the radiation armour.
 			var/rad_protection = check_protection ? radiation_protection_fraction() : 1
-			if(!(SEND_SIGNAL(src, COMSIG_LIVING_IRRADIATE_EFFECT, effect, effecttype, blocked, check_protection, rad_protection) & COMPONENT_BLOCK_IRRADIATION))
+			if(!(OM_EMIT(src, /datum/om/event/before/living_irradiate_effect, effect, effecttype, blocked, check_protection, rad_protection) & COMPONENT_BLOCK_IRRADIATION))
 				radiation += max((effect * rad_protection), 0)
 		if(STUTTER)
 			if(!status_immune(EFFECT_STUNNED)) // stun is usually associated with stutter

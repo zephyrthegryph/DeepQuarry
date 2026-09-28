@@ -223,7 +223,7 @@ DECLARE_INTERACTIONS(/obj/item/bug_monitor, \
 		unpair(selected_camera())
 		selected_camera_handle = null
 		return
-	user.AddComponent(/datum/component/remote_view/item_zoom, focused_on = selected_camera(), vconfig_path = /datum/remote_view_config/camera_standard, our_item = src, viewsize = null, tileoffset = 0, show_visible_messages = TRUE)
+	user.begin_remote_view(/datum/remote_view/item_zoom, selected_camera(), null, /datum/remote_view_config/camera_standard, src, 0, TRUE)
 
 /obj/item/bug_monitor/proc/can_use_cam(mob/user)
 	if(!cameras.len)

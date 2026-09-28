@@ -16,25 +16,25 @@ It is used to destroy hand-held objects and advance technological research. Used
 	idle_power_usage = 30
 	active_power_usage = 2500
 	var/rped_recycler_ready = TRUE
-	var/datum/component/remote_materials/rmat
+	var/datum/remote_materials/rmat
 
 /obj/machinery/rnd/destructive_analyzer/Initialize(mapload)
-	rmat = AddComponent( \
-		/datum/component/remote_materials, \
+	rmat = new /datum/remote_materials( \
+		src, \
 		mapload, \
 		mat_container_flags = MATCONTAINER_NO_INSERT \
 	)
 
 	//Destructive analysis
-	var/static/list/destructive_signals = list(
-		COMSIG_MACHINERY_DESTRUCTIVE_SCAN = TYPE_PROC_REF(/datum/component/experiment_handler, try_run_destructive_experiment),
+	var/static/list/destructive_events = list(
+		/datum/om/event/machinery_destructive_scan = TYPE_PROC_REF(/datum/experiment_handler, try_run_destructive_experiment),
 	)
 
-	AddComponent(/datum/component/experiment_handler, \
+	new /datum/experiment_handler(src, \
 		config_mode = EXPERIMENT_CONFIG_ALTCLICK, \
 		allowed_experiments = list(/datum/experiment/scanning),\
 		config_flags = EXPERIMENT_CONFIG_ALWAYS_ACTIVE|EXPERIMENT_CONFIG_SILENT_FAIL,\
-		experiment_signals = destructive_signals, \
+		experiment_events = destructive_events, \
 	)
 	. = ..()
 	default_apply_parts()
@@ -156,7 +156,7 @@ It is used to destroy hand-held objects and advance technological research. Used
 		atom_say("Mass part deconstruction attempt canceled - no valid parts for recycling detected.")
 		return TRUE
 	// Sending salvaged materials to the silo
-	var/datum/component/material_container/materials = get_silo_material_container_datum(TRUE)
+	var/datum/material_container/materials = get_silo_material_container_datum(TRUE)
 	if(!materials)
 		return TRUE
 	replacer.latent_materialize_all() // a walk needs real things (C5)
@@ -179,7 +179,7 @@ It is used to destroy hand-held objects and advance technological research. Used
 	playsound(get_turf(src), 'sound/machines/chime.ogg', 50, 1)
 
 /obj/machinery/rnd/destructive_analyzer/proc/get_silo_material_container_datum(verbose)
-	var/datum/component/material_container/materials = rmat.mat_container()
+	var/datum/material_container/materials = rmat.mat_container()
 	if(!materials)
 		if(verbose)
 			atom_say("No access to material storage, please contact the quartermaster.")
@@ -312,10 +312,10 @@ It is used to destroy hand-held objects and advance technological research. Used
 
 	//Perform experiment
 	techweb_item_generate_points(thing, stored_research)
-	SEND_SIGNAL(src, COMSIG_MACHINERY_DESTRUCTIVE_SCAN, thing)
+	OM_EMIT(src, /datum/om/event/machinery_destructive_scan, thing)
 
 	//Finally, let's add it to the material silo, if applicable.
-	var/datum/component/material_container/materials = get_silo_material_container_datum(FALSE)
+	var/datum/material_container/materials = get_silo_material_container_datum(FALSE)
 	if(materials)
 		materials.insert_item(thing, decon_mod, src, FALSE)
 	qdel(thing)

@@ -85,7 +85,7 @@
 // Spawn a single fish at given location.
 /datum/event/spacefish_migration/proc/spawn_one_fish(loc)
 	var/mob/living/simple_mob/animal/M = new fish_type(loc)
-	RegisterSignal(M, COMSIG_OBSERVER_DESTROYED, PROC_REF(on_fish_destruction))
+	om_hook(M, /datum/om/event/qdeleting, src, PROC_REF(on_fish_destruction))
 	LAZYADD(spawned_fish, M)
 	return M
 
@@ -97,10 +97,10 @@
 			. += 1
 
 // If fish is bomphed, remove it from the list.
-/datum/event/spacefish_migration/proc/on_fish_destruction(mob/M)
-	SIGNAL_HANDLER
+/datum/event/spacefish_migration/proc/on_fish_destruction(mob/M, datum/om/event/qdeleting/event)
+	EVENT_HANDLER
 	LAZYREMOVE(spawned_fish, M)
-	UnregisterSignal(M, COMSIG_OBSERVER_DESTROYED)
+	om_unhook(M, /datum/om/event/qdeleting, src)
 
 /datum/event/spacefish_migration/end()
 	. = ..()

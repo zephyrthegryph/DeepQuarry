@@ -37,7 +37,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/fusion_core, REGISTRY_FUSION_CORES)
 /obj/machinery/power/fusion_core/Initialize(mapload)
 	. = ..()
 
-	AddComponent(/datum/component/hose_connector/output)
+	add_hose_connector(/datum/hose_connector/output)
 
 	create_reagents(10000)
 
@@ -70,7 +70,7 @@ REF_SPILL(/obj/machinery/power/fusion_core, "material_sample")
 		Shutdown()
 		return PROCESS_KILL
 
-	SEND_SIGNAL(src, COMSIG_HOSE_FORCEPUMP)
+	OM_EMIT(src, /datum/om/event/hose_forcepump)
 
 	if(owned_field)
 

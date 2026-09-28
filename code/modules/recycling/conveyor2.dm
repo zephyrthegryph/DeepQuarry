@@ -32,7 +32,7 @@
 /obj/machinery/conveyor/Initialize(mapload, newdir, on = 0)
 	. = ..()
 	if(loc)
-		RegisterSignal(loc, COMSIG_ATOM_ENTERED, PROC_REF(on_turf_entered))
+		om_hook(loc, /datum/om/event/atom_entered, src, PROC_REF(on_turf_entered))
 	if(newdir)
 		set_dir(newdir)
 
@@ -51,13 +51,14 @@
 
 /obj/machinery/conveyor/Moved(atom/old_loc, direction, forced = FALSE)
 	if(old_loc)
-		UnregisterSignal(old_loc, COMSIG_ATOM_ENTERED)
+		om_unhook(old_loc, /datum/om/event/atom_entered, src)
 	. = ..()
 	if(loc)
-		RegisterSignal(loc, COMSIG_ATOM_ENTERED, PROC_REF(on_turf_entered))
+		om_hook(loc, /datum/om/event/atom_entered, src, PROC_REF(on_turf_entered))
 
-/obj/machinery/conveyor/proc/on_turf_entered(datum/source, atom/movable/arrived)
-	SIGNAL_HANDLER
+/obj/machinery/conveyor/proc/on_turf_entered(datum/source, datum/om/event/atom_entered/event)
+	EVENT_HANDLER
+	var/atom/movable/arrived = event.arrived
 	if(operating && arrived && !arrived.anchored && !istype(arrived, /obj/effect/abstract) && !arrived.is_incorporeal())
 		MACHINE_WAKE(src)
 

@@ -18,7 +18,7 @@
 		pixel_y = (dir & 3)? (dir ==1 ? -27 : 27) : 0
 	else
 		has_extinguisher = new/obj/item/extinguisher(src)
-		RegisterSignal(has_extinguisher, COMSIG_QDELETING, PROC_REF(on_extinguisher_deleted))
+		om_hook(has_extinguisher, /datum/om/event/qdeleting, src, PROC_REF(on_extinguisher_deleted))
 
 	update_icon()
 
@@ -43,7 +43,7 @@
 			user.remove_from_mob(O)
 			O.forceMove(src)
 			has_extinguisher = O
-			RegisterSignal(has_extinguisher, COMSIG_QDELETING, PROC_REF(on_extinguisher_deleted))
+			om_hook(has_extinguisher, /datum/om/event/qdeleting, src, PROC_REF(on_extinguisher_deleted))
 			to_chat(user, span_notice("You place [O] in [src]."))
 		else
 			opened = !opened
@@ -84,7 +84,7 @@
 			to_chat(user, span_notice("You try to move your [temp.name], but cannot!"))
 			return TRUE
 	if(has_extinguisher)
-		UnregisterSignal(has_extinguisher, COMSIG_QDELETING)
+		om_unhook(has_extinguisher, /datum/om/event/qdeleting, src)
 		user.put_in_hands(has_extinguisher)
 		to_chat(user, span_notice("You take [has_extinguisher] from [src]."))
 		has_extinguisher = null
@@ -96,7 +96,7 @@
 
 /obj/structure/extinguisher_cabinet/attack_tk(mob/user)
 	if(has_extinguisher)
-		UnregisterSignal(has_extinguisher, COMSIG_QDELETING)
+		om_unhook(has_extinguisher, /datum/om/event/qdeleting, src)
 		has_extinguisher.forceMove(loc)
 		to_chat(user, span_notice("You telekinetically remove [has_extinguisher] from [src]."))
 		has_extinguisher = null
@@ -105,8 +105,8 @@
 		opened = !opened
 	update_icon()
 
-/obj/structure/extinguisher_cabinet/proc/on_extinguisher_deleted(datum/source)
-	SIGNAL_HANDLER
+/obj/structure/extinguisher_cabinet/proc/on_extinguisher_deleted(datum/source, datum/om/event/qdeleting/event)
+	EVENT_HANDLER
 	if(source != has_extinguisher)
 		return
 	has_extinguisher = null

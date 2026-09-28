@@ -108,10 +108,10 @@ REF_OWNED_VALUES(/datum/reagents, "reagent_by_id")
 	return TRUE
 
 /// Called after handle_reactions() finishes processing, if reactions occurred.
-/// Base implementation sends COMSIG_REAGENTS_HOLDER_REACTED.
-/// Subtypes that do not want this signal (e.g. distilling) override to do nothing.
+/// Base implementation emits /datum/om/event/reagents_holder_reacted.
+/// Subtypes that do not want this event (e.g. distilling) override to do nothing.
 /datum/reagents/proc/on_reactions_handled(list/effect_reactions)
-	SEND_SIGNAL(src, COMSIG_REAGENTS_HOLDER_REACTED, effect_reactions)
+	OM_EMIT(src, /datum/om/event/reagents_holder_reacted, effect_reactions)
 
 /datum/reagents/proc/handle_reactions()
 	if(QDELETED(my_atom))

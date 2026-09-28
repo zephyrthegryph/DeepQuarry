@@ -20,27 +20,26 @@
 	if (!(target in motionTargets))
 		LAZYADD(motionTargets, target)
 		// Losing a target is event driven: it moves, dies or is deleted.
-		RegisterSignal(target, COMSIG_MOVABLE_MOVED, PROC_REF(on_motion_target_changed), TRUE)
-		RegisterSignal(target, COMSIG_MOB_STATCHANGE, PROC_REF(on_motion_target_changed), TRUE)
-		RegisterSignal(target, COMSIG_QDELETING, PROC_REF(on_motion_target_deleted), TRUE)
+		om_hook(target, list(/datum/om/event/moved, /datum/om/event/mob_statchange), src, PROC_REF(on_motion_target_changed))
+		om_hook(target, /datum/om/event/qdeleting, src, PROC_REF(on_motion_target_deleted))
 	schedule_camera_timer()
 	return 1
 
 /// A tracked target moved or changed stat: drop it if it died or (outside an
 /// ai_monitored area, which tracks its own exits) left the camera's range.
-/obj/machinery/camera/proc/on_motion_target_changed(mob/target)
-	SIGNAL_HANDLER
+/obj/machinery/camera/proc/on_motion_target_changed(mob/target, datum/om/event/event)
+	EVENT_HANDLER
 	if(target.stat == DEAD || (!area_motion() && !in_range(src, target)))
 		lostTarget(target)
 
-/obj/machinery/camera/proc/on_motion_target_deleted(mob/target)
-	SIGNAL_HANDLER
+/obj/machinery/camera/proc/on_motion_target_deleted(mob/target, datum/om/event/qdeleting/event)
+	EVENT_HANDLER
 	lostTarget(target)
 
 /obj/machinery/camera/proc/lostTarget(mob/target)
 	if (target in motionTargets)
 		LAZYREMOVE(motionTargets, target)
-		UnregisterSignal(target, list(COMSIG_MOVABLE_MOVED, COMSIG_MOB_STATCHANGE, COMSIG_QDELETING))
+		om_unhook(target, list(/datum/om/event/moved, /datum/om/event/mob_statchange, /datum/om/event/qdeleting), src)
 	if (LAZYLEN(motionTargets) == 0)
 		cancelAlarm()
 

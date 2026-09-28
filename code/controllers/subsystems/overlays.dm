@@ -234,8 +234,6 @@ SUBSYSTEM_DEF(overlays)
 			continue
 		if(name == "vars") // Go away
 			continue
-		if(name == "_listen_lookup") // This is just gonna happen with marked datums, don't care
-			continue
 		if(name == "overlays")
 			first.realize_overlays()
 			second.realize_overlays()

@@ -53,7 +53,7 @@
 		// Sometimes the fryer will start with much less than full oil, significantly impacting efficiency until filled
 		variance = rand()*0.5
 	oil.add_reagent(REAGENT_ID_COOKINGOIL, optimal_oil*(1 - variance))
-	AddComponent(/datum/component/hose_connector/input/fryer)
+	add_hose_connector(/datum/hose_connector/input/fryer)
 
 REF_OWNED(/obj/machinery/appliance/cooker/fryer, list("fry_loop", "oil"))
 

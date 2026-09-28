@@ -2,56 +2,56 @@
 // Appearance is data (/datum/protean_blob_style); this form holds the
 // character's choices (style, colours, per-layer states).
 
-/datum/component/forms/protean
+/datum/forms/protean
 	/// The character's nanosuit control cluster. Per-character, lives here.
 	/// There is only ever the one: if it is destroyed, it is gone.
 	var/obj/item/rig/protean/rig
 	/// world.time of the last form change (form strain).
 	var/last_switch_time = 0
 
-/datum/component/forms/protean/get_form_types()
+/datum/forms/protean/get_form_types()
 	var/static/list/types = list(/datum/form/human, /datum/form/protean_blob)
 	return types
 
-/datum/component/forms/protean/RegisterWithParent()
+/datum/forms/protean/attach()
 	. = ..()
-	var/mob/living/carbon/human/H = parent
+	var/mob/living/carbon/human/H = owner
 	var/list/power_verbs = protean_power_verbs()
 	if(length(power_verbs))
 		add_verb(H, power_verbs)
 
-/datum/component/forms/protean/UnregisterFromParent()
-	var/mob/living/carbon/human/H = parent
+/datum/forms/protean/detach()
+	var/mob/living/carbon/human/H = owner
 	var/list/power_verbs = protean_power_verbs()
 	if(length(power_verbs))
 		remove_verb(H, power_verbs)
 	return ..()
 
 // ALLOW(lifecycle): the protean's rig forgets its protean.
-/datum/component/forms/protean/Destroy(force)
-	if(rig?.myprotean == parent)
+/datum/forms/protean/Destroy(force)
+	if(rig && (!owner || rig.myprotean == owner))
 		rig.myprotean = null
 	// A handle-kind var is never cleaned by the lifecycle: drop it here.
 	rig = null
 	return ..()
 
-/datum/component/forms/protean/proc/blob_form()
+/datum/forms/protean/proc/blob_form()
 	RETURN_TYPE(/datum/form/protean_blob)
 	return forms[/datum/form/protean_blob]
 
 /// Inside our own control cluster (worn or lying about).
-/datum/component/forms/protean/proc/in_rig()
-	var/mob/living/carbon/human/H = parent
+/datum/forms/protean/proc/in_rig()
+	var/mob/living/carbon/human/H = owner
 	return rig && H.loc == rig
 
-/datum/component/forms/protean/proc/is_dormant()
-	var/mob/living/carbon/human/H = parent
+/datum/forms/protean/proc/is_dormant()
+	var/mob/living/carbon/human/H = owner
 	return !!H.body?.find_affliction(/datum/affliction/core_dormancy)
 
 /// Fold into the control cluster. Collapses into the blob first. Fails if
 /// the cluster is gone.
-/datum/component/forms/protean/proc/enter_rig()
-	var/mob/living/carbon/human/H = parent
+/datum/forms/protean/proc/enter_rig()
+	var/mob/living/carbon/human/H = owner
 	if(!rig)
 		to_chat(H, span_warning("Your control cluster is gone. You have nothing to fold into."))
 		log_game("FORMS: [key_name(H)] tried to fold into a control cluster they no longer have.")
@@ -78,8 +78,8 @@
 
 /// Unfold from the control cluster, putting it back on. With `devour`, a host
 /// that allows it ends up in the selected belly.
-/datum/component/forms/protean/proc/leave_rig(devour = FALSE)
-	var/mob/living/carbon/human/H = parent
+/datum/forms/protean/proc/leave_rig(devour = FALSE)
+	var/mob/living/carbon/human/H = owner
 	if(!in_rig())
 		return FALSE
 	var/mob/living/wearer = rig.wearer()
@@ -99,20 +99,19 @@
 	return TRUE
 
 /// Changing shape quickly strains the swarm (form_strain).
-/datum/component/forms/protean/set_form(form_type, silent = FALSE)
+/datum/forms/protean/set_form(form_type, silent = FALSE)
 	var/previous_switch = last_switch_time
 	. = ..()
 	if(!.)
 		return
 	last_switch_time = world.time
 	if(previous_switch && world.time - previous_switch < NANITE_FORM_SWITCH_GRACE)
-		var/mob/living/carbon/human/H = parent
+		var/mob/living/carbon/human/H = owner
 		H.body?.afflict(/datum/affliction/nanite/form_strain, null, NANITE_STRAIN_PER_FAST_SWITCH)
 		log_game("FORMS: [key_name(H)] changed form again within [NANITE_FORM_SWITCH_GRACE / 10] seconds; form strain.")
 
 /// Upkeep of the swarm's shape and its control cluster.
-/datum/component/forms/protean/on_life(mob/living/source)
-	SIGNAL_HANDLER
+/datum/forms/protean/on_life(mob/living/source)
 	..()
 	if(source.stat == DEAD || is_dormant())
 		return
@@ -124,8 +123,8 @@
 /// The orchestrator coordinates a change of shape. A damaged one may fail to:
 /// the chance of failure is half its damage's severity. Returns TRUE when the
 /// swarm holds together for the change.
-/datum/component/forms/protean/proc/form_control_check()
-	var/mob/living/carbon/human/H = parent
+/datum/forms/protean/proc/form_control_check()
+	var/mob/living/carbon/human/H = owner
 	var/obj/item/organ/internal/nano/orchestrator/O = H.internal_organs_by_name?[O_ORCH]
 	var/datum/affliction/nanite/orchestrator_damage/damage = O && H.body?.find_affliction(/datum/affliction/nanite/orchestrator_damage, O)
 	if(!damage || !prob(damage.severity / 2))
@@ -159,13 +158,13 @@
 	RETURN_TYPE(/datum/protean_blob_style)
 	return protean_blob_styles()[style_id] || protean_blob_styles()["puddle1"]
 
-/datum/form/protean_blob/on_enter(datum/component/forms/F, mob/living/carbon/human/H)
+/datum/form/protean_blob/on_enter(datum/forms/F, mob/living/carbon/human/H)
 	release_everything(H)
 	..()
 	H.item_state = style_id
 	H.vore_capacity = get_style().vore_capacity
 
-/datum/form/protean_blob/on_exit(datum/component/forms/F, mob/living/carbon/human/H)
+/datum/form/protean_blob/on_exit(datum/forms/F, mob/living/carbon/human/H)
 	if(hiding)
 		set_hiding(H, FALSE)
 	H.item_state = null
@@ -177,7 +176,7 @@
 	..()
 	to_chat(H, span_notice("You rapidly disassociate your form. In this form your nanites repair you from your refactory's steel."))
 
-/datum/form/protean_blob/build_overlays(datum/component/forms/F, mob/living/carbon/human/H)
+/datum/form/protean_blob/build_overlays(datum/forms/F, mob/living/carbon/human/H)
 	if(hiding)
 		return list(image('icons/mob/species/protean/protean.dmi', "hide"))
 	return get_style().build(src, H)
@@ -213,14 +212,14 @@
 	hiding = new_hiding
 	if(hiding)
 		H.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
-		RegisterSignal(H, COMSIG_MOVABLE_PRE_MOVE, PROC_REF(block_move))
+		om_hook(H, /datum/om/event/before/movable_pre_move, src, PROC_REF(block_move))
 	else
 		H.mouse_opacity = MOUSE_OPACITY_ICON
-		UnregisterSignal(H, COMSIG_MOVABLE_PRE_MOVE)
+		om_unhook(H, /datum/om/event/before/movable_pre_move, src)
 	H.get_forms()?.refresh_appearance()
 
-/datum/form/protean_blob/proc/block_move(atom/movable/source)
-	SIGNAL_HANDLER
+/datum/form/protean_blob/proc/block_move(atom/movable/source, datum/om/event/before/movable_pre_move/event)
+	EVENT_HANDLER
 	return COMPONENT_MOVABLE_BLOCK_PRE_MOVE
 
 // --- Blob styles: appearance as data ---------------------------------------------------
@@ -502,3 +501,11 @@
 /// The extended breastplate follows the second metal shell.
 /datum/protean_blob_style/layered/dullahan/derive_states(list/states)
 	states[6] = (states[3] == "dullahanmetal2") ? "dullahanextendedon" : "dullahanextendedoff"
+
+/// The character's protean forms, or null when it is not a protean.
+/mob/living/proc/get_protean_forms()
+	RETURN_TYPE(/datum/forms/protean)
+	return null
+
+/mob/living/carbon/human/get_protean_forms()
+	return istype(character_forms, /datum/forms/protean) ? character_forms : null

@@ -201,8 +201,8 @@
 	return NONE
 
 /// Called when an action associated with our item is deleted
-/obj/item/proc/on_action_deleted(datum/source)
-	SIGNAL_HANDLER
+/obj/item/proc/on_action_deleted(datum/source, datum/om/event/qdeleting/event)
+	EVENT_HANDLER
 
 	if(!(source in actions))
 		CRASH("An action ([source.type]) was deleted that was associated with an item ([src]), but was not found in the item's actions list.")
@@ -223,7 +223,7 @@
 		CRASH("item add_item_action got a type or instance of something that wasn't an action.")
 
 	LAZYADD(actions, action)
-	RegisterSignal(action, COMSIG_QDELETING, PROC_REF(on_action_deleted))
+	om_hook(action, /datum/om/event/qdeleting, src, PROC_REF(on_action_deleted))
 	if(ismob(loc))
 		// We're being held or are equipped by someone while adding an action?
 		// Then they should also probably be granted the action, given it's in a correct slot
@@ -237,7 +237,7 @@
 	if(!action)
 		return
 
-	UnregisterSignal(action, COMSIG_QDELETING)
+	om_unhook(action, /datum/om/event/qdeleting, src)
 	LAZYREMOVE(actions, action)
 	qdel(action)
 
@@ -466,7 +466,7 @@
 		action_item_has.Remove(user)
 
 	if(!equipping) //We ONLY send these signals when we ACTUALLY drop the item. Because our item code is stupid, swapping items between your hand is 'dropping' them.
-		SEND_SIGNAL(src, COMSIG_ITEM_DROPPED, user)
+		OM_EMIT(src, /datum/om/event/item_dropped, user)
 		if((item_flags & DROPDEL) && loc != user && !QDELETED(src))
 			qdel(src)
 
@@ -475,8 +475,8 @@
 
 // called just as an item is picked up (loc is not yet changed)
 /obj/item/proc/pickup(mob/user)
-	SEND_SIGNAL(src, COMSIG_ITEM_PICKUP, user)
-	SEND_SIGNAL(user, COMSIG_ITEM_PICKUP, src)
+	OM_EMIT(src, /datum/om/event/item_pickup, user)
+	OM_EMIT(user, /datum/om/event/item_pickup, src)
 	if(om_wants(user, /datum/om/event/picked_up_item))
 		om_emit(user, new /datum/om/event/picked_up_item(src))
 	pixel_x = 0
@@ -520,8 +520,8 @@
 	else if(slot == slot_l_hand || slot == slot_r_hand)
 		if(!muffled_by_belly(user))
 			playsound(src, pickup_sound, 20, preference = /datum/preference/toggle/pickup_sounds)
-	SEND_SIGNAL(src, COMSIG_ITEM_EQUIPPED, user, slot)
-	SEND_SIGNAL(user, COMSIG_MOB_EQUIPPED_ITEM, src, slot)
+	OM_EMIT(src, /datum/om/event/item_equipped, user, slot)
+	OM_EMIT(user, /datum/om/event/mob_equipped_item, src, slot)
 	user.on_equipment_changed()
 	var/mob/living/M = loc
 	if(!istype(M))
@@ -751,9 +751,9 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 	if(I && !I.abstract)
 		I.showoff(src)
 
-/// For zooming with scope or binoculars. Uses remote_view/item component for disabling when you move or drop the item
+/// For zooming with scope or binoculars. Uses the /datum/remote_view/item_zoom view for disabling when you move or drop the item
 /obj/item/proc/zoom(mob/living/M, tileoffset = 14,viewsize = 9) //tileoffset is client view offset in the direction the user is facing. viewsize is how far out this thing zooms. 7 is normal view
-	SIGNAL_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	if(isliving(usr)) //Always prefer usr if set
 		M = usr
 	if(!M.client)
@@ -784,9 +784,9 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 		can_zoom = FALSE
 
 	if(!zoom && can_zoom)
-		M.AddComponent(/datum/component/remote_view/item_zoom, focused_on = M, vconfig_path = /datum/remote_view_config/zoomed_item, our_item = src, viewsize = viewsize, tileoffset = tileoffset, show_visible_messages = TRUE)
+		M.begin_remote_view(/datum/remote_view/item_zoom, M, viewsize, /datum/remote_view_config/zoomed_item, src, tileoffset, TRUE)
 		return
-	SEND_SIGNAL(src,COMSIG_REMOTE_VIEW_CLEAR)
+	OM_EMIT(src, /datum/om/event/remote_view_clear)
 
 /obj/item/proc/pwr_drain()
 	return 0 // Process Kill
@@ -837,7 +837,7 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 	#ifdef UNIT_TESTS
 	var/mob/living/carbon/human/H = loc
 	if(ishuman(H))
-		SEND_SIGNAL(H, COMSIG_UNITTEST_DATA, list("set_slot",slot_name,icon2use,state2use,inhands,type,H.species?.name))
+		OM_EMIT(H, /datum/om/event/unittest_data, list("set_slot",slot_name,icon2use,state2use,inhands,type,H.species?.name))
 	#endif
 
 	//Generate the base onmob icon

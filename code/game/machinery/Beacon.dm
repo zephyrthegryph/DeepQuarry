@@ -16,7 +16,7 @@
 	Beacon = new /obj/item/radio/beacon
 	Beacon.invisibility = INVISIBILITY_MAXIMUM
 	Beacon.forceMove(T)
-	RegisterSignals(Beacon, list(COMSIG_MOVABLE_MOVED, COMSIG_QDELETING), PROC_REF(beacon_changed))
+	om_hook(Beacon, list(/datum/om/event/moved, /datum/om/event/qdeleting), src, PROC_REF(beacon_changed))
 
 	hide(!T.is_plating())
 
@@ -42,7 +42,7 @@ REF_OWNED(/obj/machinery/bluespace_beacon, "Beacon")
 		Beacon = new /obj/item/radio/beacon
 		Beacon.invisibility = INVISIBILITY_MAXIMUM
 		Beacon.forceMove(T)
-		RegisterSignals(Beacon, list(COMSIG_MOVABLE_MOVED, COMSIG_QDELETING), PROC_REF(beacon_changed))
+		om_hook(Beacon, list(/datum/om/event/moved, /datum/om/event/qdeleting), src, PROC_REF(beacon_changed))
 	if(Beacon)
 		if(Beacon.loc != src.loc)
 			Beacon.forceMove(src.loc)
@@ -54,8 +54,8 @@ REF_OWNED(/obj/machinery/bluespace_beacon, "Beacon")
 	. = ..()
 	MACHINE_WAKE(src)
 
-/obj/machinery/bluespace_beacon/proc/beacon_changed(datum/source)
-	SIGNAL_HANDLER
+/obj/machinery/bluespace_beacon/proc/beacon_changed(datum/source, datum/om/event/event)
+	EVENT_HANDLER
 	if(source == Beacon && QDELETED(source))
 		Beacon = null
 	MACHINE_WAKE(src)

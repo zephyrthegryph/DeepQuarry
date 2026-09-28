@@ -40,7 +40,6 @@
 	..()
 
 /obj/effect/decal/cleanable/greenglow/proc/radiate()
-	SIGNAL_HANDLER
 	if(active)
 		return
 	if(!COOLDOWN_FINISHED(src, event_cooldown))

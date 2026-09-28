@@ -90,7 +90,7 @@ REF_OWNED(/obj/item/organ/internal/mmi_holder, "stored_mmi")
 		. = stored_mmi // Code
 		stored_mmi.forceMove(drop_location())
 		if(owner.mind)
-			var/datum/component/mind_host/host = get_mind_host(stored_mmi)
+			var/datum/mind_host/host = get_mind_host(stored_mmi)
 			var/mob/living/carbon/brain/view = host?.receive_mind(owner.mind, "brain interface removed from [owner]")
 			view?.reset_perspective()
 	..()

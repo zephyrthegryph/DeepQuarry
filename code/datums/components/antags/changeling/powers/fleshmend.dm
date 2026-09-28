@@ -14,7 +14,7 @@
 	set desc = "Begins a slow rengeration of our form.  Does not effect stuns or chemicals."
 
 	var/mob/living/C = src
-	var/datum/component/antag/changeling/changeling = changeling_power(10,0,100,UNCONSCIOUS)
+	var/datum/changeling/changeling = changeling_power(10,0,100,UNCONSCIOUS)
 	if(!changeling)
 		return FALSE
 	if(C.has_modifier_of_type(/datum/modifier/fleshmend))

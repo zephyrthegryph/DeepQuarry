@@ -185,7 +185,7 @@
 		new /obj/item/organ/internal/mmi_holder/robot(target, 1, M)
 	else
 		new /obj/item/organ/internal/mmi_holder(target, 1, M)
-	var/datum/component/mind_host/host = get_mind_host(M)
+	var/datum/mind_host/host = get_mind_host(M)
 	host?.release_mind(target, "MMI installed into [target] by [key_name(user)]")
 	log_game("SURGERY: [key_name(user)] installed [M] into [key_name(target)]")
 	target.pick_new_form_name(FALSE)

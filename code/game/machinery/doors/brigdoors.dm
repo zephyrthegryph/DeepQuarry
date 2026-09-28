@@ -53,14 +53,14 @@
 		if(C.id == id)
 			LAZYADD(targets,C)
 	for(var/atom/movable/target as anything in targets)
-		RegisterSignal(target, COMSIG_QDELETING, PROC_REF(target_deleted))
+		om_hook(target, /datum/om/event/qdeleting, src, PROC_REF(target_deleted))
 
 	if(!LAZYLEN(targets))
 		stat |= BROKEN
 	update_icon()
 
-/obj/machinery/door_timer/proc/target_deleted(datum/source)
-	SIGNAL_HANDLER
+/obj/machinery/door_timer/proc/target_deleted(datum/source, datum/om/event/qdeleting/event)
+	EVENT_HANDLER
 	LAZYREMOVE(targets, source)
 
 //Main door timer loop, if it's timing and time is >0 reduce time by 1.

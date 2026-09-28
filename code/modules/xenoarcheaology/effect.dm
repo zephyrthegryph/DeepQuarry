@@ -26,12 +26,12 @@
 REF_OWNED(/datum/artifact_effect, "active_effect")
 
 /datum/artifact_effect/proc/get_master_holder()	// Return the effectmaster's holder, if it is set to an effectmaster. Otherwise, master is the target object.
-	if(istype(master(), /datum/component/artifact_master))
+	if(istype(master(), /datum/artifact_master))
 		return master().holder()
 	else
 		return master()
 
-/datum/artifact_effect/New(datum/component/artifact_master/newmaster)
+/datum/artifact_effect/New(datum/artifact_master/newmaster)
 	..()
 
 	master_handle = om_handle(newmaster)
@@ -237,5 +237,5 @@ REF_OWNED(/datum/artifact_effect, "active_effect")
 	return susceptibility
 
 /// LC-refs: This code is handled in effect_master.dm -- an OM handle (om_handle()), so it reads null once that is deleted.
-/datum/artifact_effect/proc/master() as /datum/component/artifact_master
+/datum/artifact_effect/proc/master() as /datum/artifact_master
 	return om_resolve(master_handle)

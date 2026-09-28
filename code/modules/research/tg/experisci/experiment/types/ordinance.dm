@@ -16,10 +16,10 @@
 	var/status_message = "Detonate an explosive of sufficient size and detect it with a doppler array."
 	. += EXPERIMENT_PROG_BOOL(status_message, is_complete())
 
-/datum/experiment/ordnance/actionable(datum/component/experiment_handler/experiment_handler)
+/datum/experiment/ordnance/actionable(datum/experiment_handler/experiment_handler)
 	return !is_complete()
 
-/datum/experiment/ordnance/perform_experiment_actions(datum/component/experiment_handler/experiment_handler, turf/epicenter, devastation_range, heavy_impact_range, light_impact_range, seconds_taken)
+/datum/experiment/ordnance/perform_experiment_actions(datum/experiment_handler/experiment_handler, turf/epicenter, devastation_range, heavy_impact_range, light_impact_range, seconds_taken)
 	if(devastation_range < required_devastation_range)
 		return FALSE
 	if(heavy_impact_range < required_heavy_impact_range)

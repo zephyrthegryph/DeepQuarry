@@ -13,7 +13,7 @@
 	// Check if they've hooked in to prevent src from alt clicking anything
 
 	// If it has a signal handler that returns a click action, done.
-	if(SEND_SIGNAL(target, COMSIG_CLICK_ALT, src) & CLICK_ACTION_ANY)
+	if(OM_EMIT(target, /datum/om/event/before/click_alt, src) & CLICK_ACTION_ANY)
 		return TRUE
 
 	// If it has a custom click_alt that returns success/block, done.
@@ -74,7 +74,7 @@
 	// if(!user.can_interact_with(src))
 	// 	return FALSE
 
-	if(SEND_SIGNAL(src, COMSIG_CLICK_ALT, user) & COMSIG_MOB_CANCEL_CLICKON)
+	if(OM_EMIT(src, /datum/om/event/before/click_alt, user) & CLICK_ACTION_SUCCESS)
 		return TRUE
 
 	if(HAS_TRAIT(src, TRAIT_ALT_CLICK_BLOCKER) && !isobserver(user))

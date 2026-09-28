@@ -53,7 +53,7 @@
 	use_power(1500)
 
 	for(var/mob/living/O in range(range, src))
-		var/datum/component/shadekin/SK = O.get_shadekin_component()
+		var/datum/shadekin/SK = O.get_shadekin_state()
 		if(!SK)
 			continue
 		SK.attack_dephase(null, src) //Won't dephase them if they're not in phase. It has built in checks.

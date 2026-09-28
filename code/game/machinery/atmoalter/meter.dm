@@ -21,13 +21,13 @@
 /// pipe target: when the pipe is destroyed the meter comes off as an item.
 /obj/machinery/meter/proc/set_target(new_target)
 	if(istype(target_ref(), /obj/machinery/atmospherics/pipe))
-		UnregisterSignal(target_ref(), COMSIG_QDELETING)
+		om_unhook(target_ref(), /datum/om/event/qdeleting, src)
 	target_handle = om_handle(new_target)
 	if(istype(target_ref(), /obj/machinery/atmospherics/pipe))
-		RegisterSignal(target_ref(), COMSIG_QDELETING, PROC_REF(on_target_deleted))
+		om_hook(target_ref(), /datum/om/event/qdeleting, src, PROC_REF(on_target_deleted))
 
-/obj/machinery/meter/proc/on_target_deleted(datum/source)
-	SIGNAL_HANDLER
+/obj/machinery/meter/proc/on_target_deleted(datum/source, datum/om/event/qdeleting/event)
+	EVENT_HANDLER
 	target_handle = null
 	if(QDELETED(src))
 		return

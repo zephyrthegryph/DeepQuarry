@@ -70,23 +70,24 @@
 
 // --- Trait systems ------------------------------------------------------------------------------
 
-/// Category for component-provided stages (the old COMSIG_LIVING_LIFE listeners). A component
-/// adds its stage with om_stage_add() when it attaches and removes it when it detaches.
+/// Category for trait stages (the old COMSIG_LIVING_LIFE listeners). A trait state
+/// (/datum/trait_state, code/datums/components/traits/_trait_state.dm) adds its stage with
+/// om_stage_add() when it attaches and removes it when it detaches. A subtype either sets
+/// `state_type` (the stage then calls life_tick() on each such state each cycle) or overrides perform().
 /datum/om/stage/life/trait
 	order = LIFE_PHASE_INPUT + 10
 	category = /datum/om/stage/life/trait
 	extra = TRUE
 	wake_on = 0
-	/// The component type this system ticks.
-	var/component_type
+	/// The /datum/trait_state type this stage ticks, if any.
+	var/state_type
 
 /datum/om/stage/life/trait/perform(mob/living/self, datum/om/frame/life/ctx)
-	for(var/datum/component/C as anything in self.GetComponents(component_type))
-		tick_component(self, C)
-
-/// Tick one instance of the component.
-/datum/om/stage/life/trait/proc/tick_component(mob/living/self, datum/component/C)
-	return
+	if(!state_type)
+		return
+	for(var/datum/trait_state/S as anything in self.trait_states)
+		if(istype(S, state_type))
+			S.life_tick()
 
 // --- Upkeep ---------------------------------------------------------------------------------------
 
@@ -194,12 +195,12 @@
 /datum/om/stage/life/mutations/perform(mob/living/self, datum/om/frame/life/ctx)
 	SHOULD_CALL_PARENT(TRUE)
 	..()
-	if(SEND_SIGNAL(self, COMSIG_HANDLE_MUTATIONS) & COMPONENT_BLOCK_LIVING_MUTATIONS)
+	if(OM_EMIT(self, /datum/om/event/before/handle_mutations) & COMPONENT_BLOCK_LIVING_MUTATIONS)
 		return COMPONENT_BLOCK_LIVING_MUTATIONS
 
 /// The root only feeds its signal's listeners.
 /datum/om/stage/life/mutations/idle(mob/living/self)
-	return type == /datum/om/stage/life/mutations && !self._listen_lookup?[COMSIG_HANDLE_MUTATIONS]
+	return type == /datum/om/stage/life/mutations && !om_wants(self, /datum/om/event/before/handle_mutations)
 
 /// Radiation dose decay and effects.
 /datum/om/stage/life/radiation
@@ -211,12 +212,12 @@
 /datum/om/stage/life/radiation/perform(mob/living/self, datum/om/frame/life/ctx)
 	SHOULD_CALL_PARENT(TRUE)
 	..()
-	if(SEND_SIGNAL(self, COMSIG_HANDLE_RADIATION) & COMPONENT_BLOCK_LIVING_RADIATION)
+	if(OM_EMIT(self, /datum/om/event/before/handle_radiation) & COMPONENT_BLOCK_LIVING_RADIATION)
 		return COMPONENT_BLOCK_LIVING_RADIATION
 
 /// The root only feeds its signal's listeners (the radiation effects component).
 /datum/om/stage/life/radiation/idle(mob/living/self)
-	return type == /datum/om/stage/life/radiation && !self._listen_lookup?[COMSIG_HANDLE_RADIATION]
+	return type == /datum/om/stage/life/radiation && !om_wants(self, /datum/om/event/before/handle_radiation)
 
 /// Blood volume and bleeding.
 /datum/om/stage/life/blood
@@ -420,7 +421,7 @@
 /// Temporary blindness, blur and deafness end on their own (timed statuses); this keeps the
 /// ones that don't (a disability, unconsciousness) topped up and heals ear damage.
 /datum/om/stage/life/disabilities/perform(mob/living/self, datum/om/frame/life/ctx)
-	SEND_SIGNAL(self, COMSIG_HANDLE_DISABILITIES)
+	OM_EMIT(self, /datum/om/event/handle_disabilities)
 	//Eyes: blindness from disability or unconsciousness doesn't get better on its own. It is an
 	// untimed hold while the cause lasts, not a one-cycle top-up: re-topping a timed status every
 	// frame raised a status change on the mob's own frame and kept it from ever parking.
@@ -441,7 +442,7 @@
 /datum/om/stage/life/disabilities/idle(mob/living/self)
 	if(type != /datum/om/stage/life/disabilities)
 		return FALSE
-	if(self._listen_lookup?[COMSIG_HANDLE_DISABILITIES])
+	if(om_wants(self, /datum/om/event/handle_disabilities))
 		return FALSE
 	if(!life_disability_hold_matches(self, EFFECT_BLINDED, "disability_blind", (self.sdisabilities & BLIND) || self.stat))
 		return FALSE
@@ -509,7 +510,7 @@
 
 /// The root's health icon is event-driven; darksight re-adapts on a timer for players.
 /datum/om/stage/life/hud/idle(mob/living/self)
-	return type == /datum/om/stage/life/hud && !self._listen_lookup?[COMSIG_MOB_HANDLE_HUD]
+	return type == /datum/om/stage/life/hud && !om_wants(self, /datum/om/event/before/mob_handle_hud)
 
 /datum/om/stage/life/hud/rewake_delay(mob/living/self)
 	return self.client ? 5 SECONDS : 0
@@ -517,13 +518,13 @@
 /// Health doll / health icon. Returns FALSE when a component draws it instead.
 /datum/om/stage/life/hud/proc/health_icons(mob/living/self)
 	SHOULD_CALL_PARENT(TRUE)
-	if(SEND_SIGNAL(self,COMSIG_MOB_HANDLE_HUD_HEALTH_ICON) & COMSIG_COMPONENT_HANDLED_HEALTH_ICON)
+	if(OM_EMIT(self, /datum/om/event/before/mob_handle_hud_health_icon) & HEALTH_ICON_EVENT_HANDLED)
 		return FALSE
 	return TRUE
 
 /// Adapts the darkness overlay to the light level and the mob's darksight.
 /datum/om/stage/life/hud/proc/darksight(mob/living/self)
-	SEND_SIGNAL(self,COMSIG_MOB_HANDLE_HUD_DARKSIGHT)
+	OM_EMIT(self, /datum/om/event/mob_handle_hud_darksight)
 	if(!self.seedarkness) //Cheap 'always darksight' var
 		self.dsoverlay.alpha = 255
 		return
@@ -564,13 +565,13 @@
 /datum/om/stage/life/vision/perform(mob/living/self, datum/om/frame/life/ctx)
 	SHOULD_CALL_PARENT(TRUE)
 	..()
-	SEND_SIGNAL(self,COMSIG_MOB_HANDLE_VISION)
+	OM_EMIT(self, /datum/om/event/mob_handle_vision)
 
 /// The root only notifies listeners (remote view); sight inputs wake it.
 /// Every variant's inputs are channel-reported (see wake_on), so all of them idle once they have
 /// run, unless a listener (remote view) wants the signal every cycle.
 /datum/om/stage/life/vision/idle(mob/living/self)
-	return !self._listen_lookup?[COMSIG_MOB_HANDLE_VISION]
+	return !om_wants(self, /datum/om/event/mob_handle_vision)
 
 /datum/om/stage/life/vision/rewake_delay(mob/living/self)
 	return self.client ? 5 SECONDS : 0

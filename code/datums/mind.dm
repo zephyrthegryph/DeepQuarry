@@ -81,7 +81,7 @@
 	if(!carried_identity && isliving(new_character))
 		carried_identity = new_character.identity()
 	identity = carried_identity
-	var/datum/component/antag/changeling/changeling_comp
+	var/datum/changeling/changeling_comp
 	var/mob/living/old_character = current
 	if(current)
 		changeling_comp = is_changeling(current)			//remove ourself from our old body's mind variable
@@ -101,8 +101,8 @@
 		else
 			new_character.bind_identity(identity)
 	if(old_character)
-		SEND_SIGNAL(old_character, COMSIG_MOB_MIND_TRANSFERRED_OUT_OF, new_character)
-	SEND_SIGNAL(new_character, COMSIG_MOB_MIND_TRANSFERRED_INTO, old_character)
+		OM_EMIT(old_character, /datum/om/event/mob_mind_transferred_out_of, new_character)
+	OM_EMIT(new_character, /datum/om/event/mob_mind_transferred_into, old_character)
 
 	// Handle mode/antag specific respawns
 	if(changeling_comp)

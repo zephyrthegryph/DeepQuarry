@@ -129,14 +129,14 @@ DECLARE_INTERACTIONS(/obj/item/borg/cloak, INTERACT_USE(null, PROC_REF(interacti
 	cloaked_factors = alist(BF_EVASION = modified_evasion)
 	set_factors(cloaked_factors)
 	holder.set_alpha_source(ALPHA_SOURCE_ROBOT_CLOAK, visibility/255, animate_time = 1 SECOND)
-	RegisterSignal(holder, COMSIG_MOB_APPLY_DAMAGE, PROC_REF(damage_inflicted))
-	RegisterSignal(holder, COMSIG_ROBOT_ITEM_ATTACK, PROC_REF(attacked_in_cloak))
+	om_hook(holder, /datum/om/event/mob_apply_damage, src, PROC_REF(damage_inflicted))
+	om_hook(holder, /datum/om/event/before/robot_item_attack, src, PROC_REF(attacked_in_cloak))
 	return
 
 /datum/modifier/robot_cloak/on_expire()
 	holder.clear_alpha_source(ALPHA_SOURCE_ROBOT_CLOAK)
-	UnregisterSignal(holder, COMSIG_MOB_APPLY_DAMAGE)
-	UnregisterSignal(holder, COMSIG_ROBOT_ITEM_ATTACK)
+	om_unhook(holder, /datum/om/event/mob_apply_damage, src)
+	om_unhook(holder, /datum/om/event/before/robot_item_attack, src)
 	remove_wibble(TRUE)
 	return
 
@@ -151,8 +151,9 @@ DECLARE_INTERACTIONS(/obj/item/borg/cloak, INTERACT_USE(null, PROC_REF(interacti
 	if(dq_get_cloaked(src) && !times_hit) //The !times_hit is here so it doesn't interfere with the animation.
 		holder.set_alpha_source(ALPHA_SOURCE_ROBOT_CLOAK, visibility/255, animate_time = 1 SECOND)
 
-/datum/modifier/robot_cloak/proc/damage_inflicted(mob/living/source, damage)
-	SIGNAL_HANDLER
+/datum/modifier/robot_cloak/proc/damage_inflicted(mob/living/source, datum/om/event/mob_apply_damage/event)
+	EVENT_HANDLER
+	var/damage = event.damage
 	if(damage < 5) //weak, don't do anything.
 		return
 	times_hit++
@@ -174,8 +175,8 @@ DECLARE_INTERACTIONS(/obj/item/borg/cloak, INTERACT_USE(null, PROC_REF(interacti
 	apply_wibbly_filters(holder, 0.5 SECONDS)
 	om_after(src, 0.5 SECONDS, PROC_REF(remove_wibble), 0.1 SECOND) //Calling a proc with no arguments
 
-/datum/modifier/robot_cloak/proc/attacked_in_cloak()
-	SIGNAL_HANDLER
+/datum/modifier/robot_cloak/proc/attacked_in_cloak(datum/source, datum/om/event/before/robot_item_attack/event)
+	EVENT_HANDLER
 	if(holder && !holder.get_filter("wibbly-[1]")) //We're not wibbled at the moment.
 		var/alpha_to_show = CLAMP((holder.alpha+(rand(50,200))), holder.alpha, 255) //Become more visible by a significant margin, randomly.
 		flick_cloak(alpha_to_show)

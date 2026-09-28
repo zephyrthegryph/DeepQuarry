@@ -79,9 +79,9 @@
 
 	// Listeners may append callbacks; each is invoked with the new turf.
 	var/list/post_change_callbacks
-	if(_listen_lookup?[COMSIG_TURF_CHANGE])
+	if(om_wants(src, /datum/om/event/turf_change))
 		post_change_callbacks = list()
-		SEND_SIGNAL(src, COMSIG_TURF_CHANGE, N, null, NONE, post_change_callbacks)
+		OM_EMIT(src, /datum/om/event/turf_change, N, null, NONE, post_change_callbacks)
 
 	cut_overlays(TRUE)
 	unmake_z_transparent()
@@ -212,7 +212,6 @@
 
 
 /turf/proc/propogate_sunlight_changes(oldtype, old_density, new_turf, above = FALSE)
-	//SEND_SIGNAL(src, COMSIG_TURF_UPDATE, oldtype, old_density, W)
 	//Sends signals in a cross pattern to all tiles that may have their sunlight var affected including this tile.
 	for(var/i = - SUNLIGHT_RADIUS, i <= SUNLIGHT_RADIUS, i++)
 		var/turf/simulated/T = locate(src.x + i, src.y, src.z)

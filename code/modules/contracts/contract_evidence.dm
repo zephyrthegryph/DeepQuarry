@@ -198,27 +198,26 @@
 		if(evidence.consumed_by == contract_id || evidence.payload?["contract_id"] == contract_id)
 			unregister_evidence(evidence)
 
-/datum/component/contract_evidence_carrier
-	dupe_mode = COMPONENT_DUPE_UNIQUE
-	var/evidence_id
+/obj/item/paper
+	/// The contract evidence id this paper carries and retains (was the contract_evidence_carrier component).
+	var/carried_evidence_id
 
-/datum/component/contract_evidence_carrier/Initialize(_evidence_id)
-	if(!istype(parent, /obj/item/paper) || !SScontracts.retain_evidence(_evidence_id))
-		return COMPONENT_INCOMPATIBLE
-	evidence_id = _evidence_id
-
-// ALLOW(lifecycle): releases its evidence id.
-/datum/component/contract_evidence_carrier/Destroy()
-	SScontracts?.release_evidence(evidence_id)
-	evidence_id = null
+// ALLOW(lifecycle): releases its carried evidence id.
+/obj/item/paper/Destroy()
+	release_carried_evidence()
 	return ..()
+
+/obj/item/paper/proc/release_carried_evidence()
+	if(carried_evidence_id)
+		SScontracts?.release_evidence(carried_evidence_id)
+		carried_evidence_id = null
 
 /obj/item/paper/proc/attach_contract_evidence(evidence_id)
 	if(!evidence_id)
 		return FALSE
-	var/datum/component/contract_evidence_carrier/existing = GetComponent(/datum/component/contract_evidence_carrier)
-	if(existing?.evidence_id != evidence_id)
-		qdel(existing)
-	AddComponent(/datum/component/contract_evidence_carrier, evidence_id)
+	if(carried_evidence_id != evidence_id)
+		release_carried_evidence()
+		if(SScontracts.retain_evidence(evidence_id))
+			carried_evidence_id = evidence_id
 	medical_scan_evidence = list("evidence_id" = evidence_id)
 	return TRUE

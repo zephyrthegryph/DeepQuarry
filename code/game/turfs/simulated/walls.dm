@@ -299,7 +299,7 @@
 		qdel(O)
 
 /turf/simulated/wall/proc/radiate()
-	SIGNAL_HANDLER
+	EVENT_HANDLER
 	// radioactivity moved to a component on /datum/material.
 	var/total_radiation = wall_radioactivity()
 	if(!total_radiation)

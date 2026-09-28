@@ -596,7 +596,7 @@
 		if(species.flags & NO_DEFIB) //TODO: Changee the NO_DEFIB species flag into a HAS_TRAIT() sometime.
 			to_chat(reviver, span_danger("You get the feeling [src] can't be revived by CPR alone."))
 			return // Handle no-defib species flag.
-		if(get_xenochimera_component())
+		if(get_xenochimera_state())
 			visible_message(span_danger("\The [src]'s body twitches and gurgles a bit."))
 			to_chat(reviver, span_danger("You get the feeling [src] can't be revived by CPR alone."))
 			return // Handle xenochim, can't cpr them back to life

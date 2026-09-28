@@ -13,7 +13,7 @@
 	set category = "Changeling"
 	set name = "Arm Blade (20)"
 
-	var/datum/component/antag/changeling/comp = is_changeling(src)
+	var/datum/changeling/comp = is_changeling(src)
 	if(!comp)
 		return
 	if(comp.recursive_enhancement)
@@ -40,7 +40,7 @@
 /mob/proc/changeling_claw()
 	set category = "Changeling"
 	set name = "Claw (15)"
-	var/datum/component/antag/changeling/comp = is_changeling(src)
+	var/datum/changeling/comp = is_changeling(src)
 	if(!comp)
 		return
 

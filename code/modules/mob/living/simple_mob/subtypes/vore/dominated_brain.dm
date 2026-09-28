@@ -46,23 +46,25 @@
 
 /mob/living/dominated_brain/proc/lets_register_our_signals()
 	if(prey_body)
-		RegisterSignal(prey_body, COMSIG_QDELETING, PROC_REF(prey_was_deleted), TRUE)
-	RegisterSignal(pred_body, COMSIG_QDELETING, PROC_REF(pred_was_deleted), TRUE)
+		om_hook(prey_body, /datum/om/event/qdeleting, src, PROC_REF(prey_was_deleted))
+	om_hook(pred_body, /datum/om/event/qdeleting, src, PROC_REF(pred_was_deleted))
 
 /mob/living/dominated_brain/proc/lets_unregister_our_signals()
 	prey_was_deleted()
 	pred_was_deleted()
 
-/mob/living/dominated_brain/proc/prey_was_deleted()
-	SIGNAL_HANDLER
+/// Also called directly with no args (lets_unregister_our_signals).
+/mob/living/dominated_brain/proc/prey_was_deleted(datum/source, datum/om/event/qdeleting/event)
+	EVENT_HANDLER
 	if(prey_body)
-		UnregisterSignal(prey_body, COMSIG_QDELETING)
+		om_unhook(prey_body, /datum/om/event/qdeleting, src)
 		prey_body = null
 
-/mob/living/dominated_brain/proc/pred_was_deleted()
-	SIGNAL_HANDLER
+/// Also called directly with no args (lets_unregister_our_signals).
+/mob/living/dominated_brain/proc/pred_was_deleted(datum/source, datum/om/event/qdeleting/event)
+	EVENT_HANDLER
 	if(pred_body)
-		UnregisterSignal(pred_body, COMSIG_QDELETING)
+		om_unhook(pred_body, /datum/om/event/qdeleting, src)
 		pred_body = null
 
 /mob/living/dominated_brain/process_resist()

@@ -1,41 +1,31 @@
-/datum/component/rotting_disability
+/// Was /datum/component/rotting_disability: a perk-granted disability ticking on the disabilities life stage.
+/datum/om/behaviour/disability/rotting
+	required_type = /mob/living/carbon/human
 
-/datum/component/rotting_disability/Initialize()
-	if (!ishuman(parent))
-		return COMPONENT_INCOMPATIBLE
+/datum/om/behaviour/disability/rotting/disability_tick(mob/living/carbon/human/owner)
 
-	RegisterSignal(owner(), COMSIG_HANDLE_DISABILITIES, PROC_REF(process_component))
-
-/datum/component/rotting_disability/proc/process_component()
-	SIGNAL_HANDLER
-
-	if (QDELETED(parent))
+	if(QDELETED(owner))
 		return
-	if(isbelly(owner().loc))
+	if(isbelly(owner.loc))
 		return
-	if(owner().transforming)
+	if(owner.transforming)
 		return
 	if(prob(2) && prob(3)) // stacked percents for rarity
 		// random strange symptoms from organ/limb
-		owner().automatic_custom_emote(VISIBLE_MESSAGE, "flinches slightly.", check_stat = TRUE)
+		owner.automatic_custom_emote(VISIBLE_MESSAGE, "flinches slightly.", check_stat = TRUE)
 		switch(rand(1,4))
 			if(1)
-				owner().injure(INJURY_TOXIN, rand(2, 8))
+				owner.injure(INJURY_TOXIN, rand(2, 8))
 			if(2)
-				owner().injure(INJURY_CELLULAR, rand(1, 2))
+				owner.injure(INJURY_CELLULAR, rand(1, 2))
 			if(3)
-				owner().apply_body_effect(/datum/body_effect/numbness/mild, 3 SECONDS)
+				owner.apply_body_effect(/datum/body_effect/numbness/mild, 3 SECONDS)
 			else
-				owner().add_oxygen_debt(rand(13, 26), src)
+				owner.add_oxygen_debt(rand(13, 26), src)
 		// external organs need to fall off if damaged enough
-		var/obj/item/organ/O = pick(owner().organs)
+		var/obj/item/organ/O = pick(owner.organs)
 		if(O && !(O.organ_tag == BP_GROIN || O.organ_tag == BP_TORSO) && istype(O,/obj/item/organ/external))
 			var/obj/item/organ/external/E = O
 			if(O.damage >= O.min_broken_damage && O.robotic <= ORGAN_ASSISTED && prob(70))
-				owner().apply_body_effect(/datum/body_effect/numbness/deep, 3 SECONDS) // what limb? Extreme nerve damage. Can't feel a thing + shock
+				owner.apply_body_effect(/datum/body_effect/numbness/deep, 3 SECONDS) // what limb? Extreme nerve damage. Can't feel a thing + shock
 				E.droplimb(TRUE, DROPLIMB_ACID)
-
-
-/// LC-refs: the afflicted mob (our parent) (was a var copying parent).
-/datum/component/rotting_disability/proc/owner() as /mob/living/carbon/human
-	return parent

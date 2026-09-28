@@ -1,5 +1,5 @@
 // Orbiting: one atom circling another (ghost follow, tesla miniballs, admin
-// orbit, the toilet gag). Replaces /datum/component/orbiter: the orbit IS an
+// orbit, the toilet gag). Replaces the old orbiter component: the orbit IS an
 // edge of /datum/om/relation/orbiting (orbiter -> center), read through
 // ORBIT_TARGET()/ORBITERS() (om.dm). Nothing about it is stored on either
 // atom; the orbiter's pre-orbit transform rides on the edge's `data`.
@@ -36,7 +36,7 @@
 
 /datum/om/relation/orbiting/proc/watch(atom/movable/AM)
 	if(!QDELETED(AM))
-		RegisterSignal(AM, COMSIG_MOVABLE_MOVED, PROC_REF(on_moved), TRUE)
+		om_hook(AM, /datum/om/event/moved, src, PROC_REF(on_moved))
 
 /datum/om/relation/orbiting/proc/watch_holders(atom/movable/center)
 	var/atom/movable/holder = center.loc
@@ -52,10 +52,10 @@
 		return
 	if(AM?.orbit_target() || LAZYLEN(AM?.orbiter_list()))
 		return
-	UnregisterSignal(AM, COMSIG_MOVABLE_MOVED)
+	om_unhook(AM, /datum/om/event/moved, src)
 
-/datum/om/relation/orbiting/proc/on_moved(atom/movable/mover, atom/oldloc, direction)
-	SIGNAL_HANDLER
+/datum/om/relation/orbiting/proc/on_moved(atom/movable/mover, datum/om/event/moved/event)
+	EVENT_HANDLER
 	var/involved = FALSE
 	// An orbiter that left its center's turf stops orbiting.
 	var/atom/center = mover?.orbit_target()
@@ -72,7 +72,7 @@
 			involved = TRUE
 			follow(inner)
 	if(!involved)
-		UnregisterSignal(mover, COMSIG_MOVABLE_MOVED)
+		om_unhook(mover, /datum/om/event/moved, src)
 
 /datum/om/relation/orbiting/proc/follow(atom/movable/center)
 	var/turf/T = get_turf(center)

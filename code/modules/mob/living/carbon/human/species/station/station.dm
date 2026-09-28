@@ -480,7 +480,7 @@
 
 	reagent_tag = IS_ZADDAT
 
-	species_component = list(/datum/component/burninlight) // Until a parent component like xenochimera have is needed, only handles burning in light.
+	species_component = list(/datum/trait_state/burninlight) // Until a parent component like xenochimera have is needed, only handles burning in light.
 
 	heat_discomfort_strings = list(
 		"Your joints itch.",
@@ -560,7 +560,7 @@
 	min_age = 18
 	max_age = 300
 
-	species_component = list(/datum/component/radiation_effects/diona)
+	species_component = list(/datum/trait_state/radiation_effects/diona)
 
 	economic_modifier = 10
 
@@ -1381,7 +1381,7 @@
 		BP_R_FOOT = list("path" = /obj/item/organ/external/foot/right/crewkin)
 		)
 
-	species_component = list(/datum/component/radiation_effects/besk)
+	species_component = list(/datum/trait_state/radiation_effects/besk)
 
 /datum/species/crew_shadekin/get_bodytype()
 	return SPECIES_SHADEKIN
@@ -1542,7 +1542,7 @@
 	tail = "tail" //Spider tail.
 	icobase_tail = 1
 
-	species_component = list(/datum/component/weaver)
+	species_component = list(/datum/trait_state/weaver)
 
 	inherent_verbs = list(
 	/mob/living/carbon/human/proc/tie_hair)
@@ -1734,7 +1734,7 @@
 
 	reagent_tag = IS_CHIMERA
 
-	species_component = list(/datum/component/xenochimera)
+	species_component = list(/datum/xenochimera)
 
 /datum/species/xenochimera/environment_effects(mob/living/carbon/human/H)
 	//Cold/pressure effects when not regenerating

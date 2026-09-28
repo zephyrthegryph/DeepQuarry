@@ -24,16 +24,16 @@
 		update_icon()
 	ghost_reporter = new(null)
 
-	var/static/list/ghost_signals = list(
-		COMSIG_GLOB_GHOST_CAPTURED = TYPE_PROC_REF(/datum/component/experiment_handler, try_run_spectral_experiment),
-		COMSIG_GLOB_WIGHT_CAPTURED = TYPE_PROC_REF(/datum/component/experiment_handler, try_run_spectral_experiment),
+	var/static/list/ghost_events = list(
+		/datum/om/event/world_ghost_captured = TYPE_PROC_REF(/datum/experiment_handler, try_run_spectral_experiment),
+		/datum/om/event/world_wight_captured = TYPE_PROC_REF(/datum/experiment_handler, try_run_spectral_experiment),
 	)
 
-	AddComponent(/datum/component/experiment_handler, \
+	new /datum/experiment_handler(src, \
 		allowed_experiments = list(/datum/experiment/ghost_capture), \
 		config_mode = EXPERIMENT_CONFIG_UI, \
 		config_flags = EXPERIMENT_CONFIG_ALWAYS_ACTIVE, \
-		experiment_signals = ghost_signals)
+		experiment_events = ghost_events)
 
 REF_OWNED(/obj/item/ghost_trap, "ghost_reporter")
 
@@ -204,7 +204,7 @@ DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
 
 	if(isliving(passing_entity))
 		var/mob/living/living_entity = passing_entity
-		var/datum/component/shadekin/SK = living_entity.get_shadekin_component()
+		var/datum/shadekin/SK = living_entity.get_shadekin_state()
 		living_entity.phase_in(get_turf(src), SK)
 
 	passing_entity.forceMove(src)
@@ -216,12 +216,12 @@ DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
 	if(isobserver(passing_entity))
 		to_chat(passing_entity, span_info("((You are incapable of moving or 'jumping' to turf by clicking, but can still escape via teleport or orbit!))"))
 
-	SEND_SIGNAL(src, COMSIG_GLOB_GHOST_CAPTURED, passing_entity)
+	OM_EMIT(src, /datum/om/event/world_ghost_captured, passing_entity)
 
 /obj/item/ghost_trap/Crossed(atom/movable/AM)
 
 	if(istype(AM, /obj/effect/shadow_wight))
-		SEND_SIGNAL(src, COMSIG_GLOB_WIGHT_CAPTURED, AM)
+		OM_EMIT(src, /datum/om/event/world_wight_captured, AM)
 		visible_message(span_danger("A flurry of beams shoot into the air from \the [src] and into [AM], capturing and disintegrating it!"))
 		return
 

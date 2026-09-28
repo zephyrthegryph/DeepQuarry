@@ -8,7 +8,7 @@
 	layer = TURF_LAYER //This was here when I got here. Why though?
 	var/level = 2
 	var/flags = NONE
-	// was_bloodied, blood_color, fluorescent moved to /datum/component/forensics_state
+	// was_bloodied, blood_color, fluorescent are the forensic_* vars (code/datums/sparse_vars/forensics.dm)
 	var/pass_flags = 0
 	var/throwpass = 0
 	var/germ_level = GERM_LEVEL_AMBIENT // The higher the germ level, the more germ on the atom.
@@ -117,7 +117,7 @@
 
 /atom/proc/Bumped(AM as mob|obj)
 
-	SEND_SIGNAL(src, COMSIG_ATOM_BUMPED, AM)
+	OM_EMIT(src, /datum/om/event/atom_bumped, AM)
 
 // Convenience proc to see if a container is open for chemistry handling
 // returns true if open
@@ -137,16 +137,22 @@
 // Used to be for the PROXMOVE flag, but that was terrible, so instead it's just here as a stub for
 // all the atoms that still have the proc, but get events other ways.
 /atom/proc/HasProximity(turf/T, WF, old_loc)
-	SIGNAL_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	return
 
-//Register listeners on turfs in a certain range
+/// Hooked on the turfs sense_proximity() watches: something entered one of them.
+/atom/proc/on_proximity_turf_entered(turf/source, datum/om/event/observer_turf_entered/event)
+	EVENT_HANDLER
+	HasProximity(source, event.arrived_handle, event.old_loc)
+
+//Register listeners on turfs in a certain range. Entries call HasProximity(turf, arrived_handle, old_loc);
+// `callback` is kept for the callers' readability and must be HasProximity.
 /atom/proc/sense_proximity(range = 1, callback)
 	ASSERT(callback)
 	ASSERT(isturf(loc))
 	var/list/turfs = trange(range, src)
 	for(var/turf/T as anything in turfs)
-		RegisterSignal(T, COMSIG_OBSERVER_TURF_ENTERED, callback)
+		om_hook(T, /datum/om/event/observer_turf_entered, src, PROC_REF(on_proximity_turf_entered))
 
 //Unregister from prox listening in a certain range. You should do this BEFORE you move, but if you
 // really can't, then you can set the center where you moved from.
@@ -154,11 +160,11 @@
 	ASSERT(isturf(center) || isturf(loc))
 	var/list/turfs = trange(range, center ? center : src)
 	for(var/turf/T as anything in turfs)
-		UnregisterSignal(T, COMSIG_OBSERVER_TURF_ENTERED)
+		om_unhook(T, /datum/om/event/observer_turf_entered, src)
 
 
 /atom
-	/// EMP_PROTECT_* flags this atom always has (was /datum/element/empprotection).
+	/// EMP_PROTECT_* flags this atom always has (was the empprotection element).
 	var/emp_protection_flags = NONE
 
 /atom/proc/emp_act(severity, recursive)
@@ -166,7 +172,7 @@
 	recursive++
 	if(recursive > 5) //After a certain depth, we're just going to assume that it's too insulated to be EMP'd.
 		return
-	var/protection = (emp_protection_flags & EMP_PROTECT_ALL) | SEND_SIGNAL(src, COMSIG_ATOM_PRE_EMP_ACT, severity)
+	var/protection = (emp_protection_flags & EMP_PROTECT_ALL) | OM_EMIT(src, /datum/om/event/before/atom_pre_emp_act, severity)
 	if(!(protection & EMP_PROTECT_WIRES) && istype(wires))
 		wires.emp_pulse()
 
@@ -174,11 +180,11 @@
 		for(var/atom/A in contents)
 			A.emp_act(severity, recursive)
 
-	SEND_SIGNAL(src, COMSIG_ATOM_EMP_ACT, severity, protection)
+	OM_EMIT(src, /datum/om/event/atom_emp_act, severity, protection)
 	return protection
 
 /atom/proc/bullet_act(obj/item/projectile/P, def_zone)
-	if(SEND_SIGNAL(src, COMSIG_ATOM_BULLET_ACT, P, def_zone) & COMPONENT_CANCEL_ATTACK_CHAIN)
+	if(OM_EMIT(src, /datum/om/event/before/atom_bullet_act, P, def_zone) & COMPONENT_CANCEL_ATTACK_CHAIN)
 		return
 
 	P.on_hit(src, 0, def_zone)
@@ -262,7 +268,6 @@
 	if(damage_band)
 		output += damage_flavour_text(damage_band)
 
-	SEND_SIGNAL(src, COMSIG_ATOM_EXAMINE, user, output)
 	om_emit_examine(src, user, output)
 	return output
 
@@ -278,7 +283,7 @@
 //called to set the atom's dir and used to add behaviour to dir-changes
 /atom/proc/set_dir(new_dir)
 	SHOULD_CALL_PARENT(TRUE)
-	SEND_SIGNAL(src, COMSIG_ATOM_DIR_CHANGE, dir, new_dir)
+	OM_EMIT(src, /datum/om/event/atom_dir_change, dir, new_dir)
 	var/oldDir = dir
 	dir = new_dir
 
@@ -297,7 +302,7 @@
 	return TRUE
 
 /atom/proc/ex_act(strength = 3)
-	return (SEND_SIGNAL(src, COMSIG_ATOM_EX_ACT, strength, src) & COMPONENT_IGNORE_EXPLOSION)
+	return (OM_EMIT(src, /datum/om/event/before/atom_ex_act, strength, src) & COMPONENT_IGNORE_EXPLOSION)
 
 /atom/proc/emag_act(remaining_charges, mob/user, emag_source)
 	return -1
@@ -305,20 +310,18 @@
 /**
  * Respond to fire being used on our atom
  *
- * Default behaviour is to send [COMSIG_ATOM_FIRE_ACT] and return
+ * Default behaviour is to emit /datum/om/event/atom_fire_act and return
  */
 /atom/proc/fire_act(exposed_temperature, exposed_volume)
-	SEND_SIGNAL(src, COMSIG_ATOM_FIRE_ACT, exposed_temperature, exposed_volume)
+	OM_EMIT(src, /datum/om/event/atom_fire_act, exposed_temperature, exposed_volume)
 	return FALSE
 
 /**
- * Sends [COMSIG_ATOM_EXTINGUISH] signal, which properly removes burning component if it is present.
- *
- * Default behaviour is to send [COMSIG_ATOM_ACID_ACT] and return
+ * Emits /datum/om/event/before/atom_extinguish, which properly removes burning state if it is present.
  */
 /atom/proc/extinguish()
 	SHOULD_CALL_PARENT(TRUE)
-	return SEND_SIGNAL(src, COMSIG_ATOM_EXTINGUISH)
+	return OM_EMIT(src, /datum/om/event/before/atom_extinguish)
 
 // Returns an assoc list of RCD information.
 // Example would be: list(RCD_VALUE_MODE = RCD_DECONSTRUCT, RCD_VALUE_DELAY = 50, RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 4)
@@ -516,16 +519,16 @@
 
 /atom/Entered(atom/movable/AM, atom/old_loc)
 	. = ..()
-	SEND_SIGNAL(AM, COMSIG_MOVABLE_ATTEMPTED_MOVE, old_loc, AM.loc)
-	SEND_SIGNAL(src, COMSIG_ATOM_ENTERED, AM, old_loc)
-	SEND_SIGNAL(AM, COMSIG_ATOM_ENTERING, src, old_loc)
+	OM_EMIT(AM, /datum/om/event/movable_attempted_move, old_loc, AM.loc)
+	OM_EMIT(src, /datum/om/event/atom_entered, AM, old_loc)
+	OM_EMIT(AM, /datum/om/event/atom_entering, src, old_loc)
 
 /atom/Exit(atom/movable/AM, atom/new_loc)
 	. = ..()
 
 /atom/Exited(atom/movable/AM, atom/new_loc)
 	. = ..()
-	SEND_SIGNAL(src, COMSIG_ATOM_EXITED, AM, new_loc)
+	OM_EMIT(src, /datum/om/event/atom_exited, AM, new_loc)
 
 /atom/proc/interact(mob/user)
 	return

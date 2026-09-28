@@ -228,15 +228,15 @@
 	..()
 	set_severity(AFFLICTION_SEVERITY_TERMINAL)
 	held_mob = owner
-	RegisterSignal(held_mob, COMSIG_LIVING_BODY_STATUS, PROC_REF(hold_alive))
+	om_hook(held_mob, /datum/om/event/before/living_body_status, src, PROC_REF(hold_alive))
 	// Without a control cluster to work through, the core is repaired on the body itself.
-	RegisterSignal(held_mob, COMSIG_ATOM_TOOL_ACT(TOOL_SCREWDRIVER), PROC_REF(on_body_screwdriver))
-	RegisterSignal(held_mob, COMSIG_ATOM_ATTACKBY, PROC_REF(on_body_attackby))
+	om_hook(held_mob, /datum/om/event/before/atom_tool_act, src, PROC_REF(on_body_screwdriver))
+	om_hook(held_mob, /datum/om/event/before/attackby, src, PROC_REF(on_body_attackby))
 	log_game("NANOFORM: [key_name(held_mob)] entered core dormancy at [AREACOORD(held_mob)].")
 	playsound(held_mob, 'sound/voice/borg_deathsound.ogg', 50, 1)
 	held_mob.visible_message(span_bold("[held_mob.name]") + " shudders and retreats inwards, coalescing into a single core component!")
 	to_chat(held_mob, span_warning("Your swarm has lost cohesion! You are locked in your core control module until you are repaired. Instructions for your revival are shown when your module is examined."))
-	var/datum/component/forms/protean/F = held_mob.GetComponent(/datum/component/forms/protean)
+	var/datum/forms/protean/F = held_mob.get_protean_forms()
 	if(!F)
 		return
 	// Folding up inside a belly, closet, mech or holder would move the core out of
@@ -262,14 +262,14 @@
 		reboot_timer = null
 	if(!held_mob)
 		return
-	UnregisterSignal(held_mob, list(COMSIG_LIVING_BODY_STATUS, COMSIG_ATOM_TOOL_ACT(TOOL_SCREWDRIVER), COMSIG_ATOM_ATTACKBY))
-	var/datum/component/forms/protean/F = held_mob.GetComponent(/datum/component/forms/protean)
+	om_unhook(held_mob, list(/datum/om/event/before/living_body_status, /datum/om/event/before/atom_tool_act, /datum/om/event/before/attackby), src)
+	var/datum/forms/protean/F = held_mob.get_protean_forms()
 	F?.rig?.wake()
 	log_game("NANOFORM: [key_name(held_mob)] left core dormancy.")
 	held_mob = null
 
-/datum/affliction/core_dormancy/proc/hold_alive(mob/living/source)
-	SIGNAL_HANDLER
+/datum/affliction/core_dormancy/proc/hold_alive(mob/living/source, datum/om/event/before/living_body_status/event)
+	EVENT_HANDLER
 	return COMPONENT_BODY_KEEP_ALIVE
 
 /// Dormant cores don't progress or heal on their own; they stay down.
@@ -283,18 +283,24 @@
 /// True when the core is repaired on the body rather than through the control
 /// cluster: the protean has no cluster, or is not folded into it.
 /datum/affliction/core_dormancy/proc/repaired_on_body()
-	var/datum/component/forms/protean/F = held_mob?.GetComponent(/datum/component/forms/protean)
+	var/datum/forms/protean/F = held_mob?.get_protean_forms()
 	return !F?.in_rig()
 
-/datum/affliction/core_dormancy/proc/on_body_screwdriver(mob/living/source, mob/living/user, obj/item/tool)
-	SIGNAL_HANDLER
+/datum/affliction/core_dormancy/proc/on_body_screwdriver(mob/living/source, datum/om/event/before/atom_tool_act/event)
+	EVENT_HANDLER
+	if(event.tool_quality != TOOL_SCREWDRIVER || event.secondary)
+		return NONE
+	var/mob/living/user = event.user
+	var/obj/item/tool = event.tool
 	if(revival_step != DORMANCY_SEALED || !repaired_on_body())
 		return NONE
 	repair_with(tool, user, source)
 	return ITEM_INTERACT_SUCCESS
 
-/datum/affliction/core_dormancy/proc/on_body_attackby(mob/living/source, obj/item/W, mob/living/user, params)
-	SIGNAL_HANDLER
+/datum/affliction/core_dormancy/proc/on_body_attackby(mob/living/source, datum/om/event/before/attackby/event)
+	EVENT_HANDLER
+	var/obj/item/W = event.item
+	var/mob/living/user = event.user
 	if(!repaired_on_body() || !is_repair_item(W))
 		return NONE
 	repair_with(W, user, source)

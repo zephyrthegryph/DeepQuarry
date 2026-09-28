@@ -25,7 +25,7 @@
 	default_apply_parts()
 	cell = default_use_hicell()
 
-	AddComponent(/datum/component/hose_connector/output)
+	add_hose_connector(/datum/hose_connector/output)
 
 	RefreshParts()
 	update_icon()
@@ -84,7 +84,7 @@ REF_OWNED(/obj/machinery/pump, "cell")
 	T.pump_reagents(reagents, reagents_per_cycle)
 	update_icon()
 
-	SEND_SIGNAL(src, COMSIG_HOSE_FORCEPUMP)
+	OM_EMIT(src, /datum/om/event/hose_forcepump)
 
 // Sets the power state, if possible.
 // Returns TRUE/FALSE on power state changing

@@ -599,7 +599,7 @@
 			t_He 	= "Shi"
 			t_His 	= "Hir"
 			t_his 	= "hir"
-	var/datum/component/xenochimera/xc = get_xenochimera_component()
+	var/datum/xenochimera/xc = get_xenochimera_state()
 	if(xc)
 		if((xc.revive_ready == REVIVING_NOW || xc.revive_ready == REVIVING_DONE))
 			if(stat == DEAD)

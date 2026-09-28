@@ -615,7 +615,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	return dismantle() ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
 
 /obj/machinery/proc/dismantle()
-	SEND_SIGNAL(src, COMSIG_OBJ_DECONSTRUCT, FALSE)
+	OM_EMIT(src, /datum/om/event/obj_deconstruct, FALSE)
 	playsound(src, 'sound/items/Crowbar.ogg', 50, 1)
 	latent_materialize_all() // a walk needs real things (C5)
 	for(var/obj/I in contents) // ALLOW(latent): materialized above
@@ -693,7 +693,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	return ..()
 
 /**
- * The one machinery break (damage.md §6). Sets BROKEN, sends COMSIG_MACHINERY_BROKEN
+ * The one machinery break (damage.md §6). Sets BROKEN, emits machinery_broken
  * and publishes KEY_MACHINE_BROKEN. Returns TRUE if the machine was not
  * already broken. Subtypes with real behaviour call this first and act on the
  * result; an override that only sets flags is forbidden (tools/ci/check_breakpoints.sh).
@@ -704,7 +704,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 		return FALSE
 	stat |= BROKEN
 	OM_CHANGED(src, CHANGE_MACHINE_BROKEN)
-	SEND_SIGNAL(src, COMSIG_MACHINERY_BROKEN, damage_flag)
+	OM_EMIT(src, /datum/om/event/machinery_broken, damage_flag)
 	update_icon()
 	return TRUE
 

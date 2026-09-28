@@ -12,7 +12,7 @@
 	set category = "Changeling"
 	set name = "Absorb DNA"
 
-	var/datum/component/antag/changeling/changeling = changeling_power(0,0,100) //Our changeling power
+	var/datum/changeling/changeling = changeling_power(0,0,100) //Our changeling power
 	if(!changeling)	return
 
 	var/obj/item/grab/G = src.get_active_hand()
@@ -29,7 +29,7 @@
 		to_chat(src, span_warning("We do not know how to parse this creature's DNA!"))
 		return
 
-	var/datum/component/antag/changeling/target_changeling = is_changeling(T) //If the target is a changeling
+	var/datum/changeling/target_changeling = is_changeling(T) //If the target is a changeling
 
 	if(T.has_mutation(HUSK)) //Lings can always absorb other lings, unless someone beat them to it first.
 		if(!target_changeling || target_changeling && target_changeling.geneticpoints < 0)
@@ -76,7 +76,7 @@
 
 /mob/living/proc/changeling_absorb_interrupted(datum/om/task/timed/changeling_absorb/task)
 	to_chat(src, span_warning("Our absorption of [task.target] has been interrupted!"))
-	var/datum/component/antag/changeling/changeling = is_changeling(src)
+	var/datum/changeling/changeling = is_changeling(src)
 	if(changeling)
 		changeling.isabsorbing = FALSE
 
@@ -88,8 +88,8 @@
 	if(task.stage < 3)
 		changeling_absorb_stage(T, task.grab, task.stage + 1)
 		return
-	var/datum/component/antag/changeling/changeling = is_changeling(src)
-	var/datum/component/antag/changeling/target_changeling = is_changeling(T)
+	var/datum/changeling/changeling = is_changeling(src)
+	var/datum/changeling/target_changeling = is_changeling(T)
 	to_chat(src, span_notice("We have absorbed [T]!"))
 	add_attack_logs(src,T,"Absorbed (changeling)")
 	visible_message(span_danger("[src] sucks the fluids from [T]!"))
@@ -102,7 +102,7 @@
 	return 1
 
 ///Proc that does the actual 'obtaining DNA' part for changelings. Has four arguments: Our victim, our changeling component, the target's changeling component, and if we drain the victim's nutrition or not.
-/mob/living/proc/changeling_obtain_dna(mob/living/carbon/human/victim, datum/component/antag/changeling/changeling, datum/component/antag/changeling/target_changeling, drain = TRUE)
+/mob/living/proc/changeling_obtain_dna(mob/living/carbon/human/victim, datum/changeling/changeling, datum/changeling/target_changeling, drain = TRUE)
 	if(!victim || !ishuman(victim)) //There MUST be a victim and it MUST be a human and NOT a monkey!
 		return
 	if(!target_changeling)

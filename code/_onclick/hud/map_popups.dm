@@ -169,4 +169,6 @@
 /client/verb/handle_popup_close(window_id as text)
 	set hidden = TRUE
 	clear_map("[window_id]_map")
-	SEND_SIGNAL(src, COMSIG_POPUP_CLEARED, window_id)
+	// Clients cannot be hooked: the event is emitted on the client's mob.
+	if(mob)
+		OM_EMIT(mob, /datum/om/event/popup_cleared, window_id)

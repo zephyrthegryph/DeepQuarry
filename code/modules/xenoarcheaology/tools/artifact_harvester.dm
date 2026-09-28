@@ -210,7 +210,7 @@
 
 		var/list/active_effects //This will be populated when we see if it has the artifact component or the artifact_master var
 
-		var/datum/component/artifact_master/ScannedMaster = analysed.GetComponent(/datum/component/artifact_master)
+		var/datum/artifact_master/ScannedMaster = analysed.artifact_master
 		if(istype(ScannedMaster))
 			active_effects = ScannedMaster.get_all_effects()
 		else

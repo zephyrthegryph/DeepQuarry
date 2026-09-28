@@ -43,15 +43,15 @@ REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
 /obj/item/gps/proc/update_holder()
 
 	if(holder_ref() && loc != holder_ref())
-		UnregisterSignal(holder_ref(), COMSIG_MOVABLE_ATTEMPTED_MOVE)
+		om_unhook(holder_ref(), /datum/om/event/movable_attempted_move, src)
 		//GLOB.dir_set_event.unregister(holder, src)
 		holder_ref().client?.screen -= compass
 		holder_handle = null
 
 	if(istype(loc, /mob))
 		holder_handle = om_handle(loc)
-		RegisterSignal(holder_ref(), COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(update_compass), override = TRUE)
-		holder_ref().AddComponent(/datum/component/recursive_move)
+		om_hook(holder_ref(), /datum/om/event/movable_attempted_move, src, PROC_REF(on_holder_moved))
+		dq_add_recursive_move(holder_ref())
 		//GLOB.dir_set_event.register(holder, src, PROC_REF(update_compass))
 
 	if(holder_ref() && tracking)
@@ -115,8 +115,13 @@ REF_OWNED(/obj/item/gps, "compass")
 	reachable_z_levels = reachable_z_levels || using_map.get_map_levels(origin.z, long_range)
 	return (target.z in reachable_z_levels)
 
+/// Hooked on the holder's movement.
+/obj/item/gps/proc/on_holder_moved(atom/movable/source, datum/om/event/movable_attempted_move/event)
+	EVENT_HANDLER
+	update_compass(source)
+
 /obj/item/gps/proc/update_compass(atom/movable/source, update_compass_icon)
-	SIGNAL_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	compass.hide_waypoints(FALSE)
 	var/turf/my_turf = get_turf(src)
 	for(var/thing in tracking_devices)

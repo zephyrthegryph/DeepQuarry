@@ -15,7 +15,7 @@
 
 /datum/om/relation/throw_of/on_unlink(datum/thrownthing/source, atom/movable/target, datum/om/edge/edge)
 	SHOULD_NOT_SLEEP(TRUE)
-	source.UnregisterSignal(target, COMSIG_LIVING_TURF_COLLISION)
+	om_unhook(target, /datum/om/event/before/living_turf_collision, source)
 	if(target.throwing == source)
 		target.throwing = null
 
@@ -72,7 +72,7 @@
 /datum/thrownthing/New(atom/movable/thrownthing, atom/target, init_dir, maxrange, speed, mob/thrower, diagonals_first, force, gentle, callback, target_zone)
 	. = ..()
 	om_link(src, thrownthing, /datum/om/relation/throw_of)
-	RegisterSignal(thrownthing, COMSIG_LIVING_TURF_COLLISION, PROC_REF(hit_atom))
+	om_hook(thrownthing, /datum/om/event/before/living_turf_collision, src, PROC_REF(hit_atom))
 	src.starting_turf = om_handle(get_turf(thrownthing))
 	var/turf/target_turf = get_turf(target)
 	src.target_turf = om_handle(target_turf)
@@ -226,8 +226,9 @@ REF_OWNED(/datum/thrownthing, list("callback"))
 
 	qdel(src)
 
-/datum/thrownthing/proc/hit_atom(atom/A)
-	SIGNAL_HANDLER
+/datum/thrownthing/proc/hit_atom(datum/source, datum/om/event/before/living_turf_collision/event)
+	EVENT_HANDLER
+	var/atom/A = source
 	finalize(hit=TRUE, t_target=A)
 
 /datum/thrownthing/proc/hitcheck(turf/T)

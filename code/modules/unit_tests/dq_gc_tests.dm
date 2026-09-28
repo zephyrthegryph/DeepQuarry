@@ -148,11 +148,11 @@
 
 /datum/unit_test/dq_shadekin_mob_deletion_leaves_no_hud/Run()
 	var/mob/living/carbon/human/H = new(null)
-	var/datum/component/shadekin/SK = H.AddComponent(/datum/component/shadekin/phase_only)
-	TEST_ASSERT_NOTNULL(SK, "shadekin component failed to attach")
+	var/datum/shadekin/SK = H.add_shadekin(/datum/shadekin/phase_only)
+	TEST_ASSERT_NOTNULL(SK, "shadekin datum failed to attach")
 	qdel(H)
 	TEST_ASSERT(QDELETED(H), "mob Destroy() did not run")
-	TEST_ASSERT(QDELETED(SK), "shadekin component was not destroyed with its mob")
+	TEST_ASSERT(QDELETED(SK), "shadekin datum was not destroyed with its mob")
 	TEST_ASSERT(isnull(H.ability_master), "mob deletion left a resurrected ability_master screen object — immortal GC cycle")
 
 // Deleting a container must Destroy() every item inside it — the base

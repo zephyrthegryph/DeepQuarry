@@ -12,7 +12,6 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick)
 	src.target = target
 
 /obj/effect/statclick/proc/cleanup()
-	SIGNAL_HANDLER
 	qdel(src)
 
 /obj/effect/statclick/proc/update(text)

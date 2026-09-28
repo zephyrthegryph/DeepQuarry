@@ -376,9 +376,6 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		if (!QDELING(src))
 			stack_trace("Client does not purport to be QDELING, this is going to cause bugs in other places!")
 
-		// Yes this is the same as what's found in qdel(). Yes it does need to be here
-		// Get off my back
-		SEND_SIGNAL(src, COMSIG_QDELETING, TRUE)
 		Destroy() //Clean up signals and timers.
 	return ..()
 
@@ -918,7 +915,9 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		if (clicklimiter[SECOND_COUNT] > scl)
 			to_chat(src, span_danger("Your previous click was ignored because you've done too many in a second"))
 			return
-	SEND_SIGNAL(src, COMSIG_CLIENT_CLICK, object, location, control, params, usr)
+	// Clients cannot be hooked: the click event is emitted on the client's mob.
+	if(mob)
+		OM_EMIT(mob, /datum/om/event/client_click, object, location, control, params, usr)
 	. = ..()
 
 /// This grabs the DPI of the user per their skin (a winget round trip, through DX-exec)

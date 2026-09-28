@@ -100,11 +100,21 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 	update_icon()
 
 /obj/item/nif/proc/register_human()
-	RegisterSignal(human, COMSIG_MOB_DEATH, GLOBAL_PROC_REF(persist_nif_data))
+	om_hook(human, /datum/om/event/mob_death, src, PROC_REF(on_human_death))
 
 /obj/item/nif/proc/unregister_human()
-	UnregisterSignal(human, COMSIG_MOB_DEATH)
+	om_unhook(human, /datum/om/event/mob_death, src)
 	human.nif = null
+
+/// Saves the NIF's data when the implanted human dies. The save does savefile I/O, so it
+/// runs right after the event instead of inside it (handlers must not sleep).
+/obj/item/nif/proc/on_human_death(mob/living/carbon/human/source, datum/om/event/mob_death/event)
+	EVENT_HANDLER
+	om_after(src, 0, PROC_REF(persist_on_death), source)
+
+/obj/item/nif/proc/persist_on_death(mob/living/carbon/human/source)
+	if(!QDELETED(source))
+		persist_nif_data(source)
 
 //Destructor cleans up references
 REF_OWNED(/obj/item/nif, "comm")
@@ -131,7 +141,7 @@ REF_OWNED_LIST(/obj/item/nif, "nifsofts")
 		human.nif = src
 		stat = NIF_INSTALLING
 		add_verb(H, /mob/living/carbon/human/proc/set_nif_examine)
-		menu_handle = om_handle(H.AddComponent(/datum/component/nif_menu))
+		menu_handle = om_handle(new /datum/nif_menu(H))
 		if(starting_software)
 			for(var/path in starting_software)
 				new path(src)

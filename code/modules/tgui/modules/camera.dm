@@ -153,11 +153,11 @@ REF_OWNED(/datum/tgui_module/camera, "cam_screen_tg")
 		var/list/cameras = get_available_cameras(ui.user)
 		var/obj/machinery/camera/C = cameras["[ckey(c_tag)]"]
 		if(active_camera())
-			UnregisterSignal(active_camera(), COMSIG_MOVABLE_ATTEMPTED_MOVE)
+			om_unhook(active_camera(), /datum/om/event/movable_attempted_move, src)
 		if(C)
 			active_camera_handle = om_handle(C)
-			active_camera().AddComponent(/datum/component/recursive_move)
-			RegisterSignal(active_camera(), COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(update_active_camera_screen))
+			dq_add_recursive_move(active_camera())
+			om_hook(active_camera(), /datum/om/event/movable_attempted_move, src, PROC_REF(on_active_camera_moved_event))
 		playsound(tgui_host(), get_sfx("terminal_type"), 25, FALSE)
 		update_active_camera_screen()
 		return TRUE
@@ -182,16 +182,20 @@ REF_OWNED(/datum/tgui_module/camera, "cam_screen_tg")
 
 			if(target)
 				if(active_camera())
-					UnregisterSignal(active_camera(), COMSIG_MOVABLE_ATTEMPTED_MOVE)
+					om_unhook(active_camera(), /datum/om/event/movable_attempted_move, src)
 				active_camera_handle = om_handle(target)
-				active_camera().AddComponent(/datum/component/recursive_move)
-				RegisterSignal(active_camera(), COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(update_active_camera_screen))
+				dq_add_recursive_move(active_camera())
+				om_hook(active_camera(), /datum/om/event/movable_attempted_move, src, PROC_REF(on_active_camera_moved_event))
 				playsound(tgui_host(), get_sfx("terminal_type"), 25, FALSE)
 				update_active_camera_screen()
 				. = TRUE
 
+/// Event wrapper: the watched camera (or something carrying it) moved.
+/datum/tgui_module/camera/proc/on_active_camera_moved_event(datum/source, datum/om/event/movable_attempted_move/event)
+	EVENT_HANDLER
+	update_active_camera_screen()
+
 /datum/tgui_module/camera/proc/update_active_camera_screen()
-	SIGNAL_HANDLER
 	if(!active_camera()?.can_use())
 		cam_screen_tg.show_camera_static()
 		return TRUE
@@ -279,7 +283,7 @@ REF_OWNED(/datum/tgui_module/camera, "cam_screen_tg")
 	// Turn off the console
 	if(length(concurrent_users) == 0 && is_living)
 		if(active_camera())
-			UnregisterSignal(active_camera(), COMSIG_MOVABLE_ATTEMPTED_MOVE)
+			om_unhook(active_camera(), /datum/om/event/movable_attempted_move, src)
 		active_camera_handle = null
 		last_camera_turf_handle = null
 		playsound(tgui_host(), 'sound/machines/terminal_off.ogg', 25, FALSE)

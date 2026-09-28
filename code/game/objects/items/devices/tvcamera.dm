@@ -141,7 +141,7 @@ DECLARE_INTERACTIONS(/obj/item/tvcamera, INTERACT_USE(null, PROC_REF(interaction
 
 /obj/item/tvcamera/proc/update_feed()
 	if(camera.status)
-		SEND_SIGNAL(camera, COMSIG_MOVABLE_ATTEMPTED_MOVE, null, null) // Forward the movement signal
+		OM_EMIT(camera, /datum/om/event/movable_attempted_move, null, null) // Forward the movement event
 
 // Bodycam
 // Security Bodycam
@@ -271,7 +271,7 @@ DECLARE_INTERACTIONS(/obj/item/clothing/accessory/bodycam, INTERACT_USE(null, PR
 
 /obj/item/clothing/accessory/bodycam/proc/update_feed()
 	if(bcamera.status)
-		SEND_SIGNAL(bcamera, COMSIG_MOVABLE_ATTEMPTED_MOVE, null, null) // Forward the movement signal
+		OM_EMIT(bcamera, /datum/om/event/movable_attempted_move, null, null) // Forward the movement event
 
 /obj/item/clothing/accessory/bodycam/update_icon()
 	..()

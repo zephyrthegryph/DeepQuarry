@@ -64,12 +64,12 @@
 		return 0
 	if(om_has(src, EFFECT_GODMODE))
 		return 0
-	if(_listen_lookup?[COMSIG_LIVING_INJURE])
+	if(om_wants(src, /datum/om/event/before/living_injure))
 		var/list/amount_ref = list(amount)
-		if(SEND_SIGNAL(src, COMSIG_LIVING_INJURE, kind, amount_ref, zone, source, flags) & COMPONENT_CANCEL_INJURY)
+		if(OM_EMIT(src, /datum/om/event/before/living_injure, kind, amount_ref, zone, source, flags) & COMPONENT_CANCEL_INJURY)
 			return 0
 		amount = amount_ref[1]
-	var/list/explain = (injury_trace || _listen_lookup?[COMSIG_LIVING_INJURY_EXPLAINED]) ? list() : null
+	var/list/explain = (injury_trace || om_wants(src, /datum/om/event/living_injury_explained)) ? list() : null
 	var/incoming_kind = kind
 	var/before = amount
 
@@ -87,10 +87,10 @@
 
 	if(!(flags & INJURE_IGNORE_RESISTANCE) && amount > 0)
 		// 2. Energy shields.
-		if(_listen_lookup?[COMSIG_LIVING_SHIELD_INJURY])
+		if(om_wants(src, /datum/om/event/living_shield_injury))
 			before = amount
 			var/list/amount_ref = list(amount)
-			SEND_SIGNAL(src, COMSIG_LIVING_SHIELD_INJURY, kind, amount_ref, zone, source, flags)
+			OM_EMIT(src, /datum/om/event/living_shield_injury, kind, amount_ref, zone, source, flags)
 			amount = max(0, amount_ref[1])
 			if(explain)
 				explain += list(list(INJURY_STAGE_SHIELD, before, amount, "energy shield"))
@@ -119,7 +119,7 @@
 	if(!(flags & (INJURE_SILENT | INJURE_CONTINUOUS)))
 		flash_weak_pain()
 	body.on_status_changed()
-	SEND_SIGNAL(src, COMSIG_LIVING_INJURED, kind, ., zone, source, flags)
+	OM_EMIT(src, /datum/om/event/living_injured, kind, ., zone, source, flags)
 
 /// Apply several kinds at once: alist(INJURY_BLUNT = 10, INJURY_BURN = 5).
 /// (alist, because DM forbids numeric keys in a plain list literal.)
@@ -153,7 +153,7 @@
 /// breakdown and shows it to the admins tracing this mob.
 /// `stages` is a list of list(INJURY_STAGE_*, amount_in, amount_out, detail).
 /mob/living/proc/explain_injury_stages(incoming_kind, kind, list/stages, zone, atom/source, flags)
-	SEND_SIGNAL(src, COMSIG_LIVING_INJURY_EXPLAINED, incoming_kind, kind, stages, zone, source, flags)
+	OM_EMIT(src, /datum/om/event/living_injury_explained, incoming_kind, kind, stages, zone, source, flags)
 	if(!injury_trace)
 		return
 	var/list/parts = list()

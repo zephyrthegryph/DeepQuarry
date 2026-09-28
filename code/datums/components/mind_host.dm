@@ -22,7 +22,10 @@
 // relation's declared target_ref_field, containment.md) never has a reason to
 // look at this file.
 
-/datum/component/mind_host
+/// (Was /datum/mind_host; now a plain datum owned by the hosting item, /obj/item var mind_host.)
+/datum/mind_host
+	/// The hosting item (brain organ, MMI, posibrain...).
+	var/obj/item/owner
 	/// The view mob the hosted mind occupies. Created on demand.
 	var/mob/living/carbon/brain/view
 	/// Brain organ whose state decides the view's status. Null for synthetic
@@ -31,14 +34,29 @@
 	/// Type of view mob to create.
 	var/view_type = /mob/living/carbon/brain
 
-/datum/component/mind_host/Initialize(obj/item/organ/internal/brain/tissue)
-	if(!isobj(parent))
-		return COMPONENT_INCOMPATIBLE
+/datum/mind_host/New(obj/item/new_owner, obj/item/organ/internal/brain/tissue)
+	..()
+	if(!isitem(new_owner))
+		log_world("[type] was created for a non-item host ([new_owner]); it hosts nothing.")
+		return
+	owner = new_owner
 	set_tissue(tissue)
+
+/// Makes `holder` a mind host (was AddComponent(/datum/mind_host, tissue)).
+/obj/item/proc/make_mind_host(obj/item/organ/internal/brain/tissue) as /datum/mind_host
+	if(mind_host)
+		QDEL_NULL(mind_host)
+	mind_host = new /datum/mind_host(src, tissue)
+	return mind_host
+
+/// Owned: this item's mind host, if it holds minds.
+REF_VAR(/obj/item, OWNED, /datum/mind_host, mind_host)
+
+REF_BACK(/datum/mind_host, list("owner" = "mind_host"))
 
 /// Phase 1: the view (owned) is detached before the tissue drops, so it isn't put through a
 /// death on the way out.
-/datum/component/mind_host/lifecycle_unbind()
+/datum/mind_host/lifecycle_unbind()
 	if(view)
 		var/mob/living/carbon/brain/old_view = view
 		view = null
@@ -47,61 +65,62 @@
 		if(!QDELETED(old_view))
 			qdel(old_view)
 	set_tissue(null)
+	owner = null
 
-REF_OWNED(/datum/component/mind_host, "view")
+REF_OWNED(/datum/mind_host, "view")
 
 /// The brain organ backing the view's status.
-/datum/component/mind_host/proc/set_tissue(obj/item/organ/internal/brain/new_tissue)
+/datum/mind_host/proc/set_tissue(obj/item/organ/internal/brain/new_tissue)
 	if(tissue() == new_tissue)
 		return
 	if(tissue())
-		UnregisterSignal(tissue(), COMSIG_QDELETING)
+		om_unhook(tissue(), /datum/om/event/qdeleting, src)
 	tissue_handle = om_handle(new_tissue)
 	if(tissue())
-		RegisterSignal(tissue(), COMSIG_QDELETING, PROC_REF(on_tissue_deleted))
+		om_hook(tissue(), /datum/om/event/qdeleting, src, PROC_REF(on_tissue_deleted))
 	view?.refresh_host_status()
 
-/datum/component/mind_host/proc/on_tissue_deleted(datum/source)
-	SIGNAL_HANDLER
+/datum/mind_host/proc/on_tissue_deleted(datum/source, datum/om/event/qdeleting/event)
+	EVENT_HANDLER
 	set_tissue(null)
 
 /// The view mob, creating it if needed.
-/datum/component/mind_host/proc/ensure_view()
+/datum/mind_host/proc/ensure_view()
 	if(!view)
-		var/atom/movable/holder = parent
+		var/atom/movable/holder = owner
 		var/mob/living/carbon/brain/new_view = new view_type(holder)
 		attach_view(new_view)
 	return view
 
-/datum/component/mind_host/proc/attach_view(mob/living/carbon/brain/new_view)
+/datum/mind_host/proc/attach_view(mob/living/carbon/brain/new_view)
 	view = new_view
 	new_view.host = src
-	new_view.container = parent
-	if(new_view.loc != parent)
-		new_view.forceMove(parent)
+	new_view.container = owner
+	if(new_view.loc != owner)
+		new_view.forceMove(owner)
 	new_view.refresh_host_status()
 
 /// The mind this host holds, if any.
-/datum/component/mind_host/proc/hosted_mind()
+/datum/mind_host/proc/hosted_mind()
 	return view?.mind
 
 /// A mind comes into this host. With no mind, the view is still made (an
 /// empty, waiting host). Returns the view.
-/datum/component/mind_host/proc/receive_mind(datum/mind/M, reason = "received")
+/datum/mind_host/proc/receive_mind(datum/mind/M, reason = "received")
 	ensure_view()
 	if(M)
-		transfer_mind(M, view, "[reason] (into [parent])")
+		transfer_mind(M, view, "[reason] (into [owner])")
 	return view
 
 /// The hosted mind goes into `dest`. Returns TRUE on success.
-/datum/component/mind_host/proc/release_mind(mob/living/dest, reason = "released")
+/datum/mind_host/proc/release_mind(mob/living/dest, reason = "released")
 	var/datum/mind/M = hosted_mind()
 	if(!M)
 		return FALSE
-	return transfer_mind(M, dest, "[reason] (from [parent])")
+	return transfer_mind(M, dest, "[reason] (from [owner])")
 
 /// Delete the (now empty) view once its mind has left.
-/datum/component/mind_host/proc/discard_view()
+/datum/mind_host/proc/discard_view()
 	if(!view)
 		return
 	var/mob/living/carbon/brain/old_view = view
@@ -112,24 +131,27 @@ REF_OWNED(/datum/component/mind_host, "view")
 
 /// Move `other`'s view (and the mind in it) into this host. Returns TRUE if a
 /// view moved.
-/datum/component/mind_host/proc/adopt_view(datum/component/mind_host/other, reason = "handed over")
+/datum/mind_host/proc/adopt_view(datum/mind_host/other, reason = "handed over")
 	if(!other?.view || view)
 		return FALSE
 	var/mob/living/carbon/brain/moved_view = other.view
 	other.view = null
-	log_game("MIND: [moved_view.mind ? "[moved_view.mind.key] ([moved_view.mind.name])" : "empty view [moved_view]"] moved from host [other.parent] to [parent]: [reason]")
+	log_game("MIND: [moved_view.mind ? "[moved_view.mind.key] ([moved_view.mind.name])" : "empty view [moved_view]"] moved from host [other.owner] to [owner]: [reason]")
 	attach_view(moved_view)
 	return TRUE
 
 /// The mind host of `A`, if it is one.
 /proc/get_mind_host(atom/A)
-	return A?.GetComponent(/datum/component/mind_host)
+	if(!isitem(A))
+		return null
+	var/obj/item/I = A
+	return I.mind_host
 
 /// The view mob a mind host holds (its hosted mind lives there), if any.
 /obj/proc/hosted_view()
-	var/datum/component/mind_host/host = GetComponent(/datum/component/mind_host)
+	var/datum/mind_host/host = get_mind_host(src)
 	return host?.view
 
 /// LC-refs: the brain organ backing the view -- an OM handle (om_handle()), so it reads null once that is deleted.
-/datum/component/mind_host/proc/tissue() as /obj/item/organ/internal/brain
+/datum/mind_host/proc/tissue() as /obj/item/organ/internal/brain
 	return om_resolve(tissue_handle)

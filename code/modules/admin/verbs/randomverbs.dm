@@ -521,7 +521,7 @@ ADMIN_VERB(respawn_character, (R_ADMIN|R_REJUVINATE), "Spawn Character", "(Re)Sp
 			if(is_lang_whitelisted(src,chosen_language) || (new_character.species && (chosen_language.name in new_character.species.secondary_langs)))
 				new_character.add_language(lang)
 
-	SEND_SIGNAL(new_character, COMSIG_HUMAN_DNA_FINALIZED)
+	OM_EMIT(new_character, /datum/om/event/human_dna_finalized)
 
 	//If desired, apply equipment.
 	if(equipment)

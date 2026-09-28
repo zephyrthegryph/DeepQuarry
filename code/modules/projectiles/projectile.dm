@@ -582,7 +582,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 			if(crawl_destroy == TRUE) //chompADD
 				return TRUE
 			if(!L.density)
-				var/datum/component/shadekin/SK = L.GetComponent(/datum/component/shadekin)
+				var/datum/shadekin/SK = L.get_shadekin_state()
 				if(!SK || (SK.in_phase && !hits_phased)) //We don't have the phasing component, or we do but we're currently phased and the bullet can't hit phased things...This is needed for simple mobs.
 					return FALSE
 	return TRUE

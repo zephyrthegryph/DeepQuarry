@@ -33,8 +33,8 @@ DECLARE_INTERACTIONS(/obj/structure/reagent_dispensers, \
 		src.verbs -= /obj/structure/reagent_dispensers/verb/set_APTFT
 
 	if(has_sockets)
-		AddComponent(/datum/component/hose_connector/input)
-		AddComponent(/datum/component/hose_connector/output)
+		add_hose_connector(/datum/hose_connector/input)
+		add_hose_connector(/datum/hose_connector/output)
 
 	. = ..()
 

@@ -883,6 +883,25 @@ deadline wheel; nothing polls. `om_ui_rate(R)` returns
   live in `code/datums/om_events/atom_events.dm`; a behaviour's own events sit next to it
   (`code/datums/behaviours/`). A before/ event can also carry a result field the sender
   reads back (`before/dice_roll.result_override`).
+- **Delivery modes.** A plain event is queued when emitted during another delivery (above).
+  `sync = TRUE` delivers at once, nested, like a direct call; `accumulate = TRUE` on a
+  before/ event runs every handler instead of stopping at the first veto. In both, numeric
+  handler returns are ORed into `event.result`, which `om_emit()` returns. `OM_EMIT(E,
+  /datum/om/event/x, args...)` wraps `om_wants()` + `new` + `om_emit()` and is 0 when no one
+  listens. The events that replaced the DCS signals are in
+  `code/datums/om_events/signal_events.dm` (sync, or accumulate when the sender reads the
+  result); their result bits are in `code/__defines/om_event_flags.dm`.
+- **Hooks (cross-entity).** `om_hook(source, /datum/om/event/x, listener, PROC_REF(on_x))`
+  (`code/datums/om/hooks.dm`) calls `listener.on_x(source, event)` for every x emitted on
+  source, after source's behaviours. `om_unhook()`, `om_unhook_all()`, `om_hooked()`. Both
+  ends hold the hook and lifecycle phase 4 drops it, so a hook never needs cleanup in
+  `Destroy()`. Hooks key on the exact event type. Handlers start with `EVENT_HANDLER`.
+  World-wide events are emitted on and hooked from `OM_WORLD` (`OM_EMIT_WORLD()`).
+  Deletion is `/datum/om/event/qdeleting` (destroy phase 0); trait changes are
+  `trait_gained` / `trait_lost`.
+- **No DCS.** Signals, components, elements and SSdcs are deleted; `tools/ci/dcs_lints.py`
+  bans their API outright. A component became a behaviour with state on the entity, or a
+  plain datum the entity owns in a declared var (`REF_VAR(..., OWNED, ...)`).
 - **Checks:** `/datum/om/check/x/why_not(actor, target)` returns null or a
   reason; `depends_on` lists the channels that can flip it; `arg` is the
   parameter. `om_why_not(spec, actor, target)`, `om_can(...)`,
@@ -1176,7 +1195,7 @@ Each has a regression test in `dq_om_core_tests.dm`.
 Each job has one mechanism. Every alternative in the third column is counted by the lint in the
 fourth, and `tools/ci/check_ratchets.sh` runs them all: a count may fall, never rise. The
 ceilings are the `tools/ci/*_baseline.txt` files next to each lint (`api_lints_baseline.txt`,
-`scheduler_lints_baseline.txt`, `dcs_lints_baseline.txt`, `cooldown_baseline.txt`,
+`scheduler_lints_baseline.txt`, `cooldown_baseline.txt`,
 `containment_baseline.txt`, `spatial_baseline.txt`, `latent_baseline.txt`,
 `declared_refs_baseline.txt`, `lifecycle_counts_baseline.txt`); lower
 one with the lint's `--update` after a sweep, never raise it.
@@ -1198,7 +1217,7 @@ spawn(0) // ALLOW(scheduler): world.Export() is a blocking external call
 - The reason after the colon is required. `allow_annotations.py` (run by `check_ratchets.sh`)
   fails on a missing reason, an unknown lint name or a malformed annotation.
 - Lint names: `api`, `check_grep` (same line only), `containment`, `cooldown`,
-  `dcs`, `declared_refs`, `instance_list`, `latent`, `lifecycle`, `object_keyed_lists`,
+  `declared_refs`, `instance_list`, `latent`, `lifecycle`, `object_keyed_lists`,
   `ownership_cycle`, `pollers`, `registry`, `scheduler`, `silent_catch`, `spatial`, `state_ref`.
 - An annotated site doesn't count toward its ceiling, so each counted total ratchets to 0.
   The scheduler's keeps are §4.11's "What stays": the MC, GC and failsafe, world and client
@@ -1230,7 +1249,7 @@ spawn(0) // ALLOW(scheduler): world.Export() is a blocking external call
 | Reuse a scratch object on a hot path | `POOL_DECLARE(type)`, `pool_take(type)` / `obj.release()`, with its per-use fields declared `REF_TRANSIENT` ([lifecycle.md §4.1](lifecycle.md#41-one-place-declarations-and-pools)) | a hand-written `GLOB` free list and release proc that clears fields by hand | review |
 | Delete something | a lifecycle verb (`code/datums/lifecycle/verbs.dm`): `consume()`, `replace_with()`, `expire()` or a lifetime, `slot_clear()`, `delete_on_death`; plain `qdel()` only when no verb fits | `del()`; a new `qdel()` where a verb fits | `scheduler_lints.py` (`del`), `lifecycle_counts_lint.py` (`qdel(` sites per file) |
 | Keep a set of live instances | an OM registry (`REGISTRY_MEMBERS()`) | a `GLOB` list of instances; a list allocated per instance | `registry_lint.py`, `instance_list_lint.py` |
-| React to something happening now | an OM event, `om_emit(E, new /datum/om/event/x)`; a `/datum/om/event/before/x` returning `EVENT_VETO` to refuse it (§10). Deferred or state-driven reactions use a channel, a watch or `om_after()` (§4.4, §4.11) | `RegisterSignal()`/`SEND_SIGNAL()`, `AddComponent()`, `AddElement()` outside the DCS core (`CORE` in `dcs_lints.py`) and sites marked `ALLOW(dcs)`; per-folder replacements in `signal_migration_map.md` | `dcs_lints.py` (`register_signal`, `add_component`, `add_element`) |
+| React to something happening now | an OM event, `OM_EMIT(E, /datum/om/event/x, args...)`; a `/datum/om/event/before/x` to refuse it or return a result; `om_hook()` to react to another entity's event (§10). Deferred or state-driven reactions use a channel, a watch or `om_after()` (§4.4, §4.11) | `RegisterSignal()`/`SEND_SIGNAL()`, `AddComponent()`, `AddElement()`, `COMSIG_*`: deleted, banned outright | `dcs_lints.py` (no ceiling) |
 
 ## 17. Lifecycle diagnostics
 

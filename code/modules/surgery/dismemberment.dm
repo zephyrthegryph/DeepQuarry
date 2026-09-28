@@ -1,5 +1,5 @@
 /mob/living/proc/regenerate_limbs(noheal = FALSE, list/excluded_zones = list())
-	SEND_SIGNAL(src, COMSIG_LIVING_REGENERATE_LIMBS, noheal, excluded_zones)
+	OM_EMIT(src, /datum/om/event/living_regenerate_limbs, noheal, excluded_zones)
 
 /mob/living/carbon/human/regenerate_limbs(noheal = FALSE, list/excluded_zones = list())
 	var/list/zone_list = BP_ALL

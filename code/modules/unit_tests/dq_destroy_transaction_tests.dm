@@ -30,11 +30,11 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 
 /obj/item/dq_destroy_transaction_phase_probe/Initialize(mapload)
 	. = ..()
-	RegisterSignal(src, COMSIG_QDELETING, PROC_REF(on_qdeleting))
+	om_hook(src, /datum/om/event/qdeleting, src, PROC_REF(on_qdeleting))
 	child = new(src)
 
-/obj/item/dq_destroy_transaction_phase_probe/proc/on_qdeleting(datum/source, force)
-	SIGNAL_HANDLER
+/obj/item/dq_destroy_transaction_phase_probe/proc/on_qdeleting(datum/source, datum/om/event/qdeleting/event)
+	EVENT_HANDLER
 	dq_destroy_transaction_log("guard")
 
 /obj/item/dq_destroy_transaction_phase_probe/lifecycle_unbind()
@@ -304,10 +304,10 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	return vars
 
 /datum/dq_destroy_transaction_reentrant_pair/proc/watch()
-	RegisterSignal(src, COMSIG_QDELETING, PROC_REF(on_qdeleting))
+	om_hook(src, /datum/om/event/qdeleting, src, PROC_REF(on_qdeleting))
 
-/datum/dq_destroy_transaction_reentrant_pair/proc/on_qdeleting(datum/source, force)
-	SIGNAL_HANDLER
+/datum/dq_destroy_transaction_reentrant_pair/proc/on_qdeleting(datum/source, datum/om/event/qdeleting/event)
+	EVENT_HANDLER
 	if(qdel_partner_on_signal && partner && !QDELETED(partner))
 		qdel(partner)
 
@@ -323,7 +323,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	qdel(A)
 
 	TEST_ASSERT(QDELETED(A), "A is gone")
-	TEST_ASSERT(QDELETED(B), "B, qdel'd re-entrantly from A's own COMSIG_QDELETING, is gone too")
+	TEST_ASSERT(QDELETED(B), "B, qdel'd re-entrantly from A's own qdeleting hook, is gone too")
 	TEST_ASSERT_NULL(A.partner, "A's own side is null (either its own phase 4, or B's phase 4 racing it, leaves no dangling ref)")
 
 // ---- Tests: scrub (phase 8) catches a leftover Destroy() re-set ----

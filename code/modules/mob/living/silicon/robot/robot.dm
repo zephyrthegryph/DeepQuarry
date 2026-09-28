@@ -170,7 +170,7 @@
 	spark_system.set_up(5, 0, src)
 	spark_system.attach(src)
 	robotact = new(src)
-	RegisterSignal(src, COMSIG_LIVING_SHIELD_INJURY, PROC_REF(absorb_injury_with_shield))
+	om_hook(src, /datum/om/event/living_shield_injury, src, PROC_REF(absorb_injury_with_shield))
 
 	add_language(LANGUAGE_ROBOT_TALK, 1)
 	add_language(LANGUAGE_GALCOM, 1)
@@ -207,8 +207,8 @@
 	recompute_power_demand()
 	update_senses()
 
-	AddComponent(/datum/component/hose_connector/input/borg)
-	AddComponent(/datum/component/hose_connector/output/borg)
+	add_hose_connector(/datum/hose_connector/input/borg)
+	add_hose_connector(/datum/hose_connector/output/borg)
 
 /mob/living/silicon/robot/LateInitialize()
 	pick_module()
@@ -312,7 +312,7 @@
 			// The MMI lands on the borg's turf (get_turf() sees through any container). The
 			// mind only follows it there: it must never stay in an MMI inside this deleting mob.
 			var/turf/T = get_turf(src)
-			var/datum/component/mind_host/host = get_mind_host(mmi)
+			var/datum/mind_host/host = get_mind_host(mmi)
 			if(T)
 				mmi.forceMove(T)
 			if(T && host)
@@ -442,7 +442,7 @@
 		return
 	var/obj/item/cell/old_cell = cell
 	if(old_cell)
-		UnregisterSignal(old_cell, list(COMSIG_ATOM_PRE_EMP_ACT, COMSIG_QDELETING))
+		om_unhook(old_cell, list(/datum/om/event/before/atom_pre_emp_act, /datum/om/event/qdeleting), src)
 	cell = new_cell
 	// A5: a replacement (not a removal: remove_cell() uninstalls first and keeps the cell) takes
 	// the old cell out of the mount and deletes it, instead of orphaning it in contents (a
@@ -456,8 +456,8 @@
 	if(new_cell)
 		if(new_cell.loc != src)
 			new_cell.forceMove(src)
-		RegisterSignal(new_cell, COMSIG_ATOM_PRE_EMP_ACT, PROC_REF(shield_cell_from_emp))
-		RegisterSignal(new_cell, COMSIG_QDELETING, PROC_REF(on_cell_deleted))
+		om_hook(new_cell, /datum/om/event/before/atom_pre_emp_act, src, PROC_REF(shield_cell_from_emp))
+		om_hook(new_cell, /datum/om/event/qdeleting, src, PROC_REF(on_cell_deleted))
 		var/datum/robot_component/mount = get_component(ROBOT_SLOT_POWER)
 		if(mount && mount.wrapped != new_cell)
 			mount.install(new_cell)
@@ -475,12 +475,12 @@
 	set_cell(null)
 	return old_cell
 
-/mob/living/silicon/robot/proc/shield_cell_from_emp(datum/source, severity)
-	SIGNAL_HANDLER
+/mob/living/silicon/robot/proc/shield_cell_from_emp(datum/source, datum/om/event/before/atom_pre_emp_act/event)
+	EVENT_HANDLER
 	return EMP_PROTECT_SELF
 
-/mob/living/silicon/robot/proc/on_cell_deleted(datum/source)
-	SIGNAL_HANDLER
+/mob/living/silicon/robot/proc/on_cell_deleted(datum/source, datum/om/event/qdeleting/event)
+	EVENT_HANDLER
 	var/datum/robot_component/mount = get_component(ROBOT_SLOT_POWER)
 	if(mount?.wrapped == source)
 		mount.wrapped = null
@@ -1305,7 +1305,7 @@
 /// Fullness a belly class shows. Components (the sleeper belly) may adjust it.
 /mob/living/silicon/robot/proc/belly_display_fullness(belly_class)
 	var/list/fullness_ref = list(vore_fullness_ex[belly_class] || 0)
-	SEND_SIGNAL(src, COMSIG_ROBOT_BELLY_FULLNESS, belly_class, fullness_ref)
+	OM_EMIT(src, /datum/om/event/robot_belly_fullness, belly_class, fullness_ref)
 	return fullness_ref[1]
 
 /mob/living/silicon/robot/proc/add_belly_overlays()
@@ -1332,7 +1332,7 @@
 
 /// The sleeper indicator shows red while the belly is busy (see the belly component).
 /mob/living/silicon/robot/proc/sleeper_red_light()
-	var/datum/component/robot_belly/belly = GetComponent(/datum/component/robot_belly)
+	var/datum/robot_belly/belly = robot_belly
 	return belly?.sleeper_state == SLEEPER_STATE_BUSY
 
 /mob/living/silicon/robot/proc/add_panel_overlay()
@@ -1535,23 +1535,23 @@
 	if(old_ai)
 		if(!silent)
 			sync() // One last sync attempt
-		UnregisterSignal(old_ai, list(COMSIG_SILICON_LAWS_CHANGED, COMSIG_QDELETING))
+		om_unhook(old_ai, list(/datum/om/event/silicon_laws_changed, /datum/om/event/qdeleting), src)
 		old_ai.connected_robots -= src
 	connected_ai = new_ai
 	if(new_ai)
 		new_ai.connected_robots |= src
-		RegisterSignal(new_ai, COMSIG_SILICON_LAWS_CHANGED, PROC_REF(on_master_laws_changed))
-		RegisterSignal(new_ai, COMSIG_QDELETING, PROC_REF(on_master_deleted))
+		om_hook(new_ai, /datum/om/event/silicon_laws_changed, src, PROC_REF(on_master_laws_changed))
+		om_hook(new_ai, /datum/om/event/qdeleting, src, PROC_REF(on_master_deleted))
 	log_runtime("ROBOT_LINK: [key_name(src)] master AI [old_ai ? key_name(old_ai) : "none"] -> [new_ai ? key_name(new_ai) : "none"].")
 	return TRUE
 
-/mob/living/silicon/robot/proc/on_master_laws_changed(datum/source)
-	SIGNAL_HANDLER
+/mob/living/silicon/robot/proc/on_master_laws_changed(datum/source, datum/om/event/silicon_laws_changed/event)
+	EVENT_HANDLER
 	if(lawupdate)
 		sync()
 
-/mob/living/silicon/robot/proc/on_master_deleted(datum/source)
-	SIGNAL_HANDLER
+/mob/living/silicon/robot/proc/on_master_deleted(datum/source, datum/om/event/qdeleting/event)
+	EVENT_HANDLER
 	set_master_ai(null, TRUE)
 
 /mob/living/silicon/robot/proc/disconnect_from_ai(silent)

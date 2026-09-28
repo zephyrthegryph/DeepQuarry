@@ -785,7 +785,7 @@
 	var/datum/service_invoice/research_invoice = SSsupply.service_invoices[length(SSsupply.service_invoices)]
 	TEST_ASSERT_EQUAL(research_invoice.verified_item_count, 1, "the real Research checkout did not retain physical merchandise evidence")
 	TEST_ASSERT_EQUAL(research_invoice.verified_amount, 500, "the real Research checkout recorded the wrong verified sale value")
-	var/datum/component/economic_adoption/adoption = prototype.GetComponent(/datum/component/economic_adoption)
+	var/datum/economic_adoption/adoption = prototype.economic_adoption
 	TEST_ASSERT_NOTNULL(adoption, "the purchased prototype was not equipped with post-sale adoption tracking")
 	TEST_ASSERT(adoption.record_use(customer), "the purchasing department could not record real operational use of its prototype")
 	TEST_ASSERT(adoption.adopted, "operational prototype use did not publish its adoption fact")
@@ -1125,11 +1125,11 @@
 	principal_mind.initial_account_handle = om_handle(principal_account)
 	var/mob/living/carbon/human/principal = new(test_turf)
 	principal_mind.transfer_to(principal)
-	var/datum/component/contract_document/charter_document = charter.GetComponent(/datum/component/contract_document)
+	var/datum/contract_document/charter_document = charter.contract_document
 	TEST_ASSERT(charter_document.register_agent_approach_signature(charter, principal, 2), "principal could not physically select the compartmentalized approach")
 	TEST_ASSERT_EQUAL(contract.approach, AGENT_APPROACH_DISCREET, "signed charter did not lock the selected operating approach")
 	var/obj/item/paper/agreement = create_contract_document(test_turf, "test freight subcontract", "<span class=\"paper_field\"></span>", contract.id, CONTRACT_DOCUMENT_AGENT_CONTACT, contract.issuer_name, list("agent_contract_id" = contract.id, "principal_account" = principal_account.account_number, "faction_id" = contract.agent_faction))
-	var/datum/component/contract_document/document = agreement.GetComponent(/datum/component/contract_document)
+	var/datum/contract_document/document = agreement.contract_document
 	TEST_ASSERT(document.register_agent_contact_signature(agreement, contact, 2), "Cargo contact could not sign the physical confidential agreement")
 	TEST_ASSERT_EQUAL(contract.contact_account_number, contact_account.account_number, "signed paper did not bind its Cargo contact")
 	var/obj/structure/closet/crate/crate = new(test_turf)
@@ -1264,7 +1264,7 @@
 	TEST_ASSERT_EQUAL(research.money, research_before + 50, "storefront did not credit its configured department")
 	TEST_ASSERT(store_item.loc != store, "storefront retained the purchased physical item")
 	TEST_ASSERT(store_item.economic_sale_invoice_id > 0, "storefront sale did not produce verified invoice evidence")
-	var/datum/component/economic_adoption/adoption = store_item.GetComponent(/datum/component/economic_adoption)
+	var/datum/economic_adoption/adoption = store_item.economic_adoption
 	TEST_ASSERT_NOTNULL(adoption, "verified Research sale did not attach operational-use evidence to the physical item")
 	TEST_ASSERT(adoption.record_use(customer_mob), "the purchasing department's first real item use did not publish adoption evidence")
 	TEST_ASSERT(adoption.adopted, "operational-use evidence did not become exactly-once after publication")

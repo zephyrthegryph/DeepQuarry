@@ -54,8 +54,6 @@
 	if(Target)
 		om_link(src, Target, /datum/om/relation/action_for)
 
-	// if(istype(target, /datum/mind))
-	// 	RegisterSignal(target, COMSIG_MIND_TRANSFERRED, PROC_REF(on_target_mind_swapped))
 
 /// An action -> the datum it acts for (an item, a mecha, a spell). Read with action_target().
 /// Deleting that datum deletes the action.
@@ -89,7 +87,7 @@ REF_OWNED_VALUES(/datum/action, "viewers")
 			return
 		Remove(owner)
 
-	SEND_SIGNAL(grant_to, COMSIG_MOB_GRANTED_ACTION, src)
+	OM_EMIT(grant_to, /datum/om/event/mob_granted_action, src)
 	om_link(src, grant_to, /datum/om/relation/action_granted_to)
 
 	GiveAction(grant_to)
@@ -112,7 +110,7 @@ REF_OWNED_VALUES(/datum/action, "viewers")
 	// While the owner relation is being torn down (either end deleted) the edge is already gone.
 	var/mob/owner = action_owner() || remove_from
 	if(owner)
-		SEND_SIGNAL(owner, COMSIG_MOB_REMOVED_ACTION, src)
+		OM_EMIT(owner, /datum/om/event/mob_removed_action, src)
 		om_unlink(src, owner, /datum/om/relation/action_granted_to)
 
 /// Actually triggers the effects of the action.

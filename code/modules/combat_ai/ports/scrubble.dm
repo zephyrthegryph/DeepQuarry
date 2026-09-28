@@ -78,7 +78,7 @@
 	name = "scrubble skitter"
 	priority_class = DQ_BEHAVIOR_PRIORITY_INTERRUPT
 	target_kind = DQ_TARGET_MOB
-	eval_triggers = list(COMSIG_DQAI_TARGET_CHANGED, COMSIG_DQAI_DAMAGE_TAKEN)
+	eval_triggers = list(DQAI_TRIGGER_TARGET_CHANGED, DQAI_TRIGGER_DAMAGE_TAKEN)
 
 /datum/ai_behavior/scrubble_skitter/applicable_to(mob/living/owner)
 	return istype(owner, /mob/living/simple_mob/vore/scrubble)

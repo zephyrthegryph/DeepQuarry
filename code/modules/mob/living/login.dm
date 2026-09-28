@@ -18,7 +18,7 @@
 		ai_brain.go_sleep()
 		to_chat(src,span_notice("Mob AI disabled while you are controlling the mob."))
 
-	AddComponent(/datum/component/character_setup)
+	add_character_setup_button()
 
 	// Vore stuff
 	add_verb(src, /mob/living/proc/escapeOOC)
@@ -33,7 +33,7 @@
 	if(!no_vore)
 		add_verb(src, /mob/living/proc/vorebelly_printout)
 		if(!vorePanel)
-			AddComponent(/datum/component/vore_panel)
+			add_vore_panel_button()
 
 	add_verb(src,/mob/living/proc/vore_transfer_reagents) // If mob doesnt have bellies it cant use this verb for anything
 	add_verb(src,/mob/living/proc/vore_check_reagents) // If mob doesnt have bellies it cant use this verb for anything

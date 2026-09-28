@@ -168,7 +168,7 @@
 			avatar().sync_organ_dna()
 			avatar().initialize_vessel()
 
-		SEND_SIGNAL(avatar(), COMSIG_HUMAN_DNA_FINALIZED)
+		OM_EMIT(avatar(), /datum/om/event/human_dna_finalized)
 
 		om_prompt(src, avatar(), list("kind" = "text", "message" = "Your mind feels foggy. You're certain your name is [occupant.real_name], but it could also be [avatar().name]. Would you like to change it to something else?", "title" = "Name change", "max_length" = MAX_NAME_LEN), PROC_REF(alien_avatar_renamed))
 

@@ -153,7 +153,7 @@
 	var/mob/living/carbon/brain/view = mmi.get_occupant()
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot)
 
-	var/datum/component/mind_host/host = get_mind_host(mmi)
+	var/datum/mind_host/host = get_mind_host(mmi)
 	TEST_ASSERT(host.release_mind(R, "unit test borging"), "the MMI should release the mind into the cyborg")
 	var/fault = dq_test_mind_fault(M, R, I, view)
 	TEST_ASSERT_NULL(fault, "after borging: [fault]")

@@ -13,7 +13,7 @@
 	set name = "Cryogenic Sting (20)"
 	set desc = "Chills and freezes a biological creature."
 
-	var/datum/component/antag/changeling/comp = is_changeling(src)
+	var/datum/changeling/comp = is_changeling(src)
 	if(comp.is_on_cooldown(CRYO_STING))
 		to_chat(src, span_notice("We are still recovering. We will be able to sting again in [(comp.get_cooldown(CRYO_STING) - world.time)/10] seconds."))
 		return

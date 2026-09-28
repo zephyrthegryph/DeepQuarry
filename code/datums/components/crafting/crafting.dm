@@ -1,10 +1,21 @@
-/datum/component/personal_crafting/Initialize()
-	if(ismob(parent))
-		RegisterSignal(parent, COMSIG_MOB_CLIENT_LOGIN, PROC_REF(create_mob_button))
+/// The mob this crafting menu belongs to (the holder's `crafting` var points back at us).
+/datum/personal_crafting/New(mob/owner)
+	..()
+	src.owner = owner
+	if(ismob(owner))
+		om_hook(owner, /datum/om/event/mob_client_login, src, PROC_REF(on_owner_login))
 
-/datum/component/personal_crafting/proc/create_mob_button(mob/user, client/CL)
-	SIGNAL_HANDLER
+// ALLOW(lifecycle): owned state datum (was a component) unhooks and detaches from its owner.
+/datum/personal_crafting/Destroy()
+	om_unhook_all(src)
+	owner = null
+	return ..()
 
+/datum/personal_crafting/proc/on_owner_login(mob/user, datum/om/event/mob_client_login/event)
+	EVENT_HANDLER
+	create_mob_button(user, event.client)
+
+/datum/personal_crafting/proc/create_mob_button(mob/user, client/CL)
 	var/datum/hud/H = user.hud_used
 	var/atom/movable/screen/craft/C = new()
 	C.icon = H.ui_style
@@ -12,9 +23,10 @@
 	C.alpha = H.ui_alpha
 	LAZYADD(H.other_important, C)
 	CL.screen += C
-	RegisterSignal(C, COMSIG_CLICK, PROC_REF(component_ui_interact))
+	om_hook(C, /datum/om/event/click, src, PROC_REF(on_button_click))
 
-/datum/component/personal_crafting
+/datum/personal_crafting
+	var/mob/owner
 	var/viewing_category = 1 //typical powergamer starting on the Weapons tab
 	var/viewing_subcategory = 1
 	var/list/categories = list( // ALLOW(instance_list): d: edited in place per instance (2 writers)
@@ -62,7 +74,7 @@
 */
 
 // Returns a list of objects available
-/datum/component/personal_crafting/proc/get_environment(atom/a, list/blacklist = null, radius_range = 1)
+/datum/personal_crafting/proc/get_environment(atom/a, list/blacklist = null, radius_range = 1)
 	. = list()
 
 	if(!isturf(a.loc))
@@ -74,7 +86,7 @@
 		. += AM
 
 // Returns an associative list containing the types of tools available, and the paths of objects available
-/datum/component/personal_crafting/proc/get_surroundings(atom/a, list/blacklist=null)
+/datum/personal_crafting/proc/get_surroundings(atom/a, list/blacklist=null)
 	. = list()
 	.["tool_qualities"] = list() // List of tool types available
 	.["other"] = list()          // List of reagents/material stacks available
@@ -108,7 +120,7 @@
  * R: The /datum/crafting_recipe being attempted.
  * contents: List of items to search for R's reqs.
  */
-/datum/component/personal_crafting/proc/check_contents(atom/a, datum/crafting_recipe/R, list/contents)
+/datum/personal_crafting/proc/check_contents(atom/a, datum/crafting_recipe/R, list/contents)
 	var/list/item_instances = contents["instances"]
 	contents = contents["other"]
 
@@ -148,7 +160,7 @@
 	return R.check_requirements(a, requirements_list)
 
 /// Returns a boolean on whether the tool requirements of the input recipe are satisfied by the input source and surroundings.
-/datum/component/personal_crafting/proc/check_tools(atom/source, datum/crafting_recipe/R, list/surroundings)
+/datum/personal_crafting/proc/check_tools(atom/source, datum/crafting_recipe/R, list/surroundings)
 	if(!length(R.tool_behaviors) && !length(R.tool_paths))
 		return TRUE
 	var/list/available_tools = list()
@@ -183,21 +195,21 @@
 
 	return TRUE
 
-/datum/component/personal_crafting/proc/check_reagents(atom/source, datum/crafting_recipe/R, list/surroundings)
+/datum/personal_crafting/proc/check_reagents(atom/source, datum/crafting_recipe/R, list/surroundings)
 	var/list/reagents = surroundings["other"]
 	for(var/requirement_path in R.chem_catalysts)
 		if(reagents[requirement_path] < LAZYACCESS(R.chem_catalysts, requirement_path))
 			return FALSE
 	return TRUE
 
-/datum/component/personal_crafting/proc/check_machinery(atom/source, datum/crafting_recipe/R, list/surroundings)
+/datum/personal_crafting/proc/check_machinery(atom/source, datum/crafting_recipe/R, list/surroundings)
 	var/list/machines = surroundings["machinery"]
 	for(var/machinery_path in R.machinery)
 		if(!machines[machinery_path])//We don't care for volume with machines, just if one is there or not
 			return FALSE
 	return TRUE
 
-/datum/component/personal_crafting/proc/check_requirements(atom/source, datum/crafting_recipe/R, list/surroundings)
+/datum/personal_crafting/proc/check_requirements(atom/source, datum/crafting_recipe/R, list/surroundings)
 	if(!check_contents(source, R, surroundings))
 		return ", missing component."
 	if(!check_tools(source, R, surroundings))
@@ -211,7 +223,7 @@
 /// Crafts `R`. Returns the text of a failure; for a mob, a timed action that calls `on_built`
 /// on this component with (crafter, recipe, item or failure text) and returns null; for
 /// anything else, the item at once.
-/datum/component/personal_crafting/proc/construct_item(atom/a, datum/crafting_recipe/R, list/material_choices, on_built, busy)
+/datum/personal_crafting/proc/construct_item(atom/a, datum/crafting_recipe/R, list/material_choices, on_built, busy)
 	var/list/surroundings = get_surroundings(a,R.blacklist)
 	// var/send_feedback = 1
 	. = check_requirements(a, R, surroundings)
@@ -235,27 +247,27 @@
 
 /// A mob crafting `recipe`: on_built, a proc on the crafting component, hears how it went.
 /datum/om/task/timed/craft
-	complete_proc = /datum/component/personal_crafting/proc/craft_done
-	cancel_proc = /datum/component/personal_crafting/proc/craft_interrupted
+	complete_proc = /datum/personal_crafting/proc/craft_done
+	cancel_proc = /datum/personal_crafting/proc/craft_interrupted
 	var/datum/crafting_recipe/recipe
 	var/list/material_choices
 	var/on_built
 
-/datum/component/personal_crafting/proc/craft_interrupted(datum/om/task/timed/craft/task)
+/datum/personal_crafting/proc/craft_interrupted(datum/om/task/timed/craft/task)
 	if(task.on_built)
 		call(src, task.on_built)(task.actor, task.recipe, ".")
 
-/datum/component/personal_crafting/proc/craft_done(datum/om/task/timed/craft/task)
+/datum/personal_crafting/proc/craft_done(datum/om/task/timed/craft/task)
 	var/result = construct_item_checked(task.actor, task.recipe, task.material_choices)
 	if(task.on_built)
 		call(src, task.on_built)(task.actor, task.recipe, result)
 
-/datum/component/personal_crafting/proc/construct_item_now(atom/a, datum/crafting_recipe/R, list/material_choices, on_built)
+/datum/personal_crafting/proc/construct_item_now(atom/a, datum/crafting_recipe/R, list/material_choices, on_built)
 	. = construct_item_checked(a, R, material_choices)
 	if(on_built)
 		call(src, on_built)(a, R, .)
 
-/datum/component/personal_crafting/proc/construct_item_checked(atom/a, datum/crafting_recipe/R, list/material_choices)
+/datum/personal_crafting/proc/construct_item_checked(atom/a, datum/crafting_recipe/R, list/material_choices)
 	var/datum/material_template/blueprint = material_template_singleton(R.material_template)
 	var/list/resolved_materials = blueprint?.resolve(material_choices)
 	var/list/surroundings = get_surroundings(a, R.blacklist)
@@ -278,7 +290,7 @@
 	return I //Send the item back to whatever called this proc so it can handle whatever it wants to do with the new item
 
 /// Sheets of each chosen material a recipe's blueprint needs.
-/datum/component/personal_crafting/proc/crafting_sheets_needed(datum/crafting_recipe/R, list/resolved)
+/datum/personal_crafting/proc/crafting_sheets_needed(datum/crafting_recipe/R, list/resolved)
 	var/list/needed = list()
 	var/datum/material_template/blueprint = material_template_singleton(R.material_template)
 	var/list/amounts = blueprint.role_amounts(R.material_total)
@@ -286,7 +298,7 @@
 		needed[resolved[role]] = (needed[resolved[role]] || 0) + CEILING(amounts[role] / SHEET_MATERIAL_AMOUNT, 1)
 	return needed
 
-/datum/component/personal_crafting/proc/crafting_materials_available(list/surroundings, datum/crafting_recipe/R, list/resolved)
+/datum/personal_crafting/proc/crafting_materials_available(list/surroundings, datum/crafting_recipe/R, list/resolved)
 	var/list/needed = crafting_sheets_needed(R, resolved)
 	var/list/instances = surroundings["instances"]
 	for(var/instance_path in instances)
@@ -298,7 +310,7 @@
 			return FALSE
 	return TRUE
 
-/datum/component/personal_crafting/proc/consume_crafting_materials(list/surroundings, datum/crafting_recipe/R, list/resolved)
+/datum/personal_crafting/proc/consume_crafting_materials(list/surroundings, datum/crafting_recipe/R, list/resolved)
 	var/list/needed = crafting_sheets_needed(R, resolved)
 	var/list/instances = surroundings["instances"]
 	for(var/instance_path in instances)
@@ -334,7 +346,7 @@
 	del_reqs return the list of parts resulting object will receive as argument of CheckParts proc, on the atom level it will add them all to the contents, on all other levels it calls ..() and does whatever is needed afterwards but from contents list already
 */
 
-/datum/component/personal_crafting/proc/del_reqs(datum/crafting_recipe/R, atom/a)
+/datum/personal_crafting/proc/del_reqs(datum/crafting_recipe/R, atom/a)
 	var/list/surroundings = get_environment(a)
 	var/list/parts = list("items" = list())
 	if(R.get_parts_reagents_volume())
@@ -437,17 +449,17 @@
 				qdel(I)
 	return parts
 
-/datum/component/personal_crafting/proc/component_ui_interact(source, location, control, params, user)
-	SIGNAL_HANDLER
-
-	if(user == parent)
+/datum/personal_crafting/proc/on_button_click(atom/source, datum/om/event/click/event)
+	EVENT_HANDLER
+	var/user = event.user
+	if(user == owner)
 		INVOKE_ASYNC(src, PROC_REF(tgui_interact), user) // ALLOW(scheduler): tgui_interact may block on asset/window setup
 
-/datum/component/personal_crafting/tgui_state(mob/user)
+/datum/personal_crafting/tgui_state(mob/user)
 	return GLOB.tgui_not_incapacitated_turf_state
 
 //For the UI related things we're going to assume the user is a mob rather than typesetting it to an atom as the UI isn't generated if the parent is an atom
-/datum/component/personal_crafting/tgui_interact(mob/user, datum/tgui/ui)
+/datum/personal_crafting/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
 		cur_category = categories[1]
@@ -459,7 +471,7 @@
 		ui = new(user, src, "PersonalCrafting")
 		ui.open()
 
-/datum/component/personal_crafting/tgui_data(mob/user)
+/datum/personal_crafting/tgui_data(mob/user)
 	// ANNOYING. We won't know what category will be on top (and thus first selected) in the UI
 	// until we crunch all the resources in tgui_static_data. So it just sets a hint and we
 	// consume it and set the category on the first UI open
@@ -515,7 +527,7 @@
 	data["craftability"] = craftability
 	return data
 
-/datum/component/personal_crafting/tgui_static_data(mob/user)
+/datum/personal_crafting/tgui_static_data(mob/user)
 	var/list/data = list()
 
 	var/list/crafting_recipes = list()
@@ -545,7 +557,7 @@
 	data["crafting_recipes"] = crafting_recipes
 	return data
 
-/datum/component/personal_crafting/tgui_act(action, params, datum/tgui/ui)
+/datum/personal_crafting/tgui_act(action, params, datum/tgui/ui)
 	. = ..()
 	if(.)
 		return
@@ -563,7 +575,7 @@
 			cur_subcategory = params["subcategory"] || ""
 			. = TRUE
 
-/datum/component/personal_crafting/proc/do_make(mob/user, datum/crafting_recipe/TR, list/material_choices)
+/datum/personal_crafting/proc/do_make(mob/user, datum/crafting_recipe/TR, list/material_choices)
 	if(om_busy(src))
 		return
 	// The crafting's timed action claims this component: busy (om_busy()) until it ends.
@@ -573,7 +585,7 @@
 		make_finished(user, TR, result)
 
 /// The end of do_make(): the item, or the text of why it failed.
-/datum/component/personal_crafting/proc/make_finished(mob/user, datum/crafting_recipe/TR, atom/movable/result)
+/datum/personal_crafting/proc/make_finished(mob/user, datum/crafting_recipe/TR, atom/movable/result)
 	if(!istext(result)) //We made an item and didn't get a fail message
 		if(ismob(user) && isitem(result)) //In case the user is actually possessing a non mob like a machine
 			user.put_in_hands(result)
@@ -584,7 +596,7 @@
 	else
 		to_chat(user, span_warning("Construction failed[result]"))
 
-/datum/component/personal_crafting/proc/build_recipe_data(datum/crafting_recipe/R)
+/datum/personal_crafting/proc/build_recipe_data(datum/crafting_recipe/R)
 	var/list/data = list()
 	data["name"] = R.name
 	data["ref"] = "[REF(R)]"
@@ -633,4 +645,6 @@
 	icon_state = "craft"
 	screen_loc = ui_smallquad
 
-REF_OWNED(/datum/component/personal_crafting, "button")
+REF_OWNED(/datum/personal_crafting, "button")
+REF_BACK(/datum/personal_crafting, list("owner" = "crafting"))
+REF_VAR(/mob/living/carbon/human, OWNED, /datum/personal_crafting, crafting)

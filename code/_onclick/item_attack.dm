@@ -30,8 +30,6 @@ avoid code duplication. This includes items that may sometimes act as a standard
 	SHOULD_CALL_PARENT(TRUE)
 	if(!user)
 		CRASH("attack_self was called without a user!")
-	if(SEND_SIGNAL(src, COMSIG_ITEM_ATTACK_SELF, user) & COMPONENT_CANCEL_ATTACK_CHAIN)
-		return TRUE
 	if(om_wants(src, /datum/om/event/before/attack_self) && om_emit(src, new /datum/om/event/before/attack_self(user)) == EVENT_VETO)
 		return TRUE
 	// Converted handlers (I7): interactions with entry = INTERACTION_ENTRY_SELF.
@@ -51,7 +49,7 @@ avoid code duplication. This includes items that may sometimes act as a standard
  */
 
 /obj/item/proc/pre_attack(atom/A, mob/user, params) //do stuff before attackby!
-	if(SEND_SIGNAL(src, COMSIG_ITEM_PRE_ATTACK, A, user, params) & COMPONENT_CANCEL_ATTACK_CHAIN)
+	if(OM_EMIT(src, /datum/om/event/before/item_pre_attack, A, user, params) & COMPONENT_CANCEL_ATTACK_CHAIN)
 		return TRUE
 	return FALSE //return TRUE to avoid calling attackby after this proc does stuff
 
@@ -106,15 +104,15 @@ avoid code duplication. This includes items that may sometimes act as a standard
 		var/result = tool_act(user, tool, tool_quality, secondary)
 		if(result & ITEM_INTERACT_SUCCESS)
 			if(!secondary)
-				SEND_SIGNAL(tool, COMSIG_ITEM_TOOL_ACTED, src, user, tool_quality, modifiers)
-			SEND_SIGNAL(tool, secondary ? COMSIG_TOOL_ATOM_ACTED_SECONDARY(tool_quality) : COMSIG_TOOL_ATOM_ACTED_PRIMARY(tool_quality), src, user, modifiers)
+				OM_EMIT(tool, /datum/om/event/item_tool_acted, src, user, tool_quality, modifiers)
+			OM_EMIT(tool, /datum/om/event/tool_atom_acted, tool_quality, secondary, src, user, modifiers)
 		if(result & (ITEM_INTERACT_SUCCESS | ITEM_INTERACT_BLOCKING | ITEM_INTERACT_SKIP_TO_ATTACK))
 			return result
 	return NONE
 
-/// Sends the quality-specific signal, then invokes the corresponding focused hook.
+/// Emits the tool-act event, then invokes the corresponding focused hook.
 /atom/proc/tool_act(mob/user, obj/item/tool, tool_quality, secondary = FALSE)
-	var/result = SEND_SIGNAL(src, secondary ? COMSIG_ATOM_SECONDARY_TOOL_ACT(tool_quality) : COMSIG_ATOM_TOOL_ACT(tool_quality), user, tool)
+	var/result = OM_EMIT(src, /datum/om/event/before/atom_tool_act, tool_quality, secondary, user, tool)
 	if(result & (ITEM_INTERACT_SUCCESS | ITEM_INTERACT_BLOCKING | ITEM_INTERACT_SKIP_TO_ATTACK))
 		return result
 	// Dormant material assemblies intentionally own no signal handlers. A
@@ -171,8 +169,6 @@ avoid code duplication. This includes items that may sometimes act as a standard
 	dq_interaction_set_click_params(user, saved_params)
 	if(answered)
 		return (INTERACTION_TRY_PASS in outcome) ? FALSE : answered.consumes_input
-	if(SEND_SIGNAL(src, COMSIG_ATOM_ATTACKBY, W, user, click_parameters) & COMPONENT_CANCEL_ATTACK_CHAIN)
-		return TRUE
 	if(om_wants(src, /datum/om/event/before/attackby) && om_emit(src, new /datum/om/event/before/attackby(W, user, click_parameters)) == EVENT_VETO)
 		return TRUE
 	return FALSE
@@ -181,7 +177,7 @@ avoid code duplication. This includes items that may sometimes act as a standard
 	if(!ismob(user))
 		return FALSE
 
-	if(SEND_SIGNAL(src, COMSIG_ATOM_ATTACKBY, I, user, click_parameters) & COMPONENT_CANCEL_ATTACK_CHAIN)
+	if(om_wants(src, /datum/om/event/before/attackby) && om_emit(src, new /datum/om/event/before/attackby(I, user, click_parameters)) == EVENT_VETO)
 		return FALSE
 
 	if(can_operate(src, user) && I.do_surgery(src,user))
@@ -228,7 +224,7 @@ avoid code duplication. This includes items that may sometimes act as a standard
 		return ITEM_INTERACT_FAILURE
 	if(M.is_incorporeal()) // No attacking phased entities :)
 		return ITEM_INTERACT_FAILURE
-	SEND_SIGNAL(src, COMSIG_ITEM_ATTACK, M, user, target_zone)
+	OM_EMIT(src, /datum/om/event/item_attack, M, user, target_zone)
 
 	/////////////////////////
 	M.lastattacker = user

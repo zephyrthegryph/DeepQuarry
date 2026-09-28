@@ -550,7 +550,7 @@
 						if(safe_pos.Find(reported_pos))
 							safe_geometry["pos"] = reported_pos
 					LAZYSET(client().tgui_resolved_geometries, locked_by().interface, safe_geometry)
-			SEND_SIGNAL(src, COMSIG_TGUI_WINDOW_VISIBLE, client())
+			OM_EMIT(src, /datum/om/event/tgui_window_visible, client())
 		if("perf/flicker")
 			if(!accept_perf_telemetry())
 				return

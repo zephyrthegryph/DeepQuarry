@@ -79,9 +79,9 @@ SUBSYSTEM_DEF(contracts)
 	custody_last_ended_at_by_subject = list()
 	security_record_subject_ids = list()
 	infrastructure_fact_revisions = list()
-	RegisterSignal(SSdcs, COMSIG_GLOB_MOB_CREATED, PROC_REF(on_mob_created))
-	RegisterSignal(SSdcs, COMSIG_GLOB_MOB_DEATH, PROC_REF(on_mob_death))
-	RegisterSignal(SSdcs, COMSIG_GLOB_PAYMENT_ACCOUNT_STATUS, PROC_REF(on_payment_account_status))
+	om_hook(OM_WORLD, /datum/om/event/world_mob_created, src, PROC_REF(on_mob_created))
+	om_hook(OM_WORLD, /datum/om/event/world_mob_death, src, PROC_REF(on_mob_death))
+	om_hook(OM_WORLD, /datum/om/event/world_payment_account_status, src, PROC_REF(on_payment_account_status))
 	for(var/mob/living/carbon/human/subject in REGISTRY_MEMBERS(REGISTRY_HUMANS))
 		watch_contract_subject(subject)
 	for(var/definition_type as anything in subtypesof(/datum/contract_definition))
@@ -106,28 +106,29 @@ SUBSYSTEM_DEF(contracts)
 	infrastructure_fact_revisions[key] = revision
 	return revision
 
-/datum/controller/subsystem/contracts/proc/on_mob_created(datum/source, mob/created_mob)
-	SIGNAL_HANDLER
+/datum/controller/subsystem/contracts/proc/on_mob_created(datum/source, datum/om/event/world_mob_created/event)
+	EVENT_HANDLER
+	var/mob/created_mob = event.mob
 	var/mob/living/carbon/human/subject = created_mob
 	if(istype(subject))
 		watch_contract_subject(subject)
 
 /datum/controller/subsystem/contracts/proc/watch_contract_subject(mob/living/carbon/human/subject)
-	RegisterSignal(subject, COMSIG_MOB_MEDICAL_ISSUES_CHANGED, PROC_REF(on_medical_issues_changed), override = TRUE)
-	RegisterSignal(subject, COMSIG_AFFLICTION_SEVERITY_CHANGED, PROC_REF(on_affliction_severity_changed), override = TRUE)
-	RegisterSignal(subject, COMSIG_BODY_AFFLICTIONS_CHANGED, PROC_REF(on_body_afflictions_changed), override = TRUE)
-	RegisterSignal(subject, COMSIG_LIVING_REVIVED, PROC_REF(on_medical_subject_revived), override = TRUE)
-	RegisterSignal(subject, COMSIG_MOB_LOGIN, PROC_REF(on_medical_subject_availability), override = TRUE)
-	RegisterSignal(subject, COMSIG_MOB_LOGOUT, PROC_REF(on_medical_subject_availability), override = TRUE)
-	RegisterSignal(subject, COMSIG_MOB_MIND_TRANSFERRED_INTO, PROC_REF(on_medical_subject_availability), override = TRUE)
-	RegisterSignal(subject, COMSIG_MOB_MIND_TRANSFERRED_OUT_OF, PROC_REF(on_medical_subject_availability), override = TRUE)
-	RegisterSignal(subject, COMSIG_MOVABLE_MOVED, PROC_REF(on_custody_input_changed), override = TRUE)
-	RegisterSignal(subject, COMSIG_MOB_EQUIPPED_ITEM, PROC_REF(on_custody_input_changed), override = TRUE)
-	RegisterSignal(subject, COMSIG_MOB_UNEQUIPPED_ITEM, PROC_REF(on_custody_input_changed), override = TRUE)
+	om_hook(subject, /datum/om/event/mob_medical_issues_changed, src, PROC_REF(on_medical_issues_changed))
+	om_hook(subject, /datum/om/event/affliction_severity_changed, src, PROC_REF(on_affliction_severity_changed))
+	om_hook(subject, /datum/om/event/body_afflictions_changed, src, PROC_REF(on_body_afflictions_changed))
+	om_hook(subject, /datum/om/event/living_revived, src, PROC_REF(on_medical_subject_revived))
+	om_hook(subject, /datum/om/event/mob_login, src, PROC_REF(on_medical_subject_availability))
+	om_hook(subject, /datum/om/event/mob_logout, src, PROC_REF(on_medical_subject_availability))
+	om_hook(subject, /datum/om/event/mob_mind_transferred_into, src, PROC_REF(on_medical_subject_availability))
+	om_hook(subject, /datum/om/event/mob_mind_transferred_out_of, src, PROC_REF(on_medical_subject_availability))
+	om_hook(subject, /datum/om/event/moved, src, PROC_REF(on_custody_input_changed))
+	om_hook(subject, /datum/om/event/mob_equipped_item, src, PROC_REF(on_custody_input_changed))
+	om_hook(subject, /datum/om/event/mob_unequipped_item, src, PROC_REF(on_custody_input_changed))
 	refresh_physical_custody(subject)
 
-/datum/controller/subsystem/contracts/proc/on_custody_input_changed(mob/living/carbon/human/subject)
-	SIGNAL_HANDLER
+/datum/controller/subsystem/contracts/proc/on_custody_input_changed(mob/living/carbon/human/subject, datum/om/event/event)
+	EVENT_HANDLER
 	refresh_physical_custody(subject)
 
 /datum/controller/subsystem/contracts/proc/is_physically_custodied(mob/living/carbon/human/subject)
@@ -221,8 +222,9 @@ SUBSYSTEM_DEF(contracts)
 		"subject_name" = subject.real_name,
 	)
 
-/datum/controller/subsystem/contracts/proc/on_payment_account_status(datum/source, datum/money_account/account)
-	SIGNAL_HANDLER
+/datum/controller/subsystem/contracts/proc/on_payment_account_status(datum/source, datum/om/event/world_payment_account_status/event)
+	EVENT_HANDLER
+	var/datum/money_account/account = event.account
 	if(!account || account.suspended)
 		return
 	// Requirements can already be complete when a payout was deferred. Account
@@ -272,8 +274,8 @@ SUBSYSTEM_DEF(contracts)
 	var/completion_number = completions_by_definition[definition.id] || 0
 	return !!queue_offer(definition.id, context, "Allied standing unlocked a higher-tier follow-up commission", "followup:[definition.id]:[completion_number]", 90)
 
-/datum/controller/subsystem/contracts/proc/on_medical_subject_availability(mob/living/carbon/human/subject)
-	SIGNAL_HANDLER
+/datum/controller/subsystem/contracts/proc/on_medical_subject_availability(mob/living/carbon/human/subject, datum/om/event/event)
+	EVENT_HANDLER
 	queue_medical_subject_reconciliation(subject)
 
 /datum/controller/subsystem/contracts/proc/queue_medical_subject_reconciliation(mob/living/carbon/human/subject)
@@ -297,21 +299,22 @@ SUBSYSTEM_DEF(contracts)
 	reconcile_medical_trial_side_contracts()
 	consider_rare_medical_case(subject)
 
-/datum/controller/subsystem/contracts/proc/on_medical_issues_changed(mob/living/carbon/human/subject)
-	SIGNAL_HANDLER
+/datum/controller/subsystem/contracts/proc/on_medical_issues_changed(mob/living/carbon/human/subject, datum/om/event/mob_medical_issues_changed/event)
+	EVENT_HANDLER
 	subject.refresh_contract_medical_eligibility()
 	consider_rare_medical_case(subject)
 
-/datum/controller/subsystem/contracts/proc/on_mob_death(datum/source, mob/living/dead_mob, gibbed)
-	SIGNAL_HANDLER
+/datum/controller/subsystem/contracts/proc/on_mob_death(datum/source, datum/om/event/world_mob_death/event)
+	EVENT_HANDLER
+	var/mob/living/dead_mob = event.living
 	if(ishuman(dead_mob))
 		var/mob/living/carbon/human/dead_subject = dead_mob
 		refresh_physical_custody(dead_subject)
 		reconcile_medical_trial_offers()
 		withdraw_rare_case_offers(dead_mob)
 
-/datum/controller/subsystem/contracts/proc/on_medical_subject_revived(mob/living/carbon/human/subject)
-	SIGNAL_HANDLER
+/datum/controller/subsystem/contracts/proc/on_medical_subject_revived(mob/living/carbon/human/subject, datum/om/event/living_revived/event)
+	EVENT_HANDLER
 	subject.contract_medical_indications = null
 	subject.refresh_contract_medical_eligibility()
 

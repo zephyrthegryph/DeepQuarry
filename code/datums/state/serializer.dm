@@ -145,7 +145,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 		ids[om_handle(child)] = id
 		assign_ids(child, id)
 
-/// Serializes one datum: type, version, delta, and (per flags) contents and components.
+/// Serializes one datum: type, version, delta, and (per flags) contents.
 /datum/state_context/proc/serialize_datum(datum/D, flags)
 	if(ismob(D))
 		refuse("[D.type] is a mob; mobs stay real")
@@ -182,12 +182,6 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 					encoded["state"] = entry.blob
 				latent += list(encoded)
 			blob[STATE_KEY_LATENT] = latent
-	if(flags & STATE_COMPONENTS)
-		var/list/components = serialize_components(D)
-		if(errors)
-			return null
-		if(length(components))
-			blob[STATE_KEY_COMPONENTS] = components
 	return errors ? null : blob
 
 /datum/state_context/proc/encode_delta(datum/D, datum/state_schema/schema)
@@ -269,37 +263,6 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 		probe_ctx.errors = null
 	qdel(probe_ctx)
 	qdel(probe)
-
-/datum/state_context/proc/serialize_components(datum/D)
-	var/list/unique = list()
-	for(var/key in D._datum_components)
-		var/entry = D._datum_components[key]
-		if(islist(entry))
-			for(var/datum/component/C as anything in entry)
-				unique |= C
-		else
-			unique |= entry
-	var/list/by_type = list()
-	for(var/datum/component/C as anything in unique)
-		switch(C.state_mode)
-			if(STATE_COMPONENT_DERIVED)
-				continue
-			if(STATE_COMPONENT_REFUSE)
-				refuse("[D.type] has component [C.type], which cannot be serialized")
-				return null
-		var/list/component_blob = serialize_datum(C, NONE)
-		if(!component_blob)
-			return null
-		by_type["[C.type]"] = component_blob
-	if(!length(by_type))
-		return null
-	var/list/keys = list()
-	for(var/key in by_type)
-		keys += key
-	sortTim(keys, GLOBAL_PROC_REF(cmp_text_asc))
-	. = list()
-	for(var/key in keys)
-		. += list(by_type[key])
 
 /// Encodes one value. `where` names the var for error messages.
 /datum/state_context/proc/encode_value(value, where)
@@ -507,12 +470,12 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 		if(!path || !A.latent_add(path, encoded["count"], encoded["state"], encoded["slot"]))
 			refuse("[A.type] refused latent entry [encoded["type"]]")
 
-/// Applies vars and components everywhere, then runs state_post_apply() children first.
+/// Applies vars (and legacy component blobs) everywhere, then runs state_post_apply() children first.
 /datum/state_context/proc/finish_tree()
 	for(var/list/entry as anything in pending)
 		apply_vars(entry[1], entry[2])
 		if(flags & STATE_COMPONENTS)
-			apply_components(entry[1], entry[2])
+			apply_legacy_components(entry[1], entry[2])
 	for(var/i = length(pending), i >= 1, i--)
 		var/list/entry = pending[i]
 		var/datum/D = entry[1]
@@ -553,17 +516,29 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 		else
 			D.vars[name] = decode_value(vars[name]) // ALLOW(api): state serializer: restores saved vars
 
-/datum/state_context/proc/apply_components(datum/D, list/blob)
+/// Blobs written before components went away carried per-instance component
+/// state (STATE_KEY_COMPONENTS). Their saved vars now live on the holder itself
+/// (GLOB.state_legacy_component_vars); anything else is refused.
+/datum/state_context/proc/apply_legacy_components(datum/D, list/blob)
 	for(var/list/component_blob as anything in blob[STATE_KEY_COMPONENTS])
-		var/path = migrate_blob(component_blob)
-		if(!path)
+		var/component_type = component_blob[STATE_KEY_TYPE]
+		var/list/var_map = GLOB.state_legacy_component_vars[component_type]
+		if(!var_map)
+			refuse("[D.type] has legacy component [component_type], which no longer exists")
 			continue
-		var/datum/component/C = D.GetComponent(path) || D.AddComponent(path)
-		if(!C)
-			refuse("[D.type] refused component [path]")
-			continue
-		apply_vars(C, component_blob)
-		C.state_post_apply(component_blob, flags)
+		var/datum/state_schema/schema = state_schema_for(D)
+		var/list/vars = component_blob[STATE_KEY_VARS] || list()
+		for(var/name in vars)
+			var/target = var_map[name]
+			if(!target || !(target in D.vars))
+				refuse("[D.type] cannot take legacy [component_type] var [name]")
+				continue
+			var/codec_path = schema.codecs[target]
+			if(codec_path)
+				var/datum/state_codec/codec = state_codec(codec_path)
+				codec.decode(D, target, vars[name], src)
+			else
+				D.vars[target] = decode_value(vars[name]) // ALLOW(api): state serializer: restores legacy component vars
 
 /// A datum from a nested blob (the owned codec): new, then its vars.
 /datum/state_context/proc/materialize_datum(list/blob)

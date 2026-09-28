@@ -14,9 +14,9 @@
 	create_reagents(200)
 	default_apply_parts()
 
-	AddComponent(/datum/component/hose_connector/input)
-	AddComponent(/datum/component/hose_connector/input)
-	AddComponent(/datum/component/hose_connector/output)
+	add_hose_connector(/datum/hose_connector/input)
+	add_hose_connector(/datum/hose_connector/input)
+	add_hose_connector(/datum/hose_connector/output)
 
 /obj/machinery/pump_relay/declare_interactions(list/into)
 	into += list(

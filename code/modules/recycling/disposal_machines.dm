@@ -66,10 +66,10 @@
 
 	var/obj/structure/disposalpipe/trunk/trunk = locate_on(loc, /obj/structure/disposalpipe/trunk)
 
-	AddComponent(/datum/component/disposal_system_connection)
-	RegisterSignal(src, COMSIG_DISPOSAL_RECEIVE, PROC_REF(packet_expel))
+	add_disposal_connection()
+	om_hook(src, /datum/om/event/disposal_receive, src, PROC_REF(on_disposal_receive))
 	if(trunk)
-		SEND_SIGNAL(src, COMSIG_DISPOSAL_LINK, trunk)
+		OM_EMIT(src, /datum/om/event/disposal_link, trunk)
 
 	air_contents = new(PRESSURE_TANK_VOLUME)
 	// Map-loaded bins are installed infrastructure, not freshly constructed
@@ -94,7 +94,7 @@
 		om_cancel_timer(src, power_retry_timer)
 		power_retry_timer = null
 	clear_gas_dependency()
-	SEND_SIGNAL(src, COMSIG_DISPOSAL_UNLINK) //Just to be safe.
+	OM_EMIT(src, /datum/om/event/disposal_unlink) //Just to be safe.
 	eject()
 	return ..()
 
@@ -668,7 +668,7 @@
 	if(stat_tracking)
 		GLOB.disposals_flush_shift_roundstat++
 
-	if(!SEND_SIGNAL(src, COMSIG_DISPOSAL_FLUSH, flushed_items, air_contents)) //If the signal isnt recieved, we'll just expel immediately.
+	if(!OM_EMIT(src, /datum/om/event/before/disposal_flush, flushed_items, air_contents)) //If nothing handles it, we'll just expel immediately.
 		if(length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 			packet_expel(src, flushed_items, air_contents)
 
@@ -703,8 +703,14 @@
 
 // called when the bin expels items, generally from a disposal network, or trying to flush without a proper connection.
 // should usually only occur if the pipe network if modified or delivering mail
+
+/// Hooked on our own disposal_receive event.
+/obj/machinery/disposal/proc/on_disposal_receive(datum/source, datum/om/event/disposal_receive/event)
+	EVENT_HANDLER
+	packet_expel(source, event.items, event.gas)
+
 /obj/machinery/disposal/proc/packet_expel(datum/source, list/expelled_items, datum/gas_mixture/gas)
-	SIGNAL_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/turf/T = get_turf(src)
 	var/turf/target
 	playsound(src, 'sound/machines/hiss.ogg', 50, 0, 0)
@@ -761,7 +767,7 @@
 	for(var/atom/movable/AM in slot_contents(CONTAINER_SLOT_DISPOSAL))
 		AM.forceMove(T)
 	//..() //*cough
-	SEND_SIGNAL(src, COMSIG_DISPOSAL_UNLINK) //unlinks in destroy, too.
+	OM_EMIT(src, /datum/om/event/disposal_unlink) //unlinks in destroy, too.
 	qdel(src) //Parent above should do this, but that's not a thing as of writing this.
 
 /obj/machinery/disposal/proc/clean_items()

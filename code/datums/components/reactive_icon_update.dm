@@ -1,7 +1,6 @@
-///Component that updates the icon_state of an item when something approaches.
+///Owned datum that updates the icon_state of an object when something approaches (was a component).
 ///NOTE: This uses the initial icon of the object, meaning it will not work properly with items that change their icon_state for other reasons.
-/datum/component/reactive_icon_update
-	dupe_mode = COMPONENT_DUPE_UNIQUE
+/datum/reactive_icon_update
 	///What we want to append to our icon_state when our conditions are filled
 	var/icon_prefix
 	///List of which directions we want to be valid. Can be NORTH/SOUTH/EAST/WEST along with NORTHEAST/SOUTHEAST/SOUTHWEST/NORTHWEST
@@ -10,30 +9,77 @@
 	var/range
 	///What type of mobs trigger the icon change.
 	var/list/triggering_mobs = list(/mob/living) // ALLOW(instance_list): d: edited in place per instance (1 writers)
+	///The object whose icon we update.
+	var/obj/owner
+	///Turfs we are hooked on (atom_entered), and the containers we are nested in (moved).
+	var/list/watched_turfs
+	var/list/watched_containers
 
-/datum/component/reactive_icon_update/Initialize(icon_prefix, list/directions, range, triggering_mobs)
-	if(!isobj(parent) || !isnum(range) || (!directions || !LAZYLEN(directions)) || (triggering_mobs && !LAZYLEN(triggering_mobs)))
-		return COMPONENT_INCOMPATIBLE
+REF_BACK(/datum/reactive_icon_update, list("owner" = "reactive_icon"))
+REF_VAR(/obj, OWNED, /datum/reactive_icon_update, reactive_icon)
 
+/// Gives this object a reactive icon (was AddComponent(/datum/reactive_icon_update...)).
+/// Replaces any existing one. Returns null when the arguments are invalid.
+/obj/proc/add_reactive_icon(type = /datum/reactive_icon_update, icon_prefix, list/directions, range, triggering_mobs)
+	if(!isnum(range) || (!directions || !LAZYLEN(directions)) || (triggering_mobs && !LAZYLEN(triggering_mobs)))
+		log_game("REACTIVE_ICON: invalid arguments for [src] ([type]); not added.")
+		return null
+	if(reactive_icon)
+		qdel(reactive_icon)
+	reactive_icon = new type(src, icon_prefix, directions, range, triggering_mobs)
+	return reactive_icon
+
+/datum/reactive_icon_update/New(obj/owner, icon_prefix, list/directions, range, triggering_mobs)
+	..()
+	src.owner = owner
 	src.icon_prefix = icon_prefix
 	src.directions = directions
 	src.range = range
 	if(triggering_mobs)
 		src.triggering_mobs = triggering_mobs
+	update_watch()
 
-	var/static/list/connections = list(
-		COMSIG_ATOM_ENTERED = PROC_REF(update_proximity_icon),
-	)
-	AddComponent(/datum/component/connect_range, parent, connections, range)
+// ALLOW(lifecycle): drops its turf/container hooks and clears the shared lists it was handed.
+/datum/reactive_icon_update/Destroy(force)
+	om_unhook_all(src)
+	watched_turfs = null
+	watched_containers = null
+	directions?.Cut()
+	triggering_mobs?.Cut()
+	owner = null
+	return ..()
 
-/datum/component/reactive_icon_update/UnregisterFromParent()
+/// Re-hooks atom_entered on every turf in range of the owner, and Moved on the owner and every
+/// container it is nested in (what connect_range did for us).
+/datum/reactive_icon_update/proc/update_watch()
+	var/list/new_containers = list(owner)
+	if(ismovable(owner.loc))
+		new_containers += get_nested_locs(owner)
+	for(var/atom/movable/C as anything in watched_containers)
+		if(!(C in new_containers))
+			om_unhook(C, /datum/om/event/moved, src)
+	for(var/atom/movable/C as anything in new_containers)
+		om_hook(C, /datum/om/event/moved, src, PROC_REF(on_moved))
+	watched_containers = new_containers
+	var/turf/T = get_turf(owner)
+	var/list/new_turfs = T ? RANGE_TURFS(range, T) : list()
+	for(var/turf/old as anything in watched_turfs)
+		if(!(old in new_turfs))
+			om_unhook(old, /datum/om/event/atom_entered, src)
+	for(var/turf/nt as anything in new_turfs)
+		om_hook(nt, /datum/om/event/atom_entered, src, PROC_REF(on_turf_entered))
+	watched_turfs = new_turfs
 
-	directions.Cut()
-	triggering_mobs.Cut()
+/datum/reactive_icon_update/proc/on_moved(datum/source, datum/om/event/moved/event)
+	EVENT_HANDLER
+	update_watch()
 
-/datum/component/reactive_icon_update/proc/update_proximity_icon(atom/current_loc, atom/movable/AM, atom/old_loc)
-	SIGNAL_HANDLER
-	var/obj/our_item = parent
+/datum/reactive_icon_update/proc/on_turf_entered(turf/source, datum/om/event/atom_entered/event)
+	EVENT_HANDLER
+	update_proximity_icon(source, event.arrived, event.old_loc)
+
+/datum/reactive_icon_update/proc/update_proximity_icon(atom/current_loc, atom/movable/AM, atom/old_loc)
+	var/obj/our_item = owner
 	if(!ismob(AM) || !mob_check(AM))
 		return
 	var/mob/M = AM
@@ -123,13 +169,13 @@
 	//The icon_state will be changed to cloak_direction_north
 	our_item.icon_state = initial(our_item.icon_state) + icon_prefix + "_" + directional_name
 
-///Variant of the reactive_icon_update component that allows for setting what slot is should be in to update it!
-/datum/component/reactive_icon_update/clothing
+///Variant of reactive_icon_update that allows for setting what slot is should be in to update it!
+/datum/reactive_icon_update/clothing
 
-/datum/component/reactive_icon_update/clothing/update_proximity_icon(atom/current_loc, atom/movable/AM, atom/old_loc)
+/datum/reactive_icon_update/clothing/update_proximity_icon(atom/current_loc, atom/movable/AM, atom/old_loc)
 	. = ..()
 	//Code to actually update the mob wearing us
-	var/obj/our_object = parent
+	var/obj/our_object = owner
 	if(ishuman(our_object.loc)) //If we're being worn
 		var/mob/living/carbon/human/wearing_mob = our_object.loc
 
@@ -150,9 +196,9 @@
 /obj/item/tool/screwdriver/test_driver/Initialize(mapload)
 	. = ..()
 	icon_state = "screwdriver"
-	AddComponent(/datum/component/reactive_icon_update, directions = list(NORTH, EAST, SOUTH, WEST, SOUTHWEST, SOUTHEAST, NORTHEAST, NORTHWEST), range = 3)
+	add_reactive_icon(directions = list(NORTH, EAST, SOUTH, WEST, SOUTHWEST, SOUTHEAST, NORTHEAST, NORTHWEST), range = 3)
 
-/datum/component/reactive_icon_update/proc/mob_check(mob/triggering_mob)
+/datum/reactive_icon_update/proc/mob_check(mob/triggering_mob)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(is_type_in_list(triggering_mob, triggering_mobs))
 		return TRUE

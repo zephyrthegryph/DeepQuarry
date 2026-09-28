@@ -13,7 +13,7 @@
 
 /datum/unit_test/dq_protean_rig_explosion_injures_protean/Run()
 	var/mob/living/carbon/human/H = make_protean_with_rig()
-	var/datum/component/forms/protean/F = H.GetComponent(/datum/component/forms/protean)
+	var/datum/forms/protean/F = H.get_protean_forms()
 	var/obj/item/rig/protean/R = F.rig
 	TEST_ASSERT_NOTNULL(R, "the protean should own its rig")
 	var/load_before = H.injury_load(INJURY_CATEGORY_PHYSICAL)

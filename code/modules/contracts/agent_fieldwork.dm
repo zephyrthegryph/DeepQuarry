@@ -203,7 +203,7 @@
 	audit(CONTRACT_AUDIT_PAYMENT, "Paid [commission] Thalers of market-premium commission to [contact_name].")
 	return commission
 
-/datum/component/contract_document/proc/register_agent_contact_signature(obj/item/paper/paper, mob/living/user, field_id)
+/datum/contract_document/proc/register_agent_contact_signature(obj/item/paper/paper, mob/living/user, field_id)
 	if(document_kind != CONTRACT_DOCUMENT_AGENT_CONTACT || field_id < 1 || field_id > 4)
 		return FALSE
 	var/datum/contract/faction_agent/contract = SScontracts.contracts_by_id[payload["agent_contract_id"]]
@@ -230,7 +230,7 @@
 	paper.updateinfolinks()
 	return TRUE
 
-/datum/component/contract_document/proc/register_agent_contact_cooperation(obj/item/paper/paper, mob/living/user, datum/contract/faction_agent/contract)
+/datum/contract_document/proc/register_agent_contact_cooperation(obj/item/paper/paper, mob/living/user, datum/contract/faction_agent/contract)
 	if(!payload["signed"] || payload["cooperated"] || contract.state != CONTRACT_ACTIVE)
 		return FALSE
 	var/datum/money_account/account = contract_account_for_mob(user)
@@ -252,7 +252,7 @@
 	to_chat(user, span_warning("You withdrew the route and forfeited its faction payment. Security must physically receive and examine this agreement before it becomes evidence; this declaration promises no immunity."))
 	return TRUE
 
-/datum/component/contract_document/proc/register_agent_endorsement(obj/item/paper/paper, mob/living/user)
+/datum/contract_document/proc/register_agent_endorsement(obj/item/paper/paper, mob/living/user)
 	if(document_kind != CONTRACT_DOCUMENT_AGENT_ENDORSEMENT)
 		return FALSE
 	var/datum/contract/faction_agent/contract = SScontracts.contracts_by_id[payload["agent_contract_id"]]
@@ -264,7 +264,7 @@
 	paper.updateinfolinks()
 	return TRUE
 
-/datum/component/contract_document/proc/register_agent_approach_signature(obj/item/paper/paper, mob/living/user, field_id)
+/datum/contract_document/proc/register_agent_approach_signature(obj/item/paper/paper, mob/living/user, field_id)
 	if(document_kind != CONTRACT_DOCUMENT_AGENT_CHARTER || payload["signed"] || field_id < 1 || field_id > 3)
 		return FALSE
 	var/datum/contract/faction_agent/contract = SScontracts.contracts_by_id[payload["agent_contract_id"]]
@@ -289,7 +289,7 @@
 		return FALSE
 	var/list/all_contents = contract_export_contents(crate)
 	for(var/obj/item/paper/paper in all_contents)
-		var/datum/component/contract_document/document = paper.GetComponent(/datum/component/contract_document)
+		var/datum/contract_document/document = paper.contract_document
 		if(document?.document_kind != CONTRACT_DOCUMENT_AGENT_CONTACT || !document.payload["signed"] || document.payload["cooperated"])
 			continue
 		var/datum/contract/faction_agent/contract = SScontracts.contracts_by_id[document.payload["agent_contract_id"]]
@@ -316,7 +316,7 @@
 	var/obj/item/paper/paper = target
 	if(!istype(paper))
 		return FALSE
-	var/datum/component/contract_document/document = paper.GetComponent(/datum/component/contract_document)
+	var/datum/contract_document/document = paper.contract_document
 	if(!(document?.document_kind in list(CONTRACT_DOCUMENT_AGENT_CONTACT, CONTRACT_DOCUMENT_AGENT_ENDORSEMENT, CONTRACT_DOCUMENT_AGENT_CHARTER)))
 		return FALSE
 	var/datum/contract/faction_agent/contract = SScontracts.contracts_by_id[document.payload["agent_contract_id"]]

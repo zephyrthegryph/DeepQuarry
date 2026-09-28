@@ -117,7 +117,7 @@
 		if (T.z != center.z || get_dist(center, T) > 4)
 			popup_msg(user, "They are out of range. They must be standing within 4 tiles of the device.")
 			return
-	var/datum/component/gargoyle/comp = statue.GetComponent(/datum/component/gargoyle)
+	var/datum/trait_state/gargoyle/comp = statue.get_trait_state(/datum/trait_state/gargoyle)
 	if (no_clothes)
 		for(var/obj/item/W in statue)
 			if(istype(W, /obj/item/implant/backup) || istype(W, /obj/item/nif))

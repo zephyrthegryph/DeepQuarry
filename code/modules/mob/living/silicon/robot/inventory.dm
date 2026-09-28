@@ -277,7 +277,7 @@
 			tracker.tracking = FALSE
 			tracker.toggle_tracking()
 	recompute_power_demand()
-	SEND_SIGNAL(src, COMSIG_ROBOT_EQUIPMENT_CHANGED, O)
+	OM_EMIT(src, /datum/om/event/robot_equipment_changed, O)
 	if(O)
 		for(var/datum/action/A as anything in O.actions)
 			A.Grant(src)

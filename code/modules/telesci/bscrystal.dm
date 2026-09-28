@@ -3,7 +3,7 @@
 	. = ..()
 	if(istype(M, /mob/living))
 		var/mob/living/L = M
-		var/datum/component/shadekin/SK = L.get_shadekin_component()
+		var/datum/shadekin/SK = L.get_shadekin_state()
 		if(SK && SK.in_phase)
 			var/turf/T = get_turf(src)
 			visible_message(span_notice("[src] fizzles and disappears as something interacts with it!"))
@@ -19,6 +19,6 @@
 /obj/item/bluespace_crystal/proc/dephase_shadekin()
 	var/turf/T = get_turf(src)
 	for(var/mob/living/living in range(3, T))
-		var/datum/component/shadekin/SK = living.get_shadekin_component()
+		var/datum/shadekin/SK = living.get_shadekin_state()
 		if(SK && SK.in_phase)
 			SK.attack_dephase(null, src)

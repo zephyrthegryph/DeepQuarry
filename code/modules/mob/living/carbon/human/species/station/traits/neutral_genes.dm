@@ -25,7 +25,7 @@
 
 	activation_message="You feel nervous."
 	primitive_expression_messages=list("nervously chitters.")
-	added_component_path = /datum/component/nervousness_disability
+	added_behaviour_path = /datum/om/behaviour/disability/nervousness
 
 /datum/trait/neutral/disability_tourettes
 	name = "Tourettes Syndrome"
@@ -38,4 +38,4 @@
 
 	activation_message="You twitch."
 	primitive_expression_messages=list("twitches and chitters.")
-	added_component_path = /datum/component/tourettes_disability
+	added_behaviour_path = /datum/om/behaviour/disability/tourettes

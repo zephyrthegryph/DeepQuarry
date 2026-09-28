@@ -55,26 +55,26 @@
 	var/list/events = list() // ALLOW(instance_list): containment (C1/C4): landed on master unlisted; not edited here
 
 /datum/dq_containment_listener/proc/watch(atom/holder)
-	RegisterSignal(holder, COMSIG_SLOT_PRE_INSERT, PROC_REF(on_pre_insert))
-	RegisterSignal(holder, COMSIG_SLOT_PRE_REMOVE, PROC_REF(on_pre_remove))
-	RegisterSignal(holder, COMSIG_SLOT_INSERTED, PROC_REF(on_inserted))
-	RegisterSignal(holder, COMSIG_SLOT_REMOVED, PROC_REF(on_removed))
+	om_hook(holder, /datum/om/event/before/slot_pre_insert, src, PROC_REF(on_pre_insert))
+	om_hook(holder, /datum/om/event/before/slot_pre_remove, src, PROC_REF(on_pre_remove))
+	om_hook(holder, /datum/om/event/slot_inserted, src, PROC_REF(on_inserted))
+	om_hook(holder, /datum/om/event/slot_removed, src, PROC_REF(on_removed))
 
-/datum/dq_containment_listener/proc/on_pre_insert(atom/source, atom/movable/thing, slot_id, mob/actor)
-	SIGNAL_HANDLER
+/datum/dq_containment_listener/proc/on_pre_insert(atom/source, datum/om/event/before/slot_pre_insert/event)
+	EVENT_HANDLER
 	return block_insert ? COMPONENT_SLOT_BLOCK : NONE
 
-/datum/dq_containment_listener/proc/on_pre_remove(atom/source, atom/movable/thing, slot_id, mob/actor)
-	SIGNAL_HANDLER
+/datum/dq_containment_listener/proc/on_pre_remove(atom/source, datum/om/event/before/slot_pre_remove/event)
+	EVENT_HANDLER
 	return block_remove ? COMPONENT_SLOT_BLOCK : NONE
 
-/datum/dq_containment_listener/proc/on_inserted(atom/source, atom/movable/thing, slot_id)
-	SIGNAL_HANDLER
-	events += "in:[slot_id]"
+/datum/dq_containment_listener/proc/on_inserted(atom/source, datum/om/event/slot_inserted/event)
+	EVENT_HANDLER
+	events += "in:[event.slot_id]"
 
-/datum/dq_containment_listener/proc/on_removed(atom/source, atom/movable/thing, slot_id)
-	SIGNAL_HANDLER
-	events += "out:[slot_id]"
+/datum/dq_containment_listener/proc/on_removed(atom/source, datum/om/event/slot_removed/event)
+	EVENT_HANDLER
+	events += "out:[event.slot_id]"
 
 /// An open floor turf with open floor to its east (the test map has no
 /// run_loc landmarks).

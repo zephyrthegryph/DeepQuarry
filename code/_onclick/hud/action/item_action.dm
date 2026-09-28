@@ -7,7 +7,7 @@
 	button_icon_state = null
 
 	/// TRUE: the button shows the target item's appearance as an overlay
-	/// (was /datum/component/action_item_overlay).
+	/// (was the action_item_overlay component).
 	var/item_overlay = FALSE
 	/// The item appearance currently applied to the button.
 	var/item_overlay_appearance

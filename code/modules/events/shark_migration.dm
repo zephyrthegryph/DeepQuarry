@@ -70,7 +70,7 @@
 // Spawn a single shark at given location.
 /datum/event/shark_migration/proc/spawn_one_shark(loc)
 	var/mob/living/simple_mob/animal/M = new /mob/living/simple_mob/animal/space/shark/event(loc)
-	RegisterSignal(M, COMSIG_OBSERVER_DESTROYED, PROC_REF(on_shark_destruction))
+	om_hook(M, /datum/om/event/qdeleting, src, PROC_REF(on_shark_destruction))
 	LAZYADD(spawned_shark, M)
 	return M
 
@@ -82,10 +82,10 @@
 			. += 1
 
 // If shark is bomphed, remove it from the list.
-/datum/event/shark_migration/proc/on_shark_destruction(mob/M)
-	SIGNAL_HANDLER
+/datum/event/shark_migration/proc/on_shark_destruction(mob/M, datum/om/event/qdeleting/event)
+	EVENT_HANDLER
 	LAZYREMOVE(spawned_shark, M)
-	UnregisterSignal(M, COMSIG_OBSERVER_DESTROYED)
+	om_unhook(M, /datum/om/event/qdeleting, src)
 
 /datum/event/shark_migration/end()
 	. = ..()

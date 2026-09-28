@@ -10,8 +10,8 @@
 /datum/unit_test/dq_form_switch_keeps_body_ticking/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human/promethean, test_floor())
 	TEST_ASSERT(isturf(H.loc), "the test character must start on a floor")
-	var/datum/component/forms/F = H.get_forms()
-	TEST_ASSERT_NOTNULL(F, "a promethean should have the forms component")
+	var/datum/forms/F = H.get_forms()
+	TEST_ASSERT_NOTNULL(F, "a promethean should have forms")
 	TEST_ASSERT(istype(F.current, /datum/form/human), "a promethean should start in human form")
 
 	var/datum/affliction/pain = H.body.afflict(/datum/affliction/acute_pain, null, 60)
@@ -42,8 +42,8 @@
 
 /datum/unit_test/dq_form_injury_multipliers/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human/promethean)
-	var/datum/component/forms/F = H.get_forms()
-	TEST_ASSERT_NOTNULL(F, "a promethean should have the forms component")
+	var/datum/forms/F = H.get_forms()
+	TEST_ASSERT_NOTNULL(F, "a promethean should have forms")
 	var/human_blunt = H.injure(INJURY_BLUNT, 4, BP_TORSO, flags = INJURE_SILENT)
 	var/human_burn = H.injure(INJURY_BURN, 2, BP_TORSO, flags = INJURE_SILENT)
 	F.set_form(/datum/form/promethean_blob)
@@ -53,16 +53,16 @@
 	TEST_ASSERT(abs(blob_blunt - human_blunt * 0.75) < 0.01, "blob form should take ×0.75 physical ([human_blunt] -> [blob_blunt])")
 	TEST_ASSERT(abs(blob_burn - human_burn * 2) < 0.01, "blob form should take ×2 thermal ([human_burn] -> [blob_burn])")
 
-/// Deleting a character leaves nothing pointing at it: the forms component,
+/// Deleting a character leaves nothing pointing at it: the forms datum,
 /// its forms and the protean rig all let go (bug 16).
 /datum/unit_test/dq_form_no_refs_on_delete
 
 /datum/unit_test/dq_form_no_refs_on_delete/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human/protean, test_floor())
-	var/datum/component/forms/protean/F = H.GetComponent(/datum/component/forms/protean)
-	TEST_ASSERT_NOTNULL(F, "a protean should have the protean forms component")
+	var/datum/forms/protean/F = H.get_protean_forms()
+	TEST_ASSERT_NOTNULL(F, "a protean should have protean forms")
 	var/obj/item/rig/protean/R = allocate(/obj/item/rig/protean, null, H)
-	TEST_ASSERT_EQUAL(F.rig, R, "the rig should register on the character's forms component")
+	TEST_ASSERT_EQUAL(F.rig, R, "the rig should register on the character's forms")
 	TEST_ASSERT_EQUAL(R.myprotean, H, "the rig should know its protean")
 
 	TEST_ASSERT(F.set_form(/datum/form/protean_blob), "switching to the protean blob should succeed")
@@ -71,11 +71,11 @@
 
 	var/datum/form/protean_blob/B = F.blob_form()
 	qdel(H)
-	TEST_ASSERT(QDELETED(F), "the forms component should go with the character")
+	TEST_ASSERT(QDELETED(F), "the forms datum should go with the character")
 	TEST_ASSERT(QDELETED(B), "form instances should go with the character")
-	TEST_ASSERT_NULL(F.current, "the component should drop its current form")
-	TEST_ASSERT_NULL(F.forms, "the component should drop its forms")
-	TEST_ASSERT_NULL(F.rig, "the component should drop its rig")
+	TEST_ASSERT_NULL(F.current, "the forms datum should drop its current form")
+	TEST_ASSERT_NULL(F.forms, "the forms datum should drop its forms")
+	TEST_ASSERT_NULL(F.rig, "the forms datum should drop its rig")
 	TEST_ASSERT_NULL(R.myprotean, "the rig should drop the deleted character")
 
 /// A nanoform body that would die goes dormant instead, and is revived by
@@ -116,7 +116,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human/protean)
 	var/datum/body/humanoid/nanoform/B = H.body
 	TEST_ASSERT(istype(B), "a protean should have the nanoform body plan")
-	var/datum/component/forms/protean/F = H.GetComponent(/datum/component/forms/protean)
+	var/datum/forms/protean/F = H.get_protean_forms()
 	var/obj/item/organ/internal/nano/refactory/R = H.nano_get_refactory()
 	TEST_ASSERT_NOTNULL(R, "a protean should have a refactory")
 	R.add_stored_material(MAT_STEEL, 1000)

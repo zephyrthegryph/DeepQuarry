@@ -154,13 +154,14 @@ REF_OWNED_VALUES(/datum/contract/medical_trial, "participants")
 			return FALSE
 	var/datum/medical_trial_participant/participant = new(identity.id, baseline, is_healthy, clinician_account)
 	participants[identity.id] = participant
-	RegisterSignal(subject, COMSIG_MOB_DEATH, PROC_REF(on_participant_death))
+	om_hook(subject, /datum/om/event/mob_death, src, PROC_REF(on_participant_death))
 	medical_trial_offer_patient_advocate(src, participant)
 	audit(CONTRACT_AUDIT_PROGRESS, "[subject.real_name] consented and baseline telemetry was recorded.")
 	return TRUE
 
-/datum/contract/medical_trial/proc/on_participant_death(mob/living/carbon/human/subject, gibbed)
-	SIGNAL_HANDLER
+/datum/contract/medical_trial/proc/on_participant_death(mob/living/carbon/human/subject, datum/om/event/mob_death/event)
+	EVENT_HANDLER
+	var/gibbed = event.gibbed
 	var/datum/contract_subject_identity/identity = SScontracts.subject_identity(subject)
 	var/datum/medical_trial_participant/participant = participants?[identity?.id]
 	if(!participant || participant.corpse_contract_offered || gibbed)
@@ -318,7 +319,7 @@ REF_OWNED_VALUES(/datum/contract/medical_trial, "participants")
 		return TRUE
 	var/mob/living/carbon/human/subject = participant.current_subject()
 	if(subject)
-		UnregisterSignal(subject, COMSIG_MOB_DEATH)
+		om_unhook(subject, /datum/om/event/mob_death, src)
 	SScontracts.void_evidence(participant.consent_evidence_id, "The subject withdrew consent before submission.")
 	medical_trial_cancel_subject_contracts(id, subject_id)
 	participants -= subject_id
@@ -464,10 +465,12 @@ REF_OWNED_VALUES(/datum/contract/medical_trial, "participants")
 /proc/affliction_reports_clinical_outcomes(datum/affliction/A)
 	return !istype(A, /datum/affliction/wound) && !istype(A, /datum/affliction/lesion) && !istype(A, /datum/affliction/load)
 
-/// COMSIG_AFFLICTION_SEVERITY_CHANGED: republish trial eligibility and emit
+/// affliction_severity_changed event: republish trial eligibility and emit
 /// the measured treatment outcome when a condition improves.
-/datum/controller/subsystem/contracts/proc/on_affliction_severity_changed(mob/living/carbon/human/patient, datum/affliction/A, old_severity)
-	SIGNAL_HANDLER
+/datum/controller/subsystem/contracts/proc/on_affliction_severity_changed(mob/living/carbon/human/patient, datum/om/event/affliction_severity_changed/event)
+	EVENT_HANDLER
+	var/datum/affliction/A = event.affliction
+	var/old_severity = event.old_severity
 	if(!istype(patient) || !affliction_reports_clinical_outcomes(A))
 		return
 	A.update_contract_eligibility()
@@ -491,11 +494,13 @@ REF_OWNED_VALUES(/datum/contract/medical_trial, "participants")
 		"detail" = "[patient.real_name]'s [A.name] improved by [round(improvement, 0.1)] severity.",
 	), "medical-treatment:[REF(A)]:[world.time]:[A.severity]", patient, null, patient)
 
-/// COMSIG_BODY_AFFLICTIONS_CHANGED: an affliction can join or leave a body
+/// body_afflictions_changed event: an affliction can join or leave a body
 /// without a severity change (an organ carrying afflictions is reattached, an
 /// affliction is cured or cleared outright). Keep eligibility in step.
-/datum/controller/subsystem/contracts/proc/on_body_afflictions_changed(mob/living/carbon/human/patient, datum/affliction/A, added)
-	SIGNAL_HANDLER
+/datum/controller/subsystem/contracts/proc/on_body_afflictions_changed(mob/living/carbon/human/patient, datum/om/event/body_afflictions_changed/event)
+	EVENT_HANDLER
+	var/datum/affliction/A = event.affliction
+	var/added = event.added
 	if(!affliction_reports_clinical_outcomes(A))
 		return
 	if(added)
@@ -504,7 +509,7 @@ REF_OWNED_VALUES(/datum/contract/medical_trial, "participants")
 	if(A.contract_eligibility_qualifying || A.contract_rare_eligibility_qualifying)
 		A.contract_eligibility_qualifying = FALSE
 		A.contract_rare_eligibility_qualifying = FALSE
-		SEND_SIGNAL(patient, COMSIG_MOB_MEDICAL_ISSUES_CHANGED)
+		OM_EMIT(patient, /datum/om/event/mob_medical_issues_changed)
 
 /datum/affliction/proc/update_contract_eligibility()
 	var/family = medical_trial_condition_family(src)
@@ -516,7 +521,7 @@ REF_OWNED_VALUES(/datum/contract/medical_trial, "participants")
 	contract_eligibility_qualifying = qualifying
 	contract_rare_eligibility_qualifying = rare_qualifying
 	if(owner)
-		SEND_SIGNAL(owner, COMSIG_MOB_MEDICAL_ISSUES_CHANGED)
+		OM_EMIT(owner, /datum/om/event/mob_medical_issues_changed)
 
 /mob/living/carbon/human
 	var/list/contract_medical_indications

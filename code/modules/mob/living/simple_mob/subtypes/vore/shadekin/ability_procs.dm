@@ -3,19 +3,19 @@
 // doesn't need its own version of it.
 
 /mob/living/simple_mob/shadekin/UnarmedAttack()
-	if(comp.in_phase)
+	if(shadekin.in_phase)
 		return FALSE //Nope.
 
 	. = ..()
 
 /mob/living/simple_mob/shadekin/can_fall()
-	if(comp.in_phase)
+	if(shadekin.in_phase)
 		return FALSE //Nope!
 
 	return ..()
 
 /mob/living/simple_mob/shadekin/zMove(direction)
-	if(comp.in_phase)
+	if(shadekin.in_phase)
 		var/turf/destination = (direction == UP) ? GetAbove(src) : GetBelow(src)
 		if(destination)
 			forceMove(destination)

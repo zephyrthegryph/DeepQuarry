@@ -32,8 +32,8 @@
 	. = ..()
 	default_apply_parts()
 	create_reagents(120)
-	AddComponent(/datum/component/hose_connector/input)
-	AddComponent(/datum/component/hose_connector/output)
+	add_hose_connector(/datum/hose_connector/input)
+	add_hose_connector(/datum/hose_connector/output)
 
 /obj/machinery/atmospherics/unary/heater/atmos_init()
 	if(node)

@@ -1,4 +1,5 @@
-/datum/component/gargoyle
+/datum/trait_state/gargoyle
+	life_stage = /datum/om/stage/life/trait/gargoyle
 	var/energy = 100
 	var/transformed = FALSE
 	var/paused = FALSE
@@ -12,30 +13,17 @@
 	var/material = "stone"
 	var/tint = "#FFFFFF"
 
-/datum/component/gargoyle/Initialize()
-	if (!ishuman(parent))
-		return COMPONENT_INCOMPATIBLE
-	add_verb(parent,/mob/living/carbon/human/proc/gargoyle_transformation)
-	add_verb(parent,/mob/living/carbon/human/proc/gargoyle_pause)
-	add_verb(parent,/mob/living/carbon/human/proc/gargoyle_checkenergy)
+/datum/trait_state/gargoyle/setup()
+	if (!ishuman(owner))
+		return FALSE
+	add_verb(owner,/mob/living/carbon/human/proc/gargoyle_transformation)
+	add_verb(owner,/mob/living/carbon/human/proc/gargoyle_pause)
+	add_verb(owner,/mob/living/carbon/human/proc/gargoyle_checkenergy)
+	return TRUE
 
-/datum/component/gargoyle/RegisterWithParent()
-	RegisterSignal(parent, COMSIG_GARGOYLE_TRANSFORMATION, PROC_REF(gargoyle_transformation))
-	RegisterSignal(parent, COMSIG_GARGOYLE_PAUSE, PROC_REF(gargoyle_pause))
-	RegisterSignal(parent, COMSIG_GARGOYLE_CHECK_ENERGY, PROC_REF(gargoyle_checkenergy))
+// detach(): the base drops every hook, including the Moved hook gargoyle_pause() adds.
 
-	om_stage_add(parent, /datum/om/stage/life/trait/gargoyle)
-
-/datum/component/gargoyle/UnregisterFromParent()
-	UnregisterSignal(parent, COMSIG_GARGOYLE_TRANSFORMATION)
-	UnregisterSignal(parent, COMSIG_GARGOYLE_PAUSE)
-	UnregisterSignal(parent, COMSIG_GARGOYLE_CHECK_ENERGY)
-	om_stage_remove(parent, /datum/om/stage/life/trait/gargoyle)
-	if(paused)
-		UnregisterSignal(parent, COMSIG_MOVABLE_MOVED) //happens if gargoyle_pause is used
-
-/datum/component/gargoyle/proc/process_component()
-	SIGNAL_HANDLER
+/datum/trait_state/gargoyle/life_tick()
 	if(QDELETED(gargoyle()))
 		return
 	if(transformed)
@@ -63,21 +51,24 @@
 	else if(!transformed && isturf(gargoyle().loc))
 		gargoyle().gargoyle_transformation()
 
-/datum/component/gargoyle/proc/unpause()
-	SIGNAL_HANDLER
+/datum/trait_state/gargoyle/proc/unpause()
 	paused = FALSE
-	UnregisterSignal(gargoyle(), COMSIG_MOVABLE_MOVED)
+	om_unhook(gargoyle(), /datum/om/event/moved, src)
 	return
+
+/datum/trait_state/gargoyle/proc/on_moved(datum/source, datum/om/event/moved/event)
+	EVENT_HANDLER
+	unpause()
 
 //verbs or action buttons...?
 /mob/living/carbon/human/proc/gargoyle_transformation()
 	set name = "Gargoyle - Petrification"
 	set category = "Abilities.Gargoyle"
 	set desc = "Turn yourself into (or back from) being a gargoyle."
-	SEND_SIGNAL(src, COMSIG_GARGOYLE_TRANSFORMATION)
+	var/datum/trait_state/gargoyle/G = get_trait_state(/datum/trait_state/gargoyle)
+	G?.gargoyle_transformation()
 
-/datum/component/gargoyle/proc/gargoyle_transformation()
-	SIGNAL_HANDLER
+/datum/trait_state/gargoyle/proc/gargoyle_transformation()
 	if(gargoyle().stat == DEAD)
 		return
 	if(energy <= 0 && isturf(gargoyle().loc))
@@ -95,40 +86,37 @@
 	set name = "Gargoyle - Pause"
 	set category = "Abilities.Gargoyle"
 	set desc = "Pause your energy while standing still, so you don't use up any more, though you will lose a small amount upon moving again."
-	SEND_SIGNAL(src, COMSIG_GARGOYLE_PAUSE)
+	var/datum/trait_state/gargoyle/G = get_trait_state(/datum/trait_state/gargoyle)
+	G?.gargoyle_pause()
 
-/datum/component/gargoyle/proc/gargoyle_pause()
-	SIGNAL_HANDLER
+/datum/trait_state/gargoyle/proc/gargoyle_pause()
 	if(gargoyle().stat)
 		return
 
 	if(!transformed && !paused)
 		paused = TRUE
-		RegisterSignal(parent, COMSIG_MOVABLE_MOVED, PROC_REF(unpause))
-		to_chat(parent, span_notice("You start conserving your energy."))
+		om_hook(owner, /datum/om/event/moved, src, PROC_REF(on_moved))
+		to_chat(owner, span_notice("You start conserving your energy."))
 
 /mob/living/carbon/human/proc/gargoyle_checkenergy()
 	set name = "Gargoyle - Check Energy"
 	set category = "Abilities.Gargoyle"
 	set desc = "Check how much energy you have remaining as a gargoyle."
-	SEND_SIGNAL(src, COMSIG_GARGOYLE_CHECK_ENERGY)
+	var/datum/trait_state/gargoyle/G = get_trait_state(/datum/trait_state/gargoyle)
+	G?.gargoyle_checkenergy()
 
-/datum/component/gargoyle/proc/gargoyle_checkenergy()
-	SIGNAL_HANDLER
-	to_chat(parent, span_notice("You have [round(energy,0.01)] energy remaining. It is currently [paused ? "stable" : (transformed ? "increasing" : "decreasing")]."))
+/datum/trait_state/gargoyle/proc/gargoyle_checkenergy()
+	to_chat(owner, span_notice("You have [round(energy,0.01)] energy remaining. It is currently [paused ? "stable" : (transformed ? "increasing" : "decreasing")]."))
 
 /// Trait system: gargoyle energy. Was a COMSIG_LIVING_LIFE listener.
 /datum/om/stage/life/trait/gargoyle
 	name = "gargoyle"
-	component_type = /datum/component/gargoyle
+	state_type = /datum/trait_state/gargoyle
 
-/datum/om/stage/life/trait/gargoyle/tick_component(mob/living/self, datum/component/gargoyle/component)
-	component.process_component()
-
-/// LC-refs: the gargoyle mob (our parent) (was a var copying parent).
-/datum/component/gargoyle/proc/gargoyle() as /mob/living/carbon/human
-	return parent
+/// LC-refs: the gargoyle mob (our owner).
+/datum/trait_state/gargoyle/proc/gargoyle() as /mob/living/carbon/human
+	return owner
 
 /// LC-refs: the statue the gargoyle is standing as -- an OM handle (om_handle()), so it reads null once that is deleted.
-/datum/component/gargoyle/proc/statue() as /obj/structure/gargoyle
+/datum/trait_state/gargoyle/proc/statue() as /obj/structure/gargoyle
 	return om_resolve(statue_handle)

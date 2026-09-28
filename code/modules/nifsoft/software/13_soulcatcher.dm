@@ -449,8 +449,8 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 	real_name = brainmob.real_name	//And the OTHER name
 
 	forceMove(get_turf(parent_human()))
-	parent_human().AddComponent(/datum/component/recursive_move)
-	RegisterSignal(parent_human(), COMSIG_MOVABLE_ATTEMPTED_MOVE, /mob/observer/eye/ar_soul/proc/human_moved)
+	dq_add_recursive_move(parent_human())
+	om_hook(parent_human(), /datum/om/event/movable_attempted_move, src, PROC_REF(human_moved))
 
 	//Time to play dressup
 	if(brainmob.client.prefs)
@@ -483,8 +483,8 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 		sprint = initial
 	return 1
 
-/mob/observer/eye/ar_soul/proc/human_moved()
-	SIGNAL_HANDLER
+/mob/observer/eye/ar_soul/proc/human_moved(datum/source, datum/om/event/movable_attempted_move/event)
+	EVENT_HANDLER
 	if(!can_see(parent_human(),src))
 		forceMove(get_turf(parent_human()))
 

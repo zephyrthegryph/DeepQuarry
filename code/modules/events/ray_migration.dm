@@ -70,7 +70,7 @@
 // Spawn a single ray at given location.
 /datum/event/ray_migration/proc/spawn_one_ray(loc)
 	var/mob/living/simple_mob/animal/M = new /mob/living/simple_mob/animal/space/ray(loc)
-	RegisterSignal(M, COMSIG_OBSERVER_DESTROYED, PROC_REF(on_ray_destruction))
+	om_hook(M, /datum/om/event/qdeleting, src, PROC_REF(on_ray_destruction))
 	LAZYADD(spawned_ray, M)
 	return M
 
@@ -82,10 +82,10 @@
 			. += 1
 
 // If ray is bomphed, remove it from the list.
-/datum/event/ray_migration/proc/on_ray_destruction(mob/M)
-	SIGNAL_HANDLER
+/datum/event/ray_migration/proc/on_ray_destruction(mob/M, datum/om/event/qdeleting/event)
+	EVENT_HANDLER
 	LAZYREMOVE(spawned_ray, M)
-	UnregisterSignal(M, COMSIG_OBSERVER_DESTROYED)
+	om_unhook(M, /datum/om/event/qdeleting, src)
 
 /datum/event/ray_migration/end()
 	. = ..()

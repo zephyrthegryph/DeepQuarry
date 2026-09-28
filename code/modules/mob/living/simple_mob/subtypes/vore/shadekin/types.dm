@@ -252,12 +252,12 @@
 	endurance = 1000000000000
 	eye_state = "BLUE EYES"
 	eye_icon_state = "e_rakshasa"
-	comp = /datum/component/shadekin/full/rakshasa
+	shadekin_type = /datum/shadekin/full/rakshasa
 
 /mob/living/simple_mob/shadekin/red/rakshasa/Initialize(mapload)
 	. = ..()
-	if(comp)
-		comp.dark_energy_infinite = TRUE
+	if(shadekin)
+		shadekin.dark_energy_infinite = TRUE
 
 /mob/living/simple_mob/shadekin/red/rakshasa/get_available_emotes()
 	. = GLOB.simple_mob_default_emotes.Copy()

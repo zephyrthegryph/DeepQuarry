@@ -28,7 +28,7 @@
 	for(var/body_type in list(SPECIES_HUMAN, SPECIES_VOX, SPECIES_TESHARI))
 		var/mob/living/carbon/human/H = new(human_storage)
 		H.set_species(body_type)
-		RegisterSignal(H, COMSIG_UNITTEST_DATA, PROC_REF(get_signal_data))
+		om_hook(H, /datum/om/event/unittest_data, src, PROC_REF(get_signal_data))
 		test_humans[body_type] = H
 	#endif
 
@@ -55,7 +55,7 @@
 	#ifdef UNIT_TESTS
 	for(var/body_type in test_humans)
 		var/mob/living/carbon/human/H = test_humans[body_type]
-		UnregisterSignal(H, COMSIG_UNITTEST_DATA)
+		om_unhook(H, /datum/om/event/unittest_data, src)
 		qdel(H)
 	test_humans = null
 	QDEL_NULL(human_storage)
@@ -96,7 +96,7 @@
 
 	#ifdef UNIT_TESTS
 	// Dress the shared per-species test humans with this item and check they get worn art.
-	// An entire signal just for unittests had to be made for this (COMSIG_UNITTEST_DATA, emitted from
+	// An entire signal just for unittests had to be made for this (/datum/om/event/unittest_data, emitted from
 	// /obj/item/proc/get_worn_icon_state in code/game/objects/items.dm under #ifdef UNIT_TESTS).
 	//
 	// This exercises set_species (done once, up-front in Run) + equip-to-slot + the worn-icon signal
@@ -179,8 +179,9 @@
 					failed = TRUE
 	return failed
 
-/datum/unit_test/all_clothing_shall_be_valid/proc/get_signal_data(atom/source, list/data = list())
-	SIGNAL_HANDLER
+/datum/unit_test/all_clothing_shall_be_valid/proc/get_signal_data(atom/source, datum/om/event/unittest_data/event)
+	EVENT_HANDLER
+	var/list/data = event.data || list()
 	switch(data[1])
 		if("set_slot")
 			var/slot_name 	= data[2]

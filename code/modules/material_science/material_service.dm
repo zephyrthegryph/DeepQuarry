@@ -248,7 +248,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 
 /datum/material_service/proc/clear_watches()
 	if(watched_turf())
-		UnregisterSignal(watched_turf(), COMSIG_TURF_CHANGE)
+		om_unhook(watched_turf(), /datum/om/event/turf_change, src)
 		watched_turf_handle = null
 	// om_watch_disarm() keys off this datum's own ref string (code/datums/om/watch.dm), not a
 	// handle, so unlike the old subscribe_gas_dependency() transport there's no QDELETED race
@@ -259,17 +259,18 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	mixture_pressures = null
 	mixture_corrosion = null
 	for(var/atom/movable/source as anything in movement_sources)
-		UnregisterSignal(source, COMSIG_MOVABLE_MOVED)
+		om_unhook(source, /datum/om/event/moved, src)
 	movement_sources = null
 
-/datum/material_service/proc/moved()
-	SIGNAL_HANDLER
+/datum/material_service/proc/moved(datum/source, datum/om/event/moved/event)
+	EVENT_HANDLER
 	watches_dirty = TRUE
 	environment_changed()
 
-/datum/material_service/proc/changing_turf(datum/source, new_type, list/new_baseturfs, flags, list/post_change_callbacks)
-	SIGNAL_HANDLER
-	UnregisterSignal(source, COMSIG_TURF_CHANGE)
+/datum/material_service/proc/changing_turf(datum/source, datum/om/event/turf_change/event)
+	EVENT_HANDLER
+	var/list/post_change_callbacks = event.post_change_callbacks
+	om_unhook(source, /datum/om/event/turf_change, src)
 	watched_turf_handle = null
 	watches_dirty = TRUE
 	post_change_callbacks += CALLBACK(src, PROC_REF(environment_changed))
@@ -341,10 +342,10 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	var/turf/location = get_turf(owner())
 	if(location != watched_turf())
 		if(watched_turf())
-			UnregisterSignal(watched_turf(), COMSIG_TURF_CHANGE)
+			om_unhook(watched_turf(), /datum/om/event/turf_change, src)
 		watched_turf_handle = om_handle(location)
 		if(watched_turf())
-			RegisterSignal(watched_turf(), COMSIG_TURF_CHANGE, PROC_REF(changing_turf))
+			om_hook(watched_turf(), /datum/om/event/turf_change, src, PROC_REF(changing_turf))
 	var/datum/gas_mixture/ambient = location?.return_air()
 	if(ambient)
 		var/ambient_id = ambient.arena_id()
@@ -373,10 +374,10 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 		location_source = location_source.loc
 	for(var/atom/movable/source as anything in movement_sources)
 		if(!(source in next_sources))
-			UnregisterSignal(source, COMSIG_MOVABLE_MOVED)
+			om_unhook(source, /datum/om/event/moved, src)
 	for(var/atom/movable/source as anything in next_sources)
 		if(!(source in movement_sources))
-			RegisterSignal(source, COMSIG_MOVABLE_MOVED, PROC_REF(moved))
+			om_hook(source, /datum/om/event/moved, src, PROC_REF(moved))
 	movement_sources = next_sources
 
 /datum/material_service/proc/contents_changed()
