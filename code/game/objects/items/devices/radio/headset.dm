@@ -97,12 +97,12 @@ REF_OWNED(/obj/item/radio/headset, list("keyslot1", "keyslot2"))
 
 	if(!keyslot1)
 		user.drop_item()
-		W.loc = src
+		W.forceMove(src)
 		keyslot1 = W
 
 	else
 		user.drop_item()
-		W.loc = src
+		W.forceMove(src)
 		keyslot2 = W
 
 

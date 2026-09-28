@@ -137,7 +137,7 @@ GLOBAL_LIST_INIT(robot_glass_options, list(
 	balloon_alert(user, "dispensing [product ? product : "product"]...")
 	if(!product)
 		return
-	product.loc = get_turf(A)
+	product.forceMove(get_turf(A))
 
 	if(isrobot(user))
 		var/mob/living/silicon/robot/R = user

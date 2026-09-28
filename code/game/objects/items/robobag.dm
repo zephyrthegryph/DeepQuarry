@@ -86,12 +86,12 @@
 				corptag.forceMove(get_turf(src))
 				corptag = W
 				user.unEquip(corptag)
-				corptag.loc = null
+				corptag.moveToNullspace()
 				to_chat(user, span_notice("You swap \the [old_tag] for \the [corptag]."))
 			else
 				corptag = W
 				user.unEquip(corptag)
-				corptag.loc = null
+				corptag.moveToNullspace()
 				to_chat(user, span_notice("You attach \the [corptag] to \the [src]."))
 			update_icon()
 

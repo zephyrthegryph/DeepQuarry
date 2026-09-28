@@ -275,7 +275,7 @@ REF_OWNED(/obj/structure/closet/body_bag/cryobag, list("syringe", "tank"))
 				to_chat(user,span_info("You insert \the [syringe] into \the [src], and it locks into place."))
 				user.unEquip(syringe)
 				src.syringe = syringe
-				syringe.loc = null
+				syringe.moveToNullspace()
 				for(var/mob/living/carbon/human/H in contents)
 					inject_occupant(H)
 					break

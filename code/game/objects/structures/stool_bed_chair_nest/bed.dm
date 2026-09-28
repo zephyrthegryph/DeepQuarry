@@ -118,7 +118,7 @@
 		C.use(1)
 		if(!istype(src.loc, /turf))
 			user.drop_from_inventory(src)
-			src.loc = get_turf(src)
+			src.forceMove(get_turf(src))
 		to_chat(user, "You add padding to \the [src].")
 		add_padding(padding_type)
 		return TRUE
@@ -299,7 +299,7 @@
 		var/obj/item/roller_holder/RH = W
 		if(!RH.held)
 			to_chat(user, span_notice("You collect the roller bed."))
-			src.loc = RH
+			src.forceMove(RH)
 			RH.held = src
 			return
 

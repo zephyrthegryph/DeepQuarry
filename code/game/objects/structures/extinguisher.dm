@@ -41,7 +41,7 @@
 	if(istype(O, /obj/item/extinguisher))
 		if(!has_extinguisher && opened)
 			user.remove_from_mob(O)
-			contents += O
+			O.forceMove(src)
 			has_extinguisher = O
 			RegisterSignal(has_extinguisher, COMSIG_QDELETING, PROC_REF(on_extinguisher_deleted))
 			to_chat(user, span_notice("You place [O] in [src]."))
@@ -97,7 +97,7 @@
 /obj/structure/extinguisher_cabinet/attack_tk(mob/user)
 	if(has_extinguisher)
 		UnregisterSignal(has_extinguisher, COMSIG_QDELETING)
-		has_extinguisher.loc = loc
+		has_extinguisher.forceMove(loc)
 		to_chat(user, span_notice("You telekinetically remove [has_extinguisher] from [src]."))
 		has_extinguisher = null
 		opened = 1

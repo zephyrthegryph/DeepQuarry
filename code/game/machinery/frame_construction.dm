@@ -130,7 +130,7 @@
 	to_chat(actor, span_notice("You place the circuit board inside the frame."))
 	frame.circuit = held
 	actor.drop_item()
-	held.loc = frame
+	held.forceMove(frame)
 	if(frame.frame_type.frame_class == FRAME_CLASS_MACHINE)
 		frame.check_components()
 		frame.update_desc()
@@ -373,10 +373,10 @@
 		if(circuit.contain_parts)
 			O.move_into(new_machine, CONTAINER_SLOT_INTERNALS)
 		else
-			O.loc = null
+			O.moveToNullspace()
 		new_machine.component_parts += O
 
-	circuit.loc = null
+	circuit.moveToNullspace()
 	circuit.move_into(new_machine, CONTAINER_SLOT_INTERNALS)
 	new_machine.circuit = circuit
 
@@ -394,7 +394,7 @@
 	B.pixel_y = pixel_y
 	B.set_dir(dir)
 	circuit.construct(B)
-	circuit.loc = null
+	circuit.moveToNullspace()
 	B.circuit = circuit
 	if(!alarm)
 		B.update_icon()
@@ -407,7 +407,7 @@
 	B.pixel_y = pixel_y
 	B.set_dir(dir)
 	circuit.construct(B)
-	circuit.loc = null
+	circuit.moveToNullspace()
 	B.circuit = circuit
 	var/obj/machinery/computer/LC = locate() in get_step(B, turn(B.dir, 90))
 	var/obj/machinery/computer/RC = locate() in get_step(B, turn(B.dir, -90))

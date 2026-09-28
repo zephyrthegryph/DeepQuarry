@@ -150,7 +150,7 @@
 		return ..()
 	else
 		user.drop_from_inventory(I)
-		I.loc = src
+		I.forceMove(src)
 		consume(I, user)
 		to_chat(user, span_notice("You place \the [I] back into \the [src]."))
 

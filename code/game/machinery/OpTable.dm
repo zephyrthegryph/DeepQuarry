@@ -79,7 +79,7 @@
 	C.update_canmove() // Sync `lying` now so check_victim() does not race the next Life() tick.
 	C.forceMove(get_turf(src))
 	for(var/obj/O in src)
-		O.loc = src.loc
+		O.forceMove(src.loc)
 	add_fingerprint(user)
 	if(ishuman(C))
 		var/mob/living/carbon/human/H = C

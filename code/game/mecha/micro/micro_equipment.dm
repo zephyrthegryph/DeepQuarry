@@ -190,8 +190,7 @@
 			occupant_message("The ore compartment is empty.")
 			return
 		for (var/obj/item/ore/O in contents)
-			contents -= O
-			O.loc = chassis.loc
+			O.forceMove(chassis.loc)
 		occupant_message("Ore compartment emptied.")
 
 /obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop/get_equip_info()
@@ -220,8 +219,7 @@
 		return
 
 	for (var/obj/item/ore/O in contents)
-		contents -= O
-		O.loc = src.loc
+		O.forceMove(src.loc)
 	to_chat(usr, span_info("You empty the ore box"))
 
 	return

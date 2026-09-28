@@ -662,7 +662,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	A.pixel_y = pixel_y
 	A.update_desc()
 	A.update_icon()
-	M.loc = null
+	M.moveToNullspace()
 	M.atom_deconstruct(TRUE, src)
 	qdel(src)
 	return 1

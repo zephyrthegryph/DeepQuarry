@@ -74,7 +74,7 @@
 		return TRUE
 
 	user.drop_item()
-	W.loc = src
+	W.forceMove(src)
 	beaker = W
 	MACHINE_WAKE(src)
 	to_chat(user, span_notice("You insert \the [W] into \the [src]."))
@@ -134,7 +134,7 @@
 /obj/machinery/feeder/proc/interaction_take_beaker(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!beaker)
 		return FALSE
-	beaker.loc = get_turf(src)
+	beaker.forceMove(get_turf(src))
 	beaker = null
 	update_icon()
 	return TRUE

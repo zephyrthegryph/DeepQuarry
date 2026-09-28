@@ -93,7 +93,7 @@
 
 	var/obj/structure/closet/C = locate_on(T, /obj/structure/closet)
 	if(C)
-		C.contents += M
+		M.forceMove(C)
 
 	return INITIALIZE_HINT_QDEL
 

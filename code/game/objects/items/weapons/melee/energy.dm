@@ -150,7 +150,7 @@
 		if(istype(W, cell_type))
 			if(!bcell)
 				user.drop_item()
-				W.loc = src
+				W.forceMove(src)
 				bcell = W
 				to_chat(user, span_notice("You install a cell in [src]."))
 				update_icon()

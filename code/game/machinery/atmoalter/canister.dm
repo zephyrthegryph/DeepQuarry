@@ -242,7 +242,7 @@ update_flag
 	update_icon()
 
 	if (src.holding)
-		src.holding.loc = src.loc
+		src.holding.forceMove(src.loc)
 		src.holding = null
 
 // Machine pipeline (code/game/machinery/machine_pipeline.dm, "portable atmospherics" section):
@@ -442,7 +442,7 @@ update_flag
 					release_log += "Valve was " + span_bold("closed") + " by [ui.user] ([ui.user.ckey]), stopping the transfer into the [holding]<br>"
 				if(istype(holding, /obj/item/tank))
 					holding.manipulated_by = ui.user.real_name
-				holding.loc = loc
+				holding.forceMove(loc)
 				holding = null
 			. = TRUE
 

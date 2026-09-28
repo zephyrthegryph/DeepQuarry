@@ -225,7 +225,7 @@
 		return FALSE
 	if(!user.unEquip(O))
 		return FALSE
-	O.loc = src
+	O.forceMove(src)
 	scan = O
 	to_chat(user, "You insert [O].")
 	tgui_interact(user)

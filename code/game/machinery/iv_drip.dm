@@ -62,7 +62,7 @@
 			return
 
 		user.drop_item()
-		W.loc = src
+		W.forceMove(src)
 		beaker = W
 		to_chat(user, "You attach \the [W] to \the [src].")
 		update_icon()
@@ -155,7 +155,7 @@
 
 /obj/machinery/iv_drip/attack_hand(mob/user as mob)
 	if(beaker)
-		beaker.loc = get_turf(src)
+		beaker.forceMove(get_turf(src))
 		beaker = null
 		update_icon()
 	else

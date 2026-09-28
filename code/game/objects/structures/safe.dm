@@ -173,7 +173,7 @@ FLOOR SAFES
 		if(I.w_class + space <= maxspace)
 			space += I.w_class
 			user.drop_item()
-			I.loc = src
+			I.forceMove(src)
 			to_chat(user, span_notice("You put [I] in \the [src]."))
 			updateUsrDialog(user)
 		else

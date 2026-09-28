@@ -58,13 +58,13 @@
 			density = FALSE
 			layer = OBJ_LAYER
 
-			loc = user.loc
+			forceMove(user.loc)
 			if(ishuman(user))
 				if(!user.get_active_hand())
 					user.put_in_hands(src)
 					to_chat(user, "You take the target out of the stake.")
 			else
-				src.loc = get_turf(user)
+				src.forceMove(get_turf(user))
 				to_chat(user, "You take the target out of the stake.")
 
 			stake.pinned_target = null

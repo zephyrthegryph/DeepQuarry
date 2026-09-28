@@ -226,7 +226,7 @@ REF_OWNED(/obj/item/flashlight, "cell")
 		if(istype(W, /obj/item/cell/device))
 			if(!cell)
 				user.drop_item()
-				W.loc = src
+				W.forceMove(src)
 				cell = W
 				to_chat(user, span_notice("You install a cell in \the [src]."))
 				playsound(src, 'sound/machines/button.ogg', 30, 1, 0)

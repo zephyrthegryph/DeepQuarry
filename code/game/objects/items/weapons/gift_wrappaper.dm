@@ -154,7 +154,7 @@
 	G.w_class = G.size + 1
 	G.icon_state = text("gift[]", G.size)
 	G.gift = W
-	W.loc = G
+	W.forceMove(G)
 	G.add_fingerprint(user)
 	W.add_fingerprint(user)
 	src.add_fingerprint(user)

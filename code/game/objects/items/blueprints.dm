@@ -452,7 +452,7 @@
 
 	for(var/i in 1 to length(turfs)) //Fix lighting. Praise the lord.
 		var/turf/thing = turfs[i]
-		newA.contents += thing
+		thing.assign_area(newA)
 		thing.change_area(oldA, newA)
 
 	set_area_machinery(newA, newA.name, oldA.name)// Change the name and area defines of all the machinery to the correct area.
@@ -579,7 +579,7 @@
 
 	for(var/i in 1 to length(turfs)) //Fix lighting. Praise the lord.
 		var/turf/thing = turfs[i]
-		newA.contents += thing
+		thing.assign_area(newA)
 		thing.change_area(oldA, newA)
 
 	move_turfs_to_area(turfs, newA)
@@ -837,7 +837,7 @@
 
 	for(var/i in 1 to length(turfs)) //Fix lighting. Praise the lord.
 		var/turf/thing = turfs[i]
-		newA.contents += thing
+		thing.assign_area(newA)
 		thing.change_area(oldA, newA)
 
 	move_turfs_to_area(turfs, newA)

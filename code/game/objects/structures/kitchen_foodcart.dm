@@ -11,7 +11,7 @@
 	. = ..()
 	for(var/obj/item/I in loc)
 		if(istype(I, /obj/item/reagent_containers/food))
-			I.loc = src
+			I.forceMove(src)
 	update_icon()
 
 /obj/structure/foodcart/declare_interactions(list/into)
@@ -30,7 +30,7 @@
 
 /obj/structure/foodcart/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	user.drop_item()
-	O.loc = src
+	O.forceMove(src)
 	update_icon()
 	return TRUE
 
@@ -53,7 +53,7 @@
 			if(!user.get_active_hand())
 				user.put_in_hands(choice)
 		else
-			choice.loc = get_turf(src)
+			choice.forceMove(get_turf(src))
 		update_icon()
 
 /obj/structure/foodcart/update_icon()

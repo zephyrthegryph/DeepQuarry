@@ -132,7 +132,7 @@
 
 /obj/machinery/floorlayer/proc/TakeTile(obj/item/stack/tile/tile)
 	if(!T)	T = tile
-	tile.loc = src
+	tile.forceMove(src)
 
 	SortStacks()
 

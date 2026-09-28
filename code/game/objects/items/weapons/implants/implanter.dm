@@ -31,7 +31,7 @@
 		return
 	if(istype(usr, /mob))
 		var/mob/M = usr
-		imp.loc = get_turf(src)
+		imp.forceMove(get_turf(src))
 		if(M.get_active_hand() == null)
 			M.put_in_hands(imp)
 		to_chat(M, span_notice("You remove \the [imp] from \the [src]."))
@@ -169,7 +169,7 @@
 		else if(istype(A.loc,/obj/item/storage))
 			var/obj/item/storage/S = A.loc
 			S.remove_from_storage(A)
-		A.loc.contents.Remove(A)
+		A.moveToNullspace()
 		update()
 
 /obj/item/implanter/restrainingbolt

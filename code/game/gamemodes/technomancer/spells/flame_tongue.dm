@@ -48,14 +48,14 @@ REF_OWNED(/obj/item/spell/flame_tongue, "welder")
 			adjust_instability(12)
 	else
 		//This is needed in order for the welder to work, and works similarly to grippers.
-		welder.loc = user
+		welder.forceMove(user)
 		var/resolved = hit_atom.attackby(welder, user)
 		if(!resolved && welder && hit_atom)
 			if(pay_energy(500))
 				welder.attack(hit_atom, user, def_zone)
 				adjust_instability(4)
 		if(welder && user && (welder.loc == user))
-			welder.loc = src
+			welder.forceMove(src)
 		else
 			welder = null
 			consume(src, user)

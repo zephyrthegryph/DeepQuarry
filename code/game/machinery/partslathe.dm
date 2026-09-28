@@ -199,7 +199,7 @@
 	var/obj/item/new_item = D.build(loc);
 	if(new_item)
 		new_item.set_economic_provenance(DEPARTMENT_RESEARCH, 15, producer_account)
-		new_item.loc = loc
+		new_item.forceMove(loc)
 		if(mat_efficiency < 1) // No matter out of nowhere
 			new_item.scale_materials(mat_efficiency)
 	return new_item

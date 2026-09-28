@@ -26,7 +26,7 @@
 /obj/structure/coatrack/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	user.visible_message("[user] takes [coat] off \the [src].", "You take [coat] off the \the [src]")
 	if(!user.put_in_active_hand(coat))
-		coat.loc = get_turf(user)
+		coat.forceMove(get_turf(user))
 	coat = null
 	update_icon()
 	return TRUE
@@ -60,7 +60,7 @@
 	if (can_hang && !coat)
 		src.visible_message("[mover] lands on \the [src].")
 		coat = mover
-		coat.loc = src
+		coat.forceMove(src)
 		update_icon()
 		return 0
 	else

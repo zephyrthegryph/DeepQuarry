@@ -51,7 +51,7 @@ GLOBAL_LIST_EMPTY(ashtray_cache)
 			to_chat(user, "\The [src] is full.")
 			return
 		user.remove_from_mob(W)
-		W.loc = src
+		W.forceMove(src)
 
 		if (istype(W,/obj/item/clothing/mask/smokable/cigarette))
 			var/obj/item/clothing/mask/smokable/cigarette/cig = W
@@ -87,7 +87,7 @@ GLOBAL_LIST_EMPTY(ashtray_cache)
 		if (contents.len)
 			src.visible_message(span_danger("\The [src] slams into [hit_atom], spilling its contents!"))
 		for (var/obj/item/O in contents) // Dump all items out, so it ejects butts too
-			O.loc = src.loc
+			O.forceMove(src.loc)
 		material_wear(3 * MATERIAL_WEAR_UNIT)
 		if (QDELETED(src))
 			return

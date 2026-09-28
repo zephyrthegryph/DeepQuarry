@@ -58,7 +58,7 @@
 /obj/effect/alien/weeds/Destroy()
 	var/turf/T = get_turf(src)
 	// To not mess up the overlay updates.
-	loc = null
+	moveToNullspace()
 
 	for (var/obj/effect/alien/weeds/W in range(1,T))
 		W.updateWeedOverlays()

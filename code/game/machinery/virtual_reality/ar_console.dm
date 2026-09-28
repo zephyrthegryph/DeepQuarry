@@ -100,7 +100,7 @@
 			continue
 		if(component_parts && (A in component_parts))
 			continue
-		A.loc = src.loc
+		A.forceMove(src.loc)
 	update_use_power(USE_POWER_IDLE)
 	update_icon()
 

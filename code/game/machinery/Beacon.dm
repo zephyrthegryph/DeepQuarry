@@ -15,7 +15,7 @@
 	var/turf/T = src.loc
 	Beacon = new /obj/item/radio/beacon
 	Beacon.invisibility = INVISIBILITY_MAXIMUM
-	Beacon.loc = T
+	Beacon.forceMove(T)
 	RegisterSignals(Beacon, list(COMSIG_MOVABLE_MOVED, COMSIG_QDELETING), PROC_REF(beacon_changed))
 
 	hide(!T.is_plating())
@@ -41,11 +41,11 @@ REF_OWNED(/obj/machinery/bluespace_beacon, "Beacon")
 		var/turf/T = src.loc
 		Beacon = new /obj/item/radio/beacon
 		Beacon.invisibility = INVISIBILITY_MAXIMUM
-		Beacon.loc = T
+		Beacon.forceMove(T)
 		RegisterSignals(Beacon, list(COMSIG_MOVABLE_MOVED, COMSIG_QDELETING), PROC_REF(beacon_changed))
 	if(Beacon)
 		if(Beacon.loc != src.loc)
-			Beacon.loc = src.loc
+			Beacon.forceMove(src.loc)
 
 	update_icon()
 	return PROCESS_KILL

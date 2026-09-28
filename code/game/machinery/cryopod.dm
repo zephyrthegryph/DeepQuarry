@@ -672,7 +672,7 @@
 		L.set_stasis(/datum/modifier/stasis/total, src)
 	if(user?.buckled_to() && istype(user?.buckled_to(), /obj/structure/bed/chair/wheelchair))
 		var/atom/movable/_tmp_buck_6 = user?.buckled_to()
-		_tmp_buck_6.loc = user.loc
+		_tmp_buck_6.forceMove(user.loc)
 
 	icon_state = occupied_icon_state
 
@@ -774,7 +774,7 @@
 		L.set_stasis(/datum/modifier/stasis/total, src)
 	if(M?.buckled_to() && istype(M?.buckled_to(), /obj/structure/bed/chair/wheelchair))
 		var/atom/movable/_tmp_buck_7 = M?.buckled_to()
-		_tmp_buck_7.loc = M.loc
+		_tmp_buck_7.forceMove(M.loc)
 
 	// Book keeping!
 	var/turf/location = get_turf(src)
