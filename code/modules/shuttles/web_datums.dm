@@ -231,7 +231,7 @@ REF_OWNED_LIST(/datum/shuttle_web_master, list("destinations", "autopaths"))
 	return current_destination()
 
 /datum/shuttle_web_master/proc/get_destination_by_type(type_to_get)
-	return locate(type_to_get) in destinations
+	return locate_in_list(destinations, type_to_get)
 
 // Autopilot stuff.
 /datum/shuttle_web_master/proc/build_autopaths()

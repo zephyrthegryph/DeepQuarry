@@ -200,9 +200,9 @@
 
 	if(istype(I, /obj/item/material/ashtray))
 		var/obj/item/material/ashtray/A = I
-		if(A.contents.len > 0)
+		if(contents_count(A) > 0)
 			user.visible_message(span_infoplain(span_bold("\The [user]") + " empties \the [A] into [src]."))
-			for(var/obj/item/O in A.contents)
+			for(var/obj/item/O in contents_of(A))
 				O.forceMove(src)
 			A.update_icon()
 			update_icon()
@@ -842,6 +842,6 @@
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/disposal/step_start_condition()
-	return mode == 1 || flush || length(contents) || has_latent() // ALLOW(latent): latent entries checked
+	return mode == 1 || flush || contents_count(src) || has_latent() // ALLOW(latent): latent entries checked
 
 REF_OWNED(/obj/machinery/disposal, "air_contents")

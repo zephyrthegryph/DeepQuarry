@@ -36,7 +36,7 @@
 	if(prob(50)) // So neither side has priority
 		possible_dirs =  list(turn(dir, -90), turn(dir, 90))
 	for(var/dir_check in possible_dirs)
-		var/obj/machinery/reagent_refinery/target = locate() in get_step(get_turf(src),dir_check)
+		var/obj/machinery/reagent_refinery/target = locate_within(get_step(get_turf(src),dir_check), /obj/machinery/reagent_refinery)
 		if(!target)
 			continue
 		target_list += list(target)

@@ -89,16 +89,16 @@
 	var/list/symptoms
 
 /datum/decl/chemical_reaction/instant/mix_virus/on_reaction(datum/reagents/holder)
-	var/datum/reagent/blood/B = locate(/datum/reagent/blood) in holder.reagent_list
+	var/datum/reagent/blood/B = locate_in_list(holder.reagent_list, /datum/reagent/blood)
 	if(B && B.data)
-		var/datum/affliction/contagion/engineered/D = locate(/datum/affliction/contagion/engineered) in B.data["viruses"]
+		var/datum/affliction/contagion/engineered/D = locate_in_list(B.data["viruses"], /datum/affliction/contagion/engineered)
 		if(D)
 			D.Evolve(level_min, level_max)
 
 /datum/decl/chemical_reaction/instant/mix_virus/picky/on_reaction(datum/reagents/holder)
-	var/datum/reagent/blood/B = locate(/datum/reagent/blood) in holder.reagent_list
+	var/datum/reagent/blood/B = locate_in_list(holder.reagent_list, /datum/reagent/blood)
 	if(B && B.data)
-		var/datum/affliction/contagion/engineered/D = locate(/datum/affliction/contagion/engineered) in B.data["viruses"]
+		var/datum/affliction/contagion/engineered/D = locate_in_list(B.data["viruses"], /datum/affliction/contagion/engineered)
 		if(D)
 			D.PickyEvolve(symptoms)
 
@@ -196,9 +196,9 @@
 	catalysts = list(REAGENT_ID_BLOOD = 1)
 
 /datum/decl/chemical_reaction/instant/mix_virus/rem_virus/on_reaction(datum/reagents/holder)
-	var/datum/reagent/blood/B = locate(/datum/reagent/blood) in holder.reagent_list
+	var/datum/reagent/blood/B = locate_in_list(holder.reagent_list, /datum/reagent/blood)
 	if(B && B.data)
-		var/datum/affliction/contagion/engineered/D = locate(/datum/affliction/contagion/engineered) in B.data["viruses"]
+		var/datum/affliction/contagion/engineered/D = locate_in_list(B.data["viruses"], /datum/affliction/contagion/engineered)
 		if(D)
 			D.Devolve()
 
@@ -217,9 +217,9 @@
 	catalysts = list(REAGENT_ID_BLOOD = 1)
 
 /datum/decl/chemical_reaction/instant/neuter_virus/on_reaction(datum/reagents/holder)
-	var/datum/reagent/blood/B = locate(/datum/reagent/blood) in holder.reagent_list
+	var/datum/reagent/blood/B = locate_in_list(holder.reagent_list, /datum/reagent/blood)
 	if(B && B.data)
-		var/datum/affliction/contagion/engineered/D = locate(/datum/affliction/contagion/engineered) in B.data["viruses"]
+		var/datum/affliction/contagion/engineered/D = locate_in_list(B.data["viruses"], /datum/affliction/contagion/engineered)
 		if(D)
 			D.Neuter()
 
@@ -230,8 +230,8 @@
 	catalysts = list(REAGENT_ID_BLOOD = 1)
 
 /datum/decl/chemical_reaction/instant/falter_virus/on_reaction(datum/reagents/holder)
-	var/datum/reagent/blood/B = locate(/datum/reagent/blood) in holder.reagent_list
+	var/datum/reagent/blood/B = locate_in_list(holder.reagent_list, /datum/reagent/blood)
 	if(B && B.data)
-		var/datum/affliction/contagion/engineered/D = locate(/datum/affliction/contagion/engineered) in B.data["viruses"]
+		var/datum/affliction/contagion/engineered/D = locate_in_list(B.data["viruses"], /datum/affliction/contagion/engineered)
 		if(D)
 			D.Falter()

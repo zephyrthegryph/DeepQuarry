@@ -68,12 +68,12 @@
 			logged_in = null
 
 		if("stocks_buy")
-			var/datum/stock/S = locate(params["share"]) in GLOB.stockExchange.stocks
+			var/datum/stock/S = locate_in_list(GLOB.stockExchange.stocks, params["share"])
 			if (S)
 				buy_some_shares(S, ui.user)
 
 		if("stocks_sell")
-			var/datum/stock/S = locate(params["share"]) in GLOB.stockExchange.stocks
+			var/datum/stock/S = locate_in_list(GLOB.stockExchange.stocks, params["share"])
 			if (S)
 				sell_some_shares(S, ui.user)
 
@@ -87,7 +87,7 @@
 				screen = "archive"
 
 		if("stocks_history")
-			var/datum/stock/S = locate(params["share"]) in GLOB.stockExchange.stocks
+			var/datum/stock/S = locate_in_list(GLOB.stockExchange.stocks, params["share"])
 			if (S)
 				//current_stock = S
 				//screen = "graph"

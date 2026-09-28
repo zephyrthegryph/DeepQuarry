@@ -45,7 +45,7 @@
 /obj/machinery/reagent_refinery/proc/wake_refinery_line()
 	MACHINE_WAKE(src)
 	for(var/direction in GLOB.cardinal)
-		var/obj/machinery/reagent_refinery/other = locate(/obj/machinery/reagent_refinery) in get_step(get_turf(src), direction)
+		var/obj/machinery/reagent_refinery/other = locate_within(get_step(get_turf(src), direction), /obj/machinery/reagent_refinery)
 		if(other)
 			MACHINE_WAKE(other)
 
@@ -109,7 +109,7 @@
 
 /obj/machinery/reagent_refinery/wrench_act(mob/user, obj/item/tool)
 	if(!anchored)
-		for(var/obj/machinery/reagent_refinery/other in loc.contents)
+		for(var/obj/machinery/reagent_refinery/other in contents_of(loc))
 			if(other != src)
 				to_chat(user, span_warning("You cannot anchor \the [src] until \the [other] is moved out of the way!"))
 				return ITEM_INTERACT_BLOCKING
@@ -174,7 +174,7 @@
 		return 0
 
 	// dump reagents to next refinery machine
-	var/obj/machinery/reagent_refinery/target = locate(/obj/machinery/reagent_refinery) in get_step(get_turf(src),dir)
+	var/obj/machinery/reagent_refinery/target = locate_within(get_step(get_turf(src),dir), /obj/machinery/reagent_refinery)
 	if(!target)
 		return 0
 	if(reagents.total_volume < minimum_reagents_for_transfer(target))

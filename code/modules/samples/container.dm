@@ -22,14 +22,14 @@
 /obj/item/storage/sample_container/update_icon()
 	..()
 	icon_state = "sample_container_[contents.len]"
-	if(contents.len > 0)
-		set_light(1, contents.len, lightcolor)
+	if(contents_count(src) > 0)
+		set_light(1, contents_count(src), lightcolor)
 	else
 		set_light(0)
 
 /obj/item/storage/sample_container/afterattack(turf/T as turf, mob/user as mob)
 	for(var/obj/item/research_sample/S in turf_contents_of_type(T, /obj/item/research_sample))
-		if(contents.len >= max_storage_space)
+		if(contents_count(src) >= max_storage_space)
 			to_chat(user, span_notice("\The [src] is full!"))
 			return
 		else

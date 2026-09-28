@@ -198,7 +198,7 @@ DECLARE_INTERACTIONS(/obj/item/research_sample, \
 
 	if(istype(P, /obj/item/storage/sample_container))
 		var/obj/item/storage/sample_container/SC = P
-		if(SC.contents.len >= SC.max_storage_space)
+		if(contents_count(SC) >= SC.max_storage_space)
 			to_chat(user, span_notice("\The [SC] is full!"))
 			return INTERACTION_HANDLED_PASS
 		else

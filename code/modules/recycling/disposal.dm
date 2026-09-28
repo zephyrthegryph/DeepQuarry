@@ -40,7 +40,7 @@
 
 	if(P)
 		// find other holder in next loc, if inactive merge it with current
-		var/obj/structure/disposalholder/H2 = locate() in P
+		var/obj/structure/disposalholder/H2 = locate_within(P, /obj/structure/disposalholder)
 		if(H2 && !H2.active)
 			H.merge(H2)
 
@@ -143,7 +143,7 @@
 				P.set_dir(D)
 
 	invisibility = INVISIBILITY_ABSTRACT	// make invisible (since we won't delete the pipe immediately)
-	var/obj/structure/disposalholder/H = locate() in src
+	var/obj/structure/disposalholder/H = locate_within(src, /obj/structure/disposalholder)
 	if(H)
 		// holder was present
 		H.active = FALSE
@@ -240,7 +240,7 @@
 // ensure if holder is present, it is expelled
 // ALLOW(lifecycle): a holder travelling in it is expelled.
 /obj/structure/disposalpipe/Destroy()
-	var/obj/structure/disposalholder/H = locate() in src
+	var/obj/structure/disposalholder/H = locate_within(src, /obj/structure/disposalholder)
 	if(H)
 		// holder was present
 		H.active = FALSE
@@ -321,7 +321,7 @@
 
 	if(P)
 		// find other holder in next loc, if inactive merge it with current
-		var/obj/structure/disposalholder/H2 = locate() in P
+		var/obj/structure/disposalholder/H2 = locate_within(P, /obj/structure/disposalholder)
 		if(H2 && !H2.active)
 			H.merge(H2)
 
@@ -370,7 +370,7 @@
 
 	if(P)
 		// find other holder in next loc, if inactive merge it with current
-		var/obj/structure/disposalholder/H2 = locate() in P
+		var/obj/structure/disposalholder/H2 = locate_within(P, /obj/structure/disposalholder)
 		if(H2 && !H2.active)
 			H.merge(H2)
 

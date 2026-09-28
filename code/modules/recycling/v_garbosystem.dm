@@ -35,7 +35,7 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 /obj/machinery/v_garbosystem/examine(mob/user, infix, suffix)
 	. = ..()
 	. += span_infoplain("The internal fluid tank reads: [reagents.total_volume]/[reagents.maximum_volume]")
-	if(contents.len || has_latent()) // ALLOW(latent): latent entries checked
+	if(contents_count(src) || has_latent()) // ALLOW(latent): latent entries checked
 		. += span_warning("There are items in the filter's trap!")
 
 /obj/machinery/v_garbosystem/declare_interactions(list/into)
@@ -194,7 +194,7 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 						L.injure(INJURY_CUT, 25, null, src)
 						items_taken++
 						break
-				for(var/atom/movable/C in A.contents)
+				for(var/atom/movable/C in contents_of(A))
 					if(C.anchored)
 						C.anchored = FALSE
 					C.forceMove(loc)

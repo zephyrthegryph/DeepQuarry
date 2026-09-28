@@ -26,7 +26,7 @@
 // This proc checks if anyone is on the shuttle.
 /datum/shuttle/autodock/ferry/arrivals/proc/check_for_passengers()
 	for(var/area/A in shuttle_area)
-		for(var/mob/living/L in A)
+		for(var/mob/living/L in contents_of(A))
 			return TRUE
 	return FALSE
 

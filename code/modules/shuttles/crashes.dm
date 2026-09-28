@@ -39,7 +39,7 @@
 	//What people are we dealing with here
 	var/list/victims = list()
 	for(var/area/A in shuttle_area)
-		for(var/mob/living/L in A)
+		for(var/mob/living/L in contents_of(A))
 			victims += L
 			shake_camera(L,2 SECONDS,4)
 

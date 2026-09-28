@@ -133,7 +133,7 @@
 	data["loaded_pill_bottle"] = !!loaded_pill_bottle
 	if(loaded_pill_bottle)
 		data["loaded_pill_bottle_name"] = loaded_pill_bottle.name
-		data["loaded_pill_bottle_contents_len"] = loaded_pill_bottle.contents.len
+		data["loaded_pill_bottle_contents_len"] = contents_count(loaded_pill_bottle)
 		data["loaded_pill_bottle_storage_slots"] = loaded_pill_bottle.max_storage_space
 
 	data["beaker"] = !!beaker

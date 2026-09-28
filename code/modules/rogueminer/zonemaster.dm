@@ -33,7 +33,7 @@
 /datum/rogue/zonemaster/New(area/A)
 	ASSERT(A)
 	myarea_handle = om_handle(A)
-	myshuttle_landmark_handle = om_handle(locate(/obj/effect/shuttle_landmark) in myarea())
+	myshuttle_landmark_handle = om_handle(locate_within(myarea(), /obj/effect/shuttle_landmark))
 	if(!istype(myshuttle_landmark(), /obj/effect/shuttle_landmark))
 		WARNING("Zonemaster cannot find a shuttle landmark in its area '[A]'")
 	om_after(src, 1 SECOND, PROC_REF(report_clean)) //This is called from controller New() and freaks out if this calls back too fast.
@@ -344,7 +344,7 @@
 	//Ore-bearing rocks that were mined
 	for(var/turf/T in mineral_rocks)
 		var/has_minerals = 0
-		for(var/atom/I in T.contents)
+		for(var/atom/I in contents_of(T))
 			if(istype(I,/obj/effect/mineral))
 				has_minerals++
 				break

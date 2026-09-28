@@ -91,13 +91,13 @@
 
 	switch(action)
 		if("lockdown_server")
-			var/obj/machinery/rnd/server/server_selected = locate(params["selected_server"]) in stored_research().techweb_servers
+			var/obj/machinery/rnd/server/server_selected = locate_in_list(stored_research().techweb_servers, params["selected_server"])
 			if(!server_selected)
 				return FALSE
 			server_selected.toggle_disable(usr)
 			return TRUE
 		if("lock_console")
-			var/obj/machinery/computer/rdconsole_tg/console_selected = locate(params["selected_console"]) in stored_research().consoles_accessing
+			var/obj/machinery/computer/rdconsole_tg/console_selected = locate_in_list(stored_research().consoles_accessing, params["selected_console"])
 			if(!console_selected)
 				return FALSE
 			console_selected.locked = !console_selected.locked

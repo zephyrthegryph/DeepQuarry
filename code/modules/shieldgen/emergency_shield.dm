@@ -163,7 +163,7 @@ REF_OWNED_LIST(/obj/machinery/shieldgen, "deployed_shields")
 
 /obj/machinery/shieldgen/proc/create_shields()
 	for(var/turf/target_tile in range(2, src))
-		if (is_type_in_list(target_tile,GLOB.shieldgen_blockedturfs) && !(locate(/obj/machinery/shield) in target_tile))
+		if (is_type_in_list(target_tile,GLOB.shieldgen_blockedturfs) && !(locate_within(target_tile, /obj/machinery/shield)))
 			if (malfunction && prob(33) || !malfunction)
 				var/obj/machinery/shield/S = new/obj/machinery/shield(target_tile)
 				LAZYADD(deployed_shields, S)

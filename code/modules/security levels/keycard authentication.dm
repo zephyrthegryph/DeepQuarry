@@ -43,7 +43,7 @@
 	A.set_dir(dir)
 	A.anchored = TRUE
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/C in src) // ALLOW(latent): materialized above
+	for(var/obj/C in contents_of(src)) // ALLOW(latent): materialized above
 		if(istype(C, /obj/item/circuitboard))
 			C.forceMove(A)
 			continue

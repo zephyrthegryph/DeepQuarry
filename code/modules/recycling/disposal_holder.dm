@@ -42,7 +42,7 @@ REF_OWNED(/obj/structure/disposalholder, "gas")
 	for(var/obj/O in flush_list)
 		if(!O.contents)
 			continue
-		for(var/mob/living/M in O.contents)
+		for(var/mob/living/M in contents_of(O))
 			if(M && M.stat != DEAD && !istype(M,/mob/living/silicon/robot/drone))
 				hasmob = TRUE
 				break

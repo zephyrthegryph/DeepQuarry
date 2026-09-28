@@ -18,7 +18,7 @@
 
 /datum/spell/aoe_turf/charge/proc/depth_cast(list/targets)
 	for(var/atom/A in targets)
-		if(A.contents.len)
+		if(contents_count(A))
 			depth_cast(A.contents)
 		cast_charge(A)
 
