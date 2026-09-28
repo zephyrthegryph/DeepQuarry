@@ -234,33 +234,34 @@
 /obj/item/gun/projectile/pistol/flash
 	magazine_type = /obj/item/ammo_magazine/m9mm/compact/flash
 
-/obj/item/gun/projectile/pistol/attack_hand(mob/living/user as mob)
+/// Old attack_hand.
+/obj/item/gun/projectile/pistol/gun_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(user.get_inactive_hand() == src)
 		if(silenced)
 			if(!user.item_is_in_hands(src))
-				..()
-				return
+				return ..()
 			to_chat(user, span_notice("You unscrew [silenced] from [src]."))
 			user.put_in_hands(silenced)
 			silenced = 0
 			w_class = ITEMSIZE_SMALL
 			update_icon()
-			return
-	..()
+			return TRUE
+	return ..()
 
-/obj/item/gun/projectile/pistol/attackby(obj/item/I as obj, mob/living/user as mob)
+/// Old attackby.
+/obj/item/gun/projectile/pistol/gun_item(mob/living/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/silencer))
 		if(!user.item_is_in_hands(src))	//if we're not in his hands
 			to_chat(user, span_notice("You'll need [src] in your hands to do that."))
-			return
+			return INTERACTION_HANDLED_PASS
 		user.drop_item()
 		to_chat(user, span_notice("You screw [I] onto [src]."))
 		silenced = I	//dodgy?
 		w_class = ITEMSIZE_NORMAL
 		I.loc = src		//put the silencer into the gun
 		update_icon()
-		return
-	..()
+		return INTERACTION_HANDLED_PASS
+	return ..()
 
 /obj/item/gun/projectile/pistol/update_icon()
 	if(ammo_magazine)
@@ -289,31 +290,32 @@
 	allowed_magazines = list(/obj/item/ammo_magazine/m9mm)
 	projectile_type = /obj/item/projectile/bullet/pistol
 
-/obj/item/gun/projectile/aps/attack_hand(mob/living/user as mob)
+/// Old attack_hand.
+/obj/item/gun/projectile/aps/gun_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(user.get_inactive_hand() == src)
 		if(silenced)
 			if(!user.item_is_in_hands(src))
-				..()
-				return
+				return ..()
 			to_chat(user, span_notice("You unscrew [silenced] from [src]."))
 			user.put_in_hands(silenced)
 			silenced = 0
 			update_icon()
-			return
-	..()
+			return TRUE
+	return ..()
 
-/obj/item/gun/projectile/aps/attackby(obj/item/I as obj, mob/living/user as mob)
+/// Old attackby.
+/obj/item/gun/projectile/aps/gun_item(mob/living/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/silencer))
 		if(!user.item_is_in_hands(src))	//if we're not in his hands
 			to_chat(user, span_notice("You'll need [src] in your hands to do that."))
-			return
+			return INTERACTION_HANDLED_PASS
 		user.drop_item()
 		to_chat(user, span_notice("You screw [I] onto [src]."))
 		silenced = I	//dodgy?
 		I.loc = src		//put the silencer into the gun
 		update_icon()
-		return
-	..()
+		return INTERACTION_HANDLED_PASS
+	return ..()
 
 /obj/item/gun/projectile/aps/update_icon()
 	if(ammo_magazine)

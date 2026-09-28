@@ -135,24 +135,25 @@
 	safetycatch = 0
 	attached_safety = null
 
-/obj/item/gun/energy/particle/attackby(obj/item/A as obj, mob/user as mob)
+/// Old attackby.
+/obj/item/gun/energy/particle/gun_item(mob/user, obj/item/A, datum/interaction/interaction)
 	if(istype(A, /obj/item/pressurelock))
 		if(safetycatch)
 			to_chat(user, span_notice("\The [src] already has a [attached_safety]."))
-			return
+			return INTERACTION_HANDLED_PASS
 		to_chat(user, span_notice("You insert \the [A] into \the [src]."))
 		user.drop_item()
 		A.loc = src
 		attached_safety = A
 		safetycatch = 1
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(A.has_tool_quality(TOOL_SCREWDRIVER))
 		if(safetycatch && attached_safety)
 			to_chat(user, span_notice("You begin removing \the [attached_safety] from \the [src]."))
 			om_do_after(user, 2.5 SECONDS, src, src, PROC_REF(safety_removed), list(user))
-			return
-	..()
+			return INTERACTION_HANDLED_PASS
+	return ..()
 
 
 // accessory

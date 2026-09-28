@@ -78,7 +78,9 @@
 		to_chat(user, span_notice("There is no micro laser in this [src]."))
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/gun/energy/floragun/attackby(obj/item/W, mob/user)
+/// Old attackby. It never called ..(): any item stops here, but afterattack still follows.
+/obj/item/gun/energy/floragun/gun_item(mob/user, obj/item/W, datum/interaction/interaction)
+	. = INTERACTION_HANDLED_PASS
 	if(istype(W, /obj/item/stock_parts/micro_laser))
 		if(!emitter)
 			user.drop_item()

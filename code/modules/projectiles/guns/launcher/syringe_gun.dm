@@ -108,8 +108,9 @@ DECLARE_INTERACTIONS(/obj/item/syringe_cartridge, \
 	LAZYREMOVE(darts, next)
 	next = null
 
-/obj/item/gun/launcher/syringe/attack_self(mob/user)
-	. = ..(user)
+/// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
+/obj/item/gun/launcher/syringe/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+	. = ..()
 	if(.)
 		return TRUE
 	if(next)
@@ -141,18 +142,19 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/syringe, INTERACT_HAND(null, PROC_RE
 		return FALSE
 	return TRUE
 
-/obj/item/gun/launcher/syringe/attackby(obj/item/A as obj, mob/user as mob)
+/// Old attackby.
+/obj/item/gun/launcher/syringe/gun_item(mob/user, obj/item/A, datum/interaction/interaction)
 	if(istype(A, /obj/item/syringe_cartridge))
 		var/obj/item/syringe_cartridge/C = A
 		if(length(darts) >= max_darts)
 			to_chat(user, span_warning("[src] is full!"))
-			return
+			return INTERACTION_HANDLED_PASS
 		user.remove_from_mob(C)
 		C.loc = src
 		LAZYADD(darts, C) //add to the end
 		user.visible_message("[user] inserts \a [C] into [src].", span_notice("You insert \a [C] into [src]."))
-	else
-		..()
+		return INTERACTION_HANDLED_PASS
+	return ..()
 
 /obj/item/gun/launcher/syringe/rapid
 	name = "syringe gun revolver"

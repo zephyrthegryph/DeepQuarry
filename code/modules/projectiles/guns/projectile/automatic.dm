@@ -194,17 +194,19 @@
 	. = ..()
 	launcher = new(src)
 
-/obj/item/gun/projectile/automatic/z8/attackby(obj/item/I, mob/user)
+/// Old attackby.
+/obj/item/gun/projectile/automatic/z8/gun_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if((istype(I, /obj/item/grenade)))
 		launcher.load(I, user)
-	else
-		..()
+		return INTERACTION_HANDLED_PASS
+	return ..()
 
-/obj/item/gun/projectile/automatic/z8/attack_hand(mob/user)
+/// Old attack_hand.
+/obj/item/gun/projectile/automatic/z8/gun_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.get_inactive_hand() == src && use_launcher)
 		launcher.unload(user)
-	else
-		..()
+		return TRUE
+	return ..()
 
 /obj/item/gun/projectile/automatic/z8/Fire(atom/target, mob/living/user, params, pointblank=0, reflex=0)
 	if(use_launcher)
@@ -281,20 +283,22 @@
 	update_icon()
 	update_held_icon()
 
-/obj/item/gun/projectile/automatic/l6_saw/attack_self(mob/user)
-	. = ..(user)
+/// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
+/obj/item/gun/projectile/automatic/l6_saw/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+	. = ..()
 	if(.)
 		return TRUE
 	if(cover_open)
 		toggle_cover(user) //close the cover
 	else
-		return ..(user, TRUE) //once closed, behave like normal
+		return ..(user, held, interaction, TRUE) //once closed, behave like normal
 
-/obj/item/gun/projectile/automatic/l6_saw/attack_hand(mob/user as mob)
+/// Old attack_hand.
+/obj/item/gun/projectile/automatic/l6_saw/gun_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!cover_open && user.get_inactive_hand() == src)
 		toggle_cover(user) //open the cover
-	else
-		return ..() //once open, behave like normal
+		return TRUE
+	return ..() //once open, behave like normal
 
 /obj/item/gun/projectile/automatic/l6_saw/update_icon()
 	if(istype(ammo_magazine,/obj/item/ammo_magazine/m762))
@@ -823,17 +827,19 @@
 	update_icon()
 	update_held_icon()
 
-/obj/item/gun/projectile/automatic/mg42/attack_self(mob/user as mob)
+/// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
+/obj/item/gun/projectile/automatic/mg42/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
 	if(cover_open)
 		toggle_cover(user) //close the cover
 	else
 		return ..() //once closed, behave like normal
 
-/obj/item/gun/projectile/automatic/mg42/attack_hand(mob/user as mob)
+/// Old attack_hand.
+/obj/item/gun/projectile/automatic/mg42/gun_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!cover_open && user.get_inactive_hand() == src)
 		toggle_cover(user) //open the cover
-	else
-		return ..() //once open, behave like normal
+		return TRUE
+	return ..() //once open, behave like normal
 
 /obj/item/gun/projectile/automatic/mg42/update_icon()
 	icon_state = "mg42[cover_open ? "open" : "closed"][ammo_magazine ? "" : "-empty"][cover_open && ammo_magazine && ammo_magazine.stored_ammo.len == 0 ? "0" : ""]"

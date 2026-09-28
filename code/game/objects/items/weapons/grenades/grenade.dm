@@ -40,10 +40,14 @@
 		else if(det_time == null)
 			. += "\The [src] is set for instant detonation."
 
-/obj/item/grenade/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+// EXTEND, not DECLARE: subtypes DECLARE item interactions of their own, which this must not replace.
+EXTEND_INTERACTIONS(/obj/item/grenade, \
+	INTERACT_SELF("Prime", PROC_REF(grenade_interaction_self)), \
+	INTERACT_HAND_UNGATED(null, PROC_REF(grenade_interaction_hand)), \
+)
+
+/// Old attack_self. FALSE (special handling) moves on to a subtype's own self-use.
+/obj/item/grenade/proc/grenade_interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(special_handling)
 		return FALSE
 	if(!active)
@@ -55,7 +59,7 @@
 			if(iscarbon(user))
 				var/mob/living/carbon/C = user
 				C.throw_mode_on()
-	return
+	return TRUE
 
 /obj/item/grenade/proc/activate(mob/user as mob)
 	if(active)
@@ -94,10 +98,10 @@
 	add_fingerprint(user)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/grenade/attack_hand()
+/// Old attack_hand: stops any throw walk, then the touch goes on to the gate and pickup.
+/obj/item/grenade/proc/grenade_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	walk(src, null, null)
-	..()
-	return
+	return FALSE
 
 /obj/item/grenade/vendor_action(obj/machinery/vending/V)
 	activate(V)

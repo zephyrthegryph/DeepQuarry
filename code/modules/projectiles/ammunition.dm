@@ -195,7 +195,18 @@ DECLARE_INTERACTIONS(/obj/item/ammo_casing, INTERACT_ITEM(null, PROC_REF(interac
 			set_forged_material(forged)
 	update_icon()
 
-/obj/item/ammo_magazine/attackby(obj/item/W as obj, mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
+	INTERACT_ITEM("Load", PROC_REF(magazine_interaction_item)), \
+	INTERACT_USE("Empty", PROC_REF(magazine_interaction_self)), \
+	INTERACT_HAND_UNGATED(null, PROC_REF(magazine_interaction_hand)), \
+)
+
+/// Old attackby (both of its definitions: magazine-to-magazine loading ran first). It never
+/// called the base attackby: any item stops here, but afterattack still follows.
+/obj/item/ammo_magazine/proc/magazine_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+	. = INTERACTION_HANDLED_PASS
+	if(!load_from_magazine(W, user))
+		return
 	make_rounds_real()
 	if(istype(W, /obj/item/ammo_casing))
 		var/obj/item/ammo_casing/C = W
@@ -228,12 +239,9 @@ DECLARE_INTERACTIONS(/obj/item/ammo_casing, INTERACT_ITEM(null, PROC_REF(interac
 	playsound(src, 'sound/weapons/flipblade.ogg', 50, 1)
 	update_icon()
 
-// This dumps all the bullets right on the floor
-/obj/item/ammo_magazine/attack_self(mob/user)
+/// Old attack_self: this dumps all the bullets right on the floor.
+/obj/item/ammo_magazine/proc/magazine_interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	make_rounds_real()
-	. = ..(user)
-	if(.)
-		return TRUE
 	if(can_remove_ammo)
 		if(!stored_ammo.len)
 			to_chat(user, span_notice("[src] is already empty!"))
@@ -251,8 +259,8 @@ DECLARE_INTERACTIONS(/obj/item/ammo_casing, INTERACT_ITEM(null, PROC_REF(interac
 		to_chat(user, span_notice("\The [src] is not designed to be unloaded."))
 		return
 
-// This puts one bullet from the magazine into your hand
-/obj/item/ammo_magazine/attack_hand(mob/user)
+/// Old attack_hand: this puts one bullet from the magazine into your hand. FALSE goes on to pickup.
+/obj/item/ammo_magazine/proc/magazine_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	make_rounds_real()
 	if(can_remove_ammo)	// For Smart Magazines
 		if(user.get_inactive_hand() == src)
@@ -262,8 +270,8 @@ DECLARE_INTERACTIONS(/obj/item/ammo_casing, INTERACT_ITEM(null, PROC_REF(interac
 				user.put_in_hands(C)
 				user.visible_message("\The [user] removes \a [C] from [src].", span_notice("You remove \a [C] from [src]."))
 				update_icon()
-				return
-	..()
+				return TRUE
+	return FALSE
 
 /// Rounds loaded, real and latent.
 /obj/item/ammo_magazine/proc/ammo_count()
@@ -355,7 +363,7 @@ GLOBAL_LIST_EMPTY(magazine_icondata_states)
 	drop_sound = 'sound/items/drop/matchbox.ogg'
 	pickup_sound = 'sound/items/pickup/matchbox.ogg'
 
-DECLARE_INTERACTIONS(/obj/item/ammo_magazine/ammo_box, INTERACT_ALT(null, PROC_REF(interaction_alt)))
+EXTEND_INTERACTIONS(/obj/item/ammo_magazine/ammo_box, INTERACT_ALT(null, PROC_REF(interaction_alt)))
 
 /// Old click_alt.
 /obj/item/ammo_magazine/ammo_box/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)

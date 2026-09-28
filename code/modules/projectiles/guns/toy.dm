@@ -233,8 +233,9 @@
 	fire_sound = 'sound/items/syringeproj.ogg'
 	special_weapon_handling = TRUE
 
-/obj/item/gun/projectile/cyborgtoy/attack_self(mob/user)
-	. = ..(user)
+/// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
+/obj/item/gun/projectile/cyborgtoy/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+	. = ..()
 	if(.)
 		return TRUE
 	cleanup = !cleanup

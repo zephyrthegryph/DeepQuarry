@@ -1452,8 +1452,10 @@
 	if(sawn_off)
 		P.submunition_spread_max = 100 //More spread when sawn off
 
-/obj/item/gun/projectile/shotgun/doublebarrel/attackby(obj/item/A as obj, mob/user as mob)
+/// Old attackby (this file's; its ..() is shotgun.dm's definition, included earlier).
+/obj/item/gun/projectile/shotgun/doublebarrel/gun_item(mob/user, obj/item/A, datum/interaction/interaction)
 	if(istype(A, /obj/item/surgical/circular_saw) || istype(A, /obj/item/melee/energy) || istype(A, /obj/item/pickaxe/plasmacutter))
+		. = INTERACTION_HANDLED_PASS
 		if(sawn_off) //Don't do anything if we were already sawed off.
 			return
 		to_chat(user, span_notice("You begin to shorten the barrel of \the [src]."))
@@ -1466,7 +1468,7 @@
 			return
 		om_do_after(user, 3 SECONDS, src, src, PROC_REF(sawed_off), list(user))	//SHIT IS STEALTHY EYYYYY
 	else
-		..()
+		return ..()
 
 /obj/item/gun/projectile/shotgun/doublebarrel/proc/sawed_off(mob/user)
 	icon_state = "sawnshotgun"

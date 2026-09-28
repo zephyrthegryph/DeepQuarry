@@ -53,7 +53,8 @@
 	var/locked = 1
 	var/lockable = 1
 
-/obj/item/gun/energy/locked/attackby(obj/item/I, mob/user)
+/// Old attackby.
+/obj/item/gun/energy/locked/gun_item(mob/user, obj/item/I, datum/interaction/interaction)
 	var/obj/item/card/id/id = I.GetID()
 	if(istype(id) && lockable)
 		if(check_access(id))
@@ -62,8 +63,8 @@
 		else
 			to_chat(user, span_warning("Access denied."))
 		user.visible_message(span_notice("[user] swipes \the [I] against \the [src]."))
-	else
-		return ..()
+		return INTERACTION_HANDLED_PASS
+	return ..()
 
 /obj/item/gun/energy/locked/emag_act(remaining_charges,mob/user)
 	..()

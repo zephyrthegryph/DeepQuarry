@@ -76,7 +76,9 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/pneumatic, INTERACT_HAND(null, PROC_
 		return FALSE
 	return TRUE
 
-/obj/item/gun/launcher/pneumatic/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby. It never called ..(): any item stops here, but afterattack still follows.
+/obj/item/gun/launcher/pneumatic/gun_item(mob/user, obj/item/W, datum/interaction/interaction)
+	. = INTERACTION_HANDLED_PASS
 	if(!tank && istype(W,/obj/item/tank))
 		user.drop_from_inventory(W, src)
 		tank = W
@@ -85,8 +87,9 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/pneumatic, INTERACT_HAND(null, PROC_
 	else if(istype(W))
 		item_storage.try_insert(W, user)
 
-/obj/item/gun/launcher/pneumatic/attack_self(mob/user)
-	. = ..(user)
+/// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
+/obj/item/gun/launcher/pneumatic/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+	. = ..()
 	if(.)
 		return TRUE
 	eject_tank(user)

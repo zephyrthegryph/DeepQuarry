@@ -121,12 +121,13 @@
 		to_chat(user, span_notice("There are no modifications currently installed."))
 	return NONE
 
-/obj/item/gun/energy/kinetic_accelerator/attackby(obj/item/I, mob/user)
+/// Old attackby.
+/obj/item/gun/energy/kinetic_accelerator/gun_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/borg/upgrade/modkit))
 		var/obj/item/borg/upgrade/modkit/MK = I
 		MK.install(src, user)
-	else
-		..()
+		return INTERACTION_HANDLED_PASS
+	return ..()
 
 /obj/item/gun/energy/kinetic_accelerator/proc/get_remaining_mod_capacity()
 	var/current_capacity_used = 0

@@ -68,21 +68,27 @@
 		return TRUE
 	return FALSE
 
-/obj/item/ammo_magazine/smart/attackby(obj/item/I as obj, mob/user)
+EXTEND_INTERACTIONS(/obj/item/ammo_magazine/smart, \
+	INTERACT_ITEM(null, PROC_REF(smart_interaction_item)), \
+	INTERACT_HAND_UNGATED(null, PROC_REF(smart_interaction_hand)), \
+)
+
+/// Old attackby. FALSE goes on to the magazine's, as its ..() did.
+/obj/item/ammo_magazine/smart/proc/smart_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	make_rounds_real()
 	if(istype(I, /obj/item/cell/device))
 		if(attached_cell)
 			to_chat(user, span_notice("\The [src] already has a [attached_cell.name] attached."))
-			return
+			return INTERACTION_HANDLED_PASS
 		else
 			to_chat(user, "You begin inserting \the [I] into \the [src].")
 			om_do_after(user, 2.5 SECONDS, src, src, PROC_REF(cell_installed), list(user, I))
-			return
+			return INTERACTION_HANDLED_PASS
 
 	else if(istype(I, /obj/item/ammo_magazine) || istype(I, /obj/item/ammo_casing))
 		scan_ammo(I, user)
 
-	..()
+	return FALSE
 
 /obj/item/ammo_magazine/smart/screwdriver_act(mob/user, obj/item/tool)
 	if(!attached_cell)
@@ -106,14 +112,15 @@
 	..()
 
 // You can remove the power cell from the magazine by hand, but it's way slower than using a screwdriver
-/obj/item/ammo_magazine/smart/attack_hand(mob/user)
+/// Old attack_hand. FALSE goes on to the magazine's, as its ..() did.
+/obj/item/ammo_magazine/smart/proc/smart_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	make_rounds_real()
 	if(user.get_inactive_hand() == src)
 		if(attached_cell)
 			to_chat(user, "You struggle to remove \the [attached_cell] from \the [src].")
 			om_do_after(user, 4 SECONDS, src, src, PROC_REF(cell_removed), list(user))
-			return
-	..()
+			return TRUE
+	return FALSE
 
 /obj/item/ammo_magazine/smart/proc/cell_installed(mob/user, obj/item/cell/device/I)
 	if(attached_cell)

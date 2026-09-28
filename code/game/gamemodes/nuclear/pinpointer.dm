@@ -19,10 +19,10 @@
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
-/obj/item/pinpointer/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/pinpointer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(nuclear || shuttle)
 		return
 	if(!active)
@@ -191,10 +191,11 @@
 	var/mode = 0	//Mode 0 locates disk, mode 1 locates the shuttle
 	var/obj/machinery/computer/shuttle_control/multi/syndicate/home = null
 
-/obj/item/pinpointer/nukeop/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/pinpointer/nukeop, INTERACT_USE("Toggle", PROC_REF(nukeop_interaction_self)))
+
+/// Old attack_self. The old override ran the parent's body first (its ..()), so this does too.
+/obj/item/pinpointer/nukeop/proc/nukeop_interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+	interaction_self(user, held, interaction)
 	if(!active)
 		active = 1
 		PERIODIC_START(src, PERIODIC_SLOW)
@@ -279,10 +280,11 @@
 	var/shuttle_comp_id = null
 	var/obj/machinery/computer/shuttle_control/our_shuttle = null
 
-/obj/item/pinpointer/shuttle/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/pinpointer/shuttle, INTERACT_USE("Toggle", PROC_REF(shuttle_interaction_self)))
+
+/// Old attack_self. The old override ran the parent's body first (its ..()), so this does too.
+/obj/item/pinpointer/shuttle/proc/shuttle_interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+	interaction_self(user, held, interaction)
 	if(!active)
 		active = TRUE
 		PERIODIC_START(src, PERIODIC_SLOW)

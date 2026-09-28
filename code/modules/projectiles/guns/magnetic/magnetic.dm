@@ -154,8 +154,9 @@ REF_OWNED(/obj/item/gun/magnetic, list("cell", "loaded", "capacitor"))
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/gun/magnetic/attackby(obj/item/thing, mob/user)
-
+/// Old attackby.
+/obj/item/gun/magnetic/gun_item(mob/user, obj/item/thing, datum/interaction/interaction)
+	. = INTERACTION_HANDLED_PASS
 	if(removable_components)
 		if(istype(thing, /obj/item/cell))
 			if(cell)
@@ -203,7 +204,7 @@ REF_OWNED(/obj/item/gun/magnetic, list("cell", "loaded", "capacitor"))
 		playsound(src, 'sound/weapons/flipblade.ogg', 50, 1)
 		update_icon()
 		return
-	. = ..()
+	return ..()
 
 DECLARE_INTERACTIONS(/obj/item/gun/magnetic, INTERACT_HAND(null, PROC_REF(interaction_hand)))
 

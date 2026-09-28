@@ -83,12 +83,13 @@ DECLARE_INTERACTIONS(/obj/item/syndie/c4explosive, INTERACT_ITEM(null, PROC_REF(
 /obj/item/flame/lighter/zippo/c4detonator
 	var/obj/item/syndie/c4explosive/bomb
 
-/obj/item/flame/lighter/zippo/c4detonator/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/flame/lighter/zippo/c4detonator, INTERACT_SELF(null, PROC_REF(c4detonator_self)))
+
+/// Old attack_self. FALSE (not in detonator mode) falls to the zippo's own self-use.
+/obj/item/flame/lighter/zippo/c4detonator/proc/c4detonator_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!detonator_mode)
 		return FALSE
+	. = TRUE
 
 	if(!lit)
 		base_state = icon_state

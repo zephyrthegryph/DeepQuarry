@@ -45,39 +45,6 @@ REF_OWNED(/obj/item/rcd, "spark_system")
 /obj/item/rcd/proc/display_resources()
 	return "It currently holds [stored_matter]/[max_stored_matter] matter-units."
 
-// Used to add new cartridges.
-/* Wow this is annoying, moved to _vr file for overhaul
-/obj/item/rcd/attackby(obj/item/W, mob/user)
-	if(istype(W, /obj/item/rcd_ammo))
-		var/obj/item/rcd_ammo/cartridge = W
-		if((stored_matter + cartridge.remaining) > max_stored_matter)
-			to_chat(user, span_warning("The RCD can't hold that many additional matter-units."))
-			return FALSE
-		stored_matter += cartridge.remaining
-		user.drop_from_inventory(W)
-		qdel(W)
-		playsound(src, 'sound/machines/click.ogg', 50, 1)
-		to_chat(user, span_notice("The RCD now holds [stored_matter]/[max_stored_matter] matter-units."))
-		return TRUE
-	return ..()
-*/
-// Changes which mode it is on.
-/*/obj/item/rcd/attack_self(mob/living/user)
-	. = ..(user)
-	if(.)
-		return TRUE
-	// Removal - Moved to VR
-	if(mode_index >= modes.len) // Shouldn't overflow unless someone messes with it in VV poorly but better safe than sorry.
-		mode_index = 1
-	else
-		mode_index++
-
-	to_chat(user, span_notice("Changed mode to '[modes[mode_index]]'."))
-	playsound(src, 'sound/effects/pop.ogg', 50, 0)
-
-	if(prob(20))
-		src.spark_system.start()
-*/
 // Removes resources if the RCD can afford it.
 /obj/item/rcd/proc/consume_resources(amount)
 	if(!can_afford(amount))
@@ -407,27 +374,6 @@ REF_OWNED(/obj/item/rcd/electric, "cell")
 		qdel(LAZYACCESS(effects, A))
 		LAZYREMOVE(effects, A)
 
-/* moved this block to code\game\objects\items\weapons\rcd.dm
-/obj/item/rcd/attackby(obj/item/W, mob/user)
-	if(istype(W, /obj/item/rcd_ammo))
-		var/obj/item/rcd_ammo/cartridge = W
-		var/can_store = min(max_stored_matter - stored_matter, cartridge.remaining)
-		if(can_store <= 0)
-			to_chat(user, span_warning("There's either no space or \the [cartridge] is empty!"))
-			return FALSE
-		stored_matter += can_store
-		cartridge.remaining -= can_store
-		if(!cartridge.remaining)
-			to_chat(user, span_warning("\The [cartridge] dissolves as it empties of compressed matter."))
-			user.drop_from_inventory(W)
-			qdel(W)
-		playsound(src, 'sound/machines/click.ogg', 50, 1)
-		to_chat(user, span_notice("The RCD now holds [stored_matter]/[max_stored_matter] matter-units."))
-		update_icon()
-		return TRUE
-	return ..()
-*/
-
 /obj/item/rcd/proc/check_menu(mob/living/user)
 	if(!istype(user))
 		return FALSE
@@ -450,75 +396,6 @@ REF_OWNED(/obj/item/rcd/electric, "cell")
 		return FALSE
 
 	return TRUE
-
-/* moved this block to code\game\objects\items\weapons\rcd.dm
-/obj/item/rcd/attack_self(mob/living/user)
-	. = ..(user)
-	if(.)
-		return TRUE
-	var/list/choices = list(
-		"Airlock" = radial_image_airlock,
-		"Deconstruct" = radial_image_decon,
-		"Grilles & Windows" = radial_image_grillewind,
-		"Floors & Walls" = radial_image_floorwall
-	)
-	/* We don't have these features yet
-	if(upgrade & RCD_UPGRADE_FRAMES)
-		choices += list(
-		"Machine Frames" = image(icon = 'icons/mob/radial.dmi', icon_state = "machine"),
-		"Computer Frames" = image(icon = 'icons/mob/radial.dmi', icon_state = "computer_dir"),
-		)
-	if(upgrade & RCD_UPGRADE_SILO_LINK)
-		choices += list(
-		"Silo Link" = image(icon = 'icons/obj/mining.dmi', icon_state = "silo"),
-		)
-	if(mode == RCD_AIRLOCK)
-		choices += list(
-		"Change Access" = image(icon = 'icons/mob/radial.dmi', icon_state = "access"),
-		"Change Airlock Type" = image(icon = 'icons/mob/radial.dmi', icon_state = "airlocktype")
-		)
-	else if(mode == RCD_WINDOWGRILLE)
-		choices += list(
-			"Change Window Type" = image(icon = 'icons/mob/radial.dmi', icon_state = "windowtype")
-		)
-	*/
-	var/choice = show_radial_menu(user, user, choices, custom_check = CALLBACK(src, PROC_REF(check_menu), user), tooltips = TRUE)
-	if(!check_menu(user))
-		return
-	switch(choice)
-		if("Floors & Walls")
-			mode_index = modes.Find(RCD_FLOORWALL)
-		if("Airlock")
-			mode_index = modes.Find(RCD_AIRLOCK)
-		if("Deconstruct")
-			mode_index = modes.Find(RCD_DECONSTRUCT)
-		if("Grilles & Windows")
-			mode_index = modes.Find(RCD_WINDOWGRILLE)
-		/* We don't have these features yet
-		if("Machine Frames")
-			mode = RCD_MACHINE
-		if("Computer Frames")
-			mode = RCD_COMPUTER
-			change_computer_dir(user)
-			return
-		if("Change Access")
-			change_airlock_access(user)
-			return
-		if("Change Airlock Type")
-			change_airlock_setting(user)
-			return
-		if("Change Window Type")
-			toggle_window_type(user)
-			return
-		if("Silo Link")
-			toggle_silo_link(user)
-			return
-		*/
-		else
-			return
-	playsound(src, 'sound/effects/pop.ogg', 50, FALSE)
-	to_chat(user, span_notice("You change RCD's mode to '[choice]'."))
-*/
 
 //////////////////
 /obj/item/rcd/electric/update_icon()

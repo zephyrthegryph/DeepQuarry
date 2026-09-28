@@ -197,21 +197,22 @@ REF_BACKLIST(/obj/effect/directional_shield, list("projector" = "active_shields"
 	for(var/obj/effect/directional_shield/S in active_shields)
 		S.update_color(new_color)
 
-/obj/item/shield_projector/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/shield_projector, INTERACT_SELF("Toggle", PROC_REF(interaction_self)))
+
+/// Old attack_self. FALSE (special handling) moves on to a subtype's own self-use.
+/obj/item/shield_projector/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(special_handling)
 		return FALSE
 	if(active)
 		if(always_on)
 			to_chat(user, span_warning("You can't seem to deactivate \the [src]."))
-			return
+			return TRUE
 		set_on(FALSE)
 	else
 		set_dir(user.dir) // Needed for linear shields.
 		set_on(TRUE)
 	visible_message(span_notice("\The [user] [!active ? "de":""]activates \the [src]."))
+	return TRUE
 
 /obj/item/shield_projector/proc/set_on(on)
 	if(isnull(on))
@@ -399,10 +400,10 @@ REF_BACKLIST(/obj/effect/directional_shield, list("projector" = "active_shields"
 	else
 		my_tool.set_ready_state(TRUE)
 
-/obj/item/shield_projector/line/exosuit/attack_self(mob/living/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/shield_projector/line/exosuit, INTERACT_USE("Toggle", PROC_REF(exosuit_interaction_self)))
+
+/// Old attack_self (the parent's self-use does nothing here: special handling).
+/obj/item/shield_projector/line/exosuit/proc/exosuit_interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(active)
 		if(always_on)
 			to_chat(user, span_warning("You can't seem to deactivate \the [src]."))

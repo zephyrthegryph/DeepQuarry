@@ -20,7 +20,9 @@
 	if(get_dist(user, src) <= 2)
 		. += span_blue("[length(rockets)] / [max_rockets] rockets.")
 
-/obj/item/gun/launcher/rocket/attackby(obj/item/I, mob/user)
+/// Old attackby. It never called ..(): any item stops here, but afterattack still follows.
+/obj/item/gun/launcher/rocket/gun_item(mob/user, obj/item/I, datum/interaction/interaction)
+	. = INTERACTION_HANDLED_PASS
 	if(istype(I, /obj/item/ammo_casing/rocket))
 		if(length(rockets) < max_rockets)
 			user.drop_item()

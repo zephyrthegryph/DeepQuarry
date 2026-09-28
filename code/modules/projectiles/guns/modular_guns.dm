@@ -68,9 +68,10 @@
 		CheckParts()
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/gun/energy/modular/attackby(obj/item/O, mob/user)
+/// Old attackby: the parent's first, then fitting a component.
+/obj/item/gun/energy/modular/gun_item(mob/user, obj/item/O, datum/interaction/interaction)
 	//Someone's attacking us, and it's not anything we have a special case for (i.e. a tool)
-	..()
+	. = ..()
 	if(assembled) // can't put anything in
 		return
 	if(!(O.type in accepted_components))//check if we can accept it

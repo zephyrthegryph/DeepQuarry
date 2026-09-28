@@ -48,10 +48,17 @@
 	H.update_icon()
 	return H
 
-/obj/item/ammo_magazine/handful/attackby(obj/item/W, mob/user)
+EXTEND_INTERACTIONS(/obj/item/ammo_magazine/handful, \
+	INTERACT_ITEM("Combine", PROC_REF(handful_interaction_item)), \
+	INTERACT_HAND_UNGATED(null, PROC_REF(handful_interaction_hand)), \
+)
+
+/// Old attackby. FALSE: everything else (loose casing -> handful, etc.) is handled by the magazine's.
+/obj/item/ammo_magazine/handful/proc/handful_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	make_rounds_real()
 	// Merge two handfuls: pour the other one into this, up to capacity.
 	if(istype(W, /obj/item/ammo_magazine/handful))
+		. = INTERACTION_HANDLED_PASS
 		var/obj/item/ammo_magazine/handful/other = W
 		if(other == src)
 			return
@@ -74,7 +81,7 @@
 			consume(other, user)
 		return
 	// Everything else (loose casing -> handful, etc.) is handled by the parent.
-	return ..()
+	return FALSE
 
 /obj/item/ammo_magazine/handful/update_icon()
 	..()
@@ -84,8 +91,18 @@
 
 // When a handful empties through normal use, get rid of it rather than leaving an
 // invisible empty stack lying around.
-/obj/item/ammo_magazine/handful/attack_hand(mob/user)
-	make_rounds_real()
-	..()
+/// Old attack_hand, first half: taking a round out by hand (the magazine's hand effect, run here
+/// so the empty check follows it). FALSE goes on to pickup; hand_pickup() checks again after.
+/obj/item/ammo_magazine/handful/proc/handful_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	. = magazine_interaction_hand(user, held, interaction)
+	if(.)
+		consume_if_empty(user)
+
+/// Old attack_hand, second half: the empty check after a pickup.
+/obj/item/ammo_magazine/handful/hand_pickup(mob/living/user)
+	. = ..()
+	consume_if_empty(user)
+
+/obj/item/ammo_magazine/handful/proc/consume_if_empty(mob/user)
 	if(!QDELETED(src) && !stored_ammo.len && loc == user)
 		consume(src, user)
