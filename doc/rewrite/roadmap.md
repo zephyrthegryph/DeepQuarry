@@ -189,15 +189,22 @@ The critical path runs R1 → R2 → R4 → R5 → R6/R7 → M1b → M2/M3/M4 �
 
 Targets are filled in after F1. Every row compares against the F1 baseline, and each target is written down before the item starts.
 
+Baseline: `rewrite/b-boot` at 40f41ef5ca (= `rewrite/om-integration`), 2026-09-27, one run each.
+Southern Cross ("SC") is `bench -DCITESTING_FULL_MAP --scenario=boot_profile`
+(run `20260927T..._b-boot-base-full-profile`); the test map ("TM") is
+`bench --scenario=boot_memory,idle,atmos_idle` (`..._b-boot-base-test`). On SC,
+`boot_memory` did not finish inside the 45-minute watchdog (the world stalled
+behind DEBUG hard-delete reference searches), so the idle rows are TM numbers.
+
 | Metric | Baseline (F1) | Target |
 |---|---|---|
-| Idle DM CPU: Machines + Timer (per hour) | | |
-| Boot time: total / Atoms / Atmos / Assets | | |
-| Boot peak and steady private memory | | |
-| Rust heap (by tag) | | |
-| Atom and list census | | |
-| Gas FFI calls per second | | |
-| Hard deletes and runtimes per round | | |
+| Idle DM CPU: Machines + Timer (per hour) | TM: Machines 2.6 ms/s (~9.4 s/h) idle, 2.8 ms/s atmos_idle; Timer not split out yet | Half (S2, M2: devices and APCs sleep) |
+| Boot time: total / Atoms / Atmos / Assets | SC: 113 s / 66.2 s / 25.0 s / 4.9 s (Lighting 9.2 s, HoloMiniMaps 5.1 s); TM: 36 s | SC 35–45 s / ≤ 25 s / ≤ 5 s / ≤ 1 s (4c, 4d, 4f) |
+| Boot peak and steady private memory | SC: 1,541 MB peak, 1,398 MB booted; TM: 1,676 MB peak, 869 MB booted | SC about 1 GB peak |
+| Rust heap (by tag) | SC: 384 MB peak (set by the first frames after turf registration), 155 MB booted, all `untagged`; TM: 42 / 21 MB | SC ≤ 160 MB peak (4b), per-domain tags populated |
+| Atom and list census | SC: 393,216 turfs, 94,623 movables, 29,904 lighting objects, 46,741 corners, 14,663 sources; TM: 102,729 instances | Per item (F5, 4c, 4f); `/turf/space` changed vars ~2 |
+| Gas FFI calls per second | TM: 166/s idle, 239/s atmos_idle; SC boot: 412,179 FFI calls | Down per M1a (batched reads) |
+| Hard deletes and runtimes per round | SC boot_profile: 0 runtimes; SC boot_memory: a `/datum/reagent/paracetamol` hard delete (held in `reagent_by_id`) | 0 and 0 |
 
 ## Guardrails
 

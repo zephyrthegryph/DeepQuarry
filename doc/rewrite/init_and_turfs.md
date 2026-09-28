@@ -81,6 +81,27 @@ geometry 6 MB, main mixtures 7 MB, pipes 4 MB, masks 4 MB, the rest is
 reactor, entity and small stores. The 226 MB peak is the first frames'
 copy-on-write snapshots right after SSair init; it is transient.
 
+### 0.2a Regression and fix on the shared World (2026-09-27, `rewrite/b-boot`)
+
+The move to the shared World (rust-core2) dropped the bulk direct writes: turf
+registration went through `MainPort::put` again, one command and one overlay
+entry per cell. Southern Cross measured 384 MB Rust peak and 155 MB booted
+(marks: +183 MB at "air: turfs registered", the rest in the first frames). Two
+fixes:
+
+- `_auxmos_register_turfs_bulk` and `heat_set_turfs_bulk` buffer their rows and
+  write them with `Sim::write_direct` (`verdigris/ffi/src/bulk.rs`), falling back
+  to the port when the domain is not quiescent (counters `bulk.direct_flushes`,
+  `bulk.port_fallback_*` in `verdigris_metrics()`).
+- A field step's per-owner flux buffers are allocated on the chunk's first
+  live edge. Every space chunk with geometry is an owner on the first frames,
+  and a full-size buffer for each was most of the transient.
+
+`boot_memory_tests::southern_cross_boot_rust_heap_peak_is_bounded` (vg-ffi)
+drives the same path on a 256x256x5 grid: 255 MB peak before, 113 MB after
+(registration 173 → 63 MB). It fails above 160 MB. The DM unit test
+`dq_rust_heap_peak_bounded` checks the live world against 512 MB.
+
 ### 0.3 DM memory census (boot_memory, sampled)
 
 809,798 instances: 393,216 turfs, 85,819 objs, 321,633 datums. The per-type

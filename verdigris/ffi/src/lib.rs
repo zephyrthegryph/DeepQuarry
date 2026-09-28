@@ -7,6 +7,7 @@
 
 mod abi;
 pub mod allocator;
+mod bulk;
 pub mod entity;
 mod gas;
 mod heat;
@@ -21,3 +22,12 @@ pub mod propagate;
 pub mod registry;
 mod sched;
 pub mod world;
+
+#[cfg(test)]
+mod boot_memory_tests;
+
+// The boot-memory tests read the Rust heap peak, so the unit-test binary counts
+// allocations the way the DLL does (verdigris/src/lib.rs).
+#[cfg(test)]
+#[global_allocator]
+static TEST_ALLOCATOR: allocator::TrackingAllocator = allocator::TrackingAllocator;

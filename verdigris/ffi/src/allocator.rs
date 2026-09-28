@@ -211,6 +211,12 @@ pub fn diagnostics() -> (u64, u64) {
     )
 }
 
+/// Restarts the overall peak at the live heap, so a test can measure the peak
+/// of one stage (a boot, a blast) on its own.
+pub fn reset_peak() {
+    PEAK_BYTES.store(CURRENT_BYTES.load(Ordering::Relaxed), Ordering::Relaxed);
+}
+
 /// Per-tag current and peak bytes.
 pub fn tag_counters() -> &'static TagCounters {
     &TAGS

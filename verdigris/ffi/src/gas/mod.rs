@@ -378,7 +378,7 @@ fn set_mask(w: &mut World, cell: u32, mask: Option<u8>) {
 
 /// Puts `value` into `cell` with its geometry (`reservoir`: space and
 /// planets) and air-block mask (`None`: keep the current one).
-fn register_cell(
+pub(crate) fn register_cell(
     w: &mut World,
     key: FieldKey<TurfGas>,
     cell: u32,
@@ -389,12 +389,27 @@ fn register_cell(
 ) {
     let volume = if volume > 0.0 { volume } else { CELL_VOLUME };
     value.refresh_in(volume);
-    let _ = w.sim_mut().port(key.cells).put(cell, value);
     let geom = Geom {
         capacity: volume,
         blocked: Dir::NONE,
         reservoir,
     };
+    // Inside a bulk bind the rows go straight to the live stores (crate::bulk).
+    let (value, geom) = match BULK.with_borrow_mut(|b| match b.as_mut() {
+        Some(bulk) => {
+            bulk.cells.push(cell, value);
+            bulk.geometry.push(cell, geom);
+            None
+        }
+        None => Some((value, geom)),
+    }) {
+        Some(rows) => rows,
+        None => {
+            set_mask(w, cell, mask);
+            return;
+        }
+    };
+    let _ = w.sim_mut().port(key.cells).put(cell, value);
     if geom_of(w, key, cell) != geom {
         let _ = w.sim_mut().port(key.geometry).put(cell, geom);
     }
@@ -573,10 +588,47 @@ fn hook_register_turf(src: ByondValue, flag: ByondValue, mask: ByondValue) -> Re
 #[auxmacros::bind("/proc/_auxmos_register_turfs_bulk")]
 fn hook_register_turfs_bulk(list: ByondValue, flag: ByondValue) -> Result<ByondValue> {
     let flag = flag.get_number()? as i32;
-    for (turf, mask) in list.iter()?.collect::<Vec<_>>() {
-        register_turf(turf, flag, mask_from_value(&mask))?;
-    }
+    let rows = list.iter()?.collect::<Vec<_>>();
+    with_bulk(|| {
+        for (turf, mask) in rows {
+            register_turf(turf, flag, mask_from_value(&mask))?;
+        }
+        Ok(())
+    })?;
     Ok(ByondValue::null())
+}
+
+/// Turf gas rows buffered by a bulk bind ([`with_bulk`]).
+pub(crate) struct Bulk {
+    cells: crate::bulk::Direct<TurfGas>,
+    geometry: crate::bulk::Direct<vg_core::field::Geometry<TurfGas>>,
+}
+
+thread_local! {
+    static BULK: std::cell::RefCell<Option<Bulk>> = const { std::cell::RefCell::new(None) };
+}
+
+/// Runs `f` with [`register_cell`] buffering into [`Bulk`], then writes the
+/// rows into the live stores in one pass (Phase 4b: no per-cell command and
+/// overlay copy of a whole map load). The rows are written even when `f`
+/// fails part-way, as the per-cell path would have queued them.
+pub(crate) fn with_bulk<T>(f: impl FnOnce() -> Result<T>) -> Result<T> {
+    let key = turf_key()?;
+    BULK.with_borrow_mut(|b| {
+        *b = Some(Bulk {
+            cells: crate::bulk::Direct::new(key.cells),
+            geometry: crate::bulk::Direct::new(key.geometry),
+        });
+    });
+    let result = f();
+    if let Some(bulk) = BULK.with_borrow_mut(Option::take) {
+        with_world(|w| {
+            bulk.cells.flush(w);
+            bulk.geometry.flush(w);
+            Ok(())
+        })?;
+    }
+    result
 }
 
 /// This turf's gas revision (bumped whenever its gas changes).

@@ -126,7 +126,7 @@ pub fn install_field(field: FieldKey<SolidHeat>) {
     FIELD.with(|f| f.set(Some(field)));
 }
 
-fn field() -> Result<FieldKey<SolidHeat>> {
+pub(crate) fn field() -> Result<FieldKey<SolidHeat>> {
     FIELD
         .with(Cell::get)
         .ok_or_else(|| eyre!("heat field not installed"))
@@ -143,7 +143,7 @@ fn cell_kind_flags(kind: i32) -> Result<(bool, u8)> {
     })
 }
 
-fn set_turf(
+pub(crate) fn set_turf(
     field: FieldKey<SolidHeat>,
     cell: u32,
     kind: i32,
@@ -183,7 +183,9 @@ fn set_turf(
                 .with(vg_core::grid::Face::Down),
             reservoir,
         };
-        if old != geom {
+        if old != geom
+            && let Some(geom) = bulk_push(|b| b.geometry.push(cell, geom), geom)
+        {
             let _ = w.sim_mut().port(field.geometry).put(cell, geom);
         }
         if old.is_node() && !old.reservoir && !reservoir {
@@ -216,10 +218,10 @@ fn set_turf(
             } else {
                 temperature.max(vg_heat::consts::TCMB)
             };
-            let _ = w.sim_mut().port(field.cells).put(
-                cell,
-                SolidCell::at(capacity, t, conductivity.max(0.0), emissivity, f),
-            );
+            let value = SolidCell::at(capacity, t, conductivity.max(0.0), emissivity, f);
+            if let Some(value) = bulk_push(|b| b.cells.push(cell, value), value) {
+                let _ = w.sim_mut().port(field.cells).put(cell, value);
+            }
         }
         wake_cell_couplings(w, cell);
         Ok(true)
@@ -268,10 +270,56 @@ fn heat_set_turf(
     Ok(ok.into())
 }
 
+/// Heat rows buffered by a bulk bind ([`with_bulk`]).
+struct Bulk {
+    cells: crate::bulk::Direct<SolidHeat>,
+    geometry: crate::bulk::Direct<vg_core::field::Geometry<SolidHeat>>,
+}
+
+thread_local! {
+    static BULK: RefCell<Option<Bulk>> = const { RefCell::new(None) };
+}
+
+/// Inside a bulk bind, hands the row to `push` and returns `None`; outside
+/// one, returns `value` for the caller to put through the port.
+fn bulk_push<T>(push: impl FnOnce(&mut Bulk), value: T) -> Option<T> {
+    BULK.with_borrow_mut(|b| match b.as_mut() {
+        Some(bulk) => {
+            push(bulk);
+            None
+        }
+        None => Some(value),
+    })
+}
+
+/// Runs `f` with [`set_turf`] buffering its new cells, then writes them into
+/// the live stores in one pass (Phase 4b, `crate::bulk`).
+pub(crate) fn with_bulk<T>(field: FieldKey<SolidHeat>, f: impl FnOnce() -> Result<T>) -> Result<T> {
+    BULK.with_borrow_mut(|b| {
+        *b = Some(Bulk {
+            cells: crate::bulk::Direct::new(field.cells),
+            geometry: crate::bulk::Direct::new(field.geometry),
+        });
+    });
+    let result = f();
+    if let Some(bulk) = BULK.with_borrow_mut(Option::take) {
+        with_world(|w| {
+            bulk.geometry.flush(w);
+            bulk.cells.flush(w);
+            Ok(())
+        })?;
+    }
+    result
+}
+
 #[auxmacros::bind("/proc/heat_set_turfs_bulk")]
 fn heat_set_turfs_bulk(records: ByondValue) -> Result<ByondValue> {
     let values = records.get_list_values()?;
     let field = field()?;
+    with_bulk(field, || set_turfs(field, &values)).map(|set| ByondValue::from(set as f32))
+}
+
+fn set_turfs(field: FieldKey<SolidHeat>, values: &[ByondValue]) -> Result<u32> {
     let mut set = 0u32;
     for r in values.chunks_exact(7) {
         let Ok(cell) = r[0].get_ref() else { continue };
@@ -290,7 +338,7 @@ fn heat_set_turfs_bulk(records: ByondValue) -> Result<ByondValue> {
             set += 1;
         }
     }
-    Ok(ByondValue::from(set as f32))
+    Ok(set)
 }
 
 #[auxmacros::bind("/turf/proc/heat_clear_turf")]
