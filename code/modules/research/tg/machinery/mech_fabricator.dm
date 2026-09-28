@@ -583,3 +583,5 @@ REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, list("print_sound", "rmat"))
 /// LC-refs: the being_built this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/mecha_part_fabricator_tg/proc/being_built() as /datum/design_techweb
 	return om_resolve(being_built_handle)
+
+REF_HELD(/obj/machinery/mecha_part_fabricator_tg, "stored_part")
