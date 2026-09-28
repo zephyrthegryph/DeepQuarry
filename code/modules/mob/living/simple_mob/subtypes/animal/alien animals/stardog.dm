@@ -460,7 +460,7 @@ REF_PAIR(/mob/living/simple_mob/vore/overmap/stardog, list("control_node" = "hos
 	if(!isliving(usr))
 		return
 	var/mob/living/L = usr
-	if(L.client.prefs.muted & MUTE_IC)
+	if(L.client?.prefs?.muted & MUTE_IC)
 		to_chat(L, span_warning("You cannot speak in IC (muted)."))
 		return
 	if (!message)
@@ -936,7 +936,7 @@ REF_PAIR(/obj/structure/control_pod, list("host" = "control_node"))
 	if(!isliving(user))
 		return TRUE
 	var/mob/living/L = user
-	if(L.client.prefs.muted & MUTE_IC)
+	if(L.client?.prefs?.muted & MUTE_IC)
 		to_chat(L, span_warning("You cannot speak in IC (muted)."))
 		return
 	om_prompt(src, L, list("kind" = "text", "message" = "Type a message to emote.", "title" = "Emote Beyond", "encode" = FALSE), PROC_REF(emote_beyond_entered))

@@ -28,7 +28,9 @@
 	// A 30% chance per Life cycle, charged for the biological time since the last roll (the
 	// stage idles and comes back on its rewake), so stasis stops the creep too.
 	var/now = om_clock_now(self, CLOCK_BIO)
-	var/cycles = self.germs_rolled_at ? clamp((now - self.germs_rolled_at) / LIFE_CYCLE, 1, GERM_CATCHUP_CYCLES) : 1
+	// Charged for elapsed biological time only: a roll with no bio time behind it (a rewake or
+	// frame while the clock is stopped by stasis) charges nothing, so re-runs cannot add creep.
+	var/cycles = self.germs_rolled_at ? clamp((now - self.germs_rolled_at) / LIFE_CYCLE, 0, GERM_CATCHUP_CYCLES) : 1
 	self.germs_rolled_at = now
 	if(self.germ_level >= GERM_LEVEL_AMBIENT)	//if you're just standing there, you shouldn't get more germs beyond an ambient level
 		return

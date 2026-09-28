@@ -56,7 +56,12 @@
 	target.death()
 	RegisterSignal(target, COMSIG_LIVING_REVIVED, PROC_REF(set_custom_see_in_dark))
 
-	D.basic_rez_timed_done(target, user)
+	// The continuation takes its om task (basic_rez() runs it through om_task_start()).
+	var/datum/om/task/timed/denecrotizer_basic_rez/task = new
+	task.actor = user
+	task.target = target
+	task.receiver = D
+	D.basic_rez_timed_done(task)
 
 	TEST_ASSERT_EQUAL(target.see_in_dark, custom_see_in_dark, "basic_rez must not reset see_in_dark back to initial() after another system set a legitimate post-revival value")
 
