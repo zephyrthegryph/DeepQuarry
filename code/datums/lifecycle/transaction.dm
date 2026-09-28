@@ -82,7 +82,7 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 	var/tick = world.tick_usage
 	D.gc_destroyed = GC_CURRENTLY_BEING_QDELETED
 	D.datum_flags |= DF_DESTROYING
-	SEND_SIGNAL(D, COMSIG_QDELETING, force)
+	OM_EMIT(D, /datum/om/event/qdeleting, force)
 	dq_lifecycle_time(trash, LIFECYCLE_PHASE_GUARD, tick)
 	DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_GUARD done")
 
