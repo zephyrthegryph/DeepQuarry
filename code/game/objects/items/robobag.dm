@@ -77,7 +77,7 @@
 	else //Allows the bag to respond to a cyborg analyzer and tag.
 		if(istype(W,/obj/item/robotanalyzer))
 			var/obj/item/robotanalyzer/analyzer = W
-			for(var/mob/living/L in contents)
+			for(var/mob/living/L in contents) // latent-ok: mobs are never latent
 				analyzer.attack(L,user)
 
 		else if(istype(W, /obj/item/clothing/accessory/badge))

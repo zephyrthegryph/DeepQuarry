@@ -148,11 +148,12 @@
 /obj/machinery/dna_scannernew/proc/eject_occupant()
 	var/mob/living/carbon/WC = get_occupant()
 	go_out()
-	for(var/obj/O in src)
+	latent_materialize_all() // a walk needs real things (C5)
+	for(var/obj/O in src) // latent-ok: materialized above
 		if((!istype(O,/obj/item/reagent_containers)) && (!istype(O,/obj/item/circuitboard/clonescanner)) && (!istype(O,/obj/item/stock_parts)) && (!istype(O,/obj/item/stack/cable_coil)))
 			O.forceMove(get_turf(src)) //Ejects items that manage to get in there (exluding the components)
 	if(!WC)
-		for(var/mob/M in src)//Failsafe so you can get mobs out
+		for(var/mob/M in src)//Failsafe so you can get mobs out (latent-ok: mobs are never latent)
 			M.forceMove(get_turf(src))
 
 /obj/machinery/dna_scannernew/MouseDrop_T(mob/target, mob/user) //Allows borgs to clone people without external assistance
@@ -285,7 +286,8 @@
 	if((!WC || locked))
 		return
 	if(istype(WC,/mob/living/carbon/brain))
-		for(var/obj/O in src)
+		latent_materialize_all() // a walk needs real things (C5)
+		for(var/obj/O in src) // latent-ok: materialized above
 			if(istype(O,/obj/item/organ/internal/brain))
 				O.forceMove(get_turf(src))
 				slot_remove(WC, O)

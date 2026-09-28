@@ -9,7 +9,7 @@
 	..()
 	for(var/obj/structure/closet/L in hear(max_range, get_turf(src)))
 		if(locate(/mob/living/carbon/, L))
-			for(var/mob/living/carbon/M in L)
+			for(var/mob/living/carbon/M in L) // latent-ok: mobs are never latent
 				bang(get_turf(src), M)
 
 	for(var/mob/living/carbon/M in hear(max_range, get_turf(src)))

@@ -247,7 +247,8 @@
 		to_chat(user, span_notice("\The [src] is currently processing."))
 	else if(istype(O, /obj/item/storage/bag/plants))
 		var/i = 0
-		for(var/obj/item/reagent_containers/food/snacks/grown/G in contents)
+		latent_materialize_all() // a walk needs real things (C5)
+		for(var/obj/item/reagent_containers/food/snacks/grown/G in contents) // latent-ok: materialized above
 			i++
 		if(i >= 10)
 			to_chat(user, span_notice("\The [src] is already full! Activate it."))
@@ -266,7 +267,8 @@
 		to_chat(user, span_notice("You cannot put this in \the [src]."))
 	else
 		var/i = 0
-		for(var/obj/item/reagent_containers/food/snacks/grown/G in contents)
+		latent_materialize_all() // a walk needs real things (C5)
+		for(var/obj/item/reagent_containers/food/snacks/grown/G in contents) // latent-ok: materialized above
 			i++
 		if(i >= 10)
 			to_chat(user, span_notice("\The [src] is full! Activate it."))
@@ -298,7 +300,8 @@
 		to_chat(user, span_notice("The biogenerator is in the process of working."))
 		return
 	var/S = 0
-	for(var/obj/item/reagent_containers/food/snacks/grown/I in contents)
+	latent_materialize_all() // a walk needs real things (C5)
+	for(var/obj/item/reagent_containers/food/snacks/grown/I in contents) // latent-ok: materialized above
 		S += 5
 		if(I.reagents.get_reagent_amount(REAGENT_ID_NUTRIMENT) < 0.1)
 			points += 1

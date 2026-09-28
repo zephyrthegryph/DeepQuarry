@@ -946,7 +946,8 @@ REF_OWNED_LIST(/datum/storage_hud, list("catchers", "backdrop"))
 	make_contents_real()
 	// Runs at Initialize for fitted kits: read contents, don't make a ledger.
 	var/list/items = list()
-	for(var/obj/item/I in contents)
+	latent_materialize_all() // a walk needs real things (C5)
+	for(var/obj/item/I in contents) // latent-ok: materialized above
 		items += I
 	storage_slots = length(items)
 

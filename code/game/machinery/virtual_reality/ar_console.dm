@@ -95,7 +95,8 @@
 	occupant.forceMove(get_turf(src))
 	occupant.vr_link = null //The machine remembers the avatar. 1 avatar per machine. So the vr_link isn't needed anymore.
 	occupant = null
-	for(var/atom/movable/A in src) // In case an object was dropped inside or something
+	latent_materialize_all() // a walk needs real things (C5)
+	for(var/atom/movable/A in src) // In case an object was dropped inside or something (latent-ok: materialized above)
 		if(A == circuit)
 			continue
 		if(component_parts && (A in component_parts))
