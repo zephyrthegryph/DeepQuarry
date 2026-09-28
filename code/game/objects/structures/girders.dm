@@ -16,7 +16,6 @@
 	var/upgrading = FALSE
 	var/applies_material_colour = 1
 	var/wall_type = /turf/simulated/wall
-	rad_insulation = RAD_VERY_LIGHT_INSULATION
 
 /obj/structure/girder/Initialize(mapload, material_key)
 	. = ..()
@@ -55,6 +54,7 @@
 	max_integrity = round(girder_material.integrity) //Should be 150 with default integrity (steel). Weaker than ye-olden Girders now.
 	update_integrity(max_integrity)
 	displaced_health = round(max_integrity/4)
+	update_rad_insulation()
 	if(applies_material_colour)
 		color = girder_material.icon_colour
 	if(girder_material.products_need_process()) //Am I radioactive or some other? Process me!
@@ -290,8 +290,16 @@
 	reinforce_girder()
 	return 1
 
+/// Shielding derived from the frame material plus any reinforcement.
+/obj/structure/girder/proc/update_rad_insulation()
+	var/transmission = girder_material ? girder_material.material_radiation_transmission(RAD_GIRDER_THICKNESS_MM) : RAD_NO_INSULATION
+	if(reinf_material)
+		transmission *= reinf_material.material_radiation_transmission(RAD_GIRDER_REINFORCEMENT_THICKNESS_MM)
+	set_rad_insulation(transmission)
+
 /obj/structure/girder/proc/reinforce_girder()
 	cover = reinf_material.hardness
+	update_rad_insulation()
 	var/bonus = round(reinf_material.integrity/2)
 	max_integrity += bonus
 	repair_damage(bonus)

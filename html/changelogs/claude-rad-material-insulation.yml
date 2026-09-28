@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - balance: "Simple doors and girders now take their radiation shielding from their material (and girder reinforcement), like walls do, instead of fixed values."

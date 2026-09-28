@@ -20,7 +20,7 @@
 		var/conductance = material.material_thermal_conductance(2.5, 0.25, material_temperature)
 		thermal_conductivity = clamp(conductance / WALL_CONDUCTANCE_PER_TRANSFER_COEFFICIENT, 0.001, WALL_MAX_HEAT_TRANSFER_COEFFICIENT)
 		heat_capacity = max(10000, material.density * material.specific_heat * 25)
-		set_rad_insulation(material.material_radiation_transmission(250))
+		set_rad_insulation(material.material_radiation_transmission(RAD_WALL_THICKNESS_MM))
 	if(reinf_material && reinf_material.explosion_resistance > explosion_resistance)
 		explosion_resistance = reinf_material.explosion_resistance
 

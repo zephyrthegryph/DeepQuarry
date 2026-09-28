@@ -24,7 +24,6 @@
 	var/can_pick = TRUE	//can it be picked/bypassed?
 	var/lock_difficulty = 1	//multiplier to picking/bypassing time
 	var/keysound = 'sound/items/toolbelt_equip.ogg'
-	rad_insulation = RAD_MEDIUM_INSULATION
 
 /// Heat behaviour rule: a flammable material door burns.
 /obj/structure/simple_door/proc/rule_burn(datum/rule/rule)
@@ -52,6 +51,7 @@
 	icon_state = material.door_icon_base
 	name = "[material.display_name] door"
 	color = material.icon_colour
+	set_rad_insulation(material.material_radiation_transmission(RAD_DOOR_THICKNESS_MM))
 	if(material.opacity < 0.5)
 		set_opacity(0)
 	else
@@ -250,20 +250,13 @@
 /obj/structure/simple_door/iron/Initialize(mapload,material_name)
 	. = ..(mapload, material_name || MAT_IRON)
 
-/obj/structure/simple_door/silver
-	rad_insulation = RAD_HEAVY_INSULATION
-
 /obj/structure/simple_door/silver/Initialize(mapload,material_name)
 	. = ..(mapload, material_name || MAT_SILVER)
-
-/obj/structure/simple_door/gold
-	rad_insulation = RAD_HEAVY_INSULATION
 
 /obj/structure/simple_door/gold/Initialize(mapload,material_name)
 	. = ..(mapload, material_name || MAT_GOLD)
 
 /obj/structure/simple_door/uranium
-	rad_insulation = RAD_NO_INSULATION
 	COOLDOWN_DECLARE(event_cooldown)
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
@@ -301,9 +294,6 @@
 
 /obj/structure/simple_door/phoron/Initialize(mapload,material_name)
 	. = ..(mapload, material_name || MAT_PHORON)
-
-/obj/structure/simple_door/diamond
-	rad_insulation = RAD_EXTREME_INSULATION
 
 /obj/structure/simple_door/diamond/Initialize(mapload,material_name)
 	. = ..(mapload, material_name || MAT_DIAMOND)
