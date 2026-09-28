@@ -1,20 +1,15 @@
-/datum/element/electrovoreable
-	// Electrovore interaction handler for items (e.g. power cells).
-	// Logic is hooked via signals (COMSIG_ITEM_ATTACK_SELF).
-
-/datum/element/electrovoreable/Attach(datum/target)
+/// Electrovore interaction for power cells (was /datum/element/electrovoreable, added to
+/// every cell). A plain override of the cell's attack_self: the handler has no state.
+/obj/item/cell/attack_self(mob/user, modifiers)
 	. = ..()
-	if(!isitem(target))
-		return ELEMENT_INCOMPATIBLE
+	if(.)
+		return
+	if(electrovore_attack_self(user) & COMPONENT_CANCEL_ATTACK_CHAIN)
+		return TRUE
 
-	RegisterSignal(target, COMSIG_ITEM_ATTACK_SELF, PROC_REF(on_attack_self))
-
-/datum/element/electrovoreable/Detach(datum/target)
-	UnregisterSignal(target, COMSIG_ITEM_ATTACK_SELF)
-	return ..()
-
-/datum/element/electrovoreable/proc/on_attack_self(obj/item/source, mob/user)
-	SIGNAL_HANDLER
+/// Electrovores charge (help, obligate) or drain (harm) the cell by hand.
+/obj/item/cell/proc/electrovore_attack_self(mob/user)
+	var/obj/item/source = src
 
 	if(!isliving(user))
 		return

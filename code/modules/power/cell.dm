@@ -52,7 +52,6 @@
 	// always need a service datum; it sleeps dependency-driven when stable.
 	apply_blueprint_effects()
 	enable_material_service()
-	AddElement(/datum/element/electrovoreable)
 	c_uid = cell_uid++
 	update_icon()
 	if(self_recharge)
