@@ -8,7 +8,7 @@ GLOBAL_LIST_EMPTY(dq_batch_probe_log)
 /obj/effect/dq_batch_probe
 	name = "batch probe"
 	/// The frame that was active while this probe initialized.
-	var/datum/materialize_batch/seen_batch
+	var/tmp/datum/materialize_batch/seen_batch
 
 /obj/effect/dq_batch_probe/Initialize(mapload)
 	. = ..()
@@ -19,13 +19,8 @@ GLOBAL_LIST_EMPTY(dq_batch_probe_log)
 /obj/effect/dq_batch_probe/LateInitialize()
 	GLOB.dq_batch_probe_log.Add(list(list("late", src)))
 
-/obj/effect/dq_batch_probe/Destroy()
-	seen_batch = null
-	return ..()
-
 /datum/unit_test/dq_materialize_batch
 	abstract_type = /datum/unit_test/dq_materialize_batch
-	var/list/probes = list()
 
 /// `count` probes created without initializing, as the map loader leaves them.
 /datum/unit_test/dq_materialize_batch/proc/uninitialized_probes(count)
@@ -34,17 +29,15 @@ GLOBAL_LIST_EMPTY(dq_batch_probe_log)
 	for(var/i in 1 to count)
 		made += new /obj/effect/dq_batch_probe(null)
 	SSatoms.map_loader_stop("dq_batch_test")
-	probes += made
+	for(var/obj/effect/dq_batch_probe/probe as anything in made)
+		own(probe)
 	return made
 
-/datum/unit_test/dq_materialize_batch/Destroy()
+/// Drops the test hooks; the probes are own()ed and go with the test.
+/datum/unit_test/dq_materialize_batch/proc/reset_hooks()
 	SSatoms.batch_yield_probe = null
 	SSatoms.batch_trace = null
 	GLOB.dq_batch_probe_log.Cut()
-	for(var/obj/effect/dq_batch_probe/probe as anything in probes)
-		qdel(probe)
-	probes = null
-	return ..()
 
 /// Index of the first (or last) log entry of `kind` for any atom in `atoms`.
 /datum/unit_test/dq_materialize_batch/proc/log_index(kind, list/atoms, last = FALSE)
@@ -62,8 +55,7 @@ GLOBAL_LIST_EMPTY(dq_batch_probe_log)
 /// late loaders after its last atom, and is isolated while it sleeps.
 /datum/unit_test/dq_materialize_batch/chunks_and_yields
 	var/list/main_batch
-	var/datum/materialize_batch/yielding
-	var/list/yield_reports = list()
+	var/list/yield_reports
 
 /datum/unit_test/dq_materialize_batch/chunks_and_yields/Run()
 	GLOB.dq_batch_probe_log.Cut()
@@ -72,14 +64,15 @@ GLOBAL_LIST_EMPTY(dq_batch_probe_log)
 	SSatoms.batch_trace = list()
 	SSatoms.batch_yield_probe = CALLBACK(src, PROC_REF(on_yield))
 	SSatoms.InitializeAtoms(main_batch.Copy())
-	SSatoms.batch_yield_probe = null
+	var/datum/materialize_batch/batch = SSatoms.batch_trace[1]
+	reset_hooks()
 
 	TEST_ASSERT_NULL(SSatoms.active_batch, "a closed frame left itself active")
-	var/datum/materialize_batch/batch = SSatoms.batch_trace[1]
 	TEST_ASSERT_EQUAL(batch.chunks, 3, "chunks for [total] atoms")
 	TEST_ASSERT_EQUAL(batch.yields, 2, "a batch yields only between chunks")
 	for(var/report in yield_reports)
 		TEST_FAIL(report)
+	yield_reports = null
 
 	// Rule 1: initialized in list order.
 	var/list/log = GLOB.dq_batch_probe_log
@@ -99,26 +92,25 @@ GLOBAL_LIST_EMPTY(dq_batch_probe_log)
 /// At each yield: nothing is active, deferral is refused, the chunk before is done and the
 /// one after untouched, and a frame opened meanwhile owns its work and finishes on its own.
 /datum/unit_test/dq_materialize_batch/chunks_and_yields/proc/on_yield(datum/materialize_batch/batch)
-	yielding = batch
 	if(SSatoms.active_batch)
-		yield_reports += "a frame stayed active across a yield"
+		LAZYADD(yield_reports, "a frame stayed active across a yield")
 	if(SSatoms.batch_defer(BATCH_WORK_CABLE_BINDS, src))
-		yield_reports += "work was deferred into a sleeping frame"
+		LAZYADD(yield_reports, "work was deferred into a sleeping frame")
 	var/boundary = batch.chunks * MATERIALIZE_CHUNK_SIZE
 	var/obj/effect/dq_batch_probe/before = main_batch[boundary]
 	var/obj/effect/dq_batch_probe/after = main_batch[boundary + 1]
 	if(!(before.flags & ATOM_INITIALIZED) || (after.flags & ATOM_INITIALIZED))
-		yield_reports += "yield [batch.yields] was not at a chunk boundary"
+		LAZYADD(yield_reports, "yield [batch.yields] was not at a chunk boundary")
 	if(log_index("late", main_batch))
-		yield_reports += "a late loader ran while its frame slept"
+		LAZYADD(yield_reports, "a late loader ran while its frame slept")
 	// Another map load while this one sleeps.
 	var/list/other = uninitialized_probes(2)
 	SSatoms.InitializeAtoms(other)
 	var/datum/materialize_batch/other_batch = SSatoms.batch_trace[length(SSatoms.batch_trace)]
-	if(other_batch == batch || other_batch.owner != other_batch)
-		yield_reports += "a frame opened during a yield joined the sleeping frame"
+	if(other_batch == batch || other_batch.owner) // a closed owner frame clears its owner link
+		LAZYADD(yield_reports, "a frame opened during a yield joined the sleeping frame")
 	if(!log_index("late", other))
-		yield_reports += "a frame opened during a yield did not run its own late loaders"
+		LAZYADD(yield_reports, "a frame opened during a yield did not run its own late loaders")
 
 /// Rules 3, 4: a nested call joins the running frame's deferred work but runs its own
 /// late loaders; deferred work flushes once, when the owner closes.
@@ -135,13 +127,14 @@ GLOBAL_LIST_EMPTY(dq_batch_probe_log)
 	TEST_ASSERT(SSatoms.active_batch == outer_batch, "closing a nested frame did not restore the outer one")
 	SSatoms.batch_close(outer_batch)
 
-	TEST_ASSERT_EQUAL(length(SSatoms.batch_trace), 2, "frames opened")
-	var/datum/materialize_batch/inner_batch = SSatoms.batch_trace[2]
+	var/frames = length(SSatoms.batch_trace)
+	var/datum/materialize_batch/inner_batch = SSatoms.batch_trace[frames]
+	reset_hooks()
+	TEST_ASSERT_EQUAL(frames, 2, "frames opened")
 	TEST_ASSERT(inner_batch.owner == outer_batch, "a nested frame did not join the running one")
 	TEST_ASSERT(inner.seen_batch == inner_batch, "the nested atom did not see its own frame")
 	TEST_ASSERT(log_index("late", list(inner)), "the nested frame's late loaders waited for the outer frame")
 	TEST_ASSERT_NULL(SSatoms.active_batch, "a closed frame left itself active")
-	qdel(outer_batch)
 
 	// Work deferred from inside the nested frame lands on the owner and flushes once.
 	var/obj/structure/cable/cable = allocate(/obj/structure/cable, test_floor())
@@ -155,8 +148,6 @@ GLOBAL_LIST_EMPTY(dq_batch_probe_log)
 	TEST_ASSERT(!owner.work[BATCH_WORK_CABLE_BINDS][cable], "undefer left the cable queued")
 	SSatoms.batch_close(owner)
 	TEST_ASSERT_NULL(SSatoms.active_batch, "closing the owner left a frame active")
-	qdel(joined)
-	qdel(owner)
 
 /// init_from_table types end up in the same state from table_initialize() as from the
 /// Initialize() chain (forced by an extra New() argument).

@@ -103,8 +103,6 @@ SUBSYSTEM_DEF(atoms)
 
 	testing("[length(queued_deletions)] atoms were queued for deletion.")
 	queued_deletions.Cut()
-	if(!batch_trace)
-		qdel(batch)
 
 	#ifdef PROFILE_MAPLOAD_INIT_ATOM
 	rustg_file_write(json_encode(mapload_init_times), "[GLOB.log_directory]/init_times.json")

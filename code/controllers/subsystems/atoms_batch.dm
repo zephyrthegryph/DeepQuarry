@@ -24,9 +24,10 @@
 	/// The SSatoms tracked-initialization source this frame holds.
 	var/source
 	/// The frame that owns this frame's deferred work: itself, or the frame it joined.
-	var/datum/materialize_batch/owner
-	/// What SSatoms.active_batch was when this frame opened; restored when it closes.
-	var/datum/materialize_batch/previous
+	/// Transient: set while the frame is open (an owner's self-reference is cleared at close).
+	var/tmp/datum/materialize_batch/owner
+	/// What SSatoms.active_batch was when this frame opened; restored and cleared at close.
+	var/tmp/datum/materialize_batch/previous
 	/// BATCH_WORK_* -> (thing -> TRUE). Only an owner frame has one.
 	var/list/work
 	/// Atoms whose Initialize() returned INITIALIZE_HINT_LATELOAD during a mapload.
@@ -48,19 +49,11 @@
 		work = new /list(BATCH_WORK_KINDS)
 	late_loaders = list()
 
-/datum/materialize_batch/Destroy()
-	owner = null
-	previous = null
-	work = null
-	late_loaders = null
-	created_atoms = null
-	return ..()
-
 /datum/controller/subsystem/atoms
 	/// The frame currently initializing atoms, or null (no batch, or its frame is yielding).
-	var/datum/materialize_batch/active_batch
+	var/tmp/datum/materialize_batch/active_batch
 	/// Test hook: when set, every chunk boundary yields and calls this instead of stoplag().
-	var/datum/callback/batch_yield_probe
+	var/tmp/datum/callback/batch_yield_probe
 	/// Every frame that opened, in order, when a test is recording (else null).
 	var/list/batch_trace
 
@@ -84,7 +77,11 @@
 				continue
 			work[kind] = null
 			flush_batch_work(kind, queued)
+	// Clear the frame's links so a closed frame holds nothing (and no self-reference).
 	active_batch = batch.previous
+	batch.previous = null
+	if(batch.owner == batch)
+		batch.owner = null
 
 /// A chunk boundary: yields to the MC if the tick is spent (never under unit tests, which
 /// have no clients to keep smooth) and keeps the frame isolated while it sleeps.
