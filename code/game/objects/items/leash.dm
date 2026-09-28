@@ -113,11 +113,9 @@
 
 //Called when someone is clicked with the leash
 /obj/item/leash/attack(mob/living/C, mob/living/user, target_zone, attack_modifier) //C is the target, user is the one with the leash
-	var/mob/living/leash_pet = src?.leash_pet()
-	var/mob/living/leash_master = src?.leash_master()
 	if(C?.leash_item()) //If the pet is already leashed, do not leash them. For the love of god.
 		// If they re-click, remove the leash
-		if (C == leash_pet && user == leash_master)
+		if (C == leash_pet() && user == leash_master())
 			unleash()
 			return ITEM_INTERACT_SUCCESS
 		else
@@ -132,41 +130,62 @@
 		to_chat(user, span_notice("You cannot leash yourself!"))
 		return ITEM_INTERACT_FAILURE
 
-	var/leashtime = 35
+	if(istype(C, /mob/living/carbon/human) && !is_wearing_collar(C))
+		to_chat(user, span_notice("[C] needs a collar before you can attach a leash to it."))
+		return ITEM_INTERACT_FAILURE
 
-	if(istype(C, /mob/living/carbon/human))
-		var/mob/living/carbon/human/humantarget = C
-		if (!is_wearing_collar(humantarget))
-			to_chat(user, span_notice("[humantarget] needs a collar before you can attach a leash to it."))
-			return ITEM_INTERACT_FAILURE
-		if(humantarget.get_equipped_item(SLOT_ID_HANDCUFFED))
-			leashtime = 5
-
-	C.visible_message(span_danger("\The [user] is attempting to put the leash on \the [C]!"), span_danger("\The [user] tries to put a leash on you"))
-	add_attack_logs(user,C,"Leashed (attempt)")
-	om_do_after(user, leashtime, target = C, receiver = src, on_done = PROC_REF(attack_timed_done), done_args = list(C, user))
+	om_flow_start(/datum/om/flow/leash, user, C, leash = src)
 	return TRUE
 
-/obj/item/leash/proc/attack_timed_done(mob/living/C, mob/living/user)
-	om_prompt(src, C, list("message" = "Would you like to be leased by [user]? You can OOC escape to escape", "title" = "Become Leashed", "choices" = list("No","Yes"), "target" = user, "requires" = PROMPT_ADJACENT, "data" = list("holder" = user)), PROC_REF(leash_accepted))
+/// Putting a leash on: the holder (actor) works on the pet (target), the pet agrees, the leash
+/// clicks on. Every step after the first re-checks valid(): the holder still has the leash and
+/// the pet isn't leashed by someone else meanwhile.
+/datum/om/flow/leash
+	name = "leash"
+	var/obj/item/leash/leash
 
-/obj/item/leash/proc/leash_accepted(mob/living/C, answer, datum/om/prompt/ask)
-	var/mob/living/user = ask.get("holder")
-	if(answer != "Yes")
-		return ITEM_INTERACT_FAILURE
-	if(QDELETED(C) || QDELETED(user) || loc != user || C?.leash_item())
-		return ITEM_INTERACT_FAILURE
+/datum/om/flow/leash/valid()
+	var/mob/living/pet = target
+	if(leash.loc != actor)
+		return "not holding the leash"
+	if(pet.leash_item())
+		return "already leashed"
+	return null
 
-	// This leash may still be on someone else: that one ends here.
+/datum/om/flow/leash/start()
+	var/mob/living/pet = target
+	var/mob/living/carbon/human/human_pet = pet
+	var/leashtime = (istype(human_pet) && human_pet.get_equipped_item(SLOT_ID_HANDCUFFED)) ? 0.5 SECONDS : 3.5 SECONDS
+	pet.visible_message(span_danger("\The [actor] is attempting to put the leash on \the [pet]!"), span_danger("\The [actor] tries to put a leash on you"))
+	add_attack_logs(actor, pet, "Leashed (attempt)")
+	wait(leashtime, PROC_REF(offer))
+
+/datum/om/flow/leash/proc/offer()
+	om_ask(target, /datum/om/prompt/confirm/leash_offer, PROC_REF(accepted))
+
+/datum/om/flow/leash/proc/accepted(datum/om/prompt/confirm/leash_offer/ask)
+	leash.attach(target, actor)
+
+/// The pet is asked (asker: the holder, from the flow). Re-checked on the answer: still face to face.
+/datum/om/prompt/confirm/leash_offer
+	title = "Become Leashed"
+	no_first = TRUE
+	ask_flags = ASK_FACE_TO_FACE
+
+/datum/om/prompt/confirm/leash_offer/prepare()
+	message = "Would you like to be leashed by [asker]? You can OOC escape to escape"
+	return TRUE
+
+/// Links the leash between `pet` and `holder`. This leash may still be on someone else: that one ends here.
+/obj/item/leash/proc/attach(mob/living/pet, mob/living/holder)
 	clear_leash()
-	if(!istype(om_link(C, src, /datum/om/relation/leashed_to), /datum/om/edge))
-		return ITEM_INTERACT_FAILURE
-	om_link(src, user, /datum/om/relation/leash_held_by)
-
-	C.visible_message(span_danger("\The [user] puts a leash on \the [C]!"), span_danger("The leash clicks onto your collar!"))
-	to_chat(C, span_userdanger("You have been leashed!"))
-	to_chat(C, span_danger("(You can use OOC escape to detach the leash)"))
-	return ITEM_INTERACT_SUCCESS
+	if(!istype(om_link(pet, src, /datum/om/relation/leashed_to), /datum/om/edge))
+		return FALSE
+	om_link(src, holder, /datum/om/relation/leash_held_by)
+	pet.visible_message(span_danger("\The [holder] puts a leash on \the [pet]!"), span_danger("The leash clicks onto your collar!"))
+	to_chat(pet, span_userdanger("You have been leashed!"))
+	to_chat(pet, span_danger("(You can use OOC escape to detach the leash)"))
+	return TRUE
 
 //Called when the leash is used in hand
 //Tugs the pet closer
@@ -295,13 +314,8 @@
 	leash_pet.visible_message(span_danger("\The [leash_pet] is attempting to unhook [leash_pet.p_their()] leash!"), span_danger("You attempt to unhook your leash"))
 	add_attack_logs(leash_master,leash_pet,"Self-unleash (attempt)")
 
-	om_do_after(leash_pet, 3.5 SECONDS, target = leash_pet, receiver = src, on_done = PROC_REF(struggle_leash_timed_done), done_args = list(leash_pet))
+	om_do_after(leash_pet, 3.5 SECONDS, target = leash_pet, receiver = src, on_done = PROC_REF(released))
 	return TRUE
-
-/obj/item/leash/proc/struggle_leash_timed_done(mob/living/leash_pet)
-
-	to_chat(leash_pet, span_userdanger("You have been released!"))
-	clear_leash()
 
 /obj/item/leash/proc/unleash()
 	var/mob/living/leash_pet = src?.leash_pet()
@@ -311,12 +325,14 @@
 	leash_pet.visible_message(span_danger("\The [leash_master] is attempting to remove the leash on \the [leash_pet]!"), span_danger("\The [leash_master] tries to remove leash from you"))
 	add_attack_logs(leash_master,leash_pet,"Unleashed (attempt)")
 
-	om_do_after(leash_master, 1.5 SECONDS, target = leash_pet, receiver = src, on_done = PROC_REF(unleash_timed_done), done_args = list(leash_pet))
+	om_do_after(leash_master, 1.5 SECONDS, target = leash_pet, receiver = src, on_done = PROC_REF(released))
 	return TRUE
 
-/obj/item/leash/proc/unleash_timed_done(mob/living/leash_pet)
-
-	to_chat(leash_pet, span_userdanger("You have been released!"))
+/// A timed unhook finished (by the pet or the holder): the pet is free.
+/obj/item/leash/proc/released()
+	var/mob/living/leash_pet = leash_pet()
+	if(leash_pet)
+		to_chat(leash_pet, span_userdanger("You have been released!"))
 	clear_leash()
 
 /obj/item/leash/proc/is_wearing_collar(mob/living/carbon/human/human)
