@@ -76,7 +76,11 @@ DECLARE_INTERACTIONS(/obj/dq_compact_probe/declining, \
 	var/obj/dq_compact_probe/probe = allocate(/obj/dq_compact_probe, T)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 
-	var/list/candidates = interaction_candidates(probe)
+	// The type's candidates include every movable's default drag (Buckle), which applies_to() hides here.
+	var/list/candidates = list()
+	for(var/datum/interaction/candidate as anything in interaction_candidates(probe))
+		if(candidate.applies_to(probe))
+			candidates += candidate
 	TEST_ASSERT(length(candidates) == 4, "the probe offers all 4 compact interactions, got [length(candidates)]")
 
 	var/datum/interaction/use_interaction

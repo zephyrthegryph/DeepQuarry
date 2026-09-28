@@ -28,6 +28,14 @@
 	/// attackby/insert may have sibling candidates competing for one click -
 	/// all of those need the effect's real TRUE/FALSE, same as the full form.
 	var/always_handled = FALSE
+	/// Optional proc on the target (a PROC_REF) answering whether this interaction is offered on
+	/// that instance at all (applies_to()); null offers it everywhere its type declares it.
+	var/applies_proc
+
+/datum/interaction/generic/applies_to(atom/target)
+	if(applies_proc && !call(target, applies_proc)())
+		return FALSE
+	return ..()
 
 /datum/interaction/generic/New(id, name, category, priority, default_action, list/requires, effect, entry, held_type, list/offered_when, consumes_input, behind_gate, always_handled)
 	src.id = id
