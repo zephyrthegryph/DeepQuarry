@@ -658,7 +658,6 @@
 #include "code\datums\components\effect_remover.dm"
 #include "code\datums\components\geiger_sound.dm"
 #include "code\datums\components\overlay_lighting.dm"
-#include "code\datums\components\radioactive_exposure.dm"
 #include "code\datums\components\reactive_icon_update.dm"
 #include "code\datums\components\recursive_move.dm"
 #include "code\datums\components\remote_view.dm"
