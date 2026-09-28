@@ -46,7 +46,7 @@
 	var/carried_evidence_id
 	/// The contract paperwork state of a paper (was the contract_document
 	/// component; code/modules/contracts/medical_trial_side_contracts.dm). Owned by the paper.
-	var/datum/contract_document/contract_document
+	var/datum/contract_document/contract_document // ALLOW(state_ref): owned child (DECLARE_REF OWNED); saved with the paper
 	/// Machine-readable freight routing attached by a crate ledger. Visible text
 	/// remains ordinary editable paper; this signed payload is invalidated if the
 	/// paper or sealed cargo changes.
