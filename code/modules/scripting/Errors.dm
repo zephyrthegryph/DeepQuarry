@@ -12,9 +12,9 @@
 
 /datum/scriptError/BadToken
 	message="Unexpected token: "
-	var/tmp/token_handle
+	var/tmp/datum/token/token_ref
 /datum/scriptError/BadToken/New(datum/token/t)
-	token_handle=om_handle(t)
+	token_ref=t
 	if(t&&t.line) message="[t.line]: [message]"
 	if(istype(t))message+="[t.value]"
 	else message+="[t]"
@@ -32,10 +32,10 @@
 	message = "Bad number: "
 
 /datum/scriptError/BadReturn
-	var/tmp/token_handle
+	var/tmp/datum/token/token_ref
 	message = "Unexpected return statement outside of a function."
 /datum/scriptError/BadReturn/New(datum/token/t)
-	src.token_handle=om_handle(t)
+	src.token_ref=t
 
 /datum/scriptError/EndOfFile
 	message = "Unexpected end of file."
@@ -123,10 +123,10 @@
 
 REF_OWNED(/datum/runtimeError, "stack")
 
-/// LC-refs: the token this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// A strong internal reference (tmp): this holder is what keeps it alive.
 /datum/scriptError/BadToken/proc/token() as /datum/token
-	return om_resolve(token_handle)
+	return token_ref
 
-/// LC-refs: the token this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// A strong internal reference (tmp): this holder is what keeps it alive.
 /datum/scriptError/BadReturn/proc/token() as /datum/token
-	return om_resolve(token_handle)
+	return token_ref

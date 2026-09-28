@@ -56,7 +56,7 @@
 	/// Maximum number of checkboxes that can be checked
 	var/max_checked
 	/// The TGUI UI state that will be returned in ui_state(). Default: always_state
-	var/tmp/state_handle
+	var/tmp/datum/tgui_state/state_static
 
 /datum/tgui_checkbox_input/New(mob/user, message, title, list/items, min_checked, max_checked, timeout, ui_state)
 	src.title = title
@@ -64,7 +64,7 @@
 	src.items = items.Copy()
 	src.min_checked = min_checked
 	src.max_checked = max_checked
-	src.state_handle = om_handle(ui_state)
+	src.state_static = ui_state
 
 	if (timeout)
 		src.timeout = timeout
@@ -137,6 +137,7 @@
 /datum/tgui_checkbox_input/proc/set_choices(list/selections)
 	src.choices = selections.Copy()
 
-/// LC-refs: the state this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /datum/tgui_checkbox_input/proc/state() as /datum/tgui_state
-	return om_resolve(state_handle)
+	return state_static
+REF_STATIC(/datum/tgui_checkbox_input, "state_static")

@@ -99,14 +99,14 @@
 // ---- Compiler ----
 
 /datum/predicate_compiler
-	var/registry_handle
+	var/datum/property_registry/registry_static
 	var/label
 	var/list/errors = list() // ALLOW(instance_list): d: compiler state (generic name, too many ambiguous call sites)
 	var/list/watchable = list() // ALLOW(instance_list): d: singleton compiler table
 
 /datum/predicate_compiler/New(datum/property_registry/registry, label)
 	..()
-	src.registry_handle = om_handle(registry)
+	src.registry_static = registry
 	src.label = label
 
 /datum/predicate_compiler/proc/error(text)
@@ -301,7 +301,7 @@
 	var/datum/pred_node/tag/node = leaf(/datum/pred_node/tag, negate)
 	node.subject = clause[2]
 	node.property = def.id
-	node.def_handle = om_handle(def)
+	node.def_static = def
 	return node
 
 /datum/predicate_compiler/proc/compile_cmp(list/clause, negate)
@@ -321,7 +321,7 @@
 	var/datum/pred_node/cmp/node = new
 	node.subject = clause[2]
 	node.property = def.id
-	node.def_handle = om_handle(def)
+	node.def_static = def
 	node.op = negate ? dq_pred_invert_cmp(op) : op
 	node.value = clause[5]
 	if(node.op != PRED_CMP_EQ && node.op != PRED_CMP_NE && channel_backed(def.id))
@@ -342,7 +342,7 @@
 	var/datum/pred_node/band/node = new
 	node.subject = clause[2]
 	node.property = def.id
-	node.def_handle = om_handle(def)
+	node.def_static = def
 	node.lo = clause[4]
 	node.hi = clause[6]
 	node.outside = negate
@@ -369,7 +369,7 @@
 	var/datum/pred_node/rel/node = new
 	node.subject = clause[2]
 	node.property = def_a.id
-	node.def_handle = om_handle(def_a)
+	node.def_static = def_a
 	node.op = negate ? dq_pred_invert_cmp(op) : op
 	node.subject_b = clause[5]
 	node.property_b = def_b.id
@@ -541,7 +541,7 @@
 /datum/pred_node/tag
 	var/subject
 	var/property
-	var/def_handle
+	var/datum/property_def/def_static
 
 /datum/pred_node/tag/test(mob/actor, atom/target, obj/item/held)
 	var/datum/thing = dq_pred_subject(subject, actor, target, held)
@@ -559,7 +559,7 @@
 /datum/pred_node/cmp
 	var/subject
 	var/property
-	var/def_handle
+	var/datum/property_def/def_static
 	/// Effective operator, with any NOT already applied.
 	var/op
 	var/value
@@ -600,7 +600,7 @@
 /datum/pred_node/band
 	var/subject
 	var/property
-	var/def_handle
+	var/datum/property_def/def_static
 	var/lo
 	var/hi
 	/// Negated: pass outside lo..hi.
@@ -633,7 +633,7 @@
 /datum/pred_node/rel
 	var/subject
 	var/property
-	var/def_handle
+	var/datum/property_def/def_static
 	var/op
 	var/subject_b
 	var/property_b
@@ -830,25 +830,30 @@
 /mob/living/simple_mob/dq_has_free_hand()
 	return has_hands && (!get_equipped_item(SLOT_ID_HAND_L) || !get_equipped_item(SLOT_ID_HAND_R))
 
-/// LC-refs: the property registry compiling against -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /datum/predicate_compiler/proc/registry() as /datum/property_registry
-	return om_resolve(registry_handle)
+	return registry_static
+REF_STATIC(/datum/predicate_compiler, "registry_static")
 
-/// LC-refs: the property this node tests -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /datum/pred_node/tag/proc/def() as /datum/property_def
-	return om_resolve(def_handle)
+	return def_static
+REF_STATIC(/datum/pred_node/tag, "def_static")
 
-/// LC-refs: the property this node tests -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /datum/pred_node/cmp/proc/def() as /datum/property_def
-	return om_resolve(def_handle)
+	return def_static
+REF_STATIC(/datum/pred_node/cmp, "def_static")
 
-/// LC-refs: the property this node tests -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /datum/pred_node/band/proc/def() as /datum/property_def
-	return om_resolve(def_handle)
+	return def_static
+REF_STATIC(/datum/pred_node/band, "def_static")
 
-/// LC-refs: the property this node tests -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /datum/pred_node/rel/proc/def() as /datum/property_def
-	return om_resolve(def_handle)
+	return def_static
+REF_STATIC(/datum/pred_node/rel, "def_static")
 
 REF_OWNED(/datum/predicate, "root")
 

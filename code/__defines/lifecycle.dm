@@ -62,6 +62,23 @@
 /// clear, because the target outlives every holder. Vars whose declared type is in
 /// DEF_TYPES (tools/ci/state_schema_lint.py) need no declaration at all.
 #define REF_DEF(PATH, NAMES) ##PATH/declared_def_vars() { . = ..(); . = (. || list()) + NAMES; }
+/// Strong references to round-long singletons, services and flyweights (a subsystem,
+/// a /datum/material, a seed, a tgui_state, a techweb). The var holds the object
+/// itself -- never an om_handle() -- because the holder may be what keeps a
+/// flyweight alive (a diverged seed, an engineered material). Destruction never
+/// clears it and the leak check never reports it: the target outlives or is
+/// shared by every holder, and a holder going away just drops one reference.
+/// Ownership rule (doc/rewrite/object_model_core.md "Ownership"): every datum has
+/// exactly one owner; handles are only for other live entities whose lifetime
+/// something else manages. tools/ci/handle_kinds_lint.py refuses a handle var
+/// whose target type is marked OM_STATIC_TYPE.
+#define REF_STATIC(PATH, NAMES) ##PATH/declared_static_vars() { . = ..(); . = (. || list()) + NAMES; }
+/// Marks PATH (and its subtypes) as a singleton / flyweight / definition type:
+/// instances are shared and live for the round, so references to them are
+/// REF_STATIC (or read from the registry at the use site), never handles.
+/// tools/ci/ref_kinds.py reads these lines; om_static_type() answers at runtime.
+#define OM_STATIC_TYPE(PATH) ##PATH/om_static_type() { return TRUE; }
+
 /// Fields of a pooled type (POOL_DECLARE) that belong to one use: pool_release()
 /// resets each to its initial value before the object goes back to its pool, so a
 /// forgotten clear can't leak a reference. Scalars may be listed too. The lint
@@ -72,7 +89,7 @@
 // REF_VAR(/obj/machinery/foo, OWNED, /datum/bar, helper) declares
 // `/obj/machinery/foo/var/datum/bar/helper` and adds "helper" to the type's
 // REF_OWNED list. KIND is any single-name kind: OWNED, OWNED_LIST, OWNED_VALUES,
-// SPILL, SPILL_LIST, HELD, DEF, TRANSIENT. VARTYPE is the full type path (/list
+// SPILL, SPILL_LIST, HELD, DEF, STATIC, TRANSIENT. VARTYPE is the full type path (/list
 // for list kinds). The older REF_* forms keep working.
 #define REF_VAR(PATH, KIND, VARTYPE, NAME) ##PATH { var##VARTYPE/##NAME; } REF_##KIND(PATH, #NAME)
 /// REF_VAR for a pair: OTHER is the partner's var pointing back.

@@ -1,7 +1,7 @@
 /datum/decl/hierarchy
 	var/name = "Hierarchy"
 	var/hierarchy_type
-	var/parent_handle
+	var/datum/decl/hierarchy/parent_static
 	var/list/datum/decl/hierarchy/children
 
 /datum/decl/hierarchy/New(full_init = TRUE)
@@ -17,7 +17,7 @@
 	for(var/subtype in (all_subtypes - type))
 		var/datum/decl/hierarchy/subtype_instance = all_subtypes[subtype]
 		var/datum/decl/hierarchy/subtype_parent = all_subtypes[subtype_instance.parent_type]
-		subtype_instance.parent_handle = om_handle(subtype_parent)
+		subtype_instance.parent_static = subtype_parent
 		dd_insertObjectList(subtype_parent.children, subtype_instance)
 
 /datum/decl/hierarchy/proc/is_category()
@@ -29,8 +29,9 @@
 /datum/decl/hierarchy/dd_SortValue()
 	return name
 
-/// LC-refs: the parent node -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /datum/decl/hierarchy/proc/parent() as /datum/decl/hierarchy
-	return om_resolve(parent_handle)
+	return parent_static
+REF_STATIC(/datum/decl/hierarchy, "parent_static")
 
 REF_OWNED_LIST(/datum/decl/hierarchy, "children")

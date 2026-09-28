@@ -11,7 +11,7 @@
 /datum/event2/event/sudden_weather_shift
 	start_delay_lower_bound = 30 SECONDS
 	start_delay_upper_bound = 1 MINUTE
-	var/tmp/chosen_planet_handle
+	var/tmp/datum/planet/chosen_planet_static
 
 /datum/event2/event/sudden_weather_shift/set_up()
 	if(!LAZYLEN(SSplanets.planets))
@@ -19,7 +19,7 @@
 		abort()
 		return
 
-	chosen_planet_handle = om_handle(pick(SSplanets.planets))
+	chosen_planet_static = pick(SSplanets.planets)
 
 /datum/event2/event/sudden_weather_shift/announce()
 	if(!chosen_planet())
@@ -44,6 +44,7 @@
 	log_game("Sudden weather shift event is now changing [chosen_planet().name]'s weather to [new_weather].")
 	chosen_planet().weather_holder.change_weather(new_weather)
 
-/// LC-refs: the chosen_planet this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /datum/event2/event/sudden_weather_shift/proc/chosen_planet() as /datum/planet
-	return om_resolve(chosen_planet_handle)
+	return chosen_planet_static
+REF_STATIC(/datum/event2/event/sudden_weather_shift, "chosen_planet_static")

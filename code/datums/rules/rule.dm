@@ -174,15 +174,15 @@
 // ---- Compiler ----
 
 /datum/rule_compiler
-	var/rule_handle
-	var/registry_handle
+	var/datum/rule/rule_static
+	var/datum/property_registry/registry_static
 	var/list/triggers = list() // ALLOW(instance_list): constraints (P3): compiler state; landed on master unlisted, not edited here
 	var/list/errors = list() // ALLOW(instance_list): constraints (P3): compiler state; landed on master unlisted, not edited here
 
 /datum/rule_compiler/New(datum/rule/rule)
 	..()
-	src.rule_handle = om_handle(rule)
-	registry_handle = om_handle(dq_property_registry())
+	src.rule_static = rule
+	registry_static = dq_property_registry()
 
 /datum/rule_compiler/proc/error(text)
 	errors += "[text]"
@@ -429,13 +429,15 @@ GLOBAL_VAR_INIT(dq_rule_recording, FALSE)
 /datum/rule_trigger/proc/provider_b() as /datum/property_provider/domain
 	return om_resolve(provider_b_handle)
 
-/// LC-refs: the rule being compiled -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /datum/rule_compiler/proc/rule() as /datum/rule
-	return om_resolve(rule_handle)
+	return rule_static
+REF_STATIC(/datum/rule_compiler, "rule_static")
 
-/// LC-refs: the property registry compiling against -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /datum/rule_compiler/proc/registry() as /datum/property_registry
-	return om_resolve(registry_handle)
+	return registry_static
+REF_STATIC(/datum/rule_compiler, "registry_static")
 
 REF_OWNED(/datum/rule, "predicate")
 

@@ -67,7 +67,7 @@
 	/// The title of the TGUI window
 	var/title
 	/// The TGUI UI state that will be returned in ui_state(). Default: always_state
-	var/tmp/state_handle
+	var/tmp/datum/tgui_state/state_static
 
 /datum/tgui_input_number/New(mob/user, message, title, default, max_value, min_value, timeout, round_value, ui_state)
 	src.default = default
@@ -76,7 +76,7 @@
 	src.min_value = min_value
 	src.title = title
 	src.round_value = round_value
-	src.state_handle = om_handle(ui_state)
+	src.state_static = ui_state
 	if (timeout)
 		src.timeout = timeout
 		start_time = world.time
@@ -156,6 +156,7 @@
 /datum/tgui_input_number/proc/set_entry(entry)
 	src.entry = entry
 
-/// LC-refs: the state this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /datum/tgui_input_number/proc/state() as /datum/tgui_state
-	return om_resolve(state_handle)
+	return state_static
+REF_STATIC(/datum/tgui_input_number, "state_static")

@@ -5,10 +5,10 @@
 	var/event_type = 0
 	var/list/cheaper_goods
 	var/list/dearer_goods
-	var/tmp/affected_dest_handle
+	var/tmp/datum/trade_destination/affected_dest_static
 
 /datum/event/economic_event/start()
-	affected_dest_handle = om_handle(pickweight(GLOB.weighted_randomevent_locations))
+	affected_dest_static = pickweight(GLOB.weighted_randomevent_locations)
 	if(length(affected_dest().viable_random_events))
 		endWhen = rand(60,300)
 		event_type = DEFAULTPICK(affected_dest().viable_random_events, null)
@@ -97,6 +97,7 @@
 	for(var/good_type in cheaper_goods)
 		affected_dest().temp_price_change[good_type] = 1
 
-/// LC-refs: the affected_dest this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /datum/event/economic_event/proc/affected_dest() as /datum/trade_destination
-	return om_resolve(affected_dest_handle)
+	return affected_dest_static
+REF_STATIC(/datum/event/economic_event, "affected_dest_static")

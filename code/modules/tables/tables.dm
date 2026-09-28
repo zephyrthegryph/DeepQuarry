@@ -20,8 +20,8 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 	/// Transient hand-off: shards produced by the most recent break_to_parts(), read
 	/// by callers (e.g. tableslam) that previously consumed take_damage()'s return.
 	var/list/last_break_shards
-	var/tmp/material_handle
-	var/tmp/reinforced_handle
+	var/tmp/datum/material/material_static
+	var/tmp/datum/material/reinforced_static
 
 	// Gambling tables. I'd prefer reinforced with carpet/felt/cloth/whatever, but AFAIK it's either harder or impossible to get /obj/item/stack/material of those.
 	// Convert if/when you can easily get stacks of these.
@@ -84,8 +84,8 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 
 // ALLOW(lifecycle): neighbouring tables re-smooth without it.
 /obj/structure/table/Destroy()
-	material_handle = null
-	reinforced_handle = null
+	material_static = null
+	reinforced_static = null
 	update_connections(1) // Update tables around us to ignore us (material=null forces no connections)
 	for(var/obj/structure/table/T in oview(src, 1))
 		T.update_icon()
@@ -207,7 +207,7 @@ DECLARE_INTERACTIONS(/obj/structure/table, \
 /obj/structure/table/proc/plating_done(datum/material/M)
 	if(material())
 		return
-	material_handle = om_handle(M)
+	material_static = M
 	update_connections(1)
 	update_icon()
 	update_desc()
@@ -216,7 +216,7 @@ DECLARE_INTERACTIONS(/obj/structure/table, \
 /obj/structure/table/proc/reinforcing_done(datum/material/M)
 	if(reinforced())
 		return
-	reinforced_handle = om_handle(M)
+	reinforced_static = M
 	update_desc()
 	update_icon()
 	update_material()
@@ -285,12 +285,12 @@ DECLARE_INTERACTIONS(/obj/structure/table, \
 								span_notice("You remove the [M.display_name] [what] from \the [src]."))
 	new M.stack_type(src.loc)
 	if(which == "reinforced")
-		reinforced_handle = null
+		reinforced_static = null
 		update_desc()
 		update_icon()
 		update_material()
 		return
-	material_handle = null
+	material_static = null
 	update_connections(TRUE)
 	update_icon()
 	for(var/obj/structure/table/table in oview(src, 1))
@@ -500,10 +500,12 @@ DECLARE_INTERACTIONS(/obj/structure/table, \
 #undef CORNER_DIAGONAL
 #undef CORNER_CLOCKWISE
 
-/// LC-refs: the material this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /obj/structure/table/proc/material() as /datum/material
-	return om_resolve(material_handle)
+	return material_static
+REF_STATIC(/obj/structure/table, "material_static")
 
-/// LC-refs: the reinforced this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /obj/structure/table/proc/reinforced() as /datum/material
-	return om_resolve(reinforced_handle)
+	return reinforced_static
+REF_STATIC(/obj/structure/table, "reinforced_static")

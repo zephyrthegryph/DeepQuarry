@@ -18,8 +18,12 @@
 	var/list/chunk_manifest
 	var/list/chunk_files
 	var/list/window_geometry_manifest
-	var/shell_assets_handle
-	var/chunk_assets_handle
+	/// A live generation's own shell/chunk bundles, created with it and owned by it.
+	/// Null for the boot generation, which reads the asset registry's singletons.
+	var/datum/asset/simple/live_shell_assets
+	var/datum/asset/simple/namespaced/live_chunk_assets
+
+REF_OWNED(/datum/tgui_asset_generation, list("live_shell_assets", "live_chunk_assets"))
 
 /datum/tgui_asset_generation/proc/get_default_geometry(interface_name)
 	var/list/geometry = LAZYACCESS(window_geometry_manifest, interface_name)
@@ -154,8 +158,6 @@ SUBSYSTEM_DEF(tgui)
 	generation.chunk_manifest = chunk_manifest
 	generation.chunk_files = chunk_files
 	generation.window_geometry_manifest = window_geometry_manifest
-	generation.shell_assets_handle = om_handle(get_asset_datum(/datum/asset/simple/tgui))
-	generation.chunk_assets_handle = om_handle(get_asset_datum(/datum/asset/simple/namespaced/tgui_chunks))
 	asset_generations += generation
 	current_asset_generation = generation
 	return generation
@@ -197,8 +199,8 @@ SUBSYSTEM_DEF(tgui)
 	generation.chunk_manifest = new_manifest
 	generation.chunk_files = new_chunk_files
 	generation.window_geometry_manifest = new_geometry_manifest
-	generation.shell_assets_handle = om_handle(new_shell)
-	generation.chunk_assets_handle = om_handle(new_chunks)
+	generation.live_shell_assets = new_shell
+	generation.live_chunk_assets = new_chunks
 	asset_generations += generation
 	// The single assignment is the publication point. A window sees the complete
 	// old generation or the complete new one, never partially-updated state.
@@ -690,10 +692,10 @@ SUBSYSTEM_DEF(tgui)
 			count++
 	return count
 
-/// LC-refs: the shell asset bundle of this generation -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The shell asset bundle of this generation: its own for a live build, else the registry singleton.
 /datum/tgui_asset_generation/proc/shell_assets() as /datum/asset/simple
-	return om_resolve(shell_assets_handle)
+	return live_shell_assets || get_asset_datum(/datum/asset/simple/tgui)
 
-/// LC-refs: the chunk asset bundle of this generation -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The chunk asset bundle of this generation: its own for a live build, else the registry singleton.
 /datum/tgui_asset_generation/proc/chunk_assets() as /datum/asset/simple/namespaced
-	return om_resolve(chunk_assets_handle)
+	return live_chunk_assets || get_asset_datum(/datum/asset/simple/namespaced/tgui_chunks)

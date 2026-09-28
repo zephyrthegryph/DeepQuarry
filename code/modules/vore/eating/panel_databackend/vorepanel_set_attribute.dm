@@ -1015,7 +1015,7 @@
 			var/tail_choice = params["val"]
 			if(!(tail_choice in GLOB.tail_styles_list))
 				return FALSE
-			host().vore_selected.tail_to_change_to_handle = om_handle(tail_choice)
+			host().vore_selected.tail_to_change_to_static = tail_choice
 			. = TRUE
 		if("b_tail_color")
 			var/newcolor = sanitize_hexcolor(lowertext(params["val"]))

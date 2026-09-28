@@ -193,7 +193,7 @@ REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
 	name = "lysis-isolation centrifuge"
 	icon_state = "traitcopier"
 
-	var/tmp/genetics_handle	// Currently scanned seed genetic structure.
+	var/tmp/datum/seed/genetics_static	// Currently scanned seed genetic structure.
 	var/degradation = 0     // Increments with each scan, stops allowing gene mods after a certain point.
 	circuit = /obj/item/circuitboard/botany_extractor
 
@@ -277,7 +277,7 @@ REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
 			active = 1
 
 			if(seed && seed.seed())
-				genetics_handle = om_handle(seed.seed())
+				genetics_static = seed.seed()
 				degradation = 0
 
 			consume(seed)
@@ -307,14 +307,14 @@ REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
 			degradation += rand(20,60)
 			if(degradation >= 100)
 				failed_task = 1
-				genetics_handle = null
+				genetics_static = null
 				degradation = 0
 			return TRUE
 
 		if("clear_buffer")
 			if(!genetics())
 				return
-			genetics_handle = null
+			genetics_static = null
 			degradation = 0
 			return TRUE
 
@@ -376,7 +376,7 @@ REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
 			active = 1
 
 			if(!isnull(GLOB.plant_service.seeds[seed.seed().name]))
-				seed.seed_handle = om_handle(seed.seed().diverge(1))
+				seed.seed_static = seed.seed().diverge(1)
 				seed.seed_type = seed.seed().name
 				seed.update_seed()
 
@@ -393,6 +393,7 @@ REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
 /obj/machinery/botany/step_start_condition()
 	return active
 
-/// LC-refs: Currently scanned seed genetic structure. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /obj/machinery/botany/extractor/proc/genetics() as /datum/seed
-	return om_resolve(genetics_handle)
+	return genetics_static
+REF_STATIC(/obj/machinery/botany/extractor, "genetics_static")

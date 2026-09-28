@@ -43,8 +43,8 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	var/list/species
 	var/list/emagged_departments
 
-	var/target_department_handle
-	var/target_species_handle
+	var/datum/suit_cycler_choice/department/target_department_static
+	var/datum/suit_cycler_choice/species/target_species_static
 
 	var/obj/item/clothing/suit/space/void/suit = null
 	var/obj/item/clothing/head/helmet/space/helmet = null
@@ -65,8 +65,8 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	emagged_departments = load_emagged()
 	limit_departments = null // just for mem
 
-	target_department_handle = om_handle(departments["No Change"])
-	target_species_handle = om_handle(species["No Change"])
+	target_department_static = departments["No Change"]
+	target_species_static = species["No Change"]
 
 	if(!target_department() || !target_species())
 		stat |= BROKEN
@@ -416,15 +416,15 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 		if("department")
 			var/choice = params["department"]
 			if(choice in departments)
-				target_department_handle = om_handle(departments[choice])
+				target_department_static = departments[choice]
 			else if(emagged && (choice in emagged_departments))
-				target_department_handle = om_handle(emagged_departments[choice])
+				target_department_static = emagged_departments[choice]
 				. = TRUE
 
 		if("species")
 			var/choice = params["species"]
 			if(choice in species)
-				target_species_handle = om_handle(species[choice])
+				target_species_static = species[choice]
 				. = TRUE
 
 		if("radlevel")
@@ -596,10 +596,12 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 
 REF_HELD(/obj/machinery/suit_cycler, list("suit", "helmet"))
 
-/// LC-refs: target department -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /obj/machinery/suit_cycler/proc/target_department() as /datum/suit_cycler_choice/department
-	return om_resolve(target_department_handle)
+	return target_department_static
+REF_STATIC(/obj/machinery/suit_cycler, "target_department_static")
 
-/// LC-refs: target species -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /obj/machinery/suit_cycler/proc/target_species() as /datum/suit_cycler_choice/species
-	return om_resolve(target_species_handle)
+	return target_species_static
+REF_STATIC(/obj/machinery/suit_cycler, "target_species_static")

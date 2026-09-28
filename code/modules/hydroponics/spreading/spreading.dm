@@ -40,7 +40,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 	var/max_growth = 0
 	var/list/neighbors
 	var/tmp/parent_handle
-	var/tmp/seed_handle
+	var/tmp/datum/seed/seed_static
 	var/sampled = 0
 	var/floor = 0
 	var/spread_chance = 40
@@ -79,7 +79,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 
 	if(!istype(newseed))
 		newseed = GLOB.plant_service.seeds[DEFAULT_SEED]
-	seed_handle = om_handle(newseed)
+	seed_static = newseed
 	if(!seed())
 		return INITIALIZE_HINT_QDEL
 
@@ -337,6 +337,7 @@ REF_OWNED(/obj/effect/plant, "plant")
 /obj/effect/plant/proc/parent() as /obj/effect/plant
 	return om_resolve(parent_handle)
 
-/// LC-refs: the seed this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /obj/effect/plant/proc/seed() as /datum/seed
-	return om_resolve(seed_handle)
+	return seed_static
+REF_STATIC(/obj/effect/plant, "seed_static")

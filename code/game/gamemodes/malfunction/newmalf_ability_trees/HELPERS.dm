@@ -85,7 +85,7 @@
 
 /proc/malf_research_chosen(mob/living/silicon/ai/user, mob/answerer, datum/malf_research_ability/tar, datum/om/prompt/ask)
 	var/datum/malf_research/res = user.research
-	res.focus_handle = om_handle(tar)
+	res.focus_static = tar
 	to_chat(user, "Research set: [tar.name]")
 
 // HELPER PROCS

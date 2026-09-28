@@ -155,14 +155,14 @@ DECLARE_INTERACTIONS(/obj/item/shovel, INTERACT_ALT(null, PROC_REF(interaction_a
 /obj/item/shovel/wood
 	icon_state = "whiteshovel"
 	item_state = "whiteshovel"
-	var/tmp/material_handle
+	var/tmp/datum/material/material_static
 	resistance_flags = FLAMMABLE
 
 /obj/item/shovel/wood/Initialize(mapload, _mat)
 	. = ..()
-	material_handle = om_handle(get_material_by_name(_mat))
+	material_static = get_material_by_name(_mat)
 	if(!istype(material(), /datum/material))
-		material_handle = null
+		material_static = null
 	else
 		name = "[material().display_name] shovel"
 		set_bulk_material(material().name, 50)
@@ -405,6 +405,7 @@ DECLARE_INTERACTIONS(/obj/structure/trailblazer, INTERACT_HAND_UNGATED(null, PRO
 	icon_state = "yellowtrail_light_on"
 	set_light(2, 2, "#ffea00")
 
-/// LC-refs: the material this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /obj/item/shovel/wood/proc/material() as /datum/material
-	return om_resolve(material_handle)
+	return material_static
+REF_STATIC(/obj/item/shovel/wood, "material_static")

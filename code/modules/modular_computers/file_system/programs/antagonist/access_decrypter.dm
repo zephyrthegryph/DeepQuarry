@@ -15,7 +15,7 @@
 	var/running = FALSE
 	var/progress = 0
 	var/target_progress = 300
-	var/tmp/target_access_handle
+	var/tmp/datum/access/target_access_static
 	var/static/list/restricted_access_codes = list(ACCESS_CHANGE_IDS, ACCESS_NETWORK) // access codes that are not hackable due to balance reasons
 
 /datum/computer_file/program/access_decrypter/kill_program(forced)
@@ -48,7 +48,7 @@
 			GLOB.ntnet_global.add_log("IDS WARNING - Unauthorised access to primary keycode database from device: [computer().network_card.get_network_tag()]  - downloaded access codes for: [target_access().desc].")
 			GLOB.ntnet_global.intrusion_detection_alarm = 1
 		message = "Successfully decrypted and saved operational key codes. Downloaded access codes for: [target_access().desc]"
-		target_access_handle = null
+		target_access_static = null
 
 /datum/computer_file/program/access_decrypter/tgui_act(action, list/params, datum/tgui/ui)
 	if(..())
@@ -71,7 +71,7 @@
 				message = "RFID card is not present in the device. Operation aborted."
 				return
 			running = TRUE
-			target_access_handle = om_handle(SSaccess.get_access_by_id("[params["access_target"]]"))
+			target_access_static = SSaccess.get_access_by_id("[params["access_target"]]")
 			if(!target_access())
 				message = "Invalid access target. Operation aborted."
 				running = FALSE
@@ -115,6 +115,7 @@
 
 	return data
 
-/// LC-refs: the target_access this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /datum/computer_file/program/access_decrypter/proc/target_access() as /datum/access
-	return om_resolve(target_access_handle)
+	return target_access_static
+REF_STATIC(/datum/computer_file/program/access_decrypter, "target_access_static")

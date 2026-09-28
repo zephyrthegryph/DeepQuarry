@@ -199,8 +199,8 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	var/updating = FALSE
 	var/electrical_reference_temperature = T20C
 	var/thermal_material_id
-	var/tmp/thermal_stock_handle
-	var/tmp/electrical_stock_handle
+	var/tmp/datum/material/thermal_stock_static
+	var/tmp/datum/material/electrical_stock_static
 	var/thermal_capacity = 1000
 	var/watches_dirty = TRUE
 	var/last_environment_temperature = T20C
@@ -229,8 +229,8 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 		owner().material_service = null
 	owner_handle = null
 	last_delivery_mixture = null
-	thermal_stock_handle = null
-	electrical_stock_handle = null
+	thermal_stock_static = null
+	electrical_stock_static = null
 	return ..()
 
 /datum/material_service/proc/schedule(delay = MATERIAL_SERVICE_INTERVAL)
@@ -407,8 +407,8 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 
 /datum/material_service/proc/initialize_thermal_stock()
 	var/datum/material/thermal = owner().material_for_role(MATERIAL_ROLE_THERMAL) || owner().primary_construction_material()
-	thermal_stock_handle = om_handle(thermal)
-	electrical_stock_handle = om_handle(owner().material_for_role(MATERIAL_ROLE_CONDUCTOR))
+	thermal_stock_static = thermal
+	electrical_stock_static = owner().material_for_role(MATERIAL_ROLE_CONDUCTOR)
 	thermal_capacity = max((thermal?.specific_heat || 125) * MATERIAL_SERVICE_REFERENCE_MASS, 1000)
 	if(thermal_material_id == thermal?.name)
 		return
@@ -623,13 +623,15 @@ REF_OWNED(/obj, "material_service")
 /datum/material_service/proc/watched_turf() as /turf
 	return om_resolve(watched_turf_handle)
 
-/// LC-refs: the thermal_stock this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /datum/material_service/proc/thermal_stock() as /datum/material
-	return om_resolve(thermal_stock_handle)
+	return thermal_stock_static
+REF_STATIC(/datum/material_service, "thermal_stock_static")
 
-/// LC-refs: the electrical_stock this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /datum/material_service/proc/electrical_stock() as /datum/material
-	return om_resolve(electrical_stock_handle)
+	return electrical_stock_static
+REF_STATIC(/datum/material_service, "electrical_stock_static")
 
 /// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/material_service/proc/owner() as /obj

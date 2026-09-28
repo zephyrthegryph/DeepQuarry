@@ -54,7 +54,7 @@
 	var/codepos = 1
 	var/line = 1
 	var/linepos = 0 //column=codepos-linepos
-	var/tmp/options_handle
+	var/tmp/datum/n_scriptOptions/nS_Options/options_ref
 	var/commenting = 0 /// 1 is a single-line comment, 2 is a multi-line comment
 /*
 	Variable: ignore
@@ -103,7 +103,7 @@
 	.=..()
 	ignore+= ascii2text(13) //Carriage return
 	LAZYADD(delim, ignore + options.symbols + end_stmt + string_delim)
-	src.options_handle=om_handle(options)
+	src.options_ref=options
 	LoadCode(code)
 
 /datum/n_Scanner/nS_Scanner/Scan() //Creates a list of tokens from source code
@@ -274,8 +274,8 @@ Reads a comment and outputs the type of comment
 
 #undef COL
 
-/// LC-refs: the options this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// A strong internal reference (tmp): this holder is what keeps it alive.
 /datum/n_Scanner/nS_Scanner/proc/options() as /datum/n_scriptOptions/nS_Options
-	return om_resolve(options_handle)
+	return options_ref
 
 REF_OWNED_LIST(/datum/n_Scanner, "errors")

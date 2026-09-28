@@ -10,7 +10,7 @@ REGISTRY_MEMBERSHIP(/obj/item/seeds, REGISTRY_SEED_PACKS)
 	w_class = ITEMSIZE_SMALL
 
 	var/seed_type
-	var/tmp/seed_handle
+	var/tmp/datum/seed/seed_static
 	var/modified = 0
 
 /obj/item/seeds/Initialize(mapload, _seed_type)
@@ -22,7 +22,7 @@ REGISTRY_MEMBERSHIP(/obj/item/seeds, REGISTRY_SEED_PACKS)
 //Grabs the appropriate seed datum from the global list.
 /obj/item/seeds/proc/update_seed()
 	if(!seed() && seed_type && !isnull(GLOB.plant_service.seeds) && GLOB.plant_service.seeds[seed_type])
-		seed_handle = om_handle(GLOB.plant_service.seeds[seed_type])
+		seed_static = GLOB.plant_service.seeds[seed_type]
 	update_appearance()
 
 //Updates strings and icon appropriately based on seed datum.
@@ -78,7 +78,7 @@ REGISTRY_MEMBERSHIP(/obj/item/seeds, REGISTRY_SEED_PACKS)
 	seed_type = null
 
 /obj/item/seeds/random/Initialize(mapload)
-	seed_handle = om_handle(GLOB.plant_service.create_random_seed())
+	seed_static = GLOB.plant_service.create_random_seed()
 	seed_type = seed().name
 	. = ..()
 
@@ -380,6 +380,7 @@ REGISTRY_MEMBERSHIP(/obj/item/seeds, REGISTRY_SEED_PACKS)
 /obj/item/seeds/lustflower
 	seed_type = PLANT_GARDENIA
 
-/// LC-refs: the seed this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /obj/item/seeds/proc/seed() as /datum/seed
-	return om_resolve(seed_handle)
+	return seed_static
+REF_STATIC(/obj/item/seeds, "seed_static")

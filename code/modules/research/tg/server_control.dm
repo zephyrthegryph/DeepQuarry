@@ -7,7 +7,7 @@
 	req_access = list(ACCESS_RD)
 
 	///Connected techweb node the server is connected to.
-	var/tmp/stored_research_handle
+	var/tmp/datum/techweb/stored_research_static
 	var/badmin = FALSE // old compatibility
 
 /obj/machinery/computer/rdservercontrol/Initialize(mapload)
@@ -15,7 +15,7 @@
 	if(!stored_research())
 		var/datum/techweb/connected_web
 		CONNECT_TO_RND_SERVER_ROUNDSTART(connected_web, src)
-		stored_research_handle = om_handle(connected_web)
+		stored_research_static = connected_web
 
 /obj/machinery/computer/rdservercontrol/declare_interactions(list/into)
 	into += list(
@@ -35,7 +35,7 @@
 	var/obj/item/multitool/tool = I.get_multitool()
 	if(tool)
 		if(!QDELETED(tool.buffer()) && istype(tool.buffer(), /datum/techweb))
-			stored_research_handle = om_handle(tool.buffer())
+			stored_research_static = tool.buffer()
 			balloon_alert(user, "techweb connected")
 	return TRUE
 
@@ -103,6 +103,7 @@
 			console_selected.locked = !console_selected.locked
 			return TRUE
 
-/// LC-refs: the stored_research this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /obj/machinery/computer/rdservercontrol/proc/stored_research() as /datum/techweb
-	return om_resolve(stored_research_handle)
+	return stored_research_static
+REF_STATIC(/obj/machinery/computer/rdservercontrol, "stored_research_static")

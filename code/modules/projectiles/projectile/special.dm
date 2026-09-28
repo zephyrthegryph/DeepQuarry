@@ -184,7 +184,7 @@
 	damage = 0
 	injury_kind = INJURY_TOXIN
 	nodamage = 1
-	var/tmp/gene_handle
+	var/tmp/datum/decl/plantgene/gene_static
 	hud_state = "electrothermal"
 
 /obj/item/projectile/energy/florayield
@@ -387,6 +387,7 @@
 	if(blastloc)
 		explosion(blastloc, -1, -1, 2, 3)
 
-/// LC-refs: the gene this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /obj/item/projectile/energy/floramut/gene/proc/gene() as /datum/decl/plantgene
-	return om_resolve(gene_handle)
+	return gene_static
+REF_STATIC(/obj/item/projectile/energy/floramut/gene, "gene_static")

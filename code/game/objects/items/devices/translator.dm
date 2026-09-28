@@ -9,14 +9,14 @@
 	var/visual = 1		//If you need to see to get the message
 	var/audio = 0		//If you need to hear to get the message
 	var/listening = 0
-	var/langset_handle
+	var/datum/language/langset_static
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
 /obj/item/universal_translator/proc/language_chosen(mob/user, datum/language/choice, datum/om/prompt/ask)
 	if(listening)
 		return
-	langset_handle = om_handle(choice)
+	langset_static = choice
 	if(langset() && ((langset().flags & NONVERBAL) || (langset().flags & HIVEMIND) || (!langset().machine_understands)))
 		//Nonverbal means no spoken words to translate, so I didn't see the need to remove it.
 		to_chat(user, span_warning("\The [src] cannot output that language."))
@@ -35,7 +35,7 @@ DECLARE_INTERACTIONS(/obj/item/universal_translator, INTERACT_USE(null, PROC_REF
 	else	//Turning OFF
 		listening = 0
 		registry_leave(REGISTRY_LISTENING_OBJECTS, src)
-		langset_handle = null
+		langset_static = null
 		icon_state = "[initial(icon_state)]"
 		to_chat(user, span_notice("You disable \the [src]."))
 
@@ -238,6 +238,7 @@ DECLARE_INTERACTIONS(/obj/item/universal_translator, INTERACT_USE(null, PROC_REF
 	name = "handheld translator (teppi)"
 	known_languages = list(LANGUAGE_TEPPI)
 
-/// LC-refs: langset -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /obj/item/universal_translator/proc/langset() as /datum/language
-	return om_resolve(langset_handle)
+	return langset_static
+REF_STATIC(/obj/item/universal_translator, "langset_static")

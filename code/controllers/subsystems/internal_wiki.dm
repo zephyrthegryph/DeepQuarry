@@ -764,7 +764,7 @@ SUBSYSTEM_DEF(internal_wiki)
 				continue // too many silly entries
 			var/datum/internal_wiki/page/catalog/P = new()
 			P.title = item.name
-			P.catalog_record_handle = om_handle(item)
+			P.catalog_record_static = item
 			P.assemble()
 			catalogs["[item.name]"] = P
 			if(!searchcache_catalogs[G.name])
@@ -1394,7 +1394,7 @@ SUBSYSTEM_DEF(internal_wiki)
 // CATALOG
 ////////////////////////////////////////////
 /datum/internal_wiki/page/catalog
-	var/catalog_record_handle
+	var/datum/category_item/catalogue/catalog_record_static
 
 /datum/internal_wiki/page/catalog/assemble()
 	data["name"] = catalog_record().name
@@ -1665,6 +1665,7 @@ SUBSYSTEM_DEF(internal_wiki)
 #undef WIKI_CATEGORY_LORE
 #undef WIKI_CATEGORY_GENE
 
-/// LC-refs: the catalogue entry this page shows -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /datum/internal_wiki/page/catalog/proc/catalog_record() as /datum/category_item/catalogue
-	return om_resolve(catalog_record_handle)
+	return catalog_record_static
+REF_STATIC(/datum/internal_wiki/page/catalog, "catalog_record_static")

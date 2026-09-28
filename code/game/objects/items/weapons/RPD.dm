@@ -31,7 +31,7 @@
 	var/category = ATMOS_CATEGORY
 	var/piping_layer = PIPING_LAYER_DEFAULT
 	var/obj/item/tool/wrench/tool
-	var/recipe_handle	// pipe recipie selected for display/construction //, added = null
+	var/datum/pipe_recipe/recipe_static	// pipe recipie selected for display/construction //, added = null
 	var/static/datum/pipe_recipe/first_atmos
 	var/static/datum/pipe_recipe/first_disposal
 	var/mode = BUILD_MODE | DESTROY_MODE | WRENCH_MODE
@@ -56,7 +56,7 @@
 	if(!first_disposal)
 		first_disposal = GLOB.disposal_pipe_recipes[GLOB.disposal_pipe_recipes[1]][1]
 	if(!recipe())
-		recipe_handle = om_handle(first_atmos)
+		recipe_static = first_atmos
 
 REF_OWNED(/obj/item/pipe_dispenser, list("spark_system", "tool"))
 
@@ -125,9 +125,9 @@ DECLARE_INTERACTIONS(/obj/item/pipe_dispenser, INTERACT_USE(null, PROC_REF(inter
 			category = text2num(params["category"])
 			switch(category)
 				if(DISPOSALS_CATEGORY)
-					recipe_handle = om_handle(first_disposal)
+					recipe_static = first_disposal
 				if(ATMOS_CATEGORY)
-					recipe_handle = om_handle(first_atmos)
+					recipe_static = first_atmos
 				// if(TRANSIT_CATEGORY)
 				// 	recipe = first_transit
 			p_dir = NORTH
@@ -139,7 +139,7 @@ DECLARE_INTERACTIONS(/obj/item/pipe_dispenser, INTERACT_USE(null, PROC_REF(inter
 			var/static/list/recipes
 			if(!recipes)
 				recipes = GLOB.disposal_pipe_recipes + GLOB.atmos_pipe_recipes
-			recipe_handle = om_handle(recipes[params["category"]][text2num(params["pipe_type"])])
+			recipe_static = recipes[params["category"]][text2num(params["pipe_type"])]
 			p_dir = NORTH
 		if("setdir")
 			p_dir = text2dir(params["dir"])
@@ -339,6 +339,7 @@ DECLARE_INTERACTIONS(/obj/item/pipe_dispenser, INTERACT_USE(null, PROC_REF(inter
 #undef DESTROY_MODE
 #undef PAINT_MODE
 
-/// LC-refs: recipe -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /obj/item/pipe_dispenser/proc/recipe() as /datum/pipe_recipe
-	return om_resolve(recipe_handle)
+	return recipe_static
+REF_STATIC(/obj/item/pipe_dispenser, "recipe_static")

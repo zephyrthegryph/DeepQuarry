@@ -67,14 +67,14 @@
 	/// Boolean field describing if the tgui_modal was closed by the user.
 	var/closed
 	/// The TGUI UI state that will be returned in ui_state(). Default: always_state
-	var/tmp/state_handle
+	var/tmp/datum/tgui_state/state_static
 
 /datum/tgui_alert/New(mob/user, message, title, list/buttons, timeout, autofocus, ui_state)
 	src.autofocus = autofocus
 	src.buttons = buttons.Copy()
 	src.message = message
 	src.title = title
-	src.state_handle = om_handle(ui_state)
+	src.state_static = ui_state
 	if (timeout)
 		src.timeout = timeout
 		start_time = world.time
@@ -193,6 +193,7 @@ REF_OWNED(/datum/tgui_alert/async, "callback")
 /datum/tgui_alert/async/wait()
 	return
 
-/// LC-refs: the state this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /datum/tgui_alert/proc/state() as /datum/tgui_state
-	return om_resolve(state_handle)
+	return state_static
+REF_STATIC(/datum/tgui_alert, "state_static")

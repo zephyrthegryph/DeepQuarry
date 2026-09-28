@@ -15,7 +15,7 @@
 // next generate_site() to reuse.
 
 /datum/expedition_teardown_job
-	var/tmp/controller_handle
+	var/tmp/datum/controller/subsystem/expedition/controller_static
 	var/tmp/site_handle
 	var/z_level
 	var/reason
@@ -26,7 +26,7 @@
 
 /datum/expedition_teardown_job/New(datum/controller/subsystem/expedition/new_controller, datum/expedition_site/new_site, new_reason)
 	..()
-	controller_handle = om_handle(new_controller)
+	controller_static = new_controller
 	site_handle = om_handle(new_site)
 	z_level = new_site?.z_level
 	reason = new_reason
@@ -771,9 +771,10 @@ SUBSYSTEM_DEF(expedition)
 			count++
 	return count
 
-/// LC-refs: the controller this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /datum/expedition_teardown_job/proc/controller() as /datum/controller/subsystem/expedition
-	return om_resolve(controller_handle)
+	return controller_static
+REF_STATIC(/datum/expedition_teardown_job, "controller_static")
 
 /// LC-refs: the site this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/expedition_teardown_job/proc/site() as /datum/expedition_site

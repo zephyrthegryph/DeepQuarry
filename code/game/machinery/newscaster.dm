@@ -57,7 +57,7 @@
 
 /datum/feed_network
 	var/list/datum/feed_channel/network_channels
-	var/wanted_issue_handle
+	var/datum/feed_message/wanted_issue_owned
 
 /datum/feed_network/proc/CreateFeedChannel(channel_name, author, locked, adminChannel = 0, announcement_message)
 	var/datum/feed_channel/newChannel = new /datum/feed_channel
@@ -624,14 +624,14 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 		WANTED.backup_author = scanned_user //I know, a bit wacky
 		if(photo_data)
 			WANTED.img = photo_data.photo().img
-		GLOB.news_network.wanted_issue_handle = om_handle(WANTED)
+		GLOB.news_network.wanted_issue_owned = WANTED
 		GLOB.news_network.alert_readers()
 		set_temp("Wanted issue for [channel_name] is now in Network Circulation.", "success", FALSE)
 		return TRUE
 
 /obj/machinery/newscaster/proc/wanted_removal_confirmed(mob/user, choice, datum/om/prompt/ask)
 	if(choice == "Confirm" && GLOB.news_network.wanted_issue() && !GLOB.news_network.wanted_issue().is_admin_message)
-		GLOB.news_network.wanted_issue_handle = null
+		GLOB.news_network.wanted_issue_owned = null
 		for(var/obj/machinery/newscaster/NEWSCASTER in REGISTRY_MEMBERS(REGISTRY_CASTERS))
 			NEWSCASTER.update_icon()
 		set_temp("Wanted issue taken down.", "success", FALSE)
@@ -748,9 +748,10 @@ REF_OWNED(/obj/machinery/newscaster, list("photo_data"))
 /datum/feed_message/proc/parent_channel() as /datum/feed_channel
 	return om_resolve(parent_channel_handle)
 
-/// LC-refs: wanted issue -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_OWNED: created for and owned by this holder; deleted with it.
 /datum/feed_network/proc/wanted_issue() as /datum/feed_message
-	return om_resolve(wanted_issue_handle)
+	return wanted_issue_owned
+REF_OWNED(/datum/feed_network, "wanted_issue_owned")
 
 /// LC-refs: viewing channel -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/newscaster/proc/viewing_channel() as /datum/feed_channel

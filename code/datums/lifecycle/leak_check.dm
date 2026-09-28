@@ -53,11 +53,13 @@ GLOBAL_VAR_INIT(dq_lifecycle_leak_check, 0)
 	if(entry)
 		return entry
 	var/list/ignored = dq_lifecycle_leak_ignored_names()
-	var/list/keep = dq_lifecycle_link_table(D)["keep"]
+	var/list/links = dq_lifecycle_link_table(D)
+	var/list/keep = links["keep"]
+	var/list/static_names = links["static"]
 	var/list/names = list()
 	var/list/tmp_names = list()
 	for(var/name in D.vars)
-		if(ignored[name] || (keep && (name in keep)))
+		if(ignored[name] || (keep && (name in keep)) || (static_names && (name in static_names)))
 			continue
 		names += name
 		if(!issaved(D.vars[name]))

@@ -37,10 +37,10 @@
 
 /datum/effect/effect/system/smoke_spread/chem/spores
 	show_log = 0
-	var/seed_handle
+	var/datum/seed/seed_static
 
 /datum/effect/effect/system/smoke_spread/chem/spores/New(_seed)
-	seed_handle = om_handle(_seed)
+	seed_static = _seed
 	if(!istype(seed(), /datum/seed))
 		CRASH("Invalid seed datum passed! [seed()] ([seed()?.type])")
 	..()
@@ -236,6 +236,7 @@ REF_OWNED(/datum/effect/effect/system/smoke_spread/chem, "chemholder")
 
 	return
 
-/// LC-refs: seed -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /datum/effect/effect/system/smoke_spread/chem/spores/proc/seed() as /datum/seed
-	return om_resolve(seed_handle)
+	return seed_static
+REF_STATIC(/datum/effect/effect/system/smoke_spread/chem/spores, "seed_static")

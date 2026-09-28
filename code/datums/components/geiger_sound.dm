@@ -35,7 +35,7 @@ REF_VAR(/datum/component/geiger_sound, OWNED, /datum/looping_sound/geiger, sound
 	SIGNAL_HANDLER
 
 	sound.last_insulation_to_target = insulation_to_target
-	sound.last_radiation_pulse_handle = om_handle(pulse_information)
+	sound.last_radiation_pulse_ref = pulse_information
 	sound.start(source)
 
 	om_after_replace(sound, TIME_WITHOUT_RADIATION_BEFORE_RESET, TYPE_PROC_REF(/datum/looping_sound,stop))
@@ -67,7 +67,7 @@ REF_VAR(/datum/component/geiger_sound, OWNED, /datum/looping_sound/geiger, sound
 	mid_length = 2
 	volume = 25
 
-	var/last_radiation_pulse_handle
+	var/tmp/datum/radiation_pulse_information/last_radiation_pulse_ref
 	var/last_insulation_to_target
 	var/wall_mounted = FALSE
 
@@ -90,7 +90,7 @@ REF_VAR(/datum/component/geiger_sound, OWNED, /datum/looping_sound/geiger, sound
 /datum/looping_sound/geiger/stop(null_parent = FALSE)
 	. = ..()
 
-	last_radiation_pulse_handle = null
+	last_radiation_pulse_ref = null
 
 /datum/component/geiger_sound/wall
 	wall_mounted = TRUE
@@ -118,6 +118,6 @@ REF_VAR(/datum/component/geiger_sound, OWNED, /datum/looping_sound/geiger, sound
 
 	return ..(starttime, mid_sounds[danger], danger)
 
-/// LC-refs: the last radiation pulse that reached us -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// A strong internal reference (tmp): this holder is what keeps it alive.
 /datum/looping_sound/geiger/proc/last_radiation_pulse() as /datum/radiation_pulse_information
-	return om_resolve(last_radiation_pulse_handle)
+	return last_radiation_pulse_ref

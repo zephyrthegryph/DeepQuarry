@@ -13,7 +13,7 @@
 	icon_state = "newscodex-open"
 //	catalogue_data = list(/datum/category_item/catalogue/information/starfire_news) Commented out until I can figure out why this won't scan.
 
-	var/loaded_article_handle //You must specify the variable this far to avoid compilation errors.
+	var/datum/computer_file/data/news_article/loaded_article_owned //You must specify the variable this far to avoid compilation errors.
 	var/show_archived = null
 
 
@@ -67,15 +67,16 @@ DECLARE_INTERACTIONS(/obj/item/starcaster_news, INTERACT_USE(null, PROC_REF(inte
 
 			for(var/datum/computer_file/data/news_article/N in GLOB.ntnet_global.available_news)
 				if(N.uid == text2num(params["uid"]))
-					loaded_article_handle = om_handle(N.clone())
+					loaded_article_owned = N.clone()
 					break
 		if("PRG_reset")
 			. = TRUE
-			loaded_article_handle = null
+			loaded_article_owned = null
 		if("PRG_toggle_archived")
 			. = TRUE
 			show_archived = !show_archived
 
-/// LC-refs: loaded article -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_OWNED: created for and owned by this holder; deleted with it.
 /obj/item/starcaster_news/proc/loaded_article() as /datum/computer_file/data/news_article
-	return om_resolve(loaded_article_handle)
+	return loaded_article_owned
+REF_OWNED(/obj/item/starcaster_news, "loaded_article_owned")

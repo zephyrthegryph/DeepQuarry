@@ -131,7 +131,7 @@
 	var/datum/expedition_building/B = new()
 	B.loot_difficulty = S.difficulty
 	B.loot_size = S.size
-	B.loot_biome_handle = om_handle(S.biome)
+	B.loot_biome_static = S.biome
 	var/dim = 14 + S.size * 4
 	if(!B.build(center, rand(dim - 2, dim + 4), rand(dim - 2, dim + 4)))
 		qdel(B)

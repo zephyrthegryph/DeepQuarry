@@ -370,7 +370,7 @@
 			return generated_station_rust_decode_failure(spec, errors, "Invalid or duplicate department record.")
 		var/datum/generated_station_department_instance/department = new
 		department.id = id
-		department.definition_handle = om_handle(definitions[definition_id])
+		department.definition_static = definitions[definition_id]
 		department.desired_area = row["desired_area"]
 		department.layout_node_id = row["node_id"]
 		departments[id] = department

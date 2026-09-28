@@ -9,7 +9,7 @@
 	move_delay = 3 // Rather slow, but still faster than swimming, and won't get you wet.
 	max_buckled_mobs = 2
 	anchored = FALSE
-	var/tmp/material_handle
+	var/tmp/datum/material/material_static
 	var/riding_datum_type = /datum/riding/boat/small
 
 /obj/vehicle/boat/sifwood/Initialize(mapload, material_name)
@@ -41,7 +41,7 @@
 	icon_state = "oar"
 	item_state = "oar"
 	force = 12
-	var/tmp/material_handle
+	var/tmp/datum/material/material_static
 
 /obj/item/oar/sifwood/Initialize(mapload, material_name)
 	. = ..(mapload, MAT_SIFWOOD)
@@ -50,7 +50,7 @@
 	..(mapload)
 	if(!material_name)
 		material_name = MAT_WOOD
-	material_handle = om_handle(get_material_by_name("[material_name]"))
+	material_static = get_material_by_name("[material_name]")
 	if(!material())
 		return INITIALIZE_HINT_QDEL
 	color = material().icon_colour
@@ -60,7 +60,7 @@
 	..(mapload)
 	if(!material_name)
 		material_name = MAT_WOOD
-	material_handle = om_handle(get_material_by_name("[material_name]"))
+	material_static = get_material_by_name("[material_name]")
 	if(!material())
 		return INITIALIZE_HINT_QDEL
 	color = material().icon_colour
@@ -79,10 +79,12 @@
 		return FALSE
 	..(L, user)
 
-/// LC-refs: the material this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /obj/vehicle/boat/proc/material() as /datum/material
-	return om_resolve(material_handle)
+	return material_static
+REF_STATIC(/obj/vehicle/boat, "material_static")
 
-/// LC-refs: the material this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /obj/item/oar/proc/material() as /datum/material
-	return om_resolve(material_handle)
+	return material_static
+REF_STATIC(/obj/item/oar, "material_static")

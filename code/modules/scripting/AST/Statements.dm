@@ -13,7 +13,7 @@
 //
 /datum/node/statement/FunctionCall
 	var/func_name
-	var/tmp/object_handle
+	var/tmp/datum/node/identifier/object_owned
 	var/list/parameters=list() // ALLOW(instance_list): d: script AST node state
 
 /*
@@ -39,7 +39,7 @@
 */
 //
 /datum/node/statement/VariableAssignment
-	var/tmp/object_handle
+	var/tmp/datum/node/identifier/object_owned
 	var/datum/node/identifier/var_name
 	var/datum/node/expression/value
 
@@ -52,8 +52,8 @@
 */
 //
 /datum/node/statement/VariableDeclaration
-	var/tmp/object_handle
-	var/tmp/var_name_handle
+	var/tmp/datum/node/identifier/object_owned
+	var/tmp/datum/node/identifier/var_name_owned
 
 /*
 	Class: IfStatement
@@ -78,10 +78,10 @@
 	Loops while test is true, initializing a variable, increasing the variable
 */
 /datum/node/statement/ForLoop
-	var/tmp/block_handle
-	var/tmp/test_handle
-	var/tmp/init_handle
-	var/tmp/increment_handle
+	var/tmp/datum/node/BlockDefinition/block_owned
+	var/tmp/datum/node/expression/test_owned
+	var/tmp/datum/node/expression/init_owned
+	var/tmp/datum/node/expression/increment_owned
 
 /*
 	Class: BreakStatement
@@ -115,34 +115,42 @@ REF_OWNED(/datum/node/statement/WhileLoop, list("block", "cond"))
 
 REF_OWNED(/datum/node/statement/ReturnStatement, "value")
 
-/// LC-refs: the var_name this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_OWNED: created for and owned by this holder; deleted with it.
 /datum/node/statement/VariableDeclaration/proc/var_name() as /datum/node/identifier
-	return om_resolve(var_name_handle)
+	return var_name_owned
+REF_OWNED(/datum/node/statement/VariableDeclaration, "var_name_owned")
 
-/// LC-refs: the test this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_OWNED: created for and owned by this holder; deleted with it.
 /datum/node/statement/ForLoop/proc/test() as /datum/node/expression
-	return om_resolve(test_handle)
+	return test_owned
+REF_OWNED(/datum/node/statement/ForLoop, "test_owned")
 
-/// LC-refs: the init this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_OWNED: created for and owned by this holder; deleted with it.
 /datum/node/statement/ForLoop/proc/init() as /datum/node/expression
-	return om_resolve(init_handle)
+	return init_owned
+REF_OWNED(/datum/node/statement/ForLoop, "init_owned")
 
-/// LC-refs: the increment this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_OWNED: created for and owned by this holder; deleted with it.
 /datum/node/statement/ForLoop/proc/increment() as /datum/node/expression
-	return om_resolve(increment_handle)
+	return increment_owned
+REF_OWNED(/datum/node/statement/ForLoop, "increment_owned")
 
-/// LC-refs: the object this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_OWNED: created for and owned by this holder; deleted with it.
 /datum/node/statement/FunctionCall/proc/object() as /datum/node/identifier
-	return om_resolve(object_handle)
+	return object_owned
+REF_OWNED(/datum/node/statement/FunctionCall, "object_owned")
 
-/// LC-refs: the object this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_OWNED: created for and owned by this holder; deleted with it.
 /datum/node/statement/VariableAssignment/proc/object() as /datum/node/identifier
-	return om_resolve(object_handle)
+	return object_owned
+REF_OWNED(/datum/node/statement/VariableAssignment, "object_owned")
 
-/// LC-refs: the object this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_OWNED: created for and owned by this holder; deleted with it.
 /datum/node/statement/VariableDeclaration/proc/object() as /datum/node/identifier
-	return om_resolve(object_handle)
+	return object_owned
+REF_OWNED(/datum/node/statement/VariableDeclaration, "object_owned")
 
-/// LC-refs: the block this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_OWNED: created for and owned by this holder; deleted with it.
 /datum/node/statement/ForLoop/proc/block_node() as /datum/node/BlockDefinition
-	return om_resolve(block_handle)
+	return block_owned
+REF_OWNED(/datum/node/statement/ForLoop, "block_owned")
