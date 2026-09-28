@@ -1,33 +1,25 @@
-#define SSMACHINES_MACHINERY     2
-#define SSMACHINES_POWERNETS     3
-
 //
-// SSmachines subsystem - gas wakes, the batched pump commit and the power step (M3: the power
-// network itself runs in Rust, see code/modules/power/power_bridge.dm). It no longer polls
-// machines: their DM work runs on the machine pipeline (code/game/machinery/machine_pipeline.dm),
-// woken by MACHINE_WAKE(), their channels and their watches (roadmap S5).
-// (Pipenets moved to SSair under the LINDA migration.)
+// The machine world service (fold wave F1; was SSmachines): gas wakes, the batched pump commit and
+// the power step (M3: the power network itself runs in Rust, see code/modules/power/power_bridge.dm),
+// run every MACHINE_SERVICE_INTERVAL by /datum/om/behaviour/world/machines on the OM global owner
+// (code/datums/om/world_lanes.dm). It polls no machines: their DM work runs on the machine pipeline
+// (code/game/machinery/machine_pipeline.dm), woken by MACHINE_WAKE(), their channels and their
+// watches (roadmap S5). Pipenets live on SSair (LINDA).
 //
 
-SUBSYSTEM_DEF(machines)
+GLOBAL_DATUM_INIT(machine_service, /datum/world_service/machines, new)
+
+/datum/world_service/machines
 	name = "Machines"
-	dependencies = list(
-		/datum/controller/subsystem/points_of_interest
-	)
-	priority = FIRE_PRIORITY_MACHINES
-	flags = SS_KEEP_TIMING
-	runlevels = RUNLEVEL_GAME|RUNLEVEL_POSTGAME
+	lane = /datum/om/behaviour/world/machines
 
-	var/current_step = SSMACHINES_MACHINERY
-
+	/// Stage costs (EMA of each logical stage, all resumed slices combined) and their last run.
 	var/cost_machinery     = 0
 	var/cost_powernets     = 0
-	/// Most recently completed logical stage costs (all resumed slices combined).
 	var/last_cost_machinery = 0
 	var/last_cost_powernets = 0
-	/// In-flight logical stage accumulators. These deliberately survive yields.
+	/// In-flight machinery stage accumulator. It deliberately survives yields.
 	var/current_cost_machinery = 0
-	var/current_cost_powernets = 0
 
 	/// Machine gas transfers accumulated since the last commit. Rust commits this flat set under
 	/// one publication lock after the pipeline devices have calculated their requested flow.
@@ -41,11 +33,9 @@ SUBSYSTEM_DEF(machines)
 	var/last_pump_commit_operations = 0
 	var/last_pump_commit_turfs = 0
 
-	/// Dirty-mixture notification batch retained while a Machines fire yields.
-	/// Gas dependency observations (vg_drain_dirty_gas_observations()) retained while a Machines fire yields.
+	/// Gas dependency observations (vg_drain_dirty_gas_observations()) retained while a step yields.
 	var/list/pending_dirty_gas_mixtures
 	var/pending_dirty_gas_index = 1
-	var/gas_wake_complete = TRUE
 	var/gas_dirty_last = 0
 	var/gas_woken_last = 0
 	var/gas_dead_last = 0
@@ -54,49 +44,51 @@ SUBSYSTEM_DEF(machines)
 	var/current_gas_wake_scan_ms = 0
 	var/current_gas_wake_subscribers = 0
 
-/datum/controller/subsystem/machines/Initialize()
+/// Boot: one power step, then a complete gas wake and pump commit (SSair.Initialize calls this
+/// where SSmachines used to initialize, before the atmos machinery setup).
+/datum/world_service/machines/initialize()
 	process_power()
-	fire()
-	return SS_INIT_SUCCESS
+	while(!wake_dirty_gas_subscribers(FALSE))
+		continue
+	flush_pump_transfers()
+	log_world("Machine service initialized: [length(power_regions)] power regions, [gas_dirty_last] gas observations.")
 
-/datum/controller/subsystem/machines/fire(resumed = 0)
-	var/timer = TICK_USAGE
-	// SSMACHINES_PIPENETS step removed; pipenets dispatch via SSair.
-	INTERNAL_PROCESS_STEP_PROFILED(SSMACHINES_MACHINERY,TRUE,process_machinery,cost_machinery,last_cost_machinery,current_cost_machinery,SSMACHINES_POWERNETS)
-	INTERNAL_PROCESS_STEP_PROFILED(SSMACHINES_POWERNETS,FALSE,process_powernets,cost_powernets,last_cost_powernets,current_cost_powernets,SSMACHINES_MACHINERY)
-
-// (Submap loads call /obj/machinery/atmospherics/atmos_init() directly,
-//  main-map load runs through SSair.Initialize -> setup_atmos_machinery.)
-
-/datum/controller/subsystem/machines/stat_entry(msg)
-	msg = "C:{"
-	msg += "MC:[round(last_cost_machinery,1)]/[round(cost_machinery,1)]|"
-	msg += "PN:[round(last_cost_powernets,1)]/[round(cost_powernets,1)]"
-	msg += "} "
-	msg += "MP:[om_pipeline_parked_count(/datum/om/pipeline/machine)] parked|"
-	msg += "PN:[length(power_regions)]|"
-	msg += "GD:[gas_dirty_last] GW:[gas_woken_last] GX:[gas_dead_last]"
-	return ..()
-
-/// Gas watches, then the pump transfers the pipeline devices queued since the last commit.
-/datum/controller/subsystem/machines/proc/process_machinery(resumed = 0)
-	if (!resumed)
-		gas_wake_complete = FALSE
+/// Gas watches, then the pump transfers the pipeline devices queued since the last commit, then
+/// the power step. The gas wake may yield; the power step only runs once it has completed.
+/datum/world_service/machines/service_step(resumed)
+	var/started = TICK_USAGE
+	if(!resumed)
+		current_cost_machinery = 0
 		current_gas_wake_scan_ms = 0
 		current_gas_wake_subscribers = 0
-	if(!gas_wake_complete)
-		gas_wake_complete = wake_dirty_gas_subscribers()
-		if(!gas_wake_complete)
-			return
-	flush_pump_transfers()
+	var/complete = wake_dirty_gas_subscribers(TRUE)
+	if(complete)
+		flush_pump_transfers()
+	current_cost_machinery += TICK_USAGE_TO_MS(started)
+	if(!complete)
+		return FALSE
+	last_cost_machinery = current_cost_machinery
+	cost_machinery = MC_AVERAGE(cost_machinery, last_cost_machinery)
+	var/power_started = TICK_USAGE
+	process_power()
+	last_cost_powernets = TICK_USAGE_TO_MS(power_started)
+	cost_powernets = MC_AVERAGE(cost_powernets, last_cost_powernets)
+	return TRUE
 
-/datum/controller/subsystem/machines/proc/queue_pump_transfer(obj/machinery/atmospherics/M, datum/gas_mixture/source, datum/gas_mixture/sink, requested_moles, specific_power, source_moles, source_volume)
+/datum/world_service/machines/stat_line()
+	. = "C:{MC:[round(last_cost_machinery,1)]/[round(cost_machinery,1)]|"
+	. += "PN:[round(last_cost_powernets,1)]/[round(cost_powernets,1)]} "
+	. += "MP:[om_pipeline_parked_count(/datum/om/pipeline/machine)] parked|"
+	. += "PN:[length(power_regions)]|"
+	. += "GD:[gas_dirty_last] GW:[gas_woken_last] GX:[gas_dead_last]"
+
+/datum/world_service/machines/proc/queue_pump_transfer(obj/machinery/atmospherics/M, datum/gas_mixture/source, datum/gas_mixture/sink, requested_moles, specific_power, source_moles, source_volume)
 	if(!M || !source || !sink || requested_moles <= 0)
 		return FALSE
 	pending_pump_transfers += list(list(M, source, sink, requested_moles, specific_power, source_moles, source_volume))
 	return TRUE
 
-/datum/controller/subsystem/machines/proc/flush_pump_transfers()
+/datum/world_service/machines/proc/flush_pump_transfers()
 	if(!length(pending_pump_transfers))
 		last_pump_commit_ms = 0
 		last_pump_commit_wall_ms = 0
@@ -159,24 +151,11 @@ SUBSYSTEM_DEF(machines)
 	last_pump_commit_suspended_ms = max(last_pump_commit_wall_ms - last_pump_commit_ms, 0)
 	pending_pump_transfers.Cut()
 
-/// The power step: one Rust call for every network, APC and SMES.
-/datum/controller/subsystem/machines/proc/process_powernets(resumed = 0)
-	process_power()
-
-/datum/controller/subsystem/machines/Recover()
-	power_regions = SSmachines.power_regions
-	power_dirty_areas = SSmachines.power_dirty_areas
-	power_material_cables = SSmachines.power_material_cables
-	pending_pump_transfers = SSmachines.pending_pump_transfers
-	pending_dirty_gas_mixtures = SSmachines.pending_dirty_gas_mixtures
-	pending_dirty_gas_index = SSmachines.pending_dirty_gas_index
-	gas_wake_complete = SSmachines.gas_wake_complete
-
 /// Hands this batch of gas dependency observations to their native watches
 /// (/datum/native_watch/gas, code/datums/om/native.dm). The OM watch layer owns one
 /// native watch per watched mixture (code/datums/om/watch.dm), which fans the record
 /// out to every om_watch armed on that mixture (om_watch_dispatch_gas()).
-/datum/controller/subsystem/machines/proc/wake_dirty_gas_subscribers()
+/datum/world_service/machines/proc/wake_dirty_gas_subscribers(budgeted = FALSE)
 	var/scan_started = TICK_USAGE
 	if(!pending_dirty_gas_mixtures)
 		pending_dirty_gas_mixtures = vg_drain_dirty_gas_observations()
@@ -195,7 +174,7 @@ SUBSYSTEM_DEF(machines)
 		current_gas_wake_subscribers++
 		// The owner reads the record from its mixture id on (index + 1).
 		W.fire(list(observations[record + 1], observations[record + 2], observations, record + 1))
-		if(MC_TICK_CHECK)
+		if(budgeted && TICK_CHECK)
 			current_gas_wake_scan_ms += TICK_DELTA_TO_MS(TICK_USAGE - scan_started)
 			return FALSE
 	pending_dirty_gas_mixtures = null
@@ -211,17 +190,15 @@ SUBSYSTEM_DEF(machines)
 /proc/om_watch_invalidate(datum/entity)
 	om_watch_fire_all(entity)
 
-/datum/controller/subsystem/machines/proc/hibernate_airlock_sensor(obj/machinery/airlock_sensor/S)
+/datum/world_service/machines/proc/hibernate_airlock_sensor(obj/machinery/airlock_sensor/S)
 	if(!S)
 		return
 	S.register_gas_dependencies()
 	MACHINE_SLEEP(S)
 
-/datum/controller/subsystem/machines/proc/hibernate_generator(obj/machinery/power/generator/G)
+/datum/world_service/machines/proc/hibernate_generator(obj/machinery/power/generator/G)
 	if(!G)
 		return
 	G.register_gas_dependencies()
 	MACHINE_SLEEP(G)
 
-#undef SSMACHINES_MACHINERY
-#undef SSMACHINES_POWERNETS

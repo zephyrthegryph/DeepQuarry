@@ -70,8 +70,8 @@
 /datum/controller/master/perf_outliers # d: MC singleton, filled every tick
 /datum/controller/master/perf_tick_realtime # d: MC singleton, filled every tick
 /datum/controller/master/perf_tick_usage # d: MC singleton, filled every tick
-/datum/controller/subsystem/machines/power_dirty_areas # d: SSmachines singleton (M3 power); one instance
-/datum/controller/subsystem/machines/power_material_cables # d: SSmachines singleton (M3 power); one instance
+/datum/world_service/machines/power_dirty_areas # d: machine world service singleton (M3 power); one instance
+/datum/world_service/machines/power_material_cables # d: machine world service singleton (M3 power); one instance
 /datum/controller/subsystem/mapping/multiz_levels # d: subsystem singleton; one entry per z-level
 /datum/controller/subsystem/mapping/z_list # d: subsystem singleton; one entry per z-level
 /datum/controller/subsystem/rolling_usage # d: one per subsystem; the usage ring buffer is always in use
@@ -596,3 +596,16 @@
 /datum/destroy_batch/registry_leaves # one per batched destroy, filled in the teardown pass
 /datum/destroy_batch/effect_turfs # one per batched destroy, filled in the teardown pass
 /datum/destroy_batch/after_effects # one per batched destroy, filled in the teardown pass
+/datum/world_service/machines/pending_pump_transfers # d: world service singleton (one instance in GLOB, was a subsystem)
+/datum/world_service/mobs/death_list # d: world service singleton (one instance in GLOB, was a subsystem)
+/datum/world_service/mobs/last_counts # d: world service singleton (one instance in GLOB, was a subsystem)
+/datum/world_service/plants/accessible_plant_sprites # d: world service singleton (one instance in GLOB, was a subsystem)
+/datum/world_service/plants/accessible_product_sprites # d: world service singleton (one instance in GLOB, was a subsystem)
+/datum/world_service/plants/gene_masked_list # d: world service singleton (one instance in GLOB, was a subsystem)
+/datum/world_service/plants/gene_tag_masks # d: world service singleton (one instance in GLOB, was a subsystem)
+/datum/world_service/plants/plant_gene_datums # d: world service singleton (one instance in GLOB, was a subsystem)
+/datum/world_service/plants/plant_icon_cache # d: world service singleton (one instance in GLOB, was a subsystem)
+/datum/world_service/plants/plant_product_sprites # d: world service singleton (one instance in GLOB, was a subsystem)
+/datum/world_service/plants/plant_sprites # d: world service singleton (one instance in GLOB, was a subsystem)
+/datum/world_service/plants/product_descs # d: world service singleton (one instance in GLOB, was a subsystem)
+/datum/world_service/plants/seeds # d: world service singleton (one instance in GLOB, was a subsystem)

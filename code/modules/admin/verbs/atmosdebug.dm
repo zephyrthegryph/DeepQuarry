@@ -44,7 +44,7 @@ ADMIN_VERB_VISIBILITY(powerdebug, ADMIN_VERB_VISIBLITY_FLAG_LOCALHOST)
 ADMIN_VERB(powerdebug, R_DEBUG, "Check Power", "Checks all powernets (Only use on a test server).", ADMIN_CATEGORY_MAPPING)
 	feedback_add_details("admin_verb","CPOW") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-	for(var/id in SSmachines.power_regions)
-		var/datum/powernet/PN = SSmachines.power_regions[id]
+	for(var/id in GLOB.machine_service.power_regions)
+		var/datum/powernet/PN = GLOB.machine_service.power_regions[id]
 		if(!length(PN.nodes))
 			to_chat(user, span_filter_adminlog("Power region [id] has no machines ([PN.avail] W available)."))

@@ -121,7 +121,7 @@
 					if(O.client?.prefs?.read_preference(/datum/preference/toggle/show_dsay))
 						to_chat(O, span_deadsay(span_bold("[src]") + " has died in " + span_bold(strip_improper("[A]")) + ". [ghost_follow_link(src, O)] "))
 
-	SSmobs.report_death(src)
+	GLOB.mob_service.report_death(src)
 
 	if(wearing_rig)
 		wearing_rig.notify_ai(span_danger("Warning: user death event. Mobility control passed to integrated intelligence system."))

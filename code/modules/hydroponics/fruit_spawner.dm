@@ -7,11 +7,11 @@
 
 /obj/fruitspawner/Initialize(mapload)
 	..()
-	if(!seedtype || !SSplants.seeds[seedtype])
+	if(!seedtype || !GLOB.plant_service.seeds[seedtype])
 		return
 	var/turf/T = get_turf(src)
 	var/obj/structure/closet/C = locate_on(T, /obj/structure/closet)
-	var/datum/seed/S = SSplants.seeds[seedtype]
+	var/datum/seed/S = GLOB.plant_service.seeds[seedtype]
 	S.harvest(C || T,0,0,1)
 	return INITIALIZE_HINT_QDEL
 

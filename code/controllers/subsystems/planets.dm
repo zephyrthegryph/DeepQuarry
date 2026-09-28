@@ -5,7 +5,8 @@ SUBSYSTEM_DEF(planets)
 	flags = SS_BACKGROUND
 	runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
 	dependencies = list(
-		/datum/controller/subsystem/plants
+		// The plant world service sets up at the top of Initialize() (it was SSplants).
+		/datum/controller/subsystem/mapping
 	)
 
 	var/static/list/planets = list()
@@ -15,6 +16,8 @@ SUBSYSTEM_DEF(planets)
 	var/static/list/needs_temp_update = list()
 
 /datum/controller/subsystem/planets/Initialize()
+	// Seed and gene tables first (was SSplants, which planets depended on); atoms need them.
+	GLOB.plant_service.initialize()
 	admin_notice(span_danger("Initializing planetary weather."), R_DEBUG)
 	createPlanets()
 	return SS_INIT_SUCCESS

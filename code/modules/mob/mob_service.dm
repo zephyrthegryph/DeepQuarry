@@ -1,41 +1,50 @@
-// Mobs subsystem. Mob Life runs on object-model pipelines (code/modules/mob/living/life/life_om.dm;
-// doc/rewrite/life_on_om.md). What is left here is death reporting and the two-minute Life
-// profile summary, read from the core scheduler's stage profile and pipeline counters.
+// The mob world service (fold wave F1; was SSmobs). Mob Life runs on object-model pipelines
+// (code/modules/mob/living/life/life_om.dm; doc/rewrite/life_on_om.md). What is left here is death
+// reporting and the two-minute Life profile summary, read from the core scheduler's stage profile
+// and pipeline counters, run every 2 s by /datum/om/behaviour/world/mobs on the OM global owner
+// (code/datums/om/world_lanes.dm). The mob hibernation / pipeline missed-wake audit runs from
+// SSbehaviours (code/controllers/subsystems/behaviours.dm).
 
-SUBSYSTEM_DEF(mobs)
+GLOBAL_DATUM_INIT(mob_service, /datum/world_service/mobs, new)
+
+/datum/world_service/mobs
 	name = "Mobs"
-	priority = FIRE_PRIORITY_MOBS
-	wait = 2 SECONDS
-	flags = SS_NO_INIT
-	runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
+	lane = /datum/om/behaviour/world/mobs
 
 	var/list/death_list = list()
 	var/profile_next_dump = 0
 	/// Pipeline counters at the last summary (parks, unparks, missed wakes), for the deltas.
 	var/list/last_counts = list(0, 0, 0)
 
-/datum/controller/subsystem/mobs/stat_entry(msg)
+/datum/world_service/mobs/stat_line()
 	var/datum/om/behaviour/life = om_registry().behaviour(/datum/om/pipeline/life)
 	var/list/S = GLOB.om_live_sched?.stat_for(life.id)
-	msg = "P: [REGISTRY_COUNT(REGISTRY_MOBS)] | parked: [om_pipeline_parked_count(/datum/om/pipeline/life)] | [S ? round(S[OM_STAT_MS], 1) : 0]ms | D: [length(death_list)]"
-	return ..()
+	return "P: [REGISTRY_COUNT(REGISTRY_MOBS)] | parked: [om_pipeline_parked_count(/datum/om/pipeline/life)] | [S ? round(S[OM_STAT_MS], 1) : 0]ms | D: [length(death_list)]"
 
-/datum/controller/subsystem/mobs/fire(resumed = 0)
+/datum/world_service/mobs/service_step(resumed)
 	if(length(death_list)) // Don't contact DB if this list is empty
-		if(CONFIG_GET(flag/sql_enabled))
-			if(!SSdbcore.IsConnected())
-				log_game("SQL ERROR during death reporting. Failed to connect.")
-			else
-				SSdbcore.MassInsert(format_table_name("death"), death_list)
-		death_list.Cut()
+		var/list/batch = death_list
+		death_list = list()
+		insert_deaths(batch)
 	if(!profile_next_dump)
 		profile_next_dump = world.time + 2 MINUTES
 	else if(world.time >= profile_next_dump)
 		dump_profile()
+	return TRUE
+
+/// The database insert sleeps, so the lane hands it off (the lane itself must not sleep).
+/datum/world_service/mobs/proc/insert_deaths(list/batch)
+	set waitfor = FALSE
+	if(!CONFIG_GET(flag/sql_enabled))
+		return
+	if(!SSdbcore.IsConnected())
+		log_game("SQL ERROR during death reporting. Failed to connect.")
+		return
+	SSdbcore.MassInsert(format_table_name("death"), batch)
 
 /// MOB_PROFILE lines (sampled cost per mob type and per stage, every Nth frame) and one
 /// MOB_PARK_SUMMARY line, every two minutes.
-/datum/controller/subsystem/mobs/proc/dump_profile()
+/datum/world_service/mobs/proc/dump_profile()
 	profile_next_dump = world.time + 2 MINUTES
 	var/datum/om/scheduler/sched = GLOB.om_live_sched
 	if(!sched)
@@ -67,7 +76,7 @@ SUBSYSTEM_DEF(mobs)
 	log_runtime("MOB_PARK_SUMMARY enabled=[GLOB.om_parking_enabled] parked=[om_pipeline_parked_count(life, sched)] parks=[now[1] - last_counts[1]] unparks=[now[2] - last_counts[2]] missed_wakes=[now[3] - last_counts[3]]")
 	last_counts = now
 
-/datum/controller/subsystem/mobs/proc/report_death(mob/living/L)
+/datum/world_service/mobs/proc/report_death(mob/living/L)
 	if(!L)
 		return
 	if(!L.key || !L.mind)

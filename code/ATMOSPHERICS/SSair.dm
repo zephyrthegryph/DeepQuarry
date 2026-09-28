@@ -3,9 +3,9 @@ SUBSYSTEM_DEF(air)
 	dependencies = list(
 		/datum/controller/subsystem/mapping,
 		/datum/controller/subsystem/atoms,
-		// setup_atmos_machinery iterates REGISTRY_MEMBERS(REGISTRY_MACHINES), so
-		// SSmachines must finish populating that list before SSair inits.
-		/datum/controller/subsystem/machines,
+		// The machine world service initializes at the top of Initialize() (it was
+		// SSmachines, which depended on points_of_interest).
+		/datum/controller/subsystem/points_of_interest,
 	)
 	priority = FIRE_PRIORITY_AIR
 	wait = 0.5 SECONDS
@@ -109,6 +109,9 @@ SUBSYSTEM_DEF(air)
 
 /datum/controller/subsystem/air/Initialize()
 	map_loading = FALSE
+	// The machine world service's boot step (power, gas wakes, pump commit), where SSmachines
+	// used to initialize: before any atmos machinery setup below.
+	GLOB.machine_service.initialize()
 
 	// Register the gas roster in the Rust arena FIRST — reaction setup
 	// (init_gas_reactions -> build_min_requirements) and everything else that
@@ -458,7 +461,7 @@ SUBSYSTEM_DEF(air)
 
 // single-pass init for every map-loaded /obj/machinery/atmospherics.
 // /tg/ ran this off SSair.atmos_machinery (which doubled as the per-tick
-// process queue). On this fork devices process via SSmachines, so we don't
+// process queue). On this fork devices run on the machine pipeline, so we don't
 // need a duplicate registry — REGISTRY_MEMBERS(REGISTRY_MACHINES) already holds every
 // /obj/machinery, and /obj/machinery/Initialize populates it during SSatoms.
 // SSair runs after SSatoms (mapping/atoms deps), so by the time this fires
@@ -489,7 +492,7 @@ GLOBAL_LIST_EMPTY(colored_images)
 
 
 // /tg/'s SSair.get_init_dirs(type, dir, init_dir) removed — CHOMP pipe
-// construction caches via SSmachines.get_init_dirs (game/machinery/pipe/
+// construction caches via GLOB.machine_service.get_init_dirs (game/machinery/pipe/
 // construction.dm:226) and atmospherics.dm's /obj/machinery/atmospherics/get_init_dirs.
 // LINDA's variant was unused.
 

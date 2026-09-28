@@ -56,7 +56,7 @@ Class Procs:
 	Destroy()                     'game/machinery/machine.dm'
 
 	get_power_usage()            'game/machinery/machinery_power.dm'
-		Returns the amount of power this machine uses every SSmachines cycle.
+		Returns the amount of power this machine uses every machine pipeline frame.
 		Default definition uses 'use_power', 'active_power_usage', 'idle_power_usage'
 
 	powered(chan = CURRENT_CHANNEL)         'game/machinery/machinery_power.dm'

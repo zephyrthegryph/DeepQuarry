@@ -22,6 +22,8 @@ SUBSYSTEM_DEF(behaviours)
 /datum/controller/subsystem/behaviours/Initialize()
 	om_registry()
 	om_scheduler()
+	// World services' periodic lanes on the global owner (machines, mobs; world_lanes.dm).
+	om_start_world_lanes()
 	return SS_INIT_SUCCESS
 
 /datum/controller/subsystem/behaviours/fire(resumed)
