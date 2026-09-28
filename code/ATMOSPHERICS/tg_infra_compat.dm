@@ -78,14 +78,14 @@ GLOBAL_LIST_INIT(contrast_colors, list("#ff0000", "#00ff00", "#0000ff", "#ffff00
 
 // === SSmapping multi-z helpers (CHOMP doesn't expose these as GLOB lists) ===
 /datum/controller/subsystem/mapping
-	var/list/z_list = list()
+	var/list/z_list = list() // ALLOW(instance_list): d: subsystem singleton; one entry per z-level
 	var/max_plane_offset = 0
-	var/list/multiz_levels = list()
+	var/list/multiz_levels = list() // ALLOW(instance_list): d: subsystem singleton; one entry per z-level
 
 
 // === Per-z-level metadata ===
 /datum/space_level
-	var/list/traits = list()
+	var/list/traits = list() // ALLOW(instance_list): d: every z-level has traits
 
 
 // flags_1 declaration moved to code/atmospherics/atom_flags_1.dm so

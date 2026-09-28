@@ -48,8 +48,8 @@ GLOBAL_DATUM_INIT(sortInstance, /datum/sort_instance, new())
 	//Stores information regarding runs yet to be merged.
 	//Run i starts at runBase[i] and extends for runLen[i] elements.
 	//runBase[i] + runLen[i] == runBase[i+1]
-	var/list/runBases = list()
-	var/list/runLens = list()
+	var/list/runBases = list() // ALLOW(instance_list): d: sort scratch state; one sort instance at a time, always used
+	var/list/runLens = list() // ALLOW(instance_list): d: sort scratch state; one sort instance at a time, always used
 
 /datum/sort_instance/proc/timSort(start, end)
 	runBases.Cut()

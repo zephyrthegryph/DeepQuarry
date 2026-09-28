@@ -380,7 +380,7 @@
 			if(abs(new_injection - old_injection) > material_change)
 				changed = TRUE
 				break
-	if(changed && !has_superconductors && world.time < next_solve)
+	if(changed && !has_superconductors && world.time < next_solve) // ALLOW(cooldown): solver scheduling
 		changed = FALSE
 	if(changed)
 		// Baseline station cable meshes are large and highly cyclic. Their

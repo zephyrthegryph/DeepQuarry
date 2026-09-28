@@ -9,7 +9,7 @@
 /// Calls B.on_deadline(E) after `delay` deciseconds (in B's clock, if it has one). `sub`
 /// keys further deadlines of the same behaviour on the same entity: OM_DL_THROTTLE is the
 /// scheduler's deferred wake, OM_DL_STAGE + n a pipeline stage's rewake (on_keyed_deadline()).
-/proc/om_deadline(datum/E, delay, B, sub = 0)
+/proc/om_deadline(datum/E, delay, B, sub = 0) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/behaviour/def = om_registry().behaviour(B)
 	var/datum/om/rec/rec = om_rec_of(E)
 	if(!rec)
@@ -39,7 +39,7 @@
 		sched.insert_deadline(rec, key, gen, due)
 	return TRUE
 
-/proc/om_cancel_after(datum/E, B, sub = 0)
+/proc/om_cancel_after(datum/E, B, sub = 0) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/rec/rec = E?.om_rec
 	if(!rec?.deadlines)
 		return FALSE
@@ -54,7 +54,7 @@
 	return FALSE
 
 /// Cancels every deadline of `B` on `E`, whatever its sub-key.
-/proc/om_cancel_all_after(datum/E, B)
+/proc/om_cancel_all_after(datum/E, B) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/rec/rec = E?.om_rec
 	if(!rec?.deadlines)
 		return
@@ -69,7 +69,7 @@
 	if(!length(D))
 		rec.deadlines = null
 
-/proc/om_deadline_pending(datum/E, B, sub = 0)
+/proc/om_deadline_pending(datum/E, B, sub = 0) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/rec/rec = E?.om_rec
 	if(!rec?.deadlines)
 		return FALSE
@@ -81,7 +81,7 @@
 
 /// A clock's rate changed: clocked deadlines get a new generation and a new
 /// real-time position (a rate increase must not wait for the old position).
-/proc/om_clock_reschedule(datum/om/rec/rec, cidx)
+/proc/om_clock_reschedule(datum/om/rec/rec, cidx) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/list/D = rec.deadlines
 	if(!D)
 		return
@@ -123,7 +123,7 @@
 	var/list/above
 
 /// Creates a rate owned by `owner` (it lives as long as the owner's record).
-/proc/om_rate_new(datum/owner, name, value = 0, per_second = 0, channel = 0, list/thresholds, min_value = -INFINITY, max_value = INFINITY)
+/proc/om_rate_new(datum/owner, name, value = 0, per_second = 0, channel = 0, list/thresholds, min_value = -INFINITY, max_value = INFINITY) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/rec/rec = om_rec_of(owner)
 	if(!rec)
 		return null
@@ -145,7 +145,7 @@
 	om_rates_reschedule(rec)
 	return R
 
-/proc/om_rate_named(datum/owner, name)
+/proc/om_rate_named(datum/owner, name) // ALLOW(base_proc): global API written before the base-type ratchet
 	for(var/datum/om/rate/R as anything in owner?.om_rec?.rates)
 		if(R.name == name)
 			return R
@@ -206,7 +206,7 @@
 		om_changed(owner, channel)
 
 /// Next crossing among all the owner's rates, as one deadline.
-/proc/om_rates_reschedule(datum/om/rec/rec)
+/proc/om_rates_reschedule(datum/om/rec/rec) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/soonest = null
 	for(var/datum/om/rate/R as anything in rec.rates)
 		for(var/level in R.thresholds)

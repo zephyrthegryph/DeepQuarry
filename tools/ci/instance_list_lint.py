@@ -7,22 +7,23 @@ if it never uses it. AGENTS.md section 3a has the alternatives: a static var or 
 getter for constant tables, a lazy (null) list for per-instance data that is
 usually empty, and a shared copy-on-write list for data that is rarely written.
 
-Declarations that really are per-instance and non-empty go in
-tools/ci/instance_list_allowlist.txt as `/type/path/var # reason`. The lint fails
-on a declaration that is not listed, on an entry without a reason, and on an
-entry that no longer matches a declaration.
+Declarations that really are per-instance and non-empty carry
+`// ALLOW(instance_list): <reason>` on the declaration line or the comment line
+above it (tools/ci/allow_annotations.py). The lint fails on any other.
 
 Usage: python3 tools/ci/instance_list_lint.py [--list]
-  --list  print every flagged declaration as an allowlist line and exit 0.
+  --list  print every unannotated declaration and exit 0.
 """
 
 import os
 import re
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from allow_annotations import allowed  # noqa: E402
+
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 SCAN_DIRS = ["code", "modular_chomp"]
-ALLOWLIST = os.path.join(ROOT, "tools", "ci", "instance_list_allowlist.txt")
 
 # var/[mods/]list/[typed/path/]name = list(...) | new/list(...) | new(...) | new
 INIT_RE = re.compile(
@@ -30,6 +31,7 @@ INIT_RE = re.compile(
     r"(?:=\s*(?:list\s*\(|alist\s*\(|new\s*/list|new\s*\(|new\s*$)|\[\s*\w+\s*\])"
 )
 SHARED_MODS = ("static", "global", "const")
+LINT = "instance_list"
 
 
 def indent_of(line):
@@ -85,7 +87,7 @@ def scan_file(path):
             match = re.match(r"^(/[\w/]+?)/var/(.*)$", body)
             if match:
                 decl = INIT_RE.match("var/" + match.group(2))
-                if decl and not any(m in decl.group("mods") for m in SHARED_MODS):
+                if decl and not any(m in decl.group("mods") for m in SHARED_MODS) and not allowed(lines, number, LINT):
                     yield match.group(1), decl.group("name"), number
                 continue
             type_path = body.rstrip("{").strip()
@@ -112,7 +114,7 @@ def scan_file(path):
         else:
             continue
         decl = INIT_RE.match(candidate)
-        if decl and not any(m in decl.group("mods").split("/") for m in SHARED_MODS):
+        if decl and not any(m in decl.group("mods").split("/") for m in SHARED_MODS) and not allowed(lines, number, LINT):
             yield type_path, decl.group("name"), number
 
 
@@ -133,43 +135,22 @@ def scan():
     return found
 
 
-def read_allowlist():
-    entries = {}
-    problems = []
-    with open(ALLOWLIST, encoding="utf-8") as handle:
-        for number, raw in enumerate(handle, 1):
-            line = raw.strip()
-            if not line or line.startswith("#"):
-                continue
-            key, _, reason = line.partition("#")
-            key = key.strip()
-            if not reason.strip():
-                problems.append(f"{ALLOWLIST}:{number}: {key} has no reason")
-            entries[key] = number
-    return entries, problems
-
-
 def main():
     found = scan()
     if "--list" in sys.argv:
         for key in sorted(found):
             print(f"{key} # {found[key]}")
         return 0
-    allowed, problems = read_allowlist()
-    for key in sorted(found):
-        if key not in allowed:
-            problems.append(
-                f"{found[key]}: {key} allocates a list for every instance. Use a static var or getter "
-                "(constant table), a lazy list (usually empty), or a shared copy-on-write list "
-                "(AGENTS.md 3a); if it really is per-instance and always filled, add it to "
-                "tools/ci/instance_list_allowlist.txt with a reason."
-            )
-    for key, number in sorted(allowed.items()):
-        if key not in found:
-            problems.append(f"{ALLOWLIST}:{number}: {key} no longer allocates per instance; remove the entry")
+    problems = [
+        f"{found[key]}: {key} allocates a list for every instance. Use a static var or getter "
+        "(constant table), a lazy list (usually empty), or a shared copy-on-write list "
+        "(AGENTS.md 3a); if it really is per-instance and always filled, mark the declaration "
+        "`// ALLOW(instance_list): <reason>`."
+        for key in sorted(found)
+    ]
     for problem in problems:
         print(problem)
-    print(f"instance_list_lint: {len(found)} per-instance list declarations, {len(allowed)} allowlisted, {len(problems)} problems")
+    print(f"instance_list_lint: {len(found)} unannotated per-instance list declarations, {len(problems)} problems")
     return 1 if problems else 0
 
 

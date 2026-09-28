@@ -3,9 +3,9 @@
 	icon_state = "generic-s"
 	assignment = "Agent"
 	var/electronic_warfare = 1
-	var/mob/registered_user = null
+	var/mob/registered_user = null // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 
-	var/datum/tgui_module/agentcard/agentcard_module
+	var/datum/tgui_module/agentcard/agentcard_module // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 
 // agentcard_module is rebuilt fresh by Initialize() every time (like reset_icon());
 // registered_user is a mob ref (and a live observer registration) (C5).
@@ -23,7 +23,7 @@
 
 REF_OWNED(/obj/item/card/id/syndicate, "agentcard_module")
 
-// LIFECYCLE: the card's registered user is unset.
+// ALLOW(lifecycle): the card's registered user is unset.
 /obj/item/card/id/syndicate/Destroy()
 	unset_registered_user(registered_user)
 	return ..()

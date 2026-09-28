@@ -115,7 +115,7 @@
 
 /// Runs every deadline that has passed. Called from the door's timer wake.
 /obj/machinery/door/proc/door_deadlines_due()
-	if(close_door_at && world.time >= close_door_at)
+	if(close_door_at && world.time >= close_door_at) // ALLOW(cooldown): scheduled auto-close deadline
 		if(density && !operating)
 			close_door_at = 0
 		else if(autoclose)

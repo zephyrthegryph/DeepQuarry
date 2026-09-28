@@ -21,7 +21,7 @@
 
 REF_SPILL(/obj/machinery/mineral/equipment_vendor, "inserted_id")
 
-// LIFECYCLE: prize entries are nested per category.
+// ALLOW(lifecycle): prize entries are nested per category.
 /obj/machinery/mineral/equipment_vendor/Destroy()
 	for(var/key, value in prize_list)
 		var/list/item_list = value

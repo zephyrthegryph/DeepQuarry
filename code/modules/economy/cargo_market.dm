@@ -447,14 +447,14 @@ REF_OWNED(/datum/cargo_market_bid, "profile")
 	var/list/retained_listings = list()
 	for(var/listing_id in market_listings)
 		var/datum/cargo_market_listing/existing_listing = market_listings[listing_id]
-		if(existing_listing.reservation_key && existing_listing.stock > 0 && world.time < existing_listing.expires_at)
+		if(existing_listing.reservation_key && existing_listing.stock > 0 && world.time < existing_listing.expires_at) // ALLOW(cooldown): market listing/bid expiry state
 			retained_listings[listing_id] = existing_listing
 		else
 			qdel(existing_listing)
 	var/list/retained_bids = list()
 	for(var/bid_id in market_bids)
 		var/datum/cargo_market_bid/existing_bid = market_bids[bid_id]
-		if(existing_bid.reservation_key && !existing_bid.completed_at && world.time < existing_bid.expires_at)
+		if(existing_bid.reservation_key && !existing_bid.completed_at && world.time < existing_bid.expires_at) // ALLOW(cooldown): market listing/bid expiry state
 			retained_bids[bid_id] = existing_bid
 		else
 			qdel(existing_bid)
@@ -499,7 +499,7 @@ REF_OWNED(/datum/cargo_market_bid, "profile")
 	next_market_refresh = expiry
 
 /datum/controller/subsystem/supply/proc/process_cargo_market()
-	if(world.time >= next_market_refresh)
+	if(world.time >= next_market_refresh) // ALLOW(cooldown): market listing/bid expiry state
 		refresh_cargo_market()
 
 /datum/controller/subsystem/supply/proc/market_counterparty_visible(datum/cargo_market_counterparty/counterparty, mob/living/user, console_unlocked = FALSE)
@@ -561,7 +561,7 @@ REF_OWNED(/datum/cargo_market_bid, "profile")
 
 /datum/controller/subsystem/supply/proc/request_market_order(datum/cargo_market_listing/listing, mob/living/user, reason, console_unlocked = FALSE, personal_funding = FALSE, contract_funding = FALSE)
 	var/datum/cargo_market_counterparty/counterparty = market_counterparties?[listing?.counterparty_id]
-	if(!listing || listing.retired || !counterparty || listing.stock <= 0 || world.time >= listing.expires_at || !market_counterparty_access(counterparty, user, console_unlocked) || !market_reserved_access(listing.reserved_account, user, listing.reservation_key))
+	if(!listing || listing.retired || !counterparty || listing.stock <= 0 || world.time >= listing.expires_at || !market_counterparty_access(counterparty, user, console_unlocked) || !market_reserved_access(listing.reserved_account, user, listing.reservation_key)) // ALLOW(cooldown): market listing/bid expiry state
 		return FALSE
 	var/datum/contract/faction_agent/funding_contract
 	if(contract_funding)
@@ -617,7 +617,7 @@ REF_OWNED(/datum/cargo_market_bid, "profile")
 	if(!order?.market_stock_reserved)
 		return FALSE
 	var/datum/cargo_market_listing/listing = market_listing(order.market_listing_id)
-	if(listing && !listing.retired && world.time < listing.expires_at)
+	if(listing && !listing.retired && world.time < listing.expires_at) // ALLOW(cooldown): market listing/bid expiry state
 		listing.stock++
 	order.market_stock_reserved = FALSE
 	return TRUE
@@ -690,7 +690,7 @@ REF_OWNED(/datum/cargo_market_bid, "profile")
 		return FALSE
 	var/datum/cargo_market_bid/bid = market_bid(export.market_bid_id)
 	var/datum/cargo_market_counterparty/counterparty = market_counterparties?[bid?.counterparty_id]
-	if(!bid || !counterparty || bid.completed_at || world.time >= bid.expires_at || !bid.profile.matches(item))
+	if(!bid || !counterparty || bid.completed_at || world.time >= bid.expires_at || !bid.profile.matches(item)) // ALLOW(cooldown): market listing/bid expiry state
 		return FALSE
 	var/reported_quantity = export_row["quantity"]
 	var/quantity = isnum(reported_quantity) ? max(1, reported_quantity) : 1
@@ -764,7 +764,7 @@ REF_OWNED(/datum/cargo_market_bid, "profile")
 		return TRUE
 	var/datum/cargo_market_bid/bid = market_bid(bid_id)
 	var/datum/cargo_market_counterparty/counterparty = market_counterparties?[bid?.counterparty_id]
-	if(!bid || bid.reservation_key || bid.completed_at || world.time >= bid.expires_at || !market_counterparty_access(counterparty, user, console_unlocked) || !market_reserved_access(bid.reserved_account, user, bid.reservation_key))
+	if(!bid || bid.reservation_key || bid.completed_at || world.time >= bid.expires_at || !market_counterparty_access(counterparty, user, console_unlocked) || !market_reserved_access(bid.reserved_account, user, bid.reservation_key)) // ALLOW(cooldown): market listing/bid expiry state
 		return FALSE
 	crate.cargo_market_bid_id = bid.id
 	crate.cargo_market_router_account = contract_account_for_mob(user)?.account_number || 0
@@ -833,7 +833,7 @@ REF_OWNED(/datum/cargo_market_bid, "profile")
 			break
 	if(!counterparty)
 		return FALSE
-	var/expiry = contract.deadline > world.time ? contract.deadline : world.time + 30 MINUTES
+	var/expiry = contract.deadline > world.time ? contract.deadline : world.time + 30 MINUTES // ALLOW(cooldown): market listing/bid expiry state
 	var/needs_purchase_route = FALSE
 	var/needs_export_route = FALSE
 	for(var/datum/contract_requirement/requirement in contract.requirements)
@@ -996,7 +996,7 @@ REF_OWNED(/datum/cargo_market_bid, "profile")
 	for(var/listing_id in market_listings)
 		var/datum/cargo_market_listing/listing = market_listings[listing_id]
 		var/datum/cargo_market_counterparty/counterparty = market_counterparties[listing.counterparty_id]
-		if(listing.retired || listing.stock <= 0 || world.time >= listing.expires_at || !market_counterparty_visible(counterparty, user, console_unlocked) || !market_reserved_access(listing.reserved_account, user, listing.reservation_key))
+		if(listing.retired || listing.stock <= 0 || world.time >= listing.expires_at || !market_counterparty_visible(counterparty, user, console_unlocked) || !market_reserved_access(listing.reserved_account, user, listing.reservation_key)) // ALLOW(cooldown): market listing/bid expiry state
 			continue
 		var/can_access_listing = market_counterparty_access(counterparty, user, console_unlocked)
 		var/datum/contract/faction_agent/funding_contract = market_contract_funding(listing.reservation_key, user, listing.unit_price)
@@ -1020,7 +1020,7 @@ REF_OWNED(/datum/cargo_market_bid, "profile")
 	for(var/bid_id in market_bids)
 		var/datum/cargo_market_bid/bid = market_bids[bid_id]
 		var/datum/cargo_market_counterparty/counterparty = market_counterparties[bid.counterparty_id]
-		if(bid.completed_at || bid.remaining_units() <= 0 || world.time >= bid.expires_at || !market_counterparty_visible(counterparty, user, console_unlocked) || !market_reserved_access(bid.reserved_account, user, bid.reservation_key))
+		if(bid.completed_at || bid.remaining_units() <= 0 || world.time >= bid.expires_at || !market_counterparty_visible(counterparty, user, console_unlocked) || !market_reserved_access(bid.reserved_account, user, bid.reservation_key)) // ALLOW(cooldown): market listing/bid expiry state
 			continue
 		bids.Add(list(list(
 			"id" = bid.id,
@@ -1066,11 +1066,11 @@ REF_OWNED(/datum/cargo_market_bid, "profile")
 				var/datum/cargo_market_bid/assigned_bid = market_bid(crate.cargo_market_bid_id)
 				var/datum/cargo_market_counterparty/assigned_counterparty = market_counterparties?[assigned_bid?.counterparty_id]
 				var/assigned_visible = assigned_bid && assigned_counterparty && market_counterparty_visible(assigned_counterparty, user, console_unlocked)
-				var/assigned_active = assigned_visible && market_reserved_access(assigned_bid.reserved_account, user, assigned_bid.reservation_key) && !assigned_bid.completed_at && world.time < assigned_bid.expires_at
+				var/assigned_active = assigned_visible && market_reserved_access(assigned_bid.reserved_account, user, assigned_bid.reservation_key) && !assigned_bid.completed_at && world.time < assigned_bid.expires_at // ALLOW(cooldown): market listing/bid expiry state
 				outbound_crates.Add(list(list(
 					"ref" = REF(crate),
 					"name" = crate.name,
-					"contents" = length(crate.contents) + crate.latent_count(), // latent-ok
+					"contents" = length(crate.contents) + crate.latent_count(), // ALLOW(latent): walk reviewed: reads what is materialized on purpose
 					"bid_id" = assigned_active ? assigned_bid.id : null,
 					"route" = assigned_active ? "[market_display_name(assigned_counterparty, user, assigned_bid.cover_name)] — [assigned_bid.profile.name]" : (assigned_bid && !assigned_visible ? "Encrypted private route" : "Spot market"),
 				)))

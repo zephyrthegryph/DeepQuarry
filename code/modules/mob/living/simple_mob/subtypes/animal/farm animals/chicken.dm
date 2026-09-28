@@ -42,7 +42,7 @@ GLOBAL_VAR_INIT(chicken_count, 0)	// How mant chickens DO we have?
 	pixel_y = rand(0, 10)
 	GLOB.chicken_count += 1
 
-// LIFECYCLE: the population cap counts it out.
+// ALLOW(lifecycle): the population cap counts it out.
 /mob/living/simple_mob/animal/passive/chicken/Destroy()
 	. = ..()
 	GLOB.chicken_count -= 1

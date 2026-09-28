@@ -33,7 +33,7 @@
 	update_connections(1)
 	update_icon()
 
-// LIFECYCLE: neighbouring catwalks redraw and things on it may fall.
+// ALLOW(lifecycle): neighbouring catwalks redraw and things on it may fall.
 /obj/structure/catwalk/Destroy()
 	redraw_nearby_catwalks()
 	update_falling()

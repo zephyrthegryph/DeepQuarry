@@ -40,7 +40,7 @@
 		return INITIALIZE_HINT_QDEL
 	update_nearby_tiles()
 
-// LIFECYCLE: leaves its generator's field; neighbouring fields redraw.
+// ALLOW(lifecycle): leaves its generator's field; neighbouring fields redraw.
 /obj/effect/energy_field/Destroy()
 	update_nearby_tiles()
 	if(my_gen)

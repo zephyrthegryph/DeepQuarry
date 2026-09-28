@@ -90,7 +90,7 @@
 		I.amount = 0
 
 /// Units a thing costs in a stock slot.
-/proc/dq_stock_units(atom/movable/thing)
+/proc/dq_stock_units(atom/movable/thing) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(istype(thing, /obj/item/stack))
 		var/obj/item/stack/S = thing
 		return S.get_amount()
@@ -105,7 +105,7 @@
  * its state must serialize (state_can_serialize), it has no contents, and it
  * runs nothing (timers, processing).
  */
-/proc/dq_stock_blob(atom/movable/thing)
+/proc/dq_stock_blob(atom/movable/thing) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!istype(thing) || QDELETED(thing) || length(thing.contents))
 		return null
 	if(length(state_running_blockers(thing)))

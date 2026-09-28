@@ -54,7 +54,7 @@
 
 REF_BACKLIST(/mob/living/simple_mob/blob/spore, list("factory" = "spores"))
 
-// LIFECYCLE: the infested body falls out as the spore bursts.
+// ALLOW(lifecycle): the infested body falls out as the spore bursts.
 /mob/living/simple_mob/blob/spore/Destroy()
 	if(infested)
 		infested.forceMove(get_turf(src))

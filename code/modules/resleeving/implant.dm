@@ -57,7 +57,7 @@ REF_BACKLIST(/obj/item/implant/backup, list("our_db" = "implants"))
 	throw_range = 5
 	w_class = ITEMSIZE_SMALL
 	MATERIAL_MIX(list(MAT_STEEL = 2000, MAT_GLASS = 2000))
-	var/list/obj/item/implant/backup/imps = list()
+	var/list/obj/item/implant/backup/imps = list() // ALLOW(instance_list): d: the implanter's loaded implants, filled in New()
 	var/max_implants = 4 //Iconstates need to exist due to the update proc!
 
 	var/db_key // To give to the baby implants

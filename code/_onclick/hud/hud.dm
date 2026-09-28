@@ -217,7 +217,7 @@ REF_OWNED(/datum/hud, list("toggle_palette", "palette_down", "palette_up", "pale
 REF_OWNED_LIST(/datum/hud, list("minihuds", "floating_actions"))
 REF_PAIR(/datum/hud, list("toggle_palette" = "our_hud", "palette_down" = "our_hud", "palette_up" = "our_hud"))
 
-// LIFECYCLE: takes its ammo counters off its mob's screen and lets the mob go.
+// ALLOW(lifecycle): takes its ammo counters off its mob's screen and lets the mob go.
 /datum/hud/Destroy()
 	if(mymob?.hud_used == src)
 		mymob.hud_used = null

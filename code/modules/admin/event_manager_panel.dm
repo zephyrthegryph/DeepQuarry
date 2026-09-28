@@ -11,7 +11,7 @@
 
 /datum/event_manager_panel
 
-// LIFECYCLE: SSevents forgets its manager panel.
+// ALLOW(lifecycle): SSevents forgets its manager panel.
 /datum/event_manager_panel/Destroy()
 	if(SSevents?.tgui_event_manager_panel == src)
 		SSevents.tgui_event_manager_panel = null

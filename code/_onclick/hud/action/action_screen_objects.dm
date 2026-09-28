@@ -20,7 +20,7 @@
 	/// God I hate how dragging works
 	var/last_hovored_ref
 
-// LIFECYCLE: a button leaves its hud's layout and its action's viewers.
+// ALLOW(lifecycle): a button leaves its hud's layout and its action's viewers.
 /atom/movable/screen/movable/action_button/Destroy()
 	if(our_hud)
 		var/mob/viewer = our_hud.mymob
@@ -428,7 +428,7 @@ REF_PAIR(/atom/movable/screen/palette_scroll/up, list("our_hud" = "palette_up"))
 	mouse_opacity = MOUSE_OPACITY_OPAQUE
 	var/datum/action_group/owner
 
-// LIFECYCLE: its palette re-lays its actions without the landing spot.
+// ALLOW(lifecycle): its palette re-lays its actions without the landing spot.
 /atom/movable/screen/action_landing/Destroy()
 	if(owner)
 		owner.landing = null

@@ -17,7 +17,7 @@
 	qdel_batch(doomed)
 
 /// Deletes `D` after `delay` deciseconds of its own clock. Null-safe.
-/proc/om_qdel_after(datum/D, delay)
+/proc/om_qdel_after(datum/D, delay) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!D || QDELETED(D))
 		return
 	if(!isdatum(D)) // an image or a list: nothing owns it, so the global owner does
@@ -72,7 +72,7 @@
 		om_after(src, i * interval, PROC_REF(start))
 
 /// om_after() target: takes an image off a mob's client screen (after a fade-out).
-/proc/remove_client_image(mob/M, image/I)
+/proc/remove_client_image(mob/M, image/I) // ALLOW(base_proc): global API written before the base-type ratchet
 	M.client?.images -= I
 
 /// Nearsighted for good (the disability) or for a while (EFFECT_NEARSIGHTED: a flash, a sting).

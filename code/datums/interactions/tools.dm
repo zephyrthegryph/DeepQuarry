@@ -31,7 +31,7 @@
 /// The last use_tool() call: its unscaled delay, quality, amount and volume. Parity tests read it; only unit tests write it.
 GLOBAL_LIST_EMPTY(dq_tool_last_use)
 
-/proc/use_tool(mob/actor, obj/item/tool, atom/target, datum/interaction/interaction, delay = 0, quality, tier = 1, amount = 0, volume = 50, message_self, message_others, datum/callback/extra_checks, silent = FALSE, datum/receiver, on_done, list/done_args, on_fail, list/fail_args, claims = FALSE, busy, job_type, list/job_params)
+/proc/use_tool(mob/actor, obj/item/tool, atom/target, datum/interaction/interaction, delay = 0, quality, tier = 1, amount = 0, volume = 50, message_self, message_others, datum/callback/extra_checks, silent = FALSE, datum/receiver, on_done, list/done_args, on_fail, list/fail_args, claims = FALSE, busy, job_type, list/job_params) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!actor || !target)
 		return FALSE
 	if(interaction)
@@ -134,7 +134,7 @@ GLOBAL_LIST_EMPTY(dq_tool_last_use)
  * have turned the welder off or emptied it), then the resources are used and `done_proc`
  * runs with `done_args` (a /proc/ path is called globally). Sets the task's `succeeded`.
  */
-/proc/use_tool_finish(datum/om/task/timed/tool_job/job)
+/proc/use_tool_finish(datum/om/task/timed/tool_job/job) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/obj/item/tool = job.tool
 	if(QDELETED(job.target) || (job.quality && tool_quality_failure(tool, job.quality, job.tier)))
 		use_tool_interrupted(job)
@@ -146,7 +146,7 @@ GLOBAL_LIST_EMPTY(dq_tool_last_use)
 	job.succeeded = TRUE
 	job.tool_done()
 
-/proc/use_tool_interrupted(datum/om/task/timed/tool_job/job)
+/proc/use_tool_interrupted(datum/om/task/timed/tool_job/job) // ALLOW(base_proc): global API written before the base-type ratchet
 	job.tool_failed()
 
 /// The tool did the job. Subtypes with state call their receiver with it.
@@ -206,7 +206,7 @@ GLOBAL_LIST_EMPTY(dq_tool_last_use)
 	T.common_material_remove_tool_done(actor, material, what, which)
 
 /// Why `tool` can't be used as `quality` at `tier`, or null if it can.
-/proc/tool_quality_failure(obj/item/tool, quality, tier = 1)
+/proc/tool_quality_failure(obj/item/tool, quality, tier = 1) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/noun = dq_pred_article(dq_pred_tool_name(quality))
 	if(!tool || !tool.has_tool_quality(quality))
 		return "needs [noun]"
@@ -215,7 +215,7 @@ GLOBAL_LIST_EMPTY(dq_tool_last_use)
 	return null
 
 /// The scaled time of a tool action: `delay` times the tool's speed and the actor's skill.
-/proc/tool_delay(mob/actor, obj/item/tool, delay, quality)
+/proc/tool_delay(mob/actor, obj/item/tool, delay, quality) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!delay)
 		return 0
 	if(!tool)
@@ -226,7 +226,7 @@ GLOBAL_LIST_EMPTY(dq_tool_last_use)
  * Multiplier on tool time for this actor's skill with `quality`. Always 1 until
  * skills exist: the hook is here so they can be added without touching sites.
  */
-/proc/tool_skill_factor(mob/actor, quality)
+/proc/tool_skill_factor(mob/actor, quality) // ALLOW(base_proc): global API written before the base-type ratchet
 	return 1
 
 // ---------------------------------------------------------------------------

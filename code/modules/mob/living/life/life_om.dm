@@ -96,7 +96,7 @@ GLOBAL_LIST_EMPTY(life_z_presence)
 /datum/life_z_presence
 	var/z
 	var/occupied = FALSE
-	var/list/members = list()
+	var/list/members = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
 
 /proc/life_z_presence(z)
 	RETURN_TYPE(/datum/life_z_presence)

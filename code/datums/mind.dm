@@ -37,7 +37,7 @@
 
 	var/datum/job/assigned_job
 
-	var/list/datum/objective/objectives = list()
+	var/list/datum/objective/objectives = list() // ALLOW(instance_list): d: mind objectives; many call sites index it
 	var/list/datum/objective/special_verbs
 
 	var/has_been_rev = 0//Tracks if this mind has been a rev or not
@@ -471,7 +471,7 @@
 	if(brigged_since == -1)
 		brigged_since = world.time
 
-	return (duration <= world.time - brigged_since)
+	return (duration <= world.time - brigged_since) // ALLOW(cooldown): elapsed brig time
 
 /datum/mind/proc/reset()
 	assigned_role =   null

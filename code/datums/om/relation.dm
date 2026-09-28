@@ -3,7 +3,7 @@
 
 /// Links `source` to `target` by relation `rel_path`. Returns the edge, or a
 /// text reason when a single end is taken and the relation refuses.
-/proc/om_link(datum/source, datum/target, rel_path)
+/proc/om_link(datum/source, datum/target, rel_path) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/relation/R = om_registry().relation(rel_path)
 	if(!source || !target || source == target)
 		return "invalid ends"
@@ -44,7 +44,7 @@
 	om_changed(target, CHANGE_RELATION_ADDED)
 	return edge
 
-/proc/om_unlink(datum/source, datum/target, rel_path)
+/proc/om_unlink(datum/source, datum/target, rel_path) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/relation/R = om_registry().relation(rel_path)
 	var/datum/om/rec/srec = source?.om_rec
 	for(var/datum/om/edge/edge as anything in srec?.edges)
@@ -55,7 +55,7 @@
 
 /// Removes `edge` from both ends. `deleting` is the end being destroyed, if
 /// any: end policies apply to the other end. Hooks get both ends non-null.
-/proc/om_unlink_edge(datum/om/edge/edge, datum/deleting)
+/proc/om_unlink_edge(datum/om/edge/edge, datum/deleting) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/relation/R = edge.rel
 	var/datum/source = edge.source
 	var/datum/target = edge.target
@@ -88,14 +88,14 @@
 	else if(deleting == target && R.on_target_delete == OM_END_DELETE_OTHER && !QDELETED(source))
 		qdel(source)
 
-/proc/om_edge_from(datum/om/rec/rec, datum/om/relation/R, as_source)
+/proc/om_edge_from(datum/om/rec/rec, datum/om/relation/R, as_source) // ALLOW(base_proc): global API written before the base-type ratchet
 	for(var/datum/om/edge/edge as anything in rec.edges)
 		if(edge.rel == R && (as_source ? edge.source == rec.owner : edge.target == rec.owner))
 			return edge
 	return null
 
 /// Targets of `E`'s edges of this relation (E is the source).
-/proc/om_related(datum/E, rel_path)
+/proc/om_related(datum/E, rel_path) // ALLOW(base_proc): global API written before the base-type ratchet
 	. = list()
 	var/datum/om/relation/R = om_registry().relation(rel_path)
 	for(var/datum/om/edge/edge as anything in E?.om_rec?.edges)
@@ -103,7 +103,7 @@
 			. += edge.target
 
 /// Sources of edges of this relation pointing at `E` (E is the target): its members.
-/proc/om_related_to(datum/E, rel_path)
+/proc/om_related_to(datum/E, rel_path) // ALLOW(base_proc): global API written before the base-type ratchet
 	. = list()
 	var/datum/om/relation/R = om_registry().relation(rel_path)
 	for(var/datum/om/edge/edge as anything in E?.om_rec?.edges)
@@ -111,7 +111,7 @@
 			. += edge.source
 
 /// The single target of `E`'s edge of this relation, or null.
-/proc/om_relation_of(datum/E, rel_path)
+/proc/om_relation_of(datum/E, rel_path) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/relation/R = om_registry().relation(rel_path)
 	for(var/datum/om/edge/edge as anything in E?.om_rec?.edges)
 		if(edge.rel == R && edge.source == E)
@@ -120,7 +120,7 @@
 
 /// The single source of an edge of this relation targeting `E`, or null.
 /// Pair with a target_single relation (at most one exists to find).
-/proc/om_source_of(datum/E, rel_path)
+/proc/om_source_of(datum/E, rel_path) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/relation/R = om_registry().relation(rel_path)
 	for(var/datum/om/edge/edge as anything in E?.om_rec?.edges)
 		if(edge.rel == R && edge.target == E)
@@ -136,7 +136,7 @@
 /datum/om/behaviour/internal/edge_refresh/on_wake(datum/om/edge/edge, changes)
 	om_edge_refresh(edge)
 
-/proc/om_edge_setup(datum/om/edge/edge)
+/proc/om_edge_setup(datum/om/edge/edge) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/relation/R = edge.rel
 	if(R.compiled_active_if || R.compiled_break_if)
 		var/datum/om/behaviour/B = om_registry().edge_behaviour
@@ -147,13 +147,13 @@
 			om_watch(edge, edge.target, mask, B)
 	om_edge_refresh(edge)
 
-/proc/om_edge_teardown(datum/om/edge/edge)
+/proc/om_edge_teardown(datum/om/edge/edge) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(edge.om_rec)
 		om_teardown_rest(edge)
 	edge.active = FALSE
 
 /// Applies or releases the relation's contributions as active_if says.
-/proc/om_edge_refresh(datum/om/edge/edge)
+/proc/om_edge_refresh(datum/om/edge/edge) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/relation/R = edge.rel
 	var/datum/source = edge.source
 	var/datum/target = edge.target
@@ -187,7 +187,7 @@
 /// An edge of relation `rel_id` was added to or removed from `rec`: wake
 /// behaviours that asked for RELATION_ADDED/REMOVED on it, and rebuild every
 /// forwarding path that runs through this entity.
-/proc/om_edge_structure_changed(datum/om/rec/rec, rel_id, bit)
+/proc/om_edge_structure_changed(datum/om/rec/rec, rel_id, bit) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(rec.table.cache_relations)
 		om_cache_clear(rec.owner, rec.table.cache_relations, rel_id)
 	for(var/i in 1 to length(rec.att))
@@ -210,7 +210,7 @@
 			if(origin.om_rec)
 				om_rebuild_fwd(origin.om_rec)
 
-/proc/om_has_related(datum/om/rec/rec)
+/proc/om_has_related(datum/om/rec/rec) // ALLOW(base_proc): global API written before the base-type ratchet
 	for(var/datum/om/behaviour/B as anything in rec.att)
 		if(B.compiled_related)
 			return TRUE
@@ -223,7 +223,7 @@
 	return FALSE
 
 /// Every entity one hop along relation `rel_id` from `E`, either direction.
-/proc/om_neighbours(datum/E, rel_id)
+/proc/om_neighbours(datum/E, rel_id) // ALLOW(base_proc): global API written before the base-type ratchet
 	. = list()
 	for(var/datum/om/edge/edge as anything in E.om_rec?.edges)
 		if(edge.rel.id != rel_id)
@@ -232,7 +232,7 @@
 
 /// Recomputes the forwarding entries `rec`'s owner has installed on related
 /// entities (wake_on_related, derived related_inputs, aggregate members).
-/proc/om_rebuild_fwd(datum/om/rec/rec)
+/proc/om_rebuild_fwd(datum/om/rec/rec) // ALLOW(base_proc): global API written before the base-type ratchet
 	om_clear_fwd_out(rec)
 	var/datum/origin = rec.owner
 	if(!origin || rec.torn_down)
@@ -251,7 +251,7 @@
 					if(edge.rel.id == D.over_rel_id && edge.target == origin)
 						om_fwd_add(rec, edge.source, D.member_inputs, -D.idx, FALSE)
 
-/proc/om_install_path(datum/om/rec/rec, list/ids, depth, datum/at, mask, bid)
+/proc/om_install_path(datum/om/rec/rec, list/ids, depth, datum/at, mask, bid) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/last = depth == length(ids)
 	for(var/datum/N as anything in om_neighbours(at, ids[depth]))
 		if(N == rec.owner)
@@ -262,7 +262,7 @@
 			om_fwd_add(rec, N, 0, bid, TRUE)
 			om_install_path(rec, ids, depth + 1, N, mask, bid)
 
-/proc/om_fwd_add(datum/om/rec/rec, datum/N, mask, bid, structural)
+/proc/om_fwd_add(datum/om/rec/rec, datum/N, mask, bid, structural) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/rec/nrec = om_rec_of(N)
 	if(!nrec)
 		return
@@ -273,7 +273,7 @@
 	if(mask)
 		N.om_listen |= mask
 
-/proc/om_clear_fwd_out(datum/om/rec/rec)
+/proc/om_clear_fwd_out(datum/om/rec/rec) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/origin = rec.owner
 	for(var/datum/N as anything in rec.fwd_out)
 		var/datum/om/rec/nrec = N.om_rec

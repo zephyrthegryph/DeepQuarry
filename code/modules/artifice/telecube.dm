@@ -99,7 +99,7 @@
 		cut_overlays()
 		add_overlay(glow)
 
-// LIFECYCLE: its mate collapses into an explosion.
+// ALLOW(lifecycle): its mate collapses into an explosion.
 /obj/item/telecube/Destroy()
 	if(mate)
 		var/turf/T = get_turf(mate)

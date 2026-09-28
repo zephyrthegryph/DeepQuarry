@@ -36,7 +36,7 @@
 		return COMPONENT_INCOMPATIBLE
 	set_tissue(tissue)
 
-// LIFECYCLE: the brain view is detached before the tissue drops, so it isn't killed on the way out.
+// ALLOW(lifecycle): the brain view is detached before the tissue drops, so it isn't killed on the way out.
 /datum/component/mind_host/Destroy(force)
 	// Detach the view before dropping the tissue, so it isn't put through a death on the way out.
 	if(view)
@@ -121,7 +121,7 @@
 	return TRUE
 
 /// The mind host of `A`, if it is one.
-/proc/get_mind_host(atom/A)
+/proc/get_mind_host(atom/A) // ALLOW(base_proc): global API written before the base-type ratchet
 	return A?.GetComponent(/datum/component/mind_host)
 
 /// The view mob a mind host holds (its hosted mind lives there), if any.

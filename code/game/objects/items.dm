@@ -19,7 +19,7 @@
 	pass_flags = PASSTABLE
 	pressure_resistance = 5
 //	causeerrorheresoifixthis
-	var/obj/item/master = null
+	var/obj/item/master = null // ALLOW(state_ref): relationship: the item this one is attached to
 	var/list/attack_verb //Used in attackby() to say how something was attacked "[x] has been [z.attack_verb] by [y] with [z]"
 	var/force = 0
 	var/throwforce = 0
@@ -58,6 +58,7 @@
 	var/slowdown = 0 // How much clothing is slowing you down. Negative values speeds you up
 	var/canremove = TRUE //Mostly for Ninja code at this point but basically will not allow the item to be removed if set to 0. /N
 
+	// ALLOW(state_ref): owned: uplink object held outside contents
 	var/obj/item/uplink/hidden/hidden_uplink = null // All items can have an uplink hidden inside, just remember to add the triggers.
 	var/zoomdevicename = null //name used for message when binoculars/scope is used
 	var/tmp/zoom = 0 //1 if item is actively being used to zoom. For scoped guns and binoculars.
@@ -95,6 +96,7 @@
 	var/reach = 1 // Length of tiles it can reach, 1 is adjacent.
 	var/addblends // Icon overlay for ADD highlights when applicable.
 
+	// ALLOW(state_ref): holds an icon file, which encodes as a resource; a runtime /icon is refused
 	var/icon/default_worn_icon	//Default on-mob icon
 	var/worn_layer				//Default on-mob layer
 
@@ -126,8 +128,9 @@
 	var/tmp/list/warned_of_possession //Checks to see who has been informed this item is possessed.
 	var/tmp/cleaving = FALSE // Used to avoid infinite cleaving.
 	var/list/tool_qualities
+	// ALLOW(state_ref): relationship: the organ this item is an augment of
 	var/obj/item/organ/my_augment = null	// Used to reference the object's host organ.
-	var/datum/identification/identity = null
+	var/datum/identification/identity = null // ALLOW(state_ref): owned: identification datum, refers back to its holder
 	var/identity_type = /datum/identification
 	var/init_hide_identity = FALSE // Set to true to automatically obscure the object on initialization.
 
@@ -159,7 +162,7 @@
 		else
 			embed_chance = max(5, round(force/(w_class*3)))
 
-// LIFECYCLE: the base item: leaves its machine's parts list, its wearer's inventory and its granted actions.
+// ALLOW(lifecycle): the base item: leaves its machine's parts list, its wearer's inventory and its granted actions.
 /obj/item/Destroy()
 	// Machine components are normally located inside their owner. Detach the
 	// owner's strong bookkeeping reference before qdel continues so a component

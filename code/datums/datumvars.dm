@@ -11,7 +11,7 @@
 /datum/proc/vv_edit_var(var_name, var_value)
 	if(var_name == NAMEOF(src, vars))
 		return FALSE
-	vars[var_name] = var_value
+	vars[var_name] = var_value // ALLOW(api): VV: admins edit any var by name
 	datum_flags |= DF_VAR_EDITED
 	return TRUE
 

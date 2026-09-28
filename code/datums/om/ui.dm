@@ -7,13 +7,13 @@
 /// Binds a UI session to `target`: a watch edge on `mask` that raises the
 /// target to RELEVANCE_WATCHED while bound. Changes are coalesced and pushed
 /// at most once per OM_UI_THROTTLE per session via session.om_ui_push().
-/proc/om_ui_bind(datum/session, datum/target, mask)
+/proc/om_ui_bind(datum/session, datum/target, mask) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/behaviour/B = om_registry().ui_behaviour
 	om_attach(session, B)
 	om_watch(session, target, mask, B)
 	om_observe(target, session, RELEVANCE_WATCHED)
 
-/proc/om_ui_unbind(datum/session, datum/target)
+/proc/om_ui_unbind(datum/session, datum/target) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/behaviour/B = om_registry().ui_behaviour
 	om_unwatch(session, target, B)
 	om_unobserve(target, session)
@@ -21,7 +21,7 @@
 		om_detach(session, B)
 
 /// Binds every ui row of `E`'s decls (target proc, watch mask) for `session`.
-/proc/om_ui_bind_table(datum/session, datum/E)
+/proc/om_ui_bind_table(datum/session, datum/E) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/rec/rec = om_rec_of(E)
 	if(!rec)
 		return
@@ -31,7 +31,7 @@
 			om_ui_bind(session, target, row["watch"] || CHANGE_GENERIC_MASK)
 
 /// The rates a ui row streams, as name -> list(value, rate, at).
-/proc/om_ui_stream(datum/E)
+/proc/om_ui_stream(datum/E) // ALLOW(base_proc): global API written before the base-type ratchet
 	. = list()
 	var/datum/om/rec/rec = E?.om_rec
 	if(!rec)
@@ -43,7 +43,7 @@
 				.[name] = om_ui_rate(R)
 
 /// Rate streaming: the client interpolates value + rate * (now - at).
-/proc/om_ui_rate(datum/om/rate/R)
+/proc/om_ui_rate(datum/om/rate/R) // ALLOW(base_proc): global API written before the base-type ratchet
 	return list("value" = R.now(), "rate" = R.per_second, "at" = R.sched_now())
 
 /// Called on the session when a bound target changed. /datum/tgui pushes an update.
@@ -85,14 +85,14 @@
 // the reactor track replaces their bodies with its generated bindings.
 
 /// Stub: register interest in native `bits` for `E` (reactor binding goes here).
-/proc/om_native_bridge_watch(datum/E, bits)
+/proc/om_native_bridge_watch(datum/E, bits) // ALLOW(base_proc): global API written before the base-type ratchet
 	return FALSE
 
 /// Stub: tell the native side `E`'s relevance level (reactor binding goes here).
-/proc/om_native_bridge_relevance(datum/E, level)
+/proc/om_native_bridge_relevance(datum/E, level) // ALLOW(base_proc): global API written before the base-type ratchet
 	return FALSE
 
-/proc/om_native_watch(datum/om/rec/rec)
+/proc/om_native_watch(datum/om/rec/rec) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/bits = 0
 	for(var/datum/om/behaviour/B as anything in rec.att)
 		bits |= B.wake_on_native
@@ -101,7 +101,7 @@
 		om_native_bridge_watch(rec.owner, bits)
 
 /// Called by the reactor drain.
-/proc/om_native_deliver(datum/E, bits)
+/proc/om_native_deliver(datum/E, bits) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/rec/rec = E?.om_rec
 	if(!rec || rec.torn_down)
 		return
@@ -110,7 +110,7 @@
 		if((B.wake_on_native & bits) && (rec.att_state[i] & OM_ATT_STARTED))
 			rec.sched.call_hook(rec, B, OM_HOOK_NATIVE, B.wake_on_native & bits)
 
-/proc/om_native_relevance(datum/E, level)
+/proc/om_native_relevance(datum/E, level) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(E)
 		om_native_bridge_relevance(E, level)
 

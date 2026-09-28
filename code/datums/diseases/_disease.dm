@@ -28,7 +28,7 @@ GLOBAL_LIST_INIT(diseases, subtypesof(/datum/disease))
 	// Other
 	var/list/viable_mobtypes
 	var/mob/living/carbon/affected_mob
-	var/list/cures = list()
+	var/list/cures = list() // ALLOW(instance_list): d: every disease defines its cures
 	var/infectivity = 10
 	var/cure_chance = 8
 	var/permeability_mod = 1
@@ -39,7 +39,7 @@ GLOBAL_LIST_INIT(diseases, subtypesof(/datum/disease))
 
 REGISTRY_MEMBERSHIP(/datum/disease, REGISTRY_ACTIVE_DISEASES)
 
-// LIFECYCLE: a running disease ends its effects.
+// ALLOW(lifecycle): a running disease ends its effects.
 /datum/disease/Destroy()
 	if(global_flag_check(virus_modifiers, PROCESSING))
 		End()

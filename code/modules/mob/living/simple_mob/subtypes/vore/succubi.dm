@@ -34,7 +34,7 @@ GLOBAL_LIST_INIT(succubus_safewords, list(
 	say_list_type = /datum/say_list/succubus
 
 	var/random_skin = 1
-	var/list/skins = list(
+	var/list/skins = list( // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 		"succubus",
 		"succubusbob",
 		"succubusginger",

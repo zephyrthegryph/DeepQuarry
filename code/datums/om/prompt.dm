@@ -97,7 +97,7 @@
 
 /// Asks `user` and calls `on_answer` with the answer later. Returns the prompt, or null if E
 /// or the user is gone or has no client (outside tests).
-/proc/om_prompt(datum/E, mob/user, list/spec, on_answer)
+/proc/om_prompt(datum/E, mob/user, list/spec, on_answer) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(isnull(E))
 		E = om_global_owner()
 	if(istype(user, /client))
@@ -313,7 +313,7 @@
 	return TRUE
 
 /// Delivers an answer (tgui, or a test). Returns null when on_answer ran, else the reason it did not.
-/proc/om_prompt_answer(datum/om/prompt/P, answer)
+/proc/om_prompt_answer(datum/om/prompt/P, answer) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(P.answered)
 		return "answered"
 	P.answered = TRUE
@@ -370,7 +370,7 @@
 	return null
 
 
-/proc/om_prompt_call(datum/E, proc_ref, mob/user, value, datum/om/prompt/P)
+/proc/om_prompt_call(datum/E, proc_ref, mob/user, value, datum/om/prompt/P) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!proc_ref)
 		return
 	try
@@ -390,7 +390,7 @@
 	return matches
 
 /// The user closed the window without answering (or it timed out).
-/proc/om_prompt_closed(datum/om/prompt/P)
+/proc/om_prompt_closed(datum/om/prompt/P) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(P.answered)
 		return
 	if(!isnull(P.spec["cancel_answer"]))
@@ -407,7 +407,7 @@
 
 // ---------------------------------------------------------------- tgui
 
-/proc/om_prompt_show(datum/om/prompt/P, mob/user)
+/proc/om_prompt_show(datum/om/prompt/P, mob/user) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/list/S = P.spec
 	var/timeout = S["timeout"] || 0
 	switch(S["kind"] || "alert")

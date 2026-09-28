@@ -16,7 +16,7 @@
 	mob_bump_flag = SIMPLE_ANIMAL //This not existing was breaking vore bump for some reason.
 	parasitic = TRUE //Digestion immunity var
 
-	var/list/speak = list()
+	var/list/speak = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 	var/speak_chance = 0 //MAy have forgotten to readd that.
 	//Synx speech code overrides normal speech code but is still a x in 200 chance of triggereing, as all mobs do.
 	//VAR$ SETUP
@@ -29,14 +29,14 @@
 	var/stomach_distended_state = "synx_s"
 	var/transformed = FALSE
 	var/memorysize = 50 //Var for how many messages synxes remember if they know speechcode
-	var/list/voices = list()
+	var/list/voices = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 	var/acid_damage_lower = SYNX_LOWER_DAMAGE - 1 //Variables for a hacky way to change to burn damage when they vomit up their stomachs. Set to 1 less than melee damage because it takes a minimum of 1 brute damage for this to activate.
 	var/acid_damage_upper = SYNX_UPPER_DAMAGE - 1
 	var/stomach_distended = 0 //Check for whether or not the synx has vomitted up its stomach.
 	var/forcefeedchance = 20 //This needs to be defined in the parent because code.
 	// Recycling bigdragon code for modular system. Hope this works! -Azel
 		//Sprites are layered ontop of one-another in order of this list
-	var/list/overlay_colors = list(
+	var/list/overlay_colors = list( // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 		"Body" = "#FFFFFF",
 		"Horns" = "#FFFFFF",
 		"Marks" = "#FFFFFF",
@@ -55,7 +55,7 @@
 		"Capra",
 	)
 	var/horns
-	var/list/marking_styles = list(
+	var/list/marking_styles = list( // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 		"None",
 		"Basic",
 		"Star",

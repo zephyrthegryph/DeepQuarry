@@ -13,7 +13,7 @@
 /// because the phase order encodes every ordering hazard the codebase used to
 /// rely on ad-hoc Destroy() comments for. Returns what phase 7's Destroy()
 /// (or, for a plain /datum with no override, the base no-op) returned.
-/proc/destroy_transaction(datum/D, force, datum/qdel_item/trash)
+/proc/destroy_transaction(datum/D, force, datum/qdel_item/trash) // ALLOW(base_proc): global API written before the base-type ratchet
 	// Indexed by LIFECYCLE_PHASE_* id, so it must have a slot per phase
 	// (an empty lazy list made every phase write an out-of-bounds runtime).
 	if(length(trash.phase_ms) < LIFECYCLE_PHASE_COUNT)
@@ -119,7 +119,7 @@
 /// Accumulates the milliseconds since `start_tick` onto phase `id`. Cheap:
 /// one TICK_USAGE_TO_MS and one list write, mirroring how destroy_time
 /// itself is already measured in qdel().
-/proc/dq_lifecycle_time(datum/qdel_item/trash, id, start_tick)
+/proc/dq_lifecycle_time(datum/qdel_item/trash, id, start_tick) // ALLOW(base_proc): global API written before the base-type ratchet
 	trash.phase_ms[id] += TICK_USAGE_TO_MS(start_tick)
 	#ifdef BENCHMARK_DEEP_PROFILE
 	benchmark_qdel_phase(id, TICK_USAGE_TO_MS(start_tick))
@@ -150,7 +150,7 @@
 /// Ends any periodic work (PERIODIC_START, code/datums/om/periodic.dm),
 /// releases HUD/screen objects from any client they're shown to, and calls
 /// the clock and grants teardown hook points.
-/proc/dq_lifecycle_teardown(datum/D)
+/proc/dq_lifecycle_teardown(datum/D) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(D.periodic_pipe)
 		periodic_stop(D)
 	if(isatom(D))
@@ -170,7 +170,7 @@
 
 /// Clock teardown hook point (DQ Medical w6/k1): cancels callbacks owned by
 /// and targeting `D`. A no-op until that track lands `clock_teardown()`.
-/proc/dq_lifecycle_clock_teardown(datum/D)
+/proc/dq_lifecycle_clock_teardown(datum/D) // ALLOW(base_proc): global API written before the base-type ratchet
 	return
 
 /// Grants auto-revoke hook point (P5, doc/rewrite/lifecycle.md §2 phase 5,
@@ -178,7 +178,7 @@
 /// revoke itself, following the pattern of a COMSIG_QDELETING handler owned
 /// by the grant's holder rather than the source cleaning up after itself. A
 /// no-op until that track lands.
-/proc/dq_lifecycle_revoke_grants(datum/D)
+/proc/dq_lifecycle_revoke_grants(datum/D) // ALLOW(base_proc): global API written before the base-type ratchet
 	// Object model (code/datums/om/entity.dm): contributions and grants this
 	// datum holds anywhere, its own store, behaviours (on_stop), deadlines, tasks.
 	if(D.om_rec)
@@ -196,7 +196,7 @@
 /datum/proc/destroy_effects()
 	return null
 
-/proc/dq_lifecycle_effects(datum/D)
+/proc/dq_lifecycle_effects(datum/D) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/destroy_effects_data/data = D.destroy_effects()
 	return data?.apply(D)
 
@@ -207,5 +207,5 @@
 /// catches whatever phase 7's leftover Destroy() set again) to break
 /// reference cycles, then does nothing else -- D is not parked anywhere,
 /// it is simply handed to the GC from here.
-/proc/dq_lifecycle_scrub(datum/D)
+/proc/dq_lifecycle_scrub(datum/D) // ALLOW(base_proc): global API written before the base-type ratchet
 	dq_lifecycle_null_declared_refs(D)

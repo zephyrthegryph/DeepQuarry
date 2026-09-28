@@ -72,21 +72,21 @@
 /datum/native_watch/world/proc/is_live()
 	return handle && vg_world_subscriptions(handle) > 0
 
-/proc/om_world_new_watch(datum/owner, callback, lane)
+/proc/om_world_new_watch(datum/owner, callback, lane) // ALLOW(base_proc): global API written before the base-type ratchet
 	RETURN_TYPE(/datum/native_watch/world)
 	if(!owner || !callback)
 		CRASH("om_world watch needs an owner and a proc")
 	return new /datum/native_watch/world(owner, callback, isnull(lane) ? LANE_SIMULATION : lane)
 
 /// One-shot: `proc` runs on `owner` at the first tick at or after world.time `time`.
-/proc/om_world_at(datum/owner, time, callback, lane)
+/proc/om_world_at(datum/owner, time, callback, lane) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/native_watch/world/W = om_world_new_watch(owner, callback, lane)
 	W.one_shot = TRUE
 	W.token = vg_world_at(W.handle, om_world_rust_lane(W.lane), om_world_tick_of(time))
 	return W
 
 /// `proc` runs when key (kind, id) is published with any bit of `mask`.
-/proc/om_world_on_key(datum/owner, kind, id, mask, callback, lane)
+/proc/om_world_on_key(datum/owner, kind, id, mask, callback, lane) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/native_watch/world/W = om_world_new_watch(owner, callback, lane)
 	W.token = vg_world_on_key(W.handle, kind, id, mask, om_world_rust_lane(W.lane))
 	return W
@@ -96,14 +96,14 @@
 	vg_world_publish(kind, id, mask)
 
 /// `proc` runs when any channel in `mask` of the Rust entity `handle` (WORLD_HANDLE) changes.
-/proc/om_world_on_change(datum/owner, list/handle, mask, callback, lane)
+/proc/om_world_on_change(datum/owner, list/handle, mask, callback, lane) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/native_watch/world/W = om_world_new_watch(owner, callback, lane)
 	W.token = vg_world_watch_changed(handle[1], W.handle, om_world_rust_lane(W.lane), handle[2], mask)
 	return W
 
 /// `proc` runs when a COND_* condition becomes true. Rust checks the condition
 /// (channel, unit, levels) and raises a runtime if it is invalid.
-/proc/om_world_when(datum/owner, list/condition, callback, lane)
+/proc/om_world_when(datum/owner, list/condition, callback, lane) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/native_watch/world/W = om_world_new_watch(owner, callback, lane)
 	var/rust_lane = om_world_rust_lane(W.lane)
 	try
@@ -128,7 +128,7 @@
 	return W
 
 /// `proc` runs at the exact tick rate model `model` enters `cmp level` (at once if it holds).
-/proc/om_world_on_rate(datum/owner, model, cmp, level, callback, lane)
+/proc/om_world_on_rate(datum/owner, model, cmp, level, callback, lane) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/native_watch/world/W = om_world_new_watch(owner, callback, lane)
 	W.token = vg_world_rate_watch(model, W.handle, om_world_rust_lane(W.lane), cmp, level)
 	return W
@@ -185,7 +185,7 @@
 	var/world_last_wakes = 0
 	var/world_last_ms = 0
 	/// Wakes by owner type, bounded at OM_MAX_STAT_TYPES types (the rest under "other").
-	var/list/world_wakes_by_type = list()
+	var/list/world_wakes_by_type = list() // ALLOW(instance_list): d: one live scheduler (plus test ones); counted on every world wake
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 	/// Tests: owner -> wakes delivered + 1 (om_world_trace()).
 	var/list/world_traced
@@ -284,7 +284,7 @@
 		.[names[i]] = v[i]
 
 /// World-wake counters for the profiler and the benchmarks.
-/proc/om_world_diagnostics(datum/om/scheduler/sched)
+/proc/om_world_diagnostics(datum/om/scheduler/sched) // ALLOW(base_proc): global API written before the base-type ratchet
 	sched = sched || GLOB.om_live_sched || om_scheduler()
 	var/list/by_type = list()
 	for(var/type in sched.world_wakes_by_type)
@@ -304,17 +304,17 @@
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 /// Tests: start counting world wakes delivered to `owner`.
-/proc/om_world_trace(datum/owner)
+/proc/om_world_trace(datum/owner) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/scheduler/sched = GLOB.om_live_sched
 	LAZYINITLIST(sched.world_traced)
 	if(!sched.world_traced[owner])
 		sched.world_traced[owner] = 1
 
-/proc/om_world_traced_wakes(datum/owner)
+/proc/om_world_traced_wakes(datum/owner) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/scheduler/sched = GLOB.om_live_sched
 	return (sched.world_traced && sched.world_traced[owner]) ? sched.world_traced[owner] - 1 : 0
 
-/proc/om_world_untrace(datum/owner)
+/proc/om_world_untrace(datum/owner) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/scheduler/sched = GLOB.om_live_sched
 	if(sched.world_traced)
 		sched.world_traced -= owner

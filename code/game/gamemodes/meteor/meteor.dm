@@ -11,7 +11,7 @@
 	var/next_wave = METEOR_DELAY
 
 /datum/game_mode/meteor/periodic_step()
-	if(world.time >= next_wave)
+	if(world.time >= next_wave) // ALLOW(cooldown): wave schedule
 		next_wave = world.time + GLOB.meteor_wave_delay
 		spawn_meteors(6, GLOB.meteors_normal)
 

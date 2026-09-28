@@ -258,7 +258,7 @@
  * * context - the atom performing the operation, this is the last argument sent in COMSIG_MATCONTAINER_ITEM_CONSUMED and is used mostly for silo logging
  */
 /datum/component/material_container/proc/user_insert(obj/item/held_item, mob/living/user, atom/context = parent)
-	set waitfor = FALSE // S10b keeps: waits on a prompt (tgui_input_number)
+	set waitfor = FALSE // ALLOW(scheduler): waits on a prompt (tgui_input_number)
 	. = 0
 
 	//All items that do not have any contents

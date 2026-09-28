@@ -47,7 +47,7 @@
 	var/leap_sound = 'sound/weapons/spiderlunge.ogg'
 
 	var/random_skin = 1
-	var/list/skins = list(
+	var/list/skins = list( // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 		"scel_orange",
 		"scel_blue",
 		"scel_purple",

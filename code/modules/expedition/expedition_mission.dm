@@ -81,7 +81,7 @@ REF_OWNED_LIST(/datum/expedition_mission, "objectives")
 		return TRUE
 	if(state == EXP_MISSION_FAILED)
 		return FALSE
-	if(deadline && world.time > deadline)
+	if(deadline && world.time > deadline) // ALLOW(cooldown): mission deadline
 		state = EXP_MISSION_FAILED
 		return FALSE
 	if(party_wiped())

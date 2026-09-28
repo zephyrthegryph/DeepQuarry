@@ -42,7 +42,7 @@
 	return "[trim(full_name)]"
 
 /datum/language
-	var/list/scramble_cache = list()
+	var/list/scramble_cache = list() // ALLOW(instance_list): d: one per language singleton; the cache fills as soon as the language is heard
 
 /* moved to its own file because it was edited so much.
 /datum/language/proc/scramble(input, list/known_languages)

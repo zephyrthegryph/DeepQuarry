@@ -66,6 +66,7 @@
 	var/decryptkey = "password"
 
 	//Spam filtering stuff
+	// ALLOW(instance_list): d: edited in place per instance (4 writers)
 	var/list/spamfilter = list("You have won", "your prize", "male enhancement", "shitcurity", \
 			"are happy to inform you", "account number", "enter your PIN")
 			//Messages having theese tokens will be rejected by server. Case sensitive
@@ -282,6 +283,7 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 10
 	active_power_usage = 100
+	// ALLOW(instance_list): d: blackbox singleton log
 	var/list/messages = list()		//Stores messages of non-standard frequencies
 	var/list/messages_admin
 
@@ -298,7 +300,7 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 	var/list/msg_service
 	var/list/msg_explorer
 
-	var/list/datum/feedback_variable/feedback = new()
+	var/list/datum/feedback_variable/feedback = new() // ALLOW(instance_list): d: blackbox singleton; feedback datums fill it every round
 
 	//Only one can exist in the world!
 /obj/machinery/blackbox_recorder/Initialize(mapload)
@@ -307,7 +309,7 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 		return INITIALIZE_HINT_QDEL
 	GLOB.blackbox = src
 
-// LIFECYCLE: the blackbox respawns with its logs.
+// ALLOW(lifecycle): the blackbox respawns with its logs.
 /obj/machinery/blackbox_recorder/Destroy()
 	var/turf/T = locate(1,1,2)
 	if(T)

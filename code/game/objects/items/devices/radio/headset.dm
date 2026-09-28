@@ -14,8 +14,8 @@
 
 	var/translate_binary = FALSE
 	var/translate_hive = FALSE
-	var/obj/item/encryptionkey/keyslot1 = null
-	var/obj/item/encryptionkey/keyslot2 = null
+	var/obj/item/encryptionkey/keyslot1 = null // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/obj/item/encryptionkey/keyslot2 = null // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 	var/ks1type = null
 	var/ks2type = null
 
@@ -709,9 +709,10 @@ REF_OWNED(/obj/item/radio/headset, list("keyslot1", "keyslot2"))
 	desc = "A headset with numerous toolkits appended to it, applying a wide variety of effects to its wearer set as per its manufacturer."
 	icon_state = "cent_headset_alt"
 	item_state = "headset"
-	var/mob/living/carbon/human/wearer
+	var/mob/living/carbon/human/wearer // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 	var/effect_icon = 'icons/effects/effects.dmi'	//Cosmetic Effect that will be applied to the mob as an overlay
 	var/effect_icon_state = "arrow2"
+	// ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 	var/image/effect_overlay = null	//Reference to an overlay so we can remove it on unequip
 	var/overlay_offset_y = 32
 	//Spells that will be added on equip

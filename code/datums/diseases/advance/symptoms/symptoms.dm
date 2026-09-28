@@ -29,9 +29,9 @@ GLOBAL_LIST_INIT(list_symptoms, subtypesof(/datum/symptom))
 	var/neutered = FALSE
 	var/stopped = FALSE // Used for Viral Suspended Animaton, stops a symptom but doesn't neuter it.
 
-	var/list/prefixes = list()
-	var/list/bodies = list()
-	var/list/suffixes = list()
+	var/list/prefixes = list() // ALLOW(instance_list): d: reset with initial() in severityset(); few symptom datums
+	var/list/bodies = list() // ALLOW(instance_list): d: reset with initial() in severityset(); few symptom datums
+	var/list/suffixes = list() // ALLOW(instance_list): d: reset with initial() in severityset(); few symptom datums
 
 /datum/symptom/New()
 	var/list/S = GLOB.list_symptoms

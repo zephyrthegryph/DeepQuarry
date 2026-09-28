@@ -1,6 +1,6 @@
 /// The SQL leaf: its query waits on the database, so callers don't wait for it.
 /proc/sql_poll_population()
-	set waitfor = FALSE // S10b keeps: SQL leaf (population insert)
+	set waitfor = FALSE // ALLOW(scheduler): SQL leaf (population insert)
 	if(!CONFIG_GET(flag/enable_stat_tracking))
 		return
 	var/admincount = GLOB.admins.len

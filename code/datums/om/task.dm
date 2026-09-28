@@ -139,7 +139,7 @@
 
 /// Calls `proc_ref` with the task: a /proc/ path globally, else on the receiver (skipped once
 /// the receiver is gone).
-/proc/om_task_call(datum/om/task/T, proc_ref)
+/proc/om_task_call(datum/om/task/T, proc_ref) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(copytext("[proc_ref]", 1, 7) == "/proc/")
 		return call(proc_ref)(T)
 	var/datum/R = T.receiver
@@ -179,7 +179,7 @@
 		var/datum/D = value
 		if(isdatum(D) && QDELETED(D))
 			return "gone"
-		T.vars[key] = value
+		T.vars[key] = value // ALLOW(api): om_task_start() params and task_holds clearing: task state by name
 	if(!T.receiver)
 		T.receiver = actor
 	if(isnull(T.duration))
@@ -238,7 +238,7 @@
 
 /// A zero-duration task that completes at once (timed actions with no delay): its checks run,
 /// then on_complete, or on_cancel with the reason (which is returned).
-/proc/om_task_run_instantly(datum/om/task/T)
+/proc/om_task_run_instantly(datum/om/task/T) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/reason = T.why_not_running()
 	if(!isnull(reason))
 		T.state = OM_TASK_CANCELLED
@@ -251,7 +251,7 @@
 
 /// Claims the target (or links to it) and holds every datum in the task's state. Null, or the
 /// reason it can't.
-/proc/om_task_claim_all(datum/om/task/T)
+/proc/om_task_claim_all(datum/om/task/T) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/task/spec = T.spec
 	var/datum/target = T.target
 	var/datum/actor = T.actor
@@ -300,7 +300,7 @@
 	by_type[path] = names
 	return names
 
-/proc/om_task_cancel(datum/om/task/T, reason = "cancelled")
+/proc/om_task_cancel(datum/om/task/T, reason = "cancelled") // ALLOW(base_proc): global API written before the base-type ratchet
 	if(T.state != OM_TASK_RUNNING)
 		return FALSE
 	T.state = OM_TASK_CANCELLED
@@ -312,7 +312,7 @@
 		stack_trace("om task [T.name] on_cancel: [e]")
 	return TRUE
 
-/proc/om_task_complete(datum/om/task/T)
+/proc/om_task_complete(datum/om/task/T) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(T.state != OM_TASK_RUNNING)
 		return FALSE
 	T.state = OM_TASK_DONE
@@ -323,7 +323,7 @@
 		stack_trace("om task [T.name] on_complete: [e]")
 	return TRUE
 
-/proc/om_task_finish(datum/om/task/T)
+/proc/om_task_finish(datum/om/task/T) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/rec/rec = T.actor?.om_rec
 	om_task_release_claims(T)
 	if(T.om_rec)
@@ -341,7 +341,7 @@
 	if(!rec.torn_down)
 		om_tasks_reschedule(rec)
 
-/proc/om_tasks_reschedule(datum/om/rec/rec)
+/proc/om_tasks_reschedule(datum/om/rec/rec) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/soonest = null
 	for(var/datum/om/task/T as anything in rec.tasks)
 		if(isnull(soonest) || T.ends_at < soonest)
@@ -392,7 +392,7 @@
 
 /// Runs the task's current step and acts on its result. Cancelling is always safe: no
 /// proc is suspended inside a step.
-/proc/om_task_run_step(datum/om/task/T, t)
+/proc/om_task_run_step(datum/om/task/T, t) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/list/S = T.spec.compiled_steps
 	var/i = T.step_no * 2 - 1
 	var/result
@@ -433,7 +433,7 @@
 	T.on_rescheduled(S[T.step_no * 2])
 
 /// TRUE when `proc_ref` is a proc of the task's own type (a step that runs on the task).
-/proc/om_task_own_proc(datum/om/task/T, proc_ref)
+/proc/om_task_own_proc(datum/om/task/T, proc_ref) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/text = "[proc_ref]"
 	var/at = findtext(text, "/proc/")
 	if(!at)
@@ -444,7 +444,7 @@
 	return owner && istype(T, owner)
 
 /// Drops every claim and hold `T` has (its target's, the extra ones, its state's).
-/proc/om_task_release_claims(datum/om/task/T)
+/proc/om_task_release_claims(datum/om/task/T) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(T.claim)
 		var/datum/om/edge/edge = T.claim
 		T.claim = null
@@ -463,7 +463,7 @@
 /// `T` also claims `D` (its actor, the tool it works with, the machine or bot it runs): `D` is
 /// busy until `T` completes, is cancelled or either is deleted. Returns the edge, or a text
 /// reason when something else already claims `D`.
-/proc/om_task_claim(datum/om/task/T, datum/D)
+/proc/om_task_claim(datum/om/task/T, datum/D) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!D || T.state != OM_TASK_RUNNING)
 		return "invalid"
 	if(T.claim?.target == D)
@@ -476,7 +476,7 @@
 
 /// The running task that claims `D`, or null. This is what "busy" means: a bot, a tool or a
 /// machine is busy while a task claims it.
-/proc/om_claiming_task(datum/D)
+/proc/om_claiming_task(datum/D) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/task/T = om_source_of(D, /datum/om/relation/claim/busy)
 	if(istype(T) && T.state == OM_TASK_RUNNING)
 		return T
@@ -485,24 +485,24 @@
 
 /// TRUE while a running task claims `D`: as the thing doing the work (its actor, tool or
 /// machine) or as the exclusive target of someone's work.
-/proc/om_busy(datum/D)
+/proc/om_busy(datum/D) // ALLOW(base_proc): global API written before the base-type ratchet
 	return !isnull(om_claiming_task(D))
 
 /// TRUE while a running task claims `D` as its exclusive target (someone is working on it),
 /// whatever `D` itself is doing.
-/proc/om_in_use(datum/D)
+/proc/om_in_use(datum/D) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/task/T = om_source_of(D, /datum/om/relation/claim)
 	return istype(T) && T.state == OM_TASK_RUNNING
 
 /// Cancels the task that claims `D`, if any (it stopped early). TRUE if one was cancelled.
-/proc/om_release_busy(datum/D, reason = "released")
+/proc/om_release_busy(datum/D, reason = "released") // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/task/T = om_claiming_task(D)
 	return T ? om_task_cancel(T, reason) : FALSE
 
 /// Holds `E` busy for `duration` (an action whose continuation is a timer, not a task step):
 /// a task on `E` claiming it, done at the deadline. `on_end`, a proc on `E`, runs when the hold
 /// ends (done or cancelled). Returns the task, or a reason (already busy).
-/proc/om_hold_busy(datum/E, duration, on_end)
+/proc/om_hold_busy(datum/E, duration, on_end) // ALLOW(base_proc): global API written before the base-type ratchet
 	return om_task_start(/datum/om/task/hold, E, null, list("duration" = max(duration, 0), "complete_proc" = on_end, "cancel_proc" = on_end))
 
 /// See om_hold_busy().
@@ -562,7 +562,7 @@
 	var/name = T.held_edges[edge]
 	T.held_edges -= edge
 	if(T.vars[name] == target)
-		T.vars[name] = null
+		T.vars[name] = null // ALLOW(api): om_task_start() params and task_holds clearing: task state by name
 	om_task_cancel(T, "gone")
 
 /// Preset: a timed tool use. State: tool (TOOL_* quality).

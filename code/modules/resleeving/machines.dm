@@ -130,7 +130,7 @@
 	density = TRUE
 	anchored = TRUE
 
-	var/list/stored_material =  list(MAT_STEEL = 30000, MAT_GLASS = 30000)
+	var/list/stored_material =  list(MAT_STEEL = 30000, MAT_GLASS = 30000) // ALLOW(instance_list): d: edited in place per instance (3 writers)
 	var/connected      //What console it's done up with
 	var/busy = 0       //Busy cloning
 	var/body_cost = 15000  //Cost of a cloned body (metal and glass ea.)

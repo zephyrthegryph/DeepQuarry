@@ -4,7 +4,7 @@
 
 
 /datum/events
-	var/list/events = list()
+	var/list/events = list() // ALLOW(instance_list): d: event bus state
 
 /datum/events/proc/addEventType(event_type as text)
 	if(!(event_type in events) || !islist(events[event_type]))

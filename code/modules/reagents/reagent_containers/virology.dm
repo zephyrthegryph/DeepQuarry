@@ -1,7 +1,7 @@
 /obj/item/reagent_containers/glass/beaker/vial/culture
 	name = "virus culture"
 	desc = "A bottle with a virus culture"
-	var/list/data = list("donor" = null, "viruses" = null, "blood_DNA" = null, "blood_type" = null, "resistances" = null, "trace_chems" = null, "changeling"=FALSE)
+	var/list/data = list("donor" = null, "viruses" = null, "blood_DNA" = null, "blood_type" = null, "resistances" = null, "trace_chems" = null, "changeling"=FALSE) // ALLOW(instance_list): d: edited in place per instance (191 writers)
 	var/list/diseases
 
 /obj/item/reagent_containers/glass/beaker/vial/culture/cold

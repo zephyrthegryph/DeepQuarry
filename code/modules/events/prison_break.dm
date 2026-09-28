@@ -6,7 +6,9 @@
 	var/list/area/areas		//List of areas to affect. Filled by start()
 
 	var/eventDept = "Security"			//Department name in announcement
+	// ALLOW(instance_list): c: read-only per-subtype constant table (3 subtype overrides); a getter would share it, not worth it on a rare type
 	var/list/areaName = list("Brig")	//Names of areas mentioned in AI and Engineering announcements
+	// ALLOW(instance_list): c: read-only per-subtype constant table (3 subtype overrides); a getter would share it, not worth it on a rare type
 	var/list/areaType = list(/area/security/prison, /area/security/brig)	//Area types to include.
 	var/list/areaNotType		//Area types to specifically exclude.
 

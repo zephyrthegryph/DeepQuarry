@@ -169,7 +169,7 @@
 	/// Machines with machine_step() work that need no frame at Initialize: nothing gives them work
 	/// until a producer's MACHINE_WAKE(), which joins them to the pipeline then. Numerous types
 	/// belong here so an idle one never costs a record (tools/ci/pollers_lint.py reads this list).
-	var/list/lazy = list(
+	var/list/lazy = list( // ALLOW(instance_list): a declaration singleton: one instance
 		/obj/machinery/door/airlock, // a radio command (receive_signal()) is its only step work
 	)
 
@@ -190,8 +190,7 @@
 	var/datum/om/frame/S = om_pipe_state(M, src, TRUE)
 	if(!S)
 		return
-	om_pipe_set_all(S, TRUE)
-	S.idle_frames = max(park_after - 1, 0)
+	om_pipe_set_all(S, TRUE, max(park_after - 1, 0))
 	if(!M.materialize_timer)
 		M.materialize_timer = om_after(M, 0, /obj/machinery/proc/materialize_wakes)
 
@@ -357,7 +356,7 @@
 	of = /obj/machinery/power/apc
 
 /datum/om/stage/machine/power/apc/perform(obj/machinery/power/apc/M, datum/om/frame/machine/F)
-	if(M.failure_until && world.time >= M.failure_until)
+	if(M.failure_until && world.time >= M.failure_until) // ALLOW(cooldown): machine failure state (pipeline core)
 		M.failure_timer = 0
 		M.failure_until = 0
 		M.queue_icon_update()
@@ -366,7 +365,7 @@
 	return STAGE_IDLE
 
 /datum/om/stage/machine/power/apc/rewake_delay(obj/machinery/power/apc/M)
-	return M.failure_until > world.time ? M.failure_until - world.time : 0
+	return M.failure_until > world.time ? M.failure_until - world.time : 0 // ALLOW(cooldown): machine failure state (pipeline core)
 
 /// Icon updates, at most every APC_UPDATE_ICON_COOLDOWN.
 /datum/om/stage/machine/present/apc

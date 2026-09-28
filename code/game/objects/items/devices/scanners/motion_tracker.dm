@@ -22,7 +22,7 @@
 		var/mob/M = loc
 		M.motiontracker_subscribe()
 
-// LIFECYCLE: its holder stops receiving motion pings.
+// ALLOW(lifecycle): its holder stops receiving motion pings.
 /obj/item/motiontracker/Destroy(force, ...)
 	if(ismob(loc))
 		var/mob/M = loc

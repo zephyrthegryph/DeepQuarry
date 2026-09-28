@@ -69,6 +69,7 @@
 		linked_alert = new_alert //so we can reference the alert, if we need to
 		update_shown_duration()
 
+	// ALLOW(cooldown): status effect duration/tick core
 	if(duration > world.time || tick_interval > world.time) //don't process if we don't care
 		switch(processing_speed)
 			if(STATUS_EFFECT_FAST_PROCESS)
@@ -83,7 +84,7 @@
 
 REF_OWNED(/datum/status_effect, "particle_effect")
 
-// LIFECYCLE: the effect leaves its mob: alert cleared, on_remove() run.
+// ALLOW(lifecycle): the effect leaves its mob: alert cleared, on_remove() run.
 /datum/status_effect/Destroy()
 	if(owner)
 		linked_alert = null
@@ -112,7 +113,7 @@ REF_OWNED(/datum/status_effect, "particle_effect")
 
 	if(tick_interval == STATUS_EFFECT_AUTO_TICK)
 		tick(seconds_per_tick)
-	else if(tick_interval != STATUS_EFFECT_NO_TICK && tick_interval < world.time)
+	else if(tick_interval != STATUS_EFFECT_NO_TICK && tick_interval < world.time) // ALLOW(cooldown): status effect duration/tick core
 		var/tick_length = (tick_interval_upperbound && tick_interval_lowerbound) ? rand(tick_interval_lowerbound, tick_interval_upperbound) : initial(tick_interval)
 		tick(tick_length / (1 SECONDS))
 		tick_interval = world.time + tick_length
@@ -122,7 +123,7 @@ REF_OWNED(/datum/status_effect, "particle_effect")
 		return
 
 	if(duration != STATUS_EFFECT_PERMANENT)
-		if(duration < world.time)
+		if(duration < world.time) // ALLOW(cooldown): status effect duration/tick core
 			qdel(src)
 			return
 		update_shown_duration()
@@ -204,7 +205,7 @@ REF_OWNED(/datum/status_effect, "particle_effect")
 		return FALSE
 
 	duration -= seconds
-	if(duration <= world.time)
+	if(duration <= world.time) // ALLOW(cooldown): status effect duration/tick core
 		qdel(src)
 		return TRUE
 

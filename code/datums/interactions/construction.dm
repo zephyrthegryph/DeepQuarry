@@ -45,12 +45,12 @@ GLOBAL_LIST_INIT(construction_graphs, init_construction_graphs())
 	return graphs
 
 /// The graph `target` follows, or null.
-/proc/construction_graph_of(atom/target)
+/proc/construction_graph_of(atom/target) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/path = target?.construction_graph
 	return path ? GLOB.construction_graphs[path] : null
 
 /// The edges leaving `target`'s current state: the resolver offers these as interactions.
-/proc/construction_edges_for(atom/target)
+/proc/construction_edges_for(atom/target) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/construction_graph/graph = construction_graph_of(target)
 	return graph ? graph.edges_for(target) : list()
 
@@ -128,7 +128,7 @@ GLOBAL_LIST_INIT(construction_graphs, init_construction_graphs())
 /// Stores the state id on the target.
 /datum/construction_graph/proc/set_state(atom/target, state)
 	if(state_var && state != CONSTRUCTION_DONE)
-		target.vars[state_var] = state
+		target.vars[state_var] = state // ALLOW(api): construction graphs name the state var they advance
 
 /// Called when a step starts, before its cost is paid (click cooldown, touching the target).
 /datum/construction_graph/proc/on_step_started(atom/target, mob/actor, obj/item/held)
@@ -453,7 +453,7 @@ GLOBAL_VAR_INIT(dq_construction_instant, FALSE)
  * plasma cutter on a wall). For attackby fallbacks: items without the edge's
  * tool quality never reach the resolver's tool path. TRUE if one was found.
  */
-/proc/try_construction_alt(mob/user, atom/target, obj/item/held)
+/proc/try_construction_alt(mob/user, atom/target, obj/item/held) // ALLOW(base_proc): global API written before the base-type ratchet
 	for(var/datum/interaction/construction/edge as anything in construction_edges_for(target))
 		if(edge.is_alt_item(held) && edge.applies_to(target))
 			edge.perform(user, target, held)
@@ -468,7 +468,7 @@ GLOBAL_VAR_INIT(dq_construction_instant, FALSE)
 // Examine
 
 /// "Next: weld the frame (needs a welder)", one line per edge leaving the target's state. Null if none.
-/proc/construction_examine_lines(mob/user, atom/target)
+/proc/construction_examine_lines(mob/user, atom/target) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/construction_graph/graph = construction_graph_of(target)
 	if(!graph)
 		return null

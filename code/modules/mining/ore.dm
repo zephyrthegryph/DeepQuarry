@@ -187,7 +187,7 @@
 	icon_state = "ore2"
 	randpixel = 8
 	w_class = ITEMSIZE_LARGE
-	var/list/stored_ore = list(
+	var/list/stored_ore = list( // ALLOW(instance_list): d: edited in place per instance (11 writers)
 		ORE_SAND = 0,
 		ORE_HEMATITE = 0,
 		ORE_CARBON = 0,

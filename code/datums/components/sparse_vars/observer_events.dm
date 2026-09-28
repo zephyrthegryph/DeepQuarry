@@ -8,7 +8,7 @@
 	. = ..()
 	events = list()
 
-/proc/dq_get_listener_list_from_event(atom/a, observer_event)
+/proc/dq_get_listener_list_from_event(atom/a, observer_event) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!a || QDELING(a))
 		return list()
 	var/datum/component/observer_events/c = a.GetComponent(/datum/component/observer_events)
@@ -25,7 +25,7 @@
 /// Read-only variant for hot paths that must not allocate a component when
 /// none exists yet (e.g. /atom/Destroy()). Returns null when there's no
 /// observer-events component attached.
-/proc/dq_peek_listener_list_from_event(atom/a, observer_event)
+/proc/dq_peek_listener_list_from_event(atom/a, observer_event) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!a)
 		return null
 	var/datum/component/observer_events/c = a.GetComponent(/datum/component/observer_events)

@@ -13,11 +13,11 @@
 	/// Sound to play when transforming a tile
 	var/sound = 'sound/effects/blind.ogg'
 	/// Weighted list of turfs to replace the floor with.
-	var/list/replace_floors = list(/turf/simulated/floor/tiled = 1)
+	var/list/replace_floors = list(/turf/simulated/floor/tiled = 1) // ALLOW(instance_list): d: edited in place per instance (1 writers)
 	/// Typepath of turf to replace walls with.
 	var/turf/replace_walls = /turf/simulated/wall
 	/// List of weighted lists for object replacement. Key is an original typepath, value is a weighted list of typepaths to replace it with.
-	var/list/replace_objs = list(
+	var/list/replace_objs = list( // ALLOW(instance_list): c: read-only per-subtype constant table (8 subtype overrides); a getter would share it, not worth it on a rare type
 		/obj/structure/bed/chair = list(/obj/structure/bed/chair = 1),
 		/obj/machinery/door/airlock = list(/obj/machinery/door/airlock = 1, /obj/machinery/door/airlock/glass = 1),
 		/obj/structure/table = list(/obj/structure/table = 1),

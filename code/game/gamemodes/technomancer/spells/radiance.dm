@@ -27,7 +27,7 @@
 	PERIODIC_START(src, PERIODIC_SLOW)
 	log_and_message_admins("has casted [src].")
 
-// LIFECYCLE: admins are told the maintained spell stopped.
+// ALLOW(lifecycle): admins are told the maintained spell stopped.
 /obj/item/spell/radiance/Destroy()
 	log_and_message_admins("has stopped maintaining [src].")
 	return ..()

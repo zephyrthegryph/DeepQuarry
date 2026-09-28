@@ -176,7 +176,7 @@ GLOBAL_LIST_INIT(custom_items, load_custom_items())
 	return all_custom_items
 
 //gets the relevant list for the key from the listlist if it exists, check to make sure they are meant to have it and then calls the giving function
-/proc/equip_custom_items(mob/living/carbon/human/M)
+/proc/equip_custom_items(mob/living/carbon/human/M) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/list/key_list = GLOB.custom_items[M.ckey]
 	if(!key_list || key_list.len < 1)
 		return

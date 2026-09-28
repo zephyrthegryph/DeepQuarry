@@ -223,7 +223,7 @@
 	no_attack_log = 1
 	hud_state = "monkey"
 	///What suits this beam can hit.
-	var/list/allowed_suits = list(/obj/item/clothing/suit/lasertag/omni, /obj/item/clothing/suit/lasertag/bluetag, /obj/item/clothing/suit/lasertag/redtag)
+	var/list/allowed_suits = list(/obj/item/clothing/suit/lasertag/omni, /obj/item/clothing/suit/lasertag/bluetag, /obj/item/clothing/suit/lasertag/redtag) // ALLOW(instance_list): d: replaced per instance at runtime (2 assignments)
 
 	///How much damage we do to the tag vest.
 	var/tag_damage = 1

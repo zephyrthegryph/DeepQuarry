@@ -21,7 +21,7 @@
 	/// Whether the button becomes transparent when it can't be used or just reddened
 	var/transparent_when_unavailable = TRUE
 	/// List of all mobs that are viewing our action button -> A unique movable for them to view.
-	var/list/viewers = list()
+	var/list/viewers = list() // ALLOW(instance_list): d: per-action viewer set; every shown action has viewers
 	/// If TRUE, this action button will be shown to observers / other mobs who view from this action's owner's eyes.
 	/// Used in [/mob/proc/show_other_mob_action_buttons]
 	/// (Not really, this behavior is unimplemented)
@@ -57,7 +57,7 @@
 	// if(istype(target, /datum/mind))
 	// 	RegisterSignal(target, COMSIG_MIND_TRANSFERRED, PROC_REF(on_target_mind_swapped))
 
-// LIFECYCLE: an action leaves its owner (signals, owner's action list, every viewer's hud).
+// ALLOW(lifecycle): an action leaves its owner (signals, owner's action list, every viewer's hud).
 /datum/action/Destroy()
 	if(owner)
 		Remove(owner)

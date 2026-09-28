@@ -81,14 +81,14 @@ GLOBAL_LIST_INIT(state_refscan_skip, list("vars", "loc", "locs", "contents", "vi
 	. += state_refcount_blockers(nodes, internal, held_refs)
 
 /// Running behaviour: timers and processing.
-/proc/state_running_blockers(datum/node)
+/proc/state_running_blockers(datum/node) // ALLOW(base_proc): global API written before the base-type ratchet
 	. = list()
 	if(om_timer_count(node))
 		. += "[node.type] has active timers"
 	if(node.datum_flags & DF_ISPROCESSING)
 		. += "[node.type] is processing"
 
-/proc/state_owned_parts(datum/holder, list/internal, list/owned)
+/proc/state_owned_parts(datum/holder, list/internal, list/owned) // ALLOW(base_proc): global API written before the base-type ratchet
 	for(var/name in holder.vars)
 		if(name in GLOB.state_refscan_skip)
 			continue
@@ -110,12 +110,12 @@ GLOBAL_LIST_INIT(state_refscan_skip, list("vars", "loc", "locs", "contents", "vi
 		return
 	owned |= value
 
-/proc/state_components_of(datum/D)
+/proc/state_components_of(datum/D) // ALLOW(base_proc): global API written before the base-type ratchet
 	for(var/key in D._datum_components)
 		var/entry = D._datum_components[key]
 		LAZYOR(., entry)
 
-/proc/state_collect_subtree(atom/A, list/nodes)
+/proc/state_collect_subtree(atom/A, list/nodes) // ALLOW(base_proc): global API written before the base-type ratchet
 	for(var/atom/movable/child as anything in A.contents)
 		nodes += child
 		state_collect_subtree(child, nodes)
@@ -149,7 +149,7 @@ GLOBAL_LIST_INIT(state_refscan_skip, list("vars", "loc", "locs", "contents", "vi
 	return refcount(nodes[i]) - state_accounted_refs(nodes[i], internal)
 
 /// References to `node` that its container, its contents, the subtree and type elements account for.
-/proc/state_accounted_refs(datum/node, list/internal)
+/proc/state_accounted_refs(datum/node, list/internal) // ALLOW(base_proc): global API written before the base-type ratchet
 	. = state_internal_refs(node, internal)
 	if(ismovable(node))
 		var/atom/movable/movable = node
@@ -172,7 +172,7 @@ GLOBAL_LIST_INIT(state_refscan_skip, list("vars", "loc", "locs", "contents", "vi
 	. += length(elements)
 
 /// References to `node` from the vars of the subtree and its components.
-/proc/state_internal_refs(datum/node, list/internal)
+/proc/state_internal_refs(datum/node, list/internal) // ALLOW(base_proc): global API written before the base-type ratchet
 	. = 0
 	for(var/datum/holder as anything in internal)
 		for(var/name in holder.vars)
@@ -197,7 +197,7 @@ GLOBAL_LIST_INIT(state_refscan_skip, list("vars", "loc", "locs", "contents", "vi
 			if(!isnull(assoc))
 				. += state_count_refs_in(assoc, node, depth + 1)
 
-/proc/state_describe_outside_refs(datum/node, extra)
+/proc/state_describe_outside_refs(datum/node, extra) // ALLOW(base_proc): global API written before the base-type ratchet
 	. = "[node.type] has [extra] reference\s from outside its container"
 #ifdef UNIT_TESTS
 	// Name the holder. Slow (it walks the world), so test builds only.

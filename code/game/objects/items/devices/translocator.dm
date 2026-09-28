@@ -52,7 +52,7 @@
 
 REF_OWNED(/obj/item/perfect_tele, list("power_source", "spk"))
 
-// LIFECYCLE: its beacons forget it.
+// ALLOW(lifecycle): its beacons forget it.
 /obj/item/perfect_tele/Destroy()
 	for(var/obj/item/perfect_tele_beacon/B in beacons)
 		B.tele_hand = null

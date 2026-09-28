@@ -25,12 +25,14 @@
 			"escort",
 			"search and rescue"
 			)
+	// ALLOW(instance_list): c: read-only per-subtype constant table (8 subtype overrides); a getter would share it, not worth it on a rare type
 	var/list/flight_types = list(		//operations and flights - we can override this if we want to remove the military-sounding ones or add our own
 			"flight",
 			"mission",
 			"route",
 			"assignment"
 			)
+	// ALLOW(instance_list): d: edited in place per instance (7 writers)
 	var/list/ship_names = list(		//Names of spaceships.  This is a mostly generic list that all the other organizations inherit from if they don't have anything better.
 			"Scout",
 			"Beacon",

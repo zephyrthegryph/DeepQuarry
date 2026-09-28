@@ -397,6 +397,7 @@
 	siemens_coefficient = 0.7 // Same as loadout jackboots.
 	can_hold_knife = 1
 	force = 2
+	// ALLOW(instance_list): c: read-only per-subtype constant table (3 subtype overrides); a getter would share it, not worth it on a rare type
 	var/list/squeak_sound = list("mechstep"=1)	//Squeak sound list. Necessary so our subtypes can have different sounds loaded into their component
 
 /obj/item/clothing/shoes/mech_shoes/fit_constraint()

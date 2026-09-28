@@ -26,7 +26,7 @@
 		on_connected_techweb()
 	set_wires(new /datum/wires/rnd(src))
 
-// LIFECYCLE: the techweb logs the disconnection.
+// ALLOW(lifecycle): the techweb logs the disconnection.
 /obj/machinery/rnd/Destroy()
 	if(stored_research)
 		log_research("[src] disconnected from techweb [stored_research] (destroyed).")

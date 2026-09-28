@@ -30,7 +30,9 @@ GLOBAL_LIST_INIT(all_supply_groups, list("Atmospherics",
 /datum/supply_pack
 	var/name = null
 	var/desc = "This is a placeholder description."	//information on what the crate is/contains
+	// ALLOW(instance_list): d: one per supply pack singleton; every pack has contents
 	var/list/contains = list() // Typepaths, used to actually spawn the contents
+	// ALLOW(instance_list): d: one per supply pack singleton, built from contains
 	var/list/manifest = list() // Object names, used to compile manifests
 	var/cost = null
 	var/containertype = null

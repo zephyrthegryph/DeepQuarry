@@ -11,11 +11,11 @@
 	var/atom/target
 	var/obj/item/held
 	/// Available interactions, highest priority first.
-	var/list/available = list()
+	var/list/available = list() // ALLOW(instance_list): interaction area (I3/I4/I6): resolver result lists; listed in memory_lists_audit.md, not edited here
 	/// Blocked interactions -> reason, highest priority first.
-	var/list/blocked = list()
+	var/list/blocked = list() // ALLOW(instance_list): interaction area (I3/I4/I6): resolver result lists; listed in memory_lists_audit.md, not edited here
 	/// Interaction -> its priority for this actor (combat mode shifts hostile ones).
-	var/list/priorities = list()
+	var/list/priorities = list() // ALLOW(instance_list): interaction area (I3/I4/I6): resolver result lists; not edited here
 
 /datum/interaction_resolution/New(mob/actor, atom/target, obj/item/held)
 	src.actor = actor
@@ -87,7 +87,7 @@
  * resolver itself needs none of them.
  * `adapter` overrides the actor's own, e.g. telekinesis acting for a human.
  */
-/proc/interactions_for(mob/actor, atom/target, obj/item/held, list/modifiers, datum/input_adapter/adapter)
+/proc/interactions_for(mob/actor, atom/target, obj/item/held, list/modifiers, datum/input_adapter/adapter) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/interaction_resolution/resolution = new(actor, target, held)
 	if(!actor || !target)
 		return resolution
@@ -117,7 +117,7 @@
  * interactions above everything else when on, and below when off, so Use
  * picks an attack only in combat mode.
  */
-/proc/interaction_priority_for(mob/actor, datum/interaction/interaction)
+/proc/interaction_priority_for(mob/actor, datum/interaction/interaction) // ALLOW(base_proc): global API written before the base-type ratchet
 	. = interaction.priority
 	if(!(INTERACTION_TAG_HOSTILE in interaction.tags))
 		return
@@ -148,7 +148,7 @@
  * path); `no_tool` limits it to interactions needing no tool (the generic path).
  * `adapter` overrides the actor's own capability adapter (telekinesis).
  */
-/proc/try_interaction(mob/actor, atom/target, obj/item/held, action, quality, no_tool = FALSE, datum/input_adapter/adapter)
+/proc/try_interaction(mob/actor, atom/target, obj/item/held, action, quality, no_tool = FALSE, datum/input_adapter/adapter) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!actor || !target)
 		return null
 	var/datum/interaction_resolution/resolution = interactions_for(actor, target, held, null, adapter)
@@ -199,7 +199,7 @@
  * target (the tile in front) also offers what is on it; the best across them wins.
  * Returns TRUE if something ran or the Menu opened.
  */
-/proc/try_interaction_category(mob/actor, atom/target, category)
+/proc/try_interaction_category(mob/actor, atom/target, category) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/obj/item/held = actor.get_active_hand()
 	var/list/targets = list(target)
 	if(isturf(target))
@@ -245,7 +245,7 @@
 	return FALSE
 
 /// Runs one interaction by id, as chosen in the Menu. Returns TRUE if it ran.
-/proc/run_chosen_interaction(mob/actor, atom/target, id)
+/proc/run_chosen_interaction(mob/actor, atom/target, id) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/interaction/interaction = INTERACTION_BY_ID(id)
 	if(!interaction || !actor || !target)
 		return FALSE
@@ -265,7 +265,7 @@
 GLOBAL_LIST_EMPTY(interaction_entry_actors)
 
 /// A type's interactions for one entry, in dispatch order: priority, then declaration order. Cached per type.
-/proc/interaction_entry_candidates(atom/target, entry)
+/proc/interaction_entry_candidates(atom/target, entry) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/static/list/cache = list()
 	var/key = "[target.type]|[entry]"
 	var/list/candidates = cache[key]
@@ -300,7 +300,7 @@ GLOBAL_LIST_EMPTY(interaction_entry_actors)
  * stopped it, or null when nothing was meant.
  * `result` (a list) gets the outcome, INTERACTION_TRY_RAN or INTERACTION_TRY_BLOCKED.
  */
-/proc/run_interaction_entry(mob/actor, atom/target, obj/item/held, entry, list/result, gate)
+/proc/run_interaction_entry(mob/actor, atom/target, obj/item/held, entry, list/result, gate) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!actor || !target)
 		return null
 	var/list/candidates = interaction_entry_candidates(target, entry)
@@ -339,7 +339,7 @@ GLOBAL_LIST_EMPTY(interaction_entry_actors)
 		result?.Add(INTERACTION_TRY_BLOCKED)
 		return INTERACTION_GATE_STOPPED
 
-/proc/interaction_entry_done(mob/actor)
+/proc/interaction_entry_done(mob/actor) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/count = GLOB.interaction_entry_actors[actor] - 1
 	if(count > 0)
 		GLOB.interaction_entry_actors[actor] = count
@@ -351,7 +351,7 @@ GLOBAL_LIST_EMPTY(interaction_entry_actors)
  * lets use it remotely (silicon_use); or inside a legacy entry, whose callers
  * decided reach themselves (telekinesis, the AI's attack_ai, grippers).
  */
-/proc/dq_interaction_reach(mob/actor, atom/target, obj/item/held)
+/proc/dq_interaction_reach(mob/actor, atom/target, obj/item/held) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!actor || !target)
 		return FALSE
 	if(GLOB.interaction_entry_actors[actor])

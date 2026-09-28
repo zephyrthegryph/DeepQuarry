@@ -145,7 +145,7 @@ REF_OWNED(/obj/item/ammo_casing, "BB")
 	throw_range = 10
 	preserve_item = 1
 
-	var/list/stored_ammo = list()
+	var/list/stored_ammo = list() // ALLOW(instance_list): d: magazines are filled with rounds on creation
 	var/mag_type = SPEEDLOADER //ammo_magazines can only be used with compatible guns. This is not a bitflag, the load_method var on guns is.
 	var/caliber = ".357"
 	var/max_ammo = 7

@@ -410,7 +410,7 @@
 	M.status_at_least(EFFECT_MUTED, 10)
 	M.status_set(EFFECT_PARALYZED, max(M.status_units(EFFECT_PARALYZED), 10))
 
-// LIFECYCLE: its mob wakes from fake death.
+// ALLOW(lifecycle): its mob wakes from fake death.
 /datum/reagent/toxin/zombiepowder/Destroy()
 	if(holder && holder.my_atom && ismob(holder.my_atom))
 		var/mob/M = holder.my_atom
@@ -445,7 +445,7 @@
 		M.visible_message("[M] wheezes.", "You wheeze sharply... it's cold.")
 		M.bodytemperature = max(M.bodytemperature - 10 * TEMPERATURE_DAMAGE_COEFFICIENT, T0C - 10)
 
-// LIFECYCLE: its mob wakes from fake death.
+// ALLOW(lifecycle): its mob wakes from fake death.
 /datum/reagent/lichpowder/Destroy()
 	if(holder && holder.my_atom && ismob(holder.my_atom))
 		var/mob/M = holder.my_atom

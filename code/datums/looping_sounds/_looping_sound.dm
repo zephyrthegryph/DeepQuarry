@@ -69,7 +69,7 @@
 	if(start_immediately)
 		start()
 
-// LIFECYCLE: stops the sound playing on its atoms.
+// ALLOW(lifecycle): stops the sound playing on its atoms.
 /datum/looping_sound/Destroy()
 	stop()
 	output_atoms = null
@@ -146,7 +146,7 @@
 		return
 	if(isnull(loop_starttime))
 		loop_starttime = world.time
-	if(max_loops && world.time >= loop_starttime + mid_length * max_loops)
+	if(max_loops && world.time >= loop_starttime + mid_length * max_loops) // ALLOW(cooldown): loop count timing
 		stop()
 		return
 	if(!direct && !has_listener())

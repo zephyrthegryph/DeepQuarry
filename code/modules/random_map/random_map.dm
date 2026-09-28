@@ -25,6 +25,7 @@
 	var/keep_outside = FALSE
 
 	// Storage for the final iteration of the map.
+	// ALLOW(instance_list): d: the generated map grid
 	var/list/map = list()           // Actual map.
 
 	// If set, the map is applied at once instead of as lane work (om_lane_work()).

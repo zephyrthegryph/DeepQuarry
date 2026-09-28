@@ -37,7 +37,7 @@
 
 REF_OWNED(/obj/item/ghost_trap, "ghost_reporter")
 
-// LIFECYCLE: a captured entity is released onto the turf.
+// ALLOW(lifecycle): a captured entity is released onto the turf.
 /obj/item/ghost_trap/Destroy()
 	var/mob/our_entity = om_resolve(captured_entity)
 	if(our_entity)

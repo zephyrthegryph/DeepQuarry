@@ -1,7 +1,7 @@
 /datum/locations
 	var/name
 	var/desc
-	var/list/contents = list()
+	var/list/contents = list() // ALLOW(instance_list): d: location tree children (generic name, too many ambiguous call sites)
 	var/parent
 
 /datum/locations/New(creator)

@@ -66,7 +66,7 @@
 	if(starting_amount)
 		update(starting_amount)
 
-// LIFECYCLE: the bars above it on the same mob slide down to close the gap.
+// ALLOW(lifecycle): the bars above it on the same mob slide down to close the gap.
 /datum/progressbar/Destroy()
 	if(user)
 		for(var/pb in user.progressbars[bar_loc])

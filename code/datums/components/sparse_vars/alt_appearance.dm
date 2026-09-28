@@ -17,24 +17,24 @@
 	. = ..()
 	viewing = list()
 
-/proc/dq_get_alt_appearances(atom/a, create = FALSE)
+/proc/dq_get_alt_appearances(atom/a, create = FALSE) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/alt_appearances_owner/c = a.GetComponent(/datum/component/alt_appearances_owner)
 	if(!c && create)
 		c = a.AddComponent(/datum/component/alt_appearances_owner)
 	return c?.appearances
 
-/proc/dq_clear_alt_appearances_component(atom/a)
+/proc/dq_clear_alt_appearances_component(atom/a) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/alt_appearances_owner/c = a.GetComponent(/datum/component/alt_appearances_owner)
 	if(c)
 		qdel(c)
 
-/proc/dq_get_viewing_alt_appearances(atom/a, create = FALSE)
+/proc/dq_get_viewing_alt_appearances(atom/a, create = FALSE) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/alt_appearances_viewer/c = a.GetComponent(/datum/component/alt_appearances_viewer)
 	if(!c && create)
 		c = a.AddComponent(/datum/component/alt_appearances_viewer)
 	return c?.viewing
 
-/proc/dq_clear_viewing_alt_appearances_component(atom/a)
+/proc/dq_clear_viewing_alt_appearances_component(atom/a) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/alt_appearances_viewer/c = a.GetComponent(/datum/component/alt_appearances_viewer)
 	if(c)
 		qdel(c)

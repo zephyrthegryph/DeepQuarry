@@ -27,7 +27,7 @@
 				. += keybinding_keys(binding, profile, player.keybinding_overrides())
 
 /// The examine section: what `user` can do to `target` now, with keys, and what they can't, with why. Null if nothing applies.
-/proc/interaction_examine_lines(mob/user, atom/target)
+/proc/interaction_examine_lines(mob/user, atom/target) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/interaction_resolution/resolution = interactions_for(user, target, user.get_active_hand())
 	if(!length(resolution.available) && !length(resolution.blocked))
 		return null
@@ -40,7 +40,7 @@
 	return lines
 
 /// The screentip for `target`: its name, then what Click and Alt-click would do. Null for nothing to show.
-/proc/interaction_screentip_text(mob/user, atom/target, obj/item/held)
+/proc/interaction_screentip_text(mob/user, atom/target, obj/item/held) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!user || !target)
 		return null
 	var/datum/interaction_resolution/resolution = interactions_for(user, target, held)

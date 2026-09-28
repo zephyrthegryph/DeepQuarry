@@ -15,7 +15,7 @@
 
 /// Scores continuous physical properties for the job a part performs. This is
 /// used only to choose and rank defaults; every solid stack remains selectable.
-/proc/material_role_score(datum/material/material, role)
+/proc/material_role_score(datum/material/material, role) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!istype(material))
 		return -INFINITY
 	switch(role)
@@ -34,7 +34,7 @@
 	return material.integrity + material.yield_strength * 0.2 + material.fracture_toughness - material.brittleness * 0.5 - material.density * 0.05
 
 /// TGUI rows for a blueprint's configurable roles.
-/proc/material_slots_tgui(datum/material_template/template, total)
+/proc/material_slots_tgui(datum/material_template/template, total) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/list/out = list()
 	if(!template)
 		return out

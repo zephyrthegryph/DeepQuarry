@@ -117,7 +117,7 @@ SUBSYSTEM_DEF(atoms)
 				// sleeps — the InitAtom work itself is seconds.
 				if(length(GLOB.clients) && TICK_CHECK)
 					clear_tracked_initalize(mapload_source)
-					stoplag() // S10b keeps: runtime template loads yield between atoms (lane-work conversion pending)
+					stoplag() // ALLOW(scheduler): runtime template loads yield between atoms (lane-work conversion pending)
 					if(mapload_source)
 						set_tracked_initalized(INITIALIZATION_INNEW_MAPLOAD, mapload_source)
 				#endif
@@ -139,7 +139,7 @@ SUBSYSTEM_DEF(atoms)
 				#endif
 				if(length(GLOB.clients) && TICK_CHECK)
 					clear_tracked_initalize(mapload_source)
-					stoplag() // S10b keeps: runtime template loads yield between atoms (lane-work conversion pending)
+					stoplag() // ALLOW(scheduler): runtime template loads yield between atoms (lane-work conversion pending)
 					if(mapload_source)
 						set_tracked_initalized(INITIALIZATION_INNEW_MAPLOAD, mapload_source)
 

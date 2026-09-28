@@ -23,7 +23,7 @@
 
 	// Client does NOT have tgui_input on: Returns regular input
 	if(!user.read_preference(/datum/preference/toggle/tgui_input_mode))
-		var/input_key = input(user, message, title + "(Modifiers are TGUI only, sorry!)", default) as null|text // S10 keeps: the blocking prompt API itself (the non-tgui fallback om_prompt never uses)
+		var/input_key = input(user, message, title + "(Modifiers are TGUI only, sorry!)", default) as null|text // ALLOW(scheduler): the blocking prompt API itself (the non-tgui fallback om_prompt never uses)
 		if(!input_key)
 			return
 		return input_key[1]
@@ -74,7 +74,7 @@
  */
 /datum/tgui_input_keycombo/proc/wait()
 	while (!entry && !closed && !QDELETED(src))
-		stoplag(1)
+		stoplag(1) // ALLOW(scheduler): tgui_input waits on the player (prompts, S10)
 
 /datum/tgui_input_keycombo/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

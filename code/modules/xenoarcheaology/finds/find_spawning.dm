@@ -878,7 +878,7 @@
 	if(become_anomalous)
 		become_anomalous()
 
-// LIFECYCLE: its artifact master component is removed.
+// ALLOW(lifecycle): its artifact master component is removed.
 /obj/item/archaeological_find/Destroy()
 	if(src.is_anomalous())
 		var/datum/component/artifact_master/arti_mstr = GetComponent(/datum/component/artifact_master)

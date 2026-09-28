@@ -25,10 +25,10 @@
 					LANGUAGE_DRUDAKAR	= 0)
 	var/can_be_pushed = 0
 	var/no_slip = 0
-	var/list/modules = list()
-	var/list/datum/matter_synth/synths = list()
-	var/list/emag = list()
-	var/list/subsystems = list()
+	var/list/modules = list() // ALLOW(instance_list): d: every robot module holds its items
+	var/list/datum/matter_synth/synths = list() // ALLOW(instance_list): d: filled per module type when the module is created
+	var/list/emag = list() // ALLOW(instance_list): d: robot module item lists, filled per module type
+	var/list/subsystems = list() // ALLOW(instance_list): d: filled per module type when the module is created
 	var/list/obj/item/borg/upgrade/supported_upgrades
 
 	// Bookkeeping

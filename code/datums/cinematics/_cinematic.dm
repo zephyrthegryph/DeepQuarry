@@ -33,7 +33,7 @@
 	/// A list of all clients watching the cinematic
 	var/list/client/watching
 	/// A list of all mobs who have TRAIT_NO_TRANSFORM set while watching the cinematic
-	var/list/locked = list()
+	var/list/locked = list() // ALLOW(instance_list): d: cinematics exist to lock viewers
 	/// Whether the cinematic is a global cinematic or not
 	var/is_global = FALSE
 	/// Refernce to the cinematic screen shown to everyohne

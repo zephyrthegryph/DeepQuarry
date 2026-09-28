@@ -111,7 +111,7 @@ REGISTRY_MEMBERSHIP(/obj/item/implant/tracking, REGISTRY_TRACKING_IMPLANTS)
 /obj/item/implant/tracking/post_implant(mob/source)
 	PERIODIC_START(src, PERIODIC_SLOW)
 
-// LIFECYCLE: leaves its limb's implant list.
+// ALLOW(lifecycle): leaves its limb's implant list.
 /obj/item/implant/tracking/Destroy()
 	if(part)
 		LAZYREMOVE(part.implants, src)
@@ -125,7 +125,7 @@ REGISTRY_MEMBERSHIP(/obj/item/implant/tracking, REGISTRY_TRACKING_IMPLANTS)
 		implant_mob = O.owner
 
 	if(ismob(implant_mob) && implant_mob.stat == DEAD)
-		if(world.time >= implant_mob.timeofdeath + degrade_time)
+		if(world.time >= implant_mob.timeofdeath + degrade_time) // ALLOW(cooldown): elapsed time since death
 			name = "melted implant"
 			desc = "Charred circuit in melted plastic case. Wonder what that used to be..."
 			icon_state = "implant_melted"

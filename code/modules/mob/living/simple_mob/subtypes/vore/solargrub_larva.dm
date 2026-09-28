@@ -194,9 +194,9 @@ REF_OWNED(/mob/living/simple_mob/animal/solargrub_larva, list("powermachine", "s
 
 /obj/machinery/abstract_grub_machine
 	var/total_active_power_usage = 45 KILOWATTS
-	var/list/active_power_usages = list(15 KILOWATTS, 15 KILOWATTS, 15 KILOWATTS)
+	var/list/active_power_usages = list(15 KILOWATTS, 15 KILOWATTS, 15 KILOWATTS) // ALLOW(instance_list): d: replaced per instance at runtime (1 assignments)
 	var/total_idle_power_usage = 3 KILOWATTS
-	var/list/idle_power_usages = list(1 KILOWATTS, 1 KILOWATTS, 1 KILOWATTS)
+	var/list/idle_power_usages = list(1 KILOWATTS, 1 KILOWATTS, 1 KILOWATTS) // ALLOW(instance_list): d: replaced per instance at runtime (1 assignments)
 	var/draining = 1
 	var/mob/living/simple_mob/animal/solargrub_larva/grub
 

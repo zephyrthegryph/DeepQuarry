@@ -17,6 +17,7 @@
 	//For SINGLE_CASING or SPEEDLOADER guns
 	var/max_shells = 0			//the number of casings that will fit inside
 	var/ammo_type = null		//the type of ammo that the gun comes preloaded with
+	// ALLOW(instance_list): d: guns spawn loaded; the chamber list is indexed everywhere
 	var/list/loaded = list()	//stored ammo
 
 	//For MAGAZINE guns

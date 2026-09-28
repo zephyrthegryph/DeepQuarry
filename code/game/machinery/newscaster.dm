@@ -20,7 +20,7 @@
 
 /datum/feed_channel
 	var/channel_name=""
-	var/list/datum/feed_message/messages = list()
+	var/list/datum/feed_message/messages = list() // ALLOW(instance_list): d: newscaster channel posts
 	var/locked=0
 	var/author=""
 	var/backup_author=""

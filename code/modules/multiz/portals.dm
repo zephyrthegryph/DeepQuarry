@@ -138,7 +138,7 @@
 	else if (istype(M, /atom/movable))
 		do_teleport(M, target)
 
-// LIFECYCLE: its target portal goes with it.
+// ALLOW(lifecycle): its target portal goes with it.
 /obj/structure/portal_event/Destroy()
 	if(target)
 		if(istype(target, /obj/structure/portal_event))
@@ -160,7 +160,7 @@
 	invisibility = INVISIBILITY_OBSERVER
 	var/target
 
-// LIFECYCLE: its portal forgets it.
+// ALLOW(lifecycle): its portal forgets it.
 /obj/structure/portal_target/Destroy()
 	if(target)
 		var/obj/structure/portal_event/T = target

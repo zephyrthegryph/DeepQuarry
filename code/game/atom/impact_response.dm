@@ -103,7 +103,7 @@
 	factors[DAMAGE_PIERCE] = 1 - (cut + tough) / 2
 	factors[DAMAGE_THERMAL] = 1 - dq_impact_resist(melting_point, IMPACT_MELTING_FLOOR, IMPACT_MELTING_SCALE)
 
-// LIFECYCLE: impact responses are shared; refuse deletion unless forced.
+// ALLOW(lifecycle): impact responses are shared; refuse deletion unless forced.
 /datum/impact_response/Destroy(force)
 	if(!force)
 		return QDEL_HINT_LETMELIVE

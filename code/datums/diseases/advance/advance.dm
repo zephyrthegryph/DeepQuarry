@@ -36,7 +36,7 @@ GLOBAL_LIST_INIT(advance_cures, list(
 	var/keepid = FALSE
 	var/archivecure
 
-	var/list/symptoms = list()
+	var/list/symptoms = list() // ALLOW(instance_list): d: every advanced disease has symptoms
 
 	var/s_processing = FALSE
 	var/id = ""
@@ -52,7 +52,7 @@ GLOBAL_LIST_INIT(advance_cures, list(
 	..(process, D)
 	return
 
-// LIFECYCLE: running symptoms end their effects.
+// ALLOW(lifecycle): running symptoms end their effects.
 /datum/disease/advance/Destroy()
 	if(s_processing)
 		for(var/datum/symptom/S in symptoms)

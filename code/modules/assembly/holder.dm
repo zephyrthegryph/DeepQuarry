@@ -13,7 +13,7 @@
 	var/obj/item/assembly/a_right = null
 	var/obj/special_assembly = null
 
-// LIFECYCLE: assemblies still inside it go with it (ones already taken out stay).
+// ALLOW(lifecycle): assemblies still inside it go with it (ones already taken out stay).
 /obj/item/assembly_holder/Destroy()
 	if(a_left)
 		a_left.holder = null

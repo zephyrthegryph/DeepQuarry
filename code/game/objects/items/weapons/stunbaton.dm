@@ -30,7 +30,7 @@
 	. = ..()
 	update_icon()
 
-// LIFECYCLE: the cell goes only if it is still inside the baton.
+// ALLOW(lifecycle): the cell goes only if it is still inside the baton.
 /obj/item/melee/baton/Destroy()
 	if(bcell?.loc == src && !QDELETED(bcell))
 		qdel(bcell)

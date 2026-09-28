@@ -194,13 +194,13 @@
 	set name = "Fix TGUI"
 	set category = "OOC.Debug"
 
-	if(alert(src, "Only use this verb if you have a white TGUI window stuck on your screen.", "Fix TGUI", "Continue", "Nevermind") != "Continue") // S10 keeps: fixes broken tgui windows, so it cannot use a tgui prompt
+	if(alert(src, "Only use this verb if you have a white TGUI window stuck on your screen.", "Fix TGUI", "Continue", "Nevermind") != "Continue") // ALLOW(scheduler): fixes broken tgui windows, so it cannot use a tgui prompt
 		return
 
 	SStgui.close_user_uis(mob)
-	if(alert(src, "Did that fix the problem?", "Fix TGUI", "Yes", "No") == "No") // S10 keeps: fixes broken tgui windows, so it cannot use a tgui prompt
+	if(alert(src, "Did that fix the problem?", "Fix TGUI", "Yes", "No") == "No") // ALLOW(scheduler): fixes broken tgui windows, so it cannot use a tgui prompt
 		SStgui.force_close_all_windows(mob)
-		alert(src, "UIs should be fixed now. If not, please cry to your nearest coder.", "Fix TGUI") // S10 keeps: fixes broken tgui windows, so it cannot use a tgui prompt
+		alert(src, "UIs should be fixed now. If not, please cry to your nearest coder.", "Fix TGUI") // ALLOW(scheduler): fixes broken tgui windows, so it cannot use a tgui prompt
 
 /**
  * verb

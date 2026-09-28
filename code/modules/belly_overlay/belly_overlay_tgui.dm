@@ -10,7 +10,7 @@
 /datum/belly_overlay_tgui
 	var/mob/owner
 	var/datum/tgui/active_ui
-	var/list/state = list()
+	var/list/state = list() // ALLOW(instance_list): d: UI state (generic name, too many ambiguous call sites)
 	/// Signature of the last computed overlay state. show() recomputes it cheaply
 	/// each tick and skips the (expensive) layer rebuild + send_update() when it
 	/// hasn't changed, so liquid bellies don't repaint the tgui every single tick.
@@ -19,7 +19,7 @@
 /datum/belly_overlay_tgui/New(mob/M)
 	owner = M
 
-// LIFECYCLE: hides the owner's belly overlay window.
+// ALLOW(lifecycle): hides the owner's belly overlay window.
 /datum/belly_overlay_tgui/Destroy(force)
 	if(owner?.client)
 		winset(owner.client, "mapwindow.belly_overlay", "is-visible=false")
@@ -53,7 +53,7 @@
 		// stoplag). This UI can be reached from no-sleep contexts (e.g. a death
 		// triggered during atom Initialize), so fire the open asynchronously — it
 		// is inherently fire-and-forget — to keep those callers non-blocking.
-		INVOKE_ASYNC(active_ui, TYPE_PROC_REF(/datum/tgui, open)) // S10b keeps: tgui open may block on asset/window setup
+		INVOKE_ASYNC(active_ui, TYPE_PROC_REF(/datum/tgui, open)) // ALLOW(scheduler): tgui open may block on asset/window setup
 
 /datum/belly_overlay_tgui/proc/build_show_signature(obj/belly/B, mob/prey)
 	// Cheap signature of everything that affects the rendered layer set. Continuous

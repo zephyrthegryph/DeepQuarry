@@ -50,8 +50,8 @@
 	var/note = null
 	var/notetitle = null
 	var/currentnote = 1
-	var/list/storedtitles = list("","","","","","","","","","","","")
-	var/list/storednotes = list("","","","","","","","","","","","")
+	var/list/storedtitles = list("","","","","","","","","","","","") // ALLOW(instance_list): d: edited in place per instance (2 writers)
+	var/list/storednotes = list("","","","","","","","","","","","") // ALLOW(instance_list): d: edited in place per instance (2 writers)
 	var/notehtml = ""
 
 /datum/data/pda/app/notekeeper/start()

@@ -13,9 +13,9 @@
 	var/fab_type = MECHFAB
 
 	/// Current items in the build queue.
-	var/list/datum/design_techweb/queue = list()
+	var/list/datum/design_techweb/queue = list() // ALLOW(instance_list): d: the build queue; kept index-parallel with queue_producer_accounts
 	/// Producer account parallel to each queued design.
-	var/list/queue_producer_accounts = list()
+	var/list/queue_producer_accounts = list() // ALLOW(instance_list): d: kept index-parallel with queue (Cut() by index)
 	var/current_producer_account = 0
 
 	/// Whether or not the machine is building the entire queue automagically.
@@ -284,7 +284,7 @@ REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, "print_sound")
 		on_start_printing()
 
 	// If there's an item being built, check if it is complete.
-	if(being_built && (build_finish < world.time))
+	if(being_built && (build_finish < world.time)) // ALLOW(cooldown): build progress
 		// Then attempt to dispense it and if appropriate build the next item.
 		dispense_built_part(being_built)
 		if(process_queue)

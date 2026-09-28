@@ -176,8 +176,8 @@
 /datum/rule_compiler
 	var/datum/rule/rule
 	var/datum/property_registry/registry
-	var/list/triggers = list()
-	var/list/errors = list()
+	var/list/triggers = list() // ALLOW(instance_list): constraints (P3): compiler state; landed on master unlisted, not edited here
+	var/list/errors = list() // ALLOW(instance_list): constraints (P3): compiler state; landed on master unlisted, not edited here
 
 /datum/rule_compiler/New(datum/rule/rule)
 	..()

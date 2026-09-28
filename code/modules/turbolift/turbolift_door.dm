@@ -11,7 +11,7 @@
 	var/datum/turbolift/lift
 	var/datum/turbolift_floor/floor
 
-// LIFECYCLE: leaves its lift's and floor's door lists.
+// ALLOW(lifecycle): leaves its lift's and floor's door lists.
 /obj/machinery/door/airlock/lift/Destroy()
 	if(lift)
 		lift.doors -= src

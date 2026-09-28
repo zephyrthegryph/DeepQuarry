@@ -9,6 +9,7 @@
 
 	var/list/spawn_cartridges = null // Set to a list of types to spawn one of each on New()
 
+	// ALLOW(instance_list): d: cartridges are spawned into it at init
 	var/list/cartridges = list() // Associative, label -> cartridge
 	var/obj/item/reagent_containers/container = null
 

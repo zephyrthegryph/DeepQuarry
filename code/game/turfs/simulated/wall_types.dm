@@ -401,7 +401,7 @@
 	var/wall_base_state = "metal"
 	var/wall_blend_category = "metal"
 	var/force_icon
-	var/list/blend_log = list()
+	var/list/blend_log = list() // ALLOW(instance_list): rare: tgmc walls are unmapped; debug log
 	var/strict_blending = FALSE
 	var/diagonal_blending = FALSE
 

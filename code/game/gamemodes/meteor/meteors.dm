@@ -156,7 +156,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/meteor, REGISTRY_METEORS)
 	if(prob(10) && !istype(T, /turf/space)) //randomly takes a 'hit' from ramming
 		get_hit()
 
-// LIFECYCLE: the meteor count changes for whoever watches the storm.
+// ALLOW(lifecycle): the meteor count changes for whoever watches the storm.
 /obj/effect/meteor/Destroy()
 	om_changed(GLOB.meteor_watch, CHANGE_METEORS)
 	return ..()

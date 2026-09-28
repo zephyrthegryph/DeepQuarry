@@ -140,7 +140,7 @@
 
 REF_OWNED(/obj/item/rig, list("power_system", "spark_system"))
 
-// LIFECYCLE: the suit pieces are torn down by the component registry first.
+// ALLOW(lifecycle): the suit pieces are torn down by the component registry first.
 /obj/item/rig/Destroy()
 	component_registry?.destroy_pieces()
 	QDEL_NULL(component_registry)

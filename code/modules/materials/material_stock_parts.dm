@@ -46,7 +46,7 @@
 /// Every named part of a multipart stock component participates in its rating.
 /// This deliberately uses role-specific physics rather than averaging the
 /// recipe into one decorative "core" material.
-/proc/dq_composite_part_rating(obj/item/stock_parts/part)
+/proc/dq_composite_part_rating(obj/item/stock_parts/part) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/raw = 0
 	if(istype(part, /obj/item/stock_parts/capacitor))
 		var/datum/material/electrode = part.material_for_role(MATERIAL_ROLE_ELECTRODE)
@@ -89,7 +89,7 @@
 /// the 1-5 range from the material's property profile. The bucketed
 /// type checks keep things simple — extending with a new part type
 /// just means adding another `istype` branch here.
-/proc/dq_part_rating_for(obj/item/stock_parts/P, datum/material/M)
+/proc/dq_part_rating_for(obj/item/stock_parts/P, datum/material/M) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(istype(P, /obj/item/stock_parts/capacitor))
 		// Capacitor stores charge — driven by conductivity.
 		return _dq_part_rating_value(M.conductivity / 25)

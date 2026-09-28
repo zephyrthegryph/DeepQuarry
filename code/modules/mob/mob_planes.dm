@@ -4,7 +4,7 @@
 
 /datum/plane_holder
 	var/mob/my_mob
-	var/list/plane_masters[VIS_COUNT]
+	var/list/plane_masters[VIS_COUNT] // ALLOW(instance_list): d: fixed-size list/x[VIS_COUNT] indexed by plane slot; every plane holder fills it
 
 /datum/plane_holder/New(mob/this_guy)
 	ASSERT(ismob(this_guy))

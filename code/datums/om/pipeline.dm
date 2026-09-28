@@ -470,7 +470,7 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 #undef OM_RUN_STAGE
 
 /// One timed stage run (profiled frames only).
-/proc/om_stage_timed(datum/om/stage/T, datum/E, datum/om/frame/F, datum/om/scheduler/sched, stride)
+/proc/om_stage_timed(datum/om/stage/T, datum/E, datum/om/frame/F, datum/om/scheduler/sched, stride) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/t0 = TICK_USAGE
 	. = T.perform(E, F)
 	var/key = "[T.type]"
@@ -509,7 +509,7 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 
 /// Deciseconds before stage `T` (plan position `i`) may run again, 0 when it may run now (and
 /// then it is recorded as running now).
-/proc/om_stage_throttle(datum/om/frame/S, i, datum/om/stage/T, now)
+/proc/om_stage_throttle(datum/om/frame/S, i, datum/om/stage/T, now) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!S.last_run)
 		S.last_run = new /list(S.plan.n)
 	var/last = S.last_run[i]
@@ -653,13 +653,13 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 	plans[key] = plan
 	return plan
 
-/proc/cmp_om_stage_pos(datum/om/stage/a, datum/om/stage/b)
+/proc/cmp_om_stage_pos(datum/om/stage/a, datum/om/stage/b) // ALLOW(base_proc): global API written before the base-type ratchet
 	return a.pos - b.pos
 
 // ---------------------------------------------------------------- entity API
 
 /// `E`'s state in pipeline `P` (type or def). `create`: allocate it and its plan if missing.
-/proc/om_pipe_state(datum/E, P, create = FALSE)
+/proc/om_pipe_state(datum/E, P, create = FALSE) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/rec/rec = create ? om_rec_of(E) : E?.om_rec
 	if(!rec)
 		return null
@@ -688,7 +688,7 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 		L[w] = 0
 
 /// Sets every stage of `S` idle (TRUE) or awake (FALSE).
-/proc/om_pipe_set_all(datum/om/frame/S, asleep)
+/proc/om_pipe_set_all(datum/om/frame/S, asleep, idle_frames = null) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/list/bits = S.bits
 	var/n = S.plan.n
 	for(var/w in 1 to length(bits))
@@ -698,9 +698,11 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 		for(var/i in 1 to n)
 			bits[OM_PIPE_WORD(i)] |= OM_PIPE_BIT(i)
 		S.asleep = n
+	if(!isnull(idle_frames))
+		S.idle_frames = idle_frames
 
 /// TRUE while stage `stage_type` (a family root or variant) is idle on `E`.
-/proc/om_stage_idle(datum/E, P, stage_type)
+/proc/om_stage_idle(datum/E, P, stage_type) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/frame/S = om_pipe_state(E, P)
 	if(!S)
 		return FALSE
@@ -708,7 +710,7 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 	return i && (S.bits[OM_PIPE_WORD(i)] & OM_PIPE_BIT(i))
 
 /// Plan position of the variant of `stage_type`'s family on `E`'s plan, or 0.
-/proc/om_plan_position(datum/om/frame/S, stage_type)
+/proc/om_plan_position(datum/om/frame/S, stage_type) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/stage/listed = om_registry().stage_by_type[stage_type]
 	if(!listed)
 		return 0
@@ -719,13 +721,13 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 	return 0
 
 /// TRUE while `E` is parked in pipeline `P`.
-/proc/om_pipe_parked(datum/E, P)
+/proc/om_pipe_parked(datum/E, P) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/frame/S = om_pipe_state(E, P)
 	return S?.parked
 
 /// Adds (or removes) a stage for this entity only: its plan is rebuilt and every stage wakes.
 /// Nothing happens for an entity that doesn't run the stage's pipeline.
-/proc/om_stage_add(datum/E, stage_type)
+/proc/om_stage_add(datum/E, stage_type) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/stage/T = om_registry().stage_by_type[stage_type]
 	if(!T)
 		CRASH("om: [stage_type] is not a stage")
@@ -737,7 +739,7 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 	LAZYADD(S.extras, stage_type)
 	om_pipe_replan(E, T.pipeline, S)
 
-/proc/om_stage_remove(datum/E, stage_type)
+/proc/om_stage_remove(datum/E, stage_type) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/stage/T = om_registry().stage_by_type[stage_type]
 	var/datum/om/frame/S = T && om_pipe_state(E, T.pipeline)
 	if(!S || !(stage_type in S.extras))
@@ -745,7 +747,7 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 	LAZYREMOVE(S.extras, stage_type)
 	om_pipe_replan(E, T.pipeline, S)
 
-/proc/om_pipe_replan(datum/E, P, datum/om/frame/S)
+/proc/om_pipe_replan(datum/E, P, datum/om/frame/S) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/pipeline/def = om_registry().behaviour(P)
 	var/datum/om/plan/plan = def.plan_for(E, S.extras)
 	if(plan == S.plan)
@@ -764,7 +766,7 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 
 /// Runs `E`'s variant of family `stage_type` now, outside the schedule, with its own frame (facts
 /// work; dt is the pipeline's nominal step). Its idle bit is unchanged. Returns perform()'s result.
-/proc/om_stage_run_now(datum/E, stage_type)
+/proc/om_stage_run_now(datum/E, stage_type) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/registry/reg = om_registry()
 	var/datum/om/stage/listed = reg.stage_by_type[stage_type]
 	if(!listed)
@@ -780,7 +782,7 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 
 /// Runs one whole frame of pipeline `P` on `E` now (content that must see a frame at once, and
 /// tests). It is a real frame: idles, rewakes and parking follow from it.
-/proc/om_run_frame_now(datum/E, P)
+/proc/om_run_frame_now(datum/E, P) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/pipeline/def = om_registry().behaviour(P)
 	if(!om_pipe_state(E, def) && om_attached(E, def))
 		om_pipe_state(E, def, TRUE)
@@ -801,7 +803,7 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 	return length(def.parked_on(sched))
 
 /// The variant of family `stage_type` that serves `E`, whether or not its plan has it.
-/proc/om_stage_for(datum/E, stage_type)
+/proc/om_stage_for(datum/E, stage_type) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/registry/reg = om_registry()
 	var/datum/om/stage/listed = reg.stage_by_type[stage_type]
 	if(!listed)
@@ -849,7 +851,7 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 
 /// Audits a sample of parked entities and of awake ones with idle stages, for every pipeline.
 /// A miss is logged, fails the unit test run, and wakes the entity.
-/proc/om_pipeline_audit(datum/om/scheduler/sched, parked_sample = 400, awake_sample = 100, expected = FALSE)
+/proc/om_pipeline_audit(datum/om/scheduler/sched, parked_sample = 400, awake_sample = 100, expected = FALSE) // ALLOW(base_proc): global API written before the base-type ratchet
 	sched = sched || GLOB.om_live_sched || om_scheduler()
 	. = list()
 	for(var/datum/om/pipeline/P as anything in om_registry().pipelines)
@@ -969,13 +971,13 @@ GLOBAL_LIST_EMPTY(om_sleepers)
 GLOBAL_LIST_EMPTY(om_traced)
 
 /// Counts behaviour wakes (on_wake) and om_after() calls delivered to `E` from now on.
-/proc/om_trace(datum/E)
+/proc/om_trace(datum/E) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!GLOB.om_traced[E])
 		GLOB.om_traced[E] = 1
 
-/proc/om_traced_count(datum/E)
+/proc/om_traced_count(datum/E) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/n = GLOB.om_traced[E]
 	return n ? n - 1 : 0
 
-/proc/om_untrace(datum/E)
+/proc/om_untrace(datum/E) // ALLOW(base_proc): global API written before the base-type ratchet
 	GLOB.om_traced -= E

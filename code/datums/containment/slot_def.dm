@@ -116,7 +116,7 @@
 /// (slot_holder_key()). Resolved from the registry's holder groups (built at
 /// boot by /datum/om/registry/proc/build_slot_holders(), registry.dm), unless
 /// the holder overrides slot_relation_overrides() to decide dynamically.
-/proc/dq_slot_defs_for(atom/holder)
+/proc/dq_slot_defs_for(atom/holder) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/static/list/cache = list()
 	var/key = holder.slot_holder_key()
 	. = cache[key]

@@ -35,7 +35,7 @@
 		"evidence_ids" = list(evidence_id),
 	), "document-created:[evidence_id]", parent)
 
-// LIFECYCLE: releases its evidence id.
+// ALLOW(lifecycle): releases its evidence id.
 /datum/component/contract_document/Destroy()
 	SScontracts?.release_evidence(evidence_id)
 	evidence_id = null
@@ -486,7 +486,7 @@
 		if(evidence["subject_id"] != subject_id)
 			continue
 		var/scan_time = evidence["scan_time"]
-		if(!isnum(scan_time) || scan_time > world.time)
+		if(!isnum(scan_time) || scan_time > world.time) // ALLOW(cooldown): contract/offer expiry and deadline state, not a rate limit
 			continue
 		if(scan_time >= signature_time && scan_time <= participant.exposure_time)
 			if(!baseline || scan_time > baseline["scan_time"])

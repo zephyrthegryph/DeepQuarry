@@ -62,7 +62,7 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 	..()
 	holder = owner_holder
 
-// LIFECYCLE: clears its holder's cached panel.
+// ALLOW(lifecycle): clears its holder's cached panel.
 /datum/permissions_panel/Destroy(force, ...)
 	if(holder)
 		holder.dq_permissions_panel = null

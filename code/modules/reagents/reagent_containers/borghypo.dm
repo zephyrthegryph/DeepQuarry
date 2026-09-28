@@ -28,8 +28,8 @@
 	var/selected_recipe_id
 	var/hypo_sound = 'sound/effects/hypospray.ogg'	// What sound do we play on use?
 
-	var/list/reagent_ids = list(REAGENT_ID_TRICORDRAZINE, REAGENT_ID_INAPROVALINE, REAGENT_ID_BICARIDINE, REAGENT_ID_ANTITOXIN, REAGENT_ID_KELOTANE, REAGENT_ID_TRAMADOL, REAGENT_ID_DEXALIN, REAGENT_ID_SPACEACILLIN)
-	var/list/reagent_volumes = list()
+	var/list/reagent_ids = list(REAGENT_ID_TRICORDRAZINE, REAGENT_ID_INAPROVALINE, REAGENT_ID_BICARIDINE, REAGENT_ID_ANTITOXIN, REAGENT_ID_KELOTANE, REAGENT_ID_TRAMADOL, REAGENT_ID_DEXALIN, REAGENT_ID_SPACEACILLIN) // ALLOW(instance_list): c: read-only per-subtype constant table (8 subtype overrides); a getter would share it, not worth it on a rare type
+	var/list/reagent_volumes = list() // ALLOW(instance_list): d: filled in Initialize() with every reagent the hypo carries
 	/// Associated list of the names of each of our reagents. Indexed via `mode`.
 	var/list/reagent_names
 	/// If we're currently recording a recipe, this will be set to a list containing the recipe's steps.
@@ -37,7 +37,7 @@
 	/// Associated list of the recipes we have saved. Indexed via the string ID of the recipe.
 	var/list/saved_recipes
 	/// In the hypo's TGUI, this determines the amount buttons that will be available to change this hypo's transfer amount.
-	var/list/transfer_amounts = list(5, 10)
+	var/list/transfer_amounts = list(5, 10) // ALLOW(instance_list): c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
 
 /obj/item/reagent_containers/borghypo/surgeon
 	reagent_ids = list(REAGENT_ID_INAPROVALINE, REAGENT_ID_DEXALIN, REAGENT_ID_TRICORDRAZINE, REAGENT_ID_SPACEACILLIN, REAGENT_ID_OXYCODONE)

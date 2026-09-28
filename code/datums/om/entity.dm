@@ -20,10 +20,10 @@
 	var/started = FALSE
 	var/torn_down = FALSE
 	/// Attached behaviours, sorted by id (= run order), with parallel lists.
-	var/list/att = list()
-	var/list/att_pend = list()
-	var/list/att_ring = list()
-	var/list/att_state = list()
+	var/list/att = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/att_pend = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/att_ring = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/att_state = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
 	/// Bumped whenever att changes shape (attach, detach), so loops over att re-find their
 	/// position only when a hook actually reshaped it.
 	var/att_ver = 0
@@ -79,7 +79,7 @@
 	phase = sched.next_phase()
 
 /// The entity's record, created on first use in the current scheduler.
-/proc/om_rec_of(datum/E)
+/proc/om_rec_of(datum/E) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/rec/rec = E.om_rec
 	if(rec)
 		return rec
@@ -98,7 +98,7 @@
 
 /// Reads `E`'s declared_cache_vars() into its type table (every instance of a type
 /// declares the same rules). A cache with no rule is an error.
-/proc/om_cache_scan(datum/om/type_table/T, datum/E)
+/proc/om_cache_scan(datum/om/type_table/T, datum/E) // ALLOW(base_proc): global API written before the base-type ratchet
 	T.cache_scanned = TRUE
 	var/list/decl = E.declared_cache_vars()
 	for(var/name in decl)
@@ -119,7 +119,7 @@
 				om_scheduler().error("[E.type]: declared cache [name] has an unknown rule [rule[1]]")
 
 /// Nulls every declared cache on `E` whose rule in `rules` (stride 2: key, var) matches.
-/proc/om_cache_clear(datum/E, list/rules, key, bits)
+/proc/om_cache_clear(datum/E, list/rules, key, bits) // ALLOW(base_proc): global API written before the base-type ratchet
 	for(var/i in 1 to length(rules) step 2)
 		var/k = rules[i]
 		if(bits ? (k & bits) : (ispath(key) ? ispath(key, k) : k == key))
@@ -130,7 +130,7 @@
 /// Joins `E` to the object model: attaches every behaviour its decls name and
 /// applies its self effects and grants. Atoms call this from Initialize()
 /// when their type has a decl; plain datums call it themselves.
-/proc/om_start(datum/E)
+/proc/om_start(datum/E) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/rec/rec = om_rec_of(E)
 	if(!rec || rec.started)
 		return rec
@@ -145,7 +145,7 @@
 	return rec
 
 /// Attaches behaviour `B` (type or def) to `E`. Idempotent.
-/proc/om_attach(datum/E, B)
+/proc/om_attach(datum/E, B) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/behaviour/def = om_registry().behaviour(B)
 	var/datum/om/rec/rec = om_rec_of(E)
 	if(!rec)
@@ -172,7 +172,7 @@
 	om_sync(rec, pos, TRUE)
 	return TRUE
 
-/proc/om_detach(datum/E, B)
+/proc/om_detach(datum/E, B) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/rec/rec = E.om_rec
 	if(!rec)
 		return FALSE
@@ -194,14 +194,14 @@
 		om_native_watch(rec)
 	return TRUE
 
-/proc/om_attached(datum/E, B)
+/proc/om_attached(datum/E, B) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/rec/rec = E.om_rec
 	if(!rec)
 		return FALSE
 	return !!rec.att.Find(om_registry().behaviour(B))
 
 /// Parks `B` on `E`: off its cadence ring until om_unpark(). Wakes and deadlines still arrive.
-/proc/om_park(datum/E, B)
+/proc/om_park(datum/E, B) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/rec/rec = E.om_rec
 	var/i = rec?.att.Find(om_registry().behaviour(B))
 	if(!i)
@@ -209,7 +209,7 @@
 	rec.att_state[i] |= OM_ATT_PARKED
 	om_sync(rec, i, FALSE)
 
-/proc/om_unpark(datum/E, B)
+/proc/om_unpark(datum/E, B) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/rec/rec = E.om_rec
 	var/i = rec?.att.Find(om_registry().behaviour(B))
 	if(!i)
@@ -219,7 +219,7 @@
 
 /// Roster membership for attachment `i`: started (on_start/on_stop) and which
 /// cadence ring it sits on. `recheck` re-evaluates `requires`.
-/proc/om_sync(datum/om/rec/rec, i, recheck)
+/proc/om_sync(datum/om/rec/rec, i, recheck) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/behaviour/B = rec.att[i]
 	var/state = rec.att_state[i]
 	if(recheck)
@@ -257,7 +257,7 @@
 	rec.att_ring[i] = desired
 
 /// Leaves the roster: off its ring, holds released, on_stop called.
-/proc/om_stop_behaviour(datum/om/rec/rec, i)
+/proc/om_stop_behaviour(datum/om/rec/rec, i) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/behaviour/B = rec.att[i]
 	var/datum/om/ring/current = rec.att_ring[i]
 	if(current)
@@ -272,19 +272,19 @@
 	om_release_hook_holds(rec, B.id)
 	rec.sched.call_hook(rec, B, OM_HOOK_STOP)
 
-/proc/om_requires_pass(datum/E, datum/om/behaviour/B)
+/proc/om_requires_pass(datum/E, datum/om/behaviour/B) // ALLOW(base_proc): global API written before the base-type ratchet
 	for(var/datum/om/check/C as anything in B.compiled_requires)
 		if(!isnull(C.why_not(E, null)))
 			return FALSE
 	return TRUE
 
-/proc/om_suspended(datum/om/rec/rec)
+/proc/om_suspended(datum/om/rec/rec) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!rec.contribs)
 		return FALSE
 	return om_value_of(rec.owner, EFFECT_SUSPENDED)
 
 /// Re-syncs every attachment (relevance, suspension or clock rate changed).
-/proc/om_sync_all(datum/om/rec/rec, recheck = FALSE)
+/proc/om_sync_all(datum/om/rec/rec, recheck = FALSE) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/i = 1
 	while(i <= length(rec.att))
 		var/datum/om/behaviour/B = rec.att[i]
@@ -300,7 +300,7 @@
 // ---------------------------------------------------------------- listen mask
 
 /// Recomputed only when attachments, watches, forwards or derived storage change.
-/proc/om_recompute_listen(datum/om/rec/rec)
+/proc/om_recompute_listen(datum/om/rec/rec) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/slow = rec.table?.service_mask
 	var/mask = slow
 	for(var/datum/om/behaviour/B as anything in rec.att)
@@ -321,7 +321,7 @@
 	rec.owner.om_listen = mask | slow | rec.table?.cache_mask
 
 /// The mask other entities and behaviours observe (decides eager derived values).
-/proc/om_observed_mask(datum/om/rec/rec)
+/proc/om_observed_mask(datum/om/rec/rec) // ALLOW(base_proc): global API written before the base-type ratchet
 	. = 0
 	for(var/datum/om/behaviour/B as anything in rec.att)
 		. |= B.wake_on
@@ -334,11 +334,11 @@
 
 /// Setters call this after writing tracked state. Level-triggered: it says
 /// "these channels may have changed"; observers re-read current state.
-/proc/om_changed(datum/E, bits)
+/proc/om_changed(datum/E, bits) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(E.om_listen & bits)
 		om_dispatch_change(E, bits)
 
-/proc/om_dispatch_change(datum/E, bits)
+/proc/om_dispatch_change(datum/E, bits) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/rec/rec = E.om_rec
 	if(!rec || rec.torn_down)
 		return
@@ -403,7 +403,7 @@
 		rec.service_pend |= bits & rec.table.service_mask
 
 /// Queues on_wake for behaviour id `bid` on `E` with `bits`.
-/proc/om_wake_id(datum/E, bid, bits)
+/proc/om_wake_id(datum/E, bid, bits) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/rec/rec = E?.om_rec
 	if(!rec || rec.torn_down)
 		return
@@ -417,7 +417,7 @@
 			return
 
 /// Wakes behaviour `B` on `E` next drain (on_wake gets CHANGE_EXPLICIT).
-/proc/om_wake(datum/E, B)
+/proc/om_wake(datum/E, B) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/behaviour/def = om_registry().behaviour(B)
 	om_wake_id(E, def.id, CHANGE_EXPLICIT)
 
@@ -425,7 +425,7 @@
 
 /// Dynamic watch: `owner`'s behaviour `B` wakes (CHANGE_RELATED) when `target`
 /// changes any of `mask`. Removed when either end is torn down.
-/proc/om_watch(datum/owner, datum/target, mask, B)
+/proc/om_watch(datum/owner, datum/target, mask, B) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/behaviour/def = om_registry().behaviour(B)
 	var/datum/om/rec/trec = om_rec_of(target)
 	var/datum/om/rec/orec = om_rec_of(owner)
@@ -443,7 +443,7 @@
 	om_recompute_listen(trec)
 	return TRUE
 
-/proc/om_unwatch(datum/owner, datum/target, B)
+/proc/om_unwatch(datum/owner, datum/target, B) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/rec/trec = target?.om_rec
 	if(!trec?.watches_in)
 		return
@@ -491,7 +491,7 @@
 
 /// Lifecycle phase 4 (links): edges, watches, forwards. Called from
 /// dq_lifecycle_clear_links(); both ends are still non-null.
-/proc/om_teardown_links(datum/E)
+/proc/om_teardown_links(datum/E) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/rec/rec = E.om_rec
 	if(!rec)
 		return
@@ -518,7 +518,7 @@
 
 /// Lifecycle phase 5 (teardown): contributions both ways, behaviours
 /// (on_stop), deadlines, tasks. Called from dq_lifecycle_revoke_grants().
-/proc/om_teardown_rest(datum/E)
+/proc/om_teardown_rest(datum/E) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/rec/rec = E.om_rec
 	if(!rec)
 		return
@@ -550,14 +550,14 @@
 /// relation (thing = source, holder = target): entering one links it, so it
 /// gets the relation's declared view fields, `changes` channels and
 /// contributes/grants for free, on top of the ledger's own bookkeeping.
-/proc/om_slot_entered(atom/holder, atom/movable/thing, datum/om/relation/slot/def)
+/proc/om_slot_entered(atom/holder, atom/movable/thing, datum/om/relation/slot/def) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(holder.om_listen & CHANGE_CONTENTS)
 		om_dispatch_change(holder, CHANGE_CONTENTS)
 	if(def)
 		om_link(thing, holder, def.type)
 
 /// Ledger: `thing` left one of `holder`'s slots.
-/proc/om_slot_left(atom/holder, atom/movable/thing, datum/om/relation/slot/def)
+/proc/om_slot_left(atom/holder, atom/movable/thing, datum/om/relation/slot/def) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(def && thing.om_rec)
 		om_unlink(thing, holder, def.type)
 	if(holder.om_listen & CHANGE_CONTENTS)

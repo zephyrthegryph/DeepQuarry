@@ -30,7 +30,7 @@
 	if(.)
 		shockdirs = list(turn(dir,90),turn(dir,-90))
 
-// LIFECYCLE: its generators clean up the rest of the field.
+// ALLOW(lifecycle): its generators clean up the rest of the field.
 /obj/machinery/containment_field/Destroy()
 	unsense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
 	if(FG1 && !FG1.clean_up)

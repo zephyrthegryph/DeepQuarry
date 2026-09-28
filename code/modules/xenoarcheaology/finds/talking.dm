@@ -1,7 +1,7 @@
-/obj/var/datum/talking_atom/talking_atom
+/obj/var/datum/talking_atom/talking_atom // ALLOW(state_ref): owned: xenoarch speech state with mob refs
 
 /datum/talking_atom
-	var/list/heard_words = list()
+	var/list/heard_words = list() // ALLOW(instance_list): d: speech memory of a talking item, filled as it hears
 	COOLDOWN_DECLARE(talk_cooldown)
 	var/atom/holder_atom
 	var/talk_interval = 50

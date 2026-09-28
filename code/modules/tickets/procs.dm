@@ -18,7 +18,7 @@
 
 	//remove out adminhelp verb temporarily to prevent spamming of admins.
 	remove_verb(src,/client/verb/mentorhelp)
-	spawn(600) // S7 keeps: client verb cooldown (client procs)
+	spawn(600) // ALLOW(scheduler): client verb cooldown (client procs)
 		add_verb(src,/client/verb/mentorhelp) // 1 minute cool-down for mentorhelps
 
 	feedback_add_details("admin_verb","Mentorhelp") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
@@ -108,7 +108,7 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 
 	//remove out adminhelp verb temporarily to prevent spamming of admins.
 	remove_verb(src,/client/verb/adminhelp)
-	spawn(1200) // S7 keeps: client verb cooldown (client procs)
+	spawn(1200) // ALLOW(scheduler): client verb cooldown (client procs)
 		add_verb(src,/client/verb/adminhelp	) // 2 minute cool-down for adminhelp
 
 	feedback_add_details("admin_verb","Adminhelp") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
@@ -165,7 +165,7 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 	var/list/afkmins = adm["afk"]
 	var/list/allmins = adm["total"]
 
-	spawn(0) //Unreliable world.Exports() // S7 keeps: world.Export() is a blocking external call
+	spawn(0) //Unreliable world.Exports() // ALLOW(scheduler): world.Export() is a blocking external call
 		var/query_string = "type=adminhelp"
 		query_string += "&key=[url_encode(CONFIG_GET(string/chat_webhook_key))]"
 		query_string += "&from=[url_encode(key_name(initiator))]"
@@ -196,7 +196,7 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 
 	//if they requested spice, then remove spice verb temporarily to prevent spamming
 	remove_verb(src,/client/verb/adminspice)
-	spawn(10 MINUTES) // S7 keeps: client verb cooldown (client procs)
+	spawn(10 MINUTES) // ALLOW(scheduler): client verb cooldown (client procs)
 		if(src)		// In case we left in the 10 minute cooldown
 			add_verb(src,/client/verb/adminspice) // 10 minute cool-down for spice request
 

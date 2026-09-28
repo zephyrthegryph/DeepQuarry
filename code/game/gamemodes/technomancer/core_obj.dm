@@ -36,7 +36,7 @@
 /obj/item/technomancer_core/Initialize(mapload)
 	. = ..()
 
-// LIFECYCLE: its summons are dismissed with it.
+// ALLOW(lifecycle): its summons are dismissed with it.
 /obj/item/technomancer_core/Destroy()
 	dismiss_all_summons()
 	return ..()

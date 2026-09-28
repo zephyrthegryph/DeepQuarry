@@ -34,9 +34,12 @@
 	var/pill_icon = 2
 	var/patch_icon = 2
 
+	// ALLOW(instance_list): d: saved recipes; many call sites
 	var/list/recipes = list() // This holds chemical recipes up to a maximum determined by SYNTHESIZER_MAX_RECIPES. Two-dimensional.
+	// ALLOW(instance_list): d: synthesizer build queue, many call sites index it
 	var/list/queue = list() // This holds the recipe id's for queued up recipes.
 	var/list/catalyst_ids // This keeps track of the chemicals in the catalyst to remove before bottling.
+	// ALLOW(instance_list): d: cartridges are spawned into it at init
 	var/list/cartridges = list() // Associative, label -> cartridge
 
 	var/static/list/spawn_cartridges = list(
@@ -67,7 +70,7 @@
 
 	var/_recharge_reagents = TRUE
 	var/process_tick = 0
-	var/list/dispense_reagents = list(
+	var/list/dispense_reagents = list( // ALLOW(instance_list): d: edited in place per instance (1 writers)
 		REAGENT_ID_HYDROGEN, REAGENT_ID_LITHIUM, REAGENT_ID_CARBON, REAGENT_ID_NITROGEN, REAGENT_ID_OXYGEN, REAGENT_ID_FLUORINE, REAGENT_ID_SODIUM,
 		REAGENT_ID_ALUMINIUM, REAGENT_ID_SILICON, REAGENT_ID_PHOSPHORUS, REAGENT_ID_SULFUR, REAGENT_ID_CHLORINE, REAGENT_ID_POTASSIUM, REAGENT_ID_IRON,
 		REAGENT_ID_COPPER, REAGENT_ID_MERCURY, REAGENT_ID_RADIUM, REAGENT_ID_WATER, REAGENT_ID_ETHANOL, REAGENT_ID_SUGAR, REAGENT_ID_SACID, REAGENT_ID_TUNGSTEN, REAGENT_ID_CALCIUM

@@ -19,10 +19,10 @@
 	var/player_two
 	var/list/ship_count_pone
 	var/list/ship_count_ptwo
-	var/list/shots_fired_pone = list()
-	var/list/shots_fired_ptwo = list()
-	var/list/ships_placed_pone = list()
-	var/list/ships_placed_ptwo = list()
+	var/list/shots_fired_pone = list() // ALLOW(instance_list): d: board state written through an alias (current_shots[key] = hit); one per game table
+	var/list/shots_fired_ptwo = list() // ALLOW(instance_list): d: board state written through an alias (current_shots[key] = hit); one per game table
+	var/list/ships_placed_pone = list() // ALLOW(instance_list): d: board state written through an alias; one per game table
+	var/list/ships_placed_ptwo = list() // ALLOW(instance_list): d: board state written through an alias; one per game table
 	var/list/destroyed_ships_pone
 	var/list/destroyed_ships_ptwo
 	var/static/list/total_ships = list(

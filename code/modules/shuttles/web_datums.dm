@@ -20,7 +20,7 @@
 	travel_time = _time
 	one_way = _oneway
 
-// LIFECYCLE: leaves both endpoints' route lists.
+// ALLOW(lifecycle): leaves both endpoints' route lists.
 /datum/shuttle_route/Destroy()
 	LAZYREMOVE(start.routes, src)
 	LAZYREMOVE(end.routes, src)
@@ -168,6 +168,7 @@ REF_OWNED_LIST(/datum/shuttle_destination, "routes")
 	var/datum/shuttle_destination/current_destination = null	// Where the shuttle currently is.  Bit of a misnomer.
 	var/datum/shuttle_destination/future_destination = null		// Where it will be in the near future.
 	var/datum/shuttle_destination/starting_destination = null	// Where the shuttle will start at, generally at the home base.
+	// ALLOW(instance_list): d: web shuttle destinations, built at init
 	var/list/destinations = list()								// List of currently instanced destinations.
 	var/destination_class = null								// Type to use in typesof(), to build destinations.
 

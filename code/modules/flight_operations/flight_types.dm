@@ -151,7 +151,7 @@ REF_OWNED(/datum/flight_vessel, "active_plan")
 		generation_state = FLIGHT_GENERATION_QUEUED
 		generation_stage = "Awaiting departure"
 
-// LIFECYCLE: its vessel forgets it and its leases are released.
+// ALLOW(lifecycle): its vessel forgets it and its leases are released.
 /datum/flight_plan/Destroy()
 	if(vessel?.active_plan == src)
 		vessel.active_plan = null

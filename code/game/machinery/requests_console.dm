@@ -72,7 +72,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 
 	update_icon()
 
-// LIFECYCLE: the last console of a department takes it off the request lists.
+// ALLOW(lifecycle): the last console of a department takes it off the request lists.
 /obj/machinery/requests_console/Destroy()
 	var/lastDeptRC = 1
 	for (var/obj/machinery/requests_console/Console in REGISTRY_MEMBERS(REGISTRY_ALARM_CONSOLES))

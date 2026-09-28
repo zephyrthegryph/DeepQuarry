@@ -112,7 +112,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/janitorialcart, REGISTRY_JANITORIAL_CARTS)
 
 REF_OWNED(/obj/structure/janitorialcart, list("mybag", "mymop", "myspray", "myreplacer", "mybucket"))
 
-// LIFECYCLE: drops its cached tgui icons.
+// ALLOW(lifecycle): drops its cached tgui icons.
 /obj/structure/janitorialcart/Destroy()
 	clearTguiIcons()
 	return ..()

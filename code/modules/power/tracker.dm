@@ -29,7 +29,7 @@
 	. = ..()
 	connect_to_network()
 
-// LIFECYCLE: leaves its solar control computer.
+// ALLOW(lifecycle): leaves its solar control computer.
 /obj/machinery/power/tracker/Destroy()
 	unset_control() //remove from control computer
 	. = ..()

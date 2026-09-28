@@ -1,0 +1,6 @@
+# Destroy()-override and qdel()-count ceilings (roadmap L4, doc/rewrite/lifecycle.md
+# sec 1, sec 8). tools/ci/lifecycle_counts_lint.py fails when a count rises above its
+# line. A site with `// ALLOW(lifecycle): <reason>` doesn't count at all.
+# Lower after a sweep: `python tools/ci/lifecycle_counts_lint.py --update`.
+destroy 2
+qdel 2126

@@ -209,7 +209,7 @@
 			if(inserted_battery.stored_charge <= 0)
 				src.loc.visible_message(span_blue("[icon2html(src,viewers(src))] [src] buzzes."), span_blue("[icon2html(src,viewers(src))] You hear something buzz."))
 				shutdown_emission()
-			else if(world.time > time_end)
+			else if(world.time > time_end) // ALLOW(cooldown): activation end time
 				src.loc.visible_message(span_blue("[icon2html(src,viewers(src))] [src] chimes."), span_blue("[icon2html(src,viewers(src))] You hear something chime."))
 				shutdown_emission()
 		else

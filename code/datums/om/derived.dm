@@ -21,7 +21,7 @@
 #define DV_STRIDE 5
 
 /// Reads derived value `name` (a DERIVE row name or a /datum/om/derived type) of `E`.
-/proc/om_derived(datum/E, name)
+/proc/om_derived(datum/E, name) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/derived/D = om_registry().derived_def(name)
 	var/datum/om/rec/rec = om_rec_of(E)
 	if(!rec)
@@ -40,14 +40,14 @@
 #endif
 	return rec.dv[k + DV_VALUE]
 
-/proc/om_dv_find(datum/om/rec/rec, didx)
+/proc/om_dv_find(datum/om/rec/rec, didx) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/list/V = rec.dv
 	for(var/i in 1 to length(V) step DV_STRIDE)
 		if(V[i] == didx)
 			return i
 	return 0
 
-/proc/om_dv_create(datum/om/rec/rec, datum/om/derived/D)
+/proc/om_dv_create(datum/om/rec/rec, datum/om/derived/D) // ALLOW(base_proc): global API written before the base-type ratchet
 	LAZYADD(rec.dv, list(D.idx, null, 1, 0, 0))
 	var/k = length(rec.dv) - DV_STRIDE + 1
 	om_dv_full(rec, k, D)
@@ -57,7 +57,7 @@
 	return k
 
 /// Full recompute (first read, dirty read, max_age, audit).
-/proc/om_dv_full(datum/om/rec/rec, k, datum/om/derived/D)
+/proc/om_dv_full(datum/om/rec/rec, k, datum/om/derived/D) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/E = rec.owner
 	var/value = null
 	var/aux = 0
@@ -112,13 +112,13 @@
 	rec.dv[k + DV_AT] = rec.sched.now()
 	rec.dv[k + DV_AUX] = aux
 
-/proc/om_agg_contribution(datum/om/derived/D, datum/member)
+/proc/om_agg_contribution(datum/om/derived/D, datum/member) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(D.aggregate == AGG_COUNT)
 		return 1
 	return D.contribution(member)
 
 /// Input channels changed: mark dependents dirty.
-/proc/om_derived_inputs_changed(datum/om/rec/rec, bits)
+/proc/om_derived_inputs_changed(datum/om/rec/rec, bits) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/list/defs = om_registry().derived
 	var/list/V = rec.dv
 	for(var/k in 1 to length(V) step DV_STRIDE)
@@ -126,7 +126,7 @@
 		if((D.inputs & bits) && !V[k + DV_DIRTY])
 			om_dv_mark(rec, k, D)
 
-/proc/om_dv_mark(datum/om/rec/rec, k, datum/om/derived/D)
+/proc/om_dv_mark(datum/om/rec/rec, k, datum/om/derived/D) // ALLOW(base_proc): global API written before the base-type ratchet
 	rec.dv[k + DV_DIRTY] = 1
 	if(!D.channel)
 		return
@@ -181,14 +181,14 @@
 
 // ---------------------------------------------------------------- aggregate deltas
 
-/proc/om_edge_cache_get(datum/om/edge/edge, didx)
+/proc/om_edge_cache_get(datum/om/edge/edge, didx) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/list/C = edge.cache
 	for(var/i in 1 to length(C) step 2)
 		if(C[i] == didx)
 			return C[i + 1]
 	return null
 
-/proc/om_edge_cache_set(datum/om/edge/edge, didx, value)
+/proc/om_edge_cache_set(datum/om/edge/edge, didx, value) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/list/C = edge.cache
 	for(var/i in 1 to length(C) step 2)
 		if(C[i] == didx)
@@ -196,7 +196,7 @@
 			return
 	LAZYADD(edge.cache, list(didx, value))
 
-/proc/om_agg_edge_added(datum/om/edge/edge)
+/proc/om_agg_edge_added(datum/om/edge/edge) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/rec/rec = edge.target?.om_rec
 	if(!rec?.dv)
 		return
@@ -209,7 +209,7 @@
 		om_edge_cache_set(edge, D.idx, c)
 		om_agg_delta(rec, k, D, edge.source, null, c, 1)
 
-/proc/om_agg_edge_removed(datum/om/edge/edge, datum/om/rec/rec)
+/proc/om_agg_edge_removed(datum/om/edge/edge, datum/om/rec/rec) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!rec?.dv)
 		return
 	var/list/defs = om_registry().derived
@@ -220,7 +220,7 @@
 		om_agg_delta(rec, k, D, edge.source, om_edge_cache_get(edge, D.idx), null, -1)
 
 /// A forwarded change from `member` (aggregate member or related input) to `origin`'s derived `didx`.
-/proc/om_agg_member_changed(datum/origin, didx, datum/member)
+/proc/om_agg_member_changed(datum/origin, didx, datum/member) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/rec/rec = origin?.om_rec
 	if(!rec?.dv)
 		return
@@ -242,7 +242,7 @@
 			return
 
 /// Applies one member delta. `sign`: 1 joined, -1 left, 0 changed.
-/proc/om_agg_delta(datum/om/rec/rec, k, datum/om/derived/D, datum/member, old_c, new_c, sign)
+/proc/om_agg_delta(datum/om/rec/rec, k, datum/om/derived/D, datum/member, old_c, new_c, sign) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/value = rec.dv[k + DV_VALUE]
 	var/aux = rec.dv[k + DV_AUX]
 	var/old_value = value

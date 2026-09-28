@@ -37,7 +37,7 @@
 	stakeholder_departments = list()
 	contact_departments = list(DEPARTMENT_CARGO)
 
-// LIFECYCLE: releases its market reservation.
+// ALLOW(lifecycle): releases its market reservation.
 /datum/contract/faction_agent/Destroy()
 	SSsupply?.release_agent_contract_market(src)
 	market_reservation_ids = null

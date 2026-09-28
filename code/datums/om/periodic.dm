@@ -28,7 +28,7 @@
 /// periodic work. DF_ISPROCESSING mirrors it for code that only asks "is this running".
 /datum/var/tmp/periodic_pipe
 
-/proc/periodic_start(datum/E, P)
+/proc/periodic_start(datum/E, P) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!E || QDELETED(E))
 		return FALSE
 	if(E.periodic_pipe == P)
@@ -41,7 +41,7 @@
 		om_attach(E, P)
 	return TRUE
 
-/proc/periodic_stop(datum/E)
+/proc/periodic_stop(datum/E) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!E)
 		return
 	E.periodic_pipe = null
@@ -52,7 +52,7 @@
 /// table above). Return PROCESS_KILL when there is nothing left to do until the next
 /// PERIODIC_START. Like the old process(), a body that sleeps doesn't hold up the frame.
 /datum/proc/periodic_step(delta)
-	set waitfor = FALSE // S10b keeps: core dispatch hook: guards the frame against a periodic_step() override that still sleeps
+	set waitfor = FALSE // ALLOW(scheduler): core dispatch hook: guards the frame against a periodic_step() override that still sleeps
 	return PROCESS_KILL
 
 /// The core's own per-datum hook, kept for tgui windows and database queries (SStgui, SSdbcore).

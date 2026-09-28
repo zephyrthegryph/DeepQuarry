@@ -35,7 +35,7 @@
 /// dq_path_step() attenuates any other damage kind (holder armour, then outer
 /// layers). Replaces a holder's own explosion_contents_severity() override
 /// (D5, containment.md §10): the number now lives on the slot, as data.
-/proc/dq_slot_blast_severity(atom/movable/holder, severity)
+/proc/dq_slot_blast_severity(atom/movable/holder, severity) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/ledger/L = dq_ledger(holder)
 	if(!L || !severity)
 		return 0

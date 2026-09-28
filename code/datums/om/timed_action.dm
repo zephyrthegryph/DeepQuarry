@@ -239,7 +239,7 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 /// Calls a captured proc: FALSE if the callee or an argument is gone, else the proc's result
 /// (TRUE for a null result). `nulls_for_gone`: a gone argument is passed as null instead
 /// (cleanup that must run).
-/proc/om_call_captured(datum/callee, proc_ref, list/captured, list/positions, nulls_for_gone = FALSE)
+/proc/om_call_captured(datum/callee, proc_ref, list/captured, list/positions, nulls_for_gone = FALSE) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!proc_ref)
 		return TRUE
 	var/list/call_args = captured ? captured.Copy() : list()
@@ -265,7 +265,7 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
  *
  * timed_action_flags: IGNORE_* (flags.dm). The named arguments are the timed task's vars.
  */
-/proc/om_do_after(mob/user, delay, atom/target, datum/receiver, on_done, list/done_args, timed_action_flags = NONE, on_fail, list/fail_args, check_proc, list/check_args, progress = TRUE, interaction_key, max_interact_count = 1, hidden = FALSE, icon = 'icons/effects/progressbar.dmi', iconstate = "cog", target_zone, max_distance, claims = FALSE, busy)
+/proc/om_do_after(mob/user, delay, atom/target, datum/receiver, on_done, list/done_args, timed_action_flags = NONE, on_fail, list/fail_args, check_proc, list/check_args, progress = TRUE, interaction_key, max_interact_count = 1, hidden = FALSE, icon = 'icons/effects/progressbar.dmi', iconstate = "cog", target_zone, max_distance, claims = FALSE, busy) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!istype(user) || QDELETED(user))
 		return "gone"
 	if(!isnum(delay))
@@ -304,7 +304,7 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 	return T
 
 /// Calls `proc_ref` on `receiver` with `call_args` (a /proc/ path is called globally). No-op without a proc.
-/proc/om_call_ref(datum/receiver, proc_ref, list/call_args)
+/proc/om_call_ref(datum/receiver, proc_ref, list/call_args) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!proc_ref)
 		return
 	if(copytext("[proc_ref]", 1, 7) == "/proc/")
@@ -314,14 +314,14 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 	return call(receiver, proc_ref)(arglist(call_args || list()))
 
 /// Running timed actions of `user` (on `target`, when given).
-/proc/om_timed_actions(mob/user, atom/target)
+/proc/om_timed_actions(mob/user, atom/target) // ALLOW(base_proc): global API written before the base-type ratchet
 	. = list()
 	for(var/datum/om/task/timed/T in user?.om_rec?.tasks)
 		if(T.state == OM_TASK_RUNNING && (!target || T.target == target))
 			. += T
 
 /// Cancels `user`'s timed actions (on `target`, when given). Returns how many.
-/proc/om_cancel_timed_actions(mob/user, atom/target, reason = "cancelled")
+/proc/om_cancel_timed_actions(mob/user, atom/target, reason = "cancelled") // ALLOW(base_proc): global API written before the base-type ratchet
 	. = 0
 	for(var/datum/om/task/timed/T as anything in om_timed_actions(user, target))
 		if(om_task_cancel(T, reason))
@@ -340,20 +340,20 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
  */
 /// Steps `A` `steps` times in `direction`, one step every `delay` deciseconds
 /// (the old `for(...) sleep(delay); step(A, dir)` drift). Stops if A is deleted.
-/proc/om_drift(atom/movable/A, direction, steps, delay)
+/proc/om_drift(atom/movable/A, direction, steps, delay) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(steps <= 0 || QDELETED(A))
 		return
 	om_after(A, delay, /proc/om_drift_step, A, direction, steps, delay)
 
-/proc/om_drift_step(atom/movable/A, direction, steps, delay)
+/proc/om_drift_step(atom/movable/A, direction, steps, delay) // ALLOW(base_proc): global API written before the base-type ratchet
 	step(A, direction)
 	if(steps > 1)
 		om_after(A, delay, /proc/om_drift_step, A, direction, steps - 1, delay)
 
-/proc/om_stagger(datum/E, list/items, delay, proc_ref, per_step = 1, list/extra, on_end)
+/proc/om_stagger(datum/E, list/items, delay, proc_ref, per_step = 1, list/extra, on_end) // ALLOW(base_proc): global API written before the base-type ratchet
 	om_stagger_step(E, items ? items.Copy() : list(), 1, delay, proc_ref, per_step, extra, on_end)
 
-/proc/om_stagger_step(datum/E, list/items, index, delay, proc_ref, per_step, list/extra, on_end)
+/proc/om_stagger_step(datum/E, list/items, index, delay, proc_ref, per_step, list/extra, on_end) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/last = min(index + max(per_step, 1) - 1, length(items))
 	var/global_proc = copytext("[proc_ref]", 1, 7) == "/proc/"
 	for(var/i in index to last)
@@ -385,7 +385,7 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
  * a /datum/callback, runs after the last slice. Before the live scheduler runs (world init), or with `now`, every
  * slice runs at once. Deleting E drops the rest.
  */
-/proc/om_lane_work(datum/E, slice_proc, cursor, on_done, now = FALSE)
+/proc/om_lane_work(datum/E, slice_proc, cursor, on_done, now = FALSE) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(now || !SSbehaviours?.initialized || !Master?.processing)
 		while(!isnull(cursor) && !QDELETED(E))
 			cursor = call(E, slice_proc)(cursor)
@@ -395,7 +395,7 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 	// on_done travels in a list: a callback passed to om_after() on its own is held weakly.
 	om_after(E, 0, /proc/om_lane_work_run, E, slice_proc, cursor, list(on_done))
 
-/proc/om_lane_work_run(datum/E, slice_proc, cursor, list/done_box)
+/proc/om_lane_work_run(datum/E, slice_proc, cursor, list/done_box) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/scheduler/sched = E.om_rec?.sched || om_scheduler()
 	do
 		cursor = call(E, slice_proc)(cursor)
@@ -406,7 +406,7 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 	om_lane_work_done(E, done_box[1])
 
 /// `on_done`: a proc on E, or a /datum/callback.
-/proc/om_lane_work_done(datum/E, on_done)
+/proc/om_lane_work_done(datum/E, on_done) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(istype(on_done, /datum/callback))
 		var/datum/callback/C = on_done
 		C.Invoke()

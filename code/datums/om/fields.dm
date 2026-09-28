@@ -16,7 +16,7 @@
 
 /datum/om/registry
 	/// type path -> field name -> channel (every decl whose `of` is an ancestor, merged).
-	var/list/fields_by_type = list()
+	var/list/fields_by_type = list() // ALLOW(instance_list): d: registry singleton, filled per entity type on first use
 
 /// Declared fields of `path` (and its ancestors): field name -> channel.
 /datum/om/registry/proc/fields_of(path)
@@ -72,13 +72,13 @@
 		error(problem)
 
 /// The channel declared for `E`'s field `name`, or 0.
-/proc/om_field_channel(datum/E, name)
+/proc/om_field_channel(datum/E, name) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/list/F = om_registry().fields_of(E.type)
 	return F[name] || 0
 
 /// The one write path for a declared field: sets `E.name` to `value` and raises the field's
 /// declared channel. Nothing is raised when the value is unchanged. Returns TRUE on a change.
-/proc/om_set(datum/E, name, value)
+/proc/om_set(datum/E, name, value) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(E.vars[name] == value)
 		return FALSE
 	var/channel = om_field_channel(E, name)
@@ -90,7 +90,7 @@
 
 /// Raises the declared channel of `E`'s field `name` after an in-place change the setter can't
 /// see (a list or datum field edited in place). Setters call it for you.
-/proc/om_field_changed(datum/E, name)
+/proc/om_field_changed(datum/E, name) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/channel = om_field_channel(E, name)
 	if(!channel)
 		CRASH("om_field_changed: [E.type].[name] is not a declared field")

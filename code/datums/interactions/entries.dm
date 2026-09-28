@@ -52,7 +52,7 @@
 	requires = list(REQ_INTERACTION_REACH, REQ_PROC(/proc/dq_actor_can_act, "you can't do that right now"))
 
 /// Requirement clause: the actor is alive, conscious and not incapacitated (the old verbs' usr checks).
-/proc/dq_actor_can_act(mob/actor, atom/target, obj/item/held)
+/proc/dq_actor_can_act(mob/actor, atom/target, obj/item/held) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!isliving(actor))
 		return FALSE
 	return !actor.incapacitated()

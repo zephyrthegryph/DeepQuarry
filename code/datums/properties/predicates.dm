@@ -101,8 +101,8 @@
 /datum/predicate_compiler
 	var/datum/property_registry/registry
 	var/label
-	var/list/errors = list()
-	var/list/watchable = list()
+	var/list/errors = list() // ALLOW(instance_list): d: compiler state (generic name, too many ambiguous call sites)
+	var/list/watchable = list() // ALLOW(instance_list): d: singleton compiler table
 
 /datum/predicate_compiler/New(datum/property_registry/registry, label)
 	..()

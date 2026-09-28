@@ -35,7 +35,7 @@ GLOBAL_REAL(Failsafe, /datum/controller/failsafe)
 	Initialize()
 
 /datum/controller/failsafe/Initialize()
-	set waitfor = FALSE // S10b keeps: MC code (failsafe loop)
+	set waitfor = FALSE // ALLOW(scheduler): MC code (failsafe loop)
 	Failsafe.Loop()
 	if (!Master || defcon == 0) //Master is gone/not responding and Failsafe just exited its loop
 		defcon = 3 //Reset defcon level as its used inside the emergency loop
@@ -51,12 +51,13 @@ GLOBAL_REAL(Failsafe, /datum/controller/failsafe)
 				message_admins(span_boldannounce("/proc/delete_all_SS_and_recreate_master: Most stuff will be broken but basic stuff like movement and chat should still work."))
 			else if (recovery_result == -1) //Failed to recreate MC
 				defcon--
+			// ALLOW(scheduler): MC
 			sleep(initial(processing_interval)) //Wait a bit until the next try
 
 	if(!QDELETED(src))
 		qdel(src) //when Loop() returns, we delete ourselves and let the mc recreate us
 
-// LIFECYCLE: MC singleton; stops its loop and asks for a hard delete.
+// ALLOW(lifecycle): MC singleton; stops its loop and asks for a hard delete.
 /datum/controller/failsafe/Destroy()
 	running = FALSE
 	..()
@@ -120,12 +121,12 @@ GLOBAL_REAL(Failsafe, /datum/controller/failsafe)
 					defcon = min(defcon + 1,5)
 					master_iteration = Master.iteration
 			if (defcon <= 1)
-				sleep(processing_interval*2)
+				sleep(processing_interval*2) // ALLOW(scheduler): MC
 			else
-				sleep(processing_interval)
+				sleep(processing_interval) // ALLOW(scheduler): MC
 		else
 			defcon = 5
-			sleep(initial(processing_interval))
+			sleep(initial(processing_interval)) // ALLOW(scheduler): MC
 
 //Emergency loop used when Master got deleted or the main loop exited while Defcon == 0
 //Loop is driven externally so runtimes only cancel the current recovery attempt
@@ -137,7 +138,7 @@ GLOBAL_REAL(Failsafe, /datum/controller/failsafe)
 		if (2 to 3) //Try to normally recreate the MC two times
 			. = Recreate_MC()
 		if (1) //Delete the old MC first so we don't transfer any info, in case that caused any issues
-			del(Master)
+			del(Master) // ALLOW(scheduler): MC failsafe: hard-kills a wedged Master
 			. = Recreate_MC()
 
 	if (. == 1) //We were able to create a new master
@@ -151,7 +152,7 @@ GLOBAL_REAL(Failsafe, /datum/controller/failsafe)
 
 ///Recreate all SSs which will still cause data survive due to Recover(), the new Master will then find and take them from global.vars
 /proc/recover_all_SS_and_recreate_master()
-	del(Master)
+	del(Master) // ALLOW(scheduler): MC failsafe: hard-kills a wedged Master
 	var/list/subsytem_types = subtypesof(/datum/controller/subsystem)
 	sortTim(subsytem_types, GLOBAL_PROC_REF(cmp_subsystem_init_stage))
 	for(var/I in subsytem_types)
@@ -166,10 +167,10 @@ GLOBAL_REAL(Failsafe, /datum/controller/failsafe)
 
 ///Delete all existing SS to basically start over
 /proc/delete_all_SS_and_recreate_master()
-	del(Master)
+	del(Master) // ALLOW(scheduler): MC failsafe: hard-kills a wedged Master
 	for(var/global_var in global.vars)
 		if (istype(global.vars[global_var], /datum/controller/subsystem))
-			del(global.vars[global_var])
+			del(global.vars[global_var]) // ALLOW(scheduler): MC failsafe: hard-kills a wedged Master
 	. = Recreate_MC()
 	if (. == 1) //We were able to create a new master
 		SSticker.Recover(); //Recover the ticket system so the Masters runlevel gets set

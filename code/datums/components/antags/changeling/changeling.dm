@@ -21,7 +21,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 	var/genomecost = 500000 // Cost for the changeling to evolve this power.
 
 /datum/component/antag/changeling
-	var/list/datum/absorbed_dna/absorbed_dna = list()
+	var/list/datum/absorbed_dna/absorbed_dna = list() // ALLOW(instance_list): d: changeling state; starts with the changeling's own DNA
 	var/list/absorbed_languages // Necessary because of set_species stuff
 	var/absorbedcount = 0
 	var/lingabsorbedcount = 1	//Starts at one, because that's us
@@ -48,7 +48,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 	dupe_mode = COMPONENT_DUPE_UNIQUE //Only the first changeling application survives!
 	var/cooldown_time = 1 SECOND // Sting anti-spam.
 	COOLDOWN_DECLARE(sting_cooldown) // world.time when we used last used a power.
-	var/list/changeling_cooldowns = list(
+	var/list/changeling_cooldowns = list( // ALLOW(instance_list): d: edited in place per instance (1 writers)
 		CRYO_STING = 0,
 		ESCAPE_RESTRAINTS = 0,
 		FAKE_DEATH = 0,
@@ -58,7 +58,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 
 ///Checks if a mind or a mob is a changeling.
 ///Checks to see if the thing fed to it is a changeling first, then does some deeper searching.
-/proc/is_changeling(mob/M)
+/proc/is_changeling(mob/M) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/antag/changeling/changeling = (M.GetComponent(/datum/component/antag/changeling))
 	if(changeling) // Whatever we fed it is a changeling. Return it.
 		return changeling
@@ -108,7 +108,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 		owner.add_language("Changeling")
 
 ///This is a component that is referenced to by the mind, so it should never be deleted
-// LIFECYCLE: antag state refuses deletion unless forced.
+// ALLOW(lifecycle): antag state refuses deletion unless forced.
 /datum/component/antag/changeling/Destroy(force = FALSE)
 	if(!force)
 		return QDEL_HINT_LETMELIVE

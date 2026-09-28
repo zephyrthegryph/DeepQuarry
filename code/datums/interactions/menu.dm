@@ -12,7 +12,7 @@
 /datum/interaction_menu/New(client/owner)
 	src.owner = owner
 
-// LIFECYCLE: clears the client's back-reference (clients aren't datums).
+// ALLOW(lifecycle): clears the client's back-reference (clients aren't datums).
 /datum/interaction_menu/Destroy()
 	if(owner?.interaction_menu == src)
 		owner.interaction_menu = null
@@ -23,7 +23,7 @@
 /client/var/tmp/datum/interaction_menu/interaction_menu
 
 /// Opens the Menu for `target`. Returns TRUE if it opened.
-/proc/open_interaction_menu(mob/user, atom/target)
+/proc/open_interaction_menu(mob/user, atom/target) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!user?.client || !target)
 		return FALSE
 	var/client/player = user.client
@@ -54,7 +54,7 @@
 	return interaction_menu_data(user, target)
 
 /// The Menu's contents for `user` looking at `target`. Split out so tests can read it.
-/proc/interaction_menu_data(mob/user, atom/target)
+/proc/interaction_menu_data(mob/user, atom/target) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/interaction_resolution/resolution = interactions_for(user, target, user.get_active_hand())
 	var/list/available = list()
 	for(var/datum/interaction/interaction as anything in resolution.available)
@@ -87,7 +87,7 @@
 	)
 
 /// The mob actions the native popup offered for any target, as list(id, name).
-/proc/interaction_menu_actions(mob/user, atom/target)
+/proc/interaction_menu_actions(mob/user, atom/target) // ALLOW(base_proc): global API written before the base-type ratchet
 	. = list(list("id" = INPUT_ACTION_INSPECT, "name" = "Examine"))
 	if(ismovable(target) && target != user && isliving(user))
 		. += list(list("id" = INPUT_ACTION_PULL, "name" = "Pull"))
@@ -136,7 +136,7 @@
 				return TRUE
 
 /// Whether a legacy verb on `target` can be run from the Menu: the popup offered verbs on things in reach.
-/proc/interaction_menu_can_reach(mob/user, atom/target)
+/proc/interaction_menu_can_reach(mob/user, atom/target) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(target == user || get(target, /mob) == user)
 		return TRUE
 	return user.Adjacent(target)

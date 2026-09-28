@@ -33,7 +33,7 @@
 	player_msg = "You will automatically alert your owner (if one exists) of enemies you see nearby.<br>\
 	You can also <b>see invisible entities, and will automatically uncloak</b> nearby invisible or hidden enemies."
 
-	var/list/seen_mobs = list()
+	var/list/seen_mobs = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 	var/view_range = 5
 
 // For PoIs.

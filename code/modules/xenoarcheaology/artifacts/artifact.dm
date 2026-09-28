@@ -38,7 +38,7 @@
 	if(isturf(loc) && !QDELETED(src))
 		MACHINE_WAKE(src)
 
-// LIFECYCLE: its artifact master component is removed.
+// ALLOW(lifecycle): its artifact master component is removed.
 /obj/machinery/artifact/Destroy()
 	if(artifact_master)
 		var/datum/component/artifact_master/arti_mstr = artifact_master

@@ -39,7 +39,7 @@
 	var/min_volume = 1
 
 	/// What instruments our built in picker can use. The picker won't show unless this is longer than one.
-	var/list/allowed_instrument_ids = list("r3grand")
+	var/list/allowed_instrument_ids = list("r3grand") // ALLOW(instance_list): d: replaced per instance at runtime (3 assignments)
 
 	//////////// Cached instrument variables /////////////
 	/// Instrument we are currently using
@@ -135,7 +135,7 @@
 	if(new_range)
 		instrument_range = new_range
 
-// LIFECYCLE: stops playing and leaves its instrument.
+// ALLOW(lifecycle): stops playing and leaves its instrument.
 /datum/song/Destroy()
 	stop_playing()
 	SSinstruments.on_song_del(src)

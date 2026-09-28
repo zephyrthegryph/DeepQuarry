@@ -4,7 +4,7 @@
 	var/list/composition
 	var/list/impurities
 	var/list/process_history
-	var/list/contributors = list()
+	var/list/contributors = list() // ALLOW(instance_list): d: batch provenance, filled when the batch is made
 	var/list/feedstock_lots
 	var/list/test_results
 	var/list/process_counts
@@ -14,7 +14,7 @@
 	var/list/dissolved_gases
 	/// High-energy or field treatments applied to the lattice.
 	var/list/field_treatments
-	var/list/cost_ledger = list(
+	var/list/cost_ledger = list( // ALLOW(instance_list): d: edited in place per instance (6 writers)
 		MATERIAL_COST_FEEDSTOCK = 0,
 		MATERIAL_COST_CHEMICALS = 0,
 		MATERIAL_COST_CATALYSTS = 0,
@@ -26,7 +26,7 @@
 		MATERIAL_COST_RECOVERY = 0,
 		MATERIAL_COST_WASTE = 0,
 	)
-	var/list/structure = list(
+	var/list/structure = list( // ALLOW(instance_list): d: edited in place per instance (32 writers)
 		MATERIAL_STRUCTURE_SOFT = 70,
 		MATERIAL_STRUCTURE_HARDENED = 0,
 		MATERIAL_STRUCTURE_PRECIPITATE = 0,

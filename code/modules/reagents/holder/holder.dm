@@ -29,7 +29,7 @@
 
 REF_OWNED_LIST(/datum/reagents, "reagent_list")
 
-// LIFECYCLE: its atom forgets it (atoms delete their reagents late, in /atom/Destroy()).
+// ALLOW(lifecycle): its atom forgets it (atoms delete their reagents late, in /atom/Destroy()).
 /datum/reagents/Destroy()
 	if(my_atom && my_atom.reagents == src)
 		my_atom.reagents = null

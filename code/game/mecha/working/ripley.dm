@@ -42,7 +42,7 @@
 
 REF_OWNED(/obj/mecha/working/ripley, "orescanner")
 
-// LIFECYCLE: cargo spills around the wreck.
+// ALLOW(lifecycle): cargo spills around the wreck.
 /obj/mecha/working/ripley/Destroy()
 	for(var/atom/movable/A in src.cargo)
 		A.forceMove(loc)

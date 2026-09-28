@@ -31,7 +31,7 @@
 /obj/singularity/energy_ball/ex_act(severity, target)
 	return
 
-// LIFECYCLE: its orbiting mini-balls go with it.
+// ALLOW(lifecycle): its orbiting mini-balls go with it.
 /obj/singularity/energy_ball/Destroy()
 	for(var/obj/singularity/energy_ball/EB as anything in orbiting_balls())
 		qdel(EB)

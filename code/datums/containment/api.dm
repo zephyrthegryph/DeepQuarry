@@ -30,7 +30,7 @@
 
 /// Why `thing` can't go into `slot_id` (null: the default slot) on `holder`,
 /// or null if it can. Checks both sides; changes nothing.
-/proc/dq_ledger_refusal(atom/movable/thing, atom/holder, slot_id, mob/actor)
+/proc/dq_ledger_refusal(atom/movable/thing, atom/holder, slot_id, mob/actor) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!istype(thing) || QDELETED(thing))
 		return "it is gone"
 	if(!holder || QDELETED(holder))
@@ -70,7 +70,7 @@
 
 /// Why `thing` can't leave the slot it is in now, or null. Things not in a
 /// slot can always leave.
-/proc/dq_ledger_removal_refusal(atom/movable/thing, mob/actor)
+/proc/dq_ledger_removal_refusal(atom/movable/thing, mob/actor) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/atom/source = thing.loc
 	var/datum/ledger/from = dq_ledger(source)
 	var/list/entry = from?.entries[thing]
@@ -87,7 +87,7 @@
 /// Commits a checked move. Returns TRUE if the thing ended up in the slot.
 /// `flags` (LEDGER_MOVE_*) reaches note_enter()/reslot() and, through them,
 /// on_slotted()/on_unslotted() (J6).
-/proc/dq_ledger_commit(atom/movable/thing, atom/holder, slot_id, flags = 0)
+/proc/dq_ledger_commit(atom/movable/thing, atom/holder, slot_id, flags = 0) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/ledger/dest = holder.ledger
 	var/id = slot_id || dest.default_id
 	if(thing.loc == holder)
@@ -142,7 +142,7 @@
 /// COMSIG_SLOT_*, on_unslotted()/on_slotted()) runs as normal, carrying
 /// `flags` to the hooks. L1's contents phase (lifecycle.dm) is the only
 /// caller that ever names an explicit `slot_id` (KEEP_WITH).
-/proc/dq_ledger_force_move(atom/movable/thing, atom/destination, flags = 0, slot_id = null)
+/proc/dq_ledger_force_move(atom/movable/thing, atom/destination, flags = 0, slot_id = null) // ALLOW(base_proc): global API written before the base-type ratchet
 	for(var/atom/A = destination; A; A = A.loc)
 		if(A == thing)
 			return FALSE

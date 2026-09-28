@@ -821,7 +821,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 		if((O) && (original))
 			for(var/V in original.vars)
 				if(!(V in blacklisted_var_names))
-					O.vars[V] = original.vars[V]
+					O.vars[V] = original.vars[V] // ALLOW(api): DuplicateObject() and the generic var setter helper
 	return O
 
 /area/proc/copy_contents_to(area/A , platingRequired = 0 )
@@ -1191,7 +1191,7 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 /mob/dview/skips_registry(registry_id)
 	return TRUE
 
-// LIFECYCLE: shared dview mob refuses deletion unless forced, then is replaced.
+// ALLOW(lifecycle): shared dview mob refuses deletion unless forced, then is replaced.
 /mob/dview/Destroy(force)
 	stack_trace("Attempt to delete the dview_mob: [log_info_line(src)]")
 	if (!force)
@@ -1696,7 +1696,7 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 /proc/admin_chat_message(message = "Debug Message", color = "#FFFFFF", sender)
 	if (!CONFIG_GET(string/chat_webhook_url) || !message)
 		return
-	spawn(0) // S7 keeps: world.Export() is a blocking external call
+	spawn(0) // ALLOW(scheduler): world.Export() is a blocking external call
 		var/query_string = "type=adminalert"
 		query_string += "&key=[url_encode(CONFIG_GET(string/chat_webhook_key))]"
 		query_string += "&msg=[url_encode(message)]"
@@ -1708,7 +1708,7 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 /proc/admin_action_message(admin = "INVALID", user = "INVALID", action = "INVALID", reason = "INVALID", time = "INVALID")
 	if (!CONFIG_GET(string/chat_webhook_url) || !action)
 		return
-	spawn(0) // S7 keeps: world.Export() is a blocking external call
+	spawn(0) // ALLOW(scheduler): world.Export() is a blocking external call
 		var/query_string = "type=adminaction"
 		query_string += "&key=[url_encode(CONFIG_GET(string/chat_webhook_key))]"
 		query_string += "&admin=[url_encode(admin)]"

@@ -7,7 +7,7 @@
 	w_class = ITEMSIZE_SMALL
 	slot_flags = SLOT_ID
 
-	var/obj/item/card/id/front_id = null
+	var/obj/item/card/id/front_id = null // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 
 	drop_sound = 'sound/items/drop/leather.ogg'
 	pickup_sound = 'sound/items/pickup/leather.ogg'

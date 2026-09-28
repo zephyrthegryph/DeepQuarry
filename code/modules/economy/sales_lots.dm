@@ -20,7 +20,7 @@
 /obj/structure/closet/crate/proc/freight_snapshot()
 	var/list/snapshot = list()
 	latent_materialize_all() // the ledger records each real item (C5)
-	for(var/atom/movable/cargo as anything in contents) // latent-ok
+	for(var/atom/movable/cargo as anything in contents) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
 		if(istype(cargo, /obj/item/paper))
 			var/obj/item/paper/document = cargo
 			if(document.shipping_ledger_data)

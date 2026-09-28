@@ -74,7 +74,7 @@
 // A get_interactions() override returning list(INTERACT_USE(...), ...) in place of a
 // declare_interactions() override plus a one-off /datum/interaction subtype.
 // Each macro builds a plain data tuple: list(kind, name, effect, requires, extra).
-// `effect` is a proc reference (PROC_REF(x) or .proc/x, written inside the
+// `effect` is a proc reference (PROC_REF(x), written inside the
 // type that owns the proc) or the string form. `name` may be null to derive
 // one from the proc's name ("insert_cell" -> "Insert cell"). `requires` is an
 // extra P2 spec (REQ_* clauses) added on top of the shape's own; omit or pass

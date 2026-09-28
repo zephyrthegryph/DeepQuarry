@@ -6,7 +6,7 @@
 	var/turf/old_turf
 	var/on = 0
 	var/obj/item/stack/tile/T
-	var/list/mode = list("dismantle"=0,"laying"=0,"collect"=0)
+	var/list/mode = list("dismantle"=0,"laying"=0,"collect"=0) // ALLOW(instance_list): d: edited in place per instance (3 writers)
 
 /obj/machinery/floorlayer/Initialize(mapload)
 	. = ..()

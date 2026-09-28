@@ -82,8 +82,8 @@ GLOBAL_LIST_EMPTY(cached_maps)
 	var/expanded_y = FALSE
 	/// If we've expanded world.maxy
 	var/expanded_x = FALSE
-	var/list/grid_models = list()
-	var/list/gridSets = list()
+	var/list/grid_models = list() // ALLOW(instance_list): d: map parser state, filled on parse
+	var/list/gridSets = list() // ALLOW(instance_list): d: map parser state, filled on parse
 	/// List of area types we've loaded AS A PART OF THIS MAP
 	/// We do this to allow non unique areas, so we'll only load one per map
 	var/list/area/loaded_areas
@@ -323,10 +323,10 @@ GLOBAL_LIST_EMPTY(cached_maps)
 	if(TICK_CHECK) { \
 		if(loading) { \
 			SSatoms.map_loader_stop(REF(src)); \
-			stoplag(); /* S10b keeps: map loading yields per chunk (lane-work conversion pending) */ \
+			stoplag(); /* ALLOW(scheduler): map loading yields per chunk (lane-work conversion pending) */ \
 			SSatoms.map_loader_begin(REF(src)); \
 		} else { \
-			stoplag(); /* S10b keeps: map loading yields per chunk (lane-work conversion pending) */ \
+			stoplag(); /* ALLOW(scheduler): map loading yields per chunk (lane-work conversion pending) */ \
 		} \
 	}
 #endif
@@ -975,7 +975,7 @@ GLOBAL_LIST_EMPTY(map_model_default)
 ////////////////
 
 /datum/parsed_map/proc/create_atom(path, crds)
-	set waitfor = FALSE // S10b keeps: guards map loading against a New() that sleeps
+	set waitfor = FALSE // ALLOW(scheduler): guards map loading against a New() that sleeps
 	. = new path (crds)
 
 //find the position of the next delimiter,skipping whatever is comprised between opening_escape and closing_escape
@@ -1094,7 +1094,7 @@ GLOBAL_LIST_EMPTY(map_model_default)
 	// fallback: string
 	return text
 
-// LIFECYCLE: stops the map loader and asks for a hard delete.
+// ALLOW(lifecycle): stops the map loader and asks for a hard delete.
 /datum/parsed_map/Destroy()
 	..()
 	SSatoms.map_loader_stop(REF(src)) // Just in case, I don't want to double up here

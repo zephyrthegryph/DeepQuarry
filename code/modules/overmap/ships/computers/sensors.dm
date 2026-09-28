@@ -157,7 +157,7 @@
 	var/range = 1
 	idle_power_usage = 5000
 
-// LIFECYCLE: sensor consoles lose it.
+// ALLOW(lifecycle): sensor consoles lose it.
 /obj/machinery/shipsensors/Destroy()
 	update_use_power(USE_POWER_OFF)
 	for(var/obj/machinery/computer/ship/sensors/console in REGISTRY_MEMBERS(REGISTRY_MACHINES))

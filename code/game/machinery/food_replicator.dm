@@ -19,7 +19,7 @@
 
 	var/obj/item/reagent_containers/container = null
 	var/printing = FALSE
-	var/list/products = list()
+	var/list/products = list() // ALLOW(instance_list): d: the replicator menu, filled at init
 
 /obj/item/circuitboard/food_replicator
 	name = T_BOARD("food replicator")

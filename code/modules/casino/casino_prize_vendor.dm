@@ -45,6 +45,7 @@
 
 	// Vending-related
 	var/datum/data/casino_prize/currently_vending = null // What we're requesting payment for right now
+	// ALLOW(instance_list): d: machine log (generic name, too many ambiguous call sites)
 	var/list/log = list() //Log only SS13 staff is allowed to look at, CKEYS are listed here for record keeping of prizes and players for events!
 
 	var/category_weapons	 = 1	//For listing categories, if false then prizes of this categories cant be obtained nor bought for post-shift enjoyment

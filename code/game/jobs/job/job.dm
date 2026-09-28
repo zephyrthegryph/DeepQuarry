@@ -4,6 +4,7 @@
 	var/title = "NOPE"
 	// Job access. The use of minimal_access or access is determined by a config setting: CONFIG_GET(flag/jobs_have_minimal_access) //
 	var/list/minimal_access      // Useful for servers which prefer to only have access given to the places a job absolutely needs (Larger server population)
+	// ALLOW(instance_list): d: every job defines its access (singletons)
 	var/list/access = list()              // Useful for servers which either have fewer players, so each person needs to fill more than one role, or servers which like to give more access, so players can't hide forever in their super secure departments (I'm looking at you, chemistry!)
 	var/flag = 0 	                      // Bitflags for the job
 	var/department_flag = 0
@@ -16,6 +17,7 @@
 	var/list/alt_titles = null            // List of alternate titles; There is no need for an alt-title datum for the base job title.
 	var/req_admin_notify                  // If this is set to 1, a text is printed to the player when jobs are assigned, telling him that he should let admins know that he has to disconnect.
 	var/minimal_player_age = 0            // If you have use_age_restriction_for_jobs config option enabled and the database set up, this option will add a requirement for players to be at least minimal_player_age days old. (meaning they first signed in at least that many days before.)
+	// ALLOW(instance_list): d: every job belongs to departments (singletons)
 	var/list/departments = list()         // List of departments this job belongs to, if any. The first one on the list will be the 'primary' department.
 	var/sorting_order = 0                 // Used for sorting jobs so boss jobs go above regular ones, and their boss's boss is above that. Higher numbers = higher in sorting.
 	var/departments_managed = null        // Is this a management position?  If yes, list of departments managed.  Otherwise null.

@@ -6,7 +6,7 @@
 /proc/_animate(atom/A, set_vars, time = 10, loop = 1, easing = LINEAR_EASING, flags = NONE)
 	var/mutable_appearance/MA = new()
 	for(var/v in set_vars)
-		MA.vars[v] = set_vars[v]
+		MA.vars[v] = set_vars[v] // ALLOW(api): SDQL mutable_appearance helper
 	animate(A, appearance = MA, time, loop, easing, flags)
 
 /proc/_acrccos(A)

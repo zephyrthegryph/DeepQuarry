@@ -8,7 +8,7 @@
 	. = ..()
 	images = list()
 
-/proc/dq_add_z_update_image(atom/a, image/img)
+/proc/dq_add_z_update_image(atom/a, image/img) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!img)
 		return
 	var/datum/component/update_on_z/c = a.GetComponent(/datum/component/update_on_z)
@@ -16,7 +16,7 @@
 		c = a.AddComponent(/datum/component/update_on_z)
 	c.images |= img
 
-/proc/dq_remove_z_update_image(atom/a, image/img)
+/proc/dq_remove_z_update_image(atom/a, image/img) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!img)
 		return
 	var/datum/component/update_on_z/c = a.GetComponent(/datum/component/update_on_z)

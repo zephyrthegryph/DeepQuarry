@@ -42,7 +42,7 @@ GLOBAL_PROTECT(protected_ranks)
 	if(init_edit_rights)
 		can_edit_rights = init_edit_rights
 
-// LIFECYCLE: refuses deletion from advanced proc calls (permission elevation).
+// ALLOW(lifecycle): refuses deletion from advanced proc calls (permission elevation).
 /datum/admin_rank/Destroy()
 	if(IsAdminAdvancedProcCall())
 		alert_to_permissions_elevation_attempt(usr)
@@ -333,7 +333,7 @@ GLOBAL_PROTECT(protected_ranks)
 	return dbfail
 
 /proc/sync_ranks_with_db()
-	set waitfor = FALSE // S10b keeps: SQL leaf (rank sync)
+	set waitfor = FALSE // ALLOW(scheduler): SQL leaf (rank sync)
 
 	if(IsAdminAdvancedProcCall())
 		to_chat(usr, span_adminprefix("Admin rank DB Sync blocked: Advanced ProcCall detected."), confidential = TRUE)

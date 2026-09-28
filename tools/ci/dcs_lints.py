@@ -2,8 +2,9 @@
 
 Synchronous "now" reactions are OM events (om_emit, before/ events with
 EVENT_VETO); deferred or state-driven reactions are channels, watches or
-om_after. DCS signals and components survive only on a core allowlist
-(tools/ci/dcs_allowlist.txt: path prefixes whose sites are not counted).
+om_after. DCS signals and components survive only in the DCS core (CORE below: path
+prefixes whose sites are not counted) and at sites marked
+`// ALLOW(dcs): <reason>` (tools/ci/allow_annotations.py).
 
 Counts (ceilings in tools/ci/dcs_lints_baseline.txt; may fall, never rise):
     register_signal  RegisterSignal( / RegisterSignals( calls
@@ -22,10 +23,10 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 from state_schema_lint import code_only  # noqa: E402
+from allow_annotations import allowed  # noqa: E402
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 BASELINE = os.path.join(ROOT, "tools", "ci", "dcs_lints_baseline.txt")
-ALLOWLIST = os.path.join(ROOT, "tools", "ci", "dcs_allowlist.txt")
 
 PATTERNS = {
     "register_signal": re.compile(r"(?<![\w/])RegisterSignals?\s*\("),
@@ -34,26 +35,25 @@ PATTERNS = {
 }
 
 
-def load_allow():
-    out = []
-    if os.path.exists(ALLOWLIST):
-        for line in open(ALLOWLIST, encoding="utf-8"):
-            line = line.split("#", 1)[0].strip()
-            if line:
-                out.append(line.replace("\\", "/"))
-    return out
+CORE = (
+    "code/datums/components/_component.dm",  # component core
+    "code/datums/elements/_element.dm",  # element core
+    "code/datums/signals.dm",  # signal core
+    "code/controllers/subsystem/dcs.dm",  # SSdcs
+)
 
 
 def sites():
-    allow = load_allow()
     found = {k: [] for k in PATTERNS}
     for path in sorted(glob.glob(os.path.join(ROOT, "code", "**", "*.dm"), recursive=True)):
         rel = os.path.relpath(path, ROOT).replace("\\", "/")
-        if any(rel.startswith(a) for a in allow):
+        if rel.startswith(CORE):
             continue
-        text = code_only(open(path, encoding="utf-8", errors="replace").read())
+        raw = open(path, encoding="utf-8", errors="replace").read()
+        raw_lines = raw.split("\n")
+        text = code_only(raw)
         for lineno, line in enumerate(text.split("\n"), 1):
-            if "#define" in line:
+            if "#define" in line or allowed(raw_lines, lineno, "dcs"):
                 continue
             for name, pat in PATTERNS.items():
                 for _ in pat.finditer(line):

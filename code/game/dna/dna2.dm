@@ -37,8 +37,8 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 
 	// Okay to read, but you're an idiot if you do.
 	// BLOCK = VALUE
-	var/list/SE[DNA_SE_LENGTH]
-	var/list/UI[DNA_UI_LENGTH]
+	var/list/SE[DNA_SE_LENGTH] // ALLOW(instance_list): d: fixed-size DNA block list, always filled
+	var/list/UI[DNA_UI_LENGTH] // ALLOW(instance_list): d: fixed-size DNA block list, always filled
 
 	// From old dna.
 	var/b_type = DEFAULT_BLOOD_TYPE  // Should probably change to an integer => string map but I'm lazy.
@@ -82,13 +82,13 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 			if("body_markings")
 				var/list/body_markings_genetic = LAZYCOPY(body_markings)
 				body_markings_genetic -= GLOB.body_marking_nopersist_list
-				new_dna.vars[A] = body_markings_genetic
+				new_dna.vars[A] = body_markings_genetic // ALLOW(api): DNA copy: every var of the record
 				continue
 		if(islist(vars[A]))
 			var/list/L = vars[A]
-			new_dna.vars[A] = L.Copy()
+			new_dna.vars[A] = L.Copy() // ALLOW(api): DNA copy: every var of the record
 			continue
-		new_dna.vars[A] = vars[A]
+		new_dna.vars[A] = vars[A] // ALLOW(api): DNA copy: every var of the record
 	// uni_identity/struc_enzymes are derived from UI[]/SE[] on demand (see
 	// GetUniIdentity()/GetStrucEnzymes() below) and were copied above along with
 	// the rest of vars, so there is nothing further to refresh here.

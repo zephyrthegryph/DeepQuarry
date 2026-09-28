@@ -640,7 +640,7 @@ GLOBAL_LIST_EMPTY(cached_examine_icons)
 	if(isnull(icon_from_file))
 		return null
 	if(icon_from_file == "Yes")
-		icon_result = input(user, "Pick icon:", "Icon") as null|icon // S10 keeps: file uploads need the BYOND file dialog
+		icon_result = input(user, "Pick icon:", "Icon") as null|icon // ALLOW(scheduler): file uploads need the BYOND file dialog
 		if(!icon_result)
 			return null
 	else if(icon_from_file == "No")

@@ -11,7 +11,7 @@
 	else
 		return name
 
-// LIFECYCLE: the base living mob: Life, modifiers, soul links, nest, transformed holder and organs.
+// ALLOW(lifecycle): the base living mob: Life, modifiers, soul links, nest, transformed holder and organs.
 /mob/living/Destroy()
 	life_leave_z()
 	remove_all_modifiers(TRUE)
@@ -1104,7 +1104,7 @@
 	SIGNAL_HANDLER
 	var/mob/owner = user
 	if(owner.client?.prefs)
-		INVOKE_ASYNC(owner.client.prefs, TYPE_PROC_REF(/datum/preferences, ShowChoices), owner) // S10b keeps: ShowChoices opens tgui (asset/window setup)
+		INVOKE_ASYNC(owner.client.prefs, TYPE_PROC_REF(/datum/preferences, ShowChoices), owner) // ALLOW(scheduler): ShowChoices opens tgui (asset/window setup)
 
 /**
  * Screen object for vore panel

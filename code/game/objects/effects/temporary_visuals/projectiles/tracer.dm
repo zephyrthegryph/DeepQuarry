@@ -1,5 +1,5 @@
 /datum/beam_components_cache
-	var/list/beam_components = list()
+	var/list/beam_components = list() // ALLOW(instance_list): d: beam cache state
 
 REF_OWNED_LIST(/datum/beam_components_cache, "beam_components")
 

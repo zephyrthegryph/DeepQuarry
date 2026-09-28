@@ -178,11 +178,11 @@ GLOBAL_VAR(latent_last_refusal)
 	return TRUE
 
 /// Whether a generator line is held as an entry.
-/proc/dq_latent_line_ok(atom/holder, path, value)
+/proc/dq_latent_line_ok(atom/holder, path, value) // ALLOW(base_proc): global API written before the base-type ratchet
 	return dq_latent_eligible(path) && holder.latent_spawn_ok(path, value)
 
 /// Creates `n` of a generator line for real (variants applied).
-/proc/dq_latent_spawn_real(atom/holder, path, value)
+/proc/dq_latent_spawn_real(atom/holder, path, value) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/list/spec = dq_resolve_spawn_value(value)
 	for(var/i in 1 to max(1, spec["count"]))
 		spawn_with_variant(path, holder, spec["variant"])
@@ -193,7 +193,7 @@ GLOBAL_VAR(latent_last_refusal)
 
 /// At init: roll nothing, but create now the generator's types that can't be
 /// latent. Holders that aren't latent create everything, as before.
-/proc/dq_latent_declare(atom/holder)
+/proc/dq_latent_declare(atom/holder) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/list/generator = holder.latent_generator()
 	if(!length(generator))
 		holder.latent_generator_clear()
@@ -216,7 +216,7 @@ GLOBAL_VAR(latent_last_refusal)
 /// Declared -> resolved: turns the generator into entries. The ledger calls
 /// this when it is built. Types that can't be latent are created real, unless
 /// dq_latent_declare() already did.
-/proc/dq_latent_resolve(atom/holder, datum/ledger/L)
+/proc/dq_latent_resolve(atom/holder, datum/ledger/L) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/list/generator = holder.latent_generator()
 	if(!length(generator))
 		holder.latent_declared = FALSE

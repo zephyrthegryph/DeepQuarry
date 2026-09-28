@@ -10,10 +10,10 @@
 	var/icon_state = "black"
 
 /datum/chunk
-	var/list/obscuredTurfs = list()
-	var/list/visibleTurfs = list()
+	var/list/obscuredTurfs = list() // ALLOW(instance_list): d: camera/ghost chunk visibility state, rebuilt on every update with &=
+	var/list/visibleTurfs = list() // ALLOW(instance_list): d: camera/ghost chunk visibility state, rebuilt on every update with &=
 	var/list/obscured
-	var/list/turfs = list()
+	var/list/turfs = list() // ALLOW(instance_list): d: every visibility chunk tracks its turfs
 	var/list/seenby
 	var/visible = 0
 	var/changed = 0

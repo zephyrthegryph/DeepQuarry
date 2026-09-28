@@ -58,7 +58,7 @@
 	icon = 'icons/misc/buildmode.dmi'
 	var/obj/effect/bmode/buildholder/master = null
 
-// LIFECYCLE: comes off its builder's screen (clients aren't datums).
+// ALLOW(lifecycle): comes off its builder's screen (clients aren't datums).
 /obj/effect/bmode/Destroy()
 	if(master && master.cl)
 		master.cl.screen -= src
@@ -215,7 +215,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 
 REF_OWNED(/obj/effect/bmode/buildholder, list("builddir", "buildhelp", "buildmode", "buildquit"))
 
-// LIFECYCLE: AI mobs it selected are deselected.
+// ALLOW(lifecycle): AI mobs it selected are deselected.
 /obj/effect/bmode/buildholder/Destroy()
 	for(var/mob/living/unit in selected_mobs)
 		deselect_AI_mob(cl, unit)
@@ -413,14 +413,14 @@ REF_OWNED(/obj/effect/bmode/buildholder, list("builddir", "buildhelp", "buildmod
 			if(pa.Find("left")) //I cant believe this shit actually compiles.
 				if(object.vars.Find(holder.buildmode.varholder))
 					log_admin("[key_name(usr)] modified [object.name]'s [holder.buildmode.varholder] to [holder.buildmode.valueholder]")
-					object.vars[holder.buildmode.varholder] = holder.buildmode.valueholder
+					object.vars[holder.buildmode.varholder] = holder.buildmode.valueholder // ALLOW(api): admin buildmode var edits
 					object.datum_flags |= DF_VAR_EDITED
 				else
 					to_chat(user, span_danger("[initial(object.name)] does not have a var called '[holder.buildmode.varholder]'"))
 			if(pa.Find("right"))
 				if(object.vars.Find(holder.buildmode.varholder))
 					log_admin("[key_name(usr)] modified [object.name]'s [holder.buildmode.varholder] to initial state.")
-					object.vars[holder.buildmode.varholder] = initial(object.vars[holder.buildmode.varholder])
+					object.vars[holder.buildmode.varholder] = initial(object.vars[holder.buildmode.varholder]) // ALLOW(api): admin buildmode var edits
 					object.datum_flags |= DF_VAR_EDITED
 				else
 					to_chat(user, span_danger("[initial(object.name)] does not have a var called '[holder.buildmode.varholder]'"))
@@ -815,7 +815,7 @@ REF_OWNED(/obj/effect/bmode/buildholder, list("builddir", "buildhelp", "buildmod
 /obj/effect/bmode/buildmode/proc/path_answered(mob/user, datum/om/prompt/ask)
 	var/result = ask.get("path")
 	log_admin("BUILDMODE/ITEM GENERATION: [key_name(user)] selected [result] to be spawned.")
-	vars[ask.get("var")] = result
+	vars[ask.get("var")] = result // ALLOW(api): admin buildmode var edits
 
 /obj/effect/bmode/buildmode/proc/make_rectangle(turf/A, turf/B, turf/wall_type, turf/floor_type, area_enabled, area_name)
 	if(!A || !B) // No coords

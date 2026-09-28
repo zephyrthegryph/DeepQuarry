@@ -4,8 +4,10 @@
 	var/atom/movable/holder = null
 	var/root_type = null
 	var/datum/lore/codex/home = null // Top-most page.
+	// ALLOW(instance_list): d: codex browser page stack, always non-empty while open
 	var/list/current_page = list() // Current page or category to display to the user. // converted to list to track multiple players.
 	var/list/indexed_pages // Assoc list with search terms pointing to a ref of the page.  It's created on New().
+	// ALLOW(instance_list): d: codex browser history, filled as pages are opened; one per codex item
 	var/list/history = list() // List of pages we previously visited. // now a 2D list
 
 /datum/codex_tree/New(new_holder, new_root_type)

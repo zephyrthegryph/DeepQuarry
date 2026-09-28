@@ -107,7 +107,7 @@ REF_BACKLIST(/obj/effect/directional_shield, list("projector" = "active_shields"
 		om_after(src, 0, PROC_REF(create_shields))
 	return ..()
 
-// LIFECYCLE: its shields come down.
+// ALLOW(lifecycle): its shields come down.
 /obj/item/shield_projector/Destroy()
 	destroy_shields()
 	UnregisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE)

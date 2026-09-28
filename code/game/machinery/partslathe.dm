@@ -29,14 +29,15 @@
 	active_power_usage = 5000
 
 	// Amount of materials we can store total
-	var/list/materials = list(MAT_STEEL = 0, MAT_GLASS = 0)
-	var/list/storage_capacity = list(MAT_STEEL = 0, MAT_GLASS = 0)
+	var/list/materials = list(MAT_STEEL = 0, MAT_GLASS = 0) // ALLOW(instance_list): d: edited in place per instance (7 writers)
+	var/list/storage_capacity = list(MAT_STEEL = 0, MAT_GLASS = 0) // ALLOW(instance_list): d: edited in place per instance (2 writers)
 
 	var/obj/item/circuitboard/copy_board // Inserted board
 
+	// ALLOW(instance_list): d: the build queue; kept index-parallel with queue_producer_accounts
 	var/list/datum/category_item/partslathe/queue = list() // Queue of things to build
 	/// Producer account parallel to each queued design.
-	var/list/queue_producer_accounts = list()
+	var/list/queue_producer_accounts = list() // ALLOW(instance_list): d: kept index-parallel with queue (Cut() by index)
 	var/busy = 0			// Currently building stuff y/n
 	var/progress = 0		// How many machine ticks have we spent building current thing?
 	var/mat_efficiency = 3	// Material usage efficiency (less efficient than protolathe)

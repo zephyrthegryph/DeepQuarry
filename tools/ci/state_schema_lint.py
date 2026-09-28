@@ -9,8 +9,9 @@ finds those vars statically:
     A saved var on a latent-safe type (or one of its ancestors) whose declared
     type is an object (`var/datum/...`, `var/obj/...`, `var/list/datum/...`,
     ...) must be `tmp`, or be given a codec in the type's `state_codecs()`, or
-    hold a registry singleton the serializer encodes by ID, or be listed in
-    tools/ci/state_ref_allowlist.txt with a reason.
+    hold a registry singleton the serializer encodes by ID, or carry
+    `// ALLOW(state_ref): <reason>` on its declaration (or the comment line
+    above it; tools/ci/allow_annotations.py).
 
 A type is latent-safe when a type block sets `latent_safe = TRUE`; subtypes
 inherit it by path until one sets `latent_safe = FALSE`.
@@ -26,7 +27,6 @@ import re
 import sys
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
-ALLOWLIST = os.path.join(ROOT, "tools", "ci", "state_ref_allowlist.txt")
 
 MODIFIERS = {"tmp", "static", "global", "const", "final"}
 UNSAVED = {"tmp", "static", "global", "const"}
@@ -250,17 +250,16 @@ def chain(path):
     return out
 
 
-def load_allowlist():
-    allowed = {}
-    if not os.path.exists(ALLOWLIST):
-        return allowed
-    with open(ALLOWLIST, encoding="utf-8") as f:
-        for line in f:
-            line = line.split("#", 1)
-            entry, reason = line[0].strip(), (line[1].strip() if len(line) > 1 else "")
-            if entry:
-                allowed[entry] = reason
-    return allowed
+_RAW = {}
+
+
+def kept(v):
+    """True if var decl `v` carries ALLOW(state_ref) on its declaration."""
+    from allow_annotations import allowed
+    if v.path not in _RAW:
+        with open(v.path, encoding="utf-8", errors="replace") as f:
+            _RAW[v.path] = f.read().split("\n")
+    return allowed(_RAW[v.path], v.line, "state_ref")
 
 
 def dm_files():
@@ -279,7 +278,6 @@ def main(argv):
     paths = dm_files()
     decls, _, latent = parse(paths)
     codecs = parse_codec_keys(paths)
-    allowed = load_allowlist()
 
     def has_codec(owner, name, subject):
         for a in chain(subject):
@@ -303,7 +301,7 @@ def main(argv):
             total_saved_ref += len(refs)
             print(f"{base}: {len(vs)} vars, {len(tmp)} tmp, {len(refs)} saved reference vars")
             for v in refs:
-                tag = "allowlisted" if f"{v.owner}/{v.name}" in allowed else "codec" if has_codec(v.owner, v.name, v.owner) else "OPEN"
+                tag = "kept" if kept(v) else "codec" if has_codec(v.owner, v.name, v.owner) else "OPEN"
                 print(f"    {v.name} ({'list of ' if v.is_list else ''}{v.vtype}) {v.path}:{v.line} [{tag}]")
         print(f"total: {total_tmp} tmp, {total_saved_ref} saved reference vars on base types")
         return 0
@@ -319,7 +317,7 @@ def main(argv):
                 if has_codec(a, v.name, t):
                     continue
                 entry = f"{a}/{v.name}"
-                if entry in allowed:
+                if kept(v):
                     used.add(entry)
                     continue
                 if (a, v.name) in checked:
@@ -327,11 +325,8 @@ def main(argv):
                 checked.add((a, v.name))
                 failures.append(f"{v.path}:{v.line}: {entry} holds a reference "
                                 f"({'list of ' if v.is_list else ''}{v.vtype}) and is saved on latent-safe {t}; "
-                                "make it tmp, give it a codec in state_codecs(), or allowlist it")
-    stale = sorted(set(allowed) - used)
-    for entry in stale:
-        failures.append(f"{ALLOWLIST}: {entry} is allowlisted but no latent-safe type saves it; remove the entry")
-    print(f"state schema lint: {len(safe_types)} latent-safe types, {len(used)} allowlisted vars, {len(failures)} problems")
+                                "make it tmp, give it a codec in state_codecs(), or mark it `// ALLOW(state_ref): <reason>`")
+    print(f"state schema lint: {len(safe_types)} latent-safe types, {len(used)} kept vars (ALLOW(state_ref)), {len(failures)} problems")
     for f in failures:
         print(f)
     return 1 if failures else 0

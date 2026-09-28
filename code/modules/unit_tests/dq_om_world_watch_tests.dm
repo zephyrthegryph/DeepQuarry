@@ -50,7 +50,7 @@
 
 /// Records every wake: list(reason, source, source_kind, step tick, previous step tick, lane).
 /datum/world_test_subscriber
-	var/list/wakes = list()
+	var/list/wakes = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
 	/// Re-publish key (WORLD_KEY_TEST, key_id) this many times from the wake.
 	var/republish = 0
 	var/key_id

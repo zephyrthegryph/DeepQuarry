@@ -237,7 +237,7 @@ GLOBAL_LIST_INIT(registries_by_type, registries_by_type_table())
 
 /// Destroy transaction, phase 2 for datums that aren't atoms (atoms leave on
 /// dematerialize): drop `D` from every registry its type declares.
-/proc/dq_lifecycle_leave_registries(datum/D)
+/proc/dq_lifecycle_leave_registries(datum/D) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(isatom(D))
 		return
 	var/list/registries = registries_by_type_table()[D.type]

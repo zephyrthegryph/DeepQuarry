@@ -175,17 +175,17 @@ GLOBAL_LIST_EMPTY(om_watch_registry)
 /// to walk every watch in the registry for every dirty mixture.
 GLOBAL_LIST_EMPTY(om_gas_watches_by_mixture)
 
-/proc/om_watch_entity_key(datum/entity)
+/proc/om_watch_entity_key(datum/entity) // ALLOW(base_proc): global API written before the base-type ratchet
 	return REF(entity)
 
-/proc/om_watch_lookup(datum/entity, watch_id)
+/proc/om_watch_lookup(datum/entity, watch_id) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/list/entity_watches = GLOB.om_watch_registry[om_watch_entity_key(entity)]
 	return entity_watches?[watch_id]
 
 /// Whether `entity` currently has watch_id armed (or, with watch_id omitted, anything armed at
 /// all) -- the generic "is this thing asleep on a gas watch" check tests want, in place of the
 /// deleted SSmachines.sleeping_gas_devices table.
-/proc/om_watch_armed(datum/entity, watch_id)
+/proc/om_watch_armed(datum/entity, watch_id) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/list/entity_watches = GLOB.om_watch_registry[om_watch_entity_key(entity)]
 	if(!entity_watches)
 		return FALSE
@@ -195,7 +195,7 @@ GLOBAL_LIST_EMPTY(om_gas_watches_by_mixture)
 
 /// Adds/replaces `W` in the per-mixture reverse index and (re)arms the underlying Rust watch
 /// with the union of every armed watch's interest mask on that mixture.
-/proc/om_watch_index_gas(datum/om_watch/W, mixture_id)
+/proc/om_watch_index_gas(datum/om_watch/W, mixture_id) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(isnull(mixture_id) || (mixture_id in W.mixture_ids))
 		return
 	LAZYADD(W.mixture_ids, mixture_id)
@@ -207,7 +207,7 @@ GLOBAL_LIST_EMPTY(om_gas_watches_by_mixture)
 	L += W
 	om_watch_republish_mixture(mixture_id)
 
-/proc/om_watch_unindex_gas(datum/om_watch/W)
+/proc/om_watch_unindex_gas(datum/om_watch/W) // ALLOW(base_proc): global API written before the base-type ratchet
 	for(var/mixture_id in W.mixture_ids)
 		var/key = "[mixture_id]"
 		var/list/L = GLOB.om_gas_watches_by_mixture[key]
@@ -267,7 +267,7 @@ GLOBAL_LIST_EMPTY(om_gas_native_watches)
 /datum/om_gas_watch_hub/proc/on_gas(datum/native_watch/gas/watch, mixture_id, change_mask, list/observation, observation_index)
 	om_watch_dispatch_gas(mixture_id, change_mask, observation, observation_index)
 
-/proc/om_watch_register(datum/om_watch/W)
+/proc/om_watch_register(datum/om_watch/W) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/key = om_watch_entity_key(om_resolve(W.entity_ref))
 	var/list/entity_watches = GLOB.om_watch_registry[key]
 	if(!entity_watches)
@@ -280,7 +280,7 @@ GLOBAL_LIST_EMPTY(om_gas_native_watches)
 /// Arms (or re-arms) a threshold-band watch on a gas mixture, replacing whatever this
 /// (entity, watch_id) pair previously watched. A crossing invokes `wake_callback` and/or
 /// om_changed(entity, channel).
-/proc/om_watch_arm_bands(datum/entity, watch_id, mixture_id, list/datum/om_watch_band/bands, channel, datum/callback/wake_callback)
+/proc/om_watch_arm_bands(datum/entity, watch_id, mixture_id, list/datum/om_watch_band/bands, channel, datum/callback/wake_callback) // ALLOW(base_proc): global API written before the base-type ratchet
 	om_watch_disarm(entity, watch_id)
 	if(isnull(mixture_id))
 		return null
@@ -298,7 +298,7 @@ GLOBAL_LIST_EMPTY(om_gas_native_watches)
 /// Arms a "wake on any change" watch: fires whenever the mixture's Rust-side revision counter
 /// advances (subject to `interest_mask`). This is the generic replacement for every
 /// "cache sleeping_mixture_revision, compare, wake" hand-rolled watch removed in this pass.
-/proc/om_watch_arm_revision(datum/entity, watch_id, mixture_id, interest_mask = GAS_DEPENDENCY_ALL, channel, datum/callback/wake_callback, current_revision)
+/proc/om_watch_arm_revision(datum/entity, watch_id, mixture_id, interest_mask = GAS_DEPENDENCY_ALL, channel, datum/callback/wake_callback, current_revision) // ALLOW(base_proc): global API written before the base-type ratchet
 	om_watch_disarm(entity, watch_id)
 	if(isnull(mixture_id))
 		return null
@@ -318,7 +318,7 @@ GLOBAL_LIST_EMPTY(om_gas_native_watches)
 /// with no args whenever a matching gas notification arrives, and a crossing fires if the
 /// return value differs from what it returned last time (air_alarm's TLV-signature check
 /// generalized).
-/proc/om_watch_arm_value(datum/entity, watch_id, mixture_id, interest_mask = GAS_DEPENDENCY_ALL, datum/callback/getter, channel, datum/callback/wake_callback)
+/proc/om_watch_arm_value(datum/entity, watch_id, mixture_id, interest_mask = GAS_DEPENDENCY_ALL, datum/callback/getter, channel, datum/callback/wake_callback) // ALLOW(base_proc): global API written before the base-type ratchet
 	om_watch_disarm(entity, watch_id)
 	if(isnull(mixture_id))
 		return null
@@ -338,7 +338,7 @@ GLOBAL_LIST_EMPTY(om_gas_native_watches)
 /// Arms a raw forwarder: every gas notification whose change mask matches `interest_mask` is
 /// handed straight to `observer` as (mixture_id, change_mask, observation, observation_index) --
 /// for a caller (material_service) that wants the numbers themselves, not a single crossing bit.
-/proc/om_watch_arm_raw(datum/entity, watch_id, mixture_id, interest_mask, datum/callback/observer)
+/proc/om_watch_arm_raw(datum/entity, watch_id, mixture_id, interest_mask, datum/callback/observer) // ALLOW(base_proc): global API written before the base-type ratchet
 	om_watch_disarm(entity, watch_id)
 	if(isnull(mixture_id))
 		return null
@@ -358,7 +358,7 @@ GLOBAL_LIST_EMPTY(om_gas_native_watches)
 /// is invoked automatically by om_watch_recheck(); otherwise the caller passes the fresh value
 /// straight to om_watch_recheck_value(). This is the generic hook for (a) any vg/pipeline
 /// component field and (c) any other computed value: `getter` is an arbitrary proc reference.
-/proc/om_watch_arm_derived(datum/entity, watch_id, list/datum/om_watch_band/bands, channel, datum/callback/getter, datum/callback/wake_callback, list/mixture_ids, interest_mask = GAS_DEPENDENCY_ALL)
+/proc/om_watch_arm_derived(datum/entity, watch_id, list/datum/om_watch_band/bands, channel, datum/callback/getter, datum/callback/wake_callback, list/mixture_ids, interest_mask = GAS_DEPENDENCY_ALL) // ALLOW(base_proc): global API written before the base-type ratchet
 	om_watch_disarm(entity, watch_id)
 	var/datum/om_watch/W = new
 	W.entity_ref = om_handle(entity)
@@ -385,7 +385,7 @@ GLOBAL_LIST_EMPTY(om_gas_native_watches)
 /// disarms the watch, so one change wakes a device at most once. This is how a device states
 /// its own eligibility rule (enough moles, a pressure delta past its deadband, a temperature
 /// past its thermostat) instead of waking on every revision and deciding afterwards.
-/proc/om_watch_arm_condition(datum/entity, watch_id, list/mixture_ids, interest_mask, datum/callback/condition, channel, datum/callback/wake_callback)
+/proc/om_watch_arm_condition(datum/entity, watch_id, list/mixture_ids, interest_mask, datum/callback/condition, channel, datum/callback/wake_callback) // ALLOW(base_proc): global API written before the base-type ratchet
 	om_watch_disarm(entity, watch_id)
 	var/datum/om_watch/W = new
 	W.entity_ref = om_handle(entity)
@@ -400,7 +400,7 @@ GLOBAL_LIST_EMPTY(om_gas_native_watches)
 		om_watch_index_gas(W, mixture_id)
 	return W
 
-/proc/om_watch_recheck(datum/entity, watch_id)
+/proc/om_watch_recheck(datum/entity, watch_id) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om_watch/W = om_watch_lookup(entity, watch_id)
 	if(!W || !W.value_getter)
 		return
@@ -411,14 +411,14 @@ GLOBAL_LIST_EMPTY(om_gas_native_watches)
 	if(W.mode == OM_WATCH_DERIVED && W.evaluate_derived(W.value_getter.Invoke()))
 		om_watch_fire(W, entity)
 
-/proc/om_watch_recheck_value(datum/entity, watch_id, current_value)
+/proc/om_watch_recheck_value(datum/entity, watch_id, current_value) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om_watch/W = om_watch_lookup(entity, watch_id)
 	if(!W || W.mode != OM_WATCH_DERIVED)
 		return
 	if(W.evaluate_derived(current_value))
 		om_watch_fire(W, entity)
 
-/proc/om_watch_disarm(datum/entity, watch_id)
+/proc/om_watch_disarm(datum/entity, watch_id) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/key = om_watch_entity_key(entity)
 	var/list/entity_watches = GLOB.om_watch_registry[key]
 	if(!entity_watches)
@@ -431,7 +431,7 @@ GLOBAL_LIST_EMPTY(om_gas_native_watches)
 		GLOB.om_watch_registry -= key
 	om_watch_unindex_gas(W)
 
-/proc/om_watch_disarm_all(datum/entity)
+/proc/om_watch_disarm_all(datum/entity) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/key = om_watch_entity_key(entity)
 	var/list/entity_watches = GLOB.om_watch_registry[key]
 	if(!entity_watches)
@@ -443,7 +443,7 @@ GLOBAL_LIST_EMPTY(om_gas_native_watches)
 /// say -- for a caller that knows something changed independent of the gas transport (a moved
 /// device, a topology change) and just wants to wake now. A no-op if nothing is armed (the
 /// entity is already awake/running).
-/proc/om_watch_fire_all(datum/entity)
+/proc/om_watch_fire_all(datum/entity) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/list/entity_watches = GLOB.om_watch_registry[om_watch_entity_key(entity)]
 	if(!entity_watches)
 		return
@@ -454,7 +454,7 @@ GLOBAL_LIST_EMPTY(om_gas_native_watches)
 
 // ---------------------------------------------------------------- dispatch
 
-/proc/om_watch_fire(datum/om_watch/W, datum/entity)
+/proc/om_watch_fire(datum/om_watch/W, datum/entity) // ALLOW(base_proc): global API written before the base-type ratchet
 	SSmachines.gas_woken_last++
 	if(istype(entity, /obj/machinery))
 		var/obj/machinery/M = entity

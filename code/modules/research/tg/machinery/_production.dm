@@ -286,7 +286,7 @@ REF_OWNED(/obj/machinery/rnd/production, "print_sound")
 	return out
 
 /// One canonical material presentation for lathes and hand crafting.
-/proc/material_choice_tgui(datum/material/mat, amount)
+/proc/material_choice_tgui(datum/material/mat, amount) // ALLOW(base_proc): global API written before the base-type ratchet
 	return list(
 			"id" = mat.name,
 			"label" = mat.display_name || mat.name,

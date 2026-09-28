@@ -88,7 +88,7 @@
 			mode = DISPOSALMODE_CHARGED
 	update_icon()
 
-// LIFECYCLE: it unlinks and ejects its contents.
+// ALLOW(lifecycle): it unlinks and ejects its contents.
 /obj/machinery/disposal/Destroy()
 	if(power_retry_timer)
 		om_cancel_timer(src, power_retry_timer)

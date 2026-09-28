@@ -285,7 +285,7 @@ the variant loader and map aliases.
   `/mob` (`quest_from_above`, `safe_animal`, `artifact_spawn_debug_tool`).
   `tools/ci/base_proc_lint.py` (in `check_ratchets.sh`) counts procs declared
   on `/datum`, `/atom`, `/atom/movable`, `/obj`, `/obj/item` and `/mob`
-  against `tools/ci/base_proc_allowlist.txt`; the ceilings went from
+  against `tools/ci/base_proc_baseline.txt`; the ceilings went from
   166/323/132/103/127/588 to 147/313/132/102/127/585. A new rarely used proc
   belongs in a global proc or a helper datum.
 
@@ -304,7 +304,7 @@ the variant loader and map aliases.
   damage, inventory, movement, heat and light, materials, construction,
   constraints, surgery, combat and attack variants, identification. Existing
   global API in those families is listed in
-  `base_proc_protected_allowlist.txt`. Ceilings now 145/306/132/100/123/577.
+  `// ALLOW(base_proc): <reason>` annotations on the procs (formerly `base_proc_protected_allowlist.txt`). Ceilings now 145/306/132/100/123/577.
   Per-proc value differs by type: a proc on `/datum` or `/atom` is ~1 MB, on
   `/obj` ~0.7 MB, on `/obj/item` ~0.44 MB, on `/mob` only ~0.08 MB (~3.5 k mob
   types).

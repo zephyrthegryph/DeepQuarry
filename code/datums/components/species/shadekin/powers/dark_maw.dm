@@ -108,7 +108,7 @@
 	SIGNAL_HANDLER
 	qdel(src)
 
-// LIFECYCLE: leaves its shadekin's maw list (the component lives on the owner, not in a var).
+// ALLOW(lifecycle): leaves its shadekin's maw list (the component lives on the owner, not in a var).
 /obj/effect/abstract/dark_maw/Destroy()
 	var/datum/component/shadekin/SK = owner?.get_shadekin_component()
 	if(SK)

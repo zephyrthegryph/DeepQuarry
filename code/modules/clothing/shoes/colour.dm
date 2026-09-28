@@ -90,7 +90,7 @@
 /obj/item/clothing/shoes/orange
 	name = "orange shoes"
 	icon_state = "orange"
-	var/obj/item/handcuffs/chained = null
+	var/obj/item/handcuffs/chained = null // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 
 /obj/item/clothing/shoes/orange/proc/attach_cuffs(obj/item/handcuffs/cuffs, mob/user as mob)
 	if (chained) return

@@ -70,7 +70,7 @@
 
 /datum/accessory_slot_registry
 	/// Assoc list of slot_flag (number) → display name (string).
-	var/list/slot_names = list()
+	var/list/slot_names = list() // ALLOW(instance_list): d: singleton registry, filled at init
 	/// Assoc list of accessory OM handle key → list of /datum/accessory_stat_modifier.
 	/// Key format: "[accessory]:[clothing]" (uses ref strings for stable keys).
 	var/list/active_modifiers
@@ -170,7 +170,7 @@
 	if(!LAZYLEN(active_modifiers))
 		active_modifiers = null
 
-// LIFECYCLE: remaining stat modifiers are reverted.
+// ALLOW(lifecycle): remaining stat modifiers are reverted.
 /datum/accessory_slot_registry/Destroy()
 	// Revert all remaining modifiers to leave the world consistent.
 	if(LAZYLEN(active_modifiers))

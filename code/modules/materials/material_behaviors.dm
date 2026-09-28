@@ -11,13 +11,13 @@
 // Canonical accessors; structural readers (walls, girders, doors, fuel) go
 // through these so the storage can change without touching every site.
 
-/proc/dq_material_luminescence(datum/material/M)
+/proc/dq_material_luminescence(datum/material/M) // ALLOW(base_proc): global API written before the base-type ratchet
 	return M ? M.luminescence : 0
 
-/proc/dq_material_radioactivity(datum/material/M)
+/proc/dq_material_radioactivity(datum/material/M) // ALLOW(base_proc): global API written before the base-type ratchet
 	return M ? M.radioactivity : 0
 
-/proc/dq_material_toxicity(datum/material/M)
+/proc/dq_material_toxicity(datum/material/M) // ALLOW(base_proc): global API written before the base-type ratchet
 	return M ? M.toxicity : 0
 
 // ---- Item application ------------------------------------------------------
@@ -73,7 +73,7 @@
 		PERIODIC_STOP(src)
 		processing = FALSE
 
-// LIFECYCLE: a luminescent item goes dark.
+// ALLOW(lifecycle): a luminescent item goes dark.
 /datum/component/material_behaviors/Destroy(force)
 	var/obj/item/I = parent
 	if(istype(I) && luminescence > 0)

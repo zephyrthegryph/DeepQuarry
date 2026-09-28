@@ -72,7 +72,7 @@
 				filling.icon += reagents.get_color()
 				add_overlay(filling)
 
-// LIFECYCLE: the breathing mask retracts from its patient.
+// ALLOW(lifecycle): the breathing mask retracts from its patient.
 /obj/structure/medical_stand/Destroy()
 	if(breather)
 		breather.internal = null

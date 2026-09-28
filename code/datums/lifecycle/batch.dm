@@ -43,27 +43,27 @@ GLOBAL_VAR_INIT(dq_destroy_collect_time, 0)
 
 /datum/destroy_batch
 	/// Doomed datum -> TRUE, in marking (pre-)order.
-	var/list/doomed = list()
+	var/list/doomed = list() // ALLOW(instance_list): one per batched destroy, always filled
 	/// Turfs whose contents are doomed: anything that would land there is part of the set.
-	var/list/doomed_places = list()
+	var/list/doomed_places = list() // ALLOW(instance_list): one per batched destroy, always filled
 	/// Doomed datum -> force.
-	var/list/forced = list()
+	var/list/forced = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
 	/// Entity handles freed by the one unbind call at the end.
-	var/list/unbind_entities = list()
+	var/list/unbind_entities = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
 	/// Movables leaving SSvg's bound list in one pass.
-	var/list/unbind_movers = list()
+	var/list/unbind_movers = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
 	/// /datum/registry -> members leaving it in one pass.
-	var/list/registry_leaves = list()
+	var/list/registry_leaves = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
 	/// Turf -> TRUE once one object's destroy effects played there.
-	var/list/effect_turfs = list()
+	var/list/effect_turfs = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
 	/// Turf -> list of /datum/destroy_effects_data whose apply_after() runs once at the end.
-	var/list/after_effects = list()
+	var/list/after_effects = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
 	/// Diagnostics.
 	var/effects_merged = 0
 	var/edges_dropped = 0
 
 /// TRUE if `D` is in the running batch's doomed set (or a doomed turf).
-/proc/dq_batch_doomed(datum/D)
+/proc/dq_batch_doomed(datum/D) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/destroy_batch/batch = GLOB.dq_destroy_batch
 	return batch && D && (batch.doomed[D] || batch.doomed_places[D])
 
@@ -104,7 +104,7 @@ GLOBAL_VAR_INIT(dq_destroy_collect_time, 0)
 
 /// Adds `D` to the set. Returns FALSE when it can't be (already deleted,
 /// already doomed, or a client's mob reached through its holder/turf).
-/proc/dq_batch_mark(datum/destroy_batch/batch, datum/D, list/order, force, spare_clients)
+/proc/dq_batch_mark(datum/destroy_batch/batch, datum/D, list/order, force, spare_clients) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!D || !isnull(D.gc_destroyed) && D.gc_destroyed != GC_BATCH_DOOMED)
 		return FALSE
 	if(batch.doomed[D] || isturf(D))
@@ -123,7 +123,7 @@ GLOBAL_VAR_INIT(dq_destroy_collect_time, 0)
 /// A doomed holder's contents join the set when they would land somewhere
 /// doomed. `order` grows as this runs; qdel_batch()'s loop reaches the new
 /// members too, so nesting is followed to any depth.
-/proc/dq_batch_mark_contents(datum/destroy_batch/batch, atom/movable/holder, list/order, force)
+/proc/dq_batch_mark_contents(datum/destroy_batch/batch, atom/movable/holder, list/order, force) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!length(holder.contents))
 		return
 	var/atom/drop = holder.drop_location()
@@ -133,7 +133,7 @@ GLOBAL_VAR_INIT(dq_destroy_collect_time, 0)
 		dq_batch_mark(batch, thing, order, force, TRUE)
 
 /// End of batch: the one unbind call, one pass per registry, merged effects.
-/proc/dq_batch_flush(datum/destroy_batch/batch)
+/proc/dq_batch_flush(datum/destroy_batch/batch) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(length(batch.unbind_movers))
 		SSvg.unregister_many(batch.unbind_movers)
 	if(length(batch.unbind_entities))
@@ -146,7 +146,7 @@ GLOBAL_VAR_INIT(dq_destroy_collect_time, 0)
 
 /// Frees Rust entity `entity`, owned by `owner`: queued for the batch's one
 /// unbind call when `owner` is doomed, freed now otherwise.
-/proc/dq_entity_unbind(datum/owner, entity)
+/proc/dq_entity_unbind(datum/owner, entity) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!entity)
 		return
 	var/datum/destroy_batch/batch = GLOB.dq_destroy_batch
@@ -157,7 +157,7 @@ GLOBAL_VAR_INIT(dq_destroy_collect_time, 0)
 
 /// TRUE (and queued) when `member` is doomed: its leave from `registry`
 /// happens in the batch's one pass over that registry.
-/proc/dq_batch_defer_registry_leave(datum/registry/registry, datum/member)
+/proc/dq_batch_defer_registry_leave(datum/registry/registry, datum/member) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/destroy_batch/batch = GLOB.dq_destroy_batch
 	if(!batch?.doomed[member])
 		return FALSE
@@ -171,7 +171,7 @@ GLOBAL_VAR_INIT(dq_destroy_collect_time, 0)
 /// member already played effects on the same turf, and queues the neighbour
 /// update once per turf. Returns TRUE when it handled D (the caller skips
 /// the unbatched apply/apply_after).
-/proc/dq_batch_effects(datum/D, datum/destroy_effects_data/effects)
+/proc/dq_batch_effects(datum/D, datum/destroy_effects_data/effects) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/destroy_batch/batch = GLOB.dq_destroy_batch
 	if(!batch?.doomed[D] || !isatom(D))
 		return FALSE

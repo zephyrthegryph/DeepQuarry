@@ -49,7 +49,7 @@
 	// never refreshes (it stays on its initial visible=FALSE/empty data).
 	..()
 
-// LIFECYCLE: closes its tooltip window.
+// ALLOW(lifecycle): closes its tooltip window.
 /datum/tooltip/Destroy(force)
 	if(tooltip_window)
 		tooltip_window.close()

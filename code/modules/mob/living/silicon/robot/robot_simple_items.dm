@@ -16,7 +16,7 @@
 
 	var/obj/item/selected_item = null
 
-	var/list/cyborg_integrated_tools = list(
+	var/list/cyborg_integrated_tools = list( // ALLOW(instance_list): d: edited in place per instance (10 writers)
 		/obj/item/tool/screwdriver/cyborg = null,
 		/obj/item/tool/wrench/cyborg = null,
 		/obj/item/tool/crowbar/cyborg = null,
@@ -77,7 +77,7 @@
 		tool_image.color = real_tool.color
 		integrated_tool_images[real_tool.name] = tool_image
 
-// LIFECYCLE: its integrated tools (assoc values) go with it.
+// ALLOW(lifecycle): its integrated tools (assoc values) go with it.
 /obj/item/robotic_multibelt/Destroy()
 	QDEL_LIST_ASSOC_VAL(cyborg_integrated_tools)
 	. = ..()
@@ -548,6 +548,7 @@ REF_OWNED_LIST(/obj/item/robotic_multibelt/materials, "cyborg_integrated_tools")
 
 	var/total_pockets = 5 //How many total inventory slots we want to have in the gripper
 
+	// ALLOW(instance_list): d: gripper pockets are created in Initialize and always present
 	var/list/pockets = list() //List of the pockets we have. This is used to store the items inside of the gripper.
 
 	var/obj/item/current_pocket = null //What pocket (or item!) we currently have selected

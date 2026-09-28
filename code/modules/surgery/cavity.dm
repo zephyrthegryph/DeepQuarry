@@ -2,7 +2,7 @@
 // objects (implants, shrapnel, cavity items) back out.
 
 /// Largest total w_class a region's cavity holds.
-/proc/surgical_cavity_capacity(obj/item/organ/external/part)
+/proc/surgical_cavity_capacity(obj/item/organ/external/part) // ALLOW(base_proc): global API written before the base-type ratchet
 	switch(part.organ_tag)
 		if(BP_HEAD)
 			return ITEMSIZE_TINY
@@ -12,7 +12,7 @@
 			return ITEMSIZE_SMALL
 	return 0
 
-/proc/surgical_cavity_name(obj/item/organ/external/part)
+/proc/surgical_cavity_name(obj/item/organ/external/part) // ALLOW(base_proc): global API written before the base-type ratchet
 	switch(part.organ_tag)
 		if(BP_HEAD)
 			return "cranial"

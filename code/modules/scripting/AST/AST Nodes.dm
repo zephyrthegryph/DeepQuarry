@@ -72,7 +72,7 @@
 	//Function calls can also be expressions or statements.
 	var/func_name
 	var/datum/node/identifier/object
-	var/list/parameters = list()
+	var/list/parameters = list() // ALLOW(instance_list): d: script AST node state
 
 /*
 	Class: literal

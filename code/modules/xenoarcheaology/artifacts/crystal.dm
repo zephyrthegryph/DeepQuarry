@@ -16,7 +16,7 @@
 	"Something twinkles faintly as you look at it.",
 	"It's mesmerizing to behold.")
 
-// LIFECYCLE: the crystal shatters into shards.
+// ALLOW(lifecycle): the crystal shatters into shards.
 /obj/structure/crystal/Destroy()
 	src.visible_message(span_bolddanger("[src] shatters!"))
 	for(var/chance in list(75, 50, 25))

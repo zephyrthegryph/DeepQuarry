@@ -90,7 +90,7 @@
 
 /obj/structure/closet/crate/secure/lootsafe/numberlock
 	desc = "A huge chunk of metal with a keypad embedded in it. Fine print above the keypad reads, Guaranteed thermite resistant, explosion resistant, and assistant resistant.\""
-	var/list/code = list()
+	var/list/code = list() // ALLOW(instance_list): d: the lock code, generated in New()
 	var/list/lastattempt
 	var/attempts = 10
 	var/codelen = 5
@@ -192,7 +192,7 @@
 	desc = "A huge chunk of metal with a keyboard imprinted in it.\""
 	hackguard = 45
 	req_access = list(150)
-	var/list/code = list()
+	var/list/code = list() // ALLOW(instance_list): d: the lock code, generated in New()
 	var/list/lastattempt
 	var/attempts = 100
 	var/codelen = 10

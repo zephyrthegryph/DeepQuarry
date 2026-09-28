@@ -12,7 +12,7 @@
 	var/enabled = TRUE
 
 	// What departments the event attached might affect.
-	var/list/departments = list(DEPARTMENT_EVERYONE)
+	var/list/departments = list(DEPARTMENT_EVERYONE) // ALLOW(instance_list): d: edited in place per instance (12 writers)
 
 	// A guess on how disruptive to a round the event might be. If the action is chosen, the GM's
 	// 'danger' score is increased by this number.

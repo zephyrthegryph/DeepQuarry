@@ -112,7 +112,7 @@
 	target_drop_time = null
 	if(user) to_chat(user, span_notice("You deactivate the beacon."))
 
-// LIFECYCLE: an active beacon deactivates.
+// ALLOW(lifecycle): an active beacon deactivates.
 /obj/machinery/power/supply_beacon/Destroy()
 	if(use_power)
 		deactivate()
@@ -128,7 +128,7 @@
 		return
 	if(!target_drop_time)
 		target_drop_time = world.time + drop_delay
-	else if(world.time >= target_drop_time)
+	else if(world.time >= target_drop_time) // ALLOW(cooldown): drop schedule
 		deactivate(permanent = 1)
 		var/drop_x = src.x - 2
 		var/drop_y = src.y - 2

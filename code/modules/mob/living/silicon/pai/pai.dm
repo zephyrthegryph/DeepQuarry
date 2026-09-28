@@ -20,7 +20,7 @@
 	var/obj/machinery/camera/current = null
 
 	var/ram = 100	// Used as currency to purchase different abilities
-	var/list/software = list()
+	var/list/software = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 	var/userDNA		// The DNA string of our assigned user
 
 	var/default_pai_card_path = /obj/item/paicard // Used when the pai is spawned directly by mapping or admin
@@ -192,7 +192,7 @@
 
 REF_OWNED(/mob/living/silicon/pai, list("card", "pai_ui_chassis", "sradio", "communicator", "pda", "pai_fold_display"))
 
-// LIFECYCLE: releases its prey, retracts its cable and frees its key.
+// ALLOW(lifecycle): releases its prey, retracts its cable and frees its key.
 /mob/living/silicon/pai/Destroy()
 	release_vore_contents()
 	check_retract_cable()

@@ -23,6 +23,7 @@ LINEN BINS
 	resistance_flags = FLAMMABLE
 
 	// / Custom nouns to act as the subject of dreams // Dreaming
+	// ALLOW(instance_list): c: read-only per-subtype constant table (17 subtype overrides); a getter would share it, not worth it on a rare type
 	var/list/dream_messages = list("white") // Dreaming
 
 /obj/item/bedsheet/Initialize(mapload)
@@ -205,7 +206,7 @@ LINEN BINS
 	icon_state = "linenbin-full"
 	anchored = TRUE
 	var/amount = 20
-	var/list/sheets = list()
+	var/list/sheets = list() // ALLOW(instance_list): d: the bin's live stock
 	var/obj/item/hidden = null
 
 

@@ -25,7 +25,7 @@ GLOBAL_REAL(GLOB, /datum/controller/global_vars)
 
 	Initialize()
 
-// LIFECYCLE: protected GLOB holder; never runs the parent chain (admin var-edit exploit).
+// ALLOW(lifecycle): protected GLOB holder; never runs the parent chain (admin var-edit exploit).
 /datum/controller/global_vars/Destroy(force)
 	// This is done to prevent an exploit where admins can get around protected vars
 	SHOULD_CALL_PARENT(FALSE)
@@ -68,10 +68,12 @@ GLOBAL_REAL(GLOB, /datum/controller/global_vars)
 			WARNING("Global [replacetext("[I]", "InitGlobal", "")] slept during initialization!")
 
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
-/// Early boot notes for the memory breakdown (init_and_turfs.md §0.4), kept
-/// in a plain global because GLOB may not exist yet: list(name, ds, MB
-/// before, MB after) for every step that took time or memory.
-var/global/list/benchmark_early_notes = list()
+/// Early boot notes for the memory breakdown (init_and_turfs.md §0.4): list(name, ds, MB
+/// before, MB after) for every step that took time or memory. A proc-local static rather than
+/// a GLOB var because GLOB may not exist yet when the first note is taken.
+/proc/benchmark_early_notes()
+	var/static/list/notes = list()
+	return notes
 
 /// DreamDaemon's private MB from the bench sampler's file (null outside a bench).
 /proc/benchmark_early_private_mb()
@@ -86,5 +88,6 @@ var/global/list/benchmark_early_notes = list()
 /proc/benchmark_early_note(name, ds, mb_before)
 	var/mb_after = benchmark_early_private_mb()
 	if(ds >= 1 || (isnum(mb_before) && isnum(mb_after) && mb_after - mb_before >= 2))
-		global.benchmark_early_notes += list(list(name, ds, mb_before, mb_after))
+		var/list/notes = benchmark_early_notes()
+		notes += list(list(name, ds, mb_before, mb_after))
 #endif

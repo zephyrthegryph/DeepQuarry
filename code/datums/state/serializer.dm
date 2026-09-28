@@ -39,7 +39,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	"pixel_w", "pixel_z", "density", "opacity", "invisibility", "gender", "maptext",
 ))
 
-/proc/state_schema_for(datum/D)
+/proc/state_schema_for(datum/D) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/state_schema/schema = GLOB.state_schemas[D.type]
 	if(schema)
 		return schema
@@ -344,7 +344,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	return list(STATE_WRAP_PAIRS = pairs)
 
 /// list(kind, id) for a registered singleton, or null.
-/proc/state_registry_id(datum/D)
+/proc/state_registry_id(datum/D) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(istype(D, /datum/material))
 		var/datum/material/M = D
 		if(GLOB.name_to_material[M.name] == M)
@@ -390,7 +390,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 		var/list/vars = list()
 		for(var/key in blob)
 			if(key != STATE_KEY_TYPE)
-				vars[key] = blob[key]
+				vars[key] = blob[key] // ALLOW(api): state serializer: restores saved vars
 		for(var/key in vars)
 			blob -= key
 		blob[STATE_KEY_VARS] = vars
@@ -466,7 +466,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 		for(var/name in A.vars)
 			var/value = A.vars[name]
 			if(isdatum(value) && (value in removed))
-				A.vars[name] = null
+				A.vars[name] = null // ALLOW(api): state serializer: restores saved vars
 	// The blob's latent entries replace whatever the holder declared at init.
 	if(A.latent_contents)
 		A.latent_generator_clear()
@@ -521,7 +521,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 			continue
 		var/default = initial(D.vars[name])
 		if(value != default && !islist(default))
-			D.vars[name] = default
+			D.vars[name] = default // ALLOW(api): state serializer: restores saved vars
 	for(var/name in vars)
 		if(!(name in schema.saved_vars))
 			// The pre-L1 loader ignored keys it did not save; keep doing that for legacy blobs.
@@ -533,7 +533,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 			var/datum/state_codec/codec = state_codec(codec_path)
 			codec.decode(D, name, vars[name], src)
 		else
-			D.vars[name] = decode_value(vars[name])
+			D.vars[name] = decode_value(vars[name]) // ALLOW(api): state serializer: restores saved vars
 
 /datum/state_context/proc/apply_components(datum/D, list/blob)
 	for(var/list/component_blob as anything in blob[STATE_KEY_COMPONENTS])
@@ -604,7 +604,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 /// Children in child-ID order. A holder with slots numbers them in its
 /// ledger's order (slots in declaration order, each in insertion order), so a
 /// child's ID doesn't depend on unrelated contents order.
-/proc/state_children(atom/A)
+/proc/state_children(atom/A) // ALLOW(base_proc): global API written before the base-type ratchet
 	// Peek only: a holder that was never used still has no ledger, and reading
 	// its children for serialization must not be what creates one.
 	var/datum/ledger/L = dq_ledger_peek(A)

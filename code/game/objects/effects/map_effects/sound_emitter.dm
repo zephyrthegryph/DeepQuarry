@@ -2,6 +2,7 @@
 /obj/effect/map_effect/interval/sound_emitter
 	name = "sound emitter"
 	icon_state = "sound_emitter"
+	// ALLOW(instance_list): c: read-only per-subtype constant table (12 subtype overrides); a getter would share it, not worth it on a rare type
 	var/list/sounds_to_play = list(null) // List containing sound files or strings of sound groups.
 	// A sound or string is picked randomly each run.
 

@@ -125,7 +125,7 @@
 	shuttle_tag = "Escape"
 	var/debug = 0
 	var/req_authorizations = 2
-	var/list/authorized = list()
+	var/list/authorized = list() // ALLOW(instance_list): d: per-console authorisation state; one emergency console
 
 /obj/machinery/computer/shuttle_control/emergency/proc/has_authorization()
 	return (authorized.len >= req_authorizations || emagged)

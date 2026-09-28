@@ -20,7 +20,7 @@
 	//resource returns when crunched; a small amount of OK stuff by default
 	var/min_ore			= 3
 	var/max_ore			= 5
-	var/list/resource_list	=	list(/obj/item/ore/glass,/obj/item/ore/coal,/obj/item/ore/iron,/obj/item/ore/lead,/obj/item/ore/marble,/obj/item/ore/phoron,/obj/item/ore/silver,/obj/item/ore/gold)
+	var/list/resource_list	=	list(/obj/item/ore/glass,/obj/item/ore/coal,/obj/item/ore/iron,/obj/item/ore/lead,/obj/item/ore/marble,/obj/item/ore/phoron,/obj/item/ore/silver,/obj/item/ore/gold) // ALLOW(instance_list): c: read-only per-subtype constant table (3 subtype overrides); a getter would share it, not worth it on a rare type
 
 /obj/item/research_sample/Initialize(mapload)
 	. = ..()

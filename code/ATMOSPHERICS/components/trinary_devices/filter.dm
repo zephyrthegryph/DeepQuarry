@@ -33,7 +33,7 @@
 		5: Methane: Methane only
 	*/
 	var/filter_type = -1
-	var/list/filtered_out = list()
+	var/list/filtered_out = list() // ALLOW(instance_list): atmos area (M1a): trinary filter pipe device; listed in memory_lists_audit.md, not edited here
 
 	var/frequency = ZERO_FREQ
 	var/datum/radio_frequency/radio_connection

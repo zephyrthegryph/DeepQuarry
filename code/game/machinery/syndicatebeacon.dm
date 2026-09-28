@@ -176,7 +176,7 @@
 	playsound(src, tool.usesound, 50, TRUE)
 	return ITEM_INTERACT_SUCCESS
 
-// LIFECYCLE: an active beacon deactivates.
+// ALLOW(lifecycle): an active beacon deactivates.
 /obj/machinery/power/singularity_beacon/Destroy()
 	if(active)
 		Deactivate()

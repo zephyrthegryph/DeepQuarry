@@ -152,7 +152,7 @@ GLOBAL_VAR(restart_counter)
 		var/abi_error = "FATAL: verdigris library ABI [verdigris_abi || "(none)"] does not match the DM build's VERDIGRIS_ABI [VERDIGRIS_ABI]. Rebuild verdigris.dll and the DM from the same tree (tools/build/build.sh)."
 		log_world(abi_error)
 		world.log << abi_error
-		del(world)
+		del(world) // ALLOW(scheduler): del(world): world shutdown
 		return
 	vg_verdigris_cleanup()
 	vg_heat_reset()
@@ -227,7 +227,7 @@ GLOBAL_VAR(restart_counter)
 
 	RunUnattendedFunctions()
 
-	spawn(3000)		//so we aren't adding to the round-start lag // S7 keeps: world/New (world procs); the ToR ban update is blocking external I/O
+	spawn(3000)		//so we aren't adding to the round-start lag // ALLOW(scheduler): world/New (world procs); the ToR ban update is blocking external I/O
 		if(CONFIG_GET(flag/ToRban))
 			ToRban_autoupdate()
 

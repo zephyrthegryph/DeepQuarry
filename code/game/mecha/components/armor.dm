@@ -21,7 +21,7 @@
 	step_delay = 1
 
 	var/deflect_chance = 10
-	var/list/damage_absorption = list(
+	var/list/damage_absorption = list( // ALLOW(instance_list): c: read-only per-subtype constant table (9 subtype overrides); a getter would share it, not worth it on a rare type
 		"brute"=	0.8,
 		"fire"=		1.2,
 		"bullet"=	0.9,

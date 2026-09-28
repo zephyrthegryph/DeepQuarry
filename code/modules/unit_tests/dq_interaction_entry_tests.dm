@@ -7,7 +7,7 @@
 /// A probe whose parent and child types each declare entry interactions.
 /obj/dq_entry_probe
 	name = "entry probe"
-	var/list/done = list()
+	var/list/done = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
 	var/allow_second = TRUE
 	var/gate_stops = FALSE
 	var/gate_calls = 0
@@ -51,7 +51,7 @@
 
 /obj/item/dq_entry_probe_item
 	name = "entry probe item"
-	var/list/done = list()
+	var/list/done = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
 
 /obj/item/dq_entry_probe_item/declare_interactions(list/into)
 	into += list(/datum/interaction/dq_entry/self_use)

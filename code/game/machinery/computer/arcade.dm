@@ -4,7 +4,7 @@
 	icon_state = "arcade1"
 	icon_keyboard = null
 	clicksound = null	//Gets too spammy and makes no sense for arcade to have the console keyboard noise anyway
-	var/list/prizes = list(	/obj/item/storage/box/snappops					= 2,
+	var/list/prizes = list(	/obj/item/storage/box/snappops					= 2, // ALLOW(instance_list): d: edited in place per instance (1 writers)
 							/obj/item/toy/blink										= 2,
 							/obj/item/clothing/under/syndicate/tacticool			= 2,
 							/obj/item/toy/sword										= 2,
@@ -347,8 +347,8 @@
 	var/alive = 4
 	var/eventdat = null
 	var/event = null
-	var/list/settlers = list("Harry","Larry","Bob")
-	var/list/events = list(ORION_TRAIL_RAIDERS		= 3,
+	var/list/settlers = list("Harry","Larry","Bob") // ALLOW(instance_list): d: edited in place per instance (5 writers)
+	var/list/events = list(ORION_TRAIL_RAIDERS		= 3, // ALLOW(instance_list): d: edited in place per instance (1 writers)
 						   ORION_TRAIL_FLUX			= 1,
 						   ORION_TRAIL_ILLNESS		= 3,
 						   ORION_TRAIL_BREAKDOWN	= 2,

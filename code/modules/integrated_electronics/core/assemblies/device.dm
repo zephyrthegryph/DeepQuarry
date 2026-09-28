@@ -84,7 +84,7 @@ REF_OWNED(/obj/item/assembly/electronic_assembly, "EA")
 	input.assembly = src
 	output.assembly = src
 
-// LIFECYCLE: its holder device forgets the assembly.
+// ALLOW(lifecycle): its holder device forgets the assembly.
 /obj/item/electronic_assembly/device/Destroy()
 	if(holder?.EA == src)
 		holder.EA = null

@@ -26,7 +26,7 @@
 		return null
 
 	if(!user.read_preference(/datum/preference/toggle/tgui_input_mode))
-		var/our_input = input(user, message, title) as null|anything in items // S10 keeps: the blocking prompt API itself (the non-tgui fallback om_prompt never uses)
+		var/our_input = input(user, message, title) as null|anything in items // ALLOW(scheduler): the blocking prompt API itself (the non-tgui fallback om_prompt never uses)
 		return our_input ? list(our_input) : null
 	var/datum/tgui_checkbox_input/input = new(user, message, title, items, min_checked, max_checked, timeout, ui_state)
 	input.tgui_interact(user)
@@ -73,7 +73,7 @@
 
 /datum/tgui_checkbox_input/proc/wait()
 	while (!closed && !QDELETED(src))
-		stoplag(1)
+		stoplag(1) // ALLOW(scheduler): tgui_input waits on the player (prompts, S10)
 
 /datum/tgui_checkbox_input/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

@@ -28,7 +28,7 @@
 
 REF_OWNED(/datum/modifier/crusher_mark, "marked_underlay")
 
-// LIFECYCLE: the mark's underlay comes off its holder.
+// ALLOW(lifecycle): the mark's underlay comes off its holder.
 /datum/modifier/crusher_mark/Destroy()
 	if(holder)
 		holder.underlays -= marked_underlay

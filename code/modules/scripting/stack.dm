@@ -1,5 +1,5 @@
 /datum/stack
-	var/list/contents=new
+	var/list/contents=new // ALLOW(instance_list): d: stack datum contents (generic name, too many ambiguous call sites)
 /datum/stack/proc/Push(value)
 	contents+=value
 

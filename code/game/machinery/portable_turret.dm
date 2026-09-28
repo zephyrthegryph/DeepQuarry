@@ -214,7 +214,7 @@
 	enabled = FALSE
 	anchored = FALSE
 	///What vests we will target.
-	var/list/vests_to_target = list(
+	var/list/vests_to_target = list( // ALLOW(instance_list): c: read-only per-subtype constant table (2 subtype overrides); a getter would share it, not worth it on a rare type
 		/obj/item/clothing/suit/lasertag/redtag,
 		/obj/item/clothing/suit/lasertag/bluetag,
 		/obj/item/clothing/suit/lasertag/omni

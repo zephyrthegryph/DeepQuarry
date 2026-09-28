@@ -42,6 +42,7 @@
 
 // Checks to see if this datum should continue existing.
 /datum/modifier/proc/check_if_valid()
+	// ALLOW(cooldown): modifier expiry
 	if(expire_at && expire_at < world.time) // Is our time up?
 		src.expire()
 

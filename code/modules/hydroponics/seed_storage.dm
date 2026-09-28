@@ -2,6 +2,7 @@
 	var/name
 	var/amount
 	var/datum/seed/seed_type // Keeps track of what our seed is
+	// ALLOW(instance_list): d: a seed pile holds seeds
 	var/list/obj/item/seeds/seeds = list() // Tracks actual objects contained in the pile
 	var/ID
 
@@ -28,7 +29,7 @@
 	idle_power_usage = 100
 
 	var/seeds_initialized = 0 // Map-placed ones break if seeds are loaded right at the start of the round, so we do it on the first interaction
-	var/list/datum/seed_pile/piles = list()
+	var/list/datum/seed_pile/piles = list() // ALLOW(instance_list): d: seed piles are filled at init and are the machine's stock
 	var/list/datum/seed_pile/piles_contra //Hacked.
 	var/list/starting_seeds
 	var/list/contraband_seeds //Seeds we only show if we've been hacked.

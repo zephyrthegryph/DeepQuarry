@@ -100,14 +100,14 @@ GLOBAL_LIST_INIT(gurgled_overlays, list(
 /obj/item/storage/backpack/gurgle_contaminate(atom/movable/item_storage = null, contamination_flavor = "Generic", contamination_color = "green")
 	make_contents_real()
 	if(contents)
-		for(var/obj/item/O in contents) // latent-ok
+		for(var/obj/item/O in contents) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
 			O.gurgle_contaminate(item_storage, contamination_flavor, contamination_color)
 	..()
 
 /obj/item/storage/belt/gurgle_contaminate(atom/movable/item_storage = null, contamination_flavor = "Generic", contamination_color = "green")
 	make_contents_real()
 	if(contents)
-		for(var/obj/item/O in contents) // latent-ok
+		for(var/obj/item/O in contents) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
 			O.gurgle_contaminate(item_storage, contamination_flavor, contamination_color)
 	..()
 

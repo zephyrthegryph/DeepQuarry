@@ -81,7 +81,7 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 	. = ..()
 	vg_unregister_gasmixture_hook(src)
 
-// LIFECYCLE: returns QDEL_HINT_IWILLGC (no reference-check queue for handles).
+// ALLOW(lifecycle): returns QDEL_HINT_IWILLGC (no reference-check queue for handles).
 /datum/gas_mixture/Destroy()
 	..()
 	// Gas mixtures are opaque handles with no post-Destroy cleanup dependency.

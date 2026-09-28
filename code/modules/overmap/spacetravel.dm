@@ -19,7 +19,7 @@
 		return INITIALIZE_HINT_QDEL
 	testing("Temporary sector at [x],[y],[z] was created, corresponding zlevel is [english_list(map_z)].")
 
-// LIFECYCLE: its z-levels return to the empty pool.
+// ALLOW(lifecycle): its z-levels return to the empty pool.
 /obj/effect/overmap/visitable/sector/temporary/Destroy()
 	for(var/zlevel in map_z)
 		using_map.cache_empty_zlevel(zlevel)

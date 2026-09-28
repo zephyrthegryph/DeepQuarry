@@ -29,7 +29,7 @@
 	if(waddling)
 		waddle_waddle(our_atom)
 
-// LIFECYCLE: the owner loses the waddle verb.
+// ALLOW(lifecycle): the owner loses the waddle verb.
 /datum/component/waddle_trait/Destroy(force = FALSE)
 	if(living_owner)
 		remove_verb(living_owner, /mob/living/proc/waddle_adjust)

@@ -92,7 +92,7 @@
 		get_area(src)?.power_subscribe(src)
 
 // Or in Destroy at all, but especially after the ..().
-// LIFECYCLE: the base machine: its power draw leaves the area budget.
+// ALLOW(lifecycle): the base machine: its power draw leaves the area budget.
 /obj/machinery/Destroy()
 	/*
 	if(ismovable(loc))

@@ -570,7 +570,7 @@ GLOBAL_LIST_EMPTY(text_tag_cache)
  ** no_trim - Prevents the input from being trimmed if you intend to parse newlines or whitespace.
 */
 /proc/stripped_input(mob/user, message = "", title = "", default = "", max_length=MAX_MESSAGE_LEN, no_trim=FALSE)
-	var/user_input = input(user, message, title, default) as text|null // S10 keeps: the blocking prompt API itself (the non-tgui fallback om_prompt never uses)
+	var/user_input = input(user, message, title, default) as text|null // ALLOW(scheduler): the blocking prompt API itself (the non-tgui fallback om_prompt never uses)
 	if(isnull(user_input)) // User pressed cancel
 		return
 	if(no_trim)
@@ -589,7 +589,7 @@ GLOBAL_LIST_EMPTY(text_tag_cache)
  ** no_trim - Prevents the input from being trimmed if you intend to parse newlines or whitespace.
 */
 /proc/stripped_multiline_input(mob/user, message = "", title = "", default = "", max_length=MAX_MESSAGE_LEN, no_trim=FALSE)
-	var/user_input = input(user, message, title, default) as message|null // S10 keeps: the blocking prompt API itself (the non-tgui fallback om_prompt never uses)
+	var/user_input = input(user, message, title, default) as message|null // ALLOW(scheduler): the blocking prompt API itself (the non-tgui fallback om_prompt never uses)
 	if(isnull(user_input)) // User pressed cancel
 		return
 	if(no_trim)

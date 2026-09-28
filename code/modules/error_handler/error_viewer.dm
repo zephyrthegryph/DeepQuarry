@@ -56,7 +56,7 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 	return "<a href='byond://?_src_=holder;[HrefToken()];viewruntime=[REF(src)][back_to_param]'>[linktext]</a>"
 
 /datum/error_viewer/error_cache
-	var/list/errors = list()
+	var/list/errors = list() // ALLOW(instance_list): d: error viewer state
 	var/list/error_sources
 	var/list/errors_silenced
 
@@ -96,7 +96,7 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 
 	// Show the error to admins with debug messages turned on, but only if one
 	//  from the same source hasn't been shown too recently
-	if (error_source.next_message_at <= world.time)
+	if (error_source.next_message_at <= world.time) // ALLOW(cooldown): error log throttling (debug infrastructure)
 		var/const/viewtext = "\[view]" // Nesting these in other brackets went poorly
 		//to_chat(world, "Runtime in <b>[error_where(e)]</b>: <b>[html_encode(e.name)]</b> [error_entry.make_link(viewtext)]")
 		var/err_msg_delay
@@ -108,7 +108,7 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 		error_source.next_message_at = world.time + err_msg_delay
 
 /datum/error_viewer/error_source
-	var/list/errors = list()
+	var/list/errors = list() // ALLOW(instance_list): d: error viewer state
 	var/next_message_at = 0
 
 /datum/error_viewer/error_source/New(exception/e)

@@ -7,7 +7,7 @@
 	light_color = "#e6ffff"
 	circuit = /obj/item/circuitboard/area_atmos
 
-	var/list/connectedscrubbers = list()
+	var/list/connectedscrubbers = list() // ALLOW(instance_list): d: filled when the console scans; atmos console
 	var/status = ""
 
 	var/range = 25

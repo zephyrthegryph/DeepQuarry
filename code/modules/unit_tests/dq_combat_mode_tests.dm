@@ -37,7 +37,7 @@
 
 /obj/dq_combat_probe
 	name = "combat probe"
-	var/list/done = list()
+	var/list/done = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
 
 /obj/dq_combat_probe/declare_interactions(list/into)
 	..()

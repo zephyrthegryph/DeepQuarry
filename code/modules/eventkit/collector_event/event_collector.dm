@@ -13,7 +13,7 @@ GLOBAL_LIST_INIT(event_collector_associations,list())
 	var/blocker_insertion_impedement_threshold = -1 //if we have more blockers than this, we can't place item in :(
 	var/show_blocker_in_examine = TRUE
 
-	var/list/possible_ingredients = list(
+	var/list/possible_ingredients = list( // ALLOW(instance_list): c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
 		/obj/item/trash,
 		/obj/item/toy/plushie/ipc,
 		/obj/item/toy/tennis

@@ -21,7 +21,7 @@
 		to_chat(user, "This computer's [H.name] slot is already occupied by \the [existing].")
 		return
 
-	vars[slot] = H
+	vars[slot] = H // ALLOW(api): hardware slots named by the part's slot var
 	found = 1
 
 	if(found)
@@ -41,7 +41,7 @@
 	var/slot = H.get_slot_var()
 	if(!slot)
 		return
-	vars[slot] = H
+	vars[slot] = H // ALLOW(api): hardware slots named by the part's slot var
 	H.holder2 = src
 
 // Uninstalls a component. Found and Critical vars may be passed by parent types
@@ -49,7 +49,7 @@
 /obj/item/modular_computer/proc/uninstall_component(mob/living/user, obj/item/computer_hardware/H, found = 0, critical = 0)
 	var/slot = H.get_slot_var()
 	if(slot && (vars[slot] == H))
-		vars[slot] = null
+		vars[slot] = null // ALLOW(api): hardware slots named by the part's slot var
 		found = 1
 		// Processor and hard drive removal shuts down the computer.
 		// is_critical_slot() lets new hardware types declare themselves critical

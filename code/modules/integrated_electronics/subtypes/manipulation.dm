@@ -170,7 +170,7 @@
 		var/grenade = new pre_attached_grenade_type(src)
 		attach_grenade(grenade)
 
-// LIFECYCLE: an unarmed grenade drops out.
+// ALLOW(lifecycle): an unarmed grenade drops out.
 /obj/item/integrated_circuit/manipulation/grenade/Destroy()
 	if(attached_grenade && !attached_grenade.active)
 		attached_grenade.dropInto(loc)

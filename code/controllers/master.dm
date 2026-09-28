@@ -85,9 +85,9 @@ GLOBAL_REAL(Master, /datum/controller/master)
 	var/rolling_usage_length = 5 SECONDS
 
 	/// Bounded per-MC-tick history used by the admin performance dashboard.
-	var/list/perf_tick_usage = list()
-	var/list/perf_tick_realtime = list()
-	var/list/perf_outliers = list()
+	var/list/perf_tick_usage = list() // ALLOW(instance_list): d: MC singleton, filled every tick
+	var/list/perf_tick_realtime = list() // ALLOW(instance_list): d: MC singleton, filled every tick
+	var/list/perf_outliers = list() // ALLOW(instance_list): d: MC singleton, filled every tick
 	/// Breakdown for the highest-usage tick since the last explicit reset.
 	var/list/perf_worst_tick
 	var/perf_history_limit = 12000
@@ -153,7 +153,7 @@ GLOBAL_REAL(Master, /datum/controller/master)
 	if(!GLOB)
 		new /datum/controller/global_vars
 
-// LIFECYCLE: MC singleton; asks for a hard delete.
+// ALLOW(lifecycle): MC singleton; asks for a hard delete.
 /datum/controller/master/Destroy()
 	..()
 	// Tell qdel() to Del() this object.
@@ -269,7 +269,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 
 /datum/controller/master/proc/check_and_perform_fast_update()
 	PRIVATE_PROC(TRUE)
-	set waitfor = FALSE // S10b keeps: MC code
+	set waitfor = FALSE // ALLOW(scheduler): MC code
 
 	if(!overview_fast_update)
 		return
@@ -350,10 +350,10 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 // Please don't stuff random bullshit here,
 // Make a subsystem, give it the SS_NO_FIRE flag, and do your work in its Initialize()
 /datum/controller/master/Initialize(delay, init_sss, tgs_prime)
-	set waitfor = 0 // S10b keeps: MC code
+	set waitfor = 0 // ALLOW(scheduler): MC code
 
 	if(delay)
-		sleep(delay)
+		sleep(delay) // ALLOW(scheduler): MC
 
 	if(init_sss)
 		init_subtypes(/datum/controller/subsystem, subsystems)
@@ -467,7 +467,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 
 	if(sleep_offline_after_initializations)
 		world.sleep_offline = TRUE
-	sleep(1 TICKS)
+	sleep(1 TICKS) // ALLOW(scheduler): MC
 
 	if(sleep_offline_after_initializations && CONFIG_GET(flag/resume_after_initializations))
 		world.sleep_offline = FALSE
@@ -563,9 +563,9 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 
 // Starts the mc, and sticks around to restart it if the loop ever ends.
 /datum/controller/master/proc/StartProcessing(delay)
-	set waitfor = 0 // S10b keeps: MC code
+	set waitfor = 0 // ALLOW(scheduler): MC code
 	if(delay)
-		sleep(delay)
+		sleep(delay) // ALLOW(scheduler): MC
 	testing("Master starting processing")
 	var/started_stage
 	var/rtn = -2
@@ -677,7 +677,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 		olddrift = newdrift
 		if (processing <= 0)
 			current_ticklimit = TICK_LIMIT_RUNNING
-			sleep(1 SECONDS)
+			sleep(1 SECONDS) // ALLOW(scheduler): MC
 			continue
 
 		//Anti-tick-contention heuristics:
@@ -687,7 +687,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 			if (starting_tick_usage > TICK_LIMIT_MC) //if there isn't enough time to bother doing anything this tick, sleep a bit.
 				sleep_delta *= 2
 				current_ticklimit = TICK_LIMIT_RUNNING * 0.5
-				sleep(world.tick_lag * (processing * sleep_delta))
+				sleep(world.tick_lag * (processing * sleep_delta)) // ALLOW(scheduler): MC
 				continue
 
 			//Byond resumed us late. assume it might have to do the same next tick
@@ -744,7 +744,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 			else
 				cached_runlevel = null //3 strikes, Lets reset the runlevel lists
 			current_ticklimit = TICK_LIMIT_RUNNING
-			sleep((1 SECONDS) * error_level)
+			sleep((1 SECONDS) * error_level) // ALLOW(scheduler): MC
 			error_level++
 			continue
 
@@ -761,7 +761,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 					else
 						cached_runlevel = null //3 strikes, Lets also reset the runlevel lists
 					current_ticklimit = TICK_LIMIT_RUNNING
-					sleep((1 SECONDS) * error_level)
+					sleep((1 SECONDS) * error_level) // ALLOW(scheduler): MC
 					error_level++
 					continue
 				error_level++
@@ -799,7 +799,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 
 		check_and_perform_fast_update()
 		record_performance_tick(max(perf_tick_peak_usage, TICK_USAGE))
-		sleep(world.tick_lag * (processing * sleep_delta))
+		sleep(world.tick_lag * (processing * sleep_delta)) // ALLOW(scheduler): MC
 
 /datum/controller/master/proc/record_performance_tick(usage)
 	usage = max(usage, 0)
@@ -1143,7 +1143,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 /datum/controller/master/StartLoadingMap()
 	//disallow more than one map to load at once, multithreading it will just cause race conditions
 	while(map_loading)
-		stoplag() // S10b keeps: MC code (map-load mutex)
+		stoplag() // ALLOW(scheduler): MC code (map-load mutex)
 	for(var/S in subsystems)
 		var/datum/controller/subsystem/SS = S
 		SS.StartLoadingMap()

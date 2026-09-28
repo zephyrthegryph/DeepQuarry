@@ -27,7 +27,7 @@
 	if(length(linked_machine.tgui_data()))
 		log_world("## ERROR [machine.type] implements tgui_data(), and has likely been ported to tgui already. It should no longer use set_machine().")
 
-// LIFECYCLE: the machine is free again and the operator's perspective and trait reset.
+// ALLOW(lifecycle): the machine is free again and the operator's perspective and trait reset.
 /datum/component/using_machine_shim/Destroy(force)
 	. = ..()
 	linked_machine.in_use = FALSE

@@ -42,7 +42,7 @@
 	/// id -> list of base providers.
 	var/list/base_providers
 	/// id -> list of contributors.
-	var/list/contributors = list()
+	var/list/contributors = list() // ALLOW(instance_list): d: registry singleton, filled at init
 	/// Tag id -> bit number (0-based, across words).
 	var/list/tag_bits
 	/// Measure ids, sorted, in table order.

@@ -132,7 +132,7 @@
 
 REF_OWNED(/obj/machinery/power/supermatter, "soundloop")
 
-// LIFECYCLE: an undelaminated deletion is reported; contract telemetry ends.
+// ALLOW(lifecycle): an undelaminated deletion is reported; contract telemetry ends.
 /obj/machinery/power/supermatter/Destroy()
 	if(!delamination_delete)
 		log_game("SUPERMATTER([x],[y],[z]) deleted outside its delamination path. Power:[power], Oxygen:[oxygen], Damage:[damage], Integrity:[get_integrity()], QDEL source:[datum_flags]")

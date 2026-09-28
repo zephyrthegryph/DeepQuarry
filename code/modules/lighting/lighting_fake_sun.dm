@@ -17,7 +17,7 @@ GLOBAL_LIST_EMPTY(fake_sunlight_zs)
 	var/do_weather = FALSE
 	var/advanced_lighting = FALSE
 
-	var/list/possible_light_setups = list(
+	var/list/possible_light_setups = list( // ALLOW(instance_list): c: read-only per-subtype constant table (4 subtype overrides); a getter would share it, not worth it on a rare type
 		list(
 			"brightness" = 1,
 			"color" = "#abfff7"

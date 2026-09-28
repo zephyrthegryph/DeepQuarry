@@ -204,9 +204,12 @@ SUBSYSTEM_DEF(transcore)
 	db.core_dump(disk=disk)
 
 /datum/transcore_db
+	// ALLOW(instance_list): d: one per transcore database (a handful); re-sorted on every write
 	var/list/datum/transhuman/mind_record/backed_up = list()	// All known mind records, indexed by MR.mindname/mind.name
 	var/list/datum/transhuman/mind_record/has_left		// Why do we even have this?
+	// ALLOW(instance_list): d: one per transcore database (a handful); re-sorted on every write
 	var/list/datum/transhuman/body_record/body_scans = list()	// All known body records, indexed by BR.mydna.name
+	// ALLOW(instance_list): d: one per transcore database (a handful)
 	var/list/obj/item/implant/backup/implants = list()	// All OPERATING implants that are being ticked
 
 	var/core_dumped = FALSE

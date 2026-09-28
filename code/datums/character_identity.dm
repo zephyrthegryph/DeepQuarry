@@ -144,7 +144,7 @@
 /// key comes along even while the player is disconnected, as a key move did,
 /// but only when the mind's body holds it: a ghosted player is never dragged
 /// back. Returns TRUE when `dest` now holds `M`.
-/proc/move_player_mind(datum/mind/M, mob/living/dest, reason = "unspecified", share = FALSE)
+/proc/move_player_mind(datum/mind/M, mob/living/dest, reason = "unspecified", share = FALSE) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!M)
 		return FALSE
 	var/holds_key = M.key && M.current?.key == M.key
@@ -152,7 +152,7 @@
 
 /// Move whoever plays `source` into `dest` through their mind. A keyed mob
 /// without a mind gets one first (ensure_mind()). FALSE when nobody plays it.
-/proc/move_player(mob/living/source, mob/living/dest, reason = "unspecified", share = FALSE)
+/proc/move_player(mob/living/source, mob/living/dest, reason = "unspecified", share = FALSE) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!istype(source) || source == dest)
 		return FALSE
 	return move_player_mind(source.ensure_mind(), dest, reason, share)

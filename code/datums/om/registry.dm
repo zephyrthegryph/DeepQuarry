@@ -16,7 +16,7 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 	return GLOB.om_reg
 
 /datum/om/registry
-	var/list/errors = list()
+	var/list/errors = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
 	/// Collect errors without stack traces (tests of broken tables).
 	var/quiet = FALSE
 	/// Null: every non-skipped bundle/decl. Else only these (plus their includes).
@@ -25,44 +25,44 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 	var/include_skipped = FALSE
 	var/built = FALSE
 
-	var/list/behaviours = list()
-	var/list/behaviour_by_type = list()
-	var/list/effects = list()
-	var/list/effect_by_id = list()
-	var/list/clocks = list()
-	var/list/clock_by_id = list()
-	var/list/relations = list()
-	var/list/relation_by_type = list()
+	var/list/behaviours = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/behaviour_by_type = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/effects = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/effect_by_id = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/clocks = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/clock_by_id = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/relations = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/relation_by_type = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
 	/// Holder type (as slot_holder_key() returns it) -> ordered list of
 	/// /datum/om/relation/slot instances declared for it (build_slot_holders()).
-	var/list/slot_groups_by_holder = list()
+	var/list/slot_groups_by_holder = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
 	/// Every declared holder type, longest-declared-path-first, so
 	/// slot_group_for() finds the most-derived match first.
-	var/list/slot_holder_types = list()
-	var/list/event_types = list()
-	var/list/event_idx = list()
+	var/list/slot_holder_types = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/event_types = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/event_idx = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
 	/// event idx -> list of behaviour ids handling it (subtypes flattened).
-	var/list/event_handlers = list()
-	var/list/derived = list()
-	var/list/derived_by_name = list()
-	var/list/checks_cache = list()
-	var/list/named_checks = list()
-	var/list/tasks = list()
-	var/list/task_by_name = list()
-	var/list/task_by_type = list()
-	var/list/services = list()
+	var/list/event_handlers = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/derived = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/derived_by_name = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/checks_cache = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/named_checks = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/tasks = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/task_by_name = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/task_by_type = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/services = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
 	/// Every stage type -> its def (categories included), and the pipelines in id order.
-	var/list/stage_by_type = list()
-	var/list/pipelines = list()
-	var/list/bundles = list()
-	var/list/bundle_by_type = list()
-	var/list/decls = list()
+	var/list/stage_by_type = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/pipelines = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/bundles = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/bundle_by_type = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/decls = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
 	/// Every type some decl applies to (on_materialize checks this).
-	var/list/decl_typecache = list()
+	var/list/decl_typecache = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
 	/// bundle type -> flattened list of bundles (includes first, then itself).
-	var/list/expansions = list()
+	var/list/expansions = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
 	/// entity type -> /datum/om/type_table (lazy).
-	var/list/type_tables = list()
+	var/list/type_tables = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
 	/// Internal behaviours (expiry, rates, tasks, ui, edge refresh).
 	var/datum/om/behaviour/expiry_behaviour
 	var/datum/om/behaviour/rate_behaviour
@@ -76,7 +76,7 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 	if(!quiet)
 		stack_trace("om registry: [msg]")
 
-/proc/om_is_abstract(datum/om/D)
+/proc/om_is_abstract(datum/om/D) // ALLOW(base_proc): global API written before the base-type ratchet
 	return D.abstract_type == D.type
 
 /datum/om/registry/proc/build()
@@ -408,7 +408,7 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 		return 1
 	return 0
 
-/proc/cmp_slot_decl_order(datum/om/relation/slot/a, datum/om/relation/slot/b)
+/proc/cmp_slot_decl_order(datum/om/relation/slot/a, datum/om/relation/slot/b) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(a.order != b.order)
 		return a.order - b.order
 	return a.id - b.id
@@ -705,12 +705,12 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 		| (!P.reactive && P.park_after ? OM_PIPE_MODE_PARKS : 0)
 
 /// Deepest `of` first; between equal depths, the least derived stage type.
-/proc/cmp_om_stage_variant(datum/om/stage/a, datum/om/stage/b)
+/proc/cmp_om_stage_variant(datum/om/stage/a, datum/om/stage/b) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(a.depth != b.depth)
 		return b.depth - a.depth
 	return om_type_depth(a.type) - om_type_depth(b.type)
 
-/proc/cmp_om_stage_order(datum/om/stage/a, datum/om/stage/b)
+/proc/cmp_om_stage_order(datum/om/stage/a, datum/om/stage/b) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(a.order != b.order)
 		return a.order - b.order
 	return sorttext(b.type, a.type)
@@ -976,7 +976,7 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 			stack += j
 	return FALSE
 
-/proc/cmp_om_behaviour_name(datum/om/behaviour/a, datum/om/behaviour/b)
+/proc/cmp_om_behaviour_name(datum/om/behaviour/a, datum/om/behaviour/b) // ALLOW(base_proc): global API written before the base-type ratchet
 	return sorttext(b.name, a.name)
 
 // ---------------------------------------------------------------- derived
@@ -1270,7 +1270,7 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 				LAZYOR(T.services, S)
 	return T
 
-/proc/cmp_om_behaviour_id(datum/om/behaviour/a, datum/om/behaviour/b)
+/proc/cmp_om_behaviour_id(datum/om/behaviour/a, datum/om/behaviour/b) // ALLOW(base_proc): global API written before the base-type ratchet
 	return a.id - b.id
 
 /datum/om/registry/proc/behaviour(path_or_def)

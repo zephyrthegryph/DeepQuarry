@@ -20,7 +20,7 @@
 #define OM_C_STRIDE 6
 
 /// Timed contribution: expires after `duration` (deciseconds) via the deadline wheel.
-/proc/om_apply(datum/target, effect_id, datum/source, duration, value = TRUE, key)
+/proc/om_apply(datum/target, effect_id, datum/source, duration, value = TRUE, key) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/effect/eff = om_registry().effect(effect_id)
 	var/datum/om/rec/rec = om_rec_of(target)
 	if(!rec || !source)
@@ -33,7 +33,7 @@
 /// Held contribution: lasts until released or until `source` is deleted.
 /// Inside a hook of a `holds` behaviour, it also lasts only while the hook
 /// keeps making it (see om_reconcile_holds()).
-/proc/om_hold(datum/target, effect_id, datum/source, value = TRUE, key)
+/proc/om_hold(datum/target, effect_id, datum/source, value = TRUE, key) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/effect/eff = om_registry().effect(effect_id)
 	var/datum/om/rec/rec = om_rec_of(target)
 	if(!rec || !source || QDELETED(source))
@@ -57,14 +57,14 @@
 /// time, deciseconds), whatever the effect's stacking rule: for callers that
 /// already computed the new expiry (set or adjust a remaining duration). An
 /// expiry at or before now releases it.
-/proc/om_apply_until(datum/target, effect_id, datum/source, expires_at, value = TRUE, key)
+/proc/om_apply_until(datum/target, effect_id, datum/source, expires_at, value = TRUE, key) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/rec/rec = om_rec_of(target)
 	if(!rec || !source)
 		return FALSE
 	return om_contrib_until(rec, om_registry().effect(effect_id), source, expires_at, value, key)
 
 /// om_apply_until() for callers holding the effect def (one id lookup per call).
-/proc/om_contrib_until(datum/om/rec/rec, datum/om/effect/eff, datum/source, expires_at, value = TRUE, key)
+/proc/om_contrib_until(datum/om/rec/rec, datum/om/effect/eff, datum/source, expires_at, value = TRUE, key) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/t = rec.sched.now()
 	if(expires_at <= t)
 		var/i = rec.contribs ? om_contrib_find(rec, eff.idx, source, key) : 0
@@ -77,17 +77,17 @@
 	return TRUE
 
 /// Expiry of `source`'s contribution to effect idx `eidx`: 0 for a hold, null when none.
-/proc/om_contrib_expiry(datum/om/rec/rec, eidx, datum/source, key)
+/proc/om_contrib_expiry(datum/om/rec/rec, eidx, datum/source, key) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/i = rec.contribs ? om_contrib_find(rec, eidx, source, key) : 0
 	return i ? rec.contribs[i + OM_C_EXPIRES] : null
 
 /// Value of `source`'s contribution to effect idx `eidx`, or null when none.
-/proc/om_contrib_value(datum/om/rec/rec, eidx, datum/source, key)
+/proc/om_contrib_value(datum/om/rec/rec, eidx, datum/source, key) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/i = rec.contribs ? om_contrib_find(rec, eidx, source, key) : 0
 	return i ? rec.contribs[i + OM_C_VALUE] : null
 
 /// Latest expiry among the timed contributions to effect idx `eidx` (0 when none).
-/proc/om_contrib_latest_expiry(datum/om/rec/rec, eidx)
+/proc/om_contrib_latest_expiry(datum/om/rec/rec, eidx) // ALLOW(base_proc): global API written before the base-type ratchet
 	. = 0
 	var/list/C = rec.contribs
 	for(var/i in 1 to length(C) step OM_C_STRIDE)
@@ -95,7 +95,7 @@
 			. = C[i + OM_C_EXPIRES]
 
 /// Releases `source`'s contribution to `eff` on `rec`. TRUE when there was one.
-/proc/om_contrib_release(datum/om/rec/rec, datum/om/effect/eff, datum/source, key)
+/proc/om_contrib_release(datum/om/rec/rec, datum/om/effect/eff, datum/source, key) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/i = rec.contribs ? om_contrib_find(rec, eff.idx, source, key) : 0
 	if(!i)
 		return FALSE
@@ -104,7 +104,7 @@
 	return TRUE
 
 /// Releases every timed contribution to `eff` on `rec` (holds stay).
-/proc/om_contrib_release_timed(datum/om/rec/rec, datum/om/effect/eff)
+/proc/om_contrib_release_timed(datum/om/rec/rec, datum/om/effect/eff) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/i = 1
 	var/removed = FALSE
 	while(i <= length(rec.contribs))
@@ -118,7 +118,7 @@
 
 /// When `source`'s contribution to `effect_id` on `target` expires (scheduler
 /// time, deciseconds): 0 for a hold, null when there is none.
-/proc/om_expires_at(datum/target, effect_id, datum/source, key)
+/proc/om_expires_at(datum/target, effect_id, datum/source, key) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/rec/rec = target?.om_rec
 	if(!rec?.contribs)
 		return null
@@ -126,11 +126,11 @@
 
 /// The time `E`'s scheduler runs on (world.time live, injected in tests). Use it
 /// with om_apply_until()/om_expires_at() so tests on a test scheduler agree.
-/proc/om_time_of(datum/E)
+/proc/om_time_of(datum/E) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/rec/rec = E?.om_rec
 	return rec ? rec.sched.now() : om_scheduler().now()
 
-/proc/om_release(datum/target, effect_id, datum/source, key)
+/proc/om_release(datum/target, effect_id, datum/source, key) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/rec/rec = target?.om_rec
 	if(!rec?.contribs)
 		return FALSE
@@ -143,7 +143,7 @@
 
 /// TRUE when the combined value differs from the effect's default (for
 /// COMBINE_ANY: when anything contributes).
-/proc/om_has(datum/target, effect_id)
+/proc/om_has(datum/target, effect_id) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/v = om_value_of(target, effect_id)
 	if(islist(v))
 		return length(v) > 0
@@ -151,7 +151,7 @@
 	return v != eff.default_value
 
 /// The combined value. COMBINE_SUM_PER_KEY returns a shared list (read only).
-/proc/om_value_of(datum/target, effect_id)
+/proc/om_value_of(datum/target, effect_id) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/effect/eff = om_registry().effect(effect_id)
 	var/datum/om/rec/rec = target?.om_rec
 	if(!rec)
@@ -162,14 +162,14 @@
 
 // ---------------------------------------------------------------- store internals
 
-/proc/om_contrib_find(datum/om/rec/rec, eidx, source, key)
+/proc/om_contrib_find(datum/om/rec/rec, eidx, source, key) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/list/C = rec.contribs
 	for(var/i in 1 to length(C) step OM_C_STRIDE)
 		if(C[i + OM_C_EFFECT] == eidx && C[i + OM_C_SOURCE] == source && C[i + OM_C_KEY] == key)
 			return i
 	return 0
 
-/proc/om_contrib_set(datum/om/rec/rec, datum/om/effect/eff, datum/source, value, expires, key, duration, exact = FALSE)
+/proc/om_contrib_set(datum/om/rec/rec, datum/om/effect/eff, datum/source, value, expires, key, duration, exact = FALSE) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(eff.expr)
 		CRASH("om: [eff.id] is a composite effect; contribute to its parts")
 	if(eff.combine == COMBINE_SUM_PER_KEY && (isnull(key) || isnum(key)))
@@ -210,7 +210,7 @@
 	om_cval_drop(rec, eff.idx)
 	om_effect_changed(rec, eff, old)
 
-/proc/om_contrib_remove(datum/om/rec/rec, datum/om/effect/eff, i)
+/proc/om_contrib_remove(datum/om/rec/rec, datum/om/effect/eff, i) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(eff.clock_idx)
 		om_clock_settle(rec, eff.clock_idx)
 	var/old = om_effect_value(rec, eff)
@@ -220,14 +220,14 @@
 	om_cval_drop(rec, eff.idx)
 	om_effect_changed(rec, eff, old)
 
-/proc/om_cval_drop(datum/om/rec/rec, eidx)
+/proc/om_cval_drop(datum/om/rec/rec, eidx) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/list/V = rec.cval
 	for(var/i in 1 to length(V) step 2)
 		if(V[i] == eidx)
 			V.Cut(i, i + 2)
 			return
 
-/proc/om_effect_value(datum/om/rec/rec, datum/om/effect/eff)
+/proc/om_effect_value(datum/om/rec/rec, datum/om/effect/eff) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(eff.expr)
 		return om_effect_eval(rec, eff.expr)
 	var/list/V = rec.cval
@@ -268,7 +268,7 @@
 	return value
 
 /// Evaluates a composite expression: text ids, ALL_OF/ANY_OF/NOT_OF/SUM_OF.
-/proc/om_effect_eval(datum/om/rec/rec, expr)
+/proc/om_effect_eval(datum/om/rec/rec, expr) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(istext(expr))
 		var/datum/om/effect/part = om_registry().effect(expr)
 		var/v = rec ? om_effect_value(rec, part) : part.default_value
@@ -293,7 +293,7 @@
 				. += om_effect_eval(rec, L[i])
 
 /// After a contribution changed: framework kinds, subclass hook, composites, channel.
-/proc/om_effect_changed(datum/om/rec/rec, datum/om/effect/eff, old)
+/proc/om_effect_changed(datum/om/rec/rec, datum/om/effect/eff, old) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/new_value = om_effect_value(rec, eff)
 	if(!islist(new_value) && new_value == old)
 		return
@@ -338,7 +338,7 @@
 // ---------------------------------------------------------------- expiry
 
 /// The next expiry on `rec`, as one deadline of the internal expiry behaviour.
-/proc/om_expiry_reschedule(datum/om/rec/rec)
+/proc/om_expiry_reschedule(datum/om/rec/rec) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/soonest = 0
 	var/list/C = rec.contribs
 	for(var/i in 1 to length(C) step OM_C_STRIDE)
@@ -376,7 +376,7 @@
 // ---------------------------------------------------------------- source lifetime and hooks
 
 /// Releases every contribution `source` holds anywhere (source deleted, edge unlinked).
-/proc/om_release_all_from(datum/source)
+/proc/om_release_all_from(datum/source) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/rec/srec = source.om_rec
 	if(!srec?.held_on)
 		return
@@ -396,7 +396,7 @@
 		om_expiry_reschedule(rec)
 
 /// Target teardown: forget the contributions on `E` and every back-reference to it.
-/proc/om_clear_target(datum/E)
+/proc/om_clear_target(datum/E) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/rec/rec = E.om_rec
 	if(!rec)
 		return
@@ -422,7 +422,7 @@
 
 /// After a `holds` hook returns: every hold the hook made before but not this
 /// time is released.
-/proc/om_reconcile_holds(datum/om/rec/rec, bid, epoch)
+/proc/om_reconcile_holds(datum/om/rec/rec, bid, epoch) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/list/log = rec.hold_log
 	if(!log)
 		return
@@ -445,7 +445,7 @@
 		rec.hold_log = null
 
 /// Behaviour stopped: all of its hook holds go.
-/proc/om_release_hook_holds(datum/om/rec/rec, bid)
+/proc/om_release_hook_holds(datum/om/rec/rec, bid) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/list/log = rec.hold_log
 	if(!log)
 		return
@@ -473,18 +473,18 @@
 
 /// Grants are effects with COMBINE_SUM_PER_KEY: kind -> effect id, id -> key,
 /// source -> contribution source. Ids are text or type paths.
-/proc/om_grant(datum/target, kind, id, datum/source)
+/proc/om_grant(datum/target, kind, id, datum/source) // ALLOW(base_proc): global API written before the base-type ratchet
 	return om_hold(target, kind, source, 1, id)
 
-/proc/om_revoke(datum/target, kind, id, datum/source)
+/proc/om_revoke(datum/target, kind, id, datum/source) // ALLOW(base_proc): global API written before the base-type ratchet
 	return om_release(target, kind, source, id)
 
-/proc/om_has_grant(datum/target, kind, id)
+/proc/om_has_grant(datum/target, kind, id) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/list/per_key = om_value_of(target, kind)
 	return islist(per_key) && per_key[id] > 0
 
 /// The sources granting `target` the `kind` grant `id` (a list), or null when none does.
-/proc/om_grant_sources(datum/target, kind, id)
+/proc/om_grant_sources(datum/target, kind, id) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/rec/rec = target?.om_rec
 	if(!rec?.contribs)
 		return null
@@ -495,7 +495,7 @@
 			LAZYADD(., C[i + OM_C_SOURCE])
 
 /// Every grant `source` gives `target`: list of list(kind, id).
-/proc/om_grants_from(datum/target, datum/source)
+/proc/om_grants_from(datum/target, datum/source) // ALLOW(base_proc): global API written before the base-type ratchet
 	. = list()
 	var/datum/om/rec/rec = target?.om_rec
 	if(!rec)
@@ -512,7 +512,7 @@
 // ---------------------------------------------------------------- clocks
 
 /// Stride 4 entry for clock `cidx`, created on first need.
-/proc/om_clock_entry(datum/om/rec/rec, cidx)
+/proc/om_clock_entry(datum/om/rec/rec, cidx) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/list/K = rec.clocks
 	for(var/i in 1 to length(K) step 4)
 		if(K[i] == cidx)
@@ -521,14 +521,14 @@
 	LAZYADD(rec.clocks, list(cidx, om_clock_compute(rec, cidx), t, t))
 	return length(rec.clocks) - 3
 
-/proc/om_clock_compute(datum/om/rec/rec, cidx)
+/proc/om_clock_compute(datum/om/rec/rec, cidx) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/clock_def/C = om_registry().clocks[cidx]
 	var/mult = om_effect_value(rec, C.mult)
 	var/inhibit = om_effect_value(rec, C.inhibit)
 	return clamp(mult * (1 - clamp(inhibit, 0, 1)), C.min_rate, C.max_rate)
 
 /// The entity's rate in clock `cidx` (1 when nothing modifies it).
-/proc/om_clock_rate(datum/om/rec/rec, cidx)
+/proc/om_clock_rate(datum/om/rec/rec, cidx) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/list/K = rec.clocks
 	for(var/i in 1 to length(K) step 4)
 		if(K[i] == cidx)
@@ -538,7 +538,7 @@
 	return om_clock_compute(rec, cidx)
 
 /// Local (clock) time in deciseconds.
-/proc/om_clock_local(datum/om/rec/rec, cidx)
+/proc/om_clock_local(datum/om/rec/rec, cidx) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/list/K = rec.clocks
 	for(var/i in 1 to length(K) step 4)
 		if(K[i] == cidx)
@@ -546,7 +546,7 @@
 	return rec.sched.now()
 
 /// Folds elapsed time into local time at the current rate. Always before a rate change.
-/proc/om_clock_settle(datum/om/rec/rec, cidx)
+/proc/om_clock_settle(datum/om/rec/rec, cidx) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/i = om_clock_entry(rec, cidx)
 	var/list/K = rec.clocks
 	var/t = rec.sched.now()
@@ -555,7 +555,7 @@
 
 /// After a clock effect changed: new rate, clocked deadlines re-inserted,
 /// roster re-synced (a zero rate sleeps cadence work).
-/proc/om_clock_changed(datum/om/rec/rec, cidx)
+/proc/om_clock_changed(datum/om/rec/rec, cidx) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/i = om_clock_entry(rec, cidx)
 	var/list/K = rec.clocks
 	var/new_rate = om_clock_compute(rec, cidx)
@@ -566,7 +566,7 @@
 	om_sync_all(rec)
 
 /// Public: rate of `E` in clock domain `clock_id`.
-/proc/om_clock_rate_of(datum/E, clock_id)
+/proc/om_clock_rate_of(datum/E, clock_id) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/clock_def/C = om_registry().clock_by_id[clock_id]
 	if(!C)
 		CRASH("om: unknown clock [clock_id]")
@@ -579,7 +579,7 @@
 /// modifying the clock reads its scheduler's time. (This is the reading the w6/k1 holder clocks
 /// provided; the rate itself comes from contributions, so holders slow their contents with
 /// relation `source_contributes` rows such as stasis_occupant's.)
-/proc/om_clock_now(datum/E, clock_id)
+/proc/om_clock_now(datum/E, clock_id) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/clock_def/C = om_registry().clock_by_id[clock_id]
 	if(!C)
 		CRASH("om: unknown clock [clock_id]")
@@ -589,20 +589,20 @@
 // ---------------------------------------------------------------- relevance and suspension
 
 /// `observer` makes `E` at least `level` relevant until released or deleted.
-/proc/om_observe(datum/E, datum/observer, level)
+/proc/om_observe(datum/E, datum/observer, level) // ALLOW(base_proc): global API written before the base-type ratchet
 	return om_hold(E, EFFECT_RELEVANCE, observer, level)
 
-/proc/om_unobserve(datum/E, datum/observer)
+/proc/om_unobserve(datum/E, datum/observer) // ALLOW(base_proc): global API written before the base-type ratchet
 	return om_release(E, EFFECT_RELEVANCE, observer)
 
-/proc/om_relevance(datum/E)
+/proc/om_relevance(datum/E) // ALLOW(base_proc): global API written before the base-type ratchet
 	return E.om_rec ? E.om_rec.relevance : RELEVANCE_NONE
 
 /// Suspends every cadence and wake of `E` while `source` holds it.
-/proc/om_suspend(datum/E, datum/source)
+/proc/om_suspend(datum/E, datum/source) // ALLOW(base_proc): global API written before the base-type ratchet
 	return om_hold(E, EFFECT_SUSPENDED, source, TRUE)
 
-/proc/om_unsuspend(datum/E, datum/source)
+/proc/om_unsuspend(datum/E, datum/source) // ALLOW(base_proc): global API written before the base-type ratchet
 	return om_release(E, EFFECT_SUSPENDED, source)
 
 #undef OM_C_EFFECT

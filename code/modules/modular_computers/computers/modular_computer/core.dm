@@ -78,7 +78,7 @@
 	update_verbs()
 	. = ..()
 
-// LIFECYCLE: its program is killed and hardware uninstalled.
+// ALLOW(lifecycle): its program is killed and hardware uninstalled.
 /obj/item/modular_computer/Destroy()
 	kill_program(1)
 	for(var/obj/item/computer_hardware/CH in src.get_all_components())

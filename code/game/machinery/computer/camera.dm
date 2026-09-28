@@ -10,7 +10,7 @@
 	circuit = /obj/item/circuitboard/security
 
 	var/mapping = 0//For the overview file, interesting bit of code.
-	var/list/network = list()
+	var/list/network = list() // ALLOW(instance_list): d: camera console network filter; many call sites
 
 	var/datum/tgui_module/camera/camera
 	var/camera_datum_type = /datum/tgui_module/camera
@@ -130,7 +130,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/computer/security/telescreen/entertainment, R
 
 REF_OWNED(/obj/machinery/computer/security/telescreen/entertainment, list("pinboard", "radio"))
 
-// LIFECYCLE: stops showing its feed.
+// ALLOW(lifecycle): stops showing its feed.
 /obj/machinery/computer/security/telescreen/entertainment/Destroy()
 	if(showing)
 		stop_showing()

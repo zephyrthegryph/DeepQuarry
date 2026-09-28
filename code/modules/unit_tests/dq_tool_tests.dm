@@ -39,7 +39,7 @@
 /obj/dq_tool_target
 	name = "tool target"
 	anchored = TRUE
-	var/list/done = list()
+	var/list/done = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
 
 /obj/dq_tool_target/declare_interactions(list/into)
 	..()

@@ -99,6 +99,7 @@
 	var/power_demand = 0
 	/// Accumulated heat the cooling loop failed to shed (machine physiology).
 	var/heat_debt = 0
+	// ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 	var/list/req_access = list(ACCESS_ROBOTICS) // Interned per subtype in Initialize().
 	var/ident = 0
 	var/viewalerts = 0
@@ -302,7 +303,7 @@
 
 //If there's an MMI in the robot, have it ejected when the mob goes away. --NEO
 //Improved /N
-// LIFECYCLE: the MMI receives the borg's mind on the turf; shells revert; parts and hat drop.
+// ALLOW(lifecycle): the MMI receives the borg's mind on the turf; shells revert; parts and hat drop.
 /mob/living/silicon/robot/Destroy()
 	for(var/ability_id in robot_granted_abilities)
 		revoke_ability(ability_id, src)

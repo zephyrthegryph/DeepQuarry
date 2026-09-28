@@ -154,15 +154,18 @@
 	name = "reagent generator implant"
 	desc = "This is an implant that has attached storage and generates a reagent."
 	implant_color = "r"
+	// ALLOW(instance_list): d: replaced per instance at runtime (1 assignments)
 	var/list/generated_reagents = list(REAGENT_ID_WATER = 2) //Any number of reagents, the associated value is how many units are generated per process()
 	var/reagent_name = REAGENT_ID_WATER //What is shown when reagents are removed, doesn't need to be an actual reagent
 	var/gen_cost = 0.5 //amount of nutrient taken from the host per process tick
 	var/transfer_amount = 30 //amount transferred when using verb
 	var/usable_volume = 120
 
-	var/list/empty_message = list("You feel as though your internal reagent implant is almost empty.")
+	var/list/empty_message = list("You feel as though your internal reagent implant is almost empty.") // ALLOW(instance_list): d: replaced per instance at runtime (1 assignments)
 	var/list/full_message = "You feel as though your internal reagent implant is full."
+	// ALLOW(instance_list): d: replaced per instance at runtime (2 assignments)
 	var/list/emote_descriptor = list("tranfers something") //In format of [x] [emote_descriptor] into [container]
+	// ALLOW(instance_list): c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
 	var/list/self_emote_descriptor = list("transfer") //In format of You [self_emote_descriptor] some [generated_reagent] into [container]
 	var/list/random_emote //An emote the person with the implant may be forced to perform after a prob check, such as [X] meows.
 	var/assigned_proc = /mob/living/carbon/human/proc/use_reagent_implant

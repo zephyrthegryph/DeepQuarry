@@ -64,7 +64,7 @@
 	for(var/id in unlock_ids)
 		unlock_ids[id] = TRUE
 
-// LIFECYCLE: nodes are immutable globals; deleting one is an error.
+// ALLOW(lifecycle): nodes are immutable globals; deleting one is an error.
 /datum/techweb_node/Destroy()
 	// Nodes are immutable global datums registered at startup via SSresearch.
 	// Destroying one at runtime would corrupt every techweb that references this node ID.

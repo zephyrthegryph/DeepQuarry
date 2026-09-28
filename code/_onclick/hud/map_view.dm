@@ -17,7 +17,7 @@ INITIALIZE_IMMEDIATE(/atom/movable/screen/map_view_tg)
 
 REF_OWNED_LIST(/atom/movable/screen/map_view_tg, "popup_plane_masters")
 
-// LIFECYCLE: hides itself from every client still viewing it (client refs are handles).
+// ALLOW(lifecycle): hides itself from every client still viewing it (client refs are handles).
 /atom/movable/screen/map_view_tg/Destroy()
 	for(var/client_ref in viewing_clients)
 		hide_from_client(om_resolve(client_ref))

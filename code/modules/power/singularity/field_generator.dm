@@ -181,7 +181,7 @@
 		return 0
 	return ..()
 
-// LIFECYCLE: its field comes down.
+// ALLOW(lifecycle): its field comes down.
 /obj/machinery/field_generator/Destroy()
 	src.cleanup()
 	. = ..()

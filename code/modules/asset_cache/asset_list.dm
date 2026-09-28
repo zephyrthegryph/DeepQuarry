@@ -627,7 +627,7 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 /datum/asset/simple/icon_states
 	_abstract = /datum/asset/simple/icon_states
 	var/icon
-	var/list/directions = list(SOUTH)
+	var/list/directions = list(SOUTH) // ALLOW(instance_list): d: replaced per instance at runtime (1 assignments)
 	var/frame = 1
 	var/movement_states = FALSE
 

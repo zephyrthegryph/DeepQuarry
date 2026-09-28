@@ -12,7 +12,7 @@
  * Each spec compiles, on first use, into a /datum/interaction/generic
  * singleton, interned by dq_interaction_from_spec() so two types that declare
  * an identical spec (most often an inherited one: a base type's proc,
- * referenced through .proc/name from a shared ancestor) share the same
+ * referenced through PROC_REF(name) from a shared ancestor) share the same
  * instance - zero extra memory beyond the first. Generated interactions plug
  * into the same registry, resolver and entry dispatch as the full form:
  * examine, the Menu, screentips and keybinds all keep working with no extra
@@ -60,7 +60,7 @@
  */
 /proc/dq_interaction_from_spec(owner_type, list/spec)
 	// Keyed by the spec list's own reference identity, not its printed content:
-	// PROC_REF(x) is nameof(.proc/x), a bare proc NAME with no type prefix, so two
+	// PROC_REF(x) expands to nameof() of the proc, a bare proc NAME with no type prefix, so two
 	// unrelated types that happen to name their effect proc the same thing (e.g.
 	// two different "interaction_self" procs) would collide on a string key. A
 	// spec's identity is stable across calls that share it though: get_interactions()

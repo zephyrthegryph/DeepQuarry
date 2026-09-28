@@ -13,7 +13,7 @@
 /// `item_use`/`CONSTRUCTION_ITEM_DELETE`. `qdel(item)` alone would delete it
 /// regardless of whether taking it out is currently allowed (stuck,
 /// handcuffed, ...); this checks first.
-/proc/consume(atom/movable/item, mob/actor)
+/proc/consume(atom/movable/item, mob/actor) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!item || QDELETED(item))
 		return FALSE
 	if(dq_ledger_removal_refusal(item, actor))
@@ -41,7 +41,7 @@
 /// from the original's state: fingerprints, id tags, dir, pixel offsets):
 /// it is then only placed and handed the original's slot and KEEP_WITH
 /// contents, with no constructor args.
-/proc/replace_with(atom/movable/original, path, ...)
+/proc/replace_with(atom/movable/original, path, ...) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!original || QDELETED(original))
 		return null
 	var/atom/holder = original.loc
@@ -166,7 +166,7 @@
 /// own declared drop_policy) to one thing, through the same forced-move
 /// machinery the destroy transaction's contents phase uses (L1,
 /// code/datums/containment/lifecycle.dm).
-/proc/dq_lifecycle_apply_policy_now(atom/movable/holder, datum/om/relation/slot/def, atom/movable/thing, policy, atom/drop)
+/proc/dq_lifecycle_apply_policy_now(atom/movable/holder, datum/om/relation/slot/def, atom/movable/thing, policy, atom/drop) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/flags = LEDGER_MOVE_FORCED
 	if(policy == SLOT_DROP_DELETE)
 		qdel(thing)

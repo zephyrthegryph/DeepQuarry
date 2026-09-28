@@ -308,7 +308,7 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 	id = id_assign++
 	qdel_on_finish = finished_qdel
 
-// LIFECYCLE: a running query halts.
+// ALLOW(lifecycle): a running query halts.
 /datum/SDQL2_query/Destroy()
 	state = SDQL2_STATE_HALTING
 	return ..()
@@ -438,7 +438,7 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 					ENABLE_BITFIELD(options, SDQL2_OPTION_DO_NOT_AUTOGC)
 
 /datum/SDQL2_query/proc/ARun()
-	INVOKE_ASYNC(src, PROC_REF(Run)) // S10b keeps: SDQL Run is a long yielding query
+	INVOKE_ASYNC(src, PROC_REF(Run)) // ALLOW(scheduler): SDQL Run is a long yielding query
 
 /datum/SDQL2_query/proc/Run()
 	if(SDQL2_IS_RUNNING)
@@ -723,7 +723,7 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 			if(++i == sets.len)
 				if(superuser)
 					if(temp.vars.Find(v))
-						temp.vars[v] = SDQL_expression(d, set_list[sets])
+						temp.vars[v] = SDQL_expression(d, set_list[sets]) // ALLOW(api): SDQL UPDATE: admin query sets vars by name
 				else
 					temp.vv_edit_var(v, SDQL_expression(d, set_list[sets]))
 				break
@@ -742,7 +742,7 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 	return superuser? (call(object, procname)(new_args)) : (WrapAdminProcCall(object, procname, new_args))
 
 /datum/SDQL2_query/proc/SDQL_function_async(datum/object, procname, list/arguments, source)
-	set waitfor = FALSE // S10b keeps: SDQL async() runs an arbitrary admin-chosen proc
+	set waitfor = FALSE // ALLOW(scheduler): SDQL async() runs an arbitrary admin-chosen proc
 	return SDQL_function_blocking(object, procname, arguments, source)
 
 /datum/SDQL2_query/proc/SDQL_expression(datum/object, list/expression, start = 1)

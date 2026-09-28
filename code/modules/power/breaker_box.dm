@@ -22,7 +22,7 @@
 	var/RCon_tag = "NO_TAG"
 	var/update_locked = 0
 
-// LIFECYCLE: the cables it switched go with it; RCON consoles rescan.
+// ALLOW(lifecycle): the cables it switched go with it; RCON consoles rescan.
 /obj/machinery/power/breakerbox/Destroy()
 	for(var/obj/structure/cable/C in src.loc)
 		C.breaker_box = null

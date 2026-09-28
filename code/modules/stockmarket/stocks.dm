@@ -15,10 +15,10 @@
 	var/name = "Stock"
 	var/short_name = "STK"
 	var/desc = "A company that does not exist."
-	var/list/values = list()
+	var/list/values = list() // ALLOW(instance_list): d: stock market singleton state
 	var/current_value = 10
 	var/last_value = 10
-	var/list/products = list()
+	var/list/products = list() // ALLOW(instance_list): d: stock market singleton state
 
 	var/performance = 0						// The current performance of the company. Tends itself to 0 when no events happen.
 
@@ -40,7 +40,7 @@
 	var/list/borrow_brokers
 	var/list/shareholders
 	var/list/borrows
-	var/list/events = list()
+	var/list/events = list() // ALLOW(instance_list): d: stock market singleton state
 	var/list/articles
 	var/fluctuation_rate = 15
 	var/fluctuation_counter = 0
@@ -183,7 +183,7 @@
 /datum/stock/proc/stock_tick(elapsed_steps = 1)
 	for (var/B in borrows)
 		var/datum/borrow/borrow = B
-		if (world.time > borrow.grace_expires)
+		if (world.time > borrow.grace_expires) // ALLOW(cooldown): stock lease/offer expiry and market phases
 			modifyAccount(borrow.borrower, -max(current_value * borrow.share_debt, 0), 1)
 			LAZYREMOVE(borrows, borrow)
 			if (borrow.borrower in GLOB.FrozenAccounts)
@@ -191,7 +191,7 @@
 				if (length(GLOB.FrozenAccounts[borrow.borrower]) == 0)
 					GLOB.FrozenAccounts -= borrow.borrower
 			qdel(borrow)
-		else if (world.time > borrow.lease_expires)
+		else if (world.time > borrow.lease_expires) // ALLOW(cooldown): stock lease/offer expiry and market phases
 			if (borrow.borrower in shareholders)
 				var/amt = LAZYACCESS(shareholders, borrow.borrower)
 				if (amt > borrow.share_debt)
@@ -209,7 +209,7 @@
 		return
 	for (var/B in borrow_brokers)
 		var/datum/borrow/borrow = B
-		if (borrow.offer_expires < world.time)
+		if (borrow.offer_expires < world.time) // ALLOW(cooldown): stock lease/offer expiry and market phases
 			LAZYREMOVE(borrow_brokers, borrow)
 			qdel(borrow)
 	if (prob(100 * (1 - (0.95 ** elapsed_steps))))

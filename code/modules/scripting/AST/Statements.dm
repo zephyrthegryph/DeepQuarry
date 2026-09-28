@@ -14,7 +14,7 @@
 /datum/node/statement/FunctionCall
 	var/func_name
 	var/datum/node/identifier/object
-	var/list/parameters=list()
+	var/list/parameters=list() // ALLOW(instance_list): d: script AST node state
 
 /*
 	Class: FunctionDefinition
@@ -23,7 +23,7 @@
 //
 /datum/node/statement/FunctionDefinition
 	var/func_name
-	var/list/parameters=list()
+	var/list/parameters=list() // ALLOW(instance_list): d: script AST node state
 	var/datum/node/BlockDefinition/FunctionBlock/block
 
 /*

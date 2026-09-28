@@ -8,7 +8,7 @@ memory, on /atom ~0.5 MB and on /obj or /obj/item ~0.2-0.45 MB.
 This lint counts the procs and verbs *declared* (proc/name, verb/name, not
 overrides) on the base types below, across the files deepquarry.dme includes,
 and fails if a type's count rises above its ceiling in
-tools/ci/base_proc_allowlist.txt. Rarely used procs (debug, admin, vv, legacy
+tools/ci/base_proc_baseline.txt. Rarely used procs (debug, admin, vv, legacy
 shims) belong in global procs or helper datums instead.
 
 Usage:
@@ -20,9 +20,12 @@ import os
 import re
 import sys
 
+sys.path.insert(0, os.path.dirname(__file__))
+from allow_annotations import allowed  # noqa: E402
+
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 DME = os.path.join(ROOT, "deepquarry.dme")
-ALLOWLIST = os.path.join(ROOT, "tools", "ci", "base_proc_allowlist.txt")
+BASELINE = os.path.join(ROOT, "tools", "ci", "base_proc_baseline.txt")
 BASE_TYPES = ["/datum", "/atom", "/atom/movable", "/obj", "/obj/item", "/mob"]
 
 INCLUDE = re.compile(r'^#include "(.+\.dm)"')
@@ -32,7 +35,8 @@ INCLUDE = re.compile(r'^#include "(.+\.dm)"')
 # materials, construction, constraints, surgery, combat, identification). Only
 # admin, debug, logging, text/formatting helpers and one-off utilities may leave
 # the base types as global procs; a global proc taking a base-type object first
-# ("/proc/x(atom/source, ...)") whose name or file matches these is an error.
+# ("/proc/x(atom/source, ...)") whose name or file matches these is an error, unless
+# it carries `// ALLOW(base_proc): <reason>` (tools/ci/allow_annotations.py).
 PROTECTED_PREFIXES = (
     "slot_", "ledger_", "lifecycle_", "dq_lifecycle_", "registry_", "join_registries", "leave_registries",
     "status_", "state_", "om_", "is_lifecycle_", "latent_",
@@ -67,29 +71,23 @@ PROTECTED_PATHS = (
 MOVED_API = re.compile(r"^/proc/(\w+)\((datum|atom|atom/movable|obj|obj/item|mob)/\w+")
 
 
-PROTECTED_ALLOWLIST = os.path.join(ROOT, "tools", "ci", "base_proc_protected_allowlist.txt")
-
-
 def protected_violations():
-    allowed = set()
-    if os.path.exists(PROTECTED_ALLOWLIST):
-        with open(PROTECTED_ALLOWLIST, encoding="utf-8") as f:
-            allowed = {l.strip() for l in f if l.strip() and not l.startswith("#")}
     bad = []
     for fn in dme_files():
         if not os.path.exists(fn):
             continue
         rel = os.path.relpath(fn, ROOT).replace("\\", "/")
         with open(fn, encoding="utf-8", errors="replace") as f:
-            for i, line in enumerate(f, 1):
-                m = MOVED_API.match(line)
-                if not m:
-                    continue
-                name = m.group(1)
-                if name in allowed:
-                    continue
-                if name.startswith(PROTECTED_PREFIXES) or rel.startswith(PROTECTED_PATHS):
-                    bad.append(f"{rel}:{i}: /proc/{name} takes a base-type object; keep this API on the type")
+            lines = f.read().split("\n")
+        for i, line in enumerate(lines, 1):
+            m = MOVED_API.match(line)
+            if not m:
+                continue
+            name = m.group(1)
+            if allowed(lines, i, "base_proc"):
+                continue
+            if name.startswith(PROTECTED_PREFIXES) or rel.startswith(PROTECTED_PATHS):
+                bad.append(f"{rel}:{i}: /proc/{name} takes a base-type object; keep this API on the type")
     return bad
 PATH_LINE = re.compile(r"^(/?[A-Za-z_][\w/]*)\s*(\(|$)")
 
@@ -173,7 +171,7 @@ def scan():
 
 def read_ceilings():
     ceil = {}
-    with open(ALLOWLIST, encoding="utf-8") as f:
+    with open(BASELINE, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if line and not line.startswith("#"):
@@ -191,12 +189,12 @@ def main():
                 print(f"    {name}")
         return 0
     if "--update" in sys.argv:
-        with open(ALLOWLIST, "w", encoding="utf-8", newline="\n") as f:
+        with open(BASELINE, "w", encoding="utf-8", newline="\n") as f:
             f.write("# Ceilings for tools/ci/base_proc_lint.py: procs and verbs declared on each\n")
             f.write("# base type (doc/rewrite/init_and_turfs.md section 0.5). Only ever lower these.\n")
             for t in BASE_TYPES:
                 f.write(f"{t} {len(found[t])}\n")
-        print("Updated", ALLOWLIST)
+        print("Updated", BASELINE)
         return 0
     ceil = read_ceilings()
     bad = False

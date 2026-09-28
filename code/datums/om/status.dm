@@ -46,7 +46,7 @@
 			if(!isnum(row[key]) || row[key] < 0)
 				reg.error("status [id]: [key] must be a number >= 0")
 				continue
-			vars[key] = row[key]
+			vars[key] = row[key] // ALLOW(api): status rows copied onto a status datum from om_library_effects()
 	if(unit <= 0 || rate <= 0)
 		reg.error("status [id]: unit and rate must be above 0")
 		unit = max(unit, 1)
@@ -112,7 +112,7 @@
 	var/left = om_status_remaining(rec, def)
 	return left ? CEILING(left * status_rate(def) / def.unit, 1) : 0
 
-/proc/om_status_remaining(datum/om/rec/rec, datum/om/effect/status/def)
+/proc/om_status_remaining(datum/om/rec/rec, datum/om/effect/status/def) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/latest = om_contrib_latest_expiry(rec, def.idx)
 	return latest ? max(latest - rec.sched.now(), 0) : 0
 

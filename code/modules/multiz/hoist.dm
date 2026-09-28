@@ -113,7 +113,7 @@
 
 REF_OWNED(/obj/structure/hoist, "source_hook")
 
-// LIFECYCLE: whatever hangs from the hoist is released.
+// ALLOW(lifecycle): whatever hangs from the hoist is released.
 /obj/structure/hoist/Destroy()
 	if(hoistee)
 		release_hoistee()

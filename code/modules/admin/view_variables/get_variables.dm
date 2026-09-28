@@ -208,7 +208,7 @@
 				return
 
 		if(VV_FILE)
-			.["value"] = input(usr, "Pick file:", "File") as null|file // S10 keeps: file uploads need the BYOND file dialog
+			.["value"] = input(usr, "Pick file:", "File") as null|file // ALLOW(scheduler): file uploads need the BYOND file dialog
 			if(.["value"] == null)
 				.["class"] = null
 				return

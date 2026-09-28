@@ -136,7 +136,7 @@
 	src.percent = percent
 	src.flat = flat
 
-// LIFECYCLE: armor datums are interned and shared; refuse deletion unless forced.
+// ALLOW(lifecycle): armor datums are interned and shared; refuse deletion unless forced.
 /datum/armor/Destroy(force)
 	if(!force)
 		// Interned and shared; nothing may delete one.

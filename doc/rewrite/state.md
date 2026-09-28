@@ -31,7 +31,7 @@ BYOND already separates saved from unsaved vars: `issaved()` is false for `tmp`,
 The API is `code/datums/state/schema.dm`. Built-in vars are skipped except a fixed appearance set (`STATE_BUILTIN_SAVED`: name, desc, icon, icon_state, dir, color, pixel offsets, …).
 
 - **Hygiene pass.** Caches, references and runtime handles become `tmp`.
-- **Reference lint (CI).** A typed var declaration that holds an object (`var/datum/…`, `var/obj/…`, `var/mob/…`, `var/list` of datums) must be `tmp` or have a codec. `tools/ci/state_schema_lint.py` parses the declarations and checks every saved var of each latent-safe type and its ancestors. Relationships that should keep an object real are listed, with a reason, in `tools/ci/state_ref_allowlist.txt`. It is what stops a new var from quietly breaking serialization.
+- **Reference lint (CI).** A typed var declaration that holds an object (`var/datum/…`, `var/obj/…`, `var/mob/…`, `var/list` of datums) must be `tmp` or have a codec. `tools/ci/state_schema_lint.py` parses the declarations and checks every saved var of each latent-safe type and its ancestors. Relationships that should keep an object real carry `// ALLOW(state_ref): <reason>` on the var declaration. It is what stops a new var from quietly breaking serialization.
 - **Latent-safe types** set `latent_safe = TRUE` (`code/datums/state/latent_safe_types.dm`), and subtypes inherit it.
 - **Components** that hold per-instance state serialize through the same codecs, as the component type plus its state. A component declares `state_mode`: saved, derived (dropped and rebuilt), or refused (the default). The sparse-var components (`code/datums/components/sparse_vars/`: forensics, alt appearance, …) come first.
 
@@ -96,7 +96,7 @@ Ad-hoc global lists (radios, PDAs and the messenger, trackers, cameras, machine 
 - An atom is still registered while its own `Destroy()` body runs (it leaves in `/atom/Destroy()`), so a Destroy() that scans its own registry must skip `src`. Other datums leave earlier, in the destroy transaction before `Destroy()`.
 - Any datum can be a member (migration track 1c). A datum that isn't an atom calls `join_registries()` from its `New()`, and the destroy transaction drops it (`dq_lifecycle_leave_registries()`).
 - Conditional registries (`REGISTRY_DECLARE_CONDITIONAL`) hold state-driven membership: living/dead mobs, players, listening objects, switched-on jammers, ghost-joinable pods. The declared type may join with `registry_join(id, x)` / `registry_leave()` / `registry_set()`; `registry_has()` is O(1). Deletion and dematerialization drop members by themselves, so no Destroy() removes anything.
-- `tools/ci/registry_lint.py` refuses new self-adding global lists; `tools/ci/registry_allowlist.txt` lists what is left and why (a packet pool, the heat core's index-stable slot table, and clients, which aren't datums).
+- `tools/ci/registry_lint.py` refuses new self-adding global lists; what is left carries `// ALLOW(registry): <reason>` at the site (a packet pool, the heat core's index-stable slot table, and clients, which aren't datums).
 - Radios, PDAs, GPS units, tracking implants and ID cards (including guest passes) now register only in `on_materialize()`, and the sandbox test and lifecycle lint cover them (`dq_lifecycle_clean_types`). None is marked latent-safe yet: their state has not been through the serializer round trip. Cameras register in `on_materialize()` too, but `/obj/machinery` still starts processing in `Initialize()`.
 
 ## 8. Signals

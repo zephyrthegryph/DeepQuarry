@@ -12,7 +12,7 @@
 // a before_* event is an error, reported loudly and answered with a veto,
 // never silently dropped.
 
-/proc/om_emit(datum/E, datum/om/event/event)
+/proc/om_emit(datum/E, datum/om/event/event) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/rec/rec = E?.om_rec
 	if(!rec || rec.torn_down)
 		return null
@@ -60,7 +60,7 @@
 	sched.emit_depth = 0
 	return null
 
-/proc/om_deliver(datum/om/rec/rec, datum/om/event/event, veto)
+/proc/om_deliver(datum/om/rec/rec, datum/om/event/event, veto) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/registry/reg = om_registry()
 	var/e = reg.event_idx[event.type]
 	var/list/flags = e ? reg.event_handlers[e] : null

@@ -23,7 +23,7 @@
 
 //	log_is_important = 0 // If this reaction should be considered important for logging. Important recipes message admins when mixed, non-important ones just log to file.
 
-	var/list/temp_range = list(T0C, T20C)
+	var/list/temp_range = list(T0C, T20C) // ALLOW(instance_list): c: read-only per-subtype constant table (54 subtype overrides); a getter would share it, not worth it on a rare type
 	var/temp_shift = 0 // How much the temperature changes when the reaction occurs.
 
 	var/require_xgm_gas = null

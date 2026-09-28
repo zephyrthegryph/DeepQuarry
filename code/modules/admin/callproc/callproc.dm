@@ -9,7 +9,7 @@ GLOBAL_PROTECT(AdminProcCallHandler)
 	name = "ProcCall Handler"
 	desc = "If you are seeing this, tell a coder."
 
-	var/list/callers = list()
+	var/list/callers = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 
 	invisibility = INVISIBILITY_ABSTRACT
 	density = FALSE
@@ -46,7 +46,7 @@ GLOBAL_PROTECT(AdminProcCallHandler)
 	return FALSE
 
 // Shit will break if this is allowed to be deleted
-// LIFECYCLE: the global proc-call handler refuses deletion unless forced.
+// ALLOW(lifecycle): the global proc-call handler refuses deletion unless forced.
 /mob/proccall_handler/Destroy(force)
 	if(GLOB.AdminProcCallHandler != src)
 		return ..()

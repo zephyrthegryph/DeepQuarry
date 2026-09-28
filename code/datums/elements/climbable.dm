@@ -229,7 +229,7 @@
 	SEND_SIGNAL(src, COMSIG_CLIMBABLE_START_CLIMB, usr)
 
 /// Checks if something is blocking our climb destination, ignores climbable objects
-/proc/can_climb_turf(obj/climbed_thing)
+/proc/can_climb_turf(obj/climbed_thing) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/turf/T = get_turf(climbed_thing)
 	if(!T || !istype(T))
 		return "empty void"
@@ -241,7 +241,7 @@
 	return 0
 
 /// Check if the destination turf for vaulting is blocked by something. Extremely similar to above.
-/proc/can_climb_neighbor_turf(obj/climbed_thing)
+/proc/can_climb_neighbor_turf(obj/climbed_thing) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/turf/T = get_step(climbed_thing, climbed_thing.dir)
 	if(!T || !istype(T))
 		return 0

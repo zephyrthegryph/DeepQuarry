@@ -27,11 +27,11 @@ GLOBAL_LIST_INIT(dq_blood_color_by_type, list(
 
 // ---- Helpers (global procs to avoid /atom proc-table bloat) ----
 
-/proc/dq_get_was_bloodied(atom/a)
+/proc/dq_get_was_bloodied(atom/a) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/forensics_state/c = a.GetComponent(/datum/component/forensics_state)
 	return c?.was_bloodied
 
-/proc/dq_set_was_bloodied(atom/a, v)
+/proc/dq_set_was_bloodied(atom/a, v) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/forensics_state/c = a.GetComponent(/datum/component/forensics_state)
 	if(!c)
 		c = a.AddComponent(/datum/component/forensics_state)
@@ -39,33 +39,33 @@ GLOBAL_LIST_INIT(dq_blood_color_by_type, list(
 
 GLOBAL_LIST_EMPTY(_dq_blood_color_resolved)
 
-/proc/dq_get_blood_color(atom/a)
+/proc/dq_get_blood_color(atom/a) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/forensics_state/c = a.GetComponent(/datum/component/forensics_state)
 	if(c && c.blood_color != null)
 		return c.blood_color
 	return _dq_resolve_typed_default(a.type, GLOB.dq_blood_color_by_type, GLOB._dq_blood_color_resolved, null)
 
-/proc/dq_set_blood_color(atom/a, color)
+/proc/dq_set_blood_color(atom/a, color) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/forensics_state/c = a.GetComponent(/datum/component/forensics_state)
 	if(!c)
 		c = a.AddComponent(/datum/component/forensics_state)
 	c.blood_color = color
 
-/proc/dq_get_forensic_data(atom/a)
+/proc/dq_get_forensic_data(atom/a) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/forensics_state/c = a.GetComponent(/datum/component/forensics_state)
 	return c?.forensic_data
 
-/proc/dq_set_forensic_data(atom/a, datum/forensics_crime/fd)
+/proc/dq_set_forensic_data(atom/a, datum/forensics_crime/fd) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/forensics_state/c = a.GetComponent(/datum/component/forensics_state)
 	if(!c)
 		c = a.AddComponent(/datum/component/forensics_state)
 	c.forensic_data = fd
 
-/proc/dq_get_fluorescent(atom/a)
+/proc/dq_get_fluorescent(atom/a) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/forensics_state/c = a.GetComponent(/datum/component/forensics_state)
 	return c?.fluorescent
 
-/proc/dq_set_fluorescent(atom/a, v)
+/proc/dq_set_fluorescent(atom/a, v) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/forensics_state/c = a.GetComponent(/datum/component/forensics_state)
 	if(!c)
 		c = a.AddComponent(/datum/component/forensics_state)

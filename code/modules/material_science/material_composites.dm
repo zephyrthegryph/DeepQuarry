@@ -42,7 +42,7 @@
 	var/material_corrosion_revision = -1
 	var/material_corrosion_cache = 0
 
-/proc/material_gas_corrosion_load(datum/gas_mixture/mixture)
+/proc/material_gas_corrosion_load(datum/gas_mixture/mixture) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!mixture)
 		return 0
 	var/revision = mixture.revision()

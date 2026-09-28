@@ -76,6 +76,7 @@
 
 	// The languages the species can't speak without an assisted organ.
 	// This list is a guess at things that no one other than the parent species should be able to speak
+	// ALLOW(instance_list): kept: shared per species type in share_type_tables(); writers assign a new list
 	var/list/assisted_langs = list(LANGUAGE_EAL, LANGUAGE_SKRELLIAN, LANGUAGE_ROOTLOCAL, LANGUAGE_ROOTGLOBAL, LANGUAGE_VOX, LANGUAGE_PROMETHEAN, LANGUAGE_HIVEMIND) // Added Hivemind.
 
 	//Soundy emotey things.
@@ -106,6 +107,7 @@
 	/// Body plan a species' members get (set_species swaps the body when it differs).
 	var/body_plan = /datum/body/humanoid
 	var/total_health = 100								// How much damage the mob can take before entering crit.
+	// ALLOW(instance_list): kept: shared per species type in share_type_tables(); give_numbing_bite() assigns a new list
 	var/list/unarmed_types = list(							// Possible unarmed attacks that the mob will use in combat,
 		/datum/unarmed_attack,
 		/datum/unarmed_attack/bite
@@ -171,7 +173,7 @@
 	var/breath_cold_level_3 = 100							// Cold gas damage level 3 below this point.
 
 	var/cold_discomfort_level = 285							// Aesthetic messages about feeling chilly.
-	var/list/cold_discomfort_strings = list(
+	var/list/cold_discomfort_strings = list( // ALLOW(instance_list): kept: shared per species type in share_type_tables(); writers assign a new list
 		"You feel chilly.",
 		"You shiver suddenly.",
 		"Your chilly flesh stands out in goosebumps."
@@ -187,7 +189,7 @@
 	var/breath_heat_level_3 = 1250							// Heat gas damage level 3 below this point.
 
 	var/heat_discomfort_level = 315							// Aesthetic messages about feeling warm.
-	var/list/heat_discomfort_strings = list(
+	var/list/heat_discomfort_strings = list( // ALLOW(instance_list): kept: shared per species type in share_type_tables(); writers assign a new list
 		"You feel sweat drip down your neck.",
 		"You feel uncomfortably warm.",
 		"Your skin prickles in the heat."
@@ -267,6 +269,7 @@
 	var/list/default_emotes
 
 	// Determines the organs that the species spawns with and
+	// ALLOW(instance_list): kept: shared per species type in share_type_tables(); writers assign a new list
 	var/list/has_organ = list(								// which required-organ checks are conducted.
 		O_HEART =		/obj/item/organ/internal/heart,
 		O_LUNGS =		/obj/item/organ/internal/lungs,
@@ -283,7 +286,7 @@
 	var/vision_organ										// If set, this organ is required for vision. Defaults to "eyes" if the species has them.
 	var/dispersed_eyes            // If set, the species will be affected by flashbangs regardless if they have eyes or not, as they see in large areas.
 
-	var/list/has_limbs = list(
+	var/list/has_limbs = list( // ALLOW(instance_list): d: nested per-limb data ("descriptor", "has_children") is written per mob copy during organ creation (body/medical code)
 		BP_TORSO =	list("path" = /obj/item/organ/external/chest),
 		BP_GROIN =	list("path" = /obj/item/organ/external/groin),
 		BP_HEAD =	 list("path" = /obj/item/organ/external/head),
@@ -297,7 +300,7 @@
 		BP_R_FOOT = list("path" = /obj/item/organ/external/foot/right)
 		)
 
-	var/list/genders = list(MALE, FEMALE)
+	var/list/genders = list(MALE, FEMALE) // ALLOW(instance_list): kept: shared per species type in share_type_tables(); writers assign a new list
 	var/ambiguous_genders = FALSE // If true, people examining a member of this species whom are not also the same species will see them as gender neutral.	Because aliens.
 
 	// Bump vars
@@ -346,7 +349,7 @@
 	var/bloodsucker = FALSE // Allows safely getting nutrition from blood.
 	var/bloodsucker_controlmode = "always loud" //Allows selecting between bloodsucker control modes. Always Loud corresponds to original implementation.
 
-	var/list/traits = list()
+	var/list/traits = list() // ALLOW(instance_list): d: per-mob trait selection; produceCopy() assigns it and genes Add/Remove in place
 	//Vars that need to be copied when producing a copy of species.
 	var/static/list/copy_vars = list("base_species", "icobase", "deform", "tail", "tail_animation", "icobase_tail", "color_mult", "primitive_form", "appearance_flags", "flesh_color", "base_color", "blood_mask", "damage_mask", "damage_overlays", "move_trail", "has_floating_eyes")
 	var/trait_points = 0
@@ -416,7 +419,7 @@
 	var/list/shared = tables_by_type[type]
 	if(shared)
 		for(var/name in shared)
-			vars[name] = shared[name]
+			vars[name] = shared[name] // ALLOW(api): species copy and shared-list interning
 		return
 	shared = list()
 	for(var/name in shared_table_vars())
@@ -879,7 +882,7 @@
 		//if(!(i in S.vars)) // This check SOUNDS like a good idea, until you realize it loops over every var in base datum + species datum + byond builtin vars for EACH var in the whitelist. All the vars in whitelist are in the base species datum anyway, so this is unneeded.
 		//	continue
 		if(S.vars[i] != vars[i] && !islist(vars[i])) //If vars are same, no point in copying.
-			S.vars[i] = vars[i]
+			S.vars[i] = vars[i] // ALLOW(api): species copy and shared-list interning
 
 /datum/species/get_bodytype()
 	return base_species

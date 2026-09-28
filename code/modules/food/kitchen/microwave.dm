@@ -87,7 +87,7 @@
 
 REF_OWNED(/obj/machinery/microwave, "soundloop")
 
-// LIFECYCLE: its contents are disposed and a pAI inside is ejected.
+// ALLOW(lifecycle): its contents are disposed and a pAI inside is ejected.
 /obj/machinery/microwave/Destroy()
 	dispose(FALSE)
 	if(paicard)

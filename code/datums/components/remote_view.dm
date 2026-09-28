@@ -72,7 +72,7 @@
 	host_mob.refresh_hud()
 	settings.attached_to_mob(src, host_mob)
 
-// LIFECYCLE: the viewer's eye, view size, hud and vision are restored.
+// ALLOW(lifecycle): the viewer's eye, view size, hud and vision are restored.
 /datum/component/remote_view/Destroy(force)
 	. = ..()
 	// Basic handling
@@ -323,7 +323,7 @@
 		host_mob.visible_message(span_filter_notice("[host_mob] peers through the [host_item.zoomdevicename ? "[host_item.zoomdevicename] of the [host_item.name]" : "[host_item.name]"]."))
 	host_mob.refresh_vision()
 
-// LIFECYCLE: the zooming item un-zooms and the viewer's client offset resets.
+// ALLOW(lifecycle): the zooming item un-zooms and the viewer's client offset resets.
 /datum/component/remote_view/item_zoom/Destroy(force)
 	// Feedback
 	if(show_message)
@@ -385,7 +385,7 @@
 	LAZYDISTINCTADD(viewers, om_handle(host_mob))
 	RegisterSignal(view_coordinator, COMSIG_REMOTE_VIEW_CLEAR, PROC_REF(handle_forced_endview))
 
-// LIFECYCLE: the view coordinator stops showing to this viewer.
+// ALLOW(lifecycle): the view coordinator stops showing to this viewer.
 /datum/component/remote_view/viewer_managed/Destroy(force)
 	view_coordinator.unlook(host_mob, FALSE)
 	LAZYREMOVE(viewers, om_handle(host_mob))
@@ -492,7 +492,7 @@
 #undef MAX_RECURSIVE
 
 /// Decouple the view to the turf on drop, or we'll be stuck on the mob that dropped us forever.
-/proc/remote_view_decouple(mob/cache_mob, turf/release_turf)
+/proc/remote_view_decouple(mob/cache_mob, turf/release_turf) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!cache_mob.client)
 		cache_mob.reset_perspective()
 		return

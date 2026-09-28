@@ -16,7 +16,7 @@
 	 * A list of turfs occupied by the movables this element is attached to.
 	 * Needed so it stops listening the turf's signals ONLY when it has no movable with the element.
 	 */
-	var/list/occupied_turfs = list()
+	var/list/occupied_turfs = list() // ALLOW(instance_list): d: element singleton; nested per-turf lists edited in place
 
 /datum/element/footstep_override/Attach(atom/movable/target, clawfootstep = FOOTSTEP_HARD_CLAW, barefootstep = FOOTSTEP_HARD_BAREFOOT, heavyfootstep = FOOTSTEP_GENERIC_HEAVY, footstep = FOOTSTEP_FLOOR, priority = STEP_SOUND_NO_PRIORITY)
 	. = ..()

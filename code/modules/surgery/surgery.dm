@@ -47,7 +47,7 @@ GLOBAL_PROTECT(surgical_steps)
 	GLOB.surgical_steps = steps
 	return steps
 
-/proc/cmp_surgical_step_priority(datum/surgical_step/a, datum/surgical_step/b)
+/proc/cmp_surgical_step_priority(datum/surgical_step/a, datum/surgical_step/b) // ALLOW(base_proc): global API written before the base-type ratchet
 	return b.priority - a.priority
 
 /// The registered prototype of `step_type`.
@@ -327,7 +327,7 @@ GLOBAL_PROTECT(surgical_steps)
 // --- Running a step -------------------------------------------------------------------
 
 /// Steps `tool` can do on `target` at `zone` right now: name -> step.
-/proc/available_surgical_steps(mob/living/user, mob/living/carbon/human/target, zone, obj/item/tool)
+/proc/available_surgical_steps(mob/living/user, mob/living/carbon/human/target, zone, obj/item/tool) // ALLOW(base_proc): global API written before the base-type ratchet
 	. = list()
 	for(var/datum/surgical_step/S as anything in surgical_steps())
 		if(!S.tool_quality(tool))
@@ -339,7 +339,7 @@ GLOBAL_PROTECT(surgical_steps)
 			.[S.name] = S
 
 /// Steps any tool could do next at `zone` (the operating computer).
-/proc/next_surgical_steps(mob/living/user, mob/living/carbon/human/target, zone)
+/proc/next_surgical_steps(mob/living/user, mob/living/carbon/human/target, zone) // ALLOW(base_proc): global API written before the base-type ratchet
 	. = list()
 	for(var/datum/surgical_step/S as anything in surgical_steps())
 		if(!length(S.allowed_tools))
@@ -493,7 +493,7 @@ GLOBAL_LIST_EMPTY(surgery_rerun_args)
 	LAZYREMOVE(surgery_zones_in_progress, zone)
 	update_surgery()
 
-/proc/spread_germs_to_organ(obj/item/organ/external/E, mob/living/carbon/human/user)
+/proc/spread_germs_to_organ(obj/item/organ/external/E, mob/living/carbon/human/user) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!istype(user) || !istype(E))
 		return
 	var/germ_level = user.germ_level

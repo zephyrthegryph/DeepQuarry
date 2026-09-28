@@ -42,14 +42,14 @@ GLOBAL_LIST_EMPTY(damage_packet_pool)
 	for(var/i in 1 to DAMAGE_KIND_COUNT)
 		amounts[i] = 0
 
-// LIFECYCLE: packets are pooled; refuse deletion unless forced.
+// ALLOW(lifecycle): packets are pooled; refuse deletion unless forced.
 /datum/damage_packet/Destroy(force)
 	if(!force)
 		return QDEL_HINT_LETMELIVE
 	return ..()
 
 /// Take a clean packet from the pool.
-/proc/damage_packet(atom/source, atom/attacker, atom/weapon, zone, flags = NONE, penetration = 0, direction = 0, armor_flag = null)
+/proc/damage_packet(atom/source, atom/attacker, atom/weapon, zone, flags = NONE, penetration = 0, direction = 0, armor_flag = null) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/damage_packet/packet
 	var/list/pool = GLOB.damage_packet_pool
 	if(length(pool))
@@ -83,7 +83,7 @@ GLOBAL_LIST_EMPTY(damage_packet_pool)
 	weapon = null
 	flags = NONE
 	armor_flag = null
-	GLOB.damage_packet_pool += src
+	GLOB.damage_packet_pool += src // ALLOW(registry): object pool of reusable packets, not a set of live instances
 
 /datum/damage_packet/proc/add(kind, amount)
 	if(amount > 0 && kind >= 1 && kind <= DAMAGE_KIND_COUNT)
@@ -357,7 +357,7 @@ GLOBAL_LIST_EMPTY(damage_packet_pool)
 
 /// The kind of wound a generic (usually animal) attack from `user` leaves:
 /// simple mobs declare their melee kind; anything else is a blunt blow.
-/proc/generic_attack_kind(mob/user)
+/proc/generic_attack_kind(mob/user) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/mob/living/simple_mob/S = user
 	if(istype(S))
 		return S.attack_injury_kind

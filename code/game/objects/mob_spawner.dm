@@ -8,7 +8,7 @@
 	COOLDOWN_DECLARE(spawn_cooldown)
 	var/spawn_delay = 10 MINUTES
 
-	var/list/spawn_types = list(
+	var/list/spawn_types = list( // ALLOW(instance_list): c: read-only per-subtype constant table (10 subtype overrides); a getter would share it, not worth it on a rare type
 	/mob/living/simple_mob/animal/passive/dog/corgi = 100,
 	/mob/living/simple_mob/animal/passive/cat = 25
 	)
@@ -27,7 +27,7 @@
 	PERIODIC_START(src, PERIODIC_SLOW)
 	COOLDOWN_START(src, spawn_cooldown, spawn_delay + rand(0, spawn_delay))
 
-// LIFECYCLE: its spawned mobs lose their nest.
+// ALLOW(lifecycle): its spawned mobs lose their nest.
 /obj/structure/mob_spawner/Destroy()
 	for(var/spawned in spawned_mobs)
 		if(istype(spawned, /mob/living))

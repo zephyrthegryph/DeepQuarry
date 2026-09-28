@@ -802,6 +802,7 @@
 	var/last_message = 0
 	var/pokephrase = "Uww!"
 	var/opened = FALSE	// has this been slit open? this will allow you to store an object in a plushie.
+	// ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 	var/obj/item/stored_item	// Note: Stored items can't be bigger than the plushie itself.
 	var/adjusted_name // Our modified name. Used so people don't do funny business with us!
 
@@ -1258,7 +1259,7 @@
 	icon_state = "eight-ball"
 	var/use_action = "shakes the ball"
 	COOLDOWN_DECLARE(cooldown)
-	var/list/possible_answers = list("Definitely.", "All signs point to yes.", "Most likely.", "Yes.", "Ask again later.", "Better not tell you now.", "Future unclear.", "Maybe.", "Doubtful.", "No.", "Don't count on it.", "Never.")
+	var/list/possible_answers = list("Definitely.", "All signs point to yes.", "Most likely.", "Yes.", "Ask again later.", "Better not tell you now.", "Future unclear.", "Maybe.", "Doubtful.", "No.", "Don't count on it.", "Never.") // ALLOW(instance_list): c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
 
 /obj/item/toy/eight_ball/attack_self(mob/user)
 	. = ..(user)
@@ -2173,7 +2174,7 @@
 	icon_state = "gibber"
 	attack_verb = list("grinded", "gibbed")
 	var/cooldown = 0
-	var/obj/stored_minature = null
+	var/obj/stored_minature = null // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 
 REF_OWNED(/obj/item/toy/minigibber, "stored_minature")
 

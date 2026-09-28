@@ -27,7 +27,7 @@
 	// Link handheld
 	make_handheld()
 
-// LIFECYCLE: the tethered handheld is recalled and the host loses its toggle verb.
+// ALLOW(lifecycle): the tethered handheld is recalled and the host loses its toggle verb.
 /datum/component/tethered_item/Destroy()
 	var/obj/item/host_item = parent
 	host_item.verbs -= /obj/item/proc/toggle_tethered_handheld

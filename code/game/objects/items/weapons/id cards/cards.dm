@@ -17,7 +17,7 @@
 	slot_flags = SLOT_EARS
 	var/associated_account_number = 0
 
-	var/list/initial_sprite_stack = list("")
+	var/list/initial_sprite_stack = list("") // ALLOW(instance_list): d: replaced per instance at runtime (2 assignments)
 	var/base_icon = 'icons/obj/card_new.dmi'
 	var/list/sprite_stack
 
@@ -168,9 +168,9 @@
 	w_class = ITEMSIZE_TINY
 	slot_flags = SLOT_EARS
 
-	var/list/initial_sprite_stack = list("")
+	var/list/initial_sprite_stack = list("") // ALLOW(instance_list): d: replaced per instance at runtime (2 assignments)
 	var/base_icon = 'icons/obj/card_fluff.dmi'
-	var/list/sprite_stack = list("")
+	var/list/sprite_stack = list("") // ALLOW(instance_list): d: edited in place per instance (22 writers)
 
 	drop_sound = 'sound/items/drop/card.ogg'
 	pickup_sound = 'sound/items/pickup/card.ogg'
@@ -264,7 +264,7 @@
 	update_icon()
 
 /obj/item/card/id/synthetic/borg
-	var/mob/living/silicon/robot/robot_owner
+	var/mob/living/silicon/robot/robot_owner // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 	var/last_robot_loc
 
 /obj/item/card/id/synthetic/borg/Initialize(mapload)

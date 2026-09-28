@@ -27,7 +27,7 @@ GLOBAL_LIST_EMPTY(_dq_catalogue_delay_resolved)
 		return c.delay
 	return _dq_resolve_typed_default(type, GLOB.dq_catalogue_delay_by_type, GLOB._dq_catalogue_delay_resolved, 5 SECONDS)
 
-/proc/dq_set_catalogue_delay(atom/a, delay)
+/proc/dq_set_catalogue_delay(atom/a, delay) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/catalogue_delay_override/c = a.GetComponent(/datum/component/catalogue_delay_override)
 	if(!c)
 		a.AddComponent(/datum/component/catalogue_delay_override, delay)

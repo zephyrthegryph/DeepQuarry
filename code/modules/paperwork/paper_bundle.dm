@@ -15,6 +15,7 @@
 	drop_sound = 'sound/items/drop/paper.ogg'
 	pickup_sound = 'sound/items/pickup/paper.ogg'
 	var/page = 1    // current page
+	// ALLOW(instance_list): d: a bundle holds pages
 	var/list/pages = list()  // Ordered list of pages as they are to be displayed. Can be different order than src.contents.
 
 

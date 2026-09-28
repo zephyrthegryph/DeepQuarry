@@ -208,7 +208,7 @@ SUBSYSTEM_DEF(machines)
 /// Wakes any /obj/machinery hibernating on a gas watch (an atom-agnostic force-wake, used by
 /// invalidate_gas_dependencies()-style callers whose device might not even be asleep, and by
 /// tests): if it has no watch armed it's already running and this is a no-op.
-/proc/om_watch_invalidate(datum/entity)
+/proc/om_watch_invalidate(datum/entity) // ALLOW(base_proc): global API written before the base-type ratchet
 	om_watch_fire_all(entity)
 
 /datum/controller/subsystem/machines/proc/hibernate_airlock_sensor(obj/machinery/airlock_sensor/S)

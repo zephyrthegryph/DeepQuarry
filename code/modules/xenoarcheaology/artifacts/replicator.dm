@@ -15,8 +15,8 @@
 
 	var/list/construction
 	var/list/tgui_construction
-	var/list/spawning_types = list()
-	var/list/stored_materials = list()
+	var/list/spawning_types = list() // ALLOW(instance_list): d: filled in New() with the replicator's output table
+	var/list/stored_materials = list() // ALLOW(instance_list): d: consumed with pop() in step with spawning_types
 
 	var/fail_message
 
@@ -215,7 +215,7 @@
 	var/quantity = 18 //This needs to be replaced with a GUI that lets you select the item you want.
 	var/list/created_mobs
 	var/list/tgui_vore_selection
-	var/list/viable_mobs = list(
+	var/list/viable_mobs = list( // ALLOW(instance_list): d: edited in place per instance (1 writers)
 	/mob/living/simple_mob/animal/passive/fox,
 	/mob/living/simple_mob/animal/passive/cow,
 	/mob/living/simple_mob/animal/passive/chicken,
@@ -475,7 +475,7 @@
 	var/quantity = 35 //This needs to be replaced with a GUI that lets you select the item you want.
 	var/list/created_items
 	var/list/tgui_vore_selection
-	var/list/viable_items = list(
+	var/list/viable_items = list( // ALLOW(instance_list): d: edited in place per instance (1 writers)
 	/obj/item/clothing/accessory/ring,
 	/obj/item/clothing/gloves/evening,
 	/obj/item/clothing/gloves/black,

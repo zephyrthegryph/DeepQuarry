@@ -338,9 +338,9 @@ ADMIN_VERB(generic_structure, R_SPAWN, "Spawn Generic Structure", "Spawn a custo
 
 	// The uploads come last (allowlisted: a native file dialog, nothing to answer it asynchronously).
 	if(s_icon_state_off == "Upload Own Sprite")
-		s_icon = input(user, "Choose an image file to upload. Images that are not 32x32 will need to have their positions offset.","Upload Icon") as null|file // S10 keeps: file uploads need the BYOND file dialog
+		s_icon = input(user, "Choose an image file to upload. Images that are not 32x32 will need to have their positions offset.","Upload Icon") as null|file // ALLOW(scheduler): file uploads need the BYOND file dialog
 	if(s_icon_state_on == "Upload Own Sprite")
-		s_icon2 = input(user, "Choose an image file to upload. Images that are not 32x32 will need to have their positions offset.","Upload Icon") as null|file // S10 keeps: file uploads need the BYOND file dialog
+		s_icon2 = input(user, "Choose an image file to upload. Images that are not 32x32 will need to have their positions offset.","Upload Icon") as null|file // ALLOW(scheduler): file uploads need the BYOND file dialog
 
 	var/spawnloc = get_turf(user.mob)
 	var/obj/structure/generic_structure/P = new(spawnloc)

@@ -92,7 +92,7 @@
 	bleed_timer += initial_damage
 	sync()
 
-// LIFECYCLE: its limb recomputes integrity.
+// ALLOW(lifecycle): its limb recomputes integrity.
 /datum/affliction/wound/Destroy()
 	var/obj/item/organ/external/E = location
 	if(istype(E))
@@ -152,6 +152,7 @@
 	if(is_treated())
 		return TRUE
 	if(wound_damage() <= autoheal_cutoff)
+		// ALLOW(cooldown): wound age
 		if(created + 10 MINUTES > world.time) // Wounds don't autoheal for ten minutes if not bandaged.
 			return FALSE
 		return TRUE

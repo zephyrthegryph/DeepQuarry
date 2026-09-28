@@ -15,8 +15,8 @@
 	var/max_blob_points = 200
 	var/last_attack = 0
 	var/datum/blob_type/blob_type = null
-	var/list/blob_mobs = list()
-	var/list/resource_blobs = list()
+	var/list/blob_mobs = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/resource_blobs = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 	var/placed = 0
 	var/base_point_rate = 2 //for blob core placement
 	var/ai_controlled = TRUE
@@ -24,7 +24,7 @@
 
 	universal_understand = TRUE
 
-	var/list/has_langs = list(LANGUAGE_ANIMAL)
+	var/list/has_langs = list(LANGUAGE_ANIMAL) // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 	var/datum/language/default_language = null
 
 /mob/observer/blob/get_default_language()
@@ -56,7 +56,7 @@
 
 REGISTRY_MEMBERSHIP(/mob/observer/blob, REGISTRY_OVERMINDS)
 
-// LIFECYCLE: its blobs and spores lose their overmind and recolour.
+// ALLOW(lifecycle): its blobs and spores lose their overmind and recolour.
 /mob/observer/blob/Destroy()
 	for(var/obj/structure/blob/B as anything in REGISTRY_MEMBERS(REGISTRY_BLOBS))
 		if(B && B.overmind == src)

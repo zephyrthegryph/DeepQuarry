@@ -38,7 +38,7 @@
 	buckle_lying = FALSE
 
 	var/random_skin = TRUE
-	var/list/skins = list(
+	var/list/skins = list( // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 		"gryphon"
 	)
 

@@ -575,6 +575,7 @@ REF_OWNED(/obj/machinery/telecomms, "soundloop")
 	var/logs = 0 // number of logs
 	var/totaltraffic = 0 // gigabytes (if > 1024, divide by 1024 -> terrabytes)
 
+	// ALLOW(instance_list): d: telecomms server state
 	var/list/memory = list()	// stored memory
 	var/rawcode = ""	// the code to compile (raw text)
 	var/datum/TCS_Compiler/Compiler	// the compiler that compiles and runs the code

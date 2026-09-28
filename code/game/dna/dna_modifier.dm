@@ -47,9 +47,9 @@
 				continue
 		if(islist(vars[A]))
 			var/list/L = vars[A]
-			newrecord.vars[A] = L.Copy()
+			newrecord.vars[A] = L.Copy() // ALLOW(api): DNA record copy: every var of the record
 			continue
-		newrecord.vars[A] = vars[A]
+		newrecord.vars[A] = vars[A] // ALLOW(api): DNA record copy: every var of the record
 	return newrecord
 
 /////////////////////////// DNA MACHINES
@@ -101,7 +101,7 @@
 /obj/machinery/dna_scannernew/explosion_contents_severity(severity)
 	return dq_slot_blast_severity(src, severity)
 
-// LIFECYCLE: the occupant slot is holder-resolved: go_out() ejects and cleans up the occupant.
+// ALLOW(lifecycle): the occupant slot is holder-resolved: go_out() ejects and cleans up the occupant.
 /obj/machinery/dna_scannernew/Destroy()
 	eject_occupant()
 	. = ..()
@@ -314,6 +314,7 @@
 	var/selected_ui_target_hex = 1
 	var/radiation_duration = 2.0
 	var/radiation_intensity = 1.0
+	// ALLOW(instance_list): d: fixed three buffer slots (list/x[3]) indexed by slot number
 	var/list/datum/transhuman/body_record/buffers[3] // Traitgenes Use bodyrecords
 	var/irradiating = 0
 	var/injector_ready = 0	//Quick fix for issue 286 (screwdriver the screen twice to restore injector)	-Pete

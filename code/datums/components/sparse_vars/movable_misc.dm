@@ -78,11 +78,11 @@ GLOBAL_LIST_INIT(dq_parachuting_by_type, list(
 
 // ---- Helpers (global procs to avoid /atom/movable proc-table bloat). ----
 
-/proc/dq_get_belly_cycles(atom/movable/am)
+/proc/dq_get_belly_cycles(atom/movable/am) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
 	if(c) return c.belly_cycles
 	return 0
-/proc/dq_set_belly_cycles(atom/movable/am, v)
+/proc/dq_set_belly_cycles(atom/movable/am, v) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
 	if(!c)
 		if(isnull(v))
@@ -92,10 +92,10 @@ GLOBAL_LIST_INIT(dq_parachuting_by_type, list(
 
 // recursive_listeners is read+written using LAZY* macros. Helpers below match
 // LAZYOR / LAZYREMOVE semantics, auto-creating the component as needed.
-/proc/dq_get_recursive_listeners(atom/movable/am)
+/proc/dq_get_recursive_listeners(atom/movable/am) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
 	return c?.recursive_listeners
-/proc/dq_set_recursive_listeners(atom/movable/am, list/v)
+/proc/dq_set_recursive_listeners(atom/movable/am, list/v) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
 	if(!c)
 		if(isnull(v))
@@ -103,14 +103,14 @@ GLOBAL_LIST_INIT(dq_parachuting_by_type, list(
 		c = am.AddComponent(/datum/component/movable_state)
 	c.recursive_listeners = v
 /// LAZYOR equivalent.
-/proc/dq_recursive_listeners_or(atom/movable/am, item)
+/proc/dq_recursive_listeners_or(atom/movable/am, item) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
 	if(!c) c = am.AddComponent(/datum/component/movable_state)
 	if(!c.recursive_listeners)
 		c.recursive_listeners = list()
 	c.recursive_listeners |= item
 /// LAZYREMOVE equivalent.
-/proc/dq_recursive_listeners_remove(atom/movable/am, item)
+/proc/dq_recursive_listeners_remove(atom/movable/am, item) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
 	if(!c || !c.recursive_listeners)
 		return
@@ -118,17 +118,17 @@ GLOBAL_LIST_INIT(dq_parachuting_by_type, list(
 	if(!length(c.recursive_listeners))
 		c.recursive_listeners = null
 /// LAZYLEN equivalent.
-/proc/dq_recursive_listeners_len(atom/movable/am)
+/proc/dq_recursive_listeners_len(atom/movable/am) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
 	if(!c || !c.recursive_listeners)
 		return 0
 	return length(c.recursive_listeners)
 
-/proc/dq_get_moved_recently(atom/movable/am)
+/proc/dq_get_moved_recently(atom/movable/am) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
 	if(c) return c.moved_recently
 	return 0
-/proc/dq_set_moved_recently(atom/movable/am, v)
+/proc/dq_set_moved_recently(atom/movable/am, v) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
 	if(!c)
 		if(isnull(v))
@@ -136,10 +136,10 @@ GLOBAL_LIST_INIT(dq_parachuting_by_type, list(
 		c = am.AddComponent(/datum/component/movable_state)
 	c.moved_recently = v
 
-/proc/dq_get_affected_dynamic_lights(atom/movable/am)
+/proc/dq_get_affected_dynamic_lights(atom/movable/am) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
 	return c?.affected_dynamic_lights
-/proc/dq_set_affected_dynamic_lights(atom/movable/am, list/v)
+/proc/dq_set_affected_dynamic_lights(atom/movable/am, list/v) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
 	if(!c)
 		if(isnull(v))
@@ -147,14 +147,14 @@ GLOBAL_LIST_INIT(dq_parachuting_by_type, list(
 		c = am.AddComponent(/datum/component/movable_state)
 	c.affected_dynamic_lights = v
 /// LAZYSET-equivalent for affected_dynamic_lights (auto-create list if null).
-/proc/dq_affected_dynamic_lights_set(atom/movable/am, key, value)
+/proc/dq_affected_dynamic_lights_set(atom/movable/am, key, value) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
 	if(!c) c = am.AddComponent(/datum/component/movable_state)
 	if(!c.affected_dynamic_lights)
 		c.affected_dynamic_lights = list()
 	c.affected_dynamic_lights[key] = value
 /// LAZYREMOVE-equivalent.
-/proc/dq_affected_dynamic_lights_remove(atom/movable/am, key)
+/proc/dq_affected_dynamic_lights_remove(atom/movable/am, key) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
 	if(!c || !c.affected_dynamic_lights)
 		return
@@ -162,10 +162,10 @@ GLOBAL_LIST_INIT(dq_parachuting_by_type, list(
 	if(!length(c.affected_dynamic_lights))
 		c.affected_dynamic_lights = null
 
-/proc/dq_get_cloaked_selfimage(atom/movable/am)
+/proc/dq_get_cloaked_selfimage(atom/movable/am) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
 	return c?.cloaked_selfimage
-/proc/dq_set_cloaked_selfimage(atom/movable/am, v)
+/proc/dq_set_cloaked_selfimage(atom/movable/am, v) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
 	if(!c)
 		if(isnull(v))
@@ -173,11 +173,11 @@ GLOBAL_LIST_INIT(dq_parachuting_by_type, list(
 		c = am.AddComponent(/datum/component/movable_state)
 	c.cloaked_selfimage = v
 
-/proc/dq_get_cloaked(atom/movable/am)
+/proc/dq_get_cloaked(atom/movable/am) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
 	if(c) return c.cloaked
 	return FALSE
-/proc/dq_set_cloaked(atom/movable/am, v)
+/proc/dq_set_cloaked(atom/movable/am, v) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
 	if(!c)
 		if(isnull(v))
@@ -185,11 +185,11 @@ GLOBAL_LIST_INIT(dq_parachuting_by_type, list(
 		c = am.AddComponent(/datum/component/movable_state)
 	c.cloaked = v
 
-/proc/dq_get_parachute(atom/movable/am)
+/proc/dq_get_parachute(atom/movable/am) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
 	if(c) return c.parachute
 	return FALSE
-/proc/dq_set_parachute(atom/movable/am, v)
+/proc/dq_set_parachute(atom/movable/am, v) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
 	if(!c)
 		if(isnull(v))
@@ -219,12 +219,12 @@ GLOBAL_LIST_EMPTY(_dq_parachuting_resolved)
 GLOBAL_LIST_EMPTY(_dq_softfall_resolved)
 GLOBAL_LIST_EMPTY(_dq_hovering_resolved)
 
-/proc/dq_get_parachuting(atom/movable/am)
+/proc/dq_get_parachuting(atom/movable/am) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
 	if(c && c.parachuting != FALSE) return c.parachuting
 	return _dq_resolve_typed_default(am.type, GLOB.dq_parachuting_by_type, GLOB._dq_parachuting_resolved, FALSE)
 
-/proc/dq_set_parachuting(atom/movable/am, v)
+/proc/dq_set_parachuting(atom/movable/am, v) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
 	if(!c)
 		if(isnull(v))
@@ -232,12 +232,12 @@ GLOBAL_LIST_EMPTY(_dq_hovering_resolved)
 		c = am.AddComponent(/datum/component/movable_state)
 	c.parachuting = v
 
-/proc/dq_get_softfall(atom/movable/am)
+/proc/dq_get_softfall(atom/movable/am) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
 	if(c && c.softfall_set) return c.softfall_value
 	return _dq_resolve_typed_default(am.type, GLOB.dq_softfall_by_type, GLOB._dq_softfall_resolved, FALSE)
 
-/proc/dq_set_softfall(atom/movable/am, v)
+/proc/dq_set_softfall(atom/movable/am, v) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
 	if(!c)
 		if(isnull(v))
@@ -246,12 +246,12 @@ GLOBAL_LIST_EMPTY(_dq_hovering_resolved)
 	c.softfall_set = TRUE
 	c.softfall_value = v
 
-/proc/dq_get_hovering(atom/movable/am)
+/proc/dq_get_hovering(atom/movable/am) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
 	if(c && c.hovering_set) return c.hovering_value
 	return _dq_resolve_typed_default(am.type, GLOB.dq_hovering_by_type, GLOB._dq_hovering_resolved, FALSE)
 
-/proc/dq_set_hovering(atom/movable/am, v)
+/proc/dq_set_hovering(atom/movable/am, v) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
 	if(!c)
 		if(isnull(v))
@@ -260,9 +260,9 @@ GLOBAL_LIST_EMPTY(_dq_hovering_resolved)
 	c.hovering_set = TRUE
 	c.hovering_value = v
 /// Clears the per-instance override so the type-default (GLOB lookup) re-applies.
-/proc/dq_clear_hovering(atom/movable/am)
+/proc/dq_clear_hovering(atom/movable/am) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
 	if(c) c.hovering_set = FALSE
-/proc/dq_clear_softfall(atom/movable/am)
+/proc/dq_clear_softfall(atom/movable/am) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
 	if(c) c.softfall_set = FALSE

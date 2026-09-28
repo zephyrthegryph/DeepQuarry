@@ -350,7 +350,7 @@ REF_OWNED(/datum/contract_requirement/event_count, "filter")
 
 REF_OWNED(/datum/contract_requirement/sustained_event, "filter")
 
-// LIFECYCLE: pending sustain timers are cancelled.
+// ALLOW(lifecycle): pending sustain timers are cancelled.
 /datum/contract_requirement/sustained_event/Destroy()
 	cancel_pending_timers()
 	return ..()
@@ -440,7 +440,7 @@ REF_OWNED(/datum/contract_requirement/sustained_event, "filter")
 
 REF_OWNED(/datum/contract_requirement/staged_sustained_event, "filter")
 
-// LIFECYCLE: pending sustain timers are cancelled.
+// ALLOW(lifecycle): pending sustain timers are cancelled.
 /datum/contract_requirement/staged_sustained_event/Destroy()
 	cancel_pending_timers()
 	return ..()

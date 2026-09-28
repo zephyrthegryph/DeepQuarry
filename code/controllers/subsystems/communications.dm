@@ -113,7 +113,7 @@ SUBSYSTEM_DEF(radio)
 
 /datum/radio_frequency
 	var/frequency as num
-	var/list/list/obj/devices = list()
+	var/list/list/obj/devices = list() // ALLOW(instance_list): d: frequencies exist because devices joined them
 
 /datum/radio_frequency/proc/post_signal(obj/source as obj|null, datum/signal/signal, radio_filter = null as text|null, range = null as num|null)
 	var/turf/start_point
@@ -182,7 +182,7 @@ SUBSYSTEM_DEF(radio)
 	//1 = radio transmission
 	//2 = subspace transmission
 
-	var/list/data = list()
+	var/list/data = list() // ALLOW(instance_list): d: every signal carries data
 	var/encryption
 
 	var/frequency = ZERO_FREQ

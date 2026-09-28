@@ -64,7 +64,7 @@ GLOBAL_PROTECT(href_token)
 		GLOB.protected_admins[target] = src
 	activate()
 
-// LIFECYCLE: refuses deletion from advanced proc calls; its fax reply goes with it.
+// ALLOW(lifecycle): refuses deletion from advanced proc calls; its fax reply goes with it.
 /datum/admins/Destroy()
 	if(IsAdminAdvancedProcCall())
 		alert_to_permissions_elevation_attempt(usr)

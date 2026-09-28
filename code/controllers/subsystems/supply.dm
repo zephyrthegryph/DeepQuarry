@@ -544,7 +544,7 @@ SUBSYSTEM_DEF(supply)
 
 				// For each thing in the crate, get the value and quantity
 				CR.latent_materialize_all() // selling needs real things (C5)
-				for(var/atom/A in CR) // latent-ok
+				for(var/atom/A in CR) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
 					if(SEND_SIGNAL(A,COMSIG_ITEM_EXPORTED,EC,TRUE))
 						things_sold_successfully += A
 			else

@@ -40,7 +40,7 @@
 
 	var/datum/data/pda/app/current_app = null
 	var/datum/data/pda/app/lastapp = null
-	var/list/programs = list(
+	var/list/programs = list( // ALLOW(instance_list): d: edited in place per instance (1 writers)
 		new/datum/data/pda/app/main_menu,
 		new/datum/data/pda/app/notekeeper,
 		new/datum/data/pda/app/timeclock, // Add the timeclock to default apps
@@ -482,7 +482,7 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 REF_OWNED(/obj/item/pda, list("pai", "cartridge"))
 REF_OWNED_LIST(/obj/item/pda, "programs")
 
-// LIFECYCLE: its ID drops out unless flagged to go with it.
+// ALLOW(lifecycle): its ID drops out unless flagged to go with it.
 /obj/item/pda/Destroy()
 	if (id && !delete_id && id.loc == src)
 		id.forceMove(get_turf(loc))

@@ -59,7 +59,7 @@
 			var/datum/pipeline/P2 = node2.parent
 			network_node2 = P2.network
 
-// LIFECYCLE: a closed clamp reopens its pipe.
+// ALLOW(lifecycle): a closed clamp reopens its pipe.
 /obj/machinery/clamp/Destroy()
 	if(!open)
 		open()

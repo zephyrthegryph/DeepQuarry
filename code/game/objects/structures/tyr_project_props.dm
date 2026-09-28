@@ -47,7 +47,7 @@
 //Okay, actual special puzzle doors for reals
 /obj/machinery/door/blast/puzzle/tyrdoor/keypad
 	icon_state_closed = "star_door"
-	var/list/code = list()
+	var/list/code = list() // ALLOW(instance_list): d: the keypad code, generated in New()
 	var/list/lastattempt
 	var/codelen = 6
 

@@ -63,7 +63,7 @@
 REF_OWNED(/obj/effect/overmap, list("cam_screen", "cam_background"))
 REF_OWNED_LIST(/obj/effect/overmap, "cam_plane_masters")
 
-// LIFECYCLE: its real appearance holder is detached.
+// ALLOW(lifecycle): its real appearance holder is detached.
 /obj/effect/overmap/Destroy()
 	real_appearance?.loc = null
 	real_appearance = null

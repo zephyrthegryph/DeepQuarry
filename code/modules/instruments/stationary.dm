@@ -4,7 +4,7 @@
 	/// IF FALSE music stops when the piano is unanchored.
 	var/can_play_unanchored = FALSE
 	/// Our allowed list of instrument ids. This is nulled on initialize.
-	var/list/allowed_instrument_ids = list("r3grand","r3harpsi","crharpsi","crgrand1","crbright1", "crichugan", "crihamgan","piano")
+	var/list/allowed_instrument_ids = list("r3grand","r3harpsi","crharpsi","crgrand1","crbright1", "crichugan", "crihamgan","piano") // ALLOW(instance_list): d: replaced per instance at runtime (2 assignments)
 	/// Our song datum.
 	var/datum/song/stationary/song
 

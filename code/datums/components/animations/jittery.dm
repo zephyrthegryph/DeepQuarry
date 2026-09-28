@@ -41,7 +41,7 @@ status starts and deletes it when it ends (the status row's on_start/on_end hook
 	SIGNAL_HANDLER
 	owner.status_end(EFFECT_JITTERY)
 
-// LIFECYCLE: the jittering mob's pixel offsets reset.
+// ALLOW(lifecycle): the jittering mob's pixel offsets reset.
 /datum/component/jittery_shake/Destroy(force = FALSE)
 	owner.pixel_x = owner.old_x
 	owner.pixel_y = owner.old_y

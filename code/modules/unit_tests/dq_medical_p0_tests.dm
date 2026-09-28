@@ -83,8 +83,8 @@
 	arm.droplimb(clean = TRUE, disintegrate = DROPLIMB_EDGE)
 	TEST_ASSERT(!QDELETED(arm), "a clean droplimb leaves the arm")
 	TEST_ASSERT_NULL(arm.owner, "a dropped arm has no owner")
-	arm.apply_wound_damage(0, 500) // burn past the limb's cap: the spill-over path (D14)
-	arm.apply_wound_damage(50, 0)  // brute on a detached limb (D14 scream path)
+	arm.apply_wound_damage(0, 500) // ALLOW(check_grep): burn past the limb's cap: drives the body-internal spill-over path (D14)
+	arm.apply_wound_damage(50, 0)  // ALLOW(check_grep): brute on a detached limb: drives the body-internal D14 scream path
 	arm.rejuvenate()               // D13
 	TEST_ASSERT_NULL(arm.owner, "the arm should still be detached")
 	qdel(arm)

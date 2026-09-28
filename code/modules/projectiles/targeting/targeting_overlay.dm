@@ -100,7 +100,7 @@ REF_BACKLIST(/obj/aiming_overlay, list("aiming_at" = "aimed"))
 		cancel_aiming()
 		return
 
-	if(!locked && lock_time <= world.time)
+	if(!locked && lock_time <= world.time) // ALLOW(cooldown): aim lock progress
 		locked = 1
 		to_chat(owner, span_notice("You are locked onto your target."))
 		to_chat(aiming_at, span_danger("The gun is trained on you!"))

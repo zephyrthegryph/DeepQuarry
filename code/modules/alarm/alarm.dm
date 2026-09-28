@@ -39,7 +39,7 @@ REF_OWNED_LIST(/datum/alarm, "sources")
 		end_time = world.time + ALARM_RESET_DELAY
 	for(var/datum/alarm_source/AS in sources)
 		// Has the alarm passed its best before date?
-		if((AS.end_time && world.time > AS.end_time) || (AS.duration && world.time > (AS.start_time + AS.duration)))
+		if((AS.end_time && world.time > AS.end_time) || (AS.duration && world.time > (AS.start_time + AS.duration))) // ALLOW(cooldown): alarm expiry
 			LAZYREMOVE(sources, AS)
 		// Has the source gone missing?	Then reset the normal duration and set end_time
 		if(!AS.source && !AS.end_time)	// end_time is used instead of duration to ensure the reset doesn't remain in the future indefinetely.

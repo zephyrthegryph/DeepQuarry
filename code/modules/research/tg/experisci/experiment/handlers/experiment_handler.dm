@@ -234,7 +234,7 @@ REGISTRY_MEMBERSHIP(/datum/component/experiment_handler, REGISTRY_EXPERIMENT_HAN
  */
 /datum/component/experiment_handler/proc/configure_experiment(datum/source, mob/user)
 	SIGNAL_HANDLER
-	INVOKE_ASYNC(src, PROC_REF(tgui_interact), user) // S10b keeps: tgui_interact may block on asset/window setup
+	INVOKE_ASYNC(src, PROC_REF(tgui_interact), user) // ALLOW(scheduler): tgui_interact may block on asset/window setup
 	// return CLICK_ACTION_SUCCESS
 
 /**
@@ -245,7 +245,7 @@ REGISTRY_MEMBERSHIP(/datum/component/experiment_handler, REGISTRY_EXPERIMENT_HAN
  */
 /datum/component/experiment_handler/proc/configure_experiment_click(datum/source, mob/user)
 	SIGNAL_HANDLER
-	INVOKE_ASYNC(src, TYPE_PROC_REF(/datum, tgui_interact), user) // S10b keeps: tgui_interact may block on asset/window setup
+	INVOKE_ASYNC(src, TYPE_PROC_REF(/datum, tgui_interact), user) // ALLOW(scheduler): tgui_interact may block on asset/window setup
 
 /**
  * Attempts to link this experiment_handler to a provided techweb

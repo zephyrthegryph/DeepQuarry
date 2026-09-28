@@ -50,7 +50,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	density = TRUE
 	status_flags = CANPUSH
 	shouldnt_see = list(/mob/observer/eye, /obj/effect/rune)
-	var/list/network = list(NETWORK_DEFAULT)
+	var/list/network = list(NETWORK_DEFAULT) // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 	var/obj/machinery/camera/camera = null
 	var/aiRestorePowerRoutine = 0
 	/// Backup capacitor charge, 0..AI_BACKUP_CAPACITY. Drains while the core is
@@ -59,7 +59,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	var/viewalerts = 0
 	var/icon/holo_icon				//Default is assigned when AI is created.
 	var/holo_color = null
-	var/list/connected_robots = list()
+	var/list/connected_robots = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 	var/obj/item/pda/ai/aiPDA = null
 	var/obj/item/communicator/aiCommunicator = null
 	var/obj/item/multitool/aiMulti = null
@@ -98,7 +98,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	var/multicam_allowed = TRUE
 	var/multicam_on = FALSE
 	var/atom/movable/screen/movable/pic_in_pic/ai/master_multicam
-	var/list/multicam_screens = list()
+	var/list/multicam_screens = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 	var/max_multicams = 6
 
 	can_be_antagged = TRUE
@@ -247,7 +247,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 
 REF_OWNED(/mob/living/silicon/ai, list("announcement", "psupply", "aiPDA", "aiCommunicator", "aiMulti", "aiRadio"))
 
-// LIFECYCLE: the AI's eye goes with it.
+// ALLOW(lifecycle): the AI's eye goes with it.
 /mob/living/silicon/ai/Destroy()
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	QDEL_NULL(eyeobj)

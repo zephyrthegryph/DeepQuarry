@@ -41,7 +41,7 @@ status starts and deletes it when it ends (the status row's on_start/on_end hook
 	SIGNAL_HANDLER
 	owner.status_end(EFFECT_DIZZY)
 
-// LIFECYCLE: the shaken client's view offset resets.
+// ALLOW(lifecycle): the shaken client's view offset resets.
 /datum/component/dizzy_shake/Destroy(force = FALSE)
 	if(owner.client)
 		owner.client.pixel_x = 0

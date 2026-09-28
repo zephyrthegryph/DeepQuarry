@@ -80,7 +80,7 @@
 	control_overlay = image('icons/obj/spells.dmi',"controlled")
 	return ..()
 
-// LIFECYCLE: controlled mobs are released.
+// ALLOW(lifecycle): controlled mobs are released.
 /obj/item/spell/control/Destroy()
 	for(var/mob/living/L in controlled_mobs)
 		deselect(L)

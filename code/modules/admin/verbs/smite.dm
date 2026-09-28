@@ -76,7 +76,7 @@
 				shadekin.ai_brain.mauling = TRUE
 			om_run_frame_now(shadekin, /datum/om/pipeline/life)
 			//Remove when done
-			spawn(10 SECONDS) // S7 keeps: admin verb (allowlist)
+			spawn(10 SECONDS) // ALLOW(scheduler): admin verb (allowlist)
 				if(shadekin)
 					shadekin.death()
 
@@ -337,7 +337,7 @@ GLOBAL_VAR(redspace_abduction_z)
 	loader.screen_loc = "NORTH-1, EAST-1"
 	target.client.screen += loader
 
-	spawn(10 SECONDS) // S7 keeps: admin verb (allowlist)
+	spawn(10 SECONDS) // ALLOW(scheduler): admin verb (allowlist)
 		if(target)
 			to_chat(target, "<span class='notice' style='font: small-caps bold large monospace!important'>Autosave complete!</span>")
 			if(target.client)

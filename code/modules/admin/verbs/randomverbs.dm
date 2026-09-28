@@ -575,7 +575,7 @@ ADMIN_VERB(respawn_character, (R_ADMIN|R_REJUVINATE), "Spawn Character", "(Re)Sp
 		new /obj/structure/drop_pod(target_turf, new_character)
 		to_chat(new_character, span_boldnotice("Please wait for your arrival."))
 	else if(showy == "Fall")
-		spawn(1) // S7 keeps: admin verb (allowlist)
+		spawn(1) // ALLOW(scheduler): admin verb (allowlist)
 			var/initial_x = new_character.pixel_x
 			var/initial_y = new_character.pixel_y
 			new_character.plane = 1
@@ -584,7 +584,7 @@ ADMIN_VERB(respawn_character, (R_ADMIN|R_REJUVINATE), "Spawn Character", "(Re)Sp
 			new_character.density = FALSE
 			new_character.opacity = FALSE
 			animate(new_character, pixel_y = initial_y, pixel_x = initial_x , time = 7)
-			spawn(7) // S7 keeps: admin verb (allowlist)
+			spawn(7) // ALLOW(scheduler): admin verb (allowlist)
 				new_character.end_fall()
 		to_chat(new_character, span_boldnotice("You have been fully spawned. Enjoy the game."))
 

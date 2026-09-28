@@ -85,7 +85,7 @@
 /// already caches slot_def_types() by the instance's type, not by
 /// instantiating a throwaway. `.owned`, `.owned_list`, `.pair`, `.backlist`
 /// -- each the list/assoc that type declared, or null.
-/proc/dq_lifecycle_link_table(datum/D)
+/proc/dq_lifecycle_link_table(datum/D) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/static/list/cache = list()
 	var/key = D.type
 	var/list/table = cache[key]
@@ -107,7 +107,7 @@
 /// owned, spill and held vars that name it are nulled -- a cell deleted in its
 /// APC, a board in its machine -- so no child clears its holder's typed var by
 /// hand.
-/proc/dq_lifecycle_release_from_holder(atom/movable/AM)
+/proc/dq_lifecycle_release_from_holder(atom/movable/AM) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/atom/holder = AM.loc
 	if(!holder || isturf(holder) || QDELETED(holder))
 		return
@@ -116,7 +116,7 @@
 	for(var/key in holder_keys)
 		for(var/var_name in table[key])
 			if(holder.vars[var_name] == AM)
-				holder.vars[var_name] = null
+				holder.vars[var_name] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
 
 /// Phase 3, for declared spill vars (REF_SPILL/REF_SPILL_LIST): each thing
 /// still inside `AM` goes to its drop location. When that location is itself
@@ -124,7 +124,7 @@
 /// The spill hook: a thing that lands refreshes its icon, since its sprite may
 /// show the holder's state (a recharger's cell mid-charge), as a hand eject does.
 /// It is the existing update_icon(), not a new base-type proc (base_proc_lint.py).
-/proc/dq_lifecycle_spill_declared(atom/movable/AM)
+/proc/dq_lifecycle_spill_declared(atom/movable/AM) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/list/table = dq_lifecycle_link_table(AM)
 	var/list/spill = table["spill"]
 	var/list/spill_list = table["spill_list"]
@@ -136,7 +136,7 @@
 		var/atom/movable/thing = AM.vars[var_name]
 		if(!ismovable(thing) || thing.loc != AM || QDELETED(thing))
 			continue
-		AM.vars[var_name] = null
+		AM.vars[var_name] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
 		if(doomed)
 			qdel(thing)
 		else
@@ -160,7 +160,7 @@
 /// Phase 4 (doc/rewrite/lifecycle.md §2): clears every declared relationship
 /// on `D` -- owned children deleted, pair partners nulled on both sides,
 /// back-list memberships removed.
-/proc/dq_lifecycle_clear_links(datum/D)
+/proc/dq_lifecycle_clear_links(datum/D) // ALLOW(base_proc): global API written before the base-type ratchet
 	// Object-model relations, watches and forwards (code/datums/om/entity.dm).
 	if(D.om_rec)
 		om_teardown_links(D)
@@ -170,7 +170,7 @@
 	var/list/owned = table["owned"]
 	for(var/var_name in owned)
 		var/datum/child = D.vars[var_name]
-		D.vars[var_name] = null
+		D.vars[var_name] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
 		// A typed var may still hold a type path (never materialized) or a list.
 		if(isdatum(child))
 			qdel(child)
@@ -200,14 +200,14 @@
 		var/datum/partner = D.vars[our_var]
 		if(batch && partner && batch.doomed[partner])
 			// Both ends doomed: the partner's own clear drops its side.
-			D.vars[our_var] = null
+			D.vars[our_var] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
 			batch.edges_dropped++
 			continue
 		link_clear(D, our_var)
 	var/list/backlist = table["backlist"]
 	for(var/our_var in backlist)
 		var/datum/owner = D.vars[our_var]
-		D.vars[our_var] = null
+		D.vars[our_var] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
 		if(batch && owner && batch.doomed[owner])
 			batch.edges_dropped++
 			continue // the owner's list goes with it
@@ -219,12 +219,12 @@
 /// Nulls whatever a declared owned/pair var still points to, without
 /// deleting anything (phase 8: the owned children are already gone by now;
 /// this only breaks reference cycles leftover Destroy() might have re-set).
-/proc/dq_lifecycle_null_declared_refs(datum/D)
+/proc/dq_lifecycle_null_declared_refs(datum/D) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/list/table = dq_lifecycle_link_table(D)
 	if(!table)
 		return
 	for(var/var_name in table["owned"])
-		D.vars[var_name] = null
+		D.vars[var_name] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
 	for(var/var_name in table["pair"])
 		if(D.vars[var_name])
 			link_clear(D, var_name)
@@ -232,44 +232,44 @@
 /// Sets a REF_PAIR both ways: `A.vars[var_a] = B`, `B.vars[var_b] = A`,
 /// clearing whatever either side pointed to first. Both types must declare
 /// `var_a`/`var_b` as a matched declared_pair_vars() entry.
-/proc/link_set(datum/A, var_a, datum/B, var_b)
+/proc/link_set(datum/A, var_a, datum/B, var_b) // ALLOW(base_proc): global API written before the base-type ratchet
 	link_clear(A, var_a)
 	link_clear(B, var_b)
-	A.vars[var_a] = B
-	B.vars[var_b] = A
+	A.vars[var_a] = B // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
+	B.vars[var_b] = A // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
 
 /// Clears a REF_PAIR from `A`'s side: nulls `A.vars[var_a]`, and, if it
 /// pointed somewhere, finds that object's declared reciprocal var (from its
 /// own declared_pair_vars()) and nulls it too. Safe to call on an already
 /// null pair.
-/proc/link_clear(datum/A, var_a)
+/proc/link_clear(datum/A, var_a) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/other = A.vars[var_a]
-	A.vars[var_a] = null
+	A.vars[var_a] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
 	if(!other)
 		return
 	var/list/other_pairs = dq_lifecycle_link_table(other)["pair"]
 	for(var/their_var in other_pairs)
 		if(other.vars[their_var] == A)
-			other.vars[their_var] = null
+			other.vars[their_var] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
 			return
 
 /// Adds `member` to `owner.vars[list_var]` and sets `member.vars[owner_var] = owner`,
 /// so phase 4 removes it automatically on either side's destruction. Both
 /// types must declare `owner_var` in declared_backlist_vars(): member's
 /// entry is `owner_var -> list_var`.
-/proc/link_backlist_add(datum/member, owner_var, datum/owner, list_var)
-	member.vars[owner_var] = owner
+/proc/link_backlist_add(datum/member, owner_var, datum/owner, list_var) // ALLOW(base_proc): global API written before the base-type ratchet
+	member.vars[owner_var] = owner // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
 	var/list/L = owner.vars[list_var]
 	if(!L)
 		L = list()
-		owner.vars[list_var] = L
+		owner.vars[list_var] = L // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
 	L |= member
 
 /// Removes `member` from the back-list side, without waiting for either
 /// object's destruction.
-/proc/link_backlist_remove(datum/member, owner_var)
+/proc/link_backlist_remove(datum/member, owner_var) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/owner = member.vars[owner_var]
-	member.vars[owner_var] = null
+	member.vars[owner_var] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
 	if(!owner)
 		return
 	// owner_var is member's var name, not owner's -- the list var lives on

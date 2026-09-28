@@ -104,7 +104,7 @@
 									   /datum/power/lleill/alchemy,
 									   /datum/power/lleill/beastform_hanner)
 
-	var/list/lleill_ability_datums = list()
+	var/list/lleill_ability_datums = list() // ALLOW(instance_list): d: New() fills it with this instance's power datums
 
 /datum/species/shapeshifter/hanner/New()
 	..()

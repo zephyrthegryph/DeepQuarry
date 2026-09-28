@@ -23,7 +23,7 @@
 
 REF_OWNED(/atom/movable/screen/movable/pic_in_pic, list("button_x", "button_shrink", "button_expand", "button_pop", "popup_screen"))
 
-// LIFECYCLE: hides itself from every client it is shown to.
+// ALLOW(lifecycle): hides itself from every client it is shown to.
 /atom/movable/screen/movable/pic_in_pic/Destroy()
 	for(var/C in shown_to)
 		unshow_to(C)

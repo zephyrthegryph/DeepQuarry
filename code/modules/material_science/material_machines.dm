@@ -10,7 +10,7 @@
 			dominant_amount = LAZYACCESS(composition, material_name)
 	return dominant?.icon_colour || "#8b8b8b"
 
-/proc/material_batch_absorb_sheet(datum/material_batch/batch, obj/item/stack/material/stack)
+/proc/material_batch_absorb_sheet(datum/material_batch/batch, obj/item/stack/material/stack) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!istype(batch) || !istype(stack) || !stack.material || stack.amount < 1 || batch.amount >= MATERIAL_SCIENCE_MAX_BATCH)
 		return FALSE
 	stack.ensure_feedstock_lot()
@@ -34,7 +34,7 @@
 	batch.recalculate()
 	return TRUE
 
-/proc/replace_processed_stack(obj/item/stack/material/old_stock, datum/material_batch/new_batch, atom/location)
+/proc/replace_processed_stack(obj/item/stack/material/old_stock, datum/material_batch/new_batch, atom/location) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!istype(old_stock) || !istype(new_batch))
 		return null
 	var/amount = old_stock.get_amount()

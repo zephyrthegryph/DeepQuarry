@@ -51,7 +51,7 @@
 		return
 	return ..()
 
-// LIFECYCLE: its corpse tag drops to the floor.
+// ALLOW(lifecycle): its corpse tag drops to the floor.
 /obj/structure/closet/body_bag/cryobag/robobag/Destroy()
 	if(corptag && get_turf(src))
 		var/turf/T = get_turf(src)

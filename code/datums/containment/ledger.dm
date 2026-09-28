@@ -24,7 +24,7 @@
 /// `destroying`: the destroy transaction's contents phase, which runs after
 /// phase 0 has marked the holder QDELETED and must still resolve a holder whose
 /// latent contents were never built (an unmaterialized probe, a sealed kit).
-/proc/dq_ledger(atom/holder, destroying = FALSE)
+/proc/dq_ledger(atom/holder, destroying = FALSE) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!holder)
 		return null
 	var/datum/ledger/L = holder.ledger
@@ -46,7 +46,7 @@
 /// creates one -- for read paths (rolling up a nested holder's contribution,
 /// walking a holder's children) that must not be what makes an empty holder
 /// start owning a ledger of its own.
-/proc/dq_ledger_peek(atom/holder)
+/proc/dq_ledger_peek(atom/holder) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/ledger/L = holder?.ledger
 	L?.sync()
 	return L
@@ -83,7 +83,7 @@
 /// combined with its own ledger's aggregates (so nested holders roll up).
 /// A list of measure values then tag words, or null when it adds nothing.
 /// `from_scratch` recomputes nested holders instead of reading their ledgers.
-/proc/dq_ledger_contribution(atom/movable/thing, from_scratch = FALSE)
+/proc/dq_ledger_contribution(atom/movable/thing, from_scratch = FALSE) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/property_registry/registry = dq_property_registry()
 	var/list/ids = dq_ledger_measure_ids()
 	var/count = length(ids)
@@ -171,7 +171,7 @@
 		default_id = first.slot_id
 	accumulators = new /list(length(dq_ledger_measure_ids()) + dq_ledger_tag_words())
 
-// LIFECYCLE: the ledger is the containment engine itself; it lets go of its holder.
+// ALLOW(lifecycle): the ledger is the containment engine itself; it lets go of its holder.
 /datum/ledger/Destroy()
 	if(holder)
 		dq_latency_sweep_unregister(holder) // the sweep list holds a hard ref
@@ -541,7 +541,7 @@
 /// arg it's already given, LEDGER_MOVE_DESTROYING) to skip re-derivation
 /// that a moment-later qdel would waste (body invalidate, stage wakes, HUD,
 /// factor recompute).
-/proc/holder_destroying(datum/holder)
+/proc/holder_destroying(datum/holder) // ALLOW(base_proc): global API written before the base-type ratchet
 	return (holder && (holder.datum_flags & DF_DESTROYING)) ? TRUE : FALSE
 
 // ---- Thing-side commit hooks (J6) ----

@@ -37,9 +37,9 @@
 				return stripped_input(user, message, title, default, PREVENT_CHARACTER_TRIM_LOSS(max_length))
 		else
 			if(multiline)
-				return input(user, message, title, default) as message|null // S10 keeps: the blocking prompt API itself (the non-tgui fallback om_prompt never uses)
+				return input(user, message, title, default) as message|null // ALLOW(scheduler): the blocking prompt API itself (the non-tgui fallback om_prompt never uses)
 			else
-				return input(user, message, title, default) as text|null // S10 keeps: the blocking prompt API itself (the non-tgui fallback om_prompt never uses)
+				return input(user, message, title, default) as text|null // ALLOW(scheduler): the blocking prompt API itself (the non-tgui fallback om_prompt never uses)
 
 	var/datum/tgui_input_text/text_input = new(user, message, title, default, max_length, multiline, encode, timeout, ui_state)
 	text_input.tgui_interact(user)
@@ -97,7 +97,7 @@
  */
 /datum/tgui_input_text/proc/wait()
 	while (!entry && !closed && !QDELETED(src))
-		stoplag(1)
+		stoplag(1) // ALLOW(scheduler): tgui_input waits on the player (prompts, S10)
 
 /datum/tgui_input_text/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

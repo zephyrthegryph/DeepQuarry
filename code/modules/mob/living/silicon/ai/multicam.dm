@@ -13,7 +13,7 @@
 
 REF_OWNED(/atom/movable/screen/movable/pic_in_pic/ai, "aiEye")
 
-// LIFECYCLE: the AI loses this multicam window.
+// ALLOW(lifecycle): the AI loses this multicam window.
 /atom/movable/screen/movable/pic_in_pic/ai/Destroy()
 	. = ..()
 	set_ai(null)
@@ -140,7 +140,7 @@ GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 /mob/observer/eye/aiEye/pic_in_pic
 	name = "Secondary AI Eye"
 	var/atom/movable/screen/movable/pic_in_pic/ai/screen
-	var/list/cameras_telegraphed = list()
+	var/list/cameras_telegraphed = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 	var/telegraph_cameras = TRUE
 	var/telegraph_range = 7
 
@@ -196,7 +196,7 @@ GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 
 REF_OWNED(/mob/observer/eye/aiEye/pic_in_pic, "screen")
 
-// LIFECYCLE: stops telegraphing to the cameras it watched.
+// ALLOW(lifecycle): stops telegraphing to the cameras it watched.
 /mob/observer/eye/aiEye/pic_in_pic/Destroy()
 	disable_camera_telegraphing()
 	return ..()

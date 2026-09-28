@@ -10,7 +10,7 @@
 	var/datum/ore	              // Path to the ore produced when tile is mined.
 	var/scan_icon         // Overlay for ore scanners.
 	// Xenoarch stuff. No idea what it's for, just refactored it to be less awful.
-	var/list/xarch_ages = list(
+	var/list/xarch_ages = list( // ALLOW(instance_list): c: read-only per-subtype constant table (4 subtype overrides); a getter would share it, not worth it on a rare type
 		"thousand" = 999,
 		"million" = 999
 		)

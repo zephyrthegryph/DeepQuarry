@@ -204,7 +204,7 @@
 	devourable = 0
 
 	vore_default_mode = DM_HOLD
-	var/list/petters = list()
+	var/list/petters = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 
 /mob/living/simple_mob/vore/pakkun/snapdragon/snappy/attack_hand(mob/living/carbon/human/M as mob)
 	if(IS_HELPING(M) && !(M in petters))

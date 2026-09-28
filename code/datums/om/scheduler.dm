@@ -61,19 +61,19 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	var/gen = 0
 
 	/// behaviour id -> list of rings (one per interval in use).
-	var/list/rings = list()
+	var/list/rings = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
 	/// lane -> rings, in behaviour id order.
 	var/list/lane_rings
 	/// lane -> recs with pending wakes.
 	var/list/wake_q
 	/// lane -> an empty list swapped in for wake_q[lane] while it drains.
 	var/list/wake_spare
-	var/list/service_queue = list()
+	var/list/service_queue = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
 	/// Recs with eager derived values to recompute.
-	var/list/derived_queue = list()
+	var/list/derived_queue = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
 
 	var/bulk_depth = 0
-	var/list/bulk_list = list()
+	var/list/bulk_list = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
 
 	/// Deadline wheel: OM_DEADLINE_BUCKETS lists of (rec, bid, gen, due) entries.
 	var/list/buckets
@@ -83,7 +83,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 
 	/// Events (event.dm).
 	var/emit_depth = 0
-	var/list/event_queue = list()
+	var/list/event_queue = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
 
 	/// Hook context for holds reconciliation (contribution.dm).
 	var/hook_epoch = 0
@@ -92,7 +92,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	var/ctx_bid = 0
 
 	/// Budget shares per lane (fractions of the run's budget).
-	var/list/lane_share = list(0.3, 0.3, 0.15, 0.15, 0.1)
+	var/list/lane_share = list(0.3, 0.3, 0.15, 0.15, 0.1) // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
 	/// Tests: max hook calls per lane per run (list of 5), and for deadlines.
 	var/list/harness_caps
 	var/harness_deadline_cap = 0
@@ -109,18 +109,18 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 
 	/// Pipelines (pipeline.dm), indexed by pipeline pipe_idx: free frames, parked entities
 	/// (each entity's pipe state knows its index) and the audit's round-robin cursor.
-	var/list/free_frames = list()
-	var/list/parked = list()
-	var/list/audit_cursor = list()
+	var/list/free_frames = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/parked = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/audit_cursor = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
 	/// Stage profile: "[stage type]" -> sampled ms and calls (pipeline profile_stride).
-	var/list/stage_cost = list()
-	var/list/stage_calls = list()
+	var/list/stage_cost = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/stage_calls = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
 	/// Frames run by profiling pipelines (the stage profiler samples every Nth).
 	var/pipe_frames = 0
 
 	/// behaviour id -> list(OM_STAT_LEN) counters.
-	var/list/stats = list()
-	var/list/errors = list()
+	var/list/stats = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/errors = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
 	/// Tests expecting an error: recorded, no stack trace.
 	var/expect_errors = FALSE
 	var/last_run_ms = 0
@@ -612,7 +612,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 
 /// Runs `B`'s tick on `E` now, outside its ring (Life's run-this-system-now
 /// path). dt is the caller's; the ring's own schedule is unchanged.
-/proc/om_tick_now(datum/E, B, dt)
+/proc/om_tick_now(datum/E, B, dt) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/rec/rec = E?.om_rec
 	if(!rec)
 		return FALSE
@@ -825,7 +825,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 /// A min_interval behaviour's wake arriving too soon: its bits stay pending (later changes
 /// coalesce into them) and one deadline delivers them when the interval ends. Returns TRUE
 /// when the wake was deferred.
-/proc/om_throttled(datum/om/rec/rec, datum/om/behaviour/B, i, bits)
+/proc/om_throttled(datum/om/rec/rec, datum/om/behaviour/B, i, bits) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/t = rec.sched.now()
 	var/list/T = rec.throttle
 	var/k = 0
@@ -847,7 +847,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	return FALSE
 
 /// The throttle interval ended: queue the coalesced wake.
-/proc/om_throttle_release(datum/om/rec/rec, datum/om/behaviour/B)
+/proc/om_throttle_release(datum/om/rec/rec, datum/om/behaviour/B) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/i = rec.att.Find(B)
 	if(i && rec.att_pend[i] && (rec.att_state[i] & OM_ATT_STARTED))
 		rec.sched.enqueue(rec, B.lane)
@@ -870,7 +870,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 // ---------------------------------------------------------------- diagnostics
 
 /// Admin-readable snapshot: per behaviour type counters, ring sizes, queue lengths.
-/proc/om_diagnostics(datum/om/scheduler/sched)
+/proc/om_diagnostics(datum/om/scheduler/sched) // ALLOW(base_proc): global API written before the base-type ratchet
 	sched = sched || GLOB.om_live_sched || om_scheduler()
 	var/datum/om/registry/reg = om_registry()
 	. = list()

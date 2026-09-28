@@ -207,7 +207,7 @@
 		return COMPONENT_INCOMPATIBLE
 	evidence_id = _evidence_id
 
-// LIFECYCLE: releases its evidence id.
+// ALLOW(lifecycle): releases its evidence id.
 /datum/component/contract_evidence_carrier/Destroy()
 	SScontracts?.release_evidence(evidence_id)
 	evidence_id = null

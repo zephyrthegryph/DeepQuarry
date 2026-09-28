@@ -46,7 +46,7 @@
 	drop_policy = SLOT_DROP_HOLDER
 	exposure = SLOT_EXPOSURE_INTERNAL
 
-// LIFECYCLE: passengers are let out.
+// ALLOW(lifecycle): passengers are let out.
 /obj/structure/transit_tube_pod/Destroy()
 	for(var/atom/movable/AM in slot_contents(CONTAINER_SLOT_TRANSIT_POD))
 		AM.forceMove(get_turf(src))

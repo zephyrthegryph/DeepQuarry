@@ -3,6 +3,7 @@
 	icon_state = "frggrenade"
 	item_state = "grenade"
 
+	// ALLOW(instance_list): c: read-only per-subtype constant table (12 subtype overrides); a getter would share it, not worth it on a rare type
 	var/list/projectile_types = list(/obj/item/projectile/bullet/pistol/rubber)	// What sorts of projectiles might we make?
 
 	//The radius of the circle used to launch projectiles. Lower values mean less projectiles are used but if set too low gaps may appear in the spread pattern

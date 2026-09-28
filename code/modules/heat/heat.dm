@@ -310,19 +310,19 @@
 /// Watches `target`'s temperature for crossing `limit` (upwards if `above`);
 /// `callback` runs on `owner` as (watch, reason, source). A turf watches its
 /// solid; any other atom its heat body. Returns the watch, or null.
-/proc/heat_watch_threshold(datum/owner, atom/target, limit, above, callback, both_edges = FALSE, lane = HEAT_LANE_NORMAL, keep_body = TRUE)
+/proc/heat_watch_threshold(datum/owner, atom/target, limit, above, callback, both_edges = FALSE, lane = HEAT_LANE_NORMAL, keep_body = TRUE) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/native_watch/heat/W = new(owner, callback)
 	return W.start(target, above ? HEAT_WATCH_ABOVE : HEAT_WATCH_BELOW, limit, both_edges, lane, keep_body)
 
 /// Watches `target`'s temperature band over ascending `levels`: fires on every
 /// band change, and once at registration.
-/proc/heat_watch_band(datum/owner, atom/target, list/levels, callback, lane = HEAT_LANE_NORMAL, keep_body = TRUE)
+/proc/heat_watch_band(datum/owner, atom/target, list/levels, callback, lane = HEAT_LANE_NORMAL, keep_body = TRUE) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/native_watch/heat/W = new(owner, callback)
 	return W.start(target, HEAT_WATCH_BAND, levels, FALSE, lane, keep_body)
 
 /// A ThresholdSet on `target` (add entries with add_entry()); `callback` runs
 /// on `owner` as (watch, payload, entered, generation) per crossing.
-/proc/heat_watch_set(datum/owner, atom/target, callback, lane = HEAT_LANE_NORMAL)
+/proc/heat_watch_set(datum/owner, atom/target, callback, lane = HEAT_LANE_NORMAL) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/native_watch/heat/W = new(owner, callback)
 	return W.start(target, HEAT_WATCH_SET, 0, FALSE, lane, TRUE)
 

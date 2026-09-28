@@ -97,7 +97,7 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 
 REF_OWNED(/datum/component/burning, "particle_effect")
 
-// LIFECYCLE: the fire's heat and shared particles leave the burning thing.
+// ALLOW(lifecycle): the fire's heat and shared particles leave the burning thing.
 /datum/component/burning/Destroy(force)
 	stop_heat()
 	if (ismovable(parent) && particle_type)

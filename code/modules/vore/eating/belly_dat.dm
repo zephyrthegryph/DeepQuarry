@@ -31,16 +31,19 @@
 	var/datum/belly/transferlocation = null	// Location that the prey is released if they struggle and get dropped off.
 
 	var/tmp/digest_mode = DM_HOLD				// Whether or not to digest. Default to not digest.
+	// ALLOW(instance_list): never instantiated: legacy /datum/belly (nothing creates it or calls copy()); no runtime cost, delete the type instead
 	var/tmp/list/digest_modes = list(DM_HOLD,DM_DIGEST,DM_HEAL,DM_ABSORB,DM_DRAIN,DM_UNABSORB,DM_SHRINK,DM_GROW,DM_SIZE_STEAL,DM_EGG)	// Possible digest modes
 	var/tmp/mob/living/owner					// The mob whose belly this is.
+	// ALLOW(instance_list): never instantiated: legacy /datum/belly (nothing creates it or calls copy()); no runtime cost, delete the type instead
 	var/tmp/list/internal_contents = list()		// People/Things you've eaten into this belly!
 	var/tmp/emotePend = FALSE					// If there's already a spawned thing counting for the next emote
+	// ALLOW(instance_list): never instantiated: legacy /datum/belly (nothing creates it or calls copy()); no runtime cost, delete the type instead
 	var/tmp/list/items_preserved = list()		// Stuff that wont digest.
-	var/list/slots = list(slot_back,slot_handcuffed,slot_l_store,slot_r_store,slot_wear_mask,slot_l_hand,slot_r_hand,slot_wear_id,slot_glasses,slot_gloves,slot_head,slot_shoes,slot_belt,slot_wear_suit,slot_w_uniform,slot_s_store,slot_l_ear,slot_r_ear)
+	var/list/slots = list(slot_back,slot_handcuffed,slot_l_store,slot_r_store,slot_wear_mask,slot_l_hand,slot_r_hand,slot_wear_id,slot_glasses,slot_gloves,slot_head,slot_shoes,slot_belt,slot_wear_suit,slot_w_uniform,slot_s_store,slot_l_ear,slot_r_ear) // ALLOW(instance_list): never instantiated: legacy /datum/belly (nothing creates it or calls copy()); no runtime cost, delete the type instead
 
 
 	// Don't forget to watch your commas at the end of each line if you change these.
-	var/list/struggle_messages_outside = list(
+	var/list/struggle_messages_outside = list( // ALLOW(instance_list): never instantiated: legacy /datum/belly (nothing creates it or calls copy()); no runtime cost, delete the type instead
 		"%pred's %belly wobbles with a squirming meal.",
 		"%pred's %belly jostles with movement.",
 		"%pred's %belly briefly swells outward as someone pushes from inside.",
@@ -50,7 +53,7 @@
 		"%pred's %belly gushes softly.",
 		"%pred's %belly lets out a wet squelch.")
 
-	var/list/struggle_messages_inside = list(
+	var/list/struggle_messages_inside = list( // ALLOW(instance_list): never instantiated: legacy /datum/belly (nothing creates it or calls copy()); no runtime cost, delete the type instead
 		"Your useless squirming only causes %pred's slimy %belly to squelch over your body.",
 		"Your struggles only cause %pred's %belly to gush softly around you.",
 		"Your movement only causes %pred's %belly to slosh around you.",
@@ -60,7 +63,7 @@
 		"You jostle %pred's %belly with movement.",
 		"You squirm inside of %pred's %belly, making it wobble around.")
 
-	var/list/digest_messages_owner = list(
+	var/list/digest_messages_owner = list( // ALLOW(instance_list): never instantiated: legacy /datum/belly (nothing creates it or calls copy()); no runtime cost, delete the type instead
 		"You feel %prey's body succumb to your digestive system, which breaks it apart into soft slurry.",
 		"You hear a lewd glorp as your %belly muscles grind %prey into a warm pulp.",
 		"Your %belly lets out a rumble as it melts %prey into sludge.",
@@ -72,7 +75,7 @@
 		"Your %belly kneads on every fiber of %prey, softening them down into mush to fuel your next hunt.",
 		"Your %belly churns %prey down into a hot slush. You can feel the nutrients coursing through your digestive track with a series of long, wet glorps.")
 
-	var/list/digest_messages_prey = list(
+	var/list/digest_messages_prey = list( // ALLOW(instance_list): never instantiated: legacy /datum/belly (nothing creates it or calls copy()); no runtime cost, delete the type instead
 		"Your body succumbs to %pred's digestive system, which breaks you apart into soft slurry.",
 		"%pred's %belly lets out a lewd glorp as their muscles grind you into a warm pulp.",
 		"%pred's %belly lets out a rumble as it melts you into sludge.",
@@ -84,14 +87,14 @@
 		"%pred's %belly kneads on every fiber of your body, softening you down into mush to fuel their next hunt.",
 		"%pred's %belly churns you down into a hot slush. Your nutrient-rich remains course through their digestive track with a series of long, wet glorps.")
 
-	var/list/examine_messages = list(
+	var/list/examine_messages = list( // ALLOW(instance_list): never instantiated: legacy /datum/belly (nothing creates it or calls copy()); no runtime cost, delete the type instead
 		"They have something solid in their %belly!",
 		"It looks like they have something in their %belly!")
 
 	//Mostly for being overridden on precreated bellies on mobs. Could be VV'd into
 	//a carbon's belly if someone really wanted. No UI for carbons to adjust this.
 	//List has indexes that are the digestion mode strings, and keys that are lists of strings.
-	var/tmp/list/emote_lists = list()
+	var/tmp/list/emote_lists = list() // ALLOW(instance_list): never instantiated: legacy /datum/belly (nothing creates it or calls copy()); no runtime cost, delete the type instead
 
 //OLD: This only exists for legacy conversion purposes
 //It's called whenever an old datum-style belly is loaded

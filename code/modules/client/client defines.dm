@@ -92,7 +92,9 @@
 	var/related_accounts_cid = "(Requires database)"	//So admins know why it isn't working - Used to determine what other accounts previously logged in from this computer id
 	var/account_join_date = "(Requires database)"
 	var/account_age = "(Requires database)"
+	// ALLOW(instance_list): d: one per connected client; loaded from the database on login
 	var/list/department_hours = list() // Track hours of leave accured for each department.
+	// ALLOW(instance_list): d: one per connected client; loaded from the database on login
 	var/list/play_hours	= list() // Tracks total playtime hours for each departments.
 
 	preload_rsc = PRELOAD_RSC
@@ -101,7 +103,7 @@
 
 	control_freak = 0 // KSC 1/30/20 - This enables all clientside options for Players.
 	// List of all asset filenames sent to this client by the asset cache, along with their assoicated md5s
-	var/list/sent_assets = list()
+	var/list/sent_assets = list() // ALLOW(instance_list): d: one per connected client; every client is sent assets on login
 	/// List of all completed blocking send jobs awaiting acknowledgement by send_asset
 	var/list/completed_asset_jobs
 	/// Last asset send job id.
@@ -126,17 +128,17 @@
 	var/stat_tab
 
 	/// list of all tabs
-	var/list/panel_tabs = list()
+	var/list/panel_tabs = list() // ALLOW(instance_list): d: one per connected client; rebuilt on every verb refresh
 	/// list of tabs containing spells and abilities
 	var/list/spell_tabs
 	/// list of misc tabs from mob
-	var/list/misc_tabs = list()
+	var/list/misc_tabs = list() // ALLOW(instance_list): d: one per connected client; stat panel tabs
 	///A lazy list of atoms we've examined in the last RECENT_EXAMINE_MAX_WINDOW (default 2) seconds, so that we will call [/atom/proc/examine_more] instead of [/atom/proc/examine] on them when examining
 	var/list/recent_examines
 	///Our object window datum. It stores info about and handles behavior for the object tab
 	var/datum/object_window_info/obj_window
 
-	var/list/misc_cache = list()
+	var/list/misc_cache = list() // ALLOW(instance_list): d: one per connected client; protean code indexes it directly
 
 	var/atom/examine_icon //Holder for examine icon, useful for statpanel
 

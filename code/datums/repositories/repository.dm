@@ -16,4 +16,4 @@
 	timestamp += valid_duration
 
 /datum/cache_entry/valid_until/is_valid()
-	return world.time < timestamp
+	return world.time < timestamp // ALLOW(cooldown): cache freshness timestamp

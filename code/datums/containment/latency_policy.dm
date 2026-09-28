@@ -29,7 +29,7 @@
  * transaction hook lands (medical_frameworks.md), swapping this one call
  * site onto it is the whole migration -- see containment.md §4.7.
  */
-/proc/dq_latent_touch(atom/movable/A)
+/proc/dq_latent_touch(atom/movable/A) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(A)
 		A.latent_last_touch = world.time
 
@@ -50,7 +50,7 @@
  * caller (dq_latent_attempt_collapse()) still goes through latent_collapse(),
  * which re-checks everything atomically.
  */
-/proc/can_be_latent(atom/movable/A)
+/proc/can_be_latent(atom/movable/A) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!CONFIG_GET(flag/latency_policy_enabled))
 		return FALSE
 	if(!A || QDELETED(A) || !A.loc)
@@ -117,7 +117,7 @@ GLOBAL_LIST_EMPTY(latency_policy_log)
  * test) or a logged runtime (live servers) -- either way it should never
  * happen if collapse and materialization are exact inverses.
  */
-/proc/dq_latency_audit_check(atom/movable/A, list/before)
+/proc/dq_latency_audit_check(atom/movable/A, list/before) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!dq_latency_audit_enabled())
 		return
 	var/list/errors = list()
@@ -137,7 +137,7 @@ GLOBAL_LIST_EMPTY(latency_policy_log)
 /// Tries to collapse `A` under the policy. Logging and the audit blob are
 /// latent_collapse()'s own job (latent.dm), so every collapse is covered,
 /// not just sweep-triggered ones. Returns TRUE if it collapsed (src deleted).
-/proc/dq_latent_attempt_collapse(atom/movable/A)
+/proc/dq_latent_attempt_collapse(atom/movable/A) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!can_be_latent(A))
 		return FALSE
 	return A.latent_collapse(2)
@@ -153,7 +153,7 @@ GLOBAL_LIST_EMPTY(latency_policy_log)
 /// candidates on its turn, rather than being torn out of the list.
 GLOBAL_LIST_EMPTY(latency_sweep_holders)
 
-/proc/dq_latency_sweep_register(atom/holder)
+/proc/dq_latency_sweep_register(atom/holder) // ALLOW(base_proc): global API written before the base-type ratchet
 	// A sandboxed (unmaterialized) holder isn't in the live world yet: materialize()
 	// registers it, so Initialize() never touches this global (lifecycle sandbox).
 	if(!(holder.flags & ATOM_MATERIALIZED))
@@ -163,7 +163,7 @@ GLOBAL_LIST_EMPTY(latency_sweep_holders)
 		if(!PERIODIC_RUNNING(GLOB.latency_sweep))
 			PERIODIC_START(GLOB.latency_sweep, PERIODIC_SLOW)
 
-/proc/dq_latency_sweep_unregister(atom/holder)
+/proc/dq_latency_sweep_unregister(atom/holder) // ALLOW(base_proc): global API written before the base-type ratchet
 	GLOB.latency_sweep_holders -= holder
 
 /datum/latency_sweep

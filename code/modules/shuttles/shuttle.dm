@@ -72,7 +72,7 @@
 			CRASH("A supply shuttle is already defined.")
 		SSsupply.shuttle = src
 
-// LIFECYCLE: leaves SSshuttles and the supply shuttle slot.
+// ALLOW(lifecycle): leaves SSshuttles and the supply shuttle slot.
 /datum/shuttle/Destroy()
 	current_location = null
 	SSshuttles.shuttles -= src.name
@@ -213,7 +213,7 @@
 /// In transit: every half second until arrival time, the travel sound every four seconds
 /// (the sound file is five) and the landing warning five seconds out.
 /datum/shuttle/proc/long_jump_transit(obj/effect/shuttle_landmark/start_location, obj/effect/shuttle_landmark/destination, last_progress_sound, made_warning)
-	if(world.time >= arrive_time)
+	if(world.time >= arrive_time) // ALLOW(cooldown): shuttle arrival schedule
 		if(!attempt_move(destination))
 			attempt_move(start_location) //try to go back to where we started. If that fails, I guess we're stuck in the interim location
 		long_jump_arrived(start_location, destination)
@@ -222,7 +222,7 @@
 		make_sounds(HYPERSPACE_PROGRESS)
 		last_progress_sound = world.time
 
-	if(arrive_time - world.time <= 5 SECONDS && !made_warning)
+	if(arrive_time - world.time <= 5 SECONDS && !made_warning) // ALLOW(cooldown): shuttle arrival schedule
 		made_warning = TRUE
 		create_warning_effect(destination)
 	om_after(src, 5, PROC_REF(long_jump_transit), start_location, destination, last_progress_sound, made_warning)

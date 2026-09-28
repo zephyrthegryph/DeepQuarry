@@ -45,7 +45,7 @@
 	for(var/obj/item/ammo_casing/casing in stored_ammo)
 		casing.set_forged_materials(core, jacket, case_material, primer)
 
-/proc/material_round_examine(datum/material/forged, list/examine_text)
+/proc/material_round_examine(datum/material/forged, list/examine_text) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!istype(forged))
 		return
 	if(istype(forged, /datum/material/processed_alloy))

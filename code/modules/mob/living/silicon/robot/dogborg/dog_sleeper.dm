@@ -16,16 +16,17 @@
 	var/min_vitality = 0
 	var/cleaning = 0
 	var/patient_laststat = null
+	// ALLOW(instance_list): c: read-only per-subtype constant table (10 subtype overrides); a getter would share it, not worth it on a rare type
 	var/list/injection_chems = list(REAGENT_ID_INAPROVALINE, REAGENT_ID_BICARIDINE, REAGENT_ID_KELOTANE, REAGENT_ID_ANTITOXIN, REAGENT_ID_DEXALIN, REAGENT_ID_TRICORDRAZINE, REAGENT_ID_SPACEACILLIN, REAGENT_ID_TRAMADOL) //The borg is able to heal every damage type. As a nerf, they use 750 charge per injection.
 	var/eject_port = "ingestion"
-	var/list/items_preserved = list()
+	var/list/items_preserved = list() // ALLOW(instance_list): d: sleeper contents bookkeeping, edited in place through many paths
 	var/stabilizer = TRUE
 	var/compactor = FALSE
 	var/analyzer = FALSE
 	var/decompiler = FALSE
 	var/delivery = FALSE
 	var/delivery_tag = "Fuel"
-	var/list/list/deliverylists = list()
+	var/list/list/deliverylists = list() // ALLOW(instance_list): d: nested per-slot lists created with the sleeper and edited in place
 	var/list/deliveryslot_1
 	var/list/deliveryslot_2
 	var/list/deliveryslot_3
@@ -69,7 +70,7 @@
 
 REF_OWNED(/obj/item/dogborg/sleeper, list("ore_bag", "med_analyzer"))
 
-// LIFECYCLE: the patient is let out.
+// ALLOW(lifecycle): the patient is let out.
 /obj/item/dogborg/sleeper/Destroy()
 	go_out()
 	. = ..()

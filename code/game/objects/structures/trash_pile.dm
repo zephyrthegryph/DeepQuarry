@@ -6,6 +6,7 @@
 	density = TRUE
 	anchored = TRUE
 
+	// ALLOW(instance_list): d: passed to the lootable element, which adds the searcher's ckey to it in place
 	var/list/searchedby	= list()// Characters that have searched this trashpile, with values of searched time.
 	var/mob/living/hider		// A simple animal that might be hiding in the pile
 	var/obj/structure/mob_spawner/mouse_nest/mouse_nest = null

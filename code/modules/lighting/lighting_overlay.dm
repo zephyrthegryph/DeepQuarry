@@ -37,7 +37,7 @@
 	needs_update = TRUE
 	SSlighting.objects_queue += src
 
-// LIFECYCLE: lighting engine: the turf's overlay resets; refuse deletion unless forced.
+// ALLOW(lifecycle): lighting engine: the turf's overlay resets; refuse deletion unless forced.
 /datum/lighting_object/Destroy(force)
 	if (!force)
 		return QDEL_HINT_LETMELIVE

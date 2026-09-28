@@ -16,7 +16,7 @@ FAILED=0
 
 # check for ripgrep
 if command -v rg >/dev/null 2>&1; then
-	grep=rg
+	grep_bin=rg
 	pcre2_support=1
 	if ! rg -P '' >/dev/null 2>&1 ; then
 		pcre2_support=0
@@ -31,7 +31,7 @@ else
 	# and are skipped here; CI always runs them.
 	export LC_ALL=C.UTF-8
 	pcre2_support=0
-	grep="grep -P"
+	grep_bin="grep -P"
 	code_files=(code/**/**.dm)
 	map_files=(maps/**/**.dmm)
 	code_x_515=(code/**/!(__byond_version_compat).dm)
@@ -39,7 +39,22 @@ fi;
 
 # The file lists are expanded once: re-globbing code/**/**.dm for every rule
 # took about 6 s each on Windows, over 4 minutes in total.
-echo -e "${BLUE}Using grep provider at $(which ${grep%% *})${NC}"
+echo -e "${BLUE}Using grep provider at $(which ${grep_bin%% *})${NC}"
+
+# A hit whose line carries `// ALLOW(check_grep): <reason>` is a justified keep
+# (doc/rewrite/object_model_core.md sec 16): every `$grep` rule drops it. Succeeds
+# (and prints) only when some hit is left.
+allow_grep() {
+	local out
+	out=$($grep_bin "$@") || true
+	out=$(printf '%s\n' "$out" | grep -v 'ALLOW([^)]*check_grep[^)]*)[[:space:]]*:[[:space:]]*[^[:space:]]' | sed '/^$/d' || true)
+	if [ -n "$out" ]; then
+		printf '%s\n' "$out"
+		return 0
+	fi
+	return 1
+}
+grep=allow_grep
 
 part=0
 section() {
@@ -499,7 +514,7 @@ part "organ damage outside the body"
 # mend(tag, amount, organ). Outside code/modules/body and code/modules/organs,
 # no take_damage()/heal_damage() on organs, no organ `.damage` writes, no
 # LESION_HEAL_* modes and no calls to the body-internal integrity procs.
-if grep -RInE --include='*.dm' '\b(organ|internal_organ|external_organ|our_organ|affecting|affected|bodypart|brain|my_brain|heart|ht|liver|lungs|kidneys|eyes|stomach|st|limb|[a-z_]*_organ)\??\.(take_damage|heal_damage|damage[[:space:]]*([-+*/]?=[^=]|\+\+|--))|(take_damage|heal_damage)\(.*(LESION_HEAL|/datum/affliction/lesion)|internal_organs_by_name\[[^]]*\]\??\.(take_damage|heal_damage)\(|\.(apply_lesion_damage|apply_wound_damage|restore_lesions|heal_wound_damage)\(|LESION_HEAL_' code | grep -vE '^code/modules/(body|organs)/'; then
+if grep -RInE --include='*.dm' '\b(organ|internal_organ|external_organ|our_organ|affecting|affected|bodypart|brain|my_brain|heart|ht|liver|lungs|kidneys|eyes|stomach|st|limb|[a-z_]*_organ)\??\.(take_damage|heal_damage|damage[[:space:]]*([-+*/]?=[^=]|\+\+|--))|(take_damage|heal_damage)\(.*(LESION_HEAL|/datum/affliction/lesion)|internal_organs_by_name\[[^]]*\]\??\.(take_damage|heal_damage)\(|\.(apply_lesion_damage|apply_wound_damage|restore_lesions|heal_wound_damage)\(|LESION_HEAL_' code | grep -vE '^code/modules/(body|organs)/' | grep -v 'ALLOW([^)]*check_grep'; then
 	echo
 	echo -e "${RED}ERROR: organ or limb damage/healing outside the body detected. Use injure(kind, amount, organ) to harm and mend(tag, amount, organ) to heal.${NC}"
 	FAILED=1

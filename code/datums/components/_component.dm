@@ -75,7 +75,7 @@
  * Arguments:
  * * force - makes it not check for and remove the component from the parent
  */
-// LIFECYCLE: the base: a component leaves its parent.
+// ALLOW(lifecycle): the base: a component leaves its parent.
 /datum/component/Destroy(force = FALSE)
 	if(!parent)
 		return ..()

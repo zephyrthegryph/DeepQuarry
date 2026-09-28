@@ -157,7 +157,7 @@ REF_OWNED(/obj/machinery/computer/teleporter, "teleport_control")
 	underlays += image('icons/obj/stationobjs.dmi', icon_state = "tele-wires")
 	default_apply_parts()
 
-// LIFECYCLE: the teleporter console forgets its hub.
+// ALLOW(lifecycle): the teleporter console forgets its hub.
 /obj/machinery/teleport/hub/Destroy()
 	com?.teleport_control.hub = null
 	com = null
@@ -224,7 +224,7 @@ REF_OWNED(/obj/machinery/computer/teleporter, "teleport_control")
 	add_overlay("controller-wires")
 	default_apply_parts()
 
-// LIFECYCLE: the teleporter console forgets its station.
+// ALLOW(lifecycle): the teleporter console forgets its station.
 /obj/machinery/teleport/station/Destroy()
 	com?.com?.teleport_control.station = null
 	com = null

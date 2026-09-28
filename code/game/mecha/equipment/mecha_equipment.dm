@@ -216,7 +216,7 @@
 	src.update_chassis_page()
 	return
 
-// LIFECYCLE: equipment detaches from its mech.
+// ALLOW(lifecycle): equipment detaches from its mech.
 /obj/item/mecha_parts/mecha_equipment/Destroy()
 	detach()
 	return ..()

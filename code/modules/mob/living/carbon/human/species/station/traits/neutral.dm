@@ -1254,7 +1254,7 @@
 	/datum/trait/neutral/food_pref/coffee,
 	/datum/trait/neutral/food_pref/stimulant
 	)
-	var/list/our_allergens = list(ALLERGEN_MEAT)
+	var/list/our_allergens = list(ALLERGEN_MEAT) // ALLOW(instance_list): c: read-only per-subtype constant table (11 subtype overrides); a getter would share it, not worth it on a rare type
 
 /datum/trait/neutral/food_pref/apply(datum/species/S, mob/living/carbon/human/H, trait_prefs)
 	. = ..()

@@ -4,7 +4,7 @@
  *
  * * material - the material used to generate the overlay
  */
-/proc/material_insertion_animation(datum/material/material)
+/proc/material_insertion_animation(datum/material/material) // ALLOW(base_proc): global API written before the base-type ratchet
 	RETURN_TYPE(/mutable_appearance)
 
 	var/static/list/mutable_appearance/apps = list()

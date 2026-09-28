@@ -89,7 +89,7 @@
 
 REF_OWNED(/datum/ai_brain, "model")
 
-// LIFECYCLE: a running behaviour is stopped and chunk sleep cancelled.
+// ALLOW(lifecycle): a running behaviour is stopped and chunk sleep cancelled.
 /datum/ai_brain/Destroy()
 	cancel_chunk_sleep()
 	if(active_behavior_type)
@@ -404,7 +404,7 @@ REF_OWNED(/datum/ai_brain, "model")
 			if(!lose_threat_at)
 				lose_threat_at = world.time
 				return  // Start the grace timer; don't drop yet.
-			if(world.time < lose_threat_at + DQ_LOSE_THREAT_TIMEOUT)
+			if(world.time < lose_threat_at + DQ_LOSE_THREAT_TIMEOUT) // ALLOW(cooldown): threat memory expiry
 				return  // Still within the grace period.
 			// Grace period expired — drop the target.
 			drop_primary_threat()
@@ -464,7 +464,7 @@ REF_OWNED(/datum/ai_brain, "model")
 		var/ref = om_handle(other)
 		var/list/entry = personal[ref]
 		if(entry)
-			if(entry["expires"] && entry["expires"] < world.time)
+			if(entry["expires"] && entry["expires"] < world.time) // ALLOW(cooldown): threat memory expiry
 				personal -= ref
 				UNSETEMPTY(personal)
 			else

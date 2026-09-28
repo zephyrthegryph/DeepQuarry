@@ -42,7 +42,7 @@
 	if(landmark_transition)
 		landmark_transition = SSshuttles.get_landmark(landmark_transition)
 
-// LIFECYCLE: its docking controllers are released.
+// ALLOW(lifecycle): its docking controllers are released.
 /datum/shuttle/autodock/Destroy()
 	in_use = null
 	next_location = null
@@ -155,7 +155,7 @@
 				set_process_state(WAIT_FINISH)
 
 		if (WAIT_FINISH)
-			if (world.time > last_dock_attempt_time + DOCK_ATTEMPT_TIMEOUT || check_docked())
+			if (world.time > last_dock_attempt_time + DOCK_ATTEMPT_TIMEOUT || check_docked()) // ALLOW(cooldown): dock attempt timeout
 				//*** all done here
 				set_process_state(IDLE_STATE)
 				arrived()

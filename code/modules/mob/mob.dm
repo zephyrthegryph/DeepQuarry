@@ -1164,7 +1164,7 @@ REF_PAIR(/mob, list("ability_master" = "my_mob"))
 		exploit_record += exploitmsg
 		I.exploit_for = om_handle(src)
 
-// LIFECYCLE: exploit add-ons forget the item (the exploited mob is a handle).
+// ALLOW(lifecycle): exploit add-ons forget the item (the exploited mob is a handle).
 /obj/item/Destroy(force, ...)
 	if(exploit_for)
 		var/mob/exploited = om_resolve(exploit_for)
@@ -1617,7 +1617,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 		for(var/variable in user_vars_remembered)
 			if(variable in user.vars)
 				if(user.vars[variable] == user_vars_to_edit[variable])
-					user.vars[variable] = user_vars_remembered[variable]
+					user.vars[variable] = user_vars_remembered[variable] // ALLOW(api): remembered user vars restored by name (admin possession)
 		user_vars_remembered = initial(user_vars_remembered)
 
 /obj/item/equipped(mob/living/user, slot_equipped)
@@ -1635,5 +1635,5 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 			for(var/variable in user_vars_remembered)
 				if(variable in user.vars)
 					if(user.vars[variable] == user_vars_to_edit[variable])
-						user.vars[variable] = user_vars_remembered[variable]
+						user.vars[variable] = user_vars_remembered[variable] // ALLOW(api): remembered user vars restored by name (admin possession)
 			user_vars_remembered = initial(user_vars_remembered)

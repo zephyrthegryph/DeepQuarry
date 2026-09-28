@@ -128,7 +128,7 @@ GLOBAL_LIST_INIT(state_type_migrations, list())
 
 /// Serializes `D` (and, with STATE_CONTENTS, its contents) into a blob.
 /// Returns null if anything refuses; the reasons are appended to `errors` if given.
-/proc/state_serialize(datum/D, flags = NONE, list/errors)
+/proc/state_serialize(datum/D, flags = NONE, list/errors) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/state_context/ctx = new(flags)
 	. = ctx.serialize_root(D)
 	if(ctx.errors && errors)
@@ -145,7 +145,7 @@ GLOBAL_LIST_INIT(state_type_migrations, list())
 
 /// Writes `blob` onto the existing object `D`. The blob's type must be D's type
 /// (after migration). Returns TRUE on success.
-/proc/state_apply(datum/D, list/blob, flags = STATE_FULL, list/errors)
+/proc/state_apply(datum/D, list/blob, flags = STATE_FULL, list/errors) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/state_context/ctx = new(flags)
 	. = ctx.apply_root(D, blob)
 	if(ctx.errors && errors)
@@ -153,23 +153,23 @@ GLOBAL_LIST_INIT(state_type_migrations, list())
 	qdel(ctx)
 
 /// The encoded delta of `D` alone (no contents or components), or null if refused.
-/proc/state_delta(datum/D, list/errors)
+/proc/state_delta(datum/D, list/errors) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/list/blob = state_serialize(D, NONE, errors)
 	if(!blob)
 		return null
 	return blob[STATE_KEY_VARS] || list()
 
 /// TRUE if state_serialize(D, flags) would succeed.
-/proc/state_can_serialize(datum/D, flags = STATE_FULL)
+/proc/state_can_serialize(datum/D, flags = STATE_FULL) // ALLOW(base_proc): global API written before the base-type ratchet
 	return !!state_serialize(D, flags)
 
 /// The type's schema: the names of its saved vars, in declaration order.
-/proc/state_saved_vars(datum/D)
+/proc/state_saved_vars(datum/D) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/state_schema/schema = state_schema_for(D)
 	return schema.saved_vars.Copy()
 
 /// TRUE if `var_name` is part of `D`'s saved state (its type's schema).
-/proc/state_is_saved(datum/D, var_name)
+/proc/state_is_saved(datum/D, var_name) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/state_schema/schema = state_schema_for(D)
 	return var_name in schema.saved_vars
 

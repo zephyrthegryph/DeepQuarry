@@ -27,9 +27,11 @@
 	var/active_regen = FALSE //Used for the regenerate proc in human_powers.dm
 	var/active_regen_delay = 300
 	COOLDOWN_DECLARE(breath_sound_cooldown)				//Allows us to store the value across proc calls per-mob.
+	// ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 	var/list/teleporters = list() //Used for lleill abilities
 
 	var/rest_dir = 0					//To lay down in a specific direction
+	// ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 	var/list/datum/genetics/side_effect/genetic_side_effects = list()	//For any genetic side effects we currently have.
 	COOLDOWN_DECLARE(chew_cooldown)
 
@@ -81,7 +83,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_ALT_FARMANIMALS)
 
 REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 
-// LIFECYCLE: organs are deleted from a snapshot; nif and blood vessel go with the body.
+// ALLOW(lifecycle): organs are deleted from a snapshot; nif and blood vessel go with the body.
 /mob/living/carbon/human/Destroy()
 	// Each organ's Destroy() removes itself (and qdels its children/internals)
 	// out of src.organs, so iterating the live list skips entries — skipped

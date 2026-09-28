@@ -83,6 +83,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	var/xo = null
 	var/atom/original = null // the original target clicked
 	var/turf/starting = null // the projectile's starting turf
+	// ALLOW(instance_list): d: filled as the projectile crosses atoms; projectiles are short-lived
 	var/list/permutated = list() // we've passed through these atoms, don't try to hit them again
 	var/p_x = 16
 	var/p_y = 16			// the pixel location of the tile that the player clicked. Default is the center
@@ -482,7 +483,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	original = target
 	setAngle(Get_Angle(source, target))
 
-// LIFECYCLE: a hitscan finalizes its tracers; its casing forgets it.
+// ALLOW(lifecycle): a hitscan finalizes its tracers; its casing forgets it.
 /obj/item/projectile/Destroy()
 	if(hitscan)
 		finalize_hitscan_and_generate_tracers()

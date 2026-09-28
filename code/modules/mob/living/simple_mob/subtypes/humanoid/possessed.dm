@@ -92,7 +92,7 @@
 	self.idle--
 
 //Dies with a variety of messages, a disgusting sound, then drops the control module, bones, blood, gibs, and a cloud of miasma.
-// LIFECYCLE: the possessed suit collapses into remains and miasma.
+// ALLOW(lifecycle): the possessed suit collapses into remains and miasma.
 /mob/living/simple_mob/humanoid/possessed/Destroy()
 	var/droploc = get_turf(src)
 	playsound(src, 'sound/effects/blobattack.ogg', 40, 1)

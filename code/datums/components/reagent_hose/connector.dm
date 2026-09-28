@@ -34,7 +34,7 @@
 
 REF_OWNED(/datum/component/hose_connector, list("my_hose", "reagents"))
 
-// LIFECYCLE: the carrier loses its disconnect verb.
+// ALLOW(lifecycle): the carrier loses its disconnect verb.
 /datum/component/hose_connector/Destroy()
 	carrier.verbs -= /atom/proc/disconnect_hose
 	. = ..()

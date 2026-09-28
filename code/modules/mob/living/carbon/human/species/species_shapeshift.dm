@@ -615,11 +615,7 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	om_do_after(src, 4 SECONDS, target = victim, receiver = src, on_done = PROC_REF(copy_body_done), done_args = list(victim, flavour))
 
 /mob/living/carbon/human/proc/copy_body_done(mob/living/carbon/human/victim, flavour)
-	var/checking = FALSE
-	for(var/obj/item/grab/G in src)
-		if(G?.grab_target() == victim && G.state >= GRAB_AGGRESSIVE)
-			checking = TRUE
-	if (!checking)
+	if (!copy_body_gripping(victim))
 		to_chat(src, span_warning("You lost your grip on [victim]!"))
 		return
 	if(client)	//Make sure we didn't d/c

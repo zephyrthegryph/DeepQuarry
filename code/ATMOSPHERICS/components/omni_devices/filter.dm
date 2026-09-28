@@ -12,7 +12,7 @@
 	icon_state = "map_filter"
 	pipe_state = "omni_filter"
 
-	var/list/atmos_filters = new()
+	var/list/atmos_filters = new() // ALLOW(instance_list): atmos area (M1a): omni filter pipe device; listed in memory_lists_audit.md, not edited here
 	var/datum/omni_port/input
 	var/datum/omni_port/output
 
@@ -23,6 +23,7 @@
 	var/max_flow_rate = 200
 	var/set_flow_rate = 200
 
+	// ALLOW(instance_list): atmos area (M1a): omni filter pipe device; listed in memory_lists_audit.md, not edited here
 	var/list/filtering_outputs = list()	//maps gasids to gas_mixtures
 
 /obj/machinery/atmospherics/omni/atmos_filter/Initialize(mapload)

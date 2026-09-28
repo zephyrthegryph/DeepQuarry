@@ -3,7 +3,7 @@
 	name = "forensic scanner"
 	desc = "Used to scan objects for DNA and fingerprints."
 	icon_state = "forensic"
-	var/list/stored = list()
+	var/list/stored = list() // ALLOW(instance_list): d: scanner evidence store
 	w_class = ITEMSIZE_SMALL
 	item_state = "electronic"
 	flags = NOBLUDGEON

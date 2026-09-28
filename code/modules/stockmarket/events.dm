@@ -14,7 +14,7 @@
 /datum/stockEvent/proc/event_tick()
 	if (finished)
 		return
-	if (world.time > next_phase)
+	if (world.time > next_phase) // ALLOW(cooldown): stock lease/offer expiry and market phases
 		transition()
 
 /datum/stockEvent/proc/transition()

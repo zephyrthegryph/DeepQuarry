@@ -18,7 +18,7 @@
 	if(!mapload || !CONFIG_GET(flag/persistence_ignore_mapload))
 		SSpersistence.track_value(src, /datum/persistent/filth/trash)
 
-// LIFECYCLE: persistent trash forgets this item.
+// ALLOW(lifecycle): persistent trash forgets this item.
 /obj/item/trash/Destroy()
 	SSpersistence.forget_value(src, /datum/persistent/filth/trash)
 	. = ..()

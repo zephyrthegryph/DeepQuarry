@@ -14,9 +14,9 @@
 	//power_rating = 7500			//7500 W ~ 10 HP
 	pipe_flags = PIPING_DEFAULT_LAYER_ONLY|PIPING_ONE_PER_TURF
 
-	var/list/stored_material =  list(MAT_ALGAE = 0, MAT_GRAPHITE = 0)
+	var/list/stored_material =  list(MAT_ALGAE = 0, MAT_GRAPHITE = 0) // ALLOW(instance_list): d: edited in place per instance (5 writers)
 	// Capacity increases with matter bin quality
-	var/list/storage_capacity = list(MAT_ALGAE = 10000, MAT_GRAPHITE = 10000)
+	var/list/storage_capacity = list(MAT_ALGAE = 10000, MAT_GRAPHITE = 10000) // ALLOW(instance_list): d: edited in place per instance (1 writers)
 	// Speed at which we convert CO2 to O2.  Increases with manipulator quality
 	var/moles_per_tick = 1
 	// Power required to convert one mole of CO2 to O2 (this is powering the grow lights).  Improves with capacitors

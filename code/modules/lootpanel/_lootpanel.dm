@@ -7,7 +7,7 @@
 	/// The owner of the panel
 	var/client/owner
 	/// The list of all search objects indexed.
-	var/list/datum/search_object/contents = list()
+	var/list/datum/search_object/contents = list() // ALLOW(instance_list): d: loot panel state (generic name, too many ambiguous call sites)
 	/// The list of search_objects needing processed
 	var/list/datum/search_object/to_image
 	/// We've been notified about client version
@@ -20,7 +20,7 @@
 
 	src.owner = owner
 
-// LIFECYCLE: its searched contents are reset.
+// ALLOW(lifecycle): its searched contents are reset.
 /datum/lootpanel/Destroy(force)
 	reset_contents()
 	owner = null

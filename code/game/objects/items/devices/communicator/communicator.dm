@@ -42,7 +42,7 @@
 	var/fon = 0 // Internal light
 	var/flum = 2 // Brightness
 
-	var/list/modules = list(
+	var/list/modules = list( // ALLOW(instance_list): d: edited in place per instance (346 writers)
 							list("module" = "Phone", "icon" = "phone", "number" = PHONTAB),
 							list("module" = "Contacts", "icon" = "user", "number" = CONTTAB),
 							list("module" = "Messaging", "icon" = "comment-alt", "number" = MESSTAB),
@@ -352,7 +352,7 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 
 /mob/observer/dead
 	var/datum/exonet_protocol/exonet = null
-	var/list/exonet_messages = list()
+	var/list/exonet_messages = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 
 // Proc: New()
 // Parameters: None
@@ -385,7 +385,7 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 REF_OWNED(/obj/item/communicator, list("camera", "exonet", "cam_screen", "cam_background"))
 REF_OWNED_LIST(/obj/item/communicator, "cam_plane_masters")
 
-// LIFECYCLE: its ID drops out, connected voices time out and its calls close.
+// ALLOW(lifecycle): its ID drops out, connected voices time out and its calls close.
 /obj/item/communicator/Destroy()
 	if (src.id)
 		src.id.forceMove(get_turf(src.loc))

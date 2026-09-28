@@ -83,18 +83,18 @@
 	return kind == DAMAGE_BLUNT || kind == DAMAGE_SHARP || kind == DAMAGE_PIERCE
 
 /// Fraction of heat `A` keeps from what it covers, 0..1 (P1 PROP_INSULATION).
-/proc/dq_path_insulation(atom/A)
+/proc/dq_path_insulation(atom/A) // ALLOW(base_proc): global API written before the base-type ratchet
 	return clamp(PROPERTY(A, PROP_INSULATION) || 0, 0, 1)
 
 /// Fraction of a hit of armour key `key` that `A` stops, 0..1: its armour's
 /// deterministic soak (get_armor(), damage.md §4) after `penetration`.
-/proc/dq_path_armor(atom/A, key, penetration = 0)
+/proc/dq_path_armor(atom/A, key, penetration = 0) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!key || !A)
 		return 0
 	return dq_armor_average_percent(A.get_armor().effective(key, penetration)) / 100
 
 /// What `A`, covering something, lets through of `effect`, 0..1.
-/proc/dq_path_attenuation(atom/A, effect, kind, penetration = 0)
+/proc/dq_path_attenuation(atom/A, effect, kind, penetration = 0) // ALLOW(base_proc): global API written before the base-type ratchet
 	switch(effect)
 		if(PATH_EFFECT_HEAT)
 			return 1 - dq_path_insulation(A)
@@ -106,7 +106,7 @@
 
 /// The things in `holder`'s layers further out than slot `def`, outermost
 /// layer first. Empty for an unlayered slot.
-/proc/dq_path_outer_layers(atom/holder, datum/om/relation/slot/def)
+/proc/dq_path_outer_layers(atom/holder, datum/om/relation/slot/def) // ALLOW(base_proc): global API written before the base-type ratchet
 	. = list()
 	if(def.layer == SLOT_LAYER_NONE)
 		return
@@ -123,11 +123,11 @@
 		if(length(things))
 			. += things
 
-/proc/cmp_slot_def_layer_dsc(datum/om/relation/slot/a, datum/om/relation/slot/b)
+/proc/cmp_slot_def_layer_dsc(datum/om/relation/slot/a, datum/om/relation/slot/b) // ALLOW(base_proc): global API written before the base-type ratchet
 	return b.layer - a.layer
 
 /// The slot definition `child` is in on `holder`, or null.
-/proc/dq_path_slot_of(atom/holder, atom/movable/child)
+/proc/dq_path_slot_of(atom/holder, atom/movable/child) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!holder || child?.loc != holder || !dq_slot_defs_for(holder))
 		return null
 	var/datum/ledger/L = dq_ledger(holder)
@@ -140,7 +140,7 @@
 /// `child`, a direct child. `kind` is the DAMAGE_* kind for damage.
 /// Holders without slots pass nothing: legacy holders keep their own code
 /// until their track migrates them.
-/proc/dq_path_step(atom/holder, atom/movable/child, effect, kind = 0, penetration = 0)
+/proc/dq_path_step(atom/holder, atom/movable/child, effect, kind = 0, penetration = 0) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/relation/slot/def = dq_path_slot_of(holder, child)
 	if(!def)
 		return 0
@@ -170,7 +170,7 @@
 
 /// Share (0..1) of `effect` reaching `child` from `from`, which holds it
 /// directly or through nested holders. 0 if `child` isn't inside `from`.
-/proc/dq_path_share(atom/movable/child, atom/from, effect, kind = 0, penetration = 0)
+/proc/dq_path_share(atom/movable/child, atom/from, effect, kind = 0, penetration = 0) // ALLOW(base_proc): global API written before the base-type ratchet
 	. = 1
 	var/atom/movable/current = child
 	while(current && current != from)

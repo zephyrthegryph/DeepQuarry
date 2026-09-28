@@ -15,7 +15,7 @@
 	/// The typepaths and number of atoms that must be scanned
 	var/list/required_atoms
 	/// The list of atoms with sub-lists of atom references for scanned atoms contributing to the experiment (Or a count of atoms destoryed for destructive expiriments)
-	var/list/scanned = list()
+	var/list/scanned = list() // ALLOW(instance_list): d: one sub-list per requirement, filled when the experiment is set up
 	/// If set, it'll be used in place of the generic "Scan samples of \a [initial(target.name)]" in serialize_progress_stage()
 	var/scan_message
 

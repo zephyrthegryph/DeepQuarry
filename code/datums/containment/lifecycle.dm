@@ -14,7 +14,7 @@
 /// has a loc when each TRANSFER(mind) resolver runs. A no-op today -- no
 /// slot_def sets is_mind_slot yet (DQ Medical, O2) -- and cheap when so: one
 /// ledger peek and a defs walk per holder in the tree, nothing per thing.
-/proc/dq_lifecycle_resolve_minds(atom/movable/root)
+/proc/dq_lifecycle_resolve_minds(atom/movable/root) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/ledger/L = dq_ledger_peek(root)
 	if(L)
 		for(var/datum/om/relation/slot/def as anything in L.defs)
@@ -75,7 +75,7 @@
 	return FALSE
 
 /// Applies `def`'s policy to the one `thing` already in its slot on `holder`.
-/proc/dq_lifecycle_resolve_slot_entry(atom/movable/holder, datum/om/relation/slot/def, atom/movable/thing, atom/drop, atom/movable/successor)
+/proc/dq_lifecycle_resolve_slot_entry(atom/movable/holder, datum/om/relation/slot/def, atom/movable/thing, atom/drop, atom/movable/successor) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/flags = LEDGER_MOVE_FORCED | LEDGER_MOVE_DESTROYING
 	switch(def.drop_policy)
 		if(SLOT_DROP_DELETE)
@@ -115,7 +115,7 @@
 /// are removed; SPILL/TRANSFER/TO_LATENT/KEEP_WITH entries stay latent if
 /// they land in another latent holder, and are created only where they land
 /// on a turf. Mirrors dq_lifecycle_resolve_slot_entry() for real things.
-/proc/dq_lifecycle_resolve_latent(datum/ledger/L, atom/drop, atom/movable/successor)
+/proc/dq_lifecycle_resolve_latent(datum/ledger/L, atom/drop, atom/movable/successor) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/atom/movable/holder = L.holder
 	for(var/datum/latent_entry/entry as anything in L.latent_list())
 		var/datum/om/relation/slot/def = L.def_by_id(entry.slot)

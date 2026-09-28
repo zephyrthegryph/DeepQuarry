@@ -181,7 +181,7 @@ REF_SPILL(/obj/machinery/mineral/processing_unit_console, "inserted_id")
 	var/obj/machinery/mineral/console = null
 	var/sheets_per_tick = 10
 	var/list/ores_processing
-	var/list/ores_stored = list()
+	var/list/ores_stored = list() // ALLOW(instance_list): d: filled in New() with an entry per ore
 	var/active = FALSE
 
 	var/points = 0

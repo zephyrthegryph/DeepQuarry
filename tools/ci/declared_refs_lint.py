@@ -30,9 +30,10 @@ Medical, body, organs, surgery, protean and mind_body are included like
 everything else (doc sec 7). tools/ci/scheduler_lints.py's LC-refs count is
 the stricter successor (tmp vars count there too).
 
-Legacy undeclared vars everywhere else are listed per file with a count in
-tools/ci/declared_refs_allowlist.txt, the same ratchet C11/campaign lints
-already use: a file may not gain vars above its count.
+Legacy undeclared vars are ratcheted: tools/ci/declared_refs_baseline.txt holds
+the ceiling, which may fall, never rise. A var that is justified as it is carries
+`// ALLOW(declared_refs): <reason>` on its declaration (or the comment line above
+it; tools/ci/allow_annotations.py) and doesn't count.
 
 Object-keyed lists. An instance list var must not collect objects (as keys or
 values: `L[obj] = ...`, `L[key] = obj`, `L += obj`, `L |= obj`, `L = list(obj = ...)`)
@@ -42,7 +43,8 @@ or a declared cache (declared_cache_vars()). Relations and slots are not vars, a
 registries are global. "An object" is recognised syntactically: `src`, `usr`, a
 `new` expression, or a name the proc declares object-typed (an argument such as
 `mob/M`, a `var/obj/item/I` local, a `for(var/atom/A in ...)` loop var). These are
-ratcheted per file in tools/ci/object_keyed_lists_allowlist.txt.
+ratcheted by the `object_keyed` ceiling in the same baseline; a justified write
+carries `// ALLOW(object_keyed_lists): <reason>`.
 
 Declared caches. Every declared_cache_vars() entry maps the var name to its
 invalidation rule, CACHE_ON_CHANGE(bits), CACHE_ON_EVENT(path) or
@@ -52,7 +54,7 @@ rule fires. An entry without a rule is an error (not ratcheted).
 Usage:
     python tools/ci/declared_refs_lint.py            # the CI check
     python tools/ci/declared_refs_lint.py --report   # every var, and the total
-    python tools/ci/declared_refs_lint.py --update   # rewrite the allowlist to today's counts
+    python tools/ci/declared_refs_lint.py --update   # rewrite the ceilings to today's counts
 """
 import glob
 import os
@@ -61,10 +63,10 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 from state_schema_lint import REF_ROOTS, code_only, under  # noqa: E402
+from allow_annotations import allowed, check_ceilings, read_baseline, write_baseline  # noqa: E402
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
-ALLOWLIST = os.path.join(ROOT, "tools", "ci", "declared_refs_allowlist.txt")
-OBJLIST_ALLOWLIST = os.path.join(ROOT, "tools", "ci", "object_keyed_lists_allowlist.txt")
+BASELINE = os.path.join(ROOT, "tools", "ci", "declared_refs_baseline.txt")
 
 # Medical, body, organs, surgery and Life are no longer excluded
 # (doc/rewrite/lifecycle.md sec 7): the sweeps include them.
@@ -215,8 +217,12 @@ def scan_file(path):
         # scheduler_lints.py's lc_refs).
         if cur_type == "/datum/om/task" or cur_type.startswith("/datum/om/task/"):
             continue
+        if allowed(source_lines, no, "declared_refs"):
+            continue
         sites.append((rel, no, "%s var/%s/%s" % (cur_type, vtype.strip("/"), name)))
-    return rel, sites, cache_errors, objlist_candidates(rel, raw_lines, objlist_ok)
+    objs = [o for o in objlist_candidates(rel, raw_lines, objlist_ok)
+            if not allowed(source_lines, o[1], "object_keyed_lists")]
+    return rel, sites, cache_errors, objs
 
 
 def is_object_type(path):
@@ -348,58 +354,20 @@ def scan():
     return counts, all_sites, obj_counts, obj_sites, cache_errors
 
 
-def read_allowlist(path=ALLOWLIST):
-    allowed = {}
-    if not os.path.exists(path):
-        return allowed
-    with open(path, encoding="utf-8") as handle:
-        for line in handle:
-            line = line.split("#", 1)[0].strip()
-            if not line:
-                continue
-            path, count = line.rsplit(None, 1)
-            allowed[path] = int(count)
-    return allowed
-
-
-def write_allowlist(counts):
-    lines = [
-        "# Undeclared object-typed vars (roadmap L2, doc/rewrite/lifecycle.md sec 4).",
-        "# tools/ci/declared_refs_lint.py reads this file: a file may not exceed its",
-        "# count, and files not listed may have none. Declare the var as REF_OWNED/",
-        "# REF_OWNED_LIST/REF_PAIR/REF_BACKLIST (or make it tmp, or an OM handle) and",
-        "# lower the count; `python tools/ci/declared_refs_lint.py --update` rewrites it.",
-        "# Total: %d vars in %d files." % (sum(counts.values()), len(counts)),
-    ]
-    for path in sorted(counts):
-        lines.append("%s %d" % (path, counts[path]))
-    with open(ALLOWLIST, "w", encoding="utf-8", newline="\n") as handle:
-        handle.write("\n".join(lines) + "\n")
-
-
-def write_objlist_allowlist(counts):
-    lines = [
-        "# Instance list vars written with objects as keys or values, undeclared",
-        "# (doc/rewrite/lifecycle.md sec 4, LC-refs). tools/ci/declared_refs_lint.py reads",
-        "# this file: a file may not exceed its count. Make the list an owned-children",
-        "# list, a backlist, a declared cache with an invalidation rule, a relation or",
-        "# a registry, or key it by OM handle, and lower the count with --update.",
-        "# Total: %d writes in %d files." % (sum(counts.values()), len(counts)),
-    ]
-    for path in sorted(counts):
-        lines.append("%s %d" % (path, counts[path]))
-    with open(OBJLIST_ALLOWLIST, "w", encoding="utf-8", newline="\n") as handle:
-        handle.write("\n".join(lines) + "\n")
-
-
 def main(argv):
     counts, sites, obj_counts, obj_sites, cache_errors = scan()
-    total = sum(counts.values())
+    total, obj_total = sum(counts.values()), sum(obj_counts.values())
+    totals = {"undeclared": total, "object_keyed": obj_total}
     if "--update" in argv:
-        write_allowlist(counts)
-        write_objlist_allowlist(obj_counts)
-        print("declared-refs allowlist: %d vars in %d files; object-keyed lists: %d writes in %d files"
-              % (total, len(counts), sum(obj_counts.values()), len(obj_counts)))
+        write_baseline(BASELINE, [
+            "Declared-reference ceilings (roadmap L2, doc/rewrite/lifecycle.md sec 4).",
+            "undeclared: object-typed vars not named by a declared_*_vars(); object_keyed: objects",
+            "written into undeclared instance lists. tools/ci/declared_refs_lint.py fails when a",
+            "count rises above its line. Declare the var/list (REF_OWNED/REF_OWNED_LIST/REF_PAIR/",
+            "REF_BACKLIST, a declared cache, tmp, an OM handle) and lower it with --update.",
+        ], totals)
+        print("declared-refs baseline: %d undeclared vars in %d files; %d object-keyed list writes in %d files"
+              % (total, len(counts), obj_total, len(obj_counts)))
         for error in cache_errors:
             print("FAIL: " + error)
         return 1 if cache_errors else 0
@@ -409,51 +377,16 @@ def main(argv):
         for rel, number, what in obj_sites:
             print("%s:%d: object-keyed list %s" % (rel, number, what))
         print("total: %d undeclared object-typed vars in %d files, %d object-keyed list writes"
-              % (total, len(counts), sum(obj_counts.values())))
+              % (total, len(counts), obj_total))
         return 0
-    allowed = read_allowlist()
-    failures, lowered = [], []
-    failures.extend(cache_errors)
-    obj_allowed = read_allowlist(OBJLIST_ALLOWLIST)
-    for rel in sorted(obj_counts):
-        limit = obj_allowed.get(rel, 0)
-        if obj_counts[rel] > limit:
-            where = ["%s:%d: %s" % s for s in obj_sites if s[0] == rel]
-            failures.append(
-                "%s writes objects into %d undeclared instance list(s), allowed %d. Declare the list "
-                "(declared_owned_list_vars/backlist/declared_cache_vars), make it a relation or registry, "
-                "or key it by om_handle():\n    %s" % (rel, obj_counts[rel], limit, "\n    ".join(where)))
-        elif obj_counts[rel] < limit:
-            lowered.append("%s: %d object-keyed list writes (allowlist says %d)" % (rel, obj_counts[rel], limit))
-    for rel in sorted(obj_allowed):
-        if rel not in obj_counts:
-            lowered.append("%s: 0 object-keyed list writes (allowlist says %d)" % (rel, obj_allowed[rel]))
-    for rel in sorted(counts):
-        limit = allowed.get(rel, 0)
-        if counts[rel] > limit:
-            where = ["%s:%d: %s" % s for s in sites if s[0] == rel]
-            failures.append(
-                "%s has %d undeclared object-typed var(s), allowed %d. Declare each as "
-                "REF_OWNED/REF_OWNED_LIST/REF_PAIR/REF_BACKLIST (code/datums/lifecycle/links.dm), "
-                "tmp, or an OM handle:\n    %s" % (rel, counts[rel], limit, "\n    ".join(where))
-            )
-        elif counts[rel] < limit:
-            lowered.append("%s: %d (allowlist says %d)" % (rel, counts[rel], limit))
-    for rel in sorted(allowed):
-        if rel not in counts:
-            lowered.append("%s: 0 (allowlist says %d)" % (rel, allowed[rel]))
-    print("declared-refs lint: %d undeclared object-typed vars in %d files (allowlisted: %d); "
-          "%d object-keyed list writes (allowlisted: %d)"
-          % (total, len(counts), sum(allowed.values()), sum(obj_counts.values()), sum(obj_allowed.values())))
-    if lowered:
-        print("These files dropped below their allowlisted count; lower it with --update:")
-        for line in lowered:
-            print("    " + line)
-    if failures:
-        for failure in failures:
-            print("FAIL: " + failure)
-        return 1
-    return 0
+    failed = check_ceilings(
+        "declared-refs", totals, read_baseline(BASELINE),
+        "Declare each new var as REF_OWNED/REF_OWNED_LIST/REF_PAIR/REF_BACKLIST "
+        "(code/datums/lifecycle/links.dm), tmp, or an OM handle; declare a new object-keyed list "
+        "(declared_owned_list_vars/backlist/declared_cache_vars) or key it by om_handle().")
+    for error in cache_errors:
+        print("FAIL: " + error)
+    return 1 if failed or cache_errors else 0
 
 
 if __name__ == "__main__":

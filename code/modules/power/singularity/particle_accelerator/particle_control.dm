@@ -26,7 +26,7 @@
 	connected_parts = list()
 	update_active_power_usage(initial(active_power_usage) * (strength + 1))
 
-// LIFECYCLE: a running accelerator powers down.
+// ALLOW(lifecycle): a running accelerator powers down.
 /obj/machinery/particle_accelerator/control_box/Destroy()
 	if(active)
 		toggle_power()

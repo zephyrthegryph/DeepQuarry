@@ -5,7 +5,7 @@
 	icon_screen = "shuttle"
 	light_color = "#00ffff"
 	var/auth_need = 3.0
-	var/list/authorized = list(  )
+	var/list/authorized = list(  ) // ALLOW(instance_list): d: per-console authorisation state
 
 
 /obj/machinery/computer/shuttle/declare_interactions(list/into)

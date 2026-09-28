@@ -2,7 +2,7 @@
 	name = "abandoned crate"
 	desc = "What could be inside?"
 	closet_appearance = /datum/decl/closet_appearance/crate/secure
-	var/list/code = list()
+	var/list/code = list() // ALLOW(instance_list): d: the lock code, generated in New()
 	var/list/lastattempt
 	var/attempts = 10
 	var/codelen = 4

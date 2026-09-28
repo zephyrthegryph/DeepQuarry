@@ -56,8 +56,8 @@
 	var/datum/robolimb/synthetic		//If they are a synthetic (aka synthetic torso). Also holds the datum for the type of robolimb.
 
 	var/list/all_underwear	// Lazy.
-	var/list/all_underwear_metadata = list()
-	var/list/hide_underwear = list()
+	var/list/all_underwear_metadata = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/hide_underwear = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 	var/headset = 1		//Which headset type the player has chosen.
 	var/backbag = 2		//Which backpack type the player has chosen.
 	var/pdachoice = 1	//Which PDA type the player has chosen.

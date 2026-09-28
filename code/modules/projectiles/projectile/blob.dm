@@ -8,7 +8,7 @@
 	fire_sound = 'sound/effects/slime_squish.ogg'
 	var/splatter = FALSE			// Will this make a cloud of reagents?
 	var/splatter_volume = 5			// The volume of its chemical container, for said cloud of reagents.
-	var/list/my_chems = list(REAGENT_ID_MOLD)
+	var/list/my_chems = list(REAGENT_ID_MOLD) // ALLOW(instance_list): c: read-only per-subtype constant table (6 subtype overrides); a getter would share it, not worth it on a rare type
 
 /obj/item/projectile/energy/blob/splattering
 	splatter = TRUE

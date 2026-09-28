@@ -253,7 +253,7 @@ REF_BACKLIST(/obj/structure/prop/prism, list("remote_dial" = "my_turrets"))
 			LAZYOR(my_turrets, P)
 			P.remote_dial = src
 
-// LIFECYCLE: its turrets forget the dial.
+// ALLOW(lifecycle): its turrets forget the dial.
 /obj/structure/prop/prismcontrol/Destroy()
 	for(var/obj/structure/prop/prism/P in my_turrets)
 		P.remote_dial = null

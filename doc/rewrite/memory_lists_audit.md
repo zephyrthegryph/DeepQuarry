@@ -61,7 +61,7 @@ The instance count was unchanged (94,283 before, 94,475 after) and so was the Ru
 
 ## Kept (class d)
 
-The lint allowlist (`tools/ci/instance_list_allowlist.txt`) has a "kept"
+The lint's keeps (`// ALLOW(instance_list): <reason>` on each declaration, formerly `tools/ci/instance_list_allowlist.txt`) has a "kept"
 section:
 
 - `/datum/internal_wiki/page/data`: every page fills it.
@@ -198,9 +198,9 @@ original list:
 
 `tools/ci/instance_list_lint.py` (in `run_linters.yml`, "Check Instance List
 Allocation") flags any type-level list var with an initializer (`list(...)`,
-`new/list`, `new()`, `list/x[N]`) that is not in
-`tools/ci/instance_list_allowlist.txt`. It also rejects entries without a
-reason and entries that no longer match anything. After pass 2 it flags 589
+`new/list`, `new()`, `list/x[N]`) that does not carry
+an `// ALLOW(instance_list): <reason>` annotation on the declaration. `tools/ci/allow_annotations.py` rejects annotations without a
+reason. After pass 2 it flags 589
 declarations, all allowlisted: 455 kept (class d per-instance state, class c
 read-only per-subtype tables, or shared at runtime), 17 owned by other areas,
 19 medical and 98 mob. The baseline section is gone.

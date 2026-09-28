@@ -51,7 +51,7 @@
 /// The single read: whether `A` must stay real right now, for any reason.
 /// Combines explicit pins, the collapse blockers (behaviour, outside refs,
 /// the weakref gap, state.md §1/collapse.dm) and sitting on a turf.
-/proc/dq_latent_pinned(atom/movable/A)
+/proc/dq_latent_pinned(atom/movable/A) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!A || QDELETED(A))
 		return TRUE
 	if(A.latent_explicitly_pinned())

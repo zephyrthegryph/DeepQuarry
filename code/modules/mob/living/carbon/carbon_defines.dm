@@ -2,7 +2,7 @@
 	gender = MALE
 	blocks_emissive = EMISSIVE_BLOCK_UNIQUE // BLEH, this could be improved for transparent species and stuff! And blocks glowing eyes?!
 	var/datum/species/species //Contains icon generation and language information, set during New().
-	var/list/antibodies = list()
+	var/list/antibodies = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 
 	var/life_tick = 0      // The amount of life ticks that have processed on this mob.
 

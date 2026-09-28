@@ -68,7 +68,7 @@ FIRE ALARM
 
 REF_OWNED(/obj/machinery/firealarm, list("soundloop", "engalarm", "critalarm", "causality"))
 
-// LIFECYCLE: a sounding alarm is reset for its area.
+// ALLOW(lifecycle): a sounding alarm is reset for its area.
 /obj/machinery/firealarm/Destroy()
 	reset()
 	return ..()

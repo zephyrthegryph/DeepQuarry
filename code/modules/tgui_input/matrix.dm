@@ -121,7 +121,7 @@
  */
 /datum/tgui_input_colormatrix/proc/wait()
 	while (!entry && !closed && !QDELETED(src))
-		stoplag(1)
+		stoplag(1) // ALLOW(scheduler): tgui_input waits on the player (prompts, S10)
 
 /datum/tgui_input_colormatrix/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

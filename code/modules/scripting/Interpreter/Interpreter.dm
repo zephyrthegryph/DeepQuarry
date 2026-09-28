@@ -177,7 +177,7 @@ Runs each statement in a block of code.
 				else
 					var/datum/D = Eval(GetVariable(stmt.object.id_name))
 					if(!D) return
-					D.vars[stmt.var_name.id_name] = Eval(stmt.value)
+					D.vars[stmt.var_name.id_name] = Eval(stmt.value) // ALLOW(api): NTSL interpreter: script assigns vars by name
 			else if(istype(S, /datum/node/statement/VariableDeclaration))
 				//VariableDeclaration nodes are used to forcibly declare a local variable so that one in a higher scope isn't used by default.
 				var/datum/node/statement/VariableDeclaration/dec=S
@@ -186,7 +186,7 @@ Runs each statement in a block of code.
 				else
 					var/datum/D = Eval(GetVariable(dec.object.id_name))
 					if(!D) return
-					D.vars[dec.var_name.id_name] = null
+					D.vars[dec.var_name.id_name] = null // ALLOW(api): NTSL interpreter: script assigns vars by name
 			else if(istype(S, /datum/node/statement/FunctionCall))
 				RunFunction(S)
 			else if(istype(S, /datum/node/statement/FunctionDefinition))

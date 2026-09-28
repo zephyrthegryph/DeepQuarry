@@ -49,7 +49,7 @@
 	smoke = new
 	update_icon()
 
-// LIFECYCLE: its occupant exits VR.
+// ALLOW(lifecycle): its occupant exits VR.
 /obj/machinery/vr_sleeper/Destroy()
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	if(occupant && occupant.vr_link)

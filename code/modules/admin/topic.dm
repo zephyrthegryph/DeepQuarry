@@ -1043,7 +1043,7 @@
 					to_chat(X, take_msg)
 			to_chat(M, span_filter_pm(span_boldnotice("Your adminhelp is being attended to by [usr.client]. Thanks for your patience!")))
 			if (CONFIG_GET(string/chat_webhook_url))
-				spawn(0) // S7 keeps: admin topic; world.Export() is a blocking external call
+				spawn(0) // ALLOW(scheduler): admin topic; world.Export() is a blocking external call
 					var/query_string = "type=admintake"
 					query_string += "&key=[url_encode(CONFIG_GET(string/chat_webhook_key))]"
 					query_string += "&admin=[url_encode(key_name(usr.client))]"

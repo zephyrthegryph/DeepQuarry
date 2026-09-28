@@ -35,7 +35,7 @@
 	/// Does the letter have a stamp overlay?
 	var/stamped = TRUE
 	/// List of all stamp overlays on the letter.
-	var/list/stamps = list()
+	var/list/stamps = list() // ALLOW(instance_list): d: mail items are stamped on creation
 	/// Maximum number of stamps on the letter.
 	var/stamp_max = 1
 	/// Physical offset of stamps on the object. X direction.

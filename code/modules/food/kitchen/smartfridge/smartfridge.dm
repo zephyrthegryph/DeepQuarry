@@ -12,7 +12,7 @@
 	active_power_usage = 100
 	flags = NOREACT
 	var/max_n_of_items = 999 // Sorry but the BYOND infinite loop detector doesn't look things over 1000.
-	var/list/item_records = list()
+	var/list/item_records = list() // ALLOW(instance_list): d: the fridge's live stock records
 	var/datum/stored_item/currently_vending = null	//What we're putting out of the machine.
 	var/stored_datum_type = /datum/stored_item
 	/// Whether inserted items with identical state fold into counts (C9).
@@ -62,7 +62,7 @@
 REF_OWNED(/obj/machinery/smartfridge, "soundloop")
 REF_OWNED_LIST(/obj/machinery/smartfridge, "item_records")
 
-// LIFECYCLE: a persistent fridge is forgotten by persistence.
+// ALLOW(lifecycle): a persistent fridge is forgotten by persistence.
 /obj/machinery/smartfridge/Destroy()
 	if(persistent)
 		SSpersistence.forget_value(src, persistent)
@@ -392,7 +392,7 @@ REF_OWNED_LIST(/obj/machinery/smartfridge, "item_records")
 		return 1
 	return 0
 
-// LIFECYCLE: records shared with the upper unit must not be deleted with it.
+// ALLOW(lifecycle): records shared with the upper unit must not be deleted with it.
 /obj/machinery/smartfridge/chemistry/chemvator/down/Destroy()
 	if(attached)
 		attached.attached = null // clear the upper unit's back-reference to us

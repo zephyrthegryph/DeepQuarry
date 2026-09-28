@@ -12,11 +12,11 @@ lint flags, in every .dm file under code/:
     `in contents`, `in src.contents`, `in src)`, `contents.len`, `length(contents)`;
   - raw walks through a variable typed as a latent holder:
     `X.contents`, `in X)`.
-A line that already goes through the API may say so with `// latent-ok`.
+A line that already goes through the API, or walks what is materialized on
+purpose, says so with `// ALLOW(latent): <reason>` (tools/ci/allow_annotations.py).
 
-Existing sites are counted per file in tools/ci/latent_allowlist.txt; a file
-may not gain sites. Run with --update to rewrite the allowlist (only ever to
-lower counts or add files you have fixed). It also prints the number of legacy
+tools/ci/latent_baseline.txt holds the ceiling on the remaining sites; it may
+fall, never rise. Run with --update to lower it after fixing sites. It also prints the number of legacy
 `contents` loops over the whole tree, for the record.
 """
 import os
@@ -24,8 +24,11 @@ import re
 import sys
 from collections import Counter
 
+sys.path.insert(0, os.path.dirname(__file__))
+from allow_annotations import allowed, check_ceilings, read_baseline, write_baseline  # noqa: E402
+
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
-ALLOWLIST = os.path.join(ROOT, "tools", "ci", "latent_allowlist.txt")
+BASELINE = os.path.join(ROOT, "tools", "ci", "latent_baseline.txt")
 SKIP_DIRS = {"unit_tests"}
 
 TYPE_HEADER = re.compile(r"^(/[\w/]+)\s*$")
@@ -89,8 +92,9 @@ def scan(path, holders):
     sites = []
     owner = None
     typed = set()
-    for number, line in enumerate(read(path), 1):
-        if "latent-ok" in line:
+    lines = read(path)
+    for number, line in enumerate(lines, 1):
+        if allowed(lines, number, "latent"):
             continue
         header = PROC_HEADER.match(line)
         if header:
@@ -129,32 +133,21 @@ def main():
         if sites:
             counts[rel] = len(sites)
             where[rel] = sites
+    total = sum(counts.values())
     if "--update" in sys.argv:
-        with open(ALLOWLIST, "w", encoding="utf-8", newline="\n") as handle:
-            handle.write("# Raw contents walks on latent holders, per file (tools/ci/latent_lint.py).\n")
-            handle.write("# Counts may only go down. Fix a site by going through the ledger API.\n")
-            for rel in sorted(counts):
-                handle.write(f"{rel} {counts[rel]}\n")
-        print(f"latent lint: wrote {len(counts)} files, {sum(counts.values())} sites")
+        write_baseline(BASELINE, [
+            "Raw contents walks on latent holders (tools/ci/latent_lint.py). May fall, never rise.",
+            "Fix a site by going through the ledger API, then `python tools/ci/latent_lint.py --update`.",
+        ], {"raw_walks": total})
+        print(f"latent lint: baseline {total} sites in {len(counts)} files")
         return 0
-    allowed = {}
-    if os.path.exists(ALLOWLIST):
-        for line in read(ALLOWLIST):
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            rel, count = line.rsplit(" ", 1)
-            allowed[rel] = int(count)
-    failed = False
-    for rel in sorted(counts):
-        if counts[rel] > allowed.get(rel, 0):
-            failed = True
-            lines = ", ".join(str(n) for n in where[rel])
-            print(f"{rel}: {counts[rel]} raw contents walk(s) on latent holders (allowed {allowed.get(rel, 0)}), lines {lines}")
-    for rel in sorted(allowed):
-        if counts.get(rel, 0) < allowed[rel]:
-            print(f"note: {rel} is down to {counts.get(rel, 0)} (allowlist says {allowed[rel]}); lower it")
-    print(f"latent lint: {len(holders[0])} latent holder roots ({len(holders[1])} opted out), {sum(counts.values())} allowlisted sites in {len(counts)} files, {legacy} legacy contents loops tree-wide")
+    if "--report" in sys.argv:
+        for rel in sorted(where):
+            for n in where[rel]:
+                print(f"{rel}:{n}: raw contents walk on a latent holder")
+    print(f"latent lint: {len(holders[0])} latent holder roots ({len(holders[1])} opted out), {total} sites in {len(counts)} files, {legacy} legacy contents loops tree-wide")
+    failed = check_ceilings("latent", {"raw_walks": total}, read_baseline(BASELINE),
+                            "Go through latent_materialize_all()/latent_entries()/slot_contents().")
     return 1 if failed else 0
 
 

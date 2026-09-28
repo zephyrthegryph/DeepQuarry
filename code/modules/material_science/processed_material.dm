@@ -68,7 +68,7 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 
 REF_OWNED(/datum/material/processed_alloy, "batch_template")
 
-/proc/register_processed_material(datum/material_batch/batch)
+/proc/register_processed_material(datum/material_batch/batch) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!istype(batch) || !length(batch.composition))
 		return null
 	batch.recalculate()
@@ -263,7 +263,7 @@ REF_OWNED(/datum/material/processed_alloy, "batch_template")
 	stock.update_thermal_processing()
 	return stock
 
-/proc/material_batch_from_stack(obj/item/stack/material/stack)
+/proc/material_batch_from_stack(obj/item/stack/material/stack) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!istype(stack) || !stack.material)
 		return null
 	if(istype(stack.material, /datum/material/processed_alloy))
@@ -284,7 +284,7 @@ REF_OWNED(/datum/material/processed_alloy, "batch_template")
 	pass_color = TRUE
 	strict_color_stacking = TRUE
 	exotic_no_autolathe_reprint = TRUE
-	var/datum/material_batch/batch_state
+	var/datum/material_batch/batch_state // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 	/// Export value of one sheet; the stack's total is always this times the
 	/// current amount, so splitting/merging/using never creates or destroys value.
 	var/export_value_per_sheet = 0

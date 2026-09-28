@@ -48,7 +48,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	. = ..()
 	connect_to_network()
 
-// LIFECYCLE: leaves its solar control computer.
+// ALLOW(lifecycle): leaves its solar control computer.
 /obj/machinery/power/solar/Destroy()
 	unset_control() //remove from control computer
 	. = ..()
@@ -316,7 +316,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	connect_to_network()
 	set_panels(cdir)
 
-// LIFECYCLE: its panels and tracker lose their controller.
+// ALLOW(lifecycle): its panels and tracker lose their controller.
 /obj/machinery/power/solar_control/Destroy()
 	for(var/obj/machinery/power/solar/M in connected_panels)
 		M.unset_control()
@@ -483,6 +483,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 			connected_tracker.unset_control()
 
 	if(track==1 && trackrate) //manual tracking and set a rotation speed
+		// ALLOW(cooldown): tracker schedule
 		if(nexttime <= world.time) //every time we need to increase/decrease the angle by 1°...
 			targetdir = (targetdir + trackrate/abs(trackrate) + 360) % 360 	//... do it
 			nexttime += 36000/abs(trackrate) //reset the counter for the next 1°

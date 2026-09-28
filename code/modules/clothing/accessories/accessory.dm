@@ -10,9 +10,10 @@
 	var/glove_level = 1							// What 'level' the accessory is on if equipped on the gloveslot. Lower = things can be put on top of it.
 	var/slot = ACCESSORY_SLOT_DECOR
 	var/can_remove = TRUE						// Can it be taken off once attached?
+	// ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 	var/obj/item/clothing/has_suit = null		// The suit the tie may be attached to
 	var/tmp/image/inv_overlay = null				// Overlay used when attached to clothing.
-	var/image/mob_overlay = null
+	var/image/mob_overlay = null // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 	var/overlay_state = null
 	var/punch_force	= 0							// added melee damage
 	var/punch_injury_kind						// what punches inflict (INJURY_*); null = the punch's own kind
@@ -22,7 +23,7 @@
 	drop_sound = 'sound/items/drop/accessory.ogg'
 	pickup_sound = 'sound/items/pickup/accessory.ogg'
 
-// LIFECYCLE: an attached accessory is removed from its clothing.
+// ALLOW(lifecycle): an attached accessory is removed from its clothing.
 /obj/item/clothing/accessory/Destroy()
 	on_removed()
 	return ..()
@@ -469,7 +470,7 @@
 	slot = ACCESSORY_SLOT_INSIGNIA // snowflakey, i know, shut up
 	item_flags = FLEXIBLEMATERIAL
 	var/breath_masked = FALSE
-	var/obj/item/clothing/mask/breath/breathmask
+	var/obj/item/clothing/mask/breath/breathmask // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 	actions_types = list(/datum/action/item_action/pull_on_gaiter)
 	special_handling = TRUE
 

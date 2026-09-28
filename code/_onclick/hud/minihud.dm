@@ -10,7 +10,7 @@
 
 REF_OWNED_LIST(/datum/mini_hud, "screenobjs")
 
-// LIFECYCLE: takes itself off the hud it was applied to.
+// ALLOW(lifecycle): takes itself off the hud it was applied to.
 /datum/mini_hud/Destroy()
 	unapply_to_hud()
 	return ..()

@@ -12,7 +12,7 @@
 	integrity_failure = 0.5
 	damage_deflection = 5
 
-	var/list/network = list(NETWORK_DEFAULT)
+	var/list/network = list(NETWORK_DEFAULT) // ALLOW(instance_list): d: replaced per instance at runtime (26 assignments)
 	var/c_tag = null
 	var/c_tag_order = 999
 	var/status = 1
@@ -80,7 +80,7 @@
 
 REF_OWNED(/obj/machinery/camera, "assembly")
 
-// LIFECYCLE: alarm handlers release it, motion sensing stops and viewers are kicked out.
+// ALLOW(lifecycle): alarm handlers release it, motion sensing stops and viewers are kicked out.
 /obj/machinery/camera/Destroy()
 	for(var/datum/alarm_handler/handler as anything in all_alarm_handlers())
 		handler.release_atom(src)
@@ -118,7 +118,7 @@ REF_OWNED(/obj/machinery/camera, "assembly")
 /obj/machinery/camera/proc/camera_timer_fired()
 	camera_timer_token = null
 	camera_timer_at = 0
-	if((stat & EMPED) && world.time >= affected_by_emp_until)
+	if((stat & EMPED) && world.time >= affected_by_emp_until) // ALLOW(cooldown): EMP state expiry
 		stat &= ~EMPED
 		cancelCameraAlarm()
 		update_icon()
@@ -142,7 +142,7 @@ REF_OWNED(/obj/machinery/camera, "assembly")
 	if (. & EMP_PROTECT_SELF)
 		return
 	if(!isEmpProof() && (forced || prob(100/severity)))
-		if(!affected_by_emp_until || (world.time > affected_by_emp_until))
+		if(!affected_by_emp_until || (world.time > affected_by_emp_until)) // ALLOW(cooldown): EMP state expiry
 			affected_by_emp_until = max(affected_by_emp_until, world.time + (90 SECONDS / severity))
 			stat |= EMPED
 			set_light(0)

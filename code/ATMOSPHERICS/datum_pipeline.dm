@@ -9,7 +9,7 @@
 	var/list/obj/machinery/atmospherics/pipe/edges //Used for building networks
 
 	// Nodes that are leaking. Used for A.S. Valves.
-	var/list/leaks = list()
+	var/list/leaks = list() // ALLOW(instance_list): atmos area (M1a): pipeline leaks; listed in memory_lists_audit.md, not edited here
 
 	var/datum/pipe_network/network
 	var/list/datum/pipe_network/network_memberships
@@ -37,7 +37,7 @@
 
 // Rust-owned wrappers refuse deletion; a legacy line stores its gas back
 // into its pipes and releases its network.
-// LIFECYCLE: LETMELIVE for rust-owned lines; legacy gas hand-back.
+// ALLOW(lifecycle): LETMELIVE for rust-owned lines; legacy gas hand-back.
 /datum/pipeline/Destroy()
 	if(network?.rust_authoritative)
 		return QDEL_HINT_LETMELIVE

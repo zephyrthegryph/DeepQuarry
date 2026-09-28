@@ -10,19 +10,19 @@
 	var/cached_name       // the name string the colors were computed for; reused as invalidation key
 	var/cached_darkened
 
-/proc/dq_get_chat_color(atom/a)
+/proc/dq_get_chat_color(atom/a) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/chat_color_cache/c = a.GetComponent(/datum/component/chat_color_cache)
 	return c?.cached_color
 
-/proc/dq_get_chat_color_name(atom/a)
+/proc/dq_get_chat_color_name(atom/a) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/chat_color_cache/c = a.GetComponent(/datum/component/chat_color_cache)
 	return c?.cached_name
 
-/proc/dq_get_chat_color_darkened(atom/a)
+/proc/dq_get_chat_color_darkened(atom/a) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/chat_color_cache/c = a.GetComponent(/datum/component/chat_color_cache)
 	return c?.cached_darkened
 
-/proc/dq_set_chat_color_cache(atom/a, color, color_name, darkened)
+/proc/dq_set_chat_color_cache(atom/a, color, color_name, darkened) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/component/chat_color_cache/c = a.GetComponent(/datum/component/chat_color_cache)
 	if(!c)
 		c = a.AddComponent(/datum/component/chat_color_cache)

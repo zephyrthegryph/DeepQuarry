@@ -336,7 +336,7 @@ GLOBAL_LIST_INIT(interactions_by_type, init_interactions_by_type())
 			into += dq_interaction_from_spec(type, specs[i])
 
 /// The interactions this atom's type offers, as shared singletons. Cached per type.
-/proc/interaction_candidates(atom/target)
+/proc/interaction_candidates(atom/target) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/static/list/cache = list()
 	var/list/candidates = cache[target.type]
 	if(candidates)

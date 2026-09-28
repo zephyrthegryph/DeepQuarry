@@ -48,7 +48,7 @@ REF_OWNED(/datum/radial_menu/persistent, "select_proc_callback")
 	Select_proc is the proc to be called each time an element on the menu is clicked, and should accept the chosen element as its final argument
 	Clicking the center button will return a choice of null
 */
-/proc/show_radial_menu_persistent(mob/user, atom/anchor, list/choices, datum/callback/select_proc, uniqueid, radius, tooltips = FALSE)
+/proc/show_radial_menu_persistent(mob/user, atom/anchor, list/choices, datum/callback/select_proc, uniqueid, radius, tooltips = FALSE) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!user || !anchor || !length(choices) || !select_proc)
 		return
 	if(!uniqueid)

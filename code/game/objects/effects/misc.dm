@@ -142,7 +142,7 @@
 
 REF_OWNED(/obj/effect/abstract/directional_lighting, "light_spot")
 
-// LIFECYCLE: only its light component may delete it.
+// ALLOW(lifecycle): only its light component may delete it.
 /obj/effect/abstract/directional_lighting/Destroy(force)
 	if(!force)
 		stack_trace("Directional light atom deleted, but not by our component")

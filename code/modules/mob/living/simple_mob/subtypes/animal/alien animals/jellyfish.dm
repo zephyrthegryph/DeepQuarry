@@ -122,7 +122,7 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 	. = ..()
 	new /obj/item/reagent_containers/food/snacks/jellyfishcore(loc, nutrition)
 
-// LIFECYCLE: the population cap counts it out.
+// ALLOW(lifecycle): the population cap counts it out.
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish/Destroy()
 	GLOB.jellyfish_count --
 	return ..()

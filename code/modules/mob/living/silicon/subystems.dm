@@ -9,7 +9,7 @@
 	var/datum/tgui_module/rcon/robot/rcon
 
 /mob/living/silicon
-	var/list/silicon_subsystems = list(
+	var/list/silicon_subsystems = list( // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 		/mob/living/silicon/proc/subsystem_alarm_monitor,
 		/mob/living/silicon/proc/subsystem_crew_manifest,
 		/mob/living/silicon/proc/subsystem_law_manager

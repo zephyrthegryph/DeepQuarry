@@ -57,6 +57,7 @@
 	pain_emote_3p = list("yelps", "whines", "barks", "growls")
 
 	//This is copypastad from protean code, hope it isnt too painful lol
+	// ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 	var/list/goia_overlays = list( //all 10 overlays, in order
 		"zorgoia_belly" = "#FFFFFF",
 		"zorgoia_main" = "#FFFFFF",

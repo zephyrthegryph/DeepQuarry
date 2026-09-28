@@ -109,7 +109,7 @@
 	pixel_x = 0
 	pixel_y = 0
 
-// LIFECYCLE: persistence stops tracking it.
+// ALLOW(lifecycle): persistence stops tracking it.
 /obj/item/paper/sticky/Destroy()
 	reset_persistence_tracking()
 	UnregisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE)

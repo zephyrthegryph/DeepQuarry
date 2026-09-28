@@ -16,7 +16,7 @@ GLOBAL_LIST(ghost_traps)
 
 /datum/ghosttrap
 	var/object = "positronic brain"
-	var/list/ban_checks = list(JOB_AI,JOB_CYBORG)
+	var/list/ban_checks = list(JOB_AI,JOB_CYBORG) // ALLOW(instance_list): c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
 	var/pref_check = BE_AI
 	var/ghost_trap_message = "They are occupying a positronic brain now."
 	var/ghost_trap_role = "Positronic Brain"

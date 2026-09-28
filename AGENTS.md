@@ -129,6 +129,26 @@ lazylist instead. For per-subtype constant tables (which DM can't express as a
   any `input()` / `tgui_input_*` returns. Validate `Topic()` hrefs (`locate(ref) in …`).
 - Parameterized SQL only; `format_table_name()` for table names.
 
+### 3g. Ratchet lints and justified keeps
+
+`tools/ci/check_ratchets.sh` runs the rewrite lints (scheduler, cooldown, DCS, API,
+declared refs, containment, spatial, latent, lifecycle counts, registry, instance lists,
+state refs, base procs, ...). Each count has a ceiling in a `tools/ci/*_baseline.txt`
+that may fall, never rise: lower it with the lint's `--update` after a sweep.
+
+There are **no allowlist files**. A site that is right as it is carries one inline
+annotation, read by every lint, on its own line or a comment-only line directly above:
+
+```dm
+spawn(0) // ALLOW(scheduler): world.Export() is a blocking external call
+```
+
+The reason is required; several lints go comma-separated (`ALLOW(lifecycle, dcs): ...`);
+inside a multi-line macro use `/* ALLOW(x): reason */`. `tools/ci/allow_annotations.py`
+lists the lint names and rejects a missing reason or an unknown name. Don't annotate new
+debt to get under a ceiling: use the mechanism the lint points to
+(`doc/rewrite/object_model_core.md` §16).
+
 ---
 
 ## 4. Build pipeline
@@ -234,6 +254,7 @@ Valid prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`,
 - [ ] Signal handlers start with `SIGNAL_HANDLER`; callbacks use the `*_PROC_REF` macros.
 - [ ] Time args use `SECONDS`/`MINUTES`/`HOURS`.
 - [ ] DreamChecker (`SpacemanDMM`) passes locally.
+- [ ] `bash tools/ci/check_ratchets.sh` passes; any kept site has `// ALLOW(<lint>): <reason>`.
 - [ ] TGUI (if changed): `tools/build/build.sh lint tgui-test` clean.
 - [ ] Unit tests pass (`bin/test.cmd`), and `dq_focus.dm` is empty.
 - [ ] One YAML changelog stub.

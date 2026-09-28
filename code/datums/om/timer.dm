@@ -67,7 +67,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 /datum/var/tmp/om_hid = 0
 
 /// A handle to `D`: "id:gen". Null for a deleted datum or a non-datum.
-/proc/om_handle(datum/D)
+/proc/om_handle(datum/D) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(!isdatum(D) || QDELETED(D))
 		return null
 	var/list/slots = GLOB.om_handle_slots
@@ -115,7 +115,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 	return D
 
 /// Lifecycle phase 5: frees `D`'s handle slot. Every handle to it stops resolving.
-/proc/om_handle_release(datum/D)
+/proc/om_handle_release(datum/D) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/id = D.om_hid
 	if(!id)
 		return
@@ -144,7 +144,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 /// Runs `proc` after `delay` deciseconds of E's timer clock. A
 /// global proc (/proc/x) gets `call_args`; a type proc is called on E. Returns the timer id
 /// (for om_cancel_timer()), or 0 if E or an argument is already gone. E null: the global owner.
-/proc/om_after(datum/E, delay, proc_ref, ...)
+/proc/om_after(datum/E, delay, proc_ref, ...) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/list/call_args = length(args) > 3 ? args.Copy(4) : null
 	if(isnull(E))
 		E = om_global_owner()
@@ -169,7 +169,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 	return id
 
 /// Cancels timer `id` on E. Always safe: nothing is suspended inside a timer.
-/proc/om_cancel_timer(datum/E, id)
+/proc/om_cancel_timer(datum/E, id) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/rec/rec = (E || om_global_owner()).om_rec
 	var/list/T = rec?.timers
 	for(var/i in 1 to length(T) step OM_TIMER_STRIDE)
@@ -185,7 +185,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 /datum/om/scheduler/proc/timer_count(datum/E)
 	return length(E?.om_rec?.timers) / OM_TIMER_STRIDE
 
-/proc/om_timer_pending(datum/E, id)
+/proc/om_timer_pending(datum/E, id) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/list/T = (E || om_global_owner()).om_rec?.timers
 	for(var/i in 1 to length(T) step OM_TIMER_STRIDE)
 		if(T[i] == id)
@@ -193,7 +193,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 	return FALSE
 
 /// Deciseconds of E's timer clock left on timer `id`, or null.
-/proc/om_timer_left(datum/E, id)
+/proc/om_timer_left(datum/E, id) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/datum/om/rec/rec = (E || om_global_owner()).om_rec
 	var/list/T = rec?.timers
 	for(var/i in 1 to length(T) step OM_TIMER_STRIDE)
@@ -202,7 +202,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 	return null
 
 /// The rate of E's timer clock: 0 while suspended, else its clock domain's rate.
-/proc/om_timer_rate(datum/om/rec/rec)
+/proc/om_timer_rate(datum/om/rec/rec) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(om_suspended(rec))
 		return 0
 	var/clock_id = rec.owner?.om_timer_clock()
@@ -211,7 +211,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 	var/datum/om/clock_def/C = om_registry().clock_by_id[clock_id]
 	return C ? om_clock_rate(rec, C.idx) : 1
 
-/proc/om_timer_local(datum/om/rec/rec)
+/proc/om_timer_local(datum/om/rec/rec) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/list/K = rec.tclock
 	if(!K)
 		rec.tclock = K = list(0, rec.sched.now(), om_timer_rate(rec))
@@ -219,7 +219,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 
 /// A clock effect or suspension changed on `rec`: fold elapsed time in at the old rate,
 /// take the new one, and move the wheel deadline.
-/proc/om_timers_rate_changed(datum/om/rec/rec)
+/proc/om_timers_rate_changed(datum/om/rec/rec) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/list/K = rec.tclock
 	if(!K)
 		return
@@ -231,7 +231,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 	K[3] = new_rate
 	om_timers_reschedule(rec)
 
-/proc/om_timers_reschedule(datum/om/rec/rec)
+/proc/om_timers_reschedule(datum/om/rec/rec) // ALLOW(base_proc): global API written before the base-type ratchet
 	if(rec.torn_down || !rec.owner)
 		return
 	var/datum/om/behaviour/B = om_registry().timer_behaviour
@@ -250,7 +250,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 	om_deadline(rec.owner, CEILING(max(soonest - om_timer_local(rec), 0) / rate, 1), B)
 
 /// Calls a stored proc: a global proc with the arguments, or a type proc on `E`.
-/proc/om_invoke(datum/E, proc_ref, list/call_args)
+/proc/om_invoke(datum/E, proc_ref, list/call_args) // ALLOW(base_proc): global API written before the base-type ratchet
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 	if(E && GLOB.om_traced[E])
 		GLOB.om_traced[E]++
@@ -269,7 +269,7 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 /// a waitfor = FALSE trampoline: if the callee sleeps, control comes back here at once, the
 /// rest of the callee finishes on its own later, and the sleep is reported. Returns the
 /// callee's return value, or OM_CALLEE_SLEPT. Runtimes re-throw as before.
-/proc/om_guarded_call(datum/E, proc_ref, list/call_args)
+/proc/om_guarded_call(datum/E, proc_ref, list/call_args) // ALLOW(base_proc): global API written before the base-type ratchet
 	var/list/state = list(TRUE, null, null) // running, result, exception
 	om_trampoline(state, E, proc_ref, call_args)
 	if(state[3])
@@ -287,7 +287,7 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 	return OM_CALLEE_SLEPT
 
 /proc/om_trampoline(list/state, datum/E, proc_ref, list/call_args)
-	set waitfor = FALSE // S10b keeps: OM sleep-guard trampoline (detects callees that sleep)
+	set waitfor = FALSE // ALLOW(scheduler): OM sleep-guard trampoline (detects callees that sleep)
 	try
 		if(E)
 			state[2] = om_invoke(E, proc_ref, call_args)

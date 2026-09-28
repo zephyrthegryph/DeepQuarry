@@ -18,6 +18,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 	density = TRUE
 	anchored = TRUE
 	circuit = /obj/item/circuitboard/pointdefense_control
+	// ALLOW(instance_list): d: live targeting state
 	var/list/targets = list()  // Targets being engaged by associated batteries
 	var/id_tag = null
 

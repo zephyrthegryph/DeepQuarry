@@ -9,7 +9,7 @@
 	slot_flags = SLOT_BELT | SLOT_BACK
 	var/vac_power = 0
 	var/output_dest
-	var/list/vac_settings = list(
+	var/list/vac_settings = list( // ALLOW(instance_list): c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
 			"power off" = 0,
 			"dust and grime" = 1,
 			"tiny objects" = 2,
