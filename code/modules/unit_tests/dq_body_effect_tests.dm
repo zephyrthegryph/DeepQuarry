@@ -100,6 +100,10 @@
 	H.weight_gain = 0
 	H.weight_loss = 0
 	H.set_bodytemperature(H.species.body_temperature || H.bodytemperature)
+	// A fresh body starts with every domain dirty; its first medical pass settles them
+	// (factors recomputed, dirty condition domains processed), as the first Life() would.
+	H.factor(BF_ALLERGY)
+	H.dq_process_dirty_medical_conditions()
 	var/list/stages = list(
 		/datum/om/stage/life/medical,
 		/datum/om/stage/life/npc,

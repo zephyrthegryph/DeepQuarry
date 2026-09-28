@@ -197,3 +197,35 @@
 		), 3, 4, list("organ_damage_per_tick" = 0.85, "organ_damage_type" = INJURY_TOXIN)),
 	)
 	return S
+
+/datum/affliction/overdose/hannoa
+	name = "hannoa overdose"
+	clinical_description = "Hannoa is a sap-derived clotting agent that metabolises very slowly, so it overdoses easily. Past the threshold its clotting runs away inside the vessels: the veins feel as if they are fusing shut, breathing becomes laboured, and the patient takes blunt tissue damage while wounds keep closing."
+	symptom_pool = list(
+		/datum/affliction_symptom/throbbing_pain    = 70,
+		/datum/affliction_symptom/labored_breathing = 60,
+		/datum/affliction_symptom/drowsy            = 50,
+	)
+	min_symptoms = 1
+	max_symptoms = 3
+	caused_by_chems = list(REAGENT_ID_HANNOA = 8)
+	caused_by_chems_organ = BP_TORSO
+
+/datum/affliction/overdose/hannoa/get_stages()
+	var/static/list/S = overdose_stages(
+		chem_stage(list(
+			/datum/affliction_symptom/drowsy         = 60,
+			/datum/affliction_symptom/throbbing_pain = 40,
+		), 1, 1),
+		chem_stage(list(
+			/datum/affliction_symptom/throbbing_pain    = 70,
+			/datum/affliction_symptom/labored_breathing = 60,
+			/datum/affliction_symptom/drowsy            = 50,
+		), 1, 2),
+		chem_stage(list(
+			/datum/affliction_symptom/throbbing_pain    = 90,
+			/datum/affliction_symptom/labored_breathing = 80,
+			/datum/affliction_symptom/cyanosis          = 60,
+		), 2, 3),
+	)
+	return S

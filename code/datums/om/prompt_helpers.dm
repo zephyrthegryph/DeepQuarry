@@ -241,8 +241,12 @@ GLOBAL_VAR(prompt_flow)
 	GLOB.prompt_flow = list("asker" = asker, "proc" = entry_proc, "args" = entry_args.Copy(), "rights" = rights)
 	try
 		. = call(asker, entry_proc)(arglist(entry_args))
-	catch(var/exception/e)
+	catch(var/e)
+		var/list/flow = GLOB.prompt_flow
 		GLOB.prompt_flow = null
+		if(e == OM_FLOW_PENDING)
+			om_flow_unwound(flow)
+			return null
 		throw e
 	GLOB.prompt_flow = null
 
