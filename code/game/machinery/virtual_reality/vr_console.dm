@@ -403,10 +403,10 @@
 
 /datum/om/prompt/text/vr_avatar_name/valid()
 	var/obj/machinery/vr_sleeper/pod = subject
-	return (istype(pod) && pod.avatar == answerer) ? null : "not the avatar"
+	return (istype(pod) && pod.avatar() == answerer) ? null : "not the avatar"
 
 /obj/machinery/vr_sleeper/proc/vr_avatar_named(datum/om/prompt/text/vr_avatar_name/ask)
-	if(ask.text())
+	if(ask.text)
 		avatar().real_name = ask.text
 		avatar().name = ask.text
 

@@ -155,14 +155,14 @@
 /obj/machinery/computer/pandemic/proc/release_reason_written(datum/om/prompt/text/pandemic_release_reason/ask)
 	if(!ask.text)
 		return
-	om_ask(ask.answerer, /datum/om/prompt/confirm/pandemic_release_sign, PROC_REF(release_form_written), disease = ask.disease, reason = ask.text)
+	om_ask(ask.answerer, /datum/om/prompt/confirm/pandemic_release_sign, PROC_REF(release_form_written), disease = ask.affliction, reason = ask.text)
 
 /datum/om/prompt/confirm/pandemic_release_sign
 	title = "Signature"
 	message = "Would you like to add your signature?"
 	answer_on_no = TRUE
 	requires = PROMPT_USABLE
-	var/datum/disease/advance/disease
+	var/datum/affliction/contagion/engineered/disease
 	var/reason
 
 /datum/om/prompt/confirm/pandemic_release_sign/valid()
@@ -171,7 +171,7 @@
 
 /obj/machinery/computer/pandemic/proc/release_form_written(datum/om/prompt/confirm/pandemic_release_sign/ask)
 	var/mob/living/user = ask.answerer
-	var/datum/disease/advance/D = ask.disease
+	var/datum/affliction/contagion/engineered/D = ask.disease
 	var/reason = ask.reason
 	reason += "<span class=\"paper_field\"></span>"
 	var/english_symptoms = list()

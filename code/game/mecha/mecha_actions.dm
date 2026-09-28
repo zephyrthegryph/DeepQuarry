@@ -77,7 +77,7 @@
 /datum/action/innate/mecha/mech_toggle_lights/Activate()
 	button_icon_state = "mech_lights_[chassis.lights ? "off" : "on"]"
 	build_all_button_icons()
-	chassis.lights(owner)
+	chassis.lights(action_owner())
 
 /datum/action/innate/mecha/mech_toggle_internals
 	name = "Toggle Internal Airtank Usage"
@@ -86,14 +86,14 @@
 /datum/action/innate/mecha/mech_toggle_internals/Activate()
 	button_icon_state = "mech_internals_[chassis.use_internal_tank ? "off" : "on"]"
 	build_all_button_icons()
-	chassis.internal_tank(owner)
+	chassis.internal_tank(action_owner())
 
 /datum/action/innate/mecha/mech_view_stats
 	name = "View stats"
 	button_icon_state = "mech_view_stats"
 
 /datum/action/innate/mecha/mech_view_stats/Activate()
-	chassis.view_stats(owner)
+	chassis.view_stats(action_owner())
 
 /datum/action/innate/mecha/mech_eject
 	name = "Eject From Mech"
@@ -109,7 +109,7 @@
 /datum/action/innate/mecha/strafe/Activate()
 	button_icon_state = "mech_strafe_[chassis.strafing ? "off" : "on"]"
 	build_all_button_icons()
-	chassis.strafing(owner)
+	chassis.strafing(action_owner())
 
 /datum/action/innate/mecha/mech_defence_mode
 	name = "Toggle Mech defence mode"

@@ -120,7 +120,7 @@
 			return
 
 	var/saved_dna = victim.dna.Clone()
-	var/datum/absorbed_dna/newDNA = new(victim.real_name, saved_dna, victim.species.name, victim.languages, victim.identifying_gender, victim.flavor_texts, victim.identity?.genetic_effects?.Copy())
+	var/datum/absorbed_dna/newDNA = new(victim.real_name, saved_dna, victim.species.name, victim.languages, victim.identifying_gender, victim.flavor_texts, victim.identity()?.genetic_effects?.Copy())
 	if(changeling.GetDNA(newDNA.name))
 		qdel(newDNA)
 		return //No double dipping! You already ate or absorbed them once this shift, glutton!

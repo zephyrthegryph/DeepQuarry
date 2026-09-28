@@ -418,7 +418,7 @@
 /obj/item/stack/proc/stack_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if (user.get_inactive_hand() != src)
 		return FALSE
-	om_ask(user, /datum/om/prompt/Split stacks, ask_flags = ASK_CARRIED | ASK_CAPABLE, title = "Split stacks", message = "How many stacks of [src] would you like to split off?  There are currently [amount].", default = 1, max = amount, min = 1, round_entry = FALSE, ask_flags = ASK_CARRIED | ASK_CAPABLE)
+	om_ask(user, /datum/om/prompt/number, PROC_REF(split_amount_chosen), title = "Split stacks", message = "How many stacks of [src] would you like to split off?  There are currently [amount].", default = 1, max = amount, min = 1, round_entry = FALSE, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 	return TRUE
 
 /obj/item/stack/proc/split_amount_chosen(datum/om/prompt/number/ask)

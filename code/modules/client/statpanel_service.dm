@@ -307,8 +307,7 @@ GLOBAL_DATUM_INIT(statpanels_service, /datum/world_service/statpanels, new)
 	for(var/datum/controller/subsystem/sub_system as anything in Master.subsystems)
 		mc_data[++mc_data.len] = list("\[[sub_system.state_letter()]][sub_system.name]", sub_system.stat_entry(), "\ref[sub_system]")
 	for(var/datum/world_service/service as anything in world_services())
-		mc_data[++mc_data.len] = list("(service) [service.name]", service.stat_line(), "
-ef[service]")
+		mc_data[++mc_data.len] = list("(service) [service.name]", service.stat_line(), "\ref[service]")
 	mc_data[++mc_data.len] = list("Camera Net", "Cameras: [length(REGISTRY_MEMBERS(REGISTRY_CAMERAS))] | Chunks: [length(GLOB.cameranet.chunks)]", "\ref[GLOB.cameranet]")
 
 ///immediately update the active statpanel tab of the target client

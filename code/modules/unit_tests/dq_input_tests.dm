@@ -312,7 +312,7 @@
 /// Each kind of Use the router can reach, declared as interactions that record which one ran.
 DECLARE_INTERACTIONS(/obj/dq_input_probe, \
 	INTERACT_HAND_UNGATED(null, PROC_REF(probe_hand)), \
-	INTERACT_O\ERVER(null, PROC_REF(probe_ghost)), \
+	INTERACT_OBSERVER(null, PROC_REF(probe_ghost)), \
 	INTERACT_ROBOT(null, PROC_REF(probe_robot)), \
 	INTERACT_SILICON(null, PROC_REF(probe_ai)), \
 	INTERACT_TK(null, PROC_REF(probe_tk)), \

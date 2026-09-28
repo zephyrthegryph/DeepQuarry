@@ -74,7 +74,8 @@ GLOBAL_VAR(dq_lifecycle_snapshot_var_keys)
 			snapshot["radio [frequency_text] [radio_filter]"] = length(devices)
 	for(var/id in GLOB.registries)
 		snapshot["registry [id]"] = REGISTRY_COUNT(id)
-	var/list/world_hooks = OM_WORLD.om_rec?.hooks_in
+	var/datum/om_world/om_world_holder = OM_WORLD
+	var/list/world_hooks = om_world_holder?.om_rec?.hooks_in
 	for(var/event_path in world_hooks)
 		var/list/hooks = world_hooks[event_path]
 		snapshot["world hook [event_path]"] = length(hooks) / 2

@@ -99,7 +99,7 @@
 	act_params[answer_key] = answer
 	act_params["om_reentry"] = TRUE
 	usr = actor // tgui_act() handlers may read usr, as they do when the user clicks.
-	if(target.tgui_act(action, act_params, ui, ui.state))
+	if(target.tgui_act(action, act_params, ui, ui.state()))
 		SStgui.update_uis(target)
 
 // ---------------------------------------------------------------- re-runs keeping their answers

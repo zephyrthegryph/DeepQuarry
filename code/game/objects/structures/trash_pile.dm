@@ -134,6 +134,7 @@ REF_OWNED(/obj/structure/trash_pile, "mouse_nest")
 		return TRUE
 
 	om_ask(user, /datum/om/prompt/confirm/become_mouse, PROC_REF(mouse_confirmed))
+	return TRUE
 
 /// Re-checked: still a ghost with a client.
 /datum/om/prompt/confirm/become_mouse
@@ -142,7 +143,6 @@ REF_OWNED(/obj/structure/trash_pile, "mouse_nest")
 	yes_text = "Squeek!"
 	no_text = "Nope!"
 	requires = list(/datum/om/check/has_client)
-	return TRUE
 
 /datum/om/prompt/confirm/become_mouse/valid()
 	return isobserver(answerer) ? null : "not a ghost"

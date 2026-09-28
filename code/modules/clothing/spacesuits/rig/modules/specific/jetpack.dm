@@ -23,7 +23,7 @@
 /obj/item/rig_module/maneuvering_jets/engage()
 	if(!..())
 		return 0
-	jets.toggle_rockets_effect(holder?.wearer)
+	jets.toggle_rockets_effect(holder?.wearer())
 	return 1
 
 /obj/item/rig_module/maneuvering_jets/activate()
@@ -36,14 +36,14 @@
 	om_after(src, 1, PROC_REF(refresh_suit_overlay))
 
 	if(!jets.on)
-		jets.jetpack_toggle_effect(holder?.wearer)
+		jets.jetpack_toggle_effect(holder?.wearer())
 	return 1
 
 /obj/item/rig_module/maneuvering_jets/deactivate()
 	if(!..())
 		return 0
 	if(jets.on)
-		jets.jetpack_toggle_effect(holder?.wearer)
+		jets.jetpack_toggle_effect(holder?.wearer())
 	return 1
 
 /obj/item/rig_module/maneuvering_jets/Initialize(mapload)

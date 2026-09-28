@@ -49,10 +49,10 @@ REF_OWNED(/obj/item/card/id/syndicate, "agentcard_module")
 
 /datum/om/prompt/choice/agent_id_mode/valid()
 	var/obj/item/card/id/syndicate/card = subject
-	return card.registered_user == answerer ? null : "not the owner"
+	return card.registered_user() == answerer ? null : "not the owner"
 
 /obj/item/card/id/syndicate/proc/edit_or_show_chosen(datum/om/prompt/choice/agent_id_mode/ask)
-	var/mob/user() = ask.answerer
+	var/mob/user = ask.answerer
 	switch(ask.choice)
 		if("Edit")
 			agentcard_module.tgui_interact(user)

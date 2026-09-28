@@ -122,7 +122,7 @@
 	if(sensors())
 		switch(action)
 			if("range")
-				var/nrange = act_ask(ui.user, action, params, ui, "k125", /datum/om/prompt/number, message = "Set new sensors() range", title = "Sensor range", default = sensors().range, max = world.view, round_entry = FALSE)
+				var/nrange = act_ask(ui.user, action, params, ui, "k125", /datum/om/prompt/number, message = "Set new sensors range", title = "Sensor range", default = sensors().range, max = world.view, round_entry = FALSE)
 				if(isnull(nrange))
 					return
 				if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)

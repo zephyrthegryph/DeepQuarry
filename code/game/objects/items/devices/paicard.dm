@@ -87,6 +87,7 @@ REF_OWNED(/obj/item/paicard, list("radio", "multitool", "signaler", "screen_laye
 		return TRUE
 
 	om_ask(user, /datum/om/prompt/confirm/pai_inhabit, PROC_REF(inhabit_confirmed), message = "Do you want to inhabit this pAI using \"[pai_name]\"?")
+	return TRUE
 
 /// A ghost loading into an empty card. Re-checked on the answer: still has a client, the card is still empty.
 /datum/om/prompt/confirm/pai_inhabit
@@ -94,7 +95,6 @@ REF_OWNED(/obj/item/paicard, list("radio", "multitool", "signaler", "screen_laye
 	yes_text = "Load pAI Data"
 	no_text = "Cancel"
 	requires = list(/datum/om/check/has_client)
-	return TRUE
 
 /datum/om/prompt/confirm/pai_inhabit/valid()
 	var/obj/item/paicard/card = subject

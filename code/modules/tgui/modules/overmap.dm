@@ -479,7 +479,7 @@
 		/* END ENGINES */
 		/* SENSORS */
 		if("range")
-			var/nrange = act_ask(ui.user, action, params, ui, "a10", /datum/om/prompt/number, message = "Set new sensors() range", title = "Sensor range", default = sensors().range, max = world.view, round_entry = FALSE)
+			var/nrange = act_ask(ui.user, action, params, ui, "a10", /datum/om/prompt/number, message = "Set new sensors range", title = "Sensor range", default = sensors().range, max = world.view, round_entry = FALSE)
 			if(isnull(nrange))
 				return
 			if(nrange)

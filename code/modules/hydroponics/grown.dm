@@ -257,12 +257,12 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/grown, \
 					return INTERACTION_HANDLED_PASS
 
 	// potato + knife = raw sticks
-	if(seed && seed.kitchen_tag && seed.kitchen_tag == PLANT_POTATO && istype(W,/obj/item/material/knife))
+	if(seed() && seed().kitchen_tag == PLANT_POTATO && istype(W,/obj/item/material/knife))
 		new /obj/item/reagent_containers/food/snacks/rawsticks(get_turf(src))
 		to_chat(user, span_notice("You cut the potato."))
 		consume(src, user)
 		return INTERACTION_HANDLED_PASS
-	if(seed && seed.kitchen_tag && seed.kitchen_tag == PLANT_SUNFLOWERS && istype(W,/obj/item/material/knife))
+	if(seed() && seed().kitchen_tag == PLANT_SUNFLOWERS && istype(W,/obj/item/material/knife))
 		new /obj/item/reagent_containers/food/snacks/rawsunflower(get_turf(src))
 		to_chat(user, span_notice("You remove the seeds from the flower, slightly damaging them."))
 		consume(src, user)

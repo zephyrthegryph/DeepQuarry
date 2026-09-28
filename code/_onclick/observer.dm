@@ -54,9 +54,9 @@ EXTEND_INTERACTIONS(/obj/machinery/teleport/hub, INTERACT_OBSERVER("Follow the l
 
 /// Declared with the portal's other interactions (portals.dm).
 /obj/effect/portal/proc/portal_ghost_follow(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!target_ref())_ref())
+	if(!target_ref())
 		return FALSE
-	user.forceMove(get_turf(target_ref())_ref())
+	user.forceMove(get_turf(target_ref()))
 	return TRUE
 
 // -------------------------------------------

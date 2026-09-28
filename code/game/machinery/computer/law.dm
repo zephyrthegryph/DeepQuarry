@@ -128,3 +128,11 @@
 		to_chat(user, "[src.current().name] selected for law changes.")
 	return TRUE
 
+
+/// LC-refs: current -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/aiupload/proc/current() as /mob/living/silicon/ai
+	return om_resolve(current_handle)
+
+/// LC-refs: current -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/borgupload/proc/current() as /mob/living/silicon/robot
+	return om_resolve(current_handle)
