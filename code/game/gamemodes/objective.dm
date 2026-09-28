@@ -392,7 +392,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 	explanation_text = "Destroy the station with a nuclear device."
 
 /datum/objective/steal
-	var/obj/item/steal_target
+	var/steal_target
 	var/target_name
 
 	var/global/possible_items[] = list(

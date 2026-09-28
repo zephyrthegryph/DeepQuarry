@@ -82,7 +82,7 @@
 	var/obj/landed_holder/landed_holder
 	var/interior_corner = 0
 	var/takes_underlays = 0
-	var/turf/under_turf //Underlay override turf path.
+	var/under_turf //Underlay override turf path.
 	var/join_flags = 0 //Bitstring to represent adjacency of joining walls
 	var/join_group = "shuttle" //A tag for what other walls to join with. Null if you don't want them to.
 	var/static/list/antilight_cache
