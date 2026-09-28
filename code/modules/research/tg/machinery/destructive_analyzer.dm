@@ -16,10 +16,10 @@ It is used to destroy hand-held objects and advance technological research. Used
 	idle_power_usage = 30
 	active_power_usage = 2500
 	var/rped_recycler_ready = TRUE
-	var/tmp/rmat_handle
+	var/datum/component/remote_materials/rmat
 
 /obj/machinery/rnd/destructive_analyzer/Initialize(mapload)
-	rmat_handle = om_handle(AddComponent()
+	rmat = AddComponent( \
 		/datum/component/remote_materials, \
 		mapload, \
 		mat_container_flags = MATCONTAINER_NO_INSERT \
@@ -177,12 +177,12 @@ It is used to destroy hand-held objects and advance technological research. Used
 	playsound(get_turf(src), 'sound/machines/chime.ogg', 50, 1)
 
 /obj/machinery/rnd/destructive_analyzer/proc/get_silo_material_container_datum(verbose)
-	var/datum/component/material_container/materials = rmat().mat_container
+	var/datum/component/material_container/materials = rmat.mat_container
 	if(!materials)
 		if(verbose)
 			atom_say("No access to material storage, please contact the quartermaster.")
 		return null
-	if(rmat().on_hold())
+	if(rmat.on_hold())
 		if(verbose)
 			atom_say("Mineral access is on hold, please contact the quartermaster.")
 		return null
@@ -348,6 +348,4 @@ It is used to destroy hand-held objects and advance technological research. Used
 
 #undef DESTRUCTIVE_ANALYZER_DESTROY_POINTS
 
-/// LC-refs: the rmat this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
-/obj/machinery/rnd/destructive_analyzer/proc/rmat() as /datum/component/remote_materials
-	return om_resolve(rmat_handle)
+REF_OWNED(/obj/machinery/rnd/destructive_analyzer, "rmat")

@@ -266,10 +266,10 @@
 			scanner_handle = om_handle(S)
 			break
 	data["has_scanner"] = !!scanner()
-	if(scanner()?.cache)
+	if(scanner()?.cache())
 		data["scanner_cache"] = list(
-			"name" = scanner().cache.name,
-			"author" = scanner().cache.author || "",
+			"name" = scanner().cache().name,
+			"author" = scanner().cache().author || "",
 		)
 	else
 		data["scanner_cache"] = null
@@ -379,8 +379,8 @@
 			return TRUE
 		if("setauthor")
 			var/newauthor = tgui_input_text(usr, "Enter the author's name:", "", "", MAX_MESSAGE_LEN)
-			if(newauthor && scanner()?.cache)
-				scanner().cache.author = newauthor
+			if(newauthor && scanner()?.cache())
+				scanner().cache().author = newauthor
 			return TRUE
 		if("setcategory")
 			var/newcategory = tgui_input_list(usr, "Choose a category:", "Category", list("Fiction", "Non-Fiction", "Adult", "Reference", "Religion"))
@@ -388,12 +388,12 @@
 				upload_category = newcategory
 			return TRUE
 		if("upload")
-			if(!scanner()?.cache)
+			if(!scanner()?.cache())
 				return TRUE
 			var/choice = tgui_alert(usr, "Are you certain you wish to upload this title to the Archive?", "Confirmation", list("Confirm", "Abort"))
 			if(choice != "Confirm")
 				return TRUE
-			if(scanner().cache.unique)
+			if(scanner().cache().unique)
 				tgui_alert_async(usr, "This book has been rejected from the database. Aborting!")
 				return TRUE
 			if(!SSdbcore.IsConnected())
@@ -401,12 +401,12 @@
 				return TRUE
 			var/datum/db_query/query = SSdbcore.NewQuery(
 				"INSERT INTO library (author, title, content, category) VALUES (:author, :title, :content, :category)",
-				list("author" = scanner().cache.author, "title" = scanner().cache.name, "content" = scanner().cache.dat, "category" = upload_category)
+				list("author" = scanner().cache().author, "title" = scanner().cache().name, "content" = scanner().cache().dat, "category" = upload_category)
 			)
 			if(!query.Execute())
 				to_chat(usr, query.ErrorMsg())
 			else
-				log_game("[usr.name]/[usr.key] has uploaded the book titled [scanner().cache.name], [length(scanner().cache.dat)] signs")
+				log_game("[usr.name]/[usr.key] has uploaded the book titled [scanner().cache().name], [length(scanner().cache().dat)] signs")
 				tgui_alert_async(usr, "Upload Complete.")
 			qdel(query)
 			return TRUE

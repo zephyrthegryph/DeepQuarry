@@ -20,7 +20,7 @@
 	icon_state = "wirer-[mode]"
 
 /obj/item/integrated_electronics/wirer/proc/wire(datum/integrated_io/io, mob/user)
-	if(!io.holder().assembly)
+	if(!io.holder().assembly())
 		to_chat(user, span_warning("\The [io.holder()] needs to be secured inside an assembly first."))
 		return
 	if(mode == WIRE)
@@ -36,7 +36,7 @@
 			to_chat(user, span_warning("Those two types of channels are incompatible. The first is a [selected_io.io_type], \
 			while the second is a [io.io_type]."))
 			return
-		if(io.holder().assembly && io.holder().assembly != selected_io.holder().assembly)
+		if(io.holder().assembly() && io.holder().assembly() != selected_io.holder().assembly())
 			to_chat(user, span_warning("Both \the [io.holder()] and \the [selected_io.holder()] need to be inside the same assembly."))
 			return
 		LAZYOR(selected_io.linked, io)
@@ -195,7 +195,7 @@
 			icon_state = "multitool"
 
 /obj/item/multitool/proc/wire(datum/integrated_io/io, mob/user)
-	if(!io.holder().assembly)
+	if(!io.holder().assembly())
 		to_chat(user, span_warning("\The [io.holder()] needs to be secured inside an assembly first."))
 		return
 
@@ -207,7 +207,7 @@
 			to_chat(user, span_warning("Those two types of channels are incompatible. The first is a [selected_io().io_type], \
 			while the second is a [io.io_type]."))
 			return
-		if(io.holder().assembly && io.holder().assembly != selected_io().holder().assembly)
+		if(io.holder().assembly() && io.holder().assembly() != selected_io().holder().assembly())
 			to_chat(user, span_warning("Both \the [io.holder()] and \the [selected_io().holder()] need to be inside the same assembly."))
 			return
 		LAZYOR(selected_io().linked, io)

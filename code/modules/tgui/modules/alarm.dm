@@ -134,7 +134,7 @@
 
 			categories[categories.len]["alarms"] += list(list(
 					"name" = "[A.alarm_name()]" + "[A.max_severity() > 1 ? "(MAJOR)" : ""]",
-					"origin_lost" = A.origin == null,
+					"origin_lost" = A.origin() == null,
 					"has_cameras" = cameras.len,
 					"cameras" = cameras,
 					"lost_sources" = lost_sources.len ? sanitize(english_list(lost_sources, nothing_text = "", and_text = ", ")) : ""))

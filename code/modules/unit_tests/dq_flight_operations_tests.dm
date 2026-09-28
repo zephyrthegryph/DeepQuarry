@@ -85,7 +85,7 @@
 	var/datum/flight_destination/carrier = SSflight_operations.destinations[carrier_id]
 	TEST_ASSERT_NOTNULL(carrier, "Flight registry omitted the Exploration Carrier")
 	TEST_ASSERT_EQUAL(carrier.orbit_parent_id, SSflight_operations.planet_id_named("Sif"), "The carrier does not independently orbit Sif")
-	var/obj/effect/overmap/visitable/ship/carrier_ship = carrier.target
+	var/obj/effect/overmap/visitable/ship/carrier_ship = carrier.target()
 	var/datum/flight_vessel/carrier_vessel = SSflight_operations.vessel_for_ship(carrier_ship)
 	TEST_ASSERT_NULL(carrier_vessel?.docked_port_id, "The carrier was incorrectly registered as docked to another destination")
 

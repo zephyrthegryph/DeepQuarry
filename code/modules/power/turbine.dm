@@ -402,9 +402,9 @@
 
 /obj/machinery/computer/turbine_computer/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	data["connected"] = (compressor() && compressor().turbine) ? TRUE : FALSE
+	data["connected"] = (compressor() && compressor().turbine()) ? TRUE : FALSE
 	data["compressor_broke"] = (!compressor() || (compressor().stat & BROKEN)) ? TRUE : FALSE
-	data["turbine_broke"] = (!compressor() || !compressor().turbine || (compressor().turbine.stat & BROKEN)) ? TRUE : FALSE
+	data["turbine_broke"] = (!compressor() || !compressor().turbine() || (compressor().turbine().stat & BROKEN)) ? TRUE : FALSE
 	data["broken"] = (data["compressor_broke"] || data["turbine_broke"])
 	data["door_status"] = door_status ? TRUE : FALSE
 
@@ -413,9 +413,9 @@
 	data["rpm"] = 0
 	data["temp"] = 0
 
-	if(compressor() && compressor().turbine)
+	if(compressor() && compressor().turbine())
 		data["online"] = compressor().starter
-		data["power"] = compressor().turbine.lastgen // DisplayPower
+		data["power"] = compressor().turbine().lastgen // DisplayPower
 		data["rpm"] = compressor().rpm
 		data["temp"] = compressor().gas_contained.return_temperature()
 
@@ -427,11 +427,11 @@
 
 	switch(action)
 		if("power-on")
-			if(compressor() && compressor().turbine)
+			if(compressor() && compressor().turbine())
 				compressor().set_starter(TRUE)
 				. = TRUE
 		if("power-off")
-			if(compressor() && compressor().turbine)
+			if(compressor() && compressor().turbine())
 				compressor().set_starter(FALSE)
 				. = TRUE
 		if("reconnect")

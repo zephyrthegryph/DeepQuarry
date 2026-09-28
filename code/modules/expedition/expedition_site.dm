@@ -80,9 +80,9 @@ REF_OWNED_LIST(/datum/expedition_site, "station_controls")
 	return null
 
 /datum/expedition_site/proc/has_active_assignment()
-	if(assigned_flight_vessel() && !QDELETED(assigned_flight_vessel()) && assigned_flight_vessel().active_expedition == src)
+	if(assigned_flight_vessel() && !QDELETED(assigned_flight_vessel()) && assigned_flight_vessel().active_expedition() == src)
 		return TRUE
-	return origin_console() && !QDELETED(origin_console()) && origin_console().active_expedition == src
+	return origin_console() && !QDELETED(origin_console()) && origin_console().active_expedition() == src
 
 /datum/expedition_site/proc/has_travel_lease()
 	var/datum/flight_destination/destination = SSflight_operations?.destinations[flight_destination_id]

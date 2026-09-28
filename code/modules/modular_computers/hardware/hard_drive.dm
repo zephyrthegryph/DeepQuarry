@@ -82,7 +82,7 @@
 	if(F in stored_files)
 		return 0
 
-	F.holder = src
+	F.holder_handle = om_handle(src)
 	LAZYADD(stored_files, F)
 	recalculate_size()
 	return 1

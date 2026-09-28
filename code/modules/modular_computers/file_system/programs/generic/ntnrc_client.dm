@@ -32,7 +32,7 @@
 
 	var/datum/ntnet_conversation/channel = GLOB.ntnet_global.get_chat_channel_by_id(active_channel)
 	var/authed = FALSE
-	if(channel && ((channel.operator() == src) || netadmin_mode))
+	if(channel && ((channel.channel_operator() == src) || netadmin_mode))
 		authed = TRUE
 	switch(action)
 		if("PRG_speak")
@@ -216,7 +216,7 @@
 					"msg" = M
 				)))
 			data["messages"] = messages
-			data["is_operator"] = (channel.operator() == src) || netadmin_mode
+			data["is_operator"] = (channel.channel_operator() == src) || netadmin_mode
 		else
 			data["clients"] = list()
 			data["messages"] = list()

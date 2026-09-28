@@ -54,7 +54,7 @@ GLOBAL_VAR_INIT(ntnet_card_uid, 1)
 	hardware_size = 1
 
 /obj/item/computer_hardware/network_card/quantum/get_signal(specific_action = 0)
-	if(!holder2)
+	if(!holder2())
 		return 0
 
 	if(!enabled)
@@ -85,7 +85,7 @@ GLOBAL_VAR_INIT(ntnet_card_uid, 1)
 
 // 0 - No signal, 1 - Low signal, 2 - High signal. 3 - Wired Connection
 /obj/item/computer_hardware/network_card/proc/get_signal(specific_action = 0)
-	if(!holder2) // Hardware is not installed in anything. No signal. How did this even get called?
+	if(!holder2()) // Hardware is not installed in anything. No signal. How did this even get called?
 		return 0
 
 	if(!enabled)
@@ -100,8 +100,8 @@ GLOBAL_VAR_INIT(ntnet_card_uid, 1)
 	if(!GLOB.ntnet_global.check_function(specific_action)) // NTNet is down and we are not connected via wired connection. No signal.
 		return 0
 
-	if(holder2)
-		var/holderz = get_z(holder2)
+	if(holder2())
+		var/holderz = get_z(holder2())
 		if(!holderz) //no reception in nullspace
 			return 0
 		var/list/zlevels_in_range = using_map.get_map_levels(holderz, FALSE) // om_range = DEFAULT_OVERMAP_RANGE)

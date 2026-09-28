@@ -97,7 +97,7 @@
 				growth_type = 4 // Mold
 	else
 		max_growth = seed().growth_stages
-		growth_threshold = max_health/seed.growth_stages
+		growth_threshold = max_health/seed().growth_stages
 
 	if(max_growth > 2 && prob(50))
 		max_growth-- //Ensure some variation in final sprite, makes the carpet of crap look less wonky.

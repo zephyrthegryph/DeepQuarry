@@ -265,7 +265,7 @@
 			// Other info
 			APC_entry["total_load"] = reading_to_text(A.channel_load_total())
 			// Hopefully removes those goddamn \improper s which are screwing up the UI
-			var/N = A.area.name
+			var/N = A.area().name
 			if(findtext(N, "\improper"))
 				N = copytext(N, 3)
 			APC_entry["name"] = N

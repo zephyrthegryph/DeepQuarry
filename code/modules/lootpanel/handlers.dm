@@ -12,7 +12,7 @@
 		return
 #endif
 
-	if(isturf(source.item))
+	if(isturf(source.item()))
 		populate_contents()
 		return
 

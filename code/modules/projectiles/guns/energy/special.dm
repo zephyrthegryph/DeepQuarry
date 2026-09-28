@@ -124,7 +124,7 @@
 	var/obj/item/projectile/energy/floraprune/GP = .
 	// Inserting the upgrade level of the gun to the projectile as there isn't a better way to do this.
 	if(istype(G))
-		G.gene = gene()
+		G.gene_handle = om_handle(gene())
 		G.lasermod = emitter.rating
 	else if(istype(GY))
 		GY.lasermod = emitter.rating

@@ -747,7 +747,7 @@ REF_OWNED(/obj/item/integrated_circuit/input/EPv2, "exonet")
 
 			set_pin_data(IC_OUTPUT, 1, assembly().battery.charge)
 			set_pin_data(IC_OUTPUT, 2, assembly().battery.maxcharge)
-			set_pin_data(IC_OUTPUT, 3, 100*assembly().battery.charge/assembly.battery.maxcharge)
+			set_pin_data(IC_OUTPUT, 3, 100*assembly().battery.charge/assembly().battery.maxcharge)
 	push_data()
 	activate_pin(2)
 

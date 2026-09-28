@@ -207,10 +207,10 @@ SUBSYSTEM_DEF(expedition)
 		site.overmap_sector().name = descriptor_name
 	if(site.landing_waypoint)
 		site.landing_waypoint.name = "[descriptor_name] - Expedition Landing Zone"
-	if(descriptor.origin_console()?.active_expedition == descriptor)
-		descriptor.origin_console().active_expedition = site
-	if(descriptor.assigned_flight_vessel()?.active_expedition == descriptor)
-		descriptor.assigned_flight_vessel().active_expedition = site
+	if(descriptor.origin_console()?.active_expedition() == descriptor)
+		descriptor.origin_console().active_expedition_handle = om_handle(site)
+	if(descriptor.assigned_flight_vessel()?.active_expedition() == descriptor)
+		descriptor.assigned_flight_vessel().active_expedition_handle = om_handle(site)
 	site.assigned_flight_vessel_handle = om_handle(descriptor.assigned_flight_vessel())
 	site.payout_turf_handle = om_handle(descriptor.payout_turf())
 	var/datum/flight_destination/destination = SSflight_operations?.destinations[old_destination_id]
@@ -635,10 +635,10 @@ SUBSYSTEM_DEF(expedition)
 	sites -= "[z]"
 	if(site.flight_destination_id)
 		SSflight_operations?.unregister_destination(site.flight_destination_id)
-	if(site.origin_console() && site.origin_console().active_expedition == site)
-		site.origin_console().active_expedition = null
-	if(site.assigned_flight_vessel()?.active_expedition == site)
-		site.assigned_flight_vessel().active_expedition = null
+	if(site.origin_console() && site.origin_console().active_expedition() == site)
+		site.origin_console().active_expedition_handle = null
+	if(site.assigned_flight_vessel()?.active_expedition() == site)
+		site.assigned_flight_vessel().active_expedition_handle = null
 	QDEL_NULL(site.landing_waypoint)
 	qdel(site.overmap_sector()); site.overmap_sector_handle = null
 	teardown_z["[z]"] = TRUE

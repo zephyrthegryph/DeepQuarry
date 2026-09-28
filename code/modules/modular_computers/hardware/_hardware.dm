@@ -77,7 +77,7 @@
 	. = ..()
 	w_class = hardware_size
 	if(istype(loc, /obj/item/modular_computer))
-		holder2 = loc
+		holder2_handle = om_handle(loc)
 
 /// Handles damage checks
 /obj/item/computer_hardware/proc/check_functionality()

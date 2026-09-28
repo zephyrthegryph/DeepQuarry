@@ -4,10 +4,10 @@
 
 #if !defined(OPENDREAM) && !defined(UNIT_TESTS)
 	if(!notified)
-		var/build = owner.byond_build
-		var/version = owner.byond_version
+		var/build = owner().byond_build
+		var/version = owner().byond_version
 		if(build < 515 || (build == 515 && version < 1635))
-			to_chat(owner.mob, span_info("\
+			to_chat(owner().mob, span_info("\
 				<span class='bolddanger'>Your version of Byond doesn't support fast image loading.</span>\n\
 				Detected: [version].[build]\n\
 				Required version for this feature: <b>515.1635</b> or later.\n\
@@ -18,7 +18,7 @@
 #endif
 
 	populate_contents()
-	tgui_interact(owner.mob)
+	tgui_interact(owner().mob)
 
 
 /**

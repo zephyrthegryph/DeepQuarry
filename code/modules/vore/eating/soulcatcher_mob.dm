@@ -172,7 +172,7 @@
 	if(!client || !client.prefs)
 		return //Um...
 
-	new /mob/observer/eye/ar_soul/vore(src, gem().owner) // takes itself as our eye
+	new /mob/observer/eye/ar_soul/vore(src, gem().owner()) // takes itself as our eye
 	gem().notify_holder("[src] now SR projecting.")
 	gem().clear_vore_fx(src)
 

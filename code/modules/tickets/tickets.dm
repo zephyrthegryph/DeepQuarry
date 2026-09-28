@@ -158,8 +158,8 @@ REF_OWNED_LIST(/datum/tickets, list("active_tickets", "closed_tickets", "resolve
 	if(C.current_ticket())
 		if(!only_alert)
 			C.current_ticket().AddInteraction("Client reconnected.")
-		C.current_ticket().initiator = C
-		C.current_ticket().initiator.mob?.throw_alert("open ticket", /atom/movable/screen/alert/open_ticket)
+		C.current_ticket().initiator_handle = om_handle(C)
+		C.current_ticket().initiator().mob?.throw_alert("open ticket", /atom/movable/screen/alert/open_ticket)
 
 //Dissasociate ticket
 /datum/tickets/proc/ClientLogout(client/C)

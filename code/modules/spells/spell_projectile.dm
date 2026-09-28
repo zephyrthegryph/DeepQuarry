@@ -39,12 +39,12 @@ REF_OWNED_LIST(/obj/item/projectile/spell_projectile, "trails")
 
 /obj/item/projectile/spell_projectile/Bump(atom/A)
 	if(loc && carried())
-		prox_cast(carried().choose_prox_targets(user = carried().holder, spell_holder = src))
+		prox_cast(carried().choose_prox_targets(user = carried().holder(), spell_holder = src))
 	return 1
 
 /obj/item/projectile/spell_projectile/on_impact()
 	if(loc && carried())
-		prox_cast(carried().choose_prox_targets(user = carried().holder, spell_holder = src))
+		prox_cast(carried().choose_prox_targets(user = carried().holder(), spell_holder = src))
 	return 1
 
 /obj/item/projectile/spell_projectile/seeking

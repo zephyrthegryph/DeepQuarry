@@ -314,10 +314,10 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 	nodes_by_id = list()
 	department_areas = list()
 	module_areas = list()
-	transit_area_handle = om_handle(new)
+	transit_area_handle = om_handle(new /area/generated_station/transit)
 	transit_area().station_id = spec().id
 	transit_area().name = "[spec().name] Transit"
-	maintenance_area_handle = om_handle(new)
+	maintenance_area_handle = om_handle(new /area/generated_station/maintenance)
 	maintenance_area().station_id = spec().id
 	maintenance_area().name = "[spec().name] Maintenance"
 	result = new

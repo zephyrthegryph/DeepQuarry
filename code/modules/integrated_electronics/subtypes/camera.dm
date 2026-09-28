@@ -215,8 +215,8 @@ REF_OWNED(/obj/item/integrated_circuit/input/video_camera_input, "camera_module"
 	access_based = FALSE
 
 /datum/tgui_module/camera/intcircuit/tgui_host(mob/user)
-	if(owner_circuit()?.assembly)
-		return owner_circuit().assembly
+	if(owner_circuit()?.assembly())
+		return owner_circuit().assembly()
 	return owner_circuit()
 
 /datum/tgui_module/camera/intcircuit/get_available_cameras(mob/user)

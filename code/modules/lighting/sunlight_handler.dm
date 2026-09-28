@@ -384,7 +384,7 @@
 	if(!sleeping && SSlighting.get_pshandler_z(holder.z))
 		pshandler_handle = om_handle(SSlighting.get_pshandler_z(holder.z))
 		LAZYADD(pshandler().shandlers, src)
-		sun_handle = om_handle(pshandler().sun)
+		sun_handle = om_handle(pshandler().sun())
 		return TRUE
 	else
 		return FALSE

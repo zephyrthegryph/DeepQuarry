@@ -44,7 +44,7 @@
 		materialization_failure = materializer.last_failure_details
 		qdel(materializer)
 	qdel(planner)
-	if(!materialization?.entry)
+	if(!materialization?.entry())
 		if(validation_messages)
 			validation_messages += materialization ? "The materialized station has no docking entry." : "Station materialization failed[materialization_failure ? ": [materialization_failure]" : "."]"
 		qdel(materialization)
@@ -53,7 +53,7 @@
 		spec = generated_station_emergency_spec(seed)
 		materialization = generated_station_emergency_materialization(spec, z)
 
-	var/datum/expedition_site/site = new(z, EXP_DIFF_LOW, get_turf(materialization.entry))
+	var/datum/expedition_site/site = new(z, EXP_DIFF_LOW, get_turf(materialization.entry()))
 	site.name = spec.name
 	site.generation_seed = seed
 	site.station_spec = spec

@@ -40,7 +40,7 @@
 
 	var/charge_percentage = rigcell ? rigcell.charge / rigcell.maxcharge : 0
 	var/air_percentage = rigtank?.air_contents ? CLAMP(rigtank.air_contents.total_moles() / 17.4693, 0, 1) : 0
-	var/air_on = owner_rig().wearer?.internal ? 1 : 0
+	var/air_on = owner_rig().wearer()?.internal ? 1 : 0
 
 	power.icon_state = "pwr[round(charge_percentage / 0.2, 1)]"
 	air.icon_state = "air[round(air_percentage / 0.2, 1)]"

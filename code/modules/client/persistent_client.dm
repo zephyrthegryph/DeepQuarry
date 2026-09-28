@@ -20,6 +20,7 @@ GLOBAL_LIST_EMPTY_TYPED(persistent_clients_by_ckey, /datum/persistent_client)
 	var/list/logging = list()
 
 	/// Callbacks invoked when this client logs in again
+	var/list/datum/action/player_actions
 	var/list/post_login_callbacks
 	/// Callbacks invoked when this client logs out
 	var/list/post_logout_callbacks
@@ -114,3 +115,6 @@ REGISTRY_MEMBERSHIP(/datum/persistent_client, REGISTRY_PERSISTENT_CLIENTS)
 /// LC-refs: the client this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/persistent_client/proc/client() as /client
 	return om_resolve(client_handle)
+
+/// LC-refs: the actions granted to this player on each login are theirs.
+REF_OWNED_LIST(/datum/persistent_client, "player_actions")

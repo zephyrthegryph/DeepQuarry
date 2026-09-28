@@ -228,7 +228,7 @@
 /datum/data/pda/app/messenger/multicast/receive_message(list/data, ref)
 	. = ..()
 
-	var/obj/item/pda/multicaster/M = pda
+	var/obj/item/pda/multicaster/M = pda()
 	if(!istype(M))
 		return
 

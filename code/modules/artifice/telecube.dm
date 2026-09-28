@@ -67,7 +67,7 @@
 		color = rgb(rand(30, 255),rand(30, 255),rand(30, 255))
 
 	if(start_paired)
-		mate_handle = om_handle(new(src.loc))
+		mate_handle = om_handle(new /obj/item/telecube(src.loc))
 		if(mirror_colors)
 			mate().glow_color = color
 			mate().color = glow_color

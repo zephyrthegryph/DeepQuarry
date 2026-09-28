@@ -227,7 +227,7 @@
 	if(!inserted_battery())
 		icon_state = "anodev"
 		return
-	var/p = (inserted_battery().stored_charge/inserted_battery.capacity)*100
+	var/p = (inserted_battery().stored_charge/inserted_battery().capacity)*100
 	p = min(p, 100)
 	icon_state = "anodev[round(p,25)]"
 
