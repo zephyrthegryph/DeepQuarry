@@ -137,7 +137,7 @@
 		B.overmind.blob_type.on_attack(B, src, def_zone)
 
 	visible_message(span_danger("\The [B] [attack_verb] \the [src]!"), span_danger("[attack_message]!"))
-	playsound(src, 'sound/effects/attackblob.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_ATTACKBLOB)
 
 	if(ai_brain)
 		ai_brain.react_to_attack(B)
@@ -244,7 +244,7 @@
 	if(OM_EMIT(src, /datum/om/event/before/living_turf_collision, T, speed) & COMPONENT_LIVING_BLOCK_TURF_COLLISION)
 		return
 	injure(INJURY_BLUNT, speed * 5, null, T) // A default of 25, spread across the body.
-	playsound(src, get_sfx("punch"), 50) //ouch sound
+	playsound(src, get_sfx(SFX_PUNCH), 50) //ouch sound
 
 /mob/living/proc/near_wall(direction,distance=1)
 	var/turf/T = get_step(get_turf(src),direction)

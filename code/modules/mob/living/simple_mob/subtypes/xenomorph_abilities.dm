@@ -19,7 +19,7 @@
 	if(O)
 		visible_message(span_boldwarning("[src] vomits up a thick purple substance and begins to shape it!"), span_alium("You shape a [choice]."))
 		O.color = "#321D37"
-		playsound(src, 'sound/effects/blobattack.ogg', 40, 1)
+		play_sfx(src, SFX_EFFECTS_BLOBATTACK, volume = 40)
 
 /mob/living/simple_mob/xeno_ch/proc/xeno_build()
 	set name = "Build Resin Structure"

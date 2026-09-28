@@ -62,7 +62,7 @@ DECLARE_INTERACTIONS(/obj/item/deadringer, INTERACT_USE(null, PROC_REF(interacti
 /obj/item/deadringer/proc/reveal()
 	if(watchowner())
 		watchowner().alpha = 255
-		playsound(src, 'sound/effects/uncloak.ogg', 35, 1, -1)
+		play_sfx(src, SFX_EFFECTS_UNCLOAK)
 	return
 
 /obj/item/deadringer/proc/makeacorpse(mob/living/carbon/human/H)

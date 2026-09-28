@@ -359,7 +359,7 @@ DECLARE_REF(/obj/machinery/alarm, "soundloop", OWNED, null)
 			set_regulating_temperature((environment.return_temperature() > target_temperature ? 1 : 2))
 			audible_message("\The [src] clicks as it starts [regulating_temperature == 1 ? "cooling" : "heating"] the room.",\
 			"You hear a click and a faint electronic hum.", runemessage = "* click *")
-			playsound(src, 'sound/machines/click.ogg', 50, 1)
+			play_sfx(src, SFX_MACHINES_CLICK)
 	else
 		//check for when we should stop adjusting temperature
 		if(TEST_TLV_VALUES || abs(environment.return_temperature() - target_temperature) <= 0.5 || environment.return_pressure() < 1)
@@ -367,7 +367,7 @@ DECLARE_REF(/obj/machinery/alarm, "soundloop", OWNED, null)
 			audible_message("\The [src] clicks quietly as it stops [regulating_temperature == 1 ? "cooling" : "heating"] the room.",\
 			"You hear a click as a faint electronic humming stops.", runemessage = "* click *")
 			set_regulating_temperature(0)
-			playsound(src, 'sound/machines/click.ogg', 50, 1)
+			play_sfx(src, SFX_MACHINES_CLICK)
 
 	if(regulating_temperature)
 		if(target_temperature > T0C + MAX_TEMPERATURE)

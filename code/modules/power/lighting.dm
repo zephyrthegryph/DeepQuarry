@@ -110,7 +110,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 	else if(user.drop_from_inventory(W))
 		user.visible_message(span_notice("[user] hooks up [W] to [src]."), \
 		span_notice("You add [W] to [src]."))
-		playsound(src, 'sound/machines/click.ogg', 50, TRUE)
+		play_sfx(src, SFX_MACHINES_CLICK)
 		W.forceMove(src)
 		cell_handle = om_handle(W)
 		add_fingerprint(user)
@@ -146,7 +146,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 
 /obj/machinery/light_construct/proc/wrench_act_tool_done(mob/user)
 	user.visible_message("[user.name] deconstructs [src].", "You deconstruct [src].", "You hear a noise.")
-	playsound(src, 'sound/items/Deconstruct.ogg', 75, TRUE)
+	play_sfx(src, SFX_ITEMS_DECONSTRUCT, 1.5)
 	replace_with(src, /obj/item/stack/material/steel, sheets_refunded)
 	return ITEM_INTERACT_SUCCESS
 
@@ -457,7 +457,7 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 	if(!on)
 		needsound = TRUE // Play sound next time we turn on
 	else if(needsound)
-		playsound(src, 'sound/effects/lighton.ogg', 65, 1)
+		play_sfx(src, SFX_EFFECTS_LIGHTON)
 		needsound = FALSE // Don't play sound again until we've been turned off
 
 	if(on)
@@ -723,9 +723,7 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 	else if(status == LIGHT_EMPTY)
 		to_chat(user, "You stick \the [W] into the light socket!")
 		if(has_power() && !(W.flags & NOCONDUCT))
-			var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-			s.set_up(3, 1, src)
-			s.start()
+			fx_sparks(src, 3)
 			if (prob(75))
 				electrocute_mob(user, get_area(src), src, rand(0.7,1.0))
 	return TRUE
@@ -841,7 +839,7 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 		update(0) //Yes. This is done here and then immediately followed up with another update(0). Why does it need that? I have no clue. But a single update(0) does not work.
 	update(0)
 	if(!on) // Only play when the light turns off.
-		playsound(src, 'sound/effects/light_flicker.ogg', 50, 1)
+		play_sfx(src, SFX_EFFECTS_LIGHT_FLICKER)
 	if(remaining_flicks > 0)
 		remaining_flicks--
 		om_after(src, rand(5, 15), PROC_REF(do_flicker), remaining_flicks, flicker_color, original_color, original_color_ns)
@@ -990,11 +988,9 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 
 	if(!skip_sound_and_sparks)
 		if(status == LIGHT_OK || status == LIGHT_BURNED)
-			playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
+			play_sfx(src, SFX_EFFECTS_GLASSHIT)
 		if(on)
-			var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-			s.set_up(3, 1, src)
-			s.start()
+			fx_sparks(src, 3)
 	status = LIGHT_BROKEN //This occasionally runtimes when it occurs midround after build mode spawns a broken light. No idea why.
 	if(installed_light) // a latent bulb takes the fixture's status
 		installed_light.status = status
@@ -1463,7 +1459,7 @@ DECLARE_INTERACTIONS(/obj/item/light, INTERACT_ITEM(null, PROC_REF(interaction_i
 		status = LIGHT_BROKEN
 		force = 5
 		sharp = TRUE
-		playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
+		play_sfx(src, SFX_EFFECTS_GLASSHIT)
 		update_icon()
 
 //Lamp Shade

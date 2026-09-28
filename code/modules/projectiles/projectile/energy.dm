@@ -44,12 +44,10 @@
 					H.injure(INJURY_PAIN, 22 * (applied_strength / 5), source = src) // Five flashes to stun.  Bit weaker than melee flashes due to being ranged.
 
 	//snap pop
-	playsound(src, 'sound/effects/snap.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_SNAP)
 	src.visible_message(span_warning("\The [src] explodes in a bright flash!"))
 
-	var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
-	sparks.set_up(2, 1, T)
-	sparks.start()
+	fx_sparks(T, 2)
 
 	new /obj/effect/decal/cleanable/ash(src.loc) //always use src.loc so that ash doesn't end up inside windows
 	new /obj/effect/effect/smoke/illumination(T, 5, brightness, brightness, light_colour)
@@ -235,7 +233,7 @@
 /obj/item/projectile/energy/plasmastun/proc/bang(mob/living/carbon/M)
 
 	to_chat(M, span_danger("You hear a loud roar."))
-	playsound(src, 'sound/effects/bang.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_BANG)
 	var/ear_safety = 0
 	ear_safety = M.get_ear_protection()
 	if(ear_safety == 1)

@@ -173,12 +173,12 @@ DECLARE_INTERACTIONS(/obj/item/toy/sword, \
 	active = !active
 	if(active)
 		to_chat(user, span_notice("You extend the plastic blade with a quick flick of your wrist."))
-		playsound(src, 'sound/weapons/saberon.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_SABERON)
 		item_state = "[icon_state]_blade"
 		w_class = ITEMSIZE_LARGE
 	else
 		to_chat(user, span_notice("You push the plastic blade back down into the handle."))
-		playsound(src, 'sound/weapons/saberoff.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_SABEROFF)
 		item_state = "[icon_state]"
 		w_class = ITEMSIZE_SMALL
 	update_icon()
@@ -259,11 +259,9 @@ DECLARE_INTERACTIONS(/obj/item/toy/sword, \
 
 /obj/item/toy/snappop/throw_impact(atom/hit_atom)
 	..()
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(3, 1, src)
-	s.start()
+	fx_sparks(src, 3)
 	src.visible_message(span_warning("The [src.name] explodes!"),span_warning("You hear a snap!"))
-	playsound(src, 'sound/effects/snap.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_SNAP)
 	replace_with(src, /obj/effect/decal/cleanable/ash)
 
 /obj/item/toy/snappop/Crossed(atom/movable/H as mob|obj)
@@ -274,11 +272,9 @@ DECLARE_INTERACTIONS(/obj/item/toy/sword, \
 		if(M.m_intent == I_RUN)
 			to_chat(M, span_warning("You step on the snap pop!"))
 
-			var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-			s.set_up(2, 0, src)
-			s.start()
+			fx_sparks(src, 2, FALSE)
 			src.visible_message(span_warning("The [src.name] explodes!"),span_warning("You hear a snap!"))
-			playsound(src, 'sound/effects/snap.ogg', 50, 1)
+			play_sfx(src, SFX_EFFECTS_SNAP)
 			replace_with(src, /obj/effect/decal/cleanable/ash)
 
 /*
@@ -300,7 +296,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/bosunwhistle, INTERACT_USE(null, PROC_REF(int
 /obj/item/toy/bosunwhistle/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(COOLDOWN_FINISHED(src, cooldown))
 		to_chat(user, span_notice("You blow on [src], creating an ear-splitting noise!"))
-		playsound(src, 'sound/misc/boatswain.ogg', 20, 1)
+		play_sfx(src, SFX_MISC_BOATSWAIN)
 		COOLDOWN_START(src, cooldown, 3.5 SECONDS)
 	return TRUE
 
@@ -328,7 +324,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/figure, INTERACT_USE(null, PROC_REF(interacti
 	if(COOLDOWN_FINISHED(src, cooldown))
 		COOLDOWN_START(src, cooldown, 3 SECONDS)
 		user.visible_message(span_notice("The [src] says \"[toysay]\"."))
-		playsound(src, 'sound/machines/click.ogg', 20, 1)
+		play_sfx(src, SFX_MACHINES_CLICK, 0.4)
 	return TRUE
 
 /obj/item/toy/figure/cmo
@@ -1575,7 +1571,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/teppi, \
 /// Old attack_self: the teppi noise, then the plushie's squeeze.
 /obj/item/toy/plushie/teppi/proc/interaction_teppi_squeeze(mob/user, obj/item/held, datum/interaction/interaction)
 	if(interaction.stance == I_HURT || interaction.stance == I_GRAB)
-		playsound(user, 'sound/voice/teppi/roar.ogg', 10, 0)
+		play_sfx(user, SFX_VOICE_TEPPI_ROAR)
 	else
 		var/teppi_noise = pick(
 			'sound/voice/teppi/whine1.ogg',
@@ -1607,7 +1603,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/teppi, \
 
 			to_chat(L, span_warning("You feel a powerful shock!"))
 			if(!.)
-				playsound(L, 'sound/effects/sparks7.ogg', 40, 1)
+				play_sfx(L, SFX_EFFECTS_SPARKS7)
 				L.electrocute_act(battery.percent() * 0, src)
 			return .
 
@@ -1824,7 +1820,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/borgplushie/drake, INTERACT_ALT(null, 
 		icon = 'icons/obj/toy.dmi'
 		icon_state = "toast"
 		to_chat(user, span_notice(" You insert bread into the toaster. "))
-		playsound(loc, 'sound/machines/ding.ogg', 50, 1)
+		play_sfx(loc, SFX_MACHINES_DING)
 
 /obj/item/reagent_containers/food/snacks/tastybread/afterattack(atom/A, mob/user as mob, proximity)
 	if(istype(A, /obj/item/toy/plushie/ipc) && !toasted)
@@ -1832,7 +1828,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/borgplushie/drake, INTERACT_ALT(null, 
 		icon = 'icons/obj/toy.dmi'
 		icon_state = "toast"
 		to_chat(user, span_notice(" You insert bread into the toaster. "))
-		playsound(loc, 'sound/machines/ding.ogg', 50, 1)
+		play_sfx(loc, SFX_MACHINES_DING)
 
 EXTEND_INTERACTIONS(/obj/item/toy/plushie/ipc, INTERACT_ITEM(null, PROC_REF(ipc_interaction_item)))
 
@@ -1840,9 +1836,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/ipc, INTERACT_ITEM(null, PROC_REF(ipc_
 /obj/item/toy/plushie/ipc/proc/ipc_interaction_item(mob/living/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/material/kitchen/utensil))
 		to_chat(user, span_notice(" You insert the [I] into the toaster. "))
-		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-		s.set_up(5, 1, src)
-		s.start()
+		fx_sparks(src, 5)
 		user.electrocute_act(15,src,0.75)
 	else
 		return FALSE
@@ -2011,7 +2005,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/chewtoy, INTERACT_USE(null, PROC_REF(interact
 
 /// Old attack_self.
 /obj/item/toy/chewtoy/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	playsound(loc, 'sound/items/drop/plushie.ogg', 50, 1)
+	play_sfx(loc, SFX_ITEMS_DROP_PLUSHIE)
 	user.visible_message(span_notice(span_bold("\The [user]") + " gnaws on [src]!"),span_notice("You gnaw on [src]!"))
 	return TRUE
 
@@ -2055,7 +2049,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/chewtoy, INTERACT_USE(null, PROC_REF(interact
 
 /obj/item/toy/flash/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(!cooldown)
-		playsound(src.loc, 'sound/weapons/flash.ogg', 100, 1)
+		play_sfx(src.loc, SFX_WEAPONS_FLASH)
 		flick("[initial(icon_state)]2", src)
 		user.visible_message(span_disarm("[user] doesn't blind [M] with the toy flash!"))
 		cooldown = 1
@@ -2083,7 +2077,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/redbutton, INTERACT_USE(null, PROC_REF(intera
 	if(COOLDOWN_FINISHED(src, cooldown))
 		COOLDOWN_START(src, cooldown, 300) // Sets cooldown at 30 seconds
 		user.visible_message(span_warning("[user] presses the big red button."), span_notice("You press the button, it plays a loud noise!"), span_notice("The button clicks loudly."))
-		playsound(src, 'sound/effects/explosionfar.ogg', 50, 0, 0)
+		play_sfx(src, SFX_EFFECTS_EXPLOSIONFAR)
 		for(var/mob/M in range(10, src)) // Checks range
 			if(!M.stat && !isAI(M)) // Checks to make sure whoever's getting shaken is alive/not the AI
 				om_after(M, 0.2 SECONDS, GLOBAL_PROC_REF(shake_camera), M, 2, 1)
@@ -2222,7 +2216,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/minigibber, \
 /obj/item/toy/minigibber/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stored_minature)
 		to_chat(user, span_danger("\The [src] makes a violent grinding noise as it tears apart the miniature figure inside!"))
-		playsound(src, 'sound/effects/splat.ogg', 50, 1)
+		play_sfx(src, SFX_EFFECTS_SPLAT)
 		QDEL_NULL(stored_minature)
 		COOLDOWN_START(src, cooldown, 0.8 SECONDS)
 	if(COOLDOWN_FINISHED(src, cooldown))
@@ -2331,7 +2325,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/russian_revolver, INTERACT_USE(null, PROC_REF
 		spin_cylinder()
 	else
 		user.visible_message(span_warning("[user] spins the cylinder on [src]!"))
-		playsound(src, 'sound/weapons/revolver_spin.ogg', 100, 1)
+		play_sfx(src, SFX_WEAPONS_REVOLVER_SPIN)
 		spin_cylinder()
 	return TRUE
 
@@ -2356,14 +2350,14 @@ DECLARE_INTERACTIONS(/obj/item/toy/russian_revolver, INTERACT_USE(null, PROC_REF
 	if(bullets_left > 1)
 		bullets_left--
 		user.visible_message(span_danger("*click*"))
-		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_EMPTY)
 		return FALSE
 	if(bullets_left == 1)
 		bullets_left = 0
 		var/zone = BP_HEAD
 		if(!(user.has_organ(zone))) // If they somehow don't have a head.
 			zone = "chest"
-		playsound(src, 'sound/effects/snap.ogg', 50, 1)
+		play_sfx(src, SFX_EFFECTS_SNAP)
 		user.visible_message(span_danger("[src] goes off!"))
 		shake_camera(user, 2, 1)
 		user.status_at_least(EFFECT_STUNNED, 1)
@@ -2395,7 +2389,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/russian_revolver, INTERACT_USE(null, PROC_REF
 
 /obj/item/toy/russian_revolver/trick_revolver/post_shot(user)
 	to_chat(user, span_danger("[src] did look pretty dodgy!"))
-	playsound(src, 'sound/items/confetti.ogg', 50, 1)
+	play_sfx(src, SFX_ITEMS_CONFETTI, vary = TRUE)
 	var/datum/effect/effect/system/confetti_spread/s = new /datum/effect/effect/system/confetti_spread
 	s.set_up(5, 1, src)
 	s.start()
@@ -2422,7 +2416,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/chainsaw, INTERACT_USE(null, PROC_REF(interac
 /// Old attack_self.
 /obj/item/toy/chainsaw/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!cooldown)
-		playsound(user, 'sound/weapons/chainsaw_startup.ogg', 10, 0)
+		play_sfx(user, SFX_WEAPONS_CHAINSAW_STARTUP)
 		cooldown = 1
 		om_after(src, 50, PROC_REF(cooldownreset))
 	return TRUE
@@ -2480,7 +2474,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/snake_popper, \
 			var/mob/living/simple_mob/C = new /mob/living/simple_mob/vore/aggressive/giant_snake(get_turf(loc))
 			C.throw_at(get_step(src, pick(GLOB.alldirs)), 9, 1, src)
 
-		playsound(src, 'sound/items/confetti.ogg', 50, 0)
+		play_sfx(src, SFX_ITEMS_CONFETTI)
 		icon_state = "tastybread_popped"
 		popped = 1
 		user.status_at_least(EFFECT_STUNNED, 1)
@@ -2515,7 +2509,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/snake_popper, \
 				var/mob/living/simple_mob/C = new /mob/living/simple_mob/vore/aggressive/giant_snake(get_turf(loc))
 				C.throw_at(get_step(src, pick(GLOB.alldirs)), 9, 1, src)
 
-			playsound(src, 'sound/items/confetti.ogg', 50, 0)
+			play_sfx(src, SFX_ITEMS_CONFETTI)
 			icon_state = "tastybread_popped"
 			popped = 1
 			user.status_at_least(EFFECT_STUNNED, 1)
@@ -2736,7 +2730,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/partypopper, INTERACT_USE(null, PROC_REF(inte
 /obj/item/toy/partypopper/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(icon_state == "partypopper")
 		user.visible_message(span_notice("[user] pulls on the string, releasing a burst of confetti!"), span_notice("You pull on the string, releasing a burst of confetti!"))
-		playsound(src, 'sound/effects/snap.ogg', 50, TRUE)
+		play_sfx(src, SFX_EFFECTS_SNAP)
 		var/datum/effect/effect/system/confetti_spread/s = new /datum/effect/effect/system/confetti_spread
 		s.set_up(5, 1, src)
 		s.start()
@@ -2854,11 +2848,11 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/dragon, INTERACT_USE("Squeeze", PROC_R
 	if(COOLDOWN_FINISHED(src, cooldown))
 		switch(pokephrase)
 			if("Weh!")
-				playsound(user, 'sound/voice/weh.ogg', 20, 0)
+				play_sfx(user, SFX_VOICE_WEH)
 			if("Merp!")
-				playsound(user, 'sound/voice/merp.ogg', 20, 0)
+				play_sfx(user, SFX_VOICE_MERP)
 			else
-				playsound(user, 'sound/voice/roarbark.ogg', 20, 0)
+				play_sfx(user, SFX_VOICE_ROARBARK)
 		COOLDOWN_START(src, cooldown, 5 SECONDS)
 	return TRUE
 
@@ -2993,7 +2987,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/dragon, INTERACT_USE("Squeeze", PROC_R
 
 /obj/item/toy/nuke/proc/alarm_sequence()
 	icon_state = "nuketoy"
-	playsound(src, 'sound/machines/Alarm.ogg', 10, 0, 0)
+	play_sfx(src, SFX_MACHINES_ALARM)
 	om_after(src, 135, TYPE_PROC_REF(/atom, set_icon_state), "nuketoycool")
 	om_after(src, 135 + (cooldown - world.time), TYPE_PROC_REF(/atom, set_icon_state), "nuketoyidle")
 

@@ -129,7 +129,7 @@
 	var/temperature = get_temperature()
 	if(temperature < optimal_temp)
 		if(use_power == 1 && ((optimal_temp - temperature) > 5))
-			playsound(src, 'sound/machines/click.ogg', 20, 1)
+			play_sfx(src, SFX_MACHINES_CLICK, 0.4)
 			use_power = 2.//If we're heating we use the active power
 			update_icon()
 		set_heating(TRUE)
@@ -138,7 +138,7 @@
 	else
 		if(use_power == 2)
 			use_power = 1
-			playsound(src, 'sound/machines/click.ogg', 20, 1)
+			play_sfx(src, SFX_MACHINES_CLICK, 0.4)
 			update_icon()
 		//We're holding steady: the casing loses heat to the room.
 		set_heating(FALSE)

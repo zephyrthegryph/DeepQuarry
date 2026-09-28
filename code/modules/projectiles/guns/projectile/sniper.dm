@@ -34,7 +34,7 @@
 	. = ..()
 	if(.)
 		return TRUE
-	playsound(src, 'sound/weapons/flipblade.ogg', 50, 1)
+	play_sfx(src, SFX_WEAPONS_FLIPBLADE)
 	bolt_open = !bolt_open
 	if(bolt_open)
 		if(chambered)

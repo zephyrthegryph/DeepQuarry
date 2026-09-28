@@ -100,7 +100,7 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 		if(istype(S, /obj/structure/grille))
 			to_chat(user, span_notice("There is still a grille on the low wall!"))
 			return TRUE
-	playsound(loc, 'sound/items/Ratchet.ogg', 100, 1)
+	play_sfx(loc, SFX_ITEMS_RATCHET, 2)
 	to_chat(user, span_notice("Now disassembling the low wall..."))
 	om_task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
 	return TRUE

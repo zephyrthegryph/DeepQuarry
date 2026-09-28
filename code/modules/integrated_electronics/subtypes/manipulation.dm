@@ -38,7 +38,7 @@
 		complexity = complexity * gun.w_class //Max complexity that a case can reach is 240. This means a small gun = 60 complexity, normal = 90, large = 120. This means you could fit 3 small guns, 2 normal guns, or 1 large gun in the circuit.
 		gun.forceMove(src)
 		to_chat(user, span_notice("You slide \the [gun] into the firing mechanism."))
-		playsound(src, 'sound/items/Crowbar.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_CROWBAR)
 	else
 		return FALSE
 	return INTERACTION_HANDLED_PASS
@@ -55,7 +55,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/manipulation/weapon_firing, \
 		to_chat(user, span_notice("You slide \the [installed_gun] out of the firing mechanism."))
 		size = initial(size)
 		complexity = initial(complexity)
-		playsound(src, 'sound/items/Crowbar.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_CROWBAR)
 		installed_gun = null
 	else
 		to_chat(user, span_notice("There's no weapon to remove from the mechanism."))

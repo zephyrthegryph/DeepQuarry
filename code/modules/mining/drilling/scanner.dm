@@ -18,7 +18,7 @@ DECLARE_INTERACTIONS(/obj/item/mining_scanner, \
 /// Old attack_self.
 /obj/item/mining_scanner/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_notice("You begin sweeping \the [src] about, scanning for metal deposits."))
-	playsound(src, 'sound/items/goggles_charge.ogg', 50, 1, -6)
+	play_sfx(src, SFX_ITEMS_GOGGLES_CHARGE)
 
 	om_task_timed(user, scan_time, src, src, PROC_REF(sweep_done), list(user))
 	return TRUE

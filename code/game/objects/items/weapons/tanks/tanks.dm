@@ -501,7 +501,7 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 			if(!T)
 				return
 			T.assume_air(air_contents)
-			playsound(src, 'sound/weapons/gunshot_shotgun.ogg', 20, 1)
+			play_sfx(src, SFX_WEAPONS_GUNSHOT_SHOTGUN)
 			visible_message("[icon2html(src,viewers(src))] " + span_danger("\The [src] flies apart!"), span_warning("You hear a bang!"))
 			T.hotspot_expose(air_contents.return_temperature(), 70, 1)
 
@@ -545,7 +545,7 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 			T.assume_air(leaked_gas)
 			if(!leaking)
 				visible_message("[icon2html(src,viewers(src))] " + span_warning("\The [src] relief valve flips open with a hiss!"), "You hear hissing.")
-				playsound(src, 'sound/effects/spray.ogg', 10, 1, -3)
+				play_sfx(src, SFX_EFFECTS_SPRAY)
 				leaking = 1
 				#ifdef FIREDBG
 				log_world(span_warning("[x],[y] tank is leaking: [pressure] kPa, integrity [get_integrity()]"))

@@ -486,7 +486,7 @@
 		if("deny")
 			if(density && !(stat & (NOPOWER|BROKEN)))
 				flick("door_deny", src)
-				playsound(src, 'sound/machines/buzz-two.ogg', 50, 0)
+				play_sfx(src, SFX_MACHINES_BUZZ_TWO)
 	return
 
 /obj/machinery/door/proc/open(forced = 0)

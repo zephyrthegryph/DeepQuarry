@@ -72,8 +72,8 @@ DECLARE_REF(/obj/machinery/reagent_refinery/furnace, "beaker", OWNED, null)
 					// Smoke em out sometimes
 					if(prob(30))
 						if(!played_sound)
-							playsound(src, 'sound/items/electronic_assembly_emptying.ogg', 50, 1)
-							playsound(src, 'sound/effects/smoke.ogg', 20, 1)
+							play_sfx(src, SFX_ITEMS_ELECTRONIC_ASSEMBLY_EMPTYING)
+							play_sfx(src, SFX_EFFECTS_SMOKE, 0.4, extrarange = 0)
 							played_sound = TRUE
 						visible_message(span_notice("\The [src] vomits a gout of smoke!"))
 						var/datum/effect/effect/system/smoke_spread/bad/smoke = new /datum/effect/effect/system/smoke_spread/bad
@@ -90,7 +90,7 @@ DECLARE_REF(/obj/machinery/reagent_refinery/furnace, "beaker", OWNED, null)
 				if(REFINERY_SINTERING_SPIDERS)
 					// Spawns some spiders
 					if(!played_sound)
-						playsound(src, 'sound/items/fulext_deploy.wav', 40, 1)
+						play_sfx(src, SFX_ITEMS_FULEXT_DEPLOY, 0.8, extrarange = 0)
 						played_sound = TRUE
 					var/i = rand(1,3)
 					while(i-- > 0)
@@ -104,7 +104,7 @@ DECLARE_REF(/obj/machinery/reagent_refinery/furnace, "beaker", OWNED, null)
 					if(printing)
 						// Place a sheet
 						if(!played_sound)
-							playsound(src, 'sound/items/electronic_assembly_emptying.ogg', 50, 1)
+							play_sfx(src, SFX_ITEMS_ELECTRONIC_ASSEMBLY_EMPTYING)
 							played_sound = TRUE
 						var/obj/item/stack/material/S = printing.place_sheet(src, 1) // One at a time
 						S.forceMove(spawn_t) // autostack

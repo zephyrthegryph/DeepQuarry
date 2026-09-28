@@ -33,7 +33,7 @@ DECLARE_INTERACTIONS(/obj/structure/firedoor_assembly, INTERACT_ITEM(null, PROC_
 
 	else if(istype(C, /obj/item/circuitboard/airalarm) && wired)
 		if(anchored)
-			playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+			play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 			user.visible_message(span_warning("[user] has inserted a circuit into \the [src]!"),
 								  "You have inserted the circuit into \the [src]!")
 			if(glass)
@@ -47,7 +47,7 @@ DECLARE_INTERACTIONS(/obj/structure/firedoor_assembly, INTERACT_ITEM(null, PROC_
 	else if(istype(C, /obj/item/stack/material) && C.get_material_name() == MAT_RGLASS && !glass)
 		var/obj/item/stack/S = C
 		if (S.get_amount() >= 1)
-			playsound(src, 'sound/items/Crowbar.ogg', 100, 1)
+			play_sfx(src, SFX_ITEMS_CROWBAR, 2)
 			user.visible_message(span_info("[user] adds [S.name] to \the [src]."),
 								span_notice("You start to install [S.name] into \the [src]."))
 			om_task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(user, S))

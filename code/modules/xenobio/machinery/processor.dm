@@ -39,7 +39,7 @@
 		om_after(src, 1, PROC_REF(begin_processing))
 	else
 		to_chat(user, span_warning("The processor is empty."))
-		playsound(src, 'sound/machines/buzz-sigh.ogg', 50, 1)
+		play_sfx(src, SFX_MACHINES_BUZZ_SIGH, vary = TRUE)
 		return TRUE
 	return TRUE
 
@@ -70,7 +70,7 @@
 		return
 	if(!can_insert(AM))
 		to_chat(user, span_warning("\The [src] cannot process \the [AM] at this time."))
-		playsound(src, 'sound/machines/buzz-sigh.ogg', 50, 1)
+		play_sfx(src, SFX_MACHINES_BUZZ_SIGH, vary = TRUE)
 		return
 	LAZYADD(to_be_processed, AM)
 	AM.forceMove(src)
@@ -80,7 +80,7 @@
 	if(processing)
 		return // Already doing it.
 	processing = TRUE
-	playsound(src, 'sound/machines/juicer.ogg', 50, 1)
+	play_sfx(src, SFX_MACHINES_JUICER, 2)
 	om_task_start(/datum/om/task/slime_processing, src)
 
 /// The processor at work: one thing a second (a core out of a slime, a body processed, or a
@@ -97,14 +97,14 @@
 		var/mob/living/simple_mob/slime/S = AM
 		if(S.cores)
 			new S.coretype(get_turf(src))
-			playsound(src, 'sound/effects/splat.ogg', 50, 1)
+			play_sfx(src, SFX_EFFECTS_SPLAT)
 			S.cores--
 			return STEP_REPEAT(1 SECOND)
 		LAZYREMOVE(to_be_processed, S)
 		qdel(S)
 		return STEP_REPEAT(1 SECOND)
 	if(ishuman(AM))
-		playsound(src, 'sound/effects/splat.ogg', 50, 1)
+		play_sfx(src, SFX_EFFECTS_SPLAT)
 		LAZYREMOVE(to_be_processed, AM)
 		qdel(AM)
 		monkeys_recycled++
@@ -114,14 +114,14 @@
 		return STEP_REPEAT(0)
 	if(monkeys_recycled >= monkeys_per_cube)
 		new /obj/item/reagent_containers/food/snacks/monkeycube(get_turf(src))
-		playsound(src, 'sound/effects/splat.ogg', 50, 1)
+		play_sfx(src, SFX_EFFECTS_SPLAT)
 		monkeys_recycled -= monkeys_per_cube
 		return STEP_REPEAT(1 SECOND)
 	return STEP_DONE
 
 /obj/machinery/processor/proc/processing_done(datum/om/task/T)
 	processing = FALSE
-	playsound(src, 'sound/machines/ding.ogg', 50, 1)
+	play_sfx(src, SFX_MACHINES_DING)
 
 /obj/machinery/processor/proc/can_insert(atom/movable/AM)
 	if(istype(AM, /mob/living/simple_mob/slime))

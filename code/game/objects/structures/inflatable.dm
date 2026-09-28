@@ -79,7 +79,7 @@ DECLARE_INTERACTIONS(/obj/item/inflatable, INTERACT_SELF("Inflate", PROC_REF(inf
 		visible_message(span_danger("[user] pierces [src] with [W]!"))
 		puncture()
 	if(W.obj_damage_type())
-		playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
+		play_sfx(src, SFX_EFFECTS_GLASSHIT)
 		receive_weapon_hit(W, user)
 	return TRUE
 
@@ -87,7 +87,7 @@ DECLARE_INTERACTIONS(/obj/item/inflatable, INTERACT_SELF("Inflate", PROC_REF(inf
 	hand_deflate_effect(user)
 
 /obj/item/inflatable/proc/inflate(mob/user,location)
-	playsound(location, 'sound/items/zip.ogg', 75, 1)
+	play_sfx(location, SFX_ITEMS_ZIP)
 	to_chat(user, span_notice("You inflate [src]."))
 	var/obj/structure/inflatable/R = new deploy_path(location)
 	src.transfer_fingerprints_to(R)
@@ -95,7 +95,7 @@ DECLARE_INTERACTIONS(/obj/item/inflatable, INTERACT_SELF("Inflate", PROC_REF(inf
 	consume(src, user)
 
 /obj/structure/inflatable/proc/deflate()
-	playsound(src, 'sound/machines/hiss.ogg', 75, 1)
+	play_sfx(src, SFX_MACHINES_HISS, 1.5, vary = TRUE)
 	visible_message("[src] slowly deflates.")
 	om_after(src, 5 SECONDS, PROC_REF(deflate_finish))
 
@@ -105,7 +105,7 @@ DECLARE_INTERACTIONS(/obj/item/inflatable, INTERACT_SELF("Inflate", PROC_REF(inf
 	replace_with(src, R)
 
 /obj/structure/inflatable/proc/puncture()
-	playsound(src, 'sound/machines/hiss.ogg', 75, 1)
+	play_sfx(src, SFX_MACHINES_HISS, 1.5, vary = TRUE)
 	visible_message("[src] rapidly deflates!")
 	var/obj/item/inflatable/torn/R = new /obj/item/inflatable/torn(loc)
 	src.transfer_fingerprints_to(R)
@@ -237,7 +237,7 @@ DECLARE_INTERACTIONS(/obj/item/inflatable, INTERACT_SELF("Inflate", PROC_REF(inf
 		icon_state = "door_closed"
 
 /obj/structure/inflatable/door/deflate()
-	playsound(src, 'sound/machines/hiss.ogg', 75, 1)
+	play_sfx(src, SFX_MACHINES_HISS, 1.5, vary = TRUE)
 	visible_message("[src] slowly deflates.")
 	om_after(src, 5 SECONDS, PROC_REF(deflate_finish))
 
@@ -247,7 +247,7 @@ DECLARE_INTERACTIONS(/obj/item/inflatable, INTERACT_SELF("Inflate", PROC_REF(inf
 	replace_with(src, R)
 
 /obj/structure/inflatable/door/puncture()
-	playsound(src, 'sound/machines/hiss.ogg', 75, 1)
+	play_sfx(src, SFX_MACHINES_HISS, 1.5, vary = TRUE)
 	visible_message("[src] rapidly deflates!")
 	var/obj/item/inflatable/door/torn/R = new /obj/item/inflatable/door/torn(loc)
 	src.transfer_fingerprints_to(R)

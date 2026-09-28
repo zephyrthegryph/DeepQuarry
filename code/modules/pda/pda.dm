@@ -253,14 +253,14 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 		var/datum/effect/effect/system/smoke_spread/chem/S = new /datum/effect/effect/system/smoke_spread/chem
 		S.attach(P.loc)
 		S.set_up(P, 10, 0, P.loc)
-		playsound(P, 'sound/effects/smoke.ogg', 50, 1, -3)
+		play_sfx(P, SFX_EFFECTS_SMOKE)
 		S.start()
 		message += "Large clouds of smoke billow forth from your [P]!"
 	if(i>=40 && i<=45) //Bad smoke
 		var/datum/effect/effect/system/smoke_spread/bad/B = new /datum/effect/effect/system/smoke_spread/bad
 		B.attach(P.loc)
 		B.set_up(P, 10, 0, P.loc)
-		playsound(P, 'sound/effects/smoke.ogg', 50, 1, -3)
+		play_sfx(P, SFX_EFFECTS_SMOKE)
 		B.start()
 		message += "Large clouds of noxious smoke billow forth from your [P]!"
 	if(i>=65 && i<=75) //Weaken
@@ -272,9 +272,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 			M.apply_effects(1,0,0,0,1)
 		message += "Your [P] flashes with a blinding white light! You feel weaker."
 	if(i>=85) //Sparks
-		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-		s.set_up(2, 1, P.loc)
-		s.start()
+		fx_sparks(P.loc, 2)
 		message += "Your [P] begins to spark violently!"
 	if(i>45 && i<65 && prob(50)) //Nothing happens
 		message += "Your [P] bleeps loudly."
@@ -297,7 +295,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 			var/mob/M = loc
 			M.put_in_hands(id)
 			to_chat(usr, span_notice("You remove the ID from the [name]."))
-			playsound(src, 'sound/machines/id_swipe.ogg', 100, 1)
+			play_sfx(src, SFX_MACHINES_ID_SWIPE, 2)
 		else
 			id.forceMove(get_turf(src))
 		cut_overlay("pda-id")
@@ -373,7 +371,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 	if (cartridge.radio)
 		cartridge.radio.hostpda_handle = null
 	to_chat(user, span_notice("You remove \the [cartridge] from the [name]."))
-	playsound(src, 'sound/machines/id_swipe.ogg', 100, 1)
+	play_sfx(src, SFX_MACHINES_ID_SWIPE, 2)
 	cartridge = null
 	update_programs()
 	update_shortcuts()

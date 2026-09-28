@@ -247,7 +247,7 @@
 
 /obj/machinery/food_replicator/proc/self_destruct()
 	visible_message(span_warning("Whirrs and spouts, starting to heat up!"))
-	playsound(src, pick('sound/effects/Glassbr1.ogg', 'sound/effects/Glassbr2.ogg', 'sound/effects/Glassbr3.ogg'), 50, 1)
+	play_sfx(src, SFX_SHATTER, volume = 50)
 
 	message_admins("[src] attempted to create an EX donk pocket at [x], [y], [z], last touched by [forensic_data?.get_lastprint()]")
 	log_game("[src] attempted to create an EX donk pocket at [x], [y], [z], last touched by [forensic_data?.get_lastprint()]. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)", 1)

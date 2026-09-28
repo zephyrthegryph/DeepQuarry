@@ -104,7 +104,7 @@ DECLARE_REF(/obj/machinery/maint_vendor, "product_datums", OWNED_LIST, null)
 	else
 		set_screen_state("screen_mad",10)
 	audible_message("[src] states, \"PURCHASE DENIED: [reason].\" ", "\The [src]'s screen briefly flashes to an X!" , runemessage = "X")
-	playsound(src, 'code/modules/maint_recycler/sfx/generaldeny.ogg', 75, 1)
+	play_sfx(src, SFX_RECYCLER_GENERALDENY)
 	return
 
 /obj/machinery/maint_vendor/proc/dispense_item_from_datum(mob/user, datum/maint_recycler_vendor_entry/used_entry)
@@ -112,7 +112,7 @@ DECLARE_REF(/obj/machinery/maint_vendor, "product_datums", OWNED_LIST, null)
 		to_chat(user,span_warning("What the fuck?? this is a scam! Nothing happened!"))
 		return;
 
-	playsound(src, 'code/modules/maint_recycler/sfx/ejectgoodies.ogg', 75, 1)
+	play_sfx(src, SFX_RECYCLER_EJECTGOODIES)
 	used_entry.spawn_with_delay(src);
 	audible_message("[src] states, \"[used_entry.tagline]\" ", "\The [src]'s screen briefly flashes a $!" , runemessage = "$$$")
 	if(prob(95))
@@ -221,11 +221,11 @@ DECLARE_REF(/obj/machinery/maint_vendor, "product_datums", OWNED_LIST, null)
 	if(is_on == state) return
 	is_on = state
 	if(is_on)
-		playsound(src, 'code/modules/maint_recycler/sfx/initialBoot.ogg', 20, 1)
+		play_sfx(src, SFX_RECYCLER_INITIALBOOT)
 		set_light(light_range_on, light_power_on)
 		monitor_screen.icon_state = "screen_default"
 	else
-		playsound(src, 'sound/machines/terminal_off.ogg', 50, 1)
+		play_sfx(src, SFX_MACHINES_TERMINAL_OFF)
 		set_light(0)
 		monitor_screen.icon_state = "screen_off"
 

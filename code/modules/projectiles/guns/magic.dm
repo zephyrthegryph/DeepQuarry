@@ -52,4 +52,4 @@
 		user.visible_message("*wzhzhzh*", span_danger("The [name] whizzles quietly."))
 	else
 		src.visible_message("*wzhzh*")
-	playsound(src, 'sound/weapons/empty.ogg', 100, 1)
+	play_sfx(src, SFX_WEAPONS_EMPTY, 2)

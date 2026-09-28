@@ -509,16 +509,14 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 		text = "\The [src] pings."
 
 	state(text, "blue")
-	playsound(src, 'sound/machines/ping.ogg', 50, 0)
+	play_sfx(src, SFX_MACHINES_PING)
 
 /obj/machinery/proc/shock(mob/user, prb)
 	if(inoperable())
 		return 0
 	if(!prob(prb))
 		return 0
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(5, 1, src)
-	s.start()
+	fx_sparks(src, 5)
 	if(electrocute_mob(user, get_area(src), src, 0.7))
 		var/area/temp_area = get_area(src)
 		if(temp_area)
@@ -609,7 +607,7 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 
 /obj/machinery/proc/dismantle()
 	OM_EMIT(src, /datum/om/event/obj_deconstruct, FALSE)
-	playsound(src, 'sound/items/Crowbar.ogg', 50, 1)
+	play_sfx(src, SFX_ITEMS_CROWBAR)
 	latent_materialize_all() // a walk needs real things (C5)
 	for(var/obj/I in contents) // ALLOW(latent): materialized above
 		if(istype(I,/obj/item/card/id))
@@ -679,7 +677,7 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 
 /obj/machinery/atom_destruction(damage_flag)
 	if(dq_destroy_effects_once(src)) // one per turf per blast (lifecycle/batch.dm)
-		playsound(src, 'sound/machines/machine_die_short.ogg', 50, TRUE)
+		play_sfx(src, SFX_MACHINES_MACHINE_DIE_SHORT)
 		var/datum/effect/effect/system/spark_spread/sparks = new
 		sparks.set_up(5, 0, src)
 		sparks.start()

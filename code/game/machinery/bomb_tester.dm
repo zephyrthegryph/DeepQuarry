@@ -352,10 +352,10 @@
 	if(cancelled)
 		return
 	if(simulation_results == "Error")
-		playsound(src, 'sound/machines/buzz-sigh.ogg', 50, 0)
+		play_sfx(src, SFX_MACHINES_BUZZ_SIGH)
 		state("Invalid parameters.")
 	else if(simulation_results == "Unstable")
-		playsound(src, 'sound/machines/buzz-two.ogg', 50, 0)
+		play_sfx(src, SFX_MACHINES_BUZZ_TWO)
 		state("Tank instability detected. Please step away from the device.")
 	else
 		ping("Simulation complete!")

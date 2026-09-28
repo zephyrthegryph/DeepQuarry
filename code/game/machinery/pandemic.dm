@@ -140,7 +140,7 @@
 	D = GLOB.archive_diseases[D.GetDiseaseID()]
 	if(!istype(D))
 		visible_message(span_warning("ERROR: Unable to print form."))
-		playsound(loc, 'sound/machines/buzz-sigh.ogg', 50, 1)
+		play_sfx(loc, SFX_MACHINES_BUZZ_SIGH, vary = TRUE)
 		return
 	if(!(printing) && D)
 		om_ask(user, /datum/om/prompt/text/pandemic_release_reason, PROC_REF(release_reason_written), affliction = D)
@@ -189,7 +189,7 @@
 	printing = TRUE
 	var/obj/item/paper/P = new /obj/item/paper(loc)
 	visible_message(span_notice("[src] rattles and prints out a sheet of paper."))
-	playsound(loc, 'sound/machines/printer.ogg', 50, 1)
+	play_sfx(loc, SFX_MACHINES_PRINTER)
 
 	P.info = span_underline(span_huge(span_bold("<center> Releasing Virus </center>")))
 	P.info += "<HR>"
@@ -387,7 +387,7 @@
 /obj/machinery/computer/pandemic/proc/reset_replicator_cooldown()
 	wait = FALSE
 	SStgui.update_uis(src)
-	playsound(src, 'sound/machines/ping.ogg', 30, TRUE)
+	play_sfx(src, SFX_MACHINES_PING, 0.6, vary = TRUE)
 	return TRUE
 
 DECLARE_REF(/obj/machinery/computer/pandemic, "beaker", HELD, null)

@@ -350,7 +350,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/bucket, INTERACT_ITEM(nul
 		else
 			reagents.trans_to_obj(D, 5)
 			to_chat(user, span_notice("You wet \the [D] in \the [src]."))
-			playsound(src, 'sound/effects/slosh.ogg', 25, 1)
+			play_sfx(src, SFX_EFFECTS_SLOSH)
 	else
 		return FALSE
 	return INTERACTION_HANDLED_PASS
@@ -402,7 +402,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/bucket/wood, INTERACT_ITE
 		else
 			reagents.trans_to_obj(D, 5)
 			to_chat(user, span_notice("You wet \the [D] in \the [src]."))
-			playsound(src, 'sound/effects/slosh.ogg', 25, 1)
+			play_sfx(src, SFX_EFFECTS_SLOSH)
 		return INTERACTION_HANDLED_PASS
 	return FALSE
 

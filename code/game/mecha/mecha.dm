@@ -624,7 +624,7 @@ DECLARE_REF(/obj/mecha, "minihud", PAIR, "owner_mech")
 				set_light(light_range - lights_power)
 			occupant_message("Toggled lights [lights?"on":"off"].")
 			src.mecha_log_message("Toggled lights [lights?"on":"off"].")
-			playsound(src, 'sound/mecha/heavylightswitch.ogg', 50, 1)
+			play_sfx(src, SFX_MECHA_HEAVYLIGHTSWITCH)
 		if("View Stats")
 			// TGUI: open MechaInterface.tsx instead of browse().
 			tgui_subview = "main"
@@ -1049,12 +1049,12 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 				plan.injure(src, shreddamage, MELEE)
 				if(prob(shreddamage))	//Why would they get free internal damage. At least make it a bit RNG.
 					mech_body_plan().roll_affliction(src, list(MECHA_INT_TEMP_CONTROL,MECHA_INT_TANK_BREACH,MECHA_INT_CONTROL_LOST))
-				playsound(src, 'sound/weapons/slash.ogg', 50, 1, -1)
+				play_sfx(src, SFX_WEAPONS_SLASH, extrarange = -1)
 				to_chat(user, span_danger("You attack the armored suit!"))
 				visible_message(span_danger("\The [user] attacks [src.name]'s armor!"))
 			else
 				src.log_append_to_last("Armor saved.")
-				playsound(src, 'sound/weapons/slash.ogg', 50, 1, -1)
+				play_sfx(src, SFX_WEAPONS_SLASH, extrarange = -1)
 				to_chat(user, span_danger("Your attack had no effect!"))
 				src.occupant_message(span_notice("\The [user]'s attack is stopped by the armor."))
 				visible_message(span_warning("\The [user] rebounds off [src.name]'s armor!"))
@@ -1408,7 +1408,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 	// recognises src as the reference.
 	connected_port.rust_attach_external_device(src)
 
-	playsound(src, 'sound/mecha/gasconnected.ogg', 50, 1)
+	play_sfx(src, SFX_MECHA_GASCONNECTED)
 	mecha_log_message("Connected to gas port.")
 	return 1
 
@@ -1421,7 +1421,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 	connected_port.connected_device = null
 	connected_port = null
 
-	playsound(src, 'sound/mecha/gasdisconnected.ogg', 50, 1)
+	play_sfx(src, SFX_MECHA_GASDISCONNECTED)
 	mecha_log_message("Disconnected from gas port.")
 	return 1
 
@@ -1499,7 +1499,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 	else		set_light(light_range - lights_power)
 	src.occupant_message("Toggled lights [lights?"on":"off"].")
 	src.mecha_log_message("Toggled lights [lights?"on":"off"].")
-	playsound(src, 'sound/mecha/heavylightswitch.ogg', 50, 1)
+	play_sfx(src, SFX_MECHA_HEAVYLIGHTSWITCH)
 	return
 
 /// Old verb "Toggle internal airtank usage". The mech minihud calls it with no user after
@@ -1524,7 +1524,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 	use_internal_tank = !use_internal_tank
 	src.occupant_message("Now taking air from [use_internal_tank?"internal airtank":"environment"].")
 	src.mecha_log_message("Now taking air from [use_internal_tank?"internal airtank":"environment"].")
-	playsound(src, 'sound/mecha/gasdisconnected.ogg', 30, 1)
+	play_sfx(src, SFX_MECHA_GASDISCONNECTED, 0.6)
 	return
 
 /// Old verb "Toggle strafing".
@@ -1651,7 +1651,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 		update_cell_alerts()
 		update_damage_alerts()
 		set_dir(dir_in)
-		playsound(src, 'sound/machines/door/windowdoor.ogg', 50, 1)
+		play_sfx(src, SFX_MACHINES_DOOR_WINDOWDOOR, 0.5)
 		if(occupant.client && dq_get_cloaked_selfimage(src))
 			occupant.client.images += dq_get_cloaked_selfimage(src)
 		play_entered_noise(occupant)
@@ -2559,13 +2559,13 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 		src.occupant_message(span_notice("\The [user]'s attack is stopped by the armor."))
 		visible_message(span_infoplain(span_bold("\The [user]") + " rebounds off [src.name]'s armor!"))
 		add_attack_logs(user, src, "attacked")
-		playsound(src, 'sound/weapons/slash.ogg', 50, 1, -1)
+		play_sfx(src, SFX_WEAPONS_SLASH, extrarange = -1)
 
 	else if(damage < damage_minimum) // Pathetic damage levels just don't harm MECH. // temp_damage_minimum -> damage_minimum
 		src.occupant_message(span_notice("\The [user]'s doesn't dent \the [src] paint."))
 		src.visible_message("\The [user]'s attack doesn't dent \the [src] armor")
 		src.log_append_to_last("Armor saved.")
-		playsound(src, 'sound/effects/Glasshit.ogg', 50, 1)
+		play_sfx(src, SFX_EFFECTS_GLASSHIT, volume = 50)
 		return
 
 	else
@@ -2638,7 +2638,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 	var/damage = rand(blob.damage_lower, blob.damage_upper)
 	src.take_damage(damage, injury_kind_obj_damage_type(blob.injury_kind))
 	visible_message(span_danger("\The [B] [blob.attack_verb] \the [src]!"), span_danger("[blob.attack_message_synth]!"))
-	playsound(src, 'sound/effects/attackblob.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_ATTACKBLOB)
 
 	return TRUE
 

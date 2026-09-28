@@ -43,7 +43,7 @@ DECLARE_INTERACTIONS(/obj/structure/disposalpipe/tagger, INTERACT_ITEM(null, PRO
 				LAZYREMOVE(GLOB.tagger_locations["[sort_tag]"], current_z)
 			sort_tag = O.currTag
 			LAZYADD(GLOB.tagger_locations["[sort_tag]"], current_z)
-			playsound(src, 'sound/machines/twobeep.ogg', 100, 1)
+			play_sfx(src, SFX_MACHINES_TWOBEEP, 2)
 			to_chat(user, span_notice("Changed tag to '[sort_tag]'."))
 			updatename()
 			updatedesc()

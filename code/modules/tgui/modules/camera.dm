@@ -111,7 +111,7 @@ DECLARE_REF(/datum/tgui_module/camera, "cam_screen_tg", OWNED, null)
 			LAZYADD(concurrent_users, user_ref)
 		// Turn on the console
 		if(length(concurrent_users) == 1 && is_living)
-			playsound(tgui_host(), 'sound/machines/terminal_on.ogg', 25, FALSE)
+			play_sfx(tgui_host(), SFX_MACHINES_TERMINAL_ON, 0.5, vary = FALSE)
 		// Open UI
 		ui = new(user, src, tgui_id, name)
 		ui.open()
@@ -148,7 +148,7 @@ DECLARE_REF(/datum/tgui_module/camera, "cam_screen_tg", OWNED, null)
 		return TRUE
 
 	if(action && !issilicon(ui.user))
-		playsound(tgui_host(), "terminal_type", 50, 1)
+		play_sfx(tgui_host(), SFX_TERMINAL_TYPE)
 
 	if(action == "switch_camera")
 		var/c_tag = params["name"]
@@ -160,7 +160,7 @@ DECLARE_REF(/datum/tgui_module/camera, "cam_screen_tg", OWNED, null)
 			active_camera_handle = om_handle(C)
 			dq_add_recursive_move(active_camera())
 			om_hook(active_camera(), /datum/om/event/movable_attempted_move, src, PROC_REF(on_active_camera_moved_event))
-		playsound(tgui_host(), get_sfx("terminal_type"), 25, FALSE)
+		playsound(tgui_host(), get_sfx(SFX_TERMINAL_TYPE), 25, FALSE)
 		update_active_camera_screen()
 		return TRUE
 
@@ -188,7 +188,7 @@ DECLARE_REF(/datum/tgui_module/camera, "cam_screen_tg", OWNED, null)
 				active_camera_handle = om_handle(target)
 				dq_add_recursive_move(active_camera())
 				om_hook(active_camera(), /datum/om/event/movable_attempted_move, src, PROC_REF(on_active_camera_moved_event))
-				playsound(tgui_host(), get_sfx("terminal_type"), 25, FALSE)
+				playsound(tgui_host(), get_sfx(SFX_TERMINAL_TYPE), 25, FALSE)
 				update_active_camera_screen()
 				. = TRUE
 
@@ -288,7 +288,7 @@ DECLARE_REF(/datum/tgui_module/camera, "cam_screen_tg", OWNED, null)
 			om_unhook(active_camera(), /datum/om/event/movable_attempted_move, src)
 		active_camera_handle = null
 		last_camera_turf_handle = null
-		playsound(tgui_host(), 'sound/machines/terminal_off.ogg', 25, FALSE)
+		play_sfx(tgui_host(), SFX_MACHINES_TERMINAL_OFF, 0.5, vary = FALSE)
 
 // NTOS Version
 // Please note, this isn't a very good replacement for converting modular computers 100% to TGUI

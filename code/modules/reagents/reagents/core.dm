@@ -190,8 +190,8 @@
 		if(istype(holder.my_atom,/obj/item/reagent_containers/glass))
 			holder.splash(location, holder.total_volume)
 		holder.clear_reagents() // lets be sure it's all gone if it was in something weird instead
-		playsound(holder.my_atom, 'sound/effects/splat.ogg', 50, 1)
-		playsound(holder.my_atom, 'sound/voice/hiss6.ogg', 50, 1)
+		play_sfx(holder.my_atom, SFX_EFFECTS_SPLAT)
+		play_sfx(holder.my_atom, SFX_VOICE_HISS6, 0.5)
 		return TRUE
 	return FALSE
 

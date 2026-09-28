@@ -44,7 +44,7 @@
 	update_icon()
 
 /obj/effect/blob/atom_destruction(damage_flag)
-	playsound(src, 'sound/effects/splat.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_SPLAT)
 	return ..()
 
 /// Blob damage is already divided by the blob's resistances, so it skips armour.
@@ -106,7 +106,7 @@
 		if(L.stat == DEAD)
 			continue
 		L.visible_message(span_danger("The blob attacks \the [L]!"), span_danger("The blob attacks you!"))
-		playsound(src, 'sound/effects/attackblob.ogg', 50, 1)
+		play_sfx(src, SFX_EFFECTS_ATTACKBLOB)
 		L.injure(INJURY_BLUNT, rand(30, 40), null, src)
 		return
 	new expandType(T)
@@ -143,7 +143,7 @@ EXTEND_INTERACTIONS(/obj/effect/blob, \
 /obj/effect/blob/proc/interaction_hit_blob(mob/user, obj/item/held, datum/interaction/interaction)
 	var/obj/item/W = held
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	playsound(src, 'sound/effects/attackblob.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_ATTACKBLOB)
 	visible_message(span_danger("\The [src] has been attacked with \the [W][(user ? " by [user]." : ".")]"))
 	var/damage_type = W.obj_damage_type()
 	if(damage_type == BURN && W.has_tool_quality(TOOL_WELDER))

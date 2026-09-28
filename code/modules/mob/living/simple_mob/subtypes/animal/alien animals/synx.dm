@@ -302,7 +302,7 @@
 
 /datum/reagent/inaprovaline/synxchem/clown/affect_blood(mob/living/carbon/M, alien, removed)
 	M.injure(INJURY_TOXIN, 0.01, flags = INJURE_SILENT)
-	playsound(M.loc, 'sound/items/bikehorn.ogg', 50, 1)
+	play_sfx(M.loc, SFX_ITEMS_BIKEHORN)
 	if(prob(1))
 		M.custom_pain("I have no horn but i must honk!",60)
 	if(prob(2))
@@ -564,7 +564,7 @@
 		for(var/belly in src.vore_organs) //Spit out all contents because our insides are now outsides
 			var/obj/belly/B = belly
 			for(var/atom/movable/A in B)
-				playsound(src, 'sound/effects/splat.ogg', 50, 1)
+				play_sfx(src, SFX_EFFECTS_SPLAT)
 				B.release_specific_contents(A)
 		update_icons()
 		return
@@ -750,10 +750,10 @@
 	set category = "Abilities.Synx"
 	icon_state = "synx_pet_rainbow"
 	icon_living = "synx_pet_rainbow"
-	playsound(src.loc, 'sound/items/bikehorn.ogg', 50, 1)
+	play_sfx(src.loc, SFX_ITEMS_BIKEHORN)
 */
 /mob/living/simple_mob/animal/synx/proc/bikehorn()
-	playsound(src.loc, 'sound/items/bikehorn.ogg', 50, 1)
+	play_sfx(src.loc, SFX_ITEMS_BIKEHORN)
 
 //HOLOSEEDSPAWNCODE
 /mob/living/simple_mob/animal/synx/ai/pet/holo

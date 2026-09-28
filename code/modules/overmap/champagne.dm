@@ -56,7 +56,7 @@
 
 	var/turf/comp_turf = get_turf(comp)
 	var/datum/shuttle/autodock/S = create_landable_shuttle(shuttle_name, comp_turf, my_area)
-	playsound(src, 'sound/effects/Glassbr3.ogg', 100, 0)
+	play_sfx(src, SFX_EFFECTS_GLASSBR3, vary = FALSE)
 	user.visible_message(span_notice("[user] smashes [src] on [comp]"),
 		span_info("You smash [src] on [comp], christening a new landable ship named [S.name]"),
 		span_notice("You hear glass shattering"))

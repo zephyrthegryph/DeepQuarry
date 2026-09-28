@@ -55,9 +55,9 @@
 	var/datum/anomaly_stats/stats = anom.stats
 
 	if(stats.stability == ANOMALY_DECAYING)
-		playsound(src, 'sound/machines/2beephigh.ogg', 75)
+		play_sfx(src, SFX_MACHINES_2BEEPHIGH)
 	else if (stats.stability == ANOMALY_GROWING)
-		playsound(src, 'sound/machines/buzzbeep.ogg', 75)
+		play_sfx(src, SFX_MACHINES_BUZZBEEP, 1.5)
 
 /obj/machinery/anomaly_harvester/declare_interactions(list/into)
 	into += list(
@@ -117,12 +117,12 @@
 		stats.attached_harvester = null
 	harvested = anomaly
 	stats.attached_harvester = om_handle(src)
-	playsound(src, 'sound/machines/boobeebeep.ogg', 75, TRUE)
+	play_sfx(src, SFX_MACHINES_BOOBEEBEEP, 1.5, vary = TRUE)
 	return TRUE
 
 /obj/machinery/anomaly_harvester/proc/generate_sample()
 	update_use_power(USE_POWER_ACTIVE)
-	playsound(src, 'sound/machines/ping.ogg', 50, TRUE)
+	play_sfx(src, SFX_MACHINES_PING, vary = TRUE)
 	switch(rand(1, 100))
 		if(1 to 50)
 			new /obj/item/research_sample/common(src)

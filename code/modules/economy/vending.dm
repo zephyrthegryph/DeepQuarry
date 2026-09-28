@@ -367,7 +367,7 @@ DECLARE_REF(/obj/machinery/vending, "product_records", OWNED_LIST, null)
  */
 /obj/machinery/vending/proc/pay_with_ewallet(obj/item/spacecash/ewallet/wallet, mob/user)
 	visible_message(span_info("\The [user] swipes \the [wallet] through \the [src]."))
-	playsound(src, 'sound/machines/id_swipe.ogg', 50, 1)
+	play_sfx(src, SFX_MACHINES_ID_SWIPE)
 	if(currently_vending().price > wallet.worth)
 		to_chat(user, span_warning("Insufficient funds on chargecard."))
 		return 0
@@ -384,7 +384,7 @@ DECLARE_REF(/obj/machinery/vending, "product_records", OWNED_LIST, null)
  */
 /obj/machinery/vending/proc/pay_with_card(obj/item/card/id/I, mob/M, pin)
 	visible_message(span_info("[M] swipes a card through [src]."))
-	playsound(src, 'sound/machines/id_swipe.ogg', 50, 1)
+	play_sfx(src, SFX_MACHINES_ID_SWIPE)
 	if(!purchase_with_id_card(I, M, GLOB.vendor_account.owner_name, name, "Purchase of [currently_vending().item_name]", currently_vending().price, GLOB.vendor_account, pin))
 		return FALSE
 	return 1
@@ -524,7 +524,7 @@ DECLARE_REF(/obj/machinery/vending, "product_records", OWNED_LIST, null)
 			if(!allowed(ui.user) && !emagged && scan_id)
 				to_chat(ui.user, span_warning("Access denied."))	//Unless emagged of course
 				flick("[icon_state]-deny",src)
-				playsound(src, 'sound/machines/deniedbeep.ogg', 50, 0)
+				play_sfx(src, SFX_MACHINES_DENIEDBEEP)
 				return
 			if(panel_open)
 				to_chat(ui.user, span_warning("[src] cannot dispense products while its service panel is open!"))
@@ -609,7 +609,7 @@ DECLARE_REF(/obj/machinery/vending, "product_records", OWNED_LIST, null)
 	if(!allowed(user) && !emagged && scan_id)
 		to_chat(user, span_warning("Access denied."))	//Unless emagged of course
 		flick("[icon_state]-deny",src)
-		playsound(src, 'sound/machines/deniedbeep.ogg', 50, 0)
+		play_sfx(src, SFX_MACHINES_DENIEDBEEP)
 		return FALSE
 	if(R.get_amount() < 1)
 		return FALSE

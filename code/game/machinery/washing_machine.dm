@@ -83,7 +83,7 @@ DECLARE_REF(/obj/machinery/washing_machine, "washing", SPILL_LIST, null)
 		state = RUNNING
 	update_icon()
 	visible_message("The washing machine starts a cycle.")
-	playsound(src, 'sound/items/washingmachine.ogg', 50, 1, 1)
+	play_sfx(src, SFX_ITEMS_WASHINGMACHINE)
 
 	om_after(src, 2 SECONDS, PROC_REF(finish_wash), damage_modifier)
 

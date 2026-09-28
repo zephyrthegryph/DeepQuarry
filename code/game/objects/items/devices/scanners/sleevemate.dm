@@ -398,10 +398,8 @@ DECLARE_INTERACTIONS(/obj/item/sleevemate, INTERACT_USE(null, PROC_REF(interacti
 	if(!(choice in list("Body Snatcher","Mind Binder")))
 		return
 	to_chat(user,span_danger("You hack [src]!"))
-	var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
-	spark_system.set_up(5, 0, src.loc)
-	spark_system.start()
-	playsound(src, "sparks", 50, 1)
+	fx_sparks(src.loc, 5, FALSE)
+	play_sfx(src, SFX_SPARKS)
 	if(isliving(src.loc))
 		var/mob/living/L = src.loc
 		L.unEquip(src)

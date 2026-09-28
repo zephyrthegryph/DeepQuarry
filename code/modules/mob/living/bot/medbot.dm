@@ -370,11 +370,9 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 		reagent_glass = null
 
 	if(emagged && prob(25))
-		playsound(src, 'sound/voice/medbot/minsult.ogg', 50, 0)
+		play_sfx(src, SFX_VOICE_MEDBOT_MINSULT)
 
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(3, 1, src)
-	s.start()
+	fx_sparks(src, 3)
 	return ..()
 
 /mob/living/bot/medbot/handleRegular()
@@ -385,7 +383,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 		return
 
 /mob/living/bot/medbot/proc/tip_over(mob/user)
-	playsound(src, 'sound/machines/warning-buzzer.ogg', 50)
+	play_sfx(src, SFX_MACHINES_WARNING_BUZZER)
 	user.visible_message(span_danger("[user] tips over [src]!"), span_danger("You tip [src] over!"))
 	is_tipped = TRUE
 	tipper_name = user.name
@@ -439,7 +437,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 		say(message)
 		playsound(src, messagevoice[message], 70)
 	else if(prob(tipped_status * 0.2))
-		playsound(src, 'sound/machines/warning-buzzer.ogg', 30, extrarange=-2)
+		play_sfx(src, SFX_MACHINES_WARNING_BUZZER, 0.6, extrarange = -2)
 
 /mob/living/bot/medbot/examine(mob/user)
 	. = ..()

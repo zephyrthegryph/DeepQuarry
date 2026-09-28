@@ -24,7 +24,7 @@
 				span_hear(span_bold("You hear the sound of immeasurable suffering!"))
 				)
 			L.injure(INJURY_PAIN, 100, source = src)
-			playsound(src, 'sound/misc/legodeath.ogg', 50, 1)
+			play_sfx(src, SFX_MISC_LEGODEATH)
 			qdel(src)
 	..()
 
@@ -54,6 +54,6 @@
 				span_hear(span_bold("You hear the sound of immeasurable suffering!"))
 				)
 			L.gib()
-			playsound(src, 'sound/misc/legodeath.ogg', 50, 1)
+			play_sfx(src, SFX_MISC_LEGODEATH)
 			qdel(src)
 	..()

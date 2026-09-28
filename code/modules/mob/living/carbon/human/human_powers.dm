@@ -77,7 +77,7 @@
 	else
 		failed = 1
 
-	playsound(src, 'sound/weapons/pierce.ogg', 25, 1, -1)
+	play_sfx(src, SFX_WEAPONS_PIERCE)
 	if(failed)
 		src.status_at_least(EFFECT_WEAKENED, rand(2,4))
 
@@ -655,7 +655,7 @@
 	var/competition = task.competition
 	if(!hand_games_check(player1,player2))
 		return
-	playsound(player1, 'sound/effects/snap.ogg', 30, 1)
+	play_sfx(player1, SFX_EFFECTS_SNAP, 0.6)
 	if(competition == player1)
 		player1.visible_message(span_notice("[player1] manages to slap [player2]'s hand before they can react!"))
 	else

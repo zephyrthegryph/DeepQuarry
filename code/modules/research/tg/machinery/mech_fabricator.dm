@@ -172,7 +172,7 @@ DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "rmat", OWNED, null)
 
 	if(design_delta > 0)
 		atom_say("Received [design_delta] new design[design_delta == 1 ? "" : "s"].")
-		playsound(src, 'sound/machines/twobeep.ogg', 50, TRUE)
+		play_sfx(src, SFX_MACHINES_TWOBEEP)
 
 	update_static_data_for_all_viewers()
 

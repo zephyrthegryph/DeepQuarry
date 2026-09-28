@@ -244,7 +244,7 @@ DECLARE_REF(/obj/item/dogborg/sleeper, "items_preserved", SPILL_LIST, null)
 		hound.visible_message(span_warning("[hound.name] empties out their contents via their [eject_port] port."), span_notice("You empty your contents via your [eject_port] port."))
 		for(var/atom/movable/content in contents)
 			content.forceMove(get_turf(src))
-		playsound(src, 'sound/effects/splat.ogg', 50, 1)
+		play_sfx(src, SFX_EFFECTS_SPLAT)
 	update_patient()
 
 /obj/item/dogborg/sleeper/proc/vore_ingest_all()
@@ -406,7 +406,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 			hound.visible_message(span_warning("[hound.name] empties out their cargo compartment via their [eject_port] port."), span_notice("You empty your cargo compartment via your [eject_port] port."))
 			for(var/atom/movable/content in deliverylists[delivery_tag])
 				content.forceMove(get_turf(src))
-			playsound(src, 'sound/effects/splat.ogg', 50, 1)
+			play_sfx(src, SFX_EFFECTS_SPLAT)
 			update_patient()
 			deliverylists[delivery_tag].Cut()
 			return TRUE
@@ -543,7 +543,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 	to_chat(hound, span_notice("Your [src.name] is now clean. Ending self-cleaning cycle."))
 	cleaning = 0
 	update_patient()
-	playsound(src, 'sound/machines/ding.ogg', vol = 100, vary = 1, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
+	play_sfx(src, SFX_MACHINES_DING, 2, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
 
 /// One digestion pass on a living occupant; indigestible ones are preserved.
 /obj/item/dogborg/sleeper/proc/digest_occupant(mob/living/T, delta_factor)

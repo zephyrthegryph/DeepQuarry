@@ -1336,9 +1336,9 @@ Note that amputating the affected organ does in fact remove the infection from t
 		jostle_bone()
 
 	if(istype(owner.loc, /obj/belly)) // bone breaks in bellys should be whisper range to prevent bar wide blender prefbreak. This is a hacky passive hardcode, if a pref gets added, remove this if else
-		playsound(src, "fracture", 90, 1, -6.5)
+		play_sfx(src, SFX_FRACTURE, extrarange = -6.5)
 	else
-		playsound(src, "fracture", 90, 1, -2) // Much more audible bonebreaks.
+		play_sfx(src, SFX_FRACTURE) // Much more audible bonebreaks.
 	log_runtime("FRACTURE: [key_name(owner)] fractured their [name].")
 	broken_description = pick("broken","fracture","hairline fracture")
 

@@ -103,7 +103,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/rig, \
 		tacknife().forceMove(get_turf(src))
 		if(M.put_in_active_hand(tacknife()))
 			to_chat(M, span_notice("You slide \the [tacknife()] out of [src]."))
-			playsound(src, 'sound/weapons/flipblade.ogg', 40, 1)
+			play_sfx(src, SFX_WEAPONS_FLIPBLADE, 0.8)
 			tacknife_handle = null
 			update_icon()
 		return TRUE
@@ -118,7 +118,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/rig, \
 		tacknife_handle = om_handle(I)
 		I.forceMove(src)
 		to_chat(M, span_notice("You slide the [I] into [src]."))
-		playsound(src, 'sound/weapons/flipblade.ogg', 40, 1)
+		play_sfx(src, SFX_WEAPONS_FLIPBLADE, 0.8)
 		update_icon()
 	return FALSE
 

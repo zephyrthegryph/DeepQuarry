@@ -45,9 +45,9 @@
 	if(result)
 		switch(stepsound)
 			if(1)
-				playsound(src,'sound/mecha/bigmech_lstep.ogg',40,1)
+				play_sfx(src, SFX_MECHA_BIGMECH_LSTEP)
 			if(2)
-				playsound(src,'sound/mecha/bigmech_rstep.ogg',40,1)
+				play_sfx(src, SFX_MECHA_BIGMECH_RSTEP)
 	return result
 
 /obj/mecha/combat/gorilla/mechturn(direction)
@@ -55,9 +55,9 @@
 	var/turnsound = rand(1,2)
 	switch(turnsound)
 		if(1)
-			playsound(src,'sound/mecha/bigmech_lturn.ogg',40,1)
+			play_sfx(src, SFX_MECHA_BIGMECH_LTURN)
 		if(2)
-			playsound(src,'sound/mecha/bigmech_rturn.ogg',40,1)
+			play_sfx(src, SFX_MECHA_BIGMECH_RTURN)
 	return 1
 
 /obj/mecha/combat/gorilla/relaymove(mob/user,direction)

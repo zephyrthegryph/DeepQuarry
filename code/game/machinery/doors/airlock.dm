@@ -131,14 +131,14 @@
 /obj/machinery/door/airlock/proc/attack_alien_timed_done(mob/user)
 	visible_message(span_danger("\The [user] tears \the [src] open, sparks flying from its electronics!"))
 	do_animate("spark")
-	playsound(src, 'sound/machines/door/airlock_tear_apart.ogg', 100, 1, volume_channel = VOLUME_CHANNEL_DOORS)
+	play_sfx(src, SFX_MACHINES_DOOR_AIRLOCK_TEAR_APART, volume_channel = VOLUME_CHANNEL_DOORS)
 	locked = FALSE
 	welded = FALSE
 	update_icon()
 	open(TRUE)
 	atom_break() //These aren't emags, these be CLAWS
 /obj/machinery/door/airlock/proc/attack_alien_timed_done2(mob/user)
-	playsound(src, 'sound/machines/door/airlock_creaking.ogg', 100, 1, volume_channel = VOLUME_CHANNEL_DOORS)
+	play_sfx(src, SFX_MACHINES_DOOR_AIRLOCK_CREAKING, volume_channel = VOLUME_CHANNEL_DOORS)
 	visible_message(span_danger("\The [user] forces \the [src] open!"))
 	open(TRUE)
 
@@ -238,7 +238,7 @@ About the new airlock wires panel:
 				return
 		else if(user.status_units(EFFECT_HALLUCINATING) > 50 && prob(10) && operating == 0)
 			to_chat(user, span_danger("You feel a powerful shock course through your body!"))
-			user.playsound_local(get_turf(user), get_sfx("sparks"), vol = 75)
+			user.playsound_local(get_turf(user), get_sfx(SFX_SPARKS), vol = 75)
 			user.injure(INJURY_PAIN, 10, null, src)
 			user.status_adjust(EFFECT_STUNNED, 10)
 			return
@@ -586,9 +586,7 @@ About the new airlock wires panel:
 			var/obj/item/i = mover
 			var/list/item_matter = i.material_totals()
 			if (item_matter && (MAT_STEEL in item_matter) && item_matter[MAT_STEEL] > 0)
-				var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-				s.set_up(5, 1, src)
-				s.start()
+				fx_sparks(src, 5)
 	. = ..()
 
 /obj/machinery/door/airlock/declare_interactions(list/into)
@@ -684,9 +682,7 @@ About the new airlock wires panel:
 		if(isElectrified())
 			visible_message(span_warning("[user] presses the door bell on \the [src], making it violently spark!"), span_warning("\The [src] sparks!"))
 			add_fingerprint(user)
-			var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-			s.set_up(5, 1, src)
-			s.start()
+			fx_sparks(src, 5)
 		else
 			visible_message(span_info("[user] presses the door bell on \the [src]."), span_info("\The [src]'s bell rings."))
 			add_fingerprint(user)
@@ -1109,9 +1105,7 @@ About the new airlock wires panel:
 		if ((O.client && !( O.blinded )))
 			O.show_message("[name]'s control panel bursts open, sparks spewing out!")
 
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(5, 1, src)
-	s.start()
+	fx_sparks(src, 5)
 
 	update_icon()
 	return
@@ -1265,7 +1259,7 @@ About the new airlock wires panel:
 			for(var/atom/movable/AM in turf)
 				if(AM.blocks_airlock())
 					if(!has_beeped)
-						playsound(src, 'sound/machines/buzz-two.ogg', 50, 0)
+						play_sfx(src, SFX_MACHINES_BUZZ_TWO)
 						has_beeped = 1
 					sleep_until_autoclose_blocker_moves(AM)
 					return

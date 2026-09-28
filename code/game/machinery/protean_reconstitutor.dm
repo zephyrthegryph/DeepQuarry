@@ -223,7 +223,7 @@ EXTEND_INTERACTIONS(/obj/machinery/protean_reconstitutor, \
 		processing_revive = TRUE
 		power_change()
 		if(prob(2))
-			playsound(src, 'sound/machines/blender.ogg', 50, 1)
+			play_sfx(src, SFX_MACHINES_BLENDER)
 		else
 			playsound(src, clicksound, 50, 1)
 		nanomass_reserve -= nanomass_required

@@ -109,7 +109,7 @@ EXTEND_INTERACTIONS(/turf/simulated/open, INTERACT_ITEM("Build", PROC_REF(open_s
 		var/obj/item/stack/rods/R = C
 		if (R.use(1))
 			to_chat(user, span_notice("Constructing support lattice ..."))
-			playsound(src, 'sound/weapons/genhit.ogg', 50, 1)
+			play_sfx(src, SFX_WEAPONS_GENHIT)
 			ReplaceWithLattice()
 		return INTERACTION_HANDLED_PASS
 
@@ -120,7 +120,7 @@ EXTEND_INTERACTIONS(/turf/simulated/open, INTERACT_ITEM("Build", PROC_REF(open_s
 			if (S.get_amount() < 1)
 				return INTERACTION_HANDLED_PASS
 			qdel(L)
-			playsound(src, 'sound/weapons/genhit.ogg', 50, 1)
+			play_sfx(src, SFX_WEAPONS_GENHIT)
 			S.use(1)
 			ChangeTurf(/turf/simulated/floor/airless)
 			return INTERACTION_HANDLED_PASS

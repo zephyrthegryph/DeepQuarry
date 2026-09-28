@@ -78,11 +78,11 @@
 	switch(damage_type)
 		if(BRUTE)
 			if(damage_amount)
-				playsound(src, 'sound/items/weapons/smash.ogg', 50, TRUE)
+				play_sfx(src, SFX_ITEMS_WEAPONS_SMASH)
 			else
-				playsound(src, 'sound/items/weapons/tap.ogg', 50, TRUE)
+				play_sfx(src, SFX_ITEMS_WEAPONS_TAP)
 		if(BURN)
-			playsound(src.loc, 'sound/items/tools/welder.ogg', 100, TRUE)
+			play_sfx(src.loc, SFX_ITEMS_TOOLS_WELDER)
 
 /// Handles the integrity of an atom changing. This must be called instead of changing integrity directly.
 /atom/proc/update_integrity(new_value)

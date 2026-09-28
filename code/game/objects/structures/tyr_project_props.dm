@@ -83,7 +83,7 @@
 		to_chat(user, span_notice("You leave the lock alone."))
 	else if(check_input(input))
 		to_chat(user, span_notice("The door unlocks and opens!"))
-		playsound(src, 'sound/machines/lockreset.ogg', 50, TRUE)
+		play_sfx(src, SFX_MACHINES_LOCKRESET)
 		open()
 	else
 		visible_message(span_warning("A red light on \the [src]'s control panel flashes briefly."))

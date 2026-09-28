@@ -20,7 +20,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable, INTERACT_SELF("Unwrap", PR
 	if(wrapped)
 		wrapped = FALSE
 		to_chat(user, span_notice("You unwrap \the [name]."))
-		playsound(src.loc, 'sound/items/drop/wrapper.ogg', 50, 1)
+		play_sfx(src.loc, SFX_ITEMS_DROP_WRAPPER)
 		slot_flags = SLOT_EARS | SLOT_MASK
 		update_icon()
 	return FALSE

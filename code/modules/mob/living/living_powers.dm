@@ -150,5 +150,5 @@
 		return
 	visible_message(span_warning("[src] fires their lazor at [chosen_target]!"))
 	var/obj/item/projectile/P = new /obj/item/projectile/beam/sparkledog(get_turf(src))
-	playsound(src, "'sound/weapons/sparkle.ogg'", 50, 1)
+	play_sfx(src, SFX_WEAPONS_SPARKLE)
 	P.launch_projectile(chosen_target, BP_TORSO, src)

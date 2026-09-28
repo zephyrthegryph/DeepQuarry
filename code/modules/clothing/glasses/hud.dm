@@ -121,7 +121,7 @@ DECLARE_REF(/obj/item/clothing/glasses/omnihud, "tgarscreen", OWNED, null)
 
 /obj/item/clothing/glasses/omnihud/prescribe(mob/user)
 	prescription = !prescription
-	playsound(src,'sound/items/Screwdriver.ogg', 50, 1)
+	play_sfx(src, SFX_ITEMS_SCREWDRIVER)
 	if(prescription)
 		user.visible_message("[user] uploads new prescription data to the [src.name] and resets the lenses.")
 		name = "[initial(name)] (pr)" //change the name *after* the text so the message above is accurate

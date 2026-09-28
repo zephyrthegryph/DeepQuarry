@@ -197,7 +197,7 @@
 /turf/simulated/wall/proc/dismantle_wall(devastated, explode, no_product)
 	// A wall built from a substance material discharges its effect when breached.
 
-	playsound(src, 'sound/items/Welder.ogg', 100, 1)
+	play_sfx(src, SFX_ITEMS_WELDER)
 	if(!no_product)
 		if(reinf_material)
 			reinf_material.place_dismantled_girder(src, reinf_material, girder_material)
@@ -425,7 +425,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 		else if(istype(S,/obj/item/stack/material/glass))
 			loaded = loadwithsheets(S, RCD_SHEETS_PER_MATTER_UNIT*1.33, user)
 	if(loaded)
-		playsound(src, 'sound/machines/click.ogg', 50, 1)
+		play_sfx(src, SFX_MACHINES_CLICK)
 		update_icon()
 		to_chat(user, span_notice("The RCD now holds [stored_matter]/[max_stored_matter] matter-units."))
 	return FALSE
@@ -535,7 +535,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /// The mode radial's (and its sub-radials') last step.
 /obj/item/rcd/proc/rcd_mode_changed(mob/living/user, choice)
-	playsound(src, 'sound/effects/pop.ogg', 50, FALSE)
+	play_sfx(src, SFX_EFFECTS_POP)
 	to_chat(user, span_notice("You change RCD's mode to '[choice]'."))
 
 /obj/item/rcd/proc/rcd_girder_chosen(datum/om/prompt/choice/radial/ask)
@@ -1024,7 +1024,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 	var/output_envelope = power_output_envelope(cost)
 	consume_resources(cost * output_envelope)
 	record_enhanced_output(cost, output_envelope)
-	playsound(A, 'sound/items/Deconstruct.ogg', 50, 1)
+	play_sfx(A, SFX_ITEMS_DECONSTRUCT)
 
 /turf/simulated/floor/proc/rcd_windoor_type_chosen(datum/om/prompt/choice/radial/rcd_build/ask)
 	if(!rcd_build_pick_ok(ask, RCD_WINDOOR))

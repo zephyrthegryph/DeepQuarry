@@ -15,7 +15,7 @@
 	return
 
 /obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/proc/pry_firedoor(obj/machinery/door/firedoor/FD, unblock)
-	playsound(FD, 'sound/machines/door/airlock_creaking.ogg', 100, 1)
+	play_sfx(FD, SFX_MACHINES_DOOR_AIRLOCK_CREAKING)
 	if(unblock)
 		FD.blocked = 0
 		FD.update_icon()
@@ -30,7 +30,7 @@
 		return
 	AD.welded = FALSE
 	AD.update_icon()
-	playsound(AD, 'sound/machines/door/airlock_creaking.ogg', 100, 1)
+	play_sfx(AD, SFX_MACHINES_DOOR_AIRLOCK_CREAKING)
 	AD.visible_message(span_danger("\The [chassis] tears \the [AD] open!"))
 	toggle_airlock(AD)
 
@@ -111,14 +111,14 @@
 			M.injure(INJURY_BLUNT, dam_force, null, chassis)
 			M.body?.add_restriction(chassis, BF_LUNG_MECHANICS, 0.2, 6 SECONDS) // the chest can't expand in the grip
 			occupant_message(span_warning("You squeeze [target] with [src.name]. Something cracks."))
-			playsound(src, "fracture", 5, 1, -2) //CRACK
+			play_sfx(src, SFX_FRACTURE, volume = 5) //CRACK
 			chassis.visible_message(span_warning("[chassis] squeezes [target]."))
 		else if(chassis?.pilot_is_disarming() && enable_special)
-			playsound(src, 'sound/mecha/hydraulic.ogg', 10, 1, -2)
+			play_sfx(src, SFX_MECHA_HYDRAULIC)
 			M.injure(INJURY_BLUNT, dam_force/2, null, chassis)
 			M.body?.add_restriction(chassis, BF_LUNG_MECHANICS, 0.4, 4 SECONDS) // winded by the slam
 			occupant_message(span_warning("You slam [target] with [src.name]. Something cracks."))
-			playsound(src, "fracture", 3, 1, -2) //CRACK 2
+			play_sfx(src, SFX_FRACTURE, volume = 3) //CRACK 2
 			chassis.visible_message(span_warning("[chassis] slams [target]."))
 			M.throw_at(get_step(M,get_dir(src, M)), 14, 1.5, chassis)
 		else

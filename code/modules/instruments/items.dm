@@ -114,7 +114,7 @@ DECLARE_INTERACTIONS(/obj/item/instrument, INTERACT_USE(null, PROC_REF(interacti
 	attack_verb = list("played", "jazzed", "trumpeted", "mourned", "dooted", "spooked")
 
 /obj/item/instrument/trumpet/spectral/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	playsound (src, 'sound/runtime/instruments/trombone/En4.mid', 100,1,-1)
+	play_sfx(src, SFX_RUNTIME_INSTRUMENTS_TROMBONE_EN4)
 	..()
 
 /obj/item/instrument/saxophone
@@ -131,7 +131,7 @@ DECLARE_INTERACTIONS(/obj/item/instrument, INTERACT_USE(null, PROC_REF(interacti
 	attack_verb = list("played", "jazzed", "saxed", "mourned", "dooted", "spooked")
 
 /obj/item/instrument/saxophone/spectral/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	playsound (src, 'sound/runtime/instruments/saxophone/En4.mid', 100,1,-1)
+	play_sfx(src, SFX_RUNTIME_INSTRUMENTS_SAXOPHONE_EN4)
 	..()
 
 /obj/item/instrument/trombone
@@ -148,7 +148,7 @@ DECLARE_INTERACTIONS(/obj/item/instrument, INTERACT_USE(null, PROC_REF(interacti
 	attack_verb = list("played", "jazzed", "tromboneed", "mourned", "dooted", "spooked")
 
 /obj/item/instrument/trombone/spectral/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	playsound (src, 'sound/runtime/instruments/trombone/Cn4.mid', 100,1,-1)
+	play_sfx(src, SFX_RUNTIME_INSTRUMENTS_TROMBONE_CN4)
 	..()
 
 /obj/item/instrument/recorder

@@ -48,7 +48,7 @@
 			if(amount_to_transfer > 0)
 				storage.reagents.trans_to(src, amount_to_transfer)
 
-	playsound(src, 'sound/effects/smoke.ogg', 50, 1, -3)
+	play_sfx(src, SFX_EFFECTS_SMOKE)
 	var/datum/effect/effect/system/smoke_spread/chem/smoke_system = new()
 	smoke_system.set_up(reagents, 10, 0, get_turf(src))
 	for(var/i = 1 to 8)

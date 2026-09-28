@@ -294,7 +294,7 @@
 /// Overrides largecrate's interaction_hand(): untape the crate first.
 /obj/structure/largecrate/animal/otie/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)//I just couldn't decide between the icons lmao
 	if(taped == 1)
-		playsound(src, 'sound/items/poster_ripped.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_POSTER_RIPPED, 0.5)
 		icon_state = "otiecrate"
 		taped = 0
 	return ..()

@@ -220,9 +220,7 @@
 			for(var/obj/machinery/light/evil_light in the_turf)
 				if((evil_light.status == LIGHT_BURNED || evil_light.status == LIGHT_BROKEN) || (living_guy.get_shock_protection() == 1)) // we can't do anything :(
 					to_chat(living_guy, span_warning("[evil_light] sparks weakly for a second."))
-					var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread //this shit is copy pasted all over the code...this needs to just be made into a proc at this point jesus christ
-					s.set_up(4, FALSE, evil_light)
-					s.start()
+					fx_sparks(evil_light, 4, FALSE)
 					//We don't clear the omen as nothing really happened.
 					break
 
@@ -328,7 +326,7 @@
 		to_chat(our_guy, span_cult("What a horrible night... To have a curse!"))
 
 	if(prob(30 * omen_luck) && our_guy.get_bodypart_name(BP_HEAD)) /// Bonk!
-		playsound(our_guy, 'sound/effects/tableheadsmash.ogg', 90, TRUE)
+		play_sfx(our_guy, SFX_EFFECTS_TABLEHEADSMASH)
 		our_guy.visible_message(span_danger("[our_guy] hits [our_guy.p_their()] head really badly falling down!"), span_bolddanger("You hit your head really badly falling down!"))
 		var/max_health_coefficient = (our_guy.get_endurance() * 0.5)
 		our_guy.injure(INJURY_BLUNT, max_health_coefficient * omen_damage, BP_HEAD)
@@ -452,7 +450,7 @@
 
 /mob/living/proc/omen_check_stairs(mob/living/unlucky_soul)
 	if(prob(3 * omen_luck)) /// Bonk!
-		playsound(unlucky_soul, 'sound/effects/tableheadsmash.ogg', 90, TRUE)
+		play_sfx(unlucky_soul, SFX_EFFECTS_TABLEHEADSMASH)
 		unlucky_soul.visible_message(span_danger("One of the stairs give way as [unlucky_soul] steps onto it, tumbling them down to the bottom!"), span_bolddanger("A stair gives way and you trip to the bottom!"))
 		var/max_health_coefficient = (unlucky_soul.get_endurance() * 0.09)
 		for(var/obj/item/organ/external/limb in unlucky_soul.organs) //In total, you should have 11 limbs (generally, unless you have an amputation). The full omen variant we want to leave you at 1 hp, the trait version less. As of writing, the trait version is 25% of the damage, so you take 24.75 across all limbs.
@@ -473,7 +471,7 @@
 					continue //Robotic hearts are immune to this.
 				human_guy.injure(INJURY_BLUNT, 10 * stun_amount * omen_damage, heart, src)
 				human_guy.injure(INJURY_BLUNT, 0.25 * agony_amount * omen_damage, heart, src)
-			playsound(src, 'sound/effects/singlebeat.ogg', 50, FALSE)
+			play_sfx(src, SFX_EFFECTS_SINGLEBEAT)
 			to_chat(unlucky_soul, span_bolddanger("You feel as though your heart stopped"))
 			human_guy.status_at_least(EFFECT_STUNNED, 5)
 			omen_consume()

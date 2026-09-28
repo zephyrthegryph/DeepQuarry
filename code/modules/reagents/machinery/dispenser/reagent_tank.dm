@@ -378,7 +378,7 @@ DECLARE_REAGENTS(/obj/structure/reagent_dispensers/acid, null, list(REAGENT_ID_S
 				var/obj/item/stack/material/plastic/P = I
 				src.add_fingerprint(user)
 				to_chat(user, span_notice("You start to attach a cup dispenser onto the water-cooler."))
-				playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+				play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 				om_task_timed(user, 2 SECONDS, src, src, PROC_REF(cupholder_done), list(user, P))
 			else
 				to_chat(user, span_warning("You need to wrench down the cooler first."))

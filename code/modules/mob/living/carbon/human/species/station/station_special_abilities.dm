@@ -905,7 +905,7 @@
 		return
 
 	visible_message(span_vnotice("\The [src] attempts to snatch up [target]!"), 					span_vnotice("You attempt to snatch up [target]!") )
-	playsound(src, 'sound/vore/sunesound/pred/schlorp.ogg', 25)
+	play_sfx(src, SFX_VORE_SUNESOUND_PRED_SCHLORP)
 
 	//Code to shoot the beam here.
 	var/obj/item/projectile/beam/appendage/appendage_attack = new /obj/item/projectile/beam/appendage(get_turf(loc))
@@ -972,7 +972,7 @@
 				originator.status_at_least(EFFECT_WEAKENED, 2) //If you hit something dense or anchored, fall flat on your face.
 				originator.visible_message(span_warning("\The [originator] trips over their self and falls flat on their face!"), \
 								span_warning("You trip over yourself and fall flat on your face!") )
-				playsound(originator, "punch", 25, 1, -1)
+				play_sfx(originator, SFX_PUNCH, 0.5, extrarange = -1)
 			return
 		else
 			hit_object.throw_at(firer, throw_range, hit_object.throw_speed, firer)
@@ -982,7 +982,7 @@
 			originator.status_at_least(EFFECT_WEAKENED, 2) //Hit a wall? Whoops!
 			originator.visible_message(span_warning("\The [originator] trips over their self and falls flat on their face!"), \
 							span_warning("You trip over yourself and fall flat on your face!") )
-			playsound(originator, "punch", 25, 1, -1)
+			play_sfx(originator, SFX_PUNCH, 0.5, extrarange = -1)
 			return
 		else
 			return

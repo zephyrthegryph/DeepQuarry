@@ -34,7 +34,7 @@ EXTEND_INTERACTIONS(/obj/item/assembly/electronic_assembly, \
 	return TRUE
 
 /obj/item/assembly/electronic_assembly/proc/toggle_open(mob/user)
-	playsound(src, 'sound/items/Crowbar.ogg', 50, 1)
+	play_sfx(src, SFX_ITEMS_CROWBAR)
 	opened = !opened
 	EA.opened = opened
 	to_chat(user, span_notice("You [opened ? "opened" : "closed"] \the [src]."))

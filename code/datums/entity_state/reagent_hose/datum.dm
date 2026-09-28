@@ -39,8 +39,8 @@
 		if(A)
 			drop_locs.Add(get_turf(node1.get_carrier()))
 			A.visible_message("The hose detatches from \the [A]")
-			playsound(A,'sound/effects/crate_close.ogg',50)
-			playsound(A,'sound/effects/plop.ogg',45)
+			play_sfx(A, SFX_EFFECTS_CRATE_CLOSE)
+			play_sfx(A, SFX_EFFECTS_PLOP)
 		node1.remove_hose()
 		node1 = null
 	if(node2)
@@ -48,8 +48,8 @@
 		if(A)
 			drop_locs.Add(get_turf(node2.get_carrier()))
 			A.visible_message("The hose detatches from \the [A]")
-			playsound(A,'sound/effects/crate_close.ogg',50)
-			playsound(A,'sound/effects/plop.ogg',45)
+			play_sfx(A, SFX_EFFECTS_CRATE_CLOSE)
+			play_sfx(A, SFX_EFFECTS_PLOP)
 		node2.remove_hose()
 		node2 = null
 	// Drop hose at one of the locations if no user is specified
@@ -74,13 +74,13 @@
 		// Poip!~
 		var/atom/A = node1.get_carrier()
 		A.visible_message("The hose attaches to \the [A]")
-		playsound(A,'sound/effects/crate_open.ogg',50)
-		playsound(A,'sound/effects/pop.ogg',65)
+		play_sfx(A, SFX_EFFECTS_CRATE_OPEN)
+		play_sfx(A, SFX_EFFECTS_POP, 1.3)
 
 		A = node2.get_carrier()
 		A.visible_message("The hose attaches to \the [A]")
-		playsound(A,'sound/effects/crate_open.ogg',50)
-		playsound(A,'sound/effects/pop.ogg',65)
+		play_sfx(A, SFX_EFFECTS_CRATE_OPEN)
+		play_sfx(A, SFX_EFFECTS_POP, 1.3)
 
 /// Updates the beam visual effect for the hose. Returns if the hose is still has a valid connection or not.
 /datum/hose/proc/update_beam()

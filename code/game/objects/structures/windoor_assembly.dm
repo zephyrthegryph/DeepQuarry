@@ -111,7 +111,7 @@
 	else if(state == "02")
 		//Adding airlock electronics for access. Step 6 complete.
 		if(istype(W, /obj/item/airlock_electronics))
-			playsound(src, 'sound/items/Screwdriver.ogg', 100, 1)
+			play_sfx(src, SFX_ITEMS_SCREWDRIVER, 2)
 			user.visible_message("[user] installs the electronics into the airlock assembly.", "You start to install electronics into the airlock assembly.")
 
 			om_task_start(/datum/om/task/timed/windoor_assembly_attackby, user, src, W = W)

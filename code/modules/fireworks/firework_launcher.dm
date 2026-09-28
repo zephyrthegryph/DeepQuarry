@@ -120,7 +120,7 @@
 		return TRUE
 
 	to_chat(user, span_notice("You launch the firework!"))
-	playsound(get_turf(src), 'sound/weapons/rpg.ogg', 75, 1)
+	play_sfx(get_turf(src), SFX_WEAPONS_RPG)
 	loaded_star().trigger_firework(WH)
 	qdel(loaded_star())
 	loaded_star_handle = null

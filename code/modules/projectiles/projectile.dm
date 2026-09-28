@@ -771,7 +771,7 @@ DECLARE_REF(/obj/item/projectile, "my_case_handle", BACK_HANDLE, "BB")
 	if(result == PROJECTILE_FORCE_MISS)
 		if(!silenced)
 			target_mob.visible_message(span_infoplain(span_bold("\The [src]") + " misses \the [target_mob] narrowly!"))
-			playsound(target_mob, "bullet_miss", 75, 1)
+			play_sfx(target_mob, SFX_BULLET_MISS)
 		return FALSE
 
 	var/impacted_organ = parse_zone(def_zone)

@@ -264,7 +264,7 @@
 			var/mob/living/L = A
 			L.status_at_least(EFFECT_WEAKENED, cloaked_weaken_amount)
 			to_chat(L, span_danger("\The [src] tears into you!"))
-			playsound(L, 'sound/weapons/spiderlunge.ogg', 75, 1)
+			play_sfx(L, SFX_WEAPONS_SPIDERLUNGE)
 	uncloak()
 	..()
 

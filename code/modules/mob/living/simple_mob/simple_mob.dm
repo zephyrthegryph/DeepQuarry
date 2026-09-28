@@ -637,7 +637,7 @@ DECLARE_REF(/mob/living/simple_mob, "mob_radio", OWNED, null)
 		M.visible_message(span_danger("\The [src] pounces on \the [M]!"))
 	else // pounce misses!
 		M.visible_message(span_danger("\The [src] attempts to pounce \the [M] but misses!"))
-		playsound(src, 'sound/weapons/punchmiss.ogg', 25, 1, -1)
+		play_sfx(src, SFX_WEAPONS_PUNCHMISS)
 
 	if(will_eat(M) && (M.lying || vore_standing_too)) //if they're edible then eat them too
 		return EatTarget(M)
@@ -915,7 +915,7 @@ DECLARE_REF(/mob/living/simple_mob, "mob_radio", OWNED, null)
 
 	visible_message(span_danger("\The [src] leaps at [T]!"))
 	throw_at(get_step(get_turf(T),get_turf(src)), 4, 1, src)
-	playsound(src, 'sound/effects/bodyfall1.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_BODYFALL1)
 	pixel_y = default_pixel_y
 	om_after(src, 5, PROC_REF(leap_land), T)
 

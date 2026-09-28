@@ -33,9 +33,9 @@
 		if(worth >= 5)
 			//consume the money
 			if(prob(50))
-				playsound(loc, 'sound/items/polaroid1.ogg', 50, 1)
+				play_sfx(loc, SFX_ITEMS_POLAROID1)
 			else
-				playsound(loc, 'sound/items/polaroid2.ogg', 50, 1)
+				play_sfx(loc, SFX_ITEMS_POLAROID2)
 
 			to_chat(user, span_info("You insert [I] into [src]."))
 			spawn_casinochips(round(worth / 5), src.loc)
@@ -46,9 +46,9 @@
 		var/obj/item/spacecasinocash/chips = I
 		//consume the chips
 		if(prob(50))
-			playsound(loc, 'sound/items/polaroid1.ogg', 50, 1)
+			play_sfx(loc, SFX_ITEMS_POLAROID1)
 		else
-			playsound(loc, 'sound/items/polaroid2.ogg', 50, 1)
+			play_sfx(loc, SFX_ITEMS_POLAROID2)
 
 		to_chat(user, span_info("You insert [I] into [src]."))
 		// Bound the input worth so worth*5 stays exactly representable.

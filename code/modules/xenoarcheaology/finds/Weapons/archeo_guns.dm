@@ -20,7 +20,7 @@
 		user.visible_message("[user] removes \a casing from [src], the casing fizzling in the air before evaporating into dust.", span_notice("You remove \a casing from [src], the casing fizzling in the air before evaporating into dust"))
 		C.moveToNullspace() //Into the void!
 		qdel(C) //And begone!
-		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_EMPTY)
 		new /obj/effect/effect/sparks(src)
 		user.hud_used.update_ammo_hud(user, src)
 	else

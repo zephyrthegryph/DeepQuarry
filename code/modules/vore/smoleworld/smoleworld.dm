@@ -88,7 +88,7 @@ EXTEND_INTERACTIONS(/obj/structure/smoletrack, \
 	if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 		return
 	to_chat(user, span_notice("[src] was dismantaled into bricks."))
-	playsound(src, 'sound/items/smolesmallbuild.ogg', 50, 1, -1, volume_channel = VOLUME_CHANNEL_MASTER)
+	play_sfx(src, SFX_ITEMS_SMOLESMALLBUILD, volume_channel = VOLUME_CHANNEL_MASTER)
 	var/turf/simulated/floor/F = get_turf(src)
 	if(istype(F))
 		new /obj/item/stack/material/smolebricks(F)
@@ -123,7 +123,7 @@ EXTEND_INTERACTIONS(/obj/structure/smoletrack, \
 /obj/structure/smoletrack/proc/smoletrack_verb_dismantle(mob/user, obj/item/held, datum/interaction/interaction)
 	if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 		return
-	playsound(src, 'sound/items/smolesmallbuild.ogg', 50, 1, -1, volume_channel = VOLUME_CHANNEL_MASTER)
+	play_sfx(src, SFX_ITEMS_SMOLESMALLBUILD, volume_channel = VOLUME_CHANNEL_MASTER)
 	var/turf/simulated/floor/F = get_turf(src)
 	if(istype(F))
 		new /obj/item/stack/material/smolebricks(F)
@@ -188,7 +188,7 @@ EXTEND_INTERACTIONS(/obj/structure/smolebuilding, \
 		if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 			return
 		to_chat(user, span_notice("[src] was dismantaled into bricks."))
-		playsound(src, 'sound/items/smolesmallbuild.ogg', 50, 1, -1, volume_channel = VOLUME_CHANNEL_MASTER)
+		play_sfx(src, SFX_ITEMS_SMOLESMALLBUILD, volume_channel = VOLUME_CHANNEL_MASTER)
 		if(!isnull(loc))
 			new /obj/item/stack/material/smolebricks(loc)
 			new /obj/item/stack/material/smolebricks(loc)
@@ -199,7 +199,7 @@ EXTEND_INTERACTIONS(/obj/structure/smolebuilding, \
 		if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 			return
 
-		playsound(src, 'sound/items/smolebuildinghit2.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_SMOLEBUILDINGHIT2)
 		user.do_attack_animation(src)
 		user.visible_message(span_danger("\The [user] bangs against \the [src]!"),
 							span_danger("You bang against \the [src]!"),
@@ -213,7 +213,7 @@ EXTEND_INTERACTIONS(/obj/structure/smolebuilding, \
 /// Stomped flat: the building leaves ruins.
 /obj/structure/smolebuilding/handle_deconstruct(disassembled = TRUE)
 	visible_message(span_danger("\The [src] falls apart!"))
-	playsound(src, 'sound/items/smolebuildingdestoryed.ogg', 50, 1, -1, volume_channel = VOLUME_CHANNEL_MASTER)
+	play_sfx(src, SFX_ITEMS_SMOLEBUILDINGDESTORYED, volume_channel = VOLUME_CHANNEL_MASTER)
 	new /obj/structure/smoleruins(loc)
 //results of attacks will remove building and spawn in ruins.
 /obj/structure/smolebuilding/proc/dismantle()
@@ -231,7 +231,7 @@ EXTEND_INTERACTIONS(/obj/structure/smolebuilding, \
 //is the same as dismaintal but instead of ruins it just makes it all explode
 /obj/structure/smolebuilding/proc/displode()
 	visible_message(span_danger("\The [src] explodes into pieces!"))
-	playsound(src, 'sound/items/smolebuildingdestoryedshort.ogg', 50, 1, -1, volume_channel = VOLUME_CHANNEL_MASTER)
+	play_sfx(src, SFX_ITEMS_SMOLEBUILDINGDESTORYEDSHORT, volume_channel = VOLUME_CHANNEL_MASTER)
 	new /obj/item/stack/material/smolebricks(loc)
 	replace_with(src, /obj/item/stack/material/smolebricks)
 	return
@@ -245,7 +245,7 @@ EXTEND_INTERACTIONS(/obj/structure/smoleruins, 	INTERACT_HAND_UNGATED_AS(I_DISAR
 	if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 		return
 	to_chat(user, span_notice("[src] was dismantaled into bricks."))
-	playsound(src, 'sound/items/smolelargeunbuild.ogg', 50, 1, volume_channel = VOLUME_CHANNEL_MASTER)
+	play_sfx(src, SFX_ITEMS_SMOLELARGEUNBUILD, volume_channel = VOLUME_CHANNEL_MASTER)
 	if(!isnull(loc))
 		new /obj/item/stack/material/smolebricks(loc)
 		new /obj/item/stack/material/smolebricks(loc)
@@ -263,7 +263,7 @@ EXTEND_INTERACTIONS(/obj/structure/smoleruins, 	INTERACT_HAND_UNGATED_AS(I_DISAR
 
 /obj/structure/smoleruins/proc/displode()
 	visible_message(span_danger("\The [src] explodes into pieces!"))
-	playsound(src, 'sound/items/smolebuildingdestoryedshort.ogg', 50, 1, -1, volume_channel = VOLUME_CHANNEL_MASTER)
+	play_sfx(src, SFX_ITEMS_SMOLEBUILDINGDESTORYEDSHORT, volume_channel = VOLUME_CHANNEL_MASTER)
 	new /obj/item/stack/material/smolebricks(loc)
 	replace_with(src, /obj/item/stack/material/smolebricks)
 	return
@@ -280,7 +280,7 @@ EXTEND_INTERACTIONS(/obj/structure/smoleruins, 	INTERACT_HAND_UNGATED_AS(I_DISAR
 /obj/structure/smolebuilding/proc/smolebuilding_verb_dismantle(mob/user, obj/item/held, datum/interaction/interaction)
 	if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 		return
-	playsound(src, 'sound/items/smolesmallbuild.ogg', 50, 1, -1, volume_channel = VOLUME_CHANNEL_MASTER)
+	play_sfx(src, SFX_ITEMS_SMOLESMALLBUILD, volume_channel = VOLUME_CHANNEL_MASTER)
 	if(!isnull(loc))
 		new /obj/item/stack/material/smolebricks(loc)
 		new /obj/item/stack/material/smolebricks(loc)

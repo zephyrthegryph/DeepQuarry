@@ -1223,11 +1223,11 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 			if(shreddamage)
 				attack_generic(H, shreddamage, "attacked")
 			else
-				playsound(src.loc, 'sound/effects/bang.ogg', 10, 1)
+				play_sfx(src.loc, SFX_EFFECTS_BANG, 0.2)
 				visible_message(span_warning("[H] punches [src], but doesn't leave a dent."))
 		if(I_DISARM)
 			H.do_attack_animation(src)
-			playsound(src.loc, 'sound/effects/clang2.ogg', 10, 1)
+			play_sfx(src.loc, SFX_EFFECTS_CLANG2, 0.2)
 			visible_message(span_warning("[H] taps [src]."))
 			if(hat && prob(10))
 				var/obj/item/flying_hat = remove_hat(get_turf(src))

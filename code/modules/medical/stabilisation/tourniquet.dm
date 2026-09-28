@@ -84,7 +84,7 @@
 		user.put_in_hands(src)
 		return
 	user.balloon_alert_visible("[user] cinches \the [src] tight around [H == user ? "their" : "[H]'s"] [E.name].", "cinched \the [src] around the [E.name].")
-	playsound(H, 'sound/effects/tape.ogg', 25)
+	play_sfx(H, SFX_EFFECTS_TAPE)
 
 // --- Limb side ---------------------------------------------------------------------
 

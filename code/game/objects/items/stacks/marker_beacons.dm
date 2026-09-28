@@ -58,7 +58,7 @@ GLOBAL_LIST_INIT(marker_beacon_colors, list(
 		return
 	if(use(1))
 		to_chat(user, span_notice("You activate and anchor [amount ? "a":"the"] [singular_name] in place."))
-		playsound(src, 'sound/machines/click.ogg', 50, 1)
+		play_sfx(src, SFX_MACHINES_CLICK)
 		var/obj/structure/marker_beacon/M = new(user.loc, picked_color)
 		transfer_fingerprints_to(M)
 
@@ -138,7 +138,7 @@ DECLARE_INTERACTIONS(/obj/structure/marker_beacon, \
 	M.update_icon()
 	transfer_fingerprints_to(M)
 	if(user.put_in_hands(M, TRUE)) //delete the beacon if it fails
-		playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 		qdel(src) //otherwise delete us
 
 /// Old attackby.
@@ -157,7 +157,7 @@ DECLARE_INTERACTIONS(/obj/structure/marker_beacon, \
 	if(!(M.get_amount() + 1 <= M.max_amount))
 		return
 	M.add(1)
-	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 	qdel(src)
 
 /// Old click_alt.

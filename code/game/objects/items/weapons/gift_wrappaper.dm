@@ -33,7 +33,7 @@ DECLARE_INTERACTIONS(/obj/item/gift, INTERACT_USE(null, PROC_REF(interaction_sel
 /// Old attack_self.
 /obj/item/gift/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	user.drop_item()
-	playsound(src, 'sound/items/package_unwrap.ogg', 50,1)
+	play_sfx(src, SFX_ITEMS_PACKAGE_UNWRAP)
 	if(gift)
 		var/obj/item/present = gift
 		gift = null // owned while wrapped: unwrapping hands it over before the paper goes

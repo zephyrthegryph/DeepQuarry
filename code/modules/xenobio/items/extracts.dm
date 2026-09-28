@@ -25,14 +25,14 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 			to_chat(user, span_warning("You cannot enhance this extract further!"))
 			return FALSE
 		to_chat(user, span_notice("You apply the enhancer to the slime extract. It may now be reused one more time."))
-		playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
+		play_sfx(src, SFX_EFFECTS_BUBBLES)
 		uses += 2
 		enhanced = TRUE
 		name = initial(name) // To remove the 'inert' part of the name.
 		consume(O, user)
 	else if(istype(O, /obj/item/slimepotion/reinvigoration))
 		to_chat(user, span_notice("You apply the reinvigorator to the slime extract. It rapidly expands, creating a brand new slime!"))
-		playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
+		play_sfx(src, SFX_EFFECTS_BUBBLES)
 		new slime_type(get_turf(src))
 		consume(O, user)
 		consume(src, user)
@@ -234,7 +234,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 			H.remove_body_effect(/datum/body_effect/berserk)
 			to_chat(H, span_warning("An intense wave of relaxing calm is felt from inside, but you remain in control of yourself."))
 
-	playsound(holder.my_atom, 'sound/effects/phasein.ogg', 75, 1)
+	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
 	..()
 
 /datum/decl/chemical_reaction/instant/slime/blue_cryotoxin
@@ -326,7 +326,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 /datum/decl/chemical_reaction/instant/slime/orange_fire/on_reaction(datum/reagents/holder)
 	log_and_message_admins("Orange extract reaction (fire) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 	holder.my_atom.visible_message(span_danger("\The [src] begins to vibrate violently!"))
-	playsound(holder.my_atom, 'sound/effects/phasein.ogg', 75, 1)
+	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
 	om_after(holder.my_atom, 5 SECONDS, /proc/slime_extract_fire, holder.my_atom)
 	..()
 
@@ -378,7 +378,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 		// This is most likely physically impossible but when has that stopped slimes before?
 		env.add_thermal_energy(15 * 1000 * 1000)
 
-	playsound(T, 'sound/effects/phasein.ogg', 75, 1)
+	play_sfx(T, SFX_EFFECTS_PHASEIN, 0.75)
 	..()
 
 /datum/decl/chemical_reaction/instant/slime/orange_smoke
@@ -393,7 +393,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 	var/datum/effect/effect/system/smoke_spread/chem/S = new /datum/effect/effect/system/smoke_spread/chem
 	S.attach(location)
 	S.set_up(holder, 120, 0, location)
-	playsound(location, 'sound/effects/smoke.ogg', 50, 1, -3)
+	play_sfx(location, SFX_EFFECTS_SMOKE)
 	S.start()
 	..()
 
@@ -428,7 +428,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 /datum/decl/chemical_reaction/instant/slime/yellow_lightning/on_reaction(datum/reagents/holder)
 	log_and_message_admins("Yellow extract reaction (lightning) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 	holder.my_atom.visible_message(span_danger("\The [src] begins to vibrate violently!"))
-	playsound(holder.my_atom, 'sound/effects/phasein.ogg', 75, 1)
+	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
 	om_after(holder.my_atom, 5 SECONDS, /proc/slime_extract_lightning, holder.my_atom)
 	..()
 
@@ -453,7 +453,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 /datum/decl/chemical_reaction/instant/slime/yellow_emp/on_reaction(datum/reagents/holder)
 	log_and_message_admins("Yellow extract reaction (emp) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 	holder.my_atom.visible_message(span_danger("\The [src] begins to vibrate violently!"))
-	playsound(holder.my_atom, 'sound/effects/phasein.ogg', 75, 1)
+	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
 	om_after(holder.my_atom, 5 SECONDS, /proc/slime_extract_emp, holder.my_atom)
 	..()
 
@@ -723,7 +723,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 		// This is most likely physically impossible but when has that stopped slimes before?
 		env.add_thermal_energy(-10 * 1000 * 1000) // For a moderately sized room this doesn't actually lower it that much.
 
-	playsound(T, 'sound/effects/phasein.ogg', 75, 1)
+	play_sfx(T, SFX_EFFECTS_PHASEIN, 0.75)
 
 	..()
 
@@ -825,7 +825,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 
 	log_and_message_admins("Red extract reaction (enrage) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 
-	playsound(holder.my_atom, 'sound/effects/phasein.ogg', 75, 1)
+	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
 	..()
 
 /datum/decl/chemical_reaction/instant/slime/red_hotsauce
@@ -893,7 +893,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 
 /datum/decl/chemical_reaction/instant/slime/green_radpulse/on_reaction(datum/reagents/holder)
 	log_and_message_admins("Green extract reaction (radiation pulse) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
-	playsound(holder.my_atom, 'sound/effects/phasein.ogg', 75, 1)
+	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
 	holder.my_atom.visible_message(span_danger("\The [holder.my_atom] begins to vibrate violently!"))
 	if(istype(holder.my_atom, /obj/item/slime_extract/green))
 		om_after(holder.my_atom, 5 SECONDS, /proc/slime_extract_start_emitting, holder.my_atom)
@@ -1021,7 +1021,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 	required = /obj/item/slime_extract/oil
 
 /datum/decl/chemical_reaction/instant/slime/oil_fakesplosion/on_reaction(datum/reagents/holder)
-	playsound(holder.my_atom, 'sound/effects/phasein.ogg', 75, 1)
+	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
 	explosion(get_turf(holder.my_atom), 0, 0, 0)
 	..()
 
@@ -1040,7 +1040,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 		power++
 	E.uses = 0
 
-	playsound(holder.my_atom, 'sound/effects/phasein.ogg', 75, 1)
+	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
 	holder.my_atom.visible_message(span_danger("\The [holder.my_atom] begins to vibrate violently!"))
 	log_and_message_admins("Oil extract reaction (explosion) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 
@@ -1211,7 +1211,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 /datum/decl/chemical_reaction/instant/slime/amber_random_food/on_reaction(datum/reagents/holder)
 	var/list/edibles = subtypesof(/obj/item/reagent_containers/food/snacks)
 
-	playsound(holder.my_atom, 'sound/effects/phasein.ogg', 100, 1)
+	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN)
 
 	for(var/i = 1 to rand(2, 4))
 		var/chosen = pick(edibles)
@@ -1348,7 +1348,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 
 /datum/decl/chemical_reaction/instant/slime/ruby_pull/on_reaction(datum/reagents/holder)
 	var/location = get_turf(holder.my_atom)
-	playsound(location, 'sound/weapons/gauss_shoot.ogg', 50, 1)
+	play_sfx(location, SFX_WEAPONS_GAUSS_SHOOT)
 	var/datum/effect/effect/system/grav_pull/s = new /datum/effect/effect/system/grav_pull
 	s.set_up(3, 3, location)
 	s.start()
@@ -1384,7 +1384,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 		var/throwdir = get_dir(location, AM)
 		AM.throw_at(get_edge_target_turf(AM, throwdir), 3, 1, src)
 
-	playsound(location, 'sound/weapons/gauss_shoot.ogg', 50, 1)
+	play_sfx(location, SFX_WEAPONS_GAUSS_SHOOT)
 	..()
 
 // *****************
@@ -1610,7 +1610,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 		target_turf.assume_gas(GAS_VOLATILE_FUEL, 33, 1500+T0C)
 		target_turf.assume_gas(GAS_O2, 66, 1500+T0C)
 		target_turf.hotspot_expose(1500+T0C, 400)
-	playsound(T, 'sound/effects/phasein.ogg', 75, 1)
+	play_sfx(T, SFX_EFFECTS_PHASEIN, 0.75)
 
 /proc/slime_extract_lightning(atom/extract)
 	var/turf/T = get_turf(extract)
@@ -1619,7 +1619,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 
 /proc/slime_extract_emp(atom/extract)
 	empulse(get_turf(extract), 2, 4, 7, 10) // As strong as a normal EMP grenade.
-	playsound(extract, 'sound/effects/phasein.ogg', 75, 1)
+	play_sfx(extract, SFX_EFFECTS_PHASEIN, 0.75)
 
 /proc/slime_extract_start_emitting(atom/extract)
 	om_task_periodic(extract, PERIODIC_SLOW)

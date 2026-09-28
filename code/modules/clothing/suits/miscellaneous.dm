@@ -1098,7 +1098,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/caution, \
 		icon_state = "caution_blinking"
 		item_state = "caution_blinking"
 		user.show_message("You turn the wet floor sign on.")
-		playsound(src.loc, 'sound/machines/button.ogg', 30, 1)
+		play_sfx(src.loc, SFX_MACHINES_BUTTON)
 	else
 		icon_state = "caution"
 		item_state = "caution"

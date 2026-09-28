@@ -70,7 +70,7 @@
 
 	area().lightswitch = on
 	area().update_icon()
-	playsound(src, 'sound/machines/button.ogg', 100, 1, 0)
+	play_sfx(src, SFX_MACHINES_BUTTON, volume = 100)
 
 	for(var/obj/machinery/light_switch/L in area())
 		L.on = on

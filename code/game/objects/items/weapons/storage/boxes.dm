@@ -66,7 +66,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/box, \
 			return
 		// Now make the cardboard
 		to_chat(user, span_notice("You fold [src] flat."))
-		playsound(src, 'sound/items/storage/boxfold.ogg', 30, 1)
+		play_sfx(src, SFX_ITEMS_STORAGE_BOXFOLD)
 		replace_with(src, foldable)
 
 	//try to crush it
@@ -76,7 +76,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/box, \
 			spill()
 		else
 			to_chat(user, span_notice("You crumple up \the [src].")) //make trash
-		playsound(src.loc, 'sound/items/drop/wrapper.ogg', 30, 1)
+		play_sfx(src.loc, SFX_ITEMS_DROP_WRAPPER, 0.6)
 		var/obj/item/trash = new src.trash()
 		qdel(src)
 		user.put_in_hands(trash)
@@ -465,7 +465,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/box/matches, INTERACT_ITEM("Strike", PROC_
 			W.light(user)
 			user.visible_message(span_notice("[user] manages to light the match on the matchbox."))
 		else
-			playsound(src, 'sound/items/cigs_lighters/matchstick_hit.ogg', 25, 0, -1)
+			play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_MATCHSTICK_HIT)
 	W.update_icon()
 	return INTERACTION_HANDLED_PASS
 

@@ -260,7 +260,7 @@
 			open = FALSE
 
 	update_door_status()
-	playsound(src, 'sound/machines/click.ogg', 100, 1)
+	play_sfx(src, SFX_MACHINES_CLICK, 2)
 
 /obj/structure/fence/door/proc/update_door_status()
 	switch(open)

@@ -77,7 +77,7 @@
 		return
 
 	chosen_window().take_damage(chosen_window().max_integrity * 0.8, BRUTE, MELEE)
-	playsound(chosen_window(), 'sound/effects/Glasshit.ogg', 100, 1)
+	play_sfx(chosen_window(), SFX_EFFECTS_GLASSHIT, volume = 100)
 	chosen_window().visible_message(span_danger("\The [chosen_window()] suddenly begins to crack!"))
 
 /datum/event2/event/window_break/should_end()

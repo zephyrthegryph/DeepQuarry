@@ -39,7 +39,7 @@
 /obj/structure/grille/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 
 	user.setClickCooldown(user.get_attack_speed())
-	playsound(src, 'sound/effects/grillehit.ogg', 80, 1)
+	play_sfx(src, SFX_EFFECTS_GRILLEHIT, 1.6)
 	user.do_attack_animation(src)
 
 	var/damage_dealt = 1
@@ -149,7 +149,7 @@
 	else if((W.flags & NOCONDUCT) || !shock(user, 70))
 		user.setClickCooldown(user.get_attack_speed(W))
 		user.do_attack_animation(src)
-		playsound(src, 'sound/effects/grillehit.ogg', 80, 1)
+		play_sfx(src, SFX_EFFECTS_GRILLEHIT, 1.6)
 		switch(W.obj_damage_type())
 			if(BURN)
 				receive_weapon_hit(W, user, W.force, INJURY_BURN)
@@ -224,9 +224,7 @@
 	if(C)
 		if(electrocute_mob(user, C, src))
 			power_warn(C.get_power_region())
-			var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-			s.set_up(3, 1, src)
-			s.start()
+			fx_sparks(src, 3)
 			if(user.has_status(EFFECT_STUNNED))
 				return 1
 		else

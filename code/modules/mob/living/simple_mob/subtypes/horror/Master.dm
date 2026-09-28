@@ -30,11 +30,11 @@
 
 
 /mob/living/simple_mob/horror/Master/on_death(gibbed)
-	playsound(src, 'sound/h_sounds/imbeciles.ogg', 50, 1)
+	play_sfx(src, SFX_H_SOUNDS_IMBECILES)
 	..()
 
 /mob/living/simple_mob/horror/Master/bullet_act()
-	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
+	play_sfx(src, SFX_H_SOUNDS_HOLLA)
 	..()
 
 

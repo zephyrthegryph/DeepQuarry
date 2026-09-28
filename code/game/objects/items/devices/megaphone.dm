@@ -138,7 +138,7 @@ DECLARE_INTERACTIONS(/obj/item/megaphone, INTERACT_USE(null, PROC_REF(interactio
 			user.audible_message(span_bold("[user.GetVoice()]") + "[user.GetAltName()] broadcasts, <FONT size=[broadcast_size] face='[broadcast_font]' color='[broadcast_color]'>\"[insult]\"</FONT>", runemessage = insult)
 			if(broadcast_size >= 11)
 				var/turf/T = get_turf(user)
-				playsound(src, 'sound/items/AirHorn.ogg', 100, 1)
+				play_sfx(src, SFX_ITEMS_AIRHORN)
 				for(var/mob/living/carbon/M in oviewers(4, T))
 					if(M.get_ear_protection() >= 2)
 						continue
@@ -156,9 +156,7 @@ DECLARE_INTERACTIONS(/obj/item/megaphone, INTERACT_USE(null, PROC_REF(interactio
 		else
 			user.audible_message(span_critical("*BZZZZzzzzzt*"))
 			if(prob(40) && insults <= 0)
-				var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-				s.set_up(2, 1, get_turf(user))
-				s.start()
+				fx_sparks(get_turf(user), 2)
 				user.visible_message(span_warning("\The [src] sparks violently!"))
 				om_after(src, 3 SECONDS, PROC_REF(overload_boom))
 	else

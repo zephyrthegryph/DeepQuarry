@@ -18,9 +18,7 @@ DECLARE_INTERACTIONS(/obj/item/bluespace_crystal, INTERACT_USE(null, PROC_REF(in
 /// Old attack_self.
 /obj/item/bluespace_crystal/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	user.balloon_alert_visible("[user] crushes [src]!", "Crushed [src]!") // Balloon alert
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread()
-	s.set_up(5, 1, get_turf(src))
-	s.start()
+	fx_sparks(get_turf(src), 5)
 	blink_mob(user)
 	consume(src, user)
 	return TRUE
@@ -32,9 +30,7 @@ DECLARE_INTERACTIONS(/obj/item/bluespace_crystal, INTERACT_USE(null, PROC_REF(in
 	if(!..()) // not caught in mid-air
 		balloon_alert_visible("[src] fizzles and disappears upon impact!") // Balloon alert
 		var/turf/T = get_turf(hit_atom)
-		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread()
-		s.set_up(5, 1, T)
-		s.start()
+		fx_sparks(T, 5)
 		if(isliving(hit_atom))
 			blink_mob(hit_atom)
 		dephase_shadekin() // mess with shadekins

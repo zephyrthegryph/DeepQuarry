@@ -81,7 +81,7 @@
 /obj/machinery/power/quantumpad/proc/interaction_boost(mob/user, obj/item/quantum_pad_booster/booster, datum/interaction/interaction)
 	visible_message("[user] violently jams [booster] into the side of [src]. [src] beeps, quietly.", \
 	"You hear the sound of a device being improperly installed in sensitive machinery, then subsequent beeping.", runemessage = "beep!")
-	playsound(src, 'sound/items/rped.ogg', 25, 1)
+	play_sfx(src, SFX_ITEMS_RPED)
 	boosted = TRUE
 	consume(booster, user)
 	return TRUE
@@ -194,7 +194,7 @@
 		to_chat(user, span_warning("This is too unstable a platform for \the [src] to operate on!"))
 		return
 	// ition End
-	playsound(src, 'sound/weapons/flash.ogg', 25, 1)
+	play_sfx(src, SFX_WEAPONS_FLASH, 0.25)
 	teleporting = 1
 
 	om_after(src, teleport_speed, PROC_REF(finish_teleport), user)

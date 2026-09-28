@@ -112,9 +112,9 @@ DECLARE_REF(/obj/machinery/reagent_refinery/grinder, "holdingitems", SPILL_LIST,
 
 	if(holdingitems.len > 0 && grind_items_to_reagents(holdingitems,reagents))
 		//Lazy coder sound design moment. THE SEQUEL
-		playsound(src, 'sound/items/poster_being_created.ogg', 50, 1)
-		playsound(src, 'sound/items/electronic_assembly_emptying.ogg', 50, 1)
-		playsound(src, 'sound/effects/metalscrape2.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_POSTER_BEING_CREATED)
+		play_sfx(src, SFX_ITEMS_ELECTRONIC_ASSEMBLY_EMPTYING)
+		play_sfx(src, SFX_EFFECTS_METALSCRAPE2)
 		if(holdingitems.len == 0)
 			update_icon()
 

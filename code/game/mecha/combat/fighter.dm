@@ -199,7 +199,7 @@ DECLARE_DEFAULT_CHILD(/obj/mecha/combat/fighter, "ion_trail", /datum/effect/effe
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	var/gravity = get_gravity()
 	if (gravity && !landing_gear_raised)
-		playsound(src, 'sound/effects/roll.ogg', 50, 1)
+		play_sfx(src, SFX_EFFECTS_ROLL, 0.5)
 	else if(gravity && ground_capable && occupant)
 		start_hover()
 	else if((!gravity && ground_capable) || !occupant)
@@ -207,7 +207,7 @@ DECLARE_DEFAULT_CHILD(/obj/mecha/combat/fighter, "ion_trail", /datum/effect/effe
 	else if(moved && gravity && !ground_capable)
 		occupant_message("Collision alert! Vehicle not rated for use in gravity!")
 		take_damage(NOGRAV_FIGHTER_DAMAGE, BRUTE)
-		playsound(src, 'sound/effects/grillehit.ogg', 50, 1)
+		play_sfx(src, SFX_EFFECTS_GRILLEHIT)
 
 /obj/mecha/combat/fighter/get_step_delay()
 	. = ..()
@@ -263,7 +263,7 @@ DECLARE_DEFAULT_CHILD(/obj/mecha/combat/fighter, "ion_trail", /datum/effect/effe
 	if(istype(obstacle, /obj) || istype(obstacle, /turf))
 		occupant_message(span_bolddanger(span_large("COLLISION ALERT!")))
 		take_damage(20, BRUTE)
-		playsound(src, 'sound/mecha/fighter/fighter_collision.ogg', 50)
+		play_sfx(src, SFX_MECHA_FIGHTER_FIGHTER_COLLISION)
 
 ////////////// Gunpod //////////////
 

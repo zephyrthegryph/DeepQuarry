@@ -495,7 +495,7 @@
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		if(H.species.trashcan == 1)
-			playsound(src,'sound/items/eatfood.ogg', rand(10,50), 1)
+			play_sfx(src, SFX_ITEMS_EATFOOD, volume = rand(10,50))
 			user.drop_item()
 			H.vore_selected.nom_atom(src)
 			balloon_alert(H, "you can taste the flavor of garbage. Wait what?")
@@ -504,7 +504,7 @@
 	if(isrobot(M))
 		var/mob/living/silicon/robot/R = M
 		if(R.module?.eats_trash) // You can now feed the trash borg yay.
-			playsound(src,'sound/items/eatfood.ogg', rand(10,50), 1)
+			play_sfx(src, SFX_ITEMS_EATFOOD, volume = rand(10,50))
 			user.drop_item()
 			R.vore_selected.nom_atom(src)
 			R.balloon_alert_visible("[user] feeds [R] with [src]!", "you feed [R] \the [src]!")

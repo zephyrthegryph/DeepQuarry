@@ -44,7 +44,7 @@ DECLARE_INTERACTIONS(/obj/structure/droppod_door, \
 	deploying = FALSE
 	deployed = TRUE
 	visible_message(span_danger("The explosive bolts on \the [src] detonate, throwing it open!"))
-	playsound(src, 'sound/effects/bang.ogg', 50, 1, 5)
+	play_sfx(src, SFX_EFFECTS_BANG, extrarange = 5)
 
 	// This is shit but it will do for the sake of testing.
 	for(var/obj/structure/droppod_door/D in orange(1,src))

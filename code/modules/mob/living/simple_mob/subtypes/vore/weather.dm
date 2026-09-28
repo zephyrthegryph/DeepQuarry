@@ -307,7 +307,7 @@
 	s1.start()
 
 	forceMove(target_turf)
-	playsound(target_turf, 'sound/effects/phasein.ogg', 50, 1)
+	play_sfx(target_turf, SFX_EFFECTS_PHASEIN, 0.5)
 	to_chat(src, span_notice("You teleport to \the [target_turf]."))
 
 	target_turf.visible_message(span_warning("\The [src] appears!"))

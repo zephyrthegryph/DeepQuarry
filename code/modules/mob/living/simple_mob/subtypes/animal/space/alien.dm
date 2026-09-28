@@ -118,7 +118,7 @@
 /mob/living/simple_mob/animal/space/alien/on_death(gibbed)
 	..()
 	visible_message("[src] lets out a waning guttural screech, green blood bubbling from its maw...")
-	playsound(src, 'sound/voice/hiss6.ogg', 100, 1)
+	play_sfx(src, SFX_VOICE_HISS6)
 
 
 // === merged from alien_chomp.dm during hard-fork de-suffix (verified no override-order change) ===

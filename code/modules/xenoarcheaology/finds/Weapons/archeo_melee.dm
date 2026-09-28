@@ -76,7 +76,7 @@
 	var/turf/T = get_turf(last_touched())
 	if(istype(T))
 		lightning_strike(T, TRUE)
-	playsound(src, 'sound/goonstation/spooky/creepyshriek.ogg', 100, 1, 75) //It plays VERY far.
+	play_sfx(src, SFX_GOONSTATION_SPOOKY_CREEPYSHRIEK) //It plays VERY far.
 	..()
 
 /obj/item/melee/artifact_blade/cultify()

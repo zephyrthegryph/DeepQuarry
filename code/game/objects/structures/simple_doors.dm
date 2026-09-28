@@ -187,11 +187,11 @@
 	else if(istype(W,/obj/item) && breakable) //not sure, can't not just weapons get passed to this proc?
 		visible_message(span_danger("[user] hits [src] with [W]!"))
 		if(material == get_material_by_name(MAT_RESIN))
-			playsound(src, 'sound/effects/attackblob.ogg', 100, 1)
+			play_sfx(src, SFX_EFFECTS_ATTACKBLOB, 2)
 		else if(material == get_material_by_name(MAT_WOOD) || material == get_material_by_name(MAT_SIFWOOD) || material == get_material_by_name(MAT_HARDWOOD))
-			playsound(src, 'sound/effects/woodcutting.ogg', 100, 1)
+			play_sfx(src, SFX_EFFECTS_WOODCUTTING)
 		else
-			playsound(src, 'sound/weapons/smash.ogg', 50, 1)
+			play_sfx(src, SFX_WEAPONS_SMASH)
 		receive_weapon_hit(W, user)
 	else
 		interaction_hand(user, W, interaction)
@@ -218,11 +218,11 @@
 /obj/structure/simple_door/attack_generic(mob/user, damage, attack_verb)
 	visible_message(span_danger("[user] [attack_verb] the [src]!"))
 	if(material == get_material_by_name(MAT_RESIN))
-		playsound(src, 'sound/effects/attackblob.ogg', 100, 1)
+		play_sfx(src, SFX_EFFECTS_ATTACKBLOB, 2)
 	else if(material == (get_material_by_name(MAT_WOOD) || get_material_by_name(MAT_SIFWOOD) || get_material_by_name(MAT_HARDWOOD)))
-		playsound(src, 'sound/effects/woodcutting.ogg', 100, 1)
+		play_sfx(src, SFX_EFFECTS_WOODCUTTING)
 	else
-		playsound(src, 'sound/weapons/smash.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_SMASH)
 	user.do_attack_animation(src)
 	receive_generic_attack(user, damage)
 

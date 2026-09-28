@@ -52,7 +52,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/spell/shield, "spark_system", /datum/effect/effe
 	if(check_shield_arc(user, bad_arc, damage_source, attacker))
 		user.visible_message(span_danger("\The [user]'s [src] blocks [attack_text]!"))
 		spark_system.start()
-		playsound(src, 'sound/weapons/blade1.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_BLADE1)
 		adjust_instability(2)
 		return 1
 	return 0

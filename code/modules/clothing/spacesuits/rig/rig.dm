@@ -296,7 +296,7 @@ DECLARE_REF(/obj/item/rig, "component_registry", OWNED, null)
 
 	if(!seal_target && !suit_is_deployed())
 		M.visible_message(span_danger("[M]'s suit flashes an error light."),span_danger("Your suit flashes an error light. It can't function properly without being fully deployed."))
-		playsound(src, 'sound/machines/rig/rigerror.ogg', 20, FALSE)
+		play_sfx(src, SFX_MACHINES_RIG_RIGERROR)
 		seal_finish(M, seal_target, booting_L, booting_R, TRUE)
 		return 0
 
@@ -326,7 +326,7 @@ DECLARE_REF(/obj/item/rig, "component_registry", OWNED, null)
 	var/mob/living/carbon/human/M = task.actor
 	if(M)
 		to_chat(M, span_warning("You must remain still while the suit is adjusting the components."))
-		playsound(src, 'sound/machines/rig/rigerror.ogg', 20, FALSE)
+		play_sfx(src, SFX_MACHINES_RIG_RIGERROR)
 	seal_finish(M, task.seal_target, task.booting_L, task.booting_R, TRUE)
 
 /obj/item/rig/proc/seal_stage_done(datum/om/task/timed/rig_seal/task)
@@ -391,7 +391,7 @@ DECLARE_REF(/obj/item/rig, "component_registry", OWNED, null)
 	else
 		piece.set_armor_value("bio", src.get_armor().value("bio"))
 	piece.worn_protection_changed()
-	playsound(src,'sound/machines/rig/rigservo.ogg', 10, FALSE)
+	play_sfx(src, SFX_MACHINES_RIG_RIGSERVO)
 
 /obj/item/rig/proc/seal_finish(mob/living/carbon/human/M, seal_target, atom/movable/screen/rig_booting/booting_L, atom/movable/screen/rig_booting/booting_R, failed_to_seal)
 	if(!failed_to_seal)
@@ -422,7 +422,7 @@ DECLARE_REF(/obj/item/rig, "component_registry", OWNED, null)
 		else
 			minihud = new (M.hud_used, src)
 	to_chat(M, span_boldnotice("Your entire suit [canremove ? "loosens as the components relax" : "tightens around you as the components lock into place"]."))
-	playsound(src, 'sound/machines/rig/rigstarted.ogg', 10, FALSE)
+	play_sfx(src, SFX_MACHINES_RIG_RIGSTARTED)
 	M.client?.screen -= booting_L
 	qdel(booting_L)
 	booting_R.icon_state = "boot_done"
@@ -551,7 +551,7 @@ DECLARE_REF(/obj/item/rig, "component_registry", OWNED, null)
 
 	if(fail_msg)
 		to_chat(user, fail_msg)
-		playsound(src, 'sound/machines/rig/rigerror.ogg', 20, FALSE)
+		play_sfx(src, SFX_MACHINES_RIG_RIGERROR)
 		return 0
 
 	// This is largely for cancelling stealth and whatever.
@@ -721,7 +721,7 @@ DECLARE_REF(/obj/item/rig, "component_registry", OWNED, null)
 				if(istype(holder))
 					if(use_obj && check_slot == use_obj)
 						balloon_alert(H, "your [use_obj.name] [use_obj.gender == PLURAL ? "retract" : "retracts"] swiftly.")
-						playsound(src, 'sound/machines/rig/rigservo.ogg', 10, FALSE)
+						play_sfx(src, SFX_MACHINES_RIG_RIGSERVO)
 						use_obj.master_rig_handle = null   // intentional retract: silence the dropped() safety net
 						use_obj.canremove = TRUE
 						holder.drop_from_inventory(use_obj)
@@ -742,7 +742,7 @@ DECLARE_REF(/obj/item/rig, "component_registry", OWNED, null)
 			else
 				use_obj.master_rig_handle = om_handle(src)   // the piece now knows its controller, so it can free itself
 				balloon_alert(H, "your [use_obj.name] [use_obj.gender == PLURAL ? "deploy" : "deploys"] swiftly.")
-				playsound(src, 'sound/machines/rig/rigservo.ogg', 10, FALSE)
+				play_sfx(src, SFX_MACHINES_RIG_RIGSERVO)
 
 	if(piece == "helmet" && helmet?.light_system == STATIC_LIGHT)
 		helmet.update_light()

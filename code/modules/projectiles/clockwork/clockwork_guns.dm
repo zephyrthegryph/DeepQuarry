@@ -31,10 +31,10 @@
 		return
 	recharging = 1
 	update_icon()
-	playsound(src,'sound/weapons/clockwork/clockwork_cock.ogg',25,1)
+	play_sfx(src, SFX_WEAPONS_CLOCKWORK_CLOCKWORK_COCK)
 	user.visible_message(span_notice("[user] pulls the charging handle on \the [src] and it whirrs to life!"), \
 						span_notice("You pull the charging handle on \the [src] and begin the reloading sequence."))
-	playsound(src,'sound/weapons/clockwork/cwc_rifle_fabricate.ogg',25,5)
+	play_sfx(src, SFX_WEAPONS_CLOCKWORK_CWC_RIFLE_FABRICATE)
 	om_task_timed(user, 5 SECONDS, src, src, PROC_REF(recharge_cycle), list(user), on_fail = PROC_REF(recharge_end), fail_args = list(user))
 
 /// One charging cycle every 5 seconds (a timed action each) until full.

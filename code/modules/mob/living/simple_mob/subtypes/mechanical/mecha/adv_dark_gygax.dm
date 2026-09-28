@@ -135,7 +135,7 @@ DECLARE_REF(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced, 
 
 	visible_message(span_warning("\The [src] creates \an [energy_ball] around itself!"))
 
-	playsound(src, 'sound/effects/lightning_chargeup.ogg', 100, 1, extrarange = 30)
+	play_sfx(src, SFX_EFFECTS_LIGHTNING_CHARGEUP)
 
 	// Shock nearby things that aren't ourselves.
 	energy_ball_pulse(1, old_shock_resist)
@@ -170,7 +170,7 @@ DECLARE_REF(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced, 
 
 	// Shoot a tesla bolt, and flashes people who are looking at the mecha without sufficent eye protection.
 	visible_message(span_warning("\The [energy_ball] explodes in a flash of light, sending a shock everywhere!"))
-	playsound(src, 'sound/effects/lightningbolt.ogg', 100, 1, extrarange = 30)
+	play_sfx(src, SFX_EFFECTS_LIGHTNINGBOLT, extrarange = 30)
 	tesla_zap(src.loc, 5, ELECTRIC_ZAP_POWER, FALSE, current_jumps = 1)
 	for(var/mob/living/L in viewers(src))
 		if(L == src)
@@ -197,7 +197,7 @@ DECLARE_REF(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced, 
 	// Telegraph our next move.
 	Beam(target, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)
 	visible_message(span_warning("\The [src] deploys a missile rack!"))
-	playsound(src, 'sound/effects/turret/move1.wav', 50, 1)
+	play_sfx(src, SFX_EFFECTS_TURRET_MOVE1)
 	rocket_volley(target, /obj/item/projectile/arc/explosive_rocket, 3, "\The [src] retracts the missile rack.")
 
 // Arcing rocket projectile that produces a weak explosion when it lands.
@@ -213,7 +213,7 @@ DECLARE_REF(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced, 
 /mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/proc/launch_microsingularity(atom/target)
 	var/turf/T = get_turf(target)
 	visible_message(span_warning("\The [src] fires an energetic sphere into the air!"))
-	playsound(src, 'sound/weapons/Laser.ogg', 50, 1)
+	play_sfx(src, SFX_WEAPONS_LASER)
 	face_atom(T)
 	var/obj/item/projectile/arc/microsingulo/sphere = new(loc)
 	sphere.old_style_target(T, src)

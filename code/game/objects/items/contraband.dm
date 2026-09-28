@@ -89,7 +89,7 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/powder, INTERACT_ITEM(null, PR
 		return FALSE
 
 	user.visible_message(span_warning("[user] snorts [src] with [W]!"))
-	playsound(loc, 'sound/effects/snort.ogg', 50, 1)
+	play_sfx(loc, SFX_EFFECTS_SNORT)
 
 	if(reagents)
 		reagents.trans_to_mob(user, amount_per_transfer_from_this, CHEM_BLOOD)

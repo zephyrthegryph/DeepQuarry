@@ -42,7 +42,7 @@ REGISTRY_MEMBERSHIP(/obj/item/radio/beacon, REGISTRY_BEACONS)
 	if(user)
 		to_chat(user, span_notice("Locked In"))
 		new /obj/machinery/power/singularity_beacon/syndicate( user.loc )
-		playsound(src, 'sound/effects/pop.ogg', 100, 1, 1)
+		play_sfx(src, SFX_EFFECTS_POP, 2, vary = TRUE, extrarange = 1)
 		consume(src, user)
 	return
 

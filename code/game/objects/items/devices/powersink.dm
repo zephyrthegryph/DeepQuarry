@@ -112,7 +112,7 @@ DECLARE_INTERACTIONS(/obj/item/powersink, INTERACT_HAND(null, PROC_REF(interacti
 	pwr_drain()
 	power_drained -= min(dissipation_rate, power_drained)
 	if(power_drained > max_power * 0.95)
-		playsound(src, 'sound/effects/screech.ogg', 100, 1, 1)
+		play_sfx(src, SFX_EFFECTS_SCREECH)
 	if(power_drained >= max_power)
 		explosion(src.loc, 3,6,9,12)
 		qdel(src)

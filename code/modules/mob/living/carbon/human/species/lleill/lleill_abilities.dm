@@ -280,7 +280,7 @@
 	var/T = get_turf(src)
 	spk.set_up(5, 0, src)
 	spk.attach(src)
-	playsound(T, "sparks", 50, 1)
+	play_sfx(T, SFX_SPARKS)
 	anim(T,src,'icons/mob/mob.dmi',,"phaseout",,src.dir)
 
 	var/S = get_turf(R)
@@ -288,8 +288,8 @@
 	species.lleill_energy -= energy_cost_tele
 
 	spk.start()
-	playsound(S, 'sound/effects/phasein.ogg', 25, 1)
-	playsound(S, 'sound/effects/sparks2.ogg', 50, 1)
+	play_sfx(S, SFX_EFFECTS_PHASEIN, 0.25)
+	play_sfx(S, SFX_EFFECTS_SPARKS2)
 	anim(S,src,'icons/mob/mob.dmi',,"phasein",,src.dir)
 	spk.set_up(5, 0, src)
 	spk.attach(src)

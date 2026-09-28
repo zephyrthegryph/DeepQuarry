@@ -5019,7 +5019,7 @@
 
 /datum/reagent/nutriment/magicdust/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
-	playsound(M, 'sound/items/hooh.ogg', 50, 1, -1)
+	play_sfx(M, SFX_ITEMS_HOOH, extrarange = -1)
 	if(prob(5))
 		to_chat(M, span_warning("You feel like you've been gnomed..."))
 

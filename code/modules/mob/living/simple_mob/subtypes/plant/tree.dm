@@ -47,7 +47,7 @@
 
 /mob/living/simple_mob/animal/space/tree/on_death(gibbed)
 	..()
-	playsound(src, 'sound/effects/woodcutting.ogg', 100, 1)
+	play_sfx(src, SFX_EFFECTS_WOODCUTTING)
 	new /obj/item/stack/material/wood(loc)
 
 /datum/decl/mob_organ_names/tree

@@ -107,7 +107,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 
 /mob/living/simple_mob/metroid/juvenile/baby/Initialize(mapload)
 	. = ..()
-	playsound(src, 'sound/metroid/metroidsee.ogg', 100, 1)
+	play_sfx(src, SFX_METROID_METROIDSEE)
 
 
 
@@ -171,7 +171,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 
 /mob/living/simple_mob/metroid/juvenile/super/Initialize(mapload)
 	. = ..()
-	playsound(src, 'sound/metroid/metroidsee.ogg', 100, 1)
+	play_sfx(src, SFX_METROID_METROIDSEE)
 
 /mob/living/simple_mob/metroid/juvenile/super/on_death(gibbed)
 	..()
@@ -214,7 +214,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 
 /mob/living/simple_mob/metroid/juvenile/alpha/Initialize(mapload)
 	. = ..()
-	playsound(src, 'sound/metroid/metroidsee.ogg', 100, 1)
+	play_sfx(src, SFX_METROID_METROIDSEE)
 
 /mob/living/simple_mob/metroid/juvenile/alpha/on_death(gibbed)
 	..()
@@ -281,7 +281,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 
 /mob/living/simple_mob/metroid/juvenile/gamma/Initialize(mapload)
 	. = ..()
-	playsound(src, 'sound/metroid/metroidgamma.ogg', 100, 1)
+	play_sfx(src, SFX_METROID_METROIDGAMMA)
 
 /mob/living/simple_mob/metroid/juvenile/gamma/on_death(gibbed)
 	..()
@@ -369,7 +369,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 
 /mob/living/simple_mob/metroid/juvenile/zeta/Initialize(mapload)
 	. = ..()
-	playsound(src, 'sound/metroid/metroidzeta.ogg', 100, 1)
+	play_sfx(src, SFX_METROID_METROIDZETA)
 
 /mob/living/simple_mob/metroid/juvenile/zeta/on_death(gibbed)
 	..()
@@ -458,7 +458,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 
 /mob/living/simple_mob/metroid/juvenile/omega/Initialize(mapload)
 	. = ..()
-	playsound(src, 'sound/metroid/metroidomega.ogg', 100, 1)
+	play_sfx(src, SFX_METROID_METROIDOMEGA)
 
 /mob/living/simple_mob/metroid/juvenile/omega/on_death(gibbed)
 	..()
@@ -545,7 +545,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 
 /mob/living/simple_mob/metroid/juvenile/queen/Initialize(mapload)
 	. = ..()
-	playsound(src, 'sound/metroid/metroidqueen.ogg', 100, 1)
+	play_sfx(src, SFX_METROID_METROIDQUEEN)
 	GLOB.queen_amount++
 
 /mob/living/simple_mob/metroid/juvenile/queen/on_death(gibbed)

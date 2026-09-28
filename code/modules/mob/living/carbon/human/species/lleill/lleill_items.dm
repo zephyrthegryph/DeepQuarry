@@ -405,9 +405,7 @@ DECLARE_INTERACTIONS(/obj/item/glamour_unstable, \
 	if(!istype(M))
 		return TRUE
 	user.visible_message(span_warning("[user] triggers \the [src]!"), span_danger("You trigger \the [src]!"))
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread()
-	s.set_up(5, 1, get_turf(src))
-	s.start()
+	fx_sparks(get_turf(src), 5)
 	var/effect_choice = rand(1,4)
 	switch(effect_choice)
 		if(1) //teleport

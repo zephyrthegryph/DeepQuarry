@@ -122,7 +122,7 @@ DECLARE_INTERACTIONS(/obj/item/eftpos, \
 					if(transaction_amount <= 0 || transaction_amount > EFTPOS_MAX_TRANSACTION)
 						to_chat(user, "[icon2html(src, user.client)]" + span_warning("Invalid transaction amount."))
 					else if(transaction_amount <= E.worth)
-						playsound(src, 'sound/machines/chime.ogg', 50, 1)
+						play_sfx(src, SFX_MACHINES_CHIME)
 						src.visible_message("[icon2html(src,viewers(src))] \The [src] chimes.")
 						transaction_paid = 1
 
@@ -276,7 +276,7 @@ DECLARE_INTERACTIONS(/obj/item/eftpos, \
 					if(D)
 						if(!D.suspended)
 							if(charge_amount <= D.money)
-								playsound(src, 'sound/machines/chime.ogg', 50, 1)
+								play_sfx(src, SFX_MACHINES_CHIME)
 								src.visible_message("[icon2html(src,viewers(src))] \The [src] chimes.")
 								transaction_paid = 1
 
@@ -301,7 +301,7 @@ DECLARE_INTERACTIONS(/obj/item/eftpos, \
 				transaction_paid = 0
 			else
 				usr.visible_message(span_info("\The [usr] swipes a card through \the [src]."))
-				playsound(src, 'sound/machines/chime.ogg', 50, 1)
+				play_sfx(src, SFX_MACHINES_CHIME)
 				src.visible_message("[icon2html(src,viewers(src))] \The [src] chimes.")
 				transaction_paid = 1
 

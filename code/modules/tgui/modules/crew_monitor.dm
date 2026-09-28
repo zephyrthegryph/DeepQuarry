@@ -12,7 +12,7 @@
 		return TRUE
 
 	if(action && !issilicon(ui.user))
-		playsound(tgui_host(), "terminal_type", 50, 1)
+		play_sfx(tgui_host(), SFX_TERMINAL_TYPE)
 
 	var/turf/T = get_turf(ui.user)
 	if(!T || !(T.z in using_map.player_levels))

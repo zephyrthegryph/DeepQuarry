@@ -10,7 +10,7 @@
 	om_task_periodic(src, PERIODIC_SLOW)
 	implode_at = world.time + 10 SECONDS
 	update_icon()
-	playsound(src, 'sound/weapons/wave.ogg', 100)
+	play_sfx(src, SFX_WEAPONS_WAVE, volume = 100)
 
 /obj/item/grenade/supermatter/update_icon()
 	cut_overlays()
@@ -23,7 +23,7 @@
 			var/mob/M = loc
 			M.drop_from_inventory(src)
 		forceMove(get_turf(src))
-	playsound(src, 'sound/effects/supermatter.ogg', 100)
+	play_sfx(src, SFX_EFFECTS_SUPERMATTER, 2, vary = FALSE)
 	supermatter_pull(src, world.view, STAGE_THREE)
 	if(world.time > implode_at)
 		explosion(loc, 1, 3, 5, 4)

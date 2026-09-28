@@ -26,5 +26,5 @@
 	else
 		core.give_energy(amount)
 		adjust_instability(50)
-	playsound(src, 'sound/effects/supermatter.ogg', 75, 1)
+	play_sfx(src, SFX_EFFECTS_SUPERMATTER, 1.5)
 	consume(src, user)

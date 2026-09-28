@@ -311,7 +311,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 	if(active)
 		return FALSE
 
-	playsound(src, 'sound/weapons/flash.ogg', 100, 0)
+	play_sfx(src, SFX_WEAPONS_FLASH, vary = FALSE)
 	active = TRUE
 	MACHINE_WAKE(src)
 	update_icon()
@@ -320,7 +320,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 /obj/machinery/pointdefense/proc/Deactivate()
 	if(!active)
 		return FALSE
-	playsound(src, 'sound/machines/apc_nopower.ogg', 50, 0)
+	play_sfx(src, SFX_MACHINES_APC_NOPOWER)
 	active = FALSE
 	MACHINE_SLEEP(src)
 	update_icon()

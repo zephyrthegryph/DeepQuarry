@@ -41,9 +41,7 @@
 		if(isliving(user))
 			var/mob/living/L = user
 			if(L.electrocute_act(17, src))
-				var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-				s.set_up(5, 1, src)
-				s.start()
+				fx_sparks(src, 5)
 				if(user.has_status(EFFECT_STUNNED))
 					return 2
 
@@ -227,7 +225,7 @@
 
 /obj/structure/closet/crate/secure/emag_act(remaining_charges, mob/user)
 	if(!broken)
-		playsound(src, "sparks", 60, 1)
+		play_sfx(src, SFX_SPARKS, 1.2)
 		locked = 0
 		broken = 1
 		to_chat(user, span_notice("You unlock \the [src]."))
@@ -242,7 +240,7 @@
 		if(!locked)
 			locked = TRUE
 		else
-			playsound(src, 'sound/effects/sparks4.ogg', 75, 1)
+			play_sfx(src, SFX_EFFECTS_SPARKS4)
 			locked = FALSE
 	if(!opened && prob(20/severity))
 		if(!locked)

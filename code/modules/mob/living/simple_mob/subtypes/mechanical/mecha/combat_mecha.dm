@@ -21,7 +21,7 @@
 		var/mob/living/L = A
 		if(L.mob_size <= MOB_MEDIUM)
 			visible_message(span_danger("\The [src] sends \the [L] flying with their mechanized fist!"))
-			playsound(src, "punch", 50, 1)
+			play_sfx(src, SFX_PUNCH)
 			L.status_at_least(EFFECT_WEAKENED, weaken_amount)
 			var/throw_dir = get_dir(src, L)
 			var/throw_dist = L.incapacitated(INCAPACITATION_DISABLED) ? 4 : 1
@@ -29,4 +29,4 @@
 		else
 			to_chat(L, span_warning("\The [src] punches you with incredible force, but you remain in place."))
 			visible_message(span_danger("\The [src] slams it's mechanized fist into \the [L] with incredible force, to no visible effect!"))
-			playsound(src, "punch", 50, 1)
+			play_sfx(src, SFX_PUNCH)

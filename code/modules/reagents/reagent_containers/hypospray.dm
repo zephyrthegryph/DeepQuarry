@@ -119,7 +119,7 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/hypospray/vial, \
 			loaded_vial = null
 			balloon_alert(user, "vial removed from \the [src]")
 			update_icon()
-			playsound(src, 'sound/weapons/flipblade.ogg', 50, 1)
+			play_sfx(src, SFX_WEAPONS_FLIPBLADE)
 			return TRUE
 		return FALSE
 	else
@@ -145,7 +145,7 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/hypospray/vial, \
 	loaded_vial.reagents.trans_to_holder(reagents,volume)
 	balloon_alert_visible("[user] has loaded [W] into \the [src].", "loaded [W] into \the [src].")
 	update_icon()
-	playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+	play_sfx(src, SFX_WEAPONS_EMPTY)
 
 /// Old attackby.
 /obj/item/reagent_containers/hypospray/vial/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)

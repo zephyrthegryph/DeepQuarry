@@ -57,7 +57,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 	return ..()
 
 /obj/item/flame/match/proc/light(mob/user)
-	playsound(src, 'sound/items/cigs_lighters/matchstick_lit.ogg', 25, 0, -1)
+	play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_MATCHSTICK_LIT)
 	lit = 1
 	injury_kind = INJURY_BURN
 	icon_state = "match_lit"
@@ -165,7 +165,7 @@ DECLARE_REAGENTS(/obj/item/clothing/mask/smokable, "chem_volume", null)
 /obj/item/clothing/mask/smokable/proc/light(flavor_text = "[usr] lights the [name].")
 	if(!src.lit)
 		src.lit = 1
-		playsound(src, 'sound/items/cigs_lighters/cig_light.ogg', 75, 1, -1)
+		play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_CIG_LIGHT)
 		injury_kind = INJURY_BURN
 		if(reagents.get_reagent_amount(REAGENT_ID_PHORON)) // the phoron explodes when exposed to fire
 			var/datum/effect/effect/system/reagents_explosion/e = new()
@@ -190,7 +190,7 @@ DECLARE_REAGENTS(/obj/item/clothing/mask/smokable, "chem_volume", null)
 /obj/item/clothing/mask/smokable/proc/die(nomessage = 0)
 	var/turf/T = get_turf(src)
 	set_light(0)
-	playsound(src, 'sound/items/cigs_lighters/cig_snuff.ogg', 50, 1)
+	play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_CIG_SNUFF)
 	om_task_periodic_stop(src)
 	if (type_butt)
 		var/obj/item/butt = new type_butt(T)
@@ -215,7 +215,7 @@ DECLARE_REAGENTS(/obj/item/clothing/mask/smokable, "chem_volume", null)
 			var/mob/living/M = loc
 			if (!nomessage)
 				to_chat(M, span_notice("Your [name] goes out, and you empty the ash."))
-				playsound(src, 'sound/items/cigs_lighters/cig_snuff.ogg', 50, 1)
+				play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_CIG_SNUFF)
 			lit = 0
 			icon_state = initial(icon_state)
 			item_state = initial(item_state)
@@ -237,7 +237,7 @@ DECLARE_REAGENTS(/obj/item/clothing/mask/smokable, "chem_volume", null)
 			to_chat(H, span_warning("\The [blocked] is in the way!"))
 			return ITEM_INTERACT_FAILURE
 		to_chat(H, span_notice("You take a drag on your [name]."))
-		playsound(src, 'sound/items/cigs_lighters/inhale.ogg', 50, 0, -1)
+		play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_INHALE)
 		smoke(5)
 		return ITEM_INTERACT_SUCCESS
 	if(istype(M) && M.on_fire)
@@ -336,7 +336,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/cigarette, \
 	if(lit == 1)
 		if(interaction.stance == I_HURT)
 			user.visible_message(span_notice("[user] drops and treads on the lit [src], putting it out instantly."))
-			playsound(src, 'sound/items/cigs_lighters/cig_snuff.ogg', 50, 1)
+			play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_CIG_SNUFF)
 			die(1)
 		else
 			user.visible_message(span_notice("[user] puts out \the [src]."))
@@ -456,7 +456,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/pipe, \
 	if(lit == 1)
 		if(interaction.stance == I_HURT)
 			user.visible_message(span_notice("[user] empties the lit [src] on the floor!."))
-			playsound(src, 'sound/items/cigs_lighters/cig_snuff.ogg', 50, 1)
+			play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_CIG_SNUFF)
 			die(1)
 		else
 			user.visible_message(span_notice("[user] puts out \the [src]."))

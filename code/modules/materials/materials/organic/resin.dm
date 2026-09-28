@@ -29,13 +29,13 @@
 	var/mob/living/carbon/M = L
 	if(istype(M) && ((locate_in_list(M.internal_organ_list(), /obj/item/organ/internal/xenos/hivenode)) || (locate_in_list(M.internal_organ_list(), /obj/item/organ/internal/xenos/resinspinner/replicant))))
 		to_chat(M, "\The [W] shudders under your touch, starting to become porous.")
-		playsound(W, 'sound/effects/attackblob.ogg', 50, 1)
+		play_sfx(W, SFX_EFFECTS_ATTACKBLOB)
 		om_task_timed(L, 5 SECONDS, W, null, GLOBAL_PROC_REF(resin_wall_dissolve), list(W))
 		return TRUE
 	return FALSE
 
 /proc/resin_wall_dissolve(turf/simulated/wall/W)
-	playsound(W, 'sound/effects/attackblob.ogg', 100, 1)
+	play_sfx(W, SFX_EFFECTS_ATTACKBLOB, 2)
 	W.dismantle_wall()
 
 /datum/material/resin/generate_recipes()

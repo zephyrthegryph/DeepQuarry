@@ -97,7 +97,7 @@ DECLARE_INTERACTIONS(/obj/item/daredevice, \
 /// Old attack_self.
 /obj/item/daredevice/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/living/capsuleowner = user
-	playsound(src, 'sound/effects/splat.ogg', 30, 1)
+	play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
 	var/item = pick(winitems)
 	om_after(src, 10 SECONDS, PROC_REF(capsule_result), capsuleowner, item)
 	return TRUE
@@ -122,7 +122,7 @@ DECLARE_INTERACTIONS(/obj/item/daredevice, \
 	om_after(src, 10 SECONDS, PROC_REF(capsule_reset))
 
 /obj/item/daredevice/proc/capsule_reset()
-	playsound(src.loc, 'sound/machines/slotmachine.ogg', 25, 1)
+	play_sfx(src.loc, SFX_MACHINES_SLOTMACHINE)
 
 //items literally just made for the above item spawner
 

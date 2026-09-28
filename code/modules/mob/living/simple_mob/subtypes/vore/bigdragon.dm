@@ -736,7 +736,7 @@ I think I covered everything.
 			if(!gentle)
 				M.injure(INJURY_BLUNT, 20, source = src)
 			to_chat(M, span_userdanger("You're thrown back by [src]!"))
-			playsound(src, get_sfx("punch"), 50, 1)
+			playsound(src, get_sfx(SFX_PUNCH), 50, 1)
 		AM.throw_at(throwtarget, maxthrow, 3, src)
 
 /mob/living/simple_mob/vore/bigdragon/proc/chargestart(atom/A)

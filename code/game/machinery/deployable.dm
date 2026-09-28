@@ -49,9 +49,7 @@ DECLARE_APPEARANCE(/obj/machinery/deployable/barrier, "locked", list("0" = list(
 				to_chat(user, "Barrier lock toggled off.")
 				return TRUE
 		else
-			var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-			s.set_up(2, 1, src)
-			s.start()
+			fx_sparks(src, 2)
 			visible_message(span_warning("BZZzZZzZZzZT"))
 			return TRUE
 	return TRUE
@@ -71,7 +69,7 @@ DECLARE_APPEARANCE(/obj/machinery/deployable/barrier, "locked", list("0" = list(
 			receive_weapon_hit(W, user, W.force * 0.75, INJURY_BURN)
 		if(BRUTE)
 			receive_weapon_hit(W, user, W.force * 0.5)
-	playsound(src, 'sound/weapons/smash.ogg', 50, 1)
+	play_sfx(src, SFX_WEAPONS_SMASH)
 	return FALSE
 
 /obj/machinery/deployable/barrier/wrench_act(mob/user, obj/item/tool)
@@ -110,9 +108,7 @@ DECLARE_APPEARANCE(/obj/machinery/deployable/barrier, "locked", list("0" = list(
 /*	var/obj/item/stack/rods/ =*/
 	new /obj/item/stack/rods(Tsec)
 
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(3, 1, src)
-	s.start()
+	fx_sparks(src, 3)
 
 	explosion(src.loc,-1,-1,0)
 	if(delete_after && !QDELETED(src))
@@ -124,17 +120,13 @@ DECLARE_APPEARANCE(/obj/machinery/deployable/barrier, "locked", list("0" = list(
 		req_access = null
 		req_one_access = null
 		to_chat(user, "You break the ID authentication lock on \the [src].")
-		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-		s.set_up(2, 1, src)
-		s.start()
+		fx_sparks(src, 2)
 		visible_message(span_warning("BZZzZZzZZzZT"))
 		return 1
 	else if(emagged == 1)
 		emagged = 2
 		to_chat(user, "You short out the anchoring mechanism on \the [src].")
-		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-		s.set_up(2, 1, src)
-		s.start()
+		fx_sparks(src, 2)
 		visible_message(span_warning("BZZzZZzZZzZT"))
 		return 1
 

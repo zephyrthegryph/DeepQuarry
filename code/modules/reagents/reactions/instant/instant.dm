@@ -784,9 +784,7 @@
 
 /datum/decl/chemical_reaction/instant/flash_powder/on_reaction(datum/reagents/holder, created_volume)
 	var/location = get_turf(holder.my_atom)
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(2, 1, location)
-	s.start()
+	fx_sparks(location, 2)
 	for(var/mob/living/carbon/M in viewers(world.view, location))
 		switch(get_dist(M, location))
 			if(0 to 3)
@@ -876,7 +874,7 @@
 	var/datum/effect/effect/system/smoke_spread/chem/S = new /datum/effect/effect/system/smoke_spread/chem
 	S.attach(location)
 	S.set_up(holder, created_volume, 0, location)
-	playsound(location, 'sound/effects/smoke.ogg', 50, 1, -3)
+	play_sfx(location, SFX_EFFECTS_SMOKE)
 	S.start()
 	if(!isliving(holder.my_atom)) //No more powergaming by creating a tiny amount of this
 		holder.clear_reagents()
@@ -1705,7 +1703,7 @@
 
 /datum/decl/chemical_reaction/instant/dontcrossthebeams/on_reaction(datum/reagents/holder, created_volume)
 	var/location = get_turf(holder.my_atom)
-	playsound(location, 'sound/weapons/gauss_shoot.ogg', 50, 1)
+	play_sfx(location, SFX_WEAPONS_GAUSS_SHOOT)
 	var/datum/effect/effect/system/grav_pull/s = new /datum/effect/effect/system/grav_pull
 	s.set_up(3, 3, location)
 	s.start()

@@ -19,7 +19,7 @@
 	if(is_below_sound_pressure(T))
 		visible_message(span_notice("Whump."))
 		return
-	playsound(src, 'sound/effects/bang.ogg', 75, 1, -3)
+	play_sfx(src, SFX_EFFECTS_BANG, 1.5, extrarange = -3)
 	if(istype(T))
 		for(var/mob/living/L in orange(T, radius))
 			if(ishuman(L))

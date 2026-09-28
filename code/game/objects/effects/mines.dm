@@ -137,10 +137,8 @@ DECLARE_APPEARANCE(/obj/effect/mine, null, list(APPEARANCE_ANY = list(APPEARANCE
 /obj/effect/mine/dnascramble/explode(mob/living/M)
 	if(triggered) // Prevents circular mine explosions from two mines detonating eachother
 		return
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread()
 	triggered = TRUE
-	s.set_up(3, 1, src)
-	s.start()
+	fx_sparks(src, 3)
 	if(istype(M))
 		M.add_radiation(50)
 		randmutb(M)
@@ -157,9 +155,7 @@ DECLARE_APPEARANCE(/obj/effect/mine, null, list(APPEARANCE_ANY = list(APPEARANCE
 	if(triggered) // Prevents circular mine explosions from two mines detonating eachother
 		return
 	triggered = TRUE
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread()
-	s.set_up(3, 1, src)
-	s.start()
+	fx_sparks(src, 3)
 	if(istype(M))
 		M.status_at_least(EFFECT_STUNNED, 30)
 	visible_message("\The [src.name] flashes violently before disintegrating!")
@@ -201,10 +197,8 @@ DECLARE_APPEARANCE(/obj/effect/mine, null, list(APPEARANCE_ANY = list(APPEARANCE
 /obj/effect/mine/kick/explode(mob/living/M)
 	if(triggered) // Prevents circular mine explosions from two mines detonating eachother
 		return
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread()
 	triggered = TRUE
-	s.set_up(3, 1, src)
-	s.start()
+	fx_sparks(src, 3)
 	if(istype(M, /obj/mecha))
 		var/obj/mecha/E = M
 		M = E?.slot_item(MECHA_SLOT_PILOT)
@@ -222,10 +216,8 @@ DECLARE_APPEARANCE(/obj/effect/mine, null, list(APPEARANCE_ANY = list(APPEARANCE
 /obj/effect/mine/frag/explode(mob/living/M)
 	if(triggered) // Prevents circular mine explosions from two mines detonating eachother
 		return
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread()
 	triggered = TRUE
-	s.set_up(3, 1, src)
-	s.start()
+	fx_sparks(src, 3)
 	var/turf/O = get_turf(src)
 	if(!O)
 		return
@@ -256,9 +248,7 @@ DECLARE_APPEARANCE(/obj/effect/mine, null, list(APPEARANCE_ANY = list(APPEARANCE
 	if(triggered) // Prevents circular mine explosions from two mines detonating eachother
 		return
 	triggered = TRUE
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread()
-	s.set_up(3, 1, src)
-	s.start()
+	fx_sparks(src, 3)
 	visible_message("\The [src.name] flashes violently before disintegrating!")
 	GLOB.motiontracker_service.ping(src,100)
 	empulse(loc, 2, 4, 7, 10, 1) // As strong as an EMP grenade
@@ -274,9 +264,7 @@ DECLARE_APPEARANCE(/obj/effect/mine, null, list(APPEARANCE_ANY = list(APPEARANCE
 	if(triggered) // Prevents circular mine explosions from two mines detonating eachother
 		return
 	triggered = TRUE
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread()
-	s.set_up(3, 1, src)
-	s.start()
+	fx_sparks(src, 3)
 	if(istype(M))
 		M.adjust_fire_stacks(5)
 		M.fire_act()
@@ -291,9 +279,7 @@ DECLARE_APPEARANCE(/obj/effect/mine, null, list(APPEARANCE_ANY = list(APPEARANCE
 	if(triggered) // Prevents circular mine explosions from two mines detonating eachother
 		return
 	triggered = TRUE
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread()
-	s.set_up(3, 1, src)
-	s.start()
+	fx_sparks(src, 3)
 	if(istype(M))
 		for(var/obj/item/content_item in contents_of(M))
 			M.drop_from_inventory(content_item)
@@ -353,7 +339,7 @@ DECLARE_INTERACTIONS(/obj/item/mine, \
 	return TRUE
 
 /obj/item/mine/proc/attack_self_timed_done(mob/user)
-	playsound(src, 'sound/weapons/armbomb.ogg', 75, 1, -3)
+	play_sfx(src, SFX_WEAPONS_ARMBOMB)
 	prime(user)
 
 /obj/item/mine/proc/attack_self_timed_failed(mob/user)
@@ -476,10 +462,8 @@ DECLARE_INTERACTIONS(/obj/item/mine, \
 /obj/effect/mine/lasertag/explode(mob/living/M)
 	if(triggered) // Prevents circular mine explosions from two mines detonating eachother
 		return
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread()
 	triggered = 1
-	s.set_up(3, 1, src)
-	s.start()
+	fx_sparks(src, 3)
 	var/turf/O = get_turf(src)
 	if(!O)
 		return

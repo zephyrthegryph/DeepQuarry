@@ -118,7 +118,7 @@
 
 /// One pump every second (a timed action each) until full.
 /obj/item/gun/energy/locked/frontier/proc/pump_cycle(mob/user)
-	playsound(src,'sound/items/change_drill.ogg',25,1)
+	play_sfx(src, SFX_ITEMS_CHANGE_DRILL)
 	user.hud_used?.update_ammo_hud(user, src)
 	if(power_supply.give(phase_power) < phase_power)
 		pump_end(user)

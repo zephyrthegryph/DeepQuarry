@@ -40,7 +40,7 @@
 	if(!SK)
 		return FALSE
 	SK.shadekin_adjust_energy(-50)
-	playsound(L, 'sound/effects/EMPulse.ogg', 75, 1)
+	play_sfx(L, SFX_EFFECTS_EMPULSE, 0.75)
 	apply_body_effect(/datum/body_effect/shadekin/heal_boop, 1 MINUTE)
 	actor.visible_message(span_notice("\The [actor] gently places a hand on \the [src]..."))
 	actor.face_atom(src)

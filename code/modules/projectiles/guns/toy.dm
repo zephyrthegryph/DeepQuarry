@@ -262,7 +262,7 @@
 		loaded.Insert(1, D)
 		success = 1
 	if(success)
-		playsound(src, 'sound/machines/hiss.ogg', 50, 0)
+		play_sfx(src, SFX_MACHINES_HISS)
 		to_chat(user, "The [src] vacuums in the darts!")
 	else
 		to_chat(user, "No Donk-Soft brand foam darts detected. Aborting.")

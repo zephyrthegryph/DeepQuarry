@@ -265,7 +265,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime, \
 	return "slime"
 
 /mob/living/simple_mob/slime/proc/squish()
-	playsound(src, 'sound/effects/slime_squish.ogg', 50, 0)
+	play_sfx(src, SFX_EFFECTS_SLIME_SQUISH, vary = FALSE)
 	visible_message(span_infoplain(span_bold("\The [src]") + " squishes!"))
 
 /datum/decl/mob_organ_names/slime

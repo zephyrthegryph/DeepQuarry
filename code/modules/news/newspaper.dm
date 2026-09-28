@@ -92,7 +92,7 @@ DECLARE_INTERACTIONS(/obj/item/newspaper, \
 			else if(curr_page == 0)
 				screen = 1
 			curr_page++
-			playsound(src, "pageturn", 50, 1)
+			play_sfx(src, SFX_PAGETURN)
 			return TRUE
 		if("prev_page")
 			if(curr_page == 0)
@@ -102,7 +102,7 @@ DECLARE_INTERACTIONS(/obj/item/newspaper, \
 			else if(curr_page == pages + 1)
 				screen = 1
 			curr_page--
-			playsound(src, "pageturn", 50, 1)
+			play_sfx(src, SFX_PAGETURN)
 			return TRUE
 
 /// Old attackby.

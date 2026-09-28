@@ -67,7 +67,7 @@
 /obj/effect/step_trigger/lost_in_space/bluespace/Trigger(A)
 	if(world.time - last_sound > 5 SECONDS)
 		last_sound = world.time
-		playsound(src, 'sound/effects/supermatter.ogg', 75, 1)
+		play_sfx(src, SFX_EFFECTS_SUPERMATTER, 1.5)
 	if(ismob(A) && prob(5))//lucky day
 		var/destturf = locate(rand(5,world.maxx-5),rand(5,world.maxy-5),pick(using_map.station_levels))
 		do_teleport(A, destturf, 0, 1, asoundin = 'sound/effects/phasein.ogg')

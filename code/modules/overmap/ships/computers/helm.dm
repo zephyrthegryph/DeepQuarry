@@ -297,7 +297,7 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 
 	add_fingerprint(ui.user)
 	if(. && !issilicon(ui.user))
-		playsound(src, "terminal_type", 50, 1)
+		play_sfx(src, SFX_TERMINAL_TYPE)
 
 /obj/machinery/computer/ship/navigation
 	name = "navigation console"

@@ -500,7 +500,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 			lay_down()
 		handle_affinity(user, -5)
 		user.visible_message(user, span_notice("\The [user] hits \the [src] with \the [O]. \The [src] grumbles at \the [user]."),span_notice("You hits \the [src] with \the [O]. \The [src] grumbles at you."))
-		playsound(src, 'sound/weapons/tap.ogg', 50, 1, -1)
+		play_sfx(src, SFX_WEAPONS_TAP, extrarange = -1)
 		return FALSE
 	if(teppi_wool)
 		if(teppi_shear(user, O))
@@ -546,7 +546,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 			user.visible_message(span_notice("\The [user] feeds \the [O] to \the [src]. It nibbles \the [O] casually."),span_notice("You feed \the [O] to \the [src]. It nibbles \the [O] casually."))
 		adjust_nutrition(yum) //add the nutriment!
 		consume(O, user)
-		playsound(src, 'sound/items/eatfood.ogg', 75, 1)
+		play_sfx(src, SFX_ITEMS_EATFOOD)
 		if(!client && lets_eat(user) && prob(1))
 			visible_message(span_danger("\The [src] scromfs \the [user] along with the food!"))
 			to_chat(user, span_notice("\The [src] leans in close, spreading its jaws in front of you. A hot, humid gust of breath blows over you as the weight of \the [src]'s presses you over, knocking you off of your feet as the warm gooey tough of jaws scromf over your figure, rapidly guzzling you away with the [O], leaving you to tumble down into the depths of its body..."))
@@ -612,23 +612,23 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 		return FALSE
 	if(resting)
 		M.visible_message(span_notice("\The [M.name] shakes \the [src] awake from their nap."),span_notice("You shake \the [src] awake!"))
-		playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+		play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 		lay_down()
 		return
 	else if(!client)
 		unarmed_touch(M)
-		playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+		play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 		if(wantpet >= 100) //We want pets sometimes
 			handle_affinity(M, 1)
 			if(teppi_adult)
 				if(prob(25))
 					M.visible_message(span_notice("\The [src] rumbles happily at \the [M]"),span_notice("\The [src] rumbles happily at you!"))
-					playsound(src, 'sound/voice/teppi/rumble.ogg', 75, 1)
+					play_sfx(src, SFX_VOICE_TEPPI_RUMBLE)
 				if(vore_selected)
 					vore_selected.digest_mode = DM_DRAIN //People outside can help calm the tumby if you squirm too much
 			else if(prob(25))
 				M.visible_message(span_notice("\The [src] rumbles happily at \the [M]"),span_notice("\The [src] rumbles happily at you!"))
-				playsound(src, 'sound/voice/teppi/cute_rumble.ogg', 75, 1)
+				play_sfx(src, SFX_VOICE_TEPPI_CUTE_RUMBLE)
 			if(prob(25))
 				wantpet = rand(0,25) * affection_factor //We stopped wanting pets
 			to_chat(M, span_notice("\The [src] leans into your touch."))
@@ -692,9 +692,9 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 		else
 			self.visible_message("\The [self] whines pathetically...", runemessage = "whines")
 			if(prob(50))
-				playsound(self, 'sound/voice/teppi/whine1.ogg', 75, 1)
+				play_sfx(self, SFX_VOICE_TEPPI_WHINE1)
 			else
-				playsound(self, 'sound/voice/teppi/whine2.ogg', 75, 1)
+				play_sfx(self, SFX_VOICE_TEPPI_WHINE2)
 			self.amount_grown -= rand(100,250)
 	if(not_hungy)
 		self.do_breeding()

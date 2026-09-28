@@ -674,7 +674,7 @@ DECLARE_REF(/obj/item/clothing/shoes, "holding", OWNED, null)
 
 	if(user.put_in_hands(holding))
 		user.visible_message(span_danger("\The [user] pulls a knife out of their boot!"))
-		playsound(src, 'sound/weapons/holster/sheathout.ogg', 25)
+		play_sfx(src, SFX_WEAPONS_HOLSTER_SHEATHOUT, 0.5, vary = FALSE)
 		holding = null
 		cut_overlay("[icon_state]_knife")
 	else

@@ -126,7 +126,7 @@
 			client.changes()
 			return TRUE
 		if("keyboard")
-			playsound_local(ui.user, get_sfx("keyboard"), vol = 20)
+			playsound_local(ui.user, get_sfx(SFX_KEYBOARD), vol = 20)
 			return TRUE
 		if("start_immediately")
 			if(!ui.user.client.is_localhost() || !check_rights_for(ui.user.client, R_SERVER))

@@ -84,7 +84,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/holoposter, REGISTRY_HOLOPOSTERS)
 	src.add_fingerprint(user)
 	if(stat & (NOPOWER))
 		return ITEM_INTERACT_BLOCKING
-	playsound(src, 'sound/items/penclick.ogg', 60, TRUE)
+	play_sfx(src, SFX_ITEMS_PENCLICK, 1.2)
 	om_ask(user, /datum/om/prompt/choice, PROC_REF(poster_chosen), message = "Available Posters", title = "Holographic Poster", choices = postertypes + "random", requires = PROMPT_ADJACENT)
 	return ITEM_INTERACT_SUCCESS
 

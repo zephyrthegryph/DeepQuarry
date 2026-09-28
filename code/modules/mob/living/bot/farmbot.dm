@@ -258,7 +258,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/farmbot, INTERACT_HAND_AS(I_HELP, "Open cont
 /mob/living/bot/farmbot/proc/refill_pulse(atom/A)
 	tank.reagents.add_reagent("water", 100)
 	if(prob(5))
-		playsound(src, 'sound/effects/slosh.ogg', 25, 1)
+		play_sfx(src, SFX_EFFECTS_SLOSH)
 	refill_step(A)
 
 /mob/living/bot/farmbot/proc/refill_end()
@@ -273,7 +273,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/farmbot, INTERACT_HAND_AS(I_HELP, "Open cont
 			visible_message(span_notice("[src] [T.dead? "removes the plant from" : "harvests"] \the [T]."))
 			T.attack_hand(src)
 		if(FARMBOT_WATER)
-			playsound(src, 'sound/effects/slosh.ogg', 25, 1)
+			play_sfx(src, SFX_EFFECTS_SLOSH)
 			visible_message(span_notice("[src] waters \the [T]."))
 			tank.reagents.trans_to(T, 100 - T.waterlevel)
 		if(FARMBOT_UPROOT)
@@ -299,9 +299,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/farmbot, INTERACT_HAND_AS(I_HELP, "Open cont
 	if(prob(50))
 		new /obj/item/robot_parts/l_arm(Tsec)
 
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(3, 1, src)
-	s.start()
+	fx_sparks(src, 3)
 	return ..()
 
 

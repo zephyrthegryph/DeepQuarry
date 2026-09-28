@@ -92,7 +92,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun/energy/floragun, "emitter", /obj/item/stock_
 	//allow shooting into adjacent hydrotrays regardless of intent
 	if(!emitter)
 		to_chat(user, span_notice("The [src] has no laser! "))
-		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_EMPTY)
 		return
 	if(adjacent_flag && istype(target,/obj/machinery/portable_atmospherics/hydroponics))
 		user.visible_message(span_danger("\The [user] fires \the [src] into \the [target]!"))
@@ -201,7 +201,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 		user.visible_message("*fizzle*", span_danger("*fizzle*"))
 	else
 		src.visible_message("*fizzle*")
-	playsound(src, 'sound/effects/sparks1.ogg', 100, 1)
+	play_sfx(src, SFX_EFFECTS_SPARKS1)
 /*
 /obj/item/gun/energy/staff/animate
 	name = "staff of animation"
@@ -418,7 +418,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 		handle_click_empty(user)
 		return
 
-	playsound(src, 'sound/weapons/chargeup.ogg', 100, 1)
+	play_sfx(src, SFX_WEAPONS_CHARGEUP)
 	spinning_up = TRUE
 	update_icon()
 	user.visible_message(span_notice("[user] starts charging the [src]!"), \
@@ -562,7 +562,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 /obj/item/projectile/bullet/magnetic/supercannon/on_hit(atom/target, blocked = 0, def_zone = null)
 	if(istype(target,/turf/simulated/wall) || istype(target,/mob/living))
 		target.visible_message(span_danger("The [src] burns a perfect hole through \the [target] with a blinding flash!"))
-		playsound(target, 'sound/effects/teleport.ogg', 40, 0)
+		play_sfx(target, SFX_EFFECTS_TELEPORT)
 	return ..(target, blocked, def_zone)
 
 /obj/item/projectile/bullet/magnetic/supercannon/Bump(atom/target) //On hit doesnt work on turfs, gotta snowflake it. Why is on_hit() called by the target, NOT the proj?????

@@ -235,12 +235,12 @@ DECLARE_REF(/obj/machinery/door/firedoor, "turbolift_floor", BACKLIST, "doors")
 	..()
 
 /obj/machinery/door/firedoor/proc/attack_alien_timed_done()
-	playsound(src, 'sound/machines/door/airlock_creaking.ogg', 100, 1)
+	play_sfx(src, SFX_MACHINES_DOOR_AIRLOCK_CREAKING)
 	src.blocked = 0
 	update_icon()
 	open(1)
 /obj/machinery/door/firedoor/proc/attack_alien_timed_done2(mob/user)
-	playsound(src, 'sound/machines/door/airlock_creaking.ogg', 100, 1)
+	play_sfx(src, SFX_MACHINES_DOOR_AIRLOCK_CREAKING)
 	visible_message(span_danger("\The [user] forces \the [src] open!"))
 	open(1)
 

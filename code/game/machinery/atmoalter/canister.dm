@@ -235,7 +235,7 @@ update_flag
 		anchored = 0
 
 	src.destroyed = 1
-	playsound(src, 'sound/effects/spray.ogg', 10, 1, -3)
+	play_sfx(src, SFX_EFFECTS_SPRAY)
 	src.density = FALSE
 	update_icon()
 

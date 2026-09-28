@@ -75,7 +75,7 @@
 	if(victim())
 		update_icon()
 	if(beep && victim() && victim().pulse)
-		playsound(src, 'sound/machines/quiet_beep.ogg')
+		play_sfx(src, SFX_MACHINES_QUIET_BEEP, volume = 0)
 
 /obj/machinery/vitals_monitor/MouseDrop(over_object, src_location, over_location)
 	if(!CanMouseDrop(over_object))

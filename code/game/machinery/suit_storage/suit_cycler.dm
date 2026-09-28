@@ -525,7 +525,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	T.visible_message("[icon2html(src,viewers(src))]" + span_notice("The [src] beeps several times."))
 	icon_state = initial(icon_state)
 	active = 0
-	playsound(src, 'sound/machines/boobeebeep.ogg', 50)
+	play_sfx(src, SFX_MACHINES_BOOBEEBEEP)
 
 /obj/machinery/suit_cycler/proc/repair_suit()
 	if(!suit || !suit.damage || !suit.can_breach)

@@ -153,7 +153,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks, \
 
 /obj/item/reagent_containers/food/drinks/proc/open(mob/user)
 	if(!cant_open)
-		playsound(src,"canopen", rand(10,50), 1)
+		play_sfx(src, SFX_CANOPEN, volume = rand(10,50))
 		GLOB.cans_opened_roundstat++
 		to_chat(user, span_notice("You open [src] with an audible pop!"))
 		flags |= OPENCONTAINER
@@ -218,7 +218,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks, \
 		to_chat(user, span_notice("You swallow a gulp from \the [src]."))
 
 /obj/item/reagent_containers/food/drinks/feed_sound(mob/user)
-	playsound(src, 'sound/items/drink.ogg', rand(10, 50), TRUE)
+	play_sfx(src, SFX_ITEMS_DRINK, volume = rand(10, 50))
 
 /obj/item/reagent_containers/food/drinks/examine(mob/user)
 	. = ..()

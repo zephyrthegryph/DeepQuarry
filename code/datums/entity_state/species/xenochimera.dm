@@ -486,7 +486,7 @@ DECLARE_REF(/mob/living/carbon/human, "xenochimera", OWNED, null)
 		var/flesh_color = owner.species.flesh_color
 		new /obj/effect/gibspawner/human/xenochimera(T, null, flesh_color, blood_color)
 		owner.visible_message(span_danger(span_huge("The lifeless husk of [owner] bursts open, revealing a new, intact copy in the pool of viscera."))) //Bloody hell...
-		playsound(T, 'sound/effects/mob_effects/xenochimera/hatch.ogg', 50)
+		play_sfx(T, SFX_EFFECTS_MOB_EFFECTS_XENOCHIMERA_HATCH)
 	else //lower cost for doing a quick cosmetic revive
 		owner.set_nutrition(old_nutrition * 0.9)
 

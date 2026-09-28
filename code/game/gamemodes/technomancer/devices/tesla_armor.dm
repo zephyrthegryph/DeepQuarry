@@ -88,4 +88,4 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/tesla, INTERACT_USE("Toggle", 
 	lightning.old_style_target(target)
 	lightning.fire()
 	visible_message(span_danger("\The [src] strikes \the [target] with lightning!"))
-	playsound(src, 'sound/weapons/gauss_shoot.ogg', 75, 1)
+	play_sfx(src, SFX_WEAPONS_GAUSS_SHOOT, 1.5)

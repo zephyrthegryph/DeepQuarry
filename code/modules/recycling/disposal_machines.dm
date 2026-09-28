@@ -352,12 +352,9 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	new_bin.update_icon()
 	new_bin.visible_message("\The [src] reconfigures into \a [new_bin]!")
 	// Effects
-	playsound(new_bin, 'sound/items/jaws_cut.ogg', 50, 1)
-	playsound(new_bin, 'sound/machines/machine_die_short.ogg', 50, 1)
-	var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
-	spark_system.set_up(5, 0, new_bin)
-	spark_system.attach(new_bin)
-	spark_system.start()
+	play_sfx(new_bin, SFX_ITEMS_JAWS_CUT)
+	play_sfx(new_bin, SFX_MACHINES_MACHINE_DIE_SHORT)
+	fx_sparks(new_bin, 5, FALSE)
 	// Cleanup
 	qdel(src)
 
@@ -644,7 +641,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 
 /obj/machinery/disposal/proc/flush_startup()
 	PROTECTED_PROC(TRUE)
-	playsound(src, 'sound/machines/disposalflush.ogg', 50, 0, 0)
+	play_sfx(src, SFX_MACHINES_DISPOSALFLUSH)
 	om_after(src, 0.5 SECONDS, PROC_REF(flush_complete)) // wait for animation to finish
 
 /obj/machinery/disposal/proc/flush_complete()
@@ -708,7 +705,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	SHOULD_NOT_SLEEP(TRUE)
 	var/turf/T = get_turf(src)
 	var/turf/target
-	playsound(src, 'sound/machines/hiss.ogg', 50, 0, 0)
+	play_sfx(src, SFX_MACHINES_HISS)
 
 	for(var/atom/movable/AM in expelled_items)
 		target = get_offset_target_turf(loc, rand(5)-rand(5), rand(5)-rand(5))

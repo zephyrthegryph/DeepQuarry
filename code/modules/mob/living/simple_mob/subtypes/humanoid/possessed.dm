@@ -78,7 +78,7 @@
 /mob/living/simple_mob/humanoid/possessed/Moved()
 	. = ..()
 	if(prob(5) && silenced == 0)
-		playsound(src, pick('sound/h_sounds/headcrab.ogg', 'sound/h_sounds/holla.ogg', 'sound/h_sounds/lynx.ogg', 'sound/h_sounds/mumble.ogg', 'sound/h_sounds/yell.ogg'), 50, 1)
+		play_sfx(src, SFX_H_SOUNDS_HEADCRAB_2)
 
 //Plays the sound every ~4 seconds.
 /datum/om/stage/life/type_post/simple_mob/humanoid/possessed
@@ -87,7 +87,7 @@
 /datum/om/stage/life/type_post/simple_mob/humanoid/possessed/perform(mob/living/simple_mob/humanoid/possessed/self, datum/om/frame/life/ctx)
 	..()
 	if(self.idle <= 0 && self.silenced == 0)
-		playsound(self, 'sound/h_sounds/breathing.ogg', 60, 1)
+		play_sfx(self, SFX_H_SOUNDS_BREATHING)
 		self.idle = 4
 	self.idle--
 
@@ -95,7 +95,7 @@
 // the possessed suit collapses into remains and miasma.
 /mob/living/simple_mob/humanoid/possessed/on_destroy(force)
 	var/droploc = get_turf(src)
-	playsound(src, 'sound/effects/blobattack.ogg', 40, 1) // ALLOW(decl): paired with the random death message
+	play_sfx(src, SFX_EFFECTS_BLOBATTACK, volume = 40) // ALLOW(decl): paired with the random death message
 	visible_message(span_critical(pick("The horrid screech of metal grating metal cuts through the air as the suit's interlocking joints grind and fold inwards upon itself. A putrid wash of decayed flesh spills forwards, staining the ground dark with the contents of the collapsing RIG's long expired pilot.", // ALLOW(decl): random message
 	"\The [src] shudders as some hurt living thing, reeling as screaming servos overcompensate beneath the weight of that debilitating strike - the horrid sounds of shattered metal resonate as the RIG rips itself apart. Limbs flung about in distinctly inhuman motions in a final failed effort at balance before buckling inwards at the joints, hydraulic fluid jettisoned as blood from a severed artery as the long liquidized contents of the suit's ex-pilot spill from its chassis in a thick slurry.",
 	"Hissing atmosphereic valves pop and snap, breaking the ageless seal as the putrid stench of rot and carrion assaults the senses in debilitating waves. The damaged RIG's visor alight with warnings of hazardous atmospheric conditions as a final distorted scream echos from within the damaged chassis. The fetid miasma that breeches through those wheezing seals overtaken by a wet burble and plop as the suit is bathed in the liquid contents of its passenger, blackened flesh fed through those narrow seals as rotten grounds.",

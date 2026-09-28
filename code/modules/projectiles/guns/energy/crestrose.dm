@@ -34,6 +34,6 @@
 /obj/item/gun/projectile/automatic/fluff/crestrose/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(default_parry_check(user, attacker, damage_source) && prob(50))
 		user.visible_message(span_danger("\The [user] parries [attack_text] with \the [src]!"))
-		playsound(user, 'sound/weapons/punchmiss.ogg', 50, 1)
+		play_sfx(user, SFX_WEAPONS_PUNCHMISS, 2, extrarange = 0)
 		return 1
 	return 0

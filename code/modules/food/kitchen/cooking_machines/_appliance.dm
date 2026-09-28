@@ -157,7 +157,7 @@
 		user.visible_message(span_filter_notice("[user] turns [src] off."), span_filter_notice("You turn off [src]."))
 		cooking = FALSE // Stop cooking here, too, just in case.
 
-	playsound(src, 'sound/machines/click.ogg', 40, 1)
+	play_sfx(src, SFX_MACHINES_CLICK, 0.8)
 	update_icon()
 
 /obj/machinery/appliance/silicon_pull(mob/living/silicon/user)
@@ -619,7 +619,7 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 	// Produce nasty smoke.
 	visible_message(span_danger("\The [src] vomits a gout of rancid smoke!"))
 	var/datum/effect/effect/system/smoke_spread/bad/burntfood/smoke = new /datum/effect/effect/system/smoke_spread/bad/burntfood
-	playsound(src, 'sound/effects/smoke.ogg', 20, 1)
+	play_sfx(src, SFX_EFFECTS_SMOKE, 0.4, extrarange = 0)
 	smoke.attach(src)
 	smoke.set_up(10, 0, get_turf(src), 300)
 	smoke.start()

@@ -106,7 +106,7 @@
 		D.preparePixelProjectile(target, user, clickparams)
 		D.firer = user
 		D.hammer_synced_handle = om_handle(src)
-		playsound(user, 'sound/weapons/plasma_cutter.ogg', 100, 1)
+		play_sfx(user, SFX_WEAPONS_PLASMA_CUTTER)
 		D.fire()
 		charged = FALSE
 		update_icon()
@@ -128,7 +128,7 @@
 		var/thrown_bonus = thrown? (src.thrown_bonus * (!ishuman(L)? 1 : human_damage_nerf)) : 0
 		if(thrown? (get_dir(src, L) & L.dir) : ((user.dir & backstab_dir) && (L.dir & backstab_dir)))
 			L.injure(INJURY_BLUNT, (detonation_damage + backstab_bonus + thrown_bonus) * blast_through, null, src)
-			playsound(src, 'sound/weapons/kenetic_accel.ogg', 100, 1) //Seriously who spelled it wrong
+			play_sfx(src, SFX_WEAPONS_KENETIC_ACCEL) //Seriously who spelled it wrong
 		else
 			L.injure(INJURY_BLUNT, (detonation_damage + thrown_bonus) * blast_through, null, src)
 
@@ -144,11 +144,11 @@
 	if(!charged)
 		charged = TRUE
 		update_icon()
-		playsound(src.loc, 'sound/weapons/kenetic_reload.ogg', 60, 1)
+		play_sfx(src.loc, SFX_WEAPONS_KENETIC_RELOAD)
 
 /obj/item/kinetic_crusher/ui_action_click(mob/user, actiontype)
 	integ_light_on = !integ_light_on
-	playsound(src, 'sound/weapons/empty.ogg', 100, TRUE)
+	play_sfx(src, SFX_WEAPONS_EMPTY, 2)
 	update_brightness(user)
 	update_icon()
 
@@ -303,7 +303,7 @@ DECLARE_INTERACTIONS(/obj/item/kinetic_crusher/machete/gauntlets, INTERACT_USE(n
 			span_notice("You retract [src] with a click and a hiss."),
 			span_notice("You hear a click and a hiss.")
 			)
-		playsound(src, 'sound/items/helmetdeploy.ogg', 40, 1)
+		play_sfx(src, SFX_ITEMS_HELMETDEPLOY)
 		storing_module().active = FALSE
 	else
 		QDEL_NULL(src)

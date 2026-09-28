@@ -45,7 +45,7 @@ DECLARE_INTERACTIONS(/obj/item/batterer, INTERACT_USE(null, PROC_REF(interaction
 
 	add_attack_logs(user,affected,"Used a [name]")
 
-	playsound(src, 'sound/misc/interference.ogg', 50, 1)
+	play_sfx(src, SFX_MISC_INTERFERENCE)
 	to_chat(user, span_notice("You trigger [src]."))
 	times_used += 1
 	if(times_used >= max_uses)

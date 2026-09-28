@@ -57,7 +57,7 @@
 	drain_loc = interfaced_with().loc
 
 	holder.spark_system.start()
-	playsound(H, 'sound/effects/sparks2.ogg', 50, 1)
+	play_sfx(H, SFX_EFFECTS_SPARKS2)
 
 	return 1
 
@@ -81,7 +81,7 @@
 		return 0
 
 	holder.spark_system.start()
-	playsound(H, 'sound/effects/sparks2.ogg', 50, 1)
+	play_sfx(H, SFX_EFFECTS_SPARKS2)
 
 	H.break_cloak()
 

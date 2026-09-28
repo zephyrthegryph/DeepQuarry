@@ -12,7 +12,7 @@
 
 // Glass-on-glass hit sound while the case still stands.
 /obj/structure/displaycase/play_attack_sound(damage_amount, damage_type, damage_flag)
-	playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
+	play_sfx(src, SFX_EFFECTS_GLASSHIT)
 
 // Reaching 0 integrity shatters the front glass into a passable, looted shell.
 /obj/structure/displaycase/atom_destruction(damage_flag)
@@ -21,7 +21,7 @@
 		density = FALSE
 		destroyed = 1
 		new /obj/item/material/shard( src.loc )
-		playsound(src, "shatter", 70, 1)
+		play_sfx(src, SFX_SHATTER)
 		update_icon()
 
 /obj/structure/displaycase/update_icon()
@@ -48,7 +48,7 @@
 /obj/structure/displaycase/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	user.setClickCooldown(user.get_attack_speed(W))
 	user.do_attack_animation(src)
-	playsound(src, 'sound/effects/Glasshit.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_GLASSHIT, volume = 50)
 	receive_weapon_hit(W, user)
 	return TRUE
 

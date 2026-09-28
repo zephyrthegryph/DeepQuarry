@@ -99,5 +99,5 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/turkeygirl, INTERACT_ITEM(null, 
 		to_chat(user, span_notice("\The [src] takes a bite of \the [O]."))
 		if(user != src)
 			to_chat(src, span_notice("\The [user] feeds \the [O] to you."))
-	playsound(src, 'sound/items/eatfood.ogg', 75, 1)
+	play_sfx(src, SFX_ITEMS_EATFOOD)
 	update_icon()

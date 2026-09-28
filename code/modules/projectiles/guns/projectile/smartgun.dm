@@ -75,11 +75,11 @@ DECLARE_INTERACTIONS(/obj/item/gun/projectile/smartgun, INTERACT_ALT(null, PROC_
 
 		if(closed)
 			icon_state = "[initial(icon_state)]_open"
-			playsound(src, 'sound/weapons/smartgunopen.ogg', 75, 0)
+			play_sfx(src, SFX_WEAPONS_SMARTGUNOPEN)
 			to_chat(user, span_notice("You unready [src] so that it can be reloaded."))
 		else
 			icon_state = "[initial(icon_state)]_closed"
-			playsound(src, 'sound/weapons/smartgunclose.ogg', 75, 0)
+			play_sfx(src, SFX_WEAPONS_SMARTGUNCLOSE)
 			to_chat(user, span_notice("You ready [src] so that it can be fired."))
 		om_after_unique(src, 2 SECONDS, PROC_REF(toggle_real_state))
 	return TRUE

@@ -38,7 +38,7 @@
 	src.mecha_log_message("Activated.")
 	om_task_periodic(src, PERIODIC_SLOW)
 	set_ready_state(FALSE)
-	playsound(src, 'sound/effects/EMPulse.ogg', 100, 1)
+	play_sfx(src, SFX_EFFECTS_EMPULSE)
 
 /obj/item/mecha_parts/mecha_equipment/cloak/proc/stop_cloak()
 	if(chassis)
@@ -46,4 +46,4 @@
 	src.mecha_log_message("Deactivated.")
 	om_task_periodic_stop(src)
 	set_ready_state(TRUE)
-	playsound(src, 'sound/effects/EMPulse.ogg', 100, 1)
+	play_sfx(src, SFX_EFFECTS_EMPULSE)

@@ -167,7 +167,7 @@ DECLARE_REF(/obj/aiming_overlay, "aiming_at", BACKLIST, "aimed")
 	aiming_with_handle = om_handle(thing)
 	aiming_at = target
 	if(istype(aiming_with(), /obj/item/gun))
-		playsound(owner(), 'sound/weapons/targeton.ogg', 50,1)
+		play_sfx(owner(), SFX_WEAPONS_TARGETON)
 	forceMove(get_turf(target))
 	om_task_periodic(src, PERIODIC_SLOW)
 
@@ -207,7 +207,7 @@ DECLARE_REF(/obj/aiming_overlay, "aiming_at", BACKLIST, "aimed")
 	if(!aiming_with() || !aiming_at)
 		return
 	if(istype(aiming_with(), /obj/item/gun))
-		playsound(owner(), 'sound/weapons/targetoff.ogg', 50,1)
+		play_sfx(owner(), SFX_WEAPONS_TARGETOFF)
 	if(!no_message)
 		owner().visible_message(span_infoplain(span_bold("\The [owner()]") + " lowers \the [aiming_with()]."))
 

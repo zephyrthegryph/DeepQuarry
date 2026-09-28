@@ -351,13 +351,13 @@ Extracted to its own procedure for easier logic handling with paper bundles.
 	if(toner <= 10) //allow replacing when low toner is affecting the print darkness
 		user.drop_item()
 		to_chat(user, span_notice("You insert the toner cartridge into \the [src]."))
-		playsound(loc, 'sound/machines/click.ogg', 50, 1)
+		play_sfx(loc, SFX_MACHINES_CLICK)
 		var/obj/item/toner/T = held
 		toner += T.toner_amount
 		consume(held, user)
 	else
 		to_chat(user, span_notice("This cartridge is not yet ready for replacement! Use up the rest of the toner."))
-		playsound(loc, 'sound/machines/buzz-two.ogg', 75, 1)
+		play_sfx(loc, SFX_MACHINES_BUZZ_TWO, 1.5, vary = TRUE)
 	return TRUE
 
 /obj/machinery/photocopier/faxmachine/multitool_act(mob/user, obj/item/tool)

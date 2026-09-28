@@ -62,7 +62,7 @@
 		var/egg = rimplant.eggtype
 		new egg(get_turf(src))
 		src.status_set(EFFECT_STUNNED, 3)
-		playsound(src,'sound/vore/insert.ogg',50,1)
+		play_sfx(src, SFX_VORE_INSERT)
 		var/index = rand(1,3)
 
 		if (usr_mob != src)
@@ -89,7 +89,7 @@
 
 /mob/living/carbon/human/proc/use_reagent_implant_egg_timed_done(obj/item/implant/reagent_generator/egg/rimplant, egg)
 	src.status_set(EFFECT_STUNNED, 3)
-	playsound(src,'sound/vore/insert.ogg',50,1)
+	play_sfx(src, SFX_VORE_INSERT)
 	src.apply_effect(10,STUTTER,0)
 	new egg(get_turf(src))
 	rimplant.reagents.remove_any(rimplant.transfer_amount)

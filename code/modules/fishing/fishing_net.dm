@@ -174,7 +174,7 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_net, \
 		var/mob/L = A
 		user.visible_message(span_notice("[user] snatches [L] with \the [src]."), span_notice("You snatch [L] with \the [src]."))
 		L.forceMove(src)
-		playsound(src, 'sound/effects/plop.ogg', 50, 1)
+		play_sfx(src, SFX_EFFECTS_PLOP, volume = 50, vary = TRUE)
 		update_icon()
 		update_weight()
 		return

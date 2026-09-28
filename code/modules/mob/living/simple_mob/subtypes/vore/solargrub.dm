@@ -82,9 +82,7 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 			if(prob(2))
 				self.visible_message(span_infoplain(span_bold("\The [self]") + " begins to sink power from the net."))
 			if(prob(5))
-				var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
-				sparks.set_up(5, 0, get_turf(self))
-				sparks.start()
+				fx_sparks(get_turf(self), 5, FALSE)
 			self.anchored = TRUE
 			self.PN = self.attached.get_power_region()
 			power_draw(self.PN, self.powerdraw)
@@ -133,13 +131,11 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 		var/mob/living/L = A
 		if(prob(shock_chance))
 			A.emp_act(4) //The weakest strength of EMP
-			playsound(src, 'sound/weapons/egloves.ogg', 75, 1)
+			play_sfx(src, SFX_WEAPONS_EGLOVES, 1.5, extrarange = 0)
 			L.status_at_least(EFFECT_WEAKENED, 4)
 			L.status_at_least(EFFECT_STUNNED, 4)
 			L.status_at_least(EFFECT_STUTTERING, 4)
-			var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-			s.set_up(5, 1, L)
-			s.start()
+			fx_sparks(L, 5)
 			visible_message(span_danger("The grub releases a powerful shock!"))
 		else
 			if(L.reagents)

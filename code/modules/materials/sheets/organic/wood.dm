@@ -94,7 +94,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/material/log, INTERACT_ITEM(null, PROC_REF(l
 	if(!use(1))
 		return
 	to_chat(user, span_notice("You cut up a log into planks."))
-	playsound(user, 'sound/effects/woodcutting.ogg', 50, 1)
+	play_sfx(user, SFX_EFFECTS_WOODCUTTING, 0.5)
 	var/obj/item/stack/material/wood/existing_wood = null
 	for(var/obj/item/stack/material/wood/M in user.loc)
 		if(M.material.name == our_material_name)

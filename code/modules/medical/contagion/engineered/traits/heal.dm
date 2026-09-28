@@ -133,7 +133,7 @@
 					if(missing.len)
 						for(var/Z in missing)
 							if(H.regenerate_limb(Z, TRUE))
-								playsound(H, 'sound/effects/blobattack.ogg', 50, 1)
+								play_sfx(H, SFX_EFFECTS_BLOBATTACK, volume = 50)
 								H.visible_message(span_warning("[H]'s missing limbs reform, making a loud, grotesque sound!"), span_userdanger("You limbs regrow, making a loud, crunchy sound and giving you great pain!"))
 								H.emote("scream")
 								if(Z == BP_HEAD)

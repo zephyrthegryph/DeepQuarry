@@ -680,7 +680,7 @@
 	if(isliving(hit_atom))
 		var/mob/living/L = hit_atom
 		L.visible_message(span_danger("\The [user] [attack_message] \the [L], sending them flying!"))
-		playsound(src, "punch", 50, 1)
+		play_sfx(src, SFX_PUNCH)
 		L.status_at_least(EFFECT_WEAKENED, 2)
 		L.injure(INJURY_BLUNT, rand(30, 50), source = user)
 		var/throwdir = get_dir(src, L)
@@ -751,7 +751,7 @@
 
 /obj/item/projectile/beam/crippling_beam/proc/bang(mob/living/carbon/M)
 	to_chat(M, span_danger("You hear a loud roar."))
-	playsound(src, 'sound/effects/bang.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_BANG)
 	var/ear_safety = 0
 	ear_safety = M.get_ear_protection()
 	if(ear_safety == 1)

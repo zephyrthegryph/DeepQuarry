@@ -205,9 +205,9 @@ DECLARE_INTERACTIONS(/obj/item/flamethrower, \
 			lit = !lit
 			if(lit)
 				om_task_periodic(src, PERIODIC_SLOW)
-				playsound(src, 'sound/items/welderactivate.ogg', 50, 1)
+				play_sfx(src, SFX_ITEMS_WELDERACTIVATE)
 			else
-				playsound(src, 'sound/items/welderdeactivate.ogg', 50, 1)
+				play_sfx(src, SFX_ITEMS_WELDERDEACTIVATE)
 			update_icon()
 			return TRUE
 		if("amount")

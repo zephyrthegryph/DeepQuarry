@@ -36,11 +36,11 @@
 	say_list_type = /datum/say_list/Steve
 
 /mob/living/simple_mob/horror/Steve/on_death(gibbed)
-	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
+	play_sfx(src, SFX_H_SOUNDS_HOLLA)
 	..()
 
 /mob/living/simple_mob/horror/Steve/bullet_act()
-	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
+	play_sfx(src, SFX_H_SOUNDS_HOLLA)
 	..()
 
 /datum/say_list/Steve

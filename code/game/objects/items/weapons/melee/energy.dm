@@ -67,14 +67,14 @@
 	injury_kind = active_injury_kind
 	injury_kinds = active_injury_kinds
 	w_class = active_w_class
-	playsound(src, 'sound/weapons/saberon.ogg', 50, 1)
+	play_sfx(src, SFX_WEAPONS_SABERON)
 	update_icon()
 	set_light(lrange, lpower, lcolor)
 
 /obj/item/melee/energy/proc/deactivate(mob/living/user)
 	if(!active)
 		return
-	playsound(src, 'sound/weapons/saberoff.ogg', 50, 1)
+	play_sfx(src, SFX_WEAPONS_SABEROFF)
 	item_state = "[icon_state]"
 	active = 0
 	embed_chance = initial(embed_chance)
@@ -320,18 +320,14 @@ DECLARE_DEFAULT_CHILD(/obj/item/melee/energy/axe/charge/loaded, "bcell", /obj/it
 	if(active && default_parry_check(user, attacker, damage_source) && prob(60))
 		user.visible_message(span_danger("\The [user] parries [attack_text] with \the [src]!"))
 
-		var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
-		spark_system.set_up(5, 0, user.loc)
-		spark_system.start()
-		playsound(src, 'sound/weapons/blade1.ogg', 50, 1)
+		fx_sparks(user.loc, 5, FALSE)
+		play_sfx(src, SFX_WEAPONS_BLADE1)
 		return 1
 	if(active && unique_parry_check(user, attacker, damage_source) && prob(projectile_parry_chance))
 		user.visible_message(span_danger("\The [user] deflects [attack_text] with \the [src]!"))
 
-		var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
-		spark_system.set_up(5, 0, user.loc)
-		spark_system.start()
-		playsound(src, 'sound/weapons/blade1.ogg', 50, 1)
+		fx_sparks(user.loc, 5, FALSE)
+		play_sfx(src, SFX_WEAPONS_BLADE1)
 		return 1
 
 	return 0
@@ -381,7 +377,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/melee/energy/axe/charge/loaded, "bcell", /obj/it
 		// EMP stuff.
 		var/obj/O = AM
 		O.emp_act(EMP_LIGHT) // A weaker severity is used because this has infinite uses.
-		playsound(O, 'sound/effects/EMPulse.ogg', 100, 1)
+		play_sfx(O, SFX_EFFECTS_EMPULSE)
 		user.setClickCooldown(user.get_attack_speed(src)) // A lot of objects don't set click delay.
 	return ..()
 
@@ -390,9 +386,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/melee/energy/axe/charge/loaded, "bcell", /obj/it
 	if(HAS_SYNTHETIC_BIOLOGY(target) && active)
 		// Do some extra damage.  Not a whole lot more since emp_act() is pretty nasty on FBPs already.
 		target.emp_act(EMP_LIGHT) // A weaker severity is used because this has infinite uses.
-		playsound(target, 'sound/effects/EMPulse.ogg', 100, 1)
+		play_sfx(target, SFX_EFFECTS_EMPULSE)
 		target.injure(INJURY_BURN, force * 3, source = src) // 15 Burn, for 20 total.
-		playsound(target, 'sound/weapons/blade1.ogg', 100, 1)
+		play_sfx(target, SFX_WEAPONS_BLADE1, 2)
 
 		// Make lesser robots really mad at us.
 		if(target.mob_class & MOB_CLASS_SYNTHETIC)
@@ -485,18 +481,14 @@ EXTEND_INTERACTIONS(/obj/item/melee/energy/blade, INTERACT_USE("Dismiss", PROC_R
 	if(default_parry_check(user, attacker, damage_source) && prob(60))
 		user.visible_message(span_danger("\The [user] parries [attack_text] with \the [src]!"))
 
-		var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
-		spark_system.set_up(5, 0, user.loc)
-		spark_system.start()
-		playsound(src, 'sound/weapons/blade1.ogg', 50, 1)
+		fx_sparks(user.loc, 5, FALSE)
+		play_sfx(src, SFX_WEAPONS_BLADE1)
 		return 1
 	if(unique_parry_check(user, attacker, damage_source) && prob(projectile_parry_chance))
 		user.visible_message(span_danger("\The [user] deflects [attack_text] with \the [src]!"))
 
-		var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
-		spark_system.set_up(5, 0, user.loc)
-		spark_system.start()
-		playsound(src, 'sound/weapons/blade1.ogg', 50, 1)
+		fx_sparks(user.loc, 5, FALSE)
+		play_sfx(src, SFX_WEAPONS_BLADE1)
 		return 1
 
 	return 0
@@ -551,10 +543,8 @@ EXTEND_INTERACTIONS(/obj/item/melee/energy/blade, INTERACT_USE("Dismiss", PROC_R
 /obj/item/melee/energy/spear/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(active && default_parry_check(user, attacker, damage_source) && prob(50))
 		user.visible_message(span_danger("\The [user] parries [attack_text] with \the [src]!"))
-		var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
-		spark_system.set_up(5, 0, user.loc)
-		spark_system.start()
-		playsound(src, 'sound/weapons/blade1.ogg', 50, 1)
+		fx_sparks(user.loc, 5, FALSE)
+		play_sfx(src, SFX_WEAPONS_BLADE1)
 		return 1
 	return 0
 

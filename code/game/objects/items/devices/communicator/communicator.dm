@@ -147,7 +147,7 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 			var/mob/M = loc
 			M.put_in_hands(id)
 			to_chat(M, span_notice("You remove the ID from the [name].")) // usr --> M
-			playsound(src, 'sound/machines/id_swipe.ogg', 100, 1)
+			play_sfx(src, SFX_MACHINES_ID_SWIPE, 2)
 		else
 			id.forceMove(get_turf(src))
 		cut_overlay("pda-id")

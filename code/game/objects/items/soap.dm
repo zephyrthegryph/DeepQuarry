@@ -74,7 +74,7 @@ DECLARE_REAGENTS(/obj/item/soap, 5, null)
 /obj/item/soap/proc/afterattack_timed_done(mob/user)
 	user.visible_message(span_notice("[user] takes a bite out of [src]!"), span_notice("You gnaw on [src]! This can't be good for you..."))
 	var/mob/living/carbon/C = user
-	playsound(get_turf(C), 'sound/items/eatfood.ogg', 25, 0)
+	play_sfx(get_turf(C), SFX_ITEMS_EATFOOD, volume = 25, vary = FALSE)
 	C.ingested.add_reagent(REAGENT_ID_TOXIN, 0.5) //normally formaldehyde, and 2 units of it. Toxin is being subsituted and is 4 times as toxic, hence a quarter of the normal amount.
 	C.ingested.add_reagent(REAGENT_ID_CHLORALHYDRATE, 3)
 	reagents.trans_to_holder(C.ingested, 1)

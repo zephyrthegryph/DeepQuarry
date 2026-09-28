@@ -124,9 +124,7 @@ DECLARE_INTERACTIONS(/obj/item/modular_computer, \
 		if(isliving(user) && has_trait(user, TRAIT_UNLUCKY) && prob(5))
 			var/mob/living/unlucky_soul = user
 			to_chat(user, span_danger("You interact with \the [src] and are met with a sudden shock!"))
-			var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-			s.set_up(5, 1, src)
-			s.start()
+			fx_sparks(src, 5)
 			unlucky_soul.electrocute_act(5, src, 1)
 			return TRUE
 		tgui_interact(user)

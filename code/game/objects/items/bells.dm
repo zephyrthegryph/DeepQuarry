@@ -20,7 +20,7 @@
 
 /obj/item/deskbell/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(!broken)
-		playsound(src, 'sound/effects/deskbell.ogg', 50, 1)
+		play_sfx(src, SFX_EFFECTS_DESKBELL)
 	..()
 
 DECLARE_INTERACTIONS(/obj/item/deskbell, \
@@ -78,12 +78,12 @@ DECLARE_INTERACTIONS(/obj/item/deskbell, \
 
 /obj/item/deskbell/proc/ring(mob/user, stance = I_HELP)
 	if(stance == I_HURT)
-		playsound(src, 'sound/effects/deskbell_rude.ogg', 50, 1)
+		play_sfx(src, SFX_EFFECTS_DESKBELL_RUDE)
 		to_chat(user,span_notice("You hammer [src] rudely!"))
 		if (prob(2))
 			break_bell(user)
 	else
-		playsound(src, 'sound/effects/deskbell.ogg', 50, 1)
+		play_sfx(src, SFX_EFFECTS_DESKBELL)
 		to_chat(user,span_notice("You gracefully ring [src]."))
 
 /obj/item/deskbell/proc/check_ability(mob/user)

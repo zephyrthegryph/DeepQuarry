@@ -465,7 +465,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/trolley_tank, \
 		if(G.reagents.total_volume >= G.reagents.maximum_volume)
 			to_chat(user,"\The [G] is full.")
 			return TRUE
-		playsound(src, 'sound/machines/reagent_dispense.ogg', 25, 1)
+		play_sfx(src, SFX_MACHINES_REAGENT_DISPENSE)
 		to_chat(user,"You drain \the [src] into the \the [G].")
 		reagents.trans_to_holder( G.reagents, G.reagents.maximum_volume)
 		update_icon()

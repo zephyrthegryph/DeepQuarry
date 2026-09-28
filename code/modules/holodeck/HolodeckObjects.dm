@@ -154,7 +154,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/holofloor, INTERACT_ITEM("Nothing", TY
 	user.do_attack_animation(src)
 	var/damage = rand(0, 9)
 	if(!damage)
-		playsound(target, 'sound/weapons/punchmiss.ogg', 25, 1, -1)
+		play_sfx(target, SFX_WEAPONS_PUNCHMISS)
 		target.visible_message(span_danger("[user] has attempted to punch [target]!"))
 		return TRUE
 	var/obj/item/organ/external/affecting = target.get_organ(ran_zone(user.zone_sel.selecting))
@@ -163,7 +163,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/holofloor, INTERACT_ITEM("Nothing", TY
 	if(user.has_mutation(HULK))
 		damage += 5
 
-	playsound(target, "punch", 25, 1, -1)
+	play_sfx(target, SFX_PUNCH, 0.5, extrarange = -1)
 
 	target.visible_message(span_bolddanger("[user] has punched [target]!"))
 
@@ -213,7 +213,7 @@ EXTEND_INTERACTIONS(/obj/structure/window/reinforced/holowindow, INTERACT_ITEM(n
 			update_nearby_icons()
 			step(src, get_dir(user, src))
 	else
-		playsound(src, 'sound/effects/Glasshit.ogg', 75, TRUE)
+		play_sfx(src, SFX_EFFECTS_GLASSHIT)
 	return FALSE
 
 /obj/structure/window/reinforced/holowindow/screwdriver_act(mob/user, obj/item/tool)
@@ -229,7 +229,7 @@ EXTEND_INTERACTIONS(/obj/structure/window/reinforced/holowindow, INTERACT_ITEM(n
 	return ITEM_INTERACT_BLOCKING
 
 /obj/structure/window/reinforced/holowindow/shatter(display_message = 1)
-	playsound(src, "shatter", 70, 1)
+	play_sfx(src, SFX_SHATTER)
 	if(display_message)
 		visible_message("[src] fades away as it shatters!")
 	qdel(src)
@@ -258,7 +258,7 @@ EXTEND_INTERACTIONS(/obj/structure/window/reinforced/holowindow, INTERACT_ITEM(n
 
 /obj/machinery/door/window/holowindoor/proc/interaction_hit(mob/user, obj/item/I, datum/interaction/interaction)
 	var/aforce = I.force
-	playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
+	play_sfx(src, SFX_EFFECTS_GLASSHIT)
 	visible_message(span_bolddanger("[src] was hit by [I]."))
 	if(I.obj_damage_type())
 		take_damage(aforce, I.obj_damage_type(), MELEE)
@@ -293,7 +293,7 @@ EXTEND_INTERACTIONS(/obj/structure/window/reinforced/holowindow, INTERACT_ITEM(n
 
 /obj/machinery/door/window/holowindoor/shatter(display_message = 1)
 	src.density = FALSE
-	playsound(src, "shatter", 70, 1)
+	play_sfx(src, SFX_SHATTER)
 	if(display_message)
 		visible_message("[src] fades away as it shatters!")
 	qdel(src)
@@ -339,10 +339,8 @@ EXTEND_INTERACTIONS(/obj/structure/window/reinforced/holowindow, INTERACT_ITEM(n
 	if(active && default_parry_check(user, attacker, damage_source) && prob(50))
 		user.visible_message(span_danger("\The [user] parries [attack_text] with \the [src]!"))
 
-		var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
-		spark_system.set_up(5, 0, user.loc)
-		spark_system.start()
-		playsound(src, 'sound/weapons/blade1.ogg', 50, 1)
+		fx_sparks(user.loc, 5, FALSE)
+		play_sfx(src, SFX_WEAPONS_BLADE1)
 		return TRUE
 	return FALSE
 
@@ -358,13 +356,13 @@ DECLARE_INTERACTIONS(/obj/item/holo/esword, \
 		force = 30
 		item_state = "[icon_state]_blade"
 		w_class = ITEMSIZE_LARGE
-		playsound(src, 'sound/weapons/saberon.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_SABERON)
 		to_chat(user, span_notice("[src] is now active."))
 	else
 		force = 3
 		item_state = "[icon_state]"
 		w_class = ITEMSIZE_SMALL
-		playsound(src, 'sound/weapons/saberoff.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_SABEROFF)
 		to_chat(user, span_notice("[src] can now be concealed."))
 
 	update_icon()

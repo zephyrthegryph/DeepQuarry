@@ -145,7 +145,7 @@ MATERIAL_MIX(/obj/item/weldingtool, list(MAT_STEEL = 70, MAT_GLASS = 30))
 		if(!welding && max_fuel)
 			O.reagents.trans_to_obj(src, max_fuel)
 			to_chat(user, span_notice("Welder refueled"))
-			playsound(src, 'sound/effects/refill.ogg', 50, 1, -6)
+			play_sfx(src, SFX_EFFECTS_REFILL)
 			return
 		else if(!welding)
 			to_chat(user, span_notice("[src] doesn't use fuel."))

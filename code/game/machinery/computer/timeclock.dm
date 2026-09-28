@@ -62,7 +62,7 @@ DECLARE_REF(/obj/machinery/computer/timeclock, "card", SPILL, null)
 	if(!card && user.unEquip(I))
 		I.forceMove(src)
 		card = I
-		playsound(src, 'sound/effects/insert_id_card.ogg', 75, 0) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
+		play_sfx(src, SFX_EFFECTS_INSERT_ID_CARD) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
 		SStgui.update_uis(src)
 		update_icon()
 	else if(card)
@@ -121,13 +121,13 @@ DECLARE_REF(/obj/machinery/computer/timeclock, "card", SPILL, null)
 			if(card)
 				ui.user.put_in_hands(card)
 				card = null
-				playsound(src, 'sound/effects/remove_id_card.ogg', 75, 0) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
+				play_sfx(src, SFX_EFFECTS_REMOVE_ID_CARD) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
 			else
 				var/obj/item/I = ui.user.get_active_hand()
 				if (istype(I, /obj/item/card/id) && ui.user.unEquip(I))
 					I.forceMove(src)
 					card = I
-					playsound(src, 'sound/effects/insert_id_card.ogg', 75, 0) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
+					play_sfx(src, SFX_EFFECTS_INSERT_ID_CARD) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
 			update_icon()
 			return TRUE
 		if("switch-to-onduty-rank")
@@ -136,7 +136,7 @@ DECLARE_REF(/obj/machinery/computer/timeclock, "card", SPILL, null)
 					makeOnDuty(params["switch-to-onduty-rank"], params["switch-to-onduty-assignment"], ui.user)
 					ui.user.put_in_hands(card)
 					card = null
-					playsound(src, 'sound/effects/remove_id_card.ogg', 75, 0) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
+					play_sfx(src, SFX_EFFECTS_REMOVE_ID_CARD) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
 			update_icon()
 			return TRUE
 		if("switch-to-offduty")
@@ -145,7 +145,7 @@ DECLARE_REF(/obj/machinery/computer/timeclock, "card", SPILL, null)
 					makeOffDuty(ui.user)
 					ui.user.put_in_hands(card)
 					card = null
-					playsound(src, 'sound/effects/remove_id_card.ogg', 75, 0) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
+					play_sfx(src, SFX_EFFECTS_REMOVE_ID_CARD) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
 			update_icon()
 			return TRUE
 

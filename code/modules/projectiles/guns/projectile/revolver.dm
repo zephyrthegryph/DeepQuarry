@@ -25,7 +25,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver, INTERACT_VERB("Spin cylin
 	chamber_offset = 0
 	visible_message(span_warning("\The [user] spins the cylinder of \the [src]!"), \
 	span_notice("You hear something metallic spin and click."))
-	playsound(src, 'sound/weapons/revolver_spin.ogg', 100, 1)
+	play_sfx(src, SFX_WEAPONS_REVOLVER_SPIN)
 	loaded = shuffle(loaded)
 	if(rand(1,max_shells) > loaded.len)
 		chamber_offset = rand(0,max_shells - loaded.len)
@@ -288,7 +288,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/lemat, INTERACT_VERB("Swap
 	chamber_offset = 0
 	visible_message(span_warning("\The [user] spins the cylinder of \the [src]!"), \
 	span_notice("You hear something metallic spin and click."))
-	playsound(src, 'sound/weapons/revolver_spin.ogg', 100, 1)
+	play_sfx(src, SFX_WEAPONS_REVOLVER_SPIN)
 	if(!flipped_firing)
 		loaded = shuffle(loaded)
 		if(rand(1,max_shells) > loaded.len)

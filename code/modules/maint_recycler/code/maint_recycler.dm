@@ -179,7 +179,7 @@ DECLARE_REF(/obj/machinery/maint_recycler, "item_overlay", OWNED, null)
 	to_chat(user, span_warning("You lever \the [src]'s door open!"))
 	open_door(user)
 	eject_item(user)
-	playsound(src, 'sound/machines/door/airlock_creaking.ogg', 4, FALSE)
+	play_sfx(src, SFX_MACHINES_DOOR_AIRLOCK_CREAKING, 0.04, vary = FALSE)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/maint_recycler/declare_interactions(list/into)
@@ -253,7 +253,7 @@ DECLARE_REF(/obj/machinery/maint_recycler, "item_overlay", OWNED, null)
 				source.forceMove(src)
 				inserted_item = source
 				update_icon()
-				playsound(src, 'code/modules/maint_recycler/sfx/voice/a wonderful throw.ogg', 75)
+				play_sfx(src, SFX_RECYCLER_A_WONDERFUL_THROW)
 				set_screen_state("screen_happy",10)
 				return
 		else
@@ -265,10 +265,10 @@ DECLARE_REF(/obj/machinery/maint_recycler, "item_overlay", OWNED, null)
 	set_screen_state("screen_deny",10)
 	to_chat(user, span_warning("\The [src] rejects \the [O]!"))
 	if(prob(99))
-		playsound(src, 'code/modules/maint_recycler/sfx/generaldeny.ogg', 75, 1)
+		play_sfx(src, SFX_RECYCLER_GENERALDENY)
 		return
 	else
-		playsound(src, 'code/modules/maint_recycler/sfx/voice/mad/denied.ogg', 75)
+		play_sfx(src, SFX_RECYCLER_DENIED)
 
 //add people to the evil list, and be mean to them
 /obj/machinery/maint_recycler/proc/evil_act(obj/item/O,mob/user)
@@ -295,14 +295,14 @@ DECLARE_REF(/obj/machinery/maint_recycler, "item_overlay", OWNED, null)
 	if(!door_open || door_locked) return
 	door_moving = TRUE
 	flick("door closing",hatch)
-	playsound(src, 'code/modules/maint_recycler/sfx/hatchclose.ogg', 40, 1)
+	play_sfx(src, SFX_RECYCLER_HATCHCLOSE)
 	om_after(src, 1 SECOND, PROC_REF(door_finished_moving), FALSE)
 
 /obj/machinery/maint_recycler/proc/open_door(mob/user)
 	if(door_open || door_locked) return
 	door_moving = TRUE
 	flick("door opening",hatch)
-	playsound(src, 'code/modules/maint_recycler/sfx/hatchopen.ogg', 40, 1)
+	play_sfx(src, SFX_RECYCLER_HATCHOPEN)
 	om_after(src, 1 SECOND, PROC_REF(door_finished_moving), TRUE)
 
 /obj/machinery/maint_recycler/proc/door_finished_moving(open)
@@ -321,7 +321,7 @@ DECLARE_REF(/obj/machinery/maint_recycler, "item_overlay", OWNED, null)
 /obj/machinery/maint_recycler/proc/shoot(mob/victim)
 	var/projectile = /obj/item/projectile/beam/stun
 	var/obj/item/projectile/P = new projectile(loc)
-	playsound(src, 'sound/weapons/taser.ogg', 30, 1)
+	play_sfx(src, SFX_WEAPONS_TASER)
 	P.old_style_target(victim)
 	P.fire()
 
@@ -356,7 +356,7 @@ DECLARE_REF(/obj/machinery/maint_recycler, "item_overlay", OWNED, null)
 		to_chat(user, span_warning("\The [src] doesn't have anything to recycle!"))
 		return //sanity check
 	door_locked = TRUE
-	playsound(src, 'code/modules/maint_recycler/sfx/recycle_act.ogg', 50)
+	play_sfx(src, SFX_RECYCLER_RECYCLE_ACT)
 	set_screen_state("screen_recycle",20)
 	om_after(src, 2 SECONDS, PROC_REF(post_recycle), user)
 
@@ -554,11 +554,11 @@ UTILITY PROCS
 	if(is_on == state) return
 	is_on = state
 	if(is_on)
-		playsound(src, 'code/modules/maint_recycler/sfx/initialBoot.ogg', 20, 1)
+		play_sfx(src, SFX_RECYCLER_INITIALBOOT)
 		set_light(light_range_on, light_power_on)
 		monitor_screen.icon_state = "screen_default"
 	else
-		playsound(src, 'sound/machines/terminal_off.ogg', 50, 1)
+		play_sfx(src, SFX_MACHINES_TERMINAL_OFF)
 		set_light(0)
 		monitor_screen.icon_state = "screen_off"
 

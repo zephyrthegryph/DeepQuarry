@@ -43,9 +43,7 @@
 		else
 			new /obj/item/clothing/suit/storage/vest(Tsec)
 
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(3, 1, src)
-	s.start()
+	fx_sparks(src, 3)
 
 	new /obj/effect/decal/cleanable/blood/oil(Tsec)
 	return ..()
@@ -64,7 +62,7 @@
 	if(emagged)
 		projectile = /obj/item/projectile/beam
 
-	playsound(src, emagged ? 'sound/weapons/Laser.ogg' : 'sound/weapons/taser.ogg', 50, 1)
+	play_sfx(src, emagged ? SFX_WEAPONS_LASER : SFX_WEAPONS_TASER, volume = 50)
 	var/obj/item/projectile/P = new projectile(loc)
 
 	P.firer = src

@@ -344,7 +344,7 @@ DECLARE_INTERACTIONS(/obj/item/roller_holder, INTERACT_USE(null, PROC_REF(intera
 /obj/structure/bed/roller/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
 
-	playsound(src, 'sound/effects/roll.ogg', 100, 1)
+	play_sfx(src, SFX_EFFECTS_ROLL)
 
 /obj/structure/bed/roller/post_buckle_mob(mob/living/M as mob)
 	if(M?.buckled_to() == src)

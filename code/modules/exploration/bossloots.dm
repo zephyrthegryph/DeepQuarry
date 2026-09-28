@@ -76,7 +76,7 @@
 		. = ..()
 		if(active && prob(2))
 			target.injure(INJURY_CUT, 50, hit_zone, src)
-			playsound(src, "blade1", 50, 1)
+			play_sfx(src, SFX_WEAPONS_BLADE1)
 
 //Mining tool
 /obj/item/personal_shield_generator/belt/magnetbelt

@@ -32,12 +32,12 @@ DECLARE_INTERACTIONS(/obj/structure/ladder_assembly, INTERACT_ITEM(null, PROC_RE
 	switch(state)
 		if(LADDER_CONSTRUCTION_UNANCHORED)
 			state = LADDER_CONSTRUCTION_WRENCHED
-			playsound(src, 'sound/items/Ratchet.ogg', 75, TRUE)
+			play_sfx(src, SFX_ITEMS_RATCHET, 1.5)
 			user.visible_message("\The [user] secures \the [src]'s reinforcing bolts.", "You secure the reinforcing bolts.", "You hear a ratchet")
 			anchored = TRUE
 		if(LADDER_CONSTRUCTION_WRENCHED)
 			state = LADDER_CONSTRUCTION_UNANCHORED
-			playsound(src, 'sound/items/Ratchet.ogg', 75, TRUE)
+			play_sfx(src, SFX_ITEMS_RATCHET, 1.5)
 			user.visible_message("\The [user] unsecures \the [src]'s reinforcing bolts.", "You undo the reinforcing bolts.", "You hear a ratchet")
 			anchored = FALSE
 		if(LADDER_CONSTRUCTION_WELDED)
@@ -56,14 +56,14 @@ DECLARE_INTERACTIONS(/obj/structure/ladder_assembly, INTERACT_ITEM(null, PROC_RE
 			if(!WT.remove_fuel(0, user))
 				to_chat(user, span_warning("You need more welding fuel to complete this task."))
 				return ITEM_INTERACT_BLOCKING
-			playsound(src, 'sound/items/Welder2.ogg', 50, TRUE)
+			play_sfx(src, SFX_ITEMS_WELDER2)
 			user.visible_message("\The [user] starts to weld \the [src] to the floor.", "You start to weld \the [src] to the floor.", "You hear welding")
 			om_task_start(/datum/om/task/timed/ladder_assembly_weld, user, src, receiver = src, WT = WT, from_state = LADDER_CONSTRUCTION_WRENCHED)
 		if(LADDER_CONSTRUCTION_WELDED)
 			if(!WT.remove_fuel(0, user))
 				to_chat(user, span_warning("You need more welding fuel to complete this task."))
 				return ITEM_INTERACT_BLOCKING
-			playsound(src, 'sound/items/Welder2.ogg', 50, TRUE)
+			play_sfx(src, SFX_ITEMS_WELDER2)
 			user.visible_message("\The [user] starts to cut \the [src] free from the floor.", "You start to cut \the [src] free from the floor.", "You hear welding")
 			om_task_start(/datum/om/task/timed/ladder_assembly_weld, user, src, receiver = src, WT = WT, from_state = LADDER_CONSTRUCTION_WELDED)
 	return ITEM_INTERACT_SUCCESS

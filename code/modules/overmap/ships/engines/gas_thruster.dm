@@ -151,7 +151,7 @@ DECLARE_REF(/obj/machinery/atmospherics/unary/engine, "controller", OWNED, null)
 	if(!removed)
 		return 0
 	. = calculate_thrust(removed)
-	playsound(src, 'sound/machines/thruster.ogg', 100 * thrust_limit, 0, world.view * 4, 0.1)
+	play_sfx(src, SFX_MACHINES_THRUSTER, volume = 100 * thrust_limit, extrarange = world.view * 4)
 	if(network)
 		network.mark_dirty()
 

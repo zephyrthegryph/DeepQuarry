@@ -28,7 +28,7 @@
 /mob/living/bot/cleanbot/edCLN/handleIdle()
 	if(vocal && prob(10))
 		automatic_custom_emote(AUDIBLE_MESSAGE, "makes a less than thrilled beeping sound.")
-		playsound(src, 'sound/machines/synth_yes.ogg', 50, 0)
+		play_sfx(src, SFX_MACHINES_SYNTH_YES)
 
 	if(red_switch && !blue_switch && !green_switch && prob(10) || src.emagged)
 		if(istype(loc, /turf/simulated))
@@ -66,9 +66,7 @@
 		else
 			new /obj/item/assembly/prox_sensor(Tsec)
 
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(3, 1, src)
-	s.start()
+	fx_sparks(src, 3)
 	return ..()
 
 /mob/living/bot/cleanbot/edCLN/tgui_data(mob/user)
@@ -102,7 +100,7 @@
 	if(!emagged)
 		if(user)
 			to_chat(user, span_notice("The [src] buzzes and beeps."))
-			playsound(src, 'sound/machines/buzzbeep.ogg', 50, 0)
+			play_sfx(src, SFX_MACHINES_BUZZBEEP)
 		emagged = 1
 		return 1
 

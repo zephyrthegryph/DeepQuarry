@@ -29,11 +29,11 @@
 	say_list_type = /datum/say_list/Eddy
 
 /mob/living/simple_mob/horror/Eddy/on_death(gibbed)
-	playsound(src, 'sound/h_sounds/headcrab.ogg', 50, 1)
+	play_sfx(src, SFX_H_SOUNDS_HEADCRAB)
 	..()
 
 /mob/living/simple_mob/horror/Eddy/bullet_act()
-	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
+	play_sfx(src, SFX_H_SOUNDS_HOLLA)
 	..()
 
 /datum/say_list/Eddy

@@ -27,7 +27,7 @@
 	user.visible_message(span_danger("\The [user] has taped up \the [H]'s eyes!"))
 	H.equip_to_slot_or_del(new /obj/item/clothing/glasses/sunglasses/blindfold/tape(H), SLOT_ID_EYES, ignore_obstructions = FALSE)
 	H.update_inv_glasses()
-	playsound(src, 'sound/effects/tape.ogg',25)
+	play_sfx(src, SFX_EFFECTS_TAPE)
 
 /obj/item/tape_roll/proc/tape_mouth_done(mob/living/carbon/human/H, mob/living/user)
 	if(!can_place(H, user))
@@ -37,7 +37,7 @@
 	user.visible_message(span_danger("\The [user] has taped up \the [H]'s mouth!"))
 	H.equip_to_slot_or_del(new /obj/item/clothing/mask/muzzle/tape(H), SLOT_ID_MASK, ignore_obstructions = FALSE)
 	H.update_inv_wear_mask()
-	playsound(src, 'sound/effects/tape.ogg',25)
+	play_sfx(src, SFX_EFFECTS_TAPE)
 
 /obj/item/tape_roll/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	if(ishuman(M))
@@ -88,7 +88,7 @@
 					return ITEM_INTERACT_FAILURE
 
 				var/obj/item/handcuffs/cable/tape/T = new(user)
-				playsound(src, 'sound/effects/tape.ogg',25)
+				play_sfx(src, SFX_EFFECTS_TAPE)
 
 				if(!T.attempt_to_cuff(H, user))
 					consume(T, user)
@@ -103,7 +103,7 @@
 	var/obj/item/ducttape/tape = new(get_turf(src))
 	tape.attach(W)
 	user.put_in_hands(tape)
-	playsound(src, 'sound/effects/tape.ogg',25)
+	play_sfx(src, SFX_EFFECTS_TAPE)
 
 /obj/item/ducttape
 	name = "tape"
@@ -182,7 +182,7 @@ DECLARE_INTERACTIONS(/obj/item/ducttape, \
 			return											// reduce papers around corners issue.
 
 	user.drop_from_inventory(src)
-	playsound(src, 'sound/effects/tape.ogg',25)
+	play_sfx(src, SFX_EFFECTS_TAPE)
 	forceMove(source_turf)
 	anchored = TRUE
 

@@ -65,10 +65,8 @@ MATERIAL_MIX(/obj/item/fusion_coil, list(MAT_STEEL = 6000, MAT_COPPER = 4000, MA
 		return
 
 	visible_message(span_danger("\The [src] sparks and sputters!"))
-	var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
-	spark_system.set_up(5, 0, src.loc)
-	spark_system.start()
-	playsound(src, "sparks", 50, 1)
+	fx_sparks(src.loc, 5, FALSE)
+	play_sfx(src, SFX_SPARKS)
 	coil_damaged = TRUE
 	coil_charge = (coil_charge / 2)
 	update_icon()

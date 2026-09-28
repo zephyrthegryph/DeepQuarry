@@ -283,7 +283,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/robotic/jaws/small, INTERACT_USE(null, PROC
 			else
 				target.visible_message(span_danger("[target] has been zapped with [src] by [user]!"))
 
-	playsound(src, 'sound/weapons/egloves.ogg', 50, 1, -1)
+	play_sfx(src, SFX_WEAPONS_EGLOVES)
 	target.stun_effect_act(0, agony, hit_zone, src, electric = TRUE)
 	msg_admin_attack("[key_name(user)] stunned [key_name(target)] with the [src].")
 	if(ishuman(target))
@@ -320,10 +320,10 @@ DECLARE_INTERACTIONS(/obj/item/melee/robotic/blade, \
 /// Old attack_self.
 /obj/item/melee/robotic/blade/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(active) //turning off
-		playsound(src, 'sound/weapons/saberoff.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_SABEROFF)
 		force = 0
 	else //turning on
-		playsound(src, 'sound/weapons/saberon.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_SABERON)
 		force = active_force
 	active = !active
 	to_chat(user, span_notice("[src] is now [active ? "on" : "off"]."))
@@ -399,7 +399,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/robotic/blade, \
 		// EMP stuff.
 		var/obj/O = AM
 		O.emp_act(3) // A weaker severity is used because this has infinite uses.
-		playsound(O, 'sound/effects/EMPulse.ogg', 100, 1)
+		play_sfx(O, SFX_EFFECTS_EMPULSE)
 		user.setClickCooldown(user.get_attack_speed(src)) // A lot of objects don't set click delay.
 	return ..()
 
@@ -408,9 +408,9 @@ DECLARE_INTERACTIONS(/obj/item/melee/robotic/blade, \
 	if(HAS_SYNTHETIC_BIOLOGY(target))
 		// Do some extra damage.  Not a whole lot more since emp_act() is pretty nasty on FBPs already.
 		target.emp_act(3) // A weaker severity is used because this has infinite uses.
-		playsound(target, 'sound/effects/EMPulse.ogg', 100, 1)
+		play_sfx(target, SFX_EFFECTS_EMPULSE)
 		target.injure(INJURY_BURN, force * 3, hit_zone, src) // 15 Burn, for 20 total.
-		playsound(target, 'sound/weapons/blade1.ogg', 100, 1)
+		play_sfx(target, SFX_WEAPONS_BLADE1, 2)
 
 		// Make lesser robots really mad at us.
 		if(target.mob_class & MOB_CLASS_SYNTHETIC)
@@ -476,7 +476,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/robotic/baton, \
 /obj/item/melee/robotic/baton/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	status = !status
 	to_chat(user, span_notice("[src] is now [status ? "on" : "off"]."))
-	playsound(src, "sparks", 75, 1, -1)
+	play_sfx(src, SFX_SPARKS, 1.5, extrarange = -1)
 	update_icon()
 	return TRUE
 
@@ -530,7 +530,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/robotic/baton, \
 		target.visible_message(span_danger("[target] has been prodded in the [affecting.name] with [src] by [user]!"))
 	else
 		target.visible_message(span_danger("[target] has been prodded with [src] by [user]!"))
-	playsound(src, 'sound/weapons/egloves.ogg', 50, 1, -1)
+	play_sfx(src, SFX_WEAPONS_EGLOVES)
 	target.stun_effect_act(stun, agony, hit_zone, src, electric = TRUE)
 	msg_admin_attack("[key_name(user)] stunned [key_name(target)] with the [src].")
 	if(ishuman(target))

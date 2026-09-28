@@ -39,9 +39,7 @@
 	var/obj/machinery/M = pick(possible_machines)
 	if(M)
 		M.visible_message(span_warning("\The [M] sparks violently and catches fire!"))
-		var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
-		sparks.set_up(4, 1, get_turf(M))
-		sparks.start()
+		fx_sparks(get_turf(M), 4)
 
 		var/turf/T = get_turf(M)
 		T.lingering_fire(0.3)

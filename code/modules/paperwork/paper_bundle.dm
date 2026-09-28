@@ -161,14 +161,14 @@ DECLARE_INTERACTIONS(/obj/item/paper_bundle, \
 				insert_sheet_at(usr, page + 1, in_hand)
 			else if(page != pages.len)
 				page++
-				playsound(src, "pageturn", 50, 1)
+				play_sfx(src, SFX_PAGETURN)
 			return TRUE
 		if("prev_page")
 			if(in_hand && (istype(in_hand, /obj/item/paper) || istype(in_hand, /obj/item/photo)))
 				insert_sheet_at(usr, page, in_hand)
 			else if(page > 1)
 				page--
-				playsound(src, "pageturn", 50, 1)
+				play_sfx(src, SFX_PAGETURN)
 			return TRUE
 		if("remove")
 			if(!pages.len)

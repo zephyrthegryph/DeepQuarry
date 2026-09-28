@@ -402,9 +402,9 @@ DECLARE_REF(/obj/machinery/power/supermatter, "soundloop", OWNED, null)
 	if(COOLDOWN_FINISHED(src, last_accent_sound) && prob(20))
 		var/aggression = min(((damage / 800) * (power / 2500)), 1.0) * 100
 		if(damage >= 300)
-			playsound(src, "smdelam", max(50, aggression), FALSE, 10)
+			play_sfx(src, SFX_SMDELAM, volume = max(50, aggression))
 		else
-			playsound(src, "smcalm", max(50, aggression), FALSE, 10)
+			play_sfx(src, SFX_SMCALM, volume = max(50, aggression))
 		var/next_sound = round((100 - aggression) * 5)
 		COOLDOWN_START(src, last_accent_sound, max(SUPERMATTER_ACCENT_SOUND_COOLDOWN, next_sound))
 

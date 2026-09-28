@@ -124,7 +124,7 @@
 	var/obj/item/projectile/beam/laser_vision/LE = new (T)
 	LE.icon = 'icons/effects/genetics.dmi'
 	LE.icon_state = "eyelasers"
-	playsound(src, 'sound/weapons/taser2.ogg', 75, 1)
+	play_sfx(src, SFX_WEAPONS_TASER2)
 	LE.firer = src
 	LE.preparePixelProjectile(A, src, params)
 	LE.fire()

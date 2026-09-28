@@ -29,11 +29,11 @@
 	say_list_type = /datum/say_list/Willy
 
 /mob/living/simple_mob/horror/Willy/on_death(gibbed)
-	playsound(src, 'sound/h_sounds/sampler.ogg', 50, 1)
+	play_sfx(src, SFX_H_SOUNDS_SAMPLER)
 	..()
 
 /mob/living/simple_mob/horror/Willy/bullet_act()
-	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
+	play_sfx(src, SFX_H_SOUNDS_HOLLA)
 	..()
 
 /datum/say_list/Willy

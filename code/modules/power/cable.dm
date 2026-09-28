@@ -364,9 +364,7 @@ DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interact
 	if(!prob(prb))
 		return 0
 	if (electrocute_mob(user, src, src, siemens_coeff))
-		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-		s.set_up(5, 1, src)
-		s.start()
+		fx_sparks(src, 5)
 		if(user.has_status(EFFECT_STUNNED))
 			return 1
 	return 0

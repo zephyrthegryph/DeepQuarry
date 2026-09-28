@@ -77,7 +77,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/bath, INTERACT_ITEM(null, PROC_REF(bath_i
 		else
 			reagents.trans_to_obj(I, 5)
 			to_chat(user, span_notice("You wet \the [I] in \the [src]."))
-			playsound(src, 'sound/effects/slosh.ogg', 25, 1)
+			play_sfx(src, SFX_EFFECTS_SLOSH)
 	if(istype(I, /obj/item/reagent_containers/glass))
 		update_icon()
 		return INTERACTION_HANDLED_PASS

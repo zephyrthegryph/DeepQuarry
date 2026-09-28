@@ -43,7 +43,7 @@
 
 	if(missed) // Most likely we have a slow attack and they dodged it or we somehow got moved.
 		add_attack_logs(src, A, "Animal-attacked (dodged)", admin_notify = FALSE)
-		playsound(src, 'sound/weapons/punchmiss.ogg', 75, 1)
+		play_sfx(src, SFX_WEAPONS_PUNCHMISS, 3, extrarange = 0)
 		visible_message(span_warning("\The [src] misses their attack."))
 		return FALSE
 
@@ -59,7 +59,7 @@
 		if(prob(melee_miss_chance))
 			add_attack_logs(src, L, "Animal-attacked (miss)", admin_notify = FALSE)
 			do_attack_animation(src)
-			playsound(src, 'sound/weapons/punchmiss.ogg', 75, 1)
+			play_sfx(src, SFX_WEAPONS_PUNCHMISS, 3, extrarange = 0)
 			return FALSE // We missed.
 
 		if(ishuman(L))
@@ -246,7 +246,7 @@
 	var/turf/T = get_turf(target)
 	if(T)
 		visible_message(span_warning("\The [src] fires a rocket into the air!"))
-		playsound(src, 'sound/weapons/rpg.ogg', 70, 1)
+		play_sfx(src, SFX_WEAPONS_RPG, volume = 70)
 		face_atom(T)
 		var/obj/item/projectile/arc/explosive_rocket/rocket = new rocket_type(loc)
 		rocket.old_style_target(T, src)
@@ -258,7 +258,7 @@
 
 /mob/living/simple_mob/proc/rocket_volley_end(atom/target, retract_message, then_proc)
 	visible_message(span_warning(retract_message))
-	playsound(src, 'sound/effects/turret/move2.wav', 50, 1)
+	play_sfx(src, SFX_EFFECTS_TURRET_MOVE2)
 	if(then_proc)
 		call(src, then_proc)(target)
 

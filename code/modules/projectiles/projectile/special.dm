@@ -120,7 +120,7 @@
 		if(A)
 
 			A.ex_act(2)
-			playsound(src, 'sound/effects/meteorimpact.ogg', 40, 1)
+			play_sfx(src, SFX_EFFECTS_METEORIMPACT)
 
 			for(var/mob/M in range(10, src))
 				if(!M.stat && !isAI(M))\

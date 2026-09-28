@@ -102,7 +102,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pakkun, \
 		return FALSE
 	if(!resting)
 		return FALSE
-	playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+	play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 	user.visible_message(span_notice("\The [user] shakes \the [src] awake."),span_notice("You shake \the [src] awake!"))
 	lay_down()
 	return TRUE

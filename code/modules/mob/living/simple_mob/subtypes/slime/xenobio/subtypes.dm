@@ -358,21 +358,17 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/xenobio/dark_purple, INTERACT_I
 	var/turf/target_turf = pick(valid_turfs)
 	var/turf/T = get_turf(src)
 
-	var/datum/effect/effect/system/spark_spread/s1 = new /datum/effect/effect/system/spark_spread
-	s1.set_up(5, 1, T)
-	var/datum/effect/effect/system/spark_spread/s2 = new /datum/effect/effect/system/spark_spread
-	s2.set_up(5, 1, target_turf)
 
 
 	T.visible_message(span_notice("\The [src] vanishes!"))
-	s1.start()
+	fx_sparks(T, 5)
 
 	forceMove(target_turf)
-	playsound(target_turf, 'sound/effects/phasein.ogg', 50, 1)
+	play_sfx(target_turf, SFX_EFFECTS_PHASEIN, 0.5)
 	to_chat(src, span_notice("You teleport to \the [target_turf]."))
 
 	target_turf.visible_message(span_warning("\The [src] appears!"))
-	s2.start()
+	fx_sparks(target_turf, 5)
 
 	if(Adjacent(A))
 		attack_target(A)
@@ -412,14 +408,14 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/xenobio/dark_purple, INTERACT_I
 		var/mob/living/L = A
 		if(L.mob_size <= MOB_MEDIUM)
 			visible_message(span_danger("\The [src] sends \the [L] flying with the impact!"))
-			playsound(src, "punch", 50, 1)
+			play_sfx(src, SFX_PUNCH)
 			L.status_at_least(EFFECT_WEAKENED, 1)
 			var/throwdir = get_dir(src, L)
 			L.throw_at(get_edge_target_turf(L, throwdir), 3, 1, src)
 		else
 			to_chat(L, span_warning("\The [src] hits you with incredible force, but you remain in place."))
 			visible_message(span_danger("\The [src] hits \the [L] with incredible force, to no visible effect!"))
-			playsound(src, "punch", 50, 1)
+			play_sfx(src, SFX_PUNCH)
 
 
 /mob/living/simple_mob/slime/xenobio/amber/get_mechanics_info(list/additional_information)

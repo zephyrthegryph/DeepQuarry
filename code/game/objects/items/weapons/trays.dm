@@ -94,7 +94,7 @@ DECLARE_INTERACTIONS(/obj/item/tray, INTERACT_ITEM(null, PROC_REF(interaction_it
 		if(!COOLDOWN_FINISHED(src, shield_bash))
 			return INTERACTION_HANDLED_PASS
 		user.visible_message(span_warning("[user] bashes [src] with [W]!"))
-		playsound(src, 'sound/effects/shieldbash.ogg', 50, 1)
+		play_sfx(src, SFX_EFFECTS_SHIELDBASH)
 		COOLDOWN_START(src, shield_bash, 2.5 SECONDS)
 	else
 		return FALSE

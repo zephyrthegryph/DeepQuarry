@@ -212,7 +212,7 @@
 	if(!speed || speed < 1)		// Do NOT spin with infinite speed, it will break the reality
 		return
 	if(istype(src?.buckled_to(),/obj/structure/bed/chair/office)) // WEEEE!!!
-		playsound(src, 'sound/effects/roll.ogg', 100, 1)
+		play_sfx(src, SFX_EFFECTS_ROLL)
 	om_task_start(/datum/om/task/spin, src, null, left = spintime, speed = speed, facing = dir)
 
 /// Spinning: one quarter turn every `speed` deciseconds until `left` runs out.

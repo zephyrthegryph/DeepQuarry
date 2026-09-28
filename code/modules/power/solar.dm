@@ -89,7 +89,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	return FALSE
 
 /obj/machinery/power/solar/crowbar_act(mob/user, obj/item/W)
-	playsound(src, 'sound/machines/click.ogg', 50, 1)
+	play_sfx(src, SFX_MACHINES_CLICK)
 	user.visible_message(span_notice("[user] begins to take the glass off the solar panel."))
 	use_tool(user, W, src, delay = 2 SECONDS, volume = 0, receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
@@ -97,7 +97,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 /obj/machinery/power/solar/proc/crowbar_act_tool_done(mob/user)
 	var/obj/item/solar_assembly/S = new(loc)
 	S.anchored = TRUE
-	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 	user.visible_message(span_notice("[user] takes the glass off the solar panel."))
 	replace_with(src, glass_type, 2)
 
@@ -244,7 +244,7 @@ DECLARE_INTERACTIONS(/obj/item/solar_assembly, \
 		if(istype(W, /obj/item/stack/material) && (W.get_material_name() == MAT_GLASS || W.get_material_name() == MAT_RGLASS))
 			var/obj/item/stack/material/S = W
 			if(S.use(2))
-				playsound(src, 'sound/machines/click.ogg', 50, 1)
+				play_sfx(src, SFX_MACHINES_CLICK)
 				user.visible_message(span_notice("[user] places the glass on the solar assembly."))
 				replace_with(src, tracker ? /obj/machinery/power/tracker : /obj/machinery/power/solar, W.type)
 			else

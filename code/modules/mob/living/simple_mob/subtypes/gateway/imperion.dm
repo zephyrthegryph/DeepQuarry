@@ -90,7 +90,7 @@
 	// Telegraph our next move.
 	Beam(target, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)
 	visible_message(span_warning("\The [src] deploys a missile rack!"))
-	playsound(src, 'sound/effects/turret/move1.wav', 50, 1)
+	play_sfx(src, SFX_EFFECTS_TURRET_MOVE1)
 	rocket_volley(target, /obj/item/projectile/arc/explosive_rocket, 3, "\The [src] retracts the missile rack.")
 
 /mob/living/simple_mob/mechanical/mecha/imperion/phase1/proc/launch_rockets(atom/target)
@@ -119,7 +119,7 @@
 /mob/living/simple_mob/mechanical/mecha/imperion/phase2/proc/electric_defense(atom/target)
 	var/turf/T = get_turf(target)
 	visible_message(span_warning("\The [src] fires an energetic sphere into the air!"))
-	playsound(src, 'sound/weapons/Laser.ogg', 50, 1)
+	play_sfx(src, SFX_WEAPONS_LASER)
 	face_atom(T)
 	var/obj/item/projectile/arc/microsingulo/sphere = new(loc)
 	sphere.old_style_target(T, src)
@@ -175,21 +175,17 @@
 	var/turf/target_turf = pick(valid_turfs)
 	var/turf/T = get_turf(src)
 
-	var/datum/effect/effect/system/spark_spread/s1 = new /datum/effect/effect/system/spark_spread
-	s1.set_up(5, 1, T)
-	var/datum/effect/effect/system/spark_spread/s2 = new /datum/effect/effect/system/spark_spread
-	s2.set_up(5, 1, target_turf)
 
 
 	T.visible_message(span_notice("\The [src] vanishes!"))
-	s1.start()
+	fx_sparks(T, 5)
 
 	forceMove(target_turf)
-	playsound(target_turf, 'sound/effects/phasein.ogg', 50, 1)
+	play_sfx(target_turf, SFX_EFFECTS_PHASEIN, 0.5)
 	to_chat(src, span_notice("You teleport to \the [target_turf]."))
 
 	target_turf.visible_message(span_warning("\The [src] appears!"))
-	s2.start()
+	fx_sparks(target_turf, 5)
 
 //Phase four, fusion time.
 /mob/living/simple_mob/mechanical/mecha/imperion/phase4 //Starts to slow down
@@ -213,7 +209,7 @@
 	// Telegraph our next move.
 	Beam(target, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)
 	visible_message(span_warning("\The [src] deploys a missile rack!"))
-	playsound(src, 'sound/effects/turret/move1.wav', 50, 1)
+	play_sfx(src, SFX_EFFECTS_TURRET_MOVE1)
 	rocket_volley(target, /obj/item/projectile/arc/explosive_rocket, 3, "\The [src] retracts the missile rack.")
 
 /mob/living/simple_mob/mechanical/mecha/imperion/phase4/proc/launch_rockets(atom/target)
@@ -242,26 +238,22 @@
 	var/turf/target_turf = pick(valid_turfs)
 	var/turf/T = get_turf(src)
 
-	var/datum/effect/effect/system/spark_spread/s1 = new /datum/effect/effect/system/spark_spread
-	s1.set_up(5, 1, T)
-	var/datum/effect/effect/system/spark_spread/s2 = new /datum/effect/effect/system/spark_spread
-	s2.set_up(5, 1, target_turf)
 
 
 	T.visible_message(span_notice("\The [src] vanishes!"))
-	s1.start()
+	fx_sparks(T, 5)
 
 	forceMove(target_turf)
-	playsound(target_turf, 'sound/effects/phasein.ogg', 50, 1)
+	play_sfx(target_turf, SFX_EFFECTS_PHASEIN, 0.5)
 	to_chat(src, span_notice("You teleport to \the [target_turf]."))
 
 	target_turf.visible_message(span_warning("\The [src] appears!"))
-	s2.start()
+	fx_sparks(target_turf, 5)
 
 /mob/living/simple_mob/mechanical/mecha/imperion/phase4/proc/launch_microsingularity(atom/target)
 	var/turf/T = get_turf(target)
 	visible_message(span_warning("\The [src] fires an energetic sphere into the air!"))
-	playsound(src, 'sound/weapons/Laser.ogg', 50, 1)
+	play_sfx(src, SFX_WEAPONS_LASER)
 	face_atom(T)
 	var/obj/item/projectile/arc/microsingulo/sphere = new(loc)
 	sphere.old_style_target(T, src)
@@ -349,7 +341,7 @@
 	// Telegraph our next move.
 	Beam(target, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)
 	visible_message(span_warning("\The [src] deploys a missile rack!"))
-	playsound(src, 'sound/effects/turret/move1.wav', 50, 1)
+	play_sfx(src, SFX_EFFECTS_TURRET_MOVE1)
 	rocket_volley(target, /obj/item/projectile/arc/explosive_rocket, 3, "\The [src] retracts the missile rack.", PROC_REF(microsingularity_followup))
 
 /mob/living/simple_mob/mechanical/mecha/imperion/phase5/proc/microsingularity_followup(atom/target)

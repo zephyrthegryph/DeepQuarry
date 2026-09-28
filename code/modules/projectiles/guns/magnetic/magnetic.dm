@@ -165,7 +165,7 @@ DECLARE_REF(/obj/item/gun/magnetic, "capacitor", OWNED, null)
 			cell = thing
 			om_task_periodic(src, PERIODIC_SLOW)
 			user.drop_from_inventory(cell, src)
-			playsound(src, 'sound/machines/click.ogg', 10, 1)
+			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
 			user.visible_message(span_infoplain(span_bold("\The [user]") + " slots \the [cell] into \the [src]."))
 			update_icon()
 			return
@@ -177,7 +177,7 @@ DECLARE_REF(/obj/item/gun/magnetic, "capacitor", OWNED, null)
 			capacitor = thing
 			om_task_periodic(src, PERIODIC_SLOW)
 			user.drop_from_inventory(capacitor, src)
-			playsound(src, 'sound/machines/click.ogg', 10, 1)
+			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
 			power_per_tick = (power_cost*0.15) * capacitor.rating
 			user.visible_message(span_infoplain(span_bold("\The [user]") + " slots \the [capacitor] into \the [src]."))
 			update_icon()
@@ -201,7 +201,7 @@ DECLARE_REF(/obj/item/gun/magnetic, "capacitor", OWNED, null)
 			ammo.use(1)
 
 		user.visible_message(span_infoplain(span_bold("\The [user]") + " loads \the [src] with \the [loaded]."))
-		playsound(src, 'sound/weapons/flipblade.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_FLIPBLADE)
 		update_icon()
 		return
 	return ..()
@@ -225,7 +225,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/magnetic, INTERACT_HAND(null, PROC_REF(intera
 			removing.forceMove(get_turf(src))
 			user.put_in_hands(removing)
 			user.visible_message(span_infoplain(span_bold("\The [user]") + " removes \the [removing] from \the [src]."))
-			playsound(src, 'sound/machines/click.ogg', 10, 1)
+			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
 			update_icon()
 			return TRUE
 	return FALSE
@@ -322,7 +322,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/magnetic, INTERACT_HAND(null, PROC_REF(intera
 
 /obj/item/gun/magnetic/fuelrod/proc/blitzed(turf/T, mob/living/carbon/M, max_range, banglet)					// Added a new proc called 'bang' that takes a location and a person to be banged.
 	to_chat(M, span_danger("BANG"))						// Called during the loop that bangs people in lockers/containers and when banging
-	playsound(src, 'sound/effects/bang.ogg', 50, 1, 30)		// people in normal view.  Could theroetically be called during other explosions.
+	play_sfx(src, SFX_EFFECTS_BANG, extrarange = 30)		// people in normal view.  Could theroetically be called during other explosions.
 
 	//Checking for protections
 	var/eye_safety = 0
@@ -414,11 +414,9 @@ DECLARE_INTERACTIONS(/obj/item/gun/magnetic, INTERACT_HAND(null, PROC_REF(intera
 
 /obj/item/gun/magnetic/fuelrod/proc/fuelrod_overload()
 	audible_message(span_critical("\The [src]'s power supply begins to overload as the device crumples!"), runemessage = "VWRRRRRRRR")
-	playsound(src, 'sound/effects/grillehit.ogg', 10, 1)
-	var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
+	play_sfx(src, SFX_EFFECTS_GRILLEHIT, 0.2)
 	var/turf/T = get_turf(src)
-	sparks.set_up(2, 1, T)
-	sparks.start()
+	fx_sparks(T, 2)
 	om_after(src, 15, PROC_REF(fuelrod_blows))
 
 /obj/item/gun/magnetic/fuelrod/proc/fuelrod_blows()

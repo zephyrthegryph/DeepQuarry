@@ -673,7 +673,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/aerogelgoggles, \
 		name = "[initial(name)]"
 		user.visible_message("[user] replaces the prescription lenses in \the [src] with generics.")
 
-	playsound(src,'sound/items/Screwdriver.ogg', 50, 1)
+	play_sfx(src, SFX_ITEMS_SCREWDRIVER)
 
 //Prescription kit
 /obj/item/glasses_kit

@@ -158,7 +158,7 @@
 
 	// Swing: lunge + whoosh, then resolve against whoever is in the tiles NOW.
 	do_attack_animation(target)
-	playsound(src, 'sound/weapons/punchmiss.ogg', 40, 1, -1)
+	play_sfx(src, SFX_WEAPONS_PUNCHMISS, 1.6)
 	var/zone = zone_sel?.selecting || BP_TORSO // fall back to chest (clientless mobs have no HUD doll)
 	// Resolve THROUGH the weapon's attack() so per-weapon overrides (stunbaton
 	// deductcharge, energy-blade cell use), is_incorporeal, lastattacker and

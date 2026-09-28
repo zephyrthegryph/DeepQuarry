@@ -710,7 +710,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/bell, \
 
 	if(!jingled)
 		user.audible_message("[user] jingles the [src]'s bell.", runemessage = "jingle")
-		playsound(src, 'sound/items/pickup/ring.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_PICKUP_RING)
 		jingled = 1
 		om_after(src, 50, PROC_REF(jingledreset))
 	return
@@ -821,9 +821,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock, INTERACT_USE(null
 		if(!M)
 			return
 		to_chat(M,span_danger("You feel a sharp shock!"))
-		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-		s.set_up(3, 1, M)
-		s.start()
+		fx_sparks(M, 3)
 		M.status_at_least(EFFECT_WEAKENED, 10)
 
 /obj/item/clothing/accessory/collar/spike

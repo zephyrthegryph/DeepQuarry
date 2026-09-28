@@ -216,10 +216,10 @@ Book Cart End
 	if(dat)
 		display_content(user)
 		user.visible_message("[user] opens a book titled \"[src.title]\" and begins reading intently.")
-		playsound(src, 'sound/bureaucracy/bookopen.ogg', 50, 1)
+		play_sfx(src, SFX_BUREAUCRACY_BOOKOPEN)
 		// onclose() was for the legacy "book" browse() window
 		// that no longer exists (books are TGUI now).
-		playsound(src, 'sound/bureaucracy/bookclose.ogg', 50, 1)
+		play_sfx(src, SFX_BUREAUCRACY_BOOKCLOSE)
 	else
 		to_chat(user, "This book is completely blank!")
 	return TRUE
@@ -352,7 +352,7 @@ DECLARE_INTERACTIONS(/obj/item/book, \
 	if(carved)
 		return
 	to_chat(user, span_notice("You carve out the pages from [title]! You didn't want to read it anyway."))
-	playsound(src, 'sound/bureaucracy/papercrumple.ogg', 50, 1)
+	play_sfx(src, SFX_BUREAUCRACY_PAPERCRUMPLE)
 	new /obj/item/shreddedp(get_turf(src))
 	carved = TRUE
 
@@ -441,12 +441,12 @@ EXTEND_INTERACTIONS(/obj/item/book/bundle, INTERACT_USE("Read", PROC_REF(interac
 		if("next_page")
 			if(page != pages.len)
 				page++
-				playsound(src, "pageturn", 50, 1)
+				play_sfx(src, SFX_PAGETURN)
 			return TRUE
 		if("prev_page")
 			if(page > 1)
 				page--
-				playsound(src, "pageturn", 50, 1)
+				play_sfx(src, SFX_PAGETURN)
 			return TRUE
 
 /*

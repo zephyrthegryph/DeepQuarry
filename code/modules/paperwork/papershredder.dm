@@ -71,7 +71,7 @@
 			return TRUE
 		paperamount += paper_result
 		consume(W, user)
-		playsound(src, 'sound/items/pshred.ogg', 75, 1)
+		play_sfx(src, SFX_ITEMS_PSHRED)
 		flick(shred_anim, src)
 		if(paperamount > max_paper)
 			to_chat(user,span_danger("\The [src] was too full, and shredded paper goes everywhere!"))

@@ -159,16 +159,16 @@
 
 	if (dna_hash in authorized)
 		src.visible_message("\The [src] buzzes. That ID has already been scanned.")
-		playsound(src, 'sound/machines/buzz-sigh.ogg', 50, 0)
+		play_sfx(src, SFX_MACHINES_BUZZ_SIGH)
 		return 0
 
 	if (!(ACCESS_HEADS in access))
 		src.visible_message("\The [src] buzzes, rejecting [ident].")
-		playsound(src, 'sound/machines/deniedbeep.ogg', 50, 0)
+		play_sfx(src, SFX_MACHINES_DENIEDBEEP)
 		return 0
 
 	src.visible_message("\The [src] beeps as it scans [ident].")
-	playsound(src, 'sound/machines/twobeep.ogg', 50, 0)
+	play_sfx(src, SFX_MACHINES_TWOBEEP, vary = FALSE)
 	authorized[dna_hash] = auth_name
 	if (req_authorizations - authorized.len)
 		to_chat(world, span_boldnotice("Alert: [req_authorizations - authorized.len] authorization\s needed to override the shuttle autopilot.")) //TODO- Belsima, make this an announcement instead of magic.

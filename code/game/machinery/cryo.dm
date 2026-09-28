@@ -302,7 +302,7 @@ EXTEND_INTERACTIONS(/obj/machinery/atmospherics/unary/cryo_cell, \
 		return
 	log_game("CRYO: [src] released [key_name(occupant)]: automated triage reports no remaining treatment demand.")
 	visible_message(span_notice("\The [src] pings: treatment complete."))
-	playsound(src, 'sound/machines/ping.ogg', 50, FALSE)
+	play_sfx(src, SFX_MACHINES_PING)
 	go_out()
 
 /obj/machinery/atmospherics/unary/cryo_cell/proc/expel_gas()

@@ -67,7 +67,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/illusion, \
 /mob/living/simple_mob/illusion/proc/illusion_interaction_hand(mob/living/carbon/human/M, obj/item/held, datum/interaction/interaction)
 	. = TRUE
 	if(!realistic)
-		playsound(src, 'sound/weapons/punchmiss.ogg', 25, 1, -1)
+		play_sfx(src, SFX_WEAPONS_PUNCHMISS)
 		visible_message(span_warning("\The [M]'s hand goes through \the [src]!"))
 		return
 	else
@@ -77,10 +77,10 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/illusion, \
 					span_notice("\The [M] hugs [src] to make [p_them()] feel better!"), \
 					span_notice("You hug [src] to make [p_them()] feel better!")
 					) // slightly redundant as at the moment most mobs still use the normal gender var, but it works and future-proofs it
-				playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+				play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 
 			if(I_DISARM)
-				playsound(src, 'sound/weapons/punchmiss.ogg', 25, 1, -1)
+				play_sfx(src, SFX_WEAPONS_PUNCHMISS)
 				visible_message(span_danger("\The [M] attempted to disarm [src]!"))
 				M.do_attack_animation(src)
 
@@ -96,7 +96,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/illusion, \
 	if(realistic)
 		return ..()
 
-	playsound(src, 'sound/weapons/punchmiss.ogg', 25, 1, -1)
+	play_sfx(src, SFX_WEAPONS_PUNCHMISS)
 	visible_message(span_warning("\The [user]'s [I] goes through \the [src]!"))
 	return FALSE
 

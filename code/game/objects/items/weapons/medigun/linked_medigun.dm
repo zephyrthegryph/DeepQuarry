@@ -124,7 +124,7 @@ EXTEND_INTERACTIONS(/obj/item/bork_medigun/linked, INTERACT_USE(null, PROC_REF(i
 	var/datum/beam/scan_beam = user.Beam(target, icon = 'icons/obj/borkmedigun.dmi', icon_state = myicon, time = 6000)
 	var/filter = filter(type = "outline", size = 1, color = mycolor)
 	var/list/box_segments = list()
-	playsound(src, 'sound/weapons/wave.ogg', 50)
+	play_sfx(src, SFX_WEAPONS_WAVE, volume = 50)
 	var/mob/living/carbon/human/H = target
 	to_chat(user, span_notice("Locking on to [H]"))
 	to_chat(H, span_warning("[user] is targetting you with their medigun"))

@@ -759,7 +759,7 @@
 			if(!silent)
 				to_chat(H, span_notice("You splash down into \the [landing]."))
 				landing.visible_message(span_infoplain(span_bold("\The [H]") + " splashes down into \The [landing]."))
-				playsound(H, "'sound/effects/slosh.ogg'", 25, 5)
+				play_sfx(H, SFX_EFFECTS_SLOSH)
 			return TRUE
 
 	if(soft_landing)
@@ -767,7 +767,7 @@
 		if(!silent)
 			to_chat(H, span_notice("You manage to lower impact of the fall and land safely."))
 			landing.visible_message(span_infoplain(span_bold("\The [H]") + " lowers down from above, landing safely."))
-			playsound(H, "rustle", 25, 1)
+			play_sfx(H, SFX_RUSTLE, extrarange = 0)
 		return TRUE
 
 	if(has_trait(src, TRAIT_HEAVY_LANDING))
@@ -775,7 +775,7 @@
 		if(!silent)
 			to_chat(H, span_danger("You land with a heavy crash!"))
 			landing.visible_message(span_danger(span_bold("\The [H]") + " crashes down from above!"))
-			playsound(H, 'sound/effects/meteorimpact.ogg', 75, TRUE, 3)
+			play_sfx(H, SFX_EFFECTS_METEORIMPACT, volume = 75, extrarange = 3)
 			for(var/i = 1 to 10)
 				H.injure(INJURY_BLUNT, rand((0), (10)), null, landing)
 			H.status_at_least(EFFECT_WEAKENED, 20)

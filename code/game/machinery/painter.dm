@@ -202,7 +202,7 @@ DECLARE_REF(/obj/machinery/gear_painter, "inserted", SPILL, null)
 				return TRUE
 			if("clear")
 				inserted.remove_atom_colour(FIXED_COLOUR_PRIORITY)
-				playsound(src, 'sound/effects/spray3.ogg', 50, 1)
+				play_sfx(src, SFX_EFFECTS_SPRAY3)
 				temp = "Cleared Successfully!"
 				return TRUE
 			if("set_matrix_color")
@@ -255,7 +255,7 @@ DECLARE_REF(/obj/machinery/gear_painter, "inserted", SPILL, null)
 		temp = "Invalid color!"
 		return FALSE
 	inserted.add_atom_colour(color_to_use, FIXED_COLOUR_PRIORITY)
-	playsound(src, 'sound/effects/spray3.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_SPRAY3)
 	return TRUE
 
 /// Produces the preview image of the item, used in the UI, the way the color is not stacking is a sin.

@@ -205,7 +205,7 @@
 
 	new /obj/effect/gibspawner/generic(T)
 
-	playsound(src.loc, 'sound/effects/blobattack.ogg', 50, 1)
+	play_sfx(src.loc, SFX_EFFECTS_BLOBATTACK, volume = 50)
 
 	blood_spawn = world.time
 

@@ -156,7 +156,7 @@ DECLARE_REF(/obj/structure/prop/prism, "remote_dial", BACKLIST, "my_turrets")
 /obj/structure/prop/prism/proc/rotate_auto(new_bearing)
 	if(rotation_lock)
 		visible_message(span_infoplain(span_bold("\The [src]") + " shudders."))
-		playsound(src, 'sound/effects/clang.ogg', 50, 1)
+		play_sfx(src, SFX_EFFECTS_CLANG, 2, extrarange = 0)
 		return
 
 	visible_message(span_infoplain(span_bold("\The [src]") + " rotates to a bearing of [new_bearing]."))

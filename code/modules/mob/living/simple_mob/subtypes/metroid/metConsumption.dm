@@ -59,7 +59,7 @@
 		victim = L
 		update_icon()
 		ai_busy_begin() // Don't want the AI to interfere with eatting.
-		playsound(src, 'sound/metroid/metroidattach.ogg', 50, 1)
+		play_sfx(src, SFX_METROID_METROIDATTACH)
 		victim.visible_message(
 			span_danger("\The [src] latches onto \the [victim]!"),
 			span_critical("\The [src] latches onto you!")
@@ -68,7 +68,7 @@
 /mob/living/simple_mob/metroid/juvenile/proc/stop_consumption(mob/living/L)
 	if(!victim)
 		return
-	playsound(src, 'sound/metroid/metroiddetach.ogg', 50, 1)
+	play_sfx(src, SFX_METROID_METROIDDETACH)
 	victim.unbuckle_mob()
 	victim.visible_message(
 		span_notice("\The [src] slides off of [victim]!"),
@@ -128,7 +128,7 @@
 		var/armor_modifier = abs((victim.injury_armor(INJURY_TOXIN, null) / 100) - 1)
 		var/damage_done = amount * armor_modifier
 		if(damage_done > 0)
-			playsound(src, 'sound/metroid/metroidattack.ogg', 100, 1)
+			play_sfx(src, SFX_METROID_METROIDATTACK)
 			var/absorbed = victim.injure(INJURY_CELLULAR, damage_done * 0.6, source = src, affliction = /datum/affliction/venom/slime_dissolution)
 			absorbed += victim.injure(INJURY_TOXIN, damage_done * 0.4, source = src)
 			adjust_nutrition(absorbed * 5)

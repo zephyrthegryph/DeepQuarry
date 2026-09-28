@@ -167,14 +167,14 @@ DECLARE_REAGENTS(/obj/machinery/v_garbosystem, CARGOTANKER_VOLUME * 2, null)
 				if(isliving(A))
 					var/mob/living/L = A
 					if(!emagged && ishuman(L) && L.mind)
-						playsound(src, 'sound/machines/warning-buzzer.ogg', 50, 0, 0)
+						play_sfx(src, SFX_MACHINES_WARNING_BUZZER)
 						visible_message(span_warning("POSSIBLE CREW MEMBER DETECTED! EMERGENCY STOP ENGAGED!"))
 						GLOB.global_announcer.autosay("Possible crew member detected in grinder feed. Emergency Stop Protocols engaged!", "Recycling Grinder Alert", "Supply")
 						operating = FALSE
 						update()
 						break
 					if(L.stat == DEAD)
-						playsound(src, 'sound/effects/splat.ogg', 50, 1)
+						play_sfx(src, SFX_EFFECTS_SPLAT)
 						if(L.meat_amount && L.meat_type) // Get all the goobs outta this goober
 							while(L.meat_amount > 0)
 								var/obj/item/meat = new L.meat_type(src)
@@ -211,9 +211,9 @@ DECLARE_REAGENTS(/obj/machinery/v_garbosystem, CARGOTANKER_VOLUME * 2, null)
 			break
 	if(items_taken) //Lazy coder sound design moment.
 		GLOB.Recycled_Items = GLOB.Recycled_Items + items_taken
-		playsound(src, 'sound/items/poster_being_created.ogg', 50, 1)
-		playsound(src, 'sound/items/electronic_assembly_emptying.ogg', 50, 1)
-		playsound(src, 'sound/effects/metalscrape2.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_POSTER_BEING_CREATED)
+		play_sfx(src, SFX_ITEMS_ELECTRONIC_ASSEMBLY_EMPTYING)
+		play_sfx(src, SFX_EFFECTS_METALSCRAPE2)
 
 /obj/machinery/v_garbosystem/proc/crunch_item(atom/movable/A)
 	if(A.loc == loc)

@@ -377,11 +377,11 @@ Pipelines + Other Objects -> Pipe network
 	var/internal_pressure = int_air.return_pressure()-env_air.return_pressure()
 	atom_deconstruct()
 	// Release pressure
-	playsound(our_turf, 'sound/effects/bang.ogg', 70, 0, 0)
-	playsound(our_turf, 'sound/effects/clang2.ogg', 70, 0, 0)
+	play_sfx(our_turf, SFX_EFFECTS_BANG, 1.4, vary = FALSE)
+	play_sfx(our_turf, SFX_EFFECTS_CLANG2, 1.4, vary = FALSE)
 	if(internal_pressure > 2*ONE_ATMOSPHERE)
 		unsafe_pressure_release(user, internal_pressure)
-		playsound(our_turf, 'sound/machines/hiss.ogg', 50, 0, 0)
+		play_sfx(our_turf, SFX_MACHINES_HISS)
 
 // Topology links: strong, cleared by lifecycle_unbind() (phase 1), which does the real disconnection.
 DECLARE_REF(/obj/machinery/atmospherics, "node1", HELD, null)

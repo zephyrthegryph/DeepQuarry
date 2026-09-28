@@ -51,7 +51,7 @@ DECLARE_INTERACTIONS(/obj/item/gold_star_printer, INTERACT_USE(null, PROC_REF(in
 
 	p.desc = "A gold star issued by [user] for [star_title], if you look closely, the fine print reads: [star_desc]"
 	p.name = "Gold Star for [star_title]"
-	playsound(user, 'sound/items/ticket_printer.ogg', 75, 1)
+	play_sfx(user, SFX_ITEMS_TICKET_PRINTER)
 
 	log_admin("[key_name(user)] has printed a Gold Star for [star_title] with the description: \"[star_desc]\"")
 	COOLDOWN_START(src, print_cooldown_until, print_cooldown)

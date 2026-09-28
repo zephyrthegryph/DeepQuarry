@@ -92,7 +92,7 @@
 			return
 
 		else if(!eject_wait)
-			playsound(src, 'sound/machines/ding.ogg', 50, 1)
+			play_sfx(src, SFX_MACHINES_DING)
 			audible_message("\The [src] signals that the growing process is complete.", runemessage = "ding")
 			connected_message("Growing Process Complete.")
 			locked = 0
@@ -532,7 +532,7 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/resleever, \
 	if(original_occupant)
 		occupant = original_occupant
 
-	playsound(src, 'sound/machines/medbayscanner1.ogg', 100, 1) // Play our sound at the end of the mind injection!
+	play_sfx(src, SFX_MACHINES_MEDBAYSCANNER1, 2) // Play our sound at the end of the mind injection!
 	return 1
 
 /obj/machinery/transhuman/resleever/proc/go_out()

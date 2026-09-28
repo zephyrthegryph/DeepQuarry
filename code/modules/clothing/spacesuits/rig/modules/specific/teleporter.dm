@@ -19,8 +19,8 @@
 		return
 
 	holder.spark_system.start()
-	playsound(T, 'sound/effects/phasein.ogg', 25, 1)
-	playsound(T, 'sound/effects/sparks2.ogg', 50, 1)
+	play_sfx(T, SFX_EFFECTS_PHASEIN, 0.25)
+	play_sfx(T, SFX_EFFECTS_SPARKS2)
 	anim(T,M,'icons/mob/mob.dmi',,"phasein",,M.dir)
 
 /obj/item/rig_module/teleporter/proc/phase_out(mob/M,turf/T)
@@ -28,7 +28,7 @@
 	if(!M || !T)
 		return
 
-	playsound(T, "sparks", 50, 1)
+	play_sfx(T, SFX_SPARKS)
 	anim(T,M,'icons/mob/mob.dmi',,"phaseout",,M.dir)
 
 /obj/item/rig_module/teleporter/engage(atom/target, notify_ai)

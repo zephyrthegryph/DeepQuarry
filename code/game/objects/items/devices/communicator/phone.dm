@@ -181,7 +181,7 @@
 	LAZYOR(voice_requests, candidate)
 
 	if(ringer)
-		playsound(src, 'sound/machines/twobeep.ogg', 50, 1)
+		play_sfx(src, SFX_MACHINES_TWOBEEP)
 		for (var/mob/O in hearers(2, loc))
 			O.show_message(text("[icon2html(src,O.client)] *beep*"))
 

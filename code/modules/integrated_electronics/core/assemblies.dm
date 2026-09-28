@@ -163,7 +163,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/electronic_assembly, "battery", /obj/item/cell/d
 				return FALSE
 			var/turf/T = get_turf(src)
 			battery.forceMove(T)
-			playsound(T, 'sound/items/Crowbar.ogg', 50, 1)
+			play_sfx(T, SFX_ITEMS_CROWBAR)
 			to_chat(ui.user, span_notice("You pull \the [battery] out of \the [src]'s power supplier."))
 			battery = null
 			return TRUE
@@ -358,7 +358,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/electronic_assembly, "battery", /obj/item/cell/d
 			return INTERACTION_HANDLED_PASS
 		if(add_circuit(I, user))
 			to_chat(user, span_notice("You slide \the [I] inside \the [src]."))
-			playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+			play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 			tgui_interact(user)
 			return TRUE
 
@@ -418,7 +418,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/electronic_assembly, "battery", /obj/item/cell/d
 		user.drop_item(cell)
 		cell.forceMove(src)
 		battery = cell
-		playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 		to_chat(user, span_notice("You slot \the [cell] inside \the [src]'s power supplier."))
 		tgui_interact(user)
 		return TRUE

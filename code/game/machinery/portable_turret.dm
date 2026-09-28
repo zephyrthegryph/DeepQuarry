@@ -581,7 +581,7 @@ DECLARE_REF(/obj/machinery/porta_turret, "spark_system", OWNED, null)
 		return
 	attacked = TRUE
 	om_after(src, TURRET_RETALIATION_TIME, PROC_REF(retaliate_end))
-	playsound(src, 'sound/machines/terminal_alert.ogg', 150)
+	play_sfx(src, SFX_MACHINES_TERMINAL_ALERT)
 
 /// om_after() target: back on after an emag's grace period.
 /obj/machinery/porta_turret/proc/emag_reenable()
@@ -598,7 +598,7 @@ DECLARE_REF(/obj/machinery/porta_turret, "spark_system", OWNED, null)
 	attacked = FALSE
 	if(stat & (NOPOWER|BROKEN))
 		return
-	playsound(src, 'sound/machines/buzzbeep.ogg', 150)
+	play_sfx(src, SFX_MACHINES_BUZZBEEP, 3)
 
 /obj/machinery/porta_turret/attack_generic(mob/living/L, damage)
 	if(isanimal(L))
@@ -875,7 +875,7 @@ DECLARE_REF(/obj/machinery/porta_turret, "spark_system", OWNED, null)
 	var/atom/flick_holder = new /atom/movable/porta_turret_cover(loc)
 	flick_holder.layer = layer + 0.1
 	flick("popup_[turret_type]", flick_holder)
-	playsound(src, 'sound/machines/turrets/turret_deploy.ogg', 100, 1)
+	play_sfx(src, SFX_MACHINES_TURRETS_TURRET_DEPLOY)
 	om_after(src, 1 SECOND, PROC_REF(popup_finish), flick_holder)
 
 /obj/machinery/porta_turret/proc/popup_finish(flick_holder)
@@ -908,7 +908,7 @@ DECLARE_REF(/obj/machinery/porta_turret, "spark_system", OWNED, null)
 	var/atom/flick_holder = new /atom/movable/porta_turret_cover(loc)
 	flick_holder.layer = layer + 0.1
 	flick("popdown_[turret_type]", flick_holder)
-	playsound(src, 'sound/machines/turrets/turret_retract.ogg', 100, 1)
+	play_sfx(src, SFX_MACHINES_TURRETS_TURRET_RETRACT)
 	om_after(src, 1 SECOND, PROC_REF(popdown_finish), flick_holder)
 
 /obj/machinery/porta_turret/proc/popdown_finish(flick_holder)
@@ -937,7 +937,7 @@ DECLARE_REF(/obj/machinery/porta_turret, "spark_system", OWNED, null)
 			var/old_dir = dir
 			set_dir(get_dir(src, target))	//even if you can't shoot, follow the target
 			if(dir != old_dir) // Play rotating sound, but only if we actually rotated
-				playsound(src, 'sound/machines/turrets/turret_rotate.ogg', 100, 1)
+				play_sfx(src, SFX_MACHINES_TURRETS_TURRET_ROTATE)
 			shootAt(target)
 			return TRUE
 	return FALSE

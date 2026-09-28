@@ -2027,7 +2027,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage/fluff/jacket, \
 	T.forceMove(src)
 	translocator = T
 	user.show_message("[icon2html(src, user.client)]*click!*")
-	playsound(src, 'sound/machines/click.ogg', 30, 1)
+	play_sfx(src, SFX_MACHINES_CLICK, 0.6)
 
 /obj/item/clothing/head/fluff/nikki/proc/translocator_unequip(obj/item/perfect_tele/T, mob/living/carbon/human/user)
 	if (translocator)
@@ -2037,7 +2037,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage/fluff/jacket, \
 		else
 			translocator.forceMove(get_turf(src))
 		translocator = null
-		playsound(src, 'sound/machines/click.ogg', 30, 1)
+		play_sfx(src, SFX_MACHINES_CLICK, 0.6)
 
 /obj/item/clothing/head/fluff/nikki/proc/teleport_fail(mob/user, mob/target)
 	if (target != user)

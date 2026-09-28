@@ -85,11 +85,28 @@ would spawn and follow the beaker, even if it is carried or thrown.
 		emit_one_steam()
 
 /////////////////////////////////////////////
-//SPARK SYSTEM (like steam system)
-// The attach(atom/atom) proc is optional, and can be called to attach the effect
-// to something, like the RCD, so then you can just call start() and the sparks
-// will always spawn at the items location.
+// SPARKS (doc/rewrite/systems.md section 16)
+// fx_sparks(atom, amount, cardinals) throws sparks from the atom's turf. Every spark shares one
+// live budget (the pool), so there is no per-call system datum to create, set up and start.
 /////////////////////////////////////////////
+
+/// Most sparks one fx_sparks() call throws.
+#define FX_SPARKS_MAX_PER_CALL 10
+/// Most sparks alive at once, world-wide; further calls throw nothing until some burn out.
+#define FX_SPARKS_MAX_LIVE 100
+
+GLOBAL_VAR_INIT(fx_live_sparks, 0)
+
+/proc/fx_sparks(atom/where, amount = 3, cardinals = TRUE)
+	var/turf/origin = get_turf(where)
+	if(!origin)
+		return
+	amount = min(amount, FX_SPARKS_MAX_PER_CALL)
+	for(var/i in 1 to amount)
+		if(GLOB.fx_live_sparks >= FX_SPARKS_MAX_LIVE)
+			return
+		var/obj/effect/effect/sparks/spark = new(origin)
+		om_after_drift(spark, pick(cardinals ? GLOB.cardinal : GLOB.alldirs), pick(1, 2, 3), 5)
 
 /obj/effect/effect/sparks
 	name = "sparks"
@@ -100,7 +117,8 @@ would spawn and follow the beaker, even if it is carried or thrown.
 
 /obj/effect/effect/sparks/Initialize(mapload)
 	. = ..()
-	playsound(src, "sparks", 100, 1)
+	GLOB.fx_live_sparks++
+	play_sfx(src, SFX_SPARKS, 2)
 	var/turf/T = src.loc
 	if (istype(T, /turf))
 		T.hotspot_expose(1000,100)
@@ -108,6 +126,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 
 // a dying spark can still light its tile.
 /obj/effect/effect/sparks/on_destroy(force)
+	GLOB.fx_live_sparks--
 	var/turf/T = src.loc
 	if (istype(T, /turf))
 		T.hotspot_expose(1000,100)
@@ -119,42 +138,8 @@ would spawn and follow the beaker, even if it is carried or thrown.
 		var/turf/T = loc
 		T.hotspot_expose(1000,100)
 
-/datum/effect/effect/system/spark_spread
-	var/total_sparks = 0 // To stop it being spammed and lagging!
-
-/datum/effect/effect/system/spark_spread/set_up(n = 3, c = 0, loca)
-	if(n > 10)
-		n = 10
-	number = n
-	cardinals = c
-	if(istype(loca, /turf/))
-		location_handle = om_handle(loca)
-	else
-		location_handle = om_handle(get_turf(loca))
-
-/datum/effect/effect/system/spark_spread/proc/emit_one_spark()
-	if(holder)
-		src.location_handle = om_handle(get_turf(holder))
-	var/obj/effect/effect/sparks/sparks = new /obj/effect/effect/sparks(src.get_location())
-	src.total_sparks++
-	var/direction
-	if(src.cardinals)
-		direction = pick(GLOB.cardinal)
-	else
-		direction = pick(GLOB.alldirs)
-	var/steps = pick(1,2,3)
-	om_after_drift(sparks, direction, steps, 5)
-	om_after(src, 20 + steps * 5, PROC_REF(dec_sparks))
-
-/datum/effect/effect/system/spark_spread/proc/dec_sparks()
-	src.total_sparks--
-
-/datum/effect/effect/system/spark_spread/start()
-	var/i = 0
-	for(i=0, i<src.number, i++)
-		if(src.total_sparks > 20)
-			return
-		emit_one_spark()
+#undef FX_SPARKS_MAX_PER_CALL
+#undef FX_SPARKS_MAX_LIVE
 
 /////////////////////////////////////////////
 //// SMOKE SYSTEMS
@@ -531,9 +516,7 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 
 /datum/effect/effect/system/reagents_explosion/start()
 	if (amount <= 2)
-		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread()
-		s.set_up(2, 1, get_location())
-		s.start()
+		fx_sparks(get_location(), 2)
 
 		for(var/mob/M in viewers(5, get_location()))
 			to_chat(M, span_warning("The solution violently explodes."))

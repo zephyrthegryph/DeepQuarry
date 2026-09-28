@@ -60,7 +60,7 @@
 
 /obj/effect/anomaly/grav/detonate()
 	new /obj/effect/temp_visual/circle_wave/gravity(get_turf(src))
-	playsound(src, 'sound/effects/cosmic_energy.ogg', vol = 50)
+	play_sfx(src, SFX_EFFECTS_COSMIC_ENERGY, vary = FALSE)
 
 /obj/effect/temp_visual/circle_wave/gravity
 	color = COLOR_NAVY
@@ -70,8 +70,6 @@
 		return
 	switch(stats.severity)
 		if(0 to 15)
-			var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread
-			sparks.set_up(3, 1, src)
-			sparks.start()
+			fx_sparks(src, 3)
 		else
 			anomalyEffect()

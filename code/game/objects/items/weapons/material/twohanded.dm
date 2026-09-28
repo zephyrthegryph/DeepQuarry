@@ -63,7 +63,7 @@
 /obj/item/material/twohanded/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(wielded && default_parry_check(user, attacker, damage_source) && prob(15))
 		user.visible_message(span_danger("\The [user] parries [attack_text] with \the [src]!"))
-		playsound(src, 'sound/weapons/punchmiss.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_PUNCHMISS, 2, extrarange = 0)
 		return 1
 	return 0
 
@@ -290,7 +290,7 @@
 			target.stun_effect_act(10 , 50, BP_TORSO, src)
 			target.injure(INJURY_ELECTRIC, 10, BP_TORSO, src)
 			target.status_at_least(EFFECT_PARALYZED, 20)
-			playsound(src.loc, "sparks", 50, 1)
+			play_sfx(src.loc, SFX_SPARKS)
 			return
 
 /obj/item/material/twohanded/sledgehammer/mjollnir/update_icon()  //Currently only here to fuck with the on-mob icons.
@@ -332,7 +332,7 @@
 	if (src.wielded == 1)
 		if(unique_parry_check(user, attacker, damage_source) && prob(50))
 			user.visible_message(span_danger("\The [user] parries [attack_text] with \the [src]!"))
-			playsound(src, 'sound/weapons/punchmiss.ogg', 50, 1)
+			play_sfx(src, SFX_WEAPONS_PUNCHMISS, 2, extrarange = 0)
 		return 1
 	return 0
 
@@ -371,7 +371,7 @@
 			parry_chance = base_parry_chance
 		if(unique_parry_check(user, attacker, damage_source) && prob(parry_chance))
 			user.visible_message(span_danger("\The [user] parries [attack_text] with \the [src]!"))
-			playsound(src, 'sound/weapons/punchmiss.ogg', 50, 1)
+			play_sfx(src, SFX_WEAPONS_PUNCHMISS, 2, extrarange = 0)
 			return 1
 	return 0
 

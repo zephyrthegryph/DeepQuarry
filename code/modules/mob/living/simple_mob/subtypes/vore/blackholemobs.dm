@@ -201,7 +201,7 @@
 /mob/living/simple_mob/vore/blackhole/grotesque/on_death(gibbed)
 	..()
 	visible_message("[src] lets out a horrible cry as it collapses into an inky black pile of gore!")
-	playsound(src, 'sound/metroid/metroiddeath.ogg', 100, 1)
+	play_sfx(src, SFX_METROID_METROIDDEATH)
 
 /mob/living/simple_mob/vore/blackhole/ranged
 	name = "Black Hole trooper"
@@ -787,7 +787,7 @@ DECLARE_REF(/mob/living/simple_mob/vore/blackhole_obelisk, "loopy", OWNED, null)
 /mob/living/simple_mob/vore/blackhole_obelisk/on_death(gibbed)
 	visible_message(span_critical("\\The [src] suddenly destablizes!"))
 	visible_message("[src] flashes brightly, crumbling as its psychic influence suddenly vanishes from the minds of those nearby...")
-	playsound(src, 'sound/effects/monolith_death.ogg', 100)
+	play_sfx(src, SFX_EFFECTS_MONOLITH_DEATH)
 	var/delay = rand(explosion_delay_lower, explosion_delay_upper)
 	animate(src, color = "#FFFFFF", time = 0.1 SECONDS, loop = ceil(delay/2))
 	animate(color = "#A663FF", time = 0.1 SECONDS)

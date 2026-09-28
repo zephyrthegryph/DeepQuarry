@@ -21,7 +21,7 @@
 
 //revolves the magazine, allowing players to choose between multiple grenade types
 /obj/item/gun/launcher/grenade/proc/pump(mob/user)
-	playsound(user, 'sound/weapons/shotgunpump.ogg', 60, 1)
+	play_sfx(user, SFX_WEAPONS_SHOTGUNPUMP)
 
 	var/obj/item/grenade/next
 	if(length(grenades))
@@ -63,7 +63,7 @@
 		grenades.len--
 		user.put_in_hands(G)
 		user.visible_message("[user] removes \a [G] from [src].", span_notice("You remove \a [G] from [src]."))
-		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_EMPTY)
 	else
 		to_chat(user, span_warning("[src] is empty."))
 
@@ -130,7 +130,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/grenade, INTERACT_HAND(null, PROC_RE
 	if(chambered())
 		user.put_in_hands(chambered())
 		user.visible_message("[user] removes \a [chambered()] from [src].", span_notice("You remove \a [chambered()] from [src]."))
-		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_EMPTY)
 		chambered_handle = null
 	else
 		to_chat(user, span_warning("[src] is empty."))

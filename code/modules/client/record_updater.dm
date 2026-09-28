@@ -21,7 +21,7 @@ GLOBAL_VAR_INIT(client_record_update_lock, FALSE)
 
 	if(jobban_isbanned(user, JOB_RECORDS) )
 		COM.visible_message(span_notice("\The [COM] buzzes!"))
-		playsound(COM, 'sound/machines/deniedbeep.ogg', 50, 0)
+		play_sfx(COM, SFX_MACHINES_DENIEDBEEP)
 		return "Update syncronization denied (OOC: You are banned from editing records)"
 
 	var/record_string = ""
@@ -47,7 +47,7 @@ GLOBAL_VAR_INIT(client_record_update_lock, FALSE)
 		to_chat(user,"Update already in progress! Please wait a moment...")
 		if(COM && !QDELETED(COM))
 			COM.visible_message(span_notice("\The [COM] buzzes!"))
-			playsound(COM, 'sound/machines/deniedbeep.ogg', 50, 0)
+			play_sfx(COM, SFX_MACHINES_DENIEDBEEP)
 		return "Update already in progress! Please wait a moment..."
 	GLOB.client_record_update_lock = TRUE
 	om_after(null, 60 SECONDS, /proc/client_record_update_unlock) // the global owner: a global lock
@@ -55,7 +55,7 @@ GLOBAL_VAR_INIT(client_record_update_lock, FALSE)
 	if(!active || !console_path)
 		if(COM && !QDELETED(COM))
 			COM.visible_message(span_notice("\The [COM] buzzes!"))
-			playsound(COM, 'sound/machines/deniedbeep.ogg', 50, 0)
+			play_sfx(COM, SFX_MACHINES_DENIEDBEEP)
 		return "Update syncronization failed (OOC: Record or console destroyed)"
 
 	to_chat(user,"Update sent! Please wait for a response...")
@@ -65,21 +65,21 @@ GLOBAL_VAR_INIT(client_record_update_lock, FALSE)
 	if(!M)
 		if(COM && !QDELETED(COM))
 			COM.visible_message(span_notice("\The [COM] buzzes!"))
-			playsound(COM, 'sound/machines/deniedbeep.ogg', 50, 0)
+			play_sfx(COM, SFX_MACHINES_DENIEDBEEP)
 		return "Update syncronization failed (OOC: Player mob does not exist, has no mind record, or is possesssed)"
 
 	var/client/C = M.client
 	if(!C)
 		if(COM && !QDELETED(COM))
 			COM.visible_message(span_notice("\The [COM] buzzes!"))
-			playsound(COM, 'sound/machines/deniedbeep.ogg', 50, 0)
+			play_sfx(COM, SFX_MACHINES_DENIEDBEEP)
 		return "Update syncronization failed (OOC: Record's owner is offline)"
 
 	var/datum/preferences/P = C.prefs
 	if(P.default_slot != M.mind.loaded_from_slot)
 		if(COM && !QDELETED(COM))
 			COM.visible_message(span_notice("\The [COM] buzzes!"))
-			playsound(COM, 'sound/machines/deniedbeep.ogg', 50, 0)
+			play_sfx(COM, SFX_MACHINES_DENIEDBEEP)
 			to_chat(M, span_warning("[user] attempted to update your [record_string] record, but your current character slot does not match your played slot. Please ensure your currently played character is selected in your Character Setup."))
 		return "Update syncronization failed (OOC: Player's current character slot does not match their played slot. They have been informed.)"
 
@@ -112,11 +112,11 @@ GLOBAL_VAR_INIT(client_record_update_lock, FALSE)
 	var/obj/machinery/computer/COM = locate(console)
 	if(istype(COM) && !QDELETED(COM))
 		COM.visible_message(span_notice("\The [COM] [message]!"))
-		playsound(COM, sound, 50, sound == 'sound/machines/ding.ogg')
+		play_sfx(COM, sound, volume = 50, vary = sound == SFX_MACHINES_DING)
 
 /datum/om/flow/client_record_update/proc/refused()
 	message_admins("[record_name] refused [record_string] record update from [pusher][reviewed ? " with review" : " without review"].")
-	console_says("buzzes", 'sound/machines/deniedbeep.ogg')
+	console_says("buzzes", SFX_MACHINES_DENIEDBEEP)
 
 /datum/om/flow/client_record_update/ended(reason)
 	refused()
@@ -130,7 +130,7 @@ GLOBAL_VAR_INIT(client_record_update_lock, FALSE)
 	var/datum/preferences/prefs = M?.client?.prefs
 	if(!prefs || prefs.default_slot != M.mind?.loaded_from_slot)
 		message_admins("[record_name]'s [record_string] record could not be updated, player disconnected or changed slot.")
-		console_says("buzzes", 'sound/machines/deniedbeep.ogg')
+		console_says("buzzes", SFX_MACHINES_DENIEDBEEP)
 		return
 
 	// Update records in the consoles, remember this can happen a while after a record is closed on the console... Use cached data.
@@ -148,7 +148,7 @@ GLOBAL_VAR_INIT(client_record_update_lock, FALSE)
 	prefs.save_character()
 	to_chat(M,span_notice("Your [record_string] record for [record.fields["name"]] has been updated."))
 	message_admins("[record.fields["name"]] accepted the [record_string] record update from [pusher].")
-	console_says("dings", 'sound/machines/ding.ogg')
+	console_says("dings", SFX_MACHINES_DING)
 
 /proc/client_record_update_unlock()
 	GLOB.client_record_update_lock = FALSE

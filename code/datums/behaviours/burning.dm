@@ -169,7 +169,7 @@ DECLARE_REF(/obj, "burn_cool_watch", OWNED, null)
 	user.injure(INJURY_BURN, 5, user.hand ? BP_L_HAND : BP_R_HAND, O)
 	to_chat(user, span_userdanger("You burn your hand on [O]!"))
 	user.emote("scream")
-	playsound(O, 'sound/items/weapons/sear.ogg', 50, TRUE)
+	play_sfx(O, SFX_ITEMS_WEAPONS_SEAR)
 	return EVENT_VETO
 
 /**

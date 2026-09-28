@@ -84,7 +84,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/telebaton, INTERACT_USE(null, PROC_REF(inte
 		H.update_inv_l_hand()
 		H.update_inv_r_hand()
 
-	playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+	play_sfx(src, SFX_WEAPONS_EMPTY)
 	add_fingerprint(user)
 
 	if(blood_overlay && forensic_data?.has_blooddna()) //updates blood overlay, if any

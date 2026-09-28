@@ -305,7 +305,7 @@
 		H.update_inv_l_hand()
 		H.update_inv_r_hand()
 
-	playsound(src, 'sound/weapons/targeton.ogg', 50, 1)
+	play_sfx(src, SFX_WEAPONS_TARGETON)
 	user.update_mob_action_buttons()
 
 EXTEND_INTERACTIONS(/obj/item/gun/projectile/shotgun/compact, INTERACT_VERB("Toggle stock", PROC_REF(compact_shotgun_verb_toggle_stock), REQ_IN_INVENTORY))

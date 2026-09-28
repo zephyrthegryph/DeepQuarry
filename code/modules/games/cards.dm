@@ -321,7 +321,7 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 			cards -= P
 		cards = newcards
 		user.visible_message(span_notice("\The [user] shuffles [src]."))
-		playsound(src, 'sound/items/cardshuffle.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_CARDSHUFFLE)
 		COOLDOWN_START(src, shuffle_cooldown, 1 SECOND)
 	else
 		return

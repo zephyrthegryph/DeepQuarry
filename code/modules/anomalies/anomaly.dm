@@ -24,9 +24,7 @@ DECLARE_REF(/obj/item/anomaly_neutralizer, "effect_remover", OWNED, null)
 	on_use(target, user)
 
 /obj/item/anomaly_neutralizer/proc/on_use(obj/effect/target, mob/living/user)
-	var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread
-	sparks.set_up(3, 1, src)
-	sparks.start()
+	fx_sparks(src, 3)
 	consume(src, user)
 
 /obj/item/anomaly_releaser

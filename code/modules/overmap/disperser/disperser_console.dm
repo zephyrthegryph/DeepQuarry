@@ -206,7 +206,7 @@
 			. = TRUE
 
 	if(. && !issilicon(ui.user))
-		playsound(src, "terminal_type", 50, 1)
+		play_sfx(src, SFX_TERMINAL_TYPE)
 
 /// LC-refs: the middle this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/computer/ship/disperser/proc/middle() as /obj/machinery/disperser/middle

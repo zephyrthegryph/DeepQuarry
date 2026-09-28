@@ -68,7 +68,7 @@ DECLARE_REF(/obj/item/clothing/suit/armor/shield, "spark_system", OWNED, null)
 	to_chat(user, span_warning("Your shield has absorbed most of \the [damage_source]."))
 
 	spark_system.start()
-	playsound(src, 'sound/weapons/blade1.ogg', 50, 1)
+	play_sfx(src, SFX_WEAPONS_BLADE1)
 	return 0 // This shield does not block all damage, so returning 0 is needed to tell the game to apply the new damage.
 
 EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/shield, INTERACT_USE("Toggle", PROC_REF(shield_armor_toggle_self)))

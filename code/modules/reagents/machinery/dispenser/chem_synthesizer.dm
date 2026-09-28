@@ -694,13 +694,13 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 	// If we're missing a cartridge somehow or lack space for the next step, stall. It's now up to the chemist to fix this.
 	if(!cartridges[label])
 		visible_message(span_warning("The [src] beeps loudly, flashing a 'cartridge missing' error!"), "You hear loud beeping!")
-		playsound(src, 'sound/weapons/smg_empty_alarm.ogg', 40)
+		play_sfx(src, SFX_WEAPONS_SMG_EMPTY_ALARM)
 		stall()
 		return
 
 	if(quantity > reagents.get_free_space())
 		visible_message(span_warning("The [src] beeps loudly, flashing a 'maximum volume exceeded' error!"), "You hear loud beeping!")
-		playsound(src, 'sound/weapons/smg_empty_alarm.ogg', 40)
+		play_sfx(src, SFX_WEAPONS_SMG_EMPTY_ALARM)
 		stall()
 		return
 
@@ -715,7 +715,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 	C.reagents.trans_to_holder(src.reagents, quantity)
 	MACHINE_WAKE(src) // a cartridge to refill
 	update_icon() // Update underlays.
-	playsound(src, 'sound/machines/HPLC_binary_pump.ogg', 15, 1)
+	play_sfx(src, SFX_MACHINES_HPLC_BINARY_PUMP)
 
 	// Advance to the next step in the recipe. If this is outside of the recipe's index, we're finished. Otherwise, proceed to next step.
 	step += 2

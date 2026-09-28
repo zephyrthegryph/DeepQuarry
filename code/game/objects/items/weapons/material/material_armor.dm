@@ -90,7 +90,7 @@
 			var/obj/item/material/shard/S = material.place_shard(T)
 			M.embed(S)
 
-	playsound(src, "shatter", 70, 1)
+	play_sfx(src, SFX_SHATTER)
 	qdel(src)
 
 // Might be best to make ablative vests a material armor using a new material to cut down on this copypaste.
@@ -119,10 +119,8 @@
 		var/turf/picked = pick(turfs)
 		if(!isturf(picked)) return
 
-		var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
-		spark_system.set_up(5, 0, user.loc)
-		spark_system.start()
-		playsound(src, 'sound/effects/teleport.ogg', 50, 1)
+		fx_sparks(user.loc, 5, FALSE)
+		play_sfx(src, SFX_EFFECTS_TELEPORT, 1.25, vary = TRUE)
 
 		user.forceMove(picked)
 		return PROJECTILE_FORCE_MISS

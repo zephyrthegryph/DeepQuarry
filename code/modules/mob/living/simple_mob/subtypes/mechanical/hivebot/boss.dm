@@ -72,7 +72,7 @@
 /mob/living/simple_mob/mechanical/hivebot/precusor/chrono/proc/electric_defense(atom/target)
 	var/turf/T = get_turf(target)
 	visible_message(span_warning("\The [src] fires an energetic sphere into the air!"))
-	playsound(src, 'sound/weapons/Laser.ogg', 50, 1)
+	play_sfx(src, SFX_WEAPONS_LASER)
 	face_atom(T)
 	var/obj/item/projectile/arc/microsingulo/sphere = new(loc)
 	sphere.old_style_target(T, src)
@@ -94,7 +94,7 @@
 	if(spawner_type && deliveryamt)
 		// Make a quick flash
 		var/turf/T = get_turf(src)
-		playsound(src, 'sound/effects/phasein.ogg', 100, 1)
+		play_sfx(src, SFX_EFFECTS_PHASEIN)
 		for(var/i=1, i<=deliveryamt, i++)
 			var/atom/movable/x = new spawner_type(T)
 			if(prob(50))

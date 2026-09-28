@@ -1519,7 +1519,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 			footcoverage_check = TRUE
 			break
 	if(lying)
-		playsound(src, 'sound/misc/slip.ogg', 25, 1, -1)
+		play_sfx(src, SFX_MISC_SLIP)
 		drop_both_hands()
 		return FALSE
 	if((species.flags & NO_SLIP && !footcoverage_check) || (get_equipped_item(SLOT_ID_SHOES) && (get_equipped_item(SLOT_ID_SHOES).item_flags & NOSLIP))) //Footwear negates a species' natural traction.

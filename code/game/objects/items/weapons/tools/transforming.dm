@@ -59,7 +59,7 @@ MATERIAL_MIX(/obj/item/tool/transforming/jawsoflife, list(MAT_METAL=150, MAT_SIL
 			pry = 1
 			tool_qualities = list(TOOL_CROWBAR)
 			if(user)
-				playsound(src, 'sound/items/change_jaws.ogg', 50, 1)
+				play_sfx(src, SFX_ITEMS_CHANGE_JAWS)
 				to_chat(user, span_notice("You attach the pry jaws to [src]."))
 		if(TOOL_WIRECUTTER)
 			desc = initial(desc) + " It's fitted with a cutting head."
@@ -68,7 +68,7 @@ MATERIAL_MIX(/obj/item/tool/transforming/jawsoflife, list(MAT_METAL=150, MAT_SIL
 			pry = 0
 			tool_qualities = list(TOOL_WIRECUTTER)
 			if(user)
-				playsound(src, 'sound/items/change_jaws.ogg', 50, 1)
+				play_sfx(src, SFX_ITEMS_CHANGE_JAWS)
 				to_chat(user, span_notice("You attach the cutting jaws to [src]."))
 
 MATERIAL_MIX(/obj/item/tool/transforming/powerdrill, list(MAT_STEEL = 150, MAT_SILVER = 50))
@@ -96,7 +96,7 @@ MATERIAL_MIX(/obj/item/tool/transforming/powerdrill, list(MAT_STEEL = 150, MAT_S
 			sharp = FALSE
 			tool_qualities = list(TOOL_WRENCH)
 			if(user)
-				playsound(src,'sound/items/change_drill.ogg',50,1)
+				play_sfx(src, SFX_ITEMS_CHANGE_DRILL, 2)
 				to_chat(user, span_notice("You attach the bolt driver to [src]."))
 		if(TOOL_SCREWDRIVER)
 			desc = initial(desc) + " It's fitted with a screw driver."
@@ -104,7 +104,7 @@ MATERIAL_MIX(/obj/item/tool/transforming/powerdrill, list(MAT_STEEL = 150, MAT_S
 			sharp = TRUE
 			tool_qualities = list(TOOL_SCREWDRIVER)
 			if(user)
-				playsound(src,'sound/items/change_drill.ogg',50,1)
+				play_sfx(src, SFX_ITEMS_CHANGE_DRILL, 2)
 				to_chat(user, span_notice("You attach the screw driver to [src]."))
 
 /obj/item/tool/transforming/altevian
@@ -136,7 +136,7 @@ MATERIAL_MIX(/obj/item/tool/transforming/powerdrill, list(MAT_STEEL = 150, MAT_S
 			usesound = 'sound/items/Ratchet.ogg'
 			tool_qualities = list(TOOL_WRENCH)
 			if(user)
-				playsound(src,'sound/items/Ratchet.ogg',50,1)
+				play_sfx(src, SFX_ITEMS_RATCHET)
 				to_chat(user, span_notice("You reconfigure [src] into bolting mode."))
 		if(TOOL_CROWBAR)
 			desc = initial(desc) + " It's currently in prying mode."
@@ -144,7 +144,7 @@ MATERIAL_MIX(/obj/item/tool/transforming/powerdrill, list(MAT_STEEL = 150, MAT_S
 			usesound = 'sound/items/Crowbar.ogg'
 			tool_qualities = list(TOOL_CROWBAR)
 			if(user)
-				playsound(src,'sound/items/Ratchet.ogg',50,1)
+				play_sfx(src, SFX_ITEMS_RATCHET)
 				to_chat(user, span_notice("You reconfigure [src] into prying mode."))
 		if(TOOL_WIRECUTTER)
 			desc = initial(desc) + " It's currently in cutting mode."
@@ -152,7 +152,7 @@ MATERIAL_MIX(/obj/item/tool/transforming/powerdrill, list(MAT_STEEL = 150, MAT_S
 			usesound = 'sound/items/Wirecutter.ogg'
 			tool_qualities = list(TOOL_WIRECUTTER)
 			if(user)
-				playsound(src,'sound/items/Ratchet.ogg',50,1)
+				play_sfx(src, SFX_ITEMS_RATCHET)
 				to_chat(user, span_notice("You reconfigure [src] into cutting mode."))
 		if(TOOL_SCREWDRIVER)
 			desc = initial(desc) + " It's currently in screwing mode."
@@ -160,7 +160,7 @@ MATERIAL_MIX(/obj/item/tool/transforming/powerdrill, list(MAT_STEEL = 150, MAT_S
 			usesound = 'sound/items/Screwdriver.ogg'
 			tool_qualities = list(TOOL_SCREWDRIVER)
 			if(user)
-				playsound(src,'sound/items/Ratchet.ogg',50,1)
+				play_sfx(src, SFX_ITEMS_RATCHET)
 				to_chat(user, span_notice("You reconfigure [src] into screwing mode."))
 		if(TOOL_MULTITOOL)
 			desc = initial(desc) + " It's currently in pulsing mode."
@@ -168,7 +168,7 @@ MATERIAL_MIX(/obj/item/tool/transforming/powerdrill, list(MAT_STEEL = 150, MAT_S
 			usesound = 'sound/items/Screwdriver.ogg'
 			tool_qualities = list(TOOL_MULTITOOL)
 			if(user)
-				playsound(src,'sound/items/Ratchet.ogg',50,1)
+				play_sfx(src, SFX_ITEMS_RATCHET)
 				to_chat(user, span_notice("You reconfigure [src] into pulsing mode."))
 		if(TOOL_WELDER)
 			desc = initial(desc) + " It's currently in welding mode."
@@ -177,7 +177,7 @@ MATERIAL_MIX(/obj/item/tool/transforming/powerdrill, list(MAT_STEEL = 150, MAT_S
 			usesound = 'sound/items/Welder2.ogg'
 			tool_qualities = list(TOOL_WELDER)
 			if(user)
-				playsound(src,'sound/items/Ratchet.ogg',50,1)
+				play_sfx(src, SFX_ITEMS_RATCHET)
 				to_chat(user, span_notice("You reconfigure [src] into welding mode."))
 
 /obj/item/weldingtool/dummy/altevian

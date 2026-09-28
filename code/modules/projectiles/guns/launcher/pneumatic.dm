@@ -61,7 +61,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun/launcher/pneumatic, "item_storage", /obj/ite
 		item_storage.remove_from_storage(removing, src.loc, user)
 		user.put_in_hands(removing)
 		to_chat(user, "You remove [removing] from the hopper.")
-		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_EMPTY)
 	else
 		to_chat(user, "There is nothing to remove in \the [src].")
 

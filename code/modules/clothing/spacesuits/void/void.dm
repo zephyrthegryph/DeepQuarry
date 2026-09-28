@@ -184,7 +184,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/clothing/suit/space/void, "tank", "tank")
 		hood.canremove = TRUE
 		H.drop_from_inventory(hood)
 		hood.forceMove(src)
-		playsound(src.loc, 'sound/machines/click2.ogg', 75, 1)
+		play_sfx(src.loc, SFX_MACHINES_CLICK2)
 	else
 		if(H.get_equipped_item(SLOT_ID_HEAD))
 			to_chat(H, span_danger("You cannot deploy your helmet while wearing \the [H.get_equipped_item(SLOT_ID_HEAD)]."))
@@ -192,7 +192,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/clothing/suit/space/void, "tank", "tank")
 		if(H.equip_to_slot_if_possible(hood, SLOT_ID_HEAD))
 			hood.canremove = FALSE
 			to_chat(H, span_info("You deploy your suit helmet, sealing you off from the world."))
-			playsound(src.loc, 'sound/machines/click2.ogg', 75, 1)
+			play_sfx(src.loc, SFX_MACHINES_CLICK2)
 
 EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void, \
 	INTERACT_ALT("Eject tank", PROC_REF(voidsuit_eject_tank_alt)), \
@@ -228,7 +228,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void, \
 		removing = cooler
 		cooler = null
 	to_chat(H, span_danger("You press the emergency release, ejecting \the [removing] from your suit."))
-	playsound(src.loc, 'sound/machines/click.ogg', 75, 1)
+	play_sfx(src.loc, SFX_MACHINES_CLICK, 1.5)
 	removing.canremove = TRUE
 	H.drop_from_inventory(removing)
 

@@ -92,7 +92,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rms, "spark_system", /datum/effect/effect/system
 	if(C.charge == 0)
 		to_chat(user, span_notice("The battery has no charge."))
 	else
-		playsound(get_turf(src), 'sound/machines/click.ogg', 50, 1)
+		play_sfx(get_turf(src), SFX_MACHINES_CLICK)
 		om_task_start(/datum/om/task/timed/rms_drain_battery, user, C, receiver = src, charge_needed = charge_needed)
 	stored_charge = CLAMP(stored_charge, 0, max_charge)
 	update_icon()
@@ -135,7 +135,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rms, "spark_system", /datum/effect/effect/system
 		if(!can_afford(charge_cost * overcharge_modifier))
 			to_chat(user, span_notice("There is not enough charge to use the overcharged mode."))
 			return
-	playsound(src.loc, 'sound/machines/click.ogg', 50, 1)
+	play_sfx(src.loc, SFX_MACHINES_CLICK)
 	om_task_start(/datum/om/task/timed/rms_use_rms, user, A, receiver = src, product = product)
 
 /datum/om/task/timed/rms_use_rms
@@ -309,7 +309,7 @@ DECLARE_INTERACTIONS(/obj/item/rms, INTERACT_USE(null, PROC_REF(interaction_self
 			return
 
 	to_chat(user, span_notice("Changed mode to '[choice]'."))
-	playsound(src.loc, 'sound/effects/pop.ogg', 50, 0)
+	play_sfx(src.loc, SFX_EFFECTS_POP)
 
 /obj/item/rms/multitool_act(mob/user, obj/item/tool)
 	overcharge = !overcharge

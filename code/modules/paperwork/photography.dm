@@ -129,7 +129,7 @@ DECLARE_INTERACTIONS(/obj/item/photo, \
 		var/mob/living/carbon/human/M = usr
 		if(!( istype(over_object, /atom/movable/screen) ))
 			return ..()
-		playsound(src, "rustle", 50, 1, -5)
+		play_sfx(src, SFX_RUSTLE, 2)
 		if((!( M.restrained() ) && !( M.stat ) && M.get_equipped_item(SLOT_ID_BACK) == src))
 			switch(over_object.name)
 				if("r_hand")
@@ -283,7 +283,7 @@ DECLARE_INTERACTIONS(/obj/item/camera, \
 	if(!on || !pictures_left || ismob(target.loc)) return
 	captureimage(target, user, flag)
 
-	playsound(src, pick('sound/items/polaroid1.ogg', 'sound/items/polaroid2.ogg'), 75, 1, -3)
+	play_sfx(src, SFX_ITEMS_POLAROID)
 
 	pictures_left--
 	desc = "A polaroid camera. It has [pictures_left] photos left."

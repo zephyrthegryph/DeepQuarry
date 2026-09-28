@@ -146,7 +146,7 @@ DECLARE_REF(/obj/machinery/hyperpad/centre, "linked", OWNED_LIST, null)
 /obj/machinery/hyperpad/centre/proc/startteleport(mob/user)
 	if(!linked_pad())
 		return
-	playsound(get_turf(src), 'sound/weapons/flash.ogg', 25, 1)
+	play_sfx(get_turf(src), SFX_WEAPONS_FLASH, 0.25)
 	teleporting = 1
 	om_after(src, teleport_speed, PROC_REF(doteleport), user)
 	var/speed = teleport_speed/8

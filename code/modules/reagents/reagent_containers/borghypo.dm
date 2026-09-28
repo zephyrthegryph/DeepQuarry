@@ -238,7 +238,7 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/borghypo, INTERACT_USE(null, P
 			var/new_mode = reagent_ids.Find(params["selectedReagentId"])
 			if(new_mode)
 				var/datum/reagent/selected_reagent = chemistry_service().chemical_reagents[reagent_ids[new_mode]]
-				playsound(src, 'sound/effects/pop.ogg', 50, 0)
+				play_sfx(src, SFX_EFFECTS_POP)
 				if(recording_recipe)
 					UNTYPED_LIST_ADD(recording_recipe, list("id" = selected_reagent.id, "amount" = amount_per_transfer_from_this))
 				else
@@ -312,7 +312,7 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/borghypo, INTERACT_USE(null, P
 			if(!selectedRecipe)
 				to_chat(ui.user, span_warning("\The [src] cannot find the recipe ") + span_boldwarning(recipe_name) + span_warning("!"))
 				return
-			playsound(ui.user, 'sound/effects/pop.ogg', 50, 0)
+			play_sfx(ui.user, SFX_EFFECTS_POP)
 			balloon_alert(ui.user, "synthesizer is using macro: '[recipe_name]'")
 			is_dispensing_recipe = TRUE
 			selected_recipe_id = recipe_name

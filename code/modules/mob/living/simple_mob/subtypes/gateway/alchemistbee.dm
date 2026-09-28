@@ -177,7 +177,7 @@
 		var/datum/effect/effect/system/smoke_spread/chem/blob/S = new /datum/effect/effect/system/smoke_spread/chem/blob
 		S.attach(location)
 		S.set_up(reagents, rand(1, splatter_volume), 0, location)
-		playsound(location, 'sound/effects/slime_squish.ogg', 30, 1, -3)
+		play_sfx(location, SFX_EFFECTS_SLIME_SQUISH, 0.6, extrarange = -3)
 		S.start()
 	..()
 

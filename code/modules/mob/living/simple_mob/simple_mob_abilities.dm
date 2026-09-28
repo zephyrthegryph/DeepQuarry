@@ -200,7 +200,7 @@
 						_tmp_buck_21.unbuckle_mob()
 
 					LM.status_at_least(EFFECT_WEAKENED, 5)
-					playsound(src, get_sfx("punch"), 50, 1)
+					playsound(src, get_sfx(SFX_PUNCH), 50, 1)
 					pouncing = 0
 			src.Move(T)
 
@@ -209,7 +209,7 @@
 			pouncing = 0
 			update_icon()
 			src.status_at_least(EFFECT_WEAKENED, 5)
-			playsound(src, get_sfx("punch"), 50, 1)
+			playsound(src, get_sfx(SFX_PUNCH), 50, 1)
 		else
 			//if we arrived, and weren't blocked, and are STILL pouncing, see if we landed on any living things that didn't block us that ISN't ourselves lmfao.
 			if(pouncing)
@@ -217,7 +217,7 @@
 					if(isliving(M) && M != src)
 						var/mob/living/LM = M
 						LM.status_at_least(EFFECT_WEAKENED, 5)
-						playsound(src, get_sfx("punch"), 50, 1)
+						playsound(src, get_sfx(SFX_PUNCH), 50, 1)
 						pouncing = 0
 			update_icon()
 
@@ -243,7 +243,7 @@
 		P.firer = src
 		P.old_style_target(A)
 		P.fire()
-		playsound(src, 'sound/weapons/alien_spitacid.ogg', 25, 0)
+		play_sfx(src, SFX_WEAPONS_ALIEN_SPITACID)
 
 /mob/living/simple_mob/proc/neurotoxin()
 	set name = "Toggle Neurotoxic Spit"
@@ -345,5 +345,5 @@
 		if(!gentle)
 			M.injure(INJURY_BLUNT, damage, source = src)
 		to_chat(M, span_userdanger("You're thrown back by [src]!"))
-		playsound(src, get_sfx("punch"), 50, 1)
+		playsound(src, get_sfx(SFX_PUNCH), 50, 1)
 	AM.throw_at(throwtarget, maxthrow, 3, src)

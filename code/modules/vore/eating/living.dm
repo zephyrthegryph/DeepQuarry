@@ -1126,7 +1126,7 @@
 		nom = list("nutrition" = 100,  "remark" = "The crytal was particularly brittle and not difficult to break apart, but the inside was incredibly flavoursome. Though devoid of any actual healing power, it seems to be very nutritious!", "WTF" = FALSE)
 
 	if(nom) //Ravenous 1-4, snackage confirmed. Clear for chowdown, over.
-		playsound(src, 'sound/items/eatfood.ogg', rand(10,50), 1)
+		play_sfx(src, SFX_ITEMS_EATFOOD, volume = rand(10,50))
 		var/T = (istype(M) ? M.hardness/40 : 1) SECONDS //1.5 seconds to eat a sheet of metal. 2.5 for durasteel and diamond & 1 by default (applies to some ores like raw carbon, slag, etc.
 		to_chat(src, span_notice("You start crunching on [I] with your powerful jaws, attempting to tear it apart..."))
 		//Eat on the move, but not multiple things at once.

@@ -54,7 +54,7 @@ DECLARE_INTERACTIONS(/obj/item/material/butterfly, INTERACT_USE(null, PROC_REF(i
 	if(user)
 		if(active)
 			to_chat(user, span_notice("You flip out \the [src]."))
-			playsound(src, 'sound/weapons/flipblade.ogg', 15, 1)
+			play_sfx(src, SFX_WEAPONS_FLIPBLADE, 0.3)
 		else
 			to_chat(user, span_notice("\The [src] can now be concealed."))
 		add_fingerprint(user)

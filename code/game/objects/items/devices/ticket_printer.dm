@@ -53,7 +53,7 @@ DECLARE_INTERACTIONS(/obj/item/ticket_printer, INTERACT_USE(null, PROC_REF(inter
 
 	p.info = final
 	p.name = "Security Citation: [ticket_name]"
-	playsound(user, 'sound/items/ticket_printer.ogg', 75, 1)
+	play_sfx(user, SFX_ITEMS_TICKET_PRINTER)
 
 	GLOB.security_printer_tickets |= details
 	log_and_message_admins("has issued '[ticket_name]' a security citation: \"[details]\"", user)
@@ -95,7 +95,7 @@ DECLARE_INTERACTIONS(/obj/item/ticket_printer, INTERACT_USE(null, PROC_REF(inter
 
 	p.info = final
 	p.name = "Permit Ticket: [ticket_name]"
-	playsound(user, 'sound/items/ticket_printer.ogg', 75, 1)
+	play_sfx(user, SFX_ITEMS_TICKET_PRINTER)
 
 	log_and_message_admins("has issued '[ticket_name]' a permit ticket: \"[details]\"", user)
 	COOLDOWN_START(src, print_cooldown_until, print_cooldown)

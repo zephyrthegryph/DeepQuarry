@@ -62,7 +62,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes/magboots, INTERACT_USE("Toggle", PR
 		set_slowdown()
 		force = 5
 		if(icon_base) icon_state = "[icon_base]1"
-		playsound(src, 'sound/effects/magnetclamp.ogg', 20)
+		play_sfx(src, SFX_EFFECTS_MAGNETCLAMP, 0.2, vary = FALSE)
 		to_chat(user, mag_enable)
 	user.update_inv_shoes()	//so our mob-overlays update
 	user.update_mob_action_buttons()

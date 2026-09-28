@@ -30,7 +30,7 @@
 		return
 
 	to_chat(M, span_danger("BANG"))						// Called during the loop that bangs people in lockers/containers and when banging
-	playsound(src, 'sound/effects/bang.ogg', 50, 1, 30)		// people in normal view.  Could theroetically be called during other explosions.
+	play_sfx(src, SFX_EFFECTS_BANG, extrarange = 30)		// people in normal view.  Could theroetically be called during other explosions.
 																	// -- Polymorph
 
 	//Checking for protections
@@ -118,11 +118,11 @@
 
 	for(var/do_spawn = numspawned, do_spawn > 0, do_spawn--)
 		new /obj/item/grenade/flashbang/cluster(src.loc)//Launches flashbangs
-		playsound(src, 'sound/weapons/armbomb.ogg', 75, 1, -3)
+		play_sfx(src, SFX_WEAPONS_ARMBOMB)
 
 	for(var/do_again = again, do_again > 0, do_again--)
 		new /obj/item/grenade/flashbang/clusterbang/segment(src.loc)//Creates a 'segment' that launches a few more flashbangs
-		playsound(src, 'sound/weapons/armbomb.ogg', 75, 1, -3)
+		play_sfx(src, SFX_WEAPONS_ARMBOMB)
 	consume(src)
 	return
 

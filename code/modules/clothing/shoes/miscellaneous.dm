@@ -317,7 +317,7 @@
 
 	var/atom/target = get_edge_target_turf(user, user.dir) //gets the user's direction
 
-	playsound(src, 'sound/effects/stealthoff.ogg', 50, 1, 1)
+	play_sfx(src, SFX_EFFECTS_STEALTHOFF)
 	user.visible_message(span_warning("[user] dashes forward into the air!"))
 	user.throw_at(target, jumpdistance, jumpspeed)
 	COOLDOWN_START(src, recharging_time, recharging_rate)

@@ -556,7 +556,7 @@
 	if(ishuman(src) && stat != CONSCIOUS && !HAS_SYNTHETIC_BIOLOGY(src))
 		body?.afflict(/datum/affliction/airway_obstruction)
 
-	playsound(get_turf(src), 'sound/effects/splat.ogg', 50, 1)
+	play_sfx(get_turf(src), SFX_EFFECTS_SPLAT)
 	var/turf/T = get_turf(src)
 	var/vomit_type = NONE
 	var/mob/living/carbon/human/H = src

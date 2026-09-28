@@ -896,7 +896,7 @@ DECLARE_INTERACTIONS(/obj/structure/control_pod, INTERACT_HAND(null, PROC_REF(in
 	var/our_y = rand(-5,5) + y
 
 	var/turf/throwtarg = locate(our_x, our_y, z)	//teehee
-	playsound(src, 'sound/vore/schlorp.ogg', vol = 100, vary = FALSE, volume_channel = VOLUME_CHANNEL_VORE)
+	play_sfx(src, SFX_VORE_SCHLORP, volume_channel = VOLUME_CHANNEL_VORE)
 	controller.throw_at(throwtarg, 10, 1)
 	controller = null
 

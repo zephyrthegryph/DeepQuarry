@@ -86,7 +86,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rcd, "spark_system", /datum/effect/effect/system
 		to_chat(user, span_warning("\The [src] lacks the required material to start."))
 		return FALSE
 
-	playsound(src, 'sound/machines/click.ogg', 50, 1)
+	play_sfx(src, SFX_MACHINES_CLICK)
 
 	var/output_envelope = power_output_envelope(rcd_results[RCD_VALUE_COST])
 	var/true_delay = rcd_results[RCD_VALUE_DELAY] * toolspeed / output_envelope
@@ -140,7 +140,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rcd, "spark_system", /datum/effect/effect/system
 	if(A.rcd_act(user, src, rcd_results[RCD_VALUE_MODE]))
 		consume_resources(rcd_results[RCD_VALUE_COST] * output_envelope)
 		record_enhanced_output(rcd_results[RCD_VALUE_COST], output_envelope)
-		playsound(A, 'sound/items/Deconstruct.ogg', 50, 1)
+		play_sfx(A, SFX_ITEMS_DECONSTRUCT)
 		cleanup_effect(A)
 		return TRUE
 

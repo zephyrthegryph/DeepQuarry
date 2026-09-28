@@ -53,7 +53,7 @@
 	for(var/mob/living/M in oviewers(3, src))
 		shake_camera(M, 2, 2)
 
-	playsound(src, 'sound/effects/meteorimpact.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_METEORIMPACT, 1.25)
 	density = initial(density)
 	opacity = initial(opacity)
 	plane = initial(plane)

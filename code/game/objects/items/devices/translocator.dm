@@ -384,7 +384,7 @@ This device records all warnings given and teleport events for admin review in c
 
 	spk.set_up(5, 0, M)
 	spk.attach(M)
-	playsound(T, "sparks", 50, 1)
+	play_sfx(T, SFX_SPARKS)
 	anim(T,M,'icons/mob/mob.dmi',,"phaseout",,M.dir)
 
 /obj/item/perfect_tele/proc/phase_in(mob/M,turf/T)
@@ -393,8 +393,8 @@ This device records all warnings given and teleport events for admin review in c
 		return
 
 	spk.start()
-	playsound(T, 'sound/effects/phasein.ogg', 25, 1)
-	playsound(T, 'sound/effects/sparks2.ogg', 50, 1)
+	play_sfx(T, SFX_EFFECTS_PHASEIN, 0.25)
+	play_sfx(T, SFX_EFFECTS_SPARKS2)
 	anim(T,M,'icons/mob/mob.dmi',,"phasein",,M.dir)
 	spk.set_up(5, 0, src)
 	spk.attach(src)
@@ -527,7 +527,7 @@ REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEAC
 	om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(pump_stroke), done_args = list(user), on_fail = PROC_REF(pump_done))
 
 /obj/item/perfect_tele/frontier/proc/pump_stroke(mob/user)
-	playsound(src,'sound/items/change_drill.ogg',25,1)
+	play_sfx(src, SFX_ITEMS_CHANGE_DRILL)
 	if(!recharging || power_source.give(phase_power) < phase_power)
 		pump_done()
 		return

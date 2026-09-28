@@ -114,7 +114,7 @@
 
 	om_hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
 	icon_state = "slotmachine_rolling"
-	playsound(src.loc, 'sound/machines/slotmachine_pull.ogg', 15, 1)
+	play_sfx(src.loc, SFX_MACHINES_SLOTMACHINE_PULL)
 
 	var/slot1 = rand(0,9)
 	switch(slot1)
@@ -260,7 +260,7 @@
 
 	om_hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
 	icon_state = "ntslotmachine_rolling"
-	playsound(src.loc, 'sound/machines/slotmachine_pull.ogg', 15, 1)
+	play_sfx(src.loc, SFX_MACHINES_SLOTMACHINE_PULL)
 
 	var/slot1 = rand(0,9)
 	switch(slot1)
@@ -347,7 +347,7 @@
 
 	if(winnings) //Did the person win?
 		icon_state = "slotmachine_winning"
-		playsound(src.loc, 'sound/machines/slotmachine.ogg', 25, 1)
+		play_sfx(src.loc, SFX_MACHINES_SLOTMACHINE)
 		om_after(src, delaytime, PROC_REF(pay_out), winnings)
 
 	if(celebrate) // Happy celebrations!
@@ -414,11 +414,11 @@
 
 	if(platinumwin) // Did they win the platinum chip?
 		new /obj/item/casino_platinum_chip(src.loc)
-		playsound(src.loc, 'sound/machines/slotmachine.ogg', 25, 1)
+		play_sfx(src.loc, SFX_MACHINES_SLOTMACHINE)
 
 	if(winnings) //Did the person win?
 		icon_state = "ntslotmachine_winning"
-		playsound(src.loc, 'sound/machines/slotmachine.ogg', 25, 1)
+		play_sfx(src.loc, SFX_MACHINES_SLOTMACHINE)
 		om_after(src, delaytime, PROC_REF(pay_out), winnings)
 
 	if(celebrate) // Happy celebrations!

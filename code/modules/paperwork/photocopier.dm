@@ -183,13 +183,13 @@
 		user.drop_item()
 		to_chat(user, span_notice("You insert the toner cartridge into \the [src]."))
 		flick("photocopier_toner", src)
-		playsound(loc, 'sound/machines/click.ogg', 50, 1)
+		play_sfx(loc, SFX_MACHINES_CLICK)
 		toner += O.toner_amount
 		consume(O, user)
 	else
 		to_chat(user, span_notice("This cartridge is not yet ready for replacement! Use up the rest of the toner."))
 		flick("photocopier_notoner", src)
-		playsound(loc, 'sound/machines/buzz-two.ogg', 75, 1)
+		play_sfx(loc, SFX_MACHINES_BUZZ_TWO, 1.5, vary = TRUE)
 	return TRUE
 
 /// Old attackby never called ..(): any other item is silently swallowed.

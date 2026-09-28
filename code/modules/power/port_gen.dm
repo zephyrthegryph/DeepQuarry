@@ -350,7 +350,7 @@
 	else
 		disconnect_from_network()
 		to_chat(user, span_notice("You unsecure the generator from the floor."))
-	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 	anchored = !anchored
 	return ITEM_INTERACT_SUCCESS
 
@@ -724,7 +724,7 @@
 	going_kaboom = TRUE
 	visible_message(span_danger("\The [src] lets out an shower of sparks as it starts to lose stability!"),\
 		span_warningplain("You hear a loud electrical crack!"))
-	playsound(src, 'sound/effects/lightningshock.ogg', 100, 1, extrarange = 5)
+	play_sfx(src, SFX_EFFECTS_LIGHTNINGSHOCK)
 	tesla_zap(src, 5, power_gen * 0.05, current_jumps = 1)
 	om_after(null, 100, GLOBAL_PROC_REF(explosion), get_turf(src), 2, 3, 4, 8) // Not a normal explosion.
 
@@ -763,7 +763,7 @@
 	state_change = TRUE
 	RefreshParts()
 	update_icon()
-	playsound(src, 'sound/effects/metal_close.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_METAL_CLOSE)
 	return TRUE
 
 /// Old attackby: `state_change = TRUE` ran unconditionally first, then a void cell was inserted if there wasn't one already.
@@ -795,7 +795,7 @@
 	cell = I
 	RefreshParts()
 	update_icon()
-	playsound(src, 'sound/effects/metal_close.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_METAL_CLOSE)
 	return TRUE
 
 /obj/machinery/power/rtg/abductor/update_icon()
@@ -869,7 +869,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/power/rtg/abductor/hybrid/built, "cell", /o
 /obj/machinery/power/rtg/kugelblitz/proc/asplod()
 	visible_message(span_danger("\The [src] lets out an shower of sparks as it starts to lose stability!"),\
 		span_warningplain("You hear a loud electrical crack!"))
-	playsound(src, 'sound/effects/lightningshock.ogg', 100, 1, extrarange = 5)
+	play_sfx(src, SFX_EFFECTS_LIGHTNINGSHOCK)
 	var/turf/T = get_turf(src)
 	qdel(src)
 	new /obj/singularity(T)

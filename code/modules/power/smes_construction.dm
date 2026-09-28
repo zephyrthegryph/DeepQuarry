@@ -120,9 +120,7 @@
 /obj/machinery/power/smes/buildable/power_step()
 	var/needs_grounding_tick = !grounding && (Percentage() > 5)
 	if(needs_grounding_tick)
-		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-		s.set_up(5, 1, src)
-		s.start()
+		fx_sparks(src, 5)
 		charge -= (output_level_max * SMESRATE)
 		if(prob(1)) // Small chance of overload occuring since grounding is disabled.
 			apcs_overload(0,10)

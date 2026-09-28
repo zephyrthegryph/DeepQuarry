@@ -59,7 +59,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water, \
 	else if(istype(O, /obj/item/mop))
 		O.reagents.add_reagent(reagent_type, 5)
 		to_chat(user, span_notice("You wet \the [O] in \the [src]."))
-		playsound(src, 'sound/effects/slosh.ogg', 25, 1)
+		play_sfx(src, SFX_EFFECTS_SLOSH)
 		return TRUE
 
 	return FALSE

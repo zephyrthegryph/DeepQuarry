@@ -100,7 +100,7 @@ DECLARE_INTERACTIONS(/obj/item/extinguisher, INTERACT_USE(null, PROC_REF(interac
 		var/obj/o = target
 		var/amount = o.reagents.trans_to_obj(src, 50)
 		to_chat(user, span_notice("You fill [src] with [amount] units of the contents of [target]."))
-		playsound(src, 'sound/effects/refill.ogg', 50, 1, -6)
+		play_sfx(src, SFX_EFFECTS_REFILL)
 		return
 
 	if (!safety)
@@ -113,7 +113,7 @@ DECLARE_INTERACTIONS(/obj/item/extinguisher, INTERACT_USE(null, PROC_REF(interac
 
 		COOLDOWN_START(src, use_cooldown, 20)
 
-		playsound(src, 'sound/effects/extinguish.ogg', 75, 1, -3)
+		play_sfx(src, SFX_EFFECTS_EXTINGUISH)
 
 		var/direction = get_dir(src,target)
 

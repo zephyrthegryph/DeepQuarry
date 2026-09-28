@@ -53,7 +53,7 @@ GLOBAL_VAR(bomb_set)
 	if(timing)
 		GLOB.bomb_set = 1 //So long as there is one nuke timing, it means one nuke is armed.
 		timeleft--
-		playsound(src, 'sound/items/timer.ogg',50) //chompedit... beep :)
+		play_sfx(src, SFX_ITEMS_TIMER) //chompedit... beep :)
 		if(timeleft <= 0)
 			explode()
 		for(var/mob/M in viewers(1, src))

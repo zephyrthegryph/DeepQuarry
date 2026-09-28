@@ -45,11 +45,9 @@ EXTEND_INTERACTIONS(/obj/item/storage/secure, \
 /obj/item/storage/secure/proc/interaction_secure_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(locked)
 		if (istype(W, /obj/item/melee/energy/blade) && emag_act(INFINITY, user, "You slice through the lock of \the [src]"))
-			var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
-			spark_system.set_up(5, 0, src.loc)
-			spark_system.start()
-			playsound(src, 'sound/weapons/blade1.ogg', 50, 1)
-			playsound(src, "sparks", 50, 1)
+			fx_sparks(src.loc, 5, FALSE)
+			play_sfx(src, SFX_WEAPONS_BLADE1)
+			play_sfx(src, SFX_SPARKS)
 			return INTERACTION_HANDLED_PASS
 
 		//At this point you have exhausted all the special things to do when locked

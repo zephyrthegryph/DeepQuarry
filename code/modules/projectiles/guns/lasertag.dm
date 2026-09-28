@@ -136,10 +136,10 @@
 
 	if(success)
 		user.visible_message(span_danger("[target] has been zapped with [src] by [user]!"))
-		playsound(src, 'sound/weapons/egloves.ogg', 50, 1, -1)
+		play_sfx(src, SFX_WEAPONS_EGLOVES)
 	else
 		user.visible_message(span_danger("[target] has been harmlessly bonked with [src] by [user]!"))
-		playsound(src, 'sound/weapons/punchmiss.ogg', 75, 1)
+		play_sfx(src, SFX_WEAPONS_PUNCHMISS, 3, extrarange = 0)
 	return ITEM_INTERACT_SUCCESS
 
 ///go my hack

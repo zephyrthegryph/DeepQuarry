@@ -36,7 +36,7 @@
 /datum/form/promethean_blob/on_exit(datum/forms/F, mob/living/carbon/human/H)
 	..()
 	H.visible_message(span_infoplain(span_bold("[H.name]") + " pulls together, forming a humanoid shape!"))
-	playsound(H, 'sound/effects/slime_squish.ogg', 15)
+	play_sfx(H, SFX_EFFECTS_SLIME_SQUISH, 0.3, vary = FALSE)
 
 /datum/form/promethean_blob/build_overlays(datum/forms/F, mob/living/carbon/human/H)
 	var/slime_icon = 'icons/mob/slime2.dmi'

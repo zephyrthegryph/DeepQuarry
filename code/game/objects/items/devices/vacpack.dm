@@ -138,7 +138,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 		user.visible_message(span_filter_notice("[user] begins [suckverb]ing the mess off \the [target.name]..."), span_notice("You begin [suckverb]ing the mess off \the [target.name]..."))
 		var/list/suckables = list()
 		if(vac_power == 8)
-			playsound(src, 'sound/machines/hiss.ogg', 100, 1, -1)
+			play_sfx(src, SFX_MACHINES_HISS, 2, vary = TRUE, extrarange = -1)
 			for(var/obj/item/I in oview(pull_range, target))
 				if(I.anchored || !is_allowed_suck(I, user, output_atom))
 					continue
@@ -301,7 +301,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 		var/obj/item/target_item = target
 		if(target_item.drop_sound)
 			playsound(src, target_item.drop_sound, vac_power * 5, 1, -1)
-	playsound(src, 'sound/rakshasa/Corrosion3.ogg', auto_setting * 15, 1, -1)
+	play_sfx(src, SFX_RAKSHASA_CORROSION3, volume = auto_setting * 15)
 	if(isbelly(output_atom))
 		var/obj/belly/output_belly = output_atom
 		output_belly.nom_atom(target)

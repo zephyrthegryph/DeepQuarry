@@ -202,10 +202,10 @@ DECLARE_INTERACTIONS(/obj/item/robot_tongue, INTERACT_USE(null, PROC_REF(interac
 			L.apply_effect(STUTTER, 1)
 			L.visible_message(span_danger("[user] has shocked [L] with its tongue!"), \
 								span_userdanger("[user] has shocked you with its tongue! You can feel the betrayal."))
-			playsound(src, 'sound/weapons/egloves.ogg', 50, 1, -1)
+			play_sfx(src, SFX_WEAPONS_EGLOVES)
 		else
 			user.visible_message(span_notice("\The [user] affectionately licks all over \the [target]'s face!"), span_notice("You affectionately lick all over \the [target]'s face!"))
-			playsound(src, 'sound/effects/attackblob.ogg', 50, 1)
+			play_sfx(src, SFX_EFFECTS_ATTACKBLOB)
 			water.use_charge(5)
 			var/mob/living/carbon/human/H = target
 			if(H.species.lightweight == 1)
@@ -418,7 +418,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/pounce, INTERACT_USE(null, PROC_REF(inter
 		src.throw_at(get_step(get_turf(T),get_turf(src)), 4, 1, src)
 	*/
 	src.throw_at(get_step(get_turf(T),get_turf(src)), 4, 1, src) // no bluespace pounce
-	playsound(src, 'sound/mecha/mechstep2.ogg', 50, 1)
+	play_sfx(src, SFX_MECHA_MECHSTEP2)
 	pixel_y = default_pixel_y
 
 	if(!bluespace)

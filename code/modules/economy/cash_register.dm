@@ -223,7 +223,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 			capture_service_staff(user)
 			rebuild_ticket()
 			ticket_changed()
-			playsound(src, 'sound/machines/twobeep.ogg', 25)
+			play_sfx(src, SFX_MACHINES_TWOBEEP, 0.5, vary = FALSE)
 			visible_message("[icon2html(src, viewers(src))][t_purpose][amount > 1 ? " [amount] x" : ""]: [amount * price] Thaler\s.")
 			return TRUE
 		if("set_amount")
@@ -313,7 +313,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 		confirm_item = I
 		confirm_revision = ticket_revision
 		src.visible_message(span_infoplain("[icon2html(src,viewers(src))]" + span_bold("Total price:") + " [transaction_amount] Thaler\s. Swipe again to confirm."))
-		playsound(src, 'sound/machines/twobeep.ogg', 25)
+		play_sfx(src, SFX_MACHINES_TWOBEEP, 0.5, vary = FALSE)
 		return 0
 
 /obj/machinery/cash_register/proc/scan_card(obj/item/card/id/I, obj/item/ID_container, mob/user)
@@ -321,7 +321,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 		return
 
 	if (cash_open)
-		playsound(src, 'sound/machines/buzz-sigh.ogg', 25)
+		play_sfx(src, SFX_MACHINES_BUZZ_SIGH, 0.5)
 		to_chat(user, "[icon2html(src, user.client)]" + span_warning("The cash box is open."))
 		return
 
@@ -392,7 +392,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 		return
 
 	if (cash_open)
-		playsound(src, 'sound/machines/buzz-sigh.ogg', 25)
+		play_sfx(src, SFX_MACHINES_BUZZ_SIGH, 0.5)
 		to_chat(user, "[icon2html(src, user.client)]" + span_warning("The cash box is open."))
 		return
 
@@ -418,7 +418,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 		return
 
 	if (cash_open)
-		playsound(src, 'sound/machines/buzz-sigh.ogg', 25)
+		play_sfx(src, SFX_MACHINES_BUZZ_SIGH, 0.5)
 		to_chat(user, "[icon2html(src, user.client)]" + span_warning("The cash box is open."))
 		return
 	if(!check_account(user))
@@ -453,7 +453,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 		src.visible_message("[icon2html(src, viewers(src))]" + span_warning("Only up to ten different items allowed per purchase."))
 		return
 	if (cash_open)
-		playsound(src, 'sound/machines/buzz-sigh.ogg', 25)
+		play_sfx(src, SFX_MACHINES_BUZZ_SIGH, 0.5)
 		to_chat(user, "[icon2html(src, user.client)]" + span_warning("The cash box is open."))
 		return
 
@@ -484,7 +484,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 		LAZYSET(verified_sale_items, O, price)
 	ticket_changed()
 	// Animation and sound
-	playsound(src, 'sound/machines/twobeep.ogg', 25)
+	play_sfx(src, SFX_MACHINES_TWOBEEP, 0.5, vary = FALSE)
 
 /obj/machinery/cash_register/proc/ticket_changed()
 	ticket_revision++
@@ -555,7 +555,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 
 /obj/machinery/cash_register/proc/transaction_complete()
 	/// Visible confirmation
-	playsound(src, 'sound/machines/chime.ogg', 25)
+	play_sfx(src, SFX_MACHINES_CHIME, 0.5, vary = FALSE)
 	src.visible_message("[icon2html(src, viewers(src))]" + span_notice("Transaction complete."))
 	flick("register_approve", src)
 	reset_memory()
@@ -616,7 +616,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 /obj/machinery/cash_register/emag_act(remaining_charges, mob/user)
 	if(!emagged)
 		src.visible_message(span_danger("The [src]'s cash box springs open as [user] swipes the card through the scanner!"))
-		playsound(src, "sparks", 50, 1)
+		play_sfx(src, SFX_SPARKS)
 		req_access = list()
 		emagged = 1
 		locked = 0

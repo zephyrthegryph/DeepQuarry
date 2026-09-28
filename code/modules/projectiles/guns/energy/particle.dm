@@ -67,12 +67,12 @@
 
 		if (!power_supply || power_supply.charge < charge_cost)
 			user.visible_message(span_warning("*click*"), span_danger("*click*"))
-			playsound(src, 'sound/weapons/empty.ogg', 100, 1)
+			play_sfx(src, SFX_WEAPONS_EMPTY, 2)
 			return 0
 		if(pressure >= 10)
 			if (safetycatch) //weapons with a pressure regulator simply won't fire
 				user.visible_message(span_warning("*click*"), span_danger("The pressure-interlock prevents you from firing \the [src]."))
-				playsound(src, 'sound/weapons/empty.ogg', 100, 1)
+				play_sfx(src, SFX_WEAPONS_EMPTY, 2)
 				return 0
 			else if (prob(min(pressure, 100))) //pressure% chance of failing
 				var/severity = rand(pressure)
@@ -84,27 +84,21 @@
 /obj/item/gun/energy/particle/proc/pressuremalfunction(severity, mob/user, turf/T)
 	if (severity <= 10) // just doesn't fire. 10% chance in 100 atmo.
 		user.visible_message(span_warning("*click*"), span_danger("\The [src] jams."))
-		playsound(src, 'sound/weapons/empty.ogg', 100, 1)
+		play_sfx(src, SFX_WEAPONS_EMPTY, 2)
 	else if (severity <= 60) //50% chance of fizzling and wasting a shot
 		user.visible_message(span_warning("\The [user] fires \the [src], but the shot fizzles in the air!"), span_danger("You fire \the [src], but the shot fizzles in the air!"))
 		power_supply.charge -= charge_cost
 		playsound(src, fire_sound, 100, 1)
-		var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
-		sparks.set_up(2, 1, T)
-		sparks.start()
+		fx_sparks(T, 2)
 		update_icon()
 	else if (severity <= 80) //20% chance of shorting out and emptying the cell
 		user.visible_message(span_warning("\The [user] pulls the trigger, but \the [src] shorts out!"), span_danger("You pull the trigger, but \the [src] shorts out!"))
 		power_supply.charge = 0
-		var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
-		sparks.set_up(2, 1, T)
-		sparks.start()
+		fx_sparks(T, 2)
 		update_icon()
 	else if (severity <= 90) //10% chance of breaking the gun
 		user.visible_message(span_warning("\The [user] pulls the trigger, but \the [src] erupts in a shower of sparks!"), span_danger("You pull the trigger, but \the [src] bursts into a shower of sparks!"))
-		var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
-		sparks.set_up(2, 1, T)
-		sparks.start()
+		fx_sparks(T, 2)
 		power_supply.charge = 0
 		power_supply.maxcharge = 1 //just to avoid div/0 runtimes
 		power_supply.desc += " It seems to be burnt out!"

@@ -30,11 +30,11 @@
 	say_list_type = /datum/say_list/BigTim
 
 /mob/living/simple_mob/horror/BigTim/on_death(gibbed)
-	playsound(src, 'sound/h_sounds/shitty_tim.ogg', 50, 1)
+	play_sfx(src, SFX_H_SOUNDS_SHITTY_TIM)
 	..()
 
 /mob/living/simple_mob/horror/BigTim/bullet_act()
-	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
+	play_sfx(src, SFX_H_SOUNDS_HOLLA)
 	..()
 
 /datum/say_list/BigTim

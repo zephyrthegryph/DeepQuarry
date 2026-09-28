@@ -260,7 +260,7 @@
 		target.apply_effect(20, PARALYZE)
 		target.visible_message(span_danger("[target] [target.species.get_knockout_message(target)]"))
 
-	playsound(attacker, "swing_hit", 25, 1, -1)
+	play_sfx(attacker, SFX_SWING_HIT)
 	add_attack_logs(attacker,target,"Headbutted using grab")
 
 	attacker.drop_from_inventory(src)
@@ -273,7 +273,7 @@
 		to_chat(attacker, span_warning("You require a better grab to do this."))
 		return
 	if(target.grab_joint(attacker, target_zone))
-		playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+		play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 		return
 
 /obj/item/grab/proc/pin_down(mob/target, mob/attacker)

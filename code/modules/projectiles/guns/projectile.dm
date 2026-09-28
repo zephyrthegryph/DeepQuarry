@@ -105,7 +105,7 @@
 				return
 			else
 				chambered.forceMove(get_turf(src))
-				playsound(src, "casing", 50, 1)
+				play_sfx(src, SFX_CASING_SOUND)
 		if(CYCLE_CASINGS) //cycle the casing back to the end.
 			if(ammo_magazine)
 				ammo_magazine.stored_ammo += chambered
@@ -128,7 +128,7 @@
 	if(ammo_magazine)
 		user.put_in_hands(ammo_magazine)
 		user.visible_message("[user] removes [ammo_magazine] from [src].", span_notice("You remove [ammo_magazine] from [src]."))
-		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_EMPTY)
 		ammo_magazine.update_icon()
 		ammo_magazine = null
 		user.hud_used?.update_ammo_hud(user, src)
@@ -149,7 +149,7 @@
 			loaded.len--
 			user.put_in_hands(C)
 			user.visible_message("[user] removes \a [C] from [src].", span_notice("You remove \a [C] from [src]."))
-		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_EMPTY)
 		user.hud_used?.update_ammo_hud(user, src)
 	else
 		to_chat(user, span_warning("[src] is empty."))
@@ -541,7 +541,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 	H.stored_ammo -= rd
 	rd.forceMove(src)
 	loaded.Insert(1, rd) //add to the head of the list
-	playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+	play_sfx(src, SFX_WEAPONS_EMPTY)
 	H.update_icon()
 	var/mob/user = task.actor
 	user.hud_used?.update_ammo_hud(user, src)
@@ -591,7 +591,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 				if(manual_chamber && CHECK_BITFIELD(auto_loading_type,CHAMBER_ON_RELOAD) && bolt_open && !chambered)
 					chamber_bullet()
 					bolt_toggle()
-				playsound(src, 'sound/weapons/flipblade.ogg', 50, 1)
+				play_sfx(src, SFX_WEAPONS_FLIPBLADE)
 				user.hud_used?.update_ammo_hud(user, src)
 			if(SPEEDLOADER)
 				if(only_open_load && !bolt_open)
@@ -611,7 +611,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 						count++
 				if(count)
 					user.visible_message("[user] reloads [src].", span_notice("You load [count] round\s into [src]."))
-					playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+					play_sfx(src, SFX_WEAPONS_EMPTY)
 					user.hud_used?.update_ammo_hud(user, src)
 		AM.update_icon()
 	else if(istype(A, /obj/item/ammo_casing))
@@ -650,7 +650,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 		C.forceMove(src)
 		loaded.Insert(1, C) //add to the head of the list
 		user.visible_message("[user] inserts \a [C] into [src].", span_notice("You insert \a [C] into [src]."))
-		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_EMPTY)
 		user.hud_used?.update_ammo_hud(user, src)
 
 	else if(istype(A, /obj/item/storage))

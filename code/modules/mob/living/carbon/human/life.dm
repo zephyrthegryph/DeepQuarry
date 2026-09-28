@@ -1234,7 +1234,7 @@
 		self.adjust_nutrition(-nutrition_reduction)
 
 	if(self.noisy == TRUE && self.nutrition < 250 && prob(10))
-		var/sound/growlsound = sound(get_sfx("hunger_sounds"))
+		var/sound/growlsound = sound(get_sfx(SFX_HUNGER_SOUNDS))
 		var/growlmultiplier = 100 - (self.nutrition / 250 * 100)
 		playsound(self, growlsound, vol = growlmultiplier, vary = 1, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
 	if(self.nutrition > 500 && self.noisy_full == TRUE)

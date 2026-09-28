@@ -223,7 +223,7 @@
 			return TRUE
 		if("play")
 			if(emagged)
-				playsound(src, 'sound/items/AirHorn.ogg', 100, 1)
+				play_sfx(src, SFX_ITEMS_AIRHORN)
 				for(var/mob/living/carbon/M in ohearers(6, src))
 					if(M.get_ear_protection() >= 2)
 						continue
@@ -266,9 +266,7 @@
 
 	explosion(src.loc, 0, 0, 1, rand(1,2), 1)
 
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(3, 1, src)
-	s.start()
+	fx_sparks(src, 3)
 
 	replace_with(src, /obj/effect/decal/cleanable/blood/oil)
 

@@ -61,7 +61,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/spell/reflect, "spark_system", /datum/effect/eff
 					P.damage = P.damage * 1.5
 
 				spark_system.start()
-				playsound(src, 'sound/weapons/blade1.ogg', 50, 1)
+				play_sfx(src, SFX_WEAPONS_BLADE1)
 				// now send a log so that admins don't think they're shooting themselves on purpose.
 				add_attack_logs(user,attacker,"Reflected [attacker]'s attack")
 
@@ -79,7 +79,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/spell/reflect, "spark_system", /datum/effect/eff
 				on the same side, and hits you!"))
 
 				spark_system.start()
-				playsound(src, 'sound/weapons/blade1.ogg', 50, 1)
+				play_sfx(src, SFX_WEAPONS_BLADE1)
 
 				add_attack_logs(user,attacker,"Reflected [attacker]'s attack")
 

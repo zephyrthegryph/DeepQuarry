@@ -108,7 +108,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/grass/sif, INTERACT_ITEM("Pla
 		var/obj/item/stack/tile/floor/S = C
 		if (S.get_amount() < 1)
 			return INTERACTION_HANDLED_PASS
-		playsound(src, 'sound/weapons/genhit.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_GENHIT)
 		ChangeTurf(/turf/simulated/floor)
 		S.use(1)
 		return INTERACTION_HANDLED_PASS

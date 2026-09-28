@@ -166,7 +166,7 @@
 		busy = 0
 		update_use_power(USE_POWER_IDLE)
 		update_icon()
-		playsound(src, 'sound/machines/chime.ogg', 50, 0)
+		play_sfx(src, SFX_MACHINES_CHIME, vary = FALSE)
 
 /obj/machinery/partslathe/proc/addToQueue(datum/category_item/partslathe/D, producer_account = 0)
 	queue += D

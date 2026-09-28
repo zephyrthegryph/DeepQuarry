@@ -132,7 +132,7 @@
 
 		visible_message(span_danger("\The [src] suddenly rises from a pool of blood \the [L]!"))
 		new /obj/effect/decal/cleanable/blood (src.loc)
-		playsound(L, 'sound/weapons/heavysmash.ogg', 75, 1)
+		play_sfx(L, SFX_WEAPONS_HEAVYSMASH)
 		L.apply_body_effect(/datum/body_effect/entangled, 1 SECONDS)
 		overshoot = FALSE
 
@@ -144,7 +144,7 @@
 
 	// Otherwise we need to keep going.
 	to_chat(src, span_warning("You overshoot your target!"))
-	playsound(src, 'sound/weapons/punchmiss.ogg', 75, 1)
+	play_sfx(src, SFX_WEAPONS_PUNCHMISS, 3, extrarange = 0)
 	var/dir_to_go = get_dir(starting_turf, destination)
 	for(var/i = 1 to rand(2, 4))
 		destination = get_step(destination, dir_to_go)
@@ -175,7 +175,7 @@
 		T = get_step(src, get_dir(src, destination))
 		if(T.check_density(ignore_mobs = TRUE))
 			to_chat(src, span_critical("You hit something really solid!"))
-			playsound(src, "punch", 75, 1)
+			play_sfx(src, SFX_PUNCH, 1.5)
 			status_at_least(EFFECT_WEAKENED, 5)
 			apply_body_effect(/datum/body_effect/tunneler_vulnerable, 10 SECONDS)
 			return FALSE // Hit a wall.
@@ -511,7 +511,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/cultist/elite, INTERACT_ITEM
 	new /obj/effect/decal/cleanable/blood/gibs (src.loc)
 	new /obj/item/material/shard (src.loc)
 	..()
-	playsound(src, 'sound/effects/Glassbr2.ogg', 100, 1)
+	play_sfx(src, SFX_EFFECTS_GLASSBR2)
 	ghostize()
 
 ////////////////////////////

@@ -151,7 +151,7 @@ DECLARE_REF(/mob/living/simple_mob/animal/solargrub_larva, "machine_effect", OWN
 	if(!end_vent)
 		return
 	forceMove(vent)
-	playsound(vent, 'sound/machines/ventcrawl.ogg', 50, 1, -3)
+	play_sfx(vent, SFX_MACHINES_VENTCRAWL)
 	vent.visible_message("\The [src] wiggles into \the [vent]!")
 	ventcrawl_travel(vent, end_vent, 3)
 
@@ -168,7 +168,7 @@ DECLARE_REF(/mob/living/simple_mob/animal/solargrub_larva, "machine_effect", OWN
 			return
 		ventcrawl_travel(vent, end_vent, redirect_attempts - 1)
 		return
-	playsound(end_vent, 'sound/machines/ventcrawl.ogg', 50, 1, -3)
+	play_sfx(end_vent, SFX_MACHINES_VENTCRAWL)
 	forceMove(get_turf(end_vent))
 
 /mob/living/simple_mob/animal/solargrub_larva/proc/expand_grub()

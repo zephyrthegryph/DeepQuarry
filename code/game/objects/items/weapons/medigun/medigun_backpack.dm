@@ -563,7 +563,7 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 					if(R.id != "tricordrazine")
 						to_chat(user, span_notice("You add [totransfer / modifier] units of [R.name] to the [src]. \n The [src] stores [round(totransfer)] U of [name]."))
 					container.reagents.remove_reagent(R.id, totransfer / modifier)
-					playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+					play_sfx(src, SFX_WEAPONS_EMPTY)
 				update_icon()
 				. = TRUE
 	return

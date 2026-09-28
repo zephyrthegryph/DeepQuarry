@@ -123,7 +123,7 @@
 				var/T = get_turf(winner)
 				spk.set_up(5, 0, winner)
 				spk.attach(winner)
-				playsound(T, "sparks", 50, 1)
+				play_sfx(T, SFX_SPARKS)
 				anim(T,winner,'icons/mob/mob.dmi',,"phaseout",,winner.dir)
 				loser.vore_selected.nom_atom(winner)
 		if(WEALTHY_CRACKER)
@@ -131,7 +131,7 @@
 			new /obj/random/cash/huge(spawnloc)
 			winner.visible_message(span_bold("\The [winner]") + " has a whole load of cash fall at their feet!")
 
-	playsound(user, 'sound/effects/snap.ogg', 50, 1)
+	play_sfx(user, SFX_EFFECTS_SNAP)
 	user.drop_item(src)
 	new /obj/random/toy(spawnloc)
 	new /obj/item/clothing/head/paper_crown(spawnloc)

@@ -168,7 +168,7 @@
 	var/atom/device = isobj(loc) ? loc : src
 	if(quenching)
 		device.visible_message(span_warning("[device] snaps with a harsh electrical crack as frost flashes from its casing!"))
-		playsound(device, 'sound/effects/sparks4.ogg', 55, TRUE)
+		play_sfx(device, SFX_EFFECTS_SPARKS4, volume = 55)
 	else
 		device.visible_message(span_notice("Condensation creeps across [device] as its electrical hum becomes suddenly clean."))
 

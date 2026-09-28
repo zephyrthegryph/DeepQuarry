@@ -77,9 +77,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/electropack, \
 				step(M, M.last_move)
 				om_after(M, 5 SECONDS, GLOBAL_PROC_REF(dq_set_moved_recently), M, FALSE)
 		to_chat(M, span_danger("You feel a sharp shock!"))
-		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-		s.set_up(3, 1, M)
-		s.start()
+		fx_sparks(M, 3)
 
 		M.status_at_least(EFFECT_WEAKENED, 10)
 

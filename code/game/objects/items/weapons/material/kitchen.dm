@@ -80,7 +80,7 @@ DECLARE_REAGENTS(/obj/item/material/kitchen/utensil, "scoop_volume", null)
 	if(!loaded)
 		return
 	M.visible_message(span_bold("\The [user]") + " feeds some of [loaded] to \the [M] with \the [src].")
-	playsound(src,'sound/items/eatfood.ogg', rand(10,40), 1)
+	play_sfx(src, SFX_ITEMS_EATFOOD, volume = rand(10,40))
 	loaded = null
 	update_icon()
 
@@ -115,7 +115,7 @@ DECLARE_REAGENTS(/obj/item/material/kitchen/utensil, "scoop_volume", null)
 				return ITEM_INTERACT_FAILURE
 			om_task_timed(user, 5 SECONDS, target = M, receiver = src, on_done = PROC_REF(force_feed_done), done_args = list(M, user))
 			return ITEM_INTERACT_SUCCESS
-		playsound(src,'sound/items/eatfood.ogg', rand(10,40), 1)
+		play_sfx(src, SFX_ITEMS_EATFOOD, volume = rand(10,40))
 		loaded = null
 		update_icon()
 		return ITEM_INTERACT_SUCCESS
