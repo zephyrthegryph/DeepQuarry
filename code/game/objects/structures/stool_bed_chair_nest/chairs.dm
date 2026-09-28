@@ -31,12 +31,14 @@
 		replace_with(src, E)
 	return TRUE
 
-/obj/structure/bed/chair/attack_tk(mob/user as mob)
+EXTEND_INTERACTIONS(/obj/structure/bed/chair, INTERACT_TK("Rotate", PROC_REF(interaction_tk)))
+
+/// Old attack_tk: spin an empty chair at range; an occupied one ignores telekinesis.
+/obj/structure/bed/chair/proc/interaction_tk(mob/user, obj/item/held, datum/interaction/interaction)
 	if(has_buckled_mobs())
-		..()
-	else
-		rotate_clockwise()
-	return
+		return FALSE
+	rotate_clockwise()
+	return TRUE
 
 /obj/structure/bed/chair/post_buckle_mob()
 	update_icon()

@@ -54,10 +54,11 @@
 	for(var/mob/living/carbon/human/O in contents)
 		O.show_inventory_panel(usr, state = GLOB.tgui_deep_inventory_state)
 
-/obj/item/holder/micro/attack_self(mob/living/carbon/user) //reworked so it works w/ nonhumans
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/holder/micro, INTERACT_SELF("Pet", PROC_REF(micro_holder_pet_self)))
+
+/// Old attack_self: reworked so it works w/ nonhumans.
+/obj/item/holder/micro/proc/micro_holder_pet_self(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
+	. = TRUE
 	user.setClickCooldown(user.get_attack_speed())
 	for(var/L in contents)
 		if(ishuman(L))
@@ -67,14 +68,7 @@
 			var/mob/living/simple_mob/S = L
 			user.visible_message(span_notice("[user] [S.response_help] \the [S]."))
 
-//Egg features.
-/obj/item/holder/attack_hand(mob/living/user as mob)
-	if(istype(src.loc, /obj/item/storage/vore_egg)) //Don't scoop up the egged mob
-		src.pickup(user)
-		user.drop_from_inventory(src)
-		return
-	..()
-
+//Egg features. (The egged-mob check lives in /obj/item/holder/proc/holder_pick_up(), holder.dm.)
 /obj/item/holder/container_resist(mob/living/held)
 	if(!istype(src.loc, /obj/item/storage/vore_egg))
 		..()

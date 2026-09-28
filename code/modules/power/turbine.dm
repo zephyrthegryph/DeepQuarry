@@ -127,11 +127,7 @@
 	id = "compressor_fingerprint"
 	name = "Touch"
 	held_type = /obj/item
-	effect = /obj/machinery/compressor/proc/interaction_fingerprint
-
-/obj/machinery/compressor/proc/interaction_fingerprint(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
-	return FALSE
+	effect = /atom/proc/interaction_fingerprint
 
 /// Old attackby: a multitool sets the comp ident tag.
 /datum/interaction/machine_item/compressor_set_ident
@@ -248,11 +244,7 @@
 	id = "turbine_fingerprint"
 	name = "Touch"
 	held_type = /obj/item
-	effect = /obj/machinery/power/turbine/proc/interaction_fingerprint
-
-/obj/machinery/power/turbine/proc/interaction_fingerprint(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
-	return FALSE
+	effect = /atom/proc/interaction_fingerprint
 
 /obj/machinery/power/turbine/wrench_act(mob/user, obj/item/W)
 	if((. = ..()))
@@ -393,10 +385,7 @@
 	id = "turbine_computer_swallow_item"
 	name = "Use"
 	held_type = /obj/item
-	effect = /obj/machinery/computer/turbine_computer/proc/interaction_swallow_item
-
-/obj/machinery/computer/turbine_computer/proc/interaction_swallow_item(mob/user, obj/item/held, datum/interaction/interaction)
-	return TRUE
+	effect = /atom/proc/interaction_swallow
 
 /obj/machinery/computer/turbine_computer/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

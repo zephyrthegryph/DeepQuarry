@@ -44,10 +44,7 @@
 	id = "cablelayer_swallow"
 	name = "Use"
 	held_type = /obj/item
-	effect = /obj/machinery/cablelayer/proc/interaction_swallow
-
-/obj/machinery/cablelayer/proc/interaction_swallow(mob/user, obj/item/held, datum/interaction/interaction)
-	return TRUE
+	effect = /atom/proc/interaction_swallow
 
 /// Old attack_hand (never called ..()): toggle the layer on/off.
 /datum/interaction/machine_hand/ungated/cablelayer_toggle

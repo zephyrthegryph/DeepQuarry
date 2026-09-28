@@ -86,11 +86,7 @@ REF_OWNED(/obj/vehicle/train/engine/quadbike, "soundloop")
 		if(8)
 			pixel_y = 0
 
-/obj/vehicle/train/engine/quadbike/attackby(obj/item/W, mob/user)
-	if(W.has_tool_quality(TOOL_MULTITOOL) && open)
-		om_ask(user, /datum/om/prompt/color/vehicle_paint, PROC_REF(vehicle_paint_picked), default = paint_color)
-		return
-	..()
+EXTEND_INTERACTIONS(/obj/vehicle/train/engine/quadbike, INTERACT_ITEM("Paint", PROC_REF(interaction_vehicle_paint)))
 
 /obj/vehicle/train/engine/quadbike/update_icon()
 	..()
@@ -270,8 +266,4 @@ REF_OWNED(/obj/vehicle/train/engine/quadbike, "soundloop")
 	Bodypaint.color = paint_color
 	add_overlay(Bodypaint)
 
-/obj/vehicle/train/trolley/trailer/attackby(obj/item/W, mob/user)
-	if(W.has_tool_quality(TOOL_MULTITOOL) && open)
-		om_ask(user, /datum/om/prompt/color/vehicle_paint, PROC_REF(vehicle_paint_picked), default = paint_color)
-		return
-	..()
+EXTEND_INTERACTIONS(/obj/vehicle/train/trolley/trailer, INTERACT_ITEM("Paint", PROC_REF(interaction_vehicle_paint)))

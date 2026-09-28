@@ -1,4 +1,5 @@
 /mob/living/simple_mob/vore/aggressive/panther
+	drag_buckle = FALSE
 	name = "panther"
 	desc = "Runtime's larger, less cuddly cousin."
 	tt_desc = "Panthera pardus"
@@ -59,9 +60,6 @@
 	add_verb(src, /mob/living/simple_mob/proc/animal_mount)
 	add_verb(src, /mob/living/proc/toggle_rider_reins)
 	movement_cooldown = 0
-
-/mob/living/simple_mob/vore/aggressive/panther/MouseDrop_T(mob/living/M, mob/living/user)
-	return
 
 /mob/living/simple_mob/vore/aggressive/panther/load_default_bellies()
 	. = ..()

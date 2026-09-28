@@ -1,7 +1,7 @@
 /*
 	Cyborg ClickOn()
 
-	Cyborgs have no range restriction on attack_robot(), because it is basically an AI click.
+	Cyborgs have no range restriction on empty-gripper Use, because it is basically an AI click.
 	However, they do have a range restriction on item use, so they cannot do without the
 	adjacency code.
 */
@@ -92,26 +92,8 @@
 /obj/machinery/turretid/BorgAltClick(mob/living/silicon/robot/user) //turret lethal on/off. Forwards to AI code.
 	AIAltClick(user)
 
-/*
-	As with AI, these are not used in click code,
-	because the code for robots is specific, not generic.
-
-	If you would like to add advanced features to robot
-	clicks, you can do so here, but you will have to
-	change attack_robot() above to the proper function
-*/
+// Not used by click code (the robot adapter handles Use); here for anything that calls them.
 /mob/living/silicon/robot/UnarmedAttack(atom/A)
-	A.attack_robot(src)
+	actor_use(/datum/input_adapter/robot, src, A)
 /mob/living/silicon/robot/RangedAttack(atom/A)
-	A.attack_robot(src)
-
-/// A cyborg's empty-gripper Use (the robot adapter, adapters.dm). With no override,
-/// `silicon_use` may make it a hand's Use; otherwise it interfaces like the AI.
-/atom/proc/attack_robot(mob/user as mob)
-	if(silicon_use & ROBOT_USE_HAND)
-		return attack_hand(user)
-	if(silicon_use & ROBOT_USE_HAND_ADJACENT)
-		if(Adjacent(user))
-			return attack_hand(user)
-		return
-	return attack_ai(user)
+	actor_use(/datum/input_adapter/robot, src, A)

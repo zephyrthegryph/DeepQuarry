@@ -11,13 +11,16 @@
 	else
 		return ..()
 
-/mob/living/carbon/alien/diona/attackby(obj/item/W, mob/user)
-	if(IS_HELPING(user) && istype(W, /obj/item/clothing/head))
-		if(hat)
-			to_chat(user, span_warning("\The [src] is already wearing \the [hat]."))
-			return
-		user.unEquip(W)
-		wear_hat(W)
-		user.visible_message(span_infoplain(span_bold("\The [user]") + " puts \the [W] on \the [src]."))
-		return
-	return ..()
+EXTEND_INTERACTIONS(/mob/living/carbon/alien/diona, INTERACT_ITEM("Put on hat", PROC_REF(diona_interaction_hat)))
+
+/// Old attackby: on help intent, a hat goes on the nymph. Anything else reaches the attack.
+/mob/living/carbon/alien/diona/proc/diona_interaction_hat(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!IS_HELPING(user) || !istype(held, /obj/item/clothing/head))
+		return FALSE
+	if(hat)
+		to_chat(user, span_warning("\The [src] is already wearing \the [hat]."))
+		return TRUE
+	user.unEquip(held)
+	wear_hat(held)
+	user.visible_message(span_infoplain(span_bold("\The [user]") + " puts \the [held] on \the [src]."))
+	return TRUE

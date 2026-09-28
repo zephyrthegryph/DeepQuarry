@@ -67,19 +67,21 @@
 	else
 		to_chat(user, span_warning("[src] is empty."))
 
-/obj/item/gun/launcher/grenade/attack_self(mob/user)
-	. = ..(user)
+/// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
+/obj/item/gun/launcher/grenade/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+	. = ..()
 	if(.)
 		return TRUE
 	if(underslung)
 		return FALSE
 	pump(user)
 
-/obj/item/gun/launcher/grenade/attackby(obj/item/I, mob/user)
+/// Old attackby.
+/obj/item/gun/launcher/grenade/gun_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if((istype(I, /obj/item/grenade)))
 		load(I, user)
-	else
-		..()
+		return INTERACTION_HANDLED_PASS
+	return ..()
 
 DECLARE_INTERACTIONS(/obj/item/gun/launcher/grenade, INTERACT_HAND(null, PROC_REF(interaction_hand)))
 

@@ -5,8 +5,10 @@
 	w_class = ITEMSIZE_COST_LARGE
 	resistance_flags = FIRE_PROOF | UNACIDABLE
 
-/obj/item/clothing/suit/armor/reactive_armor_shell/attackby(obj/item/I, mob/user)
-	. = ..()
+EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/reactive_armor_shell, INTERACT_INSERT(/obj/item/assembly/signaler/anomaly, PROC_REF(reactive_shell_insert_core), "Insert anomaly core"))
+
+/// Old attackby: install an anomaly core.
+/obj/item/clothing/suit/armor/reactive_armor_shell/proc/reactive_shell_insert_core(mob/user, obj/item/I, datum/interaction/interaction)
 	var/static/list/anomaly_armour_types = list(
 		/obj/effect/anomaly/grav = /obj/item/clothing/suit/armor/reactive/repulse,
 		/obj/effect/anomaly/flux = /obj/item/clothing/suit/armor/reactive/tesla,
@@ -27,6 +29,7 @@
 		replace_with(src, armour_path)
 		consume(anomaly, user)
 		return TRUE
+	return FALSE
 
 /obj/item/clothing/suit/armor/reactive
 	name = "reactive armor"
@@ -54,10 +57,10 @@
 	. = ..()
 	icon_state = "reactive[active ? null : "off"]"
 
-/obj/item/clothing/suit/armor/reactive/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/reactive, INTERACT_USE("Toggle", PROC_REF(reactive_armor_toggle_self)))
+
+/// Old attack_self.
+/obj/item/clothing/suit/armor/reactive/proc/reactive_armor_toggle_self(mob/user, obj/item/held, datum/interaction/interaction)
 	active = !active
 	to_chat(user, span_notice("[src] is now [active ? "active" : "inactive"]."))
 	update_icon()

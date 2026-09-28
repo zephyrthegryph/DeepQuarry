@@ -70,9 +70,13 @@
 		that_one.resize(prev_size, ignore_prefs = TRUE)
 		return
 
-/mob/living/simple_mob/vore/overmap/stardog/attack_hand(mob/living/user)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/overmap/stardog, INTERACT_HAND_UNGATED(null, PROC_REF(stardog_interaction_hand)))
+
+/// Old attack_hand: pick someone out of the fur.
+/mob/living/simple_mob/vore/overmap/stardog/proc/stardog_interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+	. = TRUE
 	if(!(user.pickup_pref && user.pickup_active))
-		return ..()
+		return FALSE
 	var/list/possible_targets = list()
 
 	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
@@ -84,7 +88,7 @@
 			possible_targets |= player
 
 	if(!possible_targets.len)
-		return ..()
+		return FALSE
 	user.visible_message(span_warning("\The [user] reaches for something in \the [src]'s fur..."),span_notice("You look through \the [src]'s fur..."))
 	om_ask(user, /datum/om/prompt/choice/stardog_fur_pick, PROC_REF(fur_pick_chosen), choices = possible_targets)
 	return TRUE
@@ -408,12 +412,18 @@ REF_PAIR(/mob/living/simple_mob/vore/overmap/stardog, list("control_node" = "hos
 	var/tree_color = null
 	var/tree_type = /obj/structure/flora/tree/fur
 
-/turf/simulated/floor/outdoors/fur/attackby()
-	return
+EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/fur, \
+	INTERACT_ITEM("Nothing", TYPE_PROC_REF(/atom, interaction_pass)), \
+	INTERACT_HAND_UNGATED("Pet", PROC_REF(fur_pet)), \
+	INTERACT_VERB("Pet Fur", PROC_REF(fur_verb_pet)), \
+	INTERACT_VERB("Emote Beyond", PROC_REF(fur_verb_emote_beyond)), \
+)
 
-/turf/simulated/floor/outdoors/fur/attack_hand(mob/user)
-	. = ..()
-	pet()
+/// Old attack_hand: the turf's own touch, then petting.
+/turf/simulated/floor/outdoors/fur/proc/fur_pet(mob/user, obj/item/held, datum/interaction/interaction)
+	turf_hand(user, held, interaction)
+	fur_verb_pet(user)
+	return TRUE
 
 /turf/simulated/floor/outdoors/fur/ex_act(severity)
 	return
@@ -455,13 +465,9 @@ REF_PAIR(/mob/living/simple_mob/vore/overmap/stardog, list("control_node" = "hos
 		else
 			tree.color = color
 
-/turf/simulated/floor/outdoors/fur/verb/pet()
-	set name = "Pet Fur"
-	set desc = "Pet the fur!"
-	set category = "IC.Stardog"
-	set src in oview(1)
-
-	usr.visible_message(span_notice("\The [usr] pets \the [src]."), span_notice("You pet \the [src]."), runemessage = "pet pat...")
+/// Old Pet Fur verb: Pet the fur!
+/turf/simulated/floor/outdoors/fur/proc/fur_verb_pet(mob/user, obj/item/held, datum/interaction/interaction)
+	user.visible_message(span_notice("\The [user] pets \the [src]."), span_notice("You pet \the [src]."), runemessage = "pet pat...")
 	var/obj/effect/overmap/visitable/ship/simplemob/stardog/s = get_overmap_sector(z)
 
 	if(s && istype(s, /obj/effect/overmap/visitable/ship/simplemob/stardog))
@@ -470,22 +476,15 @@ REF_PAIR(/mob/living/simple_mob/vore/overmap/stardog, list("control_node" = "hos
 		if(m.affinity >= 10 && prob(5))
 			m.visible_message("\The [m]'s tail wags happily!")
 
-/turf/simulated/floor/outdoors/fur/verb/emote_beyond(message as message)	//Now even the stars will know your sin.
-	set name = "Emote Beyond"
-	set desc = "Emote to those beyond the fur!"
-	set category = "IC.Chat"
-	set src in oview(1)
-
-	if(!isliving(usr))
+/// Old Emote Beyond verb: Emote to those beyond the fur!
+/turf/simulated/floor/outdoors/fur/proc/fur_verb_emote_beyond(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!isliving(user))
 		return
-	var/mob/living/L = usr
+	var/mob/living/L = user
 	if(L.client?.prefs?.muted & MUTE_IC)
 		to_chat(L, span_warning("You cannot speak in IC (muted)."))
 		return
-	if (!message)
-		om_ask(L, /datum/om/prompt/text, PROC_REF(emote_beyond_answered), title = "Emote Beyond", message = "Type a message to emote.", encode = FALSE)
-		return
-	emote_beyond_entered(L, message)
+	om_ask(L, /datum/om/prompt/text, PROC_REF(emote_beyond_answered), title = "Emote Beyond", message = "Type a message to emote.", encode = FALSE)
 
 /turf/simulated/floor/outdoors/fur/proc/emote_beyond_answered(datum/om/prompt/text/ask)
 	emote_beyond_entered(ask.answerer, ask.text)
@@ -633,11 +632,7 @@ REF_PAIR(/mob/living/simple_mob/vore/overmap/stardog, list("control_node" = "hos
 	name = "dense fur"
 	desc = "Silky and soft, but too thick to pass or cut!"
 
-EXTEND_INTERACTIONS(/obj/structure/flora/tree/fur/wall, INTERACT_ITEM(null, PROC_REF(wall_interaction_item)))
-
-/// Old attackby.
-/obj/structure/flora/tree/fur/wall/proc/wall_interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
-	return INTERACTION_HANDLED_PASS
+EXTEND_INTERACTIONS(/obj/structure/flora/tree/fur/wall, INTERACT_ITEM(null, TYPE_PROC_REF(/atom, interaction_pass)))
 
 /area/redgate/stardog
 	name = "dog"
@@ -934,10 +929,7 @@ DECLARE_INTERACTIONS(/obj/structure/control_pod, INTERACT_HAND(null, PROC_REF(in
 /datum/interaction/machine_item/dog_eye_swallow
 	id = "dog_eye_swallow"
 	name = "Use"
-	effect = /obj/machinery/computer/ship/navigation/telescreen/dog_eye/proc/interaction_dog_eye_swallow
-
-/obj/machinery/computer/ship/navigation/telescreen/dog_eye/proc/interaction_dog_eye_swallow(mob/user, obj/item/held, datum/interaction/interaction)
-	return TRUE
+	effect = /atom/proc/interaction_swallow
 
 /obj/machinery/computer/ship/navigation/telescreen/dog_eye/update_icon()
 	. = ..()
@@ -1052,9 +1044,14 @@ DECLARE_INTERACTIONS(/obj/structure/control_pod, INTERACT_HAND(null, PROC_REF(in
 	icon_state = "nose"
 	anchored = TRUE
 
-/obj/effect/dog_nose/attack_hand(mob/living/user)
-	. = ..()
+EXTEND_INTERACTIONS(/obj/effect/dog_nose, \
+	INTERACT_HAND("Boop", PROC_REF(interaction_boop_snoot)), \
+)
+
+/// Old attack_hand.
+/obj/effect/dog_nose/proc/interaction_boop_snoot(mob/living/user, obj/item/held, datum/interaction/interaction)
 	user.visible_message(span_notice("\The [user] boops the snoot."),span_notice("You boop the snoot."),runemessage = "boop")
+	return TRUE
 
 /obj/effect/dog_nose/Crossed(atom/movable/AM as mob|obj)
 	. = ..()
@@ -1115,9 +1112,14 @@ DECLARE_INTERACTIONS(/obj/structure/control_pod, INTERACT_HAND(null, PROC_REF(in
 	. = ..()
 	lets_go(AM)
 
-/obj/effect/dog_teleporter/attack_hand(mob/living/user)
-	. = ..()
+EXTEND_INTERACTIONS(/obj/effect/dog_teleporter, \
+	INTERACT_HAND(null, PROC_REF(interaction_dog_teleport)), \
+)
+
+/// Old attack_hand: touching it sends you through.
+/obj/effect/dog_teleporter/proc/interaction_dog_teleport(mob/living/user, obj/item/held, datum/interaction/interaction)
 	lets_go(user)
+	return TRUE
 
 /obj/effect/dog_teleporter/attack_generic(mob/user)
 	. = ..()

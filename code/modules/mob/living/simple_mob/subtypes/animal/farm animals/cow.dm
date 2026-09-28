@@ -31,7 +31,13 @@
 
 	add_hose_connector(/datum/hose_connector/output/cow) // Moo?
 
-/mob/living/simple_mob/animal/passive/cow/attackby(obj/item/O as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/cow, \
+	INTERACT_ITEM(null, PROC_REF(cow_interaction_item)), \
+	INTERACT_HAND_UNGATED(null, PROC_REF(cow_interaction_hand)))
+
+/// Old attackby: milking.
+/mob/living/simple_mob/animal/passive/cow/proc/cow_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+	. = TRUE
 	var/obj/item/reagent_containers/glass/G = O
 	if(stat == CONSCIOUS && istype(G) && G.is_open_container())
 		user.visible_message(span_notice("[user] milks [src] using \the [O]."))
@@ -41,7 +47,7 @@
 		if(!transfered)
 			to_chat(user, span_red("The udder is dry. Wait a bit longer..."))
 	else
-		..()
+		return FALSE
 
 /datum/om/stage/life/type_post/simple_mob/animal/passive/cow
 	of = /mob/living/simple_mob/animal/passive/cow
@@ -52,14 +58,16 @@
 		if(self.udder && prob(5))
 			self.udder.add_reagent(REAGENT_ID_MILK, rand(5, 10))
 
-/mob/living/simple_mob/animal/passive/cow/attack_hand(mob/living/carbon/M as mob)
+/// Old attack_hand: cow tipping.
+/mob/living/simple_mob/animal/passive/cow/proc/cow_interaction_hand(mob/living/carbon/M, obj/item/held, datum/interaction/interaction)
+	. = TRUE
 	if(!stat && IS_DISARMING(M) && icon_state != icon_dead)
 		M.visible_message(span_warning("[M] tips over [src]."),span_notice("You tip over [src]."))
 		status_at_least(EFFECT_WEAKENED, 30)
 		icon_state = icon_dead
 		om_after(src, rand(20, 50), PROC_REF(get_up_after_tipping), M)
 	else
-		..()
+		return FALSE
 
 /datum/say_list/cow
 	speak = list("moo?","moo","MOOOOOO")

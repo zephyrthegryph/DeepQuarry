@@ -21,6 +21,7 @@ GLOBAL_DATUM_INIT(new_pipe_networks, /datum, new)
 	V.check_leaks()
 
 /obj/machinery/atmospherics/valve/shutoff
+	silicon_use = SILICON_USE_HAND
 	icon = 'icons/atmos/clamp.dmi'
 	icon_state = "map_vclamp0"
 	pipe_state = "vclamp"
@@ -52,9 +53,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/atmospherics/valve/shutoff, REGISTRY_SHUTOFF_
 	om_watch(src, GLOB.new_pipe_networks, CHANGE_PIPE_LEAKS, /datum/om/behaviour/sleeper/shutoff_valve)
 	global_leak_token = TRUE
 	subscribe_network_keys()
-
-/obj/machinery/atmospherics/valve/shutoff/attack_ai(mob/user as mob)
-	return src.attack_hand(user)
 
 /obj/machinery/atmospherics/valve/shutoff/declare_interactions(list/into)
 	into += list(

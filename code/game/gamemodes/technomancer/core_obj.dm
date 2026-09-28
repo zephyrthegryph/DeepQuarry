@@ -340,13 +340,10 @@
 	regen_rate = 100 //250 seconds to full
 	instability_modifier = 0.75
 
-/obj/item/technomancer_core/verb/toggle_lock()
-	set name = "Toggle Core Lock"
-	set category = "Object"
-	set desc = "Toggles the locking mechanism on your manipulation core."
+/obj/item/technomancer_core/proc/technomancer_core_toggle_lock_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
 	canremove = !canremove
-	to_chat(usr, span_notice("You [canremove ? "de" : ""]activate the locking mechanism on \the [src]."))
+	to_chat(user, span_notice("You [canremove ? "de" : ""]activate the locking mechanism on \the [src]."))
 
 // For the adminbuse!
 /obj/item/technomancer_core/universal
@@ -367,3 +364,8 @@
 	visible_message(span_infoplain(span_bold("\The [src]") + " begins to fade away..."))
 	animate(src, alpha = 255, alpha = 0, time = 30) // Makes them fade into nothingness.
 	expire(30)
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/technomancer_core, \
+	INTERACT_VERB("Toggle Core Lock", PROC_REF(technomancer_core_toggle_lock_effect), REQ_IN_INVENTORY), \
+)

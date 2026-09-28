@@ -36,7 +36,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 		for(var/mob/living/silicon/ai/M as anything in REGISTRY_MEMBERS(REGISTRY_AIS))
 			if ((M.client && M.check_current_machine(subject)))
 				is_in_use = 1
-				subject.attack_ai(M)
+				actor_use(/datum/input_adapter/ai, M, subject)
 	return is_in_use
 
 /// Full backup capacitor charge (the old 200-point oxyloss budget).
@@ -509,7 +509,7 @@ REF_OWNED(/mob/living/silicon/ai, list("announcement", "psupply", "aiPDA", "aiCo
 		var/obj/machinery/hologram/holopad/H = locate(href_list["jumptoholopad"])
 		if(stat == CONSCIOUS)
 			if(H)
-				H.attack_ai(src) //may as well recycle
+				actor_use(/datum/input_adapter/ai, src, H) //may as well recycle
 			else
 				to_chat(src, span_notice("Unable to locate the holopad."))
 
@@ -822,14 +822,12 @@ REF_OWNED(/mob/living/silicon/ai, list("announcement", "psupply", "aiPDA", "aiCo
 				src.camera.set_light(AI_CAMERA_LUMINOSITY)
 		camera_light_on = world.timeofday + 1 * 20 // Update the light every 2 seconds.
 
-/mob/living/silicon/ai/attackby(obj/item/W as obj, mob/user as mob)
-	if(istype(W, /obj/item/aicard))
+EXTEND_INTERACTIONS(/mob/living/silicon/ai, INTERACT_INSERT(/obj/item/aicard, PROC_REF(ai_interaction_card), "Transfer to card"))
 
-		var/obj/item/aicard/card = W
-		card.grab_ai(src, user)
-
-	else
-		return ..()
+/// Old attackby: an intelliCard pulls the AI in.
+/mob/living/silicon/ai/proc/ai_interaction_card(mob/user, obj/item/aicard/card, datum/interaction/interaction)
+	card.grab_ai(src, user)
+	return TRUE
 
 /mob/living/silicon/ai/wrench_act(mob/user, obj/item/tool)
 	if(user == deployed_shell)

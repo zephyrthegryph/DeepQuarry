@@ -30,24 +30,25 @@
 	else
 		. += span_warning("It expired at [worldtime2stationtime(expiration_time)].")
 
-/obj/item/card/id/guest/read()
-	if(!Adjacent(usr))
+/obj/item/card/id/guest/id_read_effect(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!Adjacent(user))
 		return //Too far to read
 	if(world.time > expiration_time) // ALLOW(cooldown): guest pass expiry
-		to_chat(usr, span_notice("This pass expired at [worldtime2stationtime(expiration_time)]."))
+		to_chat(user, span_notice("This pass expired at [worldtime2stationtime(expiration_time)]."))
 	else
-		to_chat(usr, span_notice("This pass expires at [worldtime2stationtime(expiration_time)]."))
+		to_chat(user, span_notice("This pass expires at [worldtime2stationtime(expiration_time)]."))
 
-	to_chat(usr, span_notice("It grants access to following areas:"))
+	to_chat(user, span_notice("It grants access to following areas:"))
 	for (var/A in temp_access)
-		to_chat(usr, span_notice("[SSaccess.get_access_desc(A)]."))
-	to_chat(usr, span_notice("Issuing reason: [reason]."))
+		to_chat(user, span_notice("[SSaccess.get_access_desc(A)]."))
+	to_chat(user, span_notice("Issuing reason: [reason]."))
 	return
 
-/obj/item/card/id/guest/attack_self(mob/living/user as mob)
-	. = ..(user)
-	if(.)
-		return TRUE
+// Replaces the card's own flash: the old override ran both and flashed the pass twice.
+EXTEND_INTERACTIONS(/obj/item/card/id/guest, INTERACT_USE("Show or deactivate", PROC_REF(interaction_guest_pass)))
+
+/// Old attack_self: flash the pass, or deactivate it in combat mode.
+/obj/item/card/id/guest/proc/interaction_guest_pass(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(IS_HARMING(user))
 		if(icon_state == "guest-invalid")
 			to_chat(user, span_warning("This guest pass is already deactivated!"))

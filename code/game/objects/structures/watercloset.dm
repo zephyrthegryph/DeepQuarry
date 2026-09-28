@@ -85,6 +85,11 @@
 	desc = initial(desc)
 
 /obj/structure/toilet/declare_interactions(list/into)
+	var/static/list/actor_specs = list(
+		INTERACT_SILICON("Use", PROC_REF(toilet_silicon_use)),
+	)
+	for(var/actor_spec in actor_specs)
+		into += dq_interaction_from_spec(type, actor_spec)
 	into += list(
 		/datum/interaction/entry_hand/toilet_hand,
 		/datum/interaction/entry_item/toilet_item,
@@ -132,12 +137,12 @@
 	update_icon()
 	return TRUE
 
-/obj/structure/toilet/attack_ai(mob/user)
-	if(isrobot(user))
-		if(user.client && !user.is_remote_viewing())
-			return attack_hand(user)
-	else
-		return attack_hand(user)
+/// Old attack_ai: the hand's Use, except for a cyborg that is remote viewing or has no client.
+/obj/structure/toilet/proc/toilet_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
+	if(isrobot(user) && (!user.client || user.is_remote_viewing()))
+		return TRUE
+	attack_hand(user)
+	return TRUE
 
 /// Old attackby: give a grabbed mob a swirlie, insert a crystal/bin, or fill the cistern.
 /datum/interaction/entry_item/toilet_item
@@ -569,10 +574,7 @@ REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
 	id = "shower_swallow"
 	name = "Use"
 	held_type = /obj/item
-	effect = /obj/machinery/shower/proc/interaction_swallow
-
-/obj/machinery/shower/proc/interaction_swallow(mob/user, obj/item/held, datum/interaction/interaction)
-	return TRUE
+	effect = /atom/proc/interaction_swallow
 
 /obj/machinery/shower/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag
@@ -750,10 +752,10 @@ REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
 	var/honk_count = 0
 	special_handling = TRUE
 
-/obj/item/bikehorn/rubberducky/red/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/red, INTERACT_USE("Squeeze", PROC_REF(duck_red_self)))
+
+/// Old attack_self.
+/obj/item/bikehorn/rubberducky/red/proc/duck_red_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(honk_count >= 3)
 		var/turf/epicenter = get_turf(src)
 		explosion(epicenter, 0, 0, 1, 3)
@@ -777,10 +779,10 @@ REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
 	honk_sound = 'sound/effects/bubbles.ogg'
 	special_handling = TRUE
 
-/obj/item/bikehorn/rubberducky/blue/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/blue, INTERACT_USE("Squeeze", PROC_REF(duck_blue_self)))
+
+/// Old attack_self.
+/obj/item/bikehorn/rubberducky/blue/proc/duck_blue_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(COOLDOWN_FINISHED(src, cooldown))
 		COOLDOWN_START(src, cooldown, 2 SECONDS)
 		playsound(src, honk_sound, 50, 1)
@@ -800,10 +802,10 @@ REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
 	honk_sound = 'sound/vore/sunesound/pred/insertion_01.ogg'
 	special_handling = TRUE
 
-/obj/item/bikehorn/rubberducky/pink/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/pink, INTERACT_USE("Squeeze", PROC_REF(duck_pink_self)))
+
+/// Old attack_self.
+/obj/item/bikehorn/rubberducky/pink/proc/duck_pink_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(COOLDOWN_FINISHED(src, cooldown))
 		if(!user.devourable)
 			to_chat(user, span_vnotice("You can't bring yourself to squeeze it..."))
@@ -833,10 +835,10 @@ REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
 	honk_sound = 'sound/effects/ghost.ogg'
 	special_handling = TRUE
 
-/obj/item/bikehorn/rubberducky/grey/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/grey, INTERACT_USE("Squeeze", PROC_REF(duck_grey_self)))
+
+/// Old attack_self.
+/obj/item/bikehorn/rubberducky/grey/proc/duck_grey_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(COOLDOWN_FINISHED(src, cooldown))
 		COOLDOWN_START(src, cooldown, 2 SECONDS)
 		playsound(src, honk_sound, 50, 1)
@@ -878,10 +880,10 @@ REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
 						/obj/structure/flora/ausbushes/fullgrass)
 	special_handling = TRUE
 
-/obj/item/bikehorn/rubberducky/green/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/green, INTERACT_USE("Squeeze", PROC_REF(duck_green_self)))
+
+/// Old attack_self.
+/obj/item/bikehorn/rubberducky/green/proc/duck_green_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(COOLDOWN_FINISHED(src, cooldown))
 		COOLDOWN_START(src, cooldown, 2 SECONDS)
 		playsound(src, honk_sound, 50, 1)
@@ -902,10 +904,10 @@ REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
 	honk_sound = 'sound/effects/lightningshock.ogg'
 	special_handling = TRUE
 
-/obj/item/bikehorn/rubberducky/white/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/white, INTERACT_USE("Squeeze", PROC_REF(duck_white_self)))
+
+/// Old attack_self.
+/obj/item/bikehorn/rubberducky/white/proc/duck_white_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(COOLDOWN_FINISHED(src, cooldown))
 		COOLDOWN_START(src, cooldown, 2 SECONDS)
 		playsound(src, honk_sound, 50, 1)
@@ -934,10 +936,10 @@ REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
 	honk_sound = 'sound/voice/quack_reverb.ogg'
 	special_handling = TRUE
 
-/obj/item/bikehorn/rubberducky/gold/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/gold, INTERACT_USE("Squeeze", PROC_REF(duck_gold_self)))
+
+/// Old attack_self.
+/obj/item/bikehorn/rubberducky/gold/proc/duck_gold_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(COOLDOWN_FINISHED(src, cooldown))
 		COOLDOWN_START(src, cooldown, 2 SECONDS)
 		playsound(src, honk_sound, 50, 1)
@@ -961,10 +963,10 @@ REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
 	honk_text = "DUK ROH DAH!"
 	special_handling = TRUE
 
-/obj/item/bikehorn/rubberducky/viking/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/viking, INTERACT_USE("Squeeze", PROC_REF(duck_viking_self)))
+
+/// Old attack_self.
+/obj/item/bikehorn/rubberducky/viking/proc/duck_viking_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(COOLDOWN_FINISHED(src, cooldown))
 		COOLDOWN_START(src, cooldown, 2 SECONDS)
 		playsound(src, honk_sound, 50, 1)
@@ -984,10 +986,10 @@ REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
 	honk_sound = 'sound/effects/teleport.ogg'
 	special_handling = TRUE
 
-/obj/item/bikehorn/rubberducky/galaxy/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/galaxy, INTERACT_USE("Squeeze", PROC_REF(duck_galaxy_self)))
+
+/// Old attack_self.
+/obj/item/bikehorn/rubberducky/galaxy/proc/duck_galaxy_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(COOLDOWN_FINISHED(src, cooldown))
 		COOLDOWN_START(src, cooldown, 2 SECONDS)
 		playsound(src, honk_sound, 50, 1)

@@ -21,10 +21,13 @@
 	say_verbs = list("mumbles", "says")
 
 // Clumsy folks can't take the mask off themselves.
-/obj/item/clothing/mask/muzzle/attack_hand(mob/living/user as mob)
+EXTEND_INTERACTIONS(/obj/item/clothing/mask/muzzle, INTERACT_HAND_UNGATED(null, PROC_REF(muzzle_worn_hand)))
+
+/// Old attack_hand.
+/obj/item/clothing/mask/muzzle/proc/muzzle_worn_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(user.get_equipped_item(SLOT_ID_MASK) == src && !user.IsAdvancedToolUser())
-		return 0
-	..()
+		return TRUE
+	return FALSE
 
 /obj/item/clothing/mask/surgical
 	name = "sterile mask"
@@ -57,12 +60,13 @@
 		update_clothing_icon()
 		worn_protection_changed()
 
-/obj/item/clothing/mask/surgical/verb/toggle()
-	set category = "Object"
-	set name = "Adjust mask"
-	set src in usr
+EXTEND_INTERACTIONS(/obj/item/clothing/mask/surgical, \
+	INTERACT_VERB("Adjust mask", PROC_REF(surgical_toggle_verb), REQ_IN_INVENTORY), \
+)
 
-	adjust_mask(usr)
+/// Old verb "Adjust mask".
+/obj/item/clothing/mask/surgical/proc/surgical_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	adjust_mask(user)
 
 /obj/item/clothing/mask/surgical/white
 	icon_state = "sterilew"
@@ -355,10 +359,10 @@
 		"Sad" = image(icon = src.icon, icon_state = "sadmask")
 		)
 
-/obj/item/clothing/mask/paper/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/mask/paper, INTERACT_USE("Change design", PROC_REF(paper_mask_design_self)))
+
+/// Old attack_self.
+/obj/item/clothing/mask/paper/proc/paper_mask_design_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!istype(user) || user.incapacitated())
 		return
 
@@ -400,10 +404,10 @@
 		"Angry" = image(icon = src.icon, icon_state = "angry"),
 		)
 
-/obj/item/clothing/mask/emotions/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/mask/emotions, INTERACT_USE("Change emotion", PROC_REF(emotion_mask_design_self)))
+
+/// Old attack_self.
+/obj/item/clothing/mask/emotions/proc/emotion_mask_design_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!istype(user) || user.incapacitated())
 		return
 

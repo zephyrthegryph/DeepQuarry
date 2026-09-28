@@ -313,10 +313,14 @@
 		stripe2_overlay.color = stripe2_color
 		add_overlay(stripe2_overlay)
 
-/obj/mecha/combat/fighter/gunpod/attackby(obj/item/W as obj, mob/user as mob)
-	if(istype(W,/obj/item/multitool) && state == 1)
-		om_ask(user, /datum/om/prompt/choice, PROC_REF(ask_stripe_color), subject = W, title = "Paint Zone", message = "Please select a target zone.", choices = list("Fore Stripe", "Aft Stripe", "CANCEL"), ask_flags = ASK_HELD | ASK_CAPABLE)
-	else ..()
+EXTEND_INTERACTIONS(/obj/mecha/combat/fighter/gunpod, INTERACT_ITEM("Paint stripes", PROC_REF(interaction_gunpod_paint)))
+
+/// Old attackby: a multitool repaints the stripes while the maintenance state is open.
+/obj/mecha/combat/fighter/gunpod/proc/interaction_gunpod_paint(mob/user, obj/item/W, datum/interaction/interaction)
+	if(!istype(W,/obj/item/multitool) || state != 1)
+		return FALSE
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(ask_stripe_color), subject = W, title = "Paint Zone", message = "Please select a target zone.", choices = list("Fore Stripe", "Aft Stripe", "CANCEL"), ask_flags = ASK_HELD | ASK_CAPABLE)
+	return TRUE
 
 /datum/om/prompt/color/mech_paint
 	title = "Paint Color"

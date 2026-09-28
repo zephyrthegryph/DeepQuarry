@@ -59,6 +59,11 @@
 	teleport_cooldown = max(50, (teleport_cooldown - (E * 100)))
 
 /obj/machinery/power/quantumpad/declare_interactions(list/into)
+	var/static/list/actor_specs = list(
+		INTERACT_OBSERVER("Travel", PROC_REF(quantumpad_ghost_travel)),
+	)
+	for(var/actor_spec in actor_specs)
+		into += dq_interaction_from_spec(type, actor_spec)
 	into += list(
 		/datum/interaction/machine_item/quantumpad_boost,
 		/datum/interaction/machine_item/part_replacement,
@@ -171,9 +176,10 @@
 	doteleport(user)
 	return TRUE
 
-/obj/machinery/power/quantumpad/attack_ghost(mob/observer/dead/ghost)
-	. = ..()
-	if(.)
+/// Old attack_ghost: ran the ghost default first, then drifts the ghost to the linked pad.
+/obj/machinery/power/quantumpad/proc/quantumpad_ghost_travel(mob/observer/dead/ghost, obj/item/held, datum/interaction/interaction)
+	. = TRUE
+	if(actor_use_default(/datum/input_adapter/ghost, ghost, src))
 		return
 	if(!linked_pad() && map_pad_link_id)
 		initMappedLink()

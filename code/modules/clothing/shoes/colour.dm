@@ -111,16 +111,21 @@
 	icon_state = "orange"
 	chained_handle = null
 
-/obj/item/clothing/shoes/orange/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/shoes/orange, \
+	INTERACT_USE("Remove cuffs", PROC_REF(orange_shoes_uncuff_self)), \
+	INTERACT_ITEM(null, PROC_REF(orange_shoes_cuff_item)), \
+)
+
+/// Old attack_self: remove the cuffs, after the shoes' own self-use (the old ..()).
+/obj/item/clothing/shoes/orange/proc/orange_shoes_uncuff_self(mob/user, obj/item/held, datum/interaction/interaction)
+	shoes_shake_out_self(user, held, interaction)
 	remove_cuffs(user)
 
-/obj/item/clothing/shoes/orange/attackby(H as obj, mob/user as mob)
-	..()
+/// Old attackby: chain the shoes with handcuffs. The shoes' own item use (the old ..() first) follows.
+/obj/item/clothing/shoes/orange/proc/orange_shoes_cuff_item(mob/user, obj/item/H, datum/interaction/interaction)
 	if (istype(H, /obj/item/handcuffs))
 		attach_cuffs(H, user)
+	return FALSE
 
 /obj/item/clothing/shoes/hitops
 	name = "white high-tops"

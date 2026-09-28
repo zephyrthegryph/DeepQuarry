@@ -91,7 +91,5 @@
 	id = "seed_extractor_swallow"
 	name = "Use"
 	held_type = /obj/item
-	effect = /obj/machinery/seed_extractor/proc/interaction_swallow
+	effect = /atom/proc/interaction_swallow
 
-/obj/machinery/seed_extractor/proc/interaction_swallow(mob/user, obj/item/held, datum/interaction/interaction)
-	return TRUE

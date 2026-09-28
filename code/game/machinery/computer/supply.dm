@@ -38,7 +38,7 @@
 	id = "supplycomp_open_ui"
 	name = "Use"
 	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_TARGET, /obj/machinery/computer/supplycomp/proc/lets_in, "you don't have the required access to use this console"))
-	effect = /obj/machinery/proc/interaction_open_ui
+	effect = /atom/proc/interaction_open_ui
 
 /obj/machinery/computer/supplycomp/proc/lets_in(mob/actor, atom/target, obj/item/held)
 	return allowed(actor)

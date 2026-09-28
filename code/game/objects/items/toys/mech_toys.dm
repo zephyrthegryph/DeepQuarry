@@ -116,6 +116,7 @@
 DECLARE_INTERACTIONS(/obj/item/toy/mecha, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_TK(null, PROC_REF(interaction_tk)), \
 )
 
 /// Old attack_self.
@@ -126,13 +127,14 @@ DECLARE_INTERACTIONS(/obj/item/toy/mecha, \
 		playsound(user, 'sound/mecha/mechstep.ogg', 20, TRUE)
 	return TRUE
 
-/// Old attack_hand: runs after the touch tried to pick it up (hand_pickup()).
-/obj/item/toy/mecha/hand_pickup(mob/user)
-	. = ..()
-	if(.)
-		return
+EXTEND_INTERACTIONS(/obj/item/toy/mecha, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(mecha_toy_pick_up)))
+
+/// Picking up a toy mech plays with it once it's in hand.
+/obj/item/toy/mecha/proc/mecha_toy_pick_up(mob/user, obj/item/held, datum/interaction/interaction)
+	interaction_pick_up(user, held, interaction)
 	if(loc == user)
 		attack_self(user)
+	return TRUE
 
 /**
  * If you attack a mech with a mech, initiate combat between them
@@ -181,13 +183,14 @@ DECLARE_INTERACTIONS(/obj/item/toy/mecha, \
 	..()
 
 /**
- * Overrides attack_tk - Sorry, you have to be face to face to initiate a battle, it's good sportsmanship
+ * Old attack_tk - Sorry, you have to be face to face to initiate a battle, it's good sportsmanship
  */
-/obj/item/toy/mecha/attack_tk(mob/user)
+/obj/item/toy/mecha/proc/interaction_tk(mob/user, obj/item/held, datum/interaction/interaction)
 	if(COOLDOWN_FINISHED(src, timer))
 		to_chat(user, span_notice("You telekinetically play with [src]."))
 		COOLDOWN_START(src, timer, cooldown)
 		playsound(user, 'sound/mecha/mechstep.ogg', 20, TRUE)
+	return TRUE
 
 /**
  * Resets the request for battle.

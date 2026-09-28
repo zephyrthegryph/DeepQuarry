@@ -22,10 +22,7 @@
 	replace_with(src, C)
 	return TRUE
 
-/obj/structure/bed/chair/e_chair/verb/toggle()
-	set name = "Toggle Electric Chair"
-	set category = "Object"
-	set src in oview(1)
+/obj/structure/bed/chair/e_chair/proc/e_chair_toggle_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
 	if(on)
 		on = 0
@@ -33,7 +30,7 @@
 	else
 		on = 1
 		icon_state = "echair1"
-	to_chat(usr, span_notice("You switch [on ? "on" : "off"] [src]."))
+	to_chat(user, span_notice("You switch [on ? "on" : "off"] [src]."))
 	return
 
 /obj/structure/bed/chair/e_chair/set_dir()
@@ -74,3 +71,8 @@
 	A.power_light = light
 	A.update_icon()
 	return
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/structure/bed/chair/e_chair, \
+	INTERACT_VERB("Toggle Electric Chair", PROC_REF(e_chair_toggle_effect)), \
+)

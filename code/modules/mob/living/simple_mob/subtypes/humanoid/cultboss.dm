@@ -1,4 +1,5 @@
 /mob/living/simple_mob/humanoid/cultist/magus/rift
+	drag_buckle = FALSE
 	name = "Rift Magus"
 	endurance = 450 //Boss Mobs should be tanky. //Old 225
 	armor_spec = "melee=70;bullet=60;laser=60;energy=90;bomb=30;bio=100;rad=100"
@@ -138,9 +139,6 @@
 	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
 	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
-
-/mob/living/simple_mob/humanoid/cultist/magus/rift/MouseDrop_T(mob/living/M, mob/living/user)
-	return
 
 /mob/living/simple_mob/humanoid/cultist/magus/rift/load_default_bellies()
 	. = ..()

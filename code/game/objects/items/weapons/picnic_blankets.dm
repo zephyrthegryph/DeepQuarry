@@ -14,11 +14,8 @@
 	drop_sound = 'sound/items/drop/cloth.ogg'
 	pickup_sound = 'sound/items/pickup/cloth.ogg'
 
-/obj/item/picnic_blankets_carried/verb/fold_out()
-	set name = "Fold out"
-	set desc = "Fold out the picnic blanket for use"
-	set category = "Object"
-	var/obj/structure/picnic_blanket_deployed/P = new /obj/structure/picnic_blanket_deployed(usr.loc)
+/obj/item/picnic_blankets_carried/proc/picnic_blankets_carried_fold_out_effect(mob/user, obj/item/held, datum/interaction/interaction)
+	var/obj/structure/picnic_blanket_deployed/P = new /obj/structure/picnic_blanket_deployed(user.loc)
 	P.name = name
 	P.desc = unfolded_desc
 	P.unfold()
@@ -35,18 +32,18 @@
 	var/list/attached_blankets
 	anchored = TRUE
 
-/obj/structure/picnic_blanket_deployed/verb/fold_up()
-	set name = "Fold up"
-	set desc = "Folds the blanket up for carrying"
-	set category = "Object"
-	set src in oview(1)
+/obj/structure/picnic_blanket_deployed/proc/picnic_blanket_deployed_fold_up_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
 	for(var/obj/structure/picnic_blanket_deployed/side in attached_blankets)
 		qdel(side)
-	var/obj/item/picnic_blankets_carried/P = new /obj/item/picnic_blankets_carried(usr.loc)
+	var/obj/item/picnic_blankets_carried/P = new /obj/item/picnic_blankets_carried(user.loc)
 	P.name = name
 	P.desc = folded_desc
 	replace_with(src, P)
+
+/// Requirement for "Fold up" (old: the verb was removed from edge pieces and locked mapped blankets).
+/obj/structure/picnic_blanket_deployed/proc/pred_can_fold_up(mob/actor, atom/target, obj/item/held)
+	return blanket_type == CENTER
 
 /obj/structure/picnic_blanket_deployed/proc/unfold()
 	var/dirs = GLOB.alldirs
@@ -81,7 +78,6 @@
 
 			//Actually spawning
 			var/obj/structure/picnic_blanket_deployed/side = new /obj/structure/picnic_blanket_deployed(T)
-			side.verbs -= /obj/structure/picnic_blanket_deployed/verb/fold_up
 			LAZYADD(attached_blankets, side)
 			side.blanket_type = SIDE
 			side.name = name //Making sure side blankets inherit our vars if they got edited at runtime
@@ -117,8 +113,19 @@
 /obj/structure/picnic_blanket_deployed/for_mapping_use/Initialize(mapload)
 	. = ..()
 	unfold()
-	if(unfoldable)
-		verbs -= /obj/structure/picnic_blanket_deployed/verb/fold_up
+
+/obj/structure/picnic_blanket_deployed/for_mapping_use/pred_can_fold_up(mob/actor, atom/target, obj/item/held)
+	return !unfoldable && ..()
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/structure/picnic_blanket_deployed, \
+	INTERACT_VERB("Fold up", PROC_REF(picnic_blanket_deployed_fold_up_effect), REQ_ON(PRED_TARGET, /obj/structure/picnic_blanket_deployed/proc/pred_can_fold_up, "fold it up from the center")), \
+)
 
 #undef CENTER
 #undef SIDE
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/picnic_blankets_carried, \
+	INTERACT_VERB("Fold out", PROC_REF(picnic_blankets_carried_fold_out_effect), REQ_IN_INVENTORY), \
+)

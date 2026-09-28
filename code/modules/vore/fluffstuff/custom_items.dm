@@ -222,10 +222,12 @@
 	assignment = "Centcom Officer"
 	special_handling = TRUE
 
-/obj/item/card/id/centcom/station/fluff/joanbadge/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+// special_handling: the inherited card "Show" steps aside for this.
+EXTEND_INTERACTIONS(/obj/item/card/id/centcom/station/fluff/joanbadge, INTERACT_SELF("Show", PROC_REF(joanbadge_flash_self)))
+
+/// Old attack_self: flash the badge.
+/obj/item/card/id/centcom/station/fluff/joanbadge/proc/joanbadge_flash_self(mob/user, obj/item/held, datum/interaction/interaction)
+	. = TRUE
 	if(isliving(user))
 		user.visible_message(span_warning("[user] flashes their golden security badge.\nIt reads:NT Security."),span_warning("You display the faded badge.\nIt reads: NT Security."))
 
@@ -293,10 +295,10 @@
 	icon_override = 'icons/vore/custom_items_vr.dmi'
 	item_state = "Flag_Nanotrasen_mob"
 
-/obj/item/flag/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/flag, INTERACT_USE("Wave", PROC_REF(flag_wave_self)))
+
+/// Old attack_self: wave the banner.
+/obj/item/flag/proc/flag_wave_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(isliving(user))
 		user.visible_message(span_warning("[user] waves their Banner around!"),span_warning("You wave your Banner around."))
 
@@ -416,10 +418,13 @@
 	assignment = "CC Medical"
 	can_configure = TRUE
 
-/obj/item/card/id/centcom/station/fluff/aronai/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/card/id/centcom/station/fluff/aronai, INTERACT_SELF("Show or configure", PROC_REF(aronai_card_self)))
+
+/// Old attack_self: the card's own "Show" first (as the old ..() did); an unconfigured card takes the user's details.
+/obj/item/card/id/centcom/station/fluff/aronai/proc/aronai_card_self(mob/user, obj/item/held, datum/interaction/interaction)
+	. = TRUE
+	if(interaction_show(user, held, interaction))
+		return
 	if(configured)
 		return
 
@@ -498,24 +503,25 @@
 	flags_inv = HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER
 	var/unbuttoned = 0
 
-/obj/item/clothing/suit/fluff/purp_robes/verb/toggle()
-	set name = "Toggle coat buttons"
-	set category = "Object"
-	set src in usr
+EXTEND_INTERACTIONS(/obj/item/clothing/suit/fluff/purp_robes, \
+	INTERACT_VERB("Toggle coat buttons", PROC_REF(purp_robes_toggle_verb), REQ_IN_INVENTORY), \
+)
 
-	if(!usr.canmove || usr.stat || usr.restrained())
+/// Old verb "Toggle coat buttons".
+/obj/item/clothing/suit/fluff/purp_robes/proc/purp_robes_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!user.canmove || user.stat || user.restrained())
 		return 0
 
 	switch(unbuttoned)
 		if(0)
 			icon_state = "[initial(icon_state)]_open"
 			unbuttoned = TRUE
-			to_chat(usr, "You unbutton the coat.")
+			to_chat(user, "You unbutton the coat.")
 		if(1)
 			icon_state = "[initial(icon_state)]"
 			unbuttoned = FALSE
-			to_chat(usr, "You button up the coat.")
-	usr.update_inv_wear_suit()
+			to_chat(user, "You button up the coat.")
+	user.update_inv_wear_suit()
 
 /obj/item/clothing/head/fluff/pink_tiara
 	name = "pink tourmaline tiara"
@@ -559,13 +565,14 @@
 	if((state > 1) || !owner)
 		PERIODIC_STOP(src)
 
-/obj/item/clothing/accessory/collar/khcrystal/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/khcrystal, INTERACT_SELF("Pair", PROC_REF(khcrystal_pair_self)))
+
+/// Old attack_self: pair the crystal to its user, once. special_collar: the inherited collar tag self-use steps aside.
+/obj/item/clothing/accessory/collar/khcrystal/proc/khcrystal_pair_self(mob/user, obj/item/held, datum/interaction/interaction)
+	. = TRUE
 	if(state > 0) //Can't re-pair, one time only, for security reasons.
 		to_chat(user, span_notice("The [name] doesn't do anything."))
-		return 0
+		return
 
 	owner = user	//We're paired to this guy
 	owner_c = user.client	//This is his client
@@ -771,10 +778,10 @@ REF_OWNED(/obj/item/storage/backpack/saddlebag/tempest, "soundloop")
 	icon_state = "dragor_dot"
 	w_class = ITEMSIZE_SMALL
 
-/obj/item/fluff/dragor_dot/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/fluff/dragor_dot, INTERACT_USE(null, PROC_REF(dragor_dot_self)))
+
+/// Old attack_self: its owner gains the gender shapeshift verb.
+/obj/item/fluff/dragor_dot/proc/dragor_dot_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.ckey == "pontifexminimus")
 		add_verb(user, /mob/living/carbon/human/proc/shapeshifter_select_gender)
 	else
@@ -862,10 +869,12 @@ REF_OWNED(/obj/item/storage/backpack/saddlebag/tempest, "soundloop")
 	user.setClickCooldown(DEFAULT_QUICK_COOLDOWN) //to prevent spam
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/clothing/accessory/badge/holo/detective/ruda/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+// fluff_badge: the inherited badge "Display" steps aside for this.
+EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/holo/detective/ruda, INTERACT_SELF("Display", PROC_REF(ruda_badge_self)))
+
+/// Old attack_self: polish or display the badge.
+/obj/item/clothing/accessory/badge/holo/detective/ruda/proc/ruda_badge_self(mob/user, obj/item/held, datum/interaction/interaction)
+	. = TRUE
 	if(!stored_name)
 		to_chat(user, "You huff along the front of your badge, then rub your sleeve on it to polish it up.")
 		set_name(user.real_name)
@@ -1000,10 +1009,12 @@ REF_OWNED(/obj/item/storage/backpack/saddlebag/tempest, "soundloop")
 		wielded = FALSE
 		update_held_icon()
 
-/obj/item/melee/baton/fluff/stunstaff/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+// special_handling: the inherited baton "Toggle" steps aside for this.
+EXTEND_INTERACTIONS(/obj/item/melee/baton/fluff/stunstaff, INTERACT_SELF("Toggle", PROC_REF(stunstaff_toggle_self)))
+
+/// Old attack_self: switch the staff on or off.
+/obj/item/melee/baton/fluff/stunstaff/proc/stunstaff_toggle_self(mob/user, obj/item/held, datum/interaction/interaction)
+	. = TRUE
 	if(bcell && bcell.charge > hitcost)
 		status = !status
 		to_chat(user, span_notice("[src] is now [status ? "on" : "off"]."))
@@ -1072,10 +1083,10 @@ REF_OWNED(/obj/item/storage/backpack/saddlebag/tempest, "soundloop")
 	edge = initial(edge)
 	w_class = initial(w_class)
 
-/obj/item/melee/fluffstuff/attack_self(mob/living/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/melee/fluffstuff, INTERACT_USE("Toggle", PROC_REF(fluffstuff_toggle_self)))
+
+/// Old attack_self: activate or deactivate the blade.
+/obj/item/melee/fluffstuff/proc/fluffstuff_toggle_self(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if (active)
 		if (CLUMSY_HARM_CHANCE(user))
 			user.visible_message(span_danger("\The [user] accidentally cuts \himself with \the [src]."),\
@@ -1246,12 +1257,14 @@ REF_OWNED(/obj/item/storage/backpack/saddlebag/tempest, "soundloop")
 	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_STORAGE)
 	return list(HOLD_ONLY(stores))
 
-/obj/item/rig/nikki/attackby(obj/item/W, mob/living/user)
-	//This thing accepts ONLY mounted sizeguns. That's IT. Nothing else!
+EXTEND_INTERACTIONS(/obj/item/rig/nikki, INTERACT_ITEM(null, PROC_REF(nikki_rig_module_item)))
+
+/// Old attackby: this thing accepts ONLY mounted sizeguns. That's IT. Nothing else!
+/obj/item/rig/nikki/proc/nikki_rig_module_item(mob/living/user, obj/item/W, datum/interaction/interaction)
 	if(open && istype(W,/obj/item/rig_module) && !istype(W,/obj/item/rig_module/mounted/sizegun))
 		to_chat(user, span_danger("\The [src] only accepts mounted size gun modules."))
-		return
-	..()
+		return TRUE
+	return FALSE
 
 /obj/item/rig/nikki/equip_constraint()
 	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/rig/nikki/proc/owner_fit, "the necklace never quite gets past your head")))
@@ -1314,53 +1327,6 @@ REF_OWNED(/obj/item/storage/backpack/saddlebag/tempest, "soundloop")
 	name = initial(name)
 	desc = initial(desc)
 
-/*Begin //Vitoras: Verie
-/obj/item/fluff/verie
-	name = "glowy hairbrush"
-	desc = "A pulse of light periodically zips across the top of this blue brush. This... is not an ordinary hair care tool. \
-	A small inscription can be seen in one side of the brush: \"THIS DEVICE IS ONLY COMPATIBLE WITH MODEL <b>RI</b> \
-	POSITRONICS IN A MODEL <b>E</b> CHASSIS.\""
-	icon = 'icons/vore/custom_items_vr.dmi'
-	icon_state = "verie_brush"
-	w_class = ITEMSIZE_TINY
-
-	var/owner = "vitoras"
-
-/obj/item/fluff/verie/attack_self(mob/living/carbon/human/user)
-	. = ..(user)
-	if(.)
-		return TRUE
-	if (istype(user))
-		// It's only made for Verie's chassis silly!
-		if (user.ckey != owner)
-			to_chat(user, span_warning("The brush's teeth are far too rough to even comb your hair. Apparently, \
-			this device was not made for people like you."))
-			return
-
-		if (!user.hair_accessory_style)
-			var/datum/sprite_accessory/hair_accessory/verie_hair_glow/V = new(user)
-			user.hair_accessory_style = V
-			user.update_hair()
-			user.visible_message("[user] combs her hair. \The [src] leaves behind glowing cyan highlights as it passes through \
-			her black strands.", \
-			span_notice("You brush your hair. \The [src]'s teeth begin to vibrate and glow as they react to your nanites. \
-			The teeth stimulate the nanites in your hair strands until your hair give off a brilliant, faintly pulsing \
-			cyan glow!"))
-
-		else
-			user.visible_message("[user] combs her hair. \The [src] brushes away her glowing cyan highlights. Neat!", \
-			span_notice("You brush your hair. \The [src]'s teeth wipe away the glowing streaks in your hair \
-			like a sponge scrubbing away a stain."))
-			user.hair_accessory_style = null
-			for(var/datum/sprite_accessory/hair_accessory/verie_hair_glow/V in user)
-				to_chat(user, span_warning("found a V to delete!"))
-				qdel(V)
-			user.update_hair()
-
-	else
-		to_chat(user, span_warning("\The [src] isn't compatible with your body as it is now."))
-
-End */
 
 // Astra - // Astra
 /obj/item/material/knife/ritual/fluff/astra
@@ -1560,10 +1526,12 @@ End */
 	stored_item.forceMove(get_turf(src))
 	stored_item = null
 
-/obj/item/toy/plushie/fluff/seona_mofuorb/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+// special_handling: the inherited plushie "Squeeze" steps aside, and this runs ahead of it.
+EXTEND_INTERACTIONS(/obj/item/toy/plushie/fluff/seona_mofuorb, INTERACT_SELF("Squeeze", PROC_REF(mofuorb_squeeze_self)))
+
+/// Old attack_self: search it, or hug, punch, strangle or poke it.
+/obj/item/toy/plushie/fluff/seona_mofuorb/proc/mofuorb_squeeze_self(mob/user, obj/item/held, datum/interaction/interaction)
+	. = TRUE
 	if(stored_item && opened && !om_busy(src))
 		om_do_after(user, 1 SECOND, src, src, PROC_REF(search_done), list(user), claims = TRUE)
 		return

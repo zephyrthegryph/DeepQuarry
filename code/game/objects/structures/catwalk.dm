@@ -165,11 +165,10 @@
 /obj/effect/catwalk_plated/CanPass()
 	return 0
 
-/obj/effect/catwalk_plated/attack_hand()
-	attack_generic()
-
-/obj/effect/catwalk_plated/attack_ghost()
-	attack_generic()
+EXTEND_INTERACTIONS(/obj/effect/catwalk_plated, \
+	INTERACT_HAND(null, PROC_REF(interaction_effect_activate_spawner)), \
+	INTERACT_OBSERVER(null, PROC_REF(interaction_effect_activate_spawner)), \
+)
 
 /obj/effect/catwalk_plated/attack_generic()
 	activate()

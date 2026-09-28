@@ -55,16 +55,15 @@ REF_OWNED_LIST(/obj/item/integrated_circuit, list("inputs", "outputs", "activato
 /obj/item/integrated_circuit/proc/check_interactivity(mob/user)
 	return tgui_status(user, GLOB.tgui_physical_state) == STATUS_INTERACTIVE
 
-/obj/item/integrated_circuit/verb/rename_component()
-	set name = "Rename Circuit"
-	set category = "Object"
-	set desc = "Rename your circuit, useful to stay organized."
+EXTEND_INTERACTIONS(/obj/item/integrated_circuit, INTERACT_VERB("Rename Circuit", PROC_REF(integrated_circuit_verb_rename), REQ_IN_INVENTORY))
 
-	var/mob/M = usr
+/// Old Rename Circuit verb: Rename your circuit, useful to stay organized.
+/obj/item/integrated_circuit/proc/integrated_circuit_verb_rename(mob/user, obj/item/held, datum/interaction/interaction)
+	var/mob/M = user
 	if(!check_interactivity(M))
 		return
 
-	var/_answer_k80 = rerun_ask(M, "k80", VERB_REF(rename_component), args, /datum/om/prompt/text, message = "What do you want to name the circuit?", title = "Rename", default = src.name, max_length = MAX_NAME_LEN, encode = FALSE)
+	var/_answer_k80 = rerun_ask(M, "k80", PROC_REF(integrated_circuit_verb_rename), args, /datum/om/prompt/text, message = "What do you want to name the circuit?", title = "Rename", default = src.name, max_length = MAX_NAME_LEN, encode = FALSE)
 	if(isnull(_answer_k80))
 		return
 	var/input = sanitizeSafe(_answer_k80, MAX_NAME_LEN)
@@ -153,7 +152,7 @@ REF_OWNED_LIST(/obj/item/integrated_circuit, list("inputs", "outputs", "activato
 	. = TRUE
 	switch(action)
 		if("rename")
-			rename_component(ui.user)
+			integrated_circuit_verb_rename(ui.user)
 			return
 
 		if("wire", "pin_name", "pin_data", "pin_unwire")

@@ -53,6 +53,7 @@
 		/datum/interaction/machine_item/cell_charger_part_replacement,
 		/datum/interaction/machine_hand/ungated/cell_charger_take,
 	)
+	into += dq_interaction_from_spec(type, INTERACT_SILICON("Take cell", PROC_REF(cell_charger_silicon_take)))
 	..()
 
 /// Old attackby's `if(stat & BROKEN) return` guarded both branches: part_replacement too.
@@ -136,7 +137,8 @@
 		update_icon()
 	return TRUE
 
-/obj/machinery/cell_charger/attack_ai(mob/user)
+/// Old attack_ai: a cyborg next to it takes the cell out. Nothing for the AI.
+/obj/machinery/cell_charger/proc/cell_charger_silicon_take(mob/user, obj/item/held, datum/interaction/interaction)
 	if(isrobot(user) && Adjacent(user)) // Borgs can remove the cell if they are near enough
 		if(charging)
 			user.visible_message("[user] removes [charging] from [src].", "You remove [charging] from [src].")
@@ -145,6 +147,7 @@
 			set_charging(null)
 			om_changed(src, CHANGE_MACHINE_OCCUPANT)
 			update_icon()
+	return TRUE
 
 /obj/machinery/cell_charger/RefreshParts()
 	var/E = get_part_rating(/obj/item/stock_parts/capacitor)

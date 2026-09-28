@@ -1,4 +1,5 @@
 /mob/living/simple_mob/vore/demonAI
+	reaction_sound = 'sound/misc/demonlaugh.ogg'
 	name = "Rift Walker"
 	desc = "A large bipedal creature, its body has a mixture of dark fur and scales. Marks on the creature's body pulse slowly with red light."
 
@@ -183,18 +184,6 @@
 
 /mob/living/simple_mob/vore/demonAI/on_death(gibbed)
 	playsound(src, 'sound/misc/demondeath.ogg', 50, 1)
-	..()
-
-/mob/living/simple_mob/vore/demonAI/attack_hand()
-	playsound(src, 'sound/misc/demonlaugh.ogg', 50, 1)
-	..()
-
-/mob/living/simple_mob/vore/demonAI/hitby()
-	playsound(src, 'sound/misc/demonlaugh.ogg', 50, 1)
-	..()
-
-/mob/living/simple_mob/vore/demonAI/attackby()
-	playsound(src, 'sound/misc/demonlaugh.ogg', 50, 1)
 	..()
 
 /mob/living/simple_mob/vore/demonAI/gibspam

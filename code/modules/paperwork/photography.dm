@@ -45,6 +45,7 @@ GLOBAL_VAR_INIT(photo_count, 0)
 DECLARE_INTERACTIONS(/obj/item/photo, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_VERB("Rename photo", PROC_REF(photo_verb_rename), REQ_IN_INVENTORY), \
 )
 
 /// Old attack_self.
@@ -96,19 +97,16 @@ DECLARE_INTERACTIONS(/obj/item/photo, \
 		data["image_html"] = ""
 	return data
 
-/obj/item/photo/verb/rename()
-	set name = "Rename photo"
-	set category = "Object"
-	set src in usr
-
-	var/_answer_k97 = rerun_ask(usr, "k97", VERB_REF(rename), args, /datum/om/prompt/text, message = "What would you like to label the photo?", title = "Photo Labelling", max_length = MAX_NAME_LEN, encode = FALSE)
+/// Old Rename photo verb.
+/obj/item/photo/proc/photo_verb_rename(mob/user, obj/item/held, datum/interaction/interaction)
+	var/_answer_k97 = rerun_ask(user, "k97", PROC_REF(photo_verb_rename), args, /datum/om/prompt/text, message = "What would you like to label the photo?", title = "Photo Labelling", max_length = MAX_NAME_LEN, encode = FALSE)
 	if(isnull(_answer_k97))
 		return
 	var/n_name = sanitizeSafe(_answer_k97, MAX_NAME_LEN)
 	//loc.loc check is for making possible renaming photos in clipboards
-	if(( (loc == usr || (loc.loc && loc.loc == usr)) && usr.stat == 0))
+	if(( (loc == user || (loc.loc && loc.loc == user)) && user.stat == 0))
 		name = "[(n_name ? text("[n_name]") : "photo")]"
-	add_fingerprint(usr)
+	add_fingerprint(user)
 	return
 
 
@@ -169,15 +167,14 @@ DECLARE_INTERACTIONS(/obj/item/photo, \
 	var/size = 3
 	var/list/picture_planes
 
-/obj/item/camera/verb/change_size()
-	set name = "Set Photo Focus"
-	set category = "Object"
-	var/nsize = rerun_ask(usr, "k165", VERB_REF(change_size), args, /datum/om/prompt/choice, message = "Photo Size", title = "Pick a size of resulting photo.", choices = list(1,3,5,7))
+/// Old Set Photo Focus verb.
+/obj/item/camera/proc/camera_verb_focus(mob/user, obj/item/held, datum/interaction/interaction)
+	var/nsize = rerun_ask(user, "k165", PROC_REF(camera_verb_focus), args, /datum/om/prompt/choice, message = "Photo Size", title = "Pick a size of resulting photo.", choices = list(1,3,5,7))
 	if(isnull(nsize))
 		return
 	if(nsize)
 		size = nsize
-		to_chat(usr, span_notice("Camera will now take [size]x[size] photos."))
+		to_chat(user, span_notice("Camera will now take [size]x[size] photos."))
 
 /obj/item/camera/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	return NONE
@@ -185,6 +182,7 @@ DECLARE_INTERACTIONS(/obj/item/photo, \
 DECLARE_INTERACTIONS(/obj/item/camera, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_VERB("Set Photo Focus", PROC_REF(camera_verb_focus), REQ_IN_INVENTORY), \
 )
 
 /// Old attack_self.

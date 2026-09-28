@@ -27,21 +27,26 @@
 /turf/unsimulated/wall/supermatter/attack_generic(mob/user as mob)
 	return attack_hand(user)
 
-/turf/unsimulated/wall/supermatter/attack_robot(mob/user as mob)
+EXTEND_INTERACTIONS(/turf/unsimulated/wall/supermatter, 	INTERACT_ROBOT("Touch", PROC_REF(supermatter_wall_robot)), 	INTERACT_SILICON("Examine", PROC_REF(supermatter_wall_examine)), 	INTERACT_OBSERVER("Examine", PROC_REF(supermatter_wall_examine)), \
+	INTERACT_HAND_UNGATED("Touch", PROC_REF(supermatter_wall_hand)), \
+	INTERACT_ITEM("Touch with", PROC_REF(supermatter_wall_item)), \
+)
+
+/// Old attack_robot: a cyborg touches it only from next to it.
+/turf/unsimulated/wall/supermatter/proc/supermatter_wall_robot(mob/user, obj/item/held, datum/interaction/interaction)
 	if(Adjacent(user))
-		return attack_hand(user)
+		attack_hand(user)
 	else
 		to_chat(user, span_warning("What the fuck are you doing?"))
-	return
+	return TRUE
 
-// /vg/: Don't let ghosts fuck with this.
-/turf/unsimulated/wall/supermatter/attack_ghost(mob/user as mob)
+/// Old attack_ai and attack_ghost (/vg/: don't let ghosts fuck with this): just examine it.
+/turf/unsimulated/wall/supermatter/proc/supermatter_wall_examine(mob/user, obj/item/held, datum/interaction/interaction)
 	user.examinate(src)
+	return TRUE
 
-/turf/unsimulated/wall/supermatter/attack_ai(mob/user as mob)
-	return user.examinate(src)
-
-/turf/unsimulated/wall/supermatter/attack_hand(mob/user as mob)
+/// Old attack_hand.
+/turf/unsimulated/wall/supermatter/proc/supermatter_wall_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	user.visible_message(span_warning("\The [user] reaches out and touches \the [src]... And then blinks out of existance."),\
 		span_danger("You reach out and touch \the [src]. Everything immediately goes quiet. Your last thought is \"That was not a wise decision.\""),\
 		span_warning("You hear an unearthly noise."))
@@ -49,8 +54,10 @@
 	playsound(src, 'sound/effects/supermatter.ogg', 50, 1)
 
 	Consume(user)
+	return TRUE
 
-/turf/unsimulated/wall/supermatter/attackby(obj/item/W as obj, mob/living/user as mob)
+/// Old attackby.
+/turf/unsimulated/wall/supermatter/proc/supermatter_wall_item(mob/living/user, obj/item/W, datum/interaction/interaction)
 	user.visible_message(span_warning("\The [user] touches \a [W] to \the [src] as a silence fills the room..."),\
 		span_danger("You touch \the [W] to \the [src] when everything suddenly goes silent.\"") + "\n" + span_notice("\The [W] flashes into dust as you flinch away from \the [src]."),\
 		span_warning("Everything suddenly goes silent."))
@@ -59,6 +66,7 @@
 
 	user.drop_from_inventory(W)
 	Consume(W)
+	return INTERACTION_HANDLED_PASS
 
 
 /turf/unsimulated/wall/supermatter/Bumped(atom/AM as mob|obj)

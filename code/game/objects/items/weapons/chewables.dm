@@ -12,16 +12,17 @@
 	var/list/filling
 	var/wrapped = FALSE
 
-/obj/item/clothing/mask/chewable/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable, INTERACT_SELF("Unwrap", PROC_REF(chewable_self)))
+
+/// Old attack_self. Returns FALSE so the clothing self-use still follows, as the old ..() did.
+/obj/item/clothing/mask/chewable/proc/chewable_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(wrapped)
 		wrapped = FALSE
 		to_chat(user, span_notice("You unwrap \the [name]."))
 		playsound(src.loc, 'sound/items/drop/wrapper.ogg', 50, 1)
 		slot_flags = SLOT_EARS | SLOT_MASK
 		update_icon()
+	return FALSE
 
 /obj/item/clothing/mask/chewable/update_icon()
 	cut_overlays()
@@ -298,15 +299,17 @@
 				victims -= F
 	return ..()
 
-/obj/item/clothing/mask/chewable/candy/lolli/attackby(obj/item/W as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable/candy/lolli, INTERACT_ITEM(null, PROC_REF(lolli_item)))
+
+/// Old attackby.
+/obj/item/clothing/mask/chewable/candy/lolli/proc/lolli_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/holder))
 		if(!(istype(W, /obj/item/holder/micro) || istype(W, /obj/item/holder/mouse)))
-			. = ..()
-			return
+			return FALSE
 
 		if(wrapped)
 			to_chat(user, span_warning("You cannot stick [W] to \the [src] without unwrapping it!"))
-			return
+			return INTERACTION_HANDLED_PASS
 
 		var/obj/item/holder/H = W
 
@@ -323,7 +326,8 @@
 
 		to_chat(user, span_notice("You stick [M] to \the [src]."))
 		to_chat(M, span_warning("[user] sticks you to \the [src]!"))
-		return
+		return INTERACTION_HANDLED_PASS
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/clothing/mask/chewable/candy/lolli/examine(mob/user)
 	. = ..()

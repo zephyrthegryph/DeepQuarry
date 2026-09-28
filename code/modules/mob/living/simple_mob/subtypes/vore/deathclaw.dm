@@ -19,6 +19,7 @@
 	value = CATALOGUER_REWARD_HARD
 
 /mob/living/simple_mob/vore/aggressive/deathclaw
+	drag_buckle = FALSE
 	name = "deathclaw"
 	desc = "Big! Big! The size of three men! Claws as long as my forearm! Ripped apart! Ripped apart!"
 	tt_desc = "Trioceros dominus"
@@ -77,9 +78,6 @@
 	add_verb(src, /mob/living/simple_mob/proc/animal_mount)
 	add_verb(src, /mob/living/proc/toggle_rider_reins)
 	movement_cooldown = 0
-
-/mob/living/simple_mob/vore/aggressive/deathclaw/MouseDrop_T(mob/living/M, mob/living/user)
-	return
 
 /mob/living/simple_mob/vore/aggressive/deathclaw/load_default_bellies()
 	. = ..()

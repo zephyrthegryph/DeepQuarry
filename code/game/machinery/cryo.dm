@@ -90,16 +90,26 @@ REF_SPILL(/obj/machinery/atmospherics/unary/cryo_cell, "beaker")
 	if(occupant == user && !user.stat)
 		go_out()
 
-/obj/machinery/atmospherics/unary/cryo_cell/attack_hand(mob/user)
+EXTEND_INTERACTIONS(/obj/machinery/atmospherics/unary/cryo_cell, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(cryo_cell_interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(cryo_cell_interaction_item)), \
+	INTERACT_DRAG("Put inside", PROC_REF(cryo_cell_interaction_drag)), \
+	INTERACT_VERB("Eject occupant", PROC_REF(cryo_cell_move_eject)), \
+	INTERACT_VERB("Move Inside", PROC_REF(cryo_cell_move_inside)), \
+)
+
+/// Old attack_hand (it never reached the machinery gate).
+/obj/machinery/atmospherics/unary/cryo_cell/proc/cryo_cell_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_CRYO)
 	if(user == occupant)
-		return
+		return TRUE
 
 	if(panel_open)
 		to_chat(user, span_boldnotice("Close the maintenance panel first."))
-		return
+		return TRUE
 
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/atmospherics/unary/cryo_cell/tgui_interact(mob/user, datum/tgui/ui = null)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -173,12 +183,13 @@ REF_SPILL(/obj/machinery/atmospherics/unary/cryo_cell, "beaker")
 
 	add_fingerprint(ui.user)
 
-/obj/machinery/atmospherics/unary/cryo_cell/attackby(obj/item/G as obj, mob/user as mob)
+/// Old attackby. It never called ..(), so every item stops here.
+/obj/machinery/atmospherics/unary/cryo_cell/proc/cryo_cell_interaction_item(mob/user, obj/item/G, datum/interaction/interaction)
 	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_CRYO)
 	if(istype(G, /obj/item/reagent_containers/glass))
 		if(beaker)
 			to_chat(user, span_warning("A beaker is already loaded into the machine."))
-			return
+			return TRUE
 
 		beaker =  G
 		user.drop_item()
@@ -190,21 +201,23 @@ REF_SPILL(/obj/machinery/atmospherics/unary/cryo_cell, "beaker")
 		var/obj/item/grab/grab = G
 		var/mob/M = grab?.grab_target()
 		if(!ismob(M))
-			return
+			return TRUE
 		if(occupant)
 			to_chat(user,span_warning("\The [src] is already occupied by [occupant]."))
 		if(M.has_buckled_mobs())
 			to_chat(user, span_warning("\The [M] has other entities attached to it. Remove them first."))
-			return
+			return TRUE
 		consume(grab, user)
 		put_mob(M)
 
-	return
+	return TRUE
 
-/obj/machinery/atmospherics/unary/cryo_cell/MouseDrop_T(mob/target, mob/user) //Allows borgs to put people into cryo without external assistance
-	if(user.stat || user.lying || !Adjacent(user) || !target.Adjacent(user)|| !ishuman(target))
-		return
+/// Old MouseDrop_T: allows borgs to put people into cryo without external assistance.
+/obj/machinery/atmospherics/unary/cryo_cell/proc/cryo_cell_interaction_drag(mob/user, mob/target, datum/interaction/interaction)
+	if(!ismob(target) || user.stat || user.lying || !Adjacent(user) || !target.Adjacent(user)|| !ishuman(target))
+		return FALSE
 	put_mob(target)
+	return TRUE
 
 /obj/machinery/atmospherics/unary/cryo_cell/update_icon()
 	cut_overlay(fluid)
@@ -363,29 +376,25 @@ REF_SPILL(/obj/machinery/atmospherics/unary/cryo_cell, "beaker")
 		return
 	go_out()//and release him from the eternal prison.
 
-/obj/machinery/atmospherics/unary/cryo_cell/verb/move_eject()
+/// Old verb "Eject occupant".
+/obj/machinery/atmospherics/unary/cryo_cell/proc/cryo_cell_move_eject(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_CRYO)
-	set name = "Eject occupant"
-	set category = "Object"
-	set src in oview(1)
-	if(usr == occupant)//If the user is inside the tube...
-		if(usr.stat == 2)//and he's not dead....
+	if(user == occupant)//If the user is inside the tube...
+		if(user.stat == 2)//and he's not dead....
 			return
-		to_chat(usr, span_notice("Release sequence activated. This will take two minutes."))
-		om_after(src, 2 MINUTES, PROC_REF(release_sequence_done), usr)
+		to_chat(user, span_notice("Release sequence activated. This will take two minutes."))
+		om_after(src, 2 MINUTES, PROC_REF(release_sequence_done), user)
 	else
-		if(usr.stat != 0)
+		if(user.stat != 0)
 			return
 		go_out()
-	add_fingerprint(usr)
+	add_fingerprint(user)
 	return
 
-/obj/machinery/atmospherics/unary/cryo_cell/verb/move_inside()
-	set name = "Move Inside"
-	set category = "Object"
-	set src in oview(1)
-	if(isliving(usr))
-		var/mob/living/L = usr
+/// Old verb "Move Inside".
+/obj/machinery/atmospherics/unary/cryo_cell/proc/cryo_cell_move_inside(mob/user, obj/item/held, datum/interaction/interaction)
+	if(isliving(user))
+		var/mob/living/L = user
 		if(L.has_buckled_mobs())
 			to_chat(L, span_warning("You have other entities attached to yourself. Remove them first."))
 			return

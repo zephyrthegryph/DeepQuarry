@@ -138,10 +138,10 @@ REF_OWNED(/obj/item/card/robot, "dummy_card")
 	var/mode = 1
 	special_handling = TRUE
 
-/obj/item/pen/robopen/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/pen/robopen, INTERACT_USE("Change colour or mode", PROC_REF(interaction_robopen)))
+
+/// Old attack_self.
+/obj/item/pen/robopen/proc/interaction_robopen(mob/user, obj/item/held, datum/interaction/interaction)
 	om_ask(user, /datum/om/prompt/choice, PROC_REF(robopen_choice_made), title = "Change What?", message = "Would you like to change colour or mode?", choices = list("Colour", "Mode", "Cancel"), buttons = TRUE, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
 /obj/item/pen/robopen/proc/robopen_choice_made(datum/om/prompt/choice/ask)
@@ -451,11 +451,14 @@ DECLARE_INTERACTIONS(/obj/item/form_printer, INTERACT_USE(null, PROC_REF(interac
 /obj/item/borg/combat/shield/Initialize(mapload)
 	. = ..()
 
-DECLARE_INTERACTIONS(/obj/item/borg/combat/shield, INTERACT_USE(null, PROC_REF(interaction_self)))
+DECLARE_INTERACTIONS(/obj/item/borg/combat/shield, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_VERB("Set shield level", PROC_REF(borg_shield_verb_set_level), REQ_IN_INVENTORY), \
+)
 
 /// Old attack_self.
 /obj/item/borg/combat/shield/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
-	set_shield_level()
+	borg_shield_verb_set_level(user)
 	return TRUE
 
 /// Cools its flash count or recovers from an overload every 2 s while either is pending (a flash
@@ -494,12 +497,9 @@ DECLARE_INTERACTIONS(/obj/item/borg/combat/shield, INTERACT_USE(null, PROC_REF(i
 	overload_time = world.time
 	PERIODIC_START(src, PERIODIC_SLOW)
 
-/obj/item/borg/combat/shield/verb/set_shield_level()
-	set name = "Set shield level"
-	set category = "Object"
-	set src in range(0)
-
-	om_ask(usr, /datum/om/prompt/choice, PROC_REF(shield_level_chosen), title = "Shield Level", message = "How much damage should the shield absorb?", choices = list("5", "10", "25", "50", "75", "100"), ask_flags = ASK_CARRIED | ASK_CAPABLE)
+/// Old Set shield level verb.
+/obj/item/borg/combat/shield/proc/borg_shield_verb_set_level(mob/user, obj/item/held, datum/interaction/interaction)
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(shield_level_chosen), title = "Shield Level", message = "How much damage should the shield absorb?", choices = list("5", "10", "25", "50", "75", "100"), ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
 /obj/item/borg/combat/shield/proc/shield_level_chosen(datum/om/prompt/choice/ask)
 	shield_level = text2num(ask.choice)/100

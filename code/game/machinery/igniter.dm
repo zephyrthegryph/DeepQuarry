@@ -92,11 +92,13 @@
 		icon_state = powered() ? "[base_state]" : "[base_state]-p"
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/sparker/attack_ai()
+EXTEND_INTERACTIONS(/obj/machinery/sparker, INTERACT_SILICON("Ignite", PROC_REF(sparker_silicon_trigger)))
+
+/// Old attack_ai: the AI triggers it directly while it is anchored.
+/obj/machinery/sparker/proc/sparker_silicon_trigger(mob/user, obj/item/held, datum/interaction/interaction)
 	if(anchored)
-		return ignite()
-	else
-		return
+		ignite()
+	return TRUE
 
 /obj/machinery/sparker/proc/ignite()
 	if(!(powered()))

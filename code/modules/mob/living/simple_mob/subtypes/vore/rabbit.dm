@@ -82,7 +82,8 @@
 		if(75 to INFINITY)
 			. += "They are very angry. Petting them will likely result in unpleasant things."
 
-/mob/living/simple_mob/vore/rabbit/attack_hand(mob/user)
+/// Was attack_hand with ..() first: petting reactions follow the normal touch.
+/mob/living/simple_mob/vore/rabbit/unarmed_touch(mob/living/user)
 	. = ..()
 
 	if(IS_HELPING(user)) // only patpet on help. :p

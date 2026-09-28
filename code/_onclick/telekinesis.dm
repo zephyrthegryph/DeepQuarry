@@ -1,12 +1,7 @@
-/*
-	Telekinetic attack:
-
-	By default, emulate the user's unarmed attack
-*/
-/atom/proc/attack_tk(mob/user)
-	if(user.stat) return
-	user.UnarmedAttack(src,0)
-	return
+/obj
+	/// A telekinetic reach can grab or poke this (the telekinesis adapter's default). Structures refuse
+	/// unless they declare an INTERACT_TK of their own.
+	var/tk_reach = TRUE
 
 /*
 	This is similar to item attack_self, but applies to anything
@@ -17,33 +12,6 @@
 */
 /atom/proc/attack_self_tk(mob/user)
 	return
-
-/obj/attack_tk(mob/user)
-	if(user.stat) return
-	if(anchored)
-		..()
-		return
-
-	var/obj/item/tk_grab/O = new(src)
-	user.put_in_active_hand(O)
-	O.host_handle = om_handle(user)
-	O.focus_object(src)
-	return
-
-/obj/item/attack_tk(mob/user)
-	if(user.stat || !isturf(loc)) return
-	if(user.has_telegrip() && !user.get_active_hand()) // both should already be true to get here
-		var/obj/item/tk_grab/O = new(src)
-		user.put_in_active_hand(O)
-		O.host_handle = om_handle(user)
-		O.focus_object(src)
-	else
-		WARNING("Strange attack_tk(): TK([user.has_telegrip()]) empty hand([!user.get_active_hand()])")
-	return
-
-
-/mob/attack_tk(mob/user)
-	return // needs more thinking about
 
 /*
 	TK Grab Item (the workhorse of old TK)

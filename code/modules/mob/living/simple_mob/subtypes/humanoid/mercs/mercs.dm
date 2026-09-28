@@ -96,7 +96,11 @@
 	loot_list = list(/obj/item/melee/energy/sword = 100, /obj/item/shield/energy = 100)
 
 // They have a shield, so they try to block
-/mob/living/simple_mob/humanoid/merc/melee/sword/attackby(obj/item/O as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/melee/sword, INTERACT_ITEM(null, PROC_REF(merc_sword_interaction_item)))
+
+/// Old attackby: shield block.
+/mob/living/simple_mob/humanoid/merc/melee/sword/proc/merc_sword_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+	. = TRUE
 	if(O.force)
 		if(prob(20))
 			visible_message(span_danger("\The [src] blocks \the [O] with its shield!"))
@@ -104,7 +108,7 @@
 				ai_brain.react_to_attack(user)
 			return
 		else
-			..()
+			return FALSE
 	else
 		to_chat(user, span_warning("This weapon is ineffective, it does no damage."))
 		visible_message(span_warning("\The [user] gently taps [src] with \the [O]."))
@@ -507,7 +511,11 @@
 	grenade_timer = 30 // well, look what you've done, you've grouped up
 
 // being Actual Professionals, they have better (read: player-level) blocking chances
-/mob/living/simple_mob/humanoid/merc/ranged/space/suppressor/attackby(obj/item/O, mob/user)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/ranged/space/suppressor, INTERACT_ITEM(null, PROC_REF(suppressor_interaction_item)))
+
+/// Old attackby: shield block.
+/mob/living/simple_mob/humanoid/merc/ranged/space/suppressor/proc/suppressor_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+	. = TRUE
 	if(O.force)
 		if(prob(50))
 			visible_message(span_danger("\The [src] blocks \the [O] with its shield!"))
@@ -515,7 +523,7 @@
 				ai_brain.react_to_attack(user)
 			return
 		else
-			..()
+			return FALSE
 	else
 		visible_message(span_warning("\The [user] gently taps [src] with \the [O]."))
 

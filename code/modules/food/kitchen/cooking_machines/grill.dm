@@ -48,7 +48,4 @@ REF_OWNED(/obj/machinery/appliance/cooker/grill, "grill_loop")
 		if(grill_loop)
 			grill_loop.stop(src)
 
-/obj/machinery/appliance/cooker/grill/attackby(obj/item/O as obj, mob/user as mob)
-	if(default_part_replacement(user, O))
-		return
-	..()
+EXTEND_INTERACTIONS(/obj/machinery/appliance/cooker/grill, INTERACT_ITEM(null, PROC_REF(appliance_interaction_part_replace)))

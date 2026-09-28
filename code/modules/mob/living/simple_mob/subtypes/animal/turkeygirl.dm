@@ -71,12 +71,16 @@
 	if(resting)
 		icon_state = "[icon_state]-resting"
 
-/mob/living/simple_mob/vore/turkeygirl/attackby(obj/item/reagent_containers/food/snacks/O as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/turkeygirl, INTERACT_ITEM(null, PROC_REF(turkeygirl_interaction_item)))
+
+/// Old attackby: feeding.
+/mob/living/simple_mob/vore/turkeygirl/proc/turkeygirl_interaction_item(mob/user, obj/item/reagent_containers/food/snacks/O, datum/interaction/interaction)
+	. = TRUE
 	if(stat)
-		return ..()
+		return FALSE
 
 	if(!istype(O, /obj/item/reagent_containers/food/snacks))
-		return ..()
+		return FALSE
 
 	if(nutrition >= max_nutrition)
 		if(user == src)

@@ -98,8 +98,6 @@
 
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/attach()
 	..()
-	if (chassis)
-		chassis.verbs |= /obj/mecha/proc/move_inside_passenger
 
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/detach()
 	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER)
@@ -107,10 +105,7 @@
 		occupant_message("Unable to detach [src] - equipment occupied.")
 		return
 
-	var/obj/mecha/M = chassis
 	..()
-	if (M && !(locate(/obj/item/mecha_parts/mecha_equipment/tool/passenger) in M.slot_contents()))
-		M.verbs -= /obj/mecha/proc/move_inside_passenger
 
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/get_equip_info()
 	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER)
@@ -128,30 +123,32 @@
 #define LOCKED 1
 #define OCCUPIED 2
 
-/obj/mecha/proc/move_inside_passenger()
-	set category = "Object"
-	set name = "Enter Passenger Compartment"
-	set src in oview(1)
+/// Requirement for the mech's "Enter Passenger Compartment" Menu entry (old verbs |= on attach / -= on detach).
+/obj/mecha/proc/pred_mecha_has_passenger_bay(mob/actor, atom/target, obj/item/held)
+	return !!(locate(/obj/item/mecha_parts/mecha_equipment/tool/passenger) in slot_contents())
 
-	//check that usr can climb in
-	if (usr.stat || !ishuman(usr))
+/// Old verb "Enter Passenger Compartment" (added to the chassis while a compartment was attached).
+/obj/mecha/proc/move_inside_passenger(mob/user, obj/item/held, datum/interaction/interaction)
+
+	//check that user can climb in
+	if (user.stat || !ishuman(user))
 		return
 
-	if (!usr.Adjacent(src))
+	if (!user.Adjacent(src))
 		return
 
-	if (!isturf(usr.loc))
-		to_chat(usr, span_danger("You can't reach the passenger compartment from here."))
+	if (!isturf(user.loc))
+		to_chat(user, span_danger("You can't reach the passenger compartment from here."))
 		return
 
-	if(iscarbon(usr))
-		var/mob/living/carbon/C = usr
+	if(iscarbon(user))
+		var/mob/living/carbon/C = user
 		if(C.get_equipped_item(SLOT_ID_HANDCUFFED))
-			to_chat(usr, span_danger("Kinda hard to climb in while handcuffed don't you think?"))
+			to_chat(user, span_danger("Kinda hard to climb in while handcuffed don't you think?"))
 			return
 
-	if(isliving(usr))
-		var/mob/living/L = usr
+	if(isliving(user))
+		var/mob/living/L = user
 		if(L.has_buckled_mobs())
 			to_chat(L, span_warning("You have other entities attached to yourself. Remove them first."))
 			return
@@ -167,19 +164,19 @@
 			continue
 
 		//found a boardable compartment
-		P.move_inside(usr)
+		P.move_inside(user)
 		return
 
 	//didn't find anything
 	switch (feedback)
 		if (OCCUPIED)
-			to_chat(usr, span_danger("The passenger compartment is already occupied!"))
+			to_chat(user, span_danger("The passenger compartment is already occupied!"))
 		if (LOCKED)
-			to_chat(usr, span_warning("The passenger compartment hatch is locked!"))
+			to_chat(user, span_warning("The passenger compartment hatch is locked!"))
 		if (OCCUPIED|LOCKED)
-			to_chat(usr, span_danger("All of the passenger compartments are already occupied or locked!"))
+			to_chat(user, span_danger("All of the passenger compartments are already occupied or locked!"))
 		if (0)
-			to_chat(usr, span_warning("\The [src] doesn't have a passenger compartment."))
+			to_chat(user, span_warning("\The [src] doesn't have a passenger compartment."))
 
 #undef LOCKED
 #undef OCCUPIED

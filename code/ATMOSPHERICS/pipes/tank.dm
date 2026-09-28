@@ -71,10 +71,7 @@
 	id = "tank_swallow_attackby"
 	name = "Use"
 	held_type = /obj/item
-	effect = /obj/machinery/atmospherics/pipe/tank/proc/interaction_swallow_attackby
-
-/obj/machinery/atmospherics/pipe/tank/proc/interaction_swallow_attackby(mob/user, obj/item/held, datum/interaction/interaction)
-	return TRUE
+	effect = /atom/proc/interaction_swallow
 
 /obj/machinery/atmospherics/pipe/tank/air
 	name = "Pressure Tank (Air)"

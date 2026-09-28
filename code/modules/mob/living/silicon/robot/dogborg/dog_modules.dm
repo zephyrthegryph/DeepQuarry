@@ -273,8 +273,9 @@ DECLARE_INTERACTIONS(/obj/item/pupscrubber, INTERACT_USE(null, PROC_REF(interact
 	var/datum/matter_synth/glass = null
 	special_handling = TRUE
 
-/obj/item/lightreplacer/dogborg/attack_self(mob/user)//Recharger refill is so last season. Now we recycle without magic!
-	. = ..(user)
+/// Old attack_self (the light replacer's self-use chain: /obj/item/lightreplacer/proc/interaction_self()).
+/obj/item/lightreplacer/dogborg/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)//Recharger refill is so last season. Now we recycle without magic!
+	. = ..()
 	if(.)
 		return TRUE
 	om_ask(user, /datum/om/prompt/choice, PROC_REF(dogborg_choice_made), title = "Selection List", message = "Do you wish to check the reserves or change the color?", choices = list("Reserves", "Color"), buttons = TRUE, ask_flags = ASK_CARRIED | ASK_CAPABLE)

@@ -253,19 +253,15 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/chest, INTERACT_ITEM(null, PROC_REF(i
 			to_chat(user, span_notice("You insert the wire!"))
 	return INTERACTION_HANDLED_PASS
 
-/obj/item/robot_parts/head/attackby(obj/item/W as obj, mob/user as mob)
-	..()
-	if(istype(W, /obj/item/flash))
-		if(istype(user,/mob/living/silicon/robot))
-			var/current_module = user.get_active_hand()
-			if(current_module == W)
-				to_chat(user, span_warning("How do you propose to do that?"))
-				return
-			else
-				add_flashes(W,user)
-		else
-			add_flashes(W,user)
-	return
+/// Old attackby's flash branch (declared with the head's other interactions in tvcamera.dm).
+/obj/item/robot_parts/head/proc/head_insert_flash(mob/user, obj/item/W, datum/interaction/interaction)
+	if(istype(user,/mob/living/silicon/robot))
+		var/current_module = user.get_active_hand()
+		if(current_module == W)
+			to_chat(user, span_warning("How do you propose to do that?"))
+			return INTERACTION_HANDLED_PASS
+	add_flashes(W,user)
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/robot_parts/head/proc/add_flashes(obj/item/W as obj, mob/user as mob) //Made into a seperate proc to avoid copypasta
 	if(src.flash1 && src.flash2)

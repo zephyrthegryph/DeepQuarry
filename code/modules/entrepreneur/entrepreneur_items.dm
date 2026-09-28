@@ -286,11 +286,7 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/horoscope, INTERACT_USE(null, PROC_R
 	icon = 'icons/obj/entrepreneur.dmi'
 	icon_state = "exercise_mat"
 
-EXTEND_INTERACTIONS(/obj/item/bedsheet/pillow/exercise, INTERACT_ITEM(null, PROC_REF(exercise_interaction_item)))
-
-/// Old attackby.
-/obj/item/bedsheet/pillow/exercise/proc/exercise_interaction_item(mob/user, obj/item/component, datum/interaction/interaction)
-	return INTERACTION_HANDLED_PASS
+EXTEND_INTERACTIONS(/obj/item/bedsheet/pillow/exercise, INTERACT_ITEM(null, TYPE_PROC_REF(/atom, interaction_pass)))
 
 /obj/item/entrepreneur/dumbbell
 	name = "dumbbell"
@@ -437,6 +433,7 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/emf, INTERACT_USE(null, PROC_REF(int
 DECLARE_INTERACTIONS(/obj/item/entrepreneur/spirit_board, \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+	INTERACT_OBSERVER("Guide", PROC_REF(spirit_board_ghost_guide)), \
 )
 
 /// Old attackby.
@@ -468,19 +465,21 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/spirit_board, \
 	next_result = _answer_k451
 	return TRUE
 
-/obj/item/entrepreneur/spirit_board/attack_ghost(mob/observer/dead/user)
+/// Old attack_ghost: choose the board's next result. Never fell through to the default.
+/obj/item/entrepreneur/spirit_board/proc/spirit_board_ghost_guide(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
 	if(!ghost_enabled)
-		return
+		return TRUE
 	if(jobban_isbanned(user, JOB_GHOSTROLES))
 		to_chat(user, span_warning("You cannot interact with this board because you are banned from playing ghost roles."))
-		return
-	var/_answer_k459 = rerun_ask(user, "k459", TYPE_PROC_REF(/atom, attack_ghost), args, /datum/om/prompt/choice, message = "What should it land on next?", title = "Next result", choices = possible_results)
+		return TRUE
+	var/_answer_k459 = rerun_ask(user, "k459", PROC_REF(spirit_board_ghost_guide), args, /datum/om/prompt/choice, message = "What should it land on next?", title = "Next result", choices = possible_results)
 	if(isnull(_answer_k459))
-		return
+		return TRUE
 	next_result = _answer_k459
 	if(!is_admin(user) || !accurate) //admins can bypass this for event stuff
 		if(prob(25))
 			next_result = 0 //25% chance for the ghost to fail to manipulate the board
+	return TRUE
 
 // Spirit Healer stuff
 

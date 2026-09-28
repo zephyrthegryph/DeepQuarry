@@ -125,13 +125,11 @@
 /obj/machinery/portable_atmospherics/powered/pump/return_air()
 	return air_contents
 
-/obj/machinery/portable_atmospherics/powered/pump/attack_ghost(mob/user)
-	return src.attack_hand(user)
-
 /obj/machinery/portable_atmospherics/powered/pump/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/machine_hand/ungated/open_ui,
 	)
+	into += dq_interaction_from_spec(type, INTERACT_OBSERVER("View", TYPE_PROC_REF(/atom, interaction_as_touch)))
 	..()
 
 /obj/machinery/portable_atmospherics/powered/pump/tgui_interact(mob/user, datum/tgui/ui)
@@ -313,10 +311,7 @@
 	name = "Use"
 	category = INTERACTION_CAT_INSERT
 	held_type = list(/obj/item/cell, /obj/item/tank)
-	effect = /obj/machinery/portable_atmospherics/powered/pump/huge/proc/interaction_reject_item
-
-/obj/machinery/portable_atmospherics/powered/pump/huge/proc/interaction_reject_item(mob/user, obj/item/held, datum/interaction/interaction)
-	return TRUE
+	effect = /atom/proc/interaction_swallow
 
 /obj/machinery/portable_atmospherics/powered/pump/huge/wrench_act(mob/user, obj/item/tool)
 	if(on)

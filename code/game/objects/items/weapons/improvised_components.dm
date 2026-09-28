@@ -28,11 +28,14 @@
 	force_divisor = 0.1
 	thrown_force_divisor = 0.1
 
-/obj/item/material/butterflyhandle/attackby(obj/item/W as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/material/butterflyhandle, INTERACT_ITEM(null, PROC_REF(butterflyhandle_interaction_item)))
+
+/// Old attackby. It never called ..(): any item stops here (no repair, no storage pickup), but afterattack still follows.
+/obj/item/material/butterflyhandle/proc/butterflyhandle_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W,/obj/item/material/butterflyblade))
 		var/obj/item/material/butterflyblade/B = W
 		to_chat(user, "You attach the two concealed blade parts.")
 		new /obj/item/material/butterflyconstruction(user.loc, B.material.name)
 		consume(W, user)
 		consume(src, user)
-		return
+	return INTERACTION_HANDLED_PASS

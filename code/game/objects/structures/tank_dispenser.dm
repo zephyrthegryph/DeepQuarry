@@ -1,6 +1,7 @@
 #define TANK_DISPENSER_CAPACITY 10
 
 /obj/structure/dispenser
+	silicon_use = ROBOT_USE_HAND_ADJACENT
 	name = "tank storage unit"
 	desc = "A simple yet bulky storage device for gas tanks. Has room for up to ten oxygen tanks, and ten phoron tanks."
 	icon = 'icons/obj/objects_vr.dmi'
@@ -36,12 +37,6 @@
 		if(1 to 4)	add_overlay("phoron-[phorontanks]")
 		if(5 to INFINITY) add_overlay("phoron-5")
 
-/obj/structure/dispenser/attack_ai(mob/user)
-	// This looks silly, but robots also call attack_ai, and they're allowed physical state stuff.
-	if(user.Adjacent(src))
-		return attack_hand(user)
-	..()
-
 /obj/structure/dispenser/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/entry_hand/dispenser_open_ui,
@@ -52,11 +47,7 @@
 /datum/interaction/entry_hand/dispenser_open_ui
 	id = "dispenser_open_ui"
 	name = "Use"
-	effect = /obj/structure/dispenser/proc/interaction_open_ui
-
-/obj/structure/dispenser/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
-	tgui_interact(user)
-	return TRUE
+	effect = /atom/proc/interaction_open_ui
 
 /obj/structure/dispenser/tgui_state(mob/user)
 	return GLOB.tgui_physical_state

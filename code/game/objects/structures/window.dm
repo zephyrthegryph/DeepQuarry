@@ -146,9 +146,11 @@
 /obj/structure/window/thrown_damage(atom/movable/source, datum/thrownthing/throwingdatum)
 	return receive_thrown(source, throwingdatum, reinf ? 0.25 : 1)
 
-/obj/structure/window/attack_tk(mob/user as mob)
+/// Old attack_tk: knock on the window at range.
+/obj/structure/window/proc/interaction_tk(mob/user, obj/item/held, datum/interaction/interaction)
 	user.visible_message(span_notice("Something knocks on [src]."))
 	playsound(src, 'sound/effects/Glasshit.ogg', 50, 1)
+	return TRUE
 
 /obj/structure/window/declare_interactions(list/into)
 	into += list(
@@ -156,6 +158,7 @@
 		/datum/interaction/entry_hand/window_hand,
 		/datum/interaction/entry_item/window_item,
 	)
+	into += dq_interaction_from_spec(type, INTERACT_TK("Knock", PROC_REF(interaction_tk)))
 	..()
 
 /// Old attack_hand's harm branch: bang on (or claw at) the window (combat mode only).

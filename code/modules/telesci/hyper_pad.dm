@@ -50,19 +50,27 @@
 /obj/machinery/hyperpad/inoperable() //A lame way of making this machine always useable
 	return 0
 
-/obj/machinery/hyperpad/centre/attack_ghost(mob/observer/dead/ghost)
-	. = ..()
-	if(.)
-		return
+/// Old attack_ghost: ran the parent pad's first (the ghost default, then the primary pad's),
+/// then drifts the ghost to the linked pad.
+/obj/machinery/hyperpad/centre/proc/hyperpad_centre_ghost_travel(mob/observer/dead/ghost, obj/item/held, datum/interaction/interaction)
+	hyperpad_ghost_use(ghost, held, interaction)
 	if(linked_pad() && !QDELETED(linked_pad()))
 		ghost.forceMove(get_turf(linked_pad()))
+	return TRUE
 
-/obj/machinery/hyperpad/attack_ghost(mob/observer/dead/ghost)
-	. = ..()
+/// Old attack_ghost: ran the ghost default first, then the primary pad's ghost Use.
+/obj/machinery/hyperpad/proc/hyperpad_ghost_use(mob/observer/dead/ghost, obj/item/held, datum/interaction/interaction)
+	actor_use_default(/datum/input_adapter/ghost, ghost, src)
 	if(primary())
-		primary().attack_ghost(ghost)
+		actor_use(/datum/input_adapter/ghost, ghost, primary())
+	return TRUE
 
 /obj/machinery/hyperpad/centre/declare_interactions(list/into)
+	var/static/list/actor_specs = list(
+		INTERACT_OBSERVER("Travel", PROC_REF(hyperpad_centre_ghost_travel)),
+	)
+	for(var/actor_spec in actor_specs)
+		into += dq_interaction_from_spec(type, actor_spec)
 	into += list(
 		/datum/interaction/machine_hand/hyperpad_centre_teleport,
 	)
@@ -93,6 +101,11 @@
 	return TRUE
 
 /obj/machinery/hyperpad/declare_interactions(list/into)
+	var/static/list/actor_specs = list(
+		INTERACT_OBSERVER("View", PROC_REF(hyperpad_ghost_use)),
+	)
+	for(var/actor_spec in actor_specs)
+		into += dq_interaction_from_spec(type, actor_spec)
 	into += list(
 		/datum/interaction/machine_hand/hyperpad_delegate,
 	)

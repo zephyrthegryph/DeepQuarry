@@ -156,7 +156,7 @@
 
 		// Actual assembly actions
 		if("rename")
-			rename(ui.user)
+			electronic_assembly_verb_rename(ui.user)
 			return TRUE
 
 		if("remove_cell")
@@ -254,16 +254,13 @@
 	return FALSE
 // End TGUI
 
-/obj/item/electronic_assembly/verb/rename()
-	set name = "Rename Circuit"
-	set category = "Object"
-	set desc = "Rename your circuit, useful to stay organized."
-
-	var/mob/M = usr
+/// Old Rename Circuit verb: Rename your circuit, useful to stay organized.
+/obj/item/electronic_assembly/proc/electronic_assembly_verb_rename(mob/user, obj/item/held, datum/interaction/interaction)
+	var/mob/M = user
 	if(!check_interactivity(M))
 		return
 
-	var/_answer_k272 = rerun_ask(usr, "k272", VERB_REF(rename), args, /datum/om/prompt/text, message = "What do you want to name this?", title = "Rename", default = src.name, max_length = MAX_NAME_LEN, encode = FALSE)
+	var/_answer_k272 = rerun_ask(user, "k272", PROC_REF(electronic_assembly_verb_rename), args, /datum/om/prompt/text, message = "What do you want to name this?", title = "Rename", default = src.name, max_length = MAX_NAME_LEN, encode = FALSE)
 	if(isnull(_answer_k272))
 		return
 	var/input = sanitizeSafe(_answer_k272, MAX_NAME_LEN)
@@ -464,6 +461,8 @@
 DECLARE_INTERACTIONS(/obj/item/electronic_assembly, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_ROBOT("Use", PROC_REF(assembly_robot_use)), \
+	INTERACT_VERB("Rename Circuit", PROC_REF(electronic_assembly_verb_rename), REQ_IN_INVENTORY), \
 )
 
 /// Old attack_self.
@@ -500,11 +499,12 @@ DECLARE_INTERACTIONS(/obj/item/electronic_assembly, \
 		choice.ask_for_input(user)
 	return TRUE
 
-/obj/item/electronic_assembly/attack_robot(mob/user as mob)
-	if(Adjacent(user))
-		return attack_self(user)
-	else
-		return ..()
+/// Old attack_robot: an adjacent cyborg uses it in hand; otherwise the default.
+/obj/item/electronic_assembly/proc/assembly_robot_use(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!Adjacent(user))
+		return FALSE
+	attack_self(user)
+	return TRUE
 
 // Returns true if power was successfully drawn.
 /obj/item/electronic_assembly/proc/draw_power(amount)

@@ -6,7 +6,8 @@
 	var/shrinking = TRUE
 	var/size_limit = 0.5
 
-/obj/structure/portal_event/resize/attack_ghost(mob/observer/dead/user)
+/// Old attack_ghost: staff also get the size settings, then the portal's own ghost use.
+/obj/structure/portal_event/resize/portal_event_ghost_use(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
 	if(!target && check_rights_for(user?.client, R_HOLDER))
 		om_ask(user, /datum/om/prompt/confirm, PROC_REF(ask_size_mode), title = "Change portal size settings", message = "Would you like to adjust the portal's size settings?", no_first = TRUE, requires = PROMPT_ADMIN(R_HOLDER))
 	return ..()

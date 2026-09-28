@@ -206,6 +206,11 @@
 // LibraryComp.tsx. The big browse-rendered switch and Topic dispatcher
 // move to tgui_data + tgui_act.
 /obj/machinery/librarycomp/declare_interactions(list/into)
+	var/static/list/actor_specs = list(
+		INTERACT_OBSERVER("Admin view", PROC_REF(librarycomp_ghost_admin_view)),
+	)
+	for(var/actor_spec in actor_specs)
+		into += dq_interaction_from_spec(type, actor_spec)
 	into += list(
 		/datum/interaction/machine_item/librarycomp_link_scanner,
 		/datum/interaction/machine_hand/ungated/librarycomp_open_ui,
@@ -524,14 +529,16 @@
 
 // admin ghost view routes to LibraryComp.tsx with is_admin_view
 // set; non-admin ghosts fall through to default handling.
-/obj/machinery/librarycomp/attack_ghost(mob/user)
+/// Old attack_ghost: admins get the admin view; other ghosts the default.
+/obj/machinery/librarycomp/proc/librarycomp_ghost_admin_view(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!check_rights(R_ADMIN, show_msg = FALSE))
-		return ..()
+		return FALSE
 	user.set_machine(src)
 	is_admin_view = TRUE
 	screenstate = 8
 	refresh_external()
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/librarycomp/emag_act(remaining_charges, mob/user)
 	if (src.density && !src.emagged)

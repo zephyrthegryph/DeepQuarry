@@ -130,9 +130,12 @@
 
 	EB.orbit(src, orbitsize, pick(FALSE, TRUE), rand(10, 25), pick(3, 4, 5, 6, 36))
 
-/obj/singularity/energy_ball/attack_hand(mob/user)
+EXTEND_INTERACTIONS(/obj/singularity/energy_ball, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_energy_ball_touch)))
+
+/// Old attack_hand: touching it dusts you (instead of the singularity's consume).
+/obj/singularity/energy_ball/proc/interaction_energy_ball_touch(mob/user, obj/item/held, datum/interaction/interaction)
 	dust_mob(user)
-	return 1
+	return TRUE
 
 /obj/singularity/energy_ball/Bump(atom/A)
 	dust_mob(A)

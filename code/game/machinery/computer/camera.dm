@@ -36,6 +36,7 @@ REF_OWNED(/obj/machinery/computer/security, "camera")
 	into += list(
 		/datum/interaction/machine_hand/ungated/security_open_ui,
 	)
+	into += dq_interaction_from_spec(type, INTERACT_ROBOT("Use", PROC_REF(security_robot_use)))
 	..()
 
 /// The old attack_hand: never called ..(), so it stays ungated.
@@ -51,12 +52,14 @@ REF_OWNED(/obj/machinery/computer/security, "camera")
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/computer/security/attack_robot(mob/user)
+/// Old attack_robot: a cyborg that isn't an AI shell uses it by hand; a shell interfaces as the AI.
+/obj/machinery/computer/security/proc/security_robot_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(isrobot(user))
 		var/mob/living/silicon/robot/R = user
 		if(!R.shell)
-			return attack_hand(user)
-	..()
+			attack_hand(user)
+			return TRUE
+	return FALSE
 
 /obj/machinery/computer/security/proc/set_network(list/new_network)
 	network = new_network

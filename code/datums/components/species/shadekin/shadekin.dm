@@ -263,7 +263,7 @@ REF_VAR(/mob/living, OWNED, /datum/shadekin, shadekin)
 	GLOB.character_setup_service.queue_preferences_save(user?.client?.prefs)
 	. = ..()
 
-/datum/component/shadekin/proc/flicker_color_picked(datum/om/prompt/color/ask)
+/datum/shadekin/proc/flicker_color_picked(datum/om/prompt/color/ask)
 	if(!ask.picked_color)
 		return
 	flicker_color = ask.picked_color

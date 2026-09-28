@@ -173,7 +173,7 @@ Pipelines + Other Objects -> Pipe network
 	name = "Paint"
 	held_type = /obj/item/pipe_painter
 	consumes_input = FALSE
-	effect = /obj/machinery/atmospherics/proc/interaction_pipe_painter
+	effect = /atom/proc/interaction_swallow
 
 /// Whether A stack of material could be fitted at all (falls through to ..() otherwise).
 /obj/machinery/atmospherics/proc/offer_fit_material(mob/actor, atom/target, obj/item/held)
@@ -190,9 +190,6 @@ Pipelines + Other Objects -> Pipe network
 	apply_material_construction(list(MATERIAL_ROLE_STRUCTURE = material.name, MATERIAL_ROLE_LINER = material.name), /datum/material_template/pressure, SHEET_MATERIAL_AMOUNT)
 	stock.use(1)
 	to_chat(user, span_notice("You fit [material.display_name] onto [src]. Its actual geometry and operating conditions will determine performance."))
-	return TRUE
-
-/obj/machinery/atmospherics/proc/interaction_pipe_painter(mob/user, obj/item/held, datum/interaction/interaction)
 	return TRUE
 
 /obj/machinery/atmospherics/proc/add_underlay(turf/T, obj/machinery/atmospherics/node, direction, icon_connect_type)

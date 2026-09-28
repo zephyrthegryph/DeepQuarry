@@ -110,23 +110,24 @@
 	spawn_active = TRUE
 	var/redgate_restricted = FALSE
 
-//override the standard attack_ghost proc for custom messages
-/obj/structure/ghost_pod/ghost_activated/maint_lurker/attack_ghost(mob/observer/dead/user)
+// Overrides the standard ghost pod observer use for custom messages.
+/obj/structure/ghost_pod/ghost_activated/maint_lurker/ghost_pod_observer_use(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
 	if(jobban_isbanned(user, JOB_GHOSTROLES))
 		to_chat(user, span_warning("You cannot use this spawnpoint because you are banned from playing ghost roles."))
-		return
+		return TRUE
 
 	//No whitelist
 	if(!is_alien_whitelisted(user.client, GLOB.all_species[user.client.prefs.read_preference(/datum/preference/choiced/species)]))
 		to_chat(user, span_warning("You cannot use this spawnpoint to spawn as a species you are not whitelisted for!"))
-		return
+		return TRUE
 
 	//No OOC notes/FT
 	if(not_has_ooc_text(user))
 		//to_chat(user, span_warning("You must have proper out-of-character notes and flavor text configured for your current character slot to use this spawnpoint."))
-		return
+		return TRUE
 
 	om_ask(user, /datum/om/prompt/confirm/lurker_spawn, PROC_REF(lurker_confirmed))
+	return TRUE
 
 /// Re-checked: the ghost still has a client and the spawner is unused.
 /datum/om/prompt/confirm/lurker_spawn
@@ -201,19 +202,20 @@
 	desc = "A starting location for characters who exist inside of the redgate!"
 	redgate_restricted = TRUE
 
-/obj/structure/ghost_pod/ghost_activated/maint_lurker/redgate/attack_ghost(mob/observer/dead/user)
+/obj/structure/ghost_pod/ghost_activated/maint_lurker/redgate/ghost_pod_observer_use(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
 	if(jobban_isbanned(user, JOB_GHOSTROLES))
 		to_chat(user, span_warning("You cannot use this spawnpoint because you are banned from playing ghost roles."))
-		return
+		return TRUE
 
 	//No whitelist
 	if(!is_alien_whitelisted(user.client, GLOB.all_species[user.client.prefs.read_preference(/datum/preference/choiced/species)]))
 		to_chat(user, span_warning("You cannot use this spawnpoint to spawn as a species you are not whitelisted for!"))
-		return
+		return TRUE
 
 	//No OOC notes/FT
 	if(not_has_ooc_text(user))
 		//to_chat(user, span_warning("You must have proper out-of-character notes and flavor text configured for your current character slot to use this spawnpoint."))
-		return
+		return TRUE
 
 	om_ask(user, /datum/om/prompt/confirm/lurker_spawn/redgate, PROC_REF(lurker_confirmed))
+	return TRUE

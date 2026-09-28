@@ -117,7 +117,11 @@
 	set name = "Shriek"
 	set desc = "Give voice to a psychic shriek."
 
-/mob/living/simple_mob/vox/armalis/attackby(obj/item/O as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vox/armalis, INTERACT_ITEM(null, PROC_REF(armalis_interaction_item)))
+
+/// Old attackby: armour/amp fitting, and its own weapon resistance (never reaches the normal attack).
+/mob/living/simple_mob/vox/armalis/proc/armalis_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+	. = TRUE
 	if(istype(O,/obj/item/vox/armalis_armour))
 		user.drop_item(O)
 		armour = O
@@ -148,7 +152,7 @@
 				if ((M.client && !( M.blinded )))
 					M.show_message(span_danger("The [O] bounces harmlessly off of [src]. "))
 	else
-		to_chat(usr, span_warning("This weapon is ineffective, it does no damage."))
+		to_chat(user, span_warning("This weapon is ineffective, it does no damage."))
 		for(var/mob/M in viewers(src, null))
 			if ((M.client && !( M.blinded )))
 				M.show_message(span_warning("[user] gently taps [src] with the [O]. "))

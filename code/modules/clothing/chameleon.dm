@@ -58,11 +58,15 @@
 	update_icon()
 	update_clothing_icon()
 
-/obj/item/clothing/under/chameleon/verb/change(picked in GLOB.chamelion_jumpsuit_choices)
-	set name = "Change Jumpsuit Appearance"
-	set category = "Chameleon Items"
-	set src in usr
+EXTEND_INTERACTIONS(/obj/item/clothing/under/chameleon, \
+	INTERACT_VERB("Change Jumpsuit Appearance", PROC_REF(chameleon_change_verb), REQ_IN_INVENTORY), \
+)
 
+/// Old verb "Change Jumpsuit Appearance".
+/obj/item/clothing/under/chameleon/proc/chameleon_change_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	var/picked = rerun_ask(user, "a1", PROC_REF(chameleon_change_verb), list(user), /datum/om/prompt/choice, message = "Choose an appearance.", title = "Chameleon", choices = GLOB.chamelion_jumpsuit_choices)
+	if(isnull(picked) || get(src, /mob) != user)
+		return
 	if(!ispath(GLOB.chamelion_jumpsuit_choices[picked]))
 		return
 
@@ -95,11 +99,15 @@
 	update_icon()
 	update_clothing_icon()
 
-/obj/item/clothing/head/chameleon/verb/change(picked in GLOB.chamelion_head_choices)
-	set name = "Change Hat/Helmet Appearance"
-	set category = "Chameleon Items"
-	set src in usr
+EXTEND_INTERACTIONS(/obj/item/clothing/head/chameleon, \
+	INTERACT_VERB("Change Hat/Helmet Appearance", PROC_REF(head_chameleon_change_verb), REQ_IN_INVENTORY), \
+)
 
+/// Old verb "Change Hat/Helmet Appearance".
+/obj/item/clothing/head/chameleon/proc/head_chameleon_change_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	var/picked = rerun_ask(user, "a1", PROC_REF(head_chameleon_change_verb), list(user), /datum/om/prompt/choice, message = "Choose an appearance.", title = "Chameleon", choices = GLOB.chamelion_head_choices)
+	if(isnull(picked) || get(src, /mob) != user)
+		return
 	if(!ispath(GLOB.chamelion_head_choices[picked]))
 		return
 
@@ -131,11 +139,15 @@
 	update_icon()
 	update_clothing_icon()
 
-/obj/item/clothing/suit/chameleon/verb/change(picked in GLOB.chamelion_suit_choices)
-	set name = "Change Oversuit Appearance"
-	set category = "Chameleon Items"
-	set src in usr
+EXTEND_INTERACTIONS(/obj/item/clothing/suit/chameleon, \
+	INTERACT_VERB("Change Oversuit Appearance", PROC_REF(suit_chameleon_change_verb), REQ_IN_INVENTORY), \
+)
 
+/// Old verb "Change Oversuit Appearance".
+/obj/item/clothing/suit/chameleon/proc/suit_chameleon_change_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	var/picked = rerun_ask(user, "a1", PROC_REF(suit_chameleon_change_verb), list(user), /datum/om/prompt/choice, message = "Choose an appearance.", title = "Chameleon", choices = GLOB.chamelion_suit_choices)
+	if(isnull(picked) || get(src, /mob) != user)
+		return
 	if(!ispath(GLOB.chamelion_suit_choices[picked]))
 		return
 
@@ -166,11 +178,15 @@
 	update_icon()
 	update_clothing_icon()
 
-/obj/item/clothing/shoes/chameleon/verb/change(picked in GLOB.chamelion_shoe_choices)
-	set name = "Change Footwear Appearance"
-	set category = "Chameleon Items"
-	set src in usr
+EXTEND_INTERACTIONS(/obj/item/clothing/shoes/chameleon, \
+	INTERACT_VERB("Change Footwear Appearance", PROC_REF(shoes_chameleon_change_verb), REQ_IN_INVENTORY), \
+)
 
+/// Old verb "Change Footwear Appearance".
+/obj/item/clothing/shoes/chameleon/proc/shoes_chameleon_change_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	var/picked = rerun_ask(user, "a1", PROC_REF(shoes_chameleon_change_verb), list(user), /datum/om/prompt/choice, message = "Choose an appearance.", title = "Chameleon", choices = GLOB.chamelion_shoe_choices)
+	if(isnull(picked) || get(src, /mob) != user)
+		return
 	if(!ispath(GLOB.chamelion_shoe_choices[picked]))
 		return
 
@@ -203,11 +219,15 @@
 		var/mob/M = src.loc
 		M.update_inv_back()
 
-/obj/item/storage/backpack/chameleon/verb/change(picked in GLOB.chamelion_back_choices)
-	set name = "Change Backpack Appearance"
-	set category = "Chameleon Items"
-	set src in usr
+EXTEND_INTERACTIONS(/obj/item/storage/backpack/chameleon, \
+	INTERACT_VERB("Change Backpack Appearance", PROC_REF(backpack_chameleon_change_verb), REQ_IN_INVENTORY), \
+)
 
+/// Old verb "Change Backpack Appearance".
+/obj/item/storage/backpack/chameleon/proc/backpack_chameleon_change_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	var/picked = rerun_ask(user, "a1", PROC_REF(backpack_chameleon_change_verb), list(user), /datum/om/prompt/choice, message = "Choose an appearance.", title = "Chameleon", choices = GLOB.chamelion_back_choices)
+	if(isnull(picked) || get(src, /mob) != user)
+		return
 	if(!ispath(GLOB.chamelion_back_choices[picked]))
 		return
 
@@ -254,11 +274,15 @@
 	update_icon()
 	update_clothing_icon()
 
-/obj/item/clothing/gloves/chameleon/verb/change(picked in GLOB.chamelion_glove_choices)
-	set name = "Change Gloves Appearance"
-	set category = "Chameleon Items"
-	set src in usr
+EXTEND_INTERACTIONS(/obj/item/clothing/gloves/chameleon, \
+	INTERACT_VERB("Change Gloves Appearance", PROC_REF(gloves_chameleon_change_verb), REQ_IN_INVENTORY), \
+)
 
+/// Old verb "Change Gloves Appearance".
+/obj/item/clothing/gloves/chameleon/proc/gloves_chameleon_change_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	var/picked = rerun_ask(user, "a1", PROC_REF(gloves_chameleon_change_verb), list(user), /datum/om/prompt/choice, message = "Choose an appearance.", title = "Chameleon", choices = GLOB.chamelion_glove_choices)
+	if(isnull(picked) || get(src, /mob) != user)
+		return
 	if(!ispath(GLOB.chamelion_glove_choices[picked]))
 		return
 
@@ -289,11 +313,15 @@
 	update_icon()
 	update_clothing_icon()
 
-/obj/item/clothing/mask/chameleon/verb/change(picked in GLOB.chamelion_mask_choices)
-	set name = "Change Mask Appearance"
-	set category = "Chameleon Items"
-	set src in usr
+EXTEND_INTERACTIONS(/obj/item/clothing/mask/chameleon, \
+	INTERACT_VERB("Change Mask Appearance", PROC_REF(mask_chameleon_change_verb), REQ_IN_INVENTORY), \
+)
 
+/// Old verb "Change Mask Appearance".
+/obj/item/clothing/mask/chameleon/proc/mask_chameleon_change_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	var/picked = rerun_ask(user, "a1", PROC_REF(mask_chameleon_change_verb), list(user), /datum/om/prompt/choice, message = "Choose an appearance.", title = "Chameleon", choices = GLOB.chamelion_mask_choices)
+	if(isnull(picked) || get(src, /mob) != user)
+		return
 	if(!ispath(GLOB.chamelion_mask_choices[picked]))
 		return
 
@@ -326,11 +354,15 @@
 	update_icon()
 	update_clothing_icon()
 
-/obj/item/clothing/glasses/chameleon/verb/change(picked in clothing_choices)
-	set name = "Change Glasses Appearance"
-	set category = "Chameleon Items"
-	set src in usr
+EXTEND_INTERACTIONS(/obj/item/clothing/glasses/chameleon, \
+	INTERACT_VERB("Change Glasses Appearance", PROC_REF(glasses_chameleon_change_verb), REQ_IN_INVENTORY), \
+)
 
+/// Old verb "Change Glasses Appearance".
+/obj/item/clothing/glasses/chameleon/proc/glasses_chameleon_change_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	var/picked = rerun_ask(user, "a1", PROC_REF(glasses_chameleon_change_verb), list(user), /datum/om/prompt/choice, message = "Choose an appearance.", title = "Chameleon", choices = clothing_choices)
+	if(isnull(picked) || get(src, /mob) != user)
+		return
 	if(!ispath(clothing_choices[picked]))
 		return
 
@@ -363,11 +395,15 @@
 		var/mob/M = src.loc
 		M.update_inv_belt()
 
-/obj/item/storage/belt/chameleon/verb/change(picked in GLOB.chamelion_belt_choices)
-	set name = "Change Belt Appearance"
-	set category = "Chameleon Items"
-	set src in usr
+EXTEND_INTERACTIONS(/obj/item/storage/belt/chameleon, \
+	INTERACT_VERB("Change Belt Appearance", PROC_REF(belt_chameleon_change_verb), REQ_IN_INVENTORY), \
+)
 
+/// Old verb "Change Belt Appearance".
+/obj/item/storage/belt/chameleon/proc/belt_chameleon_change_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	var/picked = rerun_ask(user, "a1", PROC_REF(belt_chameleon_change_verb), list(user), /datum/om/prompt/choice, message = "Choose an appearance.", title = "Chameleon", choices = GLOB.chamelion_belt_choices)
+	if(isnull(picked) || get(src, /mob) != user)
+		return
 	if(!ispath(GLOB.chamelion_belt_choices[picked]))
 		return
 
@@ -403,11 +439,15 @@
 	update_icon()
 	update_clothing_icon()
 
-/obj/item/clothing/accessory/chameleon/verb/change(picked in GLOB.chamelion_accessory_choices)
-	set name = "Change Accessory Appearance"
-	set category = "Chameleon Items"
-	set src in usr
+EXTEND_INTERACTIONS(/obj/item/clothing/accessory/chameleon, \
+	INTERACT_VERB("Change Accessory Appearance", PROC_REF(accessory_chameleon_change_verb), REQ_IN_INVENTORY), \
+)
 
+/// Old verb "Change Accessory Appearance".
+/obj/item/clothing/accessory/chameleon/proc/accessory_chameleon_change_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	var/picked = rerun_ask(user, "a1", PROC_REF(accessory_chameleon_change_verb), list(user), /datum/om/prompt/choice, message = "Choose an appearance.", title = "Chameleon", choices = GLOB.chamelion_accessory_choices)
+	if(isnull(picked) || get(src, /mob) != user)
+		return
 	if(!ispath(GLOB.chamelion_accessory_choices[picked]))
 		return
 
@@ -487,15 +527,22 @@
 		copy_projectile = null
 		//charge_meter = 0
 
-/obj/item/gun/energy/chameleon/verb/change(picked in GLOB.gun_choices)
-	set name = "Change Gun Appearance"
-	set category = "Chameleon Items"
-	set src in usr
+EXTEND_INTERACTIONS(/obj/item/gun/energy/chameleon, \
+	INTERACT_VERB("Change Gun Appearance", PROC_REF(energy_chameleon_change_verb), REQ_IN_INVENTORY), \
+)
 
+/// Old verb "Change Gun Appearance".
+/obj/item/gun/energy/chameleon/proc/energy_chameleon_change_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	var/picked = rerun_ask(user, "a1", PROC_REF(energy_chameleon_change_verb), list(user), /datum/om/prompt/choice, message = "Choose an appearance.", title = "Chameleon", choices = GLOB.gun_choices)
+	if(isnull(picked) || get(src, /mob) != user)
+		return
 	if(!ispath(GLOB.gun_choices[picked]))
 		return
 
 	disguise(GLOB.gun_choices[picked])
+	// Adopt the impersonated weapon's help text (was an override in examine/descriptions/weapons.dm).
+	var/obj/O = GLOB.gun_choices[picked]
+	description_info = initial(O.description_info)
 
 	//so our overlays update.
 	if (ismob(src.loc))

@@ -48,6 +48,8 @@
 
 	///Occult check. Used for do_after
 	var/occult = FALSE
+	/// Alt-click folds it into a paper plane.
+	var/plane_foldable = TRUE
 
 	var/was_maploaded = FALSE // This tracks if the paper was created on mapload.
 
@@ -68,8 +70,8 @@
 	icon_state = "greetingcard"
 	slot_flags = null //no fun allowed!!!!
 
-/obj/item/paper/card/click_alt() //No fun allowed
-	return
+/obj/item/paper/card
+	plane_foldable = FALSE //No fun allowed
 
 /obj/item/paper/card/update_icon()
 	return
@@ -109,8 +111,8 @@
 /obj/item/paper/alien/burnpaper()
 	return
 
-/obj/item/paper/alien/click_alt() // No airplanes for me.
-	return
+/obj/item/paper/alien
+	plane_foldable = FALSE // No airplanes for me.
 
 
 /obj/item/paper/Initialize(mapload, text, title)
@@ -302,32 +304,27 @@
 /obj/item/paper/proc/on_field_written(mob/living/user, field_id, obj/item/pen/writing_implement)
 	return
 
-/obj/item/paper/verb/rename()
-	set name = "Rename paper"
-	set category = "Object"
-	set src in usr
-
-	if(CLUMSY_FAIL_CHANCE(usr))
-		to_chat(usr, span_warning("You cut yourself on the paper."))
+/// Old Rename paper verb.
+/obj/item/paper/proc/paper_verb_rename(mob/user, obj/item/held, datum/interaction/interaction)
+	if(CLUMSY_FAIL_CHANCE(user))
+		to_chat(user, span_warning("You cut yourself on the paper."))
 		return
-	var/_answer_k309 = rerun_ask(usr, "k309", VERB_REF(rename), args, /datum/om/prompt/text, message = "What would you like to label the paper?", title = "Paper Labelling", max_length = MAX_NAME_LEN, encode = FALSE)
+	var/_answer_k309 = rerun_ask(user, "k309", PROC_REF(paper_verb_rename), args, /datum/om/prompt/text, message = "What would you like to label the paper?", title = "Paper Labelling", max_length = MAX_NAME_LEN, encode = FALSE)
 	if(isnull(_answer_k309))
 		return
 	var/n_name = sanitizeSafe(_answer_k309, MAX_NAME_LEN)
 
-	// We check loc one level up, so we can rename in clipboards and such. See also: /obj/item/photo/rename()
-	if((loc == usr || loc.loc && loc.loc == usr) && usr.stat == 0 && n_name)
+	// We check loc one level up, so we can rename in clipboards and such. See also: /obj/item/photo/photo_verb_rename()
+	if((loc == user || loc.loc && loc.loc == user) && user.stat == 0 && n_name)
 		name = n_name
 		if(n_name != "paper")
 			desc = "This is a paper titled '" + name + "'."
 
-		add_fingerprint(usr)
+		add_fingerprint(user)
 	return
 
-/obj/item/paper/attack_self(mob/living/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self: read it, or crumple it in combat mode.
+/obj/item/paper/proc/interaction_paper_self(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(occult)
 		return
 	if(IS_HARMING(user))
@@ -348,7 +345,8 @@
 	return
 
 // AI/cyborg viewer routes through the same TGUI paper window.
-/obj/item/paper/attack_ai(mob/living/silicon/ai/user)
+/// Old attack_ai: read the paper; close enough (via the AI's camera) to read it properly.
+/obj/item/paper/proc/paper_silicon_read(mob/living/silicon/ai/user, obj/item/held, datum/interaction/interaction)
 	var/dist
 	if(istype(user) && user.camera)
 		dist = get_dist(src, user.camera)
@@ -357,7 +355,7 @@
 	can_read_view = (dist < 2)
 	tgui_view = "read"
 	tgui_interact(user)
-	return
+	return TRUE
 
 /obj/item/paper/proc/wipe_lipstick_done(mob/living/user, mob/living/carbon/human/H)
 	user.visible_message(span_notice("[user] wipes [H]'s lipstick off with \the [src]."), \
@@ -556,7 +554,13 @@
 		return "paper" //Gross, but required for now.
 	return ..()
 
-DECLARE_INTERACTIONS(/obj/item/paper, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+DECLARE_INTERACTIONS(/obj/item/paper, \
+	INTERACT_USE("Read", PROC_REF(interaction_paper_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_ALT("Fold into a plane", PROC_REF(interaction_fold_plane)), \
+	INTERACT_SILICON("Read", PROC_REF(paper_silicon_read)), \
+	INTERACT_VERB("Rename paper", PROC_REF(paper_verb_rename), REQ_IN_INVENTORY), \
+)
 
 /// Old attackby.
 /obj/item/paper/proc/interaction_item(mob/user, obj/item/P, datum/interaction/interaction)

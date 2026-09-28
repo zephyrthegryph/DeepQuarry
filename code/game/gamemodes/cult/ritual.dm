@@ -85,18 +85,29 @@ REF_OWNED(/obj/effect/rune, "blood_image")
 	if(iscultist(user))
 		. += "This spell circle reads: <i>[word1] [word2] [word3]</i>."
 
-/obj/effect/rune/attackby(obj/I, mob/user)
-	if(istype(I, /obj/item/book/tome) && iscultist(user))
-		to_chat(user, "You retrace your steps, carefully undoing the lines of the rune.")
-		qdel(src)
-		return
-	else if(istype(I, /obj/item/nullrod))
-		to_chat(user, span_notice("You disrupt the vile magic with the deadening field of the null rod!"))
-		qdel(src)
-		return
-	return
+EXTEND_INTERACTIONS(/obj/effect/rune, \
+	INTERACT_INSERT(/obj/item/book/tome, PROC_REF(interaction_erase_rune), "Erase rune"), \
+	INTERACT_INSERT(/obj/item/nullrod, PROC_REF(interaction_nullrod_rune), "Disrupt rune"), \
+	INTERACT_HAND("Invoke", PROC_REF(interaction_invoke_rune)), \
+)
 
-/obj/effect/rune/attack_hand(mob/living/user)
+/// Old attackby: a cultist's tome undoes the rune.
+/obj/effect/rune/proc/interaction_erase_rune(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!iscultist(user))
+		return INTERACTION_HANDLED_PASS
+	to_chat(user, "You retrace your steps, carefully undoing the lines of the rune.")
+	qdel(src)
+	return INTERACTION_HANDLED_PASS
+
+/// Old attackby: a null rod disrupts the rune.
+/obj/effect/rune/proc/interaction_nullrod_rune(mob/user, obj/item/held, datum/interaction/interaction)
+	to_chat(user, span_notice("You disrupt the vile magic with the deadening field of the null rod!"))
+	qdel(src)
+	return INTERACTION_HANDLED_PASS
+
+/// Old attack_hand: speak the rune's words.
+/obj/effect/rune/proc/interaction_invoke_rune(mob/living/user, obj/item/held, datum/interaction/interaction)
+	. = TRUE
 	if(!iscultist(user))
 		to_chat(user, "You can't mouth the arcane scratchings without fumbling over them.")
 		return
@@ -310,10 +321,10 @@ REF_OWNED(/obj/effect/rune, "blood_image")
 	return ITEM_INTERACT_SUCCESS
 
 
-/obj/item/book/tome/attack_self(mob/living/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/book/tome, INTERACT_USE("Read", PROC_REF(interaction_tome)))
+
+/// Old attack_self.
+/obj/item/book/tome/proc/interaction_tome(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(!user.canmove || user.stat || user.restrained())
 		return
 	if(occult_tier > 1) //This is a low tier book. If it's a higher tier, use ITS parent call instead of  continuing.
@@ -459,10 +470,10 @@ REF_OWNED(/obj/effect/rune, "blood_image")
 	w_class = ITEMSIZE_SMALL
 	occult_tier = 2
 	var/cultistsonly = 1
-/obj/item/book/tome/imbued/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/book/tome/imbued, INTERACT_USE("Scribe a rune", PROC_REF(interaction_imbued)))
+
+/// Old attack_self: the admin tome scribes working runes at once. Its parent's self-use did nothing at this tier.
+/obj/item/book/tome/imbued/proc/interaction_imbued(mob/user, obj/item/held, datum/interaction/interaction)
 	if(src.cultistsonly && !iscultist(user))
 		return
 	if(!GLOB.cultwords["travel"])

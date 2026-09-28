@@ -252,13 +252,10 @@
 	held_type = /obj/item/pipe_painter
 	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/atmospherics/pipe/proc/not_a_tank, null))
 	consumes_input = FALSE
-	effect = /obj/machinery/atmospherics/pipe/proc/interaction_pipe_painter_noop
+	effect = /atom/proc/interaction_swallow
 
 /obj/machinery/atmospherics/pipe/proc/not_a_tank(mob/actor, atom/target, obj/item/held)
 	return !istype(target, /obj/machinery/atmospherics/pipe/tank)
-
-/obj/machinery/atmospherics/pipe/proc/interaction_pipe_painter_noop(mob/user, obj/item/held, datum/interaction/interaction)
-	return TRUE
 
 /obj/machinery/atmospherics/pipe/welder_act(mob/user, obj/item/W)
 	if(!damaged_leak)

@@ -60,10 +60,8 @@
 		return FALSE
 	return IC.attackby(I, user)
 
-/obj/item/clothing/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self: work the integrated circuit. FALSE when there is none, so self-use falls through.
+/obj/item/clothing/proc/clothing_circuit_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(special_handling)
 		return FALSE
 	if(helmet_handling)
@@ -73,6 +71,8 @@
 			IC.attack_self(user)
 		else
 			action_circuit.do_work()
+		return TRUE
+	return FALSE
 
 // Does most of the repeatative setup.
 /obj/item/clothing/proc/setup_integrated_circuit(new_type)

@@ -1,6 +1,6 @@
 
 // Clicking with an empty hand
-/mob/living/attack_hand(mob/living/L)
+/mob/living/unarmed_touch(mob/living/L)
 	..()
 	if(istype(L) && !IS_HELPING(L))
 		if(ai_brain) // Using disarm, grab, or harm intent is considered a hostile action to the mob's AI.

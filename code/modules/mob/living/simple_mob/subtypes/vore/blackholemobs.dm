@@ -695,8 +695,9 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 
 REF_OWNED(/mob/living/simple_mob/vore/blackhole_obelisk, "loopy")
 
-/mob/living/simple_mob/vore/blackhole_obelisk/attack_hand(mob/living/L)
-	..()
+/// Was attack_hand with ..() first: the obelisk's reactions follow the normal touch.
+/mob/living/simple_mob/vore/blackhole_obelisk/unarmed_touch(mob/living/L)
+	. = ..()
 
 	switch(L.use_stance())
 		if(I_HELP)

@@ -98,13 +98,11 @@
 /obj/machinery/portable_atmospherics/powered/scrubber/return_air()
 	return air_contents
 
-/obj/machinery/portable_atmospherics/powered/scrubber/attack_ghost(mob/user)
-	return src.attack_hand(user)
-
 /obj/machinery/portable_atmospherics/powered/scrubber/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/machine_hand/ungated/open_ui,
 	)
+	into += dq_interaction_from_spec(type, INTERACT_OBSERVER("View", TYPE_PROC_REF(/atom, interaction_as_touch)))
 	..()
 
 /obj/machinery/portable_atmospherics/powered/scrubber/tgui_interact(mob/user, datum/tgui/ui)
@@ -252,10 +250,7 @@
 	id = "scrubber_huge_reject_cell_tank"
 	name = "Use"
 	held_type = list(/obj/item/cell, /obj/item/tank)
-	effect = /obj/machinery/portable_atmospherics/powered/scrubber/huge/proc/interaction_reject_cell_tank
-
-/obj/machinery/portable_atmospherics/powered/scrubber/huge/proc/interaction_reject_cell_tank(mob/user, obj/item/held, datum/interaction/interaction)
-	return TRUE
+	effect = /atom/proc/interaction_swallow
 
 /obj/machinery/portable_atmospherics/powered/scrubber/huge/wrench_act(mob/user, obj/item/tool)
 	if(on)

@@ -86,8 +86,9 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/crossbow/bow, INTERACT_HAND(null, PR
 		return FALSE
 	return TRUE
 
-/obj/item/gun/launcher/crossbow/bow/attack_self(mob/living/user)
-	. = ..(user)
+/// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
+/obj/item/gun/launcher/crossbow/bow/gun_self(mob/living/user, obj/item/held, datum/interaction/interaction, callback)
+	. = ..()
 	if(.)
 		return TRUE
 	if(hardlight)
@@ -117,7 +118,9 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/crossbow/bow, INTERACT_HAND(null, PR
 	user.visible_message(span_infoplain(span_bold("[user]") + "draws the string on [src] back fully!"), span_infoplain("You draw the string on [src] back fully!"))
 	update_icon()
 
-/obj/item/gun/launcher/crossbow/bow/attackby(obj/item/W as obj, mob/user)
+/// Old attackby. It never called ..(): any item stops here, but afterattack still follows.
+/obj/item/gun/launcher/crossbow/bow/gun_item(mob/user, obj/item/W, datum/interaction/interaction)
+	. = INTERACTION_HANDLED_PASS
 	if(!bolt && istype(W,/obj/item/arrow/standard))
 		user.drop_from_inventory(W, src)
 		bolt = W
@@ -145,8 +148,9 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/crossbow/bow, INTERACT_HAND(null, PR
 	QDEL_NULL(bolt)
 	update_icon()
 
-/obj/item/gun/launcher/crossbow/bow/hardlight/attack_self(mob/user)
-	. = ..(user)
+/// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
+/obj/item/gun/launcher/crossbow/bow/hardlight/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+	. = ..()
 	if(.)
 		return TRUE
 	if(drawn)

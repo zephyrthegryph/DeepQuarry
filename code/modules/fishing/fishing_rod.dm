@@ -58,14 +58,17 @@
 	to_chat(user, span_notice("You string \the [src]!"))
 	update_icon()
 
-/obj/item/material/fishing_rod/attackby(obj/item/I as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/material/fishing_rod, INTERACT_ITEM(null, PROC_REF(fishing_rod_item)))
+
+/// Old attackby: string the rod or swap its bait; bait falls through as its ..() did.
+/obj/item/material/fishing_rod/proc/fishing_rod_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/stack/cable_coil) && !strung)
 		var/obj/item/stack/cable_coil/C = I
 		if(C.get_amount() < 5)
 			to_chat(user, span_warning("You do not have enough length in \the [C] to string this!"))
-			return
+			return INTERACTION_HANDLED_PASS
 		om_do_after(user, rand(10 SECONDS, 20 SECONDS), src, src, PROC_REF(string_done), list(user, C))
-		return
+		return INTERACTION_HANDLED_PASS
 	else if(istype(I, bait_type))
 		if(Bait)
 			Bait.forceMove(get_turf(user))
@@ -74,7 +77,7 @@
 		user.drop_from_inventory(Bait)
 		Bait.forceMove(src)
 		update_bait()
-	return ..()
+	return FALSE
 
 /obj/item/material/fishing_rod/wirecutter_act(mob/user, obj/item/tool)
 	if(!strung)

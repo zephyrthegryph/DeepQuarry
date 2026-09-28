@@ -21,13 +21,21 @@
 
 REF_OWNED(/obj/item/clothing/accessory/storage, "hold")
 
-/obj/item/clothing/accessory/storage/attack_hand(mob/user)
+EXTEND_INTERACTIONS(/obj/item/clothing/accessory/storage, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(storage_accessory_hand)), \
+	INTERACT_ITEM(null, PROC_REF(storage_accessory_item)), \
+	INTERACT_USE("Empty", PROC_REF(storage_accessory_empty_self)), \
+)
+
+/// Old attack_hand: open the storage when attached, else handle it as a storage item.
+/obj/item/clothing/accessory/storage/proc/storage_accessory_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if (has_suit())	//if we are part of a suit
 		hold.open(user)
-		return
+		return TRUE
 
 	if (hold.handle_attack_hand(user))	//otherwise interact as a regular storage item
-		..(user)
+		return FALSE
+	return TRUE
 
 /obj/item/clothing/accessory/storage/MouseDrop(obj/over_object)
 	if (has_suit())
@@ -36,13 +44,12 @@ REF_OWNED(/obj/item/clothing/accessory/storage, "hold")
 	if (hold.handle_mousedrop(usr, over_object))
 		..(over_object)
 
-/obj/item/clothing/accessory/storage/attackby(obj/item/W, mob/user)
-	return hold.attackby(W, user)
+/// Old attackby: the item goes to the internal storage.
+/obj/item/clothing/accessory/storage/proc/storage_accessory_item(mob/user, obj/item/W, datum/interaction/interaction)
+	return hold.attackby(W, user) ? TRUE : INTERACTION_HANDLED_PASS
 
-/obj/item/clothing/accessory/storage/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self: empty the storage.
+/obj/item/clothing/accessory/storage/proc/storage_accessory_empty_self(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_notice("You empty [src]."))
 	var/turf/T = get_turf(src)
 	hold.hide_from(user)

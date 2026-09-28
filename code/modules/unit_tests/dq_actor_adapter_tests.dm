@@ -50,9 +50,6 @@ GLOBAL_LIST_EMPTY(dq_actor_calls)
 	GLOB.dq_actor_calls += interaction.id
 	return TRUE
 
-/obj/dq_actor_probe/attack_tk(mob/user)
-	GLOB.dq_actor_calls += "attack_tk"
-
 // Real converted types, recording the hand's and the UI's handlers instead of running them.
 // They don't override attack_ai/attack_robot/attack_ghost, so those resolve as on the parent.
 
@@ -150,14 +147,14 @@ GLOBAL_LIST_EMPTY(dq_actor_calls)
 	telekinesis.use(H, probe)
 	TEST_ASSERT_EQUAL(jointext(GLOB.dq_actor_calls, ","), "dq_actor_handless", "telekinetic Use runs the tool-less interaction")
 
-	// Nothing answers: each falls back to its legacy handler.
+	// A probe declaring one interaction per actor kind: each actor runs its own.
 	var/obj/dq_input_probe/plain = allocate(/obj/dq_input_probe, T)
-	TEST_ASSERT_EQUAL(dq_route(R, plain, "left=1"), "attack_robot", "no interaction: the cyborg falls back to attack_robot")
-	TEST_ASSERT_EQUAL(dq_route(AI, plain, "left=1"), "attack_ai", "no interaction: the AI falls back to attack_ai")
-	TEST_ASSERT_EQUAL(dq_route(ghost, plain, "left=1"), "attack_ghost", "no interaction: the ghost falls back to attack_ghost")
+	TEST_ASSERT_EQUAL(dq_route(R, plain, "left=1"), "attack_robot", "the cyborg runs its INTERACT_ROBOT")
+	TEST_ASSERT_EQUAL(dq_route(AI, plain, "left=1"), "attack_ai", "the AI runs its INTERACT_SILICON")
+	TEST_ASSERT_EQUAL(dq_route(ghost, plain, "left=1"), "attack_ghost", "the ghost runs its INTERACT_OBSERVER")
 	plain.last_handler = null
 	telekinesis.use(H, plain)
-	TEST_ASSERT_EQUAL(plain.last_handler, "attack_tk", "no interaction: telekinesis falls back to attack_tk")
+	TEST_ASSERT_EQUAL(plain.last_handler, "attack_tk", "telekinesis runs its INTERACT_TK")
 
 // ---- Parity: the deleted forwarding overrides ----
 
@@ -209,7 +206,7 @@ GLOBAL_LIST_EMPTY(dq_actor_calls)
 	TEST_ASSERT_EQUAL(dq_actor_click(ghost, allocate(/obj/machinery/turretid/dq_actor_probe, T)), "tgui_interact", "turret control: a ghost's Use opens the UI to view")
 	TEST_ASSERT_EQUAL(dq_actor_click(ghost, allocate(/obj/machinery/button/dq_actor_probe, T)), "tgui_interact", "button (never overridden): the same, as before")
 
-/// Telekinesis reaches the same handlers as before: attack_tk, which for anchored objects is an unarmed attack.
+/// Telekinesis with no INTERACT_TK falls to the adapter default, which for anchored objects is an unarmed attack.
 /datum/unit_test/dq_actor_parity_telekinesis
 
 /datum/unit_test/dq_actor_parity_telekinesis/Run()

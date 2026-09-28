@@ -22,9 +22,10 @@
 	active_power_usage = 6
 	power_channel = ENVIRON
 
-/obj/machinery/keycard_auth/attack_ai(mob/user)
+/// Old attack_ai: refuse silicons.
+/obj/machinery/keycard_auth/proc/keycard_auth_silicon_refuse(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_warning("A firewall prevents you from interfacing with this device!"))
-	return
+	return TRUE
 
 /obj/machinery/keycard_auth/screwdriver_act(mob/user, obj/item/tool)
 	use_tool(user, tool, src, delay = 1 SECOND, volume = 50, message_self = "You begin removing the faceplate from the [src]", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
@@ -54,6 +55,11 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/keycard_auth/declare_interactions(list/into)
+	var/static/list/actor_specs = list(
+		INTERACT_SILICON("Use", PROC_REF(keycard_auth_silicon_refuse)),
+	)
+	for(var/actor_spec in actor_specs)
+		into += dq_interaction_from_spec(type, actor_spec)
 	into += list(
 		/datum/interaction/machine_item/keycard_auth_swipe,
 		/datum/interaction/machine_hand/ungated/keycard_auth_open_ui,

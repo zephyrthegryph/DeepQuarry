@@ -96,6 +96,7 @@
 //Singularity beacon
 ////////////////////////////////////////
 /obj/machinery/power/singularity_beacon
+	silicon_use = NONE // silicons can't use it
 	name = "ominous beacon"
 	desc = "This looks suspicious..."
 	icon = 'icons/obj/singularity.dmi'
@@ -131,9 +132,6 @@
 	active = 0
 	if(user)
 		to_chat(user, span_notice("You deactivate the beacon."))
-
-/obj/machinery/power/singularity_beacon/attack_ai(mob/user as mob)
-	return
 
 /obj/machinery/power/singularity_beacon/declare_interactions(list/into)
 	into += list(

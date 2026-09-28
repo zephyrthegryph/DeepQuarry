@@ -47,10 +47,7 @@
 		)
 	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
-/obj/item/storage/wallet/casino/verb/toggle_design()
-	set category = "Object"
-	set name = "Toggle design"
-	set src in usr
+/obj/item/storage/wallet/casino/proc/casino_toggle_design_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
 	if (icon_state == "casinowallet_black")
 		icon_state = "casinowallet_brown"
@@ -82,3 +79,8 @@ DECLARE_INTERACTIONS(/obj/structure/stripper_pole, INTERACT_HAND(null, PROC_REF(
 		layer = ABOVE_MOB_LAYER
 	else
 		layer = BELOW_MOB_LAYER
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/storage/wallet/casino, \
+	INTERACT_VERB("Toggle design", PROC_REF(casino_toggle_design_effect), REQ_IN_INVENTORY), \
+)

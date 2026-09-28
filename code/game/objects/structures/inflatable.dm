@@ -9,13 +9,14 @@
 	///Var used for attack_self chain
 	var/special_handling = FALSE
 
-/obj/item/inflatable/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/inflatable, INTERACT_SELF("Inflate", PROC_REF(inflatable_self)))
+
+/// Old attack_self: inflate here. Subtypes with special_handling fall through.
+/obj/item/inflatable/proc/inflatable_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(special_handling)
 		return FALSE
 	inflate(user,user.loc)
+	return TRUE
 
 /obj/item/inflatable/afterattack(atom/A, mob/user)
 	..(A, user)
@@ -39,6 +40,8 @@
 	icon_state = "wall"
 
 	max_integrity = 50
+	/// Set once a hand deflate starts (old: the Deflate verb removed itself).
+	var/deflating = FALSE
 
 /obj/structure/inflatable/Initialize(mapload)
 	. = ..()
@@ -52,6 +55,7 @@
 		/datum/interaction/entry_hand/inflatable_hand,
 		/datum/interaction/entry_item/inflatable_item,
 	)
+	into += dq_interaction_from_spec(type, INTERACT_VERB("Deflate", PROC_REF(hand_deflate_effect)))
 	..()
 
 /// Old attack_hand: just leaves a fingerprint.
@@ -79,8 +83,8 @@
 		receive_weapon_hit(W, user)
 	return TRUE
 
-/obj/structure/inflatable/click_ctrl()
-	hand_deflate()
+/obj/structure/inflatable/click_ctrl(mob/user)
+	hand_deflate_effect(user)
 
 /obj/item/inflatable/proc/inflate(mob/user,location)
 	playsound(location, 'sound/items/zip.ogg', 75, 1)
@@ -108,15 +112,14 @@
 	src.transfer_fingerprints_to(R)
 	replace_with(src, R)
 
-/obj/structure/inflatable/verb/hand_deflate()
-	set name = "Deflate"
-	set category = "Object"
-	set src in oview(1)
+/obj/structure/inflatable/proc/hand_deflate_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	if(isobserver(usr) || usr.restrained() || !usr.Adjacent(src))
+	if(isobserver(user) || user.restrained() || !user.Adjacent(src))
 		return
 
-	verbs -= /obj/structure/inflatable/verb/hand_deflate
+	if(deflating)
+		return
+	deflating = TRUE
 	deflate()
 
 /obj/structure/inflatable/attack_generic(mob/user, damage, attack_verb)
@@ -152,18 +155,21 @@
 	var/state = 0 //closed, 1 == open
 	var/isSwitchingStates = 0
 
-/obj/structure/inflatable/door/attack_ai(mob/user as mob) //those aren't machinery, they're just big fucking slabs of a mineral
+/// Old attack_ai: those aren't machinery, they're just big slabs of a mineral. Cyborgs next to it open it; the AI can't.
+/obj/structure/inflatable/door/proc/inflatable_door_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(isAI(user)) //so the AI can't open it
-		return
-	else if(isrobot(user)) //but cyborgs can
-		if(get_dist(user,src) <= 1) //not remotely though
-			return TryToSwitchState(user)
+		return TRUE
+	if(isrobot(user) && get_dist(user,src) <= 1) //but cyborgs can, not remotely though
+		TryToSwitchState(user)
+	return TRUE
 
 // The door's Use replaces (doesn't chain to) the base inflatable's fingerprint-only one.
 /obj/structure/inflatable/door/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/entry_hand/inflatable_door_hand,
 	)
+	into += dq_interaction_from_spec(type, INTERACT_SILICON("Open", PROC_REF(inflatable_door_silicon_use)))
+	into += dq_interaction_from_spec(type, INTERACT_VERB("Deflate", PROC_REF(hand_deflate_effect)))
 
 /// Old attack_hand: open/close the door.
 /datum/interaction/entry_hand/inflatable_door_hand
@@ -255,10 +261,10 @@
 	icon_state = "folded_wall_torn"
 	special_handling = TRUE
 
-/obj/item/inflatable/torn/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/inflatable/torn, INTERACT_USE("Inflate", PROC_REF(torn_inflatable_self)))
+
+/// Old attack_self.
+/obj/item/inflatable/torn/proc/torn_inflatable_self(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_notice("The inflatable wall is too torn to be inflated!"))
 	add_fingerprint(user)
 
@@ -269,10 +275,10 @@
 	icon_state = "folded_door_torn"
 	special_handling = TRUE
 
-/obj/item/inflatable/door/torn/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/inflatable/door/torn, INTERACT_USE("Inflate", PROC_REF(torn_door_inflatable_self)))
+
+/// Old attack_self.
+/obj/item/inflatable/door/torn/proc/torn_door_inflatable_self(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_notice("The inflatable door is too torn to be inflated!"))
 	add_fingerprint(user)
 

@@ -34,21 +34,21 @@
 	special_handling = TRUE
 	resistance_flags = FIRE_PROOF
 
-/obj/item/clothing/head/welding/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
-	toggle()
+EXTEND_INTERACTIONS(/obj/item/clothing/head/welding, \
+	INTERACT_USE("Flip", PROC_REF(welding_mask_flip_self)), \
+	INTERACT_VERB("Adjust welding mask", PROC_REF(head_welding_toggle_verb), REQ_IN_INVENTORY), \
+)
 
-/obj/item/clothing/head/welding/verb/toggle()
-	set category = "Object"
-	set name = "Adjust welding mask"
-	set src in usr
+/// Old attack_self.
+/obj/item/clothing/head/welding/proc/welding_mask_flip_self(mob/user, obj/item/held, datum/interaction/interaction)
+	head_welding_toggle_verb(user)
 
+/// Old verb "Adjust welding mask".
+/obj/item/clothing/head/welding/proc/head_welding_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!base_state)
 		base_state = icon_state
 
-	if(usr.canmove && !usr.stat && !usr.restrained())
+	if(user.canmove && !user.stat && !user.restrained())
 		if(src.up)
 			src.up = !src.up
 			body_parts_covered |= (EYES|FACE)
@@ -56,7 +56,7 @@
 			icon_state = base_state
 			flash_protection = FLASH_PROTECTION_MAJOR
 			tint = initial(tint)
-			to_chat(usr, "You flip the [src] down to protect your eyes.")
+			to_chat(user, "You flip the [src] down to protect your eyes.")
 		else
 			src.up = !src.up
 			body_parts_covered &= ~(EYES|FACE)
@@ -64,12 +64,12 @@
 			icon_state = "[base_state]up"
 			flash_protection = FLASH_PROTECTION_NONE
 			tint = TINT_NONE
-			to_chat(usr, "You push the [src] up out of your face.")
+			to_chat(user, "You push the [src] up out of your face.")
 		update_clothing_icon()	//so our mob-overlays
 		if (ismob(src.loc)) //should allow masks to update when it is opened/closed
 			var/mob/M = src.loc
 			M.update_inv_wear_mask()
-		usr.update_mob_action_buttons()
+		user.update_mob_action_buttons()
 
 /obj/item/clothing/head/welding/demon
 	name = "demonic welding helmet"
@@ -143,10 +143,10 @@
 	if (istype(location, /turf))
 		location.hotspot_expose(700, 1)
 
-/obj/item/clothing/head/cakehat/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/head/cakehat, INTERACT_USE("Light", PROC_REF(cakehat_light_self)))
+
+/// Old attack_self.
+/obj/item/clothing/head/cakehat/proc/cakehat_light_self(mob/user, obj/item/held, datum/interaction/interaction)
 	onfire = !(onfire)
 	if (onfire)
 		force = 3
@@ -169,10 +169,10 @@
 	flags_inv = HIDEEARS
 	special_handling = TRUE
 
-/obj/item/clothing/head/ushanka/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/head/ushanka, INTERACT_USE("Toggle ear flaps", PROC_REF(ushanka_flaps_self)))
+
+/// Old attack_self.
+/obj/item/clothing/head/ushanka/proc/ushanka_flaps_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(src.icon_state == initial(icon_state))
 		src.icon_state = "[icon_state]up"
 		to_chat(user, "You raise the ear flaps on the ushanka.")

@@ -260,7 +260,7 @@ REF_OWNED(/datum/protean_power, "button")
 /// A protean power's pick. Re-checked on the answer: the power can still be used.
 /datum/om/prompt/choice/protean_power
 	var/datum/protean_power/power
-	var/datum/component/forms/protean/form
+	var/datum/forms/protean/form
 	/// The limb the pick is about, for the limb refactor.
 	var/limb
 
@@ -269,7 +269,7 @@ REF_OWNED(/datum/protean_power, "button")
 
 /datum/om/prompt/confirm/protean_power
 	var/datum/protean_power/power
-	var/datum/component/forms/protean/form
+	var/datum/forms/protean/form
 	var/limb
 
 /datum/om/prompt/confirm/protean_power/valid()

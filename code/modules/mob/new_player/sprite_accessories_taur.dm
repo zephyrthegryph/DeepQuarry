@@ -85,6 +85,7 @@
 
 //Human overrides for taur riding
 /mob/living/carbon/human
+	drag_buckle = FALSE
 	max_buckled_mobs = 1 //Yeehaw
 	can_buckle = TRUE
 	buckle_movable = TRUE
@@ -122,9 +123,6 @@
 		riding_datum.rider_size = M.size_multiplier
 		src?.buckled_mob_list()[M] = "riding"
 
-/mob/living/carbon/human/MouseDrop_T(mob/living/M, mob/living/user) //Prevention for forced relocation caused by can_buckle. Base proc has no other use.
-	return
-
 /mob/living/carbon/human/proc/taur_mount(mob/living/M in living_mobs(1))
 	set name = "Taur Mount/Dismount"
 	set category = "Abilities.General"
@@ -142,7 +140,7 @@
 	if(buckle_mob(M))
 		visible_message(span_notice("[M] starts riding [name]!"))
 
-/mob/living/carbon/human/attack_hand(mob/user as mob)
+/mob/living/carbon/human/unarmed_touch(mob/user as mob)
 	if(LAZYLEN(src?.buckled_mob_list()) && riding_datum)
 		//We're getting off!
 		if(user in src?.buckled_mob_list())

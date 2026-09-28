@@ -62,7 +62,7 @@
 	name = "Use"
 	requires = list(REQ_INTERACTION_REACH,
 		REQ_ON(PRED_TARGET, /obj/machinery/computer/telecomms/monitor/proc/telemonitor_powered, "it isn't working"))
-	effect = /obj/machinery/proc/interaction_open_ui
+	effect = /atom/proc/interaction_open_ui
 
 /obj/machinery/computer/telecomms/monitor/proc/telemonitor_powered(mob/actor, atom/target, obj/item/held)
 	return !(stat & (BROKEN|NOPOWER))

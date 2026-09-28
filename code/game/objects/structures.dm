@@ -11,6 +11,8 @@
 	var/list/other_connections
 	var/list/blend_objects = null // Objects which to blend with // default null
 	var/list/noblend_objects = null // Objects to avoid blending with (such as children of listed blend objects. // default null
+	// Structures shrug off a plain telekinetic grab or poke; ones that react declare an INTERACT_TK.
+	tk_reach = FALSE
 
 // ALLOW(lifecycle): the base structure: leaves its parts behind.
 /obj/structure/Destroy()
@@ -30,9 +32,6 @@
 				attack_generic(user, shreddamage, "attacks")
 	om_emit(src, new /datum/om/event/climb_shake(user))
 	return ..()
-
-/obj/structure/attack_tk()
-	return
 
 // Default destruction for integrity-using structures: drop any parts (via Destroy) and delete.
 // Subtypes that shatter into shards / drop rods override this and call ..() or qdel themselves.

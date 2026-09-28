@@ -58,6 +58,7 @@ DECLARE_INTERACTIONS(/obj/structure/casino_table, INTERACT_ITEM("Place", PROC_RE
 EXTEND_INTERACTIONS(/obj/structure/casino_table/roulette_table, \
 	INTERACT_HAND_UNGATED("Spin", PROC_REF(interaction_hand)), \
 	INTERACT_INSERT(/obj/item/roulette_ball, PROC_REF(interaction_insert_ball), null), \
+	INTERACT_VERB("Remove Roulette Ball", PROC_REF(roulette_table_remove_ball_effect)), \
 )
 
 /// Old attack_hand.
@@ -103,29 +104,26 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/roulette_table, \
 	to_chat(user, span_notice("You insert [W] into [src]."))
 	return INTERACTION_HANDLED_PASS
 
-/obj/structure/casino_table/roulette_table/verb/remove_ball()
-	set name = "Remove Roulette Ball"
-	set category = "Object"
-	set src in oview(1)
+/obj/structure/casino_table/roulette_table/proc/roulette_table_remove_ball_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	if(!usr || !isturf(usr.loc))
+	if(!user || !isturf(user.loc))
 		return
-	if(usr.stat || usr.restrained())
+	if(user.stat || user.restrained())
 		return
-	if(HAS_TRAIT(usr, TRAIT_AMBIENT_PEST_MOB) || (isobserver(usr)))
+	if(HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user)))
 		return
 
 	if(om_busy(src))
-		to_chat(usr, span_warning("You cannot remove \the [ball] while [src] is spinning!"))
+		to_chat(user, span_warning("You cannot remove \the [ball] while [src] is spinning!"))
 		return
 
 	if(ball)
-		usr.put_in_hands(ball)
-		to_chat(usr, span_notice("You remove \the [ball] from [src]."))
+		user.put_in_hands(ball)
+		to_chat(user, span_notice("You remove \the [ball] from [src]."))
 		ball = null
 		return
 	else
-		to_chat(usr, span_notice("There is no ball in [src]!"))
+		to_chat(user, span_notice("There is no ball in [src]!"))
 		return
 
 /obj/structure/casino_table/roulette_table/long

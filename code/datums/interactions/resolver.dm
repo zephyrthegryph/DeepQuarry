@@ -175,8 +175,8 @@
 		return INTERACTION_TRY_MENU
 	if(length(best) == 1)
 		var/datum/interaction/interaction = best[1]
-		interaction.perform(actor, target, held)
-		return INTERACTION_TRY_RAN
+		// An effect that declined (returned FALSE) leaves the input to the actor's default.
+		return interaction.attempt(actor, target, held)
 	if(quality)
 		var/datum/interaction/meant = resolution.intended_blocked(action, quality)
 		if(meant)
@@ -416,3 +416,9 @@ GLOBAL_LIST_EMPTY(interaction_entry_click_params)
 	if(GLOB.interaction_entry_actors[actor])
 		return TRUE
 	return actor.get_active_hand() == target || actor.get_inactive_hand() == target
+
+/// Requirement clause REQ_IN_INVENTORY: the target is somewhere on the actor.
+/proc/dq_interaction_in_inventory(mob/actor, atom/target, obj/item/held)
+	if(!actor || !target)
+		return FALSE
+	return get(target, /mob) == actor

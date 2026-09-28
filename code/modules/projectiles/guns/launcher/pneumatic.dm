@@ -35,16 +35,14 @@
 	item_storage.max_storage_space = max_storage_space
 	item_storage.use_sound = null
 
-/obj/item/gun/launcher/pneumatic/verb/set_pressure() //set amount of tank pressure.
-	set name = "Set Valve Pressure"
-	set category = "Object"
-	set src in range(0)
-	var/N = rerun_ask(usr, "k42", VERB_REF(set_pressure), args, /datum/om/prompt/choice, message = "Percentage of tank used per shot:", title = "[src]", choices = possible_pressure_amounts)
+/// Old Set Valve Pressure verb.
+/obj/item/gun/launcher/pneumatic/proc/pneumatic_verb_set_pressure(mob/user, obj/item/held, datum/interaction/interaction)
+	var/N = rerun_ask(user, "k42", PROC_REF(pneumatic_verb_set_pressure), args, /datum/om/prompt/choice, message = "Percentage of tank used per shot:", title = "[src]", choices = possible_pressure_amounts)
 	if(isnull(N))
 		return
 	if (N)
 		pressure_setting = N
-		to_chat(usr, "You dial the pressure valve to [pressure_setting]%.")
+		to_chat(user, "You dial the pressure valve to [pressure_setting]%.")
 
 /obj/item/gun/launcher/pneumatic/proc/eject_tank(mob/user) //Remove the tank.
 	if(!tank())
@@ -66,7 +64,10 @@
 	else
 		to_chat(user, "There is nothing to remove in \the [src].")
 
-DECLARE_INTERACTIONS(/obj/item/gun/launcher/pneumatic, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+DECLARE_INTERACTIONS(/obj/item/gun/launcher/pneumatic, \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_VERB("Set Valve Pressure", PROC_REF(pneumatic_verb_set_pressure), REQ_IN_INVENTORY), \
+)
 
 /// Old attack_hand.
 /obj/item/gun/launcher/pneumatic/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
@@ -76,7 +77,9 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/pneumatic, INTERACT_HAND(null, PROC_
 		return FALSE
 	return TRUE
 
-/obj/item/gun/launcher/pneumatic/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby. It never called ..(): any item stops here, but afterattack still follows.
+/obj/item/gun/launcher/pneumatic/gun_item(mob/user, obj/item/W, datum/interaction/interaction)
+	. = INTERACTION_HANDLED_PASS
 	if(!tank() && istype(W,/obj/item/tank))
 		user.drop_from_inventory(W, src)
 		tank_handle = om_handle(W)
@@ -85,8 +88,9 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/pneumatic, INTERACT_HAND(null, PROC_
 	else if(istype(W))
 		item_storage.try_insert(W, user)
 
-/obj/item/gun/launcher/pneumatic/attack_self(mob/user)
-	. = ..(user)
+/// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
+/obj/item/gun/launcher/pneumatic/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+	. = ..()
 	if(.)
 		return TRUE
 	eject_tank(user)

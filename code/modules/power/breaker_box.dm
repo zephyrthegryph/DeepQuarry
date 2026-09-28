@@ -53,17 +53,19 @@
 	else
 		. += span_warning("It seems to be offline.")
 
-/obj/machinery/power/breakerbox/attack_ai(mob/user)
+/// Old attack_ai: toggle the breaker remotely.
+/obj/machinery/power/breakerbox/proc/breakerbox_silicon_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	if(update_locked)
 		to_chat(user, span_red("System locked. Please try again later."))
-		return
+		return TRUE
 
 	if(om_busy(src))
 		to_chat(user, span_red("System is busy. Please wait until current operation is finished before changing power settings."))
-		return
+		return TRUE
 
 	to_chat(user, span_green("Updating power settings..."))
 	om_do_after(user, 5 SECONDS, src, src, PROC_REF(toggle_done), list(user, FALSE), claims = TRUE)
+	return TRUE
 
 /obj/machinery/power/breakerbox/proc/unlock_updates()
 	update_locked = 0
@@ -80,6 +82,11 @@
 	om_after(src, 60 SECONDS, PROC_REF(unlock_updates))
 
 /obj/machinery/power/breakerbox/declare_interactions(list/into)
+	var/static/list/actor_specs = list(
+		INTERACT_SILICON("Toggle", PROC_REF(breakerbox_silicon_toggle)),
+	)
+	for(var/actor_spec in actor_specs)
+		into += dq_interaction_from_spec(type, actor_spec)
 	into += list(
 		/datum/interaction/machine_hand/ungated/breakerbox_toggle,
 		/datum/interaction/machine_item/breakerbox_use,

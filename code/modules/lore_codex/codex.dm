@@ -20,10 +20,10 @@
 		codex_tree_keys["[root_type]"] = tree
 	. = ..()
 
-/obj/item/book/codex/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/book/codex, INTERACT_USE("Read", PROC_REF(interaction_read_codex)))
+
+/// Old attack_self.
+/obj/item/book/codex/proc/interaction_read_codex(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!tree)
 		tree = codex_tree_keys["[root_type]"]
 		if(!tree)

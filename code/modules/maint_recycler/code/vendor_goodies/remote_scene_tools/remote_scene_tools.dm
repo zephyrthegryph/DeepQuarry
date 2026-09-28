@@ -187,22 +187,23 @@ why aren't these accessories?
 			return loc.loc
 	return null
 
-/obj/item/remote_scene_tool/verb/summon_counterpart()
-	set name = "Summon Counterpart"
-	set desc = "Forcibly moves the linked object over to you - or, if it doesn't exist, spawn a new one."
+EXTEND_INTERACTIONS(/obj/item/remote_scene_tool, INTERACT_VERB("Summon Counterpart", PROC_REF(remote_scene_tool_verb_summon), REQ_IN_INVENTORY))
+
+/// Old Summon Counterpart verb: Forcibly moves the linked object over to you - or, if it doesn't exist, spawn a new one.
+/obj/item/remote_scene_tool/proc/remote_scene_tool_verb_summon(mob/user, obj/item/held, datum/interaction/interaction)
 	if(can_summon || (linked() == null && can_replace))
 		if(linked() == null)
 			create_counterpart()
-			to_chat(usr,span_notice("\The [src] forms a new [linked()]!"))
+			to_chat(user,span_notice("\The [src] forms a new [linked()]!"))
 		else
 			var/mob/counterpart = linked().getWearer()
 			if(counterpart)
 				counterpart.remove_from_mob(linked(),get_turf(src))
 			else
 				linked().forceMove(get_turf(src))
-			to_chat(usr,span_notice("\The [linked()] materializes in front of you!"))
+			to_chat(user,span_notice("\The [linked()] materializes in front of you!"))
 	else
-		to_chat(usr,span_notice("Nothing seems to happen!"))
+		to_chat(user,span_notice("Nothing seems to happen!"))
 
 /obj/item/remote_scene_tool/proc/create_counterpart()
 	var/obj/item/remote_scene_tool/newrst = new replacementType(get_turf(src))

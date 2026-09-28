@@ -6,10 +6,11 @@
 	item_state = "table_parts"
 	w_class = ITEMSIZE_HUGE
 
-/obj/item/contraband/package/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+// The package's own unwrap replaces the parent's: the old override ran both and handed out two items.
+DECLARE_INTERACTIONS(/obj/item/contraband/package, INTERACT_USE("Unwrap", PROC_REF(interaction_unwrap_package)))
+
+/// Old attack_self.
+/obj/item/contraband/package/proc/interaction_unwrap_package(mob/user, obj/item/held, datum/interaction/interaction)
 	var/contraband = pick(
 		/obj/item/reagent_containers/glass/beaker/vial/macrocillin,
 		/obj/item/reagent_containers/glass/beaker/vial/microcillin,

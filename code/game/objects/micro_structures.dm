@@ -98,12 +98,14 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 	tunnel_interact(user)
 	return ..()
 
-/obj/structure/micro_tunnel/attack_robot(mob/living/user)
+/// Old attack_robot: only a cyborg next to the hole uses it (then its default, as the old ..()).
+/obj/structure/micro_tunnel/proc/micro_tunnel_robot_use(mob/living/user, obj/item/held, datum/interaction/interaction)
 	var/turf/hole = get_turf(src)	//Borgs can click stuff from far away, let's make sure they're next to the hole
 	var/turf/borg = get_turf(user)
 	if(hole.AdjacentQuick(borg))
 		tunnel_interact(user)
-		return ..()
+		return FALSE
+	return TRUE
 
 /obj/structure/micro_tunnel/proc/tunnel_interact(mob/living/user)
 	if(!isliving(user))
@@ -270,6 +272,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 DECLARE_INTERACTIONS(/obj/structure/micro_tunnel, \
 	INTERACT_DRAG(null, PROC_REF(interaction_drag)), \
 	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_ROBOT("Use", PROC_REF(micro_tunnel_robot_use)), \
 )
 
 /// Old MouseDrop_T.

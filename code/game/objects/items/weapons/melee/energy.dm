@@ -108,16 +108,14 @@
 	if(colorable)
 		. += span_notice("Alt-click to recolor it.")
 
-/obj/item/melee/energy/attack_self(mob/living/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self. FALSE (special handling) moves on to the next self-use.
+/obj/item/melee/energy/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(special_handling)
 		return FALSE
 	if(use_cell)
 		if((!bcell || bcell.charge < hitcost) && !active)
 			to_chat(user, span_notice("\The [src] does not seem to have power."))
-			return
+			return TRUE
 
 	if (active)
 		if (CLUMSY_HARM_CHANCE(user))
@@ -135,7 +133,7 @@
 		H.update_inv_r_hand()
 
 	add_fingerprint(user)
-	return
+	return TRUE
 
 /obj/item/melee/energy/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(active && use_cell)
@@ -146,6 +144,7 @@
 	return ..()
 
 DECLARE_INTERACTIONS(/obj/item/melee/energy, \
+	INTERACT_SELF("Toggle", PROC_REF(interaction_self)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
 )
@@ -469,10 +468,10 @@ DECLARE_INTERACTIONS(/obj/item/melee/energy, \
 	om_after(src, 0, PROC_REF(check_held))
 	set_light(lrange, lpower, lcolor)
 
-/obj/item/melee/energy/blade/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/melee/energy/blade, INTERACT_USE("Dismiss", PROC_REF(blade_interaction_self)))
+
+/// Old attack_self (the parent's self-use does nothing for a blade: special handling).
+/obj/item/melee/energy/blade/proc/blade_interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	user.drop_from_inventory(src)
 	expire(1)
 

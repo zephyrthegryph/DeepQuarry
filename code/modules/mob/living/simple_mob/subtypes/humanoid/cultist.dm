@@ -212,6 +212,7 @@
 	value = CATALOGUER_REWARD_EASY
 
 /mob/living/simple_mob/humanoid/cultist/tesh
+	drag_buckle = FALSE
 	name = "cultist"
 	desc = "A sinister looking hooded Teshari armed with a curved knife."
 	icon_state = "culttesh"
@@ -405,6 +406,7 @@
 	value = CATALOGUER_REWARD_MEDIUM
 
 /mob/living/simple_mob/humanoid/cultist/castertesh
+	drag_buckle = FALSE
 	name = "Teshari Mage"
 	desc = "This Teshari seems to have forsoken weapons for unfanthomable power."
 	icon_state = "castertesh"
@@ -473,7 +475,11 @@
 	attack_sound = 'sound/weapons/bladeslice.ogg'
 
 
-/mob/living/simple_mob/humanoid/cultist/elite/attackby(obj/item/O as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/cultist/elite, INTERACT_ITEM(null, PROC_REF(cultist_elite_interaction_item)))
+
+/// Old attackby: shield block.
+/mob/living/simple_mob/humanoid/cultist/elite/proc/cultist_elite_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+	. = TRUE
 	if(O.force)
 		if(prob(30))
 			visible_message(span_danger("\The [src] blocks \the [O] with its shield!"))
@@ -481,7 +487,7 @@
 				ai_brain.react_to_attack(user)
 			return
 		else
-			..()
+			return FALSE
 	else
 		to_chat(user, span_warning("This weapon is ineffective, it does no damage."))
 		visible_message(span_warning("\The [user] gently taps [src] with \the [O]."))
@@ -698,6 +704,7 @@
 	projectiletype = /obj/item/projectile/energy/fireball
 
 /mob/living/simple_mob/humanoid/cultist/noodle
+	drag_buckle = FALSE
 	name = "Converted"
 	desc = "An indiuval wrapped up in a makeshift rig, made from fallen cultist."
 	icon_state = "cobra-cultist"
@@ -739,6 +746,7 @@
 
 //Nibbler//
 /mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball
+	drag_buckle = FALSE
 	vore_active = 1
 	vore_capacity = 6
 	vore_max_size = RESIZE_HUGE
@@ -755,9 +763,6 @@
 	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
 	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
-
-/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball/MouseDrop_T(mob/living/M, mob/living/user)
-	return
 
 /mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball/load_default_bellies()
 	. = ..()
@@ -795,9 +800,6 @@
 	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
 	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
-
-/mob/living/simple_mob/humanoid/cultist/noodle/MouseDrop_T(mob/living/M, mob/living/user)
-	return
 
 /mob/living/simple_mob/humanoid/cultist/noodle/load_default_bellies()
 	. = ..()
@@ -837,9 +839,6 @@
 	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
 
-/mob/living/simple_mob/humanoid/cultist/tesh/MouseDrop_T(mob/living/M, mob/living/user)
-	return
-
 /mob/living/simple_mob/humanoid/cultist/tesh/load_default_bellies()
 	. = ..()
 	var/obj/belly/B = vore_selected
@@ -876,9 +875,6 @@
 	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
 	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
-
-/mob/living/simple_mob/humanoid/cultist/castertesh/MouseDrop_T(mob/living/M, mob/living/user)
-	return
 
 /mob/living/simple_mob/humanoid/cultist/castertesh/load_default_bellies()
 	. = ..()

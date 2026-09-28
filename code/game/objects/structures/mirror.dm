@@ -28,27 +28,30 @@ REF_OWNED(/obj/structure/mirror, "M")
 		/datum/interaction/entry_hand/mirror_open_ui,
 		/datum/interaction/entry_item/mirror_item,
 	)
+	into += dq_interaction_from_spec(type, INTERACT_SILICON("Use", PROC_REF(mirror_silicon_use)))
 	..()
 
 /// Old attack_hand: open the appearance changer.
 /datum/interaction/entry_hand/mirror_open_ui
 	id = "mirror_open_ui"
 	name = "Use"
-	effect = /obj/structure/mirror/proc/interaction_open_ui
+	effect = /obj/structure/mirror/proc/mirror_open_ui
 
-/obj/structure/mirror/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/mirror/proc/mirror_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!glass) return TRUE
 	if(shattered)	return TRUE
 
 	M.tgui_interact(user)
 	return TRUE
 
-/obj/structure/mirror/attack_ai(mob/user)
-	if(!glass) return
-	if(shattered)	return
-	if(!Adjacent(user)) return
+/// Old attack_ai: a silicon next to it opens the appearance changer.
+/obj/structure/mirror/proc/mirror_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!glass) return TRUE
+	if(shattered)	return TRUE
+	if(!Adjacent(user)) return TRUE
 
 	M.tgui_interact(user)
+	return TRUE
 
 /obj/structure/mirror/proc/shatter()
 	if(!glass) return
@@ -147,8 +150,8 @@ REF_OWNED(/obj/structure/mirror, "M")
 	icon_state = "mirror_broke"
 	shattered = 1
 
-/// Overrides mirror's interaction_open_ui(): raiders may become Vox here, then the mirror opens as usual.
-/obj/structure/mirror/raider/interaction_open_ui(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
+/// Overrides mirror's mirror_open_ui(): raiders may become Vox here, then the mirror opens as usual.
+/obj/structure/mirror/raider/mirror_open_ui(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
 	if(istype(get_area(src),/area/syndicate_mothership))
 		if(istype(user) && user.mind && user.mind.special_role == "Raider" && user.species.name != SPECIES_VOX && is_alien_whitelisted(user.client, SPECIES_VOX))
 			om_ask(user, /datum/om/prompt/confirm, PROC_REF(become_vox_answered), title = "Become Vox?", message = "Do you wish to become a true Vox of the Shoal? This is not reversible.", no_first = TRUE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)

@@ -8,9 +8,8 @@
 	thermal_conductivity = 0
 	flags = TURF_ACID_IMMUNE
 
-/turf/simulated/floor/holofloor/attackby(obj/item/W as obj, mob/user as mob)
-	return
-	// HOLOFLOOR DOES NOT GIVE A FUCK
+// Old attackby: the holofloor ignores items.
+EXTEND_INTERACTIONS(/turf/simulated/floor/holofloor, INTERACT_ITEM("Nothing", TYPE_PROC_REF(/atom, interaction_pass)))
 
 /turf/simulated/floor/holofloor/set_flooring()
 	return
@@ -468,11 +467,17 @@ DECLARE_INTERACTIONS(/obj/structure/holohoop, INTERACT_ITEM(null, PROC_REF(inter
 	active_power_usage = 6
 	power_channel = ENVIRON
 
-/obj/machinery/readybutton/attack_ai(mob/user)
+/// Old attack_ai: refuse silicons.
+/obj/machinery/readybutton/proc/readybutton_silicon_refuse(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, "The station AI is not to interact with these devices!")
-	return
+	return TRUE
 
 /obj/machinery/readybutton/declare_interactions(list/into)
+	var/static/list/actor_specs = list(
+		INTERACT_SILICON("Use", PROC_REF(readybutton_silicon_refuse)),
+	)
+	for(var/actor_spec in actor_specs)
+		into += dq_interaction_from_spec(type, actor_spec)
 	into += list(
 		/datum/interaction/machine_item/readybutton_touch,
 		/datum/interaction/machine_hand/ungated/readybutton_press,

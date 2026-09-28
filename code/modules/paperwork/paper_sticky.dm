@@ -128,9 +128,12 @@ DECLARE_INTERACTIONS(/obj/item/sticky_pad, \
 		icon_state = info ? "paper_words" : "paper"
 
 // Copied from duct tape.
-/// Old attack_hand: runs after the touch tried to pick it up (hand_pickup()).
-/obj/item/paper/sticky/hand_pickup(mob/user)
-	. = ..()
+EXTEND_INTERACTIONS(/obj/item/paper/sticky, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(sticky_pick_up)))
+
+/// Picking a note up off a wall ends its persistence.
+/obj/item/paper/sticky/proc/sticky_pick_up(mob/user, obj/item/held, datum/interaction/interaction)
+	. = TRUE
+	interaction_pick_up(user, held, interaction)
 	if(!istype(loc, /turf))
 		reset_persistence_tracking()
 

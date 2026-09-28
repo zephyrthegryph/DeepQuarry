@@ -209,14 +209,13 @@
 	one_handed_penalty = 70
 	fire_sound = "sound/weapons/serdy/sks.ogg"
 
-/obj/item/gun/projectile/automatic/serdy/hunter/ui_action_click()
-	scope()
+/obj/item/gun/projectile/automatic/serdy/hunter/ui_action_click(mob/user, actiontype)
+	serdy_hunter_verb_scope(user)
 
-/obj/item/gun/projectile/automatic/serdy/hunter/verb/scope()
-	set category = "Object"
-	set name = "Use Scope"
-	set popup_menu = 1
+EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hunter, INTERACT_VERB("Use Scope", PROC_REF(serdy_hunter_verb_scope), REQ_IN_INVENTORY))
 
+/// Old Use Scope verb.
+/obj/item/gun/projectile/automatic/serdy/hunter/proc/serdy_hunter_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
 	toggle_scope(2.0)
 
 // AR Variants
@@ -454,14 +453,13 @@
 	scoped_accuracy = 50
 	one_handed_penalty = 70
 
-/obj/item/gun/projectile/automatic/serdy/mosin/scoped/ui_action_click()
-	scope()
+/obj/item/gun/projectile/automatic/serdy/mosin/scoped/ui_action_click(mob/user, actiontype)
+	serdy_mosin_verb_scope(user)
 
-/obj/item/gun/projectile/automatic/serdy/mosin/scoped/verb/scope()
-	set category = "Object"
-	set name = "Use Scope"
-	set popup_menu = 1
+EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/mosin/scoped, INTERACT_VERB("Use Scope", PROC_REF(serdy_mosin_verb_scope), REQ_IN_INVENTORY))
 
+/// Old Use Scope verb.
+/obj/item/gun/projectile/automatic/serdy/mosin/scoped/proc/serdy_mosin_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
 	toggle_scope(2.0)
 
 /obj/item/gun/projectile/automatic/serdy/type901
@@ -521,14 +519,13 @@
 	sound_chamber = 'sound/weapons/ballistics/boltactionclose.ogg'
 	fire_sound = "sound/weapons/serdy/sks.ogg"
 
-/obj/item/gun/projectile/automatic/serdy/awp/ui_action_click()
-	scope()
+/obj/item/gun/projectile/automatic/serdy/awp/ui_action_click(mob/user, actiontype)
+	serdy_awp_verb_scope(user)
 
-/obj/item/gun/projectile/automatic/serdy/awp/verb/scope()
-	set category = "Object"
-	set name = "Use Scope"
-	set popup_menu = 1
+EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/awp, INTERACT_VERB("Use Scope", PROC_REF(serdy_awp_verb_scope), REQ_IN_INVENTORY))
 
+/// Old Use Scope verb.
+/obj/item/gun/projectile/automatic/serdy/awp/proc/serdy_awp_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
 	toggle_scope(2.0)
 
 /obj/item/gun/projectile/automatic/serdy/hectate
@@ -558,14 +555,13 @@
 	fire_sound = "sound/weapons/serdy/sks.ogg"
 
 
-/obj/item/gun/projectile/automatic/serdy/hectate/ui_action_click()
-	scope()
+/obj/item/gun/projectile/automatic/serdy/hectate/ui_action_click(mob/user, actiontype)
+	serdy_hectate_verb_scope(user)
 
-/obj/item/gun/projectile/automatic/serdy/hectate/verb/scope()
-	set category = "Object"
-	set name = "Use Scope"
-	set popup_menu = 1
+EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hectate, INTERACT_VERB("Use Scope", PROC_REF(serdy_hectate_verb_scope), REQ_IN_INVENTORY))
 
+/// Old Use Scope verb.
+/obj/item/gun/projectile/automatic/serdy/hectate/proc/serdy_hectate_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
 	toggle_scope(2.0)
 
 /obj/item/gun/projectile/automatic/serdy/memegun
@@ -1452,8 +1448,10 @@
 	if(sawn_off)
 		P.submunition_spread_max = 100 //More spread when sawn off
 
-/obj/item/gun/projectile/shotgun/doublebarrel/attackby(obj/item/A as obj, mob/user as mob)
+/// Old attackby (this file's; its ..() is shotgun.dm's definition, included earlier).
+/obj/item/gun/projectile/shotgun/doublebarrel/gun_item(mob/user, obj/item/A, datum/interaction/interaction)
 	if(istype(A, /obj/item/surgical/circular_saw) || istype(A, /obj/item/melee/energy) || istype(A, /obj/item/pickaxe/plasmacutter))
+		. = INTERACTION_HANDLED_PASS
 		if(sawn_off) //Don't do anything if we were already sawed off.
 			return
 		to_chat(user, span_notice("You begin to shorten the barrel of \the [src]."))
@@ -1466,7 +1464,7 @@
 			return
 		om_do_after(user, 3 SECONDS, src, src, PROC_REF(sawed_off), list(user))	//SHIT IS STEALTHY EYYYYY
 	else
-		..()
+		return ..()
 
 /obj/item/gun/projectile/shotgun/doublebarrel/proc/sawed_off(mob/user)
 	icon_state = "sawnshotgun"

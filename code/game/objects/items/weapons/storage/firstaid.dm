@@ -137,11 +137,14 @@
 		I.color = wrapper_color
 		add_overlay(I)
 
-/obj/item/storage/pill_bottle/attackby(obj/item/W as obj, mob/user as mob)
-	if(istype(W, /obj/item/pen) || istype(W, /obj/item/flashlight/pen))
-		om_ask(user, /datum/om/prompt/text, PROC_REF(label_entered), title = "Label", message = "Enter a label for [name]", default = label_text, max_length = MAX_NAME_LEN, encode = FALSE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
-	else
-		..()
+EXTEND_INTERACTIONS(/obj/item/storage/pill_bottle, INTERACT_ITEM("Label", PROC_REF(interaction_label)))
+
+/// Old attackby: a pen labels the bottle; anything else goes on to the storage's insertion.
+/obj/item/storage/pill_bottle/proc/interaction_label(mob/user, obj/item/W, datum/interaction/interaction)
+	if(!istype(W, /obj/item/pen) && !istype(W, /obj/item/flashlight/pen))
+		return FALSE
+	om_ask(user, /datum/om/prompt/Label, | ASK_CAPABLE, title = "Label", message = "Enter a label for [name]", default = label_Label, max_length = MAX_NAME_LEN, encode = FALSE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/storage/pill_bottle/proc/label_entered(datum/om/prompt/text/ask)
 	var/mob/user = ask.answerer

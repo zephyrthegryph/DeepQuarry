@@ -27,6 +27,7 @@
 		/datum/interaction/entry_item/extinguisher_cabinet_item,
 		/datum/interaction/entry_hand/extinguisher_cabinet_hand,
 	)
+	into += dq_interaction_from_spec(type, INTERACT_TK(null, PROC_REF(interaction_tk)))
 	..()
 
 /// Old attackby: store the extinguisher, or just toggle the cabinet open.
@@ -94,7 +95,8 @@
 	update_icon()
 	return TRUE
 
-/obj/structure/extinguisher_cabinet/attack_tk(mob/user)
+/// Old attack_tk: pull the extinguisher out at range, or toggle the cabinet.
+/obj/structure/extinguisher_cabinet/proc/interaction_tk(mob/user, obj/item/held, datum/interaction/interaction)
 	if(has_extinguisher)
 		om_unhook(has_extinguisher, /datum/om/event/qdeleting, src)
 		has_extinguisher.forceMove(loc)
@@ -104,6 +106,7 @@
 	else
 		opened = !opened
 	update_icon()
+	return TRUE
 
 /obj/structure/extinguisher_cabinet/proc/on_extinguisher_deleted(datum/source, datum/om/event/qdeleting/event)
 	EVENT_HANDLER

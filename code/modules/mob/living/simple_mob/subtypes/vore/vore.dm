@@ -129,3 +129,4 @@
 
 /mob/living/simple_mob/vore/aggressive
 	mob_bump_flag = HEAVY
+

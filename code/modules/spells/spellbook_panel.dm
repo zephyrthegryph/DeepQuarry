@@ -79,15 +79,16 @@
 			return TRUE
 
 // spellbook now opens via TGUI panel rather than admin_log_show.
-/obj/item/spellbook/attack_self(mob/user = usr)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/spellbook, INTERACT_SELF("Read", PROC_REF(interaction_read_spellbook)))
+
+/// Old attack_self: the spellbook panel opens via TGUI. Specially handled books leave it to their own self-use.
+/obj/item/spellbook/proc/interaction_read_spellbook(mob/user, obj/item/held, datum/interaction/interaction)
 	if(special_handling)
 		return FALSE
 	if(!user)
-		return
+		return TRUE
 	if((user.mind && !GLOB.wizards.is_antagonist(user.mind)))
 		to_chat(user, span_warning("You stare at the book but cannot make sense of the markings!"))
-		return
+		return TRUE
 	dq_open_spellbook(user)
+	return TRUE

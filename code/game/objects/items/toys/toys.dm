@@ -857,10 +857,8 @@ DECLARE_INTERACTIONS(/obj/structure/plushie, \
 		if(in_range(user, src) && stored_item)
 			. += span_italics("You can see something in there...")
 
-/obj/item/toy/plushie/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self: hug, punch or poke it, and fish out anything stitched inside.
+/obj/item/toy/plushie/proc/interaction_squeeze(mob/user, obj/item/held, datum/interaction/interaction)
 	if(special_handling)
 		return
 	if(stored_item && opened && !om_busy(src))
@@ -901,11 +899,8 @@ DECLARE_INTERACTIONS(/obj/structure/plushie, \
 	atom_say("[pokephrase]")
 	name = adjusted_name
 
-/obj/item/toy/plushie/verb/rename_plushie()
-	set name = "Name Plushie"
-	set category = "Object"
-	set desc = "Give your plushie a cute name!"
-	var/mob/M = usr
+/obj/item/toy/plushie/proc/rename_plushie_effect(mob/user, obj/item/held, datum/interaction/interaction)
+	var/mob/M = user
 	if(!M.mind)
 		return 0
 
@@ -923,7 +918,10 @@ DECLARE_INTERACTIONS(/obj/structure/plushie, \
 		to_chat(M, "You name the plushie [input], giving it a hug for good luck.")
 		return 1
 
-DECLARE_INTERACTIONS(/obj/item/toy/plushie, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+DECLARE_INTERACTIONS(/obj/item/toy/plushie, \
+	INTERACT_USE("Squeeze", PROC_REF(interaction_squeeze)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
 
 /// Old attackby.
 /obj/item/toy/plushie/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
@@ -1574,7 +1572,10 @@ DECLARE_INTERACTIONS(/obj/structure/balloon, \
 	desc = "No teppi were harmed in the creation of this plushie."
 	icon_state = "teppialt"
 
-/obj/item/toy/plushie/teppi/attack_self(mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/toy/plushie/teppi, INTERACT_USE("Squeeze", PROC_REF(interaction_teppi_squeeze)))
+
+/// Old attack_self: the teppi noise, then the plushie's squeeze.
+/obj/item/toy/plushie/teppi/proc/interaction_teppi_squeeze(mob/user, obj/item/held, datum/interaction/interaction)
 	if(IS_HARMING(user) || IS_GRABBING(user))
 		playsound(user, 'sound/voice/teppi/roar.ogg', 10, 0)
 	else
@@ -1583,7 +1584,7 @@ DECLARE_INTERACTIONS(/obj/structure/balloon, \
 			'sound/voice/teppi/whine2.ogg')
 		playsound(user, teppi_noise, 10, 0)
 		src.visible_message(span_notice("Gyooooooooh!"))
-	return ..()
+	return interaction_squeeze(user, held, interaction)
 
 /*
  * Hand buzzer
@@ -1873,37 +1874,6 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/ipc, INTERACT_ITEM(null, PROC_REF(ipc_
 	attack_verb = list("existed near")
 	bubble_icon = "textbox"
 
-/* // Disable, upstream player reference.
-/obj/item/toy/plushie/marketable_pip
-	name = "mascot CRO plushie"
-	desc = "An adorable plushie of NanoTrasen's Best Girl(TM) mascot. It smells faintly of paperwork."
-	icon = 'icons/obj/toy.dmi'
-	icon_state = "marketable_pip"
-	squeeze_sound = 'sound/effects/whistle.ogg'
-
-EXTEND_INTERACTIONS(/obj/item/toy/plushie/marketable_pip, INTERACT_ITEM(null, PROC_REF(marketable_pip_interaction_item)))
-
-/// Old attackby.
-/obj/item/toy/plushie/marketable_pip/proc/marketable_pip_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	var/obj/item/card/id/id = I.GetID()
-	if(istype(id) && COOLDOWN_FINISHED(src, cooldown_timer))
-		var/responses = list("I'm not giving you all-access.", "Do you want an ID modification?", "Where are you swiping that!?", "Congratulations! You've been promoted to unemployed!")
-		pokephrase = pick(responses)
-		user.visible_message(span_notice("[user] swipes \the [I] against \the [src]."))
-		playsound(user, 'sound/effects/whistle.ogg', 10, 0)
-		say_phrase()
-		COOLDOWN_START(src, cooldown_timer, cooldown_length)
-		return FALSE
-	return INTERACTION_HANDLED_PASS
-
-/obj/item/toy/plushie/marketable_pip/attack_self(mob/user as mob)
-	if(COOLDOWN_FINISHED(src, cooldown))
-		playsound(user, 'sound/effects/whistle.ogg', 10, 0)
-		COOLDOWN_START(src, cooldown, 15 SECONDS)
-	return ..()
-/obj/item/toy/plushie/marketable_pip/proc/cooldownreset()
-	cooldown = 0
-*/ // end
 
 /obj/item/toy/plushie/moth
 	name = "moth plushie"
@@ -1996,11 +1966,12 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/marketable_pip, INTERACT_ITEM(null, PR
 	icon_state = "rock"
 	attack_verb = list("grug'd", "unga'd")
 
-/obj/item/toy/rock/attackby(obj/item/I as obj, mob/living/user as mob, proximity)
-	if(!proximity) return
-	if(istype(I, /obj/item/pen))
-		om_ask(user, /datum/om/prompt/choice, PROC_REF(face_chosen), title = "Faces", message = "Choose what you'd like to draw.", choices = list("fred","roxie","rock","Cancel"), buttons = TRUE, subject = I, ask_flags = ASK_HELD | ASK_CAPABLE)
-	return
+DECLARE_INTERACTIONS(/obj/item/toy/rock, INTERACT_INSERT(/obj/item/pen, PROC_REF(interaction_draw_face), "Draw a face"))
+
+/// Old attackby.
+/obj/item/toy/rock/proc/interaction_draw_face(mob/living/user, obj/item/I, datum/interaction/interaction)
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(face_chosen), title = "Faces", message = "Choose what you'd like to draw.", choices = list("fred","roxie","rock","Cancel"), buttons = TRUE, subject = I, ask_flags = ASK_HELD | ASK_CAPABLE)
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/toy/rock/proc/face_chosen(datum/om/prompt/choice/ask)
 	var/mob/living/user = ask.answerer
@@ -2244,7 +2215,10 @@ DECLARE_INTERACTIONS(/obj/item/toy/nuke, \
 
 REF_OWNED(/obj/item/toy/minigibber, "stored_minature")
 
-DECLARE_INTERACTIONS(/obj/item/toy/minigibber, INTERACT_USE(null, PROC_REF(interaction_self)))
+DECLARE_INTERACTIONS(/obj/item/toy/minigibber, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM("Feed", PROC_REF(interaction_feed)), \
+)
 
 /// Old attack_self.
 /obj/item/toy/minigibber/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
@@ -2259,12 +2233,13 @@ DECLARE_INTERACTIONS(/obj/item/toy/minigibber, INTERACT_USE(null, PROC_REF(inter
 		cooldown = world.time
 	return TRUE
 
-/obj/item/toy/minigibber/attackby(obj/O, mob/user, params)
+/// Old attackby: feed a figure into the gibber.
+/obj/item/toy/minigibber/proc/interaction_feed(mob/user, obj/O, datum/interaction/interaction)
 	if(istype(O,/obj/item/toy/figure) || istype(O,/obj/item/toy/character) && O.loc == user)
 		to_chat(user, span_notice("You start feeding \the [O] [icon2html(O, user.client)] into \the [src]'s mini-input."))
 		om_task_start(/datum/om/task/timed/minigibber_attackby, user, src, receiver = src, O = O)
-
-	else ..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
 /datum/om/task/timed/minigibber_attackby
 	duration = 1 SECOND
@@ -2874,10 +2849,10 @@ DECLARE_INTERACTIONS(/obj/item/toy/acorn_branch, INTERACT_USE(null, PROC_REF(int
 	if (pokephrase != "Rawr~!")
 		pokephrase = pick("ROAR!", "RAWR!", "GAWR!", "GRR!", "GROAR!", "GRAH!", "Weh!", "Merp!")
 
-/obj/item/toy/plushie/dragon/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/toy/plushie/dragon, INTERACT_USE("Squeeze", PROC_REF(interaction_dragon_squeeze)))
+
+/// Old attack_self: the dragon noise. The plushie's squeeze does nothing for it (special_handling).
+/obj/item/toy/plushie/dragon/proc/interaction_dragon_squeeze(mob/user, obj/item/held, datum/interaction/interaction)
 	if(COOLDOWN_FINISHED(src, cooldown))
 		switch(pokephrase)
 			if("Weh!")
@@ -2887,7 +2862,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/acorn_branch, INTERACT_USE(null, PROC_REF(int
 			else
 				playsound(user, 'sound/voice/roarbark.ogg', 20, 0)
 		COOLDOWN_START(src, cooldown, 5 SECONDS)
-	return ..()
+	return TRUE
 
 /obj/item/toy/plushie/dragon/green
 	name = "green dragon plushie"
@@ -2929,11 +2904,8 @@ DECLARE_INTERACTIONS(/obj/item/toy/acorn_branch, INTERACT_USE(null, PROC_REF(int
 		slot_back_str = 'icons/mob/toy_worn.dmi',
 		slot_head_str = 'icons/mob/toy_worn.dmi')
 
-/obj/item/toy/plushie/teshari/strix/rename_plushie()
-	set name = "Name Plushie"
-	set category = "Object"
-	set desc = "Give your plushie a cute name!"
-	var/mob/M = usr
+/obj/item/toy/plushie/teshari/strix/rename_plushie_effect(mob/user, obj/item/held, datum/interaction/interaction)
+	var/mob/M = user
 	if(!M.mind)
 		return 0
 
@@ -2955,11 +2927,8 @@ DECLARE_INTERACTIONS(/obj/item/toy/acorn_branch, INTERACT_USE(null, PROC_REF(int
 		slot_back_str = 'icons/vore/custom_onmob_yw.dmi',
 		slot_head_str = 'icons/vore/custom_onmob_yw.dmi')
 
-/obj/item/toy/plushie/teshari/eili/rename_plushie()
-	set name = "Name Plushie"
-	set category = "Object"
-	set desc = "Give your plushie a cute name!"
-	var/mob/M = usr
+/obj/item/toy/plushie/teshari/eili/rename_plushie_effect(mob/user, obj/item/held, datum/interaction/interaction)
+	var/mob/M = user
 	if(!M.mind)
 		return 0
 
@@ -3032,3 +3001,8 @@ DECLARE_INTERACTIONS(/obj/item/toy/acorn_branch, INTERACT_USE(null, PROC_REF(int
 
 REF_HELD(/obj/structure/plushie, list("stored_item"))
 REF_HELD(/obj/item/toy/plushie, list("stored_item"))
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/toy/plushie, \
+	INTERACT_VERB("Name Plushie", PROC_REF(rename_plushie_effect), REQ_IN_INVENTORY), \
+)

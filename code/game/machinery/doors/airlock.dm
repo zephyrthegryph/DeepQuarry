@@ -567,7 +567,7 @@ About the new airlock wires panel:
 /obj/machinery/door/airlock/proc/hack_finish(datum/om/task/airlock_ai_hack/T)
 	//bring up airlock dialog
 	aiHacking = 0
-	attack_ai(T.user)
+	actor_use(/datum/input_adapter/ai, T.user, src)
 	return STEP_DONE
 
 /obj/machinery/door/airlock/CanPass(atom/movable/mover, turf/target)
@@ -1438,38 +1438,52 @@ About the new airlock wires panel:
 	if(allowed(user))
 		..()
 
-/obj/machinery/computer/atmoscontrol/attack_robot(mob/user)
-	if(allowed(user))
-		..()
-	else if(Adjacent(user))
-		attack_hand(user)
+// Old attack_robot overrides: a cyborg with access interfaces remotely as the AI does
+// (FALSE: the robot adapter's default); without it, only by hand from next to it.
+// atmos_control.dm, robot.dm and turret_control.dm declare these types' other interactions;
+// portable_turret.dm lists porta_turret_robot_use in the turret's own declare_interactions().
+EXTEND_INTERACTIONS(/obj/machinery/computer/atmoscontrol, INTERACT_ROBOT("Use", PROC_REF(atmoscontrol_robot_use)))
+EXTEND_INTERACTIONS(/obj/machinery/computer/robotics, INTERACT_ROBOT("Use", PROC_REF(robotics_console_robot_use)))
+EXTEND_INTERACTIONS(/obj/machinery/turretid, INTERACT_ROBOT("Use", PROC_REF(turretid_robot_use)))
+EXTEND_INTERACTIONS(/obj/machinery/door/airlock, INTERACT_ROBOT("Use", PROC_REF(airlock_robot_use)))
 
-/obj/machinery/computer/robotics/attack_robot(mob/user)
+/obj/machinery/computer/atmoscontrol/proc/atmoscontrol_robot_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(allowed(user))
-		..()
-	else if(Adjacent(user))
+		return FALSE
+	if(Adjacent(user))
 		attack_hand(user)
+	return TRUE
 
-/obj/machinery/turretid/attack_robot(mob/user)
+/obj/machinery/computer/robotics/proc/robotics_console_robot_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(allowed(user))
-		..()
-	else if(Adjacent(user))
+		return FALSE
+	if(Adjacent(user))
 		attack_hand(user)
+	return TRUE
 
-/obj/machinery/door/airlock/attack_robot(mob/user)
+/obj/machinery/turretid/proc/turretid_robot_use(mob/user, obj/item/held, datum/interaction/interaction)
+	if(allowed(user))
+		return FALSE
+	if(Adjacent(user))
+		attack_hand(user)
+	return TRUE
+
+/obj/machinery/door/airlock/proc/airlock_robot_use(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/living/silicon/robot/R = user
 	if(!istype(R))
-		return //why are you here
+		return TRUE //why are you here
 	if(check_access(R.idcard))
-		..()
-	else if(Adjacent(user))
+		return FALSE
+	if(Adjacent(user))
 		attack_hand(user)
+	return TRUE
 
-/obj/machinery/porta_turret/attack_robot(mob/user)
+/obj/machinery/porta_turret/proc/porta_turret_robot_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(allowed(user))
-		..()
-	else if(Adjacent(user))
+		return FALSE
+	if(Adjacent(user))
 		attack_hand(user)
+	return TRUE
 
 /obj/machinery/porta_turret/isLocked(mob/user)
 	var/mob/living/silicon/robot/R = user

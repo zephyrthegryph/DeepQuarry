@@ -300,7 +300,7 @@
 		list("right=1", INPUT_ACTION_ALTERNATE, TYPE_PROC_REF(/mob, AltClickOn)),
 	))
 
-/// Records which legacy handler the router reached.
+/// Records which actor-kind interaction the router reached (named after the handler it replaced).
 /obj/dq_input_probe
 	var/last_handler
 	var/mob/last_user
@@ -309,33 +309,51 @@
 	last_handler = handler
 	last_user = user
 
-/obj/dq_input_probe/attack_hand(mob/user)
+/// Each kind of Use the router can reach, declared as interactions that record which one ran.
+DECLARE_INTERACTIONS(/obj/dq_input_probe, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(probe_hand)), \
+	INTERACT_O\ERVER(null, PROC_REF(probe_ghost)), \
+	INTERACT_ROBOT(null, PROC_REF(probe_robot)), \
+	INTERACT_SILICON(null, PROC_REF(probe_ai)), \
+	INTERACT_TK(null, PROC_REF(probe_tk)), \
+	INTERACT_ALT(null, PROC_REF(probe_alt)), \
+	INTERACT_DRAG(null, PROC_REF(probe_drag)), \
+)
+
+/obj/dq_input_probe/proc/probe_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	note("attack_hand", user)
+	return TRUE
 
-/obj/dq_input_probe/attack_ghost(mob/observer/dead/user)
+/obj/dq_input_probe/proc/probe_ghost(mob/user, obj/item/held, datum/interaction/interaction)
 	note("attack_ghost", user)
+	return TRUE
 
-/obj/dq_input_probe/attack_robot(mob/user)
+/obj/dq_input_probe/proc/probe_robot(mob/user, obj/item/held, datum/interaction/interaction)
 	note("attack_robot", user)
+	return TRUE
 
-/obj/dq_input_probe/attack_ai(mob/user)
+/obj/dq_input_probe/proc/probe_ai(mob/user, obj/item/held, datum/interaction/interaction)
 	note("attack_ai", user)
+	return TRUE
 
-/obj/dq_input_probe/attack_tk(mob/user)
+/obj/dq_input_probe/proc/probe_tk(mob/user, obj/item/held, datum/interaction/interaction)
 	note("attack_tk", user)
+	return TRUE
 
-/obj/dq_input_probe/click_alt(mob/user)
+/obj/dq_input_probe/proc/probe_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	note("click_alt", user)
-	return CLICK_ACTION_SUCCESS
+	return TRUE
 
-/obj/dq_input_probe/MouseDrop_T(atom/dropping, mob/user, src_location, over_location, src_control, over_control, params)
+/obj/dq_input_probe/proc/probe_drag(mob/user, obj/item/held, datum/interaction/interaction)
 	note("MouseDrop_T", user)
+	return TRUE
 
 /obj/item/dq_input_probe_item
 	var/mob/self_used_by
 
-/obj/item/dq_input_probe_item/attack_self(mob/user, modifiers)
-	. = ..()
+DECLARE_INTERACTIONS(/obj/item/dq_input_probe_item, INTERACT_USE(null, PROC_REF(probe_self)))
+
+/obj/item/dq_input_probe_item/proc/probe_self(mob/user, obj/item/held, datum/interaction/interaction)
 	self_used_by = user
 
 /// Clicks through the router as a mob; returns the handler the probe saw for that mob.
@@ -387,7 +405,7 @@
 
 	var/datum/input_adapter/telekinesis/telekinesis = INPUT_ADAPTER(telekinesis)
 	telekinesis.use(H, probe)
-	TEST_ASSERT_EQUAL(probe.last_handler, "attack_tk", "the telekinesis adapter's Use reaches attack_tk")
+	TEST_ASSERT_EQUAL(probe.last_handler, "attack_tk", "the telekinesis adapter's Use runs the INTERACT_TK")
 
 	var/obj/item/dq_input_probe_item/item = allocate(/obj/item/dq_input_probe_item, T)
 	TEST_ASSERT(H.put_in_active_hand(item), "the human should hold the probe item")

@@ -539,20 +539,22 @@
 	user.put_in_active_hand(O)
 	consume(src, user)
 
-/obj/item/organ/attack_self(mob/user, callback)
-	. = ..(user)
-	if(.)
-		return TRUE
-
+/// Old attack_self: bite the organ. Virtual: external limbs override it and call ..() with
+/// `callback` TRUE once they've handled their own contents (special_handling otherwise falls through).
+/obj/item/organ/proc/organ_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
 	if(special_handling && !callback)
 		return FALSE
 
 	// Convert it to an edible form, yum yum.
 	if(!(robotic >= ORGAN_ROBOT) && IS_HELPING(user) && user.zone_sel.selecting == O_MOUTH)
 		bitten(user)
-		return
+		return TRUE
+	return FALSE
 
-DECLARE_INTERACTIONS(/obj/item/organ, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+DECLARE_INTERACTIONS(/obj/item/organ, \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_SELF(null, PROC_REF(organ_self)), \
+)
 
 /// Old attackby.
 /obj/item/organ/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)

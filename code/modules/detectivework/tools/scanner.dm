@@ -179,13 +179,10 @@
 		. = 1
 	stored["\ref [A]"] = fresh
 
-/obj/item/detective_scanner/verb/examine_data()
-	set name = "Examine Forensic Data"
-	set category = "Object"
-	set src in view(1)
+/obj/item/detective_scanner/proc/examine_data_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	//to_world("usr is [usr]") //why was this a thing? -KK.
-	display_data(usr)
+	//to_world("user is [user]") //why was this a thing? -KK.
+	display_data(user)
 
 /// Shows the stored records one per second (a timed action each, so moving stops the spam).
 /obj/item/detective_scanner/proc/display_data(mob/user)
@@ -234,17 +231,14 @@
 			for(var/bloodsample in bloods)
 				to_chat(user, " - " + span_warning("[bloodsample]") + " Type: [bloods[bloodsample]]")
 
-/obj/item/detective_scanner/verb/wipe()
-	set name = "Wipe Forensic Data"
-	set category = "Object"
-	set src in view(1)
+/obj/item/detective_scanner/proc/detective_scanner_wipe_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	var/_answer_k217 = rerun_ask(usr, "k217", VERB_REF(wipe), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to wipe all data from [src]?", title = "Wipe Data", choices = list("Yes","No"))
+	var/_answer_k217 = rerun_ask(user, "k217", PROC_REF(detective_scanner_wipe_effect), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to wipe all data from [src]?", title = "Wipe Data", choices = list("Yes","No"))
 	if(isnull(_answer_k217))
 		return
 	if (_answer_k217 == "Yes")
 		stored = list()
-		to_chat(usr, span_notice("Forensic data erase complete."))
+		to_chat(user, span_notice("Forensic data erase complete."))
 
 /obj/item/detective_scanner/advanced
 	name = "advanced forensic scanner"
@@ -258,3 +252,9 @@
 		to_chat(user, span_notice("Blood type: [blooddna[blood]]\nDNA: [blood]"))
 
 REF_OWNED_VALUES(/obj/item/detective_scanner, "stored")
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/detective_scanner, \
+	INTERACT_VERB("Examine Forensic Data", PROC_REF(examine_data_effect)), \
+	INTERACT_VERB("Wipe Forensic Data", PROC_REF(detective_scanner_wipe_effect)), \
+)

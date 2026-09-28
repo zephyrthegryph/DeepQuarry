@@ -78,17 +78,25 @@
 		clear_holster()
 
 //YW change start
-/obj/item/clothing/accessory/holster/attack_hand(mob/user)
+EXTEND_INTERACTIONS(/obj/item/clothing/accessory/holster, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(holster_draw_hand)), \
+	INTERACT_ITEM(null, PROC_REF(holster_item)), \
+	INTERACT_VERB("Holster", PROC_REF(holster_quick_holster_verb), REQ_IN_INVENTORY), \
+)
+
+/// Old attack_hand: draw from an attached holster in combat mode.
+/obj/item/clothing/accessory/holster/proc/holster_draw_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if (IS_HARMING(user) && has_suit() && (slot & SLOT_HOLSTER ))	//if we are part of a suit and are using harm intent
 		if (holstered)
 			unholster(user)
-		return
-
-	..(user)
+		return TRUE
+	return FALSE
 //YW change end
 
-/obj/item/clothing/accessory/holster/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby: holster the item.
+/obj/item/clothing/accessory/holster/proc/holster_item(mob/user, obj/item/W, datum/interaction/interaction)
 	holster(W, user)
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/clothing/accessory/holster/examine(mob/user)
 	. = ..(user)
@@ -97,45 +105,21 @@
 	else
 		. += "It is empty."
 
-/obj/item/clothing/accessory/holster/on_attached(obj/item/clothing/under/S, mob/user as mob)
-	..()
-	if(has_suit())
-		has_suit().verbs += /obj/item/clothing/accessory/holster/verb/holster_verb
+// The uniform it is attached to offers "Holster" too (/obj/item/clothing/under, clothing.dm).
+/// Old verb "Holster".
+/obj/item/clothing/accessory/holster/proc/holster_quick_holster_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!isliving(user)) return
+	if(user.stat) return
 
-/obj/item/clothing/accessory/holster/on_removed(mob/user as mob)
-	if(has_suit())
-		has_suit().verbs -= /obj/item/clothing/accessory/holster/verb/holster_verb
-	..()
-
-//For the holster hotkey
-/obj/item/clothing/accessory/holster/verb/holster_verb()
-	set name = "Holster"
-	set category = "Object"
-	set src in usr
-	if(!isliving(usr)) return
-	if(usr.stat) return
-
-	//can't we just use src here?
-	var/obj/item/clothing/accessory/holster/H = null
-	if (istype(src, /obj/item/clothing/accessory/holster))
-		H = src
-	else if (istype(src, /obj/item/clothing/under))
-		var/obj/item/clothing/under/S = src
-		if (LAZYLEN(S.accessories))
-			H = locate() in S.accessories
-
-	if (!H)
-		to_chat(usr, span_warning("Something is very wrong."))
-		return
-
+	var/obj/item/clothing/accessory/holster/H = src
 	if(!H.holstered)
-		var/obj/item/W = usr.get_active_hand()
+		var/obj/item/W = user.get_active_hand()
 		if(!istype(W, /obj/item))
-			to_chat(usr, span_warning("You need your gun equipped to holster it."))
+			to_chat(user, span_warning("You need your gun equipped to holster it."))
 			return
-		H.holster(W, usr)
+		H.holster(W, user)
 	else
-		H.unholster(usr)
+		H.unholster(user)
 
 /obj/item/clothing/accessory/holster/armpit
 	name = "armpit holster"

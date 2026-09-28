@@ -361,10 +361,14 @@
 	icon_state = "blade_tosser"
 	icon_living = "blade_tosser"
 
-/mob/living/simple_mob/humanoid/astral_collective/body/dagger/attackby(obj/item/O as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/astral_collective/body/dagger, INTERACT_ITEM(null, PROC_REF(astral_dagger_interaction_item)))
+
+/// Old attackby: may teleport, then the normal attack.
+/mob/living/simple_mob/humanoid/astral_collective/body/dagger/proc/astral_dagger_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+	. = TRUE
 	if(prob(50))
 		teleport_attack(src)
-	..()
+	return FALSE
 
 /mob/living/simple_mob/humanoid/astral_collective/body/dagger/bullet_act(obj/item/projectile/Proj)
 	if(prob(50))
@@ -401,16 +405,20 @@
 	special_attack_cooldown = 10 SECONDS
 
 //Gravity shield. Hit it with melee, and a sudden gravity surge may tear your weapon to the ground
-/mob/living/simple_mob/humanoid/astral_collective/mind/gravity/attackby(obj/item/O as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/astral_collective/mind/gravity, INTERACT_ITEM(null, PROC_REF(astral_gravity_interaction_item)))
+
+/// Old attackby: may pull the weapon to the ground.
+/mob/living/simple_mob/humanoid/astral_collective/mind/gravity/proc/astral_gravity_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+	. = TRUE
 	if(O.force)
 		if(prob(30))
 			visible_message(span_boldwarning(span_orange("[O] is pulled to the ground!.")))
 			user.drop_item()
 			return
 		else
-			..()
+			return FALSE
 	else
-		..()
+		return FALSE
 
 /mob/living/simple_mob/humanoid/astral_collective/mind/gravity/do_special_attack(atom/A)
 	for(var/mob/living/L in orange(src, 7)) //despite the attack range being 6 we do 7 so folks don't wander in then get confused why they are getting hit by it

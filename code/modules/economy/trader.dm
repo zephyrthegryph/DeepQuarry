@@ -44,14 +44,16 @@
 	if(move_trader)
 		move_trader()
 
-/obj/trader/attack_hand(mob/living/user)
-	. = ..()
+DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_trader_hand)), 	INTERACT_ITEM(null, PROC_REF(interaction_trader_item)))
+
+/// Old attack_hand: start a trade with one customer at a time.
+/obj/trader/proc/interaction_trader_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(trading)
 		to_chat(user, span_notice("\The [src] is busy with someone else at the moment..."))
-		return
+		return TRUE
 	if(!products.len)
 		to_chat(user, span_notice("\The [src] hasn't got anything to sell."))
-		return
+		return TRUE
 	trading = TRUE
 	switch(accepts)
 		if("coin")
@@ -63,6 +65,7 @@
 				welcome_accepts_name = "a kind of item"
 	// One customer at a time: any way the questions end frees the trader.
 	om_flow_start(/datum/om/flow/trader_trade, user, src)
+	return TRUE
 
 /obj/trader/proc/trade_price(obj/item)
 	return LAZYACCESS(prices, item.type) || 0
@@ -159,8 +162,8 @@
 	else
 		to_chat(actor, span_notice("You decided leave your change banked."))
 
-/obj/trader/attackby(obj/item/O, mob/user)
-	. = ..()
+/// Old attackby (ran ..() first): bank coins, cash or items; the base item handling still follows.
+/obj/trader/proc/interaction_trader_item(mob/user, obj/item/O, datum/interaction/interaction)
 	switch(accepts)
 		if("coin")
 			if(istype(O, /obj/item/aliencoin))
@@ -178,7 +181,7 @@
 					c.update_icon()
 					loadsamoney = null
 					visible_message(span_notice("\The [src] accepts \the [user]'s [O]."))
-					return
+					return INTERACTION_HANDLED_PASS
 				user.drop_item()
 				w.forceMove(src.contents)
 				LAZYADD(bank, w)
@@ -189,6 +192,7 @@
 				O.forceMove(src.contents)
 				LAZYADD(bank, O)
 				visible_message(span_notice("\The [src] accepts \the [user]'s [O]."))
+	return INTERACTION_HANDLED_PASS
 
 /obj/trader/proc/get_value(kind)
 	var/value = 0

@@ -12,25 +12,23 @@
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
-/obj/item/implanter/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/implanter, INTERACT_SELF("Toggle", PROC_REF(implanter_self)))
+
+/// Old attack_self: toggle the implanter. Subtypes with special_handling fall through.
+/obj/item/implanter/proc/implanter_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(special_handling)
 		return FALSE
 	active = !active
 	to_chat(user, span_notice("You [active ? "" : "de"]activate \the [src]."))
 	update()
+	return TRUE
 
-/obj/item/implanter/verb/remove_implant()
-	set category = "Object"
-	set name = "Remove Implant"
-	set src in usr
+/obj/item/implanter/proc/remove_implant_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
 	if(!imp)
 		return
-	if(istype(usr, /mob))
-		var/mob/M = usr
+	if(istype(user, /mob))
+		var/mob/M = user
 		imp.forceMove(get_turf(src))
 		if(M.get_active_hand() == null)
 			M.put_in_hands(imp)
@@ -193,3 +191,8 @@
 	update()
 
 REF_HELD(/obj/item/implanter, list("imp"))
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/implanter, \
+	INTERACT_VERB("Remove Implant", PROC_REF(remove_implant_effect), REQ_IN_INVENTORY), \
+)

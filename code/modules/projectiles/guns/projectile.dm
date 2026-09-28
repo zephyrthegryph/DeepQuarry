@@ -154,12 +154,14 @@
 	update_icon()
 	user.hud_used?.update_ammo_hud(user, src)
 
-/obj/item/gun/projectile/attackby(obj/item/A as obj, mob/user as mob)
-	..()
+/// Old attackby: the parent's first, then loading.
+/obj/item/gun/projectile/gun_item(mob/user, obj/item/A, datum/interaction/interaction)
+	. = ..()
 	load_ammo(A, user)
 
-/obj/item/gun/projectile/attack_self(mob/user, callback)
-	. = ..(user)
+/// Old attack_self.
+/obj/item/gun/projectile/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+	. = ..()
 	if(.)
 		return TRUE
 	if(special_weapon_handling && !callback)
@@ -171,11 +173,14 @@
 	else
 		unload_ammo(user)
 
-/obj/item/gun/projectile/attack_hand(mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PROC_REF(gun_hand)))
+
+/// Old attack_hand: unload from the off hand. Subtypes override it with ..(); FALSE goes on to pickup.
+/obj/item/gun/projectile/proc/gun_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.get_inactive_hand() == src)
 		unload_ammo(user, allow_dump=0)
-	else
-		return ..()
+		return TRUE
+	return FALSE
 
 /obj/item/gun/projectile/afterattack(atom/A, mob/living/user)
 	..()
@@ -208,17 +213,6 @@
 		bullets += 1
 	return bullets
 
-/* Unneeded -- so far.
-//in case the weapon has firemodes and can't unload using attack_hand()
-/obj/item/gun/projectile/verb/unload_gun()
-	set name = "Unload Ammo"
-	set category = "Object"
-	set src in usr
-
-	if(usr.stat || usr.restrained()) return
-
-	unload_ammo(usr)
-*/
 
 // TGMC Ammo HUD Insertion
 /obj/item/gun/projectile/has_ammo_counter()

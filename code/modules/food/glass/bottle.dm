@@ -25,9 +25,12 @@
 	..()
 	update_icon()
 
-/// Old attack_hand: runs after the touch tried to pick it up (hand_pickup()).
-/obj/item/reagent_containers/glass/bottle/hand_pickup(mob/user)
-	. = ..()
+EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/bottle, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(bottle_pick_up)))
+
+/// Picking the bottle up refreshes its look.
+/obj/item/reagent_containers/glass/bottle/proc/bottle_pick_up(mob/user, obj/item/held, datum/interaction/interaction)
+	. = TRUE
+	interaction_pick_up(user, held, interaction)
 	update_icon()
 
 /obj/item/reagent_containers/glass/bottle/Initialize(mapload)

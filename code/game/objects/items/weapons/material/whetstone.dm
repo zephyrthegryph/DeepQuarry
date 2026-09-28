@@ -58,7 +58,11 @@ DECLARE_INTERACTIONS(/obj/item/whetstone, INTERACT_ITEM(null, PROC_REF(interacti
 	repair_time = material.density * 0.5 // weight renamed to density.
 	sharpen_time = material.density * 3 // weight renamed to density.
 
-/obj/item/material/sharpeningkit/attackby(obj/item/W, mob/user)
+EXTEND_INTERACTIONS(/obj/item/material/sharpeningkit, INTERACT_ITEM(null, PROC_REF(sharpeningkit_interaction_item)))
+
+/// Old attackby. It never called ..(): any item stops here, but afterattack still follows.
+/obj/item/material/sharpeningkit/proc/sharpeningkit_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+	. = INTERACTION_HANDLED_PASS
 	if(istype(W, /obj/item/stack/material))
 		var/obj/item/stack/material/S = W
 		if(S.material == material)

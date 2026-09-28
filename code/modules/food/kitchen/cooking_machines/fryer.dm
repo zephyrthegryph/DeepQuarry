@@ -256,7 +256,10 @@ REF_OWNED(/obj/machinery/appliance/cooker/fryer, list("fry_loop", "oil"))
 
 	fry_loop.stop()
 
-/obj/machinery/appliance/cooker/fryer/attackby(obj/item/I, mob/user)
+EXTEND_INTERACTIONS(/obj/machinery/appliance/cooker/fryer, INTERACT_ITEM(null, PROC_REF(fryer_interaction_oil)))
+
+/// Old attackby: scooping or pouring oil, else the appliance's own handling.
+/obj/machinery/appliance/cooker/fryer/proc/fryer_interaction_oil(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/reagent_containers) && !istype(I, /obj/item/reagent_containers/food) && I.reagents)
 		if(istype(I, /obj/item/reagent_containers/glass)) //Scooping stuff out with a glass.
 			if(I.reagents.total_volume <= 0 && oil)
@@ -280,4 +283,4 @@ REF_OWNED(/obj/machinery/appliance/cooker/fryer, list("fry_loop", "oil"))
 			user.visible_message(span_filter_notice("[user] pours some oil into \the [src]."), span_notice("You pour [amount]u of oil into \the [src]."), span_notice("You hear something viscous being poured into a metal container."))
 			return TRUE
 	//If neither of the above returned, then call parent as normal
-	..()
+	return FALSE

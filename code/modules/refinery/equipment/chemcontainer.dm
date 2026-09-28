@@ -20,6 +20,9 @@
 	VAR_PROTECTED/loaded_reagent = null
 	VAR_PRIVATE/label = ""
 
+/obj/item/reagent_containers/chem_canister
+	transfer_amount_verb = FALSE // Can't be set on these
+
 /obj/item/reagent_containers/chem_canister/Initialize(mapload)
 	. = ..()
 	if(loaded_reagent)
@@ -27,8 +30,6 @@
 		if(R) // Sanity check the reagent
 			set_canister(R.name,R.id)
 			reagents.add_reagent(R.id, volume)
-	// Can't be set on these
-	src.verbs -= /obj/item/reagent_containers/verb/set_APTFT
 	update_icon()
 
 /obj/item/reagent_containers/chem_canister/examine(mob/user)

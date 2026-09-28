@@ -32,15 +32,13 @@
 /*	else
 		radio.interact(user)
 */
-/obj/item/camerabug/verb/reset()
-	set name = "Reset camera bug"
-	set category = "Object"
+/obj/item/camerabug/proc/camerabug_reset_effect(mob/user, obj/item/held, datum/interaction/interaction)
 	if(linkedmonitor())
 		linkedmonitor().unpair(src)
 	linkedmonitor_handle = null
 	qdel(camera)
 	camera = new camtype(src)
-	to_chat(usr, span_notice("You turn the [src] off and on again, delinking it from any monitors."))
+	to_chat(user, span_notice("You turn the [src] off and on again, delinking it from any monitors."))
 
 /obj/item/brokenbug
 	name = "broken mobile camera pod"
@@ -284,3 +282,7 @@ REF_OWNED(/obj/item/camerabug, list("camera"))
 /// LC-refs: selected camera -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/bug_monitor/proc/selected_camera() as /obj/machinery/camera/bug
 	return om_resolve(selected_camera_handle)
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/camerabug, \
+	INTERACT_VERB("Reset camera bug", PROC_REF(camerabug_reset_effect), REQ_IN_INVENTORY), \
+)

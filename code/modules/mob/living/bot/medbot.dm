@@ -208,7 +208,13 @@
 	else
 		icon_state = "medibot[on]"
 
-/mob/living/bot/medbot/attack_hand(mob/living/carbon/human/H)
+EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
+	INTERACT_ITEM(null, PROC_REF(medbot_interaction_item)), \
+	INTERACT_HAND_UNGATED(null, PROC_REF(medbot_interaction_hand)))
+
+/// Old attack_hand (no gate, no default touch): disarm tips it, help rights it, else open the controls.
+/mob/living/bot/medbot/proc/medbot_interaction_hand(mob/living/carbon/human/H, obj/item/held, datum/interaction/interaction)
+	. = TRUE
 	if(istype(H) && IS_DISARMING(H) && !is_tipped)
 		H.visible_message(span_danger("[H] begins tipping over [src]."), span_warning("You begin tipping over [src]..."))
 
@@ -264,22 +270,22 @@
 		ui = new(user, src, "Medbot", name)
 		ui.open()
 
-/mob/living/bot/medbot/attackby(obj/item/O, mob/user)
-	if(istype(O, /obj/item/reagent_containers/glass))
-		if(locked)
-			to_chat(user, span_notice("You cannot insert a beaker because the panel is locked."))
-			return
-		if(!isnull(reagent_glass))
-			to_chat(user, span_notice("There is already a beaker loaded."))
-			return
+/// Old attackby: load a beaker; anything else falls to the bot's item handling.
+/mob/living/bot/medbot/proc/medbot_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+	if(!istype(O, /obj/item/reagent_containers/glass))
+		return FALSE
+	if(locked)
+		to_chat(user, span_notice("You cannot insert a beaker because the panel is locked."))
+		return TRUE
+	if(!isnull(reagent_glass))
+		to_chat(user, span_notice("There is already a beaker loaded."))
+		return TRUE
 
-		user.drop_item()
-		O.forceMove(src)
-		reagent_glass = O
-		to_chat(user, span_notice("You insert [O]."))
-		return
-	else
-		..()
+	user.drop_item()
+	O.forceMove(src)
+	reagent_glass = O
+	to_chat(user, span_notice("You insert [O]."))
+	return TRUE
 
 /mob/living/bot/medbot/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	if(..())
@@ -483,7 +489,10 @@
 
 /* Construction */
 
-/obj/item/storage/firstaid/attackby(obj/item/S, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/storage/firstaid, INTERACT_ITEM("Add robot arm", PROC_REF(interaction_medbot_arm)))
+
+/// Old attackby: a robot arm on an empty kit starts a medibot; anything else goes on to the storage.
+/obj/item/storage/firstaid/proc/interaction_medbot_arm(mob/user, obj/item/S, datum/interaction/interaction)
 	// Accept either a robotic arm part or a robotic external arm organ to build the assembly.
 	var/is_robot_arm = istype(S, /obj/item/robot_parts/l_arm) || istype(S, /obj/item/robot_parts/r_arm)
 	var/is_robotic_organ = FALSE
@@ -492,11 +501,11 @@
 		is_robotic_organ = (organ_arm.robotic == ORGAN_ROBOT)
 
 	if(!is_robot_arm && !is_robotic_organ)
-		return ..()
+		return FALSE
 
 	if(contents.len >= 1 || has_latent()) // ALLOW(latent): latent entries checked
 		to_chat(user, span_notice("You need to empty [src] out first."))
-		return
+		return INTERACTION_HANDLED_PASS
 
 	var/obj/item/firstaid_arm_assembly/A = new /obj/item/firstaid_arm_assembly
 	if(istype(src, /obj/item/storage/firstaid/fire))
@@ -510,6 +519,7 @@
 	user.put_in_hands(A)
 	to_chat(user, span_notice("You add the robot arm to the first aid kit."))
 	consume(src, user)
+	return TRUE
 
 /obj/item/firstaid_arm_assembly
 	name = "first aid/robot arm assembly"

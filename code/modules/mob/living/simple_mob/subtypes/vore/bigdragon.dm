@@ -49,6 +49,7 @@ I think I covered everything.
 ///
 
 /mob/living/simple_mob/vore/bigdragon
+	drag_buckle = FALSE
 	name = "large dragon"
 	desc = "A large, intimidating creature reminiscent of the traditional idea of medieval fire breathing lizards."
 	catalogue_data = list(/datum/category_item/catalogue/fauna/bigdragon)
@@ -262,9 +263,6 @@ I think I covered everything.
 	add_language(LANGUAGE_UNATHI)
 	mob_radio = new /obj/item/radio/headset/mob_headset(src)	//We always give radios to spawned mobs anyway
 	icon_state = "dragon_maneNone"
-
-/mob/living/simple_mob/vore/bigdragon/MouseDrop_T(mob/living/M, mob/living/user)
-	return
 
 /mob/living/simple_mob/vore/bigdragon/runechat_y_offset(width, height)
 	return (..()*size_multiplier) + 40

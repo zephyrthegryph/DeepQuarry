@@ -38,15 +38,19 @@
 	var/copy = "/mob/living/simple_mob/vore/solarray"
 
 
-/mob/living/simple_mob/vore/spacecritter/attackby(obj/item/O, mob/user)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/spacecritter, INTERACT_ITEM(null, PROC_REF(spacecritter_interaction_item)))
+
+/// Old attackby: the evolve key evolves, the feed item duplicates; anything else is a normal hit.
+/mob/living/simple_mob/vore/spacecritter/proc/spacecritter_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	if(istype(O, evolvekey))
 		consume(O, user)
 		evolve()
-	else if(istype(O, feed))
+		return TRUE
+	if(istype(O, feed))
 		consume(O, user)
 		duplicate()
-	else
-		.=..()
+		return TRUE
+	return FALSE
 
 /mob/living/simple_mob/vore/spacecritter/proc/evolve()
 	var/mob/living/L

@@ -25,6 +25,7 @@ DECLARE_INTERACTIONS(/obj/item/supply_beacon, INTERACT_USE(null, PROC_REF(intera
 	consume(src, user)
 
 /obj/machinery/power/supply_beacon
+	silicon_use = ROBOT_USE_HAND_ADJACENT
 	name = "supply beacon"
 	desc = "A bulky moonshot supply beacon. Someone has been messing with the wiring."
 	icon = 'icons/obj/supplybeacon.dmi'
@@ -85,10 +86,6 @@ DECLARE_INTERACTIONS(/obj/item/supply_beacon, INTERACT_USE(null, PROC_REF(intera
 		return TRUE
 	to_chat(user, span_warning("You need to secure the beacon with a wrench first!"))
 	return TRUE
-
-/obj/machinery/power/supply_beacon/attack_ai(mob/user)
-	if(user.Adjacent(src))
-		attack_hand(user)
 
 /obj/machinery/power/supply_beacon/proc/activate(mob/user)
 	if(expended)

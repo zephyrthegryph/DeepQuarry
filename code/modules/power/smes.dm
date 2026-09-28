@@ -421,10 +421,7 @@ REF_OWNED(/obj/machinery/power/smes, "soundloop")
 	name = "Use"
 	held_type = /obj/item
 	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/power/smes/proc/panel_is_open, "you need to open the access hatch first"))
-	effect = /obj/machinery/power/smes/proc/interaction_swallow
-
-/obj/machinery/power/smes/proc/interaction_swallow(mob/user, obj/item/held, datum/interaction/interaction)
-	return TRUE
+	effect = /atom/proc/interaction_swallow
 
 /obj/machinery/power/smes/screwdriver_act(mob/user, obj/item/tool)
 	return ..()

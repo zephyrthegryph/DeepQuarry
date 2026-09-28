@@ -30,12 +30,20 @@
 		density = FALSE
 	return ..()
 
-/obj/machinery/optable/attack_hand(mob/user as mob)
+EXTEND_INTERACTIONS(/obj/machinery/optable, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(optable_interaction_hand)), \
+	INTERACT_DRAG("Lay on table", PROC_REF(optable_interaction_drag)), \
+	INTERACT_ITEM(null, PROC_REF(optable_interaction_item)), \
+	INTERACT_VERB("Climb On Table", PROC_REF(optable_climb_onto)), \
+)
+
+/// Old attack_hand (it never reached the machinery gate).
+/obj/machinery/optable/proc/optable_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.has_mutation(HULK))
 		visible_message(span_danger("\The [user] destroys \the [src]!"))
 		density = FALSE
 		qdel(src)
-	return
+	return TRUE
 
 /obj/machinery/optable/CanPass(atom/movable/mover, turf/target)
 	if(istype(mover) && mover.checkpass(PASSTABLE))
@@ -92,36 +100,35 @@
 	else
 		icon_state = "table2-idle"
 
-/obj/machinery/optable/MouseDrop_T(mob/living/carbon/target, mob/living/user)
+/// Old MouseDrop_T.
+/obj/machinery/optable/proc/optable_interaction_drag(mob/living/user, mob/living/carbon/target, datum/interaction/interaction)
 	if(!istype(target) || !istype(user))
-		return ..()
+		return FALSE
 
 	if(!Adjacent(target) || !Adjacent(user))
-		return ..()
+		return FALSE
 
 	if(user.incapacitated() || !check_table(target, user))
-		return ..()
+		return FALSE
 
 	take_victim(target, user)
+	return TRUE
 
-/obj/machinery/optable/verb/climb_onto()
-	set name = "Climb On Table"
-	set category = "Object"
-	set src in oview(1)
-
-	var/mob/living/user = usr
+/// Old verb "Climb On Table".
+/obj/machinery/optable/proc/optable_climb_onto(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(!istype(user) || user.incapacitated() || !check_table(user, user))
 		return
 
 	take_victim(user, user)
 
-/obj/machinery/optable/attackby(obj/item/W, mob/living/carbon/user)
+/// Old attackby. It never called ..(), so every item stops here.
+/obj/machinery/optable/proc/optable_interaction_item(mob/living/carbon/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/grab))
 		var/obj/item/grab/G = W
 		if(iscarbon(G?.grab_target()) && check_table(G?.grab_target(), user))
 			take_victim(G?.grab_target(), user)
 			consume(W, user)
-			return
+	return TRUE
 
 /obj/machinery/optable/proc/check_table(mob/living/carbon/patient, mob/living/user)
 	check_victim()

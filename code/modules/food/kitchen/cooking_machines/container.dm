@@ -36,35 +36,40 @@
 		. += span_notice("It contains [reagents.total_volume]u of reagents.")
 
 
-/obj/item/reagent_containers/cooking_container/attackby(obj/item/I as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/reagent_containers/cooking_container, \
+	INTERACT_ITEM(null, PROC_REF(cooking_container_interaction_item)), \
+	INTERACT_ALT("Empty container", PROC_REF(cooking_container_interaction_empty)), \
+	INTERACT_VERB("Empty Container", PROC_REF(cooking_container_verb_empty)), \
+)
+
+/// Old attackby.
+/obj/item/reagent_containers/cooking_container/proc/cooking_container_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/gripper))
 		var/obj/item/gripper/GR = I
 		var/obj/item/wrapped = GR.get_wrapped_item()
 		if(wrapped)
 			attackby(wrapped, user)
-			return FALSE
+			return INTERACTION_HANDLED_PASS
 
 	for (var/possible_type in insertable)
 		if (istype(I, possible_type))
 			if (!can_fit(I))
 				to_chat(user, span_warning("There's no more space in the [src] for that!"))
-				return 0
+				return INTERACTION_HANDLED_PASS
 
 			if(!user.unEquip(I) && !isturf(I.loc))
-				return
+				return INTERACTION_HANDLED_PASS
 			I.forceMove(src)
 			to_chat(user, span_notice("You put the [I] into the [src]."))
 			food_items += 1
 			update_icon()
-			return
+			return INTERACTION_HANDLED_PASS
+	return INTERACTION_HANDLED_PASS
 
-/obj/item/reagent_containers/cooking_container/verb/empty()
-	set src in oview(1)
-	set name = "Empty Container"
-	set category = "Object"
-	set desc = "Removes items from the container, excluding reagents."
-
-	do_empty(usr)
+/// Old Empty Container verb: removes items from the container, excluding reagents.
+/obj/item/reagent_containers/cooking_container/proc/cooking_container_verb_empty(mob/user, obj/item/held, datum/interaction/interaction)
+	do_empty(user)
+	return TRUE
 
 /obj/item/reagent_containers/cooking_container/proc/do_empty(mob/user)
 	if (!isliving(user))
@@ -99,8 +104,10 @@
 			return 1//Contains only a single object which can be extracted alone
 	return 2//Contains multiple objects and/or reagents
 
-/obj/item/reagent_containers/cooking_container/click_alt(mob/user)
+/// Old click_alt.
+/obj/item/reagent_containers/cooking_container/proc/cooking_container_interaction_empty(mob/user, obj/item/held, datum/interaction/interaction)
 	do_empty(user)
+	return TRUE
 
 //Deletes contents of container.
 //Used when food is burned, before replacing it with a burned mess

@@ -51,8 +51,6 @@
 	icon_state = "powersink0"
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/powersink/attack_ai()
-	return
 
 DECLARE_INTERACTIONS(/obj/item/powersink, INTERACT_HAND(null, PROC_REF(interaction_hand)))
 

@@ -82,6 +82,7 @@ DECLARE_INTERACTIONS(/obj/item/walkpod, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+	INTERACT_VERB("Take HeadPods", PROC_REF(walkpod_verb_take_headpods), REQ_IN_INVENTORY), \
 )
 
 /// Old attack_self.
@@ -229,11 +230,9 @@ DECLARE_INTERACTIONS(/obj/item/walkpod, \
 			return TRUE
 
 // Silly verb
-/obj/item/walkpod/verb/take_headpods()
-	set name = "Take HeadPods"
-	set desc = "Grab the pair of HeadPods."
-
-	var/mob/living/L = usr
+/// Old Take HeadPods verb: Grab the pair of HeadPods.
+/obj/item/walkpod/proc/walkpod_verb_take_headpods(mob/user, obj/item/held, datum/interaction/interaction)
+	var/mob/living/L = user
 	if(!istype(L))
 		return
 	if(deployed_headpods)

@@ -335,12 +335,13 @@
 	ChangeTurf(/turf/simulated/wall/cult, preserve_outdoors = TRUE)
 	return TRUE
 
-/turf/simulated/wall/click_alt(mob/user)
+/// Old click_alt: graffiti with the held item; otherwise the default alt-click.
+/turf/simulated/wall/proc/wall_graffiti_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	if(isliving(user))
 		var/mob/living/livingUser = user
 		if(try_graffiti(livingUser, livingUser.get_active_hand()))
-			return
-	. = ..()
+			return TRUE
+	return FALSE
 
 // === merged from RCD_chomp.dm during hard-fork de-suffix. Placed in this file because it
 // is the highest-positioned definer in the override chain for the members it
@@ -378,14 +379,20 @@
 		to_chat(user, span_warning("You short out the safeties on \the [src]'s construction limiter"))
 		return TRUE
 
-/obj/item/rcd/attackby(obj/item/W, mob/user)
+DECLARE_INTERACTIONS(/obj/item/rcd, \
+	INTERACT_ITEM("Load", PROC_REF(rcd_item)), \
+	INTERACT_USE("Select mode", PROC_REF(rcd_self)), \
+)
+
+/// Old attackby: load matter cartridges or sheets, then fall through as its ..() did.
+/obj/item/rcd/proc/rcd_item(mob/user, obj/item/W, datum/interaction/interaction)
 	var/loaded = 0
 	if(istype(W, /obj/item/rcd_ammo))
 		var/obj/item/rcd_ammo/cartridge = W
 		var/can_store = min(max_stored_matter - stored_matter, cartridge.remaining)
 		if(can_store <= 0)
 			to_chat(user, span_warning("There's either no space or \the [cartridge] is empty!"))
-			return FALSE
+			return INTERACTION_HANDLED_PASS
 		stored_matter += can_store
 		cartridge.remaining -= can_store
 		if(!cartridge.remaining)
@@ -414,7 +421,7 @@
 		playsound(src, 'sound/machines/click.ogg', 50, 1)
 		update_icon()
 		to_chat(user, span_notice("The RCD now holds [stored_matter]/[max_stored_matter] matter-units."))
-	return ..()
+	return FALSE
 
 /obj/item/rcd/proc/loadwithsheets(obj/item/stack/S, value, mob/user)
 	var/maxsheets = round((max_stored_matter-stored_matter)/value)    //calculate the max number of sheets that will fit in RCD
@@ -427,8 +434,8 @@
 	to_chat(user, span_warning("You can't insert any more [S.name] sheets into [src]!"))
 	return 0
 
-/obj/item/rcd/attack_self(mob/living/user)
-	..()
+/// Old attack_self: the mode radial menu.
+/obj/item/rcd/proc/rcd_self(mob/living/user, obj/item/held, datum/interaction/interaction)
 	var/list/choices = list(
 		"Floors & Walls" = radial_image_floorwall,
 		"Airlock" = radial_image_airlock,

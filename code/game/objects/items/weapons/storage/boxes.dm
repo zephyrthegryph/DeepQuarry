@@ -39,9 +39,11 @@
 
 /obj/item/storage/box/hold_constraint()
 	return list(HOLD_MAX_SIZE(ITEMSIZE_SMALL))
-/obj/item/storage/box/attack_self(mob/user)
-	. = ..(user)
-	if(.)
+EXTEND_INTERACTIONS(/obj/item/storage/box, INTERACT_USE("Fold", PROC_REF(interaction_fold)))
+
+/// Old attack_self: after the storage's own self-use, fold the box flat or crumple it.
+/obj/item/storage/box/proc/interaction_fold(mob/user, obj/item/held, datum/interaction/interaction)
+	if(interaction_self(user, held, interaction))
 		return TRUE
 
 	//try to fold it
@@ -449,7 +451,10 @@
 	var/list/holds = list(/obj/item/flame/match)
 	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
-/obj/item/storage/box/matches/attackby(obj/item/flame/match/W, mob/user)
+EXTEND_INTERACTIONS(/obj/item/storage/box/matches, INTERACT_ITEM("Strike", PROC_REF(interaction_strike)))
+
+/// Old attackby: strike a match. It never reached the storage's insertion.
+/obj/item/storage/box/matches/proc/interaction_strike(mob/user, obj/item/flame/match/W, datum/interaction/interaction)
 	if(istype(W) && !W.lit && !W.burnt)
 		if(prob(25))
 			W.light(user)
@@ -457,7 +462,7 @@
 		else
 			playsound(src, 'sound/items/cigs_lighters/matchstick_hit.ogg', 25, 0, -1)
 	W.update_icon()
-	return
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/storage/box/autoinjectors
 	name = "box of injectors"

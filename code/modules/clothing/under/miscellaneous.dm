@@ -1708,13 +1708,13 @@
 			Hides any bulges on your body, as well as conceals your true weight."
 	hides_bulges = TRUE
 
-/obj/item/clothing/under/hyperfiber/verb/toggle_fibers()
-		set category = "Object"
-		set name = "Adjust Bluespace Fibers"
-		set desc = "Adjust your suit's HYPER fibers. Activating it hides your stomach(s) and your general body-build. Good if you have a lot to hide."
-		set src in usr
+EXTEND_INTERACTIONS(/obj/item/clothing/under/hyperfiber, \
+	INTERACT_VERB("Adjust Bluespace Fibers", PROC_REF(hyperfiber_toggle_fibers_verb), REQ_IN_INVENTORY), \
+)
 
-		adjust_fibers(usr)
+/// Old verb "Adjust Bluespace Fibers".
+/obj/item/clothing/under/hyperfiber/proc/hyperfiber_toggle_fibers_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	adjust_fibers(user)
 
 /obj/item/clothing/under/hyperfiber/proc/adjust_fibers(mob/user)
 	if(hides_bulges == FALSE)
@@ -1733,12 +1733,13 @@
 			Allows one to resize themselves at will, and conceals their true weight as well as any bulges or protrusions on their body."
 	var/original_size
 
-/obj/item/clothing/under/hyperfiber/bluespace/verb/resize()
-	set name = "Adjust Bluespace Fibers"
-	set desc = "Adjust your suit's bluespace fibers. Activating it allows you to expand your own body or reduce it in size! Effect is limited to when you have the suit on."
-	set category = "Object"
-	set src in usr
-	bluespace_size(usr)
+EXTEND_INTERACTIONS(/obj/item/clothing/under/hyperfiber/bluespace, \
+	INTERACT_VERB("Adjust Bluespace Fibers", PROC_REF(bluespace_resize_verb), REQ_IN_INVENTORY), \
+)
+
+/// Old verb "Adjust Bluespace Fibers".
+/obj/item/clothing/under/hyperfiber/bluespace/proc/bluespace_resize_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	bluespace_size(user)
 
 /obj/item/clothing/under/hyperfiber/bluespace/proc/bluespace_size(mob/user)
 	if (!ishuman(user))
@@ -1882,12 +1883,13 @@
 	if(Adjacent(user))
 		. += "The dial seems to be set to [target_size*100]%"
 
-/obj/item/clothing/gloves/bluespace/deluxe/verb/turn_dial()
-	set name = "Adjust Bluespace Dial"
-	set desc = "Adjust your bracelet's standard size setting. Effect is limited to when you have the bracelet on."
-	set category = "Object"
-	set src in usr
-	bluespace_size(usr)
+EXTEND_INTERACTIONS(/obj/item/clothing/gloves/bluespace/deluxe, \
+	INTERACT_VERB("Adjust Bluespace Dial", PROC_REF(deluxe_turn_dial_verb), REQ_IN_INVENTORY), \
+)
+
+/// Old verb "Adjust Bluespace Dial".
+/obj/item/clothing/gloves/bluespace/deluxe/proc/deluxe_turn_dial_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	bluespace_size(user)
 
 /obj/item/clothing/gloves/bluespace/deluxe/proc/bluespace_size(mob/user) //Taken from HYPER suit
 	if(!ishuman(user))

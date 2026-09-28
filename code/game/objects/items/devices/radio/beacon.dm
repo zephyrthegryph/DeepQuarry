@@ -15,17 +15,18 @@ REGISTRY_MEMBERSHIP(/obj/item/radio/beacon, REGISTRY_BEACONS)
 	return null
 
 
-/obj/item/radio/beacon/verb/alter_signal(t as text)
-	set name = "Alter Beacon's Signal"
-	set category = "Object"
-	set src in usr
-
-	if ((usr.canmove && !( usr.restrained() )))
+/obj/item/radio/beacon/proc/alter_signal_effect(mob/user, obj/item/held, datum/interaction/interaction)
+	// The old verb took the text as its argument; ask for it instead.
+	var/t = rerun_ask(user, "beacon_signal", PROC_REF(alter_signal_effect), args, /datum/om/prompt/text, message = "Enter the beacon's new signal code.", title = "Alter Beacon's Signal", default = code, max_length = MAX_NAME_LEN)
+	if(isnull(t))
+		return
+	if(loc != user)
+		return
+	if ((user.canmove && !( user.restrained() )))
 		src.code = t
 	if (!( src.code ))
 		src.code = "beacon"
-	src.add_fingerprint(usr)
-	return
+	src.add_fingerprint(user)
 
 // SINGULO BEACON SPAWNER
 
@@ -44,3 +45,8 @@ REGISTRY_MEMBERSHIP(/obj/item/radio/beacon, REGISTRY_BEACONS)
 		playsound(src, 'sound/effects/pop.ogg', 100, 1, 1)
 		consume(src, user)
 	return
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/radio/beacon, \
+	INTERACT_VERB("Alter Beacon's Signal", PROC_REF(alter_signal_effect), REQ_IN_INVENTORY), \
+)

@@ -58,7 +58,10 @@
 		if(!charges)
 			. += "There seems to be no more room for any more edits!"
 
-DECLARE_INTERACTIONS(/obj/item/areaeditor, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+DECLARE_INTERACTIONS(/obj/item/areaeditor, \
+	INTERACT_USE("Read", PROC_REF(areaeditor_text)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
 
 /// Old attackby.
 /obj/item/areaeditor/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
@@ -78,10 +81,8 @@ DECLARE_INTERACTIONS(/obj/item/areaeditor, INTERACT_ITEM(null, PROC_REF(interact
 		return FALSE
 	return INTERACTION_HANDLED_PASS
 
-/obj/item/areaeditor/attack_self(mob/user) //Convert this to TGUI some time.
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self: builds the area editing page, which subtypes add to and show. Convert this to TGUI some time.
+/obj/item/areaeditor/proc/areaeditor_text(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	. = "<BODY><HTML><head><title>[src]</title></head> \
 				<h2>[station_name()] [src.name]</h2>"
@@ -134,10 +135,10 @@ DECLARE_INTERACTIONS(/obj/item/areaeditor, INTERACT_ITEM(null, PROC_REF(interact
 	preserve_item = 1
 	var/legend = 1
 
-/obj/item/wire_reader/attack_self(mob/user) //Convert this to TGUI some time.
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/wire_reader, INTERACT_USE("Read", PROC_REF(interaction_read_wires)))
+
+/// Old attack_self. Convert this to TGUI some time.
+/obj/item/wire_reader/proc/interaction_read_wires(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	. = "<BODY><HTML><head><title>[src]</title></head> \
 				<h2>[station_name()] [src.name]</h2>"
@@ -197,10 +198,11 @@ DECLARE_INTERACTIONS(/obj/item/areaeditor, INTERACT_ITEM(null, PROC_REF(interact
 	uses_charges = 1
 	can_override = 1 // This will allow easier building on the planets, dont think blueprint grief is too big of a problem. -Lotion
 
-/obj/item/areaeditor/blueprints/attack_self(mob/user)
-	. = ..(user)
-	if(. == 1) //I hate this so much.
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/areaeditor/blueprints, INTERACT_USE("Read", PROC_REF(interaction_read_blueprints)))
+
+/// Old attack_self: the area editor's page, plus the station and wiring pages, shown.
+/obj/item/areaeditor/blueprints/proc/interaction_read_blueprints(mob/user, obj/item/held, datum/interaction/interaction)
+	. = areaeditor_text(user, held, interaction)
 	var/area/A = get_area(user)
 	if(!legend)
 		if(get_area_type() == AREA_STATION)
@@ -249,7 +251,7 @@ DECLARE_INTERACTIONS(/obj/item/areaeditor, INTERACT_ITEM(null, PROC_REF(interact
 	..()
 	//clear_viewer()
 	if(length(areaColor_turfs))
-		seeAreaColors_remove()
+		seeAreaColors_remove_effect(user)
 	legend = FALSE
 
 /obj/item/areaeditor/proc/get_area_type(area/A)
@@ -698,62 +700,53 @@ DECLARE_INTERACTIONS(/obj/item/areaeditor, INTERACT_ITEM(null, PROC_REF(interact
 
 //Nice verbs for the engineer to see where areas start/end.
 
-/obj/item/areaeditor/verb/seeRoomColors()
-	set src in usr
-	set category = "Blueprints"
-	set name = "Show Room Colors"
+/obj/item/areaeditor/proc/seeRoomColors_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
 	// If standing somewhere we can expand from, use expand perms, otherwise create
 	var/canOverwrite = (get_area_type() & can_expand_areas_in) ? can_expand_areas_into : can_create_areas_into
-	var/res = detect_room_ex(get_turf(usr), canOverwrite, visual = 1)
+	var/res = detect_room_ex(get_turf(user), canOverwrite, visual = 1)
 	if(!istype(res, /list))
 		switch(res)
 			if(ROOM_ERR_SPACE)
-				to_chat(usr, span_warning("The new area must be completely airtight!"))
+				to_chat(user, span_warning("The new area must be completely airtight!"))
 				return
 			if(ROOM_ERR_TOOLARGE)
-				to_chat(usr, span_warning("The new area too large!"))
+				to_chat(user, span_warning("The new area too large!"))
 				return
 			else
-				to_chat(usr, span_danger("Error! Please notify administration!"))
+				to_chat(user, span_danger("Error! Please notify administration!"))
 				return
 	// Okay we got a room, lets color it
-	seeAreaColors_remove()
+	seeAreaColors_remove_effect(user)
 	var/icon/green = new('icons/misc/debug_group.dmi', "green")
 	for(var/turf/T in res)
-		usr << image(green, T, "blueprints", TURF_LAYER)
+		user << image(green, T, "blueprints", TURF_LAYER)
 		LAZYADD(areaColor_turfs, T)
-	to_chat(usr, span_notice("The space covered by the new area is highlighted in green."))
+	to_chat(user, span_notice("The space covered by the new area is highlighted in green."))
 
-/obj/item/areaeditor/verb/seeAreaColors()
-	set src in usr
-	set category = "Blueprints"
-	set name = "Show Area Colors"
+/obj/item/areaeditor/proc/seeAreaColors_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
 	// Remove any existing
-	seeAreaColors_remove()
+	seeAreaColors_remove_effect(user)
 
-	to_chat(usr, span_notice("\The [src] shows nearby areas in different colors."))
+	to_chat(user, span_notice("\The [src] shows nearby areas in different colors."))
 	var/i = 0
-	for(var/area/A in range(usr))
+	for(var/area/A in range(user))
 		if(get_area_type(A) == AREA_SPACE)
 			continue // Don't overlay all of space!
 		var/icon/areaColor = new('icons/misc/debug_rebuild.dmi', "[++i]")
-		to_chat(usr, "- [A] as [i]")
+		to_chat(user, "- [A] as [i]")
 		for(var/turf/T in A.contents)
-			usr << image(areaColor, T, "blueprints", TURF_LAYER)
+			user << image(areaColor, T, "blueprints", TURF_LAYER)
 			LAZYADD(areaColor_turfs, T)
 
-/obj/item/areaeditor/verb/seeAreaColors_remove()
-	set src in usr
-	set category = "Blueprints"
-	set name = "Remove Area Colors"
+/obj/item/areaeditor/proc/seeAreaColors_remove_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
 	LAZYCLEARLIST(areaColor_turfs)
-	if(usr.client.images.len)
-		for(var/image/i in usr.client.images)
+	if(user?.client?.images.len)
+		for(var/image/i in user.client.images)
 			if(i.icon_state == "blueprints")
-				usr.client.images.Remove(i)
+				user.client.images.Remove(i)
 
 //GLOBAL VERB FOR PAPER TO ENABLE ANYONE TO MAKE AN AREA IN BUILDABLE AREAS.
 //THIS IS 70 TILES. ANYTHING LARGER SHOULD USE ACTUAL BLUEPRINTS.
@@ -762,23 +755,20 @@ DECLARE_INTERACTIONS(/obj/item/areaeditor, INTERACT_ITEM(null, PROC_REF(interact
 	var/created_area = 0
 	var/area_cooldown = 0
 
-/obj/item/paper/verb/create_area()
-	set name = "Create Area"
-	set category = "Object"
-	set src in usr
+/obj/item/paper/proc/create_area_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
 	if(created_area)
-		to_chat(usr, span_warning("This paper has already been used to create an area."))
+		to_chat(user, span_warning("This paper has already been used to create an area."))
 		return
 
-	if(usr.stat || !COOLDOWN_FINISHED(src, area_cooldown))
-		to_chat(usr, span_warning("You recently used this paper to try to create an area. Wait one minute before using it again."))
+	if(user.stat || !COOLDOWN_FINISHED(src, area_cooldown))
+		to_chat(user, span_warning("You recently used this paper to try to create an area. Wait one minute before using it again."))
 		return
 
 	COOLDOWN_START(src, area_cooldown, 600) //Anti spam.
 
-	create_new_area(usr)
-	add_fingerprint(usr)
+	create_new_area(user)
+	add_fingerprint(user)
 	return
 
 /proc/get_new_area_type(area/A) //1 = can build in. 0 = can not build in.
@@ -924,3 +914,15 @@ DECLARE_INTERACTIONS(/obj/item/areaeditor, INTERACT_ITEM(null, PROC_REF(interact
 	return
 
 #undef BP_MAX_ROOM_SIZE
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/areaeditor, \
+	INTERACT_VERB("Show Room Colors", PROC_REF(seeRoomColors_effect), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Show Area Colors", PROC_REF(seeAreaColors_effect), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Remove Area Colors", PROC_REF(seeAreaColors_remove_effect), REQ_IN_INVENTORY), \
+)
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/paper, \
+	INTERACT_VERB("Create Area", PROC_REF(create_area_effect), REQ_IN_INVENTORY), \
+)

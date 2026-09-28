@@ -21,6 +21,10 @@
 #define INTERACTION_TAG_HOSTILE "hostile"
 /// Observer-only: offered to ghosts and to no one else (I3).
 #define INTERACTION_TAG_OBSERVER "observer"
+/// Telekinesis-only: offered to a telekinetic reach and to no one else (I3).
+#define INTERACTION_TAG_TELEKINESIS "telekinesis"
+/// Silicon-only: offered to the AI and cyborgs and to no one else (I3).
+#define INTERACTION_TAG_SILICON "silicon"
 /// Part of the Maintainable behaviour (panel, anchor, deconstruct, repair).
 #define INTERACTION_TAG_MAINTENANCE "maintenance"
 
@@ -124,7 +128,9 @@
 
 /**
  * Declares a type's compact interaction specs: generates its get_interactions()
- * getter returning a proc-local `var/static/list` (allocated once, ever; AGENTS.md §3a).
+ * getter returning a proc-local `var/static/list` (allocated once, on first use; AGENTS.md §3a).
+ * It is built lazily rather than in the static's initializer: every static initializer runs in
+ * one world-init proc, which DM caps in size, and there are hundreds of these.
  *
  *   DECLARE_INTERACTIONS(/obj/item/binoculars, \
  *   	INTERACT_USE("Zoom", PROC_REF(zoom)), \
@@ -137,7 +143,10 @@
  * them, override declare_interactions() and use dq_interaction_from_spec() (§5a).
  */
 #define DECLARE_INTERACTIONS(T, specs...) ##T/get_interactions(){\
-	var/static/list/dq_interaction_specs = list(specs);\
+	var/static/list/dq_interaction_specs;\
+	if(!dq_interaction_specs){\
+		dq_interaction_specs = list(specs);\
+	}\
 	return dq_interaction_specs;\
 }
 
@@ -148,7 +157,10 @@
  * Use it on a subtype of a type that declares interactions of its own.
  */
 #define EXTEND_INTERACTIONS(T, specs...) ##T/declare_interactions(list/into){\
-	var/static/list/dq_interaction_specs = list(specs);\
+	var/static/list/dq_interaction_specs;\
+	if(!dq_interaction_specs){\
+		dq_interaction_specs = list(specs);\
+	}\
 	for(var/dq_spec in dq_interaction_specs){\
 		into += dq_interaction_from_spec(type, dq_spec);\
 	}\
@@ -173,3 +185,42 @@
 #define INTERACT_HAND_HOSTILE(name, effect, requires...) list(INTERACT_KIND_HAND, name, effect, list(requires), null, INTERACT_STANCE_HOSTILE)
 /// Touched with an empty hand, only with combat mode off.
 #define INTERACT_HAND_PEACEFUL(name, effect, requires...) list(INTERACT_KIND_HAND, name, effect, list(requires), null, INTERACT_STANCE_PEACEFUL)
+
+// Default interactions: what a type does with an input when nothing more specific it
+// offers takes it (an item's pickup, a mob being hit or touched). Spec element 7.
+// They sort after every other interaction of the entry, whichever type declared them.
+#define INTERACT_ORDER_DEFAULT "default"
+/// Priority of a default interaction: below every ordinary one (0) and hostile shifts.
+#define INTERACTION_DEFAULT_PRIORITY -(COMBAT_MODE_PRIORITY_SHIFT * 2)
+/// Touched with an empty hand, when nothing else answers: the type's default touch (an item's pickup).
+#define INTERACT_HAND_DEFAULT(name, effect, requires...) list(INTERACT_KIND_HAND, name, effect, list(requires), null, null, INTERACT_ORDER_DEFAULT)
+/// Used with any item, when nothing else takes it: the type's default (a mob is hit with it).
+#define INTERACT_ITEM_DEFAULT(name, effect, requires...) list(INTERACT_KIND_ITEM, name, effect, list(requires), null, null, INTERACT_ORDER_DEFAULT)
+/// Something dragged onto the target, when nothing else takes it (a movable's drag-buckle).
+#define INTERACT_DRAG_DEFAULT(name, effect, requires...) list(INTERACT_KIND_DRAG, name, effect, list(requires), null, null, INTERACT_ORDER_DEFAULT)
+/// Used with an item of `held_type`, when nothing else takes it.
+#define INTERACT_INSERT_DEFAULT(held_type, effect, name, requires...) list(INTERACT_KIND_INSERT, name, effect, list(requires), held_type, null, INTERACT_ORDER_DEFAULT)
+
+// Actor-kind shapes (I3). Resolver-native Use for one kind of actor, replacing the
+// attack_ai / attack_robot / attack_ghost overrides. The actor's adapter decides reach.
+#define INTERACT_KIND_SILICON "silicon"
+#define INTERACT_KIND_ROBOT "robot"
+#define INTERACT_KIND_OBSERVER "observer"
+/// The AI's Use, and a cyborg's empty-gripper Use (old attack_ai). `effect(actor, held, interaction)`.
+#define INTERACT_SILICON(name, effect, requires...) list(INTERACT_KIND_SILICON, name, effect, list(requires))
+/// A cyborg's empty-gripper Use only (old attack_robot). List it before an INTERACT_SILICON it overrides.
+#define INTERACT_ROBOT(name, effect, requires...) list(INTERACT_KIND_ROBOT, name, effect, list(requires))
+#define INTERACT_KIND_TK "tk"
+/// A telekinetic Use at range (old attack_tk). FALSE lets the default telekinetic grab happen.
+#define INTERACT_TK(name, effect, requires...) list(INTERACT_KIND_TK, name, effect, list(requires))
+/// A ghost's Use (old attack_ghost). `effect(actor, held, interaction)`.
+#define INTERACT_OBSERVER(name, effect, requires...) list(INTERACT_KIND_OBSERVER, name, effect, list(requires))
+
+// Object verbs as interactions (I7). A Menu entry with no key or click of its own: what an
+// object verb (the right-click popup) did. Reach is the entry's usual (adjacent, or carried);
+// add REQ_IN_INVENTORY for an old `set src in usr`.
+#define INTERACT_KIND_VERB "verb"
+/// An action chosen from the Menu (old object verb). `effect(actor, held, interaction)`.
+#define INTERACT_VERB(name, effect, requires...) list(INTERACT_KIND_VERB, name, effect, list(requires))
+/// Requirement: the target is on the actor (held, worn or in their bags), as an old `set src in usr`.
+#define REQ_IN_INVENTORY REQ_PROC(/proc/dq_interaction_in_inventory, "you need to be carrying it")

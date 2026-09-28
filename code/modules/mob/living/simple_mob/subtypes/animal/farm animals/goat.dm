@@ -61,7 +61,11 @@
 		for(var/obj/effect/plant/SV in loc)
 			SV.die_off(1)
 
-/mob/living/simple_mob/animal/goat/attackby(obj/item/O as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/goat, INTERACT_ITEM(null, PROC_REF(goat_interaction_item)))
+
+/// Old attackby: milking.
+/mob/living/simple_mob/animal/goat/proc/goat_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+	. = TRUE
 	var/obj/item/reagent_containers/glass/G = O
 	if(stat == CONSCIOUS && istype(G) && G.is_open_container())
 		user.visible_message(span_notice("[user] milks [src] using \the [O]."))
@@ -71,7 +75,7 @@
 		if(!transfered)
 			to_chat(user, span_red("The udder is dry. Wait a bit longer..."))
 	else
-		..()
+		return FALSE
 
 /datum/say_list/goat
 	speak = list("EHEHEHEHEH","eh?")

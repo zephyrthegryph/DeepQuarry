@@ -54,45 +54,50 @@
 
 
 /obj/item/clothing/mask/gas/sechailer/ui_action_click(mob/user, actiontype)
-	halt()
+	sechailer_halt_verb(user)
 
-/obj/item/clothing/mask/gas/sechailer/click_alt(mob/user)
-	selectphrase()
+EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/sechailer, \
+	INTERACT_ALT("Select phrase", PROC_REF(sechailer_phrase_alt)), \
+	INTERACT_VERB("Select gas mask phrase", PROC_REF(sechailer_selectphrase_verb), REQ_IN_INVENTORY), \
+	INTERACT_VERB("HALT!", PROC_REF(sechailer_halt_verb), REQ_IN_INVENTORY), \
+)
 
-/obj/item/clothing/mask/gas/sechailer/verb/selectphrase()
-	set name = "Select gas mask phrase"
-	set category = "Object"
-	set desc = "Alter the message shouted by your complionator gas mask."
+/// Old click_alt. It never reached the clothing alt-click.
+/obj/item/clothing/mask/gas/sechailer/proc/sechailer_phrase_alt(mob/user, obj/item/held, datum/interaction/interaction)
+	sechailer_selectphrase_verb(user)
+	return TRUE
 
+/// Old verb "Select gas mask phrase".
+/obj/item/clothing/mask/gas/sechailer/proc/sechailer_selectphrase_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	var/key = phrase_list[phrase]
 	var/message = phrase_list[key]
 
 	if (!safety)
-		to_chat(usr, span_notice("You set the restrictor to: FUCK YOUR CUNT YOU SHIT EATING COCKSUCKER MAN EAT A DONG FUCKING ASS RAMMING SHIT FUCK EAT PENISES IN YOUR FUCK FACE AND SHIT OUT ABORTIONS OF FUCK AND DO SHIT IN YOUR ASS YOU COCK FUCK SHIT MONKEY FUCK ASS WANKER FROM THE DEPTHS OF SHIT."))
+		to_chat(user, span_notice("You set the restrictor to: FUCK YOUR CUNT YOU SHIT EATING COCKSUCKER MAN EAT A DONG FUCKING ASS RAMMING SHIT FUCK EAT PENISES IN YOUR FUCK FACE AND SHIT OUT ABORTIONS OF FUCK AND DO SHIT IN YOUR ASS YOU COCK FUCK SHIT MONKEY FUCK ASS WANKER FROM THE DEPTHS OF SHIT."))
 		return
 	switch(aggressiveness)
 		if(1)
 			phrase = (phrase < 6) ? (phrase + 1) : 1
 			key = phrase_list[phrase]
 			message = phrase_list[key]
-			to_chat(usr,span_notice("You set the restrictor to: [message]"))
+			to_chat(user,span_notice("You set the restrictor to: [message]"))
 		if(2)
 			phrase = (phrase < 11 && phrase >= 7) ? (phrase + 1) : 7
 			key = phrase_list[phrase]
 			message = phrase_list[key]
-			to_chat(usr,span_notice("You set the restrictor to: [message]"))
+			to_chat(user,span_notice("You set the restrictor to: [message]"))
 		if(3)
 			phrase = (phrase < 18 && phrase >= 12 ) ? (phrase + 1) : 12
 			key = phrase_list[phrase]
 			message = phrase_list[key]
-			to_chat(usr,span_notice("You set the restrictor to: [message]"))
+			to_chat(user,span_notice("You set the restrictor to: [message]"))
 		if(4)
 			phrase = (phrase < 18 && phrase >= 1 ) ? (phrase + 1) : 1
 			key = phrase_list[phrase]
 			message = phrase_list[key]
-			to_chat(usr,span_notice("You set the restrictor to: [message]"))
+			to_chat(user,span_notice("You set the restrictor to: [message]"))
 		else
-			to_chat(usr, span_notice("It's broken."))
+			to_chat(user, span_notice("It's broken."))
 
 /obj/item/clothing/mask/gas/sechailer/emag_act(mob/user)
 	if(safety)
@@ -147,22 +152,20 @@
 	qdel(src)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/clothing/mask/gas/sechailer/verb/halt()
-	set name = "HALT!"
-	set category = "Objects"
-	set desc = "Activate your face mask hailer."
+/// Old verb "HALT!".
+/obj/item/clothing/mask/gas/sechailer/proc/sechailer_halt_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	var/key = phrase_list[phrase]
 	var/message = phrase_list[key]
 
 	if(cooldown < world.time - 35) // A cooldown, to stop people being jerks
 		if(!safety)
 			message = "FUCK YOUR CUNT YOU SHIT EATING COCKSUCKER MAN EAT A DONG FUCKING ASS RAMMING SHIT FUCK EAT PENISES IN YOUR FUCK FACE AND SHIT OUT ABORTIONS OF FUCK AND DO SHIT IN YOUR ASS YOU COCK FUCK SHIT MONKEY FUCK ASS WANKER FROM THE DEPTHS OF SHIT."
-			usr.visible_message(span_infoplain("[usr]'s Compli-o-Nator: " + span_red(span_huge(span_bold("[message]")))))
+			user.visible_message(span_infoplain("[user]'s Compli-o-Nator: " + span_red(span_huge(span_bold("[message]")))))
 			playsound(src, 'sound/voice/binsult.ogg', 50, 0, 4) //Future sound channel = something like SFX
 			cooldown = world.time
 			return
 
-		usr.visible_message(span_infoplain("[usr]'s Compli-o-Nator: " + span_red(span_huge(span_bold("[message]")))))
+		user.visible_message(span_infoplain("[user]'s Compli-o-Nator: " + span_red(span_huge(span_bold("[message]")))))
 		playsound(src, "sound/voice/complionator/[key].ogg", 50, 0, 4) //future sound channel = something like SFX
 		cooldown = world.time
 

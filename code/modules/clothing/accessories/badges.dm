@@ -26,10 +26,11 @@
 
 /obj/item/clothing/accessory/badge/proc/set_desc(mob/living/carbon/human/H)
 
-/obj/item/clothing/accessory/badge/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge, INTERACT_SELF("Display", PROC_REF(badge_display_self)))
+
+/// Old attack_self: polish or display the badge. Returns FALSE where the old body returned nothing,
+/// so subtypes' legacy attack_self bodies that ran after ..() still run.
+/obj/item/clothing/accessory/badge/proc/badge_display_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(sheriff_badge)
 		return FALSE
 	if(fluff_badge)
@@ -37,17 +38,18 @@
 	if(!stored_name)
 		if(holo)
 			to_chat(user, "Waving around a holobadge before swiping an ID would be pretty pointless.")
-			return
+			return FALSE
 		else
 			to_chat(user, "You polish your old badge fondly, shining up the surface.")
 		set_name(user.real_name)
-		return
+		return FALSE
 
 	if(isliving(user))
 		if(stored_name)
 			user.visible_message(span_notice("[user] displays their [src.name].\nIt reads: [stored_name], [badge_string]."),span_notice("You display your [src.name].\nIt reads: [stored_name], [badge_string]."))
 		else
 			user.visible_message(span_notice("[user] displays their [src.name].\nIt reads: [badge_string]."),span_notice("You display your [src.name]. It reads: [badge_string]."))
+	return FALSE
 
 /obj/item/clothing/accessory/badge/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	user.visible_message(span_danger("[user] invades [M]'s personal space, thrusting [src] into their face insistently."),span_danger("You invade [M]'s personal space, thrusting [src] into their face insistently."))
@@ -113,7 +115,10 @@
 		to_chat(user, span_danger("You crack the holobadge security checks."))
 		return 1
 
-/obj/item/clothing/accessory/badge/holo/attackby(obj/item/O as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/holo, INTERACT_ITEM(null, PROC_REF(holobadge_imprint_item)))
+
+/// Old attackby: imprint ID details.
+/obj/item/clothing/accessory/badge/holo/proc/holobadge_imprint_item(mob/user, obj/item/O, datum/interaction/interaction)
 	if(istype(O, /obj/item/card/id) || istype(O, /obj/item/pda))
 
 		var/obj/item/card/id/id_card = null
@@ -133,8 +138,8 @@
 				break
 		if(!found)
 			to_chat(user, "[src] rejects your insufficient access rights.")
-		return
-	..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
 /obj/item/storage/box/holobadge
 	name = "holobadge box"
@@ -203,10 +208,10 @@
 	special_handling = TRUE
 	sheriff_badge = TRUE
 
-/obj/item/clothing/accessory/badge/sheriff/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/sheriff, INTERACT_USE("Flash badge", PROC_REF(sheriff_badge_self)))
+
+/// Old attack_self.
+/obj/item/clothing/accessory/badge/sheriff/proc/sheriff_badge_self(mob/user, obj/item/held, datum/interaction/interaction)
 	user.visible_message("[user] shows their sheriff badge. There's a new sheriff in town!",\
 		"You flash the sheriff badge to everyone around you!")
 
@@ -302,7 +307,13 @@ REF_OWNED(/obj/item/clothing/accessory/dosimeter, "current_film")
 	if(current_film.state > 1)
 		PERIODIC_STOP(src)
 
-/obj/item/clothing/accessory/dosimeter/attack_hand(mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/clothing/accessory/dosimeter, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(dosimeter_remove_film_hand)), \
+	INTERACT_INSERT(/obj/item/dosimeter_film, PROC_REF(dosimeter_insert_film), "Insert film"), \
+)
+
+/// Old attack_hand: pull the film out while holding the dosimeter in the other hand.
+/obj/item/clothing/accessory/dosimeter/proc/dosimeter_remove_film_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.get_inactive_hand() == src)
 		if(current_film)
 			user.put_in_hands(current_film)
@@ -311,28 +322,25 @@ REF_OWNED(/obj/item/clothing/accessory/dosimeter, "current_film")
 			desc = "This seems like a dosimeter, but there is no film inside."
 			PERIODIC_STOP(src)
 			update_state(0)
-			return
-		..()
+			return TRUE
+	return FALSE
+
+/// Old attackby: insert a film.
+/obj/item/clothing/accessory/dosimeter/proc/dosimeter_insert_film(mob/user, obj/item/I, datum/interaction/interaction)
+	if(!current_film)
+		user.drop_item()
+		I.forceMove(src)
+		current_film = I
+		update_state(current_film.state)
+
+		to_chat(user, span_notice("You inserted the film into \the [src]."))
+		desc = "This seems like a dosimeter. It has a film inside."
+
+		if(current_film.state < 2)
+			PERIODIC_START(src, PERIODIC_SLOW)
 	else
-		return ..()
-
-/obj/item/clothing/accessory/dosimeter/attackby(obj/item/I, mob/user)
-	if(istype(I, /obj/item/dosimeter_film))
-		if(!current_film)
-			user.drop_item()
-			I.forceMove(src)
-			current_film = I
-			update_state(current_film.state)
-
-			to_chat(user, span_notice("You inserted the film into \the [src]."))
-			desc = "This seems like a dosimeter. It has a film inside."
-
-			if(current_film.state < 2)
-				PERIODIC_START(src, PERIODIC_SLOW)
-		else
-			to_chat(user, span_notice("\The [src] already has a film inside."))
-	else
-		return ..()
+		to_chat(user, span_notice("\The [src] already has a film inside."))
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/clothing/accessory/dosimeter/proc/check_holder()
 	var/mob/living/carbon/human/H = om_resolve(wearer)

@@ -47,7 +47,7 @@
 		for(var/obj/item/clothing/accessory/A in U.accessories)
 			if(istype(A, /obj/item/clothing/accessory/holster))
 				var/obj/item/clothing/accessory/holster/O = A
-				O.holster_verb()
+				O.holster_quick_holster_verb(H)
 
 /datum/decl/hierarchy/outfit/costume/cowboy
 	name = OUTFIT_COSTUME("Cowboy")
@@ -64,7 +64,7 @@
 		for(var/obj/item/clothing/accessory/A in U.accessories)
 			if(istype(A, /obj/item/clothing/accessory/holster))
 				var/obj/item/clothing/accessory/holster/O = A
-				O.holster_verb()
+				O.holster_quick_holster_verb(H)
 
 /datum/decl/hierarchy/outfit/costume/lumberjack
 	name = OUTFIT_COSTUME("Lumberjack")

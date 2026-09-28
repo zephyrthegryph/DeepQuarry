@@ -33,18 +33,18 @@
 			to_chat(user, "You pull the mask up to cover your face.")
 		update_clothing_icon()
 
-/obj/item/clothing/mask/breath/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/mask/breath, \
+	INTERACT_USE("Adjust", PROC_REF(breath_mask_adjust_self)), \
+	INTERACT_VERB("Adjust mask", PROC_REF(breath_toggle_verb), REQ_IN_INVENTORY), \
+)
+
+/// Old attack_self.
+/obj/item/clothing/mask/breath/proc/breath_mask_adjust_self(mob/user, obj/item/held, datum/interaction/interaction)
 	adjust_mask(user)
 
-/obj/item/clothing/mask/breath/verb/toggle()
-		set category = "Object"
-		set name = "Adjust mask"
-		set src in usr
-
-		adjust_mask(usr)
+/// Old verb "Adjust mask".
+/obj/item/clothing/mask/breath/proc/breath_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	adjust_mask(user)
 
 /obj/item/clothing/mask/breath/medical
 	desc = "A close-fitting sterile mask that can be connected to an air supply."

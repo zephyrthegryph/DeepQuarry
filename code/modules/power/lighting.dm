@@ -629,6 +629,12 @@ REF_OWNED(/obj/machinery/light, list("cell", "overlay_layer"))
 	update()
 
 /obj/machinery/light/declare_interactions(list/into)
+	var/static/list/actor_specs = list(
+		INTERACT_SILICON("Toggle emergency lights", PROC_REF(light_silicon_toggle_emergency)),
+		INTERACT_TK("Remove bulb", PROC_REF(light_tk_remove)),
+	)
+	for(var/actor_spec in actor_specs)
+		into += dq_interaction_from_spec(type, actor_spec)
 	into += list(
 		/datum/interaction/machine_item/light_paint,
 		/datum/interaction/machine_item/light_replace,
@@ -847,19 +853,16 @@ REF_OWNED(/obj/machinery/light, list("cell", "overlay_layer"))
 	flickering = 0
 
 // ai attack - turn on/off emergency lighting for a specific fixture
-/obj/machinery/light/attack_ai(mob/user)
+/// Old attack_ai: toggle the fixture's emergency lighting.
+/obj/machinery/light/proc/light_silicon_toggle_emergency(mob/user, obj/item/held, datum/interaction/interaction)
 	no_emergency = !no_emergency
 	to_chat(user, span_notice("Emergency lights for this fixture have been [no_emergency ? "disabled" : "enabled"]."))
 	update(FALSE)
-	return
+	return TRUE
 
 // ai alt click - Make light flicker.  Very important for atmosphere.
 /obj/machinery/light/AIAltClick(mob/user)
 	flicker(1)
-
-/obj/machinery/light/flamp/attack_ai(mob/user)
-	attack_hand()
-	return
 
 // attack with hand - remove tube/bulb
 // if hands aren't protected and the light is on, burn the player
@@ -922,6 +925,11 @@ REF_OWNED(/obj/machinery/light, list("cell", "overlay_layer"))
 	return TRUE
 
 /obj/machinery/light/flamp/declare_interactions(list/into)
+	var/static/list/actor_specs = list(
+		INTERACT_SILICON("Use", TYPE_PROC_REF(/atom, interaction_as_touch)),
+	)
+	for(var/actor_spec in actor_specs)
+		into += dq_interaction_from_spec(type, actor_spec)
 	into += list(
 		/datum/interaction/machine_item/light_flamp_add_shade,
 		/datum/interaction/machine_hand/ungated/light_flamp_toggle,
@@ -952,10 +960,11 @@ REF_OWNED(/obj/machinery/light, list("cell", "overlay_layer"))
 		update()
 	return TRUE
 
-/obj/machinery/light/attack_tk(mob/user)
+/// Old attack_tk: pull the bulb out at range into a telekinetic grab.
+/obj/machinery/light/proc/light_tk_remove(mob/user, obj/item/held, datum/interaction/interaction)
 	if(status == LIGHT_EMPTY)
 		to_chat(user, "There is no [get_fitting_name()] in this light.")
-		return
+		return TRUE
 
 	to_chat(user, "You telekinetically remove the light [get_fitting_name()].")
 	var/obj/item/light/B = bulb()
@@ -967,6 +976,7 @@ REF_OWNED(/obj/machinery/light, list("cell", "overlay_layer"))
 	O.focus_object(B)
 	B.update_icon()
 	remove_bulb()
+	return TRUE
 
 // break the light and make sparks if was on
 
@@ -1721,10 +1731,7 @@ DECLARE_INTERACTIONS(/obj/item/light, INTERACT_ITEM(null, PROC_REF(interaction_i
 	id = "light_torch_swallow"
 	name = "Use"
 	held_type = /obj/item
-	effect = /obj/machinery/light/small/torch/proc/interaction_swallow
-
-/obj/machinery/light/small/torch/proc/interaction_swallow(mob/user, obj/item/held, datum/interaction/interaction)
-	return TRUE
+	effect = /atom/proc/interaction_swallow
 
 /obj/machinery/light/broken
 	icon_state = "tube-broken"

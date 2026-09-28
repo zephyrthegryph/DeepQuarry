@@ -32,12 +32,12 @@
 	if(!is_open_container())
 		. += "The cap is sealed."
 
-/obj/item/reagent_containers/chem_disp_cartridge/verb/verb_set_label(L as text)
-	set name = "Set Cartridge Label"
-	set category = "Object"
-	set src in view(usr, 1)
-
-	setLabel(L, usr)
+/// Old verb "Set Cartridge Label" (it took the label as a verb argument; now a text prompt).
+/obj/item/reagent_containers/chem_disp_cartridge/proc/cartridge_set_label(mob/user, obj/item/held, datum/interaction/interaction)
+	var/L = rerun_ask(user, "label", PROC_REF(cartridge_set_label), args, /datum/om/prompt/text, message = "Label for \the [src]:", title = "Set Cartridge Label", default = label, max_length = MAX_NAME_LEN)
+	if(isnull(L))
+		return
+	setLabel(L, user)
 
 /obj/item/reagent_containers/chem_disp_cartridge/proc/setLabel(L, mob/user = null)
 	if(L)
@@ -52,7 +52,10 @@
 		label = ""
 		name = initial(name)
 
-DECLARE_INTERACTIONS(/obj/item/reagent_containers/chem_disp_cartridge, INTERACT_USE(null, PROC_REF(interaction_self)))
+DECLARE_INTERACTIONS(/obj/item/reagent_containers/chem_disp_cartridge, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_VERB("Set Cartridge Label", PROC_REF(cartridge_set_label)), \
+)
 
 /// Old attack_self.
 /obj/item/reagent_containers/chem_disp_cartridge/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)

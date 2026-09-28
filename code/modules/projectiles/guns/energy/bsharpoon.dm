@@ -55,6 +55,8 @@
 DECLARE_INTERACTIONS(/obj/item/bluespace_harpoon, \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 	INTERACT_USE("Change fire mode", PROC_REF(interaction_fire_mode)), \
+	INTERACT_VERB("Change Fire Mode", PROC_REF(harpoon_verb_fire_mode), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Toggle Spatial Rearrangement", PROC_REF(harpoon_verb_dropnom_mode), REQ_IN_INVENTORY), \
 )
 
 /// Old attackby.
@@ -212,25 +214,19 @@ DECLARE_INTERACTIONS(/obj/item/bluespace_harpoon, \
 
 /// Old attack_self: switch the fire mode.
 /obj/item/bluespace_harpoon/proc/interaction_fire_mode(mob/user, obj/item/held, datum/interaction/interaction)
-	change_fire_mode(user)
+	harpoon_verb_fire_mode(user)
 	return TRUE
 
-/obj/item/bluespace_harpoon/verb/change_fire_mode(mob/user)
-	set name = "Change Fire Mode"
-	set category = "Object"
-	set src in range(0)
-
+/// Old Change Fire Mode verb.
+/obj/item/bluespace_harpoon/proc/harpoon_verb_fire_mode(mob/user, obj/item/held, datum/interaction/interaction)
 	if(transforming) return
 	mode = !mode
 	transforming = 1
 	to_chat(user,span_info("You change \the [src]'s mode to [mode ? "transmiting" : "receiving"]."))
 	update_icon()
 
-/obj/item/bluespace_harpoon/verb/chande_dropnom_mode(mob/user as mob)
-	set name = "Toggle Spatial Rearrangement"
-	set category = "Object"
-	set src in range(0)
-
+/// Old Toggle Spatial Rearrangement verb.
+/obj/item/bluespace_harpoon/proc/harpoon_verb_dropnom_mode(mob/user, obj/item/held, datum/interaction/interaction)
 	dropnoms_active = !dropnoms_active
 	to_chat(user,span_info("You switch \the [src]'s spatial rearrangement [dropnoms_active ? "on" : "off"]. (Telenoms [dropnoms_active ? "enabled" : "disabled"])"))
 

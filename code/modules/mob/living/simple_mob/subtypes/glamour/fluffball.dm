@@ -128,8 +128,12 @@
 	else
 		return //just leave them
 
-/mob/living/simple_mob/vore/fluffball/attackby(obj/item/W as obj, mob/user as mob)
-	..()
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/fluffball, INTERACT_ITEM(null, PROC_REF(fluffball_interaction_item)))
+
+/// Old attackby: the normal attack, then it steals food into its fluff.
+/mob/living/simple_mob/vore/fluffball/proc/fluffball_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+	. = TRUE
+	hit_with_item(W, user)
 	if(istype(W,/obj/item/reagent_containers/food))
 		consume(W, user)
 		visible_message("<span class='notice'>\The [src] quickly steals \the [W] into its fluff, it seems to have become a little less shy!</span>!")

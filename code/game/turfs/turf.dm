@@ -149,7 +149,14 @@ REGISTRY_MEMBERSHIP(/turf, REGISTRY_CLEANBOT_RESERVED_TURFS)
 /turf/proc/is_solid_structure()
 	return 1
 
-/turf/attack_hand(mob/user)
+DECLARE_INTERACTIONS(/turf, \
+	INTERACT_ITEM(null, PROC_REF(turf_item)), \
+	INTERACT_HAND_UNGATED("Touch", PROC_REF(turf_hand)), \
+	INTERACT_DRAG("Crawl", PROC_REF(turf_drag)), \
+)
+
+/// Old attack_hand: toggle a door on the tile, or pull what you're pulling onto it. FALSE when neither.
+/turf/proc/turf_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	//QOL feature, clicking on turf can toggle doors, unless pulling something
 	if(!user?.pulling_target())
 		var/obj/machinery/door/airlock/AL = locate_on(src, /obj/machinery/door/airlock)
@@ -178,7 +185,8 @@ REGISTRY_MEMBERSHIP(/turf, REGISTRY_CLEANBOT_RESERVED_TURFS)
 		step(pulling, get_dir(pulling.loc, src))
 	return 1
 
-/turf/attackby(obj/item/W, mob/user)
+/// Old attackby: dig the tile with a shovel; a pickup-mode bag collects the tile. Otherwise falls through.
+/turf/proc/turf_item(mob/user, obj/item/W, datum/interaction/interaction)
 	// Check if this turf can be dug up, check initial because we remove the flag when we've exhausted all loot, but still want to keep dig functionality
 	if((flags & TURF_CAN_DIG_SHOVEL) && !density && istype(W, /obj/item/shovel))
 		handle_turf_dig(user, W)
@@ -188,7 +196,7 @@ REGISTRY_MEMBERSHIP(/turf, REGISTRY_CLEANBOT_RESERVED_TURFS)
 		var/obj/item/storage/S = W
 		if(S.use_to_pickup && S.collection_mode)
 			S.gather_all(src, user)
-	return ..()
+	return FALSE
 
 /turf
 	silicon_use = ROBOT_USE_HAND
@@ -221,22 +229,24 @@ REGISTRY_MEMBERSHIP(/turf, REGISTRY_CLEANBOT_RESERVED_TURFS)
 		playsound(src, 'sound/weapons/punchmiss.ogg', 25, 1, -1)
 	return success
 
-/turf/MouseDrop_T(atom/movable/O as mob|obj, mob/user as mob)
+/// Old MouseDrop_T: a lying mob crawls, dragging something along onto the tile.
+/turf/proc/turf_drag(mob/user, atom/movable/O, datum/interaction/interaction)
 	var/turf/T = get_turf(user)
 	var/area/A = T.loc
 	if((istype(A) && !(A.get_gravity())) || (istype(T,/turf/space)))
-		return
+		return FALSE
 	if(istype(O, /atom/movable/screen))
-		return
+		return FALSE
 	if(user.restrained() || user.stat || user.has_status(EFFECT_STUNNED) || user.has_status(EFFECT_PARALYZED) || (!user.lying && !isrobot(user)) || LAZYLEN(user?.grabbed_by_list()) || user.is_paralyzed())
-		return
+		return FALSE
 	if((!(istype(O, /atom/movable)) || O.anchored || !Adjacent(user) || !Adjacent(O) || !user.Adjacent(O)))
-		return
+		return FALSE
 	if(!isturf(O.loc) || !isturf(user.loc))
-		return
+		return FALSE
 	if(isanimal(user) && O != user)
-		return
+		return FALSE
 	om_do_after(user, 25 + (5 * user.status_units(EFFECT_WEAKENED)), O, src, PROC_REF(crawl_drag_done), list(O, user))
+	return TRUE
 
 /turf/proc/crawl_drag_done(atom/movable/O, mob/user)
 	if(user.stat)

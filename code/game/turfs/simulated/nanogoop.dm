@@ -39,18 +39,24 @@ REGISTRY_MEMBERSHIP(/turf/simulated/floor/water/digestive_enzymes/nanites, REGIS
 		if(get_area(tolink) == get_area(src))
 			linkedsmes = om_handle(tolink)
 
-/turf/simulated/floor/water/digestive_enzymes/nanites/attack_hand(mob/user)
+EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
+	INTERACT_HAND_UNGATED("Interface", PROC_REF(nanites_hand)), \
+	INTERACT_SILICON("Interface", PROC_REF(nanites_silicon_interface)), \
+)
+
+/// Old attack_hand: a protean may interface with the pool; the turf's own touch always follows.
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanites_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/living/nutrienttarget = om_resolve(moblink)
 	var/obj/machinery/power/smes/smes = om_resolve(linkedsmes)
 	if(check_target() && (user != nutrienttarget))//prioritize this here, so mobs can turn the turf off
-		return ..()
+		return FALSE
 	if(ishuman(user))
 		if(smes || isAI(nutrienttarget))
-			return ..()
+			return FALSE
 		var/mob/living/carbon/human/checker = user
 		if(checker.nif)//Proteans have NIFS
 			om_ask(user, /datum/om/prompt/choice/nanite_state, PROC_REF(nanite_state_chosen), ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
-	return ..()
+	return FALSE
 
 /// Interfacing with nanite goop: on or off, then (on) what it recycles. A person must stay next
 /// to it (ask_flags set at the call); an AI answers from anywhere (`from_ai`).
@@ -122,22 +128,18 @@ REGISTRY_MEMBERSHIP(/turf/simulated/floor/water/digestive_enzymes/nanites, REGIS
 			moblink = om_handle(user)
 			toggle_all(TRUE, TRUE)
 
-/turf/simulated/floor/water/digestive_enzymes/nanites/attack_ai(mob/user)
+/// Old attack_ai. Cyborgs (shells included) never reached it: turfs send their Use to
+/// attack_hand (ROBOT_USE_HAND), so they fall through to that default here too.
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanites_silicon_interface(mob/user, obj/item/held, datum/interaction/interaction)
+	if(isrobot(user))
+		return FALSE
 	var/mob/living/nutrienttarget = om_resolve(moblink)
-	var/obj/machinery/power/smes/smes = om_resolve(linkedsmes)
-	if(isrobot(user) && !isshell(user))
-		if(smes || isAI(nutrienttarget))
-			return ..()
-		if(check_target() && user != nutrienttarget)
-			return ..()
-	if(isAI(user) || isshell(user))// AI have priority
-		if(check_target())
-			if(isAI(nutrienttarget) && user != nutrienttarget)//first come first serve, for AI
-				if(isshell(user))
-					return ..()
-				if(!locate(user) in range(1, src))// AI can always control adjacent nanite tiles
-					return ..()
+	if(check_target())
+		if(isAI(nutrienttarget) && user != nutrienttarget)//first come first serve, for AI
+			if(!locate(user) in range(1, src))// AI can always control adjacent nanite tiles
+				return FALSE
 	om_ask(user, /datum/om/prompt/choice/nanite_state, PROC_REF(nanite_state_chosen), from_ai = TRUE)
+	return TRUE
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanite_ai_interface_chosen(mob/user, state, choice2)
 	switch(state)

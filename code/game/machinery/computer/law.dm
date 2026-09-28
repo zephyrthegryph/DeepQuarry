@@ -16,6 +16,7 @@
 		/datum/interaction/machine_item/aiupload_install,
 		/datum/interaction/machine_hand/ungated/aiupload_select_ai,
 	)
+	into += dq_interaction_from_spec(type, INTERACT_OBSERVER("View", TYPE_PROC_REF(/atom, interaction_swallow)))
 	..()
 
 /// The old "Access Computer's Internals" object verb.
@@ -76,10 +77,6 @@
 		to_chat(user, "[src.current().name] selected for law changes.")
 	return TRUE
 
-/obj/machinery/computer/aiupload/attack_ghost(user as mob)
-	return 1
-
-
 /obj/machinery/computer/borgupload
 	name = "cyborg upload console"
 	desc = "Used to upload laws to Cyborgs."
@@ -94,6 +91,7 @@
 		/datum/interaction/machine_item/borgupload_install,
 		/datum/interaction/machine_hand/ungated/borgupload_select_borg,
 	)
+	into += dq_interaction_from_spec(type, INTERACT_OBSERVER("View", TYPE_PROC_REF(/atom, interaction_swallow)))
 	..()
 
 /// The old attackby: installs an AI module, else falls through to the base behaviour.
@@ -130,13 +128,3 @@
 		to_chat(user, "[src.current().name] selected for law changes.")
 	return TRUE
 
-/obj/machinery/computer/borgupload/attack_ghost(user as mob)
-	return 1
-
-/// LC-refs: current -- an OM handle (om_handle()), so it reads null once that is deleted.
-/obj/machinery/computer/aiupload/proc/current() as /mob/living/silicon/ai
-	return om_resolve(current_handle)
-
-/// LC-refs: current -- an OM handle (om_handle()), so it reads null once that is deleted.
-/obj/machinery/computer/borgupload/proc/current() as /mob/living/silicon/robot
-	return om_resolve(current_handle)

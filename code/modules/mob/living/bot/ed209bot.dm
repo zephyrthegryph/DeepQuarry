@@ -83,11 +83,7 @@
 	var/lasercolor = ""
 	construction_graph = /datum/construction_graph/secbot_assembly/ed209
 
-// Renaming the finished bot is not construction: keep it a plain interaction.
-/obj/item/secbot_assembly/ed209_assembly/attackby(obj/item/W, mob/user)
-	..()
-	if(istype(W, /obj/item/pen))
-		ask_name_var(user)
+// Renaming with a pen is inherited from /obj/item/secbot_assembly (secbot_assembly_rename).
 
 /// A robot leg: two robot_parts types, or a robotic external leg organ by name.
 /datum/interaction/construction/secbot/leg

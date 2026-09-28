@@ -141,6 +141,12 @@
 	)
 
 /obj/machinery/portable_atmospherics/hydroponics/declare_interactions(list/into)
+	var/static/list/actor_specs = list(
+		INTERACT_OBSERVER("Harvest", PROC_REF(hydroponics_ghost_harvest)),
+		INTERACT_TK("Harvest", PROC_REF(hydroponics_tk_harvest)),
+	)
+	for(var/actor_spec in actor_specs)
+		into += dq_interaction_from_spec(type, actor_spec)
 	into += list(
 		/datum/interaction/machine_item/hydroponics_attackby,
 		/datum/interaction/machine_hand/ungated/hydroponics_interact,
@@ -164,20 +170,20 @@
 	close_lid(user)
 	return TRUE
 
-/obj/machinery/portable_atmospherics/hydroponics/attack_ghost(mob/observer/dead/user)
-
+/// Old attack_ghost: a ghost may become a living plant product. Never fell through to the default.
+/obj/machinery/portable_atmospherics/hydroponics/proc/hydroponics_ghost_harvest(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
 	if(!(harvest && seed && seed.has_mob_product))
-		return
+		return TRUE
 
 	var/datum/ghosttrap/plant/G = get_ghost_trap("living plant")
 	if(!G.assess_candidate(user))
-		return
-	var/response = rerun_ask(user, "k175", TYPE_PROC_REF(/atom, attack_ghost), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to harvest this [seed.display_name]?", title = "Living plant request", choices = list("Yes", "No"))
+		return TRUE
+	var/response = rerun_ask(user, "k175", PROC_REF(hydroponics_ghost_harvest), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to harvest this [seed.display_name]?", title = "Living plant request", choices = list("Yes", "No"))
 	if(isnull(response))
-		return
+		return TRUE
 	if(response == "Yes")
 		harvest()
-	return
+	return TRUE
 
 /obj/machinery/portable_atmospherics/hydroponics/attack_generic(mob/user)
 
@@ -683,11 +689,13 @@ REF_OWNED(/obj/machinery/portable_atmospherics/hydroponics, list("temp_chem_hold
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/portable_atmospherics/hydroponics/attack_tk(mob/user)
+/// Old attack_tk: clear a dead plant or harvest a ripe one at range.
+/obj/machinery/portable_atmospherics/hydroponics/proc/hydroponics_tk_harvest(mob/user, obj/item/held, datum/interaction/interaction)
 	if(dead)
 		remove_dead(user)
 	else if(harvest)
 		harvest(user)
+	return TRUE
 
 /datum/interaction/machine_hand/ungated/hydroponics_interact
 	id = "hydroponics_interact"

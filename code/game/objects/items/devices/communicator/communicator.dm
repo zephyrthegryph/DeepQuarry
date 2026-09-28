@@ -108,6 +108,7 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 	INTERACT_ALT("Remove ID", PROC_REF(interaction_alt)), \
 	INTERACT_ITEM("Scan ID", PROC_REF(interaction_item)), \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_OBSERVER("View", PROC_REF(communicator_observer_use)), \
 )
 
 /// Old click_alt: eject the loaded ID.
@@ -341,12 +342,11 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 		return attack_self(M)
 	return
 
-// Proc: attack_ghost()
-// Parameters: 1 (user - the ghost clicking on the device)
-// Description: Recreates the known_devices list, so that the ghost looking at the device can see themselves, then calls ..() so that NanoUI appears.
-/obj/item/communicator/attack_ghost(mob/user)
+/// Old attack_ghost: recreates the known_devices list, so that the ghost looking at the device
+/// can see themselves, then falls through to the ghost's default so that the UI appears.
+/obj/item/communicator/proc/communicator_observer_use(mob/user, obj/item/held, datum/interaction/interaction)
 	populate_known_devices() //Update the devices so ghosts can see the list on NanoUI.
-	..()
+	return FALSE
 
 /mob/observer/dead
 	var/datum/exonet_protocol/exonet = null

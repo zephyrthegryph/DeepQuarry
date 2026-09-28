@@ -197,10 +197,7 @@
 	id = "photocopier_catchall"
 	name = "Use"
 	held_type = /obj/item
-	effect = /obj/machinery/photocopier/proc/interaction_catchall
-
-/obj/machinery/photocopier/proc/interaction_catchall(mob/user, obj/item/O, datum/interaction/interaction)
-	return TRUE
+	effect = /atom/proc/interaction_swallow
 
 /obj/machinery/photocopier/screwdriver_act(mob/user, obj/item/tool)
 	return ..()

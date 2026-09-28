@@ -11,11 +11,15 @@
 /obj/item/borg/cloak/Initialize(mapload)
 	. = ..()
 
-DECLARE_INTERACTIONS(/obj/item/borg/cloak, INTERACT_USE(null, PROC_REF(interaction_self)))
+DECLARE_INTERACTIONS(/obj/item/borg/cloak, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_VERB("Toggle Cloak Strength", PROC_REF(cloak_verb_set_level), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Toggle Cloak", PROC_REF(cloak_verb_toggle), REQ_IN_INVENTORY), \
+)
 
 /// Old attack_self.
 /obj/item/borg/cloak/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	set_cloak_level(user)
+	cloak_verb_set_level(user)
 	return TRUE
 
 /obj/item/borg/cloak/item_ctrl_click(mob/user)
@@ -50,12 +54,9 @@ DECLARE_INTERACTIONS(/obj/item/borg/cloak, INTERACT_USE(null, PROC_REF(interacti
 		robot.remove_body_effect(/datum/body_effect/robot_cloak)
 		active = FALSE
 
-/obj/item/borg/cloak/verb/set_cloak_level()
-	set name = "Toggle Cloak Strength"
-	set category = "Object"
-	set src in range(0)
-	var/mob/living/silicon/robot/R = usr
-	set_cloaking_level(R)
+/// Old Toggle Cloak Strength verb.
+/obj/item/borg/cloak/proc/cloak_verb_set_level(mob/user, obj/item/held, datum/interaction/interaction)
+	set_cloaking_level(user)
 
 /obj/item/borg/cloak/proc/set_cloaking_level(mob/living/silicon/robot/R)
 	if(!isrobot(R)) //sod off
@@ -76,12 +77,9 @@ DECLARE_INTERACTIONS(/obj/item/borg/cloak, INTERACT_USE(null, PROC_REF(interacti
 		to_chat(R, span_warning("Invalid cloak level. Must be between 0 and 100."))
 		return
 
-/obj/item/borg/cloak/verb/activate_cloak()
-	set name = "Toggle Cloak"
-	set category = "Object"
-	set src in range(0)
-	var/mob/living/silicon/robot/R = usr
-	toggle_cloak(R)
+/// Old Toggle Cloak verb.
+/obj/item/borg/cloak/proc/cloak_verb_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+	toggle_cloak(user)
 
 /obj/item/borg/cloak/proc/toggle_cloak(mob/living/silicon/robot/R)
 	if(!isrobot(R)) //sod off

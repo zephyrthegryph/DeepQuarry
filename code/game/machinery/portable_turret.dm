@@ -408,6 +408,7 @@ REF_OWNED(/obj/machinery/porta_turret, "spark_system")
 		/datum/interaction/machine_item/porta_turret_hit,
 		/datum/interaction/machine_hand/ungated/open_ui,
 	)
+	into += dq_interaction_from_spec(type, INTERACT_ROBOT("Use", PROC_REF(porta_turret_robot_use))) // airlock.dm
 	..()
 
 /obj/machinery/porta_turret/proc/HasController()
@@ -1033,6 +1034,7 @@ REF_OWNED(/obj/machinery/porta_turret, "spark_system")
 */
 
 /obj/machinery/porta_turret_construct
+	silicon_use = NONE // silicons can't use the frame
 	name = "turret frame"
 	icon = 'icons/obj/turrets.dmi'
 	icon_state = "turret_frame"
@@ -1283,9 +1285,6 @@ REF_OWNED(/obj/machinery/porta_turret, "spark_system")
 			new /obj/item/assembly/prox_sensor(loc)
 			build_step = 4
 	return TRUE
-
-/obj/machinery/porta_turret_construct/attack_ai()
-	return
 
 /atom/movable/porta_turret_cover
 	icon = 'icons/obj/turrets.dmi'

@@ -70,10 +70,10 @@ REF_OWNED(/obj/item/clothing/suit/armor/shield, "spark_system")
 	playsound(src, 'sound/weapons/blade1.ogg', 50, 1)
 	return 0 // This shield does not block all damage, so returning 0 is needed to tell the game to apply the new damage.
 
-/obj/item/clothing/suit/armor/shield/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/shield, INTERACT_USE("Toggle", PROC_REF(shield_armor_toggle_self)))
+
+/// Old attack_self.
+/obj/item/clothing/suit/armor/shield/proc/shield_armor_toggle_self(mob/user, obj/item/held, datum/interaction/interaction)
 	active = !active
 	to_chat(user, span_notice("You [active ? "" : "de"]activate \the [src]."))
 	update_icon()

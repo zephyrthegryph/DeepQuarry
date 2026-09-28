@@ -101,11 +101,7 @@
 	id = "jukebox_fingerprint"
 	name = "Use"
 	held_type = /obj/item
-	effect = /obj/machinery/media/jukebox/proc/interaction_fingerprint
-
-/obj/machinery/media/jukebox/proc/interaction_fingerprint(mob/user, obj/item/W, datum/interaction/interaction)
-	src.add_fingerprint(user)
-	return FALSE
+	effect = /atom/proc/interaction_fingerprint
 
 /obj/machinery/media/jukebox/wirecutter_act(mob/user, obj/item/tool)
 	wires.Interact(user)
@@ -258,11 +254,7 @@
 /datum/interaction/machine_hand/ungated/jukebox_interact
 	id = "jukebox_interact"
 	name = "Use"
-	effect = /obj/machinery/media/jukebox/proc/interaction_interact_impl
-
-/obj/machinery/media/jukebox/proc/interaction_interact_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	interact(user)
-	return TRUE
+	effect = /atom/proc/interaction_interact
 
 /obj/machinery/media/jukebox/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag
@@ -331,6 +323,7 @@
 
 // Ghostly jukebox for adminbuse
 /obj/machinery/media/jukebox/ghost
+	silicon_use = NONE // silicons can't use it
 	name = "ghost jukebox"
 	desc = "A jukebox from the nether-realms! Spooky."
 
@@ -355,11 +348,9 @@
 	return
 /obj/machinery/media/jukebox/ghost/visible_message(message, blind_message, list/exclude_mobs, range, runemessage)
 	return
-/// Untouchable: no interactions at all (the old attackby/attack_hand returned).
+/// Untouchable: no interactions at all (the old attackby/attack_hand returned); only ghosts use it.
 /obj/machinery/media/jukebox/ghost/declare_interactions(list/into)
-	return
-/obj/machinery/media/jukebox/ghost/attack_ai(mob/user as mob)
-	return
+	into += dq_interaction_from_spec(type, INTERACT_OBSERVER("Use", PROC_REF(ghost_jukebox_observer_use)))
 /obj/machinery/media/jukebox/ghost/update_use_power(new_use_power)
 	return
 /obj/machinery/media/jukebox/ghost/power_change()
@@ -377,9 +368,10 @@
 		animate(src, alpha = initial(alpha), time = 10)
 // End junk
 
-/obj/machinery/media/jukebox/ghost/attack_ghost(mob/observer/dead/M)
+/// Old attack_ghost: staff get the controls, other ghosts hear what's playing.
+/obj/machinery/media/jukebox/ghost/proc/ghost_jukebox_observer_use(mob/observer/dead/M, obj/item/held, datum/interaction/interaction)
 	if(!istype(M))
-		return
+		return TRUE
 
 	if(check_rights(R_FUN|R_ADMIN, show_msg=0))
 		interact(M)
@@ -387,6 +379,7 @@
 		to_chat(M, "\The [src] is playing [current_track().display()].")
 	else
 		to_chat(M, "\The [src] is not playing any music.")
+	return TRUE
 
 /obj/machinery/media/jukebox/ghost/getTracksList()
 	return (custom_tracks + ..())

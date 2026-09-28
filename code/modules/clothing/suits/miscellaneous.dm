@@ -268,13 +268,16 @@
 
 	var/resist_time = 4800	// Eight minutes.
 
-/obj/item/clothing/suit/straight_jacket/attack_hand(mob/living/user as mob)
+EXTEND_INTERACTIONS(/obj/item/clothing/suit/straight_jacket, INTERACT_HAND_UNGATED(null, PROC_REF(straight_jacket_worn_hand)))
+
+/// Old attack_hand: the wearer can't take it off themselves.
+/obj/item/clothing/suit/straight_jacket/proc/straight_jacket_worn_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
 		if(src == H.get_equipped_item(SLOT_ID_SUIT))
 			to_chat(H, span_notice("You need help taking this off!"))
-			return
-	..()
+			return TRUE
+	return FALSE
 
 /obj/item/clothing/suit/straight_jacket/equipped(mob/living/user,slot)
 	. = ..()
@@ -950,56 +953,56 @@
 	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY)
 	return list(HOLD_ONLY(stores))
 
-/obj/item/clothing/suit/storage/flannel/verb/roll_sleeves()
-	set name = "Roll Sleeves"
-	set category = "Object"
-	set src in usr
-	if(!isliving(usr))
+EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage/flannel, \
+	INTERACT_VERB("Roll Sleeves", PROC_REF(flannel_roll_sleeves_verb), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Toggle Shirt Tucking", PROC_REF(flannel_tuck_verb), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Toggle Shirt Buttons", PROC_REF(flannel_button_verb), REQ_IN_INVENTORY), \
+)
+
+/// Old verb "Roll Sleeves".
+/obj/item/clothing/suit/storage/flannel/proc/flannel_roll_sleeves_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!isliving(user))
 		return
-	if(usr.stat)
+	if(user.stat)
 		return
 
 	if(rolled == 0)
 		rolled = 1
 		body_parts_covered &= ~(ARMS)
-		to_chat(usr, span_notice("You roll up the sleeves of your [src]."))
+		to_chat(user, span_notice("You roll up the sleeves of your [src]."))
 	else
 		rolled = 0
 		body_parts_covered = initial(body_parts_covered)
-		to_chat(usr, span_notice("You roll down the sleeves of your [src]."))
+		to_chat(user, span_notice("You roll down the sleeves of your [src]."))
 	update_icon()
 	worn_protection_changed()
 
-/obj/item/clothing/suit/storage/flannel/verb/tuck()
-	set name = "Toggle Shirt Tucking"
-	set category = "Object"
-	set src in usr
-	if(!isliving(usr)||usr.stat)
+/// Old verb "Toggle Shirt Tucking".
+/obj/item/clothing/suit/storage/flannel/proc/flannel_tuck_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!isliving(user)||user.stat)
 		return
 
 	if(tucked == 0)
 		tucked = 1
-		to_chat(usr, span_notice("You tuck in your your [src]."))
+		to_chat(user, span_notice("You tuck in your your [src]."))
 	else
 		tucked = 0
-		to_chat(usr, span_notice("You untuck your [src]."))
+		to_chat(user, span_notice("You untuck your [src]."))
 	update_icon()
 
-/obj/item/clothing/suit/storage/flannel/verb/button()
-	set name = "Toggle Shirt Buttons"
-	set category = "Object"
-	set src in usr
-	if(!isliving(usr)||usr.stat)
+/// Old verb "Toggle Shirt Buttons".
+/obj/item/clothing/suit/storage/flannel/proc/flannel_button_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!isliving(user)||user.stat)
 		return
 
 	if(buttoned == 0)
 		buttoned = 1
 		flags_inv = HIDETIE|HIDEHOLSTER
-		to_chat(usr, span_notice("You button your [src]."))
+		to_chat(user, span_notice("You button your [src]."))
 	else
 		buttoned = 0
 		flags_inv = HIDEHOLSTER
-		to_chat(usr, span_notice("You unbutton your [src]."))
+		to_chat(user, span_notice("You unbutton your [src]."))
 	update_icon()
 
 /obj/item/clothing/suit/storage/flannel/update_icon()
@@ -1075,14 +1078,19 @@
 	armor_spec = "melee=5"
 	special_handling = TRUE
 
-/obj/item/clothing/suit/caution/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/suit/caution, \
+	INTERACT_USE("Toggle", PROC_REF(caution_toggle_self)), \
+	INTERACT_ALT("Toggle", PROC_REF(caution_toggle_alt)), \
+)
+
+/// Old attack_self.
+/obj/item/clothing/suit/caution/proc/caution_toggle_self(mob/user, obj/item/held, datum/interaction/interaction)
 	toggle(user)
 
-/obj/item/clothing/suit/caution/click_alt(mob/user)
+/// Old click_alt. It never reached the clothing alt-click.
+/obj/item/clothing/suit/caution/proc/caution_toggle_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	toggle(user)
+	return TRUE
 
 /obj/item/clothing/suit/caution/proc/toggle(mob/user)
 	if(!user || user.stat || user.lying || user.restrained() || !Adjacent(user))

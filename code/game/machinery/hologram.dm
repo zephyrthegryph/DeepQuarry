@@ -49,6 +49,7 @@ Possible to do for anyone motivated enough:
 		/datum/interaction/machine_item/holopad_request,
 		/datum/interaction/machine_hand/ungated/holopad_request,
 	)
+	into += dq_interaction_from_spec(type, INTERACT_SILICON("Project", PROC_REF(holopad_silicon_use)))
 	..()
 
 /datum/interaction/machine_item/holopad_request
@@ -83,9 +84,10 @@ Possible to do for anyone motivated enough:
 	else
 		to_chat(user, span_notice("A request for AI presence was already sent recently."))
 
-/obj/machinery/hologram/holopad/attack_ai(mob/living/silicon/ai/user)
+/// Old attack_ai: the AI moves its eye here, then makes or clears its hologram. Nothing for cyborgs.
+/obj/machinery/hologram/holopad/proc/holopad_silicon_use(mob/living/silicon/ai/user, obj/item/held, datum/interaction/interaction)
 	if(!istype(user))
-		return
+		return TRUE
 	/*There are pretty much only three ways to interact here.
 	I don't need to check for client since they're clicking on an object.
 	This may change in the future but for now will suffice.*/
@@ -96,7 +98,7 @@ Possible to do for anyone motivated enough:
 		activate_holo(user)
 	else//If there is a hologram, remove it.
 		clear_holo(user)
-	return
+	return TRUE
 
 /obj/machinery/hologram/holopad/proc/activate_holo(mob/living/silicon/ai/user)
 	var/mob/observer/eye/eyeobj = user?.active_eye()

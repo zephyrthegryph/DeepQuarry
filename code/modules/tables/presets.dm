@@ -131,10 +131,11 @@
 	can_reinforce = FALSE
 	can_plate = FALSE
 
+/obj/structure/table/alien
+	can_flip_verb = FALSE
+
 /obj/structure/table/alien/Initialize(mapload)
 	material_static = get_material_by_name(MAT_ALIEN_ALIUM)
-	verbs -= /obj/structure/table/verb/do_flip
-	verbs -= /obj/structure/table/proc/do_put
 	. = ..()
 
 /obj/structure/table/alien/dismantle(obj/item/tool/wrench/W, mob/user)
@@ -307,10 +308,11 @@
 	can_reinforce = FALSE
 	can_plate = FALSE
 
+/obj/structure/table/darkglass
+	can_flip_verb = FALSE
+
 /obj/structure/table/darkglass/Initialize(mapload)
 	material_static = get_material_by_name(MAT_DARKGLASS)
-	verbs -= /obj/structure/table/verb/do_flip
-	verbs -= /obj/structure/table/proc/do_put
 
 	. = ..()
 
@@ -330,10 +332,11 @@
 	can_reinforce = FALSE
 	can_plate = FALSE
 
+/obj/structure/table/fancyblack
+	can_flip_verb = FALSE
+
 /obj/structure/table/fancyblack/Initialize(mapload)
 	material_static = get_material_by_name(MAT_FANCYBLACK)
-	verbs -= /obj/structure/table/verb/do_flip
-	verbs -= /obj/structure/table/proc/do_put
 
 	. = ..()
 

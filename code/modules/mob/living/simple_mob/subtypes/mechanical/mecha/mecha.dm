@@ -117,13 +117,17 @@ REF_OWNED(/mob/living/simple_mob/mechanical/mecha, "sparks")
 	om_after(src, 1 SECOND, TYPE_PROC_REF(/atom, cut_overlay), deflect_image)
 //	flick_overlay_view(deflect_image, src, duration = 1 SECOND, gc_after = TRUE)
 
-/mob/living/simple_mob/mechanical/mecha/attackby(obj/item/I, mob/user)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/mechanical/mecha, INTERACT_ITEM(null, PROC_REF(mecha_interaction_item)))
+
+/// Old attackby: armour deflection.
+/mob/living/simple_mob/mechanical/mecha/proc/mecha_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+	. = TRUE
 	if(prob(deflect_chance))
 		visible_message(span_warning("\The [user]'s [I] bounces off \the [src]'s armor!"))
 		deflect_sprite()
 		user.setClickCooldown(user.get_attack_speed(I))
 		return
-	..()
+	return FALSE
 
 /mob/living/simple_mob/mechanical/mecha/ex_act(severity)
 	if(prob(deflect_chance))

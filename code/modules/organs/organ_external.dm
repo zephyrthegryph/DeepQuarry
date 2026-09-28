@@ -184,12 +184,10 @@
 		else
 			apply_wound_damage(0, scorch_damage)
 
-/obj/item/organ/external/attack_self(mob/living/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self (virtual: /obj/item/organ/proc/organ_self()): rip out embedded objects, then the organ's own self-use.
+/obj/item/organ/external/organ_self(mob/living/user, obj/item/held, datum/interaction/interaction, callback)
 	if(!contents.len)
-		return ..(user, TRUE)
+		return ..(user, held, interaction, TRUE)
 	var/list/removable_objects = list()
 	for(var/obj/item/organ/external/E in (contents + src))
 		if(!istype(E))
@@ -204,8 +202,8 @@
 		if(istype(I))
 			user.put_in_hands(I)
 		user.visible_message(span_danger("\The [user] rips \the [I] out of \the [src]!"))
-		return //no eating the limb until everything's been removed
-	return ..(user, TRUE)
+		return TRUE //no eating the limb until everything's been removed
+	return ..(user, held, interaction, TRUE)
 
 /obj/item/organ/external/get_description_info(list/additional_information)
 	if(!additional_information)

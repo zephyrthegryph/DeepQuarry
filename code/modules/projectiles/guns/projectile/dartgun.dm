@@ -102,14 +102,15 @@
 				for(var/datum/reagent/R in B.reagents.reagent_list)
 					. += span_notice("[R.volume] units of [R.name]")
 
-/obj/item/gun/projectile/dartgun/attackby(obj/item/I, mob/user)
+/// Old attackby.
+/obj/item/gun/projectile/dartgun/gun_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/reagent_containers/glass))
 		if(!istype(I, container_type))
 			to_chat(user, span_blue("[I] doesn't seem to fit into [src]."))
-			return
+			return INTERACTION_HANDLED_PASS
 		if(length(beakers) >= max_beakers)
 			to_chat(user, span_blue("[src] already has [max_beakers] beakers in it - another one isn't going to fit!"))
-			return
+			return INTERACTION_HANDLED_PASS
 		var/obj/item/reagent_containers/glass/beaker/B = I
 		user.drop_item()
 		B.forceMove(src)
@@ -117,7 +118,7 @@
 		to_chat(user, span_blue("You slot [B] into [src]."))
 		updateUsrDialog(user)
 		return 1
-	..()
+	return ..()
 
 //fills the given dart with reagents
 /obj/item/gun/projectile/dartgun/proc/fill_dart(obj/item/projectile/bullet/chemdart/dart)
@@ -126,8 +127,9 @@
 		for(var/obj/item/reagent_containers/glass/beaker/B in mixing)
 			B.reagents.trans_to_obj(dart, mix_amount)
 
-/obj/item/gun/projectile/dartgun/attack_self(mob/user)
-	. = ..(user)
+/// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
+/obj/item/gun/projectile/dartgun/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+	. = ..()
 	if(.)
 		return TRUE
 	// structured TGUI Dartgun (see

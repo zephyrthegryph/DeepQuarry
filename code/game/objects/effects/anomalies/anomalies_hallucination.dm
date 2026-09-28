@@ -95,10 +95,14 @@
 	if(SPT_PROB(move_chance, seconds_per_tick))
 		move_anomaly()
 
-/obj/effect/anomaly/hallucination/decoy/attackby(obj/item/tool, mob/user, params)
-	if(istype(tool, /obj/item/analyzer))
-		to_chat(user, span_notice("You activate \the [tool]. [replacetext(report_text, "%TOOL%", "[tool]")]"))
-	return ..()
+EXTEND_INTERACTIONS(/obj/effect/anomaly/hallucination/decoy, \
+	INTERACT_INSERT(/obj/item/analyzer, PROC_REF(interaction_decoy_analyze), null), \
+)
+
+/// Old attackby: an analyzer on a decoy gives a nonsense reading, then the normal handling carries on.
+/obj/effect/anomaly/hallucination/decoy/proc/interaction_decoy_analyze(mob/user, obj/item/held, datum/interaction/interaction)
+	to_chat(user, span_notice("You activate \the [held]. [replacetext(report_text, "%TOOL%", "[held]")]"))
+	return FALSE
 
 /obj/effect/anomaly/hallucination/decoy/detonate()
 	var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread

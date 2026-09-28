@@ -211,9 +211,11 @@ DECLARE_INTERACTIONS(/obj/item/beartrap, \
 /obj/item/material/barbedwire/proc/can_use(mob/user)
 	return (user.IsAdvancedToolUser() && !issilicon(user) && !user.stat && !user.restrained())
 
-DECLARE_INTERACTIONS(/obj/item/material/barbedwire, \
+// EXTEND: /obj/item/material's repair interaction still applies, after this type's own.
+EXTEND_INTERACTIONS(/obj/item/material/barbedwire, \
 	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(barbedwire_interaction_item)), \
 )
 
 /// Old attack_hand.
@@ -264,9 +266,10 @@ DECLARE_INTERACTIONS(/obj/item/material/barbedwire, \
 	anchored = TRUE
 	update_icon()
 
-/obj/item/material/barbedwire/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby: wear from being hit, then falls through as its ..() did.
+/obj/item/material/barbedwire/proc/barbedwire_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(!istype(W))
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if((W.flags & NOCONDUCT) || !shock(user, 70, pick(BP_L_HAND, BP_R_HAND)))
 		user.setClickCooldown(user.get_attack_speed(W))
@@ -280,7 +283,7 @@ DECLARE_INTERACTIONS(/obj/item/material/barbedwire, \
 
 		material_wear(inc_damage * MATERIAL_WEAR_UNIT)
 
-	..()
+	return FALSE
 
 /obj/item/material/barbedwire/wirecutter_act(mob/user, obj/item/tool)
 	if(!istype(tool))

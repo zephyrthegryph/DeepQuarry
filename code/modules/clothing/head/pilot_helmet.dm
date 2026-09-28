@@ -152,13 +152,13 @@
 		I.icon_state = ""
 		animate(pilot_hud,alpha=0,time=3 SECONDS)
 
-/obj/item/clothing/head/pilot/verb/hud_colors()
-	set name = "Alter HUD color"
-	set desc = "Change the color of the piloting HUD."
-	set category = "Object"
-	set src in usr
+EXTEND_INTERACTIONS(/obj/item/clothing/head/pilot, \
+	INTERACT_VERB("Alter HUD color", PROC_REF(pilot_hud_colors_verb), REQ_IN_INVENTORY), \
+)
 
-	om_ask(usr, /datum/om/prompt/color, PROC_REF(hud_color_picked), title = "HUD Color", message = "Pick a color!", ask_flags = ASK_CARRIED | ASK_CAPABLE)
+/// Old verb "Alter HUD color".
+/obj/item/clothing/head/pilot/proc/pilot_hud_colors_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	om_ask(user, /datum/om/prompt/color, PROC_REF(hud_color_picked), title = "HUD Color", message = "Pick a color!", ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
 /obj/item/clothing/head/pilot/proc/hud_color_picked(datum/om/prompt/color/ask)
 	for(var/img in list("top_words","left_bar","right_bar","flyboxes"))
@@ -192,10 +192,10 @@ REF_OWNED(/obj/item/clothing/head/pilot, "pilot_hud")
 	actions_types = list(/datum/action/item_action/toggle_visor)
 	special_handling = TRUE
 
-/obj/item/clothing/head/pilot/alt/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/head/pilot/alt, INTERACT_USE("Toggle visor", PROC_REF(pilot_alt_visor_self)))
+
+/// Old attack_self.
+/obj/item/clothing/head/pilot/alt/proc/pilot_alt_visor_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(src.icon_state == initial(icon_state))
 		src.icon_state = "[icon_state]up"
 		to_chat(user, "You raise the visor on the pilot helmet.")
@@ -218,10 +218,10 @@ REF_OWNED(/obj/item/clothing/head/pilot, "pilot_hud")
 	special_handling = TRUE
 	resistance_flags = FIRE_PROOF
 
-/obj/item/clothing/head/pilot_vr/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/head/pilot_vr, INTERACT_USE("Toggle visor", PROC_REF(pilot_vr_visor_self)))
+
+/// Old attack_self.
+/obj/item/clothing/head/pilot_vr/proc/pilot_vr_visor_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(src.icon_state == initial(icon_state))
 		src.icon_state = "[icon_state]up"
 		to_chat(user, "You raise the visor on the pilot helmet.")

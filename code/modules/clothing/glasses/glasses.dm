@@ -87,10 +87,10 @@ BLIND     // can't see anything
 	user.update_mob_action_buttons()
 	user.recalculate_vis()
 
-/obj/item/clothing/glasses/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/glasses, INTERACT_SELF(null, PROC_REF(glasses_toggle_self)))
+
+/// Old attack_self: toggle the optical matrix. FALSE where the old body returned nothing.
+/obj/item/clothing/glasses/proc/glasses_toggle_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(specialty_goggles)
 		return FALSE
 	if(toggleable)
@@ -102,6 +102,7 @@ BLIND     // can't see anything
 				to_chat(user, span_notice("You activate the optical matrix on the [src]."))
 			else
 				to_chat(user, span_notice("You deactivate the optical matrix on the [src]."))
+	return FALSE
 
 /obj/item/clothing/glasses/meson
 	name = "optical meson scanner"
@@ -204,12 +205,14 @@ BLIND     // can't see anything
 	drop_sound = 'sound/items/drop/gloves.ogg'
 	pickup_sound = 'sound/items/pickup/gloves.ogg'
 
-/obj/item/clothing/glasses/eyepatch/verb/switcheye()
-	set name = "Switch Eyepatch"
-	set category = "Object"
-	set src in usr
-	if(!isliving(usr)) return
-	if(usr.stat) return
+EXTEND_INTERACTIONS(/obj/item/clothing/glasses/eyepatch, \
+	INTERACT_VERB("Switch Eyepatch", PROC_REF(eyepatch_switcheye_verb), REQ_IN_INVENTORY), \
+)
+
+/// Old verb "Switch Eyepatch".
+/obj/item/clothing/glasses/eyepatch/proc/eyepatch_switcheye_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!isliving(user)) return
+	if(user.stat) return
 
 	eye = !eye
 	if(eye)
@@ -228,12 +231,14 @@ BLIND     // can't see anything
 	drop_sound = 'sound/items/drop/gloves.ogg'
 	pickup_sound = 'sound/items/pickup/gloves.ogg'
 
-/obj/item/clothing/glasses/eyepatchwhite/verb/switcheye()
-	set name = "Switch Eyepatch"
-	set category = "Object"
-	set src in usr
-	if(!isliving(usr)) return
-	if(usr.stat) return
+EXTEND_INTERACTIONS(/obj/item/clothing/glasses/eyepatchwhite, \
+	INTERACT_VERB("Switch Eyepatch", PROC_REF(eyepatchwhite_switcheye_verb), REQ_IN_INVENTORY), \
+)
+
+/// Old verb "Switch Eyepatch".
+/obj/item/clothing/glasses/eyepatchwhite/proc/eyepatchwhite_switcheye_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!isliving(user)) return
+	if(user.stat) return
 
 	eye = !eye
 	if(eye)
@@ -371,8 +376,10 @@ BLIND     // can't see anything
 	. = ..()
 	. += span_notice("Alt-click to toggle modes.")
 
-/obj/item/clothing/glasses/sunglasses/bigshot/click_alt(mob/user)
-	set src in usr
+EXTEND_INTERACTIONS(/obj/item/clothing/glasses/sunglasses/bigshot, INTERACT_ALT("Toggle AR", PROC_REF(bigshot_ar_alt)))
+
+/// Old click_alt: toggle the AR mode. It never reached the clothing alt-click.
+/obj/item/clothing/glasses/sunglasses/bigshot/proc/bigshot_ar_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.canmove && !user.stat && !user.restrained())
 		if(src.ar)
 			src.ar = !src.ar
@@ -383,6 +390,7 @@ BLIND     // can't see anything
 			icon_state = "[initial(icon_state)]_fzz"
 			to_chat(user, "You press a small button on \the [src] and activate the AR mode.")
 		update_clothing_icon()
+	return TRUE
 
 /obj/item/clothing/glasses/welding
 	name = "welding goggles"
@@ -397,18 +405,18 @@ BLIND     // can't see anything
 	tint = TINT_HEAVY
 	specialty_goggles = TRUE
 
-/obj/item/clothing/glasses/welding/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
-	toggle()
+EXTEND_INTERACTIONS(/obj/item/clothing/glasses/welding, \
+	INTERACT_USE("Flip", PROC_REF(welding_goggles_flip_self)), \
+	INTERACT_VERB("Adjust welding goggles", PROC_REF(welding_toggle_verb), REQ_IN_INVENTORY), \
+)
 
-/obj/item/clothing/glasses/welding/verb/toggle()
-	set category = "Object"
-	set name = "Adjust welding goggles"
-	set src in usr
+/// Old attack_self.
+/obj/item/clothing/glasses/welding/proc/welding_goggles_flip_self(mob/user, obj/item/held, datum/interaction/interaction)
+	welding_toggle_verb(user)
 
-	if(usr.canmove && !usr.stat && !usr.restrained())
+/// Old verb "Adjust welding goggles".
+/obj/item/clothing/glasses/welding/proc/welding_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(user.canmove && !user.stat && !user.restrained())
 		if(src.up)
 			src.up = !src.up
 			flags_inv |= HIDEEYES
@@ -416,7 +424,7 @@ BLIND     // can't see anything
 			icon_state = initial(icon_state)
 			flash_protection = initial(flash_protection)
 			tint = initial(tint)
-			to_chat(usr, "You flip \the [src] down to protect your eyes.")
+			to_chat(user, "You flip \the [src] down to protect your eyes.")
 		else
 			src.up = !src.up
 			flags_inv &= ~HIDEEYES
@@ -424,9 +432,9 @@ BLIND     // can't see anything
 			icon_state = "[initial(icon_state)]up"
 			flash_protection = FLASH_PROTECTION_NONE
 			tint = TINT_NONE
-			to_chat(usr, "You push \the [src] up out of your face.")
+			to_chat(user, "You push \the [src] up out of your face.")
 		update_clothing_icon()
-		usr.update_mob_action_buttons()
+		user.update_mob_action_buttons()
 
 /obj/item/clothing/glasses/welding/superior
 	name = "superior welding goggles"
@@ -508,10 +516,10 @@ BLIND     // can't see anything
 	activation_sound = 'sound/effects/pop.ogg'
 	specialty_goggles = TRUE
 
-/obj/item/clothing/glasses/sunglasses/sechud/aviator/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/glasses/sunglasses/sechud/aviator, INTERACT_USE("Switch mode", PROC_REF(aviator_mode_self)))
+
+/// Old attack_self.
+/obj/item/clothing/glasses/sunglasses/sechud/aviator/proc/aviator_mode_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(toggleable && !user.incapacitated())
 		on = !on
 		if(on)
@@ -626,32 +634,32 @@ BLIND     // can't see anything
 	var/list/bodytypes = list(SPECIES_TESHARI)
 	return list(REQ_FITS_BODYTYPES(bodytypes))
 
-/obj/item/clothing/glasses/aerogelgoggles/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
-	toggle()
+EXTEND_INTERACTIONS(/obj/item/clothing/glasses/aerogelgoggles, \
+	INTERACT_USE("Flip", PROC_REF(aerogel_goggles_flip_self)), \
+	INTERACT_VERB("Adjust Orange Goggles", PROC_REF(aerogelgoggles_toggle_verb), REQ_IN_INVENTORY), \
+)
 
-/obj/item/clothing/glasses/aerogelgoggles/verb/toggle()
-	set category = "Object"
-	set name = "Adjust Orange Goggles"
-	set src in usr
+/// Old attack_self.
+/obj/item/clothing/glasses/aerogelgoggles/proc/aerogel_goggles_flip_self(mob/user, obj/item/held, datum/interaction/interaction)
+	aerogelgoggles_toggle_verb(user)
 
-	if(usr.canmove && !usr.stat && !usr.restrained())
+/// Old verb "Adjust Orange Goggles".
+/obj/item/clothing/glasses/aerogelgoggles/proc/aerogelgoggles_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(user.canmove && !user.stat && !user.restrained())
 		if(src.up)
 			src.up = !src.up
 			flags_inv |= HIDEEYES
 			body_parts_covered |= EYES
 			icon_state = initial(icon_state)
-			to_chat(usr, "You flip \the [src] down to protect your eyes.")
+			to_chat(user, "You flip \the [src] down to protect your eyes.")
 		else
 			src.up = !src.up
 			flags_inv &= ~HIDEEYES
 			body_parts_covered &= ~EYES
 			icon_state = "[initial(icon_state)]up"
-			to_chat(usr, "You push \the [src] up from in front of your eyes.")
+			to_chat(user, "You push \the [src] up from in front of your eyes.")
 		update_clothing_icon()
-		usr.update_mob_action_buttons()
+		user.update_mob_action_buttons()
 
 
 /obj/item/clothing/glasses/proc/prescribe(mob/user)
@@ -766,10 +774,11 @@ BLIND     // can't see anything
 		"Scanning pattern 4" = image(icon = src.icon, icon_state = "tacsecvis4"),
 		)
 
-/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis, INTERACT_USE("Scanning pattern", PROC_REF(tactical_sec_vis_pattern_self)))
+
+/// Old attack_self: pick a scanning pattern, after the glasses toggle (the old ..()).
+/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis/proc/tactical_sec_vis_pattern_self(mob/user, obj/item/held, datum/interaction/interaction)
+	glasses_toggle_self(user, held, interaction)
 	if(!istype(user) || user.incapacitated())
 		return
 

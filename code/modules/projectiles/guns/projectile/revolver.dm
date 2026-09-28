@@ -18,13 +18,12 @@
 	var/chamber_offset = 0 //how many empty chambers in the cylinder until you hit a round
 	fire_sound = 'sound/weapons/gunshot4.ogg'
 
-/obj/item/gun/projectile/revolver/verb/spin_cylinder()
-	set name = "Spin cylinder"
-	set desc = "Fun when you're bored out of your skull."
-	set category = "Object"
+EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver, INTERACT_VERB("Spin cylinder", PROC_REF(revolver_verb_spin_cylinder), REQ_IN_INVENTORY))
 
+/// Old Spin cylinder verb: Fun when you're bored out of your skull.
+/obj/item/gun/projectile/revolver/proc/revolver_verb_spin_cylinder(mob/user, obj/item/held, datum/interaction/interaction)
 	chamber_offset = 0
-	visible_message(span_warning("\The [usr] spins the cylinder of \the [src]!"), \
+	visible_message(span_warning("\The [user] spins the cylinder of \the [src]!"), \
 	span_notice("You hear something metallic spin and click."))
 	playsound(src, 'sound/weapons/revolver_spin.ogg', 100, 1)
 	loaded = shuffle(loaded)
@@ -55,18 +54,17 @@
 	caliber = ".38"
 	ammo_type = /obj/item/ammo_casing/a38
 
-/obj/item/gun/projectile/revolver/detective/verb/rename_gun()
-	set name = "Name Gun"
-	set category = "Object"
-	set desc = "Click to rename your gun. If you're the detective."
+EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/detective, INTERACT_VERB("Name Gun", PROC_REF(det_revolver_verb_rename), REQ_IN_INVENTORY))
 
-	var/mob/M = usr
+/// Old Name Gun verb: Click to rename your gun. If you're the detective.
+/obj/item/gun/projectile/revolver/detective/proc/det_revolver_verb_rename(mob/user, obj/item/held, datum/interaction/interaction)
+	var/mob/M = user
 	if(!M.mind)	return 0
 	if(M.mind.assigned_role != JOB_DETECTIVE)
 		to_chat(M, span_notice("You don't feel cool enough to name this gun, chump."))
 		return 0
 
-	var/_answer_k69 = rerun_ask(M, "k69", VERB_REF(rename_gun), args, /datum/om/prompt/text, message = "What do you want to name the gun?", title = "Rename Revolver", max_length = MAX_NAME_LEN, encode = FALSE)
+	var/_answer_k69 = rerun_ask(M, "k69", PROC_REF(det_revolver_verb_rename), args, /datum/om/prompt/text, message = "What do you want to name the gun?", title = "Rename Revolver", max_length = MAX_NAME_LEN, encode = FALSE)
 	if(isnull(_answer_k69))
 		return
 	var/input = sanitizeSafe(_answer_k69)
@@ -84,19 +82,21 @@
 	ammo_type = /obj/item/ammo_casing/a45/rubber
 	max_shells = 6
 
-/obj/item/gun/projectile/revolver/detective45/verb/rename_gun()
-	set name = "Name Gun"
-	set category = "Object"
-	set desc = "Rename your gun. If you're the " + JOB_DETECTIVE  + "."
+EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/detective45, \
+	INTERACT_VERB("Name Gun", PROC_REF(det45_revolver_verb_rename), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Resprite gun", PROC_REF(det45_revolver_verb_reskin), REQ_IN_INVENTORY), \
+)
 
-	var/mob/M = usr
+/// Old Name Gun verb: rename your gun, if you are the detective.
+/obj/item/gun/projectile/revolver/detective45/proc/det45_revolver_verb_rename(mob/user, obj/item/held, datum/interaction/interaction)
+	var/mob/M = user
 	if(!M.mind)	return 0
 	var/job = M.mind.assigned_role
 	if(job != JOB_DETECTIVE)
 		to_chat(M, span_notice("You don't feel cool enough to name this gun, chump."))
 		return 0
 
-	var/_answer_k96 = rerun_ask(M, "k96", VERB_REF(rename_gun), args, /datum/om/prompt/text, message = "What do you want to name the gun?", title = "Rename Revolver", max_length = MAX_NAME_LEN, encode = FALSE)
+	var/_answer_k96 = rerun_ask(M, "k96", PROC_REF(det45_revolver_verb_rename), args, /datum/om/prompt/text, message = "What do you want to name the gun?", title = "Rename Revolver", max_length = MAX_NAME_LEN, encode = FALSE)
 	if(isnull(_answer_k96))
 		return
 	var/input = sanitizeSafe(_answer_k96, MAX_NAME_LEN)
@@ -106,12 +106,9 @@
 		to_chat(M, "You name the gun [input]. Say hello to your new friend.")
 		return 1
 
-/obj/item/gun/projectile/revolver/detective45/verb/reskin_gun()
-	set name = "Resprite gun"
-	set category = "Object"
-	set desc = "Click to choose a sprite for your gun."
-
-	var/mob/M = usr
+/// Old Resprite gun verb: Click to choose a sprite for your gun.
+/obj/item/gun/projectile/revolver/detective45/proc/det45_revolver_verb_reskin(mob/user, obj/item/held, datum/interaction/interaction)
+	var/mob/M = user
 	var/list/options = list()
 	options["MarsTech R1 Snubnose"] = "detective"
 	options["MarsTech R1 Snubnose (Blued)"] = "detective_blued"
@@ -122,7 +119,7 @@
 	options["MarsTech Frontiersman Shadow"] = "detective_peacemaker_dark"
 	options["Jindal Duke"] = "detective_fitz"
 	options["H-H M1895"] = "nagant"
-	var/choice = rerun_ask(M, "k119", VERB_REF(reskin_gun), args, /datum/om/prompt/choice, message = "Choose your sprite!", title = "Resprite Gun", choices = options)
+	var/choice = rerun_ask(M, "k119", PROC_REF(det45_revolver_verb_reskin), args, /datum/om/prompt/choice, message = "Choose your sprite!", title = "Resprite Gun", choices = options)
 	if(isnull(choice))
 		return
 	if(src && choice && !M.stat && in_range(M,src))
@@ -245,12 +242,11 @@
 	for(var/i in 1 to secondary_max_shells)
 		secondary_loaded += new secondary_ammo_type(src)
 
-/obj/item/gun/projectile/revolver/lemat/verb/swap_firingmode()
-	set name = "Swap Firing Mode"
-	set category = "Object"
-	set desc = "Click to swap from one method of firing to another."
+EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/lemat, INTERACT_VERB("Swap Firing Mode", PROC_REF(lemat_verb_swap_firing_mode), REQ_IN_INVENTORY))
 
-	var/mob/living/carbon/human/M = usr
+/// Old Swap Firing Mode verb: Click to swap from one method of firing to another.
+/obj/item/gun/projectile/revolver/lemat/proc/lemat_verb_swap_firing_mode(mob/user, obj/item/held, datum/interaction/interaction)
+	var/mob/living/carbon/human/M = user
 	if(!M.mind)
 		return 0
 
@@ -287,13 +283,10 @@
 
 		flipped_firing = 0
 
-/obj/item/gun/projectile/revolver/lemat/spin_cylinder()
-	set name = "Spin cylinder"
-	set desc = "Fun when you're bored out of your skull."
-	set category = "Object"
-
+/// Old Spin cylinder verb override: the LeMat spins whichever cylinder it is firing from.
+/obj/item/gun/projectile/revolver/lemat/revolver_verb_spin_cylinder(mob/user, obj/item/held, datum/interaction/interaction)
 	chamber_offset = 0
-	visible_message(span_warning("\The [usr] spins the cylinder of \the [src]!"), \
+	visible_message(span_warning("\The [user] spins the cylinder of \the [src]!"), \
 	span_notice("You hear something metallic spin and click."))
 	playsound(src, 'sound/weapons/revolver_spin.ogg', 100, 1)
 	if(!flipped_firing)

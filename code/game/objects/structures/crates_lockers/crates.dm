@@ -175,19 +175,16 @@
 			O.show_message( span_notice("The crate has been [locked ? null : "un"]locked by [user]."), 1)
 	update_icon()
 
-/obj/structure/closet/crate/secure/verb/verb_togglelock()
-	set src in oview(1) // One square distance
-	set category = "Object"
-	set name = "Toggle Lock"
+/obj/structure/closet/crate/secure/proc/secure_verb_togglelock_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	if(!usr.canmove || usr.stat || usr.restrained()) // Don't use it if you're not able to! Checks for stuns, ghost and restrain
+	if(!user.canmove || user.stat || user.restrained()) // Don't use it if you're not able to! Checks for stuns, ghost and restrain
 		return
 
-	if(ishuman(usr) || isrobot(usr))
-		src.add_fingerprint(usr)
-		src.togglelock(usr)
+	if(ishuman(user) || isrobot(user))
+		src.add_fingerprint(user)
+		src.togglelock(user)
 	else
-		to_chat(usr, span_warning("This mob type can't use this verb."))
+		to_chat(user, span_warning("This mob type can't use this verb."))
 
 // Secure crate's Use fully replaces closet's (the original override never called ..() into
 // it either), so it declares its own interaction.
@@ -198,6 +195,8 @@
 	into += list(
 		/datum/interaction/entry_hand/secure_crate_hand,
 	)
+	var/static/list/lock_spec = INTERACT_VERB("Toggle Lock", PROC_REF(secure_verb_togglelock_effect))
+	into += dq_interaction_from_spec(/obj/structure/closet/crate/secure, lock_spec)
 	..()
 	into -= /datum/interaction/entry_hand/closet_hand
 

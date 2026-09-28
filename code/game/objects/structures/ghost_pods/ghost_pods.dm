@@ -58,12 +58,14 @@
 
 // This type is triggered manually by a player discovering the pod and deciding to open it.
 /obj/structure/ghost_pod/manual
+	silicon_use = ROBOT_USE_HAND_ADJACENT // borgs can open pods
 	var/confirm_before_open = FALSE // Recommended to be TRUE if the pod contains a surprise.
 
 /obj/structure/ghost_pod/manual/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/entry_hand/ghost_pod_open,
 	)
+	into += dq_interaction_from_spec(type, INTERACT_OBSERVER("Inhabit", PROC_REF(ghost_pod_manual_observer_use)))
 	..()
 
 /// Old attack_hand: open the pod.
@@ -79,10 +81,6 @@
 			return TRUE
 		touch_pod(user)
 	return TRUE
-
-/obj/structure/ghost_pod/manual/attack_ai(mob/living/silicon/user)
-	if(Adjacent(user))
-		attack_hand(user) // Borgs can open pods.
 
 // This type is triggered on a timer, as opposed to needing another player to 'open' the pod.  Good for away missions.
 /obj/structure/ghost_pod/automatic
@@ -103,20 +101,25 @@
 /obj/structure/ghost_pod/ghost_activated
 	description_info = "A ghost can click on this to return to the round as whatever is contained inside this object."
 
-/obj/structure/ghost_pod/ghost_activated/attack_ghost(mob/observer/dead/user)
+// Subtypes with their own ghost use override ghost_pod_observer_use() (it never fell through).
+EXTEND_INTERACTIONS(/obj/structure/ghost_pod/ghost_activated, INTERACT_OBSERVER("Inhabit", PROC_REF(ghost_pod_observer_use)))
+
+/// Old attack_ghost: a ghost inhabits the pod.
+/obj/structure/ghost_pod/ghost_activated/proc/ghost_pod_observer_use(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
 	if(jobban_isbanned(user, JOB_GHOSTROLES))
 		to_chat(user, span_warning("You cannot inhabit this creature because you are banned from playing ghost roles."))
-		return
+		return TRUE
 
 	//No OOC notes
 	if (not_has_ooc_text(user))
-		return
+		return TRUE
 
 	if(used)
 		to_chat(user, span_warning("Another spirit appears to have gotten to \the [src] before you.  Sorry."))
-		return
+		return TRUE
 
 	om_ask(user, /datum/om/prompt/confirm/ghost_pod_activate, PROC_REF(activation_confirmed))
+	return TRUE
 
 /// A ghost confirms taking a pod. The pod is busy while it's open (manual pods): any answer
 /// or a cancel frees it.
@@ -246,29 +249,31 @@ REGISTRY_MEMBERSHIP(/obj/structure/ghost_pod, REGISTRY_GHOST_PODS)
 	var/remains_active = FALSE
 	var/activated = FALSE
 
-/obj/structure/ghost_pod/manual/attack_ghost(mob/observer/dead/user)
+/// Old attack_ghost: a ghost takes over an activated pod that stays open to ghosts.
+/obj/structure/ghost_pod/manual/proc/ghost_pod_manual_observer_use(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
 	if(jobban_isbanned(user, JOB_GHOSTROLES))
 		to_chat(user, span_warning("You cannot inhabit this creature because you are banned from playing ghost roles."))
-		return
+		return TRUE
 
 	//No OOC notes
 	if (not_has_ooc_text(user))
-		return
+		return TRUE
 
 	if(!remains_active || busy)
-		return
+		return TRUE
 
 	if(!activated)
 		to_chat(user, span_warning("\The [src] has not yet been activated.  Sorry."))
-		return
+		return TRUE
 
 	if(used)
 		to_chat(user, span_warning("Another spirit appears to have gotten to \the [src] before you.  Sorry."))
-		return
+		return TRUE
 
 	busy = TRUE
 	if(!om_ask(user, /datum/om/prompt/confirm/ghost_pod_activate, PROC_REF(activation_confirmed)))
 		busy = FALSE
+	return TRUE
 
 /obj/structure/ghost_pod/proc/ghostpod_startup(notify = FALSE)
 	registry_join(REGISTRY_GHOST_PODS, src)

@@ -92,14 +92,18 @@
 	. = ..()
 	material_response_impact(get_turf(hit_atom) || get_turf(src), hit_atom)
 
-/obj/item/material/attackby(obj/item/W, mob/user)
+// EXTEND, not DECLARE: many subtypes DECLARE interactions of their own, which this must not replace.
+EXTEND_INTERACTIONS(/obj/item/material, INTERACT_ITEM("Repair", PROC_REF(material_interaction_item)))
+
+/// Old attackby: repairs with a whetstone or sharpening kit, then falls through as its ..() did.
+/obj/item/material/proc/material_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/whetstone))
 		var/obj/item/whetstone/whet = W
 		repair(whet.repair_amount, whet.repair_time, user)
 	if(istype(W, /obj/item/material/sharpeningkit))
 		var/obj/item/material/sharpeningkit/SK = W
 		repair(SK.repair_amount, SK.repair_time, user)
-	..()
+	return FALSE
 
 /// Wear from use. Wear is not a blow from outside, so armour doesn't apply.
 /obj/item/material/proc/material_wear(amount)

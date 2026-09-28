@@ -31,17 +31,10 @@
 REF_PAIR(/obj/machinery/computer/operating, list("table" = "computer"))
 REF_PAIR(/obj/machinery/optable, list("computer" = "table"))
 
-/obj/machinery/computer/operating/attack_ai(mob/user)
-	add_fingerprint(user)
-	if(stat & (BROKEN|NOPOWER))
-		return
-	tgui_interact(user)
-
-/obj/machinery/computer/operating/attack_hand(mob/user)
-	add_fingerprint(user)
-	if(stat & (BROKEN|NOPOWER))
-		return
-	tgui_interact(user)
+EXTEND_INTERACTIONS(/obj/machinery/computer/operating, \
+	INTERACT_HAND_UNGATED(null, TYPE_PROC_REF(/obj/machinery, interaction_open_ui_powered_fingerprint)), \
+	INTERACT_SILICON("Use", TYPE_PROC_REF(/obj/machinery, interaction_open_ui_powered_fingerprint)), \
+)
 
 /obj/machinery/computer/operating/tgui_interact(mob/user, datum/tgui/ui = null)
 	ui = SStgui.try_update_ui(user, src, ui)

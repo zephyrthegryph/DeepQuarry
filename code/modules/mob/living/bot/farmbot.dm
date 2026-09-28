@@ -63,11 +63,13 @@
 	return data
 
 
-/mob/living/bot/farmbot/attack_hand(mob/user)
-	. = ..()
-	if(.)
-		return
-	tgui_interact(user)
+EXTEND_INTERACTIONS(/mob/living/bot/farmbot, INTERACT_HAND("Open controls", PROC_REF(farmbot_interaction_hand)))
+
+/// Old attack_hand: the default touch first (old ..()); if that did nothing, open the controls.
+/mob/living/bot/farmbot/proc/farmbot_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!unarmed_touch(user))
+		tgui_interact(user)
+	return TRUE
 
 /mob/living/bot/farmbot/emag_act(remaining_charges, mob/user)
 	. = ..()

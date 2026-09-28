@@ -43,20 +43,26 @@
 /turf/simulated/floor/water/get_edge_icon_state()
 	return "water_shallow"
 
-/turf/simulated/floor/water/attackby(obj/item/O as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/turf/simulated/floor/water, \
+	INTERACT_INSERT(/obj/item/material/fishing_rod, PROC_REF(water_fishing), "Cast a line"), \
+	INTERACT_ITEM("Fill", PROC_REF(water_fill)), \
+)
+
+/// Old attackby: fill an open container or wet a mop.
+/turf/simulated/floor/water/proc/water_fill(mob/user, obj/item/O, datum/interaction/interaction)
 	var/obj/item/reagent_containers/RG = O
 	if (istype(RG) && RG.is_open_container())
 		RG.reagents.add_reagent(reagent_type, min(RG.volume - RG.reagents.total_volume, RG.amount_per_transfer_from_this))
 		user.visible_message(span_notice("[user] fills \the [RG] using \the [src]."),span_notice("You fill \the [RG] using \the [src]."))
-		return 1
+		return TRUE
 
 	else if(istype(O, /obj/item/mop))
 		O.reagents.add_reagent(reagent_type, 5)
 		to_chat(user, span_notice("You wet \the [O] in \the [src]."))
 		playsound(src, 'sound/effects/slosh.ogg', 25, 1)
-		return 1
+		return TRUE
 
-	else return ..()
+	return FALSE
 
 /turf/simulated/floor/water/return_air_for_internal_lifeform(mob/living/L)
 	if(L && L.lying)

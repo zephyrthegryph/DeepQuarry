@@ -76,7 +76,15 @@
 	. = ..()
 	make_rotatable()
 
-/obj/structure/smoletrack/attack_hand(mob/user)
+EXTEND_INTERACTIONS(/obj/structure/smoletrack, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(smoletrack_dismantle_hand)), \
+	INTERACT_VERB("Use Color Pieces", PROC_REF(smoletrack_verb_color)), \
+	INTERACT_VERB("Take Road Apart", PROC_REF(smoletrack_verb_dismantle)), \
+)
+
+/// Old attack_hand: a disarming touch takes the piece apart. It never reached the parent touch.
+/obj/structure/smoletrack/proc/smoletrack_dismantle_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	. = TRUE
 	if(IS_DISARMING(user))
 		if(HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 			return
@@ -91,13 +99,11 @@
 	return CONFIG_GET(flag/ghost_interaction)
 
 //color roads
-/obj/structure/smoletrack/verb/colorpieces()
-	set name = "Use Color Pieces"
-	set category = "Object"
-	set src in oview(1)
-	if(HAS_TRAIT(usr, TRAIT_AMBIENT_PEST_MOB) || (isobserver(usr) && !CONFIG_GET(flag/ghost_interaction)))
+/// Old Use Color Pieces verb.
+/obj/structure/smoletrack/proc/smoletrack_verb_color(mob/user, obj/item/held, datum/interaction/interaction)
+	if(HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 		return
-	om_ask(usr, /datum/om/prompt/color/smole_paint, PROC_REF(smole_paint_picked), default = color)
+	om_ask(user, /datum/om/prompt/color/smole_paint, PROC_REF(smole_paint_picked), default = color)
 
 /// A smole road or building's colour. Re-checked on the answer: the painter is still next to it.
 /datum/om/prompt/color/smole_paint
@@ -114,11 +120,9 @@
 		color = ask.picked_color
 
 // probably redundant, allows for direct way to dismantal without knowing intents
-/obj/structure/smoletrack/verb/menudismantal()
-	set name = "Take Road Apart"
-	set category = "Object"
-	set src in oview(1)
-	if(HAS_TRAIT(usr, TRAIT_AMBIENT_PEST_MOB) || (isobserver(usr) && !CONFIG_GET(flag/ghost_interaction)))
+/// Old Take Road Apart verb.
+/obj/structure/smoletrack/proc/smoletrack_verb_dismantle(mob/user, obj/item/held, datum/interaction/interaction)
+	if(HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 		return
 	playsound(src, 'sound/items/smolesmallbuild.ogg', 50, 1, -1, volume_channel = VOLUME_CHANNEL_MASTER)
 	var/turf/simulated/floor/F = get_turf(src)
@@ -168,7 +172,16 @@
 	max_integrity = 75 // Three stomps.
 
 //makes it so buildings can be dismaintaled or GodZilla style attacked
-/obj/structure/smolebuilding/attack_hand(mob/user)
+EXTEND_INTERACTIONS(/obj/structure/smolebuilding, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(smolebuilding_hand)), \
+	INTERACT_ITEM(null, PROC_REF(smolebuilding_item)), \
+	INTERACT_VERB("Use Color Pieces", PROC_REF(smolebuilding_verb_color)), \
+	INTERACT_VERB("Take Building Apart", PROC_REF(smolebuilding_verb_dismantle)), \
+)
+
+/// Old attack_hand: dismantle (disarm), bang on (harm) or knock on the building.
+/obj/structure/smolebuilding/proc/smolebuilding_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	. = TRUE
 	if(IS_DISARMING(user))
 		if(HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 			return
@@ -205,9 +218,10 @@
 	deconstruct(FALSE)
 
 //checks for items and does the same as dismaintle but spawns material instead.
-/obj/structure/smolebuilding/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby: any hit with an item flattens it.
+/obj/structure/smolebuilding/proc/smolebuilding_item(mob/user, obj/item/W, datum/interaction/interaction)
 	dismantle()
-	return
+	return TRUE
 //checks for projectile damage and does the same as dismaintle but spawns material instead.
 /obj/structure/smolebuilding/bullet_act(obj/item/projectile/Proj)
 	displode()
@@ -221,7 +235,11 @@
 	return
 
 //get material from ruins
-/obj/structure/smoleruins/attack_hand(mob/user)
+EXTEND_INTERACTIONS(/obj/structure/smoleruins, 	INTERACT_HAND_UNGATED(null, PROC_REF(smoleruins_dismantle_hand)), 	INTERACT_ITEM(null, PROC_REF(smoleruins_item)), )
+
+/// Old attack_hand: a disarming touch takes the ruins apart. It never reached the parent touch.
+/obj/structure/smoleruins/proc/smoleruins_dismantle_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	. = TRUE
 	if(IS_DISARMING(user))
 		if(HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 			return
@@ -233,9 +251,10 @@
 		qdel(src)
 
 //Ruins go asplode same as buildings if attacked
-/obj/structure/smoleruins/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby: any hit with an item blows the ruins apart.
+/obj/structure/smoleruins/proc/smoleruins_item(mob/user, obj/item/W, datum/interaction/interaction)
 	displode()
-	return
+	return TRUE
 
 /obj/structure/smoleruins/bullet_act(obj/item/projectile/Proj)
 	displode()
@@ -249,20 +268,16 @@
 	return
 
 //color buildings
-/obj/structure/smolebuilding/verb/colorpieces()
-	set name = "Use Color Pieces"
-	set category = "Object"
-	set src in oview(1)
-	if(HAS_TRAIT(usr, TRAIT_AMBIENT_PEST_MOB) || (isobserver(usr) && !CONFIG_GET(flag/ghost_interaction)))
+/// Old Use Color Pieces verb.
+/obj/structure/smolebuilding/proc/smolebuilding_verb_color(mob/user, obj/item/held, datum/interaction/interaction)
+	if(HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 		return
-	om_ask(usr, /datum/om/prompt/color/smole_paint, PROC_REF(smole_paint_picked), default = color)
+	om_ask(user, /datum/om/prompt/color/smole_paint, PROC_REF(smole_paint_picked), default = color)
 
 //probably a bit redundant but gives a more direct way to disassemble buildings without using intents
-/obj/structure/smolebuilding/verb/menudismantal()
-	set name = "Take Building Apart"
-	set category = "Object"
-	set src in oview(1)
-	if(HAS_TRAIT(usr, TRAIT_AMBIENT_PEST_MOB) || (isobserver(usr) && !CONFIG_GET(flag/ghost_interaction)))
+/// Old Take Building Apart verb.
+/obj/structure/smolebuilding/proc/smolebuilding_verb_dismantle(mob/user, obj/item/held, datum/interaction/interaction)
+	if(HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 		return
 	playsound(src, 'sound/items/smolesmallbuild.ogg', 50, 1, -1, volume_channel = VOLUME_CHANNEL_MASTER)
 	if(!isnull(loc))

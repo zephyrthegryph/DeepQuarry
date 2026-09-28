@@ -26,10 +26,8 @@
 REF_OWNED(/obj/item/grenade/chem_grenade, "detonator")
 REF_OWNED_LIST(/obj/item/grenade/chem_grenade, "beakers")
 
-/obj/item/grenade/chem_grenade/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self.
+/obj/item/grenade/chem_grenade/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!stage || stage==1)
 		if(detonator)
 //				detonator.loc=src.loc
@@ -56,7 +54,10 @@ REF_OWNED_LIST(/obj/item/grenade/chem_grenade, "beakers")
 			var/mob/living/carbon/C = user
 			C.throw_mode_on()
 
-DECLARE_INTERACTIONS(/obj/item/grenade/chem_grenade, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+DECLARE_INTERACTIONS(/obj/item/grenade/chem_grenade, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
 
 /// Old attackby.
 /obj/item/grenade/chem_grenade/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)

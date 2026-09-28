@@ -48,18 +48,26 @@
 			used_radios += my_headset
 
 // Clicked on while holding an object.
-/mob/living/simple_mob/animal/passive/bird/parrot/attackby(obj/item/I, mob/user)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/bird/parrot, \
+	INTERACT_ITEM(null, PROC_REF(parrot_interaction_item)), \
+	INTERACT_HAND_UNGATED(null, PROC_REF(parrot_interaction_hand)))
+
+/// Old attackby: give a headset.
+/mob/living/simple_mob/animal/passive/bird/parrot/proc/parrot_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+	. = TRUE
 	if(istype(I, /obj/item/radio/headset))
 		give_headset(I, user)
 		return
-	return ..()
+	return FALSE
 
 // Clicked on by empty hand.
-/mob/living/simple_mob/animal/passive/bird/parrot/attack_hand(mob/living/L)
+/// Old attack_hand: grab the headset off.
+/mob/living/simple_mob/animal/passive/bird/parrot/proc/parrot_interaction_hand(mob/living/L, obj/item/held, datum/interaction/interaction)
+	. = TRUE
 	if(IS_GRABBING(L) && my_headset)
 		remove_headset(L)
 	else
-		..()
+		return FALSE
 
 
 /mob/living/simple_mob/animal/passive/bird/parrot/proc/give_headset(obj/item/radio/headset/new_headset, mob/living/user)

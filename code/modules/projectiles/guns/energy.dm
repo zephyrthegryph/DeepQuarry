@@ -177,8 +177,9 @@
 	else
 		to_chat(user, span_notice("[src] does not have a power cell."))
 
-/obj/item/gun/energy/attackby(obj/item/A as obj, mob/user as mob)
-	..()
+/// Old attackby: the parent's first, then loading.
+/obj/item/gun/energy/gun_item(mob/user, obj/item/A, datum/interaction/interaction)
+	. = ..()
 	load_ammo(A, user)
 
 DECLARE_INTERACTIONS(/obj/item/gun/energy, INTERACT_HAND(null, PROC_REF(interaction_hand)))

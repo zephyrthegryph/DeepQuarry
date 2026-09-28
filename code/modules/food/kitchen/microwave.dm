@@ -119,12 +119,19 @@ REF_OWNED(/obj/machinery/microwave, "soundloop")
 	update_icon()
 	SStgui.update_uis(src)
 
-/obj/machinery/microwave/attackby(obj/item/O, mob/user)
+EXTEND_INTERACTIONS(/obj/machinery/microwave, \
+	INTERACT_ITEM(null, PROC_REF(microwave_interaction_item)), \
+	INTERACT_HAND_UNGATED(null, PROC_REF(microwave_interaction_hand)), \
+	INTERACT_VERB("Eject content", PROC_REF(microwave_verb_eject)), \
+)
+
+/// Old attackby.
+/obj/machinery/microwave/proc/microwave_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	if(handle_broken(O, user)) return TRUE
 	if(handle_dirty(O, user)) return TRUE
 	if(default_part_replacement(user, O)) return TRUE
 	if(try_insert_item(O, user)) return TRUE
-	if(try_insert_reagent(O, user)) return FALSE
+	if(try_insert_reagent(O, user)) return INTERACTION_HANDLED_PASS // the container's afterattack pours
 	if(istype(O,/obj/item/grab))
 		var/obj/item/grab/G = O
 		to_chat(user, span_warning("Unfortunately, the laws of physics prevent you from inserting \the [G?.grab_target()] into \the [src]."))
@@ -136,9 +143,8 @@ REF_OWNED(/obj/machinery/microwave, "soundloop")
 		to_chat(user, span_warning("There is already a pAI inserted, and you don't feel like cooking \the [O]."))
 		return TRUE
 	if(istype(O, /obj/item/gripper)) //Grippers count as 'attacking' before the thing they're holding. Don't send a message.
-		return FALSE
+		return INTERACTION_HANDLED_PASS
 	to_chat(user, span_warning("You have no idea what you can cook with \the [O]."))
-	..()
 	post_state_change()
 	return FALSE
 
@@ -286,12 +292,14 @@ REF_OWNED(/obj/machinery/microwave, "soundloop")
 		return STATUS_INTERACTIVE
 	. = ..()
 
-/obj/machinery/microwave/attack_hand(mob/user as mob)
+/// Old attack_hand.
+/obj/machinery/microwave/proc/microwave_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(IS_GRABBING(user))
 		if(paicard)
 			ejectpai(user)
-			return
+			return TRUE
 	tgui_interact(user)
+	return TRUE
 
 /*******************
 *   Microwave Menu
@@ -561,16 +569,15 @@ REF_OWNED(/obj/machinery/microwave, "soundloop")
 	ffuu.reagents.add_reagent(REAGENT_ID_TOXIN, amount/10)
 	return ffuu
 
-/obj/machinery/microwave/verb/Eject()
-	set src in oview(1)
-	set category = "Object"
-	set name = "Eject content"
-	usr.visible_message(
-	span_notice("[usr] tries to open [src] and remove its contents.") ,
+/// Old Eject content verb.
+/obj/machinery/microwave/proc/microwave_verb_eject(mob/user, obj/item/held, datum/interaction/interaction)
+	user.visible_message(
+	span_notice("[user] tries to open [src] and remove its contents.") ,
 	span_notice("You try to open [src] and remove its contents.")
 	)
 
-	om_do_after(usr, 1 SECOND, src, src, PROC_REF(eject_done), list(usr))
+	om_do_after(user, 1 SECOND, src, src, PROC_REF(eject_done), list(user))
+	return TRUE
 
 /obj/machinery/microwave/proc/eject_done(mob/user)
 	if(operating)

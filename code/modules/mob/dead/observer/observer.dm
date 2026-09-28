@@ -121,10 +121,12 @@
 		reenter_corpse()
 		return
 
-/mob/observer/dead/attackby(obj/item/W, mob/user)
-	if(istype(W,/obj/item/book/tome))
-		var/mob/observer/dead/M = src
-		M.manifest(user)
+EXTEND_INTERACTIONS(/mob/observer/dead, INTERACT_INSERT(/obj/item/book/tome, PROC_REF(observer_tome_manifest), "Manifest"))
+
+/// Old attackby: a tome makes the ghost manifest.
+/mob/observer/dead/proc/observer_tome_manifest(mob/user, obj/item/held, datum/interaction/interaction)
+	manifest(user)
+	return TRUE
 
 /mob/observer/dead/CanPass(atom/movable/mover, turf/target)
 	return TRUE

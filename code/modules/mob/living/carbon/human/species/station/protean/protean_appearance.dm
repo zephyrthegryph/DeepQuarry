@@ -82,7 +82,7 @@
 
 /// Refreshes H's appearance if this blob form is the one worn.
 /datum/form/protean_blob/proc/refresh_if_worn(mob/living/carbon/human/H)
-	var/datum/component/forms/F = H.get_forms()
+	var/datum/forms/F = H.get_forms()
 	if(F?.current == src)
 		F.refresh_appearance()
 

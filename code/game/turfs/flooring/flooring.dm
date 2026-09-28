@@ -920,9 +920,6 @@ GLOBAL_LIST_INIT(flooring_types, populate_flooring_types())
 	icon_state = "c_flesh_floor"
 	initial_flooring = /datum/decl/flooring/flesh
 
-/turf/simulated/floor/flesh/attackby()
-	return
-
 /datum/decl/flooring/flesh
 	name = "flesh"
 	desc = "This slick flesh ripples and squishes under your touch"

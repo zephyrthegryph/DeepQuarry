@@ -222,10 +222,10 @@ DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(in
 /obj/item/stack/cable_coil/cyborg/material_totals()
 	return list()
 
-/obj/item/stack/cable_coil/cyborg/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/cyborg, INTERACT_USE("Change colour", PROC_REF(cyborg_coil_self)))
+
+/// Old attack_self.
+/obj/item/stack/cable_coil/cyborg/proc/cyborg_coil_self(mob/user, obj/item/held, datum/interaction/interaction)
 	set_colour(user)
 
 /obj/item/stack/cable_coil/cyborg/proc/set_colour(mob/user)
@@ -615,12 +615,10 @@ REF_OWNED_LIST(/obj/item/gripper, "pockets")
 		drop_item(user)
 	return TRUE
 
-/obj/item/gripper/verb/drop_gripper_item()
+EXTEND_INTERACTIONS(/obj/item/gripper, INTERACT_VERB("Drop Item", PROC_REF(gripper_verb_drop), REQ_IN_INVENTORY))
 
-	set name = "Drop Item"
-	set desc = "Release an item from your magnetic gripper."
-	set category = "Abilities.Silicon"
-
+/// Old Drop Item verb: Release an item from your magnetic gripper.
+/obj/item/gripper/proc/gripper_verb_drop(mob/user, obj/item/held, datum/interaction/interaction)
 	drop_item(src.loc)
 
 //Different types of grippers!

@@ -20,22 +20,25 @@
 	reagents.add_reagent(REAGENT_ID_NUTRIMENT,3)
 	updateName()
 
-/obj/item/reagent_containers/food/snacks/customizable/attackby(obj/item/I, mob/user)
+EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/customizable, INTERACT_ITEM(null, PROC_REF(customizable_item)))
+
+/// Old attackby. FALSE falls to the snack handling, as the old ..() did.
+/obj/item/reagent_containers/food/snacks/customizable/proc/customizable_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I,/obj/item/reagent_containers/food/snacks))
 		if((contents.len >= ingMax) || (contents.len >= INGREDIENT_LIMIT))
 			to_chat(user, span_warning("That's already looking pretty stuffed."))
-			return
+			return INTERACTION_HANDLED_PASS
 
 		var/obj/item/reagent_containers/food/snacks/S = I
 		if(istype(S,/obj/item/reagent_containers/food/snacks/customizable))
 			var/obj/item/reagent_containers/food/snacks/customizable/SC = S
 			if(fullyCustom && SC.fullyCustom)
 				to_chat(user, span_warning("You slap yourself on the back of the head for thinking that stacking plates is an interesting dish."))
-				return
+				return INTERACTION_HANDLED_PASS
 		if(istype(I, /obj/item/reagent_containers/food/snacks/customizable))
 			//to_chat(user, span_warning("[pick("As uniquely original as that idea is, you can't figure out how to perform it.","That would be a straining topological exercise.","This world just isn't ready for your cooking genius.","It's possible that you may have a problem.","It won't fit.","You don't think that would taste very good.","Quit goofin' around.")]"))
 			to_chat(user, span_warning("As uniquely original as that idea is, you can't figure out how to perform it."))
-			return
+			return INTERACTION_HANDLED_PASS
 		/*if(!user.drop_item())
 			to_chat(user, span_warning("\The [I] is stuck to your hands!"))
 			return*/
@@ -61,9 +64,8 @@
 
 		updateName()
 		to_chat(user, span_notice("You add the [I.name] to the [src.name]."))
-	else
-		. = ..()
-	return
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
 /obj/item/reagent_containers/food/snacks/customizable/proc/generateFilling(obj/item/reagent_containers/food/snacks/S, params)
 	var/image/I
@@ -131,14 +133,17 @@ REF_OWNED_LIST(/obj/item/reagent_containers/food/snacks/customizable, "ingredien
 	stackIngredients = 1
 	addTop = 0
 
-/obj/item/reagent_containers/food/snacks/customizable/sandwich/attackby(obj/item/I,mob/user)
+EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/customizable/sandwich, INTERACT_ITEM(null, PROC_REF(custom_sandwich_item)))
+
+/// Old attackby. FALSE falls to the customizable handling, as the old ..() did.
+/obj/item/reagent_containers/food/snacks/customizable/sandwich/proc/custom_sandwich_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I,/obj/item/reagent_containers/food/snacks/slice/bread) && !addTop)
 		I.reagents.trans_to_holder(reagents,I.reagents.total_volume)
 		consume(I, user)
 		addTop = 1
 		src.drawTopping()
-	else
-		..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
 /obj/item/reagent_containers/food/snacks/customizable/burger
 	name = "burger"
@@ -174,18 +179,31 @@ REF_OWNED_LIST(/obj/item/reagent_containers/food/snacks/customizable, "ingredien
 
 // Various Snacks //////////////////////////////////////////////
 
-/obj/item/reagent_containers/food/snacks/slice/bread/attackby(obj/item/I,mob/user,params)
+EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/slice/bread, INTERACT_ITEM(null, PROC_REF(bread_slice_item)))
+
+/// Old attackby: this file's override plus the sandwich.dm one it reached through ..() (shard -> sandwich), merged.
+/// FALSE falls to the snack handling, as the old chain did.
+/obj/item/reagent_containers/food/snacks/slice/bread/proc/bread_slice_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I,/obj/item/reagent_containers/food/snacks))
 		if(istype(I, /obj/item/reagent_containers/food/snacks/customizable))
 			to_chat(user, span_warning("Sorry, no recursive food."))
-			return
+			return INTERACTION_HANDLED_PASS
 		var/obj/F = new/obj/item/reagent_containers/food/snacks/customizable/sandwich(get_turf(src),I) //boy ain't this a mouthful
 		F.attackby(I, user)
 		consume(src, user)
-	else
-		return ..()
+		return INTERACTION_HANDLED_PASS
+	if(istype(I,/obj/item/material/shard))
+		var/obj/item/reagent_containers/food/snacks/csandwich/S = new(get_turf(src))
+		S.attackby(I,user)
+		consume(src, user)
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
-/obj/item/reagent_containers/food/snacks/bun/attackby(obj/item/I, mob/user)
+EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/bun, INTERACT_ITEM(null, PROC_REF(bun_item)))
+
+/// Old attackby. Its ..() for a non-snack reached an older snacks.dm override whose recipes were all
+/// snack-only and which never called its own parent, so every item is answered here.
+/obj/item/reagent_containers/food/snacks/bun/proc/bun_item(mob/user, obj/item/I, datum/interaction/interaction)
 	// Bun + meatball = burger
 	if(istype(I,/obj/item/reagent_containers/food/snacks/meatball))
 		new /obj/item/reagent_containers/food/snacks/monkeyburger(src)
@@ -214,30 +232,35 @@ REF_OWNED_LIST(/obj/item/reagent_containers/food/snacks/customizable, "ingredien
 		var/obj/F = new/obj/item/reagent_containers/food/snacks/customizable/burger(get_turf(src),I)
 		F.attackby(I, user)
 		consume(src, user)
-	else
-		return ..()
+	return INTERACTION_HANDLED_PASS
 
-/obj/item/reagent_containers/food/snacks/sliceable/flatdough/attackby(obj/item/I, mob/user)
+EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/sliceable/flatdough, INTERACT_ITEM(null, PROC_REF(flatdough_item)))
+
+/// Old attackby. FALSE falls to the snack handling, as the old ..() did.
+/obj/item/reagent_containers/food/snacks/sliceable/flatdough/proc/flatdough_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/reagent_containers/food/snacks))
 		if(istype(I, /obj/item/reagent_containers/food/snacks/customizable))
 			to_chat(user, span_warning("Sorry, no recursive food."))
-			return
+			return INTERACTION_HANDLED_PASS
 		var/obj/F = new/obj/item/reagent_containers/food/snacks/customizable/pizza(get_turf(src),I)
 		F.attackby(I, user)
 		consume(src, user)
-	else
-		return ..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
-/obj/item/reagent_containers/food/snacks/spagetti/attackby(obj/item/I, mob/user)
+EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/spagetti, INTERACT_ITEM(null, PROC_REF(spagetti_item)))
+
+/// Old attackby. FALSE falls to the snack handling, as the old ..() did.
+/obj/item/reagent_containers/food/snacks/spagetti/proc/spagetti_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/reagent_containers/food/snacks))
 		if(istype(I, /obj/item/reagent_containers/food/snacks/customizable))
 			to_chat(user, span_warning("Sorry, no recursive food."))
-			return
+			return INTERACTION_HANDLED_PASS
 		var/obj/F = new/obj/item/reagent_containers/food/snacks/customizable/pasta(get_turf(src),I)
 		F.attackby(I, user)
 		consume(src, user)
-	else
-		return ..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
 // Custom Meals ////////////////////////////////////////////////
 

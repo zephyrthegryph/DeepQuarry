@@ -89,8 +89,9 @@
 	update_icon()
 	..()
 
-/obj/item/gun/launcher/crossbow/attack_self(mob/living/user)
-	. = ..(user)
+/// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
+/obj/item/gun/launcher/crossbow/gun_self(mob/living/user, obj/item/held, datum/interaction/interaction, callback)
+	. = ..()
 	if(.)
 		return TRUE
 	if(is_bow)
@@ -168,7 +169,9 @@
 		to_chat(user, span_notice("[src] doesn't have a cell installed."))
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/gun/launcher/crossbow/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby.
+/obj/item/gun/launcher/crossbow/gun_item(mob/user, obj/item/W, datum/interaction/interaction)
+	. = INTERACTION_HANDLED_PASS
 	if(!bolt)
 		if (istype(W,/obj/item/arrow))
 			user.drop_from_inventory(W, src)
@@ -198,7 +201,7 @@
 			to_chat(user, span_notice("[src] already has a cell installed."))
 
 	else
-		..()
+		return ..()
 
 /obj/item/gun/launcher/crossbow/proc/superheat_rod(mob/user)
 	if(!user || !cell() || !bolt) return

@@ -47,7 +47,10 @@
 	armor_spec = "melee=10;bullet=10;laser=10;bio=55"
 
 //Turn it into a hailer mask
-/obj/item/clothing/mask/gas/half/attackby(obj/item/I, mob/user)
+EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/half, INTERACT_ITEM(null, PROC_REF(half_mask_add_hailer_item)))
+
+/// Old attackby: fit a hailer. Always fell through to ..() afterwards.
+/obj/item/clothing/mask/gas/half/proc/half_mask_add_hailer_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/hailer))
 		playsound(src, 'sound/items/Screwdriver.ogg', 50, 1)
 		user.drop_item(src)
@@ -60,7 +63,7 @@
 		if(!isturf(N.loc))
 			user.put_in_hands(N)
 		consume(src, user)
-	..()
+	return FALSE
 
 //Plague Dr suit can be found in clothing/suits/bio.dm
 /obj/item/clothing/mask/gas/plaguedoctor
@@ -112,10 +115,10 @@
 			to_chat(user, "Your mask moves to cover your mouth.")
 	return
 
-/obj/item/clothing/mask/gas/swat/vox/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/swat/vox, INTERACT_USE("Feeding port", PROC_REF(vox_mask_port_self)))
+
+/// Old attack_self.
+/obj/item/clothing/mask/gas/swat/vox/proc/vox_mask_port_self(mob/user, obj/item/held, datum/interaction/interaction)
 	feeding_port(user)
 
 /obj/item/clothing/mask/gas/zaddat

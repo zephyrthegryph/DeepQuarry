@@ -43,13 +43,16 @@ GLOBAL_LIST_EMPTY(ashtray_cache)
 	else
 		desc = "An ashtray made of [material.display_name]."
 
-/obj/item/material/ashtray/attackby(obj/item/W as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/material/ashtray, INTERACT_ITEM(null, PROC_REF(ashtray_item)))
+
+/// Old attackby. It never called its parent, so it always answers.
+/obj/item/material/ashtray/proc/ashtray_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if (get_integrity() <= 0)
-		return
+		return INTERACTION_HANDLED_PASS
 	if (istype(W,/obj/item/trash/cigbutt) || istype(W,/obj/item/clothing/mask/smokable/cigarette) || istype(W, /obj/item/flame/match))
 		if (contents.len >= max_butts)
 			to_chat(user, "\The [src] is full.")
-			return
+			return INTERACTION_HANDLED_PASS
 		user.remove_from_mob(W)
 		W.forceMove(src)
 
@@ -80,7 +83,7 @@ GLOBAL_LIST_EMPTY(ashtray_cache)
 	else
 		to_chat(user, "You hit [src] with [W].")
 		material_wear(W.force * MATERIAL_WEAR_UNIT)
-	return
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/material/ashtray/throw_impact(atom/hit_atom)
 	if (get_integrity() > 0)

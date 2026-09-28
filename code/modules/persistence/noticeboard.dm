@@ -107,12 +107,15 @@ REF_OWNED_LIST(/obj/structure/noticeboard, "notices")
 	dismantle()
 	return ITEM_INTERACT_SUCCESS
 
-/obj/structure/noticeboard/attack_ai(mob/user)
+/// Old attack_ai: look at the board.
+/obj/structure/noticeboard/proc/noticeboard_silicon_examine(mob/user, obj/item/held, datum/interaction/interaction)
 	examine(user)
+	return TRUE
 
 DECLARE_INTERACTIONS(/obj/structure/noticeboard, \
 	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_SILICON("Examine", PROC_REF(noticeboard_silicon_examine)), \
 )
 
 /// Old attack_hand.

@@ -67,8 +67,10 @@
 
 	var/sawn_off = FALSE
 
-/obj/item/gun/projectile/shotgun/pump/rifle/ceremonial/attackby(obj/item/A as obj, mob/user as mob)
+/// Old attackby.
+/obj/item/gun/projectile/shotgun/pump/rifle/ceremonial/gun_item(mob/user, obj/item/A, datum/interaction/interaction)
 	if(istype(A, /obj/item/surgical/circular_saw) || istype(A, /obj/item/melee/energy) || istype(A, /obj/item/pickaxe/plasmacutter) && w_class != ITEMSIZE_NORMAL)
+		. = INTERACTION_HANDLED_PASS
 		if(sawn_off)
 			to_chat(user, span_warning("The [src] is already shortened!"))
 			return
@@ -80,7 +82,7 @@
 			return
 		om_do_after(user, 3 SECONDS, src, src, PROC_REF(saw_off_done), list(user))
 	else
-		..()
+		return ..()
 
 /obj/item/gun/projectile/shotgun/pump/rifle/ceremonial/proc/saw_off_done(mob/user)
 	if(sawn_off)
@@ -142,12 +144,13 @@
 	pump_animation = "scoped-boltaction-cycling"
 
 /obj/item/gun/projectile/shotgun/pump/rifle/ui_action_click(mob/user, actiontype)
-	scope()
+	pump_rifle_verb_scope(user)
 
-/obj/item/gun/projectile/shotgun/pump/rifle/verb/scope()
-	set category = "Object"
-	set name = "Use Scope"
-	set popup_menu = 1
+EXTEND_INTERACTIONS(/obj/item/gun/projectile/shotgun/pump/rifle, INTERACT_VERB("Use Scope", PROC_REF(pump_rifle_verb_scope), REQ_IN_INVENTORY))
+
+/// Old Use Scope verb.
+/obj/item/gun/projectile/shotgun/pump/rifle/proc/pump_rifle_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
+
 
 
 /obj/item/gun/projectile/shotgun/pump/rifle/vox_hunting

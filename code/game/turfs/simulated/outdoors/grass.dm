@@ -99,16 +99,20 @@
 	. = ..()
 // end
 
-/turf/simulated/floor/outdoors/grass/sif/attackby(obj/item/C, mob/user) // begin, other tiles have ways to build on them, sif grass doesnt. So I put this snowflake on just sif grass
+// Other tiles have ways to build on them, sif grass doesn't, so this snowflake is just on sif grass.
+EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/grass/sif, INTERACT_ITEM("Plate", PROC_REF(sif_grass_plate)))
+
+/// Old attackby: floor tiles plate the grass.
+/turf/simulated/floor/outdoors/grass/sif/proc/sif_grass_plate(mob/user, obj/item/C, datum/interaction/interaction)
 	if(istype(C, /obj/item/stack/tile/floor))
 		var/obj/item/stack/tile/floor/S = C
 		if (S.get_amount() < 1)
-			return
+			return INTERACTION_HANDLED_PASS
 		playsound(src, 'sound/weapons/genhit.ogg', 50, 1)
 		ChangeTurf(/turf/simulated/floor)
 		S.use(1)
-		return
-	. = ..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 // end
 
 

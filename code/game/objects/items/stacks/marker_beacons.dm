@@ -50,10 +50,8 @@ GLOBAL_LIST_INIT(marker_beacon_colors, list(
 /obj/item/stack/marker_beacon/update_icon()
 	icon_state = "[icon_base][lowertext(picked_color)]"
 
-/obj/item/stack/marker_beacon/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self: place a beacon.
+/obj/item/stack/marker_beacon/proc/marker_beacon_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!isturf(user.loc))
 		to_chat(user, span_warning("You need more space to place a [singular_name] here."))
 		return
@@ -66,7 +64,10 @@ GLOBAL_LIST_INIT(marker_beacon_colors, list(
 		var/obj/structure/marker_beacon/M = new(user.loc, picked_color)
 		transfer_fingerprints_to(M)
 
-EXTEND_INTERACTIONS(/obj/item/stack/marker_beacon, INTERACT_ALT(null, PROC_REF(interaction_alt)))
+EXTEND_INTERACTIONS(/obj/item/stack/marker_beacon, \
+	INTERACT_USE("Place", PROC_REF(marker_beacon_self)), \
+	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+)
 
 /// Old click_alt.
 /obj/item/stack/marker_beacon/proc/interaction_alt(mob/living/user, obj/item/held, datum/interaction/interaction)

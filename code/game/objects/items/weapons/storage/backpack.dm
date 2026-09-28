@@ -74,30 +74,29 @@
 		icon_state = "[icon_state]_tilted"
 		tilted = 1
 
-/obj/item/storage/backpack/holding/duffle/verb/tilt()
-	set name = "Adjust Duffelbag Angle"
-	set desc = "Adjust the angle of your dufflebag for cosmetic effect"
-	set category = "Object"
-	set src in usr
-	if(!usr.canmove || usr.stat || usr.restrained())
+/obj/item/storage/backpack/holding/duffle/proc/duffle_tilt_effect(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!user.canmove || user.stat || user.restrained())
 		return
 	if(tilted)
 		icon_state = "[initial(icon_state)]"
-		to_chat(usr, "You adjust the angle of \the [src] to rest across your lower back.")
+		to_chat(user, "You adjust the angle of \the [src] to rest across your lower back.")
 		tilted = 0
 	else
 		icon_state = "[icon_state]_tilted"
-		to_chat(usr, "You adjust the angle of \the [src] to rest diagonally across your back.")
+		to_chat(user, "You adjust the angle of \the [src] to rest diagonally across your back.")
 		tilted = 1
 	update_icon()
-	usr.update_inv_back()
+	user.update_inv_back()
 
-/obj/item/storage/backpack/holding/attackby(obj/item/W as obj, mob/user as mob)
-	if(istype(W, /obj/item/storage/backpack/holding))
-		to_chat(user, span_warning("The Bluespace interfaces of the two devices conflict and malfunction."))
-		consume(W, user)
-		return
-	. = ..()
+EXTEND_INTERACTIONS(/obj/item/storage/backpack/holding, \
+	INTERACT_INSERT(/obj/item/storage/backpack/holding, PROC_REF(interaction_conflict), "Put in"), \
+)
+
+/// Old attackby: two bags of holding destroy the one put in.
+/obj/item/storage/backpack/holding/proc/interaction_conflict(mob/user, obj/item/W, datum/interaction/interaction)
+	to_chat(user, span_warning("The Bluespace interfaces of the two devices conflict and malfunction."))
+	consume(W, user)
+	return TRUE
 
 /obj/item/storage/backpack/cultpack
 	name = "trophy rack"
@@ -185,26 +184,22 @@
 		icon_state = "[icon_state]_tilted"
 		tilted = 1
 
-/obj/item/storage/backpack/dufflebag/verb/tilt()
-	set name = "Adjust Duffelbag Angle"
-	set desc = "Adjust the angle of your dufflebag for cosmetic effect"
-	set category = "Object"
-	set src in usr
-	if(!usr.canmove || usr.stat || usr.restrained())
+/obj/item/storage/backpack/dufflebag/proc/dufflebag_tilt_effect(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!user.canmove || user.stat || user.restrained())
 		return
 	if(!can_tilt)
-		to_chat(usr, "[src] can't be adjusted like that.")
+		to_chat(user, "[src] can't be adjusted like that.")
 		return
 	if(tilted)
 		icon_state = "[initial(icon_state)]"
-		to_chat(usr, "You adjust the angle of \the [src] to rest across your lower back.")
+		to_chat(user, "You adjust the angle of \the [src] to rest across your lower back.")
 		tilted = 0
 	else
 		icon_state = "[icon_state]_tilted"
-		to_chat(usr, "You adjust the angle of \the [src] to rest diagonally across your back.")
+		to_chat(user, "You adjust the angle of \the [src] to rest diagonally across your back.")
 		tilted = 1
 	update_icon()
-	usr.update_inv_back()
+	user.update_inv_back()
 
 /obj/item/storage/backpack/dufflebag/syndie
 	name = "black dufflebag"
@@ -504,16 +499,13 @@
 /obj/item/storage/backpack/parachute/handleParachute()
 	dq_set_parachute(src, FALSE)	//If you dq_get_parachute(src) in, the dq_get_parachute(src) has probably been used.
 
-/obj/item/storage/backpack/parachute/verb/pack_parachute()
+/obj/item/storage/backpack/parachute/proc/pack_parachute_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	set name = "Pack/Unpack Parachute"
-	set category = "Object"
-	set src in usr
 
 	if(!isliving(src.loc))
 		return
 
-	var/mob/living/carbon/human/H = usr
+	var/mob/living/carbon/human/H = user
 
 	if(!istype(H))
 		return
@@ -739,3 +731,18 @@
 	desc = "An armored vest with the armor modules replaced with various handy compartments with decent storage capacity. Useless for protection though. Holds more than its lighter cousin.."
 	max_storage_space = INVENTORY_DUFFLEBAG_SPACE
 	slowdown = 0.5
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/storage/backpack/holding/duffle, \
+	INTERACT_VERB("Adjust Duffelbag Angle", PROC_REF(duffle_tilt_effect), REQ_IN_INVENTORY), \
+)
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/storage/backpack/dufflebag, \
+	INTERACT_VERB("Adjust Duffelbag Angle", PROC_REF(dufflebag_tilt_effect), REQ_IN_INVENTORY), \
+)
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/storage/backpack/parachute, \
+	INTERACT_VERB("Pack/Unpack Parachute", PROC_REF(pack_parachute_effect), REQ_IN_INVENTORY), \
+)

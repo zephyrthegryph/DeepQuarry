@@ -127,7 +127,10 @@ EXTEND_INTERACTIONS(/obj/structure/lift/button, INTERACT_ITEM(null, PROC_REF(int
 	req_one_access = list(ACCESS_HEADS, ACCESS_ATMOSPHERICS, ACCESS_MEDICAL)
 
 // Hit it with a PDA or ID to enable priority call mode
-EXTEND_INTERACTIONS(/obj/structure/lift/panel, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+EXTEND_INTERACTIONS(/obj/structure/lift/panel, \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_OBSERVER("View", TYPE_PROC_REF(/atom, interaction_interact)), \
+)
 
 /// Old attackby.
 /obj/structure/lift/panel/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
@@ -144,9 +147,6 @@ EXTEND_INTERACTIONS(/obj/structure/lift/panel, INTERACT_ITEM(null, PROC_REF(inte
 			audible_message(span_warning("Firefighter Mode Deactivated. Door safeties enabled.  Automatic control engaged."), runemessage = "ding")
 		return INTERACTION_HANDLED_PASS
 	return FALSE
-
-/obj/structure/lift/panel/attack_ghost(mob/user)
-	return interact(user)
 
 /obj/structure/lift/panel/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag

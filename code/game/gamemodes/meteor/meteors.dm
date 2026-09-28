@@ -211,11 +211,14 @@ REGISTRY_MEMBERSHIP(/obj/effect/meteor, REGISTRY_METEORS)
 	meteor_effect(explode)
 	qdel(src)
 
-/obj/effect/meteor/attackby(obj/item/W as obj, mob/user as mob, params)
-	if(istype(W, /obj/item/pickaxe))
-		qdel(src)
-		return
-	..()
+EXTEND_INTERACTIONS(/obj/effect/meteor, \
+	INTERACT_INSERT(/obj/item/pickaxe, PROC_REF(interaction_mine_meteor), "Break up"), \
+)
+
+/// Old attackby: a pickaxe breaks the meteor up.
+/obj/effect/meteor/proc/interaction_mine_meteor(mob/user, obj/item/held, datum/interaction/interaction)
+	qdel(src)
+	return INTERACTION_HANDLED_PASS
 
 /obj/effect/meteor/bullet_act(obj/item/projectile/Proj)
 	if(Proj.excavation_amount)

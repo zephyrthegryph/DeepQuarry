@@ -121,7 +121,13 @@ REF_OWNED(/obj/effect/anomaly, list("countdown", "anomaly_core", "stats"))
 		density = TRUE
 	return
 
-/obj/effect/anomaly/attackby(obj/item/I, mob/user)
+EXTEND_INTERACTIONS(/obj/effect/anomaly, \
+	INTERACT_ITEM(null, PROC_REF(interaction_scan_anomaly)), \
+)
+
+/// Old attackby: analyzers read a stabilized core's frequency; anomaly scanners buffer the anomaly.
+/obj/effect/anomaly/proc/interaction_scan_anomaly(mob/user, obj/item/held, datum/interaction/interaction)
+	var/obj/item/I = held
 	if(istype(I, /obj/item/analyzer) || (istype(I, /obj/item/anomaly_scanner) && !stats))
 		if(anomaly_core)
 			to_chat(user, span_notice("Analyzing... [src]'s stabilized field is fluctuating along frequency [format_frequency(anomaly_core.frequency)], code [anomaly_core.code]."))
@@ -130,7 +136,7 @@ REF_OWNED(/obj/effect/anomaly, list("countdown", "anomaly_core", "stats"))
 		var/obj/item/anomaly_scanner/scanner = I
 		om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, scanner))
 		return TRUE
-	return ..()
+	return FALSE
 
 /obj/effect/anomaly/proc/attackby_timed_done(mob/user, obj/item/anomaly_scanner/scanner)
 	scanner.buffered_anomaly = om_handle(src)

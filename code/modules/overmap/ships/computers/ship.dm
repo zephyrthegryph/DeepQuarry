@@ -62,17 +62,27 @@ REF_OWNED(/obj/machinery/computer/ship, "flight_operations_ui")
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/computer/ship/attack_ai(mob/user)
+/// Old attack_ai: open the interface if silicon control is allowed. Never fell through.
+/obj/machinery/computer/ship/proc/ship_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!ai_control && issilicon(user))
 		to_chat(user, span_warning("Access Denied."))
-		return
+		return TRUE
 	if(tgui_status(user, tgui_state()) > STATUS_CLOSE)
-		return interface_interact(user)
+		interface_interact(user)
+	return TRUE
 
-/obj/machinery/computer/ship/attack_ghost(mob/user)
+/// Old attack_ghost: open the interface.
+/obj/machinery/computer/ship/proc/ship_ghost_view(mob/user, obj/item/held, datum/interaction/interaction)
 	interface_interact(user)
+	return TRUE
 
 /obj/machinery/computer/ship/declare_interactions(list/into)
+	var/static/list/actor_specs = list(
+		INTERACT_SILICON("Use", PROC_REF(ship_silicon_use)),
+		INTERACT_OBSERVER("View", PROC_REF(ship_ghost_view)),
+	)
+	for(var/actor_spec in actor_specs)
+		into += dq_interaction_from_spec(type, actor_spec)
 	into += list(
 		/datum/interaction/machine_hand/ship_use,
 	)

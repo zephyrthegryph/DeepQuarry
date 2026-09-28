@@ -382,19 +382,20 @@
 
 	armor_spec = "melee=30;bullet=30;laser=30;energy=20;bomb=20;bio=100;rad=20;cold=60"
 
-/obj/item/clothing/head/helmet/space/void/aether/verb/select_color()
-	set name = "Helmet Color"
-	set desc = "Change the color of the helmet"
-	set category = "Object"
+EXTEND_INTERACTIONS(/obj/item/clothing/head/helmet/space/void/aether, \
+	INTERACT_VERB("Helmet Color", PROC_REF(aether_select_color_verb), REQ_IN_INVENTORY), \
+)
 
-	var/choice = rerun_ask(usr, "a1", VERB_REF(select_color), args, /datum/om/prompt/choice, message = "Select a new color:", title = "[src] Color", choices = list("White", "Blue", "Purple", "Yellow", "Red", "Green"))
+/// Old verb "Helmet Color".
+/obj/item/clothing/head/helmet/space/void/aether/proc/aether_select_color_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	var/choice = rerun_ask(user, "a1", PROC_REF(aether_select_color_verb), list(user), /datum/om/prompt/choice, message = "Select a new color:", title = "[src] Color", choices = list("White", "Blue", "Purple", "Yellow", "Red", "Green"))
 	if(isnull(choice))
 		return
 	if(!choice)
 		return
 	icon_state = "moebiushelm_[choice]"
 	update_clothing_icon()
-	to_chat(usr, span_notice("[src] color changed to: [choice]"))
+	to_chat(user, span_notice("[src] color changed to: [choice]"))
 
 // Excelsior suit
 /obj/item/clothing/suit/space/void/excelsior

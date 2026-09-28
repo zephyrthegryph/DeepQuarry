@@ -102,6 +102,8 @@
 DECLARE_INTERACTIONS(/obj/item/paper_bundle, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_VERB("Rename bundle", PROC_REF(paper_bundle_verb_rename), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Loose bundle", PROC_REF(paper_bundle_verb_loosen), REQ_IN_INVENTORY), \
 )
 
 /// Old attack_self.
@@ -186,32 +188,26 @@ DECLARE_INTERACTIONS(/obj/item/paper_bundle, \
 			update_icon()
 			return TRUE
 
-/obj/item/paper_bundle/verb/rename()
-	set name = "Rename bundle"
-	set category = "Object"
-	set src in usr
-
-	var/_answer_k189 = rerun_ask(usr, "k189", VERB_REF(rename), args, /datum/om/prompt/text, message = "What would you like to label the bundle?", title = "Bundle Labelling", max_length = MAX_NAME_LEN, encode = FALSE)
+/// Old Rename bundle verb.
+/obj/item/paper_bundle/proc/paper_bundle_verb_rename(mob/user, obj/item/held, datum/interaction/interaction)
+	var/_answer_k189 = rerun_ask(user, "k189", PROC_REF(paper_bundle_verb_rename), args, /datum/om/prompt/text, message = "What would you like to label the bundle?", title = "Bundle Labelling", max_length = MAX_NAME_LEN, encode = FALSE)
 	if(isnull(_answer_k189))
 		return
 	var/n_name = sanitizeSafe(_answer_k189, MAX_NAME_LEN)
-	if((loc == usr || loc.loc && loc.loc == usr) && usr.stat == 0)
+	if((loc == user || loc.loc && loc.loc == user) && user.stat == 0)
 		name = "[(n_name ? text("[n_name]") : "paper")]"
-	add_fingerprint(usr)
+	add_fingerprint(user)
 	return
 
 
-/obj/item/paper_bundle/verb/remove_all()
-	set name = "Loose bundle"
-	set category = "Object"
-	set src in usr
-
-	to_chat(usr, span_notice("You loosen the bundle."))
+/// Old Loose bundle verb.
+/obj/item/paper_bundle/proc/paper_bundle_verb_loosen(mob/user, obj/item/held, datum/interaction/interaction)
+	to_chat(user, span_notice("You loosen the bundle."))
 	for(var/obj/O in src)
-		O.forceMove(usr.loc)
+		O.forceMove(user.loc)
 		O.layer = initial(O.layer)
-		O.add_fingerprint(usr)
-	consume(src, usr)
+		O.add_fingerprint(user)
+	consume(src, user)
 	return
 
 

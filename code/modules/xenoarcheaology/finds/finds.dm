@@ -47,7 +47,10 @@
 			else	//if we somehow glitched
 				return	//do nothing
 
-/obj/item/strangerock/attackby(obj/item/I, mob/user)
+DECLARE_INTERACTIONS(/obj/item/strangerock, INTERACT_ITEM(null, PROC_REF(strangerock_item)))
+
+/// Old attackby: mine it away or sample it; anything else may crumble it (after a bag gathers it, as its ..() did first).
+/obj/item/strangerock/proc/strangerock_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/pickaxe)) //Whatever, if you use a hand pick it should work just like a brush. No reason for otherwise.
 		var/obj/item/inside = locate() in src
 		if(inside)
@@ -56,17 +59,19 @@
 		else
 			visible_message(span_info("\The [src] is mined away into nothing."))
 		consume(src, user)
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(istype(I, /obj/item/core_sampler))
 		var/obj/item/core_sampler/S = I
 		S.sample_item(src, user)
-		return
+		return INTERACTION_HANDLED_PASS
 
-	..()
+	var/obj/item/storage/bag = I
+	var/gathered = istype(bag) && bag.try_collect(src, user)
 	if(prob(33))
 		src.visible_message(span_warning("[src] crumbles away, leaving some dust and gravel behind."))
 		consume(src, user)
+	return gathered ? TRUE : INTERACTION_HANDLED_PASS
 
 /obj/item/strangerock/welder_act(mob/user, obj/item/tool)
 	var/obj/item/weldingtool/welder = tool.get_welder()

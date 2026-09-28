@@ -57,9 +57,12 @@
 		name = "[name_prefix] [name_suffix]"
 	make_sellable(/datum/sellable/research_sample)
 
-/// Old attack_hand: runs after the touch tried to pick it up (hand_pickup()).
-/obj/item/research_sample/hand_pickup(mob/user)
-	. = ..()
+EXTEND_INTERACTIONS(/obj/item/research_sample, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(sample_pick_up)))
+
+/// Picking a sample up may burn an unprotected holder.
+/obj/item/research_sample/proc/sample_pick_up(mob/user, obj/item/held, datum/interaction/interaction)
+	. = TRUE
+	interaction_pick_up(user, held, interaction)
 	var/mob/living/M = user
 	if(!istype(M))
 		return

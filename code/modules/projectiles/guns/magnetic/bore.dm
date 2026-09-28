@@ -128,7 +128,8 @@ EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(
 		playsound(src, 'sound/weapons/flipblade.ogg', 50, 1)
 	update_icon()
 
-/obj/item/gun/magnetic/matfed/attackby(obj/item/thing, mob/user)
+/// Old attackby: the parent's first, then its own.
+/obj/item/gun/magnetic/matfed/gun_item(mob/user, obj/item/thing, datum/interaction/interaction)
 	. = ..()
 	update_rating_mod()
 	if(removable_components)

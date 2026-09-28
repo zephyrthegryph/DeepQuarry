@@ -89,11 +89,8 @@
 	G.s_click(src)
 	return 1
 
-/atom/movable/screen/grab/attack_hand()
-	return
-
-/atom/movable/screen/grab/attackby()
-	return
+// Screen grabs are clicked through Click() above; touches and items do nothing.
+DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing", TYPE_PROC_REF(/atom, interaction_swallow)), 	INTERACT_ITEM("Nothing", TYPE_PROC_REF(/atom, interaction_swallow)), )
 
 /atom/movable/screen/storage
 	name = "storage"

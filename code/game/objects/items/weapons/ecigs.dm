@@ -108,7 +108,14 @@ REF_OWNED(/obj/item/clothing/mask/smokable/ecig, "ec_cartridge")
 		M.update_inv_l_hand(0)
 		M.update_inv_r_hand(1)
 
-/obj/item/clothing/mask/smokable/ecig/attackby(obj/item/I, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/ecig, \
+	INTERACT_SELF(null, PROC_REF(ecig_self)), \
+	INTERACT_ITEM(null, PROC_REF(ecig_item)), \
+	INTERACT_HAND_UNGATED("Eject cartridge", PROC_REF(ecig_hand)), \
+)
+
+/// Old attackby. It never called its parent, so it always answers (the smokable lighting never applied to e-cigs).
+/obj/item/clothing/mask/smokable/ecig/proc/ecig_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/reagent_containers/ecig_cartridge))
 		if (ec_cartridge)//can't add second one
 			to_chat(user, span_notice("A cartridge has already been installed."))
@@ -118,11 +125,10 @@ REF_OWNED(/obj/item/clothing/mask/smokable/ecig, "ec_cartridge")
 			ec_cartridge = I
 			update_icon()
 			to_chat(user, span_notice("You insert [I] into [src]."))
+	return INTERACTION_HANDLED_PASS
 
-/obj/item/clothing/mask/smokable/ecig/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self. Returns FALSE so the clothing self-use still follows, as the old ..() did.
+/obj/item/clothing/mask/smokable/ecig/proc/ecig_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(active)
 		active = FALSE
 		PERIODIC_STOP(src)
@@ -131,22 +137,24 @@ REF_OWNED(/obj/item/clothing/mask/smokable/ecig, "ec_cartridge")
 	else
 		if(!ec_cartridge)
 			to_chat(user, span_notice("You can't use it with no cartridge installed!."))
-			return
+			return FALSE
 		active = TRUE
 		PERIODIC_START(src, PERIODIC_SLOW)
 		to_chat(user, span_notice("You turn on \the [src]. "))
 		update_icon()
+	return FALSE
 
-/obj/item/clothing/mask/smokable/ecig/attack_hand(mob/user as mob)//eject cartridge
-	if(user.get_inactive_hand() == src)//if being hold
-		if (ec_cartridge)
-			active=0
-			user.put_in_hands(ec_cartridge)
-			to_chat(user, span_notice("You eject [ec_cartridge] from \the [src]."))
-			ec_cartridge = null
-			update_icon()
-	else
-		..()
+/// Old attack_hand: eject the cartridge.
+/obj/item/clothing/mask/smokable/ecig/proc/ecig_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	if(user.get_inactive_hand() != src)//if being hold
+		return FALSE
+	if (ec_cartridge)
+		active=0
+		user.put_in_hands(ec_cartridge)
+		to_chat(user, span_notice("You eject [ec_cartridge] from \the [src]."))
+		ec_cartridge = null
+		update_icon()
+	return TRUE
 
 /obj/item/reagent_containers/ecig_cartridge
 	name = "tobacco flavour cartridge"

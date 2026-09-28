@@ -282,12 +282,9 @@
 		else if(M.get_equipped_item(SLOT_ID_HAND_R) == src)
 			M.update_inv_r_hand()
 
-/obj/item/verb/move_to_top()
-	set name = "Move To Top"
-	set category = "Object"
-	set src in oview(1)
+/obj/item/proc/move_to_top_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	if(!istype(src.loc, /turf) || usr.stat || usr.restrained() )
+	if(!istype(src.loc, /turf) || user.stat || user.restrained() )
 		return
 
 	var/turf/T = src.loc
@@ -319,26 +316,45 @@
 				size = "enormous"
 	return ..(user, "", "It is \a [size] item.")
 
-/obj/item/attack_hand(mob/living/user as mob)
-	if (!user) return
-	// A gate or a converted hand interaction (I7) answered the touch: no pickup, as the old override's early return.
-	if(..())
-		return TRUE
-	return hand_pickup(user)
-
 /**
- * An empty-hand touch that no interaction answered: pick the item up (or use it, when
- * anchored). Reactions to being picked up by hand override it as `. = ..()` then their
- * own work, as the old `attack_hand() { . = ..(); ... }` overrides did: they are not
- * interactions of their own.
+ * Every item's defaults: an empty hand picks it up, and a pickup-mode storage bag
+ * collects it. They come after everything else the item offers for those inputs.
+ * A type that reacts to being picked up declares its own INTERACT_HAND_DEFAULT
+ * "Pick up" whose effect calls interaction_pick_up() first.
  */
-/obj/item/proc/hand_pickup(mob/living/user)
-	if(anchored) // Start
-		if(hascall(src, "attack_self"))
-			return src.attack_self(user)
-		else
+/obj/item/declare_interactions(list/into)
+	..()
+	var/static/list/default_specs = list(
+		INTERACT_HAND_DEFAULT("Pick up", PROC_REF(interaction_pick_up)),
+		INTERACT_INSERT_DEFAULT(/obj/item/storage, PROC_REF(interaction_collected), "Collect"),
+	)
+	for(var/spec in default_specs)
+		into += dq_interaction_from_spec(/obj/item, spec)
+	// Old /obj/item/attack_ai. Offered only on a module's items, so it never competes with an item's own.
+	var/static/list/module_spec = INTERACT_SILICON("Equip", PROC_REF(item_silicon_equip_module), REQ_TARGET_STATE(/obj/item/proc/item_in_robot_module))
+	into += dq_interaction_from_spec(/obj/item, module_spec)
+	// Old /obj/item object verbs.
+	var/static/list/verb_specs = list(
+		INTERACT_VERB("Move To Top", PROC_REF(move_to_top_effect)),
+		INTERACT_VERB("Toggle Digestable", PROC_REF(toggle_digestable_effect), REQ_IN_INVENTORY),
+	)
+	for(var/spec in verb_specs)
+		into += dq_interaction_from_spec(/obj/item, spec)
+
+/// A pickup-mode storage bag used on the item collects it (or its whole tile).
+/obj/item/proc/interaction_collected(mob/user, obj/item/storage/bag, datum/interaction/interaction)
+	return bag.try_collect(src, user) ? INTERACTION_HANDLED_PASS : FALSE
+
+/// Pick the item up into the active hand. An anchored item is used instead (its self-use).
+/obj/item/proc/interaction_pick_up(mob/living/user, obj/item/held, datum/interaction/interaction)
+	pick_up_by_hand(user)
+	return TRUE
+
+/obj/item/proc/pick_up_by_hand(mob/living/user)
+	if(anchored)
+		if(!attack_self(user))
 			to_chat(user, span_notice("This is anchored and you can't lift it."))
-		return // End
+		return
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
 		var/obj/item/organ/external/temp = H.organs_by_name[BP_R_HAND]
@@ -384,30 +400,19 @@
 	// EDIT END.
 	return
 
-/obj/item/attack_ai(mob/user as mob)
-	if (istype(src.loc, /obj/item/robot_module))
-		//If the item is part of a cyborg module, equip it
-		if(!isrobot(user))
-			return
-		var/mob/living/silicon/robot/R = user
-		R.activate_module(src)
-		R.hud_used.update_robot_modules_display()
+/obj/item/proc/item_in_robot_module(mob/actor, atom/target, obj/item/held)
+	return istype(loc, /obj/item/robot_module)
 
-/obj/item/attackby(obj/item/W as obj, mob/user as mob)
-	. = ..()
-	// A converted item interaction (I7) answered: nothing else, as the old override's early return.
-	if(.)
-		return
-	if(istype(W, /obj/item/storage))
-		var/obj/item/storage/S = W
-		if(S.use_to_pickup)
-			if(S.collection_mode) //Mode is set to collect all items
-				if(isturf(src.loc))
-					S.gather_all(src.loc, user)
-
-			else
-				S.try_insert(src, user)
-	return
+/// Old attack_ai: a cyborg clicking an item of its module equips it.
+/obj/item/proc/item_silicon_equip_module(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!istype(src.loc, /obj/item/robot_module))
+		return FALSE
+	if(!isrobot(user))
+		return TRUE
+	var/mob/living/silicon/robot/R = user
+	R.activate_module(src)
+	R.hud_used.update_robot_modules_display()
+	return TRUE
 
 /obj/item/proc/talk_into(mob/M as mob, text)
 	return
@@ -564,40 +569,6 @@
 	if(!M.slot_is_accessible(slot, src, disable_warning? null : M))
 		return 0
 	return 1
-
-/obj/item/verb/verb_pickup()
-	set src in oview(1)
-	set category = "Object"
-	set name = "Pick up"
-
-	if(!(usr))
-		return
-	if(!usr.canmove || usr.stat || usr.restrained() || !Adjacent(usr) || usr.is_incorporeal())
-		return
-	if(isanimal(usr)) // Allows simple mobs with hands to use the pickup verb
-		var/mob/living/simple_mob/s = usr
-		if(!s.has_hands)
-			to_chat(usr, span_warning("You can't pick things up!"))
-			return
-	else if((!iscarbon(usr)) || (isbrain(usr)))//Is humanoid, and is not a brain
-		to_chat(usr, span_warning("You can't pick things up!"))
-		return
-	var/mob/living/L = usr
-	if( usr.stat || usr.restrained() )//Is not asleep/dead and is not restrained
-		to_chat(usr, span_warning("You can't pick things up!"))
-		return
-	if(src.anchored) //Object isn't anchored
-		to_chat(usr, span_warning("You can't pick that up!"))
-		return
-	if(L.get_active_hand()) // Hand is not full //
-		to_chat(usr, span_warning("Your hand is full."))
-		return
-	if(!isturf(src.loc)) //Object is on a turf
-		to_chat(usr, span_warning("You can't pick that up!"))
-		return
-	//All checks are done, time to pick it up!
-	usr.UnarmedAttack(src)
-	return
 
 //This proc is executed when someone clicks the on-screen UI button.
 //The default action is attack_self().
@@ -1060,13 +1031,10 @@ Note: This proc can be overwritten to allow for different types of auto-alignmen
 /obj/item/proc/get_multitool()
 	return
 
-/obj/item/verb/toggle_digestable()
-	set category = "Object"
-	set name = "Toggle Digestable"
-	set desc = "Toggle item's digestability."
+/obj/item/proc/toggle_digestable_effect(mob/user, obj/item/held, datum/interaction/interaction)
 	digestable = !digestable
 	if(!digestable)
-		to_chat(usr, span_notice("[src] is now protected from digestion."))
+		to_chat(user, span_notice("[src] is now protected from digestion."))
 
 REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_ITEM_TF_SPAWNPOINTS)
 

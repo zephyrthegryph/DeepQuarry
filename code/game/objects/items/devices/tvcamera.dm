@@ -188,7 +188,7 @@ REF_OWNED(/obj/item/clothing/accessory/bodycam, list("bcamera", "bradio"))
 	bradio.hear_talk(M, message_pieces, verb)
 	. = ..()
 
-DECLARE_INTERACTIONS(/obj/item/clothing/accessory/bodycam, INTERACT_USE(null, PROC_REF(interaction_self)))
+EXTEND_INTERACTIONS(/obj/item/clothing/accessory/bodycam, INTERACT_USE(null, PROC_REF(interaction_self)))
 
 /obj/item/clothing/accessory/bodycam/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
@@ -286,7 +286,10 @@ DECLARE_INTERACTIONS(/obj/item/clothing/accessory/bodycam, INTERACT_USE(null, PR
 
 //Assembly by roboticist
 
-DECLARE_INTERACTIONS(/obj/item/robot_parts/head, INTERACT_INSERT(/obj/item/assembly/infra, PROC_REF(interaction_item), null))
+DECLARE_INTERACTIONS(/obj/item/robot_parts/head, \
+	INTERACT_INSERT(/obj/item/assembly/infra, PROC_REF(interaction_item), null), \
+	INTERACT_INSERT(/obj/item/flash, PROC_REF(head_insert_flash), null), \
+)
 
 /obj/item/robot_parts/head/proc/interaction_item(mob/user, obj/item/assembly/S, datum/interaction/interaction)
 	var/obj/item/TVAssembly/A = new(user)

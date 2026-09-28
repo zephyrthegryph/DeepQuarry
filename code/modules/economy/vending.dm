@@ -204,6 +204,11 @@ REF_OWNED_LIST(/obj/machinery/vending, "product_records")
 		return 1
 
 /obj/machinery/vending/declare_interactions(list/into)
+	var/static/list/actor_specs = list(
+		INTERACT_OBSERVER("Use", TYPE_PROC_REF(/atom, interaction_as_touch)),
+	)
+	for(var/actor_spec in actor_specs)
+		into += dq_interaction_from_spec(type, actor_spec)
 	into += list(
 		/datum/interaction/machine_item/vending_id_dispatch,
 		/datum/interaction/machine_item/vending_refill,
@@ -221,15 +226,11 @@ REF_OWNED_LIST(/obj/machinery/vending, "product_records")
 	name = "Use"
 	held_type = /obj/item
 	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/vending/proc/wants_hand_dispatch, null))
-	effect = /obj/machinery/vending/proc/interaction_id_dispatch
+	effect = /atom/proc/interaction_as_touch
 
 /// No side effects: whether attackby would have dispatched to attack_hand for this item.
 /obj/machinery/vending/proc/wants_hand_dispatch(mob/actor, atom/target, obj/item/held)
 	return held.GetID() || istype(held, /obj/item/spacecash)
-
-/obj/machinery/vending/proc/interaction_id_dispatch(mob/user, obj/item/held, datum/interaction/interaction)
-	attack_hand(user)
-	return TRUE
 
 /// Old attackby: refill cartridge branch.
 /datum/interaction/machine_item/vending_refill
@@ -395,9 +396,6 @@ REF_OWNED_LIST(/obj/machinery/vending, "product_records")
  */
 /obj/machinery/vending/proc/credit_purchase(target as text)
 	GLOB.vendor_account.credit(currently_vending().price, target, "Purchase of [currently_vending().item_name]", name)
-
-/obj/machinery/vending/attack_ghost(mob/user)
-	return attack_hand(user)
 
 /// Old attack_hand: never called ..().
 /datum/interaction/machine_hand/ungated/vending_use

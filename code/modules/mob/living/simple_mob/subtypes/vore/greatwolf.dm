@@ -1,4 +1,5 @@
 /mob/living/simple_mob/vore/greatwolf
+	drag_buckle = FALSE
 	name = "great white wolf"
 	desc = "A massive white wolf, with piercing green eyes. Much like a dire wolf, but bigger. Passive, until you give it a reason to not be."
 	catalogue_data = list(/datum/category_item/catalogue/fauna/greatwolf)
@@ -98,24 +99,23 @@
 	add_verb(src,/mob/living/simple_mob/proc/pick_color)
 	movement_cooldown = -1.5 // 1.5 Downstream
 
-/mob/living/simple_mob/vore/greatwolf/MouseDrop_T(mob/living/M, mob/living/user)
-	return
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/greatwolf, \
+	INTERACT_INSERT(/obj/item/reagent_containers/food, PROC_REF(greatwolf_interaction_feed), "Feed"), \
+)
 
-
-/mob/living/simple_mob/vore/greatwolf/attackby(obj/item/O, mob/user) // Trade food for people!
-	if(istype(O, /obj/item/reagent_containers/food))
-		consume(O, user)
-		playsound(src,'sound/vore/gulp.ogg', rand(10,50), 1)
-		if(!(ai_brain != null))//No autobarf on player control.
-			return
-		if(istype(O, /obj/item/reagent_containers/food/snacks/donut) && istype(src, /mob/living/simple_mob/vore/greatwolf/black))
-			to_chat(user,span_notice("The huge wolf begrudgingly accepts your offer in exchange for it's catch."))
-			release_vore_contents()
-		else if(prob(2)) //Small chance to get prey out from white doggos
-			to_chat(user,span_notice("The huge wolf accepts your offer for their catch."))
-			release_vore_contents()
-		return
-	. = ..()
+/// Old attackby: trade food for people!
+/mob/living/simple_mob/vore/greatwolf/proc/greatwolf_interaction_feed(mob/user, obj/item/O, datum/interaction/interaction)
+	consume(O, user)
+	playsound(src,'sound/vore/gulp.ogg', rand(10,50), 1)
+	if(!(ai_brain != null))//No autobarf on player control.
+		return TRUE
+	if(istype(O, /obj/item/reagent_containers/food/snacks/donut) && istype(src, /mob/living/simple_mob/vore/greatwolf/black))
+		to_chat(user,span_notice("The huge wolf begrudgingly accepts your offer in exchange for it's catch."))
+		release_vore_contents()
+	else if(prob(2)) //Small chance to get prey out from white doggos
+		to_chat(user,span_notice("The huge wolf accepts your offer for their catch."))
+		release_vore_contents()
+	return TRUE
 
 /mob/living/simple_mob/vore/greatwolf/load_default_bellies()
 	. = ..()

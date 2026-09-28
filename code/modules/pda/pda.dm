@@ -195,17 +195,15 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 /obj/item/pda/proc/close(mob/user)
 	SStgui.close_uis(src)
 
-/obj/item/pda/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self: open the PDA (or its uplink). Subtypes with special_handling fall through.
+/obj/item/pda/proc/pda_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(special_handling)
 		return FALSE
 	if(active_uplink_check(user))
-		return
+		return TRUE
 
 	tgui_interact(user)
-	return
+	return TRUE
 
 /obj/item/pda/proc/start_program(datum/data/pda/P)
 	if(P && ((P in programs) || (cartridge && (P in cartridge.programs))))
@@ -320,65 +318,53 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 	else
 		to_chat(usr, span_notice("This PDA does not have a pen in it."))
 
-/obj/item/pda/verb/verb_reset_pda()
-	set category = "Object"
-	set name = "Reset PDA"
-	set src in usr
-
-	if(issilicon(usr))
+/// Old Reset PDA verb.
+/obj/item/pda/proc/pda_verb_reset(mob/user, obj/item/held, datum/interaction/interaction)
+	if(issilicon(user))
 		return
 
-	if(can_use(usr))
+	if(can_use(user))
 		start_program(find_program(/datum/data/pda/app/main_menu))
 		LAZYCLEARLIST(notifying_programs)
 		cut_overlay("pda-r")
-		to_chat(usr, span_notice("You press the reset button on \the [src]."))
+		to_chat(user, span_notice("You press the reset button on \the [src]."))
 	else
-		to_chat(usr, span_notice("You cannot do this while restrained."))
+		to_chat(user, span_notice("You cannot do this while restrained."))
 
-/obj/item/pda/verb/verb_remove_id()
-	set category = "Object"
-	set name = "Remove id"
-	set src in usr
-
-	if(issilicon(usr))
+/// Old Remove id verb.
+/obj/item/pda/proc/pda_verb_remove_id(mob/user, obj/item/held, datum/interaction/interaction)
+	if(issilicon(user))
 		return
 
-	if ( can_use(usr) )
+	if ( can_use(user) )
 		if(id)
 			remove_id()
 		else
-			to_chat(usr, span_notice("This PDA does not have an ID in it."))
+			to_chat(user, span_notice("This PDA does not have an ID in it."))
 	else
-		to_chat(usr, span_notice("You cannot do this while restrained."))
+		to_chat(user, span_notice("You cannot do this while restrained."))
 
-/obj/item/pda/verb/verb_remove_pen()
-	set category = "Object"
-	set name = "Remove pen"
-	set src in usr
-
-	if(issilicon(usr))
+/// Old Remove pen verb.
+/obj/item/pda/proc/pda_verb_remove_pen(mob/user, obj/item/held, datum/interaction/interaction)
+	if(issilicon(user))
 		return
 
-	if ( can_use(usr) )
+	if ( can_use(user) )
 		remove_pen()
 	else
-		to_chat(usr, span_notice("You cannot do this while restrained."))
+		to_chat(user, span_notice("You cannot do this while restrained."))
 
-/obj/item/pda/verb/verb_remove_cartridge()
-	set category = "Object"
-	set name = "Remove cartridge"
-	set src in usr
-
-	if(issilicon(usr))
+/// Old Remove cartridge verb.
+/obj/item/pda/proc/pda_verb_remove_cartridge(mob/user, obj/item/held, datum/interaction/interaction)
+	if(issilicon(user))
 		return
 
-	if(!can_use(usr))
-		to_chat(usr, span_notice("You cannot do this while restrained."))
+	if(!can_use(user))
+		to_chat(user, span_notice("You cannot do this while restrained."))
 		return
 
 	if(isnull(cartridge))
-		to_chat(usr, span_notice("There's no cartridge to eject."))
+		to_chat(user, span_notice("There's no cartridge to eject."))
 		return
 
 	cartridge.forceMove(get_turf(src))
@@ -389,7 +375,7 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 	// scanmode = 0
 	if (cartridge.radio)
 		cartridge.radio.hostpda_handle = null
-	to_chat(usr, span_notice("You remove \the [cartridge] from the [name]."))
+	to_chat(user, span_notice("You remove \the [cartridge] from the [name]."))
 	playsound(src, 'sound/machines/id_swipe.ogg', 100, 1)
 	cartridge = null
 	update_programs()
@@ -421,6 +407,11 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 DECLARE_INTERACTIONS(/obj/item/pda, \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+	INTERACT_SELF(null, PROC_REF(pda_self)), \
+	INTERACT_VERB("Reset PDA", PROC_REF(pda_verb_reset), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Remove id", PROC_REF(pda_verb_remove_id), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Remove pen", PROC_REF(pda_verb_remove_pen), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Remove cartridge", PROC_REF(pda_verb_remove_cartridge), REQ_IN_INVENTORY), \
 )
 
 /// Old attackby.

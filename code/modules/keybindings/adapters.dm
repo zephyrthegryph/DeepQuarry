@@ -107,7 +107,7 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 /// Whether this kind of actor can ever do `interaction`. Excluded ones aren't even listed as blocked.
 /// Observer-only interactions are for ghosts alone.
 /datum/input_adapter/proc/allows_interaction(mob/user, atom/target, datum/interaction/interaction)
-	return !(INTERACTION_TAG_OBSERVER in interaction.tags)
+	return !(INTERACTION_TAG_OBSERVER in interaction.tags) && !(INTERACTION_TAG_SILICON in interaction.tags) && !(INTERACTION_TAG_TELEKINESIS in interaction.tags)
 
 /// Use through the resolver with nothing in hand. TRUE if an interaction answered.
 /datum/input_adapter/proc/use_interaction(mob/user, atom/target)
@@ -116,6 +116,27 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 /// The Use action.
 /datum/input_adapter/proc/use(mob/user, atom/target, list/modifiers, params)
 	return
+
+/// What this kind of actor's Use does when no interaction answers.
+/datum/input_adapter/proc/default_use(mob/user, atom/target)
+	return FALSE
+
+/// actor_use(/datum/input_adapter/ai, user, target): use_as() on that adapter's singleton.
+/proc/actor_use(adapter_type, mob/user, atom/target)
+	var/datum/input_adapter/adapter = GLOB.input_adapters[adapter_type]
+	return adapter.use_as(user, target)
+
+/// actor_use_default(/datum/input_adapter/ghost, user, target): that adapter's default Use.
+/proc/actor_use_default(adapter_type, mob/user, atom/target)
+	var/datum/input_adapter/adapter = GLOB.input_adapters[adapter_type]
+	return adapter.default_use(user, target)
+
+/// Use `target` as this kind of actor, for code that makes an actor use something directly
+/// (an AI hotkey, a pAI reaching through a cable): its interactions, then its default.
+/datum/input_adapter/proc/use_as(mob/user, atom/target)
+	if(use_interaction(user, target))
+		return TRUE
+	return default_use(user, target)
 
 /**
  * One Use run as a Disarm or Grab (use_attack_variant() has set the variant).
@@ -291,6 +312,8 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 /datum/input_adapter/telekinesis/allows_interaction(mob/user, atom/target, datum/interaction/interaction)
 	if(interaction.tool)
 		return FALSE
+	if(INTERACTION_TAG_TELEKINESIS in interaction.tags)
+		return TRUE
 	return ..()
 
 /// Use at range: grab or poke the target telekinetically.
@@ -302,7 +325,30 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 		return
 	if(use_interaction(user, target))
 		return TRUE
-	target.attack_tk(user)
+	default_use(user, target)
+
+/**
+ * A telekinetic Use no interaction answered: grab a loose object (an item on the floor,
+ * or anything unanchored) with a telekinetic grab; otherwise poke it as an unarmed hand
+ * would. Mobs, carried items and objects with `tk_reach = FALSE` are left alone.
+ */
+/datum/input_adapter/telekinesis/default_use(mob/user, atom/target)
+	if(user.stat || ismob(target))
+		return FALSE
+	var/obj/O = target
+	if(istype(O))
+		if(!O.tk_reach)
+			return FALSE
+		if(isitem(O) && !isturf(O.loc))
+			return FALSE
+	if(!istype(O) || (O.anchored && !isitem(O)))
+		user.UnarmedAttack(target, 0)
+		return TRUE
+	var/obj/item/tk_grab/grab = new(O)
+	user.put_in_active_hand(grab)
+	grab.host = user
+	grab.focus_object(O)
+	return TRUE
 
 // ---------------------------------------------------------------------------
 // Ghosts: observer-only.
@@ -320,7 +366,15 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 /datum/input_adapter/ghost/use(mob/user, atom/target, list/modifiers, params)
 	if(use_interaction(user, target))
 		return TRUE
-	target.attack_ghost(user)
+	default_use(user, target)
+
+/// A ghost's Use when no observer interaction answers: an object's UI, to view; an inquisitive ghost examines.
+/datum/input_adapter/ghost/default_use(mob/observer/dead/user, atom/target)
+	if(isobj(target))
+		target.tgui_interact(user)
+	if(user.client?.inquisitive_ghost)
+		user.examinate(target)
+	return TRUE
 
 // ---------------------------------------------------------------------------
 // AI: remote, no hands, acts through the camera network.
@@ -380,14 +434,38 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 	target.add_hiddenprint(user)
 	if(use_interaction(user, target))
 		return TRUE
-	// attack_ai: the type's override, or the hand's Use per its silicon_use.
-	target.attack_ai(user)
+	default_use(user, target)
+
+/// The AI's Use when no silicon interaction answers: what the type's `silicon_use` says.
+/datum/input_adapter/ai/default_use(mob/user, atom/target)
+	if(target.silicon_use & SILICON_USE_HAND)
+		return target.attack_hand(user)
+	if(target.silicon_use & SILICON_USE_UI)
+		return target.tgui_interact(user)
+	return FALSE
 
 // ---------------------------------------------------------------------------
 // Cyborgs: AI-style remote interfacing with an empty gripper, reach-limited items.
 
 /datum/input_adapter/robot
 	name = "robot"
+
+/// A cyborg's empty-gripper Use when no interaction answers: a hand's Use where the type says so
+/// (or on something with a mob buckled to it, so anti-robot valves can't be worked around it), else like the AI.
+/datum/input_adapter/robot/default_use(mob/user, atom/target)
+	if(target.silicon_use & ROBOT_USE_HAND)
+		return target.attack_hand(user)
+	if(target.silicon_use & ROBOT_USE_HAND_ADJACENT)
+		return target.Adjacent(user) ? target.attack_hand(user) : FALSE
+	if(isobj(target) && target.Adjacent(user))
+		var/obj/O = target
+		if(O.has_buckled_mobs())
+			return O.attack_hand(user)
+	return actor_use_default(/datum/input_adapter/ai, user, target)
+
+/// Cyborgs get everything but observer-only interactions, silicon-only ones included.
+/datum/input_adapter/robot/allows_interaction(mob/user, atom/target, datum/interaction/interaction)
+	return !(INTERACTION_TAG_OBSERVER in interaction.tags)
 
 /datum/input_adapter/robot/accept_click(mob/living/silicon/robot/user, atom/target, params)
 	if(!user.checkClickCooldown())
@@ -401,7 +479,7 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 	return TRUE
 
 /*
-	Cyborgs have no range restriction on attack_robot(), because it is basically an
+	Cyborgs have no range restriction on empty-gripper Use, because it is basically an
 	AI click. They do have a range restriction on item use.
 */
 /datum/input_adapter/robot/use(mob/living/silicon/robot/user, atom/A, list/modifiers, params)
@@ -428,8 +506,7 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 		A.add_hiddenprint(user)
 		if(use_interaction(user, A))
 			return TRUE
-		// attack_robot: the type's override, or silicon_use (the hand's Use, or interfacing like the AI).
-		A.attack_robot(user)
+		default_use(user, A)
 		return
 	// buckled cannot prevent machine interlinking but stops arm movement
 	if(user?.buckled_to())

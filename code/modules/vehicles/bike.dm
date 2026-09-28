@@ -45,11 +45,14 @@
 	paint_color = rgb(rand(1,255),rand(1,255),rand(1,255))
 	. = ..()
 
-/obj/vehicle/bike/attackby(obj/item/W, mob/user)
-	if(W.has_tool_quality(TOOL_MULTITOOL) && open)
-		om_ask(user, /datum/om/prompt/color/vehicle_paint, PROC_REF(vehicle_paint_picked), default = paint_color)
-		return
-	..()
+EXTEND_INTERACTIONS(/obj/vehicle/bike, \
+	INTERACT_ITEM("Paint", PROC_REF(interaction_vehicle_paint)), \
+	INTERACT_ALT("Toggle kickstand", PROC_REF(interaction_bike_kickstand)), \
+	INTERACT_DRAG("Load", PROC_REF(interaction_bike_drag)), \
+	INTERACT_HAND(null, PROC_REF(interaction_bike_hand)), \
+	INTERACT_VERB("Toggle Engine", PROC_REF(bike_toggle_engine), REQ_REACH(0)), \
+	INTERACT_VERB("Toggle Kickstand", PROC_REF(bike_kickstand), REQ_REACH(0)), \
+)
 
 /// A vehicle's paint colour (multitool, panel open). Re-checked on the answer: the painter is
 /// still next to it and able. Shared by the bike, the quad and its trailer.
@@ -70,11 +73,9 @@
 	else
 		return ..()
 
-/obj/vehicle/bike/verb/toggle()
-	set name = "Toggle Engine"
-	set category = "Object.Vehicle" // TGPanel
-	set src in view(0)
-	toggle_proc(usr)
+/// Old verb "Toggle Engine".
+/obj/vehicle/bike/proc/bike_toggle_engine(mob/user, obj/item/held, datum/interaction/interaction)
+	toggle_proc(user)
 
 /obj/vehicle/bike/proc/toggle_proc(mob/user)
 	if(!isliving(user) || HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB))
@@ -92,27 +93,25 @@
 		visible_message("\The [src] putters before turning off.", "You hear something putter slowly.")
 		return CLICK_ACTION_SUCCESS
 
-/obj/vehicle/bike/click_alt(mob/user)
-	if(Adjacent(user))
-		kickstand(user)
-	else
-		return ..()
+/// Old click_alt: toggle the kickstand when adjacent.
+/obj/vehicle/bike/proc/interaction_bike_kickstand(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!Adjacent(user))
+		return FALSE
+	bike_kickstand(user)
+	return TRUE
 
-/obj/vehicle/bike/verb/kickstand(mob/user as mob)
-	set name = "Toggle Kickstand"
-	set category = "Object.Vehicle" // TGPanel
-	set src in view(0)
-
-	if(!isliving(usr) || HAS_TRAIT(usr, TRAIT_AMBIENT_PEST_MOB))
+/// Old verb "Toggle Kickstand".
+/obj/vehicle/bike/proc/bike_kickstand(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!isliving(user) || HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB))
 		return
 
-	if(usr.incapacitated()) return
+	if(user.incapacitated()) return
 
 	if(kickstand)
 		visible_message("[user] puts up \the [src]'s kickstand.")
 	else
 		if(istype(src.loc,/turf/space) || istype(src.loc, /turf/simulated/floor/water))
-			to_chat(usr, span_warning(" You don't think kickstands work here..."))
+			to_chat(user, span_warning(" You don't think kickstands work here..."))
 			return
 		visible_message("[user] puts down \the [src]'s kickstand.")
 		var/mob/pulledby = src?.pulled_by_mob()
@@ -129,17 +128,20 @@
 		return 0
 	return ..(M, user)
 
-/obj/vehicle/bike/MouseDrop_T(atom/movable/C, mob/user as mob)
+/// Old MouseDrop_T: load the dropped atom onto the bike.
+/obj/vehicle/bike/proc/interaction_bike_drag(mob/user, atom/movable/C, datum/interaction/interaction)
 	if(!load(C, user))
 		to_chat(user, span_warning(" You were unable to load \the [C] onto \the [src]."))
-		return
+	return TRUE
 
-/obj/vehicle/bike/attack_hand(mob/user as mob)
+/// Old attack_hand: buckle yourself on, or off.
+/obj/vehicle/bike/proc/interaction_bike_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user == load)
 		unload(load, user)
 		to_chat(user, "You unbuckle yourself from \the [src].")
 	else if(!load && load(user, user))
 		to_chat(user, "You buckle yourself to \the [src].")
+	return TRUE
 
 /obj/vehicle/bike/relaymove(mob/user, direction)
 	if(user != load || !on)

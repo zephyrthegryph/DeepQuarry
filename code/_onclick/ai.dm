@@ -23,25 +23,12 @@
 
 
 // AI clicks route through the input router with the AI adapter (adapters.dm):
-// its own click table, then attack_ai for Use.
+// its own click table, then its interactions (INTERACT_SILICON) and silicon_use.
 
-/*
-	AI has no need for the UnarmedAttack() and RangedAttack() procs,
-	because the AI code is not generic;	attack_ai() is used instead.
-	The below is only really for safety, or you can alter the way
-	it functions and re-insert it above.
-*/
 /mob/living/silicon/ai/UnarmedAttack(atom/A)
-	A.attack_ai(src)
+	actor_use(/datum/input_adapter/ai, src, A)
 /mob/living/silicon/ai/RangedAttack(atom/A)
-	A.attack_ai(src)
-
-/// The AI's Use (the AI adapter, adapters.dm). With no override, `silicon_use` says what it does.
-/atom/proc/attack_ai(mob/user as mob)
-	if(silicon_use & SILICON_USE_HAND)
-		return attack_hand(user)
-	if(silicon_use & SILICON_USE_UI)
-		return tgui_interact(user)
+	actor_use(/datum/input_adapter/ai, src, A)
 
 /*
 	Since the AI handles shift, ctrl, and alt-click differently

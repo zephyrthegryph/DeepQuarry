@@ -132,17 +132,14 @@
 	src.go_out()
 	return
 
-/obj/machinery/dna_scannernew/verb/eject()
-	set src in oview(1)
-	set category = "Object"
-	set name = "Eject DNA Scanner"
+/obj/machinery/dna_scannernew/proc/dna_scannernew_eject_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	if(usr.stat != 0)
+	if(user.stat != 0)
 		return
 
 	eject_occupant()
 
-	add_fingerprint(usr)
+	add_fingerprint(user)
 	return
 
 /obj/machinery/dna_scannernew/proc/eject_occupant()
@@ -156,64 +153,72 @@
 		for(var/mob/M in src)//Failsafe so you can get mobs out // ALLOW(latent): mobs are never latent
 			M.forceMove(get_turf(src))
 
-/obj/machinery/dna_scannernew/MouseDrop_T(mob/target, mob/user) //Allows borgs to clone people without external assistance
+EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
+	INTERACT_ITEM(null, PROC_REF(dna_scanner_interaction_item)), \
+	INTERACT_DRAG("Put inside", PROC_REF(dna_scanner_interaction_drag)), \
+	INTERACT_VERB("Eject DNA Scanner", PROC_REF(dna_scannernew_eject_effect)), \
+	INTERACT_VERB("Enter DNA Scanner", PROC_REF(dna_scannernew_move_inside_effect)), \
+)
+
+/// Old MouseDrop_T: allows borgs to clone people without external assistance.
+/obj/machinery/dna_scannernew/proc/dna_scanner_interaction_drag(mob/user, atom/movable/dropped, datum/interaction/interaction)
+	var/mob/target = dropped
 	var/mob/living/carbon/WC = get_occupant()
-	if(user.stat || user.lying || !Adjacent(user) || !target.Adjacent(user)|| !ishuman(target) || WC)
-		return
+	if(!ismob(target) || user.stat || user.lying || !Adjacent(user) || !target.Adjacent(user)|| !ishuman(target) || WC)
+		return FALSE
 	// Traitgenes Do not allow buckled or ridden mobs
-	if(target?.buckled_to())
-		return
+	if(target.buckled_to())
+		return FALSE
 	if(target.has_buckled_mobs())
 		to_chat(user, span_warning("\The [target] has other entities attached to it. Remove them first."))
-		return
+		return TRUE
 	put_in(target)
+	return TRUE
 
-/obj/machinery/dna_scannernew/verb/move_inside()
-	set src in oview(1)
-	set category = "Object"
-	set name = "Enter DNA Scanner"
+/obj/machinery/dna_scannernew/proc/dna_scannernew_move_inside_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	if(usr.stat != 0)
+	if(user.stat != 0)
 		return
-	if(!ishuman(usr) && !issmall(usr)) //Make sure they're a mob that has dna
-		to_chat(usr, span_notice("Try as you might, you can not climb up into the scanner."))
+	if(!ishuman(user) && !issmall(user)) //Make sure they're a mob that has dna
+		to_chat(user, span_notice("Try as you might, you can not climb up into the scanner."))
 		return
 	var/mob/living/carbon/WC = get_occupant()
 	if(WC)
-		to_chat(usr, span_warning("The scanner is already occupied!"))
+		to_chat(user, span_warning("The scanner is already occupied!"))
 		return
-	if(usr.abiotic())
-		to_chat(usr, span_warning("The subject cannot have abiotic items on."))
+	if(user.abiotic())
+		to_chat(user, span_warning("The subject cannot have abiotic items on."))
 		return
 	if(WC)
-		to_chat(usr, span_warning("There is already something inside."))
+		to_chat(user, span_warning("There is already something inside."))
 		return
-	usr.stop_pulling()
-	if(!usr.move_into(src, OCCUPANT_SLOT_DNA_SCANNER, usr))
-		to_chat(usr, span_warning("\The [src] won't take you!"))
+	user.stop_pulling()
+	if(!user.move_into(src, OCCUPANT_SLOT_DNA_SCANNER, user))
+		to_chat(user, span_warning("\The [src] won't take you!"))
 		return
-	set_occupant(usr)
+	set_occupant(user)
 	icon_state = "scanner_1"
-	add_fingerprint(usr)
+	add_fingerprint(user)
 	SStgui.update_uis(src)
 
-/obj/machinery/dna_scannernew/attackby(obj/item/item as obj, mob/user as mob)
+/// Old attackby.
+/obj/machinery/dna_scannernew/proc/dna_scanner_interaction_item(mob/user, obj/item/item, datum/interaction/interaction)
 	if(istype(item, /obj/item/reagent_containers/glass))
 		if(beaker)
 			to_chat(user, span_warning("A beaker is already loaded into the machine."))
-			return
+			return TRUE
 
 		beaker = item
 		user.drop_item()
 		item.forceMove(src)
 		user.visible_message("\The [user] adds \a [item] to \the [src]!", "You add \a [item] to \the [src]!")
 		SStgui.update_uis(src)
-		return
+		return TRUE
 
 	else if(istype(item, /obj/item/organ/internal/brain))
 		if(get_occupant())
 			to_chat(user, span_warning("The scanner is already occupied!"))
-			return
+			return TRUE
 		var/obj/item/organ/internal/brain/brain = item
 		if(brain.clone_source)
 			user.drop_item()
@@ -222,26 +227,28 @@
 			src.add_fingerprint(user)
 			user.visible_message("\The [user] adds \a [item] to \the [src]!", "You add \a [item] to \the [src]!")
 			SStgui.update_uis(src)
-			return
+			return TRUE
 		else
 			to_chat(user, "\The [brain] is not acceptable for genetic sampling!")
 
+		return TRUE
+
 	else if(!istype(item, /obj/item/grab))
-		return
+		return FALSE
 	var/obj/item/grab/G = item
 	var/mob/living/grabbed = G?.grab_target()
 	if(!ismob(grabbed))
-		return
+		return FALSE
 	if(get_occupant())
 		to_chat(user, span_warning("The scanner is already occupied!"))
-		return
+		return TRUE
 	if(grabbed.abiotic())
 		to_chat(user, span_warning("The subject cannot have abiotic items on."))
-		return
+		return TRUE
 	put_in(grabbed)
 	src.add_fingerprint(user)
 	consume(G, user)
-	return
+	return TRUE
 
 // Traitgenes Deconstructable dna scanner
 /obj/machinery/dna_scannernew/dismantle()
@@ -329,23 +336,26 @@
 	idle_power_usage = 10
 	active_power_usage = 400
 
-/obj/machinery/computer/scan_consolenew/attackby(obj/item/I as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/machinery/computer/scan_consolenew, \
+	INTERACT_ITEM(null, PROC_REF(dna_console_interaction_item)), \
+	INTERACT_HAND(null, TYPE_PROC_REF(/atom, interaction_open_ui)), \
+)
+
+/// Old attackby.
+/obj/machinery/computer/scan_consolenew/proc/dna_console_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	// Traitgenes body record disks are used instead of a unique disk
-	if(istype(I, /obj/item/disk/body_record)) //INSERT SOME diskS
-		if(connected())
-			if(!disk)
-				user.drop_item()
-				I.forceMove(src)
-				disk = I
-				to_chat(user, "You insert [I].")
-				SStgui.update_uis(src) // update all UIs attached to src
-				return
-		else
-			to_chat(user, "\The [src] will not accept a disk without a DNA modifier connected.")
-			return
+	if(!istype(I, /obj/item/disk/body_record)) //INSERT SOME diskS
+		return FALSE
+	if(connected())
+		if(!disk)
+			user.drop_item()
+			I.forceMove(src)
+			disk = I
+			to_chat(user, "You insert [I].")
+			SStgui.update_uis(src) // update all UIs attached to src
 	else
-		..()
-	return
+		to_chat(user, "\The [src] will not accept a disk without a DNA modifier connected.")
+	return TRUE
 
 /obj/machinery/computer/scan_consolenew/Initialize(mapload)
 	. = ..()
@@ -381,10 +391,6 @@
 
 /obj/machinery/computer/scan_consolenew
 	silicon_use = SILICON_USE_UI
-
-/obj/machinery/computer/scan_consolenew/attack_hand(user as mob)
-	if(!..())
-		tgui_interact(user)
 
 /obj/machinery/computer/scan_consolenew/tgui_interact(mob/user, datum/tgui/ui)
 	var/mob/living/carbon/WC = connected()?.get_occupant()

@@ -8,7 +8,9 @@
 
 
 // When someone clicks us with an empty hand
-/mob/living/simple_mob/attack_hand(mob/living/L)
+/mob/living/simple_mob/unarmed_touch(mob/living/L)
+	if(reaction_sound)
+		playsound(src, reaction_sound, 50, 1)
 	..()
 
 	switch(L.use_stance())
@@ -80,7 +82,9 @@
 
 
 // When somoene clicks us with an item in hand
-/mob/living/simple_mob/attackby(obj/item/O, mob/user)
+/mob/living/simple_mob/hit_with_item(obj/item/O, mob/user, attack_modifier)
+	if(reaction_sound)
+		playsound(src, reaction_sound, 50, 1)
 	if(istype(O, /obj/item/stack/medical))
 		if(stat != DEAD)
 			// This could be done better.
@@ -275,3 +279,12 @@
 	if(ignore_thickness)
 		return TRUE
 	return !thick_armor
+
+/mob/living/simple_mob
+	/// Played whenever the mob is touched, hit with an item or struck by something thrown (the horrors' shrieks).
+	var/reaction_sound
+
+/mob/living/simple_mob/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
+	if(reaction_sound)
+		playsound(src, reaction_sound, 50, 1)
+	return ..()

@@ -577,15 +577,18 @@
 	for(var/x in src.verbs)
 		src.verbs -= x
 
-/atom/movable/overlay/attackby(a, b)
-	if (src.master)
-		return src.master.attackby(a, b)
-	return
+// An overlay passes touches and items on to what it overlays.
+DECLARE_INTERACTIONS(/atom/movable/overlay, 	INTERACT_HAND_UNGATED(null, PROC_REF(overlay_pass_touch)), 	INTERACT_ITEM(null, PROC_REF(overlay_pass_item)), )
 
-/atom/movable/overlay/attack_hand(a, b, c)
-	if (src.master)
-		return src.master.attack_hand(a, b, c)
-	return
+/atom/movable/overlay/proc/overlay_pass_touch(mob/user, obj/item/held, datum/interaction/interaction)
+	if(master)
+		master.attack_hand(user)
+	return TRUE
+
+/atom/movable/overlay/proc/overlay_pass_item(mob/user, obj/item/W, datum/interaction/interaction)
+	if(master)
+		return master.attackby(W, user) ? TRUE : INTERACTION_HANDLED_PASS
+	return TRUE
 
 /atom/movable/proc/touch_map_edge()
 	if(z in using_map.sealed_levels)

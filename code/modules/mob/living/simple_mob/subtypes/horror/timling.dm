@@ -1,4 +1,5 @@
 /mob/living/simple_mob/horror/TinyTim
+	reaction_sound = 'sound/h_sounds/holla.ogg'
 	name = "???"
 	desc = "A tall figure wearing ripped clothes. Its eyes are placed on the bulb of skin that's folded over the front of its face."
 
@@ -33,18 +34,6 @@
 	..()
 
 /mob/living/simple_mob/horror/TinyTim/bullet_act()
-	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
-	..()
-
-/mob/living/simple_mob/horror/TinyTim/attack_hand()
-	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
-	..()
-
-/mob/living/simple_mob/horror/TinyTim/hitby()
-	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
-	..()
-
-/mob/living/simple_mob/horror/TinyTim/attackby()
 	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
 	..()
 

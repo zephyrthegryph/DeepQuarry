@@ -217,9 +217,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	icon_state += "-open"
 	add_radio()
 	add_cabin()
-	if(!add_airtank()) //we check this here in case mecha does not have an internal tank available by default - WIP
-		removeVerb(/obj/mecha/verb/connect_to_port)
-		removeVerb(/obj/mecha/verb/toggle_internal_tank)
+	add_airtank() // without an internal tank the port/airtank Menu entries are not offered (pred_mecha_has_airtank)
 
 	spark_system = new
 	spark_system.set_up(2, 0, src)
@@ -231,7 +229,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		src.smoke_system.attach(src)
 
 	add_cell()
-	removeVerb(/obj/mecha/verb/disconnect_from_port)
 	src.mecha_log_message("[src.name] created.")
 	loc.Entered(src)
 
@@ -517,12 +514,6 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 ////////////////////////
 ////// Helpers /////////
 ////////////////////////
-
-/obj/mecha/proc/removeVerb(verb_path)
-	src.verbs -= verb_path
-
-/obj/mecha/proc/addVerb(verb_path)
-	src.verbs += verb_path
 
 /obj/mecha/proc/add_airtank()
 	// the ZAS portable canister type was deleted in the LINDA migration.
@@ -1141,11 +1132,40 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 		qdel(src)
 	return
 
-/obj/mecha/attack_hand(mob/user as mob)
+// Pilot Menu entries (old "Exosuit Interface" verbs): the pilot is inside the mech, which
+// counts as reach (movable/Adjacent: neighbor == loc); pred_mecha_pilot keeps them pilot-only.
+DECLARE_INTERACTIONS(/obj/mecha, \
+	INTERACT_ITEM(null, PROC_REF(interaction_mecha_paint_kit)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_mecha_item)), \
+	INTERACT_HAND(null, PROC_REF(interaction_mecha_hand)), \
+	INTERACT_DRAG("Enter exosuit", PROC_REF(interaction_mecha_drag)), \
+	INTERACT_ALT("Toggle strafing", PROC_REF(interaction_mecha_alt)), \
+	INTERACT_VERB("Enter Exosuit", PROC_REF(mecha_verb_enter), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_outside, null)), \
+	INTERACT_VERB("Enter Passenger Compartment", PROC_REF(move_inside_passenger), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_outside, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_has_passenger_bay, null)), \
+	INTERACT_VERB("Eject", PROC_REF(mecha_verb_eject), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null)), \
+	INTERACT_VERB("View Stats", PROC_REF(view_stats), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null)), \
+	INTERACT_VERB("Toggle Lights", PROC_REF(mecha_verb_toggle_lights), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null)), \
+	INTERACT_VERB("Toggle strafing", PROC_REF(mecha_verb_toggle_strafing), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null)), \
+	INTERACT_VERB("Toggle internal airtank usage", PROC_REF(toggle_internal_tank), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_has_airtank, null)), \
+	INTERACT_VERB("Connect to port", PROC_REF(mecha_verb_connect_to_port), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_port_connectable, null)), \
+	INTERACT_VERB("Disconnect from port", PROC_REF(mecha_verb_disconnect_from_port), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_port_connected, null)), \
+	INTERACT_VERB("Toggle defence mode", PROC_REF(mecha_verb_toggle_defence_mode), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_can_defence_mode, null)), \
+	INTERACT_VERB("Toggle leg actuators overload", PROC_REF(mecha_verb_toggle_overload), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_can_overload, null)), \
+	INTERACT_VERB("Activate Smoke", PROC_REF(mecha_verb_toggle_smoke), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_can_smoke, null)), \
+	INTERACT_VERB("Zoom", PROC_REF(mecha_verb_toggle_zoom), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_can_zoom, null)), \
+	INTERACT_VERB("Toggle thrusters", PROC_REF(mecha_verb_toggle_thrusters), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_can_thrusters, null)), \
+	INTERACT_VERB("Change melee damage type", PROC_REF(mecha_verb_switch_damtype), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_can_switch_damtype, null)), \
+	INTERACT_VERB("Toggle phasing", PROC_REF(mecha_verb_toggle_phasing), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_can_phasing, null)), \
+	INTERACT_VERB("Toggle cloaking", PROC_REF(mecha_verb_toggle_cloak), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_can_cloak, null)), \
+	INTERACT_VERB("Toggle weapons only cycling", PROC_REF(mecha_verb_toggle_weapons_only_cycle), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null)), \
+)
+
+/// Old attack_hand.
+/obj/mecha/proc/interaction_mecha_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	if(user == occupant)
 		show_radial_occupant(user)
-		return
+		return TRUE
 
 	user.setClickCooldown(user.get_attack_speed())
 	src.mecha_log_message("Attack by hand/paw. Attacker - [user].",1)
@@ -1180,7 +1200,7 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 		else
 			user.visible_message(span_danger("\The [user] hits \the [src]. Nothing happens."),span_danger("You hit \the [src] with no visible effect."))
 			src.log_append_to_last("Armor saved.")
-		return
+		return TRUE
 	else if ((user.has_mutation(HULK)) && !prob(temp_deflect_chance))
 		src.take_damage(15)	//The take_damage() proc handles armor values
 		if(prob(25))	//Hulks punch hard but lets not give them consistent internal damage.
@@ -1189,7 +1209,7 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 	else
 		user.visible_message(span_infoplain((span_red(span_bold("[user] hits [src.name]. Nothing happens.")))),span_infoplain(span_red(span_bold("You hit [src.name] with no visible effect."))))
 		src.log_append_to_last("Armor saved.")
-	return
+	return TRUE
 
 /// The mech's packet sink. Each kind lands through the mech's own absorption
 /// and component model (take_damage: absorbDamage, then
@@ -1495,19 +1515,20 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 
 // Maintenance steps and weld repairs: mecha_maintenance.dm.
 
-/obj/mecha/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby: every item is handled here (maintenance, parts, else dynattackby).
+/obj/mecha/proc/interaction_mecha_item(mob/user, obj/item/W, datum/interaction/interaction)
 
 	if(istype(W, /obj/item/mmi))
 		if(mmi_move_inside(W,user))
 			to_chat(user, "[src]-MMI interface initialized successfuly")
 		else
 			to_chat(user, "[src]-MMI interface initialization failed.")
-		return
+		return TRUE
 
 	if(istype(W, /obj/item/robotanalyzer))
 		var/obj/item/robotanalyzer/RA = W
 		RA.do_scan(src, user)
-		return
+		return TRUE
 
 	if(istype(W, /obj/item/mecha_parts/mecha_equipment))
 		var/obj/item/mecha_parts/mecha_equipment/E = W
@@ -1517,7 +1538,7 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 			user.visible_message("[user] attaches [W] to [src]", "You attach [W] to [src]")
 		else
 			to_chat(user, "You were unable to attach [W] to [src]")
-		return
+		return TRUE
 
 	if(istype(W, /obj/item/mecha_parts/component) && state == MECHA_CELL_OUT)
 		var/obj/item/mecha_parts/component/MC = W
@@ -1525,11 +1546,11 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 			user.drop_item()
 			MC.forceMove(src)
 			user.visible_message("[user] installs \the [W] in \the [src]", "You install \the [W] in \the [src].")
-		return
+		return TRUE
 
 	if(istype(W, /obj/item/card/robot))
 		var/obj/item/card/robot/RoC = W
-		return attackby(RoC.dummy_card, user)
+		return interaction_mecha_item(user, RoC.dummy_card, interaction)
 
 	if(istype(W, /obj/item/card/id)||istype(W, /obj/item/pda))
 		if(add_req_access || maint_access)
@@ -1541,14 +1562,14 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 					var/obj/item/pda/pda = W
 					id_card = pda.id
 				output_maintenance_dialog(id_card, user)
-				return
+				return TRUE
 			else
 				to_chat(user, span_warning("Invalid ID: Access denied."))
 		else
 			to_chat(user, span_warning("Maintenance protocols disabled by operator."))
 	// Tool steps are the maintenance graph (mecha_maintenance.dm); a tool it has no step for does nothing.
 	else if(W.has_tool_quality(TOOL_WRENCH) || W.has_tool_quality(TOOL_CROWBAR) || W.has_tool_quality(TOOL_SCREWDRIVER))
-		return
+		return TRUE
 	else if(istype(W, /obj/item/stack/cable_coil))
 		if(state >= MECHA_CELL_OPEN && hasInternalDamage(MECHA_INT_SHORT_CIRCUIT))
 			var/obj/item/stack/cable_coil/CC = W
@@ -1557,7 +1578,7 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 				to_chat(user, "You replace the fused wires.")
 			else
 				to_chat(user, "There's not enough wire to finish the task.")
-		return
+		return TRUE
 	else if(istype(W, /obj/item/multitool))
 		if(state>=MECHA_CELL_OPEN && src?.slot_item(MECHA_SLOT_PILOT))
 			to_chat(user, "You attempt to eject the pilot using the maintenance controls.")
@@ -1569,7 +1590,7 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 				to_chat(user, span_warning("Your attempt is rejected."))
 				src.occupant_message(span_warning("An attempt to eject you was made using the maintenance controls."))
 				src.mecha_log_message("Eject attempt made using maintenance controls - rejected.")
-		return
+		return TRUE
 
 	else if(istype(W, /obj/item/cell))
 		if(state==MECHA_CELL_OUT)
@@ -1581,16 +1602,16 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 				src.mecha_log_message("Powercell installed")
 			else
 				to_chat(user, "There's already a powercell installed.")
-		return
+		return TRUE
 
 	else if(W.has_tool_quality(TOOL_WELDER) && !IS_HARMING(user))
-		return
+		return TRUE
 
 	else if(istype(W, /obj/item/mecha_parts/mecha_tracking))
 		user.drop_from_inventory(W)
 		W.forceMove(src)
 		user.visible_message("[user] attaches [W] to [src].", "You attach [W] to [src]")
-		return
+		return TRUE
 
 	else if(istype(W,/obj/item/stack/nanopaste))
 		if(state >= MECHA_PANEL_LOOSE)
@@ -1601,7 +1622,7 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 
 				if(!C)
 					to_chat(user, span_notice("There are no components installed!"))
-					return
+					return TRUE
 
 				if(C.get_integrity() >= C.max_integrity)
 					to_chat(user, span_notice("\The [C] does not require repairs."))
@@ -1609,11 +1630,11 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 				else if(C.get_integrity() < C.max_integrity)
 					to_chat(user, span_notice("You start to repair damage to \the [C]."))
 					C.paste_repair_step(user, NP, src)
-			return
+			return TRUE
 
 		else
 			to_chat(user, span_notice("You can't reach \the [src]'s internal components."))
-			return
+			return TRUE
 
 	else
 		call((LAZYACCESS(proc_res, "dynattackby")||src), "dynattackby")(W,user)
@@ -1633,21 +1654,8 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 			src.take_damage(W.force, W.obj_damage_type())
 			src.check_for_internal_damage(list(MECHA_INT_TEMP_CONTROL,MECHA_INT_TANK_BREACH,MECHA_INT_CONTROL_LOST))
 */
-	return
+	return TRUE
 
-/*
-/obj/mecha/attack_ai(mob/living/silicon/ai/user as mob)
-	if(!isAI(user))
-		return
-	var/output = {"<b>Assume direct control over [src]?</b>
-						<a href='byond://?src=\ref[src];ai_take_control=\ref[user];duration=3000'>Yes</a><br>
-						"}
-	// TGUI sub-view: AI attack interface.
-	tgui_subview = "attack_ai"
-	tgui_subview_html = output
-	tgui_interact(user)
-	return
-*/
 
 ///////////////////////////////
 ////////  Brain Stuff  ////////
@@ -1709,7 +1717,6 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 		brainmob.canmove = 1 //should allow relaymove
 		mmi_as_oc.loc = src
 		mmi_as_oc.mecha = src
-		src.verbs += /obj/mecha/verb/eject
 		src.Entered(mmi_as_oc)
 		src.Move(src.loc)
 		update_icon()
@@ -1816,17 +1823,32 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 ////////  Verbs  ////////
 /////////////////////////
 
-/obj/mecha/verb/connect_to_port()
-	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
-	set name = "Connect to port"
-	set category = "Exosuit Interface"
-	set src = usr.loc
-	set popup_menu = 0
+/// Requirement: the actor is this mech's pilot (old `set src = usr.loc` + pilot checks).
+/obj/mecha/proc/pred_mecha_pilot(mob/actor, atom/target, obj/item/held)
+	return actor && actor == slot_item(MECHA_SLOT_PILOT)
 
+/// Requirement: the actor is outside this mech (old `set src in oview(1)`).
+/obj/mecha/proc/pred_mecha_outside(mob/actor, atom/target, obj/item/held)
+	return actor && actor.loc != src
+
+/// Requirement: the mech has an internal airtank (old removeVerb on Initialize without one).
+/obj/mecha/proc/pred_mecha_has_airtank(mob/actor, atom/target, obj/item/held)
+	return !!internal_tank
+
+/// Requirement: port connection state (old connect/disconnect verb toggling).
+/obj/mecha/proc/pred_mecha_port_connectable(mob/actor, atom/target, obj/item/held)
+	return internal_tank && !connected_port
+
+/obj/mecha/proc/pred_mecha_port_connected(mob/actor, atom/target, obj/item/held)
+	return !!connected_port
+
+/// Old verb "Connect to port".
+/obj/mecha/proc/mecha_verb_connect_to_port(mob/user, obj/item/held, datum/interaction/interaction)
+	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	if(!occupant)
 		return
 
-	if(usr != occupant)
+	if(user != occupant)
 		return
 
 	var/obj/item/mecha_parts/component/gas/GC = internal_components[MECH_GAS]
@@ -1838,8 +1860,6 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 		if(possible_port)
 			if(connect(possible_port))
 				occupant_message(span_notice("\The [name] connects to the port."))
-				verbs += /obj/mecha/verb/disconnect_from_port
-				verbs -= /obj/mecha/verb/connect_to_port
 				return
 			else
 				occupant_message(span_danger("\The [name] failed to connect to the port."))
@@ -1847,36 +1867,27 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 		else
 			occupant_message("Nothing happens")
 
-/obj/mecha/verb/disconnect_from_port()
+/// Old verb "Disconnect from port".
+/obj/mecha/proc/mecha_verb_disconnect_from_port(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
-	set name = "Disconnect from port"
-	set category = "Exosuit Interface"
-	set src = usr.loc
-	set popup_menu = 0
-
 	if(!occupant)
 		return
 
-	if(usr != occupant)
+	if(user != occupant)
 		return
 
 	if(disconnect())
 		occupant_message(span_notice("[name] disconnects from the port."))
-		verbs -= /obj/mecha/verb/disconnect_from_port
-		verbs += /obj/mecha/verb/connect_to_port
 	else
 		occupant_message(span_danger("[name] is not connected to the port at the moment."))
 
-/obj/mecha/verb/toggle_lights()
-	set name = "Toggle Lights"
-	set category = "Exosuit Interface"
-	set src = usr.loc
-	set popup_menu = 0
-	lights()
+/// Old verb "Toggle Lights".
+/obj/mecha/proc/mecha_verb_toggle_lights(mob/user, obj/item/held, datum/interaction/interaction)
+	lights(user)
 
-/obj/mecha/verb/lights()
+/obj/mecha/proc/lights(mob/user)
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
-	if(usr!=occupant)	return
+	if(user!=occupant)	return
 	lights = !lights
 	if(lights)	set_light(light_range + lights_power)
 	else		set_light(light_range - lights_power)
@@ -1885,16 +1896,14 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 	playsound(src, 'sound/mecha/heavylightswitch.ogg', 50, 1)
 	return
 
-/obj/mecha/verb/toggle_internal_tank()
-	set name = "Toggle internal airtank usage"
-	set category = "Exosuit Interface"
-	set src = usr.loc
-	set popup_menu = 0
-	internal_tank()
+/// Old verb "Toggle internal airtank usage". The mech minihud calls it with no user after
+/// checking the clicker is the pilot, so a null user means the pilot.
+/obj/mecha/proc/toggle_internal_tank(mob/user, obj/item/held, datum/interaction/interaction)
+	internal_tank(user || slot_item(MECHA_SLOT_PILOT))
 
-/obj/mecha/proc/internal_tank()
+/obj/mecha/proc/internal_tank(mob/user)
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
-	if(usr!=src?.slot_item(MECHA_SLOT_PILOT))
+	if(!user || user!=occupant)
 		return
 
 	var/obj/item/mecha_parts/component/gas/GC = internal_components[MECH_GAS]
@@ -1912,37 +1921,34 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 	playsound(src, 'sound/mecha/gasdisconnected.ogg', 30, 1)
 	return
 
-/obj/mecha/verb/toggle_strafing()
-	set name = "Toggle strafing"
-	set category = "Exosuit Interface"
-	set src = usr.loc
-	set popup_menu = 0
-	strafing()
+/// Old verb "Toggle strafing".
+/obj/mecha/proc/mecha_verb_toggle_strafing(mob/user, obj/item/held, datum/interaction/interaction)
+	strafing(user)
 
-/obj/mecha/proc/strafing()
-	if(usr!=src?.slot_item(MECHA_SLOT_PILOT))
+/obj/mecha/proc/strafing(mob/user)
+	if(!user || user!=src?.slot_item(MECHA_SLOT_PILOT))
 		return
 	strafing = !strafing
 	src.occupant_message("Toggled strafing mode [strafing?"on":"off"].")
 	src.mecha_log_message("Toggled strafing mode [strafing?"on":"off"].")
 	return
 
-/obj/mecha/MouseDrop_T(mob/O, mob/user)
+/// Old MouseDrop_T: drag yourself onto the mech to climb in.
+/obj/mecha/proc/interaction_mecha_drag(mob/user, atom/movable/O, datum/interaction/interaction)
 	//Humans can pilot mechs.
 	if(!ishuman(O))
-		return
+		return TRUE
 
 	//Can't put other people into mechs (can comment this out if you want that to be possible)
 	if(O != user)
-		return
+		return TRUE
 
 	move_inside(user)
+	return TRUE
 
-/obj/mecha/verb/enter()
-	set category = "Object"
-	set name = "Enter Exosuit"
-	set src in oview(1)
-	move_inside(usr)
+/// Old verb "Enter Exosuit".
+/obj/mecha/proc/mecha_verb_enter(mob/user, obj/item/held, datum/interaction/interaction)
+	move_inside(user)
 
 //returns an equipment object if we have one of that type, useful since is_type_in_list won't return the object
 //since is_type_in_list uses caching, this is a slower operation, so only use it if needed
@@ -2029,31 +2035,12 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 			return
 		PERIODIC_START(src, PERIODIC_SLOW)
 		src.add_fingerprint(H)
-		src.verbs += /obj/mecha/verb/eject
 		src.log_append_to_last("[H] moved in as pilot.")
 		update_icon()
 		if(occupant.hud_used)
 			minihud = new (occupant.hud_used, src)
 
-//This part removes all the verbs if you don't have them the _possible on your mech. This is a little clunky, but it lets you just add that to any mech.
-//And it's not like this 10yo code wasn't clunky before.
-
-		if(!smoke_possible)			//Can't use smoke? No verb for you.
-			verbs -= /obj/mecha/verb/toggle_smoke
-		if(!thrusters_possible)		//Can't use thrusters? No verb for you.
-			verbs -= /obj/mecha/verb/toggle_thrusters
-		if(!defence_mode_possible)	//Do i need to explain everything?
-			verbs -= /obj/mecha/verb/toggle_defence_mode
-		if(!overload_possible)
-			verbs -= /obj/mecha/verb/toggle_overload
-		if(!zoom_possible)
-			verbs -= /obj/mecha/verb/toggle_zoom
-		if(!phasing_possible)
-			verbs -= /obj/mecha/verb/toggle_phasing
-		if(!switch_dmg_type_possible)
-			verbs -= /obj/mecha/verb/switch_damtype
-		if(!cloak_possible)
-			verbs -= /obj/mecha/verb/toggle_cloak
+		// The *_possible capability vars gate the pilot's Menu entries (pred_mecha_can_* in mecha_actions.dm).
 
 		occupant.in_enclosed_vehicle = 1	//Useful for when you need to know if someone is in a mecho.
 		update_cell_alerts()
@@ -2085,41 +2072,29 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 			else//Everyone else gets the normal noise
 				who << sound('sound/mecha/nominal.ogg',volume=50)
 
-/obj/mecha/click_alt(mob/living/user)
+/// Old click_alt: the pilot toggles strafing.
+/obj/mecha/proc/interaction_mecha_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	if(user == occupant)
-		strafing()
+		strafing(user)
+	return TRUE
 
-/obj/mecha/verb/view_stats()
-	set name = "View Stats"
-	set category = "Exosuit Interface"
-	set src = usr.loc
-	set popup_menu = 0
-	if(usr != src?.slot_item(MECHA_SLOT_PILOT))
+/// Old verb "View Stats".
+/obj/mecha/proc/view_stats(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!user || user != src?.slot_item(MECHA_SLOT_PILOT))
 		return
 	// TGUI: replaces legacy browse(get_stats_html()).
 	tgui_subview = "main"
 	tgui_interact(src?.slot_item(MECHA_SLOT_PILOT))
 	return
 
-/*
-/obj/mecha/verb/force_eject()
-	set category = "Object"
-	set name = "Force Eject"
-	set src in view(5)
-	src.go_out()
-	return
-*/
 
-/obj/mecha/verb/eject()
-	set name = "Eject"
-	set category = "Exosuit Interface"
-	set src = usr.loc
-	set popup_menu = 0
-	if(usr!=src?.slot_item(MECHA_SLOT_PILOT))
+/// Old verb "Eject".
+/obj/mecha/proc/mecha_verb_eject(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!user || user!=src?.slot_item(MECHA_SLOT_PILOT))
 		return
 	src.go_out()
-	add_fingerprint(usr)
+	add_fingerprint(user)
 	return
 
 /obj/mecha/proc/go_out() //Eject/Exit the mech. Yes this is for easier searching.
@@ -2157,7 +2132,6 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 		occupant.in_enclosed_vehicle = 0
 		update_icon()
 		set_dir(dir_in)
-		verbs -= /obj/mecha/verb/eject
 
 		//src.zoom = 0
 
@@ -2357,8 +2331,8 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 	data["radio_mic"] = !!radio.broadcasting
 	data["radio_spk"] = !!radio.listening
 	data["radio_freq"] = format_frequency(radio.frequency)
-	data["airtank_disconnect"] = (/obj/mecha/verb/disconnect_from_port in verbs)
-	data["airtank_connect"] = (/obj/mecha/verb/connect_to_port in verbs)
+	data["airtank_disconnect"] = !!connected_port
+	data["airtank_connect"] = !!(internal_tank && !connected_port)
 	// Permissions.
 	data["id_upload_locked"] = !!add_req_access
 	data["maint_access"] = !!maint_access
@@ -2393,7 +2367,7 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 		list("label" = "Universal",     "used" = length(universal_equipment),     "max" = max_universal_equip),
 		list("label" = "Special",       "used" = length(special_equipment),       "max" = max_special_equip),
 	)
-	data["can_eject"] = (/obj/mecha/verb/eject in verbs)
+	data["can_eject"] = !!slot_item(MECHA_SLOT_PILOT)
 	return data
 
 /obj/mecha/tgui_act(action, list/params)
@@ -2569,8 +2543,8 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 						<div class='header'>Airtank</div>
 						<div class='links'>
 						<a href='byond://?src=\ref[src];toggle_airtank=1'>Toggle Internal Airtank Usage</a><br>
-						[(/obj/mecha/verb/disconnect_from_port in src.verbs)?"<a href='byond://?src=\ref[src];port_disconnect=1'>Disconnect from port</a><br>":null]
-						[(/obj/mecha/verb/connect_to_port in src.verbs)?"<a href='byond://?src=\ref[src];port_connect=1'>Connect to port</a><br>":null]
+						[connected_port?"<a href='byond://?src=\ref[src];port_disconnect=1'>Disconnect from port</a><br>":null]
+						[(internal_tank && !connected_port)?"<a href='byond://?src=\ref[src];port_connect=1'>Connect to port</a><br>":null]
 						</div>
 						</div>
 						<div class='wr'>
@@ -2585,7 +2559,7 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 						</div>
 						<div id='equipment_menu'>[get_equipment_menu()]</div>
 						<hr>
-						[(/obj/mecha/verb/eject in src.verbs)?"<a href='byond://?src=\ref[src];eject=1'>Eject</a><br>":null]
+						[slot_item(MECHA_SLOT_PILOT)?"<a href='byond://?src=\ref[src];eject=1'>Eject</a><br>":null]
 						"}
 	return output
 
@@ -2722,24 +2696,24 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 		return
 	if(href_list["eject"])
 		if(usr != src?.slot_item(MECHA_SLOT_PILOT))	return
-		src.eject()
+		mecha_verb_eject(usr)
 		return
 	if(href_list["toggle_lights"])
 		if(usr != src?.slot_item(MECHA_SLOT_PILOT))	return
-		src.lights()
+		src.lights(usr)
 		return
 /*
 	if(href_list["toggle_strafing"])
 		if(usr != src?.slot_item(MECHA_SLOT_PILOT))	return
-		src.strafing()
+		src.strafing(usr)
 		return*/
 
 	if(href_list["toggle_airtank"])
 		if(usr != src?.slot_item(MECHA_SLOT_PILOT))	return
-		src.internal_tank()
+		src.internal_tank(usr)
 		return
 	if (href_list["toggle_thrusters"])
-		src.toggle_thrusters()
+		src.thrusters(usr)
 	if (href_list["smoke"])
 		src.smoke(usr)
 	if (href_list["toggle_zoom"])
@@ -2747,7 +2721,7 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 	if(href_list["toggle_defence_mode"])
 		src.defence_mode(usr)
 	if(href_list["switch_damtype"])
-		src.switch_damtype()
+		src.query_damtype(usr)
 	if(href_list["phasing"])
 		src.phasing(usr)
 
@@ -2771,11 +2745,11 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 		return
 	if(href_list["port_disconnect"])
 		if(usr != src?.slot_item(MECHA_SLOT_PILOT))	return
-		src.disconnect_from_port()
+		mecha_verb_disconnect_from_port(usr)
 		return
 	if (href_list["port_connect"])
 		if(usr != src?.slot_item(MECHA_SLOT_PILOT))	return
-		src.connect_to_port()
+		mecha_verb_connect_to_port(usr)
 		return
 	if(href_list["view_log"])
 		if(usr != src?.slot_item(MECHA_SLOT_PILOT))

@@ -75,10 +75,7 @@
 		playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
 
 //Lets the owner get AI controlled bound mobs to follow them, or tells player controlled mobs to follow them.
-/obj/item/capture_crystal/verb/follow_owner()
-	set name = "Toggle Follow"
-	set category = "Object"
-	set src in usr
+/obj/item/capture_crystal/proc/follow_owner_effect(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!ismob(loc))
 		return
 	var/mob/living/M = src.loc
@@ -121,10 +118,7 @@
 
 //Don't really want people 'haha funny' capturing and releasing one another willy nilly. So! If you wanna release someone, you gotta destroy the thingy.
 //(Which is consistent with how it works with digestion anyway.)
-/obj/item/capture_crystal/verb/destroy_crystal()
-	set name = "Destroy Crystal"
-	set category = "Object"
-	set src in usr
+/obj/item/capture_crystal/proc/destroy_crystal_effect(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!ismob(loc))
 		return
 	var/mob/living/M = src.loc
@@ -135,10 +129,7 @@
 		qdel(src)
 
 //If you catch something/someone and want to give it to someone else though, that's fine.
-/obj/item/capture_crystal/verb/release_ownership()
-	set name = "Release Ownership"
-	set category = "Object"
-	set src in usr
+/obj/item/capture_crystal/proc/release_ownership_effect(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!ismob(loc))
 		return
 	var/mob/living/M = src.loc
@@ -182,10 +173,7 @@
 	to_chat(M, span_notice("Your command has been transmitted, '[transmit_msg]'"))
 	log_admin("[key_name_admin(M)] sent the command, '[transmit_msg]' to [bound_mob].")
 
-/obj/item/capture_crystal/verb/invite_ghost()
-	set name = "Enhance (Toggle Ghost Join)"
-	set category = "Object"
-	set src in usr
+/obj/item/capture_crystal/proc/invite_ghost_effect(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!ismob(loc))
 		return
 	var/mob/living/U = src.loc
@@ -1068,3 +1056,11 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 	//The target is not a mob, so let's not do anything.
 	playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
 	to_chat(user, span_notice("\The [src] clicks unsatisfyingly."))
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/capture_crystal, \
+	INTERACT_VERB("Toggle Follow", PROC_REF(follow_owner_effect), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Destroy Crystal", PROC_REF(destroy_crystal_effect), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Release Ownership", PROC_REF(release_ownership_effect), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Enhance (Toggle Ghost Join)", PROC_REF(invite_ghost_effect), REQ_IN_INVENTORY), \
+)

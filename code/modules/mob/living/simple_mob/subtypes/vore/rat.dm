@@ -19,6 +19,7 @@
 	value = CATALOGUER_REWARD_MEDIUM
 
 /mob/living/simple_mob/vore/aggressive/rat
+	drag_buckle = FALSE
 	name = "giant rat"
 	desc = "In what passes for a hierarchy among verminous rodents, this one is king."
 	tt_desc = "Mus muscular"
@@ -180,14 +181,15 @@
 			hunger = 0
 			food = null
 
-/mob/living/simple_mob/vore/aggressive/rat/tame/attackby(obj/item/O, mob/user) // Feed the rat your food to satisfy it.
-	if(istype(O, /obj/item/reagent_containers/food/snacks))
-		qdel(O)
-		playsound(src,'sound/items/eatfood.ogg', rand(10,50), 1)
-		hunger = 0
-		food = null
-		return
-	. = ..()
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/rat/tame, INTERACT_INSERT(/obj/item/reagent_containers/food/snacks, PROC_REF(tame_rat_interaction_feed), "Feed"))
+
+/// Feed the rat your food to satisfy it.
+/mob/living/simple_mob/vore/aggressive/rat/tame/proc/tame_rat_interaction_feed(mob/user, obj/item/O, datum/interaction/interaction)
+	qdel(O)
+	playsound(src,'sound/items/eatfood.ogg', rand(10,50), 1)
+	hunger = 0
+	food = null
+	return TRUE
 
 /mob/living/simple_mob/vore/aggressive/rat/tame/Found(atom/found_atom)
 	if(!SA_attackable(found_atom))
@@ -226,9 +228,6 @@
 	add_verb(src, /mob/living/simple_mob/proc/animal_mount)
 	add_verb(src, /mob/living/proc/toggle_rider_reins)
 	movement_cooldown = 0
-
-/mob/living/simple_mob/vore/aggressive/rat/MouseDrop_T(mob/living/M, mob/living/user)
-	return
 
 /mob/living/simple_mob/vore/aggressive/rat/phoron
 	name = "phoron rat"

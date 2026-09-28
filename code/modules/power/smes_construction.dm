@@ -133,18 +133,18 @@
 /obj/machinery/power/smes/buildable/power_settled()
 	return grounding || Percentage() <= 5
 
-// Proc: attack_ai()
-// Parameters: None
-// Description: AI requires the RCON wire to be intact to operate the SMES.
-/obj/machinery/power/smes/buildable/attack_ai(mob/user)
+/// Old attack_ai: AI requires the RCON wire to be intact to operate the SMES (the default Use).
+/// Cyborgs standing next to the SMES can also play with the wiring.
+/obj/machinery/power/smes/buildable/proc/smes_buildable_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(RCon)
-		..()
+		actor_use_default(/datum/input_adapter/ai, user, src)
 	else // RCON wire cut
 		to_chat(user, span_warning("Connection error: Destination Unreachable."))
 
 	// Cyborgs standing next to the SMES can play with the wiring.
 	if(isrobot(user) && Adjacent(user) && panel_open)
 		wires.Interact(user)
+	return TRUE
 
 // Proc: New()
 // Parameters: None
@@ -165,6 +165,11 @@
 // Parameters: None
 // Description: Opens the UI as usual, and if cover is removed opens the wiring panel.
 /obj/machinery/power/smes/buildable/declare_interactions(list/into)
+	var/static/list/actor_specs = list(
+		INTERACT_SILICON("Use", PROC_REF(smes_buildable_silicon_use)),
+	)
+	for(var/actor_spec in actor_specs)
+		into += dq_interaction_from_spec(type, actor_spec)
 	into += list(
 		/datum/interaction/machine_hand/smes_buildable_wires,
 	)

@@ -544,6 +544,11 @@ REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 	reboot()
 
 /obj/machinery/power/apc/declare_interactions(list/into)
+	var/static/list/actor_specs = list(
+		INTERACT_OBSERVER("View", PROC_REF(apc_ghost_view)),
+	)
+	for(var/actor_spec in actor_specs)
+		into += dq_interaction_from_spec(type, actor_spec)
 	into += list(
 		/datum/interaction/machine_item/apc_use_item,
 		/datum/interaction/machine_alt/apc_toggle_lock,
@@ -776,10 +781,13 @@ REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 	interact(user)
 	return TRUE
 
-/obj/machinery/power/apc/attack_ghost(mob/user)
+/// Old attack_ghost: view the wires with the panel open, else the interface.
+/obj/machinery/power/apc/proc/apc_ghost_view(mob/user, obj/item/held, datum/interaction/interaction)
 	if(panel_open)
-		return wires.Interact(user)
-	return tgui_interact(user)
+		wires.Interact(user)
+		return TRUE
+	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/power/apc/interact(mob/user)
 	if(!user)

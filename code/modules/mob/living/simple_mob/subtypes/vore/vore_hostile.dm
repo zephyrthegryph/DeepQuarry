@@ -80,14 +80,17 @@
 	B.escapechance = 25
 	B.escape_stun = 5
 
-/mob/living/simple_mob/vore/vore_hostile/abyss_lurker/attack_hand(mob/living/user)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker, INTERACT_HAND_UNGATED(null, PROC_REF(abyss_lurker_interaction_hand)))
 
+/// Old attack_hand: touching a willing prey-player makes the lurker target them instead of the normal touch.
+/mob/living/simple_mob/vore/vore_hostile/abyss_lurker/proc/abyss_lurker_interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(client || !user.client || !ai_brain || !isliving(user))
-		return ..()
+		return FALSE
 	if(!user.devourable || !user.allowmobvore || !user.can_be_drop_prey)
-		return ..()
-	// DQEdit - was: ai_holder.give_target(user); track_target_position; set_stance(STANCE_FIGHT)
+		return FALSE
 	ai_brain?.give_target(user, TRUE)
+	return TRUE
+
 /////Leaper/////
 
 /datum/category_item/catalogue/fauna/leaper

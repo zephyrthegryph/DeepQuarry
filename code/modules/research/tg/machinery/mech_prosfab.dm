@@ -99,11 +99,7 @@
 	name = "Use"
 	held_type = /obj/item
 	consumes_input = FALSE
-	effect = /obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/interaction_fingerprint_marker
-
-/obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/interaction_fingerprint_marker(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
-	return FALSE
+	effect = /atom/proc/interaction_fingerprint
 
 /// Old attackby: install limb blueprint files from a disk.
 /datum/interaction/machine_item/prosfab_limb_disk

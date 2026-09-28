@@ -158,14 +158,17 @@
 	created_name = sanitizeSafe(ask.text, MAX_NAME_LEN)
 	update_state()
 
-/obj/structure/door_assembly/attack_robot(mob/living/silicon/robot/user)
-	if(Adjacent(user) && user.module?.names_assemblies) //Only drones and engineering borgs need this.
+/// Old attack_robot: drones and engineering borgs next to it rename it.
+/obj/structure/door_assembly/proc/door_assembly_robot_rename(mob/living/silicon/robot/user, obj/item/held, datum/interaction/interaction)
+	if(istype(user) && Adjacent(user) && user.module?.names_assemblies) //Only drones and engineering borgs need this.
 		rename_door(user)
+	return TRUE
 
 /obj/structure/door_assembly/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/entry_item/door_assembly_item,
 	)
+	into += dq_interaction_from_spec(type, INTERACT_ROBOT("Rename", PROC_REF(door_assembly_robot_rename)))
 	..()
 
 /// Old attackby: rename with a pen, wire, install electronics, or plate the assembly.

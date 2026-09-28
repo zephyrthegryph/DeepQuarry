@@ -71,8 +71,9 @@
 	if(istype(M)) // TGMC Ammo HUD
 		M?.hud_used?.update_ammo_hud(M, src)
 
-/obj/item/gun/projectile/cell_loaded/attack_self(mob/user)
-	. = ..(user)
+/// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
+/obj/item/gun/projectile/cell_loaded/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+	. = ..()
 	if(.)
 		return TRUE
 	if(!chambered)
@@ -147,7 +148,11 @@
 
 	var/list/modes
 
-/obj/item/ammo_magazine/cell_mag/attackby(obj/item/W as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/ammo_magazine/cell_mag, INTERACT_ITEM("Load", PROC_REF(cell_mag_interaction_item)))
+
+/// Old attackby. It never called ..(): any item stops here, but afterattack still follows.
+/obj/item/ammo_magazine/cell_mag/proc/cell_mag_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+	. = INTERACTION_HANDLED_PASS
 	make_rounds_real()
 	if(istype(W, /obj/item/ammo_casing/microbattery))
 		var/obj/item/ammo_casing/microbattery/B = W

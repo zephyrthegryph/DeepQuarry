@@ -41,17 +41,20 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_GHOST_PODS)
 /mob/living/simple_mob/animal/giant_spider/carrier //or the ones who fart babies when they die
 	ic_revivable = FALSE
 
-/// A ghost has clicked us
-/mob/living/simple_mob/attack_ghost(mob/observer/dead/user as mob)
+EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_REF(simple_mob_observer_join)))
+
+/// A ghost has clicked us (old attack_ghost). FALSE falls to the ghost's default (examine).
+/mob/living/simple_mob/proc/simple_mob_observer_join(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
 	if(!ghostjoin)
-		return ..()
+		return FALSE
 	if(jobban_isbanned(user, JOB_GHOSTROLES))
 		to_chat(user, span_warning("You cannot inhabit this creature because you are banned from playing ghost roles."))
-		return
+		return TRUE
 	if(!evaluate_ghost_join(user))
-		return ..()
+		return FALSE
 
 	tgui_alert_async(user, "Would you like to become [src]? It is bound to [revivedby].", "Become Mob", list("Yes","No"), CALLBACK(src, PROC_REF(reply_ghost_join)), 20 SECONDS)
+	return TRUE
 
 /// A reply to an async alert request was received
 /mob/living/simple_mob/proc/reply_ghost_join(response)

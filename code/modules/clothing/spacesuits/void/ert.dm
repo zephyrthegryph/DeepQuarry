@@ -101,19 +101,22 @@
 		to_chat(user, "\The [src] does not have anything installed.")
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/clothing/suit/space/void/responseteam/attackby(obj/item/W as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/responseteam, INTERACT_ITEM(null, PROC_REF(responseteam_worn_item)))
+
+/// Old attackby: no modifying it while worn.
+/obj/item/clothing/suit/space/void/responseteam/proc/responseteam_worn_item(mob/user, obj/item/W, datum/interaction/interaction)
 
 	if(!isliving(user))
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(istype(W, /obj/item/clothing/accessory) || istype(W, /obj/item/hand_labeler))
-		return ..()
+		return FALSE
 
 	if(user.get_inventory_slot(src) == slot_wear_suit)
 		to_chat(user, span_warning("You cannot modify \the [src] while it is being worn."))
-		return
+		return INTERACTION_HANDLED_PASS
 
-	..()
+	return FALSE
 
 
 /obj/item/clothing/head/helmet/space/void/responseteam
@@ -136,24 +139,25 @@
 	var/list/bodytypes = list("exclude",SPECIES_DIONA,SPECIES_VOX,SPECIES_TESHARI,SPECIES_ALTEVIAN)
 	return list(REQ_FITS_BODYTYPES(bodytypes))
 
-/obj/item/clothing/head/helmet/space/void/responseteam/verb/toggle()
-	set category = "Object"
-	set name = "Toggle Mark 7 Suit HUD"
-	set src in usr
+EXTEND_INTERACTIONS(/obj/item/clothing/head/helmet/space/void/responseteam, \
+	INTERACT_VERB("Toggle Mark 7 Suit HUD", PROC_REF(responseteam_toggle_verb), REQ_IN_INVENTORY), \
+)
 
-	if(usr.canmove && !usr.stat && !usr.restrained())
+/// Old verb "Toggle Mark 7 Suit HUD".
+/obj/item/clothing/head/helmet/space/void/responseteam/proc/responseteam_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(user.canmove && !user.stat && !user.restrained())
 		if(src.hud_active)
 			away_planes = enables_planes
 			enables_planes = null
-			to_chat(usr, "You disable the inbuilt heads-up display.")
+			to_chat(user, "You disable the inbuilt heads-up display.")
 			hud_active = 0
 		else
 			enables_planes = away_planes
 			away_planes = null
-			to_chat(usr, "You enable the inbuilt heads-up display.")
+			to_chat(user, "You enable the inbuilt heads-up display.")
 			hud_active = 1
-		usr << activation_sound
-		usr.recalculate_vis()
+		user << activation_sound
+		user.recalculate_vis()
 
 /obj/item/clothing/head/helmet/space/void/responseteam/command
 	name = "Mark VII-C Emergency Response Team Commander Helmet"

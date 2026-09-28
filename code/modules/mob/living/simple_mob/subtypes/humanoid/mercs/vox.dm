@@ -81,7 +81,11 @@
 	loot_list = list(/obj/item/melee/energy/sword = 100)
 
 // They're good with the swords? I dunno. I like the idea they can deflect.
-/mob/living/simple_mob/humanoid/merc/voxpirate/boarder/attackby(obj/item/O, mob/user)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/voxpirate/boarder, INTERACT_ITEM(null, PROC_REF(voxboarder_interaction_item)))
+
+/// Old attackby: sword block.
+/mob/living/simple_mob/humanoid/merc/voxpirate/boarder/proc/voxboarder_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+	. = TRUE
 	if(O.force)
 		if(prob(20))
 			visible_message(span_danger("\The [src] blocks \the [O] with its sword!"))
@@ -89,7 +93,7 @@
 				ai_brain.react_to_attack(user)
 			return
 		else
-			..()
+			return FALSE
 	else
 		to_chat(user, span_warning("This weapon is ineffective, it does no damage."))
 		visible_message(span_warning("\The [user] gently taps [src] with \the [O]."))

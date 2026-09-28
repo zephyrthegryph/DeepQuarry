@@ -40,7 +40,4 @@ REF_OWNED(/obj/machinery/appliance/mixer/candy, "candymaker_loop")
 	food_color = get_random_colour(1)
 	. = ..()
 
-/obj/machinery/appliance/mixer/candy/attackby(obj/item/O as obj, mob/user as mob)
-	if(default_part_replacement(user, O))
-		return
-	..()
+EXTEND_INTERACTIONS(/obj/machinery/appliance/mixer/candy, INTERACT_ITEM(null, PROC_REF(appliance_interaction_part_replace)))

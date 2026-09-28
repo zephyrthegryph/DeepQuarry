@@ -46,10 +46,12 @@
 		T.clean_deploy(src)
 	to_chat(user, span_notice("You have finished mopping!"))
 
-/obj/effect/attackby(obj/item/I, mob/user)
-	if(istype(I, /obj/item/mop_deploy) || istype(I, /obj/item/soap))
-		return
-	..()
+// Mops and soap on an effect (decals, runes, overlays) go straight to their afterattack
+// cleaning: nothing else about the effect (signals, less specific interactions) reacts.
+EXTEND_INTERACTIONS(/obj/effect, \
+	INTERACT_INSERT(/obj/item/mop_deploy, TYPE_PROC_REF(/atom, interaction_pass), null), \
+	INTERACT_INSERT(/obj/item/soap, TYPE_PROC_REF(/atom, interaction_pass), null), \
+)
 
 DECLARE_INTERACTIONS(/obj/item/mop_deploy, INTERACT_USE(null, PROC_REF(interaction_self)))
 

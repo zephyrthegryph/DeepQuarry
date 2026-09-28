@@ -82,6 +82,7 @@ GLOBAL_LIST_INIT(ai_status_emotions, list(
 	into += list(
 		/datum/interaction/machine_item/ai_status_display_touch,
 	)
+	into += dq_interaction_from_spec(type, INTERACT_SILICON("Set status", PROC_REF(ai_status_display_silicon_use)))
 	..()
 
 /// Old attackby: dispatched straight to attack_hand for any item.
@@ -98,9 +99,11 @@ GLOBAL_LIST_INIT(ai_status_emotions, list(
 /obj/machinery/ai_status_display/screwdriver_act(mob/user, obj/item/tool)
 	return deconstruct_display(user, tool)
 
-/obj/machinery/ai_status_display/attack_ai(mob/user as mob)
+/// Old attack_ai: pick the displayed emotion.
+/obj/machinery/ai_status_display/proc/ai_status_display_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
 	var/list/ai_emotions = get_ai_emotions(user.ckey)
 	om_ask(user, /datum/om/prompt/choice, PROC_REF(emotion_chosen), message = "Please, select a status:", title = "AI Status", choices = ai_emotions)
+	return TRUE
 
 /obj/machinery/ai_status_display/proc/emotion_chosen(datum/om/prompt/choice/ask)
 	var/emote = ask.choice

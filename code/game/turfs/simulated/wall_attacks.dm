@@ -91,15 +91,14 @@
 		toggle_open(user)
 	return 0
 
-/turf/simulated/wall/attack_ai(mob/user)
-	if(!Adjacent(user))
-		return
-	if(!isrobot((user)))
-		return
-	var/rotting = (locate_on(src, /obj/effect/overlay/wallrot))
-	try_touch(user, rotting)
+EXTEND_INTERACTIONS(/turf/simulated/wall, \
+	INTERACT_ITEM(null, PROC_REF(wall_item)), \
+	INTERACT_HAND_UNGATED("Touch", PROC_REF(wall_hand)), \
+	INTERACT_ALT("Graffiti", PROC_REF(wall_graffiti_alt)), \
+)
 
-/turf/simulated/wall/attack_hand(mob/user)
+/// Old attack_hand: touch the wall (a hulk smashes it). The turf's own touch never follows.
+/turf/simulated/wall/proc/wall_hand(mob/user, obj/item/held, datum/interaction/interaction)
 
 	radiate()
 	add_fingerprint(user)
@@ -113,6 +112,7 @@
 			return 1
 
 	try_touch(user, rotting)
+	return TRUE
 
 /turf/simulated/wall/attack_generic(mob/user, damage, attack_message)
 
@@ -133,17 +133,18 @@
 		return success_smash(user)
 	return fail_smash(user)
 
-/turf/simulated/wall/attackby(obj/item/W, mob/user, attack_modifier, click_parameters)
+/// Old attackby: mounting, roofing, crumbling a rotten wall, thermite and frames; anything else touches it.
+/turf/simulated/wall/proc/wall_item(mob/user, obj/item/W, datum/interaction/interaction)
 
 	user.setClickCooldown(user.get_attack_speed(W))
 
 	if (!user.IsAdvancedToolUser())
 		to_chat(user, span_warning("You don't have the dexterity to do this!"))
-		return
+		return INTERACTION_HANDLED_PASS
 
 	//get the user's location
 	if(!istype(user.loc, /turf))
-		return	//can't do this stuff whilst inside objects and such
+		return INTERACTION_HANDLED_PASS //can't do this stuff whilst inside objects and such
 
 	if(W)
 		radiate()
@@ -153,7 +154,7 @@
 	if(istype(W, /obj/item/electronic_assembly/wallmount))
 		var/obj/item/electronic_assembly/wallmount/IC = W
 		IC.mount_assembly(src, user)
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(istype(W, /obj/item/stack/tile/roofing))
 		var/expended_tile = FALSE // To track the case. If a ceiling is built in a multiz zlevel, it also necessarily roofs it against weather
@@ -171,7 +172,7 @@
 					expended_tile = TRUE
 			else
 				to_chat(user, span_warning("There aren't any holes in the ceiling to patch here."))
-				return
+				return INTERACTION_HANDLED_PASS
 
 		// Create a ceiling to shield from the weather
 		if(is_outdoors())
@@ -180,20 +181,20 @@
 				if(!expended_tile) // Would've already played a sound
 					playsound(src, 'sound/weapons/genhit.ogg', 50, 1)
 				user.visible_message(span_notice("[user] roofs \the [src], shielding it from the elements."), span_notice("You roof \the [src] tile, shielding it from the elements."))
-		return
+		return INTERACTION_HANDLED_PASS
 
 	// Welders reach the wall's interactions (wall_construction.dm) before attackby.
 	if(locate_on(src, /obj/effect/overlay/wallrot))
 		if(!is_sharp(W) && W.force >= 10 || W.force >= 20)
 			to_chat(user, span_notice("\The [src] crumbles away under the force of your [W.name]."))
 			src.dismantle_wall(1)
-			return
+			return INTERACTION_HANDLED_PASS
 
 	//THERMITE related stuff. Calls src.thermitemelt() which handles melting simulated walls and the relevant effects
 	if(thermite)
 		if(istype(W, /obj/item/pickaxe/plasmacutter))
 			thermitemelt(user)
-			return
+			return INTERACTION_HANDLED_PASS
 
 		else if( istype(W, /obj/item/melee/energy/blade) )
 			var/obj/item/melee/energy/blade/EB = W
@@ -204,16 +205,17 @@
 			playsound(src, 'sound/weapons/blade1.ogg', 50, 1)
 
 			thermitemelt(user)
-			return
+			return INTERACTION_HANDLED_PASS
 
 	// Plasma cutters, energy blades and pickaxes stand in for the welder on the graph's cutting steps.
 	if(try_construction_alt(user, src, W))
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(istype(W,/obj/item/frame))
 		var/obj/item/frame/F = W
 		F.try_build(src, user)
-		return
+		return INTERACTION_HANDLED_PASS
 
 	else if(!istype(W,/obj/item/rcd) && !istype(W, /obj/item/reagent_containers))
-		return attack_hand(user)
+		return attack_hand(user) ? TRUE : INTERACTION_HANDLED_PASS
+	return INTERACTION_HANDLED_PASS

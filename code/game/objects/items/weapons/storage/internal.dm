@@ -11,10 +11,8 @@
 	if(!istype(master_item(), /obj/item))
 		return INITIALIZE_HINT_QDEL
 	name = master_item().name
-	verbs -= /obj/item/verb/verb_pickup	//make sure this is never picked up.
 
-/obj/item/storage/internal/attack_hand()
-	return		//make sure this is never picked up
+EXTEND_INTERACTIONS(/obj/item/storage/internal, INTERACT_HAND_UNGATED(null, TYPE_PROC_REF(/atom, interaction_swallow)))
 
 /// Internal storage is part of its owner and is never worn on its own.
 /obj/item/storage/internal/equip_constraint()

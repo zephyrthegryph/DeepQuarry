@@ -367,13 +367,10 @@ DECLARE_INTERACTIONS(/obj/item/flashlight, \
 	on = 1
 	light_system = STATIC_LIGHT
 
-/obj/item/flashlight/lamp/verb/toggle_light()
-	set name = "Toggle light"
-	set category = "Object"
-	set src in oview(1)
+/obj/item/flashlight/lamp/proc/lamp_toggle_light_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	if(!usr.stat)
-		attack_self(usr)
+	if(!user.stat)
+		attack_self(user)
 
 // green-shaded desk lamp
 /obj/item/flashlight/lamp/green
@@ -542,3 +539,8 @@ DECLARE_INTERACTIONS(/obj/item/flashlight, \
 	light_color = "#49F37C"
 
 #undef CAN_USE
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/flashlight/lamp, \
+	INTERACT_VERB("Toggle light", PROC_REF(lamp_toggle_light_effect)), \
+)

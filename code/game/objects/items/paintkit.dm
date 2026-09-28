@@ -48,14 +48,32 @@
 			U.update_rolldown_status()
 		use(1, user)
 
-// Generic use
-/obj/item/attackby(obj/item/W as obj, mob/user as mob)
-	if(istype(W, /obj/item/kit))
-		var/obj/item/kit/K = W
-		K.customize(src, user)
-		return
-
+/**
+ * Generic use: a customisation kit on any item. It goes ahead of every other item
+ * interaction, as the old /obj/item/attackby override ran before the converted ones,
+ * except on suits whose own handling ran first and could refuse it (a worn voidsuit,
+ * a protean rig): there it goes last.
+ */
+/obj/item/declare_interactions(list/into)
 	..()
+	var/static/list/kit_spec = INTERACT_INSERT(/obj/item/kit, PROC_REF(interaction_kit_customize), "Customise")
+	var/static/list/kit_last_types = list(
+		/obj/item/clothing/head/helmet/space/void,
+		/obj/item/clothing/suit/space/void,
+		/obj/item/clothing/suit/storage/hooded,
+		/obj/item/rig,
+	)
+	var/datum/interaction/kit = dq_interaction_from_spec(/obj/item, kit_spec)
+	for(var/kit_last_type in kit_last_types)
+		if(ispath(type, kit_last_type))
+			into += kit
+			return
+	into.Insert(1, kit)
+
+/// Old attackby: a kit customises the item if it can. Either way nothing else handles the kit.
+/obj/item/proc/interaction_kit_customize(mob/user, obj/item/kit/K, datum/interaction/interaction)
+	K.customize(src, user)
+	return INTERACTION_HANDLED_PASS
 
 // Root hardsuit kit defines.
 // Icons for modified hardsuits need to be in the proper .dmis because suit cyclers may cock them up.
@@ -122,27 +140,6 @@
 				suit.restrict_fit(list(H.species.get_bodytype(H)))
 		use(1,user)
 
-/obj/item/clothing/head/helmet/space/void/attackby(obj/item/O, mob/user)
-	if(istype(O,/obj/item/kit/suit))
-		var/obj/item/kit/suit/kit = O
-		kit.customize(src, user)
-		return
-	return ..()
-
-/obj/item/clothing/suit/space/void/attackby(obj/item/O, mob/user)
-	if(istype(O,/obj/item/kit/suit))
-		var/obj/item/kit/suit/kit = O
-		kit.customize(src, user)
-		return
-	return ..()
-
-/obj/item/clothing/suit/storage/hooded/attackby(obj/item/O, mob/user)
-	if(istype(O,/obj/item/kit/suit))
-		var/obj/item/kit/suit/kit = O
-		kit.customize(src, user)
-		return
-	return ..()
-
 /obj/item/kit/suit/rig
 	name = "rig modification kit"
 	desc = "A kit for modifying a rigsuit."
@@ -183,13 +180,6 @@
 
 /obj/item/kit/suit/rig/can_customize(obj/item/I)
 	return istype(I, /obj/item/rig)
-
-/obj/item/rig/attackby(obj/item/O, mob/user)
-	if(istype(O,/obj/item/kit/suit))
-		var/obj/item/kit/suit/rig/kit = O
-		kit.customize(src, user)
-		return
-	return ..()
 
 /obj/item/kit/suit/rig/debug/Initialize(mapload)
 	set_info("debug suit", "This is a test", "debug", CUSTOM_ITEM_OBJ, CUSTOM_ITEM_MOB)
@@ -238,13 +228,13 @@
 	M.update_icon()
 	use(1, user)
 
-/obj/mecha/attackby(obj/item/W, mob/user)
-	if(istype(W, /obj/item/kit/paint))
-		var/obj/item/kit/paint/P = W
-		P.customize(src, user)
-		return
-	else
-		return ..()
+/// Old /obj/mecha/attackby override: a paint kit customises the mech. Declared in mecha.dm.
+/obj/mecha/proc/interaction_mecha_paint_kit(mob/user, obj/item/W, datum/interaction/interaction)
+	if(!istype(W, /obj/item/kit/paint))
+		return FALSE
+	var/obj/item/kit/paint/P = W
+	P.customize(src, user)
+	return TRUE
 
 //Ripley APLU kits.
 /obj/item/kit/paint/ripley

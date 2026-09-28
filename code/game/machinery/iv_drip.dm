@@ -55,20 +55,26 @@
 		update_icon()
 
 
-/obj/machinery/iv_drip/attackby(obj/item/W as obj, mob/user as mob)
-	if(istype(W, /obj/item/reagent_containers))
-		if(!isnull(beaker))
-			to_chat(user, "There is already a reagent container loaded!")
-			return
+EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
+	INTERACT_ITEM(null, PROC_REF(iv_drip_interaction_item)), \
+	INTERACT_HAND_UNGATED("Remove container", PROC_REF(iv_drip_interaction_hand)), \
+	INTERACT_VERB("Toggle Mode", PROC_REF(iv_drip_toggle_mode)), \
+)
 
-		user.drop_item()
-		W.forceMove(src)
-		beaker = W
-		to_chat(user, "You attach \the [W] to \the [src].")
-		update_icon()
-		return
+/// Old attackby.
+/obj/machinery/iv_drip/proc/iv_drip_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+	if(!istype(W, /obj/item/reagent_containers))
+		return FALSE
+	if(!isnull(beaker))
+		to_chat(user, "There is already a reagent container loaded!")
+		return TRUE
 
-	return ..()
+	user.drop_item()
+	W.forceMove(src)
+	beaker = W
+	to_chat(user, "You attach \the [W] to \the [src].")
+	update_icon()
+	return TRUE
 
 /obj/machinery/iv_drip/screwdriver_act(mob/user, obj/item/tool)
 	playsound(src, tool.usesound, 50, TRUE)
@@ -153,29 +159,27 @@
 						"detail" = "Collected [amount] units of [B.data?["blood_type"] || "untyped"] blood from [T].",
 					), "blood-donation:[REF(beaker)]:[round(beaker.reagents.total_volume, 0.1)]", src, null, T)
 
-/obj/machinery/iv_drip/attack_hand(mob/user as mob)
-	if(beaker)
-		beaker.forceMove(get_turf(src))
-		beaker = null
-		update_icon()
-	else
-		return ..()
+/// Old attack_hand: take the container off before the machinery gate; with none, the touch goes on.
+/obj/machinery/iv_drip/proc/iv_drip_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!beaker)
+		return FALSE
+	beaker.forceMove(get_turf(src))
+	beaker = null
+	update_icon()
+	return TRUE
 
 
-/obj/machinery/iv_drip/verb/toggle_mode()
-	set category = "Object"
-	set name = "Toggle Mode"
-	set src in view(1)
-
-	if(!isliving(usr))
-		to_chat(usr, span_warning("You can't do that."))
+/// Old verb "Toggle Mode".
+/obj/machinery/iv_drip/proc/iv_drip_toggle_mode(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!isliving(user))
+		to_chat(user, span_warning("You can't do that."))
 		return
 
-	if(usr.stat)
+	if(user.stat)
 		return
 
 	mode = !mode
-	to_chat(usr, "The IV drip is now [mode ? "injecting" : "taking blood"].")
+	to_chat(user, "The IV drip is now [mode ? "injecting" : "taking blood"].")
 
 /obj/machinery/iv_drip/examine(mob/user)
 	. = ..()

@@ -21,11 +21,12 @@
 	set_wires(new /datum/wires/explosive/c4(src))
 	image_overlay = image('icons/obj/assemblies.dmi', "plastic-explosive2")
 
-/obj/item/plastique/attackby(obj/item/I, mob/user)
+/// Old attackby.
+/obj/item/plastique/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(I.has_tool_quality(TOOL_MULTITOOL) || istype(I, /obj/item/assembly/signaler))
 		wires.Interact(user)
-	else
-		return ..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
 /obj/item/plastique/screwdriver_act(mob/user, obj/item/tool)
 	open_panel = !open_panel
@@ -41,7 +42,10 @@
 	wires.Interact(user)
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_INTERACTIONS(/obj/item/plastique, INTERACT_USE(null, PROC_REF(interaction_self)))
+DECLARE_INTERACTIONS(/obj/item/plastique, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
 
 /// Old attack_self.
 /obj/item/plastique/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
@@ -114,8 +118,11 @@ DECLARE_INTERACTIONS(/obj/item/plastique, INTERACT_USE(null, PROC_REF(interactio
 	blast_light = 4
 	blast_flash = 7
 
-/obj/item/plastique/seismic/attackby(obj/item/I, mob/user)
-	. = ..()
+EXTEND_INTERACTIONS(/obj/item/plastique/seismic, INTERACT_ITEM(null, PROC_REF(seismic_interaction_item)))
+
+/// Old attackby: it ran the parent's body first (its ..()), so this does too.
+/obj/item/plastique/seismic/proc/seismic_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+	. = interaction_item(user, I, interaction)
 	if(open_panel)
 		if(istype(I, /obj/item/stock_parts/micro_laser))
 			var/obj/item/stock_parts/SP = I

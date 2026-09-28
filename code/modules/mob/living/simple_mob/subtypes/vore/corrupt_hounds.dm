@@ -11,6 +11,7 @@
 	value = CATALOGUER_REWARD_MEDIUM
 
 /mob/living/simple_mob/vore/aggressive/corrupthound
+	drag_buckle = FALSE
 	name = "corrupt hound"
 	desc = "Good boy machine broke. This is definitely no good news for the organic lifeforms in vicinity."
 	catalogue_data = list(/datum/category_item/catalogue/technology/drone/corrupt_hound)
@@ -123,9 +124,6 @@
 	add_verb(src, /mob/living/simple_mob/proc/animal_mount)
 	add_verb(src, /mob/living/proc/toggle_rider_reins)
 	movement_cooldown = 0
-
-/mob/living/simple_mob/vore/aggressive/corrupthound/MouseDrop_T(mob/living/M, mob/living/user)
-	return
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/space/Process_Spacemove(check_drift = 0)
 	return TRUE
@@ -258,6 +256,7 @@
 	value = CATALOGUER_REWARD_MEDIUM
 
 /mob/living/simple_mob/vore/retaliate/corrupthound/janihound
+	drag_buckle = FALSE
 	name = "corrupt janihound"
 	desc = "An old janihound! Evidently, it doesn't seem to be lawed anymore. You should probably leave it alone."
 	catalogue_data = list(/datum/category_item/catalogue/technology/drone/corrupt_hound)
@@ -369,9 +368,6 @@
 	verbs |= /mob/living/simple_mob/proc/animal_mount
 	verbs |= /mob/living/proc/toggle_rider_reins
 	movement_cooldown = 3
-
-/mob/living/simple_mob/vore/retaliate/corrupthound/janihound/MouseDrop_T(mob/living/M, mob/living/user)
-	return
 
 /mob/living/simple_mob/vore/retaliate/corrupthound/janihound/space/Process_Spacemove(check_drift = 0)
 	return TRUE

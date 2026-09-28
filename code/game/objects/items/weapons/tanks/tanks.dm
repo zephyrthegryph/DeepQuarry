@@ -134,8 +134,8 @@ REF_OWNED(/obj/item/tank, list("air_contents", "proxyassembly"))
 	if(src.valve_welded)
 		. += span_warning("\The [src] emergency relief valve has been welded shut!")
 
-/obj/item/tank/attackby(obj/item/W as obj, mob/user as mob)
-	..()
+/// Old attackby (its ..() ran first; the base item handling now follows the pass).
+/obj/item/tank/proc/tank_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if (istype(src.loc, /obj/item/assembly))
 		icon = src.loc
 
@@ -157,6 +157,7 @@ REF_OWNED(/obj/item/tank, list("air_contents", "proxyassembly"))
 			om_task_start(/datum/om/task/timed/tank_attackby, user, src, receiver = src, W = W)
 		else
 			to_chat(user, span_notice("You need to wire the device up first."))
+	return INTERACTION_HANDLED_PASS
 
 /datum/om/task/timed/tank_attackby
 	duration = 5 SECONDS
@@ -257,7 +258,10 @@ REF_OWNED(/obj/item/tank, list("air_contents", "proxyassembly"))
 			update_integrity(max_integrity)
 		src.air_contents.add_thermal_energy(rand(2000,50000))
 
-DECLARE_INTERACTIONS(/obj/item/tank, INTERACT_USE(null, PROC_REF(interaction_self)))
+DECLARE_INTERACTIONS(/obj/item/tank, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(tank_item)), \
+)
 
 /// Old attack_self.
 /obj/item/tank/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)

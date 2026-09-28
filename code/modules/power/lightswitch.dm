@@ -30,11 +30,7 @@
 	id = "lightswitch_fingerprint"
 	name = "Use"
 	held_type = /obj/item
-	effect = /obj/machinery/light_switch/proc/interaction_fingerprint
-
-/obj/machinery/light_switch/proc/interaction_fingerprint(mob/user, obj/item/W, datum/interaction/interaction)
-	src.add_fingerprint(user)
-	return FALSE
+	effect = /atom/proc/interaction_fingerprint
 
 /obj/machinery/light_switch
 	maintenance_flags = MACHINE_MAINT_STANDARD

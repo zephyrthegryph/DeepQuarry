@@ -90,10 +90,10 @@ GLOBAL_LIST_EMPTY(dq_interact_cleanup_calls)
 	for(var/path in types)
 		var/atom/target = allocate(path, T)
 		dq_cleanup_calls_reset()
-		target.attack_ai(AI)
+		actor_use(/datum/input_adapter/ai, AI, target)
 		TEST_ASSERT_EQUAL(dq_cleanup_calls(), "attack_hand", "[path]: the AI's Use is the hand's")
 
-/// A ghost's attack_ghost on the cryo cell and PanD.E.M.I.C. still opens the UI.
+/// A ghost's Use on the cryo cell and PanD.E.M.I.C. still opens the UI.
 /datum/unit_test/dq_cleanup_medical_ghost_parity
 
 /datum/unit_test/dq_cleanup_medical_ghost_parity/Run()
@@ -102,7 +102,7 @@ GLOBAL_LIST_EMPTY(dq_interact_cleanup_calls)
 	for(var/path in list(/obj/machinery/computer/pandemic/dq_cleanup_probe, /obj/machinery/atmospherics/unary/cryo_cell/dq_cleanup_probe))
 		var/atom/target = allocate(path, T)
 		dq_cleanup_calls_reset()
-		target.attack_ghost(ghost)
+		actor_use(/datum/input_adapter/ghost, ghost, target)
 		TEST_ASSERT_EQUAL(dq_cleanup_calls(), "tgui_interact", "[path]: a ghost's Use opens the UI to view")
 
 /// A cyborg uses the medical stand by hand when adjacent, and not at all from range.
@@ -113,13 +113,13 @@ GLOBAL_LIST_EMPTY(dq_interact_cleanup_calls)
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, T)
 	var/obj/structure/medical_stand/dq_cleanup_probe/stand = allocate(/obj/structure/medical_stand/dq_cleanup_probe, T)
 	dq_cleanup_calls_reset()
-	stand.attack_robot(R)
+	actor_use(/datum/input_adapter/robot, R, stand)
 	TEST_ASSERT_EQUAL(dq_cleanup_calls(), "attack_hand", "adjacent: the cyborg's Use is the hand's")
 	var/turf/far = locate(T.x + 3, T.y, T.z)
 	TEST_ASSERT_NOTNULL(far, "the test floor has room for a distant turf")
 	stand.forceMove(far)
 	dq_cleanup_calls_reset()
-	stand.attack_robot(R)
+	actor_use(/datum/input_adapter/robot, R, stand)
 	TEST_ASSERT_EQUAL(dq_cleanup_calls(), "", "at range: nothing, and no AI-style interfacing")
 
 // ---- Combat mode gates ----

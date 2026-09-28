@@ -85,10 +85,12 @@
 		else
 			user.visible_message(span_infoplain(span_bold("\The [user]") + " pulls \the [ejecting] from \the [src]'s cargo compartment."))
 
-/mob/living/silicon/robot/platform/attack_ai(mob/user)
+/// Old attack_ai: an adjacent cyborg unloads cargo; otherwise the next silicon Use / default.
+/mob/living/silicon/robot/platform/proc/platform_silicon_unload(mob/user, obj/item/held, datum/interaction/interaction)
 	if(isrobot(user) && user.Adjacent(src))
-		return try_remove_cargo(user)
-	return ..()
+		try_remove_cargo(user)
+		return TRUE
+	return FALSE
 
 /mob/living/silicon/robot/platform/proc/try_remove_cargo(mob/user)
 	if(!length(stored_atoms) || !istype(user))
@@ -131,7 +133,9 @@
 	drop_stored_atom(user = src)
 	return TRUE
 
-/mob/living/silicon/robot/platform/MouseDrop_T(atom/movable/dropping, mob/living/user)
+/// Old MouseDrop_T: start loading the dropped thing into cargo. A refused drop still falls to the
+/// cyborg's drag block, as the old override never reached the base drag-buckle.
+/mob/living/silicon/robot/platform/proc/platform_interaction_drag(mob/living/user, atom/movable/dropping, datum/interaction/interaction)
 	if(!istype(user) || !istype(dropping) || user.incapacitated())
 		return FALSE
 	if(!can_mouse_drop(dropping, user) || !can_store_atom(dropping, user))
@@ -141,7 +145,7 @@
 	else
 		user.visible_message(span_infoplain(span_bold("\The [user]") + " begins loading \the [dropping] into \the [src]'s cargo compartment."))
 	om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(MouseDrop_T_platform_done), done_args = list(dropping, user))
-	return FALSE
+	return TRUE
 
 /mob/living/silicon/robot/platform/proc/MouseDrop_T_platform_done(atom/movable/dropping, mob/living/user)
 	if(!(can_mouse_drop(dropping, user) && can_store_atom(dropping, user)))

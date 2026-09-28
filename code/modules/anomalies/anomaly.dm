@@ -143,16 +143,17 @@ DECLARE_INTERACTIONS(/obj/item/anomaly_scanner, INTERACT_USE(null, PROC_REF(inte
 	self_recharge = 1
 	use_external_power = 1
 
-/obj/item/gun/energy/anomaly/attack_self(mob/user)
-	var/chosen_particle = rerun_ask(user, "k147", PROC_REF(attack_self), args, /datum/om/prompt/choice, message = "Select particle type", title = "Particle Selection", choices = ANOMALY_PARTICLE_ALL)
+/// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()): pick a particle, then the gun's own self-use.
+/obj/item/gun/energy/anomaly/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+	var/chosen_particle = rerun_ask(user, "k147", PROC_REF(gun_self), args, /datum/om/prompt/choice, message = "Select particle type", title = "Particle Selection", choices = ANOMALY_PARTICLE_ALL)
 	if(isnull(chosen_particle))
 		return TRUE
 	if(!chosen_particle)
-		return
+		return FALSE
 
 	particle = chosen_particle
 	balloon_alert_visible("changed to [chosen_particle]")
-	..()
+	return ..()
 
 /obj/item/gun/energy/anomaly/consume_next_projectile()
 	var/obj/item/cell/battery = power_supply
@@ -192,8 +193,9 @@ DECLARE_INTERACTIONS(/obj/item/anomaly_scanner, INTERACT_USE(null, PROC_REF(inte
 	var/picked = FALSE
 	anomaly_type = /obj/effect/anomaly/flux // Default
 
-/obj/item/assembly/signaler/anomaly/choice/attack_self(mob/user, modifiers)
-	. = ..(user)
+/// Old attack_self (the assembly self-use chain: /obj/item/assembly/proc/interaction_self()).
+/obj/item/assembly/signaler/anomaly/choice/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+	. = ..()
 	if(.)
 		return TRUE
 
@@ -210,7 +212,7 @@ DECLARE_INTERACTIONS(/obj/item/anomaly_scanner, INTERACT_USE(null, PROC_REF(inte
 			choices[capitalize(anom.name)] = type
 			qdel(anom) // only the type is kept; don't leak the sample object
 
-	var/choice = rerun_ask(user, "k211", PROC_REF(attack_self), args, /datum/om/prompt/choice, message = "Choose an anomaly core.", title = "Anomaly Core Selection", choices = choices)
+	var/choice = rerun_ask(user, "k211", PROC_REF(interaction_self), args, /datum/om/prompt/choice, message = "Choose an anomaly core.", title = "Anomaly Core Selection", choices = choices)
 	if(isnull(choice))
 		return TRUE
 

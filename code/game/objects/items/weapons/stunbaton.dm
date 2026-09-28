@@ -147,6 +147,7 @@
 	return INTERACTION_HANDLED_PASS
 
 DECLARE_INTERACTIONS(/obj/item/melee/baton, \
+	INTERACT_SELF("Toggle", PROC_REF(interaction_self)), \
 	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 )
@@ -166,10 +167,8 @@ DECLARE_INTERACTIONS(/obj/item/melee/baton, \
 	else
 		return FALSE
 
-/obj/item/melee/baton/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self. FALSE (special handling) moves on to a subtype's own attack_self.
+/obj/item/melee/baton/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(special_handling)
 		return FALSE
 	if(bcell && bcell.charge >= hitcost)
@@ -184,6 +183,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/baton, \
 		else
 			to_chat(user, span_warning("[src] is out of charge."))
 	add_fingerprint(user)
+	return TRUE
 
 /obj/item/melee/baton/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(status && CLUMSY_FAIL_CHANCE(user))

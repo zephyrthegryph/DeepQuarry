@@ -65,14 +65,11 @@
 	created_name = "SL-ED-209 Security Robot"
 	construction_graph = /datum/construction_graph/secbot_assembly/ed209_slime
 
-// Renaming the finished bot is not construction: keep it a plain interaction.
+// Renaming with a pen is inherited from /obj/item/secbot_assembly (secbot_assembly_rename).
 // Here in the event it's added into a PoI or some such: standard construction
 // relies on the standard ED-209 assembly up until the taser is added, then
 // swaps to this type (see /datum/interaction/construction/secbot/ed209/taser_xeno),
 // so this graph covers the same steps end to end for a directly-placed one.
-/obj/item/secbot_assembly/ed209_assembly/slime/attackby(obj/item/W, mob/user)
-	if(istype(W, /obj/item/pen))
-		ask_name_var(user)
 
 /datum/construction_graph/secbot_assembly/ed209_slime
 	id = "ed209_assembly_slime"

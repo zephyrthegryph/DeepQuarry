@@ -23,14 +23,11 @@
 	poster_type = /obj/structure/sign/poster/custom
 
 /// Verb to change a custom poster's design
-/obj/item/poster/custom/verb/select_poster()
+/obj/item/poster/custom/proc/select_poster_effect(mob/user, obj/item/held, datum/interaction/interaction)
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	set name = "Set Poster type"
-	set category = "Object"
-	set desc = "Click to choose a poster to display."
 
-	var/mob/M = usr
+	var/mob/M = user
 	var/list/options = list()
 	var/list/datum/decl/poster/posters = GLOB.decls_repository.get_decls_of_type(/datum/decl/poster)
 	for(var/option in posters)
@@ -47,3 +44,8 @@
 // Wall object
 /obj/structure/sign/poster/custom // placed wall object
 	roll_type = /obj/item/poster/custom
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/poster/custom, \
+	INTERACT_VERB("Set Poster type", PROC_REF(select_poster_effect), REQ_IN_INVENTORY), \
+)

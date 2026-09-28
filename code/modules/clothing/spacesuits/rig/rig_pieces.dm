@@ -92,7 +92,13 @@
 	var/list/stores = list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS,/obj/item/storage)
 	return list(HOLD_ONLY(stores))
 
-/obj/item/clothing/suit/space/rig/attack_hand(mob/living/M)
+EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/rig, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(rig_suit_draw_knife_hand)), \
+	INTERACT_ITEM(null, PROC_REF(rig_suit_sheathe_knife_item)), \
+)
+
+/// Old attack_hand: slide the tactical knife out.
+/obj/item/clothing/suit/space/rig/proc/rig_suit_draw_knife_hand(mob/living/M, obj/item/held, datum/interaction/interaction)
 	if(tacknife())
 		tacknife().forceMove(get_turf(src))
 		if(M.put_in_active_hand(tacknife()))
@@ -100,20 +106,21 @@
 			playsound(src, 'sound/weapons/flipblade.ogg', 40, 1)
 			tacknife_handle = null
 			update_icon()
-		return
-	..()
+		return TRUE
+	return FALSE
 
-/obj/item/clothing/suit/space/rig/attackby(obj/item/I, mob/living/M)
+/// Old attackby: slide a tactical knife in. Always fell through to ..() afterwards.
+/obj/item/clothing/suit/space/rig/proc/rig_suit_sheathe_knife_item(mob/living/M, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/material/knife/tacknife))
 		if(tacknife())
-			return
+			return INTERACTION_HANDLED_PASS
 		M.drop_item()
 		tacknife_handle = om_handle(I)
 		I.forceMove(src)
 		to_chat(M, span_notice("You slide the [I] into [src]."))
 		playsound(src, 'sound/weapons/flipblade.ogg', 40, 1)
 		update_icon()
-	..()
+	return FALSE
 
 //TODO: move this to modules
 /obj/item/clothing/head/helmet/space/rig/proc/prevent_track()

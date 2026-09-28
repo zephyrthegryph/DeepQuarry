@@ -1,4 +1,5 @@
 /mob/living/simple_mob/vore/sheep
+	drag_buckle = FALSE
 	name = "sheep"
 	desc = "looks warm and wooly!."
 	tt_desc = "Ovis aries"
@@ -50,9 +51,6 @@
 	add_verb(src, /mob/living/proc/toggle_rider_reins)
 	movement_cooldown = -1
 
-/mob/living/simple_mob/vore/sheep/MouseDrop_T(mob/living/M, mob/living/user)
-	return
-
 /mob/living/simple_mob/vore/sheep/load_default_bellies()
 	. = ..()
 	var/obj/belly/B = vore_selected
@@ -86,15 +84,14 @@
 //If you just update icon_living it should still work with vore states and dying, you'll just need to make and label the sprites appropriately.
 //Make sure you un-comment the variables above too.
 
-/mob/living/simple_mob/vore/sheep/attackby(obj/item/O as obj, mob/user as mob)
-	if(istype(O, /obj/item/material/knife) || O.has_tool_quality(TOOL_WIRECUTTER))
-		if(!IS_HELPING(user))
-			return ..()
-		if(!harvestable_wool)
-			return ..()
-		om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(shear_done), done_args = list(user, O), interaction_key = "shearing")
-		return
-	return ..()
+//Add INTERACT_ITEM_PEACEFUL("Shear", PROC_REF(sheep_interaction_shear)) to the sheep's EXTEND_INTERACTIONS above when re-enabling.
+/mob/living/simple_mob/vore/sheep/proc/sheep_interaction_shear(mob/user, obj/item/O, datum/interaction/interaction)
+	if(!istype(O, /obj/item/material/knife) && !O.has_tool_quality(TOOL_WIRECUTTER))
+		return FALSE
+	if(!harvestable_wool)
+		return FALSE
+	om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(shear_done), done_args = list(user, O), interaction_key = "shearing")
+	return TRUE
 
 /mob/living/simple_mob/vore/sheep/proc/shear_done(mob/user, obj/item/O)
 	if(!harvestable_wool)

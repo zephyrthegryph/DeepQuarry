@@ -172,13 +172,17 @@
 	else
 		..()
 
-/mob/living/simple_mob/animal/passive/snake/python/noodle/attackby(obj/item/O, mob/user)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/snake/python/noodle, INTERACT_ITEM(null, PROC_REF(noodle_interaction_item)))
+
+/// Old attackby: snake snacks.
+/mob/living/simple_mob/animal/passive/snake/python/noodle/proc/noodle_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+	. = TRUE
 	if(istype(O, /obj/item/reagent_containers/food/snacks/snakesnack))
 		visible_message(span_notice("[user] feeds \the [O] to [src]."))
 		adjust_nutrition(100) //It's sugar!
 		consume(O, user)
 	else
-		return ..()
+		return FALSE
 
 /*
  * Special snek-snax for Noodle!

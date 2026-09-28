@@ -131,16 +131,6 @@
 /obj/item/storage/Initialize(mapload)
 	. = ..()
 
-	if(allow_quick_empty)
-		verbs += /obj/item/storage/verb/quick_empty
-	else
-		verbs -= /obj/item/storage/verb/quick_empty
-
-	if(allow_quick_gather)
-		verbs += /obj/item/storage/verb/toggle_gathering_mode
-	else
-		verbs -= /obj/item/storage/verb/toggle_gathering_mode
-
 	if(LAZYLEN(starts_with) && !empty)
 		// starts_with values are list(count, variant). See code/datums/variants/spawn_with_variant.dm.
 		// Latent-safe types without a variant stay declared until the storage
@@ -341,23 +331,26 @@ REF_OWNED(/obj/item/storage, "hud")
 	else
 		to_chat(user, span_notice("You fail to pick anything up with \the [src]."))
 
-/obj/item/storage/verb/toggle_gathering_mode()
-	set name = "Switch Gathering Method"
-	set category = "Object"
+/obj/item/storage/proc/toggle_gathering_mode_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
 	collection_mode = !collection_mode
 	switch (collection_mode)
 		if(1)
-			to_chat(usr, "[src] now picks up all items on a tile at once.")
+			to_chat(user, "[src] now picks up all items on a tile at once.")
 		if(0)
-			to_chat(usr, "[src] now picks up one item at a time.")
+			to_chat(user, "[src] now picks up one item at a time.")
 
-/obj/item/storage/verb/quick_empty()
-	set name = "Empty Contents"
-	set category = "Object"
-	set src in view(1)
+/// Requirement for "Switch Gathering Method" (old: the verb was only added when allow_quick_gather).
+/obj/item/storage/proc/pred_can_toggle_gathering(mob/actor, atom/target, obj/item/held)
+	return allow_quick_gather
 
-	try_quick_empty(usr)
+/// Requirement for "Empty Contents" (old: the verb was only added when allow_quick_empty).
+/obj/item/storage/proc/pred_can_quick_empty(mob/actor, atom/target, obj/item/held)
+	return allow_quick_empty
+
+/obj/item/storage/proc/quick_empty_effect(mob/user, obj/item/held, datum/interaction/interaction)
+
+	try_quick_empty(user)
 
 /// Quick-empty onto the floor, if `user` can.
 /obj/item/storage/proc/try_quick_empty(mob/user)
@@ -441,22 +434,32 @@ REF_OWNED(/obj/item/storage, "hud")
 				user.put_in_l_hand(src)
 		add_fingerprint(user)
 
-/obj/item/storage/click_alt(mob/user)
+/// Old click_alt: open or close the storage; anywhere else, the default alt-click.
+/obj/item/storage/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	make_contents_real()
 	if(user in is_seeing)
 		src.close(user)
-	else if(isliving(user) && Adjacent(user))
+		return TRUE
+	if(isliving(user) && Adjacent(user))
 		src.open(user)
-	else
-		return ..()
+		return TRUE
+	return FALSE
 
-//This proc is called when you want to place an item into the storage item.
-/obj/item/storage/attackby(obj/item/W as obj, mob/user as mob)
+/**
+ * Old attackby: place an item into the storage. The old override ran the item's base
+ * attackby first (signal listeners, then a pickup-mode bag gathering the tile), so this does too.
+ */
+/obj/item/storage/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	make_contents_real()
-	..()
+	if(om_wants(src, /datum/om/event/before/attackby) && om_emit(src, new /datum/om/event/before/attackby(W, user, dq_interaction_click_params(user))) == EVENT_VETO)
+		return TRUE
+	// A pickup-mode bag collects first, as the old override's ..() did; then the item's own
+	// collect default must not run again, so the input is used up.
+	var/obj/item/storage/bag = W
+	var/pass = (istype(bag) && bag.try_collect(src, user)) ? TRUE : INTERACTION_HANDLED_PASS
 
 	if(isrobot(user))
-		return //Robots can't interact with storage items.
+		return pass //Robots can't interact with storage items.
 
 	if(istype(W, /obj/item/lightreplacer))
 		var/obj/item/lightreplacer/LP = W
@@ -468,64 +471,89 @@ REF_OWNED(/obj/item/storage, "hud")
 				consume(L, user)
 		if(amt_inserted)
 			to_chat(user, "You inserted [amt_inserted] light\s into \the [LP.name]. You have [LP.uses] light\s remaining.")
-			return
+			return pass
 
 	var/refusal = insert_refusal(W, user)
 	if(refusal)
 		refuse_insert(W, user, refusal)
-		return
+		return pass
 
 	if(istype(W, /obj/item/tray))
 		var/obj/item/tray/T = W
 		if(T.calc_carry() > 0)
 			if(prob(85))
 				to_chat(user, span_warning("The tray won't fit in [src]."))
-				return
+				return pass
 			else
 				user.drop_from_inventory(W, get_turf(user))
 				to_chat(user, span_warning("God damn it!"))
 
 	W.add_fingerprint(user)
-	return insert_item(W, user)
+	return insert_item(W, user) ? TRUE : pass
 
-/obj/item/storage/attack_hand(mob/user as mob)
+/// Old attack_hand, the part before the pickup: a pocketed storage comes to hand, a held one opens.
+/obj/item/storage/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	make_contents_real()
 	if(ishuman(user) && !pocketable)
 		var/mob/living/carbon/human/H = user
 		if(H.get_equipped_item(SLOT_ID_POCKET_L) == src && !H.get_active_hand())	//Prevents opening if it's in a pocket.
 			H.put_in_hands(src)
-			return
+			return TRUE
 		if(H.get_equipped_item(SLOT_ID_POCKET_R) == src && !H.get_active_hand())
 			H.put_in_hands(src)
-			return
-
-	if (src.loc == user)
+			return TRUE
+	if(src.loc == user)
 		src.open(user)
-	else
-		..()
-		for(var/mob/M in range(1))
-			if (M.s_active == src)
-				src.close(M)
-	src.add_fingerprint(user)
-	return
-
-/obj/item/storage/attack_self(mob/user)
-	make_contents_real()
-	. = ..(user)
-	if(.)
+		src.add_fingerprint(user)
 		return TRUE
+	return FALSE
+
+/// Picking the storage up: whoever was looking inside stops.
+/obj/item/storage/proc/interaction_pick_up_storage(mob/living/user, obj/item/held, datum/interaction/interaction)
+	interaction_pick_up(user, held, interaction)
+	for(var/mob/M in range(1))
+		if (M.s_active == src)
+			src.close(M)
+	src.add_fingerprint(user)
+	return TRUE
+
+/**
+ * Collect `target` with this bag when it is in pickup mode: its whole tile in
+ * collection mode, else just it. TRUE when the bag is a pickup bag (it acted).
+ */
+/obj/item/storage/proc/try_collect(obj/item/target, mob/user)
+	if(!use_to_pickup)
+		return FALSE
+	if(collection_mode) //Mode is set to collect all items
+		if(isturf(target.loc))
+			gather_all(target.loc, user)
+	else
+		try_insert(target, user)
+	return TRUE
+
+/// Old attack_self: quick-empty. FALSE lets a subtype's self-use go on.
+/obj/item/storage/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+	make_contents_real()
 	if(special_handling)
 		return FALSE
 	if((user.get_active_hand() == src) || (isrobot(user)) && allow_quick_empty)
-		if(src.verbs.Find(/obj/item/storage/verb/quick_empty))
+		if(allow_quick_empty)
 			try_quick_empty(user)
 			return TRUE
+	return FALSE
 
 /obj/item/storage/AllowDrop()
 	return TRUE
 
 // Allows micros to drag themselves into storage items
-DECLARE_INTERACTIONS(/obj/item/storage, INTERACT_DRAG(null, PROC_REF(interaction_drag)))
+DECLARE_INTERACTIONS(/obj/item/storage, \
+	INTERACT_ITEM("Put in", PROC_REF(interaction_item)), \
+	INTERACT_HAND_UNGATED("Open", PROC_REF(interaction_hand)), \
+	INTERACT_SELF("Empty", PROC_REF(interaction_self)), \
+	INTERACT_ALT("Open", PROC_REF(interaction_alt)), \
+	INTERACT_DRAG(null, PROC_REF(interaction_drag)), \
+	INTERACT_HAND_DEFAULT("Pick up", PROC_REF(interaction_pick_up_storage)), \
+)
 
 /// Old MouseDrop_T.
 /obj/item/storage/proc/interaction_drag(mob/living/user, mob/living/target, datum/interaction/interaction)
@@ -1011,12 +1039,15 @@ REF_OWNED_LIST(/datum/storage_hud, list("catchers", "backdrop"))
 		closed_state = "[initial(icon_state)]"
 	. = ..()
 
-/obj/item/storage/trinketbox/attack_self(mob/user)
-	. = ..(user)
-	if(.)
+EXTEND_INTERACTIONS(/obj/item/storage/trinketbox, INTERACT_USE("Open", PROC_REF(interaction_open_lid)))
+
+/// Old attack_self: after the storage's own self-use, flip the lid.
+/obj/item/storage/trinketbox/proc/interaction_open_lid(mob/user, obj/item/held, datum/interaction/interaction)
+	if(interaction_self(user, held, interaction))
 		return TRUE
 	open = !open
 	update_icon()
+	return TRUE
 
 /obj/item/storage/trinketbox/examine(mob/user)
 	. = ..()
@@ -1024,3 +1055,9 @@ REF_OWNED_LIST(/datum/storage_hud, list("catchers", "backdrop"))
 	if(open && length(held))
 		var/display_item = held[1]
 		. += span_notice("\The [src] contains \the [display_item]!")
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/storage, \
+	INTERACT_VERB("Switch Gathering Method", PROC_REF(toggle_gathering_mode_effect), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/storage/proc/pred_can_toggle_gathering, "it has only one gathering method")), \
+	INTERACT_VERB("Empty Contents", PROC_REF(quick_empty_effect), REQ_ON(PRED_TARGET, /obj/item/storage/proc/pred_can_quick_empty, "it can't be emptied that way")), \
+)

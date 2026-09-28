@@ -78,7 +78,9 @@
 		to_chat(user, span_notice("There is no micro laser in this [src]."))
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/gun/energy/floragun/attackby(obj/item/W, mob/user)
+/// Old attackby. It never called ..(): any item stops here, but afterattack still follows.
+/obj/item/gun/energy/floragun/gun_item(mob/user, obj/item/W, datum/interaction/interaction)
+	. = INTERACTION_HANDLED_PASS
 	if(istype(W, /obj/item/stock_parts/micro_laser))
 		if(!emitter)
 			user.drop_item()
@@ -100,12 +102,11 @@
 		return
 	..()
 
-/obj/item/gun/energy/floragun/verb/select_gene()
-	set name = "Select Gene"
-	set category = "Object"
-	set src in view(1)
+EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", PROC_REF(floragun_verb_select_gene)))
 
-	var/genemask = rerun_ask(usr, "k108", VERB_REF(select_gene), args, /datum/om/prompt/choice, message = "Choose a gene to modify.", title = "Gene Choice", choices = GLOB.plant_service.plant_gene_datums)
+/// Old Select Gene verb.
+/obj/item/gun/energy/floragun/proc/floragun_verb_select_gene(mob/user, obj/item/held, datum/interaction/interaction)
+	var/genemask = rerun_ask(user, "k108", PROC_REF(floragun_verb_select_gene), args, /datum/om/prompt/choice, message = "Choose a gene to modify.", title = "Gene Choice", choices = GLOB.plant_service.plant_gene_datums)
 	if(isnull(genemask))
 		return
 
@@ -114,7 +115,7 @@
 
 	gene_static = GLOB.plant_service.plant_gene_datums[genemask]
 
-	to_chat(usr, span_info("You set the [src]'s targeted genetic area to [genemask]."))
+	to_chat(user, span_info("You set the [src]'s targeted genetic area to [genemask]."))
 
 	return
 

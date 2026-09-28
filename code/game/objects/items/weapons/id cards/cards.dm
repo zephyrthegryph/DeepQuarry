@@ -61,17 +61,18 @@
 	drop_sound = 'sound/items/drop/disk.ogg'
 	pickup_sound = 'sound/items/pickup/disk.ogg'
 
-/obj/item/card/data/verb/label(t as text)
-	set name = "Label Card"
-	set category = "Object"
-	set src in usr
-
+/obj/item/card/data/proc/data_label_effect(mob/user, obj/item/held, datum/interaction/interaction)
+	// The old verb took the text as its argument; ask for it instead.
+	var/t = rerun_ask(user, "data_card_label", PROC_REF(data_label_effect), args, /datum/om/prompt/text, message = "Enter a label for the card.", title = "Label Card", max_length = MAX_NAME_LEN)
+	if(isnull(t))
+		return
+	if(get(src, /mob) != user)
+		return
 	if (t)
 		src.name = text("data card- '[]'", t)
 	else
 		src.name = "data card"
-	src.add_fingerprint(usr)
-	return
+	src.add_fingerprint(user)
 
 /obj/item/card/data/clown
 	name = "\proper the coordinates to clown planet"
@@ -309,3 +310,8 @@ DECLARE_INTERACTIONS(/obj/item/card_fluff, INTERACT_USE(null, PROC_REF(interacti
 /// LC-refs: robot owner -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/card/id/synthetic/borg/proc/robot_owner() as /mob/living/silicon/robot
 	return om_resolve(robot_owner_handle)
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/card/data, \
+	INTERACT_VERB("Label Card", PROC_REF(data_label_effect), REQ_IN_INVENTORY), \
+)

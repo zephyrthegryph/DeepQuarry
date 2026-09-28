@@ -47,20 +47,16 @@
 	if(holder().glove_type)
 		var/new_glove_type_path = holder().glove_type
 		holder().gloves = new new_glove_type_path(holder())
-		holder().verbs |= /obj/item/rig/proc/toggle_gauntlets
 	if(holder().helm_type)
 		var/new_helm_type_path = holder().helm_type
 		holder().helmet = new new_helm_type_path(holder())
-		holder().verbs |= /obj/item/rig/proc/toggle_helmet
 	if(holder().boot_type)
 		var/new_boot_type_path = holder().boot_type
 		holder().boots = new new_boot_type_path(holder())
-		holder().verbs |= /obj/item/rig/proc/toggle_boots
 	if(holder().chest_type)
 		var/new_chest_type_path = holder().chest_type
 		holder().chest = new new_chest_type_path(holder())
 		holder().chest.adopt_constraint(CONSTRAINT_SUIT_STORAGE, holder())
-		holder().verbs |= /obj/item/rig/proc/toggle_chest
 
 	// Apply shared stats to equippable pieces
 	propagate_stats()

@@ -33,19 +33,20 @@
 	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS)
 	return list(HOLD_ONLY(stores))
 
-/obj/item/clothing/suit/space/void/zaddat/verb/custom_suit()
-	set name = "Customize Shroud"
-	set category = "Object"
-	set desc = "Pick an appearance for your Shroud."
+EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/zaddat, \
+	INTERACT_VERB("Customize Shroud", PROC_REF(zaddat_custom_suit_verb), REQ_IN_INVENTORY), \
+)
 
-	var/mob/M = usr
+/// Old verb "Customize Shroud".
+/obj/item/clothing/suit/space/void/zaddat/proc/zaddat_custom_suit_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	var/mob/M = user
 	var/suit_style = null
 
 	if(has_been_customized)
 		to_chat(M, "This Shroud has already been customized!")
 		return FALSE
 
-	var/_answer_a1 = rerun_ask(M, "a1", VERB_REF(custom_suit), args, /datum/om/prompt/choice, message = "Which suit style would you like?", title = "Suit Style", choices = list("Engineer", "Spacer", "Knight", "Fashion", "Bishop", "Hegemony", "Rugged", "Soft"))
+	var/_answer_a1 = rerun_ask(M, "a1", PROC_REF(zaddat_custom_suit_verb), list(user), /datum/om/prompt/choice, message = "Which suit style would you like?", title = "Suit Style", choices = list("Engineer", "Spacer", "Knight", "Fashion", "Bishop", "Hegemony", "Rugged", "Soft"))
 	if(isnull(_answer_a1))
 		return
 	suit_style = _answer_a1
@@ -170,19 +171,15 @@
 
 
 
-/obj/item/clothing/suit/space/void/zaddat/security/custom_suit() //so it cant turn into looks that dont makes sense and keep security name in it
-	set name = "Customize Shroud"
-	set category = "Object"
-	set desc = "Pick an appearance for your Shroud."
-
-	var/mob/M = usr
+/obj/item/clothing/suit/space/void/zaddat/security/zaddat_custom_suit_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	var/mob/M = user
 	var/suit_style = null
 
 	if(has_been_customized)
 		to_chat(M, "This Shroud has already been customized!")
 		return FALSE
 
-	var/_answer_a2 = rerun_ask(M, "a2", TYPE_VERB_REF(/obj/item/clothing/suit/space/void/zaddat, custom_suit), args, /datum/om/prompt/choice, message = "Which suit style would you like?", title = "Select Style", choices = list("Engineer", "Spacer", "Knight", "Fashion", "Bishop", "Hegemony", "Rugged", "Soft"))
+	var/_answer_a2 = rerun_ask(M, "a2", PROC_REF(zaddat_custom_suit_verb), list(user), /datum/om/prompt/choice, message = "Which suit style would you like?", title = "Select Style", choices = list("Engineer", "Spacer", "Knight", "Fashion", "Bishop", "Hegemony", "Rugged", "Soft"))
 	if(isnull(_answer_a2))
 		return
 	suit_style = _answer_a2
@@ -249,19 +246,15 @@
 	return TRUE
 
 
-/obj/item/clothing/suit/space/void/zaddat/engineer/custom_suit()
-	set name = "Customize Shroud"
-	set category = "Object"
-	set desc = "Pick an appearance for your Shroud."
-
-	var/mob/M = usr
+/obj/item/clothing/suit/space/void/zaddat/engineer/zaddat_custom_suit_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	var/mob/M = user
 	var/suit_style = null
 
 	if(has_been_customized)
 		to_chat(M, "This Shroud has already been customized!")
 		return FALSE
 
-	var/_answer_a3 = rerun_ask(M, "a3", TYPE_VERB_REF(/obj/item/clothing/suit/space/void/zaddat, custom_suit), args, /datum/om/prompt/choice, message = "Which suit style would you like?", title = "Select Style", choices = list("Engineer", "Spacer", "Knight", "Fashion", "Bishop", "Hegemony", "Rugged", "Soft"))
+	var/_answer_a3 = rerun_ask(M, "a3", PROC_REF(zaddat_custom_suit_verb), list(user), /datum/om/prompt/choice, message = "Which suit style would you like?", title = "Select Style", choices = list("Engineer", "Spacer", "Knight", "Fashion", "Bishop", "Hegemony", "Rugged", "Soft"))
 	if(isnull(_answer_a3))
 		return
 	suit_style = _answer_a3

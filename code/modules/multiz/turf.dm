@@ -98,29 +98,32 @@ GLOBAL_DATUM_INIT(openspace_backdrop_one_for_all, /atom/movable/openspace_backdr
 	add_overlay(GLOB.openspace_backdrop_one_for_all) //Special grey square for projecting backdrop darkness filter on it.
 
 // Straight copy from space.
-/turf/simulated/open/attackby(obj/item/C as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/turf/simulated/open, INTERACT_ITEM("Build", PROC_REF(open_space_build)))
+
+/// Old attackby, a straight copy from space: rods build a lattice, tiles plate it, cable is laid.
+/turf/simulated/open/proc/open_space_build(mob/user, obj/item/C, datum/interaction/interaction)
 	if (istype(C, /obj/item/stack/rods))
 		var/obj/structure/lattice/L = locate(/obj/structure/lattice, src)
 		if(L)
-			return
+			return INTERACTION_HANDLED_PASS
 		var/obj/item/stack/rods/R = C
 		if (R.use(1))
 			to_chat(user, span_notice("Constructing support lattice ..."))
 			playsound(src, 'sound/weapons/genhit.ogg', 50, 1)
 			ReplaceWithLattice()
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if (istype(C, /obj/item/stack/tile/floor))
 		var/obj/structure/lattice/L = locate(/obj/structure/lattice, src)
 		if(L)
 			var/obj/item/stack/tile/floor/S = C
 			if (S.get_amount() < 1)
-				return
+				return INTERACTION_HANDLED_PASS
 			qdel(L)
 			playsound(src, 'sound/weapons/genhit.ogg', 50, 1)
 			S.use(1)
 			ChangeTurf(/turf/simulated/floor/airless)
-			return
+			return INTERACTION_HANDLED_PASS
 		else
 			to_chat(user, span_warning("The plating is going to need some support."))
 
@@ -128,8 +131,8 @@ GLOBAL_DATUM_INIT(openspace_backdrop_one_for_all, /atom/movable/openspace_backdr
 	if(istype(C, /obj/item/stack/cable_coil))
 		var/obj/item/stack/cable_coil/coil = C
 		coil.turf_place(src, user)
-		return
-	return
+		return INTERACTION_HANDLED_PASS
+	return INTERACTION_HANDLED_PASS
 
 //Most things use is_plating to test if there is a cover tile on top (like regular floors)
 /turf/simulated/open/is_plating()

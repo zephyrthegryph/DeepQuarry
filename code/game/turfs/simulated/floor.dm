@@ -109,9 +109,10 @@
 	ChangeTurf(/turf/simulated/floor/cult, preserve_outdoors = TRUE)
 	return TRUE
 
-/turf/simulated/floor/click_alt(mob/user)
+/// Old click_alt: graffiti with the held item; otherwise the default alt-click.
+/turf/simulated/floor/proc/floor_graffiti_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	if(isliving(user))
 		var/mob/living/livingUser = user
 		if(try_graffiti(livingUser, livingUser.get_active_hand()))
-			return
-	. = ..()
+			return TRUE
+	return FALSE

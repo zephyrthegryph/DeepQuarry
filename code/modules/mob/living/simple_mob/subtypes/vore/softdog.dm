@@ -206,13 +206,16 @@
 	projectiletype = /obj/item/projectile/forcebolt/harmless/awoobolt
 	projectilesound = 'sound/voice/long_awoo.ogg'
 
-/mob/living/simple_mob/vore/woof/cass/attack_hand(mob/living/carbon/human/M as mob)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/woof/cass, INTERACT_HAND_UNGATED(null, PROC_REF(cass_interaction_hand)))
+
+/// Old attack_hand: while playing dead, only a long help-pet revives her; alive, the normal touch.
+/mob/living/simple_mob/vore/woof/cass/proc/cass_interaction_hand(mob/living/carbon/human/M, obj/item/held, datum/interaction/interaction)
 	if(stat != DEAD)
-		return ..()
+		return FALSE
 	if(IS_HELPING(M))
 		M.visible_message("[M] pets [src].", runemessage = "pets [src]")
 		om_do_after(M, 30 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_cass_done), done_args = list(M), on_fail = PROC_REF(attack_hand_cass_failed), fail_args = list(M))
-	return
+	return TRUE
 
 /mob/living/simple_mob/vore/woof/cass/proc/attack_hand_cass_done(mob/living/carbon/human/M)
 	faction = M.faction

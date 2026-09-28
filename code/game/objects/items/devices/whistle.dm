@@ -14,16 +14,13 @@
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
-/obj/item/hailer/verb/set_message()
-	set name = "Set Hailer Message"
-	set category = "Object"
-	set desc = "Alter the message shouted by your hailer."
+/obj/item/hailer/proc/set_message_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
 	if(!isnull(insults))
-		to_chat(usr, "The hailer is fried. The tiny input screen just shows a waving ASCII penis.")
+		to_chat(user, "The hailer is fried. The tiny input screen just shows a waving ASCII penis.")
 		return
 
-	om_ask(usr, /datum/om/prompt/text, PROC_REF(message_entered), message = "Please enter new message (leave blank to reset).", ask_flags = ASK_CARRIED | ASK_CAPABLE)
+	om_ask(user, /datum/om/prompt/text, PROC_REF(message_entered), message = "Please enter new message (leave blank to reset).", ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
 /obj/item/hailer/proc/message_entered(datum/om/prompt/text/ask)
 	var/mob/user = ask.answerer
@@ -62,3 +59,8 @@ DECLARE_INTERACTIONS(/obj/item/hailer, INTERACT_USE(null, PROC_REF(interaction_s
 		return 1
 	else
 		to_chat(user, "The hailer is fried. You can't even fit the sequencer into the input slot.")
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/hailer, \
+	INTERACT_VERB("Set Hailer Message", PROC_REF(set_message_effect), REQ_IN_INVENTORY), \
+)

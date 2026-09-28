@@ -6,6 +6,7 @@
 	value = CATALOGUER_REWARD_HARD
 
 /mob/living/simple_mob/vr/alchemistbee
+	drag_buckle = FALSE
 	name = "large hardlight creature"
 	desc = "A digital creature"
 	icon = 'icons/mob/alchemistbee.dmi'
@@ -56,9 +57,6 @@
 	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
 	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
-
-/mob/living/simple_mob/vr/alchemistbee/MouseDrop_T(mob/living/M, mob/living/user)
-	return
 
 /mob/living/simple_mob/vr/alchemistbee/load_default_bellies()
 	. = ..()

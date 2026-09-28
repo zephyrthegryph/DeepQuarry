@@ -35,27 +35,29 @@
 			stop_following()
 		forceMove(get_turf(A))
 
-// Ghost clicks route through the input router; Use runs attack_ghost (adapters.dm).
-
-// Oh by the way this didn't work with old click code which is why clicking shit didn't spam you
-/atom/proc/attack_ghost(mob/observer/dead/user as mob)
-	if(user.client && user.client.inquisitive_ghost)
-		user.examinate(src)
-	return
+// Ghost clicks route through the input router: observer interactions (INTERACT_OBSERVER),
+// then the ghost adapter's default (an object's UI to view, an inquisitive ghost's examine).
 
 // ---------------------------------------
 // And here are some good things for free:
 // Now you can click through portals, wormholes, gateways, and teleporters while observing. -Sayu
 
-/obj/machinery/teleport/hub/attack_ghost(mob/user as mob)
+EXTEND_INTERACTIONS(/obj/machinery/teleport/hub, INTERACT_OBSERVER("Follow the link", PROC_REF(hub_ghost_follow)))
+
+/obj/machinery/teleport/hub/proc/hub_ghost_follow(mob/user, obj/item/held, datum/interaction/interaction)
 	var/atom/l = loc
 	var/obj/machinery/computer/teleporter/com = locate(/obj/machinery/computer/teleporter, locate(l.x - 2, l.y, l.z))
-	if(com?.teleport_control.locked())
-		user.forceMove(get_turf(com.teleport_control.locked()))
+	if(!com?.teleport_control.locked())
+		return FALSE
+	user.forceMove(get_turf(com.teleport_control.locked()))
+	return TRUE
 
-/obj/effect/portal/attack_ghost(mob/user as mob)
-	if(target_ref())
-		user.forceMove(get_turf(target_ref()))
+/// Declared with the portal's other interactions (portals.dm).
+/obj/effect/portal/proc/portal_ghost_follow(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!target_ref())_ref())
+		return FALSE
+	user.forceMove(get_turf(target_ref())_ref())
+	return TRUE
 
 // -------------------------------------------
 // This was supposed to be used by adminghosts

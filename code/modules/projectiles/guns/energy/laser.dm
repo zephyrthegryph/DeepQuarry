@@ -231,13 +231,12 @@
 	//End .
 
 /obj/item/gun/energy/sniperrifle/ui_action_click(mob/user, actiontype)
-	scope()
+	sniperrifle_verb_scope(user)
 
-/obj/item/gun/energy/sniperrifle/verb/scope()
-	set category = "Object"
-	set name = "Use Scope"
-	set popup_menu = 1
+EXTEND_INTERACTIONS(/obj/item/gun/energy/sniperrifle, INTERACT_VERB("Use Scope", PROC_REF(sniperrifle_verb_scope), REQ_IN_INVENTORY))
 
+/// Old Use Scope verb.
+/obj/item/gun/energy/sniperrifle/proc/sniperrifle_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
 	toggle_scope(2.0)
 
 /*
@@ -331,13 +330,12 @@
 	var/scope_multiplier = 1.5
 
 /obj/item/gun/energy/monorifle/ui_action_click(mob/user, actiontype)
-	sights()
+	monorifle_verb_sights(user)
 
-/obj/item/gun/energy/monorifle/verb/sights()
-	set category = "Object"
-	set name = "Aim Down Sights"
-	set popup_menu = 1
+EXTEND_INTERACTIONS(/obj/item/gun/energy/monorifle, INTERACT_VERB("Aim Down Sights", PROC_REF(monorifle_verb_sights), REQ_IN_INVENTORY))
 
+/// Old Aim Down Sights verb.
+/obj/item/gun/energy/monorifle/proc/monorifle_verb_sights(mob/user, obj/item/held, datum/interaction/interaction)
 	toggle_scope(scope_multiplier)
 
 /obj/item/gun/energy/monorifle/combat

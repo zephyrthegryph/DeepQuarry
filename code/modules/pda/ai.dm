@@ -41,14 +41,13 @@
 		var/mob/living/silicon/robot/robot_owner = loc
 		.["theme"] = robot_owner.get_ui_theme()
 
-/obj/item/pda/ai/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/pda/ai, INTERACT_USE(null, PROC_REF(ai_pda_self)))
+
+/// Old attack_self: only the clown virus honk.
+/obj/item/pda/ai/proc/ai_pda_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if ((honkamt > 0) && (prob(60)))//For clown virus.
 		honkamt--
 		playsound(src, 'sound/items/bikehorn.ogg', 30, 1)
-	return
 
 
 /obj/item/pda/ai/pai

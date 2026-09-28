@@ -43,25 +43,26 @@ REF_PAIR(/obj/machinery/sleep_console, list("sleeper" = "console"))
 			break
 
 
-/obj/machinery/sleep_console/attack_hand(mob/user)
-	if(..())
-		return 1
+EXTEND_INTERACTIONS(/obj/machinery/sleep_console, \
+	INTERACT_HAND(null, PROC_REF(sleep_console_interaction_hand)), \
+	INTERACT_ITEM(null, TYPE_PROC_REF(/atom, interaction_as_touch)), \
+)
 
+/// Old attack_hand.
+/obj/machinery/sleep_console/proc/sleep_console_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!sleeper)
 		findsleeper()
 		if(!sleeper)
 			to_chat(user, span_notice("Sleeper not found!"))
-			return
+			return TRUE
 
 	if(panel_open)
 		to_chat(user, span_notice("Close the maintenance panel first."))
-		return
+		return TRUE
 
 	if(sleeper)
-		return tgui_interact(user)
-
-/obj/machinery/sleep_console/attackby(obj/item/I, mob/user)
-	return attack_hand(user)
+		tgui_interact(user)
+	return TRUE
 
 /obj/machinery/sleep_console/screwdriver_act(mob/user, obj/item/tool)
 	return deconstruct_display(user, tool)
@@ -170,13 +171,19 @@ REF_PAIR(/obj/machinery/sleeper, list("console" = "sleeper"))
 			LAZYADD(available_chemicals, new_chemicals)
 		return
 
-/obj/machinery/sleeper/attack_hand(mob/user)
-	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
-	if(!controls_inside)
-		return FALSE
+EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(sleeper_interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(sleeper_interaction_item)), \
+	INTERACT_DRAG("Put inside", PROC_REF(sleeper_interaction_drag)), \
+	INTERACT_VERB("Eject occupant", PROC_REF(sleeper_move_eject)), \
+)
 
-	if(user == occupant)
+/// Old attack_hand (it never reached the machinery gate).
+/obj/machinery/sleeper/proc/sleeper_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
+	if(controls_inside && user == occupant)
 		tgui_interact(user)
+	return TRUE
 
 /obj/machinery/sleeper/tgui_interact(mob/user, datum/tgui/ui = null)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -387,14 +394,15 @@ REF_PAIR(/obj/machinery/sleeper, list("console" = "sleeper"))
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
 	icon_state = "sleeper_[occupant ? "1" : "0"]"
 
-/obj/machinery/sleeper/attackby(obj/item/I, mob/user)
+/// Old attackby. It never called ..(), so every item stops here.
+/obj/machinery/sleeper/proc/sleeper_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
 	add_fingerprint(user)
 	if(istype(I, /obj/item/grab))
 		var/obj/item/grab/G = I
 		if(G?.grab_target())
 			go_in(G?.grab_target(), user)
-		return
+		return TRUE
 	if(istype(I, /obj/item/reagent_containers/glass))
 		if(!beaker)
 			beaker = I
@@ -403,10 +411,10 @@ REF_PAIR(/obj/machinery/sleeper, list("console" = "sleeper"))
 			user.visible_message(span_infoplain(span_bold("\The [user]") + " adds \a [I] to \the [src]."), span_notice("You add \a [I] to \the [src]."))
 		else
 			to_chat(user, span_warning("\The [src] has a beaker already."))
-		return
+		return TRUE
 	if(!occupant)
-		if(default_part_replacement(user, I))
-			return
+		default_part_replacement(user, I)
+	return TRUE
 
 /obj/machinery/sleeper/screwdriver_act(mob/user, obj/item/tool)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
@@ -416,33 +424,33 @@ REF_PAIR(/obj/machinery/sleeper, list("console" = "sleeper"))
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
 	return occupant ? ITEM_INTERACT_BLOCKING : ..()
 
-/obj/machinery/sleeper/verb/move_eject()
+/// Old verb "Eject occupant".
+/obj/machinery/sleeper/proc/sleeper_move_eject(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
-	set name = "Eject occupant"
-	set category = "Object"
-	set src in oview(1)
-	if(usr == occupant)
-		switch(usr.stat)
+	if(user == occupant)
+		switch(user.stat)
 			if(DEAD)
 				return
 			if(UNCONSCIOUS)
-				to_chat(usr, span_notice("You struggle through the haze to hit the eject button. This will take a couple of minutes..."))
-				om_do_after(usr, 2 MINUTES, target = src, receiver = src, on_done = PROC_REF(move_eject_timed_done), done_args = list())
+				to_chat(user, span_notice("You struggle through the haze to hit the eject button. This will take a couple of minutes..."))
+				om_do_after(user, 2 MINUTES, target = src, receiver = src, on_done = PROC_REF(move_eject_timed_done), done_args = list())
 			if(CONSCIOUS)
 				go_out()
 	else
-		if(usr.stat != CONSCIOUS)
+		if(user.stat != CONSCIOUS)
 			return
 		go_out()
-	add_fingerprint(usr)
+	add_fingerprint(user)
 
 /obj/machinery/sleeper/proc/move_eject_timed_done()
 	go_out()
 
-/obj/machinery/sleeper/MouseDrop_T(mob/target, mob/user)
-	if(user.stat || user.lying || !Adjacent(user) || !target.Adjacent(user) || !ishuman(target))
-		return
+/// Old MouseDrop_T.
+/obj/machinery/sleeper/proc/sleeper_interaction_drag(mob/user, mob/target, datum/interaction/interaction)
+	if(!ismob(target) || user.stat || user.lying || !Adjacent(user) || !target.Adjacent(user) || !ishuman(target))
+		return FALSE
 	go_in(target, user)
+	return TRUE
 
 /obj/machinery/sleeper/relaymove(mob/user)
 	..()

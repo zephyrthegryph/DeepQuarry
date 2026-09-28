@@ -212,8 +212,7 @@
 	else
 		icon_state = "cleanbot[on]"
 
-/mob/living/bot/cleanbot/attack_hand(mob/user)
-	tgui_interact(user)
+EXTEND_INTERACTIONS(/mob/living/bot/cleanbot, INTERACT_HAND_UNGATED("Open controls", TYPE_PROC_REF(/atom, interaction_open_ui)))
 
 /mob/living/bot/cleanbot/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

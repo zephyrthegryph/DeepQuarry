@@ -83,9 +83,16 @@ REF_OWNED(/obj/machinery/appliance/cooker/oven, "oven_loop")
 			oven_loop.stop(src)
 	..()
 
-/obj/machinery/appliance/cooker/oven/click_alt(mob/user)
+EXTEND_INTERACTIONS(/obj/machinery/appliance/cooker/oven, \
+	INTERACT_ITEM(null, PROC_REF(appliance_interaction_part_replace)), \
+	INTERACT_ALT("Toggle door", PROC_REF(oven_interaction_toggle_door)), \
+)
+
+/// Old click_alt.
+/obj/machinery/appliance/cooker/oven/proc/oven_interaction_toggle_door(mob/user, obj/item/held, datum/interaction/interaction)
 	try_toggle_door(user)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
+	return TRUE
 
 /obj/machinery/appliance/cooker/oven/proc/try_toggle_door(mob/user)
 	if(!isliving(user) || isAI(user))
@@ -155,7 +162,4 @@ REF_OWNED(/obj/machinery/appliance/cooker/oven, "oven_loop")
 	else
 		..()
 
-/obj/machinery/appliance/cooker/oven/attackby(obj/item/O as obj, mob/user as mob)
-	if(default_part_replacement(user, O))
-		return
-	..()
+

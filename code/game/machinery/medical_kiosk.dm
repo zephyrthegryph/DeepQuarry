@@ -51,8 +51,13 @@
 	else
 		icon_state = "kiosk" // waiting for user or to finish processing
 
-/obj/machinery/medical_kiosk/attack_hand(mob/living/user)
-	. = ..()
+EXTEND_INTERACTIONS(/obj/machinery/medical_kiosk, \
+	INTERACT_HAND(null, PROC_REF(medical_kiosk_interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(medical_kiosk_interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/machinery/medical_kiosk/proc/medical_kiosk_interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(istype(user) && Adjacent(user))
 		if(inoperable() || panel_open)
 			to_chat(user, span_warning("\The [src] seems to be nonfunctional..."))
@@ -60,11 +65,11 @@
 			to_chat(user, span_warning("Another patient has begin using this machine. Please wait for them to finish, or their session to time out."))
 		else
 			start_using(user)
+	return TRUE
 
-/obj/machinery/medical_kiosk/attackby(obj/item/O, mob/user)
-	. = ..()
-	if(default_part_replacement(user, O))
-		return
+/// Old attackby.
+/obj/machinery/medical_kiosk/proc/medical_kiosk_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+	return default_part_replacement(user, O) ? TRUE : FALSE
 
 /obj/machinery/medical_kiosk/proc/wake_lock(mob/living/user)
 	active_user_handle = om_handle(user)

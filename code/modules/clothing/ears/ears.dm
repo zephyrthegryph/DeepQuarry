@@ -19,23 +19,25 @@
 	item_state_slots = list(slot_r_hand_str = "headphones", slot_l_hand_str = "headphones")
 	slot_flags = SLOT_EARS | SLOT_TWOEARS
 
-/obj/item/clothing/ears/earmuffs/headphones/verb/togglemusic()
-	set name = "Toggle Headphone Music"
-	set category = "Object"
-	set src in usr
-	if(!isliving(usr)) return
-	if(usr.stat) return
+EXTEND_INTERACTIONS(/obj/item/clothing/ears/earmuffs/headphones, \
+	INTERACT_VERB("Toggle Headphone Music", PROC_REF(headphones_togglemusic_verb), REQ_IN_INVENTORY), \
+)
+
+/// Old verb "Toggle Headphone Music".
+/obj/item/clothing/ears/earmuffs/headphones/proc/headphones_togglemusic_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!isliving(user)) return
+	if(user.stat) return
 
 	var/base_icon = copytext(icon_state,1,(length(icon_state) - 3 + headphones_on))
 
 	if(headphones_on)
 		icon_state = "[base_icon]_off"
 		headphones_on = 0
-		to_chat(usr, span_notice("You turn the music off."))
+		to_chat(user, span_notice("You turn the music off."))
 	else
 		icon_state = "[base_icon]_on"
 		headphones_on = 1
-		to_chat(usr, span_notice("You turn the music on."))
+		to_chat(user, span_notice("You turn the music on."))
 
 	update_clothing_icon()
 

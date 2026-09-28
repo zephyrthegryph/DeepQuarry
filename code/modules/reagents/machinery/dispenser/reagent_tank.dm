@@ -19,7 +19,12 @@
 DECLARE_INTERACTIONS(/obj/structure/reagent_dispensers, \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+	INTERACT_VERB("Set transfer amount", PROC_REF(reagent_dispenser_set_aptft), REQ_ON(PRED_TARGET, /obj/structure/reagent_dispensers/proc/pred_dispenser_has_transfer_amounts, null)), \
 )
+
+/// Requirement: the dispenser offers transfer amounts (old verbs -= set_APTFT on Initialize without them).
+/obj/structure/reagent_dispensers/proc/pred_dispenser_has_transfer_amounts(mob/actor, atom/target, obj/item/held)
+	return !!possible_transfer_amounts
 
 /// Old attackby.
 /obj/structure/reagent_dispensers/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
@@ -29,9 +34,6 @@ DECLARE_INTERACTIONS(/obj/structure/reagent_dispensers, \
 	var/datum/reagents/R = new/datum/reagents(5000)
 	reagents = R
 	R.my_atom = src
-	if (!possible_transfer_amounts)
-		src.verbs -= /obj/structure/reagent_dispensers/verb/set_APTFT
-
 	if(has_sockets)
 		add_hose_connector(/datum/hose_connector/input)
 		add_hose_connector(/datum/hose_connector/output)
@@ -48,11 +50,9 @@ DECLARE_INTERACTIONS(/obj/structure/reagent_dispensers, \
 		else
 			. += span_notice("Nothing.")
 
-/obj/structure/reagent_dispensers/verb/set_APTFT() //set amount_per_transfer_from_this
-	set name = "Set transfer amount"
-	set category = "Object"
-	set src in view(1)
-	var/N = rerun_ask(usr, "a1", VERB_REF(set_APTFT), args, /datum/om/prompt/choice, message = "Amount per transfer from this:", title = "[src]", choices = possible_transfer_amounts)
+/// Old verb "Set transfer amount": set amount_per_transfer_from_this.
+/obj/structure/reagent_dispensers/proc/reagent_dispenser_set_aptft(mob/user, obj/item/held, datum/interaction/interaction)
+	var/N = rerun_ask(user, "a1", PROC_REF(reagent_dispenser_set_aptft), args, /datum/om/prompt/choice, message = "Amount per transfer from this:", title = "[src]", choices = possible_transfer_amounts)
 	if(isnull(N))
 		return
 	if (N)

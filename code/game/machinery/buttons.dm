@@ -33,15 +33,11 @@
 	name = "Press"
 	category = INTERACTION_CAT_TOGGLE
 	held_type = /obj/item
-	effect = /obj/machinery/button/proc/interaction_press_with_item
+	effect = /atom/proc/interaction_as_touch
 
 /// Remote buttons declare their own item interactions.
 /datum/interaction/machine_item/button_press_item/applies_to(atom/target)
 	return !istype(target, /obj/machinery/button/remote)
-
-/obj/machinery/button/proc/interaction_press_with_item(mob/user, obj/item/held, datum/interaction/interaction)
-	attack_hand(user)
-	return TRUE
 
 /obj/machinery/button/proc/interaction_press(mob/user, obj/item/held, datum/interaction/interaction)
 	playsound(src, 'sound/machines/button.ogg', 100, 1)

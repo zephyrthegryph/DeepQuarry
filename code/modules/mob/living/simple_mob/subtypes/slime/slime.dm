@@ -190,14 +190,22 @@ REF_SPILL(/mob/living/simple_mob/slime, "hat")
 	self.mend(TREAT_TISSUE_REPAIR, 1)
 
 // Clicked on by empty hand.
-/mob/living/simple_mob/slime/attack_hand(mob/living/L)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/slime, \
+	INTERACT_ITEM(null, PROC_REF(slime_interaction_item)), \
+	INTERACT_HAND_UNGATED(null, PROC_REF(slime_interaction_hand)))
+
+/// Old attack_hand: grab the hat off.
+/mob/living/simple_mob/slime/proc/slime_interaction_hand(mob/living/L, obj/item/held, datum/interaction/interaction)
+	. = TRUE
 	if(IS_GRABBING(L) && hat)
 		remove_hat(L)
 	else
-		..()
+		return FALSE
 
 // Clicked on while holding an object.
-/mob/living/simple_mob/slime/attackby(obj/item/I, mob/user)
+/// Old attackby: hat simulator, and weapons may pass through.
+/mob/living/simple_mob/slime/proc/slime_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+	. = TRUE
 	if(istype(I, /obj/item/clothing/head)) // Handle hat simulator.
 		give_hat(I, user)
 		return
@@ -213,7 +221,7 @@ REF_SPILL(/mob/living/simple_mob/slime, "hat")
 		visible_message(span_warning("\The [user]'s [I] passes right through \the [src]!"))
 		user.setClickCooldown(user.get_attack_speed(I))
 		return
-	..()
+	return FALSE
 
 // Called when hit with an active slimebaton (or xeno taser).
 // Subtypes react differently.

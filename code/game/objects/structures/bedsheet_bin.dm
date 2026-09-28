@@ -30,10 +30,8 @@ LINEN BINS
 	. = ..()
 	make_rotatable(only_flip = TRUE)
 
-/obj/item/bedsheet/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self: lay the sheet out or pick its layer back up. Subtypes with special_handling fall through.
+/obj/item/bedsheet/proc/bedsheet_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(special_handling)
 		return FALSE
 	user.drop_item()
@@ -42,9 +40,12 @@ LINEN BINS
 	else
 		reset_plane_and_layer()
 	add_fingerprint(user)
-	return
+	return TRUE
 
-DECLARE_INTERACTIONS(/obj/item/bedsheet, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+DECLARE_INTERACTIONS(/obj/item/bedsheet, \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_SELF("Lay out", PROC_REF(bedsheet_self)), \
+)
 
 /// Old attackby.
 /obj/item/bedsheet/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
@@ -237,6 +238,7 @@ DECLARE_INTERACTIONS(/obj/item/bedsheet, INTERACT_ITEM(null, PROC_REF(interactio
 		/datum/interaction/entry_item/bedsheetbin_item,
 		/datum/interaction/entry_hand/bedsheetbin_hand,
 	)
+	into += dq_interaction_from_spec(type, INTERACT_TK("Take sheet", PROC_REF(interaction_tk)))
 	..()
 
 /// Old attackby: put a bedsheet in, or hide a small item among the sheets.
@@ -290,7 +292,8 @@ DECLARE_INTERACTIONS(/obj/item/bedsheet, INTERACT_ITEM(null, PROC_REF(interactio
 	add_fingerprint(user)
 	return TRUE
 
-/obj/structure/bedsheetbin/attack_tk(mob/user as mob)
+/// Old attack_tk: pull a sheet (and anything hidden among them) out at range.
+/obj/structure/bedsheetbin/proc/interaction_tk(mob/user, obj/item/held, datum/interaction/interaction)
 	if(amount >= 1)
 		amount--
 
@@ -312,7 +315,7 @@ DECLARE_INTERACTIONS(/obj/item/bedsheet, INTERACT_ITEM(null, PROC_REF(interactio
 
 
 	add_fingerprint(user)
-
+	return TRUE
 
 /obj/item/bedsheet/cosmos
 	icon = 'icons/obj/items.dmi'

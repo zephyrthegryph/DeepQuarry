@@ -287,6 +287,12 @@ REF_OWNED(/obj/structure/closet, "door_obj")
 		/datum/interaction/entry_hand/closet_hand,
 		/datum/interaction/entry_drag/closet_drag,
 	)
+	var/static/list/verb_specs = list(
+		INTERACT_VERB("Toggle Open", PROC_REF(verb_toggleopen_effect)),
+		INTERACT_VERB("Devour Occupants", PROC_REF(closet_hidden_vore_effect)),
+	)
+	for(var/spec in verb_specs)
+		into += dq_interaction_from_spec(/obj/structure/closet, spec)
 	..()
 
 /// Old MouseDrop_T: stuff a dragged mob or object in while open, or climb it while closed.
@@ -434,26 +440,23 @@ REF_OWNED(/obj/structure/closet, "door_obj")
 	if(!toggle())
 		to_chat(user, span_notice("It won't budge!"))
 
-/obj/structure/closet/verb/verb_toggleopen()
-	set src in oview(1)
-	set category = "Object"
-	set name = "Toggle Open"
+/obj/structure/closet/proc/verb_toggleopen_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	if(!usr.canmove || usr.stat || usr.restrained())
+	if(!user.canmove || user.stat || user.restrained())
 		return
 
-	if(ishuman(usr) || isrobot(usr))
-		add_fingerprint(usr)
-		toggle(usr)
-	else if(isanimal(usr)) // ition Start
-		var/mob/living/simple_mob/s = usr
+	if(ishuman(user) || isrobot(user))
+		add_fingerprint(user)
+		toggle(user)
+	else if(isanimal(user)) // ition Start
+		var/mob/living/simple_mob/s = user
 		if(s.has_hands)
-			add_fingerprint(usr)
-			toggle(usr)
+			add_fingerprint(user)
+			toggle(user)
 		else
-			to_chat(usr, span_warning("This mob type can't use this verb.")) // ition End
+			to_chat(user, span_warning("This mob type can't use this verb.")) // ition End
 	else
-		to_chat(usr, span_warning("This mob type can't use this verb."))
+		to_chat(user, span_warning("This mob type can't use this verb."))
 
 /obj/structure/closet/update_icon()
 	if(opened)
@@ -598,16 +601,13 @@ REF_OWNED(/obj/structure/closet, "door_obj")
 
 //verb to eat people in the same closet as yourself
 
-/obj/structure/closet/verb/hidden_vore()
-	set src in oview(1)
-	set category = "Object"
-	set name = "Devour Occupants" // vore as a verb is cronge
+/obj/structure/closet/proc/closet_hidden_vore_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	if(!isliving(usr)) //no ghosts
+	if(!isliving(user)) //no ghosts
 		return
 
-	if(!(usr in slot_contents()))
-		to_chat(usr, span_warning("You need to be inside \the [src] to do this."))
+	if(!(user in slot_contents()))
+		to_chat(user, span_warning("You need to be inside \the [src] to do this."))
 		return
 
 	var/list/targets = list() //IF IT IS NOT BROKEN. DO NOT FIX IT.
@@ -615,7 +615,7 @@ REF_OWNED(/obj/structure/closet, "door_obj")
 	for(var/mob/living/L in slot_contents())
 		if(!isliving(L)) //Don't eat anything that isn't mob/living. Failsafe.
 			continue
-		if(L == usr) //no eating yourself. 1984.
+		if(L == user) //no eating yourself. 1984.
 			continue
 		if(L.devourable)
 			targets += L
@@ -624,7 +624,7 @@ REF_OWNED(/obj/structure/closet, "door_obj")
 		to_chat(src, span_notice("No eligible targets found."))
 		return
 
-	om_ask(usr, /datum/om/prompt/choice, PROC_REF(hidden_vore_target_chosen), choices = targets, title = "Victim", message = "Please select a target.", requires = list(/datum/om/check/inside_target))
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(hidden_vore_target_chosen), choices = targets, title = "Victim", message = "Please select a target.", requires = list(/datum/om/check/inside_target))
 
 /obj/structure/closet/proc/hidden_vore_target_chosen(datum/om/prompt/choice/ask)
 	var/mob/living/user = ask.answerer

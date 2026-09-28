@@ -53,14 +53,22 @@
 
 	real_name = name
 
-/mob/living/simple_mob/animal/passive/mothroach/attack_hand(mob/user)
-	. = ..()
+EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/mothroach, \
+	INTERACT_ITEM(null, PROC_REF(mothroach_interaction_item)), \
+	INTERACT_HAND(null, PROC_REF(mothroach_interaction_hand)))
+
+/// Old attack_hand: the normal touch, then a scream.
+/mob/living/simple_mob/animal/passive/mothroach/proc/mothroach_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	. = TRUE
+	unarmed_touch(user)
 
 	if(stat != DEAD)
 		playsound(src, 'sound/voice/scream/moth/moth_scream.ogg', 50, TRUE)
 
-/mob/living/simple_mob/animal/passive/mothroach/attackby(obj/item/O, mob/user)
-	. = ..()
+/// Old attackby: the normal attack, then a scream.
+/mob/living/simple_mob/animal/passive/mothroach/proc/mothroach_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+	. = TRUE
+	hit_with_item(O, user)
 
 	if(stat != DEAD)
 		playsound(src, 'sound/voice/scream/moth/moth_scream.ogg', 50, TRUE)

@@ -108,6 +108,8 @@
 		/datum/interaction/entry_hand/secure_closet_hand,
 		/datum/interaction/entry_alt/secure_closet_alt,
 	)
+	var/static/list/lock_spec = INTERACT_VERB("Toggle Lock", PROC_REF(secure_closet_verb_togglelock_effect))
+	into += dq_interaction_from_spec(/obj/structure/closet/secure_closet, lock_spec)
 	..()
 	into -= /datum/interaction/entry_hand/closet_hand
 
@@ -132,22 +134,19 @@
 	effect = /obj/structure/closet/secure_closet/proc/interaction_alt
 
 /obj/structure/closet/secure_closet/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
-	verb_togglelock()
+	secure_closet_verb_togglelock_effect(user)
 	return TRUE
 
-/obj/structure/closet/secure_closet/verb/verb_togglelock()
-	set src in oview(1) // One square distance
-	set category = "Object"
-	set name = "Toggle Lock"
+/obj/structure/closet/secure_closet/proc/secure_closet_verb_togglelock_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	if(!usr.canmove || usr.stat || usr.restrained() || !Adjacent(usr)) // Don't use it if you're not able to! Checks for stuns, ghost and restrain
+	if(!user.canmove || user.stat || user.restrained() || !Adjacent(user)) // Don't use it if you're not able to! Checks for stuns, ghost and restrain
 		return
 
-	if(ishuman(usr) || isrobot(usr))
-		add_fingerprint(usr)
-		togglelock(usr)
+	if(ishuman(user) || isrobot(user))
+		add_fingerprint(user)
+		togglelock(user)
 	else
-		to_chat(usr, span_warning("This mob type can't use this verb."))
+		to_chat(user, span_warning("This mob type can't use this verb."))
 
 /obj/structure/closet/secure_closet/update_icon()
 	if(opened)

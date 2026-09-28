@@ -380,8 +380,8 @@
 	icon_state = "c_flesh_floor"
 	icon = 'icons/turf/stomach_vr.dmi'
 
-/turf/simulated/floor/flesh/attackby()
-	return
+// Old attackby: items do nothing here.
+EXTEND_INTERACTIONS(/turf/simulated/floor/flesh, INTERACT_ITEM("Nothing", TYPE_PROC_REF(/atom, interaction_pass)))
 
 /turf/simulated/floor/flesh/ex_act(severity)
 	return
@@ -397,31 +397,35 @@
 		set_light(3,3,"#26c5a9")
 		om_after(src, 5 SECONDS, PROC_REF(crossing_glow_off))
 
-/turf/simulated/shuttle/plating/airless/carry/attackby(obj/item/C, mob/user) //this is gross
+EXTEND_INTERACTIONS(/turf/simulated/shuttle/plating/airless/carry, INTERACT_ITEM("Build", PROC_REF(carry_plating_item)))
+
+/// Old attackby: rods build a lattice, floor tiles plate it. This is gross.
+/turf/simulated/shuttle/plating/airless/carry/proc/carry_plating_item(mob/user, obj/item/C, datum/interaction/interaction)
 	if (istype(C, /obj/item/stack/rods))
 		var/obj/structure/lattice/L = locate(/obj/structure/lattice, src)
 		if(L)
-			return
+			return INTERACTION_HANDLED_PASS
 		var/obj/item/stack/rods/R = C
 		if (R.use(1))
 			to_chat(user, span_notice("Constructing support lattice ..."))
 			playsound(src, 'sound/weapons/genhit.ogg', 50, 1)
 			new/obj/structure/lattice(src)
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if (istype(C, /obj/item/stack/tile/floor))
 		var/obj/structure/lattice/L = locate(/obj/structure/lattice, src)
 		if(L)
 			var/obj/item/stack/tile/floor/S = C
 			if (S.get_amount() < 1)
-				return
+				return INTERACTION_HANDLED_PASS
 			qdel(L)
 			playsound(src, 'sound/weapons/genhit.ogg', 50, 1)
 			S.use(1)
 			ChangeTurf(/turf/simulated/floor/airless)
-			return
+			return INTERACTION_HANDLED_PASS
 		else
 			to_chat(user, span_warning("The plating is going to need some support."))
+	return INTERACTION_HANDLED_PASS
 
 /turf/simulated/shuttle/plating/airless/carry/is_solid_structure()
 	return locate(/obj/structure/lattice, src)

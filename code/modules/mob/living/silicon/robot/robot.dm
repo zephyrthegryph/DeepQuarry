@@ -788,38 +788,46 @@
 
 // --- Tool and item interactions ---------------------------------------------------------------
 
-/mob/living/silicon/robot/attackby(obj/item/W, mob/user)
+EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
+	INTERACT_ITEM(null, PROC_REF(robot_interaction_item)), \
+	INTERACT_HAND_UNGATED(null, PROC_REF(robot_interaction_hand)), \
+	INTERACT_DRAG("Block drag", TYPE_PROC_REF(/atom, interaction_swallow)), \
+	INTERACT_ROBOT("Drop hat", PROC_REF(robot_drop_own_hat)), \
+	INTERACT_SILICON("Deploy to shell", PROC_REF(robot_ai_deploy_shell)))
+
+/// Old attackby: parts, laws, repairs, IDs and upgrades. Anything else sparks and reaches the attack.
+/mob/living/silicon/robot/proc/robot_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/handcuffs)) // fuck i don't even know why isrobot() in handcuff code isn't working so this will have to do
-		return
+		return TRUE
 	if(opened && install_component(W, user))
-		return
+		return TRUE
 	if(opened && istype(W, /obj/item/implant/restrainingbolt) && !cell)
 		install_bolt(W, user)
-		return
+		return TRUE
 	if(istype(W, /obj/item/aiModule))
 		upload_law_module(W, user)
-		return
+		return TRUE
 	if(istype(W, /obj/item/stack/cable_coil) && can_rewire())
 		cable_act(W, user)
-		return
+		return TRUE
 	if(istype(W, /obj/item/cell) && opened)
 		insert_cell(W, user)
-		return
+		return TRUE
 	if(istype(W, /obj/item/encryptionkey) && opened)
 		if(radio)//sanityyyyyy
 			radio.attackby(W,user)//GTFO, you have your own procs
 		else
 			to_chat(user, span_filter_notice("Unable to locate a radio."))
-		return
+		return TRUE
 	if(W.GetID())
 		swipe_id(W, user)
-		return
+		return TRUE
 	if(istype(W, /obj/item/borg/upgrade))
 		apply_upgrade(W, user)
-		return
+		return TRUE
 	if(!(istype(W, /obj/item/robotanalyzer) || istype(W, /obj/item/healthanalyzer)) && W.force > 0)
 		spark_system.start()
-	return ..()
+	return FALSE
 
 /// Insert a part into its empty slot. Afflictions it carried come back with it.
 /mob/living/silicon/robot/proc/install_component(obj/item/W, mob/user)
@@ -1125,7 +1133,8 @@
 	vore_fullness_ex = list()
 	vore_light_states = list()
 
-/mob/living/silicon/robot/attack_hand(mob/user)
+/// Old attack_hand (never reached the gate or the default touch): dismounts, cell removal, petting and punching.
+/mob/living/silicon/robot/proc/robot_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(LAZYLEN(src?.buckled_mob_list()))
 		//We're getting off!
 		if(user in src?.buckled_mob_list())
@@ -1134,7 +1143,7 @@
 		if(user == src)
 			for(var/rider in src?.buckled_mob_list())
 				riding_datum?.force_dismount(rider)
-		return
+		return TRUE
 
 	add_fingerprint(user)
 
@@ -1143,6 +1152,7 @@
 
 	if(ishuman(user) && !opened)
 		hand_interact(user)
+	return TRUE
 
 /// Hand removal of the cell, or of the fried remains of its mount.
 /mob/living/silicon/robot/proc/take_out_power_part(mob/user)
@@ -1399,12 +1409,13 @@
 	if(. != old_dir)
 		update_worn_icons()
 
-/mob/living/silicon/robot/attack_robot(mob/user)
-	. = ..()
-
+/// Old attack_robot: a cyborg clicking itself drops its hat. The old body ran ..() (attack_ai) first,
+/// so that runs first here too, as the AI-style Use (silicon interactions, then the default).
+/mob/living/silicon/robot/proc/robot_drop_own_hat(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user != src || isnull(hat))
-		return
+		return FALSE
 
+	actor_use(/datum/input_adapter/ai, user, src)
 	balloon_alert(user, "dropping hat...")
 	om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_robot_robot_done), done_args = list(user))
 	return TRUE
@@ -1756,10 +1767,6 @@
 	if(.)
 		riding_datum.rider_size = M.size_multiplier
 		src?.buckled_mob_list()[M] = "riding"
-
-/mob/living/silicon/robot/MouseDrop_T(mob/living/M, mob/living/user) //Prevention for forced relocation caused by can_buckle. Base proc has no other use.
-	return
-
 
 /mob/living/silicon/robot/get_scooped(mob/living/carbon/grabber, self_drop)
 	var/obj/item/holder/H = ..(grabber, self_drop)

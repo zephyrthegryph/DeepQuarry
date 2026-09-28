@@ -34,6 +34,8 @@
  * Returns TRUE when a gate stopped the touch or an interaction answered it.
  */
 /atom/proc/attack_hand(mob/user as mob)
+	if(!user)
+		return FALSE
 	return run_interaction_entry(user, src, null, INTERACTION_ENTRY_HAND, null, TRUE) ? TRUE : FALSE
 
 /**
@@ -78,7 +80,7 @@
 		else if(get_dist(src, A) > TK_MAXRANGE)
 			to_chat(src, TK_OUTRANGED_MESSAGE)
 		else
-			A.attack_tk(src)
+			actor_use(/datum/input_adapter/telekinesis, src, A)
 	else if(spitting) //Only used by xenos right now, can be expanded.
 		Spit(A)
 

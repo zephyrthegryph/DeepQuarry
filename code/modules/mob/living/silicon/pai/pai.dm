@@ -291,22 +291,27 @@ REF_OWNED(/mob/living/silicon/pai, list("card", "pai_ui_chassis", "sradio", "com
 // Click interactions
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-/mob/living/silicon/pai/attackby(obj/item/W as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/mob/living/silicon/pai, \
+	INTERACT_ITEM(null, PROC_REF(pai_interaction_item)), \
+	INTERACT_HAND_UNGATED(null, PROC_REF(pai_interaction_hand)))
+
+/// Old attackby (never reached the default attack): ID access edits, else its own hit or bonk.
+/mob/living/silicon/pai/proc/pai_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	var/obj/item/card/id/ID = W.GetID()
 	if(ID)
 		if (idaccessible == 1)
 			om_ask(user, /datum/om/prompt/choice/pai_access, PROC_REF(access_modify_chosen), card = W)
-			return
+			return TRUE
 		else if (istype(W, /obj/item/card/id) && idaccessible == 0)
 			to_chat(user, span_notice("[src] is not accepting access modifcations at this time."))
-			return
+			return TRUE
 	if(W.force)
 		visible_message(span_danger("[user.name] attacks [src] with [W]!"))
 		receive_weapon_hit(W, user, silent = FALSE)
 	else
 		visible_message(span_warning("[user.name] bonks [src] harmlessly with [W]."))
 	om_after(src, 1, PROC_REF(close_up_unless_dead))
-	return
+	return TRUE
 
 /// Swiping an ID over a pAI. Re-checked on the answer: next to the pAI and able, it still
 /// accepts access changes, and the card (still an ID) is still held.
@@ -345,15 +350,16 @@ REF_OWNED(/mob/living/silicon/pai, list("card", "pai_ui_chassis", "sradio", "com
 	if(radio)
 		radio.recalculateChannels()
 
-/mob/living/silicon/pai/attack_hand(mob/user as mob)
+/// Old attack_hand: help pats, disarm boops it shut; other intents reach the gate and default touch.
+/mob/living/silicon/pai/proc/pai_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(IS_HELPING(user))
 		visible_message(span_notice("\The [user] pats \the [src]."))
-		return
+		return TRUE
 	if(IS_DISARMING(user))
 		visible_message(span_danger("\The [user] boops \the [src] on the head."))
 		close_up()
-		return
-	. = ..()
+		return TRUE
+	return FALSE
 
 /mob/living/silicon/pai/UnarmedAttack(atom/A, proximity_flag)
 	. = ..()
@@ -373,7 +379,7 @@ REF_OWNED(/mob/living/silicon/pai, list("card", "pai_ui_chassis", "sradio", "com
 	// We don't want to pick these up, just toggle them
 	if(istype(A,/obj/item/flashlight/lamp))
 		var/obj/item/flashlight/lamp/L = A
-		L.toggle_light()
+		L.lamp_toggle_light_effect(src)
 		return
 
 	// All other computers explain why it's not accessible by showing a firewall warning
@@ -401,7 +407,7 @@ REF_OWNED(/mob/living/silicon/pai, list("card", "pai_ui_chassis", "sradio", "com
 	if(istype(A, /obj/machinery))
 		var/obj/machinery/M = A
 		if(M.paicard == card)
-			M.attack_ai(src)
+			actor_use(/datum/input_adapter/ai, src, M)
 			return
 	return ..()
 

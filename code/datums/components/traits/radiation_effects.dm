@@ -312,7 +312,7 @@
 
 	return data
 
-/datum/component/radiation_effects/proc/radiation_color_picked(datum/om/prompt/color/ask)
+/datum/trait_state/radiation_effects/proc/radiation_color_picked(datum/om/prompt/color/ask)
 	if(!ask.picked_color)
 		return
 	radiation_color = ask.picked_color

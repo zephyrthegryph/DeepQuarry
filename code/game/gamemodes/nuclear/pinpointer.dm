@@ -19,10 +19,10 @@
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
-/obj/item/pinpointer/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/pinpointer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(nuclear || shuttle)
 		return
 	if(!active)
@@ -115,17 +115,14 @@
 		if(16 to INFINITY)
 			icon_state = "pinonfar"
 
-/obj/item/pinpointer/advpinpointer/verb/toggle_mode()
-	set category = "Object"
-	set name = "Toggle Pinpointer Mode"
-	set src in view(1)
+/obj/item/pinpointer/advpinpointer/proc/advpinpointer_toggle_mode_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
 	active = 0
 	icon_state = "pinoff"
 	target_handle = null
 	location_handle = null
 
-	om_ask(usr, /datum/om/prompt/choice/carried_item, PROC_REF(pinpointer_mode_chosen), title = "Pinpointer Mode Select", message = "Please select the mode you want to put the pinpointer in.", choices = list("Location", "Disk Recovery", "Other Signature"), buttons = TRUE)
+	om_ask(user, /datum/om/prompt/choice/carried_item, PROC_REF(pinpointer_mode_chosen), title = "Pinpointer Mode Select", message = "Please select the mode you want to put the pinpointer in.", choices = list("Location", "Disk Recovery", "Other Signature"), buttons = TRUE)
 
 /// A pinpointer coordinate (x, then y: `location_x` carries the first). Re-checked: it's in view.
 /datum/om/prompt/number/pinpointer_location
@@ -203,10 +200,11 @@
 	var/mode = 0	//Mode 0 locates disk, mode 1 locates the shuttle
 	var/home_handle
 
-/obj/item/pinpointer/nukeop/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/pinpointer/nukeop, INTERACT_USE("Toggle", PROC_REF(nukeop_interaction_self)))
+
+/// Old attack_self. The old override ran the parent's body first (its ..()), so this does too.
+/obj/item/pinpointer/nukeop/proc/nukeop_interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+	interaction_self(user, held, interaction)
 	if(!active)
 		active = 1
 		PERIODIC_START(src, PERIODIC_SLOW)
@@ -291,10 +289,11 @@
 	var/shuttle_comp_id = null
 	var/our_shuttle_handle
 
-/obj/item/pinpointer/shuttle/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/pinpointer/shuttle, INTERACT_USE("Toggle", PROC_REF(shuttle_interaction_self)))
+
+/// Old attack_self. The old override ran the parent's body first (its ..()), so this does too.
+/obj/item/pinpointer/shuttle/proc/shuttle_interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+	interaction_self(user, held, interaction)
 	if(!active)
 		active = TRUE
 		PERIODIC_START(src, PERIODIC_SLOW)
@@ -360,3 +359,8 @@
 /// LC-refs: our shuttle -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/pinpointer/shuttle/proc/our_shuttle() as /obj/machinery/computer/shuttle_control
 	return om_resolve(our_shuttle_handle)
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/pinpointer/advpinpointer, \
+	INTERACT_VERB("Toggle Pinpointer Mode", PROC_REF(advpinpointer_toggle_mode_effect)), \
+)

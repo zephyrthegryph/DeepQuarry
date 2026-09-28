@@ -341,27 +341,25 @@ DECLARE_INTERACTIONS(/obj/item/cataloguer, \
 		icon_state = initial(icon_state)
 
 /obj/item/cataloguer/compact/ui_action_click(mob/user, actiontype)
-	toggle()
+	compact_toggle_effect(user)
 
-/obj/item/cataloguer/compact/verb/toggle()
-	set name = "Toggle Cataloguer"
-	set category = "Object"
+/obj/item/cataloguer/compact/proc/compact_toggle_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
 	if(om_busy(src))
-		to_chat(usr, span_warning("\The [src] is currently scanning something."))
+		to_chat(user, span_warning("\The [src] is currently scanning something."))
 		return
 	deployed = !(deployed)
 	if(deployed)
 		w_class = ITEMSIZE_NORMAL
 		icon_state = "[initial(icon_state)]"
-		to_chat(usr, span_notice("You flick open \the [src]."))
+		to_chat(user, span_notice("You flick open \the [src]."))
 	else
 		w_class = ITEMSIZE_SMALL
 		icon_state = "[initial(icon_state)]_closed"
-		to_chat(usr, span_notice("You close \the [src]."))
+		to_chat(user, span_notice("You close \the [src]."))
 
-	if (ismob(usr))
-		var/mob/M = usr
+	if (ismob(user))
+		var/mob/M = user
 		M.update_mob_action_buttons()
 
 /obj/item/cataloguer/compact/afterattack(atom/target, mob/user, proximity_flag)
@@ -375,3 +373,8 @@ DECLARE_INTERACTIONS(/obj/item/cataloguer, \
 		to_chat(user, span_warning("\The [src] is closed."))
 		return
 	return ..()
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/cataloguer/compact, \
+	INTERACT_VERB("Toggle Cataloguer", PROC_REF(compact_toggle_effect), REQ_IN_INVENTORY), \
+)

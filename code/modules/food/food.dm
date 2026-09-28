@@ -16,12 +16,9 @@
 	var/list/food_inserted_micros
 	resistance_flags = FLAMMABLE
 
-/obj/item/reagent_containers/food/verb/change_name()
-	set name = "Rename Food"
-	set category = "Object"
-	set src in view(0)
+/obj/item/reagent_containers/food/proc/food_change_name_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	handle_name_change(usr)
+	handle_name_change(user)
 
 /obj/item/reagent_containers/food/proc/handle_name_change(mob/living/user)
 	if(user.stat == DEAD || !(ishuman(user) || isrobot(user)))
@@ -42,9 +39,13 @@
 		src.pixel_x = rand(-6.0, 6) //Randomizes postion
 		src.pixel_y = rand(-6.0, 6)
 
-/obj/item/reagent_containers/food/attackby(obj/item/W, mob/user)
-	. = ..()
+// DECLARE here, EXTEND on every food subtype: this spec must stay last (it was the ..() end of their chains).
+DECLARE_INTERACTIONS(/obj/item/reagent_containers/food, INTERACT_ITEM(null, PROC_REF(food_item)))
+
+/// Old attackby: the changeling blood test, then the base item handling (FALSE).
+/obj/item/reagent_containers/food/proc/food_item(mob/user, obj/item/W, datum/interaction/interaction)
 	attempt_changeling_test(W,user)
+	return FALSE
 
 /obj/item/reagent_containers/food/afterattack(atom/A, mob/user, proximity, params)
 	if((center_of_mass_x || center_of_mass_y) && proximity && params && istype(A, /obj/structure/table))
@@ -75,3 +76,8 @@
 
 #undef CELLS
 #undef CELLSIZE
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/reagent_containers/food, \
+	INTERACT_VERB("Rename Food", PROC_REF(food_change_name_effect)), \
+)

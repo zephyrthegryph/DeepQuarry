@@ -16,19 +16,23 @@
 	special_handling = TRUE
 
 
-/obj/item/clothing/suit/shibari/attack_hand(mob/living/user as mob)
+EXTEND_INTERACTIONS(/obj/item/clothing/suit/shibari, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(shibari_worn_hand)), \
+	INTERACT_USE("Choose limbs", PROC_REF(shibari_mode_self)), \
+)
+
+/// Old attack_hand: the wearer can't take it off themselves.
+/obj/item/clothing/suit/shibari/proc/shibari_worn_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
 		if(src == H.get_equipped_item(SLOT_ID_SUIT))
 			to_chat(H, span_notice("You need help taking this off!"))
-			return
-	..()
+			return TRUE
+	return FALSE
 
-/obj/item/clothing/suit/shibari/attack_self(mob/living/user)
-	. = ..(user)
-	if(.)
-		return TRUE
-	var/_answer_a1 = rerun_ask(user, "a1", PROC_REF(attack_self), args, /datum/om/prompt/choice, message = "Which limbs would you like to restrain with the bindings?", title = "Shibari", choices = list(SHIBARI_NONE, SHIBARI_ARMS, SHIBARI_LEGS, SHIBARI_BOTH))
+/// Old attack_self: choose which limbs to bind.
+/obj/item/clothing/suit/shibari/proc/shibari_mode_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+	var/_answer_a1 = rerun_ask(user, "a1", PROC_REF(shibari_mode_self), args, /datum/om/prompt/choice, message = "Which limbs would you like to restrain with the bindings?", title = "Shibari", choices = list(SHIBARI_NONE, SHIBARI_ARMS, SHIBARI_LEGS, SHIBARI_BOTH))
 	if(isnull(_answer_a1))
 		return TRUE
 	rope_mode = _answer_a1

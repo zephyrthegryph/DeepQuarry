@@ -44,12 +44,15 @@
 	. += "It currently has [lasertag_health] hits out of [lasertag_max_health] remaining!"
 	. += "It regenerates one hit every [time_to_heal*0.1] seconds."
 
-/obj/item/clothing/suit/lasertag/verb/adjust_health()
-	set name = "Adjust Suit Health"
-	set category = "Object"
-	set src in usr
-	if(isliving(usr))
-		adjust_health_proc(usr)
+EXTEND_INTERACTIONS(/obj/item/clothing/suit/lasertag, \
+	INTERACT_VERB("Adjust Suit Health", PROC_REF(lasertag_adjust_health_verb), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Adjust Healing Timer", PROC_REF(lasertag_adjust_heal_time_verb), REQ_IN_INVENTORY), \
+)
+
+/// Old verb "Adjust Suit Health".
+/obj/item/clothing/suit/lasertag/proc/lasertag_adjust_health_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(isliving(user))
+		adjust_health_proc(user)
 
 /obj/item/clothing/suit/lasertag/proc/adjust_health_proc(mob/living/user)
 	var/max_health = 10
@@ -70,12 +73,10 @@
 	lasertag_health = lasertag_max_health
 	user.visible_message(user, span_notice("Set [src]'s allowed shots to [lasertag_max_health], fully healing the vest!"))
 
-/obj/item/clothing/suit/lasertag/verb/adjust_heal_time()
-	set name = "Adjust Healing Timer"
-	set category = "Object"
-	set src in usr
-	if(isliving(usr))
-		adjust_heal_time_proc(usr)
+/// Old verb "Adjust Healing Timer".
+/obj/item/clothing/suit/lasertag/proc/lasertag_adjust_heal_time_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(isliving(user))
+		adjust_heal_time_proc(user)
 
 /obj/item/clothing/suit/lasertag/proc/adjust_heal_time_proc(mob/living/user)
 	var/max_heal_time = 60

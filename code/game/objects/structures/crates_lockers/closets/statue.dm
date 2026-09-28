@@ -123,7 +123,7 @@
 /obj/structure/closet/statue/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	return TRUE
 
-/obj/structure/closet/statue/verb_toggleopen()
+/obj/structure/closet/statue/verb_toggleopen_effect(mob/user, obj/item/held, datum/interaction/interaction)
 	return
 
 /obj/structure/closet/statue/update_icon()

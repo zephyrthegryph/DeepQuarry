@@ -19,10 +19,7 @@
 	var/spray_size = 3
 	var/static/list/spray_sizes = list(1,3)
 	volume = 250
-
-/obj/item/reagent_containers/spray/Initialize(mapload)
-	. = ..()
-	src.verbs -= /obj/item/reagent_containers/verb/set_APTFT
+	transfer_amount_verb = FALSE
 
 /obj/item/reagent_containers/spray/afterattack(atom/A as mob|obj, mob/user as mob, proximity)
 	if(istype(A, /obj/item/storage) || istype(A, /obj/structure/table) || istype(A, /obj/structure/closet) || istype(A, /obj/item/reagent_containers) || istype(A, /obj/structure/sink) || istype(A, /obj/structure/janitorialcart))
@@ -67,34 +64,23 @@
 		D.set_up(my_target, spray_size, 10)
 	return
 
-/*
-/obj/item/reagent_containers/spray/attack_self(mob/user) //Now done via alt-click instead
-	if(!max_transfer_amount)
-		return
-	amount_per_transfer_from_this = next_in_list(amount_per_transfer_from_this, possible_transfer_amounts)
-	spray_size = next_in_list(spray_size, spray_sizes)
-	balloon_alert(user, "pressure nozzle adjusted to [amount_per_transfer_from_this] units per spray.")
-*/
-
 /obj/item/reagent_containers/spray/examine(mob/user)
 	. = ..()
 	if(loc == user)
 		. += "[round(reagents.total_volume)] units left."
 
-/obj/item/reagent_containers/spray/verb/empty()
+EXTEND_INTERACTIONS(/obj/item/reagent_containers/spray, INTERACT_VERB("Empty Spray Bottle", PROC_REF(spray_verb_empty), REQ_IN_INVENTORY))
 
-	set name = "Empty Spray Bottle"
-	set category = "Object"
-	set src in usr
-
-	var/_answer_a1 = rerun_ask(usr, "a1", VERB_REF(empty), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to empty that?", title = "Empty Bottle:", choices = list("Yes", "No"))
+/// Old Empty Spray Bottle verb.
+/obj/item/reagent_containers/spray/proc/spray_verb_empty(mob/user, obj/item/held, datum/interaction/interaction)
+	var/_answer_a1 = rerun_ask(user, "a1", PROC_REF(spray_verb_empty), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to empty that?", title = "Empty Bottle:", choices = list("Yes", "No"))
 	if(isnull(_answer_a1))
 		return
 	if (_answer_a1 != "Yes")
 		return
-	if(isturf(usr.loc))
-		balloon_alert(usr, "emptied \the [src] onto the floor.")
-		reagents.splash(usr.loc, reagents.total_volume)
+	if(isturf(user.loc))
+		balloon_alert(user, "emptied \the [src] onto the floor.")
+		reagents.splash(user.loc, reagents.total_volume)
 
 //space cleaner
 /obj/item/reagent_containers/spray/cleaner
@@ -139,12 +125,13 @@
 	if(Adjacent(user))
 		. += "The safety is [safety ? "on" : "off"]."
 
-/obj/item/reagent_containers/spray/pepper/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/reagent_containers/spray/pepper, INTERACT_SELF("Toggle safety", PROC_REF(pepper_self)))
+
+/// Old attack_self.
+/obj/item/reagent_containers/spray/pepper/proc/pepper_self(mob/user, obj/item/held, datum/interaction/interaction)
 	safety = !safety
 	balloon_alert(user, "safety [safety ? "on" : "off"].")
+	return TRUE
 
 /obj/item/reagent_containers/spray/pepper/Spray_at(atom/A as mob|obj, mob/user)
 	if(safety)
@@ -254,11 +241,14 @@
 			add_overlay(hose_overlay)
 			break
 
-/obj/item/reagent_containers/spray/chemsprayer/hosed/click_alt(mob/living/carbon/user)
+EXTEND_INTERACTIONS(/obj/item/reagent_containers/spray/chemsprayer/hosed, INTERACT_ALT("Turn dial", PROC_REF(hosed_alt)))
+
+/// Old click_alt (never called its parent: no transfer-amount prompt, no default alt-click).
+/obj/item/reagent_containers/spray/chemsprayer/hosed/proc/hosed_alt(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
 	if(++spray_particles > 3) spray_particles = 1
 
 	balloon_alert(user, "dial turned to [spray_particles].")
-	return
+	return TRUE
 
 /obj/item/reagent_containers/spray/chemsprayer/hosed/item_ctrl_click(mob/user)
 	if(loc != get_turf(src))

@@ -58,7 +58,10 @@ DECLARE_INTERACTIONS(/obj/item/fossil/skull, INTERACT_ITEM(null, PROC_REF(intera
 	breq = rand(6)+3
 	desc = "An incomplete skeleton, looks like it could use [breq-bnum] more bones."
 
-/obj/skeleton/attackby(obj/item/W, mob/user)
+DECLARE_INTERACTIONS(/obj/skeleton, INTERACT_ITEM(null, PROC_REF(interaction_skeleton_item)))
+
+/// Old attackby: add bones until complete, or relabel the plaque with a pen.
+/obj/skeleton/proc/interaction_skeleton_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W,/obj/item/fossil/bone))
 		if(!bstate)
 			bnum++
@@ -77,9 +80,9 @@ DECLARE_INTERACTIONS(/obj/item/fossil/skull, INTERACT_ITEM(null, PROC_REF(intera
 				src.desc = "Incomplete skeleton, looks like it could use [src.breq-src.bnum] more bones."
 				to_chat(user, "Looks like it could use [src.breq-src.bnum] more bones.")
 		else
-			..()
+			return FALSE
 	else if(istype(W,/obj/item/pen))
-		var/_answer_k80 = rerun_ask(user, "k80", TYPE_PROC_REF(/atom, attackby), args, /datum/om/prompt/text, message = "What would you like to write on the plaque:", title = "Skeleton plaque")
+		var/_answer_k80 = rerun_ask(user, "k80", PROC_REF(interaction_skeleton_item), args, /datum/om/prompt/text, message = "What would you like to write on the plaque:", title = "Skeleton plaque")
 		if(isnull(_answer_k80))
 			return TRUE
 		plaque_contents = _answer_k80
@@ -89,7 +92,8 @@ DECLARE_INTERACTIONS(/obj/item/fossil/skull, INTERACT_ITEM(null, PROC_REF(intera
 		else
 			src.desc = "A creature made of [src.contents.len-1] assorted bones and a skull. The plaque reads \'[plaque_contents]\'."
 	else
-		..()
+		return FALSE
+	return TRUE
 
 //shells and plants do not make skeletons
 /obj/item/fossil/shell

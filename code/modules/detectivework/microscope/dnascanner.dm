@@ -58,7 +58,7 @@
 /datum/interaction/machine_hand/ungated/dnaforensics_open_ui
 	id = "dnaforensics_open_ui"
 	name = "Use"
-	effect = /obj/machinery/proc/interaction_open_ui
+	effect = /atom/proc/interaction_open_ui
 
 /obj/machinery/dnaforensics/tgui_interact(mob/user, datum/tgui/ui)
 	if(stat & (NOPOWER))

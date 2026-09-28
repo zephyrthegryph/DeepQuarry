@@ -229,10 +229,10 @@ DECLARE_INTERACTIONS(/obj/item/miscdisc, INTERACT_USE(null, PROC_REF(interaction
 	item_state = "table_parts"
 	w_class = ITEMSIZE_HUGE
 
-/obj/item/contraband/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/contraband, INTERACT_USE("Unwrap", PROC_REF(interaction_unwrap)))
+
+/// Old attack_self.
+/obj/item/contraband/proc/interaction_unwrap(mob/user, obj/item/held, datum/interaction/interaction)
 	var/contraband = pick(
 		/obj/item/reagent_containers/glass/beaker/vial/macrocillin,
 		/obj/item/reagent_containers/glass/beaker/vial/microcillin,

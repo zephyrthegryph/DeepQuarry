@@ -84,6 +84,11 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+	INTERACT_VERB("Draw", PROC_REF(deck_verb_draw)), \
+	INTERACT_VERB("Deal", PROC_REF(deck_verb_deal)), \
+	INTERACT_VERB("Deal Multiple Cards", PROC_REF(deck_verb_deal_multi)), \
+	INTERACT_VERB("Search for Cards", PROC_REF(deck_verb_search)), \
+	INTERACT_VERB("Shuffle", PROC_REF(deck_verb_shuffle)), \
 )
 
 /// Old attack_hand.
@@ -92,18 +97,11 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 	if(ishuman(H) && (istype(src.loc, /obj/item/storage) || src == H.get_equipped_item(SLOT_ID_POCKET_R) || src == H.get_equipped_item(SLOT_ID_POCKET_L) || src.loc == user)) // so objects can be removed from storage containers or pockets. also added a catch-all, so if it's in the mob you'll pick it up. Human only, however!
 		return FALSE
 	else // but if they're not, or are in your hands, you can still draw cards.
-		draw_card()
+		deck_verb_draw(user)
 	return TRUE
 
-/obj/item/deck/verb/draw_card()
-
-	set category = "Object"
-	set name = "Draw"
-	set desc = "Draw a card from a deck."
-	set src in view(1)
-
-	var/mob/living/carbon/user = usr
-
+/// Old Draw verb: Draw a card from a deck.
+/obj/item/deck/proc/deck_verb_draw(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
 	if(user.stat || !Adjacent(user)) return
 
 	if(user.hands_are_full()) // Safety check lest the card disappear into oblivion
@@ -136,72 +134,55 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 	user.visible_message(span_infoplain(span_bold("\The [user]") + " draws a card."))
 	to_chat(user,span_notice("It's the [P]."))
 
-/obj/item/deck/verb/deal_card()
-
-	set category = "Object"
-	set name = "Deal"
-	set desc = "Deal a card from a deck."
-	set src in view(1)
-
-	if(usr.stat || !Adjacent(usr)) return
+/// Old Deal verb: Deal a card from a deck.
+/obj/item/deck/proc/deck_verb_deal(mob/user, obj/item/held, datum/interaction/interaction)
+	if(user.stat || !Adjacent(user)) return
 
 	if(!cards.len)
-		to_chat(usr,span_notice("There are no cards in the deck."))
+		to_chat(user,span_notice("There are no cards in the deck."))
 		return
 
 	var/list/players = list()
-	for(var/mob/living/player in viewers(3))
+	for(var/mob/living/player in viewers(3, user))
 		if(!player.stat)
 			players += player
-	//players -= usr
+	//players -= user
 
-	var/mob/living/M = rerun_ask(usr, "k148", VERB_REF(deal_card), args, /datum/om/prompt/choice, message = "Who do you wish to deal a card?", title = "Deal to whom?", choices = players)
+	var/mob/living/M = rerun_ask(user, "k148", PROC_REF(deck_verb_deal), args, /datum/om/prompt/choice, message = "Who do you wish to deal a card?", title = "Deal to whom?", choices = players)
 	if(isnull(M))
 		return
-	if(!usr || !src || !M) return
+	if(!user || !src || !M) return
 
-	deal_at(usr, M, 1)
+	deal_at(user, M, 1)
 
-/obj/item/deck/verb/deal_card_multi()
-
-	set category = "Object"
-	set name = "Deal Multiple Cards"
-	set desc = "Deal multiple cards from a deck."
-	set src in view(1)
-
-	if(usr.stat || !Adjacent(usr)) return
+/// Old Deal Multiple Cards verb: Deal multiple cards from a deck.
+/obj/item/deck/proc/deck_verb_deal_multi(mob/user, obj/item/held, datum/interaction/interaction)
+	if(user.stat || !Adjacent(user)) return
 
 	if(!cards.len)
-		to_chat(usr,span_notice("There are no cards in the deck."))
+		to_chat(user,span_notice("There are no cards in the deck."))
 		return
 
 	var/list/players = list()
-	for(var/mob/living/player in viewers(3))
+	for(var/mob/living/player in viewers(3, user))
 		if(!player.stat)
 			players += player
-	//players -= usr
+	//players -= user
 	var/maxcards = max(min(cards.len,10),1)
-	var/dcard = rerun_ask(usr, "k172", VERB_REF(deal_card_multi), args, /datum/om/prompt/number, message = "How many card(s) do you wish to deal? You may deal up to [maxcards] cards.", max = maxcards)
+	var/dcard = rerun_ask(user, "k172", PROC_REF(deck_verb_deal_multi), args, /datum/om/prompt/number, message = "How many card(s) do you wish to deal? You may deal up to [maxcards] cards.", max = maxcards)
 	if(isnull(dcard))
 		return
 	if(dcard > maxcards)
 		return
-	var/mob/living/M = rerun_ask(usr, "k175", VERB_REF(deal_card_multi), args, /datum/om/prompt/choice, message = "Who do you wish to deal [dcard] card(s)?", title = "Deal to whom?", choices = players)
+	var/mob/living/M = rerun_ask(user, "k175", PROC_REF(deck_verb_deal_multi), args, /datum/om/prompt/choice, message = "Who do you wish to deal [dcard] card(s)?", title = "Deal to whom?", choices = players)
 	if(isnull(M))
 		return
-	if(!usr || !src || !M) return
+	if(!user || !src || !M) return
 
-	deal_at(usr, M, dcard)
+	deal_at(user, M, dcard)
 
-/obj/item/deck/verb/search_cards()
-
-	set category = "Object"
-	set name = "Search for Cards"
-	set desc = "Search for and draw a specific card (or cards) in the deck. This will be an obvious action to all observers."
-	set src in view(1)
-
-	var/mob/living/carbon/user = usr
-
+/// Old Search for Cards verb: Search for and draw a specific card (or cards) in the deck. This will be an obvious action to all observers.
+/obj/item/deck/proc/deck_verb_search(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
 	if(user.stat || !Adjacent(user)) return
 
 	if(user.hands_are_full()) // Safety check lest the card disappear into oblivion
@@ -241,7 +222,7 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 		for(var/i = 0, i < length(L), i++)
 			cards_to_choose += "[key] ([i+1])"
 
-	var/list/cards_to_draw = rerun_ask(user, "k228", VERB_REF(search_cards), args, /datum/om/prompt/checklist, message = "Which cards do you want to retrieve?", title = "Choose your cards", choices = cards_to_choose, min_picks = 1)
+	var/list/cards_to_draw = rerun_ask(user, "k228", PROC_REF(deck_verb_search), args, /datum/om/prompt/checklist, message = "Which cards do you want to retrieve?", title = "Choose your cards", choices = cards_to_choose, min_picks = 1)
 	if(isnull(cards_to_draw))
 		return
 
@@ -272,10 +253,10 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 	user.visible_message(span_notice("\The [user] searches for specific cards in \the [src], and draws [cards_to_draw.len]."))
 
 /obj/item/deck/item_ctrl_click(mob/user)
-	deal_card()
+	deck_verb_deal(user)
 
 /obj/item/deck/click_ctrl_shift(mob/user)
-	deal_card_multi()
+	deck_verb_deal_multi(user)
 
 /obj/item/deck/proc/deal_at(mob/user, mob/target, dcard) // Take in the no. of card to be dealt
 	var/obj/item/hand/H = new(get_step(user, user.dir))
@@ -330,12 +311,9 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 	return TRUE
 
 
-/obj/item/deck/verb/verb_shuffle()
-	set category = "Object"
-	set name = "Shuffle"
-	set desc = "Shuffle the cards in the deck."
-	set src in view(1)
-	shuffle(usr)
+/// Old Shuffle verb: Shuffle the cards in the deck.
+/obj/item/deck/proc/deck_verb_shuffle(mob/user, obj/item/held, datum/interaction/interaction)
+	shuffle(user)
 
 /obj/item/deck/proc/shuffle(mob/user)
 	if (cooldown < world.time - 10) // 15 ticks cooldown
@@ -374,24 +352,6 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 				to_chat(user,span_notice("You pick up [src]."))
 				user.put_in_hands(src)
 
-	return
-
-/obj/item/deck/verb_pickup() // Snowflaked so pick up verb work as intended
-	var/mob/user = usr
-	if((istype(user) && (!( user.restrained() ) && (!( user.stat ) && (user.contents.Find(src) || in_range(src, user))))))
-		if(!isanimal(user))
-			if( !user.get_active_hand() )		//if active hand is empty
-				var/mob/living/carbon/human/H = user
-				var/obj/item/organ/external/temp = H.organs_by_name[BP_R_HAND]
-
-				if (H.hand)
-					temp = H.organs_by_name[BP_L_HAND]
-				if(temp && !temp.is_usable())
-					to_chat(user,span_notice("You try to move your [temp.name], but cannot!"))
-					return
-
-				to_chat(user,span_notice("You pick up [src]."))
-				user.put_in_hands(src)
 	return
 
 /obj/item/deck/cards/triple
@@ -443,15 +403,11 @@ DECLARE_INTERACTIONS(/obj/item/pack, INTERACT_USE(null, PROC_REF(interaction_sel
 	var/list/cards = list() // ALLOW(instance_list): d: a hand of cards always holds cards
 	var/parentdeck = null
 
-/obj/item/hand/verb/discard()
-
-	set category = "Object"
-	set name = "Discard"
-	set desc = "Place (a) card(s) from your hand in front of you."
-
+/// Old Discard verb: Place (a) card(s) from your hand in front of you.
+/obj/item/hand/proc/hand_verb_discard(mob/user, obj/item/held, datum/interaction/interaction)
 	var/i
 	var/maxcards = min(cards.len,5) // Maximum of 5 cards at once
-	var/discards = rerun_ask(usr, "k432", VERB_REF(discard), args, /datum/om/prompt/number, message = "How many cards do you want to discard? You may discard up to [maxcards] card(s)", max = maxcards)
+	var/discards = rerun_ask(user, "k432", PROC_REF(hand_verb_discard), args, /datum/om/prompt/number, message = "How many cards do you want to discard? You may discard up to [maxcards] card(s)", max = maxcards)
 	if(isnull(discards))
 		return
 	if(discards > maxcards)
@@ -463,8 +419,8 @@ DECLARE_INTERACTIONS(/obj/item/pack, INTERACT_USE(null, PROC_REF(interaction_sel
 		for(var/datum/playingcard/P in cards)
 			if(!(P in picked))
 				to_discard[P.name] = P
-		var/discarding = rerun_ask(usr, "card[i]", VERB_REF(discard), args, /datum/om/prompt/choice, message = "Which card do you wish to put down?", title = "Card Selection", choices = to_discard)
-		if(!discarding || !to_discard[discarding] || !usr || !src) return
+		var/discarding = rerun_ask(user, "card[i]", PROC_REF(hand_verb_discard), args, /datum/om/prompt/choice, message = "Which card do you wish to put down?", title = "Card Selection", choices = to_discard)
+		if(!discarding || !to_discard[discarding] || !user || !src) return
 		picked += to_discard[discarding]
 
 	for(var/datum/playingcard/card as anything in picked)
@@ -477,9 +433,9 @@ DECLARE_INTERACTIONS(/obj/item/pack, INTERACT_USE(null, PROC_REF(interaction_sel
 		H.parentdeck = src.parentdeck
 		H.update_icon()
 		src.update_icon()
-		usr.visible_message(span_notice("\The [usr] plays \the [discarding]."))
-		H.forceMove(get_turf(usr))
-		H.Move(get_step(usr,usr.dir))
+		user.visible_message(span_notice("\The [user] plays \the [discarding]."))
+		H.forceMove(get_turf(user))
+		H.Move(get_step(user,user.dir))
 
 	if(!cards.len)
 		qdel(src)
@@ -488,6 +444,8 @@ DECLARE_INTERACTIONS(/obj/item/hand, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+	INTERACT_VERB("Discard", PROC_REF(hand_verb_discard), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Remove card", PROC_REF(hand_verb_remove_card)), \
 )
 
 /// Old attack_self.
@@ -504,15 +462,8 @@ DECLARE_INTERACTIONS(/obj/item/hand, \
 		for(var/datum/playingcard/P in cards)
 			. += "\The [P.name]."
 
-/obj/item/hand/verb/Removecard()
-
-	set category = "Object"
-	set name = "Remove card"
-	set desc = "Remove a card from the hand."
-	set src in view(1)
-
-	var/mob/living/carbon/user = usr
-
+/// Old Remove card verb: Remove a card from the hand.
+/obj/item/hand/proc/hand_verb_remove_card(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
 	if(user.stat || !Adjacent(user)) return
 
 	if(user.hands_are_full()) // Safety check lest the card disappear into oblivion
@@ -522,7 +473,7 @@ DECLARE_INTERACTIONS(/obj/item/hand, \
 	var/pickablecards = list()
 	for(var/datum/playingcard/P in cards)
 		pickablecards[P.name] = P
-	var/pickedcard = rerun_ask(user, "k493", VERB_REF(Removecard), args, /datum/om/prompt/choice, message = "Which card do you want to remove from the hand?", title = "Card Selection", choices = pickablecards)
+	var/pickedcard = rerun_ask(user, "k493", PROC_REF(hand_verb_remove_card), args, /datum/om/prompt/choice, message = "Which card do you want to remove from the hand?", title = "Card Selection", choices = pickablecards)
 	if(isnull(pickedcard))
 		return
 
@@ -615,11 +566,11 @@ DECLARE_INTERACTIONS(/obj/item/hand, \
 /obj/item/hand/item_ctrl_click(mob/user)
 	if(user.stat || !Adjacent(user))
 		return
-	discard()
+	hand_verb_discard(user)
 
 /// Old click_alt.
 /obj/item/hand/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
-	Removecard()
+	hand_verb_remove_card(user)
 	return TRUE
 
 // A deck, pack or hand owns the card datums it holds.

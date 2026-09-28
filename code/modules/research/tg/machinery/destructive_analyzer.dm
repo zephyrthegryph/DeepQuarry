@@ -72,10 +72,7 @@ It is used to destroy hand-held objects and advance technological research. Used
 	category = INTERACTION_CAT_MAINTAIN
 	held_type = /obj/item/storage/part_replacer
 	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/rnd/destructive_analyzer/proc/not_busy, "it's busy right now"))
-	effect = /obj/machinery/rnd/destructive_analyzer/proc/interaction_part_replace
-
-/obj/machinery/rnd/destructive_analyzer/proc/interaction_part_replace(mob/user, obj/item/held, datum/interaction/interaction)
-	return default_part_replacement(user, held) ? TRUE : FALSE
+	effect = /obj/machinery/proc/interaction_part_replacement
 
 /datum/interaction/machine_item/destructive_analyzer_load
 	id = "destructive_analyzer_load"

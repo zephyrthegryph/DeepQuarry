@@ -84,7 +84,7 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 		var/obj/item/tank/jetpack/J = locate(/obj/item/tank/jetpack) in H
 		if(!J)
 			return
-		J.toggle()
+		J.jetpack_toggle_effect(H)
 		J.toggle_valve()
 
 /datum/decl/hierarchy/outfit/proc/equip(mob/living/carbon/human/H, rank, assignment)

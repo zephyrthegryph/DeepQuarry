@@ -135,12 +135,16 @@
 	playsound(src,'sound/voice/succlet_shriek.ogg', 100, 1)
 	om_qdel_after(src, 25)
 
-/mob/living/simple_mob/vore/alienanimals/succlet/attackby(obj/item/O, mob/user)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/succlet, INTERACT_ITEM(null, PROC_REF(succlet_interaction_item)))
+
+/// Old attackby: newspaper swat.
+/mob/living/simple_mob/vore/alienanimals/succlet/proc/succlet_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+	. = TRUE
 	if(istype(O, /obj/item/newspaper) && !ckey && isturf(user.loc))
 		user.visible_message(span_info("[user] swats [src] with [O]!"))
 		release_vore_contents()
 	else
-		..()
+		return FALSE
 
 /mob/living/simple_mob/vore/alienanimals/succlet/proc/succlet_move(target)
 	if(!target)
@@ -218,8 +222,12 @@
 	icon_living = "poison_succlet"
 	icon_rest = "poison_succlet"
 
-/mob/living/simple_mob/vore/alienanimals/succlet/poison/attack_hand(mob/user)
-	. = ..()
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/succlet/poison, INTERACT_HAND(null, PROC_REF(succlet_poison_interaction_hand)))
+
+/// Old attack_hand: the normal touch, then a sting unless helping.
+/mob/living/simple_mob/vore/alienanimals/succlet/poison/proc/succlet_poison_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	unarmed_touch(user)
+	. = TRUE
 	if(!IS_HELPING(user))
 		if(isliving(user))
 			var/mob/living/l = user

@@ -4,9 +4,12 @@
 	var/uses = 0
 	info = "<center><img src='talisman.png'></center><br/><br/>"
 
-/obj/item/paper/talisman/attack_self(mob/living/user)
-	. = ..(user)
-	if(.)
+EXTEND_INTERACTIONS(/obj/item/paper/talisman, INTERACT_USE("Invoke", PROC_REF(interaction_talisman)))
+
+/// Old attack_self: the paper's own self-use (read or crumple), then the talisman's effect.
+/obj/item/paper/talisman/proc/interaction_talisman(mob/living/user, obj/item/held, datum/interaction/interaction)
+	interaction_paper_self(user, held, interaction)
+	if(QDELETED(src))
 		return TRUE
 	if(iscultist(user))
 		var/delete = 1

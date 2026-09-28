@@ -23,16 +23,21 @@
 /obj/structure/anomaly_container/proc/can_contain(obj/O)
 	return O.is_anomalous()
 
-DECLARE_INTERACTIONS(/obj/structure/anomaly_container, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+DECLARE_INTERACTIONS(/obj/structure/anomaly_container, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
+	INTERACT_ROBOT("Release", PROC_REF(anomaly_container_robot_release)), \
+)
 
 /// Old attack_hand.
 /obj/structure/anomaly_container/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	release()
 	return TRUE
 
-/obj/structure/anomaly_container/attack_robot(mob/user)
+/// Old attack_robot: an adjacent cyborg releases the contents. Never fell through.
+/obj/structure/anomaly_container/proc/anomaly_container_robot_release(mob/user, obj/item/held, datum/interaction/interaction)
 	if(Adjacent(user))
 		release()
+	return TRUE
 
 /obj/structure/anomaly_container/proc/contain(obj/machinery/artifact/artifact)
 	if(contained())

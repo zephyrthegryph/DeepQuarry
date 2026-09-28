@@ -4,6 +4,10 @@
 	icon = 'icons/effects/blood.dmi'
 	icon_state = "remains"
 	anchored = FALSE
+	/// What touching the remains says they crumble into.
+	var/crumble_message = "sinks together into a pile of ash"
+	/// What they leave behind on a floor when touched.
+	var/crumble_into = /obj/effect/decal/cleanable/ash
 
 /obj/effect/decal/remains/human
 	desc = "They look like human remains. They have a strange aura about them."
@@ -16,6 +20,8 @@
 	desc = "They look like the remains of something mechanical. They have a strange aura about them."
 	icon = 'icons/mob/robots.dmi'
 	icon_state = "remainsrobot"
+	crumble_message = "crumbles down into a pile of debris"
+	crumble_into = /obj/effect/decal/cleanable/blood/gibs/robot
 
 /obj/effect/decal/remains/mouse
 	desc = "They look like the remains of a small rodent."
@@ -55,16 +61,15 @@
 	desc = "They look like human remains. They've been here a long time."
 	icon_state = "mummified2"
 
-/obj/effect/decal/remains/attack_hand(mob/user as mob)
-	to_chat(user, span_notice("[src] sinks together into a pile of ash."))
-	var/turf/simulated/floor/F = get_turf(src)
-	if(istype(F))
-		new /obj/effect/decal/cleanable/ash(F)
-	qdel(src)
+EXTEND_INTERACTIONS(/obj/effect/decal/remains, \
+	INTERACT_HAND(null, PROC_REF(interaction_crumble_remains)), \
+)
 
-/obj/effect/decal/remains/robot/attack_hand(mob/user as mob)
-	to_chat(user, span_notice("[src] crumbles down into a pile of debris."))
+/// Old attack_hand: the remains crumble away at a touch.
+/obj/effect/decal/remains/proc/interaction_crumble_remains(mob/user, obj/item/held, datum/interaction/interaction)
+	to_chat(user, span_notice("[src] [crumble_message]."))
 	var/turf/simulated/floor/F = get_turf(src)
 	if(istype(F))
-		new /obj/effect/decal/cleanable/blood/gibs/robot(F)
+		new crumble_into(F)
 	qdel(src)
+	return TRUE

@@ -142,10 +142,6 @@
 
 	if(dna_lock)
 		attached_lock = new /obj/item/dnalockingchip(src)
-	if(!dna_lock)
-		verbs -= /obj/item/gun/verb/remove_dna
-		verbs -= /obj/item/gun/verb/give_dna
-		verbs -= /obj/item/gun/verb/allow_dna
 
 	if(sel_mode <= length(firemodes))
 		var/datum/firemode/new_mode = LAZYACCESS(firemodes, sel_mode)
@@ -296,8 +292,24 @@ REF_OWNED(/obj/item/gun, "firemode_selector")
 	else
 		return ..() //Pistolwhippin'
 
-/obj/item/gun/attackby(obj/item/A as obj, mob/user as mob)
+// EXTEND, not DECLARE: gun subtypes DECLARE interactions of their own, which this must not replace.
+// Both effects are override chains: gun subtypes override gun_item()/gun_self() with ..(), as they
+// overrode attackby()/attack_self(), so the parent-first order of those chains is kept.
+EXTEND_INTERACTIONS(/obj/item/gun, \
+	INTERACT_ITEM("Fit", PROC_REF(gun_item)), \
+	INTERACT_SELF("Operate", PROC_REF(gun_self)), \
+	INTERACT_VERB("Give DNA", PROC_REF(gun_verb_give_dna), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/gun/proc/pred_has_dna_lock, "it has no DNA lock")), \
+	INTERACT_VERB("Remove DNA", PROC_REF(gun_verb_remove_dna), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/gun/proc/pred_has_dna_lock, "it has no DNA lock")), \
+	INTERACT_VERB("Toggle DNA Samples Allowance", PROC_REF(gun_verb_allow_dna), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/gun/proc/pred_has_dna_lock, "it has no DNA lock")), \
+)
+
+/**
+ * Old attackby. TRUE uses the item up (no afterattack), INTERACTION_HANDLED_PASS handled it but
+ * afterattack follows, FALSE falls through to the base item's attackby (as the old ..() did).
+ */
+/obj/item/gun/proc/gun_item(mob/user, obj/item/A, datum/interaction/interaction)
 	if(istype(A, /obj/item/dnalockingchip))
+		. = INTERACTION_HANDLED_PASS
 		if(dna_lock)
 			to_chat(user, span_notice("\The [src] already has a [attached_lock]."))
 			return
@@ -306,12 +318,9 @@ REF_OWNED(/obj/item/gun, "firemode_selector")
 		A.forceMove(src)
 		attached_lock = A
 		dna_lock = 1
-		verbs += /obj/item/gun/verb/remove_dna
-		verbs += /obj/item/gun/verb/give_dna
-		verbs += /obj/item/gun/verb/allow_dna
 		return
 
-	..()
+	return FALSE
 
 /obj/item/gun/screwdriver_act(mob/user, obj/item/tool)
 	if(!dna_lock || !attached_lock || attached_lock.controller_lock)
@@ -325,9 +334,6 @@ REF_OWNED(/obj/item/gun, "firemode_selector")
 	user.put_in_hands(attached_lock)
 	dna_lock = FALSE
 	attached_lock = null
-	verbs -= /obj/item/gun/verb/remove_dna
-	verbs -= /obj/item/gun/verb/give_dna
-	verbs -= /obj/item/gun/verb/allow_dna
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/gun/emag_act(remaining_charges, mob/user)
@@ -807,10 +813,9 @@ REF_OWNED(/obj/item/gun, "firemode_selector")
 
 	return new_mode
 
-/obj/item/gun/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self. `callback` is the projectile gun's re-entry flag (l6_saw). A falsy return
+/// (as the old chain's) leaves the self-use unhandled.
+/obj/item/gun/proc/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
 	if(special_handling)
 		return FALSE
 	switch_firemodes(user)

@@ -18,8 +18,7 @@
 	center_of_mass_y = 6
 	volume = 50
 
-/obj/item/reagent_containers/food/condiment/attackby(obj/item/W as obj, mob/user as mob)
-	return
+EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/condiment, INTERACT_ITEM(null, TYPE_PROC_REF(/atom, interaction_pass)))
 
 /obj/item/reagent_containers/food/condiment/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(standard_feed_mob(user, M))

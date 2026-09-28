@@ -15,12 +15,18 @@
 	icon_state = "ash"
 	anchored = TRUE
 
-/obj/effect/decal/cleanable/ash/attack_hand(mob/user as mob)
+EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/ash, \
+	INTERACT_HAND("Sift", PROC_REF(interaction_sift_ash)), \
+)
+
+/// Old attack_hand: the ash crumbles away into floor dirt.
+/obj/effect/decal/cleanable/ash/proc/interaction_sift_ash(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_notice("[src] sifts through your fingers."))
 	var/turf/simulated/floor/F = get_turf(src)
 	if (istype(F))
 		F.dirt += 4
 	qdel(src)
+	return TRUE
 
 /obj/effect/decal/cleanable/greenglow
 	COOLDOWN_DECLARE(event_cooldown)
@@ -148,7 +154,6 @@
 	icon = 'icons/effects/blood.dmi'
 	icon_state = "vomit_1"
 	random_icon_states = list("vomit_1", "vomit_2", "vomit_3", "vomit_4")
-	var/list/datum/affliction/contagion/viruses
 
 /obj/effect/decal/cleanable/vomit/old
 	name = "crusty dried vomit"
@@ -229,9 +234,15 @@
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "confetti"
 
-/obj/effect/decal/cleanable/confetti/attack_hand(mob/user)
+EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/confetti, \
+	INTERACT_HAND("Pick up", PROC_REF(interaction_pick_confetti)), \
+)
+
+/// Old attack_hand: slowly pick the confetti up.
+/obj/effect/decal/cleanable/confetti/proc/interaction_pick_confetti(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_notice("You start to meticulously pick up the confetti."))
 	om_do_after(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list())
+	return TRUE
 
 /obj/effect/decal/cleanable/confetti/proc/attack_hand_timed_done()
 	qdel(src)

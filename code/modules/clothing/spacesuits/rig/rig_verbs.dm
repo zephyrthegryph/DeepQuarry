@@ -1,42 +1,33 @@
-// Interface for humans.
-/obj/item/rig/verb/hardsuit_interface()
+// Interface for humans. The Menu entries are declared with the rest of the rig's interactions (rig_attackby.dm).
 
-	set name = "Open Hardsuit Interface"
-	set desc = "Open the hardsuit system interface."
-	set category = "Hardsuit"
-	set src = usr.contents
-
+/// Old verb "Open Hardsuit Interface".
+/obj/item/rig/proc/rig_hardsuit_interface_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	if(wearer() && (wearer().get_equipped_item(SLOT_ID_BACK) == src || wearer().get_equipped_item(SLOT_ID_BELT) == src))
-		tgui_interact(usr)
+		tgui_interact(user)
 
 // So the UI button clicks come here
 /obj/item/rig/ui_action_click(mob/user, actiontype)
 	if(user == wearer() && (wearer().get_equipped_item(SLOT_ID_BACK) == src || wearer().get_equipped_item(SLOT_ID_BELT) == src))
 		tgui_interact(user)
 
-/obj/item/rig/verb/toggle_vision()
-
-	set name = "Toggle Visor"
-	set desc = "Turns your rig visor off or on."
-	set category = "Hardsuit"
-	set src = usr.contents
-
+/// Old verb "Toggle Visor".
+/obj/item/rig/proc/rig_toggle_vision_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!istype(wearer(), /mob/living/carbon/human) || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src))
-		to_chat(usr, span_warning("The hardsuit is not being worn."))
+		to_chat(user, span_warning("The hardsuit is not being worn."))
 		return
 
-	if(!check_power_cost(usr))
+	if(!check_power_cost(user))
 		return
 
 	if(canremove)
-		to_chat(usr, span_warning("The suit is not active."))
+		to_chat(user, span_warning("The suit is not active."))
 		return
 
-	if(!check_suit_access(usr))
+	if(!check_suit_access(user))
 		return
 
 	if(!visor)
-		to_chat(usr, span_warning("The hardsuit does not have a configurable visor."))
+		to_chat(user, span_warning("The hardsuit does not have a configurable visor."))
 		return
 
 	if(!visor.active)
@@ -44,174 +35,129 @@
 	else
 		visor.deactivate()
 
-/obj/item/rig/proc/toggle_helmet()
-
-	set name = "Toggle Helmet"
-	set desc = "Deploys or retracts your helmet."
-	set category = "Hardsuit"
-	set src = usr.contents
-
+/// Old verb "Toggle Helmet" (offered while the suit has that piece).
+/obj/item/rig/proc/rig_toggle_helmet_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!istype(wearer(), /mob/living/carbon/human) || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src))
-		to_chat(usr, span_warning("The hardsuit is not being worn."))
+		to_chat(user, span_warning("The hardsuit is not being worn."))
 		return
 
-	if(!check_suit_access(usr))
+	if(!check_suit_access(user))
 		return
 
 	toggle_piece("helmet",wearer())
 
-/obj/item/rig/proc/toggle_chest()
-
-	set name = "Toggle Chestpiece"
-	set desc = "Deploys or retracts your chestpiece."
-	set category = "Hardsuit"
-	set src = usr.contents
-
-	if(!check_suit_access(usr))
+/// Old verb "Toggle Chestpiece" (offered while the suit has that piece).
+/obj/item/rig/proc/rig_toggle_chest_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!check_suit_access(user))
 		return
 
 	toggle_piece("chest",wearer())
 
-/obj/item/rig/proc/toggle_gauntlets()
-
-	set name = "Toggle Gauntlets"
-	set desc = "Deploys or retracts your gauntlets."
-	set category = "Hardsuit"
-	set src = usr.contents
-
+/// Old verb "Toggle Gauntlets" (offered while the suit has that piece).
+/obj/item/rig/proc/rig_toggle_gauntlets_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!istype(wearer(), /mob/living/carbon/human) || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src))
-		to_chat(usr, span_warning("The hardsuit is not being worn."))
+		to_chat(user, span_warning("The hardsuit is not being worn."))
 		return
 
-	if(!check_suit_access(usr))
+	if(!check_suit_access(user))
 		return
 
 	toggle_piece("gauntlets",wearer())
 
-/obj/item/rig/proc/toggle_boots()
-
-	set name = "Toggle Boots"
-	set desc = "Deploys or retracts your boots."
-	set category = "Hardsuit"
-	set src = usr.contents
-
+/// Old verb "Toggle Boots" (offered while the suit has that piece).
+/obj/item/rig/proc/rig_toggle_boots_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!istype(wearer(), /mob/living/carbon/human) || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src))
-		to_chat(usr, span_warning("The hardsuit is not being worn."))
+		to_chat(user, span_warning("The hardsuit is not being worn."))
 		return
 
-	if(!check_suit_access(usr))
+	if(!check_suit_access(user))
 		return
 
 	toggle_piece("boots",wearer())
 
-/obj/item/rig/verb/deploy_suit()
-
-	set name = "Deploy Hardsuit"
-	set desc = "Deploys helmet, gloves and boots."
-	set category = "Hardsuit"
-	set src = usr.contents
-
+/// Old verb "Deploy Hardsuit".
+/obj/item/rig/proc/rig_deploy_suit_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!istype(wearer(), /mob/living/carbon/human) || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src))
-		to_chat(usr, span_warning("The hardsuit is not being worn."))
+		to_chat(user, span_warning("The hardsuit is not being worn."))
 		return
 
-	if(!check_suit_access(usr))
+	if(!check_suit_access(user))
 		return
 
-	if(!check_power_cost(usr))
+	if(!check_power_cost(user))
 		return
 
 	deploy(wearer())
 
-/obj/item/rig/verb/toggle_seals_verb()
-
-	set name = "Toggle Hardsuit"
-	set desc = "Activates or deactivates your rig."
-	set category = "Hardsuit"
-	set src = usr.contents
-
+/// Old verb "Toggle Hardsuit".
+/obj/item/rig/proc/rig_toggle_seals_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!istype(wearer(), /mob/living/carbon/human) || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src))
-		to_chat(usr, span_warning("The hardsuit is not being worn."))
+		to_chat(user, span_warning("The hardsuit is not being worn."))
 		return
 
-	if(!check_suit_access(usr))
+	if(!check_suit_access(user))
 		return
 
 	toggle_seals(wearer())
 
-/obj/item/rig/verb/switch_vision_mode()
-
-	set name = "Switch Vision Mode"
-	set desc = "Switches between available vision modes."
-	set category = "Hardsuit"
-	set src = usr.contents
-
-	if(malfunction_check(usr))
+/// Old verb "Switch Vision Mode".
+/obj/item/rig/proc/rig_switch_vision_mode_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(malfunction_check(user))
 		return
 
-	if(!check_power_cost(usr, 0, 0, 0, 0))
+	if(!check_power_cost(user, 0, 0, 0, 0))
 		return
 
 	if(canremove)
-		to_chat(usr, span_warning("The suit is not active."))
+		to_chat(user, span_warning("The suit is not active."))
 		return
 
 	if(!visor)
-		to_chat(usr, span_warning("The hardsuit does not have a configurable visor."))
+		to_chat(user, span_warning("The hardsuit does not have a configurable visor."))
 		return
 
 	if(!visor.active)
 		visor.activate()
 
 	if(!visor.active)
-		to_chat(usr, span_warning("The visor is suffering a hardware fault and cannot be configured."))
+		to_chat(user, span_warning("The visor is suffering a hardware fault and cannot be configured."))
 		return
 
 	visor.engage()
 
-/obj/item/rig/verb/alter_voice()
-
-	set name = "Configure Voice Synthesiser"
-	set desc = "Toggles or configures your voice synthesizer."
-	set category = "Hardsuit"
-	set src = usr.contents
-
-	if(malfunction_check(usr))
+/// Old verb "Configure Voice Synthesiser".
+/obj/item/rig/proc/rig_alter_voice_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(malfunction_check(user))
 		return
 
 	if(canremove)
-		to_chat(usr, span_warning("The suit is not active."))
+		to_chat(user, span_warning("The suit is not active."))
 		return
 
 	if(!istype(wearer(), /mob/living/carbon/human) || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src))
-		to_chat(usr, span_warning("The hardsuit is not being worn."))
+		to_chat(user, span_warning("The hardsuit is not being worn."))
 		return
 
 	if(!speech)
-		to_chat(usr, span_warning("The hardsuit does not have a speech synthesiser."))
+		to_chat(user, span_warning("The hardsuit does not have a speech synthesiser."))
 		return
 
 	speech.engage()
 
-/obj/item/rig/verb/select_module()
-
-	set name = "Select Module"
-	set desc = "Selects a module as your primary system."
-	set category = "Hardsuit"
-	set src = usr.contents
-
-	if(malfunction_check(usr))
+/// Old verb "Select Module".
+/obj/item/rig/proc/rig_select_module_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(malfunction_check(user))
 		return
 
-	if(!check_power_cost(usr, 0, 0, 0, 0))
+	if(!check_power_cost(user, 0, 0, 0, 0))
 		return
 
 	if(canremove)
-		to_chat(usr, span_warning("The suit is not active."))
+		to_chat(user, span_warning("The suit is not active."))
 		return
 
 	if(!istype(wearer(), /mob/living/carbon/human) || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src))
-		to_chat(usr, span_warning("The hardsuit is not being worn."))
+		to_chat(user, span_warning("The hardsuit is not being worn."))
 		return
 
 	var/list/selectable = list()
@@ -219,37 +165,32 @@
 		if(module.selectable)
 			selectable |= module
 
-	var/obj/item/rig_module/module = rerun_ask(usr, "a1", VERB_REF(select_module), args, /datum/om/prompt/choice, message = "Which module do you wish to select?", title = "Select Module", choices = selectable)
+	var/obj/item/rig_module/module = rerun_ask(user, "a1", PROC_REF(rig_select_module_verb), list(user), /datum/om/prompt/choice, message = "Which module do you wish to select?", title = "Select Module", choices = selectable)
 	if(isnull(module))
 		return
 
 	if(!istype(module))
 		selected_module = null
-		to_chat(usr, span_boldnotice("Primary system is now: deselected."))
+		to_chat(user, span_boldnotice("Primary system is now: deselected."))
 		return
 
 	selected_module = module
-	to_chat(usr, span_boldnotice("Primary system is now: [selected_module.interface_name]."))
+	to_chat(user, span_boldnotice("Primary system is now: [selected_module.interface_name]."))
 
-/obj/item/rig/verb/toggle_module()
-
-	set name = "Toggle Module"
-	set desc = "Toggle a system module."
-	set category = "Hardsuit"
-	set src = usr.contents
-
-	if(malfunction_check(usr))
+/// Old verb "Toggle Module".
+/obj/item/rig/proc/rig_toggle_module_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(malfunction_check(user))
 		return
 
-	if(!check_power_cost(usr, 0, 0, 0, 0))
+	if(!check_power_cost(user, 0, 0, 0, 0))
 		return
 
 	if(canremove)
-		to_chat(usr, span_warning("The suit is not active."))
+		to_chat(user, span_warning("The suit is not active."))
 		return
 
 	if(!istype(wearer(), /mob/living/carbon/human) || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src))
-		to_chat(usr, span_warning("The hardsuit is not being worn."))
+		to_chat(user, span_warning("The hardsuit is not being worn."))
 		return
 
 	var/list/selectable = list()
@@ -257,7 +198,7 @@
 		if(module.toggleable)
 			selectable |= module
 
-	var/obj/item/rig_module/module = rerun_ask(usr, "a2", VERB_REF(toggle_module), args, /datum/om/prompt/choice, message = "Which module do you wish to toggle?", title = "Toggle Module", choices = selectable)
+	var/obj/item/rig_module/module = rerun_ask(user, "a2", PROC_REF(rig_toggle_module_verb), list(user), /datum/om/prompt/choice, message = "Which module do you wish to toggle?", title = "Toggle Module", choices = selectable)
 	if(isnull(module))
 		return
 
@@ -265,31 +206,26 @@
 		return
 
 	if(module.active)
-		to_chat(usr, span_boldnotice("You attempt to deactivate \the [module.interface_name]."))
+		to_chat(user, span_boldnotice("You attempt to deactivate \the [module.interface_name]."))
 		module.deactivate()
 	else
-		to_chat(usr, span_boldnotice("You attempt to activate \the [module.interface_name]."))
+		to_chat(user, span_boldnotice("You attempt to activate \the [module.interface_name]."))
 		module.activate()
 
-/obj/item/rig/verb/engage_module()
-
-	set name = "Engage Module"
-	set desc = "Engages a system module."
-	set category = "Hardsuit"
-	set src = usr.contents
-
-	if(malfunction_check(usr))
+/// Old verb "Engage Module".
+/obj/item/rig/proc/rig_engage_module_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(malfunction_check(user))
 		return
 
 	if(canremove)
-		to_chat(usr, span_warning("The suit is not active."))
+		to_chat(user, span_warning("The suit is not active."))
 		return
 
 	if(!istype(wearer(), /mob/living/carbon/human) || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src))
-		to_chat(usr, span_warning("The hardsuit is not being worn."))
+		to_chat(user, span_warning("The hardsuit is not being worn."))
 		return
 
-	if(!check_power_cost(usr, 0, 0, 0, 0))
+	if(!check_power_cost(user, 0, 0, 0, 0))
 		return
 
 	var/list/selectable = list()
@@ -297,12 +233,25 @@
 		if(module.usable)
 			selectable |= module
 
-	var/obj/item/rig_module/module = rerun_ask(usr, "a3", VERB_REF(engage_module), args, /datum/om/prompt/choice, message = "Which module do you wish to engage?", title = "Engage Module", choices = selectable)
+	var/obj/item/rig_module/module = rerun_ask(user, "a3", PROC_REF(rig_engage_module_verb), list(user), /datum/om/prompt/choice, message = "Which module do you wish to engage?", title = "Engage Module", choices = selectable)
 	if(isnull(module))
 		return
 
 	if(!istype(module))
 		return
 
-	to_chat(usr, span_boldnotice("You attempt to engage the [module.interface_name]."))
+	to_chat(user, span_boldnotice("You attempt to engage the [module.interface_name]."))
 	module.engage()
+
+/// Requirement: the suit has this piece (replaces adding the toggle verbs when the piece was built).
+/obj/item/rig/proc/pred_has_helmet(mob/actor, atom/target, obj/item/held)
+	return !!helmet
+
+/obj/item/rig/proc/pred_has_chest(mob/actor, atom/target, obj/item/held)
+	return !!chest
+
+/obj/item/rig/proc/pred_has_gauntlets(mob/actor, atom/target, obj/item/held)
+	return !!gloves
+
+/obj/item/rig/proc/pred_has_boots(mob/actor, atom/target, obj/item/held)
+	return !!boots

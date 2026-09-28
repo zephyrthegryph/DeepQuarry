@@ -57,7 +57,11 @@
 
 	return PROJECTILE_FORCE_MISS
 
-/mob/living/simple_mob/illusion/attack_hand(mob/living/carbon/human/M)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/illusion, INTERACT_HAND_UNGATED(null, PROC_REF(illusion_interaction_hand)))
+
+/// Old attack_hand: unrealistic illusions can't be touched; realistic ones fake the reactions.
+/mob/living/simple_mob/illusion/proc/illusion_interaction_hand(mob/living/carbon/human/M, obj/item/held, datum/interaction/interaction)
+	. = TRUE
 	if(!realistic)
 		playsound(src, 'sound/weapons/punchmiss.ogg', 25, 1, -1)
 		visible_message(span_warning("\The [M]'s hand goes through \the [src]!"))
@@ -77,7 +81,7 @@
 				M.do_attack_animation(src)
 
 			if(I_GRAB)
-				..()
+				return FALSE
 
 			if(I_HURT)
 				injure(INJURY_BLUNT, harm_intent_damage, source = M)

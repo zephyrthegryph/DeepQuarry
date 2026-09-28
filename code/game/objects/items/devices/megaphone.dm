@@ -98,12 +98,9 @@ DECLARE_INTERACTIONS(/obj/item/megaphone, INTERACT_USE(null, PROC_REF(interactio
 			to_chat(user, span_warning("You re-scramble \the [src]'s voice synthesizer."))
 		return 1
 
-/obj/item/megaphone/super/verb/turn_volume_dial()
-	set name = "Change Volume"
-	set desc = "Allows you to change the megaphone's volume."
-	set category = "Object"
+/obj/item/megaphone/super/proc/turn_volume_dial_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	adjust_volume(usr)
+	adjust_volume(user)
 
 /obj/item/megaphone/super/proc/adjust_volume(mob/living/user)
 	om_ask(user, /datum/om/prompt/choice, PROC_REF(volume_chosen), choices = volume_options, title = "Set Volume", message = "Set Volume", requires = PROMPT_ADJACENT)
@@ -112,12 +109,9 @@ DECLARE_INTERACTIONS(/obj/item/megaphone, INTERACT_USE(null, PROC_REF(interactio
 	if(ask.choice)
 		broadcast_size = ask.choice
 
-/obj/item/megaphone/super/verb/change_font()
-	set name = "Change... Pronunciation?"
-	set desc = "Allows you to change the megaphone's font."
-	set category = "Object"
+/obj/item/megaphone/super/proc/change_font_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	adjust_font(usr)
+	adjust_font(user)
 
 /obj/item/megaphone/super/proc/adjust_font(mob/living/user)
 	om_ask(user, /datum/om/prompt/choice, PROC_REF(font_chosen), choices = font_options, title = "Set Volume", message = "Set Volume", requires = PROMPT_ADJACENT)
@@ -126,12 +120,9 @@ DECLARE_INTERACTIONS(/obj/item/megaphone, INTERACT_USE(null, PROC_REF(interactio
 	if(ask.choice)
 		broadcast_font = ask.choice
 
-/obj/item/megaphone/super/verb/change_color()
-	set name = "Change... Tune?"
-	set desc = "Allows you to change the megaphone's color."
-	set category = "Object"
+/obj/item/megaphone/super/proc/change_color_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	adjust_color(usr)
+	adjust_color(user)
 
 /obj/item/megaphone/super/proc/adjust_color(mob/living/user)
 	om_ask(user, /datum/om/prompt/choice, PROC_REF(color_chosen), choices = color_options, title = "Set Volume", message = "Set Volume", requires = PROMPT_ADJACENT)
@@ -177,3 +168,10 @@ DECLARE_INTERACTIONS(/obj/item/megaphone, INTERACT_USE(null, PROC_REF(interactio
 	explosion(get_turf(src), -1, -1, 1, 3, adminlog = 1)
 	qdel(src)
 	return
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/megaphone/super, \
+	INTERACT_VERB("Change Volume", PROC_REF(turn_volume_dial_effect), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Change... Pronunciation?", PROC_REF(change_font_effect), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Change... Tune?", PROC_REF(change_color_effect), REQ_IN_INVENTORY), \
+)

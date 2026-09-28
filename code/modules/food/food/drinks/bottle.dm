@@ -84,45 +84,50 @@ REF_SPILL(/obj/item/reagent_containers/food/drinks/bottle, "rag")
 	qdel(src)
 	return B
 
-/obj/item/reagent_containers/food/drinks/bottle/verb/smash_bottle()
-	set name = "Smash Bottle"
-	set category = "Object"
+/obj/item/reagent_containers/food/drinks/bottle/proc/smash_bottle_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
 	var/list/things_to_smash_on = list()
-	for(var/atom/A in range (1, usr))
-		if(A.density && usr.Adjacent(A) && !istype(A, /mob))
+	for(var/atom/A in range (1, user))
+		if(A.density && user.Adjacent(A) && !istype(A, /mob))
 			things_to_smash_on += A
 
-	var/atom/choice = rerun_ask(usr, "k104", VERB_REF(smash_bottle), args, /datum/om/prompt/choice, message = "Select what you want to smash the bottle on.", title = "SMASH!", choices = things_to_smash_on)
+	var/atom/choice = rerun_ask(user, "k104", PROC_REF(smash_bottle_effect), args, /datum/om/prompt/choice, message = "Select what you want to smash the bottle on.", title = "SMASH!", choices = things_to_smash_on)
 	if(isnull(choice))
 		return
 	if(!choice)
 		return
-	if(!(choice.density && usr.Adjacent(choice)))
-		to_chat(usr, span_warning("You must stay close to your target! You moved away from \the [choice]"))
+	if(!(choice.density && user.Adjacent(choice)))
+		to_chat(user, span_warning("You must stay close to your target! You moved away from \the [choice]"))
 		return
 
-	usr.put_in_hands(src.smash(usr.loc, choice))
-	usr.visible_message(span_danger("\The [usr] smashed \the [src] on \the [choice]!"))
-	to_chat(usr, span_danger("You smash \the [src] on \the [choice]!"))
+	user.put_in_hands(src.smash(user.loc, choice))
+	user.visible_message(span_danger("\The [user] smashed \the [src] on \the [choice]!"))
+	to_chat(user, span_danger("You smash \the [src] on \the [choice]!"))
 
-/obj/item/reagent_containers/food/drinks/bottle/attackby(obj/item/W, mob/user)
+EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/bottle, \
+	INTERACT_SELF(null, PROC_REF(bottle_self)), \
+	INTERACT_ITEM(null, PROC_REF(bottle_item)), \
+	INTERACT_VERB("Smash Bottle", PROC_REF(smash_bottle_effect), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Spin The Bottle", PROC_REF(spin_bottle_effect)), \
+)
+
+/// Old attackby. FALSE falls to the drinks handling, as the old ..() did.
+/obj/item/reagent_containers/food/drinks/bottle/proc/bottle_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(!rag && istype(W, /obj/item/reagent_containers/glass/rag))
 		insert_rag(W, user)
-		return
+		return INTERACTION_HANDLED_PASS
 	if(rag && istype(W, /obj/item/flame))
 		rag.attackby(W, user)
-		return
-	..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
-/obj/item/reagent_containers/food/drinks/bottle/attack_self(mob/user, special_pass)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self: pull the rag out, else open the bottle (the drinks self-use, forced past special_handling).
+/obj/item/reagent_containers/food/drinks/bottle/proc/bottle_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(rag)
 		remove_rag(user)
 	else
-		..(user, TRUE)
+		drinks_self(user, held, interaction, TRUE)
+	return TRUE
 
 /obj/item/reagent_containers/food/drinks/bottle/proc/insert_rag(obj/item/reagent_containers/glass/rag/R, mob/user)
 	if(!isGlass || rag) return
@@ -182,20 +187,17 @@ REF_SPILL(/obj/item/reagent_containers/food/drinks/bottle, "rag")
 	var/obj/item/broken_bottle/B = smash(target.loc, target)
 	user.put_in_active_hand(B)
 
-/obj/item/reagent_containers/food/drinks/bottle/verb/spin_bottle()
-	set name = "Spin The Bottle"
-	set category = "Object"
-	set src in view(1)
+/obj/item/reagent_containers/food/drinks/bottle/proc/spin_bottle_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	if(isobserver(usr) || usr.stat)
+	if(isobserver(user) || user.stat)
 		return
 
 	if(!isturf(src.loc))
-		to_chat(usr, span_notice("\The [src] needs to be on the floor to spin."))
+		to_chat(user, span_notice("\The [src] needs to be on the floor to spin."))
 		return
 
 	var/spin_rotation = (rand(0,359))
-	usr.visible_message(span_warning("\The [usr] spins \the [src]!"),span_notice("You spin \the [src]!"))
+	user.visible_message(span_warning("\The [user] spins \the [src]!"),span_notice("You spin \the [src]!"))
 	SpinAnimation(3,10)
 	om_after(src, 3 SECONDS, PROC_REF(finish_spin), spin_rotation)
 

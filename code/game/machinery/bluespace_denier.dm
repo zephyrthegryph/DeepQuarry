@@ -34,11 +34,13 @@
 //		sd_SetLuminosity(0)
 
 //Let the AI trigger them directly.
-/obj/machinery/bluespace_denier/attack_ai()
+EXTEND_INTERACTIONS(/obj/machinery/bluespace_denier, INTERACT_SILICON("Pulse", PROC_REF(bluespace_denier_silicon_trigger)))
+
+/// Old attack_ai: the AI triggers it directly while it is anchored.
+/obj/machinery/bluespace_denier/proc/bluespace_denier_silicon_trigger(mob/user, obj/item/held, datum/interaction/interaction)
 	if(anchored)
-		return pulse()
-	else
-		return
+		pulse()
+	return TRUE
 
 /obj/machinery/bluespace_denier/proc/pulse()
 	if(!(powered()))

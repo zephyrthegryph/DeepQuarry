@@ -65,12 +65,18 @@
 /obj/effect/energy_field/bullet_act(obj/item/projectile/Proj)
 	adjust_strength(-Proj.get_structure_damage() / 10)
 
-/obj/effect/energy_field/attackby(obj/item/W, mob/user)
-	if(W.force)
-		adjust_strength(-W.force / 20)
+EXTEND_INTERACTIONS(/obj/effect/energy_field, \
+	INTERACT_ITEM(null, PROC_REF(interaction_hit_energy_field)), \
+	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_touch_energy_field)), \
+)
+
+/// Old attackby: a forceful hit weakens the field; the item's normal handling carries on.
+/obj/effect/energy_field/proc/interaction_hit_energy_field(mob/user, obj/item/held, datum/interaction/interaction)
+	if(held.force)
+		adjust_strength(-held.force / 20)
 		user.do_attack_animation(src)
-		user.setClickCooldown(user.get_attack_speed(W))
-	..()
+		user.setClickCooldown(user.get_attack_speed(held))
+	return FALSE
 
 /obj/effect/energy_field/attack_generic(mob/user, damage)
 	if(damage)
@@ -78,9 +84,10 @@
 		user.do_attack_animation(src)
 		user.setClickCooldown(user.get_attack_speed())
 
-/obj/effect/energy_field/attack_hand(mob/living/user)
-	impact_effect(3) // Harmless, but still produces the 'impact' effect.
-	..()
+/// Old attack_hand: harmless, but still produces the 'impact' effect; the touch carries on.
+/obj/effect/energy_field/proc/interaction_touch_energy_field(mob/user, obj/item/held, datum/interaction/interaction)
+	impact_effect(3)
+	return FALSE
 
 /obj/effect/energy_field/Bumped(atom/A)
 	..(A)

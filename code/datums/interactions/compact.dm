@@ -83,6 +83,8 @@
 	var/held_type = length(spec) >= 5 ? spec[5] : null
 	// INTERACT_STANCE_*: a hostile/peaceful shape is only meant in that combat stance (offered_when).
 	var/stance = length(spec) >= 6 ? spec[6] : null
+	// INTERACT_ORDER_DEFAULT: the type's default for this input, tried after everything else it offers.
+	var/priority = (length(spec) >= 7 && spec[7] == INTERACT_ORDER_DEFAULT) ? INTERACTION_DEFAULT_PRIORITY : 0
 	var/list/offered_when
 	var/list/tags
 	switch(stance)
@@ -103,6 +105,8 @@
 	var/list/base_requires
 	if(kind == INTERACT_KIND_USE || kind == INTERACT_KIND_SELF)
 		base_requires = ispath(owner_type, /obj/item) ? list(REQ_SELF_USE_REACH) : list()
+	else if(kind == INTERACT_KIND_SILICON || kind == INTERACT_KIND_ROBOT || kind == INTERACT_KIND_OBSERVER || kind == INTERACT_KIND_TK)
+		base_requires = list() // the actor's adapter decides reach (the AI's cameras, a cyborg's link, a ghost anywhere)
 	else
 		base_requires = list(REQ_INTERACTION_REACH)
 	requires = base_requires + (requires || list())
@@ -135,6 +139,25 @@
 			entry = INTERACTION_ENTRY_ALT
 			category = INTERACTION_CAT_TOGGLE
 			default_action = INPUT_ACTION_ALTERNATE
+		// Object verb (I7): resolver-native, chosen from the Menu (no key or click runs it).
+		if(INTERACT_KIND_VERB)
+			category = INTERACTION_CAT_CONFIGURE
+			default_action = null
+		// Actor-kind Use (I3): resolver-native, offered only to the actors their tags name.
+		if(INTERACT_KIND_SILICON)
+			category = INTERACTION_CAT_OPEN
+			tags = (tags || list()) + list(INTERACTION_TAG_REMOTE, INTERACTION_TAG_SILICON)
+		if(INTERACT_KIND_ROBOT)
+			category = INTERACTION_CAT_OPEN
+			priority = 1 // a cyborg's own Use goes ahead of the silicon one it overrides
+			tags = (tags || list()) + list(INTERACTION_TAG_SILICON)
+		if(INTERACT_KIND_OBSERVER)
+			category = INTERACTION_CAT_OPEN
+			tags = (tags || list()) + list(INTERACTION_TAG_OBSERVER)
+		if(INTERACT_KIND_TK)
+			category = INTERACTION_CAT_OPEN
+			priority = 1 // ahead of the hand's interactions telekinesis also reaches
+			tags = (tags || list()) + list(INTERACTION_TAG_TELEKINESIS)
 		else
 			CRASH("dq_interaction_from_spec: unknown compact interaction kind [kind] on [owner_type]")
 
@@ -145,14 +168,14 @@
 	// still want the same auto-generated id text (two "interaction_self" procs on
 	// unrelated types); this seed just needs to vary between them, not to be a
 	// lookup key on its own.
-	var/id_seed = "[kind]|[effect_key]|[held_type]|[owner_type]|[stance]" // deterministic across builds (a \ref is not)
+	var/id_seed = "[kind]|[effect_key]|[held_type]|[owner_type]|[stance]|[priority]" // deterministic across builds (a \ref is not)
 	var/base_id = "gen_[dq_interaction_slug(kind)]_[dq_interaction_slug(effect_key)]"
 	var/id = base_id
 	var/attempt = 0
 	while(interaction_by_id(id) || cache_has_id(cache, id))
 		id = "[base_id]_[md5("[id_seed]|[attempt++]")]"
 
-	var/datum/interaction/generic/interaction = new(id, name, category, /* priority */ 0, default_action, requires, effect, entry, held_type, offered_when, /* consumes_input */ TRUE, behind_gate, always_handled)
+	var/datum/interaction/generic/interaction = new(id, name, category, priority, default_action, requires, effect, entry, held_type, offered_when, /* consumes_input */ TRUE, behind_gate, always_handled)
 	interaction.tags = tags
 	cache[spec] = interaction
 	return interaction
