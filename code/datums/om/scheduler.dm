@@ -123,6 +123,12 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	var/list/errors = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
 	/// Tests expecting an error: recorded, no stack trace.
 	var/expect_errors = FALSE
+	/// Times a lane loop was aborted by a runtime that escaped per-behaviour isolation (run_lane_guarded()).
+	var/lane_faults = 0
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
+	/// Test harness: lane -> TRUE makes run_lane() runtime for that lane (lane-isolation tests).
+	var/list/harness_lane_fault
+#endif
 	var/last_run_ms = 0
 	var/runs = 0
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
@@ -321,15 +327,18 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 		cap = harness_caps ? harness_caps[lane] : 0
 		calls = 0
 		for(var/datum/om/ring/R as anything in lane_rings[lane])
-			if(ring_urgent(R, t))
-				run_ring(R, t)
+			try
+				if(ring_urgent(R, t))
+					run_ring(R, t)
+			catch(var/exception/borrow_e)
+				report_caught(borrow_e, "lane [lane] borrow pass ([R.behaviour()?.name]): [borrow_e] ([borrow_e.file]:[borrow_e.line])")
 
 	// 3. Lanes with guaranteed shares.
 	for(var/lane in 1 to OM_LANE_COUNT)
 		limit = min(TICK_USAGE + avail * lane_share[lane], tick_limit)
 		cap = harness_caps ? harness_caps[lane] : 0
 		calls = 0
-		if(!run_lane(lane, t))
+		if(!run_lane_guarded(lane, t))
 			done = FALSE
 
 	// 4. Leftover budget.
@@ -340,7 +349,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 		if(!run_deadlines(t))
 			done = FALSE
 		for(var/lane in 1 to OM_LANE_COUNT)
-			if(!run_lane(lane, t))
+			if(!run_lane_guarded(lane, t))
 				done = FALSE
 	last_run_ms = TICK_USAGE_TO_MS(start)
 	return done
@@ -352,8 +361,24 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 		return TRUE
 	return FALSE
 
+/// run_lane() behind a lane-level guard. Hooks are already isolated per behaviour
+/// (run_slot, call_hook, services, world wakes, derived values); this catches what
+/// escapes them (scheduler bookkeeping, a ring's behaviour lookup), so one lane's
+/// runtime is logged and that lane resumes next pass while the other lanes still run.
+/datum/om/scheduler/proc/run_lane_guarded(lane, t)
+	try
+		return run_lane(lane, t)
+	catch(var/exception/e)
+		lane_faults++
+		report_caught(e, "lane [lane] aborted: [e] ([e.file]:[e.line])")
+		return FALSE
+
 /datum/om/scheduler/proc/run_lane(lane, t)
 	. = TRUE
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
+	if(harness_lane_fault && harness_lane_fault[lane])
+		CRASH("deliberate lane fault (lane [lane])")
+#endif
 	// Eager derived values are inputs to wakes in every lane: a behaviour in
 	// an earlier lane observing a derived channel must see the change this
 	// pass, not the next. The queue is empty (one length check) almost always.
@@ -677,10 +702,19 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 			// Conservative: another behaviour pending the same bits just takes the full
 			// dispatch path on its next change (om_dispatch_change()).
 			rec.pend_union &= ~bits
-			if(B.compiled_wake_if && !isnull(B.compiled_wake_if.why_not(rec.owner, null)))
-				i++
-				continue
-			if(B.min_interval && om_throttled(rec, B, i, bits))
+			// The gate is behaviour code too: a runtime in wake_if or the throttle drops
+			// this one wake (logged, counted) instead of unwinding the lane's drain.
+			var/gated = FALSE
+			try
+				if(B.compiled_wake_if && !isnull(B.compiled_wake_if.why_not(rec.owner, null)))
+					gated = TRUE
+				else if(B.min_interval && om_throttled(rec, B, i, bits))
+					gated = TRUE
+			catch(var/exception/gate_e)
+				gated = TRUE
+				report_caught(gate_e, "[B.name] wake gate ([rec.owner?.type]): [gate_e] ([gate_e.file]:[gate_e.line])")
+				stat_inc(B.id, OM_STAT_ERRORS)
+			if(gated)
 				i++
 				continue
 			stat_inc(B.id, OM_STAT_WAKES)
