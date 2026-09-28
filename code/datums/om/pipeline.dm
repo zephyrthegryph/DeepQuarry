@@ -982,6 +982,8 @@ GLOBAL_LIST_EMPTY(om_sleepers)
 
 /// Tests: entity -> behaviour wakes and timer calls delivered to it, + 1 (a traced entity is truthy).
 GLOBAL_LIST_EMPTY(om_traced)
+/// Tests: entity -> union of the change bits its traced wakes arrived with.
+GLOBAL_LIST_EMPTY(om_traced_bits)
 
 /// Counts behaviour wakes (on_wake) and om_after() calls delivered to `E` from now on.
 /proc/om_trace(datum/E)
@@ -992,8 +994,14 @@ GLOBAL_LIST_EMPTY(om_traced)
 	var/n = GLOB.om_traced[E]
 	return n ? n - 1 : 0
 
+/// Tests: the union of the change bits every traced on_wake to `E` arrived with (a watch
+/// wake is CHANGE_RELATED, a MACHINE_WAKE() CHANGE_EXPLICIT, a power change its own channel).
+/proc/om_traced_wake_bits(datum/E)
+	return GLOB.om_traced_bits[E] || 0
+
 /proc/om_untrace(datum/E)
 	GLOB.om_traced -= E
+	GLOB.om_traced_bits -= E
 
 REF_OWNED(/datum/om/stage, "compiled_run_if")
 
