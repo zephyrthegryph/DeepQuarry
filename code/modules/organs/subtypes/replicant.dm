@@ -175,7 +175,7 @@
 	if(((damage_tally >= 50 || prev_damage_tally >= 50) && prev_damage_tally - damage_tally < 0) || pain_tally >= 60)
 		if(world.time > last_activation_time + 60 SECONDS)
 			last_activation_time = world.time
-			owner.add_modifier(/datum/modifier/berserk, 20 SECONDS)
+			owner.apply_body_effect(/datum/body_effect/berserk, 20 SECONDS)
 			apply_lesion_damage(5)
 
 /obj/item/organ/internal/heart/replicant/rage/crew/handle_organ_proc_special()
@@ -191,7 +191,7 @@
 	if(((damage_tally >= 50 || prev_damage_tally >= 50) && prev_damage_tally - damage_tally < 0) || pain_tally >= 60)
 		if(world.time > last_activation_time + 60 MINUTES) //Can only be activated once every 60 minutes to prevent it being able to be spammed
 			last_activation_time = world.time
-			owner.add_modifier(/datum/modifier/berserk, 40 SECONDS) //Lasts a little longer so that it can actually get some use seeing as it activates so infrequently
+			owner.apply_body_effect(/datum/body_effect/berserk, 40 SECONDS) //Lasts a little longer so that it can actually get some use seeing as it activates so infrequently
 			apply_lesion_damage(5)
 
 /obj/item/organ/internal/lungs/replicant/mending

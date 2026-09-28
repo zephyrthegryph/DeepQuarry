@@ -32,10 +32,11 @@
 		return FALSE
 	SK.shadekin_adjust_energy(-25)
 	playsound(actor, 'sound/effects/bamf.ogg', 75, 1)
-	actor.add_modifier(/datum/modifier/shadekin/create_shade, 20 SECONDS)
+	actor.apply_body_effect(/datum/body_effect/shadekin/create_shade, 20 SECONDS)
 	return TRUE
 
-/datum/modifier/shadekin/create_shade
+/datum/body_effect/shadekin/create_shade
+	tick_interval = 2 SECONDS
 	name = "Shadekin Shadegen"
 	desc = "Darkness envelops you."
 	mob_overlay_state = ""
@@ -43,25 +44,22 @@
 	on_created_text = span_notice("You drag part of The Dark into realspace, enveloping yourself.")
 	on_expired_text = span_warning("You lose your grasp on The Dark and realspace reasserts itself.")
 	stacks = MODIFIER_STACK_EXTEND
-	var/mob/living/my_kin
 
-/datum/modifier/shadekin/create_shade/tick()
-	var/datum/component/shadekin/SK = my_kin.get_shadekin_component()
+/datum/body_effect/shadekin/create_shade/on_tick(mob/living/L)
+	var/datum/component/shadekin/SK = L.get_shadekin_component()
 	if(SK && SK.in_phase)
-		expire()
+		L.end_body_effect(type)
 
-/datum/modifier/shadekin/create_shade/on_applied()
-	my_kin = holder
-	holder.set_glow_toggle(TRUE)
-	holder.set_glow_range(8)
-	holder.set_glow_intensity(-10)
-	holder.set_glow_color("#FFFFFF")
-	holder.set_light(8, -10, "#FFFFFF")
+/datum/body_effect/shadekin/create_shade/on_start(mob/living/L)
+	L.set_glow_toggle(TRUE)
+	L.set_glow_range(8)
+	L.set_glow_intensity(-10)
+	L.set_glow_color("#FFFFFF")
+	L.set_light(8, -10, "#FFFFFF")
 
-/datum/modifier/shadekin/create_shade/on_expire()
-	holder.set_glow_toggle(initial(holder.glow_toggle))
-	holder.set_glow_range(initial(holder.glow_range))
-	holder.set_glow_intensity(initial(holder.glow_intensity))
-	holder.set_glow_color(initial(holder.glow_color))
-	holder.set_light(0)
-	my_kin = null
+/datum/body_effect/shadekin/create_shade/on_end(mob/living/L, expired)
+	L.set_glow_toggle(initial(L.glow_toggle))
+	L.set_glow_range(initial(L.glow_range))
+	L.set_glow_intensity(initial(L.glow_intensity))
+	L.set_glow_color(initial(L.glow_color))
+	L.set_light(0)

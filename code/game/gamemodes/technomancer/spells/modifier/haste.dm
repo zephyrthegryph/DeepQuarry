@@ -14,10 +14,10 @@
 	cast_methods = CAST_RANGED
 	aspect = ASPECT_FORCE
 	light_color = "#FF5C5C"
-	modifier_type = /datum/modifier/technomancer/haste
+	modifier_type = /datum/body_effect/technomancer/haste
 	modifier_duration = 5 SECONDS
 
-/datum/modifier/technomancer/haste
+/datum/body_effect/technomancer/haste
 	name = "haste"
 	desc = "Moving is almost effortless!"
 	mob_overlay_state = "haste"

@@ -144,20 +144,19 @@
 
 // ---------------------------------------------------------------- stasis source
 
-/// set_stasis() links the stasis modifier to its source; the source is found
-/// again through STASIS_SOURCE, and deleting it leaves sourceless stasis.
+/// set_stasis() keys the stasis by its source (a handle); the source finds it again, and
+/// deleting the source leaves sourceless stasis.
 /datum/unit_test/dq_refs_stasis_held_by
 
 /datum/unit_test/dq_refs_stasis_held_by/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/source = allocate(/obj/item/tourniquet)
-	H.set_stasis(/datum/modifier/stasis/light, source)
-	var/datum/modifier/stasis/S = H.stasis_modifier_from(source)
-	TEST_ASSERT_NOTNULL(S, "the source's stasis is found")
-	TEST_ASSERT_EQUAL(S?.stasis_source(), source, "STASIS_SOURCE is the source")
+	H.set_stasis(/datum/body_effect/stasis/light, source)
+	TEST_ASSERT_EQUAL(H.stasis_type_from(source), /datum/body_effect/stasis/light, "the source's stasis is found")
 	TEST_ASSERT(H.has_stasis_from(source), "has_stasis_from() agrees")
+	TEST_ASSERT(!H.has_stasis_from(null), "while the source lives the stasis is not sourceless")
 	qdel(source)
-	TEST_ASSERT_NULL(S?.stasis_source(), "deleting the source unlinks it")
+	TEST_ASSERT_EQUAL(H.stasis_type_from(null), /datum/body_effect/stasis/light, "deleting the source leaves sourceless stasis")
 	H.set_stasis(null, null)
 	TEST_ASSERT_EQUAL(H.factor(BF_STASIS), 0, "the leftover stasis is released as sourceless")
 

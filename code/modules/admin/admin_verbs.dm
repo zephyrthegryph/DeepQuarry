@@ -270,7 +270,7 @@ ADMIN_VERB(admin_give_modifier, R_EVENT, "Give Modifier", "Makes a mob weaker or
 		to_chat(user, span_warning("Looks like you didn't select a mob."))
 		return
 
-	var/list/possible_modifiers = subtypesof(/datum/modifier)
+	var/list/possible_modifiers = subtypesof(/datum/body_effect)
 
 	var/new_modifier_type = verb_prompt(user, "a8", list("kind" = "list", "message" = "What modifier should we add to [living_target]?", "title" = "Modifier Type", "choices" = possible_modifiers), args)
 	if(isnull(new_modifier_type))
@@ -285,7 +285,7 @@ ADMIN_VERB(admin_give_modifier, R_EVENT, "Give Modifier", "Makes a mob weaker or
 	else
 		duration = duration SECONDS
 
-	living_target.add_modifier(new_modifier_type, duration)
+	living_target.apply_body_effect(new_modifier_type, duration)
 	log_and_message_admins("has given [key_name(living_target)] the modifer [new_modifier_type], with a duration of [duration ? "[duration / 600] minutes" : "forever"].", user)
 
 ADMIN_VERB_AND_CONTEXT_MENU(make_sound, R_FUN, "Make Sound", "Display a message to everyone who can hear the target.", ADMIN_CATEGORY_FUN_SOUNDS, obj/target_object in world)

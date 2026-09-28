@@ -27,12 +27,12 @@
 		if(L == self)
 			continue // Don't buff ourselves.
 		if(self.IIsAlly(L) && L.isSynthetic()) // Don't buff enemies.
-			L.add_modifier(/datum/modifier/aura/hivebot_commander_buff, null, self)
+			L.apply_body_effect(/datum/body_effect/aura/hivebot_commander_buff, null, self)
 
 // Modifier added to friendly hivebots nearby.
 // Boosts most stats by 30%.
 // The boost is lost if the commander is too far away or dies.
-/datum/modifier/aura/hivebot_commander_buff
+/datum/body_effect/aura/hivebot_commander_buff
 	name = "Strategicals"
 	on_created_text = span_notice("Signal established with commander. Optimizating combat performance...")
 	on_expired_text = span_warning("Lost signal to commander. Optimization halting.")

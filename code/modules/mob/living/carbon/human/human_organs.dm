@@ -173,7 +173,7 @@
 	// Check again...
 	if(!get_equipped_item(SLOT_ID_HAND_L) && !get_equipped_item(SLOT_ID_HAND_R))
 		return
-	var/adrenaline = has_modifier_of_type(/datum/modifier/adrenaline)
+	var/adrenaline = has_body_effect(/datum/body_effect/adrenaline)
 	for (var/obj/item/organ/external/E in organs)
 		if(!E || !E.can_grasp)
 			continue

@@ -57,5 +57,5 @@
 		env.add_thermal_energy(-10 * 1000)
 
 /datum/blob_type/cryogenic_goo/on_chunk_use(obj/item/blobcore_chunk/B, mob/living/user)
-	user.add_modifier(/datum/modifier/endothermic, 5 MINUTES)
+	user.apply_body_effect(/datum/body_effect/endothermic, 5 MINUTES)
 	return

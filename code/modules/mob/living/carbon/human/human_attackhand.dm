@@ -572,7 +572,7 @@
 		return //Lets you know IMMEDIATELY that this is a robot. Do not pass go. Don't do damage or pump blood.
 
 	//The below is what actually allows metabolism.
-	add_modifier(/datum/modifier/bloodpump_corpse/cpr, 2 SECONDS)
+	apply_body_effect(/datum/body_effect/bloodpump_corpse/cpr, 2 SECONDS)
 	// Compressions: a floor under cardiac output for a stopped heart (and,
 	// with a vasopressor aboard, a chance to coarsen asystole into VF).
 	body?.add_support(reviver, BF_PUMP, SUPPORT_CPR_PUMP, CPR_COMPRESSION_WINDOW)

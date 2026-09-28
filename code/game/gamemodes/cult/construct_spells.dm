@@ -315,10 +315,10 @@
 	charge_max = 600
 
 /datum/spell/targeted/occult_repair_aura/cast(list/targets, mob/living/user)
-	if(findNullRod(user) || user.has_modifier_of_type(/datum/modifier/repair_aura))
+	if(findNullRod(user) || user.has_body_effect(/datum/body_effect/repair_aura))
 		charge_counter = 300
 		return
-	user.add_modifier(/datum/modifier/repair_aura, 30 SECONDS)
+	user.apply_body_effect(/datum/body_effect/repair_aura, 30 SECONDS)
 
 /datum/spell/targeted/ambush_mode
 	name = "Toggle Ambush"
@@ -620,7 +620,7 @@
 	pay_energy(5)
 	if(isliving(hit_atom))
 		var/mob/living/L = hit_atom
-		L.add_modifier(/datum/modifier/agonize, 10 SECONDS)
+		L.apply_body_effect(/datum/body_effect/agonize, 10 SECONDS)
 
 /obj/effect/temporary_effect/pulse/agonizing_sphere
 	name = "agonizing sphere"
@@ -637,7 +637,7 @@
 /obj/effect/temporary_effect/pulse/agonizing_sphere/on_pulse()
 	for(var/mob/living/L in view(4,src))
 		if(!iscultist(L) && !istype(L, /mob/living/simple_mob/construct))
-			L.add_modifier(/datum/modifier/agonize, 2 SECONDS)
+			L.apply_body_effect(/datum/body_effect/agonize, 2 SECONDS)
 			if(L.isSynthetic())
 				to_chat(L, span_cult("Your chassis warps as the [src] pulses!"))
 				L.injure(INJURY_BURN, 4, source = src)
@@ -657,7 +657,7 @@
 /obj/item/spell/construct/mend_occult/on_melee_cast(atom/hit_atom, mob/living/user, def_zone)
 	if(isliving(hit_atom))
 		var/mob/living/L = hit_atom
-		L.add_modifier(/datum/modifier/mend_occult, 150)
+		L.apply_body_effect(/datum/body_effect/mend_occult, 150)
 	consume(src, user)
 
 //Juggernaut Slam
@@ -891,7 +891,7 @@
 	pay_energy(5)
 	if(isliving(hit_atom))
 		var/mob/living/L = hit_atom
-		L.add_modifier(/datum/modifier/soothe, 10 SECONDS)
+		L.apply_body_effect(/datum/body_effect/soothe, 10 SECONDS)
 
 /obj/effect/temporary_effect/pulse/soothing_sphere
 	name = "soothing sphere"
@@ -909,11 +909,12 @@
 /obj/effect/temporary_effect/pulse/soothing_sphere/on_pulse()
 	for(var/mob/living/L in view(4,src))
 		if(!iscultist(L) && !istype(L, /mob/living/simple_mob/construct))
-			L.add_modifier(/datum/modifier/soothe, 2 SECONDS)
+			L.apply_body_effect(/datum/body_effect/soothe, 2 SECONDS)
 			L.mend(TREAT_TISSUE_REPAIR, rand(5, 10))
 			L.mend(TREAT_BURN_CARE, rand(5, 10))
 
-/datum/modifier/soothe
+/datum/body_effect/soothe
+	tick_interval = 2 SECONDS
 	name = "soothe"
 	desc = "Your body is soothed of pain."
 
@@ -924,9 +925,9 @@
 
 	mob_overlay_state = "blue_electricity_constant"
 
-/datum/modifier/soothe/tick()
-	if(ishuman(holder))
-		var/mob/living/carbon/human/H = holder
+/datum/body_effect/soothe/on_tick(mob/living/L)
+	if(ishuman(L))
+		var/mob/living/carbon/human/H = L
 		H.apply_effect(-20, AGONY)
 		if(prob(10))
 			to_chat(H, span_warning("It feels so comforting!"))
@@ -957,10 +958,11 @@
 /obj/item/spell/construct/mend_purity/on_melee_cast(atom/hit_atom, mob/living/user, def_zone)
 	if(isliving(hit_atom))
 		var/mob/living/L = hit_atom
-		L.add_modifier(/datum/modifier/mend_purity, 150)
+		L.apply_body_effect(/datum/body_effect/mend_purity, 150)
 	consume(src, user)
 
-/datum/modifier/mend_purity
+/datum/body_effect/mend_purity
+	tick_interval = 2 SECONDS
 	name = "holy mending"
 	desc = "Your body is mending, rejoice!"
 
@@ -971,17 +973,16 @@
 
 	mob_overlay_state = "blue_electricity_constant"
 
-/datum/modifier/mend_purity/tick()
-	if(isliving(holder))
-		var/mob/living/L = holder
+/datum/body_effect/mend_purity/on_tick(mob/living/L)
+	if(isliving(L))
 		var/mend_amount = istype(L, /mob/living/simple_mob/construct) ? rand(5, 10) : 2
 		L.mend(TREAT_TISSUE_REPAIR, mend_amount)
 		L.mend(TREAT_PLATING_REPAIR, mend_amount)
 		L.mend(TREAT_BURN_CARE, mend_amount)
 		L.mend(TREAT_WIRING_REPAIR, mend_amount)
 
-		if(ishuman(holder))
-			var/mob/living/carbon/human/H = holder
+		if(ishuman(L))
+			var/mob/living/carbon/human/H = L
 
 			for(var/obj/item/organ/internal/O in H.internal_organs)
 				if(O.damage > 0)
@@ -1026,12 +1027,13 @@
 	charge_max = 600
 
 /datum/spell/targeted/purity_repair_aura/cast(list/targets, mob/living/user)
-	if(findNullRod(user) || user.has_modifier_of_type(/datum/modifier/repair_aura))
+	if(findNullRod(user) || user.has_body_effect(/datum/body_effect/repair_aura))
 		charge_counter = 300
 		return
-	user.add_modifier(/datum/modifier/repair_aura_purity, 30 SECONDS)
+	user.apply_body_effect(/datum/body_effect/repair_aura_purity, 30 SECONDS)
 
-/datum/modifier/repair_aura_purity
+/datum/body_effect/repair_aura_purity
+	tick_interval = 2 SECONDS
 	name = "aura of repair (purity)"
 	desc = "You are emitting a field of strange energy, capable of repairing constructs."
 
@@ -1039,8 +1041,8 @@
 	on_expired_text = span_notice("The purity repair aura fades.")
 	stacks = MODIFIER_STACK_EXTEND
 
-/datum/modifier/repair_aura_purity/tick()
-	for(var/mob/living/simple_mob/construct/T in view(4,holder))
+/datum/body_effect/repair_aura_purity/on_tick(mob/living/L)
+	for(var/mob/living/simple_mob/construct/T in view(4,L))
 		T.mend(TREAT_TISSUE_REPAIR, rand(10, 15))
 		T.mend(TREAT_PLATING_REPAIR, rand(10, 15))
 		T.mend(TREAT_BURN_CARE, rand(10, 15))

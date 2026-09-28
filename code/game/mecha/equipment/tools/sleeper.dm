@@ -49,7 +49,7 @@
 			return
 		if(!target.move_into(src, OCCUPANT_SLOT_MECHA_SLEEPER))
 			return
-		occupant.set_stasis(/datum/modifier/stasis/moderate, src)
+		occupant.set_stasis(/datum/body_effect/stasis/moderate, src)
 		set_ready_state(FALSE)
 		PERIODIC_START(src, PERIODIC_SECOND)
 		occupant_message(span_notice("[target] successfully loaded into [src]. Life support functions engaged."))

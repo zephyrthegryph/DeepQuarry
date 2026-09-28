@@ -116,11 +116,10 @@
 		detonate(target, user)
 
 /obj/item/kinetic_crusher/proc/detonate(mob/living/L, mob/living/user, thrown = FALSE)
-	var/datum/modifier/crusher_mark/CM = L.get_modifier_of_type(/datum/modifier/crusher_mark)
-	if(!CM || CM.hammer_synced != src)
+	if(!L.has_body_effect(/datum/body_effect/crusher_mark) || L.body_effect_origin(/datum/body_effect/crusher_mark) != src)
 		return
 	if(!QDELETED(L))
-		L.remove_modifiers_of_type(/datum/modifier/crusher_mark)
+		L.remove_body_effect(/datum/body_effect/crusher_mark)
 		new /obj/effect/temp_visual/kinetic_blast(get_turf(L))
 		var/backstab_dir = get_dir(user, L)
 		var/blast_through = (100 - L.armor_against(ARMOR_BLAST)) / 100 // Blast armour soaks the detonation.
@@ -138,7 +137,7 @@
 	if(!isliving(hit_atom))
 		return
 	var/mob/living/L = hit_atom
-	if(L.has_modifier_of_type(/datum/modifier/crusher_mark))
+	if(L.has_body_effect(/datum/body_effect/crusher_mark))
 		detonate(L, throwingdatumd?.get_thrower(), TRUE)
 
 /obj/item/kinetic_crusher/proc/Recharge()
@@ -349,6 +348,6 @@
 /obj/item/projectile/destabilizer/on_hit(atom/target, blocked = FALSE)
 	if(isliving(target))
 		var/mob/living/L = target
-		if(hammer_synced.can_mark(L))
-			L.add_modifier(/datum/modifier/crusher_mark, 30 SECONDS, firer, TRUE)
+		if(hammer_synced?.can_mark(L))
+			L.apply_body_effect(/datum/body_effect/crusher_mark, 30 SECONDS, hammer_synced, TRUE)
 	..()

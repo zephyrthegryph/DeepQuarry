@@ -72,7 +72,7 @@
 		last_touched.status_at_least(EFFECT_SLEEPING, 10)
 		last_touched.status_adjust(EFFECT_JITTERY, 1000)
 		last_touched.status_adjust(EFFECT_BLURRY, 10)
-		last_touched.add_modifier(/datum/modifier/agonize, 30 SECONDS)
+		last_touched.apply_body_effect(/datum/body_effect/agonize, 30 SECONDS)
 		blood_splatter(last_touched, last_touched, 1)
 		if(last_touched.loc)
 			conjure_animation(last_touched.loc)

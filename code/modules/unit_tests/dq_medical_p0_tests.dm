@@ -51,14 +51,14 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/datum/character_identity/body_identity = H.identity
 	TEST_ASSERT_NOTNULL(body_identity, "a body always has an identity")
-	H.record_genetic_modifier(/datum/modifier/no_clone, TRUE)
-	TEST_ASSERT(body_identity.has_genetic_modifier(/datum/modifier/no_clone), "the body identity should carry no_clone")
+	H.record_genetic_effect(/datum/body_effect/no_clone, TRUE)
+	TEST_ASSERT(body_identity.has_genetic_effect(/datum/body_effect/no_clone), "the body identity should carry no_clone")
 	var/datum/mind/probe = new /datum/mind("dq_p0_probe")
 	TEST_ASSERT_NULL(probe.identity, "a fresh mind has no identity until it enters a body")
 	H.mind_initialize()
 	TEST_ASSERT_EQUAL(H.mind.get_identity(), body_identity, "the new mind should adopt the body's identity")
 	TEST_ASSERT_EQUAL(H.identity, body_identity, "the body should keep its identity")
-	TEST_ASSERT(H.identity.has_genetic_modifier(/datum/modifier/no_clone), "no_clone must survive mind_initialize()")
+	TEST_ASSERT(H.identity.has_genetic_effect(/datum/body_effect/no_clone), "no_clone must survive mind_initialize()")
 	SSticker?.minds -= H.mind
 
 /// A7: Notify Transcore from a brain with no mind or no record answers instead of runtiming.

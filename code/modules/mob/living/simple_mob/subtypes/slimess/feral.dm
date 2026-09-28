@@ -270,7 +270,7 @@
 	for(var/mob/living/L in view(src, 2))
 		if(L.stat == DEAD || !IIsAlly(L))
 			continue
-		L.add_modifier(/datum/modifier/aura/slime_heal, null, src)
+		L.apply_body_effect(/datum/body_effect/aura/slime_heal, null, src)
 
 /mob/living/simple_mob/slime/feral/emerald
 	desc = "This slime is faster than usual, even more so than the red slimes."
@@ -292,4 +292,4 @@
 	for(var/mob/living/L in view(src, 2))
 		if(L.stat == DEAD || !IIsAlly(L))
 			continue
-		L.add_modifier(/datum/modifier/technomancer/haste, 5 SECONDS, src)
+		L.apply_body_effect(/datum/body_effect/technomancer/haste, 5 SECONDS, src)

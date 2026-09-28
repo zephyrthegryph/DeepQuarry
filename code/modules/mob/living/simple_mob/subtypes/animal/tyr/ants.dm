@@ -267,7 +267,7 @@
 /mob/living/simple_mob/animal/tyr/mineral_ants/bronze/do_special_attack(atom/A)
 	for(var/mob/living/L in orange(src, 7))
 		if(IIsAlly(L))
-			L.add_modifier(/datum/modifier/technomancer/haste, 3, src)
+			L.apply_body_effect(/datum/body_effect/technomancer/haste, 3, src)
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/graphite //nothing special here
 	name = "graphite ant"
@@ -455,7 +455,7 @@ ANT STRUCTURES
 	die()
 /obj/effect/ant_structure/trap
 	name = "spore trap"
-	var/modifiertype = /datum/modifier/berserk
+	var/modifiertype = /datum/body_effect/berserk
 
 /obj/effect/ant_structure/trap/Crossed(atom/movable/source)
 	if(source.is_incorporeal())
@@ -475,7 +475,7 @@ ANT STRUCTURES
 	..()
 
 /obj/effect/ant_structure/trap/proc/attack_mob(mob/living/L)
-	L.add_modifier(modifiertype, 5 SECONDS)
+	L.apply_body_effect(modifiertype, 5 SECONDS)
 
 /obj/effect/ant_structure/trap/burn
 	icon_state = "burn_trap"

@@ -13,13 +13,13 @@
 	if(!L.is_sentient())
 		return FALSE // Drons are presumably deaf to any psionic things.
 
-	if(L.add_modifier(/datum/modifier/feysight, 30 SECONDS))
+	if(L.apply_body_effect(/datum/body_effect/feysight, 30 SECONDS))
 		to_chat(L, span_alien("An otherworldly feeling seems to enter your mind, and you feel at peace."))
 		L.injure(INJURY_PAIN, 10)
 		to_chat(L, span_danger("The inside of your head hurts..."))
 		return TRUE
 	else
-		if(L.has_modifier_of_type(/datum/modifier/feysight))
+		if(L.has_body_effect(/datum/body_effect/feysight))
 			to_chat(L, span_warning("An otherworldly feeling seems to enter your mind again, and it holds the visions in place."))
 		else
 			to_chat(L, span_warning("An otherworldly feeling seems to enter your mind, and you briefly feel peace, but \

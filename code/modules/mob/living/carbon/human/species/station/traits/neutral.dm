@@ -879,12 +879,12 @@
 
 /datum/trait/neutral/colorblind/mono/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	H.add_modifier(/datum/modifier/trait/colorblind_monochrome)
+	H.apply_body_effect(/datum/body_effect/trait/colorblind_monochrome)
 
 // Traitgenes Made into a gene trait
 /datum/trait/neutral/colorblind/mono/unapply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	H.remove_a_modifier_of_type(/datum/modifier/trait/colorblind_monochrome)
+	H.remove_body_effect_stack(/datum/body_effect/trait/colorblind_monochrome)
 
 /datum/trait/neutral/colorblind/para_vulp
 	name = "Colorblindness (Para Vulp)"
@@ -900,12 +900,12 @@
 
 /datum/trait/neutral/colorblind/para_vulp/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	H.add_modifier(/datum/modifier/trait/colorblind_vulp)
+	H.apply_body_effect(/datum/body_effect/trait/colorblind_vulp)
 
 // Traitgenes Made into a gene trait
 /datum/trait/neutral/colorblind/para_vulp/unapply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	H.remove_a_modifier_of_type(/datum/modifier/trait/colorblind_vulp)
+	H.remove_body_effect_stack(/datum/body_effect/trait/colorblind_vulp)
 
 /datum/trait/neutral/colorblind/para_taj
 	name = "Colorblindness (Para Taj)"
@@ -921,12 +921,12 @@
 
 /datum/trait/neutral/colorblind/para_taj/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	H.add_modifier(/datum/modifier/trait/colorblind_taj)
+	H.apply_body_effect(/datum/body_effect/trait/colorblind_taj)
 
 // Traitgenes Made into a gene trait
 /datum/trait/neutral/colorblind/para_taj/unapply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	H.remove_a_modifier_of_type(/datum/modifier/trait/colorblind_taj)
+	H.remove_body_effect_stack(/datum/body_effect/trait/colorblind_taj)
 
 // Body shape traits
 /datum/trait/neutral/taller

@@ -68,7 +68,7 @@
 			//Patient critical - emergency stasis
 			if(mode >= 3)
 				if(HP_percent <= 0)
-					H.set_stasis(/datum/modifier/stasis/moderate, nif)
+					H.set_stasis(/datum/body_effect/stasis/moderate, nif)
 				if(HP_percent > 0.2)
 					H.set_stasis(null, nif)
 					nif.notify("Ending emergency stasis.",TRUE)

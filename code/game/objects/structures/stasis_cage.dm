@@ -41,7 +41,7 @@
 
 	contained_handle = om_handle(animal)
 	animal.forceMove(src)
-	animal.set_stasis(/datum/modifier/stasis/total, src)
+	animal.set_stasis(/datum/body_effect/stasis/total, src)
 	if(animal?.buckled_to() && istype(animal?.buckled_to(), /obj/effect/energy_net))
 		var/atom/movable/_tmp_buck_11 = animal?.buckled_to()
 		_tmp_buck_11.forceMove(animal.loc)

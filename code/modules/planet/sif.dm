@@ -731,9 +731,9 @@ GLOBAL_DATUM(planet_sif, /datum/planet/sif)
 		var/turf/T = get_turf(H)
 		if(!T.is_outdoors())
 			return
-		H.add_modifier(/datum/modifier/starrynight_boon, 1 SECONDS, src)
+		H.apply_body_effect(/datum/body_effect/starrynight_boon, 1 SECONDS, src)
 
-/datum/modifier/starrynight_boon
+/datum/body_effect/starrynight_boon
 	name = "Starry Night"
 	desc = "You feel serene and well rested."
 
@@ -742,11 +742,11 @@ GLOBAL_DATUM(planet_sif, /datum/planet/sif)
 	factors = alist(BF_HEALING_RECEIVED = 2)
 
 /*
-/datum/modifier/starrynight_boon/tick() Wanna have this and it's counter part mess with kin but brain says noto figuring out how lol
-	holder.shadekin_adjust_energy(-3)
+/datum/body_effect/starrynight_boon/on_tick(mob/living/L) Wanna have this and it's counter part mess with kin but brain says noto figuring out how lol
+	L.shadekin_adjust_energy(-3)
 */
 
-/datum/modifier/midnightfog_boon
+/datum/body_effect/midnightfog_boon
 	name = "Midnight Fog"
 	desc = "You feel not fully there."
 
@@ -757,8 +757,8 @@ GLOBAL_DATUM(planet_sif, /datum/planet/sif)
 	factors = alist(BF_BLEEDING = 2, BF_EVASION = 10)
 
 /*
-/datum/modifier/midnightfog_boon/tick()
-	holder.shadekin_adjust_energy(3)
+/datum/body_effect/midnightfog_boon/on_tick(mob/living/L)
+	L.shadekin_adjust_energy(3)
 */
 
 /datum/weather/sif/midnightfog
@@ -779,7 +779,7 @@ GLOBAL_DATUM(planet_sif, /datum/planet/sif)
 		var/turf/T = get_turf(H)
 		if(!T.is_outdoors())
 			return
-		H.add_modifier(/datum/modifier/midnightfog_boon, 1 SECONDS, src)
+		H.apply_body_effect(/datum/body_effect/midnightfog_boon, 1 SECONDS, src)
 
 /datum/weather/sif/fallout/temp
 	name = "short-term fallout"

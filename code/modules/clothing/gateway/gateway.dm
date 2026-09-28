@@ -68,7 +68,7 @@
 
 /obj/item/clothing/head/psy_crown/candycrown/activate_ability(mob/living/wearer)
 	..()
-	wearer.add_modifier(/datum/modifier/aura/candy_orange, 30 SECONDS)
+	wearer.apply_body_effect(/datum/body_effect/aura/candy_orange, 30 SECONDS)
 
 /obj/item/clothing/gloves/stamina
 	name = "gloves of stamina"
@@ -127,7 +127,7 @@
 	to_chat(wearer, flavor_activate)
 	to_chat(wearer, span_danger("The inside of your head hurts..."))
 	wearer.injure(INJURY_NEURAL, brainloss_cost, null, src)
-	wearer.add_modifier(/datum/modifier/aura/candy_blue, 30 SECONDS)
+	wearer.apply_body_effect(/datum/body_effect/aura/candy_blue, 30 SECONDS)
 
 /obj/item/clothing/suit/armor/buffvest/equipped(mob/living/carbon/human/H, slot)
 	..()

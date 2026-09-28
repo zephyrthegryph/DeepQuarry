@@ -404,8 +404,8 @@
 		if(M.mind && GLOB.cult.is_antagonist(M.mind) && prob(10))
 			GLOB.cult.remove_antagonist(M.mind)
 		if(prob(2)) //Get an ACTUAL chaplain for your stuff
-			if(M.has_modifier_of_type(/datum/modifier/redspace_corruption))
-				M.remove_modifiers_of_type(/datum/modifier/redspace_corruption)
+			if(M.has_body_effect(/datum/body_effect/redspace_corruption))
+				M.remove_body_effect(/datum/body_effect/redspace_corruption)
 				to_chat(M, span_notice("You feel calmer."))
 
 			if(M.has_contagion(/datum/affliction/contagion/fleshy_spread))
@@ -414,7 +414,7 @@
 					break
 				to_chat(M, span_notice("Your fever subsides.."))
 		if(volume <= max_dose * 0.5 && !failed_message)
-			if(M.has_modifier_of_type(/datum/modifier/redspace_corruption) || M.has_contagion(/datum/affliction/contagion/fleshy_spread))
+			if(M.has_body_effect(/datum/body_effect/redspace_corruption) || M.has_contagion(/datum/affliction/contagion/fleshy_spread))
 				to_chat(M, span_notice("The power of the holy water courses through you, but seems to have failed to cure your ailments. Perhaps a larger dose is needed?"))
 				failed_message = TRUE
 
@@ -424,8 +424,8 @@
 		if(M.mind && GLOB.cult.is_antagonist(M.mind) && prob(5))
 			GLOB.cult.remove_antagonist(M.mind)
 		if(prob(1)) //injecting holy water makes it weaker because that's sinful
-			if(M.has_modifier_of_type(/datum/modifier/redspace_corruption))
-				M.remove_modifiers_of_type(/datum/modifier/redspace_corruption)
+			if(M.has_body_effect(/datum/body_effect/redspace_corruption))
+				M.remove_body_effect(/datum/body_effect/redspace_corruption)
 				to_chat(M, span_notice("You feel calmer."))
 
 			if(M.has_contagion(/datum/affliction/contagion/fleshy_spread))
@@ -434,7 +434,7 @@
 					break
 				to_chat(M, span_notice("Your fever subsides.."))
 		if(volume <= max_dose * 0.25 && !failed_message)
-			if(M.has_modifier_of_type(/datum/modifier/redspace_corruption) || M.has_contagion(/datum/affliction/contagion/fleshy_spread))
+			if(M.has_body_effect(/datum/body_effect/redspace_corruption) || M.has_contagion(/datum/affliction/contagion/fleshy_spread))
 				to_chat(M, span_notice("The power of the holy water courses through you, but seems to have failed to cure your ailments. Perhaps a larger dose is needed?"))
 				failed_message = TRUE
 	return

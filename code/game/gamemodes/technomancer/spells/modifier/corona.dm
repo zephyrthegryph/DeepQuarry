@@ -16,10 +16,11 @@
 	light_color = "#D9D900"
 	spell_light_intensity = 5
 	spell_light_range = 3
-	modifier_type = /datum/modifier/technomancer/corona
+	modifier_type = /datum/body_effect/technomancer/corona
 	modifier_duration = 1 MINUTE
 
-/datum/modifier/technomancer/corona
+/datum/body_effect/technomancer/corona
+	tick_interval = 2 SECONDS
 	name = "corona"
 	desc = "You appear to be glowing really bright.  It doesn't seem to hurt, however hiding will be impossible."
 	mob_overlay_state = "corona"
@@ -29,5 +30,5 @@
 	factors = alist(BF_EVASION = -30)
 	stacks = MODIFIER_STACK_EXTEND
 
-/datum/modifier/technomancer/corona/tick()
-	holder.break_cloak()
+/datum/body_effect/technomancer/corona/on_tick(mob/living/L)
+	L.break_cloak()

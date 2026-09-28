@@ -195,7 +195,7 @@
 	armor_penetration = 0
 	splatter_volume = 60
 	my_chems = list(REAGENT_ID_FROSTOIL)
-	modifier_type_to_apply = /datum/modifier/wizpoison/frost
+	modifier_type_to_apply = /datum/body_effect/wizpoison/frost
 	modifier_duration = 15 SECONDS
 	splatter = TRUE
 
@@ -205,7 +205,7 @@
 	armor_penetration = 0
 	splatter_volume = 60
 	my_chems = list(REAGENT_ID_TOXIN)
-	modifier_type_to_apply = /datum/modifier/wizpoison
+	modifier_type_to_apply = /datum/body_effect/wizpoison
 	modifier_duration = 15 SECONDS
 	splatter = TRUE
 
@@ -215,7 +215,7 @@
 	armor_penetration = 0
 	splatter_volume = 60
 	my_chems = list(REAGENT_ID_SACID)
-	modifier_type_to_apply = /datum/modifier/wizfire
+	modifier_type_to_apply = /datum/body_effect/wizfire
 	modifier_duration = 15 SECONDS
 	splatter = TRUE
 
@@ -225,7 +225,7 @@
 	armor_penetration = 0
 	splatter_volume = 60
 	my_chems = list(REAGENT_ID_SHREDDINGNANITES)
-	modifier_type_to_apply = /datum/modifier/wizfire/lighting
+	modifier_type_to_apply = /datum/body_effect/wizfire/lighting
 	modifier_duration = 15 SECONDS
 	splatter = TRUE
 

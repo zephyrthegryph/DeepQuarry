@@ -647,9 +647,9 @@
 /datum/balance_scenario/stasis/proc/levels()
 	var/static/list/levels = list(
 		"none" = null,
-		"light" = /datum/modifier/stasis/light,
-		"moderate" = /datum/modifier/stasis/moderate,
-		"deep" = /datum/modifier/stasis/deep,
+		"light" = /datum/body_effect/stasis/light,
+		"moderate" = /datum/body_effect/stasis/moderate,
+		"deep" = /datum/body_effect/stasis/deep,
 	)
 	return levels
 

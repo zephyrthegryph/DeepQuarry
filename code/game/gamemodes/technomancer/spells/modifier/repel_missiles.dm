@@ -14,10 +14,10 @@
 	cast_methods = CAST_RANGED
 	aspect = ASPECT_FORCE
 	light_color = "#FF5C5C"
-	modifier_type = /datum/modifier/technomancer/repel_missiles
+	modifier_type = /datum/body_effect/technomancer/repel_missiles
 	modifier_duration = 10 MINUTES
 
-/datum/modifier/technomancer/repel_missiles
+/datum/body_effect/technomancer/repel_missiles
 	name = "repel_missiles"
 	desc = "A repulsion field can always be useful to have."
 	mob_overlay_state = "repel_missiles"

@@ -174,9 +174,9 @@
 	var/datum/interaction/ability/A = dq_respite_ability()
 	TEST_ASSERT_NULL(A.why_not(H, H, null), "an unblocked shadekin can start Dark Respite")
 	TEST_ASSERT_EQUAL(A.attempt(H, H, null), INTERACTION_TRY_RAN, "starting it runs")
-	TEST_ASSERT(H.has_modifier_of_type(/datum/modifier/dark_respite), "the modifier is applied")
+	TEST_ASSERT(H.has_body_effect(/datum/body_effect/dark_respite), "the modifier is applied")
 	TEST_ASSERT_EQUAL(A.attempt(H, H, null), INTERACTION_TRY_RAN, "triggering it again runs")
-	TEST_ASSERT(!H.has_modifier_of_type(/datum/modifier/dark_respite), "the second use ends it")
+	TEST_ASSERT(!H.has_body_effect(/datum/body_effect/dark_respite), "the second use ends it")
 
 /// The fix found while porting: a Dark Respite an emergency warp started can't
 /// be manually ended (the legacy verb warned about this but didn't enforce it).
@@ -185,12 +185,12 @@
 /datum/unit_test/dq_ability_dark_respite_warp_triggered_cannot_be_manually_ended/Run()
 	var/mob/living/carbon/human/H = dq_respite_test_human()
 	var/datum/component/shadekin/SK = H.get_shadekin_component()
-	H.add_modifier(/datum/modifier/dark_respite) // as an emergency warp would, not through the ability
+	H.apply_body_effect(/datum/body_effect/dark_respite) // as an emergency warp would, not through the ability
 	SK.manual_respite = FALSE
 	var/datum/interaction/ability/A = dq_respite_ability()
 	TEST_ASSERT_EQUAL(A.why_not(H, H, null), "you cannot manually end a Dark Respite triggered by an emergency warp", "blocked with the documented reason")
 	TEST_ASSERT_EQUAL(A.attempt(H, H, null), INTERACTION_TRY_BLOCKED, "attempt() actually refuses, unlike the legacy verb")
-	TEST_ASSERT(H.has_modifier_of_type(/datum/modifier/dark_respite), "the emergency-warp respite is still running")
+	TEST_ASSERT(H.has_body_effect(/datum/body_effect/dark_respite), "the emergency-warp respite is still running")
 
 /// Dark Respite only works in the Dark.
 /datum/unit_test/dq_ability_dark_respite_needs_dark_area
@@ -224,7 +224,7 @@
 	var/before = SK.shadekin_get_energy()
 	TEST_ASSERT_EQUAL(A.attempt(H, patient, null), INTERACTION_TRY_RAN, "healing runs")
 	TEST_ASSERT_EQUAL(SK.shadekin_get_energy(), before - 50, "the flat 50-energy cost was spent")
-	TEST_ASSERT(patient.has_modifier_of_type(/datum/modifier/shadekin/heal_boop), "the patient is healing")
+	TEST_ASSERT(patient.has_body_effect(/datum/body_effect/shadekin/heal_boop), "the patient is healing")
 
 /datum/unit_test/dq_ability_regenerate_other_needs_energy
 
@@ -250,7 +250,7 @@
 	var/before = SK.shadekin_get_energy()
 	TEST_ASSERT_EQUAL(A.attempt(H, H, null), INTERACTION_TRY_RAN, "it runs")
 	TEST_ASSERT_EQUAL(SK.shadekin_get_energy(), before - 25, "the flat 25-energy cost was spent")
-	TEST_ASSERT(H.has_modifier_of_type(/datum/modifier/shadekin/create_shade), "the shade modifier is applied")
+	TEST_ASSERT(H.has_body_effect(/datum/body_effect/shadekin/create_shade), "the shade modifier is applied")
 
 // ---- Dark maw ----
 // (dark_maw's darkness requirement reads the turf's live get_lumcount(), which

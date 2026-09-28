@@ -17,38 +17,40 @@
 	var/datum/component/antag/changeling/changeling = changeling_power(10,0,100,UNCONSCIOUS)
 	if(!changeling)
 		return FALSE
-	if(C.has_modifier_of_type(/datum/modifier/fleshmend))
+	if(C.has_body_effect(/datum/body_effect/fleshmend))
 		to_chat(src, span_notice("We are already under the effect of fleshmend."))
 		return FALSE
 
 	changeling.chem_charges -= 10
 
 	if(changeling.recursive_enhancement)
-		C.add_modifier(/datum/modifier/fleshmend/recursive, 50 SECONDS)
+		C.apply_body_effect(/datum/body_effect/fleshmend/recursive, 50 SECONDS)
 	else
-		C.add_modifier(/datum/modifier/fleshmend, 50 SECONDS)
+		C.apply_body_effect(/datum/body_effect/fleshmend, 50 SECONDS)
 
 	feedback_add_details("changeling_powers","FM")
 	return TRUE
 
-/datum/modifier/fleshmend
+/datum/body_effect/fleshmend
+	stacks = MODIFIER_STACK_FORBID
+	tick_interval = 2 SECONDS
 	name = "Fleshmend"
 	desc = "We are regenerating"
 	on_created_text = "We have begun to regenerate our body."
 	on_expired_text = "Our regeneration has ceased."
 
 // For changelings who bought the Recursive Enhancement evolution.
-/datum/modifier/fleshmend/recursive
+/datum/body_effect/fleshmend/recursive
 	name = "Advanced Fleshmend"
 	desc = "We have begun regenerating our body, and more rapidly than normal."
 
 //These were previously 2 or 4 per second, now it's 4 or 8 per 2 seconds
-/datum/modifier/fleshmend/tick()
-	holder.mend(TREAT_TISSUE_REPAIR, 4)
-	holder.mend(TREAT_OXYGENATION, 4)
-	holder.mend(TREAT_BURN_CARE, 4)
+/datum/body_effect/fleshmend/on_tick(mob/living/L)
+	L.mend(TREAT_TISSUE_REPAIR, 4)
+	L.mend(TREAT_OXYGENATION, 4)
+	L.mend(TREAT_BURN_CARE, 4)
 
-/datum/modifier/fleshmend/recursive/tick()
-	holder.mend(TREAT_TISSUE_REPAIR, 8)
-	holder.mend(TREAT_OXYGENATION, 8)
-	holder.mend(TREAT_BURN_CARE, 8)
+/datum/body_effect/fleshmend/recursive/on_tick(mob/living/L)
+	L.mend(TREAT_TISSUE_REPAIR, 8)
+	L.mend(TREAT_OXYGENATION, 8)
+	L.mend(TREAT_BURN_CARE, 8)

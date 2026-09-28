@@ -55,11 +55,11 @@
 				infected.status_adjust(EFFECT_CONFUSED, 10)
 				infected.status_at_least(EFFECT_MUTED, 10)
 		if(4)
-			if(!infected.has_modifier_of_type(/datum/modifier/redspace_drain))
-				infected.add_modifier(/datum/modifier/redspace_drain/lesser)
-			var/datum/modifier/redspace_drain/drain_modifier = infected.get_modifier_of_type(/datum/modifier/redspace_drain/lesser)
-			if(drain_modifier && prob(5))
-				drain_modifier.choose_organs(1)
+			if(!infected.has_body_effect(/datum/body_effect/redspace_drain))
+				infected.apply_body_effect(/datum/body_effect/redspace_drain/lesser)
+			if(infected.has_body_effect(/datum/body_effect/redspace_drain/lesser) && prob(5))
+				var/datum/body_effect/redspace_drain/drain = body_effect_def(/datum/body_effect/redspace_drain/lesser)
+				drain.choose_organs(infected, 1)
 		if(5)
 			//You waited WAY too long to get this cured. You're permanently infected now. Technically, this means you're now 'infectious'
 			if(infected.mind?.assigned_role == JOB_CHAPLAIN)
@@ -70,8 +70,8 @@
 				to_chat(infected, span_cult("An alien presence attempts to prod at your mind, but at the final hour the effects of the corruption subsides."))
 				cure()
 				return
-			if(!infected.has_modifier_of_type(/datum/modifier/redspace_corruption))
-				infected.add_modifier(/datum/modifier/redspace_corruption)
+			if(!infected.has_body_effect(/datum/body_effect/redspace_corruption))
+				infected.apply_body_effect(/datum/body_effect/redspace_corruption)
 				to_chat(infected, span_cult("You feel something latch into your mind, something melding with every fiber of your being."))
 				to_chat(infected, span_cult("Every one of your cells scream out in agony as they're individually overtaken by a foreign entity."))
 				to_chat(infected, span_cult("Your body feels foreign, like you're an invader in another's body."))
@@ -83,8 +83,8 @@
 
 /datum/affliction/contagion/fleshy_spread/cure()
 	var/mob/living/carbon/human/infected = host
-	if(infected?.has_modifier_of_type(/datum/modifier/redspace_drain/lesser))
-		infected.remove_modifiers_of_type(/datum/modifier/redspace_drain/lesser)
+	if(infected?.has_body_effect(/datum/body_effect/redspace_drain/lesser))
+		infected.remove_body_effect(/datum/body_effect/redspace_drain/lesser)
 	..()
 
 /datum/affliction/contagion/fleshy_spread/proc/fever(mob/living/M)

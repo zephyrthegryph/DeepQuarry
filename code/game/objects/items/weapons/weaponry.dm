@@ -37,8 +37,8 @@
 
 		if(ishuman(M))
 			var/mob/living/carbon/human/infected = M
-			if(infected.has_modifier_of_type(/datum/modifier/redspace_corruption))
-				infected.remove_modifiers_of_type(/datum/modifier/redspace_corruption)
+			if(infected.has_body_effect(/datum/body_effect/redspace_corruption))
+				infected.remove_body_effect(/datum/body_effect/redspace_corruption)
 				to_chat(user, "You wave [src] over [infected]'s head, and feel a dark presence leave [M.p_their()] body.")
 				to_chat(infected, "[user] waves [src] over your head and you feel a dark presence leave your body.")
 

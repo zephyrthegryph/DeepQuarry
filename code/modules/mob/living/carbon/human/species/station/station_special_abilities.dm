@@ -552,7 +552,7 @@
 		to_chat(src,span_warning("Looks like you lost your chance..."))
 		return
 
-// T.add_modifier(/datum/modifier/gory_devourment, 10 SECONDS) // Don't need this because we don't do resleeving sickness.
+// T.apply_body_effect(/datum/body_effect/gory_devourment, 10 SECONDS) // Don't need this because we don't do resleeving sickness.
 
 	//Removing an internal organ
 	if(T_int && T_int.damage >= 25) //Internal organ and it's been severely damaged
@@ -714,9 +714,9 @@
 		return
 	COOLDOWN_START(src, last_special, 50) //No spamming!
 
-	if(has_modifier_of_type(/datum/modifier/underwater_stealth))
+	if(has_body_effect(/datum/body_effect/underwater_stealth))
 		to_chat(src, "You resurface!")
-		remove_modifiers_of_type(/datum/modifier/underwater_stealth)
+		remove_body_effect(/datum/body_effect/underwater_stealth)
 		return
 
 	if(!isturf(loc)) //We have no turf.
@@ -726,7 +726,7 @@
 	if(istype(src.loc, /turf/simulated/floor/water))
 		var/turf/simulated/floor/water/water_floor = src.loc
 		if(water_floor.depth >= 1) //Is it deep enough?
-			add_modifier(/datum/modifier/underwater_stealth) //No duration. It'll remove itself when they exit the water!
+			apply_body_effect(/datum/body_effect/underwater_stealth) //No duration. It'll remove itself when they exit the water!
 			to_chat(src, "You dive into the water!")
 			visible_message("[src] dives into the water!")
 		else
@@ -755,7 +755,7 @@
 		return
 
 
-	if(!has_modifier_of_type(/datum/modifier/underwater_stealth))
+	if(!has_body_effect(/datum/body_effect/underwater_stealth))
 		to_chat(src, "You must be underwater to do this!!")
 		return
 
@@ -776,7 +776,7 @@
 	om_prompt(src, src, list("kind" = "list", "message" = "Please select a target.", "title" = "Victim", "choices" = targets, "requires" = PROMPT_CONSCIOUS), PROC_REF(underwater_devour_target_chosen))
 
 /mob/living/carbon/human/proc/underwater_devour_target_chosen(mob/user, mob/living/target, datum/om/prompt/ask)
-	if(!has_modifier_of_type(/datum/modifier/underwater_stealth) || get_dist(src, target) > 1)
+	if(!has_body_effect(/datum/body_effect/underwater_stealth) || get_dist(src, target) > 1)
 		return
 	to_chat(target, span_critical("Something begins to circle around you in the water!")) //Dun dun...
 	var/starting_loc = target.loc

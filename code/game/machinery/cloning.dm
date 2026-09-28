@@ -136,7 +136,7 @@
 				else
 					return 0
 
-	if(clonemind.get_identity()?.has_genetic_modifier(/datum/modifier/no_clone))	//Can't be cloned: a persistent trait of the character
+	if(clonemind.get_identity()?.has_genetic_effect(/datum/body_effect/no_clone))	//Can't be cloned: a persistent trait of the character
 		return 0
 
 	// Remove biomass when the cloning is started, rather than when the guy pops out
@@ -178,8 +178,8 @@
 	modifier_lower_bound = round(modifier_lower_bound * clone_sickness_length, 1)
 	modifier_upper_bound = round(modifier_upper_bound * clone_sickness_length, 1)
 
-	H.add_modifier(H.species.cloning_modifier, rand(modifier_lower_bound, modifier_upper_bound))
-	H.add_modifier(/datum/modifier/cloned)
+	H.apply_body_effect(H.species.cloning_modifier, rand(modifier_lower_bound, modifier_upper_bound))
+	H.apply_body_effect(/datum/body_effect/cloned)
 
 	// Finished! H was created directly in src (produce_human_mob() ->
 	// internal_producebody()), so it landed in the pod's default slot

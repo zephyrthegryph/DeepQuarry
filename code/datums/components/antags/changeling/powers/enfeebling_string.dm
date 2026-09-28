@@ -39,6 +39,6 @@
 		if(comp.recursive_enhancement)
 			type_to_give = /datum/body_effect/enfeeble/strong
 			to_chat(src, span_notice("We make them extremely weak."))
-		H.add_modifier(type_to_give, 2 MINUTES)
+		H.apply_body_effect(type_to_give, 2 MINUTES)
 	feedback_add_details("changeling_powers","ES")
 	return 1

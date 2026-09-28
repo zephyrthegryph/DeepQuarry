@@ -198,7 +198,7 @@ REF_OWNED(/obj/item/gun, "firemode_selector")
 
 	var/mob/living/M = user
 	if(istype(M))
-		if(M.has_modifier_of_type(/datum/modifier/underwater_stealth))
+		if(M.has_body_effect(/datum/body_effect/underwater_stealth))
 			to_chat(user, span_warning("You cannot use guns whilst hiding underwater!"))
 			return FALSE
 		else if(M.has_body_effect(/datum/body_effect/phased_out))
@@ -207,10 +207,10 @@ REF_OWNED(/obj/item/gun, "firemode_selector")
 		else if(M.has_body_effect(/datum/body_effect/rednet))
 			to_chat(user, span_warning("Your gun refuses to fire!"))
 			return FALSE
-		else if(M.has_modifier_of_type(/datum/modifier/trait/thickdigits))
+		else if(M.has_body_effect(/datum/body_effect/trait/thickdigits))
 			to_chat(user, span_warning("Your hands can't pull the trigger!!"))
 			return FALSE
-		else if(M.has_modifier_of_type(/datum/modifier/shield_projection/melee_focus))
+		else if(M.has_body_effect(/datum/body_effect/shield_projection/melee_focus))
 			to_chat(user, span_warning("The shield projection around you prevents you from using anything but melee!!"))
 			return FALSE
 	if(dna_lock && attached_lock.stored_dna)

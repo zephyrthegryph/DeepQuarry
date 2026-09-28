@@ -28,14 +28,17 @@
 	var/duration = modifier_duration
 	if(duration)
 		duration = round(duration * calculate_spell_power(1.0), 1)
-	var/datum/modifier/M = L.add_modifier(modifier_type, duration, owner_ref())
-	if(istype(M, /datum/modifier/technomancer))
-		var/datum/modifier/technomancer/MT = M
-		MT.spell_power = calculate_spell_power(1)
+	if(L.apply_body_effect(modifier_type, duration, owner_ref()) && ispath(modifier_type, /datum/body_effect/technomancer) && isnull(L.body_effect_state(modifier_type)))
+		L.set_body_effect_state(modifier_type, calculate_spell_power(1))
 	log_and_message_admins("has casted [src] on [L].")
 	consume(src, L)
 	return TRUE
 
 // Technomancer specific subtype which keeps track of spell power and gets targeted specificially by Dispel.
-/datum/modifier/technomancer
-	var/spell_power = null // Set by on_add_modifier.
+/datum/body_effect/technomancer
+	stacks = MODIFIER_STACK_FORBID
+	// Per-application state: the spell power it was cast with (set by on_add_modifier).
+
+/datum/body_effect/technomancer/proc/spell_power_of(mob/living/L)
+	var/power = L.body_effect_state(type)
+	return isnum(power) ? power : 1

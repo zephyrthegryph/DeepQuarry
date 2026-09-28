@@ -112,25 +112,26 @@
 	speed = 1.0
 
 /obj/item/projectile/energy/homing_bolt/wizard/fire
-	modifier_type_to_apply = /datum/modifier/wizfire
+	modifier_type_to_apply = /datum/body_effect/wizfire
 	modifier_duration = 6 SECONDS
 	icon_state = "fireball2"
 
 /obj/item/projectile/energy/homing_bolt/wizard/lighting
-	modifier_type_to_apply = /datum/modifier/wizfire/lighting
+	modifier_type_to_apply = /datum/body_effect/wizfire/lighting
 	modifier_duration = 6 SECONDS
 
 /obj/item/projectile/energy/homing_bolt/wizard/poison
-	modifier_type_to_apply = /datum/modifier/wizpoison
+	modifier_type_to_apply = /datum/body_effect/wizpoison
 	modifier_duration = 6 SECONDS
 	icon_state = "green_pellet"
 
 /obj/item/projectile/energy/homing_bolt/wizard/frost
-	modifier_type_to_apply = /datum/modifier/wizpoison/frost
+	modifier_type_to_apply = /datum/body_effect/wizpoison/frost
 	modifier_duration = 6 SECONDS
 	icon_state = "ice_2"
 
-/datum/modifier/wizfire
+/datum/body_effect/wizfire
+	tick_interval = 2 SECONDS
 	name = "wizfire"
 	desc = "Can you even see this in game?"
 	mob_overlay_state = "on_fire"
@@ -141,10 +142,10 @@
 	var/damage_per_tick = 1.5
 	factors = alist(BF_BLEEDING = 0.7)
 
-/datum/modifier/wizfire/tick()
-	holder.inflict_heat_damage(damage_per_tick)
+/datum/body_effect/wizfire/on_tick(mob/living/L)
+	L.inflict_heat_damage(damage_per_tick * L.body_effect_stacks(type)) // each stack burns
 
-/datum/modifier/wizfire/lighting
+/datum/body_effect/wizfire/lighting
 	name = "wizlighting"
 	desc = "Can you even see this in game?."
 	mob_overlay_state = "blue_electricity_constant"
@@ -155,7 +156,8 @@
 	damage_per_tick = 1.0
 	factors = alist(BF_BLEEDING = 0.7, BF_INCOMING_THERMAL = 1.1)
 
-/datum/modifier/wizpoison
+/datum/body_effect/wizpoison
+	tick_interval = 2 SECONDS
 	name = "wizpoison"
 	desc = "Can you even see this in game?."
 	mob_overlay_state = "poisoned"
@@ -165,12 +167,13 @@
 	stacks = MODIFIER_STACK_ALLOWED // Multiple instances will hurt a lot.
 	var/damage_per_tick = 3
 
-/datum/modifier/wizpoison/tick()
-	if(holder.stat == DEAD)
-		expire(silent = TRUE)
-	holder.inflict_poison_damage(damage_per_tick)
+/datum/body_effect/wizpoison/on_tick(mob/living/L)
+	if(L.stat == DEAD)
+		L.end_body_effect(type, TRUE)
+		return
+	L.inflict_poison_damage(damage_per_tick * L.body_effect_stacks(type)) // each stack poisons
 
-/datum/modifier/wizpoison/frost
+/datum/body_effect/wizpoison/frost
 	name = "wizfrost"
 	desc = "Can you even see this in game?."
 	mob_overlay_state = "chilled"
@@ -191,7 +194,7 @@
 	stacks = MODIFIER_STACK_ALLOWED //How does this stack?
 	factors = alist(BF_ENDURANCE_MULT = 0.7)
 
-/datum/modifier/aura/crumbling
+/datum/body_effect/aura/crumbling
 	name = "crumbling"
 	desc = "Can you even see this in game?."
 	mob_overlay_state = "cult_aura"
@@ -201,5 +204,5 @@
 	aura_max_distance = 4
 	factors = alist(BF_INCOMING_ALL = 1.2, BF_DEMAND = 2, BF_INCOMING_PAIN = 2, BF_DISABLE_DURATION = 1.2, BF_HEALING_RECEIVED = 0.8, BF_ENDURANCE_MULT = 0.9)
 
-/datum/modifier/aura/crumbling/superboss
+/datum/body_effect/aura/crumbling/superboss
 	aura_max_distance = 16

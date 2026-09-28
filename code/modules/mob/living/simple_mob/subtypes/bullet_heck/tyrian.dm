@@ -77,9 +77,9 @@
 			attackcycle = 0
 			switch(use_stance())
 				if(I_HURT)
-					om_after(src, 1.5 SECONDS, PROC_REF(summon_puddles), A, 3, /datum/modifier/mmo_drop/blade_boss_long)
+					om_after(src, 1.5 SECONDS, PROC_REF(summon_puddles), A, 3, /datum/body_effect/mmo_drop/blade_boss_long)
 				if(I_GRAB)
-					om_after(src, 1.5 SECONDS, PROC_REF(summon_puddles), A, 3, /datum/modifier/mmo_drop/blade_boss_long)
+					om_after(src, 1.5 SECONDS, PROC_REF(summon_puddles), A, 3, /datum/body_effect/mmo_drop/blade_boss_long)
 				if(I_DISARM)
 					om_after(src, 0.75 SECONDS, PROC_REF(bomb_lines), A, 3)
 		if(3)
@@ -90,16 +90,16 @@
 				if(I_GRAB)
 					om_after(src, 1.5 SECONDS, PROC_REF(bomb_chaos), A, 3)
 				if(I_DISARM)
-					om_after(src, 1 SECOND, PROC_REF(summon_puddles), A, 4, /datum/modifier/mmo_drop/blade_boss_long)
+					om_after(src, 1 SECOND, PROC_REF(summon_puddles), A, 4, /datum/body_effect/mmo_drop/blade_boss_long)
 		if(4)
 			attackcycle = 0
 			switch(use_stance())
 				if(I_HURT)
-					om_after(src, 1.5 SECONDS, PROC_REF(summon_puddles), A, 1, /datum/modifier/mmo_drop/blade_boss_short)
+					om_after(src, 1.5 SECONDS, PROC_REF(summon_puddles), A, 1, /datum/body_effect/mmo_drop/blade_boss_short)
 				if(I_GRAB)
-					om_after(src, 1.5 SECONDS, PROC_REF(summon_puddles), A, 1, /datum/modifier/mmo_drop/blade_boss_short)
+					om_after(src, 1.5 SECONDS, PROC_REF(summon_puddles), A, 1, /datum/body_effect/mmo_drop/blade_boss_short)
 				if(I_DISARM)
-					om_after(src, 1 SECOND, PROC_REF(summon_puddles), A, 1, /datum/modifier/mmo_drop/blade_boss_short)
+					om_after(src, 1 SECOND, PROC_REF(summon_puddles), A, 1, /datum/body_effect/mmo_drop/blade_boss_short)
 
 //The eletrical boss
 //Has some issues since lighting damage causes stuns, so never dirrectly attacks you with lighting
@@ -174,13 +174,13 @@
 			om_after(src, 0.5 SECONDS, PROC_REF(bullet_blossom), A, 8, 8)
 		if(8)
 			attackcycle = 0
-			om_after(src, 0.75 SECONDS, PROC_REF(summon_puddles), A, 9, /datum/modifier/mmo_drop/blade_boss_short)
+			om_after(src, 0.75 SECONDS, PROC_REF(summon_puddles), A, 9, /datum/body_effect/mmo_drop/blade_boss_short)
 		if(9)
 			attackcycle = 0
 			om_after(src, 0.75 SECONDS, PROC_REF(bomb_lines), A, 10)
 		if(10)
 			attackcycle = 0
-			om_after(src, 0.75 SECONDS, PROC_REF(summon_puddles), A, 11, /datum/modifier/mmo_drop/blade_boss_long)
+			om_after(src, 0.75 SECONDS, PROC_REF(summon_puddles), A, 11, /datum/body_effect/mmo_drop/blade_boss_long)
 		if(11)
 			attackcycle = 0
 			om_after(src, 0.75 SECONDS, PROC_REF(bomb_chaos), A, 12)
@@ -188,7 +188,7 @@
 			attackcycle = 0
 			om_after(src, 0.5 SECONDS, PROC_REF(dual_spin), A, 13, 5)
 		if(13)
-			om_after(src, 0.5 SECONDS, PROC_REF(summon_puddles), A, 2, /datum/modifier/mmo_drop/metal_tomb)
+			om_after(src, 0.5 SECONDS, PROC_REF(summon_puddles), A, 2, /datum/body_effect/mmo_drop/metal_tomb)
 			attackcycle = 0
 		if(14)
 			specialattackprojectile = /obj/item/projectile/beam/heavylaser

@@ -460,7 +460,7 @@
 
 /datum/reagent/necroxadone/affect_blood(mob/living/carbon/M, alien, removed)
 	var/chem_effective = 1 * M.species.chem_strength_heal
-	if(M.bodytemperature < 170 || (M.stat == DEAD && M.has_modifier_of_type(/datum/modifier/bloodpump_corpse)))
+	if(M.bodytemperature < 170 || (M.stat == DEAD && M.has_body_effect(/datum/body_effect/bloodpump_corpse)))
 		if(alien == IS_SLIME)
 			if(prob(10))
 				to_chat(M, span_danger("It's so cold. Something causes your cellular mass to harden sporadically, resulting in seizure-like twitching."))
@@ -1856,8 +1856,8 @@
 	industrial_use = REFINERYEXPORT_REASON_DRUG
 
 /datum/reagent/sleevingcure/affect_blood(mob/living/carbon/M, alien, removed)
-	M.remove_a_modifier_of_type(/datum/modifier/resleeving_sickness)
-	M.remove_a_modifier_of_type(/datum/modifier/faux_resleeving_sickness)
+	M.remove_body_effect_stack(/datum/body_effect/resleeving_sickness)
+	M.remove_body_effect_stack(/datum/body_effect/faux_resleeving_sickness)
 */
 
 
@@ -2346,8 +2346,8 @@
 	M.extinguish_mob()
 	M.remove_body_effect(/datum/body_effect/berserk_exhaustion)
 	M.remove_body_effect(/datum/body_effect/entangled)
-	M.remove_a_modifier_of_type(/datum/modifier/wizfire)
-	M.remove_a_modifier_of_type(/datum/modifier/wizpoison)
+	M.remove_body_effect_stack(/datum/body_effect/wizfire)
+	M.remove_body_effect_stack(/datum/body_effect/wizpoison)
 
 //tier 3
 /datum/reagent/modapplying/liquidhealer
@@ -2359,12 +2359,14 @@
 	color = "#00CCFF"
 	scannable = 1
 	overdose = REAGENTS_OVERDOSE * 0.5
-	modifier_to_add = /datum/modifier/liquidhealer
+	modifier_to_add = /datum/body_effect/liquidhealer
 	modifier_duration = 3 SECONDS
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_MEDSCI
 
-/datum/modifier/liquidhealer
+/datum/body_effect/liquidhealer
+	stacks = MODIFIER_STACK_FORBID
+	tick_interval = 2 SECONDS
 	name = REAGENT_ID_LIQUIDHEALER
 	desc = "You are filled with an overwhelming healing."
 
@@ -2373,19 +2375,20 @@
 
 	factors = alist(BF_HEALING_RECEIVED = 1.2)
 
-/datum/modifier/liquidhealer/tick()
-	if(holder.stat == DEAD)
-		expire()
+/datum/body_effect/liquidhealer/on_tick(mob/living/L)
+	if(L.stat == DEAD)
+		L.end_body_effect(type)
+		return
 
 	// A regeneration power, not a reagent: it mends by mechanism, organic
 	// and synthetic alike (the old code repaired robolimbs too).
-	holder.mend(TREAT_TISSUE_REPAIR, 1)
-	holder.mend(TREAT_BURN_CARE, 1)
-	holder.mend(TREAT_PLATING_REPAIR, 1)
-	holder.mend(TREAT_WIRING_REPAIR, 1)
-	holder.mend(TREAT_ANTITOXIN, 1)
-	holder.mend(TREAT_OXYGENATION, 1)
-	holder.mend(TREAT_GENETIC_REPAIR, 1)
+	L.mend(TREAT_TISSUE_REPAIR, 1)
+	L.mend(TREAT_BURN_CARE, 1)
+	L.mend(TREAT_PLATING_REPAIR, 1)
+	L.mend(TREAT_WIRING_REPAIR, 1)
+	L.mend(TREAT_ANTITOXIN, 1)
+	L.mend(TREAT_OXYGENATION, 1)
+	L.mend(TREAT_GENETIC_REPAIR, 1)
 
 
 /datum/reagent/modapplying/phoenixbreath
@@ -2401,7 +2404,7 @@
 	metabolism = 0.1
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_MEDSCI
-	modifier_to_add = /datum/modifier/life_cloak
+	modifier_to_add = /datum/body_effect/life_cloak
 	modifier_duration = 3 SECONDS
 
 

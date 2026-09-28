@@ -686,7 +686,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	// directly (e.g. the disabler's borg power drain) still see the real value.
 	L.apply_effects(stun, weaken, paralyze, irradiate, stutter, eyeblur, drowsy, taser_effect ? 0 : agony, blocked, incendiary, flammability)
 	if(modifier_type_to_apply)
-		L.add_modifier(modifier_type_to_apply, modifier_duration)
+		L.apply_body_effect(modifier_type_to_apply, modifier_duration)
 	return 1
 
 /// Applies this projectile's harm to a living target: the single entry point

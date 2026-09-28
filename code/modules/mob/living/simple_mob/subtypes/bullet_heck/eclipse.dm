@@ -23,7 +23,7 @@
 					om_after(src, 0.5 SECONDS, PROC_REF(hole_in_wall), A, rng_cycle, 18)
 					attackcycle = 0
 				if(3)
-					om_after(src, 0.5 SECONDS, PROC_REF(summon_puddles), A, rng_cycle, /datum/modifier/mmo_drop/eclipse_iceball)
+					om_after(src, 0.5 SECONDS, PROC_REF(summon_puddles), A, rng_cycle, /datum/body_effect/mmo_drop/eclipse_iceball)
 					attackcycle = 0
 		if(I_GRAB) //phase2
 			switch(attackcycle)
@@ -36,12 +36,12 @@
 					om_after(src, 0.5 SECONDS, PROC_REF(chain_burst), A, rng_cycle, 6)
 					attackcycle = 0
 				if(3)
-					om_after(src, 0.5 SECONDS, PROC_REF(summon_puddles), A, rng_cycle, /datum/modifier/mmo_drop/eclipse_iceball)
+					om_after(src, 0.5 SECONDS, PROC_REF(summon_puddles), A, rng_cycle, /datum/body_effect/mmo_drop/eclipse_iceball)
 					attackcycle = 0
 		if(I_DISARM) //phase3
 			switch(attackcycle)
 				if(1)
-					om_after(src, 0.5 SECONDS, PROC_REF(summon_puddles), A, rng_cycle, /datum/modifier/mmo_drop/eclipse_iceball)
+					om_after(src, 0.5 SECONDS, PROC_REF(summon_puddles), A, rng_cycle, /datum/body_effect/mmo_drop/eclipse_iceball)
 					attackcycle = 0
 				if(2)
 					specialattackprojectile = /obj/item/projectile/arc/blue_energy/precusor
@@ -170,7 +170,7 @@
 		if(I_DISARM) //phase3
 			switch(attackcycle)
 				if(1)
-					om_after(src, 2.5 SECONDS, PROC_REF(summon_puddles), A, rng_cycle, /datum/modifier/mmo_drop/blade_boss_short)
+					om_after(src, 2.5 SECONDS, PROC_REF(summon_puddles), A, rng_cycle, /datum/body_effect/mmo_drop/blade_boss_short)
 					attackcycle = 0
 				if(2)
 					om_after(src, 0.5 SECONDS, PROC_REF(hole_in_wall), A, 3, 12)

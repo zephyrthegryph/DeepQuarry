@@ -35,7 +35,7 @@
 	taste_description = "blood"
 	color = "#808080"
 
-	modifier_to_add = /datum/modifier/nervoushigh
+	modifier_to_add = /datum/body_effect/nervoushigh
 	modifier_duration = 3 SECONDS
 
 /datum/reagent/modapplying/heatnullifer

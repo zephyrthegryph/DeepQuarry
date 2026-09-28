@@ -251,7 +251,6 @@
 		/datum/om/stage/life/type_pre/carbon/human,
 		/datum/om/stage/life/upkeep,
 		/datum/om/stage/life/instability/carbon/human,
-		/datum/om/stage/life/modifiers,
 		/datum/om/stage/life/light,
 		/datum/om/stage/life/breathing/carbon/human,
 		/datum/om/stage/life/mutations/carbon/human,
@@ -308,7 +307,6 @@
 	var/list/types = life_test_stage_types(R)
 	var/list/expected = list(
 		/datum/om/stage/life/robot_cycle,
-		/datum/om/stage/life/modifiers/silicon/robot,
 		/datum/om/stage/life/robot_senses,
 		/datum/om/stage/life/instability/silicon/robot,
 		/datum/om/stage/life/robot_power,
@@ -650,7 +648,7 @@
 /datum/unit_test/life_om/stasis_clock/run_life()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
-	H.set_stasis(/datum/modifier/stasis/deep, src)
+	H.set_stasis(/datum/body_effect/stasis/deep, src)
 	TEST_ASSERT(abs(om_clock_rate_of(H, CLOCK_BIO) - 0.1) < 0.001, "deep stasis holds the biology clock at 0.1, got [om_clock_rate_of(H, CLOCK_BIO)]")
 	var/biology = 0
 	var/frames_before = life_test_frames(H)
@@ -660,7 +658,7 @@
 			biology++
 	TEST_ASSERT_EQUAL(biology, 2, "deep stasis runs biology on 2 frames in 20")
 	TEST_ASSERT_EQUAL(life_test_frames(H), frames_before + 20, "the frame itself keeps running in stasis")
-	H.set_stasis(/datum/modifier/stasis/total, src)
+	H.set_stasis(/datum/body_effect/stasis/total, src)
 	TEST_ASSERT_EQUAL(om_clock_rate_of(H, CLOCK_BIO), 0, "total stasis stops the biology clock")
 	biology = 0
 	for(var/i in 1 to 10)

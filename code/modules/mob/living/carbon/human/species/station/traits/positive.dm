@@ -697,9 +697,11 @@
 		return
 	last_adrenaline_rush = world.time
 	log_and_message_admins("[H]'s adrenaline rush trait just activated!", H)
-	H.add_modifier(/datum/modifier/adrenaline, 30 SECONDS)
+	H.apply_body_effect(/datum/body_effect/adrenaline, 30 SECONDS)
 
-/datum/modifier/adrenaline
+/datum/body_effect/adrenaline
+	stacks = MODIFIER_STACK_FORBID
+	tick_interval = 2 SECONDS
 	name = "Adrenaline Rush"
 	desc = "A rush of adrenaline, usually caused by near death in situations."
 	on_created_text = span_danger("You suddenly feel adrenaline pumping through your veins as your body refuses to give up! You feel stronger, and faster, and the pain fades away quickly.")
@@ -721,28 +723,30 @@
 	// Metabolism in overdrive
 	factors = alist(BF_METABOLISM = 2.5, BF_BLEEDING = 1.25, BF_SLOWDOWN = -11, BF_ACCURACY = 25, BF_DISPERSION = -25, BF_EVASION = 20, BF_ATTACK_SPEED = 0.5, BF_MELEE_DAMAGE = 2, BF_INCOMING_ALL = 0.8, BF_DEMAND = 0.1, BF_DISABLE_DURATION = 0, BF_ENDURANCE_FLAT = 25, BF_PAIN_IMMUNITY = 1, BF_PULSE_SHIFT = 2)
 
+	// Per-application state: list(original duration, the disabling values it suppressed).
 
-	var/original_length
-	var/list/original_values
+/datum/body_effect/adrenaline/on_start(mob/living/L)
+	var/original_length = L.body_effect_remaining(type)
+	var/list/original_values = list("stun" = L.current_pain()*1.5, "weaken" = L.status_units(EFFECT_WEAKENED)*1.5, "paralyze" = L.status_units(EFFECT_PARALYZED)*1.5, "stutter" = L.status_units(EFFECT_STUTTERING)*1.5, "eye_blur" = L.status_units(EFFECT_BLURRY)*1.5, "drowsy" = L.status_units(EFFECT_DROWSY)*1.5, "agony" = L.current_pain()*1.5, "confuse" = L.status_units(EFFECT_CONFUSED)*1.5)
+	L.set_body_effect_state(type, list(original_length, original_values))
 
-/datum/modifier/adrenaline/on_applied()
-	original_length = expire_at - world.time
-	original_values = list("stun" = holder.current_pain()*1.5, "weaken" = holder.status_units(EFFECT_WEAKENED)*1.5, "paralyze" = holder.status_units(EFFECT_PARALYZED)*1.5, "stutter" = holder.status_units(EFFECT_STUTTERING)*1.5, "eye_blur" = holder.status_units(EFFECT_BLURRY)*1.5, "drowsy" = holder.status_units(EFFECT_DROWSY)*1.5, "agony" = holder.current_pain()*1.5, "confuse" = holder.status_units(EFFECT_CONFUSED)*1.5)
+/datum/body_effect/adrenaline/on_tick(mob/living/L)
+	L.mend(TREAT_ANALGESIC, 100)
+	L.status_set(EFFECT_WEAKENED, 0)
+	L.status_set(EFFECT_PARALYZED, 0)
+	L.status_set(EFFECT_STUTTERING, 0)
+	L.status_set(EFFECT_BLURRY, 0)
+	L.status_set(EFFECT_DROWSY, 0)
+	L.status_set(EFFECT_CONFUSED, 0)
+	L.status_set(EFFECT_STUNNED, 0)
 
-/datum/modifier/adrenaline/tick()
-	holder.mend(TREAT_ANALGESIC, 100)
-	holder.status_set(EFFECT_WEAKENED, 0)
-	holder.status_set(EFFECT_PARALYZED, 0)
-	holder.status_set(EFFECT_STUTTERING, 0)
-	holder.status_set(EFFECT_BLURRY, 0)
-	holder.status_set(EFFECT_DROWSY, 0)
-	holder.status_set(EFFECT_CONFUSED, 0)
-	holder.status_set(EFFECT_STUNNED, 0)
-
-/datum/modifier/adrenaline/on_expire()	//Your time is up, time to suffer the consequences.
-	holder.apply_effects(original_values["stun"] + 30,original_values["weaken"] + 20,original_values["paralyze"] + 15,0,original_values["stutter"] + 40,original_values["eye_blur"] + 20,original_values["drowsy"] + 75,original_values["agony"])
-	holder.status_at_least(EFFECT_CONFUSED, original_values["confused"])
-	holder.apply_body_effect(/datum/body_effect/adrenaline_recovery,original_length*17.5)
+/datum/body_effect/adrenaline/on_end(mob/living/L, expired)	//Your time is up, time to suffer the consequences.
+	var/list/state = L.body_effect_state(type)
+	var/original_length = state?[1] || 0
+	var/list/original_values = state?[2] || list()
+	L.apply_effects(original_values["stun"] + 30,original_values["weaken"] + 20,original_values["paralyze"] + 15,0,original_values["stutter"] + 40,original_values["eye_blur"] + 20,original_values["drowsy"] + 75,original_values["agony"])
+	L.status_at_least(EFFECT_CONFUSED, original_values["confused"])
+	L.apply_body_effect(/datum/body_effect/adrenaline_recovery,original_length*17.5)
 
 /datum/body_effect/adrenaline_recovery
 	stacks = MODIFIER_STACK_FORBID
@@ -905,7 +909,7 @@
 
 /datum/trait/positive/emp_resist/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	H.add_modifier(/datum/modifier/trait/empresist)
+	H.apply_body_effect(/datum/body_effect/trait/empresist)
 
 /datum/trait/positive/emp_resist_major
 	name = "Major EMP Resistance"
@@ -919,7 +923,7 @@
 
 /datum/trait/positive/emp_resist_major/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	H.add_modifier(/datum/modifier/trait/empresistb)
+	H.apply_body_effect(/datum/body_effect/trait/empresistb)
 
 /datum/trait/positive/radioactive_heal
 	name = "Radioactive Heal"

@@ -1,7 +1,7 @@
 /datum/component/xenoqueenbuff
 	var/mob/living/carbon/human/xeno
 	var/aura_active = 0
-	var/datum/modifier/aura/applying = /datum/modifier/aura/xenoqueenbuff // In case we want to add more than one buff in the future.
+	var/datum/body_effect/aura/applying = /datum/body_effect/aura/xenoqueenbuff // In case we want to add more than one buff in the future.
 
 /datum/component/xenoqueenbuff/Initialize()
 	if(!ishuman(parent))
@@ -23,9 +23,10 @@
 		if(L == xeno)
 			continue //Don't buff ourselves
 		if(xeno.IIsAlly(L))
-			L.add_modifier(applying, null, parent)
+			L.apply_body_effect(applying, null, parent)
 
-/datum/modifier/aura/xenoqueenbuff
+/datum/body_effect/aura/xenoqueenbuff
+	tick_interval = 2 SECONDS
 	name = "Adrenal Surge"
 	on_created_text = span_notice("The influence of a nearby Xenomorph Queen strengthens your body... ")
 	on_expired_text = span_warning("You feel the influence of the Queen slip away, causing your body to relax.")
@@ -38,14 +39,13 @@
 	// Only affects ranged attacks missing
 	factors = alist(BF_EVASION = 25, BF_ATTACK_SPEED = 0.9, BF_MELEE_DAMAGE = 1.2)
 
-/datum/modifier/aura/xenoqueenbuff/check_if_valid()
-	.=..()
-	var/atom/A = om_resolve(origin)
+/datum/body_effect/aura/xenoqueenbuff/on_check(mob/living/L)
+	var/atom/A = L.body_effect_origin(type)
 	if(istype(A))
 		var/datum/component/xenoqueenbuff/X = A.GetComponent(/datum/component/xenoqueenbuff)
 		if(X)
 			if(!X.aura_active)
-				expire()
+				L.end_body_effect(type)
 
 /mob/living/carbon/human/proc/queen_aura_toggle()
 	set name = "Commanding Aura"

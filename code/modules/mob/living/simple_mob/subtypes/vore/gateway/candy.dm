@@ -221,7 +221,7 @@
 	for(var/mob/living/L in view(src, 2))
 		if(L.stat == DEAD || !IIsAlly(L))
 			continue
-		L.add_modifier(/datum/modifier/aura/candy_blue, null, src)
+		L.apply_body_effect(/datum/body_effect/aura/candy_blue, null, src)
 
 /mob/living/simple_mob/vore/candy/redcabold //Tanky boi
 	name = "gummy kobold"
@@ -273,7 +273,7 @@
 	for(var/mob/living/L in view(src, 2))
 		if(L.stat == DEAD || !IIsAlly(L))
 			continue
-		L.add_modifier(/datum/modifier/aura/candy_yellow, null, src)
+		L.apply_body_effect(/datum/body_effect/aura/candy_yellow, null, src)
 
 /mob/living/simple_mob/vore/candy/orangecabold //Increase melee damage
 	name = "gummy kobold"
@@ -297,7 +297,7 @@
 	for(var/mob/living/L in view(src, 2))
 		if(L.stat == DEAD || !IIsAlly(L))
 			continue
-		L.add_modifier(/datum/modifier/aura/candy_orange, null, src)
+		L.apply_body_effect(/datum/body_effect/aura/candy_orange, null, src)
 
 /mob/living/simple_mob/vore/candy/purplecabold //Heals folks
 	name = "gummy kobold"
@@ -321,7 +321,7 @@
 	for(var/mob/living/L in view(src, 2))
 		if(L.stat == DEAD || !IIsAlly(L))
 			continue
-		L.add_modifier(/datum/modifier/aura/candy_purple, null, src)
+		L.apply_body_effect(/datum/body_effect/aura/candy_purple, null, src)
 
 /mob/living/simple_mob/vore/candy/greencabold //Nyoooooom
 	name = "gummy kobold"
@@ -378,46 +378,47 @@
 	appendage_attack.launch_projectile(A, BP_TORSO, src)
 	ai_busy_end()
 //Modifiers
-/datum/modifier/aura/candy_purple //Healz
+/datum/body_effect/aura/candy_purple //Healz
 	name = "candy_purple"
 	desc = "You feel somewhat gooey."
 	stacks = MODIFIER_STACK_FORBID
 	aura_max_distance = 5
 
-/datum/modifier/aura/candy_purple/tick()
-	if(holder.stat == DEAD)
-		expire()
+/datum/body_effect/aura/candy_purple/on_tick(mob/living/L)
+	if(L.stat == DEAD)
+		L.end_body_effect(type)
+		return
 
-	if(ishuman(holder)) // Every limb, organic or robotic.
-		var/mob/living/carbon/human/H = holder
+	if(ishuman(L)) // Every limb, organic or robotic.
+		var/mob/living/carbon/human/H = L
 		for(var/obj/item/organ/external/E as anything in H.organs)
 			H.mend(TREAT_TISSUE_REPAIR, 2, E.organ_tag)
 			H.mend(TREAT_BURN_CARE, 2, E.organ_tag)
 			H.mend(TREAT_PLATING_REPAIR, 2, E.organ_tag)
 			H.mend(TREAT_WIRING_REPAIR, 2, E.organ_tag)
 	else
-		holder.mend(TREAT_TISSUE_REPAIR, 2)
-		holder.mend(TREAT_BURN_CARE, 2)
-		holder.mend(TREAT_PLATING_REPAIR, 2)
-		holder.mend(TREAT_WIRING_REPAIR, 2)
+		L.mend(TREAT_TISSUE_REPAIR, 2)
+		L.mend(TREAT_BURN_CARE, 2)
+		L.mend(TREAT_PLATING_REPAIR, 2)
+		L.mend(TREAT_WIRING_REPAIR, 2)
 
-	holder.mend(TREAT_ANTITOXIN, 1)
+	L.mend(TREAT_ANTITOXIN, 1)
 
-/datum/modifier/aura/candy_orange //melee+
+/datum/body_effect/aura/candy_orange //melee+
 	name = "candy orange"
 	desc = "You feel somewhat gooey."
 	stacks = MODIFIER_STACK_FORBID
 	aura_max_distance = 5
 	factors = alist(BF_MELEE_DAMAGE = 1.5)
 
-/datum/modifier/aura/candy_yellow //speed
+/datum/body_effect/aura/candy_yellow //speed
 	name = "candy yellow"
 	desc = "You feel somewhat gooey."
 	stacks = MODIFIER_STACK_FORBID
 	aura_max_distance = 5
 	factors = alist(BF_SLOWDOWN = -1)
 
-/datum/modifier/aura/candy_blue //defense
+/datum/body_effect/aura/candy_blue //defense
 	name = "candy blue"
 	desc = "You feel somewhat gooey."
 	stacks = MODIFIER_STACK_FORBID

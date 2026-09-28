@@ -63,7 +63,7 @@ REF_OWNED(/obj/item/organ/internal/heart/machine/anomalock, "core")
 	if(!COOLDOWN_FINISHED(src, survival_cooldown))
 		return FALSE
 
-	organ_owner.add_modifier(/datum/modifier/voltaic_overdrive, 30 SECONDS)
+	organ_owner.apply_body_effect(/datum/body_effect/voltaic_overdrive, 30 SECONDS)
 	add_lightning_overlay(30 SECONDS)
 	COOLDOWN_START(src, survival_cooldown, survival_cooldown_time)
 	om_after(src, COOLDOWN_TIMELEFT(src, survival_cooldown), PROC_REF(notify_cooldown), organ_owner)
@@ -135,13 +135,15 @@ REF_OWNED(/obj/item/organ/internal/heart/machine/anomalock, "core")
 	. = ..()
 	icon_state = initial(icon_state) + (core ? "-core" : "")
 
-/datum/modifier/voltaic_overdrive
+/datum/body_effect/voltaic_overdrive
+	stacks = MODIFIER_STACK_FORBID
 	name = "voltaic_overdrive"
 	client_color = "#e9f76b"
 	factors = alist(BF_PAIN_IMMUNITY = 1)
+	tick_interval = 2 SECONDS
 
-/datum/modifier/voltaic_overdrive/tick(seconds_between_ticks)
-	. = ..()
+/datum/body_effect/voltaic_overdrive/on_tick(mob/living/L)
+	var/mob/living/holder = L
 	if(!holder.is_critical())
 		return
 
@@ -157,12 +159,12 @@ REF_OWNED(/obj/item/organ/internal/heart/machine/anomalock, "core")
 	holder.status_adjust(EFFECT_STUNNED, -5)
 	holder.status_set(EFFECT_BLURRY, 0)
 
-/datum/modifier/voltaic_overdrive/on_applied()
+/datum/body_effect/voltaic_overdrive/on_start(mob/living/L)
 	. = ..()
-	REMOVE_TRAIT(src, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)
-	holder.reagents.add_reagent(REAGENT_ID_MYELAMINE, 5)
-	to_chat(holder, span_userdanger("You feel a burst of energy! It's do or die!"))
+	REMOVE_TRAIT(L, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)
+	L.reagents.add_reagent(REAGENT_ID_MYELAMINE, 5)
+	to_chat(L, span_userdanger("You feel a burst of energy! It's do or die!"))
 
-/datum/modifier/voltaic_overdrive/on_expire()
+/datum/body_effect/voltaic_overdrive/on_end(mob/living/L, expired)
 	. = ..()
-	holder.balloon_alert(holder, "your heart weakens")
+	L.balloon_alert(L, "your heart weakens")

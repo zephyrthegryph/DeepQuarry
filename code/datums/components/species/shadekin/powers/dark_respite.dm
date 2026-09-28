@@ -43,7 +43,7 @@
 	var/datum/component/shadekin/SK = actor.get_shadekin_component()
 	if(!SK)
 		return "you aren't shadekin"
-	if(!actor.has_modifier_of_type(/datum/modifier/dark_respite))
+	if(!actor.has_body_effect(/datum/body_effect/dark_respite))
 		return TRUE
 	return SK.manual_respite || "you cannot manually end a Dark Respite triggered by an emergency warp"
 
@@ -52,42 +52,41 @@
 	var/datum/component/shadekin/SK = actor.get_shadekin_component()
 	if(!SK)
 		return FALSE
-	if(actor.has_modifier_of_type(/datum/modifier/dark_respite))
+	if(actor.has_body_effect(/datum/body_effect/dark_respite))
 		to_chat(actor, span_notice("You stop focusing the Dark on healing yourself."))
 		SK.manual_respite = FALSE
-		actor.remove_a_modifier_of_type(/datum/modifier/dark_respite)
+		actor.remove_body_effect_stack(/datum/body_effect/dark_respite)
 		return TRUE
 	to_chat(actor, span_notice("You start focusing the Dark on healing yourself. (Leave the dark or trigger the ability again to end this.)"))
 	SK.manual_respite = TRUE
-	actor.add_modifier(/datum/modifier/dark_respite)
+	actor.apply_body_effect(/datum/body_effect/dark_respite)
 	return TRUE
 
-/datum/modifier/dark_respite
+/datum/body_effect/dark_respite
+	stacks = MODIFIER_STACK_FORBID
+	tick_interval = 2 SECONDS
 	name = "Dark Respite"
-	var/datum/component/shadekin/SK
 
-// Override this for special effects when it gets added to the mob.
-/datum/modifier/dark_respite/on_applied()
-	SK = holder.get_shadekin_component()
-	if(!SK)
-		expire()
-	return
+/datum/body_effect/dark_respite/on_start(mob/living/L)
+	if(!L.get_shadekin_component())
+		L.end_body_effect(type)
 
-/datum/modifier/dark_respite/tick()
+/datum/body_effect/dark_respite/on_tick(mob/living/L)
+	var/datum/component/shadekin/SK = L.get_shadekin_component()
 	if(!SK)
-		expire()
+		L.end_body_effect(type)
 		return
 	var/mob/living/carbon/human/H
-	if(istype(holder, /mob/living/carbon/human))
-		H = holder
+	if(istype(L, /mob/living/carbon/human))
+		H = L
 	var/in_dark = istype(get_area(H), /area/shadekin)
-	update_respite_factors(in_dark, H?.nutrition > 0)
+	update_respite_factors(L, in_dark, H?.nutrition > 0)
 
 	if(in_dark)
 		//Very good healing, but only in the Dark.
-		holder.mend(TREAT_BURN_CARE, 0.25)
-		holder.mend(TREAT_TISSUE_REPAIR, 3.25)
-		holder.mend(TREAT_ANTITOXIN, 0.25)
+		L.mend(TREAT_BURN_CARE, 0.25)
+		L.mend(TREAT_TISSUE_REPAIR, 3.25)
+		L.mend(TREAT_ANTITOXIN, 0.25)
 		if(H)
 			for(var/obj/item/organ/internal/I in H.internal_organs)
 				if(I.robotic >= ORGAN_ROBOT)
@@ -106,19 +105,15 @@
 							O.remove_wound(W)
 	else
 		if(SK.manual_respite)
-			to_chat(holder, span_notice("As you leave the Dark, you stop focusing the Dark on healing yourself."))
+			to_chat(L, span_notice("As you leave the Dark, you stop focusing the Dark on healing yourself."))
 			SK.manual_respite = FALSE
-			expire()
+			L.end_body_effect(type)
 
 /// The Dark numbs pain and fights infection; a fed body rebuilds blood.
 /// Swaps between static tables, so the factors only recompute on a change.
-/datum/modifier/dark_respite/proc/update_respite_factors(in_dark, fed)
+/datum/body_effect/dark_respite/proc/update_respite_factors(mob/living/L, in_dark, fed)
 	var/static/alist/dark_fed = alist(BF_PAIN_IMMUNITY = 1, BF_ANTIMICROBIAL = ANTIBIO_SUPER, BF_BLOOD_REGEN = 5)
 	var/static/alist/dark_hungry = alist(BF_PAIN_IMMUNITY = 1, BF_ANTIMICROBIAL = ANTIBIO_SUPER)
 	var/static/alist/light_fed = alist(BF_BLOOD_REGEN = 5)
 	var/alist/wanted = in_dark ? (fed ? dark_fed : dark_hungry) : (fed ? light_fed : null)
-	if(wanted != factors)
-		set_factors(wanted)
-
-/datum/modifier/dark_respite/on_expire()
-	SK = null
+	L.set_body_effect_factors(type, wanted)

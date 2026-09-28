@@ -267,5 +267,5 @@
 /obj/item/spell/unrestricted/mend/on_melee_cast(atom/hit_atom, mob/living/user, def_zone)
 	if(isliving(hit_atom))
 		var/mob/living/L = hit_atom
-		L.add_modifier(/datum/modifier/mend_occult, 150)	//No need to change this, it does the job
+		L.apply_body_effect(/datum/body_effect/mend_occult, 150)	//No need to change this, it does the job
 	consume(src, user)
