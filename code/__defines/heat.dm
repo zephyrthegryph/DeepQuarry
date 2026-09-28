@@ -76,3 +76,13 @@
 #define COOKER_CONTENT_CONDUCTANCE 60
 /// A hibernating cooker wakes this far below its optimal temperature, K.
 #define COOKER_THERMOSTAT_BAND 5
+
+// Mob reactions to fire exposure (/mob/living/var/fire_reaction).
+/// Ignores flame contact.
+#define FIRE_REACTION_NONE 0
+/// Gains fire stacks and ignites (the default).
+#define FIRE_REACTION_BURN 1
+/// Ignites without gaining stacks from hotspots (silicons).
+#define FIRE_REACTION_IGNITE 2
+/// Runs fire_trigger_proc instead of burning (volatile slimes).
+#define FIRE_REACTION_TRIGGER 3

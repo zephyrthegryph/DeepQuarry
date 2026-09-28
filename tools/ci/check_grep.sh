@@ -468,9 +468,9 @@ part "heat: ratchet on fire_act() overrides (H3)"
 # Heat behaviour is declared: thermal properties, temperature thresholds and
 # heat rules (code/datums/rules/declarations.dm) on the heat node that
 # /obj/fire_act() heats. Don't add a per-type fire_act() override; declare a
-# rule. Remaining: /atom, /obj, floor + wall turfs, mob body heat (living,
-# carbon, robot, three slimes) and unit-test probes. This count may only go down.
-fire_act_max=12
+# rule. Remaining: /atom, /obj, /turf/simulated (declared burn()), /mob/living
+# (declared fire_reaction) and two unit-test probes. This count may only go down.
+fire_act_max=6
 fire_act_count=$($grep -c '^/[A-Za-z0-9_/]*/fire_act\(' "${code_files[@]}" | awk -F: '{s += $NF} END {print s + 0}')
 if [ "$fire_act_count" -gt "$fire_act_max" ]; then
 	echo
@@ -484,7 +484,7 @@ part "damage: ratchet on non-turf ex_act() overrides (D5)"
 # resistance_flags = BOMB_PROOF instead of a severity ladder. Remaining overrides
 # carry orthogonal effects (spawning, detonating, draining) or separate pools
 # (blobs, plants, shields, modular computers, mobs). This count may only go down.
-ex_act_max=66
+ex_act_max=64
 ex_act_count=$($grep -c '^/(atom|obj|mob|area)[A-Za-z0-9_/]*/ex_act\(' "${code_files[@]}" | awk -F: '{s += $NF} END {print s + 0}')
 if [ "$ex_act_count" -gt "$ex_act_max" ]; then
 	echo

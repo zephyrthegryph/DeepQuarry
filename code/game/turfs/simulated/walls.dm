@@ -191,8 +191,6 @@
 	. = ..()
 	dismantle_wall()
 
-/turf/simulated/wall/fire_act(exposed_temperature, exposed_volume)//Doesn't fucking work because walls don't interact with air :(
-	burn(exposed_temperature)
 
 /turf/simulated/wall/proc/dismantle_wall(devastated, explode, no_product)
 	// A wall built from a substance material discharges its effect when breached.
@@ -322,7 +320,7 @@
 	)
 	return total_radiation
 
-/turf/simulated/wall/proc/burn(temperature)
+/turf/simulated/wall/burn(temperature)
 	if(material.combustion_effect(src, temperature, 0.7))
 		om_after(src, 2, PROC_REF(burn_collapse), temperature, girder_material.name)
 

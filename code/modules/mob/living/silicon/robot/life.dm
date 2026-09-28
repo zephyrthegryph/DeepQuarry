@@ -8,6 +8,7 @@
 // Countdowns (killswitch, weapon lock) are timers (robot.dm).
 
 /mob/living/silicon/robot
+	fire_reaction = FIRE_REACTION_IGNITE
 	life_set = LIFE_SET_ROBOT
 
 /// `if(transforming) return` and the per-cycle power counter reset.
@@ -306,12 +307,6 @@
 	if(lockdown || !is_component_functioning(ROBOT_SLOT_ACTUATOR))
 		canmove = FALSE
 	return canmove
-
-/mob/living/silicon/robot/fire_act()
-	if(is_incorporeal())
-		return
-	if(!on_fire) //Silicons don't gain stacks from hotspots, but hotspots can ignite them
-		ignite_mob()
 
 /mob/living/silicon/robot/update_fire()
 	cut_overlay(image(icon = 'icons/mob/OnFire.dmi', icon_state = get_fire_icon_state()))

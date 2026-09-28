@@ -23,7 +23,16 @@
 				src.hotspot_expose(1000,CELL_VOLUME)
 	return
 
-/turf/simulated/floor/fire_act(exposed_temperature, exposed_volume)
+/// Flame contact on a simulated turf: its declared heat damage (floor tiles
+/// scorch and lift, walls melt). The one turf fire_act.
+/turf/simulated/fire_act(exposed_temperature, exposed_volume)
+	burn(exposed_temperature)
+
+/// Heat damage from flame contact at `exposed_temperature`; none by default.
+/turf/simulated/proc/burn(exposed_temperature)
+	return
+
+/turf/simulated/floor/burn(exposed_temperature)
 
 	var/temp_destroy = get_damage_temperature()
 	if(!burnt && prob(5))

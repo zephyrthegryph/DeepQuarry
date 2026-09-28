@@ -1,15 +1,36 @@
 //Mobs on Fire
 
 //altered this to cap at the temperature of the fire causing it, using the same 1:1500 value as /mob/living/carbon/human/handle_fire() in human/life.dm
+/// How this mob reacts to fire exposure (FIRE_REACTION_*), declared per type.
+/mob/living/var/fire_reaction = FIRE_REACTION_BURN
+/// FIRE_REACTION_TRIGGER: the proc fire runs (ignite, explode) and the verb logged for it.
+/mob/living/var/fire_trigger_proc
+/mob/living/var/fire_trigger_verb = "ignited"
+/// Whether flame contact heats this mob's body (scaled by its heat protection).
+/mob/living/var/fire_heats_body = FALSE
+
+/// The one fire_act for mobs: the reaction is declared, never overridden.
 /mob/living/fire_act(exposed_temperature, exposed_volume)
 	if(is_incorporeal())
 		return
-	if(exposed_temperature)
-		if(fire_stacks < exposed_temperature/1500) // Subject to balance
-			adjust_fire_stacks(2)
-	else
-		adjust_fire_stacks(2)
-	ignite_mob()
+	switch(fire_reaction)
+		if(FIRE_REACTION_NONE)
+			return
+		if(FIRE_REACTION_TRIGGER)
+			log_and_message_admins("[fire_trigger_verb] due to exposure to fire.", src)
+			if(fire_trigger_proc)
+				call(src, fire_trigger_proc)()
+			return
+		if(FIRE_REACTION_IGNITE)
+			// No stacks from hotspots, but a hotspot can still ignite it.
+			if(!on_fire)
+				ignite_mob()
+		else
+			if(!exposed_temperature || fire_stacks < exposed_temperature / 1500) // Subject to balance
+				adjust_fire_stacks(2)
+			ignite_mob()
+	if(fire_heats_body && exposed_temperature)
+		adjust_bodytemperature(max(min(BODYTEMP_HEATING_MAX * (1 - get_heat_protection()), exposed_temperature - bodytemperature), 0))
 
 
 /// Global list that containes cached fire overlays for mobs

@@ -38,6 +38,7 @@
 
 	if(admin)
 		can_rotate = FALSE
+		resistance_flags |= BOMB_PROOF
 
 /obj/structure/reflector/examine(mob/user)
 	. = ..()
@@ -315,12 +316,6 @@
 /obj/structure/reflector/box/auto_reflect(obj/item/projectile/P)
 	redirect_projectile(P,rotation_angle)
 	return ..()
-
-/obj/structure/reflector/ex_act()
-	if(admin)
-		return
-	else
-		return ..()
 
 /obj/structure/reflector/singularity_act()
 	if(admin)
