@@ -129,24 +129,29 @@
 		return
 	deal_damage(DAMAGE_THERMAL, amount, FIRE, flags = DAMAGE_PACKET_SILENT)
 
-/// The overheating state: while the object is above its heat limit (the
-/// overheating rule adds this and removes it when it cools), a thermal damage
-/// stream proportional to the excess, OVERHEAT_DAMAGE_PER_KELVIN per second
-/// per kelvin, between OVERHEAT_DAMAGE_MIN and OVERHEAT_DAMAGE_MAX per second.
-/datum/component/overheating
-	dupe_mode = COMPONENT_DUPE_UNIQUE
+/// The overheating state (was /datum/component/overheating): while the object is
+/// above its heat limit (the overheating rule attaches this and detaches it when it
+/// cools), a thermal damage stream proportional to the excess, OVERHEAT_DAMAGE_PER_KELVIN
+/// per second per kelvin, between OVERHEAT_DAMAGE_MIN and OVERHEAT_DAMAGE_MAX per second.
+/// A shared OM behaviour ticking once a second; it has no state of its own.
+/datum/om/behaviour/overheating
+	every = 1 SECONDS
 
-/datum/component/overheating/Initialize()
-	if(!isobj(parent))
-		return COMPONENT_INCOMPATIBLE
-	var/obj/O = parent
+/datum/om/behaviour/overheating/on_start(obj/O)
 	O.on_overheat()
-	PERIODIC_START(src, PERIODIC_SECOND)
 
-/datum/component/overheating/periodic_step(seconds_per_tick)
-	var/obj/O = parent
+/datum/om/behaviour/overheating/tick(obj/O, dt)
+	O.overheat_step(dt)
+
+/// TRUE while the object overheats.
+/obj/proc/is_overheating()
+	return om_attached(src, /datum/om/behaviour/overheating)
+
+/// One second-scaled step of the overheating damage stream.
+/obj/proc/overheat_step(seconds_per_tick)
+	var/obj/O = src
 	if(QDELETED(O))
-		return PROCESS_KILL
+		return
 	var/limit = PROPERTY(O, PROP_MELTING_POINT)
 	var/excess = O.get_temperature() - (isnull(limit) ? INFINITY : limit)
 	if(!(excess > 0))
