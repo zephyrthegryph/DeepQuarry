@@ -21,19 +21,19 @@ first-use accessor. This lint ratchets four counts:
 
 A line or override carrying `// ALLOW(init): <reason>` does not count
 (tools/ci/allow_annotations.py). The counts live in
-tools/ci/init_baseline.txt and may fall, never rise.
+tools/ci/init_baseline.txt as site fingerprints; the baseline only shrinks.
 
 Usage:
     python tools/ci/init_lint.py            # the CI check
     python tools/ci/init_lint.py --report   # every site
-    python tools/ci/init_lint.py --update   # rewrite the ceilings to today's counts
+    python tools/ci/init_lint.py --update   # drop fixed sites from the baseline (never adds)
 """
 import os
 import re
 import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
-from allow_annotations import allowed, check_ceilings, read_baseline, write_baseline  # noqa: E402
+from allow_annotations import allowed, check_sites, write_sites  # noqa: E402
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 BASELINE = os.path.join(ROOT, "tools", "ci", "init_baseline.txt")
@@ -97,19 +97,26 @@ def main():
         for kind, numbers in scan(read(path)).items():
             totals[kind] += len(numbers)
             where.extend((rel, n, kind) for n in numbers)
-    if "--update" in sys.argv:
-        write_baseline(BASELINE, [
-            "Initialize() ratchet (tools/ci/init_lint.py, doc/rewrite/init_and_turfs.md sec 3.6).",
-            "May fall, never rise. Move type facts to the type table and registration to on_materialize(),",
-            "then `python tools/ci/init_lint.py --update`.",
-        ], totals)
-        print("init lint: baseline written: %s" % totals)
+    sites = {kind: [] for kind in totals}
+    for rel, n, kind in where:
+        sites[kind].append((rel, n))
+    if "--update" in sys.argv or "--seed" in sys.argv:
+        rows = write_sites(BASELINE, [
+            "Initialize() ratchet sites (tools/ci/init_lint.py, doc/rewrite/init_and_turfs.md sec 3.6).",
+            "rule<TAB>file<TAB>normalized line. Shrink-only: fix sites, then `python tools/ci/init_lint.py --update`.",
+        ], sites, list(totals), shrink_only="--seed" not in sys.argv)
+        print("init lint: baseline written: %d sites" % rows)
         return 0
     if "--report" in sys.argv:
         for rel, n, kind in sorted(where):
             print("%s:%d: %s" % (rel, n, kind))
-    failed = check_ceilings("init", totals, read_baseline(BASELINE),
-                            "Give a new override `// INIT: <reason>`, or move the work to the type table / on_materialize().")
+    failed = check_sites("init", sites, BASELINE, {
+        "initialize": "move type facts to the type table and registration to on_materialize()",
+        "late_initialize": "use on_materialize() or a first-use accessor instead of LateInitialize()",
+        "unreasoned": "add `// INIT: <per-instance state it sets>` on or above the header",
+        "world_reads": "don't reach outside the instance in Initialize(); do it in on_materialize()",
+        "turf_on_materialize": "turf on_materialize() overrides are skipped by SSatoms; use the type table",
+    }, banned=("turf_on_materialize",))
     return 1 if failed else 0
 
 

@@ -613,7 +613,7 @@ REF_WEAK_LIST(/datum/unit_test/dq_containment_conservation_fuzz, list("holders",
 	name = "hooked test item"
 	has_slot_hooks = TRUE
 	sharp = TRUE // so it can enter the box's sharp-only "main" slot too
-	var/list/log = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/log = list()
 
 /obj/item/dq_containment_test/hooked/on_slotted(atom/holder, slot_id)
 	log += "on:[holder]:[slot_id]"

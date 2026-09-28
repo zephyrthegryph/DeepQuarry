@@ -1,8 +1,8 @@
 """One-way-to-do-it lints (doc/rewrite/object_model_core.md sec 16, "One way to do X").
 
 Each count is a banned alternative to the object model's one mechanism for a
-job. tools/ci/api_lints_baseline.txt holds the ceilings: a count may fall,
-never rise. A justified site (framework reflection: the serializer, links,
+job. tools/ci/api_lints_baseline.txt holds the legacy sites (file + line text):
+the baseline only shrinks. A justified site (framework reflection: the serializer, links,
 tasks, VV) carries `// ALLOW(api): <reason>` on its line or the comment line
 above it (tools/ci/allow_annotations.py) and is not counted. Most are at 0; the rest are ratchets a sweep lowers.
 
@@ -52,7 +52,7 @@ import sys
 sys.path.insert(0, os.path.dirname(__file__))
 from state_schema_lint import code_only  # noqa: E402
 import field_write_lint  # noqa: E402
-from allow_annotations import allowed  # noqa: E402
+from allow_annotations import allowed, check_sites, write_sites  # noqa: E402
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 BASELINE = os.path.join(ROOT, "tools", "ci", "api_lints_baseline.txt")
@@ -209,35 +209,14 @@ def scan():
     return sites
 
 
-def read_baseline():
-    base = {}
-    if os.path.exists(BASELINE):
-        with open(BASELINE, encoding="utf-8") as handle:
-            for line in handle:
-                line = line.split("#", 1)[0].strip()
-                if line:
-                    name, count = line.split()
-                    base[name] = int(count)
-    return base
-
-
-def write_baseline(counts):
-    lines = [
-        "# One-way-to-do-it lint ceilings (doc/rewrite/object_model_core.md sec 16).",
-        "# tools/ci/api_lints.py fails when a count rises above its line here.",
-        "# Lower a line when a sweep removes sites: `python tools/ci/api_lints.py --update`.",
-    ]
-    for name in NAMES:
-        lines.append("%s %d" % (name, counts[name]))
-    with open(BASELINE, "w", encoding="utf-8", newline="\n") as handle:
-        handle.write("\n".join(lines) + "\n")
-
-
 def main(argv):
     sites = scan()
     counts = {name: len(sites[name]) for name in NAMES}
-    if "--update" in argv:
-        write_baseline(counts)
+    if "--update" in argv or "--seed" in argv:
+        write_sites(BASELINE, [
+            "api lint legacy sites (tools/ci/api_lints.py). rule<TAB>file<TAB>normalized line.",
+            "A site not listed here fails. Shrink-only: after a sweep, `python tools/ci/api_lints.py --update`.",
+        ], sites, [n for n in NAMES if n not in ()], shrink_only="--seed" not in argv)
         print("api lints baseline: " + ", ".join("%s %d" % (n, counts[n]) for n in NAMES))
         return 0
     if "--report" in argv:
@@ -246,25 +225,8 @@ def main(argv):
             for rel, line in sites[name]:
                 print("%s:%d: %s" % (rel, line, name))
         return 0
-    base = read_baseline()
-    failed = False
-    for name in NAMES:
-        ceiling = base.get(name)
-        if ceiling is None:
-            print("%-16s %5d  FAIL (no ceiling in the baseline)" % (name, counts[name]))
-            failed = True
-        elif counts[name] > ceiling:
-            print("%-16s %5d  FAIL (ceiling %d)" % (name, counts[name], ceiling))
-            failed = True
-        elif counts[name] < ceiling:
-            print("%-16s %5d  below ceiling %d: lower it with --update" % (name, counts[name], ceiling))
-        else:
-            print("%-16s %5d  ok" % (name, counts[name]))
-    if failed:
-        print("A count rose above its ceiling: use the one mechanism doc/rewrite/object_model_core.md sec 16 names; `--report NAME` lists the sites.")
-        return 1
-    return 0
-
+    failed = check_sites("api", sites, BASELINE, "use the one mechanism doc/rewrite/object_model_core.md sec 16 names", banned=())
+    return 1 if failed else 0
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))

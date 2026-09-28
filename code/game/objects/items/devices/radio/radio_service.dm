@@ -68,7 +68,7 @@ GLOBAL_DATUM_INIT(radio_service, /datum/world_service/radio, new)
 /datum/world_service/radio
 	name = "Radio"
 	boot_after = /datum/controller/subsystem/atoms
-	var/list/datum/radio_frequency/frequencies = list() // ALLOW(instance_list): d: world service singleton
+	var/list/datum/radio_frequency/frequencies = list()
 
 /// The service owns its frequencies (keyed by frequency text).
 /datum/world_service/radio/declared_owned_value_vars()

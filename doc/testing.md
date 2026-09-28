@@ -9,7 +9,7 @@ points or `tools\build\build.bat`; on Linux (and in Git Bash) use
 | Goal | Command | Typical time |
 |---|---|---|
 | Full unit-test suite on the test map | `bin/test.cmd` · `tools/build/build.sh dm-test` | about 4 minutes plus compile |
-| A few tests only (use this while developing) | `bash tools/dq_focused_test.sh /datum/unit_test/<name> [...]` | compile + about 25 s |
+| A few tests only (use this while developing) | `bash tools/dq_focused_test.sh <name> [...]` (bare names, `/datum/unit_test/` paths or quoted `*` globs; `--repeat=N`) | compile + about 25 s |
 | Unit tests on Southern Cross | `tools/build/build.sh dm-test -DCITESTING_FULL_MAP` | much longer |
 | Focused tests on Southern Cross | `bash tools/dq_focused_test.sh --full-map /datum/unit_test/<name>` | |
 | DM lint + TGUI lint and types | `tools/build/build.sh lint` | a few minutes |
@@ -58,8 +58,17 @@ including a git worktree. `TEST_FOCUS(...)` lines in `dq_focus.dm` with a plain
 
 ```sh
 bash tools/dq_focused_test.sh /datum/unit_test/belly_damage /datum/unit_test/spritesheets
+bash tools/dq_focused_test.sh belly_damage spritesheets                 # bare names get /datum/unit_test/ prepended
+bash tools/dq_focused_test.sh 'dq_expedition_*'                        # glob over every /datum/unit_test type (quote it)
+bash tools/dq_focused_test.sh --repeat=5 belly_damage                  # N runs, per-run pass/FAIL summary, fails if any failed
+bash tools/dq_focused_test.sh --dm-version=516.1682 belly_damage        # any other --flag is forwarded to dm-test
 DQ_WIP_TREE=1 bash tools/dq_focused_test.sh /datum/unit_test/<name>   # tree with someone else's unfinished includes
 ```
+
+A glob (a name with `*`, `?` or `[`) is matched against the `/datum/unit_test/...`
+type definitions under `code/` and fails if nothing matches. `--repeat=N` reruns the
+same focus set N times against the one compiled `.dmb`, a quick flake check for the
+tests you touched (`test-repeat` is the full-suite version).
 
 A focused run skips some waits that only matter for the full suite. None of
 them can hide a failure in the full suite, which still does all of them:

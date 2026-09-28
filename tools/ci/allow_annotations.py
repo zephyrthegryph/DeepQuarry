@@ -12,8 +12,9 @@ site's own line or on a comment-only line directly above it:
 Inside a multi-line macro, where `//` would swallow the `\` continuation, the
 block form `/* ALLOW(scheduler): reason */` works the same. The reason after the
 colon is required. Lint names are LINTS below. Ratchet
-ceilings (the *_baseline.txt files) still hold the count of unannotated legacy
-sites; an annotation takes its site out of the count for good.
+baselines (the *_baseline.txt files) list the unannotated legacy sites as
+fingerprints (check_sites() / write_sites() below); an annotation takes its site
+out of the ratchet for good.
 
     python tools/ci/allow_annotations.py            # check every annotation's syntax
     python tools/ci/allow_annotations.py --report   # count annotations per lint
@@ -22,6 +23,7 @@ import glob
 import os
 import re
 import sys
+from collections import Counter
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
@@ -118,6 +120,105 @@ def check_ceilings(label, counts, base, hint):
     if failed:
         print("%s: a count rose above its ceiling. %s `--report` lists the sites; a justified keep "
               "takes `// ALLOW(<lint>): <reason>` (tools/ci/allow_annotations.py)." % (label, hint))
+    return failed
+
+
+_LINES = {}
+
+
+def site_text(rel, number):
+    """The whitespace-normalized text of 1-based line `number` of repo file `rel`."""
+    lines = _LINES.get(rel)
+    if lines is None:
+        with open(os.path.join(ROOT, rel), encoding="utf-8", errors="replace") as handle:
+            lines = _LINES[rel] = handle.read().split("\n")
+    return " ".join(lines[number - 1].split()) if 1 <= number <= len(lines) else ""
+
+
+def read_sites(path):
+    """{rule: Counter((file, normalized line text))} from a site-fingerprint baseline.
+
+    Lines are `rule<TAB>file<TAB>normalized line text`; `#` lines are comments. A
+    fingerprint has no line number, so edits elsewhere in the file don't break it."""
+    base = {}
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as handle:
+            for line in handle:
+                line = line.rstrip("\n")
+                if not line or line.startswith("#"):
+                    continue
+                parts = line.split("\t", 2)
+                if len(parts) != 3:
+                    continue
+                base.setdefault(parts[0], Counter())[(parts[1], parts[2])] += 1
+    return base
+
+
+def _fingerprints(sites):
+    """{rule: [(rel, number, text)]} from {rule: [(rel, number, ...)]}."""
+    return {rule: [(s[0], s[1], site_text(s[0], s[1])) for s in found] for rule, found in sites.items()}
+
+
+def write_sites(path, header, sites, rules=None, shrink_only=True):
+    """Rewrites a site-fingerprint baseline from {rule: [(rel, number, ...)]}.
+
+    With shrink_only (the --update default) a site absent from the old baseline is not
+    added: the baseline only ever loses sites. `--seed` (shrink_only=False) records every
+    current site; use it only to create a baseline."""
+    old = read_sites(path)
+    rows = []
+    for rule in (rules or sorted(sites)):
+        budget = Counter(old.get(rule, Counter()))
+        for rel, _number, text in sorted(_fingerprints({rule: sites.get(rule, [])})[rule]):
+            key = (rel, text)
+            if shrink_only:
+                if budget[key] <= 0:
+                    continue
+                budget[key] -= 1
+            rows.append("%s\t%s\t%s" % (rule, rel, text))
+    with open(path, "w", encoding="utf-8", newline="\n") as handle:
+        handle.write("\n".join(["# " + h for h in header] + rows) + "\n")
+    return len(rows)
+
+
+def check_sites(label, sites, path, hints, banned=()):
+    """The ratchet check against a site-fingerprint baseline.
+
+    `sites` is {rule: [(rel, number, ...)]}; `hints` is {rule: fix hint} or one string.
+    Prints one line per rule, then ONLY the sites the baseline doesn't hold, as
+    `file:line: [label/rule] text -- hint`. Rules in `banned` have no baseline. True on
+    any new site."""
+    base = read_sites(path)
+    failed = False
+    new_lines = []
+    for rule, found in _fingerprints(sites).items():
+        budget = Counter() if rule in banned else Counter(base.get(rule, Counter()))
+        known = sum(budget.values())
+        fresh = []
+        for rel, number, text in found:
+            key = (rel, text)
+            if budget[key] > 0:
+                budget[key] -= 1
+            else:
+                fresh.append((rel, number, text))
+        gone = sum(budget.values())
+        if fresh:
+            failed = True
+            status = "FAIL (%d new site%s)" % (len(fresh), "" if len(fresh) == 1 else "s")
+        elif gone:
+            status = "%d baselined site%s gone: shrink the baseline with --update" % (gone, "" if gone == 1 else "s")
+        else:
+            status = "ok"
+        print("%s %-19s %6d  (baseline %d)  %s" % (label, rule, len(found), known, status))
+        hint = hints.get(rule, "") if isinstance(hints, dict) else hints
+        for rel, number, text in fresh:
+            new_lines.append("%s:%d: [%s/%s] %s%s" % (rel, number, label, rule, text, (" -- " + hint) if hint else ""))
+    if new_lines:
+        print("%s: new sites (baselined legacy sites are not listed):" % label)
+        for line in new_lines:
+            print(line)
+        print("Fix each site, or keep a justified one with `// ALLOW(<lint>): <reason>` "
+              "(tools/ci/allow_annotations.py). Baselines only shrink.")
     return failed
 
 

@@ -12,10 +12,10 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 
 	/// A list of radiation sources (/datum/radiation_pulse_information) that have yet to process.
 	/// Do not interact with this directly, use `radiation_pulse` instead.
-	var/list/datum/radiation_pulse_information/processing = list() // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
+	var/list/datum/radiation_pulse_information/processing = list()
 	/// Turfs whose shielding changed since the last flush to the Rust
 	/// insulation layer (RAD_SHIELDING_CHANGED). Keyed by turf.
-	var/list/turf/dirty_turfs = list() // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
+	var/list/turf/dirty_turfs = list()
 	/// world.maxz the Rust layer last saw; a new z-level forces a flush.
 	var/synced_maxz = 0
 	/// Cumulative work counters consumed by the lightweight profiler.
@@ -30,8 +30,8 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 	var/profile_yields = 0
 	var/profile_max_queue = 0
 	var/profile_max_targets_remaining = 0
-	var/list/profile_source_cost_ms = list() // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
-	var/list/profile_source_targets = list() // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
+	var/list/profile_source_cost_ms = list()
+	var/list/profile_source_targets = list()
 
 /datum/world_service/radiation/service_step(resumed)
 	flush_shielding()

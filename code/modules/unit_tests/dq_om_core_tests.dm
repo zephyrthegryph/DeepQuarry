@@ -6,7 +6,7 @@
 
 /datum/om_test_entity
 	var/ticks = 0
-	var/list/dts = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/dts = list()
 	var/wakes = 0
 	var/last_changes = 0
 	var/deadlines = 0
@@ -14,7 +14,7 @@
 	var/starts = 0
 	var/stops = 0
 	var/events = 0
-	var/list/log = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/log = list()
 	var/value = 1
 	var/weight = 0
 	var/enabled = TRUE

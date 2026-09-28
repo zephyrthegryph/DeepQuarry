@@ -4,7 +4,7 @@ Counts every site of the things the OM scheduler replaces, and the undeclared
 object-typed vars (LC-refs, doc/rewrite/lifecycle.md sec 4), across code/
 (unit tests excluded; `#define` lines are macro plumbing and don't count).
 Each count is ratcheted: tools/ci/scheduler_lints_baseline.txt holds the
-ceiling, today's counts at the time it was written. A sweep lowers them to 0
+legacy sites as fingerprints (file + line text); it only shrinks. A sweep empties it
 outside the justified keeps of sec 4.11 ("What stays").
 
     spawn            spawn(                        -> om_after, tasks
@@ -49,7 +49,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 from state_schema_lint import REF_ROOTS, code_only, under  # noqa: E402
-from allow_annotations import allowed  # noqa: E402
+from allow_annotations import allowed, check_sites, write_sites  # noqa: E402
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 BASELINE = os.path.join(ROOT, "tools", "ci", "scheduler_lints_baseline.txt")
@@ -204,37 +204,14 @@ def scan():
     return sites
 
 
-def read_baseline():
-    base = {}
-    if os.path.exists(BASELINE):
-        with open(BASELINE, encoding="utf-8") as handle:
-            for line in handle:
-                line = line.split("#", 1)[0].strip()
-                if line:
-                    name, count = line.split()
-                    base[name] = int(count)
-    return base
-
-
-def write_baseline(counts):
-    lines = [
-        "# One-scheduler lint ceilings (roadmap S6, doc/rewrite/object_model_core.md sec 4.11).",
-        "# tools/ci/scheduler_lints.py fails when a count rises above its line here.",
-        "# Lower a line when a sweep removes sites: `python tools/ci/scheduler_lints.py --update`.",
-    ]
-    for name in NAMES:
-        if name in BANNED:
-            continue
-        lines.append("%s %d" % (name, counts[name]))
-    with open(BASELINE, "w", encoding="utf-8", newline="\n") as handle:
-        handle.write("\n".join(lines) + "\n")
-
-
 def main(argv):
     sites = scan()
     counts = {name: len(sites[name]) for name in NAMES}
-    if "--update" in argv:
-        write_baseline(counts)
+    if "--update" in argv or "--seed" in argv:
+        write_sites(BASELINE, [
+            "scheduler lint legacy sites (tools/ci/scheduler_lints.py). rule<TAB>file<TAB>normalized line.",
+            "A site not listed here fails. Shrink-only: after a sweep, `python tools/ci/scheduler_lints.py --update`.",
+        ], sites, [n for n in NAMES if n not in set(BANNED)], shrink_only="--seed" not in argv)
         print("scheduler lints baseline: " + ", ".join("%s %d" % (n, counts[n]) for n in NAMES))
         return 0
     if "--report" in argv:
@@ -243,24 +220,8 @@ def main(argv):
             for rel, number, what in sites[name]:
                 print("%s:%d: %s" % (rel, number, what))
         return 0
-    base = read_baseline()
-    failed = False
-    for name in NAMES:
-        limit = 0 if name in BANNED else base.get(name, 0)
-        status = "ok"
-        if counts[name] > limit:
-            status = "FAIL (ceiling %d)" % limit
-            failed = True
-        elif counts[name] < limit:
-            status = "below ceiling %d: lower it with --update" % limit
-        print("%-13s %6d  %s" % (name, counts[name], status))
-    if failed:
-        print("A count rose above its ceiling. Use the OM scheduler instead "
-              "(om_after, om_task steps, om_prompt, OM handles, declared refs); "
-              "`--report NAME` lists the sites.")
-        return 1
-    return 0
-
+    failed = check_sites("scheduler", sites, BASELINE, "use the OM scheduler (om_after, om_task steps, om_prompt, OM handles, declared refs)", banned=BANNED)
+    return 1 if failed else 0
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))

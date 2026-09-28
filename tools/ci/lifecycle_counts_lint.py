@@ -15,8 +15,8 @@ section 3.5, doc/rewrite/lifecycle.md).
                           code/datums/lifecycle/verbs.dm (consume(), replace_with(),
                           expire(), slot_clear()/ledger_empty(), delete_on_death).
 
-The qdel( count is ratcheted: tools/ci/lifecycle_counts_baseline.txt holds the
-ceiling, which may fall, never rise. A qdel( site carrying
+The qdel( count is ratcheted: tools/ci/lifecycle_counts_baseline.txt holds each
+baselined site (file + line text) and only shrinks. A qdel( site carrying
 `// ALLOW(lifecycle): <reason>` (tools/ci/allow_annotations.py) doesn't count.
 
 The ceiling stops new hand-rolled Destroy()s and qdel() sites from accumulating
@@ -26,7 +26,7 @@ prove the >= 85%/~50% targets are met (that's `--report`'s totals, tracked over 
 Usage:
     python tools/ci/lifecycle_counts_lint.py            # the CI check
     python tools/ci/lifecycle_counts_lint.py --report   # every site, and the totals
-    python tools/ci/lifecycle_counts_lint.py --update   # rewrite the ceilings to today's counts
+    python tools/ci/lifecycle_counts_lint.py --update   # drop fixed sites from the baseline (never adds)
 """
 import glob
 import os
@@ -35,7 +35,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 from state_schema_lint import code_only  # noqa: E402
-from allow_annotations import allowed, check_ceilings, read_baseline, write_baseline  # noqa: E402
+from allow_annotations import allowed, check_sites, write_sites  # noqa: E402
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 BASELINE = os.path.join(ROOT, "tools", "ci", "lifecycle_counts_baseline.txt")
@@ -111,14 +111,13 @@ def scan():
 def main(argv):
     destroy_counts, destroy_sites, qdel_counts, qdel_sites = scan()
     destroy_total, qdel_total = sum(destroy_counts.values()), sum(qdel_counts.values())
-    counts = {"qdel": qdel_total}
-    if "--update" in argv:
-        write_baseline(BASELINE, [
-            "qdel()-count ceiling (roadmap L4, doc/rewrite/lifecycle.md sec 1, sec 8).",
-            "tools/ci/lifecycle_counts_lint.py fails when it rises above its line (Destroy()",
-            "overrides are banned outright). A site with `// ALLOW(lifecycle): <reason>` doesn't count.",
-            "Lower after a sweep: `python tools/ci/lifecycle_counts_lint.py --update`.",
-        ], counts)
+    if "--update" in argv or "--seed" in argv:
+        write_sites(BASELINE, [
+            "qdel( sites (roadmap L4, doc/rewrite/lifecycle.md sec 1, sec 8). rule<TAB>file<TAB>normalized line.",
+            "tools/ci/lifecycle_counts_lint.py fails on a site not listed here (Destroy() overrides are",
+            "banned outright). A site with `// ALLOW(lifecycle): <reason>` doesn't count.",
+            "Shrink-only: after a sweep, `python tools/ci/lifecycle_counts_lint.py --update`.",
+        ], {"qdel": qdel_sites}, shrink_only="--seed" not in argv)
         print("lifecycle counts baseline: %d Destroy() overrides, %d qdel( sites" % (destroy_total, qdel_total))
         return 0
     if "--report" in argv:
@@ -133,11 +132,10 @@ def main(argv):
         print("%s:%d: %s -- Destroy() overrides are banned outside the core chain; use REF_* "
               "declarations, a phase hook, on_destroy(), destroy_hint or lifecycle_keep() "
               "(code/datums/lifecycle/transaction.dm)" % (rel, number, what))
-    failed = check_ceilings(
-        "lifecycle", counts, read_baseline(BASELINE),
-        "Remove a new Destroy() or fold it into a declared relationship/policy (L1-L3); replace a new "
-        "qdel( with consume()/replace_with()/expire()/slot_clear()/ledger_empty()/delete_on_death "
-        "(code/datums/lifecycle/verbs.dm).")
+    failed = check_sites(
+        "lifecycle", {"qdel": qdel_sites}, BASELINE,
+        "use consume()/replace_with()/expire()/slot_clear()/ledger_empty()/delete_on_death "
+        "(code/datums/lifecycle/verbs.dm)")
     return 1 if failed or destroy_sites else 0
 
 

@@ -9,7 +9,7 @@ GLOBAL_DATUM_INIT(ping_service, /datum/world_service/ping, new)
 /datum/world_service/ping
 	name = "Ping"
 	lane = /datum/om/behaviour/world/ping
-	var/list/currentrun = list() // ALLOW(instance_list): d: world service singleton
+	var/list/currentrun = list()
 
 /datum/world_service/ping/stat_line()
 	return "P:[length(GLOB.clients)]"

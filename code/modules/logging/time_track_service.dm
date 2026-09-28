@@ -19,7 +19,7 @@ GLOBAL_DATUM_INIT(time_track_service, /datum/world_service/time_track, new)
 	var/last_tick_realtime = 0
 	var/last_tick_byond_time = 0
 	var/last_tick_tickcount = 0
-	var/list/sendmaps_names_map = list( // ALLOW(instance_list): d: world service singleton
+	var/list/sendmaps_names_map = list(
 		"SendMaps" = "send_maps",
 		"SendMaps: Initial housekeeping" = "initial_house",
 		"SendMaps: Cleanup" = "cleanup",

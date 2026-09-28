@@ -25,7 +25,7 @@ import sys
 from collections import Counter
 
 sys.path.insert(0, os.path.dirname(__file__))
-from allow_annotations import allowed, check_ceilings, read_baseline, write_baseline  # noqa: E402
+from allow_annotations import allowed, check_sites, write_sites  # noqa: E402
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 BASELINE = os.path.join(ROOT, "tools", "ci", "latent_baseline.txt")
@@ -134,20 +134,21 @@ def main():
             counts[rel] = len(sites)
             where[rel] = sites
     total = sum(counts.values())
-    if "--update" in sys.argv:
-        write_baseline(BASELINE, [
-            "Raw contents walks on latent holders (tools/ci/latent_lint.py). May fall, never rise.",
-            "Fix a site by going through the ledger API, then `python tools/ci/latent_lint.py --update`.",
-        ], {"raw_walks": total})
-        print(f"latent lint: baseline {total} sites in {len(counts)} files")
+    sites = {"raw_walks": [(rel, n) for rel in sorted(where) for n in where[rel]]}
+    if "--update" in sys.argv or "--seed" in sys.argv:
+        rows = write_sites(BASELINE, [
+            "Raw contents walks on latent holders (tools/ci/latent_lint.py). rule<TAB>file<TAB>normalized line.",
+            "Shrink-only: fix a site through the ledger API, then `python tools/ci/latent_lint.py --update`.",
+        ], sites, shrink_only="--seed" not in sys.argv)
+        print(f"latent lint: baseline {rows} sites")
         return 0
     if "--report" in sys.argv:
         for rel in sorted(where):
             for n in where[rel]:
                 print(f"{rel}:{n}: raw contents walk on a latent holder")
     print(f"latent lint: {len(holders[0])} latent holder roots ({len(holders[1])} opted out), {total} sites in {len(counts)} files, {legacy} legacy contents loops tree-wide")
-    failed = check_ceilings("latent", {"raw_walks": total}, read_baseline(BASELINE),
-                            "Go through latent_materialize_all()/latent_entries()/slot_contents().")
+    failed = check_sites("latent", sites, BASELINE,
+                         "go through latent_materialize_all()/latent_entries()/slot_contents()")
     return 1 if failed else 0
 
 

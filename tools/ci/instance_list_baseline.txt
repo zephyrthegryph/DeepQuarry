@@ -1,0 +1,18 @@
+# Per-instance list declarations not yet reasoned about (tools/ci/instance_list_lint.py).
+# rule<TAB>file<TAB>normalized line. Shrink-only: convert (AGENTS.md 3a) or give a real
+# `// ALLOW(instance_list): <reason>`, then `python tools/ci/instance_list_lint.py --update`.
+instance_list	code/datums/entity_state/species/shadekin/shadekin.dm	var/list/shadekin_granted_abilities = list(ABILITY_ID_SHADEKIN_PHASE_SHIFT, ABILITY_ID_SHADEKIN_REGENERATE_OTHER, ABILITY_ID_SHADEKIN_CREATE_SHADE)
+instance_list	code/modules/mob/living/life/life_om.dm	var/list/members = list()
+instance_list	code/modules/unit_tests/dq_containment_tests.dm	var/list/log = list()
+instance_list	code/modules/unit_tests/dq_interaction_entry_tests.dm	var/list/done = list()
+instance_list	code/modules/unit_tests/dq_interaction_entry_tests.dm	var/list/done = list()
+instance_list	code/modules/unit_tests/dq_life_om_tests.dm	var/list/runs = list()
+instance_list	code/modules/unit_tests/dq_life_om_tests.dm	var/list/runs = list()
+instance_list	code/modules/unit_tests/dq_life_om_tests.dm	var/list/runs = list()
+instance_list	code/modules/unit_tests/dq_om_core_tests.dm	var/list/dts = list()
+instance_list	code/modules/unit_tests/dq_om_core_tests.dm	var/list/log = list()
+instance_list	code/modules/unit_tests/dq_om_pipeline_tests.dm	var/list/log = list()
+instance_list	code/modules/unit_tests/dq_om_pipeline_tests.dm	var/list/busy = list()
+instance_list	code/modules/unit_tests/dq_om_pipeline_tests.dm	var/list/wakes = list()
+instance_list	code/modules/unit_tests/dq_om_pipeline_tests.dm	var/list/log = list()
+instance_list	code/modules/unit_tests/dq_om_pipeline_tests.dm	var/list/busy = list()

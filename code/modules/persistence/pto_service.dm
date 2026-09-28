@@ -11,8 +11,8 @@ GLOBAL_DATUM_INIT(persist_service, /datum/world_service/persist, new)
 	lane = /datum/om/behaviour/world/persist
 	/// Accrual period; must match the lane's `every`.
 	var/accrual_interval = 15 MINUTES
-	var/list/currentrun = list() // ALLOW(instance_list): d: world service singleton
-	var/list/query_stack = list() // ALLOW(instance_list): d: world service singleton
+	var/list/currentrun = list()
+	var/list/query_stack = list()
 
 /datum/world_service/persist/service_step(resumed)
 	return update_department_hours(resumed)

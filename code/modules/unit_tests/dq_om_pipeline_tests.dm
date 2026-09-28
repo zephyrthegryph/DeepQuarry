@@ -10,13 +10,13 @@
 	var/on = TRUE
 	var/lit = TRUE
 	/// Stage names in the order they ran.
-	var/list/log = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/log = list()
 	/// Stage names that keep work (their idle() is FALSE).
-	var/list/busy = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/busy = list()
 	var/abort_now = 0
 	var/nested = 0
 	/// test_throttle's wakes.
-	var/list/wakes = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/wakes = list()
 	/// Stage "slow": start slow work (0 none, 1 started, 2 finished after its sleep).
 	var/slow_work = FALSE
 	var/slow_state = 0
@@ -24,8 +24,8 @@
 /datum/pipe_test_entity/deep
 /datum/pipe_test_entity/deep/deeper
 /datum/pipe_test_other
-	var/list/log = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
-	var/list/busy = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/log = list()
+	var/list/busy = list()
 
 /// One decl for two unrelated types (multi-type decls).
 /datum/om/decl/pipe_test
