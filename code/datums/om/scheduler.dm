@@ -158,6 +158,16 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	if(!expect_errors)
 		stack_trace("om: [msg]")
 
+/// error() for a caught exception: recorded like error(), and, unless errors
+/// are expected, reported through dq_report_caught() so the runtime log gets
+/// the exception's own file/line/stack and a test run counts it.
+/datum/om/scheduler/proc/report_caught(exception/e, msg)
+	errors += msg
+	if(length(errors) > 200)
+		errors.Cut(1, 101)
+	if(!expect_errors)
+		dq_report_caught(e, "om: [msg]")
+
 /datum/om/scheduler/proc/stat_inc(bid, index, amount = 1)
 	var/list/S = stat_for(bid)
 	S[index] += amount
@@ -518,7 +528,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 			// i is already past the entity that raised: the loop resumes at the next.
 			// i is past the entity that raised; name it, so a runtime says which thing failed.
 			var/datum/failed = (i > 1 && i - 1 <= length(L)) ? L[i - 1] : null
-			error("[B.name] tick ([failed?.type]): [e] ([e.file]:[e.line])")
+			report_caught(e, "[B.name] tick ([failed?.type]): [e] ([e.file]:[e.line])")
 			stat_inc(B.id, OM_STAT_ERRORS)
 	R.cur_i = i
 	calls = n_calls
@@ -601,7 +611,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 				B.on_keyed_deadline(E, arg)
 	catch(var/exception/e)
 		failed = TRUE
-		error("[B.name] hook [kind]: [e] ([e.file]:[e.line])")
+		report_caught(e, "[B.name] hook [kind]: [e] ([e.file]:[e.line])")
 		stat_inc(B.id, OM_STAT_ERRORS)
 	if(B.holds)
 		if(!failed && kind != OM_HOOK_STOP && !rec.torn_down)
@@ -714,7 +724,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 				try
 					S.on_changes(E, mine & bits)
 				catch(var/exception/e)
-					error("[S.type] on_changes: [e]")
+					report_caught(e, "[S.type] on_changes: [e]")
 		if(out_of_budget() && idx < length(Q))
 			service_queue = Q.Copy(idx + 1) + service_queue
 			return FALSE
@@ -756,7 +766,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 					break
 				dl_cursor++
 	catch(var/exception/e)
-		error("deadline wheel: [e]")
+		report_caught(e, "deadline wheel: [e]")
 	dl_processing = FALSE
 
 /datum/om/scheduler/proc/run_bucket(b, t)

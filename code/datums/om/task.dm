@@ -309,7 +309,7 @@
 	try
 		T.on_cancel(reason)
 	catch(var/exception/e)
-		stack_trace("om task [T.name] on_cancel: [e]")
+		dq_report_caught(e, "om task [T.name] on_cancel")
 	return TRUE
 
 /proc/om_task_complete(datum/om/task/T)
@@ -320,7 +320,7 @@
 	try
 		T.on_complete()
 	catch(var/exception/e)
-		stack_trace("om task [T.name] on_complete: [e]")
+		dq_report_caught(e, "om task [T.name] on_complete")
 	return TRUE
 
 /proc/om_task_finish(datum/om/task/T)
@@ -407,7 +407,7 @@
 		if(result == OM_CALLEE_SLEPT)
 			result = STEP_FAIL("slept")
 	catch(var/exception/e)
-		stack_trace("om task [T.name] step [S[i]]: [e]")
+		dq_report_caught(e, "om task [T.name] step [S[i]]")
 		result = STEP_FAIL("error")
 	if(T.state != OM_TASK_RUNNING)
 		return // the step cancelled or finished its own task

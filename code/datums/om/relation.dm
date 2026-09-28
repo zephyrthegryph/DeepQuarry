@@ -35,7 +35,7 @@
 	try
 		R.on_link(source, target, edge)
 	catch(var/exception/e)
-		srec.sched.error("[R.type] on_link: [e]")
+		srec.sched.report_caught(e, "[R.type] on_link: [e]")
 	om_edge_setup(edge)
 	om_agg_edge_added(edge)
 	om_edge_structure_changed(srec, R.id, CHANGE_RELATION_ADDED)
@@ -74,7 +74,10 @@
 		R.on_unlink(source, target, edge)
 	catch(var/exception/e)
 		var/datum/om/rec/either = srec || trec
-		either?.sched.error("[R.type] on_unlink: [e]")
+		if(either)
+			either.sched.report_caught(e, "[R.type] on_unlink: [e]")
+		else
+			dq_report_caught(e, "[R.type] on_unlink")
 	if(srec && !srec.torn_down)
 		om_edge_structure_changed(srec, R.id, CHANGE_RELATION_REMOVED)
 		om_changed(source, CHANGE_RELATION_REMOVED)

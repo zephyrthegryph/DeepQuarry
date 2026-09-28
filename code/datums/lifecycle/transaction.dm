@@ -20,6 +20,56 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 #define DQ_LIFECYCLE_TRACE(D, what) if(GLOB.dq_lifecycle_trace_depth) { log_world("LIFECYCLE_TRACE: [D.type] [ref(D)] [what]") }
 
 /proc/destroy_transaction(datum/D, force, datum/qdel_item/trash)
+	var/hint = QDEL_HINT_QUEUE
+	var/aborted = FALSE
+	try
+		hint = destroy_transaction_phases(D, force, trash)
+	catch(var/exception/e)
+		// A runtime in any phase (often a Destroy() override touching state an
+		// Initialize() that returned INITIALIZE_HINT_QDEL early never set up)
+		// used to abandon the transaction: the atom kept its loc and contents,
+		// stayed "being destroyed" forever, and a second qdel() was refused.
+		// Report it, then finish what must happen for the object to be freed.
+		aborted = TRUE
+		dq_report_caught(e, "destroy transaction of [D?.type]")
+		if(D)
+			dq_lifecycle_finish_aborted(D)
+	if(D && ismovable(D) && hint != QDEL_HINT_LETMELIVE)
+		dq_lifecycle_release_loc(D, aborted)
+	return hint
+
+/// What an aborted destroy transaction still owes: declared refs scrubbed,
+/// and a movable's contents deleted (as /atom/movable/Destroy() would have).
+/proc/dq_lifecycle_finish_aborted(datum/D)
+	try
+		dq_lifecycle_scrub(D)
+		if(D.om_hid)
+			om_handle_release(D)
+		if(ismovable(D))
+			var/atom/movable/AM = D
+			for(var/atom/movable/thing in AM.contents.Copy())
+				qdel(thing)
+	catch(var/exception/e)
+		dq_report_caught(e, "finishing the aborted destroy of [D.type]")
+
+/// A destroyed movable leaves its loc (/atom/movable/Destroy() ends with
+/// moveToNullspace()). One still somewhere had a Destroy() that skipped ..()
+/// or runtimed: it is moved out here, so it never lingers on a turf where
+/// nothing can delete it again.
+/proc/dq_lifecycle_release_loc(atom/movable/AM, aborted)
+	if(isnull(AM.loc))
+		return
+	if(!aborted)
+		dq_lifecycle_report("LIFECYCLE: [AM.type] still in [AM.loc.type] after Destroy() (an override skipped ..()?); moved to nullspace")
+	try
+		AM.moveToNullspace()
+	catch(var/exception/e)
+		dq_report_caught(e, "moving the destroyed [AM.type] to nullspace")
+	if(AM.loc)
+		AM.loc = null
+
+/// The phases of destroy_transaction(), in order.
+/proc/destroy_transaction_phases(datum/D, force, datum/qdel_item/trash)
 	DQ_LIFECYCLE_TRACE(D, "begin")
 	// Indexed by LIFECYCLE_PHASE_* id, so it must have a slot per phase
 	// (an empty lazy list made every phase write an out-of-bounds runtime).
@@ -132,6 +182,11 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 	dq_lifecycle_scrub(D)
 	dq_lifecycle_time(trash, LIFECYCLE_PHASE_SCRUB, tick)
 	DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_SCRUB done")
+
+	// Postcondition (leak_check.dm): on in test builds, toggleable on servers.
+	// Nothing D still holds may be a deleted object that holds D back.
+	if(GLOB.dq_lifecycle_leak_check && hint != QDEL_HINT_LETMELIVE)
+		dq_lifecycle_postcondition(D)
 
 	DQ_LIFECYCLE_TRACE(D, "end")
 	return hint

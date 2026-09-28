@@ -28,6 +28,10 @@
 		SSchemistry.initialize_chemical_reagents()
 
 REF_OWNED_LIST(/datum/reagents, "reagent_list")
+// The id index holds the same reagents: declared, so phase 4 empties it
+// (its members are already deleted through reagent_list by then) and the
+// holder <-> reagent.holder cycle can't survive the destroy.
+REF_OWNED_VALUES(/datum/reagents, "reagent_by_id")
 
 // LIFECYCLE: its atom forgets it (atoms delete their reagents late, in /atom/Destroy()).
 /datum/reagents/Destroy()

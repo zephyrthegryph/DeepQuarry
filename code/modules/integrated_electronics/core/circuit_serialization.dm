@@ -262,7 +262,7 @@
 		var/cleaned_json = html_decode(json_data)
 
 		assembly_data = json_decode(cleaned_json)
-	catch
+	catch // ALLOW(silent_catch): bad user-supplied circuit JSON; the caller handles null
 		return null
 
 	if(!assembly_data || !islist(assembly_data))

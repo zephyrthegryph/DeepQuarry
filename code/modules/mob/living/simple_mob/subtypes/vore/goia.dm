@@ -505,51 +505,51 @@
 			try
 				if(rgb2num(input_style_list[1]))
 					goia_overlays["zorgoia_main"] = input_style_list[1]
-			catch
+			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
 			// goia_overlays["main"] = input_style_list[2] // We only have one yet
 			try
 				if(rgb2num(input_style_list[3]))
 					goia_overlays["zorgoia_ears"] = input_style_list[3]
-			catch
+			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
 			goia_overlays["ears"] = input_style_list[4]
 			try
 				if(rgb2num(input_style_list[5]))
 					goia_overlays["zorgoia_spots"] = input_style_list[5]
-			catch
+			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
 			goia_overlays["spots"] = input_style_list[6]
 			try
 				if(rgb2num(input_style_list[7]))
 					goia_overlays["zorgoia_claws"] = input_style_list[7]
-			catch
+			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
 			goia_overlays["claws"] = input_style_list[8]
 			try
 				if(rgb2num(input_style_list[9]))
 					goia_overlays["zorgoia_spines"] = input_style_list[9]
-			catch
+			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
 			goia_overlays["spines"] = input_style_list[10]
 			try
 				if(rgb2num(input_style_list[11]))
 					goia_overlays["zorgoia_fluff"] = input_style_list[11]
-			catch
+			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
 			goia_overlays["fluff"] = input_style_list[12]
 			try
 				if(rgb2num(input_style_list[13]))
 					goia_overlays["zorgoia_underbelly"] = input_style_list[13]
-			catch
+			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
 			goia_overlays["underbelly"] = input_style_list[14]
 			try
 				if(rgb2num(input_style_list[15]))
 					goia_overlays["zorgoia_eyes"] = input_style_list[15]
-			catch
+			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
 			goia_overlays["eyes"] = input_style_list[16]
 			try
 				if(rgb2num(input_style_list[17]))
 					goia_overlays["zorgoia_spike"] = input_style_list[17]
-			catch
+			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
 			input_style_list["spike"] = input_style_list[18]
 			try
 				if(rgb2num(input_style_list[19]))
 					goia_overlays["zorgoia_belly"] = input_style_list[19]
-			catch
+			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
 			goia_overlays["belly"] = input_style_list[20]
 			update_icon()

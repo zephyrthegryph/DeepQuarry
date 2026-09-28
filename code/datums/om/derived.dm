@@ -170,7 +170,7 @@
 				om_dv_full(rec, best, D)
 			catch(var/exception/e)
 				rec.dv[best + DV_DIRTY] = 0
-				error("derived [D.name]: [e]")
+				report_caught(e, "derived [D.name]: [e]")
 				continue
 			if(islist(old) || old != rec.dv[best + DV_VALUE])
 				om_changed(rec.owner, D.channel)

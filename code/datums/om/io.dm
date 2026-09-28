@@ -102,7 +102,7 @@
 	var/list/result
 	try
 		result = json_decode(raw)
-	catch
+	catch // ALLOW(silent_catch): a malformed result is returned to the caller as the job's error
 		return list(null, "bad sql result: [raw]")
 	switch(result?["status"])
 		if("ok")
@@ -138,7 +138,7 @@
 		R.status_code = L["status_code"]
 		R.headers = L["headers"]
 		R.body = L["body"]
-	catch
+	catch // ALLOW(silent_catch): a malformed result is returned to the caller as the job's error
 		return list(null, "bad http result: [raw]")
 	return list(R, null)
 
@@ -201,17 +201,11 @@
 	J.request = K.arg_count ? args.Copy(3, 3 + K.arg_count) : list()
 	J.on_done = args[3 + K.arg_count]
 	if(length(args) > 3 + K.arg_count)
-		var/list/captured = args.Copy(4 + K.arg_count)
-		for(var/i in 1 to length(captured))
-			var/datum/D = captured[i]
-			if(!isdatum(D))
-				continue
-			var/h = om_handle(D)
-			if(isnull(h))
-				return 0
-			captured[i] = h
-			LAZYADD(J.positions, i)
-		J.context = captured
+		var/list/capture = om_capture_args(args.Copy(4 + K.arg_count))
+		if(!capture)
+			return 0
+		J.context = capture[1]
+		J.positions = capture[2]
 	var/datum/om/scheduler/sched = om_scheduler()
 	J.id = ++sched.io_seq
 	J.queued_at = REALTIMEOFDAY
@@ -351,6 +345,7 @@
 	var/list/captured = J.context ? J.context.Copy() : null
 	if(!E || (captured && !om_resolve_captured(captured, J.positions)))
 		om_io_stat(sched, K, OM_IO_STAT_DROPPED)
+		log_qdel("OM: dropped io [K.name] callback [J.on_done]: its owner or a captured argument was deleted")
 		return
 	var/list/call_args = list(outcome[1], outcome[2])
 	if(captured)
@@ -358,7 +353,7 @@
 	try
 		om_guarded_call(E, J.on_done, call_args)
 	catch(var/exception/e)
-		stack_trace("om io [K.name] callback [J.on_done] on [E]: [e]")
+		dq_report_caught(e, "om io [K.name] callback [J.on_done] on [E]")
 
 /// The I/O section of om_diagnostics().
 /proc/om_io_diagnostics(sched_arg)

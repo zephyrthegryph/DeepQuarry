@@ -822,6 +822,8 @@ GLOBAL_VAR(dq_test_select_names)
 	// NOT IMPLEMENTED: returnable_list += typesof(/turf/open/openspace)
 	// NOT IMPLEMENTED: returnable_list += typesof(/obj/item/robot_model) // These should never be spawned outside of a robot.
 
+	// Lifecycle diagnostics fixtures: refuse to initialize, one runtimes in Destroy() on purpose (dq_lifecycle_diag_tests.dm).
+	returnable_list += typesof(/obj/item/dq_diag_init_refuser)
 	return returnable_list
 
 /proc/RunUnitTests()

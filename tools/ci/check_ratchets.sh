@@ -24,7 +24,9 @@ for lint in \
 	api_lints.py \
 	cooldown_lint.py \
 	base_proc_lint.py \
-	dcs_lints.py; do
+	dcs_lints.py \
+	silent_catch_lint.py \
+	ownership_cycle_lint.py; do
 	echo "::group::$lint"
 	if ! "$PY" "tools/ci/$lint"; then
 		failed+=("$lint")

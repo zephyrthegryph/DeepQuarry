@@ -258,7 +258,7 @@
 	var/rejected = FALSE
 	try
 		om_world_when(hot, COND_ABOVE(WORLD_PROBE(51), 9, 1), WORLD_TEST_WAKE)
-	catch
+	catch // ALLOW(silent_catch): the test asserts the call throws
 		rejected = TRUE
 	TEST_ASSERT(rejected, "a condition on a missing channel was accepted")
 	for(var/datum/native_watch/W as anything in watches)

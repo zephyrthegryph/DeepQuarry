@@ -616,6 +616,7 @@
 #include "code\datums\containment\stock.dm"
 #include "code\datums\lifecycle\batch.dm"
 #include "code\datums\lifecycle\links.dm"
+#include "code\datums\lifecycle\leak_check.dm"
 #include "code\datums\lifecycle\transaction.dm"
 #include "code\datums\lifecycle\verbs.dm"
 #include "code\datums\datacore.dm"

@@ -118,7 +118,7 @@ GLOBAL_DATUM_INIT(gear_tweak_unified_recolor, /datum/gear_tweak/recolor, new)
 	var/icon/working
 	try
 		working = new /icon(source)
-	catch
+	catch // ALLOW(silent_catch): an unreadable icon is an expected failure; the caller handles null
 		return null
 	if(!working)
 		return null
@@ -182,7 +182,7 @@ GLOBAL_DATUM_INIT(gear_tweak_unified_recolor, /datum/gear_tweak/recolor, new)
 	var/icon/sample
 	try
 		sample = icon(icon_path, icon_state, SOUTH, 1)
-	catch
+	catch // ALLOW(silent_catch): an unreadable icon is an expected failure; the caller handles null
 		return list()
 	if(!sample)
 		return list()

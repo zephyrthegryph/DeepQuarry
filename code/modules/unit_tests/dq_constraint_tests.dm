@@ -28,7 +28,7 @@
 	var/atom/movable/A
 	try
 		A = new path(T)
-	catch
+	catch // ALLOW(silent_catch): a type that cannot be constructed here is skipped by the probe
 		return null
 	if(QDELETED(A) || A.loc != T)
 		return null

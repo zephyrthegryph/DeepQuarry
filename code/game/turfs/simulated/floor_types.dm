@@ -46,7 +46,7 @@
 
 	// Associate the holder with the new turf.
 	new_holder.my_turf_handle = om_handle(new_dest)
-	new_dest.landed_holder_handle = om_handle(new_holder)
+	new_dest.landed_holder_ref = new_holder
 
 	//Update underlays if necessary (interior corners won't have changed).
 	if(new_dest.takes_underlays && !new_dest.interior_corner)
@@ -79,7 +79,9 @@
 	heat_capacity = 0
 	flags = TURF_ACID_IMMUNE
 
-	var/landed_holder_handle
+	/// What this shuttle floor landed on (a nullspace holder). Owned: the var
+	/// is the holder's only reference, so a handle let BYOND free it at once.
+	var/obj/landed_holder/landed_holder_ref
 	var/interior_corner = 0
 	var/takes_underlays = 0
 	var/under_turf //Underlay override turf path.
@@ -446,6 +448,8 @@ REF_OWNED(/obj/landed_holder, list("turf_image"))
 /obj/landed_holder/proc/my_turf() as /turf/simulated/shuttle
 	return om_resolve(my_turf_handle)
 
-/// LC-refs: landed holder -- an OM handle (om_handle()), so it reads null once that is deleted.
+REF_OWNED(/turf/simulated/shuttle, "landed_holder_ref")
+
+/// The landed holder this floor owns (landed_holder_ref), or null.
 /turf/simulated/shuttle/proc/landed_holder() as /obj/landed_holder
-	return om_resolve(landed_holder_handle)
+	return QDELETED(landed_holder_ref) ? null : landed_holder_ref

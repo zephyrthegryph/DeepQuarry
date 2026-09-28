@@ -29,7 +29,7 @@
 		try
 			. = om_deliver(rec, event, TRUE)
 		catch(var/exception/e1)
-			sched.error("[event.type]: [e1]")
+			sched.report_caught(e1, "[event.type]: [e1]")
 		rec.in_veto = FALSE
 		return
 	if(sched.emit_depth)
@@ -46,7 +46,7 @@
 	try
 		om_deliver(rec, event, FALSE)
 	catch(var/exception/e2)
-		sched.error("[event.type]: [e2]")
+		sched.report_caught(e2, "[event.type]: [e2]")
 	while(length(sched.event_queue))
 		var/datum/om/rec/next_rec = sched.event_queue[1]
 		var/datum/om/event/next = sched.event_queue[2]
@@ -56,7 +56,7 @@
 		try
 			om_deliver(next_rec, next, FALSE)
 		catch(var/exception/e3)
-			sched.error("[next.type]: [e3]")
+			sched.report_caught(e3, "[next.type]: [e3]")
 	sched.emit_depth = 0
 	return null
 

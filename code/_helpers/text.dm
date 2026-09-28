@@ -742,7 +742,7 @@ GLOBAL_LIST_EMPTY(text_tag_cache)
 /proc/safe_json_decode(data)
 	try
 		return json_decode(data)
-	catch
+	catch // ALLOW(silent_catch): malformed input is the expected failure; the caller handles null
 		return null
 
 /// Removes all non-alphanumerics from the text, keep in mind this can lead to id conflicts

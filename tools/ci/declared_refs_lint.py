@@ -42,7 +42,10 @@ or a declared cache (declared_cache_vars()). Relations and slots are not vars, a
 registries are global. "An object" is recognised syntactically: `src`, `usr`, a
 `new` expression, or a name the proc declares object-typed (an argument such as
 `mob/M`, a `var/obj/item/I` local, a `for(var/atom/A in ...)` loop var). These are
-ratcheted per file in tools/ci/object_keyed_lists_allowlist.txt.
+ratcheted per file in tools/ci/object_keyed_lists_allowlist.txt. A list var
+declared with an object element type (`var/list/datum/reagent/reagent_by_id`,
+tmp or not) counts once at its declaration even when no write is recognised:
+an id -> datum index left set after Destroy is a cycle among deleted objects.
 
 Declared caches. Every declared_cache_vars() entry maps the var name to its
 invalidation rule, CACHE_ON_CHANGE(bits), CACHE_ON_EVENT(path) or
@@ -80,6 +83,8 @@ DECLARED_PROCS = (
     "declared_held_vars",
     "declared_pair_vars",
     "declared_backlist_vars",
+    "declared_back_vars",
+    "declared_keep_vars",
     "declared_cache_vars",
 )
 # Declarations that make an instance list var a legitimate holder of objects.
@@ -87,7 +92,7 @@ OBJLIST_PROCS = ("declared_owned_list_vars", "declared_owned_value_vars", "decla
                  "declared_cache_vars")
 # The one-line forms (code/__defines/lifecycle.dm): REF_OWNED(/type, NAMES) and friends expand to
 # the matching declared_*_vars() override.
-REF_MACRO = re.compile(r"^REF_(OWNED_LIST|OWNED_VALUES|OWNED|SPILL_LIST|SPILL|HELD|PAIR|BACKLIST)\(\s*(/[\w/]+)\s*,(.*)\)\s*$")
+REF_MACRO = re.compile(r"^REF_(OWNED_LIST|OWNED_VALUES|OWNED|SPILL_LIST|SPILL|HELD|PAIR|BACKLIST|BACK|KEEP)\(\s*(/[\w/]+)\s*,(.*)\)\s*$")
 REF_MACRO_PROC = {
     "OWNED": "declared_owned_vars",
     "OWNED_LIST": "declared_owned_list_vars",
@@ -97,6 +102,8 @@ REF_MACRO_PROC = {
     "HELD": "declared_held_vars",
     "PAIR": "declared_pair_vars",
     "BACKLIST": "declared_backlist_vars",
+    "BACK": "declared_back_vars",
+    "KEEP": "declared_keep_vars",
 }
 CACHE_ENTRY = re.compile(r'"(\w+)"\s*(=\s*(\S.*?))?\s*,?\s*$')
 CACHE_RULE = re.compile(r"^CACHE_ON_(CHANGE|EVENT|RELATION)\(")
@@ -269,8 +276,9 @@ def objlist_candidates(rel, raw_lines, objlist_ok):
     """(rel, line, text) for every write of an object into an undeclared instance list var."""
     # Instance list vars declared in this file (any type block, indent 1).
     list_vars = set()
+    typed_lists = {}  # name -> (line, text): `var/list/datum/reagent/x`, a list typed as holding objects
     cur_type = None
-    for raw in raw_lines:
+    for decl_no, raw in enumerate(raw_lines, 1):
         if not raw.strip():
             continue
         stripped = raw.lstrip("\t ")
@@ -291,12 +299,21 @@ def objlist_candidates(rel, raw_lines, objlist_ok):
         if mods & {"static", "global", "const"} or len(segs) < 2 or segs[0] != "list":
             continue
         list_vars.add(segs[-1])
+        # A list whose declared element type is an object type holds objects by
+        # declaration, even where no write is recognisable (an index write of a
+        # proc result, `x = other_list`): the reagent_by_id class, an assoc of id ->
+        # datum that, left set after Destroy, closed a cycle between deleted objects.
+        if len(segs) > 2 and is_object_type("/".join(segs[1:-1])):
+            typed_lists[segs[-1]] = (decl_no, stripped.rstrip())
     list_vars -= objlist_ok
     list_vars -= BACKLIST_TARGETS
     if not list_vars:
         return []
 
     out = []
+    for name in sorted(set(typed_lists) & list_vars):
+        decl_no, text = typed_lists[name]
+        out.append((rel, decl_no, "%s: typed object list, undeclared: %s" % (name, text)))
     objs, locals_ = set(), set()
     for no, raw in enumerate(raw_lines, 1):
         if not raw.strip():

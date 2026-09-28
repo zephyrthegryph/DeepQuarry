@@ -170,7 +170,7 @@
 		for(var/item in L)
 			if(!isnum(item) && L[item]) return TRUE
 			if(!L[item]) return FALSE
-	catch
+	catch // ALLOW(silent_catch): probing whether a list is associative; a runtime means it is not
 		return FALSE
 
 /proc/add_types(datum/thing, list/L)

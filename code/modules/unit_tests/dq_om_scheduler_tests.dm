@@ -163,6 +163,42 @@
 	TEST_ASSERT_EQUAL(sched.timers_dropped, dropped + 1, "the dropped call is counted")
 	TEST_ASSERT(!om_after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, "x", arg), "a deleted argument is refused up front")
 
+/datum/om_test_entity/proc/timer_hit_list(tag, list/others)
+	log += tag
+	for(var/datum/om_test_entity/other in others)
+		other.log += "[tag] via"
+
+/// A datum inside a list argument (one level deep, as a member or under a text
+/// key) is captured as a handle too: the pending record holds no reference to
+/// it, so deleting it can't hard-delete, and the call is dropped when it fires.
+/datum/unit_test/om/timer_list_arg_deleted_is_dropped
+
+/datum/unit_test/om/timer_list_arg_deleted_is_dropped/run_om(list/made)
+	var/datum/om_test_entity/E = entity(made)
+	var/datum/om_test_entity/member = entity(made)
+	var/datum/om_test_entity/keyed = entity(made)
+	var/datum/om_test_entity/kept = entity(made)
+	om_after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit_list, "listed", list(member))
+	om_after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit_list, "keyed", list("who" = keyed))
+	om_after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit_list, "kept", list(kept))
+	var/list/T = E.om_rec.timers
+	for(var/i in 1 to length(T) step OM_TIMER_STRIDE)
+		var/list/captured = T[i + 3]
+		var/list/inner = captured[2]
+		for(var/entry in inner)
+			TEST_ASSERT(!isdatum(entry), "a pending timer holds no datum in its list argument")
+			if(istext(entry))
+				TEST_ASSERT(!isdatum(inner[entry]), "nor as a keyed value")
+	var/dropped = sched.timers_dropped
+	qdel(member)
+	qdel(keyed)
+	scheduler_advance(2)
+	TEST_ASSERT(!("listed" in E.log), "a call whose list member was deleted does not run")
+	TEST_ASSERT(!("keyed" in E.log), "a call whose keyed list value was deleted does not run")
+	TEST_ASSERT("kept" in E.log, "a call whose list member lives runs")
+	TEST_ASSERT("kept via" in kept.log, "and gets the resolved datum back")
+	TEST_ASSERT_EQUAL(sched.timers_dropped, dropped + 2, "both dropped calls are counted")
+
 // ---------------------------------------------------------------- task steps
 
 /datum/unit_test/om/task_step_results
