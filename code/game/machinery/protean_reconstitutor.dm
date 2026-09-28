@@ -285,8 +285,7 @@ EXTEND_INTERACTIONS(/obj/machinery/protean_reconstitutor, \
 		var/charjob = record_found.fields["real_rank"]
 		var/obj/item/organ/internal/mmi_holder/posibrain/nano/BR = O
 		BR.stored_mmi = null	//toss the dummy...
-		for(var/atom/movable/dummy as anything in contents_of(BR))
-			qdel(dummy)
+		BR.slot_clear()
 		BR.stored_mmi = protean_brain	//...and implant the salvaged mmi in its place
 		protean_brain.forceMove(BR)
 		var/picked_ckey = posibrain_client.ckey

@@ -23,8 +23,8 @@
 #define PGRID_VIEWAVAIL 3
 #define PGRID_VIEWLOAD 4
 #define PGRID_BROWNOUT 5
-/// world.time the monitor warning lasts until.
-#define PGRID_PROBLEM_UNTIL 6
+/// TRUE while a timed power_warn() is showing (cleared by power_warn_expire()).
+#define PGRID_PROBLEM_TIMED 6
 /// The material overlay's own standing warning.
 #define PGRID_MATERIAL_PROBLEM 7
 /// The warning state last announced on CHANGE_POWER_GRID_STATE.
@@ -46,7 +46,7 @@
 	grid[PGRID_VIEWAVAIL] = 0
 	grid[PGRID_VIEWLOAD] = 0
 	grid[PGRID_BROWNOUT] = FALSE
-	grid[PGRID_PROBLEM_UNTIL] = 0
+	grid[PGRID_PROBLEM_TIMED] = FALSE
 	grid[PGRID_MATERIAL_PROBLEM] = FALSE
 	grid[PGRID_PROBLEM_SHOWN] = FALSE
 	grid[PGRID_NODES] = list() // ALLOW(instance_list): one per live region; created because a machine joined
@@ -138,7 +138,7 @@
 	var/list/grid = power_grid(id)
 	if(!grid)
 		return FALSE
-	return grid[PGRID_MATERIAL_PROBLEM] || grid[PGRID_PROBLEM_UNTIL] > world.time
+	return grid[PGRID_MATERIAL_PROBLEM] || grid[PGRID_PROBLEM_TIMED]
 
 /// The machines bound to region `id` (do not modify).
 /proc/power_grid_nodes(id)
@@ -203,7 +203,16 @@
 	var/list/grid = power_grid(id)
 	if(!grid)
 		return
-	grid[PGRID_PROBLEM_UNTIL] = max(grid[PGRID_PROBLEM_UNTIL], world.time + max(duration, 1))
+	grid[PGRID_PROBLEM_TIMED] = TRUE
+	om_after_replace(null, max(duration, 1), GLOBAL_PROC_REF(power_warn_expire), id)
+	power_grid_sync_problem(id)
+
+/// Ends a timed power_warn() on region `id` once its duration has run out.
+/proc/power_warn_expire(id)
+	var/list/grid = GLOB.machine_service.power_grids[id]
+	if(!grid)
+		return
+	grid[PGRID_PROBLEM_TIMED] = FALSE
 	power_grid_sync_problem(id)
 
 /proc/power_set_material_warning(id, active)
@@ -366,7 +375,7 @@ REF_OWNED(/datum/material_power_overlay, "material_graph")
 #undef PGRID_VIEWAVAIL
 #undef PGRID_VIEWLOAD
 #undef PGRID_BROWNOUT
-#undef PGRID_PROBLEM_UNTIL
+#undef PGRID_PROBLEM_TIMED
 #undef PGRID_MATERIAL_PROBLEM
 #undef PGRID_PROBLEM_SHOWN
 #undef PGRID_NODES
