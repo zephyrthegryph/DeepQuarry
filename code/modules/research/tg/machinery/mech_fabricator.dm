@@ -79,7 +79,7 @@
 	if(stored_research())
 		on_connected_techweb()
 
-REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, "print_sound")
+REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, list("print_sound", "rmat"))
 
 /obj/machinery/mecha_part_fabricator_tg/proc/connect_techweb(datum/techweb/new_techweb)
 	if(stored_research())

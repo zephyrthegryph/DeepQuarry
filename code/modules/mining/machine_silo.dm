@@ -277,3 +277,5 @@
 		separator = ", "
 		msg += "[amount < 0 ? "-" : "+"][val] [M.name]"
 	return msg.Join()
+
+REF_OWNED(/obj/machinery/ore_silo, "materials")
