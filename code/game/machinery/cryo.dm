@@ -94,6 +94,8 @@ EXTEND_INTERACTIONS(/obj/machinery/atmospherics/unary/cryo_cell, \
 	INTERACT_HAND_UNGATED(null, PROC_REF(cryo_cell_interaction_hand)), \
 	INTERACT_ITEM(null, PROC_REF(cryo_cell_interaction_item)), \
 	INTERACT_DRAG("Put inside", PROC_REF(cryo_cell_interaction_drag)), \
+	INTERACT_VERB("Eject occupant", PROC_REF(cryo_cell_move_eject)), \
+	INTERACT_VERB("Move Inside", PROC_REF(cryo_cell_move_inside)), \
 )
 
 /// Old attack_hand (it never reached the machinery gate).
@@ -374,29 +376,25 @@ EXTEND_INTERACTIONS(/obj/machinery/atmospherics/unary/cryo_cell, \
 		return
 	go_out()//and release him from the eternal prison.
 
-/obj/machinery/atmospherics/unary/cryo_cell/verb/move_eject()
+/// Old verb "Eject occupant".
+/obj/machinery/atmospherics/unary/cryo_cell/proc/cryo_cell_move_eject(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_CRYO)
-	set name = "Eject occupant"
-	set category = "Object"
-	set src in oview(1)
-	if(usr == occupant)//If the user is inside the tube...
-		if(usr.stat == 2)//and he's not dead....
+	if(user == occupant)//If the user is inside the tube...
+		if(user.stat == 2)//and he's not dead....
 			return
-		to_chat(usr, span_notice("Release sequence activated. This will take two minutes."))
-		om_after(src, 2 MINUTES, PROC_REF(release_sequence_done), usr)
+		to_chat(user, span_notice("Release sequence activated. This will take two minutes."))
+		om_after(src, 2 MINUTES, PROC_REF(release_sequence_done), user)
 	else
-		if(usr.stat != 0)
+		if(user.stat != 0)
 			return
 		go_out()
-	add_fingerprint(usr)
+	add_fingerprint(user)
 	return
 
-/obj/machinery/atmospherics/unary/cryo_cell/verb/move_inside()
-	set name = "Move Inside"
-	set category = "Object"
-	set src in oview(1)
-	if(isliving(usr))
-		var/mob/living/L = usr
+/// Old verb "Move Inside".
+/obj/machinery/atmospherics/unary/cryo_cell/proc/cryo_cell_move_inside(mob/user, obj/item/held, datum/interaction/interaction)
+	if(isliving(user))
+		var/mob/living/L = user
 		if(L.has_buckled_mobs())
 			to_chat(L, span_warning("You have other entities attached to yourself. Remove them first."))
 			return

@@ -103,12 +103,9 @@ Buildable meters
 	name = "[initial(fakeA.name)] fitting"
 	icon_state = initial(fakeA.pipe_state)
 
-/obj/item/pipe/verb/flip()
-	set category = "Object"
-	set name = "Flip Pipe"
-	set src in view(1)
-
-	if ( usr.stat || usr.restrained() || !usr.canmove )
+/// Old verb "Flip Pipe".
+/obj/item/pipe/proc/pipe_flip(mob/user, obj/item/held, datum/interaction/interaction)
+	if ( user.stat || user.restrained() || !user.canmove )
 		return
 
 	do_a_flip()
@@ -154,6 +151,7 @@ Buildable meters
 DECLARE_INTERACTIONS(/obj/item/pipe, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_VERB("Flip Pipe", PROC_REF(pipe_flip)), \
 )
 
 /// Old attack_self.

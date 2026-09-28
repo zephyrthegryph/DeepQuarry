@@ -104,7 +104,15 @@
 
 	return 1
 
-EXTEND_INTERACTIONS(/obj/vehicle/train, 	INTERACT_DRAG("Load", PROC_REF(interaction_train_drag)), 	INTERACT_HAND(null, PROC_REF(interaction_train_hand)))
+EXTEND_INTERACTIONS(/obj/vehicle/train, \
+	INTERACT_DRAG("Load", PROC_REF(interaction_train_drag)), \
+	INTERACT_HAND(null, PROC_REF(interaction_train_hand)), \
+	INTERACT_VERB("Unlatch", PROC_REF(train_unlatch), REQ_ON(PRED_TARGET, /obj/vehicle/train/proc/pred_train_unlatchable, null)), \
+)
+
+/// Requirement for "Unlatch": unhitches this train from the one in front of it. Overridden FALSE where nothing latches.
+/obj/vehicle/train/proc/pred_train_unlatchable(mob/actor, atom/target, obj/item/held)
+	return TRUE
 
 /// Old MouseDrop_T: drop a train car to latch it, anything else to load it.
 /obj/vehicle/train/proc/interaction_train_drag(mob/user, atom/movable/C, datum/interaction/interaction)
@@ -137,19 +145,15 @@ EXTEND_INTERACTIONS(/obj/vehicle/train, 	INTERACT_DRAG("Load", PROC_REF(interact
 	user.visible_message(span_notice("[user] [passenger_allowed ? "cuts" : "mends"] a cable in [src]."),span_notice("You [passenger_allowed ? "cut" : "mend"] the load limiter cable."))
 	return TRUE
 
-/obj/vehicle/train/verb/unlatch_v()
-	set name = "Unlatch"
-	set desc = "Unhitches this train from the one in front of it."
-	set category = "Object.Vehicle" // TGPanel
-	set src in view(1)
-
-	if(!ishuman(usr))
+/// Old verb "Unlatch".
+/obj/vehicle/train/proc/train_unlatch(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!ishuman(user))
 		return
 
-	if(!usr.canmove || usr.stat || usr.restrained() || !Adjacent(usr))
+	if(!user.canmove || user.stat || user.restrained() || !Adjacent(user))
 		return
 
-	unattach(usr)
+	unattach(user)
 
 
 //-------------------------------------------

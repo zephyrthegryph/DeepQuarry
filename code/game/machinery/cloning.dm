@@ -110,6 +110,8 @@
 EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 	INTERACT_HAND_UNGATED(null, PROC_REF(clonepod_interaction_hand)), \
 	INTERACT_ITEM(null, PROC_REF(clonepod_interaction_item)), \
+	INTERACT_VERB("Eject Cloner", PROC_REF(clonepod_eject)), \
+	INTERACT_VERB("Eject Beakers", PROC_REF(clonepod_empty_beakers)), \
 )
 
 /// Old attack_hand (it never reached the machinery gate).
@@ -368,15 +370,12 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 		return 100
 	return clamp(100 * (AFFLICTION_SEVERITY_TERMINAL - clone_growth_load(occupant)) / span, 0, 100)
 
-/obj/machinery/clonepod/verb/eject()
-	set name = "Eject Cloner"
-	set category = "Object"
-	set src in oview(1)
-
-	if(usr.stat != 0)
+/// Old verb "Eject Cloner".
+/obj/machinery/clonepod/proc/clonepod_eject(mob/user, obj/item/held, datum/interaction/interaction)
+	if(user.stat != 0)
 		return
 	go_out()
-	add_fingerprint(usr)
+	add_fingerprint(user)
 	return
 
 /obj/machinery/clonepod/proc/go_out()
@@ -437,15 +436,11 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 	return 0
 
 // Empties all of the beakers from the cloning pod, used to refill it
-/obj/machinery/clonepod/verb/empty_beakers()
-	set name = "Eject Beakers"
-	set category = "Object"
-	set src in oview(1)
-
-	if(usr.stat != 0)
+/obj/machinery/clonepod/proc/clonepod_empty_beakers(mob/user, obj/item/held, datum/interaction/interaction)
+	if(user.stat != 0)
 		return
 
-	add_fingerprint(usr)
+	add_fingerprint(user)
 	drop_beakers()
 	return
 

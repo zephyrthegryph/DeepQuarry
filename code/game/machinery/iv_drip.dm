@@ -58,6 +58,7 @@
 EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 	INTERACT_ITEM(null, PROC_REF(iv_drip_interaction_item)), \
 	INTERACT_HAND_UNGATED("Remove container", PROC_REF(iv_drip_interaction_hand)), \
+	INTERACT_VERB("Toggle Mode", PROC_REF(iv_drip_toggle_mode)), \
 )
 
 /// Old attackby.
@@ -168,20 +169,17 @@ EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 	return TRUE
 
 
-/obj/machinery/iv_drip/verb/toggle_mode()
-	set category = "Object"
-	set name = "Toggle Mode"
-	set src in view(1)
-
-	if(!isliving(usr))
-		to_chat(usr, span_warning("You can't do that."))
+/// Old verb "Toggle Mode".
+/obj/machinery/iv_drip/proc/iv_drip_toggle_mode(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!isliving(user))
+		to_chat(user, span_warning("You can't do that."))
 		return
 
-	if(usr.stat)
+	if(user.stat)
 		return
 
 	mode = !mode
-	to_chat(usr, "The IV drip is now [mode ? "injecting" : "taking blood"].")
+	to_chat(user, "The IV drip is now [mode ? "injecting" : "taking blood"].")
 
 /obj/machinery/iv_drip/examine(mob/user)
 	. = ..()

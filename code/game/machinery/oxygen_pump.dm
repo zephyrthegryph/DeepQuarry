@@ -60,6 +60,7 @@ REF_OWNED(/obj/machinery/oxygen_pump, list("tank", "contained"))
 EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 	INTERACT_HAND_UNGATED(null, PROC_REF(oxygen_pump_interaction_hand)), \
 	INTERACT_ITEM(null, PROC_REF(oxygen_pump_interaction_item)), \
+	INTERACT_VERB("Show Tank Settings", PROC_REF(oxygen_pump_settings)), \
 )
 
 /// Old attack_hand (it never reached the machinery gate).
@@ -196,11 +197,8 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 				breather.internals.icon_state = "internal0"
 
 //Create rightclick to view tank settings
-/obj/machinery/oxygen_pump/verb/settings()
-	set src in oview(1)
-	set category = "Object"
-	set name = "Show Tank Settings"
-	tgui_interact(usr)
+/obj/machinery/oxygen_pump/proc/oxygen_pump_settings(mob/user, obj/item/held, datum/interaction/interaction)
+	tgui_interact(user)
 
 /obj/machinery/oxygen_pump/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
 	if(!tank)

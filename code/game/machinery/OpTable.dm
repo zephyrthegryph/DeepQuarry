@@ -34,6 +34,7 @@ EXTEND_INTERACTIONS(/obj/machinery/optable, \
 	INTERACT_HAND_UNGATED(null, PROC_REF(optable_interaction_hand)), \
 	INTERACT_DRAG("Lay on table", PROC_REF(optable_interaction_drag)), \
 	INTERACT_ITEM(null, PROC_REF(optable_interaction_item)), \
+	INTERACT_VERB("Climb On Table", PROC_REF(optable_climb_onto)), \
 )
 
 /// Old attack_hand (it never reached the machinery gate).
@@ -112,12 +113,8 @@ EXTEND_INTERACTIONS(/obj/machinery/optable, \
 	take_victim(target, user)
 	return TRUE
 
-/obj/machinery/optable/verb/climb_onto()
-	set name = "Climb On Table"
-	set category = "Object"
-	set src in oview(1)
-
-	var/mob/living/user = usr
+/// Old verb "Climb On Table".
+/obj/machinery/optable/proc/optable_climb_onto(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(!istype(user) || user.incapacitated() || !check_table(user, user))
 		return
 

@@ -62,26 +62,24 @@
 		"blood_type" = list("A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"),
 	)
 
-/obj/machinery/computer/med_data/verb/eject_id()
-	set category = "Object"
-	set name = "Eject ID Card"
-	set src in oview(1)
-
-	if(!usr || usr.stat || usr.lying)	return
+/// Old verb "Eject ID Card".
+/obj/machinery/computer/med_data/proc/med_data_eject_id(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!user || user.stat || user.lying)	return
 
 	if(scan)
-		to_chat(usr, "You remove \the [scan] from \the [src].")
+		to_chat(user, "You remove \the [scan] from \the [src].")
 		scan.loc = get_turf(src)
-		if(!usr.get_active_hand() && ishuman(usr))
-			usr.put_in_hands(scan)
+		if(!user.get_active_hand() && ishuman(user))
+			user.put_in_hands(scan)
 		scan = null
 	else
-		to_chat(usr, "There is nothing to remove from the console.")
+		to_chat(user, "There is nothing to remove from the console.")
 	return
 
 EXTEND_INTERACTIONS(/obj/machinery/computer/med_data, \
 	INTERACT_ITEM(null, PROC_REF(med_data_interaction_item)), \
 	INTERACT_HAND(null, PROC_REF(med_data_interaction_hand)), \
+	INTERACT_VERB("Eject ID Card", PROC_REF(med_data_eject_id)), \
 )
 
 /// Old attackby.

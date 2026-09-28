@@ -49,7 +49,10 @@ EXTEND_INTERACTIONS(/obj/vehicle/bike, \
 	INTERACT_ITEM("Paint", PROC_REF(interaction_vehicle_paint)), \
 	INTERACT_ALT("Toggle kickstand", PROC_REF(interaction_bike_kickstand)), \
 	INTERACT_DRAG("Load", PROC_REF(interaction_bike_drag)), \
-	INTERACT_HAND(null, PROC_REF(interaction_bike_hand)))
+	INTERACT_HAND(null, PROC_REF(interaction_bike_hand)), \
+	INTERACT_VERB("Toggle Engine", PROC_REF(bike_toggle_engine), REQ_REACH(0)), \
+	INTERACT_VERB("Toggle Kickstand", PROC_REF(bike_kickstand), REQ_REACH(0)), \
+)
 
 /obj/vehicle/bike/click_ctrl(mob/user)
 	if(Adjacent(user) && anchored)
@@ -57,11 +60,9 @@ EXTEND_INTERACTIONS(/obj/vehicle/bike, \
 	else
 		return ..()
 
-/obj/vehicle/bike/verb/toggle()
-	set name = "Toggle Engine"
-	set category = "Object.Vehicle" // TGPanel
-	set src in view(0)
-	toggle_proc(usr)
+/// Old verb "Toggle Engine".
+/obj/vehicle/bike/proc/bike_toggle_engine(mob/user, obj/item/held, datum/interaction/interaction)
+	toggle_proc(user)
 
 /obj/vehicle/bike/proc/toggle_proc(mob/user)
 	if(!isliving(user) || HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB))
@@ -83,24 +84,21 @@ EXTEND_INTERACTIONS(/obj/vehicle/bike, \
 /obj/vehicle/bike/proc/interaction_bike_kickstand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!Adjacent(user))
 		return FALSE
-	kickstand(user)
+	bike_kickstand(user)
 	return TRUE
 
-/obj/vehicle/bike/verb/kickstand(mob/user as mob)
-	set name = "Toggle Kickstand"
-	set category = "Object.Vehicle" // TGPanel
-	set src in view(0)
-
-	if(!isliving(usr) || HAS_TRAIT(usr, TRAIT_AMBIENT_PEST_MOB))
+/// Old verb "Toggle Kickstand".
+/obj/vehicle/bike/proc/bike_kickstand(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!isliving(user) || HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB))
 		return
 
-	if(usr.incapacitated()) return
+	if(user.incapacitated()) return
 
 	if(kickstand)
 		visible_message("[user] puts up \the [src]'s kickstand.")
 	else
 		if(istype(src.loc,/turf/space) || istype(src.loc, /turf/simulated/floor/water))
-			to_chat(usr, span_warning(" You don't think kickstands work here..."))
+			to_chat(user, span_warning(" You don't think kickstands work here..."))
 			return
 		visible_message("[user] puts down \the [src]'s kickstand.")
 		var/mob/pulledby = src?.pulled_by_mob()

@@ -180,6 +180,7 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 	INTERACT_HAND_UNGATED(null, PROC_REF(sleeper_interaction_hand)), \
 	INTERACT_ITEM(null, PROC_REF(sleeper_interaction_item)), \
 	INTERACT_DRAG("Put inside", PROC_REF(sleeper_interaction_drag)), \
+	INTERACT_VERB("Eject occupant", PROC_REF(sleeper_move_eject)), \
 )
 
 /// Old attack_hand (it never reached the machinery gate).
@@ -420,25 +421,23 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
 	return occupant ? ITEM_INTERACT_BLOCKING : ..()
 
-/obj/machinery/sleeper/verb/move_eject()
+/// Old verb "Eject occupant".
+/obj/machinery/sleeper/proc/sleeper_move_eject(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
-	set name = "Eject occupant"
-	set category = "Object"
-	set src in oview(1)
-	if(usr == occupant)
-		switch(usr.stat)
+	if(user == occupant)
+		switch(user.stat)
 			if(DEAD)
 				return
 			if(UNCONSCIOUS)
-				to_chat(usr, span_notice("You struggle through the haze to hit the eject button. This will take a couple of minutes..."))
-				om_do_after(usr, 2 MINUTES, target = src, receiver = src, on_done = PROC_REF(move_eject_timed_done), done_args = list())
+				to_chat(user, span_notice("You struggle through the haze to hit the eject button. This will take a couple of minutes..."))
+				om_do_after(user, 2 MINUTES, target = src, receiver = src, on_done = PROC_REF(move_eject_timed_done), done_args = list())
 			if(CONSCIOUS)
 				go_out()
 	else
-		if(usr.stat != CONSCIOUS)
+		if(user.stat != CONSCIOUS)
 			return
 		go_out()
-	add_fingerprint(usr)
+	add_fingerprint(user)
 
 /obj/machinery/sleeper/proc/move_eject_timed_done()
 	go_out()

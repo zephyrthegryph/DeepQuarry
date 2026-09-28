@@ -251,10 +251,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 	icon_state = "[d1]-[d2]"
 	alpha = invisibility ? 127 : 255
 
-//Telekinesis has no effect on a cable
-/obj/structure/cable/attack_tk(mob/user)
-	return
-
 // Items usable on a cable :
 //   - Wirecutters : cut it duh !
 //   - Cable coil : merge cables
@@ -535,10 +531,13 @@ DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interact
 	set_cable_color(selected_type, user)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/stack/cable_coil/verb/make_restraint()
-	set name = "Make Cable Restraints"
-	set category = "Object"
-	var/mob/M = usr
+EXTEND_INTERACTIONS(/obj/item/stack/cable_coil, \
+	INTERACT_VERB("Make Cable Restraints", PROC_REF(cable_coil_make_restraint), REQ_IN_INVENTORY), \
+)
+
+/// Old verb "Make Cable Restraints" (an obj verb with no `set src`, so src in usr).
+/obj/item/stack/cable_coil/proc/cable_coil_make_restraint(mob/user, obj/item/held, datum/interaction/interaction)
+	var/mob/M = user
 
 	if(ishuman(M) && !M.restrained() && !M.stat && !M.has_status(EFFECT_PARALYZED) && ! M.has_status(EFFECT_STUNNED))
 		if(!istype(M.loc,/turf)) return

@@ -126,13 +126,13 @@ REF_OWNED(/obj/mecha/working/ripley, "orescanner")
 	. = ..()
 	orescanner = new /obj/item/mining_scanner
 
-/obj/mecha/working/ripley/verb/detect_ore()
-	set category = "Exosuit Interface"
-	set name = "Detect Ores"
-	set src = usr.loc
-	set popup_menu = 0
+EXTEND_INTERACTIONS(/obj/mecha/working/ripley, \
+	INTERACT_VERB("Detect Ores", PROC_REF(ripley_detect_ore), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null)), \
+)
 
-	orescanner.attack_self(usr)
+/// Old verb "Detect Ores".
+/obj/mecha/working/ripley/proc/ripley_detect_ore(mob/user, obj/item/held, datum/interaction/interaction)
+	orescanner.attack_self(user)
 
 //Meant for random spawns.
 /obj/mecha/working/ripley/mining/old

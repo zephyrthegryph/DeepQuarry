@@ -44,14 +44,19 @@
 	turn_off()	//so engine verbs are correctly set
 	create_reagents(600)
 	update_icon()
-	verbs -= /obj/vehicle/train/verb/unlatch_v // Nothing to unlatch
 
 	if(prob(20))
 		callme = pick(list("pimpin' ride","thang","pussy wagon","janihound deflector","raunchy love mobile","sanitation stallion","magic carpet","crime mobile","get away car"))
 
 EXTEND_INTERACTIONS(/obj/vehicle/train/engine/janicart, \
 	INTERACT_ITEM(null, PROC_REF(interaction_janicart_item)), \
-	INTERACT_HAND(null, PROC_REF(interaction_janicart_hand)))
+	INTERACT_HAND(null, PROC_REF(interaction_janicart_hand)), \
+	INTERACT_VERB("Toggle brushes", PROC_REF(janicart_toggle_brush), REQ_REACH(0)), \
+)
+
+// Nothing to unlatch (old verbs -= unlatch_v on Initialize).
+/obj/vehicle/train/engine/janicart/pred_train_unlatchable(mob/actor, atom/target, obj/item/held)
+	return FALSE
 
 /// Old attackby: wet a mop, or hook on a trash bag.
 /obj/vehicle/train/engine/janicart/proc/interaction_janicart_item(mob/user, obj/item/W, datum/interaction/interaction)
@@ -90,19 +95,16 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine/janicart, \
 		if(mybag)
 			. += "\A [mybag] is hanging on the [callme]."
 
-/obj/vehicle/train/engine/janicart/verb/toggle_brush()
-	set name = "Toggle brushes"
-	set category = "Object.Vehicle"
-	set src in view(0)
-
-	if(!ishuman(usr))
+/// Old verb "Toggle brushes".
+/obj/vehicle/train/engine/janicart/proc/janicart_toggle_brush(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!ishuman(user))
 		return
 
 	scrubbing = !scrubbing
 	if (scrubbing)
-		to_chat(usr, span_notice("You turn the [callme]'s brushes on."))
+		to_chat(user, span_notice("You turn the [callme]'s brushes on."))
 	else
-		to_chat(usr, span_notice("You turn the [callme]'s brushes off."))
+		to_chat(user, span_notice("You turn the [callme]'s brushes off."))
 
 /obj/vehicle/train/engine/janicart/latch(obj/vehicle/train/T, mob/user)
 	return // nothing latchs to this!

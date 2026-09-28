@@ -144,12 +144,12 @@
 		return "shallow"
 	return "erratic"
 
-/obj/machinery/vitals_monitor/verb/toggle_beep()
-	set name = "Toggle Monitor Beeping"
-	set category = "Object"
-	set src in view(1)
+EXTEND_INTERACTIONS(/obj/machinery/vitals_monitor, \
+	INTERACT_VERB("Toggle Monitor Beeping", PROC_REF(vitals_monitor_toggle_beep)), \
+)
 
-	var/mob/user = usr
+/// Old verb "Toggle Monitor Beeping".
+/obj/machinery/vitals_monitor/proc/vitals_monitor_toggle_beep(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!istype(user))
 		return
 

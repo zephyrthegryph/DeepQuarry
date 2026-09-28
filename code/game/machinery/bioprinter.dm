@@ -84,6 +84,7 @@
 EXTEND_INTERACTIONS(/obj/machinery/organ_printer, \
 	INTERACT_ITEM(null, PROC_REF(organ_printer_interaction_item)), \
 	INTERACT_HAND_UNGATED(null, PROC_REF(organ_printer_interaction_hand)), \
+	INTERACT_VERB("Eject Beaker", PROC_REF(organ_printer_eject_beaker)), \
 )
 
 /// Old attackby.
@@ -208,14 +209,11 @@ EXTEND_INTERACTIONS(/obj/machinery/organ_printer, \
 
 	print_organ(organ_path)
 
-/obj/machinery/organ_printer/verb/eject_beaker()
-	set name = "Eject Beaker"
-	set category = "Object"
-	set src in oview(1)
-
-	if(usr.stat != 0)
+/// Old verb "Eject Beaker".
+/obj/machinery/organ_printer/proc/organ_printer_eject_beaker(mob/user, obj/item/held, datum/interaction/interaction)
+	if(user.stat != 0)
 		return
-	add_fingerprint(usr)
+	add_fingerprint(user)
 	remove_beaker()
 	return
 

@@ -84,7 +84,12 @@
 
 EXTEND_INTERACTIONS(/obj/vehicle/train/rover/trolley, INTERACT_ITEM("Toggle load limiter", PROC_REF(interaction_train_limiter_cable)))
 
-EXTEND_INTERACTIONS(/obj/vehicle/train/rover/engine, INTERACT_ITEM("Insert key", PROC_REF(interaction_rover_engine_key)))
+EXTEND_INTERACTIONS(/obj/vehicle/train/rover/engine, \
+	INTERACT_ITEM("Insert key", PROC_REF(interaction_rover_engine_key)), \
+	INTERACT_VERB("Start engine", PROC_REF(rover_engine_start_engine), REQ_REACH(0), REQ_ON(PRED_TARGET, /obj/vehicle/train/rover/engine/proc/pred_rover_engine_stopped, null)), \
+	INTERACT_VERB("Stop engine", PROC_REF(rover_engine_stop_engine), REQ_REACH(0), REQ_ON(PRED_TARGET, /obj/vehicle/train/rover/engine/proc/pred_rover_engine_running, null)), \
+	INTERACT_VERB("Remove key", PROC_REF(rover_engine_remove_key), REQ_REACH(0), REQ_ON(PRED_TARGET, /obj/vehicle/train/rover/engine/proc/pred_rover_engine_has_key, null)), \
+)
 
 /// Old attackby: the key goes in the ignition (a key is always used up here, even with one already in).
 /obj/vehicle/train/rover/engine/proc/interaction_rover_engine_key(mob/user, obj/item/W, datum/interaction/interaction)
@@ -94,7 +99,6 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/rover/engine, INTERACT_ITEM("Insert key",
 		user.drop_item()
 		W.forceMove(src)
 		key = W
-		verbs += /obj/vehicle/train/rover/engine/verb/remove_key
 	return TRUE
 
 //cargo trains are open topped, so there is a chance the projectile will hit the mob ridding the train instead
@@ -145,24 +149,8 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/rover/engine, INTERACT_ITEM("Insert key",
 		..()
 		update_stats()
 
-		verbs -= /obj/vehicle/train/rover/engine/verb/stop_engine
-		verbs -= /obj/vehicle/train/rover/engine/verb/start_engine
-
-		if(on)
-			verbs += /obj/vehicle/train/rover/engine/verb/stop_engine
-		else
-			verbs += /obj/vehicle/train/rover/engine/verb/start_engine
-
 /obj/vehicle/train/rover/engine/turn_off()
 	..()
-
-	verbs -= /obj/vehicle/train/rover/engine/verb/stop_engine
-	verbs -= /obj/vehicle/train/rover/engine/verb/start_engine
-
-	if(!on)
-		verbs += /obj/vehicle/train/rover/engine/verb/start_engine
-	else
-		verbs += /obj/vehicle/train/rover/engine/verb/stop_engine
 
 /obj/vehicle/train/rover/RunOver(mob/living/M)
 	var/list/parts = list(BP_HEAD, BP_TORSO, BP_L_LEG, BP_R_LEG, BP_L_ARM, BP_R_ARM)
@@ -211,63 +199,52 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/rover/engine, INTERACT_ITEM("Insert key",
 		. += "There are[key ? "" : " no"] keys in the ignition."
 		. += "The charge meter reads [cell? round(cell.percent(), 0.01) : 0]%"
 
-/obj/vehicle/train/rover/engine/verb/start_engine()
-	set name = "Start engine"
-	set category = "Object.Vehicle" // TGPanel
-	set src in view(0)
-
-	if(!ishuman(usr))
+/// Old verb "Start engine".
+/obj/vehicle/train/rover/engine/proc/rover_engine_start_engine(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!ishuman(user))
 		return
 
 	if(on)
-		to_chat(usr, "The engine is already running.")
+		to_chat(user, "The engine is already running.")
 		return
 
 	turn_on()
 	if (on)
-		to_chat(usr, "You start [src]'s engine.")
+		to_chat(user, "You start [src]'s engine.")
 	else
 		if(cell.charge < charge_use)
-			to_chat(usr, "[src] is out of power.")
+			to_chat(user, "[src] is out of power.")
 		else
-			to_chat(usr, "[src]'s engine won't start.")
+			to_chat(user, "[src]'s engine won't start.")
 
-/obj/vehicle/train/rover/engine/verb/stop_engine()
-	set name = "Stop engine"
-	set category = "Object.Vehicle" // TGPanel
-	set src in view(0)
-
-	if(!ishuman(usr))
+/// Old verb "Stop engine".
+/obj/vehicle/train/rover/engine/proc/rover_engine_stop_engine(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!ishuman(user))
 		return
 
 	if(!on)
-		to_chat(usr, "The engine is already stopped.")
+		to_chat(user, "The engine is already stopped.")
 		return
 
 	turn_off()
 	if (!on)
-		to_chat(usr, "You stop [src]'s engine.")
+		to_chat(user, "You stop [src]'s engine.")
 
-/obj/vehicle/train/rover/engine/verb/remove_key()
-	set name = "Remove key"
-	set category = "Object.Vehicle" // TGPanel
-	set src in view(0)
-
-	if(!ishuman(usr))
+/// Old verb "Remove key".
+/obj/vehicle/train/rover/engine/proc/rover_engine_remove_key(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!ishuman(user))
 		return
 
-	if(!key || (load && load != usr))
+	if(!key || (load && load != user))
 		return
 
 	if(on)
 		turn_off()
 
-	key.loc = usr.loc
-	if(!usr.get_active_hand())
-		usr.put_in_hands(key)
+	key.loc = user.loc
+	if(!user.get_active_hand())
+		user.put_in_hands(key)
 	key = null
-
-	verbs -= /obj/vehicle/train/rover/engine/verb/remove_key
 
 //-------------------------------------------
 // Loading/unloading procs
@@ -403,3 +380,13 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/rover/engine, INTERACT_ITEM("Insert key",
 		anchored = FALSE
 	else
 		anchored = TRUE
+
+/// Engine Menu requirements (old start/stop/remove_key verb toggling in turn_on/turn_off/key insert).
+/obj/vehicle/train/rover/engine/proc/pred_rover_engine_running(mob/actor, atom/target, obj/item/held)
+	return on
+
+/obj/vehicle/train/rover/engine/proc/pred_rover_engine_stopped(mob/actor, atom/target, obj/item/held)
+	return !on
+
+/obj/vehicle/train/rover/engine/proc/pred_rover_engine_has_key(mob/actor, atom/target, obj/item/held)
+	return !!key

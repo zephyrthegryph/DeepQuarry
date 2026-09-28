@@ -27,6 +27,7 @@
 		/datum/interaction/entry_hand/fireaxecabinet_hand,
 	)
 	into += dq_interaction_from_spec(type, INTERACT_SILICON("Toggle lock", PROC_REF(fireaxecabinet_silicon_lock)))
+	into += dq_interaction_from_spec(type, INTERACT_TK(null, PROC_REF(interaction_tk)))
 	..()
 
 /// Old attackby: unlock/lock the case, smash the glass, or take/replace the axe, depending on state and item.
@@ -138,14 +139,16 @@
 		toggle_close_open()
 	return TRUE
 
-/obj/structure/fireaxecabinet/attack_tk(mob/user as mob)
+/// Old attack_tk: pull the axe out of an open case at range; otherwise act as a hand would.
+/obj/structure/fireaxecabinet/proc/interaction_tk(mob/user, obj/item/held, datum/interaction/interaction)
 	if(open && fireaxe)
 		fireaxe.forceMove(loc)
 		to_chat(user, span_notice("You telekinetically remove the fire axe."))
 		fireaxe = null
 		update_icon()
-		return
+		return TRUE
 	attack_hand(user)
+	return TRUE
 
 /obj/structure/fireaxecabinet/proc/toggle_close_open()
 	open = !open
@@ -156,36 +159,32 @@
 		update_icon()
 		flick("[icon_state]closing", src)
 
-/obj/structure/fireaxecabinet/verb/toggle_openness() //nice name, huh? HUH?! -Erro //YEAH -Agouri
-	set name = "Open/Close"
-	set category = "Object"
+/obj/structure/fireaxecabinet/proc/toggle_openness_effect(mob/user, obj/item/held, datum/interaction/interaction) //nice name, huh? HUH?! -Erro //YEAH -Agouri
 
-	if (isrobot(usr) || locked || smashed)
+	if (isrobot(user) || locked || smashed)
 		if(locked)
-			to_chat(usr, span_warning("The cabinet won't budge!"))
+			to_chat(user, span_warning("The cabinet won't budge!"))
 		else if(smashed)
-			to_chat(usr, span_notice("The protective glass is broken!"))
+			to_chat(user, span_notice("The protective glass is broken!"))
 		return
 
 	toggle_close_open()
 	update_icon()
 
-/obj/structure/fireaxecabinet/verb/remove_fire_axe()
-	set name = "Remove Fire Axe"
-	set category = "Object"
+/obj/structure/fireaxecabinet/proc/remove_fire_axe_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	if (isrobot(usr))
+	if (isrobot(user))
 		return
 
 	if (open)
 		if(fireaxe)
-			usr.put_in_hands(fireaxe)
+			user.put_in_hands(fireaxe)
 			fireaxe = null
-			to_chat(usr, span_notice("You take the Fire axe from the [name]."))
+			to_chat(user, span_notice("You take the Fire axe from the [name]."))
 		else
-			to_chat(usr, span_notice("The [name] is empty."))
+			to_chat(user, span_notice("The [name] is empty."))
 	else
-		to_chat(usr, span_notice("The [name] is closed."))
+		to_chat(user, span_notice("The [name] is closed."))
 	update_icon()
 
 /// Old attack_ai: lock or unlock it remotely.

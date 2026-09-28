@@ -27,25 +27,25 @@
 	anchored = 1.0
 	density = 1
 
-/obj/structure/event/santa_sack/verb/setanchor()
-	set name = "Bind/unbind sack"
-	set category = "Object"
-	set src in view(1)
-
-	if(usr.incapacitated())
+/// Old verb "Bind/unbind sack".
+/obj/structure/event/santa_sack/proc/santa_sack_setanchor(mob/user, obj/item/held, datum/interaction/interaction)
+	if(user.incapacitated())
 		return
-	if(usr.ckey == santa_ckey)
+	if(user.ckey == santa_ckey)
 		if(anchored == 0)
 			anchored = 1
-			to_chat(usr,span_notice("You bind the sack, none can make off with it now!"))
+			to_chat(user,span_notice("You bind the sack, none can make off with it now!"))
 		else
 			anchored = 0
-			to_chat(usr,span_notice("You unbind the sack, you can now drag it off. But so can anyone else!"))
+			to_chat(user,span_notice("You unbind the sack, you can now drag it off. But so can anyone else!"))
 	else
-		to_chat(usr, span_warning("Only Santa can bind and unbind his sack!"))
+		to_chat(user, span_warning("Only Santa can bind and unbind his sack!"))
 	return
 
-DECLARE_INTERACTIONS(/obj/structure/event/santa_sack, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+DECLARE_INTERACTIONS(/obj/structure/event/santa_sack, \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_VERB("Bind/unbind sack", PROC_REF(santa_sack_setanchor)), \
+)
 
 /// Old attack_hand.
 /obj/structure/event/santa_sack/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)

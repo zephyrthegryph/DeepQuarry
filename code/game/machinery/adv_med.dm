@@ -50,6 +50,7 @@ REF_PAIR(/obj/machinery/bodyscanner, list("console" = "scanner"))
 EXTEND_INTERACTIONS(/obj/machinery/bodyscanner, \
 	INTERACT_ITEM(null, PROC_REF(bodyscanner_interaction_item)), \
 	INTERACT_DRAG("Put inside", PROC_REF(bodyscanner_interaction_drag)), \
+	INTERACT_VERB("Eject Body Scanner", PROC_REF(bodyscanner_eject)), \
 )
 
 /// Old attackby.
@@ -140,15 +141,12 @@ EXTEND_INTERACTIONS(/obj/machinery/bodyscanner, \
 		return 0 //maybe they should be able to get out with cuffs, but whatever
 	go_out()
 
-/obj/machinery/bodyscanner/verb/eject()
-	set src in oview(1)
-	set category = "Object"
-	set name = "Eject Body Scanner"
-
-	if(usr.incapacitated())
+/// Old verb "Eject Body Scanner".
+/obj/machinery/bodyscanner/proc/bodyscanner_eject(mob/user, obj/item/held, datum/interaction/interaction)
+	if(user.incapacitated())
 		return
 	go_out()
-	add_fingerprint(usr)
+	add_fingerprint(user)
 
 /obj/machinery/bodyscanner/proc/go_out()
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_BODY_SCANNER)
@@ -189,7 +187,7 @@ EXTEND_INTERACTIONS(/obj/machinery/bodyscanner, \
 	. = TRUE
 	switch(action)
 		if("ejectify")
-			eject()
+			bodyscanner_eject(usr)
 		if("print_p")
 			var/atom/target = console ? console : src
 			visible_message(span_notice("[target] rattles and prints out a sheet of paper."))

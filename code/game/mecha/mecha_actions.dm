@@ -77,7 +77,7 @@
 /datum/action/innate/mecha/mech_toggle_lights/Activate()
 	button_icon_state = "mech_lights_[chassis.lights ? "off" : "on"]"
 	build_all_button_icons()
-	chassis.lights()
+	chassis.lights(owner)
 
 /datum/action/innate/mecha/mech_toggle_internals
 	name = "Toggle Internal Airtank Usage"
@@ -86,14 +86,14 @@
 /datum/action/innate/mecha/mech_toggle_internals/Activate()
 	button_icon_state = "mech_internals_[chassis.use_internal_tank ? "off" : "on"]"
 	build_all_button_icons()
-	chassis.internal_tank()
+	chassis.internal_tank(owner)
 
 /datum/action/innate/mecha/mech_view_stats
 	name = "View stats"
 	button_icon_state = "mech_view_stats"
 
 /datum/action/innate/mecha/mech_view_stats/Activate()
-	chassis.view_stats()
+	chassis.view_stats(owner)
 
 /datum/action/innate/mecha/mech_eject
 	name = "Eject From Mech"
@@ -109,7 +109,7 @@
 /datum/action/innate/mecha/strafe/Activate()
 	button_icon_state = "mech_strafe_[chassis.strafing ? "off" : "on"]"
 	build_all_button_icons()
-	chassis.strafing()
+	chassis.strafing(owner)
 
 /datum/action/innate/mecha/mech_defence_mode
 	name = "Toggle Mech defence mode"
@@ -229,12 +229,27 @@
 /////
 /////
 
-/obj/mecha/verb/toggle_defence_mode()
-	set category = "Exosuit Interface"
-	set name = "Toggle defence mode"
-	set src = usr.loc
-	set popup_menu = 0
-	defence_mode(usr)
+/// Old verb "Toggle defence mode".
+/obj/mecha/proc/mecha_verb_toggle_defence_mode(mob/user, obj/item/held, datum/interaction/interaction)
+	defence_mode(user)
+
+// Capability requirements (old moved_inside() removing the verbs a mech can't use).
+/obj/mecha/proc/pred_mecha_can_defence_mode(mob/actor, atom/target, obj/item/held)
+	return defence_mode_possible
+/obj/mecha/proc/pred_mecha_can_overload(mob/actor, atom/target, obj/item/held)
+	return overload_possible
+/obj/mecha/proc/pred_mecha_can_smoke(mob/actor, atom/target, obj/item/held)
+	return smoke_possible
+/obj/mecha/proc/pred_mecha_can_zoom(mob/actor, atom/target, obj/item/held)
+	return zoom_possible
+/obj/mecha/proc/pred_mecha_can_thrusters(mob/actor, atom/target, obj/item/held)
+	return thrusters_possible
+/obj/mecha/proc/pred_mecha_can_switch_damtype(mob/actor, atom/target, obj/item/held)
+	return switch_dmg_type_possible
+/obj/mecha/proc/pred_mecha_can_phasing(mob/actor, atom/target, obj/item/held)
+	return phasing_possible
+/obj/mecha/proc/pred_mecha_can_cloak(mob/actor, atom/target, obj/item/held)
+	return cloak_possible
 
 /obj/mecha/proc/defence_mode(mob/user)
 	if(user!=src?.slot_item(MECHA_SLOT_PILOT))
@@ -250,12 +265,9 @@
 	src.log_message("Toggled defence mode.", LOG_GAME)
 	return
 
-/obj/mecha/verb/toggle_overload()
-	set category = "Exosuit Interface"
-	set name = "Toggle leg actuators overload"
-	set src = usr.loc
-	set popup_menu = 0
-	overload(usr)
+/// Old verb "Toggle leg actuators overload".
+/obj/mecha/proc/mecha_verb_toggle_overload(mob/user, obj/item/held, datum/interaction/interaction)
+	overload(user)
 
 /obj/mecha/proc/overload(mob/user)
 	if(user.stat == 1)//No manipulating things while unconcious.
@@ -278,12 +290,9 @@
 	playsound(src, 'sound/mecha/mechanical_toggle.ogg', 50, 1)
 	return
 
-/obj/mecha/verb/toggle_smoke()
-	set category = "Exosuit Interface"
-	set name = "Activate Smoke"
-	set src = usr.loc
-	set popup_menu = 0
-	smoke(usr)
+/// Old verb "Activate Smoke".
+/obj/mecha/proc/mecha_verb_toggle_smoke(mob/user, obj/item/held, datum/interaction/interaction)
+	smoke(user)
 
 /obj/mecha/proc/smoke(mob/user)
 	if(user!=src?.slot_item(MECHA_SLOT_PILOT))
@@ -306,12 +315,9 @@
 		COOLDOWN_START(src, smoke_cooldown_end, smoke_cooldown)
 	return
 
-/obj/mecha/verb/toggle_zoom()
-	set category = "Exosuit Interface"
-	set name = "Zoom"
-	set src = usr.loc
-	set popup_menu = 0
-	zoom(usr)
+/// Old verb "Zoom".
+/obj/mecha/proc/mecha_verb_toggle_zoom(mob/user, obj/item/held, datum/interaction/interaction)
+	zoom(user)
 
 /obj/mecha/proc/zoom(mob/user)//This could use improvements but maybe later.
 	if(user!=src?.slot_item(MECHA_SLOT_PILOT))
@@ -333,12 +339,9 @@
 			_tmp_occ_13.set_viewsize() // Reset to default
 	return
 
-/obj/mecha/verb/toggle_thrusters()
-	set category = "Exosuit Interface"
-	set name = "Toggle thrusters"
-	set src = usr.loc
-	set popup_menu = 0
-	thrusters(usr)
+/// Old verb "Toggle thrusters".
+/obj/mecha/proc/mecha_verb_toggle_thrusters(mob/user, obj/item/held, datum/interaction/interaction)
+	thrusters(user)
 
 /obj/mecha/proc/thrusters(mob/user)
 	if(user!=src?.slot_item(MECHA_SLOT_PILOT))
@@ -353,12 +356,9 @@
 				src.occupant_message(span_red("Thrusters disabled."))
 	return
 
-/obj/mecha/verb/switch_damtype()
-	set category = "Exosuit Interface"
-	set name = "Change melee damage type"
-	set src = usr.loc
-	set popup_menu = 0
-	query_damtype(usr)
+/// Old verb "Change melee damage type".
+/obj/mecha/proc/mecha_verb_switch_damtype(mob/user, obj/item/held, datum/interaction/interaction)
+	query_damtype(user)
 
 /obj/mecha/proc/query_damtype(mob/user)
 	if(user!=src?.slot_item(MECHA_SLOT_PILOT))
@@ -379,12 +379,9 @@
 	occupant_message("Melee damage type switched to [new_damtype]")
 	return
 
-/obj/mecha/verb/toggle_phasing()
-	set category = "Exosuit Interface"
-	set name = "Toggle phasing"
-	set src = usr.loc
-	set popup_menu = 0
-	phasing(usr)
+/// Old verb "Toggle phasing".
+/obj/mecha/proc/mecha_verb_toggle_phasing(mob/user, obj/item/held, datum/interaction/interaction)
+	phasing(user)
 
 /obj/mecha/proc/phasing(mob/user)
 	if(user!=src?.slot_item(MECHA_SLOT_PILOT))
@@ -397,12 +394,9 @@
 		src.occupant_message(span_red("Disabled phasing."))
 	return
 
-/obj/mecha/verb/toggle_cloak()
-	set category = "Exosuit Interface"
-	set name = "Toggle cloaking"
-	set src = usr.loc
-	set popup_menu = 0
-	toggle_cloaking(usr)
+/// Old verb "Toggle cloaking".
+/obj/mecha/proc/mecha_verb_toggle_cloak(mob/user, obj/item/held, datum/interaction/interaction)
+	toggle_cloaking(user)
 
 /obj/mecha/proc/toggle_cloaking(mob/user)
 	if(user!=src?.slot_item(MECHA_SLOT_PILOT))
@@ -419,12 +413,9 @@
 		src.occupant_message(span_red("Disabled cloaking."))
 	return
 
-/obj/mecha/verb/toggle_weapons_only_cycle()
-	set category = "Exosuit Interface"
-	set name = "Toggle weapons only cycling"
-	set src = usr.loc
-	set popup_menu = 0
-	set_weapons_only_cycle(usr)
+/// Old verb "Toggle weapons only cycling".
+/obj/mecha/proc/mecha_verb_toggle_weapons_only_cycle(mob/user, obj/item/held, datum/interaction/interaction)
+	set_weapons_only_cycle(user)
 
 /obj/mecha/proc/set_weapons_only_cycle(mob/user)
 	if(user!=src?.slot_item(MECHA_SLOT_PILOT))
