@@ -38,7 +38,7 @@
 		apply_default_language(GLOB.all_languages[LANGUAGE_GALCOM])
 		init_subsystems()
 
-		AddElement(/datum/element/footstep, FOOTSTEP_MOB_SHOE, 1, -6)
+		enable_footsteps(FOOTSTEP_MOB_SHOE, 1, -6)
 
 REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 

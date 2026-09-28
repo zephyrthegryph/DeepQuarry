@@ -1,42 +1,41 @@
 #define SHOULD_DISABLE_FOOTSTEPS(source)
 
-///Footstep element. Plays footsteps at parents location when it is appropriate.
-/datum/element/footstep
-	element_flags = ELEMENT_DETACH_ON_HOST_DESTROY|ELEMENT_BESPOKE
-	argument_hash_start_idx = 2
-	///A list containing living mobs and the number of steps they have taken since the last time their footsteps were played.
-	var/list/steps_for_living
-	///volume determines the extra volume of the footstep. This is multiplied by the base volume, should there be one.
-	var/volume
-	///e_range stands for extra range - aka how far the sound can be heard. This is added to the base value and ignored if there isn't a base value.
-	var/e_range
-	///footstep_type is a define which determines what kind of sounds should get chosen.
-	var/footstep_type
-	///This can be a list OR a soundfile OR null. Determines whatever sound gets played.
-	var/footstep_sounds
-	///Whether or not to add variation to the sounds played
-	var/sound_vary = FALSE
+///Footstep behaviour (was /datum/element/footstep). Plays footsteps at the mob's location
+///when it is appropriate. A shared behaviour singleton handling /datum/om/event/moved; the
+///per-mob settings and step counter live on the mob. Attach with L.enable_footsteps().
+/datum/om/behaviour/footstep
+	handles = list(/datum/om/event/moved)
 
-/datum/element/footstep/Attach(datum/target, footstep_type = FOOTSTEP_MOB_BAREFOOT, volume = 0.1, e_range = -8, sound_vary = FALSE)
-	. = ..()
-	if(!ismovable(target))
-		return ELEMENT_INCOMPATIBLE
-	src.volume = volume
-	src.e_range = e_range
-	src.footstep_type = footstep_type
-	src.sound_vary = sound_vary
+/mob/living
+	///FOOTSTEP_MOB_*: which kind of sounds the footstep behaviour chooses (non-humans).
+	var/footstep_type = FOOTSTEP_MOB_BAREFOOT
+	///Extra volume of the footstep, multiplied by the base volume.
+	var/footstep_volume = 0.1
+	///Extra range, added to the base value.
+	var/footstep_e_range = -8
+	///Whether to add variation to the sounds played.
+	var/footstep_vary = FALSE
+	///Steps taken since footsteps were last played.
+	var/footstep_steps = 0
 
-	if(ishuman(target))
-		RegisterSignal(target, COMSIG_MOVABLE_MOVED, PROC_REF(play_humanstep))
-		LAZYSET(steps_for_living, target, 0)
-		return
+/mob/living/proc/enable_footsteps(type = FOOTSTEP_MOB_BAREFOOT, volume = 0.1, e_range = -8, vary = FALSE)
+	footstep_type = type
+	footstep_volume = volume
+	footstep_e_range = e_range
+	footstep_vary = vary
+	footstep_steps = 0
+	om_attach(src, /datum/om/behaviour/footstep)
 
-	footstep_sounds = check_footstep_type(footstep_type)
+/mob/living/proc/disable_footsteps()
+	om_detach(src, /datum/om/behaviour/footstep)
 
-	RegisterSignal(target, COMSIG_MOVABLE_MOVED, PROC_REF(play_simplestep))
-	LAZYSET(steps_for_living, target, 0)
+/datum/om/behaviour/footstep/on_moved(mob/living/source, datum/om/event/moved/event)
+	if(ishuman(source))
+		play_humanstep(source)
+	else
+		play_simplestep(source)
 
-/datum/element/footstep/proc/check_footstep_type(footstep_type)
+/datum/om/behaviour/footstep/proc/check_footstep_type(footstep_type)
 	var/footstep_ret
 	switch(footstep_type)
 		if(FOOTSTEP_MOB_TESHARI)
@@ -59,13 +58,10 @@
 			footstep_ret = GLOB.barefootstep
 	return footstep_ret
 
-/datum/element/footstep/Detach(atom/movable/source)
-	UnregisterSignal(source, COMSIG_MOVABLE_MOVED)
-	LAZYREMOVE(steps_for_living, source)
-	return ..()
-
 ///Prepares a footstep for living mobs. Determines if it should get played. Returns the turf it should get played on. Note that it is always a /turf/simulated
-/datum/element/footstep/proc/prepare_step(mob/living/source)
+/datum/om/behaviour/footstep/proc/prepare_step(mob/living/source)
+	var/volume = source.footstep_volume
+	var/sound_vary = source.footstep_vary
 	var/turf/simulated/turf = get_turf(source)
 	if(!istype(turf))
 		return
@@ -87,11 +83,11 @@
 			return
 		if(carbon_source.m_intent == I_WALK)
 			return// stealth
-	LAZYADDASSOC(steps_for_living, source, 1)
-	var/steps = LAZYACCESS(steps_for_living, source)
+	source.footstep_steps++
+	var/steps = source.footstep_steps
 
 	if(steps >= 6)
-		LAZYSET(steps_for_living, source, 0)
+		source.footstep_steps = 0
 		steps = 0
 
 	if(steps % 2)
@@ -114,8 +110,12 @@
 		return null
 	return .
 
-/datum/element/footstep/proc/play_simplestep(mob/living/source, atom/oldloc, direction, forced, list/old_locs, momentum_change)
-	SIGNAL_HANDLER
+/datum/om/behaviour/footstep/proc/play_simplestep(mob/living/source)
+	var/volume = source.footstep_volume
+	var/e_range = source.footstep_e_range
+	var/sound_vary = source.footstep_vary
+	var/footstep_type = source.footstep_type
+	var/footstep_sounds = check_footstep_type(footstep_type)
 
 	var/volume_multiplier = 0.3
 
@@ -135,8 +135,10 @@
 		return
 	playsound(source.loc, pick(footstep_sounds[turf_footstep][1]), footstep_sounds[turf_footstep][2] * volume, TRUE, footstep_sounds[turf_footstep][3] + e_range, falloff = 1, vary = sound_vary)
 
-/datum/element/footstep/proc/play_humanstep(mob/living/carbon/human/source, atom/oldloc, direction, forced, list/old_locs, momentum_change)
-	SIGNAL_HANDLER
+/datum/om/behaviour/footstep/proc/play_humanstep(mob/living/carbon/human/source)
+	var/volume = source.footstep_volume
+	var/e_range = source.footstep_e_range
+	var/sound_vary = source.footstep_vary
 
 	var/volume_multiplier = 0.3
 	var/range_adjustment = 0
@@ -168,7 +170,10 @@
 	// we are barefoot
 	play_barefoot_sound(source, prepared_steps, volume_multiplier, range_adjustment)
 
-/datum/element/footstep/proc/play_barefoot_sound(mob/living/carbon/human/source, list/prepared_steps, volume_multiplier, range_adjustment)
+/datum/om/behaviour/footstep/proc/play_barefoot_sound(mob/living/carbon/human/source, list/prepared_steps, volume_multiplier, range_adjustment)
+	var/volume = source.footstep_volume
+	var/e_range = source.footstep_e_range
+	var/sound_vary = source.footstep_vary
 
 	if(source.species.special_step_sounds)
 		playsound(source.loc, pick(source.species.special_step_sounds), volume, TRUE, falloff = 1, vary = sound_vary)
@@ -187,13 +192,4 @@
 			TRUE,
 			bare_footstep_sounds[barefoot_type][3] + e_range + range_adjustment, falloff = 1, vary = sound_vary)
 
-///Prepares a footstep for machine walking
-/datum/element/footstep/proc/play_simplestep_machine(atom/movable/source, atom/oldloc, direction, forced, list/old_locs, momentum_change)
-	SIGNAL_HANDLER
-
-	var/turf/simulated/source_loc = get_turf(source)
-	if(!istype(source_loc))
-		return
-
-	playsound(source_loc, footstep_sounds, 50, falloff = 1, vary = sound_vary)
 #undef SHOULD_DISABLE_FOOTSTEPS

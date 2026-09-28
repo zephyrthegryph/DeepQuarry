@@ -8,9 +8,9 @@
 #define COMSIG_TURF_CHANGE "turf_change"
 
 
-///from /datum/element/footstep/prepare_step(): (list/steps)
+///from /datum/om/behaviour/footstep/prepare_step(): (list/steps)
 #define COMSIG_TURF_PREPARE_STEP_SOUND "turf_prepare_step_sound"
-	//stops element/footstep/proc/prepare_step() from returning null if the turf itself has no sound
+	//stops /datum/om/behaviour/footstep/proc/prepare_step() from returning null if the turf itself has no sound
 	#define FOOTSTEP_OVERRIDEN (1<<0)
 
 
