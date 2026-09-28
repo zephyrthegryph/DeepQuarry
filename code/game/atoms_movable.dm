@@ -61,7 +61,7 @@
 		add_overlay(list(gen_emissive_blocker), TRUE)
 
 	if(opacity)
-		AddElement(/datum/element/light_blocking)
+		start_blocking_light()
 	if(icon_scale_x != DEFAULT_ICON_SCALE_X || icon_scale_y != DEFAULT_ICON_SCALE_Y || icon_rotation != DEFAULT_ICON_ROTATION)
 		update_transform()
 	switch(light_system)
@@ -129,11 +129,8 @@
 		cut_overlay(em_block)
 		UnregisterSignal(em_block, COMSIG_QDELETING)
 		QDEL_NULL(em_block)
-	// The parent datum destructor tears down attached elements. Detach the
-	// light-blocking element first so it can remove this movable from its turf's
-	// opacity_sources while both the element and loc are still valid.
-	if(opacity)
-		RemoveElement(/datum/element/light_blocking)
+	// Leave the turf's opacity_sources while loc is still valid.
+	stop_blocking_light()
 	. = ..()
 
 	// Any mobs buckled to us were already unbuckled in the destroy
@@ -311,6 +308,8 @@
 ///Called after a successful Move(). By this point, we've already moved
 /atom/movable/proc/Moved(atom/old_loc, direction, forced = FALSE, movetime)
 	SEND_SIGNAL(src, COMSIG_MOVABLE_MOVED, old_loc, direction, forced, movetime)
+	if(blocks_light)
+		light_blocking_moved(old_loc)
 	om_emit_moved(src, old_loc, direction, forced)
 	// Mobs raise CHANGE_MOB_LOC themselves (living_movement.dm).
 	if(om_listen && !ismob(src))

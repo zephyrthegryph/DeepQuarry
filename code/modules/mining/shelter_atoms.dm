@@ -684,11 +684,11 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	if(door)
 		if(door.locked)
 			door.unlock()
-			door.RemoveElement(/datum/element/light_blocking)
+			door.stop_blocking_light()
 		else
 			door.lock()
 			// Block light when bolted, since the door is effectively functioning like polarized glass
-			door.AddElement(/datum/element/light_blocking)
+			door.start_blocking_light()
 	return TRUE
 
 // Capsule-specific light switch

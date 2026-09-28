@@ -108,9 +108,9 @@
 		return
 
 	if(opacity)
-		AddElement(/datum/element/light_blocking)
+		start_blocking_light()
 	else
-		RemoveElement(/datum/element/light_blocking)
+		stop_blocking_light()
 
 
 /turf/set_opacity(new_opacity)
