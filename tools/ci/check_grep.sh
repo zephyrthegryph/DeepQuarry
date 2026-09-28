@@ -764,6 +764,14 @@ if grep -P '^/[\w/][^(\s]*\((?:[^)]*,\s*)?var/.*\)' "${code_files[@]}"; then
 	echo -e "${RED}ERROR: changed files contains proc argument starting with 'var'.${NC}"
 	FAILED=1
 fi;
+# The same for a signature that breaks before its closing paren (with or without
+# a `\` continuation): its first line has no `)`, and -z reads each file whole,
+# so [^()] and \s span lines.
+if LC_ALL=C.UTF-8 grep -Pzo '(?m)^/[\w/][^(\s]*\((?=[^)\n]*\n)(?:[^()]*?,)?\s*(?:\\\s*)?var/[^\n]*' "${code_files[@]}" | tr '\0' '\n' | grep .; then
+	echo
+	echo -e "${RED}ERROR: changed files contains a multi-line proc argument starting with 'var'.${NC}"
+	FAILED=1
+fi;
 
 part "unmanaged global vars"
 if grep -P '^/*var/' "${code_files[@]}"; then

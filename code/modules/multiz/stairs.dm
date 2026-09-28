@@ -21,10 +21,10 @@
 //  - B2: Loc of middle stair
 //  - T1: Openspace over bottom stair
 //  - T2: Loc of top stair, over middle stair
-/obj/structure/stairs/proc/check_integrity(var/obj/structure/stairs/bottom/B = null,
-										   var/obj/structure/stairs/middle/M = null,
-										   var/obj/structure/stairs/top/T = null,
-										   var/turf/simulated/open/O = null)
+/obj/structure/stairs/proc/check_integrity(obj/structure/stairs/bottom/B = null,
+										   obj/structure/stairs/middle/M = null,
+										   obj/structure/stairs/top/T = null,
+										   turf/simulated/open/O = null)
 
 	// Base cases: Something is missing!
 	// The parent type doesn't know enough about the positional relations to find neighbors, only evaluate if they're connected
@@ -81,10 +81,10 @@ DECLARE_REF(/obj/structure/stairs/bottom, "top", PAIR, "bottom")
 DECLARE_REF(/obj/structure/stairs/bottom, "middle", PAIR, "bottom")
 
 // These are necessarily fairly similar, but because the positional relations are different, we have to copy-pasta a fair bit
-/obj/structure/stairs/bottom/check_integrity(var/obj/structure/stairs/bottom/B = null,
-												var/obj/structure/stairs/middle/M = null,
-												var/obj/structure/stairs/top/T = null,
-												var/turf/simulated/open/O = null)
+/obj/structure/stairs/bottom/check_integrity(obj/structure/stairs/bottom/B = null,
+												obj/structure/stairs/middle/M = null,
+												obj/structure/stairs/top/T = null,
+												turf/simulated/open/O = null)
 
 	// In the case where we're provided all the pieces, just try connecting them.
 	// In order: all exist, they are appropriately adjacent, and they can connect
@@ -252,10 +252,10 @@ DECLARE_REF(/obj/structure/stairs/middle, "top", PAIR, "middle")
 DECLARE_REF(/obj/structure/stairs/middle, "bottom", PAIR, "middle")
 
 // These are necessarily fairly similar, but because the positional relations are different, we have to copy-pasta a fair bit
-/obj/structure/stairs/middle/check_integrity(var/obj/structure/stairs/bottom/B = null,
-												var/obj/structure/stairs/middle/M = null,
-												var/obj/structure/stairs/top/T = null,
-												var/turf/simulated/open/O = null)
+/obj/structure/stairs/middle/check_integrity(obj/structure/stairs/bottom/B = null,
+												obj/structure/stairs/middle/M = null,
+												obj/structure/stairs/top/T = null,
+												turf/simulated/open/O = null)
 
 	// In the  case where we're provided all the pieces, just try connecting them.
 	// In order: all exist, they are appropriately adjacent, and they can connect
@@ -333,10 +333,10 @@ DECLARE_REF(/obj/structure/stairs/top, "middle", PAIR, "top")
 DECLARE_REF(/obj/structure/stairs/top, "bottom", PAIR, "top")
 
 // These are necessarily fairly similar, but because the positional relations are different, we have to copy-pasta a fair bit
-/obj/structure/stairs/top/check_integrity(var/obj/structure/stairs/bottom/B = null,
-										  var/obj/structure/stairs/middle/M = null,
-										  var/obj/structure/stairs/top/T = null,
-										  var/turf/simulated/open/O = null)
+/obj/structure/stairs/top/check_integrity(obj/structure/stairs/bottom/B = null,
+										  obj/structure/stairs/middle/M = null,
+										  obj/structure/stairs/top/T = null,
+										  turf/simulated/open/O = null)
 
 	// In the  case where we're provided all the pieces, just try connecting them.
 	// In order: all exist, they are appropriately adjacent, and they can connect

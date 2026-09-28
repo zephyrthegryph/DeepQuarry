@@ -310,11 +310,11 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 
 **/
 
-/proc/Broadcast_Message(var/datum/radio_frequency/connection, var/mob/M,
-						var/vmask, var/list/vmessage_pieces, var/obj/item/radio/radio,
-						var/list/message_pieces, var/name, var/job, var/realname, var/vname,
-						var/data, var/compression, var/list/level, var/freq, var/verbage = "says",
-						var/list/forced_radios)
+/proc/Broadcast_Message(datum/radio_frequency/connection, mob/M,
+						vmask, list/vmessage_pieces, obj/item/radio/radio,
+						list/message_pieces, name, job, realname, vname,
+						data, compression, list/level, freq, verbage = "says",
+						list/forced_radios)
 
 	/* ###### Prepare the radio connection ###### */
 
