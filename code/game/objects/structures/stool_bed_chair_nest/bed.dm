@@ -454,4 +454,4 @@ DECLARE_INTERACTIONS(/obj/item/roller_holder, INTERACT_USE(null, PROC_REF(intera
 	anchored = !anchored
 	to_chat(user, span_notice("You [anchored ? "secured" : "unsecured"] \the [src]!"))
 
-REF_OWNED(/obj/item/roller_holder, list("held"))
+DECLARE_REF(/obj/item/roller_holder, "held", OWNED, null)

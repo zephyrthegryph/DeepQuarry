@@ -81,4 +81,4 @@
 	. = ..()
 	hud = new /obj/item/clothing/glasses/hud/security(src)
 
-REF_HELD(/obj/item/borg/sight/hud, list("hud"))
+DECLARE_REF(/obj/item/borg/sight/hud, "hud", HELD, null)

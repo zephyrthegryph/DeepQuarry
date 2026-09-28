@@ -5,7 +5,8 @@ GLOBAL_DATUM_INIT(uplink, /datum/uplink, new)
 	var/list/datum/uplink_item/items
 	var/list/datum/uplink_category/categories
 
-REF_DEF(/datum/uplink, list("items", "categories"))
+DECLARE_REF(/datum/uplink, "items", DEF, null)
+DECLARE_REF(/datum/uplink, "categories", DEF, null)
 
 /datum/uplink/New(type)
 	items_assoc = list()
@@ -35,7 +36,7 @@ REF_DEF(/datum/uplink, list("items", "categories"))
 	var/list/antag_roles	// Antag roles this item is displayed to. If empty, display to all.
 	var/blacklisted = FALSE
 
-REF_DEF(/datum/uplink_item, list("category"))
+DECLARE_REF(/datum/uplink_item, "category", DEF, null)
 
 /datum/uplink_item/item
 	var/path = null
@@ -207,6 +208,7 @@ REF_DEF(/datum/uplink_item, list("category"))
 
 	return bought_items
 
-REF_OWNED_LIST(/datum/uplink, list("items", "categories"))
+DECLARE_REF(/datum/uplink, "items", OWNED_LIST, null)
+DECLARE_REF(/datum/uplink, "categories", OWNED_LIST, null)
 
-REF_OWNED_VALUES(/datum/uplink, "items_assoc")
+DECLARE_REF(/datum/uplink, "items_assoc", OWNED_VALUES, null)

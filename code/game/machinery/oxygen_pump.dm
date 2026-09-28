@@ -24,7 +24,8 @@
 	tank = new spawn_type (src)
 	contained = new mask_type (src)
 
-REF_OWNED(/obj/machinery/oxygen_pump, list("tank", "contained"))
+DECLARE_REF(/obj/machinery/oxygen_pump, "tank", OWNED, null)
+DECLARE_REF(/obj/machinery/oxygen_pump, "contained", OWNED, null)
 
 // the mask retracts from its breather.
 /obj/machinery/oxygen_pump/lifecycle_prerelease()

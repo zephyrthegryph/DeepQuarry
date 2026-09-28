@@ -25,7 +25,7 @@
 	shadow = new(get_turf(src))
 	return ..()
 
-REF_OWNED(/obj/item/projectile/arc, "shadow")
+DECLARE_REF(/obj/item/projectile/arc, "shadow", OWNED, null)
 
 /obj/item/projectile/arc/proc/calculate_initial_pixel_distance(atom/user, atom/target)
 	var/datum/point/A = new(user)

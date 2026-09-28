@@ -1011,6 +1011,6 @@ GLOBAL_LIST_EMPTY(om_traced_bits)
 	GLOB.om_traced -= E
 	GLOB.om_traced_bits -= E
 
-REF_OWNED(/datum/om/stage, "compiled_run_if")
+DECLARE_REF(/datum/om/stage, "compiled_run_if", OWNED, null)
 
-REF_OWNED_VALUES(/datum/om/pipeline, "plans")
+DECLARE_REF(/datum/om/pipeline, "plans", OWNED_VALUES, null)

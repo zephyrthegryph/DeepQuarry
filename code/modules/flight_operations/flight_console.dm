@@ -219,9 +219,9 @@
 		flight_operations_ui = new(src)
 	flight_operations_ui.tgui_interact(user, ui)
 
-REF_OWNED(/obj/machinery/computer/ship, "flight_operations_ui")
+DECLARE_REF(/obj/machinery/computer/ship, "flight_operations_ui", OWNED, null)
 
-REF_OWNED(/obj/machinery/computer/shuttle_control/explore, "flight_operations_ui")
+DECLARE_REF(/obj/machinery/computer/shuttle_control/explore, "flight_operations_ui", OWNED, null)
 
 /// LC-refs: the host this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/flight_operations_ui/proc/host() as /datum

@@ -14,7 +14,7 @@
 	if(new_partner)
 		pair(new_partner)
 
-REF_PAIR(/obj/effect/overmap/bluespace_rift, list("partner" = "partner"))
+DECLARE_REF(/obj/effect/overmap/bluespace_rift, "partner", PAIR, "partner")
 
 /obj/effect/overmap/bluespace_rift/proc/pair(obj/effect/overmap/bluespace_rift/new_partner)
 	if(istype(new_partner))

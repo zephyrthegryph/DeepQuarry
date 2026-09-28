@@ -481,4 +481,4 @@
 /obj/machinery/media/jukebox/proc/current_track() as /datum/track
 	return om_resolve(current_track_handle)
 
-REF_HELD(/obj/machinery/media/jukebox, "remotes")
+DECLARE_REF(/obj/machinery/media/jukebox, "remotes", HELD, null)

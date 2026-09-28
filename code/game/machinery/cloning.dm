@@ -64,7 +64,7 @@
 	update_icon()
 
 // its containers drop out and the growing clone is ejected.
-REF_SPILL_LIST(/obj/machinery/clonepod, "containers")
+DECLARE_REF(/obj/machinery/clonepod, "containers", SPILL_LIST, null)
 
 // The occupant slot already spilled the clone in phase 3; go_out() is kept for its mess
 // branch (a failed clone leaves gibs).

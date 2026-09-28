@@ -46,7 +46,7 @@
 
 	oven_loop = new(list(src), FALSE)
 
-REF_OWNED(/obj/machinery/appliance/cooker/oven, "oven_loop")
+DECLARE_REF(/obj/machinery/appliance/cooker/oven, "oven_loop", OWNED, null)
 
 /obj/machinery/appliance/cooker/oven/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	. = ..()

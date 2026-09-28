@@ -10,7 +10,7 @@
 // Packets are pooled (code/datums/lifecycle/pool.dm): acquire one with
 // damage_packet(), never new() one, and release() it as soon as
 // receive_damage() returns. Nothing may keep a reference to a packet past its
-// release; release() resets every REF_TRANSIENT field below from the declaration.
+// release; release() resets every DECLARE_REF(..., TRANSIENT) field below from the declaration.
 
 /datum/damage_packet
 	/// Amount per kind, indexed by DAMAGE_* (flat list of DAMAGE_KIND_COUNT
@@ -36,7 +36,14 @@
 	var/armor_flag
 
 POOL_DECLARE(/datum/damage_packet)
-REF_TRANSIENT(/datum/damage_packet, list("source", "attacker", "weapon", "zone", "penetration", "direction", "flags", "armor_flag"))
+DECLARE_REF(/datum/damage_packet, "source", TRANSIENT, null)
+DECLARE_REF(/datum/damage_packet, "attacker", TRANSIENT, null)
+DECLARE_REF(/datum/damage_packet, "weapon", TRANSIENT, null)
+DECLARE_REF(/datum/damage_packet, "zone", TRANSIENT, null)
+DECLARE_REF(/datum/damage_packet, "penetration", TRANSIENT, null)
+DECLARE_REF(/datum/damage_packet, "direction", TRANSIENT, null)
+DECLARE_REF(/datum/damage_packet, "flags", TRANSIENT, null)
+DECLARE_REF(/datum/damage_packet, "armor_flag", TRANSIENT, null)
 
 /datum/damage_packet/New()
 	amounts = new /list(DAMAGE_KIND_COUNT)

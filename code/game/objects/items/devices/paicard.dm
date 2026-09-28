@@ -53,7 +53,10 @@
 	. = ..()
 	setEmotion(16)
 
-REF_OWNED(/obj/item/paicard, list("radio", "multitool", "signaler", "screen_layer"))
+DECLARE_REF(/obj/item/paicard, "radio", OWNED, null)
+DECLARE_REF(/obj/item/paicard, "multitool", OWNED, null)
+DECLARE_REF(/obj/item/paicard, "signaler", OWNED, null)
+DECLARE_REF(/obj/item/paicard, "screen_layer", OWNED, null)
 // the pAI dies with its card (no throwing friend pAIs into the singularity to respawn).
 /obj/item/paicard/on_destroy(force)
 	if(!QDELETED(pai))
@@ -943,6 +946,6 @@ DECLARE_INTERACTIONS(/obj/item/paicard, \
 	if(pai?.digestable)
 		return ..()
 
-REF_HELD(/obj/machinery, list("paicard"))
+DECLARE_REF(/obj/machinery, "paicard", HELD, null)
 
-REF_HELD(/obj/item/paicard, "pai")
+DECLARE_REF(/obj/item/paicard, "pai", HELD, null)

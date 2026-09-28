@@ -66,7 +66,7 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	stack_type = /obj/item/stack/material/processed_alloy
 	var/datum/material_batch/batch_template
 
-REF_OWNED(/datum/material/processed_alloy, "batch_template")
+DECLARE_REF(/datum/material/processed_alloy, "batch_template", OWNED, null)
 
 /proc/register_processed_material(datum/material_batch/batch)
 	if(!istype(batch) || !length(batch.composition))
@@ -300,7 +300,7 @@ REF_OWNED(/datum/material/processed_alloy, "batch_template")
 		var/datum/material/processed_alloy/processed = material
 		batch_state = processed.batch_template.copy_for_amount(amount)
 
-REF_OWNED(/obj/item/stack/material/processed_alloy, "batch_state")
+DECLARE_REF(/obj/item/stack/material/processed_alloy, "batch_state", OWNED, null)
 
 /obj/item/stack/material/processed_alloy/proc/physical_batch() as /datum/material_batch
 	if(batch_state)

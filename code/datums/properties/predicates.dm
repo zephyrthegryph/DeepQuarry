@@ -830,31 +830,31 @@
 /mob/living/simple_mob/dq_has_free_hand()
 	return has_hands && (!get_equipped_item(SLOT_ID_HAND_L) || !get_equipped_item(SLOT_ID_HAND_R))
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/predicate_compiler/proc/registry() as /datum/property_registry
 	return registry_static
-REF_STATIC(/datum/predicate_compiler, "registry_static")
+DECLARE_REF(/datum/predicate_compiler, "registry_static", STATIC, null)
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/pred_node/tag/proc/def() as /datum/property_def
 	return def_static
-REF_STATIC(/datum/pred_node/tag, "def_static")
+DECLARE_REF(/datum/pred_node/tag, "def_static", STATIC, null)
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/pred_node/cmp/proc/def() as /datum/property_def
 	return def_static
-REF_STATIC(/datum/pred_node/cmp, "def_static")
+DECLARE_REF(/datum/pred_node/cmp, "def_static", STATIC, null)
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/pred_node/band/proc/def() as /datum/property_def
 	return def_static
-REF_STATIC(/datum/pred_node/band, "def_static")
+DECLARE_REF(/datum/pred_node/band, "def_static", STATIC, null)
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/pred_node/rel/proc/def() as /datum/property_def
 	return def_static
-REF_STATIC(/datum/pred_node/rel, "def_static")
+DECLARE_REF(/datum/pred_node/rel, "def_static", STATIC, null)
 
-REF_OWNED(/datum/predicate, "root")
+DECLARE_REF(/datum/predicate, "root", OWNED, null)
 
-REF_OWNED_LIST(/datum/predicate, "watchable")
+DECLARE_REF(/datum/predicate, "watchable", OWNED_LIST, null)

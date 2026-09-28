@@ -49,7 +49,7 @@
 	// never refreshes (it stays on its initial visible=FALSE/empty data).
 	..()
 
-// ALLOW(lifecycle): closes its tooltip window before phase 4 deletes it (REF_OWNED).
+// ALLOW(lifecycle): closes its tooltip window before phase 4 deletes it (DECLARE_REF(..., OWNED)).
 /datum/tooltip/lifecycle_unbind()
 	tooltip_window?.close()
 	return ..()
@@ -197,7 +197,7 @@
 		return
 	user.client.tooltips.hide(tip_src)
 
-REF_OWNED(/datum/tooltip, "tooltip_window")
+DECLARE_REF(/datum/tooltip, "tooltip_window", OWNED, null)
 
 /// LC-refs: the last_target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tooltip/proc/last_target() as /atom

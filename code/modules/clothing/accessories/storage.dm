@@ -19,7 +19,7 @@
 	if (!hide_on_roll)
 		on_rolled["down"] = icon_state
 
-REF_OWNED(/obj/item/clothing/accessory/storage, "hold")
+DECLARE_REF(/obj/item/clothing/accessory/storage, "hold", OWNED, null)
 
 EXTEND_INTERACTIONS(/obj/item/clothing/accessory/storage, \
 	INTERACT_HAND_UNGATED(null, PROC_REF(storage_accessory_hand)), \

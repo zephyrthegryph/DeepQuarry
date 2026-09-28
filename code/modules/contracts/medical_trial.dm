@@ -63,8 +63,10 @@
 	var/conditional_offer = FALSE
 	var/resupplies_used = 0
 
-REF_OWNED(/datum/contract/medical_trial, list("profile", "observation_requirement", "analysis_requirement"))
-REF_OWNED_VALUES(/datum/contract/medical_trial, "participants")
+DECLARE_REF(/datum/contract/medical_trial, "profile", OWNED, null)
+DECLARE_REF(/datum/contract/medical_trial, "observation_requirement", OWNED, null)
+DECLARE_REF(/datum/contract/medical_trial, "analysis_requirement", OWNED, null)
+DECLARE_REF(/datum/contract/medical_trial, "participants", OWNED_VALUES, null)
 
 /datum/contract/medical_trial/proc/initialize_trial(cohort, target_metric)
 	profile = new(cohort, target_metric)
@@ -876,4 +878,4 @@ REF_OWNED_VALUES(/datum/contract/medical_trial, "participants")
 	var/list/contracts = medical_trial_contract_fractions(reagent.data)
 	return reagent.volume * (contracts[contract_id] || 0)
 
-REF_BACK(/datum/medical_trial_participant, list("consent_record" = null))
+DECLARE_REF(/datum/medical_trial_participant, "consent_record", BACK, null)

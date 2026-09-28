@@ -35,7 +35,7 @@
 	Reset()
 	set_choices(newchoices,tooltips)
 
-REF_OWNED(/datum/radial_menu/persistent, "select_proc_callback")
+DECLARE_REF(/datum/radial_menu/persistent, "select_proc_callback", OWNED, null)
 
 /datum/radial_menu/persistent/lifecycle_dematerialize()
 	. = ..()

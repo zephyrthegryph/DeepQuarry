@@ -3,7 +3,7 @@
 		identity = new identity_type(src)
 	return ..()
 
-REF_OWNED(/obj/item, "identity")
+DECLARE_REF(/obj/item, "identity", OWNED, null)
 
 /obj/item/proc/hide_identity() // Mostly for admins to make things secret.
 	if(!identity)

@@ -633,6 +633,7 @@
 	icon_state = "craft"
 	screen_loc = ui_smallquad
 
-REF_OWNED(/datum/personal_crafting, "button")
-REF_BACK(/datum/personal_crafting, list("owner" = "crafting"))
-REF_VAR(/mob/living/carbon/human, OWNED, /datum/personal_crafting, crafting)
+DECLARE_REF(/datum/personal_crafting, "button", OWNED, null)
+DECLARE_REF(/datum/personal_crafting, "owner", BACK, "crafting")
+/mob/living/carbon/human/var/datum/personal_crafting/crafting
+DECLARE_REF(/mob/living/carbon/human, "crafting", OWNED, null)

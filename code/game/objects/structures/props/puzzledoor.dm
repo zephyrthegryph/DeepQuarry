@@ -46,7 +46,7 @@
 			LAZYOR(locks, L)
 
 // many-to-many with locks: leaves each lock's door list.
-REF_LIST_BACK(/obj/machinery/door/blast/puzzle, list("locks" = list(/obj/structure/prop/lock = "linked_objects")))
+DECLARE_REF(/obj/machinery/door/blast/puzzle, "locks", LIST_BACK, list(/obj/structure/prop/lock = "linked_objects"))
 
 /obj/machinery/door/blast/puzzle/declare_interactions(list/into)
 	into += list(

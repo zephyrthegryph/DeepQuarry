@@ -45,8 +45,9 @@ Nothing else in the console has ID requirements.
 	if(stored_research)
 		LAZYADD(stored_research.consoles_accessing, src)
 
-REF_BACKLIST(/obj/machinery/computer/rdconsole_tg, list("stored_research" = "consoles_accessing"))
-REF_SPILL(/obj/machinery/computer/rdconsole_tg, list("t_disk", "d_disk"))
+DECLARE_REF(/obj/machinery/computer/rdconsole_tg, "stored_research", BACKLIST, "consoles_accessing")
+DECLARE_REF(/obj/machinery/computer/rdconsole_tg, "t_disk", SPILL, null)
+DECLARE_REF(/obj/machinery/computer/rdconsole_tg, "d_disk", SPILL, null)
 
 /obj/machinery/computer/rdconsole_tg/declare_interactions(list/into)
 	into += list(

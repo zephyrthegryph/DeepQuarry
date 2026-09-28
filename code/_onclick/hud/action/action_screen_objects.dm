@@ -257,7 +257,7 @@
 	var/color_timer_id
 
 // the hud owns us as its toggle_palette; one deleted on its own clears that var.
-REF_BACK_HANDLE(/atom/movable/screen/button_palette, list("our_hud_handle" = "toggle_palette"))
+DECLARE_REF(/atom/movable/screen/button_palette, "our_hud_handle", BACK_HANDLE, "toggle_palette")
 
 /atom/movable/screen/button_palette/Initialize(mapload)
 	. = ..()
@@ -412,7 +412,7 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	scroll_direction = 1
 
 // the hud owns us as its palette_down; one deleted on its own clears that var.
-REF_BACK_HANDLE(/atom/movable/screen/palette_scroll/down, list("our_hud_handle" = "palette_down"))
+DECLARE_REF(/atom/movable/screen/palette_scroll/down, "our_hud_handle", BACK_HANDLE, "palette_down")
 
 /atom/movable/screen/palette_scroll/up
 	name = "Scroll Up"
@@ -421,7 +421,7 @@ REF_BACK_HANDLE(/atom/movable/screen/palette_scroll/down, list("our_hud_handle" 
 	scroll_direction = -1
 
 // the hud owns us as its palette_up; one deleted on its own clears that var.
-REF_BACK_HANDLE(/atom/movable/screen/palette_scroll/up, list("our_hud_handle" = "palette_up"))
+DECLARE_REF(/atom/movable/screen/palette_scroll/up, "our_hud_handle", BACK_HANDLE, "palette_up")
 
 /// Exists so you have a place to put your buttons when you move them around
 /atom/movable/screen/action_landing
@@ -479,4 +479,4 @@ REF_BACK_HANDLE(/atom/movable/screen/palette_scroll/up, list("our_hud_handle" = 
 /atom/movable/screen/action_landing/proc/owner() as /datum/action_group
 	return om_resolve(owner_handle)
 
-REF_OWNED(/atom/movable/screen/movable/action_button, list("button_overlay"))
+DECLARE_REF(/atom/movable/screen/movable/action_button, "button_overlay", OWNED, null)

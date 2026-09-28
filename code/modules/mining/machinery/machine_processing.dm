@@ -31,7 +31,7 @@
 		log_mapping("Ore processing machine console at [src.x], [src.y], [src.z] could not find its machine!")
 		qdel(src)
 
-REF_SPILL(/obj/machinery/mineral/processing_unit_console, "inserted_id")
+DECLARE_REF(/obj/machinery/mineral/processing_unit_console, "inserted_id", SPILL, null)
 
 /obj/machinery/mineral/processing_unit_console/declare_interactions(list/into)
 	into += list(

@@ -69,7 +69,7 @@
 		chamber_air.copy_from(environment)
 	create_reagents(120)
 
-REF_OWNED(/obj/machinery/material_furnace, "chamber_air")
+DECLARE_REF(/obj/machinery/material_furnace, "chamber_air", OWNED, null)
 
 /obj/machinery/material_furnace/examine(mob/user)
 	. = ..()

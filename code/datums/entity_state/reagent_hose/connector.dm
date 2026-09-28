@@ -14,7 +14,7 @@
 
 /// Carrier's hose sockets (/datum/hose_connector), owned: deleted with the carrier.
 /atom/movable/var/list/hose_connectors
-REF_OWNED_LIST(/atom/movable, "hose_connectors")
+DECLARE_REF(/atom/movable, "hose_connectors", OWNED_LIST, null)
 
 /// Adds a hose connector of `connector_type` to src. Returns it, or null when src can't carry that type.
 /atom/movable/proc/add_hose_connector(connector_type, set_unique_name = null)
@@ -60,10 +60,11 @@ REF_OWNED_LIST(/atom/movable, "hose_connectors")
 		om_task_periodic(src, PERIODIC_SLOW)
 	return TRUE
 
-REF_OWNED(/datum/hose_connector, list("reagents"))
+DECLARE_REF(/datum/hose_connector, "reagents", OWNED, null)
 // A hose is shared by its two connectors, so neither owns it: it lives while both
 // ends do, and a dying connector deletes it (the hose disconnects both ends).
-REF_BACK(/datum/hose_connector, list("carrier" = null, "my_hose" = null))
+DECLARE_REF(/datum/hose_connector, "carrier", BACK, null)
+DECLARE_REF(/datum/hose_connector, "my_hose", BACK, null)
 
 // the carrier loses its disconnect verb (before phase 4 nulls carrier).
 /datum/hose_connector/lifecycle_prerelease()

@@ -68,7 +68,7 @@
 		update_nearby_tiles() //Force ZAS update
 	..()
 
-REF_BACKLIST_HANDLE(/obj/effect/shield, list("gen_handle" = list("field_segments", "damaged_segments")))
+DECLARE_REF(/obj/effect/shield, "gen_handle", BACKLIST_HANDLE, list("field_segments", "damaged_segments"))
 
 // Temporarily collapses this shield segment.
 /obj/effect/shield/proc/fail(duration)

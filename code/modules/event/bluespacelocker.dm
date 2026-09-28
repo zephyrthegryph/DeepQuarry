@@ -67,4 +67,4 @@
 /datum/event/bluespace_locker/proc/exit_point() as /obj/structure/closet
 	return om_resolve(exit_point_handle)
 
-REF_STATIC(/datum/event/bluespace_locker, list("pickable_areas"))
+DECLARE_REF(/datum/event/bluespace_locker, "pickable_areas", STATIC, null)

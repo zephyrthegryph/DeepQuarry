@@ -371,4 +371,4 @@
 /obj/machinery/field_generator/step_start_condition()
 	return active || Varedit_start
 
-REF_OWNED_LIST(/obj/machinery/field_generator, "fields")
+DECLARE_REF(/obj/machinery/field_generator, "fields", OWNED_LIST, null)

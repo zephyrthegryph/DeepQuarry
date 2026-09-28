@@ -72,7 +72,7 @@
 	src.modifier_type_to_apply = modifier_type_to_apply
 	src.modifier_duration     = modifier_duration
 
-REF_OWNED(/datum/projectile_effects, "turf_effect_callback")
+DECLARE_REF(/datum/projectile_effects, "turf_effect_callback", OWNED, null)
 
 /// Apply mob-targeted effects.  Returns TRUE if any effect was applied.
 /// blocked: armor absorption percentage; >= 100 suppresses all effects.

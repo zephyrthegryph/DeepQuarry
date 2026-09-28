@@ -183,7 +183,7 @@
 	..(user, message, title, buttons, timeout, autofocus, ui_state)
 	src.callback = callback
 
-REF_OWNED(/datum/tgui_alert/async, "callback")
+DECLARE_REF(/datum/tgui_alert/async, "callback", OWNED, null)
 
 /datum/tgui_alert/async/set_choice(choice)
 	. = ..()
@@ -193,7 +193,7 @@ REF_OWNED(/datum/tgui_alert/async, "callback")
 /datum/tgui_alert/async/wait()
 	return
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/tgui_alert/proc/state() as /datum/tgui_state
 	return state_static
-REF_STATIC(/datum/tgui_alert, "state_static")
+DECLARE_REF(/datum/tgui_alert, "state_static", STATIC, null)

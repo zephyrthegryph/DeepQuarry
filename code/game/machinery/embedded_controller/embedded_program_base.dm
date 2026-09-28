@@ -11,8 +11,8 @@
 		var/obj/machinery/embedded_controller/radio/R = M
 		id_tag = R.id_tag
 
-REF_PAIR(/datum/embedded_program, list("master" = "program"))
-REF_PAIR(/obj/machinery/embedded_controller, list("program" = "master"))
+DECLARE_REF(/datum/embedded_program, "master", PAIR, "program")
+DECLARE_REF(/obj/machinery/embedded_controller, "program", PAIR, "master")
 
 // Return TRUE if was a command for us, otherwise return FALSE (so controllers with multiple programs can try each in turn until one accepts)
 /datum/embedded_program/proc/receive_user_command(command)

@@ -46,7 +46,7 @@
 	else
 		animate(src, color = new_color, 5)
 
-REF_BACKLIST(/obj/effect/directional_shield, list("projector" = "active_shields"))
+DECLARE_REF(/obj/effect/directional_shield, "projector", BACKLIST, "active_shields")
 
 /obj/effect/directional_shield/CanPass(atom/movable/mover, turf/target)
 	if(istype(mover, /obj/item/projectile))

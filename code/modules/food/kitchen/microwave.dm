@@ -85,7 +85,7 @@
 	soundloop = new(list(src), FALSE)
 	update_icon()
 
-REF_OWNED(/obj/machinery/microwave, "soundloop")
+DECLARE_REF(/obj/machinery/microwave, "soundloop", OWNED, null)
 
 // its contents are disposed and a pAI inside is ejected.
 /obj/machinery/microwave/on_destroy(force)

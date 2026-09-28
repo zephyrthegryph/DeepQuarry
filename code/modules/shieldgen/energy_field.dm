@@ -41,7 +41,7 @@
 	update_nearby_tiles()
 
 // Leaves its generator's field (a shield generator or a forcefield artifact).
-REF_BACKLIST_HANDLE(/obj/effect/energy_field, list("my_gen_handle" = list(/obj/machinery/shield_gen = "field", /datum/artifact_effect/forcefield = "created_field")))
+DECLARE_REF(/obj/effect/energy_field, "my_gen_handle", BACKLIST_HANDLE, list(/obj/machinery/shield_gen = "field", /datum/artifact_effect/forcefield = "created_field"))
 
 // Neighbouring fields redraw.
 /obj/effect/energy_field/on_destroy(force)

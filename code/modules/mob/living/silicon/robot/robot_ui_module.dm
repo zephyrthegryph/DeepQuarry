@@ -195,4 +195,4 @@
 	sprite_datum.do_equipment_glamour(module)
 	to_chat(src, span_filter_notice("Your icon has been set. You now require a module reset to change it."))
 
-REF_STATIC(/datum/tgui_module/robot_ui_module, "sprite_datum")
+DECLARE_REF(/datum/tgui_module/robot_ui_module, "sprite_datum", STATIC, null)

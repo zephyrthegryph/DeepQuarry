@@ -50,7 +50,7 @@ MATERIAL_MIX(/obj/item/flashlight, list(MAT_STEEL = 50,MAT_GLASS = 20))
 
 	update_brightness()
 
-REF_OWNED(/obj/item/flashlight, "cell")
+DECLARE_REF(/obj/item/flashlight, "cell", OWNED, null)
 
 /obj/item/flashlight/get_cell()
 	return cell

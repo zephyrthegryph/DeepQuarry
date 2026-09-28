@@ -334,4 +334,4 @@
 #undef BIOGEN_ITEM
 #undef BIOGEN_REAGENT
 
-REF_HELD(/obj/machinery/biogenerator, list("beaker"))
+DECLARE_REF(/obj/machinery/biogenerator, "beaker", HELD, null)

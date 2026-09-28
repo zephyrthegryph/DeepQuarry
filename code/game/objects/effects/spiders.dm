@@ -98,7 +98,7 @@ EXTEND_INTERACTIONS(/obj/effect/spider/spiderling, \
 	get_light_and_color(parent)
 
 // leaves the implant list of the limb it was laid in.
-REF_BACK_VIA(/obj/effect/spider/eggcluster, list("loc" = list(/obj/item/organ/external = "implants")))
+DECLARE_REF(/obj/effect/spider/eggcluster, "loc", BACK_VIA, list(/obj/item/organ/external = "implants"))
 
 /// Hatches (its growth timer).
 /obj/effect/spider/eggcluster/proc/hatch()
@@ -305,7 +305,7 @@ REF_BACK_VIA(/obj/effect/spider/eggcluster, list("loc" = list(/obj/item/organ/ex
 	src.visible_message(span_warning("\The [src] splits open."))
 	..()
 
-REF_SPILL_LIST(/obj/effect/spider/cocoon, "contents") // whatever was wrapped falls out
+DECLARE_REF(/obj/effect/spider/cocoon, "contents", SPILL_LIST, null)	// whatever was wrapped falls out
 
 /obj/effect/spider/spiderling/non_growing/horror
 	icon_state = "tendrils"

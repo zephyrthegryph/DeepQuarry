@@ -1,8 +1,8 @@
 """Declared-reference kinds shared by declared_refs_lint.py and scheduler_lints.py
 (doc/rewrite/lifecycle.md sec 4, code/__defines/lifecycle.dm).
 
-One place for: the one-line REF_* macro forms, the one-place REF_VAR forms,
-pooled types (POOL_DECLARE), the implicit REF_DEF types (DEF_TYPES) and the
+One place for: the DECLARE_REF(PATH, "var", KIND, OPT) form and its kinds,
+pooled types (POOL_DECLARE), the implicit DEF types (DEF_TYPES) and the
 singleton / flyweight types marked OM_STATIC_TYPE (static_types()).
 """
 import glob
@@ -13,47 +13,40 @@ from state_schema_lint import DEF_TYPES, under
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
-# REF_OWNED(/type, NAMES) and friends -> the declared_*_vars() override they expand to.
-REF_MACRO_PROC = {
-    "OWNED": "declared_owned_vars",
-    "OWNED_LIST": "declared_owned_list_vars",
-    "OWNED_VALUES": "declared_owned_value_vars",
-    "SPILL": "declared_spill_vars",
-    "SPILL_LIST": "declared_spill_list_vars",
-    "HELD": "declared_held_vars",
-    "PAIR": "declared_pair_vars",
-    "BACKLIST": "declared_backlist_vars",
-    "BACK": "declared_back_vars",
-    "KEEP": "declared_keep_vars",
-    "DEF": "declared_def_vars",
-    "STATIC": "declared_static_vars",
-    "TRANSIENT": "declared_transient_vars",
-    "WEAK_LIST": "declared_weak_list_vars",
-    "DROP": "declared_drop_vars",
-    "LIST_BACK": "declared_list_back_vars",
+# Every kind DECLARE_REF(PATH, "var", KIND, OPT) accepts (code/__defines/lifecycle.dm,
+# REFKIND_*), and what OPT is for it: None (OPT must be null) or a description.
+REF_KINDS = {
+    "OWNED": None, "OWNED_LIST": None, "OWNED_VALUES": None, "SPILL": None, "SPILL_LIST": None,
+    "HELD": None, "DROP": None, "KEEP": None, "DEF": None, "STATIC": None, "WEAK_LIST": None,
+    "TRANSIENT": None,
+    "PAIR": "the partner's var pointing back",
+    "BACKLIST": "the owner's list var",
+    "BACKLIST_HANDLE": "the partner's list var(s)",
+    "BACK_HANDLE": "the partner's var naming us",
+    "BACK_VIA": "the partner's var(s) naming us",
+    "LIST_BACK": "the member var(s) naming us",
+    "BACK": "the owner's var pointing at us, or null",
+    "QUEUE": "a global getter proc path, or a list of them",
 }
-_KINDS = "|".join(sorted(REF_MACRO_PROC, key=len, reverse=True))
-REF_MACRO = re.compile(r"^REF_(" + _KINDS + r")\(\s*(/[\w/]+)\s*,(.*)\)\s*$")
-# REF_VAR(/type, KIND, /vartype, name), REF_PAIR_VAR(/type, /vartype, name, "other"),
-# REF_BACKLIST_VAR(/type, /vartype, name, "list_var").
-REF_VAR = re.compile(r"^REF_VAR\(\s*(/[\w/]+)\s*,\s*(" + _KINDS + r")\s*,\s*(/[\w/]+)\s*,\s*(\w+)\s*\)\s*$")
-REF_PAIRED_VAR = re.compile(r"^REF_(PAIR|BACKLIST)_VAR\(\s*(/[\w/]+)\s*,\s*(/[\w/]+)\s*,\s*(\w+)\s*,\s*\"(\w+)\"\s*\)\s*$")
+# Kinds whose var may legitimately hold objects in a list.
+OBJLIST_KINDS = ("OWNED_LIST", "OWNED_VALUES", "SPILL_LIST", "DEF", "STATIC", "DROP", "LIST_BACK", "WEAK_LIST")
+REF_DECL = re.compile(r'^DECLARE_REF\(\s*(/[\w/]+)\s*,\s*"([^"]*)"\s*,\s*(\w+)\s*,(.*)\)\s*(//.*)?$')
 OM_STATIC_TYPE = re.compile(r"^OM_STATIC_TYPE\(\s*(/[\w/]+)\s*\)", re.M)
 POOL_DECLARE = re.compile(r"^POOL_DECLARE\(\s*(/[\w/]+)\s*\)\s*$", re.M)
+# The one hand-written declaration proc left: OM caches (code/datums/om/entity.dm).
+DECLARED_PROCS = ("declared_cache_vars",)
 
-DECLARED_PROCS = tuple(REF_MACRO_PROC.values()) + ("declared_cache_vars",)
 
-
-def ref_var_decl(line):
-    """A one-place declaration line -> (owner, kind, vartype, name), or None.
-    kind is a REF_MACRO_PROC key."""
-    m = REF_VAR.match(line)
-    if m:
-        return m.group(1), m.group(2), m.group(3), m.group(4)
-    m = REF_PAIRED_VAR.match(line)
-    if m:
-        return m.group(2), m.group(1), m.group(3), m.group(4)
-    return None
+def ref_decl(line):
+    """A DECLARE_REF line -> (owner, var, kind, opt) with opt stripped, or None.
+    Raises ValueError for an unknown kind."""
+    m = REF_DECL.match(line.strip())
+    if not m:
+        return None
+    owner, var, kind, opt = m.group(1), m.group(2), m.group(3), m.group(4).strip()
+    if kind not in REF_KINDS:
+        raise ValueError("unknown DECLARE_REF kind %s (one of %s)" % (kind, ", ".join(sorted(REF_KINDS))))
+    return owner.rstrip("/"), var, kind, opt
 
 
 _POOLED = None
@@ -78,7 +71,7 @@ def is_pooled(type_path):
 
 
 def is_def_type(vtype):
-    """An implicit REF_DEF: the var's declared type is a frozen definition type."""
+    """An implicit DEF declaration: the var's declared type is a frozen definition type."""
     return under(vtype, DEF_TYPES)
 
 
@@ -88,7 +81,7 @@ _STATIC = None
 def static_types():
     """Every type marked OM_STATIC_TYPE across code/ (read once), plus the frozen
     definition types (DEF_TYPES): singletons and flyweights, which a reference
-    holds with REF_STATIC and never with a handle."""
+    holds with DECLARE_REF(..., STATIC) and never with a handle."""
     global _STATIC
     if _STATIC is None:
         found = set(DEF_TYPES)

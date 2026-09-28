@@ -611,23 +611,23 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 		material_service.watches_dirty = TRUE
 	material_service?.schedule(0)
 
-REF_OWNED(/obj, "material_service")
+DECLARE_REF(/obj, "material_service", OWNED, null)
 
 /// LC-refs: the watched_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/material_service/proc/watched_turf() as /turf
 	return om_resolve(watched_turf_handle)
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/material_service/proc/thermal_stock() as /datum/material
 	return thermal_stock_static
-REF_STATIC(/datum/material_service, "thermal_stock_static")
+DECLARE_REF(/datum/material_service, "thermal_stock_static", STATIC, null)
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/material_service/proc/electrical_stock() as /datum/material
 	return electrical_stock_static
-REF_STATIC(/datum/material_service, "electrical_stock_static")
+DECLARE_REF(/datum/material_service, "electrical_stock_static", STATIC, null)
 
 /// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/material_service/proc/owner() as /obj
 	return om_resolve(owner_handle)
-REF_BACK_HANDLE(/datum/material_service, list("owner_handle" = "material_service"))
+DECLARE_REF(/datum/material_service, "owner_handle", BACK_HANDLE, "material_service")

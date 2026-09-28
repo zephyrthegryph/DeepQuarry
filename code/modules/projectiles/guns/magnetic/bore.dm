@@ -23,7 +23,7 @@
 		mat_cost = initial(mat_cost) / (2*manipulator.rating)
 	update_rating_mod()
 
-REF_OWNED(/obj/item/gun/magnetic/matfed, "manipulator")
+DECLARE_REF(/obj/item/gun/magnetic/matfed, "manipulator", OWNED, null)
 
 /obj/item/gun/magnetic/matfed/examine(mob/user)
 	. = ..()
@@ -228,7 +228,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(
 	. = ..()
 	soundloop = new(list(src), 0)
 
-REF_OWNED(/obj/item/gun/magnetic/matfed/phoronbore, "soundloop")
+DECLARE_REF(/obj/item/gun/magnetic/matfed/phoronbore, "soundloop", OWNED, null)
 
 /obj/item/gun/magnetic/matfed/phoronbore/ui_action_click(mob/user, actiontype)
 	toggle_generator(user)

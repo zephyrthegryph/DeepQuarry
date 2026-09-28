@@ -124,4 +124,4 @@
 /obj/mecha/medical/odysseus/
 	minimum_penetration = 0
 
-REF_HELD(/obj/mecha/medical/odysseus, list("hud"))
+DECLARE_REF(/obj/mecha/medical/odysseus, "hud", HELD, null)

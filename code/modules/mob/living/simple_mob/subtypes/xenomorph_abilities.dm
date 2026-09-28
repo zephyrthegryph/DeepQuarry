@@ -118,4 +118,4 @@
 	pounce_action.Grant(src)
 	spin_action.Grant(src)
 
-REF_HELD(/datum/action/innate/xeno_ch, "parent_xeno")
+DECLARE_REF(/datum/action/innate/xeno_ch, "parent_xeno", HELD, null)

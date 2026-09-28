@@ -21,7 +21,7 @@ GLOBAL_LIST_EMPTY(client_only_images_expiring)
 	LAZYADD(clients, om_handle(C))
 
 // comes off every client it was shown to (clients aren't datums).
-REF_LIST_BACK(/image/client_only, list("clients" = "images"))
+DECLARE_REF(/image/client_only, "clients", LIST_BACK, "images")
 
 /image/client_only/lifecycle_dematerialize()
 	..()

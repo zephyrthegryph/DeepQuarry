@@ -30,4 +30,4 @@
 /datum/computer_file/data/email_message/proc/set_timestamp()
 	timestamp = stationtime2text()
 
-REF_OWNED(/datum/computer_file/data/email_message, "attachment")
+DECLARE_REF(/datum/computer_file/data/email_message, "attachment", OWNED, null)

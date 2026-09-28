@@ -176,7 +176,7 @@
 		return
 	holder.squish()
 
-REF_OWNED(/mob/living/simple_mob/slime/xenobio, "slime_state")
+DECLARE_REF(/mob/living/simple_mob/slime/xenobio, "slime_state", OWNED, null)
 
 /// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/slime_state/proc/holder() as /mob/living/simple_mob/slime/xenobio

@@ -16,7 +16,7 @@
 		alpha = 0
 */
 
-REF_BACKLIST(/obj/structure/holosign, list("projector" = "signs"))
+DECLARE_REF(/obj/structure/holosign, "projector", BACKLIST, "signs")
 
 /obj/structure/holosign/declare_interactions(list/into)
 	into += list(

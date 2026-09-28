@@ -169,4 +169,6 @@
 	..()
 	register_gas_dependencies()
 
-REF_HELD(/obj/machinery/atmospherics/unary, list("air_contents", "node", "network"))
+DECLARE_REF(/obj/machinery/atmospherics/unary, "air_contents", HELD, null)
+DECLARE_REF(/obj/machinery/atmospherics/unary, "node", HELD, null)
+DECLARE_REF(/obj/machinery/atmospherics/unary, "network", HELD, null)

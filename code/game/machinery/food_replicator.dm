@@ -259,4 +259,4 @@
 	update_icon()
 	explosion(src, 0, 0, 2)
 
-REF_HELD(/obj/machinery/food_replicator, list("container"))
+DECLARE_REF(/obj/machinery/food_replicator, "container", HELD, null)

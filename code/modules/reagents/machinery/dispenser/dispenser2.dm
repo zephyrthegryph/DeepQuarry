@@ -327,6 +327,6 @@
 	tgui_interact(user)
 	return TRUE
 
-REF_HELD(/obj/machinery/chemical_dispenser, "container")
+DECLARE_REF(/obj/machinery/chemical_dispenser, "container", HELD, null)
 // Label -> installed cartridge (in contents); they go with the machine.
-REF_OWNED_VALUES(/obj/machinery/chemical_dispenser, "cartridges")
+DECLARE_REF(/obj/machinery/chemical_dispenser, "cartridges", OWNED_VALUES, null)

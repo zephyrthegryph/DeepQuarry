@@ -40,7 +40,7 @@
 
 	om_hook(user, /datum/om/event/qdeleting, src, PROC_REF(on_user_delete))
 
-REF_OWNED(/datum/cogbar, "blank")
+DECLARE_REF(/datum/cogbar, "blank", OWNED, null)
 
 /// Phase 1: take the overlay off the user and the blank image (owned, dropped in phase 4) off the client.
 /datum/cogbar/lifecycle_unbind()

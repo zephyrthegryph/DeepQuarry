@@ -43,7 +43,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 /obj/machinery/power/generator/LateInitialize()
 	reconnect()
 
-REF_OWNED(/obj/machinery/power/generator, "soundloop")
+DECLARE_REF(/obj/machinery/power/generator, "soundloop", OWNED, null)
 
 //generators connect in dir and GLOB.reverse_dir(dir) directions
 //mnemonic to determine circulator/generator directions: the cirulators orbit clockwise around the generator

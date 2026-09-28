@@ -27,7 +27,7 @@
 	update_icon()
 	make_climbable()
 
-REF_OWNED(/obj/machinery/reagent_refinery/furnace, "beaker")
+DECLARE_REF(/obj/machinery/reagent_refinery/furnace, "beaker", OWNED, null)
 
 /obj/machinery/reagent_refinery/furnace/refinery_step()
 	if(!anchored)

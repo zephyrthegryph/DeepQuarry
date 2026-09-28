@@ -254,7 +254,7 @@
 	. = ..()
 	hidden_uplink_handle = om_handle(new /obj/item/uplink/hidden(src))
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/item/uplink/proc/discount_item() as /datum/uplink_item
 	return discount_item_static
-REF_STATIC(/obj/item/uplink, "discount_item_static")
+DECLARE_REF(/obj/item/uplink, "discount_item_static", STATIC, null)

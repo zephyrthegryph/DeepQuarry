@@ -9,7 +9,7 @@
 	profile = owner?.mob?.keybind_profile() || KEYBIND_PROFILE_DEFAULT
 
 // clears the client's cached editor (clients aren't datums).
-REF_BACK_HANDLE(/datum/keybind_editor, list("owner_handle" = "keybind_editor"))
+DECLARE_REF(/datum/keybind_editor, "owner_handle", BACK_HANDLE, "keybind_editor")
 
 /client/var/tmp/datum/keybind_editor/keybind_editor
 
@@ -180,7 +180,7 @@ REF_BACK_HANDLE(/datum/keybind_editor, list("owner_handle" = "keybind_editor"))
 	log_input("Keybindings: [owner().key] changed their [profile] bindings.")
 	owner().apply_keybindings(force = TRUE)
 
-REF_OWNED(/client, "keybind_editor")
+DECLARE_REF(/client, "keybind_editor", OWNED, null)
 
 /// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/keybind_editor/proc/owner() as /client

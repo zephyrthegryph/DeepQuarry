@@ -20,7 +20,7 @@
 		podfall(auto_open)
 	air = new
 
-REF_OWNED(/obj/structure/drop_pod, "air")
+DECLARE_REF(/obj/structure/drop_pod, "air", OWNED, null)
 
 /obj/structure/drop_pod/proc/podfall(auto_open)
 	var/turf/T = get_turf(src)

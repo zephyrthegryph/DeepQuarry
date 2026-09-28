@@ -81,7 +81,7 @@
 	if(tgarscreen_path)
 		tgarscreen = new tgarscreen_path(src)
 
-REF_OWNED(/obj/item/clothing/glasses/omnihud, "tgarscreen")
+DECLARE_REF(/obj/item/clothing/glasses/omnihud, "tgarscreen", OWNED, null)
 
 /obj/item/clothing/glasses/omnihud/dropped(mob/user, equipping, slot)
 	if(tgarscreen)

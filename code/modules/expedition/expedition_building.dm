@@ -278,7 +278,7 @@
 	if(prob(60))
 		expedition_decorate(locate(cx, cy, z), 2, loot_biome(), rand(1, 3))
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/expedition_building/proc/loot_biome() as /datum/expedition_biome
 	return loot_biome_static
-REF_STATIC(/datum/expedition_building, "loot_biome_static")
+DECLARE_REF(/datum/expedition_building, "loot_biome_static", STATIC, null)

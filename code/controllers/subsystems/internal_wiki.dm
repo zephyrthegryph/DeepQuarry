@@ -1665,7 +1665,7 @@ SUBSYSTEM_DEF(internal_wiki)
 #undef WIKI_CATEGORY_LORE
 #undef WIKI_CATEGORY_GENE
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/internal_wiki/page/catalog/proc/catalog_record() as /datum/category_item/catalogue
 	return catalog_record_static
-REF_STATIC(/datum/internal_wiki/page/catalog, "catalog_record_static")
+DECLARE_REF(/datum/internal_wiki/page/catalog, "catalog_record_static", STATIC, null)

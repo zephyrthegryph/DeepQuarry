@@ -29,7 +29,7 @@
 		bcell = new bcell(src)
 	update_icon()
 
-REF_OWNED(/obj/item/defib_kit, "bcell")
+DECLARE_REF(/obj/item/defib_kit, "bcell", OWNED, null)
 
 /obj/item/defib_kit/loaded //starts with a cell
 	bcell = /obj/item/cell/apc

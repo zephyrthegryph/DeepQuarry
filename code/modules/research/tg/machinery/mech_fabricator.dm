@@ -57,9 +57,12 @@
 	/// Direction the produced items will drop (0 means on top of us)
 	var/drop_direction = SOUTH
 
-REF_DEF(/obj/machinery/mecha_part_fabricator_tg, list("queue", "cached_designs", "illegal_local_designs"))
+DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "queue", DEF, null)
+DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "cached_designs", DEF, null)
+DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "illegal_local_designs", DEF, null)
 /// The current design datum that the machine is building.
-REF_VAR(/obj/machinery/mecha_part_fabricator_tg, DEF, /datum/design_techweb, being_built)
+/obj/machinery/mecha_part_fabricator_tg/var/datum/design_techweb/being_built
+DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "being_built", DEF, null)
 
 /obj/machinery/mecha_part_fabricator_tg/Initialize(mapload)
 	print_sound = new(list(src), FALSE)
@@ -82,7 +85,8 @@ REF_VAR(/obj/machinery/mecha_part_fabricator_tg, DEF, /datum/design_techweb, bei
 	if(stored_research())
 		on_connected_techweb()
 
-REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, list("print_sound", "rmat"))
+DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "print_sound", OWNED, null)
+DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "rmat", OWNED, null)
 
 /obj/machinery/mecha_part_fabricator_tg/proc/connect_techweb(datum/techweb/new_techweb)
 	if(stored_research())
@@ -576,13 +580,13 @@ REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, list("print_sound", "rmat"))
 /obj/machinery/mecha_part_fabricator_tg/step_start_condition()
 	return process_queue
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/machinery/mecha_part_fabricator_tg/proc/stored_research() as /datum/techweb
 	return stored_research_static
-REF_STATIC(/obj/machinery/mecha_part_fabricator_tg, "stored_research_static")
+DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "stored_research_static", STATIC, null)
 
 /// LC-refs: the being_built this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/mecha_part_fabricator_tg/proc/being_built() as /datum/design_techweb
 	return being_built
 
-REF_HELD(/obj/machinery/mecha_part_fabricator_tg, "stored_part")
+DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "stored_part", HELD, null)

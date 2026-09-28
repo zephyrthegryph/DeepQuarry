@@ -593,7 +593,7 @@
 
 #undef FIELD
 
-REF_HELD(/obj/machinery/computer/secure_data, list("scan"))
+DECLARE_REF(/obj/machinery/computer/secure_data, "scan", HELD, null)
 
 /// LC-refs: active1 -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/computer/secure_data/proc/active1() as /datum/data/record

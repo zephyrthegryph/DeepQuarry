@@ -270,5 +270,8 @@
 	network1 = null
 	network2 = null
 
-REF_HELD(/obj/machinery/atmospherics/pipeturbine, list("air_in", "air_out", "network1", "network2"))
-REF_HELD(/obj/machinery/power/turbinemotor, "turbine")
+DECLARE_REF(/obj/machinery/atmospherics/pipeturbine, "air_in", HELD, null)
+DECLARE_REF(/obj/machinery/atmospherics/pipeturbine, "air_out", HELD, null)
+DECLARE_REF(/obj/machinery/atmospherics/pipeturbine, "network1", HELD, null)
+DECLARE_REF(/obj/machinery/atmospherics/pipeturbine, "network2", HELD, null)
+DECLARE_REF(/obj/machinery/power/turbinemotor, "turbine", HELD, null)

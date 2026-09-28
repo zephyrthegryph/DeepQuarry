@@ -36,7 +36,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 		ui = new(user, src, "ModifyRobot", "Modify Robot")
 		ui.open()
 
-REF_OWNED(/datum/eventkit/modify_robot, "source")
+DECLARE_REF(/datum/eventkit/modify_robot, "source", OWNED, null)
 
 /datum/eventkit/modify_robot/ui_assets(mob/user)
 	if(!target())
@@ -800,4 +800,4 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 /datum/eventkit/modify_robot/proc/target() as /mob/living/silicon/robot
 	return om_resolve(target_handle)
 
-REF_OWNED_LIST(/datum/eventkit/modify_robot, "law_list")
+DECLARE_REF(/datum/eventkit/modify_robot, "law_list", OWNED_LIST, null)

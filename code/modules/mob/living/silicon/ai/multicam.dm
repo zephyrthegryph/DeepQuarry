@@ -12,9 +12,10 @@
 	aiEye.screen = src
 
 // ALLOW(ownership_cycle): type-level only; a pic_in_pic window is never one of its own eye's hud elements.
-REF_OWNED(/atom/movable/screen/movable/pic_in_pic/ai, list("aiEye", "highlighted_background"))
+DECLARE_REF(/atom/movable/screen/movable/pic_in_pic/ai, "aiEye", OWNED, null)
+DECLARE_REF(/atom/movable/screen/movable/pic_in_pic/ai, "highlighted_background", OWNED, null)
 // set_ai(null) in Destroy() takes the window off the AI.
-REF_HELD(/atom/movable/screen/movable/pic_in_pic/ai, "ai")
+DECLARE_REF(/atom/movable/screen/movable/pic_in_pic/ai, "ai", HELD, null)
 
 // the AI loses this multicam window.
 /atom/movable/screen/movable/pic_in_pic/ai/on_destroy(force)
@@ -194,9 +195,9 @@ GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 		C.update_icon()
 	cameras_telegraphed.Cut()
 
-// The screen owns its eye (REF_OWNED aiEye); `screen` is only the way back,
+// The screen owns its eye (DECLARE_REF(..., OWNED) aiEye); `screen` is only the way back,
 // so ownership stays a tree (tools/ci/ownership_cycle_lint.py).
-REF_BACK(/mob/observer/eye/aiEye/pic_in_pic, list("screen" = "aiEye"))
+DECLARE_REF(/mob/observer/eye/aiEye/pic_in_pic, "screen", BACK, "aiEye")
 
 // stops telegraphing to the cameras it watched.
 /mob/observer/eye/aiEye/pic_in_pic/on_destroy(force)

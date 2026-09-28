@@ -348,4 +348,5 @@
 	if(welded)
 		. += "It is welded shut."
 
-REF_STATIC(/obj/machinery/atmospherics/unary/vent_scrubber, list("initial_loc", "radio_connection"))
+DECLARE_REF(/obj/machinery/atmospherics/unary/vent_scrubber, "initial_loc", STATIC, null)
+DECLARE_REF(/obj/machinery/atmospherics/unary/vent_scrubber, "radio_connection", STATIC, null)

@@ -307,7 +307,8 @@
 /// use it. It observes the ordinary item interaction events and publishes one
 /// reversible physical fact rather than teaching individual item types about
 /// contracts.
-REF_VAR(/obj/item, OWNED, /datum/economic_adoption, economic_adoption)
+/obj/item/var/datum/economic_adoption/economic_adoption // ALLOW(state_ref): owned child (DECLARE_REF OWNED); saved as before, the one-line REF_VAR form hid it from this lint
+DECLARE_REF(/obj/item, "economic_adoption", OWNED, null)
 
 /datum/economic_adoption
 	/// The purchased item.
@@ -319,7 +320,7 @@ REF_VAR(/obj/item, OWNED, /datum/economic_adoption, economic_adoption)
 	var/value
 	var/adopted = FALSE
 
-REF_BACK(/datum/economic_adoption, list("parent" = "economic_adoption"))
+DECLARE_REF(/datum/economic_adoption, "parent", BACK, "economic_adoption")
 
 /datum/economic_adoption/New(obj/item/new_parent, _invoice_id, _customer_account, _customer_department, _provider_department, _value)
 	. = ..()

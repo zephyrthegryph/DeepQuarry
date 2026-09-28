@@ -587,4 +587,4 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 	return
 
 // Antagonist definitions are round-long singletons.
-REF_STATIC(/datum/game_mode, "antag_templates")
+DECLARE_REF(/datum/game_mode, "antag_templates", STATIC, null)

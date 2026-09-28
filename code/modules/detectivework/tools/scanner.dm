@@ -250,7 +250,7 @@
 	for(var/blood in blooddna)
 		to_chat(user, span_notice("Blood type: [blooddna[blood]]\nDNA: [blood]"))
 
-REF_OWNED_VALUES(/obj/item/detective_scanner, "stored")
+DECLARE_REF(/obj/item/detective_scanner, "stored", OWNED_VALUES, null)
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/detective_scanner, \

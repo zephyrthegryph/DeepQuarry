@@ -3,7 +3,7 @@
 	var/metabolism_speed = 1	// Multiplicative, 1 is full speed, 0.5 is half, etc.
 	var/mob/living/carbon/parent
 
-REF_BACK(/datum/reagents/metabolism, list("parent" = null))
+DECLARE_REF(/datum/reagents/metabolism, "parent", BACK, null)
 
 /datum/reagents/metabolism/New(max = 100, mob/living/carbon/parent_mob, met_class = null)
 	..(max, parent_mob)
@@ -38,4 +38,4 @@ REF_BACK(/datum/reagents/metabolism, list("parent" = null))
 	metabolism_class = CHEM_TOUCH
 
 // parent is a back reference to the carbon holding this metabolism.
-REF_BACK(/datum/reagents/metabolism, list("parent" = null))
+DECLARE_REF(/datum/reagents/metabolism, "parent", BACK, null)

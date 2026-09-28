@@ -474,8 +474,9 @@ DECLARE_INTERACTIONS(/obj/item/pda, \
 		explosion(T, 0, 0, 1, rand(1,2))
 	return
 
-REF_OWNED(/obj/item/pda, list("pai", "cartridge"))
-REF_OWNED_LIST(/obj/item/pda, "programs")
+DECLARE_REF(/obj/item/pda, "pai", OWNED, null)
+DECLARE_REF(/obj/item/pda, "cartridge", OWNED, null)
+DECLARE_REF(/obj/item/pda, "programs", OWNED_LIST, null)
 
 // its ID drops out unless flagged to go with it.
 /obj/item/pda/on_destroy(force)
@@ -536,7 +537,7 @@ REF_OWNED_LIST(/obj/item/pda, "programs")
 /obj/item/pda/pilot
 	icon_state = "pda-pilot"		//New sprites, but still no ROM cartridge or anything
 
-REF_HELD(/obj/item/pda, "id")
+DECLARE_REF(/obj/item/pda, "id", HELD, null)
 
 /// LC-refs: the scanmode this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/pda/proc/scanmode() as /datum/data/pda/utility/scanmode

@@ -238,5 +238,5 @@
 /mob/living/simple_mob/animal/passive/fox/beastmode
 	movement_cooldown = 1
 
-REF_HELD(/mob/living/simple_mob/animal/passive/fox, "flee_target")
-REF_HELD(/mob/living/simple_mob/animal/passive/fox/renault, "friend")
+DECLARE_REF(/mob/living/simple_mob/animal/passive/fox, "flee_target", HELD, null)
+DECLARE_REF(/mob/living/simple_mob/animal/passive/fox/renault, "friend", HELD, null)

@@ -71,7 +71,8 @@
 	stakeholder_roles = list()
 	stakeholder_proposals = list()
 
-REF_OWNED_VALUES(/datum/contract/social, list("stakeholder_roles", "stakeholder_proposals"))
+DECLARE_REF(/datum/contract/social, "stakeholder_roles", OWNED_VALUES, null)
+DECLARE_REF(/datum/contract/social, "stakeholder_proposals", OWNED_VALUES, null)
 
 /datum/contract/social/on_negotiated_terms_changed()
 	..()

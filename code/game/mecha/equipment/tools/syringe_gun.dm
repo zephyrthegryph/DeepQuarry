@@ -558,6 +558,7 @@
 		return
 	om_after(src, 1, PROC_REF(mech_syringe_flight), trg, steps_left - 1)
 
-REF_OWNED_LIST(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "syringes")
-REF_OWNED(/obj/item/mecha_parts/mecha_equipment/crisis_drone, list("drone_overlay", "MyBeam"))
-REF_HELD(/obj/item/mecha_parts/mecha_equipment/crisis_drone, "Target")
+DECLARE_REF(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "syringes", OWNED_LIST, null)
+DECLARE_REF(/obj/item/mecha_parts/mecha_equipment/crisis_drone, "drone_overlay", OWNED, null)
+DECLARE_REF(/obj/item/mecha_parts/mecha_equipment/crisis_drone, "MyBeam", OWNED, null)
+DECLARE_REF(/obj/item/mecha_parts/mecha_equipment/crisis_drone, "Target", HELD, null)

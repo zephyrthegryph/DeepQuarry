@@ -1049,9 +1049,10 @@
 	var/mob/living/owner
 	var/atom/movable/screen/character_setup/screen_icon
 
-REF_VAR(/mob/living, OWNED, /datum/character_setup_button, character_setup_button)
-REF_OWNED(/datum/character_setup_button, "screen_icon")
-REF_BACK(/datum/character_setup_button, list("owner" = "character_setup_button"))
+/mob/living/var/datum/character_setup_button/character_setup_button
+DECLARE_REF(/mob/living, "character_setup_button", OWNED, null)
+DECLARE_REF(/datum/character_setup_button, "screen_icon", OWNED, null)
+DECLARE_REF(/datum/character_setup_button, "owner", BACK, "character_setup_button")
 
 /datum/character_setup_button/New(mob/living/M)
 	..()

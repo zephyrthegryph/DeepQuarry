@@ -539,13 +539,13 @@
 /datum/tgui/proc/window() as /datum/tgui_window
 	return om_resolve(window_handle)
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/tgui/proc/state() as /datum/tgui_state
 	return state_static
-REF_STATIC(/datum/tgui, "state_static")
+DECLARE_REF(/datum/tgui, "state_static", STATIC, null)
 
 /// LC-refs: the parent_ui this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui/proc/parent_ui() as /datum/tgui
 	return om_resolve(parent_ui_handle)
 
-REF_BACKLIST(/datum/tgui, list("user" = "tgui_open_uis"))
+DECLARE_REF(/datum/tgui, "user", BACKLIST, "tgui_open_uis")

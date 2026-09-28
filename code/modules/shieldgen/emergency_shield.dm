@@ -37,7 +37,7 @@
 	update_nearby_tiles(need_rebuild=1)
 
 // leaves its generator's deployed shields (the generator is a handle).
-REF_BACKLIST_HANDLE(/obj/machinery/shield, list("our_owner" = "deployed_shields"))
+DECLARE_REF(/obj/machinery/shield, "our_owner", BACKLIST_HANDLE, "deployed_shields")
 
 /obj/machinery/shield/on_destroy(force)
 	opacity = 0
@@ -121,8 +121,8 @@ REF_BACKLIST_HANDLE(/obj/machinery/shield, list("our_owner" = "deployed_shields"
 		cell = new cell_type(src)
 	make_climbable()
 
-REF_OWNED(/obj/machinery/shieldgen, "cell")
-REF_OWNED_LIST(/obj/machinery/shieldgen, "deployed_shields")
+DECLARE_REF(/obj/machinery/shieldgen, "cell", OWNED, null)
+DECLARE_REF(/obj/machinery/shieldgen, "deployed_shields", OWNED_LIST, null)
 
 // its shields collapse.
 /obj/machinery/shieldgen/on_destroy(force)

@@ -218,8 +218,14 @@
 	update_icon()
 	return INITIALIZE_HINT_LATELOAD
 
-REF_STATIC(/obj/machinery/portable_atmospherics/hydroponics, "seed")
-REF_OWNED(/obj/machinery/portable_atmospherics/hydroponics, list("temp_chem_holder", "ov_lowhealth", "ov_lowwater", "ov_lownutri", "ov_harvest", "ov_frozen", "ov_alert3"))
+DECLARE_REF(/obj/machinery/portable_atmospherics/hydroponics, "seed", STATIC, null)
+DECLARE_REF(/obj/machinery/portable_atmospherics/hydroponics, "temp_chem_holder", OWNED, null)
+DECLARE_REF(/obj/machinery/portable_atmospherics/hydroponics, "ov_lowhealth", OWNED, null)
+DECLARE_REF(/obj/machinery/portable_atmospherics/hydroponics, "ov_lowwater", OWNED, null)
+DECLARE_REF(/obj/machinery/portable_atmospherics/hydroponics, "ov_lownutri", OWNED, null)
+DECLARE_REF(/obj/machinery/portable_atmospherics/hydroponics, "ov_harvest", OWNED, null)
+DECLARE_REF(/obj/machinery/portable_atmospherics/hydroponics, "ov_frozen", OWNED, null)
+DECLARE_REF(/obj/machinery/portable_atmospherics/hydroponics, "ov_alert3", OWNED, null)
 
 /obj/machinery/portable_atmospherics/hydroponics/on_reagent_change()
 	MACHINE_WAKE(src)

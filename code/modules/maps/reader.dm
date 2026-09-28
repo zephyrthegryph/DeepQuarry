@@ -1112,7 +1112,7 @@ GLOBAL_LIST_EMPTY(map_model_default)
 #undef MAP_UNKNOWN
 #undef MAPLOADING_CHECK_TICK
 
-REF_OWNED_LIST(/datum/parsed_map, "gridSets")
+DECLARE_REF(/datum/parsed_map, "gridSets", OWNED_LIST, null)
 
 // Area instances outlive the parse (areas are never deleted with the map datum).
-REF_STATIC(/datum/parsed_map, list("loaded_areas"))
+DECLARE_REF(/datum/parsed_map, "loaded_areas", STATIC, null)

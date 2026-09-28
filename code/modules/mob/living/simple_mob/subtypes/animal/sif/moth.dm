@@ -120,7 +120,7 @@
 	add_verb(src, /mob/living/proc/ventcrawl)
 	add_verb(src, /mob/living/proc/hide)
 
-REF_OWNED(/mob/living/simple_mob/animal/sif/tymisian, "smoke_spore")
+DECLARE_REF(/mob/living/simple_mob/animal/sif/tymisian, "smoke_spore", OWNED, null)
 
 /datum/om/stage/life/special/animal/sif/tymisian
 	of = /mob/living/simple_mob/animal/sif/tymisian

@@ -107,8 +107,11 @@
 		last_camera_turf_handle = null
 		cut_data()
 
-REF_OWNED(/datum/tgui_module/appearance_changer, list("cam_screen", "cam_background", "local_skybox", "mannequin"))
-REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
+DECLARE_REF(/datum/tgui_module/appearance_changer, "cam_screen", OWNED, null)
+DECLARE_REF(/datum/tgui_module/appearance_changer, "cam_background", OWNED, null)
+DECLARE_REF(/datum/tgui_module/appearance_changer, "local_skybox", OWNED, null)
+DECLARE_REF(/datum/tgui_module/appearance_changer, "mannequin", OWNED, null)
+DECLARE_REF(/datum/tgui_module/appearance_changer, "cam_plane_masters", OWNED_LIST, null)
 
 /datum/tgui_module/appearance_changer/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	if(..())

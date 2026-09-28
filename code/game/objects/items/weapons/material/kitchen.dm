@@ -225,4 +225,4 @@
 		return ITEM_INTERACT_SUCCESS
 	return ..()
 
-REF_SPILL_LIST(/obj/item/material/kitchen/utensil, "food_inserted_micros")
+DECLARE_REF(/obj/item/material/kitchen/utensil, "food_inserted_micros", SPILL_LIST, null)

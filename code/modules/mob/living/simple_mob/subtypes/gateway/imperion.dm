@@ -505,4 +505,4 @@
 			continue
 		L.apply_body_effect(/datum/body_effect/aura/despair, null, src)
 
-REF_OWNED(/mob/living/simple_mob/mechanical/mecha/imperion/phase5, "shields")
+DECLARE_REF(/mob/living/simple_mob/mechanical/mecha/imperion/phase5, "shields", OWNED, null)

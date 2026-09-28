@@ -11,7 +11,7 @@ GLOBAL_DATUM_INIT(character_setup_service, /datum/world_service/character_setup,
 	var/list/preferences_datums = list() // ALLOW(instance_list): d: world service singleton
 	var/list/newplayers_requiring_init = list() // ALLOW(instance_list): d: world service singleton
 
-	/// Preferences waiting to be saved, as a weak list (REF_WEAK_LIST): the client owns them.
+	/// Preferences waiting to be saved, as a weak list (DECLARE_REF(..., WEAK_LIST)): the client owns them.
 	var/list/save_queue
 /*
 /datum/world_service/character_setup/Initialize()
@@ -63,4 +63,4 @@ GLOBAL_DATUM_INIT(character_setup_service, /datum/world_service/character_setup,
 	return GLOB.character_setup_service
 
 /// Pending saves: drained by service_step(); deleted prefs are skipped there.
-REF_WEAK_LIST(/datum/world_service/character_setup, "save_queue")
+DECLARE_REF(/datum/world_service/character_setup, "save_queue", WEAK_LIST, null)

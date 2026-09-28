@@ -167,7 +167,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/overmap/stardog, INTERACT_HAND_U
 	. = ..()
 	child_om_marker?.set_light(5, 1, "#ff8df5")
 
-REF_PAIR(/mob/living/simple_mob/vore/overmap/stardog, list("control_node" = "host"))
+DECLARE_REF(/mob/living/simple_mob/vore/overmap/stardog, "control_node", PAIR, "host")
 
 /mob/living/simple_mob/vore/overmap/stardog/get_status_tab_items()
 	. = ..()
@@ -839,8 +839,8 @@ EXTEND_INTERACTIONS(/obj/structure/flora/tree/fur/wall, INTERACT_ITEM(null, TYPE
 			host = dog
 			dog.control_node = src
 
-REF_PAIR(/obj/structure/control_pod, list("host" = "control_node"))
-REF_HELD(/obj/structure/control_pod, "controller")
+DECLARE_REF(/obj/structure/control_pod, "host", PAIR, "control_node")
+DECLARE_REF(/obj/structure/control_pod, "controller", HELD, null)
 
 DECLARE_INTERACTIONS(/obj/structure/control_pod, INTERACT_HAND(null, PROC_REF(interaction_hand)))
 
@@ -1521,8 +1521,8 @@ DECLARE_INTERACTIONS(/obj/structure/auto_flesh_door, INTERACT_HAND(null, PROC_RE
 	else
 		icon_state = "flesh-closed"
 
-REF_HELD(/obj/effect/dog_teleporter, "target")
-REF_HELD(/turf/simulated/floor/water/digestive_enzymes, "linked_mob")
+DECLARE_REF(/obj/effect/dog_teleporter, "target", HELD, null)
+DECLARE_REF(/turf/simulated/floor/water/digestive_enzymes, "linked_mob", HELD, null)
 
 /// Enzyme pools numb swimmers who opted out of digestion pain.
 /turf/simulated/floor/water/digestive_enzymes/numbs_pain_of(mob/living/occupant)

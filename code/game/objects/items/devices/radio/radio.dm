@@ -869,8 +869,8 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 	bs_tx_preload_id = "cryogaia_rx" //Transmit to a receiver
 	bs_rx_preload_id = "cryogaia_tx" //Recveive from a transmitter
 
-REF_OWNED_LIST(/obj/item/radio, list("secure_radio_connections"))
-REF_HELD(/obj/item/radio/borg, list("keyslot"))
+DECLARE_REF(/obj/item/radio, "secure_radio_connections", OWNED_LIST, null)
+DECLARE_REF(/obj/item/radio/borg, "keyslot", HELD, null)
 
 /// LC-refs: radio connection -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/radio/proc/radio_connection() as /datum/radio_frequency

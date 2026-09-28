@@ -80,4 +80,4 @@
 			chosen_target.attack_hand(user)
 		add_attack_logs(user,chosen_target,"Warp striked")
 
-REF_OWNED(/obj/item/spell/warp_strike, list("sparks"))
+DECLARE_REF(/obj/item/spell/warp_strike, "sparks", OWNED, null)

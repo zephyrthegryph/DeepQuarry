@@ -232,4 +232,10 @@
 	network2 = null
 	network3 = null
 
-REF_HELD(/obj/machinery/atmospherics/trinary, list("air1", "air2", "air3", "node3", "network1", "network2", "network3"))
+DECLARE_REF(/obj/machinery/atmospherics/trinary, "air1", HELD, null)
+DECLARE_REF(/obj/machinery/atmospherics/trinary, "air2", HELD, null)
+DECLARE_REF(/obj/machinery/atmospherics/trinary, "air3", HELD, null)
+DECLARE_REF(/obj/machinery/atmospherics/trinary, "node3", HELD, null)
+DECLARE_REF(/obj/machinery/atmospherics/trinary, "network1", HELD, null)
+DECLARE_REF(/obj/machinery/atmospherics/trinary, "network2", HELD, null)
+DECLARE_REF(/obj/machinery/atmospherics/trinary, "network3", HELD, null)

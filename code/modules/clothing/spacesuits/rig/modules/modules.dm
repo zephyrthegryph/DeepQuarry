@@ -136,8 +136,8 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 	LAZYADD(stat_modules, new/atom/movable/stat_rig_module/select(src))
 	LAZYADD(stat_modules, new/atom/movable/stat_rig_module/charge(src))
 
-REF_BACKLIST(/obj/item/rig_module, list("holder" = "installed_modules"))
-REF_OWNED_LIST(/obj/item/rig_module, "stat_modules")
+DECLARE_REF(/obj/item/rig_module, "holder", BACKLIST, "installed_modules")
+DECLARE_REF(/obj/item/rig_module, "stat_modules", OWNED_LIST, null)
 
 // Called when the module is installed into a suit.
 /obj/item/rig_module/proc/installed(obj/item/rig/new_holder)
@@ -339,4 +339,4 @@ REF_OWNED_LIST(/obj/item/rig_module, "stat_modules")
 		suit_overlay = suit_overlay_inactive
 	holder?.update_icon()
 
-REF_BACKLIST(/atom/movable/stat_rig_module, list("module" = "stat_modules"))
+DECLARE_REF(/atom/movable/stat_rig_module, "module", BACKLIST, "stat_modules")

@@ -48,7 +48,7 @@
 
 	return ..()
 
-REF_OWNED(/mob/living/simple_mob/mechanical/mecha, "sparks")
+DECLARE_REF(/mob/living/simple_mob/mechanical/mecha, "sparks", OWNED, null)
 
 /mob/living/simple_mob/mechanical/mecha
 	delete_on_death = TRUE

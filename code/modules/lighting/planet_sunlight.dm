@@ -130,7 +130,9 @@
 	brightness = CLAMP01(sun().our_brightness)
 	color = sun().our_color
 
-REF_OWNED(/datum/planet_sunlight_handler, list("vis_overhead", "vis_shade", "owned_sun"))
+DECLARE_REF(/datum/planet_sunlight_handler, "vis_overhead", OWNED, null)
+DECLARE_REF(/datum/planet_sunlight_handler, "vis_shade", OWNED, null)
+DECLARE_REF(/datum/planet_sunlight_handler, "owned_sun", OWNED, null)
 
 /// LC-refs: the sun this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/simple_sun/planetary/proc/sun() as /datum/sun_holder

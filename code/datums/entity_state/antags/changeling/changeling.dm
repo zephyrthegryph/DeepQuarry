@@ -491,10 +491,11 @@ DECLARE_INTERACTIONS(/obj/item/changeling_debug, INTERACT_USE(null, PROC_REF(int
 /mob/living/get_changeling_state()
 	return changeling_state
 
-REF_VAR(/mob/living, OWNED, /datum/changeling, changeling_state)
+/mob/living/var/datum/changeling/changeling_state
+DECLARE_REF(/mob/living, "changeling_state", OWNED, null)
 
-REF_BACK(/datum/changeling, list("owner" = "changeling_state"))
+DECLARE_REF(/datum/changeling, "owner", BACK, "changeling_state")
 
-REF_OWNED_LIST(/datum/changeling, "absorbed_dna")
+DECLARE_REF(/datum/changeling, "absorbed_dna", OWNED_LIST, null)
 
-REF_OWNED(/datum/changeling, "power_panel")
+DECLARE_REF(/datum/changeling, "power_panel", OWNED, null)

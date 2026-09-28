@@ -386,6 +386,6 @@
 /obj/machinery/partslathe/step_start_condition()
 	return busy
 
-REF_HELD(/obj/machinery/partslathe, list("copy_board"))
+DECLARE_REF(/obj/machinery/partslathe, "copy_board", HELD, null)
 
-REF_STATIC(/obj/machinery/partslathe, "queue")
+DECLARE_REF(/obj/machinery/partslathe, "queue", STATIC, null)

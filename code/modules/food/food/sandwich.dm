@@ -68,7 +68,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/csandwich, INTERACT
 	if(length(name) > 80) name = "[pick(list("absurd","colossal","enormous","ridiculous"))] sandwich"
 	w_class = n_ceil(CLAMP((length(ingredients)/2),2,4))
 
-REF_OWNED_LIST(/obj/item/reagent_containers/food/snacks/csandwich, "ingredients")
+DECLARE_REF(/obj/item/reagent_containers/food/snacks/csandwich, "ingredients", OWNED_LIST, null)
 
 /obj/item/reagent_containers/food/snacks/csandwich/examine(mob/user)
 	. = ..()

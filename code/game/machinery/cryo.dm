@@ -51,7 +51,7 @@
 	add_overlay(tank)
 	update_icon()
 
-REF_SPILL(/obj/machinery/atmospherics/unary/cryo_cell, "beaker")
+DECLARE_REF(/obj/machinery/atmospherics/unary/cryo_cell, "beaker", SPILL, null)
 
 /// Sealed occupant slot (C8, containment.md §10, OM relations step 3).
 /datum/om/relation/slot/occupant/cryo
@@ -423,4 +423,4 @@ EXTEND_INTERACTIONS(/obj/machinery/atmospherics/unary/cryo_cell, \
 #undef CRYO_BASE_RATE
 #undef CRYO_DEEP_COLD
 
-REF_OWNED(/obj/machinery/atmospherics/unary/cryo_cell, list("fluid"))
+DECLARE_REF(/obj/machinery/atmospherics/unary/cryo_cell, "fluid", OWNED, null)

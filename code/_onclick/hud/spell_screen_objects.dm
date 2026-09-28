@@ -22,7 +22,7 @@
 
 // the master leaves its holder's spell_masters list (a handle, so the mob side can't be declared).
 // (Screen objects leave every client's screen in phase 5.)
-REF_BACK_VIA(/atom/movable/screen/movable/spell_master, list("spell_holder_handle" = "spell_masters"))
+DECLARE_REF(/atom/movable/screen/movable/spell_master, "spell_holder_handle", BACK_VIA, "spell_masters")
 
 /// LC-refs: the mob whose spells these are -- an OM handle (om_handle()), so it reads null once that is deleted.
 /atom/movable/screen/movable/spell_master/proc/spell_holder() as /mob
@@ -172,7 +172,7 @@ REF_BACK_VIA(/atom/movable/screen/movable/spell_master, list("spell_holder_handl
 
 	var/icon/last_charged_icon
 
-REF_OWNED(/atom/movable/screen/spell, list("last_charged_icon"))
+DECLARE_REF(/atom/movable/screen/spell, "last_charged_icon", OWNED, null)
 
 /// LC-refs: the spell this button casts -- an OM handle (om_handle()), so it reads null once that is deleted.
 /atom/movable/screen/spell/proc/spell() as /datum/spell

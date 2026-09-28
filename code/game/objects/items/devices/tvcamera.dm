@@ -14,7 +14,8 @@
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
-REF_OWNED(/obj/item/tvcamera, list("camera", "radio"))
+DECLARE_REF(/obj/item/tvcamera, "camera", OWNED, null)
+DECLARE_REF(/obj/item/tvcamera, "radio", OWNED, null)
 
 /obj/item/tvcamera/examine()
 	. = ..()
@@ -164,7 +165,8 @@ DECLARE_INTERACTIONS(/obj/item/tvcamera, INTERACT_USE(null, PROC_REF(interaction
 	var/showing_name
 	special_handling = TRUE
 
-REF_OWNED(/obj/item/clothing/accessory/bodycam, list("bcamera", "bradio"))
+DECLARE_REF(/obj/item/clothing/accessory/bodycam, "bcamera", OWNED, null)
+DECLARE_REF(/obj/item/clothing/accessory/bodycam, "bradio", OWNED, null)
 
 /obj/item/clothing/accessory/bodycam/examine()
 	. = ..()

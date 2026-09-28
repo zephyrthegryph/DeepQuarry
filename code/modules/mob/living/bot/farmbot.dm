@@ -437,5 +437,5 @@ DECLARE_INTERACTIONS(/obj/item/farmbot_arm_assembly, \
 	visible_message(span_warning("[src] buzzes oddly."))
 	emagged = 1
 
-REF_HELD(/mob/living/bot/farmbot, "tank")
-REF_HELD(/obj/item/farmbot_arm_assembly, "tank")
+DECLARE_REF(/mob/living/bot/farmbot, "tank", HELD, null)
+DECLARE_REF(/obj/item/farmbot_arm_assembly, "tank", HELD, null)

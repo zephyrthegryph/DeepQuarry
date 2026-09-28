@@ -151,7 +151,7 @@
 /obj/effect/dummy/chameleon/slot_loose(mob/actor, atom/target, obj/item/held)
 	return TRUE
 
-REF_OWNED(/obj/structure/closet, "door_obj")
+DECLARE_REF(/obj/structure/closet, "door_obj", OWNED, null)
 
 /obj/structure/closet/examine(mob/user)
 	. = ..()

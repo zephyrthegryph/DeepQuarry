@@ -522,4 +522,4 @@ GLOBAL_DATUM_INIT(gas_data, /datum/xgm_gas_data, new())
 	return
 
 // gas id -> gas type path, on the round-long gas data singleton.
-REF_STATIC(/datum/xgm_gas_data, "gases")
+DECLARE_REF(/datum/xgm_gas_data, "gases", STATIC, null)

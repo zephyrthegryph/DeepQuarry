@@ -85,4 +85,4 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/goat, INTERACT_ITEM(null, PROC
 	// say_got_target doesn't seem to handle emotes, but keeping this here in case someone wants to make it work
 //	say_got_target = list(span_warning("[src] gets an evil-looking gleam in their eye."))
 
-REF_OWNED(/mob/living/simple_mob/animal/goat, "udder")
+DECLARE_REF(/mob/living/simple_mob/animal/goat, "udder", OWNED, null)

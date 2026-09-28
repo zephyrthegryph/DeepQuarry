@@ -386,8 +386,9 @@
 /obj/machinery/bomb_tester/step_start_condition()
 	return simulating
 
-REF_HELD(/obj/machinery/bomb_tester, list("tank1", "tank2"))
-REF_OWNED(/obj/machinery/bomb_tester, list("faketank"))
+DECLARE_REF(/obj/machinery/bomb_tester, "tank1", HELD, null)
+DECLARE_REF(/obj/machinery/bomb_tester, "tank2", HELD, null)
+DECLARE_REF(/obj/machinery/bomb_tester, "faketank", OWNED, null)
 
 /// LC-refs: test canister -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/bomb_tester/proc/test_canister() as /obj/machinery/portable_atmospherics/canister

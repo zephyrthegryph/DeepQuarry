@@ -60,8 +60,15 @@
 	last_occupied = world.time
 	participants = list()
 
-REF_OWNED(/datum/expedition_site, list("station_defense", "station_director", "station_simulation", "mission", "biome", "station_spec", "station_materialization", "landing_waypoint"))
-REF_OWNED_LIST(/datum/expedition_site, "station_controls")
+DECLARE_REF(/datum/expedition_site, "station_defense", OWNED, null)
+DECLARE_REF(/datum/expedition_site, "station_director", OWNED, null)
+DECLARE_REF(/datum/expedition_site, "station_simulation", OWNED, null)
+DECLARE_REF(/datum/expedition_site, "mission", OWNED, null)
+DECLARE_REF(/datum/expedition_site, "biome", OWNED, null)
+DECLARE_REF(/datum/expedition_site, "station_spec", OWNED, null)
+DECLARE_REF(/datum/expedition_site, "station_materialization", OWNED, null)
+DECLARE_REF(/datum/expedition_site, "landing_waypoint", OWNED, null)
+DECLARE_REF(/datum/expedition_site, "station_controls", OWNED_LIST, null)
 
 /// A deleted descriptor leaves the service list that owned it.
 /datum/expedition_site/lifecycle_unbind()

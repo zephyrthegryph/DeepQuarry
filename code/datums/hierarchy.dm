@@ -29,9 +29,9 @@
 /datum/decl/hierarchy/dd_SortValue()
 	return name
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/decl/hierarchy/proc/parent() as /datum/decl/hierarchy
 	return parent_static
-REF_STATIC(/datum/decl/hierarchy, "parent_static")
+DECLARE_REF(/datum/decl/hierarchy, "parent_static", STATIC, null)
 
-REF_OWNED_LIST(/datum/decl/hierarchy, "children")
+DECLARE_REF(/datum/decl/hierarchy, "children", OWNED_LIST, null)

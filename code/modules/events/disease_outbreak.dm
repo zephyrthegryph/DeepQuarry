@@ -97,4 +97,4 @@ GLOBAL_LIST_EMPTY(current_pending_diseases)
 		if(initial(CS.transmission) > 1)
 			transmissable_symptoms += candidate
 
-REF_OWNED(/datum/event/disease_outbreak, "chosen_disease")
+DECLARE_REF(/datum/event/disease_outbreak, "chosen_disease", OWNED, null)

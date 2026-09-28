@@ -189,5 +189,11 @@
 /mob/living/carbon/human/ai_controlled
 	low_priority = TRUE
 
-REF_STATIC(/mob/living/carbon/human, list("synthetic", "ear_style", "ear_secondary_style", "tail_style", "wing_style"))
-REF_HELD(/mob/living/carbon/human, list("vr_holder", "vr_link", "machine_visual"))
+DECLARE_REF(/mob/living/carbon/human, "synthetic", STATIC, null)
+DECLARE_REF(/mob/living/carbon/human, "ear_style", STATIC, null)
+DECLARE_REF(/mob/living/carbon/human, "ear_secondary_style", STATIC, null)
+DECLARE_REF(/mob/living/carbon/human, "tail_style", STATIC, null)
+DECLARE_REF(/mob/living/carbon/human, "wing_style", STATIC, null)
+DECLARE_REF(/mob/living/carbon/human, "vr_holder", HELD, null)
+DECLARE_REF(/mob/living/carbon/human, "vr_link", HELD, null)
+DECLARE_REF(/mob/living/carbon/human, "machine_visual", HELD, null)

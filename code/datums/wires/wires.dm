@@ -523,4 +523,4 @@
 
 #undef MAXIMUM_EMP_WIRES
 
-REF_BACK(/datum/wires, list("holder" = "wires"))
+DECLARE_REF(/datum/wires, "holder", BACK, "wires")

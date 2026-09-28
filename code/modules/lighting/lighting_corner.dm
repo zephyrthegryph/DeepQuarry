@@ -178,11 +178,11 @@
 // Lighting engine: only a forced qdel() deletes a corner.
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lighting_corner)
 
-/// SSlighting's corner queue (REF_QUEUE_MEMBER).
+/// SSlighting's corner queue (DECLARE_REF(..., QUEUE)).
 /proc/lifecycle_lighting_corners_queue()
 	return SSlighting?.corners_queue
 
-REF_QUEUE_MEMBER(/datum/lighting_corner, list("needs_update" = /proc/lifecycle_lighting_corners_queue))
+DECLARE_REF(/datum/lighting_corner, "needs_update", QUEUE, /proc/lifecycle_lighting_corners_queue)
 
 // Corners leave their sources and turfs.
 /datum/lighting_corner/on_destroy(force)
@@ -310,6 +310,9 @@ REF_QUEUE_MEMBER(/datum/lighting_corner, list("needs_update" = /proc/lifecycle_l
 		master_NW_sim.shandler.sunlight_update()
 
 // Corners are immortal (Destroy refuses unless forced): turfs are never deleted, so the masters are never cleared.
-REF_STATIC(/datum/lighting_corner, list("master_NE", "master_SE", "master_SW", "master_NW"))
+DECLARE_REF(/datum/lighting_corner, "master_NE", STATIC, null)
+DECLARE_REF(/datum/lighting_corner, "master_SE", STATIC, null)
+DECLARE_REF(/datum/lighting_corner, "master_SW", STATIC, null)
+DECLARE_REF(/datum/lighting_corner, "master_NW", STATIC, null)
 
 

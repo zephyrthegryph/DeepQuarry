@@ -325,9 +325,11 @@
 /atom/movable/weather_visuals/special
 	plane = PLANE_LIGHTING_ABOVE
 
-REF_BACK(/datum/weather_holder, list("our_planet" = "weather_holder"))
+DECLARE_REF(/datum/weather_holder, "our_planet", BACK, "weather_holder")
 // current_weather is one of allowed_weather_types, not a separate child.
-REF_HELD(/datum/weather_holder, list("current_weather"))
-REF_OWNED(/datum/weather_holder, list("visuals", "special_visuals"))
-REF_BACK(/datum/weather, list("holder" = null))
-REF_OWNED(/datum/weather, list("outdoor_sounds", "indoor_sounds"))
+DECLARE_REF(/datum/weather_holder, "current_weather", HELD, null)
+DECLARE_REF(/datum/weather_holder, "visuals", OWNED, null)
+DECLARE_REF(/datum/weather_holder, "special_visuals", OWNED, null)
+DECLARE_REF(/datum/weather, "holder", BACK, null)
+DECLARE_REF(/datum/weather, "outdoor_sounds", OWNED, null)
+DECLARE_REF(/datum/weather, "indoor_sounds", OWNED, null)

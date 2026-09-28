@@ -109,7 +109,11 @@ REGISTRY_MEMBERSHIP(/obj/structure/janitorialcart, REGISTRY_JANITORIAL_CARTS)
 	LAZYCLEARLIST(tgui_icons)
 	SStgui.update_uis(src)
 
-REF_OWNED(/obj/structure/janitorialcart, list("mybag", "mymop", "myspray", "myreplacer", "mybucket"))
+DECLARE_REF(/obj/structure/janitorialcart, "mybag", OWNED, null)
+DECLARE_REF(/obj/structure/janitorialcart, "mymop", OWNED, null)
+DECLARE_REF(/obj/structure/janitorialcart, "myspray", OWNED, null)
+DECLARE_REF(/obj/structure/janitorialcart, "myreplacer", OWNED, null)
+DECLARE_REF(/obj/structure/janitorialcart, "mybucket", OWNED, null)
 
 // drops its cached tgui icons.
 /obj/structure/janitorialcart/on_destroy(force)

@@ -654,8 +654,9 @@
 /datum/mind/proc/initial_account() as /datum/money_account
 	return om_resolve(initial_account_handle)
 
-REF_OWNED(/datum/mind, list("antag_holder", "my_religion"))
+DECLARE_REF(/datum/mind, "antag_holder", OWNED, null)
+DECLARE_REF(/datum/mind, "my_religion", OWNED, null)
 
-REF_OWNED_LIST(/datum/mind, "objectives")
+DECLARE_REF(/datum/mind, "objectives", OWNED_LIST, null)
 
-REF_BACK(/datum/mind, list("current" = "mind"))
+DECLARE_REF(/datum/mind, "current", BACK, "mind")

@@ -81,7 +81,10 @@
 		return null
 	return new /datum/generated_station_director(simulation)
 
-REF_OWNED_VALUES(/datum/generated_station_director, list("reports", "squads", "orders", "global_knowledge"))
+DECLARE_REF(/datum/generated_station_director, "reports", OWNED_VALUES, null)
+DECLARE_REF(/datum/generated_station_director, "squads", OWNED_VALUES, null)
+DECLARE_REF(/datum/generated_station_director, "orders", OWNED_VALUES, null)
+DECLARE_REF(/datum/generated_station_director, "global_knowledge", OWNED_VALUES, null)
 
 /datum/generated_station_director/proc/mark_dirty(department_id)
 	strategic_dirty = TRUE

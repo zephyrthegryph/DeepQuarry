@@ -25,8 +25,9 @@
 	var/datum/callback/start_experiment_callback
 
 /// The experiment handler of this movable, if it has one. Owned: deleted with it.
-REF_VAR(/atom/movable, OWNED, /datum/experiment_handler, experiment_handler)
-REF_BACK(/datum/experiment_handler, list("owner" = "experiment_handler"))
+/atom/movable/var/datum/experiment_handler/experiment_handler // ALLOW(state_ref): owned child (DECLARE_REF OWNED); saved as before, the one-line REF_VAR form hid it from this lint
+DECLARE_REF(/atom/movable, "experiment_handler", OWNED, null)
+DECLARE_REF(/datum/experiment_handler, "owner", BACK, "experiment_handler")
 
 /**
  * Creates the experiment handler of a movable
@@ -429,13 +430,13 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 		if("start_experiment_callback")
 			start_experiment_callback.Invoke(selected_experiment())
 
-REF_OWNED(/datum/experiment_handler, "start_experiment_callback")
+DECLARE_REF(/datum/experiment_handler, "start_experiment_callback", OWNED, null)
 
 /// LC-refs: the selected_experiment this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/experiment_handler/proc/selected_experiment() as /datum/experiment
 	return om_resolve(selected_experiment_handle)
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/experiment_handler/proc/linked_web() as /datum/techweb
 	return linked_web_static
-REF_STATIC(/datum/experiment_handler, "linked_web_static")
+DECLARE_REF(/datum/experiment_handler, "linked_web_static", STATIC, null)

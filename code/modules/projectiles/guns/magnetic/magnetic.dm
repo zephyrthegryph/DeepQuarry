@@ -46,7 +46,9 @@
 
 	update_icon()
 
-REF_OWNED(/obj/item/gun/magnetic, list("cell", "loaded", "capacitor"))
+DECLARE_REF(/obj/item/gun/magnetic, "cell", OWNED, null)
+DECLARE_REF(/obj/item/gun/magnetic, "loaded", OWNED, null)
+DECLARE_REF(/obj/item/gun/magnetic, "capacitor", OWNED, null)
 
 /obj/item/gun/magnetic/get_cell()
 	return cell

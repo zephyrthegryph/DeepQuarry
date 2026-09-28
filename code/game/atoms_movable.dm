@@ -863,8 +863,8 @@ DECLARE_INTERACTIONS(/atom/movable/overlay, 	INTERACT_HAND_UNGATED(null, PROC_RE
 		var/client/C = usr.client
 		C?.open_particle_editor(src)
 
-REF_OWNED(/atom/movable, list("riding_datum"))
+DECLARE_REF(/atom/movable, "riding_datum", OWNED, null)
 
 // The throw_of relation's view field: its on_unlink() clears it.
-REF_HELD(/atom/movable, "throwing")
-REF_BACK(/atom/movable/overlay, list("master" = null))
+DECLARE_REF(/atom/movable, "throwing", HELD, null)
+DECLARE_REF(/atom/movable/overlay, "master", BACK, null)

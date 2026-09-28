@@ -725,7 +725,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/khcrystal, INTERACT_SELF
 	soundloop = new(list(src), FALSE)
 	return ..()
 
-REF_OWNED(/obj/item/storage/backpack/saddlebag/tempest, "soundloop")
+DECLARE_REF(/obj/item/storage/backpack/saddlebag/tempest, "soundloop", OWNED, null)
 
 /obj/item/storage/backpack/saddlebag/tempest/ui_action_click(mob/user, actiontype)
 	ambulance = !(ambulance)

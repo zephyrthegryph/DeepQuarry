@@ -127,8 +127,8 @@
 	soundloop.start() // Have to do this here bc it starts on
 
 // Leaves NTNet's relay list; DoS programs aimed at it lose their target.
-REF_BACKLIST(/obj/machinery/ntnet_relay, list("NTNet_static" = "relays"))
-REF_LIST_BACK(/obj/machinery/ntnet_relay, list("dos_sources" = "target_handle"))
+DECLARE_REF(/obj/machinery/ntnet_relay, "NTNet_static", BACKLIST, "relays")
+DECLARE_REF(/obj/machinery/ntnet_relay, "dos_sources", LIST_BACK, "target_handle")
 
 // NTNet logs the lost relay and DoS programs report it.
 /obj/machinery/ntnet_relay/on_destroy(force)
@@ -145,9 +145,9 @@ REF_LIST_BACK(/obj/machinery/ntnet_relay, list("dos_sources" = "target_handle"))
 /obj/machinery/ntnet_relay/step_start_condition()
 	return TRUE // sets its power draw
 
-REF_OWNED(/obj/machinery/ntnet_relay, "soundloop")
+DECLARE_REF(/obj/machinery/ntnet_relay, "soundloop", OWNED, null)
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/machinery/ntnet_relay/proc/NTNet() as /datum/ntnet
 	return NTNet_static
-REF_STATIC(/obj/machinery/ntnet_relay, "NTNet_static")
+DECLARE_REF(/obj/machinery/ntnet_relay, "NTNet_static", STATIC, null)

@@ -179,4 +179,4 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/metroid/juvenile, INTERACT_HAND_UNGAT
 	adjust_nutrition(-500)
 	status_set(EFFECT_PARALYZED, 0)
 
-REF_HELD(/mob/living/simple_mob/metroid/juvenile, "victim")
+DECLARE_REF(/mob/living/simple_mob/metroid/juvenile, "victim", HELD, null)

@@ -484,4 +484,4 @@ MATERIAL_MIX(/obj/item/stock_parts/motor, list(MAT_STEEL = 60, MAT_GLASS = 10))
 /obj/item/pai_cable/proc/machine() as /obj/machinery
 	return om_resolve(machine_handle)
 
-REF_OWNED(/obj/item/gift, list("gift"))
+DECLARE_REF(/obj/item/gift, "gift", OWNED, null)

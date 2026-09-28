@@ -8,9 +8,10 @@
 	var/dirtslip = FALSE
 
 /// Owned: the slide in progress, if any.
-REF_VAR(/mob/living, OWNED, /datum/turfslip, turfslip)
+/mob/living/var/datum/turfslip/turfslip
+DECLARE_REF(/mob/living, "turfslip", OWNED, null)
 
-REF_BACK(/datum/turfslip, list("owner" = "turfslip"))
+DECLARE_REF(/datum/turfslip, "owner", BACK, "turfslip")
 
 /datum/turfslip/New(mob/living/new_owner)
 	..()

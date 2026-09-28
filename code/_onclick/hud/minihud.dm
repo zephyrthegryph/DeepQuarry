@@ -8,7 +8,7 @@
 	if(needs_processing)
 		om_task_periodic(src, PERIODIC_SECOND)
 
-REF_OWNED_LIST(/datum/mini_hud, "screenobjs")
+DECLARE_REF(/datum/mini_hud, "screenobjs", OWNED_LIST, null)
 
 // takes itself off the hud it was applied to.
 /datum/mini_hud/on_destroy(force)

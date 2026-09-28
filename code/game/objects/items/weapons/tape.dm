@@ -201,4 +201,4 @@ DECLARE_INTERACTIONS(/obj/item/ducttape, \
 			else if(dir_offset & SOUTH)
 				pixel_y -= 32
 
-REF_HELD(/obj/item/ducttape, list("stuck"))
+DECLARE_REF(/obj/item/ducttape, "stuck", HELD, null)

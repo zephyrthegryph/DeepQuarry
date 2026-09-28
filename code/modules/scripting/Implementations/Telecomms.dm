@@ -328,7 +328,7 @@
 	if(!pass)
 		S.relay_information(newsign, /obj/machinery/telecomms/broadcaster) // send this simple message to broadcasters
 
-REF_OWNED(/datum/TCS_Compiler, "interpreter")
+DECLARE_REF(/datum/TCS_Compiler, "interpreter", OWNED, null)
 
 /// LC-refs: the Compiler this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/n_Interpreter/TCS_Interpreter/proc/Compiler() as /datum/TCS_Compiler

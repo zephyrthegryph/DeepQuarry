@@ -374,4 +374,4 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable/candy/lolli, INTERACT_ITEM(
 			to_chat(loc, span_notice("There's no more of \the [name] left!"))
 		spitout(0)
 
-REF_SPILL_LIST(/obj/item/clothing/mask/chewable/candy/lolli, "victims")
+DECLARE_REF(/obj/item/clothing/mask/chewable/candy/lolli, "victims", SPILL_LIST, null)

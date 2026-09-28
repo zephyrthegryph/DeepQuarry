@@ -140,5 +140,8 @@
 		to_chat(user, span_danger("Nothing on \the [T] is useful to you."))
 	return
 
-// The synths are the robot module's (REF_OWNED_LIST "synths").
-REF_HELD(/obj/item/matter_decompiler, list("metal", "glass", "wood", "plastic"))
+// The synths are the robot module's (DECLARE_REF(..., OWNED_LIST) "synths").
+DECLARE_REF(/obj/item/matter_decompiler, "metal", HELD, null)
+DECLARE_REF(/obj/item/matter_decompiler, "glass", HELD, null)
+DECLARE_REF(/obj/item/matter_decompiler, "wood", HELD, null)
+DECLARE_REF(/obj/item/matter_decompiler, "plastic", HELD, null)

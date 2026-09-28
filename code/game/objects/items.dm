@@ -162,7 +162,7 @@
 // Machine components are normally located inside their owner: a component
 // destroyed on its own (upgrade, explosion, bulk teardown) leaves the owner's
 // component_parts, or that list would keep it as a hard delete.
-REF_BACK_VIA(/obj/item, list("loc" = list(/obj/machinery = "component_parts")))
+DECLARE_REF(/obj/item, "loc", BACK_VIA, list(/obj/machinery = "component_parts"))
 
 /obj/item/on_destroy(force)
 	if(ismob(loc))
@@ -1126,7 +1126,9 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 			return TRUE
 	return FALSE
 
-REF_OWNED(/obj/item, list("blood_overlay", "d_stage_overlay", "identity"))
+DECLARE_REF(/obj/item, "blood_overlay", OWNED, null)
+DECLARE_REF(/obj/item, "d_stage_overlay", OWNED, null)
+DECLARE_REF(/obj/item, "identity", OWNED, null)
 
 /// LC-refs: hidden uplink -- an OM handle (om_handle()); a global helper keeps the proc off the base type.
 /proc/item_hidden_uplink(obj/item/I) as /obj/item/uplink/hidden
@@ -1136,4 +1138,4 @@ REF_OWNED(/obj/item, list("blood_overlay", "d_stage_overlay", "identity"))
 /proc/item_my_augment(obj/item/I) as /obj/item/organ
 	return om_resolve(I?.my_augment_handle)
 
-REF_HELD(/obj/item, "master")
+DECLARE_REF(/obj/item, "master", HELD, null)

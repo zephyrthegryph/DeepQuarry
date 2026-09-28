@@ -86,7 +86,7 @@
 	if(user_client())
 		clean_user_client()
 
-REF_OWNED(/datum/progressbar, "bar")
+DECLARE_REF(/datum/progressbar, "bar", OWNED, null)
 
 ///Called right before the user's Destroy()
 /datum/progressbar/proc/on_user_delete(datum/source, datum/om/event/qdeleting/event)

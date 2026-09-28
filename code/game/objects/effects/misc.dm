@@ -140,7 +140,7 @@
 			if(3 to INFINITY)
 				light_spot.icon_state = "far"
 
-REF_OWNED(/obj/effect/abstract/directional_lighting, "light_spot")
+DECLARE_REF(/obj/effect/abstract/directional_lighting, "light_spot", OWNED, null)
 
 // Only its light component may delete it (a forced qdel()).
 /obj/effect/abstract/directional_lighting/lifecycle_keep(force)

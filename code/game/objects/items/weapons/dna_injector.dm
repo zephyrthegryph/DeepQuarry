@@ -349,4 +349,4 @@
 	disabling = TRUE
 // CHOMPEnable End
 
-REF_OWNED(/obj/item/dnainjector, list("buf"))
+DECLARE_REF(/obj/item/dnainjector, "buf", OWNED, null)

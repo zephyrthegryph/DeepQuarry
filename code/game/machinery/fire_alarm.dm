@@ -65,7 +65,10 @@ FIRE ALARM
 	critalarm = new(list(src), FALSE) // Create soundloop
 	causality = new(list(src), FALSE) // Create soundloop
 
-REF_OWNED(/obj/machinery/firealarm, list("soundloop", "engalarm", "critalarm", "causality"))
+DECLARE_REF(/obj/machinery/firealarm, "soundloop", OWNED, null)
+DECLARE_REF(/obj/machinery/firealarm, "engalarm", OWNED, null)
+DECLARE_REF(/obj/machinery/firealarm, "critalarm", OWNED, null)
+DECLARE_REF(/obj/machinery/firealarm, "causality", OWNED, null)
 
 // a sounding alarm is reset for its area.
 /obj/machinery/firealarm/on_destroy(force)

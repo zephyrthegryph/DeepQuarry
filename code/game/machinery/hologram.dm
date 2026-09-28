@@ -246,4 +246,4 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 #undef HOLOGRAM_POWER_USAGE
 #undef IS_RANGE_BASED
 
-REF_HELD(/obj/machinery/hologram/holopad, "masters")
+DECLARE_REF(/obj/machinery/hologram/holopad, "masters", HELD, null)

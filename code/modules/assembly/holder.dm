@@ -14,7 +14,8 @@
 	var/tmp/special_assembly_handle
 
 // Its assemblies stop naming it (ones inside go with it; ones taken out stay).
-REF_BACK_VIA(/obj/item/assembly_holder, list("a_left" = "holder_handle", "a_right" = "holder_handle"))
+DECLARE_REF(/obj/item/assembly_holder, "a_left", BACK_VIA, "holder_handle")
+DECLARE_REF(/obj/item/assembly_holder, "a_right", BACK_VIA, "holder_handle")
 
 /obj/item/assembly_holder/proc/attach(obj/item/assembly/D, obj/item/assembly/D2, mob/user)
 	if(!D || !D2)
@@ -249,7 +250,8 @@ REF_BACK_VIA(/obj/item/assembly_holder, list("a_left" = "holder_handle", "a_righ
 	else
 		to_chat(usr, span_notice("You cannot do this while [usr.stat ? "unconscious/dead" : "restrained"]."))
 
-REF_HELD(/obj/item/assembly_holder, list("a_left", "a_right"))
+DECLARE_REF(/obj/item/assembly_holder, "a_left", HELD, null)
+DECLARE_REF(/obj/item/assembly_holder, "a_right", HELD, null)
 
 /// LC-refs: the special_assembly this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/assembly_holder/proc/special_assembly() as /obj

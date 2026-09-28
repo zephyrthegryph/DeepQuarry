@@ -93,7 +93,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 	decryptkey = GenerateKey()
 	send_pda_message("System Administrator", "system", "This is an automated message. The messaging system is functioning correctly.")
 
-REF_OWNED(/obj/machinery/message_server, "soundloop")
+DECLARE_REF(/obj/machinery/message_server, "soundloop", OWNED, null)
 
 /obj/machinery/message_server/examine(mob/user, distance, infix, suffix)
 	. = ..()
@@ -309,7 +309,7 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 
 // ALLOW(lifecycle): the blackbox respawns with its logs. Phase 1, before phase 4 deletes the feedback
 /obj/machinery/blackbox_recorder/lifecycle_unbind()
-// it owns (REF_OWNED_LIST): the replacement takes the list over.
+// it owns (DECLARE_REF(..., OWNED_LIST)): the replacement takes the list over.
 	var/turf/T = locate(1,1,2)
 	if(T)
 		GLOB.blackbox = null
@@ -478,6 +478,7 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 /obj/machinery/message_server/step_start_condition()
 	return active // its hum
 
-REF_OWNED_LIST(/obj/machinery/message_server, list("pda_msgs", "rc_msgs"))
+DECLARE_REF(/obj/machinery/message_server, "pda_msgs", OWNED_LIST, null)
+DECLARE_REF(/obj/machinery/message_server, "rc_msgs", OWNED_LIST, null)
 
-REF_OWNED_LIST(/obj/machinery/blackbox_recorder, "feedback")
+DECLARE_REF(/obj/machinery/blackbox_recorder, "feedback", OWNED_LIST, null)

@@ -108,7 +108,7 @@
 	icon_state = "light1"
 	on = 0
 
-REF_OWNED(/obj/machinery/light_switch, list("overlay"))
+DECLARE_REF(/obj/machinery/light_switch, "overlay", OWNED, null)
 
 /// LC-refs: area -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/light_switch/proc/area() as /area

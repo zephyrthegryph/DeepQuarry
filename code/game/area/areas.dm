@@ -674,4 +674,4 @@ GLOBAL_DATUM(spoiler_obfuscation_image, /image)
 	if(flag_check(AREA_NO_SPOILERS))
 		set_spoiler_obfuscation(TRUE)
 
-REF_PAIR(/area, list("apc" = "area"))
+DECLARE_REF(/area, "apc", PAIR, "area")

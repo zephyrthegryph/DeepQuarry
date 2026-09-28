@@ -23,7 +23,7 @@
 		BB = new projectile_type(src)
 	randpixel_xy()
 
-REF_OWNED(/obj/item/ammo_casing, "BB")
+DECLARE_REF(/obj/item/ammo_casing, "BB", OWNED, null)
 
 //removes the projectile from the ammo casing
 /obj/item/ammo_casing/proc/expend()
@@ -384,4 +384,4 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/ammo_box, INTERACT_ALT(null, PROC_RE
 
 	. += span_notice("Alt-click to extract contents.")
 
-REF_OWNED_LIST(/obj/item/ammo_magazine, "stored_ammo")
+DECLARE_REF(/obj/item/ammo_magazine, "stored_ammo", OWNED_LIST, null)

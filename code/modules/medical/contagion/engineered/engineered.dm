@@ -677,4 +677,4 @@ ADMIN_VERB(AdminCreateVirus, R_SPAWN|R_EVENT, "Create Advanced Virus", "Create a
 		if(3)
 			return "[pick(bodies)][pick(suffixes)]"
 
-REF_OWNED_LIST(/datum/disease/advance, "symptoms")
+DECLARE_REF(/datum/disease/advance, "symptoms", OWNED_LIST, null)

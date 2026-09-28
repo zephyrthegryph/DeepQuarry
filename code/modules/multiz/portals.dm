@@ -157,7 +157,7 @@ DECLARE_INTERACTIONS(/obj/structure/portal_event, \
 	var/target
 
 // its portal forgets it.
-REF_BACK(/obj/structure/portal_target, list("target" = "target"))
+DECLARE_REF(/obj/structure/portal_target, "target", BACK, "target")
 
 /obj/structure/portal_gateway
 	name = "portal"
@@ -225,4 +225,4 @@ REF_BACK(/obj/structure/portal_target, list("target" = "target"))
 
 /// LC-refs: a portal's other end goes with it (phase 4 deletes it; its own Destroy() then
 /// finds the link already gone).
-REF_OWNED(/obj/structure/portal_event, "target")
+DECLARE_REF(/obj/structure/portal_event, "target", OWNED, null)

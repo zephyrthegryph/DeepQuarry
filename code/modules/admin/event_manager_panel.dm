@@ -174,4 +174,4 @@
 /datum/world_service/events
 	var/datum/event_manager_panel/tgui_event_manager_panel
 
-REF_OWNED(/datum/world_service/events, "tgui_event_manager_panel")
+DECLARE_REF(/datum/world_service/events, "tgui_event_manager_panel", OWNED, null)

@@ -369,5 +369,5 @@
 
 	return data
 
-REF_HELD(/mob/living, "internal")
-REF_BACK(/datum/inventory_panel, list("host" = "inventory_panel"))
+DECLARE_REF(/mob/living, "internal", HELD, null)
+DECLARE_REF(/datum/inventory_panel, "host", BACK, "inventory_panel")

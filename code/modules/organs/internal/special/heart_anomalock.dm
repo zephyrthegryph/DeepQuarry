@@ -21,7 +21,8 @@
 	///If the core is removable once socketed.
 	var/core_removable = TRUE
 
-REF_OWNED(/obj/item/organ/internal/heart/machine/anomalock, list("core", "lightning_overlay"))
+DECLARE_REF(/obj/item/organ/internal/heart/machine/anomalock, "core", OWNED, null)
+DECLARE_REF(/obj/item/organ/internal/heart/machine/anomalock, "lightning_overlay", OWNED, null)
 
 /obj/item/organ/internal/heart/machine/anomalock/handle_organ_mod_special(removed)
 	if(!core)

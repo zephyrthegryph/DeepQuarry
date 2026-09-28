@@ -26,7 +26,7 @@
 	. = ..()
 	announce = new /obj/item/radio/intercom(src)
 
-REF_SPILL(/obj/machinery/computer/timeclock, "card")
+DECLARE_REF(/obj/machinery/computer/timeclock, "card", SPILL, null)
 
 /obj/machinery/computer/timeclock/update_icon()
 	if(inoperable())
@@ -297,4 +297,4 @@ REF_SPILL(/obj/machinery/computer/timeclock, "card")
 	dir = 4
 	pixel_x = -26
 
-REF_HELD(/obj/machinery/computer/timeclock, list("announce"))
+DECLARE_REF(/obj/machinery/computer/timeclock, "announce", HELD, null)

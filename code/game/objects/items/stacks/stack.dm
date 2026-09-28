@@ -563,5 +563,5 @@ DECLARE_INTERACTIONS(/obj/item/stack, \
 			merge(AM)
 	return ..()
 
-REF_STATIC(/obj/item/stack, "recipes")
-REF_HELD(/obj/item/stack, "synths")
+DECLARE_REF(/obj/item/stack, "recipes", STATIC, null)
+DECLARE_REF(/obj/item/stack, "synths", HELD, null)

@@ -238,4 +238,4 @@ EXTEND_INTERACTIONS(/obj/structure/backup_implanter_ch, \
 /obj/item/implant/backup/proc/our_db() as /datum/transcore_db
 	return GLOB.transcore_service.db_by_key(db_key)
 
-REF_OWNED_LIST(/obj/item/backup_implanter, "imps")
+DECLARE_REF(/obj/item/backup_implanter, "imps", OWNED_LIST, null)

@@ -65,4 +65,5 @@
 		ME.add_equip_overlay(src)
 	return
 
-REF_OWNED(/obj/mecha, list("face_overlay", "pilot_image"))
+DECLARE_REF(/obj/mecha, "face_overlay", OWNED, null)
+DECLARE_REF(/obj/mecha, "pilot_image", OWNED, null)

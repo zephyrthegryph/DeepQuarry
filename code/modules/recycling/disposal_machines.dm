@@ -840,4 +840,4 @@
 /obj/machinery/disposal/step_start_condition()
 	return mode == 1 || flush || contents_count(src) || has_latent() // ALLOW(latent): latent entries checked
 
-REF_OWNED(/obj/machinery/disposal, "air_contents")
+DECLARE_REF(/obj/machinery/disposal, "air_contents", OWNED, null)

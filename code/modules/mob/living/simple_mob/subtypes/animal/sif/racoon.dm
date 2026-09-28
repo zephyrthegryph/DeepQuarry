@@ -119,7 +119,7 @@
 	emote_see = list("sniffs","looks around", "rubs its hands")
 	emote_hear = list("chitters", "clicks")
 
-REF_SPILL(/mob/living/simple_mob/animal/sif/sakimm, "hat")
+DECLARE_REF(/mob/living/simple_mob/animal/sif/sakimm, "hat", SPILL, null)
 
 /mob/living/simple_mob/animal/sif/sakimm/update_icon()
 	cut_overlays()

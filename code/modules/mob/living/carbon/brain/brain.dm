@@ -135,5 +135,5 @@
 		record.last_notification = world.time
 		to_chat(src, span_notice("New notification has been sent."))
 
-REF_BACK(/mob/living/carbon/brain, list("host" = "view"))
-REF_HELD(/mob/living/carbon/brain, "container")
+DECLARE_REF(/mob/living/carbon/brain, "host", BACK, "view")
+DECLARE_REF(/mob/living/carbon/brain, "container", HELD, null)

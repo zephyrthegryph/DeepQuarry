@@ -10,10 +10,10 @@
 // implant scan and backup staleness pass run by /datum/om/behaviour/world/transcore (3 min).
 GLOBAL_DATUM_INIT(transcore_service, /datum/world_service/transcore, new)
 
-REF_OWNED_VALUES(/datum/world_service/transcore, "databases")
-REF_OWNED(/datum/world_service/transcore, "default_db")
+DECLARE_REF(/datum/world_service/transcore, "databases", OWNED_VALUES, null)
+DECLARE_REF(/datum/world_service/transcore, "default_db", OWNED, null)
 // The per-cadence work queue: record/implant -> its database, all round-long service data.
-REF_STATIC(/datum/world_service/transcore, "current_run")
+DECLARE_REF(/datum/world_service/transcore, "current_run", STATIC, null)
 
 /datum/world_service/transcore
 	name = "Transcore"
@@ -315,7 +315,9 @@ REF_STATIC(/datum/world_service/transcore, "current_run")
 
 /// The database owns its records: mind records (backed_up, and has_left once they cryo) and
 /// body records, keyed by name. A core dump moves the mind records to the disk first.
-REF_OWNED_VALUES(/datum/transcore_db, list("backed_up", "has_left", "body_scans"))
+DECLARE_REF(/datum/transcore_db, "backed_up", OWNED_VALUES, null)
+DECLARE_REF(/datum/transcore_db, "has_left", OWNED_VALUES, null)
+DECLARE_REF(/datum/transcore_db, "body_scans", OWNED_VALUES, null)
 
 /// Resleeving implant scan and backup staleness (was SStranscore, 3 min, background).
 /datum/om/behaviour/world/transcore

@@ -122,7 +122,7 @@
 	last_piece_handle = om_handle(NC)
 	return 1
 
-REF_HELD(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer, list("cable"))
+DECLARE_REF(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer, "cable", HELD, null)
 
 /// LC-refs: old turf -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/old_turf() as /turf

@@ -827,8 +827,6 @@
 		network2 = new_network
 	return TRUE
 
-/obj/machinery/atmospherics/declared_owned_list_vars()
-	. = ..()
-	. = (. || list()) + "rust_unbound_port_air"
+DECLARE_REF(/obj/machinery/atmospherics, "rust_unbound_port_air", OWNED_LIST, null)
 
-REF_BACK(/datum/pipe_port, list("machine" = null))
+DECLARE_REF(/datum/pipe_port, "machine", BACK, null)

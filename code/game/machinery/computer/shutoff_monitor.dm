@@ -11,7 +11,7 @@
 	. = ..()
 	monitor = new(src)
 
-REF_OWNED(/obj/machinery/computer/shutoff_monitor, "monitor")
+DECLARE_REF(/obj/machinery/computer/shutoff_monitor, "monitor", OWNED, null)
 
 /obj/machinery/computer/shutoff_monitor/declare_interactions(list/into)
 	into += list(

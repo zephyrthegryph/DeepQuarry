@@ -498,4 +498,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/autolok, INTERACT_ITEM(nu
 /obj/item/clothing/suit/space/void
 	can_breach = 0
 
-REF_HELD(/obj/item/clothing/suit/space/void, list("boots", "tank", "cooler"))
+DECLARE_REF(/obj/item/clothing/suit/space/void, "boots", HELD, null)
+DECLARE_REF(/obj/item/clothing/suit/space/void, "tank", HELD, null)
+DECLARE_REF(/obj/item/clothing/suit/space/void, "cooler", HELD, null)

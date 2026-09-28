@@ -158,4 +158,4 @@ GLOBAL_VAR_INIT(warrant_uid, 0)
 /datum/computer_file/program/digitalwarrant/proc/activewarrant() as /datum/data/record/warrant
 	return activewarrant_ref
 
-REF_BACK(/datum/computer_file/program/digitalwarrant, list("activewarrant_ref" = null))
+DECLARE_REF(/datum/computer_file/program/digitalwarrant, "activewarrant_ref", BACK, null)

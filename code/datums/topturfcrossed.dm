@@ -56,7 +56,7 @@
 /datum/topturfcrossed/proc/our_old_turf() as /turf
 	return om_resolve(our_old_turf_handle)
 
-REF_BACK(/datum/topturfcrossed, list("owner" = "topturfcrossed"))
+DECLARE_REF(/datum/topturfcrossed, "owner", BACK, "topturfcrossed")
 
 //the bikehorn of testing
 /obj/item/bikehorn/topturf_testing
@@ -64,7 +64,7 @@ REF_BACK(/datum/topturfcrossed, list("owner" = "topturfcrossed"))
 	desc = "honk if you're working correctly"
 	var/tmp/datum/topturfcrossed/topturfcrossed
 
-REF_OWNED(/obj/item/bikehorn/topturf_testing, "topturfcrossed")
+DECLARE_REF(/obj/item/bikehorn/topturf_testing, "topturfcrossed", OWNED, null)
 
 /obj/item/bikehorn/topturf_testing/Initialize(mapload)
 	. = ..()

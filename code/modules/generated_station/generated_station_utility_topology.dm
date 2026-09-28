@@ -117,7 +117,8 @@
 	scrub_tanks = list()
 	alarms = list()
 
-REF_OWNED_LIST(/datum/generated_station_utility_topology, list("power_objects", "atmos_objects"))
+DECLARE_REF(/datum/generated_station_utility_topology, "power_objects", OWNED_LIST, null)
+DECLARE_REF(/datum/generated_station_utility_topology, "atmos_objects", OWNED_LIST, null)
 
 /datum/generated_station_utility_topology/proc/power_available()
 	var/has_source = FALSE
@@ -811,9 +812,9 @@ REF_OWNED_LIST(/datum/generated_station_utility_topology, list("power_objects", 
 /obj/machinery/power/generator/generated_station/step_start_condition()
 	return !(stat & BROKEN)
 
-REF_OWNED(/datum/generated_station_utility_builder, "result")
+DECLARE_REF(/datum/generated_station_utility_builder, "result", OWNED, null)
 
-REF_OWNED(/datum/expedition_site, "station_utilities")
+DECLARE_REF(/datum/expedition_site, "station_utilities", OWNED, null)
 
 /// LC-refs: the spec this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/generated_station_utility_builder/proc/spec() as /datum/generated_station_spec

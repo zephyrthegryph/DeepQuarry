@@ -45,7 +45,7 @@
 	/// Optional validity check (performer adjacent, machine powered...).
 	var/datum/callback/still_valid
 
-REF_OWNED(/datum/body_support, "still_valid")
+DECLARE_REF(/datum/body_support, "still_valid", OWNED, null)
 
 /datum/body_support/proc/is_valid()
 	if(expires_at && world.time >= expires_at) // ALLOW(cooldown): physiology factor expiry
@@ -72,7 +72,7 @@ REF_OWNED(/datum/body_support, "still_valid")
 	/// The physiology, or null (simple and machine plans).
 	var/datum/physiology/physiology
 
-REF_OWNED(/datum/body, "physiology")
+DECLARE_REF(/datum/body, "physiology", OWNED, null)
 
 /// A floor on `factor_id` from `source` for `duration` (0 = until removed or
 /// `still_valid` fails). Re-adding from the same source refreshes it.
@@ -290,7 +290,7 @@ REF_OWNED(/datum/body, "physiology")
 	/// world.time the post-revival grace ends (0 = none).
 	var/revival_grace_until = 0
 
-REF_BACK(/datum/physiology, list("body" = "physiology"))
+DECLARE_REF(/datum/physiology, "body", BACK, "physiology")
 
 /datum/physiology/New(datum/body/new_body)
 	..()

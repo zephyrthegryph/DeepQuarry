@@ -7,7 +7,7 @@
 	pockets = new/obj/item/storage/internal(src)
 	pockets.max_storage_space = ITEMSIZE_COST_SMALL * 2
 
-REF_OWNED(/obj/item/clothing/suit/storage, "pockets")
+DECLARE_REF(/obj/item/clothing/suit/storage, "pockets", OWNED, null)
 
 EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage, \
 	INTERACT_HAND_UNGATED(null, PROC_REF(suit_pockets_hand)), \

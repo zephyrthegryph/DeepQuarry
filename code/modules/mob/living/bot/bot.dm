@@ -598,8 +598,10 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 	feeding = FALSE
 	can_be_drop_pred = FALSE
 
-REF_OWNED(/mob/living/bot, list("botcard", "access_scanner"))
-REF_HELD(/mob/living/bot, list("paicard", "target"))
-REF_STATIC(/mob/living/bot, "obstacle")
+DECLARE_REF(/mob/living/bot, "botcard", OWNED, null)
+DECLARE_REF(/mob/living/bot, "access_scanner", OWNED, null)
+DECLARE_REF(/mob/living/bot, "paicard", HELD, null)
+DECLARE_REF(/mob/living/bot, "target", HELD, null)
+DECLARE_REF(/mob/living/bot, "obstacle", STATIC, null)
 /// Things the bot gave up on and how often: AI memory, re-learned as it patrols.
 // ignore_past counts how often each target was ignored, keyed by om_handle(): the bot owns none of them.

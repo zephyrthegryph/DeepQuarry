@@ -157,4 +157,4 @@ DECLARE_INTERACTIONS(/obj/item/blobcore_chunk, \
 		chunk.visible_message(span_warning("[chunk] shifts strangely, but falls still."))
 
 // LC-refs: the chunk owns its own blob type instance (the overmind's is deleted with the overmind).
-REF_OWNED(/obj/item/blobcore_chunk, "blob_type")
+DECLARE_REF(/obj/item/blobcore_chunk, "blob_type", OWNED, null)

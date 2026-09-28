@@ -86,4 +86,4 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/cow, \
 									"[src] seems resigned to its fate.")
 		to_chat(M, pick(responses))
 
-REF_OWNED(/mob/living/simple_mob/animal/passive/cow, "udder")
+DECLARE_REF(/mob/living/simple_mob/animal/passive/cow, "udder", OWNED, null)

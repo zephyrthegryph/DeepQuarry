@@ -51,4 +51,4 @@
 
 // Proof of concept.
 
-REF_OWNED(/datum/event2/event/legacy, "legacy_event")
+DECLARE_REF(/datum/event2/event/legacy, "legacy_event", OWNED, null)

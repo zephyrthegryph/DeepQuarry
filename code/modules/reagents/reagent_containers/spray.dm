@@ -217,7 +217,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/spray/pepper, INTERACT_SELF("To
 
 	var/icon/hose_overlay
 
-REF_OWNED(/obj/item/reagent_containers/spray/chemsprayer/hosed, "hose_overlay")
+DECLARE_REF(/obj/item/reagent_containers/spray/chemsprayer/hosed, "hose_overlay", OWNED, null)
 
 /obj/item/reagent_containers/spray/chemsprayer/hosed/Initialize(mapload)
 	. = ..()

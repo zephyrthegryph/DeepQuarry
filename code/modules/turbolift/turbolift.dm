@@ -229,7 +229,7 @@
 	priority_mode = FALSE
 	update_ext_panel_icons()
 
-REF_OWNED(/datum/turbolift, "control_panel_interior")
+DECLARE_REF(/datum/turbolift, "control_panel_interior", OWNED, null)
 
 /// LC-refs: Where are we going? -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/turbolift/proc/target_floor() as /datum/turbolift_floor

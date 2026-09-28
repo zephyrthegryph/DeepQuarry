@@ -136,7 +136,7 @@
 		instrument_range = new_range
 
 // stops playing and leaves its instrument.
-REF_BACK_VIA(/datum/song, list("using_instrument_static" = "songs_using"))
+DECLARE_REF(/datum/song, "using_instrument_static", BACK_VIA, "songs_using")
 
 /datum/song/on_destroy(force)
 	stop_playing()
@@ -444,10 +444,10 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 /datum/song/proc/parent() as /atom
 	return om_resolve(parent_handle)
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/song/proc/using_instrument() as /datum/instrument
 	return using_instrument_static
-REF_STATIC(/datum/song, "using_instrument_static")
+DECLARE_REF(/datum/song, "using_instrument_static", STATIC, null)
 
 /// LC-refs: the music_player this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/song/proc/music_player() as /atom

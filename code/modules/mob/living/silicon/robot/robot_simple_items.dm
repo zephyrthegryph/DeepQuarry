@@ -78,7 +78,7 @@
 		integrated_tool_images[real_tool.name] = tool_image
 
 // its integrated tools (assoc values) go with it.
-REF_OWNED_VALUES(/obj/item/robotic_multibelt, "cyborg_integrated_tools")
+DECLARE_REF(/obj/item/robotic_multibelt, "cyborg_integrated_tools", OWNED_VALUES, null)
 
 DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(interaction_self)))
 
@@ -511,7 +511,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/cyborg, INTERACT_USE("Change colo
 
 	. = ..()
 
-REF_OWNED_LIST(/obj/item/robotic_multibelt/materials, "cyborg_integrated_tools")
+DECLARE_REF(/obj/item/robotic_multibelt/materials, "cyborg_integrated_tools", OWNED_LIST, null)
 
 ///Allows the material fabricator to pick up materials if they hit an appropriate stack.
 /obj/item/robotic_multibelt/materials/afterattack(atom/target, mob/user, proximity_flag, click_parameters)
@@ -593,7 +593,7 @@ REF_OWNED_LIST(/obj/item/robotic_multibelt/materials, "cyborg_integrated_tools")
 	om_hook(our_robot, /datum/om/event/do_after_began, src, PROC_REF(begin_using))
 	om_hook(our_robot, /datum/om/event/do_after_ended, src, PROC_REF(end_using))
 
-REF_OWNED_LIST(/obj/item/gripper, "pockets")
+DECLARE_REF(/obj/item/gripper, "pockets", OWNED_LIST, null)
 
 /obj/item/gripper/examine(mob/user)
 	. = ..()
@@ -809,4 +809,4 @@ EXTEND_INTERACTIONS(/obj/item/gripper, INTERACT_VERB("Drop Item", PROC_REF(gripp
 /obj/item/gripper/syndicate/hold_constraint()
 	return list(HOLD_ONLY(list(BASIC_GRIPPER, SECURITY_GRIPPER, MINER_GRIPPER, PAPERWORK_GRIPPER, MEDICAL_GRIPPER, RESEARCH_GRIPPER, CIRCUIT_GRIPPER, SERVICE_GRIPPER, GRAVEYARD_GRIPPER, ORGAN_GRIPPER, ROBOTICS_ORGAN_GRIPPER, EXOSUIT_GRIPPER, SHEET_GRIPPER)))
 
-REF_HELD(/obj/item/reagent_containers/glass/bucket/cyborg, "R")
+DECLARE_REF(/obj/item/reagent_containers/glass/bucket/cyborg, "R", HELD, null)

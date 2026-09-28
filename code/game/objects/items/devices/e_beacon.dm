@@ -92,4 +92,4 @@ DECLARE_INTERACTIONS(/obj/item/emergency_beacon, \
 		return TRUE
 	return FALSE
 
-REF_HELD(/obj/item/emergency_beacon, list("gps"))
+DECLARE_REF(/obj/item/emergency_beacon, "gps", HELD, null)

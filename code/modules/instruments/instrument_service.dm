@@ -61,4 +61,4 @@ GLOBAL_DATUM_INIT(instrument_service, /datum/world_service/instruments, new)
 	if(!isnull(.))
 		current_instrument_channels++
 
-REF_OWNED_VALUES(/datum/world_service/instruments, list("instrument_data"))
+DECLARE_REF(/datum/world_service/instruments, "instrument_data", OWNED_VALUES, null)

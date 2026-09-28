@@ -436,5 +436,5 @@
 	say_got_target = list("MAR!!!")
 	//reactions = list("Mar?" = "Marrr!", "Mar!" = "Marrr???", "Mar." = "Marrr.")
 
-REF_HELD(/mob/living/simple_mob/shadekin, "henlo_human")
-REF_OWNED(/mob/living/simple_mob/shadekin, "tailimage")
+DECLARE_REF(/mob/living/simple_mob/shadekin, "henlo_human", HELD, null)
+DECLARE_REF(/mob/living/simple_mob/shadekin, "tailimage", OWNED, null)

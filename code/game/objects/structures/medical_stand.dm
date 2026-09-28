@@ -478,7 +478,9 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 	mask_type = /obj/item/clothing/mask/breath/medical
 	is_loosen = FALSE
 
-REF_OWNED(/obj/structure/medical_stand, list("tank", "contained", "beaker"))
+DECLARE_REF(/obj/structure/medical_stand, "tank", OWNED, null)
+DECLARE_REF(/obj/structure/medical_stand, "contained", OWNED, null)
+DECLARE_REF(/obj/structure/medical_stand, "beaker", OWNED, null)
 
 /// LC-refs: breather -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/structure/medical_stand/proc/breather() as /mob/living/carbon/human

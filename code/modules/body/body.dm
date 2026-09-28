@@ -29,7 +29,7 @@
 		body = new body_type(src)
 	return ..()
 
-REF_OWNED(/mob/living, "body")
+DECLARE_REF(/mob/living, "body", OWNED, null)
 
 /// Systemic biology (BIOLOGY_* flags). Non-living mobs have no body: organic.
 /mob/proc/biology()
@@ -97,8 +97,8 @@ REF_OWNED(/mob/living, "body")
 
 /// Afflictions leave through remove_affliction(), so their on_removed()
 /// hooks and signals run, then are deleted.
-REF_BACK(/datum/body, list("owner" = "body"))
-REF_OWNED_LIST(/datum/body, "supports")
+DECLARE_REF(/datum/body, "owner", BACK, "body")
+DECLARE_REF(/datum/body, "supports", OWNED_LIST, null)
 
 // each affliction is removed (symptoms end) before it is deleted. When the owner itself is being
 // deleted there is nobody to resolve symptoms on, wake or signal (audit C24): the afflictions are

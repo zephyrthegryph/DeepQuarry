@@ -385,7 +385,10 @@ S     - The scope the variable resides in. If it is null, a scope with the varia
 #undef BREAKING
 #undef CONTINUING
 
-REF_OWNED(/datum/n_Interpreter, list("scopes", "functions", "globalScope", "program"))
+DECLARE_REF(/datum/n_Interpreter, "scopes", OWNED, null)
+DECLARE_REF(/datum/n_Interpreter, "functions", OWNED, null)
+DECLARE_REF(/datum/n_Interpreter, "globalScope", OWNED, null)
+DECLARE_REF(/datum/n_Interpreter, "program", OWNED, null)
 
 /// A strong internal reference (tmp): this holder is what keeps it alive.
 /datum/n_Interpreter/proc/curFunction() as /datum/node/statement/FunctionDefinition
@@ -400,4 +403,5 @@ REF_OWNED(/datum/n_Interpreter, list("scopes", "functions", "globalScope", "prog
 	return curScope_ref
 
 // Cursors into scopes and function definitions held by the scope stack and the program tree.
-REF_BACK(/datum/n_Interpreter, list("curScope_ref" = null, "curFunction_ref" = null))
+DECLARE_REF(/datum/n_Interpreter, "curScope_ref", BACK, null)
+DECLARE_REF(/datum/n_Interpreter, "curFunction_ref", BACK, null)

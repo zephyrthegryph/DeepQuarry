@@ -664,4 +664,4 @@
 	return TRUE
 
 // One of the species' shared unarmed attacks.
-REF_STATIC(/mob/living/carbon/human, "default_attack")
+DECLARE_REF(/mob/living/carbon/human, "default_attack", STATIC, null)

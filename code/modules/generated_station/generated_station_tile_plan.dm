@@ -91,7 +91,7 @@
 	for(var/y in 1 to grid_height)
 		tiles[coordinate_key(x, y)] = new /datum/generated_station_tile_intent(x, y)
 
-REF_OWNED_VALUES(/datum/generated_station_tile_plan, "tiles")
+DECLARE_REF(/datum/generated_station_tile_plan, "tiles", OWNED_VALUES, null)
 
 /datum/generated_station_tile_plan/proc/coordinate_key(local_x, local_y)
 	return "[local_x],[local_y]"

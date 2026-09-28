@@ -127,7 +127,7 @@
 		materialization_handle = null
 		return null
 	var/datum/generated_station_materialization/done = materializer().result
-	// Hand-off: the materializer owns its result (REF_OWNED) only while building it, so
+	// Hand-off: the materializer owns its result (DECLARE_REF(..., OWNED)) only while building it, so
 	// deleting the materializer afterwards must not delete the station it built.
 	materializer().result = null
 	materialization_handle = om_handle(done)
@@ -158,4 +158,4 @@
 
 
 
-REF_HELD(/datum/generated_station_materialization_job, "on_done")
+DECLARE_REF(/datum/generated_station_materialization_job, "on_done", HELD, null)

@@ -11,7 +11,7 @@
 	. = ..()
 	cell = new(src)
 
-REF_OWNED(/obj/item/shield_diffuser, "cell")
+DECLARE_REF(/obj/item/shield_diffuser, "cell", OWNED, null)
 
 /obj/item/shield_diffuser/get_cell()
 	return cell

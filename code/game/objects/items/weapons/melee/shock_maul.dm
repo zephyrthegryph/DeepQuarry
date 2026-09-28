@@ -304,4 +304,4 @@ DECLARE_INTERACTIONS(/obj/item/melee/shock_maul, \
 	injury_kind = INJURY_PAIN
 	launch_force = 0
 
-REF_HELD(/obj/item/melee/shock_maul, list("bcell"))
+DECLARE_REF(/obj/item/melee/shock_maul, "bcell", HELD, null)

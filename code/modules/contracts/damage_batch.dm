@@ -140,4 +140,4 @@
 		if(rule)
 			evaluate_opportunity_window(rule, window, window_key, event)
 
-REF_OWNED_VALUES(/datum/controller/subsystem/contracts, "pending_damage_reports")
+DECLARE_REF(/datum/controller/subsystem/contracts, "pending_damage_reports", OWNED_VALUES, null)

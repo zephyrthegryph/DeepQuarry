@@ -31,7 +31,7 @@ MATERIAL_MIX(/obj/item/taperecorder, list(MAT_STEEL = 60,MAT_GLASS = 30))
 /obj/item/taperecorder/empty
 	mytape = null
 
-REF_OWNED(/obj/item/taperecorder, "mytape")
+DECLARE_REF(/obj/item/taperecorder, "mytape", OWNED, null)
 
 DECLARE_INTERACTIONS(/obj/item/taperecorder, \
 	INTERACT_INSERT(/obj/item/rectape, PROC_REF(interaction_item), "Insert tape"), \

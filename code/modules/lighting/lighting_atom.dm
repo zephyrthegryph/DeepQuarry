@@ -204,7 +204,7 @@
 	set_light_power(power)
 	set_light_color(color)
 
-REF_OWNED(/atom, "light")
+DECLARE_REF(/atom, "light", OWNED, null)
 
 // Held, not owned: /atom/movable/Destroy() cuts the blocker overlay and unregisters from it itself.
-REF_HELD(/atom/movable, "em_block")
+DECLARE_REF(/atom/movable, "em_block", HELD, null)

@@ -105,4 +105,11 @@
 			return TRUE
 	return TRUE
 
-REF_OWNED(/datum/data/pda/app/game_launcher, list("voresweeper", "fourrow", "spacebattle", "rpgdice", "chess", "checkers", "ninemens", "tictactoe"))
+DECLARE_REF(/datum/data/pda/app/game_launcher, "voresweeper", OWNED, null)
+DECLARE_REF(/datum/data/pda/app/game_launcher, "fourrow", OWNED, null)
+DECLARE_REF(/datum/data/pda/app/game_launcher, "spacebattle", OWNED, null)
+DECLARE_REF(/datum/data/pda/app/game_launcher, "rpgdice", OWNED, null)
+DECLARE_REF(/datum/data/pda/app/game_launcher, "chess", OWNED, null)
+DECLARE_REF(/datum/data/pda/app/game_launcher, "checkers", OWNED, null)
+DECLARE_REF(/datum/data/pda/app/game_launcher, "ninemens", OWNED, null)
+DECLARE_REF(/datum/data/pda/app/game_launcher, "tictactoe", OWNED, null)

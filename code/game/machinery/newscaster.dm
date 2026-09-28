@@ -721,16 +721,16 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	alert = 0
 	update_icon()
 
-REF_OWNED(/obj/machinery/newscaster, list("photo_data"))
+DECLARE_REF(/obj/machinery/newscaster, "photo_data", OWNED, null)
 
 /// LC-refs: parent channel -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/feed_message/proc/parent_channel() as /datum/feed_channel
 	return om_resolve(parent_channel_handle)
 
-/// REF_OWNED: created for and owned by this holder; deleted with it.
+/// DECLARE_REF(..., OWNED): created for and owned by this holder; deleted with it.
 /datum/feed_network/proc/wanted_issue() as /datum/feed_message
 	return wanted_issue_owned
-REF_OWNED(/datum/feed_network, "wanted_issue_owned")
+DECLARE_REF(/datum/feed_network, "wanted_issue_owned", OWNED, null)
 
 /// LC-refs: viewing channel -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/newscaster/proc/viewing_channel() as /datum/feed_channel
@@ -744,5 +744,5 @@ REF_OWNED(/datum/feed_network, "wanted_issue_owned")
 /datum/news_photo/proc/photo() as /obj/item/photo
 	return om_resolve(photo_handle)
 
-REF_OWNED_LIST(/datum/feed_channel, list("messages"))
-REF_OWNED_LIST(/datum/feed_network, list("network_channels"))
+DECLARE_REF(/datum/feed_channel, "messages", OWNED_LIST, null)
+DECLARE_REF(/datum/feed_network, "network_channels", OWNED_LIST, null)

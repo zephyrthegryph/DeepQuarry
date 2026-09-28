@@ -44,7 +44,9 @@
 	. = ..()
 	status = TRUE
 
-REF_OWNED(/obj/item/flamethrower, list("weldtool", "igniter", "ptank"))
+DECLARE_REF(/obj/item/flamethrower, "weldtool", OWNED, null)
+DECLARE_REF(/obj/item/flamethrower, "igniter", OWNED, null)
+DECLARE_REF(/obj/item/flamethrower, "ptank", OWNED, null)
 
 /obj/item/flamethrower/periodic_step()
 	if(!lit)

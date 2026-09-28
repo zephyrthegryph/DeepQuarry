@@ -45,9 +45,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	. = ..()
 	dq_destroy_transaction_log("dematerialize")
 
-/obj/item/dq_destroy_transaction_phase_probe/declared_owned_vars()
-	var/static/list/vars = list("child")
-	return vars
+DECLARE_REF(/obj/item/dq_destroy_transaction_phase_probe, "child", OWNED, null)
 
 /obj/item/dq_destroy_transaction_phase_probe/destroy_effects()
 	var/static/datum/destroy_effects_data/dq_destroy_transaction_logging_effects/data = new
@@ -77,7 +75,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	saw_destroying_flag = (flags & LEDGER_MOVE_DESTROYING) ? TRUE : FALSE
 	loc_when_unslotted = loc // doMove() already committed `loc =` before note_exit/on_unslotted runs
 
-/// A REF_OWNED child: its own Destroy() logs "links" (phase 4 deletes it).
+/// A DECLARE_REF(..., OWNED) child: its own Destroy() logs "links" (phase 4 deletes it).
 /datum/dq_destroy_transaction_owned_child
 
 /datum/dq_destroy_transaction_owned_child/on_destroy(force)
@@ -92,14 +90,12 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	dq_destroy_transaction_log("effects")
 	return ..()
 
-// ---- Fixtures: REF_PAIR ----
+// ---- Fixtures: DECLARE_REF(..., PAIR) ----
 
 /datum/dq_destroy_transaction_pair_fixture
 	var/datum/dq_destroy_transaction_pair_fixture/partner
 
-/datum/dq_destroy_transaction_pair_fixture/declared_pair_vars()
-	var/static/list/vars = list("partner" = "partner")
-	return vars
+DECLARE_REF(/datum/dq_destroy_transaction_pair_fixture, "partner", PAIR, "partner")
 
 // ---- Tests: phase ordering ----
 
@@ -277,7 +273,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 
 	TEST_ASSERT_EQUAL(occupant.loc, T, "TRANSFER + drop_resolver() ejected the occupant to the pod's turf, not nullspace or nowhere")
 
-// ---- Tests: REF_PAIR symmetry and re-entrancy ----
+// ---- Tests: DECLARE_REF(..., PAIR) symmetry and re-entrancy ----
 
 /datum/unit_test/dq_destroy_transaction_pair_symmetry
 
@@ -299,9 +295,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	var/datum/dq_destroy_transaction_reentrant_pair/partner
 	var/qdel_partner_on_signal = FALSE
 
-/datum/dq_destroy_transaction_reentrant_pair/declared_pair_vars()
-	var/static/list/vars = list("partner" = "partner")
-	return vars
+DECLARE_REF(/datum/dq_destroy_transaction_reentrant_pair, "partner", PAIR, "partner")
 
 /datum/dq_destroy_transaction_reentrant_pair/proc/watch()
 	om_hook(src, /datum/om/event/qdeleting, src, PROC_REF(on_qdeleting))
@@ -332,9 +326,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	var/datum/dq_destroy_transaction_pair_fixture/partner
 	var/reset_after_links = FALSE
 
-/datum/dq_destroy_transaction_scrub_fixture/declared_pair_vars()
-	var/static/list/vars = list("partner" = "partner")
-	return vars
+DECLARE_REF(/datum/dq_destroy_transaction_scrub_fixture, "partner", PAIR, "partner")
 
 /// Re-sets the fixture's declared pair var from phase 6 (effects), after phase 4
 /// cleared it: only phase 8's scrub can null it again.

@@ -810,4 +810,4 @@
 	desc = "A bunch of mossy rocks."
 	icon_state = "rocks2"
 
-REF_HELD(/obj/structure/flora/pottedplant, list("stored_item"))
+DECLARE_REF(/obj/structure/flora/pottedplant, "stored_item", HELD, null)

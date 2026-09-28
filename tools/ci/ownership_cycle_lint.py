@@ -1,11 +1,11 @@
 """Ownership-cycle lint (doc/rewrite/object_model_core.md, lifecycle section).
 
-Ownership must be a tree. REF_OWNED / REF_OWNED_LIST / REF_OWNED_VALUES say
+Ownership must be a tree. DECLARE_REF(..., OWNED / OWNED_LIST / OWNED_VALUES) say
 "deleting me deletes this child"; if a child's type in turn owns something of
 the owner's type, the two can each qdel the other (an overmap mob and its
 marker did exactly that: a double-qdel CRASH, swallowed, a hung test batch).
 
-This reads every REF_OWNED* declaration, looks up the declared type of each
+This reads every OWNED* DECLARE_REF line, looks up the declared type of each
 named var (on the declaring type or an ancestor), and builds a graph
 owner type -> child var type. A cycle is reported when following owned edges
 from type A reaches a var typed as A or an ancestor of A.
@@ -18,7 +18,7 @@ cases this can't see (untyped vars, declarations written as procs).
 One side of a mutual pair should own; the other side holds a plain reference
 that it nulls in Destroy(), or a handle. Escape hatch for a cycle that can't
 actually form (or a test fixture): `// ALLOW(ownership_cycle): reason` on the
-REF_OWNED* line or the line above it.
+DECLARE_REF line or the line above it.
 
 Usage:
     python tools/ci/ownership_cycle_lint.py
@@ -32,7 +32,8 @@ import state_schema_lint as schema  # noqa: E402
 from allow_annotations import names_on  # noqa: E402
 
 ROOT = schema.ROOT
-DECL = re.compile(r"^REF_OWNED(?:_LIST|_VALUES)?\(\s*(/[\w/]+)\s*,\s*(.*)\)\s*(//.*)?$")
+from ref_kinds import ref_decl  # noqa: E402
+OWNED_KINDS = ("OWNED", "OWNED_LIST", "OWNED_VALUES")
 VAGUE = {"", "/datum", "/atom", "/atom/movable", "/obj", "/mob", "/turf", "/area",
          "/obj/item", "/obj/effect", "/obj/machinery", "/obj/structure", "/mob/living",
          "/datum/component", "/datum/element"}
@@ -60,13 +61,13 @@ def main():
         with open(path, encoding="utf-8", errors="ignore") as f:
             prev = ""
             for no, line in enumerate(f, 1):
-                m = DECL.match(line.strip())
+                decl = ref_decl(line) if line.startswith("DECLARE_REF(") else None
                 allowed = "ownership_cycle" in names_on(line) or (prev.lstrip().startswith("//") and "ownership_cycle" in names_on(prev))
                 prev = line
-                if not m or allowed:
+                if not decl or decl[2] not in OWNED_KINDS or allowed:
                     continue
-                owner = m.group(1).rstrip("/")
-                for name in re.findall(r'"(\w+)"', m.group(2)):
+                owner = decl[0]
+                for name in (decl[1],):
                     vtype = None
                     for anc in ancestors_inclusive(owner):
                         if (anc, name) in var_types:

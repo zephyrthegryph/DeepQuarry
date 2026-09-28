@@ -366,4 +366,4 @@
 		return PROJECTILE_CONTINUE
 	return ..()
 
-REF_HELD(/obj/structure/door_assembly, list("electronics"))
+DECLARE_REF(/obj/structure/door_assembly, "electronics", HELD, null)

@@ -97,7 +97,7 @@
 	for(var/good_type in cheaper_goods)
 		affected_dest().temp_price_change[good_type] = 1
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/event/economic_event/proc/affected_dest() as /datum/trade_destination
 	return affected_dest_static
-REF_STATIC(/datum/event/economic_event, "affected_dest_static")
+DECLARE_REF(/datum/event/economic_event, "affected_dest_static", STATIC, null)

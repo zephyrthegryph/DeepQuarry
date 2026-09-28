@@ -23,7 +23,7 @@ GLOBAL_LIST_EMPTY(shared_particles)
 	src.particle_flags = particle_flags
 	particles = new particle_path()
 
-REF_OWNED(/obj/effect/abstract/shared_particle_holder, "particles")
+DECLARE_REF(/obj/effect/abstract/shared_particle_holder, "particles", OWNED, null)
 
 /* Adds (or creates and adds) a shared particle holder
  * Shared particle holders are held in nullspace and added to vis_contents of all atoms using it

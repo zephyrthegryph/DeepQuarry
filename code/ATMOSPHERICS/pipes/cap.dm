@@ -148,4 +148,4 @@
 	icon_connect_type = "-aux"
 	color = PIPE_COLOR_CYAN
 
-REF_HELD(/obj/machinery/atmospherics/pipe/cap, "node")
+DECLARE_REF(/obj/machinery/atmospherics/pipe/cap, "node", HELD, null)

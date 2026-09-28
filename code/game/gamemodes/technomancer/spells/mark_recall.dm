@@ -128,7 +128,7 @@ GLOBAL_LIST_INIT(mark_spells, list())
 	adjust_instability(25)
 	consume(src, user)
 
-REF_OWNED(/datum/technomancer_marker, list("I"))
+DECLARE_REF(/datum/technomancer_marker, "I", OWNED, null)
 
 /// LC-refs: T -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/technomancer_marker/proc/T() as /turf

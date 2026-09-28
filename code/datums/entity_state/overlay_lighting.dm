@@ -157,7 +157,7 @@
 	if(overlay_lighting_flags & LIGHTING_ON)
 		turn_off()
 
-// Runs in destroy phase 1, before phase 4 nulls `owner` (REF_BACK).
+// Runs in destroy phase 1, before phase 4 nulls `owner` (DECLARE_REF(..., BACK)).
 /datum/overlay_lighting/lifecycle_unbind()
 	. = ..()
 	detach()
@@ -570,14 +570,16 @@
 /datum/overlay_lighting/proc/parent_attached_to() as /atom/movable
 	return om_resolve(parent_attached_to_handle)
 
-REF_OWNED(/datum/overlay_lighting, list("visible_mask", "directional_atom", "cone"))
-REF_BACK(/datum/overlay_lighting, list("owner" = "overlay_light"))
+DECLARE_REF(/datum/overlay_lighting, "visible_mask", OWNED, null)
+DECLARE_REF(/datum/overlay_lighting, "directional_atom", OWNED, null)
+DECLARE_REF(/datum/overlay_lighting, "cone", OWNED, null)
+DECLARE_REF(/datum/overlay_lighting, "owner", BACK, "overlay_light")
 
 /atom/movable
 	///The overlay light of MOVABLE_LIGHT / MOVABLE_LIGHT_DIRECTIONAL atoms (see add_overlay_lighting()).
 	var/tmp/datum/overlay_lighting/overlay_light
-REF_OWNED(/atom/movable, list("overlay_light"))
+DECLARE_REF(/atom/movable, "overlay_light", OWNED, null)
 
 /// Lit turfs: rebuilt by make_luminosity_update(), dropped by clean_old_turfs() (unbind).
 // turfs, never freed
-REF_STATIC(/datum/overlay_lighting, "affected_turfs")
+DECLARE_REF(/datum/overlay_lighting, "affected_turfs", STATIC, null)

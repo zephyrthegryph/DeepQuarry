@@ -765,4 +765,4 @@
 
 /// The fixture floor, rebuilt per event by Run().
 // turfs, never freed
-REF_STATIC(/datum/benchmark/major_events, "event_turfs")
+DECLARE_REF(/datum/benchmark/major_events, "event_turfs", STATIC, null)

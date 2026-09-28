@@ -143,4 +143,4 @@
 	update_integrity(25)
 	cell.charge = rand(0, (cell.charge/2))
 
-REF_HELD(/obj/mecha/combat/gygax/serenity, list("hud"))
+DECLARE_REF(/obj/mecha/combat/gygax/serenity, "hud", HELD, null)

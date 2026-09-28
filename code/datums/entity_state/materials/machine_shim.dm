@@ -13,8 +13,8 @@
 	var/mob/owner
 
 /mob/var/datum/using_machine_shim/machine_shim
-REF_OWNED(/mob, "machine_shim")
-REF_BACK(/datum/using_machine_shim, list("owner" = "machine_shim"))
+DECLARE_REF(/mob, "machine_shim", OWNED, null)
+DECLARE_REF(/datum/using_machine_shim, "owner", BACK, "machine_shim")
 
 /datum/using_machine_shim/New(mob/new_owner, obj/machinery/machine)
 	..()

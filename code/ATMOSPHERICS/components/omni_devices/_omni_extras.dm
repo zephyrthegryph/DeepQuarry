@@ -115,6 +115,8 @@
 		else
 			return null
 
-REF_BACKLIST(/datum/omni_port, list("master" = "ports"))
+DECLARE_REF(/datum/omni_port, "master", BACKLIST, "ports")
 
-REF_HELD(/datum/omni_port, list("air", "node", "network"))
+DECLARE_REF(/datum/omni_port, "air", HELD, null)
+DECLARE_REF(/datum/omni_port, "node", HELD, null)
+DECLARE_REF(/datum/omni_port, "network", HELD, null)

@@ -109,7 +109,7 @@
 	qdel(src)
 
 // leaves its shadekin's maw list (the shadekin datum lives on the owner, not in a var).
-REF_BACK_VIA(/obj/effect/abstract/dark_maw, list("owner_handle.shadekin" = "active_dark_maws"))
+DECLARE_REF(/obj/effect/abstract/dark_maw, "owner_handle.shadekin", BACK_VIA, "active_dark_maws")
 
 /obj/effect/abstract/dark_maw/Crossed(O)
 	. = ..()

@@ -69,7 +69,7 @@
 	var/y
 	var/obj/effect/landmark/generated_station_service/landmark
 
-REF_OWNED(/datum/generated_station_service_endpoint, "landmark")
+DECLARE_REF(/datum/generated_station_service_endpoint, "landmark", OWNED, null)
 
 /// A route between two service endpoints, stored in planner-local coordinates.
 /datum/generated_station_service_route
@@ -85,7 +85,7 @@ REF_OWNED(/datum/generated_station_service_endpoint, "landmark")
 	path = list()
 	physical_markers = list()
 
-REF_OWNED_LIST(/datum/generated_station_service_route, "physical_markers")
+DECLARE_REF(/datum/generated_station_service_route, "physical_markers", OWNED_LIST, null)
 
 /obj/effect/landmark/generated_station_department_core
 	name = "generated department control point"

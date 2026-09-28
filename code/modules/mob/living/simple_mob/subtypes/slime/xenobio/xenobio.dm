@@ -262,4 +262,4 @@
 	lines.Add(description_info)
 	return lines.Join("\n")
 
-REF_HELD(/mob/living/simple_mob/slime/xenobio, "victim")
+DECLARE_REF(/mob/living/simple_mob/slime/xenobio, "victim", HELD, null)

@@ -308,10 +308,10 @@
 /datum/stock/proc/displayValues(mob/user)
 	return  // body provided by modular override
 
-REF_OWNED(/datum/stock, "industry")
+DECLARE_REF(/datum/stock, "industry", OWNED, null)
 
 /// LC-refs: the stock this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/borrow/proc/stock() as /datum/stock
 	return om_resolve(stock_handle)
 
-REF_OWNED_LIST(/datum/stock, "events")
+DECLARE_REF(/datum/stock, "events", OWNED_LIST, null)

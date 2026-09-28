@@ -66,7 +66,7 @@
 	description = _description
 	options = list()
 
-REF_OWNED_VALUES(/datum/contract_negotiation_clause, "options")
+DECLARE_REF(/datum/contract_negotiation_clause, "options", OWNED_VALUES, null)
 
 /datum/contract_negotiation_clause/proc/add_option(datum/contract_clause_option/option, make_default = FALSE)
 	if(!option?.id || options[option.id])
@@ -251,8 +251,9 @@ REF_OWNED_VALUES(/datum/contract_negotiation_clause, "options")
 	negotiated_effects = list()
 	secondary_faction_reputation_rewards = list()
 
-REF_OWNED_LIST(/datum/contract, list("requirements", "audit_log"))
-REF_OWNED_VALUES(/datum/contract, "negotiation_clauses")
+DECLARE_REF(/datum/contract, "requirements", OWNED_LIST, null)
+DECLARE_REF(/datum/contract, "audit_log", OWNED_LIST, null)
+DECLARE_REF(/datum/contract, "negotiation_clauses", OWNED_VALUES, null)
 
 // an active contract unsubscribes and leaves SScontracts (before phase 4
 // deletes its owned requirements, which unsubscribing still reads).
@@ -263,7 +264,7 @@ REF_OWNED_VALUES(/datum/contract, "negotiation_clauses")
 	SScontracts?.unregister_contract(src)
 
 // its children are orphaned.
-REF_LIST_BACK(/datum/contract, list("children" = "parent"))
+DECLARE_REF(/datum/contract, "children", LIST_BACK, "parent")
 
 /datum/contract/proc/finalize_offer(duration)
 	if(state != CONTRACT_OFFERED || !isnum(duration) || duration <= 0)
@@ -781,5 +782,5 @@ REF_LIST_BACK(/datum/contract, list("children" = "parent"))
 	return TRUE
 
 // A sub-contract sits in its parent's children list; Destroy() orphans our own children.
-REF_BACKLIST(/datum/contract, list("parent" = "children"))
-REF_BACK(/datum/contract, list("funding_account" = null))
+DECLARE_REF(/datum/contract, "parent", BACKLIST, "children")
+DECLARE_REF(/datum/contract, "funding_account", BACK, null)

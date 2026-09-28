@@ -880,7 +880,7 @@
 	desc = "A secured airlock you might've come in from. You could leave easily using this."
 	quiet = TRUE
 
-REF_HELD(/obj/machinery/cryopod, list("announce"))
+DECLARE_REF(/obj/machinery/cryopod, "announce", HELD, null)
 
 /// LC-refs: control computer -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/cryopod/proc/control_computer() as /obj/machinery/computer/cryopod

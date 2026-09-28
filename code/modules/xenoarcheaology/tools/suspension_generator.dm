@@ -255,11 +255,11 @@
 	anchored = 1
 	density = 1
 
-REF_SPILL_LIST(/obj/effect/suspension_field, "contents")
+DECLARE_REF(/obj/effect/suspension_field, "contents", SPILL_LIST, null)
 
-REF_OWNED(/obj/machinery/suspension_gen, "suspension_field")
+DECLARE_REF(/obj/machinery/suspension_gen, "suspension_field", OWNED, null)
 
-REF_HELD(/obj/machinery/suspension_gen, "cell")
+DECLARE_REF(/obj/machinery/suspension_gen, "cell", HELD, null)
 
 /// LC-refs: the auth_card this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/suspension_gen/proc/auth_card() as /obj/item/card/id

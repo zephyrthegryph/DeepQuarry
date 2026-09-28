@@ -28,7 +28,7 @@
 /datum/dq_state_holder
 	var/atom/held
 
-REF_HELD(/datum/dq_state_holder, "held")
+DECLARE_REF(/datum/dq_state_holder, "held", HELD, null)
 
 /datum/dq_state_holder/proc/on_signal(datum/source, datum/om/event/qdeleting/event)
 	EVENT_HANDLER

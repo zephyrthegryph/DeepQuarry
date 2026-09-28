@@ -2211,7 +2211,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/nuke, \
 	var/cooldown = 0
 	var/obj/stored_minature = null // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 
-REF_OWNED(/obj/item/toy/minigibber, "stored_minature")
+DECLARE_REF(/obj/item/toy/minigibber, "stored_minature", OWNED, null)
 
 DECLARE_INTERACTIONS(/obj/item/toy/minigibber, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
@@ -2997,8 +2997,8 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/dragon, INTERACT_USE("Squeeze", PROC_R
 	om_after(src, 135, TYPE_PROC_REF(/atom, set_icon_state), "nuketoycool")
 	om_after(src, 135 + (cooldown - world.time), TYPE_PROC_REF(/atom, set_icon_state), "nuketoyidle")
 
-REF_HELD(/obj/structure/plushie, list("stored_item"))
-REF_HELD(/obj/item/toy/plushie, list("stored_item"))
+DECLARE_REF(/obj/structure/plushie, "stored_item", HELD, null)
+DECLARE_REF(/obj/item/toy/plushie, "stored_item", HELD, null)
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/toy/plushie, \

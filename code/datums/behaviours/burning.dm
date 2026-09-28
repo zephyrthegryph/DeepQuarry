@@ -32,9 +32,7 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 	/// Why the fire went out (BURN_ENDED_*), for tests and examine.
 	var/burn_ended_by
 
-/obj/declared_owned_vars()
-	. = ..()
-	. = (. || list()) + "burn_cool_watch"
+DECLARE_REF(/obj, "burn_cool_watch", OWNED, null)
 
 /// TRUE while this object burns.
 /obj/proc/is_burning()

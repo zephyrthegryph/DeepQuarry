@@ -746,9 +746,10 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 	nitrogen = 0
 	temperature	= TCMB
 
-REF_OWNED(/turf/simulated/mineral, list("geologic_data", "artifact_find"))
+DECLARE_REF(/turf/simulated/mineral, "geologic_data", OWNED, null)
+DECLARE_REF(/turf/simulated/mineral, "artifact_find", OWNED, null)
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /turf/simulated/mineral/proc/mineral() as /datum/ore
 	return mineral_static
-REF_STATIC(/turf/simulated/mineral, "mineral_static")
+DECLARE_REF(/turf/simulated/mineral, "mineral_static", STATIC, null)

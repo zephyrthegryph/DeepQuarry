@@ -114,7 +114,7 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 	holder_handle = om_handle(owner_holder)
 
 // clears its holder's cached panel.
-REF_BACK_HANDLE(/datum/permissions_panel, list("holder_handle" = "dq_permissions_panel"))
+DECLARE_REF(/datum/permissions_panel, "holder_handle", BACK_HANDLE, "dq_permissions_panel")
 
 /datum/permissions_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_PERMISSIONS)
@@ -409,7 +409,7 @@ REF_BACK_HANDLE(/datum/permissions_panel, list("holder_handle" = "dq_permissions
 			forward_topic("editrightsbrowserhousekeep=1;editrightsremoverank=[name]")
 			return TRUE
 
-REF_OWNED(/datum/admins, "dq_permissions_panel")
+DECLARE_REF(/datum/admins, "dq_permissions_panel", OWNED, null)
 
 /// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/permissions_panel/proc/holder() as /datum/admins

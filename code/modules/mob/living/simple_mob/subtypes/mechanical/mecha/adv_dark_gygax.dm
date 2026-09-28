@@ -92,7 +92,7 @@
 	projectilesound = 'sound/weapons/wave.ogg'
 	var/obj/effect/overlay/energy_ball/energy_ball = null
 
-REF_OWNED(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced, "energy_ball")
+DECLARE_REF(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced, "energy_ball", OWNED, null)
 
 /mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/do_special_attack(atom/A)
 	. = TRUE // So we don't fire a bolt as well.

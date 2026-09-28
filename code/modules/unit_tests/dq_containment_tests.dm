@@ -152,8 +152,9 @@
 	TEST_ASSERT(moves_done >= 25, "the fuzz exercised real moves ([moves_done])")
 	TEST_ASSERT(moves_refused >= 5, "the fuzz exercised refusals ([moves_refused])")
 
-REF_OWNED_LIST(/datum/unit_test/dq_containment_conservation_fuzz, "made")
-REF_WEAK_LIST(/datum/unit_test/dq_containment_conservation_fuzz, list("holders", "things"))
+DECLARE_REF(/datum/unit_test/dq_containment_conservation_fuzz, "made", OWNED_LIST, null)
+DECLARE_REF(/datum/unit_test/dq_containment_conservation_fuzz, "holders", WEAK_LIST, null)
+DECLARE_REF(/datum/unit_test/dq_containment_conservation_fuzz, "things", WEAK_LIST, null)
 
 /datum/unit_test/dq_containment_conservation_fuzz/proc/add_holder(path)
 	var/atom/movable/H = new path(floor)

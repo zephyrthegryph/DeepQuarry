@@ -248,8 +248,7 @@
 	return src
 
 /// `target` points back at the atom whose heat_watches list holds this watch.
-/datum/native_watch/heat/declared_backlist_vars()
-	return list("target" = "heat_watches")
+DECLARE_REF(/datum/native_watch/heat, "target", BACKLIST, "heat_watches")
 
 /datum/native_watch/heat/register()
 	if(!isturf(target))

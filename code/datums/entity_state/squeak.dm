@@ -29,8 +29,9 @@
 	/// The squeaky shoes.
 	var/obj/item/clothing/shoes/owner
 
-REF_BACK(/datum/squeak, list("owner" = "squeak"))
-REF_VAR(/obj/item/clothing/shoes, OWNED, /datum/squeak, squeak)
+DECLARE_REF(/datum/squeak, "owner", BACK, "squeak")
+/obj/item/clothing/shoes/var/datum/squeak/squeak // ALLOW(state_ref): owned child (DECLARE_REF OWNED); saved as before, the one-line REF_VAR form hid it from this lint
+DECLARE_REF(/obj/item/clothing/shoes, "squeak", OWNED, null)
 
 /// Gives these shoes a squeak (was LoadComponent(/datum/component/squeak, ...)): returns the
 /// existing one when they already squeak.

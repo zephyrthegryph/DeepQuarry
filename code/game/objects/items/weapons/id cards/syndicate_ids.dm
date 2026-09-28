@@ -21,7 +21,7 @@
 	. = ..() // Same as the normal Syndicate id, only already has all station access
 	access |= SSaccess.get_all_station_access()
 
-REF_OWNED(/obj/item/card/id/syndicate, "agentcard_module")
+DECLARE_REF(/obj/item/card/id/syndicate, "agentcard_module", OWNED, null)
 
 // the card's registered user is unset.
 /obj/item/card/id/syndicate/on_destroy(force)

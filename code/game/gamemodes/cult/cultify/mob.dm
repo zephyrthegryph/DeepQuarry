@@ -62,4 +62,5 @@
 			qdel(narsimage)
 			qdel(narglow)
 
-REF_OWNED(/mob, list("narsimage", "narglow"))
+DECLARE_REF(/mob, "narsimage", OWNED, null)
+DECLARE_REF(/mob, "narglow", OWNED, null)

@@ -130,4 +130,4 @@ DECLARE_INTERACTIONS(/obj/item/cane/white/collapsible, INTERACT_USE(null, PROC_R
 	add_fingerprint(user)
 	return TRUE
 
-REF_HELD(/obj/item/cane/concealed, list("concealed_blade"))
+DECLARE_REF(/obj/item/cane/concealed, "concealed_blade", HELD, null)

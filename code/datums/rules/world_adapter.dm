@@ -92,7 +92,7 @@
 	..()
 	atom_ref = om_handle(A)
 
-REF_OWNED_LIST(/datum/dq_rx_node, "watches")
+DECLARE_REF(/datum/dq_rx_node, "watches", OWNED_LIST, null)
 
 /// Phase 1 (unbind): the node leaves its atom.
 /datum/dq_rx_node/lifecycle_unbind()
@@ -108,9 +108,7 @@ REF_OWNED_LIST(/datum/dq_rx_node, "watches")
 /// The atom's heat node, if a rule made one.
 /atom/var/tmp/datum/dq_rx_node/rx_node
 
-/atom/declared_owned_vars()
-	. = ..()
-	. = (. || list()) + "rx_node"
+DECLARE_REF(/atom, "rx_node", OWNED, null)
 
 /// A node watch fired: wake the rule binding.
 /datum/proc/on_rx_node_heat(datum/native_watch/heat/watch, reason, source)

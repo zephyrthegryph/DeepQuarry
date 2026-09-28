@@ -15,8 +15,9 @@
 	var/list/watched_turfs
 	var/list/watched_containers
 
-REF_BACK(/datum/reactive_icon_update, list("owner" = "reactive_icon"))
-REF_VAR(/obj, OWNED, /datum/reactive_icon_update, reactive_icon)
+DECLARE_REF(/datum/reactive_icon_update, "owner", BACK, "reactive_icon")
+/obj/var/datum/reactive_icon_update/reactive_icon // ALLOW(state_ref): owned child (DECLARE_REF OWNED); saved as before, the one-line REF_VAR form hid it from this lint
+DECLARE_REF(/obj, "reactive_icon", OWNED, null)
 
 /// Gives this object a reactive icon (was AddComponent(/datum/reactive_icon_update...)).
 /// Replaces any existing one. Returns null when the arguments are invalid.
@@ -41,7 +42,10 @@ REF_VAR(/obj, OWNED, /datum/reactive_icon_update, reactive_icon)
 
 // Drops its turf/container lists and the lists it was handed (dropped, not cut:
 // the caller may share them). Its hooks go with the OM teardown.
-REF_DROP(/datum/reactive_icon_update, list("watched_turfs", "watched_containers", "directions", "triggering_mobs"))
+DECLARE_REF(/datum/reactive_icon_update, "watched_turfs", DROP, null)
+DECLARE_REF(/datum/reactive_icon_update, "watched_containers", DROP, null)
+DECLARE_REF(/datum/reactive_icon_update, "directions", DROP, null)
+DECLARE_REF(/datum/reactive_icon_update, "triggering_mobs", DROP, null)
 
 /// Re-hooks atom_entered on every turf in range of the owner, and Moved on the owner and every
 /// container it is nested in (what connect_range did for us).

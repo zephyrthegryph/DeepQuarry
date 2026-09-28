@@ -13,7 +13,7 @@
 	IC = new(src)
 	IC.implant_handle = om_handle(src)
 
-REF_OWNED(/obj/item/implant/integrated_circuit, "IC")
+DECLARE_REF(/obj/item/implant/integrated_circuit, "IC", OWNED, null)
 
 /obj/item/implant/integrated_circuit/get_data()
 	var/dat = {"

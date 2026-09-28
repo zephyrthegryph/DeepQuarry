@@ -602,8 +602,8 @@ EXTEND_INTERACTIONS(/obj/item/melee/energy/blade, INTERACT_USE("Dismiss", PROC_R
 	. = ..()
 	om_after(src, 0, PROC_REF(check_held))
 
-REF_HELD(/obj/item/melee/energy, list("bcell"))
-REF_OWNED(/obj/item/melee/energy/blade, list("spark_system"))
+DECLARE_REF(/obj/item/melee/energy, "bcell", HELD, null)
+DECLARE_REF(/obj/item/melee/energy/blade, "spark_system", OWNED, null)
 
 /// LC-refs: creator -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/melee/energy/blade/proc/creator() as /mob/living

@@ -30,7 +30,7 @@
 	ion_trail = new /datum/effect/effect/system/ion_trail_follow()
 	ion_trail.set_up(src)
 
-REF_OWNED(/obj/mecha/working/hoverpod, "ion_trail")
+DECLARE_REF(/obj/mecha/working/hoverpod, "ion_trail", OWNED, null)
 
 /obj/mecha/working/hoverpod/moved_inside(mob/living/carbon/human/H as mob)
 	. = ..(H)

@@ -817,4 +817,4 @@
 	closet_appearance = /datum/decl/closet_appearance/crate/fennec
 	points_per_crate = 0
 
-REF_HELD(/obj/structure/closet/crate, list("shipping_ledger"))
+DECLARE_REF(/obj/structure/closet/crate, "shipping_ledger", HELD, null)

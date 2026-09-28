@@ -207,7 +207,7 @@
 	IO = new(src)
 	return ..()
 
-REF_OWNED(/obj/item/integrated_circuit/passive/power/powernet, "IO")
+DECLARE_REF(/obj/item/integrated_circuit/passive/power/powernet, "IO", OWNED, null)
 
 /obj/item/integrated_circuit/passive/power/powernet/on_anchored()
 	IO.connect_to_network()

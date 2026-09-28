@@ -40,7 +40,7 @@
 		hub.com_handle = om_handle(src)
 		teleport_control.station_handle = om_handle(station)
 
-REF_OWNED(/obj/machinery/computer/teleporter, "teleport_control")
+DECLARE_REF(/obj/machinery/computer/teleporter, "teleport_control", OWNED, null)
 
 /obj/machinery/computer/teleporter/declare_interactions(list/into)
 	into += list(
@@ -161,7 +161,7 @@ REF_OWNED(/obj/machinery/computer/teleporter, "teleport_control")
 	default_apply_parts()
 
 // the teleporter console forgets its hub.
-REF_BACK_VIA(/obj/machinery/teleport/hub, list("com_handle.teleport_control" = "hub_handle"))
+DECLARE_REF(/obj/machinery/teleport/hub, "com_handle.teleport_control", BACK_VIA, "hub_handle")
 
 /obj/machinery/teleport/hub/Bumped(M as mob|obj)
 	if(icon_state == "tele1")
@@ -225,7 +225,7 @@ REF_BACK_VIA(/obj/machinery/teleport/hub, list("com_handle.teleport_control" = "
 	default_apply_parts()
 
 // the teleporter console forgets its station.
-REF_BACK_VIA(/obj/machinery/teleport/station, list("com_handle.com_handle.teleport_control" = "station_handle"))
+DECLARE_REF(/obj/machinery/teleport/station, "com_handle.com_handle.teleport_control", BACK_VIA, "station_handle")
 
 /obj/machinery/teleport/station/proc/engage(mob/user)
 	if(stat & (BROKEN|NOPOWER))

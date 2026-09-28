@@ -5,7 +5,8 @@
 #define MEDICAL_SIDE_SAMPLE_AMOUNT 3
 
 /// The contract paperwork state of a paper (was the contract_document component). Owned by the paper.
-REF_VAR(/obj/item/paper, OWNED, /datum/contract_document, contract_document)
+/obj/item/paper/var/datum/contract_document/contract_document // ALLOW(state_ref): owned child (DECLARE_REF OWNED); saved as before, the one-line REF_VAR form hid it from this lint
+DECLARE_REF(/obj/item/paper, "contract_document", OWNED, null)
 
 /datum/contract_document
 	/// The paper this document state belongs to.
@@ -17,7 +18,7 @@ REF_VAR(/obj/item/paper, OWNED, /datum/contract_document, contract_document)
 	var/list/payload
 	var/evidence_id
 
-REF_BACK(/datum/contract_document, list("holder" = "contract_document"))
+DECLARE_REF(/datum/contract_document, "holder", BACK, "contract_document")
 
 /datum/contract_document/New(obj/item/paper/new_holder, _contract_id, _document_kind, _destination, list/_payload)
 	. = ..()
@@ -581,4 +582,4 @@ REF_BACK(/datum/contract_document, list("holder" = "contract_document"))
 #undef MEDICAL_SIDE_AUTOPSY
 #undef MEDICAL_SIDE_SAMPLE_AMOUNT
 
-REF_OWNED(/datum/contract/medical_trial_personal, "action_requirement")
+DECLARE_REF(/datum/contract/medical_trial_personal, "action_requirement", OWNED, null)

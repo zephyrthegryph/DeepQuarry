@@ -76,4 +76,5 @@
 		return FALSE
 	return client().start_typing(channel)
 
-REF_OWNED(/mob, list("active_typing_indicator", "active_thinking_indicator"))
+DECLARE_REF(/mob, "active_typing_indicator", OWNED, null)
+DECLARE_REF(/mob, "active_thinking_indicator", OWNED, null)

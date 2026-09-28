@@ -943,4 +943,4 @@ ADMIN_VERB(set_uplink, R_ADMIN|R_DEBUG, "Set Uplink", "Allows admins to set up a
 	traitor_human.mind.accept_tcrystals = 1
 	message_admins("[key_name(usr)] has given [traitor_human.ckey] an uplink.")
 
-REF_OWNED(/datum/admins, "faxreply")
+DECLARE_REF(/datum/admins, "faxreply", OWNED, null)

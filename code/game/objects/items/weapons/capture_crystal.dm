@@ -1059,4 +1059,5 @@ EXTEND_INTERACTIONS(/obj/item/capture_crystal, \
 	INTERACT_VERB("Enhance (Toggle Ghost Join)", PROC_REF(invite_ghost_effect), REQ_IN_INVENTORY), \
 )
 
-REF_HELD(/obj/item/capture_crystal, list("owner", "bound_mob"))
+DECLARE_REF(/obj/item/capture_crystal, "owner", HELD, null)
+DECLARE_REF(/obj/item/capture_crystal, "bound_mob", HELD, null)

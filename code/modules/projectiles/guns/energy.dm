@@ -278,4 +278,4 @@ DECLARE_INTERACTIONS(/obj/item/gun/energy, INTERACT_HAND(null, PROC_REF(interact
 	else
 		return FLOOR(power_supply.charge / max(charge_cost, 1), 1)
 
-REF_HELD(/obj/item/gun/energy, "power_supply")
+DECLARE_REF(/obj/item/gun/energy, "power_supply", HELD, null)

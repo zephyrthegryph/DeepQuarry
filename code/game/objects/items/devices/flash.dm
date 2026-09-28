@@ -49,7 +49,7 @@
 	. = ..()
 	power_supply = new cell_type(src)
 
-REF_OWNED(/obj/item/flash, "power_supply")
+DECLARE_REF(/obj/item/flash, "power_supply", OWNED, null)
 
 /obj/item/flash/screwdriver_act(mob/user, obj/item/tool)
 	if(!broken)

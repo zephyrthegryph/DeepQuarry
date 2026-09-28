@@ -122,7 +122,7 @@
 /datum/tgui_input_keycombo/proc/set_entry(entry)
 	src.entry = entry
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/tgui_input_keycombo/proc/state() as /datum/tgui_state
 	return state_static
-REF_STATIC(/datum/tgui_input_keycombo, "state_static")
+DECLARE_REF(/datum/tgui_input_keycombo, "state_static", STATIC, null)

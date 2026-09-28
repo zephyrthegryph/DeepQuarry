@@ -123,7 +123,7 @@
 /datum/tgui_panel/proc/send_roundrestart()
 	window.send_message("roundrestart")
 
-REF_OWNED(/datum/tgui_panel, "window")
+DECLARE_REF(/datum/tgui_panel, "window", OWNED, null)
 
 /// LC-refs: the client this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_panel/proc/client() as /client

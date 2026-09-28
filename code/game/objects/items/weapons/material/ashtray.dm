@@ -110,4 +110,4 @@ EXTEND_INTERACTIONS(/obj/item/material/ashtray, INTERACT_ITEM(null, PROC_REF(ash
 /obj/item/material/ashtray/glass/Initialize(mapload)
 	. = ..(mapload, MAT_GLASS)
 
-REF_OWNED(/obj/item/material/ashtray, list("base_image"))
+DECLARE_REF(/obj/item/material/ashtray, "base_image", OWNED, null)

@@ -19,7 +19,7 @@
 	var/list/prize_list //Generated during Initialize
 	var/dirty_items = FALSE // Used to refresh the static/redundant data in case the machine gets VV'd
 
-REF_SPILL(/obj/machinery/mineral/equipment_vendor, "inserted_id")
+DECLARE_REF(/obj/machinery/mineral/equipment_vendor, "inserted_id", SPILL, null)
 
 // prize entries are nested per category.
 /obj/machinery/mineral/equipment_vendor/on_destroy(force)
@@ -424,4 +424,4 @@ REF_SPILL(/obj/machinery/mineral/equipment_vendor, "inserted_id")
 	s.start()
 	return ..()
 
-REF_OWNED_LIST(/obj/machinery/mineral/equipment_vendor, "prize_list")
+DECLARE_REF(/obj/machinery/mineral/equipment_vendor, "prize_list", OWNED_LIST, null)

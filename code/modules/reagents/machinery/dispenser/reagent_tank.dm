@@ -566,4 +566,4 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/water_cooler, \
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_CLEANER, 1000)
 
-REF_HELD(/obj/structure/reagent_dispensers/fueltank, "rig")
+DECLARE_REF(/obj/structure/reagent_dispensers/fueltank, "rig", HELD, null)

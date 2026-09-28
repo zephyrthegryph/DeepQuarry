@@ -321,6 +321,6 @@
 /datum/tgs_api/v4/SecurityLevel()
 	return security_level
 
-REF_OWNED(/datum/tgs_api/v4, "cached_revision")
+DECLARE_REF(/datum/tgs_api/v4, "cached_revision", OWNED, null)
 
-REF_OWNED_LIST(/datum/tgs_api/v4, "cached_test_merges")
+DECLARE_REF(/datum/tgs_api/v4, "cached_test_merges", OWNED_LIST, null)

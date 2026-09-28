@@ -22,7 +22,7 @@
 	anchored = TRUE
 	unacidable = TRUE
 
-REF_OWNED(/obj/structure/morgue, "connected")
+DECLARE_REF(/obj/structure/morgue, "connected", OWNED, null)
 
 /obj/structure/morgue/proc/get_occupants()
 	LAZYCLEARLIST(occupants)
@@ -161,8 +161,8 @@ REF_OWNED(/obj/structure/morgue, "connected")
 	anchored = TRUE
 	throwpass = 1
 
-REF_PAIR(/obj/structure/m_tray, list("connected" = "connected"))
-REF_PAIR(/obj/structure/morgue, list("connected" = "connected"))
+DECLARE_REF(/obj/structure/m_tray, "connected", PAIR, "connected")
+DECLARE_REF(/obj/structure/morgue, "connected", PAIR, "connected")
 
 /obj/structure/m_tray
 	silicon_use = ROBOT_USE_HAND_ADJACENT

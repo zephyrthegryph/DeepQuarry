@@ -8,7 +8,7 @@ mistakes follow from using one anyway, and this lint refuses both:
 
   (a) static-target   a handle var whose target type is a singleton / flyweight
                       (OM_STATIC_TYPE, or a DEF_TYPES definition). Those are held
-                      with REF_STATIC, or read from their registry at the use site.
+                      with DECLARE_REF(..., STATIC), or read from their registry at the use site.
                       Found through the handle's typed accessor
                       (`/T/proc/x() as /X` returning om_resolve(x_handle)), and
                       through `om_handle(SSfoo)` (a subsystem).
@@ -16,8 +16,8 @@ mistakes follow from using one anyway, and this lint refuses both:
                       then handed to om_handle() (or a fresh .clone()/.diverge()/
                       .Copy() handed straight to it) with no other use that could keep
                       it (stored in a var or list, passed to a call, returned).
-                      The new datum has no owner: the holder owns it (REF_OWNED)
-                      or holds it (REF_HELD / a tmp strong var). Atoms created on
+                      The new datum has no owner: the holder owns it (DECLARE_REF(..., OWNED))
+                      or holds it (DECLARE_REF(..., HELD) / a tmp strong var). Atoms created on
                       a location are owned by that location and are not flagged.
 
   (c) non-datum       om_handle() of an /image, /mutable_appearance, list, icon,
@@ -107,7 +107,7 @@ def main(argv):
             if is_static_type(target):
                 no = text.count("\n", 0, m.start()) + 1
                 if not allowed(lines, no, LINT) and not allowed(lines, no - 1, LINT):
-                    sites.append((rel, no, "static-target", "%s.%s is a handle to %s (a singleton/flyweight): use REF_STATIC or the registry" % (owner, var, target)))
+                    sites.append((rel, no, "static-target", "%s.%s is a handle to %s (a singleton/flyweight): use DECLARE_REF(..., STATIC) or the registry" % (owner, var, target)))
         for no, line in enumerate(lines, 1):
             code = code_part(line)
             if "om_handle(" not in code:
@@ -137,7 +137,7 @@ def main(argv):
             for i, name in orphan_locals(body):
                 no = a + i + 1
                 if not allowed(lines, no, LINT):
-                    sites.append((rel, no, "orphan", "`%s` is a new datum whose only reference is a handle: own it (REF_OWNED) or hold it strongly" % name))
+                    sites.append((rel, no, "orphan", "`%s` is a new datum whose only reference is a handle: own it (DECLARE_REF(..., OWNED)) or hold it strongly" % name))
     if report or sites:
         for rel, no, kind, msg in sites:
             print("%s:%d: %s: %s" % (rel, no, kind, msg))

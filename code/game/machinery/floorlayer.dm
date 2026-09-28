@@ -147,7 +147,7 @@
 	for(var/obj/item/stack/tile/tile in turf_contents_of_type(w_turf, /obj/item/stack/tile))
 		TakeTile(tile)
 
-REF_HELD(/obj/machinery/floorlayer, list("T"))
+DECLARE_REF(/obj/machinery/floorlayer, "T", HELD, null)
 
 /// LC-refs: old turf -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/floorlayer/proc/old_turf() as /turf

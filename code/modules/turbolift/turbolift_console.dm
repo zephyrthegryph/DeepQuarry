@@ -60,8 +60,8 @@ DECLARE_INTERACTIONS(/obj/structure/lift, INTERACT_HAND_UNGATED(null, PROC_REF(i
 	req_access = list(ACCESS_EVA)
 	var/datum/turbolift_floor/floor
 
-REF_PAIR(/obj/structure/lift/button, list("floor" = "ext_panel"))
-REF_PAIR(/datum/turbolift_floor, list("ext_panel" = "floor"))
+DECLARE_REF(/obj/structure/lift/button, "floor", PAIR, "ext_panel")
+DECLARE_REF(/datum/turbolift_floor, "ext_panel", PAIR, "floor")
 
 /obj/structure/lift/button/proc/reset()
 	light_up = FALSE

@@ -112,8 +112,8 @@ lazylist instead. For per-subtype constant tables (which DM can't express as a
   (calls `..()`), teardown that must still read declared vars in
   `lifecycle_prerelease()`, behaviour-side work in `on_entity_destroy(E)`. The GC hint is
   the `destroy_hint` var; refusal is `lifecycle_keep(force)`.
-- **Declare every object-typed var** (`REF_OWNED`, `REF_STATIC`, `REF_PAIR`, `REF_BACK`,
-  `REF_BACKLIST`, `REF_WEAK_LIST`, `REF_BACK_HANDLE`, OM handle, declared cache, …); see
+- **Declare every object-typed var** (one line per var, `DECLARE_REF(PATH, "var", KIND, OPT)` with KIND `OWNED`, `STATIC`, `PAIR`, `BACK`,
+  `BACKLIST`, `WEAK_LIST`, `BACK_HANDLE`, …; or an OM handle, or a declared cache); see
   the table in `doc/rewrite/om_in_10_minutes.md` §3.
 - Delete with a lifecycle verb (`consume()`, `replace_with()`, `expire()`, `slot_clear()`)
   when one fits, else `qdel()`; never `del()`.
@@ -278,7 +278,7 @@ Valid prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`,
 
 - [ ] New `.dm` files `#include`d in `deepquarry.dme`.
 - [ ] Absolute type/proc paths only; no `:` operator on subtype access.
-- [ ] No `Destroy()` overrides; object vars declared (`REF_*`); consequences in `on_destroy()`.
+- [ ] No `Destroy()` overrides; object vars declared (`DECLARE_REF()`); consequences in `on_destroy()`.
 - [ ] Event handlers start with `EVENT_HANDLER`; callbacks use the `*_PROC_REF` macros.
 - [ ] Time args use `SECONDS`/`MINUTES`/`HOURS`.
 - [ ] DreamChecker (`SpacemanDMM`) passes locally.

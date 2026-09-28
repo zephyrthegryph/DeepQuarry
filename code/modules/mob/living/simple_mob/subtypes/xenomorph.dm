@@ -61,7 +61,12 @@
 	src.adjust_nutrition(src.max_nutrition)
 	sight |= SEE_MOBS
 
-REF_OWNED(/mob/living/simple_mob/xeno_ch, list("build_action", "neurotox_action", "acidspit_action", "corrode_action", "pounce_action", "spin_action"))
+DECLARE_REF(/mob/living/simple_mob/xeno_ch, "build_action", OWNED, null)
+DECLARE_REF(/mob/living/simple_mob/xeno_ch, "neurotox_action", OWNED, null)
+DECLARE_REF(/mob/living/simple_mob/xeno_ch, "acidspit_action", OWNED, null)
+DECLARE_REF(/mob/living/simple_mob/xeno_ch, "corrode_action", OWNED, null)
+DECLARE_REF(/mob/living/simple_mob/xeno_ch, "pounce_action", OWNED, null)
+DECLARE_REF(/mob/living/simple_mob/xeno_ch, "spin_action", OWNED, null)
 
 /mob/living/simple_mob/xeno_ch/Login()
 	. = ..()

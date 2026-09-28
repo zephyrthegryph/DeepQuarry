@@ -12,4 +12,4 @@
 	if(invested >= price)
 		unlocked = 1
 
-REF_OWNED(/datum/malf_research_ability, list("next"))
+DECLARE_REF(/datum/malf_research_ability, "next", OWNED, null)

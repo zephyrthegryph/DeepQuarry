@@ -8,7 +8,8 @@
 	w_class = ITEMSIZE_HUGE
 	special_handling = TRUE
 
-REF_OWNED(/obj/item/assembly/shock_kit, list("part1", "part2"))
+DECLARE_REF(/obj/item/assembly/shock_kit, "part1", OWNED, null)
+DECLARE_REF(/obj/item/assembly/shock_kit, "part2", OWNED, null)
 
 /obj/item/assembly/shock_kit/wrench_act(mob/user, obj/item/tool)
 	if(!status)

@@ -80,6 +80,6 @@ GLOBAL_DATUM_INIT(event_service, /datum/world_service/events, new)
 				message += "and ran to completion."
 		to_chat(world, message)
 
-REF_OWNED(/datum/world_service/events, list("new_event"))
-REF_OWNED_LIST(/datum/world_service/events, list("finished_events"))
-REF_STATIC(/datum/world_service/events, list("allEvents"))
+DECLARE_REF(/datum/world_service/events, "new_event", OWNED, null)
+DECLARE_REF(/datum/world_service/events, "finished_events", OWNED_LIST, null)
+DECLARE_REF(/datum/world_service/events, "allEvents", STATIC, null)

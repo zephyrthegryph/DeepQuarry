@@ -12,7 +12,7 @@
 // which still reaches D back through one of its own vars: a cycle among
 // deleted objects. In strict mode it also lists any non-tmp var still holding
 // any datum, deleted or live (noisy on legacy types; a debugging aid). Exempt: BYOND's built-in vars, the lifecycle bookkeeping vars below,
-// vars equal to their initial value, and REF_KEEP vars. Text (handles), numbers
+// vars equal to their initial value, and DECLARE_REF(..., KEEP) vars. Text (handles), numbers
 // and type paths never match.
 //
 // Test builds run it on every destroy and report each line as
@@ -45,7 +45,7 @@ GLOBAL_VAR_INIT(dq_lifecycle_leak_check, 0)
 	return names
 
 /// Per type: the names of D's vars worth looking at (not ignored, not
-/// REF_KEEP), and which of them are tmp (issaved() is FALSE for tmp, const,
+/// DECLARE_REF(..., KEEP)), and which of them are tmp (issaved() is FALSE for tmp, const,
 /// static and global vars). Cached once per type.
 /proc/dq_lifecycle_leak_candidates(datum/D)
 	var/static/list/cache = list()
@@ -54,8 +54,8 @@ GLOBAL_VAR_INIT(dq_lifecycle_leak_check, 0)
 		return entry
 	var/list/ignored = dq_lifecycle_leak_ignored_names()
 	var/list/links = dq_lifecycle_link_table(D)
-	var/list/keep = links["keep"]
-	var/list/static_names = links["static"]
+	var/list/keep = links[REFKIND_KEEP]
+	var/list/static_names = links[REFKIND_STATIC]
 	var/list/names = list()
 	var/list/tmp_names = list()
 	for(var/name in D.vars)

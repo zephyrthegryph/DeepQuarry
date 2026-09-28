@@ -35,8 +35,12 @@ GLOBAL_DATUM_INIT(tickets, /datum/tickets, new)
 	var/obj/effect/statclick/ticket_list/cstatclick = new(null, null, AHELP_CLOSED)
 	var/obj/effect/statclick/ticket_list/rstatclick = new(null, null, AHELP_RESOLVED)
 
-REF_OWNED(/datum/tickets, list("astatclick", "cstatclick", "rstatclick"))
-REF_OWNED_LIST(/datum/tickets, list("active_tickets", "closed_tickets", "resolved_tickets"))
+DECLARE_REF(/datum/tickets, "astatclick", OWNED, null)
+DECLARE_REF(/datum/tickets, "cstatclick", OWNED, null)
+DECLARE_REF(/datum/tickets, "rstatclick", OWNED, null)
+DECLARE_REF(/datum/tickets, "active_tickets", OWNED_LIST, null)
+DECLARE_REF(/datum/tickets, "closed_tickets", OWNED_LIST, null)
+DECLARE_REF(/datum/tickets, "resolved_tickets", OWNED_LIST, null)
 
 //private
 /datum/tickets/proc/ListInsert(datum/ticket/new_ticket)
@@ -754,7 +758,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket)
 
 	return msg
 
-REF_OWNED(/datum/ticket, "statclick")
+DECLARE_REF(/datum/ticket, "statclick", OWNED, null)
 
 /// LC-refs: the ticket_datum this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/effect/statclick/ticket/proc/ticket_datum() as /datum/ticket

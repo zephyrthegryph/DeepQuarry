@@ -25,7 +25,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/fusion_fuel_injector, REGISTRY_FUEL_INJECTORS
 	default_apply_parts()
 	make_rotatable()
 
-REF_SPILL(/obj/machinery/fusion_fuel_injector, "cur_assembly")
+DECLARE_REF(/obj/machinery/fusion_fuel_injector, "cur_assembly", SPILL, null)
 
 /obj/machinery/fusion_fuel_injector/mapped
 	anchored = TRUE

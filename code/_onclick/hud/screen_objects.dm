@@ -803,8 +803,13 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 	frame.vis_contents.Add(powbutton,mapbutton)
 	vis_contents.Add(frame)
 
-REF_OWNED(/atom/movable/screen/movable/mapper_holder, list("mask_full", "mask_ping", "bg", "frame", "powbutton", "mapbutton"))
-REF_BACK_HANDLE(/atom/movable/screen/movable/mapper_holder, list("owner_handle" = "hud_item"))
+DECLARE_REF(/atom/movable/screen/movable/mapper_holder, "mask_full", OWNED, null)
+DECLARE_REF(/atom/movable/screen/movable/mapper_holder, "mask_ping", OWNED, null)
+DECLARE_REF(/atom/movable/screen/movable/mapper_holder, "bg", OWNED, null)
+DECLARE_REF(/atom/movable/screen/movable/mapper_holder, "frame", OWNED, null)
+DECLARE_REF(/atom/movable/screen/movable/mapper_holder, "powbutton", OWNED, null)
+DECLARE_REF(/atom/movable/screen/movable/mapper_holder, "mapbutton", OWNED, null)
+DECLARE_REF(/atom/movable/screen/movable/mapper_holder, "owner_handle", BACK_HANDLE, "hud_item")
 
 /atom/movable/screen/movable/mapper_holder/proc/update(atom/movable/screen/mapper/map, atom/movable/screen/mapper/extras_holder/extras, ping = FALSE)
 	if(!running)
@@ -1103,6 +1108,6 @@ REF_BACK_HANDLE(/atom/movable/screen/movable/mapper_holder, list("owner_handle" 
 /atom/movable/screen/mapper/proc/parent() as /atom/movable/screen/movable/mapper_holder
 	return om_resolve(parent_handle)
 
-REF_OWNED(/atom/movable/screen/zone_sel, list("selecting_appearance"))
+DECLARE_REF(/atom/movable/screen/zone_sel, "selecting_appearance", OWNED, null)
 
-REF_OWNED(/atom/movable/screen/inventory/hand, list("handcuff_overlay"))
+DECLARE_REF(/atom/movable/screen/inventory/hand, "handcuff_overlay", OWNED, null)

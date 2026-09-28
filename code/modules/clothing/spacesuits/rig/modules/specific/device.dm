@@ -175,4 +175,4 @@
 			to_chat(holder.wearer(), span_notice("Switched to internal affairs stamp."))
 		return 1
 
-REF_HELD(/obj/item/rig_module/device, "device")
+DECLARE_REF(/obj/item/rig_module/device, "device", HELD, null)

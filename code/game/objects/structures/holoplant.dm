@@ -110,4 +110,4 @@
 /obj/machinery/holoplant/shipped
 	anchored = FALSE
 
-REF_OWNED(/obj/machinery/holoplant, list("plant"))
+DECLARE_REF(/obj/machinery/holoplant, "plant", OWNED, null)

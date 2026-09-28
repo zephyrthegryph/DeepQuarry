@@ -299,7 +299,7 @@
 		if(candidate.definition_id == "medical_rare_case_report" && candidate.context["target_ref"] == subject_ref)
 			withdraw_candidate(candidate, "The patient is no longer available for this report.")
 
-REF_OWNED(/datum/contract/medical_case_report, "evidence_requirement")
+DECLARE_REF(/datum/contract/medical_case_report, "evidence_requirement", OWNED, null)
 
 /// LC-refs: the consent_record this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/contract/medical_case_report/proc/consent_record() as /obj/item/paper

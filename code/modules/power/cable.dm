@@ -941,7 +941,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/alien, INTERACT_HAND_UNGATED("Tak
 #undef MAXCOIL
 
 /// LC-refs: a cable is a member of its material overlay's cables; deleting it leaves the list.
-REF_BACKLIST(/obj/structure/cable, list("material_overlay" = "cables"))
+DECLARE_REF(/obj/structure/cable, "material_overlay", BACKLIST, "cables")
 
 /// LC-refs: the breaker_box this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/structure/cable/proc/breaker_box() as /obj/machinery/power/breakerbox

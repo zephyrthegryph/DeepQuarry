@@ -14,7 +14,7 @@
 	. = ..()
 	crew_monitor = new(src)
 
-REF_OWNED(/obj/machinery/computer/crew, "crew_monitor")
+DECLARE_REF(/obj/machinery/computer/crew, "crew_monitor", OWNED, null)
 
 /obj/machinery/computer/crew/declare_interactions(list/into)
 	into += list(

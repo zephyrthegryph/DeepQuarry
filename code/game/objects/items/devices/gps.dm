@@ -91,7 +91,7 @@ REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
 	if(holder_ref())
 		update_compass(src, TRUE)
 
-REF_OWNED(/obj/item/gps, "compass")
+DECLARE_REF(/obj/item/gps, "compass", OWNED, null)
 
 // the GPS leaves its holder's tracking.
 /obj/item/gps/on_destroy(force)

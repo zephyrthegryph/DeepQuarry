@@ -4,7 +4,8 @@
 /// calls initialize(), where SSplants used to initialize.
 GLOBAL_DATUM_INIT(plant_service, /datum/world_service/plants, new)
 
-REF_STATIC(/datum/world_service/plants, list("seeds", "plant_gene_datums"))
+DECLARE_REF(/datum/world_service/plants, "seeds", STATIC, null)
+DECLARE_REF(/datum/world_service/plants, "plant_gene_datums", STATIC, null)
 
 /datum/world_service/plants
 	name = "Plants"

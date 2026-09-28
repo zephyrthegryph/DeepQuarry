@@ -289,4 +289,4 @@
 /obj/machinery/space_heater/step_start_condition()
 	return state
 
-REF_HELD(/obj/machinery/space_heater, list("cell"))
+DECLARE_REF(/obj/machinery/space_heater, "cell", HELD, null)

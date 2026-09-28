@@ -342,7 +342,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 	if(special_frame)
 		add_overlay(special_frame)
 
-REF_OWNED(/obj/machinery/gear_dispenser/suit_fancy, "door")
+DECLARE_REF(/obj/machinery/gear_dispenser/suit_fancy, "door", OWNED, null)
 
 /obj/machinery/gear_dispenser/suit_fancy/power_change()
 	. = ..()
@@ -981,7 +981,7 @@ REF_OWNED(/obj/machinery/gear_dispenser/suit_fancy, "door")
 #undef GD_UNLIMITED
 #undef GD_UNIQUE
 
-REF_OWNED(/obj/machinery/gear_dispenser, list("one_setting"))
+DECLARE_REF(/obj/machinery/gear_dispenser, "one_setting", OWNED, null)
 
 /// LC-refs: held gear disp -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/gear_dispenser/suit_fancy/proc/held_gear_disp() as /datum/gear_disp

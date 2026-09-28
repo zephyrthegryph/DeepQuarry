@@ -15,7 +15,8 @@
 	var/mob/living/soul_sharer
 	var/id // Optional ID, for tagging and finding specific instances.
 
-REF_BACKLIST(/datum/soul_link, list("soul_owner" = "owned_soul_links", "soul_sharer" = "shared_soul_links"))
+DECLARE_REF(/datum/soul_link, "soul_owner", BACKLIST, "owned_soul_links")
+DECLARE_REF(/datum/soul_link, "soul_sharer", BACKLIST, "shared_soul_links")
 
 /datum/soul_link/proc/remove_soul_sharer(mob/living/sharer)
 	if(soul_sharer == sharer)

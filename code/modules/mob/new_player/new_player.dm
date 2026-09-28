@@ -21,7 +21,10 @@
 
 	var/created_for
 
-REF_OWNED(/mob/new_player, list("manifest_dialog", "late_choices_dialog", "privacy_poll_dialog", "poll_browser_dialog"))
+DECLARE_REF(/mob/new_player, "manifest_dialog", OWNED, null)
+DECLARE_REF(/mob/new_player, "late_choices_dialog", OWNED, null)
+DECLARE_REF(/mob/new_player, "privacy_poll_dialog", OWNED, null)
+DECLARE_REF(/mob/new_player, "poll_browser_dialog", OWNED, null)
 
 /mob/new_player/get_status_tab_items()
 	. = ..()
@@ -547,4 +550,4 @@ REF_OWNED(/mob/new_player, list("manifest_dialog", "late_choices_dialog", "priva
 	return pass
 
 // The window belongs to the client (tgui_window); the lobby only drives it.
-REF_HELD(/mob/new_player, "lobby_window")
+DECLARE_REF(/mob/new_player, "lobby_window", HELD, null)

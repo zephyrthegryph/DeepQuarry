@@ -497,4 +497,4 @@ EXTEND_INTERACTIONS(/obj/effect/floormimic, INTERACT_ITEM(null, PROC_REF(floormi
 	base_attack_cooldown = 10
 	attack_armor_pen = 50
 
-REF_HELD(/mob/living/simple_mob/vore/aggressive/mimic, "real_crate")
+DECLARE_REF(/mob/living/simple_mob/vore/aggressive/mimic, "real_crate", HELD, null)

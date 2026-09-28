@@ -29,7 +29,7 @@
 	EVENT_HANDLER
 	update_icon()
 
-REF_OWNED(/obj/item/radio/intercom, "circuit")
+DECLARE_REF(/obj/item/radio/intercom, "circuit", OWNED, null)
 
 /obj/item/radio/intercom/custom
 	name = "station intercom (Custom)"

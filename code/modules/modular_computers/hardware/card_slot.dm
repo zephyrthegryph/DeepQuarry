@@ -11,7 +11,14 @@
 /obj/item/computer_hardware/card_slot/get_slot_var()
 	return "card_slot"
 
-REF_HELD(/obj/item/modular_computer, list("processor_unit", "network_card", "hard_drive", "battery_module", "card_slot", "nano_printer", "portable_drive", "tesla_link"))
+DECLARE_REF(/obj/item/modular_computer, "processor_unit", HELD, null)
+DECLARE_REF(/obj/item/modular_computer, "network_card", HELD, null)
+DECLARE_REF(/obj/item/modular_computer, "hard_drive", HELD, null)
+DECLARE_REF(/obj/item/modular_computer, "battery_module", HELD, null)
+DECLARE_REF(/obj/item/modular_computer, "card_slot", HELD, null)
+DECLARE_REF(/obj/item/modular_computer, "nano_printer", HELD, null)
+DECLARE_REF(/obj/item/modular_computer, "portable_drive", HELD, null)
+DECLARE_REF(/obj/item/modular_computer, "tesla_link", HELD, null)
 
 // its card drops at the computer's turf.
 /obj/item/computer_hardware/card_slot/on_destroy(force)

@@ -385,4 +385,4 @@ DECLARE_INTERACTIONS(/obj/item/cat_box, INTERACT_USE(null, PROC_REF(interaction_
 	flick("kphaseout",src)
 	expire(1 SECOND) //Back from whence you came!
 
-REF_HELD(/mob/living/simple_mob/animal/passive/cat, "friend")
+DECLARE_REF(/mob/living/simple_mob/animal/passive/cat, "friend", HELD, null)

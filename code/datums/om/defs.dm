@@ -118,7 +118,7 @@
 	return
 
 /// The entity `E` is being destroyed. Runs in the destroy transaction's phase 4, before the
-/// declared links (REF_*) are cleared, so E's vars still read; on_stop follows in phase 5.
+/// declared links (DECLARE_REF) are cleared, so E's vars still read; on_stop follows in phase 5.
 /// Every attached behaviour gets it, started or not. The behaviour's destroy hook: put teardown
 /// here instead of a Destroy() override on the entity.
 /datum/om/behaviour/proc/on_entity_destroy(datum/E)
@@ -369,8 +369,9 @@
 	SHOULD_NOT_SLEEP(TRUE)
 	return
 
-REF_OWNED(/datum/om/behaviour, "compiled_wake_if")
+DECLARE_REF(/datum/om/behaviour, "compiled_wake_if", OWNED, null)
 
-REF_OWNED(/datum/om/relation, list("compiled_active_if", "compiled_break_if"))
+DECLARE_REF(/datum/om/relation, "compiled_active_if", OWNED, null)
+DECLARE_REF(/datum/om/relation, "compiled_break_if", OWNED, null)
 
-REF_OWNED(/datum/om/derived, "compiled_expr")
+DECLARE_REF(/datum/om/derived, "compiled_expr", OWNED, null)

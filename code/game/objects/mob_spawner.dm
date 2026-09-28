@@ -28,7 +28,7 @@
 	COOLDOWN_START(src, spawn_cooldown, spawn_delay + rand(0, spawn_delay))
 
 // its spawned mobs lose their nest.
-REF_LIST_BACK(/obj/structure/mob_spawner, list("spawned_mobs" = "nest"))
+DECLARE_REF(/obj/structure/mob_spawner, "spawned_mobs", LIST_BACK, "nest")
 
 /// Acts only while a player is near; otherwise it sleeps until one comes near.
 /obj/structure/mob_spawner/periodic_step()
@@ -332,4 +332,4 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 	spawn_delay = 300
 	spawn_types = list(/mob/living/simple_mob/mechanical/hivebot/swarm = 200, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/basic = 50, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/laser = 25, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/ion = 10, /mob/living/simple_mob/mechanical/hivebot/tank/meatshield = 10)
 
-REF_OWNED(/obj/structure/mob_spawner/scanner, list("prox"))
+DECLARE_REF(/obj/structure/mob_spawner/scanner, "prox", OWNED, null)

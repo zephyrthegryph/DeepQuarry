@@ -29,7 +29,8 @@
 	return A.artifact_master
 
 /// The artifact state of an anomalous atom (was the artifact_master component). Owned by it.
-REF_VAR(/atom, OWNED, /datum/artifact_master, artifact_master)
+/atom/var/datum/artifact_master/artifact_master // ALLOW(state_ref): owned child (DECLARE_REF OWNED); saved as before, the one-line REF_VAR form hid it from this lint
+DECLARE_REF(/atom, "artifact_master", OWNED, null)
 
 /datum/artifact_master
 	var/tmp/holder_handle
@@ -484,4 +485,4 @@ REF_VAR(/atom, OWNED, /datum/artifact_master, artifact_master)
 /datum/artifact_master/proc/holder() as /atom
 	return om_resolve(holder_handle)
 
-REF_OWNED_LIST(/datum/artifact_master, "my_effects")
+DECLARE_REF(/datum/artifact_master, "my_effects", OWNED_LIST, null)

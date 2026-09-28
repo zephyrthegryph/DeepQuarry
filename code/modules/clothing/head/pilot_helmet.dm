@@ -165,7 +165,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/pilot, \
 		var/image/I = images[img]
 		I.color = ask.picked_color
 
-REF_OWNED(/obj/item/clothing/head/pilot, "pilot_hud")
+DECLARE_REF(/obj/item/clothing/head/pilot, "pilot_hud", OWNED, null)
 
 // its HUD images are detached.
 /obj/item/clothing/head/pilot/on_destroy(force)
@@ -257,6 +257,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/pilot_vr, INTERACT_USE("Toggle visor
 /obj/item/clothing/head/pilot/proc/shuttle_comp() as /obj/machinery/computer/shuttle_control/web
 	return om_resolve(shuttle_comp_handle)
 
-REF_OWNED_LIST(/obj/item/clothing/head/pilot, "raw_images")
+DECLARE_REF(/obj/item/clothing/head/pilot, "raw_images", OWNED_LIST, null)
 
-REF_OWNED_VALUES(/obj/item/clothing/head/pilot, "images")
+DECLARE_REF(/obj/item/clothing/head/pilot, "images", OWNED_VALUES, null)

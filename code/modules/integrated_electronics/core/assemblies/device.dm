@@ -13,7 +13,7 @@
 	EA = new(src)
 	EA.holder_handle = om_handle(src)
 
-REF_OWNED(/obj/item/assembly/electronic_assembly, "EA")
+DECLARE_REF(/obj/item/assembly/electronic_assembly, "EA", OWNED, null)
 
 EXTEND_INTERACTIONS(/obj/item/assembly/electronic_assembly, \
 	INTERACT_ITEM(null, PROC_REF(electronic_assembly_interaction_item)), \
@@ -90,7 +90,7 @@ EXTEND_INTERACTIONS(/obj/item/assembly/electronic_assembly, \
 	output.assembly_handle = om_handle(src)
 
 // its holder device forgets the assembly.
-REF_BACK_HANDLE(/obj/item/electronic_assembly/device, list("holder_handle" = "EA"))
+DECLARE_REF(/obj/item/electronic_assembly/device, "holder_handle", BACK_HANDLE, "EA")
 
 /obj/item/electronic_assembly/device/check_interactivity(mob/user)
 	if(!CanInteract(user, state = GLOB.tgui_deep_inventory_state))

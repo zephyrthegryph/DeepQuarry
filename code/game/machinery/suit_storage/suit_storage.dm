@@ -503,4 +503,6 @@
 	dump_everything()
 	update_icon()
 
-REF_OWNED(/obj/machinery/suit_storage_unit, list("SUIT", "HELMET", "MASK"))
+DECLARE_REF(/obj/machinery/suit_storage_unit, "SUIT", OWNED, null)
+DECLARE_REF(/obj/machinery/suit_storage_unit, "HELMET", OWNED, null)
+DECLARE_REF(/obj/machinery/suit_storage_unit, "MASK", OWNED, null)

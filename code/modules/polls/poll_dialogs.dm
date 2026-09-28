@@ -28,8 +28,8 @@
 /datum/privacy_poll_dialog/New(mob/new_player/owner)
 	src.owner = owner
 
-REF_PAIR(/datum/privacy_poll_dialog, list("owner" = "privacy_poll_dialog"))
-REF_PAIR(/mob/new_player, list("privacy_poll_dialog" = "owner"))
+DECLARE_REF(/datum/privacy_poll_dialog, "owner", PAIR, "privacy_poll_dialog")
+DECLARE_REF(/mob/new_player, "privacy_poll_dialog", PAIR, "owner")
 
 /datum/privacy_poll_dialog/tgui_state(mob/user)
 	return GLOB.tgui_always_state
@@ -125,8 +125,8 @@ REF_PAIR(/mob/new_player, list("privacy_poll_dialog" = "owner"))
 	poll_meta = list()
 	refresh_poll_list()
 
-REF_PAIR(/datum/poll_browser_dialog, list("owner" = "poll_browser_dialog"))
-REF_PAIR(/mob/new_player, list("poll_browser_dialog" = "owner"))
+DECLARE_REF(/datum/poll_browser_dialog, "owner", PAIR, "poll_browser_dialog")
+DECLARE_REF(/mob/new_player, "poll_browser_dialog", PAIR, "owner")
 
 /datum/poll_browser_dialog/tgui_state(mob/user)
 	return GLOB.tgui_always_state

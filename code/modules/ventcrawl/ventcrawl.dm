@@ -214,4 +214,4 @@
 
 	pipes_shown.len = 0
 
-REF_OWNED_LIST(/mob/living, "pipes_shown")
+DECLARE_REF(/mob/living, "pipes_shown", OWNED_LIST, null)

@@ -22,7 +22,7 @@
 	alarm_monitor.register_alarm(src, "update_console_icon")
 	. = ..()
 
-REF_OWNED(/obj/machinery/computer/station_alert, "alarm_monitor")
+DECLARE_REF(/obj/machinery/computer/station_alert, "alarm_monitor", OWNED, null)
 
 /// Phase 2: leaves its alarm monitor's listeners.
 /obj/machinery/computer/station_alert/lifecycle_dematerialize()

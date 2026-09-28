@@ -18,7 +18,8 @@
 	/// returns the existing one. Defaults to the state's own exact type.
 	var/unique_type
 
-REF_BACKLIST_VAR(/datum/trait_state, /mob/living, owner, "trait_states")
+/datum/trait_state/var/mob/living/owner
+DECLARE_REF(/datum/trait_state, "owner", BACKLIST, "trait_states")
 
 /datum/trait_state/New(mob/living/owner)
 	..()
@@ -50,11 +51,12 @@ REF_BACKLIST_VAR(/datum/trait_state, /mob/living, owner, "trait_states")
 /datum/trait_state/lifecycle_prerelease()
 	..()
 	if(owner)
-		detach() // phase 4 then drops us from owner.trait_states (REF_BACKLIST)
+		detach() // phase 4 then drops us from owner.trait_states (DECLARE_REF(..., BACKLIST))
 
 // --- Mob API ------------------------------------------------------------------------------------
 
-REF_VAR(/mob/living, OWNED_LIST, /list, trait_states)
+/mob/living/var/list/trait_states
+DECLARE_REF(/mob/living, "trait_states", OWNED_LIST, null)
 
 /// First trait state of `state_type` (or a subtype) this mob holds, or null.
 /mob/living/proc/get_trait_state(state_type)

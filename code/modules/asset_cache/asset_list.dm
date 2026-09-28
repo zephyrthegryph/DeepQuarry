@@ -747,4 +747,4 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 /datum/asset/json/unregister()
 	SSassets.transport.unregister_asset("[name].json")
 
-REF_OWNED_VALUES(/datum/asset/simple, "assets")
+DECLARE_REF(/datum/asset/simple, "assets", OWNED_VALUES, null)

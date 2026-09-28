@@ -121,4 +121,4 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/illusion, INTERACT_HAND_UNGATED(null,
 	if(copying)
 		return copying.get_catalogue_delay()
 
-REF_HELD(/mob/living/simple_mob/illusion, "copying")
+DECLARE_REF(/mob/living/simple_mob/illusion, "copying", HELD, null)

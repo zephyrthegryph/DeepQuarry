@@ -85,4 +85,4 @@
 	return GLOB.tgui_self_state
 
 /// Sensors on the grid, rebuilt by refresh_sensors().
-REF_WEAK_LIST(/datum/tgui_module/power_monitor, "grid_sensors")
+DECLARE_REF(/datum/tgui_module/power_monitor, "grid_sensors", WEAK_LIST, null)

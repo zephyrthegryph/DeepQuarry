@@ -85,4 +85,4 @@
 				gib()
 
 // A meat type path or a shared definition, never a per-mob instance.
-REF_STATIC(/mob/living, "meat_type")
+DECLARE_REF(/mob/living, "meat_type", STATIC, null)

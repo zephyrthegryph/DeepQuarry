@@ -251,7 +251,7 @@ DECLARE_INTERACTIONS(/obj/item/anodevice, \
 		add_attack_logs(user,M,"Anobattery tap ([inserted_battery()?.battery_effect?.name])")
 	return ITEM_INTERACT_SUCCESS
 
-REF_OWNED(/obj/item/anobattery, "battery_effect")
+DECLARE_REF(/obj/item/anobattery, "battery_effect", OWNED, null)
 
 /// LC-refs: the inserted_battery this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/anodevice/proc/inserted_battery() as /obj/item/anobattery

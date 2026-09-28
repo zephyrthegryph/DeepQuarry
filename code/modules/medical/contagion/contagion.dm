@@ -100,7 +100,7 @@
 	var/tmp/mob/living/carbon/human/host
 
 REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
-REF_BACK(/datum/affliction/contagion, list("host" = null))
+DECLARE_REF(/datum/affliction/contagion, "host", BACK, null)
 
 /// Contagions are systemic: whatever arguments a subtype's constructor takes,
 /// the affliction location is null.

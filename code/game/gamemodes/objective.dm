@@ -837,6 +837,6 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 		return 0
 	return rval
 
-REF_BACKLIST(/datum/objective, list("owner" = "objectives"))
+DECLARE_REF(/datum/objective, "owner", BACKLIST, "objectives")
 // Minds live for the round; the objective only reads its target.
-REF_HELD(/datum/objective, "target")
+DECLARE_REF(/datum/objective, "target", HELD, null)

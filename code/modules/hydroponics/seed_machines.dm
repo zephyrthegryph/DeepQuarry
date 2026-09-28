@@ -66,7 +66,8 @@ DECLARE_INTERACTIONS(/obj/item/disk/botany, INTERACT_USE(null, PROC_REF(interact
 	..()
 */
 
-REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
+DECLARE_REF(/obj/machinery/botany, "seed", SPILL, null)
+DECLARE_REF(/obj/machinery/botany, "loaded_disk", SPILL, null)
 
 /obj/machinery/botany/machine_step()
 
@@ -393,7 +394,7 @@ REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
 /obj/machinery/botany/step_start_condition()
 	return active
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/machinery/botany/extractor/proc/genetics() as /datum/seed
 	return genetics_static
-REF_STATIC(/obj/machinery/botany/extractor, "genetics_static")
+DECLARE_REF(/obj/machinery/botany/extractor, "genetics_static", STATIC, null)

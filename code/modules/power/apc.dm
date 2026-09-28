@@ -203,9 +203,10 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 /obj/machinery/power/apc/LateInitialize()
 	update()
 
-REF_OWNED(/obj/machinery/power/apc, list("terminal", "icon_renderer"))
-REF_SPILL(/obj/machinery/power/apc, "cell")
-REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
+DECLARE_REF(/obj/machinery/power/apc, "terminal", OWNED, null)
+DECLARE_REF(/obj/machinery/power/apc, "icon_renderer", OWNED, null)
+DECLARE_REF(/obj/machinery/power/apc, "cell", SPILL, null)
+DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 
 /// Phase 1 (unbind): the APC's Rust power node goes.
 /obj/machinery/power/apc/lifecycle_unbind()

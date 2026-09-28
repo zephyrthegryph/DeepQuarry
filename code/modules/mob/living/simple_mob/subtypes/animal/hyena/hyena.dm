@@ -149,7 +149,7 @@ They're also cool, and Rykka/Nyria wrote this uwu
 	emote_see = list("sniffs", "looks around", "grooms itself", "rolls around")
 	emote_hear = list("yawns", "cackles", "playfully yaps")
 
-REF_SPILL(/mob/living/simple_mob/animal/hyena, "hat")
+DECLARE_REF(/mob/living/simple_mob/animal/hyena, "hat", SPILL, null)
 
 /mob/living/simple_mob/animal/hyena/update_icon()
 	overlays.Cut()

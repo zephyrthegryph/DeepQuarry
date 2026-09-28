@@ -308,4 +308,4 @@ EXTEND_INTERACTIONS(/obj/item/card/id/guest, INTERACT_USE("Show or deactivate", 
 	else
 		to_chat(user, span_warning("Invalid duration."))
 
-REF_HELD(/obj/machinery/computer/guestpass, list("giver"))
+DECLARE_REF(/obj/machinery/computer/guestpass, "giver", HELD, null)

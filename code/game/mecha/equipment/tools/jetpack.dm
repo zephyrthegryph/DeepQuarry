@@ -130,4 +130,4 @@
 /obj/item/mecha_parts/mecha_equipment/tool/jetpack/cooldown_over()
 	wait = 0
 
-REF_OWNED(/obj/item/mecha_parts/mecha_equipment/tool/jetpack, list("ion_trail"))
+DECLARE_REF(/obj/item/mecha_parts/mecha_equipment/tool/jetpack, "ion_trail", OWNED, null)

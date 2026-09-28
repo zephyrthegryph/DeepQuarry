@@ -74,7 +74,7 @@
 	..()
 
 // the mech points at its minihud; the minihud going clears that var.
-REF_BACK_HANDLE(/datum/mini_hud/mech, list("owner_mech_handle" = "minihud"))
+DECLARE_REF(/datum/mini_hud/mech, "owner_mech_handle", BACK_HANDLE, "minihud")
 
 /datum/mini_hud/mech/periodic_step()
 	if(!owner_mech())
@@ -208,6 +208,12 @@ REF_BACK_HANDLE(/datum/mini_hud/mech, list("owner_mech_handle" = "minihud"))
 /datum/mini_hud/mech/proc/owner_mech() as /obj/mecha
 	return om_resolve(owner_mech_handle)
 
-REF_OWNED(/datum/mini_hud/rig, list("power", "health", "air", "airtoggle"))
+DECLARE_REF(/datum/mini_hud/rig, "power", OWNED, null)
+DECLARE_REF(/datum/mini_hud/rig, "health", OWNED, null)
+DECLARE_REF(/datum/mini_hud/rig, "air", OWNED, null)
+DECLARE_REF(/datum/mini_hud/rig, "airtoggle", OWNED, null)
 
-REF_OWNED(/datum/mini_hud/mech, list("power", "health", "air", "airtoggle"))
+DECLARE_REF(/datum/mini_hud/mech, "power", OWNED, null)
+DECLARE_REF(/datum/mini_hud/mech, "health", OWNED, null)
+DECLARE_REF(/datum/mini_hud/mech, "air", OWNED, null)
+DECLARE_REF(/datum/mini_hud/mech, "airtoggle", OWNED, null)

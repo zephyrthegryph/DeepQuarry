@@ -227,8 +227,9 @@ GLOBAL_DATUM_INIT(station_faction_relations, /datum/station_faction_relations, n
 	for(var/department in get_reputation_departments())
 		department_ledgers[department] = new /datum/faction_reputation_ledger(reputations)
 
-REF_OWNED_VALUES(/datum/station_faction_relations, list("department_ledgers", "personal_ledgers"))
-REF_OWNED_LIST(/datum/station_faction_relations, "agent_records")
+DECLARE_REF(/datum/station_faction_relations, "department_ledgers", OWNED_VALUES, null)
+DECLARE_REF(/datum/station_faction_relations, "personal_ledgers", OWNED_VALUES, null)
+DECLARE_REF(/datum/station_faction_relations, "agent_records", OWNED_LIST, null)
 
 /datum/station_faction_relations/proc/get_reputation_departments()
 	return list(
@@ -532,6 +533,6 @@ REF_OWNED_LIST(/datum/station_faction_relations, "agent_records")
 	// Affiliations describe relationships; NanoTrasen employment remains independent.
 	return ..()
 
-REF_BACK(/datum/faction_agent_record, list("agent_mind" = null))
+DECLARE_REF(/datum/faction_agent_record, "agent_mind", BACK, null)
 // Usually the station relations' personal ledger for our account (owned there), else a private one.
-REF_BACK(/mob/living, list("faction_reputation" = null))
+DECLARE_REF(/mob/living, "faction_reputation", BACK, null)

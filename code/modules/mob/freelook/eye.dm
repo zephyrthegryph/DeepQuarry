@@ -143,4 +143,4 @@
 		sprint = initial
 	return 1
 
-REF_STATIC(/mob/observer/eye, "visualnet")
+DECLARE_REF(/mob/observer/eye, "visualnet", STATIC, null)

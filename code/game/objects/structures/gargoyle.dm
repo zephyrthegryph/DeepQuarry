@@ -311,4 +311,4 @@
 			return
 	return ..()
 
-REF_OWNED(/obj/structure/gargoyle, "tail_image")
+DECLARE_REF(/obj/structure/gargoyle, "tail_image", OWNED, null)

@@ -611,4 +611,4 @@
 	reserve.require_number("command_allocation", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, 6000)
 	contract.add_requirement(reserve)
 
-REF_OWNED(/datum/contract/outcome/engine_performance, "performance_requirement")
+DECLARE_REF(/datum/contract/outcome/engine_performance, "performance_requirement", OWNED, null)

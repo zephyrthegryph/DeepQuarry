@@ -89,7 +89,7 @@
 				atom_break()
 			break
 
-REF_OWNED(/obj/machinery/atmospherics/unary/engine, "controller")
+DECLARE_REF(/obj/machinery/atmospherics/unary/engine, "controller", OWNED, null)
 
 /obj/machinery/atmospherics/unary/engine/proc/get_status()
 	. = list()

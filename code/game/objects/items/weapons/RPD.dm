@@ -58,7 +58,8 @@ MATERIAL_MIX(/obj/item/pipe_dispenser, list(MAT_STEEL = 50000, MAT_GLASS = 25000
 	if(!recipe())
 		recipe_static = first_atmos
 
-REF_OWNED(/obj/item/pipe_dispenser, list("spark_system", "tool"))
+DECLARE_REF(/obj/item/pipe_dispenser, "spark_system", OWNED, null)
+DECLARE_REF(/obj/item/pipe_dispenser, "tool", OWNED, null)
 
 DECLARE_INTERACTIONS(/obj/item/pipe_dispenser, INTERACT_USE(null, PROC_REF(interaction_self)))
 
@@ -335,7 +336,7 @@ DECLARE_INTERACTIONS(/obj/item/pipe_dispenser, INTERACT_USE(null, PROC_REF(inter
 #undef DESTROY_MODE
 #undef PAINT_MODE
 
-/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
+/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/item/pipe_dispenser/proc/recipe() as /datum/pipe_recipe
 	return recipe_static
-REF_STATIC(/obj/item/pipe_dispenser, "recipe_static")
+DECLARE_REF(/obj/item/pipe_dispenser, "recipe_static", STATIC, null)

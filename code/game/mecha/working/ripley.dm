@@ -40,7 +40,7 @@
 					ore_box.stored_ore[ore.material]++
 					qdel(ore)
 
-REF_OWNED(/obj/mecha/working/ripley, "orescanner")
+DECLARE_REF(/obj/mecha/working/ripley, "orescanner", OWNED, null)
 
 /obj/mecha/working/ripley/firefighter
 	desc = "Standard APLU chassis was refitted with additional thermal protection and cistern."

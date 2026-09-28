@@ -35,7 +35,7 @@
 	spark_system.attach(src)
 	return ..()
 */
-REF_OWNED(/obj/item/rcd, "spark_system")
+DECLARE_REF(/obj/item/rcd, "spark_system", OWNED, null)
 
 /obj/item/rcd/examine(mob/user)
 	. = ..()
@@ -193,7 +193,7 @@ REF_OWNED(/obj/item/rcd, "spark_system")
 		cell = new /obj/item/cell/high(src)
 	return ..()
 
-REF_OWNED(/obj/item/rcd/electric, "cell")
+DECLARE_REF(/obj/item/rcd/electric, "cell", OWNED, null)
 
 /obj/item/rcd/electric/get_cell()
 	RETURN_TYPE(/obj/item/cell)

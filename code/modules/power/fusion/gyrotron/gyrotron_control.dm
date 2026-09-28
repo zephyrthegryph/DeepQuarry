@@ -17,7 +17,7 @@
 	monitor.gyro_tag = id_tag
 	monitor.scan_range = scan_range
 
-REF_OWNED(/obj/machinery/computer/gyrotron_control, "monitor")
+DECLARE_REF(/obj/machinery/computer/gyrotron_control, "monitor", OWNED, null)
 
 /obj/machinery/computer/gyrotron_control/declare_interactions(list/into)
 	into += list(

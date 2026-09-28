@@ -67,4 +67,4 @@
 #undef SKYBOX_PIXELS
 #undef SKYBOX_TURFS
 
-REF_OWNED(/client, list("skybox"))
+DECLARE_REF(/client, "skybox", OWNED, null)

@@ -86,13 +86,14 @@
 	rebuild_behaviors()
 	return ..()
 
-REF_OWNED(/datum/ai_brain, "model")
-REF_BACK(/datum/ai_brain, list("primary_threat" = null, "holder" = "ai_brain"))
+DECLARE_REF(/datum/ai_brain, "model", OWNED, null)
+DECLARE_REF(/datum/ai_brain, "primary_threat", BACK, null)
+DECLARE_REF(/datum/ai_brain, "holder", BACK, "ai_brain")
 
 // effective_behaviors maps behaviour type -> om_handle() of its source atom (or null): the brain owns no source.
 
 /// A running behaviour is stopped (it ends ai_busy on holder) and the loops and chunk sleep are
-/// cancelled while holder is still set; phase 4 then clears holder and holder.ai_brain (REF_BACK).
+/// cancelled while holder is still set; phase 4 then clears holder and holder.ai_brain (DECLARE_REF(..., BACK)).
 /datum/ai_brain/lifecycle_prerelease()
 	cancel_chunk_sleep()
 	if(active_behavior_type)

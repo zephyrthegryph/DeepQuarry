@@ -68,7 +68,7 @@ GLOBAL_LIST_INIT(RMS_random_malfunction, list(/obj/item/fbp_backup_cell,
 	spark_system.attach(src)
 	add_overlay("rms_charge[charge_stage]")
 
-REF_OWNED(/obj/item/rms, "spark_system")
+DECLARE_REF(/obj/item/rms, "spark_system", OWNED, null)
 
 /obj/item/rms/update_icon()
 	charge_stage = round((stored_charge/max_charge)*4)

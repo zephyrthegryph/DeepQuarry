@@ -12,10 +12,11 @@
 /mob
 	/// The active remote view of this mob, if any (see begin_remote_view()).
 	var/tmp/datum/remote_view/remote_view
-REF_OWNED(/mob, list("remote_view"))
+DECLARE_REF(/mob, "remote_view", OWNED, null)
 
-REF_OWNED(/datum/remote_view, list("settings"))
-REF_BACK(/datum/remote_view, list("host_mob" = "remote_view", "remote_view_target" = null))
+DECLARE_REF(/datum/remote_view, "settings", OWNED, null)
+DECLARE_REF(/datum/remote_view, "host_mob", BACK, "remote_view")
+DECLARE_REF(/datum/remote_view, "remote_view_target", BACK, null)
 
 /**
  * Starts a remote view of `view_type` on this mob, replacing any current one.
@@ -339,7 +340,7 @@ REF_BACK(/datum/remote_view, list("host_mob" = "remote_view", "remote_view_targe
 	VAR_PRIVATE/obj/item/host_item
 	VAR_PRIVATE/show_message
 
-REF_BACK(/datum/remote_view/item_zoom, list("host_item" = null))
+DECLARE_REF(/datum/remote_view/item_zoom, "host_item", BACK, null)
 
 /datum/remote_view/item_zoom/start(atom/focused_on, viewsize, vconfig_path, obj/item/our_item, tileoffset, show_visible_messages)
 	. = ..()
@@ -426,7 +427,7 @@ REF_BACK(/datum/remote_view/item_zoom, list("host_item" = null))
 	VAR_PRIVATE/datum/view_coordinator // The object containing the viewer_list, with look() and unlook() logic
 	VAR_PRIVATE/list/viewers // list from the view_coordinator, lists in byond are pass by reference, so this is the SAME list as on the coordinator! If you pass a null this will explode.
 
-REF_BACK(/datum/remote_view/viewer_managed, list("view_coordinator" = null))
+DECLARE_REF(/datum/remote_view/viewer_managed, "view_coordinator", BACK, null)
 
 /datum/remote_view/viewer_managed/start(atom/focused_on, viewsize, vconfig_path, datum/coordinator, list/viewer_list)
 	. = ..()
