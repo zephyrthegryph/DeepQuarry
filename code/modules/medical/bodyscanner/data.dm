@@ -91,11 +91,8 @@
 	out["allergens"] = assembly_allergy_list(H.species.allergens, H.species.medallergens)
 	out["hasAllergens"] = islist(out["allergens"])
 
-	out["colourblind"] = null
-	for(var/datum/modifier/M in H.modifiers)
-		if(!isnull(M.wire_colors_replace))
-			out["colourblind"] = LAZYLEN(M.wire_colors_replace)
-			break
+	var/list/wire_colors = H.body_effect_wire_colors()
+	out["colourblind"] = wire_colors ? LAZYLEN(wire_colors) : null
 
 
 /obj/machinery/bodyscanner/proc/dq_emit_reagents(mob/living/carbon/human/H, list/out)

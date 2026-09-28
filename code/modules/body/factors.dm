@@ -8,7 +8,8 @@
 //   /datum/reagent      `factors`, value at the standard dose, scaled by the
 //                       dose curve (dq_chem_dose_scale). get_factors(L) may
 //                       return another static table per species.
-//   /datum/modifier     `factors`, applied at full value.
+//   /datum/body_effect  `factors` (per stack), or the application's own table
+//                       (set_body_effect_factors()), applied at full value.
 //   /datum/species      `factor_baseline`, applied at full value.
 //   /datum/trait        `factors`, folded into the species' baseline.
 //   /datum/form         `factors`, applied at full value while worn.
@@ -17,7 +18,7 @@
 // The body keeps one flat cached list, `body.factors`, indexed by BF_*. It
 // stays null while every factor is at baseline (most bodies). It is rebuilt
 // only when marked dirty (BODY_DIRTY_FACTORS): an affliction is added or
-// removed or crosses a BF_SEVERITY_BAND, a modifier changes, reagents change,
+// removed or crosses a BF_SEVERITY_BAND, a body effect changes, reagents change,
 // equipment with worn_factors moves, the form or species changes.
 //
 // Read with `L.factor(BF_X)`.
@@ -247,8 +248,8 @@
 	var/list/acc = null
 	for(var/datum/affliction/A as anything in afflictions)
 		acc = A.accumulate_factors(acc)
-	for(var/datum/modifier/M as anything in owner.modifiers)
-		acc = body_factor_accumulate(acc, M.factors)
+	acc = owner.accumulate_body_effect_factors(acc)
+	acc = owner.accumulate_stasis_factors(acc)
 	acc = accumulate_reagent_factors(acc)
 	acc = accumulate_plan_factors(acc)
 	var/list/old = factors
@@ -392,16 +393,6 @@
 
 /mob/living/carbon/human/reagent_tag()
 	return species?.reagent_tag
-
-/datum/modifier
-	/// Body factors applied at full value while the modifier exists.
-	var/alist/factors
-
-/// Replace this modifier's table at runtime (charge-dependent shields,
-/// stacking effects). Marks the holder's factors stale.
-/datum/modifier/proc/set_factors(alist/new_factors)
-	factors = new_factors
-	holder?.invalidate_factors()
 
 /datum/form
 	/// Body factors applied at full value while this form is worn.
