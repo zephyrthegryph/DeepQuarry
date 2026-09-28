@@ -1980,7 +1980,7 @@
 	is_genetrait = FALSE
 	hidden = FALSE
 	custom_only = FALSE
-	added_component_path = /datum/component/slip_prone
+	added_behaviour_path = /datum/om/behaviour/slip_prone
 	excludes = list(/datum/trait/negative/unlucky/major, /datum/trait/negative/unlucky)
 
 

@@ -1,19 +1,11 @@
-//Honestly this could be an element, but I don't want to aggressively refactor traits in an upport and cleanup PR.
-/datum/component/absorbent
+/// Absorbent (was /datum/component/absorbent): cleans what the barefoot mob walks over and
+/// feeds on it. A shared OM behaviour on the moved event; attached by the Absorbent trait.
+/datum/om/behaviour/absorbent
+	handles = list(/datum/om/event/moved)
 
-/datum/component/absorbent/Initialize()
-	if(!ishuman(parent))
-		return COMPONENT_INCOMPATIBLE
-
-/datum/component/absorbent/RegisterWithParent()
-	RegisterSignal(parent, COMSIG_MOVABLE_MOVED, PROC_REF(process_component))
-
-/datum/component/absorbent/UnregisterFromParent()
-	UnregisterSignal(parent, list(COMSIG_MOVABLE_MOVED))
-
-/datum/component/absorbent/proc/process_component()
-	SIGNAL_HANDLER
-	var/mob/living/carbon/human/H = parent
+/datum/om/behaviour/absorbent/on_moved(mob/living/carbon/human/H, datum/om/event/moved/event)
+	if(!istype(H))
+		return
 	var/turf/T = get_turf(H)
 	if(istype(T))
 		if(!(H.get_equipped_item(SLOT_ID_SHOES) || (H.get_equipped_item(SLOT_ID_SUIT) && (H.get_equipped_item(SLOT_ID_SUIT).body_parts_covered & FEET))))

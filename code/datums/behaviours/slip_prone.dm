@@ -1,17 +1,11 @@
 /**
- * Like unlucky, but only has a chance of slipping into someone!
+ * Like unlucky, but only has a chance of slipping into someone! (was /datum/component/slip_prone)
+ * A shared OM behaviour on the moved event; attached by the Slip Prone trait.
  */
-/datum/component/slip_prone
-	dupe_mode = COMPONENT_DUPE_UNIQUE_PASSARGS
+/datum/om/behaviour/slip_prone
+	handles = list(/datum/om/event/moved)
 
-/datum/component/slip_prone/RegisterWithParent()
-	RegisterSignal(parent, COMSIG_MOVABLE_MOVED, PROC_REF(attempt_slip))
-
-/datum/component/slip_prone/UnregisterFromParent()
-	UnregisterSignal(parent, COMSIG_MOVABLE_MOVED)
-
-/datum/component/slip_prone/proc/attempt_slip(atom/movable/our_guy)
-	SIGNAL_HANDLER
+/datum/om/behaviour/slip_prone/on_moved(atom/movable/our_guy, datum/om/event/moved/event)
 
 	if(!isliving(our_guy) || isbelly(our_guy.loc))
 		return

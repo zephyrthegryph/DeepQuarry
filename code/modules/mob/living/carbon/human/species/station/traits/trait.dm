@@ -18,6 +18,7 @@
 	var/has_preferences //if set, should be a list of the preferences for this trait in the format: list("identifier/name of var to edit" = list(typeofpref, "text to display in prefs", TRAIT_NO_VAREDIT_TARGET/TRAIT_VAREDIT_TARGET_SPECIES/etc, (optional: default value)), etc) typeofpref should follow the defines in _traits.dm (eg. TRAIT_PREF_TYPE_BOOLEAN)
 	var/special_env = FALSE
 	var/added_component_path		//What component this trait applies, if any.
+	var/added_behaviour_path		//What OM behaviour this trait attaches, if any.
 
 
 	// Traitgenes Traits can toggle mutations and disabilities
@@ -81,6 +82,8 @@
 		LAZYADD(S.env_traits, src)
 	if(added_component_path && !H.GetComponent(added_component_path))
 		H.AddComponent(added_component_path)
+	if(added_behaviour_path)
+		om_attach(H, added_behaviour_path)
 	return
 
 // Traitgenes Disabling traits, genes can be turned off after all!
@@ -113,6 +116,8 @@
 		H.set_sdisabilities(H.sdisabilities & (~sdisability)) // bitflag
 	if(special_env)
 		LAZYREMOVE(S.env_traits, src)
+	if(added_behaviour_path && H)
+		om_detach(H, added_behaviour_path)
 	if(added_component_path)
 		var/datum/component/C = H.GetComponent(added_component_path)
 		if(C)
