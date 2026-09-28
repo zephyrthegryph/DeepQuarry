@@ -42,12 +42,19 @@
 	else
 		chargesa--
 		insistinga = 0
-		om_prompt(src, user, list("kind" = "list", "message" = "You want...", "title" = "Wish", "choices" = list("Power","Wealth","Immortality","To Kill","Peace"), "requires" = PROMPT_ADJACENT), PROC_REF(wish_chosen))
+		om_ask(user, /datum/om/prompt/choice/wish, PROC_REF(wish_chosen))
 		return TRUE
 	return TRUE
 
-/obj/machinery/wish_granter/proc/wish_chosen(mob/living/carbon/human/user, wish, datum/om/prompt/ask)
-	switch(wish)
+/datum/om/prompt/choice/wish
+	title = "Wish"
+	message = "You want..."
+	choices = list("Power","Wealth","Immortality","To Kill","Peace")
+	requires = PROMPT_ADJACENT
+
+/obj/machinery/wish_granter/proc/wish_chosen(datum/om/prompt/choice/wish/ask)
+	var/mob/living/carbon/human/user = ask.answerer
+	switch(ask.choice)
 		if("Power")
 			to_chat(user, span_boldwarning("Your wish is granted, but at a terrible cost..."))
 			to_chat(user, span_warning("The Wish Granter punishes you for your selfishness, claiming your soul."))

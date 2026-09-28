@@ -62,10 +62,12 @@
 	return TRUE
 
 /obj/machinery/floorlayer/wrench_act(mob/user, obj/item/tool)
-	om_prompt(src, user, list("kind" = "list", "message" = "Choose work mode", "title" = "Mode", "choices" = mode, "requires" = PROMPT_ADJACENT), PROC_REF(work_mode_chosen))
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(work_mode_chosen), message = "Choose work mode", title = "Mode", choices = mode, requires = PROMPT_ADJACENT)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/floorlayer/proc/work_mode_chosen(mob/user, selected_mode, datum/om/prompt/ask)
+/obj/machinery/floorlayer/proc/work_mode_chosen(datum/om/prompt/choice/ask)
+	var/mob/user = ask.answerer
+	var/selected_mode = ask.choice
 	mode[selected_mode] = !mode[selected_mode]
 	user.visible_message(span_notice("[user] has set \the [src] [selected_mode] mode [mode[selected_mode] ? "on" : "off"]."), span_notice("You set \the [src] [selected_mode] mode [mode[selected_mode] ? "on" : "off"]."))
 	return ITEM_INTERACT_SUCCESS
@@ -74,10 +76,12 @@
 	if(!length(contents))
 		to_chat(user, span_notice("\The [src] is empty."))
 		return ITEM_INTERACT_BLOCKING
-	om_prompt(src, user, list("kind" = "list", "message" = "Choose remove tile type.", "title" = "Tiles", "choices" = contents, "requires" = PROMPT_ADJACENT), PROC_REF(tile_removal_chosen))
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(tile_removal_chosen), message = "Choose remove tile type.", title = "Tiles", choices = contents, requires = PROMPT_ADJACENT)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/floorlayer/proc/tile_removal_chosen(mob/user, obj/item/stack/tile/selected, datum/om/prompt/ask)
+/obj/machinery/floorlayer/proc/tile_removal_chosen(datum/om/prompt/choice/ask)
+	var/mob/user = ask.answerer
+	var/obj/item/stack/tile/selected = ask.choice
 	if(selected.loc != src)
 		return
 	if(selected)
@@ -87,10 +91,11 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/floorlayer/screwdriver_act(mob/user, obj/item/tool)
-	om_prompt(src, user, list("kind" = "list", "message" = "Choose tile type.", "title" = "Tiles", "choices" = contents, "requires" = PROMPT_ADJACENT), PROC_REF(tile_type_chosen))
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(tile_type_chosen), message = "Choose tile type.", title = "Tiles", choices = contents, requires = PROMPT_ADJACENT)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/floorlayer/proc/tile_type_chosen(mob/user, obj/item/stack/tile/selected, datum/om/prompt/ask)
+/obj/machinery/floorlayer/proc/tile_type_chosen(datum/om/prompt/choice/ask)
+	var/obj/item/stack/tile/selected = ask.choice
 	if(selected.loc == src)
 		T = selected
 

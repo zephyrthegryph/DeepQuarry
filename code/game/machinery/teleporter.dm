@@ -119,12 +119,17 @@ REF_OWNED(/obj/machinery/computer/teleporter, "teleport_control")
 /obj/machinery/computer/teleporter/proc/interaction_set_id(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & (NOPOWER|BROKEN) || !isliving(user))
 		return TRUE
-	om_prompt(src, user, list("kind" = "text", "message" = "ID Tag:", "title" = "Set teleporter ID", "requires" = PROMPT_ADJACENT), PROC_REF(teleporter_id_entered))
+	om_ask(user, /datum/om/prompt/text/teleporter_id, PROC_REF(teleporter_id_entered))
 	return TRUE
 
-/obj/machinery/computer/teleporter/proc/teleporter_id_entered(mob/user, t, datum/om/prompt/ask)
-	if(t)
-		id = t
+/datum/om/prompt/text/teleporter_id
+	title = "Set teleporter ID"
+	message = "ID Tag:"
+	requires = PROMPT_ADJACENT
+
+/obj/machinery/computer/teleporter/proc/teleporter_id_entered(datum/om/prompt/text/teleporter_id/ask)
+	if(ask.text)
+		id = ask.text
 	return TRUE
 
 //////

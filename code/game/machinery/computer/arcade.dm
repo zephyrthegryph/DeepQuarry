@@ -1170,13 +1170,19 @@
 	// Have the customer punch in the PIN before checking if there's enough money. Prevents people from figuring out acct is
 	// empty at high security levels
 	if(customer_account.security_level != 0) //If card requires pin authentication (ie seclevel 1 or 2)
-		om_prompt(src, user, list("kind" = "number", "message" = "Enter pin code", "title" = "Vendor transaction", "requires" = PROMPT_ADJACENT, "data" = list("account" = I.associated_account_number)), PROC_REF(card_pin_entered))
+		om_ask(user, /datum/om/prompt/number/claw_pin, PROC_REF(card_pin_entered), account = I.associated_account_number)
 		return 0
 	return charge_account(customer_account)
 
 /// The PIN arrived: the play is paid once the account accepts it.
-/obj/machinery/computer/arcade/clawmachine/proc/card_pin_entered(mob/user, attempt_pin, datum/om/prompt/ask)
-	var/datum/money_account/customer_account = attempt_account_access(ask.get("account"), attempt_pin, 2)
+/datum/om/prompt/number/claw_pin
+	title = "Vendor transaction"
+	message = "Enter pin code"
+	requires = PROMPT_ADJACENT
+	var/account
+
+/obj/machinery/computer/arcade/clawmachine/proc/card_pin_entered(datum/om/prompt/number/claw_pin/ask)
+	var/datum/money_account/customer_account = attempt_account_access(ask.account, ask.number, 2)
 	if(!customer_account)
 		visible_message(span_info("Unable to access account: incorrect credentials."))
 		return

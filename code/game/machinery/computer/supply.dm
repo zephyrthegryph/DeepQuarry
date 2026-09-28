@@ -248,7 +248,7 @@
 			var/contract_funding = !!params["contract"]
 			if(!personal_funding && !contract_funding && !can_trade_market(ui.user))
 				return FALSE
-			om_prompt(src, ui.user, list("kind" = "text", "message" = "Procurement justification", "title" = "Why should the station purchase this market listing?", "default" = "External market procurement", "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_USABLE, "data" = list("listing" = listing, "personal" = personal_funding, "contract" = contract_funding)), PROC_REF(market_request_justified))
+			om_ask(ui.user, /datum/om/prompt/text/supply_market_justification, PROC_REF(market_request_justified), listing = listing, personal = personal_funding, contract = contract_funding)
 			. = TRUE
 		if("market_route")
 			var/datum/cargo_market_bid/bid = SSsupply.market_bid(params["bid"])
@@ -290,10 +290,7 @@
 				visible_message(span_warning("[src]'s monitor flashes, \"[reqtime - world.time] seconds remaining until another requisition form may be printed.\""))
 				return FALSE
 
-			om_prompt_sequence(src, ui.user, list(
-				list("key" = "amount", "kind" = "number", "message" = "How many crates? (0 to 20)", "max" = 20, "min" = 0),
-				list("key" = "reason", "kind" = "text", "message" = "Reason:", "title" = "Why do you require this item?", "default" = "", "max_length" = MAX_MESSAGE_LEN),
-			), PROC_REF(crates_requested), list("requires" = PROMPT_USABLE, "timeout" = 1 MINUTE, "data" = list("pack" = S, "personal" = !!params["personal"])))
+			om_ask(ui.user, /datum/om/prompt/number/supply_crate_amount, PROC_REF(crate_amount_entered), pack = S, personal = !!params["personal"])
 			. = TRUE
 
 		if("request_crate")
@@ -310,7 +307,7 @@
 				visible_message(span_warning("[src]'s monitor flashes, \"[reqtime - world.time] seconds remaining until another requisition form may be printed.\""))
 				return FALSE
 
-			om_prompt(src, ui.user, list("kind" = "text", "message" = "Reason:", "title" = "Why do you require this item?", "default" = "", "max_length" = MAX_MESSAGE_LEN, "timeout" = 1 MINUTE, "requires" = PROMPT_USABLE, "data" = list("pack" = S, "personal" = !!params["personal"])), PROC_REF(crate_requested))
+			om_ask(ui.user, /datum/om/prompt/text/supply_crate_reason, PROC_REF(crate_requested), pack = S, personal = !!params["personal"])
 			. = TRUE
 		// Approving Orders
 		if("edit_order_value")
@@ -319,7 +316,7 @@
 				return FALSE
 			if(!(authorization & SUP_ACCEPT_ORDERS))
 				return FALSE
-			om_prompt(src, ui.user, list("kind" = "text", "message" = params["edit"], "title" = "Enter the new value for this field:", "default" = params["default"], "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_USABLE, "data" = list("order" = O, "field" = params["edit"])), PROC_REF(order_value_entered))
+			om_ask(ui.user, /datum/om/prompt/text/supply_field, PROC_REF(order_value_entered), message = params["edit"], default = params["default"], edited = O, field = params["edit"])
 			. = TRUE
 		if("approve_order")
 			var/datum/supply_order/O = locate(params["ref"])
@@ -358,10 +355,7 @@
 				return FALSE
 			if(!(authorization & SUP_ACCEPT_ORDERS))
 				return FALSE
-			om_prompt_sequence(src, ui.user, list(
-				list("key" = "field", "message" = "Select which field to edit", "title" = "Field Choice", "choices" = list("Name", "Quantity", "Value")),
-				PROC_REF(ask_export_value),
-			), PROC_REF(export_field_edited), list("requires" = PROMPT_USABLE, "data" = list("crate" = E, "index" = params["index"])))
+			om_ask(ui.user, /datum/om/prompt/choice/supply_export_field, PROC_REF(ask_export_value), crate = E, index = params["index"])
 			. = TRUE
 		if("export_delete_field")
 			var/datum/exported_crate/E = locate(params["ref"])
@@ -388,7 +382,7 @@
 				return FALSE
 			if(!(authorization & SUP_ACCEPT_ORDERS))
 				return FALSE
-			om_prompt(src, ui.user, list("kind" = "text", "message" = params["edit"], "title" = "Enter the new value for this field:", "default" = params["default"], "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_USABLE, "data" = list("crate" = E, "field" = params["edit"])), PROC_REF(export_value_entered))
+			om_ask(ui.user, /datum/om/prompt/text/supply_field, PROC_REF(export_value_entered), message = params["edit"], default = params["default"], edited = E, field = params["edit"])
 			. = TRUE
 		if("export_delete")
 			var/datum/exported_crate/E = locate(params["ref"])
@@ -423,10 +417,21 @@
 
 	add_fingerprint(ui.user)
 
-/obj/machinery/computer/supplycomp/proc/market_request_justified(mob/user, reason, datum/om/prompt/ask)
-	var/datum/cargo_market_listing/listing = ask.get("listing")
-	var/personal_funding = ask.get("personal")
-	var/contract_funding = ask.get("contract")
+/datum/om/prompt/text/supply_market_justification
+	title = "Why should the station purchase this market listing?"
+	message = "Procurement justification"
+	default = "External market procurement"
+	requires = PROMPT_USABLE
+	var/datum/cargo_market_listing/listing
+	var/personal = FALSE
+	var/contract = FALSE
+
+/obj/machinery/computer/supplycomp/proc/market_request_justified(datum/om/prompt/text/supply_market_justification/ask)
+	var/mob/user = ask.answerer
+	var/reason = ask.text
+	var/datum/cargo_market_listing/listing = ask.listing
+	var/personal_funding = ask.personal
+	var/contract_funding = ask.contract
 	if(!reason)
 		return FALSE
 	if(!SSsupply.request_market_order(listing, user, reason, can_order_contraband || (authorization & SUP_CONTRABAND), personal_funding, contract_funding))
@@ -435,14 +440,41 @@
 	to_chat(user, span_notice("The quoted market order was submitted[contract_funding ? " against the contract allowance" : (personal_funding ? " with personal funding" : " for departmental approval")]."))
 	. = TRUE
 
-/obj/machinery/computer/supplycomp/proc/crates_requested(mob/user, datum/om/prompt/ask)
-	var/datum/supply_pack/S = ask.get("pack")
-	var/amount = clamp(ask.get("amount"), 0, 20)
-	var/reason = ask.get("reason")
+/datum/om/prompt/number/supply_crate_amount
+	message = "How many crates? (0 to 20)"
+	min = 0
+	max = 20
+	timeout = 1 MINUTE
+	requires = PROMPT_USABLE
+	var/datum/supply_pack/pack
+	var/personal = FALSE
+
+/obj/machinery/computer/supplycomp/proc/crate_amount_entered(datum/om/prompt/number/supply_crate_amount/ask)
+	var/amount = clamp(ask.number, 0, 20)
+	if(!amount)
+		return
+	om_ask(ask.answerer, /datum/om/prompt/text/supply_crate_reason, PROC_REF(crates_requested), pack = ask.pack, personal = ask.personal, amount = amount)
+
+/// The requisition reason (single crates, and after the amount for multiple).
+/datum/om/prompt/text/supply_crate_reason
+	title = "Why do you require this item?"
+	message = "Reason:"
+	default = ""
+	timeout = 1 MINUTE
+	requires = PROMPT_USABLE
+	var/datum/supply_pack/pack
+	var/personal = FALSE
+	var/amount = 1
+
+/obj/machinery/computer/supplycomp/proc/crates_requested(datum/om/prompt/text/supply_crate_reason/ask)
+	var/mob/user = ask.answerer
+	var/datum/supply_pack/S = ask.pack
+	var/amount = ask.amount
+	var/reason = ask.text
 	if(!amount || !reason)
 		return FALSE
 
-	var/personal_funding = !!ask.get("personal")
+	var/personal_funding = !!ask.personal
 	var/orders_created = 0
 	for(var/i in 1 to amount)
 		if(!SSsupply.create_order(S, user, reason, personal_funding))
@@ -481,12 +513,14 @@
 	reqtime = (world.time + 5) % 1e5
 	. = TRUE
 
-/obj/machinery/computer/supplycomp/proc/crate_requested(mob/user, reason, datum/om/prompt/ask)
-	var/datum/supply_pack/S = ask.get("pack")
+/obj/machinery/computer/supplycomp/proc/crate_requested(datum/om/prompt/text/supply_crate_reason/ask)
+	var/mob/user = ask.answerer
+	var/reason = ask.text
+	var/datum/supply_pack/S = ask.pack
 	if(!reason)
 		return FALSE
 
-	if(!SSsupply.create_order(S, user, reason, !!ask.get("personal")))
+	if(!SSsupply.create_order(S, user, reason, !!ask.personal))
 		to_chat(user, span_warning("The order could not be funded."))
 		return FALSE
 
@@ -518,12 +552,27 @@
 	reqtime = (world.time + 5) % 1e5
 	. = TRUE
 
-/obj/machinery/computer/supplycomp/proc/order_value_entered(mob/user, new_val, datum/om/prompt/ask)
-	var/datum/supply_order/O = ask.get("order")
-	if(!new_val || !(authorization & SUP_ACCEPT_ORDERS))
+/// Edits one field of an order or an export; re-checked on the answer: the console still accepts orders.
+/datum/om/prompt/text/supply_field
+	title = "Enter the new value for this field:"
+	requires = PROMPT_USABLE
+	/// The order or exported crate being edited.
+	var/datum/edited
+	var/field
+	/// Export content row (export_edit_field only).
+	var/index
+
+/datum/om/prompt/text/supply_field/valid()
+	var/obj/machinery/computer/supplycomp/console = subject
+	return (console.authorization & SUP_ACCEPT_ORDERS) ? null : "not authorized"
+
+/obj/machinery/computer/supplycomp/proc/order_value_entered(datum/om/prompt/text/supply_field/ask)
+	var/datum/supply_order/O = ask.edited
+	var/new_val = ask.text
+	if(!new_val)
 		return FALSE
 
-	switch(ask.get("field"))
+	switch(ask.field)
 		if("Supply Pack")
 			O.name = new_val
 
@@ -553,18 +602,26 @@
 			O.approved_at = new_val
 	. = TRUE
 
-/obj/machinery/computer/supplycomp/proc/ask_export_value(mob/user, datum/om/prompt/ask)
-	var/datum/exported_crate/E = ask.get("crate")
-	var/list/L = E.contents[ask.get("index")]
-	var/field = ask.get("field")
-	return list("key" = "value", "kind" = "text", "message" = field, "title" = "Enter the new value for this field:", "default" = L[lowertext(field)], "max_length" = MAX_MESSAGE_LEN)
+/datum/om/prompt/choice/supply_export_field
+	title = "Field Choice"
+	message = "Select which field to edit"
+	choices = list("Name", "Quantity", "Value")
+	buttons = TRUE
+	requires = PROMPT_USABLE
+	var/datum/exported_crate/crate
+	var/index
 
-/obj/machinery/computer/supplycomp/proc/export_field_edited(mob/user, datum/om/prompt/ask)
-	var/datum/exported_crate/E = ask.get("crate")
-	var/list/L = E.contents[ask.get("index")]
-	var/field = ask.get("field")
-	var/new_val = ask.get("value")
-	if(!new_val || !islist(L) || !(authorization & SUP_ACCEPT_ORDERS))
+/obj/machinery/computer/supplycomp/proc/ask_export_value(datum/om/prompt/choice/supply_export_field/ask)
+	var/list/L = ask.crate.contents[ask.index]
+	var/field = ask.choice
+	om_ask(ask.answerer, /datum/om/prompt/text/supply_field, PROC_REF(export_field_edited), message = field, default = L[lowertext(field)], edited = ask.crate, field = field, index = ask.index)
+
+/obj/machinery/computer/supplycomp/proc/export_field_edited(datum/om/prompt/text/supply_field/ask)
+	var/datum/exported_crate/E = ask.edited
+	var/list/L = E.contents[ask.index]
+	var/field = ask.field
+	var/new_val = ask.text
+	if(!new_val || !islist(L))
 		return
 	switch(field)
 		if("Name")
@@ -581,12 +638,13 @@
 				L["value"] = num
 	. = TRUE
 
-/obj/machinery/computer/supplycomp/proc/export_value_entered(mob/user, new_val, datum/om/prompt/ask)
-	var/datum/exported_crate/E = ask.get("crate")
-	if(!new_val || !(authorization & SUP_ACCEPT_ORDERS))
+/obj/machinery/computer/supplycomp/proc/export_value_entered(datum/om/prompt/text/supply_field/ask)
+	var/datum/exported_crate/E = ask.edited
+	var/new_val = ask.text
+	if(!new_val)
 		return
 
-	switch(ask.get("field"))
+	switch(ask.field)
 		if("Name")
 			E.name = new_val
 

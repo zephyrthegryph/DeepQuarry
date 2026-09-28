@@ -36,7 +36,10 @@
 		consume(src, user)
 
 /obj/item/spell/chroma/on_use_cast(mob/user)
-	var/new_color = tgui_color_picker(user, "Choose the color you want your light to be.", "Color selection")
+	om_ask(user, /datum/om/prompt/color, PROC_REF(chroma_color_picked), title = "Color selection", message = "Choose the color you want your light to be.", ask_flags = ASK_CARRIED | ASK_CAPABLE)
+
+/obj/item/spell/chroma/proc/chroma_color_picked(datum/om/prompt/color/ask)
+	var/new_color = ask.picked_color
 	if(new_color)
 		color_to_use = new_color
 		set_light(6, 5, l_color = new_color)

@@ -180,10 +180,18 @@
 	if(!A)
 		to_chat(U, span_danger("Capture failed!") + ": The soul stone is empty! Go kill someone!")
 		return;
-	om_prompt(src, U, list("kind" = "list", "message" = "Please choose which type of construct you wish to create.", "title" = "Construct Type", "choices" = possible_constructs, "target" = T, "requires" = PROMPT_ADJACENT, "data" = list("shell" = T)), PROC_REF(construct_type_chosen))
+	om_ask(U, /datum/om/prompt/choice/construct_type, PROC_REF(construct_type_chosen), choices = possible_constructs, subject = T)
 
-/obj/item/soulstone/proc/construct_type_chosen(mob/U, construct_class, datum/om/prompt/ask)
-	var/obj/structure/constructshell/T = ask.get("shell")
+/// Binding a shade into a construct shell (the subject). Re-checked: next to the shell and able.
+/datum/om/prompt/choice/construct_type
+	title = "Construct Type"
+	message = "Please choose which type of construct you wish to create."
+	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+
+/obj/item/soulstone/proc/construct_type_chosen(datum/om/prompt/choice/construct_type/ask)
+	var/mob/U = ask.answerer
+	var/construct_class = ask.choice
+	var/obj/structure/constructshell/T = ask.subject
 	var/mob/living/simple_mob/construct/shade/A = locate() in src
 	if(!A)
 		return

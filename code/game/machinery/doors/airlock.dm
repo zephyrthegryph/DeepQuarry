@@ -494,7 +494,7 @@ About the new airlock wires panel:
 	if(aiHacking)
 		return
 	aiHacking = TRUE
-	om_task_start(/datum/om/task/airlock_ai_hack, src, null, list("user" = user))
+	om_task_start(/datum/om/task/airlock_ai_hack, src, null, receiver = src, user = user)
 
 /// An AI hacking an airlock whose AI control is blocked: fault detection, the hack, the
 /// upload and the transfer, each re-checking that the hack is still needed and possible.

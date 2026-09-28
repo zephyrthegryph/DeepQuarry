@@ -175,19 +175,27 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 			to_chat(target, span_danger("And you were able to force it out of your mind. You now know the truth, there's something horrible out there, stop it and its minions at all costs."))
 
 		else
-			om_prompt(src, target, list("message" = "Do you want to join the cult?", "title" = "Submit to Nar'Sie", "choices" = list("Resist","Submit"), "on_cancel" = PROC_REF(convert_closed), "data" = list("waiting" = waiting_for_input)), PROC_REF(convert_answered))
+			om_ask(target, /datum/om/prompt/confirm/cult_convert, PROC_REF(convert_answered), waiting = waiting_for_input)
 
 	if(target in converting)
 		om_after(src, 10 SECONDS, PROC_REF(convert_tick), attacker, target, waiting_for_input, 1) //proc once every 10 seconds
 
-/obj/effect/rune/proc/convert_closed(mob/living/carbon/target, datum/om/prompt/ask)
-	var/list/waiting_for_input = ask.get("waiting")
-	waiting_for_input[target] = 0
+/// The convert rune's offer. Closing it is resisting; `waiting` is the rune's asked-already list.
+/datum/om/prompt/confirm/cult_convert
+	title = "Submit to Nar'Sie"
+	message = "Do you want to join the cult?"
+	yes_text = "Submit"
+	no_text = "Resist"
+	no_first = TRUE
+	answer_on_no = TRUE
+	cancel_answer = "Resist"
+	var/list/waiting
 
-/obj/effect/rune/proc/convert_answered(mob/living/carbon/target, choice, datum/om/prompt/ask)
-	var/list/waiting_for_input = ask.get("waiting")
+/obj/effect/rune/proc/convert_answered(datum/om/prompt/confirm/cult_convert/ask)
+	var/mob/living/carbon/target = ask.answerer
+	var/list/waiting_for_input = ask.waiting
 	waiting_for_input[target] = 0
-	if(choice == "Submit") //choosing 'Resist' does nothing of course.
+	if(ask.yes) //choosing 'Resist' does nothing of course.
 		GLOB.cult.add_antagonist(target.mind)
 		LAZYREMOVE(converting, target)
 		target.status_set(EFFECT_HALLUCINATING, 0) //sudden clarity
@@ -631,13 +639,20 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 // returns 0 if the rune is not used. returns 1 if the rune is used.
 /obj/effect/rune/proc/communicate(mob/living/user)
 	. = 1 // Default output is 1. If the rune is deleted it will return 1
-	om_prompt(src, user, list("kind" = "text", "message" = "Please choose a message to tell to the other acolytes.", "title" = "Voice of Blood", "default" = "", "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_ADJACENT, "on_cancel" = PROC_REF(communicate_cancelled)), PROC_REF(communicate_entered))
+	om_ask(user, /datum/om/prompt/text/cult_communicate, PROC_REF(communicate_entered))
 	return 1
 
-/obj/effect/rune/proc/communicate_cancelled(mob/living/user, datum/om/prompt/ask)
-	fizzle(user)
+/// The communicate rune's message; a cancel fizzles the rune (an empty answer).
+/datum/om/prompt/text/cult_communicate
+	title = "Voice of Blood"
+	message = "Please choose a message to tell to the other acolytes."
+	default = ""
+	ask_flags = ASK_ADJACENT | ASK_CAPABLE
+	cancel_answer = ""
 
-/obj/effect/rune/proc/communicate_entered(mob/living/user, input, datum/om/prompt/ask)
+/obj/effect/rune/proc/communicate_entered(datum/om/prompt/text/cult_communicate/ask)
+	var/mob/living/user = ask.answerer
+	var/input = ask.text
 	if(!input)
 		if (istype(src))
 			fizzle(user)
@@ -851,16 +866,29 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 			users+=C
 	var/dam = round(15 / users.len)
 	if(users.len>=3)
-		om_prompt(src, user, list("kind" = "list", "message" = "Choose the one who you want to free", "title" = "Followers of Geometer", "choices" = (cultists - users), "requires" = PROMPT_ADJACENT, "on_cancel" = PROC_REF(ritual_cancelled), "data" = list("users" = users, "dam" = dam)), PROC_REF(freedom_target_chosen))
+		om_ask(user, /datum/om/prompt/choice/cult_ritual, PROC_REF(freedom_target_chosen), message = "Choose the one who you want to free", choices = (cultists - users), users = users, dam = dam)
 		return
 
-/obj/effect/rune/proc/ritual_cancelled(mob/living/user, datum/om/prompt/ask)
-	fizzle(user)
-	return fizzle(user)
+/// A group rune's pick of a cultist (freedom, summon). Re-checked: next to the rune and able. A
+/// cancel fizzles the rune.
+/datum/om/prompt/choice/cult_ritual
+	title = "Followers of Geometer"
+	ask_flags = ASK_ADJACENT | ASK_CAPABLE
+	/// The cultists around the rune when it was invoked.
+	var/list/users
+	var/dam
 
-/obj/effect/rune/proc/freedom_target_chosen(mob/living/user, mob/living/carbon/cultist, datum/om/prompt/ask)
-	var/list/users = ask.get("users")
-	var/dam = ask.get("dam")
+/datum/om/prompt/choice/cult_ritual/cancelled()
+	var/obj/effect/rune/R = subject
+	if(istype(R))
+		R.fizzle(answerer)
+	return ..()
+
+/obj/effect/rune/proc/freedom_target_chosen(datum/om/prompt/choice/cult_ritual/ask)
+	var/mob/living/user = ask.answerer
+	var/mob/living/carbon/cultist = ask.choice
+	var/list/users = ask.users
+	var/dam = ask.dam
 	if(!cultist)
 		return fizzle(user)
 	if (cultist == user) //just to be sure.
@@ -906,12 +934,14 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 		if(iscultist(C) && !C.stat)
 			users += C
 	if(users.len>=3)
-		om_prompt(src, user, list("kind" = "list", "message" = "Choose the one who you want to summon", "title" = "Followers of Geometer", "choices" = (cultists - user), "requires" = PROMPT_ADJACENT, "on_cancel" = PROC_REF(ritual_cancelled), "data" = list("users" = users)), PROC_REF(summon_target_chosen))
+		om_ask(user, /datum/om/prompt/choice/cult_ritual, PROC_REF(summon_target_chosen), message = "Choose the one who you want to summon", choices = (cultists - user), users = users)
 		return
 	return fizzle(user)
 
-/obj/effect/rune/proc/summon_target_chosen(mob/living/user, mob/living/carbon/cultist, datum/om/prompt/ask)
-	var/list/users = ask.get("users")
+/obj/effect/rune/proc/summon_target_chosen(datum/om/prompt/choice/cult_ritual/ask)
+	var/mob/living/user = ask.answerer
+	var/mob/living/carbon/cultist = ask.choice
+	var/list/users = ask.users
 	if(!cultist)
 		return fizzle(user)
 	if (cultist == user) //just to be sure.

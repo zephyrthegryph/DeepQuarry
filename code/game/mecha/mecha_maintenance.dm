@@ -110,14 +110,21 @@
 			removable_components[MC.name] = MC
 		else
 			to_chat(actor, span_notice("\The [mech] appears to be missing \the [slot]."))
-	om_prompt(mech, actor, list("kind" = "list", "message" = "Which component do you want to pry out?", "title" = "Remove Component", "choices" = removable_components, "requires" = PROMPT_ADJACENT, "data" = list("components" = removable_components)), GLOBAL_PROC_REF(mecha_component_pry_chosen))
+	om_ask(actor, /datum/om/prompt/choice/mecha_pry_component, GLOBAL_PROC_REF(mecha_component_pry_chosen), subject = mech, choices = removable_components)
 	return TRUE
 
-/proc/mecha_component_pry_chosen(obj/mecha/mech, mob/actor, remove, datum/om/prompt/ask)
-	var/list/removable_components = ask.get("components")
-	if(mech.state != MECHA_CELL_OUT)
-		return
-	var/obj/item/mecha_parts/component/RmC = removable_components[remove]
+/// Re-checked on the answer: still next to the mech, its cell still out.
+/datum/om/prompt/choice/mecha_pry_component
+	title = "Remove Component"
+	message = "Which component do you want to pry out?"
+	requires = PROMPT_ADJACENT
+
+/datum/om/prompt/choice/mecha_pry_component/valid()
+	var/obj/mecha/mech = subject
+	return mech.state == MECHA_CELL_OUT ? null : "cell not out"
+
+/proc/mecha_component_pry_chosen(datum/om/prompt/choice/mecha_pry_component/ask)
+	var/obj/item/mecha_parts/component/RmC = ask.choices[ask.choice]
 	RmC.detach()
 	return TRUE
 

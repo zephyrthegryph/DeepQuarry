@@ -94,15 +94,16 @@
 	if(!ability_prechecks(user, price))
 		return
 
-	om_prompt_sequence(user, user, list(
-		list("key" = "title", "kind" = "text", "message" = "Select message title: "),
-		list("key" = "text", "kind" = "text", "message" = "Select message text: "),
-	), GLOBAL_PROC_REF(malf_encryption_hack_written), list("requires" = PROMPT_CONSCIOUS))
+	om_ask(user, /datum/om/prompt/text/malf, GLOBAL_PROC_REF(malf_encryption_hack_titled), message = "Select message title: ")
 
-/proc/malf_encryption_hack_written(mob/living/silicon/ai/user, mob/answerer, datum/om/prompt/ask)
+/proc/malf_encryption_hack_titled(datum/om/prompt/text/malf/ask)
+	om_ask(ask.answerer, /datum/om/prompt/text/malf, GLOBAL_PROC_REF(malf_encryption_hack_written), message = "Select message text: ", message_title = ask.text)
+
+/proc/malf_encryption_hack_written(datum/om/prompt/text/malf/ask)
+	var/mob/living/silicon/ai/user = ask.answerer
 	var/price = 75
-	var/title = ask.get("title")
-	var/text = ask.get("text")
+	var/title = ask.message_title
+	var/text = ask.text
 	if(!title || !text || !ability_prechecks(user, price) || !ability_pay(user, price))
 		to_chat(user, "Hack Aborted")
 		return
@@ -128,9 +129,11 @@
 	if(!ability_prechecks(user, price))
 		return
 
-	om_prompt(user, user, list("kind" = "list", "message" = "Select new alert level:", "title" = "Alert Level", "choices" = list("green", "yellow", "violet", "orange", "blue", "red", "delta"), "requires" = PROMPT_CONSCIOUS), GLOBAL_PROC_REF(malf_alert_hack_chosen))
+	om_ask(user, /datum/om/prompt/choice/malf, GLOBAL_PROC_REF(malf_alert_hack_chosen), title = "Alert Level", message = "Select new alert level:", choices = list("green", "yellow", "violet", "orange", "blue", "red", "delta"))
 
-/proc/malf_alert_hack_chosen(mob/living/silicon/ai/user, mob/answerer, alert_target, datum/om/prompt/ask)
+/proc/malf_alert_hack_chosen(datum/om/prompt/choice/malf/ask)
+	var/mob/living/silicon/ai/user = ask.answerer
+	var/alert_target = ask.choice
 	var/price = 200
 	if(!alert_target || !ability_prechecks(user, price) || !ability_pay(user, price))
 		to_chat(user, "Hack Aborted")
@@ -150,12 +153,11 @@
 	set name = "System Override"
 	set desc = "500 CPU - Begins hacking station's primary firewall, quickly overtaking remaining APC systems. When completed grants access to station's self-destruct mechanism. Network administrators will probably notice this."
 	var/mob/living/silicon/ai/user = usr
-	om_prompt(user, user, list("message" = "Begin system override? This cannot be stopped once started. The network administrators will probably notice this.", "title" = "System Override:", "choices" = list("Yes", "No"), "requires" = PROMPT_CONSCIOUS), GLOBAL_PROC_REF(malf_system_override_confirmed))
+	om_ask(user, /datum/om/prompt/confirm/malf, GLOBAL_PROC_REF(malf_system_override_confirmed), title = "System Override:", message = "Begin system override? This cannot be stopped once started. The network administrators will probably notice this.")
 
-/proc/malf_system_override_confirmed(mob/living/silicon/ai/user, mob/answerer, answer, datum/om/prompt/ask)
+/proc/malf_system_override_confirmed(datum/om/prompt/confirm/malf/ask)
+	var/mob/living/silicon/ai/user = ask.answerer
 	var/price = 500
-	if(answer != "Yes")
-		return
 	if (!ability_prechecks(user, price) || !ability_pay(user, price) || user.system_override)
 		if(user.system_override)
 			to_chat(user, "You already started the system override sequence.")

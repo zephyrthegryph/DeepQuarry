@@ -119,12 +119,17 @@
 
 /datum/antagonist/proc/set_antag_name(mob/living/player)
 	// Choose a name, if any.
-	om_prompt(src, player, list("kind" = "text", "message" = "You are a [role_text]. Would you like to change your name to something else?", "title" = "Name change", "max_length" = MAX_NAME_LEN, "on_cancel" = PROC_REF(antag_name_kept)), PROC_REF(antag_name_chosen))
+	om_ask(player, /datum/om/prompt/text/antag_name, PROC_REF(antag_name_chosen), message = "You are a [role_text]. Would you like to change your name to something else?")
 
-/datum/antagonist/proc/antag_name_kept(mob/living/player, datum/om/prompt/ask)
-	antag_name_chosen(player, null, ask)
+/// A new antagonist may rename themselves; a cancel keeps the name (the rest still runs).
+/datum/om/prompt/text/antag_name
+	title = "Name change"
+	max_length = MAX_NAME_LEN
+	cancel_answer = ""
 
-/datum/antagonist/proc/antag_name_chosen(mob/living/player, newname, datum/om/prompt/ask)
+/datum/antagonist/proc/antag_name_chosen(datum/om/prompt/text/antag_name/ask)
+	var/mob/living/player = ask.answerer
+	var/newname = ask.text
 	if (newname)
 		player.real_name = newname
 		player.name = player.real_name

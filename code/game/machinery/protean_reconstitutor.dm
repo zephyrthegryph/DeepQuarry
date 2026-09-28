@@ -155,11 +155,19 @@
 	if(!protean_brain && !protean_orchestrator && !protean_refactory)
 		to_chat(user, "\The [src] does not have any protean components you can retrieve.")
 		return ITEM_INTERACT_BLOCKING
-	om_prompt(src, user, list("kind" = "list", "message" = "What component would you like to remove?", "title" = "Remove Component", "choices" = list(protean_brain, protean_orchestrator, protean_refactory), "requires" = PROMPT_ADJACENT, "data" = list("tool" = tool)), PROC_REF(component_chosen))
+	om_ask(user, /datum/om/prompt/choice/protean_component, PROC_REF(component_chosen), choices = list(protean_brain, protean_orchestrator, protean_refactory), tool = tool)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/protean_reconstitutor/proc/component_chosen(mob/user, atom/movable/choice, datum/om/prompt/ask)
-	var/obj/item/tool = ask.get("tool")
+/datum/om/prompt/choice/protean_component
+	title = "Remove Component"
+	message = "What component would you like to remove?"
+	requires = PROMPT_ADJACENT
+	var/obj/item/tool
+
+/obj/machinery/protean_reconstitutor/proc/component_chosen(datum/om/prompt/choice/protean_component/ask)
+	var/mob/user = ask.answerer
+	var/atom/movable/choice = ask.choice
+	var/obj/item/tool = ask.tool
 	if(processing_revive || choice.loc != src)
 		return
 	to_chat(user, "You fish \the [choice] out of \the [src].")

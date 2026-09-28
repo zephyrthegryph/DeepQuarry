@@ -232,14 +232,23 @@ GLOBAL_LIST_EMPTY(Holiday) //Holidays are lists now, so we can have more than on
 ADMIN_VERB(Set_Holiday, R_SERVER, "Set Holiday", "Force-set the Holiday variable to make the game think it's a certain day.", ADMIN_CATEGORY_FUN_EVENT_KIT)
 	GLOB.Holiday = list()
 
-	om_prompt_sequence(user, user, list(
-		list("key" = "name", "kind" = "text", "message" = "What holiday is it today?", "title" = "Set Holiday"),
-		list("key" = "about", "kind" = "text", "message" = "Now explain what the holiday is about", "title" = "Set Holiday", "multiline" = TRUE),
-	), GLOBAL_PROC_REF(set_holiday_answered), list("requires" = PROMPT_ADMIN(R_SERVER)))
+	om_ask(user, /datum/om/prompt/text/set_holiday, GLOBAL_PROC_REF(set_holiday_named), message = "What holiday is it today?")
 
-/proc/set_holiday_answered(client/C, mob/user, datum/om/prompt/ask)
-	var/H = ask.get("name")
-	var/B = ask.get("about")
+/// "Set Holiday": its name, then what it's about (`holiday` carries the name).
+/datum/om/prompt/text/set_holiday
+	title = "Set Holiday"
+	requires = PROMPT_ADMIN(R_SERVER)
+	var/holiday
+
+/proc/set_holiday_named(datum/om/prompt/text/set_holiday/ask)
+	if(!ask.text)
+		return
+	om_ask(ask.answerer, /datum/om/prompt/text/set_holiday, GLOBAL_PROC_REF(set_holiday_answered), message = "Now explain what the holiday is about", multiline = TRUE, holiday = ask.text)
+
+/proc/set_holiday_answered(datum/om/prompt/text/set_holiday/ask)
+	var/mob/user = ask.answerer
+	var/H = ask.holiday
+	var/B = ask.text
 	if(!H || !B)
 		return
 	GLOB.Holiday = list()

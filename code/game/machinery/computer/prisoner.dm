@@ -82,13 +82,20 @@
 				to_chat(ui.user, "Unauthorized Access.")
 			. = TRUE
 		if("warn")
-			om_prompt(src, ui.user, list("kind" = "text", "message" = "Message:", "title" = "Enter your message here!", "default" = "", "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_USABLE, "data" = list("imp" = params["imp"])), PROC_REF(warning_entered))
+			om_ask(ui.user, /datum/om/prompt/text/implant_warning, PROC_REF(warning_entered), imp_ref = params["imp"])
 			. = TRUE
 	add_fingerprint(ui.user)
 
-/obj/machinery/computer/prisoner/proc/warning_entered(mob/user, warning, datum/om/prompt/ask)
-	var/list/params = list("imp" = ask.get("imp"))
-	var/obj/item/implant/I = locate(params["imp"])
+/datum/om/prompt/text/implant_warning
+	title = "Enter your message here!"
+	message = "Message:"
+	default = ""
+	requires = PROMPT_USABLE
+	/// The implant's ref from the UI.
+	var/imp_ref
+
+/obj/machinery/computer/prisoner/proc/warning_entered(datum/om/prompt/text/implant_warning/ask)
+	var/obj/item/implant/I = locate(ask.imp_ref)
 	if(I && I.imp_in)
-		to_chat(I.imp_in, span_notice("You hear a voice in your head saying: '[warning]'"))
+		to_chat(I.imp_in, span_notice("You hear a voice in your head saying: '[ask.text]'"))
 	SStgui.update_uis(src)

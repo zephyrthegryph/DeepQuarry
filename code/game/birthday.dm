@@ -29,11 +29,18 @@
 		*/ //Chomp DISABLE END
 	else
 		msg = "Your birthday has passed! Do you want to increase your character's listed age?"	//sad, but thus is the life of an adult
-	om_prompt(src, src, list("message" = msg, "title" = "BIRTHDAY! ([read_preference(/datum/preference/numeric/human/bday_month)]/[read_preference(/datum/preference/numeric/human/bday_day)])", "choices" = list("Level me up, baby","No way, I'mma stay young forever"), "data" = list("lastyear" = lastyear)), PROC_REF(birthday_answered))
+	om_ask(src, /datum/om/prompt/confirm/birthday, PROC_REF(birthday_answered), message = msg, title = "BIRTHDAY! ([read_preference(/datum/preference/numeric/human/bday_month)]/[read_preference(/datum/preference/numeric/human/bday_day)])", lastyear = lastyear)
 
-/mob/living/carbon/human/proc/birthday_answered(mob/user, answer, datum/om/prompt/ask)
-	var/lastyear = ask.get("lastyear")
-	if(answer == "Level me up, baby")
+/// "Increase your age?" The answer proc runs on any answer (the preferences are saved on a no too).
+/datum/om/prompt/confirm/birthday
+	yes_text = "Level me up, baby"
+	no_text = "No way, I'mma stay young forever"
+	answer_on_no = TRUE
+	var/lastyear
+
+/mob/living/carbon/human/proc/birthday_answered(datum/om/prompt/confirm/birthday/ask)
+	var/lastyear = ask.lastyear
+	if(ask.yes)
 		if(lastyear == 0)	//We've never been asked, so let's just assume you were keeping track before now and only add 1
 			age += 1
 		else

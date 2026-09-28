@@ -68,12 +68,11 @@
 	var/list/sound_options = available_sounds.Copy()
 	if(check_for_scepter())
 		sound_options["!!AIR HORN!!"] = 'sound/items/AirHorn.ogg'
-	om_prompt(src, user, list("kind" = "list", "message" = "Select the sound you want to make.", "title" = "Sounds", "choices" = sound_options, "requires" = PROMPT_HELD, "data" = list("options" = sound_options)), PROC_REF(deception_sound_chosen))
+	om_ask(user, /datum/om/prompt/choice/carried_item, PROC_REF(deception_sound_chosen), title = "Sounds", message = "Select the sound you want to make.", choices = sound_options)
 
-/obj/item/spell/audible_deception/proc/deception_sound_chosen(mob/user, new_sound, datum/om/prompt/ask)
-	var/list/sound_options = ask.get("options")
-	if(new_sound)
-		selected_sound = sound_options[new_sound]
+/obj/item/spell/audible_deception/proc/deception_sound_chosen(datum/om/prompt/choice/carried_item/ask)
+	if(ask.choice)
+		selected_sound = ask.choices[ask.choice]
 
 /obj/item/spell/audible_deception/on_ranged_cast(atom/hit_atom, mob/living/user)
 	var/turf/T = get_turf(hit_atom)

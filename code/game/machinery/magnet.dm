@@ -286,7 +286,7 @@
 				if(speed <= 0)
 					speed = 1
 			if("setpath")
-				om_prompt(src, usr, list("kind" = "text", "message" = "Please define a new path!", "default" = path, "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_USABLE), PROC_REF(magnet_path_entered))
+				om_ask(usr, /datum/om/prompt/text, PROC_REF(magnet_path_entered), message = "Please define a new path!", default = path, max_length = MAX_MESSAGE_LEN, requires = PROMPT_USABLE)
 
 			if("togglemoving")
 				moving = !moving
@@ -295,7 +295,9 @@
 
 	updateUsrDialog(usr)
 
-/obj/machinery/magnetic_controller/proc/magnet_path_entered(mob/user, newpath, datum/om/prompt/ask)
+/obj/machinery/magnetic_controller/proc/magnet_path_entered(datum/om/prompt/text/ask)
+	var/mob/user = ask.answerer
+	var/newpath = ask.text
 	updateUsrDialog(user)
 	if(newpath && newpath != "")
 		moving = 0 // stop moving

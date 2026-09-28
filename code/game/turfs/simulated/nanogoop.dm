@@ -49,27 +49,55 @@ REGISTRY_MEMBERSHIP(/turf/simulated/floor/water/digestive_enzymes/nanites, REGIS
 			return ..()
 		var/mob/living/carbon/human/checker = user
 		if(checker.nif)//Proteans have NIFS
-			om_prompt_sequence(src, user, list(
-				list("key" = "state", "kind" = "list", "message" = "Do you wish interface with \the [src]", "title" = "Desired state", "choices" = list("On", "Off")),
-				PROC_REF(ask_nanite_targets),
-			), PROC_REF(nanite_interface_chosen), list("requires" = PROMPT_ADJACENT))
+			om_ask(user, /datum/om/prompt/choice/nanite_state, PROC_REF(nanite_state_chosen), ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 	return ..()
 
-/turf/simulated/floor/water/digestive_enzymes/nanites/proc/ask_nanite_targets(mob/user, datum/om/prompt/ask)
-	if(ask.get("state") == "On")
-		return list("key" = "targets", "kind" = "list", "message" = "Which entities do you wish for \the [src] to recycle?", "title" = "Desired targets", "choices" = list("None", "All", "Organics and Cyborgs", "Organics and Synthetics", "Only Organics"))
+/// Interfacing with nanite goop: on or off, then (on) what it recycles. A person must stay next
+/// to it (ask_flags set at the call); an AI answers from anywhere (`from_ai`).
+/datum/om/prompt/choice/nanite_state
+	title = "Desired state"
+	choices = list("On", "Off")
+	var/from_ai = FALSE
 
-/turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanite_interface_chosen(mob/living/carbon/human/checker, datum/om/prompt/ask)
-	switch(ask.get("state"))
+/datum/om/prompt/choice/nanite_state/prepare()
+	message = "Do you wish interface with \the [subject]"
+	return TRUE
+
+/datum/om/prompt/choice/nanite_targets
+	title = "Desired targets"
+	choices = list("None", "All", "Organics and Cyborgs", "Organics and Synthetics", "Only Organics")
+	var/from_ai = FALSE
+
+/datum/om/prompt/choice/nanite_targets/prepare()
+	message = "Which entities do you wish for \the [subject] to recycle?"
+	return TRUE
+
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanite_state_chosen(datum/om/prompt/choice/nanite_state/ask)
+	if(ask.choice == "On")
+		om_ask(ask.answerer, /datum/om/prompt/choice/nanite_targets, PROC_REF(nanite_targets_chosen), ask_flags = ask.ask_flags, from_ai = ask.from_ai)
+		return
+	if(ask.from_ai)
+		nanite_ai_interface_chosen(ask.answerer, ask.choice)
+	else
+		nanite_interface_chosen(ask.answerer, ask.choice)
+
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanite_targets_chosen(datum/om/prompt/choice/nanite_targets/ask)
+	if(ask.from_ai)
+		nanite_ai_interface_chosen(ask.answerer, "On", ask.choice)
+	else
+		nanite_interface_chosen(ask.answerer, "On", ask.choice)
+
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanite_interface_chosen(mob/living/carbon/human/checker, state, targets)
+	switch(state)
 		if("On")
-			if(!ask.get("targets"))
+			if(!targets)
 				return
 			if(checker.isSynthetic())
 				to_chat(checker, span_warning("With you in control, \the [src] will not attempt to recycle your body, no matter the setting you pick"))
 			else
 				to_chat(checker, span_warning("You realize there is no way for the simplistic [src] to ignore your form, if you set it to recycle."))
 			checker.visible_message(span_warning("\The [checker] inspects \the [src]"), span_warning("You begin to interface with \the [src]."))
-			om_do_after(checker, 3 SECONDS, src, src, PROC_REF(interface_on), list(checker, ask.get("targets")))
+			om_do_after(checker, 3 SECONDS, src, src, PROC_REF(interface_on), list(checker, targets))
 		if("Off")
 			if(active)
 				checker.visible_message(span_warning("\The [checker] inspects \the [src]"), span_warning("You begin to interface with \the [src]."))
@@ -109,14 +137,10 @@ REGISTRY_MEMBERSHIP(/turf/simulated/floor/water/digestive_enzymes/nanites, REGIS
 					return ..()
 				if(!locate(user) in range(1, src))// AI can always control adjacent nanite tiles
 					return ..()
-	om_prompt_sequence(src, user, list(
-		list("key" = "state", "kind" = "list", "message" = "Do you wish interface with \the [src]", "title" = "Desired state", "choices" = list("On", "Off")),
-		PROC_REF(ask_nanite_targets),
-	), PROC_REF(nanite_ai_interface_chosen))
+	om_ask(user, /datum/om/prompt/choice/nanite_state, PROC_REF(nanite_state_chosen), from_ai = TRUE)
 
-/turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanite_ai_interface_chosen(mob/user, datum/om/prompt/ask)
-	var/choice2 = ask.get("targets")
-	switch(ask.get("state"))
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanite_ai_interface_chosen(mob/user, state, choice2)
+	switch(state)
 		if("On")
 			if(!choice2)
 				return

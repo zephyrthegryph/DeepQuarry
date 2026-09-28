@@ -55,9 +55,11 @@
 	for(var/mob/living/R in oview(user.loc,1))
 		receivers += R
 
-	om_prompt(src, user, list("kind" = "list", "message" = "Choose who to give a present to.", "title" = "Give Present", "choices" = mobs_in_view(1, user), "requires" = PROMPT_ADJACENT), PROC_REF(present_receiver_chosen))
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(present_receiver_chosen), message = "Choose who to give a present to.", title = "Give Present", choices = mobs_in_view(1, user), requires = PROMPT_ADJACENT)
 
-/obj/structure/event/santa_sack/proc/present_receiver_chosen(mob/user, mob/living/T, datum/om/prompt/ask)
+/obj/structure/event/santa_sack/proc/present_receiver_chosen(datum/om/prompt/choice/ask)
+	var/mob/user = ask.answerer
+	var/mob/living/T = ask.choice
 	if(!T.ckey)
 		return
 

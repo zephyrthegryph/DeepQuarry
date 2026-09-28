@@ -150,9 +150,18 @@
 	..()
 
 /obj/mecha/combat/phazon/janus/query_damtype()
-	om_prompt(src, src?.slot_item(MECHA_SLOT_PILOT), list("message" = "Gauntlet Phase Emitter Mode", "title" = "Damage Type", "choices" = list("Force","Energy","Stun"), "requires" = list(/datum/om/check/inside_target)), PROC_REF(janus_damtype_chosen))
+	om_ask(src?.slot_item(MECHA_SLOT_PILOT), /datum/om/prompt/choice/janus_damtype, PROC_REF(janus_damtype_chosen))
 
-/obj/mecha/combat/phazon/janus/proc/janus_damtype_chosen(mob/user, new_damtype, datum/om/prompt/ask)
+/// Re-checked on the answer: the pilot is still inside.
+/datum/om/prompt/choice/janus_damtype
+	title = "Damage Type"
+	message = "Gauntlet Phase Emitter Mode"
+	choices = list("Force","Energy","Stun")
+	buttons = TRUE
+	requires = list(/datum/om/check/inside_target)
+
+/obj/mecha/combat/phazon/janus/proc/janus_damtype_chosen(datum/om/prompt/choice/janus_damtype/ask)
+	var/new_damtype = ask.choice
 	switch(new_damtype)
 		if("Force")
 			melee_injury_kind = INJURY_BLUNT

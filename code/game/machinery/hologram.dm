@@ -68,20 +68,20 @@ Possible to do for anyone motivated enough:
 /obj/machinery/hologram/holopad/proc/interaction_request(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction) //Carn: Hologram requests.
 	if(!istype(user))
 		return TRUE
-	om_prompt(src, user, list("message" = "Would you like to request an AI's presence?", "title" = "Request AI", "choices" = list("Yes","No"), "requires" = PROMPT_ADJACENT), PROC_REF(ai_request_answered))
+	om_ask(user, /datum/om/prompt/confirm, PROC_REF(ai_request_answered), message = "Would you like to request an AI's presence?", title = "Request AI", requires = PROMPT_ADJACENT)
 	return TRUE
 
-/obj/machinery/hologram/holopad/proc/ai_request_answered(mob/living/carbon/human/user, answer, datum/om/prompt/ask)
-	if(answer == "Yes")
-		if(COOLDOWN_FINISHED(src, request_cooldown)) //don't spam the AI with requests you jerk!
-			COOLDOWN_START(src, request_cooldown, 200)
-			to_chat(user, span_notice("You request an AI's presence."))
-			var/area/area = get_area(src)
-			for(var/mob/living/silicon/ai/AI in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
-				if(!AI.client)	continue
-				to_chat(AI, span_info("Your presence is requested at <a href='byond://?src=\ref[AI];jumptoholopad=\ref[src]'>\the [area]</a>."))
-		else
-			to_chat(user, span_notice("A request for AI presence was already sent recently."))
+/obj/machinery/hologram/holopad/proc/ai_request_answered(datum/om/prompt/confirm/ask)
+	var/mob/living/carbon/human/user = ask.answerer
+	if(COOLDOWN_FINISHED(src, request_cooldown)) //don't spam the AI with requests you jerk!
+		COOLDOWN_START(src, request_cooldown, 200)
+		to_chat(user, span_notice("You request an AI's presence."))
+		var/area/area = get_area(src)
+		for(var/mob/living/silicon/ai/AI in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
+			if(!AI.client)	continue
+			to_chat(AI, span_info("Your presence is requested at <a href='byond://?src=\ref[AI];jumptoholopad=\ref[src]'>\the [area]</a>."))
+	else
+		to_chat(user, span_notice("A request for AI presence was already sent recently."))
 
 /obj/machinery/hologram/holopad/attack_ai(mob/living/silicon/ai/user)
 	if(!istype(user))

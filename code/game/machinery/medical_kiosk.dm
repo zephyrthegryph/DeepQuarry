@@ -86,21 +86,39 @@
 
 	// User requests service
 	user.visible_message(span_bold("[user]") + " wakes [src].", "You wake [src].")
-	om_prompt(src, user, list("message" = "What service would you like?", "title" = "[src]", "choices" = list("Health Scan", "Backup Scan", "Cancel"), "timeout" = 10 SECONDS, "requires" = PROMPT_ADJACENT, "on_cancel" = PROC_REF(service_cancelled), "on_refused" = PROC_REF(service_cancelled)), PROC_REF(service_chosen))
+	om_ask(user, /datum/om/prompt/choice/kiosk_service, PROC_REF(service_chosen), title = "[src]")
 	return TRUE
 
-/obj/machinery/medical_kiosk/proc/service_cancelled(mob/living/user, datum/om/prompt/ask)
-	suspend()
+/// A cancel, a timeout or a failed re-check (moved away, kiosk broken or opened) suspends the kiosk.
+/datum/om/prompt/choice/kiosk_service
+	message = "What service would you like?"
+	choices = list("Health Scan", "Backup Scan", "Cancel")
+	buttons = TRUE
+	timeout = 10 SECONDS
+	requires = PROMPT_ADJACENT
 
-/obj/machinery/medical_kiosk/proc/service_chosen(mob/living/user, choice, datum/om/prompt/ask)
-	if(choice == "Cancel" || inoperable() || panel_open)
-		suspend()
-		return
+/datum/om/prompt/choice/kiosk_service/valid()
+	var/obj/machinery/medical_kiosk/K = subject
+	if(choice == "Cancel" || K.inoperable() || K.panel_open)
+		return "cancelled"
+	return null
+
+/datum/om/prompt/choice/kiosk_service/cancelled()
+	var/obj/machinery/medical_kiosk/K = subject
+	K?.suspend()
+
+/datum/om/prompt/choice/kiosk_service/refused(reason)
+	var/obj/machinery/medical_kiosk/K = subject
+	K?.suspend()
+
+/obj/machinery/medical_kiosk/proc/service_chosen(datum/om/prompt/choice/kiosk_service/ask)
+	var/mob/living/user = ask.answerer
+	var/choice = ask.choice
 
 	// Service begins, delay
 	visible_message(span_bold("\The [src]") + " scans [user] thoroughly!")
 	flick("kiosk_active", src)
-	om_task_start(/datum/om/task/timed/medical_kiosk_start_using, user, src, list("receiver" = src, "choice" = choice))
+	om_task_start(/datum/om/task/timed/medical_kiosk_start_using, user, src, receiver = src, choice = choice)
 	return TRUE
 
 /datum/om/task/timed/medical_kiosk_start_using

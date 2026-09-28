@@ -1671,7 +1671,7 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 
 	visible_message(span_notice("[usr] starts to insert a brain into [src.name]"))
 
-	var/started = om_task_start(/datum/om/task/timed/mecha_mmi_install, user, src, list("receiver" = src, "mmi_as_oc" = mmi_as_oc))
+	var/started = om_task_start(/datum/om/task/timed/mecha_mmi_install, user, src, receiver = src, mmi_as_oc = mmi_as_oc)
 	return !istext(started)
 
 /datum/om/task/timed/mecha_mmi_install
@@ -1998,7 +1998,7 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 			GrantActions(occupant, 1)
 	else
 		visible_message(span_infoplain(span_bold("\The [user]") + " starts to climb into [src.name]"))
-		om_task_start(/datum/om/task/timed/mecha_climb_in, user, src, list("receiver" = src))
+		om_task_start(/datum/om/task/timed/mecha_climb_in, user, src, receiver = src)
 	return
 
 /datum/om/task/timed/mecha_climb_in
@@ -2784,7 +2784,7 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 		return
 	if (href_list["change_name"])
 		if(usr != src?.slot_item(MECHA_SLOT_PILOT))	return
-		om_prompt(src, occupant, list("kind" = "text", "message" = "Choose new exosuit name", "title" = "Rename exosuit", "default" = initial(name), "max_length" = MAX_NAME_LEN, "encode" = FALSE, "requires" = list(/datum/om/check/inside_target)), PROC_REF(exosuit_renamed))
+		om_ask(occupant, /datum/om/prompt/text/exosuit_name, PROC_REF(exosuit_renamed), default = initial(name))
 		return
 	if (href_list["toggle_id_upload"])
 		if(usr != src?.slot_item(MECHA_SLOT_PILOT))	return
@@ -2819,7 +2819,7 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 		if(!in_range(src, usr))	return
 		var/mob/user = top_filter.getMob("user")
 		if(user)
-			om_prompt(src, user, list("kind" = "number", "message" = "Input new output pressure", "title" = "Pressure setting", "default" = internal_tank_valve, "round" = FALSE, "requires" = PROMPT_ADJACENT), PROC_REF(tank_valve_entered))
+			om_ask(user, /datum/om/prompt/number/mecha_maint/tank_valve, PROC_REF(tank_valve_entered), default = internal_tank_valve)
 	if(href_list["remove_passenger"] && state >= MECHA_BOLTS_SECURED)
 		if(!in_range(src, usr))
 			return
@@ -2833,7 +2833,7 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 			to_chat(user, span_warning("There are no passengers to remove."))
 			return
 
-		om_prompt(src, user, list("kind" = "list", "message" = "Choose a passenger to forcibly remove.", "title" = "Forcibly Remove Passenger", "choices" = passengers, "requires" = PROMPT_ADJACENT, "data" = list("passengers" = passengers)), PROC_REF(passenger_removal_chosen))
+		om_ask(user, /datum/om/prompt/choice/mecha_remove_passenger, PROC_REF(passenger_removal_chosen), choices = passengers)
 		return
 	if(href_list["add_req_access"] && add_req_access && top_filter.getObj("id_card"))
 		if(!in_range(src, usr))	return
@@ -2892,24 +2892,51 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 		return
 	*/
 
-/obj/mecha/proc/exosuit_renamed(mob/user, newname, datum/om/prompt/ask)
-	newname = sanitizeSafe(newname, MAX_NAME_LEN)
+/// Re-checked on the answer: the pilot is still inside.
+/datum/om/prompt/text/exosuit_name
+	title = "Rename exosuit"
+	message = "Choose new exosuit name"
+	max_length = MAX_NAME_LEN
+	encode = FALSE
+	requires = list(/datum/om/check/inside_target)
+
+/obj/mecha/proc/exosuit_renamed(datum/om/prompt/text/exosuit_name/ask)
+	var/newname = sanitizeSafe(ask.text, MAX_NAME_LEN)
 	if(newname)
 		name = newname
 	else
-		tgui_alert_async(user, "nope.avi")
+		tgui_alert_async(ask.answerer, "nope.avi")
 
-/obj/mecha/proc/tank_valve_entered(mob/user, new_pressure, datum/om/prompt/ask)
-	if(new_pressure && state >= MECHA_BOLTS_SECURED)
-		internal_tank_valve = new_pressure
-		to_chat(user, "The internal pressure valve has been set to [internal_tank_valve]kPa.")
+/// Maintenance-panel settings: re-checked on the answer, still next to the mech with its bolts exposed.
+/datum/om/prompt/number/mecha_maint
+	requires = PROMPT_ADJACENT
 
-/obj/mecha/proc/passenger_removal_chosen(mob/user, pname, datum/om/prompt/ask)
-	var/list/passengers = ask.get("passengers")
-	if(state < MECHA_BOLTS_SECURED)
-		return
+/datum/om/prompt/number/mecha_maint/valid()
+	var/obj/mecha/M = subject
+	return M.state >= MECHA_BOLTS_SECURED ? null : "bolts secured"
 
-	var/obj/item/mecha_parts/mecha_equipment/tool/passenger/P = passengers[pname]
+/datum/om/prompt/number/mecha_maint/tank_valve
+	title = "Pressure setting"
+	message = "Input new output pressure"
+	round_entry = FALSE
+
+/datum/om/prompt/choice/mecha_remove_passenger
+	title = "Forcibly Remove Passenger"
+	message = "Choose a passenger to forcibly remove."
+	requires = PROMPT_ADJACENT
+
+/datum/om/prompt/choice/mecha_remove_passenger/valid()
+	var/obj/mecha/M = subject
+	return M.state >= MECHA_BOLTS_SECURED ? null : "bolts secured"
+
+/obj/mecha/proc/tank_valve_entered(datum/om/prompt/number/mecha_maint/tank_valve/ask)
+	if(ask.number)
+		internal_tank_valve = ask.number
+		to_chat(ask.answerer, "The internal pressure valve has been set to [internal_tank_valve]kPa.")
+
+/obj/mecha/proc/passenger_removal_chosen(datum/om/prompt/choice/mecha_remove_passenger/ask)
+	var/mob/user = ask.answerer
+	var/obj/item/mecha_parts/mecha_equipment/tool/passenger/P = ask.choices[ask.choice]
 	var/mob/passenger_occupant = P?.slot_item(MECHA_SLOT_PILOT)
 
 	user.visible_message(span_infoplain(span_bold("\The [user]") + " begins opening the hatch on \the [P]..."), span_notice("You begin opening the hatch on \the [P]..."))

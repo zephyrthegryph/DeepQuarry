@@ -479,17 +479,24 @@ REF_OWNED(/obj/effect/rune, "blood_image")
 		if (!istype(user.loc,/turf))
 			to_chat(user, span_notice("You do not have enough space to write a proper rune."))
 		var/list/runes = list("teleport", "itemport", "tome", "armor", "convert", "tear in reality", "emp", "drain", "seer", "raise", "obscure", "reveal", "astral journey", "manifest", "imbue talisman", "sacrifice", "wall", "freedom", "cultsummon", "deafen", "blind", "bloodboil", "communicate", "stun")
-		om_prompt_sequence(src, user, list(
-			list("key" = "rune", "kind" = "list", "message" = "Choose a rune to scribe", "title" = "Rune Scribing", "choices" = runes),
-			PROC_REF(imbued_ask_beacon),
-		), PROC_REF(imbued_rune_chosen), list("timeout" = 30 SECONDS))
+		om_ask(user, /datum/om/prompt/choice/imbued_rune, PROC_REF(imbued_rune_picked), message = "Choose a rune to scribe", choices = runes)
 
-/obj/item/book/tome/imbued/proc/imbued_ask_beacon(mob/user, datum/om/prompt/ask)
-	if(ask.get("rune") == "teleport" || ask.get("rune") == "itemport")
-		return list("key" = "beacon", "kind" = "list", "message" = "Select the last rune", "title" = "Rune Scribing", "choices" = list("ire", "ego", "nahlizet", "certum", "veri", "jatkaa", "balaq", "mgar", "karazet", "geeri"))
+/// The admin tome's rune pick, then (for a teleport rune) its last word. `rune` carries the first answer.
+/datum/om/prompt/choice/imbued_rune
+	title = "Rune Scribing"
+	timeout = 30 SECONDS
+	var/rune
 
-/obj/item/book/tome/imbued/proc/imbued_rune_chosen(mob/user, datum/om/prompt/ask)
-	var/r = ask.get("rune")
+/obj/item/book/tome/imbued/proc/imbued_rune_picked(datum/om/prompt/choice/imbued_rune/ask)
+	if(ask.choice == "teleport" || ask.choice == "itemport")
+		om_ask(ask.answerer, /datum/om/prompt/choice/imbued_rune, PROC_REF(imbued_beacon_picked), message = "Select the last rune", choices = list("ire", "ego", "nahlizet", "certum", "veri", "jatkaa", "balaq", "mgar", "karazet", "geeri"), rune = ask.choice)
+		return
+	imbued_rune_chosen(ask.answerer, ask.choice)
+
+/obj/item/book/tome/imbued/proc/imbued_beacon_picked(datum/om/prompt/choice/imbued_rune/ask)
+	imbued_rune_chosen(ask.answerer, ask.rune, ask.choice)
+
+/obj/item/book/tome/imbued/proc/imbued_rune_chosen(mob/user, r, beacon)
 	var/obj/effect/rune/R = new /obj/effect/rune
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
@@ -498,14 +505,12 @@ REF_OWNED(/obj/effect/rune, "blood_image")
 	log_and_message_admins("created \an [r] rune at \the [A.name] - [user.loc.x]-[user.loc.y]-[user.loc.z].")
 	switch(r)
 		if("teleport")
-			var/beacon = ask.get("beacon")
 			R.word1=GLOB.cultwords["travel"]
 			R.word2=GLOB.cultwords["self"]
 			R.word3=beacon
 			R.loc = user.loc
 			R.check_icon()
 		if("itemport")
-			var/beacon = ask.get("beacon")
 			R.word1=GLOB.cultwords["travel"]
 			R.word2=GLOB.cultwords["other"]
 			R.word3=beacon

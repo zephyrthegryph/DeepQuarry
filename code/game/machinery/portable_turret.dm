@@ -1158,10 +1158,11 @@ REF_OWNED(/obj/machinery/porta_turret, "spark_system")
 
 /obj/machinery/porta_turret_construct/proc/interaction_rename(mob/user, obj/item/I, datum/interaction/interaction)
 	//you can rename turrets like bots!
-	om_prompt(src, user, list("kind" = "text", "message" = "Enter new turret name", "title" = name, "default" = finish_name, "max_length" = MAX_NAME_LEN, "encode" = FALSE, "requires" = PROMPT_ADJACENT), PROC_REF(turret_named))
+	om_ask(user, /datum/om/prompt/text, PROC_REF(turret_named), message = "Enter new turret name", title = name, default = finish_name, max_length = MAX_NAME_LEN, encode = FALSE, requires = PROMPT_ADJACENT)
 	return TRUE
 
-/obj/machinery/porta_turret_construct/proc/turret_named(mob/user, t, datum/om/prompt/ask)
+/obj/machinery/porta_turret_construct/proc/turret_named(datum/om/prompt/text/ask)
+	var/t = ask.text
 	t = sanitizeSafe(t, MAX_NAME_LEN)
 	if(!t)
 		return

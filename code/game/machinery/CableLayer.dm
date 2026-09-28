@@ -69,14 +69,21 @@
 	if(!cable || !cable.get_amount())
 		to_chat(user, span_warning("There's no more cable on the reel."))
 		return ITEM_INTERACT_BLOCKING
-	om_prompt(src, user, list("kind" = "number", "message" = "Please specify the length of cable to cut", "title" = "Cut cable", "default" = min(cable.get_amount(), 30), "requires" = PROMPT_ADJACENT, "data" = list("tool" = tool)), PROC_REF(cable_length_entered))
+	om_ask(user, /datum/om/prompt/number/cablelayer_cut, PROC_REF(cable_length_entered), default = min(cable.get_amount(), 30), tool = tool)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/cablelayer/proc/cable_length_entered(mob/user, amount, datum/om/prompt/ask)
-	var/obj/item/tool = ask.get("tool")
+/// How much cable to cut off the layer's reel. Re-checked: next to the layer and able.
+/datum/om/prompt/number/cablelayer_cut
+	title = "Cut cable"
+	message = "Please specify the length of cable to cut"
+	ask_flags = ASK_ADJACENT | ASK_CAPABLE
+	var/obj/item/tool
+
+/obj/machinery/cablelayer/proc/cable_length_entered(datum/om/prompt/number/cablelayer_cut/ask)
+	var/obj/item/tool = ask.tool
 	if(!cable)
 		return
-	amount = min(amount, cable.get_amount(), 30)
+	var/amount = min(ask.number, cable.get_amount(), 30)
 	if(amount)
 		playsound(src, tool.usesound, 50, TRUE)
 		use_cable(amount)

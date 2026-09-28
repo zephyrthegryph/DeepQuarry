@@ -156,7 +156,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore, REGISTRY_EMPTY_AI_CORES)
 			to_chat(user, span_notice("You connect the monitor."))
 			if(!brain)
 				var/obj/structure/AIcore/deactivated/D = new(loc)
-				om_prompt(D, user, list("message" = "Would you like this core to be open for latejoining AIs?", "title" = "Latejoin", "choices" = list("Yes", "No")), GLOBAL_PROC_REF(ai_core_latejoin_answered))
+				om_ask(user, /datum/om/prompt/confirm/ai_core_latejoin, GLOBAL_PROC_REF(ai_core_latejoin_answered), subject = D)
 			else
 				var/mob/living/silicon/ai/A = new /mob/living/silicon/ai(loc, FALSE, laws, brain)
 				if(A) //if there's no brain, the mob is deleted and a structure/AIcore is created
@@ -168,9 +168,12 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore, REGISTRY_EMPTY_AI_CORES)
 			return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_BLOCKING
 
-/proc/ai_core_latejoin_answered(obj/structure/AIcore/deactivated/D, mob/user, answer, datum/om/prompt/ask)
-	if(answer == "Yes")
-		registry_join(REGISTRY_EMPTY_AI_CORES, D)
+/datum/om/prompt/confirm/ai_core_latejoin
+	title = "Latejoin"
+	message = "Would you like this core to be open for latejoining AIs?"
+
+/proc/ai_core_latejoin_answered(datum/om/prompt/confirm/ai_core_latejoin/ask)
+	registry_join(REGISTRY_EMPTY_AI_CORES, ask.subject)
 
 /obj/structure/AIcore/crowbar_act(mob/user, obj/item/tool)
 	switch(state)
@@ -289,10 +292,17 @@ ADMIN_VERB(empty_ai_core_toggle_latejoin, R_ADMIN|R_SERVER|R_EVENT, "Toggle AI C
 	for(var/obj/structure/AIcore/deactivated/current_ai_struct in REGISTRY_MEMBERS(REGISTRY_AI_CORES_DEACTIVATED))
 		cores["[current_ai_struct] ([current_ai_struct.loc.loc])"] = current_ai_struct
 
-	om_prompt(user, user, list("kind" = "list", "message" = "Which core?", "title" = "Toggle AI Core Latejoin", "choices" = cores, "requires" = PROMPT_ADMIN(R_ADMIN|R_SERVER|R_EVENT), "data" = list("cores" = cores)), GLOBAL_PROC_REF(empty_ai_core_latejoin_chosen))
+	om_ask(user, /datum/om/prompt/choice/ai_core_latejoin_toggle, GLOBAL_PROC_REF(empty_ai_core_latejoin_chosen), choices = cores)
 
-/proc/empty_ai_core_latejoin_chosen(client/C, mob/user, id, datum/om/prompt/ask)
-	var/list/cores = ask.get("cores")
+/datum/om/prompt/choice/ai_core_latejoin_toggle
+	title = "Toggle AI Core Latejoin"
+	message = "Which core?"
+	requires = PROMPT_ADMIN(R_ADMIN|R_SERVER|R_EVENT)
+
+/proc/empty_ai_core_latejoin_chosen(datum/om/prompt/choice/ai_core_latejoin_toggle/ask)
+	var/list/cores = ask.choices
+	var/id = ask.choice
+	var/mob/user = ask.answerer
 
 	var/obj/structure/AIcore/deactivated/ai_struct = cores[id]
 	if(!ai_struct)

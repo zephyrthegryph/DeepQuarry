@@ -529,7 +529,7 @@
 	var/image/target_image = image(icon = 'icons/obj/spells.dmi', icon_state = "target")
 
 	T.add_overlay(target_image)
-	om_task_start(/datum/om/task/timed/construct_shot, user, src, list("duration" = pre_shot_delay, "receiver" = src, "aimed_at" = hit_atom, "marked" = T, "marker" = target_image))
+	om_task_start(/datum/om/task/timed/construct_shot, user, src, duration = pre_shot_delay, aimed_at = hit_atom, marked = T, marker = target_image)
 	return FALSE
 
 /obj/item/spell/construct/projectile/var/shot_ready = FALSE
@@ -691,7 +691,7 @@
 		var/windup = cooldown
 		if(W.reinf_material)
 			windup = cooldown * 2
-		om_task_start(/datum/om/task/timed/slam_slam_wall, user, src, list("receiver" = src, "duration" = windup, "W" = W, "attack_message" = attack_message))
+		om_task_start(/datum/om/task/timed/slam_slam_wall, user, src, duration = windup, W = W, attack_message = attack_message)
 		return
 	consume(src, user)
 

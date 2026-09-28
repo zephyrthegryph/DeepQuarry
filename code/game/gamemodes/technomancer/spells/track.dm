@@ -40,11 +40,11 @@ REGISTRY_MEMBERSHIP(/obj, REGISTRY_TECHNOMANCER_BELONGINGS)
 		if(L == user)
 			continue
 		mob_choices += L
-	om_prompt(src, user, list("kind" = "list", "message" = "Decide what or who to track.", "title" = "Tracking", "choices" = (object_choices + mob_choices), "requires" = PROMPT_HELD), PROC_REF(track_target_chosen))
+	om_ask(user, /datum/om/prompt/choice/carried_item, PROC_REF(track_target_chosen), title = "Tracking", message = "Decide what or who to track.", choices = (object_choices + mob_choices))
 
-/obj/item/spell/track/proc/track_target_chosen(mob/user, choice, datum/om/prompt/ask)
-	if(choice)
-		tracked = choice
+/obj/item/spell/track/proc/track_target_chosen(datum/om/prompt/choice/carried_item/ask)
+	if(ask.choice)
+		tracked = ask.choice
 		tracking = 1
 		track()
 

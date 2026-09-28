@@ -203,14 +203,27 @@
 	switch(action)
 		if("change_freq")
 			. = TRUE
-			om_prompt(src, ui.user, list("kind" = "number", "message" = "Specify a new frequency for new signals to change to. Enter null to turn off frequency changing. Decimals assigned automatically.", "title" = "[src]", "default" = network, "round" = FALSE, "requires" = PROMPT_USABLE, "on_cancel" = PROC_REF(change_frequency_cleared)), PROC_REF(change_frequency_entered))
+			om_ask(ui.user, /datum/om/prompt/number/telecomms_change_frequency, PROC_REF(change_frequency_entered), title = "[src]", default = network)
 
-/obj/machinery/telecomms/bus/proc/change_frequency_cleared(mob/user, datum/om/prompt/ask)
-	change_frequency_entered(user, null, ask)
+/// A cancel turns frequency changing off.
+/datum/om/prompt/number/telecomms_change_frequency
+	message = "Specify a new frequency for new signals to change to. Enter null to turn off frequency changing. Decimals assigned automatically."
+	round_entry = FALSE
+	requires = PROMPT_USABLE
 
-/obj/machinery/telecomms/bus/proc/change_frequency_entered(mob/user, newfreq, datum/om/prompt/ask)
-	if(!canAccess(user))
-		return
+/datum/om/prompt/number/telecomms_change_frequency/valid()
+	var/obj/machinery/telecomms/machine = subject
+	return machine.canAccess(answerer) ? null : "no access"
+
+/datum/om/prompt/number/telecomms_change_frequency/cancelled()
+	var/obj/machinery/telecomms/bus/machine = subject
+	if(machine?.canAccess(answerer))
+		machine.set_change_frequency(null)
+
+/obj/machinery/telecomms/bus/proc/change_frequency_entered(datum/om/prompt/number/telecomms_change_frequency/ask)
+	set_change_frequency(ask.number)
+
+/obj/machinery/telecomms/bus/proc/set_change_frequency(newfreq)
 	if(newfreq)
 		if(findtext(num2text(newfreq), "."))
 			newfreq *= 10 // shift the decimal one place
@@ -279,15 +292,15 @@
 			. = TRUE
 
 		if("id")
-			om_prompt(src, ui.user, list("kind" = "text", "message" = "Specify the new ID for this machine", "title" = "[src]", "default" = id, "requires" = PROMPT_USABLE), PROC_REF(id_entered))
+			om_ask(ui.user, /datum/om/prompt/text/telecomms_setting, PROC_REF(id_entered), title = "[src]", message = "Specify the new ID for this machine", default = id)
 			. = TRUE
 
 		if("network")
-			om_prompt(src, ui.user, list("kind" = "text", "message" = "Specify the new network for this machine. This will break all current links.", "title" = "[src]", "default" = network, "max_length" = 15, "requires" = PROMPT_USABLE), PROC_REF(network_entered))
+			om_ask(ui.user, /datum/om/prompt/text/telecomms_setting, PROC_REF(network_entered), title = "[src]", message = "Specify the new network for this machine. This will break all current links.", default = network, max_length = 15)
 			. = TRUE
 
 		if("freq")
-			om_prompt(src, ui.user, list("kind" = "number", "message" = "Specify a new frequency to filter (GHz). Decimals assigned automatically.", "title" = "[src]", "max" = 9999, "requires" = PROMPT_USABLE), PROC_REF(filter_frequency_entered))
+			om_ask(ui.user, /datum/om/prompt/number/telecomms_setting, PROC_REF(filter_frequency_entered), title = "[src]", message = "Specify a new frequency to filter (GHz). Decimals assigned automatically.", max = 9999)
 			. = TRUE
 
 		if("delete")
@@ -345,16 +358,30 @@
 
 	add_fingerprint(ui.user)
 
-/obj/machinery/telecomms/proc/id_entered(mob/user, newid, datum/om/prompt/ask)
-	newid = copytext(reject_bad_text(newid),1,MAX_MESSAGE_LEN)
-	if(newid && canAccess(user))
+/// A telecomms machine setting; re-checked on the answer: the answerer can still access the machine.
+/datum/om/prompt/text/telecomms_setting
+	requires = PROMPT_USABLE
+
+/datum/om/prompt/text/telecomms_setting/valid()
+	var/obj/machinery/telecomms/machine = subject
+	return machine.canAccess(answerer) ? null : "no access"
+
+/datum/om/prompt/number/telecomms_setting
+	requires = PROMPT_USABLE
+
+/datum/om/prompt/number/telecomms_setting/valid()
+	var/obj/machinery/telecomms/machine = subject
+	return machine.canAccess(answerer) ? null : "no access"
+
+/obj/machinery/telecomms/proc/id_entered(datum/om/prompt/text/telecomms_setting/ask)
+	var/newid = copytext(reject_bad_text(ask.text),1,MAX_MESSAGE_LEN)
+	if(newid)
 		id = newid
 		set_temp("-% New ID assigned: \"[id]\" %-", "average")
 		SStgui.update_uis(src)
 
-/obj/machinery/telecomms/proc/network_entered(mob/user, newnet, datum/om/prompt/ask)
-	if(!canAccess(user))
-		return
+/obj/machinery/telecomms/proc/network_entered(datum/om/prompt/text/telecomms_setting/ask)
+	var/newnet = ask.text
 	SStgui.update_uis(src)
 
 	if(length(newnet) > 15)
@@ -369,8 +396,9 @@
 		set_temp("-% New network tag assigned: \"[network]\" %-", "average")
 	. = TRUE
 
-/obj/machinery/telecomms/proc/filter_frequency_entered(mob/user, newfreq, datum/om/prompt/ask)
-	if(!newfreq || !canAccess(user))
+/obj/machinery/telecomms/proc/filter_frequency_entered(datum/om/prompt/number/telecomms_setting/ask)
+	var/newfreq = ask.number
+	if(!newfreq)
 		return
 	SStgui.update_uis(src)
 	if(findtext(num2text(newfreq), "."))

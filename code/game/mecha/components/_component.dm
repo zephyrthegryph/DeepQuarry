@@ -148,7 +148,7 @@
 /obj/item/mecha_parts/component/proc/paste_repair_step(mob/user, obj/item/stack/nanopaste/NP, atom/site)
 	if(get_integrity() >= max_integrity)
 		return
-	om_task_start(/datum/om/task/timed/component_paste_repair, user, site, list("receiver" = src, "NP" = NP))
+	om_task_start(/datum/om/task/timed/component_paste_repair, user, site, receiver = src, NP = NP)
 
 /datum/om/task/timed/component_paste_repair
 	duration = 1 SECOND

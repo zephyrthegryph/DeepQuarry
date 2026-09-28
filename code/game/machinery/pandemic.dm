@@ -143,16 +143,36 @@
 		playsound(loc, 'sound/machines/buzz-sigh.ogg', 50, 1)
 		return
 	if(!(printing) && D)
-		om_prompt_sequence(src, user, list(
-			list("key" = "reason", "kind" = "text", "message" = "Enter a reason for the release", "title" = "Write", "multiline" = TRUE),
-			list("key" = "sign", "message" = "Would you like to add your signature?", "title" = "Signature", "choices" = list("Yes","No")),
-		), PROC_REF(release_form_written), list("requires" = PROMPT_USABLE, "data" = list("disease" = D)))
+		om_ask(user, /datum/om/prompt/text/pandemic_release_reason, PROC_REF(release_reason_written), disease = D)
 
-/obj/machinery/computer/pandemic/proc/release_form_written(mob/living/user, datum/om/prompt/ask)
-	var/datum/disease/advance/D = ask.get("disease")
-	var/reason = ask.get("reason")
-	if(printing || !reason)
+/datum/om/prompt/text/pandemic_release_reason
+	title = "Write"
+	message = "Enter a reason for the release"
+	multiline = TRUE
+	requires = PROMPT_USABLE
+	var/datum/disease/advance/disease
+
+/obj/machinery/computer/pandemic/proc/release_reason_written(datum/om/prompt/text/pandemic_release_reason/ask)
+	if(!ask.text)
 		return
+	om_ask(ask.answerer, /datum/om/prompt/confirm/pandemic_release_sign, PROC_REF(release_form_written), disease = ask.disease, reason = ask.text)
+
+/datum/om/prompt/confirm/pandemic_release_sign
+	title = "Signature"
+	message = "Would you like to add your signature?"
+	answer_on_no = TRUE
+	requires = PROMPT_USABLE
+	var/datum/disease/advance/disease
+	var/reason
+
+/datum/om/prompt/confirm/pandemic_release_sign/valid()
+	var/obj/machinery/computer/pandemic/P = subject
+	return P.printing ? "busy" : null
+
+/obj/machinery/computer/pandemic/proc/release_form_written(datum/om/prompt/confirm/pandemic_release_sign/ask)
+	var/mob/living/user = ask.answerer
+	var/datum/disease/advance/D = ask.disease
+	var/reason = ask.reason
 	reason += "<span class=\"paper_field\"></span>"
 	var/english_symptoms = list()
 	for(var/I in D.symptoms)
@@ -161,7 +181,7 @@
 	var/symptoms = english_list(english_symptoms)
 
 	var/signature
-	if(ask.get("sign") == "Yes")
+	if(ask.yes)
 		signature = "<font face=\"Times New Roman\">" + span_italics("[user ? user.real_name : "Anonymous"]") + "</font>"
 	else
 		signature = "<span class=\"paper_field\"></span>"

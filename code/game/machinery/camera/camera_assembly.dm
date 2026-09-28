@@ -104,55 +104,80 @@
 	if(state != 3)
 		return FALSE
 	playsound(src, tool.usesound, 50, TRUE)
-	om_prompt_sequence(src, user, list(
-		list("key" = "networks", "kind" = "text", "message" = "Which networks would you like to connect this camera to? Separate networks with a comma. No Spaces!\nFor example: "+using_map.station_short+",Security,Secret ", "title" = "Set Network", "default" = camera_network ? camera_network : NETWORK_DEFAULT, "max_length" = MAX_MESSAGE_LEN),
-		PROC_REF(ask_camera_name),
-	), PROC_REF(camera_configured), list("requires" = PROMPT_ADJACENT))
+	om_ask(user, /datum/om/prompt/text/camera_networks, PROC_REF(camera_networks_entered), message = "Which networks would you like to connect this camera to? Separate networks with a comma. No Spaces!\nFor example: "+using_map.station_short+",Security,Secret ", default = camera_network ? camera_network : NETWORK_DEFAULT)
 	return TRUE
 
-/obj/item/camera_assembly/proc/ask_camera_name(mob/user, datum/om/prompt/ask)
-	var/list/tempnetwork = splittext(ask.get("networks") || "", ",")
-	if(!length(tempnetwork))
-		return null
+/datum/om/prompt/text/camera_networks
+	title = "Set Network"
+	requires = PROMPT_ADJACENT
+
+/obj/item/camera_assembly/proc/camera_networks_entered(datum/om/prompt/text/camera_networks/ask)
+	if(!ask.text)
+		to_chat(ask.answerer, "No input found please hang up and try your call again.")
+		return
+	var/list/tempnetwork = splittext(ask.text, ",")
+	if(tempnetwork.len < 1)
+		to_chat(ask.answerer, "No network found please hang up and try your call again.")
+		return
 	var/area/camera_area = get_area(src)
 	var/temptag = "[sanitize(camera_area.name)] ([rand(1, 999)])"
-	return list("key" = "name", "kind" = "text", "message" = "How would you like to name the camera?", "title" = "Set Camera Name", "default" = camera_name ? camera_name : temptag, "max_length" = MAX_NAME_LEN, "encode" = FALSE)
+	om_ask(ask.answerer, /datum/om/prompt/text/camera_name, PROC_REF(camera_configured), default = camera_name ? camera_name : temptag, networks = tempnetwork)
 
-/obj/item/camera_assembly/proc/camera_configured(mob/user, datum/om/prompt/ask)
-	if(!ask.get("networks"))
-		to_chat(user, "No input found please hang up and try your call again.")
-		return
-	var/list/tempnetwork = splittext(ask.get("networks"), ",")
-	if(tempnetwork.len < 1)
-		to_chat(user, "No network found please hang up and try your call again.")
-		return
-	if(state != 3)
-		return
+/datum/om/prompt/text/camera_name
+	title = "Set Camera Name"
+	message = "How would you like to name the camera?"
+	max_length = MAX_NAME_LEN
+	encode = FALSE
+	requires = PROMPT_ADJACENT
+	var/list/networks
+
+/datum/om/prompt/text/camera_name/valid()
+	var/obj/item/camera_assembly/A = subject
+	return A.state == 3 ? null : "wrong state"
+
+/obj/item/camera_assembly/proc/camera_configured(datum/om/prompt/text/camera_name/ask)
 	state = 4
 	var/obj/machinery/camera/C = new(loc)
 	loc = C
 	C.assembly = src
 	C.auto_turn()
-	C.replace_networks(uniqueList(tempnetwork))
-	C.c_tag = sanitizeSafe(ask.get("name"), MAX_NAME_LEN)
-	ask_camera_direction(user, C, 5)
+	C.replace_networks(uniqueList(ask.networks))
+	C.c_tag = sanitizeSafe(ask.text, MAX_NAME_LEN)
+	ask_camera_direction(ask.answerer, C, 5)
 
 /// Turns the new camera until the builder is happy, with up to `chances` more tries.
 /obj/item/camera_assembly/proc/ask_camera_direction(mob/user, obj/machinery/camera/C, chances)
-	om_prompt(C, user, list("kind" = "list", "message" = "Direction?", "title" = "Assembling Camera", "choices" = list("NORTH", "EAST", "SOUTH", "WEST", "LEAVE IT"), "requires" = PROMPT_ADJACENT, "data" = list("assembly" = src, "chances" = chances)), GLOBAL_PROC_REF(camera_direction_chosen))
+	om_ask(user, /datum/om/prompt/choice/camera_direction, PROC_REF(camera_direction_chosen), subject = C, camera = C, chances = chances)
 
-/proc/camera_direction_chosen(obj/machinery/camera/C, mob/user, direct, datum/om/prompt/ask)
-	if(direct != "LEAVE IT")
-		C.dir = text2dir(direct)
-	var/chances = ask.get("chances")
-	if(chances > 0)
-		om_prompt_chain(ask, list("message" = "Is this what you want? Chances Remaining: [chances]", "title" = "Confirmation", "choices" = list("Yes", "No")), GLOBAL_PROC_REF(camera_direction_confirmed))
+/datum/om/prompt/choice/camera_direction
+	title = "Assembling Camera"
+	message = "Direction?"
+	choices = list("NORTH", "EAST", "SOUTH", "WEST", "LEAVE IT")
+	requires = PROMPT_ADJACENT
+	var/obj/machinery/camera/camera
+	var/chances = 0
 
-/proc/camera_direction_confirmed(obj/machinery/camera/C, mob/user, answer, datum/om/prompt/ask)
-	if(answer == "Yes")
+/obj/item/camera_assembly/proc/camera_direction_chosen(datum/om/prompt/choice/camera_direction/ask)
+	var/obj/machinery/camera/C = ask.camera
+	if(ask.choice != "LEAVE IT")
+		C.dir = text2dir(ask.choice)
+	if(ask.chances > 0)
+		om_ask(ask.answerer, /datum/om/prompt/confirm/camera_direction_ok, PROC_REF(camera_direction_confirmed), subject = C, camera = C, chances = ask.chances)
+
+/datum/om/prompt/confirm/camera_direction_ok
+	title = "Confirmation"
+	answer_on_no = TRUE
+	var/obj/machinery/camera/camera
+	var/chances = 0
+
+/datum/om/prompt/confirm/camera_direction_ok/prepare()
+	message = "Is this what you want? Chances Remaining: [chances]"
+	return TRUE
+
+/obj/item/camera_assembly/proc/camera_direction_confirmed(datum/om/prompt/confirm/camera_direction_ok/ask)
+	if(ask.yes)
 		return
-	var/obj/item/camera_assembly/assembly = ask.get("assembly")
-	assembly.ask_camera_direction(user, C, ask.get("chances") - 1)
+	ask_camera_direction(ask.answerer, ask.camera, ask.chances - 1)
 
 /obj/item/camera_assembly/update_icon()
 	if(anchored)

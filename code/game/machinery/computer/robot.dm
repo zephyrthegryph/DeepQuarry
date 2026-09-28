@@ -232,13 +232,25 @@
 			var/mob/living/silicon/robot/R = locate(params["ref"])
 			if(!can_hack(ui.user, R))
 				return
-			om_prompt(src, ui.user, list("message" = "Really hack [R.name]? This cannot be undone.", "title" = "Hack?", "choices" = list("Yes", "No"), "requires" = PROMPT_USABLE, "data" = list("borg" = R)), PROC_REF(hack_confirmed))
+			om_ask(ui.user, /datum/om/prompt/confirm/robot_hack, PROC_REF(hack_confirmed), borg = R)
 			. = TRUE
 
-/obj/machinery/computer/robotics/proc/hack_confirmed(mob/user, choice, datum/om/prompt/ask)
-	var/mob/living/silicon/robot/R = ask.get("borg")
-	if(choice != "Yes" || !can_hack(user, R))
-		return
+/datum/om/prompt/confirm/robot_hack
+	title = "Hack?"
+	requires = PROMPT_USABLE
+	var/mob/living/silicon/robot/borg
+
+/datum/om/prompt/confirm/robot_hack/prepare()
+	message = "Really hack [borg.name]? This cannot be undone."
+	return TRUE
+
+/datum/om/prompt/confirm/robot_hack/valid()
+	var/obj/machinery/computer/robotics/console = subject
+	return console.can_hack(answerer, borg) ? null : "can't hack"
+
+/obj/machinery/computer/robotics/proc/hack_confirmed(datum/om/prompt/confirm/robot_hack/ask)
+	var/mob/living/silicon/robot/R = ask.borg
+	var/mob/user = ask.answerer
 	log_game("[key_name(user)] emagged [key_name(R)] using robotic console!")
 	message_admins(span_notice("[key_name_admin(user)] emagged [key_name_admin(R)] using robotic console!"))
 	R.emagged = TRUE

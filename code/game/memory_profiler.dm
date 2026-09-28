@@ -9,13 +9,15 @@
 
 /proc/profile_memory()
 	if(usr?.client)
-		om_prompt(null, usr, list("message" = "Running this will likely cause minor lag for around 20 minutes and the server will freeze for a bit at the end", "title" = "Profile memory", "choices" = list("Yes", "No"), "requires" = PROMPT_ADMIN(R_DEBUG)), GLOBAL_PROC_REF(profile_memory_confirmed))
+		om_ask(usr, /datum/om/prompt/confirm/profile_memory, GLOBAL_PROC_REF(profile_memory_run))
 		return
 	profile_memory_run()
 
-/proc/profile_memory_confirmed(datum/E, mob/user, answer, datum/om/prompt/ask)
-	if(answer == "Yes")
-		profile_memory_run()
+/// Re-checked on the answer: still a debug admin.
+/datum/om/prompt/confirm/profile_memory
+	title = "Profile memory"
+	message = "Running this will likely cause minor lag for around 20 minutes and the server will freeze for a bit at the end"
+	requires = PROMPT_ADMIN(R_DEBUG)
 
 /proc/profile_memory_run()
 	var/list/types_count = list()

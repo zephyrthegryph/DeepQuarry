@@ -34,18 +34,30 @@
 	message_admins(span_danger("[src]([src.ckey]) attempted to convert [player.current]."))
 
 	COOLDOWN_START(player, rev_cooldown, 100)
-	om_prompt(src, player.current, list("message" = "Asked by [src]: Do you want to join the [faction.faction_descriptor]?", "title" = "Join the [faction.faction_descriptor]?", "choices" = list("No!","Yes!"), "on_cancel" = PROC_REF(faction_join_refused), "data" = list("mind" = player, "faction" = faction)), PROC_REF(faction_join_answered))
+	om_ask(player.current, /datum/om/prompt/confirm/faction_join, PROC_REF(faction_join_answered), asker = src, player = player, faction = faction)
 
-/mob/living/proc/faction_join_refused(mob/living/answerer, datum/om/prompt/ask)
-	faction_join_answered(answerer, null, ask)
+/// Asked to join a faction; a cancel is a refusal.
+/datum/om/prompt/confirm/faction_join
+	yes_text = "Yes!"
+	no_text = "No!"
+	no_first = TRUE
+	answer_on_no = TRUE
+	cancel_answer = "No!"
+	var/datum/mind/player
+	var/datum/antagonist/faction
 
-/mob/living/proc/faction_join_answered(mob/living/answerer, choice, datum/om/prompt/ask)
-	var/datum/mind/player = ask.get("mind")
-	var/datum/antagonist/faction = ask.get("faction")
-	if(choice == "Yes!" && faction.add_antagonist_mind(player, 0, faction.faction_role_text, faction.faction_welcome))
+/datum/om/prompt/confirm/faction_join/prepare()
+	title = "Join the [faction.faction_descriptor]?"
+	message = "Asked by [asker]: Do you want to join the [faction.faction_descriptor]?"
+	return TRUE
+
+/mob/living/proc/faction_join_answered(datum/om/prompt/confirm/faction_join/ask)
+	var/datum/mind/player = ask.player
+	var/datum/antagonist/faction = ask.faction
+	if(ask.yes && faction.add_antagonist_mind(player, 0, faction.faction_role_text, faction.faction_welcome))
 		to_chat(src, span_notice("\The [player.current] joins the [faction.faction_descriptor]!"))
 		return
-	if(!choice || choice == "No!")
+	if(!ask.yes)
 		to_chat(player, span_danger("You reject this traitorous cause!"))
 	to_chat(src, span_danger("\The [player.current] does not support the [faction.faction_descriptor]!"))
 

@@ -744,13 +744,18 @@
 		return
 
 	if(M.client)
-		om_prompt(src, M, list("message" = "Would you like to enter long-term storage?", "title" = "Cryopod", "choices" = list("Yes","No"), "requires" = PROMPT_ADJACENT, "data" = list("loader" = user)), PROC_REF(storage_consent_answered))
+		om_ask(M, /datum/om/prompt/confirm/cryo_consent, PROC_REF(storage_consent_answered), loader = user)
 		return
 	finish_go_in(M, user, 1)
 
-/obj/machinery/cryopod/proc/storage_consent_answered(mob/M, answer, datum/om/prompt/ask)
-	if(answer == "Yes")
-		finish_go_in(M, ask.get("loader"), TRUE)
+/datum/om/prompt/confirm/cryo_consent
+	title = "Cryopod"
+	message = "Would you like to enter long-term storage?"
+	requires = PROMPT_ADJACENT
+	var/mob/loader
+
+/obj/machinery/cryopod/proc/storage_consent_answered(datum/om/prompt/confirm/cryo_consent/ask)
+	finish_go_in(ask.answerer, ask.loader, TRUE)
 
 /obj/machinery/cryopod/proc/finish_go_in(mob/M, mob/user, willing)
 

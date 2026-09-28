@@ -23,13 +23,11 @@
 		user.bombing_core = 0
 		return
 
-	om_prompt(user, user, list("message" = "Really destroy core?", "title" = "Core self-destruct", "choices" = list("YES", "NO"), "requires" = PROMPT_CONSCIOUS), GLOBAL_PROC_REF(malf_core_bomb_confirmed))
+	om_ask(user, /datum/om/prompt/confirm/malf, GLOBAL_PROC_REF(malf_core_bomb_confirmed), title = "Core self-destruct", message = "Really destroy core?", yes_text = "YES", no_text = "NO", price = 0, precheck_override = 1)
 
-/proc/malf_core_bomb_confirmed(mob/living/silicon/ai/user, mob/answerer, choice, datum/om/prompt/ask)
-	if(choice != "YES" || user.bombing_core)
-		return
-
-	if(!ability_prechecks(user, 0, 1))
+/proc/malf_core_bomb_confirmed(datum/om/prompt/confirm/malf/ask)
+	var/mob/living/silicon/ai/user = ask.answerer
+	if(user.bombing_core)
 		return
 
 	user.bombing_core = 1
@@ -86,14 +84,13 @@
 		user.bombing_station = 0
 		return
 
-	om_prompt(user, user, list("message" = "Really destroy station?", "title" = "Station self-destruct", "choices" = list("YES", "NO"), "requires" = PROMPT_CONSCIOUS), GLOBAL_PROC_REF(malf_station_bomb_confirmed))
+	om_ask(user, /datum/om/prompt/confirm/malf, GLOBAL_PROC_REF(malf_station_bomb_confirmed), title = "Station self-destruct", message = "Really destroy station?", yes_text = "YES", no_text = "NO", price = 0)
 
-/proc/malf_station_bomb_confirmed(mob/living/silicon/ai/user, mob/answerer, choice, datum/om/prompt/ask)
-	if(choice != "YES" || user.bombing_station)
+/proc/malf_station_bomb_confirmed(datum/om/prompt/confirm/malf/ask)
+	var/mob/living/silicon/ai/user = ask.answerer
+	if(user.bombing_station)
 		return
 	var/obj/item/radio/radio = new/obj/item/radio()
-	if(!ability_prechecks(user, 0, 0))
-		return
 	to_chat(user, "***** STATION SELF-DESTRUCT SEQUENCE INITIATED *****")
 	to_chat(user, "Self-destructing in 2 minutes. Use this command again to abort.")
 	user.bombing_station = 1

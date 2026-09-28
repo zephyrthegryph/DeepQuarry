@@ -33,19 +33,14 @@
 		to_chat(user, span_danger("\The [src] has ran out of uses, and is now useless to you!"))
 		return
 	else
-		om_prompt(src, user, list("kind" = "list", "message" = "Area to teleport to", "title" = "Teleportation", "choices" = GLOB.teleportlocs, "requires" = PROMPT_HELD), PROC_REF(teleport_area_chosen))
+		om_ask(user, /datum/om/prompt/choice/carried_item, PROC_REF(teleport_area_chosen), title = "Teleportation", message = "Area to teleport to", choices = GLOB.teleportlocs)
 
-/obj/item/disposable_teleporter/proc/teleport_area_chosen(mob/user, area_wanted, datum/om/prompt/ask)
+/obj/item/disposable_teleporter/proc/teleport_area_chosen(datum/om/prompt/choice/carried_item/ask)
+	var/mob/user = ask.answerer
 	if(!uses)
 		return
-	var/area/A = GLOB.teleportlocs[area_wanted]
+	var/area/A = GLOB.teleportlocs[ask.choice]
 	if(!A)
-		return
-
-	if (user.stat || user.restrained())
-		return
-
-	if(!((user == loc || (in_range(src, user) && istype(src.loc, /turf)))))
 		return
 
 	var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
