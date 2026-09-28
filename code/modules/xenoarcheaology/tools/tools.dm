@@ -285,6 +285,13 @@ DECLARE_INTERACTIONS(/obj/item/depth_scanner, INTERACT_USE(null, PROC_REF(intera
 			icon_state = "pinoff"
 
 
+DECLARE_INTERACTIONS(/obj/item/beacon_locator, INTERACT_USE("Open", PROC_REF(interaction_open)))
+
+/// Old attack_self: open the interface.
+/obj/item/beacon_locator/proc/interaction_open(mob/user, obj/item/held, datum/interaction/interaction)
+	tgui_interact(user)
+	return TRUE
+
 /obj/item/beacon_locator/tgui_state(mob/user)
 	return GLOB.tgui_inventory_state
 

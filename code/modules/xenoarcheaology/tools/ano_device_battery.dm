@@ -67,7 +67,10 @@
 	last_user_touched = user
 	..()
 
-DECLARE_INTERACTIONS(/obj/item/anodevice, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+DECLARE_INTERACTIONS(/obj/item/anodevice, \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_USE("Open", PROC_REF(interaction_open)), \
+)
 
 /// Old attackby.
 /obj/item/anodevice/proc/interaction_item(mob/user, obj/I, datum/interaction/interaction)
@@ -82,6 +85,11 @@ DECLARE_INTERACTIONS(/obj/item/anodevice, INTERACT_ITEM(null, PROC_REF(interacti
 		return FALSE
 	return INTERACTION_HANDLED_PASS
 
+
+/// Old attack_self: open the interface.
+/obj/item/anodevice/proc/interaction_open(mob/user, obj/item/held, datum/interaction/interaction)
+	tgui_interact(user)
+	return TRUE
 
 /obj/item/anodevice/tgui_state(mob/user)
 	return GLOB.tgui_inventory_state

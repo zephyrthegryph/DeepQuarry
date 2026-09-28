@@ -227,7 +227,6 @@ EXTEND_INTERACTIONS(/obj/structure/barricade/cutout, \
 
 	else
 		return FALSE
-	return INTERACTION_HANDLED_PASS
 
 /obj/structure/barricade/cutout/proc/cutout_type_chosen(mob/user, choice, datum/om/prompt/ask)
 	if(!Adjacent(user))

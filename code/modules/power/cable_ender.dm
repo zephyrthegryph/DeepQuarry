@@ -33,7 +33,6 @@ EXTEND_INTERACTIONS(/obj/structure/cable/ender, INTERACT_ITEM(null, PROC_REF(end
 		return INTERACTION_HANDLED_PASS
 	else
 		return FALSE
-	return INTERACTION_HANDLED_PASS
 
 /obj/structure/cable/ender/wirecutter_act(mob/user, obj/item/W)
 	to_chat(user, span_notice("These cables are too tough to be cut with those [W.name]."))

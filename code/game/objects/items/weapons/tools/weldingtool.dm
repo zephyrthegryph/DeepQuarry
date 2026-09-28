@@ -618,7 +618,6 @@ EXTEND_INTERACTIONS(/obj/item/weldingtool/electric, \
 		return FALSE
 	else
 		return FALSE
-	return TRUE
 
 /// Old attackby.
 /obj/item/weldingtool/electric/proc/electric_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)

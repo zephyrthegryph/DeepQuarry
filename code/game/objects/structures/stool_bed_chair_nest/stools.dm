@@ -130,7 +130,6 @@ DECLARE_INTERACTIONS(/obj/item/stool, INTERACT_ITEM(null, PROC_REF(interaction_i
 		return INTERACTION_HANDLED_PASS
 	else
 		return FALSE
-	return INTERACTION_HANDLED_PASS
 
 /obj/item/stool/wrench_act(mob/user, obj/item/W)
 	playsound(src, W.usesound, 50, 1)

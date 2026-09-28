@@ -454,8 +454,8 @@ DECLARE_INTERACTIONS(/obj/item/glamour_unstable, INTERACT_USE(null, PROC_REF(int
 	var/new_size = (rand(25,200))/100
 	L.resize(new_size, ignore_prefs = FALSE)
 
-/// Old attack_hand: runs after the touch tried to pick it up.
-/obj/item/glamour_unstable/after_attack_hand(mob/user)
+/// Old attack_hand: runs after the touch tried to pick it up (hand_pickup()).
+/obj/item/glamour_unstable/hand_pickup(mob/user)
 	. = ..()
 
 	var/mob/living/M = user

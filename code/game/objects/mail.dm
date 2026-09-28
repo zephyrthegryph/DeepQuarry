@@ -135,7 +135,7 @@
 			B.set_recipient = TRUE
 		return TRUE
 
-DECLARE_INTERACTIONS(/obj/item/mail/blank, INTERACT_ALT(null, PROC_REF(interaction_alt)))
+EXTEND_INTERACTIONS(/obj/item/mail/blank, INTERACT_ALT(null, PROC_REF(interaction_alt)))
 
 /// Old click_alt.
 /obj/item/mail/blank/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
@@ -222,6 +222,13 @@ DECLARE_INTERACTIONS(/obj/item/mail/blank, INTERACT_ALT(null, PROC_REF(interacti
 			balloon_alert(user, "destination not set!")
 		return
 
+
+DECLARE_INTERACTIONS(/obj/item/mail, INTERACT_USE("Unwrap", PROC_REF(interaction_unwrap)))
+
+/// Old attack_self: open the letter.
+/obj/item/mail/proc/interaction_unwrap(mob/user, obj/item/held, datum/interaction/interaction)
+	unwrap(user)
+	return TRUE
 
 /obj/item/mail/proc/unwrap(mob/user)
 	if(recipient_ref)

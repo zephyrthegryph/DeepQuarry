@@ -171,6 +171,13 @@
 						assailant.visible_message(span_warning("[assailant] sits on [target]'s face!"))
 
 
+DECLARE_INTERACTIONS(/obj/item/grab, INTERACT_USE("Tighten grip", PROC_REF(interaction_tighten)))
+
+/// Old attack_self: upgrade the grab.
+/obj/item/grab/proc/interaction_tighten(mob/user, obj/item/held, datum/interaction/interaction)
+	s_click(hud)
+	return TRUE
+
 //Updating pixelshift, position and direction
 //Gets called on process, when the grab gets upgraded or the assailant moves
 /obj/item/grab/proc/adjust_position()

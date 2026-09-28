@@ -151,7 +151,6 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/blood, \
 			return TRUE
 	else
 		return TRUE
-	return TRUE
 
 /obj/item/reagent_containers/blood/prelabeled
 	name = "IV Pack"

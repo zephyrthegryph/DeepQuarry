@@ -56,7 +56,10 @@ dq_get_softfall
 dq_get_viewing_alt_appearances
 dq_get_was_bloodied
 dq_heat_path_ambient
+dq_interaction_click_params
 dq_interaction_reach
+dq_interaction_self_reach
+dq_interaction_set_click_params
 dq_latency_audit_check
 dq_latency_sweep_register
 dq_latency_sweep_unregister
@@ -139,6 +142,7 @@ holder_destroying
 interaction_candidates
 interaction_entry_candidates
 interaction_entry_done
+interaction_entry_restore_pass
 interaction_examine_lines
 interaction_menu_actions
 interaction_menu_can_reach

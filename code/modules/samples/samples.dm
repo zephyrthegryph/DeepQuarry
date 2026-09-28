@@ -57,8 +57,8 @@
 		name = "[name_prefix] [name_suffix]"
 	AddElement(/datum/element/sellable/research_sample)
 
-/// Old attack_hand: runs after the touch tried to pick it up.
-/obj/item/research_sample/after_attack_hand(mob/user)
+/// Old attack_hand: runs after the touch tried to pick it up (hand_pickup()).
+/obj/item/research_sample/hand_pickup(mob/user)
 	. = ..()
 	var/mob/living/M = user
 	if(!istype(M))

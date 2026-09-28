@@ -165,7 +165,6 @@ DECLARE_INTERACTIONS(/obj/item/melee/baton, \
 		return FALSE
 	else
 		return FALSE
-	return TRUE
 
 /obj/item/melee/baton/attack_self(mob/user)
 	. = ..(user)

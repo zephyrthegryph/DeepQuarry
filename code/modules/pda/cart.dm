@@ -340,6 +340,7 @@ REF_OWNED_LIST(/obj/item/cartridge, list("programs", "messenger_plugins"))
 REF_OWNED(/obj/item/cartridge/storage, "hold")
 
 DECLARE_INTERACTIONS(/obj/item/cartridge/storage, \
+	INTERACT_ITEM("Store", PROC_REF(interaction_store)), \
 	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
 )
@@ -350,6 +351,10 @@ DECLARE_INTERACTIONS(/obj/item/cartridge/storage, \
 		return FALSE
 	return TRUE
 
+
+/// Old attackby: put the item in the cartridge's storage.
+/obj/item/cartridge/storage/proc/interaction_store(mob/user, obj/item/W, datum/interaction/interaction)
+	return hold.attackby(W, user) ? TRUE : INTERACTION_HANDLED_PASS
 
 /obj/item/cartridge/storage/MouseDrop(obj/over_object)
 	if (hold.handle_mousedrop(usr, over_object))

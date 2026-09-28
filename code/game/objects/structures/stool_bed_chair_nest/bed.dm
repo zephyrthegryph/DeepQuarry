@@ -332,7 +332,7 @@ DECLARE_INTERACTIONS(/obj/item/roller, \
 DECLARE_INTERACTIONS(/obj/item/roller_holder, INTERACT_USE(null, PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/roller_holder/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/roller_holder/proc/interaction_self(mob/user, obj/item/self_item, datum/interaction/interaction)
 	if(!held)
 		to_chat(user, span_notice("The rack is empty."))
 		return TRUE

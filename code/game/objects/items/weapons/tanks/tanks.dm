@@ -265,11 +265,11 @@ DECLARE_INTERACTIONS(/obj/item/tank, INTERACT_USE(null, PROC_REF(interaction_sel
 	if (!(src.air_contents))
 		return TRUE
 	tgui_interact(user)
-	return TRUE
 
-// There's GOT to be a better way to do this
+	// There's GOT to be a better way to do this
 	if (src.proxyassembly.assembly)
 		src.proxyassembly.assembly.attack_self(user)
+	return TRUE
 
 /obj/item/tank/tgui_state(mob/user)
 	return GLOB.tgui_deep_inventory_state

@@ -128,8 +128,8 @@ DECLARE_INTERACTIONS(/obj/item/sticky_pad, \
 		icon_state = info ? "paper_words" : "paper"
 
 // Copied from duct tape.
-/// Old attack_hand: runs after the touch tried to pick it up.
-/obj/item/paper/sticky/after_attack_hand(mob/user)
+/// Old attack_hand: runs after the touch tried to pick it up (hand_pickup()).
+/obj/item/paper/sticky/hand_pickup(mob/user)
 	. = ..()
 	if(!istype(loc, /turf))
 		reset_persistence_tracking()

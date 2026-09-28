@@ -82,8 +82,8 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/syringe, \
 	update_icon()
 	return TRUE
 
-/// Old attack_hand: runs after the touch tried to pick it up.
-/obj/item/reagent_containers/syringe/after_attack_hand(mob/user)
+/// Old attack_hand: runs after the touch tried to pick it up (hand_pickup()).
+/obj/item/reagent_containers/syringe/hand_pickup(mob/user)
 	. = ..()
 	update_icon()
 

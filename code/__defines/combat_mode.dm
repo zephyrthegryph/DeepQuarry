@@ -41,6 +41,6 @@
 #define COMSIG_MOB_COMBAT_MODE_CHANGED "mob_combat_mode_changed"
 
 /// Selector clause: the actor's Use is the harm outcome (IS_HARMING).
-#define REQ_HARMING REQ_ON(PRED_ACTOR, /mob/proc/pred_harming, "combat mode is off")
+#define REQ_HARMING REQ_PROC(/proc/dq_pred_harming, "combat mode is off")
 /// Selector clause: the actor's Use is the help outcome (IS_HELPING).
-#define REQ_HELPING REQ_ON(PRED_ACTOR, /mob/proc/pred_helping, "combat mode is on")
+#define REQ_HELPING REQ_PROC(/proc/dq_pred_helping, "combat mode is on")

@@ -168,7 +168,6 @@
 		return INTERACTION_HANDLED_PASS
 	else
 		return FALSE
-	return INTERACTION_HANDLED_PASS
 
 /obj/item/coin/wirecutter_act(mob/user, obj/item/tool)
 	if(!string_attached)

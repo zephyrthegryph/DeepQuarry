@@ -122,7 +122,6 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/hypospray/vial, \
 		return FALSE
 	else
 		return FALSE
-	return TRUE
 
 /obj/item/reagent_containers/hypospray/vial/update_icon()
 	..()

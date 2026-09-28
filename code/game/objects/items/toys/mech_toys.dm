@@ -126,8 +126,8 @@ DECLARE_INTERACTIONS(/obj/item/toy/mecha, \
 		playsound(user, 'sound/mecha/mechstep.ogg', 20, TRUE)
 	return TRUE
 
-/// Old attack_hand: runs after the touch tried to pick it up.
-/obj/item/toy/mecha/after_attack_hand(mob/user)
+/// Old attack_hand: runs after the touch tried to pick it up (hand_pickup()).
+/obj/item/toy/mecha/hand_pickup(mob/user)
 	. = ..()
 	if(.)
 		return

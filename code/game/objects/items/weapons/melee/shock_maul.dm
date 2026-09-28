@@ -199,7 +199,6 @@ DECLARE_INTERACTIONS(/obj/item/melee/shock_maul, \
 		return FALSE
 	else
 		return FALSE
-	return TRUE
 
 /// Old attack_self.
 /obj/item/melee/shock_maul/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)

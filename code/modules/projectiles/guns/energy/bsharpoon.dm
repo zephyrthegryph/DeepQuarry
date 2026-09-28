@@ -52,7 +52,10 @@
 	update_fail_chance()
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_INTERACTIONS(/obj/item/bluespace_harpoon, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+DECLARE_INTERACTIONS(/obj/item/bluespace_harpoon, \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_USE("Change fire mode", PROC_REF(interaction_fire_mode)), \
+)
 
 /// Old attackby.
 /obj/item/bluespace_harpoon/proc/interaction_item(mob/living/user, obj/item/I, datum/interaction/interaction)
@@ -206,6 +209,11 @@ DECLARE_INTERACTIONS(/obj/item/bluespace_harpoon, INTERACT_ITEM(null, PROC_REF(i
 						to_chat(M, span_vnotice("You materialize around [living_user] as they end up in your [belly_dest]!"))
 
 
+
+/// Old attack_self: switch the fire mode.
+/obj/item/bluespace_harpoon/proc/interaction_fire_mode(mob/user, obj/item/held, datum/interaction/interaction)
+	change_fire_mode(user)
+	return TRUE
 
 /obj/item/bluespace_harpoon/verb/change_fire_mode(mob/user)
 	set name = "Change Fire Mode"

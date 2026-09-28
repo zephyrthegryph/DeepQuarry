@@ -324,18 +324,14 @@
 	// A gate or a converted hand interaction (I7) answered the touch: no pickup, as the old override's early return.
 	if(..())
 		return TRUE
-	. = hand_pickup(user)
-	after_attack_hand(user)
+	return hand_pickup(user)
 
 /**
- * Runs after an empty-hand touch that no interaction answered has tried to pick the item up
- * (whether or not it could). For reactions to being picked up by hand, the old
- * `attack_hand() { . = ..(); ... }` overrides: they are not interactions of their own.
+ * An empty-hand touch that no interaction answered: pick the item up (or use it, when
+ * anchored). Reactions to being picked up by hand override it as `. = ..()` then their
+ * own work, as the old `attack_hand() { . = ..(); ... }` overrides did: they are not
+ * interactions of their own.
  */
-/obj/item/proc/after_attack_hand(mob/user)
-	return
-
-/// An empty-hand touch's default: pick the item up (or use it, when anchored).
 /obj/item/proc/hand_pickup(mob/living/user)
 	if(anchored) // Start
 		if(hascall(src, "attack_self"))

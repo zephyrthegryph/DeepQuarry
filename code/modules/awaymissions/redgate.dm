@@ -234,8 +234,8 @@ DECLARE_INTERACTIONS(/obj/structure/redgate, INTERACT_HAND_UNGATED(null, PROC_RE
 	src.loc = src.start_pos
 	GLOB.global_announcer.autosay("[capitalize(laser_team)] flag returned by [user]!","Laserdome Announcer","Entertainment")
 
-/// Old attack_hand: runs after the touch tried to pick it up.
-/obj/item/laserdome_flag/after_attack_hand(mob/user)
+/// Old attack_hand: runs after the touch tried to pick it up (hand_pickup()).
+/obj/item/laserdome_flag/hand_pickup(mob/user)
 	. = ..()
 	var/mob/living/carbon/human/M = loc
 	var/grabbing_team
@@ -362,8 +362,8 @@ DECLARE_INTERACTIONS(/obj/structure/flag_base, INTERACT_ITEM(null, PROC_REF(inte
 	. = ..()
 	start_pos = src.loc	//save our starting location for later
 
-/// Old attack_hand: runs after the touch tried to pick it up.
-/obj/item/laserdome_hyperball/after_attack_hand(mob/user)
+/// Old attack_hand: runs after the touch tried to pick it up (hand_pickup()).
+/obj/item/laserdome_hyperball/hand_pickup(mob/user)
 	. = ..()
 	var/mob/living/carbon/human/M = loc
 	var/grabbing_team
