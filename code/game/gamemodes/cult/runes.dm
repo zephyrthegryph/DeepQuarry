@@ -174,7 +174,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 			to_chat(target, span_cult("Your blood pulses. Your head throbs. The world goes red. All at once you are aware of a horrible, horrible truth. The veil of reality has been ripped away and in the festering wound left behind something sinister takes root."))
 			to_chat(target, span_danger("And you were able to force it out of your mind. You now know the truth, there's something horrible out there, stop it and its minions at all costs."))
 
-		else spawn()
+		else spawn() // S7 keeps: waits on a prompt (tgui_alert; prompts, S10)
 			var/choice = tgui_alert(target,"Do you want to join the cult?","Submit to Nar'Sie",list("Resist","Submit"))
 			waiting_for_input[target] = 0
 			if(choice == "Submit") //choosing 'Resist' does nothing of course.
