@@ -1,3 +1,16 @@
+/// apply_wound_damage() tuning: spill into internal organs, dismemberment, overflow spread.
+#define LIMB_SPILL_SHARP_BRUTE 5
+#define LIMB_SPILL_BLUNT_BRUTE 10
+#define LIMB_SPILL_CHANCE 5
+#define LIMB_VITAL_DISMEMBER_RESIST 1.5
+#define LIMB_RUINED_DISMEMBER_MULT 3
+#define LIMB_DISMEMBER_PRIOR_FRACTION (1/3)
+#define LIMB_DISMEMBER_HIT_FRACTION 0.5
+#define LIMB_SPREAD_MIN_OVERFLOW 5
+#define LIMB_DISMEMBER_INELIGIBLE 0
+#define LIMB_DISMEMBER_SPARED 1
+#define LIMB_DISMEMBER_DROPPED 2
+
 /****************************************************
 				EXTERNAL ORGANS
 ****************************************************/
@@ -460,20 +473,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 	//This tells us how damaged we are prior to this attack.
 	var/prior_damage = get_trauma() + get_burn()
 
-	// High brute damage or sharp objects may damage internal organs
-	if(internal_organs && (get_trauma() >= max_damage || (((sharp && brute >= 5) || brute >= 10) && prob(5))))
-		// Damage an internal organ
-		if(internal_organs && internal_organs.len)
-			var/obj/item/organ/I = pick(internal_organs)
-			brute *= 0.5
-			// Blunt force bruises the organ; blades tear it; a narrow
-			// penetrating hit holes a hollow organ (solid ones tear).
-			var/spill_lesion = /datum/affliction/lesion/contusion
-			if(sharp)
-				spill_lesion = edge ? /datum/affliction/lesion/laceration : /datum/affliction/lesion/perforation
-			var/obj/item/organ/internal/spilled = I
-			if(istype(spilled))
-				spilled.apply_lesion_damage(brute, spill_lesion)
+	brute = spill_into_organs(brute, sharp, edge)
 
 	if(is_fractured() && brute)
 		jostle_bone(brute)
@@ -482,147 +482,138 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 	if(used_weapon)
 		add_autopsy_data("[used_weapon]", brute + burn)
 
-	var/can_cut = sharp
-
-	// If the limbs can break, make sure we don't exceed the maximum damage a limb can take before breaking
-	// Non-vital organs are limited to max_damage. You can't kill someone by bludeonging their arm all the way to 200 -- you can
-	// push them faster into paincrit though, as the additional damage is converted into shock.
-	var/brute_overflow = 0
-	var/burn_overflow = 0
-	if(is_damageable(brute + burn) || !CONFIG_GET(flag/limbs_can_break))
-		if(brute)
-			if(can_cut)
-				if(sharp && !edge)
-					create_wound( PIERCE, brute )
-				else
-					create_wound( CUT, brute )
-			else
-				create_wound( BRUISE, brute )
-		if(burn)
-			create_wound( BURN, burn )
-	else
-		//If we can't inflict the full amount of damage, spread the damage in other ways
-		//How much damage can we actually cause?
-		var/can_inflict = max_damage * CONFIG_GET(number/organ_health_multiplier) - (get_trauma() + get_burn())
-		var/spillover = 0
-		if(can_inflict)
-			if (brute > 0)
-				//Inflict all burte damage we can
-				if(can_cut)
-					if(sharp && !edge)
-						create_wound( PIERCE, min(brute,can_inflict) )
-					else
-						create_wound( CUT, min(brute,can_inflict) )
-				else
-					create_wound( BRUISE, min(brute,can_inflict) )
-				//How much more damage can we inflict
-				brute_overflow = max(0, brute - can_inflict)
-				//How much brute damage is left to inflict
-				spillover += max(0, brute - can_inflict)
-
-			can_inflict = max_damage * CONFIG_GET(number/organ_health_multiplier) - (get_trauma() + get_burn()) //Refresh the can_inflict var, so burn doesn't overload the limb if it is set to take both.
-
-			if (burn > 0 && can_inflict)
-				//Inflict all burn damage we can
-				create_wound(BURN, min(burn,can_inflict))
-				//How much burn damage is left to inflict
-				burn_overflow = max(0, burn - can_inflict)
-				spillover += burn_overflow
-
-		//If there is pain to dispense.
-		if(spillover && owner) // detached limbs have no owner (D14)
-			owner.shock_stage += spillover * CONFIG_GET(number/organ_damage_spillover_multiplier)
+	var/list/overflow = inflict_wounds(brute, burn, sharp, edge)
 
 	// sync the organ's damage with its wounds
-	src.update_damages()
+	update_damages()
 
-	//If limb took enough damage, try to cut or tear it off
-	if(owner && !is_stump())
-		/// <summary>
-		/// This determines if the limb is ELIGIBLE to be chopped off or not.
-		/// It checks if it's amputatable, if the config setting is set, then continues down the proc.
-		/// </summary>
-		if(!cannot_amputate && CONFIG_GET(flag/limbs_can_break))
-			// By default, limbs aren't knocked off unless certain criteria is met.
-			var/destruction_eligible = FALSE
-
-			// These are adjusted in case we get hit with a projectile.
-			// Projectiles have suffered MASSIVE damage creep and as a result, throw ALL the numbers off.
-			// This code was - primarily - intended for melee weapons, which have MUCH lower numbers.
-			var/modifed_brute = brute
-			var/modifed_burn = burn
-
-			// Let's calculate how INJURED our limb is accounting for AFTER the damage we just took. Determines the chance the next attack will take our limb off!
-			var/damage_factor = ((get_trauma() + get_burn())/(max_damage*CONFIG_GET(number/organ_health_multiplier)))*100
-			if(get_trauma() > max_damage || get_burn() > max_damage) //This is in case we go OVER our max. This doesn't EVER happen except on VITAL organs.
-				damage_factor = 100
-			// Max_damage of 80 and trauma of 80? || Factor = 100 Max_damage of 80 and trauma of 40? Factor = 50 || Max_damage of 80 and trauma of 5? Factor = 5
-			// This lowers our chances of having our limb removed when it has less damage. The more damaged the limb, the higher the chance it falls off!
-
-			//Check edge eligibility
-			var/edge_eligible = FALSE
-			if(edge)
-				if(istype(used_weapon,/obj/item))
-					var/obj/item/W = used_weapon
-					if(W.w_class >= w_class)
-						edge_eligible = 1
-				else
-					edge_eligible = 1
-
-			// Due to the afformentioned damage creep, projectile damage is halved.
-			// UNLESS The projectile does over the limb's max damage in the first place, then you're in danger of it going bye bye.
-			if(projectile && (brute + burn) < max_damage)
-				modifed_brute = modifed_brute/2
-				modifed_burn = modifed_burn/2
-
-			// Vital organs have a lower chance of getting causing removals AND require much higher damaging attacks.
-			// For reference, the head has 75 max_damage.
-			if(vital)
-				modifed_brute = modifed_brute/1.5
-				modifed_burn = modifed_burn/1.5
-
-			// So, limbs have this issue where "If my limb is already at max damage, it doesn't matter how much more damage it takes, it won't go up"
-			// While that is FINE, there should be some benefit to repeatedly hitting the same limb when it's aleady maxed out. Thus, time comes in.
-			if(prior_damage >= max_damage)
-				modifed_brute = modifed_brute*3
-				modifed_burn = modifed_burn*3
-
-			// Our limb has OVER 1/3 it's max health in damage already, we are eligible for removal.
-			if(prior_damage > max_damage/3)
-				destruction_eligible = TRUE
-			// If an attack is doing OVER half our max damage in ONE hit, we are eligible for removal.
-			else if((modifed_brute + modifed_burn) > max_damage/2)
-				destruction_eligible = TRUE
-
-			if(destruction_eligible)
-				if(nonsolid && damage >= max_damage)
-					droplimb(TRUE, DROPLIMB_EDGE)
-				else if (robotic >= ORGAN_NANOFORM && damage >= max_damage)
-					droplimb(TRUE, DROPLIMB_BURN)
-
-				//Hit with a sharp object.
-				else if(edge_eligible && modifed_brute >= max_damage / DROPLIMB_THRESHOLD_EDGE && prob(modifed_brute*0.15) && prob(damage_factor))
-					droplimb(FALSE, DROPLIMB_EDGE)
-
-				//Hit with burn. Such as by getting shocked by a door.
-				else if((modifed_burn >= max_damage / DROPLIMB_THRESHOLD_DESTROY) && prob(modifed_burn*0.75) && prob(damage_factor))
-					droplimb(FALSE, DROPLIMB_BURN)
-
-				//These are the 'Hit with a big, blunt weapon.' Sharp objects don't get to do this. Walls do enough to do this if someone gets thrown against it enough times.
-				else if((!edge_eligible && modifed_brute >= max_damage / DROPLIMB_THRESHOLD_DESTROY && prob(modifed_brute*0.25)) && prob(damage_factor))
-					droplimb(FALSE, DROPLIMB_BLUNT)
-
-				else if(spread_dam && owner && parent && (brute_overflow || burn_overflow) && (brute_overflow >= 5 || burn_overflow >= 5) && !permutation) //No infinite damage loops.
-					var/brute_third = brute_overflow * 0.33
-					var/burn_third = burn_overflow * 0.33
-					if(children && children.len)
-						var/brute_on_children = brute_third / children.len
-						var/burn_on_children = burn_third / children.len
-						for(var/obj/item/organ/external/C in children)
-							if(!C.is_stump())
-								C.apply_wound_damage(brute_on_children, burn_on_children, FALSE, FALSE, null, forbidden_limbs, 1) //Splits the damage to each individual 'child', incase multiple exist.
-					parent.apply_wound_damage(brute_third, burn_third, FALSE, FALSE, null, forbidden_limbs, 1)
+	//If limb took enough damage, try to cut or tear it off.
+	// A limb that was eligible to come off but held spreads what it couldn't take.
+	if(owner && !is_stump() && try_dismember(brute, burn, edge, used_weapon, projectile, prior_damage) == LIMB_DISMEMBER_SPARED && overflow && !permutation)
+		spread_overflow(overflow[1], overflow[2], forbidden_limbs)
+	if(QDELETED(src))
+		return
 	return update_icon()
+
+/// High brute or a sharp hit may carry into one of the limb's internal organs. Blunt force
+/// bruises it, blades tear it, a narrow penetrating hit holes it. Returns the brute left for
+/// the limb itself (halved when an organ took some).
+/obj/item/organ/external/proc/spill_into_organs(brute, sharp, edge)
+	if(!length(internal_organs))
+		return brute
+	if(!(get_trauma() >= max_damage || (((sharp && brute >= LIMB_SPILL_SHARP_BRUTE) || brute >= LIMB_SPILL_BLUNT_BRUTE) && prob(LIMB_SPILL_CHANCE))))
+		return brute
+	brute *= 0.5
+	var/obj/item/organ/internal/spilled = pick(internal_organs)
+	if(istype(spilled))
+		var/spill_lesion = /datum/affliction/lesion/contusion
+		if(sharp)
+			spill_lesion = edge ? /datum/affliction/lesion/laceration : /datum/affliction/lesion/perforation
+		spilled.apply_lesion_damage(brute, spill_lesion)
+	return brute
+
+/// The wound a brute hit of this kind makes.
+/obj/item/organ/external/proc/brute_wound_type(sharp, edge)
+	if(!sharp)
+		return BRUISE
+	return edge ? CUT : PIERCE
+
+/// Turn the hit into wounds. A limb that can't take it all (limbs_can_break) takes what it can;
+/// the rest becomes shock. Returns list(brute_overflow, burn_overflow), or null with none.
+/obj/item/organ/external/proc/inflict_wounds(brute, burn, sharp, edge)
+	if(is_damageable(brute + burn) || !CONFIG_GET(flag/limbs_can_break))
+		if(brute)
+			create_wound(brute_wound_type(sharp, edge), brute)
+		if(burn)
+			create_wound(BURN, burn)
+		return null
+	// Non-vital organs are limited to max_damage: you can't kill someone by bludgeoning their
+	// arm to 200, but the excess pushes them into paincrit as shock.
+	var/limb_cap = max_damage * CONFIG_GET(number/organ_health_multiplier)
+	var/can_inflict = limb_cap - (get_trauma() + get_burn())
+	if(!can_inflict)
+		return null
+	var/brute_overflow = 0
+	var/burn_overflow = 0
+	if(brute > 0)
+		create_wound(brute_wound_type(sharp, edge), min(brute, can_inflict))
+		brute_overflow = max(0, brute - can_inflict)
+	can_inflict = limb_cap - (get_trauma() + get_burn()) // so burn doesn't overload a limb taking both
+	if(burn > 0 && can_inflict)
+		create_wound(BURN, min(burn, can_inflict))
+		burn_overflow = max(0, burn - can_inflict)
+	var/spillover = brute_overflow + burn_overflow
+	if(!spillover)
+		return null
+	if(owner) // detached limbs have no owner (D14)
+		owner.shock_stage += spillover * CONFIG_GET(number/organ_damage_spillover_multiplier)
+	return list(brute_overflow, burn_overflow)
+
+/// Chance-based dismemberment after a hit. Returns LIMB_DISMEMBER_INELIGIBLE (the hit can't take
+/// it off), LIMB_DISMEMBER_SPARED (it could, but held) or LIMB_DISMEMBER_DROPPED.
+/obj/item/organ/external/proc/try_dismember(brute, burn, edge, used_weapon, projectile, prior_damage)
+	if(cannot_amputate || !CONFIG_GET(flag/limbs_can_break))
+		return LIMB_DISMEMBER_INELIGIBLE
+	var/limb_cap = max_damage * CONFIG_GET(number/organ_health_multiplier)
+	// How injured the limb is after this hit: the more damaged, the likelier it comes off.
+	var/damage_factor = ((get_trauma() + get_burn()) / limb_cap) * 100
+	if(get_trauma() > max_damage || get_burn() > max_damage) // only vital limbs go over
+		damage_factor = 100
+
+	var/edge_eligible = FALSE
+	if(edge)
+		var/obj/item/W = used_weapon
+		edge_eligible = !istype(W) || W.w_class >= w_class
+
+	// The thresholds were tuned for melee. Projectiles creep, so they count half unless the one
+	// hit exceeds the limb; vital limbs resist; hammering an already-ruined limb counts triple.
+	var/modified_brute = brute
+	var/modified_burn = burn
+	if(projectile && (brute + burn) < max_damage)
+		modified_brute /= 2
+		modified_burn /= 2
+	if(vital)
+		modified_brute /= LIMB_VITAL_DISMEMBER_RESIST
+		modified_burn /= LIMB_VITAL_DISMEMBER_RESIST
+	if(prior_damage >= max_damage)
+		modified_brute *= LIMB_RUINED_DISMEMBER_MULT
+		modified_burn *= LIMB_RUINED_DISMEMBER_MULT
+
+	// Eligible when already a third ruined, or when one hit does over half the limb.
+	if(prior_damage <= max_damage * LIMB_DISMEMBER_PRIOR_FRACTION && (modified_brute + modified_burn) <= max_damage * LIMB_DISMEMBER_HIT_FRACTION)
+		return LIMB_DISMEMBER_INELIGIBLE
+
+	if(nonsolid && damage >= max_damage)
+		droplimb(TRUE, DROPLIMB_EDGE)
+	else if(robotic >= ORGAN_NANOFORM && damage >= max_damage)
+		droplimb(TRUE, DROPLIMB_BURN)
+	else if(edge_eligible && modified_brute >= max_damage / DROPLIMB_THRESHOLD_EDGE && prob(modified_brute * 0.15) && prob(damage_factor))
+		droplimb(FALSE, DROPLIMB_EDGE) // a sharp object
+	else if(modified_burn >= max_damage / DROPLIMB_THRESHOLD_DESTROY && prob(modified_burn * 0.75) && prob(damage_factor))
+		droplimb(FALSE, DROPLIMB_BURN) // burned off, e.g. a shocking door
+	else if(!edge_eligible && modified_brute >= max_damage / DROPLIMB_THRESHOLD_DESTROY && prob(modified_brute * 0.25) && prob(damage_factor))
+		droplimb(FALSE, DROPLIMB_BLUNT) // a big blunt weapon (or a wall, enough times)
+	else
+		return LIMB_DISMEMBER_SPARED
+	return LIMB_DISMEMBER_DROPPED
+
+/// Damage a maxed limb couldn't take spreads a third to its children and a third to its parent
+/// (spread_dam limbs only). The spread hits are permutations, so they never spread again.
+/obj/item/organ/external/proc/spread_overflow(brute_overflow, burn_overflow, list/forbidden_limbs)
+	if(!spread_dam || !owner || !parent || (brute_overflow < LIMB_SPREAD_MIN_OVERFLOW && burn_overflow < LIMB_SPREAD_MIN_OVERFLOW))
+		return
+	var/brute_third = brute_overflow * 0.33
+	var/burn_third = burn_overflow * 0.33
+	var/obj/item/organ/external/up = parent
+	if(length(children))
+		var/list/targets = children.Copy() // a child can come off mid-loop
+		var/brute_on_children = brute_third / targets.len
+		var/burn_on_children = burn_third / targets.len
+		for(var/obj/item/organ/external/C as anything in targets)
+			if(!QDELETED(C) && !C.is_stump())
+				C.apply_wound_damage(brute_on_children, burn_on_children, FALSE, FALSE, null, forbidden_limbs, TRUE)
+	if(!QDELETED(up))
+		up.apply_wound_damage(brute_third, burn_third, FALSE, FALSE, null, forbidden_limbs, TRUE)
 
 /// Body-internal: heal this limb's wounds directly. Only for a limb that is
 /// NOT in a body (repairing a detached prosthetic on the bench); limbs in a
@@ -1726,3 +1717,15 @@ Note that amputating the affected organ does in fact remove the infection from t
 		H.update_icons_body()
 	else
 		victim.update_icons()
+
+#undef LIMB_SPILL_SHARP_BRUTE
+#undef LIMB_SPILL_BLUNT_BRUTE
+#undef LIMB_SPILL_CHANCE
+#undef LIMB_VITAL_DISMEMBER_RESIST
+#undef LIMB_RUINED_DISMEMBER_MULT
+#undef LIMB_DISMEMBER_PRIOR_FRACTION
+#undef LIMB_DISMEMBER_HIT_FRACTION
+#undef LIMB_SPREAD_MIN_OVERFLOW
+#undef LIMB_DISMEMBER_INELIGIBLE
+#undef LIMB_DISMEMBER_SPARED
+#undef LIMB_DISMEMBER_DROPPED
