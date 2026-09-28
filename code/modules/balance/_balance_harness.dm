@@ -105,7 +105,7 @@
 	RETURN_TYPE(/obj/item/organ/internal/brain)
 	if(QDELETED(H))
 		return null
-	return H.internal_organs_by_name[O_BRAIN]
+	return H.organ_in(O_BRAIN)
 
 /// Everything wrong with a mob, as one number: injury load in every category
 /// plus oxygen debt. Digestion may land as any of them.

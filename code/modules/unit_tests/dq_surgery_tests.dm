@@ -157,7 +157,7 @@
 /datum/unit_test/dq_surgery_organ_steps_match_lesions/Run()
 	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/liver = H.internal_organs_by_name[O_LIVER]
+	var/obj/item/organ/internal/liver = H.organ_in(O_LIVER)
 	TEST_ASSERT_NOTNULL(liver, "no liver")
 	H.injure(INJURY_CUT, 10, liver, affliction = /datum/affliction/lesion/laceration, flags = INJURE_IGNORE_RESISTANCE)
 	H.injure(INJURY_CUT, 10, liver, affliction = /datum/affliction/lesion/necrosis, flags = INJURE_IGNORE_RESISTANCE)
@@ -177,8 +177,8 @@
 /datum/unit_test/dq_surgery_organ_repair_is_targeted/Run()
 	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/heart = H.internal_organs_by_name[O_HEART]
-	var/obj/item/organ/internal/lungs = H.internal_organs_by_name[O_LUNGS]
+	var/obj/item/organ/internal/heart = H.organ_in(O_HEART)
+	var/obj/item/organ/internal/lungs = H.organ_in(O_LUNGS)
 	H.injure(INJURY_BLUNT, 10, heart, affliction = /datum/affliction/lesion/contusion, flags = INJURE_IGNORE_RESISTANCE)
 	H.injure(INJURY_BLUNT, 10, lungs, affliction = /datum/affliction/lesion/contusion, flags = INJURE_IGNORE_RESISTANCE)
 	_surgery_perform(/datum/surgical_step/treat/organ/suture, surgeon, H, BP_TORSO, null, heart)
@@ -191,7 +191,7 @@
 /datum/unit_test/dq_surgery_organ_beyond_repair_heals_nothing/Run()
 	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/brain = H.organ_in(O_BRAIN)
 	TEST_ASSERT_NOTNULL(brain, "no brain")
 	H.injure(INJURY_CUT, 10, brain, affliction = /datum/affliction/lesion/laceration, flags = INJURE_IGNORE_RESISTANCE)
 	brain.status |= ORGAN_DEAD
@@ -256,7 +256,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 
 	// A nicked organ is a lesion.
-	var/obj/item/organ/internal/heart = H.internal_organs_by_name[O_HEART]
+	var/obj/item/organ/internal/heart = H.organ_in(O_HEART)
 	TEST_ASSERT_NULL(heart.find_lesion(/datum/affliction/lesion/laceration), "the heart starts whole")
 	_surgery_fail(/datum/surgical_step/treat/organ/suture, surgeon, H, BP_TORSO, null, heart)
 	TEST_ASSERT_NOTNULL(heart.find_lesion(/datum/affliction/lesion/laceration), "a slipped suture lacerates the organ")
@@ -323,7 +323,7 @@
 /datum/unit_test/dq_surgery_organ_reinsertion_keeps_afflictions/Run()
 	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/liver = H.internal_organs_by_name[O_LIVER]
+	var/obj/item/organ/internal/liver = H.organ_in(O_LIVER)
 	H.injure(INJURY_CUT, 10, liver, affliction = /datum/affliction/lesion/laceration, flags = INJURE_IGNORE_RESISTANCE)
 	var/datum/affliction/lesion/laceration/L = liver.find_lesion(/datum/affliction/lesion/laceration)
 	TEST_ASSERT_NOTNULL(L, "laceration didn't form")
@@ -332,7 +332,7 @@
 	var/zone = liver.parent_organ
 	_surgery_perform(/datum/surgical_step/organ/extract, surgeon, H, zone, null, liver)
 	TEST_ASSERT_NULL(liver.owner, "the liver is out")
-	TEST_ASSERT_NULL(H.internal_organs_by_name[O_LIVER], "the patient has no liver")
+	TEST_ASSERT_NULL(H.organ_in(O_LIVER), "the patient has no liver")
 	TEST_ASSERT(!(L in H.get_afflictions()), "the lesion left the body with the liver")
 	TEST_ASSERT(!QDELETED(L), "the lesion travels with the liver")
 	TEST_ASSERT_EQUAL(L.location, liver, "the lesion is still on the liver")
@@ -340,7 +340,7 @@
 
 	_surgery_perform(/datum/surgical_step/organ/insert, surgeon, H, zone, liver)
 	TEST_ASSERT_EQUAL(liver.owner, H, "the liver is back in")
-	TEST_ASSERT_EQUAL(H.internal_organs_by_name[O_LIVER], liver, "the patient has their liver again")
+	TEST_ASSERT_EQUAL(H.organ_in(O_LIVER), liver, "the patient has their liver again")
 	TEST_ASSERT(L in H.get_afflictions(), "the lesion came back with the liver")
 	TEST_ASSERT_EQUAL(L.owner, H, "the lesion belongs to the patient again")
 
@@ -528,7 +528,7 @@
 
 /datum/unit_test/dq_synaptizine_od_rescues_brain_with_alkysine/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/brain/B = H.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/B = H.organ_in(O_BRAIN)
 
 	// 70% damage: in the salvage band, above the 60% swelling floor.
 	dq_test_set_organ_damage(B, B.max_damage * 0.7)
@@ -559,7 +559,7 @@
 
 /datum/unit_test/dq_brain_swelling_blunts_treatment/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/brain/B = H.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/B = H.organ_in(O_BRAIN)
 	dq_test_set_organ_damage(B, B.max_damage * 0.7)
 	var/start = B.damage
 
@@ -575,7 +575,7 @@
 
 /datum/unit_test/dq_brain_terminal_zone_is_unsavable/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/brain/B = H.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/B = H.organ_in(O_BRAIN)
 	dq_test_set_organ_damage(B, B.max_damage * 0.92)  // past terminal floor
 	var/start = B.damage
 
@@ -799,7 +799,7 @@
 
 /datum/unit_test/dq_brain_decay_past_threshold/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/brain/B = H.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/B = H.organ_in(O_BRAIN)
 	TEST_ASSERT_NOTNULL(B, "no brain organ")
 
 	// Push the brain to 70% damage (above the 60% salvage threshold).
@@ -828,7 +828,7 @@
 
 /datum/unit_test/dq_brain_stable_mid_range/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/brain/B = H.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/B = H.organ_in(O_BRAIN)
 
 	// 40% damage: above natural regeneration, below swelling.
 	dq_test_set_organ_damage(B, B.max_damage * 0.4)
@@ -846,7 +846,7 @@
 
 /datum/unit_test/dq_brain_natural_heal_below_floor/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/brain/B = H.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/B = H.organ_in(O_BRAIN)
 
 	// 15% damage: below the 20% natural-heal ceiling.
 	dq_test_set_organ_damage(B, B.max_damage * 0.15)
@@ -864,7 +864,7 @@
 
 /datum/unit_test/dq_brain_natural_heal_floors_at_zero/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/brain/B = H.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/B = H.organ_in(O_BRAIN)
 	dq_test_set_organ_damage(B, 0.5)  // tiny damage, less than one heal tick
 
 	for(var/i in 1 to 10)

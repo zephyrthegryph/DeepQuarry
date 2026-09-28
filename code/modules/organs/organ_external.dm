@@ -67,7 +67,6 @@
 	// Wounds are /datum/affliction/wound located on this limb: see get_wounds() (body/parts/limb.dm).
 	var/obj/item/organ/external/parent // Master-limb.
 	var/list/children                  // Sub-limbs.
-	var/list/internal_organs           // Internal organs of this body part
 	var/sabotaged = 0                  // If a prosthetic limb is emagged, it will detonate when it fails.
 	var/list/implants                  // Currently implanted objects.
 	var/organ_rel_size = 25            // Relative size of the organ.
@@ -497,12 +496,12 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 /// bruises it, blades tear it, a narrow penetrating hit holes it. Returns the brute left for
 /// the limb itself (halved when an organ took some).
 /obj/item/organ/external/proc/spill_into_organs(brute, sharp, edge)
-	if(!length(internal_organs))
+	if(!length(held_organs()))
 		return brute
 	if(!(get_trauma() >= max_damage || (((sharp && brute >= LIMB_SPILL_SHARP_BRUTE) || brute >= LIMB_SPILL_BLUNT_BRUTE) && prob(LIMB_SPILL_CHANCE))))
 		return brute
 	brute *= 0.5
-	var/obj/item/organ/internal/spilled = pick(internal_organs)
+	var/obj/item/organ/internal/spilled = pick(held_organs())
 	if(istype(spilled))
 		var/spill_lesion = /datum/affliction/lesion/contusion
 		if(sharp)
@@ -738,7 +737,7 @@ This function completely restores a damaged organ to perfect condition.
 	recalc_integrity()
 
 	// handle internal organs
-	for(var/obj/item/organ/current_organ in internal_organs)
+	for(var/obj/item/organ/current_organ in held_organs())
 		current_organ.rejuvenate(ignore_prosthetic_prefs)
 
 	// remove embedded objects and drop them on the floor
@@ -929,7 +928,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 	if(. >= 2 && antibiotics < ANTIBIO_NORM) //INFECTION_LEVEL_TWO
 		//spread the infection to internal organs
 		var/obj/item/organ/target_organ = null	//make internal organs become infected one at a time instead of all at once
-		for (var/obj/item/organ/I in internal_organs)
+		for (var/obj/item/organ/I in held_organs())
 			if (I.germ_level > 0 && I.germ_level < min(germ_level, INFECTION_LEVEL_TWO))	//once the organ reaches whatever we can give it, or level two, switch to a different one
 				if (!target_organ || I.germ_level > target_organ.germ_level)	//choose the organ with the highest germ_level
 					target_organ = I
@@ -937,7 +936,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 		if (!target_organ)
 			//figure out which organs we can spread germs to and pick one at random
 			var/list/candidate_organs = list()
-			for (var/obj/item/organ/I in internal_organs)
+			for (var/obj/item/organ/I in held_organs())
 				if (I.germ_level < germ_level)
 					candidate_organs |= I
 			if (candidate_organs.len)
@@ -1588,9 +1587,9 @@ Note that amputating the affected organ does in fact remove the infection from t
 	var/trauma = get_trauma()
 	if(trauma + force < min_broken_damage/5)	//no papercuts moving bones
 		return
-	if(LAZYLEN(internal_organs) && prob(trauma + force) && !owner.transforming)
+	if(length(held_organs()) && prob(trauma + force) && !owner.transforming)
 		owner.custom_pain("A piece of bone in your [encased ? encased : name] moves painfully!", 50)
-		var/obj/item/organ/internal/I = pick(internal_organs)
+		var/obj/item/organ/internal/I = pick(held_organs())
 		if(istype(I))
 			I.apply_lesion_damage(rand(3,5), /datum/affliction/lesion/laceration)
 

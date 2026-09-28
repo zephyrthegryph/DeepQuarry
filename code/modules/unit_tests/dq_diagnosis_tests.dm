@@ -20,7 +20,7 @@
 /datum/unit_test/proc/_diagnosis_patient()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	H.injure(INJURY_CUT, 25, BP_L_ARM, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
-	var/obj/item/organ/internal/liver = H.internal_organs_by_name[O_LIVER]
+	var/obj/item/organ/internal/liver = H.organ_in(O_LIVER)
 	H.injure(INJURY_BLUNT, liver.max_damage * 0.4, liver, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	return H
 

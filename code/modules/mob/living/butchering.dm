@@ -69,8 +69,8 @@
 
 	if(butchery_drops_organs)
 		spawn_butchery_organs()
-	if(LAZYLEN(internal_organs) && butchery_drops_organs)
-		for(var/obj/item/organ/OR in internal_organs.Copy())
+	if(length(internal_organ_list()) && butchery_drops_organs)
+		for(var/obj/item/organ/OR in internal_organ_list())
 			OR.removed()
 
 	if(!ckey)

@@ -20,14 +20,14 @@
 
 /// Test helper: take `H`'s brain out. Returns the organ.
 /proc/dq_test_remove_brain(mob/living/carbon/human/H)
-	var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/brain = H.organ_in(O_BRAIN)
 	brain.removed()
 	return brain
 
 /// Test helper: a human with an empty brain slot, ready for a transplant.
 /proc/dq_test_brainless_recipient(datum/unit_test/test)
 	var/mob/living/carbon/human/H = test.allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/brain/old = H.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/old = H.organ_in(O_BRAIN)
 	old.removed()
 	qdel(old)
 	return H
@@ -199,7 +199,7 @@
 /datum/unit_test/dq_mind_mmi_brain_damage_continuity/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	dq_test_give_mind(H, "Damaged Brain")
-	var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/brain = H.organ_in(O_BRAIN)
 	dq_test_injure_organ(H, brain, 30, /datum/affliction/lesion/contusion)
 	var/datum/affliction/lesion/L = brain.find_lesion(/datum/affliction/lesion/contusion)
 	TEST_ASSERT_NOTNULL(L, "setup: the brain should carry a contusion")
@@ -239,7 +239,7 @@
 /datum/unit_test/dq_mind_brain_death_gating/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/shockpaddles/paddles = allocate(/obj/item/shockpaddles)
-	var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/brain = H.organ_in(O_BRAIN)
 	brain.reset_defib_window()
 
 	dq_test_set_organ_damage(brain, brain.max_damage - 1)

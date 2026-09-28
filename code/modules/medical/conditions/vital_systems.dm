@@ -257,7 +257,7 @@
 	var/mob/living/carbon/human/H = owner
 	if(!istype(H))
 		return FALSE
-	var/obj/item/organ/internal/lungs = H.internal_organs_by_name?[O_LUNGS]
+	var/obj/item/organ/internal/lungs = H.organ_in(O_LUNGS)
 	if(!lungs)
 		return FALSE
 	var/datum/affliction/lesion/perforation/P = lungs.find_lesion(/datum/affliction/lesion/perforation)
@@ -412,7 +412,7 @@
 	if(!is_shockable())
 		return FALSE
 	var/mob/living/carbon/human/H = owner
-	var/obj/item/organ/internal/heart/heart = istype(H) ? H.internal_organs_by_name?[O_HEART] : null
+	var/obj/item/organ/internal/heart/heart = istype(H) ? H.organ_in(O_HEART) : null
 	if(!heart || heart.is_broken())
 		return FALSE
 	set_rhythm(CARDIAC_RHYTHM_SINUS)
@@ -502,7 +502,7 @@
 
 /// Push the heart into `rhythm` (only ever toward a worse rhythm).
 /mob/living/carbon/human/proc/induce_arrhythmia(rhythm = CARDIAC_RHYTHM_VF)
-	if(!should_have_organ(O_HEART) || !internal_organs_by_name?[O_HEART])
+	if(!should_have_organ(O_HEART) || !organ_in(O_HEART))
 		return null
 	var/datum/affliction/cardiac_arrhythmia/A = cardiac_arrhythmia()
 	if(A)

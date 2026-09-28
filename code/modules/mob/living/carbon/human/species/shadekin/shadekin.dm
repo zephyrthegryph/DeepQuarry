@@ -142,7 +142,7 @@
 		for(var/obj/item/organ/external/bp in H.organs)
 			bp.bandage()
 			bp.disinfect()
-		for(var/obj/item/organ/internal/I in H.internal_organs) //other wise their organs stay mush
+		for(var/obj/item/organ/internal/I in H.internal_organ_list()) //other wise their organs stay mush
 			H.mend(TREAT_RESTORATION, I.max_damage, I)
 			I.restore_status()
 			if(I.organ_tag == O_EYES)

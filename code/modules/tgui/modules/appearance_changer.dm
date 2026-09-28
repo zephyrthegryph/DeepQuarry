@@ -893,7 +893,7 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 /datum/tgui_module/appearance_changer/proc/get_genders(mob/living/carbon/human/target)
 	var/datum/species/S = target.species
 	var/list/possible_genders = S.genders
-	if(!target.internal_organs_by_name["cell"])
+	if(!target.organ_in("cell"))
 		return possible_genders
 	possible_genders = possible_genders.Copy()
 	possible_genders |= NEUTER

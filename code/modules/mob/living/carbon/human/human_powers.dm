@@ -176,7 +176,7 @@
 		// Bust it
 		src.death()
 
-		for(var/obj/item/organ/internal/diona/Org in internal_organs.Copy()) // Remove Nymph organs. (A copy: deleting one uncaches it.)
+		for(var/obj/item/organ/internal/diona/Org in internal_organ_list()) // Remove Nymph organs. (a fresh list from the organ slots)
 			qdel(Org)
 
 		// Purge the diona verbs.
@@ -222,7 +222,7 @@
 			else
 				output += "[EO.name] - " + span_green("OK") + "\n"
 
-	for(var/obj/item/organ/IO in internal_organs)
+	for(var/obj/item/organ/IO in internal_organ_list())
 		if(IO.is_assisted())
 			if(IO.damage)
 				output += "[IO.name] - " + span_warning("[IO.damage > 10 ? "Heavy Damage" : "Light Damage"]") + "\n"
@@ -301,7 +301,7 @@
 /mob/living/carbon/human/proc/regenerate_human_done()
 	adjust_nutrition(-200)
 
-	for(var/obj/item/organ/internal/I in internal_organs)
+	for(var/obj/item/organ/internal/I in internal_organ_list())
 		if(I.is_robotic()) // No free robofix.
 			continue
 		if(I.damage > 0)
@@ -330,7 +330,7 @@
 			injure(INJURY_PAIN, agony_to_apply, O.organ_tag)
 
 	for(var/organtype in species.has_organ) // Replace completely missing internal organs. -After- external ones, so they all should exist.
-		if(!src.internal_organs_by_name[organtype])
+		if(!src.organ_in(organtype))
 			var/organpath = species.has_organ[organtype]
 			var/obj/item/organ/Int = new organpath(src, TRUE)
 

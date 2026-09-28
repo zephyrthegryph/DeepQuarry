@@ -365,7 +365,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/external/head, INTERACT_ITEM(null, PROC_REF(
 	var/should_have_eyes = owner.should_have_organ(O_EYES)
 	var/has_eye_sprites = owner.species.appearance_flags & HAS_EYE_COLOR
 	if((should_have_eyes || has_eye_sprites) && eye_icon)
-		var/obj/item/organ/internal/eyes/eyes = owner.internal_organs_by_name[O_EYES]
+		var/obj/item/organ/internal/eyes/eyes = owner.organ_in(O_EYES)
 		var/icon/eyes_icon = new/icon(eye_icon_location, eye_icon)
 		//Do we have a special eye icon with its own coloration? Remove
 		if(!findtext(eye_icon, regex("-colored")))

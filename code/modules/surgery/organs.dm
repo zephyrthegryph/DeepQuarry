@@ -36,7 +36,7 @@
 
 /datum/surgical_step/organ/extract/proc/removable_organs(mob/living/carbon/human/target, obj/item/organ/external/part)
 	. = list()
-	for(var/obj/item/organ/internal/I as anything in part.internal_organs)
+	for(var/obj/item/organ/internal/I as anything in part.held_organs())
 		if(I.owner == target)
 			.[I.name] = I
 
@@ -74,7 +74,7 @@
 	if((part.is_robotic()) && !(O.is_robotic()))
 		to_chat(user, span_warning("There are only sockets and mounts inside \the [part.name]; nothing \the [O] could be seated on."))
 		return SURGERY_REFUSED
-	if(target.internal_organs_by_name[O.organ_tag])
+	if(target.organ_in(O.organ_tag))
 		to_chat(user, span_warning("There's already something sitting where \the [O] would go."))
 		return SURGERY_REFUSED
 	if(istype(O, /obj/item/organ/internal/malignant))
@@ -90,7 +90,7 @@
 
 /datum/surgical_step/organ/insert/perform(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/work_target)
 	var/obj/item/organ/internal/O = tool
-	if(!istype(O) || target.internal_organs_by_name[O.organ_tag])
+	if(!istype(O) || target.organ_in(O.organ_tag))
 		return
 	if(istype(O, /obj/item/organ/internal/malignant))
 		O.parent_organ = part.organ_tag
@@ -120,14 +120,14 @@
 	complication_affliction = /datum/affliction/lesion/laceration
 
 /datum/surgical_step/organ/reconnect/is_needed(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool)
-	for(var/obj/item/organ/internal/I as anything in part.internal_organs)
+	for(var/obj/item/organ/internal/I as anything in part.held_organs())
 		if(I.status & ORGAN_CUT_AWAY)
 			return TRUE
 	return FALSE
 
 /datum/surgical_step/organ/reconnect/choose_target(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool)
 	var/list/choices = list()
-	for(var/obj/item/organ/internal/I as anything in part.internal_organs)
+	for(var/obj/item/organ/internal/I as anything in part.held_organs())
 		if(I.status & ORGAN_CUT_AWAY)
 			choices[I.name] = I
 	if(!length(choices))
@@ -168,7 +168,7 @@
 	if(!target.should_have_organ(O_BRAIN))
 		to_chat(user, span_warning("You search \the [part.name], but there's no cradle for a brain anywhere in it."))
 		return SURGERY_REFUSED
-	if(target.internal_organs_by_name[O_BRAIN])
+	if(target.organ_in(O_BRAIN))
 		to_chat(user, span_warning("The brain cradle in \the [part.name] is already occupied."))
 		return SURGERY_REFUSED
 	return TRUE
@@ -211,7 +211,7 @@
 	if(!target.should_have_organ(O_BRAIN))
 		to_chat(user, span_warning("You search \the [part.name], but there's no cradle for a cephalon anywhere in it."))
 		return SURGERY_REFUSED
-	if(target.internal_organs_by_name[O_BRAIN])
+	if(target.organ_in(O_BRAIN))
 		to_chat(user, span_warning("There's already something rooted in the frame."))
 		return SURGERY_REFUSED
 	return TRUE

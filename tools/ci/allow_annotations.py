@@ -37,6 +37,7 @@ LINTS = {
     "latent": "tools/ci/latent_lint.py",
     "lifecycle": "tools/ci/lifecycle_counts_lint.py (qdel( sites; Destroy() overrides are banned outright)",
     "object_keyed_lists": "tools/ci/declared_refs_lint.py (object-keyed instance lists)",
+    "organ_slots": "tools/ci/organ_slots_lint.py (the deleted internal organ lists; ceiling 0)",
     "ownership_cycle": "tools/ci/ownership_cycle_lint.py (type-level REF_OWNED cycles)",
     "pollers": "tools/ci/pollers_lint.py",
     "registry": "tools/ci/registry_lint.py",

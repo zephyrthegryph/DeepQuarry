@@ -45,7 +45,7 @@ GLOBAL_LIST_EMPTY(limb_icon_cache)
 	..()
 
 	if(owner)
-		var/obj/item/organ/internal/eyes/eyes = owner.internal_organs_by_name[O_EYES]
+		var/obj/item/organ/internal/eyes/eyes = owner.organ_in(O_EYES)
 		if(eyes) eyes.update_colour()
 
 /obj/item/organ/external/head/proc/get_hair_icon()

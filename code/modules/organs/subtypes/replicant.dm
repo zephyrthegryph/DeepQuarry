@@ -101,7 +101,7 @@
 		return
 
 	var/list/all_organs = list()
-	all_organs |= owner.internal_organs
+	all_organs |= owner.internal_organ_list()
 	all_organs |= owner.organs
 
 	var/modifier = round(rejection_adjust * (1 - 0.5 * is_bruised()))
@@ -198,7 +198,7 @@
 
 	if(istype(owner))
 		for(var/o_tag in repair_list())
-			var/obj/item/organ/O = owner.internal_organs_by_name[o_tag]
+			var/obj/item/organ/O = owner.organ_in(o_tag)
 			if(O)
 				owner.mend(TREAT_RESTORATION, repair_rate * modifier, O)
 

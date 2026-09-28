@@ -314,7 +314,7 @@ DECLARE_INTERACTIONS(/obj/item/weldingtool, \
 	safety = between(-1, safety + eye_safety_modifier, 2)
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
-		var/obj/item/organ/internal/eyes/E = H.internal_organs_by_name[O_EYES]
+		var/obj/item/organ/internal/eyes/E = H.organ_in(O_EYES)
 		if(!E)
 			return
 		if(HAS_SYNTHETIC_BIOLOGY(user)) //Fixes robots going blind when doing the equivalent of a bruise pack.

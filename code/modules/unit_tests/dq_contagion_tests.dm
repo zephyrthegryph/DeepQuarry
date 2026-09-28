@@ -155,7 +155,7 @@
 	var/datum/affliction/contagion/appendicitis/D = contagion_of(H, /datum/affliction/contagion/appendicitis)
 	TEST_ASSERT_NOTNULL(D, "appendicitis should be an affliction")
 	TEST_ASSERT(!D.has_cure(), "appendicitis has no reagent cure")
-	var/obj/item/organ/internal/appendix/A = H.internal_organs_by_name[O_APPENDIX]
+	var/obj/item/organ/internal/appendix/A = H.organ_in(O_APPENDIX)
 	TEST_ASSERT_NOTNULL(A, "the test human should have an appendix")
 	A.removed()
 	qdel(A)

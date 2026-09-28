@@ -576,7 +576,7 @@
 	var/clotted = 0
 	var/too_far_gone = 0
 
-	for(var/obj/item/organ/external/affecting as anything in H.organs) //'organs' is just external organs, as opposed to 'internal_organs'
+	for(var/obj/item/organ/external/affecting as anything in H.organs) //'organs' is just external organs, as opposed to internal organs (organ_in / INTERNAL_ORGANS)
 
 		// No amount of clotting is going to help you here.
 		if(affecting.open)

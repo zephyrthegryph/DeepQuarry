@@ -125,7 +125,7 @@ REF_BACK(/datum/affliction/contagion, list("host" = null))
 
 /datum/affliction/contagion/proc/has_required_organs(mob/living/carbon/human/H)
 	for(var/organ in required_organs)
-		if(locate_in_list(H.internal_organs, organ))
+		if(locate_in_list(H.internal_organ_list(), organ))
 			continue
 		if(locate_in_list(H.organs, organ))
 			continue

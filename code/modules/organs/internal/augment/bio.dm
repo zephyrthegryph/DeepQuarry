@@ -43,7 +43,7 @@
 	set desc = "Toggle your flash-proof, thermal-integrated sunglasses."
 	set category = "Augments"
 
-	var/obj/item/organ/internal/augment/aug = internal_organs_by_name[O_AUG_EYES]
+	var/obj/item/organ/internal/augment/aug = organ_in(O_AUG_EYES)
 
 	if(get_equipped_item(SLOT_ID_EYES))
 		if(aug && aug.integrated_object == get_equipped_item(SLOT_ID_EYES))

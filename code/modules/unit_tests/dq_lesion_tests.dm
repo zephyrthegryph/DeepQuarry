@@ -34,7 +34,7 @@
 
 /datum/unit_test/dq_lesion_created_from_organ_damage/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/liver = H.internal_organs_by_name[O_LIVER]
+	var/obj/item/organ/internal/liver = H.organ_in(O_LIVER)
 	TEST_ASSERT_NOTNULL(liver, "no liver")
 	TEST_ASSERT_EQUAL(liver.damage, 0, "a fresh liver should be undamaged")
 
@@ -61,8 +61,8 @@
 
 /datum/unit_test/dq_lesion_injury_kind_table/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/liver = H.internal_organs_by_name[O_LIVER]
-	var/obj/item/organ/internal/stomach = H.internal_organs_by_name[O_STOMACH]
+	var/obj/item/organ/internal/liver = H.organ_in(O_LIVER)
+	var/obj/item/organ/internal/stomach = H.organ_in(O_STOMACH)
 	TEST_ASSERT_NOTNULL(liver, "no liver")
 	TEST_ASSERT_NOTNULL(stomach, "no stomach")
 
@@ -72,7 +72,7 @@
 	TEST_ASSERT_NOTNULL(liver.find_lesion(/datum/affliction/lesion/toxic_injury), "toxin aimed at an organ should be a toxic injury")
 	H.injure(INJURY_PIERCE, 5, stomach, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	TEST_ASSERT_NOTNULL(stomach.find_lesion(/datum/affliction/lesion/perforation), "a piercing hit should perforate a hollow organ")
-	var/obj/item/organ/internal/kidneys = H.internal_organs_by_name[O_KIDNEYS]
+	var/obj/item/organ/internal/kidneys = H.organ_in(O_KIDNEYS)
 	H.injure(INJURY_PIERCE, 5, kidneys, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	TEST_ASSERT_NULL(kidneys.find_lesion(/datum/affliction/lesion/perforation), "a solid organ can't be perforated")
 	TEST_ASSERT_NOTNULL(kidneys.find_lesion(/datum/affliction/lesion/laceration), "a piercing hit should tear a solid organ")
@@ -91,7 +91,7 @@
 
 /datum/unit_test/dq_lesion_derived_integrity/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/heart = H.internal_organs_by_name[O_HEART]
+	var/obj/item/organ/internal/heart = H.organ_in(O_HEART)
 	TEST_ASSERT_NOTNULL(heart, "no heart")
 
 	dq_test_injure_organ(H, heart, 10, /datum/affliction/lesion/contusion)
@@ -114,7 +114,7 @@
 
 /datum/unit_test/dq_lesion_surgical_repair_heals_laceration/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/liver = H.internal_organs_by_name[O_LIVER]
+	var/obj/item/organ/internal/liver = H.organ_in(O_LIVER)
 	TEST_ASSERT_NOTNULL(liver, "no liver")
 	dq_test_injure_organ(H, liver, 30, /datum/affliction/lesion/laceration)
 	var/datum/affliction/lesion/laceration/L = liver.find_lesion(/datum/affliction/lesion/laceration)
@@ -141,7 +141,7 @@
 
 /datum/unit_test/dq_lesion_surgical_repair_single_budget/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/liver = H.internal_organs_by_name[O_LIVER]
+	var/obj/item/organ/internal/liver = H.organ_in(O_LIVER)
 	TEST_ASSERT_NOTNULL(liver, "no liver")
 	dq_test_injure_organ(H, liver, 20, /datum/affliction/lesion/laceration)
 	dq_test_injure_organ(H, liver, 20, /datum/affliction/lesion/necrosis)
@@ -155,7 +155,7 @@
 
 /datum/unit_test/dq_lesion_respiratory_mend_respects_floor/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/lungs = H.internal_organs_by_name[O_LUNGS]
+	var/obj/item/organ/internal/lungs = H.organ_in(O_LUNGS)
 	TEST_ASSERT_NOTNULL(lungs, "no lungs")
 	dq_test_injure_organ(H, lungs, 20, /datum/affliction/lesion/perforation)
 	var/datum/affliction/lesion/perforation/P = lungs.find_lesion(/datum/affliction/lesion/perforation)
@@ -170,7 +170,7 @@
 
 /datum/unit_test/dq_lesion_necrosis_needs_resection/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/kidneys = H.internal_organs_by_name[O_KIDNEYS]
+	var/obj/item/organ/internal/kidneys = H.organ_in(O_KIDNEYS)
 	TEST_ASSERT_NOTNULL(kidneys, "no kidneys")
 	dq_test_injure_organ(H, kidneys, 20, /datum/affliction/lesion/necrosis)
 	H.mend(TREAT_HEPATORENAL, 1000, kidneys)
@@ -184,7 +184,7 @@
 /datum/unit_test/dq_lesion_transplant_carries_lesions/Run()
 	var/mob/living/carbon/human/donor = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/recipient = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/kidneys = donor.internal_organs_by_name[O_KIDNEYS]
+	var/obj/item/organ/internal/kidneys = donor.organ_in(O_KIDNEYS)
 	TEST_ASSERT_NOTNULL(kidneys, "donor has no kidneys")
 	dq_test_injure_organ(donor, kidneys, 20, /datum/affliction/lesion/toxic_injury)
 	var/datum/affliction/lesion/L = kidneys.find_lesion(/datum/affliction/lesion/toxic_injury)
@@ -196,7 +196,7 @@
 	TEST_ASSERT(L in kidneys.detached_afflictions, "the lesion should ride the detached organ")
 	TEST_ASSERT_EQUAL(kidneys.damage, 20, "a detached organ keeps its derived damage")
 
-	var/obj/item/organ/internal/old_kidneys = recipient.internal_organs_by_name[O_KIDNEYS]
+	var/obj/item/organ/internal/old_kidneys = recipient.organ_in(O_KIDNEYS)
 	if(old_kidneys)
 		old_kidneys.removed()
 		qdel(old_kidneys)
@@ -213,7 +213,7 @@
 
 /datum/unit_test/dq_lesion_synthetic_organ_component_fault/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/heart = H.internal_organs_by_name[O_HEART]
+	var/obj/item/organ/internal/heart = H.organ_in(O_HEART)
 	TEST_ASSERT_NOTNULL(heart, "no heart")
 	heart.robotize()
 	dq_test_injure_organ(H, heart, 10, /datum/affliction/lesion/laceration)
@@ -230,8 +230,8 @@
 
 /datum/unit_test/dq_lesion_restoration_repairs_everything/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/liver = H.internal_organs_by_name[O_LIVER]
-	var/obj/item/organ/internal/heart = H.internal_organs_by_name[O_HEART]
+	var/obj/item/organ/internal/liver = H.organ_in(O_LIVER)
+	var/obj/item/organ/internal/heart = H.organ_in(O_HEART)
 	heart.robotize()
 	dq_test_injure_organ(H, liver, 20, /datum/affliction/lesion/laceration)
 	dq_test_injure_organ(H, heart, 20)
@@ -246,7 +246,7 @@
 
 /datum/unit_test/dq_affliction_afflict_configures_location/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/heart = H.internal_organs_by_name[O_HEART]
+	var/obj/item/organ/internal/heart = H.organ_in(O_HEART)
 	var/datum/affliction/lesion/L = H.body.afflict(/datum/affliction/lesion/contusion, heart)
 	TEST_ASSERT_NOTNULL(L, "afflict() should create the lesion")
 	TEST_ASSERT_EQUAL(L.location, heart, "the lesion should sit on the heart")

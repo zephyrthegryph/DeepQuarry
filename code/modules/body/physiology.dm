@@ -424,7 +424,7 @@ REF_BACK(/datum/physiology, list("body" = "physiology"))
 
 /// Gas exchange the lungs themselves manage.
 /datum/physiology/humanoid/proc/lung_condition(mob/living/carbon/human/H)
-	var/obj/item/organ/internal/lungs/L = H.internal_organs_by_name[O_LUNGS]
+	var/obj/item/organ/internal/lungs/L = H.organ_in(O_LUNGS)
 	if(!L || (L.status & ORGAN_DEAD))
 		return 0
 	if(L.is_broken())
@@ -435,7 +435,7 @@ REF_BACK(/datum/physiology, list("body" = "physiology"))
 
 /// Pumping the heart itself manages (rhythm is BF_PUMP, from the arrhythmia).
 /datum/physiology/humanoid/proc/heart_condition(mob/living/carbon/human/H)
-	var/obj/item/organ/internal/heart/heart = H.internal_organs_by_name[O_HEART]
+	var/obj/item/organ/internal/heart/heart = H.organ_in(O_HEART)
 	if(!heart || (heart.status & ORGAN_DEAD))
 		return 0
 	if(heart.is_broken())
@@ -480,7 +480,7 @@ REF_BACK(/datum/physiology, list("body" = "physiology"))
 	var/mob/living/carbon/human/H = body.owner
 	if(!H.should_have_organ(O_BRAIN))
 		return
-	var/obj/item/organ/internal/brain/B = H.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/B = H.organ_in(O_BRAIN)
 	if(!istype(B) || B.is_robotic())
 		return
 	var/rate = DQ_HYPOXIA_BRAIN_RATE * clamp((oxygen_debt - DQ_HYPOXIA_BRAIN_DAMAGE) / (AFFLICTION_SEVERITY_TERMINAL - DQ_HYPOXIA_BRAIN_DAMAGE), 0, 1)
@@ -509,7 +509,7 @@ REF_BACK(/datum/physiology, list("body" = "physiology"))
 	if(!circulates)
 		return null
 	var/mob/living/carbon/human/H = body.owner
-	var/obj/item/organ/internal/heart/heart = H.internal_organs_by_name[O_HEART]
+	var/obj/item/organ/internal/heart/heart = H.organ_in(O_HEART)
 	if(!heart || (heart.status & ORGAN_DEAD))
 		return RHYTHM_ASYSTOLE
 	var/datum/affliction/cardiac_arrhythmia/A = body.find_affliction(/datum/affliction/cardiac_arrhythmia)

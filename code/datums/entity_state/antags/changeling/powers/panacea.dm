@@ -54,7 +54,7 @@
 			var/germ_heal = heal_amount * 100
 			G.germ_level = max(0, G.germ_level - germ_heal)
 
-	for(var/obj/item/organ/internal/I in C.internal_organs)
+	for(var/obj/item/organ/internal/I in C.internal_organ_list())
 		var/obj/item/organ/internal/G = I
 		if(G.germ_level)
 			var/germ_heal = heal_amount * 100

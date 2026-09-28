@@ -12,7 +12,7 @@
 
 /datum/unit_test/dq_k_c_d19_scanner_organs_from_diagnosis/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/appendix/A = H.internal_organs_by_name[O_APPENDIX]
+	var/obj/item/organ/internal/appendix/A = H.organ_in(O_APPENDIX)
 	TEST_ASSERT(istype(A), "the test human has an appendix")
 	A.inflamed = 1
 	var/datum/diagnosis/D = H.diagnose(/datum/diagnostic_profile/body_scanner)
@@ -36,7 +36,7 @@
 
 /datum/unit_test/dq_k_c_d19_fake_death_parts/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/brain/B = H.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/B = H.organ_in(O_BRAIN)
 	TEST_ASSERT(istype(B), "the test human has a brain")
 	H.status_flags |= FAKEDEATH
 	var/datum/diagnosis/D = H.diagnose(/datum/diagnostic_profile/body_scanner)

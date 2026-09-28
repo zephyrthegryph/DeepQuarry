@@ -39,7 +39,7 @@
 /mob/living/carbon/human/proc/get_pulse_reading_bpm()
 	// Map the upstream pulse enum to a bpm baseline, then offset by
 	// compensatory tachycardia from blood loss and heart-rate factors.
-	var/obj/item/organ/internal/heart/H = internal_organs_by_name?[O_HEART]
+	var/obj/item/organ/internal/heart/H = organ_in(O_HEART)
 	if(!H || H.is_broken() || !has_cardiac_output())
 		return 0
 	var/baseline
@@ -72,7 +72,7 @@
 	// has a strong effect; we mirror the upstream "blood_level_*"
 	// thresholds. Returns list(systolic, diastolic) or null if no
 	// detectable blood pressure (dead, no heart).
-	var/obj/item/organ/internal/heart/H = internal_organs_by_name?[O_HEART]
+	var/obj/item/organ/internal/heart/H = organ_in(O_HEART)
 	if(!H || H.is_broken() || is_dead() || !has_cardiac_output())
 		return null
 	var/sys = 120

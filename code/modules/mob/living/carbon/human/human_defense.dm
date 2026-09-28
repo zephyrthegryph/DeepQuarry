@@ -587,7 +587,7 @@ emp_act
 	user.visible_message(span_danger("\The [user] twists \the [W] around inside [src]'s [chest]!"))
 
 	if(prob(organ_chance))
-		var/obj/item/organ/internal/selected_organ = pick(chest.internal_organs)
+		var/obj/item/organ/internal/selected_organ = pick(chest.held_organs())
 		injure(INJURY_CUT, damage * 0.5, selected_organ, W, affliction = /datum/affliction/lesion/laceration)
 		G.last_action = world.time
 		flick(G.hud.icon_state, G.hud)

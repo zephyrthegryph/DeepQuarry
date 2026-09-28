@@ -193,7 +193,7 @@ GLOBAL_PROTECT(surgical_steps)
 	if(scope != SURGERY_SCOPE_ORGAN)
 		. += part
 	if(scope != SURGERY_SCOPE_PART)
-		for(var/obj/item/organ/internal/I as anything in part.internal_organs)
+		for(var/obj/item/organ/internal/I as anything in part.held_organs())
 			if(I.owner == target)
 				. += I
 

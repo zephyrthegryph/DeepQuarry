@@ -82,7 +82,7 @@
 
 	//This really should be in mob not every check
 	if(ishuman(M))
-		var/obj/item/organ/internal/eyes/E = H.internal_organs_by_name[O_EYES]
+		var/obj/item/organ/internal/eyes/E = H.organ_in(O_EYES)
 		if (E && E.damage >= E.min_bruised_damage)
 			to_chat(M, span_danger("Your eyes start to burn badly!"))
 			if(!banglet && !(istype(src , /obj/item/grenade/flashbang/clusterbang)))

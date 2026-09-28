@@ -1,10 +1,8 @@
 // Lazy: most living mobs (simple mobs, silicons) have no organs. Humans always
 // do and keep them eager (human_defines.dm); butchery animals set theirs per type.
 /mob/living
-	var/list/internal_organs
 	var/list/organs
 	var/list/organs_by_name // map organ names to organs
-	var/list/internal_organs_by_name // so internal organs have less ickiness too
 	var/list/bad_external_organs // organs we check until they are good.
 
 /mob/living/proc/get_bodypart_name(zone)
@@ -24,10 +22,10 @@
 	return null
 
 /// Create the butchery organs inside the mob, once. Each lands in the mob's
-/// interior slot, where the attach hook caches it in internal_organs
+/// interior slot, where it belongs to the mob (organ_in(), code/modules/body/parts/queries.dm)
 /// (code/modules/body/parts/attach.dm).
 /mob/living/proc/spawn_butchery_organs()
-	if(LAZYLEN(internal_organs))
+	if(length(internal_organ_list()))
 		return
 	for(var/path in butchery_organ_types())
 		var/obj/item/organ/neworg = new path(src, TRUE)
@@ -38,7 +36,7 @@
 	if(butchery_drops_organs)
 		spawn_butchery_organs()
 
-		for(var/obj/item/organ/I in internal_organs?.Copy()) // removed() shrinks the cache
+		for(var/obj/item/organ/I in internal_organ_list()) // a fresh list: removed() empties the slot
 			I.removed()
 			if(!QDELETED(I) && isturf(I.loc)) // Some organs qdel themselves or other things when removed
 				I.throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)),rand(1,3),30)

@@ -93,12 +93,12 @@
 	switch(body_part)
 
 		if(BP_GROIN)
-			var/obj/item/organ/internal/intestine/intestine = H.internal_organs_by_name[O_INTESTINE]
-			var/obj/item/organ/internal/stomach/stomach = H.internal_organs_by_name[O_STOMACH]
-			var/obj/item/organ/internal/kidneys/kidneys = H.internal_organs_by_name[O_KIDNEYS]
-			var/obj/item/organ/internal/liver/liver = H.internal_organs_by_name[O_LIVER]
-			var/obj/item/organ/internal/spleen/spleen = H.internal_organs_by_name[O_SPLEEN]
-			var/obj/item/organ/internal/appendix/appendix = H.internal_organs_by_name[O_APPENDIX]
+			var/obj/item/organ/internal/intestine/intestine = H.organ_in(O_INTESTINE)
+			var/obj/item/organ/internal/stomach/stomach = H.organ_in(O_STOMACH)
+			var/obj/item/organ/internal/kidneys/kidneys = H.organ_in(O_KIDNEYS)
+			var/obj/item/organ/internal/liver/liver = H.organ_in(O_LIVER)
+			var/obj/item/organ/internal/spleen/spleen = H.organ_in(O_SPLEEN)
+			var/obj/item/organ/internal/appendix/appendix = H.organ_in(O_APPENDIX)
 			if(intestine && intestine.is_bruised())
 				bad_organs++
 			if(stomach && stomach.is_bruised())
@@ -114,15 +114,15 @@
 				appendicitis = TRUE
 
 		if(BP_TORSO)
-			var/obj/item/organ/internal/lungs/lungs = H.internal_organs_by_name[O_LUNGS]
-			var/obj/item/organ/internal/heart/heart = H.internal_organs_by_name[O_HEART]
+			var/obj/item/organ/internal/lungs/lungs = H.organ_in(O_LUNGS)
+			var/obj/item/organ/internal/heart/heart = H.organ_in(O_HEART)
 			if(lungs && lungs.is_bruised())
 				bad_organs++
 			if(heart && heart.is_bruised())
 				bad_organs++
 
 		if(BP_HEAD)
-			var/obj/item/organ/internal/voicebox/voicebox = H.internal_organs_by_name[O_VOICE]
+			var/obj/item/organ/internal/voicebox/voicebox = H.organ_in(O_VOICE)
 			if(voicebox && voicebox.is_bruised())
 				bad_organs++
 

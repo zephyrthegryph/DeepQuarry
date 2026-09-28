@@ -707,7 +707,7 @@ REF_OWNED_VALUES(/datum/contract/medical_trial, "participants")
 		if("hepatic failure")
 			condition_type = /datum/affliction/hepatic_failure
 			organ_tag = O_LIVER
-	var/obj/item/organ/host = subject.internal_organs_by_name?[organ_tag]
+	var/obj/item/organ/host = subject.organ_in(organ_tag)
 	if(!host || !condition_type)
 		return
 	var/datum/affliction/adverse = subject.body.find_affliction(condition_type, host)
@@ -736,13 +736,13 @@ REF_OWNED_VALUES(/datum/contract/medical_trial, "participants")
 			host = subject.get_organ(BP_TORSO)
 		if("respiratory")
 			condition_type = /datum/affliction/pulmonary_contusion
-			host = subject.internal_organs_by_name?[O_LUNGS]
+			host = subject.organ_in(O_LUNGS)
 		if("neurological")
 			condition_type = /datum/affliction/concussion
-			host = subject.internal_organs_by_name?[O_BRAIN]
+			host = subject.organ_in(O_BRAIN)
 		if("organ failure")
 			condition_type = /datum/affliction/hepatic_failure
-			host = subject.internal_organs_by_name?[O_LIVER]
+			host = subject.organ_in(O_LIVER)
 	if(!host || !condition_type)
 		return
 	var/datum/affliction/challenge_condition = subject.body.afflict(condition_type, host)

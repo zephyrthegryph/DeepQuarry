@@ -230,7 +230,7 @@
 
 /// Organ processing.
 /datum/om/stage/life/guts/perform(mob/living/simple_mob/self, datum/om/frame/life/ctx)
-	for(var/obj/item/organ/OR in self.internal_organs)
+	for(var/obj/item/organ/OR in self.internal_organ_list())
 		OR.periodic_step()
 
 	for(var/obj/item/organ/OR in self.organs)
@@ -238,7 +238,7 @@
 
 /// Only mobs carrying real organ objects process them (most list organ paths for butchery).
 /datum/om/stage/life/guts/idle(mob/living/simple_mob/self)
-	return !(LAZYLEN(self.internal_organs) && (locate_in_list(self.internal_organs, /obj/item/organ))) && !(LAZYLEN(self.organs) && (locate_in_list(self.organs, /obj/item/organ)))
+	return !length(self.internal_organ_list()) && !(LAZYLEN(self.organs) && (locate_in_list(self.organs, /obj/item/organ)))
 
 /datum/om/stage/life/supernatural
 	reads = list("purge")

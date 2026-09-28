@@ -107,8 +107,8 @@
 	var/datum/affliction/cardiac_arrhythmia/A1 = without_cpr.induce_arrhythmia(CARDIAC_RHYTHM_VF)
 	var/datum/affliction/cardiac_arrhythmia/A2 = with_cpr.induce_arrhythmia(CARDIAC_RHYTHM_VF)
 	TEST_ASSERT(A1 && A2, "both hearts should fibrillate")
-	var/obj/item/organ/internal/brain/B1 = without_cpr.internal_organs_by_name[O_BRAIN]
-	var/obj/item/organ/internal/brain/B2 = with_cpr.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/B1 = without_cpr.organ_in(O_BRAIN)
+	var/obj/item/organ/internal/brain/B2 = with_cpr.organ_in(O_BRAIN)
 	TEST_ASSERT(B1 && B2, "both patients need brains")
 
 	var/obj/item/rescuer = allocate(/obj/item/bag_valve_mask)

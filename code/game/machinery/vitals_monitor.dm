@@ -41,7 +41,7 @@
 		var/breathing = "none"
 
 		if(victim().stat != DEAD && !(victim().status_flags & FAKEDEATH))
-			var/obj/item/organ/internal/brain/brain = victim().internal_organs_by_name[O_BRAIN]
+			var/obj/item/organ/internal/brain/brain = victim().organ_in(O_BRAIN)
 			if(istype(brain))
 				if(victim().injury_load(INJURY_CATEGORY_NEURAL) || is_changeling(victim()) || HAS_TRAIT(victim(), UNIQUE_MINDSTRUCTURE))
 					brain_activity = "anomalous"
@@ -50,7 +50,7 @@
 				else
 					brain_activity = "normal"
 
-			var/obj/item/organ/internal/lungs/lungs = victim().internal_organs_by_name[O_LUNGS]
+			var/obj/item/organ/internal/lungs/lungs = victim().organ_in(O_LUNGS)
 			if(istype(lungs))
 				if(victim().breath_blocked())
 					breathing = "none"
@@ -110,7 +110,7 @@
 			add_overlay("pulse_thready")
 			add_overlay("pulse_warning")
 
-	var/obj/item/organ/internal/brain/brain = victim().internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/brain = victim().organ_in(O_BRAIN)
 	if(istype(brain) && victim().stat != DEAD && !(victim().status_flags & FAKEDEATH))
 		if(victim().injury_load(INJURY_CATEGORY_NEURAL))
 			add_overlay("brain_verybad")
@@ -122,7 +122,7 @@
 	else
 		add_overlay("brain_warning")
 
-	var/obj/item/organ/internal/lungs/lungs = victim().internal_organs_by_name[O_LUNGS]
+	var/obj/item/organ/internal/lungs/lungs = victim().organ_in(O_LUNGS)
 	if(istype(lungs) && victim().stat != DEAD && !(victim().status_flags & FAKEDEATH))
 		switch(breathing_band())
 			if("erratic")

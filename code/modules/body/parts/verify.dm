@@ -30,10 +30,11 @@
 			if(M.organs_by_name?[part.organ_tag] != part)
 				. += "organs_by_name\[[part.organ_tag]] is [M.organs_by_name?[part.organ_tag]], not [part]"
 		else
-			if(!(part in M.internal_organs))
-				. += "[part] is attached but not in [M].internal_organs"
-			if(M.internal_organs_by_name?[part.organ_tag] != part)
-				. += "internal_organs_by_name\[[part.organ_tag]] is [M.internal_organs_by_name?[part.organ_tag]], not [part]"
+			// O-slots: no cache to compare; the keyed slot lookup must find it.
+			if(!(part in M.internal_organ_list()))
+				. += "[part] is attached but internal_organ_list() misses it"
+			if(M.organ_in(part.organ_tag) != part)
+				. += "organ_in([part.organ_tag]) is [M.organ_in(part.organ_tag)], not [part]"
 		var/obj/item/organ/external/E = part
 		if(istype(E))
 			. += dq_verify_limb_links(E)
@@ -42,15 +43,12 @@
 	for(var/obj/item/organ/O as anything in M.organs)
 		if(!(O in tree))
 			. += "[M].organs lists [O] ([O?.type]), which is not in the tree"
-	for(var/obj/item/organ/O as anything in M.internal_organs)
+	for(var/obj/item/organ/O as anything in M.internal_organ_list())
 		if(!(O in tree))
-			. += "[M].internal_organs lists [O] ([O?.type]), which is not in the tree"
+			. += "[M].internal_organ_list() returns [O] ([O?.type]), which is not in the tree"
 	for(var/tag in M.organs_by_name)
 		if(!(M.organs_by_name[tag] in tree))
 			. += "organs_by_name\[[tag]] holds [M.organs_by_name[tag]], which is not in the tree"
-	for(var/tag in M.internal_organs_by_name)
-		if(!(M.internal_organs_by_name[tag] in tree))
-			. += "internal_organs_by_name\[[tag]] holds [M.internal_organs_by_name[tag]], which is not in the tree"
 
 	// Located afflictions sit on attached parts.
 	for(var/location in M.body.afflictions_by_location)
@@ -73,8 +71,9 @@
 	var/list/inner = E.slot_contents(SLOT_ID_PART_ORGANS)
 	if(length(kids) != LAZYLEN(E.children) || length(kids - E.children))
 		. += "[E].children ([jointext(E.children || list(), ", ")]) differs from its child slot ([jointext(kids, ", ")])"
-	if(length(inner) != LAZYLEN(E.internal_organs) || length(inner - E.internal_organs))
-		. += "[E].internal_organs ([jointext(E.internal_organs || list(), ", ")]) differs from its organ slot ([jointext(inner, ", ")])"
+	for(var/obj/item/organ/O as anything in inner)
+		if(E.slot_lookup(SLOT_ID_PART_ORGANS, O.organ_tag) != O)
+			. += "[E]'s organ slot key [O.organ_tag] resolves to [E.slot_lookup(SLOT_ID_PART_ORGANS, O.organ_tag)], not [O]"
 	for(var/obj/item/organ/external/child as anything in kids)
 		if(child.parent != E)
 			. += "[child].parent is [child.parent], not [E]"

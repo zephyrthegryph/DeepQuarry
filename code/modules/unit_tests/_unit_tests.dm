@@ -277,6 +277,7 @@
 #include "../balance/balance_scenarios.dm"
 #include "dq_balance_harness_tests.dm"
 #include "dq_part_lifecycle_tests.dm"
+#include "dq_organ_slot_tests.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

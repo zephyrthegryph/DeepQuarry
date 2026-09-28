@@ -31,7 +31,7 @@
 /datum/dq_medical_scenario/proc/_seed(mob/living/carbon/human/H, organ_tag, condition_type, severity = DQ_SCENARIO_DEFAULT_SEVERITY)
 	var/obj/item/organ/target
 	if(organ_tag in list(O_HEART, O_LUNGS, O_BRAIN, O_LIVER, O_KIDNEYS, O_STOMACH, O_INTESTINE, O_SPLEEN, O_APPENDIX, O_EYES))
-		target = H.internal_organs_by_name[organ_tag]
+		target = H.organ_in(organ_tag)
 	else
 		target = H.get_organ(organ_tag)
 	if(!target)

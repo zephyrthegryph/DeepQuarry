@@ -98,7 +98,7 @@ REF_OWNED(/obj/item/organ/internal/augment, list("integrated_object", "my_radial
 
 	var/list/present_augs = list()
 
-	for(var/obj/item/organ/internal/augment/Aug in internal_organs)
+	for(var/obj/item/organ/internal/augment/Aug in internal_organ_list())
 		if(Aug.my_radial_icon && !Aug.is_broken() && Aug.check_verb_compatability())
 			present_augs[Aug.radial_name] = Aug
 

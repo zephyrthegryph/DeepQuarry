@@ -209,7 +209,7 @@
 			var/mob/living/carbon/human/H = M
 			if(!HAS_SYNTHETIC_BIOLOGY(H))
 				if(H.species.has_organ[O_HEART] && (active_metab.metabolism_class == CHEM_BLOOD))
-					var/obj/item/organ/internal/heart/Pump = H.internal_organs_by_name[O_HEART]
+					var/obj/item/organ/internal/heart/Pump = H.organ_in(O_HEART)
 					if(!Pump)
 						removed *= 0.1
 					else if(Pump.standard_pulse_level == PULSE_NONE)	// No pulse normally means chemicals process a little bit slower than normal.
@@ -218,23 +218,23 @@
 						removed *= max(0.1, H.pulse / Pump.standard_pulse_level)
 
 				if(H.species.has_organ[O_STOMACH] && (active_metab.metabolism_class == CHEM_INGEST))
-					var/obj/item/organ/internal/stomach/Chamber = H.internal_organs_by_name[O_STOMACH]
+					var/obj/item/organ/internal/stomach/Chamber = H.organ_in(O_STOMACH)
 					if(Chamber)
 						ingest_rem_mult *= max(0.1, 1 - (Chamber.damage / Chamber.max_damage))
 					else
 						ingest_rem_mult = 0.1
 
 				if(H.species.has_organ[O_INTESTINE] && (active_metab.metabolism_class == CHEM_INGEST))
-					var/obj/item/organ/internal/intestine/Tube = H.internal_organs_by_name[O_INTESTINE]
+					var/obj/item/organ/internal/intestine/Tube = H.organ_in(O_INTESTINE)
 					if(Tube)
 						ingest_abs_mult *= max(0.1, 1 - (Tube.damage / Tube.max_damage))
 					else
 						ingest_abs_mult = 0.1
 
 			else
-				var/obj/item/organ/internal/heart/machine/Pump = H.internal_organs_by_name[O_PUMP]
-				var/obj/item/organ/internal/stomach/machine/Cycler = H.internal_organs_by_name[O_CYCLER]
-				var/obj/item/organ/internal/nano/refactory/Refactory = H.internal_organs_by_name[O_FACT] // ition: Proteans
+				var/obj/item/organ/internal/heart/machine/Pump = H.organ_in(O_PUMP)
+				var/obj/item/organ/internal/stomach/machine/Cycler = H.organ_in(O_CYCLER)
+				var/obj/item/organ/internal/nano/refactory/Refactory = H.organ_in(O_FACT) // ition: Proteans
 
 				if(active_metab.metabolism_class == CHEM_BLOOD)
 					if(Pump)
@@ -264,7 +264,7 @@
 
 			if(filtered_organs && filtered_organs.len)
 				for(var/organ_tag in filtered_organs)
-					var/obj/item/organ/internal/O = H.internal_organs_by_name[organ_tag]
+					var/obj/item/organ/internal/O = H.organ_in(organ_tag)
 					if(O && !O.is_broken() && prob(max(0, O.max_damage - O.damage)))
 						removed *= 0.8
 						if(active_metab.metabolism_class == CHEM_INGEST)

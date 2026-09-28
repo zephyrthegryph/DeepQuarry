@@ -27,3 +27,17 @@
 /// Whether `slot_id` is one of the structural part slots whose occupant is
 /// attached to the body its tree hangs from.
 #define IS_PART_TREE_SLOT(slot_id) ((slot_id) == SLOT_ID_PART_ROOT || (slot_id) == SLOT_ID_PART_CHILD || (slot_id) == SLOT_ID_PART_ORGANS)
+
+// ---- Organ slots (O-slots) ----
+// Internal organs are keyed entries (key: organ_tag, O_*) in their limb's
+// SLOT_ID_PART_ORGANS slot, or, for a mob with no part tree, loose in its
+// SLOT_ID_BODY interior slot. The ledger is the only record: there are no
+// mob-side organ lists. Read through these (code/modules/body/parts/queries.dm):
+//   M.organ_in(O_HEART)         the attached organ keyed O_HEART, or null
+//   INTERNAL_ORGANS(M)          a fresh list of every attached internal organ
+//   ORGAN_IN(M, tag)            macro form of organ_in()
+// Write through the ledger: move_into(limb, SLOT_ID_PART_ORGANS) / place_into()
+// to insert, removed() / slot_remove() to take out. tools/ci/organ_slots_lint.py
+// keeps the deleted lists deleted.
+#define ORGAN_IN(M, tag) ((M).organ_in(tag))
+#define INTERNAL_ORGANS(M) ((M).internal_organ_list())

@@ -377,7 +377,7 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	g_eyes = new_color_rgb_list[2]
 	b_eyes = new_color_rgb_list[3]
 	// Now sync the organ's eye_colour list, if possible
-	var/obj/item/organ/internal/eyes/eyes = internal_organs_by_name[O_EYES]
+	var/obj/item/organ/internal/eyes/eyes = organ_in(O_EYES)
 	if(istype(eyes))
 		eyes.update_colour()
 

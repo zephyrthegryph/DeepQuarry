@@ -1403,7 +1403,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	var/mob/user = ask.answerer
 	var/new_organ = ask.choice
 	var/mob/living/carbon/M = src
-	if(locate_in_list(M.internal_organs, new_organ))
+	if(locate_in_list(M.internal_organ_list(), new_organ))
 		to_chat(user, "Mob already has that organ.")
 		return
 	new new_organ(M)
@@ -1412,7 +1412,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	var/mob/user = ask.answerer
 	var/obj/item/organ/rem_organ = ask.choice
 	var/mob/living/carbon/M = src
-	if(!(locate_in_list(M.internal_organs, rem_organ)))
+	if(!(locate_in_list(M.internal_organ_list(), rem_organ)))
 		to_chat(user, "Mob does not have that organ.")
 		return
 	to_chat(user, "Removed [rem_organ] from [M].")
@@ -1546,7 +1546,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 			to_chat(usr, "This can only be done to instances of type /mob/living/carbon")
 			return
 
-		om_ask(usr, /datum/om/prompt/choice/vv_spawn, PROC_REF(vv_organ_removed), title = "Organ", message = "Please choose an organ to remove.", choices = M.internal_organs)
+		om_ask(usr, /datum/om/prompt/choice/vv_spawn, PROC_REF(vv_organ_removed), title = "Organ", message = "Please choose an organ to remove.", choices = M.internal_organ_list())
 
 	if(href_list[VV_HK_GIVE_AI])
 		if(!check_rights(R_HOLDER))

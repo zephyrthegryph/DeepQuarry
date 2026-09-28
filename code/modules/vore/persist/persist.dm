@@ -183,7 +183,7 @@
 
 	// Internal organs also
 	for(var/name in character.species.has_organ)
-		var/obj/item/organ/internal_organ = character.internal_organs_by_name[name]
+		var/obj/item/organ/internal_organ = character.organ_in(name)
 		if(internal_organ)
 			if(istype(internal_organ, /obj/item/organ/internal/mmi_holder/robot))
 				organ_data[name] = FBP_DIGITAL // Need a better way to detect this special type

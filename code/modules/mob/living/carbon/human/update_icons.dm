@@ -223,7 +223,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	var/g = (gender == MALE ? "male" : "female")
 	var/icon_key = "[species.get_race_key(src)][g][s_tone][r_skin][g_skin][b_skin]"
 	icon_key += lip_style ? "[lip_style]" : "nolips"
-	var/obj/item/organ/internal/eyes/eyes = internal_organs_by_name[O_EYES]
+	var/obj/item/organ/internal/eyes/eyes = organ_in(O_EYES)
 	if(eyes)
 		icon_key += "[eyes.eye_rgb()]"
 	else
@@ -528,7 +528,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 		return
 
 	//The eyes store the color themselves, funny enough.
-	var/obj/item/organ/internal/eyes/eyes = internal_organs_by_name[O_EYES]
+	var/obj/item/organ/internal/eyes/eyes = organ_in(O_EYES)
 	if(!head_organ.eye_icon)
 		return
 

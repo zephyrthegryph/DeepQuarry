@@ -26,7 +26,7 @@
 
 /mob/living/carbon/human/revival_window_refusal()
 	if(should_have_organ(O_BRAIN))
-		var/obj/item/organ/internal/brain/brain = internal_organs_by_name[O_BRAIN]
+		var/obj/item/organ/internal/brain/brain = organ_in(O_BRAIN)
 		if(!brain)
 			return "no brain"
 		if(istype(brain)) // Some species have 'brains' that aren't brains and have no decay timer.
@@ -48,13 +48,13 @@
 	return null
 
 /mob/living/carbon/human/revival_window_left()
-	var/obj/item/organ/internal/brain/brain = internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/brain = organ_in(O_BRAIN)
 	return istype(brain) ? brain.defib_window_left() : null
 
 /// The defib window stops running down (and starts recovering) at revival (audit D10).
 /mob/living/carbon/human/on_revived(reason, datum/source)
 	. = ..()
-	var/obj/item/organ/internal/brain/brain = internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/brain = organ_in(O_BRAIN)
 	if(istype(brain))
 		brain.sync_defib_window()
 
@@ -68,7 +68,7 @@
 	for(var/organ_tag in species.has_organ)
 		var/organ_type = species.has_organ[organ_tag]
 		var/obj/item/organ/prototype = organ_type
-		if(!initial(prototype.vital) || internal_organs_by_name[organ_tag])
+		if(!initial(prototype.vital) || organ_in(organ_tag))
 			continue
 		// Born inside us, the organ places itself (ledger attach hook); set_organ_tag() rekeys
 		// its slot and our caches when the species files it under a non-default tag.
@@ -77,9 +77,9 @@
 			O.set_organ_tag(organ_tag)
 		log_game("REVIVE RESTORE: [key_name(src)] regrew missing vital organ [organ_tag].")
 	restore_all_organs()
-	for(var/obj/item/organ/internal/I in internal_organs)
+	for(var/obj/item/organ/internal/I in internal_organ_list())
 		I.rejuvenate()
-	var/obj/item/organ/internal/brain/brain = internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/brain = organ_in(O_BRAIN)
 	if(istype(brain))
 		brain.status &= ~ORGAN_DEAD
 		brain.damage = 0

@@ -114,7 +114,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 			. += "Tank Pressure: [internal.air_contents.return_pressure()]"
 			. += "Distribution Pressure: [internal.distribute_pressure]"
 
-	var/obj/item/organ/internal/xenos/plasmavessel/P = internal_organs_by_name[O_PLASMA] //Xenomorphs. Mech.
+	var/obj/item/organ/internal/xenos/plasmavessel/P = organ_in(O_PLASMA) //Xenomorphs. Mech.
 	if(P)
 		. += "Phoron Stored: [P.stored_plasma]/[P.max_plasma]"
 
@@ -667,8 +667,8 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 
 	var/obj/item/organ/internal/eyes/I
 
-	if(internal_organs_by_name[O_EYES]) // Eyes are fucked, not a 'weak point'.
-		I = internal_organs_by_name[O_EYES]
+	if(organ_in(O_EYES)) // Eyes are fucked, not a 'weak point'.
+		I = organ_in(O_EYES)
 		if(I.is_broken())
 			return FLASH_PROTECTION_MAJOR
 	else if(!species.dispersed_eyes) // They can't be flashed if they don't have eyes, or widespread sensing surfaces.
@@ -681,8 +681,8 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	return number
 
 /mob/living/carbon/human/flash_eyes(intensity = FLASH_PROTECTION_MODERATE, override_blindness_check = FALSE, affect_silicon = FALSE, visual = FALSE, type = /atom/movable/screen/fullscreen/flash)
-	if(internal_organs_by_name[O_EYES]) // Eyes are fucked, not a 'weak point'.
-		var/obj/item/organ/internal/eyes/I = internal_organs_by_name[O_EYES]
+	if(organ_in(O_EYES)) // Eyes are fucked, not a 'weak point'.
+		var/obj/item/organ/internal/eyes/I = organ_in(O_EYES)
 		I.additional_flash_effects(intensity)
 	return ..()
 
@@ -708,7 +708,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 //Checks that the species has a "head" (brain containing organ) and that hit_zone refers to it.
 /mob/living/carbon/human/proc/headcheck(target_zone, brain_tag = O_BRAIN)
 
-	var/obj/item/organ/affecting = internal_organs_by_name[brain_tag]
+	var/obj/item/organ/affecting = organ_in(brain_tag)
 
 	target_zone = check_zone(target_zone)
 	if(!affecting || affecting.parent_organ != target_zone)
@@ -1034,11 +1034,11 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	..()
 
 /mob/living/carbon/human/proc/is_lung_ruptured()
-	var/obj/item/organ/internal/lungs/L = internal_organs_by_name[O_LUNGS]
+	var/obj/item/organ/internal/lungs/L = organ_in(O_LUNGS)
 	return L && L.is_bruised()
 
 /mob/living/carbon/human/proc/rupture_lung(gradual)
-	var/obj/item/organ/internal/lungs/L = internal_organs_by_name[O_LUNGS]
+	var/obj/item/organ/internal/lungs/L = organ_in(O_LUNGS)
 
 	if(L)
 		if(gradual && (L.damage < (L.min_bruised_damage-1))) //We do slow ticking damage up to 9. After 9, we rupture completely.
@@ -1483,8 +1483,8 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 		return ..()
 
 /mob/living/carbon/human/has_brain()
-	if(internal_organs_by_name[O_BRAIN])
-		var/obj/item/organ/brain = internal_organs_by_name[O_BRAIN]
+	if(organ_in(O_BRAIN))
+		var/obj/item/organ/brain = organ_in(O_BRAIN)
 		if(brain && istype(brain))
 			return 1
 	return 0
@@ -1494,19 +1494,19 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 /mob/living/carbon/human/is_brain_dead()
 	if(!should_have_organ(O_BRAIN))
 		return FALSE
-	var/obj/item/organ/internal/brain/B = internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/B = organ_in(O_BRAIN)
 	return istype(B) && B.is_brain_dead()
 
 /mob/living/carbon/human/has_eyes()
-	if(internal_organs_by_name[O_EYES])
-		var/obj/item/organ/eyes = internal_organs_by_name[O_EYES]
+	if(organ_in(O_EYES))
+		var/obj/item/organ/eyes = organ_in(O_EYES)
 		if(eyes && istype(eyes) && !(eyes.status & ORGAN_CUT_AWAY))
 			return 1
 	return 0
 
 /mob/living/carbon/human/has_lungs()
-	if(internal_organs_by_name[O_LUNGS])
-		var/obj/item/organ/lungs = internal_organs_by_name[O_LUNGS]
+	if(organ_in(O_LUNGS))
+		var/obj/item/organ/lungs = organ_in(O_LUNGS)
 		if(lungs && istype(lungs) && !(lungs.status & ORGAN_CUT_AWAY))
 			return TRUE
 	return FALSE
@@ -1706,7 +1706,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 		var/name = initial(O.name)
 		var/vital = initial(O.vital) //check for vital organs
 		if(vital)
-			O = internal_organs_by_name[organ_tag]
+			O = organ_in(organ_tag)
 			if(!O)
 				return name
 			if(istype(O, /obj/item/organ/internal/brain))

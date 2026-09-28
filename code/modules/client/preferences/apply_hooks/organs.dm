@@ -48,7 +48,7 @@
 		var/status = pref_organ_data[name]
 		if(!status)
 			continue
-		var/obj/item/organ/I = target.internal_organs_by_name[name]
+		var/obj/item/organ/I = target.organ_in(name)
 		if(istype(I, /obj/item/organ/internal/brain))
 			var/obj/item/organ/external/E = target.get_organ(I.parent_organ)
 			if(!E || E.is_organic())

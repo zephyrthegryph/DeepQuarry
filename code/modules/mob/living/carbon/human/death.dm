@@ -23,7 +23,7 @@
 		vr_link.vr_holder = null
 		vr_link = null
 
-	for(var/obj/item/organ/I in internal_organs.Copy()) // removed() shrinks the cache
+	for(var/obj/item/organ/I in internal_organ_list()) // a fresh list: removed() empties the slot
 		I.removed()
 		if(!QDELETED(I) && isturf(I.loc)) // Some organs qdel themselves or other things when removed
 			I.throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)),rand(1,3),30)
@@ -64,7 +64,7 @@
 /mob/living/carbon/human/on_death(gibbed)
 	. = ..()
 	// The defib window starts running down on the body clock now (audit D10).
-	var/obj/item/organ/internal/brain/brain = internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/brain = organ_in(O_BRAIN)
 	if(istype(brain))
 		brain.sync_defib_window()
 	BITSET(hud_updateflag, HEALTH_HUD)

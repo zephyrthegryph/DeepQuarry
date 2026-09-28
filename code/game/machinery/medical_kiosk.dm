@@ -175,7 +175,7 @@ EXTEND_INTERACTIONS(/obj/machinery/medical_kiosk, \
 		if(length(dq_limb_internal_bleeds(E)))
 			problems |= INTERNAL_BLEEDING
 
-	for(var/obj/item/organ/internal/I in user.internal_organs)
+	for(var/obj/item/organ/internal/I in user.internal_organ_list())
 		if(I.is_fractured() || (I.status & (ORGAN_DEAD|ORGAN_DESTROYED)))
 			problems |= SERIOUS_INTERNAL_DAMAGE
 		if(I.status & ORGAN_BLEEDING)

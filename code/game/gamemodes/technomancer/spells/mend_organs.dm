@@ -31,7 +31,7 @@
 			user.adjust_instability(5)
 			L.adjust_instability(5)
 
-			for(var/obj/item/organ/internal/O in H.internal_organs)
+			for(var/obj/item/organ/internal/O in H.internal_organ_list())
 				if(O.damage > 0) // Fix internal damage
 					H.mend(TREAT_RESTORATION, heal_power / 2, O)
 				if(O.damage <= 5 && O.organ_tag == O_EYES) // Fix eyes

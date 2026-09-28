@@ -242,9 +242,9 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 
 /obj/item/shockpaddles/proc/can_revive(mob/living/carbon/human/H) //This is checked right before attempting to revive
 	// D11: there is nothing to restart without a heart.
-	if(H.should_have_organ(O_HEART) && !H.internal_organs_by_name[O_HEART])
+	if(H.should_have_organ(O_HEART) && !H.organ_in(O_HEART))
 		return "buzzes, \"Resuscitation failed - No cardiac activity: patient has no heart. Further attempts futile without replacement.\""
-	var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/brain = H.organ_in(O_BRAIN)
 	if(H.should_have_organ(O_BRAIN))
 		if(!brain)
 			return "buzzes, \"Resuscitation failed - Patient lacks a brain. Further attempts futile without replacement.\""
@@ -299,7 +299,7 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 	if(!H.should_have_organ(O_HEART))
 		return FALSE
 
-	var/obj/item/organ/internal/heart/heart = H.internal_organs_by_name[O_HEART]
+	var/obj/item/organ/internal/heart/heart = H.organ_in(O_HEART)
 	if(!heart)
 		return TRUE
 
@@ -516,7 +516,7 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 	if(!H.should_have_organ(O_BRAIN))
 		return // No brain.
 
-	var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/brain = H.organ_in(O_BRAIN)
 	if(!brain)
 		return // Still no brain.
 

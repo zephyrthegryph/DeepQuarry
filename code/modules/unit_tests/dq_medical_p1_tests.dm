@@ -101,7 +101,7 @@
 	var/old_heal = H.species.chem_strength_heal
 	H.species.chem_strength_heal = 0
 	H.bloodstr.add_reagent(REAGENT_ID_SPACEACILLIN, 5)
-	var/obj/item/organ/internal/liver = H.internal_organs_by_name[O_LIVER]
+	var/obj/item/organ/internal/liver = H.organ_in(O_LIVER)
 	liver.transplant_data = list()
 	liver.can_reject = !initial(liver.can_reject)
 	var/datum/reagent/R = GLOB.chemistry_service.chemical_reagents[REAGENT_ID_MALISHQUALEM]
@@ -236,7 +236,7 @@
 
 /datum/unit_test/dq_p1_c6_metric_owned_takes_no_treatment/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/datum/affliction/A = H.body.afflict(/datum/affliction/hepatic_failure, H.internal_organs_by_name[O_LIVER], 50)
+	var/datum/affliction/A = H.body.afflict(/datum/affliction/hepatic_failure, H.organ_in(O_LIVER), 50)
 	A.metric_owned = TRUE
 	TEST_ASSERT_EQUAL(A.receive_tagged_treatment(TREAT_HEPATORENAL, 30), 0, "a metric-owned affliction takes no treatment itself")
 	TEST_ASSERT_EQUAL(A.severity, 50, "and its severity is untouched")
@@ -290,7 +290,7 @@
 
 /datum/unit_test/dq_p1_c15_clear_stage/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/datum/affliction/A = H.body.afflict(/datum/affliction/brain_damage, H.internal_organs_by_name[O_BRAIN], 40)
+	var/datum/affliction/A = H.body.afflict(/datum/affliction/brain_damage, H.organ_in(O_BRAIN), 40)
 	A._apply_stage("Significant")
 	A.clear_stage()
 	TEST_ASSERT_NULL(A.stage, "no stage after clearing")
@@ -383,7 +383,7 @@
 /datum/unit_test/dq_p1_d11_defib_needs_heart/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/shockpaddles/standalone/paddles = allocate(/obj/item/shockpaddles/standalone)
-	var/obj/item/organ/internal/heart = H.internal_organs_by_name[O_HEART]
+	var/obj/item/organ/internal/heart = H.organ_in(O_HEART)
 	heart.removed()
 	qdel(heart)
 	var/message = paddles.can_revive(H)

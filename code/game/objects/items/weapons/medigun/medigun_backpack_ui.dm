@@ -20,7 +20,7 @@
 	if(scapacitor?.get_rating() < 5)
 		gridstatus = 3
 	if(H)
-		for(var/obj/item/organ/org in H.internal_organs)
+		for(var/obj/item/organ/org in H.internal_organ_list())
 			if(org.is_robotic())
 				continue
 			if(org.status & ORGAN_BLEEDING)

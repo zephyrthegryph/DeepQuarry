@@ -66,7 +66,7 @@
 		return TRUE
 
 /mob/living/carbon/is_allowed_vent_crawl_item(obj/item/carried_item)
-	if(carried_item in internal_organs)
+	if(has_internal_organ(carried_item))
 		return TRUE
 	return ..()
 

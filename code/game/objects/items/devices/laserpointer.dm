@@ -112,7 +112,7 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 				var/eye_prot = H.eyecheck()
 				if(!H.has_vision() || eye_prot >= FLASH_PROTECTION_MAJOR)
 					eye_prot = 100 //Immune
-				var/obj/item/organ/internal/eyes/E = H.internal_organs_by_name[O_EYES]
+				var/obj/item/organ/internal/eyes/E = H.organ_in(O_EYES)
 				if(!E || eye_prot == 100)
 					outmsg = span_notice("You shine [src] at [H] with no response.")
 				else

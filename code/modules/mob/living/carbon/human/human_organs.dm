@@ -1,5 +1,5 @@
 /mob/living/carbon/human/proc/update_eyes()
-	var/obj/item/organ/internal/eyes/eyes = internal_organs_by_name[O_EYES]
+	var/obj/item/organ/internal/eyes/eyes = organ_in(O_EYES)
 	if(eyes)
 		eyes.update_colour()
 		update_icons_body() //Body handles eyes
@@ -32,7 +32,7 @@
 	for(var/obj/item/organ/external/E as anything in self.organs)
 		if(E.germ_level || E.need_process())
 			return FALSE
-	for(var/obj/item/organ/I as anything in self.internal_organs)
+	for(var/obj/item/organ/I as anything in self.internal_organ_list())
 		if(!I.life_step_idle())
 			return FALSE
 	return TRUE
@@ -59,7 +59,7 @@
 				self.bad_external_organs += Ex
 
 	//processing internal organs is pretty cheap, do that first.
-	for(var/obj/item/organ/I in self.internal_organs)
+	for(var/obj/item/organ/I in self.internal_organ_list())
 		I.periodic_step()
 
 	self.handle_stance()
@@ -82,7 +82,7 @@
 
 			if (!self.lying && !self?.buckled_to() && world.time - self.l_move_time < 15)
 			//Moving around with fractured ribs won't do you any good
-				if (prob(10) && !self.stat && self.can_feel_pain() && self.factor(BF_ANALGESIA) < 50 && E.is_broken() && E.internal_organs.len)
+				if (prob(10) && !self.stat && self.can_feel_pain() && self.factor(BF_ANALGESIA) < 50 && E.is_broken() && length(E.held_organs()))
 					self.custom_pain("Pain jolts through your broken [E.encased ? E.encased : E.name], staggering you!", 50)
 					self.emote("scream")
 					self.drop_item(self.loc)
@@ -251,7 +251,7 @@
 	domutcheck( src, null, flgs)
 
 /mob/living/carbon/human/proc/sync_organ_dna()
-	var/list/all_bits = internal_organs|organs
+	var/list/all_bits = internal_organ_list()|organs
 	for(var/obj/item/organ/O in all_bits)
 		O.set_dna(dna)
 

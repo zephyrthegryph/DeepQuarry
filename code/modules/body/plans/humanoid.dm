@@ -37,7 +37,7 @@
 	var/obj/item/organ/O = H.get_organ(check_zone(zone))
 	if(O)
 		return O
-	return H.internal_organs_by_name?[zone]
+	return H.organ_in(zone)
 
 /datum/body/humanoid/biology_of(location)
 	var/obj/item/organ/O = location
@@ -134,7 +134,7 @@
 		if(INJURY_NEURAL)
 			if(!H.should_have_organ(O_BRAIN))
 				return 0
-			var/obj/item/organ/internal/brain/B = H.internal_organs_by_name[O_BRAIN]
+			var/obj/item/organ/internal/brain/B = H.organ_in(O_BRAIN)
 			if(!B)
 				return 0
 			// Neural injury is brain tissue damage: a brain lesion.
@@ -252,7 +252,7 @@
 /datum/body/humanoid/proc/compute_vitality(worst_part)
 	var/mob/living/carbon/human/H = owner
 	var/danger = worst_part / DQ_VITAL_PART_LETHAL_MULT
-	for(var/obj/item/organ/internal/O as anything in H.internal_organs)
+	for(var/obj/item/organ/internal/O as anything in H.internal_organ_list())
 		if(O.vital && O.max_damage)
 			danger = max(danger, O.damage / O.max_damage)
 	// Only afflictions that are injuries count toward the readout; side
@@ -397,7 +397,7 @@
 				. += E.get_burn()
 			return
 		if(INJURY_CATEGORY_NEURAL)
-			var/obj/item/organ/internal/brain/B = H.internal_organs_by_name?[O_BRAIN]
+			var/obj/item/organ/internal/brain/B = H.organ_in(O_BRAIN)
 			return B ? B.damage : (H.should_have_organ(O_BRAIN) ? 200 : 0)
 	return ..()
 

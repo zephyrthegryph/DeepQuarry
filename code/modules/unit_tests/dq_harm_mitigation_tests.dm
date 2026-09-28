@@ -102,7 +102,7 @@
 	TEST_ASSERT_EQUAL(H.injury_armor(INJURY_FROSTBITE, BP_TORSO), 0, "no armour resists frostbite")
 	TEST_ASSERT_EQUAL(H.injury_armor(INJURY_BLUNT, BP_HEAD), 0, "a vest doesn't armour the head")
 	var/obj/item/organ/external/chest = H.get_organ(BP_TORSO)
-	var/obj/item/organ/internal/heart = H.internal_organs_by_name[O_HEART]
+	var/obj/item/organ/internal/heart = H.organ_in(O_HEART)
 	TEST_ASSERT_EQUAL(H.injury_armor(INJURY_BLUNT, chest), 40, "a limb target reads its own armour")
 	if(heart)
 		TEST_ASSERT_EQUAL(H.injury_armor(INJURY_BLUNT, heart), 40, "an organ target reads its limb's armour")

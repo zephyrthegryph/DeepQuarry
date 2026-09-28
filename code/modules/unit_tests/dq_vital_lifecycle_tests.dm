@@ -151,7 +151,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT_EQUAL(H.return_from_death("unit test", src), "not dead", "a living mob can't be revived")
 	H.death()
-	var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/brain = H.organ_in(O_BRAIN)
 	TEST_ASSERT(istype(brain), "a human has a brain")
 	brain.expire_defib_window()
 	TEST_ASSERT_EQUAL(H.return_from_death("unit test", src), "brain decayed", "a decayed brain closes the window")
@@ -215,7 +215,7 @@
 /datum/unit_test/dq_revive_restore_always_succeeds/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	H.death()
-	var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/brain = H.organ_in(O_BRAIN)
 	TEST_ASSERT(istype(brain), "a human has a brain")
 	brain.expire_defib_window()
 	brain.die()
@@ -232,12 +232,12 @@
 /datum/unit_test/dq_revive_restore_regrows_brain/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	H.death()
-	var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/brain = H.organ_in(O_BRAIN)
 	brain.removed()
 	qdel(brain)
-	TEST_ASSERT_NULL(H.internal_organs_by_name[O_BRAIN], "the brain is gone")
+	TEST_ASSERT_NULL(H.organ_in(O_BRAIN), "the brain is gone")
 	TEST_ASSERT_EQUAL(H.return_from_death("unit test", src, REVIVE_RESTORE | REVIVE_IGNORE_WINDOW | REVIVE_HEAL), TRUE, "reform flags revive a brainless body")
-	TEST_ASSERT_NOTNULL(H.internal_organs_by_name[O_BRAIN], "the brain is regrown")
+	TEST_ASSERT_NOTNULL(H.organ_in(O_BRAIN), "the brain is regrown")
 
 /// Vore reform fully restores the stored body: a husked, brain-dead, badly hurt corpse comes back whole.
 /datum/unit_test/dq_revive_reform_restore_full
@@ -246,7 +246,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	H.injure(INJURY_BLUNT, 60, BP_TORSO, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	H.death()
-	var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/brain = H.organ_in(O_BRAIN)
 	brain.expire_defib_window()
 	brain.die()
 	H.ChangeToHusk()

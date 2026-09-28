@@ -123,7 +123,7 @@
 /// swarm holds together for the change.
 /datum/forms/protean/proc/form_control_check()
 	var/mob/living/carbon/human/H = owner
-	var/obj/item/organ/internal/nano/orchestrator/O = H.internal_organs_by_name?[O_ORCH]
+	var/obj/item/organ/internal/nano/orchestrator/O = H.organ_in(O_ORCH)
 	var/datum/affliction/nanite/orchestrator_damage/damage = O && H.body?.find_affliction(/datum/affliction/nanite/orchestrator_damage, O)
 	if(!damage || !prob(damage.severity / 2))
 		return TRUE

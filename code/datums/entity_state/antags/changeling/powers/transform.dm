@@ -64,7 +64,7 @@
 		var/mob/living/owner = src
 		for(var/obj/item/organ/O in owner.organs) //I guess you can also consider this a changeling test if you take out their organ and implant it into someone else and it doesn't reject.
 			O.can_reject = FALSE
-		for(var/obj/item/organ/O in owner.internal_organs)
+		for(var/obj/item/organ/O in owner.internal_organ_list())
 			O.can_reject = FALSE
 
 	feedback_add_details("changeling_powers","TR")

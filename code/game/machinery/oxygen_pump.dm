@@ -356,8 +356,8 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 			if(ishuman(breather()) && !(HAS_SYNTHETIC_BIOLOGY(breather())))
 				var/mob/living/carbon/human/H = breather()
 
-				if(H.internal_organs_by_name[O_LUNGS])
-					var/obj/item/organ/internal/L = H.internal_organs_by_name[O_LUNGS]
+				if(H.organ_in(O_LUNGS))
+					var/obj/item/organ/internal/L = H.organ_in(O_LUNGS)
 					if(L)
 						if(!(L.status & ORGAN_DEAD))
 							H.mend(TREAT_OXYGENATION, rand(10,15))

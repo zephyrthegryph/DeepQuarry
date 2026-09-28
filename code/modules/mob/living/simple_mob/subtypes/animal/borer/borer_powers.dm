@@ -110,7 +110,7 @@
 	if(!(Adjacent(infest_target)))
 		to_chat(src, span_warning("They are no longer in range!"))
 		return
-	if(!infest_target.internal_organs_by_name[O_BRAIN]) // See section below about replace_brain() being disabled
+	if(!infest_target.organ_in(O_BRAIN)) // See section below about replace_brain() being disabled
 		to_chat(src, span_danger("\The [infest_target] has no brain to bond to!"))
 		return
 
@@ -128,7 +128,7 @@
 
 	/* This is likely not desired, and has some major issues with ghost behavior. Disabling for now
 	// No brain organ, so the borer moves in and replaces it permanently.
-	if(!host.internal_organs_by_name[O_BRAIN])
+	if(!host.organ_in(O_BRAIN))
 		add_attack_logs(src, host, "merged with brainless body (borer)")
 		replace_brain()
 		return

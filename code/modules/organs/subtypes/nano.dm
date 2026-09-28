@@ -219,7 +219,7 @@
 	return null
 
 /mob/living/carbon/human/nano_get_refactory()
-	var/obj/item/organ/internal/nano/refactory/R = internal_organs_by_name?[O_FACT]
+	var/obj/item/organ/internal/nano/refactory/R = organ_in(O_FACT)
 	if(istype(R) && !(R.status & ORGAN_DEAD))
 		return R
 	return null

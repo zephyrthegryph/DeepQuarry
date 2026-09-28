@@ -61,7 +61,7 @@
 
 	// Not lifelike synth, might have synth voice box
 	if(!robo)
-		var/obj/item/organ/internal/V = internal_organs_by_name[O_VOICE]
+		var/obj/item/organ/internal/V = organ_in(O_VOICE)
 		if(V?.is_robotic())
 			return "synthetic"
 
