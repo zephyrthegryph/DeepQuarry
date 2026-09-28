@@ -670,7 +670,7 @@ REF_OWNED(/mob/living/simple_mob, list("myid", "mob_radio"))
 	if(!vore_active || no_vore || !voremob_loaded)
 		return
 
-	AddElement(/datum/element/slosh) // Sloshy element
+	om_attach(src, /datum/om/behaviour/slosh) // Sloshy element
 
 	if(!soulgem)
 		soulgem = new(src)

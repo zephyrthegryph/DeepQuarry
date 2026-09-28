@@ -43,7 +43,7 @@
 /mob/proc/init_vore(force = FALSE)
 	//Something else made organs, meanwhile.
 	if(!isnewplayer(src))
-		AddElement(/datum/element/slosh)
+		om_attach(src, /datum/om/behaviour/slosh)
 		// Wire the spontaneous-vore signal handlers (stumble/slip/drop/throw vore).
 		// The element was already defined in code/datums/elements/vore/spontaneous_vore.dm
 		// but was never attached anywhere — stumble/slip/drop/throw vore was silently
