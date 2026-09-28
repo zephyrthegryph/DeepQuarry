@@ -56,8 +56,12 @@ EXTEND_INTERACTIONS(/obj/item/stack/material/supermatter, INTERACT_HAND_UNGATED(
 	supermatter_touched(user)
 	return TRUE
 
-/obj/item/stack/material/supermatter/hand_pickup(mob/living/user)
-	. = ..()
+EXTEND_INTERACTIONS(/obj/item/stack/material/supermatter, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(supermatter_pick_up)))
+
+/// Picking supermatter up: it re-weighs itself and may scorch the holder.
+/obj/item/stack/material/supermatter/proc/supermatter_pick_up(mob/user, obj/item/held, datum/interaction/interaction)
+	. = TRUE
+	interaction_pick_up(user, held, interaction)
 	supermatter_touched(user)
 
 /// Old attack_hand's tail: after a touch, the stack re-weighs itself and may scorch the toucher.

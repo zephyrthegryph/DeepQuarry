@@ -126,13 +126,14 @@ DECLARE_INTERACTIONS(/obj/item/toy/mecha, \
 		playsound(user, 'sound/mecha/mechstep.ogg', 20, TRUE)
 	return TRUE
 
-/// Old attack_hand: runs after the touch tried to pick it up (hand_pickup()).
-/obj/item/toy/mecha/hand_pickup(mob/user)
-	. = ..()
-	if(.)
-		return
+EXTEND_INTERACTIONS(/obj/item/toy/mecha, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(mecha_toy_pick_up)))
+
+/// Picking up a toy mech plays with it once it's in hand.
+/obj/item/toy/mecha/proc/mecha_toy_pick_up(mob/user, obj/item/held, datum/interaction/interaction)
+	interaction_pick_up(user, held, interaction)
 	if(loc == user)
 		attack_self(user)
+	return TRUE
 
 /**
  * If you attack a mech with a mech, initiate combat between them

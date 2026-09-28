@@ -66,7 +66,8 @@ DECLARE_INTERACTIONS(/obj/item/strangerock, INTERACT_ITEM(null, PROC_REF(strange
 		S.sample_item(src, user)
 		return INTERACTION_HANDLED_PASS
 
-	var/gathered = storage_gather_by(I, user)
+	var/obj/item/storage/bag = I
+	var/gathered = istype(bag) && bag.try_collect(src, user)
 	if(prob(33))
 		src.visible_message(span_warning("[src] crumbles away, leaving some dust and gravel behind."))
 		consume(src, user)

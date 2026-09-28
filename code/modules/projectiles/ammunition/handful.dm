@@ -92,15 +92,18 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/handful, \
 // When a handful empties through normal use, get rid of it rather than leaving an
 // invisible empty stack lying around.
 /// Old attack_hand, first half: taking a round out by hand (the magazine's hand effect, run here
-/// so the empty check follows it). FALSE goes on to pickup; hand_pickup() checks again after.
+/// so the empty check follows it). FALSE goes on to pickup; the pickup checks again after.
 /obj/item/ammo_magazine/handful/proc/handful_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	. = magazine_interaction_hand(user, held, interaction)
 	if(.)
 		consume_if_empty(user)
 
-/// Old attack_hand, second half: the empty check after a pickup.
-/obj/item/ammo_magazine/handful/hand_pickup(mob/living/user)
-	. = ..()
+EXTEND_INTERACTIONS(/obj/item/ammo_magazine/handful, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(handful_pick_up)))
+
+/// Picking a handful up: an empty one is used up.
+/obj/item/ammo_magazine/handful/proc/handful_pick_up(mob/user, obj/item/held, datum/interaction/interaction)
+	. = TRUE
+	interaction_pick_up(user, held, interaction)
 	consume_if_empty(user)
 
 /obj/item/ammo_magazine/handful/proc/consume_if_empty(mob/user)

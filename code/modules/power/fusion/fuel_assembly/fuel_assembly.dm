@@ -136,9 +136,12 @@ DECLARE_INTERACTIONS(/obj/item/fuel_assembly/blitz/unshielded, INTERACT_ITEM(nul
 			to_chat(user,span_warning("You need at least five sheets of lead to add shielding!"))
 	return INTERACTION_HANDLED_PASS
 
-/// Old attack_hand: runs after the touch tried to pick it up (hand_pickup()).
-/obj/item/fuel_assembly/blitz/unshielded/hand_pickup(mob/user)
-	. = ..()
+EXTEND_INTERACTIONS(/obj/item/fuel_assembly/blitz/unshielded, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(unshielded_pick_up)))
+
+/// Picking the unshielded rod up irradiates the holder.
+/obj/item/fuel_assembly/blitz/unshielded/proc/unshielded_pick_up(mob/user, obj/item/held, datum/interaction/interaction)
+	. = TRUE
+	interaction_pick_up(user, held, interaction)
 
 	if(!ishuman(user))
 		return

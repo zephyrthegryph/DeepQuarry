@@ -173,3 +173,16 @@
 #define INTERACT_HAND_HOSTILE(name, effect, requires...) list(INTERACT_KIND_HAND, name, effect, list(requires), null, INTERACT_STANCE_HOSTILE)
 /// Touched with an empty hand, only with combat mode off.
 #define INTERACT_HAND_PEACEFUL(name, effect, requires...) list(INTERACT_KIND_HAND, name, effect, list(requires), null, INTERACT_STANCE_PEACEFUL)
+
+// Default interactions: what a type does with an input when nothing more specific it
+// offers takes it (an item's pickup, a mob being hit or touched). Spec element 7.
+// They sort after every other interaction of the entry, whichever type declared them.
+#define INTERACT_ORDER_DEFAULT "default"
+/// Priority of a default interaction: below every ordinary one (0) and hostile shifts.
+#define INTERACTION_DEFAULT_PRIORITY -(COMBAT_MODE_PRIORITY_SHIFT * 2)
+/// Touched with an empty hand, when nothing else answers: the type's default touch (an item's pickup).
+#define INTERACT_HAND_DEFAULT(name, effect, requires...) list(INTERACT_KIND_HAND, name, effect, list(requires), null, null, INTERACT_ORDER_DEFAULT)
+/// Used with any item, when nothing else takes it: the type's default (a mob is hit with it).
+#define INTERACT_ITEM_DEFAULT(name, effect, requires...) list(INTERACT_KIND_ITEM, name, effect, list(requires), null, null, INTERACT_ORDER_DEFAULT)
+/// Used with an item of `held_type`, when nothing else takes it.
+#define INTERACT_INSERT_DEFAULT(held_type, effect, name, requires...) list(INTERACT_KIND_INSERT, name, effect, list(requires), held_type, null, INTERACT_ORDER_DEFAULT)

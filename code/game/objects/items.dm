@@ -320,21 +320,34 @@
 	return ..(user, "", "It is \a [size] item.")
 
 /**
- * An empty-hand touch that no interaction answered: pick the item up (or use it, when
- * anchored). Reactions to being picked up by hand override it as `. = ..()` then their
- * own work, as the old `attack_hand() { . = ..(); ... }` overrides did: they are not
- * interactions of their own.
+ * Every item's defaults: an empty hand picks it up, and a pickup-mode storage bag
+ * collects it. They come after everything else the item offers for those inputs.
+ * A type that reacts to being picked up declares its own INTERACT_HAND_DEFAULT
+ * "Pick up" whose effect calls interaction_pick_up() first.
  */
-/obj/item/hand_default(mob/living/user)
-	return hand_pickup(user)
+/obj/item/declare_interactions(list/into)
+	..()
+	var/static/list/default_specs = list(
+		INTERACT_HAND_DEFAULT("Pick up", PROC_REF(interaction_pick_up)),
+		INTERACT_INSERT_DEFAULT(/obj/item/storage, PROC_REF(interaction_collected), "Collect"),
+	)
+	for(var/spec in default_specs)
+		into += dq_interaction_from_spec(/obj/item, spec)
 
-/obj/item/proc/hand_pickup(mob/living/user)
-	if(anchored) // Start
-		if(hascall(src, "attack_self"))
-			return src.attack_self(user)
-		else
+/// A pickup-mode storage bag used on the item collects it (or its whole tile).
+/obj/item/proc/interaction_collected(mob/user, obj/item/storage/bag, datum/interaction/interaction)
+	return bag.try_collect(src, user) ? INTERACTION_HANDLED_PASS : FALSE
+
+/// Pick the item up into the active hand. An anchored item is used instead (its self-use).
+/obj/item/proc/interaction_pick_up(mob/living/user, obj/item/held, datum/interaction/interaction)
+	pick_up_by_hand(user)
+	return TRUE
+
+/obj/item/proc/pick_up_by_hand(mob/living/user)
+	if(anchored)
+		if(!attack_self(user))
 			to_chat(user, span_notice("This is anchored and you can't lift it."))
-		return // End
+		return
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
 		var/obj/item/organ/external/temp = H.organs_by_name[BP_R_HAND]
@@ -388,25 +401,6 @@
 		var/mob/living/silicon/robot/R = user
 		R.activate_module(src)
 		R.hud_used.update_robot_modules_display()
-
-/// Used with an item nothing else took: a pickup-mode bag collects this item.
-/obj/item/attackby_default(obj/item/W, mob/user, attack_modifier)
-	storage_gather_by(W, user)
-	return FALSE
-
-/// A pickup-mode storage used on this item collects it (or its whole tile). TRUE when W was such a storage.
-/obj/item/proc/storage_gather_by(obj/item/W, mob/user)
-	if(!istype(W, /obj/item/storage))
-		return FALSE
-	var/obj/item/storage/S = W
-	if(!S.use_to_pickup)
-		return FALSE
-	if(S.collection_mode) //Mode is set to collect all items
-		if(isturf(src.loc))
-			S.gather_all(src.loc, user)
-	else
-		S.try_insert(src, user)
-	return TRUE
 
 /obj/item/proc/talk_into(mob/M as mob, text)
 	return

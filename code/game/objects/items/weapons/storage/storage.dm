@@ -460,8 +460,10 @@ REF_OWNED(/obj/item/storage, "hud")
 	make_contents_real()
 	if(SEND_SIGNAL(src, COMSIG_ATOM_ATTACKBY, W, user, dq_interaction_click_params(user)) & COMPONENT_CANCEL_ATTACK_CHAIN)
 		return TRUE
-	// After a gather the base item attackby must not gather again, so the input is used up.
-	var/pass = storage_gather_by(W, user) ? TRUE : INTERACTION_HANDLED_PASS
+	// A pickup-mode bag collects first, as the old override's ..() did; then the item's own
+	// collect default must not run again, so the input is used up.
+	var/obj/item/storage/bag = W
+	var/pass = (istype(bag) && bag.try_collect(src, user)) ? TRUE : INTERACTION_HANDLED_PASS
 
 	if(isrobot(user))
 		return pass //Robots can't interact with storage items.
@@ -513,13 +515,28 @@ REF_OWNED(/obj/item/storage, "hud")
 		return TRUE
 	return FALSE
 
-/// Old attack_hand, the part after the pickup: whoever was looking inside stops.
-/obj/item/storage/hand_pickup(mob/living/user)
-	. = ..()
+/// Picking the storage up: whoever was looking inside stops.
+/obj/item/storage/proc/interaction_pick_up_storage(mob/living/user, obj/item/held, datum/interaction/interaction)
+	interaction_pick_up(user, held, interaction)
 	for(var/mob/M in range(1))
 		if (M.s_active == src)
 			src.close(M)
 	src.add_fingerprint(user)
+	return TRUE
+
+/**
+ * Collect `target` with this bag when it is in pickup mode: its whole tile in
+ * collection mode, else just it. TRUE when the bag is a pickup bag (it acted).
+ */
+/obj/item/storage/proc/try_collect(obj/item/target, mob/user)
+	if(!use_to_pickup)
+		return FALSE
+	if(collection_mode) //Mode is set to collect all items
+		if(isturf(target.loc))
+			gather_all(target.loc, user)
+	else
+		try_insert(target, user)
+	return TRUE
 
 /// Old attack_self: quick-empty. FALSE lets a subtype's self-use go on.
 /obj/item/storage/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
@@ -542,6 +559,7 @@ DECLARE_INTERACTIONS(/obj/item/storage, \
 	INTERACT_SELF("Empty", PROC_REF(interaction_self)), \
 	INTERACT_ALT("Open", PROC_REF(interaction_alt)), \
 	INTERACT_DRAG(null, PROC_REF(interaction_drag)), \
+	INTERACT_HAND_DEFAULT("Pick up", PROC_REF(interaction_pick_up_storage)), \
 )
 
 /// Old MouseDrop_T.

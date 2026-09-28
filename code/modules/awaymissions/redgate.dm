@@ -234,9 +234,12 @@ DECLARE_INTERACTIONS(/obj/structure/redgate, INTERACT_HAND_UNGATED(null, PROC_RE
 	src.loc = src.start_pos
 	GLOB.global_announcer.autosay("[capitalize(laser_team)] flag returned by [user]!","Laserdome Announcer","Entertainment")
 
-/// Old attack_hand: runs after the touch tried to pick it up (hand_pickup()).
-/obj/item/laserdome_flag/hand_pickup(mob/user)
-	. = ..()
+EXTEND_INTERACTIONS(/obj/item/laserdome_flag, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(flag_pick_up)))
+
+/// Picking the flag up: the other team is told who has it.
+/obj/item/laserdome_flag/proc/flag_pick_up(mob/user, obj/item/held, datum/interaction/interaction)
+	. = TRUE
+	interaction_pick_up(user, held, interaction)
 	var/mob/living/carbon/human/M = loc
 	var/grabbing_team
 
@@ -362,9 +365,12 @@ DECLARE_INTERACTIONS(/obj/structure/flag_base, INTERACT_ITEM(null, PROC_REF(inte
 	. = ..()
 	start_pos = src.loc	//save our starting location for later
 
-/// Old attack_hand: runs after the touch tried to pick it up (hand_pickup()).
-/obj/item/laserdome_hyperball/hand_pickup(mob/user)
-	. = ..()
+EXTEND_INTERACTIONS(/obj/item/laserdome_hyperball, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(hyperball_pick_up)))
+
+/// Picking the ball up: the teams are told who has it.
+/obj/item/laserdome_hyperball/proc/hyperball_pick_up(mob/user, obj/item/held, datum/interaction/interaction)
+	. = TRUE
+	interaction_pick_up(user, held, interaction)
 	var/mob/living/carbon/human/M = loc
 	var/grabbing_team
 

@@ -83,6 +83,8 @@
 	var/held_type = length(spec) >= 5 ? spec[5] : null
 	// INTERACT_STANCE_*: a hostile/peaceful shape is only meant in that combat stance (offered_when).
 	var/stance = length(spec) >= 6 ? spec[6] : null
+	// INTERACT_ORDER_DEFAULT: the type's default for this input, tried after everything else it offers.
+	var/priority = (length(spec) >= 7 && spec[7] == INTERACT_ORDER_DEFAULT) ? INTERACTION_DEFAULT_PRIORITY : 0
 	var/list/offered_when
 	var/list/tags
 	switch(stance)
@@ -145,14 +147,14 @@
 	// still want the same auto-generated id text (two "interaction_self" procs on
 	// unrelated types); this seed just needs to vary between them, not to be a
 	// lookup key on its own.
-	var/id_seed = "[kind]|[effect_key]|[held_type]|[owner_type]|[stance]" // deterministic across builds (a \ref is not)
+	var/id_seed = "[kind]|[effect_key]|[held_type]|[owner_type]|[stance]|[priority]" // deterministic across builds (a \ref is not)
 	var/base_id = "gen_[dq_interaction_slug(kind)]_[dq_interaction_slug(effect_key)]"
 	var/id = base_id
 	var/attempt = 0
 	while(interaction_by_id(id) || cache_has_id(cache, id))
 		id = "[base_id]_[md5("[id_seed]|[attempt++]")]"
 
-	var/datum/interaction/generic/interaction = new(id, name, category, /* priority */ 0, default_action, requires, effect, entry, held_type, offered_when, /* consumes_input */ TRUE, behind_gate, always_handled)
+	var/datum/interaction/generic/interaction = new(id, name, category, priority, default_action, requires, effect, entry, held_type, offered_when, /* consumes_input */ TRUE, behind_gate, always_handled)
 	interaction.tags = tags
 	cache[spec] = interaction
 	return interaction

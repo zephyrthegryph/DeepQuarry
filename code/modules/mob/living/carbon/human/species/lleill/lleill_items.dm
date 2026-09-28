@@ -387,7 +387,10 @@ DECLARE_INTERACTIONS(/obj/structure/glamour_ring, INTERACT_HAND_UNGATED(null, PR
 		"leopardmander" = /mob/living/simple_mob/vore/leopardmander
 		)
 
-DECLARE_INTERACTIONS(/obj/item/glamour_unstable, INTERACT_USE(null, PROC_REF(interaction_self)))
+DECLARE_INTERACTIONS(/obj/item/glamour_unstable, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_HAND_DEFAULT("Pick up", PROC_REF(glamour_pick_up)), \
+)
 
 /// Old attack_self.
 /obj/item/glamour_unstable/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
@@ -454,9 +457,10 @@ DECLARE_INTERACTIONS(/obj/item/glamour_unstable, INTERACT_USE(null, PROC_REF(int
 	var/new_size = (rand(25,200))/100
 	L.resize(new_size, ignore_prefs = FALSE)
 
-/// Old attack_hand: runs after the touch tried to pick it up (hand_pickup()).
-/obj/item/glamour_unstable/hand_pickup(mob/user)
-	. = ..()
+/// Picking the unstable glamour up bare-handed may set it off.
+/obj/item/glamour_unstable/proc/glamour_pick_up(mob/user, obj/item/held, datum/interaction/interaction)
+	. = TRUE
+	interaction_pick_up(user, held, interaction)
 
 	var/mob/living/M = user
 	if(!istype(M))
