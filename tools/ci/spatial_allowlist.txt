@@ -5,7 +5,7 @@
 # the ledger read API or the spatial API (doc/rewrite/containment.md
 # section 2a) and lower the count; `python tools/ci/spatial_lint.py
 # --update` rewrites it.
-# Total: 1269 sites in 563 files.
+# Total: 1266 sites in 560 files.
 code/ATMOSPHERICS/components/binary_devices/pipeturbine.dm 2
 code/ATMOSPHERICS/components/unary/unary_base.dm 1
 code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm 1
@@ -19,7 +19,6 @@ code/_helpers/pathfinding/common.dm 1
 code/_helpers/turfs.dm 1
 code/_helpers/unsorted.dm 9
 code/_onclick/adjacent.dm 1
-code/_onclick/hud/screen_objects.dm 1
 code/_onclick/observer.dm 1
 code/controllers/master.dm 1
 code/controllers/subsystems/explosions.dm 2
@@ -41,7 +40,6 @@ code/datums/components/food/germ_sensitive.dm 1
 code/datums/components/materials/material_container.dm 2
 code/datums/components/remote_view.dm 2
 code/datums/components/species/shadekin/powers/phase_shift.dm 2
-code/datums/components/structures/bluespace_connection.dm 1
 code/datums/components/traits/crowd_detection.dm 3
 code/datums/components/traits/weaver.dm 2
 code/datums/diseases/_MobProcs.dm 2
@@ -315,7 +313,7 @@ code/modules/keybindings/adapters.dm 2
 code/modules/library/lib_items.dm 6
 code/modules/library/lib_machines.dm 2
 code/modules/looking_glass/lg_area.dm 1
-code/modules/lootpanel/contents.dm 2
+code/modules/lootpanel/contents.dm 1
 code/modules/lootpanel/ui.dm 3
 code/modules/maps/map_template.dm 1
 code/modules/materials/materials/organic/resin.dm 4
@@ -498,7 +496,6 @@ code/modules/research/tg/server_control.dm 2
 code/modules/rogueminer/zonemaster.dm 3
 code/modules/samples/container.dm 3
 code/modules/samples/samples.dm 1
-code/modules/scripting/stack.dm 5
 code/modules/security levels/keycard authentication.dm 1
 code/modules/shieldgen/emergency_shield.dm 1
 code/modules/shuttles/crashes.dm 1

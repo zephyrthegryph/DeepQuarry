@@ -281,8 +281,7 @@
 
 	var/obj/item/storage/toolbox/mechanical/N = new /obj/item/storage/toolbox/mechanical(Tsec)
 	N.latent_discard()
-	for(var/obj/item/I in N.contents) // latent-ok: discarded above
-		qdel(I)
+	QDEL_LIST(N.contents) // latent-ok: discarded above
 	new /obj/item/assembly/prox_sensor(Tsec)
 	if(prob(50))
 		new /obj/item/robot_parts/l_arm(Tsec)
