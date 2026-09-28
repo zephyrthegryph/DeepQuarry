@@ -10,6 +10,9 @@
 
 REF_VAR(/mob/living/carbon/human, OWNED, /datum/forms, character_forms)
 REF_BACK(/datum/forms, list("owner" = "character_forms"))
+// Form type -> this character's form instance; `current` is one of them.
+REF_OWNED_VALUES(/datum/forms, "forms")
+REF_HELD(/datum/forms, "current")
 
 /mob/living/carbon/human/proc/get_forms()
 	RETURN_TYPE(/datum/forms)
@@ -93,9 +96,6 @@ REF_BACK(/datum/forms, list("owner" = "character_forms"))
 			owner.character_forms = null
 	owner = null
 	current = null
-	for(var/form_type in forms)
-		qdel(forms[form_type])
-	forms = null
 	form_overlays = null
 	return ..()
 

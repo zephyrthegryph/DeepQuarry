@@ -267,3 +267,6 @@ REF_OWNED_LIST(/datum/plane_holder, "plane_masters")
 		if(my_mob.client)
 			my_mob.client.images -= GLOB.entopic_images
 // /mob/Destroy() cleanup of REGISTRY_MEMBERS(REGISTRY_ENTOPIC_USERS) folded into the canonical /mob/Destroy() in mob.dm
+
+REF_BACK(/datum/plane_holder, list("my_mob" = "plane_holder"))
+REF_BACK(/atom/movable/screen/plane_master/augmented, list("my_mob" = null))

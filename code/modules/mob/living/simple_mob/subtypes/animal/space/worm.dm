@@ -406,3 +406,6 @@
 		previous.update_body_faction()
 		return 1
 	return 0
+
+// Neighbouring segments: Destroy() severs the back half and unlinks the front.
+REF_HELD(/mob/living/simple_mob/animal/space/space_worm, list("previous", "next", "currentlyEating"))

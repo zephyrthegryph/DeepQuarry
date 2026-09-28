@@ -35,6 +35,7 @@
 	vore_default_mode = DM_SELECT
 	vore_pounce_maxhealth = 1000
 	vore_bump_emote = "encloses on"
+	/// OM handles of the mobs already eaten once.
 	var/list/eaten_mobs = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 
 /mob/living/simple_mob/vore/mantrap/load_default_bellies()
@@ -69,11 +70,11 @@
 		return
 	if(isliving(AM))
 		var/mob/living/L = AM
-		if(L in eaten_mobs)
+		if(om_handle(L) in eaten_mobs)
 			return
 		if(L.devourable && L.allowmobvore && (src.vore_fullness < src.vore_capacity))
 			begin_instant_nom(src,L,src,src.vore_selected)
-			eaten_mobs += L
+			eaten_mobs += om_handle(L)
 
 
 ////////////////////////////PITCHER PLANT////////////////////////////////////////////////

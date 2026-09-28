@@ -13,3 +13,5 @@
 		transfer_personality(D)
 	om_unhook(ghost_check, /datum/om/event/ghost_query_complete, src)
 	QDEL_NULL(ghost_check) //get rid of the query
+
+REF_OWNED(/mob/living/simple_mob/animal/borer, "ghost_check")

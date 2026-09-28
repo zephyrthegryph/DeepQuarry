@@ -151,3 +151,5 @@
 /mob/living/voice
 	no_vore = TRUE
 	can_pain_emote = FALSE
+
+REF_HELD(/mob/living/voice, "comm")

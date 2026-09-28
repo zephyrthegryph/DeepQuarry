@@ -218,3 +218,7 @@ REF_BACK(/obj/effect/overmap/visitable/ship/simplemob, list("parent" = "child_om
 	EVENT_HANDLER
 	forceMove(parent.loc)
 	set_dir(parent.dir)
+
+// Type paths, never instances.
+REF_STATIC(/obj/effect/overmap/visitable/simplemob, "parent_mob_type")
+REF_STATIC(/obj/effect/overmap/visitable/ship/simplemob, "parent_mob_type")

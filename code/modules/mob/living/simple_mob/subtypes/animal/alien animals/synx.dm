@@ -388,9 +388,9 @@
 	. = ..()
 	if(!message || !speaker)    return
 	if (speaker == src) return
-	speaker = speaker.GetVoice()
+	var/voice_name = speaker.GetVoice()
 	speak += message
-	voices += speaker
+	voices += voice_name
 	if(voices.len>=memorysize)
 		voices -= (pick(voices))//making the list more dynamic
 	if(speak.len>=memorysize)

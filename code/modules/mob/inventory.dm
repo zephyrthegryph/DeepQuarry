@@ -529,3 +529,5 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 /mob/proc/delete_inventory(include_hands)
 	for(var/entry in get_equipped_items())
 		consume(entry, src)
+
+REF_HELD(/mob, "s_active")

@@ -771,3 +771,6 @@ EXTEND_INTERACTIONS(/obj/item/rig/protean, \
 				usr.unEquip(src)
 				usr.put_in_l_hand(src)
 		src.add_fingerprint(usr)
+
+// Destroy() reads both before letting go (the core spills out, soaking stops).
+REF_HELD(/obj/item/rig/protean, list("myprotean", "soaking_wearer"))

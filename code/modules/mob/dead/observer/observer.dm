@@ -534,10 +534,6 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 		exonet.remove_address()
 		QDEL_NULL(exonet)
 	QDEL_NULL(dq_exonet_log_panel_cache)
-	if(body_backup)
-		body_backup.moveToNullspace() //YEET
-		qdel(body_backup)
-		body_backup = null
 	visualnet.addVisibility(src, src.client)
 	visualnet = null
 	stop_following()
@@ -1192,3 +1188,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 
 /mob/observer
 	low_priority = TRUE
+
+REF_OWNED(/mob/observer, "body_backup")
+REF_STATIC(/mob/observer/dead, "visualnet")
+REF_HELD(/mob/observer/dead, "hud")

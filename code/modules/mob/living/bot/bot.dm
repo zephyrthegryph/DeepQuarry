@@ -201,12 +201,14 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 	if(ignore_list.len)
 		for(var/atom/A in ignore_list)
 			if(!A || !A.loc || prob(1))
-				if(A in ignore_past)
-					if(prob(10/ignore_past[A]) || !A || !A.loc)
-						ignore_past[A]++
+				var/past_key = om_handle(A)
+				if(past_key && (past_key in ignore_past))
+					if(prob(10/ignore_past[past_key]) || !A || !A.loc)
+						ignore_past[past_key]++
 						ignore_list -= A
 				else
-					ignore_past[A] = 1
+					if(past_key)
+						ignore_past[past_key] = 1
 					ignore_list -= A
 	handleRegular()
 
@@ -367,8 +369,8 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 			ignore_list |= target
 		resetTarget()
 		obstacle = null
-	else if(target in ignore_past)
-		ignore_past.Remove(target)
+	else if(om_handle_of(target) in ignore_past)
+		ignore_past.Remove(om_handle_of(target))
 	return
 
 /mob/living/bot/proc/makeStep(list/path)
@@ -604,3 +606,9 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 	devourable = FALSE
 	feeding = FALSE
 	can_be_drop_pred = FALSE
+
+REF_OWNED(/mob/living/bot, list("botcard", "access_scanner"))
+REF_HELD(/mob/living/bot, list("paicard", "target"))
+REF_STATIC(/mob/living/bot, "obstacle")
+/// Things the bot gave up on and how often: AI memory, re-learned as it patrols.
+// ignore_past counts how often each target was ignored, keyed by om_handle(): the bot owns none of them.

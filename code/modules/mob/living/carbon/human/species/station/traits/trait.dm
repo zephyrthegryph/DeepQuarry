@@ -207,3 +207,5 @@
 
 /datum/trait/proc/environment_effects(mob/living/carbon/human/H)
 	return
+
+REF_PAIR(/datum/trait, list("linked_gene" = "linked_trait"))

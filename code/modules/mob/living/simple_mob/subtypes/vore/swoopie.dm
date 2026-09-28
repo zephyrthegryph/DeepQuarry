@@ -323,3 +323,5 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie,
 
 //Custom Swoopie AI to make it swoop up trash when asked to
 // Select an obj if no mobs are around.
+
+REF_OWNED(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie, "Vac")

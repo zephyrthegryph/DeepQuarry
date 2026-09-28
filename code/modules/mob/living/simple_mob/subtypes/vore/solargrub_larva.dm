@@ -253,3 +253,5 @@ REF_OWNED(/mob/living/simple_mob/animal/solargrub_larva, list("powermachine", "s
 				to_chat(user, span_warning("You disturb a grub nesting in \the [O]!"))
 				return
 	return ..()
+
+REF_BACK(/obj/machinery/abstract_grub_machine, list("grub" = "powermachine"))

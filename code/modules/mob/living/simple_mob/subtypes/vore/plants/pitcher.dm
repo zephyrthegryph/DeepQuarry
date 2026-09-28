@@ -341,3 +341,6 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/pitcher_fruit, INTE
 #undef NUTRITION_MEAT
 #undef PITCHER_SATED
 #undef PITCHER_HUNGRY
+
+REF_STATIC(/obj/item/reagent_containers/food/snacks/pitcher_fruit, "seed")
+REF_HELD(/obj/item/reagent_containers/food/snacks/pitcher_fruit, "pit")

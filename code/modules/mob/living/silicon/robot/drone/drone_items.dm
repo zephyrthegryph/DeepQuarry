@@ -173,3 +173,6 @@
 // 	dat += resources
 
 // 	src << browse("<html>[dat]</html>", "window=robotmod")
+
+// The synths are the robot module's (REF_OWNED_LIST "synths").
+REF_HELD(/obj/item/matter_decompiler, list("metal", "glass", "wood", "plastic"))

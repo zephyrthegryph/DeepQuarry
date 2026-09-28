@@ -435,3 +435,6 @@
 	say_maybe_target = list("...mar?")
 	say_got_target = list("MAR!!!")
 	//reactions = list("Mar?" = "Marrr!", "Mar!" = "Marrr???", "Mar." = "Marrr.")
+
+REF_HELD(/mob/living/simple_mob/shadekin, "henlo_human")
+REF_OWNED(/mob/living/simple_mob/shadekin, "tailimage")

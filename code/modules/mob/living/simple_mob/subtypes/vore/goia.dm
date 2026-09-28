@@ -528,3 +528,5 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/zorgoia, \
 			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
 			goia_overlays["belly"] = input_style_list[20]
 			update_icon()
+
+REF_HELD(/mob/living/simple_mob/vore/zorgoia, "friend")

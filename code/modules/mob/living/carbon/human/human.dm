@@ -2313,3 +2313,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	COOLDOWN_START(src, last_special, 2 SECONDS) // Antispam.
 	create_new_area(usr)
 	return
+
+REF_HELD(/mob/living/carbon/human, "wearing_rig")
+// Each side effect is created for this human and kept only here and by its finish() timer.
+REF_OWNED_LIST(/mob/living/carbon/human, "genetic_side_effects")

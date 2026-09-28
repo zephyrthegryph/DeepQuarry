@@ -203,3 +203,5 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/vore/solargrub, REGISTRY_SOLARGRUBS)
 		"With how incredibly charged the solargrub is, its constant internal vibrating adds an additional layer of processing to its stomach's slow, steady churning, helping break you down faster!",
 		"The solargrub chitters in irritation at your continued solidity, followed by a string of crushingly tight stomach clenches that grind its caustic stomach ooze into your body!",
 		"The deceptively severe heat trapped within the solargrub works in tandem with its inner muscles and your tingling, prickling stomach juice bath to weaken you!")
+
+REF_HELD(/mob/living/simple_mob/vore/solargrub, list("PN", "attached"))

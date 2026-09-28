@@ -45,3 +45,6 @@
 			new new_path(get_turf(user))
 
 	return
+
+// A tool type path, never an instance.
+REF_STATIC(/mob/living/simple_mob, "harvest_tool")

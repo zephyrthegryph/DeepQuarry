@@ -1869,3 +1869,6 @@
 	color_blend_mode = ICON_MULTIPLY
 	extra_overlay = "chu_markings"
 	extra_overlay2 = "chu_tipmarkings"
+
+REF_STATIC(/datum/sprite_accessory/tail, "clip_mask_icon")
+REF_OWNED(/datum/sprite_accessory/tail, "clip_mask")

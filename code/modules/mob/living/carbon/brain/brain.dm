@@ -37,10 +37,6 @@
 		if(stat != DEAD)	//If not dead.
 			death(1)	//Brains can die again. AND THEY SHOULD AHA HA HA HA HA HA
 		ghostize()		//Ghostize checks for key so nothing else is necessary.
-	if(host)
-		if(host.view == src)
-			host.view = null
-		host = null
 	container = null
 	return ..()
 
@@ -138,3 +134,5 @@
 		record.last_notification = world.time
 		to_chat(src, span_notice("New notification has been sent."))
 
+REF_BACK(/mob/living/carbon/brain, list("host" = "view"))
+REF_HELD(/mob/living/carbon/brain, "container")

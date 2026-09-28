@@ -97,7 +97,6 @@
 /mob/living/simple_mob/animal/borer/Destroy()
 	var/mob/living/carbon/human/host = src?.borer_host()
 	motiontracker_unsubscribe()
-	QDEL_NULL(ghost_check)
 	if(host)
 		detatch()
 		leave_host()
@@ -420,3 +419,5 @@
 
 /datum/decl/mob_organ_names/borer
 	hit_zones = list("head", "central segment", "tail segment")
+
+REF_HELD(/mob/living/simple_mob/animal/borer, "host_brain")

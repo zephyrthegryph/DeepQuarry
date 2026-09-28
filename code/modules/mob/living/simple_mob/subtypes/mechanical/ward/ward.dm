@@ -42,3 +42,5 @@
 
 /datum/decl/mob_organ_names/ward
 	hit_zones = list("chassis", "sensor array", "hover thruster")
+
+REF_HELD(/mob/living/simple_mob/mechanical/ward, "owner")

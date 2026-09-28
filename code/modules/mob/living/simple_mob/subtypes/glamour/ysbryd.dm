@@ -169,3 +169,5 @@
 
 
 ///////////////////////////AI stuff
+
+REF_HELD(/mob/living/simple_mob/ysbryd, "chosen_target")

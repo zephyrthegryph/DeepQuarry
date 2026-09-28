@@ -516,3 +516,5 @@ REF_BACK(/datum/carried_afflictions, list("holder" = "carried_afflictions"))
 	desc = "A pair of flexible, adaptable armor plates, used to protect the internals of robots."
 	max_damage = 220
 	color = COLOR_OFF_WHITE
+
+REF_BACK(/datum/robot_component, list("owner" = null))

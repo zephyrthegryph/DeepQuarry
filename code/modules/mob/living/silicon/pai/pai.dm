@@ -190,7 +190,9 @@
 	update_icon()
 	return TRUE
 
-REF_OWNED(/mob/living/silicon/pai, list("card", "pai_ui_chassis", "sradio", "communicator", "pda", "pai_fold_display"))
+REF_OWNED(/mob/living/silicon/pai, list("card", "pai_ui_chassis", "sradio", "communicator", "pda", "pai_fold_display", "eye_layer", "holo_icon_south", "holo_icon_north", "holo_icon_east", "holo_icon_west"))
+// `radio` is the card's radio; the cable is retracted by check_retract_cable(); records belong to the datacore.
+REF_HELD(/mob/living/silicon/pai, list("current", "radio", "cable", "medicalActive1", "medicalActive2", "securityActive1", "securityActive2", "hackdoor"))
 
 // ALLOW(lifecycle): releases its prey, retracts its cable and frees its key.
 /mob/living/silicon/pai/Destroy()

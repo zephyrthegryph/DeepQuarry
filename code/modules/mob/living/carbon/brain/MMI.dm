@@ -173,12 +173,9 @@ DECLARE_INTERACTIONS(/obj/item/mmi, \
 
 // ALLOW(lifecycle): the occupant view is discarded before the tissue; a borg forgets its MMI.
 /obj/item/mmi/Destroy()
-	if(body_backup)
-		qdel(body_backup)
 	if(isrobot(loc))
 		var/mob/living/silicon/robot/borg = loc
 		borg.mmi = null
-	QDEL_NULL(radio)
 	// The occupant goes first: deleting the tissue under a live view would kill it for nothing.
 	var/datum/mind_host/host = get_mind_host(src)
 	host?.discard_view()
@@ -394,3 +391,8 @@ EXTEND_INTERACTIONS(/obj/item/mmi/digital, \
 	icon = 'icons/obj/module.dmi'
 	icon_state = "mainboard"
 	w_class = ITEMSIZE_NORMAL
+
+REF_OWNED(/obj/item/mmi, list("radio", "body_backup"))
+// The brain stays until Destroy(): the occupant's view is discarded before its tissue goes.
+REF_HELD(/obj/item/mmi, list("brainobj", "mecha"))
+REF_OWNED(/obj/item/mmi/digital, "Q")

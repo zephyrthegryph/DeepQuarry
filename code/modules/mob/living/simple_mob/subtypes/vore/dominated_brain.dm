@@ -594,3 +594,5 @@
 	to_chat(pred_body, span_warning("You feel as though a piece of yourself is missing, as \the [src] returns to their body."))
 	log_admin("[prey_body] ([prey_body.ckey]) has returned to their body from [pred_body].")
 	qdel(src)
+
+REF_HELD(/mob/living/dominated_brain, list("prey_body", "prey_mind", "pred_body", "pred_mind"))

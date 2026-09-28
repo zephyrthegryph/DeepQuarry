@@ -13,12 +13,6 @@
 	host = host_mob
 	channel = CHANNEL
 
-/// Phase 2: its host's panel cache lets go.
-/datum/news_panel/lifecycle_dematerialize()
-	. = ..()
-	if(host?.dq_news_panel_cache == src)
-		host.dq_news_panel_cache = null
-
 /datum/news_panel/tgui_state(mob/user)
 	return GLOB.tgui_always_state
 
@@ -76,3 +70,7 @@
 		current_news_page = 1
 	dq_news_panel_cache.tgui_interact(src)
 	client.seen_news = 1
+
+REF_OWNED(/mob/new_player, "dq_news_panel_cache")
+REF_BACK(/datum/news_panel, list("host" = "dq_news_panel_cache"))
+REF_HELD(/datum/news_panel, "channel")

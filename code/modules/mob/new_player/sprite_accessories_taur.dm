@@ -1355,3 +1355,5 @@
 /datum/sprite_accessory/tail/taur/teshari/alt
 	name = "Teshari dual-color Alt (Taur)"
 	extra_overlay = "tesh_markings_alt"
+
+REF_STATIC(/datum/sprite_accessory/tail/taur, list("suit_sprites", "under_sprites"))

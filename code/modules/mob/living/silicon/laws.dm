@@ -224,3 +224,5 @@
 							"The crew needs eye protection from the nearby star. Make sure they wear sunglasses.")
 							// CHOMPEnd
 	return pick(laws)
+
+REF_OWNED(/mob/living/silicon, "laws")

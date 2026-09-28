@@ -265,3 +265,5 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/dog, INTERACT_ITEM(nul
 
 /datum/decl/mob_organ_names/corgi
 	hit_zones = list("head", "body", "left foreleg", "right foreleg", "left hind leg", "right hind leg", "tail", "heart") //You monster.
+
+REF_SPILL(/mob/living/simple_mob/animal/passive/dog, list("inventory_head", "inventory_back"))
