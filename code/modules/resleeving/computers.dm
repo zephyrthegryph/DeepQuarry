@@ -44,8 +44,6 @@
 // its pods are released.
 /obj/machinery/computer/transhuman/resleeving/on_destroy(force)
 	releasepods()
-	current_br = null
-	current_mr = null
 	..()
 
 /obj/machinery/computer/transhuman/resleeving/proc/updatemodules()

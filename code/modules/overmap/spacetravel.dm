@@ -20,11 +20,11 @@
 	testing("Temporary sector at [x],[y],[z] was created, corresponding zlevel is [english_list(map_z)].")
 
 // its z-levels return to the empty pool.
-/obj/effect/overmap/visitable/sector/temporary/on_destroy(force)
+/obj/effect/overmap/visitable/sector/temporary/lifecycle_dematerialize()
 	for(var/zlevel in map_z)
 		using_map.cache_empty_zlevel(zlevel)
 	testing("Temporary sector at [x],[y] was destroyed, returning empty zlevel [map_z[1]] to map datum.")
-	..()
+	return ..()
 
 /obj/effect/overmap/visitable/sector/temporary/find_z_levels()
 	LAZYADD(map_z, using_map.get_empty_zlevel())

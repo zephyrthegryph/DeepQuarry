@@ -40,18 +40,11 @@ REF_BACK(/datum/nif_menu, list("owner" = null))
 	if(owner.client)
 		create_mob_button(owner)
 
-// owned state datum (was a component) unhooks and detaches from its owner.
+// takes the NIF verb back from its owner. Hooks, the screen icon (owned; it
+// leaves client screens in its own teardown) and the owner ref are core work.
 /datum/nif_menu/on_destroy(force)
-	if(owner)
-		om_unhook(owner, list(/datum/om/event/mob_client_login, /datum/om/event/qdeleting), src)
-		if(screen_icon)
-			owner.client?.screen -= screen_icon
-		if(ishuman(owner))
-			remove_verb(owner, /mob/living/carbon/human/proc/nif_menu)
-	if(screen_icon)
-		om_unhook(screen_icon, /datum/om/event/click, src)
-		QDEL_NULL(screen_icon)
-	owner = null
+	if(ishuman(owner))
+		remove_verb(owner, /mob/living/carbon/human/proc/nif_menu)
 	..()
 
 /datum/nif_menu/proc/on_owner_qdeleting(datum/source, datum/om/event/qdeleting/event)

@@ -122,10 +122,6 @@ DECLARE_INTERACTIONS(/obj/item/sticky_pad, \
 	..()
 	reset_persistence_tracking()
 
-/obj/item/paper/sticky/on_destroy(force)
-	om_unhook(src, /datum/om/event/movable_attempted_move, src)
-	..()
-
 /obj/item/paper/sticky/update_icon()
 	if(icon_state != "scrap")
 		icon_state = info ? "paper_words" : "paper"
