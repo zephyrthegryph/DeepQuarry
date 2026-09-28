@@ -274,7 +274,7 @@
 			return
 
 		user.drop_item()
-		O.loc = src
+		O.forceMove(src)
 		reagent_glass = O
 		to_chat(user, span_notice("You insert [O]."))
 		return
@@ -357,7 +357,7 @@
 		new /obj/item/robot_parts/l_arm(Tsec)
 
 	if(reagent_glass)
-		reagent_glass.loc = Tsec
+		reagent_glass.forceMove(Tsec)
 		reagent_glass = null
 
 	if(emagged && prob(25))
@@ -494,7 +494,7 @@
 	if(!is_robot_arm && !is_robotic_organ)
 		return ..()
 
-	if(contents.len >= 1)
+	if(contents.len >= 1 || has_latent()) // latent-ok: latent entries checked
 		to_chat(user, span_notice("You need to empty [src] out first."))
 		return
 

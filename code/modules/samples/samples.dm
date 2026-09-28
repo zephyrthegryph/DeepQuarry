@@ -194,7 +194,7 @@
 			to_chat(user, span_notice("\The [SC] is full!"))
 			return
 		else
-			src.loc = SC
+			src.forceMove(SC)
 			SC.update_icon()
 			to_chat(user, span_notice("You store \the [src] in \the [SC]."))
 

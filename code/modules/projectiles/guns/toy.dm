@@ -257,7 +257,7 @@
 	for(var/obj/item/ammo_casing/afoam_dart/D in T)
 		if(loaded.len >= max_shells)
 			break
-		D.loc = src
+		D.forceMove(src)
 		loaded.Insert(1, D)
 		success = 1
 	if(success)

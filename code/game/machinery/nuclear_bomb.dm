@@ -82,7 +82,7 @@ GLOBAL_VAR(bomb_set)
 
 /obj/machinery/nuclearbomb/proc/interaction_insert_disk(mob/user, obj/item/O, datum/interaction/interaction)
 	user.drop_item()
-	O.loc = src
+	O.forceMove(src)
 	auth_handle = om_handle(O)
 	add_fingerprint(user)
 	return TRUE
@@ -270,14 +270,14 @@ GLOBAL_VAR(bomb_set)
 	switch(action)
 		if("auth")
 			if(auth())
-				auth().loc = src.loc
+				auth().forceMove(src.loc)
 				yes_code = 0
 				auth_handle = null
 			else
 				var/obj/item/I = usr.get_active_hand()
 				if(istype(I, /obj/item/disk/nuclear))
 					usr.drop_item()
-					I.loc = src
+					I.forceMove(src)
 					auth_handle = om_handle(I)
 			return TRUE
 		if("type")

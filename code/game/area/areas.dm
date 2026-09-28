@@ -81,6 +81,13 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	if(flag_check(AREA_NO_SPOILERS))
 		set_spoiler_obfuscation(TRUE)
 
+/// The one place a turf is moved between areas. Areas aren't ledger holders:
+/// a turf's area is the engine's own area membership, so this is a raw
+/// contents write by design. Callers still run their own lighting/power
+/// follow-up (ChangeArea(), or turf.change_area()).
+/turf/proc/assign_area(area/A)
+	A.contents += src
+
 // Changes the area of T to A. Do not do this manually.
 // Area is expected to be a non-null instance.
 /proc/ChangeArea(turf/T, area/A)
@@ -91,7 +98,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 		return
 	// NOTE: BayStation calles area.Exited/Entered for the TURF T.  So far we don't do that.s
 	// NOTE: There probably won't be any atoms in these turfs, but just in case we should call these procs.
-	A.contents.Add(T)
+	T.assign_area(A)
 	T.reactor_area_changed()
 	if(old_area)
 		// Handle dynamic lighting update if

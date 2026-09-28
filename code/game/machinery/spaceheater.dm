@@ -223,7 +223,7 @@
 				if(istype(C))
 					ui.user.drop_item()
 					cell = C
-					C.loc = src
+					C.forceMove(src)
 					C.add_fingerprint(ui.user)
 					power_change()
 					if(state)

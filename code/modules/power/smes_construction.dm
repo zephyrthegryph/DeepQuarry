@@ -398,7 +398,7 @@
 		user.drop_item()
 		cur_coils ++
 		component_parts += W
-		W.loc = src
+		W.forceMove(src)
 		recalc_coils()
 	else
 		to_chat(user, span_red("You can't insert more coils into this SMES unit!"))

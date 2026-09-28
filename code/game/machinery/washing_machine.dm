@@ -174,7 +174,6 @@ REF_SPILL_LIST(/obj/machinery/washing_machine, "washing")
 				user.drop_item()
 				crayon_handle = om_handle(W)
 				crayon().forceMove(src)
-				crayon().loc = src
 			//else: old fell through to a bare ..() (approximated as a no-op)
 
 		//else: old fell through to a bare ..() (approximated as a no-op)

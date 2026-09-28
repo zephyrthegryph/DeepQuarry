@@ -41,7 +41,8 @@
 	A.pixel_y = pixel_y
 	A.set_dir(dir)
 	A.anchored = TRUE
-	for(var/obj/C in src)
+	latent_materialize_all() // a walk needs real things (C5)
+	for(var/obj/C in src) // latent-ok: materialized above
 		if(istype(C, /obj/item/circuitboard))
 			C.forceMove(A)
 			continue

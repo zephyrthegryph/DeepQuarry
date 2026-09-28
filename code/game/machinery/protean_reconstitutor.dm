@@ -120,19 +120,19 @@
 			return
 		to_chat(user,span_notice("You slot \the [NB] into \the [src]."))
 		user.drop_from_inventory(NB)
-		NB.loc = src
+		NB.forceMove(src)
 		protean_brain = NB
 
 	if(istype(W,/obj/item/organ/internal/nano/orchestrator))
 		to_chat(user,span_notice("You slot \the [W] into \the [src]."))
 		user.drop_from_inventory(W)
-		W.loc = src
+		W.forceMove(src)
 		protean_orchestrator = W
 
 	if(istype(W,/obj/item/organ/internal/nano/refactory))
 		to_chat(user,span_notice("You slot \the [W] into \the [src]."))
 		user.drop_from_inventory(W)
-		W.loc = src
+		W.forceMove(src)
 		protean_refactory = W
 
 	if(istype(W,/obj/item/stack/nanopaste))
@@ -271,7 +271,7 @@
 		BR.stored_mmi = null	//toss the dummy...
 		BR.contents.Cut()
 		BR.stored_mmi = protean_brain	//...and implant the salvaged mmi in its place
-		BR.contents.Add(protean_brain)
+		protean_brain.forceMove(BR)
 		var/picked_ckey = posibrain_client.ckey
 		var/picked_slot = posibrain_client.prefs.default_slot
 		if(P.dna)
@@ -308,7 +308,7 @@
 
 		var/datum/component/mind_host/core_host = get_mind_host(protean_brain)
 		core_host.release_mind(P, "protean reconstitution")
-		protean_brain.loc = BR
+		protean_brain.forceMove(BR)
 	if(index < length(organs))
 		om_after(src, per_organ_delay, PROC_REF(reconstitute_organ), P, organs, index + 1)
 		return

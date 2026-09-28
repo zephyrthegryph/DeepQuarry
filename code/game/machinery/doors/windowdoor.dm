@@ -44,7 +44,7 @@
 	else
 		ae = electronics
 		electronics = null
-		ae.loc = src.loc
+		ae.forceMove(src.loc)
 	if(operating == -1)
 		ae.icon_state = "door_electronics_smoked"
 		operating = 0

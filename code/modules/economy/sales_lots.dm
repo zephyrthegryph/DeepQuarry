@@ -265,7 +265,8 @@
 /obj/machinery/department_storefront/tgui_data(mob/user)
 	var/list/stock = list()
 	var/list/rows_by_key = list()
-	for(var/obj/item/item as anything in contents)
+	latent_materialize_all() // a walk needs real things (C5)
+	for(var/obj/item/item as anything in contents) // latent-ok: materialized above
 		var/item_ref = REF(item)
 		var/listing_key = "[item.type]|[stock_prices[item_ref]]"
 		var/list/row = rows_by_key[listing_key]
@@ -296,7 +297,8 @@
 	if(.)
 		return
 	var/item_ref = params["ref"]
-	var/obj/item/item = locate(item_ref) in contents
+	latent_materialize_all() // a walk needs real things (C5)
+	var/obj/item/item = locate(item_ref) in contents // latent-ok: materialized above
 	switch(action)
 		if("buy")
 			return storefront_purchase(item, ui.user)
@@ -314,7 +316,8 @@
 			if(!isnum(new_price) || new_price < 1 || new_price > 100000)
 				return FALSE
 			var/old_price = stock_prices[item_ref]
-			for(var/obj/item/matching_item as anything in contents)
+			latent_materialize_all() // a walk needs real things (C5)
+			for(var/obj/item/matching_item as anything in contents) // latent-ok: materialized above
 				var/matching_ref = REF(matching_item)
 				if(matching_item.type == item.type && stock_prices[matching_ref] == old_price)
 					stock_prices[matching_ref] = round(new_price)
@@ -326,7 +329,8 @@
 			if(!isnum(new_markup) || new_markup < -90 || new_markup > 500)
 				return FALSE
 			markup_percent = round(new_markup)
-			for(var/obj/item/stock_item as anything in contents)
+			latent_materialize_all() // a walk needs real things (C5)
+			for(var/obj/item/stock_item as anything in contents) // latent-ok: materialized above
 				var/stock_ref = REF(stock_item)
 				stock_prices[stock_ref] = max(1, round(stock_suggested_prices[stock_ref] * (100 + markup_percent) / 100))
 			return TRUE

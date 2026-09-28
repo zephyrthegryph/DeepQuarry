@@ -69,7 +69,7 @@ REF_OWNED_LIST(/obj/item/grenade/chem_grenade, "beakers")
 		to_chat(user, span_notice("You add [W] to the metal casing."))
 		playsound(src, 'sound/items/Screwdriver2.ogg', 25, -3)
 		user.remove_from_mob(det)
-		det.loc = src
+		det.forceMove(src)
 		detonator = det
 		if(istimer(detonator.a_left))
 			var/obj/item/assembly/timer/T = detonator.a_left
@@ -89,7 +89,7 @@ REF_OWNED_LIST(/obj/item/grenade/chem_grenade, "beakers")
 			if(W.reagents.total_volume)
 				to_chat(user, span_notice("You add \the [W] to the assembly."))
 				user.drop_item()
-				W.loc = src
+				W.forceMove(src)
 				LAZYADD(beakers, W)
 				stage = 1
 				name = "unsecured grenade with [length(beakers)] containers[detonator?" and detonator":""]"

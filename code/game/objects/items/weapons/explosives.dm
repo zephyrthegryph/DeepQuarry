@@ -67,7 +67,7 @@
 		return
 	user.drop_item()
 	src.target_handle = om_handle(target_ref())
-	loc = null
+	moveToNullspace()
 
 	if (ismob(target))
 		add_attack_logs(user, target, "planted [name] on with [timer] second fuse")

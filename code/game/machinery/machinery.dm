@@ -200,7 +200,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 		component_parts.Cut()
 		component_parts = null
 	if(contents) // The same for contents.
-		for(var/atom/A in contents)
+		latent_materialize_all() // a walk needs real things (C5)
+		for(var/atom/A in contents) // latent-ok: materialized above
 			if(ishuman(A))
 				var/mob/living/carbon/human/H = A
 				H.forceMove(loc)
@@ -607,7 +608,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 /obj/machinery/proc/dismantle()
 	SEND_SIGNAL(src, COMSIG_OBJ_DECONSTRUCT, FALSE)
 	playsound(src, 'sound/items/Crowbar.ogg', 50, 1)
-	for(var/obj/I in contents)
+	latent_materialize_all() // a walk needs real things (C5)
+	for(var/obj/I in contents) // latent-ok: materialized above
 		if(istype(I,/obj/item/card/id))
 			I.forceMove(src.loc)
 
@@ -653,7 +655,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	A.pixel_y = pixel_y
 	A.update_desc()
 	A.update_icon()
-	M.loc = null
+	M.moveToNullspace()
 	M.atom_deconstruct(TRUE, src)
 	qdel(src)
 	return 1

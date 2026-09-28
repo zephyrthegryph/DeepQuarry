@@ -28,7 +28,7 @@
 	if(.)
 		return TRUE
 	if(chambered)
-		chambered.loc = get_turf(src)
+		chambered.forceMove(get_turf(src))
 		chambered = null
 		var/obj/item/ammo_casing/C = loaded[1]
 		loaded -= C

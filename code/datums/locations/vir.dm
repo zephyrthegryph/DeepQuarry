@@ -5,7 +5,7 @@
 	desc = "Vir is a human system that sits between the inner and outer systems of human-controlled space."
 
 /datum/locations/vir/New(creator)
-	contents.Add(
+	children.Add(
 		new /datum/locations/firnir(src),
 		new /datum/locations/tyr(src),
 		new /datum/locations/sif(src),
@@ -42,7 +42,7 @@
 	various purposes.  The temperature of the gas giant is 150 kelvin (-108°C)"
 
 /datum/locations/kara/New(creator)
-	contents.Add(
+	children.Add(
 		new /datum/locations/northern_star(src)
 		)
 	..(creator)
@@ -53,7 +53,7 @@
 	Originally conceived as 'just another pitstop' for weary asteroid miners, it has grown to become a significant installation in the Kara subsystem."
 
 /datum/locations/northern_star/New(creator)
-	contents.Add(
+	children.Add(
 		new /datum/locations/northern_star_interior(src)
 		)
 	..(creator)

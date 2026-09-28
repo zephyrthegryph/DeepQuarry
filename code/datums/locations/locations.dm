@@ -1,7 +1,7 @@
 /datum/locations
 	var/name
 	var/desc
-	var/list/contents = list()
+	var/list/children = list()
 	var/parent
 
 /datum/locations/New(creator)
@@ -15,7 +15,7 @@
 	desc = "The galaxy we all live in."
 
 /datum/locations/milky_way/New()
-	contents.Add(
+	children.Add(
 		new /datum/locations/sol(src),
 		new /datum/locations/tau_ceti(src),
 		new /datum/locations/nyx(src),

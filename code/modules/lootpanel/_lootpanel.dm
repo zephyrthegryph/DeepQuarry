@@ -7,7 +7,7 @@
 	/// The owner of the panel
 	var/client/owner
 	/// The list of all search objects indexed.
-	var/list/datum/search_object/contents = list()
+	var/list/datum/search_object/searchables = list()
 	/// The list of search_objects needing processed
 	var/list/datum/search_object/to_image
 	/// We've been notified about client version

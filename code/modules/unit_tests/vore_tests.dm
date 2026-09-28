@@ -1,5 +1,5 @@
-/datum/unit_test/proc/create_test_human(turf/loc = null)
-	if(!loc)
+/datum/unit_test/proc/create_test_human(turf/spawn_turf = null)
+	if(!spawn_turf)
 		// was T.zone.air.return_pressure() under ZAS; LINDA exposes
 		// per-turf air directly via return_air().
 		for(var/turf/simulated/floor/tiled/T in world)
@@ -8,12 +8,12 @@
 				continue
 			var/pressure = air.return_pressure()
 			if(90 < pressure && pressure < 120) // Find a turf between 90 and 120
-				loc = T
+				spawn_turf = T
 				break
 
-	TEST_ASSERT(loc, "No valid turf available for test mob")
+	TEST_ASSERT(spawn_turf, "No valid turf available for test mob")
 
-	var/mob/living/carbon/human/test_human = allocate(/mob/living/carbon/human, loc)
+	var/mob/living/carbon/human/test_human = allocate(/mob/living/carbon/human, spawn_turf)
 
 	return test_human
 

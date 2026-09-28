@@ -155,7 +155,7 @@ REF_OWNED(/obj/machinery/portable_atmospherics, list("air_contents", "holding"))
 		return TRUE
 	var/obj/item/tank/T = W
 	user.drop_item()
-	T.loc = src
+	T.forceMove(src)
 	holding = T
 	update_icon()
 	return TRUE
@@ -229,7 +229,7 @@ REF_OWNED(/obj/machinery/portable_atmospherics, list("air_contents", "holding"))
 	user.drop_item()
 	C.add_fingerprint(user)
 	cell = C
-	C.loc = src
+	C.forceMove(src)
 	user.visible_message(span_notice("[user] opens the panel on [src] and inserts [C]."), span_notice("You open the panel on [src] and insert [C]."))
 	power_change()
 	return TRUE

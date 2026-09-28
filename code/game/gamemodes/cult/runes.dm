@@ -71,7 +71,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 		span_warning("You smell ozone."))
 		for(var/obj/O in src.loc)
 			if(!O.anchored)
-				O.loc = IP.loc
+				O.forceMove(IP.loc)
 		for(var/mob/M in src.loc)
 			M.forceMove(IP.loc)
 		return

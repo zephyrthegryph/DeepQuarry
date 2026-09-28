@@ -304,7 +304,7 @@ REF_OWNED(/obj/item/gun, "firemode_selector")
 			return
 		to_chat(user, span_notice("You insert \the [A] into \the [src]."))
 		user.drop_item()
-		A.loc = src
+		A.forceMove(src)
 		attached_lock = A
 		dna_lock = 1
 		verbs += /obj/item/gun/verb/remove_dna

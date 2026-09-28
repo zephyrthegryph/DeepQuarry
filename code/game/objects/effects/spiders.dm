@@ -160,7 +160,7 @@
 
 /obj/effect/spider/spiderling/Bump(atom/user)
 	if(istype(user, /obj/structure/table))
-		src.loc = user.loc
+		src.forceMove(user.loc)
 	else
 		..()
 
@@ -189,7 +189,7 @@
 		var/obj/item/organ/external/O = loc
 		if(!O.owner || O.owner.stat == DEAD || amount_grown > 80)
 			LAZYREMOVE(O.implants, src)
-			src.loc = O.owner ? O.owner.loc : O.loc
+			src.forceMove(O.owner ? O.owner.loc : O.loc)
 			src.visible_message(span_warning("\A [src] makes its way out of [O.owner ? "[O.owner]'s [O.name]" : "\the [O]"]!"))
 			if(O.owner)
 				O.owner.injure(INJURY_PIERCE, 1, O.organ_tag, src)
@@ -208,13 +208,13 @@
 	om_after(src, rand(20,60), PROC_REF(vent_crawl_enter), entry, exit_vent)
 
 /obj/effect/spider/spiderling/proc/vent_crawl_enter(obj/machinery/atmospherics/unary/vent_pump/entry, obj/machinery/atmospherics/unary/vent_pump/exit_vent)
-	loc = exit_vent
+	forceMove(exit_vent)
 	var/travel_time = round(get_dist(loc, exit_vent.loc) / 2)
 	om_after(src, travel_time, PROC_REF(vent_crawl_midway), entry, exit_vent, travel_time)
 
 /obj/effect/spider/spiderling/proc/vent_crawl_midway(obj/machinery/atmospherics/unary/vent_pump/entry, obj/machinery/atmospherics/unary/vent_pump/exit_vent, travel_time)
 	if(!exit_vent || exit_vent.welded)
-		loc = entry
+		forceMove(entry)
 		entry_vent_handle = null
 		return
 
@@ -225,10 +225,10 @@
 
 /obj/effect/spider/spiderling/proc/vent_crawl_exit(obj/machinery/atmospherics/unary/vent_pump/entry, obj/machinery/atmospherics/unary/vent_pump/exit_vent)
 	if(!exit_vent || exit_vent.welded)
-		loc = entry
+		forceMove(entry)
 		entry_vent_handle = null
 		return
-	loc = exit_vent.loc
+	forceMove(exit_vent.loc)
 	entry_vent_handle = null
 	var/area/new_area = get_area(loc)
 	if(new_area)
@@ -296,7 +296,7 @@
 /obj/effect/spider/cocoon/Destroy()
 	src.visible_message(span_warning("\The [src] splits open."))
 	for(var/atom/movable/A in contents)
-		A.loc = src.loc
+		A.forceMove(src.loc)
 	return ..()
 
 /obj/effect/spider/spiderling/non_growing/horror

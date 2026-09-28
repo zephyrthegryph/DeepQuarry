@@ -326,7 +326,8 @@
 			if(istype(output_atom, /obj/item/storage))//check if a mob holder's gonna fit there!
 				var/obj/item/storage/target_storage = output_atom
 				var/total_storage_space = ITEMSIZE_COST_SMALL
-				for(var/obj/item/thing in target_storage.contents)
+				target_storage.latent_materialize_all() // a walk needs real things (C5)
+				for(var/obj/item/thing in target_storage.contents) // latent-ok: materialized above
 					total_storage_space += thing.get_storage_cost()
 				if(total_storage_space > target_storage.max_storage_space)
 					return FALSE

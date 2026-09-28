@@ -56,7 +56,7 @@
 	else if(istype(A, /obj/effect/spider/spiderling))
 		var/obj/effect/spider/spiderling/S = A
 		user.visible_message(span_notice("[user] scoops [S] into \the [src]."), span_notice("You scoop [S] into \the [src]."))
-		S.loc = src
+		S.forceMove(src)
 		PERIODIC_STOP(S) // No growing inside jars
 		contains = JAR_SPIDER
 		update_icon()
@@ -89,7 +89,7 @@
 	switch(contains)
 		if(JAR_MONEY)
 			for(var/obj/O in src)
-				O.loc = user.loc
+				O.forceMove(user.loc)
 			to_chat(user, span_notice("You take money out of \the [src]."))
 			contains = JAR_NOTHING
 			update_icon()
@@ -103,7 +103,7 @@
 			return
 		if(JAR_SPIDER)
 			for(var/obj/effect/spider/spiderling/S in src)
-				S.loc = user.loc
+				S.forceMove(user.loc)
 				user.visible_message(span_notice("[user] releases [S] from \the [src]."), span_notice("You release [S] from \the [src]."))
 				PERIODIC_START(S, PERIODIC_SLOW) // They can grow after being let out though
 			contains = JAR_NOTHING
@@ -125,7 +125,7 @@
 		var/obj/item/spacecash/S = W
 		user.visible_message(span_notice("[user] puts [S.worth] [S.worth > 1 ? "thalers" : "thaler"] into \the [src]."))
 		user.drop_from_inventory(S)
-		S.loc = src
+		S.forceMove(src)
 		update_icon()
 	//CHOMPDDITION: your god can not help you
 	if(istype(W,/obj/item/holder/micro))

@@ -132,7 +132,7 @@ REMOVAL
 			return
 		//var/obj/item/reagent_containers/glass/beaker/B = I
 		user.drop_item()
-		I.loc = src
+		I.forceMove(src)
 		loaded_item = I
 		user.visible_message(span_notice("[user] inserts [I] into [src]."), span_notice("You slot [I] into [src]."))
 		return 1
@@ -192,7 +192,7 @@ REMOVAL
 		return
 	if(loaded_item)
 		var/obj/item/reagent_containers/food/snacks/monkeycube/cube = loaded_item
-		cube.loc = A
+		cube.forceMove(A)
 		cube.Expand()
 		loaded_item = null
 		COOLDOWN_START(src, firable, 2 SECONDS)

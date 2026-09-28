@@ -96,7 +96,7 @@
 	if (chained) return
 
 	user.drop_item()
-	cuffs.loc = src
+	cuffs.forceMove(src)
 	chained = cuffs
 	slowdown = 15
 	icon_state = "orange1"

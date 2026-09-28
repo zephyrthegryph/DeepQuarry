@@ -169,5 +169,5 @@
 /obj/structure/sign/poster/proc/roll_and_drop(turf/newloc)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	var/obj/item/poster/P = new roll_type(newloc, poster_decl)
-	P.loc = newloc
+	P.forceMove(newloc)
 	qdel(src)

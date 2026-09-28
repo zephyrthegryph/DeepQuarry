@@ -168,11 +168,11 @@
 /obj/machinery/computer/guestpass/proc/interaction_eject_id(mob/user, obj/item/held, datum/interaction/interaction)
 	if(giver)
 		to_chat(user, span_notice("You remove \the [giver] from \the [src]."))
-		giver.loc = get_turf(src)
+		giver.forceMove(get_turf(src))
 		if(!user.get_active_hand() && ishuman(user))
 			user.put_in_hands(giver)
 		else
-			giver.loc = src.loc
+			giver.forceMove(src.loc)
 		giver = null
 		LAZYCLEARLIST(accesses)
 	else
@@ -237,18 +237,18 @@
 		if("id")
 			if(giver)
 				if(ishuman(ui.user))
-					giver.loc = ui.user.loc
+					giver.forceMove(ui.user.loc)
 					if(!ui.user.get_active_hand())
 						ui.user.put_in_hands(giver)
 					giver = null
 				else
-					giver.loc = src.loc
+					giver.forceMove(src.loc)
 					giver = null
 				LAZYCLEARLIST(accesses)
 			else
 				var/obj/item/I = ui.user.get_active_hand()
 				if(istype(I, /obj/item/card/id) && ui.user.unEquip(I))
-					I.loc = src
+					I.forceMove(src)
 					giver = I
 
 		if("print")

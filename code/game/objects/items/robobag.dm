@@ -77,7 +77,7 @@
 	else //Allows the bag to respond to a cyborg analyzer and tag.
 		if(istype(W,/obj/item/robotanalyzer))
 			var/obj/item/robotanalyzer/analyzer = W
-			for(var/mob/living/L in contents)
+			for(var/mob/living/L in contents) // latent-ok: mobs are never latent
 				analyzer.attack(L,user)
 
 		else if(istype(W, /obj/item/clothing/accessory/badge))
@@ -86,12 +86,12 @@
 				corptag.forceMove(get_turf(src))
 				corptag = W
 				user.unEquip(corptag)
-				corptag.loc = null
+				corptag.moveToNullspace()
 				to_chat(user, span_notice("You swap \the [old_tag] for \the [corptag]."))
 			else
 				corptag = W
 				user.unEquip(corptag)
-				corptag.loc = null
+				corptag.moveToNullspace()
 				to_chat(user, span_notice("You attach \the [corptag] to \the [src]."))
 			update_icon()
 

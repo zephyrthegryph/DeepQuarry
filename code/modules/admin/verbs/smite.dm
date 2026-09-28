@@ -154,13 +154,13 @@
 
 		if(SMITE_PEPPERNADE)
 			var/obj/item/grenade/chem_grenade/teargas/grenade = new /obj/item/grenade/chem_grenade/teargas
-			grenade.loc = target.loc
+			grenade.forceMove(target.loc)
 			to_chat(target,span_warning("GRENADE?!"))
 			grenade.detonate()
 
 		if(SMITE_SPICEREQUEST)
 			var/obj/item/reagent_containers/food/condiment/spacespice/spice = new /obj/item/reagent_containers/food/condiment/spacespice
-			spice.loc = target.loc
+			spice.forceMove(target.loc)
 			to_chat(target,"A bottle of spices appears at your feet... be careful what you wish for!")
 
 		if(SMITE_PIE)

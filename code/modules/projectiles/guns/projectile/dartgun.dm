@@ -112,7 +112,7 @@
 			return
 		var/obj/item/reagent_containers/glass/beaker/B = I
 		user.drop_item()
-		B.loc = src
+		B.forceMove(src)
 		LAZYADD(beakers, B)
 		to_chat(user, span_blue("You slot [B] into [src]."))
 		updateUsrDialog(user)
@@ -165,7 +165,7 @@
 				to_chat(usr, "You remove [B] from [src].")
 				LAZYREMOVE(mixing, B)
 				LAZYREMOVE(beakers, B)
-				B.loc = get_turf(src)
+				B.forceMove(get_turf(src))
 	else if (href_list["eject_cart"])
 		unload_ammo(usr)
 	src.updateUsrDialog(usr)

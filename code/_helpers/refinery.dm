@@ -82,7 +82,7 @@
 
 	else // If you added supermatter but didn't try grinding it, or somehow this is negative.
 		for(var/obj/item/stack/material/supermatter/S in holdingitems)
-			S.loc = our_atom.loc
+			S.forceMove(our_atom.loc)
 			holdingitems -= S
 			regrets += S.get_amount()
 		radiation_pulse(

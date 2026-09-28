@@ -54,7 +54,7 @@
 		if(chambered.caseless)
 			qdel(chambered) // Delete casing
 		else
-			chambered.loc = get_turf(src) // Eject casing
+			chambered.forceMove(get_turf(src)) // Eject casing
 		chambered = null
 		M.hud_used?.update_ammo_hud(M, src) // TGMC Ammo HUD Port
 

@@ -147,7 +147,7 @@ DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor
 		to_chat(usr, "You can't flip \the [src] because there's \a [occupied] in the way.")
 		return 0
 
-	src.loc = get_step(src, src.dir)
+	src.forceMove(get_step(src, src.dir))
 	set_dir(turn(dir, 180))
 	update_icon()
 	return

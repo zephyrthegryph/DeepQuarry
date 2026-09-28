@@ -31,9 +31,8 @@
 			if (sdepth > MAX_STORAGE_REACH)
 				return	//too deeply nested to access
 
-			var/obj/item/storage/U = I.loc
 			user.client.screen -= I
-			U.contents.Remove(I)
+			I.moveToNullspace()
 		else if(user.item_is_in_hands(I))
 			user.drop_from_inventory(I)
 		else
@@ -67,7 +66,7 @@
 	add_overlay("evidence")	//should look nicer for transparent stuff. not really that important, but hey.
 
 	desc = "An evidence bag containing [I]."
-	I.loc = src
+	I.forceMove(src)
 	stored_item = I
 	w_class = I.w_class
 	return

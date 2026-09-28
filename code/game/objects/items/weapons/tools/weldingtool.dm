@@ -613,7 +613,7 @@ REF_PAIR(/obj/item/weldpack, list("nozzle" = "mounted_pack"))
 		if(istype(W, /obj/item/cell/device))
 			if(!power_supply)
 				user.drop_item()
-				W.loc = src
+				W.forceMove(src)
 				power_supply = W
 				to_chat(user, span_notice("You install a cell in \the [src]."))
 				update_icon()

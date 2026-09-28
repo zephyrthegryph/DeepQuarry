@@ -78,7 +78,7 @@
 			beaker =  O
 			user.drop_item()
 
-			O.loc = src
+			O.forceMove(src)
 			update_icon()
 			return TRUE
 
@@ -128,7 +128,7 @@
 		return TRUE
 
 	user.remove_from_mob(O)
-	O.loc = src
+	O.forceMove(src)
 	LAZYADD(holdingitems, O)
 	// start
 	if(istype(O,/obj/item/stack/material/supermatter))
@@ -207,7 +207,7 @@
 	if(user.incapacitated())
 		return
 	for(var/obj/item/O in holdingitems)
-		O.loc = src.loc
+		O.forceMove(src.loc)
 		LAZYREMOVE(holdingitems, O)
 	LAZYCLEARLIST(holdingitems)
 	if(beaker)

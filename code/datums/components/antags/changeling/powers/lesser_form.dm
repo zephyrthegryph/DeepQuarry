@@ -118,7 +118,7 @@
 	O.injure(INJURY_BURN, C.injury_load(INJURY_CATEGORY_THERMAL), flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	O.set_stat(C.stat)
 	for (var/obj/item/implant/I in implants)
-		I.loc = O
+		I.forceMove(O)
 		I.implanted = O
 
 	C.mind.transfer_to(O)

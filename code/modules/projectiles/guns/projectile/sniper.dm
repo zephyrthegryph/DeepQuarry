@@ -38,7 +38,7 @@
 	if(bolt_open)
 		if(chambered)
 			to_chat(user, span_notice("You work the bolt open, ejecting [chambered]!"))
-			chambered.loc = get_turf(src)
+			chambered.forceMove(get_turf(src))
 			loaded -= chambered
 			chambered = null
 		else

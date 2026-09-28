@@ -264,7 +264,7 @@
 	add_attack_logs(attacker,target,"Headbutted using grab")
 
 	attacker.drop_from_inventory(src)
-	src.loc = null
+	src.moveToNullspace()
 	qdel(src)
 	return
 

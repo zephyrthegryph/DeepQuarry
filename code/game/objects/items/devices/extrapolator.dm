@@ -49,7 +49,7 @@
 /obj/item/extrapolator/proc/interaction_item(mob/user, obj/item/item, datum/interaction/interaction)
 	if(!scanner)
 		user.drop_item()
-		item.loc = src
+		item.forceMove(src)
 		scanner = item
 		to_chat(user, span_notice("You install \the [scanner] in [src]."))
 		refresh_parts()

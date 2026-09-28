@@ -166,7 +166,7 @@
 		if(istype(W, /obj/item/cell/device))
 			if(!bcell)
 				user.drop_item()
-				W.loc = src
+				W.forceMove(src)
 				bcell = W
 				to_chat(user, span_notice("You install a cell in \the [src]."))
 				update_held_icon()

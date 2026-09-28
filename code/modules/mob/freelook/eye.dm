@@ -98,7 +98,7 @@
 			owner.reset_perspective(src)
 			if(owner_follows_eye)
 				visualnet.updateVisibility(owner, 0)
-				owner.loc = loc
+				owner.forceMove(loc)
 				visualnet.updateVisibility(owner, 0)
 			if(use_static)
 				visualnet.visibility(src, owner.client)

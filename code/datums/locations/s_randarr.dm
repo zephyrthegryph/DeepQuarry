@@ -7,7 +7,7 @@
 	desc = "An orange star, associated with the Tajaran god of life and mercy."
 
 /datum/locations/s_randarr/New(creator)
-	contents.Add(
+	children.Add(
 		new /datum/locations/ahdomai(src),
 		new /datum/locations/sranjir(src),
 		new /datum/locations/messa(src),
@@ -23,7 +23,7 @@
 	Its geography is largely mountainous, with a number of tundras, frozen plains, semi-frozen lakes, and icy seas."
 
 /datum/locations/ahdomai/New(creator)
-	contents.Add(
+	children.Add(
 		new /datum/locations/ahdomai_northern_plains(src),
 		new /datum/locations/ahdomai_snowy_mountains(src)
 		)
@@ -34,7 +34,7 @@
 	desc = "One of the regions of Ahdomai."
 
 /datum/locations/ahdomai_northern_plains/New(creator)
-	contents.Add(
+	children.Add(
 		new /datum/locations/mijri_peninsula(src),
 		new /datum/locations/the_slavemaster_strip(src)
 		)
@@ -55,7 +55,7 @@
 	and those of Tajr-kii S'randarr must keep it away from the followers of Messa."
 
 /datum/locations/the_slavemaster_strip/New(creator)
-	contents.Add(
+	children.Add(
 		new /datum/locations/northern_plains_mining_network(src),
 		new /datum/locations/mi_dynh_al_manq(src),
 		new /datum/locations/contai(src)
@@ -83,7 +83,7 @@
 	desc = "One of the regions of Ahdomai."
 
 /datum/locations/ahdomai_snowy_mountains/New(creator)
-	contents.Add(
+	children.Add(
 		new /datum/locations/rhezars_crown(src),
 		new /datum/locations/rrhazkal_ice_maw(src),
 		new /datum/locations/ah_fralak_landing(src),

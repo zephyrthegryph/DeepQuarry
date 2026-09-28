@@ -657,7 +657,7 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 
 	if(!keyslot)
 		user.drop_item()
-		W.loc = src
+		W.forceMove(src)
 		keyslot = W
 
 	recalculateChannels()

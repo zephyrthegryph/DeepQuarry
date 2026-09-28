@@ -41,7 +41,7 @@
 			I.visible_message(span_danger("\The [I] vanishes into thin air!"))
 			I.forceMove(get_turf(user))
 			user.drop_item(src)
-			src.loc = null
+			src.moveToNullspace()
 			user.put_in_hands(I)
 			user.visible_message(span_notice("\A [I] appears in \the [user]'s hand!"))
 			add_attack_logs(user,I,"Stolen with [src]")
@@ -58,7 +58,7 @@
 			s2.start()
 			L.throw_at(get_step(get_turf(src),get_turf(L)), 4, 1, src)
 			user.drop_item(src)
-			src.loc = null
+			src.moveToNullspace()
 			om_after(src, 1 SECOND, PROC_REF(finish_apportation_grab), user, L)
 
 /obj/item/spell/apportation/proc/finish_apportation_grab(mob/living/user, mob/living/L)

@@ -257,7 +257,7 @@
 		to_chat(user, span_notice("You screw [I] onto [src]."))
 		silenced = I	//dodgy?
 		w_class = ITEMSIZE_NORMAL
-		I.loc = src		//put the silencer into the gun
+		I.forceMove(src) //put the silencer into the gun
 		update_icon()
 		return
 	..()
@@ -310,7 +310,7 @@
 		user.drop_item()
 		to_chat(user, span_notice("You screw [I] onto [src]."))
 		silenced = I	//dodgy?
-		I.loc = src		//put the silencer into the gun
+		I.forceMove(src) //put the silencer into the gun
 		update_icon()
 		return
 	..()

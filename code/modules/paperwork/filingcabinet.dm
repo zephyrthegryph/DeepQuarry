@@ -28,7 +28,7 @@
 /obj/structure/filingcabinet/Initialize(mapload)
 	for(var/obj/item/I in loc)
 		if(istype(I, /obj/item/paper) || istype(I, /obj/item/folder) || istype(I, /obj/item/photo) || istype(I, /obj/item/paper_bundle))
-			I.loc = src
+			I.forceMove(src)
 	. = ..()
 	AddElement(/datum/element/climbable)
 
@@ -36,7 +36,7 @@
 	if(istype(P, /obj/item/paper) || istype(P, /obj/item/folder) || istype(P, /obj/item/photo) || istype(P, /obj/item/paper_bundle))
 		to_chat(user, span_notice("You put [P] in [src]."))
 		user.drop_item()
-		P.loc = src
+		P.forceMove(src)
 		open_animation()
 		SStgui.update_uis(src)
 	else
@@ -77,7 +77,7 @@
 	if(contents.len)
 		if(prob(40 + contents.len * 5))
 			var/obj/item/I = pick(contents)
-			I.loc = loc
+			I.forceMove(loc)
 			if(prob(25))
 				step_rand(I)
 			to_chat(user, span_notice("You pull \a [I] out of [src] at random."))

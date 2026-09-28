@@ -97,9 +97,9 @@
 		if(ishuman(user))
 			if(!user.get_active_hand())
 				user.put_in_hands(cell)
-				cell.loc = user.loc
+				cell.forceMove(user.loc)
 		else
-			cell.loc = src.loc
+			cell.forceMove(src.loc)
 
 		cell.add_fingerprint(user)
 		cell.update_icon()
@@ -137,7 +137,7 @@
 				to_chat(user, "There is a power cell already installed.")
 			else
 				user.drop_item()
-				W.loc = src
+				W.forceMove(src)
 				cell = W
 				to_chat(user, "You insert the power cell.")
 	update_icon()

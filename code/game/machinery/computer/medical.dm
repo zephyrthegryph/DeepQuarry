@@ -71,7 +71,7 @@
 
 	if(scan)
 		to_chat(usr, "You remove \the [scan] from \the [src].")
-		scan.loc = get_turf(src)
+		scan.forceMove(get_turf(src))
 		if(!usr.get_active_hand() && ishuman(usr))
 			usr.put_in_hands(scan)
 		scan = null
@@ -81,7 +81,7 @@
 
 /obj/machinery/computer/med_data/attackby(obj/item/O, mob/user)
 	if(istype(O, /obj/item/card/id) && !scan && user.unEquip(O))
-		O.loc = src
+		O.forceMove(src)
 		scan = O
 		to_chat(user, "You insert \the [O].")
 		tgui_interact(user)

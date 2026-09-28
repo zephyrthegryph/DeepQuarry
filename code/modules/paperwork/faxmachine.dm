@@ -442,7 +442,7 @@ Extracted to its own procedure for easier logic handling with paper bundles.
 		visible_message("[src] beeps, \"Error transmitting message.\"")
 		return
 
-	rcvdcopy.loc = null //hopefully this shouldn't cause trouble
+	rcvdcopy.moveToNullspace() //hopefully this shouldn't cause trouble
 	GLOB.adminfaxes += rcvdcopy
 
 	//message badmins that a fax has arrived

@@ -310,14 +310,14 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 	if(istype(O,/obj/machinery/microwave))
 		return ..()
 	if(istype (O, /obj/machinery/seed_extractor))
-		pit.loc = O.loc //1 seed, perhaps balanced because you can get the reagents and the seed. Can be increased if desirable.
+		pit.forceMove(O.loc) //1 seed, perhaps balanced because you can get the reagents and the seed. Can be increased if desirable.
 		consume(src, user)
 	if(!(proximity && O.is_open_container()))
 		return
 	to_chat(user, span_notice("You squeeze \the [src], juicing it into \the [O]."))
 	reagents.trans_to(O, reagents.total_volume)
 	user.drop_from_inventory(src)
-	pit.loc = user.loc
+	pit.forceMove(user.loc)
 	consume(src, user)
 
 /obj/item/reagent_containers/food/snacks/pitcher_fruit/attack_self(mob/user)

@@ -3,7 +3,7 @@
 	if(!istype(H) || !Adjacent(H))
 		return ..()
 	if(IS_GRABBING(H) && hat && !H.hands_are_full())
-		hat.loc = get_turf(src)
+		hat.forceMove(get_turf(src))
 		H.put_in_hands(hat)
 		H.visible_message(span_danger("\The [H] removes \the [src]'s [hat]."))
 		hat = null

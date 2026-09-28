@@ -244,13 +244,13 @@ LINEN BINS
 /obj/structure/bedsheetbin/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/bedsheet))
 		user.drop_item()
-		I.loc = src
+		I.forceMove(src)
 		sheets.Add(I)
 		amount++
 		to_chat(user, span_notice("You put [I] in [src]."))
 	else if(amount && !hidden() && I.w_class < ITEMSIZE_LARGE)	//make sure there's sheets to hide it among, make sure nothing else is hidden in there.
 		user.drop_item()
-		I.loc = src
+		I.forceMove(src)
 		hidden_handle = om_handle(I)
 		to_chat(user, span_notice("You hide [I] among the sheets."))
 	return TRUE
@@ -273,12 +273,12 @@ LINEN BINS
 		else
 			B = new /obj/item/bedsheet(loc)
 
-		B.loc = user.loc
+		B.forceMove(user.loc)
 		user.put_in_hands(B)
 		to_chat(user, span_notice("You take [B] out of [src]."))
 
 		if(hidden())
-			hidden().loc = user.loc
+			hidden().forceMove(user.loc)
 			to_chat(user, span_notice("[hidden()] falls out of [B]!"))
 			hidden_handle = null
 
@@ -298,12 +298,12 @@ LINEN BINS
 		else
 			B = new /obj/item/bedsheet(loc)
 
-		B.loc = loc
+		B.forceMove(loc)
 		to_chat(user, span_notice("You telekinetically remove [B] from [src]."))
 		update_icon()
 
 		if(hidden())
-			hidden().loc = loc
+			hidden().forceMove(loc)
 			hidden_handle = null
 
 

@@ -776,7 +776,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 
 					//Move the objects. Not forceMove because the object isn't "moving" really, it's supposed to be on the "same" turf.
 					for(var/obj/O in T)
-						O.loc = X
+						O.forceMove(X)
 						if(O.light_system == STATIC_LIGHT)
 							O.update_light()
 						else
@@ -788,7 +788,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 					//Move the mobs unless it's an AI eye or other eye type.
 					for(var/mob/M in T)
 						if(isEye(M)) continue // If we need to check for more mobs, I'll add a variable
-						M.loc = X
+						M.forceMove(X)
 
 						if(z_level_change) // Same goes for mobs.
 							M.onTransitZ(T.z, X.z)
@@ -911,7 +911,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 						newobjs += DuplicateObject(O , 1)
 
 					for(var/obj/O in newobjs)
-						O.loc = X
+						O.forceMove(X)
 
 					for(var/mob/M in T)
 
@@ -922,7 +922,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 						newmobs += DuplicateObject(M , 1)
 
 					for(var/mob/M in newmobs)
-						M.loc = X
+						M.forceMove(X)
 
 					copiedobjs += newobjs
 					copiedobjs += newmobs
@@ -980,11 +980,11 @@ Turf and target are seperate in case you want to teleport some distance from a t
 	else if (zone == BP_R_FOOT) return "right foot"
 	else return zone
 
-/proc/get(atom/loc, type)
-	while(loc)
-		if(istype(loc, type))
-			return loc
-		loc = loc.loc
+/proc/get(atom/current, type)
+	while(current)
+		if(istype(current, type))
+			return current
+		current = current.loc
 	return null
 
 /proc/get_turf_or_move(turf/location)

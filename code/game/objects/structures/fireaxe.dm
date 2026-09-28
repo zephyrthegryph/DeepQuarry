@@ -74,7 +74,7 @@
 				O.update_icon()
 			fireaxe = O
 			user.remove_from_mob(O)
-			contents += O
+			O.forceMove(src)
 			to_chat(user, span_notice("You place the fire axe back in the [name]."))
 			update_icon()
 		else

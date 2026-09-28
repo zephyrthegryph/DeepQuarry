@@ -58,7 +58,7 @@
 /obj/machinery/chem_master/proc/interaction_load_beaker(mob/user, obj/item/B, datum/interaction/interaction)
 	src.beaker = B
 	user.drop_item()
-	B.loc = src
+	B.forceMove(src)
 	to_chat(user, "You add 	he [B] to the machine.")
 	update_icon()
 	return TRUE
@@ -82,7 +82,7 @@
 	PB.make_contents_real()
 	src.loaded_pill_bottle = PB
 	user.drop_item()
-	B.loc = src
+	B.forceMove(src)
 	to_chat(user, "You add \the [loaded_pill_bottle] into the dispenser slot.")
 	return TRUE
 

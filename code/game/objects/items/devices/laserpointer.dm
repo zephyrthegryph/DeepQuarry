@@ -56,7 +56,7 @@
 /obj/item/laser_pointer/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(!diode)
 		user.drop_item()
-		W.loc = src
+		W.forceMove(src)
 		diode = W
 		to_chat(user, span_notice("You install a [diode.name] in [src]."))
 	else

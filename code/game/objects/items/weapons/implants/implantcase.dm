@@ -43,14 +43,14 @@
 		if (M.imp)
 			if ((imp || M.imp.implanted))
 				return
-			M.imp.loc = src
+			M.imp.forceMove(src)
 			imp = M.imp
 			M.imp = null
 			update()
 			M.update()
 		else
 			if (imp)
-				imp.loc = M
+				imp.forceMove(M)
 				M.imp = imp
 				imp = null
 				update()

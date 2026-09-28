@@ -93,7 +93,7 @@
 		remove_wound(W)
 
 	if(splinted && splinted.loc == src)
-		splinted.loc = null
+		splinted.moveToNullspace()
 		qdel(splinted)
 	splinted = null
 
@@ -200,7 +200,7 @@
 			removable_objects |= I
 	if(removable_objects.len)
 		var/obj/item/I = pick(removable_objects)
-		I.loc = get_turf(user) //just in case something was embedded that is not an item
+		I.forceMove(get_turf(user)) //just in case something was embedded that is not an item
 		if(istype(I))
 			user.put_in_hands(I)
 		user.visible_message(span_danger("\The [user] rips \the [I] out of \the [src]!"))
@@ -292,7 +292,7 @@
 					if(!removing || removing.loc != src || !Adjacent(user)) //Didn't select anything or selected something that was already removed OR we walked away.
 						user.visible_message(span_danger(span_bold("[user]") + " decides against removing anything from [src]"))
 						return
-					removing.loc = get_turf(user.loc)
+					removing.forceMove(get_turf(user.loc))
 					user.put_in_hands(removing)
 					user.visible_message(span_danger(span_bold("[user]") + " extracts [removing] from [src] with [W]!"))
 				else
@@ -742,7 +742,7 @@ This function completely restores a damaged organ to perfect condition.
 	for(var/obj/implanted_object in implants)
 		if(istype(implanted_object,/obj/item/implant) || istype(implanted_object,/obj/item/nif)) // We don't want to remove REAL implants. Just shrapnel etc. // NIFs pls
 			continue
-		implanted_object.loc = get_turf(src)
+		implanted_object.forceMove(get_turf(src))
 		LAZYREMOVE(implants, implanted_object)
 	if(owner && !owner.has_embedded_objects()) // rejuvenating a detached limb has no owner (D13)
 		owner.clear_alert("embeddedobject")
@@ -1496,7 +1496,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 	if(ismob(W.loc))
 		var/mob/living/H = W.loc
 		H.drop_from_inventory(W)
-	W.loc = owner
+	W.forceMove(owner)
 
 /// Severs this limb, with everything below it, onto the floor (the base
 /// removed() moves it; the detach hook releases the subtree). Implants still

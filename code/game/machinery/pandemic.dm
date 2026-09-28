@@ -214,7 +214,7 @@
 		return TRUE
 	user.drop_item()
 	beaker = I
-	beaker.loc = src
+	beaker.forceMove(src)
 	to_chat(user, span_notice("You add \the [I] to the machine."))
 	update_tgui_static_data(user)
 	icon_state = "pandemic1"

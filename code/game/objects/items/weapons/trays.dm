@@ -26,7 +26,7 @@
 	// Drop all the things. All of them.
 	cut_overlays()
 	for(var/obj/item/I in carrying)
-		I.loc = M.loc
+		I.forceMove(M.loc)
 		LAZYREMOVE(carrying, I)
 		if(isturf(I.loc))
 			I.scatter_steps(rand(1, 2))
@@ -135,7 +135,7 @@
 			if(calc_carry() + add >= max_carry)
 				break
 			var/image/Img = new(src.icon)
-			I.loc = src
+			I.forceMove(src)
 			LAZYADD(carrying, I)
 			Img.icon = I.icon
 			Img.icon_state = I.icon_state

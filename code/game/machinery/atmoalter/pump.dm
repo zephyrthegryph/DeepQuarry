@@ -183,7 +183,7 @@
 			. = 1
 		if("eject")
 			if(holding)
-				holding.loc = loc
+				holding.forceMove(loc)
 				holding = null
 			. = 1
 		if("pressure")

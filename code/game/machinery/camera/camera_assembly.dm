@@ -40,7 +40,7 @@
 		to_chat(user, "You attach \the [W] into the assembly inner circuits.")
 		LAZYADD(upgrades, W)
 		user.remove_from_mob(W)
-		W.loc = src
+		W.forceMove(src)
 		return
 
 	// Taking out upgrades
@@ -96,7 +96,7 @@
 	if(upgrade)
 		to_chat(user, span_notice("You unattach an upgrade from the assembly."))
 		playsound(src, tool.usesound, 50, TRUE)
-		upgrade.loc = get_turf(src)
+		upgrade.forceMove(get_turf(src))
 		LAZYREMOVE(upgrades, upgrade)
 	return TRUE
 
@@ -130,7 +130,7 @@
 		return
 	state = 4
 	var/obj/machinery/camera/C = new(loc)
-	loc = C
+	forceMove(C)
 	C.assembly = src
 	C.auto_turn()
 	C.replace_networks(uniqueList(tempnetwork))

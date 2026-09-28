@@ -293,7 +293,7 @@ REF_OWNED(/obj/item/gun/magnetic, list("cell", "loaded", "capacitor"))
 					visible_message(span_critical("\The [src] explodes in a blinding white light with a deafening bang!"))
 					for(var/obj/structure/closet/L in hear(max_range, get_turf(src)))
 						if(locate(/mob/living/carbon/, L))
-							for(var/mob/living/carbon/M in L)
+							for(var/mob/living/carbon/M in L) // latent-ok: mobs are never latent
 								blitzed(get_turf(src), M, max_range, banglet)
 					for(var/mob/living/carbon/M in hear(max_range, get_turf(src)))
 						blitzed(get_turf(src), M, max_range, banglet)

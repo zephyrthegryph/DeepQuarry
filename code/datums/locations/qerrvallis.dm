@@ -5,7 +5,7 @@
 	desc = "The home system of the Skrell, which translates to 'Star of the royals' or 'Light of the Crown'."
 
 /datum/locations/qerrvallis/New(creator)
-	contents.Add(
+	children.Add(
 		new /datum/locations/qerrbalak(src)
 		)
 	..(creator)
@@ -16,7 +16,7 @@
 	The world is filled with Skrellian cities which often sit on stilts."
 
 /datum/locations/qerrbalak/New(creator)
-	contents.Add(
+	children.Add(
 		new /datum/locations/qarrkloa(src),
 		new /datum/locations/moglar(src),
 		new /datum/locations/miqoxi(src),

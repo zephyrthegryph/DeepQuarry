@@ -836,4 +836,4 @@
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/disposal/step_start_condition()
-	return mode == 1 || flush || length(contents)
+	return mode == 1 || flush || length(contents) || has_latent() // latent-ok: latent entries checked

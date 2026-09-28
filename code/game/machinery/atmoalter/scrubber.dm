@@ -147,7 +147,7 @@
 			. = TRUE
 		if("eject")
 			if(holding)
-				holding.loc = loc
+				holding.forceMove(loc)
 				holding = null
 			. = TRUE
 		if("volume_adj")

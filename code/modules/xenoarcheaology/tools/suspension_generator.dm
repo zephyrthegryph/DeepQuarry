@@ -57,7 +57,7 @@
 	if(!panel_open)
 		tgui_interact(user)
 	else if(cell)
-		cell.loc = loc
+		cell.forceMove(loc)
 		cell.add_fingerprint(user)
 		cell.update_icon()
 
@@ -140,7 +140,7 @@
 			to_chat(user, span_warning("There is a power cell already installed."))
 		else
 			user.drop_item()
-			W.loc = src
+			W.forceMove(src)
 			cell = W
 			to_chat(user, span_info("You insert the power cell."))
 			icon_state = "suspension"
@@ -199,7 +199,7 @@
 	update_icon()
 
 	for(var/obj/item/I in turf_contents_of_type(T, /obj/item))
-		I.loc = suspension_field
+		I.forceMove(suspension_field)
 		collected++
 
 	if(collected)

@@ -18,7 +18,7 @@
 		var/obj/item/ammo_casing/C = loaded[loaded.len]
 		loaded.len--
 		user.visible_message("[user] removes \a casing from [src], the casing fizzling in the air before evaporating into dust.", span_notice("You remove \a casing from [src], the casing fizzling in the air before evaporating into dust"))
-		C.loc = null //Into the void!
+		C.moveToNullspace() //Into the void!
 		qdel(C) //And begone!
 		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
 		new /obj/effect/effect/sparks(src)

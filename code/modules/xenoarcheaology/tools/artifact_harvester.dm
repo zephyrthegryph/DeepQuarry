@@ -63,7 +63,7 @@
 		if(!inserted_battery)
 			to_chat(user, span_blue("You insert [held] into [src]."))
 			user.drop_item()
-			held.loc = src
+			held.forceMove(src)
 			src.inserted_battery = held
 			SStgui.update_uis(src)
 		else

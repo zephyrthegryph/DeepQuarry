@@ -543,7 +543,7 @@
 
 /obj/machinery/libraryscanner/proc/interaction_insert_book(mob/user, obj/item/held, datum/interaction/interaction)
 	user.drop_item()
-	held.loc = src
+	held.forceMove(src)
 	return TRUE
 
 // TGUI migration. attack_hand opens LibraryScanner.tsx;
@@ -570,7 +570,8 @@
 	data["has_cache"] = !!cache
 	data["cache_name"] = cache ? cache.name : ""
 	var/has_book = FALSE
-	for(var/obj/item/book/B in contents)
+	latent_materialize_all() // a walk needs real things (C5)
+	for(var/obj/item/book/B in contents) // latent-ok: materialized above
 		has_book = TRUE
 		break
 	data["has_book"] = has_book
@@ -582,7 +583,8 @@
 		return
 	switch(action)
 		if("scan")
-			for(var/obj/item/book/B in contents)
+			latent_materialize_all() // a walk needs real things (C5)
+			for(var/obj/item/book/B in contents) // latent-ok: materialized above
 				cache = B
 				break
 			add_fingerprint(usr)
@@ -591,8 +593,9 @@
 			cache = null
 			return TRUE
 		if("eject")
-			for(var/obj/item/book/B in contents)
-				B.loc = src.loc
+			latent_materialize_all() // a walk needs real things (C5)
+			for(var/obj/item/book/B in contents) // latent-ok: materialized above
+				B.forceMove(src.loc)
 			return TRUE
 
 
@@ -626,13 +629,13 @@
 /obj/machinery/bookbinder/proc/interaction_bind(mob/user, obj/item/held, datum/interaction/interaction)
 	if(istype(held, /obj/item/paper))
 		user.drop_item()
-		held.loc = src
+		held.forceMove(src)
 		user.visible_message("[user] loads some paper into [src].", "You load some paper into [src].")
 		src.visible_message("[src] begins to hum as it warms up its printing drums.")
 		om_after(src, rand(200,400), PROC_REF(bind_paper), held)
 	else
 		user.drop_item()
-		held.loc = src
+		held.forceMove(src)
 		user.visible_message("[user] loads some paper into [src].", "You load some paper into [src].")
 		src.visible_message("[src] begins to hum as it warms up its printing drums.")
 		om_after(src, rand(300,500), PROC_REF(bind_bundle), held)

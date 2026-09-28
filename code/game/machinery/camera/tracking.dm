@@ -41,14 +41,14 @@
 
 	return
 
-/mob/living/silicon/ai/proc/ai_store_location(loc as text)
+/mob/living/silicon/ai/proc/ai_store_location(location_name as text)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	set category = "AI.Camera Control"
 	set name = "Store Camera Location"
 	set desc = "Stores your current camera location by the given name"
 
-	loc = sanitize(loc)
-	if(!loc)
+	location_name = sanitize(location_name)
+	if(!location_name)
 		to_chat(src, span_warning("Must supply a location name"))
 		return
 
@@ -56,7 +56,7 @@
 		to_chat(src, span_warning("Cannot store additional locations. Remove one first"))
 		return
 
-	if(loc in stored_locations)
+	if(location_name in stored_locations)
 		to_chat(src, span_warning("There is already a stored location by this name"))
 		return
 
@@ -65,8 +65,8 @@
 		to_chat(src, span_warning("Unable to store this location"))
 		return
 
-	stored_locations[loc] = L
-	to_chat(src, "Location '[loc]' stored")
+	stored_locations[location_name] = L
+	to_chat(src, "Location '[location_name]' stored")
 
 /mob/living/silicon/ai/proc/sorted_stored_locations()
 	return sortList(stored_locations)

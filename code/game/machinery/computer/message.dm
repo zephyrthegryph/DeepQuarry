@@ -48,7 +48,7 @@
 			spark_system.set_up(5, 0, src)
 			spark_system.start()
 			var/obj/item/paper/monitorkey/MK = new/obj/item/paper/monitorkey
-			MK.loc = loc
+			MK.forceMove(loc)
 			// Will help make emagging the console not so easy to get away with.
 			MK.info += "<br><br>" + span_red("£%@%(*$%&(£&?*(%&£/{}")
 			om_after(src, 100*length(linkedServer().decryptkey), PROC_REF(UnmagConsole))

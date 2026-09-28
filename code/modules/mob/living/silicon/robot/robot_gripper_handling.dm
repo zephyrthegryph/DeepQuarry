@@ -118,7 +118,7 @@
 
 	var/obj/item/wrapped = get_wrapped_item()
 	if(wrapped)
-		wrapped.loc = loc //Place it in to the robot.
+		wrapped.forceMove(loc) //Place it in to the robot.
 		var/resolved = wrapped.attackby(O, user)
 		wrapped = get_wrapped_item() //We check to see if the object exists after we do attackby.
 
@@ -142,7 +142,7 @@
 			return TRUE
 
 		//Nothing happened to it. Just put it back into our pocket.
-		wrapped.loc = current_pocket
+		wrapped.forceMove(current_pocket)
 		return TRUE
 
 	return ..()
@@ -187,7 +187,7 @@
 		var/obj/item/reagent_containers/wrapped_container = wrapped
 		original_amount = wrapped_container.reagents?.total_volume
 
-	wrapped.loc = user
+	wrapped.forceMove(user)
 
 	var/resolved = target.attackby(wrapped, user)
 	if(!resolved && wrapped && target)
@@ -200,11 +200,11 @@
 	if(istype(wrapped, /obj/item/reagent_containers))
 		var/obj/item/reagent_containers/wrapped_container = wrapped
 		if(wrapped_container.reagents?.total_volume != original_amount || (istype(target, /obj/item/reagent_containers)))
-			wrapped.loc = previous_pocket
+			wrapped.forceMove(previous_pocket)
 			update_ref(wrapped)
 			return TRUE
 
-	wrapped.loc = previous_pocket
+	wrapped.forceMove(previous_pocket)
 	update_ref(wrapped)
 	return FALSE
 
@@ -233,7 +233,7 @@
 			to_chat(user, "Something prevents you from taking \the [I] out of \the [S].")
 			return
 	else
-		I.loc = selected_pocket
+		I.forceMove(selected_pocket)
 
 	to_chat(user, "You collect \the [I].")
 	current_pocket = selected_pocket

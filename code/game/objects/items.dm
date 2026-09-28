@@ -292,9 +292,9 @@
 
 	var/turf/T = src.loc
 
-	src.loc = null
+	src.moveToNullspace()
 
-	src.loc = T
+	src.forceMove(T)
 
 // See inventory_sizes.dm for the defines.
 /obj/item/examine(mob/user, infix, suffix)

@@ -662,7 +662,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 /obj/machinery/newscaster/proc/AttachPhoto(mob/user)
 	if(photo_data)
 		if(!photo_data.is_synth)
-			photo_data.photo().loc = src.loc
+			photo_data.photo().forceMove(src.loc)
 			if(!issilicon(user))
 				user.put_in_inactive_hand(photo_data.photo())
 		qdel(photo_data)
@@ -670,7 +670,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	if(istype(user.get_active_hand(), /obj/item/photo))
 		var/obj/item/photo = user.get_active_hand()
 		user.drop_item()
-		photo.loc = src
+		photo.forceMove(src)
 		photo_data = new(photo, 0)
 	else if(istype(user,/mob/living/silicon))
 		var/mob/living/silicon/tempAI = user
@@ -713,7 +713,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 		LAZYADD(NEWSPAPER.news_content, FC)
 	if(GLOB.news_network.wanted_issue())
 		NEWSPAPER.important_message = GLOB.news_network.wanted_issue()
-	NEWSPAPER.loc = get_turf(src)
+	NEWSPAPER.forceMove(get_turf(src))
 	paper_remaining--
 	return
 

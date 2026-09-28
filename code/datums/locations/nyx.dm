@@ -6,7 +6,7 @@
 	frontier. There are four planets orbiting it, not including its sub-stellar companion, Erebus."
 
 /datum/locations/nyx/New(creator)
-	contents.Add(
+	children.Add(
 		new /datum/locations/erebus(src),
 		new /datum/locations/moros(src),
 		new /datum/locations/brinkburn(src),
@@ -29,7 +29,7 @@
 	have significant volcanic activity due to tidal heating."
 
 /datum/locations/erebus/New(creator)
-	contents.Add(
+	children.Add(
 		new /datum/locations/talons_bull(src),
 		new /datum/locations/exodus(src),
 		new /datum/locations/crescent(src)

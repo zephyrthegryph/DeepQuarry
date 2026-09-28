@@ -139,9 +139,9 @@
 					LAZYADDASSOC(stack_storage, matname, S.get_amount())
 					qdel(S)
 				else
-					O.loc = output.loc
+					O.forceMove(output.loc)
 			else
-				O.loc = output.loc
+				O.forceMove(output.loc)
 
 	//Output amounts that are past stack_amt.
 	for(var/sheet in stack_storage)

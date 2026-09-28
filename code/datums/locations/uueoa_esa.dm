@@ -5,7 +5,7 @@
 	desc = "The home system of the Unathi.  It roughly translates to 'burning mother'."
 
 /datum/locations/uueoa_esa/New(creator)
-	contents.Add(
+	children.Add(
 		new /datum/locations/moghes(src),
 		new /datum/locations/ouere(src),
 		new /datum/locations/yeora(src),

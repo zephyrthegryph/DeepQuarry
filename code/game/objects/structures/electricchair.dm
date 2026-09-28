@@ -16,7 +16,7 @@
 	playsound(src, W.usesound, 50, 1)
 	C.set_dir(dir)
 	if(part)
-		part.loc = loc
+		part.forceMove(loc)
 		part.master = null
 		part = null
 	replace_with(src, C)

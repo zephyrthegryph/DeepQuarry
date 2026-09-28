@@ -76,7 +76,7 @@
 		return TRUE
 	beaker = O
 	user.drop_item()
-	O.loc = src
+	O.forceMove(src)
 	update_icon()
 	return TRUE
 

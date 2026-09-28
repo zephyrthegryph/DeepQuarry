@@ -158,7 +158,7 @@
 			to_chat(user, span_warning("[src] is full!"))
 			return
 		user.remove_from_mob(B)
-		B.loc = src
+		B.forceMove(src)
 		stored_ammo.Add(B)
 		update_icon()
 	playsound(src, 'sound/weapons/flipblade.ogg', 50, 1)

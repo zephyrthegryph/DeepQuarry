@@ -172,7 +172,7 @@
 	if(istype(I, /obj/item/grab))
 		var/obj/item/grab/G = I
 		var/mob/grabbed = G?.grab_target()
-		grabbed.loc = src.loc
+		grabbed.forceMove(src.loc)
 		visible_message(span_warning("[G?.grab_assailant()] smashes [grabbed] through the foamed metal wall."))
 		consume(I, user)
 		qdel(src)

@@ -2,7 +2,7 @@
 
 // LIFECYCLE: ventcrawlers inside are put out; its pipe image comes off players' clients.
 /obj/machinery/atmospherics/Destroy()
-	for(var/mob/living/M in src) //ventcrawling is serious business
+	for(var/mob/living/M in src) //ventcrawling is serious business (latent-ok: mobs are never latent)
 		M.remove_ventcrawl()
 		M.forceMove(get_turf(src))
 	if(pipe_image)

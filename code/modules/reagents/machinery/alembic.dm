@@ -57,7 +57,7 @@
 	src.expected_base = O.base_reagent
 	src.product_potion = O.product_potion
 	user.drop_item()
-	O.loc = src
+	O.forceMove(src)
 	update_icon()
 	to_chat(user, span_notice("You place the [O] in the alembic."))
 	return TRUE
@@ -76,7 +76,7 @@
 /obj/machinery/alembic/proc/interaction_load_base(mob/user, obj/item/O, datum/interaction/interaction)
 	src.base_reagent = O
 	user.drop_item()
-	O.loc = src
+	O.forceMove(src)
 	update_icon()
 	to_chat(user, span_notice("You place the [O] in the alembic."))
 	return TRUE

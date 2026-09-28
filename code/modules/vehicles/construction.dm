@@ -210,7 +210,7 @@
 	playsound(assembly, held.usesound, 30, TRUE)
 	var/obj/vehicle/train/engine/quadbike/built/product = new(assembly)
 	to_chat(actor, span_notice("You finish \the [product]"))
-	product.loc = get_turf(assembly)
+	product.forceMove(get_turf(assembly))
 	product.cell = assembly.cell
 	assembly.cell.forceMove(product)
 	assembly.cell = null
@@ -285,7 +285,7 @@
 	var/obj/item/vehicle_assembly/quadtrailer/trailer = target
 	to_chat(actor, span_notice("You close up \the [trailer]."))
 	var/obj/vehicle/train/trolley/trailer/product = new(trailer)
-	product.loc = get_turf(trailer)
+	product.forceMove(get_turf(trailer))
 	consume(trailer, actor)
 	return TRUE
 
@@ -416,7 +416,7 @@
 	playsound(assembly, held.usesound, 30, TRUE)
 	var/obj/vehicle/bike/built/product = new(assembly)
 	to_chat(actor, span_notice("You finish \the [product]"))
-	product.loc = get_turf(assembly)
+	product.forceMove(get_turf(assembly))
 	product.cell = assembly.cell
 	assembly.cell.forceMove(product)
 	assembly.cell = null
@@ -575,7 +575,7 @@
 	playsound(assembly, held.usesound, 30, TRUE)
 	var/obj/vehicle/train/engine/quadbike/snowmobile/built/product = new(assembly)
 	to_chat(actor, span_notice("You finish \the [product]"))
-	product.loc = get_turf(assembly)
+	product.forceMove(get_turf(assembly))
 	product.cell = assembly.cell
 	assembly.cell.forceMove(product)
 	assembly.cell = null

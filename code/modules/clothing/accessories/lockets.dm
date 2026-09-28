@@ -29,7 +29,7 @@
 		icon_state = "[base_icon]_open"
 		if(held)
 			to_chat(user, "\The [held] falls out!")
-			held.loc = get_turf(user)
+			held.forceMove(get_turf(user))
 			held = null
 	else
 		icon_state = "[base_icon]"
@@ -45,7 +45,7 @@
 		else
 			to_chat(user, "You slip [O] into [src].")
 			user.drop_item()
-			O.loc = src
+			O.forceMove(src)
 			held = O
 		return
 	..()

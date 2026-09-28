@@ -373,7 +373,7 @@
 	combustion = FALSE
 
 /obj/item/projectile/bullet/pistol/cap/periodic_step()
-	loc = null
+	moveToNullspace()
 	qdel(src)
 
 /obj/item/projectile/bullet/blank
@@ -425,7 +425,7 @@
 	hud_state = "pistol_light"
 
 /obj/item/projectile/bullet/cap/periodic_step()
-	loc = null
+	moveToNullspace()
 	qdel(src)
 
 /obj/item/projectile/bullet/foam_dart

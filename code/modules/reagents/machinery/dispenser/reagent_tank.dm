@@ -190,7 +190,7 @@
 	if(!rig)
 		return
 	user.visible_message(span_notice("[user] detaches [rig] from \the [src]."), span_notice("You detach [rig] from \the [src]"))
-	rig.loc = get_turf(user)
+	rig.forceMove(get_turf(user))
 	rig = null
 	overlays = new/list()
 
@@ -216,7 +216,7 @@
 
 	rig = H
 	user.drop_item()
-	H.loc = src
+	H.forceMove(src)
 
 	var/icon/test = getFlatIcon(H)
 	test.Shift(NORTH,1)

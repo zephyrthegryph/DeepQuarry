@@ -69,7 +69,7 @@
 		var/obj/structure/bigDelivery/P = new /obj/structure/bigDelivery(get_turf(O.loc))
 		P.icon_state = "deliverycrate"
 		P.wrapped = O
-		O.loc = P
+		O.forceMove(P)
 		src.amount -= 3
 		wrap_used()
 		user.visible_message("\The [user] wraps \a [target] with \a [src].",\
@@ -87,7 +87,7 @@
 		var/obj/structure/bigDelivery/P = new /obj/structure/bigDelivery(get_turf(O.loc))
 		P.wrapped = O
 		O.sealed = 1
-		O.loc = P
+		O.forceMove(P)
 		src.amount -= 3
 		wrap_used()
 		user.visible_message("\The [user] wraps \a [target] with \a [src].",\

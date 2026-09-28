@@ -166,8 +166,9 @@
 	var/mob/living/occupant = src?.slot_item(OCCUPANT_SLOT_GIBBER)
 	if(operating || !occupant)
 		return
-	for(var/obj/O in src)
-		O.loc = src.loc
+	latent_materialize_all() // a walk needs real things (C5)
+	for(var/obj/O in src) // latent-ok: materialized above
+		O.forceMove(src.loc)
 	slot_remove(occupant, get_turf(src))
 	update_icon()
 	return
@@ -234,7 +235,8 @@
 
 				byproducts[path] -= 1
 
-	for (var/obj/thing in contents)
+	latent_materialize_all() // a walk needs real things (C5)
+	for (var/obj/thing in contents) // latent-ok: materialized above
 		// There's a chance that the gibber will fail to destroy or butcher some evidence.
 		if(istype(thing,/obj/item/organ) && prob(80))
 			var/obj/item/organ/OR = thing

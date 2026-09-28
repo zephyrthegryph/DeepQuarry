@@ -324,7 +324,7 @@
 		var/obj/item/stack/material/M = D
 		if (M.use(1))
 			var/obj/item/secbot_assembly/edCLN_assembly/B = new /obj/item/secbot_assembly/edCLN_assembly
-			B.loc = get_turf(src)
+			B.forceMove(get_turf(src))
 			to_chat(user, span_notice("You armed the robot frame."))
 			if (user.get_inactive_hand()==src)
 				user.remove_from_mob(src)

@@ -24,7 +24,7 @@
 	if(istype(I, /obj/item/ammo_casing/rocket))
 		if(length(rockets) < max_rockets)
 			user.drop_item()
-			I.loc = src
+			I.forceMove(src)
 			LAZYADD(rockets, I)
 			to_chat(user, span_blue("You put the rocket in [src]."))
 			to_chat(user, span_blue("[length(rockets)] / [max_rockets] rockets."))

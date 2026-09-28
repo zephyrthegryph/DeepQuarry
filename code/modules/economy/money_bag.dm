@@ -43,11 +43,11 @@
 		var/obj/item/coin/C = W
 		to_chat(user, span_blue("You add the [C.name] into the bag."))
 		user.drop_item()
-		contents += C
+		C.forceMove(src)
 	if (istype(W, /obj/item/moneybag))
 		var/obj/item/moneybag/C = W
 		for (var/obj/O in C.contents)
-			contents += O;
+			O.forceMove(src)
 		to_chat(user, span_blue("You empty the [C.name] into the bag."))
 	return
 
@@ -80,7 +80,7 @@
 				COIN = locate(/obj/item/coin/uranium,src.contents)
 		if(!COIN)
 			return
-		COIN.loc = src.loc
+		COIN.forceMove(src.loc)
 	return
 
 

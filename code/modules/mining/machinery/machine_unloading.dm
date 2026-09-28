@@ -107,7 +107,7 @@
 			for (i = 0; i<10; i++)
 				O = locate(/obj/item, input.loc)
 				if (O)
-					O.loc = src.output.loc
+					O.forceMove(src.output.loc)
 				else
 					return
 	return

@@ -224,7 +224,7 @@
 /obj/structure/door_assembly/proc/attackby_timed_done2(obj/item/W, mob/user)
 	if(!src) return
 	user.drop_item()
-	W.loc = src
+	W.forceMove(src)
 	to_chat(user, span_notice("You installed the airlock electronics!"))
 	src.state = 2
 	src.electronics = W
@@ -319,7 +319,7 @@
 /obj/structure/door_assembly/proc/crowbar_act_tool_done(mob/user)
 	to_chat(user, span_notice("You removed the airlock electronics!"))
 	src.state = 1
-	electronics.loc = src.loc
+	electronics.forceMove(src.loc)
 	electronics = null
 
 /obj/structure/door_assembly/screwdriver_act(mob/user, obj/item/W)

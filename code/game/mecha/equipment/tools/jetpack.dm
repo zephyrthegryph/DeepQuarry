@@ -94,7 +94,7 @@
 		if(chassis?.slot_item(MECHA_SLOT_PILOT))
 			for(var/obj/effect/speech_bubble/B in range(1, chassis))
 				if(B.parent == chassis?.slot_item(MECHA_SLOT_PILOT))
-					B.loc = chassis.loc
+					B.forceMove(chassis.loc)
 	if(move_result)
 		wait = 1
 		chassis.use_power(energy_drain)

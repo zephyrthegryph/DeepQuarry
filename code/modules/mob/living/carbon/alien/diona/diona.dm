@@ -64,7 +64,7 @@ GLOBAL_LIST_INIT(nymph_default_emotes, list(
 	if(hat)
 		return
 	hat = new_hat
-	new_hat.loc = src
+	new_hat.forceMove(src)
 	update_icons()
 
 /mob/living/carbon/alien/diona/proc/npc_behaviour(mob/living/carbon/alien/diona/D)

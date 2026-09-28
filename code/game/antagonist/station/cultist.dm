@@ -77,7 +77,7 @@ GLOBAL_DATUM(cult, /datum/antagonist/cultist)
 			break
 	var/obj/item/storage/S = locate() in player.contents
 	if(S && istype(S))
-		T.loc = S
+		T.forceMove(S)
 
 /datum/antagonist/cultist/greet(datum/mind/player)
 	if(!..())

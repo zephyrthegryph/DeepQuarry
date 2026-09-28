@@ -423,7 +423,7 @@
 						piles -= N
 						LAZYREMOVE(piles_contra, N)
 						qdel(N)
-					O.loc = src.loc
+					O.forceMove(src.loc)
 				else
 					piles -= N
 					LAZYREMOVE(piles_contra, N)
@@ -487,7 +487,7 @@
 		var/obj/item/storage/S = O.loc
 		S.remove_from_storage(O, src)
 
-	O.loc = src
+	O.forceMove(src)
 	var/newID = 0
 
 	if(contraband)

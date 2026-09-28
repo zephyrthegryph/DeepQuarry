@@ -131,7 +131,7 @@
 		W.flags ^= OPENCONTAINER
 		W.update_icon()
 	user.drop_item()
-	W.loc = src
+	W.forceMove(src)
 	loaded_vial = W
 	reagents.maximum_volume = loaded_vial.reagents.maximum_volume
 	loaded_vial.reagents.trans_to_holder(reagents,volume)

@@ -69,7 +69,7 @@
 /obj/machinery/computer/secure_data/proc/interaction_secure_data_eject_id(mob/user, obj/item/held, datum/interaction/interaction)
 	if(scan)
 		to_chat(user, "You remove \the [scan] from \the [src].")
-		scan.loc = get_turf(src)
+		scan.forceMove(get_turf(src))
 		if(!user.get_active_hand() && ishuman(user))
 			user.put_in_hands(scan)
 		scan = null
@@ -91,7 +91,7 @@
 /obj/machinery/computer/secure_data/proc/interaction_secure_data_insert_id(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!user.unEquip(held))
 		return FALSE
-	held.loc = src
+	held.forceMove(src)
 	scan = held
 	to_chat(user, "You insert \the [held].")
 	tgui_interact(user)

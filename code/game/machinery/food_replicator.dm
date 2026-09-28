@@ -155,7 +155,7 @@
 		return TRUE
 
 	user.drop_item()
-	O.loc = src
+	O.forceMove(src)
 	container = O
 	balloon_alert(user, "placed \the [O] in \the [src]")
 	return TRUE

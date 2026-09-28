@@ -151,7 +151,7 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 			to_chat(M, span_notice("You remove the ID from the [name].")) // usr --> M
 			playsound(src, 'sound/machines/id_swipe.ogg', 100, 1)
 		else
-			id.loc = get_turf(src)
+			id.forceMove(get_turf(src))
 		cut_overlay("pda-id")
 		id = null
 
@@ -172,14 +172,14 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 		else
 			var/obj/item/I = user.get_active_hand()
 			if (istype(I, /obj/item/card/id) && user.unEquip(I))
-				I.loc = src
+				I.forceMove(src)
 				id = I
 			return 1
 	else
 		var/obj/item/card/I = user.get_active_hand()
 		if (istype(I, /obj/item/card/id) && I:registered_name && user.unEquip(I))
 			var/obj/old_id = id
-			I.loc = src
+			I.forceMove(src)
 			id = I
 			user.put_in_hands(old_id)
 			return 1

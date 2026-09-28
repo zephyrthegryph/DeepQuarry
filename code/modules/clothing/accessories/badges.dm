@@ -320,7 +320,7 @@ REF_OWNED(/obj/item/clothing/accessory/dosimeter, "current_film")
 	if(istype(I, /obj/item/dosimeter_film))
 		if(!current_film)
 			user.drop_item()
-			I.loc = src
+			I.forceMove(src)
 			current_film = I
 			update_state(current_film.state)
 

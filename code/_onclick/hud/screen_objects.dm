@@ -334,7 +334,7 @@
 							var/list/nicename = null
 							var/list/tankcheck = null
 							var/breathes = GAS_O2    //default, we'll check later
-							var/list/contents = list()
+							var/list/tank_moles = list()
 							var/from = "on"
 
 							if(ishuman(C))
@@ -364,58 +364,58 @@
 								if(istype(tankcheck[i], /obj/item/tank))
 									var/obj/item/tank/t = tankcheck[i]
 									if (!isnull(t.manipulated_by) && t.manipulated_by != C.real_name && findtext(t.desc,breathes))
-										contents.Add(t.air_contents.total_moles())	//Someone messed with the tank and put unknown gasses
+										tank_moles.Add(t.air_contents.total_moles())	//Someone messed with the tank and put unknown gasses
 										continue					//in it, so we're going to believe the tank is what it says it is
 									switch(breathes)
 																		//These tanks we're sure of their contents
 										if(GAS_N2) 							//So we're a bit more picky about them.
 
 											if(LINDA_GAS_AMT(t.air_contents, GAS_N2) && !LINDA_GAS_AMT(t.air_contents, GAS_O2))
-												contents.Add(LINDA_GAS_AMT(t.air_contents, GAS_N2))
+												tank_moles.Add(LINDA_GAS_AMT(t.air_contents, GAS_N2))
 											else
-												contents.Add(0)
+												tank_moles.Add(0)
 
 										if (GAS_O2)
 											if(LINDA_GAS_AMT(t.air_contents, GAS_O2) && !LINDA_GAS_AMT(t.air_contents, GAS_PHORON))
-												contents.Add(LINDA_GAS_AMT(t.air_contents, GAS_O2))
+												tank_moles.Add(LINDA_GAS_AMT(t.air_contents, GAS_O2))
 											else
-												contents.Add(0)
+												tank_moles.Add(0)
 
 										// No races breath this, but never know about downstream servers.
 										if (GAS_CO2)
 											if(LINDA_GAS_AMT(t.air_contents, GAS_CO2) && !LINDA_GAS_AMT(t.air_contents, GAS_PHORON))
-												contents.Add(LINDA_GAS_AMT(t.air_contents, GAS_CO2))
+												tank_moles.Add(LINDA_GAS_AMT(t.air_contents, GAS_CO2))
 											else
-												contents.Add(0)
+												tank_moles.Add(0)
 
 										// And here's for the Vox
 										if (GAS_PHORON)
 											if(LINDA_GAS_AMT(t.air_contents, GAS_PHORON) && !LINDA_GAS_AMT(t.air_contents, GAS_O2))
-												contents.Add(LINDA_GAS_AMT(t.air_contents, GAS_PHORON))
+												tank_moles.Add(LINDA_GAS_AMT(t.air_contents, GAS_PHORON))
 											else
-												contents.Add(0)
+												tank_moles.Add(0)
 
 										// Grunts rejoice!
 										if (GAS_CH4)
 											if(LINDA_GAS_AMT(t.air_contents, GAS_CH4) && !LINDA_GAS_AMT(t.air_contents, GAS_O2))
-												contents.Add(LINDA_GAS_AMT(t.air_contents, GAS_CH4))
+												tank_moles.Add(LINDA_GAS_AMT(t.air_contents, GAS_CH4))
 											else
-												contents.Add(0)
+												tank_moles.Add(0)
 
 								else
 									//no tank so we set contents to 0
-									contents.Add(0)
+									tank_moles.Add(0)
 
 							//Alright now we know the contents of the tanks so we have to pick the best one.
 
 							var/best = 0
 							var/bestcontents = 0
-							for(var/i=1, i <  contents.len + 1 , ++i)
-								if(!contents[i])
+							for(var/i=1, i <  tank_moles.len + 1 , ++i)
+								if(!tank_moles[i])
 									continue
-								if(contents[i] > bestcontents)
+								if(tank_moles[i] > bestcontents)
 									best = i
-									bestcontents = contents[i]
+									bestcontents = tank_moles[i]
 
 							//We've determined the best container now we set it as our internals
 
