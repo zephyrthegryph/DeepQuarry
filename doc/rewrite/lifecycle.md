@@ -118,12 +118,15 @@ enforces it.
 | `REF_OWNED(var)` / `REF_OWNED_LIST(var)` | a child that is not contained (actions, loops, helpers, DB/tgui contexts), deleted in phase 4 | `QDEL_NULL`/`QDEL_LIST` bodies |
 | `REF_PAIR(var, other_var)` | two-sided. Set and cleared only through `link_set()`/`link_clear()`, and destroying either side nulls the other | sleeper↔console, portals, teleporter, turbolift doors, card_slot holder |
 | `REF_BACKLIST(var, list_var)` | membership in another object's list (assoc or plain), removed automatically | `projector.signs`, aim lists, implant DB |
+| `REF_DEF(var)` | a frozen definition or registry object that is never deleted (`/datum/material`, `/datum/decl`, a techweb design, an uplink category). Destruction does nothing with it. A var whose declared type is in `DEF_TYPES` (`tools/ci/state_schema_lint.py`: material, decl, language, property_def) is an implicit `REF_DEF` and needs no declaration; species are not in it, because `produceCopy()` makes per-mob copies | material, flooring, closet appearance, designs, uplink categories |
+| `REF_TRANSIENT(var)` | a pooled object's per-use field (§4.1). `pool_release()` resets each to its initial value from the declaration, so no hand-written clearing can leak a reference. Scalars may be listed too. The lint accepts it only on a `POOL_DECLARE`d type | damage packet `source`/`attacker`/`weapon` |
 | OM handle | a text var holding `om_handle(x)`, resolved with `om_resolve(h)` (null once `x` is deleted). Replaces `/datum/weakref` ([object_model_core.md §4.11](object_model_core.md#411-one-scheduler-time-sequences-and-asynchrony)) | "remember who it was": last attacker, forensics, logs, UI selections, tgui and client refs, saved IDs |
 | declared cache | `declared_cache_vars()` maps the var to its invalidation rule: `CACHE_ON_CHANGE(bits)`, `CACHE_ON_EVENT(path)` or `CACHE_ON_RELATION(path)` (`code/__DEFINES/om.dm`). The OM core nulls the var when the rule fires (a raise of those channels, an event of that type, an edge of that relation added or removed); scrubbed in phase 8 | caches |
 
 - **LC-refs.** Every datum-typed instance var or list is exactly one of: a
-  relation or slot, an owned child, an OM handle, or a declared cache with an
-  invalidation rule. There is no "weak" kind any more: `/datum/weakref` goes
+  relation or slot, an owned child, an OM handle, a declared cache with an
+  invalidation rule, a `REF_DEF` definition reference, or a `REF_TRANSIENT` field of
+  a pooled type. There is no "weak" kind any more: `/datum/weakref` goes
   away, live links become relations and everything else becomes a handle.
   The LC-refs lint (`tools/ci/scheduler_lints.py`) counts undeclared vars and is
   ratcheted to 0. `GLOB` lists of objects become OM registries, which drop
@@ -153,6 +156,50 @@ enforces it.
 - Generic nulling runs **after** leftover `Destroy()` (phase 8). Legacy code
   that reads its own refs during Destroy still works, and code that does
   `qdel(x); x.foo` in the same tick isn't broken mid-call.
+
+### 4.1 One-place declarations and pools
+
+**`REF_VAR`.** A var and its kind can be declared together, in one line next to
+the type (`code/__defines/lifecycle.dm`). The older `REF_*` forms keep working.
+
+```dm
+// Before
+/datum/component/geiger_sound
+	var/datum/looping_sound/geiger/sound
+...
+REF_OWNED(/datum/component/geiger_sound, "sound")
+
+// After
+REF_VAR(/datum/component/geiger_sound, OWNED, /datum/looping_sound/geiger, sound)
+```
+
+`KIND` is any single-name kind (`OWNED`, `OWNED_LIST`, `OWNED_VALUES`, `SPILL`,
+`SPILL_LIST`, `HELD`, `DEF`, `TRANSIENT`); `VARTYPE` is the full type (`/list` for
+list kinds). `REF_PAIR_VAR(PATH, VARTYPE, NAME, "other")` and
+`REF_BACKLIST_VAR(PATH, VARTYPE, NAME, "list_var")` cover the two assoc kinds.
+
+**Pools** (`code/datums/lifecycle/pool.dm`). A scratch object made and dropped on
+a hot path (the damage packet, one per hit) is pooled instead:
+
+```dm
+POOL_DECLARE(/datum/damage_packet)
+REF_TRANSIENT(/datum/damage_packet, list("source", "attacker", "weapon", "zone", "penetration", "direction", "flags", "armor_flag"))
+
+var/datum/damage_packet/packet = pool_take(/datum/damage_packet)
+...
+packet.release()   // or pool_release(packet)
+```
+
+- `pool_take(type)` hands out a free object or makes one; `pool_release(obj)` resets
+  the `REF_TRANSIENT` fields and returns it to the per-type free list.
+- Releasing an object that isn't taken crashes (double-release detection).
+- Pooled objects refuse a normal `qdel()` (`POOL_DECLARE` overrides `Destroy()`).
+- Poisoning, `pool_set_poison(TRUE)` (tests and debugging): a released object is
+  marked `POOL_STATE_POISONED` and never handed out again, and `POOL_ASSERT_LIVE(src)`
+  at the top of the type's procs crashes on it, catching use after release.
+- `om_diagnostics()["pools"]` (`pool_diagnostics()`) reports free, out, peak,
+  created, taken, released, double releases, poisoned, use-after-release and
+  refused qdels per pooled type.
 
 ## 5. Replacing qdel call sites
 
