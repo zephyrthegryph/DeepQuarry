@@ -71,37 +71,3 @@ EXTEND_INTERACTIONS(/obj/item/stack/rods, INTERACT_ITEM(null, PROC_REF(rods_inte
 
 /obj/item/stack/rods/reagents_per_sheet()
 	return REAGENTS_PER_ROD
-
-/*
-/obj/item/stack/rods/attack_self(mob/user)
-	src.add_fingerprint(user)
-
-	if(!istype(user.loc,/turf)) return 0
-
-	if (locate(/obj/structure/grille, user.loc))
-		for(var/obj/structure/grille/G in user.loc)
-			if (G.destroyed)
-				G.update_integrity(10)
-				G.density = TRUE
-				G.destroyed = 0
-				G.icon_state = "grille"
-				use(1)
-			else
-				return 1
-
-	else if(!om_busy(src))
-		if(get_amount() < 2)
-			to_chat(user, span_warning("You need at least two rods to do this."))
-			return
-		to_chat(user, span_notice("Assembling grille..."))
-		om_do_after(user, 1 SECOND, src, src, PROC_REF(grille_done), list(user), claims = TRUE)
-	return
-
-/obj/item/stack/rods/proc/grille_done(mob/user)
-	if(get_amount() < 2)
-		return
-	var/obj/structure/grille/F = new /obj/structure/grille/ ( user.loc )
-	to_chat(user, span_notice("You assemble a grille"))
-	F.add_fingerprint(user)
-	use(2)
-*/

@@ -9,13 +9,14 @@
 	///Var used for attack_self chain
 	var/special_handling = FALSE
 
-/obj/item/inflatable/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/inflatable, INTERACT_SELF("Inflate", PROC_REF(inflatable_self)))
+
+/// Old attack_self: inflate here. Subtypes with special_handling fall through.
+/obj/item/inflatable/proc/inflatable_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(special_handling)
 		return FALSE
 	inflate(user,user.loc)
+	return TRUE
 
 /obj/item/inflatable/afterattack(atom/A, mob/user)
 	..(A, user)
@@ -255,10 +256,10 @@
 	icon_state = "folded_wall_torn"
 	special_handling = TRUE
 
-/obj/item/inflatable/torn/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/inflatable/torn, INTERACT_USE("Inflate", PROC_REF(torn_inflatable_self)))
+
+/// Old attack_self.
+/obj/item/inflatable/torn/proc/torn_inflatable_self(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_notice("The inflatable wall is too torn to be inflated!"))
 	add_fingerprint(user)
 
@@ -269,10 +270,10 @@
 	icon_state = "folded_door_torn"
 	special_handling = TRUE
 
-/obj/item/inflatable/door/torn/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/inflatable/door/torn, INTERACT_USE("Inflate", PROC_REF(torn_door_inflatable_self)))
+
+/// Old attack_self.
+/obj/item/inflatable/door/torn/proc/torn_door_inflatable_self(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_notice("The inflatable door is too torn to be inflated!"))
 	add_fingerprint(user)
 

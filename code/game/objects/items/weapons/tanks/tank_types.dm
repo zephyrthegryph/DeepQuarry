@@ -76,19 +76,22 @@
 	. = ..()
 	src.air_contents.adjust_gas(GAS_PHORON, (3*ONE_ATMOSPHERE)*70/(R_IDEAL_GAS_EQUATION*T20C))
 
-/obj/item/tank/phoron/attackby(obj/item/W as obj, mob/user as mob)
-	..()
+EXTEND_INTERACTIONS(/obj/item/tank/phoron, INTERACT_ITEM(null, PROC_REF(phoron_tank_item)))
+
+/// Old attackby: the tank's handling first (its old ..()), then fitting into a flamethrower.
+/obj/item/tank/phoron/proc/phoron_tank_item(mob/user, obj/item/W, datum/interaction/interaction)
+	tank_item(user, W, interaction)
 
 	if (istype(W, /obj/item/flamethrower))
 		var/obj/item/flamethrower/F = W
 		if ((!F.status)||(F.ptank))
-			return
+			return INTERACTION_HANDLED_PASS
 		master = F
 		F.ptank = src
 		user.remove_from_mob(src)
 		forceMove(F)
 		F.update_icon()
-	return
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/tank/vox	//Can't be a child of phoron or the gas amount gets screwey.
 	name = "phoron tank"

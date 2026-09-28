@@ -288,47 +288,51 @@
 	name = "plate insert"
 	desc = "used to craft armor plates for a plate carrier. Trim with a welder for light armor or add a second for heavy armor"
 
-/obj/item/material/armor_plating/attackby(obj/O, mob/user)
+EXTEND_INTERACTIONS(/obj/item/material/armor_plating, INTERACT_ITEM(null, PROC_REF(armor_plating_item)))
+
+/// Old attackby: wire the plate, or join two plates into makeshift armour.
+/obj/item/material/armor_plating/proc/armor_plating_item(mob/user, obj/item/O, datum/interaction/interaction)
 	if(istype(O, /obj/item/stack/cable_coil))
 		var/obj/item/stack/cable_coil/S = O
 		if(wired)
 			to_chat(user, span_warning("This already has enough wires on it."))
-			return
+			return INTERACTION_HANDLED_PASS
 		if(S.use(20))
 			to_chat(user, span_notice("You attach several wires to \the [src].  Now it needs another plate."))
 			wired = TRUE
 			icon_state = "[initial(icon_state)]_wired"
-			return
+			return INTERACTION_HANDLED_PASS
 		else
 			to_chat(user, span_notice("You need more wire for that."))
-			return
+			return INTERACTION_HANDLED_PASS
 	if(istype(O, /obj/item/material/armor_plating))
 		var/obj/item/material/armor_plating/second_plate = O
 		if(!wired && !second_plate.wired)
 			to_chat(user, span_warning("You need something to hold the two pieces of plating together."))
-			return
+			return INTERACTION_HANDLED_PASS
 		if(second_plate.material != src.material)
 			to_chat(user, span_warning("Both plates need to be the same type of material."))
-			return
+			return INTERACTION_HANDLED_PASS
 		user.drop_from_inventory(src)
 		user.drop_from_inventory(second_plate)
 		var/obj/item/clothing/suit/armor/material/makeshift/new_armor = new(null, src.material.name)
 		user.put_in_hands(new_armor)
 		consume(second_plate, user)
 		consume(src, user)
-	else
-		..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
-//Make plating inserts for modular armour.
-/obj/item/material/armor_plating/insert/attackby(obj/item/O, mob/user)
+EXTEND_INTERACTIONS(/obj/item/material/armor_plating/insert, INTERACT_ITEM(null, PROC_REF(armor_insert_item)))
 
-	. = ..()
+/// Old attackby: make plating inserts for modular armour. The old body ran its parent's first, so this does too.
+/obj/item/material/armor_plating/insert/proc/armor_insert_item(mob/user, obj/item/O, datum/interaction/interaction)
+	. = armor_plating_item(user, O, interaction)
 
 	if(istype(O, /obj/item/material/armor_plating/insert))
 		var/obj/item/material/armor_plating/insert/second_plate = O
 		if(second_plate.material != src.material)
 			to_chat(user, span_warning("Both plates need to be the same type of material."))
-			return
+			return INTERACTION_HANDLED_PASS
 		to_chat(user, span_notice("You bond the two plates together."))
 		user.drop_from_inventory(src)
 		user.drop_from_inventory(second_plate)
@@ -336,7 +340,7 @@
 		user.put_in_hands(new_armor)
 		consume(second_plate, user)
 		consume(src, user)
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(istype(O, /obj/item/stack/material))
 		var/obj/item/stack/material/S = O
@@ -347,7 +351,7 @@
 				var/obj/item/clothing/accessory/material/makeshift/legguards/new_armor = new(null, src.material.name)
 				user.put_in_hands(new_armor)
 				consume(src, user)
-				return
+				return INTERACTION_HANDLED_PASS
 
 /obj/item/material/armor_plating/insert/welder_act(mob/user, obj/item/tool)
 	var/obj/item/weldingtool/S = tool.get_welder()
@@ -380,19 +384,18 @@
 	name = "wooden bucket"
 	icon_state = "woodbucket"
 
-/obj/item/clothing/head/helmet/bucket/attackby(obj/O, mob/user)
-	if(istype(O, /obj/item/stack/material))
-		var/obj/item/stack/material/S = O
-		if(S.use(2))
-			to_chat(user, span_notice("You apply some [S.material.use_name] to \the [src].  Hopefully it'll make the makeshift helmet stronger."))
-			var/obj/item/clothing/head/helmet/material/makeshift/helmet = new(null, S.material.name)
-			user.put_in_hands(helmet)
-			consume(src, user)
-			return
-		else
-			to_chat(user, span_warning("You don't have enough material to build a helmet!"))
-	else
-		..()
+EXTEND_INTERACTIONS(/obj/item/clothing/head/helmet/bucket, INTERACT_INSERT(/obj/item/stack/material, PROC_REF(bucket_helmet_material), "Reinforce"))
+
+/// Old attackby: two sheets of material make a makeshift helmet.
+/obj/item/clothing/head/helmet/bucket/proc/bucket_helmet_material(mob/user, obj/item/stack/material/S, datum/interaction/interaction)
+	if(S.use(2))
+		to_chat(user, span_notice("You apply some [S.material.use_name] to \the [src].  Hopefully it'll make the makeshift helmet stronger."))
+		var/obj/item/clothing/head/helmet/material/makeshift/helmet = new(null, S.material.name)
+		user.put_in_hands(helmet)
+		consume(src, user)
+		return INTERACTION_HANDLED_PASS
+	to_chat(user, span_warning("You don't have enough material to build a helmet!"))
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/clothing/head/helmet/material
 	name = "helmet"

@@ -109,14 +109,15 @@
 	new_stack.update_strings()
 	return new_stack
 
-/obj/item/stack/material/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self: build windows, or open the recipe window.
+/obj/item/stack/material/proc/material_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!material.build_windows(user, src))
 		tgui_interact(user)
 
-EXTEND_INTERACTIONS(/obj/item/stack/material, INTERACT_ITEM(null, PROC_REF(material_interaction_item)))
+EXTEND_INTERACTIONS(/obj/item/stack/material, \
+	INTERACT_USE(null, PROC_REF(material_self)), \
+	INTERACT_ITEM(null, PROC_REF(material_interaction_item)), \
+)
 
 /// Old attackby.
 /obj/item/stack/material/proc/material_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)

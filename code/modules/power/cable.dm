@@ -885,9 +885,12 @@ DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interact
 	if(Adjacent(user))
 		. += "It doesn't seem to have a beginning, or an end."
 
-/obj/item/stack/cable_coil/alien/attack_hand(mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/alien, INTERACT_HAND_UNGATED("Take wire", PROC_REF(alien_coil_hand)))
+
+/// Old attack_hand: take wire from the endless coil in the other hand; otherwise fall through to pickup.
+/obj/item/stack/cable_coil/alien/proc/alien_coil_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if (user.get_inactive_hand() == src)
-		var/N = rerun_prompt(user, "k889", list("kind" = "number", "message" = "How many units of wire do you want to take from [src]? You can only take up to [amount] at a time.", "title" = "Split stacks", "default" = 1, "max" = amount), TYPE_PROC_REF(/atom, attack_hand), args)
+		var/N = rerun_prompt(user, "k889", list("kind" = "number", "message" = "How many units of wire do you want to take from [src]? You can only take up to [amount] at a time.", "title" = "Split stacks", "default" = 1, "max" = amount), PROC_REF(alien_coil_hand), args)
 		if(isnull(N))
 			return TRUE
 		if(N && N <= amount)
@@ -901,10 +904,7 @@ DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interact
 				CC.add_fingerprint(user)
 				if (src && user.check_current_machine(src))
 					src.interact(user)
-		else
-			return
-	else
-		..()
-	return
+		return TRUE
+	return FALSE
 
 #undef MAXCOIL

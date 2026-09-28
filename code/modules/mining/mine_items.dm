@@ -244,7 +244,11 @@ DECLARE_INTERACTIONS(/obj/item/shovel, INTERACT_ALT(null, PROC_REF(interaction_a
 	singular_name = "green flag"
 	icon_state = "greenflag"
 
-EXTEND_INTERACTIONS(/obj/item/stack/flag, INTERACT_ITEM(null, PROC_REF(flag_interaction_item)))
+EXTEND_INTERACTIONS(/obj/item/stack/flag, \
+	INTERACT_ITEM(null, PROC_REF(flag_interaction_item)), \
+	INTERACT_HAND_UNGATED("Knock down", PROC_REF(flag_hand)), \
+	INTERACT_USE("Plant", PROC_REF(flag_self)), \
+)
 
 /// Old attackby.
 /obj/item/stack/flag/proc/flag_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
@@ -254,20 +258,18 @@ EXTEND_INTERACTIONS(/obj/item/stack/flag, INTERACT_ITEM(null, PROC_REF(flag_inte
 		return FALSE
 	return INTERACTION_HANDLED_PASS
 
-/obj/item/stack/flag/attack_hand(user as mob)
-	if(upright)
-		upright = 0
-		icon_state = base_state
-		anchored = FALSE
-		src.visible_message(span_infoplain(span_bold("[user]") + " knocks down [src]."))
-	else
-		..()
+/// Old attack_hand: knock an upright flag down; otherwise fall through to the stack's split and pickup.
+/obj/item/stack/flag/proc/flag_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!upright)
+		return FALSE
+	upright = 0
+	icon_state = base_state
+	anchored = FALSE
+	src.visible_message(span_infoplain(span_bold("[user]") + " knocks down [src]."))
+	return TRUE
 
-/obj/item/stack/flag/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
-
+/// Old attack_self: plant a flag.
+/obj/item/stack/flag/proc/flag_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/obj/item/stack/flag/F = locate() in get_turf(src)
 
 	var/turf/T = get_turf(src)
@@ -318,11 +320,10 @@ EXTEND_INTERACTIONS(/obj/item/stack/flag, INTERACT_ITEM(null, PROC_REF(flag_inte
 	icon_state = "yellowtrail_light"
 	blazer_type = /obj/structure/trailblazer/yellow
 
-/obj/item/stack/lightpole/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/stack/lightpole, INTERACT_USE("Plant", PROC_REF(lightpole_self)))
 
+/// Old attack_self: plant a trail light.
+/obj/item/stack/lightpole/proc/lightpole_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/turf/T = get_turf(user)
 	if(!T || (!istype(T,/turf/simulated/mineral) && !istype(T,/turf/simulated/floor/outdoors) && !istype(T,/turf/simulated/floor/snow) && !istype(T,/turf/snow)))
 		to_chat(user, span_warning("The light won't stand up in this terrain."))

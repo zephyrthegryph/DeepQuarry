@@ -283,7 +283,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/bodycam, INTERACT_USE(null, PRO
 
 //Assembly by roboticist
 
-DECLARE_INTERACTIONS(/obj/item/robot_parts/head, INTERACT_INSERT(/obj/item/assembly/infra, PROC_REF(interaction_item), null))
+DECLARE_INTERACTIONS(/obj/item/robot_parts/head, \
+	INTERACT_INSERT(/obj/item/assembly/infra, PROC_REF(interaction_item), null), \
+	INTERACT_INSERT(/obj/item/flash, PROC_REF(head_insert_flash), null), \
+)
 
 /obj/item/robot_parts/head/proc/interaction_item(mob/user, obj/item/assembly/S, datum/interaction/interaction)
 	var/obj/item/TVAssembly/A = new(user)

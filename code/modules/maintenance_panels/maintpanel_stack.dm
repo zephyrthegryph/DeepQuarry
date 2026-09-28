@@ -13,10 +13,10 @@
 	no_variants = FALSE
 	custom_handling = TRUE
 
-/obj/item/stack/tile/maintenance_panel/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/stack/tile/maintenance_panel, INTERACT_SELF("Build panel", PROC_REF(maintenance_panel_self)))
+
+/// Old attack_self: build a panel.
+/obj/item/stack/tile/maintenance_panel/proc/maintenance_panel_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/turf/T = user.loc
 	if(!user || (loc != user && !isrobot(user)) || user.stat || user.loc != T)
 		return FALSE

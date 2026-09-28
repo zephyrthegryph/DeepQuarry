@@ -61,10 +61,13 @@
 		return
 	return ..()
 
-/obj/item/material/fishing_net/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/material/fishing_net, \
+	INTERACT_SELF("Empty", PROC_REF(fishing_net_self)), \
+	INTERACT_ITEM(null, PROC_REF(fishing_net_item)), \
+)
+
+/// Old attack_self: empty the net. Subtypes with special_handling fall through.
+/obj/item/material/fishing_net/proc/fishing_net_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(special_handling)
 		return FALSE
 	for(var/mob/M in src)
@@ -75,14 +78,15 @@
 		user.visible_message(span_notice("[user] dumps \the [I] out of \the [src]."), span_notice("You dump \the [I] out of \the [src]."))
 	update_icon()
 	update_weight()
-	return
+	return TRUE
 
-/obj/item/material/fishing_net/attackby(obj/item/W, mob/user)
+/// Old attackby: a trapped creature may take the hit; then falls through as its ..() did.
+/obj/item/material/fishing_net/proc/fishing_net_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(contents)
 		for(var/mob/living/L in contents)
 			if(prob(25))
 				L.attackby(W, user)
-	..()
+	return FALSE
 
 /obj/item/material/fishing_net/update_icon() // Also updates name and desc
 	underlays.Cut()
@@ -178,10 +182,10 @@
 		return
 	return ..()
 
-/obj/item/material/fishing_net/butterfly_net/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/material/fishing_net/butterfly_net, INTERACT_USE("Empty", PROC_REF(butterfly_net_self)))
+
+/// Old attack_self.
+/obj/item/material/fishing_net/butterfly_net/proc/butterfly_net_self(mob/user, obj/item/held, datum/interaction/interaction)
 	for(var/mob/living/M in src)
 		if(!user.get_inactive_hand()) //Check if the inactive hand is empty
 			M.forceMove(get_turf(src))

@@ -45,10 +45,10 @@
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
-/obj/item/bikehorn/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/bikehorn, INTERACT_SELF("Honk", PROC_REF(bikehorn_self)))
+
+/// Old attack_self: honk. Subtypes with special_handling fall through.
+/obj/item/bikehorn/proc/bikehorn_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(special_handling)
 		return FALSE
 	if(COOLDOWN_FINISHED(src, cooldown))
@@ -57,6 +57,7 @@
 		add_fingerprint(user)
 		if(honk_text)
 			audible_message(span_maroon("[honk_text]"))
+	return TRUE
 
 /obj/item/bikehorn/Crossed(atom/movable/AM as mob|obj)
 	if(AM.is_incorporeal())

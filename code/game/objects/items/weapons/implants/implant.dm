@@ -803,10 +803,10 @@ Due to the small chemical capacity of the implant, the life of the implant is re
 		to_chat(user,"You set the laws to: <br>" + span_notice("[newlaws]"))
 		implant.laws = newlaws //Organic
 
-/obj/item/implanter/compliance/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/implanter/compliance, INTERACT_USE("Set laws", PROC_REF(compliance_implanter_self)))
+
+/// Old attack_self.
+/obj/item/implanter/compliance/proc/compliance_implanter_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(istype(imp,/obj/item/implant/compliance))
 		var/obj/item/implant/compliance/implant = imp
 		om_prompt(src, user, list("kind" = "text", "message" = "Please Input Laws", "title" = "Compliance Laws", "default" = "", "multiline" = TRUE, "requires" = PROMPT_HELD, "data" = list("implant" = implant)), PROC_REF(laws_entered))

@@ -162,11 +162,14 @@
 	name = "handmade blindfold"
 	desc = "A handmade blindfold that covers the eyes, preventing sight."
 
-/obj/item/clothing/accessory/collar/craftable/attack_self(mob/user)
-	. = ..(user)
-	if(.)
+EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/craftable, INTERACT_SELF("Label", PROC_REF(craftable_collar_self)))
+
+/// Old attack_self: the collar's own tag handling first (the old ..()), then labelling.
+/obj/item/clothing/accessory/collar/craftable/proc/craftable_collar_self(mob/user, obj/item/held, datum/interaction/interaction)
+	if(collar_tag_self(user, held, interaction))
 		return TRUE
-	var/_answer_k169 = rerun_prompt(user, "k169", list("kind" = "text", "message" = "What would you like to label the collar?", "title" = "Collar Labelling", "max_length" = MAX_NAME_LEN, "encode" = FALSE), PROC_REF(attack_self), args)
+	var/_answer_k169 = rerun_prompt(user, "k169", list("kind" = "text", "message" = "What would you like to label the collar?", "title" = "Collar Labelling", "max_length" = MAX_NAME_LEN, "encode" = FALSE), PROC_REF(craftable_collar_self), args)
 	if(isnull(_answer_k169))
 		return TRUE
 	given_name = sanitizeSafe(_answer_k169, MAX_NAME_LEN)
+	return TRUE

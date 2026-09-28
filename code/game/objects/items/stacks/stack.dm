@@ -78,13 +78,12 @@
 	if(Adjacent(user))
 		. += get_examine_string()
 
-/obj/item/stack/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self: the stack's recipe window. Subtypes with custom_handling fall through.
+/obj/item/stack/proc/stack_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(custom_handling)
 		return FALSE
 	tgui_interact(user)
+	return TRUE
 
 /obj/item/stack/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -415,12 +414,12 @@
 		if(!amount)
 			break
 
-/obj/item/stack/attack_hand(mob/user as mob)
-	if (user.get_inactive_hand() == src)
-		om_prompt(src, user, list("kind" = "number", "message" = "How many stacks of [src] would you like to split off?  There are currently [amount].", "title" = "Split stacks", "default" = 1, "max" = amount, "min" = 1, "requires" = PROMPT_HELD), PROC_REF(split_amount_chosen))
-	else
-		..()
-	return
+/// Old attack_hand: touching the stack in the other hand splits it; otherwise falls through to pickup.
+/obj/item/stack/proc/stack_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	if (user.get_inactive_hand() != src)
+		return FALSE
+	om_prompt(src, user, list("kind" = "number", "message" = "How many stacks of [src] would you like to split off?  There are currently [amount].", "title" = "Split stacks", "default" = 1, "max" = amount, "min" = 1, "requires" = PROMPT_HELD), PROC_REF(split_amount_chosen))
+	return TRUE
 
 /obj/item/stack/proc/split_amount_chosen(mob/user, N, datum/om/prompt/ask)
 	if(N != round(N))
@@ -435,7 +434,11 @@
 			if (!QDELETED(src) && user.check_current_machine(src))
 				src.interact(user)
 
-DECLARE_INTERACTIONS(/obj/item/stack, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+DECLARE_INTERACTIONS(/obj/item/stack, \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_SELF(null, PROC_REF(stack_self)), \
+	INTERACT_HAND_UNGATED("Split", PROC_REF(stack_hand)), \
+)
 
 /// Old attackby.
 /obj/item/stack/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)

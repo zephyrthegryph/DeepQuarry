@@ -143,10 +143,10 @@
 		return INITIALIZE_HINT_QDEL
 	color = M.icon_colour
 
-/obj/item/stack/emptysandbag/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/stack/emptysandbag, INTERACT_USE("Fill", PROC_REF(emptysandbag_self)))
+
+/// Old attack_self.
+/obj/item/stack/emptysandbag/proc/emptysandbag_self(mob/user, obj/item/held, datum/interaction/interaction)
 	fill_next_bag(user)
 
 /// Fills one sandbag a second while the user stays put on outdoor ground.

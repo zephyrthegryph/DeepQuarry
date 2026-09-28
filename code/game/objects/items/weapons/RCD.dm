@@ -289,11 +289,12 @@ REF_OWNED(/obj/item/rcd/electric, "cell")
 /obj/item/rcd/debug/consume_resources(amount)
 	return TRUE
 
-/obj/item/rcd/debug/attackby(obj/item/W, mob/user)
-	if(istype(W, /obj/item/rcd_ammo))
-		to_chat(user, span_notice("\The [src] makes its own material, no need to add more."))
-		return FALSE
-	return ..()
+EXTEND_INTERACTIONS(/obj/item/rcd/debug, INTERACT_INSERT(/obj/item/rcd_ammo, PROC_REF(debug_rcd_refuse_ammo), "Load"))
+
+/// Old attackby: refuses cartridges; anything else falls through to the RCD's loading.
+/obj/item/rcd/debug/proc/debug_rcd_refuse_ammo(mob/user, obj/item/W, datum/interaction/interaction)
+	to_chat(user, span_notice("\The [src] makes its own material, no need to add more."))
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/rcd/debug/display_resources()
 	return "It has UNLIMITED POWER!"

@@ -171,7 +171,8 @@
 	if(!template)
 		template = null
 
-/obj/item/survivalcapsule/superpose/attack_self(mob/user, modifiers)
+/// Old attack_self (virtual: /obj/item/survivalcapsule/proc/survivalcapsule_self()): pick a template first.
+/obj/item/survivalcapsule/superpose/survivalcapsule_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!pod_initialized) // Populate list after round start as map templates might not exist when this item is created.
 		for(var/datum/map_template/shelter/superpose/shelter_type as anything in subtypesof(/datum/map_template/shelter))
 			if(!(initial(shelter_type.mappath)) || !(initial(shelter_type.superpose))) // Limits map templates to those marked for the superpose capsule.
@@ -179,7 +180,7 @@
 			LAZYADD(template_ids, initial(shelter_type.shelter_id))
 		pod_initialized = TRUE
 	if(!template_id)
-		var/answer = rerun_prompt(user, "k182", list("kind" = "list", "message" = "Which template would you like to load?", "title" = "Available Templates", "choices" = template_ids), PROC_REF(attack_self), args)
+		var/answer = rerun_prompt(user, "k182", list("kind" = "list", "message" = "Which template would you like to load?", "title" = "Available Templates", "choices" = template_ids), PROC_REF(survivalcapsule_self), args)
 		if(isnull(answer))
 			return TRUE
 		if(!answer)
@@ -189,7 +190,7 @@
 			return // Return here or the pod will activate as soon as a selection is made.
 
 	// Now we call super to run the rest of the parent proc since the choice has been handled.
-	..()
+	return ..()
 
 // Allows resetting the capsule if the wrong template is chosen.
 /obj/item/survivalcapsule/superpose/verb/resetpod()
@@ -206,7 +207,8 @@
 	name = "superposed surfluid shuttle capsule"
 	is_ship = TRUE //So you cant just make holes in planets
 
-/obj/item/survivalcapsule/superpose/shuttle/attack_self(mob/user, modifiers)
+/// Old attack_self (virtual: /obj/item/survivalcapsule/proc/survivalcapsule_self()): pick a shuttle template first.
+/obj/item/survivalcapsule/superpose/shuttle/survivalcapsule_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!pod_initialized)
 		for(var/datum/map_template/shelter/superpose/shelter_type as anything in subtypesof(/datum/map_template/shelter/))
 			if(!(initial(shelter_type.mappath)) || !(initial(shelter_type.shuttle)))
@@ -214,7 +216,7 @@
 			LAZYADD(template_ids, initial(shelter_type.shelter_id))
 		pod_initialized = TRUE
 	if(!template_id)
-		var/answer = rerun_prompt(user, "k215", list("kind" = "list", "message" = "Which template would you like to load?", "title" = "Available Templates", "choices" = template_ids), PROC_REF(attack_self), args)
+		var/answer = rerun_prompt(user, "k215", list("kind" = "list", "message" = "Which template would you like to load?", "title" = "Available Templates", "choices" = template_ids), PROC_REF(survivalcapsule_self), args)
 		if(isnull(answer))
 			return TRUE
 		if(!answer)
@@ -223,7 +225,7 @@
 			template_id = answer
 			unique_id = answer
 			return
-	..()
+	return ..()
 
 GLOBAL_LIST_EMPTY(unique_deployable)
 /*****************************Survival Pod********************************/
@@ -400,15 +402,14 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	if(length(temp_info))
 		. += temp_info
 
-/obj/item/survivalcapsule/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(survivalcapsule_self)))
+
+/// Old attack_self: deploy the shelter. Virtual: the superpose capsules override it with ..() last.
+/obj/item/survivalcapsule/proc/survivalcapsule_self(mob/user, obj/item/held, datum/interaction/interaction)
 	//Can't grab when capsule is New() because templates aren't loaded then
 	if(istype(get_area(user), /area/vr))
 		to_chat(user, span_danger("\The [src] does not appear to work in VR! This is useless to you!"))
 		return
-	. = ..()
 	get_template()
 	if(!used)
 		if(unique_id && (unique_id in GLOB.unique_deployable))
@@ -428,7 +429,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 		// We only show where the doors will be on a successful deploy check to avoid player confusion.
 		remove_preview(user, preview_render, 0)
 		preview_render = preview_template(user, deploy_location, show_doors = TRUE)
-		var/_answer_k433 = rerun_prompt(usr, "k433", list("message" = "Confirm location. (The shelter's exterior doors are highlighted in green!)", "title" = "Shelter Deploy Confirm", "choices" = list("No","Yes")), PROC_REF(attack_self), args)
+		var/_answer_k433 = rerun_prompt(usr, "k433", list("message" = "Confirm location. (The shelter's exterior doors are highlighted in green!)", "title" = "Shelter Deploy Confirm", "choices" = list("No","Yes")), PROC_REF(survivalcapsule_self), args)
 		if(isnull(_answer_k433))
 			return TRUE
 		if(_answer_k433 == "Yes")

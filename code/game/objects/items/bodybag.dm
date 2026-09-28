@@ -13,10 +13,10 @@
 	var/robotic = FALSE
 	var/mass_grave = FALSE
 
-/obj/item/bodybag/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/bodybag, INTERACT_SELF("Unfold", PROC_REF(bodybag_self)))
+
+/// Old attack_self: unfold the bag. Mass-grave bags fall through (their subtype unfolds them).
+/obj/item/bodybag/proc/bodybag_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(mass_grave) // TODO, upport this.
 		return FALSE // TODO, upport this.
 
@@ -27,7 +27,7 @@
 			R.syringe = syringe
 			syringe = null
 		consume(src, user)
-		return
+		return TRUE
 	if(robotic)
 		var/obj/structure/closet/body_bag/cryobag/robobag/R = new /obj/structure/closet/body_bag/cryobag/robobag(user.loc)
 		R.add_fingerprint(user)
@@ -35,11 +35,11 @@
 			R.syringe = syringe
 			syringe = null
 		consume(src, user)
-		return
+		return TRUE
 	var/obj/structure/closet/body_bag/R = new /obj/structure/closet/body_bag(user.loc)
 	R.add_fingerprint(user)
 	consume(src, user)
-	return
+	return TRUE
 
 /obj/item/storage/box/bodybags
 	name = "body bags"
@@ -67,10 +67,10 @@
 	w_class = ITEMSIZE_LARGE
 	mass_grave = TRUE
 
-/obj/item/bodybag/large/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/bodybag/large, INTERACT_USE("Unfold", PROC_REF(large_bodybag_self)))
+
+/// Old attack_self.
+/obj/item/bodybag/large/proc/large_bodybag_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/obj/structure/closet/body_bag/large/R = new /obj/structure/closet/body_bag/large(user.loc)
 	R.add_fingerprint(user)
 	consume(src, user)

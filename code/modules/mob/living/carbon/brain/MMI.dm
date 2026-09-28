@@ -80,7 +80,10 @@
 	else
 		to_chat (usr, "You were unable to toggle the [src]'s radio.")
 
-DECLARE_INTERACTIONS(/obj/item/mmi, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+DECLARE_INTERACTIONS(/obj/item/mmi, \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_SELF("Upend", PROC_REF(mmi_self)), \
+)
 
 /// Old attackby.
 /obj/item/mmi/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
@@ -130,10 +133,8 @@ DECLARE_INTERACTIONS(/obj/item/mmi, INTERACT_ITEM(null, PROC_REF(interaction_ite
 	host.adopt_view(get_mind_host(B), reason)
 	update_occupied_state()
 
-/obj/item/mmi/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self: upend the MMI. Subtypes with special_handling fall through.
+/obj/item/mmi/proc/mmi_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(special_handling)
 		return FALSE
 	if(!get_occupant())
@@ -143,6 +144,7 @@ DECLARE_INTERACTIONS(/obj/item/mmi, INTERACT_ITEM(null, PROC_REF(interaction_ite
 	else
 		to_chat(user, span_notice("You upend the MMI, spilling the brain onto the floor."))
 		eject_brain(get_turf(user), "spilled from [src] by [key_name(user)]")
+	return TRUE
 
 /// Take the brain organ out; the occupant (and its mind) goes with it. The
 /// organ keeps its lesions, so damage and treatment carry on.
@@ -231,7 +233,10 @@ DECLARE_INTERACTIONS(/obj/item/mmi, INTERACT_ITEM(null, PROC_REF(interaction_ite
 /obj/item/mmi/digital/update_occupied_state()
 	return
 
-EXTEND_INTERACTIONS(/obj/item/mmi/digital, INTERACT_ITEM(null, PROC_REF(digital_interaction_item)))
+EXTEND_INTERACTIONS(/obj/item/mmi/digital, \
+	INTERACT_ITEM(null, PROC_REF(digital_interaction_item)), \
+	INTERACT_SELF("Boot", PROC_REF(digital_mmi_self)), \
+)
 
 /// Old attackby.
 /obj/item/mmi/digital/proc/digital_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
@@ -261,10 +266,8 @@ EXTEND_INTERACTIONS(/obj/item/mmi/digital, INTERACT_ITEM(null, PROC_REF(digital_
 	else
 		view.set_stat(CONSCIOUS)
 
-/obj/item/mmi/digital/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self: boot the device. Subtypes with is_digital_robot fall through.
+/obj/item/mmi/digital/proc/digital_mmi_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(is_digital_robot)
 		return FALSE
 	var/mob/living/carbon/brain/occupant = get_occupant()
@@ -272,6 +275,7 @@ EXTEND_INTERACTIONS(/obj/item/mmi/digital, INTERACT_ITEM(null, PROC_REF(digital_
 		//Start the process of searching for a new user.
 		to_chat(user, span_blue("You carefully locate the manual activation switch and start the [src]'s boot process."))
 		request_player()
+	return TRUE
 
 /obj/item/mmi/digital/proc/request_player()
 	if(!ghost_query_type)

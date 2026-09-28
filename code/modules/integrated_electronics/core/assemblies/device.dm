@@ -45,12 +45,14 @@ EXTEND_INTERACTIONS(/obj/item/assembly/electronic_assembly, INTERACT_ITEM(null, 
 	if(opened)
 		icon_state = icon_state + "-open"
 
-/obj/item/assembly/electronic_assembly/attack_self(mob/user)
-	. = ..(user)
+/// Old attack_self (the assembly self-use chain: /obj/item/assembly/proc/interaction_self()): use the circuit inside.
+/obj/item/assembly/electronic_assembly/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+	. = ..()
 	if(.)
 		return TRUE
 	if(EA)
 		EA.attack_self(user)
+	return TRUE
 
 /obj/item/assembly/electronic_assembly/pulsed(radio = 0)						//Called when another assembly acts on this one, var/radio will determine where it came from for wire calcs
 	if(EA)

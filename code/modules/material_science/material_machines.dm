@@ -458,16 +458,19 @@ EXTEND_INTERACTIONS(/obj/structure/bed/bath/material_treatment, INTERACT_ITEM(nu
 	visible_message(span_notice("[user] [process_description] [stock] in [src]."))
 	return INTERACTION_HANDLED_PASS
 
-/obj/item/stack/material/processed_alloy/attackby(obj/item/item, mob/user)
+EXTEND_INTERACTIONS(/obj/item/stack/material/processed_alloy, INTERACT_ITEM(null, PROC_REF(processed_alloy_item)))
+
+/// Old attackby: surface treatments and measurements; anything else falls through as its ..() did.
+/obj/item/stack/material/processed_alloy/proc/processed_alloy_item(mob/user, obj/item/item, datum/interaction/interaction)
 	if(!istype(material, /datum/material/processed_alloy))
-		return ..()
+		return FALSE
 	var/datum/material_batch/batch = physical_batch().copy_batch()
 	var/changed = FALSE
 	if(istype(item, /obj/item/slime_extract))
 		var/obj/item/slime_extract/extract = item
 		if(!extract.uses)
 			qdel(batch)
-			return ..()
+			return FALSE
 		var/layer
 		if(istype(extract, /obj/item/slime_extract/blue))
 			layer = MATERIAL_SURFACE_SLIME_CRYO
@@ -486,7 +489,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/bath/material_treatment, INTERACT_ITEM(nu
 		else
 			to_chat(user, span_warning("[extract] cannot form a stable engineering surface on this stock."))
 			qdel(batch)
-			return ..()
+			return FALSE
 		batch.add_surface_layer(layer, 35, "[extract.name] matrix", 4)
 		extract.uses--
 		changed = TRUE
@@ -510,8 +513,8 @@ EXTEND_INTERACTIONS(/obj/structure/bed/bath/material_treatment, INTERACT_ITEM(nu
 		user.put_in_hands(replacement)
 	qdel(batch)
 	if(changed)
-		return
-	return ..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
 /// Emitter fire is the accessible pulse-treatment route. Receptive crystal
 /// lattices retain part of the shot; ordinary stock simply becomes hot.

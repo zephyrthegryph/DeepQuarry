@@ -195,17 +195,15 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 /obj/item/pda/proc/close(mob/user)
 	SStgui.close_uis(src)
 
-/obj/item/pda/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self: open the PDA (or its uplink). Subtypes with special_handling fall through.
+/obj/item/pda/proc/pda_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(special_handling)
 		return FALSE
 	if(active_uplink_check(user))
-		return
+		return TRUE
 
 	tgui_interact(user)
-	return
+	return TRUE
 
 /obj/item/pda/proc/start_program(datum/data/pda/P)
 	if(P && ((P in programs) || (cartridge && (P in cartridge.programs))))
@@ -421,6 +419,7 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 DECLARE_INTERACTIONS(/obj/item/pda, \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+	INTERACT_SELF(null, PROC_REF(pda_self)), \
 )
 
 /// Old attackby.

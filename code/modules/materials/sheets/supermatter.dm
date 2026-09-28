@@ -47,9 +47,21 @@
 	update_mass()
 	return
 
-/obj/item/stack/material/supermatter/attack_hand(mob/user)
-	. = ..()
+EXTEND_INTERACTIONS(/obj/item/stack/material/supermatter, INTERACT_HAND_UNGATED("Split", PROC_REF(supermatter_hand)))
 
+/// Old attack_hand's split branch: the stack's split, then the touch burns as after any touch.
+/obj/item/stack/material/supermatter/proc/supermatter_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!stack_hand(user, held, interaction))
+		return FALSE
+	supermatter_touched(user)
+	return TRUE
+
+/obj/item/stack/material/supermatter/hand_pickup(mob/living/user)
+	. = ..()
+	supermatter_touched(user)
+
+/// Old attack_hand's tail: after a touch, the stack re-weighs itself and may scorch the toucher.
+/obj/item/stack/material/supermatter/proc/supermatter_touched(mob/user)
 	update_mass()
 	var/mob/living/M = user
 	if(!istype(M))

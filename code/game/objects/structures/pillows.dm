@@ -10,10 +10,8 @@
 	throw_range = 7
 	special_handling = TRUE
 
-/obj/item/bedsheet/pillow/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self: set the pillow down.
+/obj/item/bedsheet/pillow/proc/pillow_self(mob/user, obj/item/held, datum/interaction/interaction)
 	user.drop_item()
 	if(icon_state == initial(icon_state))
 		icon_state = "[icon_state]_placed"
@@ -23,7 +21,10 @@
 	..()
 	icon_state = initial(icon_state)
 
-EXTEND_INTERACTIONS(/obj/item/bedsheet/pillow, INTERACT_ITEM(null, PROC_REF(pillow_interaction_item)))
+EXTEND_INTERACTIONS(/obj/item/bedsheet/pillow, \
+	INTERACT_USE("Place", PROC_REF(pillow_self)), \
+	INTERACT_ITEM(null, PROC_REF(pillow_interaction_item)), \
+)
 
 /// Old attackby.
 /obj/item/bedsheet/pillow/proc/pillow_interaction_item(mob/user, obj/item/component, datum/interaction/interaction)
