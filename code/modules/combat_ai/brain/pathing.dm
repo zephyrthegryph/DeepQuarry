@@ -1,7 +1,7 @@
 // A* pathfinding integration for the brain.
 //
 // The legacy ai_holder stores the cached path on itself; we do the same on
-// the brain. SSpathfinder is reused via dq_pathfind(), which wraps the same
+// the brain. The pathfinder service (om_pathfinder()) is reused via dq_pathfind(), which wraps the same
 // /datum/pathfinding/astar instance the legacy holder used. ID-card access is
 // honoured so doors a mob can open are walked through instead of avoided.
 //
@@ -32,7 +32,7 @@
 	var/obj/item/card/id/potential_id = actor.GetIdCard()
 	if(!isnull(potential_id))
 		instance.ss13_with_access = potential_id.access?.Copy()
-	return SSpathfinder.run_pathfinding(instance)
+	return om_pathfinder().run_pathfinding(instance)
 
 /// One smart step toward an atom. Re-uses a cached path when the goal is
 /// close to the previous goal; recomputes otherwise. Returns TRUE if the mob
@@ -52,12 +52,12 @@
 		need_recompute = TRUE
 	if(!need_recompute && failed_steps >= 3)
 		need_recompute = TRUE
-	if(!need_recompute && path_navigation_revision != SSai.navigation_revision)
+	if(!need_recompute && path_navigation_revision != GLOB.ai_navigation_revision)
 		need_recompute = TRUE
 	if(need_recompute)
 		cached_path = dq_pathfind(holder, target_turf, get_to)
 		path_goal = target_turf
-		path_navigation_revision = SSai.navigation_revision
+		path_navigation_revision = GLOB.ai_navigation_revision
 		failed_steps = 0
 		if(!length(cached_path))
 			return FALSE

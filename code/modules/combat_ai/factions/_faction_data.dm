@@ -50,7 +50,7 @@ GLOBAL_DATUM_INIT(dq_faction_data_default, /datum/faction_data, new())
 		return default_disposition
 	return result
 
-/// Build the global registry at world init.
+/// Builds the global registry. Runs on the first lookup (it used to be SSdq_combat_ai's init).
 /proc/dq_build_faction_registry()
 	GLOB.dq_faction_data.Cut()
 	for(var/T in typesof(/datum/faction_data))
@@ -64,6 +64,8 @@ GLOBAL_DATUM_INIT(dq_faction_data_default, /datum/faction_data, new())
 
 /// Convenience lookup used by the brain.
 /proc/dq_faction_data_for(faction_string)
+	if(!length(GLOB.dq_faction_data))
+		dq_build_faction_registry()
 	if(!faction_string)
 		return GLOB.dq_faction_data_default
 	. = GLOB.dq_faction_data[faction_string]

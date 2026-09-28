@@ -490,7 +490,7 @@
 		return
 	operating = 1
 
-	SSai?.publish_navigation_change()
+	publish_navigation_change()
 
 	do_animate("opening")
 	icon_state = "door0"
@@ -549,7 +549,7 @@
 	clear_autoclose_blockers()
 	operating = 1
 
-	SSai?.publish_navigation_change()
+	publish_navigation_change()
 
 	close_door_at = 0
 	do_animate("closing")

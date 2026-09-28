@@ -140,6 +140,7 @@
 #include "dq_bodyscanner_tests.dm"
 #include "dq_diagnosis_tests.dm"
 #include "dq_combat_ai_tests.dm"
+#include "dq_ai_om_tests.dm"
 #include "dq_economy_tests.dm"
 #include "dq_contract_tests.dm"
 #include "dq_expedition_tests.dm"

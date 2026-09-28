@@ -185,7 +185,7 @@ SUBSYSTEM_DEF(time_track)
 			SSbehaviours.ticks,
 			SSbehaviours.tick_overrun,
 			REGISTRY_COUNT(REGISTRY_MOBS),
-			SSai.cost,
+			om_ai_brain_cost(),
 			SStimer.cost,
 			SSdbcore.all_queries_num,
 			SSdbcore.queries_active_num,

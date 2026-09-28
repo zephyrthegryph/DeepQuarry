@@ -6,20 +6,19 @@
 // /datum/target_selector singletons. State that can't be class-level lives in
 // the world model (per-tick perception) or behavior_state (per-mob cooldowns).
 //
-// Duck-typed compatible with SSai/SSaifast: exposes `holder`, `is_busy()`,
-// `handle_strategicals()`, `handle_tactics()`, `process_flags`, `set_stance`.
-// SSai sleeps mobs by calling set_stance(STANCE_IDLE) — we accept the call as
-// a no-op since the brain has no stance enum.
+// Scheduled by two OM behaviours on the mob (scheduling.dm): a strategic loop (2 s) and a
+// tactical loop (0.25 s, only while it has a combat target). They park by the mob's relevance
+// and clock; a calm brain hibernates on mob chunks until something moves near it.
 
-#define DQAI_START_PROCESSING(B) if (!(B.process_flags & DQAI_PROCESSING)) {B.process_flags |= DQAI_PROCESSING; SSai.processing += B}
-#define DQAI_STOP_PROCESSING(B)  if (B.process_flags & DQAI_PROCESSING) {B.process_flags &= ~DQAI_PROCESSING; SSai.processing -= B}
-#define DQAI_START_FASTPROCESSING(B) if (!(B.process_flags & DQAI_FASTPROCESSING)) {B.process_flags |= DQAI_FASTPROCESSING; SSaifast.processing += B}
-#define DQAI_STOP_FASTPROCESSING(B)  if (B.process_flags & DQAI_FASTPROCESSING) {B.process_flags &= ~DQAI_FASTPROCESSING; SSaifast.processing -= B}
+#define DQAI_START_PROCESSING(B) B.start_loop(DQAI_PROCESSING)
+#define DQAI_STOP_PROCESSING(B) B.stop_loop(DQAI_PROCESSING)
+#define DQAI_START_FASTPROCESSING(B) B.start_loop(DQAI_FASTPROCESSING)
+#define DQAI_STOP_FASTPROCESSING(B) B.stop_loop(DQAI_FASTPROCESSING)
 
 /datum/ai_brain
-	// --- SSai duck-typed surface ---
-	var/mob/living/holder = null    // SSai reads this. Same name as ai_holder.
-	var/process_flags = 0           // bitmask of DQAI_PROCESSING / FASTPROCESSING.
+	// --- Scheduling ---
+	var/mob/living/holder = null    // the mob this brain drives; its OM behaviours run the loops.
+	var/process_flags = 0           // loops asked for: DQAI_PROCESSING / DQAI_FASTPROCESSING.
 
 	// --- Configuration ---
 	var/intelligence = AI_NORMAL    // Tiered AI level, mirroring legacy holder.
@@ -108,7 +107,7 @@ REF_OWNED(/datum/ai_brain, "model")
 	leader_ref = leader ? om_handle(leader) : null
 
 // ---------------------------------------------------------------------------
-// SSai-compatible surface.
+// Loop scheduling (scheduling.dm).
 // ---------------------------------------------------------------------------
 
 /datum/ai_brain/proc/manage_processing(desired)
@@ -121,8 +120,7 @@ REF_OWNED(/datum/ai_brain, "model")
 	else
 		DQAI_STOP_FASTPROCESSING(src)
 
-/// SSai calls this when sleeping the mob; accept gracefully. Brain has no
-/// stance enum — sleeping just halts behavior selection naturally.
+/// Legacy stance setter; accepted as a no-op. The brain has no stance enum.
 /datum/ai_brain/proc/set_stance(_stance)
 	return
 
@@ -510,7 +508,7 @@ REF_OWNED(/datum/ai_brain, "model")
 		var/datum/ai_behavior/B = dq_get_behavior(btype)
 		B.on_signal(arglist(list(src, sig_type) + tail))
 
-/// SSai reads this: TRUE while a task claims the brain's mob -- an ability's wind-up, a timed
+/// The loops check this: TRUE while a task claims the brain's mob -- an ability's wind-up, a timed
 /// action, or a behavior that blocks reselection (code/datums/om/task.dm, om_busy()).
 /datum/ai_brain/proc/is_busy()
 	return holder ? om_busy(holder) : FALSE

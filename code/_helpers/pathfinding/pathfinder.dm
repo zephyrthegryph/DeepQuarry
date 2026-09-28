@@ -27,7 +27,7 @@
 	/// to maximize performance.
 	var/tmp/pathfinding_cycle = 0
 	/// Failed search key -> list(GLOB.ai_navigation_revision, world.time) when it failed (Q9).
-	var/list/failed_searches = list()
+	var/list/failed_searches
 	/// Searches answered from failed_searches.
 	var/failure_cache_hits = 0
 
@@ -86,12 +86,12 @@
 	var/failure_key = instance.failure_cache_key()
 	var/navigation_revision = GLOB.ai_navigation_revision
 	if(failure_key)
-		var/list/failure = failed_searches[failure_key]
+		var/list/failure = LAZYACCESS(failed_searches, failure_key)
 		if(failure)
 			if(failure[1] == navigation_revision && world.time - failure[2] < PATHFINDER_FAILURE_TTL)
 				failure_cache_hits++
 				return null
-			failed_searches -= failure_key
+			LAZYREMOVE(failed_searches, failure_key)
 	pathfinding_mutex = TRUE
 	. = instance.search()
 	if(world.time > started + PATHFINDER_TIMEOUT)
@@ -99,9 +99,9 @@
 		log_runtime("pathfinder timeout of instance with debug variables [instance.debug_log_string()]")
 	pathfinding_mutex = FALSE
 	if(failure_key && !length(.))
-		if(length(failed_searches) >= PATHFINDER_FAILURE_CACHE_MAX)
-			failed_searches.Cut()
-		failed_searches[failure_key] = list(navigation_revision, world.time)
+		if(LAZYLEN(failed_searches) >= PATHFINDER_FAILURE_CACHE_MAX)
+			failed_searches = null
+		LAZYSET(failed_searches, failure_key, list(navigation_revision, world.time))
 
 /// The pathfinder service singleton (the live registry's instance).
 /proc/om_pathfinder()
