@@ -29,11 +29,45 @@
 	/// On-demand lane: parked while has_work() is FALSE, unparked by demand() when work is queued
 	/// (a cascade, an explosion, a star move). Idle services then cost the scheduler nothing.
 	var/on_demand = FALSE
+	/// Boot slot: the subsystem type after whose Initialize() the MC initializes this service
+	/// (boot_world_services_after()). Null: lazy (LAZY_SERVICE()) or initialized by its owner.
+	var/boot_after
+	/// Service types that must initialize before this one; booted first, in declared order.
+	var/list/order_after
 
 /// One-time setup, called by whatever used to be this service's Initialize() dependency slot, or
 /// on first use by ready() for a lazy service. Overrides set `initialized = TRUE` first.
 /datum/world_service/proc/initialize()
 	initialized = TRUE
+
+/// Server shutdown (MC Shutdown(), after the subsystems): flush whatever must survive the round.
+/datum/world_service/proc/shutdown()
+	return
+
+/// Initializes `S` after every service in its order_after (depth first; initialized guards cycles).
+/proc/boot_world_service(datum/world_service/S)
+	if(S.initialized)
+		return
+	for(var/datum/world_service/other as anything in world_services())
+		if(other.type in S.order_after)
+			boot_world_service(other)
+	var/started = REALTIMEOFDAY
+	S.initialize()
+	S.initialized = TRUE
+	log_world("World service [S.name] initialized in [(REALTIMEOFDAY - started) / 10]s.")
+
+/// MC boot hook: initializes every service whose boot slot is `subsystem_type`.
+/proc/boot_world_services_after(subsystem_type)
+	for(var/datum/world_service/S as anything in world_services())
+		if(S.boot_after == subsystem_type)
+			boot_world_service(S)
+
+/// MC shutdown hook.
+/proc/shutdown_world_services()
+	for(var/datum/world_service/S as anything in world_services())
+		if(S.initialized)
+			log_world("Shutting down [S.name] world service...")
+			S.shutdown()
 
 /// Lazy services: initializes on first use and returns the service (LAZY_SERVICE() in __defines/om.dm).
 /datum/world_service/proc/ready()
@@ -98,6 +132,10 @@
 		GLOB.solar_service, GLOB.nightshift_service, GLOB.planet_service, GLOB.skybox_service,
 		GLOB.poi_service, GLOB.starmover_service, GLOB.turf_cascade_service, GLOB.explosion_service,
 		GLOB.inactivity_service, GLOB.transfer_service, GLOB.radio_service, GLOB.antag_service,
+		// Former feature subsystems (large).
+		// FEATURE_SERVICES_LARGE
+		// Former feature subsystems (small) and client plumbing.
+		// FEATURE_SERVICES_SMALL
 	)
 
 /// Attaches every world service's lane to the live scheduler's global owner (SSbehaviours init).
