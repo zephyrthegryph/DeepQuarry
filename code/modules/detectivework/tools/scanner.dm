@@ -256,3 +256,5 @@
 	var/list/blooddna = target.forensic_data.get_blooddna()
 	for(var/blood in blooddna)
 		to_chat(user, span_notice("Blood type: [blooddna[blood]]\nDNA: [blood]"))
+
+REF_OWNED_VALUES(/obj/item/detective_scanner, "stored")

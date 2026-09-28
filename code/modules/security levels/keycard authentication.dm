@@ -11,9 +11,9 @@
 	var/screen = 1
 	var/confirmed = 0 //This variable is set by the device that confirms the request.
 	var/confirm_delay = 20 //(2 seconds)
-	var/obj/machinery/keycard_auth/event_source
-	var/mob/event_triggered_by
-	var/mob/event_confirmed_by
+	var/tmp/event_source_handle
+	var/tmp/event_triggered_by_handle
+	var/tmp/event_confirmed_by_handle
 	//1 = select event
 	//2 = authenticate
 	anchored = TRUE
@@ -77,11 +77,11 @@
 		if(ACCESS_KEYCARD_AUTH in ID.GetAccess())
 			if(active == 1)
 				//This is not the device that made the initial request. It is the device confirming the request.
-				if(event_source)
-					event_source.confirmed = 1
-					event_source.event_confirmed_by = user
+				if(event_source())
+					event_source().confirmed = 1
+					event_source().event_confirmed_by_handle = om_handle(user)
 			else if(screen == 2)
-				event_triggered_by = user
+				event_triggered_by_handle = om_handle(user)
 				broadcast_request(user) //This is the device making the initial event request. It needs to broadcast to other devices
 	return TRUE
 
@@ -148,10 +148,10 @@
 	event = ""
 	screen = 1
 	confirmed = 0
-	event_source = null
+	event_source_handle = null
 	icon_state = "auth_off"
-	event_triggered_by = null
-	event_confirmed_by = null
+	event_triggered_by_handle = null
+	event_confirmed_by_handle = null
 
 /obj/machinery/keycard_auth/proc/broadcast_request(mob/user)
 	icon_state = "auth_on"
@@ -167,14 +167,14 @@
 	if(confirmed)
 		confirmed = 0
 		trigger_event(user)
-		log_game("[key_name(event_triggered_by)] triggered and [key_name(event_confirmed_by)] confirmed event [event]")
-		message_admins("[key_name(event_triggered_by)] triggered and [key_name(event_confirmed_by)] confirmed event [event]", 1)
+		log_game("[key_name(event_triggered_by())] triggered and [key_name(event_confirmed_by())] confirmed event [event]")
+		message_admins("[key_name(event_triggered_by())] triggered and [key_name(event_confirmed_by())] confirmed event [event]", 1)
 	reset()
 
 /obj/machinery/keycard_auth/proc/receive_request(obj/machinery/keycard_auth/source)
 	if(stat & (BROKEN|NOPOWER))
 		return
-	event_source = source
+	event_source_handle = om_handle(source)
 	// Busy for the confirmation window: a hold claims the device and closes the window when it ends.
 	om_release_busy(src, "new request")
 	active = 1
@@ -182,7 +182,7 @@
 	om_hold_busy(src, confirm_delay, PROC_REF(receive_window_closed))
 
 /obj/machinery/keycard_auth/proc/receive_window_closed()
-	event_source = null
+	event_source_handle = null
 	icon_state = "auth_off"
 	active = 0
 
@@ -225,3 +225,15 @@ GLOBAL_VAR_INIT(maint_all_access, FALSE)
 	if(GLOB.maint_all_access && src.check_access_list(list(ACCESS_MAINT_TUNNELS)))
 		return 1
 	return ..(M)
+
+/// LC-refs: the event_triggered_by this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/keycard_auth/proc/event_triggered_by() as /mob
+	return om_resolve(event_triggered_by_handle)
+
+/// LC-refs: the event_confirmed_by this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/keycard_auth/proc/event_confirmed_by() as /mob
+	return om_resolve(event_confirmed_by_handle)
+
+/// LC-refs: the event_source this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/keycard_auth/proc/event_source() as /obj/machinery/keycard_auth
+	return om_resolve(event_source_handle)

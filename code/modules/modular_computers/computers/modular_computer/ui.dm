@@ -15,10 +15,10 @@
 		return 0
 
 	// If we have an active program switch to it now.
-	if(active_program)
+	if(active_program())
 		if(ui) // This is the main laptop screen. Since we are switching to program's UI close it for now.
 			ui.close()
-		active_program.tgui_interact(user)
+		active_program().tgui_interact(user)
 		return
 
 	// We are still here, that means there is no program loaded. Load the BIOS/ROM/OS/whatever you want to call it.
@@ -40,7 +40,7 @@
 	data["login"] = list()
 	var/obj/item/computer_hardware/card_slot/cardholder = card_slot
 	if(cardholder)
-		var/obj/item/card/id/stored_card = cardholder.stored_card
+		var/obj/item/card/id/stored_card = cardholder.stored_card()
 		if(stored_card)
 			var/stored_name = stored_card.registered_name
 			var/stored_title = stored_card.assignment
@@ -166,13 +166,13 @@
 		program_headers.Add(list(list(
 			"icon" = P.ui_header
 		)))
-	if(active_program && active_program.ui_header)
+	if(active_program() && active_program().ui_header)
 		program_headers.Add(list(list(
-			"icon" = active_program.ui_header
+			"icon" = active_program().ui_header
 		)))
 	data["PC_programheaders"] = program_headers
 
 	data["PC_stationtime"] = stationtime2text()
 	data["PC_hasheader"] = 1
-	data["PC_showexitprogram"] = active_program ? 1 : 0 // Hides "Exit Program" button on mainscreen
+	data["PC_showexitprogram"] = active_program() ? 1 : 0 // Hides "Exit Program" button on mainscreen
 	return data

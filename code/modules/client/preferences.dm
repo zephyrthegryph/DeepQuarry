@@ -49,7 +49,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 
 	// body_markings, flavor_texts, flavour_texts_robot, custom_link, exploit_record migrated to /datum/preference subtypes.
 
-	var/client/client = null
+	var/tmp/client_handle
 	var/client_ckey = null
 
 	// communicator_visibility/ringtone migrated to /datum/preference subtypes.
@@ -124,7 +124,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	var/dq_last_preview_render_ms = 0
 
 /datum/preferences/New(client/C)
-	client = C
+	client_handle = om_handle(C)
 
 	for(var/middleware_type in subtypesof(/datum/preference_middleware))
 		LAZYADD(middleware, new middleware_type(src))
@@ -150,7 +150,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	update_preference_by_type(/datum/preference/name/real_name, random_name(read_preference(/datum/preference/choiced/gender/identifying), read_preference(/datum/preference/choiced/species)))
 	update_preference_by_type(/datum/preference/text/human/b_type, RANDOM_BLOOD_TYPE) // migrated
 
-	if(client)
+	if(client())
 		apply_all_client_preferences()
 
 	if(!loaded_preferences_successfully)
@@ -274,7 +274,7 @@ REF_OWNED_LIST(/datum/preferences, "middleware")
 	else if(href_list["reload"])
 		load_preferences(TRUE)
 		load_character()
-		client.prefs_vr.load_vore()
+		client().prefs_vr.load_vore()
 		sanitize_preferences()
 	else if(href_list["load"])
 		if(!IsGuestKey(usr.key))
@@ -602,3 +602,9 @@ REF_OWNED_LIST(/datum/preferences, "middleware")
 	SScharacter_setup.queue_preferences_save(prefs)
 
 	feedback_add_details("admin_verb","TCaptureCrystal") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+
+REF_OWNED(/datum/preferences, "savefile")
+
+/// LC-refs: the client this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/preferences/proc/client() as /client
+	return om_resolve(client_handle)

@@ -5,14 +5,14 @@
 	searchables -= source
 	LAZYREMOVE(to_image, source)
 
-	var/datum/tgui/window = SStgui.get_open_ui(owner.mob, src)
+	var/datum/tgui/window = SStgui.get_open_ui(owner().mob, src)
 #if !defined(UNIT_TESTS) // we dont want to delete searchables if we're testing
 	if(isnull(window))
 		reset_contents()
 		return
 #endif
 
-	if(isturf(source.item))
+	if(isturf(source.item()))
 		populate_contents()
 		return
 

@@ -2,15 +2,15 @@
 /datum/lore/codex
 	var/name = null // Title displayed
 	var/data = null // The actual words.
-	var/datum/lore/codex/parent = null // Category above us
+	var/tmp/parent_handle	// Category above us
 	// ALLOW(instance_list): d: codex page keywords, filled at init
 	var/list/keywords = list() // Used for searching.
-	var/datum/codex_tree/holder = null
+	var/tmp/holder_handle
 
 /datum/lore/codex/New(new_holder, new_parent)
 	..()
-	holder = new_holder
-	parent = new_parent
+	holder_handle = om_handle(new_holder)
+	parent_handle = om_handle(new_parent)
 	add_content()
 	if(name)
 		keywords.Add(name)
@@ -20,7 +20,7 @@
 	if(.)
 		return
 
-	holder.Topic(href, href_list) // Redirect to the physical object
+	holder().Topic(href, href_list) // Redirect to the physical object
 
 /datum/lore/codex/page
 
@@ -56,7 +56,7 @@
 	..()
 	var/list/new_children_list = list()
 	for(var/type in children)
-		new_children_list.Add(new type(holder, src))
+		new_children_list.Add(new type(holder(), src))
 	children = new_children_list
 
 /datum/lore/codex/category/index_page()
@@ -66,3 +66,11 @@
 	for(var/datum/lore/codex/child in children)
 		results += child.index_page()
 	return results
+
+/// LC-refs: Category above us -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/lore/codex/proc/parent() as /datum/lore/codex
+	return om_resolve(parent_handle)
+
+/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/lore/codex/proc/holder() as /datum/codex_tree
+	return om_resolve(holder_handle)

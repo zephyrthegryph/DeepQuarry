@@ -53,7 +53,7 @@
 	metrics.identical_room_shape_ratio = metrics.largest_identical_room_shape_count / max(1, metrics.module_count)
 
 	var/list/transit_floors = list()
-	for(var/turf/simulated/floor/T in transit_area)
+	for(var/turf/simulated/floor/T in transit_area())
 		transit_floors[T] = TRUE
 	var/edge_count = 0
 	for(var/turf/simulated/floor/T as anything in transit_floors)
@@ -364,12 +364,12 @@
 		var/area/generated_station/module_area = module_areas[module_id]
 		for(var/turf/T in area_contents_of_type(module_area, /turf))
 			station_turfs |= T
-	for(var/turf/T in transit_area)
+	for(var/turf/T in transit_area())
 		station_turfs |= T
 		if(istype(T, /turf/simulated/floor))
 			transit_floors |= T
 			circulation_floors |= T
-	for(var/turf/T in maintenance_area)
+	for(var/turf/T in maintenance_area())
 		station_turfs |= T
 		if(istype(T, /turf/simulated/floor))
 			circulation_floors |= T
@@ -410,7 +410,7 @@
 				continue
 			for(var/datum/generated_station_department_instance/department in spec.departments)
 				if(department.id == layout_node.department_instance_id)
-					module_department_id = department.definition?.id
+					module_department_id = department.definition()?.id
 					break
 			break
 		var/datum/generated_room_definition/definition = generated_room_definition_for(module_department_id, module.role)
@@ -536,7 +536,7 @@
 		if(generated_station_architectural_passable(T))
 			walkable_station |= T
 	if(length(walkable_station))
-		var/turf/start = get_turf(entry)
+		var/turf/start = get_turf(entry())
 		if(!(start in walkable_station))
 			start = walkable_station[1]
 		var/list/reached_station = list()

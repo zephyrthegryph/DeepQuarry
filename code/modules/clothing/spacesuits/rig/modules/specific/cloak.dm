@@ -27,7 +27,7 @@
 	if(!..())
 		return 0
 
-	var/mob/living/carbon/human/H = holder.wearer
+	var/mob/living/carbon/human/H = holder.wearer()
 
 	to_chat(H, span_boldnotice("You are now nearly invisible to normal detection."))
 	H.alpha = 5
@@ -41,7 +41,7 @@
 	if(!..())
 		return 0
 
-	var/mob/living/carbon/human/H = holder.wearer
+	var/mob/living/carbon/human/H = holder.wearer()
 
 	to_chat(H, span_danger("You are now visible."))
 

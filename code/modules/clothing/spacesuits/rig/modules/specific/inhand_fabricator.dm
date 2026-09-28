@@ -21,7 +21,7 @@
 	if(!..())
 		return 0
 
-	var/mob/living/H = holder.wearer
+	var/mob/living/H = holder.wearer()
 
 	if(target)
 		var/obj/item/firing = new fabrication_type()
@@ -55,9 +55,9 @@
 
 /obj/item/rig_module/fabricator/energy_net/engage(atom/target)
 
-	if(holder && holder.wearer)
+	if(holder && holder.wearer())
 		if(..(target) && target)
 			set_dir(get_dir(src,target))  // Face the target
-			holder.wearer.Beam(target,"n_beam",,10)
+			holder.wearer().Beam(target,"n_beam",,10)
 		return 1
 	return 0

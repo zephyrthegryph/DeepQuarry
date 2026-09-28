@@ -16,7 +16,7 @@
 		"syndicate"
 	)
 	var/tmp/last_notification
-	var/tmp/datum/component/nif_menu/menu
+	var/tmp/menu_handle
 
 /**
  * Small helper component to manage the HUD icon
@@ -180,3 +180,7 @@ REF_OWNED(/datum/component/nif_menu, "screen_icon")
 		if("dismissNotification")
 			last_notification = null
 			return TRUE
+
+/// LC-refs: the menu this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/nif/proc/menu() as /datum/component/nif_menu
+	return om_resolve(menu_handle)

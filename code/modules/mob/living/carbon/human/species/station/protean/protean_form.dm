@@ -80,7 +80,7 @@
 	var/mob/living/carbon/human/H = parent
 	if(!in_rig())
 		return FALSE
-	var/mob/living/wearer = rig.wearer
+	var/mob/living/wearer = rig.wearer()
 	if(ismob(rig.loc))
 		var/mob/M = rig.loc
 		M.drop_from_inventory(rig)

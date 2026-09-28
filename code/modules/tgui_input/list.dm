@@ -64,7 +64,7 @@
 	/// Boolean field describing if the tgui_list_input was closed by the user.
 	var/closed
 	/// The TGUI UI state that will be returned in ui_state(). Default: always_state
-	var/datum/tgui_state/state
+	var/tmp/state_handle
 	/// Whether the tgui list input is invalid or not (i.e. due to all list entries being null)
 	var/invalid = FALSE
 
@@ -74,7 +74,7 @@
 	src.items = list()
 	src.items_map = list()
 	src.default = default
-	src.state = ui_state
+	src.state_handle = om_handle(ui_state)
 	var/list/repeat_items = list()
 	// Gets rid of illegal characters
 	var/static/regex/whitelistedWords = regex(@{"([^\u0020-\u8000]+)"})
@@ -113,7 +113,7 @@
 	closed = TRUE
 
 /datum/tgui_list_input/tgui_state(mob/user)
-	return state
+	return state()
 
 /datum/tgui_list_input/tgui_static_data(mob/user)
 	var/list/data = list()
@@ -150,3 +150,7 @@
 
 /datum/tgui_list_input/proc/set_choice(choice)
 	src.choice = choice
+
+/// LC-refs: the state this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_list_input/proc/state() as /datum/tgui_state
+	return om_resolve(state_handle)

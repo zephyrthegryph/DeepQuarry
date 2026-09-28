@@ -21,7 +21,7 @@
 
 /datum/board_game/vore_sweeper/New(atom/holder)
 	. = ..()
-	parent = holder
+	parent_handle = om_handle(holder)
 
 /datum/board_game/vore_sweeper/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -62,11 +62,11 @@
 			if(!dealer_mob)
 				return FALSE
 			if(dealer_mob == ui.user)
-				parent.atom_say("[ui.user] stopped dealing.")
+				parent().atom_say("[ui.user] stopped dealing.")
 				dealer = null
 				return TRUE
 			if(get_dist(ui.user, dealer_mob) > 3)
-				parent.atom_say("Dealer has been cleared by [ui.user].")
+				parent().atom_say("Dealer has been cleared by [ui.user].")
 				dealer = null
 				return TRUE
 			return FALSE
@@ -294,13 +294,13 @@
 	// Reject non-numeric/sub-1 counts: a negative or zero count would otherwise slip
 	// past the upper bound and break grid generation.
 	if(!isnum(mines) || mines < 1)
-		parent.atom_say("The grid must have at least one mine.")
+		parent().atom_say("The grid must have at least one mine.")
 		mine_count = 1
 		return
 	if(mines <= max_mines)
 		mine_count = round(mines)
 		return
-	parent.atom_say("The grid with [total_tiles] tiles only supports a maximum of [max_mines] mines.")
+	parent().atom_say("The grid with [total_tiles] tiles only supports a maximum of [max_mines] mines.")
 	mine_count = max_mines
 
 /datum/board_game/vore_sweeper/proc/validate_coords(list/params)

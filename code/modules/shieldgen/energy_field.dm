@@ -26,7 +26,7 @@
 	layer = ABOVE_MOB_LAYER
 	density = FALSE
 	can_atmos_pass = ATMOS_PASS_DENSITY
-	var/obj/machinery/shield_gen/my_gen = null
+	var/tmp/my_gen_handle
 	var/ticks_recovering = 10
 	uses_integrity = TRUE
 	max_integrity = 10 * FIELD_INTEGRITY_PER_RENWICK
@@ -35,7 +35,7 @@
 /obj/effect/energy_field/Initialize(mapload, new_gen)
 	. = ..()
 	update_integrity(0) // Fields start down; the generator charges them.
-	my_gen = new_gen
+	my_gen_handle = om_handle(new_gen)
 	if(nearby_active_shield_diffuser(src))
 		return INITIALIZE_HINT_QDEL
 	update_nearby_tiles()
@@ -43,14 +43,14 @@
 // ALLOW(lifecycle): leaves its generator's field; neighbouring fields redraw.
 /obj/effect/energy_field/Destroy()
 	update_nearby_tiles()
-	if(my_gen)
-		if(istype(my_gen))
-			LAZYREMOVE(my_gen.field, src)
-			my_gen = null
-		else if(istype(my_gen, /datum/artifact_effect/forcefield))
-			var/datum/artifact_effect/forcefield/AE = my_gen
+	if(my_gen())
+		if(istype(my_gen(), /obj/machinery/shield_gen))
+			LAZYREMOVE(my_gen().field, src)
+			my_gen_handle = null
+		else if(istype(my_gen(), /datum/artifact_effect/forcefield))
+			var/datum/artifact_effect/forcefield/AE = my_gen()
 			LAZYREMOVE(AE.created_field, src)
-			my_gen = null
+			my_gen_handle = null
 	var/turf/current_loc = get_turf(src)
 	. = ..()
 	for(var/direction in GLOB.cardinal)
@@ -181,3 +181,7 @@
 					F.impact_effect(i, affected_shields) // Spread the effect to them.
 
 #undef FIELD_INTEGRITY_PER_RENWICK
+
+/// LC-refs: the my_gen this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/effect/energy_field/proc/my_gen() as /obj/machinery/shield_gen
+	return om_resolve(my_gen_handle)

@@ -17,19 +17,19 @@
 /datum/event2/event/money_hacker
 	length_lower_bound = 8 MINUTES
 	length_upper_bound = 12 MINUTES
-	var/datum/money_account/targeted_account = null
+	var/tmp/targeted_account_handle
 
 /datum/event2/event/money_hacker/set_up()
 	if(REGISTRY_COUNT(REGISTRY_MONEY_ACCOUNTS))
-		targeted_account = pick(REGISTRY_MEMBERS(REGISTRY_MONEY_ACCOUNTS))
+		targeted_account_handle = om_handle(pick(REGISTRY_MEMBERS(REGISTRY_MONEY_ACCOUNTS)))
 
-	if(!targeted_account)
+	if(!targeted_account())
 		log_game("Money hacker event could not find an account to hack. Aborting.")
 		abort()
 		return
 
 /datum/event2/event/money_hacker/announce()
-	var/message = "A brute force hack has been detected (in progress since [stationtime2text()]). The target of the attack is: Financial account #[targeted_account.account_number], \
+	var/message = "A brute force hack has been detected (in progress since [stationtime2text()]). The target of the attack is: Financial account #[targeted_account().account_number], \
 	without intervention this attack will succeed in approximately 10 minutes. Required intervention: temporary suspension of affected accounts until the attack has ceased. \
 	Notifications will be sent as updates occur."
 	var/my_department = "[location_name()] Firewall Subroutines"
@@ -44,9 +44,9 @@
 
 /datum/event2/event/money_hacker/end()
 	var/message = null
-	if(targeted_account && !targeted_account.suspended) // Hacker wins.
+	if(targeted_account() && !targeted_account().suspended) // Hacker wins.
 		message = "The hack attempt has succeeded."
-		hack_account(targeted_account)
+		hack_account(targeted_account())
 		log_game("Money hacker event managed to hack the targeted account.")
 
 	else // Crew wins.
@@ -108,3 +108,7 @@
 	T.source_terminal = pick("","[pick("Biesel","New Gibson")] GalaxyNet Terminal #[rand(111,999)]","your mums place","nantrasen high CommanD","Angessa's Pearl","Nowhere")
 
 	LAZYADD(A.transaction_log, T)
+
+/// LC-refs: the targeted_account this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/event2/event/money_hacker/proc/targeted_account() as /datum/money_account
+	return om_resolve(targeted_account_handle)

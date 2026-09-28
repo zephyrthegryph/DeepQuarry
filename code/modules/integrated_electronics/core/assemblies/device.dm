@@ -11,7 +11,7 @@
 /obj/item/assembly/electronic_assembly/Initialize(mapload)
 	. = ..()
 	EA = new(src)
-	EA.holder = src
+	EA.holder_handle = om_handle(src)
 
 REF_OWNED(/obj/item/assembly/electronic_assembly, "EA")
 
@@ -76,7 +76,7 @@ EXTEND_INTERACTIONS(/obj/item/assembly/electronic_assembly, INTERACT_ITEM(null, 
 	name = "electronic device"
 	icon_state = "setup_device"
 	desc = "It's a tiny electronic device with specific use for attaching to other devices."
-	var/obj/item/assembly/electronic_assembly/holder
+	var/tmp/holder_handle
 	w_class = ITEMSIZE_TINY
 	max_components = IC_COMPONENTS_BASE * 3/4
 	max_complexity = IC_COMPLEXITY_BASE * 3/4
@@ -85,17 +85,21 @@ EXTEND_INTERACTIONS(/obj/item/assembly/electronic_assembly, INTERACT_ITEM(null, 
 	. = ..()
 	var/obj/item/integrated_circuit/built_in/device_input/input = new(src)
 	var/obj/item/integrated_circuit/built_in/device_output/output = new(src)
-	input.assembly = src
-	output.assembly = src
+	input.assembly_handle = om_handle(src)
+	output.assembly_handle = om_handle(src)
 
 // ALLOW(lifecycle): its holder device forgets the assembly.
 /obj/item/electronic_assembly/device/Destroy()
-	if(holder?.EA == src)
-		holder.EA = null
-	holder = null
+	if(holder()?.EA == src)
+		holder().EA = null
+	holder_handle = null
 	return ..()
 
 /obj/item/electronic_assembly/device/check_interactivity(mob/user)
 	if(!CanInteract(user, state = GLOB.tgui_deep_inventory_state))
 		return 0
 	return 1
+
+/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/electronic_assembly/device/proc/holder() as /obj/item/assembly/electronic_assembly
+	return om_resolve(holder_handle)

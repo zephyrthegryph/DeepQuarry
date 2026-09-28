@@ -8,8 +8,8 @@
 	density = FALSE
 
 /obj/structure/table/bench/update_desc()
-	if(material)
-		name = "[material.display_name] bench"
+	if(material())
+		name = "[material().display_name] bench"
 	else
 		name = "bench frame"
 

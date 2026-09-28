@@ -18,16 +18,16 @@
 		return 0
 
 	if(!target)
-		device.attack_self(holder.wearer)
+		device.attack_self(holder.wearer())
 		return 1
 
 	var/turf/T = get_turf(target)
 	if(istype(T) && !T.Adjacent(get_turf(src)))
 		return 0
 
-	var/resolved = target.attackby(device,holder.wearer)
+	var/resolved = target.attackby(device,holder.wearer())
 	if(!resolved && device && target)
-		device.afterattack(target,holder.wearer,1)
+		device.afterattack(target,holder.wearer(),1)
 	return 1
 
 /obj/item/rig_module/device/flash
@@ -132,7 +132,7 @@
 		return 0
 
 	if(!target)
-		device.attack_hand(holder.wearer)
+		device.attack_hand(holder.wearer())
 		return 1
 
 /obj/item/rig_module/device/pen
@@ -169,8 +169,10 @@
 	if(!target)
 		if(device == iastamp)
 			device = deniedstamp
-			to_chat(holder.wearer, span_notice("Switched to denied stamp."))
+			to_chat(holder.wearer(), span_notice("Switched to denied stamp."))
 		else if(device == deniedstamp)
 			device = iastamp
-			to_chat(holder.wearer, span_notice("Switched to internal affairs stamp."))
+			to_chat(holder.wearer(), span_notice("Switched to internal affairs stamp."))
 		return 1
+
+REF_HELD(/obj/item/rig_module/device, "device")

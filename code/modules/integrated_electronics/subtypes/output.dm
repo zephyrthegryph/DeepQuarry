@@ -41,7 +41,7 @@
 	..()
 	var/list/nearby_things = range(0, get_turf(src))
 	for(var/mob/M in nearby_things)
-		var/obj/O = assembly ? assembly : src
+		var/obj/O = assembly() ? assembly() : src
 		to_chat(M, span_notice("[icon2html(O,M.client)] [stuff_to_display]"))
 
 /obj/item/integrated_circuit/output/screen/large
@@ -54,7 +54,7 @@
 
 /obj/item/integrated_circuit/output/screen/large/do_work()
 	..()
-	var/obj/O = assembly ? assembly : src
+	var/obj/O = assembly() ? assembly() : src
 	O.visible_message(span_notice("[icon2html(O,viewers(O))] [stuff_to_display]"))
 
 /obj/item/integrated_circuit/output/light
@@ -76,10 +76,10 @@
 	update_lighting()
 
 /obj/item/integrated_circuit/output/light/proc/update_lighting()
-	if(assembly)
-		var/atom/light_source = assembly
-		if(istype(assembly,/obj/item/electronic_assembly/clothing))
-			light_source = assembly.loc
+	if(assembly())
+		var/atom/light_source = assembly()
+		if(istype(assembly(),/obj/item/electronic_assembly/clothing))
+			light_source = assembly().loc
 		if(light_toggled)
 			light_source.set_light(l_range = light_brightness, l_power = light_brightness, l_color = light_rgb)
 		else
@@ -133,7 +133,7 @@
 /obj/item/integrated_circuit/output/text_to_speech/do_work()
 	text = get_pin_data(IC_INPUT, 1)
 	if(!isnull(text))
-		var/obj/O = assembly ? assembly : src
+		var/obj/O = assembly() ? assembly() : src
 		audible_message("[icon2html(O,hearers(src))] \The [O.name] states, \"[text]\"", runemessage = text)
 
 /obj/item/integrated_circuit/output/text_to_speech/advanced
@@ -436,7 +436,7 @@
 	var/atom/movable/AM = get_pin_data_as_type(IC_INPUT, 2, /atom/movable)
 	var/holo_color = get_pin_data(IC_INPUT, 3)
 
-	if(istype(AM) && assembly)
+	if(istype(AM) && assembly())
 		if(AM in view(get_turf(src))) // It must be able to 'see' the object it will copy.
 			hologram = new(src)
 			var/icon/holo_icon = getHologramIcon(getFlatIcon(AM), no_color = TRUE)
@@ -473,3 +473,5 @@
 	if(hologram)
 		destroy_hologram()
 		set_pin_data(IC_INPUT, 1, FALSE)
+
+REF_OWNED(/obj/item/integrated_circuit/output/text_to_speech/advanced, "my_voice")

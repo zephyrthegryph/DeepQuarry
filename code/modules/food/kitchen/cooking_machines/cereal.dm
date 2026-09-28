@@ -37,7 +37,7 @@ REF_OWNED(/obj/machinery/appliance/mixer/cereal, "cerealmaker_loop")
 
 	var/list/images = list()
 	var/num = 0
-	for(var/obj/item/I in CI.container)
+	for(var/obj/item/I in CI.container())
 		if (istype(I, /obj/item/reagent_containers/food/snacks/variable/cereal))
 			//Images of cereal boxes on cereal boxes is dumb
 			continue

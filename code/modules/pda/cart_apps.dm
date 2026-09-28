@@ -50,11 +50,11 @@
 		if("message")
 			status_signal.data["msg1"] = data1
 			status_signal.data["msg2"] = data2
-			var/mob/user = pda.forensic_data?.get_lastprint()
-			if(isliving(pda.loc))
-				user = pda.loc
-			log_admin("STATUS: [user] set status screen with [pda]. Message: [data1] [data2]")
-			message_admins("STATUS: [user] set status screen with [pda]. Message: [data1] [data2]")
+			var/mob/user = pda().forensic_data?.get_lastprint()
+			if(isliving(pda().loc))
+				user = pda().loc
+			log_admin("STATUS: [user] set status screen with [pda()]. Message: [data1] [data2]")
+			message_admins("STATUS: [user] set status screen with [pda()]. Message: [data1] [data2]")
 
 		if("alert")
 			status_signal.data["picture_state"] = data1
@@ -68,8 +68,8 @@
 	category = "Utilities"
 
 /datum/data/pda/app/signaller/update_ui(mob/user, list/data)
-	if(pda.cartridge && istype(pda.cartridge.radio, /obj/item/radio/integrated/signal))
-		var/obj/item/radio/integrated/signal/R = pda.cartridge.radio
+	if(pda().cartridge && istype(pda().cartridge.radio, /obj/item/radio/integrated/signal))
+		var/obj/item/radio/integrated/signal/R = pda().cartridge.radio
 		data["frequency"] = R.frequency
 		data["minFrequency"] = RADIO_LOW_FREQ
 		data["maxFrequency"] = RADIO_HIGH_FREQ
@@ -78,8 +78,8 @@
 /datum/data/pda/app/signaller/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	if(..())
 		return TRUE
-	if(pda.cartridge && istype(pda.cartridge.radio, /obj/item/radio/integrated/signal))
-		var/obj/item/radio/integrated/signal/R = pda.cartridge.radio
+	if(pda().cartridge && istype(pda().cartridge.radio, /obj/item/radio/integrated/signal))
+		var/obj/item/radio/integrated/signal/R = pda().cartridge.radio
 
 		switch(action)
 			if("signal")
@@ -127,14 +127,14 @@ REF_OWNED(/datum/data/pda/app/power, "power_monitor")
 			return TRUE
 
 /datum/data/pda/app/crew_records
-	var/datum/data/record/general_records = null
+	var/tmp/general_records_handle
 
 /datum/data/pda/app/crew_records/update_ui(mob/user, list/data)
 	var/list/records[0]
 
-	if(general_records && (general_records in GLOB.data_core.general))
+	if(general_records() && (general_records() in GLOB.data_core.general))
 		data["records"] = records
-		records["general"] = general_records.fields
+		records["general"] = general_records().fields
 		return records
 	else
 		for(var/datum/data/record/R as anything in sortRecord(GLOB.data_core.general))
@@ -154,12 +154,12 @@ REF_OWNED(/datum/data/pda/app/power, "power_monitor")
 				load_records(R)
 			return TRUE
 		if("Back")
-			general_records = null
+			general_records_handle = null
 			has_back = 0
 			return TRUE
 
 /datum/data/pda/app/crew_records/proc/load_records(datum/data/record/R)
-	general_records = R
+	general_records_handle = om_handle(R)
 	has_back = 1
 
 /datum/data/pda/app/crew_records/medical
@@ -168,15 +168,15 @@ REF_OWNED(/datum/data/pda/app/power, "power_monitor")
 	template = "pda_medical"
 	category = "Medical"
 
-	var/datum/data/record/medical_records = null
+	var/tmp/medical_records_handle
 
 /datum/data/pda/app/crew_records/medical/update_ui(mob/user, list/data)
 	var/list/records = ..()
 	if(!records)
 		return
 
-	if(medical_records && (medical_records in GLOB.data_core.medical))
-		records["medical"] = medical_records.fields
+	if(medical_records() && (medical_records() in GLOB.data_core.medical))
+		records["medical"] = medical_records().fields
 
 	return records
 
@@ -184,7 +184,7 @@ REF_OWNED(/datum/data/pda/app/power, "power_monitor")
 	..(R)
 	for(var/datum/data/record/E as anything in GLOB.data_core.medical)
 		if(E && (E.fields["name"] == R.fields["name"] || E.fields["id"] == R.fields["id"]))
-			medical_records = E
+			medical_records_handle = om_handle(E)
 			break
 
 /datum/data/pda/app/crew_records/security
@@ -193,15 +193,15 @@ REF_OWNED(/datum/data/pda/app/power, "power_monitor")
 	template = "pda_security"
 	category = "Security"
 
-	var/datum/data/record/security_records = null
+	var/tmp/security_records_handle
 
 /datum/data/pda/app/crew_records/security/update_ui(mob/user, list/data)
 	var/list/records = ..()
 	if(!records)
 		return
 
-	if(security_records && (security_records in GLOB.data_core.security))
-		records["security"] = security_records.fields
+	if(security_records() && (security_records() in GLOB.data_core.security))
+		records["security"] = security_records().fields
 
 	return records
 
@@ -209,7 +209,7 @@ REF_OWNED(/datum/data/pda/app/power, "power_monitor")
 	..(R)
 	for(var/datum/data/record/E as anything in GLOB.data_core.security)
 		if(E && (E.fields["name"] == R.fields["name"] || E.fields["id"] == R.fields["id"]))
-			security_records = E
+			security_records_handle = om_handle(E)
 			break
 
 /datum/data/pda/app/supply
@@ -257,7 +257,7 @@ REF_OWNED(/datum/data/pda/app/power, "power_monitor")
 
 /datum/data/pda/app/janitor/update_ui(mob/user, list/data)
 	var/JaniData[0]
-	var/turf/cl = get_turf(pda)
+	var/turf/cl = get_turf(pda())
 
 	if(cl)
 		JaniData["user_loc"] = list("x" = cl.x, "y" = cl.y)
@@ -270,7 +270,7 @@ REF_OWNED(/datum/data/pda/app/power, "power_monitor")
 		if(ml)
 			if(ml.z != cl.z)
 				continue
-			var/direction = get_dir(pda, M)
+			var/direction = get_dir(pda(), M)
 			MopData[++MopData.len] = list ("x" = ml.x, "y" = ml.y, "dir" = uppertext(dir2text(direction)), "status" = M.reagents.total_volume ? "Wet" : "Dry")
 
 	var/BucketData[0]
@@ -279,7 +279,7 @@ REF_OWNED(/datum/data/pda/app/power, "power_monitor")
 		if(bl)
 			if(bl.z != cl.z)
 				continue
-			var/direction = get_dir(pda,B)
+			var/direction = get_dir(pda(),B)
 			BucketData[++BucketData.len] = list ("x" = bl.x, "y" = bl.y, "dir" = uppertext(dir2text(direction)), "volume" = B.reagents.total_volume, "max_volume" = B.reagents.maximum_volume)
 
 	var/CbotData[0]
@@ -288,7 +288,7 @@ REF_OWNED(/datum/data/pda/app/power, "power_monitor")
 		if(bl)
 			if(bl.z != cl.z)
 				continue
-			var/direction = get_dir(pda,B)
+			var/direction = get_dir(pda(),B)
 			CbotData[++CbotData.len] = list("x" = bl.x, "y" = bl.y, "dir" = uppertext(dir2text(direction)), "status" = B.on ? "Online" : "Offline")
 
 	var/CartData[0]
@@ -297,7 +297,7 @@ REF_OWNED(/datum/data/pda/app/power, "power_monitor")
 		if(bl)
 			if(bl.z != cl.z)
 				continue
-			var/direction = get_dir(pda,B)
+			var/direction = get_dir(pda(),B)
 			CartData[++CartData.len] = list("x" = bl.x, "y" = bl.y, "dir" = uppertext(dir2text(direction)), "volume" = B.mybucket?.reagents.total_volume || 0, "max_volume" = B.mybucket?.reagents.maximum_volume || 0)
 
 	JaniData["mops"] = MopData.len ? MopData : null
@@ -305,3 +305,15 @@ REF_OWNED(/datum/data/pda/app/power, "power_monitor")
 	JaniData["cleanbots"] = CbotData.len ? CbotData : null
 	JaniData["carts"] = CartData.len ? CartData : null
 	data["janitor"] = JaniData
+
+/// LC-refs: the general_records this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/data/pda/app/crew_records/proc/general_records() as /datum/data/record
+	return om_resolve(general_records_handle)
+
+/// LC-refs: the medical_records this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/data/pda/app/crew_records/medical/proc/medical_records() as /datum/data/record
+	return om_resolve(medical_records_handle)
+
+/// LC-refs: the security_records this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/data/pda/app/crew_records/security/proc/security_records() as /datum/data/record
+	return om_resolve(security_records_handle)

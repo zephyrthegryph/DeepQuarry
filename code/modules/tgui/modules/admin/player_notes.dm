@@ -202,7 +202,7 @@
 	PlayerNotesPageLegacy(1)
 
 /datum/admins/proc/PlayerNotesFilterLegacy()
-	var/filter = rerun_prompt(owner, "a1", list("kind" = "text", "message" = "Filter string (case-insensitive regex)", "title" = "Player notes filter"), PROC_REF(PlayerNotesFilterLegacy), args)
+	var/filter = rerun_prompt(owner(), "a1", list("kind" = "text", "message" = "Filter string (case-insensitive regex)", "title" = "Player notes filter"), PROC_REF(PlayerNotesFilterLegacy), args)
 	if(isnull(filter))
 		return
 	PlayerNotesPageLegacy(1, filter)

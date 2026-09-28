@@ -44,7 +44,7 @@
 		materialization_failure = materializer.last_failure_details
 		qdel(materializer)
 	qdel(planner)
-	if(!materialization?.entry)
+	if(!materialization?.entry())
 		if(validation_messages)
 			validation_messages += materialization ? "The materialized station has no docking entry." : "Station materialization failed[materialization_failure ? ": [materialization_failure]" : "."]"
 		qdel(materialization)
@@ -53,7 +53,7 @@
 		spec = generated_station_emergency_spec(seed)
 		materialization = generated_station_emergency_materialization(spec, z)
 
-	var/datum/expedition_site/site = new(z, EXP_DIFF_LOW, get_turf(materialization.entry))
+	var/datum/expedition_site/site = new(z, EXP_DIFF_LOW, get_turf(materialization.entry()))
 	site.name = spec.name
 	site.generation_seed = seed
 	site.station_spec = spec
@@ -95,7 +95,7 @@
 		to_chat(usr, span_warning("Generated station [seed] failed: [length(validation_messages) ? jointext(validation_messages, "; ") : "no diagnostic was returned"]."))
 		return
 	if(mob)
-		mob.forceMove(site.landing)
+		mob.forceMove(site.landing())
 	to_chat(usr, span_notice("Generated station seed [seed] on z[site.z_level]; moved you to its docking entry. The expedition lifecycle will recycle it after it is vacated."))
 /client/verb/generate_expedition_site()
 	set name = "Generate Expedition Site"
@@ -105,12 +105,12 @@
 		return
 
 	var/datum/expedition_site/site = SSexpedition.generate_site()
-	if(!site || !site.landing)
+	if(!site || !site.landing())
 		to_chat(usr, span_warning("Expedition site generation failed (see world log)."))
 		return
 
 	if(mob)
-		mob.forceMove(site.landing)
+		mob.forceMove(site.landing())
 	to_chat(usr, span_notice("Generated [site.name] on z[site.z_level]; moved you to its landing point."))
 
 // Roll a chosen mission, generate its site, and drop the admin on the landing
@@ -146,10 +146,10 @@
 
 	var/datum/expedition_mission/mission = new mission_type(diff)
 	var/datum/expedition_site/site = SSexpedition.generate_site(mission)
-	if(!site || !site.landing)
+	if(!site || !site.landing())
 		to_chat(usr, span_warning("Expedition mission generation failed (see world log)."))
 		return
 
 	if(mob)
-		mob.forceMove(site.landing)
+		mob.forceMove(site.landing())
 	to_chat(usr, span_notice("Generated mission '[mission.name]' on [site.name] (z[site.z_level]). Objective: [mission.objective_text()]"))

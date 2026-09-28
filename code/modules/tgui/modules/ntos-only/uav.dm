@@ -2,7 +2,7 @@
 	name = "UAV Control"
 	tgui_id = "UAV"
 	ntos = TRUE
-	var/obj/item/uav/current_uav = null //The UAV we're watching
+	var/tmp/current_uav_handle	//The UAV we're watching
 	var/signal_strength = 0 //Our last signal strength report (cached for a few seconds)
 	var/signal_test_counter = 0 //How long until next signal strength check
 	var/list/viewers //Who's viewing a UAV through us
@@ -11,19 +11,19 @@
 /datum/tgui_module/uav/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = ..()
 
-	if(current_uav)
-		if(QDELETED(current_uav))
+	if(current_uav())
+		if(QDELETED(current_uav()))
 			clear_current()
 		else if(signal_test_counter-- <= 0)
-			signal_strength = get_signal_to(current_uav)
+			signal_strength = get_signal_to(current_uav())
 			if(!signal_strength)
 				clear_current()
 			else // Don't reset counter until we find a UAV that's actually in range we can stay connected to
 				signal_test_counter = 20
 
 	data["current_uav"] = null
-	if(current_uav)
-		data["current_uav"] = list("status" = current_uav.get_status_string(), "power" = current_uav.state == 1 ? 1 : null)
+	if(current_uav())
+		data["current_uav"] = list("status" = current_uav().get_status_string(), "power" = current_uav().state == 1 ? 1 : null)
 	data["signal_strength"] = signal_strength ? signal_strength >= 2 ? "High" : "Low" : "None"
 	data["in_use"] = LAZYLEN(viewers)
 
@@ -61,58 +61,58 @@
 			//Deleted UAVs don't resolve, so match on the \ref the UI sent (\ref[null] for those)
 			for(var/h in mc_host.paired_uavs)
 				if("\ref[om_resolve(h)]" == refstring)
-					if(current_uav && om_handle(current_uav) == h)
+					if(current_uav() && om_handle(current_uav()) == h)
 						set_current(null)
 					LAZYREMOVE(mc_host.paired_uavs, h)
 			return TRUE
 
 		if("view_uav")
-			if(!current_uav)
+			if(!current_uav())
 				return FALSE
 
-			if(!current_uav.state)
+			if(!current_uav().state)
 				to_chat(ui.user,span_warning("The screen freezes for a moment, before returning to the UAV selection menu. It's not able to connect to that UAV."))
 			else
 				if(get_dist(ui.user, tgui_host()) > 1 || ui.user.blinded)
 					return FALSE
 				else if(!viewing_uav(ui.user))
 					if(!viewers) viewers = list() // List must exist for pass by reference to work
-					start_coordinated_remoteview(src, ui.user, current_uav, viewers, /datum/remote_view_config/uav_control)
+					start_coordinated_remoteview(src, ui.user, current_uav(), viewers, /datum/remote_view_config/uav_control)
 				else
 					ui.user.reset_perspective()
 			return TRUE
 
 		if("power_uav")
-			if(!current_uav)
+			if(!current_uav())
 				return FALSE
-			else if(current_uav.toggle_power())
+			else if(current_uav().toggle_power())
 				SEND_SIGNAL(src,COMSIG_REMOTE_VIEW_CLEAR)
 				return TRUE
 
 /datum/tgui_module/uav/proc/set_current(obj/item/uav/U)
-	if(current_uav == U)
+	if(current_uav() == U)
 		return
 
 	signal_strength = 0
-	if(current_uav)
-		UnregisterSignal(current_uav, COMSIG_MOVABLE_Z_CHANGED)
-	current_uav = U
+	if(current_uav())
+		UnregisterSignal(current_uav(), COMSIG_MOVABLE_Z_CHANGED)
+	current_uav_handle = om_handle(U)
 	if(U)
 		RegisterSignal(U, COMSIG_MOVABLE_Z_CHANGED, PROC_REF(current_uav_changed_z))
 	SEND_SIGNAL(src,COMSIG_REMOTE_VIEW_CLEAR)
 
 /datum/tgui_module/uav/proc/clear_current()
-	if(!current_uav)
+	if(!current_uav())
 		return
 
-	UnregisterSignal(current_uav, COMSIG_MOVABLE_Z_CHANGED)
+	UnregisterSignal(current_uav(), COMSIG_MOVABLE_Z_CHANGED)
 	signal_strength = 0
-	current_uav = null
+	current_uav_handle = null
 	SEND_SIGNAL(src,COMSIG_REMOTE_VIEW_CLEAR)
 
 /datum/tgui_module/uav/proc/current_uav_changed_z(old_z, new_z)
 	SIGNAL_HANDLER
-	signal_strength = get_signal_to(current_uav)
+	signal_strength = get_signal_to(current_uav())
 	if(!signal_strength)
 		clear_current()
 
@@ -176,14 +176,14 @@
 	if(issilicon(user)) //Too complicated for me to want to mess with at the moment
 		to_chat(user, span_warning("Regulations prevent you from controlling several corporeal forms at the same time!"))
 		return
-	if(!current_uav)
+	if(!current_uav())
 		return
-	current_uav.add_master(user)
+	current_uav().add_master(user)
 	LAZYDISTINCTADD(viewers, om_handle(user))
 
 /datum/tgui_module/uav/unlook(mob/user)
-	if(current_uav)
-		current_uav.remove_master(user)
+	if(current_uav())
+		current_uav().remove_master(user)
 	LAZYREMOVE(viewers, om_handle(user))
 
 /datum/tgui_module/uav/tgui_close(mob/user)
@@ -200,15 +200,15 @@
 
 /datum/remote_view_config/uav_control/handle_relay_movement( datum/component/remote_view/owner_component, mob/host_mob, direction)
 	var/datum/tgui_module/uav/tgui_owner = owner_component.get_coordinator()
-	if(tgui_owner?.current_uav)
-		return tgui_owner.current_uav.relaymove(host_mob, direction, tgui_owner.signal_strength)
+	if(tgui_owner?.current_uav())
+		return tgui_owner.current_uav().relaymove(host_mob, direction, tgui_owner.signal_strength)
 	return FALSE
 
 /datum/remote_view_config/uav_control/handle_apply_visuals( datum/component/remote_view/owner_component, mob/host_mob)
 	var/datum/tgui_module/uav/tgui_owner = owner_component.get_coordinator()
 	if(!tgui_owner)
 		return
-	if(get_dist(host_mob, tgui_owner.tgui_host()) > 1 || !tgui_owner.current_uav)
+	if(get_dist(host_mob, tgui_owner.tgui_host()) > 1 || !tgui_owner.current_uav())
 		host_mob.reset_perspective()
 		return
 	// Apply hud
@@ -242,10 +242,10 @@
 	MA.icon = 'icons/mob/screen1_robot_minimalist.dmi'
 	MA.cut_overlays()
 
-	if(!tgui_owner?.current_uav)
+	if(!tgui_owner?.current_uav())
 		MA.icon_state = "health7"
 	else
-		switch(tgui_owner.current_uav.get_integrity())
+		switch(tgui_owner.current_uav().get_integrity())
 			if(100 to INFINITY)
 				MA.icon_state = "health0"
 			if(80 to 100)
@@ -264,3 +264,7 @@
 	host_mob.healths.icon_state = "blank"
 	host_mob.healths.appearance = MA
 	return COMSIG_COMPONENT_HANDLED_HEALTH_ICON
+
+/// LC-refs: The UAV we're watching -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_module/uav/proc/current_uav() as /obj/item/uav
+	return om_resolve(current_uav_handle)

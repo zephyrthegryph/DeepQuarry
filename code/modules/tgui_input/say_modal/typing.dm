@@ -61,11 +61,11 @@
 /datum/tgui_say/proc/start_thinking(channel)
 	if(!window_open)
 		return FALSE
-	return client.start_thinking(channel)
+	return client().start_thinking(channel)
 
 /** Removes typing/thinking indicators and flags the mob as not thinking */
 /datum/tgui_say/proc/stop_thinking(channel)
-	return client.stop_thinking(channel)
+	return client().stop_thinking(channel)
 
 /**
  * Handles the user typing. After a brief period of inactivity,
@@ -74,4 +74,6 @@
 /datum/tgui_say/proc/start_typing(channel)
 	if(!window_open)
 		return FALSE
-	return client.start_typing(channel)
+	return client().start_typing(channel)
+
+REF_OWNED(/mob, list("active_typing_indicator", "active_thinking_indicator"))

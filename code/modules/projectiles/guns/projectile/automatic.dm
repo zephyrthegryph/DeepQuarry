@@ -209,7 +209,7 @@
 /obj/item/gun/projectile/automatic/z8/Fire(atom/target, mob/living/user, params, pointblank=0, reflex=0)
 	if(use_launcher)
 		launcher.Fire(target, user, params, pointblank, reflex)
-		if(!launcher.chambered)
+		if(!launcher.chambered())
 			switch_firemodes(user) //switch back automatically
 	else
 		..()
@@ -225,8 +225,8 @@
 
 /obj/item/gun/projectile/automatic/z8/examine(mob/user)
 	. = ..()
-	if(launcher.chambered)
-		. += "\The [launcher] has \a [launcher.chambered] loaded."
+	if(launcher.chambered())
+		. += "\The [launcher] has \a [launcher.chambered()] loaded."
 	else
 		. += "\The [launcher] is empty."
 

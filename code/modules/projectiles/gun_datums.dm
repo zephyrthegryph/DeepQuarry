@@ -13,7 +13,7 @@
  * allocated per-gun but none of its sync/target methods were ever called,
  * fire_context was never instantiated, and the "_fire_one_shot" unification its
  * docstring described never existed.  Both have been removed.  The gun's own
- * aim_targets / last_moved_mob / told_cant_shoot / lock_time tmp vars remain the
+ * last_moved_mob / told_cant_shoot / lock_time tmp vars remain the
  * live aiming state, read directly by the targeting overlay.
  */
 

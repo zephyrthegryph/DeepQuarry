@@ -18,20 +18,20 @@
 	// Printing state variables
 	var/is_printing = FALSE		// If true, printer is busy cloning.
 	var/print_end_time = 0		// World time when printing will finish
-	var/obj/item/electronic_assembly/queued_assembly = null	// The assembly being cloned.
+	var/tmp/queued_assembly_handle	// The assembly being cloned.
 
 /obj/item/integrated_circuit_printer/proc/finish_printing()
-	if(!queued_assembly)
+	if(!queued_assembly())
 		is_printing = FALSE
 		return
 
 	// Drop the assembly on the ground
-	queued_assembly.forceMove(get_turf(src))
+	queued_assembly().forceMove(get_turf(src))
 	playsound(src, 'sound/machines/ding.ogg', 50, TRUE)
-	visible_message(span_notice("[src] beeps as it finishes printing '[queued_assembly.name]'."))
+	visible_message(span_notice("[src] beeps as it finishes printing '[queued_assembly().name]'."))
 
 	// Clear printing state
-	queued_assembly = null
+	queued_assembly_handle = null
 	is_printing = FALSE
 	print_end_time = 0
 
@@ -488,7 +488,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit_printer, \
 	assembly.update_icon()
 
 	// Start the printing process
-	queued_assembly = assembly
+	queued_assembly_handle = om_handle(assembly)
 	is_printing = TRUE
 	print_end_time = world.time + print_time
 
@@ -523,3 +523,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit_printer, \
 	name = "integrated circuit printer upgrade disk - circuit cloner"
 	desc = "Install this into your integrated circuit printer to enhance it.  This one allows the printer to duplicate assemblies."
 	icon_state = "upgrade_disk_clone"
+
+/// LC-refs: The assembly being cloned. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/integrated_circuit_printer/proc/queued_assembly() as /obj/item/electronic_assembly
+	return om_resolve(queued_assembly_handle)

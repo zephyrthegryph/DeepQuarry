@@ -2,7 +2,7 @@
 /datum/shuttle/autodock/overmap/stargazer
 	name = "Stargazer"
 	warmup_time = 1
-	current_location = "stargazer_dock"
+	current_location_tag = "stargazer_dock"
 	docking_controller_tag = "stargazer"
 	shuttle_area = /area/shuttle/stargazer
 	fuel_consumption = 2
@@ -23,7 +23,7 @@
 /datum/shuttle/autodock/overmap/baby_mammoth
 	name = "Baby_mammoth"
 	warmup_time = 5
-	current_location = "baby_mammoth_dock"
+	current_location_tag = "baby_mammoth_dock"
 	docking_controller_tag = "baby_mammoth"
 	shuttle_area = /area/shuttle/baby_mammoth
 	fuel_consumption = 2
@@ -44,7 +44,7 @@
 /datum/shuttle/autodock/overmap/ursula
 	name = "Ursula"
 	warmup_time = 2
-	current_location = "ursula_dock"
+	current_location_tag = "ursula_dock"
 	docking_controller_tag = "ursula"
 	shuttle_area = /area/shuttle/ursula
 	fuel_consumption = 2
@@ -65,7 +65,7 @@
 /datum/shuttle/autodock/overmap/needle
 	name = "Needle"
 	warmup_time = 0
-	current_location = "needle_dock"
+	current_location_tag = "needle_dock"
 	docking_controller_tag = "needle"
 	shuttle_area = /area/shuttle/needle
 	fuel_consumption = 1
@@ -86,7 +86,7 @@
 /datum/shuttle/autodock/overmap/echidna
 	name = "Echidna"
 	warmup_time = 4
-	current_location = "echidna_dock"
+	current_location_tag = "echidna_dock"
 	docking_controller_tag = "echidna"
 	shuttle_area = /area/shuttle/echidna
 	fuel_consumption = 2
@@ -107,7 +107,7 @@
 /datum/shuttle/autodock/overmap/spacebus
 	name = "Space Bus"
 	warmup_time = 4
-	current_location = "hangar_2"
+	current_location_tag = "hangar_2"
 	docking_controller_tag = "spacebus"
 	shuttle_area = /area/shuttle/spacebus
 	fuel_consumption = 1
@@ -122,7 +122,7 @@
 /datum/shuttle/autodock/overmap/junker
 	name = "Junker"
 	warmup_time = 4
-	current_location = "junkspawn"
+	current_location_tag = "junkspawn"
 	docking_controller_tag = "junker"
 	shuttle_area = /area/shuttle/junker
 	fuel_consumption = 1

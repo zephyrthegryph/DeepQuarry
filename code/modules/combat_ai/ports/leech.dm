@@ -86,7 +86,7 @@
 			best = W
 	if(!best)
 		return null
-	brain.home_turf = best
+	brain.home_turf_handle = om_handle(best)
 	return DQAI_RESULT(110, best)
 
 /datum/ai_behavior/leech_seek_water/tick(datum/ai_brain/brain, atom/target, atom/source)

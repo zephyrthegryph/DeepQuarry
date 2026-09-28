@@ -249,7 +249,7 @@ REF_OWNED(/datum/powernet, "material_graph")
 		return
 	LAZYINITLIST(material_consumers)
 	for(var/obj/machinery/power/terminal/T in nodes)
-		var/obj/machinery/power/apc/A = T.master
+		var/obj/machinery/power/apc/A = T.master()
 		if(istype(A))
 			material_consumers[om_handle(T)] += A.channel_load_total()
 	material_pending_heat += material_loss_watts * elapsed_seconds

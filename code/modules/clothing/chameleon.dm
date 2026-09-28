@@ -430,7 +430,7 @@
 	charge_cost = 48 //uses next to no power, since it's just holograms
 	battery_lock = 1
 
-	var/obj/item/projectile/copy_projectile
+	var/copy_projectile	// a projectile type path
 
 /obj/item/gun/energy/chameleon/Initialize(mapload)
 	. = ..()
@@ -442,17 +442,18 @@
 
 /obj/item/gun/energy/chameleon/consume_next_projectile()
 	var/obj/item/projectile/P = ..()
+	var/obj/item/projectile/copy_type = copy_projectile
 	if(P && ispath(copy_projectile))
-		P.name = initial(copy_projectile.name)
-		P.icon = initial(copy_projectile.icon)
-		P.icon_state = initial(copy_projectile.icon_state)
-		P.pass_flags = initial(copy_projectile.pass_flags)
-		P.fire_sound = initial(copy_projectile.fire_sound)
-		P.hitscan = initial(copy_projectile.hitscan)
-		P.speed = initial(copy_projectile.speed)
-		P.muzzle_type = initial(copy_projectile.muzzle_type)
-		P.tracer_type = initial(copy_projectile.tracer_type)
-		P.impact_type = initial(copy_projectile.impact_type)
+		P.name = initial(copy_type.name)
+		P.icon = initial(copy_type.icon)
+		P.icon_state = initial(copy_type.icon_state)
+		P.pass_flags = initial(copy_type.pass_flags)
+		P.fire_sound = initial(copy_type.fire_sound)
+		P.hitscan = initial(copy_type.hitscan)
+		P.speed = initial(copy_type.speed)
+		P.muzzle_type = initial(copy_type.muzzle_type)
+		P.tracer_type = initial(copy_type.tracer_type)
+		P.impact_type = initial(copy_type.impact_type)
 	return P
 
 /obj/item/gun/energy/chameleon/emp_act(severity, recursive)

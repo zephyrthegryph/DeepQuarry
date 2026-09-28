@@ -11,16 +11,16 @@
 	var/secured = 0
 	var/obj/item/assembly/a_left = null
 	var/obj/item/assembly/a_right = null
-	var/obj/special_assembly = null
+	var/tmp/special_assembly_handle
 
 // ALLOW(lifecycle): assemblies still inside it go with it (ones already taken out stay).
 /obj/item/assembly_holder/Destroy()
 	if(a_left)
-		a_left.holder = null
+		a_left.holder_handle = null
 		if(a_left.loc == src && !QDELETED(a_left))
 			qdel(a_left)
 	if(a_right)
-		a_right.holder = null
+		a_right.holder_handle = null
 		if(a_right.loc == src && !QDELETED(a_right))
 			qdel(a_right)
 	return ..()
@@ -39,8 +39,8 @@
 		user.remove_from_mob(D)
 		user.remove_from_mob(D2)
 
-	D.holder = src
-	D2.holder = src
+	D.holder_handle = om_handle(src)
+	D2.holder_handle = om_handle(src)
 	D.forceMove(src)
 	D2.forceMove(src)
 	a_left = D
@@ -171,10 +171,10 @@
 		if(!T)
 			return TRUE
 		if(a_left)
-			a_left.holder = null
+			a_left.holder_handle = null
 			a_left.forceMove(T)
 		if(a_right)
-			a_right.holder = null
+			a_right.holder_handle = null
 			a_right.forceMove(T)
 		consume(src, user)
 	return TRUE
@@ -207,12 +207,12 @@
 
 	var/obj/item/assembly/igniter/ign = new(src)
 	ign.secured = 1
-	ign.holder = src
+	ign.holder_handle = om_handle(src)
 
 	var/obj/item/assembly/timer/tmr = new(src)
 	tmr.time = 5
 	tmr.secured = 1
-	tmr.holder = src
+	tmr.holder_handle = om_handle(src)
 
 	a_left = tmr
 	a_right = ign
@@ -257,3 +257,9 @@
 				to_chat(usr, span_notice("Timer can't be [ntime <= 0 ? "negative" : "more than 1000 seconds"]."))
 	else
 		to_chat(usr, span_notice("You cannot do this while [usr.stat ? "unconscious/dead" : "restrained"]."))
+
+REF_HELD(/obj/item/assembly_holder, list("a_left", "a_right"))
+
+/// LC-refs: the special_assembly this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/assembly_holder/proc/special_assembly() as /obj
+	return om_resolve(special_assembly_handle)

@@ -443,7 +443,7 @@ so as to remain in compliance with the most up-to-date laws."
 
 	// Open a new chat with the user
 	var/datum/ticket_chat/TC = new()
-	TC.T = usr.client.current_ticket
+	TC.T_handle = om_handle(usr.client.current_ticket())
 	TC.tgui_interact(usr.client.mob)
 
 // PRIVATE = only edit, use, or override these if you're editing the system as a whole

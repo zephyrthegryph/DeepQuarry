@@ -140,7 +140,7 @@ REF_OWNED(/obj/machinery/appliance/cooker/fryer, list("fry_loop", "oil"))
 		var/datum/reagents/buffer = new /datum/reagents(2)
 		oil.trans_to_holder(buffer, min(0.5, CI.max_oil - CI.oil))
 		CI.oil += buffer.total_volume
-		CI.container.soak_reagent(buffer)
+		CI.container().soak_reagent(buffer)
 
 //To solve any odd logic problems with results having oil as part of their compiletime ingredients.
 //Upon finishing a recipe the fryer will analyse any oils in the result, and replace them with our oil
@@ -154,7 +154,7 @@ REF_OWNED(/obj/machinery/appliance/cooker/fryer, list("fry_loop", "oil"))
 	if(!our_oil)
 		return
 
-	for (var/obj/item/I in CI.container)
+	for (var/obj/item/I in CI.container())
 		if (I.reagents && I.reagents.total_volume)
 			for (var/datum/reagent/R in I.reagents.reagent_list)
 				if (istype(R, /datum/reagent/nutriment/triglyceride/oil))
@@ -172,13 +172,13 @@ REF_OWNED(/obj/machinery/appliance/cooker/fryer, list("fry_loop", "oil"))
 			//If we have less than the combined total, then top up from our reservoir
 			var/datum/reagents/buffer = new /datum/reagents(INFINITY)
 			oil.trans_to_holder(buffer, total_oil - total_our_oil)
-			CI.container.soak_reagent(buffer)
+			CI.container().soak_reagent(buffer)
 		else if (total_our_oil > total_oil)
 
 			//If we have more than the maximum allowed then we delete some.
 			//This could only happen if one of the objects spawns with the same type of oil as ours
 			var/portion = 1 - (total_oil / total_our_oil) //find the percentage to remove
-			for (var/obj/item/I in CI.container)
+			for (var/obj/item/I in CI.container())
 				if (I.reagents && I.reagents.total_volume)
 					for (var/datum/reagent/R in I.reagents.reagent_list)
 						if (R.id == our_oil.id)

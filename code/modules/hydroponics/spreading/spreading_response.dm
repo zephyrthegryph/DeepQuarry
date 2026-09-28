@@ -5,7 +5,7 @@
 	if(isnull(AM))
 		log_runtime("DEBUG: HasProximity called without reference on [src].")
 		return
-	if(!is_mature() || seed.get_trait(TRAIT_SPREAD) != 2)
+	if(!is_mature() || seed().get_trait(TRAIT_SPREAD) != 2)
 		return
 
 	var/mob/living/M = AM
@@ -15,14 +15,14 @@
 	if(M.is_incorporeal()) // Don't buckle phased entities.
 		return
 
-	if(!has_buckled_mobs() && !M?.buckled_to() && !M.anchored && (issmall(M) || prob(round(seed.get_trait(TRAIT_POTENCY)/3))))
+	if(!has_buckled_mobs() && !M?.buckled_to() && !M.anchored && (issmall(M) || prob(round(seed().get_trait(TRAIT_POTENCY)/3))))
 		//wait a tick for the Entered() proc that called HasProximity() to finish (and thus the moving animation),
 		//so we don't appear to teleport from two tiles away when moving into a turf adjacent to vines.
 		om_after(src, 1, PROC_REF(entangle), M)
 
 /obj/effect/plant/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
-	if(seed.get_trait(TRAIT_SPREAD)==2)
+	if(seed().get_trait(TRAIT_SPREAD)==2)
 		if(isturf(old_loc))
 			unsense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity), center = old_loc)
 		if(isturf(loc))
@@ -44,15 +44,15 @@
 	if(!is_mature())
 		return
 	var/mob/living/carbon/human/H = victim
-	if(prob(round(seed.get_trait(TRAIT_POTENCY)/3)))
+	if(prob(round(seed().get_trait(TRAIT_POTENCY)/3)))
 		entangle(victim)
 	if(istype(H) && H.get_equipped_item(SLOT_ID_SHOES))
 		return
-	seed.do_thorns(victim,src)
-	seed.do_sting(victim,src,pick(BP_R_FOOT,BP_L_FOOT,BP_R_LEG,BP_L_LEG))
+	seed().do_thorns(victim,src)
+	seed().do_sting(victim,src,pick(BP_R_FOOT,BP_L_FOOT,BP_R_LEG,BP_L_LEG))
 
-	if(seed.get_trait(TRAIT_SPORING) && prob(round(seed.get_trait(TRAIT_POTENCY)/2)))
-		seed.create_spores(get_turf(victim))
+	if(seed().get_trait(TRAIT_SPORING) && prob(round(seed().get_trait(TRAIT_POTENCY)/2)))
+		seed().create_spores(get_turf(victim))
 
 /obj/effect/plant/proc/unbuckle()
 	unbuckle_all_mobs(TRUE)
@@ -61,8 +61,8 @@
 /obj/effect/plant/proc/manual_unbuckle(mob/user as mob)
 	if(has_buckled_mobs())
 		var/chance = 20
-		if(seed)
-			chance = round(100/(20*seed.get_trait(TRAIT_POTENCY)/100))
+		if(seed())
+			chance = round(100/(20*seed().get_trait(TRAIT_POTENCY)/100))
 		if(prob(chance))
 			for(var/mob/living/L as anything in src?.buckled_mob_list())
 				if(!(user in src?.buckled_mob_list()))
@@ -109,4 +109,4 @@
 			victim.set_dir(pick(GLOB.cardinal))
 			to_chat(victim, span_danger("Tendrils [pick("wind", "tangle", "tighten")] around you!"))
 			victim.status_at_least(EFFECT_WEAKENED, 0.5)
-			seed.do_thorns(victim,src)
+			seed().do_thorns(victim,src)

@@ -24,14 +24,14 @@
 
 /datum/shuttle/autodock/multi/New()
 	..()
-	start_location = current_location
-	last_location = current_location
+	start_location = current_location()
+	last_location = current_location()
 
 /datum/shuttle/autodock/multi/proc/set_destination(destination_key, mob/user)
 	if(moving_status != SHUTTLE_IDLE)
 		return
-	next_location = LAZYACCESS(destinations_cache, destination_key)
-	if(!next_location)
+	next_location_handle = om_handle(LAZYACCESS(destinations_cache, destination_key))
+	if(!next_location())
 		WARNING("Shuttle [src] set to destination we can't find: [destination_key]")
 
 /datum/shuttle/autodock/multi/proc/get_destinations()

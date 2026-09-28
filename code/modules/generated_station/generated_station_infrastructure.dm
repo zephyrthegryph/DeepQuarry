@@ -71,10 +71,10 @@
 		for(var/turf/T in area_contents_of_type(room_area, /turf))
 			if(istype(T, /turf/simulated/floor))
 				pressurized_turfs[T] = TRUE
-	for(var/turf/T in station_materialization.transit_area)
+	for(var/turf/T in station_materialization.transit_area())
 		if(istype(T, /turf/simulated/floor))
 			pressurized_turfs[T] = TRUE
-	for(var/turf/T in station_materialization.maintenance_area)
+	for(var/turf/T in station_materialization.maintenance_area())
 		if(istype(T, /turf/simulated/floor))
 			pressurized_turfs[T] = TRUE
 	for(var/turf/open/T as anything in pressurized_turfs)

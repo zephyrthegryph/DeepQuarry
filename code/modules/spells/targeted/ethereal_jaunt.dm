@@ -42,7 +42,7 @@
 
 /// The jaunt ends: steam where the jaunter will come out.
 /datum/spell/targeted/ethereal_jaunt/proc/jaunt_resurface(mob/living/target, obj/effect/dummy/spell_jaunt/holder, atom/movable/overlay/animation)
-	var/mobloc = holder.last_valid_turf
+	var/mobloc = holder.last_valid_turf()
 	animation.forceMove(mobloc)
 	jaunt_steam(mobloc)
 	target.canmove = 0
@@ -54,7 +54,7 @@
 	om_after(src, 5, PROC_REF(jaunt_finish), target, holder, animation)
 
 /datum/spell/targeted/ethereal_jaunt/proc/jaunt_finish(mob/living/target, obj/effect/dummy/spell_jaunt/holder, atom/movable/overlay/animation)
-	var/mobloc = holder.last_valid_turf
+	var/mobloc = holder.last_valid_turf()
 	if(!target.forceMove(mobloc))
 		for(var/direction in list(1,2,4,8,5,6,9,10))
 			var/turf/T = get_step(mobloc, direction)
@@ -86,11 +86,11 @@
 	var/reappearing = 0
 	density = FALSE
 	anchored = TRUE
-	var/turf/last_valid_turf
+	var/tmp/last_valid_turf_handle
 
 /obj/effect/dummy/spell_jaunt/Initialize(mapload)
 	. = ..()
-	last_valid_turf = get_turf(loc)
+	last_valid_turf_handle = om_handle(get_turf(loc))
 
 REF_SPILL_LIST(/obj/effect/dummy/spell_jaunt, "contents")
 
@@ -101,7 +101,7 @@ REF_SPILL_LIST(/obj/effect/dummy/spell_jaunt, "contents")
 		loc = newLoc
 		var/turf/T = get_turf(loc)
 		if(!T.contains_dense_objects())
-			last_valid_turf = T
+			last_valid_turf_handle = om_handle(T)
 	else
 		to_chat(user, span_warning("Some strange aura is blocking the way!"))
 	src.canmove = 0
@@ -114,3 +114,7 @@ REF_SPILL_LIST(/obj/effect/dummy/spell_jaunt, "contents")
 
 /obj/effect/dummy/spell_jaunt/proc/allow_move()
 	canmove = 1
+
+/// LC-refs: the last_valid_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/effect/dummy/spell_jaunt/proc/last_valid_turf() as /turf
+	return om_resolve(last_valid_turf_handle)

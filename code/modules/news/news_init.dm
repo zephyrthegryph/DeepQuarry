@@ -5,7 +5,7 @@ GLOBAL_DATUM_INIT(news_data, /datum/lore/news, new)
 	// CreateFeedChannel("Vir News Network", "Oculum Broadcast", 1, 1, "Updates from the Vir News Network!") // Removal
 
 /datum/lore/news
-	var/datum/feed_channel/station_newspaper
+	var/tmp/station_newspaper_handle
 	var/datum/lore/codex/category/main_news/news_codex = new()
 	var/newsindex
 
@@ -23,7 +23,7 @@ GLOBAL_DATUM_INIT(news_data, /datum/lore/news, new)
 		log_runtime("Load: Could not find newscaster network.")
 		return
 
-	if(!station_newspaper)
+	if(!station_newspaper())
 		log_runtime("Load: Could not find news channel Vir News Network to populate news articles.")
 		return
 
@@ -36,5 +36,11 @@ GLOBAL_DATUM_INIT(news_data, /datum/lore/news, new)
 /datum/lore/news/proc/find_station_newspaper()
 	for(var/datum/feed_channel/F in GLOB.news_network.network_channels)
 		if(F.channel_name == "Vir News Network")
-			station_newspaper = F
+			station_newspaper_handle = om_handle(F)
 			break
+
+REF_OWNED(/datum/lore/news, "news_codex")
+
+/// LC-refs: the station_newspaper this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/lore/news/proc/station_newspaper() as /datum/feed_channel
+	return om_resolve(station_newspaper_handle)

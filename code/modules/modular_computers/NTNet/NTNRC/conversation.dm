@@ -3,7 +3,7 @@ GLOBAL_VAR_INIT(ntnrc_uid, 0)
 /datum/ntnet_conversation/
 	var/id = null
 	var/title = "Untitled Conversation"
-	var/datum/computer_file/program/chatclient/operator // "Administrator" of this channel. Creator starts as channel's operator,
+	var/tmp/operator_handle	// "Administrator" of this channel. Creator starts as channel's operator,
 	var/list/messages = list() // ALLOW(instance_list): d: chat channel history
 	var/list/clients
 	var/password
@@ -35,7 +35,7 @@ GLOBAL_VAR_INIT(ntnrc_uid, 0)
 	LAZYADD(clients, C)
 	add_status_message("[C.username] has joined the channel.")
 	// No operator, so we assume the channel was empty. Assign this user as operator.
-	if(!operator)
+	if(!channel_operator())
 		changeop(C)
 
 /datum/ntnet_conversation/proc/remove_client(datum/computer_file/program/chatclient/C)
@@ -45,8 +45,8 @@ GLOBAL_VAR_INIT(ntnrc_uid, 0)
 	add_status_message("[C.username] has left the channel.")
 
 	// Channel operator left, pick new operator
-	if(C == operator)
-		operator = null
+	if(C == channel_operator())
+		operator_handle = null
 		if(length(clients))
 			var/datum/computer_file/program/chatclient/newop = DEFAULTPICK(clients, null)
 			changeop(newop)
@@ -54,12 +54,16 @@ GLOBAL_VAR_INIT(ntnrc_uid, 0)
 
 /datum/ntnet_conversation/proc/changeop(datum/computer_file/program/chatclient/newop)
 	if(istype(newop))
-		operator = newop
+		operator_handle = om_handle(newop)
 		add_status_message("Channel operator status transferred to [newop.username].")
 
 /datum/ntnet_conversation/proc/change_title(newtitle, datum/computer_file/program/chatclient/client)
-	if(operator != client)
+	if(channel_operator() != client)
 		return 0 // Not Authorised
 
 	add_status_message("[client.username] has changed channel title from [title] to [newtitle]")
 	title = newtitle
+
+/// LC-refs: "Administrator" of this channel. Creator starts as channel's operator, -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/ntnet_conversation/proc/channel_operator() as /datum/computer_file/program/chatclient
+	return om_resolve(operator_handle)

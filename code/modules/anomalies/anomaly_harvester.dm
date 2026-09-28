@@ -15,7 +15,6 @@
 	var/efficiency = 1
 
 	var/harvested
-	var/list/obj/item/research_sample/samples
 
 /obj/machinery/anomaly_harvester/Initialize(mapload)
 	. = ..()

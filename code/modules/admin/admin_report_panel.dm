@@ -25,12 +25,12 @@
 	/// Optional fully-formatted HTML body (rendered after lines/table).
 	var/body_html = ""
 	/// Optional datum receiving forwarded byond:// link clicks. May be null.
-	var/datum/forward_host
+	var/tmp/forward_host_handle
 
 /datum/admin_report/New(report_title, mob/viewer, datum/host)
 	..()
 	title = report_title
-	forward_host = host
+	forward_host_handle = om_handle(host)
 
 /datum/admin_report/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN|R_MOD|R_DEBUG|R_SERVER|R_EVENT)
@@ -49,7 +49,7 @@
 	data["columns"] = columns || list()
 	data["rows"] = rows || list()
 	data["body_html"] = body_html
-	data["has_host"] = !!forward_host
+	data["has_host"] = !!forward_host()
 	return data
 
 /datum/admin_report/tgui_act(action, list/params, datum/tgui/ui)
@@ -57,7 +57,7 @@
 	if(.)
 		return
 	if(action == "forward_topic")
-		dispatch_forwarded_topic(ui.user, forward_host, "[params["href"]]")
+		dispatch_forwarded_topic(ui.user, forward_host(), "[params["href"]]")
 		SStgui.update_uis(src)
 		return TRUE
 	if(action == "close")
@@ -126,3 +126,7 @@
 		return
 	var/datum/dq_stock_chart_panel/panel = new(name, values)
 	panel.tgui_interact(user)
+
+/// LC-refs: the forward_host this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/admin_report/proc/forward_host() as /datum
+	return om_resolve(forward_host_handle)

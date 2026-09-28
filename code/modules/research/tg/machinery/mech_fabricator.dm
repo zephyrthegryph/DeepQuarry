@@ -40,7 +40,7 @@
 	var/component_coeff = 1
 
 	/// Reference to the techweb.
-	var/datum/techweb/stored_research
+	var/tmp/stored_research_handle
 
 	/// Reference to a remote material inventory, such as an ore silo.
 	var/datum/component/remote_materials/rmat
@@ -75,23 +75,25 @@ REF_VAR(/obj/machinery/mecha_part_fabricator_tg, DEF, /datum/design_techweb, bei
 	default_apply_parts()
 	RefreshParts()
 	update_icon()
-	if(!stored_research)
-		CONNECT_TO_RND_SERVER_ROUNDSTART(stored_research, src)
-	if(stored_research)
+	if(!stored_research())
+		var/datum/techweb/connected_web
+		CONNECT_TO_RND_SERVER_ROUNDSTART(connected_web, src)
+		stored_research_handle = om_handle(connected_web)
+	if(stored_research())
 		on_connected_techweb()
 
-REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, "print_sound")
+REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, list("print_sound", "rmat"))
 
 /obj/machinery/mecha_part_fabricator_tg/proc/connect_techweb(datum/techweb/new_techweb)
-	if(stored_research)
-		UnregisterSignal(stored_research, list(COMSIG_TECHWEB_ADD_DESIGN, COMSIG_TECHWEB_REMOVE_DESIGN))
-	stored_research = new_techweb
-	if(!isnull(stored_research))
+	if(stored_research())
+		UnregisterSignal(stored_research(), list(COMSIG_TECHWEB_ADD_DESIGN, COMSIG_TECHWEB_REMOVE_DESIGN))
+	stored_research_handle = om_handle(new_techweb)
+	if(!isnull(stored_research()))
 		on_connected_techweb()
 
 /obj/machinery/mecha_part_fabricator_tg/proc/on_connected_techweb()
 	RegisterSignals(
-		stored_research,
+		stored_research(),
 		list(COMSIG_TECHWEB_ADD_DESIGN, COMSIG_TECHWEB_REMOVE_DESIGN),
 		PROC_REF(on_techweb_update)
 	)
@@ -120,9 +122,9 @@ REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, "print_sound")
 	time_coeff = round(initial(time_coeff) - (initial(time_coeff)*(T))/5,0.01)
 
 	// Adjust the build time of any item currently being built.
-	if(being_built)
+	if(being_built())
 		var/last_const_time = build_finish - build_start
-		var/new_const_time = get_construction_time_w_coeff(initial(being_built.construction_time))
+		var/new_const_time = get_construction_time_w_coeff(initial(being_built().construction_time))
 		var/const_time_left = build_finish - world.time
 		var/new_build_time = (new_const_time / last_const_time) * const_time_left
 		build_finish = world.time + new_build_time
@@ -141,7 +143,7 @@ REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, "print_sound")
 		return
 	if(isobserver(user) || user.is_incorporeal())
 		return
-	if(being_built)
+	if(being_built())
 		balloon_alert(user, "cannot reorient whilst printing!")
 		return
 	var/direction = get_dir(src, over_location)
@@ -157,7 +159,7 @@ REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, "print_sound")
 	var/previous_design_count = cached_designs.len
 
 	cached_designs.Cut()
-	for(var/v in stored_research.researched_designs)
+	for(var/v in stored_research().researched_designs)
 		var/datum/design_techweb/design = SSresearch.techweb_design_by_id(v)
 
 		if(design.build_type & fab_type)
@@ -247,7 +249,7 @@ REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, "print_sound")
 		return FALSE
 
 	rmat.use_materials(D.materials, component_coeff, 1, "built", "[D.name]")
-	being_built = D
+	being_built_handle = om_handle(D)
 	current_producer_account = producer_account
 	build_finish = world.time + get_construction_time_w_coeff(initial(D.construction_time))
 	build_start = world.time
@@ -272,7 +274,7 @@ REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, "print_sound")
 		return PROCESS_KILL
 
 	// If there's nothing being built, try to build something
-	if(!being_built)
+	if(!being_built())
 		// First, check if it's safe to actually print anything; if not, abort now!
 		if(exit.density)
 			atom_say("Warning. Exit port obstructed. Please clear obstructions or reorient machine, then retry.")
@@ -285,9 +287,9 @@ REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, "print_sound")
 		on_start_printing()
 
 	// If there's an item being built, check if it is complete.
-	if(being_built && (build_finish < world.time)) // ALLOW(cooldown): build progress
+	if(being_built() && (build_finish < world.time)) // ALLOW(cooldown): build progress
 		// Then attempt to dispense it and if appropriate build the next item.
-		dispense_built_part(being_built)
+		dispense_built_part(being_built())
 		if(process_queue)
 			build_next_in_queue(FALSE)
 		return TRUE
@@ -305,7 +307,7 @@ REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, "print_sound")
 	built_part.set_economic_provenance(DEPARTMENT_RESEARCH, max(25, dispensed_design.construction_time), current_producer_account)
 	current_producer_account = 0
 
-	being_built = null
+	being_built_handle = null
 
 	var/turf/exit = get_step(src, drop_direction)
 	if(exit.density)
@@ -431,10 +433,10 @@ REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, "print_sound")
 	data["queue"] = list()
 	data["processing"] = process_queue
 
-	if(being_built)
+	if(being_built())
 		data["queue"] += list(list(
 			"jobId" = top_job_id,
-			"designId" = being_built.id,
+			"designId" = being_built().id,
 			"processing" = TRUE,
 			"timeLeft" = (build_finish - world.time)
 		))
@@ -474,7 +476,7 @@ REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, "print_sound")
 				if(!istext(design_id))
 					continue
 
-				if(!(LAZYFIND(stored_research.researched_designs, design_id) || is_type_in_list(SSresearch.techweb_design_by_id(design_id), illegal_local_designs)))
+				if(!(LAZYFIND(stored_research().researched_designs, design_id) || is_type_in_list(SSresearch.techweb_design_by_id(design_id), illegal_local_designs)))
 					continue
 
 				var/datum/design_techweb/design = SSresearch.techweb_design_by_id(design_id)
@@ -558,7 +560,7 @@ REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, "print_sound")
 /obj/machinery/mecha_part_fabricator_tg/proc/interaction_guard(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 
-	if(being_built)
+	if(being_built())
 		to_chat(user, span_warning("\The [src] is currently processing! Please wait until completion."))
 		return TRUE
 	return FALSE
@@ -576,3 +578,13 @@ REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, "print_sound")
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/mecha_part_fabricator_tg/step_start_condition()
 	return process_queue
+
+/// LC-refs: the stored_research this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/mecha_part_fabricator_tg/proc/stored_research() as /datum/techweb
+	return om_resolve(stored_research_handle)
+
+/// LC-refs: the being_built this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/mecha_part_fabricator_tg/proc/being_built() as /datum/design_techweb
+	return om_resolve(being_built_handle)
+
+REF_HELD(/obj/machinery/mecha_part_fabricator_tg, "stored_part")

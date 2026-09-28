@@ -215,3 +215,5 @@
 		reset_perspective(src)
 
 	pipes_shown.len = 0
+
+REF_OWNED_LIST(/mob/living, "pipes_shown")

@@ -122,7 +122,7 @@
 
 /proc/dq_power_test_apc()
 	for(var/obj/machinery/power/apc/candidate as anything in REGISTRY_MEMBERS(REGISTRY_APCS))
-		if(candidate.terminal && candidate.cell && candidate.area?.requires_power && !(candidate.stat & (BROKEN | MAINT)) && isturf(candidate.loc))
+		if(candidate.terminal && candidate.cell && candidate.area()?.requires_power && !(candidate.stat & (BROKEN | MAINT)) && isturf(candidate.loc))
 			return candidate
 	return null
 
@@ -142,7 +142,7 @@
 
 	// Cut off, nearly empty, with a load.
 	A.disconnect_from_network()
-	A.area.use_power_static(2000, EQUIP)
+	A.area().use_power_static(2000, EQUIP)
 	A.operating = TRUE
 	A.chargemode = TRUE
 	A.equipment = POWERCHAN_ON_AUTO
@@ -157,7 +157,7 @@
 	var/drained = FALSE
 	for(var/i in 1 to 20)
 		dq_power_test_step()
-		if(!A.area.power_equip)
+		if(!A.area().power_equip)
 			drained = TRUE
 			break
 	TEST_ASSERT(drained, "an empty isolated APC kept its area powered")
@@ -172,7 +172,7 @@
 	var/restored = FALSE
 	for(var/i in 1 to 80)
 		dq_power_test_step()
-		if(A.area.power_equip && A.charging)
+		if(A.area().power_equip && A.charging)
 			restored = TRUE
 			break
 	TEST_ASSERT(restored, "the APC did not restore and charge once supply returned")
@@ -183,7 +183,7 @@
 	TEST_ASSERT(!machine_stepping(A), "the APC polled during the cycle")
 
 	T.set_power_supply(0)
-	A.area.use_power_static(-2000, EQUIP)
+	A.area().use_power_static(-2000, EQUIP)
 	A.cell.charge = old_charge
 	A.sync_cell_charge()
 	A.update()
@@ -279,7 +279,7 @@
 		return
 	// Area power is an OM channel (CHANGE_AREA_POWER); whatever watches it (lights,
 	// machines asleep on sleep_until_keys()) is woken by the raise. Count the raise.
-	var/area/area = A.area
+	var/area/area = A.area()
 	var/datum/om/rec/rec = om_rec_of(area)
 	var/datum/om/scheduler/sched = rec.sched
 	var/old_listen = area.om_listen

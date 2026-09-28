@@ -106,7 +106,7 @@
 
 	charge_max = 10
 
-	var/obj/item/spell/unrestricted/spell_obj = null //This is the var that determines what Technomancer-style spell is put into their hands.
+	var/spell_obj = null //This is the var that determines what Technomancer-style spell is put into their hands.
 
 /datum/spell/targeted/unrestricted/cast(list/targets, mob/living/user)
 	user.place_spell_in_hand(spell_obj)
@@ -177,7 +177,7 @@
 	icon_state = "generic"
 	desc = "This is a generic template that shoots projectiles.  If you can read this, the game broke!"
 	cast_methods = CAST_RANGED
-	var/obj/item/projectile/spell_projectile = null
+	var/spell_projectile = null
 	var/pre_shot_delay = 0
 	var/fire_sound = null
 	var/energy_cost_per_shot = 5

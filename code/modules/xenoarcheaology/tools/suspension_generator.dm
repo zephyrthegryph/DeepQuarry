@@ -7,7 +7,7 @@
 	density = 1
 	req_access = list(ACCESS_RESEARCH)
 	var/obj/item/cell/cell
-	var/obj/item/card/id/auth_card
+	var/tmp/auth_card_handle
 	var/locked = 1
 	var/power_use = 15
 	var/obj/effect/suspension_field/suspension_field
@@ -153,13 +153,13 @@
 	effect = /obj/machinery/suspension_gen/proc/interaction_swipe_card
 
 /obj/machinery/suspension_gen/proc/interaction_swipe_card(mob/user, obj/item/card/I, datum/interaction/interaction)
-	if(!auth_card)
+	if(!auth_card())
 		if(attempt_unlock(I, user))
 			to_chat(user, span_info("You swipe [I], the console flashes \'<i>Access granted.</i>\'"))
 		else
 			to_chat(user, span_warning("You swipe [I], console flashes \'<i>Access denied.</i>\'"))
 	else
-		to_chat(user, span_warning("Remove [auth_card] first."))
+		to_chat(user, span_warning("Remove [auth_card()] first."))
 	return TRUE
 
 /obj/machinery/suspension_gen/proc/attempt_unlock(obj/item/card/C, mob/user)
@@ -256,3 +256,11 @@
 	density = 1
 
 REF_SPILL_LIST(/obj/effect/suspension_field, "contents")
+
+REF_OWNED(/obj/machinery/suspension_gen, "suspension_field")
+
+REF_HELD(/obj/machinery/suspension_gen, "cell")
+
+/// LC-refs: the auth_card this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/suspension_gen/proc/auth_card() as /obj/item/card/id
+	return om_resolve(auth_card_handle)

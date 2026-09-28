@@ -50,5 +50,7 @@
 /obj/item/rig_module/voice/proc/voice_name_entered(mob/user, raw_choice, datum/om/prompt/ask)
 	if(!raw_choice || !holder || holder.wearer != user)
 		return
+
+REF_OWNED(/obj/item/rig_module/voice, "voice_holder")
 	voice_holder.voice = raw_choice
 	to_chat(user, span_blue("You are now mimicking <B>[voice_holder.voice]</B>."))

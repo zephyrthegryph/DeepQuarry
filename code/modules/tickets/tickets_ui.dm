@@ -32,8 +32,8 @@
 
 	var/selected_ticket = null
 
-	if(user.client.selected_ticket)
-		var/datum/ticket/T = user.client.selected_ticket
+	if(user.client.selected_ticket())
+		var/datum/ticket/T = user.client.selected_ticket()
 		if(check_rights_for(user.client, (R_ADMIN|R_SERVER|R_MOD)) || (check_rights_for(user.client, R_MENTOR) && T.level < 1))
 			selected_ticket = list(
 				"id" = T.id,
@@ -144,22 +144,22 @@
 				return
 
 			feedback_add_details("admin_verb","Admincreatedticket") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
-			if(player.current_ticket)
+			if(player.current_ticket())
 				var/input = act_prompt(ui.user, action, params, ui, "k139", list("message" = "The player already has a ticket open. Is this for the same issue?", "title" = "Duplicate?", "choices" = list("Yes","No")))
 				if(isnull(input))
 					return
 				if(!input)
 					return
 				if(input == "Yes")
-					if(player.current_ticket)
-						player.current_ticket.MessageNoRecipient(ticket_text)
+					if(player.current_ticket())
+						player.current_ticket().MessageNoRecipient(ticket_text)
 						to_chat(ui.user, span_adminnotice("PM to-" + span_bold("Admins") + ": [ticket_text]"))
 						return
 					else
 						to_chat(ui.user, span_warning("Ticket not found, creating new one..."))
 				else
-					player.current_ticket.AddInteraction("[key_name_admin(ui.user)] opened a new ticket.")
-					player.current_ticket.Close(ui.user)
+					player.current_ticket().AddInteraction("[key_name_admin(ui.user)] opened a new ticket.")
+					player.current_ticket().Close(ui.user)
 
 			// Create a new ticket and handle it. You created it afterall!
 			var/datum/ticket/T = new /datum/ticket(ticket_text, player, TRUE, level)
@@ -176,27 +176,27 @@
 			. = TRUE
 		if("pick_ticket")
 			var/datum/ticket/T = ID2Ticket(params["ticket_id"])
-			ui.user.client.selected_ticket = T
+			ui.user.client.selected_ticket_handle = om_handle(T)
 			. = TRUE
 		if("retitle_ticket")
-			ui.user.client.selected_ticket.Retitle()
+			ui.user.client.selected_ticket().Retitle()
 			. = TRUE
 		if("reopen_ticket")
-			ui.user.client.selected_ticket.Reopen(ui.user)
+			ui.user.client.selected_ticket().Reopen(ui.user)
 			. = TRUE
 		if("undock_ticket")
-			ui.user.client.selected_ticket.tgui_interact(ui.user)
-			ui.user.client.selected_ticket = null
+			ui.user.client.selected_ticket().tgui_interact(ui.user)
+			ui.user.client.selected_ticket_handle = null
 			. = TRUE
 		if("send_msg")
 			if(!params["msg"])
 				return
 
-			switch(ui.user.client.selected_ticket.level)
+			switch(ui.user.client.selected_ticket().level)
 				if (0)
-					ui.user.client.cmd_mentor_pm(ui.user.client.selected_ticket.initiator, params["msg"], ui.user.client.selected_ticket)
+					ui.user.client.cmd_mentor_pm(ui.user.client.selected_ticket().initiator(), params["msg"], ui.user.client.selected_ticket())
 				if (1)
-					ui.user.client.cmd_admin_pm(ui.user.client.selected_ticket.initiator, params["msg"], ui.user.client.selected_ticket)
+					ui.user.client.cmd_admin_pm(ui.user.client.selected_ticket().initiator(), params["msg"], ui.user.client.selected_ticket())
 			. = TRUE
 
 /datum/tickets/tgui_fallback(payload, user)
@@ -278,9 +278,9 @@
 
 			switch(level)
 				if (0)
-					ui.user.client.cmd_mentor_pm(T.initiator, sanitize(params["msg"]), T)
+					ui.user.client.cmd_mentor_pm(T.initiator(), sanitize(params["msg"]), T)
 				if (1)
-					ui.user.client.cmd_admin_pm(T.initiator, sanitize(params["msg"]), T)
+					ui.user.client.cmd_admin_pm(T.initiator(), sanitize(params["msg"]), T)
 
 			. = TRUE
 
@@ -311,7 +311,7 @@
 	if(closed_at)
 		dat += "<br>Closed at: [gameTimestamp(wtime = closed_at)] (Approx [(world.time - closed_at) / 600] minutes ago)"
 	dat += "<br><br>"
-	if(initiator)
+	if(initiator())
 		dat += span_bold("Actions:") + " [FullMonty(ref_src, check_rights_for(user.client, (R_ADMIN|R_SERVER|R_MOD)))]<br>"
 	else
 		dat += span_bold("DISCONNECTED") + "[GLOB.TAB][ClosureLinks(ref_src)]<br>"

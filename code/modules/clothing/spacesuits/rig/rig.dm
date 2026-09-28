@@ -56,7 +56,7 @@
 	var/obj/item/rig_module/selected_module = null            // Primary system (used with middle-click)
 	var/obj/item/rig_module/vision/visor                      // Kinda shitty to have a var for a module, but saves time.
 	var/obj/item/rig_module/voice/speech                      // As above.
-	var/mob/living/carbon/human/wearer                        // The person currently wearing the rig.
+	var/tmp/wearer_handle	// The person currently wearing the rig.
 	var/image/mob_icon                                        // Holder for on-mob icon.
 	var/list/installed_modules                       // Power consumption/use bookkeeping.
 
@@ -138,7 +138,7 @@
 
 	update_icon(1)
 
-REF_OWNED(/obj/item/rig, list("power_system", "spark_system"))
+REF_OWNED(/obj/item/rig, list("power_system", "spark_system", "boots", "chest", "helmet", "gloves", "mob_icon", "minihud", "component_registry"))
 
 // ALLOW(lifecycle): the suit pieces are torn down by the component registry first.
 /obj/item/rig/Destroy()
@@ -153,9 +153,9 @@ REF_OWNED(/obj/item/rig, list("power_system", "spark_system"))
 
 /obj/item/rig/examine(mob/user)
 	. = ..()
-	if(wearer)
+	if(wearer())
 		for(var/obj/item/piece in list(helmet,gloves,chest,boots))
-			if(!piece || piece.loc != wearer)
+			if(!piece || piece.loc != wearer())
 				continue
 			. += "[icon2html(piece, user.client)] \The [piece] [piece.gender == PLURAL ? "are" : "is"] deployed."
 
@@ -182,7 +182,7 @@ REF_OWNED(/obj/item/rig, list("power_system", "spark_system"))
 		// onto the (ex-)wearer. Moved() is the universal hook: unlike dropped() it also
 		// fires for forceMove(), which is how the damage/protean paths remove the suit.
 		for(var/obj/item/clothing/piece in list(helmet, gloves, chest, boots))
-			if(piece.master_rig == src && ismob(piece.loc))
+			if(piece.master_rig() == src && ismob(piece.loc))
 				piece.rig_self_detach()
 		// drop_from_inventory() bypasses the canremove seal gate, so a sealed suit can
 		// land here still flagged sealed. Reset to a clean unsealed state, otherwise the
@@ -193,7 +193,7 @@ REF_OWNED(/obj/item/rig, list("power_system", "spark_system"))
 	// If we've lost any parts, grab them back.
 	var/mob/living/M
 	for(var/obj/item/piece in list(gloves,boots,helmet,chest))
-		if(piece.loc != src && !(wearer && piece.loc == wearer))
+		if(piece.loc != src && !(wearer() && piece.loc == wearer()))
 			if(isliving(piece.loc))
 				M = piece.loc
 				M.unEquip(piece)
@@ -211,15 +211,15 @@ REF_OWNED(/obj/item/rig, list("power_system", "spark_system"))
 	return ..()
 
 /obj/item/rig/proc/suit_is_deployed()
-	if(!istype(wearer) || src.loc != wearer || (wearer.get_equipped_item(SLOT_ID_BACK) != src && wearer.get_equipped_item(SLOT_ID_BELT) != src))
+	if(!istype(wearer(), /mob/living/carbon/human) || src.loc != wearer() || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src))
 		return 0
-	if(helm_type && !(helmet && wearer.get_equipped_item(SLOT_ID_HEAD) == helmet))
+	if(helm_type && !(helmet && wearer().get_equipped_item(SLOT_ID_HEAD) == helmet))
 		return 0
-	if(glove_type && !(gloves && wearer.get_equipped_item(SLOT_ID_GLOVES) == gloves))
+	if(glove_type && !(gloves && wearer().get_equipped_item(SLOT_ID_GLOVES) == gloves))
 		return 0
-	if(boot_type && !(boots && wearer.get_equipped_item(SLOT_ID_SHOES) == boots))
+	if(boot_type && !(boots && wearer().get_equipped_item(SLOT_ID_SHOES) == boots))
 		return 0
-	if(chest_type && !(chest && wearer.get_equipped_item(SLOT_ID_SUIT) == chest))
+	if(chest_type && !(chest && wearer().get_equipped_item(SLOT_ID_SUIT) == chest))
 		return 0
 	return 1
 
@@ -375,7 +375,7 @@ REF_OWNED(/obj/item/rig, list("power_system", "spark_system"))
 			to_chat(M, span_notice("\The [piece] hisses [!seal_target ? "closed" : "open"]."))
 			M.update_inv_head()
 			if(helmet?.light_system == STATIC_LIGHT)
-				helmet.update_light(wearer)
+				helmet.update_light(wearer())
 
 	//sealed pieces become airtight, protecting against diseases
 	if (!seal_target)
@@ -484,9 +484,9 @@ REF_OWNED(/obj/item/rig, list("power_system", "spark_system"))
 /obj/item/rig/periodic_step()
 	// Not on a mob...?
 	if(!ismob(loc))
-		if(wearer?.wearing_rig == src)
-			wearer.wearing_rig = null
-		wearer = null
+		if(wearer()?.wearing_rig == src)
+			wearer().wearing_rig = null
+		wearer_handle = null
 		return PROCESS_KILL
 
 	// Run through cooling.
@@ -495,7 +495,7 @@ REF_OWNED(/obj/item/rig, list("power_system", "spark_system"))
 	// The offline-state machine now lives in power_system.
 	// We only invoke it when the original condition would have triggered
 	// the cell-check path, preserving the original conditional structure.
-	if(!istype(wearer) || loc != wearer || (wearer.get_equipped_item(SLOT_ID_BACK) != src && wearer.get_equipped_item(SLOT_ID_BELT) != src) || canremove || !cell || cell.charge <= 0)
+	if(!istype(wearer(), /mob/living/carbon/human) || loc != wearer() || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src) || canremove || !cell || cell.charge <= 0)
 		if(power_system.process_offline_state())
 			offline = power_system.offline
 			return
@@ -588,8 +588,8 @@ REF_OWNED(/obj/item/rig, list("power_system", "spark_system"))
 		var/species_icon = default_mob_icon
 		// Since setting mob_icon will override the species checks in
 		// update_inv_wear_suit(), handle species checks here.
-		if(wearer && LAZYACCESS(sprite_sheets, wearer.species.get_bodytype(wearer)))
-			species_icon = sprite_sheets[wearer.species.get_bodytype(wearer)]
+		if(wearer() && LAZYACCESS(sprite_sheets, wearer().species.get_bodytype(wearer())))
+			species_icon = sprite_sheets[wearer().species.get_bodytype(wearer())]
 		mob_icon = icon(icon = species_icon, icon_state = "[icon_state]")
 
 	if(chest)
@@ -599,12 +599,12 @@ REF_OWNED(/obj/item/rig, list("power_system", "spark_system"))
 				if(module.suit_overlay)
 					chest.add_overlay(image(module.suit_overlay_icon, icon_state = "[module.suit_overlay]", dir = SOUTH))
 
-	if(wearer)
-		wearer.update_inv_shoes()
-		wearer.update_inv_gloves()
-		wearer.update_inv_head()
-		wearer.update_inv_wear_suit()
-		wearer.update_inv_back()
+	if(wearer())
+		wearer().update_inv_shoes()
+		wearer().update_inv_gloves()
+		wearer().update_inv_head()
+		wearer().update_inv_wear_suit()
+		wearer().update_inv_back()
 	return
 
 /obj/item/rig/proc/check_suit_access(mob/living/carbon/human/user, do_message = TRUE)
@@ -633,8 +633,8 @@ REF_OWNED(/obj/item/rig, list("power_system", "spark_system"))
 
 /obj/item/rig/proc/notify_ai(message)
 	for(var/obj/item/rig_module/ai_container/module in installed_modules)
-		if(module.integrated_ai && module.integrated_ai.client && !module.integrated_ai.stat)
-			to_chat(module.integrated_ai, "[message]")
+		if(module.integrated_ai() && module.integrated_ai().client && !module.integrated_ai().stat)
+			to_chat(module.integrated_ai(), "[message]")
 			. = 1
 
 /obj/item/rig/equipped(mob/living/carbon/human/M)
@@ -663,8 +663,8 @@ REF_OWNED(/obj/item/rig, list("power_system", "spark_system"))
 /obj/item/rig/proc/put_on_done(mob/living/carbon/human/M)
 	if(istype(M) && (M.get_equipped_item(SLOT_ID_BACK) == src || M.get_equipped_item(SLOT_ID_BELT) == src))
 		M.visible_message(span_boldnotice("[M] struggles into \the [src]."), span_boldnotice("You struggle into \the [src]."))
-		wearer = M
-		wearer.wearing_rig = src
+		wearer_handle = om_handle(M)
+		wearer().wearing_rig = src
 		update_icon()
 
 /obj/item/rig/proc/toggle_piece(piece, mob/living/carbon/human/H, deploy_mode, forced = FALSE)
@@ -672,13 +672,13 @@ REF_OWNED(/obj/item/rig, list("power_system", "spark_system"))
 	if((sealing || !cell || !cell.charge) && !forced)
 		return
 
-	if((!istype(wearer) || (wearer.get_equipped_item(SLOT_ID_BACK) != src && wearer.get_equipped_item(SLOT_ID_BELT) != src)) && !forced)
+	if((!istype(wearer(), /mob/living/carbon/human) || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src)) && !forced)
 		return
 
 	if(!H)
 		return
 
-	if((H == wearer && (H.stat||H.has_status(EFFECT_PARALYZED)||H.has_status(EFFECT_STUNNED))) && !forced) // If the user isn't wearing the suit it's probably an AI.
+	if((H == wearer() && (H.stat||H.has_status(EFFECT_PARALYZED)||H.has_status(EFFECT_STUNNED))) && !forced) // If the user isn't wearing the suit it's probably an AI.
 		return
 
 	var/obj/item/check_slot
@@ -714,7 +714,7 @@ REF_OWNED(/obj/item/rig, list("power_system", "spark_system"))
 					if(use_obj && check_slot == use_obj)
 						balloon_alert(H, "your [use_obj.name] [use_obj.gender == PLURAL ? "retract" : "retracts"] swiftly.")
 						playsound(src, 'sound/machines/rig/rigservo.ogg', 10, FALSE)
-						use_obj.master_rig = null   // intentional retract: silence the dropped() safety net
+						use_obj.master_rig_handle = null   // intentional retract: silence the dropped() safety net
 						use_obj.canremove = TRUE
 						holder.drop_from_inventory(use_obj)
 						use_obj.forceMove(get_turf(src))
@@ -732,7 +732,7 @@ REF_OWNED(/obj/item/rig, list("power_system", "spark_system"))
 					to_chat(H, span_danger("You are unable to deploy \the [piece] as \the [check_slot] [check_slot.gender == PLURAL ? "are" : "is"] in the way."))
 					return
 			else
-				use_obj.master_rig = src   // the piece now knows its controller, so it can free itself
+				use_obj.master_rig_handle = om_handle(src)   // the piece now knows its controller, so it can free itself
 				balloon_alert(H, "your [use_obj.name] [use_obj.gender == PLURAL ? "deploy" : "deploys"] swiftly.")
 				playsound(src, 'sound/machines/rig/rigservo.ogg', 10, FALSE)
 
@@ -774,9 +774,9 @@ REF_OWNED(/obj/item/rig, list("power_system", "spark_system"))
 	tgui_shared_states?.Cut()
 	// Piece retraction and seal-state reset are handled in Moved() (the universal hook
 	// that also catches forceMove); here we just drop the wearer back-references.
-	if(wearer && wearer.wearing_rig == src)
-		wearer.wearing_rig = null
-	wearer = null
+	if(wearer() && wearer().wearing_rig == src)
+		wearer().wearing_rig = null
+	wearer_handle = null
 
 //Todo
 /obj/item/rig/proc/malfunction()
@@ -844,11 +844,11 @@ REF_OWNED(/obj/item/rig, list("power_system", "spark_system"))
 	if(!source)
 		source = "hit"
 
-	if(wearer)
+	if(wearer())
 		if(dam_module.damage >= 2)
-			to_chat(wearer, span_danger("The [source] has disabled your [dam_module.interface_name]!"))
+			to_chat(wearer(), span_danger("The [source] has disabled your [dam_module.interface_name]!"))
 		else
-			to_chat(wearer, span_warning("The [source] has damaged your [dam_module.interface_name]!"))
+			to_chat(wearer(), span_warning("The [source] has damaged your [dam_module.interface_name]!"))
 	dam_module.deactivate()
 
 /obj/item/rig/proc/malfunction_check(mob/living/carbon/human/user)
@@ -869,7 +869,7 @@ REF_OWNED(/obj/item/rig, list("power_system", "spark_system"))
 		for(var/obj/item/rig_module/ai_container/module in contents)
 			if(module.damage >= 2)
 				continue
-			if(module.integrated_ai && module.integrated_ai.client && !module.integrated_ai.stat)
+			if(module.integrated_ai() && module.integrated_ai().client && !module.integrated_ai().stat)
 				found_ai = 1
 				break
 		if(!found_ai)
@@ -887,11 +887,11 @@ REF_OWNED(/obj/item/rig, list("power_system", "spark_system"))
 		if(user)
 			to_chat(user, span_warning("Your host rig is unpowered and unresponsive."))
 		return 0
-	if(!wearer || (wearer.get_equipped_item(SLOT_ID_BACK) != src && wearer.get_equipped_item(SLOT_ID_BELT) != src))
+	if(!wearer() || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src))
 		if(user)
 			to_chat(user, span_warning("Your host rig is not being worn."))
 		return 0
-	if(!wearer.stat && !control_overridden && !ai_override_enabled)
+	if(!wearer().stat && !control_overridden && !ai_override_enabled)
 		if(user)
 			to_chat(user, span_warning("You are locked out of the suit servo controller."))
 		return 0
@@ -900,8 +900,8 @@ REF_OWNED(/obj/item/rig, list("power_system", "spark_system"))
 /obj/item/rig/proc/force_rest(mob/user)
 	if(!ai_can_move_suit(user, check_user_module = 1))
 		return
-	wearer.lay_down()
-	to_chat(user, span_notice("\The [wearer] is now [wearer.resting ? "resting" : "getting up"]."))
+	wearer().lay_down()
+	to_chat(user, span_notice("\The [wearer()] is now [wearer().resting ? "resting" : "getting up"]."))
 
 /obj/item/rig/proc/forced_move(direction, mob/user, ai_moving = TRUE)
 
@@ -909,7 +909,7 @@ REF_OWNED(/obj/item/rig, list("power_system", "spark_system"))
 	if(!COOLDOWN_FINISHED(src, wearer_move_delay))
 		return
 
-	if(!wearer || !wearer.loc) // Removed some stuff for protean living hardsuit
+	if(!wearer() || !wearer().loc) // Removed some stuff for protean living hardsuit
 		return
 
 // Added this for protean living hardsuit
@@ -922,67 +922,67 @@ REF_OWNED(/obj/item/rig, list("power_system", "spark_system"))
 		COOLDOWN_START(src, wearer_move_delay, ai_controlled_move_delay)
 
 	//This is sota the goto stop mobs from moving var
-	if(wearer.transforming || !wearer.canmove)
+	if(wearer().transforming || !wearer().canmove)
 		return
 
-	if((istype(wearer.loc, /turf/space)) || (wearer.lastarea.get_gravity() == 0))
-		if(!wearer.Process_Spacemove(0))
+	if((istype(wearer().loc, /turf/space)) || (wearer().lastarea.get_gravity() == 0))
+		if(!wearer().Process_Spacemove(0))
 			return 0
 
 	if(malfunctioning)
 		direction = pick(GLOB.cardinal)
 
 	// Inside an object, tell it we moved.
-	if(isobj(wearer.loc) || ismob(wearer.loc))
-		var/atom/O = wearer.loc
-		return O.relaymove(wearer, direction)
+	if(isobj(wearer().loc) || ismob(wearer().loc))
+		var/atom/O = wearer().loc
+		return O.relaymove(wearer(), direction)
 
-	if(isturf(wearer.loc))
-		if(wearer.restrained())//Why being pulled while cuffed prevents you from moving
-			for(var/mob/M in range(wearer, 1))
-				if(M?.pulling_target() == wearer)
-					if(!M.restrained() && M.stat == 0 && M.canmove && wearer.Adjacent(M))
+	if(isturf(wearer().loc))
+		if(wearer().restrained())//Why being pulled while cuffed prevents you from moving
+			for(var/mob/M in range(wearer(), 1))
+				if(M?.pulling_target() == wearer())
+					if(!M.restrained() && M.stat == 0 && M.canmove && wearer().Adjacent(M))
 						to_chat(user, span_notice("Your host is restrained! They can't move!"))
 						return 0
 					else
 						M.stop_pulling()
 
-	if(LAZYLEN(wearer.pinned))
-		to_chat(src, span_notice("Your host is pinned to a wall by [wearer.pinned[1]]!"))
+	if(LAZYLEN(wearer().pinned))
+		to_chat(src, span_notice("Your host is pinned to a wall by [wearer().pinned[1]]!"))
 		return 0
 
-	if(istype(wearer?.buckled_to(), /obj/vehicle))
+	if(istype(wearer()?.buckled_to(), /obj/vehicle))
 		//manually set move_delay for vehicles so we don't inherit any mob movement penalties
 		//specific vehicle move delays are set in code\modules\vehicles\vehicle.dm
 		wearer_move_delay = world.time
-		var/atom/movable/_tmp_buck_13 = wearer?.buckled_to()
-		return _tmp_buck_13.relaymove(wearer, direction)
+		var/atom/movable/_tmp_buck_13 = wearer()?.buckled_to()
+		return _tmp_buck_13.relaymove(wearer(), direction)
 
-	if(istype(wearer.get_current_machine(), /obj/machinery))
-		if(wearer.get_current_machine().relaymove(wearer, direction))
+	if(istype(wearer().get_current_machine(), /obj/machinery))
+		if(wearer().get_current_machine().relaymove(wearer(), direction))
 			return
 
-	var/mob/wearer_puller = wearer?.pulled_by_mob()
-	if(wearer_puller || wearer?.buckled_to()) // Wheelchair driving!
-		if(istype(wearer.loc, /turf/space))
+	var/mob/wearer_puller = wearer()?.pulled_by_mob()
+	if(wearer_puller || wearer()?.buckled_to()) // Wheelchair driving!
+		if(istype(wearer().loc, /turf/space))
 			return // No wheelchair driving in space
 		if(istype(wearer_puller, /obj/structure/bed/chair/wheelchair))
-			return wearer_puller.relaymove(wearer, direction)
-		else if(istype(wearer?.buckled_to(), /obj/structure/bed/chair/wheelchair))
-			if(ishuman(wearer?.buckled_to()))
-				var/obj/item/organ/external/l_hand = wearer.get_organ(BP_L_HAND)
-				var/obj/item/organ/external/r_hand = wearer.get_organ(BP_R_HAND)
+			return wearer_puller.relaymove(wearer(), direction)
+		else if(istype(wearer()?.buckled_to(), /obj/structure/bed/chair/wheelchair))
+			if(ishuman(wearer()?.buckled_to()))
+				var/obj/item/organ/external/l_hand = wearer().get_organ(BP_L_HAND)
+				var/obj/item/organ/external/r_hand = wearer().get_organ(BP_R_HAND)
 				if((!l_hand || (l_hand.status & ORGAN_DESTROYED)) && (!r_hand || (r_hand.status & ORGAN_DESTROYED)))
 					return // No hands to drive your chair? Tough luck!
 			wearer_move_delay += 2
-			var/atom/movable/_tmp_buck_14 = wearer?.buckled_to()
-			return _tmp_buck_14.relaymove(wearer,direction)
+			var/atom/movable/_tmp_buck_14 = wearer()?.buckled_to()
+			return _tmp_buck_14.relaymove(wearer(),direction)
 
 	var/power_cost = 50
 	if(!ai_moving)
 		power_cost = 20
 	draw_power(power_cost / CELLRATE, wearer, partial = TRUE)
-	wearer.Move(get_step(get_turf(wearer),direction),direction)
+	wearer().Move(get_step(get_turf(wearer()),direction),direction)
 
 // This returns the rig if you are contained inside one, but not if you are wearing it
 /atom/proc/get_rig()
@@ -1028,3 +1028,9 @@ REF_OWNED(/obj/item/rig, list("power_system", "spark_system"))
 /proc/rig_boot_hud_clear(mob/M, atom/movable/screen/booting_R)
 	M.client?.screen -= booting_R
 	qdel(booting_R)
+
+REF_HELD(/obj/item/rig, list("air_supply", "cell", "selected_module", "visor", "speech", "rig_storage"))
+
+/// LC-refs: The person currently wearing the rig. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/rig/proc/wearer() as /mob/living/carbon/human
+	return om_resolve(wearer_handle)

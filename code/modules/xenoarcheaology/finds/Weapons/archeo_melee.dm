@@ -27,7 +27,7 @@
 	sharp = TRUE
 	injury_kind = INJURY_CUT
 	embed_chance = 0
-	var/mob/living/carbon/human/last_touched //The last human that touched us
+	var/tmp/last_touched_handle	//The last human that touched us
 	var/stored_blood = 0 //How much energy we have!
 	var/last_special = 0 //How recently our powers were used! Can be admin-set to a high number to keep from having the mode able to be changed.
 	var/static/list/abilities = list("Consecrate", "Summon")
@@ -42,22 +42,22 @@
 
 /obj/item/melee/artifact_blade/examine(mob/user)
 	. = ..()
-	if(stored_blood && user == last_touched)
+	if(stored_blood && user == last_touched())
 		. += span_cult("You can sense the blade has about " + span_bold("[stored_blood]") + " lifeforce contained within it.")
 
 /obj/item/melee/artifact_blade/periodic_step()
-	if(!last_touched || !stored_blood) //Nobody has touched us yet or we have no energy...For now.
+	if(!last_touched() || !stored_blood) //Nobody has touched us yet or we have no energy...For now.
 		return
-	if(!last_touched || last_touched.stat == DEAD) //If our user doesn't exist or is dead, stop processing until the next unlucky sod touches us.
+	if(!last_touched() || last_touched().stat == DEAD) //If our user doesn't exist or is dead, stop processing until the next unlucky sod touches us.
 		PERIODIC_STOP(src)
-		last_touched = null
+		last_touched_handle = null
 		return
-	if(loc == last_touched && (last_touched.life_tick % 30 == 0)) //We are currently being wielded by our owner. One proc every minute.
+	if(loc == last_touched() && (last_touched().life_tick % 30 == 0)) //We are currently being wielded by our owner. One proc every minute.
 		/// First and foremost, the sword passively takes some blood from you when you hold it.
 		/// This doesn't INJURE you like using it but does take blood. And a LOT of it. If you just carry the sword around, it's going to drain you.
-		to_chat(last_touched, span_cult("You feel weaker as the sword drains your lifeforce, imbuing itself with power."))
+		to_chat(last_touched(), span_cult("You feel weaker as the sword drains your lifeforce, imbuing itself with power."))
 		var/blood_to_remove = rand(10,30)
-		if(last_touched.remove_blood(blood_to_remove))
+		if(last_touched().remove_blood(blood_to_remove))
 			stored_blood += blood_to_remove*3
 			empowered = 1
 			return //We are done with our effects.
@@ -66,22 +66,22 @@
 
 // ALLOW(lifecycle): a charged blade punishes its wielder.
 /obj/item/melee/artifact_blade/Destroy()
-	if(stored_blood && last_touched && last_touched.stat != DEAD) //We have been activated (have some energy), an owner and they are alive. They are going to feel pain.
-		to_chat(last_touched, span_cult("You feel as though your mind is suddenly being torn apart at the seams as the [src] is destroyed!"))
-		last_touched.status_at_least(EFFECT_PARALYZED, 10)
-		last_touched.status_at_least(EFFECT_SLEEPING, 10)
-		last_touched.status_adjust(EFFECT_JITTERY, 1000)
-		last_touched.status_adjust(EFFECT_BLURRY, 10)
-		last_touched.add_modifier(/datum/modifier/agonize, 30 SECONDS)
-		blood_splatter(last_touched, last_touched, 1)
-		if(last_touched.loc)
-			conjure_animation(last_touched.loc)
+	if(stored_blood && last_touched() && last_touched().stat != DEAD) //We have been activated (have some energy), an owner and they are alive. They are going to feel pain.
+		to_chat(last_touched(), span_cult("You feel as though your mind is suddenly being torn apart at the seams as the [src] is destroyed!"))
+		last_touched().status_at_least(EFFECT_PARALYZED, 10)
+		last_touched().status_at_least(EFFECT_SLEEPING, 10)
+		last_touched().status_adjust(EFFECT_JITTERY, 1000)
+		last_touched().status_adjust(EFFECT_BLURRY, 10)
+		last_touched().add_modifier(/datum/modifier/agonize, 30 SECONDS)
+		blood_splatter(last_touched(), last_touched(), 1)
+		if(last_touched().loc)
+			conjure_animation(last_touched().loc)
 	visible_message(span_cult("\The [src] screeches as it's destroyed"))
-	var/turf/T = get_turf(last_touched)
+	var/turf/T = get_turf(last_touched())
 	if(istype(T))
 		lightning_strike(T, TRUE)
 	playsound(src, 'sound/goonstation/spooky/creepyshriek.ogg', 100, 1, 75) //It plays VERY far.
-	last_touched = null //Get rid of the reference to our owner.
+	last_touched_handle = null //Get rid of the reference to our owner.
 	. = ..()
 
 /obj/item/melee/artifact_blade/cultify()
@@ -156,9 +156,9 @@
 /obj/item/melee/artifact_blade/pickup(mob/living/user as mob)
 	// We check to see if the person picking us up isn't our owner, not a cultist, and they're human.
 	// Yes. This means you can hand off the sword to someone else to make them the newfound owner of the cursed sword.
-	if((user != last_touched) && !iscultist(user) && ishuman(user))
+	if((user != last_touched()) && !iscultist(user) && ishuman(user))
 		to_chat(user, span_cult("An overwhelming feeling of dread comes over you as you pick up the sword. You feel as though it has become attached to you."))
-		last_touched = user
+		last_touched_handle = om_handle(user)
 		PERIODIC_START(src, PERIODIC_SLOW)
 
 DECLARE_INTERACTIONS(/obj/item/melee/artifact_blade, INTERACT_USE(null, PROC_REF(interaction_self)))
@@ -313,3 +313,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/artifact_blade, INTERACT_USE(null, PROC_REF
 #undef SOULSTONE
 #undef SHELL
 #undef ARTIFACT
+
+/// LC-refs: The last human that touched us -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/melee/artifact_blade/proc/last_touched() as /mob/living/carbon/human
+	return om_resolve(last_touched_handle)

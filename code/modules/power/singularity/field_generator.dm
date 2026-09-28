@@ -28,7 +28,7 @@
 	var/state = 0
 	var/warming_up = 0
 	var/list/obj/machinery/containment_field/fields
-	var/list/obj/machinery/field_generator/connected_gens
+	var/list/connected_gens	// OM handles of the linked generators (om_resolve_all())
 	var/clean_up = 0
 
 	//If keeping field generators powered is hard then increase the emitter active power usage.
@@ -223,7 +223,7 @@
 		src.power = field_generator_max_power
 
 	var/power_draw = gen_power_draw
-	for(var/obj/machinery/field_generator/FG in connected_gens)
+	for(var/obj/machinery/field_generator/FG in om_resolve_all(connected_gens))
 		if (!isnull(FG))
 			power_draw += gen_power_draw
 	for (var/obj/machinery/containment_field/F in fields)
@@ -253,7 +253,7 @@
 	var/actual_draw = src.power	//already checked that power < draw
 	src.power = 0
 
-	for(var/obj/machinery/field_generator/FG in connected_gens)
+	for(var/obj/machinery/field_generator/FG in om_resolve_all(connected_gens))
 		if (FG in flood_list)
 			continue
 		actual_draw += FG.draw_power(draw - actual_draw, flood_list) //since the flood list reference is shared this actually works.
@@ -309,23 +309,23 @@
 			G.fields += CF
 			CF.set_dir(field_dir)
 	var/listcheck = 0
-	for(var/obj/machinery/field_generator/FG in connected_gens)
+	for(var/obj/machinery/field_generator/FG in om_resolve_all(connected_gens))
 		if (isnull(FG))
 			continue
 		if(FG == G)
 			listcheck = 1
 			break
 	if(!listcheck)
-		connected_gens.Add(G)
+		connected_gens.Add(om_handle(G))
 	listcheck = 0
-	for(var/obj/machinery/field_generator/FG2 in G.connected_gens)
+	for(var/obj/machinery/field_generator/FG2 in om_resolve_all(G.connected_gens))
 		if (isnull(FG2))
 			continue
 		if(FG2 == src)
 			listcheck = 1
 			break
 	if(!listcheck)
-		G.connected_gens.Add(src)
+		G.connected_gens.Add(om_handle(src))
 
 /obj/machinery/field_generator/proc/cleanup()
 	clean_up = 1
@@ -334,13 +334,13 @@
 			continue
 		qdel(F)
 	fields = list()
-	for(var/obj/machinery/field_generator/FG in connected_gens)
+	for(var/obj/machinery/field_generator/FG in om_resolve_all(connected_gens))
 		if (QDELETED(FG))
 			continue
-		FG.connected_gens.Remove(src)
+		FG.connected_gens.Remove(om_handle_of(src))
 		if(!FG.clean_up)//Makes the other gens clean up as well
 			FG.cleanup()
-		connected_gens.Remove(FG)
+		connected_gens.Remove(om_handle_of(FG))
 	connected_gens = list()
 	clean_up = 0
 	update_icon()
@@ -370,3 +370,5 @@
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/field_generator/step_start_condition()
 	return active || Varedit_start
+
+REF_OWNED_LIST(/obj/machinery/field_generator, "fields")

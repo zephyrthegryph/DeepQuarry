@@ -9,7 +9,7 @@
 
 /datum/data/pda/app/contracts/update_ui(mob/living/user, list/data)
 	var/list/contracts = list()
-	var/datum/money_account/account = pda.id ? get_account(pda.id.associated_account_number) : null
+	var/datum/money_account/account = pda().id ? get_account(pda().id.associated_account_number) : null
 	if(account)
 		for(var/id in SScontracts.contracts_by_id)
 			var/datum/contract/contract = SScontracts.contracts_by_id[id]
@@ -27,9 +27,9 @@
 /datum/data/pda/app/contracts/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	if(..())
 		return TRUE
-	if(!(action in list("contract_accept", "contract_decline", "contract_stakeholder_propose", "contract_stakeholder_withdraw", "contract_agent_apply")) || pda.loc != ui.user || !pda.id)
+	if(!(action in list("contract_accept", "contract_decline", "contract_stakeholder_propose", "contract_stakeholder_withdraw", "contract_agent_apply")) || pda().loc != ui.user || !pda().id)
 		return FALSE
-	var/datum/money_account/account = get_account(pda.id.associated_account_number)
+	var/datum/money_account/account = get_account(pda().id.associated_account_number)
 	var/datum/contract/contract = SScontracts.contracts_by_id[params["id"]]
 	if(!account || !contract)
 		if(action == "contract_agent_apply" && account)
@@ -41,7 +41,7 @@
 				return
 			if(_answer_k39 != "Begin vetting")
 				return FALSE
-			if(pda.loc != ui.user || !pda.id || pda.id.associated_account_number != account.account_number)
+			if(pda().loc != ui.user || !pda().id || pda().id.associated_account_number != account.account_number)
 				return FALSE
 			return GLOB.station_faction_relations.begin_agent_vetting(ui.user, faction.id)
 		return FALSE
@@ -66,7 +66,7 @@
 					return
 				if(_answer_k57 != "Accept red contract")
 					return FALSE
-				if(pda.loc != ui.user || !pda.id || pda.id.associated_account_number != account.account_number || contract.state != CONTRACT_OFFERED)
+				if(pda().loc != ui.user || !pda().id || pda().id.associated_account_number != account.account_number || contract.state != CONTRACT_OFFERED)
 					return FALSE
-			return contract.accept(account, ui.user, pda)
+			return contract.accept(account, ui.user, pda())
 	return FALSE

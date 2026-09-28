@@ -202,7 +202,7 @@
 /datum/benchmark/major_events
 	id = "major_events"
 	description = "Tick cost of explosions, supermatter, mass fire and decompression"
-	var/turf/open/event_center
+	var/tmp/event_center_handle
 	var/list/turf/open/event_turfs
 
 /datum/benchmark/major_events/Run()
@@ -211,7 +211,7 @@
 	for(var/event_name in events)
 		event_turfs = build_floor_fixture(64)
 		var/turf/corner = event_turfs[1]
-		event_center = locate(33, 33, corner.z)
+		event_center_handle = om_handle(locate(33, 33, corner.z))
 		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
 		switch(event_name)
 			if("large_explosion")
@@ -242,10 +242,10 @@
 	end_window(event_name)
 
 /datum/benchmark/major_events/proc/trigger_large_explosion()
-	explosion(event_center, 8, 16, 24, 32, FALSE, 0)
+	explosion(event_center(), 8, 16, 24, 32, FALSE, 0)
 
 /datum/benchmark/major_events/proc/trigger_supermatter()
-	var/obj/machinery/power/supermatter/crystal = new(event_center)
+	var/obj/machinery/power/supermatter/crystal = new(event_center())
 	crystal.pull_time = 0
 	crystal.power = 5000
 	crystal.explode()
@@ -266,12 +266,12 @@
 /datum/benchmark/generation
 	id = "generation"
 	description = "Expedition station generation and release (bench_cycles, default 1)"
-	var/datum/expedition_site/generated_site
+	var/tmp/generated_site_handle
 	var/generation_done = FALSE
 
 /datum/benchmark/generation/proc/generate(seed, list/diagnostics)
 	try
-		generated_site = SSexpedition.generate_debug_station(seed, diagnostics)
+		generated_site_handle = om_handle(SSexpedition.generate_debug_station(seed, diagnostics))
 	catch(var/exception/error)
 		diagnostics["error"] = "[error]"
 	generation_done = TRUE
@@ -283,7 +283,7 @@
 	for(var/cycle in 1 to cycles)
 		mark("cycle[cycle]_begin")
 		var/list/diagnostics = list()
-		generated_site = null
+		generated_site_handle = null
 		generation_done = FALSE
 		begin_window()
 		INVOKE_ASYNC(src, PROC_REF(generate), seed, diagnostics) // ALLOW(scheduler): expedition generation yields; harness polls a deadline
@@ -294,11 +294,11 @@
 			stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
 		end_window("cycle[cycle]_generate")
 		detail("cycle[cycle]_diagnostics", diagnostics)
-		if(!generated_site)
+		if(!generated_site())
 			fail("generation returned no site on cycle [cycle]: [diagnostics["error"] || "no error"]")
 		mark("cycle[cycle]_generated")
-		SSexpedition.release_site(generated_site, "generation benchmark")
-		generated_site = null
+		SSexpedition.release_site(generated_site(), "generation benchmark")
+		generated_site_handle = null
 		var/waited = 0
 		while((length(SSexpedition.teardown_z) || !length(SSexpedition.free_z)) && waited++ < world.fps * 180)
 			stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
@@ -754,3 +754,11 @@
 #ifdef BISECT_EXTRA_PROCS
 #include "../../../tools/bisect/extra_procs.dm"
 #endif
+
+/// LC-refs: the event_center this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/benchmark/major_events/proc/event_center() as /turf/open
+	return om_resolve(event_center_handle)
+
+/// LC-refs: the generated_site this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/benchmark/generation/proc/generated_site() as /datum/expedition_site
+	return om_resolve(generated_site_handle)

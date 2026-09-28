@@ -64,7 +64,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/manipulation/weapon_firing, \
 /obj/item/integrated_circuit/manipulation/weapon_firing/do_work()
 	if(!installed_gun)
 		return
-	if(!assembly)
+	if(!assembly())
 		return
 	if(!istype(loc, /obj/item/electronic_assembly))
 		return
@@ -93,7 +93,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/manipulation/weapon_firing, \
 	if(isnum(target_y.data))
 		target_y.data = round(target_y.data)
 
-	var/turf/T = get_turf(src.assembly)
+	var/turf/T = get_turf(src.assembly())
 
 	if(target_x.data == 0 && target_y.data == 0) // Don't shoot ourselves.
 		return
@@ -146,13 +146,13 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/manipulation/weapon_firing, \
 /obj/item/integrated_circuit/manipulation/locomotion/do_work()
 	..()
 	var/turf/T = get_turf(src)
-	if(T && assembly)
-		if(assembly.anchored || !assembly.can_move())
+	if(T && assembly())
+		if(assembly().anchored || !assembly().can_move())
 			return
-		if(assembly.loc == T) // Check if we're held by someone.  If the loc is the floor, we're not held.
+		if(assembly().loc == T) // Check if we're held by someone.  If the loc is the floor, we're not held.
 			var/datum/integrated_io/wanted_dir = inputs[1]
 			if(isnum(wanted_dir.data))
-				step(assembly, wanted_dir.data)
+				step(assembly(), wanted_dir.data)
 
 /obj/item/integrated_circuit/manipulation/grenade
 	name = "grenade primer"

@@ -137,3 +137,6 @@
 			affected_turf.vis_contents += pshandler.vis_shade
 		if(FALSE)
 			affected_turf.underlays |= current_underlay
+
+// Held, not owned: Destroy() takes the underlay back off the turf (and may refuse deletion).
+REF_HELD(/datum/lighting_object, "current_underlay")

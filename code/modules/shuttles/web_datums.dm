@@ -6,15 +6,15 @@
 
 // This is the first datum, and it connects shuttle_destinations together.
 /datum/shuttle_route
-	var/datum/shuttle_destination/start = null	// One of the two sides of this route.  Start just means it was the creator of this route.
-	var/datum/shuttle_destination/end = null	// The second side.
+	var/tmp/start_handle	// One of the two sides of this route.  Start just means it was the creator of this route.
+	var/tmp/end_handle	// The second side.
 	var/var/obj/effect/shuttle_landmark/interim	// Where the shuttle sits during the movement.  Make sure no other shuttle shares this or Very Bad Things will happen.
 	var/travel_time = 0							// How long it takes to move from start to end, or end to start.  Set to 0 for instant travel.
 	var/one_way = FALSE							// If true, you can't travel from end to start.
 
 /datum/shuttle_route/New(_start, _end, _interim, _time = 0, _oneway = FALSE)
-	start = _start
-	end = _end
+	start_handle = om_handle(_start)
+	end_handle = om_handle(_end)
 	if(_interim)
 		interim = SSshuttles.get_landmark(_interim)
 	travel_time = _time
@@ -22,23 +22,23 @@
 
 // ALLOW(lifecycle): leaves both endpoints' route lists.
 /datum/shuttle_route/Destroy()
-	LAZYREMOVE(start.routes, src)
-	LAZYREMOVE(end.routes, src)
+	LAZYREMOVE(start().routes, src)
+	LAZYREMOVE(end().routes, src)
 	return ..()
 
 /datum/shuttle_route/proc/get_other_side(datum/shuttle_destination/PoV)
-	if(PoV == start)
-		return end
-	if(PoV == end)
-		return start
+	if(PoV == start())
+		return end()
+	if(PoV == end())
+		return start()
 	return null
 
 /datum/shuttle_route/proc/display_route(datum/shuttle_destination/PoV)
 	var/datum/shuttle_destination/target = null
-	if(PoV == start)
-		target = end
-	else if(PoV == end)
-		target = start
+	if(PoV == start())
+		target = end()
+	else if(PoV == end())
+		target = start()
 	else
 		return "ERROR"
 
@@ -51,8 +51,9 @@
 // This is the second datum, and contains information on all the potential destinations for a specific shuttle.
 /datum/shuttle_destination
 	var/name = "a place"				// Name of the destination, used for the flight computer.
-	var/obj/effect/shuttle_landmark/my_landmark = null // Where the shuttle will move to when it actually arrives.
-	var/datum/shuttle_web_master/master = null // The datum that does the coordination with the actual shuttle datum.
+	var/tmp/my_landmark_handle	// Where the shuttle will move to when it actually arrives.
+	var/my_landmark_tag	// the tag it starts as; resolved into my_landmark at init
+	var/tmp/master_handle	// The datum that does the coordination with the actual shuttle datum.
 	var/list/routes			// Routes that are connected to this destination.
 	var/preferred_interim_tag = null	// When building a new route, use interim landmark with this tag.
 	var/skip_me = FALSE					// We will not autocreate this one. Some map must be doing it.
@@ -71,11 +72,11 @@
 	var/list/routes_to_make
 
 /datum/shuttle_destination/New(new_master)
-	var/landmark_tag = my_landmark // Subtypes set this to the tag string; resolve it to the landmark obj.
-	my_landmark = SSshuttles.get_landmark(landmark_tag)
-	if(!my_landmark)
+	var/landmark_tag = my_landmark_tag // Subtypes set the tag string; resolve it to the landmark obj.
+	my_landmark_handle = om_handle(SSshuttles.get_landmark(landmark_tag))
+	if(!my_landmark())
 		log_mapping("Web shuttle destination '[name]' could not find its landmark '[landmark_tag]'.") // Important error message
-	master = new_master
+	master_handle = om_handle(new_master)
 
 REF_OWNED_LIST(/datum/shuttle_destination, "routes")
 
@@ -113,7 +114,7 @@ REF_OWNED_LIST(/datum/shuttle_destination, "routes")
 	return null
 
 /datum/shuttle_destination/proc/announce_departure()
-	if(isnull(get_departure_message()) || master.my_shuttle.cloaked)
+	if(isnull(get_departure_message()) || master().my_shuttle().cloaked)
 		return
 
 	if(!radio_announce)
@@ -125,7 +126,7 @@ REF_OWNED_LIST(/datum/shuttle_destination, "routes")
 	return null
 
 /datum/shuttle_destination/proc/announce_arrival()
-	if(isnull(get_arrival_message()) || master.my_shuttle.cloaked)
+	if(isnull(get_arrival_message()) || master().my_shuttle().cloaked)
 		return
 
 	if(!radio_announce)
@@ -136,7 +137,7 @@ REF_OWNED_LIST(/datum/shuttle_destination, "routes")
 /datum/shuttle_destination/proc/link_destinations(datum/shuttle_destination/other_place, interim_tag, travel_time = 0)
 	// First, check to make sure this doesn't cause a duplicate route.
 	for(var/datum/shuttle_route/R in routes)
-		if(R.start == other_place || R.end == other_place)
+		if(R.start() == other_place || R.end() == other_place)
 			return
 
 	// Now we can connect them.
@@ -153,7 +154,7 @@ REF_OWNED_LIST(/datum/shuttle_destination, "routes")
 // Returns a /datum/shuttle_route connecting this destination to origin, if one exists.
 /datum/shuttle_destination/proc/get_route_to(origin_type)
 	for(var/datum/shuttle_route/R in routes)
-		if(R.start.type == origin_type || R.end.type == origin_type)
+		if(R.start().type == origin_type || R.end().type == origin_type)
 			return R
 	return null
 
@@ -164,24 +165,24 @@ REF_OWNED_LIST(/datum/shuttle_destination, "routes")
 // This is the third and final datum, which coordinates with the shuttle datum to tell it where it is, where it can go, and how long it will take.
 // It is also responsible for instancing all the destinations it has control over, and linking them together.
 /datum/shuttle_web_master
-	var/datum/shuttle/autodock/web_shuttle/my_shuttle = null	// Ref to the shuttle this datum is coordinating with.
-	var/datum/shuttle_destination/current_destination = null	// Where the shuttle currently is.  Bit of a misnomer.
-	var/datum/shuttle_destination/future_destination = null		// Where it will be in the near future.
-	var/datum/shuttle_destination/starting_destination = null	// Where the shuttle will start at, generally at the home base.
+	var/tmp/my_shuttle_handle	// Ref to the shuttle this datum is coordinating with.
+	var/tmp/current_destination_handle	// Where the shuttle currently is.  Bit of a misnomer.
+	var/tmp/future_destination_handle	// Where it will be in the near future.
+	var/starting_destination = null	// Where the shuttle will start at, generally at the home base.
 	// ALLOW(instance_list): d: web shuttle destinations, built at init
 	var/list/destinations = list()								// List of currently instanced destinations.
 	var/destination_class = null								// Type to use in typesof(), to build destinations.
 
-	var/datum/shuttle_autopath/autopath = null					// Datum used to direct an autopilot.
+	var/tmp/autopath_handle	// Datum used to direct an autopilot.
 	var/list/autopaths									// Potential autopaths the autopilot can use. The autopath's start var must equal current_destination to be viable.
 	var/autopath_class = null									// Similar to destination_class, used for typesof().
 
 /datum/shuttle_web_master/New(new_shuttle, new_destination_class = null)
-	my_shuttle = new_shuttle
+	my_shuttle_handle = om_handle(new_shuttle)
 	if(new_destination_class)
 		destination_class = new_destination_class
 	build_destinations()
-	current_destination = get_destination_by_type(starting_destination)
+	current_destination_handle = om_handle(get_destination_by_type(starting_destination))
 	build_autopaths()
 
 REF_OWNED_LIST(/datum/shuttle_web_master, "destinations")
@@ -197,7 +198,7 @@ REF_OWNED_LIST(/datum/shuttle_web_master, "destinations")
 		// A destination whose map landmark didn't resolve (e.g. it lived on a
 		// z-level this map doesn't load) is unreachable — pruning it here keeps
 		// routes, flight computers and autopaths from ever offering a null jump.
-		if(!D.my_landmark)
+		if(!D.my_landmark())
 			log_mapping("Web shuttle destination '[D.name]' ([new_type]) pruned: no landmark on this map.")
 			qdel(D)
 			continue
@@ -213,21 +214,21 @@ REF_OWNED_LIST(/datum/shuttle_web_master, "destinations")
 			D.link_destinations(other, D.preferred_interim_tag, travel_delay)
 
 /datum/shuttle_web_master/proc/on_shuttle_departure()
-	current_destination.exit()
+	current_destination().exit()
 
 /datum/shuttle_web_master/proc/on_shuttle_arrival()
-	if(future_destination)
-		future_destination.enter()
-		current_destination = future_destination
-		future_destination = null
+	if(future_destination())
+		future_destination().enter()
+		current_destination_handle = om_handle(future_destination())
+		future_destination_handle = null
 
 /datum/shuttle_web_master/proc/get_available_routes()
-	if(current_destination)
-		return LAZYCOPY(current_destination.routes)
+	if(current_destination())
+		return LAZYCOPY(current_destination().routes)
 
 /datum/shuttle_web_master/proc/get_current_destination()
 	RETURN_TYPE(/datum/shuttle_destination)
-	return current_destination
+	return current_destination()
 
 /datum/shuttle_web_master/proc/get_destination_by_type(type_to_get)
 	return locate(type_to_get) in destinations
@@ -236,7 +237,7 @@ REF_OWNED_LIST(/datum/shuttle_web_master, "destinations")
 /datum/shuttle_web_master/proc/build_autopaths()
 	autopaths = init_subtypes(autopath_class, autopaths)
 	for(var/datum/shuttle_autopath/P in autopaths)
-		P.master = src
+		P.master_handle = om_handle(src)
 	// Drop autopaths that reference destinations pruned in build_destinations()
 	// (landmark missing on this map) — walking one would dead-end mid-route.
 	for(var/datum/shuttle_autopath/P in autopaths)
@@ -251,62 +252,62 @@ REF_OWNED_LIST(/datum/shuttle_web_master, "destinations")
 			qdel(P)
 
 /datum/shuttle_web_master/proc/choose_path()
-	if(!length(autopaths) || !current_destination)
+	if(!length(autopaths) || !current_destination())
 		return
 	for(var/datum/shuttle_autopath/path in autopaths)
-		if(path.start == current_destination.type)
-			autopath = path
+		if(path.start == current_destination().type)
+			autopath_handle = om_handle(path)
 			break
 
 /datum/shuttle_web_master/proc/path_finished(datum/shuttle_autopath/path)
-	autopath = null
+	autopath_handle = null
 
 /datum/shuttle_web_master/proc/walk_path(target_type)
-	if(!current_destination)
+	if(!current_destination())
 		return FALSE
-	var/datum/shuttle_route/R = current_destination.get_route_to(target_type)
+	var/datum/shuttle_route/R = current_destination().get_route_to(target_type)
 	if(!R)
 		return FALSE
-	future_destination = R.get_other_side(current_destination)
-	if(!future_destination?.my_landmark) // Nowhere to actually land; abort the hop rather than jumping to null.
-		log_shuttle("Web shuttle [my_shuttle] aborted a hop to [target_type]: destination has no landmark.")
-		future_destination = null
+	future_destination_handle = om_handle(R.get_other_side(current_destination()))
+	if(!future_destination()?.my_landmark()) // Nowhere to actually land; abort the hop rather than jumping to null.
+		log_shuttle("Web shuttle [my_shuttle()] aborted a hop to [target_type]: destination has no landmark.")
+		future_destination_handle = null
 		return FALSE
 
-	var/travel_time = R.travel_time * my_shuttle.flight_time_modifier * 2 // Autopilot is less efficent than having someone flying manually.
+	var/travel_time = R.travel_time * my_shuttle().flight_time_modifier * 2 // Autopilot is less efficent than having someone flying manually.
 	// TODO - Leshana - Change this to use proccess stuff of autodock!
 	if(R.interim && R.travel_time > 0)
-		my_shuttle.long_jump(future_destination.my_landmark, R.interim, travel_time / 10)
+		my_shuttle().long_jump(future_destination().my_landmark(), R.interim, travel_time / 10)
 	else
-		my_shuttle.short_jump(future_destination.my_landmark)
+		my_shuttle().short_jump(future_destination().my_landmark())
 	return TRUE // Note this will return before the shuttle actually arrives.
 
 /datum/shuttle_web_master/proc/process_autopath()
-	if(!autopath) // If we don't have a path, get one.
+	if(!autopath()) // If we don't have a path, get one.
 		if(!length(autopaths))
 			// No flyable route exists from anywhere (e.g. every autopath was pruned
 			// because its destinations aren't on this map). Autopiloting is pointless;
 			// switch it off so the shuttle stops announcing takeoffs it can't make.
-			my_shuttle.adjust_autopilot(FALSE)
+			my_shuttle().adjust_autopilot(FALSE)
 			return
 		choose_path()
 
-	if(!autopath) // Still nothing, oh well.
+	if(!autopath()) // Still nothing, oh well.
 		return
 
-	var/datum/shuttle_destination/target = autopath.get_next_node()
+	var/datum/shuttle_destination/target = autopath().get_next_node()
 	if(walk_path(target))
-		autopath.walk_path()
+		autopath().walk_path()
 	else
 		// The hop failed (missing route/landmark). Drop the path so we re-plan
 		// instead of retrying the same broken hop every process tick.
-		autopath.reset_path()
-		autopath = null
+		autopath().reset_path()
+		autopath_handle = null
 
 // Call this to reset everything related to autopiloting.
 /datum/shuttle_web_master/proc/reset_autopath()
-	autopath = null
-	my_shuttle.autopilot = FALSE
+	autopath_handle = null
+	my_shuttle().autopilot = FALSE
 
 /*************
  * Autopaths *
@@ -314,8 +315,8 @@ REF_OWNED_LIST(/datum/shuttle_web_master, "destinations")
 
 // Fourth datum, this one essentially acts as directions for an autopilot to go to the correct places.
 /datum/shuttle_autopath
-	var/datum/shuttle_web_master/master = null
-	var/datum/shuttle_destination/start = null
+	var/tmp/master_handle
+	var/start = null
 	var/list/path_nodes
 	var/index = 1
 
@@ -332,4 +333,40 @@ REF_OWNED_LIST(/datum/shuttle_web_master, "destinations")
 
 /datum/shuttle_autopath/proc/finish_path()
 	reset_path()
-	master.path_finished(src)
+	master().path_finished(src)
+
+/// LC-refs: One of the two sides of this route.  Start just means it was the creator of this route. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/shuttle_route/proc/start() as /datum/shuttle_destination
+	return om_resolve(start_handle)
+
+/// LC-refs: The second side. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/shuttle_route/proc/end() as /datum/shuttle_destination
+	return om_resolve(end_handle)
+
+/// LC-refs: The datum that does the coordination with the actual shuttle datum. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/shuttle_destination/proc/master() as /datum/shuttle_web_master
+	return om_resolve(master_handle)
+
+/// LC-refs: Ref to the shuttle this datum is coordinating with. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/shuttle_web_master/proc/my_shuttle() as /datum/shuttle/autodock/web_shuttle
+	return om_resolve(my_shuttle_handle)
+
+/// LC-refs: Datum used to direct an autopilot. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/shuttle_web_master/proc/autopath() as /datum/shuttle_autopath
+	return om_resolve(autopath_handle)
+
+/// LC-refs: the master this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/shuttle_autopath/proc/master() as /datum/shuttle_web_master
+	return om_resolve(master_handle)
+
+/// LC-refs: Where it will be in the near future. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/shuttle_web_master/proc/future_destination() as /datum/shuttle_destination
+	return om_resolve(future_destination_handle)
+
+/// LC-refs: Where the shuttle currently is.  Bit of a misnomer. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/shuttle_web_master/proc/current_destination() as /datum/shuttle_destination
+	return om_resolve(current_destination_handle)
+
+/// LC-refs: Where the shuttle will move to when it actually arrives. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/shuttle_destination/proc/my_landmark() as /obj/effect/shuttle_landmark
+	return om_resolve(my_landmark_handle)

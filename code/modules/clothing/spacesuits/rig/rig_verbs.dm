@@ -6,12 +6,12 @@
 	set category = "Hardsuit"
 	set src = usr.contents
 
-	if(wearer && (wearer.get_equipped_item(SLOT_ID_BACK) == src || wearer.get_equipped_item(SLOT_ID_BELT) == src))
+	if(wearer() && (wearer().get_equipped_item(SLOT_ID_BACK) == src || wearer().get_equipped_item(SLOT_ID_BELT) == src))
 		tgui_interact(usr)
 
 // So the UI button clicks come here
 /obj/item/rig/ui_action_click(mob/user, actiontype)
-	if(user == wearer && (wearer.get_equipped_item(SLOT_ID_BACK) == src || wearer.get_equipped_item(SLOT_ID_BELT) == src))
+	if(user == wearer() && (wearer().get_equipped_item(SLOT_ID_BACK) == src || wearer().get_equipped_item(SLOT_ID_BELT) == src))
 		tgui_interact(user)
 
 /obj/item/rig/verb/toggle_vision()
@@ -21,7 +21,7 @@
 	set category = "Hardsuit"
 	set src = usr.contents
 
-	if(!istype(wearer) || (wearer.get_equipped_item(SLOT_ID_BACK) != src && wearer.get_equipped_item(SLOT_ID_BELT) != src))
+	if(!istype(wearer(), /mob/living/carbon/human) || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src))
 		to_chat(usr, span_warning("The hardsuit is not being worn."))
 		return
 
@@ -51,14 +51,14 @@
 	set category = "Hardsuit"
 	set src = usr.contents
 
-	if(!istype(wearer) || (wearer.get_equipped_item(SLOT_ID_BACK) != src && wearer.get_equipped_item(SLOT_ID_BELT) != src))
+	if(!istype(wearer(), /mob/living/carbon/human) || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src))
 		to_chat(usr, span_warning("The hardsuit is not being worn."))
 		return
 
 	if(!check_suit_access(usr))
 		return
 
-	toggle_piece("helmet",wearer)
+	toggle_piece("helmet",wearer())
 
 /obj/item/rig/proc/toggle_chest()
 
@@ -70,7 +70,7 @@
 	if(!check_suit_access(usr))
 		return
 
-	toggle_piece("chest",wearer)
+	toggle_piece("chest",wearer())
 
 /obj/item/rig/proc/toggle_gauntlets()
 
@@ -79,14 +79,14 @@
 	set category = "Hardsuit"
 	set src = usr.contents
 
-	if(!istype(wearer) || (wearer.get_equipped_item(SLOT_ID_BACK) != src && wearer.get_equipped_item(SLOT_ID_BELT) != src))
+	if(!istype(wearer(), /mob/living/carbon/human) || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src))
 		to_chat(usr, span_warning("The hardsuit is not being worn."))
 		return
 
 	if(!check_suit_access(usr))
 		return
 
-	toggle_piece("gauntlets",wearer)
+	toggle_piece("gauntlets",wearer())
 
 /obj/item/rig/proc/toggle_boots()
 
@@ -95,14 +95,14 @@
 	set category = "Hardsuit"
 	set src = usr.contents
 
-	if(!istype(wearer) || (wearer.get_equipped_item(SLOT_ID_BACK) != src && wearer.get_equipped_item(SLOT_ID_BELT) != src))
+	if(!istype(wearer(), /mob/living/carbon/human) || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src))
 		to_chat(usr, span_warning("The hardsuit is not being worn."))
 		return
 
 	if(!check_suit_access(usr))
 		return
 
-	toggle_piece("boots",wearer)
+	toggle_piece("boots",wearer())
 
 /obj/item/rig/verb/deploy_suit()
 
@@ -111,7 +111,7 @@
 	set category = "Hardsuit"
 	set src = usr.contents
 
-	if(!istype(wearer) || (wearer.get_equipped_item(SLOT_ID_BACK) != src && wearer.get_equipped_item(SLOT_ID_BELT) != src))
+	if(!istype(wearer(), /mob/living/carbon/human) || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src))
 		to_chat(usr, span_warning("The hardsuit is not being worn."))
 		return
 
@@ -121,7 +121,7 @@
 	if(!check_power_cost(usr))
 		return
 
-	deploy(wearer)
+	deploy(wearer())
 
 /obj/item/rig/verb/toggle_seals_verb()
 
@@ -130,14 +130,14 @@
 	set category = "Hardsuit"
 	set src = usr.contents
 
-	if(!istype(wearer) || (wearer.get_equipped_item(SLOT_ID_BACK) != src && wearer.get_equipped_item(SLOT_ID_BELT) != src))
+	if(!istype(wearer(), /mob/living/carbon/human) || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src))
 		to_chat(usr, span_warning("The hardsuit is not being worn."))
 		return
 
 	if(!check_suit_access(usr))
 		return
 
-	toggle_seals(wearer)
+	toggle_seals(wearer())
 
 /obj/item/rig/verb/switch_vision_mode()
 
@@ -183,7 +183,7 @@
 		to_chat(usr, span_warning("The suit is not active."))
 		return
 
-	if(!istype(wearer) || (wearer.get_equipped_item(SLOT_ID_BACK) != src && wearer.get_equipped_item(SLOT_ID_BELT) != src))
+	if(!istype(wearer(), /mob/living/carbon/human) || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src))
 		to_chat(usr, span_warning("The hardsuit is not being worn."))
 		return
 
@@ -210,7 +210,7 @@
 		to_chat(usr, span_warning("The suit is not active."))
 		return
 
-	if(!istype(wearer) || (wearer.get_equipped_item(SLOT_ID_BACK) != src && wearer.get_equipped_item(SLOT_ID_BELT) != src))
+	if(!istype(wearer(), /mob/living/carbon/human) || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src))
 		to_chat(usr, span_warning("The hardsuit is not being worn."))
 		return
 
@@ -248,7 +248,7 @@
 		to_chat(usr, span_warning("The suit is not active."))
 		return
 
-	if(!istype(wearer) || (wearer.get_equipped_item(SLOT_ID_BACK) != src && wearer.get_equipped_item(SLOT_ID_BELT) != src))
+	if(!istype(wearer(), /mob/living/carbon/human) || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src))
 		to_chat(usr, span_warning("The hardsuit is not being worn."))
 		return
 
@@ -285,7 +285,7 @@
 		to_chat(usr, span_warning("The suit is not active."))
 		return
 
-	if(!istype(wearer) || (wearer.get_equipped_item(SLOT_ID_BACK) != src && wearer.get_equipped_item(SLOT_ID_BELT) != src))
+	if(!istype(wearer(), /mob/living/carbon/human) || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src))
 		to_chat(usr, span_warning("The hardsuit is not being worn."))
 		return
 

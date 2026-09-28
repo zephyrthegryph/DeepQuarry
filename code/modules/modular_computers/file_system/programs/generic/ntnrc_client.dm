@@ -32,7 +32,7 @@
 
 	var/datum/ntnet_conversation/channel = GLOB.ntnet_global.get_chat_channel_by_id(active_channel)
 	var/authed = FALSE
-	if(channel && ((channel.operator == src) || netadmin_mode))
+	if(channel && ((channel.channel_operator() == src) || netadmin_mode))
 		authed = TRUE
 	switch(action)
 		if("PRG_speak")
@@ -74,7 +74,7 @@
 				return
 			var/datum/ntnet_conversation/C = new /datum/ntnet_conversation()
 			C.add_client(src)
-			C.operator = src
+			C.operator_handle = om_handle(src)
 			C.title = channel_title
 			active_channel = C.id
 			return TRUE
@@ -112,14 +112,14 @@
 				logfile.stored_data = "[logfile.stored_data][logstring]\[BR\]"
 			logfile.stored_data = "[logfile.stored_data]\[b\]Logfile dump completed.\[/b\]"
 			logfile.calculate_size()
-			if(!computer || !computer.hard_drive || !computer.hard_drive.store_file(logfile))
-				if(!computer)
+			if(!computer() || !computer().hard_drive || !computer().hard_drive.store_file(logfile))
+				if(!computer())
 					// This program shouldn't even be runnable without computer.
 					CRASH("Var computer is null!")
-				if(!computer.hard_drive)
-					computer.visible_message(span_warning("\The [computer] shows an \"I/O Error - Hard drive connection error\" warning."))
+				if(!computer().hard_drive)
+					computer().visible_message(span_warning("\The [computer()] shows an \"I/O Error - Hard drive connection error\" warning."))
 				else	// In 99.9% cases this will mean our HDD is full
-					computer.visible_message(span_warning("\The [computer] shows an \"I/O Error - Hard drive may be full. Please free some space and try again. Required space: [logfile.size]GQ\" warning."))
+					computer().visible_message(span_warning("\The [computer()] shows an \"I/O Error - Hard drive may be full. Please free some space and try again. Required space: [logfile.size]GQ\" warning."))
 			return TRUE
 		if("PRG_renamechannel")
 			if(!authed)
@@ -216,7 +216,7 @@
 					"msg" = M
 				)))
 			data["messages"] = messages
-			data["is_operator"] = (channel.operator == src) || netadmin_mode
+			data["is_operator"] = (channel.channel_operator() == src) || netadmin_mode
 		else
 			data["clients"] = list()
 			data["messages"] = list()

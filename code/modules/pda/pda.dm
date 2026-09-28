@@ -19,7 +19,7 @@
 
 	//Secondary variables
 	var/model_name = "Thinktronic 5230 Personal Data Assistant"
-	var/datum/data/pda/utility/scanmode/scanmode = null
+	var/tmp/scanmode_handle
 
 	var/lock_code = "" // Lockcode to unlock uplink
 
@@ -38,8 +38,8 @@
 
 	var/spam_proof = FALSE // If true, it can't be spammed by random events.
 
-	var/datum/data/pda/app/current_app = null
-	var/datum/data/pda/app/lastapp = null
+	var/tmp/current_app_handle
+	var/tmp/lastapp_handle
 	var/list/programs = list( // ALLOW(instance_list): d: edited in place per instance (1 writers)
 		new/datum/data/pda/app/main_menu,
 		new/datum/data/pda/app/notekeeper,
@@ -228,7 +228,7 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 
 /obj/item/pda/proc/update_programs()
 	for(var/datum/data/pda/P as anything in programs)
-		P.pda = src
+		P.pda_handle = om_handle(src)
 
 /obj/item/pda/proc/detonate_act(obj/item/pda/P)
 	//TODO: sometimes these attacks show up on the message server
@@ -388,7 +388,7 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 	// mode = 0
 	// scanmode = 0
 	if (cartridge.radio)
-		cartridge.radio.hostpda = null
+		cartridge.radio.hostpda_handle = null
 	to_chat(usr, span_notice("You remove \the [cartridge] from the [name]."))
 	playsound(src, 'sound/machines/id_swipe.ogg', 100, 1)
 	cartridge = null
@@ -433,7 +433,7 @@ DECLARE_INTERACTIONS(/obj/item/pda, \
 		update_shortcuts()
 		to_chat(user, span_notice("You insert [cartridge] into [src]."))
 		if(cartridge.radio)
-			cartridge.radio.hostpda = src
+			cartridge.radio.hostpda_handle = om_handle(src)
 
 	else if(istype(C, /obj/item/card/id))
 		var/obj/item/card/id/idcard = C
@@ -470,13 +470,13 @@ DECLARE_INTERACTIONS(/obj/item/pda, \
 	return INTERACTION_HANDLED_PASS
 
 /obj/item/pda/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(istype(M, /mob/living/carbon) && scanmode)
-		scanmode.scan_mob(M, user)
+	if(istype(M, /mob/living/carbon) && scanmode())
+		scanmode().scan_mob(M, user)
 		return ITEM_INTERACT_SUCCESS
 
 /obj/item/pda/afterattack(atom/A, mob/user, proximity)
-	if(proximity && scanmode)
-		scanmode.scan_atom(A, user)
+	if(proximity && scanmode())
+		scanmode().scan_atom(A, user)
 
 /obj/item/pda/proc/explode() //This needs tuning. //Sure did.
 	if(!src.detonate) return
@@ -548,3 +548,17 @@ REF_OWNED_LIST(/obj/item/pda, "programs")
 
 /obj/item/pda/pilot
 	icon_state = "pda-pilot"		//New sprites, but still no ROM cartridge or anything
+
+REF_HELD(/obj/item/pda, "id")
+
+/// LC-refs: the scanmode this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/pda/proc/scanmode() as /datum/data/pda/utility/scanmode
+	return om_resolve(scanmode_handle)
+
+/// LC-refs: the current_app this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/pda/proc/current_app() as /datum/data/pda/app
+	return om_resolve(current_app_handle)
+
+/// LC-refs: the lastapp this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/pda/proc/lastapp() as /datum/data/pda/app
+	return om_resolve(lastapp_handle)

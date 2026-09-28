@@ -19,7 +19,7 @@ It is used to destroy hand-held objects and advance technological research. Used
 	var/datum/component/remote_materials/rmat
 
 /obj/machinery/rnd/destructive_analyzer/Initialize(mapload)
-	rmat = AddComponent(
+	rmat = AddComponent( \
 		/datum/component/remote_materials, \
 		mapload, \
 		mat_container_flags = MATCONTAINER_NO_INSERT \
@@ -349,3 +349,5 @@ It is used to destroy hand-held objects and advance technological research. Used
 	return TRUE
 
 #undef DESTRUCTIVE_ANALYZER_DESTROY_POINTS
+
+REF_OWNED(/obj/machinery/rnd/destructive_analyzer, "rmat")

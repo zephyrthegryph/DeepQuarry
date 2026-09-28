@@ -2,7 +2,7 @@
 	name = "stored soul"
 	desc = "A soul stored within the predator."
 
-	var/obj/soulgem/gem
+	var/tmp/gem_handle
 
 // Cleaning up the refs during deletion
 // ALLOW(lifecycle): its gem is told the mind unloaded.
@@ -10,11 +10,11 @@
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(eyeobj)
 		QDEL_NULL(eyeobj)
-		gem?.notify_holder("[name] ended SR projection.")
-	if(gem)
-		gem.notify_holder("Mind unloaded: [name]")
-		gem.brainmobs -= src
-		gem = null
+		gem()?.notify_holder("[name] ended SR projection.")
+	if(gem())
+		gem().notify_holder("Mind unloaded: [name]")
+		gem().brainmobs -= src
+		gem_handle = null
 	container = null
 	return ..()
 
@@ -27,7 +27,7 @@
 	if(QDELETED(self))
 		return
 
-	if(!self.parent_mob && !self.transient &&(self.life_tick % 150 == 0) && self.gem.setting_flags & NIF_SC_BACKUPS)
+	if(!self.parent_mob && !self.transient &&(self.life_tick % 150 == 0) && self.gem().setting_flags & NIF_SC_BACKUPS)
 		SStranscore.m_backup(self.mind,0) //Passed 0 means "Don't touch the nif fields on the mind record"
 
 	if(!self.client)
@@ -40,32 +40,32 @@
 	else
 		self.status_set(EFFECT_BLINDED, 0)
 		self.clear_fullscreen("blind")
-		if(!self.gem.flag_check(SOULGEM_SHOW_VORE_SFX))
+		if(!self.gem().flag_check(SOULGEM_SHOW_VORE_SFX))
 			self.client.screen.Add(GLOB.global_hud.whitense)
-	if(self.gem.flag_check(SOULGEM_SHOW_VORE_SFX))
+	if(self.gem().flag_check(SOULGEM_SHOW_VORE_SFX))
 		self.client.screen.Remove(GLOB.global_hud.whitense)
 
 // Say proc for captures souls
 /mob/living/carbon/brain/caught_soul/vore/say(message, datum/language/speaking = null, whispering = 0)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(has_status(EFFECT_MUTED)) return FALSE
-	gem.use_speech(message, src, eyeobj)
+	gem().use_speech(message, src, eyeobj)
 
 // Emote proc for captured souls
 /mob/living/carbon/brain/caught_soul/vore/custom_emote(m_type, message)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(has_status(EFFECT_MUTED)) return FALSE
-	gem.use_emote(message,src,eyeobj)
+	gem().use_emote(message,src,eyeobj)
 
 /mob/living/carbon/brain/caught_soul/vore/me_verb_subtle(message as message)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(has_status(EFFECT_MUTED)) return FALSE
-	gem.use_emote(message,src,eyeobj,TRUE)
+	gem().use_emote(message,src,eyeobj,TRUE)
 
 /mob/living/carbon/brain/caught_soul/vore/whisper(message as text)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(has_status(EFFECT_MUTED)) return FALSE
-	gem.use_speech(message,src,eyeobj,TRUE)
+	gem().use_speech(message,src,eyeobj,TRUE)
 
 // Resist override, only returning a message that one is stuck for now
 /mob/living/carbon/brain/caught_soul/vore/resist()
@@ -171,16 +171,16 @@
 		to_chat(src, span_warning("You're already projecting in SR!"))
 		return
 
-	if(!(gem.setting_flags & NIF_SC_PROJECTING))
+	if(!(gem().setting_flags & NIF_SC_PROJECTING))
 		to_chat(src, span_warning("Projecting from this soulcatcher has been disabled!"))
 		return
 
 	if(!client || !client.prefs)
 		return //Um...
 
-	new /mob/observer/eye/ar_soul/vore(src, gem.owner) // takes itself as our eye
-	gem.notify_holder("[src] now SR projecting.")
-	gem.clear_vore_fx(src)
+	new /mob/observer/eye/ar_soul/vore(src, gem().owner()) // takes itself as our eye
+	gem().notify_holder("[src] now SR projecting.")
+	gem().clear_vore_fx(src)
 
 // Jump to the owner as SR projection
 /mob/living/carbon/brain/caught_soul/vore/jump_to_owner()
@@ -193,7 +193,7 @@
 		to_chat(src, span_warning("You're not projecting into SR!"))
 		return
 
-	eyeobj.forceMove(get_turf(gem))
+	eyeobj.forceMove(get_turf(gem()))
 
 // End SR projecting and return to the soulcatcher containing the soul
 /mob/living/carbon/brain/caught_soul/vore/reenter_soulcatcher()
@@ -207,8 +207,8 @@
 		return
 
 	QDEL_NULL(eyeobj)
-	gem.notify_holder("[src] ended SR projection.")
-	gem.show_vore_fx(src)
+	gem().notify_holder("[src] ended SR projection.")
+	gem().show_vore_fx(src)
 
 /mob/living/carbon/brain/caught_soul/vore/nsay_brain()
 	set name = "NSay"
@@ -219,7 +219,7 @@
 	if(isnull(message))
 		return
 	if(message)
-		gem.use_speech(message, src)
+		gem().use_speech(message, src)
 
 /mob/living/carbon/brain/caught_soul/vore/nme_brain()
 	set name = "NMe"
@@ -230,7 +230,7 @@
 	if(isnull(message))
 		return
 	if(message)
-		gem.use_emote(message, src)
+		gem().use_emote(message, src)
 
 // Allows the captured owner to transfer themselves to valid nearby objects
 /mob/living/carbon/brain/caught_soul/vore/proc/transfer_self()
@@ -242,11 +242,11 @@
 	if(eyeobj)
 		to_chat(src, span_warning("You can't do that while SR projecting!"))
 		return
-	if(gem.own_mind != mind)
+	if(gem().own_mind() != mind)
 		to_chat(src, span_warning("You aren't in your own soulcatcher!"))
 		return
 
-	var/list/valid_objects = gem.find_transfer_objects()
+	var/list/valid_objects = gem().find_transfer_objects()
 	if(!valid_objects || !valid_objects.len)
 		return
 
@@ -254,7 +254,7 @@
 	if(isnull(target))
 		return
 
-	gem.transfer_mob_selector(src, target)
+	gem().transfer_mob_selector(src, target)
 
 // Allows the owner to reenter the body after being caught or having given away control
 /mob/living/carbon/brain/caught_soul/vore/proc/reenter_body()
@@ -266,4 +266,8 @@
 	if(eyeobj)
 		to_chat(src, span_warning("You can't do that while SR projecting!"))
 		return
-	gem.return_to_body(mind)
+	gem().return_to_body(mind)
+
+/// LC-refs: the gem this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/mob/living/carbon/brain/caught_soul/vore/proc/gem() as /obj/soulgem
+	return om_resolve(gem_handle)

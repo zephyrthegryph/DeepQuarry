@@ -18,7 +18,7 @@
 
 	var/scrubbing = FALSE //Floor cleaning enabled
 	var/amount_per_transfer_from_this = 5 //shit I dunno, adding this so syringes stop runtime erroring. --NeoFite
-	var/obj/item/storage/bag/trash/mybag	= null
+	var/tmp/mybag_handle
 	var/callme = "janitor cart" //how do people refer to it?
 
 	key_type = /obj/item/key/janicart
@@ -62,15 +62,15 @@
 		to_chat(user, span_notice("You hook the trashbag onto the [callme]."))
 		user.drop_item()
 		W.forceMove(src)
-		mybag = W
+		mybag_handle = om_handle(W)
 		return
 	. = ..()
 
 /obj/vehicle/train/engine/janicart/attack_hand(mob/user)
-	if(mybag)
-		mybag.forceMove(get_turf(user))
-		user.put_in_hands(mybag)
-		mybag = null
+	if(mybag())
+		mybag().forceMove(get_turf(user))
+		user.put_in_hands(mybag())
+		mybag_handle = null
 		return
 	. = ..()
 
@@ -81,8 +81,8 @@
 	. = ..()
 	if(Adjacent(user))
 		. += "This [callme] contains [reagents.total_volume] unit\s of water!"
-		if(mybag)
-			. += "\A [mybag] is hanging on the [callme]."
+		if(mybag())
+			. += "\A [mybag()] is hanging on the [callme]."
 
 /obj/vehicle/train/engine/janicart/verb/toggle_brush()
 	set name = "Toggle brushes"
@@ -129,3 +129,7 @@
 			if(ishuman(load))
 				var/mob/living/carbon/human/D = load
 				to_chat(D, span_notice("The [callme]'s brushes turn off, as it runs out of cleaner."))
+
+/// LC-refs: the mybag this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/vehicle/train/engine/janicart/proc/mybag() as /obj/item/storage/bag/trash
+	return om_resolve(mybag_handle)

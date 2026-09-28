@@ -14,8 +14,8 @@
 	var/train_length = 0
 	var/latch_on_start = 1
 
-	var/obj/vehicle/train/lead
-	var/obj/vehicle/train/tow
+	var/tmp/lead_handle
+	var/tmp/tow_handle
 
 	var/open_top = TRUE
 
@@ -31,9 +31,9 @@
 /obj/vehicle/train/Move(atom/newloc, direct = 0, movetime)
 	var/old_loc = get_turf(src)
 	if((. = ..()))
-		if(tow)
-			tow.Move(old_loc)
-	else if(lead)
+		if(tow())
+			tow().Move(old_loc)
+	else if(lead())
 		unattach()
 
 /obj/vehicle/train/Bump(atom/Obstacle)
@@ -77,8 +77,8 @@
 // Vehicle procs
 //-------------------------------------------
 /obj/vehicle/train/explode()
-	if (tow)
-		tow.unattach()
+	if (tow())
+		tow().unattach()
 	unattach()
 	..()
 
@@ -152,12 +152,12 @@
 			to_chat(user, span_red("[src] is too far away from [T] to hitch them together."))
 		return
 
-	if (lead)
+	if (lead())
 		if(user)
 			to_chat(user, span_red("[src] is already hitched to something."))
 		return
 
-	if (T.tow)
+	if (T.tow())
 		if(user)
 			to_chat(user, span_red("[T] is already towing something."))
 		return
@@ -169,12 +169,12 @@
 			if(user)
 				to_chat(user, span_red("That seems very silly."))
 			return
-		next_car = next_car.lead
+		next_car = next_car.lead()
 
 	//latch with src as the follower
-	lead = T
-	T.tow = src
-	set_dir(lead.dir)
+	lead_handle = om_handle(T)
+	T.tow_handle = om_handle(src)
+	set_dir(lead().dir)
 
 	if(user)
 		to_chat(user, span_blue("You hitch [src] to [T]."))
@@ -184,15 +184,15 @@
 
 //detaches the train from whatever is towing it
 /obj/vehicle/train/proc/unattach(mob/user)
-	if (!lead)
+	if (!lead())
 		to_chat(user, span_red("[src] is not hitched to anything."))
 		return
 
-	lead.tow = null
-	lead.update_stats()
+	lead().tow_handle = null
+	lead().update_stats()
 
-	to_chat(user, span_blue("You unhitch [src] from [lead]."))
-	lead = null
+	to_chat(user, span_blue("You unhitch [src] from [lead()]."))
+	lead_handle = null
 
 	update_stats()
 
@@ -209,7 +209,7 @@
 
 //returns 1 if this is the lead car of the train
 /obj/vehicle/train/proc/is_train_head()
-	if (lead)
+	if (lead())
 		return 0
 	return 1
 
@@ -223,16 +223,16 @@
 /obj/vehicle/train/update_stats()
 	//first, seek to the end of the train
 	var/obj/vehicle/train/T = src
-	while(T.tow)
+	while(T.tow())
 		//check for cyclic train.
-		if (T.tow == src)
-			lead.tow = null
-			lead.update_stats()
+		if (T.tow() == src)
+			lead().tow_handle = null
+			lead().update_stats()
 
-			lead = null
+			lead_handle = null
 			update_stats()
 			return
-		T = T.tow
+		T = T.tow()
 
 	//now walk back to the front.
 	var/active_engines = 0
@@ -242,7 +242,15 @@
 		if (T.powered && T.on)
 			active_engines++
 		T.update_car(train_length, active_engines)
-		T = T.lead
+		T = T.lead()
 
 /obj/vehicle/train/proc/update_car(train_length, active_engines)
 	return
+
+/// LC-refs: the tow this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/vehicle/train/proc/tow() as /obj/vehicle/train
+	return om_resolve(tow_handle)
+
+/// LC-refs: the lead this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/vehicle/train/proc/lead() as /obj/vehicle/train
+	return om_resolve(lead_handle)

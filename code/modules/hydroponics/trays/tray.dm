@@ -212,7 +212,7 @@
 	update_icon()
 	return INITIALIZE_HINT_LATELOAD
 
-REF_OWNED(/obj/machinery/portable_atmospherics/hydroponics, "temp_chem_holder")
+REF_OWNED(/obj/machinery/portable_atmospherics/hydroponics, list("temp_chem_holder", "ov_lowhealth", "ov_lowwater", "ov_lownutri", "ov_harvest", "ov_frozen", "ov_alert3"))
 
 /obj/machinery/portable_atmospherics/hydroponics/on_reagent_change()
 	MACHINE_WAKE(src)
@@ -235,7 +235,7 @@ REF_OWNED(/obj/machinery/portable_atmospherics/hydroponics, "temp_chem_holder")
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/plant_seeds(obj/item/seeds/S)
 	lastproduce = 0
-	seed = S.seed //Grab the seed datum.
+	seed = S.seed() //Grab the seed datum.
 	dead = 0
 	age = 1
 	//Snowflakey, maybe move this to the seed datum
@@ -266,7 +266,7 @@ REF_OWNED(/obj/machinery/portable_atmospherics/hydroponics, "temp_chem_holder")
 			if(istype(Proj, /obj/item/projectile/energy/floramut/gene))
 				var/obj/item/projectile/energy/floramut/gene/G = Proj
 				if(seed)
-					seed = seed.diverge_mutate_gene(G.gene, get_turf(loc))	//get_turf just in case it's not in a turf.
+					seed = seed.diverge_mutate_gene(G.gene(), get_turf(loc))	//get_turf just in case it's not in a turf.
 			else
 				mutate(1)
 				return
@@ -583,12 +583,12 @@ REF_OWNED(/obj/machinery/portable_atmospherics/hydroponics, "temp_chem_holder")
 			var/obj/item/seeds/S = O
 			user.remove_from_mob(O)
 
-			if(!S.seed)
+			if(!S.seed())
 				to_chat(user, span_filter_notice("The packet seems to be empty. You throw it away."))
 				consume(O, user)
 				return TRUE
 
-			to_chat(user, span_filter_notice("You plant the [S.seed.seed_name] [S.seed.seed_noun]."))
+			to_chat(user, span_filter_notice("You plant the [S.seed().seed_name] [S.seed().seed_noun]."))
 			plant_seeds(S)
 
 		else

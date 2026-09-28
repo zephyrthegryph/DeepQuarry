@@ -90,7 +90,7 @@ GLOBAL_LIST_EMPTY_TYPED(gear_datums, /datum/gear)
 
 	// Ckey allowlist (legacy hand-curated gear)
 	if(ckeywhitelist && length(ckeywhitelist))
-		if(!prefs.client || !(prefs.client.ckey in ckeywhitelist))
+		if(!prefs.client() || !(prefs.client().ckey in ckeywhitelist))
 			return FALSE
 
 	// Taur-half check for known taur-locked items. We can't put this on /datum/gear as

@@ -17,8 +17,8 @@
 		icon_state = "mousetraparmed"
 	else
 		icon_state = "mousetrap"
-	if(holder)
-		holder.update_icon()
+	if(holder())
+		holder().update_icon()
 
 /obj/item/assembly/mousetrap/proc/triggered(mob/target, type = "feet")
 	if(!armed)

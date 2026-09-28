@@ -23,7 +23,7 @@
 	if(!check_functionality())
 		return 0
 
-	var/obj/item/paper/P = new/obj/item/paper(get_turf(holder2))
+	var/obj/item/paper/P = new/obj/item/paper(get_turf(holder2()))
 
 	// Damaged printer causes the resulting paper to be somewhat harder to read.
 	if(get_integrity_damage() > damage_malfunction)

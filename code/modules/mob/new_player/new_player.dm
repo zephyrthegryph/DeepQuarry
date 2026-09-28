@@ -63,7 +63,7 @@ REF_OWNED(/mob/new_player, list("manifest_dialog", "late_choices_dialog", "priva
 	if(!ready && href_list["preference"])
 		client.prefs.process_link(src, href_list)
 	if(href_list["open_station_news"])
-		show_latest_news(GLOB.news_data.station_newspaper)
+		show_latest_news(GLOB.news_data.station_newspaper())
 
 /mob/new_player/proc/handle_server_news()
 	if(!client)

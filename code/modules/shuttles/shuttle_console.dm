@@ -45,7 +45,7 @@
 	var/shuttle_status
 	switch(shuttle.process_state)
 		if(IDLE_STATE)
-			var/cannot_depart = shuttle.current_location.cannot_depart(shuttle)
+			var/cannot_depart = shuttle.current_location().cannot_depart(shuttle)
 			if (shuttle.in_use)
 				shuttle_status = "Busy."
 			else if(cannot_depart)
@@ -76,16 +76,16 @@
 // This is a subset of the actual checks; contains those that give messages to the user.
 // This enables us to give nice error messages as well as not even bother proceeding if we can't.
 /obj/machinery/computer/shuttle_control/proc/can_move(datum/shuttle/autodock/shuttle, user)
-	var/cannot_depart = shuttle.current_location.cannot_depart(shuttle)
+	var/cannot_depart = shuttle.current_location().cannot_depart(shuttle)
 	if(cannot_depart)
 		to_chat(user, span_warning("[cannot_depart]"))
 		if(shuttle.debug_logging)
-			log_shuttle("Shuttle [shuttle] cannot depart [shuttle.current_location] because: [cannot_depart].")
+			log_shuttle("Shuttle [shuttle] cannot depart [shuttle.current_location()] because: [cannot_depart].")
 		return FALSE
-	if(!shuttle.next_location.is_valid(shuttle))
+	if(!shuttle.next_location().is_valid(shuttle))
 		to_chat(user, span_warning("Destination zone is invalid or obstructed."))
 		if(shuttle.debug_logging)
-			log_shuttle("Shuttle [shuttle] destination [shuttle.next_location] is invalid.")
+			log_shuttle("Shuttle [shuttle] destination [shuttle.next_location()] is invalid.")
 		return FALSE
 	return TRUE
 

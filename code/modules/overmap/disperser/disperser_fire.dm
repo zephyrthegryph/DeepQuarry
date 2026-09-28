@@ -2,7 +2,7 @@
 	log_and_message_admins("attempted to launch a disperser beam.")
 	if(!link_parts())
 		return FALSE //no disperser, no service
-	if(!front.powered() || !middle.powered() || !back.powered())
+	if(!front().powered() || !middle().powered() || !back().powered())
 		return FALSE //no power, no boom boom
 	var/chargetype = get_charge_type()
 	if(chargetype <= 0)
@@ -10,11 +10,11 @@
 
 	var/atom/movable/atomcharge = get_charge()
 
-	var/turf/start = front
-	var/direction = front.dir
+	var/turf/start = front()
+	var/direction = front().dir
 
 	var/distance = 0
-	for(var/turf/T in getline(get_step(front,front.dir), get_target_turf(start, direction)))
+	for(var/turf/T in getline(get_step(front(),front().dir), get_target_turf(start, direction)))
 		distance++
 		if(T.density)
 			if(distance < 7)
@@ -39,8 +39,8 @@
 		if(!isdeaf(M))
 			M << sound('sound/effects/explosionfar.ogg', volume=10)
 
-	if(front) //Meanwhile front might have exploded
-		front.layer = ABOVE_JUNK_LAYER //So the beam goes below us. Looks a lot better
+	if(front()) //Meanwhile front might have exploded
+		front().layer = ABOVE_JUNK_LAYER //So the beam goes below us. Looks a lot better
 	playsound(start, 'sound/machines/disperser_fire.ogg', 100, 1)
 	handle_beam(start, direction)
 	handle_overbeam()
@@ -48,7 +48,7 @@
 
 	//Some moron disregarded the cooldown warning. Let's blow in their face.
 	if(prob(cool_failchance()))
-		explosion(middle,rand(1,2),rand(2,3),rand(3,4))
+		explosion(middle(),rand(1,2),rand(2,3),rand(3,4))
 	next_shot = coolinterval + world.time
 
 	//Success, but we missed.
@@ -59,7 +59,7 @@
 
 	var/list/candidates = list()
 
-	for(var/obj/effect/overmap/event/O in get_step(linked, overmapdir))
+	for(var/obj/effect/overmap/event/O in get_step(linked(), overmapdir))
 		candidates += O
 
 	//Way to waste a charge
@@ -80,11 +80,11 @@
 
 /obj/machinery/computer/ship/disperser/proc/handle_beam(turf/start, direction)
 	start.Beam(get_target_turf(start, direction), "bsa_beam", time = 50, maxdistance = world.maxx)
-	if(front)
-		front.layer = initial(front.layer)
+	if(front())
+		front().layer = initial(front().layer)
 
 /obj/machinery/computer/ship/disperser/proc/handle_overbeam()
-	linked.Beam(get_step(linked, overmapdir), "bsa_beam", time = 150, maxdistance = world.maxx)
+	linked().Beam(get_step(linked(), overmapdir), "bsa_beam", time = 150, maxdistance = world.maxx)
 
 /obj/machinery/computer/ship/disperser/proc/get_target_turf(turf/start, direction)
 	switch(direction)

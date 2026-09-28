@@ -24,14 +24,14 @@ log transactions
 	idle_power_usage = 10
 	circuit =  /obj/item/circuitboard/atm
 	flags = WALL_ITEM
-	var/datum/money_account/authenticated_account
+	var/tmp/authenticated_account_handle
 	var/number_incorrect_tries = 0
 	var/previous_account_number = 0
 	var/max_pin_attempts = 3
 	var/ticks_left_locked_down = 0
 	var/ticks_left_timeout = 0
 	var/machine_id = ""
-	var/obj/item/card/held_card
+	var/tmp/held_card_handle
 	var/editing_security_level = 0
 	var/view_screen = NO_SCREEN
 	var/datum/effect/effect/system/spark_spread/spark_system
@@ -52,7 +52,7 @@ REF_OWNED(/obj/machinery/atm, "spark_system")
 	if(ticks_left_timeout > 0)
 		ticks_left_timeout--
 		if(ticks_left_timeout <= 0)
-			authenticated_account = null
+			authenticated_account_handle = null
 	if(ticks_left_locked_down > 0)
 		ticks_left_locked_down--
 		if(ticks_left_locked_down <= 0)
@@ -115,12 +115,12 @@ REF_OWNED(/obj/machinery/atm, "spark_system")
 		return TRUE
 
 	var/obj/item/card/id/idcard = held
-	if(!held_card)
+	if(!held_card())
 		user.drop_item()
 		idcard.forceMove(src)
-		held_card = idcard
-		if(authenticated_account && held_card.associated_account_number != authenticated_account.account_number)
-			authenticated_account = null
+		held_card_handle = om_handle(idcard)
+		if(authenticated_account() && held_card().associated_account_number != authenticated_account().account_number)
+			authenticated_account_handle = null
 	return TRUE
 
 /// The old attackby's spacecash branch: deposit cash into the authenticated account.
@@ -132,11 +132,11 @@ REF_OWNED(/obj/machinery/atm, "spark_system")
 	effect = /obj/machinery/atm/proc/interaction_atm_deposit_cash
 
 /obj/machinery/atm/proc/has_authenticated_account(mob/actor, atom/target, obj/item/held)
-	return !!authenticated_account
+	return !!authenticated_account()
 
 /obj/machinery/atm/proc/interaction_atm_deposit_cash(mob/user, obj/item/spacecash/held, datum/interaction/interaction)
 	// Convert physical cash into an audited account deposit.
-	authenticated_account.credit(held.worth, user.real_name, "Cash deposit", machine_id)
+	authenticated_account().credit(held.worth, user.real_name, "Cash deposit", machine_id)
 	if(prob(50))
 		playsound(src, 'sound/items/polaroid1.ogg', 50, 1)
 	else
@@ -173,20 +173,20 @@ REF_OWNED(/obj/machinery/atm, "spark_system")
 	if(emagged > 0)
 		return data
 
-	data["held_card"] = held_card
+	data["held_card"] = held_card()
 	data["locked_down"] = ticks_left_locked_down
 	if(ticks_left_locked_down > 0)
 		return data
 
 	data["authenticated_account"] = null
 	data["suspended"] = FALSE
-	if(authenticated_account)
-		if(authenticated_account.suspended)
+	if(authenticated_account())
+		if(authenticated_account().suspended)
 			data["suspended"] = TRUE
 			return data
 
 		var/list/transactions = list()
-		for(var/datum/transaction/T as anything in authenticated_account.transaction_log)
+		for(var/datum/transaction/T as anything in authenticated_account().transaction_log)
 			UNTYPED_LIST_ADD(transactions, list(
 				"date" = T.date,
 				"time" = T.time,
@@ -197,9 +197,9 @@ REF_OWNED(/obj/machinery/atm, "spark_system")
 			))
 
 		data["authenticated_account"] = list(
-			"owner_name" = authenticated_account.owner_name,
-			"money" = authenticated_account.money,
-			"security_level" = authenticated_account.security_level,
+			"owner_name" = authenticated_account().owner_name,
+			"money" = authenticated_account().money,
+			"security_level" = authenticated_account().security_level,
 			"transactions" = transactions,
 		)
 
@@ -213,7 +213,7 @@ REF_OWNED(/obj/machinery/atm, "spark_system")
 	switch(action)
 		// This is also a logout
 		if("insert_card")
-			if(held_card)
+			if(held_card())
 				release_held_id(ui.user)
 			else
 				if(emagged > 0)
@@ -222,26 +222,26 @@ REF_OWNED(/obj/machinery/atm, "spark_system")
 					var/obj/item/I = ui.user.get_active_hand()
 					if(istype(I, /obj/item/card/id))
 						ui.user.drop_item(src)
-						held_card = I
+						held_card_handle = om_handle(I)
 			. = TRUE
 
 		if("logout")
-			if(held_card)
+			if(held_card())
 				release_held_id(ui.user)
-			authenticated_account = null
+			authenticated_account_handle = null
 			. = TRUE
 
 		// Balance statement
 		if("balance_statement")
-			if(!authenticated_account)
+			if(!authenticated_account())
 				return
 
 			var/obj/item/paper/R = new(loc)
-			R.name = "Account balance: [authenticated_account.owner_name]"
+			R.name = "Account balance: [authenticated_account().owner_name]"
 			R.info = span_bold("NT Automated Teller Account Statement") + "<br><br>"
-			R.info += span_italics("Account holder:") + " [authenticated_account.owner_name]<br>"
-			R.info += span_italics("Account number:") + " [authenticated_account.account_number]<br>"
-			R.info += span_italics("Balance:") + " $[authenticated_account.money]<br>"
+			R.info += span_italics("Account holder:") + " [authenticated_account().owner_name]<br>"
+			R.info += span_italics("Account number:") + " [authenticated_account().account_number]<br>"
+			R.info += span_italics("Balance:") + " $[authenticated_account().money]<br>"
 			R.info += span_italics("Date and time:") + " [stationtime2text()], [GLOB.current_date_string]<br><br>"
 			R.info += span_italics("Service terminal ID:") + " [machine_id]<br>"
 
@@ -262,14 +262,14 @@ REF_OWNED(/obj/machinery/atm, "spark_system")
 
 		// Transaction logs
 		if("print_transaction")
-			if(!authenticated_account)
+			if(!authenticated_account())
 				return
 
 			var/obj/item/paper/R = new(loc)
-			R.name = "Transaction logs: [authenticated_account.owner_name]"
+			R.name = "Transaction logs: [authenticated_account().owner_name]"
 			R.info = span_bold("Transaction logs") + "<br>"
-			R.info += span_italics("Account holder:") + " [authenticated_account.owner_name]<br>"
-			R.info += span_italics("Account number:") + " [authenticated_account.account_number]<br>"
+			R.info += span_italics("Account holder:") + " [authenticated_account().owner_name]<br>"
+			R.info += span_italics("Account number:") + " [authenticated_account().account_number]<br>"
 			R.info += span_italics("Date and time:") + " [stationtime2text()], [GLOB.current_date_string]<br><br>"
 			R.info += span_italics("Service terminal ID:") + " [machine_id]<br>"
 			R.info += "<table border=1 style='width:100%'>"
@@ -281,7 +281,7 @@ REF_OWNED(/obj/machinery/atm, "spark_system")
 			R.info += "<td>" + span_bold("Value") + "</td>"
 			R.info += "<td>" + span_bold("Source terminal ID") + "</td>"
 			R.info += "</tr>"
-			for(var/datum/transaction/T in authenticated_account.transaction_log)
+			for(var/datum/transaction/T in authenticated_account().transaction_log)
 				R.info += "<tr>"
 				R.info += "<td>[T.date]</td>"
 				R.info += "<td>[T.time]</td>"
@@ -308,7 +308,7 @@ REF_OWNED(/obj/machinery/atm, "spark_system")
 			. = TRUE
 
 		if("change_security_level")
-			if(authenticated_account)
+			if(authenticated_account())
 				var/new_sec_level = clamp(text2num(params["new_security_level"]), 0, 2)
 				if(!isnum(new_sec_level))
 					return
@@ -316,35 +316,35 @@ REF_OWNED(/obj/machinery/atm, "spark_system")
 				// be re-authorised: either the matching card is physically inserted, or
 				// the account PIN is re-entered and validated. Raising the level is always
 				// allowed for the already-authenticated holder.
-				if(new_sec_level < authenticated_account.security_level)
-					var/card_present = held_card && held_card.associated_account_number == authenticated_account.account_number
+				if(new_sec_level < authenticated_account().security_level)
+					var/card_present = held_card() && held_card().associated_account_number == authenticated_account().account_number
 					if(!card_present)
 						var/tried_pin = act_prompt(ui.user, action, params, ui, "k325", list("kind" = "number", "message" = "Re-enter your account PIN to lower the security level", "title" = "Confirm PIN"))
 						if(isnull(tried_pin))
 							return
 						// Re-validate auth/state after the sleeping input.
-						if(!authenticated_account || QDELETED(src))
+						if(!authenticated_account() || QDELETED(src))
 							return
-						var/datum/money_account/reauth = attempt_account_access(authenticated_account.account_number, tried_pin, 1)
-						if(reauth != authenticated_account)
+						var/datum/money_account/reauth = attempt_account_access(authenticated_account().account_number, tried_pin, 1)
+						if(reauth != authenticated_account())
 							to_chat(ui.user, "[icon2html(src, ui.user.client)]" + span_warning("Incorrect PIN; security level unchanged."))
 							return
-				authenticated_account.security_level = new_sec_level
+				authenticated_account().security_level = new_sec_level
 			. = TRUE
 
 		if("attempt_auth")
 			if(ticks_left_locked_down)
 				return
-			var/tried_account_num = held_card ? held_card.associated_account_number : text2num(params["account_num"])
+			var/tried_account_num = held_card() ? held_card().associated_account_number : text2num(params["account_num"])
 			var/tried_pin = text2num(params["account_pin"])
 
 			// check if they have low security enabled
 			if(!tried_account_num)
 				scan_user(ui.user)
 			else
-				authenticated_account = attempt_account_access(tried_account_num, tried_pin, held_card && held_card.associated_account_number == tried_account_num ? 2 : 1)
+				authenticated_account_handle = om_handle(attempt_account_access(tried_account_num, tried_pin, held_card() && held_card().associated_account_number == tried_account_num ? 2 : 1))
 
-			if(!authenticated_account)
+			if(!authenticated_account())
 				number_incorrect_tries++
 				if(previous_account_number == tried_account_num)
 					if(number_incorrect_tries > max_pin_attempts)
@@ -376,30 +376,30 @@ REF_OWNED(/obj/machinery/atm, "spark_system")
 
 				//create a transaction log entry
 				var/datum/transaction/T = new()
-				T.target_name = authenticated_account.owner_name
+				T.target_name = authenticated_account().owner_name
 				T.purpose = "Remote terminal access"
 				T.source_terminal = machine_id
 				T.date = GLOB.current_date_string
 				T.time = stationtime2text()
-				LAZYADD(authenticated_account.transaction_log, T)
+				LAZYADD(authenticated_account().transaction_log, T)
 
-				to_chat(ui.user, span_notice("[icon2html(src, ui.user.client)] Access granted. Welcome user '[authenticated_account.owner_name].'"))
+				to_chat(ui.user, span_notice("[icon2html(src, ui.user.client)] Access granted. Welcome user '[authenticated_account().owner_name].'"))
 
 			previous_account_number = tried_account_num
 			. = TRUE
 
 		if("transfer")
-			if(!authenticated_account)
+			if(!authenticated_account())
 				return
 			var/transfer_amount = text2num(params["funds_amount"])
 			transfer_amount = round(transfer_amount, 0.01)
 			if(transfer_amount <= 0)
 				tgui_alert_async(ui.user, "That is not a valid amount.")
-			else if(transfer_amount <= authenticated_account.money)
+			else if(transfer_amount <= authenticated_account().money)
 				var/target_account_number = text2num(params["target_acc_number"])
 				var/transfer_purpose = params["purpose"]
 				var/datum/money_account/target_account = get_account(target_account_number)
-				if(transfer_account_funds(authenticated_account, target_account, transfer_amount, transfer_purpose, machine_id))
+				if(transfer_account_funds(authenticated_account(), target_account, transfer_amount, transfer_purpose, machine_id))
 					to_chat(ui.user, "[icon2html(src, ui.user.client)]" + span_info("Funds transfer successful."))
 				else
 					to_chat(ui.user, "[icon2html(src, ui.user.client)]" + span_warning("Funds transfer failed."))
@@ -415,10 +415,10 @@ REF_OWNED(/obj/machinery/atm, "spark_system")
 				tgui_alert_async(ui.user, "That is not a valid amount.")
 				return
 
-			if(!authenticated_account)
+			if(!authenticated_account())
 				return
 
-			if(authenticated_account.debit(amount, authenticated_account.owner_name, "E-wallet withdrawal", machine_id))
+			if(authenticated_account().debit(amount, authenticated_account().owner_name, "E-wallet withdrawal", machine_id))
 				playsound(src, 'sound/machines/chime.ogg', 50, 1)
 				spawn_ewallet(amount,src.loc,ui.user)
 			else
@@ -432,10 +432,10 @@ REF_OWNED(/obj/machinery/atm, "spark_system")
 				tgui_alert_async(ui.user, "That is not a valid amount.")
 				return
 
-			if(!authenticated_account)
+			if(!authenticated_account())
 				return
 
-			if(authenticated_account.debit(amount, authenticated_account.owner_name, "Cash withdrawal", machine_id))
+			if(authenticated_account().debit(amount, authenticated_account().owner_name, "Cash withdrawal", machine_id))
 				playsound(src, 'sound/machines/chime.ogg', 50, 1)
 				spawn_money(amount,src.loc,ui.user)
 			else
@@ -463,7 +463,7 @@ REF_OWNED(/obj/machinery/atm, "spark_system")
 
 //stolen wholesale and then edited a bit from newscasters, which are awesome and by Agouri
 /obj/machinery/atm/proc/scan_user(mob/living/carbon/human/human_user as mob)
-	if(!authenticated_account)
+	if(!authenticated_account())
 		if(human_user.get_equipped_item(SLOT_ID_ID))
 			var/obj/item/card/id/I
 			if(istype(human_user.get_equipped_item(SLOT_ID_ID), /obj/item/card/id) )
@@ -472,28 +472,36 @@ REF_OWNED(/obj/machinery/atm, "spark_system")
 				var/obj/item/pda/P = human_user.get_equipped_item(SLOT_ID_ID)
 				I = P.id
 			if(I)
-				authenticated_account = attempt_account_access(I.associated_account_number)
+				authenticated_account_handle = om_handle(attempt_account_access(I.associated_account_number))
 
 // put the currently held id on the ground or in the hand of the user
 /obj/machinery/atm/proc/release_held_id(mob/living/carbon/human/human_user as mob)
-	if(!held_card)
+	if(!held_card())
 		return
 
-	held_card.forceMove(src.loc)
-	authenticated_account = null
+	held_card().forceMove(src.loc)
+	authenticated_account_handle = null
 
 	if(ishuman(human_user) && !human_user.get_active_hand())
-		human_user.put_in_hands(held_card)
-	held_card = null
+		human_user.put_in_hands(held_card())
+	held_card_handle = null
 
 /obj/machinery/atm/proc/spawn_ewallet(sum, loc, mob/living/carbon/human/human_user as mob)
 	var/obj/item/spacecash/ewallet/E = new /obj/item/spacecash/ewallet(loc)
 	if(ishuman(human_user) && !human_user.get_active_hand())
 		human_user.put_in_hands(E)
 	E.worth = sum
-	E.owner_name = authenticated_account.owner_name
+	E.owner_name = authenticated_account().owner_name
 
 #undef NO_SCREEN
 #undef CHANGE_SECURITY_LEVEL
 #undef TRANSFER_FUNDS
 #undef VIEW_TRANSACTION_LOGS
+
+/// LC-refs: the held_card this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/atm/proc/held_card() as /obj/item/card
+	return om_resolve(held_card_handle)
+
+/// LC-refs: the authenticated_account this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/atm/proc/authenticated_account() as /datum/money_account
+	return om_resolve(authenticated_account_handle)

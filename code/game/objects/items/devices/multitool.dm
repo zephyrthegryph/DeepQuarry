@@ -39,8 +39,8 @@ DECLARE_INTERACTIONS(/obj/item/multitool, INTERACT_USE(null, PROC_REF(interactio
 	if(uplink)
 		return
 
-	if(selected_io)
-		selected_io = null
+	if(selected_io())
+		selected_io_handle = null
 		to_chat(user, span_notice("You clear the wired connection from the multitool."))
 		update_icon()
 		return

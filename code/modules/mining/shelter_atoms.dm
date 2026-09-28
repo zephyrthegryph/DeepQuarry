@@ -165,11 +165,11 @@
 
 // Override since the parent proc has a sanity check to delete the capsule if no template is found, which doesn't exactly work with this item considering examining calls this proc.
 /obj/item/survivalcapsule/superpose/get_template()
-	if(template)
+	if(template())
 		return
-	template = SSmapping.shelter_templates[template_id]
-	if(!template)
-		template = null
+	template_handle = om_handle(SSmapping.shelter_templates[template_id])
+	if(!template())
+		template_handle = null
 
 /obj/item/survivalcapsule/superpose/attack_self(mob/user, modifiers)
 	if(!pod_initialized) // Populate list after round start as map templates might not exist when this item is created.
@@ -198,7 +198,7 @@
 	set category = "Object"
 	if(!used)
 		template_id = null
-		template = null // Important to reset both, otherwise the template cannot be reset once the pod has been deployed.
+		template_handle = null // Important to reset both, otherwise the template cannot be reset once the pod has been deployed.
 		unique_id = null
 		to_chat(usr, span_notice("You reset the pod's selection."))
 
@@ -264,17 +264,17 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	icon = 'icons/obj/device_alt.dmi'
 	w_class = ITEMSIZE_TINY
 	var/template_id = "shelter_alpha"
-	var/datum/map_template/shelter/template
+	var/tmp/template_handle
 	var/used = FALSE
 	var/is_ship = FALSE
 	var/unique_id = null
 	var/admin_log_verb = "activated a bluespace capsule" // Just to make the blue/redspace ones distinct for admin logs
 
 /obj/item/survivalcapsule/proc/get_template()
-	if(template)
+	if(template())
 		return
-	template = SSmapping.shelter_templates[get_template_id()]
-	if(!template)
+	template_handle = om_handle(SSmapping.shelter_templates[get_template_id()])
+	if(!template())
 		throw EXCEPTION("Shelter template ([template_id]) not found!")
 		qdel(src)
 
@@ -283,11 +283,11 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 
 /obj/item/survivalcapsule/proc/get_template_info()
 	var/ret = ""
-	if(!template)
+	if(!template())
 		get_template()
-	if(template)
-		ret += "This capsule has the [template.name] stored:\n"
-		ret += template.description
+	if(template())
+		ret += "This capsule has the [template().name] stored:\n"
+		ret += template().description
 	else
 		ret += "This capsule has an unknown template stored."
 	return ret
@@ -297,18 +297,18 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	if(!deploy_turf)
 		return
 	var/preview_render = list()
-	template.preload_size(template.mappath)
+	template().preload_size(template().mappath)
 	// Get origin (bottom-left) of shelter template relative to where we are on the map
-	var/turf/origin = locate(user.x - round((template.width)/2) , user.y - round((template.height)/2) , user.z)
-	var/turf/topright = locate(user.x + round((template.width)/2) , user.y + round((template.height)/2) , user.z)
+	var/turf/origin = locate(user.x - round((template().width)/2) , user.y - round((template().height)/2) , user.z)
+	var/turf/topright = locate(user.x + round((template().width)/2) , user.y + round((template().height)/2) , user.z)
 	if(!origin || !topright)
 		return
-	for(var/turf/S in template.get_affected_turfs(deploy_turf, centered = TRUE))
-		if(template.get_turf_deployability(S, is_ship) != SHELTER_DEPLOY_ALLOWED)
+	for(var/turf/S in template().get_affected_turfs(deploy_turf, centered = TRUE))
+		if(template().get_turf_deployability(S, is_ship) != SHELTER_DEPLOY_ALLOWED)
 			preview_render += image('icons/misc/debug_group.dmi',S ,"red")
 		else if(show_doors)
 			var/is_door_here = FALSE
-			for(var/list/door_coord in template.door_locations)
+			for(var/list/door_coord in template().door_locations)
 				// If we're at a spot where a door is going to appear, display a green spot!
 				var/dX = origin.x + door_coord[1] - 1
 				var/dY = origin.y + door_coord[2] - 1
@@ -335,7 +335,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	user.client.images -= preview_render
 
 /obj/item/survivalcapsule/proc/can_deploy(turf/deploy_location, turf/above_location)
-	var/status = template.check_deploy(deploy_location, is_ship)
+	var/status = template().check_deploy(deploy_location, is_ship)
 	switch(status)
 		//Not allowed due to /area technical reasons
 		if(SHELTER_DEPLOY_BAD_AREA)
@@ -343,8 +343,8 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 
 		//Anchored objects or no space
 		if(SHELTER_DEPLOY_BAD_TURFS, SHELTER_DEPLOY_ANCHORED_OBJECTS)
-			var/width = template.width
-			var/height = template.height
+			var/width = template().width
+			var/height = template().height
 			src.loc.visible_message(span_warning("\The [src] can be activated here, but doesn't have room to deploy! You need to clear a [width]x[height] area!"))
 
 		if(SHELTER_DEPLOY_SHIP_SPACE)
@@ -388,10 +388,10 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 
 	// Load shelter template
 	if(above_location)
-		template.add_roof(above_location)
-	template.annihilate_plants(deploy_location)
-	template.load(deploy_location, centered = TRUE)
-	template.update_lighting(deploy_location)
+		template().add_roof(above_location)
+	template().annihilate_plants(deploy_location)
+	template().load(deploy_location, centered = TRUE)
+	template().update_lighting(deploy_location)
 	consume(src, user)
 
 /obj/item/survivalcapsule/examine(mob/user)
@@ -640,7 +640,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	desc = "You can secure yourself inside the shelter here."
 	specialfunctions = 4 // 4 is bolts
 	id = "placeholder_id_do_not_use" //This has to be this way, otherwise it will control ALL doors if left blank.
-	var/obj/machinery/door/airlock/voidcraft/survival_pod/door
+	var/tmp/door_handle
 
 /obj/machinery/button/remote/airlock/survival_pod/declare_interactions(list/into)
 	into += list(
@@ -654,12 +654,12 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	effect = /obj/machinery/button/remote/airlock/survival_pod/proc/interaction_glass
 
 /obj/machinery/button/remote/airlock/survival_pod/proc/interaction_glass(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!door)
+	if(!door())
 		var/turf/dT = get_step(src,dir)
-		door = locate() in dT
-	if(door)
-		door.glass = !door.glass
-		door.opacity = !door.opacity
+		door_handle = om_handle(locate(/obj/machinery/door/airlock/voidcraft/survival_pod) in dT)
+	if(door())
+		door().glass = !door().glass
+		door().opacity = !door().opacity
 	return TRUE
 
 //Subtype that actually bolts doors!
@@ -681,21 +681,21 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 
 /obj/machinery/button/remote/airlock/survival_pod/bolts/proc/interaction_bolts(mob/user, obj/item/held, datum/interaction/interaction)
 	interaction_glass(user, held, interaction)
-	if(door)
-		if(door.locked)
-			door.unlock()
-			door.stop_blocking_light()
+	if(door())
+		if(door().locked)
+			door().unlock()
+			door().stop_blocking_light()
 		else
-			door.lock()
+			door().lock()
 			// Block light when bolted, since the door is effectively functioning like polarized glass
-			door.start_blocking_light()
+			door().start_blocking_light()
 	return TRUE
 
 // Capsule-specific light switch
 // Turns off only one light in a given direction from its source turf.
 /obj/machinery/light_switch/survival_pod
 	name = "shelter light switch"
-	var/obj/machinery/light/target_light
+	var/tmp/target_light_handle
 
 // Deliberately override base light switch behavior because we don't want to toggle ALL lights in the area - just one!
 /obj/machinery/light_switch/survival_pod/declare_interactions(list/into)
@@ -713,20 +713,20 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 /obj/machinery/light_switch/survival_pod/proc/interaction_toggle_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	on = !on
 	playsound(src, 'sound/machines/button.ogg', 100, 1, 0)
-	if(!target_light)
+	if(!target_light())
 		var/turf/dT = get_step(src, dir)
-		target_light = locate() in dT
-	if(target_light)
-		target_light.on = on
-		target_light.update()
+		target_light_handle = om_handle(locate(/obj/machinery/light) in dT)
+	if(target_light())
+		target_light().on = on
+		target_light().update()
 		// I'm so sorry but for some ungodly reason calling update() simply isn't
 		// enough to make the light actually set its lighting.
 		// So I guess we're doing this manually! :')
-		if(target_light.on)
-			target_light.set_light(target_light.brightness_range, target_light.brightness_power, target_light.brightness_color)
-			target_light.overlay_color = target_light.brightness_color
+		if(target_light().on)
+			target_light().set_light(target_light().brightness_range, target_light().brightness_power, target_light().brightness_color)
+			target_light().overlay_color = target_light().brightness_color
 		else
-			target_light.set_light(0)
+			target_light().set_light(0)
 	update_icon()
 
 	GLOB.lights_switched_on_roundstat++
@@ -775,7 +775,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	icon_state = "table"
 
 /obj/structure/table/survival_pod/Initialize(mapload)
-	material = get_material_by_name(MAT_STEEL)
+	material_handle = om_handle(get_material_by_name(MAT_STEEL))
 	. = ..()
 	verbs -= /obj/structure/table/verb/do_flip
 	verbs -= /obj/structure/table/proc/do_put
@@ -941,3 +941,15 @@ EXTEND_INTERACTIONS(/obj/item/gps/computer, INTERACT_HAND_UNGATED(null, PROC_REF
 	anchored = TRUE
 	layer = BELOW_MOB_LAYER
 	density = FALSE
+
+/// LC-refs: the template this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/survivalcapsule/proc/template() as /datum/map_template/shelter
+	return om_resolve(template_handle)
+
+/// LC-refs: the door this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/button/remote/airlock/survival_pod/proc/door() as /obj/machinery/door/airlock/voidcraft/survival_pod
+	return om_resolve(door_handle)
+
+/// LC-refs: the target_light this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/light_switch/survival_pod/proc/target_light() as /obj/machinery/light
+	return om_resolve(target_light_handle)

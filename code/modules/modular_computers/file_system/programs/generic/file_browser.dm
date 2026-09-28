@@ -20,8 +20,8 @@
 	if(..())
 		return TRUE
 
-	var/obj/item/computer_hardware/hard_drive/HDD = computer.hard_drive
-	var/obj/item/computer_hardware/hard_drive/RHDD = computer.portable_drive
+	var/obj/item/computer_hardware/hard_drive/HDD = computer().hard_drive
+	var/obj/item/computer_hardware/hard_drive/RHDD = computer().portable_drive()
 
 	switch(action)
 		if("PRG_openfile")
@@ -59,7 +59,7 @@
 				return
 			if(!open_file)
 				return
-			var/datum/computer_file/data/F = computer.find_file_by_uid(open_file)
+			var/datum/computer_file/data/F = computer().find_file_by_uid(open_file)
 			if(!F || !istype(F))
 				return
 			var/_answer_k63 = act_prompt(ui.user, action, params, ui, "k63", list("message" = "WARNING: This file is not compatible with editor. Editing it may result in permanently corrupted formatting or damaged data consistency. Edit anyway?", "title" = "Incompatible File", "choices" = list("No", "Yes")))
@@ -80,49 +80,49 @@
 
 			if(F)
 				var/datum/computer_file/data/backup = F.clone()
-				F.holder.remove_file(F)
+				F.holder().remove_file(F)
 				F.stored_data = newtext
 				F.calculate_size()
 				// We can't store the updated file, it's probably too large. Print an error and restore backed up version.
 				// This is mostly intended to prevent people from losing texts they spent lot of time working on due to running out of space.
 				// They will be able to copy-paste the text from error screen and store it in notepad or something.
-				if(!F.holder.store_file(F))
+				if(!F.holder().store_file(F))
 					error = "I/O error: Unable to overwrite file. Hard drive is probably full. You may want to backup your changes before closing this window:<br><br>[html_decode(F.stored_data)]<br><br>"
-					F.holder.store_file(backup)
+					F.holder().store_file(backup)
 				return TRUE
 		if("PRG_printfile")
 			if(!HDD)
 				return
 			if(!open_file)
 				return
-			var/datum/computer_file/data/F = computer.find_file_by_uid(open_file)
+			var/datum/computer_file/data/F = computer().find_file_by_uid(open_file)
 			if(!F || !istype(F))
 				return
-			if(!computer.nano_printer)
+			if(!computer().nano_printer)
 				error = "Missing Hardware: Your computer does not have required hardware to complete this operation."
 				return TRUE
-			if(!computer.nano_printer.print_text(pencode2html(F.stored_data)))
+			if(!computer().nano_printer.print_text(pencode2html(F.stored_data)))
 				error = "Hardware error: Printer was unable to print the file. It may be out of paper."
 				return TRUE
 			return TRUE
 		if("PRG_deletefile")
 			if(!HDD)
 				return
-			var/datum/computer_file/file = computer.find_file_by_uid(params["uid"])
+			var/datum/computer_file/file = computer().find_file_by_uid(params["uid"])
 			if(!file || file.undeletable)
 				return
-			file.holder.remove_file(file)
+			file.holder().remove_file(file)
 			return TRUE
 		if("PRG_rename")
 			if(!HDD)
 				return
-			var/datum/computer_file/file = computer.find_file_by_uid(params["uid"])
+			var/datum/computer_file/file = computer().find_file_by_uid(params["uid"])
 			if(!file)
 				return
 			var/newname = params["new_name"]
 			if(!newname)
 				return
-			if(file.holder.find_file_by_name(newname))
+			if(file.holder().find_file_by_name(newname))
 				error = "I/O error: File already exists."
 				return TRUE
 			file.filename = newname
@@ -158,13 +158,13 @@
 /datum/computer_file/program/filemanager/tgui_data(mob/user)
 	var/list/data = get_header_data()
 
-	var/obj/item/computer_hardware/hard_drive/HDD = computer.hard_drive
-	var/obj/item/computer_hardware/hard_drive/portable/RHDD = computer.portable_drive
+	var/obj/item/computer_hardware/hard_drive/HDD = computer().hard_drive
+	var/obj/item/computer_hardware/hard_drive/portable/RHDD = computer().portable_drive()
 
 	data["error"] = null
 	if(error)
 		data["error"] = error
-	if(!computer || !HDD)
+	if(!computer() || !HDD)
 		data["error"] = "I/O ERROR: Unable to access hard drive."
 
 	data["filedata"] = null
@@ -176,10 +176,10 @@
 	if(open_file)
 		var/datum/computer_file/data/file
 
-		if(!computer || (!computer.hard_drive && computer.portable_drive))
+		if(!computer() || (!computer().hard_drive && computer().portable_drive()))
 			data["error"] = "I/O ERROR: Unable to access hard drive."
 		else
-			file = computer.find_file_by_uid(open_file)
+			file = computer().find_file_by_uid(open_file)
 			if(!istype(file))
 				data["error"] = "I/O ERROR: Unable to open file."
 			else

@@ -12,11 +12,11 @@
 // instead. Wiring this up to TGUI assets is a follow-up.
 
 /datum/admins/proc/dq_open_newscaster_panel()
-	if(!owner?.mob)
+	if(!owner()?.mob)
 		return
 	if(!dq_newscaster_panel)
 		dq_newscaster_panel = new(src)
-	dq_newscaster_panel.tgui_interact(owner.mob)
+	dq_newscaster_panel.tgui_interact(owner().mob)
 
 /datum/admins
 	var/datum/newscaster_panel/dq_newscaster_panel
@@ -72,7 +72,7 @@ REF_PAIR(/datum/admins, list("dq_newscaster_panel" = "holder"))
 	data["signature"] = holder.admincaster_signature
 	data["company_name"] = using_map.company_name
 	data["has_wanted"] = !!GLOB.news_network.wanted_issue()
-	data["channel"] = pack_channel(holder.admincaster_feed_channel)
+	data["channel"] = pack_channel(holder.admincaster_feed_channel())
 	data["message"] = pack_message(holder.admincaster_feed_message)
 
 	// Channel listing for the screens that need it.
@@ -83,8 +83,8 @@ REF_PAIR(/datum/admins, list("dq_newscaster_panel" = "holder"))
 
 	// Active channel's messages (screens 9, 12, 13).
 	var/list/channel_messages = list()
-	if(holder.admincaster_feed_channel)
-		for(var/datum/feed_message/MSG in holder.admincaster_feed_channel.messages)
+	if(holder.admincaster_feed_channel())
+		for(var/datum/feed_message/MSG in holder.admincaster_feed_channel().messages)
 			channel_messages += list(pack_message(MSG))
 	data["channel_messages"] = channel_messages
 

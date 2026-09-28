@@ -50,12 +50,12 @@
 			continue
 		webs++
 		for(var/datum/shuttle_destination/D in WS.web_master.destinations)
-			TEST_ASSERT_NOTNULL(D.my_landmark, "web shuttle '[name]' kept destination '[D.name]' ([D.type]) with no landmark — should have been pruned")
+			TEST_ASSERT_NOTNULL(D.my_landmark(), "web shuttle '[name]' kept destination '[D.name]' ([D.type]) with no landmark — should have been pruned")
 			// Every surviving route must connect two surviving destinations.
 			for(var/datum/shuttle_route/R in D.routes)
-				TEST_ASSERT_NOTNULL(R.start, "route on '[D.name]' has a null start")
-				TEST_ASSERT_NOTNULL(R.end, "route on '[D.name]' has a null end")
-				TEST_ASSERT(R.start.my_landmark && R.end.my_landmark, "web shuttle '[name]' route [R.start.name] <-> [R.end.name] touches a landmark-less destination")
+				TEST_ASSERT_NOTNULL(R.start(), "route on '[D.name]' has a null start")
+				TEST_ASSERT_NOTNULL(R.end(), "route on '[D.name]' has a null end")
+				TEST_ASSERT(R.start().my_landmark() && R.end().my_landmark(), "web shuttle '[name]' route [R.start().name] <-> [R.end().name] touches a landmark-less destination")
 		// Autopaths must only reference destinations that survived the prune.
 		for(var/datum/shuttle_autopath/P in WS.web_master.autopaths)
 			TEST_ASSERT_NOTNULL(WS.web_master.get_destination_by_type(P.start), "web shuttle '[name]' autopath [P.type] starts at a pruned destination")
@@ -77,13 +77,13 @@
 		log_test("No shuttles on this map; skipping null-jump guard check.")
 		return
 	var/prior_status = S.moving_status
-	var/prior_location = S.current_location
+	var/prior_location = S.current_location()
 	// All three must early-return without runtiming (runtime => test failure).
 	S.long_jump(null, null, 10)
 	S.short_jump(null)
 	TEST_ASSERT(!S.attempt_move(null), "attempt_move(null) did not refuse the move")
 	TEST_ASSERT_EQUAL(S.moving_status, prior_status, "null jump changed moving_status")
-	TEST_ASSERT_EQUAL(S.current_location, prior_location, "null jump moved the shuttle")
+	TEST_ASSERT_EQUAL(S.current_location(), prior_location, "null jump moved the shuttle")
 	S.create_warning_effect(null) // must be a no-op
 
 /datum/unit_test/dq_shuttle_repeated_moves_preserve_air
@@ -106,7 +106,7 @@
 			turf_count++
 			total_moles += T.air.total_moles()
 			oxygen += T.air.get_moles(/datum/gas/oxygen)
-	return "turfs=[turf_count], total=[total_moles], oxygen=[oxygen], location=[shuttle.current_location?.landmark_tag] z=[shuttle.current_location?.z]"
+	return "turfs=[turf_count], total=[total_moles], oxygen=[oxygen], location=[shuttle.current_location()?.landmark_tag] z=[shuttle.current_location()?.z]"
 
 /datum/unit_test/dq_shuttle_repeated_moves_preserve_air/proc/wait_for_atmos(cycles)
 	// Deterministic gas frames (the test hook), no wall-clock wait.
@@ -170,7 +170,7 @@
 	var/baseline = measure_oxygen(shuttle)
 	TEST_ASSERT(baseline > 0, "Ferry-Demo began without oxygen")
 	for(var/hop in 1 to 8)
-		var/obj/effect/shuttle_landmark/next_landmark = shuttle.current_location == shuttle.landmark_offsite ? shuttle.landmark_station : shuttle.landmark_offsite
+		var/obj/effect/shuttle_landmark/next_landmark = shuttle.current_location() == shuttle.landmark_offsite() ? shuttle.landmark_station() : shuttle.landmark_offsite()
 		TEST_ASSERT(shuttle.attempt_move(next_landmark), "Ferry-Demo repeated move [hop] failed")
 		for(var/area/topology_area as anything in shuttle.shuttle_area)
 			for(var/turf/open/topology_turf in topology_area)
@@ -178,7 +178,7 @@
 					TEST_ASSERT(vg_topology_matches(topology_turf), "Rust/DM atmos topology diverged after shuttle move [hop] at [topology_turf.x],[topology_turf.y],[topology_turf.z]")
 		var/immediate_oxygen = measure_oxygen(shuttle)
 		TEST_ASSERT(immediate_oxygen >= baseline * 0.99, "Ferry-Demo lost oxygen during turf translation on move [hop]: [baseline] -> [immediate_oxygen]")
-		if(next_landmark == shuttle.landmark_offsite)
+		if(next_landmark == shuttle.landmark_offsite())
 			var/leak = find_space_leak(shuttle)
 			TEST_ASSERT(!leak, "Ferry-Demo pressure volume was connected to space after move [hop]: [leak]")
 		// Five gas frames, run deterministically; a leak would drain the
@@ -190,7 +190,7 @@
 					if(!cycle_turf.blocks_air && cycle_turf.air)
 						TEST_ASSERT(vg_topology_matches(cycle_turf), "Rust/DM atmos topology diverged after shuttle move [hop], atmos cycle [cycle], at [cycle_turf.x],[cycle_turf.y],[cycle_turf.z]")
 		var/hop_oxygen = measure_oxygen(shuttle)
-		if(next_landmark == shuttle.landmark_offsite)
+		if(next_landmark == shuttle.landmark_offsite())
 			TEST_ASSERT(hop_oxygen >= baseline * 0.99, "Ferry-Demo lost oxygen after returning offsite on repeated move [hop]: [baseline] -> [hop_oxygen]; [gas_diagnostics(shuttle)]")
 
 /datum/unit_test/dq_arrivals_shuttle_preserves_air
@@ -216,7 +216,7 @@
 	var/obj/machinery/computer/shuttle_control/arrivals/console = locate() in world
 	TEST_ASSERT_NOTNULL(console, "Southern Cross arrivals control console was not mapped")
 	TEST_ASSERT_EQUAL(console.machine_step(), PROCESS_KILL, "arrivals console still performs idle polling instead of hibernating")
-	TEST_ASSERT_NOTNULL(shuttle.landmark_station, "arrivals shuttle has no station landmark")
+	TEST_ASSERT_NOTNULL(shuttle.landmark_station(), "arrivals shuttle has no station landmark")
 	var/total_o2_before = 0
 	var/pressurized_turfs_before = 0
 	for(var/area/A as anything in shuttle.shuttle_area)
@@ -259,7 +259,7 @@
 				if(T.initial_gas_mix == OPENTURF_DEFAULT_ATMOS)
 					TEST_ASSERT(T.air.return_pressure() > 80, "habitable arrivals shuttle turf became airless while waiting at [T.x],[T.y],[T.z]: [T.air.return_pressure()] kPa in [get_area(T)]")
 	TEST_ASSERT(soaked_o2 >= total_o2_before * 0.99, "arrivals shuttle lost oxygen while waiting off-station: [total_o2_before] -> [soaked_o2]")
-	TEST_ASSERT(shuttle.attempt_move(shuttle.landmark_station), "arrivals shuttle could not move to its station landmark")
+	TEST_ASSERT(shuttle.attempt_move(shuttle.landmark_station()), "arrivals shuttle could not move to its station landmark")
 	var/total_o2_after = 0
 	var/pressurized_turfs_after = 0
 	for(var/area/A as anything in shuttle.shuttle_area)
@@ -273,11 +273,11 @@
 				TEST_ASSERT(T.air.return_pressure() > 80, "habitable arrivals shuttle turf arrived airless at [T.x],[T.y],[T.z]: [T.air.return_pressure()] kPa in [get_area(T)]")
 	TEST_ASSERT(pressurized_turfs_after > 0, "arrivals shuttle became airless after moving")
 	TEST_ASSERT(total_o2_after >= total_o2_before * 0.99, "arrivals shuttle lost oxygen while moving: [total_o2_before] -> [total_o2_after]")
-	TEST_ASSERT(shuttle.attempt_move(shuttle.landmark_offsite), "arrivals shuttle could not return to its off-station landmark")
+	TEST_ASSERT(shuttle.attempt_move(shuttle.landmark_offsite()), "arrivals shuttle could not return to its off-station landmark")
 	var/repeated_move_baseline = measure_oxygen(shuttle)
 	for(var/hop in 1 to 6)
 		wait_for_atmos(5)
-		var/obj/effect/shuttle_landmark/next_landmark = shuttle.current_location == shuttle.landmark_offsite ? shuttle.landmark_station : shuttle.landmark_offsite
+		var/obj/effect/shuttle_landmark/next_landmark = shuttle.current_location() == shuttle.landmark_offsite() ? shuttle.landmark_station() : shuttle.landmark_offsite()
 		TEST_ASSERT(shuttle.attempt_move(next_landmark), "arrivals shuttle repeated move [hop] failed")
 		wait_for_atmos(5)
 		var/hop_oxygen = measure_oxygen(shuttle)
@@ -288,7 +288,7 @@
 /datum/unit_test/dq_escape_shuttle_preserves_air/Run()
 	var/datum/shuttle/autodock/ferry/emergency/shuttle = SSshuttles.shuttles["Escape"]
 	TEST_ASSERT_NOTNULL(shuttle, "Southern Cross escape shuttle was not registered")
-	TEST_ASSERT_NOTNULL(shuttle.landmark_station, "escape shuttle has no station landmark")
+	TEST_ASSERT_NOTNULL(shuttle.landmark_station(), "escape shuttle has no station landmark")
 	var/total_o2_before = 0
 	var/turf/open/component_start
 	for(var/area/A as anything in shuttle.shuttle_area)
@@ -324,11 +324,11 @@
 			if(!T.blocks_air && T.air)
 				soaked_o2 += T.air.get_moles(/datum/gas/oxygen)
 	TEST_ASSERT(soaked_o2 >= total_o2_before * 0.99, "escape shuttle lost oxygen while waiting off-station: [total_o2_before] -> [soaked_o2]")
-	TEST_ASSERT(shuttle.attempt_move(shuttle.landmark_station), "escape shuttle could not move to its station landmark")
+	TEST_ASSERT(shuttle.attempt_move(shuttle.landmark_station()), "escape shuttle could not move to its station landmark")
 	var/total_o2_after = 0
 	for(var/area/A as anything in shuttle.shuttle_area)
 		for(var/turf/open/T in A)
 			if(!T.blocks_air && T.air)
 				total_o2_after += T.air.get_moles(/datum/gas/oxygen)
 	TEST_ASSERT(total_o2_after >= soaked_o2 * 0.99, "escape shuttle lost oxygen while moving: [soaked_o2] -> [total_o2_after]")
-	TEST_ASSERT(shuttle.attempt_move(shuttle.landmark_offsite), "escape shuttle could not return to its off-station landmark")
+	TEST_ASSERT(shuttle.attempt_move(shuttle.landmark_offsite()), "escape shuttle could not return to its off-station landmark")

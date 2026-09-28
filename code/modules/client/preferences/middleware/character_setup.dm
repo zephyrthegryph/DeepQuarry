@@ -227,7 +227,7 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 	// synth-only entries. The species_picker editor (which drives play_mode)
 	// is always allowed through so the player has an escape hatch back to
 	// human mode.
-	var/play_mode = preferences.read_preference(/datum/preference/text/human/play_mode) || "human"
+	var/play_mode = preferences().read_preference(/datum/preference/text/human/play_mode) || "human"
 	var/playing_as_robot = (play_mode == "robot")
 	var/playing_as_pai = (play_mode == "pai")
 
@@ -235,10 +235,10 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 		var/datum/preference/pref = GLOB.preference_entries[pref_type]
 		if(pref.savefile_identifier != PREFERENCE_CHARACTER)
 			continue
-		var/widget_hint = pref.get_widget(preferences)
+		var/widget_hint = pref.get_widget(preferences())
 		if(widget_hint == PREF_WIDGET_HIDDEN)
 			continue
-		var/cat = pref.get_category(preferences)
+		var/cat = pref.get_category(preferences())
 		if(!cat)
 			cat = "misc"
 		// categories the user shouldn't see as a tab. Manually rendered
@@ -250,7 +250,7 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 		// eating column space in the strip.
 		if(cat == PREFERENCE_CATEGORY_MANUALLY_RENDERED || cat == PREFERENCE_CATEGORY_NON_CONTEXTUAL)
 			continue
-		var/grp = pref.get_group(preferences) || ""
+		var/grp = pref.get_group(preferences()) || ""
 
 		// play-mode gating. play_mode is itself a hidden pref so
 		// no escape hatch needed here; the species_picker editor below is
@@ -298,13 +298,13 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 			"key" = pref.savefile_key,
 			"label" = pref.display_label,
 			"widget" = widget_hint,
-			"props" = include_details ? pref.get_widget_props(preferences) : list(),
+			"props" = include_details ? pref.get_widget_props(preferences()) : list(),
 		)
 		if(include_details)
-			var/list/choices = pref.get_pref_choices(preferences)
+			var/list/choices = pref.get_pref_choices(preferences())
 			if(choices)
 				widget_payload["choices"] = choices
-			var/list/thumbnails = pref.get_pref_thumbnails(preferences)
+			var/list/thumbnails = pref.get_pref_thumbnails(preferences())
 			if(thumbnails)
 				widget_payload["thumbnails"] = thumbnails
 
@@ -391,12 +391,12 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 	return categories_data
 
 /datum/preference_middleware/character_setup/proc/dq_ensure_category_cache(category_key)
-	if(!islist(preferences.dq_category_static_cache))
-		preferences.dq_category_static_cache = list()
-	if(!islist(preferences.dq_category_index))
-		var/play_mode = preferences.read_preference(/datum/preference/text/human/play_mode) || "human"
-		preferences.dq_category_index = dq_character_category_index(play_mode)
-	if(!category_key || (category_key in preferences.dq_category_static_cache))
+	if(!islist(preferences().dq_category_static_cache))
+		preferences().dq_category_static_cache = list()
+	if(!islist(preferences().dq_category_index))
+		var/play_mode = preferences().read_preference(/datum/preference/text/human/play_mode) || "human"
+		preferences().dq_category_index = dq_character_category_index(play_mode)
+	if(!category_key || (category_key in preferences().dq_category_static_cache))
 		return
 	var/list/categories_data = dq_build_category_structure(category_key, TRUE)
 	for(var/list/category as anything in categories_data)
@@ -407,13 +407,13 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 				else if(item["type"] == "editor")
 					item -= "data"
 		var/built_category_key = category["category"]
-		preferences.dq_category_static_cache[built_category_key] = category
+		preferences().dq_category_static_cache[built_category_key] = category
 
 /datum/preference_middleware/character_setup/proc/dq_editor_version(editor_key)
-	LAZYINITLIST(preferences.dq_editor_static_versions)
-	if(!preferences.dq_editor_static_versions[editor_key])
-		preferences.dq_editor_static_versions[editor_key] = 1
-	return preferences.dq_editor_static_versions[editor_key]
+	LAZYINITLIST(preferences().dq_editor_static_versions)
+	if(!preferences().dq_editor_static_versions[editor_key])
+		preferences().dq_editor_static_versions[editor_key] = 1
+	return preferences().dq_editor_static_versions[editor_key]
 
 /datum/preferences/proc/dq_invalidate_category_cache()
 	dq_category_static_cache = null
@@ -432,60 +432,60 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 /datum/preference_middleware/character_setup/get_ui_data(mob/user, datum/tgui/ui)
 	var/list/data = ..()
 
-	if(preferences.current_window != PREFERENCE_TAB_CHARACTER_PREFERENCES)
+	if(preferences().current_window != PREFERENCE_TAB_CHARACTER_PREFERENCES)
 		return data
 
 	var/catalog_started = TICK_USAGE_REAL
 	dq_ensure_category_cache()
-	if(!(preferences.dq_active_category in preferences.dq_category_static_cache))
-		if(!(preferences.dq_active_category in preferences.dq_category_index))
-			preferences.dq_active_category = preferences.dq_category_index?[1]
-		dq_ensure_category_cache(preferences.dq_active_category)
+	if(!(preferences().dq_active_category in preferences().dq_category_static_cache))
+		if(!(preferences().dq_active_category in preferences().dq_category_index))
+			preferences().dq_active_category = preferences().dq_category_index?[1]
+		dq_ensure_category_cache(preferences().dq_active_category)
 
-	data["dq_cache_key"] = "[REF(preferences)]-[preferences.default_slot]"
-	data["dq_active_category"] = preferences.dq_active_category
-	data["dq_category_index"] = preferences.dq_category_index
-	data["dq_structure_version"] = preferences.dq_category_structure_version
+	data["dq_cache_key"] = "[REF(preferences())]-[preferences().default_slot]"
+	data["dq_active_category"] = preferences().dq_active_category
+	data["dq_category_index"] = preferences().dq_category_index
+	data["dq_structure_version"] = preferences().dq_category_structure_version
 
-	var/window_id = ui?.window?.id || "unpooled"
-	var/force_catalogs = !!preferences.dq_force_catalogs_by_window?[window_id]
+	var/window_id = ui?.window()?.id || "unpooled"
+	var/force_catalogs = !!preferences().dq_force_catalogs_by_window?[window_id]
 	if(force_catalogs)
-		preferences.dq_force_catalogs_by_window -= window_id
-	LAZYINITLIST(preferences.dq_window_category_versions)
-	if(!islist(preferences.dq_window_category_versions[window_id]))
-		preferences.dq_window_category_versions[window_id] = list()
-	var/list/window_category_versions = preferences.dq_window_category_versions[window_id]
-	if(window_category_versions[preferences.dq_active_category] != preferences.dq_category_structure_version)
+		preferences().dq_force_catalogs_by_window -= window_id
+	LAZYINITLIST(preferences().dq_window_category_versions)
+	if(!islist(preferences().dq_window_category_versions[window_id]))
+		preferences().dq_window_category_versions[window_id] = list()
+	var/list/window_category_versions = preferences().dq_window_category_versions[window_id]
+	if(window_category_versions[preferences().dq_active_category] != preferences().dq_category_structure_version)
 		var/list/category_patch = list()
-		category_patch[preferences.dq_active_category] = preferences.dq_category_static_cache[preferences.dq_active_category]
+		category_patch[preferences().dq_active_category] = preferences().dq_category_static_cache[preferences().dq_active_category]
 		data["dq_category_patch"] = category_patch
-		window_category_versions[preferences.dq_active_category] = preferences.dq_category_structure_version
+		window_category_versions[preferences().dq_active_category] = preferences().dq_category_structure_version
 
 	// Values are small and allow a cached category to display current state
 	// immediately. Large editor state and catalogs are restricted to the active
 	// category so unopened tabs cost nothing.
 	var/list/widget_values = list()
-	var/list/active_category = preferences.dq_category_static_cache[preferences.dq_active_category]
+	var/list/active_category = preferences().dq_category_static_cache[preferences().dq_active_category]
 	for(var/list/group as anything in active_category?["groups"])
 		for(var/list/item as anything in group["items"])
 			if(item["type"] != "widget")
 				continue
 			var/datum/preference/pref = GLOB.preference_entries_by_key[item["key"]]
 			if(pref)
-				widget_values[pref.savefile_key] = preferences.read_preference(pref.type)
+				widget_values[pref.savefile_key] = preferences().read_preference(pref.type)
 	data["dq_values"] = widget_values
 
 	var/list/editor_data = list()
 	var/list/editor_versions = list()
 	var/list/editor_static_patch = list()
-	LAZYINITLIST(preferences.dq_window_editor_versions)
-	if(!islist(preferences.dq_window_editor_versions[window_id]))
-		preferences.dq_window_editor_versions[window_id] = list()
-	var/list/window_editor_versions = preferences.dq_window_editor_versions[window_id]
+	LAZYINITLIST(preferences().dq_window_editor_versions)
+	if(!islist(preferences().dq_window_editor_versions[window_id]))
+		preferences().dq_window_editor_versions[window_id] = list()
+	var/list/window_editor_versions = preferences().dq_window_editor_versions[window_id]
 	for(var/datum/preference_editor/editor as anything in GLOB.preference_editors)
-		if(editor.hidden || editor.category != preferences.dq_active_category)
+		if(editor.hidden || editor.category != preferences().dq_active_category)
 			continue
-		editor_data[editor.key] = editor.build_ui_data(preferences)
+		editor_data[editor.key] = editor.build_ui_data(preferences())
 		var/editor_version = dq_editor_version(editor.key)
 		editor_versions[editor.key] = editor_version
 		if(window_editor_versions[editor.key] == editor_version)
@@ -495,9 +495,9 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 		// editor-specific construction off the window-opening critical path.
 		if(!force_catalogs)
 			continue
-		if(!islist(preferences.dq_editor_static_cache) || !(editor.key in preferences.dq_editor_static_cache))
-			preferences.dq_rebuild_editor_static_entry(editor)
-		editor_static_patch[editor.key] = preferences.dq_editor_static_cache?[editor.key] || list()
+		if(!islist(preferences().dq_editor_static_cache) || !(editor.key in preferences().dq_editor_static_cache))
+			preferences().dq_rebuild_editor_static_entry(editor)
+		editor_static_patch[editor.key] = preferences().dq_editor_static_cache?[editor.key] || list()
 		window_editor_versions[editor.key] = editor_version
 	data["dq_editor_data"] = editor_data
 	data["dq_editor_versions"] = editor_versions
@@ -546,19 +546,19 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 		if("dq_select_category")
 			dq_ensure_category_cache()
 			var/category_key = params["category"]
-			if(!(category_key in preferences.dq_category_index))
+			if(!(category_key in preferences().dq_category_index))
 				return FALSE
-			preferences.dq_active_category = category_key
+			preferences().dq_active_category = category_key
 			if(params["force_catalogs"])
-				var/window_id = ui?.window?.id || "unpooled"
-				LAZYINITLIST(preferences.dq_force_catalogs_by_window)
-				preferences.dq_force_catalogs_by_window[window_id] = TRUE
-				if(islist(preferences.dq_window_category_versions?[window_id]))
-					preferences.dq_window_category_versions[window_id] -= category_key
-				if(islist(preferences.dq_window_editor_versions?[window_id]))
+				var/window_id = ui?.window()?.id || "unpooled"
+				LAZYINITLIST(preferences().dq_force_catalogs_by_window)
+				preferences().dq_force_catalogs_by_window[window_id] = TRUE
+				if(islist(preferences().dq_window_category_versions?[window_id]))
+					preferences().dq_window_category_versions[window_id] -= category_key
+				if(islist(preferences().dq_window_editor_versions?[window_id]))
 					for(var/datum/preference_editor/editor as anything in GLOB.preference_editors)
 						if(!editor.hidden && editor.category == category_key)
-							preferences.dq_window_editor_versions[window_id] -= editor.key
+							preferences().dq_window_editor_versions[window_id] -= editor.key
 			return TRUE
 
 		// Single-pref update from the auto-renderer.
@@ -573,7 +573,7 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 			if(!pref.is_client_writable(preferences))
 				log_world("dq_update_preference: [ui.user?.ckey] attempted to write non-client-writable pref [key]")
 				return FALSE
-			preferences.update_preference(pref, value)
+			preferences().update_preference(pref, value)
 			return TRUE
 
 		// Color picker for /datum/preference/color/* widgets. The React side has no
@@ -587,17 +587,17 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 				return FALSE
 			if(!pref.is_client_writable(preferences))
 				return FALSE
-			var/current = preferences.read_preference(pref.type)
+			var/current = preferences().read_preference(pref.type)
 			var/new_color = tgui_color_picker(ui.user, "Pick a color", "Color", current || "#000000")
 			if(!new_color)
 				return TRUE  // user cancelled; nothing to write
 			// tgui_color_picker sleeps — the player can move, log off, swap characters, or
 			// have their prefs torn down while it's open. Re-verify before writing.
-			if(!ui.user?.client?.prefs || ui.user.client.prefs != preferences)
+			if(!ui.user?.client?.prefs || ui.user.client.prefs != preferences())
 				return TRUE
-			if(!pref.is_accessible(preferences))
+			if(!pref.is_accessible(preferences()))
 				return TRUE
-			preferences.update_preference(pref, new_color)
+			preferences().update_preference(pref, new_color)
 			return TRUE
 
 		// Atomic multi-pref operation handled by a registered editor.
@@ -606,10 +606,10 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 			var/datum/preference_editor/editor = GLOB.preference_editors_by_key[editor_key]
 			if(!editor)
 				return FALSE
-			var/result = editor.handle_action(preferences, params["action"], params["params"], ui.user)
+			var/result = editor.handle_action(preferences(), params["action"], params["params"], ui.user)
 			// Switching human/robot/pAI mode changes which category groups exist.
 			// Drop the structure cache and bump its version; each pooled browser
 			// receives the new active-category patch on its next update.
 			if(result == PREF_UPDATE_ACCEPTED && editor_key == "species_picker")
-				preferences.dq_invalidate_category_cache()
+				preferences().dq_invalidate_category_cache()
 			return (result == PREF_UPDATE_ACCEPTED)

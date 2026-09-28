@@ -64,7 +64,7 @@ So, hopefully this is helpful if any more icons are to be added/changed/wonderin
 	icon_state = "none"
 	anchored = FALSE
 	density = TRUE
-	var/obj/machinery/particle_accelerator/control_box/master = null
+	var/tmp/master_handle
 	var/construction_state = 0
 	var/reference = null
 	var/powered = 0
@@ -79,8 +79,8 @@ So, hopefully this is helpful if any more icons are to be added/changed/wonderin
 // ALLOW(lifecycle): its control box rescans its parts.
 /obj/structure/particle_accelerator/Destroy()
 	construction_state = 0
-	if(master)
-		master.part_scan()
+	if(master())
+		master().part_scan()
 	. = ..()
 
 /obj/structure/particle_accelerator/end_cap
@@ -119,8 +119,8 @@ DECLARE_INTERACTIONS(/obj/structure/particle_accelerator, INTERACT_INSERT(/obj/i
 
 /obj/structure/particle_accelerator/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
-	if(master?.active)
-		master.toggle_power()
+	if(master()?.active)
+		master().toggle_power()
 		log_game("PACCEL([x],[y],[z]) Was moved while active and turned off.")
 		investigate_log("was moved whilst active; it " + span_red("powered down") + ".","singulo")
 
@@ -138,25 +138,25 @@ DECLARE_INTERACTIONS(/obj/structure/particle_accelerator, INTERACT_INSERT(/obj/i
 	return
 
 /obj/structure/particle_accelerator/proc/update_state()
-	if(master)
-		master.update_state()
+	if(master())
+		master().update_state()
 		return 0
 
 /obj/structure/particle_accelerator/proc/report_ready(obj/O)
-	if(O && (O == master))
+	if(O && (O == master()))
 		if(construction_state >= 3)
 			return 1
 	return 0
 
 /obj/structure/particle_accelerator/proc/report_master()
-	if(master)
-		return master
+	if(master())
+		return master()
 	return 0
 
 /obj/structure/particle_accelerator/proc/connect_master(obj/O)
 	if(O && istype(O,/obj/machinery/particle_accelerator/control_box))
 		if(O.dir == src.dir)
-			master = O
+			master_handle = om_handle(O)
 			return 1
 	return 0
 
@@ -339,3 +339,7 @@ DECLARE_INTERACTIONS(/obj/structure/particle_accelerator, INTERACT_INSERT(/obj/i
 	. = ..()
 	update_state()
 	update_icon()
+
+/// LC-refs: the master this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/structure/particle_accelerator/proc/master() as /obj/machinery/particle_accelerator/control_box
+	return om_resolve(master_handle)

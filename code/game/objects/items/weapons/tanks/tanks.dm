@@ -207,7 +207,7 @@ REF_OWNED(/obj/item/tank, list("air_contents", "proxyassembly"))
 	else
 		if(!src.proxyassembly.assembly.a_left)
 			assy.a_right.dropInto(user.loc)
-			assy.a_right.holder = null
+			assy.a_right.holder_handle = null
 			assy.a_right = null
 			src.proxyassembly.assembly = null
 			qdel(assy)

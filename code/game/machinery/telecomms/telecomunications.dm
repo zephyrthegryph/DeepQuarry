@@ -588,7 +588,7 @@ REF_OWNED(/obj/machinery/telecomms, "soundloop")
 
 /obj/machinery/telecomms/server/Initialize(mapload)
 	Compiler = new()
-	Compiler.Holder = src
+	Compiler.Holder_handle = om_handle(src)
 	server_radio = new()
 	. = ..()
 

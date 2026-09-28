@@ -157,7 +157,7 @@
 	var/list/checkouts
 	var/list/inventory
 	var/checkoutperiod = 5 // In minutes
-	var/obj/machinery/libraryscanner/scanner // Book scanner that will be used when uploading books to the Archive
+	var/tmp/scanner_handle	// Book scanner that will be used when uploading books to the Archive
 
 	/// Printing a bible or a book: at most one per few seconds.
 	COOLDOWN_DECLARE(print_cooldown)
@@ -220,7 +220,7 @@
 
 /obj/machinery/librarycomp/proc/interaction_link_scanner(mob/user, obj/item/held, datum/interaction/interaction)
 	var/obj/item/barcodescanner/scanner = held
-	scanner.computer = src
+	scanner.computer_handle = om_handle(src)
 	to_chat(user, "[scanner]'s associated machine has been set to [src].")
 	for(var/mob/V in hearers(src))
 		V.show_message("[src] lets out a low, short blip.", 2)
@@ -287,15 +287,15 @@
 	data["upload_category"] = upload_category
 	data["has_db"] = SSdbcore.IsConnected()
 	// Ensure a connected scanner is auto-discovered like the legacy UI did.
-	if(!scanner)
+	if(!scanner())
 		for(var/obj/machinery/libraryscanner/S in range(9))
-			scanner = S
+			scanner_handle = om_handle(S)
 			break
-	data["has_scanner"] = !!scanner
-	if(scanner?.cache)
+	data["has_scanner"] = !!scanner()
+	if(scanner()?.cache())
 		data["scanner_cache"] = list(
-			"name" = scanner.cache.name,
-			"author" = scanner.cache.author || "",
+			"name" = scanner().cache().name,
+			"author" = scanner().cache().author || "",
 		)
 	else
 		data["scanner_cache"] = null
@@ -410,8 +410,8 @@
 			var/newauthor = act_prompt(usr, action, params, ui, "k381", list("kind" = "text", "message" = "Enter the author's name:", "max_length" = MAX_MESSAGE_LEN))
 			if(isnull(newauthor))
 				return
-			if(newauthor && scanner?.cache)
-				scanner.cache.author = newauthor
+			if(newauthor && scanner()?.cache())
+				scanner().cache().author = newauthor
 			return TRUE
 		if("setcategory")
 			var/newcategory = act_prompt(usr, action, params, ui, "k386", list("kind" = "list", "message" = "Choose a category:", "title" = "Category", "choices" = list("Fiction", "Non-Fiction", "Adult", "Reference", "Religion")))
@@ -421,14 +421,14 @@
 				upload_category = newcategory
 			return TRUE
 		if("upload")
-			if(!scanner?.cache)
+			if(!scanner()?.cache())
 				return TRUE
 			var/choice = act_prompt(usr, action, params, ui, "k393", list("message" = "Are you certain you wish to upload this title to the Archive?", "title" = "Confirmation", "choices" = list("Confirm", "Abort")))
 			if(isnull(choice))
 				return
 			if(choice != "Confirm")
 				return TRUE
-			if(scanner.cache.unique)
+			if(scanner().cache().unique)
 				tgui_alert_async(usr, "This book has been rejected from the database. Aborting!")
 				return TRUE
 			if(!SSdbcore.IsConnected())
@@ -437,8 +437,8 @@
 			// om_io: the uploader hears back when the archive answers.
 			om_io(src, /datum/om/io/sql,
 				"INSERT INTO library (author, title, content, category) VALUES (:author, :title, :content, :category)",
-				list("author" = scanner.cache.author, "title" = scanner.cache.name, "content" = scanner.cache.dat, "category" = upload_category),
-				PROC_REF(upload_done), usr.ckey, "[usr.name]/[usr.key] has uploaded the book titled [scanner.cache.name], [length(scanner.cache.dat)] signs")
+				list("author" = scanner().cache().author, "title" = scanner().cache().name, "content" = scanner().cache().dat, "category" = upload_category),
+				PROC_REF(upload_done), usr.ckey, "[usr.name]/[usr.key] has uploaded the book titled [scanner().cache().name], [length(scanner().cache().dat)] signs")
 			return TRUE
 		if("targetid")
 			var/raw_id = params["id"]
@@ -548,7 +548,7 @@
 	icon_state = "bigscanner"
 	anchored = TRUE
 	density = TRUE
-	var/obj/item/book/cache		// Last scanned book
+	var/tmp/cache_handle	// Last scanned book
 
 /obj/machinery/libraryscanner/declare_interactions(list/into)
 	into += list(
@@ -589,8 +589,8 @@
 
 /obj/machinery/libraryscanner/tgui_data(mob/user)
 	var/list/data = list()
-	data["has_cache"] = !!cache
-	data["cache_name"] = cache ? cache.name : ""
+	data["has_cache"] = !!cache()
+	data["cache_name"] = cache() ? cache().name : ""
 	var/has_book = FALSE
 	latent_materialize_all() // a walk needs real things (C5)
 	for(var/obj/item/book/B in contents) // ALLOW(latent): materialized above
@@ -607,12 +607,12 @@
 		if("scan")
 			latent_materialize_all() // a walk needs real things (C5)
 			for(var/obj/item/book/B in contents) // ALLOW(latent): materialized above
-				cache = B
+				cache_handle = om_handle(B)
 				break
 			add_fingerprint(usr)
 			return TRUE
 		if("clear")
-			cache = null
+			cache_handle = null
 			return TRUE
 		if("eject")
 			latent_materialize_all() // a walk needs real things (C5)
@@ -682,3 +682,11 @@
 	b.name = "Print Job #" + "[rand(100, 999)]"
 	b.icon_state = "book[rand(1,7)]"
 	qdel(source_bundle)
+
+/// LC-refs: Book scanner that will be used when uploading books to the Archive -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/librarycomp/proc/scanner() as /obj/machinery/libraryscanner
+	return om_resolve(scanner_handle)
+
+/// LC-refs: Last scanned book -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/libraryscanner/proc/cache() as /obj/item/book
+	return om_resolve(cache_handle)

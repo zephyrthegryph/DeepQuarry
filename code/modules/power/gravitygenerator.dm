@@ -51,8 +51,8 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 
 // ALLOW(lifecycle): a broken part takes the whole generator down.
 /obj/machinery/gravity_generator/part/Destroy()
-	if(main_part)
-		qdel(main_part)
+	if(main_part())
+		qdel(main_part())
 	atom_break()
 	return ..()
 
@@ -61,7 +61,7 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 //
 
 /obj/machinery/gravity_generator/part
-	var/obj/machinery/gravity_generator/main/main_part = null
+	var/tmp/main_part_handle
 
 /obj/machinery/gravity_generator/part/declare_interactions(list/into)
 	into += list(
@@ -78,7 +78,7 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 	effect = /obj/machinery/gravity_generator/part/proc/interaction_forward_item
 
 /obj/machinery/gravity_generator/part/proc/interaction_forward_item(mob/user, obj/item/I, datum/interaction/interaction)
-	main_part?.attackby(I, user)
+	main_part()?.attackby(I, user)
 	return TRUE
 
 /// Old attack_hand: forwarded straight to main_part's own attack_hand, never called ..().
@@ -88,16 +88,16 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 	effect = /obj/machinery/gravity_generator/part/proc/interaction_forward_hand
 
 /obj/machinery/gravity_generator/part/proc/interaction_forward_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	main_part?.attack_hand(user)
+	main_part()?.attack_hand(user)
 	return TRUE
 
 /obj/machinery/gravity_generator/part/get_status()
-	return main_part?.get_status()
+	return main_part()?.get_status()
 
 /obj/machinery/gravity_generator/part/atom_break(damage_flag)
 	. = ..()
-	if(main_part && !(main_part.stat & BROKEN))
-		main_part.atom_break(damage_flag)
+	if(main_part() && !(main_part().stat & BROKEN))
+		main_part().atom_break(damage_flag)
 
 //
 // Generator which spawns with the station.
@@ -109,7 +109,7 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 /obj/machinery/gravity_generator/main/station/Initialize(mapload)
 	. = ..()
 	setup_parts()
-	middle.add_overlay("activated")
+	middle().add_overlay("activated")
 
 //
 // Generator an admin can spawn
@@ -132,7 +132,7 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 	var/on = TRUE
 	var/breaker = TRUE
 	var/list/parts
-	var/obj/middle = null
+	var/tmp/middle_handle
 	var/charging_state = POWER_IDLE
 	var/charge_count = 100
 	var/current_overlay = null
@@ -156,7 +156,7 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 	if(!gravity_in_level())
 		update_gravity(FALSE)
 	for(var/obj/machinery/gravity_generator/part/O in parts)
-		O.main_part = null
+		O.main_part_handle = null
 		if(!QDESTROYING(O))
 			qdel(O)
 	return ..()
@@ -172,13 +172,13 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 			continue
 		var/obj/machinery/gravity_generator/part/part = new(T)
 		if(count == 5) // Middle
-			middle = part
+			middle_handle = om_handle(part)
 		if(count <= 3) // Their sprite is the top part of the generator
 			part.density = FALSE
 			part.plane = MOB_PLANE
 			part.layer = ABOVE_MOB_LAYER
 		part.sprite_number = count
-		part.main_part = src
+		part.main_part_handle = om_handle(src)
 		LAZYADD(parts, part)
 		part.update_icon()
 
@@ -192,7 +192,7 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 	for(var/obj/machinery/gravity_generator/M in parts)
 		if(!(M.stat & BROKEN))
 			M.atom_break(damage_flag)
-	middle.cut_overlays()
+	middle().cut_overlays()
 	charge_count = 0
 	breaker = FALSE
 	set_power()
@@ -405,10 +405,10 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 					overlay_state = "activated"
 
 			if(overlay_state != current_overlay)
-				if(middle)
-					middle.cut_overlays()
+				if(middle())
+					middle().cut_overlays()
 					if(overlay_state)
-						middle.add_overlay(overlay_state)
+						middle().add_overlay(overlay_state)
 					current_overlay = overlay_state
 
 /obj/machinery/gravity_generator/main/proc/pulse_radiation()
@@ -502,3 +502,11 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/gravity_generator/main/step_start_condition()
 	return charging_state != 0 // POWER_IDLE (undefined past this file end)
+
+/// LC-refs: the main_part this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/gravity_generator/part/proc/main_part() as /obj/machinery/gravity_generator/main
+	return om_resolve(main_part_handle)
+
+/// LC-refs: the middle this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/gravity_generator/main/proc/middle() as /obj
+	return om_resolve(middle_handle)

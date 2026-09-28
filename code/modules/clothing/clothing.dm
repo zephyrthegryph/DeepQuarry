@@ -71,8 +71,8 @@
 // safe: retracted back into the control module if it still exists, otherwise dropped
 // to the floor as a normal item. After this runs the piece is never "stuck".
 /obj/item/clothing/proc/rig_self_detach()
-	var/obj/item/rig/owner_rig = master_rig
-	master_rig = null
+	var/obj/item/rig/owner_rig = master_rig()
+	master_rig_handle = null
 	canremove = TRUE
 	if(ismob(loc))
 		var/mob/M = loc
@@ -93,7 +93,7 @@
 	// control module (dismemberment, stripping, gibbing) frees itself instead of
 	// staying locked. The module's own retract clears master_rig first, so this no-ops
 	// for the normal path.
-	if(master_rig)
+	if(master_rig())
 		rig_self_detach()
 
 /obj/item/clothing/click_alt(mob/user)
@@ -319,7 +319,7 @@
 		ACCESSORY_SLOT_RING\
 		|ACCESSORY_SLOT_WRIST)
 
-REF_OWNED(/obj/item/clothing/gloves, list("ring", "gloves"))
+REF_OWNED(/obj/item/clothing/gloves, list("ring", "gloves", "special_attack"))
 REF_SPILL_LIST(/obj/item/clothing/gloves, "contents")
 
 /obj/item/clothing/proc/set_clothing_index()
@@ -1330,7 +1330,7 @@ REF_SPILL_LIST(/obj/item/clothing, "contents")
 // ALLOW(lifecycle): its integrated circuit goes with it.
 /obj/item/clothing/Destroy()
 	if(IC)
-		IC.clothing = null
+		IC.clothing_handle = null
 		action_circuit = null
 		QDEL_NULL(IC)
 	return ..()
@@ -1526,3 +1526,13 @@ DECLARE_INTERACTIONS(/obj/item/clothing/shoes, INTERACT_DRAG(null, PROC_REF(inte
 		SPECIES_TESHARI = 'icons/inventory/head/mob_teshari.dmi',
 		SPECIES_VOX = 'icons/inventory/head/mob_vox.dmi',
 		SPECIES_WEREBEAST = 'icons/inventory/head/mob_werebeast.dmi')
+
+REF_OWNED(/obj/item/clothing/head, "helmet_light")
+
+REF_OWNED(/obj/item/clothing/under, list("rolled_down_icon", "rolled_down_sleeves_icon"))
+
+REF_HELD(/obj/item/clothing/gloves, "cell")
+
+/// LC-refs: the master_rig this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/clothing/proc/master_rig() as /obj/item/rig
+	return om_resolve(master_rig_handle)

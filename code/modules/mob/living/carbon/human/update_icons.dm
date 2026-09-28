@@ -514,7 +514,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	var/icon/hair_acc_s = get_hair_accessory_overlay()
 	var/image/hair_acc_s_image = null
 	if(hair_acc_s)
-		if(hair_accessory_style.ignores_lighting)
+		if(hair_accessory_style().ignores_lighting)
 			hair_acc_s_image = image(hair_acc_s)
 			hair_acc_s_image.plane = PLANE_LIGHTING_ABOVE
 			hair_acc_s_image.appearance_flags = appearance_flags

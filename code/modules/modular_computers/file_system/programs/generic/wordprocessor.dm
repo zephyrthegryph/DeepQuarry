@@ -19,7 +19,7 @@
 	category = PROG_OFFICE
 
 /datum/computer_file/program/wordprocessor/proc/get_file(filename)
-	var/obj/item/computer_hardware/hard_drive/HDD = computer.hard_drive
+	var/obj/item/computer_hardware/hard_drive/HDD = computer().hard_drive
 	if(!HDD)
 		return
 	var/datum/computer_file/data/F = HDD.find_file_by_name(filename)
@@ -40,7 +40,7 @@
 		F = create_file(filename, loaded_data)
 		return !isnull(F)
 	var/datum/computer_file/data/backup = F.clone()
-	var/obj/item/computer_hardware/hard_drive/HDD = computer.hard_drive
+	var/obj/item/computer_hardware/hard_drive/HDD = computer().hard_drive
 	if(!HDD)
 		return
 	HDD.remove_file(F)
@@ -55,7 +55,7 @@
 /datum/computer_file/program/wordprocessor/proc/create_file(newname, data = "")
 	if(!newname)
 		return
-	var/obj/item/computer_hardware/hard_drive/HDD = computer.hard_drive
+	var/obj/item/computer_hardware/hard_drive/HDD = computer().hard_drive
 	if(!HDD)
 		return
 	if(get_file(newname))
@@ -195,10 +195,10 @@
 			return TRUE
 
 		if("PRG_printfile")
-			if(!computer.nano_printer)
+			if(!computer().nano_printer)
 				error = "Missing Hardware: Your computer does not have the required hardware to complete this operation."
 				return TRUE
-			if(!computer.nano_printer.print_text(pencode2html(loaded_data)))
+			if(!computer().nano_printer.print_text(pencode2html(loaded_data)))
 				error = "Hardware error: Printer was unable to print the file. It may be out of paper."
 				return TRUE
 			return TRUE
@@ -206,8 +206,8 @@
 /datum/computer_file/program/wordprocessor/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = get_header_data()
 
-	var/obj/item/computer_hardware/hard_drive/HDD = computer.hard_drive
-	var/obj/item/computer_hardware/hard_drive/portable/RHDD = computer.portable_drive
+	var/obj/item/computer_hardware/hard_drive/HDD = computer().hard_drive
+	var/obj/item/computer_hardware/hard_drive/portable/RHDD = computer().portable_drive()
 	data["error"] = null
 	if(error)
 		data["error"] = error
@@ -221,7 +221,7 @@
 
 	if(browsing)
 		data["browsing"] = browsing
-		if(!computer || !HDD)
+		if(!computer() || !HDD)
 			data["error"] = "I/O ERROR: Unable to access hard drive."
 		else
 			var/list/files[0]

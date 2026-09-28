@@ -133,12 +133,12 @@
 	//Mechanically required
 	var/path
 	var/slot
-	var/client/client
+	var/tmp/client_handle
 	var/client_ckey
 
 /datum/vore_preferences/New(client/C)
 	if(istype(C))
-		client = C
+		client_handle = om_handle(C)
 		client_ckey = C.ckey
 		load_vore()
 
@@ -173,12 +173,12 @@
 
 
 /datum/vore_preferences/proc/load_vore()
-	if(!client || !client_ckey)
+	if(!client() || !client_ckey)
 		return FALSE //No client, how can we save?
-	if(!client.prefs || !client.prefs.default_slot)
+	if(!client().prefs || !client().prefs.default_slot)
 		return FALSE //Need to know what character to load!
 
-	slot = client.prefs.default_slot
+	slot = client().prefs.default_slot
 
 	load_path(client_ckey,slot)
 
@@ -500,3 +500,9 @@
 //Can do conversions here
 /datum/vore_preferences/proc/patch_version(list/json_from_file,version)
 	return json_from_file
+
+REF_OWNED(/client, "prefs_vr")
+
+/// LC-refs: the client this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/vore_preferences/proc/client() as /client
+	return om_resolve(client_handle)

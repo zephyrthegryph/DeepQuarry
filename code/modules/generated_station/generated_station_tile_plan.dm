@@ -60,7 +60,7 @@
 	var/list/errors
 	/// Exclusive fixture ownership keyed by structural wall coordinate and room-facing side.
 	var/list/wall_fixture_edges
-	var/datum/generated_station_materializer/generation_owner
+	var/tmp/generation_owner_handle
 	var/list/utility_floors_by_owner
 	var/list/utility_floors_by_zone
 	/// Working state of derive_hull_step() and validate_seal_step() between slices.
@@ -82,7 +82,7 @@
 	wall_fixture_edges = list()
 	utility_floors_by_owner = list()
 	utility_floors_by_zone = list()
-	generation_owner = new_generation_owner
+	generation_owner_handle = om_handle(new_generation_owner)
 	if(!deferred)
 		for(var/x in 1 to grid_width)
 			fill_column(x)
@@ -119,7 +119,7 @@ REF_OWNED_VALUES(/datum/generated_station_tile_plan, "tiles")
 				utility_floors_by_zone[intent.zone_id] = list()
 			var/list/zone_floors = utility_floors_by_zone[intent.zone_id]
 			zone_floors += intent
-		generation_owner?.generation_checkpoint("Indexing utility sockets", 31)
+		generation_owner()?.generation_checkpoint("Indexing utility sockets", 31)
 
 /datum/generated_station_tile_plan/proc/utility_floors(owner_id, zone_id)
 	return zone_id ? utility_floors_by_zone[zone_id] : utility_floors_by_owner[owner_id]
@@ -240,7 +240,7 @@ REF_OWNED_VALUES(/datum/generated_station_tile_plan, "tiles")
 				var/open_x = door_intent.local_x + (door_intent.door_direction == EAST) - (door_intent.door_direction == WEST)
 				var/open_y = door_intent.local_y + (door_intent.door_direction == NORTH) - (door_intent.door_direction == SOUTH)
 				hull_openings[coordinate_key(open_x, open_y)] = TRUE
-			if(n < count && generation_owner?.generation_checkpoint("Deriving station hull", 29))
+			if(n < count && generation_owner()?.generation_checkpoint("Deriving station hull", 29))
 				return list(1, n + 1)
 		stage = 2
 		i = 1
@@ -254,7 +254,7 @@ REF_OWNED_VALUES(/datum/generated_station_tile_plan, "tiles")
 						continue
 					if(neighbor && neighbor.structure_kind == GENERATED_STATION_TILE_EXTERIOR)
 						hull_coordinates[coordinate_key(neighbor.local_x, neighbor.local_y)] = neighbor
-			if(n < count && generation_owner?.generation_checkpoint("Deriving station hull", 29))
+			if(n < count && generation_owner()?.generation_checkpoint("Deriving station hull", 29))
 				return list(2, n + 1)
 		for(var/key in hull_coordinates)
 			var/datum/generated_station_tile_intent/intent = hull_coordinates[key]
@@ -273,7 +273,7 @@ REF_OWNED_VALUES(/datum/generated_station_tile_plan, "tiles")
 			var/west = tile(intent.local_x - 1, intent.local_y)?.structure_kind == GENERATED_STATION_TILE_HULL
 			if((north || south) && (east || west) && (north + south + east + west == 2))
 				hull_corners += intent
-		if(n < count && generation_owner?.generation_checkpoint("Closing station hull corners", 30))
+		if(n < count && generation_owner()?.generation_checkpoint("Closing station hull corners", 30))
 			return list(3, n + 1)
 	for(var/datum/generated_station_tile_intent/intent in hull_corners)
 		claim(intent.local_x, intent.local_y, wall_owner_id, "hull", GENERATED_STATION_TILE_HULL, null, null)
@@ -304,7 +304,7 @@ REF_OWNED_VALUES(/datum/generated_station_tile_plan, "tiles")
 		for(var/y in 1 to grid_height)
 			seal_enqueue(tile(1, y))
 			seal_enqueue(tile(grid_width, y))
-		if(generation_owner?.generation_checkpoint("Seeding pressure-hull work queue", 30, TRUE))
+		if(generation_owner()?.generation_checkpoint("Seeding pressure-hull work queue", 30, TRUE))
 			return TRUE
 	var/list/open = seal_open
 	var/list/visited = seal_visited
@@ -324,7 +324,7 @@ REF_OWNED_VALUES(/datum/generated_station_tile_plan, "tiles")
 			var/datum/generated_station_tile_intent/neighbor = tile(neighbor_x, neighbor_y)
 			if(neighbor && !visited[(neighbor.local_y - 1) * grid_width + neighbor.local_x])
 				seal_enqueue(neighbor)
-		if(seal_open_count && generation_owner?.generation_checkpoint("Validating station pressure hull", 30))
+		if(seal_open_count && generation_owner()?.generation_checkpoint("Validating station pressure hull", 30))
 			return TRUE
 	seal_open = null
 	seal_visited = null
@@ -338,3 +338,7 @@ REF_OWNED_VALUES(/datum/generated_station_tile_plan, "tiles")
 	seal_queued[key] = TRUE
 	seal_open[++seal_open_count] = intent
 
+
+/// LC-refs: the generation_owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/generated_station_tile_plan/proc/generation_owner() as /datum/generated_station_materializer
+	return om_resolve(generation_owner_handle)

@@ -351,14 +351,14 @@
 	// The soulgem saves its linked belly by name and relinks it on load.
 	var/obj/soulgem/gem = new(pred)
 	gem.inside_flavor = "a test room"
-	gem.linked_belly = copy
+	gem.linked_belly_handle = om_handle(copy)
 	var/list/gem_blob = state_serialize(gem, NONE, errors)
 	TEST_ASSERT_NOTNULL(gem_blob, "the soulgem should serialize: [jointext(errors, "; ")]")
 	var/list/gem_vars = gem_blob[STATE_KEY_VARS]
 	TEST_ASSERT_EQUAL(gem_vars["linked_belly"], "Tummy", "the linked belly should be saved by name")
-	gem.linked_belly = null
+	gem.linked_belly_handle = null
 	var/obj/soulgem/gem_copy = state_materialize(json_decode(json_encode(gem_blob)), pred, NONE, errors)
 	TEST_ASSERT_EQUAL(gem_copy?.inside_flavor, "a test room", "soulgem text should round trip")
-	TEST_ASSERT(gem_copy?.linked_belly?.name == "Tummy", "the soulgem should relink the belly by name")
+	TEST_ASSERT(gem_copy?.linked_belly()?.name == "Tummy", "the soulgem should relink the belly by name")
 	qdel(gem_copy)
 	qdel(gem)

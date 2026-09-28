@@ -7,12 +7,12 @@
 	randpixel = 5
 	w_class = ITEMSIZE_SMALL
 	MATERIAL_MIX(list(MAT_STEEL = 30, MAT_GLASS = 10))
-	var/datum/techweb/stored_research
+	var/tmp/stored_research_handle
 
 /obj/item/disk/tech_disk/Initialize(mapload)
 	. = ..()
-	if(!stored_research)
-		stored_research = new /datum/techweb/disk
+	if(!stored_research())
+		stored_research_handle = om_handle(new /datum/techweb/disk)
 	randpixel_xy()
 
 /obj/item/disk/tech_disk/debug
@@ -20,7 +20,7 @@
 	desc = "A debug item for research"
 
 /obj/item/disk/tech_disk/debug/Initialize(mapload)
-	stored_research = locate(/datum/techweb/admin) in SSresearch.techwebs
+	stored_research_handle = om_handle(locate(/datum/techweb/admin) in SSresearch.techwebs)
 	return ..()
 
 /obj/item/disk/design_disk
@@ -47,3 +47,7 @@
  */
 /obj/item/disk/design_disk/proc/on_upload(datum/techweb/stored_research, atom/research_source)
 	return
+
+/// LC-refs: the stored_research this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/disk/tech_disk/proc/stored_research() as /datum/techweb
+	return om_resolve(stored_research_handle)

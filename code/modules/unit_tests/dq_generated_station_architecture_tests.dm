@@ -284,7 +284,7 @@
 	materialized.z_level = world.maxz
 	var/area/generated_station/transit/transit = new
 	transit.station_id = materialized.station_id
-	materialized.transit_area = transit
+	materialized.transit_area_handle = om_handle(transit)
 	var/turf/T = locate(world.maxx, world.maxy, world.maxz)
 	T.ChangeTurf(/turf/simulated/floor/plating, tell_universe = FALSE)
 	ChangeArea(T, transit)
@@ -312,7 +312,7 @@
 	materialized.z_level = world.maxz
 	materialized.origin_x = 1
 	materialized.origin_y = 1
-	materialized.transit_area = new
+	materialized.transit_area_handle = om_handle(new /area/generated_station/transit)
 	materialized.tile_plan = new(1, 1)
 	var/turf/actual = locate(1, 1, world.maxz)
 	var/expected_kind = istype(actual, /turf/simulated/floor) ? GENERATED_STATION_TILE_HULL : GENERATED_STATION_TILE_FLOOR
@@ -335,7 +335,7 @@
 	materialized.z_level = world.maxz
 	materialized.origin_x = 1
 	materialized.origin_y = 1
-	materialized.transit_area = new
+	materialized.transit_area_handle = om_handle(new /area/generated_station/transit)
 	materialized.tile_plan = new(1, 1)
 	var/turf/actual = locate(1, 1, world.maxz)
 	var/expected_kind = GENERATED_STATION_TILE_EXTERIOR

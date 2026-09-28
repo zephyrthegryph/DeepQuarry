@@ -10,9 +10,9 @@
 	use_power = USE_POWER_IDLE
 	var/harvesting = 0
 	var/harvesting_speed = 0
-	var/obj/item/anobattery/inserted_battery
-	var/obj/cur_artifact
-	var/obj/machinery/artifact_scanpad/owned_scanner = null
+	var/tmp/inserted_battery_handle
+	var/tmp/cur_artifact_handle
+	var/tmp/owned_scanner_handle
 	var/last_process = 0
 	bubble_icon = "science"
 	circuit = /obj/item/circuitboard/artifact_harvester
@@ -20,9 +20,9 @@
 /// If you want it to load smoothly, set it's dir to wherever the scanpad is!
 /obj/machinery/artifact_harvester/Initialize(mapload)
 	. = ..()
-	owned_scanner = locate(/obj/machinery/artifact_scanpad) in get_step(src, dir)
-	if(!owned_scanner)
-		owned_scanner = locate(/obj/machinery/artifact_scanpad) in orange(1, src)
+	owned_scanner_handle = om_handle(locate(/obj/machinery/artifact_scanpad) in get_step(src, dir))
+	if(!owned_scanner())
+		owned_scanner_handle = om_handle(locate(/obj/machinery/artifact_scanpad) in orange(1, src))
 	default_apply_parts()
 	update_icon()
 
@@ -60,27 +60,27 @@
 
 /obj/machinery/artifact_harvester/proc/interaction_artifact_harvester_use_item(mob/user, obj/item/held, datum/interaction/interaction)
 	if(istype(held,/obj/item/anobattery))
-		if(!inserted_battery)
+		if(!inserted_battery())
 			to_chat(user, span_blue("You insert [held] into [src]."))
 			user.drop_item()
 			held.forceMove(src)
-			src.inserted_battery = held
+			src.inserted_battery_handle = om_handle(held)
 			SStgui.update_uis(src)
 		else
 			to_chat(user, span_red("There is already a battery in [src]."))
 	if(default_part_replacement(user, held))
 		return TRUE
-	if(inserted_battery)
+	if(inserted_battery())
 		return FALSE
 	return TRUE
 
 /obj/machinery/artifact_harvester/screwdriver_act(mob/user, obj/item/tool)
-	if(inserted_battery)
+	if(inserted_battery())
 		return ITEM_INTERACT_BLOCKING
 	return ..()
 
 /obj/machinery/artifact_harvester/crowbar_act(mob/user, obj/item/tool)
-	if(inserted_battery)
+	if(inserted_battery())
 		return ITEM_INTERACT_BLOCKING
 	return ..()
 
@@ -108,21 +108,21 @@
 	data["info"] = list(
 		"no_scanner" = TRUE,
 	)
-	if(owned_scanner)
+	if(owned_scanner())
 		data["info"] = list(
 			"no_scanner" = FALSE,
 			"harvesting" = harvesting,
 			"inserted_battery" = list(),
 		)
-		if(inserted_battery)
+		if(inserted_battery())
 			data["info"]["inserted_battery"] = list(
-				"name" = inserted_battery.name,
-				"stored_charge" = inserted_battery.stored_charge,
-				"capacity" = inserted_battery.capacity,
+				"name" = inserted_battery().name,
+				"stored_charge" = inserted_battery().stored_charge,
+				"capacity" = inserted_battery().capacity,
 				"artifact_id" = null
 			)
-			if(inserted_battery.battery_effect)
-				data["info"]["inserted_battery"]["artifact_id"] = inserted_battery.battery_effect.artifact_id || "???"
+			if(inserted_battery().battery_effect)
+				data["info"]["inserted_battery"]["artifact_id"] = inserted_battery().battery_effect.artifact_id || "???"
 			else
 				data["info"]["inserted_battery"]["artifact_id"] = "N/A"
 	return data
@@ -140,31 +140,31 @@
 
 		if("stopharvest")
 			if(harvesting)
-				if(harvesting < 0 && inserted_battery.battery_effect && inserted_battery.battery_effect.activated)
-					inserted_battery.battery_effect.ToggleActivate()
+				if(harvesting < 0 && inserted_battery().battery_effect && inserted_battery().battery_effect.activated)
+					inserted_battery().battery_effect.ToggleActivate()
 				harvesting = 0
-				cur_artifact.anchored = FALSE
-				cur_artifact.in_use = 0
-				cur_artifact = null
+				cur_artifact().anchored = FALSE
+				cur_artifact().in_use = 0
+				cur_artifact_handle = null
 				atom_say("Energy harvesting interrupted.")
 				icon_state = "incubator"
 			return TRUE
 
 		if("ejectbattery")
-			if(inserted_battery)
-				inserted_battery.forceMove(loc)
-				inserted_battery = null
+			if(inserted_battery())
+				inserted_battery().forceMove(loc)
+				inserted_battery_handle = null
 			return TRUE
 
 		if("drainbattery")
-			if(inserted_battery)
-				if(inserted_battery.battery_effect && inserted_battery.stored_charge > 0)
+			if(inserted_battery())
+				if(inserted_battery().battery_effect && inserted_battery().stored_charge > 0)
 					var/_answer_k162 = act_prompt(ui.user, action, params, ui, "k162", list("message" = "This action will dump all charge, safety gear is recommended before proceeding", "title" = "Warning", "choices" = list("Continue","Cancel")))
 					if(isnull(_answer_k162))
 						return
 					if(_answer_k162 == "Continue")
-						if(!inserted_battery.battery_effect.activated)
-							inserted_battery.battery_effect.ToggleActivate(1)
+						if(!inserted_battery().battery_effect.activated)
+							inserted_battery().battery_effect.ToggleActivate(1)
 						harvesting = -1
 						update_use_power(USE_POWER_ACTIVE)
 						icon_state = "incubator_on"
@@ -177,18 +177,18 @@
 
 
 /obj/machinery/artifact_harvester/proc/harvest(mob/user)
-	if(!inserted_battery)
+	if(!inserted_battery())
 		atom_say("Cannot harvest. No battery inserted.")
 		return
-	if(inserted_battery.stored_charge >= inserted_battery.capacity)
+	if(inserted_battery().stored_charge >= inserted_battery().capacity)
 		atom_say("Cannot harvest. Battery is full.")
 		return
 
 	//locate artifact on analysis pad
-	cur_artifact = null
+	cur_artifact_handle = null
 	var/articount = 0
 	var/obj/analysed
-	for(var/obj/A in get_turf(owned_scanner))
+	for(var/obj/A in get_turf(owned_scanner()))
 		analysed = A
 		if(A.is_anomalous())
 			articount++
@@ -206,7 +206,7 @@
 		return
 
 	if(analysed)
-		cur_artifact = analysed
+		cur_artifact_handle = om_handle(analysed)
 
 		var/list/active_effects //This will be populated when we see if it has the artifact component or the artifact_master var
 
@@ -237,17 +237,17 @@
 
 		//see if we can clear out an old effect
 		//delete it when the ids match to account for duplicate ids having different effects
-		if(inserted_battery.battery_effect && inserted_battery.stored_charge <= 0)
-			qdel(inserted_battery.battery_effect)
-			inserted_battery.battery_effect = null
+		if(inserted_battery().battery_effect && inserted_battery().stored_charge <= 0)
+			qdel(inserted_battery().battery_effect)
+			inserted_battery().battery_effect = null
 
 		//
 		var/datum/artifact_effect/source_effect
 
 		//if we already have charge in the battery, we can only recharge it from the source artifact
-		if(inserted_battery.stored_charge > 0)
+		if(inserted_battery().stored_charge > 0)
 			var/battery_matches_primary_id = 0
-			if(inserted_battery.battery_effect && inserted_battery.battery_effect.artifact_id == ScannedMaster.artifact_id)
+			if(inserted_battery().battery_effect && inserted_battery().battery_effect.artifact_id == ScannedMaster.artifact_id)
 				battery_matches_primary_id = 1
 			if(battery_matches_primary_id && selected_effect)
 				//we're good to recharge the primary effect!
@@ -261,23 +261,23 @@
 		if(source_effect)
 			harvesting = 1
 			update_use_power(USE_POWER_ACTIVE)
-			cur_artifact.anchored = TRUE
-			cur_artifact.in_use = 1
+			cur_artifact().anchored = TRUE
+			cur_artifact().in_use = 1
 			icon_state = "incubator_on"
 			atom_say("Beginning energy harvesting.")
 
 			//duplicate the artifact's effect datum
-			if(!inserted_battery.battery_effect)
+			if(!inserted_battery().battery_effect)
 				var/effecttype = source_effect.type
-				var/datum/artifact_effect/E = new effecttype(inserted_battery)
+				var/datum/artifact_effect/E = new effecttype(inserted_battery())
 
 				//duplicate it's unique settings
 				for(var/varname in list("chargelevelmax","artifact_id","effect","effectrange","trigger"))
 					E.vars[varname] = source_effect.vars[varname] // ALLOW(api): artifact effect copy
 
 				//copy the new datum into the battery
-				inserted_battery.battery_effect = E
-				inserted_battery.stored_charge = 0
+				inserted_battery().battery_effect = E
+				inserted_battery().stored_charge = 0
 
 
 /// Charges or dumps a battery while harvesting (started from its UI); otherwise it sleeps.
@@ -289,39 +289,51 @@
 
 	if(harvesting > 0)
 		//charge at 33% consumption rate
-		inserted_battery.stored_charge += harvesting_speed
+		inserted_battery().stored_charge += harvesting_speed
 
 		//check if we've finished
-		if(inserted_battery.stored_charge >= inserted_battery.capacity)
+		if(inserted_battery().stored_charge >= inserted_battery().capacity)
 			update_use_power(USE_POWER_IDLE)
 			harvesting = 0
-			cur_artifact.anchored = FALSE
-			cur_artifact.in_use = 0
-			cur_artifact = null
+			cur_artifact().anchored = FALSE
+			cur_artifact().in_use = 0
+			cur_artifact_handle = null
 			src.visible_message(span_bold("[name]") + " states, \"Battery is full.\"")
 			icon_state = "incubator"
 
 	else if(harvesting < 0)
 		//dump some charge
-		inserted_battery.stored_charge -= harvesting_speed
+		inserted_battery().stored_charge -= harvesting_speed
 
 		//do the effect
-		if(inserted_battery.battery_effect)
-			inserted_battery.battery_effect.periodic_step()
+		if(inserted_battery().battery_effect)
+			inserted_battery().battery_effect.periodic_step()
 
 			//if the effect works by touch, activate it on anyone viewing the console
-			if(inserted_battery.battery_effect.effect == EFFECT_TOUCH)
+			if(inserted_battery().battery_effect.effect == EFFECT_TOUCH)
 				var/list/nearby = viewers(1, src)
 				for(var/mob/M in nearby)
 					if(M.check_current_machine(src))
-						inserted_battery.battery_effect.DoEffectTouch(M)
+						inserted_battery().battery_effect.DoEffectTouch(M)
 
 		//if there's no charge left, finish
-		if(inserted_battery.stored_charge <= 0)
+		if(inserted_battery().stored_charge <= 0)
 			update_use_power(USE_POWER_IDLE)
-			inserted_battery.stored_charge = 0
+			inserted_battery().stored_charge = 0
 			harvesting = 0
-			if(inserted_battery.battery_effect && inserted_battery.battery_effect.activated)
-				inserted_battery.battery_effect.ToggleActivate()
+			if(inserted_battery().battery_effect && inserted_battery().battery_effect.activated)
+				inserted_battery().battery_effect.ToggleActivate()
 			src.visible_message(span_bold("[name]") + " states, \"Battery dump completed.\"")
 			icon_state = "incubator"
+
+/// LC-refs: the inserted_battery this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/artifact_harvester/proc/inserted_battery() as /obj/item/anobattery
+	return om_resolve(inserted_battery_handle)
+
+/// LC-refs: the cur_artifact this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/artifact_harvester/proc/cur_artifact() as /obj
+	return om_resolve(cur_artifact_handle)
+
+/// LC-refs: the owned_scanner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/artifact_harvester/proc/owned_scanner() as /obj/machinery/artifact_scanpad
+	return om_resolve(owned_scanner_handle)

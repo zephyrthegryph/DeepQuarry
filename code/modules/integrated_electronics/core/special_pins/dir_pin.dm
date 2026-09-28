@@ -6,14 +6,14 @@
 	var/new_data = rerun_prompt(user, "k6", list("kind" = "number", "message" = "Please type in a valid dir number.  Valid dirs are;\nNorth/Fore = [NORTH],\nSouth/Aft = [SOUTH],\nEast/Starboard = [EAST],\nWest/Port = [WEST],\nNortheast = [NORTHEAST],\nNorthwest = [NORTHWEST],\nSoutheast = [SOUTHEAST],\nSouthwest = [SOUTHWEST],\nUp = [UP],\nDown = [DOWN]", "title" = "[src] dir writing"), PROC_REF(ask_for_pin_data), args)
 	if(isnull(new_data))
 		return
-	if(isnum(new_data) && holder.check_interactivity(user) )
+	if(isnum(new_data) && holder().check_interactivity(user) )
 		to_chat(user, span_notice("You input [new_data] into the pin."))
 		write_data_to_pin(new_data)
 
 /datum/integrated_io/dir/write_data_to_pin(new_data)
 	if(isnull(new_data) || (new_data in (GLOB.alldirs + list(UP, DOWN))))
 		data = new_data
-		holder.on_data_written()
+		holder().on_data_written()
 
 /datum/integrated_io/dir/display_pin_type()
 	return IC_FORMAT_DIR

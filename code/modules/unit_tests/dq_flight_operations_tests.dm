@@ -5,7 +5,7 @@
 	var/datum/flight_destination/destination = new
 	destination.id = "unit-test-destination"
 	destination.name = "Unit Test Destination"
-	destination.target = target
+	destination.target_handle = om_handle(target)
 	destination.required_capabilities = FLIGHT_CAP_STRATEGIC
 	var/datum/flight_vessel/vessel = new
 	vessel.name = "Unit Test Vessel"
@@ -28,11 +28,11 @@
 	var/datum/expedition_site/site = SSexpedition.create_site_descriptor(mission, EXP_DIFF_LOW)
 	TEST_ASSERT_NOTNULL(site, "Expedition survey did not create a site descriptor")
 	TEST_ASSERT_EQUAL(site.z_level, 0, "Surveying an expedition allocated a physical z-level before departure")
-	TEST_ASSERT_NULL(site.landing, "Surveying an expedition created a landing turf before departure")
-	TEST_ASSERT_NULL(site.overmap_sector, "Surveying an expedition created a legacy overmap sector before departure")
+	TEST_ASSERT_NULL(site.landing(), "Surveying an expedition created a landing turf before departure")
+	TEST_ASSERT_NULL(site.overmap_sector(), "Surveying an expedition created a legacy overmap sector before departure")
 	TEST_ASSERT_NOTNULL(site.flight_destination_id, "Surveying an expedition did not register a stable flight destination")
 	var/datum/flight_destination/destination = SSflight_operations.destinations[site.flight_destination_id]
-	TEST_ASSERT(destination?.expedition == site, "The flight destination did not retain the surveyed site descriptor")
+	TEST_ASSERT(destination?.expedition() == site, "The flight destination did not retain the surveyed site descriptor")
 	SSflight_operations.unregister_destination(site.flight_destination_id)
 	qdel(site)
 
@@ -42,7 +42,7 @@
 	var/obj/effect/target = new(null)
 	var/datum/flight_destination/destination = new
 	destination.name = "Surface Site"
-	destination.target = target
+	destination.target_handle = om_handle(target)
 	destination.required_capabilities = FLIGHT_CAP_LAND
 	var/datum/flight_vessel/vessel = new
 	vessel.capabilities = FLIGHT_CAP_STRATEGIC
@@ -85,7 +85,7 @@
 	var/datum/flight_destination/carrier = SSflight_operations.destinations[carrier_id]
 	TEST_ASSERT_NOTNULL(carrier, "Flight registry omitted the Exploration Carrier")
 	TEST_ASSERT_EQUAL(carrier.orbit_parent_id, SSflight_operations.planet_id_named("Sif"), "The carrier does not independently orbit Sif")
-	var/obj/effect/overmap/visitable/ship/carrier_ship = carrier.target
+	var/obj/effect/overmap/visitable/ship/carrier_ship = carrier.target()
 	var/datum/flight_vessel/carrier_vessel = SSflight_operations.vessel_for_ship(carrier_ship)
 	TEST_ASSERT_NULL(carrier_vessel?.docked_port_id, "The carrier was incorrectly registered as docked to another destination")
 
@@ -148,9 +148,9 @@
 	var/list/expected_destination_ids = list()
 	for(var/id in SSflight_operations.vessels)
 		var/datum/flight_vessel/vessel = SSflight_operations.vessels[id]
-		if(!(vessel.shuttle?.current_location?.landmark_tag in carrier_dock_tags))
+		if(!(vessel.shuttle()?.current_location()?.landmark_tag in carrier_dock_tags))
 			continue
-		var/datum/flight_destination/destination = SSflight_operations.destination_for_target(vessel.ship)
+		var/datum/flight_destination/destination = SSflight_operations.destination_for_target(vessel.ship())
 		TEST_ASSERT_NOTNULL(destination, "Carrier craft [vessel.name] has no render destination")
 		expected_destination_ids[destination.id] = vessel.name
 		var/datum/flight_port/port = SSflight_operations.ports[vessel.docked_port_id]
@@ -184,16 +184,16 @@
 	var/datum/flight_vessel/vessel
 	for(var/id in SSflight_operations.vessels)
 		var/datum/flight_vessel/candidate = SSflight_operations.vessels[id]
-		if(candidate.shuttle)
+		if(candidate.shuttle())
 			vessel = candidate
 			break
 	TEST_ASSERT_NOTNULL(vessel, "No landable expedition vessel was registered")
 	var/datum/flight_plan/plan = new(vessel, null, station)
 	TEST_ASSERT(plan.start(), "Southern Cross flight failed preflight")
-	TEST_ASSERT_NOTNULL(plan.arrival_port, "Southern Cross flight planned an orbital fallback instead of a physical landing")
-	TEST_ASSERT(plan.arrival_port.landmark.landmark_tag in list("hangar_3_expedition", "hangar_3_echidna"), "Southern Cross flight did not reserve Hangar Three")
-	TEST_ASSERT(plan.arrival_port.reserved_by == plan, "Reserved arrival port does not own the flight plan lease")
-	TEST_ASSERT_EQUAL(plan.arrival_port.host_destination_id, station.id, "Southern Cross flight substituted a berth on another physical host")
+	TEST_ASSERT_NOTNULL(plan.arrival_port(), "Southern Cross flight planned an orbital fallback instead of a physical landing")
+	TEST_ASSERT(plan.arrival_port().landmark().landmark_tag in list("hangar_3_expedition", "hangar_3_echidna"), "Southern Cross flight did not reserve Hangar Three")
+	TEST_ASSERT(plan.arrival_port().reserved_by() == plan, "Reserved arrival port does not own the flight plan lease")
+	TEST_ASSERT_EQUAL(plan.arrival_port().host_destination_id, station.id, "Southern Cross flight substituted a berth on another physical host")
 	qdel(plan)
 
 /datum/unit_test/dq_station_route_rejects_carrier_port_alias
@@ -217,13 +217,13 @@
 	var/tested_vessels = 0
 	for(var/id in SSflight_operations.vessels)
 		var/datum/flight_vessel/vessel = SSflight_operations.vessels[id]
-		if(!vessel.shuttle || !(vessel.capabilities & FLIGHT_CAP_EXPEDITION))
+		if(!vessel.shuttle() || !(vessel.capabilities & FLIGHT_CAP_EXPEDITION))
 			continue
 		tested_vessels++
 		var/found_valid_berth = FALSE
 		for(var/tag in list("hangar_3_expedition", "hangar_3_echidna"))
 			var/obj/effect/shuttle_landmark/southern_cross/expedition_station/berth = SSshuttles.registered_shuttle_landmarks[tag]
-			if(berth?.accepts_shuttle(vessel.shuttle) && berth.is_valid(vessel.shuttle))
+			if(berth?.accepts_shuttle(vessel.shuttle()) && berth.is_valid(vessel.shuttle()))
 				found_valid_berth = TRUE
 				break
 		TEST_ASSERT(found_valid_berth, "Hangar Three cannot physically fit [vessel.name]")
@@ -237,17 +237,17 @@
 	var/datum/flight_destination/station = new
 	station.id = "unit-station-orbit"
 	station.kind = FLIGHT_DEST_STATION
-	station.target = target
+	station.target_handle = om_handle(target)
 	var/datum/flight_vessel/vessel = new
-	vessel.ship = ship
+	vessel.ship_handle = om_handle(ship)
 	vessel.capabilities = FLIGHT_CAP_STRATEGIC
 	var/datum/flight_plan/plan = new(vessel, null, station)
 	TEST_ASSERT(!plan.start(), "A station flight without a berth launched despite having nowhere to land")
-	TEST_ASSERT_NULL(plan.arrival_port, "A station flight reserved an unrelated physical berth")
+	TEST_ASSERT_NULL(plan.arrival_port(), "A station flight reserved an unrelated physical berth")
 	TEST_ASSERT_EQUAL(plan.state, FLIGHT_PLAN_FAILED, "A berthless station flight did not fail during preflight")
 	qdel(plan)
-	vessel.ship = null
-	station.target = null
+	vessel.ship_handle = null
+	station.target_handle = null
 	qdel(vessel)
 	qdel(station)
 	qdel(target)
@@ -262,10 +262,10 @@
 	var/datum/flight_port/port = new
 	var/datum/flight_plan/plan = new(vessel, null, destination)
 	vessel.active_plan = plan
-	plan.arrival_port = port
-	port.reserved_by = plan
+	plan.arrival_port_handle = om_handle(port)
+	port.reserved_by_handle = om_handle(plan)
 	plan.fail("Intentional unit-test failure")
-	TEST_ASSERT_NULL(port.reserved_by, "A failed flight retained its arrival-port reservation")
+	TEST_ASSERT_NULL(port.reserved_by(), "A failed flight retained its arrival-port reservation")
 	TEST_ASSERT(!LAZYLEN(destination.active_plans), "A failed flight retained its destination lease")
 	qdel(plan)
 	qdel(port)
@@ -278,7 +278,7 @@
 	var/datum/expedition_site/site = new
 	var/datum/flight_destination/destination = new
 	destination.id = "unit-expedition-destination"
-	destination.expedition = site
+	destination.expedition_handle = om_handle(site)
 	var/datum/flight_vessel/vessel = new
 	var/datum/flight_plan/plan = new(vessel, null, destination)
 	TEST_ASSERT_EQUAL(plan.generation_state, FLIGHT_GENERATION_QUEUED, "An ungenerated expedition was not queued")
@@ -286,7 +286,7 @@
 	TEST_ASSERT_EQUAL(plan.generation_state, FLIGHT_GENERATION_RUNNING, "Engaging an expedition did not arm generation")
 	TEST_ASSERT_EQUAL(plan.generation_stage, "Reserving destination", "Expedition generation began before transit")
 	qdel(plan)
-	destination.expedition = null
+	destination.expedition_handle = null
 	qdel(vessel)
 	qdel(destination)
 	qdel(site)

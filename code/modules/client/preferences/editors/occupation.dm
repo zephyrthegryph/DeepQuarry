@@ -60,7 +60,7 @@
 /// a short human-readable reason ("WHITELIST", "AGE 30+", etc.).
 /datum/preference_editor/occupation/proc/block_reason(datum/preferences/preferences, datum/job/job)
 	if(job.whitelist_only)
-		var/client/C = preferences.client
+		var/client/C = preferences.client()
 		if(!C || !is_job_whitelisted(C.mob, job.title))
 			return "WHITELIST"
 	var/min_age = job.get_min_age()

@@ -49,10 +49,10 @@ REF_OWNED(/obj/machinery/appliance/mixer, "mixer_loop")
 
 /obj/machinery/appliance/mixer/has_space(obj/item/I)
 	var/datum/cooking_item/CI = LAZYACCESS(cooking_objs, 1)
-	if (!CI || !CI.container)
+	if (!CI || !CI.container())
 		return 0
 
-	if (CI.container.can_fit(I))
+	if (CI.container().can_fit(I))
 		return CI
 
 	return 0
@@ -70,12 +70,12 @@ REF_OWNED(/obj/machinery/appliance/mixer, "mixer_loop")
 	if (can_remove_items(user))
 		var/list/menuoptions = list()
 		for(var/datum/cooking_item/CI as anything in cooking_objs)
-			if (CI.container)
-				if (!CI.container.check_contents())
+			if (CI.container())
+				if (!CI.container().check_contents())
 					to_chat(user, span_filter_notice("There's nothing in [src] you can remove!"))
 					return
 
-				for (var/obj/item/I in CI.container)
+				for (var/obj/item/I in CI.container())
 					menuoptions[I.name] = I
 
 		var/selection = rerun_prompt(user, "k86", list("kind" = "list", "message" = "Which item would you like to remove? If you want to remove chemicals, use an empty beaker.", "title" = "Remove ingredients", "choices" = menuoptions), PROC_REF(removal_menu), args)
@@ -99,7 +99,7 @@ REF_OWNED(/obj/machinery/appliance/mixer, "mixer_loop")
 	set category = "Object"
 
 	var/datum/cooking_item/CI = LAZYACCESS(cooking_objs, 1)
-	if(!CI.container.check_contents())
+	if(!CI.container().check_contents())
 		to_chat(usr, span_filter_notice("There's nothing in it! Add ingredients before turning [src] on!"))
 		return
 

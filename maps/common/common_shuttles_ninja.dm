@@ -10,7 +10,7 @@
 	can_cloak = TRUE
 	cloaked = TRUE
 	shuttle_area = /area/shuttle/ninja
-	current_location = "ninja_start"
+	current_location_tag = "ninja_start"
 	docking_controller_tag = "ninja_shuttle"
 	move_direction = SOUTH
 	destination_tags = list(

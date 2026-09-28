@@ -2,7 +2,7 @@
 /obj/item/broken_gun
 	desc = "The remains of an unfortunate firearm."
 
-	var/obj/item/gun/my_guntype = null
+	var/my_guntype = null	// the gun type this repairs into
 
 	// Materials needed for repair. Associative list, path - number of items
 	var/list/material_needs
@@ -143,7 +143,7 @@ DECLARE_INTERACTIONS(/obj/item/broken_gun, INTERACT_ITEM(null, PROC_REF(interact
 			break
 
 	if(fully_repaired)
-		my_guntype = new my_guntype(get_turf(src))
-		my_guntype.name = "[pick("salvaged", "repaired", "old")] [initial(my_guntype.name)]"
-		to_chat(user, span_notice("You finish your repairs on \the [my_guntype]."))
+		var/obj/item/gun/repaired = new my_guntype(get_turf(src))
+		repaired.name = "[pick("salvaged", "repaired", "old")] [initial(repaired.name)]"
+		to_chat(user, span_notice("You finish your repairs on \the [repaired]."))
 		consume(src, user)

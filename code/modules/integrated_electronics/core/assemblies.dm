@@ -16,8 +16,8 @@
 	var/net_power = 0 // Set every tick, to display how much power is being drawn in total.
 	var/detail_color = COLOR_ASSEMBLY_BLACK
 	var/locked = FALSE // If true, the assembly cannot be opened with a crowbar
-	var/obj/item/card/id/locked_by = null // The ID that locked this assembly
-	var/obj/item/card/id/access_card = null // ID card for door access
+	var/tmp/locked_by_handle	// The ID that locked this assembly
+	var/tmp/access_card_handle	// ID card for door access
 	var/list/component_positions // Stores circuit positions as list of lists: list("ref" = ref, "x" = x, "y" = y)
 	/// Cached flag: TRUE when this assembly has at least one circuit that draws or
 	/// makes power (so handle_idle_power() actually has work to do). Invalidated to
@@ -179,12 +179,12 @@
 			if(!istype(pin2))
 				return
 
-			var/obj/item/integrated_circuit/holder1 = pin1.holder
-			if(!istype(holder1) || holder1.loc != src || holder1.assembly != src)
+			var/obj/item/integrated_circuit/holder1 = pin1.holder()
+			if(!istype(holder1) || holder1.loc != src || holder1.assembly() != src)
 				return
 
-			var/obj/item/integrated_circuit/holder2 = pin2.holder
-			if(!istype(holder2) || holder2.loc != src || holder2.assembly != src)
+			var/obj/item/integrated_circuit/holder2 = pin2.holder()
+			if(!istype(holder2) || holder2.loc != src || holder2.assembly() != src)
 				return
 
 			// Wiring the same pin will unwire it
@@ -202,8 +202,8 @@
 			if(!istype(pin1))
 				return
 
-			var/obj/item/integrated_circuit/holder1 = pin1.holder
-			if(!istype(holder1) || holder1.loc != src || holder1.assembly != src)
+			var/obj/item/integrated_circuit/holder1 = pin1.holder()
+			if(!istype(holder1) || holder1.loc != src || holder1.assembly() != src)
 				return
 
 			for(var/datum/integrated_io/other as anything in pin1.linked)
@@ -333,14 +333,14 @@
 	if(!IC.forceMove(src))
 		return FALSE
 
-	IC.assembly = src
+	IC.assembly_handle = om_handle(src)
 
 	return TRUE
 
 // Non-interactive version of above that always succeeds, intended for build-in circuits that get added on assembly initialization.
 /obj/item/electronic_assembly/proc/force_add_circuit(obj/item/integrated_circuit/IC)
 	IC.forceMove(src)
-	IC.assembly = src
+	IC.assembly_handle = om_handle(src)
 
 /obj/item/electronic_assembly/afterattack(atom/target, mob/user, proximity)
 	var/scanned = FALSE
@@ -382,18 +382,18 @@
 
 		if(locked)
 			// Trying to unlock
-			if(locked_by && id_card.registered_name == locked_by.registered_name)
+			if(locked_by() && id_card.registered_name == locked_by().registered_name)
 				locked = FALSE
-				locked_by = null
+				locked_by_handle = null
 				to_chat(user, span_notice("You unlock \the [src]."))
 				update_icon()
 			else
-				to_chat(user, span_warning("Access denied. This assembly was locked by [locked_by ? locked_by.registered_name : "someone else"]."))
+				to_chat(user, span_warning("Access denied. This assembly was locked by [locked_by() ? locked_by().registered_name : "someone else"]."))
 			return TRUE
 		else
 			// Trying to lock
 			locked = TRUE
-			locked_by = id_card
+			locked_by_handle = om_handle(id_card)
 			to_chat(user, span_notice("You lock \the [src]. Now only your ID card can unlock it."))
 			update_icon()
 			return TRUE
@@ -542,10 +542,20 @@ DECLARE_INTERACTIONS(/obj/item/electronic_assembly, \
 				D.open()
 
 /obj/item/electronic_assembly/check_access(obj/item/I)
-	if(access_card)
-		return access_card.check_access(I)
+	if(access_card())
+		return access_card().check_access(I)
 	return ..()  // Fall back to default behavior if no access_card
 
 // Returns TRUE if I is something that could/should have a valid interaction. Used to tell circuitclothes to hit the circuit with something instead of the clothes
 /obj/item/electronic_assembly/proc/is_valid_tool(obj/item/I)
 	return I.has_tool_quality(TOOL_CROWBAR) || I.has_tool_quality(TOOL_SCREWDRIVER) || istype(I, /obj/item/integrated_circuit) || istype(I, /obj/item/cell/device) || istype(I, /obj/item/integrated_electronics)
+
+REF_HELD(/obj/item/electronic_assembly, "battery")
+
+/// LC-refs: ID card for door access -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/electronic_assembly/proc/access_card() as /obj/item/card/id
+	return om_resolve(access_card_handle)
+
+/// LC-refs: The ID that locked this assembly -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/electronic_assembly/proc/locked_by() as /obj/item/card/id
+	return om_resolve(locked_by_handle)

@@ -543,7 +543,7 @@ ADMIN_VERB(adminorbit, R_FUN, "Orbit Things", "Makes something orbit around some
 	var/atom/movable/orbiter
 	var/input
 
-	var/datum/marked_datum = user.holder.marked_datum
+	var/datum/marked_datum = user.holder.marked_datum()
 	if(marked_datum)
 		var/_answer_a25 = verb_prompt(user, "a25", list("message" = "You have \n[marked_datum] marked, should this be the center of the orbit, or the orbiter?", "title" = "Orbit", "choices" = list("Center", "Orbiter", "Neither")), args)
 		if(isnull(_answer_a25))

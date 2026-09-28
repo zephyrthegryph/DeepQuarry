@@ -31,7 +31,7 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 	var/rock_icon_path = 'icons/turf/walls.dmi' // Override this on a subtype turf if you want a custom icon
 	var/random_icon = 0
 
-	var/datum/ore/mineral
+	var/tmp/mineral_handle
 	var/sand_dug
 	var/mined_ore = 0
 	var/last_act = 0
@@ -180,14 +180,14 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 	if(prob(20))
 		overlay_detail = "asteroid[rand(0,9)]"
 	update_icon(!mapload)
-	if(density && mineral)
+	if(density && mineral())
 		. = INITIALIZE_HINT_LATELOAD
 	if(random_icon)
 		dir = pick(GLOB.alldirs)
 		. = INITIALIZE_HINT_LATELOAD
 
 /turf/simulated/mineral/LateInitialize()
-	if(density && mineral)
+	if(density && mineral())
 		MineralSpread()
 
 /turf/simulated/mineral/update_icon(update_neighbors, ignore_list)
@@ -195,8 +195,8 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 
 	//We are a wall (why does this system work like this??)
 	if(density)
-		if(mineral)
-			name = "[mineral.display_name] deposit"
+		if(mineral())
+			name = "[mineral().display_name] deposit"
 		else
 			name = "rock"
 
@@ -316,19 +316,19 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 			M.selected.action(src)
 
 /turf/simulated/mineral/proc/MineralSpread()
-	if(mineral && mineral.spread)
+	if(mineral() && mineral().spread)
 		for(var/trydir in GLOB.cardinal)
-			if(prob(mineral.spread_chance))
+			if(prob(mineral().spread_chance))
 				var/turf/simulated/mineral/target_turf = get_step(src, trydir)
-				if(istype(target_turf) && target_turf.density && !target_turf.mineral)
-					target_turf.mineral = mineral
+				if(istype(target_turf) && target_turf.density && !target_turf.mineral())
+					target_turf.mineral_handle = om_handle(mineral())
 					target_turf.UpdateMineral()
 					target_turf.MineralSpread()
 
 
 /turf/simulated/mineral/proc/UpdateMineral()
 	clear_ore_effects()
-	if(mineral)
+	if(mineral())
 		new /obj/effect/mineral(src)
 	update_icon()
 
@@ -581,11 +581,12 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 		qdel(M)
 
 /turf/simulated/mineral/proc/DropMineral()
-	if(!mineral)
+	if(!mineral())
 		return
 	clear_ore_effects()
 	geologic_data = new /datum/geosample(src)
-	var/obj/item/ore/O = new mineral.ore (src)
+	var/new_ore_path = mineral().ore
+	var/obj/item/ore/O = new new_ore_path(src)
 	if(istype(O))
 		geologic_data.UpdateNearbyArtifactInfo(src)
 		O.geologic_data = geologic_data
@@ -596,7 +597,7 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 	if(artifact_find)
 		//boulder with an artifact inside
 		B = new(src)
-		B.artifact_find = artifact_find
+		B.artifact_find_handle = om_handle(artifact_find)
 
 	if(B)
 		GetDrilled(0)
@@ -614,10 +615,10 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 			update_icon()
 		return
 
-	if (mineral && mineral.result_amount)
+	if (mineral() && mineral().result_amount)
 
 		//if the turf has already been excavated, some of it's ore has been removed
-		for (var/i = 1 to mineral.result_amount - mined_ore)
+		for (var/i = 1 to mineral().result_amount - mined_ore)
 			DropMineral()
 
 	GLOB.rocks_drilled_roundstat++
@@ -704,7 +705,7 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 				new /obj/item/stack/material/uranium(src, rand(5,25))
 
 /turf/simulated/mineral/proc/make_ore(rare_ore)
-	if(mineral || ignore_mapgen || ignore_oregen)
+	if(mineral() || ignore_mapgen || ignore_oregen)
 		return
 
 	var/mineral_name
@@ -715,7 +716,7 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 		mineral_name = pickweight(list(ORE_MARBLE = 3, ORE_QUARTZ = 10, ORE_COPPER = 20, ORE_TIN = 15, ORE_BAUXITE = 15, ORE_URANIUM = 10, ORE_PLATINUM = 10, ORE_HEMATITE = 70, ORE_RUTILE = 15, ORE_CARBON = 70, ORE_DIAMOND = 2, ORE_GOLD = 10, ORE_SILVER = 10, ORE_PHORON = 20, ORE_LEAD = 3, ORE_VOPAL = 1, ORE_VERDANTIUM = 1, ORE_PAINITE = 1))
 
 	if(mineral_name && (mineral_name in GLOB.ore_data))
-		mineral = GLOB.ore_data[mineral_name]
+		mineral_handle = om_handle(GLOB.ore_data[mineral_name])
 		UpdateMineral()
 	update_icon()
 
@@ -741,3 +742,9 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 	oxygen = 0
 	nitrogen = 0
 	temperature	= TCMB
+
+REF_OWNED(/turf/simulated/mineral, list("geologic_data", "artifact_find"))
+
+/// LC-refs: the mineral this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/turf/simulated/mineral/proc/mineral() as /datum/ore
+	return om_resolve(mineral_handle)

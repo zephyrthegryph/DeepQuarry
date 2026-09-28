@@ -20,27 +20,27 @@
 /turf/simulated/lighting_build_overlay()
 	..()
 	if(shandler)
-		shandler.only_sun_object = lighting_object
+		shandler.only_sun_object_handle = om_handle(lighting_object)
 
 /datum/sunlight_handler
-	var/datum/simple_sun/sun
+	var/tmp/sun_handle
 	var/turf/simulated/holder
-	var/datum/lighting_object/only_sun_object
+	var/tmp/only_sun_object_handle
 	var/effect_str_r = 0
 	var/effect_str_g = 0
 	var/effect_str_b = 0
 	//agony but necessary for memory optimization
-	var/datum/lighting_corner/affected_NE
-	var/datum/lighting_corner/affected_NW
-	var/datum/lighting_corner/affected_SW
-	var/datum/lighting_corner/affected_SE
-	var/datum/lighting_corner/only_sun_NE
-	var/datum/lighting_corner/only_sun_NW
-	var/datum/lighting_corner/only_sun_SW
-	var/datum/lighting_corner/only_sun_SE
+	var/tmp/affected_NE_handle
+	var/tmp/affected_NW_handle
+	var/tmp/affected_SW_handle
+	var/tmp/affected_SE_handle
+	var/tmp/only_sun_NE_handle
+	var/tmp/only_sun_NW_handle
+	var/tmp/only_sun_SW_handle
+	var/tmp/only_sun_SE_handle
 	var/sunlight = FALSE
 	var/inherited = FALSE
-	var/datum/planet_sunlight_handler/pshandler
+	var/pshandler_handle
 	var/sleeping = FALSE
 
 /datum/sunlight_handler/New(parent)
@@ -75,74 +75,74 @@
 
 /datum/sunlight_handler/proc/get_affected_list()
 	var/list/affected = list()
-	if(affected_NE) affected += affected_NE
-	if(affected_NW) affected += affected_NW
-	if(affected_SW) affected += affected_SW
-	if(affected_SE) affected += affected_SE
+	if(affected_NE()) affected += affected_NE()
+	if(affected_NW()) affected += affected_NW()
+	if(affected_SW()) affected += affected_SW()
+	if(affected_SE()) affected += affected_SE()
 	return affected
 
 /datum/sunlight_handler/proc/add_to_affected(datum/lighting_corner/corner)
 	if(holder.lighting_corner_NE == corner)
-		affected_NE = corner
+		affected_NE_handle = om_handle(corner)
 		return
 	if(holder.lighting_corner_NW == corner)
-		affected_NW = corner
+		affected_NW_handle = om_handle(corner)
 		return
 	if(holder.lighting_corner_SW == corner)
-		affected_SW = corner
+		affected_SW_handle = om_handle(corner)
 		return
 	if(holder.lighting_corner_SE == corner)
-		affected_SE = corner
+		affected_SE_handle = om_handle(corner)
 		return
 
 /datum/sunlight_handler/proc/remove_from_affected(datum/lighting_corner/corner)
-	if(affected_NE == corner)
-		affected_NE = null
+	if(affected_NE() == corner)
+		affected_NE_handle = null
 		return
-	if(affected_NW == corner)
-		affected_NW = null
+	if(affected_NW() == corner)
+		affected_NW_handle = null
 		return
-	if(affected_SW == corner)
-		affected_SW = null
+	if(affected_SW() == corner)
+		affected_SW_handle = null
 		return
-	if(affected_SE == corner)
-		affected_SE = null
+	if(affected_SE() == corner)
+		affected_SE_handle = null
 		return
 
 /datum/sunlight_handler/proc/get_only_sun_list()
 	var/list/only_sun = list()
-	if(only_sun_NE) only_sun += only_sun_NE
-	if(only_sun_NW) only_sun += only_sun_NW
-	if(only_sun_SW) only_sun += only_sun_SW
-	if(only_sun_SE) only_sun += only_sun_SE
+	if(only_sun_NE()) only_sun += only_sun_NE()
+	if(only_sun_NW()) only_sun += only_sun_NW()
+	if(only_sun_SW()) only_sun += only_sun_SW()
+	if(only_sun_SE()) only_sun += only_sun_SE()
 	return only_sun
 
 /datum/sunlight_handler/proc/add_to_only_sun(datum/lighting_corner/corner)
 	if(holder.lighting_corner_NE == corner)
-		only_sun_NE = corner
+		only_sun_NE_handle = om_handle(corner)
 		return
 	if(holder.lighting_corner_NW == corner)
-		only_sun_NW = corner
+		only_sun_NW_handle = om_handle(corner)
 		return
 	if(holder.lighting_corner_SW == corner)
-		only_sun_SW = corner
+		only_sun_SW_handle = om_handle(corner)
 		return
 	if(holder.lighting_corner_SE == corner)
-		only_sun_SE = corner
+		only_sun_SE_handle = om_handle(corner)
 		return
 
 /datum/sunlight_handler/proc/remove_from_only_sun(datum/lighting_corner/corner)
-	if(only_sun_NE == corner)
-		only_sun_NE = null
+	if(only_sun_NE() == corner)
+		only_sun_NE_handle = null
 		return
-	if(only_sun_NW == corner)
-		only_sun_NW = null
+	if(only_sun_NW() == corner)
+		only_sun_NW_handle = null
 		return
-	if(only_sun_SW == corner)
-		only_sun_SW = null
+	if(only_sun_SW() == corner)
+		only_sun_SW_handle = null
 		return
-	if(only_sun_SE == corner)
-		only_sun_SE = null
+	if(only_sun_SE() == corner)
+		only_sun_SE_handle = null
 		return
 
 /datum/sunlight_handler/proc/turf_update(old_density, turf/new_turf, above)
@@ -281,27 +281,27 @@
 				add_to_only_sun(corner)
 				corner.sunlight = sunonly_val
 
-	if((sunlightonly_corners == 4 || sunlightonly_shade_corners == 4) && !only_sun_object)
+	if((sunlightonly_corners == 4 || sunlightonly_shade_corners == 4) && !only_sun_object())
 		var/datum/lighting_object/holder_object = holder.lighting_object
 		if(holder_object && !holder_object.sunlight_only)
-			only_sun_object = holder_object
-			only_sun_object.set_sunonly(sunonly_val, pshandler)
+			only_sun_object_handle = om_handle(holder_object)
+			only_sun_object().set_sunonly(sunonly_val, pshandler())
 
 
-	if(sunlightonly_corners < 4 && sunlightonly_shade_corners < 4 && only_sun_object)
-		only_sun_object.set_sunonly(FALSE, pshandler)
-		only_sun_object = null
+	if(sunlightonly_corners < 4 && sunlightonly_shade_corners < 4 && only_sun_object())
+		only_sun_object().set_sunonly(FALSE, pshandler())
+		only_sun_object_handle = null
 
-	if(only_sun_object)
+	if(only_sun_object())
 		//Edge cases but needed to make sure that the correct overlay is used in the case that all corners switch from shade to overhead or vice versa between updates
-		if(only_sun_object.sunlight_only == SUNLIGHT_ONLY_SHADE && sunlight == SUNLIGHT_OVERHEAD)
-			only_sun_object.set_sunonly(SUNLIGHT_ONLY, pshandler)
-		else if(only_sun_object.sunlight_only == SUNLIGHT_ONLY && sunlight == SUNLIGHT_CURRENT)
-			only_sun_object.set_sunonly(SUNLIGHT_ONLY_SHADE, pshandler)
-		only_sun_object.update_sun()
+		if(only_sun_object().sunlight_only == SUNLIGHT_ONLY_SHADE && sunlight == SUNLIGHT_OVERHEAD)
+			only_sun_object().set_sunonly(SUNLIGHT_ONLY, pshandler())
+		else if(only_sun_object().sunlight_only == SUNLIGHT_ONLY && sunlight == SUNLIGHT_CURRENT)
+			only_sun_object().set_sunonly(SUNLIGHT_ONLY_SHADE, pshandler())
+		only_sun_object().update_sun()
 
 	for(var/datum/lighting_corner/corner in only_sun)
-		corner.update_sun(pshandler)
+		corner.update_sun(pshandler())
 
 	if(sleepable_corners == 4)
 		set_sleeping(TRUE)
@@ -317,8 +317,8 @@
 			sunlight_mult = 0.6
 		if(SUNLIGHT_OVERHEAD)
 			sunlight_mult = 1.0
-	var/brightness = sun.brightness * sunlight_mult * SSlighting.sun_mult
-	var/list/color = hex2rgb(sun.color)
+	var/brightness = sun().brightness * sunlight_mult * SSlighting.sun_mult
+	var/list/color = hex2rgb(sun().color)
 	var/red = brightness * (color[1] / 255.0)
 	var/green = brightness * (color[2] / 255.0)
 	var/blue = brightness * (color[3] / 255.0)
@@ -347,9 +347,9 @@
 	effect_str_b = blue
 
 /datum/sunlight_handler/proc/corner_sunlight_change(datum/lighting_corner/sender)
-	if(only_sun_object)
-		only_sun_object.set_sunonly(FALSE, pshandler)
-		only_sun_object = null
+	if(only_sun_object())
+		only_sun_object().set_sunonly(FALSE, pshandler())
+		only_sun_object_handle = null
 
 	set_sleeping(FALSE)
 	wake_sleepers()
@@ -368,10 +368,10 @@
 		return
 	sleeping = val
 	if(val)
-		LAZYREMOVE(pshandler.shandlers, src)
+		LAZYREMOVE(pshandler().shandlers, src)
 		SSlighting.sunlight_queue -= src
 	else
-		LAZYOR(pshandler.shandlers, src)
+		LAZYOR(pshandler().shandlers, src)
 		SSlighting.sunlight_queue |= src //Just in case somehow gets set to false twice use |=
 
 /datum/sunlight_handler/proc/wake_sleepers(val)
@@ -380,11 +380,60 @@
 		corner.wake_sleepers()
 
 /datum/sunlight_handler/proc/try_get_sun()
-	if(sun) return TRUE
+	if(sun()) return TRUE
 	if(!sleeping && SSlighting.get_pshandler_z(holder.z))
-		pshandler = SSlighting.get_pshandler_z(holder.z)
-		LAZYADD(pshandler.shandlers, src)
-		sun = pshandler.sun
+		pshandler_handle = om_handle(SSlighting.get_pshandler_z(holder.z))
+		LAZYADD(pshandler().shandlers, src)
+		sun_handle = om_handle(pshandler().sun())
 		return TRUE
 	else
 		return FALSE
+
+// LC-refs: a simulated turf and its sunlight handler point at each other (the handler moves
+// with the turf through ChangeTurf, turf_changing.dm).
+REF_PAIR(/turf/simulated, list("shandler" = "holder"))
+REF_PAIR(/datum/sunlight_handler, list("holder" = "shandler"))
+
+/// LC-refs: the sun this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/sunlight_handler/proc/sun() as /datum/simple_sun
+	return om_resolve(sun_handle)
+
+/// LC-refs: the only_sun_object this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/sunlight_handler/proc/only_sun_object() as /datum/lighting_object
+	return om_resolve(only_sun_object_handle)
+
+/// LC-refs: the affected_NE this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/sunlight_handler/proc/affected_NE() as /datum/lighting_corner
+	return om_resolve(affected_NE_handle)
+
+/// LC-refs: the affected_NW this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/sunlight_handler/proc/affected_NW() as /datum/lighting_corner
+	return om_resolve(affected_NW_handle)
+
+/// LC-refs: the affected_SW this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/sunlight_handler/proc/affected_SW() as /datum/lighting_corner
+	return om_resolve(affected_SW_handle)
+
+/// LC-refs: the affected_SE this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/sunlight_handler/proc/affected_SE() as /datum/lighting_corner
+	return om_resolve(affected_SE_handle)
+
+/// LC-refs: the only_sun_NE this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/sunlight_handler/proc/only_sun_NE() as /datum/lighting_corner
+	return om_resolve(only_sun_NE_handle)
+
+/// LC-refs: the only_sun_NW this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/sunlight_handler/proc/only_sun_NW() as /datum/lighting_corner
+	return om_resolve(only_sun_NW_handle)
+
+/// LC-refs: the only_sun_SW this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/sunlight_handler/proc/only_sun_SW() as /datum/lighting_corner
+	return om_resolve(only_sun_SW_handle)
+
+/// LC-refs: the only_sun_SE this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/sunlight_handler/proc/only_sun_SE() as /datum/lighting_corner
+	return om_resolve(only_sun_SE_handle)
+
+/// LC-refs: the pshandler this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/sunlight_handler/proc/pshandler() as /datum/planet_sunlight_handler
+	return om_resolve(pshandler_handle)

@@ -423,3 +423,5 @@ REF_SPILL(/obj/machinery/mineral/equipment_vendor, "inserted_id")
 	s.set_up(5, 1, src)
 	s.start()
 	return ..()
+
+REF_OWNED_LIST(/obj/machinery/mineral/equipment_vendor, "prize_list")

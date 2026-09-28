@@ -8,19 +8,19 @@ Code is pretty much ripped verbatim from nano modules, but with un-needed stuff 
 */
 /datum/tgui_module
 	var/name
-	var/datum/host
+	var/tmp/host_handle
 	var/list/using_access
 
 	var/tgui_id
 	var/ntos = FALSE
 
 /datum/tgui_module/New(host)
-	src.host = host
+	src.host_handle = om_handle(host)
 	if(ntos)
 		tgui_id = "Ntos" + tgui_id
 
 /datum/tgui_module/tgui_host()
-	return host ? host.tgui_host() : src
+	return host() ? host().tgui_host() : src
 
 /datum/tgui_module/ui_assets(mob/user)
 	var/list/data = list()
@@ -30,8 +30,8 @@ Code is pretty much ripped verbatim from nano modules, but with un-needed stuff 
 	return data
 
 /datum/tgui_module/tgui_close(mob/user)
-	if(host)
-		host.tgui_close(user)
+	if(host())
+		host().tgui_close(user)
 
 /datum/tgui_module/proc/can_still_topic(mob/user, datum/tgui_state/state)
 	return (tgui_status(user, state) == STATUS_INTERACTIVE)
@@ -93,3 +93,7 @@ Code is pretty much ripped verbatim from nano modules, but with un-needed stuff 
 
 /datum/tgui_module/proc/close_ui()
 	SStgui.close_uis(src)
+
+/// LC-refs: the host this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_module/proc/host() as /datum
+	return om_resolve(host_handle)

@@ -197,3 +197,5 @@
 
 			var/obj/machinery/light/small/readylight/light = locate() in T
 			if(light) light.set_state(1)
+
+REF_OWNED(/datum/shuttle/autodock/ferry/specops, "announcer")

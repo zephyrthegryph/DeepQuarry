@@ -110,7 +110,7 @@
 
 /datum/nifsoft/mesons/life()
 	if((. = ..()))
-		var/mob/living/carbon/human/H = nif.human
+		var/mob/living/carbon/human/H = nif().human
 		if(H.client)
 			H.client.screen |= GLOB.global_hud.meson
 
@@ -130,7 +130,7 @@
 
 /datum/nifsoft/material/life()
 	if((. = ..()))
-		var/mob/living/carbon/human/H = nif.human
+		var/mob/living/carbon/human/H = nif().human
 		if(H.client)
 			H.client.screen |= GLOB.global_hud.material
 
@@ -151,7 +151,7 @@
 
 /datum/nifsoft/thermals/life()
 	if((. = ..()))
-		var/mob/living/carbon/human/H = nif.human
+		var/mob/living/carbon/human/H = nif().human
 		if(H.client)
 			H.client.screen |= GLOB.global_hud.thermal
 
@@ -171,6 +171,6 @@
 
 /datum/nifsoft/nightvis/life()
 	if((. = ..()))
-		var/mob/living/carbon/human/H = nif.human
+		var/mob/living/carbon/human/H = nif().human
 		if(H.client)
 			H.client.screen |= GLOB.global_hud.nvg

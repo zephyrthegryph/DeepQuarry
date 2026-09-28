@@ -54,7 +54,7 @@
 // ALLOW(lifecycle): cooking food and its containers go with the machine.
 /obj/machinery/appliance/Destroy()
 	for(var/datum/cooking_item/CI as anything in cooking_objs)
-		qdel(CI.container)//Food is fragile, it probably doesnt survive the destruction of the machine
+		qdel(CI.container())//Food is fragile, it probably doesnt survive the destruction of the machine
 		LAZYREMOVE(cooking_objs, CI)
 		qdel(CI)
 	return ..()
@@ -68,7 +68,7 @@
 	if (length(cooking_objs))
 		var/string = "Contains..."
 		for(var/datum/cooking_item/CI as anything in cooking_objs)
-			string += "-\a [CI.container.label(null, CI.combine_target)], [report_progress(CI)]</br>"
+			string += "-\a [CI.container().label(null, CI.combine_target)], [report_progress(CI)]</br>"
 		return string
 	else
 		to_chat(user, span_notice("It is empty."))
@@ -286,7 +286,7 @@
 			return TRUE
 	else
 		if (CI && istype(CI))
-			I.forceMove(CI.container)
+			I.forceMove(CI.container())
 
 		else //Something went wrong
 			return FALSE
@@ -303,10 +303,10 @@
 	return CI
 
 /obj/machinery/appliance/proc/get_cooking_work(datum/cooking_item/CI)
-	for (var/obj/item/J in CI.container)
+	for (var/obj/item/J in CI.container())
 		cookwork_by_item(J, CI)
 
-	for(var/datum/reagent/R as anything in CI.container.reagents.reagent_list)
+	for(var/datum/reagent/R as anything in CI.container().reagents.reagent_list)
 		if (istype(R, /datum/reagent/nutriment))
 			CI.max_cookwork += R.volume *2//Added reagents contribute less than those in food items due to granular form
 
@@ -375,7 +375,7 @@
 			eject(CI, null)
 
 	// Gotta hurt.
-	for(var/obj/item/holder/H in CI.container.contents)
+	for(var/obj/item/holder/H in CI.container().contents)
 		var/mob/living/M = H.held_mob
 		if(M)
 			M.injure(mob_injury_kind, rand(1,3) * (1/M.size_multiplier), pick(BP_ALL), source = src)
@@ -398,8 +398,8 @@
 /obj/machinery/appliance/proc/predict_cooking(datum/cooking_item/CI)
 	var/datum/recipe/recipe = null
 	var/atom/C = null
-	if(CI.container)
-		C = CI.container
+	if(CI.container())
+		C = CI.container()
 	else
 		C = src
 	recipe = select_recipe(GLOB.available_recipes[appliancetype], C)
@@ -411,7 +411,7 @@
 	else if(CI.combine_target)
 		results += predict_combination(CI)
 	else
-		for(var/obj/item/I in CI.container)
+		for(var/obj/item/I in CI.container())
 			results += predict_modification(I, CI)
 
 	return jointext(results, ", ")
@@ -421,7 +421,7 @@
 
 	var/list/words = list()
 
-	for(var/obj/item/reagent_containers/food/snacks/S in CI.container)
+	for(var/obj/item/reagent_containers/food/snacks/S in CI.container())
 		words |= splittext(S.name, " ")
 
 	//Set the name.
@@ -451,8 +451,8 @@
 	//Check recipes first, a valid recipe overrides other options
 	var/datum/recipe/recipe = null
 	var/atom/C = null
-	if (CI.container)
-		C = CI.container
+	if (CI.container())
+		C = CI.container()
 	else
 		C = src
 	recipe = select_recipe(GLOB.available_recipes[appliancetype],C)
@@ -486,11 +486,11 @@
 
 	else
 		//Otherwise, we're just doing standard modification cooking. change a color + name
-		for (var/obj/item/i in CI.container)
+		for (var/obj/item/i in CI.container())
 			modify_cook(i, CI)
 
 	//Final step. Cook function just cooks batter for now.
-	for (var/obj/item/reagent_containers/food/snacks/S in CI.container)
+	for (var/obj/item/reagent_containers/food/snacks/S in CI.container())
 		if(!S.heat_cooked)
 			S.heat_cooked = TRUE
 			S.cook()
@@ -505,10 +505,10 @@
 	var/totalcolour
 	var/reagents_determine_color
 
-	if(!LAZYLEN(CI.container.contents))	// It's possible to make something, such as a cake in the oven, with only reagents. This stops them from being grey and sad.
+	if(!LAZYLEN(CI.container().contents))	// It's possible to make something, such as a cake in the oven, with only reagents. This stops them from being grey and sad.
 		reagents_determine_color = TRUE
 
-	for (var/obj/item/I in CI.container)
+	for (var/obj/item/I in CI.container())
 		var/obj/item/reagent_containers/food/snacks/S
 		if (istype(I, /obj/item/holder))
 			S = create_mob_food(I, CI)
@@ -534,15 +534,15 @@
 		//Cleanup these empty husk ingredients now
 		if (I)
 			qdel(I)
-			CI.container.food_items--
+			CI.container().food_items--
 		if(S && !QDELETED(S)) //Incase I = S up there.
 			qdel(S)
-			CI.container.food_items--
+			CI.container().food_items--
 
-	CI.container.reagents.trans_to_holder(buffer, CI.container.reagents.total_volume)
+	CI.container().reagents.trans_to_holder(buffer, CI.container().reagents.total_volume)
 
-	var/obj/item/reagent_containers/food/snacks/result = new cook_path(CI.container)
-	CI.container.food_items++
+	var/obj/item/reagent_containers/food/snacks/result = new cook_path(CI.container())
+	CI.container().food_items++
 	buffer.trans_to_holder(result.reagents, buffer.total_volume)	//trans_to doesn't handle food items well, so
 																	//just call trans_to_holder instead
 
@@ -600,8 +600,8 @@
 /obj/machinery/appliance/proc/burn_food(datum/cooking_item/CI)
 	// You dun goofed.
 	CI.burned = 1
-	CI.container.clear()
-	new /obj/item/reagent_containers/food/snacks/badrecipe(CI.container)
+	CI.container().clear()
+	new /obj/item/reagent_containers/food/snacks/badrecipe(CI.container())
 
 	// Produce nasty smoke.
 	visible_message(span_danger("\The [src] vomits a gout of rancid smoke!"))
@@ -656,8 +656,8 @@
 				our_contents[i]["prediction"] = predict_cooking(CI)
 				if(CI.max_cookwork)
 					our_contents[i]["progress"] = CI.cookwork / CI.max_cookwork
-				if(CI.container)
-					our_contents[i]["container"] = CI.container.label(i)
+				if(CI.container())
+					our_contents[i]["container"] = CI.container().label(i)
 				else
 					our_contents[i]["container"] = null
 	data["our_contents"] = our_contents
@@ -700,8 +700,8 @@
 	if (can_remove_items(user))
 		var/list/menuoptions = list()
 		for(var/datum/cooking_item/CI as anything in cooking_objs)
-			if (CI.container)
-				menuoptions[CI.container.label(menuoptions.len)] = CI
+			if (CI.container())
+				menuoptions[CI.container().label(menuoptions.len)] = CI
 
 		var/selection = rerun_prompt(user, "k713", list("kind" = "list", "message" = "Which item would you like to remove?", "title" = "Remove ingredients", "choices" = menuoptions), PROC_REF(removal_menu), args)
 		if(isnull(selection))
@@ -725,14 +725,14 @@
 /obj/machinery/appliance/proc/eject(datum/cooking_item/CI, mob/user = null)
 	var/obj/item/thing
 	var/delete = 1
-	var/status = CI.container.check_contents()
+	var/status = CI.container().check_contents()
 	var/obj/item/reagent_containers/cooking_container/cook_container
 
 	if (status == 1)//If theres only one object in a container then we extract that
-		thing = locate(/obj/item) in CI.container
+		thing = locate(/obj/item) in CI.container()
 		delete = 0
 	else//If the container is empty OR contains more than one thing, then we must extract the container
-		thing = CI.container
+		thing = CI.container()
 
 	if (user)
 		if(!user.put_in_hands(thing))
@@ -770,7 +770,7 @@
 	product.desc = "[product.desc]\nIt has been [cook_type]."
 
 /obj/machinery/appliance/proc/change_product_appearance(obj/item/reagent_containers/food/snacks/product, datum/cooking_item/CI)
-	if (!product.coating) //Coatings change colour through a new sprite
+	if (!product.coating()) //Coatings change colour through a new sprite
 		product.color = food_color
 	product.filling_color = food_color
 
@@ -811,7 +811,7 @@
 
 	victim.calculate_composition()
 
-	var/obj/item/reagent_containers/food/snacks/variable/mob/result = new /obj/item/reagent_containers/food/snacks/variable/mob(CI.container)
+	var/obj/item/reagent_containers/food/snacks/variable/mob/result = new /obj/item/reagent_containers/food/snacks/variable/mob(CI.container())
 	result.w_class = victim.mob_size
 	result.reagents.add_reagent(victim.composition_reagent, victim.composition_reagent_quantity)
 
@@ -843,7 +843,7 @@
 	var/cookwork
 	var/overcook_mult = 6 // How long it takes to overcook. This is max_cookwork x overcook mult. If you're changing this, mind that at 3x, a max_cookwork of 30 becomes 90 ticks for the purpose of burning, and a max_cookwork of 4 only has 12 before burning! // doubled to 6
 	var/result_type = 0
-	var/obj/item/reagent_containers/cooking_container/container = null
+	var/tmp/container_handle
 	var/combine_target = null
 
 	//Result type is one of the following:
@@ -859,7 +859,7 @@
 	var/max_oil = 0//Used for fryers.
 
 /datum/cooking_item/New(obj/item/I)
-	container = I
+	container_handle = om_handle(I)
 
 //This is called for containers whose contents are ejected without removing the container
 /datum/cooking_item/proc/reset()
@@ -890,3 +890,7 @@
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/appliance/step_start_condition()
 	return cooking
+
+/// LC-refs: the container this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/cooking_item/proc/container() as /obj/item/reagent_containers/cooking_container
+	return om_resolve(container_handle)

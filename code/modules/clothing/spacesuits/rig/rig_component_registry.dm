@@ -16,10 +16,10 @@
 
 /datum/rig_component_registry
 	/// The rig this datum belongs to.  Nulled on Destroy().
-	var/obj/item/rig/holder
+	var/tmp/holder_handle
 
 /datum/rig_component_registry/New(obj/item/rig/new_holder)
-	holder = new_holder
+	holder_handle = om_handle(new_holder)
 
 /*
  * proc/initialize_pieces()
@@ -31,30 +31,36 @@
  */
 /datum/rig_component_registry/proc/initialize_pieces()
 	// Spawn modules first so they exist before pieces reference back to the rig
-	if(holder.initial_modules && holder.initial_modules.len)
-		for(var/path in holder.initial_modules)
-			var/obj/item/rig_module/module = new path(holder)
-			LAZYADD(holder.installed_modules, module)
-			module.installed(holder)
+	if(holder().initial_modules && holder().initial_modules.len)
+		for(var/path in holder().initial_modules)
+			var/obj/item/rig_module/module = new path(holder())
+			LAZYADD(holder().installed_modules, module)
+			module.installed(holder())
 
 	// Spawn the six physical components
-	if(holder.cell_type)
-		holder.cell = new holder.cell_type(holder)
-	if(holder.air_type)
-		holder.air_supply = new holder.air_type(holder)
-	if(holder.glove_type)
-		holder.gloves = new holder.glove_type(holder)
-		holder.verbs |= /obj/item/rig/proc/toggle_gauntlets
-	if(holder.helm_type)
-		holder.helmet = new holder.helm_type(holder)
-		holder.verbs |= /obj/item/rig/proc/toggle_helmet
-	if(holder.boot_type)
-		holder.boots = new holder.boot_type(holder)
-		holder.verbs |= /obj/item/rig/proc/toggle_boots
-	if(holder.chest_type)
-		holder.chest = new holder.chest_type(holder)
-		holder.chest.adopt_constraint(CONSTRAINT_SUIT_STORAGE, holder)
-		holder.verbs |= /obj/item/rig/proc/toggle_chest
+	if(holder().cell_type)
+		var/new_cell_type_path = holder().cell_type
+		holder().cell = new new_cell_type_path(holder())
+	if(holder().air_type)
+		var/new_air_type_path = holder().air_type
+		holder().air_supply = new new_air_type_path(holder())
+	if(holder().glove_type)
+		var/new_glove_type_path = holder().glove_type
+		holder().gloves = new new_glove_type_path(holder())
+		holder().verbs |= /obj/item/rig/proc/toggle_gauntlets
+	if(holder().helm_type)
+		var/new_helm_type_path = holder().helm_type
+		holder().helmet = new new_helm_type_path(holder())
+		holder().verbs |= /obj/item/rig/proc/toggle_helmet
+	if(holder().boot_type)
+		var/new_boot_type_path = holder().boot_type
+		holder().boots = new new_boot_type_path(holder())
+		holder().verbs |= /obj/item/rig/proc/toggle_boots
+	if(holder().chest_type)
+		var/new_chest_type_path = holder().chest_type
+		holder().chest = new new_chest_type_path(holder())
+		holder().chest.adopt_constraint(CONSTRAINT_SUIT_STORAGE, holder())
+		holder().verbs |= /obj/item/rig/proc/toggle_chest
 
 	// Apply shared stats to equippable pieces
 	propagate_stats()
@@ -72,17 +78,17 @@
 		if(!istype(piece))
 			continue
 		piece.canremove = FALSE
-		piece.name = "[holder.suit_type] [initial(piece.name)]"
-		piece.desc = "It seems to be part of a [holder.name]."
-		piece.icon_state = "[holder.suit_state]"
-		piece.min_cold_protection_temperature = holder.min_cold_protection_temperature
-		piece.max_heat_protection_temperature = holder.max_heat_protection_temperature
+		piece.name = "[holder().suit_type] [initial(piece.name)]"
+		piece.desc = "It seems to be part of a [holder().name]."
+		piece.icon_state = "[holder().suit_state]"
+		piece.min_cold_protection_temperature = holder().min_cold_protection_temperature
+		piece.max_heat_protection_temperature = holder().max_heat_protection_temperature
 		// Preserve insulated gloves that already have a lower coefficient
-		if(piece.siemens_coefficient > holder.siemens_coefficient)
-			piece.siemens_coefficient = holder.siemens_coefficient
-		piece.permeability_coefficient = holder.permeability_coefficient
-		piece.unacidable = holder.unacidable
-		piece.set_armor(holder.get_armor())
+		if(piece.siemens_coefficient > holder().siemens_coefficient)
+			piece.siemens_coefficient = holder().siemens_coefficient
+		piece.permeability_coefficient = holder().permeability_coefficient
+		piece.unacidable = holder().unacidable
+		piece.set_armor(holder().get_armor())
 		piece.worn_protection_changed()
 
 /*
@@ -93,32 +99,32 @@
  */
 /datum/rig_component_registry/proc/destroy_pieces()
 	for(var/obj/item/piece in list(
-			holder.gloves,
-			holder.boots,
-			holder.helmet,
-			holder.chest,
-			holder.cell,
-			holder.air_supply))
+			holder().gloves,
+			holder().boots,
+			holder().helmet,
+			holder().chest,
+			holder().cell,
+			holder().air_supply))
 		if(!istype(piece))
 			continue
 		// Orderly teardown: clear the back-ref so the piece's dropped() self-detach
 		// safety net stays inert while we deliberately drop and delete it.
 		if(istype(piece, /obj/item/clothing))
 			var/obj/item/clothing/deployed = piece
-			deployed.master_rig = null
+			deployed.master_rig_handle = null
 		var/mob/living/M = piece.loc
 		if(istype(M))
 			M.drop_from_inventory(piece)
 		qdel(piece)
 
-	holder.gloves    = null
-	holder.boots     = null
-	holder.helmet    = null
-	holder.chest     = null
-	holder.cell      = null
-	holder.air_supply = null
+	holder().gloves    = null
+	holder().boots     = null
+	holder().helmet    = null
+	holder().chest     = null
+	holder().cell      = null
+	holder().air_supply = null
 
-	for(var/obj/item/rig_module/module in holder.installed_modules)
+	for(var/obj/item/rig_module/module in holder().installed_modules)
 		qdel(module)
 	// installed_modules list is a var on holder; leave nulling to rig/Destroy()
 
@@ -131,14 +137,14 @@
  */
 /datum/rig_component_registry/proc/get_equippable_pieces()
 	var/list/pieces = list()
-	if(holder.gloves)
-		pieces += holder.gloves
-	if(holder.helmet)
-		pieces += holder.helmet
-	if(holder.boots)
-		pieces += holder.boots
-	if(holder.chest)
-		pieces += holder.chest
+	if(holder().gloves)
+		pieces += holder().gloves
+	if(holder().helmet)
+		pieces += holder().helmet
+	if(holder().boots)
+		pieces += holder().boots
+	if(holder().chest)
+		pieces += holder().chest
 	return pieces
 
 /*
@@ -149,10 +155,14 @@
  */
 /datum/rig_component_registry/proc/get_all_pieces()
 	var/list/pieces = list()
-	if(holder.gloves)    pieces += holder.gloves
-	if(holder.boots)     pieces += holder.boots
-	if(holder.helmet)    pieces += holder.helmet
-	if(holder.chest)     pieces += holder.chest
-	if(holder.cell)      pieces += holder.cell
-	if(holder.air_supply) pieces += holder.air_supply
+	if(holder().gloves)    pieces += holder().gloves
+	if(holder().boots)     pieces += holder().boots
+	if(holder().helmet)    pieces += holder().helmet
+	if(holder().chest)     pieces += holder().chest
+	if(holder().cell)      pieces += holder().cell
+	if(holder().air_supply) pieces += holder().air_supply
 	return pieces
+
+/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/rig_component_registry/proc/holder() as /obj/item/rig
+	return om_resolve(holder_handle)

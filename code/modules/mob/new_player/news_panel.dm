@@ -66,7 +66,7 @@
 			return TRUE
 
 /mob/new_player/proc/show_latest_news(datum/feed_channel/CHANNEL)
-	if(!GLOB.news_data || !GLOB.news_data.station_newspaper)
+	if(!GLOB.news_data || !GLOB.news_data.station_newspaper())
 		return
 	if(!dq_news_panel_cache)
 		dq_news_panel_cache = new(src, CHANNEL)

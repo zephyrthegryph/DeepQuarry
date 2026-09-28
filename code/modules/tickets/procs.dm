@@ -22,23 +22,23 @@
 		add_verb(src,/client/verb/mentorhelp) // 1 minute cool-down for mentorhelps
 
 	feedback_add_details("admin_verb","Mentorhelp") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
-	if(current_ticket)
+	if(current_ticket())
 		var/input = rerun_prompt(src, "k26", list("message" = "You already have a ticket open. Is this for the same issue?", "title" = "Duplicate?", "choices" = list("Yes","No")), VERB_REF(mentorhelp), args)
 		if(isnull(input))
 			return
 		if(!input)
 			return
 		if(input == "Yes")
-			if(current_ticket)
+			if(current_ticket())
 				log_admin("Mentorhelp: [key_name(src)]: [msg]")
-				current_ticket.MessageNoRecipient(msg)
+				current_ticket().MessageNoRecipient(msg)
 				to_chat(src, span_adminnotice(span_mentor("Mentor-PM to-" + span_bold("Mentors") + ": [msg]")))
 				return
 			else
 				to_chat(src, span_warning("Ticket not found, creating new one..."))
 		else
-			current_ticket.AddInteraction("[usr.ckey] opened a new ticket.")
-			current_ticket.Resolve(usr)
+			current_ticket().AddInteraction("[usr.ckey] opened a new ticket.")
+			current_ticket().Resolve(usr)
 
 	new /datum/ticket(msg, src, FALSE, 0)
 
@@ -112,22 +112,22 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 		add_verb(src,/client/verb/adminhelp	) // 2 minute cool-down for adminhelp
 
 	feedback_add_details("admin_verb","Adminhelp") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
-	if(current_ticket)
+	if(current_ticket())
 		var/input = rerun_prompt(src, "k107", list("message" = "You already have a ticket open. Is this for the same issue?", "title" = "Duplicate?", "choices" = list("Yes","No")), VERB_REF(adminhelp), args)
 		if(isnull(input))
 			return
 		if(!input)
 			return
 		if(input == "Yes")
-			if(current_ticket)
-				current_ticket.MessageNoRecipient(msg)
+			if(current_ticket())
+				current_ticket().MessageNoRecipient(msg)
 				to_chat(src, span_adminnotice("PM to-" + span_bold("Admins") + ": [msg]"))
 				return
 			else
 				to_chat(src, span_warning("Ticket not found, creating new one..."))
-		else if(current_ticket)
-			current_ticket.AddInteraction("[key_name_admin(usr)] opened a new ticket.")
-			current_ticket.Close(usr)
+		else if(current_ticket())
+			current_ticket().AddInteraction("[key_name_admin(usr)] opened a new ticket.")
+			current_ticket().Close(usr)
 
 	new /datum/ticket(msg, src, FALSE, 1)
 
@@ -167,7 +167,7 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 
 	var/query_string = "type=adminhelp"
 	query_string += "&key=[url_encode(CONFIG_GET(string/chat_webhook_key))]"
-	query_string += "&from=[url_encode(key_name(initiator))]"
+	query_string += "&from=[url_encode(key_name(initiator()))]"
 	query_string += "&msg=[url_encode(html_decode(name))]"
 	query_string += "&admin_number=[allmins.len]"
 	query_string += "&admin_number_afk=[afkmins.len]"
@@ -217,7 +217,7 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 			to_chat(src, span_admin_pm_warning("Error: Mentor-PM: Client not found."))
 		return
 
-	var/datum/ticket/T = C.current_ticket
+	var/datum/ticket/T = C.current_ticket()
 
 	if(T)
 		message_mentors(span_mentor_channel("[src] has started replying to [C]'s mentor help."))
@@ -239,7 +239,7 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 		return
 
 	//Not a mentor and no open ticket
-	if(!holder && !current_ticket)
+	if(!holder && !current_ticket())
 		to_chat(src, span_mentor_warning("You can no longer reply to this ticket, please open another one by using the Mentorhelp verb if need be."))
 		if(!holder)
 			msg = trim(sanitize(copytext(msg,1,MAX_MESSAGE_LEN)))
@@ -269,16 +269,16 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 			return
 
 	if(!recipient)
-		if(!current_ticket)
+		if(!current_ticket())
 			to_chat(src, span_mentor_warning("Error: Mentor-PM: Client not found."))
 			to_chat(src, msg)
 			return
 		log_admin("Mentorhelp: [key_name(src)]: [msg]")
-		current_ticket.MessageNoRecipient(msg)
+		current_ticket().MessageNoRecipient(msg)
 		return
 
 	//Has mentor powers but the recipient no longer has an open ticket
-	if(src.holder && !recipient.current_ticket)
+	if(src.holder && !recipient.current_ticket())
 		to_chat(src, span_mentor_warning("You can no longer reply to this ticket."))
 		to_chat(src, span_mentor_notice("Message: [msg]"))
 		return
@@ -292,17 +292,17 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 
 	var/interaction_message = span_mentor_notice("Mentor-PM from-" + span_bold("[src]") + " to-" + span_bold("[recipient]") + ": [msg]")
 
-	if (recipient.current_ticket && !recipient.holder && recipient.current_ticket.level == 0)
-		recipient.current_ticket.AddInteraction(interaction_message)
-	if (src.current_ticket && !src.holder && src.current_ticket.level == 0)
-		src.current_ticket.AddInteraction(interaction_message)
+	if (recipient.current_ticket() && !recipient.holder && recipient.current_ticket().level == 0)
+		recipient.current_ticket().AddInteraction(interaction_message)
+	if (src.current_ticket() && !src.holder && src.current_ticket().level == 0)
+		src.current_ticket().AddInteraction(interaction_message)
 
 	// It's a little fucky if they're both mentors, but while admins may need to adminhelp I don't really see any reason a mentor would have to mentorhelp since you can literally just ask any other mentors online
 	if (recipient.holder && src.holder)
-		if (recipient.current_ticket && recipient != src && recipient.current_ticket.level == 0)
-			recipient.current_ticket.AddInteraction(interaction_message)
-		if (src.current_ticket && src.current_ticket.level == 0)
-			src.current_ticket.AddInteraction(interaction_message)
+		if (recipient.current_ticket() && recipient != src && recipient.current_ticket().level == 0)
+			recipient.current_ticket().AddInteraction(interaction_message)
+		if (src.current_ticket() && src.current_ticket().level == 0)
+			src.current_ticket().AddInteraction(interaction_message)
 
 	to_chat(recipient, span_mentor(span_italics("Mentor-PM from-" + span_bold("<a href='byond://?mentorhelp_msg=\ref[src]'>[src]</a>") + ": [msg]")))
 	to_chat(src, span_mentor(span_italics("Mentor-PM to-" + span_bold("[recipient]") + ": [msg]")))

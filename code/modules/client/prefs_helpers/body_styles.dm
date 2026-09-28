@@ -3,7 +3,7 @@
 // bgstate_options moved onto /datum/preference/text/human/bgstate as bgstate_choices.
 // markings_subwindow stays as runtime UI state.
 /datum/preferences
-	var/datum/browser/markings_subwindow = null
+	var/tmp/markings_subwindow_handle
 
 // Sanitize ear/wing/tail styles
 /datum/preferences/proc/sanitize_body_styles()
@@ -49,12 +49,12 @@
 			continue
 		if(instance.name == DEVELOPER_WARNING_NAME)
 			continue
-		if(instance.ckeys_allowed && (!client || !(client.ckey in instance.ckeys_allowed)))
+		if(instance.ckeys_allowed && (!client() || !(client().ckey in instance.ckeys_allowed)))
 			continue
 		var/_custom_base = read_preference(/datum/preference/text/human/custom_base) // migrated pref
-		if(instance.species_allowed && (!pref_species || !(pref_species in instance.species_allowed)) && (!client || !check_rights_for(client, R_ADMIN | R_EVENT | R_FUN)) && (!_custom_base || !(_custom_base in instance.species_allowed)))
+		if(instance.species_allowed && (!pref_species || !(pref_species in instance.species_allowed)) && (!client() || !check_rights_for(client(), R_ADMIN | R_EVENT | R_FUN)) && (!_custom_base || !(_custom_base in instance.species_allowed)))
 			continue
-		if(!instance.can_be_selected && (!client || !check_rights_for(client, R_HOLDER)))
+		if(!instance.can_be_selected && (!client() || !check_rights_for(client(), R_HOLDER)))
 			continue
 		.[instance.name] = instance
 
@@ -72,3 +72,7 @@
 // /datum/category_item/player_setup_item/general/body and all its tgui_data/
 // tgui_act/tgui_constant_data/has_flag/reset_limbs helpers were the Bay-prefs Body tab.
 // Deleted; the new auto-renderer + accessories/markings apply_hooks own the equivalent.
+
+/// LC-refs: the markings_subwindow this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/preferences/proc/markings_subwindow()
+	return om_resolve(markings_subwindow_handle)

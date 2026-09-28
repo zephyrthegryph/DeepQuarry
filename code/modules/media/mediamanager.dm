@@ -40,7 +40,7 @@
 	if(!istype(M) || isEye(M))
 		return ..()
 	// Optimization, no need to call update_music() if both are null (or same instance, strange as that would be)
-	if(M.lastarea?.media_source == src.media_source)
+	if(M.lastarea?.media_source() == src.media_source())
 		return ..()
 	if(M.client?.media && !M.client.media.forced)
 		M.update_music()
@@ -99,7 +99,7 @@
 /area
 	// For now, only one media source per area allowed
 	// Possible Future: turn into a list, then only play the first one that's playing.
-	var/obj/machinery/media/media_source = null
+	var/tmp/media_source_handle
 
 //
 // ### Media Manager Datum
@@ -111,7 +111,7 @@
 	var/source_volume = 1		// Volume as set by source. Actual volume = "volume * source_volume"
 	var/rate = 1				// Playback speed.  For Fun(tm)
 	var/volume = 0.5			// Client's volume modifier. Actual volume = "volume * source_volume"
-	var/client/owner			// Client this is actually running in
+	var/tmp/owner_handle	// Client this is actually running in
 	var/forced=0				// If true, current url overrides area media sources
 	// media playback via TGUI MediaPlayer hosted in the
 	// hidden rpane.mediapanel skin element. The skin element stays
@@ -124,14 +124,16 @@
 
 /datum/media_manager/New(client/C)
 	ASSERT(istype(C))
-	src.owner = C
+	src.owner_handle = om_handle(C)
 
-// ALLOW(lifecycle): closes its media window.
+// ALLOW(lifecycle): closes its media window before phase 4 deletes it (REF_OWNED).
+/datum/media_manager/lifecycle_unbind()
+	media_window?.close()
+	return ..()
+
+// ALLOW(lifecycle): drops its owner and last target.
 /datum/media_manager/Destroy()
-	if(media_window)
-		media_window.close()
-		media_window = null
-	owner = null
+	owner_handle = null
 	return ..()
 
 /datum/media_manager/tgui_state(mob/user)
@@ -139,8 +141,8 @@
 
 /datum/media_manager/tgui_data(mob/user)
 	var/should_play = TRUE
-	if(owner?.prefs)
-		should_play = owner.prefs.read_preference(/datum/preference/toggle/play_jukebox) || url == ""
+	if(owner()?.prefs)
+		should_play = owner().prefs.read_preference(/datum/preference/toggle/play_jukebox) || url == ""
 	return list(
 		"url" = should_play ? url : "",
 		"start_time" = (world.time - start_time) / 10,
@@ -149,28 +151,28 @@
 
 // Actually pop open the player in the background.
 /datum/media_manager/proc/open()
-	if(!owner)
+	if(!owner())
 		return
-	if(owner.prefs && isnum(owner.prefs.read_preference(/datum/preference/numeric/living/jukebox_volume)))
-		volume = owner.prefs.read_preference(/datum/preference/numeric/living/jukebox_volume) / 100
+	if(owner().prefs && isnum(owner().prefs.read_preference(/datum/preference/numeric/living/jukebox_volume)))
+		volume = owner().prefs.read_preference(/datum/preference/numeric/living/jukebox_volume) / 100
 
 	// Enable the hidden skin element so its BROWSER actually loads our
 	// assets — the 1x1 size keeps it invisible regardless of is-visible.
-	winset(owner, WINDOW_ID, "is-disabled=false;is-visible=true")
-	media_window = new(owner, WINDOW_ID)
+	winset(owner(), WINDOW_ID, "is-disabled=false;is-visible=true")
+	media_window = new(owner(), WINDOW_ID)
 	media_window.initialize(
 		assets = list(get_asset_datum(/datum/asset/simple/tgui)),
 	)
 
-	var/datum/tgui/ui = SStgui.try_update_ui(owner.mob, src, null)
+	var/datum/tgui/ui = SStgui.try_update_ui(owner().mob, src, null)
 	if(!ui)
-		ui = new(owner.mob, src, "MediaPlayer", window = media_window)
+		ui = new(owner().mob, src, "MediaPlayer", window = media_window)
 		ui.closeable = FALSE
 		ui.open(preinitialized = TRUE)
 
 // Push a fresh state to the React side; it'll re-sync audio src/volume/time.
 /datum/media_manager/proc/send_update()
-	if(!owner)
+	if(!owner())
 		return
 	MP_DEBUG(span_green("Sending update to mediapanel ([url], [(world.time - start_time) / 10], [volume * source_volume])..."))
 	SStgui.update_uis(src)
@@ -195,15 +197,15 @@
 	var/targetStartTime = 0
 	var/targetVolume = 0
 
-	if (forced || !owner || !owner.mob)
+	if (forced || !owner() || !owner().mob)
 		return
 
-	var/area/A = get_area(owner.mob)
+	var/area/A = get_area(owner().mob)
 	if(!A)
-		MP_DEBUG("client=[owner], mob=[owner.mob] not in an area! loc=[owner.mob.loc].  Aborting.")
+		MP_DEBUG("client=[owner()], mob=[owner().mob] not in an area! loc=[owner().mob.loc].  Aborting.")
 		stop_music()
 		return
-	var/obj/machinery/media/M = A.media_source
+	var/obj/machinery/media/M = A.media_source()
 	if(M && M.playing)
 		targetURL = M.media_url
 		targetStartTime = M.media_start_time
@@ -215,3 +217,15 @@
 #undef DEBUG_MEDIAPLAYER
 #undef MP_DEBUG
 #endif
+
+REF_OWNED(/client, "media")
+
+REF_OWNED(/datum/media_manager, "media_window")
+
+/// LC-refs: the media_source this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/area/proc/media_source() as /obj/machinery/media
+	return om_resolve(media_source_handle)
+
+/// LC-refs: Client this is actually running in -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/media_manager/proc/owner() as /client
+	return om_resolve(owner_handle)

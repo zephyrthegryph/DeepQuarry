@@ -16,7 +16,7 @@
 
 /datum/rig_power_system
 	/// The rig this datum belongs to.  Nulled on Destroy().
-	var/obj/item/rig/holder
+	var/tmp/holder_handle
 
 	// ---- Cooling system ----
 	/// Whether the active cooling system is running.
@@ -37,7 +37,7 @@
 	var/offline_vision_restriction = 1
 
 /datum/rig_power_system/New(obj/item/rig/new_holder)
-	holder = new_holder
+	holder_handle = om_handle(new_holder)
 
 /*
  * proc/get_environment_temperature()
@@ -46,8 +46,8 @@
  * Returns 0 for space, and accounts for mecha interiors and cryo cells.
  */
 /datum/rig_power_system/proc/get_environment_temperature()
-	if(ishuman(holder.loc))
-		var/mob/living/carbon/human/H = holder.loc
+	if(ishuman(holder().loc))
+		var/mob/living/carbon/human/H = holder().loc
 		if(istype(H.loc, /obj/mecha))
 			var/obj/mecha/M = H.loc
 			return M.get_interior_temperature()
@@ -55,7 +55,7 @@
 			var/obj/machinery/atmospherics/unary/cryo_cell/cryo = H.loc
 			return cryo.air_contents.return_temperature()
 
-	var/turf/T = get_turf(holder)
+	var/turf/T = get_turf(holder())
 	if(!T)
 		return 0
 	if(istype(T, /turf/space))
@@ -75,16 +75,16 @@
  * Called from /obj/item/rig/process().
  */
 /datum/rig_power_system/proc/run_cooling(mob/living/carbon/human/H)
-	if(!cooling_on || !holder.cell)
+	if(!cooling_on || !holder().cell)
 		return
 	if(!H)
 		return
-	if(!holder.attached_to_user(H))
+	if(!holder().attached_to_user(H))
 		return
-	if(!holder.suit_is_deployed())
+	if(!holder().suit_is_deployed())
 		return
 
-	var/turf/T = get_turf(holder)
+	var/turf/T = get_turf(holder())
 	if(!T)
 		return
 
@@ -107,10 +107,10 @@
 
 	var/charge_usage = (temp_adj / max_cooling) * charge_consumption
 	H.bodytemperature -= temp_adj * efficiency
-	holder.draw_power(charge_usage / CELLRATE, src, partial = TRUE)
+	holder().draw_power(charge_usage / CELLRATE, src, partial = TRUE)
 
-	if(holder.cell.charge <= 0)
-		holder.turn_cooling_off(H, 1)
+	if(holder().cell.charge <= 0)
+		holder().turn_cooling_off(H, 1)
 
 /*
  * proc/process_offline_state()
@@ -125,19 +125,19 @@
  *   offline == 2 — offline-stable; no further action until power returns
  */
 /datum/rig_power_system/proc/process_offline_state()
-	var/mob/living/carbon/human/W = holder.wearer
+	var/mob/living/carbon/human/W = holder().wearer()
 
-	if(!holder.cell || holder.cell.charge <= 0)
-		if(holder.electrified > 0)
-			holder.electrified = 0
+	if(!holder().cell || holder().cell.charge <= 0)
+		if(holder().electrified > 0)
+			holder().electrified = 0
 		if(!offline)
 			if(istype(W))
-				if(!holder.canremove)
+				if(!holder().canremove)
 					if(offline_slowdown < 1.5)
 						to_chat(W, span_danger("Your suit beeps stridently, and suddenly goes dead."))
 					else
 						to_chat(W, span_danger("Your suit beeps stridently, and suddenly you're wearing a leaden mass of metal and plastic composites instead of a powered suit."))
-					playsound(holder, 'sound/machines/rig/rigdown.ogg', 60, FALSE)
+					playsound(holder(), 'sound/machines/rig/rigdown.ogg', 60, FALSE)
 				if(offline_vision_restriction == 1)
 					to_chat(W, span_danger("The suit optics flicker and die, leaving you with restricted vision."))
 				else if(offline_vision_restriction == 2)
@@ -147,16 +147,20 @@
 	else if(offline)
 		offline = 0
 		if(istype(W) && !W.wearing_rig)
-			W.wearing_rig = holder
-		if(!istype(holder, /obj/item/rig/protean))
-			holder.slowdown = initial(holder.slowdown)
+			W.wearing_rig = holder()
+		if(!istype(holder(), /obj/item/rig/protean))
+			holder().slowdown = initial(holder().slowdown)
 
 	if(offline)
 		if(offline == 1)
-			for(var/obj/item/rig_module/module in holder.installed_modules)
+			for(var/obj/item/rig_module/module in holder().installed_modules)
 				module.deactivate()
 			offline = 2
-			holder.slowdown = offline_slowdown
+			holder().slowdown = offline_slowdown
 		return TRUE
 
 	return FALSE
+
+/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/rig_power_system/proc/holder() as /obj/item/rig
+	return om_resolve(holder_handle)

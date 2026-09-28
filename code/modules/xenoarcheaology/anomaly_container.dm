@@ -5,7 +5,7 @@
 	icon_state = "anomaly_container"
 	density = TRUE
 
-	var/obj/machinery/artifact/contained
+	var/tmp/contained_handle
 
 /obj/structure/anomaly_container/Initialize(mapload)
 	. = ..()
@@ -35,18 +35,18 @@ DECLARE_INTERACTIONS(/obj/structure/anomaly_container, INTERACT_HAND_UNGATED(nul
 		release()
 
 /obj/structure/anomaly_container/proc/contain(obj/machinery/artifact/artifact)
-	if(contained)
+	if(contained())
 		return
-	contained = artifact
+	contained_handle = om_handle(artifact)
 	artifact.forceMove(src)
 	underlays += image(artifact)
-	desc = "Used to safely contain and move anomalies. \The [contained] is kept inside."
+	desc = "Used to safely contain and move anomalies. \The [contained()] is kept inside."
 
 /obj/structure/anomaly_container/proc/release()
-	if(!contained)
+	if(!contained())
 		return
-	contained.dropInto(src)
-	contained = null
+	contained().dropInto(src)
+	contained_handle = null
 	underlays.Cut()
 	desc = initial(desc)
 
@@ -57,3 +57,7 @@ DECLARE_INTERACTIONS(/obj/structure/anomaly_container, INTERACT_HAND_UNGATED(nul
 		if(!QDELETED(src) && isturf(loc) && is_anomalous() && Adjacent(over_object) && CanMouseDrop(over_object, usr))
 			Bumped(usr)
 			over_object.contain(src)
+
+/// LC-refs: the contained this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/structure/anomaly_container/proc/contained() as /obj/machinery/artifact
+	return om_resolve(contained_handle)

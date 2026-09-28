@@ -49,18 +49,18 @@
 	moving_status = SHUTTLE_INTRANSIT
 
 	//If we are at the away_landmark then we are just pretending to move, otherwise actually do the move
-	if (next_location == away_waypoint)
+	if (next_location() == away_waypoint)
 		attempt_move(away_waypoint)
 
 	//wait ETA here, plus a late arrival sometimes.
 	arrive_time = world.time + SSsupply.movetime
 	var/wait = SSsupply.movetime
-	if (next_location != away_waypoint && prob(late_chance))
+	if (next_location() != away_waypoint && prob(late_chance))
 		wait += rand(0,max_late_time)
 	om_after(src, wait, PROC_REF(supply_arrive), destination, away_waypoint)
 
 /datum/shuttle/autodock/ferry/supply/proc/supply_arrive(obj/effect/shuttle_landmark/destination, obj/effect/shuttle_landmark/away_waypoint)
-	if (next_location != away_waypoint)
+	if (next_location() != away_waypoint)
 		attempt_move(destination)
 
 	moving_status = SHUTTLE_IDLE
@@ -102,8 +102,8 @@
 	location = FERRY_LOCATION_OFFSITE
 	shuttle_area = /area/shuttle/supply
 	warmup_time = 10
-	landmark_offsite = "supply_cc"
-	landmark_station = "supply_station"
+	landmark_offsite_tag = "supply_cc"
+	landmark_station_tag = "supply_station"
 	docking_controller_tag = "supply_shuttle"
 	flags = SHUTTLE_FLAGS_PROCESS|SHUTTLE_FLAGS_SUPPLY
 	move_direction = WEST

@@ -34,8 +34,8 @@
 
 	// --- Active action ---
 	var/active_behavior_type = null   // typepath of currently-running behavior
-	var/atom/active_target = null
-	var/atom/active_source = null     // null for innate, else the item/modifier granting it
+	var/tmp/active_target_handle
+	var/tmp/active_source_handle	// null for innate, else the item/modifier granting it
 	var/selection_dirty = TRUE
 
 	// --- Behavior aggregation ---
@@ -53,7 +53,7 @@
 	// --- Tactical state (read by behaviors) ---
 	var/last_attack_at = 0           // world.time of the most recent successful attack tick
 	var/last_juke_at = 0             // last world.time evasive_juke fired
-	var/turf/home_turf = null        // for guard / return_home behaviors
+	var/tmp/home_turf_handle	// for guard / return_home behaviors
 	var/leader_ref = null  // for follow_leader / cooperative AI
 	/// world.time when primary_threat first left view(). Used to mirror legacy
 	/// ai_holder lose_target_timeout: the mob keeps pursuing for
@@ -74,7 +74,7 @@
 	holder = owner
 	model = new /datum/world_model(owner)
 	target_selector_chain = list(/datum/target_selector/closest)
-	home_turf = get_turf(owner)
+	home_turf_handle = om_handle(get_turf(owner))
 	manage_processing(DQAI_PROCESSING)
 	RegisterSignal(holder, COMSIG_MOB_STATCHANGE, PROC_REF(on_stat_change))
 	RegisterSignal(holder, COMSIG_LIVING_INJURED, PROC_REF(on_holder_injured))
@@ -93,7 +93,7 @@ REF_OWNED(/datum/ai_brain, "model")
 	cancel_chunk_sleep()
 	if(active_behavior_type)
 		var/datum/ai_behavior/B = dq_get_behavior(active_behavior_type)
-		B.stop(src, active_target, active_source, DQ_BEHAVIOR_STOP_QDEL)
+		B.stop(src, active_target(), active_source(), DQ_BEHAVIOR_STOP_QDEL)
 	// Clear the mob's back-reference so nothing keeps calling into a deleted brain.
 	if(holder?.ai_brain == src)
 		holder.ai_brain = null
@@ -180,7 +180,7 @@ REF_OWNED(/datum/ai_brain, "model")
 
 	if(active_behavior_type)
 		var/datum/ai_behavior/B = dq_get_behavior(active_behavior_type)
-		var/result = B.tick(src, active_target, active_source)
+		var/result = B.tick(src, active_target(), active_source())
 		switch(result)
 			if(DQ_BEHAVIOR_CONTINUE)
 				return
@@ -327,8 +327,8 @@ REF_OWNED(/datum/ai_brain, "model")
 		// for tick-driven behaviors (approach_threat reads `target` each tick).
 		// Re-face the new target so the mob's sprite reorients immediately
 		// instead of waiting for the next step.
-		if(active_target != best_target)
-			active_target = best_target
+		if(active_target() != best_target)
+			active_target_handle = om_handle(best_target)
 			if(holder && best_target)
 				holder.face_atom(best_target)
 		return TRUE
@@ -340,8 +340,8 @@ REF_OWNED(/datum/ai_brain, "model")
 	if(active_behavior_type)
 		stop_active(DQ_BEHAVIOR_STOP_INTERRUPTED)
 	active_behavior_type = btype
-	active_target = target
-	active_source = source
+	active_target_handle = om_handle(target)
+	active_source_handle = om_handle(source)
 	var/datum/ai_behavior/B = dq_get_behavior(btype)
 	var/result = B.start(src, target, source)
 	if(result == DQ_BEHAVIOR_DONE)
@@ -353,10 +353,10 @@ REF_OWNED(/datum/ai_brain, "model")
 	if(!active_behavior_type)
 		return
 	var/datum/ai_behavior/B = dq_get_behavior(active_behavior_type)
-	B.stop(src, active_target, active_source, reason)
+	B.stop(src, active_target(), active_source(), reason)
 	active_behavior_type = null
-	active_target = null
-	active_source = null
+	active_target_handle = null
+	active_source_handle = null
 	// Defensive: if a behavior's start() runtimed before releasing its hold, the
 	// brain would lock up. stop_active is the funnel for every termination,
 	// so always release the hold here regardless of blocks_reselection.
@@ -600,3 +600,15 @@ REF_OWNED(/datum/ai_brain, "model")
 	var/datum/om/task/T = om_claiming_task(src)
 	if(istype(T, /datum/om/task/hold))
 		om_task_cancel(T, "done")
+
+/// LC-refs: the active_target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/ai_brain/proc/active_target() as /atom
+	return om_resolve(active_target_handle)
+
+/// LC-refs: null for innate, else the item/modifier granting it -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/ai_brain/proc/active_source() as /atom
+	return om_resolve(active_source_handle)
+
+/// LC-refs: for guard / return_home behaviors -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/ai_brain/proc/home_turf() as /turf
+	return om_resolve(home_turf_handle)

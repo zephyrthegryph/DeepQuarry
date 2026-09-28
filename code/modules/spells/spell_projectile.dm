@@ -5,7 +5,7 @@
 
 	nodamage = 1 //Most of the time, anyways
 
-	var/datum/spell/targeted/projectile/carried
+	var/tmp/carried_handle
 
 	penetrating = 0
 	range = 10 //set by the duration of the spell
@@ -33,19 +33,23 @@ REF_OWNED_LIST(/obj/item/projectile/spell_projectile, "trails")
 
 /obj/item/projectile/spell_projectile/proc/prox_cast(list/targets)
 	if(loc)
-		carried.prox_cast(targets, src)
+		carried().prox_cast(targets, src)
 		qdel(src)
 	return
 
 /obj/item/projectile/spell_projectile/Bump(atom/A)
-	if(loc && carried)
-		prox_cast(carried.choose_prox_targets(user = carried.holder, spell_holder = src))
+	if(loc && carried())
+		prox_cast(carried().choose_prox_targets(user = carried().holder(), spell_holder = src))
 	return 1
 
 /obj/item/projectile/spell_projectile/on_impact()
-	if(loc && carried)
-		prox_cast(carried.choose_prox_targets(user = carried.holder, spell_holder = src))
+	if(loc && carried())
+		prox_cast(carried().choose_prox_targets(user = carried().holder(), spell_holder = src))
 	return 1
 
 /obj/item/projectile/spell_projectile/seeking
 	name = "seeking spell"
+
+/// LC-refs: the carried this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/projectile/spell_projectile/proc/carried() as /datum/spell/targeted/projectile
+	return om_resolve(carried_handle)

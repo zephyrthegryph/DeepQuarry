@@ -180,5 +180,5 @@ REF_OWNED(/obj/machinery/vending/nifsoft_shop, "entopic")
 		do_logging(R, user, 1)
 
 	vend_ready = 1
-	currently_vending = null
+	currently_vending_handle = null
 	SStgui.update_uis(src)

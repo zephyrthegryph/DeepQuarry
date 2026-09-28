@@ -24,7 +24,7 @@ DECLARE_INTERACTIONS(/obj/item/hoist_kit, INTERACT_USE(null, PROC_REF(interactio
 	desc = "A clamp used to lift people or things."
 	icon = 'icons/obj/hoists.dmi'
 	icon_state = "hoist_hook"
-	var/obj/structure/hoist/source_hoist
+	var/tmp/source_hoist_handle
 	can_buckle = TRUE
 	anchored = TRUE
 	description_info = "Click and drag someone (or any object) to this to attach them to the clamp. If you are within reach, when you click and drag this to a turf adjacent to you, it will move the attached object there and release it."
@@ -40,16 +40,16 @@ DECLARE_INTERACTIONS(/obj/item/hoist_kit, INTERACT_USE(null, PROC_REF(interactio
 	if (!AM.simulated || AM.anchored)
 		to_chat(user, span_notice("You can't do that."))
 		return
-	if (source_hoist.hoistee)
-		to_chat(user, span_notice("\The [source_hoist.hoistee] is already attached to \the [src]!"))
+	if (source_hoist().hoistee())
+		to_chat(user, span_notice("\The [source_hoist().hoistee()] is already attached to \the [src]!"))
 		return
-	source_hoist.attach_hoistee(AM)
+	source_hoist().attach_hoistee(AM)
 	user.visible_message(span_danger("[user] attaches \the [AM] to \the [src]."), span_danger("You attach \the [AM] to \the [src]."), span_danger("You hear something clamp into place."))
 
 /obj/structure/hoist/proc/attach_hoistee(atom/movable/AM)
 	if (get_turf(AM) != get_turf(source_hook))
 		AM.forceMove(get_turf(source_hook))
-	hoistee = AM
+	hoistee_handle = om_handle(AM)
 	if(ismob(AM))
 		source_hook.buckle_mob(AM)
 	AM.anchored = TRUE // why isn't this being set by buckle_mob for silicons?
@@ -70,26 +70,26 @@ DECLARE_INTERACTIONS(/obj/item/hoist_kit, INTERACT_USE(null, PROC_REF(interactio
 		to_chat(usr, span_notice("You stare cluelessly at \the [src]."))
 		return
 
-	if (!source_hoist.hoistee)
+	if (!source_hoist().hoistee())
 		return
 	if (!isturf(dest))
 		return
-	if (!dest.Adjacent(source_hoist.hoistee))
+	if (!dest.Adjacent(source_hoist().hoistee()))
 		return
 
-	source_hoist.check_consistency()
+	source_hoist().check_consistency()
 
 	var/turf/desturf = dest
-	source_hoist.hoistee.forceMove(desturf)
-	usr.visible_message(span_danger("[usr] detaches \the [source_hoist.hoistee] from the hoist clamp."), span_danger("You detach \the [source_hoist.hoistee] from the hoist clamp."), span_danger("You hear something unclamp."))
-	source_hoist.release_hoistee()
+	source_hoist().hoistee().forceMove(desturf)
+	usr.visible_message(span_danger("[usr] detaches \the [source_hoist().hoistee()] from the hoist clamp."), span_danger("You detach \the [source_hoist().hoistee()] from the hoist clamp."), span_danger("You hear something unclamp."))
+	source_hoist().release_hoistee()
 
 // This will handle mobs unbuckling themselves.
 /obj/effect/hoist_hook/unbuckle_mob(mob/living/buckled_mob, force = FALSE)
 	. = ..()
-	if (. && !QDELETED(source_hoist))
+	if (. && !QDELETED(source_hoist()))
 		var/mob/M = .
-		source_hoist.hoistee = null
+		source_hoist().hoistee_handle = null
 		M.fall()
 
 /obj/structure/hoist
@@ -100,7 +100,7 @@ DECLARE_INTERACTIONS(/obj/item/hoist_kit, INTERACT_USE(null, PROC_REF(interactio
 	anchored = TRUE
 	name = "hoist"
 	desc = "A manual hoist, uses a clamp and pulley to hoist things."
-	var/atom/movable/hoistee
+	var/tmp/hoistee_handle
 	var/movedir = UP
 	var/obj/effect/hoist_hook/source_hook
 	description_info = "Click this to raise or lower the hoist, or to switch directions if it can't move any further. It can also be collapsed into a hoist kit."
@@ -110,29 +110,29 @@ DECLARE_INTERACTIONS(/obj/item/hoist_kit, INTERACT_USE(null, PROC_REF(interactio
 	dir = ndir
 	var/turf/newloc = get_step(src, dir)
 	source_hook = new(newloc)
-	source_hook.source_hoist = src
+	source_hook.source_hoist_handle = om_handle(src)
 
 REF_OWNED(/obj/structure/hoist, "source_hook")
 
 // ALLOW(lifecycle): whatever hangs from the hoist is released.
 /obj/structure/hoist/Destroy()
-	if(hoistee)
+	if(hoistee())
 		release_hoistee()
 	return ..()
 
 /obj/structure/hoist/proc/check_consistency()
-	if (!hoistee)
+	if (!hoistee())
 		return
-	if (hoistee.z != source_hook.z)
+	if (hoistee().z != source_hook.z)
 		release_hoistee()
 		return
 
 /obj/structure/hoist/proc/release_hoistee()
-	if(ismob(hoistee))
-		source_hook.unbuckle_mob(hoistee)
+	if(ismob(hoistee()))
+		source_hook.unbuckle_mob(hoistee())
 	else
-		hoistee.anchored = FALSE
-	hoistee = null
+		hoistee().anchored = FALSE
+	hoistee_handle = null
 	layer = NORMAL_LAYER
 
 /obj/structure/hoist/proc/break_hoist()
@@ -140,7 +140,7 @@ REF_OWNED(/obj/structure/hoist, "source_hook")
 		return
 	broken = 1
 	desc += " It looks broken, and the clamp has retracted back into the hoist. Seems like you'd have to re-deploy it to get it to work again."
-	if(hoistee)
+	if(hoistee())
 		release_hoistee()
 	QDEL_NULL(source_hook)
 
@@ -152,7 +152,7 @@ REF_OWNED(/obj/structure/hoist, "source_hook")
 /obj/effect/hoist_hook/ex_act(severity)
 	// A hit on the hook wrenches the hoist; it breaks more often the closer the blast.
 	if(prob(100 / severity))
-		source_hoist.break_hoist()
+		source_hoist().break_hoist()
 
 /obj/structure/hoist
 	silicon_use = ROBOT_USE_HAND
@@ -182,7 +182,7 @@ DECLARE_INTERACTIONS(/obj/structure/hoist, INTERACT_HAND_UNGATED(null, PROC_REF(
 		to_chat(user, span_notice("You switch the direction of the pulley."))
 		return TRUE
 
-	if (!hoistee)
+	if (!hoistee())
 		user.visible_message(span_notice("[user] begins to [movtext] the clamp."), span_notice("You begin to [movtext] the clamp."), span_notice("You hear the sound of a crank."))
 		move_dir(movedir, 0)
 		return TRUE
@@ -190,14 +190,14 @@ DECLARE_INTERACTIONS(/obj/structure/hoist, INTERACT_HAND_UNGATED(null, PROC_REF(
 	check_consistency()
 
 	var/size
-	if (ismob(hoistee))
-		var/mob/M = hoistee
+	if (ismob(hoistee()))
+		var/mob/M = hoistee()
 		size = M.mob_size
-	else if (isobj(hoistee))
-		var/obj/O = hoistee
+	else if (isobj(hoistee()))
+		var/obj/O = hoistee()
 		size = O.w_class
 
-	user.visible_message(span_notice("[user] begins to [movtext] \the [hoistee]!"), span_notice("You begin to [movtext] \the [hoistee]!"), span_notice("You hear the sound of a crank."))
+	user.visible_message(span_notice("[user] begins to [movtext] \the [hoistee()]!"), span_notice("You begin to [movtext] \the [hoistee()]!"), span_notice("You hear the sound of a crank."))
 	om_do_after(user, (1 SECONDS) * size / 4, src, src, PROC_REF(move_dir), list(movedir, 1))
 	return TRUE
 
@@ -218,8 +218,8 @@ DECLARE_INTERACTIONS(/obj/structure/hoist, INTERACT_HAND_UNGATED(null, PROC_REF(
 		to_chat(usr, span_notice("You stare cluelessly at \the [src]."))
 		return
 
-	if (hoistee)
-		to_chat(usr, span_notice("You cannot collapse the hoist with \the [hoistee] attached!"))
+	if (hoistee())
+		to_chat(usr, span_notice("You cannot collapse the hoist with \the [hoistee()] attached!"))
 		return
 	collapse_kit()
 
@@ -246,7 +246,7 @@ DECLARE_INTERACTIONS(/obj/structure/hoist, INTERACT_HAND_UNGATED(null, PROC_REF(
 	source_hook.forceMove(move_dest)
 	if (!ishoisting)
 		return 1
-	hoistee.hoist_act(move_dest)
+	hoistee().hoist_act(move_dest)
 	return 1
 
 /atom/movable/proc/hoist_act(turf/dest)
@@ -254,3 +254,11 @@ DECLARE_INTERACTIONS(/obj/structure/hoist, INTERACT_HAND_UNGATED(null, PROC_REF(
 	return TRUE
 
 #undef NORMAL_LAYER
+
+/// LC-refs: the hoistee this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/structure/hoist/proc/hoistee() as /atom/movable
+	return om_resolve(hoistee_handle)
+
+/// LC-refs: the source_hoist this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/effect/hoist_hook/proc/source_hoist() as /obj/structure/hoist
+	return om_resolve(source_hoist_handle)

@@ -33,7 +33,7 @@
 	/// Loot context, set by the caller so furnished crates roll appropriate tiers.
 	var/loot_difficulty = EXP_DIFF_LOW
 	var/loot_size = EXP_SIZE_SMALL
-	var/datum/expedition_biome/loot_biome = null
+	var/tmp/loot_biome_handle
 
 // Draw a building centred on `center`, roughly w x h tiles. Returns TRUE if a
 // usable structure (at least one room) was produced.
@@ -276,4 +276,8 @@
 			expedition_spawn_loot(null, expedition_roll_tier(loot_difficulty, loot_size), o)
 	// A little grime/remains so rooms feel lived-in (and abandoned).
 	if(prob(60))
-		expedition_decorate(locate(cx, cy, z), 2, loot_biome, rand(1, 3))
+		expedition_decorate(locate(cx, cy, z), 2, loot_biome(), rand(1, 3))
+
+/// LC-refs: the loot_biome this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/expedition_building/proc/loot_biome() as /datum/expedition_biome
+	return om_resolve(loot_biome_handle)

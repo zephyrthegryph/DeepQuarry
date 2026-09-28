@@ -11,7 +11,7 @@
 		return lit.value
 	else if(istype(exp, /datum/node/expression/value/reference))
 		var/datum/node/expression/value/reference/ref=exp
-		return ref.value
+		return ref.value()
 	else if(istype(exp, /datum/node/expression/value/variable))
 		var/datum/node/expression/value/variable/v=exp
 		if(!v.object)

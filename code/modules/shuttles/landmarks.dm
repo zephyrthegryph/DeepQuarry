@@ -12,15 +12,17 @@
 	//ID of the landmark
 	var/landmark_tag
 	//ID of the controller on the dock side (intialize to id_tag, becomes reference)
-	var/datum/embedded_program/docking/docking_controller
+	var/tmp/docking_controller_handle
+	var/docking_controller_tag	// the tag it starts as; resolved into docking_controller at init
 	//Map of shuttle names to ID of controller used for this landmark for shuttles with multiple ones.
 	var/list/special_dock_targets
 
 	//When the shuttle leaves this landmark, it will leave behind the base area
 	//also used to determine if the shuttle can arrive here without obstruction
-	var/area/base_area
+	var/base_area	// the area type (or area) configured; Initialize() resolves it into landing_area()
+	var/tmp/base_area_handle
 	//Will also leave this type of turf behind if set.
-	var/turf/base_turf
+	var/base_turf
 	//Name of the shuttle, null for generic waypoint
 	var/shuttle_restricted
 	//does it use docking codes?
@@ -28,7 +30,7 @@
 
 /obj/effect/shuttle_landmark/Initialize(mapload)
 	. = ..()
-	if(docking_controller)
+	if(docking_controller_tag)
 		. = INITIALIZE_HINT_LATELOAD
 
 	// Even if this flag is set, hardcoded values take precedence.
@@ -37,33 +39,28 @@
 			var/area/A = locate(base_area)
 			if(!istype(A))
 				CRASH("Shuttle landmark \"[landmark_tag]\" couldn't locate area [base_area].")
-			base_area = A
+			base_area_handle = om_handle(A)
 		else
-			base_area = get_area(src)
+			base_area_handle = om_handle(get_area(src))
 		var/turf/T = get_turf(src)
 		if(T && !base_turf)
 			base_turf = T.type
 	else
-		base_area = locate(base_area || world.area)
+		base_area_handle = om_handle(isarea(base_area) ? base_area : locate(base_area || world.area))
 	SSshuttles.register_landmark(landmark_tag, src)
 
 /obj/effect/shuttle_landmark/LateInitialize()
-	if(!docking_controller)
+	if(!docking_controller_tag)
 		return
-	var/docking_tag = docking_controller
-	docking_controller = SSshuttles.docking_registry[docking_tag]
-	if(!istype(docking_controller))
+	var/docking_tag = docking_controller_tag
+	docking_controller_handle = om_handle(SSshuttles.docking_registry[docking_tag])
+	if(!istype(docking_controller(), /datum/embedded_program/docking))
 		log_mapping("Could not find docking controller for shuttle waypoint '[name]', docking tag was '[docking_tag]'.")
-	else
-		RegisterSignal(docking_controller, COMSIG_QDELETING, PROC_REF(docking_controller_deleted))
+	// No QDELETING registration: the controller is an OM handle, which reads null once it is deleted.
 	if(using_map.use_overmap)
 		var/obj/effect/overmap/visitable/location = get_overmap_sector(z)
 		if(location && location.docking_codes && use_docking_codes)
-			docking_controller.docking_codes = location.docking_codes
-
-/obj/effect/shuttle_landmark/proc/docking_controller_deleted()
-	SIGNAL_HANDLER
-	docking_controller = null
+			docking_controller().docking_codes = location.docking_codes
 
 /obj/effect/shuttle_landmark/forceMove(atom/destination, direction, movetime)
 	var/obj/effect/overmap/visitable/map_origin = get_overmap_sector(z)
@@ -80,11 +77,11 @@
 	shuttle_restricted = shuttle_name
 
 /obj/effect/shuttle_landmark/proc/is_valid(datum/shuttle/shuttle)
-	if(shuttle.current_location == src)
+	if(shuttle.current_location() == src)
 		return FALSE
 	for(var/area/A in shuttle.shuttle_area)
-		var/list/translation = get_turf_translation(get_turf(shuttle.current_location), get_turf(src), A.contents)
-		if(check_collision(base_area, list_values(translation)))
+		var/list/translation = get_turf_translation(get_turf(shuttle.current_location()), get_turf(src), A.contents)
+		if(check_collision(landing_area(), list_values(translation)))
 			return FALSE
 	var/conn = GetConnectedZlevels(z)
 	for(var/w in (z - shuttle.multiz) to z)
@@ -94,10 +91,10 @@
 
 // This creates a graphical warning to where the shuttle is about to land in approximately five seconds.
 /obj/effect/shuttle_landmark/proc/create_warning_effect(datum/shuttle/shuttle)
-	if(shuttle.current_location == src)
+	if(shuttle.current_location() == src)
 		return // TOO LATE!
 	for(var/area/A in shuttle.shuttle_area)
-		var/list/translation = get_turf_translation(get_turf(shuttle.current_location), get_turf(src), A.contents)
+		var/list/translation = get_turf_translation(get_turf(shuttle.current_location()), get_turf(src), A.contents)
 		for(var/T in list_values(translation))
 			new /obj/effect/temporary_effect/shuttle_landing(T) // It'll delete itself when needed.
 	return
@@ -196,3 +193,11 @@ DECLARE_INTERACTIONS(/obj/item/spaceflare, INTERACT_USE(null, PROC_REF(interacti
 	if(active)
 		icon_state = "bluflare_on"
 		set_light(0.3, 0.1, 6, 2, "85d1ff")
+
+/// LC-refs: the docking_controller this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/effect/shuttle_landmark/proc/docking_controller() as /datum/embedded_program/docking
+	return om_resolve(docking_controller_handle)
+
+/// LC-refs: the area this landmark leaves behind when a shuttle departs -- an OM handle resolved from base_area at Initialize().
+/obj/effect/shuttle_landmark/proc/landing_area() as /area
+	return om_resolve(base_area_handle)

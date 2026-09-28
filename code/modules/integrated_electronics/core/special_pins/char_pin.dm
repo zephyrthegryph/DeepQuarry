@@ -7,7 +7,7 @@
 	if(isnull(_answer_k6))
 		return
 	var/new_data = sanitizeSafe(_answer_k6, 1, 0, 0)
-	if(holder.check_interactivity(user) )
+	if(holder().check_interactivity(user) )
 		to_chat(user, span_notice("You input [new_data ? "new_data" : "NULL"] into the pin."))
 		write_data_to_pin(new_data)
 
@@ -16,7 +16,7 @@
 		if(length(new_data) > 1)
 			return
 		data = new_data
-		holder.on_data_written()
+		holder().on_data_written()
 
 // This makes the text go from "A" to "%".
 /datum/integrated_io/char/scramble()

@@ -20,8 +20,8 @@
 	announce_delay_upper_bound = 20 SECONDS
 	length_lower_bound = 8 MINUTES
 	length_upper_bound = 12 MINUTES
-	var/turf/chosen_turf_with_windows = null
-	var/obj/structure/window/chosen_window = null
+	var/tmp/chosen_turf_with_windows_handle
+	var/tmp/chosen_window_handle
 	var/list/collateral_windows
 
 /datum/event2/event/window_break/set_up()
@@ -38,31 +38,31 @@
 		for(var/obj/structure/window/W in area.contents)
 			if(!is_window_to_space(W))
 				continue
-			chosen_turf_with_windows = get_turf(W)
+			chosen_turf_with_windows_handle = om_handle(get_turf(W))
 			collateral_windows = gather_collateral_windows(W)
 			break // Break out of the inner loop.
 
-		if(chosen_turf_with_windows)
-			log_game("Window Break event has chosen turf '[chosen_turf_with_windows.name]' in [chosen_turf_with_windows.loc].")
+		if(chosen_turf_with_windows())
+			log_game("Window Break event has chosen turf '[chosen_turf_with_windows().name]' in [chosen_turf_with_windows().loc].")
 			break // Then the outer loop.
 
-	if(!chosen_turf_with_windows)
+	if(!chosen_turf_with_windows())
 		log_game("Window Break event could not find a turf with valid windows to break. Aborting.")
 		abort()
 		return
 
 /datum/event2/event/window_break/announce()
-	if(chosen_window)
-		GLOB.command_announcement.Announce("Structural integrity of space-facing windows at \the [get_area(chosen_turf_with_windows)] are failing. \
+	if(chosen_window())
+		GLOB.command_announcement.Announce("Structural integrity of space-facing windows at \the [get_area(chosen_turf_with_windows())] are failing. \
 		Repair of the damaged window is advised. Personnel without EVA suits in the area should leave until repairs are complete.", "Structural Alert", ANNOUNCER_MSG_WINDOWBREAK)
 
 /datum/event2/event/window_break/start()
-	if(!chosen_turf_with_windows)
+	if(!chosen_turf_with_windows())
 		return
 
-	for(var/obj/structure/window/W in chosen_turf_with_windows.contents)
+	for(var/obj/structure/window/W in chosen_turf_with_windows().contents)
 		if(W.is_fulltile()) // Full tile windows are simple and can always be used.
-			chosen_window = W
+			chosen_window_handle = om_handle(W)
 			break
 		else // Otherwise we only want the window that is on the inside side of the station.
 			var/turf/T = get_step(W, W.dir)
@@ -70,32 +70,32 @@
 				continue
 			if(T.check_density())
 				continue
-			chosen_window = W
+			chosen_window_handle = om_handle(W)
 			break
 
-	if(!chosen_window)
+	if(!chosen_window())
 		return
 
-	chosen_window.take_damage(chosen_window.max_integrity * 0.8, BRUTE, MELEE)
-	playsound(chosen_window, 'sound/effects/Glasshit.ogg', 100, 1)
-	chosen_window.visible_message(span_danger("\The [chosen_window] suddenly begins to crack!"))
+	chosen_window().take_damage(chosen_window().max_integrity * 0.8, BRUTE, MELEE)
+	playsound(chosen_window(), 'sound/effects/Glasshit.ogg', 100, 1)
+	chosen_window().visible_message(span_danger("\The [chosen_window()] suddenly begins to crack!"))
 
 /datum/event2/event/window_break/should_end()
 	. = ..()
 	if(!.) // If the timer didn't expire, we can still end it early if someone messes up.
-		if(!chosen_window || !chosen_window.anchored || chosen_window.get_integrity() >= chosen_window.max_integrity)
+		if(!chosen_window() || !chosen_window().anchored || chosen_window().get_integrity() >= chosen_window().max_integrity)
 			// If the window got deconstructed/moved/etc, immediately end and make the breach happen.
 			// Also end early if it was repaired.
 			return TRUE
 
 /datum/event2/event/window_break/end()
 	// If someone fixed the window, then everything is fine.
-	if(chosen_window && chosen_window.anchored && chosen_window.get_integrity() >= chosen_window.max_integrity)
+	if(chosen_window() && chosen_window().anchored && chosen_window().get_integrity() >= chosen_window().max_integrity)
 		log_game("Window Break event ended with window repaired.")
 		return
 
 	// Otherwise a bunch of windows shatter.
-	chosen_window?.shatter()
+	chosen_window()?.shatter()
 
 	var/windows_to_shatter = min(rand(4, 10), length(collateral_windows))
 	for(var/i = 1 to windows_to_shatter)
@@ -146,3 +146,11 @@
 			if(!(neighbor in frontier_set) && !(neighbor in explored_set))
 				frontier_set += neighbor
 	return result_set
+
+/// LC-refs: the chosen_turf_with_windows this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/event2/event/window_break/proc/chosen_turf_with_windows() as /turf
+	return om_resolve(chosen_turf_with_windows_handle)
+
+/// LC-refs: the chosen_window this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/event2/event/window_break/proc/chosen_window() as /obj/structure/window
+	return om_resolve(chosen_window_handle)

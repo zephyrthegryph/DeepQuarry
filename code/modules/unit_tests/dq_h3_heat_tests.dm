@@ -151,8 +151,8 @@
 	vg_heat_body_couple(oven.heat_body, 0, HEAT_TARGET_NONE, 0, 0)
 	var/list/things = list(oven)
 	for(var/datum/cooking_item/CI as anything in oven.cooking_objs)
-		TEST_ASSERT(!isnull(CI.container.heat_body), "its containers are coupled to it")
-		things += CI.container
+		TEST_ASSERT(!isnull(CI.container().heat_body), "its containers are coupled to it")
+		things += CI.container()
 	// The heat source adds energy.
 	vg_world_run_steps(1)
 	var/start = dq_h3_energy(things)
@@ -232,7 +232,7 @@
 	T.hotspot_expose(PLASMA_MINIMUM_BURN_TEMPERATURE + 500, CELL_VOLUME, TRUE)
 	var/obj/effect/hotspot/hotspot = T.active_hotspot
 	TEST_ASSERT(hotspot, "the tile burns")
-	TEST_ASSERT_EQUAL(probe.heat_fire_turf, T, "the hotspot coupled the item to the burning gas")
+	TEST_ASSERT_EQUAL(om_resolve(probe.heat_fire_turf_handle), T, "the hotspot coupled the item to the burning gas")
 	TEST_ASSERT(!isnull(probe.heat_body), "through its heat body")
 	var/start = probe.get_temperature()
 	// Was a fixed vg_world_run_steps(3): that assumed 3 frames is always
@@ -254,7 +254,7 @@
 	hotspot.perform_exposure()
 	TEST_ASSERT_EQUAL(probe.fire_acts, 0, "without a fire_act() call per SSair fire")
 	qdel(hotspot)
-	TEST_ASSERT_NULL(probe.heat_fire_turf, "the fire going out uncouples it")
+	TEST_ASSERT_NULL(om_resolve(probe.heat_fire_turf_handle), "the fire going out uncouples it")
 
 	for(var/obj/effect/hotspot/other in range(2, T))
 		qdel(other)

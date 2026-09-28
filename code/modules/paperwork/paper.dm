@@ -574,7 +574,7 @@ DECLARE_INTERACTIONS(/obj/item/paper, INTERACT_ITEM(null, PROC_REF(interaction_i
 		if(src.loc == user)
 			user.drop_from_inventory(src)
 		src.forceMove(CB)
-		CB.toppaper = src
+		CB.toppaper_handle = om_handle(src)
 		CB.update_icon()
 		to_chat(user, span_notice("You clip the [src] onto \the [CB]."))
 

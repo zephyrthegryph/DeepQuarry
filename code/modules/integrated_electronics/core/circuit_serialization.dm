@@ -163,20 +163,20 @@
 		for(var/i = 1, i <= IC.outputs.len, i++)
 			var/datum/integrated_io/output_pin = IC.outputs[i]
 			for(var/datum/integrated_io/linked_pin in output_pin.linked)
-				var/target_component_index = component_indices[REF(linked_pin.holder)]
+				var/target_component_index = component_indices[REF(linked_pin.holder())]
 				if(target_component_index)
 					var/target_pin_type = "u"  // u = unknown
 					var/target_pin_index = 0
 
-					if(linked_pin in linked_pin.holder.inputs)
+					if(linked_pin in linked_pin.holder().inputs)
 						target_pin_type = "i"  // i = input
-						target_pin_index = linked_pin.holder.inputs.Find(linked_pin)
-					else if(linked_pin in linked_pin.holder.outputs)
+						target_pin_index = linked_pin.holder().inputs.Find(linked_pin)
+					else if(linked_pin in linked_pin.holder().outputs)
 						target_pin_type = "o"  // o = output
-						target_pin_index = linked_pin.holder.outputs.Find(linked_pin)
-					else if(linked_pin in linked_pin.holder.activators)
+						target_pin_index = linked_pin.holder().outputs.Find(linked_pin)
+					else if(linked_pin in linked_pin.holder().activators)
 						target_pin_type = "a"  // a = activator
-						target_pin_index = linked_pin.holder.activators.Find(linked_pin)
+						target_pin_index = linked_pin.holder().activators.Find(linked_pin)
 
 					if(target_pin_index > 0)
 						// Create unique connection identifier to prevent duplicates
@@ -200,20 +200,20 @@
 		for(var/i = 1, i <= IC.activators.len, i++)
 			var/datum/integrated_io/activate/activator_pin = IC.activators[i]
 			for(var/datum/integrated_io/linked_pin in activator_pin.linked)
-				var/target_component_index = component_indices[REF(linked_pin.holder)]
+				var/target_component_index = component_indices[REF(linked_pin.holder())]
 				if(target_component_index)
 					var/target_pin_type = "u"  // u = unknown
 					var/target_pin_index = 0
 
-					if(linked_pin in linked_pin.holder.inputs)
+					if(linked_pin in linked_pin.holder().inputs)
 						target_pin_type = "i"  // i = input
-						target_pin_index = linked_pin.holder.inputs.Find(linked_pin)
-					else if(linked_pin in linked_pin.holder.outputs)
+						target_pin_index = linked_pin.holder().inputs.Find(linked_pin)
+					else if(linked_pin in linked_pin.holder().outputs)
 						target_pin_type = "o"  // o = output
-						target_pin_index = linked_pin.holder.outputs.Find(linked_pin)
-					else if(linked_pin in linked_pin.holder.activators)
+						target_pin_index = linked_pin.holder().outputs.Find(linked_pin)
+					else if(linked_pin in linked_pin.holder().activators)
 						target_pin_type = "a"  // a = activator
-						target_pin_index = linked_pin.holder.activators.Find(linked_pin)
+						target_pin_index = linked_pin.holder().activators.Find(linked_pin)
 
 					if(target_pin_index > 0)
 						// Create unique connection identifier to prevent duplicates

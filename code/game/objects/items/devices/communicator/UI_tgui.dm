@@ -232,9 +232,9 @@ REF_OWNED_LIST(/obj/item/communicator, "cam_plane_masters")
 			)))
 
 	for(var/obj/item/integrated_circuit/input/EPv2/CIRC in im_contacts)
-		if(CIRC.exonet && CIRC.assembly)
+		if(CIRC.exonet && CIRC.assembly())
 			im_contacts_ui.Add(list(list(
-				"name" = sanitize(CIRC.assembly.name),
+				"name" = sanitize(CIRC.assembly().name),
 				"address" = CIRC.exonet.address,
 				"ref" = "\ref[CIRC]"
 			)))

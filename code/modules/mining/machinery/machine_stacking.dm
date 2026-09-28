@@ -7,15 +7,15 @@
 	layer = ABOVE_WINDOW_LAYER
 	density = TRUE
 	anchored = TRUE
-	var/obj/machinery/mineral/stacking_machine/machine = null
+	var/tmp/machine_handle
 	//var/machinedir = SOUTHEAST //This is really dumb, so lets burn it with fire.
 
 /obj/machinery/mineral/stacking_unit_console/Initialize(mapload)
 	. = ..()
 	//src.machine = locate(/obj/machinery/mineral/stacking_machine, get_step(src, machinedir)) //No.
-	src.machine = locate(/obj/machinery/mineral/stacking_machine) in range(5,src)
-	if (machine)
-		machine.console = src
+	src.machine_handle = om_handle(locate(/obj/machinery/mineral/stacking_machine) in range(5,src))
+	if (machine())
+		machine().console_handle = om_handle(src)
 	else
 		//Silently failing and causing mappers to scratch their heads while runtiming isn't ideal.
 		stack_trace(span_danger("Warning: Stacking machine console at [src.x], [src.y], [src.z] could not find its machine!"))
@@ -47,14 +47,14 @@
 	var/list/data = ..()
 
 	var/list/stacktypes = list()
-	for(var/stacktype in machine.stack_storage)
-		if(LAZYACCESS(machine.stack_storage, stacktype) > 0)
+	for(var/stacktype in machine().stack_storage)
+		if(LAZYACCESS(machine().stack_storage, stacktype) > 0)
 			stacktypes.Add(list(list(
 				"type" = stacktype,
-				"amt" = LAZYACCESS(machine.stack_storage, stacktype),
+				"amt" = LAZYACCESS(machine().stack_storage, stacktype),
 			)))
 	data["stacktypes"] = stacktypes
-	data["stackingAmt"] = machine.stack_amt
+	data["stackingAmt"] = machine().stack_amt
 	return data
 
 /obj/machinery/mineral/stacking_unit_console/tgui_act(action, list/params, datum/tgui/ui)
@@ -63,16 +63,16 @@
 
 	switch(action)
 		if("change_stack")
-			machine.stack_amt = clamp(text2num(params["amt"]), 1, 50)
-			machine.wake_mining()
+			machine().stack_amt = clamp(text2num(params["amt"]), 1, 50)
+			machine().wake_mining()
 			. = TRUE
 
 		if("release_stack")
 			var/stack = params["stack"]
-			if(LAZYACCESS(machine.stack_storage, stack) > 0)
-				var/stacktype = LAZYACCESS(machine.stack_paths, stack)
-				new stacktype(get_turf(machine.output), LAZYACCESS(machine.stack_storage, stack))
-				LAZYSET(machine.stack_storage, stack, 0)
+			if(LAZYACCESS(machine().stack_storage, stack) > 0)
+				var/stacktype = LAZYACCESS(machine().stack_paths, stack)
+				new stacktype(get_turf(machine().output_marker()), LAZYACCESS(machine().stack_storage, stack))
+				LAZYSET(machine().stack_storage, stack, 0)
 			. = TRUE
 
 	add_fingerprint(ui.user)
@@ -85,9 +85,9 @@
 	icon_state = "stacker"
 	density = TRUE
 	anchored = TRUE
-	var/obj/machinery/mineral/stacking_unit_console/console
-	var/obj/machinery/mineral/input = null
-	var/obj/machinery/mineral/output = null
+	var/tmp/console_handle
+	var/tmp/input_handle
+	var/tmp/output_handle
 	var/list/stack_storage
 	var/list/stack_paths
 	var/stack_amt = 50; // Amount to stack before releassing
@@ -100,17 +100,17 @@
 		LAZYSET(stack_paths, s_matname, S)
 
 	for (var/dir in GLOB.cardinal)
-		src.input = locate(/obj/machinery/mineral/input, get_step(src, dir))
-		if(src.input) break
+		src.input_handle = om_handle(locate(/obj/machinery/mineral/input, get_step(src, dir)))
+		if(src.input_marker()) break
 	for (var/dir in GLOB.cardinal)
-		src.output = locate(/obj/machinery/mineral/output, get_step(src, dir))
-		if(src.output) break
-	watch_input(input)
+		src.output_handle = om_handle(locate(/obj/machinery/mineral/output, get_step(src, dir)))
+		if(src.output_marker()) break
+	watch_input(input_marker())
 
 /// Phase 2: drops the turf watch on its input marker.
 /obj/machinery/mineral/stacking_machine/lifecycle_dematerialize()
 	. = ..()
-	unwatch_input(input)
+	unwatch_input(input_marker())
 
 /obj/machinery/mineral/stacking_machine/proc/toggle_speed(forced)
 	if(forced)
@@ -126,8 +126,8 @@
 
 /obj/machinery/mineral/stacking_machine/machine_step()
 	var/did_work = FALSE
-	if (src.output && src.input)
-		var/turf/T = get_turf(input)
+	if (src.output_marker() && src.input_marker())
+		var/turf/T = get_turf(input_marker())
 		for(var/obj/item/O in turf_contents_of_type(T, /obj/item))
 			if(!O)
 				continue
@@ -139,16 +139,32 @@
 					LAZYADDASSOC(stack_storage, matname, S.get_amount())
 					qdel(S)
 				else
-					O.forceMove(output.loc)
+					O.forceMove(output_marker().loc)
 			else
-				O.forceMove(output.loc)
+				O.forceMove(output_marker().loc)
 
 	//Output amounts that are past stack_amt.
 	for(var/sheet in stack_storage)
 		if(LAZYACCESS(stack_storage, sheet) >= stack_amt)
 			did_work = TRUE
 			var/stacktype = LAZYACCESS(stack_paths, sheet)
-			new stacktype (get_turf(output), stack_amt)
+			new stacktype (get_turf(output_marker()), stack_amt)
 			stack_storage[sheet] -= stack_amt
 	if(!did_work)
 		return PROCESS_KILL
+
+/// LC-refs: the input this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/mineral/stacking_machine/proc/input_marker() as /obj/machinery/mineral
+	return om_resolve(input_handle)
+
+/// LC-refs: the output this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/mineral/stacking_machine/proc/output_marker() as /obj/machinery/mineral
+	return om_resolve(output_handle)
+
+/// LC-refs: the console this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/mineral/stacking_machine/proc/console() as /obj/machinery/mineral/stacking_unit_console
+	return om_resolve(console_handle)
+
+/// LC-refs: the machine this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/mineral/stacking_unit_console/proc/machine() as /obj/machinery/mineral/stacking_machine
+	return om_resolve(machine_handle)

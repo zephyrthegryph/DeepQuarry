@@ -187,7 +187,7 @@
 	// and the Captain-only items don't show. Default loadout falls through to the
 	// normal highest-job resolution.
 	var/datum/job/previewJob
-	if(client && ispAI(client.mob))
+	if(client() && ispAI(client().mob))
 		previewJob = null  // pAI clients get no preview job equip.
 	else if(read_preference(/datum/preference/toggle/human/prefer_visitor_role))
 		previewJob = SSjob.get_job(JOB_ALT_VISITOR)
@@ -363,7 +363,7 @@
 			continue
 		if(!(pref_species in S.species_allowed) && (!read_preference(/datum/preference/text/human/custom_base) || !(read_preference(/datum/preference/text/human/custom_base) in S.species_allowed))) // migrated
 			continue
-		if(!S.can_be_selected && (!client || !check_rights_for(client, R_HOLDER)))
+		if(!S.can_be_selected && (!client() || !check_rights_for(client(), R_HOLDER)))
 			continue
 		if((!S.ckeys_allowed) || (user.ckey in S.ckeys_allowed))
 			valid_hairstyles[S.name] = hairstyle
@@ -384,7 +384,7 @@
 			continue
 		if(!(pref_species in S.species_allowed) && (!read_preference(/datum/preference/text/human/custom_base) || !(read_preference(/datum/preference/text/human/custom_base) in S.species_allowed))) // migrated
 			continue
-		if(!S.can_be_selected && (!client || !check_rights_for(client, R_HOLDER)))
+		if(!S.can_be_selected && (!client() || !check_rights_for(client(), R_HOLDER)))
 			continue
 
 		valid_facialhairstyles[facialhairstyle] = GLOB.facial_hair_styles_list[facialhairstyle]

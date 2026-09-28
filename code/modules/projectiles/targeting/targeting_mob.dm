@@ -18,7 +18,7 @@
 /mob/living/proc/stop_aiming(obj/item/thing, no_message = 0)
 	if(!aiming)
 		aiming = new(src)
-	if(thing && aiming.aiming_with != thing)
+	if(thing && aiming.aiming_with() != thing)
 		return
 	aiming.cancel_aiming(no_message)
 
@@ -49,3 +49,5 @@
 	if(hud_used)
 		if (hud_used.move_intent)
 			hud_used.move_intent.icon_state = intent == I_WALK ? "walking" : "running"
+
+REF_OWNED(/mob/living, "aiming")

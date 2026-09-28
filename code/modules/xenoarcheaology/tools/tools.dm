@@ -108,7 +108,7 @@ DECLARE_INTERACTIONS(/obj/item/ano_scanner, INTERACT_USE(null, PROC_REF(interact
 	w_class = ITEMSIZE_SMALL
 	slot_flags = SLOT_BELT
 	var/list/positive_locations
-	var/datum/depth_scan/current
+	var/tmp/current_handle
 
 /datum/depth_scan
 	var/time = ""
@@ -129,7 +129,7 @@ DECLARE_INTERACTIONS(/obj/item/ano_scanner, INTERACT_USE(null, PROC_REF(interact
 			D.coords = "[M.x]:[M.y]:[M.z]"
 			D.time = stationtime2text()
 			D.record_index = length(positive_locations) + 1
-			D.material = M.mineral ? M.mineral.display_name : "Rock"
+			D.material = M.mineral() ? M.mineral().display_name : "Rock"
 
 			//find the first artifact and store it
 			if(M.finds.len)
@@ -143,7 +143,7 @@ DECLARE_INTERACTIONS(/obj/item/ano_scanner, INTERACT_USE(null, PROC_REF(interact
 
 	else if(istype(A, /obj/structure/boulder))
 		var/obj/structure/boulder/B = A
-		if(B.artifact_find)
+		if(B.artifact_find())
 			//create a new scanlog entry
 			var/datum/depth_scan/D = new()
 			D.coords = "[B.x]:[B.y]:[B.z]"
@@ -183,15 +183,15 @@ DECLARE_INTERACTIONS(/obj/item/depth_scanner, INTERACT_USE(null, PROC_REF(intera
 	var/list/data = ..()
 
 	data["current"] = list()
-	if(current)
+	if(current())
 		data["current"] = list(
-			"time" = current.time,
-			"coords" = current.coords,
-			"depth" = current.depth,
-			"index" = current.record_index,
+			"time" = current().time,
+			"coords" = current().coords,
+			"depth" = current().depth,
+			"index" = current().record_index,
 		)
 		data["current"]["material"] = "Unknown"
-		var/index = GLOB.responsive_carriers.Find(current.material)
+		var/index = GLOB.responsive_carriers.Find(current().material)
 		if(index > 0 && index <= LAZYLEN(GLOB.finds_as_strings))
 			data["current"]["material"] = GLOB.finds_as_strings[index]
 
@@ -215,7 +215,7 @@ DECLARE_INTERACTIONS(/obj/item/depth_scanner, INTERACT_USE(null, PROC_REF(intera
 		if("select")
 			var/index = text2num(params["select"])
 			if(index && index <= LAZYLEN(positive_locations))
-				current = LAZYACCESS(positive_locations, index)
+				current_handle = om_handle(LAZYACCESS(positive_locations, index))
 			return TRUE
 		if("clear")
 			var/index = text2num(params["clear"])
@@ -224,11 +224,11 @@ DECLARE_INTERACTIONS(/obj/item/depth_scanner, INTERACT_USE(null, PROC_REF(intera
 					var/datum/depth_scan/D = LAZYACCESS(positive_locations, index)
 					LAZYREMOVE(positive_locations, D)
 					qdel(D)
-					current = null
+					current_handle = null
 			else
 				QDEL_LIST_NULL(positive_locations)
 				positive_locations = list()
-				QDEL_NULL(current)
+				qdel_handle(current_handle); current_handle = null
 			return TRUE
 
 /obj/item/beacon_locator
@@ -240,18 +240,18 @@ DECLARE_INTERACTIONS(/obj/item/depth_scanner, INTERACT_USE(null, PROC_REF(intera
 	MATERIAL_MIX(list(MAT_STEEL = 1000,MAT_GLASS = 500))
 	var/frequency = PUB_FREQ
 	var/scan_ticks = 0
-	var/obj/item/radio/target_radio
+	var/tmp/target_radio_handle
 
 /obj/item/beacon_locator/Initialize(mapload)
 	. = ..()
 
 /// Points at its target (or counts a reset) every 2 s while tracking; idle, it sleeps.
 /obj/item/beacon_locator/periodic_step()
-	if(!target_radio && !scan_ticks)
+	if(!target_radio() && !scan_ticks)
 		return PROCESS_KILL
-	if(target_radio)
-		set_dir(get_dir(src,target_radio))
-		switch(get_dist(src,target_radio))
+	if(target_radio())
+		set_dir(get_dir(src,target_radio()))
+		switch(get_dist(src,target_radio()))
 			if(0 to 3)
 				icon_state = "pinondirect"
 			if(4 to 10)
@@ -273,10 +273,10 @@ DECLARE_INTERACTIONS(/obj/item/depth_scanner, INTERACT_USE(null, PROC_REF(intera
 						var/check_dist = get_dist(T,R)
 						if(check_dist < cur_dist)
 							cur_dist = check_dist
-							target_radio = R
+							target_radio_handle = om_handle(R)
 
 				scan_ticks = 0
-				if(target_radio)
+				if(target_radio())
 					PERIODIC_START(src, PERIODIC_SLOW)
 					T.visible_message("[icon2html(src,viewers(src))] [src] [pick("chirps","chirrups","cheeps")] happily.")
 				else
@@ -306,8 +306,8 @@ DECLARE_INTERACTIONS(/obj/item/beacon_locator, INTERACT_USE("Open", PROC_REF(int
 
 	data["scan_ticks"] = scan_ticks
 	data["degrees"] = null
-	if(target_radio)
-		data["degrees"] = round(Get_Angle(get_turf(src), get_turf(target_radio)))
+	if(target_radio())
+		data["degrees"] = round(Get_Angle(get_turf(src), get_turf(target_radio())))
 
 	data["rawfreq"] = frequency
 	data["minFrequency"] = RADIO_LOW_FREQ
@@ -322,7 +322,7 @@ DECLARE_INTERACTIONS(/obj/item/beacon_locator, INTERACT_USE("Open", PROC_REF(int
 	switch(action)
 		if("reset_tracking")
 			scan_ticks = 1
-			target_radio = null
+			target_radio_handle = null
 			PERIODIC_START(src, PERIODIC_SLOW)
 			return TRUE
 		if("setFrequency")
@@ -371,3 +371,13 @@ DECLARE_INTERACTIONS(/obj/item/xenoarch_multi_tool, INTERACT_USE(null, PROC_REF(
 	set name = "Scan for Anomalies"
 	set desc = "Scan for artifacts and anomalies within your vicinity."
 	anomaly_scanner.interact(user)
+
+REF_OWNED(/obj/item/xenoarch_multi_tool, list("anomaly_scanner", "depth_scanner"))
+
+/// LC-refs: the target_radio this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/beacon_locator/proc/target_radio() as /obj/item/radio
+	return om_resolve(target_radio_handle)
+
+/// LC-refs: the current this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/depth_scanner/proc/current() as /datum/depth_scan
+	return om_resolve(current_handle)

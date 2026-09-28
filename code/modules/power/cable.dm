@@ -64,7 +64,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	plane = PLATING_PLANE
 	layer = WIRES_LAYER
 	color = COLOR_RED
-	var/obj/machinery/power/breakerbox/breaker_box
+	var/tmp/breaker_box_handle
 	/// Optional registered composite. Ordinary mapped cable retains baseline behavior.
 	var/engineered_material_id
 	var/material_current = 0
@@ -289,7 +289,7 @@ DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interact
 		to_chat(user, span_warning("You must cut this cable from above."))
 		return ITEM_INTERACT_BLOCKING
 
-	if(breaker_box)
+	if(breaker_box())
 		to_chat(user, span_warning("This cable is connected to nearby breaker box. Use breaker box to interact with it."))
 		return ITEM_INTERACT_BLOCKING
 
@@ -908,3 +908,10 @@ DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interact
 	return
 
 #undef MAXCOIL
+
+/// LC-refs: a cable is a member of its powernet's cables; deleting it leaves the list.
+REF_BACKLIST(/obj/structure/cable, list("powernet" = "cables"))
+
+/// LC-refs: the breaker_box this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/structure/cable/proc/breaker_box() as /obj/machinery/power/breakerbox
+	return om_resolve(breaker_box_handle)

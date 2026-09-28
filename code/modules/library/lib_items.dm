@@ -190,7 +190,7 @@ Book Cart End
 	var/unique = 0   // 0 - Normal book, 1 - Should not be treated as normal book, unable to be copied, unable to be modified
 	var/title		 // The real name of the book.
 	var/carved = 0	 // Has the book been hollowed out for use as a secret storage item?
-	var/obj/item/store	//What's in the book?
+	var/tmp/store_handle	//What's in the book?
 	var/occult_tier = 0 //If the book is an occult book or not and how strong it is. Used for attack_self
 	///Var for attack_self chain
 	var/special_handling = FALSE
@@ -207,10 +207,10 @@ Book Cart End
 	if(special_handling)
 		return FALSE
 	if(carved)
-		if(store)
-			to_chat(user, span_notice("[store] falls out of [title]!"))
-			store.forceMove(get_turf(src.loc))
-			store = null
+		if(store())
+			to_chat(user, span_notice("[store()] falls out of [title]!"))
+			store().forceMove(get_turf(src.loc))
+			store_handle = null
 			return
 		else
 			to_chat(user, span_notice("The pages of [title] have been cut out!"))
@@ -249,11 +249,11 @@ DECLARE_INTERACTIONS(/obj/item/book, INTERACT_ITEM(null, PROC_REF(interaction_it
 /// Old attackby.
 /obj/item/book/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(carved)
-		if(!store)
+		if(!store())
 			if(W.w_class < ITEMSIZE_LARGE)
 				user.drop_item()
 				W.forceMove(src)
-				store = W
+				store_handle = om_handle(W)
 				to_chat(user, span_notice("You put [W] in [title]."))
 				return INTERACTION_HANDLED_PASS
 			else
@@ -303,32 +303,32 @@ DECLARE_INTERACTIONS(/obj/item/book, INTERACT_ITEM(null, PROC_REF(interaction_it
 				return INTERACTION_HANDLED_PASS
 	else if(istype(W, /obj/item/barcodescanner))
 		var/obj/item/barcodescanner/scanner = W
-		if(!scanner.computer)
+		if(!scanner.computer())
 			to_chat(user, "[W]'s screen flashes: 'No associated computer found!'")
 		else
 			switch(scanner.mode)
 				if(0)
-					scanner.book = src
+					scanner.book_handle = om_handle(src)
 					to_chat(user, "[W]'s screen flashes: 'Book stored in buffer.'")
 				if(1)
-					scanner.book = src
-					scanner.computer.buffer_book = src.name
+					scanner.book_handle = om_handle(src)
+					scanner.computer().buffer_book = src.name
 					to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. Book title stored in associated computer buffer.'")
 				if(2)
-					scanner.book = src
-					for(var/datum/borrowbook/b in scanner.computer.checkouts)
+					scanner.book_handle = om_handle(src)
+					for(var/datum/borrowbook/b in scanner.computer().checkouts)
 						if(b.bookname == src.name)
-							LAZYREMOVE(scanner.computer.checkouts, b)
+							LAZYREMOVE(scanner.computer().checkouts, b)
 							to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. Book has been checked in.'")
 							return INTERACTION_HANDLED_PASS
 					to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. No active check-out record found for current title.'")
 				if(3)
-					scanner.book = src
-					for(var/obj/item/book in scanner.computer.inventory)
+					scanner.book_handle = om_handle(src)
+					for(var/obj/item/book in scanner.computer().inventory)
 						if(book == src)
 							to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. Title already present in inventory, aborting to avoid duplicate entry.'")
 							return INTERACTION_HANDLED_PASS
-					LAZYADD(scanner.computer.inventory, src)
+					LAZYADD(scanner.computer().inventory, src)
 					to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. Title added to general inventory.'")
 	else if(istype(W, /obj/item/material/knife))
 		return carve_pages(user)
@@ -457,8 +457,8 @@ DECLARE_INTERACTIONS(/obj/item/book, INTERACT_ITEM(null, PROC_REF(interaction_it
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_SMALL
-	var/obj/machinery/librarycomp/computer // Associated computer - Modes 1 to 3 use this
-	var/obj/item/book/book	 //  Currently scanned book
+	var/tmp/computer_handle	// Associated computer - Modes 1 to 3 use this
+	var/tmp/book_handle	//  Currently scanned book
 	var/mode = 0 					// 0 - Scan only, 1 - Scan and Set Buffer, 2 - Scan and Attempt to Check In, 3 - Scan and Attempt to Add to Inventory
 
 DECLARE_INTERACTIONS(/obj/item/barcodescanner, INTERACT_USE(null, PROC_REF(interaction_self)))
@@ -482,9 +482,21 @@ DECLARE_INTERACTIONS(/obj/item/barcodescanner, INTERACT_USE(null, PROC_REF(inter
 		else
 			modedesc = "ERROR"
 	to_chat(user, " - Mode [mode] : [modedesc]")
-	if(src.computer)
+	if(src.computer())
 		to_chat(user, span_green("Computer has been associated with this unit."))
 	else
 		to_chat(user, span_red("No associated computer found. Only local scans will function properly."))
 	to_chat(user, "\n")
+
+/// LC-refs: What's in the book? -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/book/proc/store() as /obj/item
+	return om_resolve(store_handle)
+
+/// LC-refs: Associated computer - Modes 1 to 3 use this -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/barcodescanner/proc/computer() as /obj/machinery/librarycomp
+	return om_resolve(computer_handle)
+
+/// LC-refs: Currently scanned book -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/barcodescanner/proc/book() as /obj/item/book
+	return om_resolve(book_handle)
 	return TRUE

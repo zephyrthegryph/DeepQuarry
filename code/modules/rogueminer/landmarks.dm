@@ -9,7 +9,7 @@
 	icon_state = "x2"
 	invisibility = INVISIBILITY_ABSTRACT
 	anchored = TRUE
-	var/datum/rogue/asteroid/myasteroid
+	var/tmp/myasteroid_handle
 
 /obj/asteroid_spawner/Initialize(mapload)
 	. = ..()
@@ -23,10 +23,18 @@
 	icon_state = "x"
 	invisibility = INVISIBILITY_ABSTRACT
 	anchored = TRUE
-	var/mob/mymob
+	var/tmp/mymob_handle
 
 /obj/rogue_mobspawner/Initialize(mapload)
 	. = ..()
 	if(loc && istype(loc,/turf/space) && istype(loc.loc,/area/asteroid/rogue))
 		var/area/asteroid/rogue/A = loc.loc
 		A.mob_spawns += src
+
+/// LC-refs: the myasteroid this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/asteroid_spawner/proc/myasteroid() as /datum/rogue/asteroid
+	return om_resolve(myasteroid_handle)
+
+/// LC-refs: the mymob this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/rogue_mobspawner/proc/mymob() as /mob
+	return om_resolve(mymob_handle)

@@ -104,11 +104,11 @@ ADMIN_VERB(access_news_network, R_ADMIN|R_EVENT, "Access Newscaster Network", "A
 	dat += "</table>"
 
 	// structured TGUI AdminReport; byond:// links forwarded to host.
-	dq_admin_report_html(owner, "Job Bans", dat, src)
+	dq_admin_report_html(owner(), "Job Bans", dat, src)
 
 /datum/admins/proc/Game()
 	if(!check_rights(0))	return
-	open_game_panel(owner?.mob)
+	open_game_panel(owner()?.mob)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////admins2.dm merge
 //i.e. buttons/verbs
@@ -824,9 +824,9 @@ ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this mach
 			var/obj/item/paper/admin/P = new /obj/item/paper/admin(null) //hopefully the null loc won't cause trouble for us
 			user.holder.faxreply = P
 
-			P.admindatum = user.holder
+			P.admindatum_handle = om_handle(user.holder)
 			P.origin = replyorigin
-			P.destination = sendto
+			P.destination_handle = om_handle(sendto)
 
 			P.adminbrowse()
 
@@ -847,7 +847,7 @@ ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this mach
 	P.name = "[P.origin] - [customname]"
 	P.desc = "This is a paper titled '" + P.name + "'."
 
-	var/shouldStamp = P.sender || ask.get("stamp") == "Yes" // admin initiated faxes are stamped when asked
+	var/shouldStamp = P.sender() || ask.get("stamp") == "Yes" // admin initiated faxes are stamped when asked
 
 	if(shouldStamp)
 		P.stamps += "<hr>" + span_italics("This paper has been stamped by the [P.origin] Quantum Relay.")
@@ -878,25 +878,25 @@ ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this mach
 
 
 	if(destination.receivefax(P))
-		to_chat(src.owner, span_notice("Message reply to transmitted successfully."))
-		if(P.sender) // sent as a reply
-			log_admin("[key_name(src.owner)] replied to a fax message from [key_name(P.sender)]")
+		to_chat(src.owner(), span_notice("Message reply to transmitted successfully."))
+		if(P.sender()) // sent as a reply
+			log_admin("[key_name(src.owner())] replied to a fax message from [key_name(P.sender())]")
 			for(var/client/C in GLOB.admins)
 				if(check_rights_for(C, (R_ADMIN | R_MOD | R_EVENT)))
-					to_chat(C, span_log_message("[span_prefix("FAX LOG:")][key_name_admin(src.owner)] replied to a fax message from [key_name_admin(P.sender)] (<a href='byond://?_src_=holder;[HrefToken()];AdminFaxView=[REF(rcvdcopy)]'>VIEW</a>)"))
+					to_chat(C, span_log_message("[span_prefix("FAX LOG:")][key_name_admin(src.owner())] replied to a fax message from [key_name_admin(P.sender())] (<a href='byond://?_src_=holder;[HrefToken()];AdminFaxView=[REF(rcvdcopy)]'>VIEW</a>)"))
 		else
-			log_admin("[key_name(src.owner)] has sent a fax message to [destination.department]")
+			log_admin("[key_name(src.owner())] has sent a fax message to [destination.department]")
 			for(var/client/C in GLOB.admins)
 				if(check_rights_for(C, (R_ADMIN | R_MOD | R_EVENT)))
-					to_chat(C, span_log_message("[span_prefix("FAX LOG:")][key_name_admin(src.owner)] has sent a fax message to [destination.department] (<a href='byond://?_src_=holder;[HrefToken()];AdminFaxView=[REF(rcvdcopy)]'>VIEW</a>)"))
+					to_chat(C, span_log_message("[span_prefix("FAX LOG:")][key_name_admin(src.owner())] has sent a fax message to [destination.department] (<a href='byond://?_src_=holder;[HrefToken()];AdminFaxView=[REF(rcvdcopy)]'>VIEW</a>)"))
 
-		var/plaintext_title = P.sender ? "replied to [key_name(P.sender)]'s fax" : "sent a fax message to [destination.department]"
+		var/plaintext_title = P.sender() ? "replied to [key_name(P.sender())]'s fax" : "sent a fax message to [destination.department]"
 		var/fax_text = paper_html_to_plaintext(P.info)
 		log_game(plaintext_title)
 		log_game(fax_text)
 
 	else
-		to_chat(src.owner, span_warning("Message reply failed."))
+		to_chat(src.owner(), span_warning("Message reply failed."))
 
 	spawn(100) // ALLOW(scheduler): admin verb (allowlist)
 		qdel(P)
@@ -914,3 +914,5 @@ ADMIN_VERB(set_uplink, R_ADMIN|R_DEBUG, "Set Uplink", "Allows admins to set up a
 	traitor_human.mind.tcrystals = DEFAULT_TELECRYSTAL_AMOUNT
 	traitor_human.mind.accept_tcrystals = 1
 	message_admins("[key_name(usr)] has given [traitor_human.ckey] an uplink.")
+
+REF_OWNED(/datum/admins, "faxreply")

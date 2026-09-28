@@ -712,7 +712,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	for(var/datum/feed_channel/FC in GLOB.news_network.network_channels)
 		LAZYADD(NEWSPAPER.news_content, FC)
 	if(GLOB.news_network.wanted_issue())
-		NEWSPAPER.important_message = GLOB.news_network.wanted_issue()
+		NEWSPAPER.important_message_handle = om_handle(GLOB.news_network.wanted_issue())
 	NEWSPAPER.forceMove(get_turf(src))
 	paper_remaining--
 	return

@@ -10,7 +10,7 @@
 	var/base_icon
 	var/open
 	// ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
-	var/obj/item/held //Item inside locket.
+	var/tmp/held_handle	//Item inside locket.
 	special_handling = TRUE
 
 /obj/item/clothing/accessory/locket/attack_self(mob/user)
@@ -28,10 +28,10 @@
 	to_chat(user, "You flip \the [src] [open?"open":"closed"].")
 	if(open)
 		icon_state = "[base_icon]_open"
-		if(held)
-			to_chat(user, "\The [held] falls out!")
-			held.forceMove(get_turf(user))
-			held = null
+		if(held())
+			to_chat(user, "\The [held()] falls out!")
+			held().forceMove(get_turf(user))
+			held_handle = null
 	else
 		icon_state = "[base_icon]"
 
@@ -41,12 +41,16 @@
 		return
 
 	if(istype(O,/obj/item/paper) || istype(O, /obj/item/photo))
-		if(held)
+		if(held())
 			to_chat(user, "\The [src] already has something inside it.")
 		else
 			to_chat(user, "You slip [O] into [src].")
 			user.drop_item()
 			O.forceMove(src)
-			held = O
+			held_handle = om_handle(O)
 		return
 	..()
+
+/// LC-refs: Item inside locket. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/clothing/accessory/locket/proc/held() as /obj/item
+	return om_resolve(held_handle)

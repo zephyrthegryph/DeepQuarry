@@ -53,98 +53,98 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 
 /obj/machinery/computer/ship/helm/machine_step()
 	..()
-	if(!autopilot || !dx || !dy || autopilot_disabled || !linked || !using_map)
+	if(!autopilot || !dx || !dy || autopilot_disabled || !linked() || !using_map)
 		return PROCESS_KILL
 	var/turf/T = locate(dx,dy,using_map.overmap_z)
-	if(linked.loc == T)
-		if(linked.is_still())
+	if(linked().loc == T)
+		if(linked().is_still())
 			autopilot = 0
 		else
-			linked.decelerate()
+			linked().decelerate()
 	else
-		var/brake_path = linked.get_brake_path()
-		var/direction = get_dir(linked.loc, T)
-		var/acceleration = min(linked.get_acceleration(), accellimit)
-		var/speed = linked.get_speed()
-		var/heading = linked.get_heading()
+		var/brake_path = linked().get_brake_path()
+		var/direction = get_dir(linked().loc, T)
+		var/acceleration = min(linked().get_acceleration(), accellimit)
+		var/speed = linked().get_speed()
+		var/heading = linked().get_heading()
 
 		// Destination is current grid or speedlimit is exceeded
-		if((get_dist(linked.loc, T) <= brake_path) || speed > speedlimit)
-			linked.decelerate()
+		if((get_dist(linked().loc, T) <= brake_path) || speed > speedlimit)
+			linked().decelerate()
 		// Heading does not match direction
 		else if(heading & ~direction)
-			linked.accelerate(turn(heading & ~direction, 180), accellimit)
+			linked().accelerate(turn(heading & ~direction, 180), accellimit)
 		// All other cases, move toward direction
 		else if(speed + acceleration <= speedlimit)
-			linked.accelerate(direction, accellimit)
+			linked().accelerate(direction, accellimit)
 	if(!autopilot)
 		return PROCESS_KILL
 
 /obj/machinery/computer/ship/helm/relaymove(mob/user, direction)
-	if(viewing_overmap(user) && linked)
-		linked.relaymove(user, direction, accellimit)
+	if(viewing_overmap(user) && linked())
+		linked().relaymove(user, direction, accellimit)
 		return 1
 
 /obj/machinery/computer/ship/helm/tgui_interact(mob/user, datum/tgui/ui)
-	if(!linked)
+	if(!linked())
 		display_reconnect_dialog(user, "helm")
 		return
 
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
-		user.client.register_map_obj(linked.cam_screen)
-		for(var/plane in linked.cam_plane_masters)
+		user.client.register_map_obj(linked().cam_screen)
+		for(var/plane in linked().cam_plane_masters)
 			user.client.register_map_obj(plane)
-		user.client.register_map_obj(linked.cam_background)
+		user.client.register_map_obj(linked().cam_background)
 
-		ui = new(user, src, "OvermapHelm", "[linked.name] Helm Control") // 565, 545
+		ui = new(user, src, "OvermapHelm", "[linked().name] Helm Control") // 565, 545
 		ui.open()
 		om_after(src, 0.1 SECONDS, PROC_REF(update_map))
 
 /obj/machinery/computer/ship/helm/proc/update_map()
-	linked.update_screen()
+	linked().update_screen()
 
 /obj/machinery/computer/ship/helm/tgui_close(mob/user)
 	. = ..()
 	// Unregister map objects
-	user.client?.clear_map(linked?.map_name)
+	user.client?.clear_map(linked()?.map_name)
 	user.reset_perspective()
 
 /obj/machinery/computer/ship/helm/tgui_data(mob/user)
 	var/list/data = ..()
 
-	var/turf/T = get_turf(linked)
+	var/turf/T = get_turf(linked())
 	var/obj/effect/overmap/visitable/sector/current_sector = locate_on(T, /obj/effect/overmap/visitable/sector)
-	if(linked)
-		data["mapRef"] = linked.map_name
+	if(linked())
+		data["mapRef"] = linked().map_name
 	data["sector"] = current_sector ? current_sector.name : "Deep Space"
 	data["sector_info"] = current_sector ? current_sector.desc : "Not Available"
-	data["landed"] = linked.get_landed_info()
-	data["s_x"] = linked.x
-	data["s_y"] = linked.y
+	data["landed"] = linked().get_landed_info()
+	data["s_x"] = linked().x
+	data["s_y"] = linked().y
 	data["dest"] = dy && dx
 	data["d_x"] = dx
 	data["d_y"] = dy
 	data["speedlimit"] = speedlimit ? speedlimit*1000 : "Halted"
-	data["accel"] = min(round(linked.get_acceleration()*1000, 0.01),accellimit*1000)
-	data["heading"] = linked.get_heading_degrees()
+	data["accel"] = min(round(linked().get_acceleration()*1000, 0.01),accellimit*1000)
+	data["heading"] = linked().get_heading_degrees()
 	data["autopilot_disabled"] = autopilot_disabled
 	data["autopilot"] = autopilot
 	data["manual_control"] = viewing_overmap(user)
-	data["canburn"] = linked.can_burn()
+	data["canburn"] = linked().can_burn()
 	data["accellimit"] = accellimit*1000
 
-	var/speed = round(linked.get_speed()*1000, 0.01)
+	var/speed = round(linked().get_speed()*1000, 0.01)
 	var/speed_color = null
-	if(linked.get_speed() < SHIP_SPEED_SLOW)
+	if(linked().get_speed() < SHIP_SPEED_SLOW)
 		speed_color = "good"
-	if(linked.get_speed() > SHIP_SPEED_FAST)
+	if(linked().get_speed() > SHIP_SPEED_FAST)
 		speed_color = "average"
 	data["speed"] = speed
 	data["speed_color"] = speed_color
 
-	if(linked.get_speed())
-		data["ETAnext"] = "[round(linked.ETA()/10)] seconds"
+	if(linked().get_speed())
+		data["ETAnext"] = "[round(linked().ETA()/10)] seconds"
 	else
 		data["ETAnext"] = "N/A"
 
@@ -165,7 +165,7 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 	if(..())
 		return TRUE
 
-	if(!linked)
+	if(!linked())
 		return FALSE
 
 	switch(action)
@@ -191,15 +191,15 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 				return TRUE
 			switch(params["add"])
 				if("current")
-					R.fields["x"] = linked.x
-					R.fields["y"] = linked.y
+					R.fields["x"] = linked().x
+					R.fields["y"] = linked().y
 				if("new")
-					var/newx = act_prompt(ui.user, action, params, ui, "k194", list("kind" = "number", "message" = "Input new entry x coordinate", "title" = "Coordinate input", "default" = linked.x, "max" = world.maxx, "min" = 1))
+					var/newx = act_prompt(ui.user, action, params, ui, "k194", list("kind" = "number", "message" = "Input new entry x coordinate", "title" = "Coordinate input", "default" = linked().x, "max" = world.maxx, "min" = 1))
 					if(isnull(newx))
 						return
 					if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
 						return TRUE
-					var/newy = act_prompt(ui.user, action, params, ui, "k197", list("kind" = "number", "message" = "Input new entry y coordinate", "title" = "Coordinate input", "default" = linked.y, "max" = world.maxy, "min" = 1))
+					var/newy = act_prompt(ui.user, action, params, ui, "k197", list("kind" = "number", "message" = "Input new entry y coordinate", "title" = "Coordinate input", "default" = linked().y, "max" = world.maxy, "min" = 1))
 					if(isnull(newy))
 						return
 					if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
@@ -264,11 +264,11 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 
 		if("move")
 			var/ndir = text2num(params["dir"])
-			linked.relaymove(ui.user, ndir, accellimit)
+			linked().relaymove(ui.user, ndir, accellimit)
 			. = TRUE
 
 		if("brake")
-			linked.decelerate()
+			linked().decelerate()
 			. = TRUE
 
 		if("apilot")
@@ -286,11 +286,11 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 			. = TRUE
 
 		if("manual")
-			if(get_dist(ui.user, src) > 1 || ui.user.blinded || !linked)
+			if(get_dist(ui.user, src) > 1 || ui.user.blinded || !linked())
 				return FALSE
-			else if(!viewing_overmap(ui.user) && linked)
+			else if(!viewing_overmap(ui.user) && linked())
 				if(!viewers) viewers = list() // List must exist for pass by reference to work
-				start_coordinated_remoteview(src, ui.user, linked, viewers, /datum/remote_view_config/overmap_ship_control)
+				start_coordinated_remoteview(src, ui.user, linked(), viewers, /datum/remote_view_config/overmap_ship_control)
 			else
 				ui.user.reset_perspective()
 			. = TRUE
@@ -309,8 +309,8 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 /obj/machinery/computer/ship/navigation/Initialize(mapload)
 	. = ..()
 	nav_tgui = new(src)
-	if(linked)
-		nav_tgui.attempt_hook_up(linked)
+	if(linked())
+		nav_tgui.attempt_hook_up(linked())
 
 /obj/machinery/computer/ship/navigation/attempt_hook_up(obj/effect/overmap/visitable/ship/sector)
 	. = ..()

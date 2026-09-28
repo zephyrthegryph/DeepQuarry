@@ -27,7 +27,7 @@
 	usage_flags = PROGRAM_ALL
 	category = PROG_UTIL
 
-	var/obj/item/modular_computer/my_computer = null
+	var/tmp/my_computer_handle
 
 /datum/computer_file/program/ntnetdownload/kill_program()
 	..()
@@ -67,7 +67,7 @@
 	if(PRG.available_on_syndinet && !computer_emagged)
 		return 0
 
-	if(!computer || !computer.hard_drive || !computer.hard_drive.try_store_file(PRG))
+	if(!computer() || !computer().hard_drive || !computer().hard_drive.try_store_file(PRG))
 		return 0
 
 	return 1
@@ -84,7 +84,7 @@
 	if(!downloaded_file)
 		return
 	generate_network_log("Completed download of file [hacked_download ? "**ENCRYPTED**" : downloaded_file.filename].[downloaded_file.filetype].")
-	if(!computer || !computer.hard_drive || !computer.hard_drive.store_file(downloaded_file))
+	if(!computer() || !computer().hard_drive || !computer().hard_drive.store_file(downloaded_file))
 		// The download failed
 		downloaderror = "I/O ERROR - Unable to save file. Check whether you have enough free space on your hard drive and whether your hard drive is properly connected. If the issue persists contact your system administrator for assistance."
 	downloaded_file = null
@@ -135,8 +135,8 @@
 	return FALSE
 
 /datum/computer_file/program/ntnetdownload/tgui_data(mob/user)
-	my_computer = computer
-	if(!istype(my_computer))
+	my_computer_handle = om_handle(computer())
+	if(!istype(my_computer(), /obj/item/modular_computer))
 		return
 
 	var/list/data = get_header_data()
@@ -151,13 +151,13 @@
 		data["downloadspeed"] = download_netspeed
 		data["downloadcompletion"] = round(download_completion, 0.1)
 
-	data["disk_size"] = my_computer.hard_drive.max_capacity
-	data["disk_used"] = my_computer.hard_drive.used_capacity
+	data["disk_size"] = my_computer().hard_drive.max_capacity
+	data["disk_used"] = my_computer().hard_drive.used_capacity
 	var/list/all_entries[0]
 	for(var/datum/computer_file/program/P in GLOB.ntnet_global.available_station_software)
 		// Only those programs our user can run will show in the list.
 		// Pass the card inserted in the laptop's slot so slotted IDs are respected.
-		if(!P.can_run(user, 0, null, my_computer.card_slot?.stored_card) && P.requires_access_to_download || my_computer.hard_drive.find_file_by_name(P.filename))
+		if(!P.can_run(user, 0, null, my_computer().card_slot?.stored_card()) && P.requires_access_to_download || my_computer().hard_drive.find_file_by_name(P.filename))
 			continue
 		all_entries.Add(list(list(
 			"filename" = P.filename,
@@ -171,7 +171,7 @@
 	if(computer_emagged) // If we are running on emagged computer we have access to some "bonus" software
 		var/list/hacked_programs[0]
 		for(var/datum/computer_file/program/P in GLOB.ntnet_global.available_antag_software)
-			if(my_computer.hard_drive.find_file_by_name(P.filename))
+			if(my_computer().hard_drive.find_file_by_name(P.filename))
 				continue
 			data["hackedavailable"] = TRUE
 			hacked_programs.Add(list(list(
@@ -190,8 +190,14 @@
 	return data
 
 /datum/computer_file/program/ntnetdownload/proc/check_compatibility(datum/computer_file/program/P)
-	var/hardflag = computer.hardware_flag
+	var/hardflag = computer().hardware_flag
 
 	if(P && P.is_supported_by_hardware(hardflag,0))
 		return "Compatible"
 	return "Incompatible!"
+
+REF_OWNED(/datum/computer_file/program/ntnetdownload, "downloaded_file")
+
+/// LC-refs: the my_computer this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/computer_file/program/ntnetdownload/proc/my_computer() as /obj/item/modular_computer
+	return om_resolve(my_computer_handle)

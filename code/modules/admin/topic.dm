@@ -19,7 +19,7 @@
 /datum/admins/Topic(href, href_list)
 	..()
 
-	if(usr.client != src.owner || !check_rights(0))
+	if(usr.client != src.owner() || !check_rights(0))
 		log_admin("[key_name(usr)] tried to use the admin panel without authorization.")
 		message_admins("[usr.key] has attempted to override the admin panel!")
 		return
@@ -578,7 +578,7 @@
 					to_chat(M, span_filter_system(span_warning("No ban appeals URL has been set.")))
 				log_admin("[usr.client.ckey] has banned [M.ckey].\nReason: [reason]\nThis will be removed in [mins] minutes.")
 				message_admins(span_blue("[usr.client.ckey] has banned [M.ckey].\nReason: [reason]\nThis will be removed in [mins] minutes."))
-				var/datum/ticket/T = M.client ? M.client.current_ticket : null
+				var/datum/ticket/T = M.client ? M.client.current_ticket() : null
 				if(T)
 					T.Resolve(usr)
 				qdel(M.client)
@@ -611,7 +611,7 @@
 				message_admins(span_blue("[usr.client.ckey] has banned [M.ckey].\nReason: [reason]\nThis is a permanent ban."))
 				feedback_inc("ban_perma",1)
 				DB_ban_record(BANTYPE_PERMA, M, -1, reason)
-				var/datum/ticket/T = M.client ? M.client.current_ticket : null
+				var/datum/ticket/T = M.client ? M.client.current_ticket() : null
 				if(T)
 					T.Resolve(usr)
 				qdel(M.client)
@@ -1069,9 +1069,9 @@
 			return
 
 		if(href_list["viewruntime_backto"])
-			error_viewer.show_to(owner, locate(href_list["viewruntime_backto"]), href_list["viewruntime_linear"])
+			error_viewer.show_to(owner(), locate(href_list["viewruntime_backto"]), href_list["viewruntime_linear"])
 		else
-			error_viewer.show_to(owner, null, href_list["viewruntime_linear"])
+			error_viewer.show_to(owner(), null, href_list["viewruntime_linear"])
 
 	else if(href_list["adminchecklaws"])
 		output_ai_laws()
@@ -1119,7 +1119,7 @@
 			if(MALE,FEMALE)	gender_description = "[M.gender]"
 			else			gender_description = span_red(span_bold("[M.gender]"))
 
-		to_chat(src.owner, "<span class='filter_adminlog'><b>Info about [M.name]:</b><br>\
+		to_chat(src.owner(), "<span class='filter_adminlog'><b>Info about [M.name]:</b><br>\
 							Mob type = [M.type]; Gender = [gender_description] Damage = [health_description]<br>\
 							Name = <b>[M.name]</b>; Real_name = [M.real_name]; Mind_name = [M.mind?"[M.mind.name]":""]; Key = <b>[M.key]</b>;<br>\
 							Location = [location_description];<br>\
@@ -1139,15 +1139,15 @@
 		if(!(istype(H.get_equipped_item(SLOT_ID_HAND_L),/obj/item/reagent_containers/food/snacks/cookie)))
 			H.equip_to_slot_or_del( new /obj/item/reagent_containers/food/snacks/cookie(H), slot_r_hand )
 			if(!(istype(H.get_equipped_item(SLOT_ID_HAND_R),/obj/item/reagent_containers/food/snacks/cookie)))
-				log_admin("[key_name(H)] has their hands full, so they did not receive their cookie, spawned by [key_name(src.owner)].")
-				message_admins("[key_name(H)] has their hands full, so they did not receive their cookie, spawned by [key_name(src.owner)].")
+				log_admin("[key_name(H)] has their hands full, so they did not receive their cookie, spawned by [key_name(src.owner())].")
+				message_admins("[key_name(H)] has their hands full, so they did not receive their cookie, spawned by [key_name(src.owner())].")
 				return
 			else
 				H.update_inv_r_hand()//To ensure the icon appears in the HUD
 		else
 			H.update_inv_l_hand()
-		log_admin("[key_name(H)] got their cookie, spawned by [key_name(src.owner)]")
-		message_admins("[key_name(H)] got their cookie, spawned by [key_name(src.owner)]")
+		log_admin("[key_name(H)] got their cookie, spawned by [key_name(src.owner())]")
+		message_admins("[key_name(H)] got their cookie, spawned by [key_name(src.owner())]")
 		feedback_inc("admin_cookies_spawned",1)
 		to_chat(H, span_notice("Your prayers have been answered!! You received the <b>best cookie</b>!"))
 
@@ -1159,7 +1159,7 @@
 			to_chat(usr, span_filter_adminlog("This can only be used on instances of type /mob/living/carbon/human"))
 			return
 
-		owner.smite(H)
+		owner().smite(H)
 
 	else if(href_list["BlueSpaceArtillery"])
 		if(!check_rights(R_ADMIN|R_FUN|R_EVENT))	return
@@ -1169,7 +1169,7 @@
 			to_chat(usr, span_filter_adminlog("This can only be used on instances of type /mob/living"))
 			return
 
-		var/_answer_a30 = topic_prompt(src.owner, href_list, "a30", list("message" = "Are you sure you wish to hit [key_name(M)] with Blue Space Artillery?", "title" = "Confirm Firing?", "choices" = list("Yes", "No")))
+		var/_answer_a30 = topic_prompt(src.owner(), href_list, "a30", list("message" = "Are you sure you wish to hit [key_name(M)] with Blue Space Artillery?", "title" = "Confirm Firing?", "choices" = list("Yes", "No")))
 		if(isnull(_answer_a30))
 			return
 		if(_answer_a30 != "Yes")
@@ -1184,14 +1184,14 @@
 			return
 
 		if(L.can_centcom_reply())
-			var/input = topic_prompt(src.owner, href_list, "a31", list("kind" = "text", "message" = "Please enter a message to reply to [key_name(L)] via their headset.", "title" = "Outgoing message from CentCom", "max_length" = MAX_MESSAGE_LEN))
+			var/input = topic_prompt(src.owner(), href_list, "a31", list("kind" = "text", "message" = "Please enter a message to reply to [key_name(L)] via their headset.", "title" = "Outgoing message from CentCom", "max_length" = MAX_MESSAGE_LEN))
 			if(isnull(input))
 				return
 			if(!input)		return
 
-			to_chat(src.owner, span_filter_adminlog("You sent [input] to [L] via a secure channel."))
-			log_admin("[src.owner] replied to [key_name(L)]'s CentCom message with the message [input].")
-			message_admins("[src.owner] replied to [key_name(L)]'s CentCom message with: \"[input]\"")
+			to_chat(src.owner(), span_filter_adminlog("You sent [input] to [L] via a secure channel."))
+			log_admin("[src.owner()] replied to [key_name(L)]'s CentCom message with the message [input].")
+			message_admins("[src.owner()] replied to [key_name(L)]'s CentCom message with: \"[input]\"")
 			if(!isAI(L))
 				to_chat(L, span_info("You hear something crackle in your headset for a moment before a voice speaks."))
 			to_chat(L, span_info("Please stand by for a message from Central Command."))
@@ -1199,7 +1199,7 @@
 			to_chat(L, span_notice("[input]"))
 			to_chat(L, span_info("Message ends."))
 		else
-			to_chat(src.owner, span_filter_adminlog("The person you are trying to contact does not have functional radio equipment."))
+			to_chat(src.owner(), span_filter_adminlog("The person you are trying to contact does not have functional radio equipment."))
 
 
 	else if(href_list["SyndicateReply"])
@@ -1211,13 +1211,13 @@
 			to_chat(usr, span_filter_adminlog("The person you are trying to contact is not wearing a headset"))
 			return
 
-		var/input = topic_prompt(src.owner, href_list, "a32", list("kind" = "text", "message" = "Please enter a message to reply to [key_name(H)] via their headset.", "title" = "Outgoing message from a shadowy figure...", "max_length" = MAX_MESSAGE_LEN))
+		var/input = topic_prompt(src.owner(), href_list, "a32", list("kind" = "text", "message" = "Please enter a message to reply to [key_name(H)] via their headset.", "title" = "Outgoing message from a shadowy figure...", "max_length" = MAX_MESSAGE_LEN))
 		if(isnull(input))
 			return
 		if(!input)	return
 
-		to_chat(src.owner, span_filter_adminlog("You sent [input] to [H] via a secure channel."))
-		log_admin("[src.owner] replied to [key_name(H)]'s illegal message with the message [input].")
+		to_chat(src.owner(), span_filter_adminlog("You sent [input] to [H] via a secure channel."))
+		log_admin("[src.owner()] replied to [key_name(H)]'s illegal message with the message [input].")
 		to_chat(H, "<span class='filter_notice'>You hear something crackle in your headset for a moment before a voice speaks.  \
 					\"Please stand by for a message from your benefactor.  Message as follows, agent. <b>\"[input]\"</b>  Message ends.\"</span>")
 
@@ -1245,10 +1245,10 @@
 
 		if (istype(bundle.pages[page], /obj/item/paper))
 			var/obj/item/paper/P = bundle.pages[page]
-			P.show_content(src.owner, 1)
+			P.show_content(src.owner(), 1)
 		else if (istype(bundle.pages[page], /obj/item/photo))
 			var/obj/item/photo/H = bundle.pages[page]
-			H.show(src.owner)
+			H.show(src.owner())
 		return
 
 	else if(href_list["FaxReply"])
@@ -1260,10 +1260,10 @@
 		var/obj/item/paper/admin/P = new /obj/item/paper/admin( null ) //hopefully the null loc won't cause trouble for us
 		faxreply = P
 
-		P.admindatum = src
+		P.admindatum_handle = om_handle(src)
 		P.origin = replyorigin
-		P.destination = fax
-		P.sender = sender
+		P.destination_handle = om_handle(fax)
+		P.sender_handle = om_handle(sender)
 
 		P.adminbrowse()
 
@@ -1382,29 +1382,29 @@
 		var/_answer_a35 = topic_prompt(usr, href_list, "a35", list("kind" = "text", "message" = "Provide a Feed Channel Name", "title" = "Network Channel Handler", "encode" = FALSE))
 		if(isnull(_answer_a35))
 			return
-		src.admincaster_feed_channel.channel_name = sanitizeSafe(_answer_a35)
+		src.admincaster_feed_channel().channel_name = sanitizeSafe(_answer_a35)
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
 
 	else if(href_list["ac_set_channel_lock"])
-		src.admincaster_feed_channel.locked = !src.admincaster_feed_channel.locked
+		src.admincaster_feed_channel().locked = !src.admincaster_feed_channel().locked
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
 
 	else if(href_list["ac_submit_new_channel"])
 		var/check = 0
 		for(var/datum/feed_channel/FC in GLOB.news_network.network_channels)
-			if(FC.channel_name == src.admincaster_feed_channel.channel_name)
+			if(FC.channel_name == src.admincaster_feed_channel().channel_name)
 				check = 1
 				break
-		if(src.admincaster_feed_channel.channel_name == "" || src.admincaster_feed_channel.channel_name == "\[REDACTED\]" || check )
+		if(src.admincaster_feed_channel().channel_name == "" || src.admincaster_feed_channel().channel_name == "\[REDACTED\]" || check )
 			src.admincaster_screen=7
 		else
 			var/choice = topic_prompt(usr, href_list, "a36", list("message" = "Please confirm Feed channel creation", "title" = "Network Channel Handler", "choices" = list("Confirm","Cancel")))
 			if(isnull(choice))
 				return
 			if(choice=="Confirm")
-				GLOB.news_network.CreateFeedChannel(admincaster_feed_channel.channel_name, admincaster_signature, admincaster_feed_channel.locked, 1)
+				GLOB.news_network.CreateFeedChannel(admincaster_feed_channel().channel_name, admincaster_signature, admincaster_feed_channel().locked, 1)
 				feedback_inc("newscaster_channels",1)                  //Adding channel to the global network
-				log_admin("[key_name_admin(usr)] created command feed channel: [src.admincaster_feed_channel.channel_name]!")
+				log_admin("[key_name_admin(usr)] created command feed channel: [src.admincaster_feed_channel().channel_name]!")
 				src.admincaster_screen=5
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
 
@@ -1415,7 +1415,7 @@
 		var/_answer_a37 = topic_prompt(usr, href_list, "a37", list("kind" = "list", "message" = "Choose receiving Feed Channel", "title" = "Network Channel Handler", "choices" = available_channels))
 		if(isnull(_answer_a37))
 			return
-		src.admincaster_feed_channel.channel_name = _answer_a37
+		src.admincaster_feed_channel().channel_name = _answer_a37
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
 
 	else if(href_list["ac_set_new_title"])
@@ -1433,14 +1433,14 @@
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
 
 	else if(href_list["ac_submit_new_message"])
-		if(src.admincaster_feed_message.body =="" || admincaster_feed_message.title == "" || admincaster_feed_message.body =="\[REDACTED\]" || admincaster_feed_channel.channel_name == "" )
+		if(src.admincaster_feed_message.body =="" || admincaster_feed_message.title == "" || admincaster_feed_message.body =="\[REDACTED\]" || admincaster_feed_channel().channel_name == "" )
 			src.admincaster_screen = 6
 		else
 			feedback_inc("newscaster_stories",1)
-			GLOB.news_network.SubmitArticle(admincaster_feed_message.body, admincaster_signature, admincaster_feed_channel.channel_name, null, 1, "", admincaster_feed_message.title)
+			GLOB.news_network.SubmitArticle(admincaster_feed_message.body, admincaster_signature, admincaster_feed_channel().channel_name, null, 1, "", admincaster_feed_message.title)
 			src.admincaster_screen=4
 
-		log_admin("[key_name_admin(usr)] submitted a feed story to channel: [src.admincaster_feed_channel.channel_name]!")
+		log_admin("[key_name_admin(usr)] submitted a feed story to channel: [src.admincaster_feed_channel().channel_name]!")
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
 
 	else if(href_list["ac_create_channel"])
@@ -1552,7 +1552,7 @@
 
 	else if(href_list["ac_pick_d_notice"])
 		var/datum/feed_channel/FC = locate(href_list["ac_pick_d_notice"])
-		src.admincaster_feed_channel = FC
+		src.admincaster_feed_channel_handle = om_handle(FC)
 		src.admincaster_screen=13
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
 
@@ -1568,21 +1568,22 @@
 	else if(href_list["ac_setScreen"]) //Brings us to the main menu and resets all fields~
 		src.admincaster_screen = text2num(href_list["ac_setScreen"])
 		if (src.admincaster_screen == 0)
-			if(src.admincaster_feed_channel)
-				src.admincaster_feed_channel = new /datum/feed_channel
+			if(src.admincaster_feed_channel())
+				src.admincaster_feed_channel_handle = null
+				src.admincaster_scratch_channel = new /datum/feed_channel
 			if(src.admincaster_feed_message)
 				src.admincaster_feed_message = new /datum/feed_message
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
 
 	else if(href_list["ac_show_channel"])
 		var/datum/feed_channel/FC = locate(href_list["ac_show_channel"])
-		src.admincaster_feed_channel = FC
+		src.admincaster_feed_channel_handle = om_handle(FC)
 		src.admincaster_screen = 9
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
 
 	else if(href_list["ac_pick_censor_channel"])
 		var/datum/feed_channel/FC = locate(href_list["ac_pick_censor_channel"])
-		src.admincaster_feed_channel = FC
+		src.admincaster_feed_channel_handle = om_handle(FC)
 		src.admincaster_screen = 12
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
 
@@ -1598,7 +1599,7 @@
 
 	else if(href_list["populate_inactive_customitems"])
 		if(check_rights(R_ADMIN|R_SERVER))
-			populate_inactive_customitems_list(src.owner)
+			populate_inactive_customitems_list(src.owner())
 
 	// GLOB.vsc was a ZAS atmos-tuning settings holder; removed in LINDA
 	// migration since LINDA tuning is compile-time in auxmos. Stub admin response.

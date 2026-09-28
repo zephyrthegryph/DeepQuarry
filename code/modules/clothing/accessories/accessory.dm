@@ -11,7 +11,7 @@
 	var/slot = ACCESSORY_SLOT_DECOR
 	var/can_remove = TRUE						// Can it be taken off once attached?
 	// ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
-	var/obj/item/clothing/has_suit = null		// The suit the tie may be attached to
+	var/tmp/has_suit_handle	// The suit the tie may be attached to
 	var/tmp/image/inv_overlay = null				// Overlay used when attached to clothing.
 	var/image/mob_overlay = null // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 	var/overlay_state = null
@@ -40,8 +40,8 @@
 	if(!istype(loc, /obj/item/clothing))
 		return null
 	// Update wearer handle before delegating (existing callers expect this side-effect).
-	if(ishuman(has_suit?.loc))
-		wearer = om_handle(has_suit.loc)
+	if(ishuman(has_suit()?.loc))
+		wearer = om_handle(has_suit().loc)
 	else
 		wearer = null
 	var/mob/living/carbon/human/H = om_resolve(wearer)
@@ -54,23 +54,23 @@
 /obj/item/clothing/accessory/proc/on_attached(obj/item/clothing/S, mob/user)
 	if(!istype(S))
 		return
-	has_suit = S
+	has_suit_handle = om_handle(S)
 	src.forceMove(S)
-	has_suit.add_overlay(get_inv_overlay())
+	has_suit().add_overlay(get_inv_overlay())
 
-	has_suit.force += force
+	has_suit().force += force
 	if(istype(S,/obj/item/clothing/gloves))
 		var/obj/item/clothing/gloves/has_gloves = S
 		has_gloves.punch_force = has_gloves.punch_force + punch_force
 
 	if(user)
-		to_chat(user, span_notice("You attach \the [src] to \the [has_suit]."))
+		to_chat(user, span_notice("You attach \the [src] to \the [has_suit()]."))
 		add_fingerprint(user)
 
 /obj/item/clothing/accessory/proc/on_removed(mob/user)
-	if(!has_suit)
+	if(!has_suit())
 		return
-	var/obj/item/clothing/old_suit = has_suit
+	var/obj/item/clothing/old_suit = has_suit()
 	old_suit.cut_overlay(get_inv_overlay())
 	old_suit.force = initial(old_suit.force)
 	if(istype(old_suit,/obj/item/clothing/gloves))
@@ -80,7 +80,7 @@
 	// directly rather than going through clothing.remove_accessory().
 	GLOB.accessory_slot_registry.remove_modifiers(src, old_suit)
 	LAZYREMOVE(old_suit.accessories, src)
-	has_suit = null
+	has_suit_handle = null
 	if(QDELETED(src))
 		return
 	if(user && !issilicon(user))
@@ -92,7 +92,7 @@
 
 //default attack_hand behaviour
 /obj/item/clothing/accessory/attack_hand(mob/user)
-	if(has_suit)
+	if(has_suit())
 		return	//we aren't an object on the ground so don't call parent
 	..()
 
@@ -480,7 +480,7 @@
 /obj/item/clothing/accessory/gaiter/attackby(obj/item/I, mob/user)
 	if(istype(I, /obj/item/clothing/mask/breath))
 		to_chat(user, span_notice("You tuck [I] behind [src]."))
-		breathmask = I
+		breathmask_handle = om_handle(I)
 		breath_masked = TRUE
 		user.drop_from_inventory(I, drop_location())
 		I.forceMove(src)
@@ -489,10 +489,10 @@
 
 /obj/item/clothing/accessory/gaiter/click_alt(mob/user)
 	. = ..()
-	if(breath_masked && breathmask)
-		to_chat(user, span_notice("You pull [breathmask] out from behind [src], and it drops to your feet."))
-		breathmask.forceMove(drop_location())
-		breathmask = null
+	if(breath_masked && breathmask())
+		to_chat(user, span_notice("You pull [breathmask()] out from behind [src], and it drops to your feet."))
+		breathmask().forceMove(drop_location())
+		breathmask_handle = null
 		breath_masked = FALSE
 		item_flags &= ~AIRTIGHT
 		item_flags |= FLEXIBLEMATERIAL
@@ -612,8 +612,8 @@
 
 /obj/item/clothing/accessory/choker/proc/setUniqueSpeciesSprite()
 	var/mob/living/carbon/human/H = loc
-	if(!istype(H) && istype(has_suit) && ishuman(has_suit.loc))
-		H = has_suit.loc
+	if(!istype(H) && istype(has_suit(), /obj/item/clothing) && ishuman(has_suit().loc))
+		H = has_suit().loc
 	if(sprite_sheets && istype(H) && H.species.get_bodytype(H) && (H.species.get_bodytype(H) in sprite_sheets))
 		icon_override = sprite_sheets[H.species.get_bodytype(H)]
 		update_clothing_icon()
@@ -621,7 +621,7 @@
 /obj/item/clothing/accessory/choker/on_attached(obj/item/clothing/S, mob/user)
 	if(!istype(S))
 		return
-	has_suit = S
+	has_suit_handle = om_handle(S)
 	setUniqueSpeciesSprite()
 	..(S, user)
 
@@ -650,8 +650,8 @@
 
 /obj/item/clothing/accessory/collar/proc/setUniqueSpeciesSprite()
 	var/mob/living/carbon/human/H = loc
-	if(!istype(H) && istype(has_suit) && ishuman(has_suit.loc))
-		H = has_suit.loc
+	if(!istype(H) && istype(has_suit(), /obj/item/clothing) && ishuman(has_suit().loc))
+		H = has_suit().loc
 	if(sprite_sheets && istype(H) && H.species.get_bodytype(H) && (H.species.get_bodytype(H) in sprite_sheets))
 		icon_override = sprite_sheets[H.species.get_bodytype(H)]
 		update_clothing_icon()
@@ -659,7 +659,7 @@
 /obj/item/clothing/accessory/collar/on_attached(obj/item/clothing/S, mob/user)
 	if(!istype(S))
 		return
-	has_suit = S
+	has_suit_handle = om_handle(S)
 	setUniqueSpeciesSprite()
 	..(S, user)
 
@@ -715,17 +715,17 @@
 	var/on = FALSE // 0 for off, 1 for on, starts off to encourage people to set non-default frequencies and codes.
 	var/frequency = AMAG_ELE_FREQ
 	var/code = 2
-	var/datum/radio_frequency/radio_connection
+	var/tmp/radio_connection_handle
 	special_collar = TRUE
 
 /obj/item/clothing/accessory/collar/shock/Initialize(mapload)
 	. = ..()
-	radio_connection = SSradio.add_object(src, frequency, RADIO_CHAT) // Makes it so you don't need to change the frequency off of default for it to work.
+	radio_connection_handle = om_handle(SSradio.add_object(src, frequency, RADIO_CHAT)) // Makes it so you don't need to change the frequency off of default for it to work.
 
 /obj/item/clothing/accessory/collar/shock/proc/set_frequency(new_frequency)
 	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection = SSradio.add_object(src, frequency, RADIO_CHAT)
+	radio_connection_handle = om_handle(SSradio.add_object(src, frequency, RADIO_CHAT))
 
 /obj/item/clothing/accessory/collar/shock/attack_self(mob/user, flag1)
 	. = ..(user)
@@ -1489,3 +1489,17 @@
 	..()
 	icon_override = 'icons/mob/ties_yw.dmi' //Moved to archive
 
+
+REF_OWNED(/obj/item/clothing/accessory, list("inv_overlay", "mob_overlay"))
+
+/// LC-refs: The suit the tie may be attached to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/clothing/accessory/proc/has_suit() as /obj/item/clothing
+	return om_resolve(has_suit_handle)
+
+/// LC-refs: the breathmask this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/clothing/accessory/gaiter/proc/breathmask() as /obj/item/clothing/mask/breath
+	return om_resolve(breathmask_handle)
+
+/// LC-refs: the radio_connection this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/clothing/accessory/collar/shock/proc/radio_connection() as /datum/radio_frequency
+	return om_resolve(radio_connection_handle)

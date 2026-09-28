@@ -7,7 +7,7 @@
 	w_class = ITEMSIZE_TINY
 	sharp = TRUE
 	injury_kind = INJURY_PIERCE
-	var/datum/geosample/geological_data
+	var/tmp/geological_data_handle
 
 /obj/item/rocksliver/Initialize(mapload)
 	. = ..()
@@ -33,9 +33,9 @@
 
 	age = rand(1, 999)
 
-	if(container.mineral)
-		if(islist(container.mineral.xarch_ages))
-			var/list/ages = container.mineral.xarch_ages
+	if(container.mineral())
+		if(islist(container.mineral().xarch_ages))
+			var/list/ages = container.mineral().xarch_ages
 			if(ages["thousand"])
 				age_thousand = rand(1, ages["thousand"])
 			if(ages["million"])
@@ -45,8 +45,8 @@
 					age_billion = rand(ages["billion_lower"], ages["billion"])
 				else
 					age_billion = rand(1, ages["billion"])
-		if(container.mineral.xarch_source_mineral)
-			source_mineral = container.mineral.xarch_source_mineral
+		if(container.mineral().xarch_source_mineral)
+			source_mineral = container.mineral().xarch_source_mineral
 
 	if(prob(75))
 		LAZYSET(find_presence, REAGENT_ID_PHOSPHORUS, rand(1, 500) / 100)
@@ -144,7 +144,7 @@
 
 			//put in a rock sliver
 			var/obj/item/rocksliver/R = new(filled_bag)
-			R.geological_data = geo_data
+			R.geological_data_handle = om_handle(geo_data)
 
 			//update the sample bag
 			filled_bag.icon_state = "evidence"
@@ -176,4 +176,10 @@ DECLARE_INTERACTIONS(/obj/item/core_sampler, \
 		icon_state = "sampler0"
 	else
 		to_chat(user, span_warning("The core sampler is empty."))
+
+REF_OWNED(/obj/item/core_sampler, "filled_bag")
+
+/// LC-refs: the geological_data this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/rocksliver/proc/geological_data() as /datum/geosample
+	return om_resolve(geological_data_handle)
 	return TRUE

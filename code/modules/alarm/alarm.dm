@@ -14,18 +14,18 @@
 	source_name = source.get_source_name()
 
 /datum/alarm
-	var/atom/origin					//Used to identify the alarm area.
+	var/tmp/origin_handle	//Used to identify the alarm area.
 	var/list/sources		//List of sources triggering the alarm. Used to determine when the alarm should be cleared.
 	var/list/sources_assoc	//Associative list of source triggers. Used to efficiently acquire the alarm source.
 	var/list/cameras				//List of cameras that can be switched to, if the player has that capability.
-	var/area/last_area				//The last acquired area, used should origin be lost (for example a destroyed borg containing an alarming camera).
-	var/area/last_name				//The last acquired name, used should origin be lost
-	var/area/last_camera_area		//The last area in which cameras where fetched, used to see if the camera list should be updated.
+	var/tmp/last_area_handle	//The last acquired area, used should origin be lost (for example a destroyed borg containing an alarming camera).
+	var/last_name	//The last acquired name, used should origin be lost
+	var/tmp/last_camera_area_handle	//The last area in which cameras where fetched, used to see if the camera list should be updated.
 	var/end_time					//Used to set when this alarm should clear, in case the origin is lost.
 	var/hidden = FALSE				//If this alarm can be seen from consoles or other things.
 
 /datum/alarm/New(atom/origin, atom/source, duration, severity, hidden)
-	src.origin = origin
+	src.origin_handle = om_handle(origin)
 
 	cameras()	// Sets up both cameras and last alarm area.
 	set_source_data(source, duration, severity, hidden)
@@ -35,7 +35,7 @@ REF_OWNED_LIST(/datum/alarm, "sources")
 /// Ages its sources (the handler calls it every 2 s while it is up).
 /datum/alarm/proc/alarm_tick()
 	// Has origin gone missing?
-	if(!origin && !end_time)
+	if(!origin() && !end_time)
 		end_time = world.time + ALARM_RESET_DELAY
 	for(var/datum/alarm_source/AS in sources)
 		// Has the alarm passed its best before date?
@@ -71,28 +71,28 @@ REF_OWNED_LIST(/datum/alarm, "sources")
 		qdel(AS)
 
 /datum/alarm/proc/alarm_area()
-	if(!origin)
-		return last_area
+	if(!origin())
+		return last_area()
 
-	last_area = origin.get_alarm_area()
-	return last_area
+	last_area_handle = om_handle(origin().get_alarm_area())
+	return last_area()
 
 /datum/alarm/proc/alarm_name()
-	if(!origin)
+	if(!origin())
 		return last_name
 
-	last_name = origin.get_alarm_name()
+	last_name = origin().get_alarm_name()
 	return last_name
 
 /datum/alarm/proc/cameras()
 	// If the alarm origin has changed area, for example a borg containing an alarming camera, reset the list of cameras
-	if(cameras && (last_camera_area != alarm_area()))
+	if(cameras && (last_camera_area() != alarm_area()))
 		cameras = null
 
 	if(!cameras)
-		cameras = origin ? origin.get_alarm_cameras() : last_area?.get_alarm_cameras()
+		cameras = origin() ? origin().get_alarm_cameras() : last_area()?.get_alarm_cameras()
 
-	last_camera_area = last_area
+	last_camera_area_handle = om_handle(last_area())
 	return cameras
 
 /datum/alarm/proc/max_severity()
@@ -144,3 +144,15 @@ REF_OWNED_LIST(/datum/alarm, "sources")
 
 /mob/living/silicon/robot/syndicate/get_alarm_cameras()
 	return list()
+
+/// LC-refs: The last acquired area, used should origin be lost (for example a destroyed borg containing an alarming camera). -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/alarm/proc/last_area() as /area
+	return om_resolve(last_area_handle)
+
+/// LC-refs: The last area in which cameras where fetched, used to see if the camera list should be updated. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/alarm/proc/last_camera_area() as /area
+	return om_resolve(last_camera_area_handle)
+
+/// LC-refs: Used to identify the alarm area. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/alarm/proc/origin() as /atom
+	return om_resolve(origin_handle)

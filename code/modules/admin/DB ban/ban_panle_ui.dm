@@ -1,6 +1,6 @@
 /datum/tgui_ban_panel
-	var/client/holder //client of whoever is using this datum
-	var/datum/admins/admin_datum
+	var/tmp/holder_handle	//client of whoever is using this datum
+	var/tmp/admin_datum_handle
 	var/playerckey
 	var/adminckey
 	var/playerip
@@ -13,20 +13,20 @@
 /datum/tgui_ban_panel/New(user, pckey, datum/admins/admind)//user can either be a client or a mob due to byondcode(tm)
 	if (istype(user, /client))
 		var/client/user_client = user
-		holder = user_client //if its a client, assign it to holder
+		holder_handle = om_handle(user_client) //if its a client, assign it to holder
 	else
 		var/mob/user_mob = user
-		holder = user_mob.client //if its a mob, assign the mob's client to holder
+		holder_handle = om_handle(user_mob.client) //if its a mob, assign the mob's client to holder
 	playerckey = pckey
-	admin_datum = admind
+	admin_datum_handle = om_handle(admind)
 	database_lookup()
 
 /datum/tgui_ban_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_BAN)
 
 /datum/tgui_ban_panel/tgui_close()
-	holder = null
-	admin_datum = null
+	holder_handle = null
+	admin_datum_handle = null
 	qdel(src)
 
 /datum/tgui_ban_panel/tgui_interact(mob/user, datum/tgui/ui)
@@ -115,7 +115,7 @@
 				message_admins("Ban process: A mob matching [playermob.ckey] was found at location [playermob.x], [playermob.y], [playermob.z]. Custom ip and computer id fields replaced with the ip and computer id from the located mob")
 			notes_add(banckey, banreason, ui.user)
 
-			admin_datum.DB_ban_record(bantype, playermob, banduration, banreason, banjob, null, banckey, banip, bancid )
+			admin_datum().DB_ban_record(bantype, playermob, banduration, banreason, banjob, null, banckey, banip, bancid )
 			if((bantype == BANTYPE_PERMA || bantype == BANTYPE_TEMP) && playermob?.client)
 				qdel(playermob.client)
 
@@ -138,7 +138,7 @@
 			if(!banedit || !banid)
 				return FALSE
 
-			admin_datum.DB_ban_edit(ui.user.client, banid, banedit)
+			admin_datum().DB_ban_edit(ui.user.client, banid, banedit)
 			return TRUE
 
 /// Starts the ban search for the current filters; the rows arrive in sql_rows_arrived().
@@ -205,4 +205,12 @@
 	for(var/list/row as anything in rows)
 		UNTYPED_LIST_ADD(all_bans, list("auto" = ((row[3] in list("TEMPBAN", "JOB_TEMPBAN")) && now > row[7]), "data_list" = row))
 	db_records = all_bans
+
+/// LC-refs: the admin_datum this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_ban_panel/proc/admin_datum() as /datum/admins
+	return om_resolve(admin_datum_handle)
+
+/// LC-refs: client of whoever is using this datum -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_ban_panel/proc/holder() as /client
+	return om_resolve(holder_handle)
 	update_static_data_for_all_viewers()

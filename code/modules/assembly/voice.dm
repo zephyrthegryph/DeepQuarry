@@ -20,7 +20,7 @@
 
 /obj/item/assembly/voice/activate()
 	if(secured)
-		if(!holder)
+		if(!holder())
 			listening = !listening
 			var/turf/T = get_turf(src)
 			T.visible_message("[icon2html(src,viewers(src))] beeps, \"[listening ? "Now" : "No longer"] recording input.\"")

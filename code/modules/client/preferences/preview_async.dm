@@ -321,7 +321,7 @@
 		var/job_id = rustg_iconforge_generate_async(DQ_PREVIEW_JOB_DIR, sheet_name, json_encode(list("preview" = sprites[dir_key])), FALSE, FALSE, TRUE)
 		jobs[dir_key] = list(job_id, sheet_name)
 	dq_preview_jobs_in_flight++
-	INVOKE_ASYNC(src, PROC_REF(dq_poll_preview_jobs), generation, jobs, ready, scale_x, scale_y, !!client) // ALLOW(scheduler): polls rust-g preview jobs (blocking external I/O)
+	INVOKE_ASYNC(src, PROC_REF(dq_poll_preview_jobs), generation, jobs, ready, scale_x, scale_y, !!client()) // ALLOW(scheduler): polls rust-g preview jobs (blocking external I/O)
 	return generation
 
 /// Waits for a render's iconforge jobs, then applies them unless the render went stale.
@@ -367,7 +367,7 @@
 	var/list/outputs = state[7]
 	dq_preview_jobs_in_flight--
 
-	var/current = !QDELETED(src) && generation == dq_preview_generation && (!had_client || client)
+	var/current = !QDELETED(src) && generation == dq_preview_generation && (!had_client || client())
 	var/list/result = current ? (ready ? ready.Copy() : list()) : null
 	var/failed = length(outputs) < length(jobs)
 	for(var/dir_key in outputs)

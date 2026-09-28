@@ -2,12 +2,12 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 	if(!target)
 		return
 	var/datum/eventkit/modify_robot/modify_robot = new()
-	modify_robot.target = target
+	modify_robot.target_handle = om_handle(target)
 	modify_robot.selected_ai = target.is_slaved()
 	modify_robot.tgui_interact(user.mob)
 
 /datum/eventkit/modify_robot
-	var/mob/living/silicon/robot/target
+	var/tmp/target_handle
 	var/mob/living/silicon/robot/source
 	var/selected_ai
 	var/ion_law	= "IonLaw"
@@ -16,17 +16,17 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 	var/supplied_law = "SuppliedLaw"
 	var/supplied_law_position = MIN_SUPPLIED_LAW_NUMBER
 	var/list/datum/ai_laws/law_list
-	var/obj/item/robotic_multibelt/multibelt_holder //Currently selected multibelt.
+	var/tmp/multibelt_holder_handle	//Currently selected multibelt.
 
 /datum/eventkit/modify_robot/New()
 	. = ..()
-	log_and_message_admins("has used modify robot and is modifying [target]")
+	log_and_message_admins("has used modify robot and is modifying [target()]")
 	law_list = new()
 	init_subtypes(/datum/ai_laws, law_list)
 	law_list = dd_sortedObjectList(law_list)
 
 /datum/eventkit/modify_robot/tgui_close()
-	target = null
+	target_handle = null
 	if(source)
 		qdel(source)
 
@@ -39,34 +39,34 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 REF_OWNED(/datum/eventkit/modify_robot, "source")
 
 /datum/eventkit/modify_robot/ui_assets(mob/user)
-	if(!target)
+	if(!target())
 		return list()
-	var/datum/asset/spritesheet_batched/robot_icons/spritesheet = GLOB.robot_sprite_sheets[target.modtype]
+	var/datum/asset/spritesheet_batched/robot_icons/spritesheet = GLOB.robot_sprite_sheets[target().modtype]
 	return spritesheet ? list(spritesheet) : list()
 
 /datum/eventkit/modify_robot/tgui_data(mob/user)
 	. = list()
 	// Target section for general data
-	var/datum/asset/spritesheet_batched/robot_icons/spritesheet = target ? GLOB.robot_sprite_sheets[target.modtype] : null
+	var/datum/asset/spritesheet_batched/robot_icons/spritesheet = target() ? GLOB.robot_sprite_sheets[target().modtype] : null
 
-	if(target)
-		.["theme"] = target.get_ui_theme()
+	if(target())
+		.["theme"] = target().get_ui_theme()
 		.["target"] = list()
-		.["target"]["name"] = target.name
-		.["target"]["ckey"] = target.ckey
-		.["target"]["module"] = target.module
-		.["target"]["emagged"] = target.emagged
-		.["target"]["crisis_override"] = target.crisis_override
-		.["target"]["active_restrictions"] = target.restrict_modules_to
+		.["target"]["name"] = target().name
+		.["target"]["ckey"] = target().ckey
+		.["target"]["module"] = target().module
+		.["target"]["emagged"] = target().emagged
+		.["target"]["crisis_override"] = target().crisis_override
+		.["target"]["active_restrictions"] = target().restrict_modules_to
 		var/list/possible_restrictions = list()
 		for(var/entry in GLOB.robot_modules)
-			if(!(target.restrict_modules_to?.Find(entry)))
+			if(!(target().restrict_modules_to?.Find(entry)))
 				possible_restrictions += entry
 		.["target"]["possible_restrictions"] = possible_restrictions
 		// Target section for options once a module has been selected
-		if(target.module)
-			.["target"]["active"] = target.icon_selected
-			.["target"]["sprite"] = sanitize_css_class_name("[target.sprite_datum.type]")
+		if(target().module)
+			.["target"]["active"] = target().icon_selected
+			.["target"]["sprite"] = sanitize_css_class_name("[target().sprite_datum.type]")
 			.["target"]["sprite_size"] = spritesheet?.icon_size_id(.["target"]["sprite"] + "S")
 			.["target"]["modules"] = get_target_items(user)
 			var/list/module_options = list()
@@ -75,24 +75,24 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 			.["model_options"] = module_options
 			// Data for the upgrade options
 			.["target"] += get_upgrades()
-			var/obj/item/gun/energy/kinetic_accelerator/kin = locate() in target.module.modules
+			var/obj/item/gun/energy/kinetic_accelerator/kin = locate() in target().module.modules
 			if(kin)
 				.["target"]["pka"] += get_pka(kin)
-			for(var/obj/item/robotic_multibelt/multibelt in target.module.modules)
+			for(var/obj/item/robotic_multibelt/multibelt in target().module.modules)
 				.["target"]["multibelt"] += list(get_mult_belt(multibelt))
 
 			// Radio section
 			var/list/radio_channels = list()
-			for(var/channel in target.radio.channels)
+			for(var/channel in target().radio.channels)
 				radio_channels += channel
 			var/list/availalbe_channels = list()
-			for(var/channel in (GLOB.radiochannels - target.radio.channels))
+			for(var/channel in (GLOB.radiochannels - target().radio.channels))
 				availalbe_channels += channel
 			.["target"]["radio_channels"] = radio_channels
 			.["target"]["availalbe_channels"] = availalbe_channels
 			// Components
 			.["target"]["components"] = get_components()
-			.["cell"] = list("name" = target.cell?.name, "charge" = target.cell?.charge, "maxcharge" = target.cell?.maxcharge)
+			.["cell"] = list("name" = target().cell?.name, "charge" = target().cell?.charge, "maxcharge" = target().cell?.maxcharge)
 			.["cell_options"] = get_cells()
 			.["camera_options"] = get_component("camera")
 			.["radio_options"] = get_component("radio")
@@ -102,14 +102,14 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 			.["armour_options"] = get_component("armour")
 			.["current_gear"] = get_gear()
 			// Access
-			.["id_icon"] = icon2html(target.idcard, user, sourceonly=TRUE)
+			.["id_icon"] = icon2html(target().idcard, user, sourceonly=TRUE)
 			var/list/active_access = list()
-			for(var/access in target.idcard?.GetAccess())
+			for(var/access in target().idcard?.GetAccess())
 				active_access += list(list("id" = access, "name" = SSaccess.get_access_desc(access)))
 			.["target"]["active_access"] = active_access
 			var/list/access_options = list()
 			for(var/datum/access/acc)
-				if(acc.id in target.idcard?.GetAccess())
+				if(acc.id in target().idcard?.GetAccess())
 					continue
 				access_options += list(list("id" = acc.id, "name" = acc.desc))
 			.["access_options"] = access_options
@@ -130,14 +130,14 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 	.["supplied_law"] = supplied_law
 	.["supplied_law_position"] = supplied_law_position
 
-	package_laws(., "zeroth_laws", list(target.laws.zeroth_law))
-	package_laws(., "ion_laws", target.laws.ion_laws)
-	package_laws(., "inherent_laws", target.laws.inherent_laws)
-	package_laws(., "supplied_laws", target.laws.supplied_laws)
+	package_laws(., "zeroth_laws", list(target().laws.zeroth_law))
+	package_laws(., "ion_laws", target().laws.ion_laws)
+	package_laws(., "inherent_laws", target().laws.inherent_laws)
+	package_laws(., "supplied_laws", target().laws.supplied_laws)
 
-	.["isAI"] = isAI(target)
+	.["isAI"] = isAI(target())
 	.["isMalf"] = is_malf(user)
-	.["isSlaved"] = target.is_slaved()
+	.["isSlaved"] = target().is_slaved()
 	var/list/active_ais = list()
 	for(var/mob/living/silicon/ai/ai in active_ais())
 		if(!ai.loc)
@@ -147,9 +147,9 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 	.["selected_ai"] = selected_ai ? selected_ai : null
 
 	var/list/channels = list()
-	for(var/ch_name in target.law_channels())
+	for(var/ch_name in target().law_channels())
 		channels[++channels.len] = list("channel" = ch_name)
-	.["channel"] = target.lawchannel
+	.["channel"] = target().lawchannel
 	.["channels"] = channels
 	.["law_sets"] = package_multiple_laws(law_list)
 
@@ -162,30 +162,30 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 		return
 	switch(action)
 		if("rename")
-			target.name = params["new_name"]
-			target.custom_name = params["new_name"]
-			target.real_name = params["new_name"]
+			target().name = params["new_name"]
+			target().custom_name = params["new_name"]
+			target().real_name = params["new_name"]
 			return TRUE
 		if("select_target")
 			var/new_target = locate(params["new_target"])
-			if(new_target != target)
-				target = locate(params["new_target"])
-				log_and_message_admins("changed robot modifictation target to [target]")
+			if(new_target != target())
+				target_handle = om_handle(locate(params["new_target"]))
+				log_and_message_admins("changed robot modifictation target to [target()]")
 			return TRUE
 		if("toggle_crisis")
-			target.crisis_override = !target.crisis_override
+			target().crisis_override = !target().crisis_override
 			return TRUE
 		if("add_restriction")
 			var/new_restriction = params["new_restriction"]
 			if(!(new_restriction in GLOB.robot_modules))
 				return FALSE
-			LAZYOR(target.restrict_modules_to, new_restriction)
+			LAZYOR(target().restrict_modules_to, new_restriction)
 			return TRUE
 		if("remove_restriction")
 			var/rem_restriction = params["rem_restriction"]
 			if(!(rem_restriction in GLOB.robot_modules))
 				return FALSE
-			LAZYREMOVE(target.restrict_modules_to, rem_restriction)
+			LAZYREMOVE(target().restrict_modules_to, rem_restriction)
 			return TRUE
 		if("select_source")
 			if(source)
@@ -207,7 +207,7 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 				return TRUE
 			return TRUE
 		if("reset_module")
-			target.module_reset(FALSE)
+			target().module_reset(FALSE)
 			return TRUE
 		if("add_module")
 			var/obj/item/selected_item = locate(params["module"])
@@ -217,18 +217,18 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 				source.idcard = null
 			source.module.emag -= selected_item
 			source.module.modules -= selected_item
-			target.module.add_item(selected_item, target)
+			target().module.add_item(selected_item, target())
 			return TRUE
 		if("rem_module")
 			var/obj/item/rem_item = locate(params["module"])
-			if(target.idcard == rem_item)
-				target.idcard = new /obj/item/card/id/synthetic(target)
-			target.uneq_all()
-			target.hud_used?.update_robot_modules_display(TRUE)
-			target.module.emag.Remove(rem_item)
-			target.module.modules.Remove(rem_item)
+			if(target().idcard == rem_item)
+				target().idcard = new /obj/item/card/id/synthetic(target())
+			target().uneq_all()
+			target().hud_used?.update_robot_modules_display(TRUE)
+			target().module.emag.Remove(rem_item)
+			target().module.modules.Remove(rem_item)
 			rem_item.moveToNullspace()
-			target.hud_used?.update_robot_modules_display()
+			target().hud_used?.update_robot_modules_display()
 			qdel(rem_item)
 			return TRUE
 		if("swap_module")
@@ -236,32 +236,32 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 				return FALSE
 			var/mod_type = source.modtype
 			qdel(source.module)
-			var/module_type = GLOB.robot_modules[target.modtype]
-			source.modtype = target.modtype
+			var/module_type = GLOB.robot_modules[target().modtype]
+			source.modtype = target().modtype
 			new module_type(source)
-			source.sprite_datum = target.sprite_datum
+			source.sprite_datum = target().sprite_datum
 			source.update_icon()
 			source.emag_items = TRUE
 			// Target
-			target.uneq_all()
-			target.hud_used?.update_robot_modules_display(TRUE)
-			qdel(target.module)
-			target.modtype = mod_type
+			target().uneq_all()
+			target().hud_used?.update_robot_modules_display(TRUE)
+			qdel(target().module)
+			target().modtype = mod_type
 			module_type = GLOB.robot_modules[mod_type]
-			target.transform_with_anim()
-			new module_type(target)
-			target.hands.icon_state = target.get_hud_module_icon()
-			target.hud_used?.update_robot_modules_display()
+			target().transform_with_anim()
+			new module_type(target())
+			target().hands.icon_state = target().get_hud_module_icon()
+			target().hud_used?.update_robot_modules_display()
 			return TRUE
 		if("ert_toggle")
-			target.crisis_override = !target.crisis_override
-			target.module_reset(FALSE)
+			target().crisis_override = !target().crisis_override
+			target().module_reset(FALSE)
 			return TRUE
 		if("add_compatibility")
-			LAZYOR(target.module.supported_upgrades, text2path(params["upgrade"]))
+			LAZYOR(target().module.supported_upgrades, text2path(params["upgrade"]))
 			return TRUE
 		if("rem_compatibility")
-			LAZYREMOVE(target.module.supported_upgrades, text2path(params["upgrade"]))
+			LAZYREMOVE(target().module.supported_upgrades, text2path(params["upgrade"]))
 			return TRUE
 		if("add_upgrade")
 			var/new_upgrade = text2path(params["upgrade"])
@@ -284,252 +284,252 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 					UN.heldname = new_name
 				U = UN
 			if(istype(U, /obj/item/borg/upgrade/restricted))
-				LAZYOR(target.module.supported_upgrades, new_upgrade)
-			if(!U.action(ui.user, target))
+				LAZYOR(target().module.supported_upgrades, new_upgrade)
+			if(!U.action(ui.user, target()))
 				return FALSE
-			U.forceMove(target)
-			target.hud_used?.update_robot_modules_display()
+			U.forceMove(target())
+			target().hud_used?.update_robot_modules_display()
 			return TRUE
 		if("install_modkit")
 			var/new_modkit = text2path(params["modkit"])
-			var/obj/item/gun/energy/kinetic_accelerator/kin = locate() in target.module.modules
+			var/obj/item/gun/energy/kinetic_accelerator/kin = locate() in target().module.modules
 			var/obj/item/borg/upgrade/modkit/M = new new_modkit(null)
-			M.install(kin, target)
+			M.install(kin, target())
 			return TRUE
 		if("remove_modkit")
-			var/obj/item/gun/energy/kinetic_accelerator/kin = locate() in target.module.modules
+			var/obj/item/gun/energy/kinetic_accelerator/kin = locate() in target().module.modules
 			var/obj/item/rem_kit = locate(params["modkit"])
 			LAZYREMOVE(kin.modkits, rem_kit)
 			qdel(rem_kit)
 			return TRUE
 		if("select_multibelt")
-			multibelt_holder = locate(params["multibelt"])
+			multibelt_holder_handle = om_handle(locate(params["multibelt"]))
 			return TRUE
 		if("install_tool")
-			if(!istype(multibelt_holder))
+			if(!istype(multibelt_holder(), /obj/item/robotic_multibelt))
 				return FALSE
-			if(istype(multibelt_holder, /obj/item/robotic_multibelt/materials))
-				target.add_new_material(text2path(params["tool"]))
+			if(istype(multibelt_holder(), /obj/item/robotic_multibelt/materials))
+				target().add_new_material(text2path(params["tool"]))
 				return TRUE
 			var/new_tool = text2path(params["tool"])
 			if(new_tool in GLOB.all_borg_multitool_options)
-				multibelt_holder.cyborg_integrated_tools += new_tool //Make sure you don't add items directly to it, or you can't ever remove them.
-				multibelt_holder.generate_tools()
+				multibelt_holder().cyborg_integrated_tools += new_tool //Make sure you don't add items directly to it, or you can't ever remove them.
+				multibelt_holder().generate_tools()
 			return TRUE
 
 		if("remove_tool")
-			if(!istype(multibelt_holder))
+			if(!istype(multibelt_holder(), /obj/item/robotic_multibelt))
 				return FALSE
-			if(istype(multibelt_holder, /obj/item/robotic_multibelt/materials))
+			if(istype(multibelt_holder(), /obj/item/robotic_multibelt/materials))
 				var/datum/matter_synth/synth = locate(params["tool"])
-				target.module.synths -= synth
+				target().module.synths -= synth
 				qdel(synth)
-				target.update_material_multibelts()
+				target().update_material_multibelts()
 				return TRUE
 			var/obj/item/rem_tool = locate(params["tool"])
-			if(multibelt_holder.selected_item == rem_tool)
-				multibelt_holder.dropped() //Reset to original icon.
+			if(multibelt_holder().selected_item == rem_tool)
+				multibelt_holder().dropped() //Reset to original icon.
 			rem_tool.moveToNullspace()
-			multibelt_holder.cyborg_integrated_tools -= rem_tool.type
-			multibelt_holder.integrated_tools_by_name -= rem_tool.name
-			multibelt_holder.integrated_tool_images -= rem_tool.name
+			multibelt_holder().cyborg_integrated_tools -= rem_tool.type
+			multibelt_holder().integrated_tools_by_name -= rem_tool.name
+			multibelt_holder().integrated_tool_images -= rem_tool.name
 			qdel(rem_tool)
 			return TRUE
 		if("add_channel")
 			var/selected_radio_channel = params["channel"]
 			if(selected_radio_channel == CHANNEL_SPECIAL_OPS || selected_radio_channel == CHANNEL_RESPONSE_TEAM)
-				target.radio.centComm = 1
+				target().radio.centComm = 1
 			if(selected_radio_channel == CHANNEL_RAIDER)
-				qdel(target.radio.keyslot)
-				target.radio.keyslot = new /obj/item/encryptionkey/raider(target)
-				target.radio.syndie = 1
+				qdel(target().radio.keyslot)
+				target().radio.keyslot = new /obj/item/encryptionkey/raider(target())
+				target().radio.syndie = 1
 			if(selected_radio_channel == CHANNEL_MERCENARY)
-				qdel(target.radio.keyslot)
-				target.radio.keyslot = new /obj/item/encryptionkey/syndicate(target)
-				target.radio.syndie = 1
-			target.module.channels += list("[selected_radio_channel]" = 1)
-			target.radio.channels[selected_radio_channel] = target.module.channels[selected_radio_channel]
-			target.radio.secure_radio_connections[selected_radio_channel] = SSradio.add_object(target.radio, GLOB.radiochannels[selected_radio_channel],  RADIO_CHAT)
+				qdel(target().radio.keyslot)
+				target().radio.keyslot = new /obj/item/encryptionkey/syndicate(target())
+				target().radio.syndie = 1
+			target().module.channels += list("[selected_radio_channel]" = 1)
+			target().radio.channels[selected_radio_channel] = target().module.channels[selected_radio_channel]
+			target().radio.secure_radio_connections[selected_radio_channel] = SSradio.add_object(target().radio, GLOB.radiochannels[selected_radio_channel],  RADIO_CHAT)
 			return TRUE
 		if("rem_channel")
 			var/selected_radio_channel = params["channel"]
-			if((selected_radio_channel == CHANNEL_SPECIAL_OPS || selected_radio_channel == CHANNEL_RESPONSE_TEAM) && !(target.module.channels[CHANNEL_SPECIAL_OPS] || target.module.channels[CHANNEL_RESPONSE_TEAM]))
-				target.radio.centComm = 0
-			target.module.channels -= selected_radio_channel
-			if((selected_radio_channel == CHANNEL_MERCENARY || selected_radio_channel == CHANNEL_RAIDER) && !(target.module.channels[CHANNEL_RAIDER] || target.module.channels[CHANNEL_MERCENARY]))
-				qdel(target.radio.keyslot)
-				target.radio.keyslot = null
-				target.radio.syndie = 0
-			target.radio.channels = list()
-			for(var/n_chan in target.module.channels)
-				target.radio.channels[n_chan] = target.module.channels[n_chan]
-			SSradio.remove_object(target.radio, GLOB.radiochannels[selected_radio_channel])
-			target.radio.secure_radio_connections -= selected_radio_channel
+			if((selected_radio_channel == CHANNEL_SPECIAL_OPS || selected_radio_channel == CHANNEL_RESPONSE_TEAM) && !(target().module.channels[CHANNEL_SPECIAL_OPS] || target().module.channels[CHANNEL_RESPONSE_TEAM]))
+				target().radio.centComm = 0
+			target().module.channels -= selected_radio_channel
+			if((selected_radio_channel == CHANNEL_MERCENARY || selected_radio_channel == CHANNEL_RAIDER) && !(target().module.channels[CHANNEL_RAIDER] || target().module.channels[CHANNEL_MERCENARY]))
+				qdel(target().radio.keyslot)
+				target().radio.keyslot = null
+				target().radio.syndie = 0
+			target().radio.channels = list()
+			for(var/n_chan in target().module.channels)
+				target().radio.channels[n_chan] = target().module.channels[n_chan]
+			SSradio.remove_object(target().radio, GLOB.radiochannels[selected_radio_channel])
+			target().radio.secure_radio_connections -= selected_radio_channel
 			return TRUE
 		if("add_component")
-			var/datum/robot_component/C = locate(params["component"]) in target.components
+			var/datum/robot_component/C = locate(params["component"]) in target().components
 			if(!C || C.internal)
 				return FALSE
 			var/new_component = text2path(params["new_part"])
 			if(C.slot == ROBOT_SLOT_POWER)
 				if(!ispath(new_component, /obj/item/cell))
 					return FALSE
-				qdel(target.remove_cell())
-				target.set_cell(new new_component(target))
+				qdel(target().remove_cell())
+				target().set_cell(new new_component(target()))
 				return TRUE
 			if(!ispath(new_component, C.external_type))
 				new_component = C.external_type
 			if(C.wrapped)
 				qdel(C.uninstall())
 			C.clear_located_damage()
-			C.install(new new_component(target))
+			C.install(new new_component(target()))
 			return TRUE
 		if("rem_component")
-			var/datum/robot_component/C = locate(params["component"]) in target.components
+			var/datum/robot_component/C = locate(params["component"]) in target().components
 			if(!C?.wrapped || C.internal)
 				return FALSE
 			if(C.slot == ROBOT_SLOT_POWER)
-				qdel(target.remove_cell())
+				qdel(target().remove_cell())
 				return TRUE
 			qdel(C.uninstall())
 			return TRUE
 		if("adjust_cell_charge")
-			var/obj/item/cell/cell = target.cell
+			var/obj/item/cell/cell = target().cell
 			if(!cell)
 				return FALSE
 			var/delta = clamp(text2num(params["charge"]), 0, cell.maxcharge) - cell.charge
 			if(delta > 0)
-				target.add_power(ROBOT_CELL_JOULES(delta), src)
+				target().add_power(ROBOT_CELL_JOULES(delta), src)
 			else if(delta < 0)
-				target.draw_power(ROBOT_CELL_JOULES(-delta), src, 0, TRUE)
+				target().draw_power(ROBOT_CELL_JOULES(-delta), src, 0, TRUE)
 			return TRUE
 		if("adjust_brute")
-			var/datum/robot_component/C = locate(params["component"]) in target.components
+			var/datum/robot_component/C = locate(params["component"]) in target().components
 			if(!C)
 				return FALSE
 			C.set_located_damage(text2num(params["damage"]), C.get_wiring_damage())
 			return TRUE
 		if("adjust_electronics")
-			var/datum/robot_component/C = locate(params["component"]) in target.components
+			var/datum/robot_component/C = locate(params["component"]) in target().components
 			if(!C)
 				return FALSE
 			C.set_located_damage(C.get_structural_damage(), text2num(params["damage"]))
 			return TRUE
 		if("add_access")
-			target.idcard.access += text2num(params["access"])
+			target().idcard.access += text2num(params["access"])
 			return TRUE
 		if("rem_access")
-			target.idcard.access -= text2num(params["access"])
+			target().idcard.access -= text2num(params["access"])
 			return TRUE
 		if("add_centcom")
-			target.idcard.access |= SSaccess.get_all_centcom_access()
+			target().idcard.access |= SSaccess.get_all_centcom_access()
 			return TRUE
 		if("rem_centcom")
-			target.idcard.access -= SSaccess.get_all_centcom_access()
+			target().idcard.access -= SSaccess.get_all_centcom_access()
 			return TRUE
 		if("add_station")
-			target.idcard.access |= SSaccess.get_all_station_access()
-			target.idcard.access |= ACCESS_SYNTH
+			target().idcard.access |= SSaccess.get_all_station_access()
+			target().idcard.access |= ACCESS_SYNTH
 			return TRUE
 		if("rem_station")
-			target.idcard.access -= SSaccess.get_all_station_access()
-			target.idcard.access -= ACCESS_SYNTH
+			target().idcard.access -= SSaccess.get_all_station_access()
+			target().idcard.access -= ACCESS_SYNTH
 			return TRUE
 		if("law_channel")
-			if(params["law_channel"] in target.law_channels())
-				target.lawchannel = params["law_channel"]
+			if(params["law_channel"] in target().law_channels())
+				target().lawchannel = params["law_channel"]
 			return TRUE
 		if("state_law")
-			var/datum/ai_law/AL = locate(params["ref"]) in target.laws.all_laws()
+			var/datum/ai_law/AL = locate(params["ref"]) in target().laws.all_laws()
 			if(AL)
 				var/state_law = text2num(params["state_law"])
-				target.laws.set_state_law(AL, state_law)
+				target().laws.set_state_law(AL, state_law)
 			return TRUE
 		if("add_zeroth_law")
-			if(zeroth_law && !target.laws.zeroth_law)
-				target.set_zeroth_law(zeroth_law)
-				target.lawsync()
+			if(zeroth_law && !target().laws.zeroth_law)
+				target().set_zeroth_law(zeroth_law)
+				target().lawsync()
 			return TRUE
 		if("add_ion_law")
 			if(ion_law)
-				target.add_ion_law(ion_law)
-				target.lawsync()
+				target().add_ion_law(ion_law)
+				target().lawsync()
 			return TRUE
 		if("add_inherent_law")
 			if(inherent_law)
-				target.add_inherent_law(inherent_law)
-				target.lawsync()
+				target().add_inherent_law(inherent_law)
+				target().lawsync()
 			return TRUE
 		if("add_supplied_law")
 			if(supplied_law && supplied_law_position >= 1 && MIN_SUPPLIED_LAW_NUMBER <= MAX_SUPPLIED_LAW_NUMBER)
-				target.add_supplied_law(supplied_law_position, supplied_law)
-				target.lawsync()
+				target().add_supplied_law(supplied_law_position, supplied_law)
+				target().lawsync()
 			return TRUE
 		if("change_zeroth_law")
 			var/new_law = sanitize(params["val"])
 			if(new_law && new_law != zeroth_law)
 				zeroth_law = new_law
-				target.lawsync()
+				target().lawsync()
 			return TRUE
 		if("change_ion_law")
 			var/new_law = sanitize(params["val"])
 			if(new_law && new_law != ion_law)
 				ion_law = new_law
-				target.lawsync()
+				target().lawsync()
 			return TRUE
 		if("change_inherent_law")
 			var/new_law = sanitize(params["val"])
 			if(new_law && new_law != inherent_law)
 				inherent_law = new_law
-				target.lawsync()
+				target().lawsync()
 			return TRUE
 		if("change_supplied_law")
 			var/new_law = sanitize(params["val"])
 			if(new_law && new_law != supplied_law)
 				supplied_law = new_law
-				target.lawsync()
+				target().lawsync()
 			return TRUE
 		if("change_supplied_law_position")
 			var/new_position = act_prompt(ui.user, action, params, ui, "position", list("kind" = "number", "message" = "Enter new supplied law position between 1 and [MAX_SUPPLIED_LAW_NUMBER], inclusive. Inherent laws at the same index as a supplied law will not be stated.", "title" = "Law Position", "default" = supplied_law_position, "max" = MAX_SUPPLIED_LAW_NUMBER, "min" = 1))
 			if(isnum(new_position))
 				supplied_law_position = CLAMP(new_position, 1, MAX_SUPPLIED_LAW_NUMBER)
-				target.lawsync()
+				target().lawsync()
 			return TRUE
 		if("edit_law")
-			var/datum/ai_law/AL = locate(params["edit_law"]) in target.laws.all_laws()
+			var/datum/ai_law/AL = locate(params["edit_law"]) in target().laws.all_laws()
 			if(AL)
 				var/new_law = act_prompt(ui.user, action, params, ui, "law", list("kind" = "text", "message" = "Enter new law. Leaving the field blank will cancel the edit.", "title" = "Edit Law", "default" = AL.law, "max_length" = MAX_MESSAGE_LEN))
 				if(new_law && new_law != AL.law)
 					AL.law = new_law
-					target.lawsync()
+					target().lawsync()
 				return TRUE
 		if("delete_law")
-			var/datum/ai_law/AL = locate(params["delete_law"]) in target.laws.all_laws()
+			var/datum/ai_law/AL = locate(params["delete_law"]) in target().laws.all_laws()
 			if(AL)
-				target.delete_law(AL)
-				target.lawsync()
+				target().delete_law(AL)
+				target().lawsync()
 			return TRUE
 		if("state_laws")
-			target.statelaws(target.laws)
+			target().statelaws(target().laws)
 			return TRUE
 		if("state_law_set")
 			var/datum/ai_laws/ALs = locate(params["state_law_set"]) in law_list
 			if(ALs)
-				target.statelaws(ALs)
+				target().statelaws(ALs)
 			return TRUE
 		if("transfer_laws")
 			var/datum/ai_laws/ALs = locate(params["transfer_laws"]) in law_list
 			if(ALs)
-				ALs.sync(target, 0)
-				target.lawsync()
+				ALs.sync(target(), 0)
+				target().lawsync()
 			return TRUE
 		if("notify_laws")
-			to_chat(target, span_danger("Law Notice\n") + target.laws.get_formatted_laws())
-			if(isAI(target))
-				var/mob/living/silicon/ai/our_ai = target
+			to_chat(target(), span_danger("Law Notice\n") + target().laws.get_formatted_laws())
+			if(isAI(target()))
+				var/mob/living/silicon/ai/our_ai = target()
 				for(var/mob/living/silicon/robot/R in our_ai.connected_robots)
 					to_chat(R, span_danger("Law Notice\n") + R.laws.get_formatted_laws())
-			if(ui.user != target)
+			if(ui.user != target())
 				to_chat(ui.user, span_notice("Laws displayed."))
 			return TRUE
 		if("select_ai")
@@ -544,39 +544,39 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 			if(!our_ai)
 				our_ai = select_active_ai_with_fewest_borgs()
 			if(our_ai)
-				target.lawupdate = TRUE
-				target.connect_to_ai(our_ai)
+				target().lawupdate = TRUE
+				target().connect_to_ai(our_ai)
 			return TRUE
 		if("disconnect_ai")
-			if(target.is_slaved())
-				target.disconnect_from_ai()
-				target.lawupdate = FALSE
+			if(target().is_slaved())
+				target().disconnect_from_ai()
+				target().lawupdate = FALSE
 			return TRUE
 		if("toggle_emag")
-			if(target.emagged)
-				target.emagged = FALSE
-				target.clear_supplied_laws()
-				target.clear_inherent_laws()
-				target.laws = new using_map.default_law_type
-				to_chat(target, span_danger("Laws updated!\n") + target.laws.get_formatted_laws())
-				target.hud_used?.update_robot_modules_display()
+			if(target().emagged)
+				target().emagged = FALSE
+				target().clear_supplied_laws()
+				target().clear_inherent_laws()
+				target().laws = new using_map.default_law_type
+				to_chat(target(), span_danger("Laws updated!\n") + target().laws.get_formatted_laws())
+				target().hud_used?.update_robot_modules_display()
 			else
-				target.emagged = TRUE
-				target.lawupdate = FALSE
-				target.disconnect_from_ai()
-				target.clear_supplied_laws()
-				target.clear_inherent_laws()
-				target.laws = new /datum/ai_laws/syndicate_override
-				if(target.bolt)
-					if(!target.bolt.malfunction)
-						target.bolt.malfunction = MALFUNCTION_PERMANENT
-				to_chat(target, span_danger("Laws updated!\n") + target.laws.get_formatted_laws())
-				target.hud_used?.update_robot_modules_display()
+				target().emagged = TRUE
+				target().lawupdate = FALSE
+				target().disconnect_from_ai()
+				target().clear_supplied_laws()
+				target().clear_inherent_laws()
+				target().laws = new /datum/ai_laws/syndicate_override
+				if(target().bolt)
+					if(!target().bolt.malfunction)
+						target().bolt.malfunction = MALFUNCTION_PERMANENT
+				to_chat(target(), span_danger("Laws updated!\n") + target().laws.get_formatted_laws())
+				target().hud_used?.update_robot_modules_display()
 			return TRUE
 
 /datum/eventkit/modify_robot/proc/get_target_items(mob/user)
 	var/list/target_items = list()
-	for(var/obj/item in target.module.modules)
+	for(var/obj/item in target().module.modules)
 		target_items += list(list("name" = item.name, "ref" = "\ref[item]", "icon" = icon2html(item, user, sourceonly=TRUE), "desc" = item.desc))
 	return target_items
 
@@ -588,7 +588,7 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 	var/list/source_items = list()
 	for(var/obj/item in (source.module.modules | source.module.emag))
 		var/exists
-		for(var/obj/has_item in (target.module.modules + target.module.emag))
+		for(var/obj/has_item in (target().module.modules + target().module.emag))
 			if(has_item.name == item.name)
 				exists = TRUE
 				break
@@ -605,7 +605,7 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 	for(var/datum/design_techweb/prosfab/robot_upgrade/restricted/upgrade as anything in subtypesof(/datum/design_techweb/prosfab/robot_upgrade/restricted))
 		if(!upgrade.name)
 			continue
-		if(!(initial(upgrade.build_path) in target.module.supported_upgrades))
+		if(!(initial(upgrade.build_path) in target().module.supported_upgrades))
 			whitelisted_upgrades += list(list("name" = initial(upgrade.name), "path" = "[initial(upgrade.build_path)]"))
 		else
 			blacklisted_upgrades += list(list("name" = initial(upgrade.name), "path" = "[initial(upgrade.build_path)]"))
@@ -615,14 +615,14 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 	for(var/datum/design_techweb/prosfab/robot_upgrade/utility/upgrade as anything in subtypesof(/datum/design_techweb/prosfab/robot_upgrade/utility))
 		if(!upgrade.name)
 			continue
-		if(!(robot_upgrade_prototype(initial(upgrade.build_path))?.is_installed(target)))
+		if(!(robot_upgrade_prototype(initial(upgrade.build_path))?.is_installed(target())))
 			utility_upgrades += list(list("name" = initial(upgrade.name), "path" = "[initial(upgrade.build_path)]"))
 	all_upgrades["utility_upgrades"] = utility_upgrades
 	var/list/basic_upgrades = list()
 	for(var/datum/design_techweb/prosfab/robot_upgrade/basic/upgrade as anything in subtypesof(/datum/design_techweb/prosfab/robot_upgrade/basic))
 		if(!upgrade.name)
 			continue
-		if(!(robot_upgrade_prototype(initial(upgrade.build_path))?.is_installed(target)))
+		if(!(robot_upgrade_prototype(initial(upgrade.build_path))?.is_installed(target())))
 			basic_upgrades += list(list("name" = initial(upgrade.name), "path" = "[initial(upgrade.build_path)]", "installed" = 0))
 		else
 			basic_upgrades += list(list("name" = initial(upgrade.name), "path" = "[initial(upgrade.build_path)]", "installed" = 1))
@@ -631,7 +631,7 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 	for(var/datum/design_techweb/prosfab/robot_upgrade/advanced/upgrade as anything in subtypesof(/datum/design_techweb/prosfab/robot_upgrade/advanced))
 		if(!upgrade.name)
 			continue
-		if(!(robot_upgrade_prototype(initial(upgrade.build_path))?.is_installed(target)))
+		if(!(robot_upgrade_prototype(initial(upgrade.build_path))?.is_installed(target())))
 			advanced_upgrades += list(list("name" = initial(upgrade.name), "path" = "[initial(upgrade.build_path)]", "installed" = 0))
 		else
 			advanced_upgrades += list(list("name" = initial(upgrade.name), "path" = "[initial(upgrade.build_path)]", "installed" = 1))
@@ -640,8 +640,8 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 	for(var/datum/design_techweb/prosfab/robot_upgrade/restricted/upgrade as anything in subtypesof(/datum/design_techweb/prosfab/robot_upgrade/restricted))
 		if(!upgrade.name)
 			continue
-		if(!(robot_upgrade_prototype(initial(upgrade.build_path))?.is_installed(target)))
-			if(!(initial(upgrade.build_path) in target.module.supported_upgrades))
+		if(!(robot_upgrade_prototype(initial(upgrade.build_path))?.is_installed(target())))
+			if(!(initial(upgrade.build_path) in target().module.supported_upgrades))
 				restricted_upgrades += list(list("name" = initial(upgrade.name), "path" = "[initial(upgrade.build_path)]", "installed" = 2))
 				continue
 			restricted_upgrades += list(list("name" = initial(upgrade.name), "path" = "[initial(upgrade.build_path)]", "installed" = 0))
@@ -692,11 +692,11 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 	var/list/integrated_tools = list()
 	var/list/tools = list()
 	if(istype(mult_belt, /obj/item/robotic_multibelt/materials))
-		for(var/datum/matter_synth/synth in target.module.synths)
+		for(var/datum/matter_synth/synth in target().module.synths)
 			integrated_tools += list(list("name" = synth.name, "ref" = "\ref[synth]"))
 		for(var/tool in GLOB.material_synth_list)
 			var/material_path = GLOB.material_synth_list[tool]
-			if(!target.can_install_synth(material_path)) //Don't add it to the list if we already have it!
+			if(!target().can_install_synth(material_path)) //Don't add it to the list if we already have it!
 				continue
 			tools += list(list("name" = tool, "path" = material_path))
 	else
@@ -753,7 +753,7 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 
 /datum/eventkit/modify_robot/proc/get_gear()
 	var/list/equip = list()
-	for(var/datum/robot_component/C as anything in target.components)
+	for(var/datum/robot_component/C as anything in target().components)
 		if(C.internal || C.slot == ROBOT_SLOT_POWER)
 			continue
 		var/component_name
@@ -764,14 +764,14 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 
 /datum/eventkit/modify_robot/proc/get_components()
 	var/list/components = list()
-	for(var/datum/robot_component/C as anything in target.components)
+	for(var/datum/robot_component/C as anything in target().components)
 		components += list(list("name" = C.name, "ref" = "\ref[C]", "brute_damage" = C.get_structural_damage(), "electronics_damage" = C.get_wiring_damage(), "max_damage" = C.max_damage, "idle_usage" = C.idle_usage, "active_usage" = C.active_usage, "installed" = C.installed, "exists" = (C.wrapped ? TRUE : FALSE)))
 	return components
 
 /datum/eventkit/modify_robot/proc/package_laws(list/data, field, list/datum/ai_law/laws)
 	var/list/packaged_laws = list()
 	for(var/datum/ai_law/AL in laws)
-		packaged_laws[++packaged_laws.len] = list("law" = AL.law, "index" = AL.get_index(), "state" = target.laws.get_state_law(AL), "ref" = "\ref[AL]")
+		packaged_laws[++packaged_laws.len] = list("law" = AL.law, "index" = AL.get_index(), "state" = target().laws.get_state_law(AL), "ref" = "\ref[AL]")
 	data[field] = packaged_laws
 	data["has_[field]"] = packaged_laws.len
 
@@ -787,7 +787,17 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 	return law_sets
 
 /datum/eventkit/modify_robot/proc/is_malf(mob/user)
-	return (is_admin(user) && !target.is_slaved()) || is_special_role(user)
+	return (is_admin(user) && !target().is_slaved()) || is_special_role(user)
 
 /datum/eventkit/modify_robot/proc/is_special_role(mob/user)
 	return user.mind?.special_role ? TRUE : FALSE
+
+/// LC-refs: Currently selected multibelt. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/eventkit/modify_robot/proc/multibelt_holder() as /obj/item/robotic_multibelt
+	return om_resolve(multibelt_holder_handle)
+
+/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/eventkit/modify_robot/proc/target() as /mob/living/silicon/robot
+	return om_resolve(target_handle)
+
+REF_OWNED_LIST(/datum/eventkit/modify_robot, "law_list")

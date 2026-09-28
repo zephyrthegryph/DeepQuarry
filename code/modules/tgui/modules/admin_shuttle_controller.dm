@@ -46,7 +46,7 @@
 				var/client/C = ui.user.client
 				if(!isobserver(ui.user))
 					SSadmin_verbs.dynamic_invoke_verb(C, /datum/admin_verb/admin_ghost)
-					SSadmin_verbs.dynamic_invoke_verb(C, /datum/admin_verb/jumptoturf, get_turf(S.current_location))
+					SSadmin_verbs.dynamic_invoke_verb(C, /datum/admin_verb/jumptoturf, get_turf(S.current_location()))
 			else if(istype(S, /obj/effect/overmap/visitable))
 				var/obj/effect/overmap/visitable/V = S
 				var/client/C = ui.user.client

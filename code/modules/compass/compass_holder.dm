@@ -123,3 +123,5 @@ REF_OWNED_VALUES(/obj/compass_holder, "compass_waypoints")
 		recalculate_heading(FALSE)
 	if(update_icon)
 		update_icon()
+
+REF_OWNED(/obj/compass_holder, "compass_heading_marker")

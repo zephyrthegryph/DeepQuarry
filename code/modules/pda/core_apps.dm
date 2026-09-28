@@ -4,16 +4,16 @@
 	hidden = 1
 
 /datum/data/pda/app/main_menu/update_ui(mob/user, list/data)
-	title = pda.name
+	title = pda().name
 
 	data["app"]["is_home"] = 1
 
-	data["apps"] = (pda.shortcut_cache || list())
-	data["categories"] = (pda.shortcut_cat_order || list())
-	data["pai"] = !isnull(pda.pai)				// pAI inserted?
+	data["apps"] = (pda().shortcut_cache || list())
+	data["categories"] = (pda().shortcut_cat_order || list())
+	data["pai"] = !isnull(pda().pai)				// pAI inserted?
 
 	var/list/notifying[0]
-	for(var/P in pda.notifying_programs)
+	for(var/P in pda().notifying_programs)
 		notifying["\ref[P]"] = 1
 	data["notifying"] = notifying
 
@@ -22,23 +22,23 @@
 		return TRUE
 	switch(action)
 		if("UpdateInfo")
-			pda.ownjob = pda.id.assignment
-			pda.ownrank = pda.id.rank
-			pda.name = "PDA-[pda.owner] ([pda.ownjob])"
+			pda().ownjob = pda().id.assignment
+			pda().ownrank = pda().id.rank
+			pda().name = "PDA-[pda().owner] ([pda().ownjob])"
 			return TRUE
 		if("pai")
-			if(pda.pai)
-				if(pda.pai.loc != pda)
-					pda.pai = null
+			if(pda().pai)
+				if(pda().pai.loc != pda())
+					pda().pai = null
 				else
 					switch(text2num(params["option"]))
 						if(1)		// Configure pAI device
-							pda.pai.attack_self(ui.user)
+							pda().pai.attack_self(ui.user)
 						if(2)		// Eject pAI device
-							var/turf/T = get_turf_or_move(pda.loc)
+							var/turf/T = get_turf_or_move(pda().loc)
 							if(T)
-								pda.pai.forceMove(T)
-								pda.pai = null
+								pda().pai.forceMove(T)
+								pda().pai = null
 			return TRUE
 
 /datum/data/pda/app/notekeeper
@@ -60,7 +60,7 @@
 
 		// display greeting!
 		greeted = TRUE
-		note = "Thank you for choosing the [pda.model_name]!"
+		note = "Thank you for choosing the [pda().model_name]!"
 		notetitle = "Congratulations!"
 
 /datum/data/pda/app/notekeeper/update_ui(mob/user, list/data)
@@ -75,100 +75,100 @@
 			var/n = act_prompt(ui.user, action, params, ui, "k75", list("kind" = "text", "message" = "Please enter message", "title" = name, "default" = notehtml, "multiline" = TRUE))
 			if(isnull(n))
 				return
-			if(pda.loc == ui.user)
+			if(pda().loc == ui.user)
 				note = adminscrub(n)
 				notehtml = html_decode(note)
 				note = replacetext(note, "\n", "<br>")
 			else
-				pda.close(ui.user)
+				pda().close(ui.user)
 			return TRUE
 		if("Titleset")
 			var/n = act_prompt(ui.user, action, params, ui, "k84", list("kind" = "text", "message" = "Please enter title", "title" = name, "default" = notetitle, "multiline" = FALSE))
 			if(isnull(n))
 				return
-			if(pda.loc == ui.user)
+			if(pda().loc == ui.user)
 				notetitle = adminscrub(n)
 			else
-				pda.close(ui.user)
+				pda().close(ui.user)
 			return TRUE
 		if("Print")
-			if(pda.loc == ui.user)
+			if(pda().loc == ui.user)
 				printnote(ui.user)
 			else
-				pda.close(ui.user)
+				pda().close(ui.user)
 			return TRUE
 		// dumb way to do this, but i don't know how to easily parse this without a lot of silly code outside the switch!
 		if("Note1")
-			if(pda.loc == ui.user)
+			if(pda().loc == ui.user)
 				changetonote(1)
 			else
-				pda.close(ui.user)
+				pda().close(ui.user)
 			return TRUE
 		if("Note2")
-			if(pda.loc == ui.user)
+			if(pda().loc == ui.user)
 				changetonote(2)
 			else
-				pda.close(ui.user)
+				pda().close(ui.user)
 			return TRUE
 		if("Note3")
-			if(pda.loc == ui.user)
+			if(pda().loc == ui.user)
 				changetonote(3)
 			else
-				pda.close(ui.user)
+				pda().close(ui.user)
 			return TRUE
 		if("Note4")
-			if(pda.loc == ui.user)
+			if(pda().loc == ui.user)
 				changetonote(4)
 			else
-				pda.close(ui.user)
+				pda().close(ui.user)
 			return TRUE
 		if("Note5")
-			if(pda.loc == ui.user)
+			if(pda().loc == ui.user)
 				changetonote(5)
 			else
-				pda.close(ui.user)
+				pda().close(ui.user)
 			return TRUE
 		if("Note6")
-			if(pda.loc == ui.user)
+			if(pda().loc == ui.user)
 				changetonote(6)
 			else
-				pda.close(ui.user)
+				pda().close(ui.user)
 			return TRUE
 		if("Note7")
-			if(pda.loc == ui.user)
+			if(pda().loc == ui.user)
 				changetonote(7)
 			else
-				pda.close(ui.user)
+				pda().close(ui.user)
 			return TRUE
 		if("Note8")
-			if(pda.loc == ui.user)
+			if(pda().loc == ui.user)
 				changetonote(8)
 			else
-				pda.close(ui.user)
+				pda().close(ui.user)
 			return TRUE
 		if("Note9")
-			if(pda.loc == ui.user)
+			if(pda().loc == ui.user)
 				changetonote(9)
 			else
-				pda.close(ui.user)
+				pda().close(ui.user)
 			return TRUE
 		if("Note10")
-			if(pda.loc == ui.user)
+			if(pda().loc == ui.user)
 				changetonote(10)
 			else
-				pda.close(ui.user)
+				pda().close(ui.user)
 			return TRUE
 		if("Note11")
-			if(pda.loc == ui.user)
+			if(pda().loc == ui.user)
 				changetonote(11)
 			else
-				pda.close(ui.user)
+				pda().close(ui.user)
 			return TRUE
 		if("Note12")
-			if(pda.loc == ui.user)
+			if(pda().loc == ui.user)
 				changetonote(12)
 			else
-				pda.close(ui.user)
+				pda().close(ui.user)
 			return TRUE
 
 /datum/data/pda/app/notekeeper/proc/printnote(mob/user)
@@ -340,11 +340,11 @@
 	data["job_datum"] = null
 	data["allow_change_job"] = null
 	data["job_choices"] = null
-	if(pda.id)
-		data["card"] = "[pda.id]"
-		data["assignment"] = pda.id.assignment
+	if(pda().id)
+		data["card"] = "[pda().id]"
+		data["assignment"] = pda().id.assignment
 		data["card_cooldown"] = getCooldown()
-		var/datum/job/job = SSjob.get_job(pda.id.rank)
+		var/datum/job/job = SSjob.get_job(pda().id.rank)
 		if(job)
 			data["job_datum"] = list(
 				"title" = job.title,
@@ -398,7 +398,7 @@
 		   && job.timeoff_factor > 0
 
 /datum/data/pda/app/timeclock/proc/makeOnDuty(mob/user, newrank, newassignment)
-	var/datum/job/oldjob = SSjob.get_job(pda.id.rank)
+	var/datum/job/oldjob = SSjob.get_job(pda().id.rank)
 	var/datum/job/newjob = SSjob.get_job(newrank)
 	if(!oldjob || !isOpenOnDutyJob(user, oldjob.pto_type, newjob))
 		return
@@ -412,21 +412,21 @@
 				return
 	if(newjob)
 		newjob.register_shift_key(user.client.ckey)
-		pda.id.access = newjob.get_access()
-		pda.id.rank = newjob.title
-		pda.id.assignment = newassignment
-		pda.id.name = text("[pda.id.registered_name]'s ID Card ([pda.id.assignment])")
-		GLOB.data_core.manifest_modify(pda.id.registered_name, pda.id.assignment, pda.id.rank)
-		pda.id.last_job_switch = world.time
-		callHook("reassign_employee", list(pda.id))
+		pda().id.access = newjob.get_access()
+		pda().id.rank = newjob.title
+		pda().id.assignment = newassignment
+		pda().id.name = text("[pda().id.registered_name]'s ID Card ([pda().id.assignment])")
+		GLOB.data_core.manifest_modify(pda().id.registered_name, pda().id.assignment, pda().id.rank)
+		pda().id.last_job_switch = world.time
+		callHook("reassign_employee", list(pda().id))
 		newjob.current_positions++
-		user.mind.assigned_role = pda.id.rank
-		user.mind.role_alt_title = pda.id.assignment
-		announce.autosay("[pda.id.registered_name] has moved On-Duty as [pda.id.assignment].", "Employee Oversight", channel, zlevels = using_map.get_map_levels(get_z(src)))
+		user.mind.assigned_role = pda().id.rank
+		user.mind.role_alt_title = pda().id.assignment
+		announce.autosay("[pda().id.registered_name] has moved On-Duty as [pda().id.assignment].", "Employee Oversight", channel, zlevels = using_map.get_map_levels(get_z(src)))
 	return
 
 /datum/data/pda/app/timeclock/proc/makeOffDuty(mob/user)
-	var/datum/job/foundjob = SSjob.get_job(pda.id.rank)
+	var/datum/job/foundjob = SSjob.get_job(pda().id.rank)
 	if(!foundjob)
 		return
 	//If we're not in an area that allows clockout and not in a belly, shouldn't be able to clock out.
@@ -440,25 +440,25 @@
 			ptojob = job
 			break
 	if(ptojob)
-		var/oldtitle = pda.id.assignment
-		pda.id.access = ptojob.get_access()
-		pda.id.rank = ptojob.title
-		pda.id.assignment = ptojob.title
-		pda.id.name = text("[pda.id.registered_name]'s ID Card ([pda.id.assignment])")
-		GLOB.data_core.manifest_modify(pda.id.registered_name, pda.id.assignment, pda.id.rank)
-		pda.id.last_job_switch = world.time
-		callHook("reassign_employee", list(pda.id))
+		var/oldtitle = pda().id.assignment
+		pda().id.access = ptojob.get_access()
+		pda().id.rank = ptojob.title
+		pda().id.assignment = ptojob.title
+		pda().id.name = text("[pda().id.registered_name]'s ID Card ([pda().id.assignment])")
+		GLOB.data_core.manifest_modify(pda().id.registered_name, pda().id.assignment, pda().id.rank)
+		pda().id.last_job_switch = world.time
+		callHook("reassign_employee", list(pda().id))
 		user.mind.assigned_role = ptojob.title
 		user.mind.role_alt_title = ptojob.title
 		foundjob.current_positions--
-		announce.autosay("[pda.id.registered_name], [oldtitle], has moved Off-Duty.", "Employee Oversight", channel, zlevels = using_map.get_map_levels(get_z(src)))
+		announce.autosay("[pda().id.registered_name], [oldtitle], has moved Off-Duty.", "Employee Oversight", channel, zlevels = using_map.get_map_levels(get_z(src)))
 	return
 
 /datum/data/pda/app/timeclock/proc/isAllowedAreaClockout(mob/user)
 	return (get_area(user).flag_check(AREA_ALLOW_CLOCKOUT) || isbelly(user.loc))
 
 /datum/data/pda/app/timeclock/proc/checkCardCooldown(mob/user)
-	if(!pda.id)
+	if(!pda().id)
 		return FALSE
 	var/time_left = getCooldown()
 	if(time_left > 0)
@@ -468,17 +468,19 @@
 
 
 /datum/data/pda/app/timeclock/proc/getCooldown()
-	return 1 MINUTES - (world.time - pda.id.last_job_switch)
+	return 1 MINUTES - (world.time - pda().id.last_job_switch)
 
 /datum/data/pda/app/timeclock/proc/checkFace(mob/user)
 	var/turf/location = get_turf(user)
-	if(!pda.id)
+	if(!pda().id)
 		to_chat(user, span_notice("No ID is inserted."))
 		return FALSE
-	if(pda.id.registered_name != user.real_name)
+	if(pda().id.registered_name != user.real_name)
 		to_chat(user, span_notice("This does not appear to be your ID"))
 		return FALSE
 	else
-		message_admins("[key_name_admin(user)] has modified '[pda.id.registered_name]' 's ID with a pda timeclock. [ADMIN_JMP(location)]")
-		log_game("[key_name_admin(user)] has modified '[pda.id.registered_name]' 's ID with a pda timeclock.")
+		message_admins("[key_name_admin(user)] has modified '[pda().id.registered_name]' 's ID with a pda timeclock. [ADMIN_JMP(location)]")
+		log_game("[key_name_admin(user)] has modified '[pda().id.registered_name]' 's ID with a pda timeclock.")
 		return TRUE
+
+REF_OWNED(/datum/data/pda/app/timeclock, "announce")

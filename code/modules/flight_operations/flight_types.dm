@@ -50,26 +50,26 @@
 	var/surface_latitude
 	var/surface_longitude
 	var/required_capabilities = 0
-	var/atom/target
-	var/datum/expedition_site/expedition
+	var/tmp/target_handle
+	var/tmp/expedition_handle
 	var/discovered = TRUE
 	var/list/active_plans
 
 /datum/flight_destination/proc/is_available()
 	if(kind == FLIGHT_DEST_SYSTEM)
 		return FALSE
-	if(expedition)
-		return !QDELETED(expedition) && expedition.status != EXP_STATUS_EXPIRED
-	return target && !QDELETED(target)
+	if(expedition())
+		return !QDELETED(expedition()) && expedition().status != EXP_STATUS_EXPIRED
+	return target() && !QDELETED(target())
 
 /datum/flight_vessel
 	var/id
 	var/name = "Unregistered Vessel"
 	var/capabilities = 0
-	var/obj/effect/overmap/visitable/ship/ship
-	var/datum/shuttle/autodock/overmap/shuttle
+	var/tmp/ship_handle
+	var/tmp/shuttle_handle
 	var/datum/flight_plan/active_plan
-	var/datum/expedition_site/active_expedition
+	var/tmp/active_expedition_handle
 	/// Authoritative celestial context; replaces hidden overmap tile coordinates.
 	var/orbit_parent_id
 	/// Reserved port occupied by the vessel, if physically docked.
@@ -95,9 +95,9 @@ REF_OWNED(/datum/flight_vessel, "active_plan")
 	/// Logical destinations whose routes may terminate at this port. The physical
 	/// host remains authoritative for rendering and occupancy.
 	var/list/serves_destination_ids
-	var/obj/effect/shuttle_landmark/landmark
-	var/datum/flight_vessel/occupied_by
-	var/datum/flight_plan/reserved_by
+	var/tmp/landmark_handle
+	var/tmp/occupied_by_handle
+	var/tmp/reserved_by_handle
 	/// Ports in the same physical bay exclude one another even when their alignment landmarks differ.
 	var/berth_group
 
@@ -105,27 +105,27 @@ REF_OWNED(/datum/flight_vessel, "active_plan")
 	return host_destination_id == destination_id || (destination_id in serves_destination_ids)
 
 /datum/flight_port/proc/can_accept(datum/flight_vessel/vessel, datum/flight_plan/requesting_plan)
-	if(!vessel?.shuttle || !landmark || QDELETED(landmark) || !landmark.is_valid(vessel.shuttle))
+	if(!vessel?.shuttle() || !landmark() || QDELETED(landmark()) || !landmark().is_valid(vessel.shuttle()))
 		return FALSE
-	if(istype(landmark, /obj/effect/shuttle_landmark/southern_cross/expedition_station))
-		var/obj/effect/shuttle_landmark/southern_cross/expedition_station/station_berth = landmark
-		if(!station_berth.accepts_shuttle(vessel.shuttle))
+	if(istype(landmark(), /obj/effect/shuttle_landmark/southern_cross/expedition_station))
+		var/obj/effect/shuttle_landmark/southern_cross/expedition_station/station_berth = landmark()
+		if(!station_berth.accepts_shuttle(vessel.shuttle()))
 			return FALSE
 	if(berth_group)
 		for(var/id in SSflight_operations.ports)
 			var/datum/flight_port/sibling = SSflight_operations.ports[id]
-			if(sibling != src && sibling.berth_group == berth_group && (sibling.occupied_by || (sibling.reserved_by && sibling.reserved_by != requesting_plan)))
+			if(sibling != src && sibling.berth_group == berth_group && (sibling.occupied_by() || (sibling.reserved_by() && sibling.reserved_by() != requesting_plan)))
 				return FALSE
-	if(occupied_by && occupied_by != vessel)
+	if(occupied_by() && occupied_by() != vessel)
 		return FALSE
-	return !reserved_by || reserved_by == requesting_plan
+	return !reserved_by() || reserved_by() == requesting_plan
 
 /datum/flight_plan
 	var/id
 	var/datum/flight_vessel/vessel
-	var/datum/flight_destination/origin
-	var/datum/flight_destination/destination
-	var/datum/flight_port/arrival_port
+	var/tmp/origin_handle
+	var/tmp/destination_handle
+	var/tmp/arrival_port_handle
 	var/state = FLIGHT_PLAN_DRAFT
 	var/failure_reason
 	var/created_at
@@ -142,12 +142,12 @@ REF_OWNED(/datum/flight_vessel, "active_plan")
 /datum/flight_plan/New(datum/flight_vessel/new_vessel, datum/flight_destination/new_origin, datum/flight_destination/new_destination)
 	..()
 	vessel = new_vessel
-	origin = new_origin
-	destination = new_destination
-	LAZYADD(destination.active_plans, src)
+	origin_handle = om_handle(new_origin)
+	destination_handle = om_handle(new_destination)
+	LAZYADD(destination().active_plans, src)
 	created_at = world.time
 	id = "flight-[REF(src)]"
-	if(destination?.expedition && destination.expedition.z_level <= 0)
+	if(destination()?.expedition() && destination().expedition().z_level <= 0)
 		generation_state = FLIGHT_GENERATION_QUEUED
 		generation_stage = "Awaiting departure"
 
@@ -157,21 +157,21 @@ REF_OWNED(/datum/flight_vessel, "active_plan")
 		vessel.active_plan = null
 	release_leases(state != FLIGHT_PLAN_ARRIVED)
 	vessel = null
-	origin = null
-	destination = null
-	arrival_port = null
+	origin_handle = null
+	destination_handle = null
+	arrival_port_handle = null
 	return ..()
 
 /datum/flight_plan/proc/release_leases(release_assignment = FALSE)
-	if(destination)
-		LAZYREMOVE(destination.active_plans, src)
-	if(arrival_port?.reserved_by == src)
-		arrival_port.reserved_by = null
-	if(release_assignment && destination?.expedition?.assigned_flight_vessel == vessel)
-		destination.expedition.assigned_flight_vessel = null
-		destination.expedition.assigned_shuttle = null
-		if(vessel?.active_expedition == destination.expedition)
-			vessel.active_expedition = null
+	if(destination())
+		LAZYREMOVE(destination().active_plans, src)
+	if(arrival_port()?.reserved_by() == src)
+		arrival_port().reserved_by_handle = null
+	if(release_assignment && destination()?.expedition()?.assigned_flight_vessel() == vessel)
+		destination().expedition().assigned_flight_vessel_handle = null
+		destination().expedition().assigned_shuttle_handle = null
+		if(vessel?.active_expedition() == destination().expedition())
+			vessel.active_expedition_handle = null
 
 /datum/flight_plan/proc/state_name()
 	switch(state)
@@ -188,19 +188,19 @@ REF_OWNED(/datum/flight_vessel, "active_plan")
 	return "Unknown"
 
 /datum/flight_plan/proc/start()
-	if(state != FLIGHT_PLAN_DRAFT || !vessel || !destination?.is_available())
+	if(state != FLIGHT_PLAN_DRAFT || !vessel || !destination()?.is_available())
 		return FALSE
-	if(!vessel.has_capabilities(destination.required_capabilities))
+	if(!vessel.has_capabilities(destination().required_capabilities))
 		fail("Vessel lacks the capabilities required for this destination.")
 		return FALSE
-	if(destination.kind == FLIGHT_DEST_STATION)
-		arrival_port = SSflight_operations.reserve_arrival_port(src)
-		if(!arrival_port)
+	if(destination().kind == FLIGHT_DEST_STATION)
+		arrival_port_handle = om_handle(SSflight_operations.reserve_arrival_port(src))
+		if(!arrival_port())
 			fail("No compatible station berth is available.")
 			return FALSE
-	if(destination.kind == FLIGHT_DEST_VESSEL)
-		arrival_port = SSflight_operations.reserve_arrival_port(src)
-		if(!arrival_port)
+	if(destination().kind == FLIGHT_DEST_VESSEL)
+		arrival_port_handle = om_handle(SSflight_operations.reserve_arrival_port(src))
+		if(!arrival_port())
 			fail("No compatible arrival port is available.")
 			return FALSE
 	state = FLIGHT_PLAN_PREPARING
@@ -208,7 +208,7 @@ REF_OWNED(/datum/flight_vessel, "active_plan")
 	if(generation_state == FLIGHT_GENERATION_QUEUED)
 		generation_state = FLIGHT_GENERATION_RUNNING
 		generation_stage = "Reserving destination"
-	log_world("Flight plan [id] engaged: [vessel.name] from [origin?.name || "local orbit"] to [destination.name].")
+	log_world("Flight plan [id] engaged: [vessel.name] from [origin()?.name || "local orbit"] to [destination().name].")
 	return TRUE
 
 /datum/flight_plan/proc/fail(reason)
@@ -225,3 +225,47 @@ REF_OWNED(/datum/flight_vessel, "active_plan")
 		return FALSE
 	cancel_requested = TRUE
 	return TRUE
+
+/// LC-refs: the landmark this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/flight_port/proc/landmark() as /obj/effect/shuttle_landmark
+	return om_resolve(landmark_handle)
+
+/// LC-refs: the origin this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/flight_plan/proc/origin() as /datum/flight_destination
+	return om_resolve(origin_handle)
+
+/// LC-refs: the ship this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/flight_vessel/proc/ship() as /obj/effect/overmap/visitable/ship
+	return om_resolve(ship_handle)
+
+/// LC-refs: the occupied_by this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/flight_port/proc/occupied_by() as /datum/flight_vessel
+	return om_resolve(occupied_by_handle)
+
+/// LC-refs: the reserved_by this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/flight_port/proc/reserved_by() as /datum/flight_plan
+	return om_resolve(reserved_by_handle)
+
+/// LC-refs: the expedition this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/flight_destination/proc/expedition() as /datum/expedition_site
+	return om_resolve(expedition_handle)
+
+/// LC-refs: the destination this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/flight_plan/proc/destination() as /datum/flight_destination
+	return om_resolve(destination_handle)
+
+/// LC-refs: the arrival_port this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/flight_plan/proc/arrival_port() as /datum/flight_port
+	return om_resolve(arrival_port_handle)
+
+/// LC-refs: the shuttle this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/flight_vessel/proc/shuttle() as /datum/shuttle/autodock/overmap
+	return om_resolve(shuttle_handle)
+
+/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/flight_destination/proc/target() as /atom
+	return om_resolve(target_handle)
+
+/// LC-refs: the active_expedition this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/flight_vessel/proc/active_expedition() as /datum/expedition_site
+	return om_resolve(active_expedition_handle)

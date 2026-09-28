@@ -263,3 +263,5 @@ DECLARE_INTERACTIONS(/obj/item/trash/bowl, INTERACT_ITEM(null, PROC_REF(interact
 	return INTERACTION_HANDLED_PASS
 
 #undef INGREDIENT_LIMIT
+
+REF_OWNED(/obj/item/reagent_containers/food/snacks/customizable, list("topping", "filling"))

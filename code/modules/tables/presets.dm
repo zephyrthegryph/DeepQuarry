@@ -4,7 +4,7 @@
 	color = "#EEEEEE"
 
 /obj/structure/table/standard/Initialize(mapload)
-	material = get_material_by_name(DEFAULT_TABLE_MATERIAL)
+	material_handle = om_handle(get_material_by_name(DEFAULT_TABLE_MATERIAL))
 	. = ..()
 
 /obj/structure/table/steel
@@ -12,7 +12,7 @@
 	color = "#666666"
 
 /obj/structure/table/steel/Initialize(mapload)
-	material = get_material_by_name(MAT_STEEL)
+	material_handle = om_handle(get_material_by_name(MAT_STEEL))
 	. = ..()
 
 /obj/structure/table/marble
@@ -20,7 +20,7 @@
 	color = "#CCCCCC"
 
 /obj/structure/table/marble/Initialize(mapload)
-	material = get_material_by_name(MAT_MARBLE)
+	material_handle = om_handle(get_material_by_name(MAT_MARBLE))
 	. = ..()
 
 /obj/structure/table/reinforced
@@ -28,8 +28,8 @@
 	color = "#EEEEEE"
 
 /obj/structure/table/reinforced/Initialize(mapload)
-	material = get_material_by_name(DEFAULT_TABLE_MATERIAL)
-	reinforced = get_material_by_name(MAT_STEEL)
+	material_handle = om_handle(get_material_by_name(DEFAULT_TABLE_MATERIAL))
+	reinforced_handle = om_handle(get_material_by_name(MAT_STEEL))
 	. = ..()
 
 /obj/structure/table/steel_reinforced
@@ -37,8 +37,8 @@
 	color = "#666666"
 
 /obj/structure/table/steel_reinforced/Initialize(mapload)
-	material = get_material_by_name(MAT_STEEL)
-	reinforced = get_material_by_name(MAT_STEEL)
+	material_handle = om_handle(get_material_by_name(MAT_STEEL))
+	reinforced_handle = om_handle(get_material_by_name(MAT_STEEL))
 	. = ..()
 
 /obj/structure/table/wooden_reinforced
@@ -46,8 +46,8 @@
 	color = "#824B28"
 
 /obj/structure/table/wooden_reinforced/Initialize(mapload)
-	material = get_material_by_name(MAT_WOOD)
-	reinforced = get_material_by_name(MAT_STEEL)
+	material_handle = om_handle(get_material_by_name(MAT_WOOD))
+	reinforced_handle = om_handle(get_material_by_name(MAT_STEEL))
 	. = ..()
 
 /obj/structure/table/woodentable
@@ -55,7 +55,7 @@
 	color = "#824B28"
 
 /obj/structure/table/woodentable/Initialize(mapload)
-	material = get_material_by_name(MAT_WOOD)
+	material_handle = om_handle(get_material_by_name(MAT_WOOD))
 	. = ..()
 
 /obj/structure/table/sifwoodentable
@@ -63,7 +63,7 @@
 	color = "#0099cc"
 
 /obj/structure/table/sifwoodentable/Initialize(mapload)
-	material = get_material_by_name(MAT_SIFWOOD)
+	material_handle = om_handle(get_material_by_name(MAT_SIFWOOD))
 	. = ..()
 
 /obj/structure/table/sifwooden_reinforced
@@ -71,8 +71,8 @@
 	color = "#824B28"
 
 /obj/structure/table/sifwooden_reinforced/Initialize(mapload)
-	material = get_material_by_name(MAT_SIFWOOD)
-	reinforced = get_material_by_name(MAT_STEEL)
+	material_handle = om_handle(get_material_by_name(MAT_SIFWOOD))
+	reinforced_handle = om_handle(get_material_by_name(MAT_STEEL))
 	. = ..()
 
 /obj/structure/table/hardwoodtable
@@ -80,14 +80,14 @@
 	color = "#42291a"
 
 /obj/structure/table/hardwoodtable/Initialize(mapload)
-	material = get_material_by_name(MAT_HARDWOOD)
+	material_handle = om_handle(get_material_by_name(MAT_HARDWOOD))
 	. = ..()
 
 /obj/structure/table/gamblingtable
 	icon_state = "gamble_preview"
 
 /obj/structure/table/gamblingtable/Initialize(mapload)
-	material = get_material_by_name(MAT_WOOD)
+	material_handle = om_handle(get_material_by_name(MAT_WOOD))
 	carpeted = 1
 	. = ..()
 
@@ -97,7 +97,7 @@
 	alpha = 77 // 0.3 * 255
 
 /obj/structure/table/glass/Initialize(mapload)
-	material = get_material_by_name(MAT_GLASS)
+	material_handle = om_handle(get_material_by_name(MAT_GLASS))
 	. = ..()
 
 /obj/structure/table/borosilicate
@@ -106,7 +106,7 @@
 	alpha = 77
 
 /obj/structure/table/borosilicate/Initialize(mapload)
-	material = get_material_by_name(MAT_PGLASS)
+	material_handle = om_handle(get_material_by_name(MAT_PGLASS))
 	. = ..()
 
 /obj/structure/table/holotable
@@ -114,14 +114,14 @@
 	color = "#EEEEEE"
 
 /obj/structure/table/holotable/Initialize(mapload)
-	material = get_material_by_name("holo[DEFAULT_TABLE_MATERIAL]")
+	material_handle = om_handle(get_material_by_name("holo[DEFAULT_TABLE_MATERIAL]"))
 	. = ..()
 
 /obj/structure/table/woodentable/holotable
 	icon_state = "holo_preview"
 
 /obj/structure/table/woodentable/holotable/Initialize(mapload)
-	material = get_material_by_name("holowood")
+	material_handle = om_handle(get_material_by_name("holowood"))
 	. = ..()
 
 /obj/structure/table/alien
@@ -132,7 +132,7 @@
 	can_plate = FALSE
 
 /obj/structure/table/alien/Initialize(mapload)
-	material = get_material_by_name(MAT_ALIEN_ALIUM)
+	material_handle = om_handle(get_material_by_name(MAT_ALIEN_ALIUM))
 	verbs -= /obj/structure/table/verb/do_flip
 	verbs -= /obj/structure/table/proc/do_put
 	. = ..()
@@ -147,7 +147,7 @@
 	color = "#EEEEEE"
 
 /obj/structure/table/bench/standard/Initialize(mapload)
-	material = get_material_by_name(DEFAULT_TABLE_MATERIAL)
+	material_handle = om_handle(get_material_by_name(DEFAULT_TABLE_MATERIAL))
 	. = ..()
 
 /obj/structure/table/bench/steel
@@ -155,7 +155,7 @@
 	color = "#666666"
 
 /obj/structure/table/bench/steel/Initialize(mapload)
-	material = get_material_by_name(MAT_STEEL)
+	material_handle = om_handle(get_material_by_name(MAT_STEEL))
 	. = ..()
 
 
@@ -164,7 +164,7 @@
 	color = "#CCCCCC"
 
 /obj/structure/table/bench/marble/Initialize(mapload)
-	material = get_material_by_name(MAT_MARBLE)
+	material_handle = om_handle(get_material_by_name(MAT_MARBLE))
 	. = ..()
 /*
 /obj/structure/table/bench/reinforced
@@ -199,7 +199,7 @@
 	color = "#824B28"
 
 /obj/structure/table/bench/wooden/Initialize(mapload)
-	material = get_material_by_name(MAT_WOOD)
+	material_handle = om_handle(get_material_by_name(MAT_WOOD))
 	. = ..()
 
 /obj/structure/table/bench/sifwooden
@@ -207,7 +207,7 @@
 	color = "#0099cc"
 
 /obj/structure/table/bench/sifwooden/Initialize(mapload)
-	material = get_material_by_name(MAT_SIFWOOD)
+	material_handle = om_handle(get_material_by_name(MAT_SIFWOOD))
 	. = ..()
 
 /obj/structure/table/bench/sifwooden/padded
@@ -218,7 +218,7 @@
 	icon_state = "padded_preview"
 
 /obj/structure/table/bench/padded/Initialize(mapload)
-	material = get_material_by_name(MAT_STEEL)
+	material_handle = om_handle(get_material_by_name(MAT_STEEL))
 	carpeted = 1
 	. = ..()
 
@@ -228,7 +228,7 @@
 	alpha = 77 // 0.3 * 255
 
 /obj/structure/table/bench/glass/Initialize(mapload)
-	material = get_material_by_name(MAT_GLASS)
+	material_handle = om_handle(get_material_by_name(MAT_GLASS))
 	. = ..()
 
 /*
@@ -253,7 +253,7 @@
 	color = "#fffce6"
 
 /obj/structure/table/bench/glamour/Initialize(mapload)
-	material = get_material_by_name(MAT_GLAMOUR)
+	material_handle = om_handle(get_material_by_name(MAT_GLAMOUR))
 	. = ..()
 
 //new wood types
@@ -262,7 +262,7 @@
 	color = "#f6dec0"
 
 /obj/structure/table/birch/Initialize(mapload)
-	material = get_material_by_name(MAT_BIRCHWOOD)
+	material_handle = om_handle(get_material_by_name(MAT_BIRCHWOOD))
 	. = ..()
 
 /obj/structure/table/pine
@@ -270,7 +270,7 @@
 	color = "#cd9d6f"
 
 /obj/structure/table/pine/Initialize(mapload)
-	material = get_material_by_name(MAT_PINEWOOD)
+	material_handle = om_handle(get_material_by_name(MAT_PINEWOOD))
 	. = ..()
 
 /obj/structure/table/oak
@@ -278,7 +278,7 @@
 	color = "#674928"
 
 /obj/structure/table/oak/Initialize(mapload)
-	material = get_material_by_name(MAT_OAKWOOD)
+	material_handle = om_handle(get_material_by_name(MAT_OAKWOOD))
 	. = ..()
 
 /obj/structure/table/acacia
@@ -286,7 +286,7 @@
 	color = "#b75e12"
 
 /obj/structure/table/acacia/Initialize(mapload)
-	material = get_material_by_name(MAT_ACACIAWOOD)
+	material_handle = om_handle(get_material_by_name(MAT_ACACIAWOOD))
 	. = ..()
 
 /obj/structure/table/redwood
@@ -294,7 +294,7 @@
 	color = "#a45a52"
 
 /obj/structure/table/redwood/Initialize(mapload)
-	material = get_material_by_name(MAT_REDWOOD)
+	material_handle = om_handle(get_material_by_name(MAT_REDWOOD))
 	. = ..()
 
 
@@ -308,7 +308,7 @@
 	can_plate = FALSE
 
 /obj/structure/table/darkglass/Initialize(mapload)
-	material = get_material_by_name(MAT_DARKGLASS)
+	material_handle = om_handle(get_material_by_name(MAT_DARKGLASS))
 	verbs -= /obj/structure/table/verb/do_flip
 	verbs -= /obj/structure/table/proc/do_put
 
@@ -331,7 +331,7 @@
 	can_plate = FALSE
 
 /obj/structure/table/fancyblack/Initialize(mapload)
-	material = get_material_by_name(MAT_FANCYBLACK)
+	material_handle = om_handle(get_material_by_name(MAT_FANCYBLACK))
 	verbs -= /obj/structure/table/verb/do_flip
 	verbs -= /obj/structure/table/proc/do_put
 
@@ -346,5 +346,5 @@
 	color = "#FFFF00"
 
 /obj/structure/table/gold/Initialize(mapload)
-	material = get_material_by_name(MAT_GOLD)
+	material_handle = om_handle(get_material_by_name(MAT_GOLD))
 	. = ..()

@@ -185,7 +185,7 @@
 	if(brain.primary_threat)
 		return null  // in combat, don't run home
 	var/mob/living/owner = brain.get_owner()
-	var/turf/home = brain.home_turf
+	var/turf/home = brain.home_turf()
 	if(!owner || !home || owner.z != home.z)
 		return null
 	// Use brain.max_home_distance as override when set; defaults to return_threshold.

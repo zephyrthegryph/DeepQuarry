@@ -14,7 +14,7 @@
 	var/turf/simulated/mineral/min_turf = loc
 	if(!istype(min_turf))
 		return INITIALIZE_HINT_QDEL
-	var/datum/ore/M = min_turf.mineral
+	var/datum/ore/M = min_turf.mineral()
 	if(!M)
 		return INITIALIZE_HINT_QDEL
 	name = "[M.display_name] deposit"
@@ -32,3 +32,5 @@
 		else
 			to_chat(world, "No ore data for [src]!")
 	return scanner_image
+
+REF_OWNED(/obj/effect/mineral, "scanner_image")

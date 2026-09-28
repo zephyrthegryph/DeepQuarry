@@ -5,14 +5,14 @@
 	// NanoTrasen TCS Language - Made by Doohl
 
 /datum/n_Interpreter/TCS_Interpreter
-	var/datum/TCS_Compiler/Compiler
+	var/tmp/Compiler_handle
 
 /datum/n_Interpreter/TCS_Interpreter/HandleError(datum/runtimeError/e)
-	Compiler.Holder.add_entry(e.ToString(), "Execution Error")
+	Compiler().Holder().add_entry(e.ToString(), "Execution Error")
 
 /datum/TCS_Compiler
 	var/datum/n_Interpreter/TCS_Interpreter/interpreter
-	var/obj/machinery/telecomms/server/Holder	// the server that is running the code
+	var/tmp/Holder_handle	// the server that is running the code
 	var/ready = 1 // 1 if ready to run code
 
 	/** Proc: Compile
@@ -37,7 +37,7 @@
 
 	interpreter 		= new(program)
 	interpreter.persist	= 1
-	interpreter.Compiler= src
+	interpreter.Compiler_handle= om_handle(src)
 
 	return returnerrors
 
@@ -62,7 +62,7 @@
 	if(om_busy(src))
 		return TRUE
 
-	interpreter.container = src
+	interpreter.container_handle = om_handle(src)
 
 	interpreter.SetVar("PI"		, 	3.141592653)	// value of pi
 	interpreter.SetVar("E" 		, 	2.718281828)	// value of e
@@ -226,7 +226,7 @@
 		return STEP_FAIL("gone")
 	apply_signal(signal)
 	if(T.relay)
-		Holder?.relay_signal(signal)
+		Holder()?.relay_signal(signal)
 	return STEP_DONE
 
 /datum/TCS_Compiler/proc/script_cancelled(datum/om/task/T)
@@ -327,3 +327,13 @@
 	var/pass = S.relay_information(newsign, /obj/machinery/telecomms/hub)
 	if(!pass)
 		S.relay_information(newsign, /obj/machinery/telecomms/broadcaster) // send this simple message to broadcasters
+
+REF_OWNED(/datum/TCS_Compiler, "interpreter")
+
+/// LC-refs: the Compiler this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/n_Interpreter/TCS_Interpreter/proc/Compiler() as /datum/TCS_Compiler
+	return om_resolve(Compiler_handle)
+
+/// LC-refs: the server that is running the code -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/TCS_Compiler/proc/Holder() as /obj/machinery/telecomms/server
+	return om_resolve(Holder_handle)

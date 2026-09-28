@@ -4,7 +4,7 @@
 	/// "organized" | "linear" — only meaningful when viewing the error_cache.
 	var/dq_linear = FALSE
 	/// Backwards-navigation target for the panel.
-	var/datum/error_viewer/dq_back_to = null
+	var/tmp/dq_back_to_handle
 
 /datum/error_viewer/browse_to(client/user, html)
 	// body is now a TGUI panel; the legacy html arg is ignored.
@@ -26,12 +26,12 @@
 	return
 
 /datum/error_viewer/error_source/ensure_back_pointer()
-	if(!dq_back_to)
-		dq_back_to = GLOB.error_cache
+	if(!dq_back_to())
+		dq_back_to_handle = om_handle(GLOB.error_cache)
 
 /datum/error_viewer/error_entry/ensure_back_pointer()
-	if(!dq_back_to)
-		dq_back_to = error_source
+	if(!dq_back_to())
+		dq_back_to_handle = om_handle(error_source())
 
 /datum/error_viewer/proc/dq_pack_link_ref(datum/error_viewer/EV)
 	if(!EV)
@@ -42,7 +42,7 @@
 	var/list/data = list()
 	data["view_kind"] = "unknown"
 	data["title"] = name
-	data["back_ref"] = dq_pack_link_ref(dq_back_to)
+	data["back_ref"] = dq_pack_link_ref(dq_back_to())
 	data["linear"] = !!dq_linear
 	data["total_runtimes"] = GLOB.total_runtimes
 	data["total_skipped"] = GLOB.total_runtimes_skipped
@@ -89,11 +89,11 @@
 	data["view_kind"] = "entry"
 	data["desc"] = desc
 	data["usr_ref"] = usr_ref || null
-	data["usr_loc_ref"] = usr_loc ? "[REF(usr_loc)]" : null
-	if(usr_loc)
-		data["usr_loc_x"] = usr_loc.x
-		data["usr_loc_y"] = usr_loc.y
-		data["usr_loc_z"] = usr_loc.z
+	data["usr_loc_ref"] = usr_loc() ? "[REF(usr_loc())]" : null
+	if(usr_loc())
+		data["usr_loc_x"] = usr_loc().x
+		data["usr_loc_y"] = usr_loc().y
+		data["usr_loc_z"] = usr_loc().z
 	return data
 
 /datum/error_viewer/tgui_act(action, list/params, datum/tgui/ui)
@@ -112,13 +112,13 @@
 			var/ref = "[params["ref"]]"
 			var/datum/error_viewer/EV = locate(ref)
 			if(istype(EV))
-				EV.dq_back_to = src
+				EV.dq_back_to_handle = om_handle(src)
 				EV.dq_linear = dq_linear
 				EV.tgui_interact(ui.user)
 			return TRUE
 		if("back")
-			if(dq_back_to)
-				dq_back_to.tgui_interact(ui.user)
+			if(dq_back_to())
+				dq_back_to().tgui_interact(ui.user)
 			return TRUE
 		if("vv_usr")
 			if(istype(src, /datum/error_viewer/error_entry))
@@ -141,13 +141,17 @@
 		if("vv_usr_loc")
 			if(istype(src, /datum/error_viewer/error_entry))
 				var/datum/error_viewer/error_entry/E = src
-				if(E.usr_loc)
-					var/ref = "[REF(E.usr_loc)]"
+				if(E.usr_loc())
+					var/ref = "[REF(E.usr_loc())]"
 					ui.user.client?.view_var_Topic("Vars=[ref]", list("_src_" = "vars", "Vars" = ref))
 			return TRUE
 		if("jmp_usr_loc")
 			if(istype(src, /datum/error_viewer/error_entry))
 				var/datum/error_viewer/error_entry/E = src
-				if(E.usr_loc)
-					ui.user.client?.holder?.Topic("adminplayerobservecoodjump=1", list("_src_" = "holder", "adminplayerobservecoodjump" = "1", "X" = "[E.usr_loc.x]", "Y" = "[E.usr_loc.y]", "Z" = "[E.usr_loc.z]"))
+				if(E.usr_loc())
+					ui.user.client?.holder?.Topic("adminplayerobservecoodjump=1", list("_src_" = "holder", "adminplayerobservecoodjump" = "1", "X" = "[E.usr_loc().x]", "Y" = "[E.usr_loc().y]", "Z" = "[E.usr_loc().z]"))
 			return TRUE
+
+/// LC-refs: the dq_back_to this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/error_viewer/proc/dq_back_to() as /datum/error_viewer
+	return om_resolve(dq_back_to_handle)

@@ -14,23 +14,23 @@
 	light_color = "#05A6A8"
 
 /obj/machinery/computer/ship/engines/tgui_interact(mob/user, datum/tgui/ui)
-	if(!linked)
+	if(!linked())
 		display_reconnect_dialog(user, "ship control systems")
 		return
 
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
-		ui = new(user, src, "OvermapEngines", "[linked.name] Engines Control") // 390, 530
+		ui = new(user, src, "OvermapEngines", "[linked().name] Engines Control") // 390, 530
 		ui.open()
 
 /obj/machinery/computer/ship/engines/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	data["global_state"] = linked.engines_state
-	data["global_limit"] = round(linked.thrust_limit*100)
+	data["global_state"] = linked().engines_state
+	data["global_limit"] = round(linked().thrust_limit*100)
 	var/total_thrust = 0
 
 	var/list/enginfo = list()
-	for(var/datum/ship_engine/E in linked.engines)
+	for(var/datum/ship_engine/E in linked().engines)
 		var/list/rdata = list()
 		rdata["eng_type"] = E.name
 		rdata["eng_on"] = E.is_on()
@@ -38,7 +38,7 @@
 		rdata["eng_thrust_limiter"] = round(E.get_thrust_limit()*100)
 		var/list/status = E.get_status()
 		if(!islist(status))
-			log_runtime(EXCEPTION("Warning, ship [E.name] (\ref[E]) for [linked.name] returned a non-list status!"))
+			log_runtime(EXCEPTION("Warning, ship [E.name] (\ref[E]) for [linked().name] returned a non-list status!"))
 			status = list("Error")
 		rdata["eng_status"] = status
 		rdata["eng_reference"] = "\ref[E]"
@@ -55,27 +55,27 @@
 
 	switch(action)
 		if("global_toggle")
-			linked.engines_state = !linked.engines_state
-			for(var/datum/ship_engine/E in linked.engines)
-				if(linked.engines_state == !E.is_on())
+			linked().engines_state = !linked().engines_state
+			for(var/datum/ship_engine/E in linked().engines)
+				if(linked().engines_state == !E.is_on())
 					E.toggle()
 			. = TRUE
 
 		if("set_global_limit")
-			var/newlim = act_prompt(ui.user, action, params, ui, "k65", list("kind" = "number", "message" = "Input new thrust limit (0..100%)", "title" = "Thrust limit", "default" = linked.thrust_limit*100, "max" = 100, "min" = 0, "round" = FALSE))
+			var/newlim = act_prompt(ui.user, action, params, ui, "k65", list("kind" = "number", "message" = "Input new thrust limit (0..100%)", "title" = "Thrust limit", "default" = linked().thrust_limit*100, "max" = 100, "min" = 0, "round" = FALSE))
 			if(isnull(newlim))
 				return
 			if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
 				return FALSE
-			linked.thrust_limit = clamp(newlim/100, 0, 1)
-			for(var/datum/ship_engine/E in linked.engines)
-				E.set_thrust_limit(linked.thrust_limit)
+			linked().thrust_limit = clamp(newlim/100, 0, 1)
+			for(var/datum/ship_engine/E in linked().engines)
+				E.set_thrust_limit(linked().thrust_limit)
 			. = TRUE
 
 		if("global_limit")
-			linked.thrust_limit = clamp(linked.thrust_limit + text2num(params["global_limit"]), 0, 1)
-			for(var/datum/ship_engine/E in linked.engines)
-				E.set_thrust_limit(linked.thrust_limit)
+			linked().thrust_limit = clamp(linked().thrust_limit + text2num(params["global_limit"]), 0, 1)
+			for(var/datum/ship_engine/E in linked().engines)
+				E.set_thrust_limit(linked().thrust_limit)
 			. = TRUE
 
 		if("set_limit")

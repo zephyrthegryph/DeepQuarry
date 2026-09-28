@@ -44,11 +44,11 @@
 		sense()
 
 /obj/item/assembly/prox_sensor/proc/sense()
-	if((!holder && !secured) || !scanning || !COOLDOWN_FINISHED(src, next_activate))
+	if((!holder() && !secured) || !scanning || !COOLDOWN_FINISHED(src, next_activate))
 		return FALSE
 	var/turf/mainloc = get_turf(src)
 	pulse(0)
-	if(!holder)
+	if(!holder())
 		mainloc.visible_message("[icon2html(src,viewers(src))] *beep* *beep*", "*beep* *beep*")
 
 /obj/item/assembly/prox_sensor/periodic_step()
@@ -84,10 +84,10 @@
 	if(scanning)
 		add_overlay("prox_scanning")
 		LAZYADD(attached_overlays, "prox_scanning")
-	if(holder)
-		holder.update_icon()
-	if(holder && istype(holder.loc,/obj/item/grenade/chem_grenade))
-		var/obj/item/grenade/chem_grenade/grenade = holder.loc
+	if(holder())
+		holder().update_icon()
+	if(holder() && istype(holder().loc,/obj/item/grenade/chem_grenade))
+		var/obj/item/grenade/chem_grenade/grenade = holder().loc
 		grenade.primed(scanning)
 
 /obj/item/assembly/prox_sensor/Moved(atom/old_loc, direction, forced = FALSE)

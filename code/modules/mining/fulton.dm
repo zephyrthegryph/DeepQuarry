@@ -4,7 +4,7 @@
 	icon = 'icons/obj/fulton.dmi'
 	icon_state = "extraction_pack"
 	w_class = ITEMSIZE_NORMAL
-	var/obj/structure/extraction_point/beacon
+	var/tmp/beacon_handle
 	var/static/list/beacon_networks = list("station")
 	var/uses_left = 3
 	var/can_use_indoors = TRUE // Can be used anywhere.
@@ -37,12 +37,12 @@ DECLARE_INTERACTIONS(/obj/item/extraction_pack, INTERACT_USE(null, PROC_REF(inte
 
 		if(!A)
 			return TRUE
-		beacon = A
+		beacon_handle = om_handle(A)
 		to_chat(user, "You link the extraction pack to the beacon system.")
 	return TRUE
 
 /obj/item/extraction_pack/afterattack(atom/movable/A, mob/living/carbon/human/user, flag, params)
-	if(!beacon)
+	if(!beacon())
 		to_chat(user, "[src] is not linked to a beacon, and cannot be used.")
 		return
 	if(!can_use_indoors)
@@ -67,7 +67,7 @@ DECLARE_INTERACTIONS(/obj/item/extraction_pack, INTERACT_USE(null, PROC_REF(inte
 
 /// The pack is on: the balloon lifts `A` off (a sequence of steps on the holder, fulton_*()).
 /obj/item/extraction_pack/proc/attach_done(mob/living/carbon/human/user, atom/movable/A)
-	if(!beacon || A.anchored || !isturf(A.loc))
+	if(!beacon() || A.anchored || !isturf(A.loc))
 		return
 	to_chat(user, span_notice("You attach the pack to [A] and activate it."))
 	uses_left--
@@ -81,9 +81,9 @@ DECLARE_INTERACTIONS(/obj/item/extraction_pack, INTERACT_USE(null, PROC_REF(inte
 		A.anchored = TRUE
 		A.density = FALSE
 	var/list/flooring_near_beacon = list()
-	for(var/turf/simulated/floor/floor in orange(1, beacon))
+	for(var/turf/simulated/floor/floor in orange(1, beacon()))
 		flooring_near_beacon += floor
-	var/turf/landing = length(flooring_near_beacon) ? pick(flooring_near_beacon) : get_turf(beacon)
+	var/turf/landing = length(flooring_near_beacon) ? pick(flooring_near_beacon) : get_turf(beacon())
 	var/obj/effect/extraction_holder/holder_obj = new(A.loc)
 	holder_obj.appearance = A.appearance
 	A.forceMove(holder_obj)
@@ -184,7 +184,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/extraction_point, REGISTRY_EXTRACTION_BEACONS
 /obj/effect/extraction_holder
 	name = "extraction holder"
 	desc = "you shouldn't see this"
-	var/atom/movable/stored_obj
+	var/tmp/stored_obj_handle
 
 /obj/item/extraction_pack/proc/check_for_living_mobs(atom/A)
 	if(isliving(A))
@@ -200,3 +200,11 @@ REGISTRY_MEMBERSHIP(/obj/structure/extraction_point, REGISTRY_EXTRACTION_BEACONS
 
 /obj/effect/extraction_holder/singularity_pull()
 	return
+
+/// LC-refs: the beacon this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/extraction_pack/proc/beacon() as /obj/structure/extraction_point
+	return om_resolve(beacon_handle)
+
+/// LC-refs: the stored_obj this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/effect/extraction_holder/proc/stored_obj() as /atom/movable
+	return om_resolve(stored_obj_handle)

@@ -1911,8 +1911,8 @@
 		if(G.darkness_view)
 			see_in_dark += G.darkness_view
 			. = TRUE
-		if(G.overlay && client)
-			client.screen |= G.overlay
+		if(G.overlay() && client)
+			client.screen |= G.overlay()
 		if(G.vision_flags)
 			sight |= G.vision_flags
 			. = TRUE

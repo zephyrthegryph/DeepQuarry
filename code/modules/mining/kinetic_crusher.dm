@@ -105,7 +105,7 @@
 		var/obj/item/projectile/destabilizer/D = new /obj/item/projectile/destabilizer(proj_turf)
 		D.preparePixelProjectile(target, user, clickparams)
 		D.firer = user
-		D.hammer_synced = src
+		D.hammer_synced_handle = om_handle(src)
 		playsound(user, 'sound/weapons/plasma_cutter.ogg', 100, 1)
 		D.fire()
 		charged = FALSE
@@ -265,7 +265,7 @@ DECLARE_INTERACTIONS(/obj/item/kinetic_crusher/machete/gauntlets, INTERACT_USE(n
 	var/obj/item/offhand/crushergauntlets/O = new(M)
 	O.name = "[name] - readied"
 	O.desc = "As much as you'd like to punch things with one hand, [src] is far too unwieldy for that."
-	O.linked = src
+	O.linked_handle = om_handle(src)
 	M.put_in_inactive_hand(O)
 	offhand = O
 
@@ -283,29 +283,29 @@ DECLARE_INTERACTIONS(/obj/item/kinetic_crusher/machete/gauntlets, INTERACT_USE(n
 	w_class = ITEMSIZE_NO_CONTAINER
 
 /obj/item/offhand/crushergauntlets
-	var/obj/item/kinetic_crusher/machete/gauntlets/linked
+	var/tmp/linked_handle
 
 /obj/item/offhand/crushergauntlets/dropped(mob/user, equipping, slot)
 	SHOULD_CALL_PARENT(FALSE)
-	if(linked.wielded)
-		linked.ready_toggle(TRUE)
+	if(linked().wielded)
+		linked().ready_toggle(TRUE)
 
 /obj/item/kinetic_crusher/machete/gauntlets/rig
 	name = "\improper mounted proto-kinetic gear"
-	var/obj/item/rig_module/gauntlets/storing_module
+	var/tmp/storing_module_handle
 
 /obj/item/kinetic_crusher/machete/gauntlets/rig/dropped(mob/user, equipping, slot)
 	. = ..(user)
-	if(storing_module)
-		src.forceMove(storing_module)
-		storing_module.stored_gauntlets = src
+	if(storing_module())
+		src.forceMove(storing_module())
+		storing_module().stored_gauntlets = src
 		user.visible_message(
 			span_notice("[user] retracts [src] with a click and a hiss."),
 			span_notice("You retract [src] with a click and a hiss."),
 			span_notice("You hear a click and a hiss.")
 			)
 		playsound(src, 'sound/items/helmetdeploy.ogg', 40, 1)
-		storing_module.active = FALSE
+		storing_module().active = FALSE
 	else
 		QDEL_NULL(src)
 
@@ -338,7 +338,7 @@ DECLARE_INTERACTIONS(/obj/item/kinetic_crusher/machete/gauntlets, INTERACT_USE(n
 	damage = 0 //We're just here to mark people. This is still a melee weapon.
 	range = 6
 	accuracy = INFINITY	// NO.
-	var/obj/item/kinetic_crusher/hammer_synced
+	var/tmp/hammer_synced_handle
 
 /obj/item/projectile/destabilizer/on_impact(atom/A)
 	if(ismineralturf(A))
@@ -350,6 +350,20 @@ DECLARE_INTERACTIONS(/obj/item/kinetic_crusher/machete/gauntlets, INTERACT_USE(n
 /obj/item/projectile/destabilizer/on_hit(atom/target, blocked = FALSE)
 	if(isliving(target))
 		var/mob/living/L = target
-		if(hammer_synced.can_mark(L))
+		if(hammer_synced().can_mark(L))
 			L.add_modifier(/datum/modifier/crusher_mark, 30 SECONDS, firer, TRUE)
 	..()
+
+REF_OWNED(/obj/item/kinetic_crusher/machete/gauntlets, "offhand")
+
+/// LC-refs: the linked this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/offhand/crushergauntlets/proc/linked() as /obj/item/kinetic_crusher/machete/gauntlets
+	return om_resolve(linked_handle)
+
+/// LC-refs: the storing_module this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/kinetic_crusher/machete/gauntlets/rig/proc/storing_module() as /obj/item/rig_module/gauntlets
+	return om_resolve(storing_module_handle)
+
+/// LC-refs: the hammer_synced this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/projectile/destabilizer/proc/hammer_synced() as /obj/item/kinetic_crusher
+	return om_resolve(hammer_synced_handle)

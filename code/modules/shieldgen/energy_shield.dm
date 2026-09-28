@@ -11,7 +11,7 @@
 	layer = ABOVE_MOB_LAYER
 	density = TRUE
 	invisibility = INVISIBILITY_NONE
-	var/obj/machinery/power/shield_generator/gen = null // Owning generator
+	var/tmp/gen_handle	// Owning generator
 	var/disabled_for = 0
 	var/diffused_for = 0
 	can_atmos_pass = ATMOS_PASS_YES
@@ -38,7 +38,7 @@
 /obj/effect/shield/proc/update_color()
 	if(disabled_for || diffused_for)
 		color = "#FFA500"
-	else if(gen?.check_flag(MODEFLAG_OVERCHARGE))
+	else if(gen()?.check_flag(MODEFLAG_OVERCHARGE))
 		color = "#FE6666"
 	else
 		color = "#00AAFF"
@@ -50,7 +50,7 @@
 		set_light(0)
 
 /obj/effect/shield/proc/update_opacity()
-	if(gen?.check_flag(MODEFLAG_PHOTONIC) && !disabled_for && !diffused_for)
+	if(gen()?.check_flag(MODEFLAG_PHOTONIC) && !disabled_for && !diffused_for)
 		set_opacity(1)
 	else
 		set_opacity(0)
@@ -67,20 +67,20 @@
 	if(can_atmos_pass != ATMOS_PASS_YES)
 		update_nearby_tiles() //Force ZAS update
 	. = ..()
-	if(gen)
-		if(src in gen.field_segments)
-			LAZYREMOVE(gen.field_segments, src)
-		if(src in gen.damaged_segments)
-			LAZYREMOVE(gen.damaged_segments, src)
-		gen = null
+	if(gen())
+		if(src in gen().field_segments)
+			LAZYREMOVE(gen().field_segments, src)
+		if(src in gen().damaged_segments)
+			LAZYREMOVE(gen().damaged_segments, src)
+		gen_handle = null
 
 // Temporarily collapses this shield segment.
 /obj/effect/shield/proc/fail(duration)
 	if(duration <= 0)
 		return
 
-	if(gen)
-		LAZYOR(gen.damaged_segments, src)
+	if(gen())
+		LAZYOR(gen().damaged_segments, src)
 	disabled_for += duration
 
 	set_density(0)
@@ -90,7 +90,7 @@
 
 // Regenerates this shield segment.
 /obj/effect/shield/proc/regenerate()
-	if(!gen)
+	if(!gen())
 		return
 	if(nearby_active_shield_diffuser(src))
 		diffuse(5)
@@ -104,16 +104,16 @@
 		update_visuals()
 		update_nearby_tiles() //Force ZAS update
 		update_explosion_resistance()
-		LAZYREMOVE(gen.damaged_segments, src)
+		LAZYREMOVE(gen().damaged_segments, src)
 
 /obj/effect/shield/proc/diffuse(duration)
 	// The shield is trying to counter diffusers. Cause lasting stress on the shield.
-	if(gen?.check_flag(MODEFLAG_BYPASS) && !disabled_for)
+	if(gen()?.check_flag(MODEFLAG_BYPASS) && !disabled_for)
 		take_damage(duration * rand(8, 12), SHIELD_DAMTYPE_EM)
 		return
 
 	diffused_for = max(duration, 0)
-	LAZYOR(gen?.damaged_segments, src)
+	LAZYOR(gen()?.damaged_segments, src)
 
 	set_density(0)
 	update_visuals()
@@ -122,7 +122,7 @@
 
 /obj/effect/shield/attack_generic(source, damage, emote)
 	take_damage(damage, SHIELD_DAMTYPE_PHYSICAL)
-	if(gen.check_flag(MODEFLAG_OVERCHARGE) && istype(source, /mob/living/))
+	if(gen().check_flag(MODEFLAG_OVERCHARGE) && istype(source, /mob/living/))
 		overcharge_shock(source)
 	..(source, damage, emote)
 
@@ -136,7 +136,7 @@
 
 	for(var/obj/effect/shield/S in range(range, src))
 		// Don't affect shields owned by other shield generators
-		if(S.gen != src.gen)
+		if(S.gen() != src.gen())
 			continue
 		// The closer we are to impact site, the longer it takes for shield to come back up.
 		S.fail(-(-range + get_dist(src, S)) * 2)
@@ -146,7 +146,7 @@
 	range = between(1, range, 10) // Sanity check
 	for(var/obj/effect/shield/S in range(range, src))
 		// Don't affect shields owned by other shield generators
-		if(S.gen != src.gen || S == src)
+		if(S.gen() != src.gen() || S == src)
 			continue
 		// Note: Range is a non-exact aproximation of the spread effect. If it doesn't look good
 		// we'll need to switch to actually walking along the shields to get exact number of steps away.
@@ -163,7 +163,7 @@
 	flash_adjacent_segments(3)
 
 /obj/effect/shield/take_damage(damage, damtype, hitby)
-	if(!gen)
+	if(!gen())
 		qdel(src)
 		return
 
@@ -177,7 +177,7 @@
 
 	new /obj/effect/temp_visual/shield_impact_effect(get_turf(src))
 
-	switch(gen.deal_shield_damage(damage, damtype))
+	switch(gen().deal_shield_damage(damage, damtype))
 		if(SHIELD_ABSORBED)
 			flash_adjacent_segments(round(damage/10)) // Nice visual effect only.
 			return
@@ -216,7 +216,7 @@
 // As we have various shield modes, this handles whether specific things can pass or not.
 /obj/effect/shield/CanPass(atom/movable/mover, turf/target)
 	// Somehow we don't have a generator. This shouldn't happen. Delete the shield.
-	if(!gen)
+	if(!gen())
 		qdel(src)
 		return 1
 
@@ -224,7 +224,7 @@
 		return 1
 
 	if(mover)
-		return mover.can_pass_shield(gen)
+		return mover.can_pass_shield(gen())
 	return 1
 
 /obj/effect/shield/proc/set_can_atmos_pass(new_value)
@@ -265,7 +265,7 @@
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	user.do_attack_animation(src)
 
-	if(gen.check_flag(MODEFLAG_HYPERKINETIC))
+	if(gen().check_flag(MODEFLAG_HYPERKINETIC))
 		user.visible_message(span_danger("\The [user] hits \the [src] with \the [I]!"))
 		if(I.obj_damage_type() == BURN)
 			take_damage(I.force, SHIELD_DAMTYPE_HEAT)
@@ -278,7 +278,7 @@
 
 // Special treatment for meteors because they would otherwise penetrate right through the shield.
 /obj/effect/shield/Bumped(atom/movable/mover)
-	if(!gen)
+	if(!gen())
 		qdel(src)
 		return 0
 	mover.shield_impact(src)
@@ -297,17 +297,17 @@
 
 // Called when a flag is toggled. Can be used to add on-toggle behavior, such as visual changes.
 /obj/effect/shield/proc/flags_updated()
-	if(!gen)
+	if(!gen())
 		qdel(src)
 		return
 
 	// Update airflow - If atmospheric we block air as long as we're enabled (density works for this)
-	set_can_atmos_pass(gen.check_flag(MODEFLAG_ATMOSPHERIC) ? ATMOS_PASS_DENSITY : ATMOS_PASS_YES)
+	set_can_atmos_pass(gen().check_flag(MODEFLAG_ATMOSPHERIC) ? ATMOS_PASS_DENSITY : ATMOS_PASS_YES)
 	update_visuals()
 	update_explosion_resistance()
 
 /obj/effect/shield/proc/update_explosion_resistance()
-	if(gen && gen.check_flag(MODEFLAG_HYPERKINETIC))
+	if(gen() && gen().check_flag(MODEFLAG_HYPERKINETIC))
 		explosion_resistance = INFINITY
 	else
 		explosion_resistance = 0
@@ -359,14 +359,18 @@
 	return
 
 /mob/living/shield_impact(obj/effect/shield/S)
-	if(!S.gen.check_flag(MODEFLAG_OVERCHARGE))
+	if(!S.gen().check_flag(MODEFLAG_OVERCHARGE))
 		return
 	S.overcharge_shock(src)
 
 /obj/effect/meteor/shield_impact(obj/effect/shield/S)
-	if(!S.gen.check_flag(MODEFLAG_HYPERKINETIC))
+	if(!S.gen().check_flag(MODEFLAG_HYPERKINETIC))
 		return
 	S.take_damage(get_shield_damage(), SHIELD_DAMTYPE_PHYSICAL, src)
 	visible_message(span_danger("\The [src] breaks into dust!"))
 	make_debris()
 	qdel(src)
+
+/// LC-refs: Owning generator -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/effect/shield/proc/gen() as /obj/machinery/power/shield_generator
+	return om_resolve(gen_handle)

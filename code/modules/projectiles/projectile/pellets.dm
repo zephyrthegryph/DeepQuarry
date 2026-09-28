@@ -26,7 +26,7 @@
 
 	var/hits = 0
 	for (var/i in 1 to total_pellets)
-		if(target_mob.lying && target_mob != original && prob(prone_chance))
+		if(target_mob.lying && target_mob != original() && prob(prone_chance))
 			continue
 
 		//pellet hits spread out across different zones, but 'aim at' the targeted zone with higher probability

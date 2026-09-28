@@ -32,10 +32,10 @@
 		return 1
 	if (get_dist(P.starting, loc) <= 1) //Tables won't help you if people are THIS close
 		return 1
-	if (get_turf(P.original) == cover)
+	if (get_turf(P.original()) == cover)
 		var/chance = 20
-		if (ismob(P.original))
-			var/mob/M = P.original
+		if (ismob(P.original()))
+			var/mob/M = P.original()
 			if (M.lying)
 				chance += 20				//Lying down lets you catch less bullets
 		if(flipped==1)
@@ -136,7 +136,7 @@
 		break_to_parts()
 		return INTERACTION_HANDLED_PASS
 
-	if(can_plate && !material)
+	if(can_plate && !material())
 		to_chat(user, span_warning("There's nothing to put \the [W] on! Try adding plating to \the [src] first."))
 		return INTERACTION_HANDLED_PASS
 

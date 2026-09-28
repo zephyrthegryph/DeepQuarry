@@ -11,7 +11,7 @@
 	available_on_syndinet = TRUE
 	tgui_id = "NtosNetDos"
 
-	var/obj/machinery/ntnet_relay/target = null
+	var/tmp/target_handle
 	var/dos_speed = 0
 	var/error = ""
 	var/executed = 0
@@ -25,17 +25,17 @@
 			dos_speed = NTNETSPEED_HIGHSIGNAL * NTNETSPEED_DOS_AMPLIFICATION
 		if(3)
 			dos_speed = NTNETSPEED_ETHERNET * NTNETSPEED_DOS_AMPLIFICATION
-	if(target && executed)
-		target.dos_overload += dos_speed
-		if(!target.operable())
-			LAZYREMOVE(target.dos_sources, src)
-			target = null
+	if(target() && executed)
+		target().dos_overload += dos_speed
+		if(!target().operable())
+			LAZYREMOVE(target().dos_sources, src)
+			target_handle = null
 			error = "Connection to destination relay lost."
 
 /datum/computer_file/program/ntnet_dos/kill_program(forced)
-	if(target)
-		LAZYREMOVE(target.dos_sources, src)
-		target = null
+	if(target())
+		LAZYREMOVE(target().dos_sources, src)
+		target_handle = null
 	executed = 0
 
 	..(forced)
@@ -47,18 +47,18 @@
 	var/list/data = get_header_data()
 
 	data["error"] = error
-	if(target && executed)
+	if(target() && executed)
 		data["target"] = TRUE
 		data["speed"] = dos_speed
 
-		data["overload"] = target.dos_overload
-		data["capacity"] = target.dos_capacity
+		data["overload"] = target().dos_overload
+		data["capacity"] = target().dos_capacity
 	else
 		data["target"] = FALSE
 		data["relays"] = list()
 		for(var/obj/machinery/ntnet_relay/R in GLOB.ntnet_global.relays)
 			data["relays"] += list(list("id" = R.uid))
-		data["focus"] = target ? target.uid : null
+		data["focus"] = target() ? target().uid : null
 
 	return data
 
@@ -69,22 +69,26 @@
 		if("PRG_target_relay")
 			for(var/obj/machinery/ntnet_relay/R in GLOB.ntnet_global.relays)
 				if(R.uid == text2num(params["targid"]))
-					target = R
+					target_handle = om_handle(R)
 					break
 			return TRUE
 		if("PRG_reset")
-			if(target)
-				LAZYREMOVE(target.dos_sources, src)
-				target = null
+			if(target())
+				LAZYREMOVE(target().dos_sources, src)
+				target_handle = null
 			executed = FALSE
 			error = ""
 			return TRUE
 		if("PRG_execute")
-			if(target)
+			if(target())
 				executed = TRUE
-				LAZYADD(target.dos_sources, src)
+				LAZYADD(target().dos_sources, src)
 				if(GLOB.ntnet_global.intrusion_detection_enabled)
-					var/obj/item/computer_hardware/network_card/network_card = computer.network_card
-					GLOB.ntnet_global.add_log("IDS WARNING - Excess traffic flood targeting relay [target.uid] detected from device: [network_card.get_network_tag()]")
+					var/obj/item/computer_hardware/network_card/network_card = computer().network_card
+					GLOB.ntnet_global.add_log("IDS WARNING - Excess traffic flood targeting relay [target().uid] detected from device: [network_card.get_network_tag()]")
 					GLOB.ntnet_global.intrusion_detection_alarm = TRUE
 			return TRUE
+
+/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/computer_file/program/ntnet_dos/proc/target() as /obj/machinery/ntnet_relay
+	return om_resolve(target_handle)

@@ -5,7 +5,7 @@
 	var/next_event_time = 0
 	var/list/available_events
 	var/list/last_event_time
-	var/datum/event_meta/next_event = null
+	var/tmp/next_event_handle
 
 	var/last_world_time = 0
 
@@ -25,20 +25,21 @@
 	last_world_time = world.time
 
 /datum/event_container/proc/start_event()
-	if(!next_event)	// If non-one has explicitly set an event, randomly pick one
-		next_event = acquire_event()
+	if(!next_event())	// If non-one has explicitly set an event, randomly pick one
+		next_event_handle = om_handle(acquire_event())
 
 	// Has an event been acquired?
-	if(next_event)
+	if(next_event())
 		// Set when the event of this type was last fired, and prepare the next event start
-		LAZYSET(last_event_time, next_event, world.time)
+		LAZYSET(last_event_time, next_event(), world.time)
 		set_event_delay()
-		next_event.enabled = !next_event.one_shot	// This event will no longer be available in the random rotation if one shot
+		next_event().enabled = !next_event().one_shot	// This event will no longer be available in the random rotation if one shot
 
-		new next_event.event_type(next_event)	// Events are added and removed from the processing queue in their New/kill procs
+		var/new_event_type_path = next_event().event_type
+		new new_event_type_path(next_event())	// Events are added and removed from the processing queue in their New/kill procs
 
-		log_game("Starting event '[next_event.name]' of severity [GLOB.severity_to_string[severity]].")
-		next_event = null						// When set to null, a random event will be selected next time
+		log_game("Starting event '[next_event().name]' of severity [GLOB.severity_to_string[severity]].")
+		next_event_handle = null						// When set to null, a random event will be selected next time
 	else
 		// If not, wait for one minute, instead of one tick, before checking again.
 		next_event_time += (60 * 10)
@@ -123,10 +124,10 @@
 /datum/event_container/proc/event_selected(mob/user, datum/event_meta/EM, datum/om/prompt/P)
 	if(!EM || !(EM in available_events))
 		return
-	if(next_event)
-		available_events += next_event
+	if(next_event())
+		available_events += next_event()
 	available_events -= EM
-	next_event = EM
+	next_event_handle = om_handle(EM)
 	log_and_message_admins("has queued the [GLOB.severity_to_string[severity]] event '[EM.name]'.", user)
 
 /datum/event_container/mundane
@@ -183,3 +184,7 @@
 		new /datum/event_meta(EVENT_LEVEL_MAJOR, "Meteor Wave",			/datum/event/meteor_wave,		30,	list(DEPARTMENT_ENGINEERING = 30),	1),
 		new /datum/event_meta(EVENT_LEVEL_MAJOR, "Space Vines",			/datum/event/spacevine, 		20,	list(DEPARTMENT_ENGINEERING = 15), 1),
 	)
+
+/// LC-refs: the next_event this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/event_container/proc/next_event() as /datum/event_meta
+	return om_resolve(next_event_handle)

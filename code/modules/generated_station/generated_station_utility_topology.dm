@@ -222,8 +222,8 @@ REF_OWNED_LIST(/datum/generated_station_utility_topology, list("power_objects", 
 	return null
 
 /datum/generated_station_utility_builder
-	var/datum/generated_station_spec/spec
-	var/datum/generated_station_materialization/materialization
+	var/tmp/spec_handle
+	var/tmp/materialization_handle
 	var/datum/generated_station_utility_topology/result
 
 /// Reserves fixtures and station-wide routes against local coordinates before live turfs exist.
@@ -235,9 +235,9 @@ REF_OWNED_LIST(/datum/generated_station_utility_topology, list("power_objects", 
 	var/list/route_targets = list()
 	plan.index_utility_floors()
 	var/engineering_owner
-	for(var/datum/generated_station_layout_node/node in spec.layout_nodes)
+	for(var/datum/generated_station_layout_node/node in spec().layout_nodes)
 		var/datum/generated_station_department_instance/department = department_for_node(node)
-		if(department?.definition?.id == "engineering")
+		if(department?.definition()?.id == "engineering")
 			engineering_owner = node.id
 	for(var/datum/generated_station_module/module in result.modules)
 		var/datum/generated_station_tile_intent/apc = planned_utility_floor(plan, module.department_node_id, reserved, TRUE, module.id)
@@ -453,10 +453,10 @@ REF_OWNED_LIST(/datum/generated_station_utility_topology, list("power_objects", 
 /datum/generated_station_utility_builder/proc/build(datum/generated_station_spec/new_spec, datum/generated_station_materialization/new_materialization)
 	if(!new_spec || !new_materialization)
 		return null
-	spec = new_spec
-	materialization = new_materialization
+	spec_handle = om_handle(new_spec)
+	materialization_handle = om_handle(new_materialization)
 	result = new
-	result.station_id = spec.id
+	result.station_id = spec().id
 	var/list/path_targets = list()
 	var/list/power_targets = list()
 	var/list/supply_connections = list()
@@ -464,13 +464,13 @@ REF_OWNED_LIST(/datum/generated_station_utility_topology, list("power_objects", 
 	var/area/generated_station/engineering_area
 	var/engineering_owner
 
-	for(var/datum/generated_station_layout_node/node in spec.layout_nodes)
-		var/area/generated_station/department_area = materialization.department_areas[node.id]
+	for(var/datum/generated_station_layout_node/node in spec().layout_nodes)
+		var/area/generated_station/department_area = materialization().department_areas[node.id]
 		if(department_area?.department_id == "engineering-1")
 			engineering_area = department_area
 			engineering_owner = node.id
-	for(var/datum/generated_station_module/module in materialization.modules)
-		var/area/generated_station/A = materialization.module_areas[module.id]
+	for(var/datum/generated_station_module/module in materialization().modules)
+		var/area/generated_station/A = materialization().module_areas[module.id]
 		var/turf/apc_turf = planned_fixture_turf(module.department_node_id, GENERATED_STATION_UTILITY_APC, module.id)
 		if(!apc_turf)
 			return fail_global_build("no APC floor in [A]")
@@ -576,8 +576,8 @@ REF_OWNED_LIST(/datum/generated_station_utility_topology, list("power_objects", 
 
 /// Proves that every department floor lies near a powered, intact, active fixture.
 /datum/generated_station_utility_builder/proc/validate_operational_light_coverage(max_distance = 7)
-	for(var/module_id in materialization.module_areas)
-		var/area/generated_station/department_area = materialization.module_areas[module_id]
+	for(var/module_id in materialization().module_areas)
+		var/area/generated_station/department_area = materialization().module_areas[module_id]
 		var/list/working_lights = list()
 		for(var/obj/machinery/light/light in area_contents_of_type(department_area, /obj/machinery/light))
 			if(light.status == LIGHT_OK && light.on && light.powered(LIGHT))
@@ -595,23 +595,23 @@ REF_OWNED_LIST(/datum/generated_station_utility_topology, list("power_objects", 
 	return TRUE
 
 /datum/generated_station_utility_builder/proc/planned_fixture_turf(owner_id, utility_id, zone_id)
-	for(var/key in materialization.tile_plan.tiles)
-		var/datum/generated_station_tile_intent/intent = materialization.tile_plan.tiles[key]
+	for(var/key in materialization().tile_plan.tiles)
+		var/datum/generated_station_tile_intent/intent = materialization().tile_plan.tiles[key]
 		if(intent.owner_id == owner_id && (!zone_id || intent.zone_id == zone_id) && (utility_id in intent.utility_intents))
-			return materialization.world_turf(intent.local_x, intent.local_y)
+			return materialization().world_turf(intent.local_x, intent.local_y)
 	return null
 
 /datum/generated_station_utility_builder/proc/planned_fixture_direction(owner_id, utility_id, zone_id)
-	for(var/key in materialization.tile_plan.tiles)
-		var/datum/generated_station_tile_intent/intent = materialization.tile_plan.tiles[key]
+	for(var/key in materialization().tile_plan.tiles)
+		var/datum/generated_station_tile_intent/intent = materialization().tile_plan.tiles[key]
 		if(intent.owner_id == owner_id && (!zone_id || intent.zone_id == zone_id) && (utility_id in intent.utility_intents))
 			return intent.utility_wall_directions[utility_id]
 	return 0
 
 /datum/generated_station_utility_builder/proc/planned_fixture_pair(owner_id, utility_id, zone_id)
 	var/datum/generated_station_tile_intent/device_intent
-	for(var/key in materialization.tile_plan.tiles)
-		var/datum/generated_station_tile_intent/intent = materialization.tile_plan.tiles[key]
+	for(var/key in materialization().tile_plan.tiles)
+		var/datum/generated_station_tile_intent/intent = materialization().tile_plan.tiles[key]
 		if(intent.owner_id == owner_id && (!zone_id || intent.zone_id == zone_id) && (utility_id in intent.utility_intents))
 			device_intent = intent
 			break
@@ -619,32 +619,32 @@ REF_OWNED_LIST(/datum/generated_station_utility_topology, list("power_objects", 
 		return null
 	var/datum/generated_station_tile_intent/connector_intent
 	for(var/list/offset in list(list(1, 0), list(-1, 0), list(0, 1), list(0, -1)))
-		var/datum/generated_station_tile_intent/candidate = materialization.tile_plan.tile(device_intent.local_x + offset[1], device_intent.local_y + offset[2])
+		var/datum/generated_station_tile_intent/candidate = materialization().tile_plan.tile(device_intent.local_x + offset[1], device_intent.local_y + offset[2])
 		if(candidate?.structure_kind == GENERATED_STATION_TILE_FLOOR && (GENERATED_STATION_UTILITY_POWER_ROUTE in candidate.utility_intents))
 			connector_intent = candidate
 			break
 	if(!connector_intent)
 		return null
 	return list(
-		"device" = materialization.world_turf(device_intent.local_x, device_intent.local_y),
-		"connector" = materialization.world_turf(connector_intent.local_x, connector_intent.local_y)
+		"device" = materialization().world_turf(device_intent.local_x, device_intent.local_y),
+		"connector" = materialization().world_turf(connector_intent.local_x, connector_intent.local_y)
 	)
 
 /datum/generated_station_utility_builder/proc/planned_route_turfs()
 	var/list/route = list()
-	for(var/key in materialization.tile_plan.tiles)
-		var/datum/generated_station_tile_intent/intent = materialization.tile_plan.tiles[key]
+	for(var/key in materialization().tile_plan.tiles)
+		var/datum/generated_station_tile_intent/intent = materialization().tile_plan.tiles[key]
 		if(GENERATED_STATION_UTILITY_POWER_ROUTE in intent.utility_intents)
-			var/turf/T = materialization.world_turf(intent.local_x, intent.local_y)
+			var/turf/T = materialization().world_turf(intent.local_x, intent.local_y)
 			route[REF(T)] = T
 	return route
 
 /datum/generated_station_utility_builder/proc/build_planned_lights()
-	for(var/key in materialization.tile_plan.tiles)
-		var/datum/generated_station_tile_intent/intent = materialization.tile_plan.tiles[key]
+	for(var/key in materialization().tile_plan.tiles)
+		var/datum/generated_station_tile_intent/intent = materialization().tile_plan.tiles[key]
 		if(!(GENERATED_STATION_UTILITY_LIGHT in intent.utility_intents))
 			continue
-		var/turf/T = materialization.world_turf(intent.local_x, intent.local_y)
+		var/turf/T = materialization().world_turf(intent.local_x, intent.local_y)
 		var/wall_direction = intent.utility_wall_directions[GENERATED_STATION_UTILITY_LIGHT]
 		if(!wall_direction)
 			continue
@@ -668,13 +668,13 @@ REF_OWNED_LIST(/datum/generated_station_utility_topology, list("power_objects", 
 
 /// Publishes power and lighting only after the power and atmosphere graphs exist.
 /datum/generated_station_utility_builder/proc/publish_utility_state()
-	for(var/node_id in materialization.department_areas)
-		var/area/generated_station/A = materialization.department_areas[node_id]
+	for(var/node_id in materialization().department_areas)
+		var/area/generated_station/A = materialization().department_areas[node_id]
 		A.power_change()
-	materialization.transit_area?.power_change()
+	materialization().transit_area()?.power_change()
 
 /datum/generated_station_utility_builder/proc/fail_global_build(reason)
-	log_world("Generated station utility build failed for [spec?.id]: [reason]")
+	log_world("Generated station utility build failed for [spec()?.id]: [reason]")
 	QDEL_NULL(result)
 	return null
 
@@ -810,3 +810,15 @@ REF_OWNED_LIST(/datum/generated_station_utility_topology, list("power_objects", 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/power/generator/generated_station/step_start_condition()
 	return !(stat & BROKEN)
+
+REF_OWNED(/datum/generated_station_utility_builder, "result")
+
+REF_OWNED(/datum/expedition_site, "station_utilities")
+
+/// LC-refs: the spec this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/generated_station_utility_builder/proc/spec() as /datum/generated_station_spec
+	return om_resolve(spec_handle)
+
+/// LC-refs: the materialization this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/generated_station_utility_builder/proc/materialization() as /datum/generated_station_materialization
+	return om_resolve(materialization_handle)

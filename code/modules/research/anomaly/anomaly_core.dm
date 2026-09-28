@@ -74,8 +74,8 @@ EXTEND_INTERACTIONS(/obj/item/assembly/signaler/anomaly, INTERACT_ITEM(null, PRO
 		return
 
 	var/source = null
-	if(connected)
-		var/datum/wires/wires = connected
+	if(connected())
+		var/datum/wires/wires = connected()
 		source = wires.holder
 	tesla_zap(source ? source : src, 2, 1000, FALSE, TRUE, 1)
 

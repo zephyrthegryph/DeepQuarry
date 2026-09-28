@@ -270,7 +270,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	//preferences datum - also holds some persistant data for the client (because we may as well keep these datums to a minimum)
 	prefs = GLOB.preferences_datums[ckey]
 	if(prefs)
-		prefs.client = src
+		prefs.client_handle = om_handle(src)
 		prefs.load_savefile() // just to make sure we have the latest data
 		prefs.apply_all_client_preferences()
 	else
@@ -391,7 +391,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	log_access("Logout: [key_name(src)]")
 	GLOB.tickets.ClientLogout(src)
 	if(holder)
-		holder.owner = null
+		holder.owner_handle = null
 		GLOB.admins -= src
 	if(skybox)
 		QDEL_NULL(skybox)

@@ -9,7 +9,7 @@
 /datum/tgui_module/robot_ui/tgui_static_data()
 	var/list/data = ..()
 
-	var/mob/living/silicon/robot/R = host
+	var/mob/living/silicon/robot/R = host()
 
 	if(!R.module)
 		return data
@@ -46,7 +46,7 @@
 /datum/tgui_module/robot_ui/tgui_data()
 	var/list/data = ..()
 
-	var/mob/living/silicon/robot/R = host
+	var/mob/living/silicon/robot/R = host()
 
 	data["module_name"] = R.module ? "[R.module]" : null
 
@@ -116,7 +116,7 @@
 	if(.)
 		return
 
-	var/mob/living/silicon/robot/R = host
+	var/mob/living/silicon/robot/R = host()
 
 	switch(action)
 		if("set_light_col")

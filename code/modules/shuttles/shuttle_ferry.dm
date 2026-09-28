@@ -2,20 +2,22 @@
 	var/location = FERRY_LOCATION_STATION	//0 = at area_station, 1 = at area_offsite
 	var/direction = FERRY_GOING_TO_STATION	//0 = going to station, 1 = going to offsite.
 
-	var/obj/effect/shuttle_landmark/landmark_station  //This variable is type-abused initially: specify the landmark_tag, not the actual landmark.
-	var/obj/effect/shuttle_landmark/landmark_offsite  //This variable is type-abused initially: specify the landmark_tag, not the actual landmark.
+	var/tmp/landmark_station_handle	// the landmark (set the _tag var, New() resolves it)
+	var/landmark_station_tag	// the tag it starts as; resolved into landmark_station at init
+	var/tmp/landmark_offsite_handle	// the landmark (set the _tag var, New() resolves it)
+	var/landmark_offsite_tag	// the tag it starts as; resolved into landmark_offsite at init
 
 	category = /datum/shuttle/autodock/ferry
 
 /datum/shuttle/autodock/ferry/New(_name)
-	if(landmark_station)
-		landmark_station = SSshuttles.get_landmark(landmark_station)
-	if(landmark_offsite)
-		landmark_offsite = SSshuttles.get_landmark(landmark_offsite)
+	if(landmark_station_tag)
+		landmark_station_handle = om_handle(SSshuttles.get_landmark(landmark_station_tag))
+	if(landmark_offsite_tag)
+		landmark_offsite_handle = om_handle(SSshuttles.get_landmark(landmark_offsite_tag))
 
 	..(_name, get_location_waypoint(location))
 
-	next_location = get_location_waypoint(!location)
+	next_location_handle = om_handle(get_location_waypoint(!location))
 
 
 //Gets the shuttle landmark associated with the given location (defaults to current location)
@@ -24,8 +26,8 @@
 		location_id = location
 
 	if (location_id == FERRY_LOCATION_STATION)
-		return landmark_station
-	return landmark_offsite
+		return landmark_station()
+	return landmark_offsite()
 
 /datum/shuttle/autodock/ferry/short_jump(destination)
 	direction = !location // Heading away from where we currently are
@@ -37,16 +39,24 @@
 
 /datum/shuttle/autodock/ferry/perform_shuttle_move()
 	..()
-	if (current_location == landmark_station) location = FERRY_LOCATION_STATION
-	if (current_location == landmark_offsite) location = FERRY_LOCATION_OFFSITE
+	if (current_location() == landmark_station()) location = FERRY_LOCATION_STATION
+	if (current_location() == landmark_offsite()) location = FERRY_LOCATION_OFFSITE
 
 // Once we have arrived where we are going, plot a course back!
 /datum/shuttle/autodock/ferry/process_arrived()
 	..()
-	next_location = get_location_waypoint(!location)
+	next_location_handle = om_handle(get_location_waypoint(!location))
 
 // Ferry shuttles should generally always be able to dock.  So read the docking codes off of the target.
 /datum/shuttle/autodock/ferry/update_docking_target(obj/effect/shuttle_landmark/location)
 	..()
-	if(active_docking_controller && active_docking_controller.docking_codes)
-		set_docking_codes(active_docking_controller.docking_codes)
+	if(active_docking_controller() && active_docking_controller().docking_codes)
+		set_docking_codes(active_docking_controller().docking_codes)
+
+/// LC-refs: the landmark resolved from the _tag var -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/shuttle/autodock/ferry/proc/landmark_station() as /obj/effect/shuttle_landmark
+	return om_resolve(landmark_station_handle)
+
+/// LC-refs: the landmark resolved from the _tag var -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/shuttle/autodock/ferry/proc/landmark_offsite() as /obj/effect/shuttle_landmark
+	return om_resolve(landmark_offsite_handle)

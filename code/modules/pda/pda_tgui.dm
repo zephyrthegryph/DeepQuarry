@@ -50,12 +50,12 @@
 	data["stationTime"] = stationtime2text() //worldtime2stationtime(world.time) // Aaa which fucking one is canonical there's SO MANY
 
 	data["app"] = list(
-		"name" = current_app.title,
-		"icon" = current_app.icon,
-		"template" = current_app.template,
-		"has_back" = current_app.has_back)
+		"name" = current_app().title,
+		"icon" = current_app().icon,
+		"template" = current_app().template,
+		"has_back" = current_app().has_back)
 
-	current_app.update_ui(user, data)
+	current_app().update_ui(user, data)
 
 	return data
 
@@ -86,12 +86,12 @@
 					T = T.loc
 				var/obj/item/cartridge/C = cartridge
 				C.forceMove(T)
-				if(scanmode in C.programs)
-					scanmode = null
-				if(current_app in C.programs)
+				if(scanmode() in C.programs)
+					scanmode_handle = null
+				if(current_app() in C.programs)
 					start_program(find_program(/datum/data/pda/app/main_menu))
 				if(C.radio)
-					C.radio.hostpda = null
+					C.radio.hostpda_handle = null
 				for(var/datum/data/pda/P in notifying_programs)
 					if(P in C.programs)
 						P.unnotify()
@@ -106,8 +106,8 @@
 		if("Ringtone")
 			return set_ringtone(ui.user)
 		else
-			if(current_app)
-				. = current_app.tgui_act(action, params, ui, state)
+			if(current_app())
+				. = current_app().tgui_act(action, params, ui, state)
 
 	if((honkamt > 0) && (prob(60)))//For clown virus.
 		honkamt--

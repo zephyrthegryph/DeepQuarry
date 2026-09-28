@@ -21,11 +21,11 @@
 		return FALSE
 
 	var/datum/search_object/index = locate(ref) in searchables
-	var/atom/thing = index?.item
+	var/atom/thing = index?.item()
 	if(QDELETED(index) || QDELETED(thing)) // Obj is gone
 		return FALSE
 
-	if(thing != source_turf && !(locate(thing) in source_turf.contents))
+	if(thing != source_turf() && !(locate(thing) in source_turf().contents))
 		qdel(index) // Item has moved
 		return TRUE
 

@@ -22,7 +22,7 @@
 /datum/event2/event/gas_leak
 	var/potential_gas_choices = list(GAS_CO2, GAS_N2O, GAS_PHORON, GAS_VOLATILE_FUEL, GAS_CH4)
 	var/chosen_gas = null
-	var/turf/chosen_turf = null
+	var/tmp/chosen_turf_handle
 
 /datum/event2/event/gas_leak/set_up()
 	chosen_gas = pick(potential_gas_choices)
@@ -32,11 +32,11 @@
 		log_game("Gas Leak event failed to find any available turfs to leak into. Aborting.")
 		abort()
 		return
-	chosen_turf = pick(turfs)
+	chosen_turf_handle = om_handle(pick(turfs))
 
 /datum/event2/event/gas_leak/announce()
-	if(chosen_turf)
-		GLOB.command_announcement.Announce("Warning, hazardous [lowertext(GLOB.gas_data.name[chosen_gas])] gas leak detected in \the [chosen_turf.loc], evacuate the area.", "Hazard Alert", ANNOUNCER_MSG_GASLEAK)
+	if(chosen_turf())
+		GLOB.command_announcement.Announce("Warning, hazardous [lowertext(GLOB.gas_data.name[chosen_gas])] gas leak detected in \the [chosen_turf().loc], evacuate the area.", "Hazard Alert", ANNOUNCER_MSG_GASLEAK)
 
 /datum/event2/event/gas_leak/start()
 	// Okay, time to actually put the gas in the room!
@@ -48,5 +48,9 @@
 	var/datum/gas_mixture/air_contents = new
 	air_contents.set_temperature(T20C + rand(-50, 50))
 	air_contents.adjust_gas(chosen_gas, (10 * MOLES_CELLSTANDARD) - LINDA_GAS_AMT(air_contents, chosen_gas))
-	chosen_turf.assume_air(air_contents)
-	playsound(chosen_turf, 'sound/effects/smoke.ogg', 75, 1)
+	chosen_turf().assume_air(air_contents)
+	playsound(chosen_turf(), 'sound/effects/smoke.ogg', 75, 1)
+
+/// LC-refs: the chosen_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/event2/event/gas_leak/proc/chosen_turf() as /turf
+	return om_resolve(chosen_turf_handle)

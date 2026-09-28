@@ -837,3 +837,5 @@
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/disposal/step_start_condition()
 	return mode == 1 || flush || length(contents) || has_latent() // ALLOW(latent): latent entries checked
+
+REF_OWNED(/obj/machinery/disposal, "air_contents")

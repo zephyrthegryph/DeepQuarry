@@ -93,10 +93,10 @@
 		// You should trust Copy().
 		checklist = fruit.Copy()
 		for(var/obj/item/reagent_containers/food/snacks/grown/G in container)
-			if(!G.seed || !G.seed.kitchen_tag || isnull(checklist[G.seed.kitchen_tag]))
+			if(!G.seed() || !G.seed().kitchen_tag || isnull(checklist[G.seed().kitchen_tag]))
 				continue
 			if(check_coating(G))
-				checklist[G.seed.kitchen_tag]--
+				checklist[G.seed().kitchen_tag]--
 		for(var/ktag in checklist)
 			if(!isnull(checklist[ktag]))
 				if(checklist[ktag] < 0 && exact)
@@ -156,11 +156,11 @@
 		return TRUE //-1 value doesnt care
 
 	var/obj/item/reagent_containers/food/snacks/S = O
-	if (!S.coating)
+	if (!S.coating())
 		if (!coating)
 			return TRUE
 		return FALSE
-	else if (S.coating.type == coating)
+	else if (S.coating().type == coating)
 		return TRUE
 
 	return FALSE
@@ -226,12 +226,12 @@
 		checklist = fruit.Copy()
 
 		for(var/obj/item/reagent_containers/food/snacks/grown/G in container)
-			if(!G.seed || !G.seed.kitchen_tag || isnull(checklist[G.seed.kitchen_tag]))
+			if(!G.seed() || !G.seed().kitchen_tag || isnull(checklist[G.seed().kitchen_tag]))
 				continue
 
-			if (checklist[G.seed.kitchen_tag] > 0)
+			if (checklist[G.seed().kitchen_tag] > 0)
 				//We found a thing we need
-				checklist[G.seed.kitchen_tag]--
+				checklist[G.seed().kitchen_tag]--
 				if (G && G.reagents)
 					G.reagents.trans_to_holder(buffer,G.reagents.total_volume)
 				qdel(G)

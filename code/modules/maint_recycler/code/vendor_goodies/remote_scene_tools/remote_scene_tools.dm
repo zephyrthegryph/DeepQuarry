@@ -10,7 +10,7 @@ why aren't these accessories?
 */
 
 /obj/item/remote_scene_tool
-	var/obj/item/remote_scene_tool/linked
+	var/tmp/linked_handle
 	icon = 'code/modules/maint_recycler/icons/goodies/remote_scene_tools.dmi'
 	icon_override = 'code/modules/maint_recycler/icons/goodies/remote_scene_tools.dmi'
 	item_state = "InvalidState" //so it defaults to the empty icon
@@ -21,7 +21,7 @@ why aren't these accessories?
 	description_info = "These stickers act as remote scene tools - any sort of emotes or subtles that the wearer does will go DIRECTLY to the other sticker! It's vague, so use it how you want in RP! Just remember bystander consent!"
 	slot_flags = (SLOT_OCLOTHING | SLOT_ICLOTHING | SLOT_GLOVES | SLOT_MASK | SLOT_HEAD | SLOT_FEET | SLOT_ID | SLOT_BELT | SLOT_BACK | SLOT_POCKET)
 	w_class = ITEMSIZE_SMALL
-	var/mob/worn_mob = null
+	var/tmp/worn_mob_handle
 	var/last_loc
 	var/can_summon = TRUE
 	var/can_replace = TRUE
@@ -30,47 +30,47 @@ why aren't these accessories?
 
 /obj/item/remote_scene_tool/proc/link_to(obj/item/remote_scene_tool/to_link)
 	//link to a remote scene tool
-	if(linked)
+	if(linked())
 		return
 
-	linked = to_link
-	linked.linked = src
+	linked_handle = om_handle(to_link)
+	linked().linked_handle = om_handle(src)
 
 /obj/item/remote_scene_tool/proc/register_to_mob(mob)
-	if(worn_mob == mob)
+	if(worn_mob() == mob)
 		return
 
-	if(worn_mob)
-		unregister_from_mob(worn_mob)
+	if(worn_mob())
+		unregister_from_mob(worn_mob())
 
-	worn_mob = mob
+	worn_mob_handle = om_handle(mob)
 
 	RegisterSignal(mob, COMSIG_MOB_LOGIN, PROC_REF(worn_mob_logged_in))
 	RegisterSignal(mob, COMSIG_MOB_LOGOUT, PROC_REF(worn_mob_logged_out))
 	transmit_emote(src, span_notice("\The [src] has been put on by [mob]!"))
 
 /obj/item/remote_scene_tool/proc/unregister_from_mob(mob)
-	if(worn_mob == null) return
-	UnregisterSignal(worn_mob, COMSIG_MOB_LOGIN)
-	UnregisterSignal(worn_mob, COMSIG_MOB_LOGOUT)
-	worn_mob = null
+	if(worn_mob() == null) return
+	UnregisterSignal(worn_mob(), COMSIG_MOB_LOGIN)
+	UnregisterSignal(worn_mob(), COMSIG_MOB_LOGOUT)
+	worn_mob_handle = null
 	transmit_emote(src, span_warning("\The [src]'s wearer has removed it!"))
 
 //called when the mob wearing this item logs out
 /obj/item/remote_scene_tool/proc/worn_mob_logged_out()
 	SIGNAL_HANDLER
-	if(!linked)
+	if(!linked())
 		return
 	transmit_emote(src, span_warning("\The [src]'s wearer has gone SSD!"))
-	linked?.linked_updated()
+	linked()?.linked_updated()
 
 /obj/item/remote_scene_tool/proc/worn_mob_logged_in()
 	SIGNAL_HANDLER
 	//called when the mob wearing this item logs in
-	if(!linked)
+	if(!linked())
 		return
 	transmit_emote(src, "\The [src]'s wearer has returned from SSD!")
-	linked?.linked_updated()
+	linked()?.linked_updated()
 
 /obj/item/remote_scene_tool/see_emote(mob/M as mob, text, emote_type)
 	//to_world_log("emote: [text] from [M] to [linked]")
@@ -79,23 +79,23 @@ why aren't these accessories?
 		transmit_emote(src, text,emote_type)
 
 /obj/item/remote_scene_tool/proc/transmit_emote(mob/M as mob, text, emote_type)
-	if(linked == null) return
-	if(ismob(linked.getWearer()))
-		var/mob/m = linked.getWearer()
+	if(linked() == null) return
+	if(ismob(linked().getWearer()))
+		var/mob/m = linked().getWearer()
 		if(!m.client) return;
-		to_chat(linked.loc, icon2html(src,m.client) + text)
+		to_chat(linked().loc, icon2html(src,m.client) + text)
 
 	//transmit the emote to the other side
 
 /obj/item/remote_scene_tool/proc/sanity_check()
 	//check if the other side is still valid
 	. = TRUE
-	if(!linked)
+	if(!linked())
 		return FALSE
-	if(linked.linked != src)
+	if(linked().linked() != src)
 		return FALSE
 
-	var/mob/m = linked.getWearer()
+	var/mob/m = linked().getWearer()
 	if(!ismob(m))
 		return FALSE
 	if(!m.client) //no scene partner? whoopsie!
@@ -115,7 +115,7 @@ why aren't these accessories?
 	if(last_loc == loc)
 		return
 	last_loc = loc
-	linked?.linked_updated()
+	linked()?.linked_updated()
 	linked_updated()
 
 	var/mob/m = getWearer()
@@ -123,8 +123,8 @@ why aren't these accessories?
 	if(ismob(m))
 		register_to_mob(m) //handles any caching
 	else
-		if(worn_mob)
-			unregister_from_mob(worn_mob) //unregister from the mob if we aren't on it anymore
+		if(worn_mob())
+			unregister_from_mob(worn_mob()) //unregister from the mob if we aren't on it anymore
 
 /obj/item/remote_scene_tool/proc/linked_updated()
 	update_icon()
@@ -138,27 +138,27 @@ why aren't these accessories?
 // ALLOW(lifecycle): its linked tool forgets it; its wearer is unregistered.
 /obj/item/remote_scene_tool/Destroy()
 	. = ..()
-	if(linked)
-		linked.linked = null //clear out the other side
-		linked = null
+	if(linked())
+		linked().linked_handle = null //clear out the other side
+		linked_handle = null
 	UnregisterSignal(src, COMSIG_ATOM_ENTERING)
-	unregister_from_mob(worn_mob)
+	unregister_from_mob(worn_mob())
 
 /obj/item/remote_scene_tool/examine(mob/user)
 	. = ..()
-	if(!linked)
+	if(!linked())
 		. += span_warning("This is not linked to anything!")
 		return
 
-	var/mob/living/carbon/human/lw = linked.getWearer()
+	var/mob/living/carbon/human/lw = linked().getWearer()
 	if(lw)
-		. += span_notice("This is linked to [lw]'s [linked.name].")
+		. += span_notice("This is linked to [lw]'s [linked().name].")
 		if(!lw.client || lw.stat == UNCONSCIOUS || lw.stat == DEAD)
 			. += span_warning("The wearer of \the [src]'s counterpart doesn't appear to be conscious!")
 	else
-		. += span_notice("Its counterpart seems to be in \the [get_area(linked).name]")
+		. += span_notice("Its counterpart seems to be in \the [get_area(linked()).name]")
 
-	if(!ismob(linked.loc))
+	if(!ismob(linked().loc))
 		. += span_warning("\The [src]'s counterpart isn't being worn or carried by anyone!")
 
 /obj/item/storage/box/remote_scene_tools
@@ -191,17 +191,17 @@ why aren't these accessories?
 /obj/item/remote_scene_tool/verb/summon_counterpart()
 	set name = "Summon Counterpart"
 	set desc = "Forcibly moves the linked object over to you - or, if it doesn't exist, spawn a new one."
-	if(can_summon || (linked == null && can_replace))
-		if(linked == null)
+	if(can_summon || (linked() == null && can_replace))
+		if(linked() == null)
 			create_counterpart()
-			to_chat(usr,span_notice("\The [src] forms a new [linked]!"))
+			to_chat(usr,span_notice("\The [src] forms a new [linked()]!"))
 		else
-			var/mob/counterpart = linked.getWearer()
+			var/mob/counterpart = linked().getWearer()
 			if(counterpart)
-				counterpart.remove_from_mob(linked,get_turf(src))
+				counterpart.remove_from_mob(linked(),get_turf(src))
 			else
-				linked.forceMove(get_turf(src))
-			to_chat(usr,span_notice("\The [linked] materializes in front of you!"))
+				linked().forceMove(get_turf(src))
+			to_chat(usr,span_notice("\The [linked()] materializes in front of you!"))
 	else
 		to_chat(usr,span_notice("Nothing seems to happen!"))
 
@@ -209,3 +209,11 @@ why aren't these accessories?
 	var/obj/item/remote_scene_tool/newrst = new replacementType(get_turf(src))
 	link_to(newrst)
 	newrst.link_to(src)
+
+/// LC-refs: the linked this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/remote_scene_tool/proc/linked() as /obj/item/remote_scene_tool
+	return om_resolve(linked_handle)
+
+/// LC-refs: the worn_mob this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/remote_scene_tool/proc/worn_mob() as /mob
+	return om_resolve(worn_mob_handle)

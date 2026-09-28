@@ -66,7 +66,7 @@
 	var/tension = 0                         // Current draw on the bow.
 	var/max_tension = 5                     // Highest possible tension.
 	var/release_speed = 5                   // Speed per unit of tension.
-	var/obj/item/cell/cell = null    // Used for firing superheated rods.
+	var/tmp/cell_handle	// Used for firing superheated rods.
 	var/current_user                        // Used to check if the crossbow has changed hands since being drawn.
 	w_class = ITEMSIZE_HUGE //.
 
@@ -158,12 +158,12 @@
 
 
 /obj/item/gun/launcher/crossbow/screwdriver_act(mob/user, obj/item/tool)
-	if(cell)
-		var/obj/item/C = cell
+	if(cell())
+		var/obj/item/C = cell()
 		C.forceMove(get_turf(user))
-		to_chat(user, span_notice("You jimmy [cell] out of [src] with [tool]."))
+		to_chat(user, span_notice("You jimmy [cell()] out of [src] with [tool]."))
 		playsound(src, tool.usesound, 50, 1)
-		cell = null
+		cell_handle = null
 	else
 		to_chat(user, span_notice("[src] doesn't have a cell installed."))
 	return ITEM_INTERACT_SUCCESS
@@ -188,11 +188,11 @@
 			return
 
 	if(istype(W, /obj/item/cell))
-		if(!cell)
+		if(!cell())
 			user.drop_item()
-			cell = W
-			cell.forceMove(src)
-			to_chat(user, span_notice("You jam [cell] into [src] and wire it to the firing coil."))
+			cell_handle = om_handle(W)
+			cell().forceMove(src)
+			to_chat(user, span_notice("You jam [cell()] into [src] and wire it to the firing coil."))
 			superheat_rod(user)
 		else
 			to_chat(user, span_notice("[src] already has a cell installed."))
@@ -201,15 +201,15 @@
 		..()
 
 /obj/item/gun/launcher/crossbow/proc/superheat_rod(mob/user)
-	if(!user || !cell || !bolt) return
-	if(cell.charge < 500) return
+	if(!user || !cell() || !bolt) return
+	if(cell().charge < 500) return
 	if(bolt.throwforce >= 15) return
 	if(!istype(bolt,/obj/item/arrow/rod)) return
 
 	to_chat(user, span_notice("[bolt] plinks and crackles as it begins to glow red-hot."))
 	bolt.throwforce = 15
 	bolt.icon_state = "metal-rod-superheated"
-	cell.use(500)
+	cell().use(500)
 
 /obj/item/gun/launcher/crossbow/update_icon()
 	if(tension > 1)

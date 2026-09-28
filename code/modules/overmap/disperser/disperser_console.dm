@@ -9,9 +9,9 @@
 	icon_keyboard = "rd_key"
 	icon_screen = "teleport"
 
-	var/obj/machinery/disperser/front/front
-	var/obj/machinery/disperser/middle/middle
-	var/obj/machinery/disperser/back/back
+	var/tmp/front_handle
+	var/tmp/middle_handle
+	var/tmp/back_handle
 	var/const/link_range = 16 //How far can the above stuff be maximum before we start complaining
 
 	var/overmapdir = 0
@@ -49,31 +49,26 @@
 		var/obj/machinery/disperser/back/B = locate() in get_step(M, backwards)
 		if(!B || get_dist(src, B) >= link_range)
 			continue
-		front = F
-		middle = M
-		back = B
+		front_handle = om_handle(F)
+		middle_handle = om_handle(M)
+		back_handle = om_handle(B)
+		// The parts are OM handles: one that is destroyed reads null, so is_valid_setup() fails
+		// without a destruction signal on each.
 		if(is_valid_setup())
-			RegisterSignal(F, COMSIG_OBSERVER_DESTROYED, PROC_REF(release_links))
-			RegisterSignal(M, COMSIG_OBSERVER_DESTROYED, PROC_REF(release_links))
-			RegisterSignal(B, COMSIG_OBSERVER_DESTROYED, PROC_REF(release_links))
 			return TRUE
 	return FALSE
 
 /obj/machinery/computer/ship/disperser/proc/is_valid_setup()
-	if(front && middle && back)
-		var/everything_in_range = (get_dist(src, front) < link_range) && (get_dist(src, middle) < link_range) && (get_dist(src, back) < link_range)
-		var/everything_in_order = (middle.Adjacent(front) && middle.Adjacent(back)) && (front.dir == middle.dir && middle.dir == back.dir)
+	if(front() && middle() && back())
+		var/everything_in_range = (get_dist(src, front()) < link_range) && (get_dist(src, middle()) < link_range) && (get_dist(src, back()) < link_range)
+		var/everything_in_order = (middle().Adjacent(front()) && middle().Adjacent(back())) && (front().dir == middle().dir && middle().dir == back().dir)
 		return everything_in_order && everything_in_range
 	return FALSE
 
 /obj/machinery/computer/ship/disperser/proc/release_links()
-	SIGNAL_HANDLER
-	UnregisterSignal(front, COMSIG_OBSERVER_DESTROYED)
-	UnregisterSignal(middle, COMSIG_OBSERVER_DESTROYED)
-	UnregisterSignal(back, COMSIG_OBSERVER_DESTROYED)
-	front = null
-	middle = null
-	back = null
+	front_handle = null
+	middle_handle = null
+	back_handle = null
 
 /obj/machinery/computer/ship/disperser/proc/get_calibration()
 	var/list/calresult[caldigit]
@@ -107,24 +102,24 @@
 	return get_next_shot_seconds() * 1000 / coolinterval
 
 /obj/machinery/computer/ship/disperser/proc/get_charge_type()
-	var/obj/structure/ship_munition/disperser_charge/B = locate() in get_turf(back)
+	var/obj/structure/ship_munition/disperser_charge/B = locate() in get_turf(back())
 	if(B)
 		return B.chargetype
 	return OVERMAP_WEAKNESS_NONE
 
 /obj/machinery/computer/ship/disperser/proc/get_charge()
-	var/obj/structure/ship_munition/disperser_charge/B = locate() in get_turf(back)
+	var/obj/structure/ship_munition/disperser_charge/B = locate() in get_turf(back())
 	if(B)
 		return B
 
 /obj/machinery/computer/ship/disperser/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
-	if(!linked)
+	if(!linked())
 		display_reconnect_dialog(user, "disperser synchronization")
 		return
 
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
-		ui = new(user, src, "OvermapDisperser", "[linked.name] ORB control") // 400, 550
+		ui = new(user, src, "OvermapDisperser", "[linked().name] ORB control") // 400, 550
 		ui.open()
 
 /obj/machinery/computer/ship/disperser/tgui_data(mob/user)
@@ -149,7 +144,7 @@
 		data["strength"] = strength
 		data["range"] = range
 		data["next_shot"] = round(get_next_shot_seconds())
-		data["nopower"] = !data["faillink"] && (!front.powered() || !middle.powered() || !back.powered())
+		data["nopower"] = !data["faillink"] && (!front().powered() || !middle().powered() || !back().powered())
 
 		var/charge = "UNKNOWN ERROR"
 		if(get_charge_type() == OVERMAP_WEAKNESS_NONE)
@@ -165,7 +160,7 @@
 	if(..())
 		return TRUE
 
-	if(!linked)
+	if(!linked())
 		return FALSE
 
 	switch(action)
@@ -194,7 +189,7 @@
 				return
 			if(input && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
 				strength = sanitize_integer(input, 1, 5, 1)
-				middle.update_idle_power_usage(strength * range * 100)
+				middle().update_idle_power_usage(strength * range * 100)
 			. = TRUE
 
 		if("range")
@@ -203,7 +198,7 @@
 				return
 			if(input && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
 				range = sanitize_integer(input, 1, 5, 1)
-				middle.update_idle_power_usage(strength * range * 100)
+				middle().update_idle_power_usage(strength * range * 100)
 			. = TRUE
 
 		if(BURN)
@@ -212,3 +207,15 @@
 
 	if(. && !issilicon(ui.user))
 		playsound(src, "terminal_type", 50, 1)
+
+/// LC-refs: the middle this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/ship/disperser/proc/middle() as /obj/machinery/disperser/middle
+	return om_resolve(middle_handle)
+
+/// LC-refs: the back this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/ship/disperser/proc/back() as /obj/machinery/disperser/back
+	return om_resolve(back_handle)
+
+/// LC-refs: the front this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/ship/disperser/proc/front() as /obj/machinery/disperser/front
+	return om_resolve(front_handle)

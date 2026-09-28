@@ -12,7 +12,7 @@
 	throw_distance = 7
 	release_force = 5
 
-	var/obj/item/grenade/chambered
+	var/tmp/chambered_handle
 	var/list/grenades
 	var/max_grenades = 5 //holds this + one in the chamber
 	MATERIAL_BULK(MAT_STEEL, 2000)
@@ -26,12 +26,12 @@
 	var/obj/item/grenade/next
 	if(length(grenades))
 		next = LAZYACCESS(grenades, 1) //get this first, so that the chambered grenade can still be removed if the grenades list is empty
-	if(chambered)
-		LAZYADD(grenades, chambered) //rotate the revolving magazine
-		chambered = null
+	if(chambered())
+		LAZYADD(grenades, chambered()) //rotate the revolving magazine
+		chambered_handle = null
 	if(next)
 		LAZYREMOVE(grenades, next) //Remove grenade from loaded list.
-		chambered = next
+		chambered_handle = om_handle(next)
 		to_chat(user, span_warning("You pump [src], loading \a [next] into the chamber."))
 	else
 		to_chat(user, span_warning("You pump [src], but the magazine is empty."))
@@ -40,10 +40,10 @@
 /obj/item/gun/launcher/grenade/examine(mob/user)
 	. = ..()
 	if(get_dist(user, src) <= 2)
-		var/grenade_count = length(grenades) + (chambered? 1 : 0)
+		var/grenade_count = length(grenades) + (chambered()? 1 : 0)
 		. += "Has [grenade_count] grenade\s remaining."
-		if(chambered)
-			. += "\A [chambered] is chambered."
+		if(chambered())
+			. += "\A [chambered()] is chambered."
 
 /obj/item/gun/launcher/grenade/proc/load(obj/item/grenade/G, mob/user)
 	if(G.loadable)
@@ -92,15 +92,15 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/grenade, INTERACT_HAND(null, PROC_RE
 	return TRUE
 
 /obj/item/gun/launcher/grenade/consume_next_projectile()
-	if(chambered)
-		chambered.det_time = 10
-		chambered.activate(null)
-	return chambered
+	if(chambered())
+		chambered().det_time = 10
+		chambered().activate(null)
+	return chambered()
 
 /obj/item/gun/launcher/grenade/handle_post_fire(mob/user)
-	message_admins("[key_name_admin(user)] fired a grenade ([chambered.name]) from a grenade launcher ([src.name]).")
-	log_game("[key_name_admin(user)] used a grenade ([chambered.name]).")
-	chambered = null
+	message_admins("[key_name_admin(user)] fired a grenade ([chambered().name]) from a grenade launcher ([src.name]).")
+	log_game("[key_name_admin(user)] used a grenade ([chambered().name]).")
+	chambered_handle = null
 
 //Underslung grenade launcher to be used with the Z8
 /obj/item/gun/launcher/grenade/underslung
@@ -114,21 +114,25 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/grenade, INTERACT_HAND(null, PROC_RE
 //load and unload directly into chambered
 /obj/item/gun/launcher/grenade/underslung/load(obj/item/grenade/G, mob/user)
 	if(G.loadable)
-		if(chambered)
+		if(chambered())
 			to_chat(user, span_warning("[src] is already loaded."))
 			return
 		user.remove_from_mob(G)
 		G.forceMove(src)
-		chambered = G
+		chambered_handle = om_handle(G)
 		user.visible_message("[user] load \a [G] into [src].", span_notice("You load \a [G] into [src]."))
 		return
 	to_chat(user, span_warning("[G] doesn't seem to fit in the [src]!"))
 
 /obj/item/gun/launcher/grenade/underslung/unload(mob/user)
-	if(chambered)
-		user.put_in_hands(chambered)
-		user.visible_message("[user] removes \a [chambered] from [src].", span_notice("You remove \a [chambered] from [src]."))
+	if(chambered())
+		user.put_in_hands(chambered())
+		user.visible_message("[user] removes \a [chambered()] from [src].", span_notice("You remove \a [chambered()] from [src]."))
 		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
-		chambered = null
+		chambered_handle = null
 	else
 		to_chat(user, span_warning("[src] is empty."))
+
+/// LC-refs: the chambered this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/gun/launcher/grenade/proc/chambered() as /obj/item/grenade
+	return om_resolve(chambered_handle)

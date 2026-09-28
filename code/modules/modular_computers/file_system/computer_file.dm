@@ -8,7 +8,7 @@ GLOBAL_VAR_INIT(file_uid, 0)
 	/// File size in GQ. Integers only!
 	var/size = 1
 	/// Holder that contains this file.
-	var/obj/item/computer_hardware/hard_drive/holder
+	var/tmp/holder_handle
 	//// Whether the file may be sent to someone via NTNet transfer, email or other means.
 	var/unsendable = FALSE
 	/// Whether the file may be deleted. Setting to TRUE prevents deletion/renaming/etc.
@@ -33,14 +33,14 @@ GLOBAL_VAR_INIT(file_uid, 0)
 
 // ALLOW(lifecycle): leaves its drive; a running program is killed.
 /datum/computer_file/Destroy()
-	if(!holder)
+	if(!holder())
 		return ..()
 
-	holder.remove_file(src)
+	holder().remove_file(src)
 	// holder.holder is the computer that has drive installed. If we are Destroy()ing program that's currently running kill it.
-	if(holder.holder2 && holder.holder2.active_program == src)
-		holder.holder2.kill_program(1)
-	holder = null
+	if(holder().holder2() && holder().holder2().active_program() == src)
+		holder().holder2().kill_program(1)
+	holder_handle = null
 	return ..()
 
 // Returns independent copy of this file.
@@ -58,3 +58,7 @@ GLOBAL_VAR_INIT(file_uid, 0)
 		temp.filename = filename
 	temp.filetype = filetype
 	return temp
+
+/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/computer_file/proc/holder() as /obj/item/computer_hardware/hard_drive
+	return om_resolve(holder_handle)

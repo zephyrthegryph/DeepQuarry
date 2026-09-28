@@ -20,7 +20,7 @@
 	var/autopilot_first_delay = null // If your want your shuttle to stay for a different amount of time for the first time, set this.
 	var/can_rename = TRUE // Lets the pilot rename the shuttle. Only available once.
 	category = /datum/shuttle/autodock/web_shuttle
-	var/list/obj/item/clothing/head/pilot/helmets
+	var/list/helmets	// OM handles of the registered pilot helmets
 
 /datum/shuttle/autodock/web_shuttle/New()
 	web_master = new web_master_type(src)
@@ -39,7 +39,7 @@ REF_OWNED(/datum/shuttle/autodock/web_shuttle, "web_master")
 
 /datum/shuttle/autodock/web_shuttle/current_dock_target()
 	// TODO - Probably don't even need to override this right?  Debug testing code below will check!
-	. = web_master?.get_current_destination()?.my_landmark?.docking_controller?.id_tag
+	. = web_master?.get_current_destination()?.my_landmark()?.docking_controller()?.id_tag
 	if (. != ..())
 		WARNING("Web shuttle [src] had current_dock_target()=[.] but autodock.current_dock_target() = [..()]")
 
@@ -62,8 +62,8 @@ REF_OWNED(/datum/shuttle/autodock/web_shuttle, "web_master")
 
 /datum/shuttle/autodock/web_shuttle/on_shuttle_arrival()
 	. = ..()
-	set_active_docking_controller(current_location.docking_controller)
-	update_docking_target(current_location)
+	set_active_docking_controller(current_location().docking_controller())
+	update_docking_target(current_location())
 	web_master.on_shuttle_arrival()
 	update_helmets()
 
@@ -74,13 +74,13 @@ REF_OWNED(/datum/shuttle/autodock/web_shuttle, "web_master")
 	update_helmets()
 
 	if(moving_status == SHUTTLE_IDLE)
-		if(web_master.autopath) // We're currently flying a path.
+		if(web_master.autopath()) // We're currently flying a path.
 			autopilot_say("Continuing route.")
 			web_master.process_autopath()
 
 		else // Otherwise we are about to start one or just finished one.
 			if(autopilot_delay > 0) // Wait for awhile so people can get on and off.
-				if(active_docking_controller && shuttle_docking_controller) // Dock to the destination if possible.
+				if(active_docking_controller() && shuttle_docking_controller) // Dock to the destination if possible.
 					var/docking_status = shuttle_docking_controller.get_docking_status()
 					if(docking_status == "undocked")
 						dock()
@@ -100,7 +100,7 @@ REF_OWNED(/datum/shuttle/autodock/web_shuttle, "web_master")
 				autopilot_delay--
 
 			else // Time to go.
-				if(active_docking_controller && shuttle_docking_controller) // Undock if possible.
+				if(active_docking_controller() && shuttle_docking_controller) // Undock if possible.
 					var/docking_status = shuttle_docking_controller.get_docking_status()
 					if(docking_status == "docked")
 						undock()
@@ -114,15 +114,16 @@ REF_OWNED(/datum/shuttle/autodock/web_shuttle, "web_master")
 				web_master.process_autopath()
 
 /datum/shuttle/autodock/web_shuttle/proc/update_helmets()
-	for(var/obj/item/clothing/head/pilot/H as anything in helmets)
-		if(QDELETED(H))
-			helmets -= H
+	for(var/h in helmets.Copy())
+		var/obj/item/clothing/head/pilot/H = om_resolve(h)
+		if(!H)
+			helmets -= h
 			continue
-		if(!H.shuttle_comp || !(get_area(H) in shuttle_area))
-			H.shuttle_comp = null
+		if(!H.shuttle_comp() || !(get_area(H) in shuttle_area))
+			H.shuttle_comp_handle = null
 			H.audible_message(span_warning("\The [H] pings as it loses it's connection with the ship."), runemessage = "ping")
 			H.update_hud("discon")
-			helmets -= H
+			helmets -= h
 		else
 			H.update_hud(moving_status)
 
@@ -220,8 +221,8 @@ REF_OWNED(/datum/shuttle/autodock/web_shuttle, "web_master")
 
 /obj/machinery/computer/shuttle_control/web/proc/interaction_register_helmet(mob/user, obj/item/clothing/head/pilot/H, datum/interaction/interaction)
 	var/datum/shuttle/autodock/web_shuttle/shuttle = SSshuttles.shuttles[shuttle_tag]
-	H.shuttle_comp = src
-	shuttle.helmets |= H
+	H.shuttle_comp_handle = om_handle(src)
+	shuttle.helmets |= om_handle(H)
 	to_chat(user, span_notice("You register the helmet with the ship's console."))
 	shuttle.update_helmets()
 	return TRUE
@@ -246,12 +247,12 @@ REF_OWNED(/datum/shuttle/autodock/web_shuttle, "web_master")
 			travel_time = "[ (route.travel_time * travel_modifier) / (1 MINUTE)] minute\s"
 		else
 			travel_time = "[ (route.travel_time * travel_modifier) / (1 SECOND)] second\s"
-		routes.Add(list(list("name" = html_encode(capitalize(route.display_route(shuttle.web_master.current_destination) )), "index" = i, "travel_time" = travel_time)))
+		routes.Add(list(list("name" = html_encode(capitalize(route.display_route(shuttle.web_master.current_destination()) )), "index" = i, "travel_time" = travel_time)))
 
-	var/shuttle_location = shuttle.web_master.current_destination.name // Destination related, not loc.
+	var/shuttle_location = shuttle.web_master.current_destination().name // Destination related, not loc.
 	var/future_location = null
-	if(shuttle.web_master.future_destination)
-		future_location = shuttle.web_master.future_destination.name
+	if(shuttle.web_master.future_destination())
+		future_location = shuttle.web_master.future_destination().name
 
 	var/shuttle_state
 	switch(shuttle.moving_status)
@@ -360,7 +361,7 @@ REF_OWNED(/datum/shuttle/autodock/web_shuttle, "web_master")
 				return
 
 			var/index = text2num(params["traverse"])
-			var/datum/shuttle_route/new_route = LAZYACCESS(WS.web_master.current_destination.routes, index)
+			var/datum/shuttle_route/new_route = LAZYACCESS(WS.web_master.current_destination().routes, index)
 			if(!istype(new_route))
 				message_admins("ERROR: Shuttle computer was asked to traverse a nonexistant route.")
 				return
@@ -368,25 +369,25 @@ REF_OWNED(/datum/shuttle/autodock/web_shuttle, "web_master")
 			if(!check_docking(ui.user, WS))
 				return TRUE
 
-			var/datum/shuttle_destination/target_destination = new_route.get_other_side(WS.web_master.current_destination)
+			var/datum/shuttle_destination/target_destination = new_route.get_other_side(WS.web_master.current_destination())
 			if(!istype(target_destination))
 				message_admins("ERROR: Shuttle computer was asked to travel to a nonexistant destination.")
 				return
 
-			WS.next_location = target_destination.my_landmark
+			WS.next_location_handle = om_handle(target_destination.my_landmark())
 			if(!can_move(WS, ui.user))
 				return
 
-			WS.web_master.future_destination = target_destination
+			WS.web_master.future_destination_handle = om_handle(target_destination)
 			to_chat(ui.user, span_notice("[WS.visible_name] flight computer received command."))
 			WS.web_master.reset_autopath() // Deviating from the path will almost certainly confuse the autopilot, so lets just reset its memory.
 
 			var/travel_time = new_route.travel_time * WS.flight_time_modifier
 			// TODO - Leshana - Change this to use proccess stuff of autodock!
 			if(new_route.interim && new_route.travel_time)
-				WS.long_jump(target_destination.my_landmark, new_route.interim, travel_time / 10)
+				WS.long_jump(target_destination.my_landmark(), new_route.interim, travel_time / 10)
 			else
-				WS.short_jump(target_destination.my_landmark)
+				WS.short_jump(target_destination.my_landmark())
 
 //check if we're undocked, give option to force launch
 /obj/machinery/computer/shuttle_control/web/proc/check_docking(mob/user, datum/shuttle/autodock/MS)

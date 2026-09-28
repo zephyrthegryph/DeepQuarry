@@ -1,5 +1,5 @@
 /datum/event/electrified_door
-	var/obj/machinery/door/airlock/chosen_door
+	var/tmp/chosen_door_handle
 	var/static/list/area/excluded = list(
 		/area/shuttle,
 		/area/crew_quarters
@@ -17,17 +17,21 @@
 
 		for(var/obj/machinery/door/airlock/target_door in target_doors)
 			if(!target_door.isElectrified() && target_door.arePowerSystemsOn() && target_door.get_integrity() >= target_door.max_integrity)
-				chosen_door = target_door
+				chosen_door_handle = om_handle(target_door)
 				return
 
 /datum/event/electrified_door/start()
 
-	if(!chosen_door)
+	if(!chosen_door())
 		return
-	chosen_door.set_safeties(0)
+	chosen_door().set_safeties(0)
 	if(severity >= EVENT_LEVEL_MODERATE)
-		chosen_door.electrify(-1)
-	chosen_door.lock()
-	chosen_door.take_damage(chosen_door.max_integrity * 5/6, BRUTE)
-	chosen_door.aiControlDisabled = 1
-	chosen_door.update_icon()
+		chosen_door().electrify(-1)
+	chosen_door().lock()
+	chosen_door().take_damage(chosen_door().max_integrity * 5/6, BRUTE)
+	chosen_door().aiControlDisabled = 1
+	chosen_door().update_icon()
+
+/// LC-refs: the chosen_door this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/event/electrified_door/proc/chosen_door() as /obj/machinery/door/airlock
+	return om_resolve(chosen_door_handle)

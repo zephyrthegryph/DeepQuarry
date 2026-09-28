@@ -147,7 +147,7 @@
 
 //animated blood 2 SPOOKY
 /obj/effect/decal/cleanable/blood/splatter/animated
-	var/turf/target_turf
+	var/tmp/target_turf_handle
 	var/loc_last_process
 
 /obj/effect/decal/cleanable/blood/splatter/animated/Initialize(mapload, _age)
@@ -157,12 +157,12 @@
 
 /// Crawls toward its target turf every 2 s; arrived, it sleeps.
 /obj/effect/decal/cleanable/blood/splatter/animated/periodic_step()
-	if(!target_turf)
+	if(!target_turf())
 		return PROCESS_KILL
-	if(target_turf && src.loc != target_turf)
-		step_towards(src,target_turf)
+	if(target_turf() && src.loc != target_turf())
+		step_towards(src,target_turf())
 		if(src.loc == loc_last_process)
-			target_turf = null
+			target_turf_handle = null
 		loc_last_process = src.loc
 
 		//leave some drips behind
@@ -226,3 +226,7 @@
 	. = ..()
 	if(length(heard_talk))
 		PERIODIC_START(src, PERIODIC_SLOW)
+
+/// LC-refs: the target_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/effect/decal/cleanable/blood/splatter/animated/proc/target_turf() as /turf
+	return om_resolve(target_turf_handle)

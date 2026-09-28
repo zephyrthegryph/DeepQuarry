@@ -4,13 +4,13 @@
 	var/admin_signature
 	name = "administrative paper"
 	desc = "If you see this, something has gone horribly wrong."
-	var/datum/admins/admindatum = null
+	var/tmp/admindatum_handle
 
 	var/admin_fax_links = null
 	var/isCrayon = 0
 	var/origin = null
-	var/mob/sender = null
-	var/obj/machinery/photocopier/faxmachine/destination
+	var/tmp/sender_handle
+	var/tmp/destination_handle
 
 	var/header = null
 	var/headerOn = TRUE
@@ -124,7 +124,7 @@
 						info += footer
 					updateinfolinks()
 					SStgui.close_uis(src)
-					admindatum.faxCallback(src, destination)
+					admindatum().faxCallback(src, destination())
 			return TRUE
 		if("penmode")
 			isCrayon = !isCrayon

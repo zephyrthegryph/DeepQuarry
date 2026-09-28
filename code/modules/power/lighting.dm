@@ -25,8 +25,8 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	var/stage = 1
 	var/fixture_type = /obj/machinery/light
 	var/sheets_refunded = 2
-	var/obj/machinery/light/newlight = null
-	var/obj/item/cell/cell = null
+	var/tmp/newlight_handle
+	var/tmp/cell_handle
 
 	var/cell_connectors = TRUE
 
@@ -61,8 +61,8 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 			if(3)
 				. += "The casing is closed."
 		if(cell_connectors)
-			if(cell)
-				. += "You see [cell] inside the casing."
+			if(cell())
+				. += "You see [cell()] inside the casing."
 			else
 				. += "The casing has no power cell for backup power."
 		else
@@ -83,11 +83,11 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	effect = /obj/machinery/light_construct/proc/interaction_remove_cell
 
 /obj/machinery/light_construct/proc/interaction_remove_cell(mob/user, obj/item/held, datum/interaction/interaction)
-	if(cell)
-		user.visible_message("[user] removes [cell] from [src]!",span_notice("You remove [cell]."))
-		user.put_in_hands(cell)
-		cell.update_icon()
-		cell = null
+	if(cell())
+		user.visible_message("[user] removes [cell()] from [src]!",span_notice("You remove [cell()]."))
+		user.put_in_hands(cell())
+		cell().update_icon()
+		cell_handle = null
 	return TRUE
 
 /datum/interaction/machine_item/light_construct_insert_cell
@@ -104,14 +104,14 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	if(!user.unEquip(W))
 		to_chat(user, span_warning("[W] is stuck to your hand!"))
 		return TRUE
-	if(cell)
+	if(cell())
 		to_chat(user, span_warning("There is a power cell already installed!"))
 	else if(user.drop_from_inventory(W))
 		user.visible_message(span_notice("[user] hooks up [W] to [src]."), \
 		span_notice("You add [W] to [src]."))
 		playsound(src, 'sound/machines/click.ogg', 50, TRUE)
 		W.forceMove(src)
-		cell = W
+		cell_handle = om_handle(W)
 		add_fingerprint(user)
 	return TRUE
 
@@ -169,11 +169,11 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	var/obj/machinery/light/finished_light = new fixture_type(loc, src)
 	finished_light.set_dir(dir)
 	transfer_fingerprints_to(finished_light)
-	if(cell)
+	if(cell())
 		finished_light.latent_cell_charge = null
-		finished_light.cell = cell
-		cell.forceMove(finished_light)
-		cell = null
+		finished_light.cell = cell()
+		cell().forceMove(finished_light)
+		cell_handle = null
 	replace_with(src, finished_light)
 	return ITEM_INTERACT_SUCCESS
 
@@ -264,7 +264,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	var/emergency_discharge_started
 	/// Wake state: the area whose power it watches, the one om_after() timer on
 	/// next_light_deadline(), and the auto-flicker chunk watches and recheck.
-	var/tmp/area/area_power_token
+	var/tmp/area_power_token_handle
 	var/tmp/last_area_power = null
 	var/tmp/light_timer_token
 	var/tmp/light_timer_at = 0
@@ -350,7 +350,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 /obj/machinery/light/flamp/noshade
 	lamp_shade = 0
 
-REF_OWNED(/obj/machinery/light, "cell")
+REF_OWNED(/obj/machinery/light, list("cell", "overlay_layer"))
 
 /// Phase 2: stops watching player chunks for flicker.
 /obj/machinery/light/lifecycle_dematerialize()
@@ -1013,15 +1013,15 @@ REF_OWNED(/obj/machinery/light, "cell")
 /// Subscribes to the current area's power key (again, if the area changed).
 /obj/machinery/light/proc/subscribe_area_power()
 	var/area/A = get_area(src)
-	if(A == area_power_token)
+	if(A == area_power_token())
 		return
-	if(area_power_token)
-		om_unwatch(src, area_power_token, /datum/om/behaviour/sleeper/light)
-		area_power_token = null
+	if(area_power_token())
+		om_unwatch(src, area_power_token(), /datum/om/behaviour/sleeper/light)
+		area_power_token_handle = null
 	if(A)
 		om_attach(src, /datum/om/behaviour/sleeper/light)
 		om_watch(src, A, CHANGE_AREA_POWER, /datum/om/behaviour/sleeper/light)
-		area_power_token = A
+		area_power_token_handle = om_handle(A)
 
 /// Area power changes and players moving near a waiting auto-flicker light.
 /datum/om/behaviour/sleeper/light
@@ -1076,7 +1076,7 @@ REF_OWNED(/obj/machinery/light, "cell")
 	var/deadline = next_light_deadline()
 	if(deadline && (isnull(light_timer_token) || light_timer_at > deadline))
 		return "deadline [deadline] (now [world.time]) has no timer"
-	if(get_area(src) && isnull(area_power_token))
+	if(get_area(src) && isnull(area_power_token()))
 		return "not watching its area's power"
 	return null
 
@@ -1746,3 +1746,17 @@ DECLARE_INTERACTIONS(/obj/item/light, INTERACT_ITEM(null, PROC_REF(interaction_i
 /obj/machinery/light/proc/surge_break()
 	on = 1
 	broken()
+
+REF_HELD(/obj/machinery/light, "installed_light")
+
+/// LC-refs: the newlight this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/light_construct/proc/newlight() as /obj/machinery/light
+	return om_resolve(newlight_handle)
+
+/// LC-refs: the area_power_token this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/light/proc/area_power_token() as /area
+	return om_resolve(area_power_token_handle)
+
+/// LC-refs: the cell this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/light_construct/proc/cell() as /obj/item/cell
+	return om_resolve(cell_handle)

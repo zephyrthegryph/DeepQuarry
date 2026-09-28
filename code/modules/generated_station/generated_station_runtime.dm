@@ -79,10 +79,10 @@
 	LAZYREMOVE(registered_defenders, defender)
 
 /datum/generated_station_director/proc/medical_heal(mob/living/defender, amount)
-	if(!(defender in registered_defenders) || simulation.department_state("medical-1") == GENERATED_DEPARTMENT_OFFLINE)
+	if(!(defender in registered_defenders) || simulation().department_state("medical-1") == GENERATED_DEPARTMENT_OFFLINE)
 		return FALSE
 	var/cost = max(1, CEILING(amount / 10, 1))
-	if(!simulation.consume_stockpile("medical-1", "medicine", cost))
+	if(!simulation().consume_stockpile("medical-1", "medicine", cost))
 		return FALSE
 	defender.mend(TREAT_TISSUE_REPAIR, amount)
 	defender.mend(TREAT_BURN_CARE, amount)
@@ -92,33 +92,33 @@
 	return TRUE
 
 /datum/generated_station_director/proc/engineering_repair(department_id, amount)
-	if(amount <= 0 || simulation.department_state("engineering-1") == GENERATED_DEPARTMENT_OFFLINE)
+	if(amount <= 0 || simulation().department_state("engineering-1") == GENERATED_DEPARTMENT_OFFLINE)
 		return FALSE
-	var/datum/generated_station_department_runtime/target = simulation.departments[department_id]
-	var/datum/generated_station_department_runtime/engineering = simulation.departments["engineering-1"]
-	var/datum/generated_station_department_runtime/logistics = simulation.departments["logistics-1"]
+	var/datum/generated_station_department_runtime/target = simulation().departments[department_id]
+	var/datum/generated_station_department_runtime/engineering = simulation().departments["engineering-1"]
+	var/datum/generated_station_department_runtime/logistics = simulation().departments["logistics-1"]
 	var/cost = max(1, CEILING(amount / 10, 1))
 	if(!target || (engineering.stockpiles["fuel"] || 0) < cost || (logistics.stockpiles["supplies"] || 0) < cost)
 		return FALSE
-	simulation.consume_stockpile("engineering-1", "fuel", cost)
-	simulation.consume_stockpile("logistics-1", "supplies", cost)
-	simulation.set_integrity(department_id, target.integrity + amount)
+	simulation().consume_stockpile("engineering-1", "fuel", cost)
+	simulation().consume_stockpile("logistics-1", "supplies", cost)
+	simulation().set_integrity(department_id, target.integrity + amount)
 	on_capabilities_changed()
 	return TRUE
 
 /datum/generated_station_director/proc/logistics_resupply(department_id, resource_id, amount)
-	if(amount <= 0 || simulation.department_state("logistics-1") == GENERATED_DEPARTMENT_OFFLINE)
+	if(amount <= 0 || simulation().department_state("logistics-1") == GENERATED_DEPARTMENT_OFFLINE)
 		return FALSE
-	var/datum/generated_station_department_runtime/logistics = simulation.departments["logistics-1"]
-	if(!simulation.departments[department_id] || (logistics.stockpiles["supplies"] || 0) < amount)
+	var/datum/generated_station_department_runtime/logistics = simulation().departments["logistics-1"]
+	if(!simulation().departments[department_id] || (logistics.stockpiles["supplies"] || 0) < amount)
 		return FALSE
-	simulation.consume_stockpile("logistics-1", "supplies", amount)
-	simulation.add_stockpile(department_id, resource_id, amount)
+	simulation().consume_stockpile("logistics-1", "supplies", amount)
+	simulation().add_stockpile(department_id, resource_id, amount)
 	on_capabilities_changed()
 	return TRUE
 
 /datum/generated_station_director/proc/request_security_reserve()
-	if(security_reserves <= 0 || simulation.department_state("security-1") == GENERATED_DEPARTMENT_OFFLINE)
+	if(security_reserves <= 0 || simulation().department_state("security-1") == GENERATED_DEPARTMENT_OFFLINE)
 		return FALSE
 	security_reserves--
 	return TRUE
@@ -264,3 +264,5 @@
 	var/coordination = station_director?.ai_can_coordinate() ? "AI coordinated" : "local control only"
 	var/profile = station_spec ? "[station_spec.faction_id] [station_spec.architecture_style], security [station_spec.security_tier], [station_spec.size_class]" : "unprofiled"
 	return "[power] · [atmosphere] · [coordination] · [profile]"
+
+REF_OWNED(/datum/expedition_site, list("station_simulation", "station_director"))

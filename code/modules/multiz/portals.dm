@@ -235,3 +235,7 @@ DECLARE_INTERACTIONS(/obj/structure/portal_event, INTERACT_HAND_UNGATED(null, PR
 	status_at_least(EFFECT_SLEEPING, 10)
 	src << 'sound/effects/bamf.ogg'
 	to_chat(src, span_warning("You're starting to come to. You feel like you've been out for a few minutes, at least..."))
+
+/// LC-refs: a portal's other end goes with it (phase 4 deletes it; its own Destroy() then
+/// finds the link already gone).
+REF_OWNED(/obj/structure/portal_event, "target")

@@ -9,7 +9,7 @@
 	if(!.)
 		return
 
-	return check_rights_for(preferences.client, R_MOD|R_ADMIN)
+	return check_rights_for(preferences.client(), R_MOD|R_ADMIN)
 
 /datum/preference/toggle/show_debug_logs
 	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
@@ -22,7 +22,7 @@
 	if(!.)
 		return
 
-	return check_rights_for(preferences.client, R_DEBUG|R_ADMIN)
+	return check_rights_for(preferences.client(), R_DEBUG|R_ADMIN)
 
 /datum/preference/toggle/show_chat_prayers
 	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
@@ -35,7 +35,7 @@
 	if(!.)
 		return
 
-	return check_rights_for(preferences.client, R_EVENT|R_ADMIN)
+	return check_rights_for(preferences.client(), R_EVENT|R_ADMIN)
 
 // General holder prefs
 /datum/preference/toggle/holder
@@ -46,7 +46,7 @@
 	if(!.)
 		return
 
-	return check_rights_for(preferences.client, R_HOLDER)
+	return check_rights_for(preferences.client(), R_HOLDER)
 
 /datum/preference/toggle/holder/play_adminhelp_ping
 	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
@@ -97,4 +97,4 @@
 	if(!..(preferences))
 		return FALSE
 
-	return CONFIG_GET(flag/allow_admin_ooccolor) && check_rights_for(preferences.client, R_ADMIN|R_EVENT|R_FUN)
+	return CONFIG_GET(flag/allow_admin_ooccolor) && check_rights_for(preferences.client(), R_ADMIN|R_EVENT|R_FUN)

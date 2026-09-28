@@ -48,8 +48,8 @@
 	var/adjusted_power = max(max_power * light_amount, 0)
 	adjusted_power = round(adjusted_power, 0.1)
 	if(adjusted_power)
-		if(assembly)
-			assembly.give_power(adjusted_power)
+		if(assembly())
+			assembly().give_power(adjusted_power)
 
 /obj/item/integrated_circuit/passive/power/starter
 	name = "starter"
@@ -61,8 +61,8 @@
 	var/is_charge=0
 
 /obj/item/integrated_circuit/passive/power/starter/handle_passive_energy()
-	if(assembly.battery)
-		if(assembly.battery.charge)
+	if(assembly().battery)
+		if(assembly().battery.charge)
 			if(!is_charge)
 				activate_pin(1)
 			is_charge=1
@@ -89,12 +89,12 @@
 
 /obj/item/integrated_circuit/passive/power/metabolic_siphon/handle_passive_energy()
 	var/mob/living/carbon/human/host = null
-	if(assembly && istype(assembly, /obj/item/electronic_assembly/implant))
-		var/obj/item/electronic_assembly/implant/implant_assembly = assembly
-		if(implant_assembly.implant.imp_in())
-			host = implant_assembly.implant.imp_in()
+	if(assembly() && istype(assembly(), /obj/item/electronic_assembly/implant))
+		var/obj/item/electronic_assembly/implant/implant_assembly = assembly()
+		if(implant_assembly.implant().imp_in())
+			host = implant_assembly.implant().imp_in()
 	if(host && test_validity(host))
-		assembly.give_power(10)
+		assembly().give_power(10)
 		host.nutrition = max(host.nutrition - DEFAULT_HUNGER_FACTOR, 0)
 
 /obj/item/integrated_circuit/passive/power/metabolic_siphon/synthetic
@@ -151,11 +151,11 @@
 	push_data()
 
 /obj/item/integrated_circuit/passive/power/chemical_cell/handle_passive_energy()
-	if(assembly)
+	if(assembly())
 		for(var/I in fuel)
-			if((assembly.battery.maxcharge-assembly.battery.charge) / CELLRATE > fuel[I])
+			if((assembly().battery.maxcharge-assembly().battery.charge) / CELLRATE > fuel[I])
 				if(reagents.remove_reagent(I, 1))
-					assembly.give_power(fuel[I])
+					assembly().give_power(fuel[I])
 
 // For really fat machines.
 /obj/item/integrated_circuit/passive/power/relay/large
@@ -170,11 +170,11 @@
 	power_amount = 2000
 
 /obj/item/integrated_circuit/passive/power/relay/handle_passive_energy()
-	if(!assembly)
+	if(!assembly())
 		return
 	var/area/A = get_area(src)
 	if(A)
-		if(A.powered(EQUIP) && assembly.give_power(power_amount))
+		if(A.powered(EQUIP) && assembly().give_power(power_amount))
 			A.use_power_oneoff(power_amount, EQUIP)
 			// give_power() handles CELLRATE on its own.
 
@@ -216,17 +216,17 @@ REF_OWNED(/obj/item/integrated_circuit/passive/power/powernet, "IO")
 	IO.disconnect_from_network()
 
 /obj/item/integrated_circuit/passive/power/powernet/handle_passive_energy()
-	if(assembly && assembly.anchored && assembly.battery)
+	if(assembly() && assembly().anchored && assembly().battery)
 		var/should_act = get_pin_data(IC_INPUT, 1) // Even if this is false, we still need to update the output pins with powernet information.
 		var/drawing = get_pin_data(IC_INPUT, 2)
 
 		if(should_act) // We're gonna give or take from the net.
 			if(drawing)
-				var/to_transfer = min(throughput, assembly.battery.amount_missing() / CELLRATE) // So we don't need to draw 10kW if the cell needs much less.
+				var/to_transfer = min(throughput, assembly().battery.amount_missing() / CELLRATE) // So we don't need to draw 10kW if the cell needs much less.
 				var/amount = IO.draw_power(to_transfer)
-				assembly.give_power(amount)
+				assembly().give_power(amount)
 			else
-				var/amount = assembly.draw_power(throughput)
+				var/amount = assembly().draw_power(throughput)
 				IO.add_avail(amount / CELLRATE)
 
 		set_pin_data(IC_OUTPUT, 1, IO.avail())

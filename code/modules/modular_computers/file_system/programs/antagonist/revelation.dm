@@ -18,24 +18,24 @@
 		activate()
 
 /datum/computer_file/program/revelation/proc/activate()
-	if(!computer)
+	if(!computer())
 		return
 
-	computer.visible_message(span_notice("\The [computer]'s screen brightly flashes and loud electrical buzzing is heard."))
-	computer.enabled = 0
-	computer.update_icon()
+	computer().visible_message(span_notice("\The [computer()]'s screen brightly flashes and loud electrical buzzing is heard."))
+	computer().enabled = 0
+	computer().update_icon()
 	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(10, 1, computer.loc)
+	s.set_up(10, 1, computer().loc)
 	s.start()
 
-	if(computer.hard_drive)
-		qdel(computer.hard_drive)
+	if(computer().hard_drive)
+		qdel(computer().hard_drive)
 
-	if(computer.battery_module && prob(25))
-		qdel(computer.battery_module)
+	if(computer().battery_module && prob(25))
+		qdel(computer().battery_module)
 
-	if(computer.tesla_link && prob(50))
-		qdel(computer.tesla_link)
+	if(computer().tesla_link && prob(50))
+		qdel(computer().tesla_link)
 
 /datum/computer_file/program/revelation/tgui_act(action, params)
 	if(..())

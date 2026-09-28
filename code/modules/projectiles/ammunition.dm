@@ -132,7 +132,7 @@ DECLARE_INTERACTIONS(/obj/item/ammo_casing, INTERACT_ITEM(null, PROC_REF(interac
 	. = ..()
 	if (!BB)
 		. += "This one is spent."
-	material_round_examine(forged_material, .)
+	material_round_examine(forged_material(), .)
 
 //An item that holds casings and can be used to put them inside guns
 /obj/item/ammo_magazine
@@ -308,7 +308,7 @@ DECLARE_INTERACTIONS(/obj/item/ammo_casing, INTERACT_ITEM(null, PROC_REF(interac
 	. = ..()
 	var/rounds = ammo_count()
 	. += "There [(rounds == 1)? "is" : "are"] [rounds] round\s left!"
-	material_round_examine(forged_material, .)
+	material_round_examine(forged_material(), .)
 
 //magazine icon state caching
 GLOBAL_LIST_EMPTY(magazine_icondata_keys)
@@ -375,3 +375,5 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine/ammo_box, INTERACT_ALT(null, PROC_R
 	. = ..()
 
 	. += span_notice("Alt-click to extract contents.")
+
+REF_OWNED_LIST(/obj/item/ammo_magazine, "stored_ammo")

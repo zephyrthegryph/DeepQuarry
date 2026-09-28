@@ -54,7 +54,7 @@
 	var/codepos = 1
 	var/line = 1
 	var/linepos = 0 //column=codepos-linepos
-	var/datum/n_scriptOptions/nS_Options/options
+	var/tmp/options_handle
 	var/commenting = 0 /// 1 is a single-line comment, 2 is a multi-line comment
 /*
 	Variable: ignore
@@ -103,7 +103,7 @@
 	.=..()
 	ignore+= ascii2text(13) //Carriage return
 	LAZYADD(delim, ignore + options.symbols + end_stmt + string_delim)
-	src.options=options
+	src.options_handle=om_handle(options)
 	LoadCode(code)
 
 /datum/n_Scanner/nS_Scanner/Scan() //Creates a list of tokens from source code
@@ -124,11 +124,11 @@
 		else if(string_delim.Find(char))
 			codepos++ //skip string delimiter
 			tokens+=ReadString(char)
-		else if(options.CanStartID(char))
+		else if(options().CanStartID(char))
 			tokens+=ReadWord()
-		else if(options.IsDigit(char))
+		else if(options().IsDigit(char))
 			tokens+=ReadNumber()
-		else if(options.symbols.Find(char))
+		else if(options().symbols.Find(char))
 			tokens+=ReadSymbol()
 
 
@@ -186,7 +186,7 @@ Reads characters separated by an item in <delim> into a token.
 		buf+=char
 		char=copytext(code, ++codepos, codepos+1)
 	codepos-- //allow main Scan() proc to read the delimiter
-	if(options.keywords.Find(buf))
+	if(options().keywords.Find(buf))
 		return new /datum/token/keyword(buf, line, COL)
 	else
 		return new /datum/token/word(buf, line, COL)
@@ -199,7 +199,7 @@ Reads a symbol into a token.
 	var/char=copytext(code, codepos, codepos+1)
 	var/buf
 
-	while(options.symbols.Find(buf+char))
+	while(options().symbols.Find(buf+char))
 		buf+=char
 		if(++codepos>length(code)) break
 		char=copytext(code, codepos, codepos+1)
@@ -216,7 +216,7 @@ Reads a number into a token.
 	var/buf
 	var/dec=0
 
-	while(options.IsDigit(char) || (char=="." && !dec))
+	while(options().IsDigit(char) || (char=="." && !dec))
 		if(char==".") dec=1
 		buf+=char
 		codepos++
@@ -273,3 +273,9 @@ Reads a comment and outputs the type of comment
 			errors+=new/datum/scriptError/UnterminatedComment()
 
 #undef COL
+
+/// LC-refs: the options this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/n_Scanner/nS_Scanner/proc/options() as /datum/n_scriptOptions/nS_Options
+	return om_resolve(options_handle)
+
+REF_OWNED_LIST(/datum/n_Scanner, "errors")

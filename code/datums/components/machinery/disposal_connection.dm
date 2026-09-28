@@ -40,17 +40,17 @@
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(!trunk)
 		return FALSE
-	if(trunk.linked) //Already linked to something
+	if(trunk.linked()) //Already linked to something
 		return FALSE
 	connected_trunk = trunk
-	trunk.linked = disposal_owner
+	trunk.linked_handle = om_handle(disposal_owner)
 	RegisterSignal(trunk, COMSIG_DISPOSAL_SEND, PROC_REF(on_recieve))
 
 /datum/component/disposal_system_connection/proc/unlink_from_trunk(datum/source)
 	SIGNAL_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(connected_trunk)
-		connected_trunk.linked = null
+		connected_trunk.linked_handle = null
 		UnregisterSignal(connected_trunk, COMSIG_DISPOSAL_SEND)
 		connected_trunk = null
 

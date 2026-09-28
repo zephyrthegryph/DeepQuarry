@@ -131,7 +131,7 @@ REF_OWNED_LIST(/obj/item/nif, "nifsofts")
 		human.nif = src
 		stat = NIF_INSTALLING
 		add_verb(H, /mob/living/carbon/human/proc/set_nif_examine)
-		menu = H.AddComponent(/datum/component/nif_menu)
+		menu_handle = om_handle(H.AddComponent(/datum/component/nif_menu))
 		if(starting_software)
 			for(var/path in starting_software)
 				new path(src)
@@ -180,7 +180,7 @@ REF_OWNED_LIST(/obj/item/nif, "nifsofts")
 	if(H)
 		remove_verb(H, /mob/living/carbon/human/proc/set_nif_examine)
 		H.nif = null
-	QDEL_NULL(menu)
+	qdel_handle(menu_handle); menu_handle = null
 	unregister_human()
 	human = null
 	install_done = null
@@ -753,3 +753,5 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 	//We add a timer that saves our changes 20 seconds from now. If we make another change, that timer is extended.
 	//However, we currently don't need mid-round updating. Updates are done on death, round end, and exiting the round.
 	//addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(persist_nif_data), src), 20 SECONDS, TIMER_UNIQUE|TIMER_OVERRIDE|TIMER_DELETE_ME)
+
+REF_HELD(/mob/living/carbon/human, "nif")

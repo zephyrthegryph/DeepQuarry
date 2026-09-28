@@ -62,7 +62,7 @@
 	var/datum/interaction/construction/power = dq_edge(assembly, "4>5")
 	TEST_ASSERT(dq_walk(H, assembly, power, cell), "adding the cell succeeds")
 	TEST_ASSERT_EQUAL(assembly.build_stage, 5, "stage 4 -> 5")
-	TEST_ASSERT_EQUAL(assembly.cell, cell, "the cell is stored on the assembly")
+	TEST_ASSERT_EQUAL(assembly.cell(), cell, "the cell is stored on the assembly")
 	TEST_ASSERT_EQUAL(cell.loc, assembly, "the cell moved onto the assembly")
 
 	var/obj/item/stock_parts/motor/motor = allocate(/obj/item/stock_parts/motor, T)
@@ -189,7 +189,7 @@
 	var/datum/interaction/construction/power = dq_edge(assembly, "5>6")
 	TEST_ASSERT(dq_walk(H, assembly, power, cell), "adding the cell succeeds")
 	TEST_ASSERT_EQUAL(assembly.build_stage, 6, "stage 5 -> 6")
-	TEST_ASSERT_EQUAL(assembly.cell, cell, "the cell is stored on the assembly")
+	TEST_ASSERT_EQUAL(assembly.cell(), cell, "the cell is stored on the assembly")
 
 	var/obj/item/tool/screwdriver/screwdriver = dq_fast_tool(/obj/item/tool/screwdriver, T)
 	var/datum/interaction/construction/finish = dq_edge(assembly, "6>done:screwdriver")

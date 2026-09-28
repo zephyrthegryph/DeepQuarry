@@ -309,8 +309,9 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 		return INITIALIZE_HINT_QDEL
 	GLOB.blackbox = src
 
-// ALLOW(lifecycle): the blackbox respawns with its logs.
-/obj/machinery/blackbox_recorder/Destroy()
+// ALLOW(lifecycle): the blackbox respawns with its logs. Phase 1, before phase 4 deletes the feedback
+/obj/machinery/blackbox_recorder/lifecycle_unbind()
+// it owns (REF_OWNED_LIST): the replacement takes the list over.
 	var/turf/T = locate(1,1,2)
 	if(T)
 		GLOB.blackbox = null
@@ -328,7 +329,8 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 		BR.feedback = feedback
 		BR.messages = messages
 		BR.messages_admin = messages_admin
-	. = ..()
+		feedback = null
+	return ..()
 
 /obj/machinery/blackbox_recorder/proc/find_feedback_datum(variable)
 	for(var/datum/feedback_variable/FV in feedback)
@@ -477,3 +479,7 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/message_server/step_start_condition()
 	return active // its hum
+
+REF_OWNED_LIST(/obj/machinery/message_server, list("pda_msgs", "rc_msgs"))
+
+REF_OWNED_LIST(/obj/machinery/blackbox_recorder, "feedback")

@@ -44,7 +44,7 @@
 	var/target_condition_type
 	var/target_condition_name
 	var/consent_time = 0
-	var/obj/item/paper/consent_record
+	var/tmp/consent_record_handle
 	var/consent_evidence_id
 	var/datum/contract_requirement/event_count/evidence_requirement
 
@@ -88,7 +88,7 @@
 	if(state != CONTRACT_ACTIVE || consent_time || SScontracts.subject_identity(subject)?.id != target_ref || !target_condition())
 		return FALSE
 	consent_time = world.time
-	consent_record = paper
+	consent_record_handle = om_handle(paper)
 	return TRUE
 
 /datum/contract/medical_case_report/proc/print_consent_revocation(turf/location, issuer_account)
@@ -298,3 +298,9 @@
 	for(var/datum/contract_offer_candidate/candidate in offer_candidates.Copy())
 		if(candidate.definition_id == "medical_rare_case_report" && candidate.context["target_ref"] == subject_ref)
 			withdraw_candidate(candidate, "The patient is no longer available for this report.")
+
+REF_OWNED(/datum/contract/medical_case_report, "evidence_requirement")
+
+/// LC-refs: the consent_record this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/contract/medical_case_report/proc/consent_record() as /obj/item/paper
+	return om_resolve(consent_record_handle)

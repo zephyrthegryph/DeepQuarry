@@ -6,25 +6,25 @@
 	icon_state = "unloader"
 	density = TRUE
 	anchored = TRUE
-	var/obj/machinery/mineral/input = null
-	var/obj/machinery/mineral/output = null
+	var/tmp/input_handle
+	var/tmp/output_handle
 
 /obj/machinery/mineral/unloading_machine/Initialize(mapload)
 	. = ..()
 	for(var/dir in GLOB.cardinal)
-		input = locate(/obj/machinery/mineral/input, get_step(src, dir))
-		if(input)
+		input_handle = om_handle(locate(/obj/machinery/mineral/input, get_step(src, dir)))
+		if(input_marker())
 			break
 	for(var/dir in GLOB.cardinal)
-		output = locate(/obj/machinery/mineral/output, get_step(src, dir))
-		if(output)
+		output_handle = om_handle(locate(/obj/machinery/mineral/output, get_step(src, dir)))
+		if(output_marker())
 			break
-	watch_input(input)
+	watch_input(input_marker())
 
 /// Phase 2: drops the turf watch on its input marker.
 /obj/machinery/mineral/unloading_machine/lifecycle_dematerialize()
 	. = ..()
-	unwatch_input(input)
+	unwatch_input(input_marker())
 
 /obj/machinery/mineral/unloading_machine/proc/toggle_speed(forced)
 	if(forced)
@@ -41,15 +41,15 @@
 /// Empties ore boxes and moves items from its input plate while there are any; then it sleeps
 /// until something arrives (on_input_entered()).
 /obj/machinery/mineral/unloading_machine/machine_step()
-	if(!output || !input || !(locate(/obj/structure/ore_box) in input.loc) && !(locate(/obj/item) in input.loc))
+	if(!output_marker() || !input_marker() || !(locate(/obj/structure/ore_box) in input_marker().loc) && !(locate(/obj/item) in input_marker().loc))
 		return PROCESS_KILL
-	if (src.output && src.input)
-		if (locate(/obj/structure/ore_box, input.loc))
-			var/obj/structure/ore_box/BOX = locate(/obj/structure/ore_box, input.loc)
+	if (src.output_marker() && src.input_marker())
+		if (locate(/obj/structure/ore_box, input_marker().loc))
+			var/obj/structure/ore_box/BOX = locate(/obj/structure/ore_box, input_marker().loc)
 			var/i = 0
 			for (var/ore in BOX.stored_ore)
 				if(BOX.stored_ore[ore] > 0)
-					var/obj/item/ore_chunk/ore_chunk = new /obj/item/ore_chunk(src.output.loc)
+					var/obj/item/ore_chunk/ore_chunk = new /obj/item/ore_chunk(src.output_marker().loc)
 					var/ore_amount = BOX.stored_ore[ore]
 					ore_chunk.stored_ore[ore] += ore_amount
 					BOX.stored_ore[ore] = 0
@@ -101,13 +101,21 @@
 					i++
 					if (i>=3) //Let's make it staggered so it looks like a lot is happening.
 						break
-		if (locate(/obj/item, input.loc))
+		if (locate(/obj/item, input_marker().loc))
 			var/obj/item/O
 			var/i
 			for (i = 0; i<10; i++)
-				O = locate(/obj/item, input.loc)
+				O = locate(/obj/item, input_marker().loc)
 				if (O)
-					O.forceMove(src.output.loc)
+					O.forceMove(src.output_marker().loc)
 				else
 					return
 	return
+
+/// LC-refs: the input this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/mineral/unloading_machine/proc/input_marker() as /obj/machinery/mineral
+	return om_resolve(input_handle)
+
+/// LC-refs: the output this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/mineral/unloading_machine/proc/output_marker() as /obj/machinery/mineral
+	return om_resolve(output_handle)

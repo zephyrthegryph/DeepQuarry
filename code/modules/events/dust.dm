@@ -7,7 +7,7 @@
 	..()
 
 /datum/event/dust/announce()
-	if(!victim)
+	if(!victim())
 		GLOB.command_announcement.Announce("Debris resulting from activity on a nearby asteroid is approaching \the [location_name()]", "Dust Alert", ANNOUNCER_MSG_DEBRISFIELD_START) // Not in an asteroid
 
 /datum/event/dust/tick()
@@ -16,7 +16,7 @@
 
 /datum/event/dust/end()
 	..()
-	if(!victim)
+	if(!victim())
 		GLOB.command_announcement.Announce("\The [location_name()] is no longer in danger of impact from space debris.", "Dust Notice", ANNOUNCER_MSG_DEBRISFIELD_END)
 
 /datum/event/dust/proc/get_severity()

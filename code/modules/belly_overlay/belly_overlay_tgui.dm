@@ -8,7 +8,7 @@
 // natively, so we don't ship per-frame URLs or any animation timing.
 
 /datum/belly_overlay_tgui
-	var/mob/owner
+	var/tmp/owner_handle
 	var/datum/tgui/active_ui
 	var/list/state = list() // ALLOW(instance_list): d: UI state (generic name, too many ambiguous call sites)
 	/// Signature of the last computed overlay state. show() recomputes it cheaply
@@ -17,13 +17,13 @@
 	var/last_show_sig
 
 /datum/belly_overlay_tgui/New(mob/M)
-	owner = M
+	owner_handle = om_handle(M)
 
 // ALLOW(lifecycle): hides the owner's belly overlay window.
 /datum/belly_overlay_tgui/Destroy(force)
-	if(owner?.client)
-		winset(owner.client, "mapwindow.belly_overlay", "is-visible=false")
-	owner = null
+	if(owner()?.client)
+		winset(owner().client, "mapwindow.belly_overlay", "is-visible=false")
+	owner_handle = null
 	active_ui = null
 	return ..()
 
@@ -42,13 +42,13 @@
 	hide()
 
 /datum/belly_overlay_tgui/proc/open_window()
-	if(!owner?.client)
+	if(!owner()?.client)
 		return
-	var/client/C = owner.client
+	var/client/C = owner().client
 	winset(C, "mapwindow.belly_overlay", "is-visible=true;inner-background-color=#00000000")
 	if(!active_ui)
 		var/datum/tgui_window/win = new(C, "mapwindow.belly_overlay")
-		active_ui = new /datum/tgui(owner, src, "BellyOverlay", "Belly Overlay", null, null, null, win)
+		active_ui = new /datum/tgui(owner(), src, "BellyOverlay", "Belly Overlay", null, null, null, win)
 		// Opening the window touches blocking BYOND UI calls (winexists / asset
 		// stoplag). This UI can be reached from no-sleep contexts (e.g. a death
 		// triggered during atom Initialize), so fire the open asynchronously — it
@@ -76,7 +76,7 @@
 		. += "|l[B.liquid_overlay]:[round(B.reagents?.total_volume)]:[B.custom_reagentcolor || B.reagentcolor]:[B.custom_reagentalpha]:[B.max_liquid_level]:[B.custom_max_volume]"
 
 /datum/belly_overlay_tgui/proc/show(obj/belly/B, mob/prey, force = FALSE)
-	if(!owner?.client)
+	if(!owner()?.client)
 		return
 	// Dirty-flag: skip the full layer rebuild + send_update() when nothing visible
 	// changed since the last show(). The window must already be open for the skip to
@@ -153,7 +153,7 @@
 			var/list/urls_to_send = list()
 			for(var/list/L in layers)
 				urls_to_send += L["url"]
-			dq_send_belly_overlay_urls(owner.client, urls_to_send)
+			dq_send_belly_overlay_urls(owner().client, urls_to_send)
 	state = list(
 		"visible" = length(layers) > 0,
 		"layers"  = layers,
@@ -174,8 +174,8 @@
 	last_show_sig = null
 	if(active_ui)
 		active_ui.send_update()
-	if(owner?.client)
-		winset(owner.client, "mapwindow.belly_overlay", "is-visible=false")
+	if(owner()?.client)
+		winset(owner().client, "mapwindow.belly_overlay", "is-visible=false")
 
 /proc/get_belly_overlay_tgui(mob/M)
 	if(!M)
@@ -187,3 +187,11 @@
 /mob
 	var/tmp/datum/belly_overlay_tgui/belly_overlay_tgui
 // /mob/Destroy() cleanup of belly_overlay_tgui folded into the canonical /mob/Destroy() in mob.dm
+
+REF_OWNED(/datum/belly_overlay_tgui, "active_ui")
+
+REF_OWNED(/mob, "belly_overlay_tgui")
+
+/// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/belly_overlay_tgui/proc/owner() as /mob
+	return om_resolve(owner_handle)

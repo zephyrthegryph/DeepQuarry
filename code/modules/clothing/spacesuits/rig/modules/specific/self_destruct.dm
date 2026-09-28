@@ -30,11 +30,11 @@ REF_OWNED(/obj/item/rig_module/self_destruct, "smoke")
 /obj/item/rig_module/self_destruct/periodic_step()
 
 	// Not being worn, leave it alone.
-	if(!holder || !holder.wearer || holder.wearer.get_equipped_item(SLOT_ID_SUIT) != holder)
+	if(!holder || !holder.wearer() || holder.wearer().get_equipped_item(SLOT_ID_SUIT) != holder)
 		return 0
 
 	//OH SHIT.
-	if(holder.wearer.stat == 2)
+	if(holder.wearer().stat == 2)
 		engage(1)
 
 /obj/item/rig_module/self_destruct/engage(skip_check)
@@ -43,8 +43,8 @@ REF_OWNED(/obj/item/rig_module/self_destruct, "smoke")
 		return
 	if(!skip_check && usr && _answer_a1 != "Yes")
 		return
-	if(holder && holder.wearer)
+	if(holder && holder.wearer())
 		smoke.set_up(10, 0, holder.loc)
 		for(var/i = 1 to smoke_strength)
 			smoke.start(272727)
-		holder.wearer.ash()
+		holder.wearer().ash()

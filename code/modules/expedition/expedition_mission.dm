@@ -20,7 +20,7 @@
 	/// EXP_MISSION_* state.
 	var/state = EXP_MISSION_ACTIVE
 	/// Back-reference to the site, set in populate().
-	var/datum/expedition_site/site
+	var/tmp/site_handle
 	/// Base survey points / Thalers paid on success.
 	var/reward_points = 100
 	var/reward_cash = 250
@@ -57,7 +57,7 @@ REF_OWNED_LIST(/datum/expedition_mission, "objectives")
 	return O
 
 /datum/expedition_mission/proc/populate(datum/expedition_site/S)
-	site = S
+	site_handle = om_handle(S)
 	objectives = build_objectives()
 	for(var/datum/expedition_objective/O in objectives)
 		O.populate(S)
@@ -101,9 +101,9 @@ REF_OWNED_LIST(/datum/expedition_mission, "objectives")
 
 // A wipe is when at least one crew deployed and none are left alive.
 /datum/expedition_mission/proc/party_wiped()
-	if(!site || !length(site.participants))
+	if(!site() || !length(site().participants))
 		return FALSE
-	for(var/mob/living/L in site.participants)
+	for(var/mob/living/L in site().participants)
 		if(!QDELETED(L) && L.stat != DEAD)
 			return FALSE
 	return TRUE
@@ -128,8 +128,8 @@ REF_OWNED_LIST(/datum/expedition_mission, "objectives")
 	if(SSexpedition)
 		SSexpedition.survey_points_total += pts
 	var/list/mob/living/crew = list()
-	if(site)
-		for(var/mob/living/L in site.participants)
+	if(site())
+		for(var/mob/living/L in site().participants)
 			if(!QDELETED(L) && L.stat != DEAD)
 				crew += L
 	var/crew_pool = round(cash * EXP_CREW_CASH_SHARE)
@@ -299,3 +299,7 @@ REF_OWNED_LIST(/datum/expedition_mission, "objectives")
 		required_obj(/datum/expedition_objective/commission_engine),
 		bonus_obj(/datum/expedition_objective/eliminate_all, 80, 100),
 	)
+
+/// LC-refs: the site this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/expedition_mission/proc/site() as /datum/expedition_site
+	return om_resolve(site_handle)

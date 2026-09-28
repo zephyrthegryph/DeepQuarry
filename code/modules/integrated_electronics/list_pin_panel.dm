@@ -29,7 +29,7 @@
 	. = ..()
 	if(.)
 		return
-	if(!holder.check_interactivity(ui.user))
+	if(!holder().check_interactivity(ui.user))
 		return
 	switch(action)
 		if("add")

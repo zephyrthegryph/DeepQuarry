@@ -32,7 +32,7 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 	if(!..())
 		return 0
 
-	var/mob/living/carbon/human/H = holder.wearer
+	var/mob/living/carbon/human/H = holder.wearer()
 	if(H)
 		to_chat(usr, span_boldnotice("You activate the suit's energy syphon."))
 		to_chat(H, span_warning("Your suit begins to sap at your own energy stores."))
@@ -46,7 +46,7 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 	if(forced)
 		active = 0
 		return
-	var/mob/living/carbon/human/H = holder.wearer
+	var/mob/living/carbon/human/H = holder.wearer()
 	if(H)
 		to_chat(usr, span_boldnotice("You deactivate the suit's energy syphon."))
 		to_chat(H, span_warning("Your suit ceases from sapping your own energy."))
@@ -56,7 +56,7 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 
 /obj/item/rig_module/protean/syphon/periodic_step()
 	if(active)
-		var/mob/living/carbon/human/H = holder.wearer
+		var/mob/living/carbon/human/H = holder.wearer()
 		if(!H)
 			return
 		var/mob/living/P = get_protean()
@@ -113,7 +113,7 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 	if(!..(1))
 		return 0
 
-	var/mob/living/carbon/human/H = holder.wearer
+	var/mob/living/carbon/human/H = holder.wearer()
 	if(H)
 		var/list/temparmor = list()
 		for(var/entry in armor_types())
@@ -140,9 +140,9 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 			piece.set_armor(dq_armor(list("melee" = 0, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 100, "rad" = 100)))
 		holder.slowdown = initial(slowdown)
 		active = 0
-		holder.wearer?.worn_protection_changed()
+		holder.wearer()?.worn_protection_changed()
 		return
-	var/mob/living/carbon/human/H = holder.wearer
+	var/mob/living/carbon/human/H = holder.wearer()
 	if(H)
 		to_chat(usr, span_boldnotice("You signal the suit to relax."))
 		to_chat(H, span_warning("Your suit softens."))
@@ -157,7 +157,7 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 
 /obj/item/rig_module/protean/armor/periodic_step()
 	if(active)
-		var/mob/living/carbon/human/H = holder.wearer
+		var/mob/living/carbon/human/H = holder.wearer()
 		if(!H)
 			deactivate(1)
 			return
@@ -181,7 +181,7 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 /obj/item/rig_module/protean/healing/activate()
 	if(!..(1))
 		return 0
-	var/mob/living/carbon/human/H = holder.wearer
+	var/mob/living/carbon/human/H = holder.wearer()
 	var/mob/living/P = get_protean()
 	if(!H || !P)
 		return 0
@@ -199,7 +199,7 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 /obj/item/rig_module/protean/healing/deactivate()
 	if(!..(1))
 		return 0
-	var/mob/living/carbon/human/H = holder.wearer
+	var/mob/living/carbon/human/H = holder.wearer()
 	if(!H)
 		return 0
 	to_chat(usr, span_boldnotice("You deactivate the suit's restorative nanites."))
@@ -212,7 +212,7 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 /obj/item/rig_module/protean/healing/periodic_step()
 	if(!active)
 		return
-	var/mob/living/carbon/human/H = holder.wearer
+	var/mob/living/carbon/human/H = holder.wearer()
 	var/mob/living/P = get_protean()
 	if(!H || !P)
 		deactivate()

@@ -12,7 +12,7 @@
 	active_power_usage = 8000
 
 	var/current_program = "Off"
-	var/area/looking_glass/my_area
+	var/tmp/my_area_handle
 	var/last_gravity_change = 0
 	COOLDOWN_DECLARE(ready)
 	var/immersion = FALSE
@@ -23,9 +23,9 @@
 	. = ..()
 	for(var/area/looking_glass/lga in world)
 		if(lga.lg_id == lg_id)
-			my_area = lga
+			my_area_handle = om_handle(lga)
 			break
-	if(!istype(my_area))
+	if(!istype(my_area(), /area/looking_glass))
 		log_mapping("Looking glass console [x],[y],[x] not in a looking glass area.")
 	if(!supported_programs.len)
 		supported_programs["Off"] = null
@@ -71,7 +71,7 @@
 	data["supportedPrograms"] = program_list
 	data["currentProgram"] = current_program
 	data["immersion"] = immersion
-	if(my_area?.get_gravity())
+	if(my_area()?.get_gravity())
 		data["gravity"] = 1
 	else
 		data["gravity"] = 0
@@ -97,12 +97,12 @@
 			return TRUE
 
 		if("gravity")
-			toggle_gravity(my_area)
+			toggle_gravity(my_area())
 			return TRUE
 
 		if("immersion")
 			immersion = !immersion
-			my_area?.toggle_optional(immersion)
+			my_area()?.toggle_optional(immersion)
 			return TRUE
 
 	add_fingerprint(ui.user)
@@ -120,14 +120,14 @@
 	COOLDOWN_START(src, ready, 10 SECONDS)
 
 	if(prog_name in supported_programs)
-		my_area?.begin_program(supported_programs[prog_name])
+		my_area()?.begin_program(supported_programs[prog_name])
 	else if(prog_name in secret_programs)
-		my_area?.begin_program(secret_programs[prog_name])
+		my_area()?.begin_program(secret_programs[prog_name])
 
 /obj/machinery/computer/looking_glass/proc/unload_program()
 	COOLDOWN_START(src, ready, 10 SECONDS)
 
-	my_area?.end_program()
+	my_area()?.end_program()
 
 /obj/machinery/computer/looking_glass/proc/toggle_gravity(area/A)
 	if(world.time < (last_gravity_change + 3 SECONDS))
@@ -147,7 +147,7 @@
 // ALLOW(lifecycle): the looking glass unloads its program.
 /obj/machinery/computer/looking_glass/Destroy()
 	unload_program()
-	my_area = null
+	my_area_handle = null
 	. = ..()
 
 /obj/machinery/computer/looking_glass/ex_act(severity)
@@ -159,3 +159,7 @@
 	..()
 	if (stat != oldstat && (stat & NOPOWER))
 		unload_program()
+
+/// LC-refs: the my_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/looking_glass/proc/my_area() as /area/looking_glass
+	return om_resolve(my_area_handle)

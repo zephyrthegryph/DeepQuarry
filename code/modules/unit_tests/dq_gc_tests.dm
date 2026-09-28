@@ -199,7 +199,7 @@
 	qdel(case)
 	TEST_ASSERT(QDELETED(device), "internal electronic device was not destroyed with its case")
 	TEST_ASSERT_NULL(case.EA, "destroyed electronic assembly retained its internal device")
-	TEST_ASSERT_NULL(device.holder, "destroyed electronic device retained its case")
+	TEST_ASSERT_NULL(device.holder(), "destroyed electronic device retained its case")
 
 // A radio whose frequency was changed must not strand itself in SSradio's
 // per-frequency listener list on deletion (registered at old freq, removed at

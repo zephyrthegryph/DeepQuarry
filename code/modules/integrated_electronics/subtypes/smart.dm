@@ -52,11 +52,11 @@
 	idc = new(src)
 
 /obj/item/integrated_circuit/smart/advanced_pathfinder/do_work()
-	if(!assembly)
+	if(!assembly())
 		activate_pin(3)
 		return
 	//idc.access = assembly.access_card.access
-	var/turf/a_loc = get_turf(assembly)
+	var/turf/a_loc = get_turf(assembly())
 
 	var/turf/target_turf = locate(get_pin_data(IC_INPUT, 1), get_pin_data(IC_INPUT, 2), a_loc.z)
 	var/list/P = om_pathfinder().default_circuit_pathfinding(src, target_turf, 0, 200)
@@ -97,7 +97,7 @@
 	power_draw_per_use = 40
 
 /obj/item/integrated_circuit/smart/targeted_pathfinder
-	var/turf/last_known_position = null
+	var/tmp/last_known_position_handle
 	var/last_target = null
 
 /obj/item/integrated_circuit/smart/targeted_pathfinder/do_work()
@@ -105,7 +105,7 @@
 	set_pin_data(IC_OUTPUT, 1, null)
 
 	if(!ic_is_ref(I.data) || I.data != last_target)
-		last_known_position = null
+		last_known_position_handle = null
 		last_target = I.data
 
 	if(!ic_is_ref(I.data))
@@ -127,16 +127,16 @@
 		return
 
 	if(A in view(start))
-		last_known_position = goal
+		last_known_position_handle = om_handle(goal)
 
 	// If target not visible but we have last known position, use that instead
 	if(!(A in view(start)))
-		if(!last_known_position)
+		if(!last_known_position())
 			push_data()
 			activate_pin(2)
 			return
-		goal = last_known_position
-	var/list/path = AStar(start, goal, /turf/proc/AdjacentTurfsWithAccess, /turf/proc/Distance, 0, 30, id = assembly)
+		goal = last_known_position()
+	var/list/path = AStar(start, goal, /turf/proc/AdjacentTurfsWithAccess, /turf/proc/Distance, 0, 30, id = assembly())
 	if(path && path.len > 1)
 		var/turf/next = path[2] // path[1] is current location
 		var/desired_dir = get_dir(start, next)
@@ -173,7 +173,7 @@
 
 /obj/item/integrated_circuit/smart/pathfinding_locomotion
 	// Add these two variables
-	var/turf/last_known_position = null
+	var/tmp/last_known_position_handle
 	var/last_target = null
 
 /obj/item/integrated_circuit/smart/pathfinding_locomotion/do_work()
@@ -181,7 +181,7 @@
 
 	// Reset last known position when target changes
 	if(!ic_is_ref(I.data) || I.data != last_target)
-		last_known_position = null
+		last_known_position_handle = null
 		last_target = I.data
 
 	if(!ic_is_ref(I.data))
@@ -201,23 +201,23 @@
 
 	// Update last known position when target is visible
 	if(A in view(start))
-		last_known_position = goal
+		last_known_position_handle = om_handle(goal)
 
 	// If target not visible but we have last known position, use that instead
 	if(!(A in view(start)))
-		if(!last_known_position)
+		if(!last_known_position())
 			// No idea where target is
 			set_pin_data(IC_OUTPUT, 1, null)
 			set_pin_data(IC_OUTPUT, 2, null)
 			push_data()
 			activate_pin(3)
 			return
-		goal = last_known_position
+		goal = last_known_position()
 
 	var/desired_dir
 
 	// Calculate path to either current position or last known position
-	var/list/path = AStar(start, goal, /turf/proc/AdjacentTurfsWithAccess, /turf/proc/Distance, 0, 30, id = assembly)
+	var/list/path = AStar(start, goal, /turf/proc/AdjacentTurfsWithAccess, /turf/proc/Distance, 0, 30, id = assembly())
 	if(path && path.len > 1)
 		var/turf/next = path[2]
 		desired_dir = get_dir(start, next)
@@ -229,8 +229,8 @@
 	push_data()
 
 	// Move the assembly
-	if(assembly && !assembly.anchored && assembly.can_move())
-		var/move_result = step(assembly, desired_dir)
+	if(assembly() && !assembly().anchored && assembly().can_move())
+		var/move_result = step(assembly(), desired_dir)
 		if(move_result)
 			activate_pin(2)
 		else
@@ -260,3 +260,11 @@
 	set_pin_data(IC_OUTPUT, 1, z_level)
 	push_data()
 	activate_pin(2)
+
+/// LC-refs: the last_known_position this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/integrated_circuit/smart/targeted_pathfinder/proc/last_known_position() as /turf
+	return om_resolve(last_known_position_handle)
+
+/// LC-refs: the last_known_position this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/integrated_circuit/smart/pathfinding_locomotion/proc/last_known_position() as /turf
+	return om_resolve(last_known_position_handle)

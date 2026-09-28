@@ -62,9 +62,9 @@ REF_OWNED_LIST(/datum/alarm_handler, "alarms")
 		return
 	var/list/datum/alarm/check_alarms = alarms.Copy()
 	for(var/datum/alarm/alarm as anything in check_alarms)
-		if(alarm.origin == departing)
-			LAZYREMOVE(alarms_assoc, alarm.origin)
-			alarm.origin = null
+		if(alarm.origin() == departing)
+			LAZYREMOVE(alarms_assoc, alarm.origin())
+			alarm.origin_handle = null
 		alarm.clear(departing)
 		if(alarm.cameras)
 			alarm.cameras -= departing
@@ -85,7 +85,7 @@ REF_OWNED_LIST(/datum/alarm_handler, "alarms")
 /datum/alarm_handler/proc/check_alarm_cleared(datum/alarm/alarm)
 	if ((alarm.end_time && world.time > alarm.end_time) || !length(alarm.sources)) // ALLOW(cooldown): alarm expiry
 		alarms -= alarm
-		LAZYREMOVE(alarms_assoc, alarm.origin)
+		LAZYREMOVE(alarms_assoc, alarm.origin())
 		on_alarm_change(alarm, ALARM_CLEARED)
 		qdel(alarm)
 		return 1
@@ -137,7 +137,9 @@ REF_OWNED_LIST(/datum/alarm_handler, "alarms")
 
 	var/list/visible_alarms = new()
 	for(var/datum/alarm/A in alarms)
-		if(A.hidden || (z && !(A.origin?.z in map_levels)))
+		if(A.hidden || (z && !(A.origin()?.z in map_levels)))
 			continue
 		visible_alarms.Add(A)
 	return visible_alarms
+
+REF_OWNED_VALUES(/datum/alarm_handler, "alarms_assoc")

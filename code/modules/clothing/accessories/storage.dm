@@ -22,7 +22,7 @@
 REF_OWNED(/obj/item/clothing/accessory/storage, "hold")
 
 /obj/item/clothing/accessory/storage/attack_hand(mob/user)
-	if (has_suit)	//if we are part of a suit
+	if (has_suit())	//if we are part of a suit
 		hold.open(user)
 		return
 
@@ -30,7 +30,7 @@ REF_OWNED(/obj/item/clothing/accessory/storage, "hold")
 		..(user)
 
 /obj/item/clothing/accessory/storage/MouseDrop(obj/over_object)
-	if (has_suit)
+	if (has_suit())
 		return
 
 	if (hold.handle_mousedrop(usr, over_object))

@@ -93,22 +93,22 @@
 	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/suit/space/rig/attack_hand(mob/living/M)
-	if(tacknife)
-		tacknife.forceMove(get_turf(src))
-		if(M.put_in_active_hand(tacknife))
-			to_chat(M, span_notice("You slide \the [tacknife] out of [src]."))
+	if(tacknife())
+		tacknife().forceMove(get_turf(src))
+		if(M.put_in_active_hand(tacknife()))
+			to_chat(M, span_notice("You slide \the [tacknife()] out of [src]."))
 			playsound(src, 'sound/weapons/flipblade.ogg', 40, 1)
-			tacknife = null
+			tacknife_handle = null
 			update_icon()
 		return
 	..()
 
 /obj/item/clothing/suit/space/rig/attackby(obj/item/I, mob/living/M)
 	if(istype(I, /obj/item/material/knife/tacknife))
-		if(tacknife)
+		if(tacknife())
 			return
 		M.drop_item()
-		tacknife = I
+		tacknife_handle = om_handle(I)
 		I.forceMove(src)
 		to_chat(M, span_notice("You slide the [I] into [src]."))
 		playsound(src, 'sound/weapons/flipblade.ogg', 40, 1)
@@ -164,3 +164,7 @@
 /obj/item/clothing/gloves/gauntlets/lightrig
 	flags = THICKMATERIAL
 	resistance_flags = FIRE_PROOF | ACID_PROOF
+
+/// LC-refs: the tacknife this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/clothing/suit/space/rig/proc/tacknife() as /obj/item/material/knife
+	return om_resolve(tacknife_handle)

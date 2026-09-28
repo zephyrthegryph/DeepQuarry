@@ -87,7 +87,7 @@
 
 		var/markstring
 		if(!(VV_MARKED_DATUM in restricted_classes))
-			markstring = "[VV_MARKED_DATUM] (CURRENT: [(istype(holder) && istype(holder.marked_datum))? holder.marked_datum.type : "NULL"])"
+			markstring = "[VV_MARKED_DATUM] (CURRENT: [(istype(holder) && istype(holder.marked_datum(), /datum))? holder.marked_datum().type : "NULL"])"
 			classes += markstring
 
 		var/list/tagstrings = new
@@ -111,7 +111,7 @@
 		.["class"] = flow_ask(mob, "[key]:class", class_spec)
 		if(.["class"] == "finish")
 			return
-		if(holder && holder.marked_datum && .["class"] == markstring)
+		if(holder && holder.marked_datum() && .["class"] == markstring)
 			.["class"] = VV_MARKED_DATUM
 
 		if(holder && tagstrings[.["class"]])
@@ -220,7 +220,7 @@
 				return
 
 		if(VV_MARKED_DATUM)
-			.["value"] = holder.marked_datum
+			.["value"] = holder.marked_datum()
 			if(.["value"] == null)
 				.["class"] = null
 				return

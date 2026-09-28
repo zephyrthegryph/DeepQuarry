@@ -4,7 +4,7 @@
 	desc = "This item spawns stack of 50 of a given material."
 	icon = 'icons/misc/mark.dmi'
 	icon_state = "x4"
-	var/obj/item/stack/type_to_spawn = null
+	var/type_to_spawn = null
 
 /obj/fiftyspawner/Initialize(mapload)
 	..()

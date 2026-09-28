@@ -13,7 +13,7 @@ GLOBAL_LIST_EMPTY(shuttdisp_list)
 	name = "Shuttle 3"
 	warmup_time = 0
 	shuttle_area = /area/shuttle/shuttle3/start
-	current_location = "exphangar_1"
+	current_location_tag = "exphangar_1"
 	docking_controller_tag = "shuttle3_shuttle"
 	web_master_type = /datum/shuttle_web_master/shuttle3
 
@@ -23,7 +23,7 @@ GLOBAL_LIST_EMPTY(shuttdisp_list)
 
 /datum/shuttle_destination/shuttle3/root
 	name = "Exporation Hangar One"
-	my_landmark = "exphangar_1"
+	my_landmark_tag = "exphangar_1"
 	preferred_interim_tag = "shuttle3_transit"
 
 	radio_announce = 0
@@ -34,14 +34,14 @@ GLOBAL_LIST_EMPTY(shuttdisp_list)
 	)
 
 /datum/shuttle_destination/shuttle3/root/get_arrival_message()
-	return "Attention, [master.my_shuttle.visible_name] has arrived to Exploration Hangar One."
+	return "Attention, [master().my_shuttle().visible_name] has arrived to Exploration Hangar One."
 
 /datum/shuttle_destination/shuttle3/root/get_departure_message()
-	return "Attention, [master.my_shuttle.visible_name] has departed Exploration Hangar One."
+	return "Attention, [master().my_shuttle().visible_name] has departed Exploration Hangar One."
 
 /datum/shuttle_destination/shuttle3/sif_orbit
 	name = "Sif Orbit"
-	my_landmark = "shuttle3_orbit"
+	my_landmark_tag = "shuttle3_orbit"
 	preferred_interim_tag = "shuttle3_transit"
 
 	routes_to_make = list(
@@ -51,21 +51,21 @@ GLOBAL_LIST_EMPTY(shuttdisp_list)
 
 /datum/shuttle_destination/shuttle3/stationhangar3
 	name = "Southern Cross Hangar Three"
-	my_landmark = "hangar_3"
+	my_landmark_tag = "hangar_3"
 	preferred_interim_tag = "shuttle3_transit"
 
 	radio_announce = 0
 	announcer = "Southern Cross Docking Computer"
 
 /datum/shuttle_destination/shuttle3/stationhangar3/get_arrival_message()
-	return "Attention, [master.my_shuttle.visible_name] has arrived to Hangar Three."
+	return "Attention, [master().my_shuttle().visible_name] has arrived to Hangar Three."
 
 /datum/shuttle_destination/shuttle3/stationhangar3/get_departure_message()
-	return "Attention, [master.my_shuttle.visible_name] has departed Hangar Three."
+	return "Attention, [master().my_shuttle().visible_name] has departed Hangar Three."
 
 /datum/shuttle_destination/shuttle3/sky
 	name = "Skies of Sif"
-	my_landmark = "shuttle3_sky"
+	my_landmark_tag = "shuttle3_sky"
 	preferred_interim_tag = "shuttle3_sky_transit"
 
 	routes_to_make = list(
@@ -74,17 +74,17 @@ GLOBAL_LIST_EMPTY(shuttdisp_list)
 
 /datum/shuttle_destination/shuttle3/mining_base
 	name = "Wilderness Landing Site "
-	my_landmark = "shuttle3_mining"
+	my_landmark_tag = "shuttle3_mining"
 	preferred_interim_tag = "shuttle3_sky_transit"
 
 	radio_announce = 0
 	announcer = "Outpost Automated ATC"
 
 /datum/shuttle_destination/shuttle3/mining_base/get_arrival_message()
-	return "Attention, [master.my_shuttle.visible_name] has arrived to the Wilderness Area."
+	return "Attention, [master().my_shuttle().visible_name] has arrived to the Wilderness Area."
 
 /datum/shuttle_destination/shuttle3/mining_base/get_departure_message()
-	return "Attention, [master.my_shuttle.visible_name] has departed the Wilderness Area."
+	return "Attention, [master().my_shuttle().visible_name] has departed the Wilderness Area."
 
 //Shuttle displays for tracking Shuttles 1 and 2 without spammy intercom announcements. This could hypothetically be expanded to other shuttles if for some reason that's desirable.
 /obj/machinery/status_display/shuttle_display
@@ -134,12 +134,12 @@ GLOBAL_LIST_EMPTY(shuttdisp_list)
 			message2 = "MANUAL"
 			location_desc = "piloted manually. Please contact Exploration to return the shuttle to autopilot" //Tell them to use Shuttle 3.
 
-		else if(my_shuttle.current_location.z == Z_LEVEL_SC_STATION_ONE)
+		else if(my_shuttle.current_location().z == Z_LEVEL_SC_STATION_ONE)
 			message2 = "Stat"
 			last_z = Z_LEVEL_SC_STATION_ONE
 			location_desc = "docked on the station"
 
-		else if(my_shuttle.current_location.z == GLOB.map_templates_loaded[Z_NAME_ALIAS_SURFACE])
+		else if(my_shuttle.current_location().z == GLOB.map_templates_loaded[Z_NAME_ALIAS_SURFACE])
 			message2 = "Outp"
 			last_z = GLOB.map_templates_loaded[Z_NAME_ALIAS_SURFACE]
 			location_desc =	"docked on the outpost"

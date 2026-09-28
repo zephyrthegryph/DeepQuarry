@@ -38,7 +38,7 @@
 		for(var/obj/item/pda/P as anything in REGISTRY_MEMBERS(REGISTRY_PDAS))
 			var/datum/data/pda/app/messenger/PM = P.find_program(/datum/data/pda/app/messenger)
 
-			if(!PM || !P.owner || PM.toff || P == pda || PM.m_hidden)
+			if(!PM || !P.owner || PM.toff || P == pda() || PM.m_hidden)
 				continue
 			if(LAZYFIND(conversations, "\ref[P]"))
 				convopdas.Add(list(list("Name" = "[P]", "Reference" = "\ref[P]", "Detonate" = "[P.detonate]", "inconvo" = "1")))
@@ -51,13 +51,13 @@
 		data["pdas"] = pdas
 
 		var/list/plugins = list()
-		if(pda.cartridge)
-			for(var/datum/data/pda/messenger_plugin/P as anything in pda.cartridge.messenger_plugins)
+		if(pda().cartridge)
+			for(var/datum/data/pda/messenger_plugin/P as anything in pda().cartridge.messenger_plugins)
 				plugins += list(list(name = P.name, icon = P.icon, ref = "\ref[P]"))
 		data["plugins"] = plugins
 
-		if(pda.cartridge)
-			data["charges"] = pda.cartridge.charges ? pda.cartridge.charges : 0
+		if(pda().cartridge)
+			data["charges"] = pda().cartridge.charges ? pda().cartridge.charges : 0
 
 /datum/data/pda/app/messenger/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	if(..())
@@ -103,15 +103,15 @@
 				to_chat(ui.user, "PDA not found.")
 
 			var/datum/data/pda/messenger_plugin/plugin = locate(params["plugin"])
-			if(plugin && (plugin in pda.cartridge.messenger_plugins))
-				plugin.messenger = src
+			if(plugin && (plugin in pda().cartridge.messenger_plugins))
+				plugin.messenger_handle = om_handle(src)
 				plugin.user_act(ui.user, P)
 		if("Back")
 			active_conversation = null
 
 // Specifically here for the chat message.
 /datum/data/pda/app/messenger/Topic(href, href_list)
-	if(!pda.can_use(usr))
+	if(!pda().can_use(usr))
 		return
 	unnotify()
 
@@ -132,7 +132,7 @@
 	t = readd_quotes(t)
 	if(!t || !istype(P))
 		return
-	if(!in_range(pda, U) && pda.loc != U)
+	if(!in_range(pda(), U) && pda().loc != U)
 		return
 
 	var/datum/data/pda/app/messenger/PM = P.find_program(/datum/data/pda/app/messenger)
@@ -143,7 +143,7 @@
 	if(last_text && world.time < last_text + 5)
 		return
 
-	if(!pda.can_use(U))
+	if(!pda().can_use(U))
 		return
 
 	last_text = world.time
@@ -156,7 +156,7 @@
 			useMS = MS
 			break
 
-	var/datum/signal/signal = pda.telecomms_process()
+	var/datum/signal/signal = pda().telecomms_process()
 
 	var/useTC = 0
 	if(signal)
@@ -174,15 +174,15 @@
 		if(useTC != 2) // Does our recipient have a broadcaster on their level?
 			to_chat(U, "ERROR: Cannot reach recipient.")
 			return
-		useMS.send_pda_message("[P.owner]","[pda.owner]","[t]")
-		pda.investigate_log(span_game(span_say("PDA Message - " + span_name("[U.key] - [pda.owner]") + " -> " + span_name("[P.owner]") + ": " + span_message("[t]"))), "pda")
+		useMS.send_pda_message("[P.owner]","[pda().owner]","[t]")
+		pda().investigate_log(span_game(span_say("PDA Message - " + span_name("[U.key] - [pda().owner]") + " -> " + span_name("[P.owner]") + ": " + span_message("[t]"))), "pda")
 
 		receive_message(list("sent" = 1, "owner" = "[P.owner]", "job" = "[P.ownjob]", "message" = "[t]", "target" = "\ref[P]"), "\ref[P]")
-		PM.receive_message(list("sent" = 0, "owner" = "[pda.owner]", "job" = "[pda.ownjob]", "message" = "[t]", "target" = "\ref[pda]"), "\ref[pda]")
+		PM.receive_message(list("sent" = 0, "owner" = "[pda().owner]", "job" = "[pda().ownjob]", "message" = "[t]", "target" = "\ref[pda()]"), "\ref[pda()]")
 
 		SStgui.update_user_uis(U, P) // Update the sending user's PDA UI so that they can see the new message
 		U.log_message("(PDA: [src.name] | [U.real_name]) sent \"[t]\" to [P.name]", LOG_PDA, color="#00ff00")
-		to_chat(U, "[icon2html(pda,U.client)] <b>Sent message to [P.owner] ([P.ownjob]), </b>\"[t]\"")
+		to_chat(U, "[icon2html(pda(),U.client)] <b>Sent message to [P.owner] ([P.ownjob]), </b>\"[t]\"")
 	else
 		to_chat(U, span_notice("ERROR: Messaging server is not responding.\n\n\
 			However, your message has been saved: ") + t)
@@ -199,7 +199,7 @@
 	for(var/obj/item/pda/P as anything in REGISTRY_MEMBERS(REGISTRY_PDAS))
 		var/datum/data/pda/app/messenger/PM = P.find_program(/datum/data/pda/app/messenger)
 
-		if(!P.owner || !PM || PM.hidden || P == pda || PM.toff)
+		if(!P.owner || !PM || PM.hidden || P == pda() || PM.toff)
 			continue
 
 		var/name = P.owner
@@ -214,7 +214,7 @@
 	return plist
 
 /datum/data/pda/app/messenger/proc/can_receive()
-	return pda.owner && !toff && !hidden
+	return pda().owner && !toff && !hidden
 
 /datum/data/pda/app/messenger/proc/receive_message(list/data, ref)
 	LAZYADD(tnote, list(data))
@@ -230,7 +230,7 @@
 /datum/data/pda/app/messenger/multicast/receive_message(list/data, ref)
 	. = ..()
 
-	var/obj/item/pda/multicaster/M = pda
+	var/obj/item/pda/multicaster/M = pda()
 	if(!istype(M))
 		return
 

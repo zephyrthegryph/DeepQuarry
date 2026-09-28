@@ -33,29 +33,29 @@
 /datum/tgui_say/proc/delegate_speech(entry, channel)
 	switch(channel)
 		if(SAY_CHANNEL)
-			client.mob.say_verb(entry)
+			client().mob.say_verb(entry)
 			return TRUE
 		if(RADIO_CHANNEL)
-			client.mob.say_verb(";" + entry)
+			client().mob.say_verb(";" + entry)
 			return TRUE
 		if(ME_CHANNEL)
-			client.mob.me_verb(entry)
+			client().mob.me_verb(entry)
 			return TRUE
 		if(WHIS_CHANNEL)
-			client.mob.whisper(entry)
+			client().mob.whisper(entry)
 			return TRUE
 		if(SUBTLE_CHANNEL)
-			client.mob.me_verb_subtle(entry)
+			client().mob.me_verb_subtle(entry)
 			return TRUE
 		if(OOC_CHANNEL)
-			client.ooc(entry)
+			client().ooc(entry)
 			return TRUE
 		if(LOOC_CHANNEL)
-			client.looc(entry)
+			client().looc(entry)
 			return TRUE
 		if(ADMIN_CHANNEL)
 			if(check_rights(R_ADMIN, show_msg = FALSE))
-				SSadmin_verbs.dynamic_invoke_verb(client, /datum/admin_verb/cmd_admin_say, entry)
+				SSadmin_verbs.dynamic_invoke_verb(client(), /datum/admin_verb/cmd_admin_say, entry)
 			return TRUE
 	return FALSE
 

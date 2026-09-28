@@ -197,8 +197,8 @@ DECLARE_INTERACTIONS(/obj/item/gun/energy, INTERACT_HAND(null, PROC_REF(interact
 		return R.cell
 	if(istype(src.loc, /obj/item/rig_module))
 		var/obj/item/rig_module/module = src.loc
-		if(module.holder && module.holder.wearer)
-			var/mob/living/carbon/human/H = module.holder.wearer
+		if(module.holder && module.holder.wearer())
+			var/mob/living/carbon/human/H = module.holder.wearer()
 			if(istype(H) && H.get_rig())
 				var/obj/item/rig/suit = H.get_rig()
 				if(istype(suit))
@@ -282,3 +282,5 @@ DECLARE_INTERACTIONS(/obj/item/gun/energy, INTERACT_HAND(null, PROC_REF(interact
 		return 0
 	else
 		return FLOOR(power_supply.charge / max(charge_cost, 1), 1)
+
+REF_HELD(/obj/item/gun/energy, "power_supply")

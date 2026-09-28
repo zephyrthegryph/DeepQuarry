@@ -370,7 +370,7 @@
 			return generated_station_rust_decode_failure(spec, errors, "Invalid or duplicate department record.")
 		var/datum/generated_station_department_instance/department = new
 		department.id = id
-		department.definition = definitions[definition_id]
+		department.definition_handle = om_handle(definitions[definition_id])
 		department.desired_area = row["desired_area"]
 		department.layout_node_id = row["node_id"]
 		departments[id] = department
@@ -403,17 +403,17 @@
 			room_department = departments[node.department_instance_id]
 		var/datum/generated_room_definition/room_definition
 		if(room_department && istext(row["role"]) && length(row["role"]))
-			var/datum/generated_room_definition/full_definition = generated_room_definition_for(room_department.definition.id, row["role"])
-			var/compact_definition_id = "[room_department.definition.id]-compact-[row["role"]]"
+			var/datum/generated_room_definition/full_definition = generated_room_definition_for(room_department.definition().id, row["role"])
+			var/compact_definition_id = "[room_department.definition().id]-compact-[row["role"]]"
 			if(full_definition?.id == row["definition_id"])
 				room_definition = full_definition
 				full_definition = null
 			else if(row["definition_id"] == compact_definition_id)
-				room_definition = generated_compact_room_definition_for(room_department.definition.id, row["role"])
-			else if(row["definition_id"] == "[room_department.definition.id]-micro-[row["role"]]")
-				room_definition = generated_micro_room_definition_for(room_department.definition.id, row["role"])
+				room_definition = generated_compact_room_definition_for(room_department.definition().id, row["role"])
+			else if(row["definition_id"] == "[room_department.definition().id]-micro-[row["role"]]")
+				room_definition = generated_micro_room_definition_for(room_department.definition().id, row["role"])
 			qdel(full_definition)
-		var/list/allowed_roles = room_department ? generated_station_rust_room_roles(room_department.definition.id) : list()
+		var/list/allowed_roles = room_department ? generated_station_rust_room_roles(room_department.definition().id) : list()
 		var/valid_room_definition = room_definition && (row["role"] in allowed_roles) && room_definition.id == row["definition_id"]
 		qdel(room_definition)
 		if(!istext(id) || !length(id))
@@ -423,7 +423,7 @@
 		if(!node)
 			return generated_station_rust_decode_failure(spec, errors, "Room [id] references unknown node [row["node_id"]].")
 		if(!valid_room_definition)
-			return generated_station_rust_decode_failure(spec, errors, "Room [id] uses invalid definition [row["definition_id"]] for role [row["role"]] in [room_department?.definition?.id].")
+			return generated_station_rust_decode_failure(spec, errors, "Room [id] uses invalid definition [row["definition_id"]] for role [row["role"]] in [room_department?.definition()?.id].")
 		if(!generated_station_rust_integer(row["frontage_x"], 1, width) || !generated_station_rust_integer(row["frontage_y"], 1, height))
 			return generated_station_rust_decode_failure(spec, errors, "Room [id] has invalid frontage [row["frontage_x"]],[row["frontage_y"]].")
 		var/datum/generated_station_room_allocation/room = new

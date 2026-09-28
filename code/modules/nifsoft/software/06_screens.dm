@@ -9,13 +9,13 @@
 
 /datum/nifsoft/crewmonitor/New()
 	..()
-	arscreen = new(nif)
+	arscreen = new(nif())
 
 REF_OWNED(/datum/nifsoft/crewmonitor, "arscreen")
 
 /datum/nifsoft/crewmonitor/activate()
 	if((. = ..()))
-		arscreen.tgui_interact(nif.human)
+		arscreen.tgui_interact(nif().human)
 		return TRUE
 
 /datum/nifsoft/crewmonitor/deactivate(force = FALSE)
@@ -36,13 +36,13 @@ REF_OWNED(/datum/nifsoft/crewmonitor, "arscreen")
 
 /datum/nifsoft/alarmmonitor/New()
 	..()
-	tgarscreen = new(nif)
+	tgarscreen = new(nif())
 
 REF_OWNED(/datum/nifsoft/alarmmonitor, "tgarscreen")
 
 /datum/nifsoft/alarmmonitor/activate()
 	if((. = ..()))
-		tgarscreen.tgui_interact(nif.human)
+		tgarscreen.tgui_interact(nif().human)
 		return TRUE
 
 /datum/nifsoft/alarmmonitor/deactivate(force = FALSE)

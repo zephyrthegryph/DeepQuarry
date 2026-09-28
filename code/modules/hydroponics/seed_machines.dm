@@ -123,7 +123,7 @@ REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
 
 /obj/machinery/botany/proc/interaction_load_seed(mob/user, obj/item/W, datum/interaction/interaction)
 	var/obj/item/seeds/S = W
-	if(S.seed && S.seed.get_trait(TRAIT_IMMUTABLE) > 0)
+	if(S.seed() && S.seed().get_trait(TRAIT_IMMUTABLE) > 0)
 		to_chat(user, span_filter_notice("That seed is not compatible with our genetics technology."))
 	else
 		user.drop_from_inventory(W)
@@ -193,7 +193,7 @@ REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
 	name = "lysis-isolation centrifuge"
 	icon_state = "traitcopier"
 
-	var/datum/seed/genetics // Currently scanned seed genetic structure.
+	var/tmp/genetics_handle	// Currently scanned seed genetic structure.
 	var/degradation = 0     // Increments with each scan, stops allowing gene mods after a certain point.
 	circuit = /obj/item/circuitboard/botany_extractor
 
@@ -222,11 +222,11 @@ REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
 	else
 		data["loaded"] = 0
 
-	if(genetics)
+	if(genetics())
 		data["hasGenetics"] = 1
-		data["sourceName"] = genetics.display_name
-		if(!genetics.roundstart)
-			data["sourceName"] += " (variety #[genetics.uid])"
+		data["sourceName"] = genetics().display_name
+		if(!genetics().roundstart)
+			data["sourceName"] += " (variety #[genetics().uid])"
 	else
 		data["hasGenetics"] = 0
 		data["sourceName"] = 0
@@ -245,10 +245,10 @@ REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
 				return
 			seed.forceMove(get_turf(src))
 
-			if(seed.seed.name == "new line" || isnull(GLOB.plant_service.seeds[seed.seed.name]))
-				seed.seed.uid = GLOB.plant_service.seeds.len + 1
-				seed.seed.name = "[seed.seed.uid]"
-				GLOB.plant_service.seeds[seed.seed.name] = seed.seed
+			if(seed.seed().name == "new line" || isnull(GLOB.plant_service.seeds[seed.seed().name]))
+				seed.seed().uid = GLOB.plant_service.seeds.len + 1
+				seed.seed().name = "[seed.seed().uid]"
+				GLOB.plant_service.seeds[seed.seed().name] = seed.seed()
 
 			seed.update_seed()
 			visible_message("[icon2html(src,viewers(src))] [src] beeps and spits out [seed].")
@@ -276,8 +276,8 @@ REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
 			COOLDOWN_START(src, action_cooldown, action_time)
 			active = 1
 
-			if(seed && seed.seed)
-				genetics = seed.seed
+			if(seed && seed.seed())
+				genetics_handle = om_handle(seed.seed())
 				degradation = 0
 
 			consume(seed)
@@ -285,36 +285,36 @@ REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
 			return TRUE
 
 		if("get_gene")
-			if(!genetics || !loaded_disk)
+			if(!genetics() || !loaded_disk)
 				return
 
 			COOLDOWN_START(src, action_cooldown, action_time)
 			active = 1
 
-			var/datum/plantgene/P = genetics.get_gene(params["get_gene"])
+			var/datum/plantgene/P = genetics().get_gene(params["get_gene"])
 			if(!P)
 				return
 			LAZYADD(loaded_disk.genes, P)
 
-			loaded_disk.genesource = "[genetics.display_name]"
-			if(!genetics.roundstart)
-				loaded_disk.genesource += " (variety #[genetics.uid])"
+			loaded_disk.genesource = "[genetics().display_name]"
+			if(!genetics().roundstart)
+				loaded_disk.genesource += " (variety #[genetics().uid])"
 
-			loaded_disk.name += " ([GLOB.plant_service.gene_tag_masks[params["get_gene"]]], #[genetics.uid])"
-			loaded_disk.desc += " The label reads \'gene [GLOB.plant_service.gene_tag_masks[params["get_gene"]]], sampled from [genetics.display_name]\'."
+			loaded_disk.name += " ([GLOB.plant_service.gene_tag_masks[params["get_gene"]]], #[genetics().uid])"
+			loaded_disk.desc += " The label reads \'gene [GLOB.plant_service.gene_tag_masks[params["get_gene"]]], sampled from [genetics().display_name]\'."
 			eject_disk = 1
 
 			degradation += rand(20,60)
 			if(degradation >= 100)
 				failed_task = 1
-				genetics = null
+				genetics_handle = null
 				degradation = 0
 			return TRUE
 
 		if("clear_buffer")
-			if(!genetics)
+			if(!genetics())
 				return
-			genetics = null
+			genetics_handle = null
 			degradation = 0
 			return TRUE
 
@@ -375,9 +375,9 @@ REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
 			COOLDOWN_START(src, action_cooldown, action_time)
 			active = 1
 
-			if(!isnull(GLOB.plant_service.seeds[seed.seed.name]))
-				seed.seed = seed.seed.diverge(1)
-				seed.seed_type = seed.seed.name
+			if(!isnull(GLOB.plant_service.seeds[seed.seed().name]))
+				seed.seed_handle = om_handle(seed.seed().diverge(1))
+				seed.seed_type = seed.seed().name
 				seed.update_seed()
 
 			if(prob(seed.modified))
@@ -385,10 +385,14 @@ REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
 				seed.modified = 101
 
 			for(var/datum/plantgene/gene in loaded_disk.genes)
-				seed.seed.apply_gene(gene)
+				seed.seed().apply_gene(gene)
 				seed.modified += rand(5,10)
 			return TRUE
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/botany/step_start_condition()
 	return active
+
+/// LC-refs: Currently scanned seed genetic structure. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/botany/extractor/proc/genetics() as /datum/seed
+	return om_resolve(genetics_handle)

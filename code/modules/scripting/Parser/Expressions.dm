@@ -108,7 +108,7 @@ See Also:
 - <GetUnaryOperator()>
 */
 /datum/n_Parser/nS_Parser/proc/GetBinaryOperator(O)
-	return GetOperator(O, /datum/node/expression/op/binary, options.binary_operators)
+	return GetOperator(O, /datum/node/expression/op/binary, options().binary_operators)
 
 /*
 Proc: GetUnaryOperator
@@ -120,7 +120,7 @@ See Also:
 - <GetBinaryOperator()>
 */
 /datum/n_Parser/nS_Parser/proc/GetUnaryOperator(O)
-	return GetOperator(O, /datum/node/expression/op/unary,  options.unary_operators)
+	return GetOperator(O, /datum/node/expression/op/unary,  options().unary_operators)
 
 /*
 Proc: Reduce
@@ -152,11 +152,11 @@ Parameters:
 end - A list of values to compare the current token to.
 */
 /datum/n_Parser/nS_Parser/proc/EndOfExpression(end[])
-	if(!curToken)
+	if(!curToken())
 		return 1
-	if(istype(curToken, /datum/token/symbol) && end.Find(curToken.value))
+	if(istype(curToken(), /datum/token/symbol) && end.Find(curToken().value))
 		return 1
-	if(istype(curToken, /datum/token/end) && end.Find(/datum/token/end))
+	if(istype(curToken(), /datum/token/end) && end.Find(/datum/token/end))
 		return 1
 	return 0
 
@@ -184,8 +184,8 @@ See Also:
 	while(TRUE)
 		if(EndOfExpression(end))
 			break
-		if(istype(curToken, /datum/token/symbol) && ErrChars.Find(curToken.value))
-			errors+=new/datum/scriptError/BadToken(curToken)
+		if(istype(curToken(), /datum/token/symbol) && ErrChars.Find(curToken().value))
+			errors+=new/datum/scriptError/BadToken(curToken())
 			break
 
 
@@ -196,24 +196,24 @@ See Also:
 		if(index+1<=tokens.len)
 			ntok=tokens[index+1]
 
-		if(istype(curToken, /datum/token/symbol) && curToken.value=="(")			//Parse parentheses expression
+		if(istype(curToken(), /datum/token/symbol) && curToken().value=="(")			//Parse parentheses expression
 			if(expecting!=VALUE)
-				errors+=new/datum/scriptError/ExpectedToken("operator", curToken)
+				errors+=new/datum/scriptError/ExpectedToken("operator", curToken())
 				NextToken()
 				continue
 			val.Push(ParseParenExpression())
-		else if(istype(curToken, /datum/token/symbol))												//Operator found.
+		else if(istype(curToken(), /datum/token/symbol))												//Operator found.
 			var/datum/node/expression/op/curOperator											//Figure out whether it is unary or binary and get a new instance.
 			if(src.expecting==OPERATOR)
-				curOperator=GetBinaryOperator(curToken)
+				curOperator=GetBinaryOperator(curToken())
 				if(!curOperator)
-					errors+=new/datum/scriptError/ExpectedToken("operator", curToken)
+					errors+=new/datum/scriptError/ExpectedToken("operator", curToken())
 					NextToken()
 					continue
 			else
-				curOperator=GetUnaryOperator(curToken)
+				curOperator=GetUnaryOperator(curToken())
 				if(!curOperator) 																						//given symbol isn't a unary operator
-					errors+=new/datum/scriptError/ExpectedToken("expression", curToken)
+					errors+=new/datum/scriptError/ExpectedToken("expression", curToken())
 					NextToken()
 					continue
 
@@ -223,8 +223,8 @@ See Also:
 			opr.Push(curOperator)
 			src.expecting=VALUE
 		else if(ntok && ntok.value=="(" && istype(ntok, /datum/token/symbol)\
-									&& istype(curToken, /datum/token/word))								//Parse function call
-			var/datum/token/preToken=curToken
+									&& istype(curToken(), /datum/token/word))								//Parse function call
+			var/datum/token/preToken=curToken()
 			var/old_expect=src.expecting
 			var/fex=ParseFunctionExpression()
 			if(old_expect!=VALUE)
@@ -232,24 +232,24 @@ See Also:
 				NextToken()
 				continue
 			val.Push(fex)
-		else if(istype(curToken, /datum/token/keyword)) 										//inline keywords
-			var/datum/n_Keyword/kw=options.keywords[curToken.value]
+		else if(istype(curToken(), /datum/token/keyword)) 										//inline keywords
+			var/datum/n_Keyword/kw=options().keywords[curToken().value]
 			kw=new kw(inline=1)
 			if(kw)
 				if(!kw.Parse(src))
 					return
 			else
-				errors+=new/datum/scriptError/BadToken(curToken)
-		else if(istype(curToken, /datum/token/end)) 													//semicolon found where it wasn't expected
-			errors+=new/datum/scriptError/BadToken(curToken)
+				errors+=new/datum/scriptError/BadToken(curToken())
+		else if(istype(curToken(), /datum/token/end)) 													//semicolon found where it wasn't expected
+			errors+=new/datum/scriptError/BadToken(curToken())
 			NextToken()
 			continue
 		else
 			if(expecting!=VALUE)
-				errors+=new/datum/scriptError/ExpectedToken("operator", curToken)
+				errors+=new/datum/scriptError/ExpectedToken("operator", curToken())
 				NextToken()
 				continue
-			val.Push(GetExpression(curToken))
+			val.Push(GetExpression(curToken()))
 			src.expecting=OPERATOR
 		NextToken()
 
@@ -269,7 +269,7 @@ See Also:
 */
 /datum/n_Parser/nS_Parser/proc/ParseFunctionExpression()
 	var/datum/node/expression/FunctionCall/exp=new
-	exp.func_name=curToken.value
+	exp.func_name=curToken().value
 	NextToken() //skip function name
 	NextToken() //skip open parenthesis, already found
 	var/loops = 0
@@ -279,11 +279,11 @@ See Also:
 		if(loops>=1000)
 			CRASH("Something TERRIBLE has gone wrong in ParseFunctionExpression ;__;")
 
-		if(istype(curToken, /datum/token/symbol) && curToken.value==")")
+		if(istype(curToken(), /datum/token/symbol) && curToken().value==")")
 			return exp
 		exp.parameters+=ParseParamExpression()
-		if(curToken.value==","&&istype(curToken, /datum/token/symbol))NextToken()	//skip comma
-		if(istype(curToken, /datum/token/end))																		//Prevents infinite loop...
+		if(curToken().value==","&&istype(curToken(), /datum/token/symbol))NextToken()	//skip comma
+		if(istype(curToken(), /datum/token/end))																		//Prevents infinite loop...
 			errors+=new/datum/scriptError/ExpectedToken(")")
 			return exp
 

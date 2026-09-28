@@ -15,18 +15,18 @@
 	return data
 
 /datum/tgui_module/cardmod/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/datum/computer_file/program/card_mod/program = host
+	var/datum/computer_file/program/card_mod/program = host()
 	if(!istype(program))
 		return 0
 	var/list/data = ..()
 	data["station_name"] = station_name()
 	data["mode"] = mod_mode
 	data["printing"] = FALSE
-	if(program && program.computer)
-		data["have_id_slot"] = !!program.computer.card_slot
-		data["have_printer"] = !!program.computer.nano_printer
+	if(program && program.computer())
+		data["have_id_slot"] = !!program.computer().card_slot
+		data["have_printer"] = !!program.computer().nano_printer
 		data["authenticated"] = program.can_run(user)
-		if(!program.computer.card_slot)
+		if(!program.computer().card_slot)
 			mod_mode = 0 //We can't modify IDs when there is no card reader
 	else
 		data["have_id_slot"] = 0
@@ -40,8 +40,8 @@
 	data["id_rank"] = null
 	data["target_owner"] = null
 	data["target_name"] = null
-	if(program && program.computer && program.computer.card_slot)
-		var/obj/item/card/id/id_card = program.computer.card_slot.stored_card
+	if(program && program.computer() && program.computer().card_slot)
+		var/obj/item/card/id/id_card = program.computer().card_slot.stored_card()
 		data["has_modify"] = !!id_card
 		data["account_number"] = id_card ? id_card.associated_account_number : null
 		data["id_rank"] = id_card && id_card.assignment ? id_card.assignment : "Unassigned"
@@ -63,8 +63,8 @@
 
 	var/list/all_centcom_access = list()
 	var/list/regions = list()
-	if(program.computer.card_slot && program.computer.card_slot.stored_card)
-		var/obj/item/card/id/id_card = program.computer.card_slot.stored_card
+	if(program.computer().card_slot && program.computer().card_slot.stored_card())
+		var/obj/item/card/id/id_card = program.computer().card_slot.stored_card()
 		if(is_centcom)
 			for(var/access in SSaccess.get_all_centcom_access())
 				all_centcom_access.Add(list(list(
@@ -93,11 +93,11 @@
 	return data
 
 /datum/tgui_module/cardmod/proc/format_jobs(list/jobs)
-	var/datum/computer_file/program/card_mod/program = host
+	var/datum/computer_file/program/card_mod/program = host()
 	if(!istype(program))
 		return null
 
-	var/obj/item/card/id/id_card = program.computer.card_slot ? program.computer.card_slot.stored_card : null
+	var/obj/item/card/id/id_card = program.computer().card_slot ? program.computer().card_slot.stored_card() : null
 	var/list/formatted = list()
 	for(var/job in jobs)
 		formatted.Add(list(list(
@@ -112,7 +112,7 @@
 		return TRUE
 
 
-	var/datum/computer_file/program/card_mod/program = host
+	var/datum/computer_file/program/card_mod/program = host()
 	if(!istype(program))
 		return TRUE
 	var/obj/item/modular_computer/computer = tgui_host()
@@ -122,7 +122,7 @@
 	var/obj/item/card/id/user_id_card = ui.user.GetIdCard()
 	var/obj/item/card/id/id_card
 	if(computer.card_slot)
-		id_card = computer.card_slot.stored_card
+		id_card = computer.card_slot.stored_card()
 
 	switch(action)
 		if("mode")

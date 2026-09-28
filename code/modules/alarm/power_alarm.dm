@@ -2,7 +2,7 @@
 	category = "Power Alarms"
 
 /datum/alarm_handler/power/on_alarm_change(datum/alarm/alarm, was_raised)
-	var/area/A = alarm.origin
+	var/area/A = alarm.origin()
 	if(istype(A))
 		A.power_alert(was_raised)
 	..()

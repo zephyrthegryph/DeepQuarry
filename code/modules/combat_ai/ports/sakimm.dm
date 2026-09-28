@@ -82,7 +82,7 @@
 /proc/dq_sakimm_find_loot(mob/living/simple_mob/animal/sif/sakimm/S, range = 7)
 	if(!istype(S) || S.get_active_hand())
 		return null
-	var/turf/home = S.ai_brain?.home_turf
+	var/turf/home = S.ai_brain?.home_turf()
 	var/list/loot_types = dq_sakimm_loot_types()
 	var/obj/item/best = null
 	var/best_dist = INFINITY
@@ -255,7 +255,7 @@
 		brain.max_home_distance = 1
 		brain.returns_home = TRUE
 		// At home: stash the loot.
-		if(brain.home_turf && get_dist(S, brain.home_turf) <= 1)
+		if(brain.home_turf() && get_dist(S, brain.home_turf()) <= 1)
 			S.drop_from_inventory(held, get_turf(S))
 	else
 		// Empty-handed: loosen leash and let it roam for new loot.

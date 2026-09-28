@@ -209,8 +209,8 @@ REF_OWNED(/obj/machinery/pump, "cell")
 		R.add_reagent(REAGENT_ID_ICE, round(volume / 2, 0.1))
 
 	for(var/turf/simulated/mineral/M in orange(5,src))
-		if(M.mineral && prob(40) && M.mineral.reagent) // v
-			R.add_reagent(M.mineral.reagent, round(volume / 5, 0.1)) // Was the turf's reagents variable not the R argument, and changed ore_reagent to M.mineral.reagent because of above change. Also nerfed amount to 1/5 instead of 1/2
+		if(M.mineral() && prob(40) && M.mineral().reagent) // v
+			R.add_reagent(M.mineral().reagent, round(volume / 5, 0.1)) // Was the turf's reagents variable not the R argument, and changed ore_reagent to M.mineral.reagent because of above change. Also nerfed amount to 1/5 instead of 1/2
 
 /turf/simulated/floor/water/pool/pump_reagents(datum/reagents/R, volume)
 	. = ..()
@@ -230,8 +230,8 @@ REF_OWNED(/obj/machinery/pump, "cell")
 	if(!istype(M))
 		return
 	// Use nearby ores as well
-	if(M.mineral && M.mineral.reagent && prob(40))
-		R.add_reagent(M.mineral.reagent, rand(0,volume / 8))
+	if(M.mineral() && M.mineral().reagent && prob(40))
+		R.add_reagent(M.mineral().reagent, rand(0,volume / 8))
 	// Pump deep reagents from deepdrill boreholes
 	for(var/metal in GLOB.deepore_fracking_reagents)
 		if(!LAZYACCESS(M.resources,metal))

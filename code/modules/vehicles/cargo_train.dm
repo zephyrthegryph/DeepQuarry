@@ -120,7 +120,7 @@
 	..()
 
 /obj/vehicle/train/trolley/Bump(atom/Obstacle)
-	if(!lead)
+	if(!lead())
 		return //so people can't knock others over by pushing a trolley around
 	..()
 
@@ -193,7 +193,7 @@
 		return 0
 	// End
 	if(is_train_head())
-		if(direction == reverse_direction(dir) && tow)
+		if(direction == reverse_direction(dir) && tow())
 			return 0
 		if(Move(get_step(src, direction)))
 			return 1
@@ -397,7 +397,7 @@
 	src.train_length = train_length
 	src.active_engines = active_engines
 
-	if(!lead && !tow)
+	if(!lead() && !tow())
 		anchored = FALSE
 	else
 		anchored = TRUE
@@ -439,7 +439,7 @@
 	return
 
 /obj/vehicle/train/trolley_tank/Bump(atom/Obstacle)
-	if(!lead)
+	if(!lead())
 		return //so people can't knock others over by pushing a trolley around
 	..()
 
@@ -510,7 +510,7 @@
 	src.train_length = train_length
 	src.active_engines = active_engines
 
-	if(!lead && !tow)
+	if(!lead() && !tow())
 		anchored = FALSE
 	else
 		anchored = TRUE
@@ -544,3 +544,5 @@
 
 /obj/vehicle/train/trolley_tank/on_reagent_change(changetype)
 	update_icon()
+
+REF_HELD(/obj/vehicle/train/engine, "key")

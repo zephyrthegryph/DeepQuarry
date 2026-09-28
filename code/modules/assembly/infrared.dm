@@ -52,22 +52,22 @@
 		add_overlay("infrared_on")
 		LAZYADD(attached_overlays, "infrared_on")
 
-	if(holder)
-		holder.update_icon(2)
+	if(holder())
+		holder().update_icon(2)
 
 /obj/item/assembly/infra/periodic_step()
 	if(!on && i_beams)
 		QDEL_LIST_NULL(i_beams)
 		return
 
-	if(!i_beams && secured && (istype(loc, /turf) || (holder && istype(holder.loc, /turf))))
+	if(!i_beams && secured && (istype(loc, /turf) || (holder() && istype(holder().loc, /turf))))
 		create_beams()
 
 /obj/item/assembly/infra/proc/create_beams(limit = 8)
 	var/current_spot = get_turf(src)
 	for(var/i = 1 to limit)
 		var/obj/effect/beam/i_beam/I = new /obj/effect/beam/i_beam(current_spot)
-		I.master = src
+		I.master_handle = om_handle(src)
 		I.density = TRUE
 		I.set_dir(dir)
 		if(!step(I, I.dir)) //Try to take a step in that direction
@@ -98,7 +98,7 @@
 	QDEL_LIST_NULL(i_beams)
 
 /obj/item/assembly/infra/holder_movement()
-	if(!holder)
+	if(!holder())
 		return FALSE
 	QDEL_LIST_NULL(i_beams)
 	return TRUE
@@ -108,7 +108,7 @@
 		return FALSE
 	pulse(0)
 	QDEL_LIST_NULL(i_beams) //They will get recreated next process() if the situation is still appropriate
-	if(!holder)
+	if(!holder())
 		visible_message("[icon2html(src,viewers(src))] *beep* *beep*")
 
 /obj/item/assembly/infra/tgui_interact(mob/user, datum/tgui/ui)
@@ -149,7 +149,7 @@
 	name = "i beam"
 	icon = 'icons/obj/projectiles.dmi'
 	icon_state = "ibeam"
-	var/obj/item/assembly/infra/master = null
+	var/tmp/master_handle
 	var/visible = 0
 	anchored = TRUE
 
@@ -158,11 +158,11 @@
 	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/effect/beam/i_beam/proc/hit()
-	master?.trigger_beam()
+	master()?.trigger_beam()
 	qdel(src)
 
 /obj/effect/beam/i_beam/periodic_step()
-	if(loc?.density || !master)
+	if(loc?.density || !master())
 		qdel(src)
 		return
 
@@ -178,3 +178,7 @@
 	if(istype(AM, /obj/effect/beam))
 		return
 	hit()
+
+/// LC-refs: the master this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/effect/beam/i_beam/proc/master() as /obj/item/assembly/infra
+	return om_resolve(master_handle)

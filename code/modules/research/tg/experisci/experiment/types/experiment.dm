@@ -97,8 +97,8 @@
  */
 /datum/experiment/proc/finish_experiment(datum/component/experiment_handler/experiment_handler)
 	completed = TRUE
-	experiment_handler.selected_experiment = null
-	var/announcetext = experiment_handler.linked_web.complete_experiment(src)
+	experiment_handler.selected_experiment_handle = null
+	var/announcetext = experiment_handler.linked_web().complete_experiment(src)
 	experiment_handler.announce_message_to_all(announcetext)
 
 /datum/experiment/proc/get_points_reward_text()

@@ -41,7 +41,7 @@ REF_OWNED_LIST(/datum/generated_station_department_definition, list("requirement
 /// Per-station realization of an authored department definition.
 /datum/generated_station_department_instance
 	var/id
-	var/datum/generated_station_department_definition/definition
+	var/tmp/definition_handle
 	var/desired_area = 1
 	var/layout_node_id
 
@@ -333,15 +333,15 @@ REF_OWNED_VALUES(/datum/generated_station_spec, "maintenance_doors")
 			result.add(GENERATED_STATION_ISSUE_ERROR, "department-id", "Department instance IDs must be present and unique.", department.id)
 		else
 			department_ids[department.id] = TRUE
-		if(!department.definition?.id)
+		if(!department.definition()?.id)
 			result.add(GENERATED_STATION_ISSUE_ERROR, "department-definition", "Department instance has no valid definition.", department.id)
 			continue
-		if(department.desired_area < department.definition.minimum_area)
+		if(department.desired_area < department.definition().minimum_area)
 			result.add(GENERATED_STATION_ISSUE_ERROR, "department-area-minimum", "Department area is below its definition minimum.", department.id)
-		if(department.definition.maximum_area > 0 && department.desired_area > department.definition.maximum_area)
+		if(department.definition().maximum_area > 0 && department.desired_area > department.definition().maximum_area)
 			result.add(GENERATED_STATION_ISSUE_ERROR, "department-area-maximum", "Department area exceeds its definition maximum.", department.id)
 		total_area += max(0, department.desired_area)
-		for(var/datum/generated_station_capability_provision/provision in department.definition.provisions)
+		for(var/datum/generated_station_capability_provision/provision in department.definition().provisions)
 			if(provision.capability_id && provision.amount > 0)
 				provided_capabilities[provision.capability_id] = (provided_capabilities[provision.capability_id] || 0) + provision.amount
 	for(var/datum/generated_station_layout_node/node in layout_nodes)
@@ -397,9 +397,9 @@ REF_OWNED_VALUES(/datum/generated_station_spec, "maintenance_doors")
 	for(var/datum/generated_station_department_instance/department in departments)
 		if(!department.layout_node_id || !node_ids[department.layout_node_id])
 			result.add(GENERATED_STATION_ISSUE_ERROR, "department-layout-node", "Department instance references an unknown layout node.", department.id)
-		if(!department.definition)
+		if(!department.definition())
 			continue
-		for(var/datum/generated_station_capability_requirement/requirement in department.definition.requirements)
+		for(var/datum/generated_station_capability_requirement/requirement in department.definition().requirements)
 			if(!requirement.capability_id || requirement.amount <= 0)
 				result.add(GENERATED_STATION_ISSUE_ERROR, "capability-requirement", "Capability requirement is malformed.", department.id)
 				continue
@@ -444,3 +444,7 @@ REF_OWNED_VALUES(/datum/generated_station_spec, "maintenance_doors")
 #define GENERATED_STATION_TILE_EXTERIOR "exterior"
 #define GENERATED_STATION_TILE_FLOOR "floor"
 #define GENERATED_STATION_TILE_HULL "hull"
+
+/// LC-refs: the definition this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/generated_station_department_instance/proc/definition() as /datum/generated_station_department_definition
+	return om_resolve(definition_handle)

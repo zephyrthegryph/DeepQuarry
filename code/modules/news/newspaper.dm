@@ -13,7 +13,7 @@
 	var/pages = 0
 	var/curr_page = 0
 	var/list/datum/feed_channel/news_content
-	var/datum/feed_message/important_message = null
+	var/tmp/important_message_handle
 	var/scribble=""
 	var/scribble_page = null
 	drop_sound = 'sound/items/drop/wrapper.ogg'
@@ -69,10 +69,10 @@ DECLARE_INTERACTIONS(/obj/item/newspaper, \
 			"messages" = msgs,
 		))
 	data["channels"] = chs
-	if(important_message)
+	if(important_message())
 		data["wanted"] = list(
-			"author" = important_message.author,
-			"body" = important_message.body,
+			"author" = important_message().author,
+			"body" = important_message().body,
 		)
 	else
 		data["wanted"] = null

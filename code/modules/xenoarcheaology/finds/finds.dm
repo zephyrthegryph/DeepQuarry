@@ -85,3 +85,5 @@
 	welder.remove_fuel(2)
 	qdel(src)
 	return ITEM_INTERACT_SUCCESS
+
+REF_OWNED(/obj/item/strangerock, "geologic_data")

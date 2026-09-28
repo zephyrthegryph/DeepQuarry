@@ -442,3 +442,5 @@
 	body_parts_covered = HEAD|FACE
 	item_flags = FLEXIBLEMATERIAL
 	flags_inv = HIDEFACE|BLOCKHAIR
+
+REF_OWNED(/obj/item/clothing/mask/ai, "eye")

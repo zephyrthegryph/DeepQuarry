@@ -122,7 +122,7 @@ GLOBAL_LIST_INIT(dq_species_preview_cache_warm_init, dq_warm_species_preview_cac
 
 /datum/preference_editor/species_picker/build_ui_static_data(datum/preferences/preferences)
 	var/list/all_species = list()
-	var/client/C = preferences.client
+	var/client/C = preferences.client()
 	for(var/species_name in GLOB.playable_species)
 		var/datum/species/S = GLOB.all_species[species_name]
 		if(!S)

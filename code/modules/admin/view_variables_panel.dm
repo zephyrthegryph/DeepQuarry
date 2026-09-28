@@ -18,7 +18,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(debug_variables, (R_DEBUG|R_SERVER|R_ADMIN|R_SPAWN|R
 	var/datum/view_variables_panel/dq_vv_panel
 
 /datum/view_variables_panel
-	var/client/owner
+	var/tmp/owner_handle
 	/// The datum or list currently being viewed.
 	var/thing
 	/// Saved ref string so refresh actions land on the same target.
@@ -26,13 +26,13 @@ ADMIN_VERB_AND_CONTEXT_MENU(debug_variables, (R_DEBUG|R_SERVER|R_ADMIN|R_SPAWN|R
 
 /datum/view_variables_panel/New(client/owner_client)
 	..()
-	owner = owner_client
+	owner_handle = om_handle(owner_client)
 
 // ALLOW(lifecycle): clears the client's cached panel (clients aren't datums).
 /datum/view_variables_panel/Destroy(force, ...)
-	if(owner)
-		owner.dq_vv_panel = null
-	owner = null
+	if(owner())
+		owner().dq_vv_panel = null
+	owner_handle = null
 	thing = null
 	return ..()
 
@@ -98,9 +98,9 @@ ADMIN_VERB_AND_CONTEXT_MENU(debug_variables, (R_DEBUG|R_SERVER|R_ADMIN|R_SPAWN|R
 		data["coords"] = null
 
 	// Marker flags.
-	var/datum/admins/holder = owner ? owner.holder : null
+	var/datum/admins/holder = owner() ? owner().holder : null
 	var/datum/thing_datum = is_listy ? null : thing
-	data["marked"] = (holder && holder.marked_datum == thing)
+	data["marked"] = (holder && holder.marked_datum() == thing)
 	data["tagged_index"] = (holder && LAZYFIND(holder.tagged_datums, thing)) || 0
 	data["varedited"] = (thing_datum && (thing_datum.datum_flags & DF_VAR_EDITED))
 	data["gc_destroyed"] = (thing_datum && thing_datum.gc_destroyed)
@@ -164,13 +164,13 @@ ADMIN_VERB_AND_CONTEXT_MENU(debug_variables, (R_DEBUG|R_SERVER|R_ADMIN|R_SPAWN|R
 	. = ..()
 	if(.)
 		return
-	if(!owner)
+	if(!owner())
 		return
 	switch(action)
 		if("refresh")
 			var/datum/refresh_target = thing
 			if(refresh_target && !QDELETED(refresh_target))
-				owner.debug_variables(refresh_target)
+				owner().debug_variables(refresh_target)
 			SStgui.update_uis(src)
 			return TRUE
 		if("forward_topic")
@@ -216,3 +216,9 @@ ADMIN_VERB_AND_CONTEXT_MENU(debug_variables, (R_DEBUG|R_SERVER|R_ADMIN|R_SPAWN|R
 		return
 	if(dq_vv_panel && dq_vv_panel.thing == thing)
 		SStgui.update_uis(dq_vv_panel)
+
+REF_OWNED(/client, "dq_vv_panel")
+
+/// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/view_variables_panel/proc/owner() as /client
+	return om_resolve(owner_handle)

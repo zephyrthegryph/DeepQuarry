@@ -186,7 +186,7 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 // Request is for a physical thing
 //
 /datum/supply_demand_order/thing
-	var/atom/type_path // Type path of the item required
+	var/type_path	// Type path of the item required
 
 /datum/supply_demand_order/thing/New(qty, atom/type_path)
 	..()
@@ -353,3 +353,5 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 		var/chosen_qty = FLOOR(rand(5, 100) * initial(A.product_mod), 1)
 		LAZYADD(required_items, new /datum/supply_demand_order/thing(chosen_qty, chosen_path))
 	return
+
+REF_OWNED(/datum/supply_demand_order/gas, "mixture")

@@ -93,23 +93,23 @@
 	var/obj/item/handcuffs/chained = null // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 
 /obj/item/clothing/shoes/orange/proc/attach_cuffs(obj/item/handcuffs/cuffs, mob/user as mob)
-	if (chained) return
+	if (chained()) return
 
 	user.drop_item()
 	cuffs.forceMove(src)
-	chained = cuffs
+	chained_handle = om_handle(cuffs)
 	slowdown = 15
 	icon_state = "orange1"
 
 /obj/item/clothing/shoes/orange/proc/remove_cuffs(mob/user as mob)
-	if (!chained) return
+	if (!chained()) return
 
-	user.put_in_hands(chained)
-	chained.add_fingerprint(user)
+	user.put_in_hands(chained())
+	chained().add_fingerprint(user)
 
 	slowdown = initial(slowdown)
 	icon_state = "orange"
-	chained = null
+	chained_handle = null
 
 /obj/item/clothing/shoes/orange/attack_self(mob/user)
 	. = ..(user)
@@ -158,3 +158,7 @@
 /obj/item/clothing/shoes/hitops/yellow
 	name = "yellow high-tops"
 	icon_state = "yellowhi"
+
+/// LC-refs: the chained this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/clothing/shoes/orange/proc/chained() as /obj/item/handcuffs
+	return om_resolve(chained_handle)

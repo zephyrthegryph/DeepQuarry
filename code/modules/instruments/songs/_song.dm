@@ -12,7 +12,7 @@
 	var/id = ""
 
 	/// The atom we're attached to/playing from
-	var/atom/parent
+	var/tmp/parent_handle
 
 	/// Our song lines
 	var/list/lines
@@ -43,7 +43,7 @@
 
 	//////////// Cached instrument variables /////////////
 	/// Instrument we are currently using
-	var/datum/instrument/using_instrument
+	var/tmp/using_instrument_handle
 	/// Cached legacy ext for legacy instruments
 	var/cached_legacy_ext
 	/// Cached legacy dir for legacy instruments
@@ -73,7 +73,7 @@
 	/// List of channels that aren't being used, as text. This is to prevent unnecessary freeing and reallocations from the sound and instrument services.
 	var/list/channels_idle
 	/// Who or what's playing us
-	var/atom/music_player
+	var/tmp/music_player_handle
 	//////////////////////////////////////////////////////
 
 	/// Last world.time we checked for who can hear us
@@ -124,7 +124,7 @@
 	join_registries() // REGISTRY_SONGS; the destroy transaction leaves it
 	lines = list()
 	tempo = sanitize_tempo(tempo, TRUE)
-	src.parent = parent
+	src.parent_handle = om_handle(parent)
 	if(instrument_ids)
 		allowed_instrument_ids = islist(instrument_ids) ? instrument_ids : list(instrument_ids)
 	if(length(allowed_instrument_ids))
@@ -139,11 +139,11 @@
 /datum/song/Destroy()
 	stop_playing()
 	lines = null
-	if(using_instrument)
-		LAZYREMOVE(using_instrument.songs_using, src)
-		using_instrument = null
+	if(using_instrument())
+		LAZYREMOVE(using_instrument().songs_using, om_handle_of(src))
+		using_instrument_handle = null
 	allowed_instrument_ids = null
-	parent = null
+	parent_handle = null
 	return ..()
 
 /**
@@ -153,7 +153,7 @@
 	last_hearcheck = world.time
 	var/list/old = hearing_mobs.Copy()
 	hearing_mobs.len = 0
-	var/turf/source = get_turf(parent)
+	var/turf/source = get_turf(parent())
 	// FIXME
 	// for(var/mob/M in get_hearers_in_view(instrument_range, source))
 	var/list/in_range = get_mobs_and_objs_in_view_fast(source, instrument_range, remote_ghosts = FALSE)
@@ -169,10 +169,10 @@
 /datum/song/proc/set_instrument(datum/instrument/I)
 	terminate_all_sounds()
 	var/old_legacy
-	if(using_instrument)
-		LAZYREMOVE(using_instrument.songs_using, src)
-		old_legacy = (using_instrument.instrument_flags & INSTRUMENT_LEGACY)
-	using_instrument = null
+	if(using_instrument())
+		LAZYREMOVE(using_instrument().songs_using, om_handle_of(src))
+		old_legacy = (using_instrument().instrument_flags & INSTRUMENT_LEGACY)
+	using_instrument_handle = null
 	cached_samples = null
 	cached_legacy_ext = null
 	cached_legacy_dir = null
@@ -180,8 +180,8 @@
 	if(istext(I) || ispath(I))
 		I = instrument_service().instrument_data[I]
 	if(istype(I))
-		using_instrument = I
-		LAZYADD(I.songs_using, src)
+		using_instrument_handle = om_handle(I)
+		LAZYADD(I.songs_using, om_handle(src))
 		var/instrument_legacy = (I.instrument_flags & INSTRUMENT_LEGACY)
 		if(instrument_legacy)
 			cached_legacy_ext = I.legacy_instrument_ext
@@ -200,7 +200,7 @@
 /datum/song/proc/start_playing(atom/user)
 	if(playing)
 		return
-	if(!using_instrument?.ready())
+	if(!using_instrument()?.ready())
 		to_chat(user, span_warning("An error has occured with [src]. Please reset the instrument."))
 		return
 	compile_chords()
@@ -211,11 +211,11 @@
 	//we can not afford to runtime, since we are going to be doing sound channel reservations and if we runtime it means we have a channel allocation leak.
 	//wrap the rest of the stuff to ensure stop_playing() is called.
 	do_hearcheck()
-	SEND_SIGNAL(parent, COMSIG_INSTRUMENT_START, src, user)
+	SEND_SIGNAL(parent(), COMSIG_INSTRUMENT_START, src, user)
 	elapsed_delay = 0
 	delay_by = 0
 	current_chord = 1
-	music_player = user
+	music_player_handle = om_handle(user)
 	PERIODIC_START(src, PERIODIC_INSTRUMENTS)
 	if(id)
 		sync_play()
@@ -232,7 +232,7 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 		if(other_instrument.playing)
 			continue
 		var/atom/other_player = other_instrument.find_sync_player()
-		if(isnull(other_player) || !(other_player in view(get_turf(parent))))
+		if(isnull(other_player) || !(other_player in view(get_turf(parent()))))
 			continue
 		// copies the main song info to target songs
 		other_instrument.lines = lines.Copy()
@@ -259,10 +259,10 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 	if(!debug_mode)
 		compiled_chords = null
 	PERIODIC_STOP(src)
-	SEND_SIGNAL(parent, COMSIG_INSTRUMENT_END, finished)
+	SEND_SIGNAL(parent(), COMSIG_INSTRUMENT_END, finished)
 	terminate_all_sounds(TRUE)
 	hearing_mobs.len = 0
-	music_player = null
+	music_player_handle = null
 
 /**
  * Processes our song.
@@ -271,7 +271,7 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 	if(!length(compiled_chords))
 		stop_playing(TRUE)
 		return
-	if(should_stop_playing(music_player) == STOP_PLAYING)
+	if(should_stop_playing(music_player()) == STOP_PLAYING)
 		stop_playing(FALSE)
 		return
 	var/list/chord = compiled_chords[current_chord]
@@ -310,13 +310,13 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 /datum/song/proc/play_chord(list/chord)
 	// last value is timing information
 	for(var/i in 1 to (length(chord) - 1))
-		legacy ? playkey_legacy(chord[i][1], chord[i][2], chord[i][3], music_player) : playkey_synth(chord[i], music_player)
+		legacy ? playkey_legacy(chord[i][1], chord[i][2], chord[i][3], music_player()) : playkey_synth(chord[i], music_player())
 
 /**
  * Checks if we should halt playback.
  */
 /datum/song/proc/should_stop_playing(atom/player)
-	if(QDELETED(player) || !using_instrument || !playing)
+	if(QDELETED(player) || !using_instrument() || !playing)
 		return STOP_PLAYING
 	return NONE
 
@@ -416,12 +416,12 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 	. = ..()
 	if(. == STOP_PLAYING || . == IGNORE_INSTRUMENT_CHECKS)
 		return
-	var/obj/item/instrument/I = parent
+	var/obj/item/instrument/I = parent()
 	return I.can_play(player) ? NONE : STOP_PLAYING
 
 /datum/song/handheld/find_sync_player()
-	var/obj/item/instrument/instrument = parent
-	var/mob/living/player = get(parent, /mob/living)
+	var/obj/item/instrument/instrument = parent()
+	var/mob/living/player = get(parent(), /mob/living)
 	if(instrument.can_play(player))
 		return player
 	return null
@@ -433,13 +433,25 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 	. = ..()
 	if(. == STOP_PLAYING || . == IGNORE_INSTRUMENT_CHECKS)
 		return TRUE
-	var/obj/structure/musician/M = parent
+	var/obj/structure/musician/M = parent()
 	return M.can_play(player) ? NONE : STOP_PLAYING
 
 /datum/song/stationary/find_sync_player()
-	var/obj/structure/musician/piano = parent
-	for(var/mob/living/player in view(parent, 1))
+	var/obj/structure/musician/piano = parent()
+	for(var/mob/living/player in view(parent(), 1))
 		if(piano.can_play(player))
 			return player
 
 	return null
+
+/// LC-refs: the parent this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/song/proc/parent() as /atom
+	return om_resolve(parent_handle)
+
+/// LC-refs: the using_instrument this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/song/proc/using_instrument() as /datum/instrument
+	return om_resolve(using_instrument_handle)
+
+/// LC-refs: the music_player this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/song/proc/music_player() as /atom
+	return om_resolve(music_player_handle)

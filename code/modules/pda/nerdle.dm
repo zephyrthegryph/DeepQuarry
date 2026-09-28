@@ -37,15 +37,15 @@
 	LAZYADD(guesses,actual_guess)
 
 	if(actual_guess == target_word)
-		pda.audible_message("[pda] says, \"congratulations! You WON! A real NERDLE™️ Champ!\"")
-		playsound(pda, 'sound/arcade/win.ogg', 50, 1, extrarange = -3, falloff = 0.1, ignore_walls = FALSE)
+		pda().audible_message("[pda()] says, \"congratulations! You WON! A real NERDLE™️ Champ!\"")
+		playsound(pda(), 'sound/arcade/win.ogg', 50, 1, extrarange = -3, falloff = 0.1, ignore_walls = FALSE)
 		report_guesses()
 		return TRUE
 
 	if(LAZYLEN(guesses) >= max_guesses)
-		pda.audible_message("[pda] says, \"Sorry! You lose! Try again next shift!\"")
+		pda().audible_message("[pda()] says, \"Sorry! You lose! Try again next shift!\"")
 		failure = TRUE
-		playsound(pda, 'sound/arcade/lose.ogg', 50, 1, extrarange = -3, falloff = 0.1, ignore_walls = FALSE)
+		playsound(pda(), 'sound/arcade/lose.ogg', 50, 1, extrarange = -3, falloff = 0.1, ignore_walls = FALSE)
 		report_guesses()
 		return FALSE
 

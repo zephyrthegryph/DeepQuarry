@@ -58,7 +58,7 @@ SUBSYSTEM_DEF(emergency_shuttle)
 		var/datum/shuttle/autodock/ferry/escape_pod/pod = escape_pods[escape_pod]
 		if(!istype(pod, /datum/shuttle/autodock/ferry/escape_pod))
 			continue
-		if(!pod.arming_controller || pod.arming_controller.armed)
+		if(!pod.arming_controller() || pod.arming_controller().armed)
 			pod.launch(src)
 
 //called when the shuttle has arrived.
@@ -84,8 +84,8 @@ SUBSYSTEM_DEF(emergency_shuttle)
 		var/datum/shuttle/autodock/ferry/escape_pod/pod = value
 		if(!istype(pod, /datum/shuttle/autodock/ferry/escape_pod))
 			continue
-		if(pod.arming_controller)
-			pod.arming_controller.arm()
+		if(pod.arming_controller())
+			pod.arming_controller().arm()
 
 //begins the launch countdown and sets the amount of time left until launch
 /datum/controller/subsystem/emergency_shuttle/proc/set_launch_countdown(seconds)

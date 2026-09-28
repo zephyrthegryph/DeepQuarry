@@ -107,11 +107,21 @@
 	Class: reference
 */
 /datum/node/expression/value/reference
-	var/datum/value
+	var/tmp/value_handle
 
 /datum/node/expression/value/reference/New(value)
 	.=..()
-	src.value=value
+	src.value_handle=om_handle(value)
 
 /datum/node/expression/value/reference/ToString()
-	return "ref: [src.value] ([src.value.type])"
+	return "ref: [src.value()] ([src.value().type])"
+
+REF_OWNED(/datum/node/expression/FunctionCall, "object")
+
+REF_OWNED(/datum/node/expression/value/variable, list("id", "object"))
+
+REF_OWNED(/datum/node/expression/op, "exp")
+
+/// LC-refs: the value this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/node/expression/value/reference/proc/value() as /datum
+	return om_resolve(value_handle)

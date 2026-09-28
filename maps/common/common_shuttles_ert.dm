@@ -10,7 +10,7 @@
 	can_cloak = TRUE
 	cloaked = FALSE
 	shuttle_area = /area/shuttle/response_ship
-	current_location = "response_ship_start"
+	current_location_tag = "response_ship_start"
 	docking_controller_tag = "response_shuttle"
 	destination_tags = list(
 		"response_ship_start",

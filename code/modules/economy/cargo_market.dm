@@ -1084,3 +1084,7 @@ REF_OWNED(/datum/cargo_market_bid, "profile")
 		"outbound_crates" = outbound_crates,
 		"is_auditor" = is_auditor,
 	)
+
+REF_OWNED_LIST(/datum/controller/subsystem/supply, "market_transactions")
+
+REF_OWNED_VALUES(/datum/controller/subsystem/supply, list("market_counterparties", "market_listings", "market_bids"))

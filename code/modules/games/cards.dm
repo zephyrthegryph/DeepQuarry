@@ -399,7 +399,7 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 	desc = "A simple deck of playing cards with triple the number of cards."
 	deck_size = 3
 
-/obj/item/pack/
+/obj/item/pack
 	name = "Card Pack"
 	desc = "For those with disposible income."
 
@@ -620,4 +620,9 @@ DECLARE_INTERACTIONS(/obj/item/hand, \
 /// Old click_alt.
 /obj/item/hand/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	Removecard()
+
+// A deck, pack or hand owns the card datums it holds.
+REF_OWNED_LIST(/obj/item/deck, "cards")
+REF_OWNED_LIST(/obj/item/pack, "cards")
+REF_OWNED_LIST(/obj/item/hand, "cards")
 	return TRUE

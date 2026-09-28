@@ -111,7 +111,7 @@
 				return
 			if(!savename)
 				return TRUE
-			var/obj/item/computer_hardware/hard_drive/HDD = computer.hard_drive
+			var/obj/item/computer_hardware/hard_drive/HDD = computer().hard_drive
 			if(!HDD)
 				return TRUE
 			var/datum/computer_file/data/news_article/N = loaded_article.clone()
@@ -120,3 +120,5 @@
 		if("PRG_toggle_archived")
 			. = TRUE
 			show_archived = !show_archived
+
+REF_OWNED(/datum/computer_file/program/newsbrowser, "loaded_article")

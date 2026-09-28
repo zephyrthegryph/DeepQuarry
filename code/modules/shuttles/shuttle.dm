@@ -6,7 +6,8 @@
 	var/moving_status = SHUTTLE_IDLE
 
 	var/list/shuttle_area // Initial value can be either a single area type or a list of area types
-	var/obj/effect/shuttle_landmark/current_location //This variable is type-abused initially: specify the landmark_tag, not the actual landmark.
+	var/tmp/current_location_handle	//Set current_location_tag, not this: New() resolves the tag into the landmark.
+	var/current_location_tag	// the tag it starts as; resolved into current_location at init
 
 	var/tmp/arrive_time = 0	//the time at which the shuttle arrives when long jumping
 	var/flags = SHUTTLE_FLAGS_NONE
@@ -51,10 +52,10 @@
 	shuttle_area = areas
 
 	if(initial_location)
-		current_location = initial_location
+		current_location_handle = om_handle(initial_location)
 	else
-		current_location = SSshuttles.get_landmark(current_location)
-	if(!istype(current_location))
+		current_location_handle = om_handle(SSshuttles.get_landmark(current_location_tag))
+	if(!istype(current_location(), /obj/effect/shuttle_landmark))
 		// landmark missing usually means the shuttle's home map
 		// was removed. Log once and skip registration so subtype New()s
 		// don't trip null derefs on current_location.docking_controller.
@@ -74,7 +75,7 @@
 
 // ALLOW(lifecycle): leaves SSshuttles and the supply shuttle slot.
 /datum/shuttle/Destroy()
-	current_location = null
+	current_location_handle = null
 	SSshuttles.shuttles -= src.name
 	SSshuttles.process_shuttles -= src
 	SSshuttles.active_process_shuttles -= src
@@ -131,7 +132,7 @@
 	if(!pre_warmup_checks())
 		return
 
-	var/obj/effect/shuttle_landmark/start_location = current_location
+	var/obj/effect/shuttle_landmark/start_location = current_location()
 	// TODO - Figure out exactly when to play sounds. Before warmup_time delay? Should there be a sleep for waiting for sounds? or no?
 	moving_status = SHUTTLE_WARMUP
 	publish_schedule()
@@ -175,7 +176,7 @@
 	if(!pre_warmup_checks())
 		return
 
-	var/obj/effect/shuttle_landmark/start_location = current_location
+	var/obj/effect/shuttle_landmark/start_location = current_location()
 	// TODO - Figure out exactly when to play sounds. Before warmup_time delay? Should there be a sleep for waiting for sounds? or no?
 	moving_status = SHUTTLE_WARMUP
 	publish_schedule()
@@ -205,7 +206,7 @@
 		return
 	interim.shuttle_arrived()
 
-	if(process_longjump(current_location, destination)) // To hook custom shuttle code in
+	if(process_longjump(current_location(), destination)) // To hook custom shuttle code in
 		return // It handled it for us (shuttle crash or such)
 
 	long_jump_transit(start_location, destination, 0, FALSE)
@@ -273,7 +274,7 @@
 	if(!destination)
 		log_shuttle("Shuttle [src] aborting attempt_move(): null destination landmark.")
 		return FALSE
-	if(current_location == destination)
+	if(current_location() == destination)
 		if(debug_logging)
 			log_shuttle("Shuttle [src] attempted to move to [destination] but is already there!")
 		return FALSE
@@ -282,15 +283,15 @@
 		if(debug_logging)
 			log_shuttle("Shuttle [src] aborting attempt_move() because destination=[destination] is not valid")
 		return FALSE
-	if(current_location.cannot_depart(src))
+	if(current_location().cannot_depart(src))
 		if(debug_logging)
-			log_shuttle("Shuttle [src] aborting attempt_move() because current_location=[current_location] refuses.")
+			log_shuttle("Shuttle [src] aborting attempt_move() because current_location=[current_location()] refuses.")
 		return FALSE
 
 	// Observer pattern pre-move
-	var/old_location = current_location
+	var/old_location = current_location()
 	SEND_SIGNAL(src, COMSIG_OBSERVER_SHUTTLE_PRE_MOVE, old_location, destination)
-	current_location.shuttle_departed(src)
+	current_location().shuttle_departed(src)
 
 	if(debug_logging)
 		log_shuttle("[src] moving to [destination]. Areas are [english_list(shuttle_area)]")
@@ -298,7 +299,7 @@
 	for(var/area/A in shuttle_area)
 		if(debug_logging)
 			log_shuttle("Translating [A]")
-		translation += get_turf_translation(get_turf(current_location), get_turf(destination), A.contents)
+		translation += get_turf_translation(get_turf(current_location()), get_turf(destination), A.contents)
 
 	// Actually do it! (This never fails)
 	perform_shuttle_move(destination, translation)
@@ -314,12 +315,12 @@
 //If you want to conditionally cancel shuttle launches, that logic must go in short_jump() or long_jump()
 /datum/shuttle/proc/perform_shuttle_move(obj/effect/shuttle_landmark/destination, list/turf_translation)
 	if(debug_logging)
-		log_shuttle("perform_shuttle_move() current=[current_location] destination=[destination]")
+		log_shuttle("perform_shuttle_move() current=[current_location()] destination=[destination]")
 	//to_world("move_shuttle() called for [name] leaving [origin] en route to [destination].")
 
 	//to_world("area_coming_from: [origin]")
 	//to_world("destination: [destination]")
-	ASSERT(current_location != destination)
+	ASSERT(current_location() != destination)
 	// If shuttle has no internal gravity, update our gravity with destination gravity
 	if((flags & SHUTTLE_FLAGS_ZERO_G))
 		var/new_grav = 1
@@ -355,7 +356,7 @@
 	var/list/radios = list()
 	for(var/area/A in shuttle_area)
 		// If there was a zlevel above our origin and we own the ceiling, erase our ceiling now we're leaving
-		if(ceiling_type && HasAbove(current_location.z))
+		if(ceiling_type && HasAbove(current_location().z))
 			for(var/turf/TO in A.contents)
 				var/turf/TA = GetAbove(TO)
 				if(istype(TA, ceiling_type))
@@ -386,11 +387,11 @@
 		A.base_turf = new_base
 
 	// Actually do the movement of everything - This replaces origin.move_contents_to(destination)
-	translate_turfs(turf_translation, current_location.base_area, current_location.base_turf)
-	current_location = destination
+	translate_turfs(turf_translation, current_location().landing_area(), current_location().base_turf)
+	current_location_handle = om_handle(destination)
 
 	// If there's a zlevel above our destination, paint in a ceiling on it so we retain our air
-	if(ceiling_type && HasAbove(current_location.z))
+	if(ceiling_type && HasAbove(current_location().z))
 		for(var/area/A in shuttle_area)
 			for(var/turf/TD in A.contents)
 				var/turf/TA = GetAbove(TD)
@@ -412,7 +413,7 @@
 	if(mothershuttle)
 		var/datum/shuttle/MS = SSshuttles.shuttles[mothershuttle]
 		if(MS)
-			if(current_location.landmark_tag == motherdock)
+			if(current_location().landmark_tag == motherdock)
 				MS.shuttle_area |= shuttle_area // We are now on mothershuttle! Bring us along!
 			else
 				MS.shuttle_area -= shuttle_area // We have left mothershuttle! Don't bring us along!
@@ -457,7 +458,7 @@
 /datum/shuttle/proc/get_location_name()
 	if(moving_status == SHUTTLE_INTRANSIT)
 		return "In transit"
-	return current_location.name
+	return current_location().name
 
 /// Wakes the status displays that show this shuttle's schedule (KEY_SHUTTLE_SCHEDULE).
 /datum/shuttle/proc/publish_schedule()
@@ -465,3 +466,7 @@
 		om_changed(SSemergency_shuttle, CHANGE_SHUTTLE_SCHEDULE)
 	else if(src == SSsupply?.shuttle)
 		om_changed(SSsupply, CHANGE_SHUTTLE_SCHEDULE)
+
+/// LC-refs: Set current_location_tag, not this: New() resolves the tag into the landmark. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/shuttle/proc/current_location() as /obj/effect/shuttle_landmark
+	return om_resolve(current_location_handle)

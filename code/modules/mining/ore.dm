@@ -234,3 +234,5 @@ DECLARE_INTERACTIONS(/obj/item/ore, INTERACT_ITEM(null, PROC_REF(interaction_ite
 /obj/item/ore/proc/scatter_if_dropped()
 	if(isturf(loc))
 		qdel(src)
+
+REF_OWNED(/obj/item/ore, "geologic_data")

@@ -35,8 +35,8 @@
 	data["events_paused"] = !CONFIG_GET(flag/allow_random_events)
 	data["report_at_round_end"] = !!GLOB.event_service.report_at_round_end
 
-	if(GLOB.event_service.selected_event_container)
-		var/datum/event_container/EC = GLOB.event_service.selected_event_container
+	if(GLOB.event_service.selected_event_container())
+		var/datum/event_container/EC = GLOB.event_service.selected_event_container()
 		var/event_time = max(0, EC.next_event_time - world.time)
 		data["selected_severity"] = GLOB.severity_to_string[EC.severity]
 		data["selected_time_left_minutes"] = round(event_time / 600, 0.1)
@@ -81,15 +81,15 @@
 			next_events += list(list(
 				"ref" = "\ref[EC]",
 				"severity" = GLOB.severity_to_string[severity],
-				"queued_name" = EC.next_event ? EC.next_event.name : null,
+				"queued_name" = EC.next_event() ? EC.next_event().name : null,
 			))
 		data["severities"] = severities
 		data["next_events"] = next_events
 		var/list/running = list()
 		for(var/datum/event/E in GLOB.event_service.active_events())
-			if(!E.event_meta)
+			if(!E.event_meta())
 				continue
-			var/datum/event_meta/EM = E.event_meta
+			var/datum/event_meta/EM = E.event_meta()
 			var/ends_at = E.startedAt + (E.lastProcessAt() * 20)
 			var/ends_in = max(0, round((ends_at - world.time) / 600, 0.1))
 			running += list(list(
@@ -173,3 +173,5 @@
 
 /datum/world_service/events
 	var/datum/event_manager_panel/tgui_event_manager_panel
+
+REF_OWNED(/datum/controller/subsystem/events, "tgui_event_manager_panel")

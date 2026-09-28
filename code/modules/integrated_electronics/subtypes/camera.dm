@@ -52,7 +52,7 @@ REF_OWNED(/obj/item/integrated_circuit/output/video_camera, "camera")
 	if(!camera)
 		return
 	var/should_be_active = get_pin_data(IC_INPUT, 2)
-	if(should_be_active && assembly?.battery?.charge)
+	if(should_be_active && assembly()?.battery?.charge)
 		if(!camera.status)
 			camera.set_status(TRUE)
 		power_draw_idle = initial(power_draw_idle)
@@ -135,7 +135,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/output/video_camera, INTERACT_
 /obj/machinery/camera/intcircuit/can_use()
 	// Ensures circuit is in a powered assembly to work.
 	var/obj/item/integrated_circuit/output/video_camera/parent = loc
-	if(istype(parent) && parent.assembly?.battery?.charge)
+	if(istype(parent) && parent.assembly()?.battery?.charge)
 		return TRUE
 	return FALSE
 
@@ -175,7 +175,7 @@ REF_OWNED(/obj/item/integrated_circuit/input/video_camera_input, "camera_module"
 	// Check if any cameras are actually available
 	var/any_available = FALSE
 	for(var/obj/item/integrated_circuit/output/video_camera/cam_circuit in paired_cameras)
-		if(cam_circuit.assembly && cam_circuit.camera?.can_use())
+		if(cam_circuit.assembly() && cam_circuit.camera?.can_use())
 			any_available = TRUE
 			break
 	if(!any_available)
@@ -212,25 +212,25 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/input/video_camera_input, INTE
 	tgui_id = "ICCameraConsole"
 	access_based = FALSE
 
-	var/obj/item/integrated_circuit/input/video_camera_input/owner_circuit
+	var/tmp/owner_circuit_handle
 
 /datum/tgui_module/camera/intcircuit/New(host)
-	owner_circuit = host
+	owner_circuit_handle = om_handle(host)
 	// Pass an empty network list - we override get_available_cameras
 	..(host, list("intcircuit_dummy"))
 	access_based = FALSE
 
 /datum/tgui_module/camera/intcircuit/tgui_host(mob/user)
-	if(owner_circuit?.assembly)
-		return owner_circuit.assembly
-	return owner_circuit
+	if(owner_circuit()?.assembly())
+		return owner_circuit().assembly()
+	return owner_circuit()
 
 /datum/tgui_module/camera/intcircuit/get_available_cameras(mob/user)
 	var/list/D = list()
-	if(!owner_circuit)
+	if(!owner_circuit())
 		return D
-	for(var/obj/item/integrated_circuit/output/video_camera/cam_circuit in owner_circuit.paired_cameras)
-		if(!cam_circuit.assembly) // Skip circuits not in assemblies
+	for(var/obj/item/integrated_circuit/output/video_camera/cam_circuit in owner_circuit().paired_cameras)
+		if(!cam_circuit.assembly()) // Skip circuits not in assemblies
 			continue
 		var/obj/machinery/camera/intcircuit/C = cam_circuit.camera
 		if(C && C.c_tag)
@@ -242,5 +242,9 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/input/video_camera_input, INTE
 
 /datum/tgui_module/camera/intcircuit/tgui_act(action, params, datum/tgui/ui)
 	if(action == "switch_camera")
-		last_camera_turf = null
+		last_camera_turf_handle = null
 	. = ..()
+
+/// LC-refs: the owner_circuit this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_module/camera/intcircuit/proc/owner_circuit() as /obj/item/integrated_circuit/input/video_camera_input
+	return om_resolve(owner_circuit_handle)

@@ -13,7 +13,7 @@
 //
 /datum/node/statement/FunctionCall
 	var/func_name
-	var/datum/node/identifier/object
+	var/tmp/object_handle
 	var/list/parameters=list() // ALLOW(instance_list): d: script AST node state
 
 /*
@@ -39,7 +39,7 @@
 */
 //
 /datum/node/statement/VariableAssignment
-	var/datum/node/identifier/object
+	var/tmp/object_handle
 	var/datum/node/identifier/var_name
 	var/datum/node/expression/value
 
@@ -52,8 +52,8 @@
 */
 //
 /datum/node/statement/VariableDeclaration
-	var/datum/node/identifier/object
-	var/datum/node/identifier/var_name
+	var/tmp/object_handle
+	var/tmp/var_name_handle
 
 /*
 	Class: IfStatement
@@ -78,10 +78,10 @@
 	Loops while test is true, initializing a variable, increasing the variable
 */
 /datum/node/statement/ForLoop
-	var/datum/node/BlockDefinition/block
-	var/datum/node/expression/test
-	var/datum/node/expression/init
-	var/datum/node/expression/increment
+	var/tmp/block_handle
+	var/tmp/test_handle
+	var/tmp/init_handle
+	var/tmp/increment_handle
 
 /*
 	Class: BreakStatement
@@ -104,3 +104,45 @@
 //
 /datum/node/statement/ReturnStatement
 	var/datum/node/expression/value
+
+REF_OWNED(/datum/node/statement/FunctionDefinition, "block")
+
+REF_OWNED(/datum/node/statement/VariableAssignment, list("var_name", "value"))
+
+REF_OWNED(/datum/node/statement/IfStatement, list("block", "else_block", "cond"))
+
+REF_OWNED(/datum/node/statement/WhileLoop, list("block", "cond"))
+
+REF_OWNED(/datum/node/statement/ReturnStatement, "value")
+
+/// LC-refs: the var_name this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/node/statement/VariableDeclaration/proc/var_name() as /datum/node/identifier
+	return om_resolve(var_name_handle)
+
+/// LC-refs: the test this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/node/statement/ForLoop/proc/test() as /datum/node/expression
+	return om_resolve(test_handle)
+
+/// LC-refs: the init this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/node/statement/ForLoop/proc/init() as /datum/node/expression
+	return om_resolve(init_handle)
+
+/// LC-refs: the increment this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/node/statement/ForLoop/proc/increment() as /datum/node/expression
+	return om_resolve(increment_handle)
+
+/// LC-refs: the object this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/node/statement/FunctionCall/proc/object() as /datum/node/identifier
+	return om_resolve(object_handle)
+
+/// LC-refs: the object this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/node/statement/VariableAssignment/proc/object() as /datum/node/identifier
+	return om_resolve(object_handle)
+
+/// LC-refs: the object this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/node/statement/VariableDeclaration/proc/object() as /datum/node/identifier
+	return om_resolve(object_handle)
+
+/// LC-refs: the block this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/node/statement/ForLoop/proc/block_node() as /datum/node/BlockDefinition
+	return om_resolve(block_handle)

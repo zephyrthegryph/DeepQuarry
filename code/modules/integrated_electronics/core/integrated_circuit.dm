@@ -68,7 +68,7 @@ REF_OWNED_LIST(/obj/item/integrated_circuit, list("inputs", "outputs", "activato
 	if(isnull(_answer_k80))
 		return
 	var/input = sanitizeSafe(_answer_k80, MAX_NAME_LEN)
-	if(src && input && assembly.check_interactivity(M))
+	if(src && input && assembly().check_interactivity(M))
 		to_chat(M, span_notice("The circuit '[src.name]' is now labeled '[input]'."))
 		displayed_name = input
 
@@ -132,8 +132,8 @@ REF_OWNED_LIST(/obj/item/integrated_circuit, list("inputs", "outputs", "activato
 		UNTYPED_LIST_ADD(linked_list, list(
 			"ref" = REF(linked),
 			"name" = linked.name,
-			"holder_ref" = REF(linked.holder),
-			"holder_name" = linked.holder.displayed_name,
+			"holder_ref" = REF(linked.holder()),
+			"holder_name" = linked.holder().displayed_name,
 		))
 	pindata["linked"] = linked_list
 	return pindata
@@ -197,8 +197,8 @@ REF_OWNED_LIST(/obj/item/integrated_circuit, list("inputs", "outputs", "activato
 		if("examine")
 			var/obj/item/integrated_circuit/examined = locate(params["ref"])
 			if(istype(examined) && (examined.loc == loc))
-				if(ui.parent_ui)
-					examined.tgui_interact(ui.user, null, ui.parent_ui)
+				if(ui.parent_ui())
+					examined.tgui_interact(ui.user, null, ui.parent_ui())
 				else
 					examined.tgui_interact(ui.user)
 
@@ -208,7 +208,7 @@ REF_OWNED_LIST(/obj/item/integrated_circuit, list("inputs", "outputs", "activato
 	return FALSE
 
 /obj/item/integrated_circuit/proc/remove(mob/user)
-	var/obj/item/electronic_assembly/A = assembly
+	var/obj/item/electronic_assembly/A = assembly()
 	if(!A)
 		to_chat(user, span_warning("This circuit is not in an assembly!"))
 		return
@@ -221,7 +221,7 @@ REF_OWNED_LIST(/obj/item/integrated_circuit, list("inputs", "outputs", "activato
 	disconnect_all()
 	var/turf/T = get_turf(src)
 	forceMove(T)
-	assembly = null
+	assembly_handle = null
 	playsound(T, 'sound/items/Crowbar.ogg', 50, 1)
 	to_chat(user, span_notice("You pop \the [src] out of the case, and slide it out."))
 
@@ -237,8 +237,8 @@ REF_OWNED_LIST(/obj/item/integrated_circuit, list("inputs", "outputs", "activato
 		I.push_data()
 
 /obj/item/integrated_circuit/proc/draw_idle_power()
-	if(assembly)
-		return assembly.draw_power(power_draw_idle)
+	if(assembly())
+		return assembly().draw_power(power_draw_idle)
 
 // Override this for special behaviour when there's no power left.
 /obj/item/integrated_circuit/proc/power_fail()
@@ -246,9 +246,9 @@ REF_OWNED_LIST(/obj/item/integrated_circuit, list("inputs", "outputs", "activato
 
 // Returns true if there's enough power to work().
 /obj/item/integrated_circuit/proc/check_power()
-	if(!assembly)
+	if(!assembly())
 		return FALSE // Not in an assembly, therefore no power.
-	if(assembly.draw_power(power_draw_per_use))
+	if(assembly().draw_power(power_draw_per_use))
 		return TRUE // Battery has enough.
 	return FALSE // Not enough power.
 
@@ -260,8 +260,8 @@ REF_OWNED_LIST(/obj/item/integrated_circuit, list("inputs", "outputs", "activato
 	// it. Bail (with feedback) before a pathological wide assembly stalls the
 	// tick. Normal assemblies never approach IC_MAX_PULSE_CIRCUITS.
 	if(work_left <= 0)
-		if(assembly)
-			assembly.visible_message(span_warning("\The [assembly] buzzes and overheats, its circuits unable to keep up!"))
+		if(assembly())
+			assembly().visible_message(span_warning("\The [assembly()] buzzes and overheats, its circuits unable to keep up!"))
 		return
 	if(power_draw_per_use && !ignore_power)
 		if(!check_power())

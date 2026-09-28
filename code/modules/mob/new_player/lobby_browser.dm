@@ -49,7 +49,7 @@
 	data["ready"] = ready
 	data["new_news"] = client?.check_for_new_server_news()
 	data["can_submit_feedback"] = SSsqlite.can_submit_feedback(client)
-	data["show_station_news"] = GLOB.news_data.station_newspaper
+	data["show_station_news"] = GLOB.news_data.station_newspaper()
 	data["new_station_news"] = client.prefs.lastlorenews != GLOB.news_data.newsindex
 	data["new_changelog"] = read_preference(/datum/preference/text/lastchangelog) != GLOB.changelog_hash
 	data["can_start_now"] = client.is_localhost() && check_rights_for(client, R_SERVER)
@@ -111,7 +111,7 @@
 			om_prompt(src, src, list("message" = "Are you sure you wish to observe? If you do, make sure to not use any knowledge gained from observing if you decide to join later.", "title" = "Observe Round?", "choices" = list("Yes","No")), PROC_REF(observe_confirmed))
 			return TRUE
 		if("give_feedback")
-			if(!SSsqlite.can_submit_feedback(persistent_client.client))
+			if(!SSsqlite.can_submit_feedback(persistent_client.client()))
 				return
 
 			if(client.feedback_form)
@@ -120,7 +120,7 @@
 				client.feedback_form = new(client)
 			return TRUE
 		if("open_station_news")
-			show_latest_news(GLOB.news_data.station_newspaper)
+			show_latest_news(GLOB.news_data.station_newspaper())
 			return TRUE
 		if("open_changelog")
 			write_preference_directly(/datum/preference/text/lastchangelog, GLOB.changelog_hash)

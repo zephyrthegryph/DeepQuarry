@@ -6,19 +6,19 @@
  */
 /datum/admins/proc/add_tagged_datum(datum/target_datum)
 	if(LAZYFIND(tagged_datums, target_datum))
-		to_chat(owner, span_warning("[target_datum] is already tagged!"))
+		to_chat(owner(), span_warning("[target_datum] is already tagged!"))
 		return
 
 	LAZYADD(tagged_datums, target_datum)
 	RegisterSignal(target_datum, COMSIG_QDELETING, PROC_REF(handle_tagged_del), override = TRUE)
-	to_chat(owner, span_notice("[target_datum] has been tagged."))
+	to_chat(owner(), span_notice("[target_datum] has been tagged."))
 
 /// Get ahead of the curve with deleting
 /datum/admins/proc/handle_tagged_del(datum/source)
 	SIGNAL_HANDLER
 
-	if(owner)
-		to_chat(owner, span_boldnotice("Tagged datum [source] ([source.type]) has been deleted."))
+	if(owner())
+		to_chat(owner(), span_boldnotice("Tagged datum [source] ([source.type]) has been deleted."))
 	remove_tagged_datum(source, silent = TRUE)
 
 /**
@@ -35,9 +35,9 @@
 	if(LAZYFIND(tagged_datums, target_datum))
 		LAZYREMOVE(tagged_datums, target_datum)
 		if(!silent)
-			to_chat(owner, span_notice("[target_datum] has been untagged."))
+			to_chat(owner(), span_notice("[target_datum] has been untagged."))
 	else if(!silent)
-		to_chat(owner, span_warning("[target_datum] was not already tagged."))
+		to_chat(owner(), span_warning("[target_datum] was not already tagged."))
 
 /// Quick define for readability
 #define TAG_DEL(X) span_bold("(<A href='byond://?_src_=holder;[HrefToken(forceGlobal = TRUE)];del_tag=[REF(X)]'>UNTAG</a>)")
@@ -55,7 +55,7 @@ ADMIN_VERB(display_tags, R_ADMIN, "View Tags", "Display all of the tagged datums
 	var/list/dat = list()
 
 	var/list/tagged_datums = user.holder.tagged_datums
-	var/list/marked_datum = user.holder.marked_datum
+	var/list/marked_datum = user.holder.marked_datum()
 
 	dat += "<br><a href='byond://?_src_=holder;[HrefToken(forceGlobal = TRUE)];show_tags=1'>Refresh</a><br>"
 	if(LAZYLEN(tagged_datums))

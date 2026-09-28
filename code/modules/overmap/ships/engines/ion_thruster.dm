@@ -1,34 +1,34 @@
 /datum/ship_engine/ion
 	name = "ion thruster"
-	var/obj/machinery/ion_engine/thruster
+	var/tmp/thruster_handle
 
 /datum/ship_engine/ion/New(obj/machinery/_holder)
 	..()
-	thruster = _holder
+	thruster_handle = om_handle(_holder)
 
 /datum/ship_engine/ion/get_status()
-	return thruster.get_status()
+	return thruster().get_status()
 
 /datum/ship_engine/ion/get_thrust()
-	return thruster.get_thrust()
+	return thruster().get_thrust()
 
 /datum/ship_engine/ion/burn()
-	return thruster.thrust_burn()
+	return thruster().thrust_burn()
 
 /datum/ship_engine/ion/set_thrust_limit(new_limit)
-	thruster.thrust_limit = new_limit
+	thruster().thrust_limit = new_limit
 
 /datum/ship_engine/ion/get_thrust_limit()
-	return thruster.thrust_limit
+	return thruster().thrust_limit
 
 /datum/ship_engine/ion/is_on()
-	return thruster.on && thruster.powered()
+	return thruster().on && thruster().powered()
 
 /datum/ship_engine/ion/toggle()
-	thruster.on = !thruster.on
+	thruster().on = !thruster().on
 
 /datum/ship_engine/ion/can_burn()
-	return thruster.on && thruster.powered()
+	return thruster().on && thruster().powered()
 
 /obj/machinery/ion_engine
 	name = "ion propulsion device"
@@ -81,3 +81,7 @@ REF_OWNED(/obj/machinery/ion_engine, "controller")
 							/obj/item/stack/cable_coil = 2,
 							/obj/item/stock_parts/matter_bin = 1,
 							/obj/item/stock_parts/capacitor = 2)
+
+/// LC-refs: the thruster this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/ship_engine/ion/proc/thruster() as /obj/machinery/ion_engine
+	return om_resolve(thruster_handle)

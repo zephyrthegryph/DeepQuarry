@@ -1,8 +1,8 @@
 /datum/filter_editor
-	var/atom/target
+	var/tmp/target_handle
 
 /datum/filter_editor/New(atom/target)
-	src.target = target
+	src.target_handle = om_handle(target)
 
 /datum/filter_editor/tgui_state(mob/user)
 	return ADMIN_STATE(R_VAREDIT)
@@ -20,8 +20,8 @@
 
 /datum/filter_editor/tgui_data()
 	var/list/data = list()
-	data["target_name"] = target.name
-	data["target_filter_data"] = target.filter_data
+	data["target_name"] = target().name
+	data["target_filter_data"] = target().filter_data
 	return data
 
 /datum/filter_editor/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
@@ -32,52 +32,52 @@
 	switch(action)
 		if("add_filter")
 			var/target_name = params["name"]
-			while(target.filter_data && target.filter_data[target_name])
+			while(target().filter_data && target().filter_data[target_name])
 				target_name = "[target_name]-dupe"
-			target.add_filter(target_name, params["priority"], list("type" = params["type"]))
+			target().add_filter(target_name, params["priority"], list("type" = params["type"]))
 			. = TRUE
 		if("remove_filter")
-			target.remove_filter(params["name"])
+			target().remove_filter(params["name"])
 			. = TRUE
 		if("rename_filter")
-			var/list/filter_data = target.filter_data[params["name"]]
-			target.remove_filter(params["name"])
-			target.add_filter(params["new_name"], filter_data["priority"], filter_data)
+			var/list/filter_data = target().filter_data[params["name"]]
+			target().remove_filter(params["name"])
+			target().add_filter(params["new_name"], filter_data["priority"], filter_data)
 			. = TRUE
 		if("edit_filter")
-			target.remove_filter(params["name"])
-			target.add_filter(params["name"], params["priority"], params["new_filter"])
+			target().remove_filter(params["name"])
+			target().add_filter(params["name"], params["priority"], params["new_filter"])
 			. = TRUE
 		if("change_priority")
 			var/new_priority = params["new_priority"]
-			target.change_filter_priority(params["name"], new_priority)
+			target().change_filter_priority(params["name"], new_priority)
 			. = TRUE
 		if("transition_filter_value")
-			target.transition_filter(params["name"], params["new_data"], 4)
+			target().transition_filter(params["name"], params["new_data"], 4)
 			. = TRUE
 		if("modify_filter_value")
-			var/list/old_filter_data = target.filter_data[params["name"]]
+			var/list/old_filter_data = target().filter_data[params["name"]]
 			var/list/new_filter_data = old_filter_data.Copy()
 			for(var/entry in params["new_data"])
 				new_filter_data[entry] = params["new_data"][entry]
 			for(var/entry in new_filter_data)
 				if(entry == GLOB.master_filter_info[old_filter_data["type"]]["defaults"][entry])
 					new_filter_data.Remove(entry)
-			target.remove_filter(params["name"])
-			target.add_filter(params["name"], old_filter_data["priority"], new_filter_data)
+			target().remove_filter(params["name"])
+			target().add_filter(params["name"], old_filter_data["priority"], new_filter_data)
 			. = TRUE
 		if("modify_color_value")
 			var/new_color = act_prompt(usr, action, params, ui, "color", list("kind" = "color", "message" = "Pick new filter color", "title" = "Filteriffic Colors!"))
 			if(new_color)
-				target.transition_filter(params["name"], list("color" = new_color), 4)
+				target().transition_filter(params["name"], list("color" = new_color), 4)
 				. = TRUE
 		if("modify_icon_value")
 			if(!GLOB.prompt_flow) // the icon questions re-run this action
 				return prompt_flow(src, PROC_REF(tgui_act), args)
 			var/icon/new_icon = pick_and_customize_icon(ui.user)
 			if(new_icon)
-				target.filter_data[params["name"]]["icon"] = new_icon
-				target.update_filters()
+				target().filter_data[params["name"]]["icon"] = new_icon
+				target().update_filters()
 				. = TRUE
 		if("mass_apply")
 			if(!check_rights_for(usr.client, R_FUN))
@@ -86,8 +86,8 @@
 			var/target_path = text2path(params["path"])
 			if(!target_path)
 				return
-			var/filters_to_copy = target.filters
-			var/filter_data_to_copy = target.filter_data
+			var/filters_to_copy = target().filters
+			var/filter_data_to_copy = target().filter_data
 			var/count = 0
 			for(var/thing in world.contents)
 				if(istype(thing, target_path))
@@ -97,3 +97,7 @@
 					count += 1
 			message_admins("LOCAL CLOWN [usr.ckey] JUST MASS FILTER EDITED [count] WITH PATH OF [params["path"]]!")
 			log_admin("LOCAL CLOWN [usr.ckey] JUST MASS FILTER EDITED [count] WITH PATH OF [params["path"]]!")
+
+/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/filter_editor/proc/target() as /atom
+	return om_resolve(target_handle)

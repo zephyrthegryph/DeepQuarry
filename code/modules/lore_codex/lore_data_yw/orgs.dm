@@ -10,7 +10,7 @@
 		var/datum/lore/organization/O = value
 		if(!(istype(O, desired_type)))
 			continue
-		var/datum/lore/codex/page/P = new(holder, src)
+		var/datum/lore/codex/page/P = new(holder(), src)
 		if(!O.name) // Probably the base type, don't make a page for it.
 			continue
 		P.name = O.name

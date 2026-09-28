@@ -6,9 +6,9 @@ GLOBAL_LIST_EMPTY_TYPED(persistent_clients_by_ckey, /datum/persistent_client)
 /// Tracks information about a client between log in and log outs
 /datum/persistent_client
 	/// The true client
-	var/client/client
+	var/tmp/client_handle
 	/// The mob this persistent client is currently bound to.
-	var/mob/mob
+	var/tmp/mob_handle
 
 	/// Major version of BYOND this client was last using.
 	var/byond_version
@@ -16,11 +16,11 @@ GLOBAL_LIST_EMPTY_TYPED(persistent_clients_by_ckey, /datum/persistent_client)
 	var/byond_build
 
 	/// Action datums assigned to this player
-	var/list/datum/action/player_actions
 	/// Tracks client action logging
 	var/list/logging = list() // ALLOW(instance_list): d: one per connected client; logs fill on login
 
 	/// Callbacks invoked when this client logs in again
+	var/list/datum/action/player_actions
 	var/list/post_login_callbacks
 	/// Callbacks invoked when this client logs out
 	var/list/post_logout_callbacks
@@ -53,26 +53,26 @@ REGISTRY_MEMBERSHIP(/datum/persistent_client, REGISTRY_PERSISTENT_CLIENTS)
 
 /// Setter for the client var, updates any vars we have that might be dependent on client state
 /datum/persistent_client/proc/set_client(client/new_client)
-	if(client == new_client)
+	if(client() == new_client)
 		return
 
-	if(client)
-		client.persistent_client = null
-	client = new_client
-	if(client)
-		client.persistent_client = src
-		byond_build = client.byond_build
-		byond_version = client.byond_version
+	if(client())
+		client().persistent_client = null
+	client_handle = om_handle(new_client)
+	if(client())
+		client().persistent_client = src
+		byond_build = client().byond_build
+		byond_version = client().byond_version
 
 /// Setter for the mob var, handles both references.
 /datum/persistent_client/proc/set_mob(mob/new_mob)
-	if(mob == new_mob)
+	if(mob() == new_mob)
 		return
 
-	mob?.persistent_client = null
+	mob()?.persistent_client = null
 	new_mob?.persistent_client?.set_mob(null)
 
-	mob = new_mob
+	mob_handle = om_handle(new_mob)
 	new_mob?.persistent_client = src
 
 /// Writes all of the `played_names` into an HTML-escaped string.
@@ -107,3 +107,14 @@ REGISTRY_MEMBERSHIP(/datum/persistent_client, REGISTRY_PERSISTENT_CLIENTS)
 			continue
 
 		LAZYADD(writable.played_names, list("[encoded_name]" = mob_tag))
+
+/// LC-refs: the mob this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/persistent_client/proc/mob() as /mob
+	return om_resolve(mob_handle)
+
+/// LC-refs: the client this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/persistent_client/proc/client() as /client
+	return om_resolve(client_handle)
+
+/// LC-refs: the actions granted to this player on each login are theirs.
+REF_OWNED_LIST(/datum/persistent_client, "player_actions")

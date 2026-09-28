@@ -13,7 +13,7 @@
 	var/key = ""
 	var/image/img
 	var/list/viewers = list() // ALLOW(instance_list): d: every alternate appearance is shown to someone
-	var/atom/owner = null
+	var/tmp/owner_handle
 
 /datum/alternate_appearance/proc/display_to(list/displayTo)
 	if(!displayTo || !displayTo.len)
@@ -42,17 +42,17 @@
 
 /datum/alternate_appearance/proc/remove()
 	hide()
-	if(owner)
-		var/list/owned = dq_get_alt_appearances(owner)
+	if(owner())
+		var/list/owned = dq_get_alt_appearances(owner())
 		if(owned)
 			owned -= key
 			if(!owned.len)
-				dq_clear_alt_appearances_component(owner)
+				dq_clear_alt_appearances_component(owner())
 
 // ALLOW(lifecycle): it is removed from everyone who saw it.
 /datum/alternate_appearance/Destroy()
 	remove()
-	owner = null
+	owner_handle = null
 	return ..()
 
 /atom/Destroy()
@@ -67,7 +67,7 @@
 	var/datum/alternate_appearance/AA = new()
 	AA.img = img
 	AA.key = key
-	AA.owner = src
+	AA.owner_handle = om_handle(src)
 
 	if(owned[key])
 		qdel(owned[key])
@@ -107,3 +107,9 @@
 	if(!AA)
 		return
 	AA.hide(hideFrom)
+
+REF_OWNED(/datum/alternate_appearance, "img")
+
+/// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/alternate_appearance/proc/owner() as /atom
+	return om_resolve(owner_handle)

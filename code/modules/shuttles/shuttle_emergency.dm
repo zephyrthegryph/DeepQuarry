@@ -2,11 +2,11 @@
 /datum/shuttle/autodock/ferry/emergency
 	category = /datum/shuttle/autodock/ferry/emergency
 	var/frequency = AUTODOCK_FREQ // Why this frequency? BECAUSE! Thats what someone decided once.
-	var/datum/radio_frequency/radio_connection
+	var/tmp/radio_connection_handle
 
 /datum/shuttle/autodock/ferry/emergency/New()
 	..()
-	radio_connection = SSradio.add_object(src, frequency, null)
+	radio_connection_handle = om_handle(SSradio.add_object(src, frequency, null))
 	if(SSemergency_shuttle.shuttle)
 		CRASH("An emergency shuttle has already been defined.")
 	SSemergency_shuttle.shuttle = src
@@ -32,7 +32,7 @@
 	..(destination, interim, travel_time, direction)
 
 /datum/shuttle/autodock/ferry/emergency/perform_shuttle_move()
-	if (current_location == landmark_station)	//leaving the station
+	if (current_location() == landmark_station())	//leaving the station
 		SSemergency_shuttle.departed = TRUE
 		var/estimated_time = round(SSemergency_shuttle.estimate_arrival_time()/60,1)
 
@@ -113,9 +113,9 @@
 	location = FERRY_LOCATION_OFFSITE
 	shuttle_area = /area/shuttle/escape
 	warmup_time = 10
-	landmark_offsite = "escape_cc"
-	landmark_station = "escape_station"
-	landmark_transition = "escape_transit"
+	landmark_offsite_tag = "escape_cc"
+	landmark_station_tag = "escape_station"
+	landmark_transition_tag = "escape_transit"
 	move_time = SHUTTLE_TRANSIT_DURATION_RETURN
 	move_direction = SOUTH
 	docking_controller_tag = "escape_shuttle"
@@ -201,3 +201,7 @@
 /obj/machinery/computer/shuttle_control/emergency/proc/interaction_scan_id(mob/user, obj/item/W, datum/interaction/interaction)
 	read_authorization(W)
 	return FALSE
+
+/// LC-refs: the radio_connection this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/shuttle/autodock/ferry/emergency/proc/radio_connection() as /datum/radio_frequency
+	return om_resolve(radio_connection_handle)

@@ -108,10 +108,10 @@
 	var/matrix/rotateMatrix = matrix()
 	transform = rotateMatrix
 
-	if(!linked)
+	if(!linked())
 		return
 
-	var/mob/owner = linked.getWearer()
+	var/mob/owner = linked().getWearer()
 	if(!owner) return;
 
 	name = "Voodoo doll of " + owner.name

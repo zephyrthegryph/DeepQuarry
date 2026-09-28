@@ -91,8 +91,8 @@
 	if(powernet)
 		for(var/obj/machinery/power/terminal/T in powernet.nodes) // APCs that are "downstream" of the powernet.
 
-			if(istype(T.master, /obj/machinery/power/apc))
-				var/obj/machinery/power/apc/A = T.master
+			if(istype(T.master(), /obj/machinery/power/apc))
+				var/obj/machinery/power/apc/A = T.master()
 				if(A.is_critical)
 					continue
 				A.do_grid_check()
@@ -113,8 +113,8 @@
 	update_icon()
 
 	for(var/obj/machinery/power/terminal/T in powernet.nodes)
-		if(istype(T.master, /obj/machinery/power/apc))
-			var/obj/machinery/power/apc/A = T.master
+		if(istype(T.master(), /obj/machinery/power/apc))
+			var/obj/machinery/power/apc/A = T.master()
 			if(A.is_critical)
 				continue
 			A.set_grid_check(FALSE)

@@ -5,7 +5,7 @@
 	icon_keyboard = "teleport_key"
 	circuit = /obj/item/circuitboard/telesci_console
 	var/sending = 1
-	var/obj/machinery/telepad/telepad = null
+	var/tmp/telepad_handle
 	var/temp_msg = "Telescience control console initialized. Welcome."
 
 	// VARIABLES //
@@ -14,7 +14,7 @@
 	var/z_co = 1
 	var/distance_off
 	var/rotation_off
-	var/turf/last_target
+	var/tmp/last_target_handle
 
 	var/rotation = 0
 	var/distance = 5
@@ -95,13 +95,13 @@ REF_SPILL(/obj/machinery/computer/telescience, "inserted_gps")
 	var/obj/item/multitool/multitool = tool
 	if(!istype(multitool.connectable(), /obj/machinery/telepad))
 		return ITEM_INTERACT_BLOCKING
-	telepad = multitool.connectable()
+	telepad_handle = om_handle(multitool.connectable())
 	multitool.connectable_handle = null
 	to_chat(user, span_warning("You upload the data from the [tool.name]'s buffer."))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/computer/telescience/proc/get_max_allowed_distance()
-	return FLOOR((length(crystals) * telepad.efficiency * powerCoefficient), 1)
+	return FLOOR((length(crystals) * telepad().efficiency * powerCoefficient), 1)
 
 /obj/machinery/computer/telescience/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -111,7 +111,7 @@ REF_SPILL(/obj/machinery/computer/telescience, "inserted_gps")
 
 /obj/machinery/computer/telescience/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	if(!telepad)
+	if(!telepad())
 		in_use = 0     //Yeah so if you deconstruct teleporter while its in the process of shooting it wont disable the console
 		data["noTelepad"] = 1
 	else
@@ -127,7 +127,7 @@ REF_SPILL(/obj/machinery/computer/telescience, "inserted_gps")
 		data["distance"] = distance
 
 		data["tempMsg"] = temp_msg
-		if(telepad.panel_open)
+		if(telepad().panel_open)
 			data["tempMsg"] = "Telepad undergoing physical maintenance operations."
 
 		//We'll base our options on connected z's or overmap
@@ -146,7 +146,7 @@ REF_SPILL(/obj/machinery/computer/telescience, "inserted_gps")
 /obj/machinery/computer/telescience/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	if(..())
 		return TRUE
-	if(!telepad || telepad.panel_open)
+	if(!telepad() || telepad().panel_open)
 		return TRUE
 
 	switch(action)
@@ -169,7 +169,7 @@ REF_SPILL(/obj/machinery/computer/telescience, "inserted_gps")
 				inserted_gps = null
 
 		if("setMemory")
-			if(last_target && inserted_gps)
+			if(last_target() && inserted_gps)
 				// TODO - What was this even supposed to do??
 				//inserted_gps.locked_location = last_target
 				temp_msg = "Function Deprecated. No action taken."
@@ -198,9 +198,9 @@ REF_SPILL(/obj/machinery/computer/telescience, "inserted_gps")
 	return TRUE
 
 /obj/machinery/computer/telescience/proc/sparks()
-	if(telepad)
+	if(telepad())
 		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread()
-		s.set_up(5, 1, get_turf(telepad))
+		s.set_up(5, 1, get_turf(telepad()))
 		s.start()
 	else
 		return
@@ -224,8 +224,8 @@ REF_SPILL(/obj/machinery/computer/telescience, "inserted_gps")
 		if(91 to 98)
 			// They did the mash! (They did the monster mash!) The monster mash! (It was a graveyard smash!)
 			sparks()
-			if(telepad)
-				var/L = get_turf(telepad)
+			if(telepad())
+				var/L = get_turf(telepad())
 				var/blocked = list(/mob/living/simple_mob/vore, /mob/living/simple_mob/vore/ddraig) + typesof(/mob/living/simple_mob/vore/woof) + typesof(/mob/living/simple_mob/vore/overmap)
 				var/list/hostiles = typesof(/mob/living/simple_mob/vore) - blocked
 				playsound(L, 'sound/effects/phasein.ogg', 100, 1, extrarange = 3, falloff = 5)
@@ -246,11 +246,11 @@ REF_SPILL(/obj/machinery/computer/telescience, "inserted_gps")
 	if(!COOLDOWN_FINISHED(src, teleport_cooldown))
 		return
 
-	if(telepad)
+	if(telepad())
 		var/trueDistance = CLAMP(distance + distance_off, 1, get_max_allowed_distance())
 		var/trueRotation = rotation + rotation_off
 
-		var/datum/projectile_data/proj_data = simple_projectile_trajectory(telepad.x, telepad.y, trueRotation, trueDistance)
+		var/datum/projectile_data/proj_data = simple_projectile_trajectory(telepad().x, telepad().y, trueRotation, trueDistance)
 		last_tele_data = proj_data
 
 		var/trueX = proj_data.dest_x
@@ -263,11 +263,11 @@ REF_SPILL(/obj/machinery/computer/telescience, "inserted_gps")
 		var/spawn_time = round(proj_data.time) * 10
 
 		var/turf/target = locate(trueX, trueY, z_co)
-		last_target = target
-		flick("pad-beam", telepad)
+		last_target_handle = om_handle(target)
+		flick("pad-beam", telepad())
 
 		if(spawn_time > 15) // 1.5 seconds
-			playsound(telepad, 'sound/weapons/flash.ogg', 50, 1)
+			playsound(telepad(), 'sound/weapons/flash.ogg', 50, 1)
 			// Wait depending on the time the projectile took to get there
 			teleporting = 1
 			temp_msg = "Powering up bluespace crystals. Please wait."
@@ -321,9 +321,9 @@ REF_SPILL(/obj/machinery/computer/telescience, "inserted_gps")
 
 /obj/machinery/computer/telescience/proc/finish_teleport(mob/user, trueDistance, spawn_time, turf/target, trueX, trueY)
 	var/area/A = get_area(target)
-	if(!telepad)
+	if(!telepad())
 		return
-	if(telepad.inoperable())
+	if(telepad().inoperable())
 		return
 	teleporting = 0
 	COOLDOWN_START(src, teleport_cooldown, (spawn_time * 2))
@@ -333,7 +333,7 @@ REF_SPILL(/obj/machinery/computer/telescience, "inserted_gps")
 	use_power(trueDistance * 10000)
 
 	var/datum/effect/effect/system/spark_spread/S = new /datum/effect/effect/system/spark_spread()
-	S.set_up(5, 1, get_turf(telepad))
+	S.set_up(5, 1, get_turf(telepad()))
 	S.start()
 
 	if(!A || (A.flag_check(BLUE_SHIELDED)) || (target.block_tele)) // consistency smh
@@ -352,7 +352,7 @@ REF_SPILL(/obj/machinery/computer/telescience, "inserted_gps")
 	Y.start()
 
 	var/turf/source = target
-	var/turf/dest = get_turf(telepad)
+	var/turf/dest = get_turf(telepad())
 	var/log_msg = ""
 	log_msg += ": [key_name(user)] has teleported "
 
@@ -361,8 +361,8 @@ REF_SPILL(/obj/machinery/computer/telescience, "inserted_gps")
 		dest = target
 
 	var/list/sent_atoms = list()
-	flick("pad-beam", telepad)
-	playsound(telepad, 'sound/weapons/emitter2.ogg', 25, 1, extrarange = 3, falloff = 5)
+	flick("pad-beam", telepad())
+	playsound(telepad(), 'sound/weapons/emitter2.ogg', 25, 1, extrarange = 3, falloff = 5)
 	for(var/atom/movable/ROI in source)
 		// if is anchored, don't let through
 		if(ROI.anchored)
@@ -402,9 +402,19 @@ REF_SPILL(/obj/machinery/computer/telescience, "inserted_gps")
 		do_teleport(ROI, dest)
 	// Either works for the experiment scan, so fire signals on both
 	SEND_SIGNAL(src, COMSIG_TELESCI_TELEPORT, sent_atoms, target, sending)
-	SEND_SIGNAL(telepad, COMSIG_TELESCI_TELEPORT, sent_atoms, target, sending)
+	SEND_SIGNAL(telepad(), COMSIG_TELESCI_TELEPORT, sent_atoms, target, sending)
 
 	if (!dd_hassuffix(log_msg, ", "))
 		log_msg += "nothing"
 	log_msg += " [sending ? "to" : "from"] [trueX], [trueY], [z_co] ([A ? A.name : "null area"])"
 	investigate_log(log_msg, "telesci")
+
+REF_OWNED(/obj/machinery/computer/telescience, "last_tele_data")
+
+/// LC-refs: the telepad this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/telescience/proc/telepad() as /obj/machinery/telepad
+	return om_resolve(telepad_handle)
+
+/// LC-refs: the last_target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/telescience/proc/last_target() as /turf
+	return om_resolve(last_target_handle)

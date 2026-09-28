@@ -476,7 +476,7 @@
 	if(S && istype(S) && !is_attached(color))
 		LAZYSET(assemblies, color, S)
 		S.forceMove(holder)
-		S.connected = src
+		S.connected_handle = om_handle(src)
 		return S
 
 /**
@@ -491,7 +491,7 @@
 	var/obj/item/assembly/signaler/S = get_attached(color)
 	if(S && istype(S))
 		LAZYREMOVE(assemblies, color)
-		S.connected = null
+		S.connected_handle = null
 		S.forceMove(holder.drop_location())
 		return S
 

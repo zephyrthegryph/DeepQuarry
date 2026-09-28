@@ -175,3 +175,6 @@ DECLARE_INTERACTIONS(/obj/item/nailpolish_remover, INTERACT_USE(null, PROC_REF(i
 	icon = _icon
 	icon_state = _icon_state
 	color = _color
+
+REF_OWNED(/obj/item/nailpolish, list("top_underlay", "color_underlay"))
+REF_OWNED(/obj/item/organ/external, "nail_polish")

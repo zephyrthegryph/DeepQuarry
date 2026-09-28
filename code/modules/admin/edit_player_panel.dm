@@ -8,70 +8,70 @@
 GLOBAL_LIST_EMPTY(dq_edit_player_panels)
 
 /datum/admins/proc/dq_open_edit_player_panel(mob/player)
-	if(!owner?.mob || !player)
+	if(!owner()?.mob || !player)
 		return
 	var/key = "[REF(src)]-[REF(player)]"
 	var/datum/edit_player_panel/panel = LAZYACCESS(GLOB.dq_edit_player_panels, key)
 	if(!panel)
 		panel = new(src, player)
 		GLOB.dq_edit_player_panels[key] = panel
-	panel.tgui_interact(owner.mob)
+	panel.tgui_interact(owner().mob)
 
 /datum/edit_player_panel
-	var/datum/admins/holder
-	var/mob/target
+	var/tmp/holder_handle
+	var/tmp/target_handle
 
 /datum/edit_player_panel/New(datum/admins/owner_holder, mob/target_mob)
 	..()
-	holder = owner_holder
-	target = target_mob
+	holder_handle = om_handle(owner_holder)
+	target_handle = om_handle(target_mob)
 
 // ALLOW(lifecycle): leaves the per-admin panel index.
 /datum/edit_player_panel/Destroy(force, ...)
-	if(holder && target)
-		GLOB.dq_edit_player_panels -= "[REF(holder)]-[REF(target)]"
-	holder = null
-	target = null
+	if(holder() && target())
+		GLOB.dq_edit_player_panels -= "[REF(holder())]-[REF(target())]"
+	holder_handle = null
+	target_handle = null
 	return ..()
 
 /datum/edit_player_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_HOLDER)
 
 /datum/edit_player_panel/tgui_interact(mob/user, datum/tgui/ui)
-	if(!holder || !target)
+	if(!holder() || !target())
 		return
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
-		ui = new(user, src, "AdminEditPlayer", "Edit Player: [target.key]")
+		ui = new(user, src, "AdminEditPlayer", "Edit Player: [target().key]")
 		ui.open()
 
 /datum/edit_player_panel/tgui_data(mob/user)
 	var/list/data = list()
-	if(!target)
+	if(!target())
 		return data
-	data["ref"] = "[REF(target)]"
-	data["name"] = "[target]"
-	data["key"] = target.key || ""
-	data["mob_type"] = "[target.type]"
-	data["has_client"] = !!target.client
-	data["is_newplayer"] = !!isnewplayer(target)
-	data["is_human"] = !!ishuman(target)
-	data["is_ai"] = !!isAI(target)
-	data["is_carbon"] = !!iscarbon(target)
-	data["is_small"] = !!issmall(target)
-	data["is_corgi"] = !!iscorgi(target)
-	data["is_animal"] = !!isanimal(target)
-	if(target.client)
-		data["client_name"] = "[target.client]"
-		data["client_ref"] = "[REF(target.client)]"
-		data["client_ckey"] = target.client.ckey
-		data["player_age"] = target.client.player_age
-		data["account_join_date"] = target.client.account_join_date
-		data["account_age"] = target.client.account_age
-		data["inactivity_minutes"] = round(target.client.inactivity / 600)
-		data["rank_names"] = target.client.holder ? target.client.holder.rank_names() : "Player"
-		data["editrights_mode"] = (GLOB.admin_datums[target.client.ckey] || GLOB.deadmins[target.client.ckey]) ? "rank" : "add"
-		data["muted"] = target.client.prefs.muted
+	data["ref"] = "[REF(target())]"
+	data["name"] = "[target()]"
+	data["key"] = target().key || ""
+	data["mob_type"] = "[target().type]"
+	data["has_client"] = !!target().client
+	data["is_newplayer"] = !!isnewplayer(target())
+	data["is_human"] = !!ishuman(target())
+	data["is_ai"] = !!isAI(target())
+	data["is_carbon"] = !!iscarbon(target())
+	data["is_small"] = !!issmall(target())
+	data["is_corgi"] = !!iscorgi(target())
+	data["is_animal"] = !!isanimal(target())
+	if(target().client)
+		data["client_name"] = "[target().client]"
+		data["client_ref"] = "[REF(target().client)]"
+		data["client_ckey"] = target().client.ckey
+		data["player_age"] = target().client.player_age
+		data["account_join_date"] = target().client.account_join_date
+		data["account_age"] = target().client.account_age
+		data["inactivity_minutes"] = round(target().client.inactivity / 600)
+		data["rank_names"] = target().client.holder ? target().client.holder.rank_names() : "Player"
+		data["editrights_mode"] = (GLOB.admin_datums[target().client.ckey] || GLOB.deadmins[target().client.ckey]) ? "rank" : "add"
+		data["muted"] = target().client.prefs.muted
 	else
 		data["client_name"] = null
 		data["client_ref"] = null
@@ -79,7 +79,7 @@ GLOBAL_LIST_EMPTY(dq_edit_player_panels)
 		data["muted"] = 0
 
 	data["can_event"] = !!check_rights(R_ADMIN|R_MOD|R_EVENT, 0)
-	data["special_character"] = is_special_character(target)
+	data["special_character"] = is_special_character(target())
 
 	// Mute mask constants exposed so the React side doesn't hardcode them.
 	data["mute_mask_ic"] = MUTE_IC
@@ -91,7 +91,7 @@ GLOBAL_LIST_EMPTY(dq_edit_player_panels)
 	data["mute_mask_all"] = MUTE_ALL
 
 	// DNA — only meaningful for carbons with a DNA struct.
-	if(target.dna && iscarbon(target))
+	if(target().dna && iscarbon(target()))
 		var/list/dna_cells = list()
 		var/list/gene_lookup = get_gene_lookup()
 		for(var/block = 1; block <= DNA_SE_LENGTH; block++)
@@ -105,9 +105,9 @@ GLOBAL_LIST_EMPTY(dq_edit_player_panels)
 				if(istype(gene, /datum/gene/trait))
 					var/datum/gene/trait/T = gene
 					tname = T.get_name()
-				if(bname in target.active_genes)
+				if(bname in target().active_genes)
 					cell_state = "active"
-				else if(target.dna.GetSEState(block))
+				else if(target().dna.GetSEState(block))
 					cell_state = "blocked"
 				else
 					cell_state = "inactive"
@@ -127,7 +127,7 @@ GLOBAL_LIST_EMPTY(dq_edit_player_panels)
 	for(var/k in get_non_innate_language_keys())
 		langs += list(list(
 			"key" = k,
-			"known" = (GLOB.all_languages[k] in target.languages),
+			"known" = (GLOB.all_languages[k] in target().languages),
 		))
 	data["languages"] = langs
 
@@ -157,20 +157,20 @@ GLOBAL_LIST_EMPTY(dq_edit_player_panels)
 	return keys
 
 /datum/edit_player_panel/proc/forward_topic(qs, list/extra_params = null)
-	forward_holder_topic(holder, qs, extra_params)
+	forward_holder_topic(holder(), qs, extra_params)
 
 /datum/edit_player_panel/tgui_act(action, list/params, datum/tgui/ui)
 	. = ..()
-	if(. || !holder || !target)
+	if(. || !holder() || !target())
 		return
 	// Most actions take action=<x>=REF(target) form. Build the ref once.
-	var/tref = "[REF(target)]"
-	var/cref = target.client ? "[REF(target.client)]" : null
+	var/tref = "[REF(target())]"
+	var/cref = target().client ? "[REF(target().client)]" : null
 	switch(action)
 		// Header actions
 		if("editrights")
 			var/mode = "[params["mode"]]"
-			forward_topic("editrights=[mode];key=[target.key]")
+			forward_topic("editrights=[mode];key=[target().key]")
 			SStgui.update_uis(src)
 			return TRUE
 		if("revive")
@@ -178,7 +178,7 @@ GLOBAL_LIST_EMPTY(dq_edit_player_panels)
 			SStgui.update_uis(src)
 			return TRUE
 		if("vv")
-			holder.Topic("Vars=[tref]", list("_src_" = "vars", "Vars" = tref))
+			holder().Topic("Vars=[tref]", list("_src_" = "vars", "Vars" = tref))
 			return TRUE
 		if("traitor")
 			forward_topic("traitor=[tref]")
@@ -207,7 +207,7 @@ GLOBAL_LIST_EMPTY(dq_edit_player_panels)
 			SStgui.update_uis(src)
 			return TRUE
 		if("warn")
-			forward_topic("warn=[target.ckey]")
+			forward_topic("warn=[target().ckey]")
 			return TRUE
 		if("newban")
 			forward_topic("newban=[tref]")
@@ -301,3 +301,11 @@ GLOBAL_LIST_EMPTY(dq_edit_player_panels)
 			forward_topic("toglang=[tref];lang=[lang]")
 			SStgui.update_uis(src)
 			return TRUE
+
+/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/edit_player_panel/proc/holder() as /datum/admins
+	return om_resolve(holder_handle)
+
+/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/edit_player_panel/proc/target() as /mob
+	return om_resolve(target_handle)

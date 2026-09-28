@@ -25,7 +25,7 @@ BLIND     // can't see anything
 	var/off_state = "degoggles"
 	var/active = 1
 	var/activation_sound = 'sound/items/goggles_charge.ogg'
-	var/tmp/atom/movable/screen/overlay = null
+	var/tmp/overlay_handle
 	var/list/away_planes //Holder for disabled planes
 	drop_sound = 'sound/items/drop/accessory.ogg'
 	pickup_sound = 'sound/items/pickup/accessory.ogg'
@@ -115,7 +115,7 @@ BLIND     // can't see anything
 
 /obj/item/clothing/glasses/meson/Initialize(mapload)
 	. = ..()
-	overlay = GLOB.global_hud.meson
+	overlay_handle = om_handle(GLOB.global_hud.meson)
 
 /obj/item/clothing/glasses/meson/prescription
 	name = "prescription mesons"
@@ -160,7 +160,7 @@ BLIND     // can't see anything
 
 /obj/item/clothing/glasses/science/Initialize(mapload)
 	. = ..()
-	overlay = GLOB.global_hud.science
+	overlay_handle = om_handle(GLOB.global_hud.science)
 
 /obj/item/clothing/glasses/goggles
 	name = "goggles"
@@ -192,7 +192,7 @@ BLIND     // can't see anything
 
 /obj/item/clothing/glasses/night/Initialize(mapload)
 	. = ..()
-	overlay = GLOB.global_hud.nvg
+	overlay_handle = om_handle(GLOB.global_hud.nvg)
 
 /obj/item/clothing/glasses/eyepatch
 	name = "eyepatch"
@@ -261,7 +261,7 @@ BLIND     // can't see anything
 
 /obj/item/clothing/glasses/material/Initialize(mapload)
 	. = ..()
-	overlay = GLOB.global_hud.material
+	overlay_handle = om_handle(GLOB.global_hud.material)
 
 /obj/item/clothing/glasses/material/prescription
 	name = "prescription optical material scanner"
@@ -282,7 +282,7 @@ BLIND     // can't see anything
 
 /obj/item/clothing/glasses/graviton/Initialize(mapload)
 	. = ..()
-	overlay = GLOB.global_hud.material
+	overlay_handle = om_handle(GLOB.global_hud.material)
 
 /obj/item/clothing/glasses/regular
 	name = "prescription glasses"
@@ -572,7 +572,7 @@ BLIND     // can't see anything
 
 /obj/item/clothing/glasses/thermal/Initialize(mapload)
 	. = ..()
-	overlay = GLOB.global_hud.thermal
+	overlay_handle = om_handle(GLOB.global_hud.thermal)
 
 /obj/item/clothing/glasses/thermal/syndi	//These are now a traitor item, concealed as mesons.	-Pete
 	name = "optical meson scanner"
@@ -856,3 +856,7 @@ BLIND     // can't see anything
 	vision_flags = SEE_TURFS
 	enables_planes = list(VIS_FULLBRIGHT, VIS_MESONS)
 	see_invisible = INVISIBILITY_SHADEKIN
+
+/// LC-refs: the overlay this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/clothing/glasses/proc/overlay() as /atom/movable/screen
+	return om_resolve(overlay_handle)

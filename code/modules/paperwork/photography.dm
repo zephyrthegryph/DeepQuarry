@@ -371,3 +371,5 @@ DECLARE_INTERACTIONS(/obj/item/camera, \
 /obj/item/camera/proc/recharged()
 	icon_state = icon_on
 	on = 1
+
+REF_OWNED(/obj/item/photo, list("img", "tiny"))

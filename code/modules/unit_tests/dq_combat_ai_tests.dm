@@ -312,7 +312,7 @@
 		break
 	TEST_ASSERT_NOTNULL(dest, "no simulated floor available on z=1 for destination")
 	S.ai_brain.give_destination(dest)
-	TEST_ASSERT_EQUAL(S.ai_brain.destination, dest, "give_destination didn't record the turf on the brain")
+	TEST_ASSERT_EQUAL(S.ai_brain.destination(), dest, "give_destination didn't record the turf on the brain")
 
 
 // --- runtime: stop_active clears busy and marks selection dirty -------

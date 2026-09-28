@@ -56,14 +56,14 @@
 	/// The user's presets
 	var/preset_colors
 	/// The TGUI UI state that will be returned in ui_state(). Default: always_state
-	var/datum/tgui_state/state
+	var/tmp/state_handle
 
 /datum/tgui_color_picker/New(mob/user, message, title, default, timeout, autofocus, ui_state)
 	src.autofocus = autofocus
 	src.title = title
 	src.default = default
 	src.message = message
-	src.state = ui_state
+	src.state_handle = om_handle(ui_state)
 	if (timeout)
 		src.timeout = timeout
 		start_time = world.time
@@ -93,7 +93,7 @@
 	closed = TRUE
 
 /datum/tgui_color_picker/tgui_state(mob/user)
-	return state
+	return state()
 
 /datum/tgui_color_picker/tgui_static_data(mob/user)
 	. = list()
@@ -149,3 +149,7 @@
 
 /datum/tgui_color_picker/proc/set_choice(choice)
 	src.choice = choice
+
+/// LC-refs: the state this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_color_picker/proc/state() as /datum/tgui_state
+	return om_resolve(state_handle)

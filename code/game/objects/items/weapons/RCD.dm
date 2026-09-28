@@ -445,7 +445,7 @@ REF_OWNED(/obj/item/rcd/electric, "cell")
 		return FALSE
 
 	var/obj/item/rig_module/device/D = loc
-	if(!istype(D) || !D?.holder?.wearer == user)
+	if(!istype(D) || !D?.holder?.wearer() == user)
 		world.log << "Three"
 		return FALSE
 

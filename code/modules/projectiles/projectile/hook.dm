@@ -131,8 +131,8 @@
 			else if(firer)
 				var/obj/T
 
-				if((original in target.contents) && istype(original, /obj))
-					T = original
+				if((original() in target.contents) && istype(original(), /obj))
+					T = original()
 
 				var/list/possible_targets = list()
 				for(var/obj/item/I in target.contents)
@@ -200,3 +200,5 @@
 	icon_state = "green_laser"
 	beam_state = "n_beam"
 	damage = 3
+
+REF_OWNED(/obj/item/projectile/energy/hook, "chain")

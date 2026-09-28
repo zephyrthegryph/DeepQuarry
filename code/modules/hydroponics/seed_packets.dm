@@ -10,7 +10,7 @@ REGISTRY_MEMBERSHIP(/obj/item/seeds, REGISTRY_SEED_PACKS)
 	w_class = ITEMSIZE_SMALL
 
 	var/seed_type
-	var/datum/seed/seed
+	var/tmp/seed_handle
 	var/modified = 0
 
 /obj/item/seeds/Initialize(mapload, _seed_type)
@@ -21,50 +21,50 @@ REGISTRY_MEMBERSHIP(/obj/item/seeds, REGISTRY_SEED_PACKS)
 
 //Grabs the appropriate seed datum from the global list.
 /obj/item/seeds/proc/update_seed()
-	if(!seed && seed_type && !isnull(GLOB.plant_service.seeds) && GLOB.plant_service.seeds[seed_type])
-		seed = GLOB.plant_service.seeds[seed_type]
+	if(!seed() && seed_type && !isnull(GLOB.plant_service.seeds) && GLOB.plant_service.seeds[seed_type])
+		seed_handle = om_handle(GLOB.plant_service.seeds[seed_type])
 	update_appearance()
 
 //Updates strings and icon appropriately based on seed datum.
 /obj/item/seeds/proc/update_appearance()
-	if(!seed) return
+	if(!seed()) return
 
 	// Update icon.
 	cut_overlays()
-	var/is_seeds = ((seed.seed_noun in list("seeds","pits","nodes")) ? 1 : 0)
+	var/is_seeds = ((seed().seed_noun in list("seeds","pits","nodes")) ? 1 : 0)
 	var/image/seed_mask
-	var/seed_base_key = "base-[is_seeds ? seed.get_trait(TRAIT_PLANT_COLOUR) : "spores"]"
+	var/seed_base_key = "base-[is_seeds ? seed().get_trait(TRAIT_PLANT_COLOUR) : "spores"]"
 	if(GLOB.plant_seed_sprites[seed_base_key])
 		seed_mask = GLOB.plant_seed_sprites[seed_base_key]
 	else
 		seed_mask = image('icons/obj/seeds.dmi',"[is_seeds ? "seed" : "spore"]-mask")
 		if(is_seeds) // Spore glass bits aren't coloured.
-			seed_mask.color = seed.get_trait(TRAIT_PLANT_COLOUR)
+			seed_mask.color = seed().get_trait(TRAIT_PLANT_COLOUR)
 		GLOB.plant_seed_sprites[seed_base_key] = seed_mask
 
 	var/image/seed_overlay
-	var/seed_overlay_key = "[seed.get_trait(TRAIT_PRODUCT_ICON)]-[seed.get_trait(TRAIT_PRODUCT_COLOUR)]"
+	var/seed_overlay_key = "[seed().get_trait(TRAIT_PRODUCT_ICON)]-[seed().get_trait(TRAIT_PRODUCT_COLOUR)]"
 	if(GLOB.plant_seed_sprites[seed_overlay_key])
 		seed_overlay = GLOB.plant_seed_sprites[seed_overlay_key]
 	else
-		seed_overlay = image('icons/obj/seeds.dmi',"[seed.get_trait(TRAIT_PRODUCT_ICON)]")
-		seed_overlay.color = seed.get_trait(TRAIT_PRODUCT_COLOUR)
+		seed_overlay = image('icons/obj/seeds.dmi',"[seed().get_trait(TRAIT_PRODUCT_ICON)]")
+		seed_overlay.color = seed().get_trait(TRAIT_PRODUCT_COLOUR)
 		GLOB.plant_seed_sprites[seed_overlay_key] = seed_overlay
 
 	add_overlay(seed_mask)
 	add_overlay(seed_overlay)
 
 	if(is_seeds)
-		src.name = "packet of [seed.seed_name] [seed.seed_noun]"
-		src.desc = "It has a picture of [seed.display_name] on the front."
+		src.name = "packet of [seed().seed_name] [seed().seed_noun]"
+		src.desc = "It has a picture of [seed().display_name] on the front."
 	else
-		src.name = "sample of [seed.seed_name] [seed.seed_noun]"
-		src.desc = "It's labelled as coming from [seed.display_name]."
+		src.name = "sample of [seed().seed_name] [seed().seed_noun]"
+		src.desc = "It's labelled as coming from [seed().display_name]."
 
 /obj/item/seeds/examine(mob/user)
 	. = ..()
-	if(seed && !seed.roundstart)
-		. += "It's tagged as variety #[seed.uid]."
+	if(seed() && !seed().roundstart)
+		. += "It's tagged as variety #[seed().uid]."
 
 /obj/item/seeds/cutting
 	name = "cuttings"
@@ -72,14 +72,14 @@ REGISTRY_MEMBERSHIP(/obj/item/seeds, REGISTRY_SEED_PACKS)
 
 /obj/item/seeds/cutting/update_appearance()
 	..()
-	src.name = "packet of [seed.seed_name] cuttings"
+	src.name = "packet of [seed().seed_name] cuttings"
 
 /obj/item/seeds/random
 	seed_type = null
 
 /obj/item/seeds/random/Initialize(mapload)
-	seed = GLOB.plant_service.create_random_seed()
-	seed_type = seed.name
+	seed_handle = om_handle(GLOB.plant_service.create_random_seed())
+	seed_type = seed().name
 	. = ..()
 
 /obj/item/seeds/replicapod
@@ -379,3 +379,7 @@ REGISTRY_MEMBERSHIP(/obj/item/seeds, REGISTRY_SEED_PACKS)
 
 /obj/item/seeds/lustflower
 	seed_type = PLANT_GARDENIA
+
+/// LC-refs: the seed this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/seeds/proc/seed() as /datum/seed
+	return om_resolve(seed_handle)

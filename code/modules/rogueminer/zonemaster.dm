@@ -5,9 +5,9 @@
 
 /datum/rogue/zonemaster
 	//our area
-	var/area/asteroid/rogue/myarea
+	var/tmp/myarea_handle
 	// var/area/shuttle/belter/myshuttle
-	var/obj/effect/shuttle_landmark/myshuttle_landmark
+	var/tmp/myshuttle_landmark_handle
 
 	//world.time
 	var/prepared_at = 0
@@ -27,14 +27,14 @@
 	var/original_mobs = 0
 
 	//in-use spawns from the area
-	var/list/obj/asteroid_spawner/rockspawns
-	var/list/obj/rogue_mobspawner/mobspawns
+	var/list/rockspawns	// OM handles (om_resolve_all())
+	var/list/mobspawns	// OM handles (om_resolve_all())
 
 /datum/rogue/zonemaster/New(area/A)
 	ASSERT(A)
-	myarea = A
-	myshuttle_landmark = locate(/obj/effect/shuttle_landmark) in myarea
-	if(!istype(myshuttle_landmark))
+	myarea_handle = om_handle(A)
+	myshuttle_landmark_handle = om_handle(locate(/obj/effect/shuttle_landmark) in myarea())
+	if(!istype(myshuttle_landmark(), /obj/effect/shuttle_landmark))
 		WARNING("Zonemaster cannot find a shuttle landmark in its area '[A]'")
 	om_after(src, 1 SECOND, PROC_REF(report_clean)) //This is called from controller New() and freaks out if this calls back too fast.
 
@@ -48,7 +48,7 @@
 		if(H.stat >= DEAD) //Conditions for exclusion here, like if disconnected people start blocking it.
 			continue
 		var/area/A = get_area(H)
-		if(A == myarea) //The loc of a turf is the area it is in.
+		if(A == myarea()) //The loc of a turf is the area it is in.
 			humans++
 	return humans
 
@@ -117,7 +117,7 @@
 	ASSERT(SP && A)
 
 	GLOB.rm_controller.dbg("ZM(pa): Placing at point [SP.x],[SP.y],[SP.z].")
-	SP.myasteroid = A
+	SP.myasteroid_handle = om_handle(A)
 
 	//Bottom-left corner of our bounding box
 	var/BLx = SP.x - (A.width/2)
@@ -173,7 +173,7 @@
 	#define ARTIFACTSPAWNNUM_LOWER 1
 	#define ARTIFACTSPAWNNUM_UPPER 1 //Replace with difficulty-based ones.
 
-	if(!M.mineral && prob(GLOB.rm_controller.diffstep_chances[GLOB.rm_controller.diffstep])) //Difficulty translates directly into ore chance
+	if(!M.mineral() && prob(GLOB.rm_controller.diffstep_chances[GLOB.rm_controller.diffstep])) //Difficulty translates directly into ore chance
 		GLOB.rm_controller.dbg("ZM(par): Adding mineral to [M.x],[M.y].")
 		if(GLOB.rm_controller.diffstep >= 3)
 			M.turf_resource_types |= TURF_HAS_RARE_ORE
@@ -281,20 +281,20 @@
 	GLOB.rm_controller.dbg("ZM(p): Randomizing spawns.")
 	randomize_spawns()
 	GLOB.rm_controller.dbg("ZM(p): [length(rockspawns)] picked.")
-	for(var/obj/asteroid_spawner/SP in rockspawns)
+	for(var/obj/asteroid_spawner/SP in om_resolve_all(rockspawns))
 		GLOB.rm_controller.dbg("ZM(p): Creating asteroid for [SP.x],[SP.y],[SP.z].")
 		var/datum/rogue/asteroid/A = generate_asteroid()
 		GLOB.rm_controller.dbg("ZM(p): Placing asteroid.")
 		place_asteroid(A,SP)
 
-	for(var/obj/rogue_mobspawner/SP in mobspawns)
+	for(var/obj/rogue_mobspawner/SP in om_resolve_all(mobspawns))
 		GLOB.rm_controller.dbg("ZM(p): Spawning mob at [SP.x],[SP.y],[SP.z].")
 		//Make sure we can spawn a spacemob here
 		if(!istype(get_turf(SP),/turf/space))
 			GLOB.rm_controller.dbg("ZM(p): Turf blocking mob spawn at [SP.x],[SP.y],[SP.z].")
-			LAZYREMOVE(mobspawns, SP)
-			for(var/obj/rogue_mobspawner/NS in myarea.mob_spawns)
-				if(NS in mobspawns)
+			LAZYREMOVE(mobspawns, om_handle_of(SP))
+			for(var/obj/rogue_mobspawner/NS in myarea().mob_spawns)
+				if(om_handle_of(NS) in mobspawns)
 					continue
 				if(istype(get_turf(NS),/turf/space))
 					SP = NS
@@ -308,36 +308,36 @@
 			LAZYADD(spawned_mobs, newmob)
 
 	GLOB.rm_controller.dbg("ZM(p): Zone generation done.")
-	log_world("RM(stats): PREP [myarea] at [world.time] with [length(spawned_mobs)] mobs, [length(mineral_rocks)] minrocks, total of [length(rockspawns)] rockspawns, [length(mobspawns)] mobspawns.") //DEBUG code for playtest stats gathering.
+	log_world("RM(stats): PREP [myarea()] at [world.time] with [length(spawned_mobs)] mobs, [length(mineral_rocks)] minrocks, total of [length(rockspawns)] rockspawns, [length(mobspawns)] mobspawns.") //DEBUG code for playtest stats gathering.
 	prepared_at = world.time
 	GLOB.rm_controller.mark_ready(src)
-	return myarea
+	return myarea()
 
 //Randomize the landmarks that are enabled
 /datum/rogue/zonemaster/proc/randomize_spawns(chance = 50)
 	GLOB.rm_controller.dbg("ZM(rs): Previously [length(rockspawns)] rockspawns.")
 	LAZYCLEARLIST(rockspawns)
 	GLOB.rm_controller.dbg("ZM(rs): Now [length(rockspawns)] rockspawns.")
-	for(var/obj/asteroid_spawner/SP in myarea.asteroid_spawns)
+	for(var/obj/asteroid_spawner/SP in myarea().asteroid_spawns)
 		if(prob(chance))
-			LAZYADD(rockspawns, SP)
+			LAZYADD(rockspawns, om_handle(SP))
 	GLOB.rm_controller.dbg("ZM(rs): Picked [length(rockspawns)] new rockspawns with [chance]% chance.")
 
 	GLOB.rm_controller.dbg("ZM(rs): Previously [length(mobspawns)] mobspawns.")
 	LAZYCLEARLIST(mobspawns)
 	GLOB.rm_controller.dbg("ZM(rs): Now [length(mobspawns)] mobspawns.")
-	for(var/obj/rogue_mobspawner/SP in myarea.mob_spawns)
+	for(var/obj/rogue_mobspawner/SP in myarea().mob_spawns)
 		if(prob(GLOB.rm_controller.diffstep_chances[GLOB.rm_controller.diffstep]))
-			LAZYADD(mobspawns, SP)
+			LAZYADD(mobspawns, om_handle(SP))
 			original_mobs++
 	GLOB.rm_controller.dbg("ZM(rs): Picked [length(mobspawns)] new mobspawns with [chance]% chance.")
-	return myarea
+	return myarea()
 
 ///////////////////////////////
 ///// Zone Cleaning ///////////
 ///////////////////////////////
 /datum/rogue/zonemaster/proc/score_zone(bonus = 10)
-	GLOB.rm_controller.dbg("ZM(sz): Scoring zone with area [myarea].")
+	GLOB.rm_controller.dbg("ZM(sz): Scoring zone with area [myarea()].")
 	scored = 1
 	var/tally = bonus
 
@@ -368,13 +368,13 @@
 
 	GLOB.rm_controller.adjust_difficulty(tally)
 	GLOB.rm_controller.dbg("ZM(sz): Finished scoring and adjusted by [tally].")
-	log_world("RM(stats): SCORE [myarea] for [tally].") //DEBUG code for playtest stats gathering.
+	log_world("RM(stats): SCORE [myarea()] for [tally].") //DEBUG code for playtest stats gathering.
 	return tally
 
 //Overall 'destroy' proc (marks as unready)
 /datum/rogue/zonemaster/proc/clean_zone(delay = 1)
-	GLOB.rm_controller.dbg("ZM(cz): Cleaning zone with area [myarea].")
-	log_world("RM(stats): CLEAN start [myarea] at [world.time] prepared at [prepared_at].") //DEBUG code for playtest stats gathering.
+	GLOB.rm_controller.dbg("ZM(cz): Cleaning zone with area [myarea()].")
+	log_world("RM(stats): CLEAN start [myarea()] at [world.time] prepared at [prepared_at].") //DEBUG code for playtest stats gathering.
 	GLOB.rm_controller.unmark_ready(src)
 
 	//Cut these lists so qdel can dereference the things properly
@@ -384,7 +384,7 @@
 	LAZYCLEARLIST(mobspawns)
 
 	clean_pass(delay, 1)
-	return myarea
+	return myarea()
 
 /// One cleaning pass: turfs to space at once, then the objects one per `delay` (om_stagger).
 /// The second pass catches what the first uncovered ("a deletion so nice that I give it twice").
@@ -399,7 +399,7 @@
 	/obj/effect/step_trigger/teleporter/roguemine_loop/west)
 
 	var/list/doomed = list()
-	for(var/atom/I in myarea.contents)
+	for(var/atom/I in myarea().contents)
 		if(I.type == /turf/space)
 			I.cut_overlays()
 			continue
@@ -426,11 +426,11 @@
 	original_mobs = 0
 	prepared_at = 0
 
-	log_world("RM(stats): CLEAN done [myarea] at [world.time].") //DEBUG code for playtest stats gathering.
+	log_world("RM(stats): CLEAN done [myarea()] at [world.time].") //DEBUG code for playtest stats gathering.
 
-	GLOB.rm_controller.dbg("ZM(cz): Finished cleaning up zone area [myarea].")
+	GLOB.rm_controller.dbg("ZM(cz): Finished cleaning up zone area [myarea()].")
 	GLOB.rm_controller.mark_clean(src)
-	return myarea
+	return myarea()
 
 ///////////////////////////////
 ///// Mysterious Mystery //////
@@ -440,3 +440,12 @@
 
 /datum/rogue/zonemaster/proc/report_clean()
 	GLOB.rm_controller.mark_clean(src)
+
+/// LC-refs: the myarea this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/rogue/zonemaster/proc/myarea() as /area/asteroid/rogue
+	return om_resolve(myarea_handle)
+
+/// LC-refs: the myshuttle_landmark this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/rogue/zonemaster/proc/myshuttle_landmark() as /obj/effect/shuttle_landmark
+	return om_resolve(myshuttle_landmark_handle)
+

@@ -28,7 +28,7 @@
 	..()
 
 /datum/event/meteor_wave/announce()
-	if(!victim)
+	if(!victim())
 		switch(severity)
 			if(EVENT_LEVEL_MAJOR)
 				GLOB.command_announcement.Announce("Meteors have been detected on collision course with \the [location_name()].", "Meteor Alert", new_sound = ANNOUNCER_MSG_METEORS)
@@ -66,7 +66,7 @@
 	// fills gaps
 	for(var/obj/machinery/shield_gen/gen in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		gen.fill_diffused()
-	if(!victim)
+	if(!victim())
 		switch(severity)
 			if(EVENT_LEVEL_MAJOR)
 				GLOB.command_announcement.Announce("\The [location_name()] has cleared the meteor storm.", "Meteor Alert")
@@ -123,19 +123,19 @@ GLOBAL_LIST_INIT(meteors_major, list(
 	alarmWhen = 0
 
 /datum/event/meteor_wave/overmap/tick()
-	if(victim && !victim.is_still() && prob(90)) // Meteors mostly fly in your face
-		start_side = victim.fore_dir
+	if(victim() && !victim().is_still() && prob(90)) // Meteors mostly fly in your face
+		start_side = victim().fore_dir
 	else //Unless you're standing still
 		start_side = pick(GLOB.cardinal)
 	..()
 
 /datum/event/meteor_wave/overmap/get_wave_size()
 	. = ..()
-	if(!victim)
+	if(!victim())
 		return
-	var/speed = victim.get_speed()
+	var/speed = victim().get_speed()
 	. = round(. * 0.5)
-	if(victim.is_still()) //Standing still means less shit flies your way
+	if(victim().is_still()) //Standing still means less shit flies your way
 		. = round(. * 0.1)
 	if(speed < SHIP_SPEED_SLOW) //Slow and steady
 		. = round(. * 0.5)
@@ -143,5 +143,5 @@ GLOBAL_LIST_INIT(meteors_major, list(
 		. *= 2
 
 	//Smol ship evasion
-	if(victim.vessel_size < SHIP_SIZE_LARGE && speed < SHIP_SPEED_FAST)
+	if(victim().vessel_size < SHIP_SIZE_LARGE && speed < SHIP_SPEED_FAST)
 		. = round(. * 0.5)

@@ -1,17 +1,17 @@
 /datum/flight_operations_ui
-	var/datum/host
-	var/datum/flight_vessel/forced_vessel
+	var/tmp/host_handle
+	var/tmp/forced_vessel_handle
 
 /datum/flight_operations_ui/New(new_host, datum/flight_vessel/new_forced_vessel = null)
 	..()
-	host = new_host
-	forced_vessel = new_forced_vessel
+	host_handle = om_handle(new_host)
+	forced_vessel_handle = om_handle(new_forced_vessel)
 
 /datum/flight_operations_ui/tgui_host()
-	return host
+	return host()
 
 /datum/flight_operations_ui/tgui_state(mob/user)
-	if(forced_vessel)
+	if(forced_vessel())
 		return ADMIN_STATE(R_ADMIN | R_EVENT | R_DEBUG)
 	return GLOB.tgui_default_state
 
@@ -25,26 +25,26 @@
 		ui.open()
 
 /datum/flight_operations_ui/proc/resolve_ship()
-	if(istype(host, /obj/machinery/computer/ship))
-		var/obj/machinery/computer/ship/console = host
-		if(!console.linked)
+	if(istype(host(), /obj/machinery/computer/ship))
+		var/obj/machinery/computer/ship/console = host()
+		if(!console.linked())
 			console.sync_linked()
-		return console.linked
-	if(istype(host, /obj/machinery/computer/shuttle_control/explore))
-		var/obj/machinery/computer/shuttle_control/explore/console = host
+		return console.linked()
+	if(istype(host(), /obj/machinery/computer/shuttle_control/explore))
+		var/obj/machinery/computer/shuttle_control/explore/console = host()
 		var/datum/shuttle/autodock/overmap/shuttle = SSshuttles.shuttles[console.shuttle_tag]
-		return shuttle?.myship
+		return shuttle?.myship()
 	return null
 
 /datum/flight_operations_ui/proc/resolve_vessel()
-	if(forced_vessel)
-		return forced_vessel
+	if(forced_vessel())
+		return forced_vessel()
 	var/obj/effect/overmap/visitable/ship/ship = resolve_ship()
 	return SSflight_operations?.vessel_for_ship(ship) || SSflight_operations?.register_vessel(ship)
 
 /datum/flight_operations_ui/proc/serialize_destinations(datum/flight_vessel/viewing_vessel)
 	var/list/destination_data = list()
-	var/obj/effect/overmap/visitable/ship/viewing_ship = viewing_vessel?.ship
+	var/obj/effect/overmap/visitable/ship/viewing_ship = viewing_vessel?.ship()
 	for(var/id in SSflight_operations.destinations)
 		var/datum/flight_destination/destination = SSflight_operations.destinations[id]
 		if(!destination?.discovered || (destination.kind != FLIGHT_DEST_SYSTEM && !destination.is_available()))
@@ -67,12 +67,12 @@
 			"latitude" = destination.surface_latitude,
 			"longitude" = destination.surface_longitude,
 			"compatible" = viewing_vessel.has_capabilities(destination.required_capabilities),
-			"materialized" = !destination.expedition || destination.expedition.z_level > 0,
-			"is_current" = destination.target == viewing_ship,
+			"materialized" = !destination.expedition() || destination.expedition().z_level > 0,
+			"is_current" = destination.target() == viewing_ship,
 		)
 		if(destination.kind == FLIGHT_DEST_VESSEL)
-			var/datum/flight_vessel/render_vessel = SSflight_operations.vessel_for_ship(destination.target)
-			var/is_carrier = istype(render_vessel?.ship, /obj/effect/overmap/visitable/ship/exploration_carrier)
+			var/datum/flight_vessel/render_vessel = SSflight_operations.vessel_for_ship(destination.target())
+			var/is_carrier = istype(render_vessel?.ship(), /obj/effect/overmap/visitable/ship/exploration_carrier)
 			var/datum/flight_port/render_port = is_carrier ? null : SSflight_operations.ports[render_vessel?.docked_port_id]
 			render_data["scene_role"] = render_port ? "docked" : "orbital"
 			render_data["docked_port_id"] = render_port?.id
@@ -82,7 +82,7 @@
 
 /datum/flight_operations_ui/tgui_data(mob/user)
 	var/datum/flight_vessel/vessel = resolve_vessel()
-	var/obj/effect/overmap/visitable/ship/ship = vessel?.ship
+	var/obj/effect/overmap/visitable/ship/ship = vessel?.ship()
 	var/list/data = list(
 		"vessel" = vessel?.name || "Unlinked vessel",
 		"vessel_id" = vessel?.id,
@@ -115,9 +115,9 @@
 	if(plan)
 		data["plan"] = list(
 			"id" = plan.id,
-			"destination_id" = plan.destination?.id,
-			"origin_id" = plan.origin?.id || vessel.orbit_parent_id,
-			"destination" = plan.destination?.name,
+			"destination_id" = plan.destination()?.id,
+			"origin_id" = plan.origin()?.id || vessel.orbit_parent_id,
+			"destination" = plan.destination()?.name,
 			"state" = plan.state,
 			"state_name" = plan.state_name(),
 			"failure" = plan.failure_reason,
@@ -128,7 +128,7 @@
 			"generation_progress" = plan.generation_progress,
 			"generation_stage" = plan.generation_stage,
 		)
-	var/datum/expedition_site/active_expedition = vessel.active_expedition
+	var/datum/expedition_site/active_expedition = vessel.active_expedition()
 	if(active_expedition && !QDELETED(active_expedition))
 		data["expedition"] = list(
 			"name" = active_expedition.name,
@@ -158,7 +158,7 @@
 			if(!jump_plan || !jump_plan.start())
 				to_chat(ui.user, span_warning("The jump could not be initiated."))
 				return TRUE
-			to_chat(ui.user, span_notice("Jump sequence engaged for [jump_plan.destination.name]."))
+			to_chat(ui.user, span_notice("Jump sequence engaged for [jump_plan.destination().name]."))
 			return TRUE
 		if("select_destination")
 			if(vessel.active_plan)
@@ -181,19 +181,19 @@
 			SSexpedition.abandon_assignment(ui.user, vessel)
 			return TRUE
 		if("toggle_engines")
-			if(!vessel.ship)
+			if(!vessel.ship())
 				return FALSE
-			vessel.ship.engines_state = !vessel.ship.engines_state
-			for(var/datum/ship_engine/engine in vessel.ship.engines)
-				if(vessel.ship.engines_state == !engine.is_on())
+			vessel.ship().engines_state = !vessel.ship().engines_state
+			for(var/datum/ship_engine/engine in vessel.ship().engines)
+				if(vessel.ship().engines_state == !engine.is_on())
 					engine.toggle()
 			return TRUE
 		if("thrust_limit")
-			if(!vessel.ship)
+			if(!vessel.ship())
 				return FALSE
-			vessel.ship.thrust_limit = clamp(text2num(params["value"]) / 100, 0, 1)
-			for(var/datum/ship_engine/engine in vessel.ship.engines)
-				engine.set_thrust_limit(vessel.ship.thrust_limit)
+			vessel.ship().thrust_limit = clamp(text2num(params["value"]) / 100, 0, 1)
+			for(var/datum/ship_engine/engine in vessel.ship().engines)
+				engine.set_thrust_limit(vessel.ship().thrust_limit)
 			return TRUE
 	return FALSE
 
@@ -218,3 +218,15 @@
 	if(!flight_operations_ui)
 		flight_operations_ui = new(src)
 	flight_operations_ui.tgui_interact(user, ui)
+
+REF_OWNED(/obj/machinery/computer/ship, "flight_operations_ui")
+
+REF_OWNED(/obj/machinery/computer/shuttle_control/explore, "flight_operations_ui")
+
+/// LC-refs: the host this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/flight_operations_ui/proc/host() as /datum
+	return om_resolve(host_handle)
+
+/// LC-refs: the forced_vessel this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/flight_operations_ui/proc/forced_vessel() as /datum/flight_vessel
+	return om_resolve(forced_vessel_handle)

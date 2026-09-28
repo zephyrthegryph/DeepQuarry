@@ -3373,7 +3373,7 @@
 /obj/effect/shuttle_landmark{
 	base_area = /area/centcom/specops;
 	base_turf = /turf/simulated/floor/plating;
-	docking_controller = "response_base";
+	docking_controller_tag = "response_base";
 	landmark_tag = "response_ship_start";
 	name = "ERT Shuttle Bay"
 	},

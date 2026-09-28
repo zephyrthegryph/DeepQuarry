@@ -61,8 +61,8 @@
 		var/list/owned_atoms = materialized.owned_furnishing_atoms.Copy()
 		owned_atoms |= materialized.doors
 		owned_atoms |= materialized.infrastructure
-		if(materialized.entry)
-			owned_atoms |= materialized.entry
+		if(materialized.entry())
+			owned_atoms |= materialized.entry()
 		var/station_id = spec.id
 		qdel(site)
 		stoplag(1)

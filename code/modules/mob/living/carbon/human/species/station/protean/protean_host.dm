@@ -52,7 +52,7 @@
 
 /datum/protean_power/latch_host/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
 	if(F.in_rig())
-		var/mob/living/wearer = F.rig.wearer
+		var/mob/living/wearer = F.rig.wearer()
 		if(!wearer)
 			to_chat(H, span_warning("You aren't being worn, dummy."))
 			return
@@ -114,10 +114,10 @@
 	verb_path = /mob/living/carbon/human/proc/nano_assimilate
 
 /datum/protean_power/assimilate_host/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
-	if(!F.rig.wearer)
+	if(!F.rig.wearer())
 		to_chat(H, span_vwarning("You need a host to assimilate."))
 		return
-	log_game("PROTEAN: [key_name(H)] assimilated their host [key_name(F.rig.wearer)]")
+	log_game("PROTEAN: [key_name(H)] assimilated their host [key_name(F.rig.wearer())]")
 	F.leave_rig(devour = TRUE)
 
 /mob/living/carbon/human/proc/nano_assimilate()

@@ -10,7 +10,7 @@
 	invisibility = INVISIBILITY_OBSERVER
 
 	faction = FACTION_BLOB
-	var/obj/structure/blob/core/blob_core = null // The blob overmind's core
+	var/tmp/blob_core_handle	// The blob overmind's core
 	var/blob_points = 0
 	var/max_blob_points = 200
 	var/last_attack = 0
@@ -25,10 +25,10 @@
 	universal_understand = TRUE
 
 	var/list/has_langs = list(LANGUAGE_ANIMAL) // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
-	var/datum/language/default_language = null
+	var/tmp/default_language_handle
 
 /mob/observer/blob/get_default_language()
-	return default_language
+	return default_language()
 
 /mob/observer/blob/Initialize(mapload, pre_placed = 0, starting_points = 60, desired_blob_type = null)
 	blob_points = starting_points
@@ -44,13 +44,13 @@
 		var/datum/blob_type/BT = pick(subtypesof(/datum/blob_type))
 		blob_type = new BT()
 	color = blob_type.complementary_color
-	if(blob_core)
-		blob_core.update_icon()
+	if(blob_core())
+		blob_core().update_icon()
 
 	for(var/L in has_langs)
 		languages |= GLOB.all_languages[L]
 	if(languages.len)
-		default_language = languages[1]
+		default_language_handle = om_handle(languages[1])
 
 	return ..()
 
@@ -74,8 +74,8 @@ REGISTRY_MEMBERSHIP(/mob/observer/blob, REGISTRY_OVERMINDS)
 	. = ..()
 	. += ""
 	. += "BLOB STATUS"
-	if(blob_core)
-		. += "Core Health: [blob_core.get_integrity()]"
+	if(blob_core())
+		. += "Core Health: [blob_core().get_integrity()]"
 	. += "Power Stored: [blob_points]/[max_blob_points]"
 	. += "Total Blobs: [REGISTRY_COUNT(REGISTRY_BLOBS)]"
 
@@ -161,3 +161,13 @@ REGISTRY_MEMBERSHIP(/mob/observer/blob, REGISTRY_OVERMINDS)
 
 	log_talk(message, LOG_SAY)
 	return 1
+
+REF_OWNED(/mob/observer/blob, "blob_type")
+
+/// LC-refs: The blob overmind's core -- an OM handle (om_handle()), so it reads null once that is deleted.
+/mob/observer/blob/proc/blob_core() as /obj/structure/blob/core
+	return om_resolve(blob_core_handle)
+
+/// LC-refs: the default_language this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/mob/observer/blob/proc/default_language() as /datum/language
+	return om_resolve(default_language_handle)

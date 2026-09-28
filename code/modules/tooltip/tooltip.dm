@@ -17,11 +17,11 @@
 // React owns is-visible (it shows the element after sizing it).
 
 /datum/tooltip
-	var/client/owner
+	var/tmp/owner_handle
 	var/control = "mapwindow.tooltip"
 	var/showing = 0
 	var/queueHide = 0
-	var/atom/last_target
+	var/tmp/last_target_handle
 	var/datum/tgui_window/tooltip_window
 	// State that gets pushed to the React side. When `_visible` is
 	// FALSE the React component renders nothing; otherwise it
@@ -41,7 +41,7 @@
 /datum/tooltip/New(client/C)
 	if(!C)
 		return
-	owner = C
+	owner_handle = om_handle(C)
 	tooltip_window = new(C, control)
 	// The tgui ui is opened lazily in show(), bound to the CURRENT mob. Opening it
 	// here (at login) binds it to the lobby new_player mob, which is deleted on
@@ -49,13 +49,15 @@
 	// never refreshes (it stays on its initial visible=FALSE/empty data).
 	..()
 
-// ALLOW(lifecycle): closes its tooltip window.
+// ALLOW(lifecycle): closes its tooltip window before phase 4 deletes it (REF_OWNED).
+/datum/tooltip/lifecycle_unbind()
+	tooltip_window?.close()
+	return ..()
+
+// ALLOW(lifecycle): drops its owner and last target.
 /datum/tooltip/Destroy(force)
-	if(tooltip_window)
-		tooltip_window.close()
-		tooltip_window = null
-	last_target = null
-	owner = null
+	last_target_handle = null
+	owner_handle = null
 	return ..()
 
 /datum/tooltip/tgui_state(mob/user)
@@ -78,15 +80,15 @@
 	)
 
 /datum/tooltip/proc/show(atom/movable/thing, params = null, title = null, content = null, theme = "default", special = "none")
-	if(!thing || !params || (!title && !content) || !owner)
+	if(!thing || !params || (!title && !content) || !owner())
 		return FALSE
 	if(!isnum(world.icon_size))
 		return FALSE
 
-	if(!isnull(last_target))
-		UnregisterSignal(last_target, COMSIG_QDELETING)
+	if(!isnull(last_target()))
+		UnregisterSignal(last_target(), COMSIG_QDELETING)
 	RegisterSignal(thing, COMSIG_QDELETING, PROC_REF(on_target_qdel))
-	last_target = thing
+	last_target_handle = om_handle(thing)
 	_revision++
 	queueHide = FALSE
 
@@ -101,7 +103,7 @@
 		content = "<p>[content]</p>"
 	title = strip_improper(title)
 
-	var/view_size = getviewsize(owner.view)
+	var/view_size = getviewsize(owner().view)
 	_visible = TRUE
 	_title = "[title][content]"
 	_theme = theme
@@ -116,9 +118,9 @@
 	// data to React (and mounts it on first hover). Tooltip.tsx measures the box,
 	// sizes the element to it at the cursor, and shows it — DM never winsets
 	// is-visible here, so the element only ever appears already positioned.
-	var/datum/tgui/ui = SStgui.try_update_ui(owner.mob, src, null)
+	var/datum/tgui/ui = SStgui.try_update_ui(owner().mob, src, null)
 	if(!ui)
-		ui = new(owner.mob, src, "Tooltip", window = tooltip_window)
+		ui = new(owner().mob, src, "Tooltip", window = tooltip_window)
 		ui.closeable = FALSE
 		ui.open()
 
@@ -135,8 +137,8 @@
 	// Hide the native control synchronously. Waiting for a TGUI update here can
 	// leave the old tooltip painted indefinitely when MouseExited is the last
 	// mouse event received.
-	if(owner)
-		winset(owner, control, "is-visible=false")
+	if(owner())
+		winset(owner(), control, "is-visible=false")
 	// A previously-started Byond.winget() can finish after the immediate winset
 	// and briefly show the browser again. Reassert hidden after that async turn,
 	// but only if no newer hover has superseded this revision.
@@ -151,26 +153,26 @@
 /datum/tooltip/proc/on_target_qdel()
 	SIGNAL_HANDLER
 	hide()
-	last_target = null
+	last_target_handle = null
 
 /datum/tooltip/proc/do_hide(hide_revision)
 	if(hide_revision != _revision)
 		queueHide = FALSE
 		return
 	queueHide = FALSE
-	if(!owner)
+	if(!owner())
 		return
-	if(last_target)
-		UnregisterSignal(last_target, COMSIG_QDELETING)
-	last_target = null
+	if(last_target())
+		UnregisterSignal(last_target(), COMSIG_QDELETING)
+	last_target_handle = null
 	_visible = FALSE
 	SStgui.update_uis(src)
 
 /datum/tooltip/proc/ensure_hidden(hide_revision)
 	if(hide_revision != _revision || _visible)
 		return
-	if(owner)
-		winset(owner, control, "is-visible=false")
+	if(owner())
+		winset(owner(), control, "is-visible=false")
 
 /datum/tooltip/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	. = ..()
@@ -199,3 +201,13 @@
 	if(!istype(user) || !user.client?.tooltips)
 		return
 	user.client.tooltips.hide(tip_src)
+
+REF_OWNED(/datum/tooltip, "tooltip_window")
+
+/// LC-refs: the last_target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tooltip/proc/last_target() as /atom
+	return om_resolve(last_target_handle)
+
+/// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tooltip/proc/owner() as /client
+	return om_resolve(owner_handle)

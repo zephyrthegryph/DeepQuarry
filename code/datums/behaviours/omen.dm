@@ -293,7 +293,7 @@
 				return
 
 		for(var/obj/structure/table/evil_table in the_turf)
-			if(!evil_table.material) //We only want tables, not just table frames.
+			if(!evil_table.material()) //We only want tables, not just table frames.
 				continue
 			if(!prob(10)) //Reduce the chance further, due to the number of tables that are passed in normal play.
 				continue

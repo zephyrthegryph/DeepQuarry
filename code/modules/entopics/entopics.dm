@@ -126,3 +126,7 @@
 	var/icon/HI = getHologramIcon(CI)
 
 	usr << ftp(holo ? HI : CI,"[A.name].dmi")
+
+REF_OWNED(/datum/entopic, "my_image")
+
+REF_OWNED(/obj/item/entopic_debug, "ent_debug")

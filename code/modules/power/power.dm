@@ -307,3 +307,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 	else if (istype(power_source, /obj/item/cell))
 		cell.use(drained_energy)
 	return drained_energy
+
+/// LC-refs: a power machine is a member of its powernet's nodes; deleting it leaves the list.
+REF_BACKLIST(/obj/machinery/power, list("powernet" = "nodes"))

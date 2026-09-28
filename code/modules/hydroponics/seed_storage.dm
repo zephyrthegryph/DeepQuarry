@@ -1,7 +1,7 @@
 /datum/seed_pile
 	var/name
 	var/amount
-	var/datum/seed/seed_type // Keeps track of what our seed is
+	var/tmp/seed_type_handle	// Keeps track of what our seed is
 	// ALLOW(instance_list): d: a seed pile holds seeds
 	var/list/obj/item/seeds/seeds = list() // Tracks actual objects contained in the pile
 	var/ID
@@ -9,12 +9,12 @@
 /datum/seed_pile/New(obj/item/seeds/O, ID)
 	name = O.name
 	amount = 1
-	seed_type = O.seed
+	seed_type_handle = om_handle(O.seed())
 	seeds += O
 	src.ID = ID
 
 /datum/seed_pile/proc/matches(obj/item/seeds/O)
-	if (O.seed == seed_type)
+	if (O.seed() == seed_type())
 		return 1
 	return 0
 
@@ -309,7 +309,7 @@
 
 	var/list/seeds = list()
 	for(var/datum/seed_pile/S in piles_to_check)
-		var/datum/seed/seed = S.seed_type
+		var/datum/seed/seed = S.seed_type()
 		if(!seed)
 			continue
 		var/list/seedinfo = list(
@@ -635,3 +635,9 @@
 		/obj/item/seeds/megashroom = 3,
 		/obj/item/seeds/lustflower = 2,
 		/obj/item/seeds/pitcherseed = 3)
+
+/// LC-refs: Keeps track of what our seed is -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/seed_pile/proc/seed_type() as /datum/seed
+	return om_resolve(seed_type_handle)
+
+REF_OWNED_LIST(/obj/machinery/seed_storage, list("piles", "piles_contra"))

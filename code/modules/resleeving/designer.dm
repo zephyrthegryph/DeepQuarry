@@ -21,11 +21,11 @@
 	// Resleeving database this machine interacts with. Blank for default database
 	// Needs a matching /datum/transcore_db with key defined in code
 	var/db_key
-	var/datum/transcore_db/our_db // These persist all round and are never destroyed, just keep a hard ref
+	var/tmp/our_db_handle	// These persist all round and are never destroyed, just keep a hard ref
 
 /obj/machinery/computer/transhuman/designer/Initialize(mapload)
 	. = ..()
-	our_db = SStranscore.db_by_key(db_key)
+	our_db_handle = om_handle(SStranscore.db_by_key(db_key))
 
 REF_SPILL(/obj/machinery/computer/transhuman/designer, "disk")
 
@@ -53,7 +53,7 @@ REF_SPILL(/obj/machinery/computer/transhuman/designer, "disk")
 		designer_gui = new(src, null)
 		designer_gui.linked_body_design_console = om_handle(src)
 		designer_gui.jiggle_map()
-	if(!designer_gui.owner)
+	if(!designer_gui.owner())
 		designer_gui.make_fake_owner()
 		selected_record = FALSE
 	designer_gui.tgui_interact(user)
@@ -89,3 +89,9 @@ REF_SPILL(/obj/machinery/computer/transhuman/designer, "disk")
 #undef MENU_STOCKRECORDS
 #undef MENU_SPECIFICRECORD
 #undef MENU_OOCNOTES
+
+REF_OWNED(/obj/machinery/computer/transhuman/designer, "designer_gui")
+
+/// LC-refs: These persist all round and are never destroyed, just keep a hard ref -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/transhuman/designer/proc/our_db() as /datum/transcore_db
+	return om_resolve(our_db_handle)

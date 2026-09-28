@@ -156,17 +156,17 @@ REF_OWNED_LIST(/datum/generated_station_service_route, "physical_markers")
 	return best
 
 /datum/generated_station_materializer/proc/build_internal_modules()
-	for(var/datum/generated_station_layout_node/node in spec.layout_nodes)
+	for(var/datum/generated_station_layout_node/node in spec().layout_nodes)
 		var/datum/generated_station_department_instance/department = department_for_node(node)
 		if(!department)
 			continue
-		var/list/roles = generated_station_module_roles(department.definition.id)
-		if(spec.grid_width >= 96 && spec.grid_height >= 96)
-			if(!build_large_department_modules(node, department.definition.id, roles))
+		var/list/roles = generated_station_module_roles(department.definition().id)
+		if(spec().grid_width >= 96 && spec().grid_height >= 96)
+			if(!build_large_department_modules(node, department.definition().id, roles))
 				log_world("Generated station department [node.id] ([node.width]x[node.height]) cannot satisfy its expanded room program.")
 				return FALSE
 			continue
-		var/list/division = generated_module_division(node, department.definition.id, roles)
+		var/list/division = generated_module_division(node, department.definition().id, roles)
 		if(!division)
 			log_world("Generated station department [node.id] ([node.width]x[node.height]) cannot satisfy its room program.")
 			return FALSE
@@ -232,7 +232,7 @@ REF_OWNED_LIST(/datum/generated_station_service_route, "physical_markers")
 		var/turf/control_turf = world_turf(round((control_module.x1 + control_module.x2) / 2), round((control_module.y1 + control_module.y2) / 2))
 		if(control_turf)
 			var/obj/effect/landmark/generated_station_department_core/core = new(control_turf)
-			core.station_id = spec.id
+			core.station_id = spec().id
 			core.department_node_id = node.id
 			core.module_role = control_module.role
 			result.control_landmarks += core
@@ -338,7 +338,7 @@ REF_OWNED_LIST(/datum/generated_station_service_route, "physical_markers")
 	var/turf/control_turf = world_turf(round((control_module.x1 + control_module.x2) / 2), round((control_module.y1 + control_module.y2) / 2))
 	if(control_turf)
 		var/obj/effect/landmark/generated_station_department_core/core = new(control_turf)
-		core.station_id = spec.id
+		core.station_id = spec().id
 		core.department_node_id = node.id
 		core.module_role = control_module.role
 		result.control_landmarks += core
@@ -380,14 +380,14 @@ REF_OWNED_LIST(/datum/generated_station_service_route, "physical_markers")
 
 /datum/generated_station_materializer/proc/services_for_department(datum/generated_station_department_instance/department)
 	var/list/services = list(GENERATED_STATION_SERVICE_MAINTENANCE)
-	for(var/datum/generated_station_capability_requirement/requirement in department.definition.requirements)
+	for(var/datum/generated_station_capability_requirement/requirement in department.definition().requirements)
 		services |= requirement.capability_id
-	for(var/datum/generated_station_capability_provision/provision in department.definition.provisions)
+	for(var/datum/generated_station_capability_provision/provision in department.definition().provisions)
 		services |= provision.capability_id
 	return services
 
 /datum/generated_station_materializer/proc/build_service_endpoints()
-	for(var/datum/generated_station_layout_node/node in spec.layout_nodes)
+	for(var/datum/generated_station_layout_node/node in spec().layout_nodes)
 		var/datum/generated_station_department_instance/department = department_for_node(node)
 		if(!department)
 			continue
@@ -410,7 +410,7 @@ REF_OWNED_LIST(/datum/generated_station_service_route, "physical_markers")
 				endpoint.x = T.x - min_x + 1
 				endpoint.y = T.y - min_y + 1
 				endpoint.landmark = new(T)
-				endpoint.landmark.station_id = spec.id
+				endpoint.landmark.station_id = spec().id
 				endpoint.landmark.department_node_id = node.id
 				endpoint.landmark.service_id = service_id
 			result.service_endpoints += endpoint
@@ -429,8 +429,8 @@ REF_OWNED_LIST(/datum/generated_station_service_route, "physical_markers")
 	var/datum/generated_station_layout_node/to_node = nodes_by_id[edge.to_node_id]
 	var/datum/generated_station_department_instance/provider = department_for_node(from_node)
 	var/datum/generated_station_department_instance/consumer = department_for_node(to_node)
-	for(var/datum/generated_station_capability_provision/provision in provider?.definition?.provisions)
-		for(var/datum/generated_station_capability_requirement/requirement in consumer?.definition?.requirements)
+	for(var/datum/generated_station_capability_provision/provision in provider?.definition()?.provisions)
+		for(var/datum/generated_station_capability_requirement/requirement in consumer?.definition()?.requirements)
 			if(provision.capability_id == requirement.capability_id)
 				return provision.capability_id
 	return null
@@ -457,7 +457,7 @@ REF_OWNED_LIST(/datum/generated_station_service_route, "physical_markers")
 			continue
 		if(point_index == 1 || point_index == length(route.path) || !(point_index % 8))
 			var/obj/effect/landmark/generated_station_service_route/marker = new(T)
-			marker.station_id = spec.id
+			marker.station_id = spec().id
 			marker.service_id = service_id
 			route.physical_markers += marker
 		generation_checkpoint("Building service routes", 49)
@@ -469,19 +469,19 @@ REF_OWNED_LIST(/datum/generated_station_service_route, "physical_markers")
 	maintenance_route.id = "maintenance-physical"
 	maintenance_route.service_id = GENERATED_STATION_SERVICE_MAINTENANCE
 	var/maintenance_index = 0
-	for(var/key in spec.maintenance_tiles)
+	for(var/key in spec().maintenance_tiles)
 		maintenance_index++
 		var/list/parts = splittext(key, ",")
 		maintenance_route.path += list(list(text2num(parts[1]), text2num(parts[2])))
 		var/turf/T = world_turf(text2num(parts[1]), text2num(parts[2]))
-		if(T && (maintenance_index == 1 || maintenance_index == length(spec.maintenance_tiles) || !(maintenance_index % 8)))
+		if(T && (maintenance_index == 1 || maintenance_index == length(spec().maintenance_tiles) || !(maintenance_index % 8)))
 			var/obj/effect/landmark/generated_station_service_route/marker = new(T)
-			marker.station_id = spec.id
+			marker.station_id = spec().id
 			marker.service_id = GENERATED_STATION_SERVICE_MAINTENANCE
 			maintenance_route.physical_markers += marker
 		generation_checkpoint("Publishing maintenance routes", 49)
 	result.service_routes += maintenance_route
-	for(var/datum/generated_station_layout_edge/edge in spec.layout_edges)
+	for(var/datum/generated_station_layout_edge/edge in spec().layout_edges)
 		if(edge.kind == GENERATED_STATION_EDGE_UTILITY)
 			var/service_id = service_for_utility_edge(edge)
 			if(service_id)
@@ -493,7 +493,7 @@ REF_OWNED_LIST(/datum/generated_station_service_route, "physical_markers")
 	for(var/key in spec.maintenance_tiles)
 		var/list/parts = splittext(key, ",")
 		var/turf/T = world_turf(text2num(parts[1]), text2num(parts[2]))
-		if(!istype(T, /turf/simulated/floor) || get_area(T) != maintenance_area)
+		if(!istype(T, /turf/simulated/floor) || get_area(T) != maintenance_area())
 			validation.add(GENERATED_STATION_ISSUE_ERROR, "maintenance-turf-mismatch", "Planned maintenance is not physical maintenance flooring.", key)
 			continue
 		maintenance_floors[T] = TRUE
@@ -526,7 +526,7 @@ REF_OWNED_LIST(/datum/generated_station_service_route, "physical_markers")
 			for(var/direction in GLOB.cardinal)
 				var/area/generated_station/neighbor_area = get_area(get_step(door_turf, direction))
 				var/datum/generated_station_department_instance/node_department = materializer?.department_for_node(node)
-				if(istype(neighbor_area) && neighbor_area.department_id == node_department?.definition?.id)
+				if(istype(neighbor_area) && neighbor_area.department_id == node_department?.definition()?.id)
 					has_maintenance_access = TRUE
 					break
 			if(has_maintenance_access)
@@ -536,12 +536,12 @@ REF_OWNED_LIST(/datum/generated_station_service_route, "physical_markers")
 		materializer?.generation_checkpoint("Validating department maintenance", 56)
 	for(var/datum/generated_station_department_instance/department in spec.departments)
 		var/node_id = department.layout_node_id
-		for(var/datum/generated_station_capability_requirement/requirement in department.definition.requirements)
+		for(var/datum/generated_station_capability_requirement/requirement in department.definition().requirements)
 			var/has_endpoint = FALSE
 			var/has_route = FALSE
 			// A department can satisfy an internal service locally; there is no
 			// meaningful inter-department route to draw back to itself.
-			for(var/datum/generated_station_capability_provision/local_provision in department.definition.provisions)
+			for(var/datum/generated_station_capability_provision/local_provision in department.definition().provisions)
 				if(local_provision.capability_id == requirement.capability_id)
 					has_route = TRUE
 					break

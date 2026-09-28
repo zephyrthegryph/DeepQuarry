@@ -44,13 +44,13 @@
 
 /datum/n_Keyword/nS_Keyword/kwReturn/Parse(datum/n_Parser/nS_Parser/parser)
 	.=KW_PASS
-	if(istype(parser.curBlock, /datum/node/BlockDefinition/GlobalBlock))
-		parser.errors+=new/datum/scriptError/BadReturn(parser.curToken)
+	if(istype(parser.curBlock(), /datum/node/BlockDefinition/GlobalBlock))
+		parser.errors+=new/datum/scriptError/BadReturn(parser.curToken())
 		. = KW_WARN
 	var/datum/node/statement/ReturnStatement/stmt=new
 	parser.NextToken()   //skip 'return' token
 	stmt.value=parser.ParseExpression()
-	LAZYADD(parser.curBlock.statements, stmt)
+	LAZYADD(parser.curBlock().statements, stmt)
 
 /datum/n_Keyword/nS_Keyword/kwIf/Parse(datum/n_Parser/nS_Parser/parser)
 	.=KW_PASS
@@ -61,17 +61,17 @@
 		return KW_FAIL
 	if(!parser.CheckToken("{", /datum/token/symbol, skip=0)) //Token needs to be preserved for parse loop, so skip=0
 		return KW_ERR
-	LAZYADD(parser.curBlock.statements, stmt)
+	LAZYADD(parser.curBlock().statements, stmt)
 	stmt.block=new
 	parser.AddBlock(stmt.block)
 
 /datum/n_Keyword/nS_Keyword/kwElse/Parse(datum/n_Parser/nS_Parser/parser)
 	.=KW_PASS
-	var/list/L=parser.curBlock.statements
+	var/list/L=parser.curBlock().statements
 	var/datum/node/statement/IfStatement/stmt
 	if(L&&L.len) stmt=L[L.len] //Get the last statement in the current block
 	if(!stmt || !istype(stmt) || stmt.else_block) //Ensure that it is an if statement
-		parser.errors+=new/datum/scriptError/ExpectedToken("if statement",parser.curToken)
+		parser.errors+=new/datum/scriptError/ExpectedToken("if statement",parser.curToken())
 		return KW_FAIL
 	parser.NextToken()         //skip 'else' token
 	if(!parser.CheckToken("{", /datum/token/symbol, skip=0))
@@ -88,68 +88,68 @@
 		return KW_FAIL
 	if(!parser.CheckToken("{", /datum/token/symbol, skip=0))
 		return KW_ERR
-	LAZYADD(parser.curBlock.statements, stmt)
+	LAZYADD(parser.curBlock().statements, stmt)
 	stmt.block=new
 	parser.AddBlock(stmt.block)
 
 /datum/n_Keyword/nS_Keyword/kwBreak/Parse(datum/n_Parser/nS_Parser/parser)
 	.=KW_PASS
-	if(istype(parser.curBlock, /datum/node/BlockDefinition/GlobalBlock))
-		parser.errors+=new/datum/scriptError/BadToken(parser.curToken)
+	if(istype(parser.curBlock(), /datum/node/BlockDefinition/GlobalBlock))
+		parser.errors+=new/datum/scriptError/BadToken(parser.curToken())
 		. = KW_WARN
 	var/datum/node/statement/BreakStatement/stmt=new
 	parser.NextToken()   //skip 'break' token
-	LAZYADD(parser.curBlock.statements, stmt)
+	LAZYADD(parser.curBlock().statements, stmt)
 
 /datum/n_Keyword/nS_Keyword/kwContinue/Parse(datum/n_Parser/nS_Parser/parser)
 	.=KW_PASS
-	if(istype(parser.curBlock, /datum/node/BlockDefinition/GlobalBlock))
-		parser.errors+=new/datum/scriptError/BadToken(parser.curToken)
+	if(istype(parser.curBlock(), /datum/node/BlockDefinition/GlobalBlock))
+		parser.errors+=new/datum/scriptError/BadToken(parser.curToken())
 		. = KW_WARN
 	var/datum/node/statement/ContinueStatement/stmt=new
 	parser.NextToken()   //skip 'break' token
-	LAZYADD(parser.curBlock.statements, stmt)
+	LAZYADD(parser.curBlock().statements, stmt)
 
 /datum/n_Keyword/nS_Keyword/kwDef/Parse(datum/n_Parser/nS_Parser/parser)
 	.=KW_PASS
 	var/datum/node/statement/FunctionDefinition/def=new
 	parser.NextToken() //skip 'def' token
-	if(!parser.options.IsValidID(parser.curToken.value))
-		parser.errors+=new/datum/scriptError/InvalidID(parser.curToken)
+	if(!parser.options().IsValidID(parser.curToken().value))
+		parser.errors+=new/datum/scriptError/InvalidID(parser.curToken())
 		return KW_FAIL
-	def.func_name=parser.curToken.value
+	def.func_name=parser.curToken().value
 	parser.NextToken()
 	if(!parser.CheckToken("(", /datum/token/symbol))
 		return KW_FAIL
 	while(TRUE) //for now parameters can be separated by whitespace - they don't need a comma in between
-		if(istype(parser.curToken, /datum/token/symbol))
-			switch(parser.curToken.value)
+		if(istype(parser.curToken(), /datum/token/symbol))
+			switch(parser.curToken().value)
 				if(",")
 					parser.NextToken()
 				if(")")
 					break
 				else
-					parser.errors+=new/datum/scriptError/BadToken(parser.curToken)
+					parser.errors+=new/datum/scriptError/BadToken(parser.curToken())
 					return KW_ERR
 
-		else if(istype(parser.curToken, /datum/token/word))
-			def.parameters+=parser.curToken.value
+		else if(istype(parser.curToken(), /datum/token/word))
+			def.parameters+=parser.curToken().value
 			parser.NextToken()
 		else
-			parser.errors+=new/datum/scriptError/InvalidID(parser.curToken)
+			parser.errors+=new/datum/scriptError/InvalidID(parser.curToken())
 			return KW_ERR
 	if(!parser.CheckToken(")", /datum/token/symbol))
 		return KW_FAIL
 
-	if(istype(parser.curToken, /datum/token/end)) //Function prototype
-		LAZYADD(parser.curBlock.statements, def)
-	else if(parser.curToken.value=="{" && istype(parser.curToken, /datum/token/symbol))
+	if(istype(parser.curToken(), /datum/token/end)) //Function prototype
+		LAZYADD(parser.curBlock().statements, def)
+	else if(parser.curToken().value=="{" && istype(parser.curToken(), /datum/token/symbol))
 		def.block = new
-		LAZYADD(parser.curBlock.statements, def)
-		parser.curBlock.functions[def.func_name]=def
+		LAZYADD(parser.curBlock().statements, def)
+		parser.curBlock().functions[def.func_name]=def
 		parser.AddBlock(def.block)
 	else
-		parser.errors+=new/datum/scriptError/BadToken(parser.curToken)
+		parser.errors+=new/datum/scriptError/BadToken(parser.curToken())
 		return KW_FAIL
 
 #undef KW_FAIL

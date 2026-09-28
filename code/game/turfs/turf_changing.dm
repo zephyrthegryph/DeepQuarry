@@ -162,9 +162,9 @@
 	if(lighting_object && istype(sim_self) && sim_self.shandler) //sanity check, but this should never be null for either of the switch cases (lighting_object will be null during initializations sometimes)
 		switch(lighting_object.sunlight_only)
 			if(SUNLIGHT_ONLY)
-				vis_contents += sim_self.shandler.pshandler.vis_overhead
+				vis_contents += sim_self.shandler.pshandler().vis_overhead
 			if(SUNLIGHT_ONLY_SHADE)
-				vis_contents += sim_self.shandler.pshandler.vis_shade
+				vis_contents += sim_self.shandler.pshandler().vis_shade
 
 	var/is_open = isopenturf(W)
 

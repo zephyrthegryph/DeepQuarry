@@ -8,15 +8,15 @@
 	glass = 1
 	icon = 'icons/obj/doors/doorlift.dmi'
 
-	var/datum/turbolift/lift
-	var/datum/turbolift_floor/floor
+	var/tmp/lift_handle
+	var/tmp/floor_handle
 
 // ALLOW(lifecycle): leaves its lift's and floor's door lists.
 /obj/machinery/door/airlock/lift/Destroy()
-	if(lift)
-		lift.doors -= src
-	if(floor)
-		floor.doors -= src
+	if(lift())
+		lift().doors -= src
+	if(lift_floor())
+		lift_floor().doors -= src
 	return ..()
 
 /obj/machinery/door/airlock/lift/bumpopen(mob/user)
@@ -52,3 +52,11 @@
 /obj/machinery/door/airlock/lift/emag_act(uses_left, mob/user)
 	to_chat(user, span_danger("This door is internally controlled."))
 	return 0 // Prevents the cryptographic sequencer from using a charge fruitlessly
+
+/// LC-refs: the lift this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/door/airlock/lift/proc/lift() as /datum/turbolift
+	return om_resolve(lift_handle)
+
+/// LC-refs: the floor this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/door/airlock/lift/proc/lift_floor() as /datum/turbolift_floor
+	return om_resolve(floor_handle)

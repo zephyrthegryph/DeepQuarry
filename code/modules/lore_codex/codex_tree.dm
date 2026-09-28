@@ -1,7 +1,7 @@
 // Holds the various pages and implementations for codex books, so they can be used in more than just books.
 
 /datum/codex_tree
-	var/atom/movable/holder = null
+	var/tmp/holder_handle
 	var/root_type = null
 	var/datum/lore/codex/home = null // Top-most page.
 	// ALLOW(instance_list): d: codex browser page stack, always non-empty while open
@@ -11,7 +11,7 @@
 	var/list/history = list() // List of pages we previously visited. // now a 2D list
 
 /datum/codex_tree/New(new_holder, new_root_type)
-	holder = new_holder
+	holder_handle = om_handle(new_holder)
 	root_type = new_root_type
 	generate_pages()
 	..()
@@ -24,8 +24,8 @@
 // Changes current_page to its parent, assuming one exists.
 /datum/codex_tree/proc/go_to_parent(mob/user)
 	var/datum/lore/codex/D = current_page["[user]"]
-	if(istype(D) && D.parent)
-		current_page["[user]"] = D.parent
+	if(istype(D) && D.parent())
+		current_page["[user]"] = D.parent()
 
 // Changes current_page to a specific page or category.
 /datum/codex_tree/proc/go_to_page(datum/lore/codex/new_page, dont_record_history = FALSE, mob/user)
@@ -74,9 +74,9 @@
 	if(istype(checked))
 		var/output = ""
 		output = span_bold("[checked.name]")
-		while(checked.parent)
-			output = "<a href='byond://?src=\ref[src];target=\ref[checked.parent]'>[checked.parent.name]</a> \> [output]"
-			checked = checked.parent
+		while(checked.parent())
+			output = "<a href='byond://?src=\ref[src];target=\ref[checked.parent()]'>[checked.parent().name]</a> \> [output]"
+			checked = checked.parent()
 		return output
 
 /datum/codex_tree/proc/make_search_bar()
@@ -114,7 +114,7 @@
 
 	var/dat
 	dat =  "<head>"
-	dat += "<title>[holder.name] ([D.name])</title>"
+	dat += "<title>[holder().name] ([D.name])</title>"
 	dat += "<link rel='stylesheet' href='codex.css' />"
 	dat += "</head>"
 
@@ -137,7 +137,7 @@
 	var/list/H = history["[user]"]
 	if(LAZYLEN(H))
 		dat += "<br><a href='byond://?src=\ref[src];go_back=1'>\[Go Back\]</a>"
-	if(D.parent)
+	if(D.parent())
 		dat += "<br><a href='byond://?src=\ref[src];go_to_parent=1'>\[Go Up\]</a>"
 	if(D != home)
 		dat += "<br><a href='byond://?src=\ref[src];go_to_home=1'>\[Go To Home\]</a>"
@@ -169,3 +169,9 @@
 		SStgui.close_uis(src)
 		return
 	display(usr)
+
+REF_OWNED(/datum/codex_tree, "home")
+
+/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/codex_tree/proc/holder() as /atom/movable
+	return om_resolve(holder_handle)

@@ -96,3 +96,5 @@ GLOBAL_LIST_EMPTY(current_pending_diseases)
 		var/datum/viral_trait/CS = candidate
 		if(initial(CS.transmission) > 1)
 			transmissable_symptoms += candidate
+
+REF_OWNED(/datum/event/disease_outbreak, "chosen_disease")

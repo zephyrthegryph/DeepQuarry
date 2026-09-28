@@ -1,13 +1,13 @@
 /// Helper to open the panel
 /datum/lootpanel/proc/open(turf/tile)
-	source_turf = tile
+	source_turf_handle = om_handle(tile)
 
 #if !defined(OPENDREAM) && !defined(UNIT_TESTS)
 	if(!notified)
-		var/build = owner.byond_build
-		var/version = owner.byond_version
+		var/build = owner().byond_build
+		var/version = owner().byond_version
 		if(build < 515 || (build == 515 && version < 1635))
-			to_chat(owner.mob, span_info("\
+			to_chat(owner().mob, span_info("\
 				<span class='bolddanger'>Your version of Byond doesn't support fast image loading.</span>\n\
 				Detected: [version].[build]\n\
 				Required version for this feature: <b>515.1635</b> or later.\n\
@@ -18,7 +18,7 @@
 #endif
 
 	populate_contents()
-	tgui_interact(owner.mob)
+	tgui_interact(owner().mob)
 
 
 /// One step of icon generation on the loot icon lane (PERIODIC_LOOT_ICONS, 0.5 s; was SSlooting).
@@ -41,12 +41,12 @@
 		if(QDELETED(index) || index.icon)
 			continue
 
-		index.generate_icon(owner)
+		index.generate_icon(owner())
 
 		if(TICK_CHECK)
 			break
 
-	var/datum/tgui/window = SStgui.get_open_ui(owner.mob, src)
+	var/datum/tgui/window = SStgui.get_open_ui(owner().mob, src)
 	if(isnull(window))
 		reset_contents()
 		return TRUE

@@ -73,10 +73,10 @@
 	var/a_computerid
 	var/a_ip
 
-	if(src.owner && istype(src.owner, /client))
-		a_ckey = src.owner:ckey
-		a_computerid = src.owner:computer_id
-		a_ip = src.owner:address
+	if(src.owner() && istype(src.owner(), /client))
+		a_ckey = src.owner():ckey
+		a_computerid = src.owner():computer_id
+		a_ip = src.owner():address
 
 	var/who
 	for(var/client/C in GLOB.clients)
@@ -279,12 +279,12 @@
 		to_chat(usr, span_filter_adminlog("[span_red("Database update failed due to multiple bans having the same ID. Contact the database admin.")]"))
 		return
 
-	if(!src.owner || !istype(src.owner, /client))
+	if(!src.owner() || !istype(src.owner(), /client))
 		return
 
-	var/unban_ckey = src.owner:ckey
-	var/unban_computerid = src.owner:computer_id
-	var/unban_ip = src.owner:address
+	var/unban_ckey = src.owner():ckey
+	var/unban_computerid = src.owner():computer_id
+	var/unban_ip = src.owner():address
 	message_admins("[key_name_admin(usr)] has lifted [pckey]'s ban.")
 
 	om_sql_write("UPDATE erro_ban SET unbanned = 1, unbanned_datetime = Now(), unbanned_ckey = :unban_ckey, unbanned_computerid = :unban_computerid, unbanned_ip = :unban_ip WHERE id = :id", list("unban_ckey" = unban_ckey, "unban_computerid" = unban_computerid, "unban_ip" = unban_ip, "id" = id))

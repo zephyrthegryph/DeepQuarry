@@ -73,7 +73,7 @@
 
 	var/wielded_item_state
 	var/one_handed_penalty = 0 // Penalty applied if someone fires a two-handed gun with one hand.
-	var/atom/movable/screen/auto_target/auto_target
+	var/tmp/auto_target_handle
 	var/shooting = 0
 	var/next_fire_time = 0
 
@@ -86,8 +86,7 @@
 	var/keep_aim = 1 	//1 for keep shooting until aim is lowered
 						//0 for one bullet after tarrget moves and aim is lowered
 	var/multi_aim = 0 //Used to determine if you can target multiple people.
-	var/tmp/list/mob/living/aim_targets //List of who yer targeting.
-	var/tmp/mob/living/last_moved_mob //Used to fire faster at more than one person.
+	var/tmp/last_moved_mob_handle	//Used to fire faster at more than one person.
 	var/tmp/told_cant_shoot = 0 //So that it doesn't spam them with the fact they cannot hit them.
 	var/tmp/lock_time = -100
 
@@ -668,13 +667,6 @@ REF_OWNED(/obj/item/gun, "firemode_selector")
 
 	P.accuracy -= user.get_accuracy_penalty()
 
-	//accuracy bonus from aiming
-	if (aim_targets && (target in aim_targets))
-		//If you aim at someone beforehead, it'll hit more often.
-		//Kinda balanced by fact you need like 2 seconds to aim
-		//As opposed to no-delay pew pew
-		P.accuracy += 30
-
 	// Body factors make it harder or easier to hit things.
 	P.accuracy += user.factor(BF_ACCURACY)
 	var/dispersion_shift = user.factor(BF_DISPERSION)
@@ -848,3 +840,13 @@ REF_OWNED(/obj/item/gun, "firemode_selector")
 	user.hud_used?.remove_ammo_hud(user, src)
 
 	..()
+
+REF_HELD(/obj/item/gun, "attached_lock")
+
+/// LC-refs: the auto_target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/gun/proc/auto_target()
+	return om_resolve(auto_target_handle)
+
+/// LC-refs: Used to fire faster at more than one person. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/gun/proc/last_moved_mob() as /mob/living
+	return om_resolve(last_moved_mob_handle)

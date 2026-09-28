@@ -1,18 +1,18 @@
 /// The tgui page where a player edits their keybindings. One per client, made on demand.
 /datum/keybind_editor
-	var/client/owner
+	var/tmp/owner_handle
 	/// The profile being edited in the UI.
 	var/profile = KEYBIND_PROFILE_DEFAULT
 
 /datum/keybind_editor/New(client/owner)
-	src.owner = owner
+	src.owner_handle = om_handle(owner)
 	profile = owner?.mob?.keybind_profile() || KEYBIND_PROFILE_DEFAULT
 
 // ALLOW(lifecycle): clears the client's cached editor (clients aren't datums).
 /datum/keybind_editor/Destroy()
-	if(owner?.keybind_editor == src)
-		owner.keybind_editor = null
-	owner = null
+	if(owner()?.keybind_editor == src)
+		owner().keybind_editor = null
+	owner_handle = null
 	return ..()
 
 /client/var/tmp/datum/keybind_editor/keybind_editor
@@ -39,7 +39,7 @@
 
 /datum/keybind_editor/tgui_static_data(mob/user)
 	var/list/bindings = list()
-	var/show_admin = check_rights_for(owner, R_HOLDER)
+	var/show_admin = check_rights_for(owner(), R_HOLDER)
 	for(var/id in GLOB.keybindings)
 		var/datum/keybinding/binding = GLOB.keybindings[id]
 		if(binding.category == KEYBIND_CAT_ADMIN && !show_admin)
@@ -64,7 +64,7 @@
 	)
 
 /datum/keybind_editor/tgui_data(mob/user)
-	var/list/overrides = owner?.prefs?.key_bindings
+	var/list/overrides = owner()?.prefs?.key_bindings
 	var/list/keys = list()
 	var/list/customised = list()
 	var/list/profile_overrides = LAZYACCESS(overrides, profile)
@@ -76,14 +76,14 @@
 		"profile" = profile,
 		"keys" = keys,
 		"customised" = customised,
-		"right_click" = owner?.right_click_binding(),
+		"right_click" = owner()?.right_click_binding(),
 	)
 
 /datum/keybind_editor/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	. = ..()
 	if(.)
 		return
-	var/datum/preferences/prefs = owner?.prefs
+	var/datum/preferences/prefs = owner()?.prefs
 	if(!prefs)
 		return
 	switch(action)
@@ -107,7 +107,7 @@
 			if(key in keys)
 				return TRUE
 			if(length(keys) >= KEYBIND_MAX_KEYS)
-				to_chat(owner, span_warning("[binding.name] already has [KEYBIND_MAX_KEYS] keys. Remove one first."))
+				to_chat(owner(), span_warning("[binding.name] already has [KEYBIND_MAX_KEYS] keys. Remove one first."))
 				return TRUE
 			// A key does one thing per profile: take it off any other binding first.
 			for(var/other_id in GLOB.keybindings)
@@ -118,7 +118,7 @@
 				if(key in other_keys)
 					other_keys -= key
 					set_keys(prefs, other, other_keys)
-					to_chat(owner, span_notice("[key] was moved from [other.name]."))
+					to_chat(owner(), span_notice("[key] was moved from [other.name]."))
 			keys += key
 			set_keys(prefs, binding, keys)
 			save_and_apply()
@@ -177,9 +177,15 @@
 	profile_overrides[binding.id] = keys.Copy()
 
 /datum/keybind_editor/proc/save_and_apply()
-	var/datum/preferences/prefs = owner?.prefs
+	var/datum/preferences/prefs = owner()?.prefs
 	if(!prefs)
 		return
 	prefs.save_preferences()
-	log_input("Keybindings: [owner.key] changed their [profile] bindings.")
-	owner.apply_keybindings(force = TRUE)
+	log_input("Keybindings: [owner().key] changed their [profile] bindings.")
+	owner().apply_keybindings(force = TRUE)
+
+REF_OWNED(/client, "keybind_editor")
+
+/// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/keybind_editor/proc/owner() as /client
+	return om_resolve(owner_handle)

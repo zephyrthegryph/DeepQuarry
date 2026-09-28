@@ -75,3 +75,5 @@ TGS_PROTECT_DATUM(/datum/tgs_api)
 
 /datum/tgs_api/proc/TriggerDeployment()
 	return TGS_UNIMPLEMENTED
+
+REF_OWNED(/datum/tgs_api, list("version", "event_handler"))

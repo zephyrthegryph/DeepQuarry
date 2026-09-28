@@ -5,7 +5,7 @@
 
 /datum/tgui_window
 	var/id
-	var/client/client
+	var/tmp/client_handle
 	var/pooled
 	var/pool_index
 	var/is_browser = FALSE
@@ -17,7 +17,7 @@
 	/// Monotonic token identifying the current use of this reusable shell.
 	var/generation = 0
 	/// Immutable shell/manifest/chunk publication loaded by this browser window.
-	var/datum/tgui_asset_generation/asset_generation
+	var/tmp/asset_generation_handle
 	/// TRUE when this pooled shell was cloned from the hidden native skin template.
 	var/native_shell = FALSE
 	/// TRUE when acquire_lock applied a generated or previously observed size while hidden.
@@ -39,8 +39,8 @@
 	var/payload_chunk_window_started_at = 0
 	/// payloadChunk topics accepted during the current accounting window.
 	var/payload_chunks_this_window = 0
-	var/datum/tgui/locked_by
-	var/datum/subscriber_object
+	var/tmp/locked_by_handle
+	var/tmp/subscriber_object_handle
 	var/subscriber_delegate
 	var/fatally_errored = FALSE
 	var/message_queue
@@ -65,8 +65,8 @@
  */
 /datum/tgui_window/New(client/client, id, pooled = FALSE)
 	src.id = id
-	src.client = client
-	src.client.tgui_windows[id] = src
+	src.client_handle = om_handle(client)
+	src.client().tgui_windows[id] = src
 	src.pooled = pooled
 	if(pooled)
 		src.pool_index = TGUI_WINDOW_INDEX(id)
@@ -93,11 +93,11 @@
 		inline_js = "",
 		inline_css = "")
 	#ifdef TGUI_DEBUGGING
-	log_tgui(client, "[id]/initiailize ([src])")
+	log_tgui(client(), "[id]/initiailize ([src])")
 	#endif
-	if(!client)
+	if(!client())
 		return
-	asset_generation = SStgui.get_current_asset_generation()
+	asset_generation_handle = om_handle(SStgui.get_current_asset_generation())
 	var/list/resolved_assets = list()
 	var/include_tgui_shell = FALSE
 	for(var/datum/asset/asset in assets)
@@ -105,8 +105,8 @@
 			include_tgui_shell = TRUE
 			continue
 		resolved_assets += asset
-	if(include_tgui_shell && asset_generation?.shell_assets())
-		resolved_assets += asset_generation.shell_assets()
+	if(include_tgui_shell && asset_generation()?.shell_assets())
+		resolved_assets += asset_generation().shell_assets()
 	src.initial_strict_mode = strict_mode
 	src.initial_fancy = fancy
 	src.initial_assets = resolved_assets
@@ -122,12 +122,12 @@
 	// Clone an already-hidden skin window first, so browse() targets its existing
 	// browser control without ever painting a default popup on screen.
 	if(pooled)
-		if(!winexists(client, id)) // ALLOW(scheduler): tgui window initialize() winexists (asset/window setup)
-			winclone(client, "tgui_window_template", id)
-		native_shell = winexists(client, id) == "MAIN" // ALLOW(scheduler): tgui window initialize() winexists (asset/window setup)
+		if(!winexists(client(), id)) // ALLOW(scheduler): tgui window initialize() winexists (asset/window setup)
+			winclone(client(), "tgui_window_template", id)
+		native_shell = winexists(client(), id) == "MAIN" // ALLOW(scheduler): tgui window initialize() winexists (asset/window setup)
 		if(native_shell)
-			winshow(client, id, FALSE)
-			winset(client, id, "alpha=0;titlebar=[!fancy];can-resize=[!fancy];can-minimize=false;on-close=\"uiclose [id]\"")
+			winshow(client(), id, FALSE)
+			winset(client(), id, "alpha=0;titlebar=[!fancy];can-resize=[!fancy];can-minimize=false;on-close=\"uiclose [id]\"")
 	// Build window options
 	var/options = "file=[id].html;can_minimize=0;auto_format=0;"
 	// Remove titlebar and resize handles for a fancy window
@@ -146,7 +146,7 @@
 	// Scoped to pooled windows only — dedicated windows (lobby, media, tooltip)
 	// manage their own visibility and are left alone.
 	// Generate page html
-	var/html = asset_generation?.basehtml || SStgui.basehtml
+	var/html = asset_generation()?.basehtml || SStgui.basehtml
 	html = replacetextEx(html, "\[tgui:windowId]", id)
 	html = replacetextEx(html, "\[tgui:strictMode]", strict_mode)
 	// Inject assets
@@ -160,7 +160,7 @@
 				inline_assets_str += "Byond.loadCss('[url]', true);\n"
 			else if(copytext(name, -3) == ".js")
 				inline_assets_str += "Byond.loadJs('[url]', true);\n"
-		asset.send(client)
+		asset.send(client())
 	if(length(inline_assets_str))
 		inline_assets_str = "<script>\n" + inline_assets_str + "</script>\n"
 	html = replacetextEx(html, "<!-- tgui:assets -->\n", inline_assets_str)
@@ -182,16 +182,16 @@
 		inline_css = "<style>\n[isfile(inline_css) ? file2text(inline_css) : inline_css]\n</style>"
 		html = replacetextEx(html, "<!-- tgui:inline-css -->", inline_css)
 	// Open the window
-	client << browse(html, "window=[id];[options]")
+	client() << browse(html, "window=[id];[options]")
 	if(native_shell)
 		// Defensive across client versions: only the JS geometry transaction may
 		// make a reusable shell visible.
-		winshow(client, id, FALSE)
+		winshow(client(), id, FALSE)
 	// Detect whether the control is a browser
-	is_browser = winexists(client, id) == "BROWSER" // ALLOW(scheduler): tgui window initialize() winexists (asset/window setup)
+	is_browser = winexists(client(), id) == "BROWSER" // ALLOW(scheduler): tgui window initialize() winexists (asset/window setup)
 	// Instruct the client to signal UI when the window is closed.
 	if(!is_browser)
-		winset(client, id, "on-close=\"uiclose [id]\"")
+		winset(client(), id, "on-close=\"uiclose [id]\"")
 
 /**
  * public
@@ -251,16 +251,16 @@
 	// acquire the shell before that message is processed. Hide it synchronously on
 	// the server before the new owner can send content, otherwise the new content
 	// flashes at the previous interface's geometry and React hides it a frame later.
-	if(client && pooled)
+	if(client() && pooled)
 		geometry_preapplied = FALSE
 		preapplied_geometry = null
 		#ifdef TGUI_DEV_DIAGNOSTICS
-		log_tgui(client, "TGUI transition: stage=server-acquire-hide-sending generation=[generation + 1] previous_visible=[visible] status=[status] native_shell=[native_shell].", window = src)
+		log_tgui(client(), "TGUI transition: stage=server-acquire-hide-sending generation=[generation + 1] previous_visible=[visible] status=[status] native_shell=[native_shell].", window = src)
 		#endif
 		if(native_shell)
-			winset(client, id, "alpha=0")
-		winshow(client, id, FALSE)
-		var/list/resolved_geometry = LAZYACCESS(client.tgui_resolved_geometries, ui?.interface)
+			winset(client(), id, "alpha=0")
+		winshow(client(), id, FALSE)
+		var/list/resolved_geometry = LAZYACCESS(client().tgui_resolved_geometries, ui?.interface)
 		if(islist(resolved_geometry))
 			var/list/native_settings = list()
 			if(resolved_geometry["size"])
@@ -268,7 +268,7 @@
 			if(resolved_geometry["pos"])
 				native_settings["pos"] = resolved_geometry["pos"]
 			if(length(native_settings))
-				winset(client, id, native_settings)
+				winset(client(), id, native_settings)
 				preapplied_geometry = native_settings.Copy()
 			geometry_preapplied = TRUE
 		else if(islist(default_geometry))
@@ -276,15 +276,15 @@
 			var/height = default_geometry["height"]
 			if(isnum(width) && isnum(height))
 				var/default_size = "[width]x[height]"
-				winset(client, id, "size=[default_size]")
+				winset(client(), id, "size=[default_size]")
 				preapplied_geometry = list("size" = default_size)
 				geometry_preapplied = TRUE
 		#ifdef TGUI_DEV_DIAGNOSTICS
-		log_tgui(client, "TGUI transition: stage=server-acquire-hide-sent generation=[generation + 1].", window = src)
+		log_tgui(client(), "TGUI transition: stage=server-acquire-hide-sent generation=[generation + 1].", window = src)
 		#endif
 	generation++
 	locked = TRUE
-	locked_by = ui
+	locked_by_handle = om_handle(ui)
 	visible = FALSE
 
 /**
@@ -297,7 +297,7 @@
 	if(locked)
 		sent_assets = list()
 	locked = FALSE
-	locked_by = null
+	locked_by_handle = null
 
 /**
  * public
@@ -309,7 +309,7 @@
  * to support multiple subscribers.
  */
 /datum/tgui_window/proc/subscribe(datum/object, delegate)
-	subscriber_object = object
+	subscriber_object_handle = om_handle(object)
 	subscriber_delegate = delegate
 
 /**
@@ -318,7 +318,7 @@
  * Unsubscribes the datum. Do not forget to call this when cleaning up.
  */
 /datum/tgui_window/proc/unsubscribe(datum/object)
-	subscriber_object = null
+	subscriber_object_handle = null
 	subscriber_delegate = null
 
 /**
@@ -329,33 +329,33 @@
  * optional can_be_suspended bool
  */
 /datum/tgui_window/proc/close(can_be_suspended = TRUE)
-	if(!client)
+	if(!client())
 		release_lock()
 		status = TGUI_WINDOW_CLOSED
 		message_queue = null
 		return
 	if(can_be_suspended && can_be_suspended())
 		#ifdef TGUI_DEBUGGING
-		log_tgui(client, "[id]/close: suspending")
+		log_tgui(client(), "[id]/close: suspending")
 		#endif
 		// Do not rely on the asynchronous browser suspend handler to hide the shell.
 		// The pool can hand this READY window to another UI immediately after return.
 		if(pooled)
 			#ifdef TGUI_DEV_DIAGNOSTICS
-			log_tgui(client, "TGUI transition: stage=server-release-hide-sending generation=[generation] previous_visible=[visible] status=[status] native_shell=[native_shell].", window = src)
+			log_tgui(client(), "TGUI transition: stage=server-release-hide-sending generation=[generation] previous_visible=[visible] status=[status] native_shell=[native_shell].", window = src)
 			#endif
 			if(native_shell)
-				winset(client, id, "alpha=0")
-			winshow(client, id, FALSE)
+				winset(client(), id, "alpha=0")
+			winshow(client(), id, FALSE)
 			#ifdef TGUI_DEV_DIAGNOSTICS
-			log_tgui(client, "TGUI transition: stage=server-release-hide-sent generation=[generation].", window = src)
+			log_tgui(client(), "TGUI transition: stage=server-release-hide-sent generation=[generation].", window = src)
 			#endif
 		visible = FALSE
 		status = TGUI_WINDOW_READY
 		send_message("suspend")
 		return
 	#ifdef TGUI_DEBUGGING
-	log_tgui(client, "[id]/close")
+	log_tgui(client(), "[id]/close")
 	#endif
 	release_lock()
 	visible = FALSE
@@ -364,7 +364,7 @@
 	// Do not close the window to give user some time
 	// to read the error message.
 	if(!fatally_errored)
-		client << browse(null, "window=[id]")
+		client() << browse(null, "window=[id]")
 
 /**
  * public
@@ -376,7 +376,7 @@
  * optional force bool Send regardless of the ready status.
  */
 /datum/tgui_window/proc/send_message(type, payload, force)
-	if(!client)
+	if(!client())
 		return
 	var/message = TGUI_CREATE_MESSAGE(type, payload)
 	// Place into queue if window is still loading
@@ -385,7 +385,7 @@
 			message_queue = list()
 		message_queue += list(message)
 		return
-	client << output(message, is_browser \
+	client() << output(message, is_browser \
 		? "[id]:update" \
 		: "[id].browser:update")
 
@@ -398,7 +398,7 @@
  * optional force bool Send regardless of the ready status.
  */
 /datum/tgui_window/proc/send_raw_message(message, force)
-	if(!client)
+	if(!client())
 		return
 	// Place into queue if window is still loading
 	if(!force && status != TGUI_WINDOW_READY)
@@ -406,7 +406,7 @@
 			message_queue = list()
 		message_queue += list(message)
 		return
-	client << output(message, is_browser \
+	client() << output(message, is_browser \
 		? "[id]:update" \
 		: "[id].browser:update")
 
@@ -420,10 +420,10 @@
  * return bool - TRUE if any assets had to be sent to the client
  */
 /datum/tgui_window/proc/send_asset(datum/asset/asset)
-	if(!client || !asset)
+	if(!client() || !asset)
 		return
 	sent_assets |= list(asset)
-	. = asset.send(client)
+	. = asset.send(client())
 	if(istype(asset, /datum/asset/spritesheet))
 		var/datum/asset/spritesheet/spritesheet = asset
 		send_message("asset/stylesheet", spritesheet.css_filename())
@@ -438,10 +438,10 @@
  * Sends queued messages if the queue wasn't empty.
  */
 /datum/tgui_window/proc/flush_message_queue()
-	if(!client || !message_queue)
+	if(!client() || !message_queue)
 		return
 	for(var/message in message_queue)
-		client << output(message, is_browser \
+		client() << output(message, is_browser \
 			? "[id]:update" \
 			: "[id].browser:update")
 	message_queue = null
@@ -454,23 +454,23 @@
  * required inline_html string HTML to inject
  */
 /datum/tgui_window/proc/replace_html(inline_html = "")
-	client << output(url_encode(inline_html), is_browser \
+	client() << output(url_encode(inline_html), is_browser \
 		? "[id]:replaceHtml" \
 		: "[id].browser:replaceHtml")
 
 /** Verify a newly-warmed native shell never became visible on the client. */
 /datum/tgui_window/proc/audit_prewarmed_hidden()
-	if(!client || locked || !prewarmed)
+	if(!client() || locked || !prewarmed)
 		return
-	dx_winget(src, client, id, "is-visible", PROC_REF(prewarmed_visibility_read))
+	dx_winget(src, client(), id, "is-visible", PROC_REF(prewarmed_visibility_read))
 
 /// dx_winget() callback for audit_prewarmed_hidden(): re-checks, then hides a shown shell.
 /datum/tgui_window/proc/prewarmed_visibility_read(is_visible)
-	if(!client || locked || !prewarmed)
+	if(!client() || locked || !prewarmed)
 		return
 	if(is_visible == "true")
-		log_tgui(client, "Prewarmed shell became visible; forcing it hidden.", window = src)
-		winshow(client, id, FALSE)
+		log_tgui(client(), "Prewarmed shell became visible; forcing it hidden.", window = src)
+		winshow(client(), id, FALSE)
 
 /**
  * private
@@ -507,25 +507,25 @@
 	if(status != TGUI_WINDOW_READY)
 		status = TGUI_WINDOW_READY
 		flush_message_queue()
-	if(type == "ready" && !client.tgui_chunk_warm_started)
-		var/chunk_base_url = asset_generation?.get_chunk_base_url()
-		if((findtext(chunk_base_url, "http://") == 1 || findtext(chunk_base_url, "https://") == 1) && length(asset_generation?.chunk_files))
-			client.tgui_chunk_warm_started = TRUE
+	if(type == "ready" && !client().tgui_chunk_warm_started)
+		var/chunk_base_url = asset_generation()?.get_chunk_base_url()
+		if((findtext(chunk_base_url, "http://") == 1 || findtext(chunk_base_url, "https://") == 1) && length(asset_generation()?.chunk_files))
+			client().tgui_chunk_warm_started = TRUE
 			send_message("chunk/warm", list(
 				"url" = chunk_base_url,
-				"files" = asset_generation.chunk_files,
+				"files" = asset_generation().chunk_files,
 			))
 	if(type == "ready" && prewarmed && !locked)
 		audit_prewarmed_hidden()
 	// Pass message to UI that requested the lock
-	if(locked && locked_by)
-		var/prevent_default = locked_by.on_message(type, payload, href_list)
+	if(locked && locked_by())
+		var/prevent_default = locked_by().on_message(type, payload, href_list)
 		if(prevent_default)
 			return
 	// Pass message to the subscriber
-	else if(subscriber_object)
+	else if(subscriber_object())
 		var/prevent_default = call(
-			subscriber_object,
+			subscriber_object(),
 			subscriber_delegate)(type, payload, href_list)
 		if(prevent_default)
 			return
@@ -536,12 +536,12 @@
 		if("visible")
 			var/reported_generation = text2num("[payload?["generation"]]")
 			if(reported_generation && reported_generation != generation)
-				log_tgui(client, "Ignored stale reveal for generation [reported_generation]; current generation is [generation].", window = src)
+				log_tgui(client(), "Ignored stale reveal for generation [reported_generation]; current generation is [generation].", window = src)
 				return
 			visible = TRUE
 			var/reported_size = payload?["geometry"]?["size"]
 			var/reported_pos = payload?["geometry"]?["pos"]
-			if(locked_by?.interface && istext(reported_size))
+			if(locked_by()?.interface && istext(reported_size))
 				var/static/regex/safe_size = regex(@"^\d+x\d+$")
 				if(safe_size.Find(reported_size))
 					var/list/safe_geometry = list("size" = reported_size)
@@ -549,30 +549,30 @@
 						var/static/regex/safe_pos = regex(@"^-?\d+,-?\d+$")
 						if(safe_pos.Find(reported_pos))
 							safe_geometry["pos"] = reported_pos
-					LAZYSET(client.tgui_resolved_geometries, locked_by.interface, safe_geometry)
-			SEND_SIGNAL(src, COMSIG_TGUI_WINDOW_VISIBLE, client)
+					LAZYSET(client().tgui_resolved_geometries, locked_by().interface, safe_geometry)
+			SEND_SIGNAL(src, COMSIG_TGUI_WINDOW_VISIBLE, client())
 		if("perf/flicker")
 			if(!accept_perf_telemetry())
 				return
-			log_tgui(client, "Automatic TGUI flicker telemetry: [truncated_perf_payload(payload)]", window = src)
+			log_tgui(client(), "Automatic TGUI flicker telemetry: [truncated_perf_payload(payload)]", window = src)
 		if("perf/status")
 			if(!accept_perf_telemetry())
 				return
-			log_tgui(client, "Automatic TGUI performance telemetry: [truncated_perf_payload(payload)]", window = src)
+			log_tgui(client(), "Automatic TGUI performance telemetry: [truncated_perf_payload(payload)]", window = src)
 		if("perf/transition")
 			if(!accept_perf_telemetry())
 				return
-			log_tgui(client, "TGUI transition: [truncated_perf_payload(payload)]", window = src)
+			log_tgui(client(), "TGUI transition: [truncated_perf_payload(payload)]", window = src)
 		if("suspend")
 			close(can_be_suspended = TRUE)
 		if("close")
 			close(can_be_suspended = FALSE)
 		if("openLink")
-			client << link(href_list["url"])
+			client() << link(href_list["url"])
 		if("cacheReloaded")
 			reinitialize()
 		if("chat/resend")
-			SSchat.handle_resend(client, payload)
+			SSchat.handle_resend(client(), payload)
 		if("oversizedPayloadRequest")
 			var/payload_id = payload["id"]
 			var/chunk_count = text2num(payload["chunkCount"])
@@ -662,3 +662,19 @@
 
 /datum/tgui_window/proc/remove_oversized_payload(payload_id)
 	LAZYREMOVE(oversized_payloads, payload_id)
+
+/// LC-refs: the asset_generation this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_window/proc/asset_generation() as /datum/tgui_asset_generation
+	return om_resolve(asset_generation_handle)
+
+/// LC-refs: the subscriber_object this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_window/proc/subscriber_object() as /datum
+	return om_resolve(subscriber_object_handle)
+
+/// LC-refs: the locked_by this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_window/proc/locked_by() as /datum/tgui
+	return om_resolve(locked_by_handle)
+
+/// LC-refs: the client this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_window/proc/client() as /client
+	return om_resolve(client_handle)

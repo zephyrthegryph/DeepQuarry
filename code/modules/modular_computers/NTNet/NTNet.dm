@@ -43,7 +43,7 @@
 	if (SSatoms && SSatoms.initialized > INITIALIZATION_INSSATOMS)
 		for(var/obj/machinery/ntnet_relay/R in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			LAZYADD(relays, R)
-			R.NTNet = src
+			R.NTNet_handle = om_handle(src)
 	build_software_lists()
 	build_news_list()
 	build_emails_list()

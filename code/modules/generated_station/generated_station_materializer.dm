@@ -158,9 +158,9 @@ REF_OWNED(/datum/generated_room_fragment_placement, "fragment")
 	var/door_count = 0
 	var/styled_floor_count = 0
 	var/accent_decal_count = 0
-	var/obj/effect/landmark/generated_station_entry/entry
-	var/area/generated_station/transit/transit_area
-	var/area/generated_station/maintenance/maintenance_area
+	var/tmp/entry_handle
+	var/transit_area_handle
+	var/tmp/maintenance_area_handle
 	var/list/department_areas
 	var/list/module_areas
 	var/list/modules
@@ -210,7 +210,7 @@ REF_OWNED(/datum/generated_room_fragment_placement, "fragment")
 
 // ALLOW(lifecycle): its areas revert to space and its built atoms go with it.
 /datum/generated_station_materialization/Destroy()
-	QDEL_NULL(entry)
+	qdel_handle(entry_handle); entry_handle = null
 	var/area/space/space_area = generated_station_space_area()
 	if(department_areas)
 		for(var/node_id in department_areas)
@@ -228,16 +228,16 @@ REF_OWNED(/datum/generated_room_fragment_placement, "fragment")
 				ChangeArea(T, space_area)
 			qdel(A)
 		module_areas = null
-	if(transit_area)
-		var/list/owned_transit_turfs = transit_area.contents.Copy()
+	if(transit_area())
+		var/list/owned_transit_turfs = transit_area().contents.Copy()
 		for(var/turf/T in owned_transit_turfs)
 			ChangeArea(T, space_area)
-	QDEL_NULL(transit_area)
-	if(maintenance_area)
-		var/list/owned_maintenance_turfs = maintenance_area.contents.Copy()
+	qdel_handle(transit_area_handle); transit_area_handle = null
+	if(maintenance_area())
+		var/list/owned_maintenance_turfs = maintenance_area().contents.Copy()
 		for(var/turf/T in owned_maintenance_turfs)
 			ChangeArea(T, space_area)
-	QDEL_NULL(maintenance_area)
+	qdel_handle(maintenance_area_handle); maintenance_area_handle = null
 	QDEL_LIST(modules)
 	QDEL_LIST(room_solutions)
 	QDEL_LIST(control_landmarks)
@@ -255,7 +255,7 @@ REF_OWNED(/datum/generated_room_fragment_placement, "fragment")
 /// Converts planner-local coordinates into station turfs. This pass deliberately
 /// creates no machinery: utility and room-content passes can safely follow it.
 /datum/generated_station_materializer
-	var/datum/generated_station_spec/spec
+	var/tmp/spec_handle
 	var/z_level
 	var/min_x
 	var/min_y
@@ -264,8 +264,8 @@ REF_OWNED(/datum/generated_room_fragment_placement, "fragment")
 	var/list/nodes_by_id
 	var/list/department_areas
 	var/list/module_areas
-	var/area/generated_station/transit/transit_area
-	var/area/generated_station/maintenance/maintenance_area
+	var/transit_area_handle
+	var/tmp/maintenance_area_handle
 	var/datum/generated_station_materialization/result
 	var/datum/generated_station_validation_result/last_architecture_validation
 	var/datum/generated_station_tile_plan/tile_plan
@@ -283,7 +283,7 @@ REF_OWNED(/datum/generated_room_fragment_placement, "fragment")
 	/// the affected room, never discard an otherwise playable station.
 	var/strict_room_contracts = TRUE
 
-REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validation", "tile_plan"))
+REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validation", "tile_plan", "result", "active_job"))
 
 /datum/generated_station_materializer/proc/materialize(datum/generated_station_spec/new_spec, new_z, origin_x = 1, origin_y = 1, datum/flight_plan/flight_plan = null, fast_mode = FALSE)
 	var/datum/generated_station_materialization_job/job = new(src, flight_plan, fast_mode)
@@ -319,37 +319,37 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 	if(origin_x < 1 || origin_y < 1 || origin_x + new_spec.grid_width - 1 > world.maxx || origin_y + new_spec.grid_height - 1 > world.maxy)
 		return FALSE
 
-	spec = new_spec
+	spec_handle = om_handle(new_spec)
 	active_job = job
 	z_level = new_z
 	min_x = origin_x
 	min_y = origin_y
-	max_x = origin_x + spec.grid_width - 1
-	max_y = origin_y + spec.grid_height - 1
+	max_x = origin_x + spec().grid_width - 1
+	max_y = origin_y + spec().grid_height - 1
 	nodes_by_id = list()
 	department_areas = list()
 	module_areas = list()
 	transit_area = generated_station_create_area(/area/generated_station/transit)
-	transit_area.station_id = spec.id
-	transit_area.name = "[spec.name] Transit"
+	transit_area().station_id = spec().id
+	transit_area().name = "[spec().name] Transit"
 	maintenance_area = generated_station_create_area(/area/generated_station/maintenance)
-	maintenance_area.station_id = spec.id
-	maintenance_area.name = "[spec.name] Maintenance"
+	maintenance_area().station_id = spec().id
+	maintenance_area().name = "[spec().name] Maintenance"
 	result = new
-	result.station_id = spec.id
+	result.station_id = spec().id
 	result.z_level = z_level
 	result.origin_x = min_x
 	result.origin_y = min_y
-	result.transit_area = transit_area
-	result.maintenance_area = maintenance_area
-	for(var/datum/generated_station_layout_node/node in spec.layout_nodes)
+	result.transit_area_handle = om_handle(transit_area())
+	result.maintenance_area_handle = om_handle(maintenance_area())
+	for(var/datum/generated_station_layout_node/node in spec().layout_nodes)
 		nodes_by_id[node.id] = node
 		var/datum/generated_station_department_instance/department = department_for_node(node)
 		if(department)
-			var/area/generated_station/department_area = make_department_area(department.definition.id)
-			department_area.station_id = spec.id
+			var/area/generated_station/department_area = make_department_area(department.definition().id)
+			department_area.station_id = spec().id
 			department_area.department_id = department.id
-			department_area.name = "[spec.name] [department.definition.name]"
+			department_area.name = "[spec().name] [department.definition().name]"
 			department_areas[node.id] = department_area
 			result.department_areas[node.id] = department_area
 		generation_checkpoint("Allocating station areas", 25)
@@ -384,7 +384,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 /// A phase failed: drop the partial result. Returns GENERATED_STATION_PHASE_FAILED.
 /datum/generated_station_materializer/proc/abort_materialization(stage, details)
 	last_failure_details = details || last_failure_details || stage
-	log_world("Generated station [spec?.id] materialization failed during [stage].")
+	log_world("Generated station [spec()?.id] materialization failed during [stage].")
 	qdel(result)
 	result = null
 	QDEL_NULL(tile_plan)
@@ -395,13 +395,13 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 /datum/generated_station_materializer/proc/abort_structural(stage)
 	var/list/plan_errors = result?.tile_plan?.errors || tile_plan?.errors
 	for(var/plan_error in plan_errors)
-		log_world("Generated station [spec.id] materialization rejected: [plan_error]")
+		log_world("Generated station [spec().id] materialization rejected: [plan_error]")
 	return abort_materialization(stage, "[stage]: [jointext(plan_errors, "; ")]")
 
 /datum/generated_station_materializer/proc/tile_plan_floor_type()
-	if(spec.architecture_style == "sterile")
+	if(spec().architecture_style == "sterile")
 		return /turf/simulated/floor/tiled/eris/white
-	if(spec.architecture_style == "fortified")
+	if(spec().architecture_style == "fortified")
 		return /turf/simulated/floor/tiled/eris/steel/techfloor
 	return /turf/simulated/floor/tiled
 
@@ -410,7 +410,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 	generation_checkpoint("Compiling structural ownership", 27)
 	if(!cursor)
 		QDEL_NULL(tile_plan)
-		tile_plan = new(spec.grid_width, spec.grid_height, src, TRUE)
+		tile_plan = new(spec().grid_width, spec().grid_height, src, TRUE)
 		cursor = 1
 	for(var/x in cursor to tile_plan.grid_width)
 		tile_plan.fill_column(x)
@@ -421,10 +421,10 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 /// Department territory, circulation, partitions, rooms, vestibules and frontages: a node a slice.
 /datum/generated_station_materializer/proc/phase_tile_nodes(cursor)
 	var/floor_type = tile_plan_floor_type()
-	for(var/i in (cursor || 1) to length(spec.layout_nodes))
-		var/datum/generated_station_layout_node/node = spec.layout_nodes[i]
+	for(var/i in (cursor || 1) to length(spec().layout_nodes))
+		var/datum/generated_station_layout_node/node = spec().layout_nodes[i]
 		var/datum/generated_station_department_instance/node_department = department_for_node(node)
-		var/department_id = node_department?.definition?.id
+		var/department_id = node_department?.definition()?.id
 		for(var/key in node.territory)
 			var/list/parts = splittext(key, ",")
 			tile_plan.claim(text2num(parts[1]), text2num(parts[2]), node.id, node.id, GENERATED_STATION_TILE_FLOOR, floor_type, department_id)
@@ -463,42 +463,42 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 				tile_plan.claim_door(socket.x, socket.y, node.id, door_type, socket.direction, department_id)
 		for(var/datum/generated_station_door_socket/socket in node.frontage_sockets)
 			tile_plan.claim_door(socket.x, socket.y, node.id, /obj/machinery/door/airlock, socket.direction, department_id)
-		if(i < length(spec.layout_nodes) && generation_checkpoint("Compiling department ownership", 28))
+		if(i < length(spec().layout_nodes) && generation_checkpoint("Compiling department ownership", 28))
 			return i + 1
 	return null
 
 /// Public circulation, a chunk of keys at a time.
 /datum/generated_station_materializer/proc/phase_tile_circulation(cursor)
 	var/floor_type = tile_plan_floor_type()
-	for(var/i in (cursor || 1) to length(spec.circulation_tiles))
-		var/list/parts = splittext(spec.circulation_tiles[i], ",")
+	for(var/i in (cursor || 1) to length(spec().circulation_tiles))
+		var/list/parts = splittext(spec().circulation_tiles[i], ",")
 		claim_transit_tile(text2num(parts[1]), text2num(parts[2]), floor_type)
-		if(i < length(spec.circulation_tiles) && generation_checkpoint("Compiling public circulation", 28))
+		if(i < length(spec().circulation_tiles) && generation_checkpoint("Compiling public circulation", 28))
 			return i + 1
 	return null
 
 /datum/generated_station_materializer/proc/phase_tile_maintenance(cursor)
-	for(var/i in (cursor || 1) to length(spec.maintenance_tiles))
-		var/key = spec.maintenance_tiles[i]
+	for(var/i in (cursor || 1) to length(spec().maintenance_tiles))
+		var/key = spec().maintenance_tiles[i]
 		var/list/parts = splittext(key, ",")
 		var/x = text2num(parts[1])
 		var/y = text2num(parts[2])
-		if(tile_plan.claim(x, y, "maintenance", "maintenance", GENERATED_STATION_TILE_FLOOR, /turf/simulated/floor/tiled/eris/steel/techfloor, null) && spec.maintenance_doors[key])
-			var/datum/generated_station_maintenance_door/maintenance_door = spec.maintenance_doors[key]
+		if(tile_plan.claim(x, y, "maintenance", "maintenance", GENERATED_STATION_TILE_FLOOR, /turf/simulated/floor/tiled/eris/steel/techfloor, null) && spec().maintenance_doors[key])
+			var/datum/generated_station_maintenance_door/maintenance_door = spec().maintenance_doors[key]
 			var/datum/generated_station_layout_node/door_node = nodes_by_id[maintenance_door.owner_node_id]
 			var/access_id
 			if(maintenance_door.to_zone_id != "maintenance" && maintenance_door.to_zone_id != "public-circulation")
-				access_id = department_for_node(door_node)?.definition?.id
+				access_id = department_for_node(door_node)?.definition()?.id
 			tile_plan.claim_door(x, y, "maintenance", /obj/machinery/door/airlock/maintenance/generated_station, maintenance_door.direction, access_id)
-		if(i < length(spec.maintenance_tiles) && generation_checkpoint("Compiling maintenance circulation", 29))
+		if(i < length(spec().maintenance_tiles) && generation_checkpoint("Compiling maintenance circulation", 29))
 			return i + 1
 	return null
 
 /datum/generated_station_materializer/proc/phase_tile_structure(cursor)
-	for(var/i in (cursor || 1) to length(spec.structural_tiles))
-		var/list/parts = splittext(spec.structural_tiles[i], ",")
+	for(var/i in (cursor || 1) to length(spec().structural_tiles))
+		var/list/parts = splittext(spec().structural_tiles[i], ",")
 		tile_plan.claim(text2num(parts[1]), text2num(parts[2]), "station-structure", "structure", GENERATED_STATION_TILE_HULL, null, null)
-		if(i < length(spec.structural_tiles) && generation_checkpoint("Compiling structural walls", 29))
+		if(i < length(spec().structural_tiles) && generation_checkpoint("Compiling structural walls", 29))
 			return i + 1
 	return null
 
@@ -537,7 +537,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 	if(!plan)
 		return abort_structural("tile-application")
 	var/area/space/space_area = generated_station_space_area()
-	var/wall_type = spec.architecture_style == "fortified" ? /turf/simulated/wall/r_wall : /turf/simulated/wall
+	var/wall_type = spec().architecture_style == "fortified" ? /turf/simulated/wall/r_wall : /turf/simulated/wall
 	var/list/tiles = plan.tiles
 	for(var/i in (cursor || 1) to length(tiles))
 		var/datum/generated_station_tile_intent/intent = tiles[tiles[i]]
@@ -551,10 +551,10 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 			if(GENERATED_STATION_TILE_FLOOR)
 				T = T.ChangeTurf(intent.floor_type, tell_universe = FALSE)
 				if(intent.owner_id == "transit")
-					ChangeArea(T, transit_area)
+					ChangeArea(T, transit_area())
 					result.corridor_count++
 				else if(intent.owner_id == "maintenance")
-					ChangeArea(T, maintenance_area)
+					ChangeArea(T, maintenance_area())
 					result.corridor_count++
 				else
 					var/area/generated_station/owner_area = module_areas[intent.zone_id] || department_areas[intent.owner_id]
@@ -569,7 +569,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 					result.floor_count++
 			if(GENERATED_STATION_TILE_HULL)
 				T = T.ChangeTurf(wall_type, tell_universe = FALSE)
-				ChangeArea(T, transit_area)
+				ChangeArea(T, transit_area())
 				result.wall_count++
 			else
 				T = T.ChangeTurf(/turf/space, tell_universe = FALSE)
@@ -627,7 +627,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 		if(strict_room_contracts)
 			return abort_materialization("emergency equipment placement", "emergency equipment")
 		result.degradation_events += "one or more rooms could not place emergency equipment"
-		log_world("Generated station [spec.id] continued without complete emergency equipment placement.")
+		log_world("Generated station [spec().id] continued without complete emergency equipment placement.")
 	return null
 
 /datum/generated_station_materializer/proc/phase_access(cursor)
@@ -639,8 +639,8 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 		// removed optional blockers, relocated required fixtures, and attempted an
 		// interior access door; retain the playable result and let the independent
 		// architecture audit report any concrete remaining defect.
-		log_world("Generated station [spec.id] retained its best-effort furnishing layout after access repair was exhausted.")
-	result.service_validation = result.validate_services(spec, src)
+		log_world("Generated station [spec().id] retained its best-effort furnishing layout after access repair was exhausted.")
+	result.service_validation = result.validate_services(spec(), src)
 	generation_checkpoint("Finalizing walls and atmosphere", 57, TRUE)
 	return null
 
@@ -678,7 +678,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 /// base tiles come from the selected authored definition; this pass adds the
 /// continuous Southern Cross-style department paint around each room edge.
 /datum/generated_station_materializer/proc/style_rust_blueprint_floors()
-	for(var/datum/generated_station_layout_node/node in spec.layout_nodes)
+	for(var/datum/generated_station_layout_node/node in spec().layout_nodes)
 		for(var/datum/generated_station_room_allocation/room in node.room_program)
 			var/accent_color = generated_station_accent_color(room.accent_style)
 			if(!accent_color)
@@ -875,7 +875,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 
 /// Adapts planner-owned room programs to the existing furnishing solver without carving live turfs.
 /datum/generated_station_materializer/proc/build_planned_modules()
-	for(var/datum/generated_station_layout_node/node in spec.layout_nodes)
+	for(var/datum/generated_station_layout_node/node in spec().layout_nodes)
 		for(var/datum/generated_station_room_allocation/room in node.room_program)
 			if(!length(room.tiles))
 				return FALSE
@@ -884,8 +884,8 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 			module.department_node_id = node.id
 			module.role = room.role
 			module.definition_id = room.definition_id
-			module.x1 = spec.grid_width
-			module.y1 = spec.grid_height
+			module.x1 = spec().grid_width
+			module.y1 = spec().grid_height
 			module.x2 = 1
 			module.y2 = 1
 			for(var/key in room.tiles)
@@ -917,7 +917,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 		var/area/generated_station/A = make_department_area(department_id)
 		if(!A)
 			return FALSE
-		A.station_id = spec.id
+		A.station_id = spec().id
 		A.department_id = department_id
 		var/designation_key = "[department_id]/[module.role]"
 		designation_counts[designation_key] = (designation_counts[designation_key] || 0) + 1
@@ -925,7 +925,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 		var/department_name = capitalize(department_id)
 		var/role_name = capitalize(replacetext(module.role, "-", " "))
 		var/datum/generated_station_room_allocation/allocation = room_allocation_for_module(module)
-		var/base_name = allocation?.area_name || "[spec.name] [department_name] [role_name]"
+		var/base_name = allocation?.area_name || "[spec().name] [department_name] [role_name]"
 		A.name = designation_number > 1 ? "[base_name] [designation_number]" : base_name
 		module_areas[module.id] = A
 		result.module_areas[module.id] = A
@@ -944,14 +944,14 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 /datum/generated_station_materializer/proc/synthesize_rust_blueprint_step(cursor)
 	if(cursor)
 		return synthesize_fixtures(cursor)
-	if(!length(spec.fixture_blueprint))
+	if(!length(spec().fixture_blueprint))
 		last_failure_details = "Rust content blueprint is empty"
 		return FALSE
 	var/list/rooms_by_native_id = list()
 	var/list/solutions_by_native_id = list()
 	synthesis_rooms = rooms_by_native_id
 	synthesis_solutions = solutions_by_native_id
-	for(var/datum/generated_station_layout_node/node in spec.layout_nodes)
+	for(var/datum/generated_station_layout_node/node in spec().layout_nodes)
 		for(var/datum/generated_station_room_allocation/room in node.room_program)
 			rooms_by_native_id["[room.rust_room_id]"] = room
 			var/datum/generated_room_solution/solution = new
@@ -974,13 +974,13 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 /datum/generated_station_materializer/proc/synthesize_fixtures(cursor)
 	var/list/rooms_by_native_id = synthesis_rooms
 	var/list/solutions_by_native_id = synthesis_solutions
-	for(var/fixture_index in cursor to length(spec.fixture_blueprint))
-		var/datum/generated_station_fixture_placement/fixture = spec.fixture_blueprint[fixture_index]
+	for(var/fixture_index in cursor to length(spec().fixture_blueprint))
+		var/datum/generated_station_fixture_placement/fixture = spec().fixture_blueprint[fixture_index]
 		if(fixture_index > cursor && generation_checkpoint("Materializing Rust room blueprint", 52))
 			return fixture_index
 		if(fixture.fixture_id in list("vent", "scrubber", "apc", "air_alarm", "fire_alarm", "wall_light"))
 			continue
-		var/atom_type = spec.fixture_type_registry[fixture.fixture_id] || generated_station_rust_fixture_type(fixture.fixture_id)
+		var/atom_type = spec().fixture_type_registry[fixture.fixture_id] || generated_station_rust_fixture_type(fixture.fixture_id)
 		if(!atom_type)
 			last_failure_details = "unknown Rust fixture '[fixture.fixture_id]'"
 			return FALSE
@@ -1091,7 +1091,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 
 /// Instantiates semantic control points only after the authoritative structure exists.
 /datum/generated_station_materializer/proc/place_planned_control_landmarks()
-	for(var/datum/generated_station_layout_node/node in spec.layout_nodes)
+	for(var/datum/generated_station_layout_node/node in spec().layout_nodes)
 		var/datum/generated_station_module/control_module
 		for(var/datum/generated_station_module/module in result.modules)
 			if(module.department_node_id == node.id)
@@ -1106,7 +1106,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 				break
 		if(control_turf)
 			var/obj/effect/landmark/generated_station_department_core/core = new(control_turf)
-			core.station_id = spec.id
+			core.station_id = spec().id
 			core.department_node_id = node.id
 			core.module_role = control_module.role
 			result.control_landmarks += core
@@ -1247,7 +1247,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 	return null
 
 /datum/generated_station_materializer/proc/department_for_node(datum/generated_station_layout_node/node) as /datum/generated_station_department_instance
-	for(var/datum/generated_station_department_instance/department in spec.departments)
+	for(var/datum/generated_station_department_instance/department in spec().departments)
 		if(department.id == node.department_instance_id)
 			return department
 	return null
@@ -1273,8 +1273,8 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 
 /datum/generated_station_materializer/proc/fill_exterior()
 	var/area/space/space_area = generated_station_space_area()
-	for(var/x in 1 to spec.grid_width)
-		for(var/y in 1 to spec.grid_height)
+	for(var/x in 1 to spec().grid_width)
+		for(var/y in 1 to spec().grid_height)
 			var/turf/T = world_turf(x, y)
 			if(T)
 				for(var/atom/movable/occupant in turf_contents_of_type(T, /atom/movable))
@@ -1285,7 +1285,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 		CHECK_TICK
 
 /datum/generated_station_materializer/proc/carve_departments()
-	for(var/datum/generated_station_layout_node/node in spec.layout_nodes)
+	for(var/datum/generated_station_layout_node/node in spec().layout_nodes)
 		var/area/generated_station/department_area = department_areas[node.id]
 		for(var/x in node.x to node.x + node.width - 1)
 			for(var/y in node.y to node.y + node.height - 1)
@@ -1294,11 +1294,11 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 					continue
 				var/on_edge = x == node.x || y == node.y || x == node.x + node.width - 1 || y == node.y + node.height - 1
 				var/floor_type = /turf/simulated/floor/tiled
-				if(spec.architecture_style == "sterile")
+				if(spec().architecture_style == "sterile")
 					floor_type = /turf/simulated/floor/tiled/eris/white
-				else if(spec.architecture_style == "fortified")
+				else if(spec().architecture_style == "fortified")
 					floor_type = /turf/simulated/floor/tiled/eris/steel/techfloor
-				var/wall_type = spec.architecture_style == "fortified" ? /turf/simulated/wall/r_wall : /turf/simulated/wall
+				var/wall_type = spec().architecture_style == "fortified" ? /turf/simulated/wall/r_wall : /turf/simulated/wall
 				T.ChangeTurf(on_edge ? wall_type : floor_type, tell_universe = FALSE)
 				ChangeArea(T, department_area)
 				if(on_edge)
@@ -1308,13 +1308,13 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 		CHECK_TICK
 
 /datum/generated_station_materializer/proc/node_at(local_x, local_y)
-	for(var/datum/generated_station_layout_node/node in spec.layout_nodes)
+	for(var/datum/generated_station_layout_node/node in spec().layout_nodes)
 		if(local_x >= node.x && local_x < node.x + node.width && local_y >= node.y && local_y < node.y + node.height)
 			return node
 	return null
 
 /datum/generated_station_materializer/proc/carve_corridor_tile(local_x, local_y)
-	if(local_x < 1 || local_y < 1 || local_x > spec.grid_width || local_y > spec.grid_height)
+	if(local_x < 1 || local_y < 1 || local_x > spec().grid_width || local_y > spec().grid_height)
 		return
 	var/datum/generated_station_layout_node/node = node_at(local_x, local_y)
 	if(node)
@@ -1324,11 +1324,11 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 		return
 	if(istype(T, /turf/space))
 		T.ChangeTurf(/turf/simulated/floor/tiled, tell_universe = FALSE)
-		ChangeArea(T, transit_area)
+		ChangeArea(T, transit_area())
 		result.corridor_count++
 
 /datum/generated_station_materializer/proc/carve_corridors()
-	for(var/datum/generated_station_layout_edge/edge in spec.layout_edges)
+	for(var/datum/generated_station_layout_edge/edge in spec().layout_edges)
 		if(edge.kind != GENERATED_STATION_EDGE_TRANSIT)
 			continue
 		var/corridor_width = edge.corridor_class == "primary" ? 3 : 2
@@ -1358,14 +1358,14 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 /// Gives every exposed transit floor a real hull wall instead of leaving it open to space.
 /datum/generated_station_materializer/proc/enclose_corridors()
 	var/list/to_wall = list()
-	for(var/turf/simulated/floor/T in transit_area)
+	for(var/turf/simulated/floor/T in transit_area())
 		for(var/direction in GLOB.cardinal)
 			var/turf/neighbor = get_step(T, direction)
 			if(istype(neighbor, /turf/space))
 				to_wall |= neighbor
 	for(var/turf/T as anything in to_wall)
-		T.ChangeTurf(spec.architecture_style == "fortified" ? /turf/simulated/wall/r_wall : /turf/simulated/wall, tell_universe = FALSE)
-		ChangeArea(T, transit_area)
+		T.ChangeTurf(spec().architecture_style == "fortified" ? /turf/simulated/wall/r_wall : /turf/simulated/wall, tell_universe = FALSE)
+		ChangeArea(T, transit_area())
 		result.wall_count++
 
 /// Returns whether a department hull tile has clear room and transit approaches.
@@ -1373,7 +1373,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 	var/turf/T = world_turf(local_x, local_y)
 	var/turf/outside = get_step(T, outward)
 	var/turf/inside = get_step(T, turn(outward, 180))
-	return istype(outside, /turf/simulated/floor) && get_area(outside) == transit_area && istype(inside, /turf/simulated/floor) && node_at(local_x, local_y) == node
+	return istype(outside, /turf/simulated/floor) && get_area(outside) == transit_area() && istype(inside, /turf/simulated/floor) && node_at(local_x, local_y) == node
 
 /// Converts the center of one continuous corridor frontage into an intentional entrance.
 /datum/generated_station_materializer/proc/place_interface_door_run(datum/generated_station_layout_node/node, datum/generated_station_department_instance/department, list/run, outward)
@@ -1391,11 +1391,11 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 
 /// Applies the generated station's department access policy to an entrance.
 /datum/generated_station_materializer/proc/configure_department_airlock(obj/machinery/door/airlock/airlock, datum/generated_station_department_instance/department)
-	configure_airlock_access(airlock, department?.definition?.id)
+	configure_airlock_access(airlock, department?.definition()?.id)
 
 /// Applies one department definition's access policy to an airlock.
 /datum/generated_station_materializer/proc/configure_airlock_access(obj/machinery/door/airlock/airlock, department_id)
-	if(spec.security_tier > 1)
+	if(spec().security_tier > 1)
 		switch(department_id)
 			if("command", "ai")
 				airlock.req_access = list(ACCESS_HEADS)
@@ -1411,7 +1411,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 /// Turns unavoidable short route termini into deliberate rest alcoves.
 /datum/generated_station_materializer/proc/furnish_transit_alcoves()
 	var/list/transit_floors = list()
-	for(var/turf/simulated/floor/T in transit_area)
+	for(var/turf/simulated/floor/T in transit_area())
 		transit_floors[T] = TRUE
 	for(var/turf/simulated/floor/T as anything in transit_floors)
 		var/list/neighbors = list()
@@ -1444,7 +1444,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 
 /// Adds a sealed two-door EVA vestibule instead of placing a naked maintenance hatch in the hull.
 /datum/generated_station_materializer/proc/place_exterior_airlocks()
-	for(var/datum/generated_station_layout_node/node in spec.layout_nodes)
+	for(var/datum/generated_station_layout_node/node in spec().layout_nodes)
 		var/turf/hull_turf
 		var/outward
 		for(var/x in node.x to node.x + node.width - 1)
@@ -1529,7 +1529,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 			side_intent.owner_id = "station-structure"
 			side_intent.zone_id = "station-structure"
 			side_intent.structure_kind = GENERATED_STATION_TILE_HULL
-			side_turf.ChangeTurf(spec.architecture_style == "fortified" ? /turf/simulated/wall/r_wall : /turf/simulated/wall, tell_universe = FALSE)
+			side_turf.ChangeTurf(spec().architecture_style == "fortified" ? /turf/simulated/wall/r_wall : /turf/simulated/wall, tell_universe = FALSE)
 			ChangeArea(side_turf, A)
 		var/obj/machinery/door/airlock/maintenance/inner = new(hull_turf)
 		inner.set_dir(outward in list(EAST, WEST) ? EAST : NORTH)
@@ -1542,9 +1542,9 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 
 /datum/generated_station_materializer/proc/place_entry()
 	var/datum/generated_station_layout_node/docking
-	for(var/datum/generated_station_layout_node/node in spec.layout_nodes)
+	for(var/datum/generated_station_layout_node/node in spec().layout_nodes)
 		var/datum/generated_station_department_instance/department = department_for_node(node)
-		if(department?.definition?.id == "docking")
+		if(department?.definition()?.id == "docking")
 			docking = node
 			break
 	if(!docking)
@@ -1564,8 +1564,8 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 				T = candidate
 				break
 	if(T)
-		result.entry = new(T)
-		result.entry.station_id = spec.id
+		result.entry_handle = om_handle(new /obj/effect/landmark/generated_station_entry(T))
+		result.entry().station_id = spec().id
 		result.register_furnishing(new /obj/item/card/id/generated_station_master(T))
 
 /datum/generated_station_materializer/proc/finalize()
@@ -1579,5 +1579,31 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 	for(var/module_id in module_areas)
 		var/area/generated_station/room_area = module_areas[module_id]
 		room_area.power_change()
-	transit_area?.power_change()
+	transit_area()?.power_change()
+
+REF_OWNED(/datum/generated_station_materialization, list("tile_plan", "service_validation"))
+
+/// LC-refs: the spec this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/generated_station_materializer/proc/spec() as /datum/generated_station_spec
+	return om_resolve(spec_handle)
+
+/// LC-refs: the maintenance_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/generated_station_materializer/proc/maintenance_area() as /area/generated_station/maintenance
+	return om_resolve(maintenance_area_handle)
+
+/// LC-refs: the maintenance_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/generated_station_materialization/proc/maintenance_area() as /area/generated_station/maintenance
+	return om_resolve(maintenance_area_handle)
+
+/// LC-refs: the entry this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/generated_station_materialization/proc/entry() as /obj/effect/landmark/generated_station_entry
+	return om_resolve(entry_handle)
+
+/// LC-refs: the transit_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/generated_station_materialization/proc/transit_area() as /area/generated_station/transit
+	return om_resolve(transit_area_handle)
+
+/// LC-refs: the transit_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/generated_station_materializer/proc/transit_area() as /area/generated_station/transit
+	return om_resolve(transit_area_handle)
 	maintenance_area?.power_change()

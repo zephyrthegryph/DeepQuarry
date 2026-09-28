@@ -54,8 +54,8 @@
 		for (var/a in cooking_objs)
 			num++
 			var/datum/cooking_item/CI = a
-			if (CI && CI.container)
-				string += "- [CI.container.label(num)], [report_progress(CI)]</br>"
+			if (CI && CI.container())
+				string += "- [CI.container().label(num)], [report_progress(CI)]</br>"
 		to_chat(user, string)
 	else
 		to_chat(user, span_notice("It's empty."))
@@ -195,7 +195,7 @@ REF_OWNED(/obj/machinery/appliance/cooker, "thermostat_watch")
 	if(isnull(heat_body))
 		return
 	for(var/datum/cooking_item/CI as anything in cooking_objs)
-		var/obj/item/container = CI?.container
+		var/obj/item/container = CI?.container()
 		if(!container || container.loc != src)
 			continue
 		cooker_couple(container, heat_body)
@@ -212,7 +212,7 @@ REF_OWNED(/obj/machinery/appliance/cooker, "thermostat_watch")
 /// The cooker stopped heating: its contents may be released at equilibrium again.
 /obj/machinery/appliance/cooker/proc/release_contents_heat()
 	for(var/datum/cooking_item/CI as anything in cooking_objs)
-		var/obj/item/container = CI?.container
+		var/obj/item/container = CI?.container()
 		if(!container)
 			continue
 		if(!isnull(container.heat_body))
@@ -230,7 +230,7 @@ REF_OWNED(/obj/machinery/appliance/cooker, "thermostat_watch")
 	else
 		//Any food items directly added need an empty container. A slot without a container cant hold food
 		for (var/datum/cooking_item/CI in cooking_objs)
-			if (CI.container.check_contents() == 0)
+			if (CI.container().check_contents() == 0)
 				return CI
 
 	return 0
