@@ -173,13 +173,13 @@
 		return
 	usr.client.setup_popup("camera-[REF(src)]", width, height, 2, "1984")
 	popup_screen.display_to(usr)
-	RegisterSignal(usr.client, COMSIG_POPUP_CLEARED, PROC_REF(on_popup_clear))
+	om_hook(usr, /datum/om/event/popup_cleared, src, PROC_REF(on_popup_clear))
 
-/atom/movable/screen/movable/pic_in_pic/proc/on_popup_clear(client/source, window)
-	SIGNAL_HANDLER
-	if(window == "camera-[REF(src)]")
-		UnregisterSignal(usr.client, COMSIG_POPUP_CLEARED)
-		popup_screen.hide_from(usr)
+/atom/movable/screen/movable/pic_in_pic/proc/on_popup_clear(mob/source, datum/om/event/popup_cleared/event)
+	EVENT_HANDLER
+	if(event.window_id == "camera-[REF(src)]")
+		om_unhook(source, /datum/om/event/popup_cleared, src)
+		popup_screen.hide_from(source)
 
 /// LC-refs: the atom this view is centred on -- an OM handle (om_handle()), so it reads null once that is deleted.
 /atom/movable/screen/movable/pic_in_pic/proc/center() as /atom

@@ -51,14 +51,14 @@ REF_OWNED_LIST(/atom/movable/screen/map_view_tg, "popup_plane_masters")
  */
 /atom/movable/screen/map_view_tg/proc/display_to(mob/show_to, datum/tgui_window/window)
 	if(window && !window.visible)
-		RegisterSignal(window, COMSIG_TGUI_WINDOW_VISIBLE, PROC_REF(display_on_ui_visible))
+		om_hook(window, /datum/om/event/tgui_window_visible, src, PROC_REF(display_on_ui_visible))
 	else
 		display_to_client(show_to.client)
 
-/atom/movable/screen/map_view_tg/proc/display_on_ui_visible(datum/tgui_window/window, client/show_to)
-	SIGNAL_HANDLER
-	display_to_client(show_to)
-	UnregisterSignal(window, COMSIG_TGUI_WINDOW_VISIBLE)
+/atom/movable/screen/map_view_tg/proc/display_on_ui_visible(datum/tgui_window/window, datum/om/event/tgui_window_visible/event)
+	EVENT_HANDLER
+	display_to_client(event.client)
+	om_unhook(window, /datum/om/event/tgui_window_visible, src)
 
 /atom/movable/screen/map_view_tg/proc/display_to_client(client/show_to)
 	show_to.register_map_obj(src)

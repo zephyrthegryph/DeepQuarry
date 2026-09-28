@@ -212,8 +212,8 @@
 		if(!action.show_to_observers)
 			continue
 		action.GiveAction(src)
-	RegisterSignal(take_from, COMSIG_MOB_GRANTED_ACTION, PROC_REF(on_observing_action_granted))
-	RegisterSignal(take_from, COMSIG_MOB_REMOVED_ACTION, PROC_REF(on_observing_action_removed))
+	om_hook(take_from, /datum/om/event/mob_granted_action, src, PROC_REF(on_observing_action_granted))
+	om_hook(take_from, /datum/om/event/mob_removed_action, src, PROC_REF(on_observing_action_removed))
 
 /**
  * Hide another mob's action buttons from this mob
@@ -223,21 +223,23 @@
 /mob/proc/hide_other_mob_action_buttons(mob/take_from)
 	for(var/datum/action/action as anything in take_from.actions)
 		action.HideFrom(src)
-	UnregisterSignal(take_from, list(COMSIG_MOB_GRANTED_ACTION, COMSIG_MOB_REMOVED_ACTION))
+	om_unhook(take_from, list(/datum/om/event/mob_granted_action, /datum/om/event/mob_removed_action), src)
 
-/// Signal proc for [COMSIG_MOB_GRANTED_ACTION] - If we're viewing another mob's action buttons,
+/// Hook for /datum/om/event/mob_granted_action - If we're viewing another mob's action buttons,
 /// we need to update with any newly added buttons granted to the mob.
-/mob/proc/on_observing_action_granted(mob/living/source, datum/action/action)
-	SIGNAL_HANDLER
+/mob/proc/on_observing_action_granted(mob/living/source, datum/om/event/mob_granted_action/event)
+	EVENT_HANDLER
+	var/datum/action/action = event.action
 
 	if(!action.show_to_observers)
 		return
 	action.GiveAction(src)
 
-/// Signal proc for [COMSIG_MOB_REMOVED_ACTION] - If we're viewing another mob's action buttons,
+/// Hook for /datum/om/event/mob_removed_action - If we're viewing another mob's action buttons,
 /// we need to update with any removed buttons from the mob.
-/mob/proc/on_observing_action_removed(mob/living/source, datum/action/action)
-	SIGNAL_HANDLER
+/mob/proc/on_observing_action_removed(mob/living/source, datum/om/event/mob_removed_action/event)
+	EVENT_HANDLER
+	var/datum/action/action = event.action
 
 	action.HideFrom(src)
 
@@ -341,13 +343,14 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 
 	set_expanded(!expanded)
 
-/atom/movable/screen/button_palette/proc/clicked_while_open(datum/source, atom/target, atom/location, control, params, mob/user)
-	SIGNAL_HANDLER
+/atom/movable/screen/button_palette/proc/clicked_while_open(datum/source, datum/om/event/client_click/event)
+	EVENT_HANDLER
+	var/atom/target = event.target
 	if(istype(target, /atom/movable/screen/movable/action_button) || istype(target, /atom/movable/screen/palette_scroll) || target == src) // If you're clicking on an action button, or us, you can live
 		return
 	set_expanded(FALSE)
 	if(source)
-		UnregisterSignal(source, COMSIG_CLIENT_CLICK)
+		om_unhook(source, /datum/om/event/client_click, src)
 
 /atom/movable/screen/button_palette/proc/set_expanded(new_expanded)
 	var/datum/action_group/our_group = our_hud().palette_actions
@@ -364,10 +367,11 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	if(!usr.client)
 		return
 
+	// Clients cannot be hooked: client clicks are emitted on the client's mob.
 	if(expanded)
-		RegisterSignal(usr.client, COMSIG_CLIENT_CLICK, PROC_REF(clicked_while_open))
+		om_hook(usr, /datum/om/event/client_click, src, PROC_REF(clicked_while_open))
 	else
-		UnregisterSignal(usr.client, COMSIG_CLIENT_CLICK)
+		om_unhook(usr, /datum/om/event/client_click, src)
 
 	closeToolTip(usr, src) //Our tooltips are now invalid, can't seem to update them in one frame, so here, just close them
 
