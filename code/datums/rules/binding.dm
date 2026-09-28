@@ -68,7 +68,7 @@
 /// A DM-owned property of `thing` changed: publish its key if anything subscribed.
 /proc/dq_rules_publish(datum/thing, key_kind)
 	var/datum/rule_binding/binding = dq_rule_binding_of(thing)
-	if(binding?.key_id && (key_kind in binding.key_kinds))
+	if(binding?.key_id && (key_kind in binding.table.key_kinds))
 		dq_rx_publish(key_kind, binding.key_id, 1)
 
 /// The node handle for (thing, property), created by `provider` when given.
@@ -81,17 +81,63 @@
 		. = dq_rx_node_new(thing)
 		LAZYSET(binding.nodes, property, .)
 
+/// Most rules one binding tracks: per-rule flags are bits of one number, and
+/// DM bitwise math is exact to 24 bits.
+#define RULE_BINDING_MAX_RULES 24
+#define RULE_BIT(i) (1 << ((i) - 1))
+
+/// The shared binding table for a rule list. dq_rules_for_type() returns one
+/// cached list per type, so every object of a type shares one table.
+/proc/dq_rule_table_for(list/rules)
+	var/static/list/cache = list()
+	var/datum/rule_type_table/table = cache[rules]
+	if(!table)
+		table = new(rules)
+		cache[rules] = table
+	return table
+
+/// What every binding of one rule list shares: the rules and the key kinds
+/// their triggers can subscribe. Immutable after New(); never deleted.
+/datum/rule_type_table
+	/// Shared rule list (dq_rules_for_type()).
+	var/list/rules
+	var/count = 0
+	/// Every key kind a trigger of these rules watches. Publishing a kind no
+	/// live watch reads is a cheap no-op.
+	var/list/key_kinds
+
+/datum/rule_type_table/New(list/rules)
+	..()
+	src.rules = rules
+	count = length(rules)
+	if(count > RULE_BINDING_MAX_RULES)
+		stack_trace("[count] rules share one binding table; only the first [RULE_BINDING_MAX_RULES] bind")
+		count = RULE_BINDING_MAX_RULES
+	for(var/i in 1 to count)
+		var/datum/rule/rule = rules[i]
+		for(var/datum/rule_trigger/trigger as anything in rule.triggers)
+			if(trigger.kind == RULE_TRIGGER_KEY)
+				LAZYOR(key_kinds, trigger.key_kind)
+
+OM_STATIC_TYPE(/datum/rule_type_table)
+REF_STATIC(/datum/rule_type_table, list("rules"))
+
+/// Per-object rule state. The rule list and key kinds live in the shared
+/// /datum/rule_type_table; per-rule flags are bits of three numbers, and every
+/// rule's watch tokens share one flat list.
 /datum/rule_binding
 	var/owner_ref
 	/// The owner, resolved for this call. Not held between calls.
 	var/tmp/atom/owner
-	/// Shared rule list for the owner's type.
-	var/list/rules
-	/// Per rule (same index): TRUE while its condition held at the last look.
-	var/list/holding
-	/// Per rule: fire count. Null until a rule first fires (most never do).
-	var/list/fired
-	/// Per rule: its subscription tokens, or null once done.
+	/// Shared per-type table (rules, key kinds).
+	var/datum/rule_type_table/table
+	/// Bit per rule: its condition held at the last look.
+	var/holding = 0
+	/// Bit per rule: subscribed and not done.
+	var/live = 0
+	/// Bit per rule: fired at least once.
+	var/fired = 0
+	/// Flat [rule index, token, rule index, token, ...] for every live subscription.
 	var/list/tokens
 	/// Per rule: hold_for rate model (RULE_HOLD_SPENT once fired this spell) and its watch token.
 	/// Both null until a hold_for rule first holds.
@@ -99,8 +145,6 @@
 	var/list/hold_tokens
 	/// property -> heat node handle (the owner's heat body, while it has one).
 	var/list/nodes
-	/// Key kinds the owner must publish.
-	var/list/key_kinds
 	/// The id of the owner's DM-owned keys (om_world_key_id()).
 	var/key_id
 	/// Every world watch made for this binding (dq_rx_*), deleted with it.
@@ -112,24 +156,24 @@
 	..()
 	owner_ref = om_handle(owner)
 	src.owner = owner
-	src.rules = rules
-	var/count = length(rules)
-	holding = new /list(count)
-	tokens = new /list(count)
+	table = dq_rule_table_for(rules)
 	owner.rule_binding = src
+	var/count = table.count
 	for(var/i in 1 to count)
-		tokens[i] = subscribe(rules[i])
+		if(subscribe(i, rules[i]))
+			live |= RULE_BIT(i)
 	// Baseline: a rule fires on crossing, not because it already holds.
 	for(var/i in 1 to count)
-		if(tokens[i])
-			holding[i] = check(rules[i])
+		if((live & RULE_BIT(i)) && check(rules[i]))
+			holding |= RULE_BIT(i)
 	src.owner = null
 
 /// Phase 1 (unbind): drops its rules and frees its Rust reactor nodes.
 /datum/rule_binding/lifecycle_unbind()
 	. = ..()
-	for(var/i in 1 to length(rules))
-		drop(i)
+	if(table)
+		for(var/i in 1 to table.count)
+			drop(i)
 	for(var/property in nodes)
 		dq_rx_node_free(nodes[property])
 	nodes = null
@@ -138,29 +182,41 @@
 	if(owner_now?.rule_binding == src)
 		owner_now.rule_binding = null
 
+/// Shared rule list (tests and diagnostics).
+/datum/rule_binding/proc/rule_list()
+	return table.rules
+
+/// Whether rule i held at the last look (tests and diagnostics).
+/datum/rule_binding/proc/is_holding(i)
+	return (holding & RULE_BIT(i)) ? TRUE : FALSE
+
 /// Whether a live rule on this binding replaces the RULE_REPLACES_* `flag`.
 /datum/rule_binding/proc/replaces(flag)
-	for(var/i in 1 to length(rules))
+	var/list/rules = table.rules
+	for(var/i in 1 to table.count)
 		var/datum/rule/rule = rules[i]
-		if((rule.replaces & flag) && tokens[i])
+		if((rule.replaces & flag) && (live & RULE_BIT(i)))
 			return TRUE
 	return FALSE
 
 /datum/rule_binding/proc/active_count()
 	. = 0
-	for(var/list/rule_tokens in tokens)
-		.++
+	for(var/i in 1 to table.count)
+		if(live & RULE_BIT(i))
+			.++
 
-/// Subscribe one rule's triggers. Returns its token list, or null if the
-/// owner can't have this rule (a threshold level it doesn't have).
-/datum/rule_binding/proc/subscribe(datum/rule/rule)
+/// Subscribe rule i's triggers, adding its tokens to `tokens`. Returns FALSE,
+/// subscribing nothing, if the owner can't have this rule (a threshold level
+/// it doesn't have).
+/datum/rule_binding/proc/subscribe(i, datum/rule/rule)
 	var/list/out = list()
 	for(var/datum/rule_trigger/trigger as anything in rule.triggers)
 		switch(trigger.kind)
 			if(RULE_TRIGGER_THRESHOLD)
 				var/level = trigger.level_for(owner)
 				if(isnull(level))
-					return cancel_all(out)
+					cancel_all(out)
+					return FALSE
 				var/handle = trigger.provider().node_of(owner, TRUE)
 				var/above = trigger.fires_above()
 				// Watches fire at >= / <=; a strict comparison watches just past the level.
@@ -177,12 +233,18 @@
 				out += dq_rx_on_change(src, trigger.provider_b().node_of(owner, TRUE), trigger.provider_b().channel)
 			if(RULE_TRIGGER_KEY)
 				if(trigger.is_threshold() && isnull(trigger.level_for(owner)))
-					return cancel_all(out)
+					cancel_all(out)
+					return FALSE
 				if(!key_id)
 					key_id = dq_rx_id()
 				out += dq_rx_on_key(src, trigger.key_kind, key_id, 1)
-				LAZYOR(key_kinds, trigger.key_kind)
-	return out
+	// A subscribed rule is live even when a watch came back null, as before.
+	for(var/token in out)
+		if(!tokens)
+			tokens = list()
+		tokens += i
+		tokens += token
+	return TRUE
 
 /datum/rule_binding/proc/cancel_all(list/out)
 	for(var/token in out)
@@ -191,10 +253,15 @@
 
 /// Drop rule i's subscriptions and hold model.
 /datum/rule_binding/proc/drop(i)
-	var/list/rule_tokens = tokens[i]
-	if(rule_tokens)
-		cancel_all(rule_tokens)
-		tokens[i] = null
+	if(live & RULE_BIT(i))
+		live &= ~RULE_BIT(i)
+		for(var/pos = length(tokens) - 1, pos >= 1, pos -= 2)
+			if(tokens[pos] != i)
+				continue
+			var/token = tokens[pos + 1]
+			tokens.Cut(pos, pos + 2)
+			dq_rx_cancel(src, token)
+		UNSETEMPTY(tokens)
 	if(hold_models && !isnull(hold_models[i]) && hold_models[i] != RULE_HOLD_SPENT)
 		dq_rx_rate_remove(hold_models[i])
 		hold_models[i] = null
@@ -219,8 +286,7 @@
 
 /// Forget the baseline and evaluate: every rule whose condition holds fires.
 /datum/rule_binding/proc/fire_holding()
-	for(var/i in 1 to length(holding))
-		holding[i] = FALSE
+	holding = 0
 	evaluate()
 
 /// Look at every live rule: fire on false -> true edges, run exits on true -> false.
@@ -231,29 +297,34 @@
 	owner = null
 
 /datum/rule_binding/proc/evaluate_rules()
-	for(var/i in 1 to length(rules))
+	var/list/rules = table.rules
+	for(var/i in 1 to table.count)
 		if(QDELETED(owner) || QDELETED(src))
 			return
-		if(!tokens[i])
+		var/bit = RULE_BIT(i)
+		if(!(live & bit))
 			continue
 		var/datum/rule/rule = rules[i]
 		var/now = check(rule)
-		var/was = holding[i]
-		holding[i] = now
+		var/was = holding & bit
+		if(now)
+			holding |= bit
+		else
+			holding &= ~bit
 		if(rule.hold_for)
 			update_hold(i, rule, now)
 			continue
 		if(now && !was)
 			fire(i)
-		else if(!now && was && fired?[i])
+		else if(!now && was && (fired & bit))
 			rule.exit(owner)
 
 /// hold_for: a rate model counts seconds held; a rate watch wakes us when it
 /// reaches the hold time. It pauses while the condition doesn't hold.
 /datum/rule_binding/proc/update_hold(i, datum/rule/rule, now)
 	if(!hold_models)
-		hold_models = new /list(length(rules))
-		hold_tokens = new /list(length(rules))
+		hold_models = new /list(table.count)
+		hold_tokens = new /list(table.count)
 	var/model = hold_models[i]
 	if(model == RULE_HOLD_SPENT)
 		// Fired during this spell; re-arm once the condition stops holding.
@@ -283,15 +354,17 @@
 		hold_tokens[i] = dq_rx_on_rate(src, model, TRUE, rule.hold_for / 10)
 
 /datum/rule_binding/proc/fire(i)
+	var/list/rules = table.rules
 	var/datum/rule/rule = rules[i]
-	if(!fired)
-		fired = new /list(length(rules))
-	fired[i]++
+	fired |= RULE_BIT(i)
 	if(rule.once)
 		drop(i)
 	rule.fire(owner)
-	if(!QDELETED(src) && !active_count())
+	if(!QDELETED(src) && !live)
 		qdel(src)
+
+#undef RULE_BIT
+#undef RULE_BINDING_MAX_RULES
 
 /// A small step past `level`, for strict comparisons and test inputs.
 /proc/dq_rule_epsilon(level)
@@ -323,3 +396,4 @@
 				qdel(thing)
 
 REF_BACK(/datum/rule_binding, list("owner" = null))
+REF_STATIC(/datum/rule_binding, list("table"))
