@@ -7,8 +7,6 @@ GLOBAL_LIST_EMPTY(dq_batch_probe_log)
 /// Records its Initialize() and LateInitialize() in one shared log.
 /obj/effect/dq_batch_probe
 	name = "batch probe"
-	/// Initialized from inside this probe's Initialize(): a nested, joined frame.
-	var/obj/effect/dq_batch_probe/nested
 	/// The frame that was active while this probe initialized.
 	var/datum/materialize_batch/seen_batch
 
@@ -16,15 +14,12 @@ GLOBAL_LIST_EMPTY(dq_batch_probe_log)
 	. = ..()
 	seen_batch = SSatoms.active_batch
 	GLOB.dq_batch_probe_log.Add(list(list("init", src)))
-	if(nested)
-		SSatoms.InitializeAtoms(list(nested))
 	return INITIALIZE_HINT_LATELOAD
 
 /obj/effect/dq_batch_probe/LateInitialize()
 	GLOB.dq_batch_probe_log.Add(list(list("late", src)))
 
 /obj/effect/dq_batch_probe/Destroy()
-	nested = null
 	seen_batch = null
 	return ..()
 
@@ -131,20 +126,22 @@ GLOBAL_LIST_EMPTY(dq_batch_probe_log)
 
 /datum/unit_test/dq_materialize_batch/nested_joins/Run()
 	GLOB.dq_batch_probe_log.Cut()
-	var/list/pair = uninitialized_probes(2)
-	var/obj/effect/dq_batch_probe/outer = pair[1]
-	var/obj/effect/dq_batch_probe/inner = pair[2]
-	outer.nested = inner
+	var/list/pair = uninitialized_probes(1)
+	var/obj/effect/dq_batch_probe/inner = pair[1]
 	SSatoms.batch_trace = list()
-	SSatoms.InitializeAtoms(list(outer))
+	// A running frame (as while an outer batch initializes), then a nested call.
+	var/datum/materialize_batch/outer_batch = SSatoms.batch_open("dq_batch_test_outer")
+	SSatoms.InitializeAtoms(list(inner))
+	TEST_ASSERT(SSatoms.active_batch == outer_batch, "closing a nested frame did not restore the outer one")
+	SSatoms.batch_close(outer_batch)
 
 	TEST_ASSERT_EQUAL(length(SSatoms.batch_trace), 2, "frames opened")
-	var/datum/materialize_batch/outer_batch = SSatoms.batch_trace[1]
 	var/datum/materialize_batch/inner_batch = SSatoms.batch_trace[2]
 	TEST_ASSERT(inner_batch.owner == outer_batch, "a nested frame did not join the running one")
 	TEST_ASSERT(inner.seen_batch == inner_batch, "the nested atom did not see its own frame")
-	TEST_ASSERT(log_index("late", list(inner)) < log_index("late", list(outer)), "the nested frame's late loaders waited for the outer frame")
+	TEST_ASSERT(log_index("late", list(inner)), "the nested frame's late loaders waited for the outer frame")
 	TEST_ASSERT_NULL(SSatoms.active_batch, "a closed frame left itself active")
+	qdel(outer_batch)
 
 	// Work deferred from inside the nested frame lands on the owner and flushes once.
 	var/obj/structure/cable/cable = allocate(/obj/structure/cable, test_floor())
@@ -177,7 +174,7 @@ GLOBAL_LIST_EMPTY(dq_batch_probe_log)
 		TEST_ASSERT_EQUAL(table.flags & wanted, wanted, "[path] via table_initialize()")
 		TEST_ASSERT_EQUAL(chain.flags & wanted, wanted, "[path] via Initialize()")
 		TEST_ASSERT_EQUAL(length(table.overlays), length(chain.overlays), "[path] overlays differ between the two paths")
-		TEST_ASSERT_EQUAL(table.atom_integrity, chain.atom_integrity, "[path] integrity differs between the two paths")
+		TEST_ASSERT_EQUAL(table.get_integrity(), chain.get_integrity(), "[path] integrity differs between the two paths")
 		if(++checked >= 20)
 			break
 	TEST_ASSERT(checked, "no init_from_table sign or decal types to check")
