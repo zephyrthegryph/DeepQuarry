@@ -379,6 +379,11 @@
 /obj/item/storage/wallet
 	latent_contents = FALSE
 
+// A robot gripper's pockets are a live tool: code reads the one item in
+// each pocket every time the gripper is used or its menu is drawn.
+/obj/item/storage/internal/gripper
+	latent_contents = FALSE
+
 /obj/item/storage/box/remote_scene_tools
 	latent_contents = FALSE
 

@@ -139,7 +139,8 @@
 		playsound(src, 'sound/effects/splat.ogg', 30, 1)
 		visible_message(span_warning("[H] tears off [src]!"),
 		span_notice("We remove [src]."))
-		for(var/atom/movable/AM in src.contents) //Dump whatever's in the bag before deleting.
+		latent_materialize_all() // a walk needs real things (C5)
+		for(var/atom/movable/AM in src.contents) //Dump whatever's in the bag before deleting. (latent-ok: materialized above)
 			AM.forceMove(get_turf(loc))
 		qdel(src)
 

@@ -23,7 +23,8 @@
 
 /datum/decl/hierarchy/outfit/costume/professional/post_equip(mob/living/carbon/human/H)
 	var/obj/item/storage/briefcase/new_briefcase = new(H)
-	for(var/obj/item/briefcase_item in new_briefcase)
+	new_briefcase.latent_materialize_all() // a walk needs real things (C5)
+	for(var/obj/item/briefcase_item in new_briefcase) // latent-ok: materialized above
 		qdel(briefcase_item)
 	new /obj/item/gun/projectile/pistol/toy(new_briefcase)
 	new /obj/item/ammo_magazine/mfoam_dart/pistol(new_briefcase)
