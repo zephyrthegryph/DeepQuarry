@@ -115,7 +115,7 @@
 		return
 	// Moving off a burning tile ends the fire coupling.
 	var/atom/movable/self = src
-	if(istype(self) && !isnull(self.heat_fire_turf()) && self.heat_fire_turf() != loc)
+	if(istype(self) && !isnull(om_resolve(self.heat_fire_turf_handle)) && om_resolve(self.heat_fire_turf_handle) != loc)
 		self.decouple_from_fire()
 
 /// Releases this atom's heat body: its excess heat goes to its surroundings.

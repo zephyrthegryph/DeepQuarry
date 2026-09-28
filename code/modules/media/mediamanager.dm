@@ -129,6 +129,7 @@
 	media_window?.close()
 	return ..()
 
+// LIFECYCLE: drops its owner and last target.
 /datum/media_manager/Destroy()
 	owner_handle = null
 	return ..()

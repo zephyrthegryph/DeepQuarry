@@ -521,7 +521,7 @@ SUBSYSTEM_DEF(expedition)
 	site.landing_handle = om_handle(get_turf(station_materialization.entry()))
 	if(!site.landing() || site.landing().density)
 		site.landing_handle = om_handle(site.floors[1])
-		qdel(station_materialization.entry()); station_materialization.entry_handle = null
+		qdel_handle(station_materialization.entry_handle); station_materialization.entry_handle = null
 		station_materialization.entry_handle = om_handle(new /obj/effect/landmark/generated_station_entry(site.landing()))
 		station_materialization.entry().station_id = station_spec.id
 		station_materialization.degradation_events += "planned docking entry was unusable; moved arrival to the first walkable floor"
@@ -640,7 +640,7 @@ SUBSYSTEM_DEF(expedition)
 	if(site.assigned_flight_vessel()?.active_expedition() == site)
 		site.assigned_flight_vessel().active_expedition_handle = null
 	QDEL_NULL(site.landing_waypoint)
-	qdel(site.overmap_sector()); site.overmap_sector_handle = null
+	qdel_handle(site.overmap_sector_handle); site.overmap_sector_handle = null
 	teardown_z["[z]"] = TRUE
 	var/datum/expedition_teardown_job/job = new(src, site, reason)
 	job.execute()

@@ -195,7 +195,7 @@ REF_OWNED(/datum/generated_room_fragment_placement, "fragment")
 
 // LIFECYCLE: its areas revert to space and its built atoms go with it.
 /datum/generated_station_materialization/Destroy()
-	qdel(entry()); entry_handle = null
+	qdel_handle(entry_handle); entry_handle = null
 	var/area/space/space_area = generated_station_space_area()
 	if(department_areas)
 		for(var/node_id in department_areas)
@@ -217,12 +217,12 @@ REF_OWNED(/datum/generated_room_fragment_placement, "fragment")
 		var/list/owned_transit_turfs = transit_area().contents.Copy()
 		for(var/turf/T in owned_transit_turfs)
 			ChangeArea(T, space_area)
-	qdel(transit_area()); transit_area_handle = null
+	qdel_handle(transit_area_handle); transit_area_handle = null
 	if(maintenance_area())
 		var/list/owned_maintenance_turfs = maintenance_area().contents.Copy()
 		for(var/turf/T in owned_maintenance_turfs)
 			ChangeArea(T, space_area)
-	qdel(maintenance_area()); maintenance_area_handle = null
+	qdel_handle(maintenance_area_handle); maintenance_area_handle = null
 	QDEL_LIST(modules)
 	QDEL_LIST(room_solutions)
 	QDEL_LIST(control_landmarks)

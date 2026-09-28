@@ -226,7 +226,7 @@
 			else
 				QDEL_LIST_NULL(positive_locations)
 				positive_locations = list()
-				qdel(current()); current_handle = null
+				qdel_handle(current_handle); current_handle = null
 			return TRUE
 
 /obj/item/beacon_locator

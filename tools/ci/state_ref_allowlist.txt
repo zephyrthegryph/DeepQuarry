@@ -26,10 +26,7 @@
 /obj/item/card/id/syndicate/registered_user # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/card/id/synthetic/borg/robot_owner # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/clothing/IC # baseline when CI was wired (2026-09-26); convert or give a real reason
-/obj/item/clothing/accessory/gaiter/breathmask # baseline when CI was wired (2026-09-26); convert or give a real reason
-/obj/item/clothing/accessory/has_suit # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/clothing/accessory/holster/holstered # baseline when CI was wired (2026-09-26); convert or give a real reason
-/obj/item/clothing/accessory/locket/held # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/clothing/accessory/mob_overlay # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/clothing/accessory/storage/hold # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/clothing/action_circuit # baseline when CI was wired (2026-09-26); convert or give a real reason
@@ -39,16 +36,11 @@
 /obj/item/clothing/gloves/special_attack # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/clothing/head/helmet/space/camera # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/clothing/head/helmet_light # baseline when CI was wired (2026-09-26); convert or give a real reason
-/obj/item/clothing/mask/gas/sechailer/hailer # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/clothing/mask/gas/voice/changer # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/clothing/mask/smokable/ecig/ec_cartridge # baseline when CI was wired (2026-09-26); convert or give a real reason
-/obj/item/clothing/mask/synthfacemask/maskmaster # baseline when CI was wired (2026-09-26); convert or give a real reason
-/obj/item/clothing/master_rig # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/clothing/shoes/holding # baseline when CI was wired (2026-09-26); convert or give a real reason
-/obj/item/clothing/shoes/orange/chained # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/clothing/shoes/shoes # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/clothing/suit/hood # baseline when CI was wired (2026-09-26); convert or give a real reason
-/obj/item/clothing/suit/space/rig/tacknife # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/clothing/suit/space/void/boots # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/clothing/suit/space/void/cooler # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/clothing/suit/space/void/tank # baseline when CI was wired (2026-09-26); convert or give a real reason
@@ -61,8 +53,6 @@
 /obj/item/radio/headset/event/wearer # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/radio/headset/keyslot1 # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/radio/headset/keyslot2 # baseline when CI was wired (2026-09-26); convert or give a real reason
-/obj/item/radio/integrated/active # baseline when CI was wired (2026-09-26); convert or give a real reason
-/obj/item/radio/integrated/hostpda # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/radio/radio_connection # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/radio/secure_radio_connections # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/stack/material/processed_alloy/batch_state # baseline when CI was wired (2026-09-26); convert or give a real reason

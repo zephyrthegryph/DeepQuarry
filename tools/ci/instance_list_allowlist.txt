@@ -298,7 +298,7 @@
 /obj/item/nif/starting_software # d: replaced per instance at runtime (1 assignments)
 /obj/item/ore_bag/stored_ore # d: edited in place per instance (14 writers)
 /obj/item/ore_chunk/stored_ore # d: edited in place per instance (11 writers)
-/obj/item/pack//cards # d: a card pack always holds cards
+/obj/item/pack/cards # d: a card pack always holds cards
 /obj/item/paper/offset_x # d: stamp and photo offsets indexed in step with ico
 /obj/item/paper/offset_y # d: stamp and photo offsets indexed in step with ico
 /obj/item/paper_bundle/pages # d: a bundle holds pages

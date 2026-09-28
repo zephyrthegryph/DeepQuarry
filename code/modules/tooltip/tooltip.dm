@@ -54,6 +54,7 @@
 	tooltip_window?.close()
 	return ..()
 
+// LIFECYCLE: drops its owner and last target.
 /datum/tooltip/Destroy(force)
 	last_target_handle = null
 	owner_handle = null
