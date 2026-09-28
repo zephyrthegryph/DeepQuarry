@@ -15,9 +15,9 @@
 /mob/living/on_destroy(force)
 	life_leave_z()
 	clear_body_effects(TRUE)
-	// The character's DNA outlives this body when the identity references it.
-	if(dna && identity()?.dna() == dna)
-		dna = null
+	// The owned dna is deleted with the body (phase 4). The identity names it by
+	// handle, which can't keep it alive: nulling `dna` here only let BYOND free it
+	// without qdel(), so the identity's handle then reported a collected target.
 	for(var/datum/soul_link/S as anything in owned_soul_links?.Copy())
 		S.owner_died(FALSE)
 		qdel(S) // If the owner is destroy()'d, the soullink is destroy()'d.

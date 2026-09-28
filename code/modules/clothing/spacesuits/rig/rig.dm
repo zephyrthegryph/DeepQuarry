@@ -142,7 +142,7 @@ REF_OWNED(/obj/item/rig, list("power_system", "spark_system", "boots", "chest", 
 
 // the suit pieces are torn down by its (owned) component registry.
 /obj/item/rig/on_destroy(force)
-	component_registry?.destroy_pieces()
+	component_registry?.destroy_pieces(src)
 	..()
 
 /obj/item/rig/MouseDrop(obj/over_object)
