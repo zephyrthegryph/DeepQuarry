@@ -224,21 +224,28 @@
 
 	ChangeTurf(/turf/simulated/floor/plating)
 
+/// Explosion adapter: the wall is a sink of the blast packet (damage.md §5).
 /turf/simulated/wall/ex_act(severity)
-	switch(severity)
-		if(1.0)
+	receive_explosion(severity)
+
+/// Walls take blast on their own ladder, not a fraction of max integrity, so a
+/// heavy blast still breaches ordinary walls. The epicentre obliterates
+/// outright; a strong girder may survive it.
+/turf/simulated/wall/receive_explosion(severity)
+	switch(round(severity))
+		if(1)
 			if(girder_material.explosion_resistance >= 25 && prob(girder_material.explosion_resistance))
 				new /obj/structure/girder/displaced(src, girder_material.name)
-			src.ChangeTurf(get_base_turf_by_area(src))
-		if(2.0)
-			if(prob(75))
-				take_damage(rand(150, 250))
-			else
-				dismantle_wall(1,1)
-		if(3.0)
-			take_damage(rand(0, 250))
-		else
-			return
+			ChangeTurf(get_base_turf_by_area(src))
+			return max_integrity
+		if(2)
+			if(prob(25))
+				dismantle_wall(1, 1)
+				return max_integrity
+			return deal_damage(DAMAGE_BLAST, rand(150, 250), flags = DAMAGE_PACKET_SILENT)
+		if(3)
+			return deal_damage(DAMAGE_BLAST, rand(0, 250), flags = DAMAGE_PACKET_SILENT)
+	return 0
 
 // Wall-rot effect, a nasty fungus that destroys walls.
 /turf/simulated/wall/proc/rot()
