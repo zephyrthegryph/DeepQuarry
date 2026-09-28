@@ -313,3 +313,5 @@ REF_OWNED(/datum/stock, "industry")
 /// LC-refs: the stock this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/borrow/proc/stock() as /datum/stock
 	return om_resolve(stock_handle)
+
+REF_OWNED_LIST(/datum/stock, "events")

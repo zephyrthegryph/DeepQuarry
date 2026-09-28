@@ -385,3 +385,5 @@ REF_OWNED(/datum/expedition_site, "station_defense")
 /// LC-refs: the director this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/generated_station_defense_runtime/proc/director() as /datum/generated_station_director
 	return om_resolve(director_handle)
+
+

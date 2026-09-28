@@ -194,3 +194,5 @@ REF_OWNED(/datum/n_Parser, list("blocks", "global_block"))
 /// LC-refs: the options this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/n_Parser/nS_Parser/proc/options() as /datum/n_scriptOptions/nS_Options
 	return om_resolve(options_handle)
+
+REF_OWNED_LIST(/datum/n_Parser, "errors")

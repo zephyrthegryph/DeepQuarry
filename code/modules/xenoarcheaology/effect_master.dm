@@ -484,3 +484,5 @@
 /// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/component/artifact_master/proc/holder() as /atom
 	return om_resolve(holder_handle)
+
+REF_OWNED_LIST(/datum/component/artifact_master, "my_effects")

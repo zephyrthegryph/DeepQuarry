@@ -339,3 +339,5 @@
 	return visibility
 
 REF_OWNED(/datum/tgs_api/v5, list("revision", "interop_version", "http_handler"))
+
+REF_OWNED_LIST(/datum/tgs_api/v5, list("test_merges", "chat_channels"))

@@ -322,3 +322,5 @@
 	return security_level
 
 REF_OWNED(/datum/tgs_api/v4, "cached_revision")
+
+REF_OWNED_LIST(/datum/tgs_api/v4, "cached_test_merges")

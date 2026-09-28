@@ -510,3 +510,5 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 	if(user.handle_eat_minerals(src))
 		return ITEM_INTERACT_SUCCESS
 	..()
+
+REF_OWNED_LIST(/datum/material, "recipes")

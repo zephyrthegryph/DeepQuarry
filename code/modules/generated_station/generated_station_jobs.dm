@@ -154,3 +154,5 @@
 /// LC-refs: the materialization this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/generated_station_materialization_job/proc/materialization() as /datum/generated_station_materialization
 	return om_resolve(materialization_handle)
+
+

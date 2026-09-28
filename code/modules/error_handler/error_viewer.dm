@@ -185,3 +185,5 @@ REF_OWNED(/datum/error_viewer/error_entry, "exc")
 /// LC-refs: the error_source this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/error_viewer/error_entry/proc/error_source() as /datum/error_viewer/error_source
 	return om_resolve(error_source_handle)
+
+REF_OWNED_LIST(/datum/error_viewer/error_source, "errors")

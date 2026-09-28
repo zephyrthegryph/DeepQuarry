@@ -131,3 +131,5 @@
 
 GLOBAL_DATUM_INIT(stockExchange, /datum/stockMarket, new)
 // plotBarGraph deleted; StockChart TGUI panel renders typed values directly.
+
+REF_OWNED_LIST(/datum/stockMarket, "stocks")

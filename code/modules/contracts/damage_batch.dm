@@ -139,3 +139,5 @@
 		var/datum/contract_opportunity_rule/rule = opportunity_rules?[rule_id]
 		if(rule)
 			evaluate_opportunity_window(rule, window, window_key, event)
+
+REF_OWNED_VALUES(/datum/controller/subsystem/contracts, "pending_damage_reports")

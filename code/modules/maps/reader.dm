@@ -1110,3 +1110,5 @@ GLOBAL_LIST_EMPTY(map_model_default)
 #undef MAP_TGM
 #undef MAP_UNKNOWN
 #undef MAPLOADING_CHECK_TICK
+
+REF_OWNED_LIST(/datum/parsed_map, "gridSets")

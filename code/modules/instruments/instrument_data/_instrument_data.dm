@@ -112,3 +112,5 @@
 		samples[num2text(key)] = new /datum/instrument_key(first_sample, key, key - first_key)
 	for(var/key in last_key to HIGHEST_KEY)
 		samples[num2text(key)] = new /datum/instrument_key(last_sample, key, key - last_key)
+
+REF_OWNED_VALUES(/datum/instrument, "samples")

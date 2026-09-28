@@ -365,3 +365,5 @@ GLOBAL_LIST_EMPTY(magazine_icondata_states)
 	. = ..()
 
 	. += span_notice("Alt-click to extract contents.")
+
+REF_OWNED_LIST(/obj/item/ammo_magazine, "stored_ammo")

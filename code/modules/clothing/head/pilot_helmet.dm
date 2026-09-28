@@ -255,3 +255,7 @@ REF_OWNED(/obj/item/clothing/head/pilot, "pilot_hud")
 /// LC-refs: the shuttle_comp this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/clothing/head/pilot/proc/shuttle_comp() as /obj/machinery/computer/shuttle_control/web
 	return om_resolve(shuttle_comp_handle)
+
+REF_OWNED_LIST(/obj/item/clothing/head/pilot, "raw_images")
+
+REF_OWNED_VALUES(/obj/item/clothing/head/pilot, "images")
