@@ -437,11 +437,16 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 /// Machines take the AI's Use as a hand's (silicon_use), but a cyborg looking
-/// through a camera can't remotely control them.
-/obj/machinery/attack_ai(mob/user as mob)
-	if(isrobot(user) && (!user.client || user.is_remote_viewing()))
-		return
-	return ..()
+/// through a camera can't remotely control them (old /obj/machinery/attack_ai). Offered
+/// only while that holds, so it doesn't compete with a machine's own silicon interactions.
+/// machinery_maintenance.dm declares the machine's other interactions.
+EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", PROC_REF(machinery_robot_remote_block), REQ_TARGET_STATE(/obj/machinery/proc/machinery_robot_remote_locked)))
+
+/obj/machinery/proc/machinery_robot_remote_locked(mob/actor, atom/target, obj/item/held)
+	return isrobot(actor) && (!actor.client || actor.is_remote_viewing())
+
+/obj/machinery/proc/machinery_robot_remote_block(mob/user, obj/item/held, datum/interaction/interaction)
+	return TRUE
 
 /// The checks every machine's hand interactions pass behind (see machine_use_blocker() for the Menu's version).
 /obj/machinery/hand_gate(mob/user as mob)

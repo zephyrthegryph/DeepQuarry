@@ -126,14 +126,17 @@
 /obj/machinery/portable_atmospherics/powered/pump/return_air()
 	return air_contents
 
-/obj/machinery/portable_atmospherics/powered/pump/attack_ghost(mob/user)
-	return src.attack_hand(user)
-
 /obj/machinery/portable_atmospherics/powered/pump/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/machine_hand/ungated/open_ui,
 	)
+	into += dq_interaction_from_spec(type, INTERACT_OBSERVER("View", PROC_REF(pump_observer)))
 	..()
+
+/// Old attack_ghost: a ghost uses it as a hand would.
+/obj/machinery/portable_atmospherics/powered/pump/proc/pump_observer(mob/user, obj/item/held, datum/interaction/interaction)
+	attack_hand(user)
+	return TRUE
 
 /obj/machinery/portable_atmospherics/powered/pump/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

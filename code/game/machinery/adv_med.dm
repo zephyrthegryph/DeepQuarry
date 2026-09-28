@@ -317,6 +317,7 @@ REF_PAIR(/obj/machinery/body_scanconsole, list("scanner" = "console"))
 EXTEND_INTERACTIONS(/obj/machinery/body_scanconsole, \
 	INTERACT_ITEM(null, PROC_REF(body_scanconsole_interaction_item)), \
 	INTERACT_HAND_UNGATED(null, PROC_REF(body_scanconsole_interaction_hand)), \
+	INTERACT_OBSERVER("View", PROC_REF(body_scanconsole_observer)), \
 )
 
 /// Old attackby: any item just opens the console.
@@ -344,8 +345,10 @@ EXTEND_INTERACTIONS(/obj/machinery/body_scanconsole, \
 /obj/machinery/body_scanconsole/proc/findscanner()
 	om_after(src, 5, PROC_REF(findscanner_now))
 
-/obj/machinery/body_scanconsole/attack_ghost(user as mob)
-	return body_scanconsole_interaction_hand(user)
+/// Old attack_ghost: a ghost gets the hand's view (and no examine).
+/obj/machinery/body_scanconsole/proc/body_scanconsole_observer(mob/user, obj/item/held, datum/interaction/interaction)
+	body_scanconsole_interaction_hand(user)
+	return TRUE
 
 /// Old attack_hand (it never reached the machinery gate).
 /obj/machinery/body_scanconsole/proc/body_scanconsole_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)

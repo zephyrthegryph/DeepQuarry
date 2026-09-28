@@ -52,11 +52,13 @@
 	return ITEM_INTERACT_SUCCESS
 
 //Let the AI trigger them directly.
-/obj/machinery/flasher/attack_ai()
+EXTEND_INTERACTIONS(/obj/machinery/flasher, INTERACT_SILICON("Flash", PROC_REF(flasher_silicon_trigger)))
+
+/// Old attack_ai: the AI triggers it directly while it is anchored.
+/obj/machinery/flasher/proc/flasher_silicon_trigger(mob/user, obj/item/held, datum/interaction/interaction)
 	if(anchored)
-		return flash()
-	else
-		return
+		flash()
+	return TRUE
 
 /obj/machinery/flasher/proc/flash()
 	if(!(powered()))

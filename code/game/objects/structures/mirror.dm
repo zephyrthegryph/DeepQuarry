@@ -28,6 +28,7 @@ REF_OWNED(/obj/structure/mirror, "M")
 		/datum/interaction/entry_hand/mirror_open_ui,
 		/datum/interaction/entry_item/mirror_item,
 	)
+	into += dq_interaction_from_spec(type, INTERACT_SILICON("Use", PROC_REF(mirror_silicon_use)))
 	..()
 
 /// Old attack_hand: open the appearance changer.
@@ -43,12 +44,14 @@ REF_OWNED(/obj/structure/mirror, "M")
 	M.tgui_interact(user)
 	return TRUE
 
-/obj/structure/mirror/attack_ai(mob/user)
-	if(!glass) return
-	if(shattered)	return
-	if(!Adjacent(user)) return
+/// Old attack_ai: a silicon next to it opens the appearance changer.
+/obj/structure/mirror/proc/mirror_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!glass) return TRUE
+	if(shattered)	return TRUE
+	if(!Adjacent(user)) return TRUE
 
 	M.tgui_interact(user)
+	return TRUE
 
 /obj/structure/mirror/proc/shatter()
 	if(!glass) return

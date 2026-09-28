@@ -31,15 +31,12 @@
 REF_PAIR(/obj/machinery/computer/operating, list("table" = "computer"))
 REF_PAIR(/obj/machinery/optable, list("computer" = "table"))
 
-/obj/machinery/computer/operating/attack_ai(mob/user)
-	add_fingerprint(user)
-	if(stat & (BROKEN|NOPOWER))
-		return
-	tgui_interact(user)
+EXTEND_INTERACTIONS(/obj/machinery/computer/operating, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(operating_console_interaction_hand)), \
+	INTERACT_SILICON("Use", PROC_REF(operating_console_interaction_hand)), \
+)
 
-EXTEND_INTERACTIONS(/obj/machinery/computer/operating, INTERACT_HAND_UNGATED(null, PROC_REF(operating_console_interaction_hand)))
-
-/// Old attack_hand (it never reached the machinery gate).
+/// Old attack_hand (it never reached the machinery gate), and old attack_ai (the same body).
 /obj/machinery/computer/operating/proc/operating_console_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	if(stat & (BROKEN|NOPOWER))

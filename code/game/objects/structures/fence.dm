@@ -155,6 +155,7 @@
 //FENCE DOORS
 
 /obj/structure/fence/door
+	silicon_use = ROBOT_USE_HAND_ADJACENT // cyborgs open it from next to it; the AI can't
 	name = "fence door"
 	desc = "Not very useful without a real lock."
 	icon_state = "door_closed"
@@ -246,13 +247,6 @@
 /obj/structure/fence/door/proc/attackby_timed_done(mob/user)
 	to_chat(user, span_notice("Success!"))
 	locked = FALSE
-
-/obj/structure/fence/door/attack_ai(mob/user as mob)
-	if(isAI(user)) //so the AI can't open it
-		return
-	else if(isrobot(user)) //but cyborgs can
-		if(get_dist(user,src) <= 1) //not remotely though
-			return attack_hand(user)
 
 /obj/structure/fence/door/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag

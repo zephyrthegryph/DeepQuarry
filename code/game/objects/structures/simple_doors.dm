@@ -69,18 +69,20 @@
 		return TryToSwitchState(user)
 	return
 
-/obj/structure/simple_door/attack_ai(mob/user as mob) //those aren't machinery, they're just big fucking slabs of a mineral
+/// Old attack_ai: those aren't machinery, they're just big slabs of a mineral. Cyborgs next to it open it; the AI can't.
+/obj/structure/simple_door/proc/simple_door_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(isAI(user)) //so the AI can't open it
-		return
-	else if(isrobot(user)) //but cyborgs can
-		if(get_dist(user,src) <= 1) //not remotely though
-			return TryToSwitchState(user)
+		return TRUE
+	if(isrobot(user) && get_dist(user,src) <= 1) //but cyborgs can, not remotely though
+		TryToSwitchState(user)
+	return TRUE
 
 /obj/structure/simple_door/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/entry_hand/simple_door_hand,
 		/datum/interaction/entry_item/simple_door_item,
 	)
+	into += dq_interaction_from_spec(type, INTERACT_SILICON("Open", PROC_REF(simple_door_silicon_use)))
 	..()
 
 /// Old attack_hand: open/close the door.
@@ -366,6 +368,7 @@
 		/datum/interaction/entry_hand/simple_door_resin_tear,
 		/datum/interaction/entry_hand/simple_door_resin_hand,
 	)
+	into += dq_interaction_from_spec(type, INTERACT_SILICON("Open", PROC_REF(simple_door_silicon_use))) // doesn't chain to the base door's
 
 /// Old attack_hand: a Hulk destroys it, a xenomorph melts through it, or it opens as usual.
 /datum/interaction/entry_hand/simple_door_resin_hand

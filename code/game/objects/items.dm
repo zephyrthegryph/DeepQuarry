@@ -333,6 +333,9 @@
 	)
 	for(var/spec in default_specs)
 		into += dq_interaction_from_spec(/obj/item, spec)
+	// Old /obj/item/attack_ai. Offered only on a module's items, so it never competes with an item's own.
+	var/static/list/module_spec = INTERACT_SILICON("Equip", PROC_REF(item_silicon_equip_module), REQ_TARGET_STATE(/obj/item/proc/item_in_robot_module))
+	into += dq_interaction_from_spec(/obj/item, module_spec)
 
 /// A pickup-mode storage bag used on the item collects it (or its whole tile).
 /obj/item/proc/interaction_collected(mob/user, obj/item/storage/bag, datum/interaction/interaction)
@@ -393,14 +396,19 @@
 	// EDIT END.
 	return
 
-/obj/item/attack_ai(mob/user as mob)
-	if (istype(src.loc, /obj/item/robot_module))
-		//If the item is part of a cyborg module, equip it
-		if(!isrobot(user))
-			return
-		var/mob/living/silicon/robot/R = user
-		R.activate_module(src)
-		R.hud_used.update_robot_modules_display()
+/obj/item/proc/item_in_robot_module(mob/actor, atom/target, obj/item/held)
+	return istype(loc, /obj/item/robot_module)
+
+/// Old attack_ai: a cyborg clicking an item of its module equips it.
+/obj/item/proc/item_silicon_equip_module(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!istype(src.loc, /obj/item/robot_module))
+		return FALSE
+	if(!isrobot(user))
+		return TRUE
+	var/mob/living/silicon/robot/R = user
+	R.activate_module(src)
+	R.hud_used.update_robot_modules_display()
+	return TRUE
 
 /obj/item/proc/talk_into(mob/M as mob, text)
 	return

@@ -19,18 +19,21 @@
 	idle_power_usage = 2
 	active_power_usage = 4
 
-/obj/machinery/button/remote/attack_ai(mob/user as mob)
-	if(wires_num & 2)
-		return attack_hand(user)
-	else
-		to_chat(user, "Error, no route to host.")
-
 /obj/machinery/button/remote/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/machine_hand/remote_toggle,
 		/datum/interaction/machine_item/remote_toggle_item,
 	)
+	into += dq_interaction_from_spec(type, INTERACT_SILICON("Toggle", PROC_REF(remote_silicon_use)))
 	..()
+
+/// Old attack_ai: silicons press it as a hand would, when its network wire is intact.
+/obj/machinery/button/remote/proc/remote_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
+	if(wires_num & 2)
+		attack_hand(user)
+	else
+		to_chat(user, "Error, no route to host.")
+	return TRUE
 
 /// The old attack_hand, gated (it called ..()).
 /datum/interaction/machine_hand/remote_toggle

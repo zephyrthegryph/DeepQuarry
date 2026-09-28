@@ -189,11 +189,16 @@ DECLARE_INTERACTIONS(/obj/item/geiger, \
 		if(PERCEIVED_RADIATION_DANGER_EXTREME)
 			icon_state = "geiger_level_5"
 
-/obj/item/geiger/wall/attack_ai(mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/geiger/wall, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
+	INTERACT_SILICON("Toggle", PROC_REF(geiger_wall_silicon_use)), \
+)
+
+/// Old attack_ai: toggle it remotely.
+/obj/item/geiger/wall/proc/geiger_wall_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
 	src.add_fingerprint(user)
 	om_after(src, 0, PROC_REF(attack_self), user)
-
-EXTEND_INTERACTIONS(/obj/item/geiger/wall, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+	return TRUE
 
 /// Old attack_hand.
 /obj/item/geiger/wall/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)

@@ -61,32 +61,34 @@ REF_OWNED(/obj/item/paicard, list("radio", "multitool", "signaler"))
 		pai.death(0)
 	return ..()
 
-/obj/item/paicard/attack_ghost(mob/user)
+/// Old attack_ghost: a ghost loads itself into an empty card. An occupied card falls to the ghost's default.
+/obj/item/paicard/proc/paicard_observer_inhabit(mob/user, obj/item/held, datum/interaction/interaction)
 	if(pai) //Have a person in them already?
-		return ..()
+		return FALSE
 	if(is_damage_critical())
 		to_chat(user, span_warning("That card is too damaged to activate!"))
-		return
+		return TRUE
 	var/time_till_respawn = user.time_till_respawn()
 	if(time_till_respawn == -1) // Special case, never allowed to respawn
 		to_chat(user, span_warning("Respawning is not allowed!"))
 	else if(time_till_respawn) // Nonzero time to respawn
 		to_chat(user, span_warning("You can't do that yet! You died too recently. You need to wait another [round(time_till_respawn/10/60, 0.1)] minutes."))
-		return
+		return TRUE
 	if(jobban_isbanned(user, JOB_PAI))
 		to_chat(user,span_warning("You cannot join a pAI card when you are banned from playing as a pAI."))
-		return
+		return TRUE
 
 	if(SSpai.check_is_already_pai(user.ckey))
 		to_chat(user, span_warning("You can't just rejoin any old pAI card!!! Your card still exists."))
-		return
+		return TRUE
 
 	var/pai_name = user.client?.prefs.read_preference(/datum/preference/text/pai_name)
 	if(!pai_name || pai_name == PAI_UNSET)
 		to_chat(user, span_danger("You have no pai name set."))
-		return
+		return TRUE
 
 	om_prompt(src, user, list("message" = "Do you want to inhabit this pAI using \"[pai_name]\"?", "title" = "Load pAI", "choices" = list("Load pAI Data", "Cancel"), "requires" = list(/datum/om/check/has_client)), PROC_REF(inhabit_confirmed))
+	return TRUE
 
 /obj/item/paicard/proc/inhabit_confirmed(mob/user, choice, datum/om/prompt/ask)
 	if(choice == "Load pAI Data" && !pai)
@@ -624,6 +626,7 @@ REF_OWNED(/obj/item/paicard, list("radio", "multitool", "signaler"))
 DECLARE_INTERACTIONS(/obj/item/paicard, \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_OBSERVER("Inhabit", PROC_REF(paicard_observer_inhabit)), \
 )
 
 /// `held` is unused by paicard's own dispatch (always null through the resolver) - repurposed

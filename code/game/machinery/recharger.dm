@@ -128,6 +128,7 @@ REF_SPILL(/obj/machinery/recharger, "charging")
 		/datum/interaction/machine_hand/ungated/recharger_take,
 		/datum/interaction/machine_drag/recharger_insert,
 	)
+	into += dq_interaction_from_spec(type, INTERACT_SILICON("Take", PROC_REF(recharger_silicon_take)))
 	..()
 
 /// Put a chargeable device in the recharger.
@@ -209,7 +210,8 @@ REF_SPILL(/obj/machinery/recharger, "charging")
 		update_icon()
 	return TRUE
 
-/obj/machinery/recharger/attack_ai(mob/user)
+/// Old attack_ai: a cyborg next to it takes out what's charging. Nothing for the AI.
+/obj/machinery/recharger/proc/recharger_silicon_take(mob/user, obj/item/held, datum/interaction/interaction)
 	if(isrobot(user) && Adjacent(user)) // Borgs can remove the cell if they are near enough
 		if(charging)
 			user.visible_message("[user] removes [charging] from [src].", "You remove [charging] from [src].")
@@ -218,6 +220,7 @@ REF_SPILL(/obj/machinery/recharger, "charging")
 			set_charging(null)
 			om_changed(src, CHANGE_MACHINE_OCCUPANT)
 			update_icon()
+	return TRUE
 
 /// One frame of charging (the machine pipeline's power/recharger stage decides whether to).
 /obj/machinery/recharger/proc/charge_step()

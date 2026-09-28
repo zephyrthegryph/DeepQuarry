@@ -38,9 +38,13 @@ REGISTRY_MEMBERSHIP(/obj/effect/simple_portal, REGISTRY_SIMPLE_PORTALS)
 			playsound(get_turf(src),teleport_sound,60,1)
 			playsound(get_turf(destination),teleport_sound,60,1)
 
-/obj/effect/simple_portal/attack_ghost(mob/observer/dead/user)
-	. = ..()
+EXTEND_INTERACTIONS(/obj/effect/simple_portal, INTERACT_OBSERVER("Enter", PROC_REF(simple_portal_observer_use)))
+
+/// Old attack_ghost: the ghost's default (examine), then through the portal.
+/obj/effect/simple_portal/proc/simple_portal_observer_use(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
+	INPUT_ADAPTER(ghost).use_default(user, src)
 	handle_teleport(user)
+	return TRUE
 
 /obj/effect/simple_portal/coords
 	var/tele_x

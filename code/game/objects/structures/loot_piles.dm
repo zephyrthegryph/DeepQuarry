@@ -13,6 +13,7 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 */
 
 /obj/structure/loot_pile
+	silicon_use = ROBOT_USE_HAND_ADJACENT
 	name = "base loot pile"
 	desc = "If you can read me, this is bugged"
 	description_info = "This can be searched by clicking on it and waiting a few seconds.  You might find valuable treasures or worthless junk. \
@@ -26,10 +27,6 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 
 	var/list/searchedby = list()	// Keys that have searched this loot pile, with values of searched time.
 	var/loot_element_path = null
-
-/obj/structure/loot_pile/attack_ai(mob/user)
-	if(isrobot(user) && Adjacent(user))
-		return attack_hand(user)
 
 /obj/structure/loot_pile/declare_interactions(list/into)
 	into += list(

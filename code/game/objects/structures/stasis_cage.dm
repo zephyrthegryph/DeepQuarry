@@ -19,6 +19,7 @@
 	into += list(
 		/datum/interaction/entry_hand/stasis_cage_release,
 	)
+	into += dq_interaction_from_spec(type, INTERACT_ROBOT("Release", PROC_REF(stasis_cage_robot_release)))
 	..()
 
 /// Old attack_hand: release the contained animal.
@@ -31,9 +32,11 @@
 	release()
 	return TRUE
 
-/obj/structure/stasis_cage/attack_robot(mob/user)
+/// Old attack_robot: a cyborg next to it releases the animal.
+/obj/structure/stasis_cage/proc/stasis_cage_robot_release(mob/user, obj/item/held, datum/interaction/interaction)
 	if(Adjacent(user))
 		release()
+	return TRUE
 
 /obj/structure/stasis_cage/proc/contain(mob/living/simple_mob/animal)
 	if(contained || !istype(animal))

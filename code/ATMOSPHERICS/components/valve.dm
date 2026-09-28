@@ -1,4 +1,6 @@
 /obj/machinery/atmospherics/valve
+	// A manual valve: the AI can't turn it (digital and shutoff valves set SILICON_USE_HAND).
+	silicon_use = NONE
 	icon = 'icons/atmos/valve.dmi'
 	icon_state = "map_valve0"
 	construction_type = /obj/item/pipe/binary
@@ -75,9 +77,6 @@
 		set_dir(1)
 	else if(dir==12)
 		set_dir(4)
-
-/obj/machinery/atmospherics/valve/attack_ai(mob/user as mob)
-	return
 
 /obj/machinery/atmospherics/valve/declare_interactions(list/into)
 	into += list(
@@ -172,6 +171,7 @@
 	return null
 
 /obj/machinery/atmospherics/valve/digital		// can be controlled by AI
+	silicon_use = SILICON_USE_HAND
 	name = "digital valve"
 	desc = "A digitally controlled valve."
 	icon = 'icons/atmos/digital_valve.dmi'
@@ -180,9 +180,6 @@
 	var/frequency = ZERO_FREQ
 	var/id = null
 	var/datum/radio_frequency/radio_connection
-
-/obj/machinery/atmospherics/valve/digital/attack_ai(mob/user as mob)
-	return src.attack_hand(user)
 
 /obj/machinery/atmospherics/valve/digital/declare_interactions(list/into)
 	into += list(

@@ -1,4 +1,6 @@
 /obj/machinery/atmospherics/tvalve
+	// A manual valve: the AI can't turn it (digital valves set SILICON_USE_HAND).
+	silicon_use = NONE
 	icon = 'icons/atmos/tvalve.dmi'
 	icon_state = "map_tvalve0"
 	construction_type = /obj/item/pipe/trinary/flippable
@@ -75,9 +77,6 @@
 	rust_rewire_internal_ports(old_edges, rust_pipe_internal_edges())
 
 	return 1
-
-/obj/machinery/atmospherics/tvalve/attack_ai(mob/user as mob)
-	return
 
 /obj/machinery/atmospherics/tvalve/declare_interactions(list/into)
 	into += list(
@@ -169,6 +168,7 @@
 	return null
 
 /obj/machinery/atmospherics/tvalve/digital		// can be controlled by AI
+	silicon_use = SILICON_USE_HAND
 	name = "digital switching valve"
 	desc = "A digitally controlled valve."
 	icon = 'icons/atmos/digital_tvalve.dmi'
@@ -192,9 +192,6 @@
 	..()
 	if(!powered())
 		icon_state = "tvalve[mirrored ? "m" : ""]nopower"
-
-/obj/machinery/atmospherics/tvalve/digital/attack_ai(mob/user as mob)
-	return src.attack_hand(user)
 
 /obj/machinery/atmospherics/tvalve/digital/declare_interactions(list/into)
 	into += list(

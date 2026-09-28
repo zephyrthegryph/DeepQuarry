@@ -153,18 +153,20 @@ DECLARE_INTERACTIONS(/obj/item/inflatable, INTERACT_SELF("Inflate", PROC_REF(inf
 	var/state = 0 //closed, 1 == open
 	var/isSwitchingStates = 0
 
-/obj/structure/inflatable/door/attack_ai(mob/user as mob) //those aren't machinery, they're just big fucking slabs of a mineral
+/// Old attack_ai: those aren't machinery, they're just big slabs of a mineral. Cyborgs next to it open it; the AI can't.
+/obj/structure/inflatable/door/proc/inflatable_door_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(isAI(user)) //so the AI can't open it
-		return
-	else if(isrobot(user)) //but cyborgs can
-		if(get_dist(user,src) <= 1) //not remotely though
-			return TryToSwitchState(user)
+		return TRUE
+	if(isrobot(user) && get_dist(user,src) <= 1) //but cyborgs can, not remotely though
+		TryToSwitchState(user)
+	return TRUE
 
 // The door's Use replaces (doesn't chain to) the base inflatable's fingerprint-only one.
 /obj/structure/inflatable/door/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/entry_hand/inflatable_door_hand,
 	)
+	into += dq_interaction_from_spec(type, INTERACT_SILICON("Open", PROC_REF(inflatable_door_silicon_use)))
 
 /// Old attack_hand: open/close the door.
 /datum/interaction/entry_hand/inflatable_door_hand

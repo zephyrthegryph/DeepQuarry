@@ -26,6 +26,7 @@
 		/datum/interaction/entry_item/fireaxecabinet_item,
 		/datum/interaction/entry_hand/fireaxecabinet_hand,
 	)
+	into += dq_interaction_from_spec(type, INTERACT_SILICON("Toggle lock", PROC_REF(fireaxecabinet_silicon_lock)))
 	..()
 
 /// Old attackby: unlock/lock the case, smash the glass, or take/replace the axe, depending on state and item.
@@ -187,17 +188,17 @@
 		to_chat(usr, span_notice("The [name] is closed."))
 	update_icon()
 
-/obj/structure/fireaxecabinet/attack_ai(mob/user as mob)
+/// Old attack_ai: lock or unlock it remotely.
+/obj/structure/fireaxecabinet/proc/fireaxecabinet_silicon_lock(mob/user, obj/item/held, datum/interaction/interaction)
 	if(smashed)
 		to_chat(user, span_warning("The security of the cabinet is compromised."))
-		return
+		return TRUE
+	locked = !locked
+	if(locked)
+		to_chat(user, span_warning("Cabinet locked."))
 	else
-		locked = !locked
-		if(locked)
-			to_chat(user, span_warning("Cabinet locked."))
-		else
-			to_chat(user, span_notice("Cabinet unlocked."))
-		return
+		to_chat(user, span_notice("Cabinet unlocked."))
+	return TRUE
 
 /obj/structure/fireaxecabinet/update_icon() //Template: fireaxe[has fireaxe][is opened][hits taken][is smashed]. If you want the opening or closing animations, add "opening" or "closing" right after the numbers
 	var/hasaxe = 0

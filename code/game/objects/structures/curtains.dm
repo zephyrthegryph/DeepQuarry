@@ -26,6 +26,7 @@
 		/datum/interaction/entry_hand/curtain_toggle,
 		/datum/interaction/entry_item/curtain_toggle_item,
 	)
+	into += dq_interaction_from_spec(type, INTERACT_SILICON("Toggle", PROC_REF(curtain_silicon_toggle)))
 	..()
 
 /// Old attack_hand: open/close the curtain.
@@ -39,13 +40,15 @@
 	toggle()
 	return TRUE
 
-/obj/structure/curtain/attack_ai(mob/user)
+/// Old attack_ai: a cyborg next to it opens/closes it. Nothing for the AI.
+/obj/structure/curtain/proc/curtain_silicon_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!Adjacent(user))
-		return
+		return TRUE
 	if(!isrobot((user)))
-		return
+		return TRUE
 	playsound(src, "rustle", 15, 1, -5)
 	toggle()
+	return TRUE
 
 /obj/structure/curtain/proc/toggle()
 	set_opacity(!opacity)

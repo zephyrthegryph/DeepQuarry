@@ -69,21 +69,25 @@
 	if(loud)
 		visible_message("\The [src] shuts down.")
 
-/obj/machinery/floodlight/attack_ai(mob/user as mob)
+/// Old attack_ai: a cyborg next to it uses it by hand; otherwise it's switched remotely.
+/obj/machinery/floodlight/proc/floodlight_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(isrobot(user) && Adjacent(user))
-		return attack_hand(user)
+		attack_hand(user)
+		return TRUE
 
 	if(on)
 		turn_off(1)
 	else
 		if(!turn_on(1))
 			to_chat(user, "You try to turn on \the [src] but it does not work.")
+	return TRUE
 
 /obj/machinery/floodlight/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/machine_item/floodlight_item,
 		/datum/interaction/machine_hand/ungated/floodlight_use,
 	)
+	into += dq_interaction_from_spec(type, INTERACT_SILICON("Toggle", PROC_REF(floodlight_silicon_use)))
 	..()
 
 /// Old attack_hand, which never called ..(): no gate.

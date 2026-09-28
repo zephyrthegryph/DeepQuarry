@@ -48,6 +48,7 @@ REF_OWNED(/obj/machinery/computer/teleporter, "teleport_control")
 		/datum/interaction/machine_hand/ungated/teleporter_computer_use,
 		/datum/interaction/machine_verb/teleporter_computer_set_id,
 	)
+	into += dq_interaction_from_spec(type, INTERACT_SILICON("Use", PROC_REF(teleporter_computer_silicon_use)))
 	..()
 
 /datum/interaction/machine_item/teleporter_computer_insert_card
@@ -96,8 +97,10 @@ REF_OWNED(/obj/machinery/computer/teleporter, "teleport_control")
 		add_fingerprint(user)
 	return TRUE
 
-/obj/machinery/computer/teleporter/attack_ai(mob/user)
+/// Old attack_ai: open the teleporter control UI.
+/obj/machinery/computer/teleporter/proc/teleporter_computer_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
 	teleport_control.tgui_interact(user)
+	return TRUE
 
 /datum/interaction/machine_hand/ungated/teleporter_computer_use
 	id = "teleporter_computer_use"

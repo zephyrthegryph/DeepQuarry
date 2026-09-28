@@ -29,17 +29,12 @@ REF_OWNED(/obj/machinery/computer/station_alert, "alarm_monitor")
 	. = ..()
 	alarm_monitor?.unregister_alarm(src)
 
-/obj/machinery/computer/station_alert/attack_ai(mob/user)
-	add_fingerprint(user)
-	if(stat & (BROKEN|NOPOWER))
-		return
-	tgui_interact(user)
-	return
-
 /obj/machinery/computer/station_alert/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/machine_hand/ungated/station_alert_open_ui,
 	)
+	// Old attack_ai: the same body as the hand's.
+	into += dq_interaction_from_spec(type, INTERACT_SILICON("Use", PROC_REF(interaction_open_ui_impl)))
 	..()
 
 /datum/interaction/machine_hand/ungated/station_alert_open_ui

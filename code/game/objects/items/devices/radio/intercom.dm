@@ -127,15 +127,13 @@ REF_OWNED(/obj/item/radio/intercom, "circuit")
 	. = ..()
 	internal_channels[num2text(RAID_FREQ)] = list(ACCESS_SYNDICATE)
 
-/obj/item/radio/intercom/attack_ai(mob/user as mob)
-	src.add_fingerprint(user)
-	attack_self(user)
-
 DECLARE_INTERACTIONS(/obj/item/radio/intercom, \
 	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_SILICON("Use", PROC_REF(interaction_hand)), \
 )
 
+/// Old attack_hand, and old attack_ai (the same body).
 /obj/item/radio/intercom/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	src.add_fingerprint(user)
 	attack_self(user)

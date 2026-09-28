@@ -12,23 +12,24 @@
 	var/redgate_restricted = FALSE
 
 /obj/structure/ghost_pod/ghost_activated/unified_hole/create_occupant(mob/observer/dead/user)
-	attack_ghost(user)
+	INPUT_ADAPTER(ghost).interface(user, src)
 
-//override the standard attack_ghost proc for custom messages
-/obj/structure/ghost_pod/ghost_activated/unified_hole/attack_ghost(mob/observer/dead/user)
+// Overrides the standard ghost pod observer use for custom messages.
+/obj/structure/ghost_pod/ghost_activated/unified_hole/ghost_pod_observer_use(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
 	if(jobban_isbanned(user, JOB_GHOSTROLES))
 		to_chat(user, span_warning("You cannot use this spawnpoint because you are banned from playing ghost roles."))
-		return
+		return TRUE
 
 	//No OOC notes/FT
 	if(not_has_ooc_text(user))
 		to_chat(user, span_warning("You must have proper out-of-character notes and flavor text configured for your current character slot to use this spawnpoint."))
-		return
+		return TRUE
 
 	if(redgate_restricted)
 		om_prompt(src, user, list("message" = "Which type of critter do you wish to spawn as? Note that this is a Redgate Spawner: if you choose the Lurker role you will not be able to leave through the redgate until another character grants you permission by clicking on the redgate with you nearby. Are you absolutely sure you wish to continue?", "title" = "Redgate Critter Spawner", "choices" = list("Mob", "Morph", "Lurker", "Cancel"), "requires" = list(/datum/om/check/has_client)), PROC_REF(critter_type_chosen))
 	else
 		om_prompt(src, user, list("message" = "Which type of critter do you wish to spawn as?", "title" = "Critter Spawner", "choices" = list("Mob", "Morph", "Lurker", "Cancel"), "requires" = list(/datum/om/check/has_client)), PROC_REF(critter_type_chosen))
+	return TRUE
 
 /obj/structure/ghost_pod/ghost_activated/unified_hole/proc/critter_type_chosen(mob/observer/dead/user, choice, datum/om/prompt/ask)
 	if(used)
