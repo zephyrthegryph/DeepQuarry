@@ -11,9 +11,10 @@
 
 	var/working = FALSE
 
+DECLARE_REAGENTS(/obj/machinery/smart_centrifuge, CARGOTANKER_VOLUME, null)
+
 /obj/machinery/smart_centrifuge/Initialize(mapload)
 	. = ..()
-	create_reagents(CARGOTANKER_VOLUME)
 	flags |= OPENCONTAINER
 	default_apply_parts()
 

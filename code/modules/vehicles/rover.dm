@@ -60,9 +60,10 @@
 //-------------------------------------------
 // Standard procs
 //-------------------------------------------
+DECLARE_DEFAULT_CHILD(/obj/vehicle/train/rover/engine, "cell", /obj/item/cell/high)
+DECLARE_DEFAULT_CHILD(/obj/vehicle/train/rover/engine, "key", /obj/item/key/rover)
+
 /obj/vehicle/train/rover/engine/Initialize(mapload)
-	cell = new /obj/item/cell/high(src)
-	key = new(src)
 	. = ..()
 	turn_off()	//so engine verbs are correctly set
 

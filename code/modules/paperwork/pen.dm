@@ -152,9 +152,7 @@ EXTEND_INTERACTIONS(/obj/item/pen/multi, INTERACT_USE("Change colour", PROC_REF(
 /obj/item/pen/reagent
 	flags = OPENCONTAINER
 
-/obj/item/pen/reagent/Initialize(mapload)
-	. = ..()
-	create_reagents(30)
+DECLARE_REAGENTS(/obj/item/pen/reagent, 30, null)
 
 /obj/item/pen/reagent/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	. = ..()
@@ -270,9 +268,7 @@ EXTEND_INTERACTIONS(/obj/item/pen/blade, INTERACT_ALT("Toggle blade", PROC_REF(i
 /obj/item/pen/reagent/sleepy
 	desc = "It's a black ink pen with a sharp point and a carefully engraved \"Waffle Co.\""
 
-/obj/item/pen/reagent/sleepy/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_CHLORALHYDRATE, 22)
+DECLARE_REAGENTS(/obj/item/pen/reagent/sleepy, null, list(REAGENT_ID_CHLORALHYDRATE = 22))
 
 
 /*
@@ -280,10 +276,7 @@ EXTEND_INTERACTIONS(/obj/item/pen/blade, INTERACT_ALT("Toggle blade", PROC_REF(i
  */
 /obj/item/pen/reagent/paralysis
 
-/obj/item/pen/reagent/paralysis/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_ZOMBIEPOWDER, 5)
-	reagents.add_reagent(REAGENT_ID_CRYPTOBIOLIN, 10)
+DECLARE_REAGENTS(/obj/item/pen/reagent/paralysis, null, list(REAGENT_ID_ZOMBIEPOWDER = 5, REAGENT_ID_CRYPTOBIOLIN = 10))
 
 /*
  * Chameleon Pen

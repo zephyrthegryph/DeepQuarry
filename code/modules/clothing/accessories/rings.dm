@@ -52,9 +52,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/ring/engagement, INTERACT_USE("
 /obj/item/clothing/accessory/ring/reagent
 	flags = OPENCONTAINER
 
-/obj/item/clothing/accessory/ring/reagent/Initialize(mapload)
-	. = ..()
-	create_reagents(15)
+DECLARE_REAGENTS(/obj/item/clothing/accessory/ring/reagent, 15, null)
 
 /obj/item/clothing/accessory/ring/reagent/equipped(mob/living/carbon/human/H)
 	..()
@@ -74,9 +72,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/ring/engagement, INTERACT_USE("
 	desc = "A ring made from what appears to be silver."
 	icon_state = "material"
 
-/obj/item/clothing/accessory/ring/reagent/sleepy/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_CHLORALHYDRATE, 15) // Less than a sleepy-pen, but still enough to knock someone out
+// Less than a sleepy-pen, but still enough to knock someone out
+DECLARE_REAGENTS(/obj/item/clothing/accessory/ring/reagent/sleepy, null, list(REAGENT_ID_CHLORALHYDRATE = 15))
 
 /////////////////////////////////////////
 //Seals and Signet Rings

@@ -43,9 +43,10 @@ DECLARE_INTERACTIONS(/obj/structure/casino_table, INTERACT_ITEM("Place", PROC_RE
 	var/datum/effect/effect/system/confetti_spread
 	var/confetti_strength = 5
 
+DECLARE_DEFAULT_CHILD(/obj/structure/casino_table/roulette_table, "ball", /obj/item/roulette_ball)
+
 /obj/structure/casino_table/roulette_table/Initialize(mapload)
 	.=..()
-	ball = new(src)
 	return
 
 /obj/structure/casino_table/roulette_table/examine(mob/user)

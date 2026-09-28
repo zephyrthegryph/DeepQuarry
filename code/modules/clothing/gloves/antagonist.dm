@@ -133,10 +133,7 @@ DECLARE_REF(/obj/item/clothing/gloves/ring/buzzer, "battery", OWNED, null)
 /obj/item/clothing/gloves/ring/buzzer/get_cell()
 	return battery
 
-/obj/item/clothing/gloves/ring/buzzer/Initialize(mapload)
-	. = ..()
-	if(!battery)
-		battery = new battery_type(src)
+DECLARE_DEFAULT_CHILD(/obj/item/clothing/gloves/ring/buzzer, "battery", "battery_type")
 
 /obj/item/clothing/gloves/ring/buzzer/Touch(atom/A, proximity, stance = I_HURT)
 	if(proximity && istype(usr, /mob/living/carbon/human))

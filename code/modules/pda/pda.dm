@@ -116,12 +116,12 @@
 
 REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 
+DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
+
 /obj/item/pda/Initialize(mapload)
 	. = ..()
 	update_programs()
-	if(default_cartridge)
-		cartridge = new default_cartridge(src)
-		cartridge.update_programs(src)
+	cartridge?.update_programs(src) // declared child from default_cartridge
 	new /obj/item/pen(src)
 
 	if(ishuman(loc))

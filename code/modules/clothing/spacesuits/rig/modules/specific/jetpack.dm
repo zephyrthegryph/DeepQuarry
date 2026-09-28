@@ -46,9 +46,7 @@
 		jets.jetpack_toggle_effect(holder?.wearer())
 	return 1
 
-/obj/item/rig_module/maneuvering_jets/Initialize(mapload)
-	. = ..()
-	jets = new(src)
+DECLARE_DEFAULT_CHILD(/obj/item/rig_module/maneuvering_jets, "jets", /obj/item/tank/jetpack/rig)
 
 DECLARE_REF(/obj/item/rig_module/maneuvering_jets, "jets", OWNED, null)
 

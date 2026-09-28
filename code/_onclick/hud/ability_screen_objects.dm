@@ -146,10 +146,7 @@ DECLARE_REF(/atom/movable/screen/movable/ability_master, "my_mob_handle", BACK_H
 	if(ability_master)
 		ability_master.toggle_open(2) //Force it to open on login.
 
-/mob/Initialize(mapload)
-	. = ..()
-	if(!ability_master)
-		ability_master = new /atom/movable/screen/movable/ability_master(src)
+DECLARE_DEFAULT_CHILD(/mob, "ability_master", /atom/movable/screen/movable/ability_master)
 
 ///////////ACTUAL ABILITIES////////////
 //This is what you click to do things//

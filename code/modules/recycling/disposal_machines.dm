@@ -51,6 +51,8 @@
 
 // create a new disposal
 // find the attached trunk (if present) and init gas resvr.
+DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C, null)
+
 /obj/machinery/disposal/Initialize(mapload, obj/structure/disposalconstruct/make_from)
 	. = ..()
 
@@ -70,8 +72,7 @@
 	if(trunk)
 		OM_EMIT(src, /datum/om/event/disposal_link, trunk)
 
-	air_contents = new(PRESSURE_TANK_VOLUME)
-	// Map-loaded bins are installed infrastructure, not freshly constructed
+	// air_contents is declared (DECLARE_GAS). Map-loaded bins are installed infrastructure, not freshly constructed
 	// empty vessels. Prime their tiny reservoir from the mapped room atmosphere
 	// so hundreds of bins do not all perform identical FFI pump transactions for
 	// the first minute of every round. Constructed/repaired bins still charge

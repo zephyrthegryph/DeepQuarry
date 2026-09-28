@@ -9,9 +9,7 @@
 	density = FALSE
 	anchored = TRUE
 
-/obj/effect/bhole/Initialize(mapload)
-	. = ..()
-	om_after(src, 0.4 SECONDS, PROC_REF(controller))
+DECLARE_START_TIMER(/obj/effect/bhole, 0.4 SECONDS, PROC_REF(controller))
 
 /obj/effect/bhole/proc/controller()
 	if(!isturf(loc))

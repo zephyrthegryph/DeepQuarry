@@ -115,10 +115,10 @@ DECLARE_REF(/obj/machinery/shield, "our_owner", BACKLIST_HANDLE, "deployed_shiel
 	use_power = USE_POWER_OFF
 	idle_power_usage = 0
 
+DECLARE_DEFAULT_CHILD(/obj/machinery/shieldgen, "cell", "cell_type")
+
 /obj/machinery/shieldgen/Initialize(mapload)
 	. = ..()
-	if(cell_type)
-		cell = new cell_type(src)
 	make_climbable()
 
 DECLARE_REF(/obj/machinery/shieldgen, "cell", OWNED, null)

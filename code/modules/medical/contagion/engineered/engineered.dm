@@ -63,8 +63,7 @@ GLOBAL_LIST_INIT(advance_cures, list(
 	if(s_processing)
 		for(var/datum/viral_trait/S in symptoms)
 			S.End(src)
-	QDEL_LIST(symptoms)
-	..()
+	..() // symptoms (OWNED_LIST) are deleted in phase 4
 
 /// Symptoms stop when the strain leaves its host.
 /datum/affliction/contagion/engineered/End()

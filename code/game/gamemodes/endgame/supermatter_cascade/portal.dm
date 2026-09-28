@@ -14,9 +14,7 @@
 
 	consume_range = 6
 
-/obj/singularity/narsie/large/exit/Initialize(mapload, ...)
-	. = ..()
-	om_task_periodic(src, PERIODIC_SLOW)
+DECLARE_PERIODIC(/obj/singularity/narsie/large/exit, PERIODIC_SLOW)
 
 /obj/singularity/narsie/large/exit/update_icon()
 	overlays = 0

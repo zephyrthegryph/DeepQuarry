@@ -280,6 +280,8 @@
 		if(!(var_name in customized))
 			. += var_name
 
+DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellies
+
 /obj/belly/Initialize(mapload)
 	. = ..()
 	//If not, we're probably just in a prefs list or something.
@@ -287,8 +289,6 @@
 		owner = loc
 		LAZYADD(owner.vore_organs, src)
 		belly_reschedule()
-
-	create_reagents(300)	// So we can have some liquids in bellies
 
 DECLARE_REF(/obj/belly, "owner", BACKLIST, "vore_organs")
 

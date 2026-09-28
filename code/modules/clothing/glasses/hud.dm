@@ -76,10 +76,7 @@
 	specialty_goggles = TRUE
 	var/hud_goggles = FALSE
 
-/obj/item/clothing/glasses/omnihud/Initialize(mapload)
-	. = ..()
-	if(tgarscreen_path)
-		tgarscreen = new tgarscreen_path(src)
+DECLARE_DEFAULT_CHILD(/obj/item/clothing/glasses/omnihud, "tgarscreen", "tgarscreen_path")
 
 DECLARE_REF(/obj/item/clothing/glasses/omnihud, "tgarscreen", OWNED, null)
 

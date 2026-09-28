@@ -54,7 +54,6 @@ DECLARE_REF(/obj/item/organ, "assists_languages", STATIC, null)
 
 // afflictions on the organ are cured; organ mods removed.
 /obj/item/organ/on_destroy(force)
-
 	handle_organ_mod_special(TRUE)
 	// Afflictions located on this organ die with it, attached or detached.
 	if(owner?.body)
@@ -65,10 +64,10 @@ DECLARE_REF(/obj/item/organ, "assists_languages", STATIC, null)
 /obj/item/organ/proc/update_health()
 	return
 
+DECLARE_REAGENTS(/obj/item/organ, 5, null)
+
 /obj/item/organ/Initialize(mapload, internal)
 	. = ..()
-	create_reagents(5)
-
 	if(isliving(loc))
 		var/mob/living/born_in = loc
 		src.w_class = max(src.w_class + mob_size_difference(born_in.mob_size, MOB_MEDIUM), 1) //smaller mobs have smaller organs.

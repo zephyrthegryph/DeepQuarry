@@ -12,9 +12,10 @@
 	var/power_use = 15
 	var/obj/effect/suspension_field/suspension_field
 
+DECLARE_DEFAULT_CHILD(/obj/machinery/suspension_gen, "cell", /obj/item/cell/high)
+
 /obj/machinery/suspension_gen/Initialize(mapload)
 	. = ..()
-	cell = new /obj/item/cell/high(src)
 	make_rotatable()
 
 /// Holds its field (draining its cell) while active; off, it sleeps until activate().

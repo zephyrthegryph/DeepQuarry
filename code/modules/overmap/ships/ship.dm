@@ -50,6 +50,8 @@
 	var/flight_vessel_id
 	render_map = TRUE
 
+DECLARE_REGISTRY(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
+
 /obj/effect/overmap/visitable/ship/Initialize(mapload)
 	. = ..()
 	min_speed = round(min_speed, SHIP_MOVE_RESOLUTION)
@@ -59,10 +61,7 @@
 	position_y = 0
 	vector_handle = om_handle(add_vis_overlay("vector", dir = SOUTH, layer = 10, unique = TRUE))
 	vector_overlay().vis_flags = (VIS_INHERIT_PLANE|VIS_INHERIT_ID)
-	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 	GLOB.flight_service?.register_vessel(src)
-
-REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
 
 // leaves the ship list and its flight vessel.
 /obj/effect/overmap/visitable/ship/lifecycle_dematerialize()

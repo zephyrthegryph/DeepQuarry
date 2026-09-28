@@ -147,9 +147,7 @@ DECLARE_REF(/obj/item/cartridge, "messenger_plugins", OWNED_LIST, null)
 	desc = "A data cartridge with an integrated radio signaler module."
 	programs = list(new/datum/data/pda/app/signaller)
 
-/obj/item/cartridge/signal/Initialize(mapload)
-	radio = new /obj/item/radio/integrated/signal(src)
-	. = ..()
+DECLARE_DEFAULT_CHILD(/obj/item/cartridge/signal, "radio", /obj/item/radio/integrated/signal)
 
 /obj/item/cartridge/signal/science
 	name = "\improper Signal Ace 2 cartridge"
@@ -233,9 +231,7 @@ DECLARE_REF(/obj/item/cartridge, "messenger_plugins", OWNED_LIST, null)
 
 		new/datum/data/pda/app/status_display)
 
-/obj/item/cartridge/rd/Initialize(mapload)
-	radio = new /obj/item/radio/integrated/signal(src)
-	. = ..()
+DECLARE_DEFAULT_CHILD(/obj/item/cartridge/rd, "radio", /obj/item/radio/integrated/signal)
 
 /obj/item/cartridge/captain
 	name = "\improper Value-PAK cartridge"
@@ -333,9 +329,10 @@ DECLARE_REF(/obj/item/cartridge, "messenger_plugins", OWNED_LIST, null)
 	var/slots = 1
 	var/obj/item/storage/internal/hold
 
+DECLARE_DEFAULT_CHILD(/obj/item/cartridge/storage, "hold", /obj/item/storage/internal)
+
 /obj/item/cartridge/storage/Initialize(mapload)
 	. = ..()
-	hold = new/obj/item/storage/internal(src)
 	hold.max_storage_space = slots * 2
 
 DECLARE_REF(/obj/item/cartridge/storage, "hold", OWNED, null)

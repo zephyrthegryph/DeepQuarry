@@ -44,9 +44,10 @@
 	var/burn_cost = 7500
 	var/generated_thrust = 2.5
 
+DECLARE_DEFAULT_CHILD(/obj/machinery/ion_engine, "controller", /datum/ship_engine/ion)
+
 /obj/machinery/ion_engine/Initialize(mapload)
 	. = ..()
-	controller = new(src)
 	add_glow()
 
 DECLARE_REF(/obj/machinery/ion_engine, "controller", OWNED, null)

@@ -136,9 +136,10 @@ EXTEND_INTERACTIONS(/obj/item/organ/internal/heart/machine/anomalock, INTERACT_I
 	core = null
 	update_icon()
 
+DECLARE_DEFAULT_CHILD(/obj/item/organ/internal/heart/machine/anomalock/prebuilt, "core", /obj/item/assembly/signaler/anomaly/flux)
+
 /obj/item/organ/internal/heart/machine/anomalock/prebuilt/Initialize(mapload, internal)
 	. = ..()
-	core = new /obj/item/assembly/signaler/anomaly/flux(src)
 	update_icon()
 
 /obj/item/organ/internal/heart/machine/anomalock/update_icon()

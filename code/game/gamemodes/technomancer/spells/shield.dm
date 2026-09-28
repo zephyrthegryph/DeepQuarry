@@ -18,10 +18,11 @@
 	var/damage_to_energy_multiplier = 30.0 //Determines how much energy to charge for blocking, e.g. 20 damage attack = 600 energy cost
 	var/datum/effect/effect/system/spark_spread/spark_system = null
 
+DECLARE_DEFAULT_CHILD(/obj/item/spell/shield, "spark_system", /datum/effect/effect/system/spark_spread)
+
 /obj/item/spell/shield/Initialize(mapload, coreless)
 	. = ..()
 	set_light(3, 2, l_color = "#006AFF")
-	spark_system = new /datum/effect/effect/system/spark_spread()
 	spark_system.set_up(5, 0, src)
 
 /obj/item/spell/shield/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")

@@ -34,9 +34,10 @@
 	var/bogus = TRUE		// set to 0 when you initialize the station map on a zLevel that has its own icon formatted for use by station holomaps.
 	var/datum/station_holomap/holomap_datum
 
+DECLARE_DEFAULT_CHILD(/obj/machinery/station_map, "holomap_datum", /datum/station_holomap)
+
 /obj/machinery/station_map/Initialize(mapload)
 	. = ..()
-	holomap_datum = new()
 	original_zLevel = loc.z
 	SSholomaps.station_holomaps += src
 	if(SSholomaps.holomaps_initialized)

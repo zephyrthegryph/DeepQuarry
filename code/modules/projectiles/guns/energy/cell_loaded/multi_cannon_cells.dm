@@ -18,9 +18,7 @@
 	charge = max_charge
 
 /// The recharge loop is running behaviour, so it starts when the cell goes live.
-/obj/item/ammo_casing/macrobattery/on_materialize()
-	. = ..()
-	om_task_periodic(src, PERIODIC_SLOW)
+DECLARE_PERIODIC(/obj/item/ammo_casing/macrobattery, PERIODIC_SLOW)
 
 /obj/item/ammo_casing/macrobattery/on_dematerialize()
 	om_task_periodic_stop(src)

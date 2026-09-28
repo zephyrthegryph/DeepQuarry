@@ -14,11 +14,12 @@
 	aspect = ASPECT_FIRE
 	var/obj/item/weldingtool/spell/welder = null
 
+DECLARE_DEFAULT_CHILD(/obj/item/spell/flame_tongue, "welder", /obj/item/weldingtool/spell)
+
 /obj/item/spell/flame_tongue/Initialize(mapload, coreless)
 	. = ..()
 	set_light(3, 2, l_color = "#FF6A00")
 	visible_message(span_warning("\The [loc]'s hand begins to emit a flame."))
-	welder = new /obj/item/weldingtool/spell(src)
 	welder.setWelding(1)
 
 DECLARE_REF(/obj/item/spell/flame_tongue, "welder", OWNED, null)

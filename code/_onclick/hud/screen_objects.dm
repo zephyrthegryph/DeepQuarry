@@ -779,17 +779,16 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 	var/owner_handle
 	var/extras_holder_handle
 
+DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mask_full", /atom/movable/screen/mapper/mask_full)
+DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mask_ping", /atom/movable/screen/mapper/mask_ping)
+DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "bg", /atom/movable/screen/mapper/bg)
+DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "frame", /atom/movable/screen/mapper/frame)
+DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "powbutton", /atom/movable/screen/mapper/powbutton)
+DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mapbutton", /atom/movable/screen/mapper/mapbutton)
+
 /atom/movable/screen/movable/mapper_holder/Initialize(mapload, newowner)
 	. = ..()
 	owner_handle = om_handle(newowner)
-
-	mask_full = new(src) // Full white square mask
-	mask_ping = new(src) // Animated 'pinging' mask
-	bg = new(src) // Background color, holds map in vis_contents, uses mult against masks
-
-	frame = new(src) // Decorative frame
-	powbutton = new(src) // Clickable button
-	mapbutton = new(src) // Clickable button
 
 	frame.icon_state = initial(frame.icon_state)+owner().hud_frame_hint
 

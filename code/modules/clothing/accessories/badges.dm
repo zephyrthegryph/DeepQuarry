@@ -294,11 +294,13 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/sheriff, INTERACT_USE("Fl
 	slot_flags = SLOT_TIE
 	var/obj/item/dosimeter_film/current_film = null
 
+DECLARE_DEFAULT_CHILD(/obj/item/clothing/accessory/dosimeter, "current_film", /obj/item/dosimeter_film)
+
+DECLARE_PERIODIC(/obj/item/clothing/accessory/dosimeter, PERIODIC_SLOW)
+
 /obj/item/clothing/accessory/dosimeter/Initialize(mapload)
 	. = ..()
-	current_film = new /obj/item/dosimeter_film(src)
 	update_state(current_film.state)
-	om_task_periodic(src, PERIODIC_SLOW)
 
 DECLARE_REF(/obj/item/clothing/accessory/dosimeter, "current_film", OWNED, null)
 

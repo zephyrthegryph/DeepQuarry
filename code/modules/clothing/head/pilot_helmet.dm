@@ -22,13 +22,14 @@
 	var/last_status
 	resistance_flags = FIRE_PROOF
 
+DECLARE_DEFAULT_CHILD(/obj/item/clothing/head/pilot, "pilot_hud", /atom/movable/screen)
+
 /obj/item/clothing/head/pilot/Initialize(mapload)
 	. = ..()
 
 	images = list()
 	raw_images = list()
 
-	pilot_hud = new(src)
 	pilot_hud.screen_loc = "1,1"
 	pilot_hud.icon = 'icons/obj/piloting_overlay.dmi'
 	pilot_hud.icon_state = "dimmer"

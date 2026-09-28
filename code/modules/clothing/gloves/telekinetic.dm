@@ -6,9 +6,7 @@
 	var/use_power_amount = 12
 
 
-/obj/item/clothing/gloves/telekinetic/Initialize(mapload)
-	. = ..()
-	cell = new /obj/item/cell/device(src)
+DECLARE_DEFAULT_CHILD(/obj/item/clothing/gloves/telekinetic, "cell", /obj/item/cell/device)
 
 /obj/item/clothing/gloves/telekinetic/proc/has_grip_power()
 	if(cell && cell.charge >= use_power_amount)

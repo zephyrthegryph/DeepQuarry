@@ -16,9 +16,7 @@
 
 	equip_type = EQUIP_UTILITY
 
-/obj/item/mecha_parts/mecha_equipment/generator/Initialize(mapload)
-	. = ..()
-	fuel = new fuel_type(src)
+DECLARE_DEFAULT_CHILD(/obj/item/mecha_parts/mecha_equipment/generator, "fuel", "fuel_type")
 
 DECLARE_REF(/obj/item/mecha_parts/mecha_equipment/generator, "fuel", OWNED, null)
 

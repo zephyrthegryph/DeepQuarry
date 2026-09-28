@@ -2,9 +2,10 @@
 	name = DEVELOPER_WARNING_NAME
 	var/obj/item/storage/internal/pockets // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 
+DECLARE_DEFAULT_CHILD(/obj/item/clothing/suit/storage, "pockets", /obj/item/storage/internal)
+
 /obj/item/clothing/suit/storage/Initialize(mapload)
 	. = ..()
-	pockets = new/obj/item/storage/internal(src)
 	pockets.max_storage_space = ITEMSIZE_COST_SMALL * 2
 
 DECLARE_REF(/obj/item/clothing/suit/storage, "pockets", OWNED, null)
@@ -101,9 +102,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage/hooded/toggle, \
 //New Vest 4 pocket storage and badge toggles, until suit accessories are a thing.
 /obj/item/clothing/suit/storage/vest/heavy/Initialize(mapload)
 	. = ..()
-	qdel(pockets) // Parent Initialize already made one; don't orphan it in contents.
-	pockets = new/obj/item/storage/internal(src)
-	pockets.max_storage_space = ITEMSIZE_COST_SMALL * 4
+	pockets.max_storage_space = ITEMSIZE_COST_SMALL * 4 // declared on /obj/item/clothing/suit/storage
 
 /obj/item/clothing/suit/storage/vest
 	var/icon_badge

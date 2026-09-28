@@ -341,10 +341,8 @@ MATERIAL_MIX(/obj/item/xenoarch_multi_tool, list(MAT_STEEL = 10000,MAT_GLASS = 5
 	var/obj/item/ano_scanner/anomaly_scanner = null
 	var/obj/item/depth_scanner/depth_scanner = null
 
-/obj/item/xenoarch_multi_tool/Initialize(mapload)
-	. = ..()
-	anomaly_scanner = new/obj/item/ano_scanner(src)
-	depth_scanner = new/obj/item/depth_scanner(src)
+DECLARE_DEFAULT_CHILD(/obj/item/xenoarch_multi_tool, "anomaly_scanner", /obj/item/ano_scanner)
+DECLARE_DEFAULT_CHILD(/obj/item/xenoarch_multi_tool, "depth_scanner", /obj/item/depth_scanner)
 
 DECLARE_INTERACTIONS(/obj/item/xenoarch_multi_tool, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
