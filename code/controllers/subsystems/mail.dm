@@ -45,7 +45,7 @@ SUBSYSTEM_DEF(mail)
 	// Admin mail
 	if(admin_mail)
 		for(var/obj/item/mail/ad_mail in admin_mail)
-			ad_mail.loc = mailcrate
+			ad_mail.forceMove(mailcrate)
 		clearlist(admin_mail)
 	mail_waiting = 0
 	return mailcrate
