@@ -36,7 +36,7 @@
 	/// For legacy instruments, our file extension
 	var/legacy_instrument_ext
 	/// What songs are using us
-	var/list/datum/song/songs_using
+	var/list/songs_using	// OM handles of the songs using this (om_resolve_all())
 	/// Don't touch this
 	var/static/HIGHEST_KEY = 127
 	/// Don't touch this x2
@@ -71,7 +71,7 @@
 // LIFECYCLE: songs using it drop it; leaves SSinstruments.
 /datum/instrument/Destroy()
 	SSinstruments.instrument_data -= id
-	for(var/i in songs_using)
+	for(var/i in om_resolve_all(songs_using))
 		var/datum/song/S = i
 		S.set_instrument(null)
 	real_samples = null

@@ -141,7 +141,7 @@
 	SSinstruments.on_song_del(src)
 	lines = null
 	if(using_instrument())
-		LAZYREMOVE(using_instrument().songs_using, src)
+		LAZYREMOVE(using_instrument().songs_using, om_handle_of(src))
 		using_instrument_handle = null
 	allowed_instrument_ids = null
 	parent_handle = null
@@ -171,7 +171,7 @@
 	terminate_all_sounds()
 	var/old_legacy
 	if(using_instrument())
-		LAZYREMOVE(using_instrument().songs_using, src)
+		LAZYREMOVE(using_instrument().songs_using, om_handle_of(src))
 		old_legacy = (using_instrument().instrument_flags & INSTRUMENT_LEGACY)
 	using_instrument_handle = null
 	cached_samples = null
@@ -182,7 +182,7 @@
 		I = SSinstruments.instrument_data[I]
 	if(istype(I))
 		using_instrument_handle = om_handle(I)
-		LAZYADD(I.songs_using, src)
+		LAZYADD(I.songs_using, om_handle(src))
 		var/instrument_legacy = (I.instrument_flags & INSTRUMENT_LEGACY)
 		if(instrument_legacy)
 			cached_legacy_ext = I.legacy_instrument_ext
