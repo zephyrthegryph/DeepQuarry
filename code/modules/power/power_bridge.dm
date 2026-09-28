@@ -22,7 +22,7 @@
 // the entity `vg_power_bind_cable` hands back) is the only identity Rust
 // needs.
 
-/datum/controller/subsystem/machines
+/datum/world_service/machines
 	/// Region id (Rust's raw handle bits + 1) -> its /datum/powernet. An alist:
 	/// the ids are numbers, and a plain list would treat them as positions.
 	var/alist/power_regions = alist()
@@ -32,7 +32,7 @@
 	var/list/power_material_cables = list()
 
 /// The /datum/powernet for region `id`, made on first use.
-/datum/controller/subsystem/machines/proc/power_facade(id)
+/datum/world_service/machines/proc/power_facade(id)
 	if(!id)
 		return null
 	var/datum/powernet/network = power_regions[id]
@@ -44,7 +44,7 @@
 	return network
 
 /// The region an already-bound entity's node is on, or null.
-/datum/controller/subsystem/machines/proc/power_region_of(entity)
+/datum/world_service/machines/proc/power_region_of(entity)
 	if(!entity)
 		return null
 	var/id = vg_power_region_of(entity)
@@ -52,9 +52,9 @@
 
 /// Queues an area's loads for its APC.
 /area/proc/power_loads_changed()
-	SSmachines.power_dirty_areas[src] = TRUE
+	GLOB.machine_service.power_dirty_areas[src] = TRUE
 
-/datum/controller/subsystem/machines/proc/power_flush_areas()
+/datum/world_service/machines/proc/power_flush_areas()
 	for(var/area/A as anything in power_dirty_areas)
 		var/obj/machinery/power/apc/apc = A.apc
 		if(apc?.vg_entity)
@@ -76,7 +76,7 @@
 /// publishes its results to DM's own cache (`/datum/powernet`) and drives
 /// the machinery-tick-cadence bookkeeping (SMES icons, APC displays) that
 /// isn't itself simulated in Rust.
-/datum/controller/subsystem/machines/proc/process_power()
+/datum/world_service/machines/proc/process_power()
 	power_flush_areas()
 	vg_power_commit()
 	for(var/obj/structure/cable/cable as anything in power_material_cables)
@@ -112,7 +112,7 @@
 /// machine, APC and SMES (admin repair): unbinds and rebinds every
 /// `vg_entity` a power object holds, so a divergence from Rust's own state
 /// cannot survive it.
-/datum/controller/subsystem/machines/proc/power_reregister_all()
+/datum/world_service/machines/proc/power_reregister_all()
 	for(var/id in power_regions)
 		qdel(power_regions[id])
 	power_regions = alist()
@@ -132,7 +132,7 @@
 
 /// Registers every cable and power machine again (admin repair, and after
 /// bulk moves that bypass Moved()).
-/datum/controller/subsystem/machines/proc/power_reregister(list/turfs)
+/datum/world_service/machines/proc/power_reregister(list/turfs)
 	for(var/turf/T as anything in turfs)
 		for(var/obj/structure/cable/cable in T)
 			cable.power_register()

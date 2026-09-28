@@ -419,8 +419,8 @@
 	seed_noun = pick("spores","nodes","cuttings","seeds","pits")
 
 	set_trait(TRAIT_POTENCY,rand(5,30),200,0)
-	set_trait(TRAIT_PRODUCT_ICON,pick(SSplants.accessible_product_sprites))
-	set_trait(TRAIT_PLANT_ICON,pick(SSplants.accessible_plant_sprites))
+	set_trait(TRAIT_PRODUCT_ICON,pick(GLOB.plant_service.accessible_product_sprites))
+	set_trait(TRAIT_PLANT_ICON,pick(GLOB.plant_service.accessible_plant_sprites))
 	set_trait(TRAIT_PLANT_COLOUR,get_random_colour(0,75,190))
 	set_trait(TRAIT_PRODUCT_COLOUR,get_random_colour(0,75,190))
 	update_growth_stages()
@@ -793,10 +793,10 @@
 			to_chat(user, span_filter_notice("You [harvest_sample ? "take a sample" : "harvest"] from the [display_name]."))
 
 		//This may be a new line. Update the global if it is.
-		if(name == "new line" || !(name in SSplants.seeds))
-			uid = SSplants.seeds.len + 1
+		if(name == "new line" || !(name in GLOB.plant_service.seeds))
+			uid = GLOB.plant_service.seeds.len + 1
 			name = "[uid]"
-			SSplants.seeds[name] = src
+			GLOB.plant_service.seeds[name] = src
 
 		if(harvest_sample)
 			var/obj/item/seeds/seeds = new(get_turf(user))
@@ -896,6 +896,6 @@
 
 /datum/seed/proc/update_growth_stages()
 	if(get_trait(TRAIT_PLANT_ICON))
-		growth_stages = SSplants.plant_sprites[get_trait(TRAIT_PLANT_ICON)]
+		growth_stages = GLOB.plant_service.plant_sprites[get_trait(TRAIT_PLANT_ICON)]
 	else
 		growth_stages = 0

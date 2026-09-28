@@ -105,12 +105,12 @@
 	set category = "Object"
 	set src in view(1)
 
-	var/genemask = tgui_input_list(usr, "Choose a gene to modify.", "Gene Choice", SSplants.plant_gene_datums)
+	var/genemask = tgui_input_list(usr, "Choose a gene to modify.", "Gene Choice", GLOB.plant_service.plant_gene_datums)
 
 	if(!genemask)
 		return
 
-	gene = SSplants.plant_gene_datums[genemask]
+	gene = GLOB.plant_service.plant_gene_datums[genemask]
 
 	to_chat(usr, span_info("You set the [src]'s targeted genetic area to [genemask]."))
 

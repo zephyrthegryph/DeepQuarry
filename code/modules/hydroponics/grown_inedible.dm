@@ -17,7 +17,7 @@
 	//Handle some post-spawn var stuff.
 	if(planttype)
 		plantname = planttype
-		var/datum/seed/S = SSplants.seeds[plantname]
+		var/datum/seed/S = GLOB.plant_service.seeds[plantname]
 		if(!S || !S.chems)
 			return
 

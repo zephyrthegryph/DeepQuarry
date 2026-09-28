@@ -19,6 +19,9 @@
 		neighbor.update_neighbors()
 	qdel(src)
 
+/// Growing (on PERIODIC_PLANTS) while in REGISTRY_GROWING_PLANTS: add_plant() / remove_plant().
+REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
+
 /obj/effect/plant
 	name = "plant"
 	anchored = TRUE
@@ -52,9 +55,9 @@
 	LAZYCLEARLIST(neighbors)
 	if(seed && seed.get_trait(TRAIT_SPREAD)==2)
 		unsense_proximity(callback = TYPE_PROC_REF(/atom, HasProximity), center = get_turf(src))
-	SSplants.remove_plant(src)
+	GLOB.plant_service.remove_plant(src)
 	for(var/obj/effect/plant/neighbor in range(1,src))
-		SSplants.add_plant(neighbor)
+		GLOB.plant_service.add_plant(neighbor)
 	return ..()
 
 /obj/effect/plant/single
@@ -70,12 +73,12 @@
 	else
 		parent = newparent
 
-	if(!SSplants)
+	if(!GLOB.plant_service)
 		to_chat(world, span_danger("Plant controller does not exist and [src] requires it. Aborting."))
 		return INITIALIZE_HINT_QDEL
 
 	if(!istype(newseed))
-		newseed = SSplants.seeds[DEFAULT_SEED]
+		newseed = GLOB.plant_service.seeds[DEFAULT_SEED]
 	seed = newseed
 	if(!seed)
 		return INITIALIZE_HINT_QDEL
@@ -111,7 +114,7 @@
 /obj/effect/plant/proc/finish_spreading()
 	set_dir(calc_dir())
 	update_icon()
-	SSplants.add_plant(src)
+	GLOB.plant_service.add_plant(src)
 	//Some plants eat through plating.
 	if(islist(seed.chems) && !isnull(seed.chems[REAGENT_ID_PACID]))
 		var/turf/T = get_turf(src)
@@ -219,7 +222,7 @@
 /obj/effect/plant/attackby(obj/item/W, mob/user)
 
 	user.setClickCooldown(user.get_attack_speed(W))
-	SSplants.add_plant(src)
+	GLOB.plant_service.add_plant(src)
 
 	if(istype(W, /obj/item/surgical/scalpel))
 		take_plant_sample(user)
@@ -248,7 +251,7 @@
 
 /obj/effect/plant/wirecutter_act(mob/user, obj/item/tool)
 	user.setClickCooldown(user.get_attack_speed(tool))
-	SSplants.add_plant(src)
+	GLOB.plant_service.add_plant(src)
 	return take_plant_sample(user) ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
 
 //handles being overrun by vines - note that attacker_parent may be null in some cases
@@ -312,7 +315,7 @@
 
 	if(turfs.len) //Pick a turf to spawn at if we can
 		var/turf/simulated/floor/T = pick(turfs) // end
-		var/datum/seed/seed = SSplants.create_random_seed(1)
+		var/datum/seed/seed = GLOB.plant_service.create_random_seed(1)
 		seed.set_trait(TRAIT_SPREAD,2)             // So it will function properly as vines.
 		seed.set_trait(TRAIT_POTENCY,rand(potency_min, potency_max)) // 70-100 potency will help guarantee a wide spread and powerful effects.
 		seed.set_trait(TRAIT_MATURATION,rand(maturation_min, maturation_max))

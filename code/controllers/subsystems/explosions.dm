@@ -4,7 +4,7 @@ SUBSYSTEM_DEF(explosions)
 	runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
 	wait = 0.5 SECONDS
 	dependencies = list(
-		/datum/controller/subsystem/machines
+		/datum/controller/subsystem/air
 	)
 	flags = SS_NO_INIT
 

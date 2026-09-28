@@ -502,13 +502,13 @@ ADMIN_VERB(adrev, R_SERVER, "Toggle Revive", "Toggle admin revives.", ADMIN_CATE
 	return 0
 
 ADMIN_VERB(spawn_fruit, R_SPAWN, "Spawn Fruit", "Spawn the product of a seed.", ADMIN_CATEGORY_DEBUG_GAME)
-	var/seedtype = tgui_input_list(user, "Select Seed.", "Seed Type", SSplants.seeds)
-	if(!seedtype || !SSplants.seeds[seedtype])
+	var/seedtype = tgui_input_list(user, "Select Seed.", "Seed Type", GLOB.plant_service.seeds)
+	if(!seedtype || !GLOB.plant_service.seeds[seedtype])
 		return
 	var/amount = tgui_input_number(user, "Amount of fruit to spawn", "Fruit Amount", 1)
 	var/mob/user_mob = user.mob
 	if(!isnull(amount))
-		var/datum/seed/S = SSplants.seeds[seedtype]
+		var/datum/seed/S = GLOB.plant_service.seeds[seedtype]
 		S.harvest(user_mob,0,0,amount)
 	log_admin("[key_name(user)] spawned [seedtype] fruit at ([user_mob.x],[user_mob.y],[user_mob.z])")
 
@@ -542,11 +542,11 @@ ADMIN_VERB(check_custom_items, R_SPAWN, "Check Custom Items", "Check the custom 
 			to_chat(user, "- name: [item.name] icon: [item.item_icon] path: [item.item_path] desc: [item.item_desc]")
 
 ADMIN_VERB(spawn_plant, R_SPAWN, "Spawn Plant", "Spawn a spreading plant effect.", ADMIN_CATEGORY_DEBUG_GAME)
-	var/seedtype = tgui_input_list(user, "Select Seed.", "Seed Type", SSplants.seeds)
-	if(!seedtype || !SSplants.seeds[seedtype])
+	var/seedtype = tgui_input_list(user, "Select Seed.", "Seed Type", GLOB.plant_service.seeds)
+	if(!seedtype || !GLOB.plant_service.seeds[seedtype])
 		return
 	var/mob/user_mob = user.mob
-	new /obj/effect/plant(get_turf(user_mob), SSplants.seeds[seedtype])
+	new /obj/effect/plant(get_turf(user_mob), GLOB.plant_service.seeds[seedtype])
 	log_admin("[key_name(user)] spawned [seedtype] vines at ([user_mob.x],[user_mob.y],[user_mob.z])")
 
 ADMIN_VERB(spawn_atom, R_SPAWN, "Spawn", "(atom path) Spawn an atom", ADMIN_CATEGORY_DEBUG_GAME, object as text|null)

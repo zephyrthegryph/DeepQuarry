@@ -31,7 +31,7 @@
 		log_runtime("Plantname not provided and [src] requires it at [x],[y],[z]")
 		return INITIALIZE_HINT_QDEL
 
-	seed = SSplants.seeds[plantname]
+	seed = GLOB.plant_service.seeds[plantname]
 
 	if(!seed)
 		log_runtime("Plant name '[plantname]' does not exist and [src] requires it at [x],[y],[z]")
@@ -66,8 +66,8 @@
 	if(!seed)
 		return
 
-	if(SSplants.product_descs["[seed.uid]"])
-		desc = SSplants.product_descs["[seed.uid]"]
+	if(GLOB.plant_service.product_descs["[seed.uid]"])
+		desc = GLOB.plant_service.product_descs["[seed.uid]"]
 	else
 		var/list/descriptors = list()
 		if(reagents.has_reagent(REAGENT_ID_SUGAR) || reagents.has_reagent(REAGENT_ID_CHERRYJELLY) || reagents.has_reagent(REAGENT_ID_HONEY) || reagents.has_reagent(REAGENT_ID_BERRYJUICE))
@@ -119,17 +119,17 @@
 			desc += " mushroom"
 		else
 			desc += " fruit"
-		SSplants.product_descs["[seed.uid]"] = desc
+		GLOB.plant_service.product_descs["[seed.uid]"] = desc
 	desc += ". Delicious! Probably."
 
 /obj/item/reagent_containers/food/snacks/grown/update_icon()
-	if(!seed || !SSplants || !SSplants.plant_icon_cache)
+	if(!seed || !GLOB.plant_service?.plant_icon_cache)
 		return
 	cut_overlays()
 	var/image/plant_icon
 	var/icon_key = "fruit-[seed.get_trait(TRAIT_PRODUCT_ICON)]-[seed.get_trait(TRAIT_PRODUCT_COLOUR)]-[seed.get_trait(TRAIT_PLANT_COLOUR)]"
-	if(SSplants.plant_icon_cache[icon_key])
-		plant_icon = SSplants.plant_icon_cache[icon_key]
+	if(GLOB.plant_service.plant_icon_cache[icon_key])
+		plant_icon = GLOB.plant_service.plant_icon_cache[icon_key]
 	else
 		plant_icon = image('icons/obj/hydroponics_products.dmi',"blank")
 		var/image/fruit_base = image('icons/obj/hydroponics_products.dmi',"[seed.get_trait(TRAIT_PRODUCT_ICON)]-product")
@@ -139,7 +139,7 @@
 			var/image/fruit_leaves = image('icons/obj/hydroponics_products.dmi',"[seed.get_trait(TRAIT_PRODUCT_ICON)]-leaf")
 			fruit_leaves.color = "[seed.get_trait(TRAIT_PLANT_COLOUR)]"
 			plant_icon.add_overlay(fruit_leaves)
-		SSplants.plant_icon_cache[icon_key] = plant_icon
+		GLOB.plant_service.plant_icon_cache[icon_key] = plant_icon
 	add_overlay(plant_icon)
 
 /obj/item/reagent_containers/food/snacks/grown/Crossed(mob/living/M)

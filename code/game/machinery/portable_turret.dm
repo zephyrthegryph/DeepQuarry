@@ -733,7 +733,7 @@ REF_OWNED(/obj/machinery/porta_turret, "spark_system")
 	PRIVATE_PROC(TRUE)
 
 	if(speed_process) // Even while in fast processing mode we want to popdown and heal at the tickrate of the standard machine loop.
-		if(world.time < (last_process_time + SSmachines.wait))
+		if(world.time < (last_process_time + MACHINE_SERVICE_INTERVAL))
 			return
 		last_process_time = world.time
 

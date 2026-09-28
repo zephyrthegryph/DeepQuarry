@@ -309,8 +309,8 @@ REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 
 /obj/machinery/power/apc/proc/energy_fail(duration)
 	var/failure_ticks = max(round(duration), 0)
-	failure_until = max(failure_until, world.time + failure_ticks * max(SSmachines.wait, 1))
-	failure_timer = CEILING(max(failure_until - world.time, 0) / max(SSmachines.wait, 1), 1)
+	failure_until = max(failure_until, world.time + failure_ticks * max(MACHINE_SERVICE_INTERVAL, 1))
+	failure_timer = CEILING(max(failure_until - world.time, 0) / max(MACHINE_SERVICE_INTERVAL, 1), 1)
 	// The power stage ends the failure by its rewake.
 	om_wake(src, /datum/om/pipeline/machine)
 	queue_icon_update()

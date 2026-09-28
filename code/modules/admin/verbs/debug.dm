@@ -178,7 +178,7 @@ ADMIN_VERB(cmd_debug_del_all, R_SERVER, "Del-All", "DANGER: Deletes all instance
 	feedback_add_details("admin_verb","DELA") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(cmd_debug_make_powernets, R_DEBUG, "Make Powernets", "Send every cable and power machine to the power network again.", ADMIN_CATEGORY_DEBUG_DANGEROUS)
-	SSmachines.power_reregister_all()
+	GLOB.machine_service.power_reregister_all()
 	log_admin("[key_name(user)] has remade the power network.")
 	message_admins("[key_name_admin(user)] has remade the power network.")
 	feedback_add_details("admin_verb","MPWN") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!

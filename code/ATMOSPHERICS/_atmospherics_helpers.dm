@@ -82,7 +82,7 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 		transfer_moles = min(transfer_moles, available_power / specific_power)
 	if(transfer_moles < MINIMUM_MOLES_TO_PUMP)
 		return -1
-	if(!SSmachines.queue_pump_transfer(M, source, sink, transfer_moles, specific_power, source_moles, source.return_volume()))
+	if(!GLOB.machine_service.queue_pump_transfer(M, source, sink, transfer_moles, specific_power, source_moles, source.return_volume()))
 		return -1
 	return specific_power * transfer_moles
 

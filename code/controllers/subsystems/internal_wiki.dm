@@ -404,8 +404,8 @@ SUBSYSTEM_DEF(internal_wiki)
 		grind_list["material"] = display_reactions
 
 	display_reactions = list()
-	for(var/SN in SSplants.seeds)
-		var/datum/seed/S = SSplants.seeds[SN]
+	for(var/SN in GLOB.plant_service.seeds)
+		var/datum/seed/S = GLOB.plant_service.seeds[SN]
 		if(S && S.roundstart && !S.mysterious)
 			if(S.wiki_flag & WIKI_SPOILER)
 				continue
@@ -553,8 +553,8 @@ SUBSYSTEM_DEF(internal_wiki)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	// seeds and plants
-	for(var/SN in SSplants.seeds)
-		var/datum/seed/S = SSplants.seeds[SN]
+	for(var/SN in GLOB.plant_service.seeds)
+		var/datum/seed/S = GLOB.plant_service.seeds[SN]
 		if(S && S.roundstart && !S.mysterious)
 			if(S.wiki_flag & WIKI_SPOILER)
 				spoiler_entries.Add(S.type)
@@ -1058,7 +1058,7 @@ SUBSYSTEM_DEF(internal_wiki)
 	if(S.mutants && length(S.mutants) > 0)
 		var/list/mutations = list()
 		for(var/MS in S.mutants)
-			var/datum/seed/mut = SSplants.seeds[MS]
+			var/datum/seed/mut = GLOB.plant_service.seeds[MS]
 			if(mut)
 				mutations.Add(mut.display_name)
 		data["mutations"] = mutations

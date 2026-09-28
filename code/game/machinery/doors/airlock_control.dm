@@ -253,7 +253,7 @@
 			alert = (pressure < ONE_ATMOSPHERE*0.8)
 
 			update_icon()
-	SSmachines.hibernate_airlock_sensor(src)
+	GLOB.machine_service.hibernate_airlock_sensor(src)
 	return PROCESS_KILL
 
 /obj/machinery/airlock_sensor/proc/set_frequency(new_frequency)

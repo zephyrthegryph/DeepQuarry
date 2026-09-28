@@ -60,7 +60,7 @@
 #define LIFE_PRESENT_MIN_INTERVAL (0.5 SECONDS)
 /// Observer upkeep (ghosts, AI eyes, blob overmind) runs this often.
 #define OBSERVER_UPKEEP_INTERVAL (LIFE_CYCLE)
-/// Every Nth pipeline frame is timed per stage and mob type (SSmobs' two-minute profile).
+/// Every Nth pipeline frame is timed per stage and mob type (the mob service's two-minute profile).
 #ifndef OM_NO_STAGE_PROFILE
 #define LIFE_PROFILE_STRIDE 16
 #else

@@ -16,5 +16,5 @@
 		var/obj/item/gripper/G = locate(/obj/item/gripper) in module
 		G?.drop_item()
 	remove_robot_verbs()
-	SSmobs.report_death(src)
+	GLOB.mob_service.report_death(src)
 	..(gibbed,"shudders violently for a moment, then becomes motionless, its eyes slowly darkening.")

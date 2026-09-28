@@ -20,7 +20,7 @@ SUBSYSTEM_DEF(timer)
 	priority = FIRE_PRIORITY_TIMER
 	flags = SS_TICKER|SS_NO_INIT
 	dependencies = list(
-		/datum/controller/subsystem/machines
+		/datum/controller/subsystem/air
 	)
 
 	/// Queue used for storing timers that do not fit into the current buckets

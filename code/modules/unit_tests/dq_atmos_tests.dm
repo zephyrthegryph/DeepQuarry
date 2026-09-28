@@ -34,7 +34,7 @@
 /// earlier fixtures; bounding an assertion by an arbitrary number of scans then
 /// tests queue position rather than whether the new mutation wakes its device.
 /proc/dq_atmos_test_drain_dependency_queue()
-	while(!SSmachines.wake_dirty_gas_subscribers())
+	while(!GLOB.machine_service.wake_dirty_gas_subscribers())
 		stoplag()
 	vg_drain_dirty_gas_observations()
 
@@ -2829,7 +2829,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	TEST_ASSERT(om_watch_armed(S), "sleeping airlock sensor did not arm a gas watch")
 	T.return_air().adjust_moles(/datum/gas/oxygen, 10)
 	for(var/i in 1 to 4096)
-		SSmachines.wake_dirty_gas_subscribers()
+		GLOB.machine_service.wake_dirty_gas_subscribers()
 		if(machine_stepping(S))
 			break
 	TEST_ASSERT(machine_stepping(S), \
@@ -3859,12 +3859,12 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/wakes_before = A.gas_dependency_wake_count
 	T.air.adjust_moles(/datum/gas/oxygen, 0.01)
 	for(var/i in 1 to 4096)
-		SSmachines.wake_dirty_gas_subscribers()
+		GLOB.machine_service.wake_dirty_gas_subscribers()
 	TEST_ASSERT_EQUAL(A.gas_dependency_wake_count, wakes_before, \
 		"a harmless composition drift that crossed no alarm or control threshold woke the air alarm")
 	T.air.adjust_moles(/datum/gas/plasma, 50)
 	for(var/i in 1 to 65536)
-		SSmachines.wake_dirty_gas_subscribers()
+		GLOB.machine_service.wake_dirty_gas_subscribers()
 		if(A.gas_dependency_wake_count > wakes_before)
 			break
 	TEST_ASSERT(A.gas_dependency_wake_count > wakes_before, \
@@ -3878,7 +3878,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	wakes_before = A.gas_dependency_wake_count
 	T.air.set_temperature(A.target_temperature + 3)
 	for(var/i in 1 to 65536)
-		SSmachines.wake_dirty_gas_subscribers()
+		GLOB.machine_service.wake_dirty_gas_subscribers()
 		if(A.gas_dependency_wake_count > wakes_before)
 			break
 	TEST_ASSERT(A.gas_dependency_wake_count > wakes_before, \
@@ -3948,7 +3948,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/vent_wakes = V.gas_dependency_wake_count
 	V.air_contents.adjust_moles(/datum/gas/oxygen, 5)
 	T.air.adjust_moles(/datum/gas/oxygen, 5)
-	while(!SSmachines.wake_dirty_gas_subscribers())
+	while(!GLOB.machine_service.wake_dirty_gas_subscribers())
 		stoplag()
 	TEST_ASSERT_EQUAL(V.gas_dependency_wake_count, vent_wakes, "a gas change woke a vent pump, which has no DM work")
 	TEST_ASSERT(!om_attached(V, /datum/om/pipeline/machine), "a vent pump joined the machine pipeline")
@@ -3960,7 +3960,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/alarm_wakes_before = A.gas_dependency_wake_count
 	T.air.adjust_moles(/datum/gas/plasma, 1)
 	for(var/alarm_i in 1 to 65536)
-		SSmachines.wake_dirty_gas_subscribers()
+		GLOB.machine_service.wake_dirty_gas_subscribers()
 		if(A.gas_dependency_wake_count > alarm_wakes_before)
 			break
 		if(!(alarm_i % 256))
@@ -3972,7 +3972,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/sensor_wakes_before = S.gas_dependency_wake_count
 	T.air.set_temperature(T.air.return_temperature() + 5)
 	for(var/sensor_i in 1 to 65536)
-		SSmachines.wake_dirty_gas_subscribers()
+		GLOB.machine_service.wake_dirty_gas_subscribers()
 		if(S.gas_dependency_wake_count > sensor_wakes_before)
 			break
 		if(!(sensor_i % 256))
@@ -4079,7 +4079,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/exchanger_wakes = first.machine_wake_count
 	second.air_contents.set_temperature(T20C + 10)
 	for(var/i in 1 to 4096)
-		SSmachines.wake_dirty_gas_subscribers()
+		GLOB.machine_service.wake_dirty_gas_subscribers()
 		if(first.machine_wake_count > exchanger_wakes)
 			break
 	TEST_ASSERT(first.machine_wake_count > exchanger_wakes, "temperature divergence did not wake a heat exchanger")
@@ -4139,7 +4139,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	first.air1.set_temperature(T20C)
 	first.air1.adjust_moles(/datum/gas/oxygen, 100)
 	for(var/generator_i in 1 to 4096)
-		SSmachines.wake_dirty_gas_subscribers()
+		GLOB.machine_service.wake_dirty_gas_subscribers()
 		if(machine_stepping(G))
 			break
 	TEST_ASSERT(machine_stepping(G), "circulator pressure change did not wake sleeping generator")
@@ -4169,12 +4169,12 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(om_watch_armed(F), "closed firedoor did not register gas dependencies")
 	var/firedoor_wakes_before = F.gas_dependency_wake_count
 	T.air.set_temperature(T.air.return_temperature() + 10)
-	while(!SSmachines.wake_dirty_gas_subscribers())
+	while(!GLOB.machine_service.wake_dirty_gas_subscribers())
 		stoplag()
 	TEST_ASSERT_EQUAL(F.gas_dependency_wake_count, firedoor_wakes_before, "harmless in-band temperature drift woke a closed firedoor")
 	T.air.set_temperature(convert_c2k(60))
 	for(var/firedoor_i in 1 to 65536)
-		SSmachines.wake_dirty_gas_subscribers()
+		GLOB.machine_service.wake_dirty_gas_subscribers()
 		if(F.gas_dependency_wake_count > firedoor_wakes_before)
 			break
 		if(!(firedoor_i % 256))
@@ -4246,7 +4246,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// Finish any dirty-gas batch captured by the running subsystem before
 	// consuming the mutation made above. Production does this on successive fires.
 	for(var/meter_i in 1 to 4096)
-		SSmachines.wake_dirty_gas_subscribers()
+		GLOB.machine_service.wake_dirty_gas_subscribers()
 		if(M.machine_wake_count > meter_wakes)
 			break
 	TEST_ASSERT(M.machine_wake_count > meter_wakes, "meter did not wake after target pressure changed")
@@ -4288,7 +4288,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/connector_wakes = C.machine_wake_count + C.gas_dependency_wake_count
 	P.air_contents.adjust_moles(/datum/gas/oxygen, 1)
 	for(var/connector_i in 1 to 4096)
-		SSmachines.wake_dirty_gas_subscribers()
+		GLOB.machine_service.wake_dirty_gas_subscribers()
 	TEST_ASSERT_EQUAL(C.machine_wake_count + C.gas_dependency_wake_count, connector_wakes, "connected portable connector woke for a device gas change it can't act on")
 	C.clear_gas_dependency()
 	C.connected_device = null
@@ -4308,11 +4308,11 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/canister_wakes = canister.gas_dependency_wake_count
 	canister.air_contents.adjust_moles(/datum/gas/oxygen, 1)
 	for(var/canister_i in 1 to 4096)
-		SSmachines.wake_dirty_gas_subscribers()
+		GLOB.machine_service.wake_dirty_gas_subscribers()
 	TEST_ASSERT_EQUAL(canister.gas_dependency_wake_count, canister_wakes, "a change inside its gauge band woke a closed connected canister")
 	canister.air_contents.clear()
 	for(var/canister_i in 1 to 4096)
-		SSmachines.wake_dirty_gas_subscribers()
+		GLOB.machine_service.wake_dirty_gas_subscribers()
 		if(canister.gas_dependency_wake_count > canister_wakes)
 			break
 	// The watch fired and queued a pipeline wake (om_changed() enqueues; the frame runs on the
@@ -4326,7 +4326,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	connector_wakes = C.machine_wake_count + C.gas_dependency_wake_count
 	canister.air_contents.adjust_moles(/datum/gas/oxygen, 1)
 	for(var/connector_i in 1 to 4096)
-		SSmachines.wake_dirty_gas_subscribers()
+		GLOB.machine_service.wake_dirty_gas_subscribers()
 	TEST_ASSERT_EQUAL(C.machine_wake_count + C.gas_dependency_wake_count, connector_wakes, "portable port woke after connected-device gas changed")
 	var/obj/machinery/status_display/D = new(T)
 	var/datum/signal/blank = new
@@ -5610,7 +5610,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/filter_wakes = F.machine_wake_count
 	F.input.air.adjust_gas(/datum/gas/oxygen, 10)
 	for(var/i in 1 to 4096)
-		SSmachines.wake_dirty_gas_subscribers()
+		GLOB.machine_service.wake_dirty_gas_subscribers()
 		if(F.machine_wake_count > filter_wakes)
 			break
 	TEST_ASSERT(F.machine_wake_count > filter_wakes, "fed omni filter did not become actionable")
@@ -5631,7 +5631,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/mixer_wakes = M.machine_wake_count
 	first_input.air.adjust_gas(/datum/gas/oxygen, 10)
 	for(var/i in 1 to 4096)
-		SSmachines.wake_dirty_gas_subscribers()
+		GLOB.machine_service.wake_dirty_gas_subscribers()
 		if(M.machine_wake_count > mixer_wakes)
 			break
 	TEST_ASSERT(M.machine_wake_count > mixer_wakes, "fed omni mixer did not become actionable")
@@ -5673,7 +5673,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/leak_wakes = P.gas_dependency_wake_count
 	T.air.adjust_moles(/datum/gas/oxygen, 1)
 	for(var/i in 1 to 65536)
-		SSmachines.wake_dirty_gas_subscribers()
+		GLOB.machine_service.wake_dirty_gas_subscribers()
 		if(P.gas_dependency_wake_count > leak_wakes)
 			break
 		if(!(i % 256))
@@ -6933,14 +6933,14 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	Can.valve_open = TRUE
 	Can.release_pressure = ONE_ATMOSPHERE * 10
 
-	// Begin processing through the SSmachines list — this is what
+	// Begin processing on the machine pipeline — this is what
 	// machinery does in a live game. Canister is portable_atmospherics
 	// which is already a machine processor target.
 	var/initial_a_plasma = A.air.get_moles(/datum/gas/plasma)
 	var/initial_b_plasma = B.air.get_moles(/datum/gas/plasma)
 
-	// Let the real game tick: Master.Loop runs SSmachines (which calls
-	// Can.process()) AND SSair (which steps the gas field). This is the one
+	// Let the real game tick: Master.Loop runs SSbehaviours (the machine pipeline calls
+	// the canister step) AND SSair (which steps the gas field). This is the one
 	// integration test that keeps the wall clock on purpose. Poll and break
 	// as soon as both conditions asserted below hold.
 	var/baseline = SSair.times_fired
@@ -7150,14 +7150,14 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/datum/native_watch/gas/W = gas_dependency_watch(probe, mixture_id, GAS_DEPENDENCY_ALL, TYPE_PROC_REF(/datum/dq_gas_dependency_probe, on_dependency))
 	var/datum/native_watch/gas/B = gas_dependency_watch(bystander, other.arena_id(), GAS_DEPENDENCY_ALL, TYPE_PROC_REF(/datum/dq_gas_dependency_probe, on_dependency))
 	air.set_temperature(T20C + 10)
-	while(!SSmachines.wake_dirty_gas_subscribers())
+	while(!GLOB.machine_service.wake_dirty_gas_subscribers())
 		stoplag()
 	TEST_ASSERT_EQUAL(length(probe.heard), 1, "the watch's owner did not hear its mixture change once")
 	TEST_ASSERT_EQUAL(probe.heard?[1], mixture_id, "the watch reported the wrong mixture")
 	TEST_ASSERT(!length(bystander.heard), "a watch on another mixture heard this one")
 	qdel(W)
 	air.set_temperature(T20C + 15)
-	while(!SSmachines.wake_dirty_gas_subscribers())
+	while(!GLOB.machine_service.wake_dirty_gas_subscribers())
 		stoplag()
 	TEST_ASSERT_EQUAL(length(probe.heard), 1, "a cancelled watch still delivered")
 	qdel(B)
@@ -7474,12 +7474,12 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(om_watch_armed(R, "gas"), "settled thermoregulator did not arm its eligibility watch")
 	var/regulator_wakes = R.gas_dependency_wake_count
 	T.air.set_temperature(T20C + 0.5)
-	while(!SSmachines.wake_dirty_gas_subscribers())
+	while(!GLOB.machine_service.wake_dirty_gas_subscribers())
 		stoplag()
 	TEST_ASSERT_EQUAL(R.gas_dependency_wake_count, regulator_wakes, "sub-degree drift inside the deadband woke a thermoregulator")
 	T.air.set_temperature(T20C + 5)
 	for(var/i in 1 to 65536)
-		SSmachines.wake_dirty_gas_subscribers()
+		GLOB.machine_service.wake_dirty_gas_subscribers()
 		if(R.gas_dependency_wake_count > regulator_wakes)
 			break
 		if(!(i % 256))
@@ -7497,12 +7497,12 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(om_watch_armed(O, "gas"), "empty outlet injector did not arm its eligibility watch")
 	var/outlet_wakes = O.gas_dependency_wake_count
 	O.air_contents.adjust_moles(/datum/gas/oxygen, MINIMUM_MOLES_TO_PUMP / 10)
-	while(!SSmachines.wake_dirty_gas_subscribers())
+	while(!GLOB.machine_service.wake_dirty_gas_subscribers())
 		stoplag()
 	TEST_ASSERT_EQUAL(O.gas_dependency_wake_count, outlet_wakes, "a trace of gas below the pumping minimum woke an outlet injector")
 	O.air_contents.adjust_moles(/datum/gas/oxygen, 10)
 	for(var/i in 1 to 65536)
-		SSmachines.wake_dirty_gas_subscribers()
+		GLOB.machine_service.wake_dirty_gas_subscribers()
 		if(O.gas_dependency_wake_count > outlet_wakes)
 			break
 		if(!(i % 256))
@@ -7518,7 +7518,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /// Drains dirty gas notifications until `M` has woken past `wakes`, or the queue runs dry.
 /datum/unit_test/dq_atmos_devices_wake_only_when_actionable/proc/deliver(obj/machinery/M, wakes)
 	for(var/i in 1 to 65536)
-		SSmachines.wake_dirty_gas_subscribers()
+		GLOB.machine_service.wake_dirty_gas_subscribers()
 		if(M.gas_dependency_wake_count > wakes)
 			return
 		if(!(i % 256))

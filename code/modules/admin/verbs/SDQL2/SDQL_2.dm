@@ -23,13 +23,13 @@ Can you see where this is going? You can select objects with an arbitrary expres
 These expressions can also do variable access and proc calls (yes, both on-object and globals!)
 Keep reading!
 
-Ok. What if you want to get every machine in the SSmachine process list? Looping through world is kinda
+Ok. What if you want to get every machine in the machine registry? Looping through world is kinda
 slow.
 
-"SELECT * IN SSmachines.machinery"
+"SELECT * IN GLOB.registry_members['machines']"
 
 Here "*" as type functions as a wildcard.
-We know everything in the global SSmachines.machinery list is a machine.
+We know everything in the global GLOB.registry_members['machines'] list is a machine.
 
 You can specify "IN <expression>" to return a list to operate on.
 This can be any list that you can wizard together from global variables and global proc calls.
@@ -38,9 +38,9 @@ It can also be a single object, in which case the object is wrapped in a list fo
 So yeah SDQL is unironically better than VV for complex single-object operations.
 
 You can of course combine these.
-"SELECT * IN SSmachines.machinery WHERE z == 4"
-"SELECT * IN SSmachines.machinery WHERE stat & 2" // (2 is NOPOWER, can't use defines from SDQL. Sorry!)
-"SELECT * IN SSmachines.machinery WHERE stat & 2 && z == 4"
+"SELECT * IN GLOB.registry_members['machines'] WHERE z == 4"
+"SELECT * IN GLOB.registry_members['machines'] WHERE stat & 2" // (2 is NOPOWER, can't use defines from SDQL. Sorry!)
+"SELECT * IN GLOB.registry_members['machines'] WHERE stat & 2 && z == 4"
 
 The possibilities are endless (just don't crash the server, ok?).
 

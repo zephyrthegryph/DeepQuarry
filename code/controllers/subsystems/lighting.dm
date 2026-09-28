@@ -1,7 +1,7 @@
 SUBSYSTEM_DEF(lighting)
 	name = "Lighting"
 	dependencies = list(
-		/datum/controller/subsystem/machines
+		/datum/controller/subsystem/air
 	)
 	wait = 1
 	flags = SS_TICKER
