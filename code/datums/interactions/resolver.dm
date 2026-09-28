@@ -263,6 +263,8 @@
 
 /// Actor -> how many legacy entries are dispatching for them right now. The entry proc decided reach itself.
 GLOBAL_LIST_EMPTY(interaction_entry_actors)
+/// Actors whose running entry interaction answered INTERACTION_HANDLED_PASS (set by generic run_effect()).
+GLOBAL_LIST_EMPTY(interaction_entry_pass)
 
 /// A type's interactions for one entry, in dispatch order: priority, then declaration order. Cached per type.
 /proc/interaction_entry_candidates(atom/target, entry)
@@ -298,7 +300,8 @@ GLOBAL_LIST_EMPTY(interaction_entry_actors)
  * interaction that is `behind_gate`, or at the end if none was meant.
  * Returns the interaction that answered, INTERACTION_GATE_STOPPED when the gate
  * stopped it, or null when nothing was meant.
- * `result` (a list) gets the outcome, INTERACTION_TRY_RAN or INTERACTION_TRY_BLOCKED.
+ * `result` (a list) gets the outcome, INTERACTION_TRY_RAN or INTERACTION_TRY_BLOCKED, plus
+ * INTERACTION_TRY_PASS when the effect answered INTERACTION_HANDLED_PASS (input not used up).
  */
 /proc/run_interaction_entry(mob/actor, atom/target, obj/item/held, entry, list/result, gate)
 	if(!actor || !target)
@@ -311,6 +314,9 @@ GLOBAL_LIST_EMPTY(interaction_entry_actors)
 			return INTERACTION_GATE_STOPPED
 		return null
 	GLOB.interaction_entry_actors[actor] = (GLOB.interaction_entry_actors[actor] || 0) + 1
+	// A nested entry (an effect that touches something else) keeps the outer one's pass flag.
+	var/saved_pass = GLOB.interaction_entry_pass[actor]
+	GLOB.interaction_entry_pass -= actor
 	. = null
 	try
 		for(var/datum/interaction/interaction as anything in candidates)
@@ -326,18 +332,28 @@ GLOBAL_LIST_EMPTY(interaction_entry_actors)
 			var/outcome = interaction.attempt(actor, target, held)
 			if(outcome)
 				result?.Add(outcome)
+				if(GLOB.interaction_entry_pass[actor])
+					result?.Add(INTERACTION_TRY_PASS)
 				. = interaction
 				break
 			if(QDELETED(target))
 				break
 	catch(var/exception/error)
+		interaction_entry_restore_pass(actor, saved_pass)
 		interaction_entry_done(actor)
 		throw error
+	interaction_entry_restore_pass(actor, saved_pass)
 	interaction_entry_done(actor)
 	// Nothing meant: the touch still reaches the gate, as the base proc did.
 	if(!. && !gate_ran && !QDELETED(target) && target.hand_gate(actor))
 		result?.Add(INTERACTION_TRY_BLOCKED)
 		return INTERACTION_GATE_STOPPED
+
+/proc/interaction_entry_restore_pass(mob/actor, saved_pass)
+	if(saved_pass)
+		GLOB.interaction_entry_pass[actor] = saved_pass
+	else
+		GLOB.interaction_entry_pass -= actor
 
 /proc/interaction_entry_done(mob/actor)
 	var/count = GLOB.interaction_entry_actors[actor] - 1

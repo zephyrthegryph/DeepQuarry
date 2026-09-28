@@ -158,9 +158,10 @@ avoid code duplication. This includes items that may sometimes act as a standard
  * item's afterattack doesn't follow.
  */
 /atom/proc/attackby(obj/item/W, mob/user, attack_modifier, click_parameters)
-	var/datum/interaction/answered = run_interaction_entry(user, src, W, INTERACTION_ENTRY_ITEM)
+	var/list/outcome = list()
+	var/datum/interaction/answered = run_interaction_entry(user, src, W, INTERACTION_ENTRY_ITEM, outcome)
 	if(answered)
-		return answered.consumes_input
+		return (INTERACTION_TRY_PASS in outcome) ? FALSE : answered.consumes_input
 	if(SEND_SIGNAL(src, COMSIG_ATOM_ATTACKBY, W, user, click_parameters) & COMPONENT_CANCEL_ATTACK_CHAIN)
 		return TRUE
 	return FALSE

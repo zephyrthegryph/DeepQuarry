@@ -321,7 +321,9 @@
 
 /obj/item/attack_hand(mob/living/user as mob)
 	if (!user) return
-	..()
+	// A gate or a converted hand interaction (I7) answered the touch: no pickup, as the old override's early return.
+	if(..())
+		return TRUE
 	if(anchored) // Start
 		if(hascall(src, "attack_self"))
 			return src.attack_self(user)
@@ -384,6 +386,9 @@
 
 /obj/item/attackby(obj/item/W as obj, mob/user as mob)
 	. = ..()
+	// A converted item interaction (I7) answered: nothing else, as the old override's early return.
+	if(.)
+		return
 	if(istype(W, /obj/item/storage))
 		var/obj/item/storage/S = W
 		if(S.use_to_pickup)
