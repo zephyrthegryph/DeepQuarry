@@ -3,7 +3,7 @@
 # count, and files not listed may have none. Declare the var as REF_OWNED/
 # REF_OWNED_LIST/REF_PAIR/REF_BACKLIST (or make it tmp, or an OM handle) and
 # lower the count; `python tools/ci/declared_refs_lint.py --update` rewrites it.
-# Total: 2562 vars in 1159 files.
+# Total: 2558 vars in 1156 files.
 code/ATMOSPHERICS/atmospherics.dm 3
 code/ATMOSPHERICS/components/binary_devices/algae_generator.dm 1
 code/ATMOSPHERICS/components/binary_devices/binary_atmos_base.dm 4
@@ -44,7 +44,6 @@ code/_helpers/pathfinding/jps.dm 2
 code/_onclick/hud/ability_screen_objects.dm 4
 code/_onclick/hud/action/action.dm 2
 code/_onclick/hud/action/action_group.dm 3
-code/_onclick/hud/action/action_item_overlay.dm 2
 code/_onclick/hud/action/action_screen_objects.dm 6
 code/_onclick/hud/hud.dm 31
 code/_onclick/hud/minihud.dm 1
@@ -84,7 +83,6 @@ code/datums/components/antags/changeling/changeling.dm 3
 code/datums/components/antags/changeling/helpers/absorbed_dna.dm 1
 code/datums/components/antags/changeling/powers/armblade.dm 1
 code/datums/components/antags/changeling/powers/visible_camouflage.dm 2
-code/datums/components/burning.dm 1
 code/datums/components/connect_containers.dm 1
 code/datums/components/connect_loc_behalf.dm 2
 code/datums/components/connect_mob_behalf.dm 2
@@ -101,7 +99,6 @@ code/datums/components/disabilities/tourettes.dm 1
 code/datums/components/dry.dm 2
 code/datums/components/effect_remover.dm 2
 code/datums/components/geiger_sound.dm 2
-code/datums/components/infective.dm 1
 code/datums/components/machinery/disposal_connection.dm 2
 code/datums/components/materials/machine_shim.dm 2
 code/datums/components/materials/remote_materials.dm 2

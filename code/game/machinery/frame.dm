@@ -356,8 +356,8 @@ GLOBAL_LIST(construction_frame_floor)
 
 	update_icon()
 
-	make_climbable()
-	make_rotatable()
+	make_climbable(src)
+	make_rotatable(src)
 
 // The board, cables, glass and tool steps are the frame's construction graph:
 // frame_construction.dm. Stock parts still go in here until C6.

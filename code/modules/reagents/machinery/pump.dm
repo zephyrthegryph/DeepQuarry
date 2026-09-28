@@ -30,7 +30,7 @@
 	RefreshParts()
 	update_icon()
 
-	make_climbable()
+	make_climbable(src)
 
 REF_OWNED(/obj/machinery/pump, "cell")
 

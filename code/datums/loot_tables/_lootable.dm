@@ -1,5 +1,5 @@
 /// Loot tables (was /datum/loot_table). Shared singletons, not attached to
-/// anything: an atom names its table in `loot_table_type` and loot_reward() rolls it.
+/// anything: an atom names its table in `loot_table_type` and loot_pile_reward() rolls it.
 /datum/loot_table
 	var/chance_nothing = 0			// Unlucky people might need to loot multiple spots to find things.
 	var/chance_uncommon = 10		// Probability of pulling from the uncommon_loot list.
@@ -30,12 +30,12 @@
 	/// The /datum/loot_table this atom drops from when searched, or null.
 	var/loot_table_type
 
-/// Drops loot from this atom's loot table for `L` (was COMSIG_LOOT_REWARD).
-/atom/proc/loot_reward(mob/living/L, list/searched_by, wake_chance = 0)
-	if(!loot_table_type)
+/// Drops loot from `A`'s loot table for `L` (was COMSIG_LOOT_REWARD).
+/proc/loot_pile_reward(atom/A, mob/living/L, list/searched_by, wake_chance = 0)
+	if(!A.loot_table_type)
 		return
-	var/datum/loot_table/table = get_loot_table(loot_table_type)
-	table.loot(src, L, searched_by, wake_chance)
+	var/datum/loot_table/table = get_loot_table(A.loot_table_type)
+	table.loot(A, L, searched_by, wake_chance)
 
 /// Calculates and drops loot, the source's turf is where it will be dropped, L is the searching mob, and searched_by is a passed list for storing who has searched a loot pile.
 /datum/loot_table/proc/loot(atom/source,mob/living/L,list/searched_by, wake_chance = 0)

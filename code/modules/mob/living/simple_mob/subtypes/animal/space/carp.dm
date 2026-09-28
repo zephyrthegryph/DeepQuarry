@@ -90,7 +90,7 @@
 	. = ..()
 	carp_randomify(rarechance)
 	update_icons()
-	enable_swarming()
+	enable_swarming(src)
 
 // This is so carps can swarm
 /mob/living/simple_mob/animal/space/carp/CanPass(atom/movable/mover, turf/target)

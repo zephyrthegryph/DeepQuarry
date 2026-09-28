@@ -13,7 +13,7 @@
 /obj/machinery/reagent_refinery/waste_processor/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	make_climbable()
+	make_climbable(src)
 	flags |= NOREACT
 
 /obj/machinery/reagent_refinery/waste_processor/refinery_step()

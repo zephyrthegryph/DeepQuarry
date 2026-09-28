@@ -1,6 +1,6 @@
 /obj/structure/closet/secure_closet/freezer/Initialize(mapload)
 	. = ..()
-	make_climbable()
+	make_climbable(src)
 
 /obj/structure/closet/secure_closet/freezer/kitchen
 	name = "kitchen cabinet"

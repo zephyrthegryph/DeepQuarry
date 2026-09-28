@@ -30,7 +30,7 @@
 	// Update neighbours and self for state
 	update_neighbours()
 	update_icon()
-	make_climbable()
+	make_climbable(src)
 
 REF_OWNED(/obj/machinery/reagent_refinery/reactor, "internal_tank")
 

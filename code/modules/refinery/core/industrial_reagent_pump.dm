@@ -21,7 +21,7 @@
 	AddComponent(/datum/component/hose_connector/input)
 	AddComponent(/datum/component/hose_connector/output)
 
-	make_climbable()
+	make_climbable(src)
 
 /obj/machinery/reagent_refinery/pump/refinery_step()
 	if(!anchored)

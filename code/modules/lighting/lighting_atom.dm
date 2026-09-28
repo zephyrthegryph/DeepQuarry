@@ -108,9 +108,9 @@
 		return
 
 	if(opacity)
-		start_blocking_light()
+		start_blocking_light(src)
 	else
-		stop_blocking_light()
+		stop_blocking_light(src)
 
 
 /turf/set_opacity(new_opacity)

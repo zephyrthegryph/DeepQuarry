@@ -45,7 +45,7 @@
 	else
 		update() // do_a_flip() calls update anyway, so, lazy way of catching unupdated pipe!
 
-	make_rotatable()
+	make_rotatable(src)
 
 // update iconstate and dpdir due to dir and type
 /obj/structure/disposalconstruct/proc/update()

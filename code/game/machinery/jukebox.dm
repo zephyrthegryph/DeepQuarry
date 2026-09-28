@@ -34,7 +34,7 @@
 	update_icon()
 	if(!LAZYLEN(getTracksList()))
 		stat |= BROKEN
-	make_climbable()
+	make_climbable(src)
 
 /obj/machinery/media/jukebox/proc/getTracksList()
 	return hacked ? SSmedia_tracks.all_tracks : SSmedia_tracks.jukebox_tracks

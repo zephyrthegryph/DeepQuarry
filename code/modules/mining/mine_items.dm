@@ -354,7 +354,7 @@
 /obj/structure/trailblazer/Initialize(mapload)
 	. = ..()
 	set_color()
-	make_climbable()
+	make_climbable(src)
 
 /obj/structure/trailblazer/proc/set_color()
 	icon_state = "redtrail_light_on"

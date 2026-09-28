@@ -121,7 +121,7 @@
 	. = ..()
 	if(cell_type)
 		cell = new cell_type(src)
-	make_climbable()
+	make_climbable(src)
 
 REF_OWNED(/obj/machinery/shieldgen, "cell")
 REF_OWNED_LIST(/obj/machinery/shieldgen, "deployed_shields")

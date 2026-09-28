@@ -21,7 +21,7 @@
 /obj/machinery/atmospherics/pipe/tank/Initialize(mapload)
 	icon_state = "air"
 	. = ..()
-	make_climbable()
+	make_climbable(src)
 
 /obj/machinery/atmospherics/pipe/tank/init_dir()
 	initialize_directions = dir

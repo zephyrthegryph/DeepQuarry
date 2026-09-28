@@ -130,7 +130,7 @@
 
 /mob/living/simple_mob/animal/giant_spider/Initialize(mapload)
 	. = ..()
-	enable_swarming()
+	enable_swarming(src)
 
 /mob/living/simple_mob/animal/giant_spider/CanPass(atom/movable/mover, turf/target)
 	if(isliving(mover) && !istype(mover, /mob/living/simple_mob/animal/giant_spider) && mover.density == TRUE && stat != DEAD)

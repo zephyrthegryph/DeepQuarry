@@ -244,7 +244,7 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 	//
 	// Behavior properties: plain numeric magnitudes. Read via
 	// dq_material_luminescence/radioactivity/toxicity (material_behaviors.dm) and
-	// applied to items by configure_material_behaviors(). 0 = inert on that axis.
+	// applied to items by configure_item_emissions(). 0 = inert on that axis.
 	var/luminescence = 0   // passive light range driver (~0-80)
 	var/radioactivity = 0  // per-tick irradiation strength
 	var/toxicity = 0       // per-tick toxin dose to a bare holder

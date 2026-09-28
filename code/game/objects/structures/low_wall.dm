@@ -43,7 +43,7 @@
 	max_integrity = material.integrity
 	update_integrity(max_integrity)
 
-	make_climbable()
+	make_climbable(src)
 
 	return INITIALIZE_HINT_LATELOAD
 

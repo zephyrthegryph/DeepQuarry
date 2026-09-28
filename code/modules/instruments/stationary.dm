@@ -52,7 +52,7 @@ REF_OWNED(/obj/structure/musician, "song")
 
 /obj/structure/musician/piano/Initialize(mapload)
 	. = ..()
-	make_climbable()
+	make_climbable(src)
 
 /** FIXME: We do not have atom_break implemented yet
 /obj/structure/musician/piano/atom_break(damage_flag)

@@ -10,7 +10,7 @@
 /obj/item/assembly/signaler/anomaly/Initialize(mapload)
 	. = ..()
 	if(worth)
-		make_sellable(/datum/sellable)
+		make_sellable(src, /datum/sellable)
 
 /obj/item/assembly/signaler/anomaly/receive_signal(datum/signal/signal)
 	if(!signal)

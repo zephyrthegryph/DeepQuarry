@@ -46,7 +46,7 @@
 		cell = new cell_type(src)
 	default_apply_parts()
 	update_icon()
-	make_climbable()
+	make_climbable(src)
 
 /obj/machinery/space_heater/RefreshParts(limited = 0)
 	min_temperature = DEFAULT_MIN_TEMP

@@ -61,7 +61,7 @@
 		add_overlay(list(gen_emissive_blocker), TRUE)
 
 	if(opacity)
-		start_blocking_light()
+		start_blocking_light(src)
 	if(icon_scale_x != DEFAULT_ICON_SCALE_X || icon_scale_y != DEFAULT_ICON_SCALE_Y || icon_rotation != DEFAULT_ICON_ROTATION)
 		update_transform()
 	switch(light_system)
@@ -130,7 +130,7 @@
 		UnregisterSignal(em_block, COMSIG_QDELETING)
 		QDEL_NULL(em_block)
 	// Leave the turf's opacity_sources while loc is still valid.
-	stop_blocking_light()
+	stop_blocking_light(src)
 	. = ..()
 
 	// Any mobs buckled to us were already unbuckled in the destroy
@@ -309,8 +309,8 @@
 /atom/movable/proc/Moved(atom/old_loc, direction, forced = FALSE, movetime)
 	SEND_SIGNAL(src, COMSIG_MOVABLE_MOVED, old_loc, direction, forced, movetime)
 	if(blocks_light)
-		light_blocking_moved(old_loc)
-	om_emit_moved(src, old_loc, direction, forced)
+		light_blocking_moved(src, old_loc)
+	moved_event_emit(src, old_loc, direction, forced)
 	// Mobs raise CHANGE_MOB_LOC themselves (living_movement.dm).
 	if(om_listen && !ismob(src))
 		om_changed(src, isitem(src) ? CHANGE_ITEM_LOC : CHANGE_EXPLICIT)
@@ -352,7 +352,7 @@
 // Make sure you know what you're doing if you call this, this is intended to only be called by byond directly.
 // You probably want CanPass()
 /atom/movable/Cross(atom/movable/AM)
-	if(om_cross_vetoed(src, AM))
+	if(cross_event_vetoed(src, AM))
 		return FALSE
 	return CanPass(AM, loc)
 

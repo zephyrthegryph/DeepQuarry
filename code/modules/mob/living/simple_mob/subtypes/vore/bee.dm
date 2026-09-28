@@ -46,7 +46,7 @@
 
 /mob/living/simple_mob/vore/bee/Initialize(mapload)
 	. = ..()
-	enable_swarming()
+	enable_swarming(src)
 
 /mob/living/simple_mob/vore/bee/Process_Spacemove(check_drift = 0)
 	return 1	//No drifting in space for space bee!

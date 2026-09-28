@@ -99,7 +99,7 @@
 	power_change()
 
 	if(can_rotate) // If we can't change directions, don't bother.
-		make_rotatable()
+		make_rotatable(src)
 
 GLOBAL_LIST_EMPTY(vending_products)
 /**

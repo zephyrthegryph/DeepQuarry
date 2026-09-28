@@ -33,7 +33,7 @@
 
 /obj/machinery/portable_atmospherics/canister/Initialize(mapload)
 	. = ..()
-	make_climbable()
+	make_climbable(src)
 
 /obj/machinery/portable_atmospherics/canister/proc/effective_maximum_pressure()
 	var/internal_temperature = air_contents?.return_temperature() || T20C

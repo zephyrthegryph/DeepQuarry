@@ -753,7 +753,7 @@
 	prototype.name = "test R&D prototype"
 	prototype.set_economic_provenance(DEPARTMENT_RESEARCH, 10, producer.account_number)
 	var/datum/exported_crate/science_export = new
-	TEST_ASSERT(prototype.export_sale(science_export, TRUE), "R&D prototype was not recognized as sellable cargo")
+	TEST_ASSERT(cargo_export_sale(prototype, science_export, TRUE), "R&D prototype was not recognized as sellable cargo")
 	TEST_ASSERT_EQUAL(science_export.value, 10, "R&D prototype export value was incorrect")
 	SSsupply.distribute_export_revenue(science_export)
 	TEST_ASSERT_EQUAL(research.money - research_before, 375, "Research did not receive its manufactured export share")
@@ -764,7 +764,7 @@
 	// Untagged salvage/raw trade belongs to Cargo and uses the same shuttle sale path.
 	var/obj/item/salvage/cargo_goods = new(test_turf)
 	var/datum/exported_crate/cargo_export = new
-	TEST_ASSERT(cargo_goods.export_sale(cargo_export, TRUE), "Cargo salvage was not recognized as sellable cargo")
+	TEST_ASSERT(cargo_export_sale(cargo_goods, cargo_export, TRUE), "Cargo salvage was not recognized as sellable cargo")
 	SSsupply.distribute_export_revenue(cargo_export)
 	TEST_ASSERT_EQUAL(cargo.money - cargo_before, 5100, "Cargo did not receive unassigned goods revenue plus handling fees")
 	TEST_ASSERT_EQUAL(cargo_contract.state, CONTRACT_COMPLETED, "Cargo's contract did not count both handled Research freight and untagged salvage")
@@ -866,7 +866,7 @@
 	var/fulfilled_before = matching_bid.fulfilled_units
 	var/datum/exported_crate/export = new
 	export.market_bid_id = matching_bid.id
-	TEST_ASSERT(test_product.export_sale(export, TRUE), "routed market freight was not accepted by the generic export path")
+	TEST_ASSERT(cargo_export_sale(test_product, export, TRUE), "routed market freight was not accepted by the generic export path")
 	TEST_ASSERT(export.value > 20, "matching buyer demand did not add a market premium")
 	TEST_ASSERT_EQUAL(matching_bid.fulfilled_units, fulfilled_before + 1, "market demand did not consume the routed unit")
 	TEST_ASSERT_EQUAL(export.market_counterparty_id, matching_bid.counterparty_id, "export receipt lost its external buyer identity")

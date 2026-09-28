@@ -19,7 +19,7 @@
 
 /obj/machinery/atmospherics/unary/heat_exchanger/Initialize(mapload)
 	. = ..()
-	make_climbable()
+	make_climbable(src)
 
 /obj/machinery/atmospherics/unary/heat_exchanger/update_icon()
 	if(node)

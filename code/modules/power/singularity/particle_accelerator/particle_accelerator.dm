@@ -73,8 +73,8 @@ So, hopefully this is helpful if any more icons are to be added/changed/wonderin
 
 /obj/structure/particle_accelerator/Initialize(mapload)
 	. = ..()
-	make_climbable()
-	make_rotatable()
+	make_climbable(src)
+	make_rotatable(src)
 
 // LIFECYCLE: its control box rescans its parts.
 /obj/structure/particle_accelerator/Destroy()
@@ -229,8 +229,8 @@ So, hopefully this is helpful if any more icons are to be added/changed/wonderin
 
 /obj/machinery/particle_accelerator/Initialize(mapload)
 	. = ..()
-	make_climbable()
-	make_rotatable()
+	make_climbable(src)
+	make_rotatable(src)
 
 /obj/machinery/particle_accelerator/update_icon()
 	return

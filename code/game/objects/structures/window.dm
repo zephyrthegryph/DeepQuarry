@@ -309,7 +309,7 @@
 		state = 0
 
 	// If we started anchored we'll need to disable rotation
-	make_rotatable()
+	make_rotatable(src)
 	update_verbs()
 
 	ini_dir = dir

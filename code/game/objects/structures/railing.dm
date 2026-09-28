@@ -31,8 +31,8 @@
 	// TODO - "constructed" is not passed to us. We need to find a way to do this safely.
 	if (constructed) // player-constructed railings
 		anchored = FALSE
-	make_climbable(/datum/om/behaviour/climbable/unanchored_can_break, 3.4 SECONDS, TRUE) // It's a RAILING!
-	make_rotatable()
+	make_climbable(src, /datum/om/behaviour/climbable/unanchored_can_break, 3.4 SECONDS, TRUE) // It's a RAILING!
+	make_rotatable(src)
 	if(src.anchored)
 		update_icon(0)
 

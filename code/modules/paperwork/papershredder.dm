@@ -30,7 +30,7 @@
 	. = ..()
 	default_apply_parts()
 	update_icon()
-	make_climbable()
+	make_climbable(src)
 
 /obj/machinery/papershredder/declare_interactions(list/into)
 	into += list(

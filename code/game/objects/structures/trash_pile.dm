@@ -26,7 +26,7 @@
 		"brokecomp")
 	mouse_nest = new(src)
 	loot_table_type = /datum/loot_table/trash_pile
-	make_climbable()
+	make_climbable(src)
 
 REF_OWNED(/obj/structure/trash_pile, "mouse_nest")
 
@@ -148,7 +148,7 @@ REF_OWNED(/obj/structure/trash_pile, "mouse_nest")
 		hider = null
 		to_chat(user,span_danger("Some sort of creature leaps out of \the [src]!"))
 	else
-		loot_reward(user, searchedby, 5)
+		loot_pile_reward(src, user, searchedby, 5)
 
 /obj/structure/mob_spawner/mouse_nest
 	name = "trash"

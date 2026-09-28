@@ -155,7 +155,7 @@
 /obj/machinery/power/thermoregulator/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	make_climbable()
+	make_climbable(src)
 
 /obj/machinery/power/thermoregulator/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()

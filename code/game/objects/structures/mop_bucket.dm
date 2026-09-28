@@ -14,7 +14,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/mopbucket, REGISTRY_MOP_BUCKETS)
 /obj/structure/mopbucket/Initialize(mapload, ...)
 	create_reagents(300)
 	. = ..()
-	make_climbable()
+	make_climbable(src)
 
 /obj/structure/mopbucket/examine(mob/user)
 	. = ..()

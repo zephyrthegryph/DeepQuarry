@@ -124,11 +124,11 @@
 		if(MEDIUM_HOLE)
 			visible_message(span_notice("\The [user] cuts into \the [src] some more."))
 			to_chat(user, span_notice("You could probably fit yourself through that hole now. Although climbing through would be much faster if you made it even bigger."))
-			make_climbable()
+			make_climbable(src)
 		if(LARGE_HOLE)
 			visible_message(span_notice("\The [user] completely cuts through \the [src]."))
 			to_chat(user, span_notice("The hole in \the [src] is now big enough to walk through."))
-			unmake_climbable()
+			unmake_climbable(src)
 	update_cut_status()
 
 /obj/structure/fence/Bumped(AM)

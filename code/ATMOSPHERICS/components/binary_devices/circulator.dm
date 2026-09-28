@@ -27,7 +27,7 @@
 /obj/machinery/atmospherics/binary/circulator/Initialize(mapload)
 	. = ..()
 	air1.set_volume(400)
-	make_rotatable()
+	make_rotatable(src)
 
 /obj/machinery/atmospherics/binary/circulator/proc/return_transfer_air()
 	var/datum/gas_mixture/removed

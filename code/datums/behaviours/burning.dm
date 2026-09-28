@@ -13,7 +13,7 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
  * Mobs use the fire stacks status effect; their body side is H2's.
  *
  * A shared OM behaviour ticking once a second; the burning state lives on the
- * object. Start with O.start_burning(); extinguish() ends it.
+ * object. Start with burning_start(O); extinguish() ends it.
  * Can only be used on objects that use the integrity system.
  */
 /datum/om/behaviour/burning
@@ -36,39 +36,43 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 	. = ..()
 	. = (. || list()) + "burn_cool_watch"
 
-/// TRUE while this object burns.
-/obj/proc/is_burning()
-	return om_attached(src, /datum/om/behaviour/burning)
+// Base-type procs cost a proc-table entry on every subtype (tools/ci/base_proc_lint.py),
+// so the burning API is global procs taking the object; the heat-watch callback runs on
+// the behaviour singleton.
 
-/// Catches fire. Refused (FALSE) unless the object uses integrity and is flammable.
-/obj/proc/start_burning(fire_overlay = GLOB.fire_overlay, fire_particles = /particles/smoke/burning)
-	if(is_burning())
+/// TRUE while `O` burns.
+/proc/burning_active(obj/O)
+	return om_attached(O, /datum/om/behaviour/burning)
+
+/// Sets `O` on fire. Refused (FALSE) unless it uses integrity and is flammable.
+/proc/burning_start(obj/O, fire_overlay = GLOB.fire_overlay, fire_particles = /particles/smoke/burning)
+	if(burning_active(O))
 		return TRUE
-	if(!uses_integrity)
-		stack_trace("Tried to start burning an atom ([type]) that does not use atom_integrity!")
+	if(!O.uses_integrity)
+		stack_trace("Tried to start burning an atom ([O.type]) that does not use atom_integrity!")
 		return FALSE
 	// only flammable atoms should burn, but it's not really an error if we try
-	if(!(resistance_flags & FLAMMABLE) || (resistance_flags & FIRE_PROOF))
+	if(!(O.resistance_flags & FLAMMABLE) || (O.resistance_flags & FIRE_PROOF))
 		return FALSE
-	burn_overlay = fire_overlay
-	burn_ended_by = null
+	O.burn_overlay = fire_overlay
+	O.burn_ended_by = null
 	if(fire_particles)
 		// burning particles look pretty bad when they stack on mobs, so that behavior is not wanted for items
-		add_shared_particles(fire_particles, "[fire_particles]_[isitem(src)]", isitem(src) ? NONE : PARTICLE_ATTACH_MOB)
-		burn_particle_type = fire_particles
-	burn_fuel = max_integrity * BURN_ENERGY_PER_INTEGRITY
-	om_attach(src, /datum/om/behaviour/burning)
+		O.add_shared_particles(fire_particles, "[fire_particles]_[isitem(O)]", isitem(O) ? NONE : PARTICLE_ATTACH_MOB)
+		O.burn_particle_type = fire_particles
+	O.burn_fuel = O.max_integrity * BURN_ENERGY_PER_INTEGRITY
+	om_attach(O, /datum/om/behaviour/burning)
 	return TRUE
 
 /datum/om/behaviour/burning/on_start(obj/O)
-	O.burning_start_heat()
+	burning_start_heat(O)
 	O.resistance_flags |= ON_FIRE
 	if(O.burn_overlay)
 		O.add_overlay(O.burn_overlay)
 	O.update_icon()
 
 /datum/om/behaviour/burning/on_stop(obj/O)
-	O.burning_stop_heat()
+	burning_stop_heat(O)
 	if(O.burn_particle_type)
 		O.remove_shared_particles("[O.burn_particle_type]_[isitem(O)]")
 		O.burn_particle_type = null
@@ -80,82 +84,85 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 	O.burn_overlay = null
 
 /// The heat source and the cooling watch on the object's heat body.
-/obj/proc/burning_start_heat()
-	if(!create_heat_body(TRUE))
+/proc/burning_start_heat(obj/O)
+	if(!O.create_heat_body(TRUE))
 		return
-	vg_heat_body_keep(heat_body, TRUE)
-	var/limit = burn_out_temperature()
+	vg_heat_body_keep(O.heat_body, TRUE)
+	var/limit = burn_out_temperature(O)
 	// A lit object is at least at its ignition point.
-	if(get_temperature() < limit + BURN_EXTINGUISH_MARGIN)
-		vg_heat_body_set_temperature(heat_body, limit + BURN_EXTINGUISH_MARGIN)
-	vg_heat_body_power(heat_body, BURN_POWER)
-	burn_cool_watch = heat_watch_threshold(src, src, limit, FALSE, TYPE_PROC_REF(/obj, burning_cooled))
+	if(O.get_temperature() < limit + BURN_EXTINGUISH_MARGIN)
+		vg_heat_body_set_temperature(O.heat_body, limit + BURN_EXTINGUISH_MARGIN)
+	vg_heat_body_power(O.heat_body, BURN_POWER)
+	var/datum/om/behaviour/burning/def = om_registry().behaviour(/datum/om/behaviour/burning)
+	O.burn_cool_watch = heat_watch_threshold(def, O, limit, FALSE, TYPE_PROC_REF(/datum/om/behaviour/burning, on_cooled))
 
 /// Below this the fire goes out.
-/obj/proc/burn_out_temperature()
-	var/ignition = PROPERTY(src, PROP_IGNITION_POINT)
+/proc/burn_out_temperature(obj/O)
+	var/ignition = PROPERTY(O, PROP_IGNITION_POINT)
 	if(isnull(ignition))
 		ignition = FIRE_MINIMUM_TEMPERATURE_TO_EXIST
 	return max(T0C + 50, ignition - BURN_EXTINGUISH_MARGIN)
 
-/obj/proc/burning_stop_heat()
-	QDEL_NULL(burn_cool_watch)
-	if(QDELETED(src) || isnull(heat_body))
+/proc/burning_stop_heat(obj/O)
+	QDEL_NULL(O.burn_cool_watch)
+	if(QDELETED(O) || isnull(O.heat_body))
 		return
-	vg_heat_body_power(heat_body, 0)
-	if(isnull(heat_fire_turf))
-		vg_heat_body_keep(heat_body, FALSE)
+	vg_heat_body_power(O.heat_body, 0)
+	if(isnull(O.heat_fire_turf))
+		vg_heat_body_keep(O.heat_body, FALSE)
 
-/// The object cooled below the burn-out temperature (burn_cool_watch).
-/obj/proc/burning_cooled(datum/native_watch/heat/watch, reason, source)
-	if(QDELETED(src) || !is_burning())
+/// The object cooled below the burn-out temperature (burn_cool_watch, owned by this
+/// behaviour singleton so no proc lands on /obj).
+/datum/om/behaviour/burning/proc/on_cooled(datum/native_watch/heat/watch, reason, source)
+	var/obj/O = watch?.target
+	if(!istype(O) || QDELETED(O) || !burning_active(O))
 		return
-	if(get_temperature() < burn_out_temperature())
-		burning_end(BURN_ENDED_COOLED)
+	if(O.get_temperature() < burn_out_temperature(O))
+		burning_end(O, BURN_ENDED_COOLED)
 
-/obj/proc/burning_end(reason)
-	burn_ended_by = reason
-	extinguish()
+/proc/burning_end(obj/O, reason)
+	O.burn_ended_by = reason
+	O.extinguish()
 
 /obj/extinguish()
 	. = ..()
-	if(is_burning())
+	if(burning_active(src))
 		om_detach(src, /datum/om/behaviour/burning)
 
 /datum/om/behaviour/burning/tick(obj/O, dt)
 	// The periodic lane this replaced passed its delta in deciseconds (10 per 1 s frame);
 	// keep that rate exactly.
-	O.burning_step(dt * 10)
+	burning_step(O, dt * 10)
 
-/// One step of burning, `seconds_per_tick` long.
-/obj/proc/burning_step(seconds_per_tick)
-	if(QDELETED(src))
+/// One step of burning `O`, `seconds_per_tick` long.
+/proc/burning_step(obj/O, seconds_per_tick)
+	if(QDELETED(O))
 		return
 	// A burnt-down object can linger at <=0 integrity in a "broken"
 	// (integrity_failure) state without being qdel'd. take_damage() CRASHes on a
 	// <=0-integrity atom (atom_defense.dm), so stop burning it — put the fire out
 	// instead of re-damaging a wreck every tick (this was crashing repeatedly on
 	// benches/furniture caught in a sustained hotspot once atmos fires actually run).
-	if(uses_integrity && get_integrity() <= 0)
-		extinguish()
+	if(O.uses_integrity && O.get_integrity() <= 0)
+		O.extinguish()
 		return
 	// Check if the object somehow became fireproof, put it out if so
-	if(resistance_flags & FIRE_PROOF)
-		extinguish()
+	if(O.resistance_flags & FIRE_PROOF)
+		O.extinguish()
 		return
 	// Oxygen: the fire draws BURN_OXYGEN_PER_JOULE from the tile (a gas command).
 	// Its heat is already on the object's body (the heat source).
-	var/joules = min(BURN_POWER * seconds_per_tick, burn_fuel)
-	if(!burn_gas_step(get_turf(src), joules, FALSE))
-		burning_end(BURN_ENDED_OXYGEN)
+	var/joules = min(BURN_POWER * seconds_per_tick, O.burn_fuel)
+	if(!burn_gas_step(get_turf(O), joules, FALSE))
+		burning_end(O, BURN_ENDED_OXYGEN)
 		return
 	// Fuel and the integrity damage stream.
-	burn_fuel -= joules
-	deal_damage(DAMAGE_THERMAL, joules / BURN_ENERGY_PER_INTEGRITY, FIRE, flags = DAMAGE_PACKET_SILENT)
-	if(QDELETED(src) || !is_burning())
+	O.burn_fuel -= joules
+	O.deal_damage(DAMAGE_THERMAL, joules / BURN_ENERGY_PER_INTEGRITY, FIRE, flags = DAMAGE_PACKET_SILENT)
+	if(QDELETED(O) || !burning_active(O))
 		return
-	if(burn_fuel <= 0)
-		burning_end(BURN_ENDED_FUEL)
+	if(O.burn_fuel <= 0)
+		burning_end(O, BURN_ENDED_FUEL)
 
 /// Alerts any examiners that the object is on fire (even though it should be rather obvious)
 /datum/om/behaviour/burning/on_examine(obj/O, datum/om/event/examine/event)

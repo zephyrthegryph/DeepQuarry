@@ -7,8 +7,8 @@
 	///Used by R&D to determine what point type the item gives, if any
 	var/techweb_point_type = TECHWEB_POINT_TYPE_GENERIC
 
-/obj/proc/make_deconstructable_research(techweb_points, techweb_point_type)
+/proc/make_deconstructable_research(obj/O, techweb_points, techweb_point_type)
 	if(!isnull(techweb_points))
-		src.techweb_points = techweb_points
+		O.techweb_points = techweb_points
 	if(!isnull(techweb_point_type))
-		src.techweb_point_type = techweb_point_type
+		O.techweb_point_type = techweb_point_type

@@ -367,8 +367,8 @@
 	previous_state = state
 	if(state == 2 && anchored)
 		connect_to_network()
-	make_climbable()
-	make_rotatable()
+	make_climbable(src)
+	make_rotatable(src)
 	emp_protection_flags |= EMP_PROTECT_SELF
 
 /obj/machinery/power/emitter/update_icon()

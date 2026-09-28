@@ -47,7 +47,7 @@
 				starting_amount = 1
 		set_amount(starting_amount, TRUE)
 	update_icon()
-	make_sellable(/datum/sellable/material_stack)
+	make_sellable(src, /datum/sellable/material_stack)
 
 /obj/item/stack/get_material_composition(breakdown_flags)
 	. = ..()

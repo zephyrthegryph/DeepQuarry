@@ -47,7 +47,7 @@ two tiles on initialization, and which way a cliff is facing may change during m
 /obj/structure/cliff/Initialize(mapload)
 	. = ..()
 	register_dangerous_to_step()
-	make_climbable(/datum/om/behaviour/climbable/cliff, CLIFF_CLIMB_DELAY SECONDS)
+	make_climbable(src, /datum/om/behaviour/climbable/cliff, CLIFF_CLIMB_DELAY SECONDS)
 
 /// Phase 2: leaves the dangerous-to-step index.
 /obj/structure/cliff/lifecycle_dematerialize()

@@ -26,7 +26,7 @@
 		if(istype(I, /obj/item/book))
 			I.loc = src
 	update_icon()
-	make_climbable()
+	make_climbable(src)
 
 /obj/structure/bookcase/attackby(obj/item/O, mob/user)
 	if(istype(O, /obj/item/book))

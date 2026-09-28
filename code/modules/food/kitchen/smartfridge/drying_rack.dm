@@ -10,7 +10,7 @@
 
 /obj/machinery/smartfridge/drying_rack/Initialize(mapload)
 	. = ..()
-	make_climbable()
+	make_climbable(src)
 
 /obj/machinery/smartfridge/drying_rack/accept_check(obj/item/O as obj)
 	if(istype(O, /obj/item/reagent_containers/food/snacks/))

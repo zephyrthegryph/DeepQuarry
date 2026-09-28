@@ -609,7 +609,7 @@
 
 /obj/machinery/bookbinder/Initialize(mapload)
 	. = ..()
-	make_climbable()
+	make_climbable(src)
 
 /obj/machinery/bookbinder/declare_interactions(list/into)
 	into += list(
