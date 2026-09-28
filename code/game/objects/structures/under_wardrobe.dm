@@ -137,9 +137,9 @@
 		H.update_underwear()
 	return TRUE
 
-/obj/structure/undies_wardrobe/proc/underwear_tweak_answered(mob/living/carbon/human/H, new_metadata, datum/om/prompt/P)
-	var/underwear = P.get("category")
-	var/datum/gear_tweak/gt = P.get("tweak")
+/obj/structure/undies_wardrobe/proc/underwear_tweak_answered(mob/living/carbon/human/H, new_metadata, datum/om/flow/ask_sequence/seq)
+	var/underwear = seq.get("category")
+	var/datum/gear_tweak/gt = seq.get("tweak")
 	if(!istype(H) || !(underwear in H.all_underwear))
 		return
 	set_metadata(H, underwear, gt, new_metadata)

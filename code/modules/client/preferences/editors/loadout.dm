@@ -559,11 +559,11 @@
 	return cost
 
 /// A gear tweak's new value: the item must still be equipped in the same loadout.
-/datum/preference_editor/loadout/proc/tweak_answered(mob/user, new_value, datum/om/prompt/P)
-	var/datum/preferences/preferences = P.get("preferences")
-	var/gear_name = P.get("gear")
-	var/tweak_idx = P.get("tweak")
-	var/loadout_key = P.get("slot")
+/datum/preference_editor/loadout/proc/tweak_answered(mob/user, new_value, datum/om/flow/ask_sequence/seq)
+	var/datum/preferences/preferences = seq.get("preferences")
+	var/gear_name = seq.get("gear")
+	var/tweak_idx = seq.get("tweak")
+	var/loadout_key = seq.get("slot")
 	var/datum/gear/G = GLOB.gear_datums[gear_name]
 	if(!preferences || !G || tweak_idx > length(G.gear_tweaks) || _current_slot(preferences) != loadout_key)
 		return

@@ -18,7 +18,7 @@
 	if(is_valid(new_entry))
 		Add(new_entry)
 
-/datum/integrated_io/list/proc/list_entry_chosen(mob/user, new_entry, datum/om/prompt/P)
+/datum/integrated_io/list/proc/list_entry_chosen(mob/user, new_entry, datum/om/flow/ask_sequence/seq)
 	if(is_valid(new_entry))
 		Add(new_entry)
 
@@ -66,16 +66,16 @@
 		ask_for_data_type(user, target_entry, on_value = PROC_REF(list_entry_edited), data = list("target" = target_entry))
 
 /// The entry is found again by value: it may have moved while they typed.
-/datum/integrated_io/list/proc/list_entry_edited(mob/user, edited_entry, datum/om/prompt/P)
+/datum/integrated_io/list/proc/list_entry_edited(mob/user, edited_entry, datum/om/flow/ask_sequence/seq)
 	var/list/my_list = data
 	if(!edited_entry)
 		return
-	var/position = P.get("position")
+	var/position = seq.get("position")
 	if(position)
-		if(position <= my_list.len && my_list[position] == P.get("target"))
+		if(position <= my_list.len && my_list[position] == seq.get("target"))
 			my_list[position] = edited_entry
 		return
-	var/idx = my_list.Find(P.get("target"))
+	var/idx = my_list.Find(seq.get("target"))
 	if(idx)
 		my_list[idx] = edited_entry
 

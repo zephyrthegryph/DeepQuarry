@@ -92,7 +92,7 @@
 						seed = markings[M][zone]["color"]
 						break
 			// The pick lands in marking_color_picked(), which writes and refreshes the UI.
-			om_ask(user, /datum/om/prompt/color/prefs/marking, PROC_REF(marking_color_picked), title = "Color picker", message = "Marking color", default = seed, preferences = preferences, marking = M)
+			om_ask(user, /datum/om/prompt/color/prefs/marking, PROC_REF(marking_color_picked), title = "Color picker", message = "Marking color", default = seed, preferences = preferences, marking = M, ui_refresh = preferences)
 			return PREF_UPDATE_UNCHANGED
 		if("set_zone_color")
 			var/M = params["marking"]
@@ -100,7 +100,7 @@
 			if(!(M in markings) || !islist(markings[M]) || !(zone in markings[M]))
 				return PREF_UPDATE_REJECTED
 			var/seed = markings[M][zone]["color"] || "#FFFFFF"
-			om_ask(user, /datum/om/prompt/color/prefs/marking, PROC_REF(zone_color_picked), title = "Color picker", message = "Zone color: [zone]", default = seed, preferences = preferences, marking = M, zone = zone)
+			om_ask(user, /datum/om/prompt/color/prefs/marking, PROC_REF(zone_color_picked), title = "Color picker", message = "Zone color: [zone]", default = seed, preferences = preferences, marking = M, zone = zone, ui_refresh = preferences)
 			return PREF_UPDATE_UNCHANGED
 		if("toggle_zone")
 			var/M = params["marking"]
@@ -148,11 +148,9 @@
 	var/M = ask.marking
 	markings[M] = preferences.mass_edit_marking_list(M, FALSE, TRUE, markings[M], color = sanitize_hexcolor(ask.picked_color))
 	preferences.update_preference_by_type(/datum/preference/body_markings, markings)
-	SStgui.update_uis(preferences)
 
 /datum/preference_editor/body_markings/proc/zone_color_picked(datum/om/prompt/color/prefs/marking/ask)
 	var/datum/preferences/preferences = ask.preferences
 	var/list/markings = preferences.read_preference(/datum/preference/body_markings)
 	markings[ask.marking][ask.zone]["color"] = sanitize_hexcolor(ask.picked_color)
 	preferences.update_preference_by_type(/datum/preference/body_markings, markings)
-	SStgui.update_uis(preferences)

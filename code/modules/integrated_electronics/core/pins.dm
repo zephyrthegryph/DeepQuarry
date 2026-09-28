@@ -142,37 +142,56 @@ list[](
 		LAZYREMOVE(linked, their_io)
 
 /// Asks `user` for a value (a type, then the value). When they finish, `on_value` is called on this
-/// pin as (user, value, P), with `data` readable from P; "null" gives a null value.
+/// pin as (user, value, seq), with `data` readable with seq.get(); "null" gives a null value.
 /datum/integrated_io/proc/ask_for_data_type(mob/user, default, list/allowed_data_types = list("string","number","null"), on_value, list/data)
 	var/list/all_data = data ? data.Copy() : list()
 	all_data["default"] = default
 	all_data["on_value"] = on_value
-	om_prompt_sequence(src, user, list(
-		list("key" = "type", "kind" = "list", "message" = "Please choose a type to use.", "title" = "[src] type setting", "choices" = allowed_data_types),
-		PROC_REF(ask_for_typed_value),
-	), PROC_REF(typed_value_entered), list("data" = all_data))
+	var/datum/om/prompt/choice/type_ask = new
+	type_ask.key = "type"
+	type_ask.title = "[src] type setting"
+	type_ask.message = "Please choose a type to use."
+	type_ask.choices = allowed_data_types
+	om_ask_sequence(src, user, list(type_ask, PROC_REF(ask_for_typed_value)), PROC_REF(typed_value_entered), null, null, null, all_data)
 
-/datum/integrated_io/proc/ask_for_typed_value(mob/user, datum/om/prompt/P)
-	var/default = P.get("default")
-	switch(P.get("type"))
+/// Step proc: the value prompt for the chosen type (none for "null").
+/datum/integrated_io/proc/ask_for_typed_value(datum/om/flow/ask_sequence/seq)
+	var/default = seq.get("default")
+	switch(seq.get("type"))
 		if("string")
-			return list("key" = "value", "kind" = "text", "message" = "Now type in a string.", "title" = "[src] string writing", "default" = istext(default) ? default : null, "max_length" = MAX_NAME_LEN, "encode" = FALSE)
+			var/datum/om/prompt/text/text_ask = new
+			text_ask.key = "value"
+			text_ask.title = "[src] string writing"
+			text_ask.message = "Now type in a string."
+			text_ask.default = istext(default) ? default : null
+			text_ask.max_length = MAX_NAME_LEN
+			text_ask.encode = FALSE
+			return text_ask
 		if("number")
-			return list("key" = "value", "kind" = "number", "message" = "Now type in a number.", "title" = "[src] number writing", "default" = isnum(default) ? default : 0, "max" = INFINITY, "min" = -INFINITY, "round" = FALSE)
+			var/datum/om/prompt/number/number_ask = new
+			number_ask.key = "value"
+			number_ask.title = "[src] number writing"
+			number_ask.message = "Now type in a number."
+			number_ask.default = isnum(default) ? default : 0
+			number_ask.max = INFINITY
+			number_ask.min = -INFINITY
+			number_ask.round_entry = FALSE
+			return number_ask
 	return null
 
-/datum/integrated_io/proc/typed_value_entered(mob/user, datum/om/prompt/P)
+/datum/integrated_io/proc/typed_value_entered(datum/om/flow/ask_sequence/seq)
+	var/mob/user = seq.actor
 	if(!holder?.check_interactivity(user))
 		return
 	var/new_data = null
-	switch(P.get("type"))
+	switch(seq.get("type"))
 		if("string")
-			new_data = sanitizeSafe(P.get("value"), MAX_NAME_LEN, 0, 0)
+			new_data = sanitizeSafe(seq.get("value"), MAX_NAME_LEN, 0, 0)
 			if(!istext(new_data))
 				return
 			to_chat(user, span_notice("You input [new_data] into the pin."))
 		if("number")
-			new_data = P.get("value")
+			new_data = seq.get("value")
 			if(!isnum(new_data))
 				return
 			to_chat(user, span_notice("You input [new_data] into the pin."))
@@ -180,7 +199,7 @@ list[](
 			to_chat(user, span_notice("You clear the pin's memory."))
 		else
 			return
-	call(src, P.get("on_value"))(user, new_data, P)
+	call(src, seq.get("on_value"))(user, new_data, seq)
 
 // Basically a null check
 /datum/integrated_io/proc/is_valid()
@@ -190,7 +209,7 @@ list[](
 /datum/integrated_io/proc/ask_for_pin_data(mob/user, obj/item/I)
 	ask_for_data_type(user, on_value = PROC_REF(pin_data_chosen))
 
-/datum/integrated_io/proc/pin_data_chosen(mob/user, new_data, datum/om/prompt/P)
+/datum/integrated_io/proc/pin_data_chosen(mob/user, new_data, datum/om/flow/ask_sequence/seq)
 	write_data_to_pin(new_data)
 
 /datum/integrated_io/activate/ask_for_pin_data(mob/user) // This just pulses the pin.
