@@ -79,13 +79,16 @@ other types of metals and chemistry for reagents).
 /datum/design_techweb/New()
 	. = ..()
 
-// designs are immutable globals; deleting one is an error.
-/datum/design_techweb/on_destroy(force)
-	// Designs are immutable global datums registered at startup via GLOB.research_service.
-	// Destroying one at runtime would corrupt every techweb that holds a reference to its ID.
-	// If you hit this crash, something is incorrectly calling qdel() on a design datum.
-	if(id != DESIGN_ID_IGNORE) // Allow the error_design base instance to be deleted normally.
-		CRASH("Attempted to destroy techweb design '[id]' ([type]) at runtime — designs are immutable global datums")
+// Designs are immutable global datums registered at startup via GLOB.research_service.
+// Destroying one at runtime would corrupt every techweb that holds a reference to its ID,
+// so qdel() refuses (the error_design base instance may still be deleted).
+/datum/design_techweb/lifecycle_keep(force)
+	if(id == DESIGN_ID_IGNORE)
+		return FALSE
+	stack_trace("Attempted to destroy techweb design '[id]' ([type]) at runtime; designs are immutable global datums")
+	return TRUE
+
+/datum/design_techweb/lifecycle_dematerialize()
 	GLOB.research_service.techweb_designs -= id
 	..()
 

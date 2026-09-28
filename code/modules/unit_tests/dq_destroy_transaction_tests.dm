@@ -117,7 +117,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	var/list/log = GLOB.dq_destroy_transaction_log
 	// "contents" (the content probe's on_unslotted) is folded in among these
 	// via phase 3; check every phase we can hook fired, in the declared order.
-	var/list/expected = list("guard", "unbind", "dematerialize", "contents", "links", "effects", "destroy")
+	var/list/expected = list("guard", "unbind", "dematerialize", "contents", "destroy", "links", "effects")
 	TEST_ASSERT_EQUAL(jointext(log, ","), jointext(expected, ","), "every hookable phase fired, in doc/rewrite/lifecycle.md's order")
 	TEST_ASSERT(content.saw_destroying_flag, "the phase-3 removal carried LEDGER_MOVE_DESTROYING")
 	TEST_ASSERT_EQUAL(content.loc_when_unslotted, T, "loc was already the drop turf when on_unslotted fired -- no nullspace parking")
@@ -336,10 +336,10 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	return vars
 
 /datum/dq_destroy_transaction_scrub_fixture/on_destroy(force)
-	// Phase 4 already nulled `partner` (and the partner's own side) by the
-	// time this runs (phase 7). Re-setting it here simulates a leftover
-	// Destroy() body that still assigns a declared pair/owned var by hand --
-	// phase 8 must null it again so nothing keeps this alive past its own death.
+	// on_destroy runs at the start of phase 4, before the links clear.
+	// Re-setting the declared pair var here simulates teardown that assigns it
+	// by hand; phases 4 and 8 must still leave it null so nothing keeps this
+	// alive past its own death.
 	partner = new /datum/dq_destroy_transaction_pair_fixture
 	..()
 

@@ -110,7 +110,6 @@ REF_BACKLIST(/obj/effect/directional_shield, list("projector" = "active_shields"
 // its shields come down.
 /obj/item/shield_projector/on_destroy(force)
 	destroy_shields()
-	om_unhook(src, /datum/om/event/movable_attempted_move, src)
 	..()
 
 /obj/item/shield_projector/proc/moved_event(datum/source, datum/om/event/movable_attempted_move/event)

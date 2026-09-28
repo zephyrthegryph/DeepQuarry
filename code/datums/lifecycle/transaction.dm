@@ -135,6 +135,7 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 	// back-list memberships removed (L2, code/datums/lifecycle/links.dm).
 	tick = world.tick_usage
 	D.lifecycle_prerelease() // teardown that still reads the declared vars (links.dm)
+	D.on_destroy(force) // the type's destroy hook: back-vars, partners and handles still live
 	if(D.om_rec)
 		om_behaviours_on_destroy(D) // each attached behaviour's on_destroy(E)
 	dq_lifecycle_clear_links(D)
@@ -161,13 +162,12 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 	dq_lifecycle_time(trash, LIFECYCLE_PHASE_EFFECTS, tick)
 	DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_EFFECTS done")
 
-	// Phase 7: the type's destroy hook (on_destroy(), the domain consequences
-	// a declaration can't express), then the core Destroy() chain (/datum,
+	// Phase 7: the core Destroy() chain (the type's on_destroy() already ran
+	// at the start of phase 4, while its declared links still read) (/datum,
 	// /atom, /atom/movable, ... and the MC's controllers: the only Destroy()
 	// overrides tools/ci/lifecycle_counts_lint.py allows). A type's declared
 	// destroy_hint replaces the core's plain QDEL_HINT_QUEUE.
 	tick = world.tick_usage
-	D.on_destroy(force)
 	var/hint = D.Destroy(force)
 	if(D.destroy_hint && hint == QDEL_HINT_QUEUE)
 		hint = D.destroy_hint
@@ -226,9 +226,11 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 	SHOULD_NOT_SLEEP(TRUE)
 	return FALSE
 
-/// The type's destroy hook, run in phase 7 after every declaration has been
-/// applied (links cleared, owned children deleted, handles released) and just
-/// before the core Destroy() chain. The place for domain consequences only:
+/// The type's destroy hook, run at the start of phase 4, right after
+/// lifecycle_prerelease() and before the links clear: contents are resolved
+/// (phase 3), but REF_BACK/BACKLIST/PAIR vars, owned children and OM handles
+/// (om_handle_is) are all still live, so teardown can reach its owner and
+/// partners. The core Destroy() chain runs later, in phase 7. The place for domain consequences only:
 /// anything a REF_* declaration, lifecycle_unbind(), lifecycle_dematerialize(),
 /// lifecycle_prerelease() or destroy_effects() expresses goes there instead.
 /// Always call ..(). Returns nothing: the GC hint is destroy_hint.

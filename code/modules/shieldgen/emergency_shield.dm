@@ -37,14 +37,12 @@
 	update_nearby_tiles(need_rebuild=1)
 
 // leaves its generator's deployed shields (the generator is a handle).
+REF_BACKLIST_HANDLE(/obj/machinery/shield, list("our_owner" = "deployed_shields"))
+
 /obj/machinery/shield/on_destroy(force)
 	opacity = 0
 	density = FALSE
 	update_nearby_tiles()
-	var/obj/machinery/shieldgen/SG = om_resolve(our_owner)
-	if(SG)
-		LAZYREMOVE(SG.deployed_shields, src)
-	our_owner = null
 	..()
 
 /obj/machinery/shield/declare_interactions(list/into)

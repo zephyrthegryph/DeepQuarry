@@ -65,9 +65,6 @@
 // its field shuts down.
 /obj/machinery/power/shield_generator/on_destroy(force)
 	shutdown_field()
-	field_segments = null
-	damaged_segments = null
-	mode_list = null
 	..()
 
 /obj/machinery/power/shield_generator/RefreshParts()

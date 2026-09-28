@@ -64,13 +64,16 @@
 	for(var/id in unlock_ids)
 		unlock_ids[id] = TRUE
 
-// nodes are immutable globals; deleting one is an error.
-/datum/techweb_node/on_destroy(force)
-	// Nodes are immutable global datums registered at startup via GLOB.research_service.
-	// Destroying one at runtime would corrupt every techweb that references this node ID.
-	// If you hit this crash, something is incorrectly calling qdel() on a node datum.
-	if(id != "ERROR") // Allow the error_node sentinel to be deleted normally.
-		CRASH("Attempted to destroy techweb node '[id]' ([type]) at runtime — nodes are immutable global datums")
+// Nodes are immutable global datums registered at startup via GLOB.research_service.
+// Destroying one at runtime would corrupt every techweb that references this node ID,
+// so qdel() refuses (the error_node sentinel may still be deleted).
+/datum/techweb_node/lifecycle_keep(force)
+	if(id == "ERROR")
+		return FALSE
+	stack_trace("Attempted to destroy techweb node '[id]' ([type]) at runtime; nodes are immutable global datums")
+	return TRUE
+
+/datum/techweb_node/lifecycle_dematerialize()
 	GLOB.research_service.techweb_nodes -= id
 	..()
 

@@ -46,11 +46,9 @@
 	if(my_gen())
 		if(istype(my_gen(), /obj/machinery/shield_gen))
 			LAZYREMOVE(my_gen().field, src)
-			my_gen_handle = null
 		else if(istype(my_gen(), /datum/artifact_effect/forcefield))
 			var/datum/artifact_effect/forcefield/AE = my_gen()
 			LAZYREMOVE(AE.created_field, src)
-			my_gen_handle = null
 	var/turf/current_loc = get_turf(src)
 	..()
 	for(var/direction in GLOB.cardinal)

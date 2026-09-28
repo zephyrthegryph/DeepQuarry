@@ -54,6 +54,12 @@
 /datum/proc/declared_backlist_vars()
 	return null
 
+/// Assoc: our var holding an OM HANDLE to the owner -> the owner's list var
+/// that holds us (REF_BACKLIST_HANDLE). Phase 4 resolves the handle and removes
+/// us (or our handle) from that list; the handle var itself is left (text).
+/datum/proc/declared_backlist_handle_vars()
+	return null
+
 /// Names of `src`'s vars holding one inserted thing (a beaker, a card, a
 /// charging cell) that goes back to the room when src is destroyed: phase 3
 /// moves it to src's drop location if it is still inside src. The one-thing
@@ -158,6 +164,7 @@
 			"owned_values" = D.declared_owned_value_vars(),
 			"pair" = D.declared_pair_vars(),
 			"backlist" = D.declared_backlist_vars(),
+			"backlist_handle" = D.declared_backlist_handle_vars(),
 			"spill" = D.declared_spill_vars(),
 			"spill_list" = D.declared_spill_list_vars(),
 			"held" = D.declared_held_vars(),
@@ -332,6 +339,19 @@
 			var/list_var = backlist[our_var]
 			var/list/L = owner.vars[list_var]
 			L?.Remove(D)
+	var/list/backlist_handle = table["backlist_handle"]
+	for(var/our_var in backlist_handle)
+		var/datum/owner = om_resolve(D.vars[our_var])
+		if(!owner || (batch && batch.doomed[owner]))
+			continue
+		var/list_vars = backlist_handle[our_var]
+		var/h = om_handle_of(D)
+		for(var/list_var in islist(list_vars) ? list_vars : list(list_vars))
+			var/list/L = owner.vars[list_var]
+			if(L)
+				L.Remove(D)
+				if(h)
+					L.Remove(h)
 
 /// Nulls whatever a declared owned/pair var still points to, without
 /// deleting anything (phase 8: the owned children are already gone by now;

@@ -83,6 +83,8 @@
 	return TRUE
 
 REF_OWNED(/datum/status_effect, "particle_effect")
+/// The mob it is on; phase 4 takes it out of the mob's status_effects.
+REF_BACKLIST(/datum/status_effect, list("owner" = "status_effects"))
 
 // the effect leaves its mob: alert cleared, on_remove() run.
 /datum/status_effect/on_destroy(force)
