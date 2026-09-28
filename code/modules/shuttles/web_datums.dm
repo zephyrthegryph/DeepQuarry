@@ -51,7 +51,7 @@
 // This is the second datum, and contains information on all the potential destinations for a specific shuttle.
 /datum/shuttle_destination
 	var/name = "a place"				// Name of the destination, used for the flight computer.
-	var/my_landmark_handle	// Where the shuttle will move to when it actually arrives.
+	var/tmp/my_landmark_handle	// Where the shuttle will move to when it actually arrives.
 	var/my_landmark_tag	// the tag it starts as; resolved into my_landmark at init
 	var/tmp/master_handle	// The datum that does the coordination with the actual shuttle datum.
 	var/list/routes			// Routes that are connected to this destination.

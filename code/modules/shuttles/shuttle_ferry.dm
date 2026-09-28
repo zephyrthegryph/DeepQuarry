@@ -2,9 +2,9 @@
 	var/location = FERRY_LOCATION_STATION	//0 = at area_station, 1 = at area_offsite
 	var/direction = FERRY_GOING_TO_STATION	//0 = going to station, 1 = going to offsite.
 
-	var/landmark_station_handle	// the landmark (set the _tag var, New() resolves it)
+	var/tmp/landmark_station_handle	// the landmark (set the _tag var, New() resolves it)
 	var/landmark_station_tag	// the tag it starts as; resolved into landmark_station at init
-	var/landmark_offsite_handle	// the landmark (set the _tag var, New() resolves it)
+	var/tmp/landmark_offsite_handle	// the landmark (set the _tag var, New() resolves it)
 	var/landmark_offsite_tag	// the tag it starts as; resolved into landmark_offsite at init
 
 	category = /datum/shuttle/autodock/ferry

@@ -13,7 +13,7 @@
 	var/tmp/next_location_handle	//This is only used internally.
 	var/tmp/active_docking_controller_handle	// Controller we are docked with (or trying to)
 
-	var/landmark_transition_handle	// the landmark (set the _tag var, New() resolves it)
+	var/tmp/landmark_transition_handle	// the landmark (set the _tag var, New() resolves it)
 	var/landmark_transition_tag	// the tag it starts as; resolved into landmark_transition at init
 	var/move_time = 240		//the time spent in the transition area
 

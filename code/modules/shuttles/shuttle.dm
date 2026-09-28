@@ -6,7 +6,7 @@
 	var/moving_status = SHUTTLE_IDLE
 
 	var/list/shuttle_area // Initial value can be either a single area type or a list of area types
-	var/current_location_handle	//Set current_location_tag, not this: New() resolves the tag into the landmark.
+	var/tmp/current_location_handle	//Set current_location_tag, not this: New() resolves the tag into the landmark.
 	var/current_location_tag	// the tag it starts as; resolved into current_location at init
 
 	var/tmp/arrive_time = 0	//the time at which the shuttle arrives when long jumping

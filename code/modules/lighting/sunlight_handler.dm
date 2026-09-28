@@ -25,19 +25,19 @@
 /datum/sunlight_handler
 	var/tmp/sun_handle
 	var/turf/simulated/holder
-	var/only_sun_object_handle
+	var/tmp/only_sun_object_handle
 	var/effect_str_r = 0
 	var/effect_str_g = 0
 	var/effect_str_b = 0
 	//agony but necessary for memory optimization
-	var/affected_NE_handle
-	var/affected_NW_handle
-	var/affected_SW_handle
-	var/affected_SE_handle
-	var/only_sun_NE_handle
-	var/only_sun_NW_handle
-	var/only_sun_SW_handle
-	var/only_sun_SE_handle
+	var/tmp/affected_NE_handle
+	var/tmp/affected_NW_handle
+	var/tmp/affected_SW_handle
+	var/tmp/affected_SE_handle
+	var/tmp/only_sun_NE_handle
+	var/tmp/only_sun_NW_handle
+	var/tmp/only_sun_SW_handle
+	var/tmp/only_sun_SE_handle
 	var/sunlight = FALSE
 	var/inherited = FALSE
 	var/datum/planet_sunlight_handler/pshandler
