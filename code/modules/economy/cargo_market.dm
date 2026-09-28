@@ -10,16 +10,13 @@
 	var/maximum_units = 12
 	var/base_price_multiplier = 1.25
 
-/datum/cargo_market_profile/proc/accepted_type_paths() as /list
-	return list()
-
-/datum/cargo_market_profile/proc/accepted_departments() as /list
-	return list()
+TYPE_TABLE_DECLARE(/datum/cargo_market_profile, accepted_type_paths, list())
+TYPE_TABLE_DECLARE(/datum/cargo_market_profile, accepted_departments, list())
 
 /datum/cargo_market_profile/proc/matches(obj/item)
 	if(!istype(item))
 		return FALSE
-	var/list/type_paths = accepted_type_paths()
+	var/list/type_paths = TYPE_TABLE_GET(src, accepted_type_paths)
 	if(length(type_paths))
 		var/type_match = FALSE
 		for(var/type_path in type_paths)
@@ -28,7 +25,7 @@
 				break
 		if(!type_match)
 			return FALSE
-	var/list/departments = accepted_departments()
+	var/list/departments = TYPE_TABLE_GET(src, accepted_departments)
 	if(length(departments) && !(item.economic_department in departments))
 		return FALSE
 	return length(type_paths) || item.economic_export_value > 0
@@ -41,9 +38,7 @@
 	maximum_units = 80
 	base_price_multiplier = 1.3
 
-/datum/cargo_market_profile/materials/accepted_type_paths()
-	var/static/list/paths = list(/obj/item/stack/material)
-	return paths
+TYPE_TABLE(/datum/cargo_market_profile/materials, accepted_type_paths, list(/obj/item/stack/material))
 
 /datum/cargo_market_profile/research_goods
 	id = "research_goods"
@@ -53,9 +48,7 @@
 	maximum_units = 8
 	base_price_multiplier = 1.45
 
-/datum/cargo_market_profile/research_goods/accepted_departments()
-	var/static/list/departments = list(DEPARTMENT_RESEARCH)
-	return departments
+TYPE_TABLE(/datum/cargo_market_profile/research_goods, accepted_departments, list(DEPARTMENT_RESEARCH))
 
 /datum/cargo_market_profile/engineering_goods
 	id = "engineering_goods"
@@ -65,9 +58,7 @@
 	maximum_units = 9
 	base_price_multiplier = 1.35
 
-/datum/cargo_market_profile/engineering_goods/accepted_departments()
-	var/static/list/departments = list(DEPARTMENT_ENGINEERING)
-	return departments
+TYPE_TABLE(/datum/cargo_market_profile/engineering_goods, accepted_departments, list(DEPARTMENT_ENGINEERING))
 
 /datum/cargo_market_profile/medical_goods
 	id = "medical_goods"
@@ -77,12 +68,10 @@
 	maximum_units = 10
 	base_price_multiplier = 1.5
 
-/datum/cargo_market_profile/medical_goods/accepted_type_paths()
-	var/static/list/paths = list(
-		/obj/item/organ/internal,
-		/obj/item/reagent_containers/glass/beaker/vial/vaccine,
-	)
-	return paths
+TYPE_TABLE(/datum/cargo_market_profile/medical_goods, accepted_type_paths, list( \
+		/obj/item/organ/internal, \
+		/obj/item/reagent_containers/glass/beaker/vial/vaccine, \
+	))
 
 /datum/cargo_market_profile/food
 	id = "food"
@@ -92,9 +81,7 @@
 	maximum_units = 18
 	base_price_multiplier = 1.3
 
-/datum/cargo_market_profile/food/accepted_type_paths()
-	var/static/list/paths = list(/obj/item/reagent_containers/food)
-	return paths
+TYPE_TABLE(/datum/cargo_market_profile/food, accepted_type_paths, list(/obj/item/reagent_containers/food))
 
 /datum/cargo_market_profile/weapons
 	id = "weapons"
@@ -104,13 +91,11 @@
 	maximum_units = 7
 	base_price_multiplier = 1.55
 
-/datum/cargo_market_profile/weapons/accepted_type_paths()
-	var/static/list/paths = list(
-		/obj/item/gun,
-		/obj/item/ammo_casing,
-		/obj/item/ammo_magazine,
-	)
-	return paths
+TYPE_TABLE(/datum/cargo_market_profile/weapons, accepted_type_paths, list( \
+		/obj/item/gun, \
+		/obj/item/ammo_casing, \
+		/obj/item/ammo_magazine, \
+	))
 
 /datum/cargo_market_profile/frontier_salvage
 	id = "frontier_salvage"
@@ -120,13 +105,11 @@
 	maximum_units = 12
 	base_price_multiplier = 1.4
 
-/datum/cargo_market_profile/frontier_salvage/accepted_type_paths()
-	var/static/list/paths = list(
-		/obj/item/salvage,
-		/obj/item/research_sample,
-		/obj/item/storage/sample_container,
-	)
-	return paths
+TYPE_TABLE(/datum/cargo_market_profile/frontier_salvage, accepted_type_paths, list( \
+		/obj/item/salvage, \
+		/obj/item/research_sample, \
+		/obj/item/storage/sample_container, \
+	))
 
 /datum/cargo_market_profile/general_manufactured
 	id = "general_manufactured"
