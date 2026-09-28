@@ -89,9 +89,12 @@
 	var/join_group = "shuttle" //A tag for what other walls to join with. Null if you don't want them to.
 	var/static/list/antilight_cache
 	rad_insulation = RAD_MEDIUM_INSULATION
+	rad_shield_material = MAT_TITANIUM
+	rad_shield_thickness_mm = RAD_SHUTTLE_HULL_THICKNESS_MM
 
 /turf/simulated/shuttle/Initialize(mapload)
 	. = ..()
+	apply_rad_shield_material()
 	if(!antilight_cache)
 		antilight_cache = list()
 		for(var/diag in GLOB.cornerdirs)

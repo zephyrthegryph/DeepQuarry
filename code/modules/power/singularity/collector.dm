@@ -14,12 +14,15 @@
 	var/active = 0
 	var/locked = 0
 	var/drainratio = 1
+	rad_shield_material = MAT_LEAD
+	rad_shield_thickness_mm = RAD_COLLECTOR_THICKNESS_MM
 	rad_insulation = RAD_EXTREME_INSULATION //It sucks up the radiation. If you're standing behind it, you're pretty safe.
 
 REGISTRY_MEMBERSHIP(/obj/machinery/power/rad_collector, REGISTRY_RAD_COLLECTORS)
 
 /obj/machinery/power/rad_collector/Initialize(mapload)
 	. = ..()
+	apply_rad_shield_material()
 	make_climbable()
 	om_hook(src, /datum/om/event/before/in_range_of_irradiation, src, PROC_REF(process_rads))
 
