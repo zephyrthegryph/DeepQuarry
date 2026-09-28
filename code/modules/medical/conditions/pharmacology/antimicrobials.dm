@@ -26,20 +26,19 @@
 	caused_by_chems = list(REAGENT_ID_SPACEACILLIN = 20)
 	caused_by_chems_organ = O_LIVER
 
-/datum/affliction/overdose/spaceacillin/get_stages()
-	var/static/list/S = overdose_stages(
-		chem_stage(list(/datum/affliction_symptom/nausea = 55), 1, 1),
-		chem_stage(list(
+/datum/affliction/overdose/spaceacillin
+	overdose_stage_data = list(
+		list(list(/datum/affliction_symptom/nausea = 55), 1, 1),
+		list(list(
 			/datum/affliction_symptom/nausea  = 75,
 			/datum/affliction_symptom/fatigue = 50,
 		), 1, 2),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/nausea   = 90,
 			/datum/affliction_symptom/fatigue  = 75,
 			/datum/affliction_symptom/jaundice = 55,
 		), 2, 3, list("always_spawns" = list(/datum/affliction/toxic_poisoning))),
 	)
-	return S
 
 /datum/affliction/overdose/corophizine
 	name = "corophizine overdose"
@@ -54,25 +53,24 @@
 	caused_by_chems = list(REAGENT_ID_COROPHIZINE = 10)
 	caused_by_chems_organ = O_LIVER
 
-/datum/affliction/overdose/corophizine/get_stages()
-	var/static/list/S = overdose_stages(
-		chem_stage(list(
+/datum/affliction/overdose/corophizine
+	overdose_stage_data = list(
+		list(list(
 			/datum/affliction_symptom/nausea  = 70,
 			/datum/affliction_symptom/fatigue = 45,
 		), 1, 2),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/nausea   = 90,
 			/datum/affliction_symptom/jaundice = 50,
 			/datum/affliction_symptom/fatigue  = 60,
 		), 2, 3),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/nausea               = 100,
 			/datum/affliction_symptom/jaundice             = 75,
 			/datum/affliction_symptom/fatigue              = 80,
 			/datum/affliction_symptom/abdominal_tenderness = 55,
 		), 3, 4, list("always_spawns" = list(/datum/affliction/toxic_poisoning))),
 	)
-	return S
 
 /datum/affliction/overdose/immunosuprizine
 	name = "immunosuprizine overdose"
@@ -92,23 +90,22 @@
 	caused_by_chems = list(REAGENT_ID_IMMUNOSUPRIZINE = 20)
 	caused_by_chems_organ = O_LIVER
 
-/datum/affliction/overdose/immunosuprizine/get_stages()
-	var/static/list/S = overdose_stages(
-		chem_stage(list(
+/datum/affliction/overdose/immunosuprizine
+	overdose_stage_data = list(
+		list(list(
 			/datum/affliction_symptom/fatigue = 55,
 			/datum/affliction_symptom/chills  = 40,
 		), 1, 1, list("organ_damage_per_tick" = 0.15, "organ_damage_type" = INJURY_TOXIN, "factors" = alist(BF_IMMUNE_SUPPRESSION = 0.2))),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/fever_sensation = 65,
 			/datum/affliction_symptom/fatigue         = 70,
 			/datum/affliction_symptom/pallor          = 50,
 			/datum/affliction_symptom/chills          = 40,
 		), 2, 3, list("organ_damage_per_tick" = 0.3, "organ_damage_type" = INJURY_TOXIN, "factors" = alist(BF_IMMUNE_SUPPRESSION = 0.35))),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/fever_sensation = 85,
 			/datum/affliction_symptom/fatigue         = 90,
 			/datum/affliction_symptom/pallor          = 75,
 			/datum/affliction_symptom/chills          = 65,
 		), 3, 4, list("organ_damage_per_tick" = 0.55, "organ_damage_type" = INJURY_TOXIN, "factors" = alist(BF_IMMUNE_SUPPRESSION = 0.55), "always_spawns" = list(/datum/affliction/wound_infection, /datum/affliction/sepsis))),
 	)
-	return S

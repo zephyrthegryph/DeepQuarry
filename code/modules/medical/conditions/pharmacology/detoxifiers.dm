@@ -56,25 +56,24 @@
 	caused_by_chems = list(REAGENT_ID_ANTITOXIN = 20)
 	caused_by_chems_organ = O_LIVER
 
-/datum/affliction/overdose/antitoxin/get_stages()
-	var/static/list/S = overdose_stages(
-		chem_stage(list(
+/datum/affliction/overdose/antitoxin
+	overdose_stage_data = list(
+		list(list(
 			/datum/affliction_symptom/nausea  = 60,
 			/datum/affliction_symptom/fatigue = 60,
 		), 1, 2),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/nausea    = 75,
 			/datum/affliction_symptom/fatigue   = 80,
 			/datum/affliction_symptom/confusion = 40,
 		), 2, 3),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/nausea        = 90,
 			/datum/affliction_symptom/fatigue       = 95,
 			/datum/affliction_symptom/confusion     = 65,
 			/datum/affliction_symptom/limb_weakness = 50,
 		), 3, 4, list("always_spawns" = list(/datum/affliction/toxic_poisoning))),
 	)
-	return S
 
 /datum/affliction/overdose/carthatoline
 	name = "carthatoline overdose"
@@ -90,19 +89,19 @@
 	caused_by_chems = list(REAGENT_ID_CARTHATOLINE = 15)
 	caused_by_chems_organ = O_LIVER
 
-/datum/affliction/overdose/carthatoline/get_stages()
-	var/static/list/S = overdose_stages(
-		chem_stage(list(
+/datum/affliction/overdose/carthatoline
+	overdose_stage_data = list(
+		list(list(
 			/datum/affliction_symptom/nausea  = 75,
 			/datum/affliction_symptom/fatigue = 55,
 		), 1, 2),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/nausea    = 90,
 			/datum/affliction_symptom/pallor    = 75,
 			/datum/affliction_symptom/fatigue   = 70,
 			/datum/affliction_symptom/dizziness = 50,
 		), 2, 3),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/nausea            = 100,
 			/datum/affliction_symptom/pallor            = 95,
 			/datum/affliction_symptom/fatigue           = 90,
@@ -110,7 +109,6 @@
 			/datum/affliction_symptom/cold_mottled_skin = 50,
 		), 3, 4),
 	)
-	return S
 
 /datum/affliction/overdose/hyronalin
 	name = "hyronalin overdose"
@@ -124,23 +122,22 @@
 	caused_by_chems = list(REAGENT_ID_HYRONALIN = 20)
 	caused_by_chems_organ = O_LIVER
 
-/datum/affliction/overdose/hyronalin/get_stages()
-	var/static/list/S = overdose_stages(
-		chem_stage(list(
+/datum/affliction/overdose/hyronalin
+	overdose_stage_data = list(
+		list(list(
 			/datum/affliction_symptom/fatigue = 55,
 			/datum/affliction_symptom/nausea  = 45,
 		), 1, 1),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/fatigue = 75,
 			/datum/affliction_symptom/nausea  = 60,
 		), 1, 2),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/fatigue           = 90,
 			/datum/affliction_symptom/nausea            = 80,
 			/datum/affliction_symptom/radiation_reading = 50,
 		), 2, 3, list("always_spawns" = list(/datum/affliction/acute_radiation))),
 	)
-	return S
 
 /datum/affliction/overdose/arithrazine
 	name = "arithrazine overdose"
@@ -159,19 +156,19 @@
 	caused_by_chems = list(REAGENT_ID_ARITHRAZINE = 20)
 	caused_by_chems_organ = O_LIVER
 
-/datum/affliction/overdose/arithrazine/get_stages()
-	var/static/list/S = overdose_stages(
-		chem_stage(list(
+/datum/affliction/overdose/arithrazine
+	overdose_stage_data = list(
+		list(list(
 			/datum/affliction_symptom/nausea  = 65,
 			/datum/affliction_symptom/fatigue = 50,
 		), 1, 2, list("organ_damage_per_tick" = 0.35, "organ_damage_type" = INJURY_TOXIN)),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/nausea   = 85,
 			/datum/affliction_symptom/fatigue  = 70,
 			/datum/affliction_symptom/jaundice = 55,
 			/datum/affliction_symptom/pallor   = 40,
 		), 2, 3, list("organ_damage_per_tick" = 0.7, "organ_damage_type" = INJURY_TOXIN)),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/nausea            = 100,
 			/datum/affliction_symptom/fatigue           = 90,
 			/datum/affliction_symptom/jaundice          = 80,
@@ -179,7 +176,6 @@
 			/datum/affliction_symptom/radiation_reading = 50,
 		), 3, 4, list("organ_damage_per_tick" = 1.3, "organ_damage_type" = INJURY_TOXIN)),
 	)
-	return S
 
 /datum/affliction/overdose/calciumcarbonate
 	name = "calcium carbonate overdose"
@@ -194,22 +190,21 @@
 	caused_by_chems = list(REAGENT_ID_CALCIUMCARBONATE = 24)
 	caused_by_chems_organ = O_LIVER
 
-/datum/affliction/overdose/calciumcarbonate/get_stages()
-	var/static/list/S = overdose_stages(
-		chem_stage(list(/datum/affliction_symptom/nausea = 65), 1, 1),
-		chem_stage(list(
+/datum/affliction/overdose/calciumcarbonate
+	overdose_stage_data = list(
+		list(list(/datum/affliction_symptom/nausea = 65), 1, 1),
+		list(list(
 			/datum/affliction_symptom/nausea               = 85,
 			/datum/affliction_symptom/abdominal_tenderness = 60,
 			/datum/affliction_symptom/fatigue              = 40,
 		), 2, 3),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/nausea               = 100,
 			/datum/affliction_symptom/abdominal_tenderness = 85,
 			/datum/affliction_symptom/fatigue              = 65,
 			/datum/affliction_symptom/limb_weakness        = 55,
 		), 3, 4),
 	)
-	return S
 
 /datum/affliction/overdose/ethylredoxrazine
 	name = "ethylredoxrazine overdose"
@@ -228,19 +223,18 @@
 	caused_by_chems = list(REAGENT_ID_ETHYLREDOXRAZINE = 30)
 	caused_by_chems_organ = O_LIVER
 
-/datum/affliction/overdose/ethylredoxrazine/get_stages()
-	var/static/list/S = overdose_stages(
-		chem_stage(list(/datum/affliction_symptom/nausea = 60), 1, 1, list("organ_damage_per_tick" = 0.1, "organ_damage_type" = "internal", "organ_damage_targets" = list(O_LIVER))),
-		chem_stage(list(
+/datum/affliction/overdose/ethylredoxrazine
+	overdose_stage_data = list(
+		list(list(/datum/affliction_symptom/nausea = 60), 1, 1, list("organ_damage_per_tick" = 0.1, "organ_damage_type" = "internal", "organ_damage_targets" = list(O_LIVER))),
+		list(list(
 			/datum/affliction_symptom/nausea   = 75,
 			/datum/affliction_symptom/jaundice = 50,
 			/datum/affliction_symptom/fatigue  = 50,
 		), 1, 2, list("organ_damage_per_tick" = 0.25, "organ_damage_type" = "internal", "organ_damage_targets" = list(O_LIVER))),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/nausea               = 90,
 			/datum/affliction_symptom/jaundice             = 75,
 			/datum/affliction_symptom/fatigue              = 75,
 			/datum/affliction_symptom/abdominal_tenderness = 55,
 		), 2, 3, list("organ_damage_per_tick" = 0.45, "organ_damage_type" = "internal", "organ_damage_targets" = list(O_LIVER))),
 	)
-	return S

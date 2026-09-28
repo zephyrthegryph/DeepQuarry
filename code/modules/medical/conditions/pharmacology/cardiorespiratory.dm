@@ -25,20 +25,19 @@
 	caused_by_chems = list(REAGENT_ID_DEXALIN = 20)
 	caused_by_chems_organ = O_LUNGS
 
-/datum/affliction/overdose/dexalin/get_stages()
-	var/static/list/S = overdose_stages(
-		chem_stage(list(/datum/affliction_symptom/short_breath = 60), 1, 1),
-		chem_stage(list(
+/datum/affliction/overdose/dexalin
+	overdose_stage_data = list(
+		list(list(/datum/affliction_symptom/short_breath = 60), 1, 1),
+		list(list(
 			/datum/affliction_symptom/labored_breathing = 80,
 			/datum/affliction_symptom/confusion         = 40,
 		), 1, 2, list("factors" = alist(BF_O2_SAT = -8))),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/labored_breathing = 95,
 			/datum/affliction_symptom/cyanosis          = 70,
 			/datum/affliction_symptom/confusion         = 60,
 		), 2, 3, list("factors" = alist(BF_O2_SAT = -15, BF_RESP_RATE = -4), "always_spawns" = list(/datum/affliction/respiratory_failure))),
 	)
-	return S
 
 /datum/affliction/overdose/dexalinp
 	name = "dexalin-plus overdose"
@@ -53,25 +52,24 @@
 	caused_by_chems = list(REAGENT_ID_DEXALINP = 20)
 	caused_by_chems_organ = O_LUNGS
 
-/datum/affliction/overdose/dexalinp/get_stages()
-	var/static/list/S = overdose_stages(
-		chem_stage(list(
+/datum/affliction/overdose/dexalinp
+	overdose_stage_data = list(
+		list(list(
 			/datum/affliction_symptom/short_breath = 70,
 			/datum/affliction_symptom/dizziness    = 40,
 		), 1, 2),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/labored_breathing = 85,
 			/datum/affliction_symptom/confusion         = 60,
 			/datum/affliction_symptom/unsteady_gait     = 50,
 		), 2, 3, list("factors" = alist(BF_O2_SAT = -10))),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/labored_breathing = 100,
 			/datum/affliction_symptom/cyanosis          = 80,
 			/datum/affliction_symptom/confusion         = 80,
 			/datum/affliction_symptom/unsteady_gait     = 70,
 		), 3, 4, list("factors" = alist(BF_O2_SAT = -20, BF_RESP_RATE = -5), "always_spawns" = list(/datum/affliction/respiratory_failure))),
 	)
-	return S
 
 /datum/affliction/overdose/inaprovaline
 	factors = alist(BF_HEART_RATE = -15, BF_BP_SYSTOLIC = -20)
@@ -87,25 +85,24 @@
 	caused_by_chems = list(REAGENT_ID_INAPROVALINE = 60)
 	caused_by_chems_organ = O_HEART
 
-/datum/affliction/overdose/inaprovaline/get_stages()
-	var/static/list/S = overdose_stages(
-		chem_stage(list(
+/datum/affliction/overdose/inaprovaline
+	overdose_stage_data = list(
+		list(list(
 			/datum/affliction_symptom/drowsy = 60,
 			/datum/affliction_symptom/pallor = 50,
 		), 1, 2, list("factors" = alist(BF_HEART_RATE = -5, BF_BP_SYSTOLIC = -8))),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/pallor       = 75,
 			/datum/affliction_symptom/short_breath = 60,
 			/datum/affliction_symptom/drowsy       = 60,
 		), 2, 3, list("factors" = alist(BF_HEART_RATE = -12, BF_BP_SYSTOLIC = -15))),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/pallor            = 90,
 			/datum/affliction_symptom/labored_breathing = 80,
 			/datum/affliction_symptom/drowsy            = 80,
 			/datum/affliction_symptom/cold_mottled_skin = 50,
 		), 3, 4, list("factors" = alist(BF_HEART_RATE = -22, BF_BP_SYSTOLIC = -28, BF_RESP_RATE = -3), "always_spawns" = list(/datum/affliction/hypovolemic_shock))),
 	)
-	return S
 
 /datum/affliction/overdose/norepinephrine
 	factors = alist(BF_HEART_RATE = 30, BF_BP_SYSTOLIC = 35, BF_BP_DIASTOLIC = 20)
@@ -122,25 +119,24 @@
 	caused_by_chems = list(REAGENT_ID_NOREPINEPHRINE = REAGENTS_OVERDOSE)
 	caused_by_chems_organ = O_HEART
 
-/datum/affliction/overdose/norepinephrine/get_stages()
-	var/static/list/S = overdose_stages(
-		chem_stage(list(
+/datum/affliction/overdose/norepinephrine
+	overdose_stage_data = list(
+		list(list(
 			/datum/affliction_symptom/palpitations = 70,
 			/datum/affliction_symptom/headache     = 60,
 		), 1, 2, list("factors" = alist(BF_HEART_RATE = 10, BF_BP_SYSTOLIC = 12))),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/palpitations = 80,
 			/datum/affliction_symptom/headache     = 70,
 			/datum/affliction_symptom/pallor       = 50,
 		), 2, 3, list("factors" = alist(BF_HEART_RATE = 22, BF_BP_SYSTOLIC = 25, BF_BP_DIASTOLIC = 12))),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/palpitations      = 90,
 			/datum/affliction_symptom/headache          = 80,
 			/datum/affliction_symptom/pallor            = 70,
 			/datum/affliction_symptom/cold_mottled_skin = 60,
 		), 3, 4, list("factors" = alist(BF_HEART_RATE = 35, BF_BP_SYSTOLIC = 40, BF_BP_DIASTOLIC = 22))),
 	)
-	return S
 
 /datum/affliction/overdose/leporazine
 	name = "leporazine overdose"
@@ -155,22 +151,21 @@
 	caused_by_chems = list(REAGENT_ID_LEPORAZINE = 20)
 	caused_by_chems_organ = BP_TORSO
 
-/datum/affliction/overdose/leporazine/get_stages()
-	var/static/list/S = overdose_stages(
-		chem_stage(list(
+/datum/affliction/overdose/leporazine
+	overdose_stage_data = list(
+		list(list(
 			/datum/affliction_symptom/chills          = 55,
 			/datum/affliction_symptom/fever_sensation = 45,
 		), 1, 1),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/chills          = 75,
 			/datum/affliction_symptom/fever_sensation = 65,
 			/datum/affliction_symptom/fatigue         = 50,
 		), 2, 3),
-		chem_stage(list(
+		list(list(
 			/datum/affliction_symptom/chills            = 90,
 			/datum/affliction_symptom/fever_sensation   = 85,
 			/datum/affliction_symptom/fatigue           = 70,
 			/datum/affliction_symptom/cold_mottled_skin = 55,
 		), 3, 4, list("always_spawns" = list(/datum/affliction/heatstroke, /datum/affliction/hypothermia))),
 	)
-	return S
