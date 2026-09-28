@@ -154,3 +154,23 @@
 	TEST_ASSERT(H.can_inject(null, FALSE, BP_TORSO, TRUE, INJECT_METHOD_NEEDLE), "bare skin takes a needle")
 	TEST_ASSERT(H.can_inject(null, FALSE, BP_TORSO, TRUE, INJECT_METHOD_HYPO), "bare skin takes a hypo")
 	TEST_ASSERT(!H.can_inject(null, FALSE, "no_such_zone", TRUE, INJECT_METHOD_HYPO), "a hypo is refused where there is no limb")
+
+/// P2-S12: radiation goes in and out through one set of writers that clamp and move the
+/// acute dose into the accumulated dose.
+/datum/unit_test/dq_med7_p2s12_radiation_writers
+
+/datum/unit_test/dq_med7_p2s12_radiation_writers/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	TEST_ASSERT_EQUAL(H.add_radiation(-5), 0, "a negative dose adds nothing")
+	H.add_radiation(RADIATION_CAP * 2)
+	TEST_ASSERT_EQUAL(H.radiation, RADIATION_CAP, "the acute dose is capped")
+	H.decay_radiation(100, 40)
+	TEST_ASSERT_EQUAL(H.radiation, RADIATION_CAP - 100, "decay lowers the acute dose")
+	TEST_ASSERT_EQUAL(H.accumulated_rads, 40, "decay settles into the accumulated dose")
+	H.purge_radiation(RADIATION_CAP)
+	TEST_ASSERT_EQUAL(H.radiation, 0, "a purge never goes below zero")
+	TEST_ASSERT_EQUAL(H.accumulated_rads, 0, "a purge clears the accumulated dose too")
+	H.add_radiation(50)
+	H.decay_radiation(0, 10)
+	H.clear_radiation()
+	TEST_ASSERT(!H.radiation && !H.accumulated_rads, "clear_radiation empties both doses")

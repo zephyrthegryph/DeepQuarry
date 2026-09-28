@@ -508,6 +508,40 @@
 	health_icons(self)
 	return TRUE
 
+/// A14: full-screen global HUD overlays are owned by their providers (glasses, NIF
+/// vision, welder masks, NIF install static). A provider claims its overlay each
+/// time it runs; the HUD stage reconciles the claims into client.screen, adding what
+/// is newly claimed and removing what nobody claimed, instead of stripping and
+/// re-adding every overlay every tick. Claims are an assoc set, so it stays bounded
+/// while the HUD stage sleeps.
+/mob
+	var/tmp/list/global_hud_claims
+
+/mob/proc/claim_global_hud(overlay)
+	if(!overlay)
+		return
+	LAZYINITLIST(global_hud_claims)
+	global_hud_claims[overlay] = TRUE
+
+/mob/proc/reconcile_global_huds()
+	var/list/claims = global_hud_claims
+	global_hud_claims = null
+	if(!client)
+		return
+	var/static/list/owned
+	if(!owned)
+		owned = list(GLOB.global_hud.blurry, GLOB.global_hud.druggy, GLOB.global_hud.vimpaired, GLOB.global_hud.darkMask, GLOB.global_hud.nvg, GLOB.global_hud.thermal, GLOB.global_hud.meson, GLOB.global_hud.science, GLOB.global_hud.material, GLOB.global_hud.whitense, GLOB.global_hud.heavy_whitense)
+	for(var/overlay in owned)
+		var/shown = islist(overlay) ? (overlay[1] in client.screen) : (overlay in client.screen)
+		if(claims?[overlay])
+			if(!shown)
+				client.screen |= overlay
+		else if(shown)
+			client.screen -= overlay
+	for(var/overlay in claims)
+		if(!(overlay in owned))
+			client.screen |= overlay
+
 /// The root's health icon is event-driven; darksight re-adapts on a timer for players.
 /datum/om/stage/life/hud/idle(mob/living/self)
 	return type == /datum/om/stage/life/hud && !om_wants(self, /datum/om/event/before/mob_handle_hud)

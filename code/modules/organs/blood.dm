@@ -58,6 +58,7 @@ REF_OWNED(/mob/living/carbon/human, "vessel")
 // Takes care blood loss and regeneration
 /datum/om/stage/life/blood/carbon/human
 	of = /mob/living/carbon/human
+	run_if = LIFE_RUN_IF_PLACED_LIVE_BIOLOGY
 	wake_on = CHANGE_MOB_HEALTH
 	woken_by = "injure/mend (wounds, bleeding); its rewake for raw vessel writes (draws, transfusions)"
 
@@ -75,9 +76,6 @@ REF_OWNED(/mob/living/carbon/human, "vessel")
 	return 10 SECONDS
 
 /datum/om/stage/life/blood/carbon/human/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
-	if(self.inStasisNow())
-		return
-
 	if(!self.should_have_organ(O_HEART))
 		return
 

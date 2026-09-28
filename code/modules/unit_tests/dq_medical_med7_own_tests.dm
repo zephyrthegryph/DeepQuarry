@@ -160,3 +160,34 @@
 	TEST_ASSERT_NOTNULL(holder, "a holder is made")
 	TEST_ASSERT_EQUAL(M.loc, holder, "the MMI sits inside its holder")
 	TEST_ASSERT_EQUAL(H.internal_organs_by_name[O_BRAIN], holder, "the holder takes the brain slot")
+
+/// D24: a limb's wound view is cached until a wound changes, and a rebuild replaces the list
+/// instead of mutating the one a caller may still be iterating.
+/datum/unit_test/dq_med7_d24_cached_wound_view
+
+/datum/unit_test/dq_med7_d24_cached_wound_view/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/organ/external/arm = H.get_organ(BP_L_ARM)
+	H.injure(INJURY_CUT, 10, BP_L_ARM)
+	var/list/first = arm.get_wounds()
+	TEST_ASSERT(length(first), "setup: the cut leaves a wound")
+	TEST_ASSERT(arm.get_wounds() == first, "an unchanged limb returns the cached view")
+	var/count = length(first)
+	H.injure(INJURY_BURN, 10, BP_L_ARM)
+	var/list/second = arm.get_wounds()
+	TEST_ASSERT(second != first, "a new wound rebuilds the view")
+	TEST_ASSERT(length(second) > count, "the rebuilt view holds the new wound")
+	TEST_ASSERT_EQUAL(length(first), count, "the old view is left intact for its reader")
+
+/// A14: global HUD overlays are claimed by providers and reconciled; claims are a set and a
+/// reconcile consumes them.
+/datum/unit_test/dq_med7_a14_global_hud_claims
+
+/datum/unit_test/dq_med7_a14_global_hud_claims/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	H.claim_global_hud(GLOB.global_hud.meson)
+	H.claim_global_hud(GLOB.global_hud.meson)
+	H.claim_global_hud(null)
+	TEST_ASSERT_EQUAL(LAZYLEN(H.global_hud_claims), 1, "claims are a set")
+	H.reconcile_global_huds()
+	TEST_ASSERT_NULL(H.global_hud_claims, "a reconcile consumes the claims")

@@ -317,12 +317,11 @@
 
 /datum/om/stage/life/mutations/carbon/human
 	of = /mob/living/carbon/human
+	run_if = LIFE_RUN_IF_PLACED_LIVE_BIOLOGY
 
 /datum/om/stage/life/mutations/carbon/human/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	. = ..()
 	if(.)
-		return
-	if(self.inStasisNow())
 		return
 
 	// Slow natural healing of wounds; cold-resistant bodies shrug off burns.
@@ -377,6 +376,7 @@
 
 /datum/om/stage/life/radiation/carbon/human
 	of = /mob/living/carbon/human
+	run_if = LIFE_RUN_IF_PLACED_LIVE_BIOLOGY
 	woken_by = "its rewake (radiation is written raw)"
 
 /// MED-6: no dose and nothing accumulated to dissipate.
@@ -389,8 +389,6 @@
 /datum/om/stage/life/radiation/carbon/human/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	. = ..()
 	if(.)
-		return
-	if(self.inStasisNow())
 		return
 
 	// B14 / P2-S12: anti-radiation treatment (reagent tags) purges through the
@@ -1555,8 +1553,6 @@
 	if(!.)
 		return
 
-	self.client.screen.Remove(GLOB.global_hud.blurry, GLOB.global_hud.druggy, GLOB.global_hud.vimpaired, GLOB.global_hud.darkMask, GLOB.global_hud.nvg, GLOB.global_hud.thermal, GLOB.global_hud.meson, GLOB.global_hud.science, GLOB.global_hud.material, GLOB.global_hud.whitense, GLOB.global_hud.heavy_whitense)
-
 	if(istype(self.client.eye,/obj/machinery/camera))
 		var/obj/machinery/camera/cam = self.client.eye
 		if(LAZYLEN(cam.client_huds))
@@ -1726,7 +1722,9 @@
 							found_welder = 1
 				if(self.absorbed) found_welder = 1
 			if(found_welder)
-				self.client.screen |= GLOB.global_hud.darkMask
+				self.claim_global_hud(GLOB.global_hud.darkMask)
+
+	self.reconcile_global_huds()
 
 /// Pain as a fraction of the pain that knocks this body out (1 = passing
 /// out from pain). Drives the HUD's softcrit / hardcrit indicators.
@@ -1892,8 +1890,8 @@ ef[limb_image][limb_image.color]"
 		if(G.darkness_view)
 			see_in_dark += G.darkness_view
 			. = TRUE
-		if(G.overlay() && client)
-			client.screen |= G.overlay()
+		if(G.overlay())
+			claim_global_hud(G.overlay())
 		if(G.vision_flags)
 			sight |= G.vision_flags
 			. = TRUE
@@ -1918,11 +1916,9 @@ ef[limb_image][limb_image.color]"
 
 /datum/om/stage/life/random_events/carbon/human
 	of = /mob/living/carbon/human
+	run_if = LIFE_RUN_IF_PLACED_LIVE_BIOLOGY
 
 /datum/om/stage/life/random_events/carbon/human/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
-	if(self.inStasisNow())
-		return
-
 	// Puke if toxloss is too high
 	if(!self.stat && !isbelly(self.loc))
 		var/toxic_load = self.injury_load(INJURY_CATEGORY_TOXIC)
