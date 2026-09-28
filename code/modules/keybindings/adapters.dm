@@ -510,7 +510,7 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 		return
 
 	// cyborgs are prohibited from using storage items, so (A.loc in contents) is not needed
-	if(A == user.loc || (A in user.loc) || (A in contents_of(user)))
+	if(A == user.loc || (A in user.loc) || (is_inside(A, user)))
 		// No adjacency checks
 		var/resolved = W.resolve_attackby(A, user, click_parameters = params)
 		if(!ITEM_INTERACT_CONSUMED(resolved) && A && W)

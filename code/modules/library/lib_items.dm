@@ -433,7 +433,7 @@ EXTEND_INTERACTIONS(/obj/item/book/bundle, INTERACT_USE("Read", PROC_REF(interac
 	. = ..()
 	if(.)
 		return
-	if(!((src in contents_of(usr)) || (istype(src.loc, /obj/item/folder) && (src.loc in contents_of(usr)))))
+	if(!((is_inside(src, usr)) || (istype(src.loc, /obj/item/folder) && (is_inside(src.loc, usr)))))
 		to_chat(usr, span_notice("You need to hold it in your hands!"))
 		return TRUE
 	usr.set_machine(src)

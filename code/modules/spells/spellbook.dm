@@ -34,7 +34,7 @@
 		if(href_list["spell_choice"])
 			if(href_list["spell_choice"] == "rememorize")
 				var/area/wizard_station/A = locate()
-				if(H in contents_of(A))
+				if(is_inside(H, A))
 					uses = max_uses
 					H.spellremove()
 					temp = "All spells have been removed. You may now memorize a new set of spells."

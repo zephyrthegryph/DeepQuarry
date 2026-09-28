@@ -35,7 +35,7 @@
 /mob/living/simple_mob/proc/do_attack(atom/A, turf/T)
 	face_atom(A)
 	var/missed = FALSE
-	if(!isturf(A) && !(A in contents_of(T)) ) // Turfs don't contain themselves so checking contents is pointless if we're targeting a turf.
+	if(!isturf(A) && !(is_inside(A, T)) ) // Turfs don't contain themselves so checking contents is pointless if we're targeting a turf.
 		missed = TRUE
 	else if(!T.AdjacentQuick(src))
 		missed = TRUE

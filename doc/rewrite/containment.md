@@ -157,7 +157,7 @@ text.
 
 ### As built (C11)
 
-- **Lint.** `tools/ci/spatial_lint.py` checks the ceiling in `tools/ci/spatial_baseline.txt` (justified reads carry `// ALLOW(spatial): <reason>`)
+- **Lint.** `tools/ci/spatial_lint.py` is an outright ban since C11; use `contents_of()`, `FOR_CONTENTS()` (non-copying, non-mutating loops), `is_inside()` (membership), `locate_within()`, `contents_count()`, `locate_in_list()` (justified reads carry `// ALLOW(spatial): <reason>`)
   (1,866 sites in 681 files at the start of C11). Same ratchet shape as C1's
   write lint: a file may not exceed its allowlisted count, an unlisted file may
   have none, and `--update` only lowers counts (never silently raises one). Both

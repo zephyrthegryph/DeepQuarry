@@ -1505,7 +1505,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes, \
 			to_chat(user, span_warning("You can't fit anyone else into \the [src]!"))
 		else
 			var/obj/item/holder/micro/holder = I
-			if(holder.held_mob && (holder.held_mob in contents_of(holder)))
+			if(holder.held_mob && (is_inside(holder.held_mob, holder)))
 				var/mob/living/M = holder.held_mob
 				holder.dump_mob()
 				to_chat(M, span_warning("[user] stuffs you into \the [src]!"))
