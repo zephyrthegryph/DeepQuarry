@@ -7520,12 +7520,14 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 /// Drains dirty gas notifications until `M` has woken past `wakes`, or the queue runs dry.
 /datum/unit_test/dq_atmos_devices_wake_only_when_actionable/proc/deliver(obj/machinery/M, wakes)
-	for(var/i in 1 to 65536)
+	// Observations are published synchronously by the mixture write; a few
+	// ticks of slack cover any deferred publish without spinning for minutes
+	// on the negative (no-wake) cases.
+	for(var/i in 1 to 16)
 		GLOB.machine_service.wake_dirty_gas_subscribers()
 		if(M.gas_dependency_wake_count > wakes)
 			return
-		if(!(i % 256))
-			stoplag()
+		stoplag()
 
 /datum/unit_test/dq_atmos_devices_wake_only_when_actionable/Run()
 	var/turf/simulated/floor/T

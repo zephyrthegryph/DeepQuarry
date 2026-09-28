@@ -228,14 +228,21 @@ GLOBAL_LIST_INIT(dq_variants_property_test, list(
 	var/datum/property_registry/registry = dq_property_registry()
 	var/failures = 0
 	for(var/id in registry.base_providers)
+		// Nested providers (e.g. /obj and /obj/item) cover overlapping type trees;
+		// resolve each path once per id instead of once per covering provider.
+		var/list/seen = list()
 		for(var/datum/property_provider/provider as anything in LAZYACCESS(registry.base_providers, id))
 			if(provider.state_var)
 				var/datum/sample = allocate(provider.applies_to)
 				TEST_ASSERT(dq_property_state_has_var(sample, provider.state_var), "[provider.type] reads [provider.state_var], which is not saved state on [provider.applies_to]")
 			for(var/path in sweep_types(typesof(provider.applies_to)))
-				if(registry.base_provider(path, id) != provider)
+				if(seen[path])
 					continue
-				var/error = registry.check_value(id, provider.type_value(path, null))
+				seen[path] = TRUE
+				var/datum/property_provider/owner = registry.base_provider(path, id)
+				if(!owner)
+					continue
+				var/error = registry.check_value(id, owner.type_value(path, null))
 				if(error && failures++ < 20)
 					TEST_FAIL("[path]: [error]")
 	TEST_ASSERT(failures == 0, "[failures] per-type values are invalid")

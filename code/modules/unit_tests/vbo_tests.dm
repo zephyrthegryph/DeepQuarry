@@ -10,6 +10,8 @@
 
 /// Tests that all mobs with assigned bellies use valid datums
 /datum/unit_test/mobs_use_valid_belly_overlays
+	/// Set TRUE to trace every lifecycle phase of each mob's deletion (slow: ~1 s per mob).
+	var/trace_lifecycle = FALSE
 
 /datum/unit_test/mobs_use_valid_belly_overlays/Run()
 	for(var/mob/living/simple_mob/test_path as anything in typesof(/mob/living/simple_mob))
@@ -30,7 +32,13 @@
 				continue
 			TEST_FAIL("[test_mob] uses a non existing belly_fullscreen [test_fullscreen].")
 		log_test("vbo: [test_path] bellies checked, deleting")
-		GLOB.dq_lifecycle_trace_depth++
+		// Per-phase lifecycle tracing (GLOB.dq_lifecycle_trace_depth) wrote
+		// ~250 log lines per mob and was ~1 s of each mob's 1.3 s cost; it is
+		// opt-in via trace_lifecycle. The per-mob log_test lines still localise
+		// a hang to one type.
+		if(trace_lifecycle)
+			GLOB.dq_lifecycle_trace_depth++
 		qdel(test_mob)
-		GLOB.dq_lifecycle_trace_depth--
+		if(trace_lifecycle)
+			GLOB.dq_lifecycle_trace_depth--
 		log_test("vbo: [test_path] deleted at [(REALTIMEOFDAY - started) / 10]s")
