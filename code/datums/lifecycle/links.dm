@@ -294,6 +294,11 @@
 			if(GLOB.dq_lifecycle_trace_depth)
 				log_world("LIFECYCLE_TRACE: [D.type] [ref(D)] links: deleting owned [var_name] ([child.type])")
 			qdel(child)
+	// Held vars (REF_HELD) are let go with their holder: the thing is deleted with the
+	// holder's contents or lives on elsewhere, and a deleted holder still naming it
+	// (a mob's focus on itself, an installed part) is a reference nothing would clear.
+	for(var/var_name in table["held"])
+		D.vars[var_name] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
 	if(GLOB.dq_lifecycle_trace_depth)
 		log_world("LIFECYCLE_TRACE: [D.type] [ref(D)] links: owned vars done")
 	var/list/owned_list = table["owned_list"]

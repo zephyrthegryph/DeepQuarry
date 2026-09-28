@@ -96,7 +96,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/datum/mind/M = dq_test_give_mind(H, "MMI Subject")
 	var/datum/character_identity/I = M.identity
-	var/obj/item/organ/internal/brain/brain = dq_test_remove_brain(H)
+	var/obj/item/organ/internal/brain/brain = own(dq_test_remove_brain(H))
 	var/mob/living/carbon/brain/view = brain.hosted_view()
 	var/obj/item/mmi/mmi = allocate(/obj/item/mmi)
 
@@ -267,7 +267,7 @@
 /datum/unit_test/dq_mind_view_status_follows_tissue/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	dq_test_give_mind(H, "Fading Brain")
-	var/obj/item/organ/internal/brain/brain = dq_test_remove_brain(H)
+	var/obj/item/organ/internal/brain/brain = own(dq_test_remove_brain(H))
 	var/mob/living/carbon/brain/view = brain.hosted_view()
 	TEST_ASSERT(view.stat != DEAD, "a removed healthy brain's view is up")
 

@@ -179,6 +179,7 @@
 	girder.wrench_act(H, wrench)
 	TEST_ASSERT_EQUAL(GLOB.dq_tool_last_use["delay"], expected, "disassembling takes 35 + integrity/50")
 	TEST_ASSERT(QDELETED(girder), "disassembled")
+	own_turf_contents(T) // the salvaged steel
 
 /// Airlock assembly: wrench anchoring 4 s at volume 100; welding it apart needs a lit welder, 4 s, no fuel.
 /datum/unit_test/dq_tool_parity_door_assembly
@@ -206,6 +207,7 @@
 	TEST_ASSERT_EQUAL(GLOB.dq_tool_last_use["delay"], 4 SECONDS, "welding it apart takes 4 s")
 	TEST_ASSERT_EQUAL(welder.get_fuel(), start, "and burns no fuel, as before")
 	TEST_ASSERT(QDELETED(assembly), "taken apart")
+	own_turf_contents(T) // the salvaged steel
 
 /// Manual valve: unwrenching takes 40 ticks at volume 50.
 /datum/unit_test/dq_tool_parity_valve
@@ -220,3 +222,4 @@
 	TEST_ASSERT_EQUAL(GLOB.dq_tool_last_use["delay"], 40, "unfastening takes 40 ticks")
 	TEST_ASSERT_EQUAL(GLOB.dq_tool_last_use["quality"], TOOL_WRENCH, "as a wrench")
 	TEST_ASSERT_EQUAL(GLOB.dq_tool_last_use["volume"], 50, "at volume 50")
+	own_turf_contents(T) // the unfastened valve comes off as a pipe item

@@ -71,6 +71,8 @@
 		if(findtext(name, "blood loss"))
 			saw_bleed = TRUE
 			break
+	for(var/obj/effect/decal/cleanable/blood/B in get_turf(H))
+		own(B)
 	TEST_ASSERT(saw_bleed, "scanner_phrase 'blood loss' should be reported as a sign")
 
 

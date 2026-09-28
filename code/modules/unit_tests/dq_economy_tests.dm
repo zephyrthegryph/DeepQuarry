@@ -1129,6 +1129,7 @@
 	TEST_ASSERT(charter_document.register_agent_approach_signature(charter, principal, 2), "principal could not physically select the compartmentalized approach")
 	TEST_ASSERT_EQUAL(contract.approach, AGENT_APPROACH_DISCREET, "signed charter did not lock the selected operating approach")
 	var/obj/item/paper/agreement = create_contract_document(test_turf, "test freight subcontract", "<span class=\"paper_field\"></span>", contract.id, CONTRACT_DOCUMENT_AGENT_CONTACT, contract.issuer_name, list("agent_contract_id" = contract.id, "principal_account" = principal_account.account_number, "faction_id" = contract.agent_faction))
+	own(agreement)
 	var/datum/contract_document/document = agreement.contract_document
 	TEST_ASSERT(document.register_agent_contact_signature(agreement, contact, 2), "Cargo contact could not sign the physical confidential agreement")
 	TEST_ASSERT_EQUAL(contract.contact_account_number, contact_account.account_number, "signed paper did not bind its Cargo contact")
@@ -1190,8 +1191,8 @@
 /datum/unit_test/dq_physical_sales_routing/Run()
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/obj/structure/closet/crate/crate = new(test_turf)
-	var/obj/item/paper/ledger = new(crate)
-	new /obj/item(crate)
+	var/obj/item/paper/ledger = allocate(/obj/item/paper, crate)
+	allocate(/obj/item, crate)
 	ledger.shipping_ledger_data = list(
 		"id" = "FL-UNIT",
 		"valid" = TRUE,

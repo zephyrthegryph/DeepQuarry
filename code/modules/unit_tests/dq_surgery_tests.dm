@@ -887,6 +887,7 @@
 	var/obj/item/organ/external/arm = H.get_organ(BP_L_ARM)
 	TEST_ASSERT_NOTNULL(arm, "no left arm")
 	arm.droplimb(clean = TRUE, disintegrate = DROPLIMB_EDGE)
+	own(arm) // the severed arm lands on the floor
 
 	// The patient no longer has this condition (we walk the patient's
 	// remaining organs; the severed arm isn't one of them).

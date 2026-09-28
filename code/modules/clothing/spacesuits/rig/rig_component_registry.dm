@@ -93,14 +93,18 @@
  * Drops and qdels all six physical pieces, nulling their vars on the holder.
  * Called from /obj/item/rig/Destroy().
  */
-/datum/rig_component_registry/proc/destroy_pieces()
+/datum/rig_component_registry/proc/destroy_pieces(obj/item/rig/R)
+	// The rig passes itself: while it is being destroyed its handle no longer resolves.
+	R ||= holder()
+	if(!R)
+		return
 	for(var/obj/item/piece in list(
-			holder().gloves,
-			holder().boots,
-			holder().helmet,
-			holder().chest,
-			holder().cell,
-			holder().air_supply))
+			R.gloves,
+			R.boots,
+			R.helmet,
+			R.chest,
+			R.cell,
+			R.air_supply))
 		if(!istype(piece))
 			continue
 		// Orderly teardown: clear the back-ref so the piece's dropped() self-detach
@@ -113,14 +117,14 @@
 			M.drop_from_inventory(piece)
 		qdel(piece)
 
-	holder().gloves    = null
-	holder().boots     = null
-	holder().helmet    = null
-	holder().chest     = null
-	holder().cell      = null
-	holder().air_supply = null
+	R.gloves    = null
+	R.boots     = null
+	R.helmet    = null
+	R.chest     = null
+	R.cell      = null
+	R.air_supply = null
 
-	for(var/obj/item/rig_module/module in holder().installed_modules)
+	for(var/obj/item/rig_module/module in R.installed_modules)
 		qdel(module)
 	// installed_modules list is a var on holder; leave nulling to rig/Destroy()
 

@@ -57,16 +57,16 @@
 		var/obj/item/stack/existing = locate_on(T, path)
 		if(existing && existing.get_amount() >= max(edge.item_amount, 1))
 			return existing
-		return new path(T, max(edge.item_amount, 1))
+		return allocate(path, T, max(edge.item_amount, 1))
 	var/obj/item/existing = locate_on(T, path)
 	if(existing)
 		return existing
-	return new path(T)
+	return allocate(path, T)
 
 /// Attaches every part `graph` needs to `chassis`, in graph order, with `actor`.
 /datum/unit_test/proc/mech_attach_all_parts(mob/actor, obj/item/chassis, datum/construction_graph/mecha/graph, turf/T)
 	for(var/obj/item/part_type as anything in graph.mecha_parts)
-		var/obj/item/part = new part_type(T)
+		var/obj/item/part = allocate(part_type, T)
 		var/datum/interaction/construction/edge = mech_edge_for_item(chassis, part)
 		TEST_ASSERT(edge, "[graph.id]: a part edge exists for [part_type]")
 		if(!edge)
@@ -105,9 +105,9 @@
 			if(existing)
 				existing.add(amount)
 			else
-				new key(T, amount)
+				allocate(key, T, amount)
 		else if(!(locate_on(T, key)))
-			new key(T)
+			allocate(key, T)
 
 /// Builds a fresh chassis for `graph_path`, attaches its parts, and returns it (already at the top of the ladder).
 /datum/unit_test/proc/mech_fresh_shell(mob/actor, graph_path, turf/T)
@@ -136,7 +136,7 @@
 	TEST_ASSERT_EQUAL(chassis.icon_state, "ripley0", "the shell is finished once every part is attached")
 	TEST_ASSERT(mech_walk_to_completion(H, chassis, tools, T), "the ladder walks all the way to completion")
 	TEST_ASSERT(QDELETED(chassis), "the chassis is gone")
-	TEST_ASSERT(locate_on(T, /obj/mecha/working/ripley), "the finished Ripley spawned")
+	TEST_ASSERT(own(locate_on(T, /obj/mecha/working/ripley)), "the finished Ripley spawned")
 
 /datum/unit_test/dq_construction_mech_gygax_full_build
 
@@ -151,7 +151,7 @@
 	TEST_ASSERT_EQUAL(chassis.icon_state, "gygax0", "the shell is finished once every part is attached")
 	TEST_ASSERT(mech_walk_to_completion(H, chassis, tools, T), "the ladder walks all the way to completion")
 	TEST_ASSERT(QDELETED(chassis), "the chassis is gone")
-	TEST_ASSERT(locate_on(T, /obj/mecha/combat/gygax), "the finished Gygax spawned")
+	TEST_ASSERT(own(locate_on(T, /obj/mecha/combat/gygax)), "the finished Gygax spawned")
 
 /datum/unit_test/dq_construction_mech_pinnace_full_build
 
@@ -166,7 +166,7 @@
 	TEST_ASSERT_EQUAL(chassis.icon_state, "pinnace0", "the shell is finished once every part is attached")
 	TEST_ASSERT(mech_walk_to_completion(H, chassis, tools, T), "the ladder walks all the way to completion")
 	TEST_ASSERT(QDELETED(chassis), "the chassis is gone")
-	TEST_ASSERT(locate_on(T, /obj/mecha/combat/fighter/pinnace), "the finished Pinnace spawned")
+	TEST_ASSERT(own(locate_on(T, /obj/mecha/combat/fighter/pinnace)), "the finished Pinnace spawned")
 
 /datum/unit_test/dq_construction_mech_polecat_full_build
 
@@ -181,7 +181,7 @@
 	TEST_ASSERT_EQUAL(chassis.icon_state, "polecat0", "the shell is finished once every part is attached")
 	TEST_ASSERT(mech_walk_to_completion(H, chassis, tools, T), "the ladder walks all the way to completion")
 	TEST_ASSERT(QDELETED(chassis), "the chassis is gone")
-	TEST_ASSERT(locate_on(T, /obj/mecha/micro/sec/polecat), "the finished Polecat spawned")
+	TEST_ASSERT(own(locate_on(T, /obj/mecha/micro/sec/polecat)), "the finished Polecat spawned")
 
 // ---- Round trips: forward some steps, then the same steps back, same materials and state ----
 
@@ -216,6 +216,7 @@
 	TEST_ASSERT_EQUAL(chassis.vars["construction_state"], before_state, "[graph_path]: the state round-trips")
 	TEST_ASSERT_EQUAL(chassis.icon_state, before_icon, "[graph_path]: the icon_state round-trips")
 	TEST_ASSERT(dq_materials_equal(dq_materials_on(T), materials_before), "[graph_path]: the same materials came back")
+	own_turf_contents(T) // the refunded materials
 
 /datum/unit_test/dq_construction_mech_ripley_round_trip
 
@@ -276,3 +277,4 @@
 			var/obj/item/advance_held = mech_item_for_edge(fwd, tools, T)
 			if(!dq_walk(H, chassis, fwd, advance_held))
 				break
+		own_turf_contents(T) // the finished mecha and any refunds

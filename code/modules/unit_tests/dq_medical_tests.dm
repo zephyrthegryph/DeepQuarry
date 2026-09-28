@@ -613,6 +613,7 @@
 			found_bleeding = TRUE
 			break
 	TEST_ASSERT(found_bleeding, "examine helper should report bleeding when bleeding_visible is active")
+	own_turf_contents(get_turf(H)) // the bleeding artery drips blood
 
 
 // --- vital reading jitter ----------------------------------------------

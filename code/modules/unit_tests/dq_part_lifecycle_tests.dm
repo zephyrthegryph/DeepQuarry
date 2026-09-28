@@ -111,6 +111,8 @@
 	var/obj/item/organ/external/arm = H.get_organ(BP_L_ARM)
 	var/obj/item/organ/external/hand = H.get_organ(BP_L_HAND)
 	arm.droplimb(FALSE, DROPLIMB_BLUNT)
+	own(hand) // flung onto the floor
+	own_turf_contents(get_turf(H)) // the blunt sever leaves gibs
 	TEST_ASSERT(QDELETED(arm), "a blunt sever destroys the limb")
 	TEST_ASSERT(!QDELETED(hand), "the hand inside is flung out, not destroyed")
 	TEST_ASSERT(isturf(hand.loc), "the flung hand lands on a turf, not [hand.loc]")
@@ -129,6 +131,7 @@
 	var/obj/item/organ/external/arm = H.get_organ(BP_L_ARM)
 	var/obj/item/organ/external/hand = H.get_organ(BP_L_HAND)
 	arm.droplimb(FALSE, DROPLIMB_BURN)
+	own_turf_contents(get_turf(H)) // the burn sever leaves ash
 	TEST_ASSERT(QDELETED(arm), "a burn sever destroys the limb")
 	TEST_ASSERT(QDELETED(hand), "and the hand inside it")
 	TEST_ASSERT_NULL(H.organs_by_name[BP_L_HAND], "the cache dropped the hand")
@@ -253,6 +256,7 @@
 	dq_assert_body_tree(M, "a butchery animal")
 	var/obj/item/organ/heart = M.internal_organs_by_name[O_HEART]
 	TEST_ASSERT(heart.removed(), "a loose organ can be removed")
+	own(heart)
 	TEST_ASSERT_NULL(heart.owner, "and has no owner after")
 	TEST_ASSERT_NULL(M.internal_organs_by_name[O_HEART], "the cache dropped it")
 	dq_assert_body_tree(M, "a butchery animal after removal")
@@ -266,6 +270,7 @@
 	TEST_ASSERT(H.equip_to_slot_or_del(G, SLOT_ID_GLOVES), "the gloves go on")
 	var/obj/item/organ/external/arm = H.get_organ(BP_L_ARM)
 	arm.droplimb(TRUE, DROPLIMB_EDGE)
+	own(arm) // the severed arm lands on the floor
 	TEST_ASSERT(H.get_equipped_item(SLOT_ID_GLOVES) != G, "severing an arm drops the gloves on its hand")
 
 /// Deleting a human leaves no part owned.

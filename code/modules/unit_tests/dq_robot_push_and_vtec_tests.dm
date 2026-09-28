@@ -70,3 +70,4 @@
 
 	TEST_ASSERT(!proto.is_installed(R), "module_reset() should uninstall VTEC along with the module, not leave the verb behind")
 	TEST_ASSERT(!R.vtec_active, "module_reset() should clear vtec_active")
+	own_turf_contents(get_turf(R)) // the reset plays smoke and fade effects

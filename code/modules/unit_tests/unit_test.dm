@@ -183,16 +183,17 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 	// still sitting on this block's turfs (besides the corner landmarks) is
 	// something the test spawned without tracking it through allocate() --
 	// directly (new X(run_loc_floor_bottom_left)) or as a side effect (an
-	// item's own inventory, a decal, a temporary effect). Logged, not failed
-	// yet: we don't have a full-suite baseline for how many existing tests
-	// would trip this, and a false-positive mass failure would be worse than
-	// the leak it's meant to catch. Once a baseline run shows it's quiet,
-	// flip the log to test.Fail().
+	// item's own inventory, a decal, a temporary effect). Returned as a
+	// failure message; RunUnitTest() fails the test with it.
 	var/leaked = 0
 	var/list/leaked_types = list()
 	for(var/turf/T in block_turfs(block))
 		for(var/atom/movable/AM in contents_of(T))
 			if(istype(AM, /obj/effect/landmark))
+				continue
+			// A fire is the block's atmosphere, not an object the test made: the air
+			// reset below puts it out along with the gas that feeds it.
+			if(istype(AM, /obj/effect/hotspot))
 				continue
 			leaked++
 			leaked_types[AM.type] = (leaked_types[AM.type] || 0) + 1
@@ -227,7 +228,8 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 		var/list/parts = list()
 		for(var/leaked_type in leaked_types)
 			parts += "[leaked_type] x[leaked_types[leaked_type]]"
-		log_world("UNIT TEST LEAK: [test ? test.type : "?"] left [leaked] object(s) on its block: [parts.Join(", ")]")
+		. = "UNIT TEST LEAK: [test ? test.type : "?"] left [leaked] object(s) on its block: [parts.Join(", ")]"
+		log_world(.)
 
 	block.in_use = FALSE
 
@@ -506,6 +508,21 @@ REF_OWNED_LIST(/datum/unit_test, "allocated")
 	allocated += instance
 	return instance
 
+/// Hands something the test didn't allocate() but did cause (a construction product, a
+/// built bot, a spawned effect) to the test, so it is deleted when the test is over.
+/// Returns `thing`.
+/datum/unit_test/proc/own(datum/thing)
+	if(thing && !QDELETED(thing))
+		allocated |= thing
+	return thing
+
+/// own()s everything currently on `T` (landmarks excepted): for a test whose subject
+/// deliberately leaves its products on the floor (deconstruction salvage, a finished build).
+/datum/unit_test/proc/own_turf_contents(turf/T)
+	for(var/atom/movable/AM as anything in contents_of(T))
+		if(!istype(AM, /obj/effect/landmark))
+			own(AM)
+
 /// A floor turf on the map, for tests whose subject must be in the world.
 /// allocate() defaults to run_loc_floor_bottom_left, which is null when the
 /// unit-test room template isn't loaded.
@@ -704,11 +721,21 @@ REF_OWNED_LIST(/datum/unit_test, "allocated")
 		log_world("::error::[TEST_OUTPUT_RED("FAIL")] [test_output_desc]")
 
 	var/final_status = skip_test ? UNIT_TEST_SKIPPED : (test.succeeded ? UNIT_TEST_PASSED : UNIT_TEST_FAILED)
-	test_results[test_path] = list("status" = final_status, "message" = message, "name" = test_path, "duration_ds" = duration, "runtimes" = GLOB.total_runtimes - runtimes_before, "ticks" = tick_stats)
 
 	var/datum/unit_test_block/block = test.test_block
 	qdel(test)
-	release_unit_test_block(block, test)
+	// A test must delete everything it creates (allocate(), or its own qdel()s). Whatever
+	// is still on its block once `allocated` is gone fails the test.
+	var/leak = release_unit_test_block(block, test)
+	if(leak && !skip_test)
+		GLOB.failed_any_test = TRUE
+		if(final_status == UNIT_TEST_PASSED)
+			log_world("::error::[TEST_OUTPUT_RED("FAIL")] [test_output_desc] (leaked objects)")
+		final_status = UNIT_TEST_FAILED
+		message = message ? "[message]\n\t[leak]" : "\t[leak]"
+		log_test("\t[leak]")
+
+	test_results[test_path] = list("status" = final_status, "message" = message, "name" = test_path, "duration_ds" = duration, "runtimes" = GLOB.total_runtimes - runtimes_before, "ticks" = tick_stats)
 
 /// Builds (and returns) a list of atoms that we shouldn't initialize in generic testing, like Create and Destroy.
 /// It is appreciated to add the reason why the atom shouldn't be initialized if you add it to this list.

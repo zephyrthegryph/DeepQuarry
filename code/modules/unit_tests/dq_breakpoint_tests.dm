@@ -103,6 +103,7 @@
 	TEST_ASSERT_EQUAL(sandboxed.break_calls, 1, "once")
 	qdel(sandboxed)
 	qdel(listener)
+	own_turf_contents(T) // breaking throws sparks
 
 /// Real machines through the base break: the flag, the signal, the fix.
 /datum/unit_test/dq_machine_break_real_types
@@ -121,6 +122,7 @@
 		TEST_ASSERT(!(machine.stat & BROKEN), "[path]: BROKEN is cleared")
 		om_unhook(machine, /datum/om/event/machinery_broken, listener)
 		qdel(machine)
+		own_turf_contents(T) // breaking throws sparks
 	qdel(listener)
 
 // ---- Flavour text at each band ----

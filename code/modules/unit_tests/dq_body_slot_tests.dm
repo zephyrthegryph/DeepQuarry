@@ -56,6 +56,7 @@
 	var/obj/item/organ/external/hand = H.get_organ(BP_L_HAND)
 	TEST_ASSERT_NOTNULL(hand, "the human should start with a left hand")
 	hand.droplimb(clean = TRUE, disintegrate = DROPLIMB_EDGE)
+	own(hand)
 	TEST_ASSERT(!H.has_body_part(BP_L_HAND), "the left hand should be gone")
 
 	TEST_ASSERT_NOTNULL(dq_ledger_refusal(pen, H, SLOT_ID_HAND_L, H), "a missing left hand should refuse the left hand slot")

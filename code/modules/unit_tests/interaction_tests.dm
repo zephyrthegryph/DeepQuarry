@@ -147,8 +147,8 @@
 	var/turf/salvage_turf = get_turf(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
 	TEST_ASSERT_NOTNULL(salvage_turf, "No mapped turf was available for the machinery salvage lifecycle test.")
 	var/obj/machinery/unit_test_destruction_salvage/machine = allocate(/obj/machinery/unit_test_destruction_salvage, salvage_turf)
-	var/obj/item/part = new(machine)
-	var/obj/item/circuitboard/board = new(machine)
+	var/obj/item/part = allocate(/obj/item, machine)
+	var/obj/item/circuitboard/board = allocate(/obj/item/circuitboard, machine)
 	machine.component_parts = list(part)
 	machine.circuit = board
 

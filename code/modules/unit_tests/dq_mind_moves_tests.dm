@@ -172,6 +172,7 @@
 	TEST_ASSERT_EQUAL(I.languages, languages_before, "the character's languages survived")
 	TEST_ASSERT_EQUAL(I.ooc_notes, "notes of Shapeshifter", "the character's OOC notes survived")
 	TEST_ASSERT(QDELETED(form), "the form is deleted after reverting")
+	own_turf_contents(get_turf(H)) // the transform and its reversal leave teleport effects
 
 
 // --- A printed sleeve gets the character from the mind ----------------------------------
