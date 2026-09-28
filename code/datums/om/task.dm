@@ -162,20 +162,41 @@
  *
  *	om_task_start(/datum/om/task/timed/tome_scribe, user, src, chosen_rune = rune, word1 = w1)
  *
- * The named arguments set the run's vars: its state, and any declaration var to override
+ * `rest` is everything after the actor: the target (optional, positional), then the named
+ * arguments, which set the run's vars: its state, and any declaration var to override
  * (duration, receiver, ...). Every datum among them is held: deleting it cancels the task.
  * `starter` is the caller's src (the macro passes it): without an explicit receiver, the
  * receiver is the first of starter, target and actor that has the complete_proc (or
- * cancel_proc/check_proc). The old form, one positional list("key" = value), still works
- * (the receiver then defaults to the actor) and is counted by api_lints.py (task_params_list).
- * Returns the task, or a text reason it can't start.
+ * cancel_proc/check_proc/a step proc). The old form, a positional list("key" = value) after
+ * the target, still works (the receiver then defaults to the actor) and is counted by
+ * api_lints.py (task_params_list). Returns the task, or a text reason it can't start.
  */
-/proc/om_task_begin(task, datum/actor, datum/target, list/params, datum/starter)
+/proc/om_task_begin(task, datum/actor, list/rest, datum/starter)
+	var/datum/target
+	var/list/params = list()
 	var/legacy = FALSE
-	if(length(params) == 1 && (isnull(params[1]) || islist(params[1])))
-		// om_task_start(type, actor, target, list("key" = value)): the deprecated list form.
-		params = params[1]
-		legacy = TRUE
+	var/positional = 0
+	for(var/i in 1 to length(rest))
+		var/entry = rest[i]
+		if(istext(entry))
+			params[entry] = rest[entry]
+			continue
+		positional++
+		if(positional == 1)
+			target = entry
+		else if(positional == 2 && (isnull(entry) || islist(entry)))
+			// om_task_start(type, actor, target, list("key" = value)): the deprecated list form.
+			var/list/old = entry
+			for(var/key in old)
+				params[key] = old[key]
+			legacy = TRUE
+		else
+			CRASH("om: task [task] was given a positional argument ([entry]); name it (var = value)")
+	return om_task_launch(task, actor, target, params, starter, legacy)
+
+/// Starts a task from a built params list (var name -> value): om_task_begin() and the helpers
+/// that build their own (om_do_after(), flows). `legacy`: the receiver defaults to the actor.
+/proc/om_task_launch(task, datum/actor, datum/target, list/params, datum/starter, legacy = FALSE)
 	var/datum/om/registry/reg = om_registry()
 	var/datum/om/task/spec = ispath(task) ? reg.task_by_type[task] : reg.task_by_name[task]
 	if(!spec)
@@ -205,7 +226,7 @@
 			return "gone"
 		T.vars[key] = value
 	if(!T.receiver)
-		T.receiver = legacy ? actor : om_task_pick_receiver(T, starter)
+		T.receiver = legacy ? actor : T.pick_receiver(starter)
 	if(isnull(T.duration))
 		T.duration = 0
 	else if(!isnum(T.duration))
@@ -263,7 +284,8 @@
 /// The receiver of a task started without one: the first of `starter` (the caller's src), the
 /// target and the actor that has the task's complete_proc, cancel_proc, check_proc or a step
 /// proc. Otherwise the starter (the caller asked for the work), else the actor.
-/proc/om_task_pick_receiver(datum/om/task/T, datum/starter)
+/datum/om/task/proc/pick_receiver(datum/starter)
+	var/datum/om/task/T = src
 	var/list/procs = list(T.complete_proc, T.cancel_proc)
 	if(istype(T, /datum/om/task/timed))
 		var/datum/om/task/timed/timed = T
@@ -274,14 +296,14 @@
 		if(!proc_ref || copytext("[proc_ref]", 1, 7) == "/proc/" || om_task_own_proc(T, proc_ref))
 			continue
 		for(var/datum/candidate as anything in list(starter, T.target, T.actor))
-			if(candidate && !QDELETED(candidate) && om_task_proc_fits(candidate, proc_ref))
+			if(candidate && !QDELETED(candidate) && proc_fits(candidate, proc_ref))
 				return candidate
 	if(starter && !QDELETED(starter))
 		return starter
 	return T.actor
 
 /// TRUE when `proc_ref` (a proc path, or a PROC_REF() name) can be called on `D`.
-/proc/om_task_proc_fits(datum/D, proc_ref)
+/datum/om/task/proc/proc_fits(datum/D, proc_ref)
 	var/text = "[proc_ref]"
 	var/at = findtext(text, "/proc/")
 	if(!at)

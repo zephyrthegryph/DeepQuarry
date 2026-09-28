@@ -298,8 +298,8 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 		"check_pos" = check?[2])
 	if(receiver)
 		params["receiver"] = receiver
-	// om_task_begin() directly: the params are built here, and the receiver defaults to the user.
-	var/datum/om/task/timed/T = om_task_begin(claims ? /datum/om/task/timed/simple/claiming : /datum/om/task/timed/simple, user, (target && target != user) ? target : null, list(params), null)
+	// om_task_launch() directly: the params are built here, and the receiver defaults to the user.
+	var/datum/om/task/timed/T = om_task_launch(claims ? /datum/om/task/timed/simple/claiming : /datum/om/task/timed/simple, user, (target && target != user) ? target : null, params, null, TRUE)
 	if(istype(T) && T.state == OM_TASK_DONE)
 		return null
 	return T

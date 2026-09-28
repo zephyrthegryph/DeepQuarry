@@ -78,7 +78,7 @@
 	if(!isnull(reason))
 		F.done = TRUE
 		return reason
-	F.run_step(PROC_REF(start), null)
+	F.run_step(/datum/om/flow/proc/start, null)
 	return F
 
 /// Null while the flow may go on, else the reason: its actor or target is gone, a requires or valid() fails.
@@ -134,8 +134,8 @@
 /datum/om/flow/proc/park()
 	if(parked)
 		return TRUE
-	var/list/names = om_state_var_names(src, /datum/om/flow, list("actor", "target"))
-	parked = om_park_state(src, names)
+	var/list/names = state_var_names(/datum/om/flow, list("actor", "target"))
+	parked = park_state(names)
 	if(isnull(parked))
 		stop("gone")
 		return FALSE
@@ -147,7 +147,7 @@
 		return TRUE
 	var/list/held = parked
 	parked = null
-	return om_unpark_state(src, held)
+	return unpark_state(held)
 
 /**
  * The step takes time: a timed action by the actor on the target (or `on`, instead), then
@@ -162,7 +162,7 @@
 		work_on = null
 	if(!park())
 		return "gone"
-	var/result = om_task_begin(/datum/om/task/timed/flow_wait, doer, work_on, list(
+	var/result = om_task_launch(/datum/om/task/timed/flow_wait, doer, work_on, list(
 		"duration" = duration,
 		"flow" = src,
 		"next_step" = next,

@@ -442,7 +442,8 @@
 // become a list keyed by var name, and the caller's src rides along (the receiver default).
 
 /// Starts a task (task.dm): om_task_start(/datum/om/task/timed/x, actor, target, var = value, ...).
-#define om_task_start(task, actor, target, params...) om_task_begin(task, actor, target, list(params), src)
+/// The target is optional (om_task_start(/datum/om/task/x, actor)).
+#define om_task_start(task, actor, rest...) om_task_begin(task, actor, list(rest), src)
 /// Asks `answerer` a typed prompt (ask.dm): om_ask(answerer, /datum/om/prompt/confirm/x, PROC_REF(cb), var = value, ...).
 /// `prompt` is a /datum/om/prompt/<kind> type or instance; cb runs on the caller's src with the prompt.
 #define om_ask(answerer, prompt, on_answer, params...) om_ask_begin(src, answerer, prompt, on_answer, list(params))

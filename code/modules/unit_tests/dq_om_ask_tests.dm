@@ -116,21 +116,21 @@
 
 /datum/om/flow/test_consent
 	var/datum/om_test_entity/witness
-	var/list/log = list()
+	var/list/log
 	var/refuse_with
 
 /datum/om/flow/test_consent/valid()
 	return refuse_with
 
 /datum/om/flow/test_consent/start()
-	log += "start"
+	LAZYADD(log, "start")
 	om_ask(target, /datum/om/prompt/confirm, PROC_REF(agreed), message = "ok?")
 
 /datum/om/flow/test_consent/proc/agreed(datum/om/prompt/confirm/ask)
-	log += "agreed:[ask.asker == actor]:[witness ? "witness" : "none"]"
+	LAZYADD(log, "agreed:[ask.asker == actor]:[witness ? "witness" : "none"]")
 
 /datum/om/flow/test_consent/ended(reason)
-	log += "ended:[reason]"
+	LAZYADD(log, "ended:[reason]")
 
 /datum/unit_test/om/flow_prompt_steps
 

@@ -223,7 +223,7 @@
  * vars. Returns the prompt, or null when it wasn't shown (the answerer is gone or has no
  * client, or prepare() said no).
  */
-/proc/om_ask_begin(datum/receiver, mob/answerer, prompt, on_answer, list/params)
+/proc/om_ask_begin(receiver, mob/answerer, prompt, on_answer, list/params)
 	var/datum/om/prompt/P = ispath(prompt) ? new prompt : prompt
 	if(!istype(P) || !P.kind_name)
 		CRASH("om_ask: [prompt] is not a typed prompt (/datum/om/prompt/<kind>)")
@@ -258,13 +258,13 @@
 	spec["on_refused"] = /proc/om_ask_refused
 	if(P.flow && !P.flow.park())
 		return null
-	var/list/names = om_state_var_names(P, /datum/om/prompt, list("answerer", "asker", "subject"))
-	P.parked = om_park_state(P, names)
+	var/list/names = P.state_var_names(/datum/om/prompt, list("answerer", "asker", "subject"))
+	P.parked = P.park_state(names)
 	if(isnull(P.parked))
 		P.flow?.stop("gone")
 		return null
 	if(!om_prompt(receiver, answerer, spec, /proc/om_ask_answered, P))
-		om_unpark_state(P, P.parked)
+		P.unpark_state(P.parked)
 		P.parked = null
 		P.flow?.stop("not asked")
 		return null
@@ -276,7 +276,7 @@
 		return TRUE
 	var/list/held = parked
 	parked = null
-	return om_unpark_state(src, held)
+	return unpark_state(held)
 
 /// The ask_flags, requires and valid(): null, or the reason to drop the answer.
 /datum/om/prompt/proc/typed_recheck(datum/E, mob/answerer)
@@ -314,7 +314,7 @@
 // ---------------------------------------------------------------- continuations (om_prompt plumbing)
 
 /// The answer passed its re-checks (take_answer() already stored it, so valid() could read it).
-/proc/om_ask_answered(datum/E, mob/user, answer, datum/om/prompt/P)
+/proc/om_ask_answered(E, mob/user, answer, datum/om/prompt/P)
 	var/proc_ref = P.answer_ref
 	if(P.flow)
 		P.flow.resume(proc_ref, P)
@@ -326,17 +326,18 @@
 	else
 		call(E, proc_ref)(P)
 
-/proc/om_ask_cancelled(datum/E, mob/user, datum/om/prompt/P)
+/proc/om_ask_cancelled(E, mob/user, datum/om/prompt/P)
 	P.unpark()
 	P.cancelled()
 
-/proc/om_ask_refused(datum/E, mob/user, reason, datum/om/prompt/P)
+/proc/om_ask_refused(E, mob/user, reason, datum/om/prompt/P)
 	P.refused(reason)
 
 // ---------------------------------------------------------------- held state (prompts, flows)
 
-/// The vars `D`'s type adds over `root` (plus `extra`): its state. Cached per type.
-/proc/om_state_var_names(datum/D, root, list/extra)
+/// The vars this type adds over `root` (plus `extra`): its state. Cached per type.
+/datum/om/proc/state_var_names(root, list/extra)
+	var/datum/D = src
 	var/static/list/by_type = list()
 	var/key = "[D.type]"
 	var/list/names = by_type[key]
@@ -357,9 +358,10 @@
 	by_type[key] = names
 	return names
 
-/// Swaps every datum (or client) in `names` on `D` for a handle. Returns name -> handle, or
-/// null if one is already deleted (nothing is changed then).
-/proc/om_park_state(datum/D, list/names)
+/// Swaps every datum (or client) in `names` for a handle. Returns name -> handle, or null if
+/// one is already deleted (nothing is changed then).
+/datum/om/proc/park_state(list/names)
+	var/datum/D = src
 	var/list/held = list()
 	for(var/name in names)
 		var/value = D.vars[name]
@@ -374,7 +376,8 @@
 	return held
 
 /// Puts parked state back. FALSE if a datum in it is gone (its var stays null).
-/proc/om_unpark_state(datum/D, list/held)
+/datum/om/proc/unpark_state(list/held)
+	var/datum/D = src
 	. = TRUE
 	for(var/name in held)
 		var/value = om_prompt_unwrap(held[name])
