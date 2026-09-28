@@ -202,6 +202,7 @@
 #include "dq_breakpoint_tests.dm"
 #include "dq_damage_packet_tests.dm"
 #include "dq_explosion_batch_tests.dm"
+#include "dq_materialize_batch_tests.dm"
 #include "dq_turf_damage_tests.dm"
 #include "dq_integrity_pool_tests.dm"
 #include "dq_mech_body_tests.dm"

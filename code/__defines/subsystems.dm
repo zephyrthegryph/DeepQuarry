@@ -32,6 +32,20 @@
 ///Call qdel on the atom after initialization
 #define INITIALIZE_HINT_QDEL 2
 
+//! ### Map-load batches (code/controllers/subsystems/atoms_batch.dm)
+
+/// Atoms SSatoms.CreateAtoms() initializes between yield points. A batch only yields at a
+/// chunk boundary, never inside one (doc/rewrite/init_and_turfs.md sec 3.3a).
+#define MATERIALIZE_CHUNK_SIZE 512
+
+/// Deferred batch work, flushed once at the end of the batch that owns it, in this order.
+/// Walls smooth once each, with their neighbours.
+#define BATCH_WORK_WALL_SMOOTHING 1
+/// Cables bind their power nodes in one Rust call.
+#define BATCH_WORK_CABLE_BINDS 2
+/// Number of BATCH_WORK_* kinds (length of a batch's work list).
+#define BATCH_WORK_KINDS 2
+
 ///type and all subtypes should always immediately call Initialize in New()
 #define INITIALIZE_IMMEDIATE(X) ##X/New(loc, ...){\
 	..();\

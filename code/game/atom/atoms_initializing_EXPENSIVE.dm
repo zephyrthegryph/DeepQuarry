@@ -43,7 +43,12 @@
 			EMPTY_BLOCK_GUARD // Pass
 		if(INITIALIZE_HINT_LATELOAD)
 			if(arguments[1]) //mapload
-				late_loaders += A
+				// The running frame runs it after its last atom (atoms_batch.dm rule 2).
+				var/datum/materialize_batch/batch = active_batch
+				if(batch)
+					batch.late_loaders += A
+				else
+					late_loaders += A
 			else
 				A.LateInitialize()
 		if(INITIALIZE_HINT_QDEL)

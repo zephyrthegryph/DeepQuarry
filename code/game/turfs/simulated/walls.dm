@@ -186,10 +186,7 @@
 /turf/simulated/wall/on_update_integrity(old_value, new_value)
 	. = ..()
 	// Inside a map-load batch the batch redraws every queued wall once (atoms.dm).
-	var/list/deferred = SSatoms?.deferred_wall_smoothing
-	if(deferred)
-		deferred[src] = TRUE
-	else
+	if(!SSatoms?.batch_defer(BATCH_WORK_WALL_SMOOTHING, src))
 		update_icon()
 
 /turf/simulated/wall/atom_destruction(damage_flag)

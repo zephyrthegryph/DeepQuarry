@@ -123,10 +123,8 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	if(!istype(T))
 		power_unregister()
 		return
-	// A map-load batch binds its cables in one call when it ends (SSatoms.flush_cable_binds()).
-	var/list/deferred = SSatoms?.deferred_cable_binds
-	if(deferred)
-		deferred[src] = TRUE
+	// A map-load batch binds its cables in one call when it ends (atoms_batch.dm).
+	if(SSatoms?.batch_defer(BATCH_WORK_CABLE_BINDS, src))
 		return
 	SSvg.untrack_entity(src, power_entity)
 	power_entity = vg_power_bind_cable(power_entity, power_shape(T))
@@ -167,7 +165,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 		SSvg.track_entity(C, C.power_entity)
 
 /obj/structure/cable/proc/power_unregister()
-	SSatoms?.deferred_cable_binds?.Remove(src)
+	SSatoms?.batch_undefer(BATCH_WORK_CABLE_BINDS, src)
 	if(!power_entity)
 		return
 	dq_power_unbind_node(src, power_entity)

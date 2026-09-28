@@ -460,6 +460,7 @@
 #include "code\modules\asset_cache\asset_loading_service.dm"
 #include "code\controllers\subsystems\assets.dm"
 #include "code\controllers\subsystems\atoms.dm"
+#include "code\controllers\subsystems\atoms_batch.dm"
 #include "code\modules\vote\transfer_service.dm"
 #include "code\controllers\subsystems\behaviours.dm"
 #include "code\controllers\subsystems\behaviours_profiler.dm"
