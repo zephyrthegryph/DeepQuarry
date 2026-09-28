@@ -923,7 +923,7 @@ REF_OWNED(/obj/machinery/porta_turret, "spark_system")
 			set_dir(get_dir(src, target))	//even if you can't shoot, follow the target
 			if(dir != old_dir) // Play rotating sound, but only if we actually rotated
 				playsound(src, 'sound/machines/turrets/turret_rotate.ogg', 100, 1)
-			INVOKE_ASYNC(src, PROC_REF(shootAt), target)
+			shootAt(target)
 			return TRUE
 	return FALSE
 

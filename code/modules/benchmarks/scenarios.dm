@@ -286,7 +286,7 @@
 		generated_site = null
 		generation_done = FALSE
 		begin_window()
-		INVOKE_ASYNC(src, PROC_REF(generate), seed, diagnostics)
+		INVOKE_ASYNC(src, PROC_REF(generate), seed, diagnostics) // S10b keeps: expedition generation yields; harness polls a deadline
 		var/deadline = REALTIMEOFDAY + 6000
 		while(!generation_done)
 			if(REALTIMEOFDAY > deadline)

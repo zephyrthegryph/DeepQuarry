@@ -159,7 +159,7 @@
 
 /obj/item/spell/energy_siphon/proc/create_lightning(mob/user, atom/source)
 	if(user && source && user != source)
-		INVOKE_ASYNC(src, PROC_REF(create_lightning_beam), user, source)
+		create_lightning_beam(user, source)
 
 /// Seven bolts 0.3 s apart: process() takes two seconds to tick, this ensures the appearance of a ongoing beam.
 /obj/item/spell/energy_siphon/proc/create_lightning_beam(mob/user, atom/source, left = 7)

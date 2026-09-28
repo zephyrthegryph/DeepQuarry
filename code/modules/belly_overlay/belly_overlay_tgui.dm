@@ -53,7 +53,7 @@
 		// stoplag). This UI can be reached from no-sleep contexts (e.g. a death
 		// triggered during atom Initialize), so fire the open asynchronously — it
 		// is inherently fire-and-forget — to keep those callers non-blocking.
-		INVOKE_ASYNC(active_ui, TYPE_PROC_REF(/datum/tgui, open))
+		INVOKE_ASYNC(active_ui, TYPE_PROC_REF(/datum/tgui, open)) // S10b keeps: tgui open may block on asset/window setup
 
 /datum/belly_overlay_tgui/proc/build_show_signature(obj/belly/B, mob/prey)
 	// Cheap signature of everything that affects the rendered layer set. Continuous

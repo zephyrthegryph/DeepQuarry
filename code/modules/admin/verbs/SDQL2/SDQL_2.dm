@@ -436,7 +436,7 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 					ENABLE_BITFIELD(options, SDQL2_OPTION_DO_NOT_AUTOGC)
 
 /datum/SDQL2_query/proc/ARun()
-	INVOKE_ASYNC(src, PROC_REF(Run))
+	INVOKE_ASYNC(src, PROC_REF(Run)) // S10b keeps: SDQL Run is a long yielding query
 
 /datum/SDQL2_query/proc/Run()
 	if(SDQL2_IS_RUNNING)

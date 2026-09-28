@@ -2349,7 +2349,7 @@
 	if(!self.nif) return
 
 	//Process regular life stuff
-	INVOKE_ASYNC(self.nif, TYPE_PROC_REF(/obj/item/nif, life))
+	self.nif.life()
 
 //Overriding carbon move proc that forces default hunger factor
 /mob/living/carbon/Moved(atom/old_loc, direction, forced = FALSE)

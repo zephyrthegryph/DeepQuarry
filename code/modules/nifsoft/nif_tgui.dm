@@ -68,7 +68,7 @@ REF_OWNED(/datum/component/nif_menu, "screen_icon")
 	SIGNAL_HANDLER
 	var/mob/living/carbon/human/H = user
 	if(istype(H) && H.nif)
-		INVOKE_ASYNC(H.nif, PROC_REF(tgui_interact), user)
+		INVOKE_ASYNC(H.nif, PROC_REF(tgui_interact), user) // S10b keeps: tgui_interact may block on asset/window setup
 
 /**
  * Screen object for NIF menu access

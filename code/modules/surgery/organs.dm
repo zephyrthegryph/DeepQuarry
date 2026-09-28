@@ -189,7 +189,7 @@
 	var/datum/component/mind_host/host = get_mind_host(M)
 	host?.release_mind(target, "MMI installed into [target] by [key_name(user)]")
 	log_game("SURGERY: [key_name(user)] installed [M] into [key_name(target)]")
-	INVOKE_ASYNC(target, TYPE_PROC_REF(/mob/living/carbon/human, pick_new_form_name), FALSE)
+	INVOKE_ASYNC(target, TYPE_PROC_REF(/mob/living/carbon/human, pick_new_form_name), FALSE) // S10b keeps: callee prompts (tgui_input_text/tgui_alert)
 
 /datum/surgical_step/organ/install_nymph
 	name = "Install Nymph"
@@ -240,7 +240,7 @@
 	add_verb(target, /mob/living/carbon/human/proc/diona_split_nymph)
 	add_verb(target, /mob/living/carbon/human/proc/regenerate)
 	log_game("SURGERY: [key_name(user)] installed a nymph into [key_name(target)]")
-	INVOKE_ASYNC(target, TYPE_PROC_REF(/mob/living/carbon/human, pick_new_form_name), TRUE)
+	INVOKE_ASYNC(target, TYPE_PROC_REF(/mob/living/carbon/human, pick_new_form_name), TRUE) // S10b keeps: callee prompts (tgui_input_text/tgui_alert)
 
 /// Let the new occupant of a synthetic body pick a name. `required`: keep
 /// asking (a bounded number of times) until they do.

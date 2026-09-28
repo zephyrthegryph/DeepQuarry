@@ -179,7 +179,7 @@
 			var/obj/machinery/atmospherics/unary/vent_pump/exit_vent = get_safe_ventcrawl_target(entry_vent)
 			if(!exit_vent)
 				return
-			INVOKE_ASYNC(src, PROC_REF(vent_crawl_async), entry_vent, exit_vent)
+			vent_crawl_async(entry_vent, exit_vent)
 
 	if(isturf(loc))
 		skitter()

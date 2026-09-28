@@ -209,7 +209,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 		SSemergency_shuttle.auto_recall = TRUE
 
 	feedback_set_details("round_start","[time2text(world.realtime)]")
-	INVOKE_ASYNC(SSdbcore, TYPE_PROC_REF(/datum/controller/subsystem/dbcore, SetRoundStart))
+	INVOKE_ASYNC(SSdbcore, TYPE_PROC_REF(/datum/controller/subsystem/dbcore, SetRoundStart)) // S10b keeps: blocking SQL query
 	if(SSticker && SSticker.mode)
 		feedback_set_details("game_mode","[SSticker.mode]")
 	feedback_set_details("server_ip","[world.internet_address]:[world.port]")

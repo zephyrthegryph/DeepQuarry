@@ -358,9 +358,9 @@ SUBSYSTEM_DEF(dbcore)
 			continue
 
 		if (warn)
-			INVOKE_ASYNC(query, TYPE_PROC_REF(/datum/db_query, warn_execute))
+			INVOKE_ASYNC(query, TYPE_PROC_REF(/datum/db_query, warn_execute)) // S10b keeps: blocking SQL query
 		else
-			INVOKE_ASYNC(query, TYPE_PROC_REF(/datum/db_query, Execute))
+			INVOKE_ASYNC(query, TYPE_PROC_REF(/datum/db_query, Execute)) // S10b keeps: blocking SQL query
 
 	for (var/datum/db_query/query as anything in queries)
 		query.sync()

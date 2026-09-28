@@ -56,7 +56,7 @@
 	if(!B || !I)
 		return
 
-	INVOKE_ASYNC(src, PROC_REF(religion_prompts), H, B, I)
+	INVOKE_ASYNC(src, PROC_REF(religion_prompts), H, B, I) // S10b keeps: callee prompts (tgui_input_text)
 
 /datum/job/chaplain/proc/religion_prompts(mob/living/carbon/human/H, obj/item/storage/bible/B, obj/item/card/id/I)
 	var/religion_name = "Unitarianism"

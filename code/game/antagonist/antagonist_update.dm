@@ -53,7 +53,7 @@
 /datum/antagonist/proc/update_icons_added(datum/mind/player)
 	if(!antag_indicator || !player.current)
 		return
-	INVOKE_ASYNC(src, PROC_REF(deferred_update_icons_added), player)
+	deferred_update_icons_added(player)
 
 /datum/antagonist/proc/deferred_update_icons_added(datum/mind/player)
 	var/give_to_player = (!faction_invisible || !(player in faction_members))
@@ -70,7 +70,7 @@
 /datum/antagonist/proc/update_icons_removed(datum/mind/player)
 	if(!antag_indicator || !player.current)
 		return
-	INVOKE_ASYNC(src, PROC_REF(deferred_update_icons_removed), player)
+	deferred_update_icons_removed(player)
 
 /datum/antagonist/proc/deferred_update_icons_removed(datum/mind/player)
 	clear_indicators(player)

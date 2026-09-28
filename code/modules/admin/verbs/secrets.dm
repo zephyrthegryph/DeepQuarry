@@ -401,7 +401,7 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 			log_admin("[key_name_admin(holder)] made everyone into monkeys.")
 			for(var/i in REGISTRY_MEMBERS(REGISTRY_MOBS))
 				var/mob/living/carbon/human/H = i
-				INVOKE_ASYNC(H, TYPE_PROC_REF(/mob/living/carbon/human, monkeyize))
+				H.monkeyize()
 
 		if("supermatter_cascade")
 			var/choice = tgui_alert(holder, "You sure you want to destroy the universe and create a large explosion at your location? Misuse of this could result in removal of flags or hilarity.","WARNING!", list("NO TIME TO EXPLAIN", "Cancel"))

@@ -161,7 +161,7 @@
 	if(!istype(client))
 		return
 
-	INVOKE_ASYNC(client, TYPE_VERB_REF(/client, refresh_tgui))
+	INVOKE_ASYNC(client, TYPE_VERB_REF(/client, refresh_tgui)) // S10b keeps: window reinitialize may block on asset/window setup
 	client.tgui_say?.load()
 
 /// Enables flashing the window in your task tray for important events

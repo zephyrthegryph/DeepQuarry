@@ -194,7 +194,7 @@ REF_OWNED_LIST(/obj/machinery/vending, "product_records")
 
 /obj/machinery/vending/ex_act(severity)
 	if(severity == 3 && prob(25))
-		INVOKE_ASYNC(src, PROC_REF(malfunction))
+		malfunction()
 	return ..()
 
 /obj/machinery/vending/emag_act(remaining_charges, mob/user)
@@ -800,7 +800,7 @@ REF_OWNED_LIST(/obj/machinery/vending, "product_records")
 	if(!throw_item)
 		return FALSE
 	throw_item.vendor_action(src)
-	INVOKE_ASYNC(throw_item, TYPE_PROC_REF(/atom/movable, throw_at), target, rand(3, 10), rand(1, 3), src)
+	throw_item.throw_at(target, rand(3, 10), rand(1, 3), src)
 	visible_message(span_warning("\The [src] launches \a [throw_item] at \the [target]!"))
 	return 1
 

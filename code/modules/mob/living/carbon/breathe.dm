@@ -35,7 +35,7 @@
 			spawn self.emote("gasp")
 	else if(self.breath_blocked()) //No ventilation (closed airway, apnea): no gas exchange at all.
 		if(prob(10) && !isbelly(self.loc))
-			INVOKE_ASYNC(self, TYPE_PROC_REF(/mob, emote), "gasp")
+			self.emote("gasp")
 	else
 		//Okay, we can breathe, now check if we can get air
 		breath = self.get_breath_from_internal() //First, check for air from internals

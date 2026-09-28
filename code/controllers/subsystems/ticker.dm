@@ -162,7 +162,7 @@ SUBSYSTEM_DEF(ticker)
 					current_state = GAME_STATE_FINISHED
 					PERIODIC_STOP(mode)
 					Master.SetRunLevel(RUNLEVEL_POSTGAME)
-					INVOKE_ASYNC(src, PROC_REF(declare_completion))
+					INVOKE_ASYNC(src, PROC_REF(declare_completion)) // S10b keeps: round-end report does SQL/blocking I/O
 				else if (mode_finished && (end_game_state < END_GAME_MODE_FINISHED))
 					end_game_state = END_GAME_MODE_FINISHED // Only do this cleanup once!
 					mode.cleanup()
@@ -228,7 +228,7 @@ SUBSYSTEM_DEF(ticker)
 		SC.auto_start()
 
 	log_world("Game start took [(world.timeofday - init_start)/10]s")
-	INVOKE_ASYNC(SSdbcore, TYPE_PROC_REF(/datum/controller/subsystem/dbcore,SetRoundStart))
+	INVOKE_ASYNC(SSdbcore, TYPE_PROC_REF(/datum/controller/subsystem/dbcore,SetRoundStart)) // S10b keeps: blocking SQL query
 
 	to_chat(world, span_notice(span_bold("Welcome to [station_name()], enjoy your stay!")))
 	play_simple_announcement(world, ANNOUNCER_MSG_ROUND_START)

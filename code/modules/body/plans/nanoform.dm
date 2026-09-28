@@ -270,7 +270,7 @@
 	SIGNAL_HANDLER
 	if(revival_step != DORMANCY_SEALED || !repaired_on_body())
 		return NONE
-	INVOKE_ASYNC(src, PROC_REF(repair_with), tool, user, source)
+	repair_with(tool, user, source)
 	return ITEM_INTERACT_SUCCESS
 
 /datum/affliction/core_dormancy/proc/on_body_attackby(mob/living/source, obj/item/W, mob/living/user, params)

@@ -10,7 +10,7 @@
 	SIGNAL_HANDLER
 	if(applied <= 0 || QDELETED(holder))
 		return
-	INVOKE_ASYNC(holder, TYPE_PROC_REF(/mob/living, dq_notify_damage), applied, kind, dq_resolve_attacker(source))
+	holder.dq_notify_damage(applied, kind, dq_resolve_attacker(source))
 
 /// Works out who is responsible for an injury source: a projectile's firer,
 /// the mob wielding a weapon, or the mob itself.

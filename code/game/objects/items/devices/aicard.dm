@@ -74,7 +74,7 @@
 		if("wipe")
 			msg_admin_attack("[key_name_admin(ui.user)] wiped [key_name_admin(AI_DEPT)] with \the [src].")
 			add_attack_logs(ui.user,carded_ai,"Purged from AI Card")
-			INVOKE_ASYNC(src, PROC_REF(wipe_ai))
+			wipe_ai()
 		if("radio")
 			carded_ai.aiRadio.disabledAi = !carded_ai.aiRadio.disabledAi
 			to_chat(carded_ai, span_warning("Your Subspace Transceiver has been [carded_ai.aiRadio.disabledAi ? "disabled" : "enabled"]!"))

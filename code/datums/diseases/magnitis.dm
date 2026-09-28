@@ -21,10 +21,10 @@
 			if(prob(2))
 				for(var/obj/M in orange(2, affected_mob))
 					if(!M.anchored && prob(5))
-						INVOKE_ASYNC(M, TYPE_PROC_REF(/atom/movable, throw_at), affected_mob, rand(3, 10), rand(1, 3), src)
+						M.throw_at(affected_mob, rand(3, 10), rand(1, 3), src)
 				for(var/mob/living/silicon/S in orange(2, affected_mob))
 					if(isAI(S)) continue
-					INVOKE_ASYNC(S, TYPE_PROC_REF(/atom/movable, throw_at), affected_mob, rand(3, 10), rand(1, 3), src)
+					S.throw_at(affected_mob, rand(3, 10), rand(1, 3), src)
 		if(3)
 			if(prob(2))
 				to_chat(affected_mob, span_danger("You feel a strong shock course through your body."))
@@ -36,13 +36,13 @@
 						var/i
 						var/iter = rand(1,2)
 						for(i=0,i<iter,i++)
-							INVOKE_ASYNC(M, TYPE_PROC_REF(/atom/movable, throw_at), affected_mob, rand(3, 10), rand(1, 3), src)
+							M.throw_at(affected_mob, rand(3, 10), rand(1, 3), src)
 				for(var/mob/living/silicon/S in orange(4, affected_mob))
 					if(isAI(S)) continue
 					var/i
 					var/iter = rand(1,2)
 					for(i=0,i<iter,i++)
-						INVOKE_ASYNC(S, TYPE_PROC_REF(/atom/movable, throw_at), affected_mob, rand(3, 10), rand(1, 3), src)
+						S.throw_at(affected_mob, rand(3, 10), rand(1, 3), src)
 		if(4)
 			if(prob(2))
 				to_chat(affected_mob, span_danger("You feel a powerful shock course through your body."))
@@ -54,11 +54,11 @@
 						var/i
 						var/iter = rand(1,3)
 						for(i=0,i<iter,i++)
-							INVOKE_ASYNC(M, TYPE_PROC_REF(/atom/movable, throw_at), affected_mob, rand(3, 10), rand(1, 3), src)
+							M.throw_at(affected_mob, rand(3, 10), rand(1, 3), src)
 				for(var/mob/living/silicon/S in orange(6, affected_mob))
 					if(isAI(S)) continue
 					var/i
 					var/iter = rand(1,3)
 					for(i=0,i<iter,i++)
-						INVOKE_ASYNC(S, TYPE_PROC_REF(/atom/movable, throw_at), affected_mob, rand(3, 10), rand(1, 3), src)
+						S.throw_at(affected_mob, rand(3, 10), rand(1, 3), src)
 	return

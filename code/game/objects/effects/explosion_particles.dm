@@ -28,7 +28,7 @@
 /datum/effect/system/expl_particles/proc/start()
 	var/i = 0
 	for(i=0, i<src.number, i++)
-		INVOKE_ASYNC(src, PROC_REF(emit_one_particle))
+		emit_one_particle()
 
 /obj/effect/explosion
 	name = "explosive particles"

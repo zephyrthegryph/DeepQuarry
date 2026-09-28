@@ -379,7 +379,7 @@
 	if(dormancy)
 		if(dormancy.revival_step != DORMANCY_SEALED)
 			return ITEM_INTERACT_BLOCKING
-		INVOKE_ASYNC(dormancy, TYPE_PROC_REF(/datum/affliction/core_dormancy, repair_with), tool, user, src)
+		dormancy.repair_with(tool, user, src)
 		return ITEM_INTERACT_SUCCESS
 	else
 		var/list/possible_removals = list()
@@ -463,7 +463,7 @@
 	var/soaked = amount_ref[1] * clamp(armor_value, 0, 100) / 100
 	if(soaked <= 0)
 		return
-	INVOKE_ASYNC(myprotean, TYPE_PROC_REF(/mob/living, injure), kind, soaked, E?.organ_tag, hit_source, 0, null, INJURE_SILENT)
+	myprotean.injure(kind, soaked, E?.organ_tag, hit_source, 0, null, INJURE_SILENT)
 	log_attack("PROTEAN RIG: [key_name(myprotean)] soaked [soaked] [injury_kind_name(kind)] for [key_name(source)].")
 
 /// The deployed piece of this cluster covering `E` on `M` (the chest piece
