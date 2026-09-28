@@ -25,28 +25,28 @@
 				force = 0
 			if(6 to 20)
 				force = prob(1)
-		if(force || (message != last_pain_message) || (world.time >= next_pain_time))
+		if(force || (message != last_pain_message) || (COOLDOWN_FINISHED(src, next_pain_time)))
 			switch(power)
 				if(0 to 5)
-					next_pain_time = world.time + 300 SECONDS
-					multilimb_pain_time = world.time + 1 MINUTE
+					COOLDOWN_START(src, next_pain_time, 300 SECONDS)
+					COOLDOWN_START(src, multilimb_pain_time, 1 MINUTE)
 				if(6 to 20)
-					next_pain_time = world.time + clamp((100 - power) SECONDS, 80 SECONDS, 95 SECONDS)
-					multilimb_pain_time = world.time + clamp((100 - power) SECONDS, 80 SECONDS, 95 SECONDS)
+					COOLDOWN_START(src, next_pain_time, clamp((100 - power) SECONDS, 80 SECONDS, 95 SECONDS))
+					COOLDOWN_START(src, multilimb_pain_time, clamp((100 - power) SECONDS, 80 SECONDS, 95 SECONDS))
 				if(21 to INFINITY)
-					next_pain_time = world.time + clamp((200 - power) SECONDS, 100 SECONDS, 3 MINUTES)
-					multilimb_pain_time = world.time + clamp((200 - power) SECONDS, 100 SECONDS, 3 MINUTES)
+					COOLDOWN_START(src, next_pain_time, clamp((200 - power) SECONDS, 100 SECONDS, 3 MINUTES))
+					COOLDOWN_START(src, multilimb_pain_time, clamp((200 - power) SECONDS, 100 SECONDS, 3 MINUTES))
 			last_pain_message = message
 			to_chat(src,message)
 			// Emote in pain for custom pain, too
 			if(prob(power / 10) && !isbelly(loc)) // No pain noises inside bellies.
 				emote("pain")
 
-	else if(force || (message != last_pain_message) || (world.time >= next_pain_time))
+	else if(force || (message != last_pain_message) || (COOLDOWN_FINISHED(src, next_pain_time)))
 		last_pain_message = message
 		to_chat(src,message)
-		next_pain_time = world.time + (100 - power)
-		multilimb_pain_time = world.time + (100 - power)
+		COOLDOWN_START(src, next_pain_time, (100 - power))
+		COOLDOWN_START(src, multilimb_pain_time, (100 - power))
 		// Emote in pain for custom pain, too
 		if(prob(power / 10) && !isbelly(loc)) // No pain noises inside bellies.
 			emote("pain")
@@ -66,7 +66,7 @@
 	if(!self.can_feel_pain() && !self.synth_cosmetic_pain)
 		return
 
-	if(world.time < self.multilimb_pain_time) //prevents spam in case of multi-limb injuries.
+	if(!COOLDOWN_FINISHED(self, multilimb_pain_time)) //prevents spam in case of multi-limb injuries.
 		return
 	var/maxdam = 0
 	var/obj/item/organ/external/damaged_organ = null

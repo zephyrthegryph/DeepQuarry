@@ -26,7 +26,7 @@
 	default_apply_parts()
 	internal_tank = new /obj/machinery/portable_atmospherics/canister/empty()
 	update_gas_network()
-	next_mode_toggle = world.time + dis_time SECONDS
+	COOLDOWN_START(src, next_mode_toggle, dis_time SECONDS)
 	// Update neighbours and self for state
 	update_neighbours()
 	update_icon()
@@ -42,14 +42,14 @@ REF_OWNED(/obj/machinery/reagent_refinery/reactor, "internal_tank")
 	if(stat & (NOPOWER|BROKEN))
 		return
 
-	if(next_mode_toggle < world.time)
+	if(COOLDOWN_FINISHED(src, next_mode_toggle))
 		if(toggle_mode == REACTOR_MODE_INTAKE)
 			if(reagents && reagents.total_volume > 0 && amount_per_transfer_from_this > 0)
 				toggle_mode = REACTOR_MODE_OUTPUT // Only drain if anything in it!
-			next_mode_toggle = world.time + drain_time SECONDS
+			COOLDOWN_START(src, next_mode_toggle, drain_time SECONDS)
 		else
 			toggle_mode = REACTOR_MODE_INTAKE
-			next_mode_toggle = world.time + dis_time SECONDS
+			COOLDOWN_START(src, next_mode_toggle, dis_time SECONDS)
 		update_icon()
 
 	if(amount_per_transfer_from_this <= 0 || reagents.total_volume <= 0)
@@ -97,7 +97,7 @@ REF_OWNED(/obj/machinery/reagent_refinery/reactor, "internal_tank")
 		return
 	update_gas_network()
 	toggle_mode = REACTOR_MODE_INTAKE
-	next_mode_toggle = world.time + dis_time SECONDS
+	COOLDOWN_START(src, next_mode_toggle, dis_time SECONDS)
 
 /obj/machinery/reagent_refinery/reactor/proc/update_gas_network()
 	if(!internal_tank)

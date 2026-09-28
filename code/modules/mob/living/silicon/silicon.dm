@@ -292,7 +292,7 @@ REF_OWNED(/mob/living/silicon, list("aiCamera", "idcard", "laws"))
 
 /mob/living/silicon/proc/receive_alarm(datum/alarm_handler/alarm_handler, datum/alarm/alarm, was_raised)
 	if(!next_alarm_notice)
-		next_alarm_notice = world.time + (10 SECONDS)
+		COOLDOWN_START(src, next_alarm_notice, (10 SECONDS))
 	if(alarm.hidden)
 		return
 	if(alarm.origin && !(get_z(alarm.origin) in using_map.get_map_levels(get_z(src), TRUE, om_range = DEFAULT_OVERMAP_RANGE)))
@@ -311,7 +311,7 @@ REF_OWNED(/mob/living/silicon, list("aiCamera", "idcard", "laws"))
 			alarms[alarm] = -1
 
 /mob/living/silicon/proc/process_queued_alarms()
-	if(next_alarm_notice && (world.time > next_alarm_notice))
+	if(next_alarm_notice && (COOLDOWN_FINISHED(src, next_alarm_notice)))
 		next_alarm_notice = 0
 
 		var/alarm_raised = 0

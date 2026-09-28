@@ -124,7 +124,7 @@
 	var/special_attack_max_range = null		// The maximum for an attempt.
 	var/special_attack_charges = null		// If set, special attacks will work off of a charge system, and won't be usable if all charges are expended. Good for grenades.
 	var/special_attack_cooldown = null		// If set, special attacks will have a cooldown between uses.
-	var/last_special_attack = null			// world.time when a special attack occured last, for cooldown calculations.
+	COOLDOWN_DECLARE(special_attack_cooldown_until)			// world.time when a special attack occured last, for cooldown calculations.
 
 	//Damage resistances
 	var/grab_resist = 0				// Chance for a grab attempt to fail. Note that this is not a true resist and is just a prob() of failure.
@@ -606,7 +606,7 @@ REF_OWNED(/mob/living/simple_mob, list("myid", "mob_radio"))
 		return ..()
 
 /mob/living/simple_mob/proc/CanPounceTarget(mob/living/M) //returns either FALSE or a %chance of success
-	if(!M.canmove || issilicon(M) || world.time < vore_pounce_cooldown) //eliminate situations where pouncing CANNOT happen
+	if(!M.canmove || issilicon(M) || !COOLDOWN_FINISHED(src, vore_pounce_cooldown)) //eliminate situations where pouncing CANNOT happen
 		return FALSE
 	if(M.is_incorporeal())
 		return FALSE
@@ -621,7 +621,7 @@ REF_OWNED(/mob/living/simple_mob, list("myid", "mob_radio"))
 		return max(0,(vore_pounce_successrate - (vore_pounce_falloff * TargetHealthPercent)))
 
 /mob/living/simple_mob/proc/PounceTarget(mob/living/M, successrate = 100)
-	vore_pounce_cooldown = world.time + 20 SECONDS // don't attempt another pounce for a while
+	COOLDOWN_START(src, vore_pounce_cooldown, 20 SECONDS) // don't attempt another pounce for a while
 	if(prob(successrate)) // pounce success!
 		M.status_at_least(EFFECT_WEAKENED, 5)
 		M.status_adjust(EFFECT_STUNNED, 2)
@@ -873,7 +873,7 @@ REF_OWNED(/mob/living/simple_mob, list("myid", "mob_radio"))
 	set category = "Abilities.Mob"
 	set desc = "Select a target to pounce at."
 
-	if(last_special > world.time)
+	if(!COOLDOWN_FINISHED(src, last_special))
 		to_chat(src, "Your legs need some more rest.")
 		return
 
@@ -892,14 +892,14 @@ REF_OWNED(/mob/living/simple_mob, list("myid", "mob_radio"))
 
 	if(get_dist(get_turf(T), get_turf(src)) > 3) return
 
-	if(last_special > world.time)
+	if(!COOLDOWN_FINISHED(src, last_special))
 		return
 
 	if(incapacitated(INCAPACITATION_DISABLED))
 		to_chat(src, "You cannot leap in your current state.")
 		return
 
-	last_special = world.time + 10
+	COOLDOWN_START(src, last_special, 10)
 	status_flags |= LEAPING
 	pixel_y = pixel_y + 10
 

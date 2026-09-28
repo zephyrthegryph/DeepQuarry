@@ -178,7 +178,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 		to_chat(usr,"It's fucked! Fix it first!")
 		return
 
-	if(world.time < next_item_added)
+	if(!COOLDOWN_FINISHED(src, next_item_added))
 		to_chat(user,span_warning("It's not ready to take another item yet!"))
 		return
 

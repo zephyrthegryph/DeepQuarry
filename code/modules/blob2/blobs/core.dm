@@ -140,8 +140,8 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 	if(!overmind)
 		create_overmind()
 	else
-		if(resource_delay <= world.time)
-			resource_delay = world.time + 1 SECOND
+		if(COOLDOWN_FINISHED(src, resource_delay))
+			COOLDOWN_START(src, resource_delay, 1 SECOND)
 			overmind.add_points(point_rate)
 	repair_damage(core_regen)
 //	if(overmind)
@@ -155,7 +155,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 		overmind.blob_type.on_core_process(src)
 
 /obj/structure/blob/core/proc/create_overmind(client/new_overmind, override_delay)
-	if(overmind_get_delay > world.time && !override_delay)
+	if(!COOLDOWN_FINISHED(src, overmind_get_delay) && !override_delay)
 		return
 
 	if(ai_controlled)
@@ -168,7 +168,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 		update_icon()
 		return TRUE
 
-	overmind_get_delay = world.time + 15 SECONDS //if this fails, we'll try again in 15 seconds
+	COOLDOWN_START(src, overmind_get_delay, 15 SECONDS) //if this fails, we'll try again in 15 seconds
 
 	if(overmind)
 		qdel(overmind)

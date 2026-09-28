@@ -15,7 +15,7 @@
 	var/mob/living/bound_mob			//Reference to our bound mob
 	var/spawn_mob_type					//The kind of mob an inactive crystal will try to spawn when activated
 	var/activate_cooldown = 30 SECONDS	//How long do we wait between unleashing and recalling
-	var/last_activate					//Automatically set by things that try to move the bound mob or capture things
+	COOLDOWN_DECLARE(activate_cooldown_until) //Automatically set by things that try to move the bound mob or capture things
 	var/empty_icon = "empty"
 	var/full_icon = "full"
 	var/spawn_mob_name = "A mob"
@@ -206,7 +206,7 @@
 		om_after(src, activate_cooldown, TYPE_PROC_REF(/atom, update_icon)) //If it's busy then we want to wait a bit to fix the sprite after the cooldown is done.
 
 /obj/item/capture_crystal/proc/cooldown_check()
-	if(world.time < last_activate + activate_cooldown)
+	if(!COOLDOWN_FINISHED(src, activate_cooldown_until))
 		return FALSE
 	else return TRUE
 
@@ -325,7 +325,7 @@
 			capture_chance = 0
 			to_chat(user, span_notice("There's no chance... It needs to be weaker."))
 
-	last_activate = world.time
+	COOLDOWN_START(src, activate_cooldown_until, activate_cooldown)
 	log_admin("[user] threw a capture crystal at [M] and got [capture_chance]% chance to catch.")
 	return capture_chance
 
@@ -388,7 +388,7 @@
 		return
 	else if(isliving(target))						//So we don't have a mob, let's try to claim one! Is the target a mob?
 		var/mob/living/M = target
-		last_activate = world.time
+		COOLDOWN_START(src, activate_cooldown_until, activate_cooldown)
 		if(M.capture_caught)					//Can't capture things that were already caught.
 			playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
 			to_chat(user, span_notice("\The [src] clicks unsatisfyingly... \The [M] is already under someone else's control."))
@@ -453,7 +453,7 @@
 			var/mob/living/simple_mob/M = bound_mob
 			M.ai_brain.go_sleep()	//AI doesn't need to think when it's in the crystal
 		bound_mob.forceMove(src)
-		last_activate = world.time
+		COOLDOWN_START(src, activate_cooldown_until, activate_cooldown)
 		bound_mob.visible_message("\The [user]'s [src] flashes, disappearing [bound_mob] in an instant!!!", "\The [src] pulls you back into confinement in a flash of light!!!")
 		animate_action(turfmemory)
 		playsound(src, 'sound/effects/capture-crystal-in.ogg', 75, 1, -1)
@@ -473,7 +473,7 @@
 		bound_mob.forceMove(user.drop_location())
 	else							//We got thrown! Let's go where we got thrown
 		bound_mob.forceMove(target.drop_location())
-	last_activate = world.time
+	COOLDOWN_START(src, activate_cooldown_until, activate_cooldown)
 	if(isanimal(bound_mob))
 		var/mob/living/simple_mob/M = bound_mob
 		M.ai_brain.go_wake()		//Okay it's time to do work, let's wake up!
@@ -938,7 +938,7 @@
 		return
 	else if(isliving(target))						//So we don't have a mob, let's try to claim one! Is the target a mob?
 		var/mob/living/M = target
-		last_activate = world.time
+		COOLDOWN_START(src, activate_cooldown_until, activate_cooldown)
 		if(M.capture_caught)					//Can't capture things that were already caught.
 			playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
 			to_chat(user, span_notice("\The [src] clicks unsatisfyingly... \The [M] is already under someone else's control."))

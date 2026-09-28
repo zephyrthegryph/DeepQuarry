@@ -22,7 +22,7 @@
 		return FALSE
 	if(user.has_status(EFFECT_MUTED))
 		return FALSE
-	if(spamcheck > world.time)
+	if(!COOLDOWN_FINISHED(src, spamcheck))
 		to_chat(user, span_warning("[src] needs to recharge!"))
 		return FALSE
 	if(loc != user)
@@ -54,7 +54,7 @@
 	if(!can_broadcast(user))
 		return
 
-	spamcheck = world.time + 20
+	COOLDOWN_START(src, spamcheck, 20)
 	do_broadcast(user, message)
 
 /obj/item/megaphone/emag_act(remaining_charges, mob/user)

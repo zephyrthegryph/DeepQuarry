@@ -8,7 +8,7 @@
 	interaction_message = span_warning("You feel like you shouldn't be sticking your nose into a wild animal's den.")
 
 	var/disturbance_spawn_chance = 20
-	var/last_spawn
+	COOLDOWN_DECLARE(spawn_cooldown)
 	var/spawn_delay = 150
 	var/randomize_spawning = FALSE
 	var/creature_types = list(/mob/living/simple_mob/animal/sif/diyaab)
@@ -23,7 +23,7 @@
 	. = ..()
 	den_mobs = list()
 	PERIODIC_START(src, PERIODIC_SLOW)
-	last_spawn = world.time
+	COOLDOWN_START(src, spawn_cooldown, spawn_delay)
 	if(randomize_spawning) //Not the biggest shift in spawntime, but it's here.
 		var/delayshift_clamp = spawn_delay / 10
 		var/delayshift = rand(delayshift_clamp, -1 * delayshift_clamp)
@@ -39,7 +39,7 @@
 	if(!mob_near(world.view * 2, TRUE))
 		return sleep_until_mob_near(world.view * 2, TRUE)
 	update_creatures()
-	if(world.time > last_spawn + spawn_delay)
+	if(COOLDOWN_FINISHED(src, spawn_cooldown))
 		spawn_creature(get_turf(src))
 
 /obj/structure/prop/nest/proc/spawn_creature(turf/spawnpoint)
@@ -47,7 +47,7 @@
 	if(total_creature_max && tally >= total_creature_max)
 		return
 	if(istype(spawnpoint) && den_mobs.len < max_creatures)
-		last_spawn = world.time
+		COOLDOWN_START(src, spawn_cooldown, spawn_delay)
 		var/spawn_choice = pick(creature_types)
 		var/mob/living/L = new spawn_choice(spawnpoint)
 		if(den_faction)

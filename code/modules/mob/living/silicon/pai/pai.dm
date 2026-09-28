@@ -153,7 +153,7 @@
 /mob/living/silicon/pai/Login()
 	. = ..()
 	if(!holo_icon_south)
-		last_special = world.time + 100		//Let's give get_character_icon time to work
+		COOLDOWN_START(src, last_special, 100) //Let's give get_character_icon time to work
 		get_character_icon()
 
 	// Meta Info for pAI

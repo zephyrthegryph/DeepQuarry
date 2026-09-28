@@ -41,10 +41,10 @@
 	set name = "Select Body Shape"
 	set category = "Abilities.Lleill"
 
-	if(stat || world.time < last_special)
+	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	last_special = world.time + 50
+	COOLDOWN_START(src, last_special, 50)
 
 	var/new_species = null
 	new_species = tgui_input_list(src, "Please select a species to emulate.", "Shapeshifter Body", species.get_valid_shapeshifter_forms(src))
@@ -68,10 +68,10 @@
 	set name = "Select Body Colour"
 	set category = "Abilities.Lleill"
 
-	if(stat || world.time < last_special)
+	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	last_special = world.time + 50
+	COOLDOWN_START(src, last_special, 50)
 
 	var/new_skin = tgui_color_picker(src, "Please select a new body color.", "Shapeshifter Colour", rgb(r_skin, g_skin, b_skin))
 	if(!new_skin)

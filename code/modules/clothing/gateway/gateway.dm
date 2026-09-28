@@ -123,7 +123,7 @@
 	var/brainloss_cost = 0
 
 /obj/item/clothing/suit/armor/buffvest/proc/activate_ability(mob/living/wearer)
-	cooldown = world.time + cooldown_duration
+	COOLDOWN_START(src, cooldown, cooldown_duration)
 	to_chat(wearer, flavor_activate)
 	to_chat(wearer, span_danger("The inside of your head hurts..."))
 	wearer.injure(INJURY_NEURAL, brainloss_cost, null, src)
@@ -150,7 +150,7 @@
 /obj/item/clothing/suit/armor/buffvest/periodic_step()
 	if(isliving(loc))
 		var/mob/living/L = loc
-		if(world.time >= cooldown && L.is_sentient() && L.get_tension() >= tension_threshold)
+		if(COOLDOWN_FINISHED(src, cooldown) && L.is_sentient() && L.get_tension() >= tension_threshold)
 			activate_ability(L)
 
 //vistor section

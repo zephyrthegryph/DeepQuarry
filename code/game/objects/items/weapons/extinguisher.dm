@@ -18,7 +18,7 @@
 	var/spray_particles = 3
 	var/spray_amount = 10	//units of liquid per particle
 	var/max_water = 300
-	var/last_use = 1.0
+	COOLDOWN_DECLARE(use_cooldown)
 	var/safety = 1
 	var/sprite_name = "fire_extinguisher"
 	var/rand_overlays = 6
@@ -104,10 +104,10 @@
 			to_chat(user, span_notice("\The [src] is empty."))
 			return
 
-		if (world.time < src.last_use + 20)
+		if (!COOLDOWN_FINISHED(src, use_cooldown))
 			return
 
-		src.last_use = world.time
+		COOLDOWN_START(src, use_cooldown, 20)
 
 		playsound(src, 'sound/effects/extinguish.ogg', 75, 1, -3)
 

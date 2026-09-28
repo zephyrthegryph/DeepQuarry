@@ -14,7 +14,7 @@
 	//Is the flash burnt out?
 	var/broken = FALSE
 	///last world.time it was used.
-	var/last_used = 0
+	COOLDOWN_DECLARE(use_cooldown)
 	///How many times the flash can be used before needing to self recharge.
 	var/max_flashes = 10
 	///Halloss damage per flash.
@@ -110,7 +110,7 @@ REF_OWNED(/obj/item/flash, "power_supply")
 	//Every ten seconds the flash doesn't get used, the times_used variable goes down by one, making the flash less likely to burn out,
 	// as well as being able to flash more before reaching max_flashes cap.
 	for(var/i=0, i < max_flashes, i++)
-		if(last_used + 10 SECONDS > world.time)
+		if(!COOLDOWN_FINISHED(src, use_cooldown))
 			break
 
 		else if(use_external_power)
@@ -121,10 +121,10 @@ REF_OWNED(/obj/item/flash, "power_supply")
 		else if(!power_supply || !power_supply.checked_use(charge_cost))
 			break
 
-		last_used += 10 SECONDS
+		use_cooldown += 10 SECONDS
 		times_used--
 
-	last_used = world.time
+	COOLDOWN_START(src, use_cooldown, 10 SECONDS)
 	times_used = max(0,round(times_used)) //sanity
 	update_icon()
 
@@ -138,7 +138,7 @@ REF_OWNED(/obj/item/flash, "power_supply")
 		battery = get_external_power_supply()
 
 	if(times_used <= max_flashes && battery && battery.charge >= charge_cost)
-		last_used = world.time
+		COOLDOWN_START(src, use_cooldown, 10 SECONDS)
 		if(one_use)
 			broken = TRUE
 			if(user)

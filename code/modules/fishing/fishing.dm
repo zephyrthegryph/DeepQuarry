@@ -62,7 +62,7 @@ GLOBAL_LIST_INIT(generic_fishing_chance_list, list(FISHING_RARE = 5, FISHING_UNC
 	var/list/fishing_loot	// Chance list.
 
 	var/fishing_cooldown = 30 SECONDS
-	var/last_fished = 0
+	COOLDOWN_DECLARE(fishing_cooldown_until)
 
 	var/fish_type
 	var/min_fishing_time = 30	// Time in seconds.
@@ -151,9 +151,9 @@ GLOBAL_LIST_INIT(generic_fishing_chance_list, list(FISHING_RARE = 5, FISHING_UNC
 	var/obj/item/P = R
 	playsound(src, 'sound/effects/slosh.ogg', 5, 1, 5)
 	to_chat(user,span_notice("You feel a tug and begin pulling!"))
-	if(world.time >= last_fished + fishing_cooldown)
+	if(COOLDOWN_FINISHED(src, fishing_cooldown_until))
 		pick_fish()
-		last_fished = world.time
+		COOLDOWN_START(src, fishing_cooldown_until, fishing_cooldown)
 	else
 		fish_type = null
 		if(prob(3))	// No fish left here..

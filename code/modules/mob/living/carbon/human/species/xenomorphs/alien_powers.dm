@@ -125,11 +125,11 @@
 	return
 
 /mob/living/carbon/human/proc/Spit(atom/A)
-	if((last_spit + 1 SECONDS) > world.time) //To prevent YATATATATATAT spitting.
+	if(!COOLDOWN_FINISHED(src, spit_cooldown)) //To prevent YATATATATATAT spitting.
 		to_chat(src, span_warning("You have not yet prepared your chemical glands. You must wait before spitting again."))
 		return
 	else
-		last_spit = world.time
+		COOLDOWN_START(src, spit_cooldown, 1 SECONDS)
 
 	if(spitting && incapacitated(INCAPACITATION_DISABLED))
 		to_chat(src, "You cannot spit in your current state.")
@@ -198,7 +198,7 @@
 		return
 
 	else
-		last_spit = world.time
+		COOLDOWN_START(src, spit_cooldown, 1 SECONDS)
 		spitting = 1
 		spit_projectile = /obj/item/projectile/energy/neurotoxin
 		spit_name = "neurotoxin"
@@ -219,7 +219,7 @@
 		return
 
 	else
-		last_spit = world.time
+		COOLDOWN_START(src, spit_cooldown, 1 SECONDS)
 		spitting = 1
 		spit_projectile = /obj/item/projectile/energy/acid
 		spit_name = "acid"
@@ -280,7 +280,7 @@
 	set name = "Leap"
 	set desc = "Leap at a target and grab them aggressively."
 
-	if(last_special > world.time)
+	if(!COOLDOWN_FINISHED(src, last_special))
 		return
 
 	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || src?.buckled_to())
@@ -299,14 +299,14 @@
 
 	if(get_dist(get_turf(T), get_turf(src)) > 4) return
 
-	if(last_special > world.time)
+	if(!COOLDOWN_FINISHED(src, last_special))
 		return
 
 	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || src?.buckled_to())
 		to_chat(src, "You cannot leap in your current state.")
 		return
 
-	last_special = world.time + 75
+	COOLDOWN_START(src, last_special, 75)
 	status_flags |= LEAPING
 
 	src.visible_message(span_danger("\The [src] leaps at [T]!"))
@@ -348,7 +348,7 @@
 	set name = "Slaughter"
 	set desc = "While grabbing someone aggressively, rip their guts out or tear them apart."
 
-	if(last_special > world.time)
+	if(!COOLDOWN_FINISHED(src, last_special))
 		return
 
 	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying)
@@ -364,7 +364,7 @@
 		to_chat(src, span_danger("You must have an aggressive grab to slaughter your prey!"))
 		return
 
-	last_special = world.time + 50
+	COOLDOWN_START(src, last_special, 50)
 
 	visible_message(span_warning(span_bold("\The [src]") + " rips viciously at \the [G?.grab_target()]'s body with its claws!"))
 

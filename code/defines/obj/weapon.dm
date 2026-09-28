@@ -51,8 +51,8 @@
 		return TRUE
 	if(special_handling)
 		return FALSE
-	if(cooldown <= world.time)
-		cooldown = (world.time + 2 SECONDS)
+	if(COOLDOWN_FINISHED(src, cooldown))
+		COOLDOWN_START(src, cooldown, 2 SECONDS)
 		playsound(src, honk_sound, 50, 1)
 		add_fingerprint(user)
 		if(honk_text)

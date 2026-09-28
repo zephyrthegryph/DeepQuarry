@@ -128,8 +128,8 @@ REF_PAIR(/obj/machinery/optable, list("computer" = "table"))
 				victim = table.victim
 				atom_say("[victim.real_name], [victim.dna.b_type] blood, [victim.stat ? "Non-Responsive" : "Awake"]")
 				SStgui.update_uis(src)
-			if(nextTick < world.time)
-				nextTick=world.time + OP_COMPUTER_COOLDOWN
+			if(COOLDOWN_FINISHED(src, nextTick))
+				COOLDOWN_START(src, nextTick, OP_COMPUTER_COOLDOWN)
 				if(crit && victim.is_critical())
 					playsound(src.loc, 'sound/machines/defib_success.ogg', 50, 0)
 				var/saturation = victim.body?.oxygenation()

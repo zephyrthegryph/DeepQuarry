@@ -111,11 +111,11 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 /datum/tgui_module/appearance_changer/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	if(..())
 		return TRUE
-	if(cooldown > world.time)
+	if(!COOLDOWN_FINISHED(src, cooldown))
 		to_chat(ui.user, span_warning("You are changing appearance too fast!"))
 		return FALSE
 	else
-		cooldown = world.time + 0.5 SECONDS
+		COOLDOWN_START(src, cooldown, 0.5 SECONDS)
 
 	var/obj/machinery/computer/transhuman/designer/DC = null
 	var/datum/tgui_module/appearance_changer/body_designer/BD = null

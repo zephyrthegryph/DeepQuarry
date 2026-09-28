@@ -75,7 +75,7 @@ REF_BACKLIST(/obj/structure/holosign, list("projector" = "signs"))
 /obj/structure/holosign/barrier/medical/Bumped(atom/movable/AM)
 	. = ..()
 	if(ishuman(AM) && !CheckHuman(AM))
-		if(buzzed < world.time)
+		if(COOLDOWN_FINISHED(src, buzzed))
 			playsound(get_turf(src), 'sound/machines/buzz-sigh.ogg', 50, 1)
 			buzzed = (world.time + 60)
 

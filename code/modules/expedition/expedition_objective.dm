@@ -411,7 +411,7 @@
 	name = "Hold position"
 	var/hold_time = 90 SECONDS
 	var/started_at = 0
-	var/last_wave = 0
+	COOLDOWN_DECLARE(wave_cooldown)
 	var/wave_interval = 12 SECONDS
 
 /datum/expedition_objective/survive/populate(datum/expedition_site/S)
@@ -424,9 +424,9 @@
 		return state
 	if(!started_at)
 		started_at = world.time
-	if(world.time >= last_wave + wave_interval)
+	if(COOLDOWN_FINISHED(src, wave_cooldown))
 		spawn_wave()
-		last_wave = world.time
+		COOLDOWN_START(src, wave_cooldown, wave_interval)
 	var/elapsed = world.time - started_at
 	progress = round(elapsed / 10)
 	if(elapsed >= hold_time)

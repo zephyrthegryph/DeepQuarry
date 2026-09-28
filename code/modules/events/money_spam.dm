@@ -1,11 +1,11 @@
 /datum/event/pda_spam
 	endWhen = 36000
-	var/last_spam_time = 0
+	COOLDOWN_DECLARE(spam_cooldown)
 	var/obj/machinery/message_server/useMS
 	var/obj/machinery/exonet_node/node
 
 /datum/event/pda_spam/setup()
-	last_spam_time = world.time
+	COOLDOWN_START(src, spam_cooldown, 3000)
 	pick_message_server()
 
 /datum/event/pda_spam/proc/pick_message_server()
@@ -15,7 +15,7 @@
 			break
 
 /datum/event/pda_spam/tick()
-	if(world.time > last_spam_time + 3000)
+	if(COOLDOWN_FINISHED(src, spam_cooldown))
 		//if there's no spam managed to get to receiver for five minutes, give up
 		kill()
 		return
@@ -102,7 +102,7 @@
 			if (useMS.send_pda_message("[P.owner]", sender, message))	//Message been filtered by spam filter.
 				return
 
-			last_spam_time = world.time
+			COOLDOWN_START(src, spam_cooldown, 3000)
 
 			//Commented out because we don't send messages like this anymore.  Instead it will just popup in their chat window.
 			//P.tnote += "<i><b>&larr; From [sender] (Unknown / spam?):</b></i><br>[message]<br>"

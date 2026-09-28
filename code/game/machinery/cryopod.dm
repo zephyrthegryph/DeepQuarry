@@ -226,7 +226,7 @@
 	var/obj/item/radio/intercom/announce //
 
 	var/obj/machinery/computer/cryopod/control_computer
-	var/last_no_computer_message = 0
+	COOLDOWN_DECLARE(no_computer_message_cooldown)
 	var/applies_stasis = 0 // allow people to change their mind
 
 	var/quiet = FALSE // No announcement.
@@ -326,10 +326,10 @@
 		control_computer = locate(/obj/machinery/computer/cryopod) in range(6,src)
 
 	// Don't send messages unless we *need* the computer, and less than five minutes have passed since last time we messaged
-	if(!control_computer && urgent && last_no_computer_message + 5 MINUTES < world.time)
+	if(!control_computer && urgent && COOLDOWN_FINISHED(src, no_computer_message_cooldown))
 		log_admin("Cryopod in [my_area] could not find control computer!")
 		message_admins("Cryopod in [my_area] could not find control computer!")
-		last_no_computer_message = world.time
+		COOLDOWN_START(src, no_computer_message_cooldown, 5 MINUTES)
 
 	return control_computer != null
 

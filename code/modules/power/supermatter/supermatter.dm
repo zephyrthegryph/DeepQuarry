@@ -399,14 +399,14 @@ REF_OWNED(/obj/machinery/power/supermatter, "soundloop")
 		soundloop.mid_sounds = list('sound/machines/sm/loops/calm.ogg' = 1)
 
 	// Play Delam/Neutral sounds at rate determined by power and damage.
-	if(last_accent_sound < world.time && prob(20))
+	if(COOLDOWN_FINISHED(src, last_accent_sound) && prob(20))
 		var/aggression = min(((damage / 800) * (power / 2500)), 1.0) * 100
 		if(damage >= 300)
 			playsound(src, "smdelam", max(50, aggression), FALSE, 10)
 		else
 			playsound(src, "smcalm", max(50, aggression), FALSE, 10)
 		var/next_sound = round((100 - aggression) * 5)
-		last_accent_sound = world.time + max(SUPERMATTER_ACCENT_SOUND_COOLDOWN, next_sound)
+		COOLDOWN_START(src, last_accent_sound, max(SUPERMATTER_ACCENT_SOUND_COOLDOWN, next_sound))
 
 	//Ok, get the air from the turf
 	var/datum/gas_mixture/removed = null
@@ -720,7 +720,7 @@ REF_OWNED(/obj/machinery/power/supermatter, "soundloop")
 	desc = "The shattered remains of a supermatter shard plinth. It doesn't look safe to be around."
 	icon = 'icons/obj/supermatter.dmi'
 	icon_state = "darkmatter_broken"
-	var/last_event = 0
+	COOLDOWN_DECLARE(event_cooldown)
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
 
@@ -732,7 +732,7 @@ REF_OWNED(/obj/machinery/power/supermatter, "soundloop")
 	SIGNAL_HANDLER
 	if(active)
 		return
-	if(world.time <= last_event + 1.5 SECONDS)
+	if(!COOLDOWN_FINISHED(src, event_cooldown))
 		return
 	active = TRUE
 	radiation_pulse(
@@ -743,7 +743,7 @@ REF_OWNED(/obj/machinery/power/supermatter, "soundloop")
 		minimum_exposure_time = URANIUM_RADIATION_MINIMUM_EXPOSURE_TIME,
 		strength = 25
 	)
-	last_event = world.time
+	COOLDOWN_START(src, event_cooldown, 1.5 SECONDS)
 	active = FALSE
 
 /obj/machinery/power/supermatter/station

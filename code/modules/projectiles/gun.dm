@@ -382,14 +382,14 @@ REF_OWNED(/obj/item/gun, "firemode_selector")
 	if(!special_check(user))
 		return
 
-	if(world.time < next_fire_time)
+	if(!COOLDOWN_FINISHED(src, next_fire_time))
 		if (world.time % 3) //to prevent spam
 			to_chat(user, span_warning("[src] is not ready to fire again!"))
 		return
 
 	var/shoot_time = (burst - 1)* burst_delay
 
-	next_fire_time = world.time + shoot_time
+	COOLDOWN_START(src, next_fire_time, shoot_time)
 	handle_gunfire(target, user, clickparams, pointblank, reflex, 1, FALSE)
 
 /obj/item/gun/proc/handle_gunfire(atom/target, mob/living/user, clickparams, pointblank=0, reflex=0, ticker, recursive = FALSE)
@@ -411,7 +411,7 @@ REF_OWNED(/obj/item/gun, "firemode_selector")
 	//update timing
 	if(recursive)
 		user.setClickCooldown(DEFAULT_QUICK_COOLDOWN)
-		next_fire_time = world.time + fire_delay
+		COOLDOWN_START(src, next_fire_time, fire_delay)
 		if(muzzle_flash)
 			if(gun_light)
 				set_light(light_brightness)
@@ -469,7 +469,7 @@ REF_OWNED(/obj/item/gun, "firemode_selector")
 				return
 
 			if(ticker == burst)
-				next_fire_time = world.time + fire_delay
+				COOLDOWN_START(src, next_fire_time, fire_delay)
 				if(muzzle_flash)
 					if(gun_light)
 						addtimer(CALLBACK(src, TYPE_PROC_REF(/atom, set_light),light_brightness), burst_delay, TIMER_DELETE_ME)
@@ -481,11 +481,11 @@ REF_OWNED(/obj/item/gun, "firemode_selector")
 	if(!target)
 		return
 
-	if(world.time < next_fire_time)
+	if(!COOLDOWN_FINISHED(src, next_fire_time))
 		return
 
 	var/shoot_time = (burst - 1)* burst_delay
-	next_fire_time = world.time + shoot_time
+	COOLDOWN_START(src, next_fire_time, shoot_time)
 	handle_userless_gunfire(target, 1, FALSE)
 
 // This is horrible. I tried to keep the old way it had because if I try to use the fancy procs above like handle_post_fire, it expects a user.
@@ -501,7 +501,7 @@ REF_OWNED(/obj/item/gun, "firemode_selector")
 
 	//update timing
 	if(recursive)
-		next_fire_time = world.time + fire_delay
+		COOLDOWN_START(src, next_fire_time, fire_delay)
 		if(muzzle_flash)
 			set_light(0)
 

@@ -65,7 +65,7 @@
 		return null
 	if(!owner.checkClickCooldown())
 		return null
-	if(world.time < G.next_fire_time)
+	if(!COOLDOWN_FINISHED(G, next_fire_time))
 		return null
 	// Gun-side ammo check via existing special_check (most guns subclass this).
 	if(!G.special_check(owner))

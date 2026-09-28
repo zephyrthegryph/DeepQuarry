@@ -36,7 +36,7 @@
 	var/datum/transcore_db/our_db
 
 	//These are the variables that control 'When we were
-	var/last_dispensed
+	COOLDOWN_DECLARE(dispense_cooldown_until)
 	var/dispense_cooldown = 1 MINUTE //If abused, this can be decreased. The machine gives chems and supplies that are easily and readily available, barring tramadol. If someone intentionally breaks their arm to rob the machines of their tramadol to fuel their addiction, that's a gameplay feature.
 
 	/// This determines if the kiosk can dispense or not. Edit the below line to FALSE if you don't want them to do such.
@@ -223,7 +223,7 @@
 	var/inaprovaline_given = FALSE
 	var/medication_dispensed = FALSE
 
-	if(!can_dispense || (world.time < last_dispensed + dispense_cooldown))
+	if(!can_dispense || (!COOLDOWN_FINISHED(src, dispense_cooldown_until)))
 		able_to_dispense = FALSE
 
 	//Let's do this list from 'most severe' to 'least severe'
@@ -328,7 +328,7 @@
 			new /obj/item/reagent_containers/pill/small_paracetamol(src.loc)
 
 	if(medication_dispensed) //We found something and can dispense meds!
-		last_dispensed = world.time
+		COOLDOWN_START(src, dispense_cooldown_until, dispense_cooldown)
 		problem_text += "<br>" + span_cyan("Condition has been analyzed and supplies have been dispensed. Please take any dispensed items to help stabilize your condition until medical personnel can see you!")
 
 	return problem_text

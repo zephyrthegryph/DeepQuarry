@@ -24,7 +24,7 @@
 
 /datum/ship_engine/gas_thruster/is_on()
 	if(nozzle.use_power && nozzle.operable())
-		if(nozzle.next_on > world.time)
+		if(!COOLDOWN_FINISHED(nozzle, next_on))
 			return -1
 		else
 			return 1
@@ -41,7 +41,7 @@
 		if(nozzle.stat & NOPOWER)//try again
 			nozzle.power_change()
 		if(nozzle.is_on())//if everything is in working order, start booting!
-			nozzle.next_on = world.time + nozzle.boot_time
+			COOLDOWN_START(nozzle, next_on, nozzle.boot_time)
 
 /datum/ship_engine/gas_thruster/can_burn()
 	return nozzle.is_on() && nozzle.check_fuel()
@@ -113,7 +113,7 @@ REF_OWNED(/obj/machinery/atmospherics/unary/engine, "controller")
 		update_use_power(USE_POWER_OFF)
 
 /obj/machinery/atmospherics/unary/engine/proc/is_on()
-	return use_power && operable() && (next_on < world.time)
+	return use_power && operable() && (COOLDOWN_FINISHED(src, next_on))
 
 /obj/machinery/atmospherics/unary/engine/proc/check_fuel()
 	return air_contents.total_moles() > 5 // minimum fuel usage is five moles, for EXTREMELY hot mix or super low pressure

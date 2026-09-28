@@ -116,7 +116,7 @@
 			return FALSE
 
 	if(ranged_cooldown_time) //If you have a non-zero number in a mob's variables, this pattern begins.
-		if(ranged_cooldown <= world.time) //Further down, a timer keeps adding to the ranged_cooldown variable automatically.
+		if(COOLDOWN_FINISHED(src, ranged_cooldown)) //Further down, a timer keeps adding to the ranged_cooldown variable automatically.
 			visible_message(span_danger(span_bold("\The [src]") + " fires at \the [A]!")) //Leave notice of shooting.
 			shoot(A) //Perform the shoot action
 			if(casingtype) //If the mob is designated to leave casings...
@@ -200,7 +200,7 @@
 		return FALSE
 
 	// Cooldown check.
-	if(!isnull(special_attack_cooldown) && last_special_attack + special_attack_cooldown > world.time)
+	if(!isnull(special_attack_cooldown) && !COOLDOWN_FINISHED(src, special_attack_cooldown_until))
 		return FALSE
 
 	// Charge check.
@@ -226,7 +226,7 @@
 
 /// The special attack itself, after any telegraph.
 /mob/living/simple_mob/proc/special_attack_fire(atom/A)
-	last_special_attack = world.time
+	COOLDOWN_START(src, special_attack_cooldown_until, special_attack_cooldown)
 	if(do_special_attack(A))
 		if(special_attack_charges)
 			special_attack_charges -= 1

@@ -30,7 +30,7 @@
 	var/shatter_sound = 'sound/effects/Glassbr3.ogg'
 
 	var/activation_cooldown = 30 SECONDS
-	var/last_activation = 0
+	COOLDOWN_DECLARE(activation_cooldown_until)
 
 /obj/structure/cult/pylon/Initialize(mapload)
 	. = ..()
@@ -99,14 +99,14 @@
 
 // Returns 1 if the pylon does something special.
 /obj/structure/cult/pylon/proc/pylon_unique()
-	last_activation = world.time
+	COOLDOWN_START(src, activation_cooldown_until, activation_cooldown)
 	return 0
 
 /// Acts only while a player is near; otherwise it sleeps until one comes near.
 /obj/structure/cult/pylon/periodic_step()
 	if(!mob_near(world.view, TRUE))
 		return sleep_until_mob_near(world.view, TRUE)
-	if(!isbroken && (last_activation + activation_cooldown < world.time) && pylon_unique())
+	if(!isbroken && (COOLDOWN_FINISHED(src, activation_cooldown_until)) && pylon_unique())
 		flick("[initial(icon_state)]-surge",src)
 
 /obj/structure/cult/tome

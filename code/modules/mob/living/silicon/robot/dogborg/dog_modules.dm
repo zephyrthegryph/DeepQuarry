@@ -344,7 +344,7 @@
 	R.leap(bluespace)
 
 /mob/living/silicon/robot/proc/leap(bluespace = FALSE)
-	if(last_special > world.time)
+	if(!COOLDOWN_FINISHED(src, last_special))
 		to_chat(src, span_filter_notice("Your leap actuators are still recharging."))
 		return
 
@@ -381,14 +381,14 @@
 		to_chat(src, span_warning("Warning, low power detected. Aborting action."))
 		return
 
-	if(last_special > world.time)
+	if(!COOLDOWN_FINISHED(src, last_special))
 		return
 
 	if(src.incapacitated(INCAPACITATION_DISABLED))
 		to_chat(src, span_filter_notice("You cannot leap in your current state."))
 		return
 
-	last_special = world.time + 10
+	COOLDOWN_START(src, last_special, 10)
 	status_flags |= LEAPING
 	pixel_y = pixel_y + 10
 

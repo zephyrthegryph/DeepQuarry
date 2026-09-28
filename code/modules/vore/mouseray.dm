@@ -36,20 +36,20 @@
 	to_chat(user, span_notice("You selected [choice]."))
 
 /obj/item/gun/energy/mouseray/Fire(atom/target, mob/living/user, clickparams, pointblank, reflex)
-	if(world.time < cooldown)
+	if(!COOLDOWN_FINISHED(src, cooldown))
 		to_chat(user, span_warning("\The [src] isn't ready yet."))
 		return
 	. = ..()
 
 /obj/item/gun/energy/mouseray/Fire_userless(atom/target)
-	if(world.time < cooldown)
+	if(!COOLDOWN_FINISHED(src, cooldown))
 		return
 	. = ..()
 
 /obj/item/gun/energy/mouseray/consume_next_projectile()
 	. = ..()
 	var/obj/item/projectile/beam/mouselaser/G = .
-	cooldown = world.time + cooldown_time
+	COOLDOWN_START(src, cooldown, cooldown_time)
 	if(tf_type)
 		G.tf_type = tf_type
 	if(tf_admin_pref_override)
@@ -124,7 +124,7 @@
 /obj/item/gun/energy/mouseray/medical/consume_next_projectile()
 	. = ..()
 	var/obj/item/projectile/beam/mouselaser/reversion/G = .
-	cooldown = world.time + cooldown_time
+	COOLDOWN_START(src, cooldown, cooldown_time)
 	if(tf_admin_pref_override)
 		G.tf_admin_pref_override = tf_admin_pref_override
 
@@ -270,7 +270,7 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/gun/energy/mouseray/metamorphosis/advanced/random/Fire(atom/target, mob/living/user, clickparams, pointblank, reflex)
-	if(world.time < cooldown)
+	if(!COOLDOWN_FINISHED(src, cooldown))
 		to_chat(user, span_warning("\The [src] isn't ready yet."))
 		return
 	if(!tf_allow_select) //Keep a repaired gun from re-randomizing

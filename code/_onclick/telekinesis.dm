@@ -63,7 +63,7 @@
 	w_class = ITEMSIZE_NO_CONTAINER
 	layer = HUD_LAYER
 
-	var/last_throw = 0
+	COOLDOWN_DECLARE(throw_cooldown)
 	var/atom/movable/focus = null
 	var/mob/living/host = null
 	item_flags = DROPDEL | NOSTRIP
@@ -90,7 +90,7 @@
 
 /obj/item/tk_grab/afterattack(atom/target as mob|obj|turf|area, mob/living/user as mob|obj, proximity)//TODO: go over this
 	if(!target || !user)	return
-	if(last_throw+3 > world.time)	return
+	if(!COOLDOWN_FINISHED(src, throw_cooldown))	return
 	if(!host || host != user)
 		consume(src, user)
 		return
@@ -128,7 +128,7 @@
 	else
 		apply_focus_overlay()
 		focus.throw_at(target, 10, 1, user)
-		last_throw = world.time
+		COOLDOWN_START(src, throw_cooldown, 3)
 		if(ishuman(user))
 			var/mob/living/carbon/human/H_user = user
 			if(istype(H_user.get_equipped_item(SLOT_ID_GLOVES),/obj/item/clothing/gloves/telekinetic))

@@ -21,17 +21,17 @@
 	var/spitting = 0 					//Spitting and spitting related things. Any human based ranged attacks, be it innate or added abilities.
 	var/spit_projectile = null			//Projectile type.
 	var/spit_name = null 				//String
-	var/last_spit = 0 					//Timestamp.
+	COOLDOWN_DECLARE(spit_cooldown) 					//Timestamp.
 
 	var/can_defib = 1					//Horrible damage (like beheadings) will prevent defibbing organics.
 	var/active_regen = FALSE //Used for the regenerate proc in human_powers.dm
 	var/active_regen_delay = 300
-	var/last_breath_sound				//Allows us to store the value across proc calls per-mob.
+	COOLDOWN_DECLARE(breath_sound_cooldown)				//Allows us to store the value across proc calls per-mob.
 	var/list/teleporters = list() //Used for lleill abilities
 
 	var/rest_dir = 0					//To lay down in a specific direction
 	var/list/datum/genetics/side_effect/genetic_side_effects = list()	//For any genetic side effects we currently have.
-	var/last_chew = 0
+	COOLDOWN_DECLARE(chew_cooldown)
 
 /mob/living/carbon/human/Initialize(mapload, new_species = null)
 	if(!dna)
@@ -872,11 +872,11 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	return species.name
 
 /mob/living/carbon/human/proc/play_xylophone()
-	if(world.time >= xylophone)
+	if(COOLDOWN_FINISHED(src, xylophone))
 		visible_message(span_filter_notice("[span_red("\The [src] begins playing [p_their()] ribcage like a xylophone. It's quite spooky.")]"),span_notice("You begin to play a spooky refrain on your ribcage."),span_filter_notice("[span_red("You hear a spooky xylophone melody.")]"))
 		var/song = pick('sound/effects/xylophone1.ogg','sound/effects/xylophone2.ogg','sound/effects/xylophone3.ogg')
 		playsound(src, song, 50, 1, -1)
-		xylophone = world.time + 2 MINUTES
+		COOLDOWN_START(src, xylophone, 2 MINUTES)
 	return
 
 /mob/living/proc/check_has_mouth()
@@ -1898,7 +1898,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	set category = "Abilities.General"
 	set desc = "Switch your horizontal direction while prone."
 
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || world.time < last_special)
+	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || !COOLDOWN_FINISHED(src, last_special))
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
@@ -2171,10 +2171,10 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	set desc = "Create an area in a enclosed space, making it able to be powered by an APC."
 	set category = "IC.Game"
 
-	if(stat || world.time < last_special)
+	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		to_chat(usr, span_warning("You recently tried to create an area. Wait a while before using it again."))
 		return
 
-	last_special = world.time + 2 SECONDS // Antispam.
+	COOLDOWN_START(src, last_special, 2 SECONDS) // Antispam.
 	create_new_area(usr)
 	return

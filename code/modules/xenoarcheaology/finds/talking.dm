@@ -2,7 +2,7 @@
 
 /datum/talking_atom
 	var/list/heard_words = list()
-	var/last_talk_time = 0
+	COOLDOWN_DECLARE(talk_cooldown)
 	var/atom/holder_atom
 	var/talk_interval = 50
 	var/talk_chance = 10
@@ -19,7 +19,7 @@
 	if(!holder_atom)
 		PERIODIC_STOP(src)
 
-	else if(heard_words.len >= 1 && world.time > last_talk_time + talk_interval && prob(talk_chance))
+	else if(heard_words.len >= 1 && COOLDOWN_FINISHED(src, talk_cooldown) && prob(talk_chance))
 		SaySomething()
 
 /datum/talking_atom/proc/catchMessage(msg, mob/source)
@@ -103,4 +103,4 @@
 
 	for(var/mob/M in listening)
 		to_chat(M, "[icon2html(holder_atom,M.client)] " + span_bold("[holder_atom] reverberates") +" , \"[span_blue(msg)]\"")
-	last_talk_time = world.time
+	COOLDOWN_START(src, talk_cooldown, talk_interval)

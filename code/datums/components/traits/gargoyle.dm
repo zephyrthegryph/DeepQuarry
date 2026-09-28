@@ -84,7 +84,7 @@
 		return
 	if(energy <= 0 && isturf(gargoyle.loc))
 		to_chat(gargoyle, span_danger("You suddenly turn into a [identifier] as you run out of energy!"))
-	else if(cooldown > world.time)
+	else if(!COOLDOWN_FINISHED(src, cooldown))
 		var/time_to_wait = (cooldown - world.time) / (1 SECONDS)
 		to_chat(gargoyle, span_warning("You can't transform just yet again! Wait for another [round(time_to_wait,0.1)] seconds!"))
 		return

@@ -23,7 +23,7 @@
 	qdel(src)
 
 /obj/effect/decal/cleanable/greenglow
-	var/last_event = 0
+	COOLDOWN_DECLARE(event_cooldown)
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
 
@@ -43,7 +43,7 @@
 	SIGNAL_HANDLER
 	if(active)
 		return
-	if(world.time <= last_event + 1.5 SECONDS)
+	if(!COOLDOWN_FINISHED(src, event_cooldown))
 		return
 	active = TRUE
 	radiation_pulse(
@@ -53,7 +53,7 @@
 		chance = URANIUM_IRRADIATION_CHANCE,
 		strength = 2
 	)
-	last_event = world.time
+	COOLDOWN_START(src, event_cooldown, 1.5 SECONDS)
 	active = FALSE
 
 /obj/effect/decal/cleanable/dirt

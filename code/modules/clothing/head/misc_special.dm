@@ -270,7 +270,7 @@
 	var/brainloss_cost = 3 // Whenever it activates, inflict this much brainloss on the wearer, as its not good for the mind to wear things that manipulate it.
 
 /obj/item/clothing/head/psy_crown/proc/activate_ability(mob/living/wearer)
-	cooldown = world.time + cooldown_duration
+	COOLDOWN_START(src, cooldown, cooldown_duration)
 	if(flavor_activate)
 		to_chat(wearer, flavor_activate)
 	to_chat(wearer, span_danger("The inside of your head hurts..."))
@@ -299,7 +299,7 @@
 /obj/item/clothing/head/psy_crown/periodic_step()
 	if(isliving(loc))
 		var/mob/living/L = loc
-		if(world.time >= cooldown && L.is_sentient() && L.get_tension() >= tension_threshold)
+		if(COOLDOWN_FINISHED(src, cooldown) && L.is_sentient() && L.get_tension() >= tension_threshold)
 			activate_ability(L)
 
 /obj/item/clothing/head/psy_crown/wrath

@@ -51,10 +51,10 @@
 	set name = "Toggle Opacity"
 	set category = "Abilities.Shapeshifter"
 
-	if(stat || world.time < last_special)
+	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	last_special = world.time + 10
+	COOLDOWN_START(src, last_special, 10)
 
 	if(src.icon_state == "promethean")
 		icon_state = lowertext(src.species.get_bodytype(src))

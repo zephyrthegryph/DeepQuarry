@@ -17,7 +17,7 @@
 	var/list/tgui_selected_id_multi //List of strings containing mob ids for multi selection
 	var/tgui_narrate_mode = 0 //0 for speak, 1 for emote
 	var/tgui_narrate_privacy = 0 //0 for loud, 1 for subtle
-	var/tgui_last_message = 0 // int to avoid spam
+	COOLDOWN_DECLARE(tgui_message_cooldown) // int to avoid spam
 
 
 
@@ -259,11 +259,11 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 						tgui_selected_name = A.name
 			return TRUE
 		if("narrate")
-			if(world.time < (tgui_last_message + 0.5 SECONDS))
+			if(!COOLDOWN_FINISHED(src, tgui_message_cooldown))
 				to_chat(ui.user, span_notice("You can't messages that quickly! Wait at least half a second"))
 			else
 				to_chat(ui.user, span_notice("Message successfully sent!"))
-				tgui_last_message = world.time
+				COOLDOWN_START(src, tgui_message_cooldown, 0.5 SECONDS)
 				var/message = params["message"] //Sanitizing before speaking it
 				if(tgui_selection_mode)
 					for(var/entity in tgui_selected_id_multi)

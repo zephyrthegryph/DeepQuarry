@@ -24,7 +24,7 @@
 	var/skin = null //Set to "tox", "ointment" or "o2" for the other two firstaid kits.
 
 	//AI vars
-	var/last_newpatient_speak = 0
+	COOLDOWN_DECLARE(newpatient_speak_cooldown)
 	var/vocal = 1
 
 	//Healing vars
@@ -47,7 +47,7 @@
 	//The name we got when we were tipped
 	var/tipper_name
 	//The last time we were tipped/righted and said a voice line, to avoid spam
-	var/last_tipping_action_voice = 0
+	COOLDOWN_DECLARE(tipping_voice_cooldown)
 
 /mob/living/bot/medbot/mysterious
 	name = "\improper Mysterious Medibot"
@@ -113,7 +113,7 @@
 	for(var/mob/living/carbon/human/H in view(7, src)) // Time to find a patient!
 		if(confirmTarget(H))
 			target = H
-			if(last_newpatient_speak + 30 SECONDS < world.time)
+			if(COOLDOWN_FINISHED(src, newpatient_speak_cooldown))
 				if(vocal)
 					var/message_options = list(
 						"Hey, [H.name]! Hold on, I'm coming." = 'sound/voice/medbot/mcoming.ogg',
@@ -124,7 +124,7 @@
 					say(message)
 					playsound(src, message_options[message], 50, 0)
 				automatic_custom_emote(VISIBLE_MESSAGE, "points at [H.name].")
-				last_newpatient_speak = world.time
+				COOLDOWN_START(src, newpatient_speak_cooldown, 30 SECONDS)
 			break
 
 /mob/living/bot/medbot/UnarmedAttack(mob/living/carbon/human/H)
@@ -207,8 +207,8 @@
 	if(istype(H) && IS_DISARMING(H) && !is_tipped)
 		H.visible_message(span_danger("[H] begins tipping over [src]."), span_warning("You begin tipping over [src]..."))
 
-		if(world.time > last_tipping_action_voice + 15 SECONDS)
-			last_tipping_action_voice = world.time // message for tipping happens when we start interacting, message for righting comes after finishing
+		if(COOLDOWN_FINISHED(src, tipping_voice_cooldown))
+			COOLDOWN_START(src, tipping_voice_cooldown, 15 SECONDS)// message for tipping happens when we start interacting, message for righting comes after finishing
 			var/list/messagevoice = list("Hey, wait..." = 'sound/voice/medbot/hey_wait.ogg',"Please don't..." = 'sound/voice/medbot/please_dont.ogg',"I trusted you..." = 'sound/voice/medbot/i_trusted_you.ogg', "Nooo..." = 'sound/voice/medbot/nooo.ogg', "Oh fuck-" = 'sound/voice/medbot/oh_fuck.ogg')
 			var/message = pick(messagevoice)
 			say(message)
@@ -389,8 +389,8 @@
 		messagevoice = list("Fuck you." = 'sound/voice/medbot/fuck_you.ogg', "Your behavior has been reported, have a nice day." = 'sound/voice/medbot/reported.ogg')
 
 	tipper_name = null
-	if(world.time > last_tipping_action_voice + 15 SECONDS)
-		last_tipping_action_voice = world.time
+	if(COOLDOWN_FINISHED(src, tipping_voice_cooldown))
+		COOLDOWN_START(src, tipping_voice_cooldown, 15 SECONDS)
 		var/message = pick(messagevoice)
 		say(message)
 		playsound(src, messagevoice[message], 70)

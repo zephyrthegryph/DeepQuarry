@@ -309,14 +309,14 @@
 
 // So Beepsky talks while beating up simple mobs.
 /mob/living/bot/secbot/proc/insult(mob/living/L)
-	if(can_next_insult > world.time)
+	if(!COOLDOWN_FINISHED(src, can_next_insult))
 		return
 	if(threat >= 10)
 		playsound(src, 'sound/voice/binsult.ogg', 75)
-		can_next_insult = world.time + 20 SECONDS
+		COOLDOWN_START(src, can_next_insult, 20 SECONDS)
 	else
 		playsound(src, pick(fighting_sounds), 75)
-		can_next_insult = world.time + 5 SECONDS
+		COOLDOWN_START(src, can_next_insult, 5 SECONDS)
 
 
 /mob/living/bot/secbot/UnarmedAttack(mob/M, proximity)
