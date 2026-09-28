@@ -234,6 +234,10 @@
 			remove_lum()
 		return
 
+	// A pixel offset past the map edge (a tracer or impact effect at the edge) has no turf.
+	if (!pixel_turf)
+		pixel_turf = source_turf
+
 	if (light_range && light_power && !applied)
 		update = TRUE
 

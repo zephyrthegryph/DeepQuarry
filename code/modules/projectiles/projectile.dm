@@ -483,11 +483,15 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	original_handle = om_handle(target)
 	setAngle(Get_Angle(source, target))
 
-// ALLOW(lifecycle): a hitscan finalizes its tracers; its casing forgets it.
-/obj/item/projectile/Destroy()
+/// Phase 2: a hitscan draws its tracers while its trajectory still exists (phase 4 deletes
+/// the owned trajectory before Destroy() runs, which left the last beam segment unrecorded).
+/obj/item/projectile/lifecycle_dematerialize()
+	. = ..()
 	if(hitscan)
 		finalize_hitscan_and_generate_tracers()
 
+// ALLOW(lifecycle): its casing forgets it.
+/obj/item/projectile/Destroy()
 	if(impacted_mobs)
 		if(LAZYLEN(impacted_mobs))
 			LAZYCLEARLIST(impacted_mobs)
@@ -552,7 +556,10 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 		thing.color = color
 		thing.set_light(impact_light_range, impact_light_intensity, impact_light_color_override? impact_light_color_override : color)
 		beam_components.beam_components += thing
-	om_qdel_after(beam_components, duration)
+	// The drawn tracers belong to their timer now, not to us (phase 4 would delete them at once).
+	var/datum/beam_components_cache/drawn = beam_components
+	beam_components = null
+	om_qdel_after(drawn, duration)
 
 //Returns true if the target atom is on our current turf and above the right layer
 //If direct target is true it's the originally clicked target.

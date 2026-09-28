@@ -167,9 +167,16 @@
 	if(owner?.overlay_light == src)
 		owner.overlay_light = null
 	owner = null
+	// The light's own effects refuse any delete but a forced one, so they go here rather than
+	// in phase 4 (which deletes owned vars unforced).
+	delete_light_effects()
 
 // ALLOW(lifecycle): owned state datum (was a component) unhooks and detaches from its owner.
 /datum/overlay_lighting/Destroy()
+	delete_light_effects()
+	return ..()
+
+/datum/overlay_lighting/proc/delete_light_effects()
 	qdel(visible_mask, TRUE)
 	visible_mask = null
 
@@ -179,8 +186,6 @@
 
 		qdel(cone, TRUE)
 		cone = null
-
-	return ..()
 
 ///Clears the affected_turfs lazylist, removing from its contents the effects of being near the light.
 /datum/overlay_lighting/proc/clean_old_turfs()

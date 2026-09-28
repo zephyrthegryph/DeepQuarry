@@ -332,5 +332,5 @@
 /obj/item/modular_computer/proc/find_file_by_uid(uid)
 	if(hard_drive)
 		. = hard_drive.find_file_by_uid(uid)
-	if(portable_drive() && !.)
-		. = portable_drive().find_file_by_uid(uid)
+	if(portable_drive && !.)
+		. = portable_drive.find_file_by_uid(uid)
