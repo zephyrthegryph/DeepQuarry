@@ -25,12 +25,12 @@ section per system), `doc/rewrite/om_in_10_minutes.md`, `doc/rewrite/declarative
    API; if you do, update `systems.md` in your branch).
 2. **Every** site of the old pattern migrated. No half states, no compatibility aliases: the
    old proc/var/pattern is deleted when its last site goes. Sites that genuinely cannot convert
-   carry `// ALLOW(sys:<rule>): <specific reason>` (keep these rare; justify each).
-3. A lint rule in `tools/ci/sys_lint.py` (create it if absent: one Python script, one rule per
-   system, `--report`, `--update`, fingerprint baseline `tools/ci/sys_baseline.txt`,
-   shrink-only; wire it into `tools/ci/check_ratchets.sh` if not already). Your rule's
-   baseline must be 0 at the end. If another worker created the script concurrently, keep your
-   rule self-contained in a function so the merge is trivial.
+   carry `// ALLOW(sys_<rule>): <specific reason>` (keep these rare; justify each).
+3. A lint module `tools/ci/sys_rules/<system>.py` (copy `_template.py`: `RULES` dict and
+   `scan(files)`); `tools/ci/sys_lint.py` runs it (already wired into check_ratchets.sh).
+   Seed with `python tools/ci/sys_lint.py --seed <system>`, shrink with `--update`. The keep
+   annotation is `// ALLOW(sys_<rule>): <reason>`. Every rule's baseline must be empty (0) at
+   the end.
 4. A focused test `code/modules/unit_tests/dq_sys_<system>_tests.dm` (included in the dme test
    section like the other dq_ tests).
 5. Compile clean; DreamChecker (`$USERPROFILE/SpacemanDMM/dreamchecker.exe`) 0 new errors;
