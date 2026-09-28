@@ -47,25 +47,7 @@
 	get_injury_level()
 	//Update our hud if we have one
 	if(healths)
-		if(stat != DEAD)
-			var/heal_per = vitality() * 100
-			switch(heal_per)
-				if(100 to INFINITY)
-					healths.icon_state = "health0"
-				if(80 to 100)
-					healths.icon_state = "health1"
-				if(60 to 80)
-					healths.icon_state = "health2"
-				if(40 to 60)
-					healths.icon_state = "health3"
-				if(20 to 40)
-					healths.icon_state = "health4"
-				if(0 to 20)
-					healths.icon_state = "health5"
-				else
-					healths.icon_state = "health6"
-		else
-			healths.icon_state = "health7"
+		healths.icon_state = vitality_health_band(src)
 
 	//Updates the nutrition while we're here
 	switch(nutrition)

@@ -338,7 +338,7 @@
 	var/obj/item/shockpaddles/paddles = allocate(/obj/item/shockpaddles)
 	var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
 	TEST_ASSERT_NOTNULL(brain, "no brain")
-	brain.defib_timer = (CONFIG_GET(number/defib_timer) MINUTES) / 2 // freshly dead
+	brain.reset_defib_window() // freshly dead
 	H.death()
 	TEST_ASSERT_NULL(paddles.can_revive(H), "setup: an undamaged, freshly dead patient should be revivable")
 

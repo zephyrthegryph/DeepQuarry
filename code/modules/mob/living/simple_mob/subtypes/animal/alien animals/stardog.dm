@@ -1524,3 +1524,7 @@ DECLARE_INTERACTIONS(/obj/structure/auto_flesh_door, INTERACT_HAND(null, PROC_RE
 
 REF_HELD(/obj/effect/dog_teleporter, "target")
 REF_HELD(/turf/simulated/floor/water/digestive_enzymes, "linked_mob")
+
+/// Enzyme pools numb swimmers who opted out of digestion pain.
+/turf/simulated/floor/water/digestive_enzymes/numbs_pain_of(mob/living/occupant)
+	return !occupant.digest_pain

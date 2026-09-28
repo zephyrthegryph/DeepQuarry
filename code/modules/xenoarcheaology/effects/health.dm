@@ -43,7 +43,7 @@
 					H.vessel.add_reagent(REAGENT_ID_BLOOD,5)
 					H.adjust_nutrition(50 * weakness)
 					H.mend(TREAT_NEURAL_REPAIR, 25 * weakness)
-					H.radiation -= min(H.radiation, 25 * weakness)
+					H.purge_radiation(25 * weakness)
 					H.set_bodytemperature(initial(H.bodytemperature))
 					H.fixblood()
 				mend_all(C, 25 * weakness, FALSE)

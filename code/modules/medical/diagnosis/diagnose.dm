@@ -80,7 +80,7 @@
 		if(!isnull(rhythm))
 			D.heart_rhythm = flat ? RHYTHM_ASYSTOLE : rhythm
 	if(P.vitals & VITALS_TEMP)
-		D.temperature = round((owner.bodytemperature - T0C + owner.factor(BF_TEMPERATURE)) * 10) / 10
+		D.temperature = round((owner.bodytemperature - T0C) * 10) / 10 // BF_TEMPERATURE moves the real set point (C16)
 	if(P.vitals & VITALS_CONSCIOUSNESS)
 		if(flat)
 			D.consciousness = "none"

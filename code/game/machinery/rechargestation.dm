@@ -127,8 +127,7 @@
 
 			// And clear up radiation
 			if(H.radiation > 0 || H.accumulated_rads > 0)
-				H.radiation = max(H.radiation - 25, 0)
-				H.accumulated_rads = max(H.accumulated_rads - 25, 0)
+				H.purge_radiation(25)
 
 		if(H.wearing_rig) // stepping into a borg charger to charge your rig and fix your shit
 			var/obj/item/rig/wornrig = H.get_rig()

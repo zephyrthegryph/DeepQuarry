@@ -154,9 +154,11 @@ EXTEND_INTERACTIONS(/obj/machinery/medical_kiosk, \
 	return
 
 /obj/machinery/medical_kiosk/proc/medical_scan(mob/living/user)
-	if(!istype(user))
+	var/datum/diagnosis/diag = istype(user) ? user.diagnose(/datum/diagnostic_profile/automation/kiosk) : null
+	if(!diag)
 		return "<br>" + span_warning("Unable to perform diagnosis on this type of life form.")
-	if(user.isSynthetic())
+	// The kiosk's sensors read organic tissue only (its profile's biology).
+	if(!(user.body.biology_of(null) & diag.profile.biology))
 		return "<br>" + span_warning("Unable to perform diagnosis on synthetic life forms.")
 
 	var/problems = 0
@@ -172,16 +174,12 @@ EXTEND_INTERACTIONS(/obj/machinery/medical_kiosk, \
 		// Internal bleeds don't set ORGAN_BLEEDING; external bleeding is caught above.
 		if(length(dq_limb_internal_bleeds(E)))
 			problems |= INTERNAL_BLEEDING
-		if(E.germ_level >= INFECTION_LEVEL_ONE) //Do NOT check for the germ_level on the mob, it'll be innacurate.
-			problems |= INFECTION
 
 	for(var/obj/item/organ/internal/I in user.internal_organs)
 		if(I.is_fractured() || (I.status & (ORGAN_DEAD|ORGAN_DESTROYED)))
 			problems |= SERIOUS_INTERNAL_DAMAGE
 		if(I.status & ORGAN_BLEEDING)
 			problems |= INTERNAL_BLEEDING
-		if(I.germ_level >= INFECTION_LEVEL_ONE) //Do NOT check for the germ_level on the mob, it'll be innacurate.
-			problems |= INFECTION
 		if(I.damage)
 			problems |= INTERNAL_DAMAGE
 		// begin- malignants
@@ -189,11 +187,15 @@ EXTEND_INTERACTIONS(/obj/machinery/medical_kiosk, \
 			problems |= WEIRD_ORGANS
 		// end
 
+	// Infections are findings of the kiosk's diagnosis, not raw germ counts.
+	if(diag.has_finding_for(/datum/affliction/wound_infection))
+		problems |= INFECTION
+
 	if(user.has_mutation(HUSK))
 		problems |= HUSKED_BODY
 
 	// The kiosk's own triage sensors: what the detected conditions respond to.
-	var/list/demand = user.body?.treatment_demand(/datum/diagnostic_profile/automation)
+	var/list/demand = user.body?.treatment_demand(diag.profile)
 	if(demand?[TREAT_ANTITOXIN])
 		problems |= TOXIN_DAMAGE
 	var/saturation = user.body?.oxygenation()

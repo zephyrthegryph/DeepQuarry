@@ -269,9 +269,7 @@
 	see_invisible = initial(see_invisible)
 
 	// shut down ongoing problems
-	radiation = 0
-	nutrition = 400
-	set_bodytemperature(T20C)
+	rejuvenate_physiology()
 	set_sdisabilities(0)
 	disabilities = 0
 	resting = FALSE
@@ -306,6 +304,12 @@
 	reload_fullscreen()
 
 	return
+
+/// Biological state a rejuvenate resets. Body plans without that biology (borgs) override it.
+/mob/living/proc/rejuvenate_physiology()
+	clear_radiation()
+	nutrition = 400
+	set_bodytemperature(T20C)
 
 /mob/living/proc/UpdateDamageIcon()
 	return

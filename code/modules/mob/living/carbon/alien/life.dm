@@ -39,7 +39,7 @@
 		return
 
 	var/rads = self.radiation/25
-	self.radiation -= rads
+	self.decay_radiation(rads)
 	//adjust_nutrition(rads) //Commented out to prevent alien obesity.
 	self.mend(TREAT_TISSUE_REPAIR, rads)
 	self.mend(TREAT_BURN_CARE, rads)
@@ -133,25 +133,7 @@
 	if(!. || !self.healths)
 		return
 
-	if(self.stat == DEAD || (self.status_flags & FAKEDEATH))
-		self.healths.icon_state = "health7"
-		return
-
-	switch(self.vitality() * 100)
-		if(100 to INFINITY)
-			self.healths.icon_state = "health0"
-		if(80 to 100)
-			self.healths.icon_state = "health1"
-		if(60 to 80)
-			self.healths.icon_state = "health2"
-		if(40 to 60)
-			self.healths.icon_state = "health3"
-		if(20 to 40)
-			self.healths.icon_state = "health4"
-		if(0 to 20)
-			self.healths.icon_state = "health5"
-		else
-			self.healths.icon_state = "health6"
+	self.healths.icon_state = vitality_health_band(self)
 
 /datum/om/stage/life/environment/carbon/alien
 	of = /mob/living/carbon/alien

@@ -116,6 +116,7 @@ REF_HELD(/datum/forms, "current")
 	refresh_appearance()
 	H.update_transform(TRUE)
 	H.update_canmove()
+	om_changed(H, CHANGE_EXPLICIT) // wake the forms life stage for the new form's upkeep
 	switching = FALSE
 	log_game("FORMS: [key_name(H)] changed form [old.id] -> [next.id] at [AREACOORD(H)]")
 	return TRUE
@@ -162,6 +163,8 @@ REF_HELD(/datum/forms, "current")
 	var/form_flag = NONE
 	/// Draw the human body and worn gear. FALSE: the form draws itself.
 	var/draws_body = TRUE
+	/// Has per-tick upkeep in on_life(); forms without it let the forms life stage sleep.
+	var/ticks = FALSE
 	/// Can hold items in its hands.
 	var/has_hands = TRUE
 	/// TREAT_REGENERATION points per tick a nanoform body may spend in this form.
@@ -270,9 +273,24 @@ REF_HELD(/datum/forms, "current")
 /// Trait system: form upkeep. Was a COMSIG_LIVING_LIFE listener.
 /datum/om/stage/life/trait/forms
 	name = "forms"
+	wake_on = CHANGE_MOB_STAT | CHANGE_EXPLICIT
+	woken_by = "set_form(); set_stat()"
 
 /datum/om/stage/life/trait/forms/perform(mob/living/self, datum/om/frame/life/ctx)
 	var/mob/living/carbon/human/H = self
 	if(!istype(H))
 		return
 	H.character_forms?.on_life(H)
+
+/// Sleeps unless the current form has per-tick upkeep (`ticks`) or draws itself (it follows
+/// resting). set_form() and stat changes wake it.
+/datum/om/stage/life/trait/forms/idle(mob/living/self)
+	var/mob/living/carbon/human/H = self
+	if(!istype(H))
+		return TRUE
+	var/datum/forms/F = H.character_forms
+	if(!F?.current)
+		return TRUE
+	if(!F.current.draws_body)
+		return FALSE
+	return !F.current.ticks || H.stat == DEAD

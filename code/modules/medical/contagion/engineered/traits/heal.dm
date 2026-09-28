@@ -312,7 +312,7 @@ Bonus
 /datum/viral_trait/heal/dna/Heal(mob/living/carbon/M, datum/affliction/contagion/engineered/A)
 	var/amt_healed = max(0, (sqrtor0(20+A.stage_rate*(3+rand())))-(sqrtor0(16+A.stealth*rand())))
 	M.mend(TREAT_NEURAL_REPAIR, amt_healed)
-	M.radiation = max(M.radiation - 3, 0)
+	M.purge_radiation(3)
 	return TRUE
 */
 

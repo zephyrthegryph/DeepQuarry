@@ -11,7 +11,6 @@
 	name = "syringe"
 	desc = "A syringe."
 	icon = 'icons/obj/syringe.dmi'
-	//description_fluff = "This could be used to engrave messages on suitable surfaces if you really put your mind to it! Alt-click a floor or wall to engrave with it." //This way it's not a completely hidden, arcane art to engrave. //CHOMP Remove
 	icon = 'icons/goonstation/objects/syringe_vr.dmi'
 	item_state = "syringe_0"
 	icon_state = "0"
@@ -286,11 +285,6 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/syringe, INTERACT_HAND_DEFAULT(
 				if(!affected)
 					to_chat(user, span_danger("\The [H] is missing that limb!"))
 					return
-				/* since synths have oil/coolant streams now, it only makes sense that you should be able to inject stuff. preserved for posterity.
-				else if(affected.robotic >= ORGAN_ROBOT)
-					to_chat(user, span_danger("You cannot inject a robotic limb."))
-					return
-				*/
 
 			var/cycle_time = injtime*0.33 //33% of the time slept between 5u doses
 			var/warmup_time = 0	//0 for containers
@@ -331,7 +325,6 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/syringe, INTERACT_HAND_DEFAULT(
 			var/trans = reagents.trans_to_obj(target, amount_per_transfer_from_this)
 			inject_finish(user, target, trans, contained)
 
-// dirty(target,affected) // Removed by Request
 	return
 
 /// Units a harm-intent stab forces in out of `volume`: 5-10 short of the barrel, never below 0.
@@ -419,8 +412,6 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/syringe, INTERACT_HAND_DEFAULT(
 /obj/item/reagent_containers/syringe/inaprovaline/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_INAPROVALINE, 15)
-	// mode = SYRINGE_INJECT // Starts capped
-	//update_icon()
 
 /obj/item/reagent_containers/syringe/antitoxin
 	name = "Syringe (anti-toxin)"
@@ -429,8 +420,6 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/syringe, INTERACT_HAND_DEFAULT(
 /obj/item/reagent_containers/syringe/antitoxin/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_ANTITOXIN, 15)
-	// mode = SYRINGE_INJECT // Starts capped
-	//update_icon()
 
 /obj/item/reagent_containers/syringe/antiviral
 	name = "Syringe (spaceacillin)"
@@ -439,8 +428,6 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/syringe, INTERACT_HAND_DEFAULT(
 /obj/item/reagent_containers/syringe/antiviral/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_SPACEACILLIN, 15)
-	// mode = SYRINGE_INJECT // Starts capped
-	//update_icon()
 
 /obj/item/reagent_containers/syringe/drugs
 	name = "Syringe (drugs)"
@@ -451,8 +438,6 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/syringe, INTERACT_HAND_DEFAULT(
 	reagents.add_reagent(REAGENT_ID_BLISS,  5)
 	reagents.add_reagent(REAGENT_ID_MINDBREAKER,  5)
 	reagents.add_reagent(REAGENT_ID_CRYPTOBIOLIN, 5)
-	// mode = SYRINGE_INJECT // Starts capped
-	//update_icon()
 
 /obj/item/reagent_containers/syringe/ld50_syringe/choral/Initialize(mapload)
 	. = ..()

@@ -659,7 +659,7 @@ REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
 	check_heat(L)
 	L.extinguish_mob()
 	L.adjust_fire_stacks(-20) //Douse ourselves with water to avoid fire more easily
-	L.radiation = CLAMP(L.radiation - 5, 0, RADIATION_CAP)
+	L.purge_radiation(5)
 
 	if(!iscarbon(A))
 		return

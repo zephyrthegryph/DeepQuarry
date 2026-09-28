@@ -139,8 +139,7 @@
 		if(INJURY_RADIATION)
 			if(systemic_biology == BIOLOGY_SYNTHETIC)
 				return 0
-			H.radiation += amount
-			return amount
+			return H.add_radiation(amount)
 	return 0
 
 /// Lesion kind an injury of `kind` makes on an internal organ (null = the

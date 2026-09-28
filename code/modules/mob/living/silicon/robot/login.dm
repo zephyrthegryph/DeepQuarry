@@ -2,6 +2,7 @@
 	..()
 	regenerate_icons()
 	update_hud()
+	update_items()
 
 	show_laws(0)
 

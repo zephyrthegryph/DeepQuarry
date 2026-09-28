@@ -30,7 +30,7 @@
 			owner.AdjustLosebreath(10) //Losebreath is a DoT that does 1:1 damage and prevents hypoxia recovery via breathing.
 
 	if(owner.internal_organs_by_name[O_BRAIN]) // As the brain starts having Trouble, the lungs start malfunctioning.
-		var/obj/item/organ/internal/brain/Brain = owner.internal_organs_by_name[O_BRAIN]
+		var/obj/item/organ/internal/Brain = owner.internal_organs_by_name[O_BRAIN] // any brain-slot occupant
 		if(Brain.get_control_efficiency() <= 0.8)
 			if(prob(4 / max(0.1,Brain.get_control_efficiency())))
 				owner.automatic_custom_emote(VISIBLE_MESSAGE, "gasps for air!", check_stat = TRUE)
@@ -84,5 +84,5 @@
 		return TRUE
 	if(is_bruised())
 		return FALSE
-	var/obj/item/organ/internal/brain/B = owner.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/B = owner.internal_organs_by_name[O_BRAIN]
 	return !B || B.get_control_efficiency() > 0.8

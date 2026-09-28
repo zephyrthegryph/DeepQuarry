@@ -283,7 +283,6 @@
 		/datum/om/stage/life/nif,
 		/datum/om/stage/life/phobias,
 		/datum/om/stage/life/npc,
-		/datum/om/stage/life/defib_timer,
 		/datum/om/stage/life/species_components,
 		/datum/om/stage/life/visible_name,
 		/datum/om/stage/life/pulse,
@@ -1125,21 +1124,17 @@
 // --- Human idle rules (w5 human sleep rules, ported onto OM stages) ---------------------------
 
 /// A healthy, placed human's event-driven stages have nothing to do: their idle rules hold, so the
-/// frame skips them until their channels or rewakes. Death opens the defibrillation window, which
-/// keeps its stage awake.
+/// frame skips them until their channels or rewakes.
 /datum/unit_test/life_om/human_idle_rules
 
 /datum/unit_test/life_om/human_idle_rules/run_life()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	om_run_frame_now(H, /datum/om/pipeline/life)
-	for(var/stage_type in list(/datum/om/stage/life/germs, /datum/om/stage/life/fall, /datum/om/stage/life/pulse, /datum/om/stage/life/pain, /datum/om/stage/life/stasis_sleep, /datum/om/stage/life/defib_timer))
+	for(var/stage_type in list(/datum/om/stage/life/germs, /datum/om/stage/life/fall, /datum/om/stage/life/pulse, /datum/om/stage/life/pain, /datum/om/stage/life/stasis_sleep))
 		var/datum/om/stage/T = om_stage_for(H, stage_type)
 		TEST_ASSERT_NOTNULL(T, "a human's plan has [stage_type]")
 		TEST_ASSERT(T?.idle(H), "[T?.type] should idle on a healthy human")
-	var/datum/om/stage/defib = om_stage_for(H, /datum/om/stage/life/defib_timer)
-	H.death()
-	TEST_ASSERT(!defib.idle(H), "a dead human's brain decays: the defib timer stays awake")
 
 /// Germ creep is charged for the biological time since the last roll, so idling between rolls
 /// loses nothing; stasis (a stopped biology clock) charges nothing.

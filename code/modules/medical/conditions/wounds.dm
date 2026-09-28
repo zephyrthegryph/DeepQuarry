@@ -53,8 +53,10 @@
 	var/desc = "wound"
 	/// Damage this wound carries (all merged instances together).
 	var/damage = 0
-	/// Ticks of bleeding left.
+	/// Life cycles of bleeding left, run down on the owner's biology clock (run_bleed_clock()).
 	var/bleed_timer = 0
+	/// om_clock_now(CLOCK_BIO) of the last run_bleed_clock(), or null before the first.
+	var/tmp/bleed_clock_at
 	/// Above this per-wound damage the wound must be treated to stop bleeding.
 	var/bleed_threshold = 30
 	/// Damage of the current stage; below it the wound heals into the next.
@@ -275,6 +277,17 @@
 	if(bleed_timer <= 0 && wound_damage() <= bleed_threshold)
 		return FALSE // clotted; big wounds need a bandage regardless
 	return TRUE
+
+/// Run bleed_timer down by the biological time elapsed since the last call, in life cycles
+/// (audit D17: it used to lose one per update_damages() call, however often that ran).
+/// `bleeding` says whether the wound bled over that span; `now` is om_clock_now(CLOCK_BIO).
+/datum/affliction/wound/proc/run_bleed_clock(now, bleeding)
+	if(isnull(bleed_clock_at) || now < bleed_clock_at)
+		bleed_clock_at = now
+		return
+	if(bleeding && bleed_timer > 0)
+		bleed_timer = max(0, bleed_timer - (now - bleed_clock_at) / LIFE_CYCLE)
+	bleed_clock_at = now
 
 // --- Affliction integration -------------------------------------------------
 

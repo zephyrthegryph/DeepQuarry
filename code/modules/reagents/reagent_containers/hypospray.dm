@@ -44,11 +44,10 @@
 		if(!affected)
 			balloon_alert(user, "\the [H] is missing that limb!")
 			return ITEM_INTERACT_FAILURE
-		/* since synths have oil/coolant streams now, it only makes sense that you should be able to inject stuff. preserved for posterity.
-		else if(affected.robotic >= ORGAN_ROBOT)
-			to_chat(user, span_danger("You cannot inject a robotic limb."))
-			return
-		*/
+		// P2-S9: the same can_inject() the syringe asks (missing limb, thick hide).
+		// Like the syringe, a thick suit doesn't refuse it: the nozzle finds a port.
+		if(!H.can_inject(user, TRUE, user.zone_sel.selecting, TRUE, INJECT_METHOD_HYPO))
+			return ITEM_INTERACT_FAILURE
 
 		if(H != user && prototype)
 			balloon_alert(user, "injecting [H] with \the [src]")

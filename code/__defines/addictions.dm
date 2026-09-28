@@ -21,4 +21,8 @@ GLOBAL_LIST_INIT(reagent_addictive_poison,list())
 			return GLOB.reagent_addictive_fast	// Bliss, hyperzine, hardcore drugs
 		if(ADDICT_POISON)
 			return GLOB.reagent_addictive_poison // Poisons that use handle_addiction() for unique longterm poisoning
-	return GLOB.reagent_addictive_standard + GLOB.reagent_addictive_fast + GLOB.reagent_addictive_slow + GLOB.reagent_addictive_poison
+	// The union is built once (the tables are constant) instead of per call.
+	var/static/list/all_addictive
+	if(!all_addictive)
+		all_addictive = GLOB.reagent_addictive_standard + GLOB.reagent_addictive_fast + GLOB.reagent_addictive_slow + GLOB.reagent_addictive_poison
+	return all_addictive

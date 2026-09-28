@@ -630,18 +630,12 @@
 		status_at_least(EFFECT_WEAKENED, rand(10,25))
 		//SShaunting.influence(HAUNTING_RESLEEVE) // Used for the Haunting module downstream. Not implemented upstream.
 
-		// This is measures in `Life()` ticks. E.g. 10 minute defib timer = 300 `Life()` ticks.				// Original math was VERY off. Life() tick occurs every ~2 seconds, not every 2 world.time ticks.
-		var/brain_damage_timer = ((CONFIG_GET(number/defib_timer) MINUTES) / 20) - ((CONFIG_GET(number/defib_braindamage_timer) MINUTES) / 20)
+		// Same defib-window brain damage as a defibrillator (brain.revival_brain_damage()).
 		var/obj/item/organ/internal/brain/brain = internal_organs_by_name[O_BRAIN]
-		if(should_have_organ(O_BRAIN) && brain && brain.defib_timer <= brain_damage_timer)
-			// As the brain decays, this will be between 0 and 1, with 1 being the most fresh.
-			var/brain_death_scale = brain.defib_timer / brain_damage_timer
-			// This is backwards from what you might expect, since 1 = fresh and 0 = rip.
-			var/current_brain_damage = injury_load(INJURY_CATEGORY_NEURAL)
-			var/damage_calc = LERP(brain.max_damage, current_brain_damage, brain_death_scale)
-			// A bit of sanity.
-			var/brain_damage = between(current_brain_damage, damage_calc, brain.max_damage)
-			injure(INJURY_NEURAL, brain_damage - current_brain_damage, null, null, 0, null, INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
+		if(should_have_organ(O_BRAIN) && istype(brain))
+			var/brain_damage = brain.revival_brain_damage(injury_load(INJURY_CATEGORY_NEURAL))
+			if(brain_damage > 0)
+				injure(INJURY_NEURAL, brain_damage, null, null, 0, null, INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	else if(stat != DEAD)
 		if(airway_obstructed())
 			// Compressions may still shift what's stuck; the breaths won't go in.

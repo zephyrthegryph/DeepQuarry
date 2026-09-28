@@ -32,7 +32,7 @@
 		if(istype(brain)) // Some species have 'brains' that aren't brains and have no decay timer.
 			if(brain.is_brain_dead())
 				return "brain dead"
-			if(brain.defib_timer <= 0)
+			if(brain.defib_window_left() <= 0)
 				return "brain decayed"
 	if(HUSK in mutations)
 		return "husked"
@@ -42,6 +42,21 @@
 	if(bad_vital_organ)
 		return "[bad_vital_organ] failed"
 	return null
+
+/// Deciseconds of biological time left to revive this dead mob, or null when nothing limits it.
+/mob/living/proc/revival_window_left()
+	return null
+
+/mob/living/carbon/human/revival_window_left()
+	var/obj/item/organ/internal/brain/brain = internal_organs_by_name[O_BRAIN]
+	return istype(brain) ? brain.defib_window_left() : null
+
+/// The defib window stops running down (and starts recovering) at revival (audit D10).
+/mob/living/carbon/human/on_revived(reason, datum/source)
+	. = ..()
+	var/obj/item/organ/internal/brain/brain = internal_organs_by_name[O_BRAIN]
+	if(istype(brain))
+		brain.sync_defib_window()
 
 /// REVIVE_RESTORE: rebuild what would refuse a revival. The base mob has nothing to rebuild.
 /mob/living/proc/restore_for_revival()
@@ -68,7 +83,7 @@
 	if(istype(brain))
 		brain.status &= ~ORGAN_DEAD
 		brain.damage = 0
-		brain.defib_timer = (CONFIG_GET(number/defib_timer) MINUTES) / 2
+		brain.reset_defib_window()
 	remove_mutation(HUSK)
 	status_flags &= ~DISFIGURED
 	can_defib = TRUE

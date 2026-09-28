@@ -42,6 +42,10 @@
 /datum/reagent/bicaridine/topical
 	treatment_tags = list(TREAT_HEMOSTATIC = 1.0, TREAT_BONE_REPAIR = 1.0, TREAT_TISSUE_REPAIR = 0.6, TREAT_NEURAL_REPAIR = 0.3)
 
+/datum/reagent/myelamine
+	// The clotting agent: runs down bleeds; its wound closure is affect_blood.
+	treatment_tags = list(TREAT_HEMOSTATIC = 1.0)
+
 /datum/reagent/tricordrazine
 	// The generic: weak at everything a field medic meets.
 	treatment_tags = list(
@@ -187,10 +191,10 @@
 	treatment_tags = list(TREAT_DIGESTIVE = 1.0, TREAT_ANTITOXIN = 0.6)
 
 /datum/reagent/cleansingagent
-	treatment_tags = list(TREAT_ANTITOXIN = 0.8)
+	treatment_tags = list(TREAT_ANTITOXIN = 0.8, TREAT_ANTIRADIATION = 0.5)
 
 /datum/reagent/purifyingagent
-	treatment_tags = list(TREAT_ANTITOXIN = 0.8)
+	treatment_tags = list(TREAT_ANTITOXIN = 0.8, TREAT_ANTIRADIATION = 0.5)
 
 /datum/reagent/serazine
 	treatment_tags = list(TREAT_ANTITOXIN = 0.3)

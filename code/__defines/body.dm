@@ -209,6 +209,16 @@
 // Reference dose for chemical treatment scaling, and its cap multiple.
 #define DQ_CHEM_STANDARD_DOSE 10
 #define DQ_CHEM_DOSE_CAP 4.0
+/// A reagent burst that closes a fracture or arterial bleed outright (mend() amount).
+#define DQ_REAGENT_KNIT_AMOUNT 100
+/// Hemostatic treatment level that alone arrests a growing internal bleed (D18a).
+#define DQ_IB_STRONG_HEMOSTATIC 0.5
+/// Radiation purged per life tick per point of TREAT_ANTIRADIATION level (B14).
+#define DQ_ANTIRAD_RADS_PER_LEVEL 3
+/// Kelvin per life tick per point of TREAT_THERMOREGULATION level (B15).
+#define DQ_THERMOREG_K_PER_LEVEL 20
+/// Hottest a coolant leak alone drives a chassis (C16); past it thermal runaway takes over.
+#define DQ_COOLANT_LEAK_MAX_TEMP (T0C + 90)
 
 // --- Consciousness & death ---------------------------------------------------------------
 /// Consciousness at or below this = unconscious.

@@ -2,10 +2,6 @@
 /mob/living/simple_mob/shadekin/red
 	name = "red-eyed shadekin"
 	eye_state = RED_EYES
-	//hostile = TRUE
-	//animal = TRUE
-	//stop_when_pulled = FALSE
-	//destroy_surroundings = TRUE
 	armor_spec = "melee=30;bullet=20;laser=20;energy=50;bomb=10;bio=100;rad=100"
 
 	eye_desc = "red eyes"
@@ -33,11 +29,6 @@
 /mob/living/simple_mob/shadekin/blue
 	name = "blue-eyed shadekin"
 	eye_state = BLUE_EYES
-	//hostile = FALSE
-	//animal = FALSE
-	//stop_when_pulled = TRUE
-	//specific_targets = TRUE //For finding injured people
-	//destroy_surroundings = FALSE
 	vore_default_mode = DM_HEAL
 	vore_escape_chance = 75
 	vore_standing_too = 1
@@ -75,10 +66,6 @@
 /mob/living/simple_mob/shadekin/purple
 	name = "purple-eyed shadekin"
 	eye_state = PURPLE_EYES
-	//hostile = FALSE
-	//animal = TRUE
-	//stop_when_pulled = FALSE
-	//destroy_surroundings = TRUE
 	vore_default_mode = DM_HOLD
 	vore_digest_chance = 25
 	vore_absorb_chance = 25
@@ -112,10 +99,6 @@
 /mob/living/simple_mob/shadekin/yellow
 	name = "yellow-eyed shadekin"
 	eye_state = YELLOW_EYES
-	//hostile = FALSE
-	//animal = TRUE
-	//stop_when_pulled = FALSE
-	//destroy_surroundings = TRUE
 	vore_default_mode = DM_DRAIN
 	vore_digest_chance = 5
 	vore_ignores_undigestable = FALSE
@@ -159,10 +142,6 @@
 /mob/living/simple_mob/shadekin/green
 	name = "green-eyed shadekin"
 	eye_state = GREEN_EYES
-	//hostile = FALSE
-	//animal = TRUE
-	//stop_when_pulled = FALSE
-	//destroy_surroundings = TRUE
 	vore_default_mode = DM_DRAIN
 	vore_digest_chance = 0
 	vore_ignores_undigestable = FALSE
@@ -195,10 +174,6 @@
 /mob/living/simple_mob/shadekin/orange
 	name = "orange-eyed shadekin"
 	eye_state = ORANGE_EYES
-	//hostile = TRUE
-	//animal = TRUE
-	//stop_when_pulled = FALSE
-	//destroy_surroundings = TRUE
 	armor_spec = "melee=20;bullet=15;laser=15;energy=25;bomb=10;bio=100;rad=100"
 
 	eye_desc = "orange eyes"
@@ -357,7 +332,6 @@
 	He seems curious but ready to flee"
 	icon_state = "soft"
 	eye_desc = "soft green eyes"
-//	vore_stomach_flavor = ""
 	player_msg = "You are Softpatch, you like things that are soft and are curious about the beings in realspace"
 
 //"Marr marr marr-marr maaarr marr?~ (Ever had your ass eaten by a shadekin before?~)" - Yrmir (Shadowfire117)

@@ -5,7 +5,6 @@
 	organ_tag = O_CELL
 	parent_organ = BP_TORSO
 	vital = TRUE
-	var/defib_timer = 1 // This sits in the brain organ slot, but is not a brain.
 
 /obj/item/organ/internal/cell/Initialize(mapload, internal)
 	robotize()
@@ -49,21 +48,26 @@ REF_OWNED(/obj/item/organ/internal/mmi_holder, "stored_mmi")
 		return
 	if(installed)
 		stored_mmi = installed
+		installed.forceMove(src)
 	else
 		stored_mmi = new brain_type(src)
 	return INITIALIZE_HINT_LATELOAD
 
+/// THE way an MMI goes into a human's brain slot (surgery, vore reform): born in `target`, a
+/// holder of the MMI's kind takes the slot and stores `M`. Returns the holder.
+/proc/install_mmi_holder(mob/living/carbon/human/target, obj/item/mmi/M)
+	var/holder_type = /obj/item/organ/internal/mmi_holder
+	if(istype(M, /obj/item/mmi/digital/posibrain/nano))
+		holder_type = /obj/item/organ/internal/mmi_holder/posibrain/nano
+	else if(istype(M, /obj/item/mmi/digital/posibrain))
+		holder_type = /obj/item/organ/internal/mmi_holder/posibrain
+	else if(istype(M, /obj/item/mmi/digital/robot))
+		holder_type = /obj/item/organ/internal/mmi_holder/robot
+	return new holder_type(target, 1, M)
+
 /obj/item/organ/internal/mmi_holder/LateInitialize()
 	update_from_mmi()
 
-// This sits in the brain organ slot, but is not a brain. Posibrains and dronecores aren't brains either.
-/obj/item/organ/internal/mmi_holder/proc/tick_defib_timer()
-	return
-
-/obj/item/organ/internal/mmi_holder/proc/get_control_efficiency()
-	. = max(0, 1 - round(damage / max_damage, 0.1))
-
-	return .
 
 /obj/item/organ/internal/mmi_holder/proc/update_from_mmi()
 	if(!owner) return

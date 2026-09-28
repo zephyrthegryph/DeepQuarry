@@ -21,6 +21,16 @@
 	/// LIFE_SET_* flags of the Life sequences that include this family. Read from the variant.
 	var/life_sets = LIFE_SET_LIVING
 
+/// Life stages read the body plan (physiology/applies()), which set_species() can swap.
+/mob/living/om_plan_key()
+	return body_type
+
+/// Rebuild this mob's Life plan after something om_plan_key() covers changed (a body plan swap).
+/mob/living/proc/recompose_life()
+	var/datum/om/frame/S = om_pipe_state(src, /datum/om/pipeline/life)
+	if(S)
+		om_pipe_replan(src, /datum/om/pipeline/life, S)
+
 /// Only the families of the mob's Life sequence (the silicons never ran the living core).
 /datum/om/stage/life/applies(mob/living/self)
 	return (life_sets & self.life_set)

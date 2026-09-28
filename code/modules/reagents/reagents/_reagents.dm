@@ -208,13 +208,40 @@
 /datum/reagent/proc/overdose(mob/living/carbon/M, alien, removed) // Overdose effect.
 	if(alien == IS_DIONA)
 		return
+	// B6: species scaling is applied per call, never written back onto the reagent.
+	var/od_mod = overdose_mod
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		overdose_mod *= H.species.chemOD_mod
+		od_mod *= H.species.chemOD_mod
 	// 6 damage per unit at minimum, scales with excessive reagents. Rounding should help keep damage consistent between ingest / inject, but isn't perfect.
 	// Hardcapped at 3.6 damage per tick, or 18 damage per unit at 0.2 metabolic rate so that you can't instakill people with overdoses by feeding them infinite periadaxon.
 	// Overall, max damage is slightly less effective than hydrophoron, and 1/5 as effective as cyanide.
-	M.injure(INJURY_TOXIN, min(removed * overdose_mod * round(3 + 3 * volume / overdose), 3.6), source = src)
+	M.injure(INJURY_TOXIN, min(removed * od_mod * round(3 + 3 * volume / overdose), 3.6), source = src)
+
+// --- Body heat (B15 / P2-S10) ---------------------------------------------------
+// Reagents heat and cool through the mob's one temperature writer, scaled by the
+// amount metabolised this tick: `kelvin_at_rem` is the shift for REM units, so a
+// faster or slower metabolism (or a trickle at the end of a dose) moves the body
+// in proportion instead of by a fixed step every tick.
+
+/// Warm (positive) or cool (negative) the body by `kelvin_at_rem` per REM metabolised.
+/datum/reagent/proc/warm_body(mob/living/M, kelvin_at_rem, removed, min_temp = 0, max_temp = INFINITY)
+	if(!M || !kelvin_at_rem || removed <= 0)
+		return 0
+	return M.adjust_bodytemperature(kelvin_at_rem * removed / REM, min_temp, max_temp)
+
+/// Move the body toward `target` K by up to `kelvin_at_rem` per REM metabolised,
+/// never past it. `warm` / `cool` limit which directions this reagent pushes.
+/datum/reagent/proc/drive_body_temperature(mob/living/M, target, kelvin_at_rem, removed, warm = TRUE, cool = TRUE)
+	if(!M || kelvin_at_rem <= 0 || removed <= 0)
+		return 0
+	var/step = kelvin_at_rem * removed / REM
+	var/current = M.bodytemperature
+	if(cool && current > target)
+		return M.adjust_bodytemperature(-min(step, current - target))
+	if(warm && current < target)
+		return M.adjust_bodytemperature(min(step, target - current))
+	return 0
 
 /datum/reagent/proc/initialize_data(newdata) // Called when the reagent is created.
 	if(!isnull(newdata))

@@ -164,6 +164,11 @@
 	localize = TRUE
 	hints = TRUE
 
+/// Medical kiosk: automated triage with a thorough (internal) scan of organic patients.
+/datum/diagnostic_profile/automation/kiosk
+	name = "medical kiosk"
+	senses = PRESENT_VISIBLE | PRESENT_SURFACE | PRESENT_INTERNAL
+
 /// Field automation (exosuit crisis drones): automated triage that also
 /// reads a synthetic diagnostic bus, for the drones that repair plating.
 /datum/diagnostic_profile/automation/field

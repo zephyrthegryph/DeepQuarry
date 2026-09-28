@@ -77,7 +77,8 @@
 			continue
 		else
 			E.periodic_step()
-			self.number_wounds += length(E.get_wounds())
+			var/list/limb_wounds = E.get_wounds() // one walk per limb per cycle (audit D24)
+			self.number_wounds += length(limb_wounds)
 
 			if (!self.lying && !self?.buckled_to() && world.time - self.l_move_time < 15)
 			//Moving around with fractured ribs won't do you any good
@@ -88,7 +89,9 @@
 					self.status_at_least(EFFECT_STUNNED, 2)
 
 				//Moving makes open wounds get infected much faster
-				for(var/datum/affliction/wound/W as anything in E.get_wounds())
+				for(var/datum/affliction/wound/W as anything in limb_wounds)
+					if (QDELETED(W))
+						continue
 					if (W.infection_check())
 						W.germ_level += 1
 

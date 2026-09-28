@@ -150,7 +150,7 @@
 	H.death()
 	var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
 	TEST_ASSERT(istype(brain), "a human has a brain")
-	brain.defib_timer = 0
+	brain.expire_defib_window()
 	TEST_ASSERT_EQUAL(H.return_from_death("unit test", src), "brain decayed", "a decayed brain closes the window")
 	TEST_ASSERT_EQUAL(H.stat, DEAD, "a refused revival leaves the mob dead")
 	TEST_ASSERT(H in REGISTRY_MEMBERS(REGISTRY_DEAD_MOBS), "a refused revival leaves the lists alone")
@@ -214,7 +214,7 @@
 	H.death()
 	var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
 	TEST_ASSERT(istype(brain), "a human has a brain")
-	brain.defib_timer = 0
+	brain.expire_defib_window()
 	brain.die()
 	H.ChangeToHusk()
 	TEST_ASSERT(H.return_from_death("unit test", src, REVIVE_HEAL) != TRUE, "without REVIVE_RESTORE the dead brain refuses")
@@ -244,7 +244,7 @@
 	H.injure(INJURY_BLUNT, 60, BP_TORSO, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	H.death()
 	var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
-	brain.defib_timer = 0
+	brain.expire_defib_window()
 	brain.die()
 	H.ChangeToHusk()
 	H.reform_restore("unit test", src)

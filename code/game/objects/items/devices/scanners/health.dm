@@ -1,5 +1,3 @@
-/// Past this long since death, resuscitation is no longer possible.
-#define DEFIB_TIME_LIMIT (10 MINUTES)
 
 // Handheld health analyzers. Each tier is a diagnostic profile: the analyzer
 // diagnoses the patient through it and renders the report to chat. What a tier
@@ -72,8 +70,11 @@
 	if(!D)
 		return
 	var/list/dat = list(D.render_chat())
-	if(D.status == DIAG_STATUS_DEAD && D.time_of_death && (world.time - D.time_of_death) < DEFIB_TIME_LIMIT)
-		dat += span_boldnotice("Subject died [DisplayTimeText(world.time - D.time_of_death)] ago - resuscitation may be possible!")
+	if(D.status == DIAG_STATUS_DEAD)
+		// The brain's defib window on the body clock (the same one CPR and defibs read, audit D10).
+		var/window_left = M.revival_window_left()
+		if(window_left > 0)
+			dat += span_boldnotice("Resuscitation may be possible for about [DisplayTimeText(window_left)] more.")
 	dat += reagent_lines(M, D.profile.scan_level)
 	dat += patient_notes(M, D.profile.scan_level)
 	user.show_message(dat.Join("<br>"), 1)
@@ -172,4 +173,3 @@
 	profile_type = /datum/diagnostic_profile/health_analyzer/phasic
 	icon_state = "health3"
 
-#undef DEFIB_TIME_LIMIT

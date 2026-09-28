@@ -15,12 +15,15 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 	attack_verb = list("attacked", "slapped", "whacked")
 	var/clone_source = FALSE
 	var/can_assist = TRUE
-	var/defib_timer = -1
-
-/obj/item/organ/internal/brain/periodic_step()
-	..()
-	if(owner && owner.is_alive()) // So there's a lower risk of ticking twice.
-		tick_defib_timer()
+	/// Biological time the defibrillation window has run down, deciseconds (audit D10). Read it
+	/// through defib_window_left(); sync_defib_window() charges it on the body clock.
+	var/defib_elapsed = 0
+	/// om_clock_now(CLOCK_BIO) of the last sync, or null before the first.
+	var/tmp/defib_clock_at
+	/// Whether that reading came from the owner's clock (TRUE) or the loose brain's own.
+	var/tmp/defib_clock_on_owner = FALSE
+	/// Whether the window was running down (dead or loose, not preserved) since the last sync.
+	var/tmp/defib_decaying = FALSE
 
 /// Fraction of max_damage below which a brain still recovers on its own
 /// (natural regeneration). Above it the brain needs neural repair; past the
@@ -32,15 +35,59 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 
 #undef BRAIN_NATURAL_HEAL_FRACTION
 
-// This is called by `process()` when the owner is alive, or brain is not in a body, and by `Life()` directly when dead.
-/obj/item/organ/internal/brain/proc/tick_defib_timer()
-	if(preserved) // In an MMI/ice box/etc.
-		return
+/// The whole defibrillation window, deciseconds of biological time (config minutes).
+/proc/defib_window_length()
+	return CONFIG_GET(number/defib_timer) MINUTES
 
-	if(!owner || owner.is_dead())
-		defib_timer = max(--defib_timer, 0)
-	else
-		defib_timer = min(++defib_timer, (CONFIG_GET(number/defib_timer) MINUTES) / 2)
+/// The last part of the window, deciseconds, in which a revival costs brain damage.
+/proc/defib_braindamage_length()
+	return min(defib_window_length(), CONFIG_GET(number/defib_braindamage_timer) MINUTES)
+
+/// Charge the defib window for the biological time since the last sync: it runs down while the
+/// brain is dead or loose (unless preserved) and recovers while its owner lives. Time is read
+/// from the owner's CLOCK_BIO (stasis stops it) or, loose, the brain's own. Idempotent, so any
+/// reader may call it; death, revival, removal and insertion call it at the transition.
+/obj/item/organ/internal/brain/proc/sync_defib_window()
+	var/on_owner = !!owner
+	var/now = om_clock_now(owner || src, CLOCK_BIO)
+	if(!isnull(defib_clock_at) && on_owner == defib_clock_on_owner && now > defib_clock_at)
+		var/span = now - defib_clock_at
+		if(defib_decaying)
+			defib_elapsed = min(defib_window_length(), defib_elapsed + span)
+		else
+			defib_elapsed = max(0, defib_elapsed - span)
+	defib_clock_at = now
+	defib_clock_on_owner = on_owner
+	defib_decaying = !preserved && (!owner || owner.is_dead())
+
+/// Deciseconds of biological time left before this brain decays past revival.
+/obj/item/organ/internal/brain/proc/defib_window_left()
+	sync_defib_window()
+	return max(0, defib_window_length() - defib_elapsed)
+
+/// A fresh window (revival restore, a new brain).
+/obj/item/organ/internal/brain/proc/reset_defib_window()
+	defib_elapsed = 0
+	defib_clock_at = null
+	sync_defib_window()
+
+/// Close the window outright.
+/obj/item/organ/internal/brain/proc/expire_defib_window()
+	defib_elapsed = defib_window_length()
+	defib_clock_at = null
+	sync_defib_window()
+
+/// Neural injury a revival now should leave (CPR and defib share it): none while more than the
+/// brain-damage stretch of the window is left, rising linearly to max_damage as it closes.
+/obj/item/organ/internal/brain/proc/revival_brain_damage(current_neural)
+	var/stretch = defib_braindamage_length()
+	var/left = defib_window_left()
+	if(stretch <= 0 || left >= stretch)
+		return 0
+	// 1 = fresh, 0 = gone.
+	var/freshness = left / stretch
+	var/target = LERP(max_damage, current_neural, freshness)
+	return max(0, between(current_neural, target, max_damage) - current_neural)
 
 /obj/item/organ/internal/brain/proc/can_assist()
 	return can_assist
@@ -87,7 +134,7 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 
 /obj/item/organ/internal/brain/Initialize(mapload)
 	. = ..()
-	defib_timer = (CONFIG_GET(number/defib_timer) MINUTES) / 2 // // Time vars measure things in ticks. Life tick happens every ~2 seconds, therefore dividing by 20
+	sync_defib_window()
 	make_mind_host(src)
 
 /// THE brain-death decision. A brain at 100% damage, or a dead organ, cannot
@@ -112,6 +159,7 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 		. += "This one seems particularly lifeless. Perhaps it will regain some of its luster later..."
 
 /obj/item/organ/internal/brain/removed(mob/living/user)
+	sync_defib_window() // charge the span in the body before the clock source changes
 
 	if(name == initial(name))
 		name = "\the [owner.real_name]'s [initial(name)]"
@@ -128,6 +176,7 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 		OM_EMIT_WORLD(/datum/om/event/world_brain_removed, view)
 
 	..()
+	sync_defib_window() // re-anchor on the loose brain's clock
 	hosted_view()?.refresh_host_status()
 
 /obj/item/organ/internal/brain/replaced(mob/living/target)
@@ -138,12 +187,15 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 			target.ghostize()
 		host.release_mind(target, "brain implanted into [target]")
 	host?.discard_view() // an implanted brain shows no view
+	sync_defib_window() // charge the span spent loose
 	..()
+	sync_defib_window() // re-anchor on the new owner's clock
 
-/obj/item/organ/internal/brain/proc/get_control_efficiency()
-	. = max(0, 1 - (round(damage / max_damage * 10) / 10))
-
-	return .
+/// Brain-slot interface (audit P2-D9): whatever organ sits in O_BRAIN (a brain, an MMI holder,
+/// a posibrain) answers how well it still runs the body, 0..1 in tenths. Callers type the slot's
+/// occupant as /obj/item/organ/internal and ask this; no occupant duck-types brain procs.
+/obj/item/organ/internal/proc/get_control_efficiency()
+	return max_damage ? max(0, 1 - round(damage / max_damage, 0.1)) : 1
 
 /obj/item/organ/internal/brain/pariah_brain
 	name = "brain remnants"
@@ -317,9 +369,3 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 		return ..()
 	return tissue.damage > 0
 
-// MED-6: when this organ's periodic_step() has nothing to do (see /obj/item/organ/proc/life_step_idle()).
-/// A living owner's brain counts its defib window back up to the cap; after that it rests.
-/obj/item/organ/internal/brain/life_step_idle()
-	if(!..())
-		return FALSE
-	return !owner || defib_timer >= (CONFIG_GET(number/defib_timer) MINUTES) / 2

@@ -140,39 +140,5 @@
 		to_chat(user, span_danger("Nothing on \the [T] is useful to you."))
 	return
 
-//PRETTIER TOOL LIST.
-// /mob/living/silicon/robot/drone/installed_modules()
-
-// 	if(!module)
-// 		module = new /obj/item/robot_module/drone(src)
-
-// 	var/dat = "<HEAD><TITLE>Drone modules</TITLE></HEAD><BODY>\n"
-// 	dat += {"
-// 	<B>Activated Modules</B>
-// 	<BR>
-// 	Module 1: [module_state_1 ? "<A HREF='byond://?src=\ref[src];mod=\ref[module_state_1]'>[module_state_1]<A>" : "No Module"]<BR>
-// 	Module 2: [module_state_2 ? "<A HREF='byond://?src=\ref[src];mod=\ref[module_state_2]'>[module_state_2]<A>" : "No Module"]<BR>
-// 	Module 3: [module_state_3 ? "<A HREF='byond://?src=\ref[src];mod=\ref[module_state_3]'>[module_state_3]<A>" : "No Module"]<BR>
-// 	<BR>
-// 	<B>Installed Modules</B><BR><BR>"}
-
-// 	var/tools = span_bold("Tools and devices") + "<BR>"
-// 	var/resources = "<BR>" + span_bold("Resources") + "<BR>"
-
-// 	for (var/O in module.modules)
-
-// 		var/module_string = ""
-
-// 	if (emagged)
-// 		for (var/O in module.emag)
-
-// 			var/module_string = ""
-
-// 	dat += tools
-
-// 	dat += resources
-
-// 	src << browse("<html>[dat]</html>", "window=robotmod")
-
 // The synths are the robot module's (REF_OWNED_LIST "synths").
 REF_HELD(/obj/item/matter_decompiler, list("metal", "glass", "wood", "plastic"))

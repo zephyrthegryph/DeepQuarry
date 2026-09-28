@@ -76,8 +76,13 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 	/// Has a run_if or a min_interval (one test on the fast path).
 	var/gated = FALSE
 
+/// Instance state (beyond its type and extras) that stage applies() reads, folded into the plan
+/// key. An entity that changes it calls om_pipe_replan() (see /mob/living/proc/recompose_life()).
+/datum/proc/om_plan_key()
+	return null
+
 /// Whether an entity (whose plan is being built) gets this stage at all. Evaluated once per plan,
-/// so it may read only what the plan key covers: the type and its extras.
+/// so it may read only what the plan key covers: the type, its extras and om_plan_key().
 /datum/om/stage/proc/applies(datum/E)
 	return TRUE
 
@@ -612,6 +617,9 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 /// The plan for `E` (its type plus `extras`), built once per key.
 /datum/om/pipeline/proc/plan_for(datum/E, list/extras)
 	var/key = "[E.type]"
+	var/state_key = E.om_plan_key()
+	if(state_key)
+		key += "#[state_key]"
 	if(length(extras))
 		var/list/names = list()
 		for(var/path in extras)

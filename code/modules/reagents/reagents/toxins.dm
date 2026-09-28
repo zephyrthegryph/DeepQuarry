@@ -555,9 +555,6 @@
 /datum/reagent/toxin/sifslurry/overdose(mob/living/carbon/M, alien, removed) // Overdose effect.
 	if(alien == IS_DIONA)
 		return
-	if(ishuman(M))
-		var/mob/living/carbon/human/H = M
-		overdose_mod *= H.species.chemOD_mod
 	M.apply_effect(2 * removed,IRRADIATE, 0, 0)
 	M.apply_effect(5 * removed,DROWSY, 0, 0)
 
@@ -1100,7 +1097,7 @@
 
 /datum/reagent/irradiated_nanites/affect_blood(mob/living/carbon/M, alien, removed)
 	//GLOB.radiation_service.radiate(get_turf(M), 20)	// Irradiate people around you. //TODO
-	M.radiation = max(M.radiation + 5 * removed, 0)	// Irradiate you. Because it's inside you.
+	M.add_radiation(5 * removed)	// Irradiate you. Because it's inside you.
 
 /datum/reagent/neurophage_nanites
 	name = REAGENT_NEUROPHAGENANITES

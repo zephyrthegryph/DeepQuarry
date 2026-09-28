@@ -45,6 +45,8 @@
 #define RESP_ARREST_APNEA_THRESHOLD 40
 /// Pneumothorax severity at which it becomes a tension pneumothorax.
 #define PNEUMOTHORAX_TENSION_THRESHOLD 60
+/// Drift rate of a pneumothorax with an active leak (and of its resolution once vented).
+#define PNEUMOTHORAX_LEAK_RATE 1.5
 
 
 // --- Airway ---------------------------------------------------------------------------
@@ -181,9 +183,9 @@
 	var/datum/affliction/tissue_hypoxia/hypoxia = body.find_affliction(/datum/affliction/tissue_hypoxia)
 	return hypoxia && hypoxia.severity >= 85
 
-/datum/affliction/respiratory_arrest/tick()
-	progression_rate = is_sustained() ? 0 : initial(progression_rate)
-	..()
+/// Held while ventilation is sustained; otherwise the arrest recovers at its own rate.
+/datum/affliction/respiratory_arrest/current_rate()
+	return is_sustained() ? 0 : progression_rate
 
 
 /// Air trapped in the pleural space, collapsing the lung.
@@ -261,12 +263,11 @@
 	var/datum/affliction/lesion/perforation/P = lungs.find_lesion(/datum/affliction/lesion/perforation)
 	return P && !P.is_stabilised()
 
-/datum/affliction/pneumothorax/tick()
+/// An active leak builds pressure faster; once vented with no leak it resolves.
+/datum/affliction/pneumothorax/current_rate()
 	if(leak_active())
-		progression_rate = 1.5
-	else
-		progression_rate = decompressed ? -1.5 : initial(progression_rate)
-	..()
+		return PNEUMOTHORAX_LEAK_RATE
+	return decompressed ? -PNEUMOTHORAX_LEAK_RATE : progression_rate
 
 /datum/affliction/pneumothorax/receive_tagged_treatment(tag, amount, continuous = FALSE)
 	if(tag == TREAT_DECOMPRESSION)
@@ -655,3 +656,4 @@
 #undef ARREST_VASOPRESSOR_CONVERSION
 #undef RESP_ARREST_APNEA_THRESHOLD
 #undef PNEUMOTHORAX_TENSION_THRESHOLD
+#undef PNEUMOTHORAX_LEAK_RATE

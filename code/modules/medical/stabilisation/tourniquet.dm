@@ -94,6 +94,29 @@
 
 REF_HELD(/obj/item/organ/external, "tourniquet")
 
+/// A cinched tourniquet that leaves the limb by any path (moved, deleted, stripped by
+/// a raw forceMove) stops occluding it (audit D15a).
+/obj/item/organ/external/Exited(atom/movable/AM, atom/new_loc)
+	. = ..()
+	if(AM && AM == tourniquet)
+		release_lost_tourniquet()
+
+/// Clear a tourniquet that is no longer physically on this limb, restoring flow.
+/obj/item/organ/external/proc/release_lost_tourniquet()
+	var/obj/item/tourniquet/T = tourniquet
+	tourniquet = null
+	if(T)
+		T.applied_at = null
+	log_game("TOURNIQUET: [T] left [key_name(owner)]'s [name] without being loosened; flow restored.")
+	if(!QDELETED(src))
+		update_damages()
+
+/obj/item/tourniquet/on_destroy(force)
+	var/obj/item/organ/external/E = loc
+	if(istype(E) && E.tourniquet == src)
+		E.release_lost_tourniquet()
+	..()
+
 /// Is blood flow into this limb cut off by a tourniquet here or on a limb above it?
 /obj/item/organ/external/proc/flow_occluded()
 	var/obj/item/organ/external/E = src

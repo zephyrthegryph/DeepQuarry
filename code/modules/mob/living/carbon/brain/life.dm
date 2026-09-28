@@ -29,6 +29,20 @@
 
 /datum/om/stage/life/status/carbon/brain
 	of = /mob/living/carbon/brain
+	woken_by = "injure/mend (refresh_host_status), brain removal/insertion, MMI emp_act; slow rewake for tissue drift"
+
+/// A hosted view's status follows its tissue, which tells it through refresh_host_status()
+/// (removal, insertion, injure, mend); a slow rewake covers drift. Awake while EMP interference
+/// is wearing off.
+/datum/om/stage/life/status/carbon/brain/idle(mob/living/carbon/brain/self)
+	if(self.emp_damage)
+		return FALSE
+	if(self.host)
+		return TRUE
+	return self.stat == DEAD || !self.body || self.body.life_settled()
+
+/datum/om/stage/life/status/carbon/brain/rewake_delay(mob/living/carbon/brain/self)
+	return self.host ? 5 SECONDS : 0
 
 /datum/om/stage/life/status/carbon/brain/update_status(mob/living/carbon/brain/self)
 	if(self.host)
@@ -145,22 +159,4 @@
 	if(!. || !self.healths)
 		return
 
-	if(self.stat == DEAD || (self.status_flags & FAKEDEATH))
-		self.healths.icon_state = "health7"
-		return
-
-	switch(self.vitality() * 100)
-		if(100 to INFINITY)
-			self.healths.icon_state = "health0"
-		if(80 to 100)
-			self.healths.icon_state = "health1"
-		if(60 to 80)
-			self.healths.icon_state = "health2"
-		if(40 to 60)
-			self.healths.icon_state = "health3"
-		if(20 to 40)
-			self.healths.icon_state = "health4"
-		if(0 to 20)
-			self.healths.icon_state = "health5"
-		else
-			self.healths.icon_state = "health6"
+	self.healths.icon_state = vitality_health_band(self)

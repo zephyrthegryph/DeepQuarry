@@ -63,6 +63,10 @@
 
 /mob/living/carbon/human/on_death(gibbed)
 	. = ..()
+	// The defib window starts running down on the body clock now (audit D10).
+	var/obj/item/organ/internal/brain/brain = internal_organs_by_name[O_BRAIN]
+	if(istype(brain))
+		brain.sync_defib_window()
 	BITSET(hud_updateflag, HEALTH_HUD)
 	BITSET(hud_updateflag, STATUS_HUD)
 	BITSET(hud_updateflag, LIFE_HUD)

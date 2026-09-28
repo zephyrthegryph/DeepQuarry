@@ -1,7 +1,10 @@
-//This is the proc for gibbing a mob. Cannot gib ghosts.
-//added different sort of gibs and animations. N
-/mob/proc/gib(anim="blank", do_gibs, gib_file = 'icons/mob/mob.dmi')
-	// Everything the gib deletes on the way is destroyed as one batch (batch.dm).
+/// The one body-destruction path behind gib(), dust() and ash(): kill the mob, hide it behind
+/// an animation overlay flicking `anim` from `anim_file`, leave `remains` (a type) and optionally
+/// gibs, ghostize, then delete the overlay and the body after DISINTEGRATE_DELAY. Subtypes
+/// customise through their gib()/dust()/ash() overrides, which end by calling ..().
+#define DISINTEGRATE_DELAY (1.5 SECONDS)
+/mob/proc/disintegrate(anim, remains, do_gibs, anim_file = 'icons/mob/mob.dmi')
+	// Everything deleted on the way is destroyed as one batch (batch.dm).
 	dq_destroy_collect_begin()
 	if(stat != DEAD)
 		death(1)
@@ -12,72 +15,37 @@
 	update_canmove()
 	registry_leave(REGISTRY_DEAD_MOBS, src)
 
-	var/atom/movable/overlay/animation = null
-	animation = new(loc)
+	var/atom/movable/overlay/animation = new(loc)
 	animation.icon_state = "blank"
-	animation.icon = gib_file
+	animation.icon = anim_file
 	animation.master = src
-
 	flick(anim, animation)
-	if(do_gibs) gibs(loc, dna)
 
-	if (!QDELETED(src))
+	if(remains)
+		new remains(loc)
+	if(do_gibs)
+		gibs(loc, dna)
+
+	if(!QDELETED(src))
 		ghostize()
 	dq_destroy_collect_end()
 
-	om_qdel_after(animation, 15)
+	om_qdel_after(animation, DISINTEGRATE_DELAY)
 	// The body and whatever is still inside it go as one batched destroy.
-	om_after(src, 15, /datum/proc/om_qdel_batch_self)
+	om_after(src, DISINTEGRATE_DELAY, /datum/proc/om_qdel_batch_self)
+#undef DISINTEGRATE_DELAY
 
-//This is the proc for turning a mob into ash. Mostly a copy of gib code (above).
-//Originally created for wizard disintegrate. I've removed the virus code since it's irrelevant here.
-//Dusting robots does not eject the MMI, so it's a bit more powerful than gib() /N
+/// Gib: burst into gibs. Cannot gib ghosts.
+/mob/proc/gib(anim="blank", do_gibs, gib_file = 'icons/mob/mob.dmi')
+	disintegrate(anim, null, do_gibs, gib_file)
+
+/// Dust: crumble into `remains`. Dusting robots does not eject the MMI.
 /mob/proc/dust(anim="dust-m",remains=/obj/effect/decal/cleanable/ash)
-	death(1)
-	var/atom/movable/overlay/animation = null
-	transforming = 1
-	canmove = 0
-	icon = null
-	invisibility = INVISIBILITY_ABSTRACT
+	disintegrate(anim, remains, FALSE)
 
-	animation = new(loc)
-	animation.icon_state = "blank"
-	animation.icon = 'icons/mob/mob.dmi'
-	animation.master = src
-
-	flick(anim, animation)
-	new remains(loc)
-
-	registry_leave(REGISTRY_DEAD_MOBS, src)
-
-	if (!QDELETED(src))
-		ghostize()
-
-	om_qdel_after(animation, 15)
-	expire(15)
-
+/// Ash: burn away with no remains of its own.
 /mob/proc/ash(anim="dust-m")
-	death(1)
-	var/atom/movable/overlay/animation = null
-	transforming = 1
-	canmove = 0
-	icon = null
-	invisibility = INVISIBILITY_ABSTRACT
-
-	animation = new(loc)
-	animation.icon_state = "blank"
-	animation.icon = 'icons/mob/mob.dmi'
-	animation.master = src
-
-	flick(anim, animation)
-
-	registry_leave(REGISTRY_DEAD_MOBS, src)
-
-	if (!QDELETED(src))
-		ghostize()
-
-	om_qdel_after(animation, 15)
-	expire(15)
+	disintegrate(anim, null, FALSE)
 
 // --- The death pipeline ----------------------------------------------------------------------
 // death() is the one way a mob dies, and it is sealed: subtypes contribute through the hooks
@@ -188,15 +156,23 @@
 /mob/proc/get_death_message(gibbed)
 	return death_message
 
-/// A mob inside something (a belly, a sleeper, a shoe, its own transformation holder) dies quietly.
+/// A mob dies quietly when the thing holding it says so (muffles_death_of()): the core asks
+/// its container instead of knowing every kind of container.
 /mob/proc/death_message_suppressed()
-	if(istype(loc, /obj/belly) || istype(loc, /obj/item/dogborg/sleeper) || istype(loc, /obj/item/clothing/shoes))
-		return TRUE
-	if(isliving(loc))
-		var/mob/living/L = loc
-		if(L.tf_mob_holder == src)
-			return TRUE
+	return loc?.muffles_death_of(src)
+
+/// Does this container keep `occupant`'s death message quiet? Bellies, sleepers, shoes and a
+/// transformation holder answer TRUE.
+/atom/proc/muffles_death_of(mob/occupant)
 	return FALSE
+
+/// Does being here numb `occupant`'s pain? Asked by can_feel_pain(); digesting bellies and
+/// enzyme pools answer for occupants who opted out of digestion pain.
+/atom/proc/numbs_pain_of(mob/living/occupant)
+	return FALSE
+
+/mob/living/muffles_death_of(mob/occupant)
+	return tf_mob_holder == occupant
 
 /// Notify what this mob is bound to: soul links, nests, vore death flags. Runs once per death.
 /mob/proc/death_links(gibbed)

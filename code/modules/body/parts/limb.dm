@@ -23,6 +23,9 @@
 	var/tmp/number_wounds = 0
 	/// A wound changed since the caches were built.
 	var/tmp/integrity_dirty = FALSE
+	/// D24: cached wound view, rebuilt with the integrity caches. Replaced (never
+	/// mutated) on rebuild, so a caller iterating it survives wounds closing.
+	var/tmp/list/wound_view
 
 /// Physical trauma load on this limb (cuts, bruises, punctures, dents).
 /obj/item/organ/external/proc/get_trauma()
@@ -42,7 +45,13 @@
 	trauma_cache = 0
 	burn_cache = 0
 	number_wounds = 0
-	for(var/datum/affliction/wound/W as anything in get_wounds())
+	var/list/view = list()
+	var/list/source = owner?.body ? owner.body.afflictions_by_location?[src] : detached_afflictions
+	for(var/datum/affliction/wound/W in source)
+		if(W.location == src)
+			view += W
+	wound_view = view
+	for(var/datum/affliction/wound/W as anything in view)
 		number_wounds += W.amount
 		if(W.internal)
 			continue // arterial bleeds don't count toward limb integrity
@@ -52,14 +61,13 @@
 			trauma_cache += W.damage
 	damage = min(max_damage, trauma_cache + burn_cache)
 
-/// Wound afflictions located on this limb, attached or detached.
+/// Wound afflictions located on this limb, attached or detached. D24: a cached
+/// read-only view rebuilt only when a wound changed; `.Copy()` it before mutating.
 /obj/item/organ/external/proc/get_wounds()
 	RETURN_TYPE(/list)
-	. = list()
-	var/list/source = owner?.body ? owner.body.afflictions_by_location?[src] : detached_afflictions
-	for(var/datum/affliction/wound/W in source)
-		if(W.location == src)
-			. += W
+	if(integrity_dirty || !wound_view)
+		recalc_integrity()
+	return wound_view
 
 /// Put a wound affliction on this limb.
 /obj/item/organ/external/proc/add_wound(datum/affliction/wound/W)

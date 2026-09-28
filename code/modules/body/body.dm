@@ -71,6 +71,8 @@ REF_OWNED(/mob/living, "body")
 	/// Reagent ID -> product of every affliction's interferes_with factor for
 	/// it (drug-interaction markers). Null when nothing interferes.
 	var/list/reagent_interference
+	/// om_clock_now(CLOCK_BIO) when regeneration was last read into the snapshot, or null.
+	var/tmp/regeneration_read_at
 
 /datum/body/New(mob/living/new_owner)
 	..()
@@ -83,20 +85,29 @@ REF_OWNED(/mob/living, "body")
 REF_BACK(/datum/body, list("owner" = "body"))
 REF_OWNED_LIST(/datum/body, "supports")
 
-// each affliction is removed (symptoms end) before it is deleted.
+// each affliction is removed (symptoms end) before it is deleted. When the owner itself is being
+// deleted there is nobody to resolve symptoms on, wake or signal (audit C24): the afflictions are
+// only unlinked.
 /datum/body/on_destroy(force)
+	var/owner_leaving = !owner || QDELETED(owner)
 	for(var/datum/affliction/A as anything in afflictions?.Copy())
-		remove_affliction(A)
+		if(owner_leaving)
+			unlink_affliction(A)
+		else
+			remove_affliction(A)
 		qdel(A)
 	..()
 
 /// Mark `domains` (BODY_DIRTY_*) stale.
 /datum/body/proc/invalidate(domains)
-	dirty |= domains
 	// The physiology reads factors and organs.
 	if(domains & (BODY_DIRTY_FACTORS | BODY_DIRTY_ORGANS))
-		dirty |= BODY_DIRTY_PHYSIOLOGY
-	if(owner)
+		domains |= BODY_DIRTY_PHYSIOLOGY
+	var/gained = domains & ~dirty
+	dirty |= domains
+	// Only a newly dirtied domain wakes the owner: bits already dirty have woken it and are
+	// still waiting to be consumed.
+	if(gained && owner)
 		om_changed(owner, CHANGE_MOB_HEALTH)
 
 // --- Affliction bookkeeping -------------------------------------------------
@@ -132,6 +143,20 @@ REF_OWNED_LIST(/datum/body, "supports")
 	A.body = null
 	A.owner = null
 	OM_EMIT(owner, /datum/om/event/body_afflictions_changed, A, FALSE)
+	return TRUE
+
+/// Teardown only: drop `A` from the indexes with no hooks, invalidation, wake or signal. For a
+/// body whose owner is being deleted (on_destroy()).
+/datum/body/proc/unlink_affliction(datum/affliction/A)
+	if(!A || A.body != src)
+		return FALSE
+	LAZYREMOVE(afflictions, A)
+	LAZYREMOVEASSOC(afflictions_by_type, A.type, A)
+	if(A.location)
+		LAZYREMOVEASSOC(afflictions_by_location, A.location, A)
+	A.active_symptoms = null
+	A.body = null
+	A.owner = null
 	return TRUE
 
 /// First affliction of exactly `affliction_type` (optionally at `location`).
@@ -260,7 +285,24 @@ REF_OWNED_LIST(/datum/body, "supports")
 /datum/body/proc/treatment_levels()
 	if(dirty & BODY_DIRTY_TREATMENT)
 		build_treatment_snapshot()
+	refresh_regeneration()
 	return treatment_snapshot
+
+/// Natural regeneration depends on sleep and nutrition, which change without touching the
+/// reagent snapshot. It is re-read at most once per biological instant (om_clock_now(CLOCK_BIO),
+/// which stasis stops) and patched into the snapshot, so ticking bodies no longer rebuild the
+/// whole treatment snapshot every cycle (audit C11).
+/datum/body/proc/refresh_regeneration()
+	var/now = owner ? om_clock_now(owner, CLOCK_BIO) : 0
+	if(now == regeneration_read_at)
+		return
+	regeneration_read_at = now
+	var/regeneration = regeneration_level()
+	if(regeneration > 0)
+		LAZYSET(treatment_snapshot, TREAT_REGENERATION, regeneration)
+	else if(treatment_snapshot)
+		treatment_snapshot -= TREAT_REGENERATION
+		UNSETEMPTY(treatment_snapshot)
 
 /// Total volume of `reagent_id` across the mob's holders (snapshot).
 /datum/body/proc/reagent_volume(reagent_id)
@@ -280,7 +322,7 @@ REF_OWNED_LIST(/datum/body, "supports")
 	dirty &= ~BODY_DIRTY_TREATMENT
 	treatment_snapshot = null
 	reagent_interference = null
-	reagent_volumes = collect_reagent_volumes()
+	reagent_volumes = collect_reagent_volumes(reagent_volumes)
 
 	for(var/datum/affliction/A as anything in afflictions)
 		for(var/reagent_id in A.interferes_with)
@@ -295,6 +337,8 @@ REF_OWNED_LIST(/datum/body, "supports")
 			var/list/tags = table[reagent_id]
 			if(!tags)
 				continue
+			if(!dq_reagent_acts_on(reagent_id, owner))
+				continue
 			var/scale = dq_chem_dose_scale(reagent_volumes[reagent_id])
 			if(scale <= 0)
 				continue
@@ -306,23 +350,27 @@ REF_OWNED_LIST(/datum/body, "supports")
 				LAZYINITLIST(treatment_snapshot)
 				treatment_snapshot[tag] = min(treatment_snapshot[tag] + tags[tag] * scale, DQ_CHEM_DOSE_CAP)
 
-	var/regeneration = regeneration_level()
-	if(regeneration > 0)
-		LAZYSET(treatment_snapshot, TREAT_REGENERATION, regeneration)
+	// Regeneration is patched in on read (refresh_regeneration()); force a re-read.
+	regeneration_read_at = null
 
 /// Reagent ID -> volume across every holder the mob metabolises from, or
-/// null when there are none.
-/datum/body/proc/collect_reagent_volumes()
-	. = null
+/// null when there are none. `reuse` (the previous result) is emptied and refilled
+/// instead of allocating a new list each metabolism tick.
+/datum/body/proc/collect_reagent_volumes(list/reuse)
+	reuse?.Cut()
+	var/list/volumes = reuse
 	if(iscarbon(owner))
 		// A carbon's `reagents` IS its bloodstream: count it once.
 		var/mob/living/carbon/C = owner
-		. = add_holder_volumes(., C.bloodstr)
-		. = add_holder_volumes(., C.ingested)
+		volumes = add_holder_volumes(volumes, C.bloodstr)
+		volumes = add_holder_volumes(volumes, C.ingested)
+		// B1: topicals on the skin treat too (a salve works where it sits).
+		volumes = add_holder_volumes(volumes, C.touching)
 		if(owner.reagents != C.bloodstr)
-			. = add_holder_volumes(., owner.reagents)
-		return
-	. = add_holder_volumes(., owner.reagents)
+			volumes = add_holder_volumes(volumes, owner.reagents)
+	else
+		volumes = add_holder_volumes(volumes, owner.reagents)
+	return length(volumes) ? volumes : null
 
 /datum/body/proc/add_holder_volumes(list/volumes, datum/reagents/holder)
 	if(!holder?.total_volume)
@@ -354,9 +402,6 @@ REF_OWNED_LIST(/datum/body, "supports")
 	// A cycle the stasis clock paused: afflictions hold still (advance_stasis()).
 	if(stasis_paused)
 		return
-	// Regeneration depends on sleep and nutrition: one snapshot per tick. Marked directly: this
-	// is the tick's own bookkeeping, not a change that should wake the mob's HEALTH stages again.
-	dirty |= BODY_DIRTY_TREATMENT
 	for(var/datum/affliction/A as anything in afflictions?.Copy())
 		if(A.body == src)
 			A.tick()

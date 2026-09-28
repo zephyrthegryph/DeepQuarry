@@ -1417,8 +1417,6 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	if(!(gender in species.genders))
 		gender = species.genders[1]
 
-	//icon_state = lowertext(species.name) //Necessary?
-
 	// Swap the body plan before the organs are built so they attach to the new body.
 	// On the first set_species() (before /mob/living/Initialize()) the body is
 	// built here: organs attach into the plan's part slots as they are made.
@@ -1432,6 +1430,8 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 		body = new body_type(src)
 		// The slot set is keyed by body plan.
 		rebuild_slot_ledger()
+		// So is the Life plan (physiology applies by body plan).
+		recompose_life()
 
 	species.handle_post_spawn(src)
 
@@ -1555,7 +1555,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 		W.message = message
 		W.add_fingerprint(src)
 
-/mob/living/carbon/human/can_inject(mob/user, error_msg, target_zone, ignore_thickness = FALSE)
+/mob/living/carbon/human/can_inject(mob/user, error_msg, target_zone, ignore_thickness = FALSE, method = INJECT_METHOD_NEEDLE)
 	. = 1
 
 	if(!target_zone)
@@ -1569,10 +1569,10 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	if(!affecting)
 		. = 0
 		fail_msg = "They are missing that limb."
-	else if (affecting.robotic == ORGAN_ROBOT)
+	else if (affecting.robotic == ORGAN_ROBOT && method == INJECT_METHOD_NEEDLE)
 		. = 0
 		fail_msg = "That limb is robotic."
-	else if (affecting.robotic >= ORGAN_LIFELIKE)
+	else if (affecting.robotic >= ORGAN_LIFELIKE && method == INJECT_METHOD_NEEDLE)
 		. = 0
 		fail_msg = "Your needle refuses to penetrate more than a short distance..."
 	else if ((species.flags & THICK_SKIN) && prob(70 - round(affecting.get_trauma() + affecting.get_burn() / 2)))	// Allows transplanted limbs with thick skin to maintain their resistance.
@@ -1869,13 +1869,8 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 /mob/living/carbon/human/can_feel_pain(obj/item/organ/check_organ)
 	if(isSynthetic())
 		return 0
-	if(!digest_pain)
-		if(istype(loc, /turf/simulated/floor/water/digestive_enzymes))
-			return FALSE
-		if(isbelly(loc))
-			var/obj/belly/b = loc
-			if(b.digest_mode == DM_DIGEST || b.digest_mode == DM_SELECT)
-				return FALSE
+	if(loc?.numbs_pain_of(src))
+		return FALSE
 	if(factor(BF_PAIN_IMMUNITY))
 		return 0
 	if(check_organ)
@@ -2067,16 +2062,6 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	set desc = "Toggle glasses worn icon visibility."
 	hide_glasses = !hide_glasses
 	update_inv_glasses()
-
-///mob/living/carbon/human/vv_edit_var(var_name, var_value)
-//	if(var_name == NAMEOF(src, mob_height))
-//		// you wanna edit this one not that one
-//		var_name = NAMEOF(src, base_mob_height)
-//	. = ..()
-//	if(!.)
-//		return .
-//	if(var_name == NAMEOF(src, base_mob_height))
-//		update_mob_height()
 
 /mob/living/carbon/human/vv_get_dropdown()
 	. = ..()

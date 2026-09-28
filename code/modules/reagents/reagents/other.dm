@@ -216,7 +216,7 @@
 	M.status_set(EFFECT_STUTTERING, 0)
 	M.status_set(EFFECT_CONFUSED, 0)
 	M.status_set(EFFECT_SLEEPING, 0)
-	M.radiation = 0
+	M.purge_radiation(INFINITY)
 	M.extinguish_mob()
 	M.fire_stacks = 0
 	M.mend(TREAT_ANTITOXIN, 100)
@@ -229,8 +229,7 @@
 		var/wound_heal = 5
 		// Organ repair is adminordrazine's TREAT_RESTORATION tag (body/treatment.dm).
 		for(var/obj/item/organ/external/O in H.bad_external_organs)
-			if(O.is_fractured())
-				O.mend_fracture()		//Only works if the bone won't rebreak, as usual
+			dq_reagent_knit_fracture(O)
 			dq_reagent_close_wounds(O, wound_heal)
 
 /datum/reagent/gold

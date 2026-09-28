@@ -57,3 +57,11 @@
 #define IS_ALRAUNE 14
 #define IS_LLEILL 15
 #define IS_GREY 16
+
+// Injection routes for /mob/living/proc/can_inject() (P2-S9): every injector
+// asks the same question and names how it delivers.
+/// A needle (syringe, syringe gun dart): pierces flesh, not plating.
+#define INJECT_METHOD_NEEDLE 1
+/// A jet or pressure injector (hypospray, autoinjector): also works through a
+/// prosthetic's fluid port, but still stopped by thick hide and thick material.
+#define INJECT_METHOD_HYPO 2

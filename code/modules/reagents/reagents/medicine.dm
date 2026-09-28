@@ -64,15 +64,29 @@
 			dq_reagent_close_wounds(O, wound_heal)
 
 /// Instant wound closure for overdose / clotting side effects (a burst, not a
-/// continuous treatment): heals `amount` off every bleeding and/or internal
-/// wound on `O`, removing the ones that close.
+/// continuous treatment). B13: goes through mend(), so the tags' biology gate
+/// applies — a robotic limb is not clotted by a drug. Bleeding wounds take
+/// tissue repair; internal (arterial) ones take vessel repair.
 /proc/dq_reagent_close_wounds(obj/item/organ/external/O, amount, bleeding = TRUE, internal = TRUE)
-	for(var/datum/affliction/wound/W as anything in O.get_wounds())
-		if(!((bleeding && W.bleeding()) || (internal && W.internal)))
-			continue
-		W.heal_damage(amount, heals_internal = TRUE)
-		if(!QDELETED(W) && W.damage <= 0)
-			O.remove_wound(W)
+	var/mob/living/L = O?.owner
+	if(!L)
+		return 0
+	. = 0
+	if(bleeding)
+		. += L.mend(TREAT_TISSUE_REPAIR, amount, O)
+	if(internal)
+		. += L.mend(TREAT_VESSEL_REPAIR, amount, O)
+
+/// B13: a reagent that knits a fracture outright (bone regrowth, calcium
+/// miracles). Routed through mend(TREAT_BONE_SETTING) so only organic bone
+/// knits, and refused while the limb is still too damaged to hold.
+/proc/dq_reagent_knit_fracture(obj/item/organ/external/O)
+	var/mob/living/L = O?.owner
+	if(!L || !O.is_fractured())
+		return 0
+	if(O.get_trauma() > O.min_broken_damage * CONFIG_GET(number/organ_health_multiplier))
+		return 0 // would just break again
+	return L.mend(TREAT_BONE_SETTING, DQ_REAGENT_KNIT_AMOUNT, O)
 
 /datum/reagent/bicaridine/topical
 	name = REAGENT_BICARIDAZE
@@ -740,8 +754,7 @@
 		totalvol += volume
 		if(totalvol >= 1)
 			for(var/obj/item/organ/external/O in H.bad_external_organs)
-				if(O.is_fractured())
-					O.mend_fracture()		//Only works if the bone won't rebreak, as usual
+				if(dq_reagent_knit_fracture(O))
 					H.custom_pain(span_danger(span_normal(span_bold("You feel a terrible agony tear through your [O.name]!"))),60,TRUE)
 					H.status_adjust(EFFECT_WEAKENED, 10)		//Bones being regrown will knock you over
 					H.injure(INJURY_PAIN, 60, O.organ_tag, source = src)
@@ -769,22 +782,15 @@
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		var/wound_heal = removed * repair_strength
-		for(var/obj/item/organ/external/O in H.organs)
-			for(var/datum/affliction/wound/W as anything in O.get_wounds())
-				if(W.bleeding())
-					W.bandage() //This is the ACTUAL clotting being performed.
-					W.heal_damage(wound_heal * 3.5) 	//Removed should be 0.15 (can be higher if you have high/apex metabolism). repair_strength is 6. Making wound_heal  .9. Multiply by 3.5 and that gives us a heal of 3.15 on our wounds.
-					if(!QDELETED(W) && W.damage <= 0)	//We do this since this will only happen once per bleeding wound, as it's then bandaged (clotted). We do the heal as we want it to be somewhat like slapping them with an advanceed/bruise_pack. (Bruise packs heal 3.5 on application, as of the time of writing.)
-						O.remove_wound(W)
-					break //We only heal ONE external wound per go around.
-			for(var/datum/affliction/wound/internal_bleeding/W in O.get_wounds())
-				W.heal_damage(wound_heal, heals_internal = TRUE)
-				if(QDELETED(W))
-					continue
-				if(W.damage <= 0)
-					O.remove_wound(W)
-				else if(dose >= 9.5 && dose < 11) //If you are in the 'sweet zone' of 9.5u to 11u, your internal wounds instantly heal. This is to prevent people from using a clotting pen or taking a 10u clotting pill from medical and it not actually fixing their wounds.
-					O.remove_wound(W)
+		// B13: clotting through mend(): one wound per limb dressed (the clot), its
+		// damage repaired, and internal bleeds closed by vessel repair.
+		var/sweet_zone = (dose >= 9.5 && dose < 11) // a 10u pen or pill fixes internal bleeding outright
+		for(var/obj/item/organ/external/O as anything in H.organs)
+			if(!LAZYLEN(O.get_wounds()))
+				continue
+			H.mend(TREAT_WOUND_PACKING, 1, O)
+			H.mend(TREAT_TISSUE_REPAIR, wound_heal * 3.5, O)
+			H.mend(TREAT_VESSEL_REPAIR, sweet_zone ? DQ_REAGENT_KNIT_AMOUNT : wound_heal, O)
 
 /datum/reagent/myelamine/overdose(mob/living/carbon/M, alien, removed)
 	//Heals slightly faster at the cost of high toxins. Honestly you should never do this, but whatever.
@@ -792,11 +798,54 @@
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		var/wound_heal = removed * repair_strength / 2
-		for(var/obj/item/organ/external/O in H.bad_external_organs)
-			for(var/datum/affliction/wound/internal_bleeding/W in O.get_wounds())
-				W.heal_damage(wound_heal, heals_internal = TRUE)
-				if(!QDELETED(W) && W.damage <= 0)
-					O.remove_wound(W)
+		for(var/obj/item/organ/external/O as anything in H.bad_external_organs)
+			dq_reagent_close_wounds(O, wound_heal, bleeding = FALSE)
+
+/// P2-D6 / P2-K6: the -daxon organ-repair family as data. Repair itself is
+/// each drug's organ treatment tag; this shared body applies the side effects:
+/// confusion while a targeted (organic) organ is damaged, then either the clash
+/// with a partner reagent or the drug's solo effect. A drug sets its organ
+/// targets and partners by overriding the two getters.
+/datum/reagent/proc/daxon_organs()
+	return null
+
+/datum/reagent/proc/daxon_partners()
+	return null
+
+/datum/reagent/proc/daxon_clash(mob/living/carbon/human/H, removed)
+	return
+
+/datum/reagent/proc/daxon_alone(mob/living/carbon/human/H, removed)
+	return
+
+/datum/reagent/proc/daxon_affect(mob/living/carbon/M, removed)
+	if(!ishuman(M))
+		return
+	var/mob/living/carbon/human/H = M
+	var/list/targets = daxon_organs()
+	for(var/obj/item/organ/internal/I as anything in H.internal_organs)
+		if(I.robotic >= ORGAN_ROBOT || !(I.organ_tag in targets))
+			continue
+		if(I.damage > 0)
+			H.status_at_least(EFFECT_CONFUSED, 2)
+			break
+	for(var/partner in daxon_partners())
+		if(H.body?.reagent_volume(partner))
+			daxon_clash(H, removed)
+			return
+	daxon_alone(H, removed)
+
+/datum/reagent/respirodaxon/affect_blood(mob/living/carbon/M, alien, removed)
+	daxon_affect(M, removed)
+
+/datum/reagent/gastirodaxon/affect_blood(mob/living/carbon/M, alien, removed)
+	daxon_affect(M, removed)
+
+/datum/reagent/hepanephrodaxon/affect_blood(mob/living/carbon/M, alien, removed)
+	daxon_affect(M, removed)
+
+/datum/reagent/cordradaxon/affect_blood(mob/living/carbon/M, alien, removed)
+	daxon_affect(M, removed)
 
 /datum/reagent/respirodaxon
 	name = REAGENT_RESPIRODAXON
@@ -813,21 +862,22 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_SPECIALDRUG
 
-/datum/reagent/respirodaxon/affect_blood(mob/living/carbon/M, alien, removed)
-	if(ishuman(M))
-		var/mob/living/carbon/human/H = M
-		for(var/obj/item/organ/internal/I in H.internal_organs)
-			if(I.robotic >= ORGAN_ROBOT || !(I.organ_tag in list(O_LUNGS, O_VOICE, O_GBLADDER)))
-				continue
-			if(I.damage > 0) // Repair is the drug's organ tag; the confusion is its side effect.
-				H.status_at_least(EFFECT_CONFUSED, 2)
-		if(M.reagents.has_reagent(REAGENT_ID_GASTIRODAXON) || M.reagents.has_reagent(REAGENT_ID_PERIDAXON))
-			if(H.losebreath >= 15 && prob(H.losebreath))
-				H.status_at_least(EFFECT_STUNNED, 2)
-			else
-				H.losebreath = CLAMP(H.losebreath + 3, 0, 20)
-		else
-			H.losebreath = max(H.losebreath - 4, 0)
+/datum/reagent/respirodaxon/daxon_organs()
+	var/static/list/organs = list(O_LUNGS, O_VOICE, O_GBLADDER)
+	return organs
+
+/datum/reagent/respirodaxon/daxon_partners()
+	var/static/list/partners = list(REAGENT_ID_GASTIRODAXON, REAGENT_ID_PERIDAXON)
+	return partners
+
+/datum/reagent/respirodaxon/daxon_clash(mob/living/carbon/human/H, removed)
+	if(H.losebreath >= 15 && prob(H.losebreath))
+		H.status_at_least(EFFECT_STUNNED, 2)
+	else
+		H.losebreath = CLAMP(H.losebreath + 3, 0, 20)
+
+/datum/reagent/respirodaxon/daxon_alone(mob/living/carbon/human/H, removed)
+	H.losebreath = max(H.losebreath - 4, 0)
 
 /datum/reagent/gastirodaxon
 	name = REAGENT_GASTIRODAXON
@@ -844,20 +894,19 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_SPECIALDRUG
 
-/datum/reagent/gastirodaxon/affect_blood(mob/living/carbon/M, alien, removed)
-	if(ishuman(M))
-		var/mob/living/carbon/human/H = M
-		for(var/obj/item/organ/internal/I in H.internal_organs)
-			if(I.robotic >= ORGAN_ROBOT || !(I.organ_tag in list(O_APPENDIX, O_STOMACH, O_INTESTINE, O_NUTRIENT, O_PLASMA, O_POLYP)))
-				continue
-			if(I.damage > 0) // Repair is the drug's organ tag; the confusion is its side effect.
-				H.status_at_least(EFFECT_CONFUSED, 2)
-		if(M.reagents.has_reagent(REAGENT_ID_HEPANEPHRODAXON) || M.reagents.has_reagent(REAGENT_ID_PERIDAXON))
-			if(prob(10))
-				H.vomit(1)
-			else if(H.nutrition > 30)
-				M.adjust_nutrition(-removed * 30)
-		// Without its interacting chems, gastirodaxon also scrubs toxins: see treatment_tags.
+/datum/reagent/gastirodaxon/daxon_organs()
+	var/static/list/organs = list(O_APPENDIX, O_STOMACH, O_INTESTINE, O_NUTRIENT, O_PLASMA, O_POLYP)
+	return organs
+
+/datum/reagent/gastirodaxon/daxon_partners()
+	var/static/list/partners = list(REAGENT_ID_HEPANEPHRODAXON, REAGENT_ID_PERIDAXON)
+	return partners
+
+/datum/reagent/gastirodaxon/daxon_clash(mob/living/carbon/human/H, removed)
+	if(prob(10))
+		H.vomit(1)
+	else if(H.nutrition > 30)
+		H.adjust_nutrition(-removed * 30)
 
 /datum/reagent/hepanephrodaxon
 	name = REAGENT_HEPANEPHRODAXON
@@ -874,22 +923,21 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_SPECIALDRUG
 
-/datum/reagent/hepanephrodaxon/affect_blood(mob/living/carbon/M, alien, removed)
-	if(ishuman(M))
-		var/mob/living/carbon/human/H = M
-		for(var/obj/item/organ/internal/I in H.internal_organs)
-			if(I.robotic >= ORGAN_ROBOT || !(I.organ_tag in list(O_LIVER, O_KIDNEYS, O_APPENDIX, O_ACID, O_HIVE)))
-				continue
-			if(I.damage > 0) // Repair is the drug's organ tag; the confusion is its side effect.
-				H.status_at_least(EFFECT_CONFUSED, 2)
-		if(M.reagents.has_reagent(REAGENT_ID_CORDRADAXON) || M.reagents.has_reagent(REAGENT_ID_PERIDAXON))
-			if(prob(5))
-				H.vomit(1)
-			else if(prob(5))
-				to_chat(H, span_danger("Something churns inside you."))
-				H.injure(INJURY_TOXIN, 10 * removed, source = src)
-				H.vomit(0, 1)
-		// Otherwise hepanephrodaxon scrubs toxins: see treatment_tags.
+/datum/reagent/hepanephrodaxon/daxon_organs()
+	var/static/list/organs = list(O_LIVER, O_KIDNEYS, O_APPENDIX, O_ACID, O_HIVE)
+	return organs
+
+/datum/reagent/hepanephrodaxon/daxon_partners()
+	var/static/list/partners = list(REAGENT_ID_CORDRADAXON, REAGENT_ID_PERIDAXON)
+	return partners
+
+/datum/reagent/hepanephrodaxon/daxon_clash(mob/living/carbon/human/H, removed)
+	if(prob(5))
+		H.vomit(1)
+	else if(prob(5))
+		to_chat(H, span_danger("Something churns inside you."))
+		H.injure(INJURY_TOXIN, 10 * removed, source = src)
+		H.vomit(0, 1)
 
 /datum/reagent/cordradaxon
 	name = REAGENT_CORDRADAXON
@@ -906,17 +954,16 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_SPECIALDRUG
 
-/datum/reagent/cordradaxon/affect_blood(mob/living/carbon/M, alien, removed)
-	if(ishuman(M))
-		var/mob/living/carbon/human/H = M
-		for(var/obj/item/organ/internal/I in H.internal_organs)
-			if(I.robotic >= ORGAN_ROBOT || !(I.organ_tag in list(O_HEART, O_SPLEEN, O_RESPONSE, O_ANCHOR, O_EGG)))
-				continue
-			if(I.damage > 0) // Repair is the drug's organ tag; the confusion is its side effect.
-				H.status_at_least(EFFECT_CONFUSED, 2)
-		if(M.reagents.has_reagent(REAGENT_ID_HYRONALIN) || M.reagents.has_reagent(REAGENT_ID_PERIDAXON))
-			H.losebreath = CLAMP(H.losebreath + 1, 0, 10)
-		// Otherwise cordradaxon oxygenates the blood: see treatment_tags.
+/datum/reagent/cordradaxon/daxon_organs()
+	var/static/list/organs = list(O_HEART, O_SPLEEN, O_RESPONSE, O_ANCHOR, O_EGG)
+	return organs
+
+/datum/reagent/cordradaxon/daxon_partners()
+	var/static/list/partners = list(REAGENT_ID_HYRONALIN, REAGENT_ID_PERIDAXON)
+	return partners
+
+/datum/reagent/cordradaxon/daxon_clash(mob/living/carbon/human/H, removed)
+	H.losebreath = CLAMP(H.losebreath + 1, 0, 10)
 
 /datum/reagent/immunosuprizine
 	name = REAGENT_IMMUNOSUPRIZINE
@@ -967,7 +1014,7 @@
 					I.rejecting = 0
 					I.can_reject = FALSE
 
-		if(H.reagents.has_reagent(REAGENT_ID_SPACEACILLIN) || H.reagents.has_reagent(REAGENT_ID_COROPHIZINE))	// Chemicals that increase your immune system's aggressiveness make this chemical's job harder.
+		if(H.body?.treatment_levels()?[TREAT_ANTIMICROBIAL]) // P2-K6: the mechanism, not the reagent IDs	// Chemicals that increase your immune system's aggressiveness make this chemical's job harder.
 			for(var/obj/item/organ/I in organtotal)
 				if(I.transplant_data)
 					var/rejectmem = I.can_reject
@@ -1015,7 +1062,7 @@
 					I.rejecting = 0
 					I.can_reject = FALSE
 
-		if(H.reagents.has_reagent(REAGENT_ID_SPACEACILLIN) || H.reagents.has_reagent(REAGENT_ID_COROPHIZINE))
+		if(H.body?.treatment_levels()?[TREAT_ANTIMICROBIAL]) // P2-K6: the mechanism, not the reagent IDs
 			for(var/obj/item/organ/I in organtotal)
 				if(I.transplant_data)
 					var/rejectmem = I.can_reject
@@ -1109,8 +1156,7 @@
 /datum/reagent/hyronalin/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien == IS_DIONA)
 		return
-	M.radiation = max(M.radiation - 30 * removed * M.species.chem_strength_heal, 0)
-	M.accumulated_rads = max(M.accumulated_rads - 30 * removed * M.species.chem_strength_heal, 0)
+	// B14: radiation purge is the TREAT_ANTIRADIATION tag (purge_radiation()).
 
 /datum/reagent/arithrazine
 	name = REAGENT_ARITHRAZINE
@@ -1130,8 +1176,7 @@
 /datum/reagent/arithrazine/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien == IS_DIONA)
 		return
-	M.radiation = max(M.radiation - 70 * removed * M.species.chem_strength_heal, 0)
-	M.accumulated_rads = max(M.accumulated_rads - 70 * removed * M.species.chem_strength_heal, 0)
+	// B14: radiation purge is the TREAT_ANTIRADIATION tag (purge_radiation()).
 	// Its antitoxin action is in the treatment_tags profile.
 	if(prob(60))
 		M.injure(INJURY_BLUNT, 4 * removed, source = src)
@@ -1356,17 +1401,8 @@
 	industrial_use = REFINERYEXPORT_REASON_CLONEDRUG
 	coolant_modifier = 0.5 // Okay substitute coolant
 
-/datum/reagent/leporazine/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
-	var/temp = BODYTEMP_NORMAL
-	if(ishuman(M))
-		var/mob/living/carbon/human/H = M
-		temp = H.species.body_temperature
-	if(M.bodytemperature > temp)
-		M.set_bodytemperature(max(temp, M.bodytemperature - (40 * TEMPERATURE_DAMAGE_COEFFICIENT)))
-	else if(M.bodytemperature < temp+1)
-		M.set_bodytemperature(min(temp, M.bodytemperature + (40 * TEMPERATURE_DAMAGE_COEFFICIENT)))
+// B15: leporazine's temperature correction is its TREAT_THERMOREGULATION tag,
+// applied by the thermoregulation life stage (no second, unscaled write here).
 
 /datum/reagent/rezadone
 	name = REAGENT_REZADONE
@@ -2123,8 +2159,6 @@
 	// Antitoxin action is the treatment_tags profile.
 	if(alien != IS_DIONA)
 		M.status_at_least(EFFECT_DRUGGED, 5)
-		M.radiation = max(M.radiation - 15 * removed * M.species.chem_strength_heal, 0)
-		M.accumulated_rads = max(M.accumulated_rads - 15 * removed * M.species.chem_strength_heal, 0)
 
 /datum/reagent/purifyingagent
 	name = REAGENT_PURIFYINGAGENT
@@ -2139,11 +2173,7 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_MEDSCI
 
-/datum/reagent/purifyingagent/affect_blood(mob/living/carbon/M, alien, removed)
-	// Antitoxin action is the treatment_tags profile.
-	if(alien != IS_DIONA)
-		M.radiation = max(M.radiation - 15 * removed * M.species.chem_strength_heal, 0)
-		M.accumulated_rads = max(M.accumulated_rads - 15 * removed * M.species.chem_strength_heal, 0)
+// Purifying agent's antitoxin and anti-radiation action are its treatment_tags profile.
 
 //liquid fire
 /datum/reagent/burncard

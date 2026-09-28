@@ -128,7 +128,7 @@
 /obj/item/projectile/beam/medical_cell/detox/on_hit(mob/living/carbon/human/target)
 	if(ishuman(target))
 		target.mend(TREAT_ANTITOXIN, 15)
-		target.radiation = max(target.radiation - 75, 0) //worse than mlem for rad, better for tox.
+		target.purge_radiation(75) //worse than mlem for rad, better for tox.
 	else
 		return 1
 

@@ -198,7 +198,7 @@
 
 	var/datum/affliction/heart_damage/C = H.body.afflict(/datum/affliction/heart_damage, chest)
 	TEST_ASSERT_NOTNULL(C, "heart_damage could not be afflicted")
-	C.severity = 90
+	C.set_severity(90)
 
 	var/heart_dmg_before = heart.damage
 	_dq_tick_n(C, 5)
@@ -214,7 +214,7 @@
 
 	var/datum/affliction/hypovolemic_shock/C = H.body.afflict(/datum/affliction/hypovolemic_shock, chest)
 	TEST_ASSERT_NOTNULL(C, "hypovolemic_shock could not be afflicted")
-	C.severity = 90
+	C.set_severity(90)
 
 	var/oxy_before = H.oxygen_debt()
 	_dq_tick_n(C, 5)
@@ -301,7 +301,7 @@
 	// the natural progression curve.
 	var/datum/affliction/wound_infection/wi = _spawn_affliction_on(H, BP_TORSO, /datum/affliction/wound_infection)
 	TEST_ASSERT_NOTNULL(wi, "wound_infection didn't spawn")
-	wi.severity = 70.0
+	wi.set_severity(70.0)
 	// Cascade rolls at 60% per tick once severity ≥ cascade_at. Force
 	// a few ticks; cellulitis should appear.
 	var/saw_cellulitis = FALSE
@@ -317,7 +317,7 @@
 
 	// Force cellulitis severity high, tick until sepsis spawns.
 	for(var/datum/affliction/cellulitis/c in chest.afflictions_here())
-		c.severity = 80
+		c.set_severity(80)
 	var/saw_sepsis = FALSE
 	for(var/i in 1 to 30)
 		for(var/datum/affliction/cellulitis/c in chest.afflictions_here())
@@ -332,7 +332,7 @@
 
 	// And sepsis → septic_shock.
 	for(var/datum/affliction/sepsis/c in chest.afflictions_here())
-		c.severity = 75
+		c.set_severity(75)
 	var/saw_shock = FALSE
 	for(var/i in 1 to 30)
 		for(var/datum/affliction/sepsis/c in chest.afflictions_here())
@@ -559,7 +559,7 @@
 	// tick. Spawn, force severity, tick a handful of times, verify drop.
 	var/datum/affliction/internal_hemorrhage/C = _spawn_affliction_on(H, BP_TORSO, /datum/affliction/internal_hemorrhage)
 	TEST_ASSERT_NOTNULL(C, "internal_hemorrhage didn't spawn")
-	C.severity = 50
+	C.set_severity(50)
 	_dq_tick_n(C, 10)
 	var/blood_after = H.vessel.get_reagent_amount(REAGENT_ID_BLOOD)
 	TEST_ASSERT(blood_after < start_blood, "internal_hemorrhage should have drained blood ([start_blood] -> [blood_after])")
@@ -600,7 +600,7 @@
 	// Spawn lacerated_artery and force-roll bleeding_visible into the
 	// active symptom set so examine should report it.
 	var/datum/affliction/lacerated_artery/C = _spawn_affliction_on(H, BP_L_ARM, /datum/affliction/lacerated_artery)
-	C.severity = 80
+	C.set_severity(80)
 	C.tick()  // rolls symptoms
 	// Force bleeding_visible if RNG didn't pick it (typepaths: singletons).
 	if(!(/datum/affliction_symptom/bleeding_visible in C.active_symptoms))
@@ -643,15 +643,15 @@
 	TEST_ASSERT_NOTNULL(C, "hypovolemic_shock didn't spawn")
 
 	// Stage 1 (mild): severity 20 → small slowdown.
-	C.severity = 20
+	C.set_severity(20)
 	C.tick()
 	var/slow_mild = H.factor(BF_SLOWDOWN)
 	// Stage 2 (moderate): severity 40 → bigger slowdown.
-	C.severity = 40
+	C.set_severity(40)
 	C.tick()
 	var/slow_moderate = H.factor(BF_SLOWDOWN)
 	// Stage 3 (severe): severity 80 → heavy slowdown.
-	C.severity = 80
+	C.set_severity(80)
 	C.tick()
 	var/slow_severe = H.factor(BF_SLOWDOWN)
 
@@ -667,7 +667,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/datum/affliction/cellulitis/C = _spawn_affliction_on(H, BP_TORSO, /datum/affliction/cellulitis)
 	TEST_ASSERT_NOTNULL(C, "cellulitis didn't spawn")
-	C.severity = 80
+	C.set_severity(80)
 
 	var/temp_before = H.bodytemperature
 	for(var/i in 1 to 10)
@@ -682,12 +682,12 @@
 /datum/unit_test/dq_medical_contraindicated_reagent_worsens/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/datum/affliction/internal_hemorrhage/C = _spawn_affliction_on(H, BP_TORSO, /datum/affliction/internal_hemorrhage)
-	C.severity = 30
+	C.set_severity(30)
 	// Baseline progression: tick a few times without hyperzine, record severity rise.
 	_dq_tick_n(C, 3)
 	var/no_hyper = C.severity
 	// Reset, add hyperzine, tick again, compare.
-	C.severity = 30
+	C.set_severity(30)
 	H.bloodstr.add_reagent(REAGENT_ID_HYPERZINE, 30)
 	_dq_tick_n(C, 3)
 	var/with_hyper = C.severity

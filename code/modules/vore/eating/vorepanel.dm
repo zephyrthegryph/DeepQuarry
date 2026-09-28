@@ -1281,19 +1281,8 @@
 						MMI.forceMove(R)
 						R.mmi = MMI
 						R.add_language(LANGUAGE_ROBOT_TALK)
-					else //reference /datum/surgical_step/organ/install_mmi/perform
-						var/obj/item/organ/internal/mmi_holder/holder
-						if(istype(MMI, /obj/item/mmi/digital/posibrain))
-							var/obj/item/organ/internal/mmi_holder/posibrain/holdertmp = new(body_backup, 1)
-							holder = holdertmp
-						else if(istype(MMI, /obj/item/mmi/digital/robot))
-							var/obj/item/organ/internal/mmi_holder/robot/holdertmp = new(body_backup, 1)
-							holder = holdertmp
-						else
-							holder = new(body_backup, 1)
-						MMI.forceMove(holder)
-						holder.stored_mmi = MMI
-						holder.update_from_mmi()
+					else // the same install as the surgery step (install_mmi_holder())
+						install_mmi_holder(body_backup, MMI)
 
 						mmi_host.release_mind(body_backup, "reformed by [key_name(user)]")
 						//You've hopefully already named yourself, so... not implementing that bit.

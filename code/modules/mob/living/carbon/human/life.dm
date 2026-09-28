@@ -317,12 +317,11 @@
 
 /datum/om/stage/life/mutations/carbon/human
 	of = /mob/living/carbon/human
+	run_if = LIFE_RUN_IF_PLACED_LIVE_BIOLOGY
 
 /datum/om/stage/life/mutations/carbon/human/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	. = ..()
 	if(.)
-		return
-	if(self.inStasisNow())
 		return
 
 	// Slow natural healing of wounds; cold-resistant bodies shrug off burns.
@@ -377,6 +376,7 @@
 
 /datum/om/stage/life/radiation/carbon/human
 	of = /mob/living/carbon/human
+	run_if = LIFE_RUN_IF_PLACED_LIVE_BIOLOGY
 	woken_by = "its rewake (radiation is written raw)"
 
 /// MED-6: no dose and nothing accumulated to dissipate.
@@ -390,16 +390,17 @@
 	. = ..()
 	if(.)
 		return
-	if(self.inStasisNow())
-		return
 
-	self.radiation = CLAMP(self.radiation,0,RADIATION_CAP) //Max of 100Gy. If you reach that...You're going to wish you were dead. You probably will be dead.
-	self.accumulated_rads = CLAMP(self.accumulated_rads,0,RADIATION_CAP) //Max of 100Gy as well. You should never get higher than this. You will be dead before you can reach this.
+	// B14 / P2-S12: anti-radiation treatment (reagent tags) purges through the
+	// one writer instead of each drug writing the dose itself.
+	var/antirad = self.body?.treatment_levels()?[TREAT_ANTIRADIATION]
+	if(antirad)
+		self.purge_radiation(antirad * DQ_ANTIRAD_RADS_PER_LEVEL)
 	var/obj/item/organ/internal/I = null //Used for further down below when an organ is picked.
 	if(!self.radiation)
 		self.clear_alert("irradiated")
 		if(self.accumulated_rads)
-			self.accumulated_rads -= RADIATION_SPEED_COEFFICIENT //Accumulated rads slowly dissipate very slowly. Get to medical to get it treated!
+			self.decay_radiation(0, -RADIATION_SPEED_COEFFICIENT) //Accumulated rads slowly dissipate very slowly. Get to medical to get it treated!
 	else if(((self.life_tick % 5 == 0) && self.radiation) || (self.radiation > 600)) //Radiation is a slow, insidious killer. Unless you get a massive dose, then the onset is sudden!
 
 		if(HAS_TRAIT(self, TRAIT_HALT_RADIATION_EFFECTS)) //If we have a trait that halts radiation effects, then we just stop here. No need to do any of the checks below.
@@ -409,17 +410,15 @@
 		var/rad_mod = self.species.radiation_mod
 
 		if(!rad_mod) //If we are rad immune, stop here and remove rads if we have any.
-			self.radiation -= 10 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod
+			self.decay_radiation(10 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod)
 			return
 
 		if (self.radiation < GLOB.radiation_levels[self.species.rad_levels]["safe"]) //Less than 1.0 Gy. No side effects.
-			self.radiation -= 10 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod
-			self.accumulated_rads += 10 * RADIATION_SPEED_COEFFICIENT //No escape from accumulated rads.
+			self.decay_radiation(10 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod, 10 * RADIATION_SPEED_COEFFICIENT) //No escape from accumulated rads.
 
 		else if (self.radiation >= GLOB.radiation_levels[self.species.rad_levels]["safe"] && self.radiation < GLOB.radiation_levels[self.species.rad_levels]["danger_1"]) //Equivalent of 1.0-2.0 Gy. Minimum stage you start seeing effects.
 			damage = 1
-			self.radiation -= 10 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod
-			self.accumulated_rads += 10 * RADIATION_SPEED_COEFFICIENT
+			self.decay_radiation(10 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod, 10 * RADIATION_SPEED_COEFFICIENT)
 			if(!self.isSynthetic())
 				if(prob(5) && prob(100 * RADIATION_SPEED_COEFFICIENT) && !self.has_status(EFFECT_WEAKENED))
 					to_chat(self, span_warning("You feel exhausted."))
@@ -435,8 +434,7 @@
 
 		else if (self.radiation >= GLOB.radiation_levels[self.species.rad_levels]["danger_1"] && self.radiation < GLOB.radiation_levels[self.species.rad_levels]["danger_2"]) //Equivalent of 2.0 to 6.0 Gy. Nobody should ever be above this without extreme negligence.
 			damage = 3
-			self.radiation -= 30 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod
-			self.accumulated_rads += 30 * RADIATION_SPEED_COEFFICIENT
+			self.decay_radiation(30 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod, 30 * RADIATION_SPEED_COEFFICIENT)
 			if(!self.isSynthetic())
 				if(prob(5))
 					self.radiation_burn(5 * RADIATION_SPEED_COEFFICIENT)
@@ -451,8 +449,7 @@
 
 		else if (self.radiation >= GLOB.radiation_levels[self.species.rad_levels]["danger_2"] && self.radiation < GLOB.radiation_levels[self.species.rad_levels]["danger_3"]) //Equivalent of 6.0 to 8.0 Gy.
 			damage = 5
-			self.radiation -= 50 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod
-			self.accumulated_rads += 50 * RADIATION_SPEED_COEFFICIENT
+			self.decay_radiation(50 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod, 50 * RADIATION_SPEED_COEFFICIENT)
 			if(!self.isSynthetic())
 				if(prob(15))
 					self.radiation_burn(10 * RADIATION_SPEED_COEFFICIENT)
@@ -479,8 +476,7 @@
 		else if (self.radiation >= GLOB.radiation_levels[self.species.rad_levels]["danger_3"] && self.radiation < GLOB.radiation_levels[self.species.rad_levels]["danger_4"]) //Equivalent of 8.0 to 30 Gy.
 			self.throw_alert("irradiated", /atom/movable/screen/alert/irradiated)
 			damage = 10
-			self.radiation -= 100 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod
-			self.accumulated_rads += 100 * RADIATION_SPEED_COEFFICIENT
+			self.decay_radiation(100 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod, 100 * RADIATION_SPEED_COEFFICIENT)
 			if(!self.isSynthetic())
 				if(prob(25))
 					self.radiation_burn(15 * RADIATION_SPEED_COEFFICIENT)
@@ -514,9 +510,7 @@
 
 		else if (self.radiation >= GLOB.radiation_levels[self.species.rad_levels]["danger_4"]) //Above 30Gy. You had to get absolutely blasted with rads for this.
 			damage = 30
-			self.radiation -= 300 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod
-			self.accumulated_rads += 300 * RADIATION_SPEED_COEFFICIENT
-
+			self.decay_radiation(300 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod, 300 * RADIATION_SPEED_COEFFICIENT)
 			if(!self.isSynthetic())
 				self.radiation_burn(damage * RADIATION_SPEED_COEFFICIENT, INJURE_CONTINUOUS) //3 burn damage a tick as your body melts.
 				self.injure(INJURY_CELLULAR, 15 * RADIATION_SPEED_COEFFICIENT, flags = INJURE_CONTINUOUS) //1.5 cellular damage a tick as your cells mutate and break down.
@@ -1199,7 +1193,13 @@
 		return TRUE
 	if(self.stat != DEAD && self.robobody_count)
 		return FALSE
-	return self.on_fire || abs(self.species.body_temperature - self.bodytemperature) < 0.5
+	return self.on_fire || abs(self.thermal_setpoint() - self.bodytemperature) < 0.5
+
+/// C16 / P2-S10: the temperature this body regulates toward — the species norm
+/// plus BF_TEMPERATURE (fevers and chills are factors on afflictions, not
+/// per-tick temperature writes).
+/mob/living/carbon/human/proc/thermal_setpoint()
+	return species.body_temperature + factor(BF_TEMPERATURE)
 
 /// Body temperature is written raw by the environment, reagents and afflictions.
 /datum/om/stage/life/thermoregulation/rewake_delay(mob/living/carbon/human/self)
@@ -1221,10 +1221,20 @@
 		if(!HS || HS.is_broken()) // However, NIF Heatsinks will not compensate for a core FBP component (your heatsink) being lost.
 			self.adjust_bodytemperature(round(self.robobody_count*0.5))
 
-	var/body_temperature_difference = self.species.body_temperature - self.bodytemperature
+	var/setpoint = self.thermal_setpoint()
+	var/body_temperature_difference = setpoint - self.bodytemperature
 
 	if (abs(body_temperature_difference) < 0.5)
 		return //fuck this precision
+
+	// B15: thermoregulating drugs (leporazine) act through their tag, here.
+	var/thermo = self.body?.treatment_levels()?[TREAT_THERMOREGULATION]
+	if(thermo)
+		var/step = min(abs(body_temperature_difference), thermo * DQ_THERMOREG_K_PER_LEVEL)
+		self.adjust_bodytemperature(body_temperature_difference > 0 ? step : -step)
+		body_temperature_difference = setpoint - self.bodytemperature
+		if (abs(body_temperature_difference) < 0.5)
+			return
 
 	if (self.on_fire)
 		return //too busy for pesky metabolic regulation
@@ -1543,8 +1553,6 @@
 	if(!.)
 		return
 
-	self.client.screen.Remove(GLOB.global_hud.blurry, GLOB.global_hud.druggy, GLOB.global_hud.vimpaired, GLOB.global_hud.darkMask, GLOB.global_hud.nvg, GLOB.global_hud.thermal, GLOB.global_hud.meson, GLOB.global_hud.science, GLOB.global_hud.material, GLOB.global_hud.whitense, GLOB.global_hud.heavy_whitense)
-
 	if(istype(self.client.eye,/obj/machinery/camera))
 		var/obj/machinery/camera/cam = self.client.eye
 		if(LAZYLEN(cam.client_huds))
@@ -1631,6 +1639,7 @@
 			self.clear_fullscreen("fear")
 
 
+		var/static/list/custom_species = list(SPECIES_CUSTOM, SPECIES_HANNER)
 		var/fat_alert = /atom/movable/screen/alert/fat
 		var/hungry_alert = /atom/movable/screen/alert/hungry
 		var/starving_alert = /atom/movable/screen/alert/starving
@@ -1639,7 +1648,7 @@
 			fat_alert = /atom/movable/screen/alert/fat/synth
 			hungry_alert = /atom/movable/screen/alert/hungry/synth
 			starving_alert = /atom/movable/screen/alert/starving/synth
-		else if(self.get_species() in list(SPECIES_CUSTOM, SPECIES_HANNER))
+		else if(self.get_species() in custom_species)
 			var/datum/species/custom/C = self.species
 			if(/datum/trait/neutral/bloodsucker in C.traits)
 				fat_alert = /atom/movable/screen/alert/fat/vampire
@@ -1713,7 +1722,9 @@
 							found_welder = 1
 				if(self.absorbed) found_welder = 1
 			if(found_welder)
-				self.client.screen |= GLOB.global_hud.darkMask
+				self.claim_global_hud(GLOB.global_hud.darkMask)
+
+	self.reconcile_global_huds()
 
 /// Pain as a fraction of the pain that knocks this body out (1 = passing
 /// out from pain). Drives the HUD's softcrit / hardcrit indicators.
@@ -1728,8 +1739,9 @@
 	if(!. || !self.healths)
 		return
 
-	if(self.stat == DEAD || (self.status_effects & FAKEDEATH)) //Dead
+	if(self.stat == DEAD || (self.status_flags & FAKEDEATH)) //Dead
 		self.healths.icon_state = "health7"	//DEAD healthmeter
+		self.health_doll_key = null
 		return
 
 	if(self.is_critical()) //Crit
@@ -1737,44 +1749,55 @@
 
 	if(self.factor(BF_ANALGESIA) > 100)
 		self.healths.icon_state = "health_numb"
+		self.health_doll_key = null
 		return
 
-	// Generate a by-limb health display.
-	var/mutable_appearance/healths_ma = new(self.healths)
-	healths_ma.icon_state = "blank"
-	healths_ma.overlays = null
-	healths_ma.plane = PLANE_PLAYER_HUD
-
-	var/no_damage = 1
+	// A by-limb health display. The doll is only rebuilt when what it shows changes: each limb's
+	// cached damage image and colour band, fire, and the pain indicators make up the key.
 	var/trauma_val = 0 // Used in calculating softcrit/hardcrit indicators.
 	if(!(self.species.flags & NO_PAIN))
 		trauma_val = self.pain_knockout_fraction()
 	var/limb_trauma_val = trauma_val*0.3
-	// Collect and apply the images all at once to avoid appearance churn.
-	var/list/health_images = list()
+	var/hallucination_hud = self.get_hallucination_state()?.get_hud_state()
+	var/burning = self.on_fire || hallucination_hud == HUD_HALLUCINATION_ONFIRE
+	if(hallucination_hud == HUD_HALLUCINATION_CRIT)
+		trauma_val = 2
+
+	var/no_damage = 1
+	var/key = "[burning ? self.get_fire_icon_state() : ""]"
 	for(var/obj/item/organ/external/E in self.organs)
 		if(no_damage && (E.get_trauma() || E.get_burn()))
 			no_damage = 0
+		var/image/limb_image = E.get_damage_hud_image(limb_trauma_val)
+		key += "|\ref[limb_image][limb_image.color]"
+	var/show_pain = trauma_val && !(self.species.flags & NO_PAIN)
+	key += "|[show_pain && trauma_val > 0.7][show_pain && trauma_val >= 1][!trauma_val && no_damage]"
+	if(key == self.health_doll_key)
+		return
+	self.health_doll_key = key
+
+	var/mutable_appearance/healths_ma = new(self.healths)
+	healths_ma.icon_state = "blank"
+	healths_ma.overlays = null
+	healths_ma.plane = PLANE_PLAYER_HUD
+	var/list/health_images = list()
+	for(var/obj/item/organ/external/E in self.organs)
 		health_images += E.get_damage_hud_image(limb_trauma_val)
-
-	// Apply a fire overlay if we're burning.
-	if(self.on_fire || self.get_hallucination_state()?.get_hud_state() == HUD_HALLUCINATION_ONFIRE)
+	if(burning)
 		health_images += image('icons/mob/OnFire.dmi',"[self.get_fire_icon_state()]")
-
-	// Show a general pain/crit indicator if needed.
-	if(self.get_hallucination_state()?.get_hud_state() == HUD_HALLUCINATION_CRIT)
-		trauma_val = 2
-	if(trauma_val)
-		if(!(self.species.flags & NO_PAIN))
-			if(trauma_val > 0.7)
-				health_images += image('icons/mob/screen1_health.dmi',"softcrit")
-			if(trauma_val >= 1)
-				health_images += image('icons/mob/screen1_health.dmi',"hardcrit")
-	else if(no_damage)
+	if(show_pain)
+		if(trauma_val > 0.7)
+			health_images += image('icons/mob/screen1_health.dmi',"softcrit")
+		if(trauma_val >= 1)
+			health_images += image('icons/mob/screen1_health.dmi',"hardcrit")
+	else if(!trauma_val && no_damage)
 		health_images += image('icons/mob/screen1_health.dmi',"fullhealth")
 
 	healths_ma.add_overlay(health_images)
 	self.healths.appearance = healths_ma
+
+/// The last by-limb health doll this human's HUD built (see health_icons); null forces a rebuild.
+/mob/living/carbon/human/var/tmp/health_doll_key
 
 /datum/om/stage/life/vision/carbon/human
 	of = /mob/living/carbon/human
@@ -1866,8 +1889,8 @@
 		if(G.darkness_view)
 			see_in_dark += G.darkness_view
 			. = TRUE
-		if(G.overlay() && client)
-			client.screen |= G.overlay()
+		if(G.overlay())
+			claim_global_hud(G.overlay())
 		if(G.vision_flags)
 			sight |= G.vision_flags
 			. = TRUE
@@ -1892,11 +1915,9 @@
 
 /datum/om/stage/life/random_events/carbon/human
 	of = /mob/living/carbon/human
+	run_if = LIFE_RUN_IF_PLACED_LIVE_BIOLOGY
 
 /datum/om/stage/life/random_events/carbon/human/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
-	if(self.inStasisNow())
-		return
-
 	// Puke if toxloss is too high
 	if(!self.stat && !isbelly(self.loc))
 		var/toxic_load = self.injury_load(INJURY_CATEGORY_TOXIC)
@@ -2111,7 +2132,7 @@
 	if(!self.has_cardiac_output())
 		return isnull(modifier_set) ? PULSE_NONE : modifier_set
 
-	var/obj/item/organ/internal/brain/Control = self.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/Control = self.internal_organs_by_name[O_BRAIN] // any brain-slot occupant
 
 	if(Control)
 		brain_modifier = Control.get_control_efficiency()
@@ -2381,30 +2402,8 @@
 	traumatic_shock = 0
 	..()
 
-/datum/om/stage/life/defib_timer
-	order = LIFE_PHASE_TAIL + 280
-	name = "defib timer"
-	wake_on = CHANGE_MOB_HEALTH
-	run_if = LIFE_RUN_IF_DEAD_BIOLOGY
-	of = /mob/living/carbon/human
-
-/// Busy while dead with a defibrillation window still open.
-/datum/om/stage/life/defib_timer/idle(mob/living/carbon/human/self)
-	if(self.stat != DEAD || !self.should_have_organ(O_BRAIN))
-		return TRUE
-	var/obj/item/organ/internal/brain/brain = self.internal_organs_by_name[O_BRAIN]
-	return !istype(brain) || brain.defib_timer <= 0
-
-/// Brain decay while dead, which closes the defibrillation window.
-/datum/om/stage/life/defib_timer/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
-	if(!self.should_have_organ(O_BRAIN))
-		return // No brain.
-
-	var/obj/item/organ/internal/brain/brain = self.internal_organs_by_name[O_BRAIN]
-	if(!brain)
-		return // Still no brain.
-
-	brain.tick_defib_timer()
+// The defibrillation window needs no Life stage: the brain charges it on the body clock when
+// read (/obj/item/organ/internal/brain/proc/sync_defib_window(), audit D10).
 
 
 

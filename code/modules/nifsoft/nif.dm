@@ -329,8 +329,7 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 
 	var/percent_done = (world.time - (install_done - (15 MINUTES))) / (15 MINUTES) // 35 minutes down to 15 minutes.
 
-	if(human.client)
-		human.client.screen.Add(GLOB.global_hud.whitense) //This is the camera static
+	human.claim_global_hud(GLOB.global_hud.whitense) //This is the camera static
 
 	switch(percent_done) //This is 0.0 to 1.0 kinda percent.
 		//Connecting to optical nerves

@@ -394,7 +394,9 @@
 
 #undef LINGERING_POISON_CYCLE
 
-/mob/living/proc/can_inject(mob/user, error_msg, target_zone, ignore_thickness = FALSE)
+/// P2-S9: can `user` inject this mob at `target_zone` by `method` (INJECT_METHOD_*)?
+/// Every injector calls this one proc; overrides honour armour and hide.
+/mob/living/proc/can_inject(mob/user, error_msg, target_zone, ignore_thickness = FALSE, method = INJECT_METHOD_NEEDLE)
 	return 1
 
 /mob/living/proc/get_organ_target()

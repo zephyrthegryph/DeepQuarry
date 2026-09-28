@@ -274,8 +274,7 @@ EXTEND_INTERACTIONS(/obj/machinery/atmospherics/unary/cryo_cell, \
 			release_treated_occupant()
 			return FALSE
 	if(occupant.bodytemperature < CRYO_DEEP_COLD && (occupant.radiation || occupant.accumulated_rads))
-		occupant.radiation -= 25
-		occupant.accumulated_rads -= 25
+		occupant.purge_radiation(25)
 	return TRUE
 
 /// What the cell's cold (and the beaker's chemistry) treats this tick at

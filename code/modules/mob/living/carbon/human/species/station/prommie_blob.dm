@@ -11,6 +11,7 @@
 	name = "promethean blob"
 	id = "promethean_blob"
 	form_flag = FORM_FLAG_PROMETHEAN_BLOB
+	ticks = TRUE
 	draws_body = FALSE
 	factors = alist(BF_INCOMING_PHYSICAL = 0.75, BF_INCOMING_THERMAL = 2)
 	enter_message = "squishes into their true form!"

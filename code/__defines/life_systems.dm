@@ -27,6 +27,9 @@
 #define LIFE_RUN_IF_STATUS_OK ALL_OF(FACT("placed"), FACT("status_ok"))
 /// The human tail inside `if(!stasis) if(stat != DEAD)` and `... else if(stat == DEAD)`.
 #define LIFE_RUN_IF_LIVE_BIOLOGY ALL_OF(NOT_OF(FACT("in_stasis")), FACT("alive"))
+/// P2-S6: a placed, living mob whose biology is not paused by stasis this frame. Stages that
+/// declare it never ask inStasisNow() themselves.
+#define LIFE_RUN_IF_PLACED_LIVE_BIOLOGY ALL_OF(FACT("placed"), NOT_OF(FACT("in_stasis")), FACT("alive"))
 #define LIFE_RUN_IF_DEAD_BIOLOGY ALL_OF(NOT_OF(FACT("in_stasis")), NOT_OF(FACT("alive")))
 
 // --- Life sets (/mob/living/var/life_set) ---------------------------------------------------
