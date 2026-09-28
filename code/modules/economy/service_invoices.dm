@@ -496,7 +496,7 @@
 				"detail" = "Closed staff service ledger for accounting period [accounting_period]",
 			), "service-period:[accounting_period]:[department]:staff:[staff_account]")
 
-/// Asks the customer to confirm a service purchase and pick a tip, through `asker`'s rerun_prompt
+/// Asks the customer to confirm a service purchase and pick a tip, through `asker`'s rerun_ask
 /// (`proc_name` with `proc_args` runs again on the answer). Returns the tip, or null while waiting or
 /// when declined.
 /proc/service_tip_choice(mob/user, datum/money_account/customer, list/quote, description, datum/asker, proc_name, list/proc_args, key = "tip")

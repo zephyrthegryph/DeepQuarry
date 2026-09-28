@@ -589,7 +589,7 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 				return FALSE
 			var/current = preferences.read_preference(pref.type)
 			// The pick is re-checked (same prefs, still accessible) and written in pref_color_picked().
-			om_ask(ui.user, /datum/om/prompt/color/prefs/entry, GLOBAL_PROC_REF(pref_color_picked), title = "Color", message = "Pick a color", default = current || "#000000", preferences = preferences, pref_key = key)
+			om_ask(ui.user, /datum/om/prompt/color/prefs/entry, TYPE_PROC_REF(/datum/preferences, pref_color_picked), receiver = preferences, title = "Color", message = "Pick a color", default = current || "#000000", preferences = preferences, pref_key = key, ui_refresh = preferences, ui_refresh_if_true = TRUE)
 			return TRUE
 
 		// Atomic multi-pref operation handled by a registered editor.
@@ -618,7 +618,7 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 	if(!pref || !pref.is_accessible(preferences))
 		return "not accessible"
 
-/proc/pref_color_picked(datum/om/prompt/color/prefs/entry/ask)
+/// The picked colour is written through update_preference(); TRUE refreshes the prefs window.
+/datum/preferences/proc/pref_color_picked(datum/om/prompt/color/prefs/entry/ask)
 	var/datum/preference/pref = GLOB.preference_entries_by_key[ask.pref_key]
-	if(ask.preferences.update_preference(pref, ask.picked_color))
-		SStgui.update_uis(ask.preferences)
+	return update_preference(pref, ask.picked_color)

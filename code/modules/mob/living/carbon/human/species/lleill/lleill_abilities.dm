@@ -360,9 +360,6 @@
 	if(actor && chosen_target && (reason == "declined" || reason == "cancelled"))
 		to_chat(actor, span_warning("\The [chosen_target] refuses the contact."))
 
-/datum/om/prompt/confirm/lleill_contact
-	title = "Actions"
-
 /datum/om/flow/lleill_contact/start()
 	om_ask(actor, /datum/om/prompt/choice, PROC_REF(target_chosen), message = "Who do you wish to take energy from?", title = "Make contact", choices = targets)
 
@@ -382,9 +379,9 @@
 	ask_consent()
 
 /datum/om/flow/lleill_contact/proc/ask_consent()
-	om_ask(chosen_target, /datum/om/prompt/confirm/lleill_contact, PROC_REF(consented), message = "Do you accept the [contact_type] physical contact from \the [actor]?")
+	om_ask(chosen_target, /datum/om/prompt/confirm, PROC_REF(consented), message = "Do you accept the [contact_type] physical contact from \the [actor]?", title = "Actions")
 
-/datum/om/flow/lleill_contact/proc/consented(datum/om/prompt/confirm/lleill_contact/ask)
+/datum/om/flow/lleill_contact/proc/consented(datum/om/prompt/confirm/ask)
 	var/mob/living/carbon/human/H = actor
 	H.lleill_contact_answered(chosen_target, contact_type, custom_text)
 

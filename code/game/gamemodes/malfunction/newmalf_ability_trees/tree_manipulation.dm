@@ -71,10 +71,10 @@
 	if(!ability_prechecks(user, price))
 		return
 
-	om_ask(user, /datum/om/prompt/choice/malf, GLOBAL_PROC_REF(malf_hack_camera_chosen), title = "Hack Camera", message = "Select required action:", choices = list("Reset", "Add X-Ray", "Add Motion Sensor", "Add EMP Shielding"), malf_target = target, price = price)
+	om_ask(user, /datum/om/prompt/choice/malf, TYPE_PROC_REF(/mob/living/silicon/ai, malf_hack_camera_chosen), receiver = user, title = "Hack Camera", message = "Select required action:", choices = list("Reset", "Add X-Ray", "Add Motion Sensor", "Add EMP Shielding"), malf_target = target, price = price)
 
-/proc/malf_hack_camera_chosen(datum/om/prompt/choice/malf/ask)
-	var/mob/living/silicon/ai/user = ask.answerer
+/mob/living/silicon/ai/proc/malf_hack_camera_chosen(datum/om/prompt/choice/malf/ask)
+	var/mob/living/silicon/ai/user = src
 	var/obj/machinery/camera/target = ask.malf_target
 	var/price = ask.price
 

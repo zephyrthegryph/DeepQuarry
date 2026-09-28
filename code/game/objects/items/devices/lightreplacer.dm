@@ -144,13 +144,9 @@
 	if(special_handling)
 		return FALSE
 	to_chat(user, "It has [uses] lights remaining.")
-	om_ask(user, /datum/om/prompt/color/light_tool, PROC_REF(replacer_color_picked), message = "Choose a color to set the light to! (Default is [LIGHT_COLOR_INCANDESCENT_TUBE])", default = selected_color)
+	om_ask(user, /datum/om/prompt/color, PROC_REF(replacer_color_picked), message = "Choose a color to set the light to! (Default is [LIGHT_COLOR_INCANDESCENT_TUBE])", default = selected_color, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
-/// A light replacer's or painter's colour. Re-checked on the answer: the tool is still carried.
-/datum/om/prompt/color/light_tool
-	ask_flags = ASK_CARRIED | ASK_CAPABLE
-
-/obj/item/lightreplacer/proc/replacer_color_picked(datum/om/prompt/color/light_tool/ask)
+/obj/item/lightreplacer/proc/replacer_color_picked(datum/om/prompt/color/ask)
 	if(ask.picked_color)
 		selected_color = ask.picked_color
 		to_chat(ask.answerer, "The light color has been changed.")
@@ -269,9 +265,9 @@
 		resetmode = 1
 		to_chat(user, span_infoplain("Painter reset."))
 	else
-		om_ask(user, /datum/om/prompt/color/light_tool, PROC_REF(painter_color_picked), title = "Choose Light Color", message = "", default = setcolor)
+		om_ask(user, /datum/om/prompt/color, PROC_REF(painter_color_picked), title = "Choose Light Color", message = "", default = setcolor, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
-/obj/item/lightpainter/proc/painter_color_picked(datum/om/prompt/color/light_tool/ask)
+/obj/item/lightpainter/proc/painter_color_picked(datum/om/prompt/color/ask)
 	if(!ask.picked_color)
 		return
 	setcolor = sanitize_hexcolor(ask.picked_color)

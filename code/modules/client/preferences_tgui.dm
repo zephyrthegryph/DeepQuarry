@@ -189,7 +189,7 @@
 
 			var/default_value = read_preference(requested_preference.type)
 
-			om_ask(ui.user, /datum/om/prompt/color/prefs/entry, GLOBAL_PROC_REF(pref_color_picked), message = "Select new color", default = default_value || COLOR_WHITE, preferences = src, pref_key = requested_preference_key)
+			om_ask(ui.user, /datum/om/prompt/color/prefs/entry, PROC_REF(pref_color_picked), message = "Select new color", default = default_value || COLOR_WHITE, preferences = src, pref_key = requested_preference_key, ui_refresh = src, ui_refresh_if_true = TRUE)
 			return FALSE
 
 	for(var/datum/preference_middleware/preference_middleware as anything in middleware)

@@ -158,9 +158,9 @@
 	set category = "Object"
 	set src in usr
 
-	om_ask(usr, /datum/om/prompt/color/carried_item, PROC_REF(hud_color_picked), title = "HUD Color", message = "Pick a color!")
+	om_ask(usr, /datum/om/prompt/color, PROC_REF(hud_color_picked), title = "HUD Color", message = "Pick a color!", ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
-/obj/item/clothing/head/pilot/proc/hud_color_picked(datum/om/prompt/color/carried_item/ask)
+/obj/item/clothing/head/pilot/proc/hud_color_picked(datum/om/prompt/color/ask)
 	for(var/img in list("top_words","left_bar","right_bar","flyboxes"))
 		var/image/I = images[img]
 		I.color = ask.picked_color

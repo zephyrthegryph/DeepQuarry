@@ -75,7 +75,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 			GLOB.additional_antag_types -= antag.id
 			message_admins("Admin [key_name_admin(usr)] removed [antag.role_text] template from game mode.")
 	else if(href_list["add_antag_type"])
-		om_ask(usr, /datum/om/prompt/choice/game_mode_antag, PROC_REF(antag_type_added), choices = SSantag_job.all_antag_types)
+		om_ask(usr, /datum/om/prompt/choice, PROC_REF(antag_type_added), choices = SSantag_job.all_antag_types, title = "Select Antag Type", message = "Which type do you wish to add?", requires = PROMPT_ADMIN(R_ADMIN|R_SERVER))
 		return
 
 	SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/show_game_mode)
@@ -93,11 +93,6 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 /datum/om/prompt/number/game_mode_option
 	requires = PROMPT_ADMIN(R_ADMIN|R_SERVER)
 	var/option
-
-/datum/om/prompt/choice/game_mode_antag
-	title = "Select Antag Type"
-	message = "Which type do you wish to add?"
-	requires = PROMPT_ADMIN(R_ADMIN|R_SERVER)
 
 /datum/game_mode/proc/game_mode_option_entered(datum/om/prompt/number/game_mode_option/ask)
 	var/mob/user = ask.answerer
@@ -123,7 +118,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 			refresh_event_modifiers()
 	message_admins("Admin [key_name_admin(user)] set game mode option '[ask.option]' to [choice].")
 
-/datum/game_mode/proc/antag_type_added(datum/om/prompt/choice/game_mode_antag/ask)
+/datum/game_mode/proc/antag_type_added(datum/om/prompt/choice/ask)
 	var/mob/user = ask.answerer
 	var/datum/antagonist/antag = SSantag_job.all_antag_types[ask.choice]
 	if(antag)

@@ -308,7 +308,7 @@
 
 	return data
 
-/datum/component/radiation_effects/proc/radiation_color_picked(datum/om/prompt/color/panel_setting/ask)
+/datum/component/radiation_effects/proc/radiation_color_picked(datum/om/prompt/color/ask)
 	if(!ask.picked_color)
 		return
 	radiation_color = ask.picked_color
@@ -319,7 +319,7 @@
 
 	switch(action)
 		if("toggle_color")
-			om_ask(ui.user, /datum/om/prompt/color/panel_setting, PROC_REF(radiation_color_picked), message = "Select a color you wish your radioactive glow to be!", default = radiation_color, ui_refresh = src)
+			om_ask(ui.user, /datum/om/prompt/color, PROC_REF(radiation_color_picked), message = "Select a color you wish your radioactive glow to be!", default = radiation_color, ui_refresh = src, title = "Color Selector")
 			return FALSE
 		if("toggle_glow")
 			glows = !glows

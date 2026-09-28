@@ -216,15 +216,11 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 		announce_ghost_joinleave(ghostize(1))
 	else
 		if(check_rights_for(src.client, R_ADMIN|R_SERVER|R_MOD)) //No need to sanity check for client and holder here as that is part of check_rights
-			om_ask(src, /datum/om/prompt/choice/ghost, PROC_REF(ghost_choice_made), message = "You have the ability to Admin-Ghost. The regular Ghost verb will announce your presence to dead chat. Both variants will allow you to return to your body using 'aghost'.\n\nWhat do you wish to do?", choices = list("Admin Ghost", "Ghost", "Stay in body"))
+			om_ask(src, /datum/om/prompt/choice, PROC_REF(ghost_choice_made), message = "You have the ability to Admin-Ghost. The regular Ghost verb will announce your presence to dead chat. Both variants will allow you to return to your body using 'aghost'.\n\nWhat do you wish to do?", choices = list("Admin Ghost", "Ghost", "Stay in body"), title = "Are you sure you want to ghost?", buttons = TRUE)
 		else
-			om_ask(src, /datum/om/prompt/choice/ghost, PROC_REF(ghost_choice_made), message = "Are you -sure- you want to ghost?\n(You are alive, or otherwise have the potential to become alive. Don't abuse ghost unless you are inside a cryopod or equivalent! You can't change your mind so choose wisely!)", choices = list("Stay in body", "Ghost"))
+			om_ask(src, /datum/om/prompt/choice, PROC_REF(ghost_choice_made), message = "Are you -sure- you want to ghost?\n(You are alive, or otherwise have the potential to become alive. Don't abuse ghost unless you are inside a cryopod or equivalent! You can't change your mind so choose wisely!)", choices = list("Stay in body", "Ghost"), title = "Are you sure you want to ghost?", buttons = TRUE)
 
-/datum/om/prompt/choice/ghost
-	title = "Are you sure you want to ghost?"
-	buttons = TRUE
-
-/mob/living/proc/ghost_choice_made(datum/om/prompt/choice/ghost/ask)
+/mob/living/proc/ghost_choice_made(datum/om/prompt/choice/ask)
 	var/response = ask.choice
 	if(response == "Admin Ghost")
 		if(!src.client)

@@ -113,22 +113,14 @@
 	/// The law type the ghost picked ("Regular" or "Vore"), asked before the drone is made.
 	var/drone_laws
 
-/// A cancel picks regular laws.
-/datum/om/prompt/choice/lost_drone_laws
-	title = "Drone Type"
-	message = "What sort of laws do you wish to have as Lost Drone (they will still be random)"
-	choices = list("Regular", "Vore")
-	buttons = TRUE
-	cancel_answer = "Regular"
-
-/obj/structure/ghost_pod/manual/lost_drone/dogborg/proc/drone_type_chosen(datum/om/prompt/choice/lost_drone_laws/ask)
+/obj/structure/ghost_pod/manual/lost_drone/dogborg/proc/drone_type_chosen(datum/om/prompt/choice/ask)
 	drone_laws = ask.choice
 	create_occupant(ask.answerer)
 
 /obj/structure/ghost_pod/manual/lost_drone/dogborg/create_occupant(mob/M)
 	if(!drone_laws)
 		used = TRUE
-		om_ask(M, /datum/om/prompt/choice/lost_drone_laws, PROC_REF(drone_type_chosen))
+		om_ask(M, /datum/om/prompt/choice, PROC_REF(drone_type_chosen), title = "Drone Type", message = "What sort of laws do you wish to have as Lost Drone (they will still be random)", choices = list("Regular", "Vore"), buttons = TRUE, cancel_answer = "Regular")
 		return
 	if(!(drone_laws == "Vore"))	// Regular
 		return ..()

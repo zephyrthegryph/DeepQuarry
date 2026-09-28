@@ -39,11 +39,11 @@ GLOBAL_LIST_INIT(ai_status_emotions, list(
 
 	return emotions
 
-/proc/set_ai_status_displays(mob/user as mob)
-	var/list/ai_emotions = get_ai_emotions(user.ckey)
-	om_ask(user, /datum/om/prompt/choice, GLOBAL_PROC_REF(ai_status_display_chosen), message = "Please, select a status:", title = "AI Status", choices = ai_emotions)
+/mob/living/silicon/ai/proc/set_ai_status_displays()
+	var/list/ai_emotions = get_ai_emotions(ckey)
+	om_ask(src, /datum/om/prompt/choice, PROC_REF(ai_status_display_chosen), message = "Please, select a status:", title = "AI Status", choices = ai_emotions)
 
-/proc/ai_status_display_chosen(datum/om/prompt/choice/ask)
+/mob/living/silicon/ai/proc/ai_status_display_chosen(datum/om/prompt/choice/ask)
 	var/emote = ask.choice
 	for (var/obj/machinery/M in REGISTRY_MEMBERS(REGISTRY_MACHINES)) //change status
 		if(istype(M, /obj/machinery/ai_status_display))

@@ -42,17 +42,11 @@
 	else
 		chargesa--
 		insistinga = 0
-		om_ask(user, /datum/om/prompt/choice/wish, PROC_REF(wish_chosen))
+		om_ask(user, /datum/om/prompt/choice, PROC_REF(wish_chosen), title = "Wish", message = "You want...", choices = list("Power","Wealth","Immortality","To Kill","Peace"), requires = PROMPT_ADJACENT)
 		return TRUE
 	return TRUE
 
-/datum/om/prompt/choice/wish
-	title = "Wish"
-	message = "You want..."
-	choices = list("Power","Wealth","Immortality","To Kill","Peace")
-	requires = PROMPT_ADJACENT
-
-/obj/machinery/wish_granter/proc/wish_chosen(datum/om/prompt/choice/wish/ask)
+/obj/machinery/wish_granter/proc/wish_chosen(datum/om/prompt/choice/ask)
 	var/mob/living/carbon/human/user = ask.answerer
 	switch(ask.choice)
 		if("Power")

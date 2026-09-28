@@ -211,13 +211,9 @@
 
 /// Offers the new mob's player their saved vore bellies.
 /mob/living/proc/offer_load_bellies()
-	om_ask(src, /datum/om/prompt/confirm/load_bellies, PROC_REF(load_bellies_answered))
+	om_ask(src, /datum/om/prompt/confirm, PROC_REF(load_bellies_answered), title = "Load Bellies", message = "Do you want to load the vore bellies from your current slot?")
 
-/datum/om/prompt/confirm/load_bellies
-	title = "Load Bellies"
-	message = "Do you want to load the vore bellies from your current slot?"
-
-/mob/living/proc/load_bellies_answered(datum/om/prompt/confirm/load_bellies/ask)
+/mob/living/proc/load_bellies_answered(datum/om/prompt/confirm/ask)
 	copy_from_prefs_vr()
 	if(LAZYLEN(vore_organs))
 		vore_selected = vore_organs[1]

@@ -388,12 +388,10 @@
 	set category = "OOC.Game Settings"
 	set name = "Set Incorporeal Speed"
 
-	om_ask(usr, /datum/om/prompt/number, /proc/incorporeal_speed_entered, title = "Incorporeal movement speed", message = "Set an incorporeal movement delay between 0 (fastest) and 5 (slowest)", default = (0.5/world.tick_lag), max = 5, min = 0)
+	om_ask(usr, /datum/om/prompt/number, PROC_REF(incorporeal_speed_entered), title = "Incorporeal movement speed", message = "Set an incorporeal movement delay between 0 (fastest) and 5 (slowest)", default = (0.5/world.tick_lag), max = 5, min = 0)
 
-/proc/incorporeal_speed_entered(datum/om/prompt/number/ask)
-	var/client/C = ask.answerer.client
-	if(C)
-		C.incorporeal_speed = ask.number * world.tick_lag
+/client/proc/incorporeal_speed_entered(datum/om/prompt/number/ask)
+	incorporeal_speed = ask.number * world.tick_lag
 
 ///Process_Incorpmove
 ///Called by client/Move()
@@ -420,12 +418,9 @@
 	reset_leaving()
 
 /// Confirmed: the ghost moves out on the direction it pressed.
-/proc/leave_belly_answered(datum/om/prompt/confirm/leave_belly/ask)
-	var/client/C = ask.answerer.client
-	if(!C)
-		return
-	C.is_leaving_belly = 2
-	C.Process_Incorpmove(ask.dir)
+/client/proc/leave_belly_answered(datum/om/prompt/confirm/leave_belly/ask)
+	is_leaving_belly = 2
+	Process_Incorpmove(ask.dir)
 
 /client/proc/Process_Incorpmove(direct)
 	if(isbelly(mob.loc) && isobserver(mob))
@@ -433,7 +428,7 @@
 			return
 		if(!is_leaving_belly)
 			is_leaving_belly = TRUE
-			om_ask(mob, /datum/om/prompt/confirm/leave_belly, /proc/leave_belly_answered, dir = direct)
+			om_ask(mob, /datum/om/prompt/confirm/leave_belly, PROC_REF(leave_belly_answered), dir = direct)
 			return
 		is_leaving_belly = FALSE
 	if(isghosttrap(mob.loc))

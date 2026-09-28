@@ -537,26 +537,6 @@
 	message = "[asker] wants to play [game]."
 	return TRUE
 
-/datum/om/prompt/choice/hand_game_rps
-	message = "Choose your attack!"
-	title = "Rock, Paper, Scissors"
-	choices = list("Rock", "Paper", "Scissors", "Cancel")
-	buttons = TRUE
-
-/datum/om/prompt/number/hand_game_strength
-	message = "How strong is your character on a scale of 1 to 10 (1 being a weakling, 10 being very strong)."
-	title = "Strength"
-	min = 1
-	max = 10
-	default = 5
-
-/datum/om/prompt/number/hand_game_speed
-	message = "How fast are your character's reaction times on a scale of 1 to 10 (1 being slow, 10 being very fast)."
-	title = "Speed"
-	min = 1
-	max = 10
-	default = 5
-
 /datum/om/flow/hand_game/start()
 	var/mob/living/carbon/human/player1 = actor
 	to_chat(player1, span_notice("Asking [target] if they want to play [game]!"))
@@ -566,11 +546,11 @@
 /datum/om/flow/hand_game/proc/ask_move(mob/living/carbon/human/player, next)
 	switch(game)
 		if("Rock, Paper, Scissors")
-			om_ask(player, /datum/om/prompt/choice/hand_game_rps, next)
+			om_ask(player, /datum/om/prompt/choice, next, message = "Choose your attack!", title = "Rock, Paper, Scissors", choices = list("Rock", "Paper", "Scissors", "Cancel"), buttons = TRUE)
 		if("Arm Wrestling")
-			om_ask(player, /datum/om/prompt/number/hand_game_strength, next)
+			om_ask(player, /datum/om/prompt/number, next, message = "How strong is your character on a scale of 1 to 10 (1 being a weakling, 10 being very strong).", title = "Strength", min = 1, max = 10, default = 5)
 		if("Slap Hands")
-			om_ask(player, /datum/om/prompt/number/hand_game_speed, next)
+			om_ask(player, /datum/om/prompt/number, next, message = "How fast are your character's reaction times on a scale of 1 to 10 (1 being slow, 10 being very fast).", title = "Speed", min = 1, max = 10, default = 5)
 
 /// The move a move prompt answered.
 /datum/om/flow/hand_game/proc/move_of(datum/om/prompt/ask)

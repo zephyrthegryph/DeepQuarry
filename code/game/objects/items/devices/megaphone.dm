@@ -47,15 +47,9 @@
 	return L
 
 /obj/item/megaphone/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	om_ask(user, /datum/om/prompt/text/megaphone, PROC_REF(shout_entered))
+	om_ask(user, /datum/om/prompt/text, PROC_REF(shout_entered), title = "Megaphone", message = "Shout a message?", ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
-/// Re-checked on the answer: the megaphone is still carried.
-/datum/om/prompt/text/megaphone
-	title = "Megaphone"
-	message = "Shout a message?"
-	ask_flags = ASK_CARRIED | ASK_CAPABLE
-
-/obj/item/megaphone/proc/shout_entered(datum/om/prompt/text/megaphone/ask)
+/obj/item/megaphone/proc/shout_entered(datum/om/prompt/text/ask)
 	var/mob/user = ask.answerer
 	if(!ask.text)
 		return
@@ -114,15 +108,9 @@
 	adjust_volume(usr)
 
 /obj/item/megaphone/super/proc/adjust_volume(mob/living/user)
-	om_ask(user, /datum/om/prompt/choice/gigaphone_setting, PROC_REF(volume_chosen), choices = volume_options)
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(volume_chosen), choices = volume_options, title = "Set Volume", message = "Set Volume", requires = PROMPT_ADJACENT)
 
-/// A gigaphone dial (volume, font, colour; all titled "Set Volume"). Re-checked on the answer: still next to it.
-/datum/om/prompt/choice/gigaphone_setting
-	title = "Set Volume"
-	message = "Set Volume"
-	requires = PROMPT_ADJACENT
-
-/obj/item/megaphone/super/proc/volume_chosen(datum/om/prompt/choice/gigaphone_setting/ask)
+/obj/item/megaphone/super/proc/volume_chosen(datum/om/prompt/choice/ask)
 	if(ask.choice)
 		broadcast_size = ask.choice
 
@@ -134,9 +122,9 @@
 	adjust_font(usr)
 
 /obj/item/megaphone/super/proc/adjust_font(mob/living/user)
-	om_ask(user, /datum/om/prompt/choice/gigaphone_setting, PROC_REF(font_chosen), choices = font_options)
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(font_chosen), choices = font_options, title = "Set Volume", message = "Set Volume", requires = PROMPT_ADJACENT)
 
-/obj/item/megaphone/super/proc/font_chosen(datum/om/prompt/choice/gigaphone_setting/ask)
+/obj/item/megaphone/super/proc/font_chosen(datum/om/prompt/choice/ask)
 	if(ask.choice)
 		broadcast_font = ask.choice
 
@@ -148,9 +136,9 @@
 	adjust_color(usr)
 
 /obj/item/megaphone/super/proc/adjust_color(mob/living/user)
-	om_ask(user, /datum/om/prompt/choice/gigaphone_setting, PROC_REF(color_chosen), choices = color_options)
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(color_chosen), choices = color_options, title = "Set Volume", message = "Set Volume", requires = PROMPT_ADJACENT)
 
-/obj/item/megaphone/super/proc/color_chosen(datum/om/prompt/choice/gigaphone_setting/ask)
+/obj/item/megaphone/super/proc/color_chosen(datum/om/prompt/choice/ask)
 	if(ask.choice)
 		broadcast_color = ask.choice
 

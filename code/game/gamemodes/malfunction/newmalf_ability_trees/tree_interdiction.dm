@@ -47,10 +47,10 @@
 	if(!ability_prechecks(user, price))
 		return
 
-	om_ask(user, /datum/om/prompt/confirm/malf, GLOBAL_PROC_REF(malf_recall_shuttle_confirmed), title = "Recall Shuttle: ", message = "Really recall the shuttle?", price = price)
+	om_ask(user, /datum/om/prompt/confirm/malf, TYPE_PROC_REF(/mob/living/silicon/ai, malf_recall_shuttle_confirmed), receiver = user, title = "Recall Shuttle: ", message = "Really recall the shuttle?", price = price)
 
-/proc/malf_recall_shuttle_confirmed(datum/om/prompt/confirm/malf/ask)
-	var/mob/living/silicon/ai/user = ask.answerer
+/mob/living/silicon/ai/proc/malf_recall_shuttle_confirmed(datum/om/prompt/confirm/malf/ask)
+	var/mob/living/silicon/ai/user = src
 	var/price = ask.price
 	if(!ability_pay(user, price))
 		return
@@ -97,29 +97,29 @@
 			return
 
 
-		om_ask(user, /datum/om/prompt/choice/malf, GLOBAL_PROC_REF(malf_unlock_target_chosen), title = "Unlock Target", message = "Select unlock target:", choices = robot_names, options = robots)
+		om_ask(user, /datum/om/prompt/choice/malf, TYPE_PROC_REF(/mob/living/silicon/ai, malf_unlock_target_chosen), receiver = user, title = "Unlock Target", message = "Select unlock target:", choices = robot_names, options = robots)
 		return
 	malf_unlock_confirm(user, target)
 
-/proc/malf_unlock_target_chosen(datum/om/prompt/choice/malf/ask)
+/mob/living/silicon/ai/proc/malf_unlock_target_chosen(datum/om/prompt/choice/malf/ask)
 	for(var/mob/living/silicon/robot/R in ask.options)
 		if(ask.choice == R.name)
-			malf_unlock_confirm(ask.answerer, R)
+			malf_unlock_confirm(src, R)
 			return
 
 /proc/malf_unlock_confirm(mob/living/silicon/ai/user, mob/living/silicon/robot/target)
 	if(target)
-		om_ask(user, /datum/om/prompt/confirm/malf, GLOBAL_PROC_REF(malf_unlock_confirmed), title = "Unlock Cyborg", message = "Really try to unlock cyborg [target.name]?", malf_target = target)
+		om_ask(user, /datum/om/prompt/confirm/malf, TYPE_PROC_REF(/mob/living/silicon/ai, malf_unlock_confirmed), receiver = user, title = "Unlock Cyborg", message = "Really try to unlock cyborg [target.name]?", malf_target = target)
 
-/proc/malf_unlock_confirmed(datum/om/prompt/confirm/malf/ask)
-	var/mob/living/silicon/ai/user = ask.answerer
+/mob/living/silicon/ai/proc/malf_unlock_confirmed(datum/om/prompt/confirm/malf/ask)
+	var/mob/living/silicon/ai/user = src
 	var/mob/living/silicon/robot/target = ask.malf_target
 	var/price = 125
 	if(!ability_pay(user, price))
 		return
 	user.hacking = 1
 	to_chat(user, "Attempting to unlock cyborg. This will take approximately 30 seconds.")
-	om_after(user, 30 SECONDS, GLOBAL_PROC_REF(malf_unlock_cyborg_done), user, target)
+	om_after(user, 30 SECONDS, TYPE_PROC_REF(/mob/living/silicon/ai, malf_unlock_cyborg_done), receiver = user, user, target)
 
 /proc/malf_unlock_cyborg_done(mob/living/silicon/ai/user, mob/living/silicon/robot/target)
 	if(target && target.lockcharge)
@@ -166,10 +166,10 @@
 		return
 
 	if(target)
-		om_ask(user, /datum/om/prompt/confirm/malf, GLOBAL_PROC_REF(malf_hack_cyborg_confirmed), title = "Hack Cyborg", message = "Really try to hack cyborg [target.name]?", malf_target = target)
+		om_ask(user, /datum/om/prompt/confirm/malf, TYPE_PROC_REF(/mob/living/silicon/ai, malf_hack_cyborg_confirmed), receiver = user, title = "Hack Cyborg", message = "Really try to hack cyborg [target.name]?", malf_target = target)
 
-/proc/malf_hack_cyborg_confirmed(datum/om/prompt/confirm/malf/ask)
-	var/mob/living/silicon/ai/user = ask.answerer
+/mob/living/silicon/ai/proc/malf_hack_cyborg_confirmed(datum/om/prompt/confirm/malf/ask)
+	var/mob/living/silicon/ai/user = src
 	var/mob/living/silicon/robot/target = ask.malf_target
 	var/price = 350
 	if(!ability_pay(user, price))
@@ -206,10 +206,10 @@
 		return
 
 	if(target)
-		om_ask(user, /datum/om/prompt/confirm/malf, GLOBAL_PROC_REF(malf_hack_ai_confirmed), title = "Hack AI", message = "Really try to hack AI [target.name]?", malf_target = target)
+		om_ask(user, /datum/om/prompt/confirm/malf, TYPE_PROC_REF(/mob/living/silicon/ai, malf_hack_ai_confirmed), receiver = user, title = "Hack AI", message = "Really try to hack AI [target.name]?", malf_target = target)
 
-/proc/malf_hack_ai_confirmed(datum/om/prompt/confirm/malf/ask)
-	var/mob/living/silicon/ai/user = ask.answerer
+/mob/living/silicon/ai/proc/malf_hack_ai_confirmed(datum/om/prompt/confirm/malf/ask)
+	var/mob/living/silicon/ai/user = src
 	var/mob/living/silicon/ai/target = ask.malf_target
 	var/price = 600
 	if(!ability_pay(user, price))

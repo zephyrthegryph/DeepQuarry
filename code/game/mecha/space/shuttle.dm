@@ -67,10 +67,10 @@
 
 /obj/mecha/working/hoverpod/shuttlecraft/attackby(obj/item/W as obj, mob/user as mob)
 	if(istype(W,/obj/item/multitool) && state == 1)
-		om_ask(user, /datum/om/prompt/choice/mech_paint_zone, PROC_REF(ask_paint_color), subject = W, choices = list("Central", "Engine", "Base", "Front", "CANCEL"))
+		om_ask(user, /datum/om/prompt/choice, PROC_REF(ask_paint_color), subject = W, choices = list("Central", "Engine", "Base", "Front", "CANCEL"), title = "Paint Zone", message = "Please select a target zone.", ask_flags = ASK_HELD | ASK_CAPABLE)
 	else ..()
 
-/obj/mecha/working/hoverpod/shuttlecraft/proc/ask_paint_color(datum/om/prompt/choice/mech_paint_zone/ask)
+/obj/mecha/working/hoverpod/shuttlecraft/proc/ask_paint_color(datum/om/prompt/choice/ask)
 	if(ask.choice != "CANCEL")
 		om_ask(ask.answerer, /datum/om/prompt/color/mech_paint, PROC_REF(hull_painted), subject = ask.subject, zone = ask.choice)
 

@@ -49,14 +49,7 @@ REF_OWNED(/obj/item/tvcamera, list("camera", "radio"))
 
 // show_ui body moved to code/modules/tvcamera_panel.dm (structured TGUI).
 
-/// Renaming a camera's broadcast channel (TV camera, body camera). Re-checked on the answer: still usable by hand.
-/datum/om/prompt/text/camera_channel
-	title = "Select new channel name"
-	message = "Channel name"
-	max_length = MAX_NAME_LEN
-	requires = PROMPT_USABLE_BY("physical")
-
-/obj/item/tvcamera/proc/channel_named(datum/om/prompt/text/camera_channel/ask)
+/obj/item/tvcamera/proc/channel_named(datum/om/prompt/text/ask)
 	var/mob/user = ask.answerer
 	var/nc = ask.text
 	if(nc)
@@ -68,7 +61,7 @@ REF_OWNED(/obj/item/tvcamera, list("camera", "radio"))
 	if(..())
 		return 1
 	if(href_list["channel"])
-		om_ask(usr, /datum/om/prompt/text/camera_channel, PROC_REF(channel_named), default = channel)
+		om_ask(usr, /datum/om/prompt/text, PROC_REF(channel_named), default = channel, title = "Select new channel name", message = "Channel name", max_length = MAX_NAME_LEN, requires = PROMPT_USABLE_BY("physical"))
 	if(href_list["video"])
 		camera.set_status(!camera.status)
 		if(camera.status)
@@ -208,7 +201,7 @@ REF_OWNED(/obj/item/clothing/accessory/bodycam, list("bcamera", "bradio"))
 
 // show_bodycam_ui body moved to code/modules/tvcamera_panel.dm (structured TGUI).
 
-/obj/item/clothing/accessory/bodycam/proc/channel_named(datum/om/prompt/text/camera_channel/ask)
+/obj/item/clothing/accessory/bodycam/proc/channel_named(datum/om/prompt/text/ask)
 	var/mob/user = ask.answerer
 	var/nc = sanitize(ask.text, MAX_NAME_LEN)
 	if(nc)
@@ -221,7 +214,7 @@ REF_OWNED(/obj/item/clothing/accessory/bodycam, list("bcamera", "bradio"))
 	if(..())
 		return 1
 	if(href_list["channel"])
-		om_ask(usr, /datum/om/prompt/text/camera_channel, PROC_REF(channel_named), default = channel)
+		om_ask(usr, /datum/om/prompt/text, PROC_REF(channel_named), default = channel, title = "Select new channel name", message = "Channel name", max_length = MAX_NAME_LEN, requires = PROMPT_USABLE_BY("physical"))
 	if(href_list["video"])
 		bcamera.set_status(!bcamera.status)
 		var/turf/here = get_turf(usr)

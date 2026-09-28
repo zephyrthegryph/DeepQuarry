@@ -197,12 +197,12 @@
 		to_chat(user, span_warning("You can't do that right now!"))
 		return
 
-	om_ask(user, /datum/om/prompt/confirm/energy_recolor, PROC_REF(ask_blade_color), message = "Are you sure you want to recolor your blade?")
+	om_ask(user, /datum/om/prompt/confirm, PROC_REF(ask_blade_color), message = "Are you sure you want to recolor your blade?", title = "Confirm Recolor", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 
-/obj/item/toy/sword/proc/ask_blade_color(datum/om/prompt/confirm/energy_recolor/ask)
-	om_ask(ask.answerer, /datum/om/prompt/color/energy, PROC_REF(blade_recolored), default = lcolor)
+/obj/item/toy/sword/proc/ask_blade_color(datum/om/prompt/confirm/ask)
+	om_ask(ask.answerer, /datum/om/prompt/color, PROC_REF(blade_recolored), default = lcolor, title = "Choose Energy Color", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 
-/obj/item/toy/sword/proc/blade_recolored(datum/om/prompt/color/energy/ask)
+/obj/item/toy/sword/proc/blade_recolored(datum/om/prompt/color/ask)
 	if(ask.picked_color)
 		lcolor = sanitize_hexcolor(ask.picked_color)
 	update_icon()

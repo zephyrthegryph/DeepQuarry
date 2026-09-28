@@ -66,7 +66,7 @@
 
 /obj/structure/bonfire/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/stack/rods) && !can_buckle && !grill)
-		om_ask(user, /datum/om/prompt/choice/bonfire_build, PROC_REF(construction_chosen), subject = W)
+		om_ask(user, /datum/om/prompt/choice, PROC_REF(construction_chosen), subject = W, title = "Bonfire", message = "What would you like to construct?", choices = list("Stake","Grill"), ask_flags = ASK_HELD | ASK_CAPABLE)
 		return TRUE
 	else if(istype(W, /obj/item/stack/material/wood) || istype(W, /obj/item/stack/material/log) )
 		add_fuel(W, user)
@@ -75,14 +75,7 @@
 		ignite()
 	return TRUE
 
-/// Building on a bonfire with rods (the subject, held throughout).
-/datum/om/prompt/choice/bonfire_build
-	title = "Bonfire"
-	message = "What would you like to construct?"
-	choices = list("Stake","Grill")
-	ask_flags = ASK_HELD | ASK_CAPABLE
-
-/obj/structure/bonfire/proc/construction_chosen(datum/om/prompt/choice/bonfire_build/ask)
+/obj/structure/bonfire/proc/construction_chosen(datum/om/prompt/choice/ask)
 	var/mob/user = ask.answerer
 	var/obj/item/stack/rods/R = ask.subject
 	if(can_buckle || grill)

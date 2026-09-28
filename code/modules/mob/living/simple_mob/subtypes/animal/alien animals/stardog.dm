@@ -482,17 +482,11 @@ REF_PAIR(/mob/living/simple_mob/vore/overmap/stardog, list("control_node" = "hos
 		to_chat(L, span_warning("You cannot speak in IC (muted)."))
 		return
 	if (!message)
-		om_ask(L, /datum/om/prompt/text/emote_beyond, PROC_REF(emote_beyond_answered))
+		om_ask(L, /datum/om/prompt/text, PROC_REF(emote_beyond_answered), title = "Emote Beyond", message = "Type a message to emote.", encode = FALSE)
 		return
 	emote_beyond_entered(L, message)
 
-/// "Emote Beyond": a subtle emote across the stardog's skin.
-/datum/om/prompt/text/emote_beyond
-	title = "Emote Beyond"
-	message = "Type a message to emote."
-	encode = FALSE
-
-/turf/simulated/floor/outdoors/fur/proc/emote_beyond_answered(datum/om/prompt/text/emote_beyond/ask)
+/turf/simulated/floor/outdoors/fur/proc/emote_beyond_answered(datum/om/prompt/text/ask)
 	emote_beyond_entered(ask.answerer, ask.text)
 
 /turf/simulated/floor/outdoors/fur/proc/emote_beyond_entered(mob/living/L, message)
@@ -966,10 +960,10 @@ REF_PAIR(/obj/structure/control_pod, list("host" = "control_node"))
 	if(L.client.prefs.muted & MUTE_IC)
 		to_chat(L, span_warning("You cannot speak in IC (muted)."))
 		return
-	om_ask(L, /datum/om/prompt/text/emote_beyond, PROC_REF(emote_beyond_entered))
+	om_ask(L, /datum/om/prompt/text, PROC_REF(emote_beyond_entered), title = "Emote Beyond", message = "Type a message to emote.", encode = FALSE)
 	return TRUE
 
-/obj/machinery/computer/ship/navigation/proc/emote_beyond_entered(datum/om/prompt/text/emote_beyond/ask)
+/obj/machinery/computer/ship/navigation/proc/emote_beyond_entered(datum/om/prompt/text/ask)
 	var/mob/living/L = ask.answerer
 	var/message = sanitize_or_reflect(ask.text, L)
 	if (!message)

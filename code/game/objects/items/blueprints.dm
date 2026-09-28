@@ -433,7 +433,7 @@
 			continue // No expanding powerless rooms etc
 		areas[place.name] = place
 
-	om_ask(creator, /datum/om/prompt/choice/blueprint_expand, GLOBAL_PROC_REF(create_area_chosen), subject = get_turf(creator), choices = areas, editor = AO, turfs = turfs)
+	om_ask(creator, /datum/om/prompt/choice/blueprint_expand, TYPE_PROC_REF(/obj/item/areaeditor, create_area_chosen), receiver = AO, subject = get_turf(creator), choices = areas, editor = AO, turfs = turfs)
 
 /// Blueprint area prompts: the subject is the creator's turf, and they stay on it (BLUEPRINT_PROMPT_REQUIRES).
 /datum/om/prompt/choice/blueprint_expand
@@ -455,14 +455,14 @@
 	var/obj/item/areaeditor/editor
 	var/list/turfs
 
-/proc/create_area_chosen(datum/om/prompt/choice/blueprint_expand/ask)
+/obj/item/areaeditor/proc/create_area_chosen(datum/om/prompt/choice/blueprint_expand/ask)
 	var/area_choice = ask.choices[ask.choice]
 	if(isarea(area_choice))
-		create_area_commit(ask.answerer, ask.editor, ask.turfs, area_choice)
+		create_area_commit(ask.answerer, src, ask.turfs, area_choice)
 		return
-	om_ask(ask.answerer, /datum/om/prompt/text/blueprint_area_name, GLOBAL_PROC_REF(create_area_named), subject = ask.subject, editor = ask.editor, turfs = ask.turfs)
+	om_ask(ask.answerer, /datum/om/prompt/text/blueprint_area_name, PROC_REF(create_area_named), subject = ask.subject, editor = src, turfs = ask.turfs)
 
-/proc/create_area_named(datum/om/prompt/text/blueprint_area_name/ask)
+/obj/item/areaeditor/proc/create_area_named(datum/om/prompt/text/blueprint_area_name/ask)
 	var/mob/creator = ask.answerer
 	var/str = ask.text
 	if(!length(str)) //cancel
@@ -478,7 +478,7 @@
 	var/area/newA = new /area
 	newA.setup(str)
 	newA.has_gravity = oldA.has_gravity
-	create_area_commit(creator, ask.editor, ask.turfs, newA, TRUE)
+	create_area_commit(creator, src, ask.turfs, newA, TRUE)
 
 /// The blueprint's area expansion, once the creator has picked (and maybe named) the area.
 /proc/create_area_commit(mob/creator, obj/item/areaeditor/AO, list/turfs, area/newA, annoy_admins = FALSE)
@@ -865,7 +865,7 @@
 		to_chat(creator, span_warning("The room you're in is too big. It can only be 70 tiles in size, excluding walls."))
 		return
 
-	om_ask(creator, /datum/om/prompt/text/blueprint_new_area, GLOBAL_PROC_REF(create_new_area_named), subject = get_turf(creator), turfs = turfs)
+	om_ask(creator, /datum/om/prompt/text/blueprint_new_area, TYPE_PROC_REF(/mob, create_new_area_named), receiver = creator, subject = get_turf(creator), turfs = turfs)
 
 /datum/om/prompt/text/blueprint_new_area
 	title = "Area Name"
@@ -878,8 +878,8 @@
 /datum/om/prompt/text/blueprint_new_area/cancelled()
 	to_chat(answerer, span_warning("No new area made. Cancelling."))
 
-/proc/create_new_area_named(datum/om/prompt/text/blueprint_new_area/ask)
-	var/mob/creator = ask.answerer
+/mob/proc/create_new_area_named(datum/om/prompt/text/blueprint_new_area/ask)
+	var/mob/creator = src
 	var/str = sanitizeSafe(ask.text, MAX_NAME_LEN)
 	if(!str || !length(str)) //sanity
 		to_chat(creator, span_warning("No new area made. Cancelling."))

@@ -81,11 +81,7 @@
 		return
 	weave_check(ask.recipe.cost, ask.recipe.result_type)
 
-/// A colour setting picked from a trait or species settings panel (weaver silk, radiation glow, shadekin flicker).
-/datum/om/prompt/color/panel_setting
-	title = "Color Selector"
-
-/datum/component/weaver/proc/silk_color_picked(datum/om/prompt/color/panel_setting/ask)
+/datum/component/weaver/proc/silk_color_picked(datum/om/prompt/color/ask)
 	if(!ask.picked_color)
 		return
 	silk_color = ask.picked_color
@@ -140,7 +136,7 @@
 
 	switch(action)
 		if("new_silk_color")
-			om_ask(ui.user, /datum/om/prompt/color/panel_setting, PROC_REF(silk_color_picked), message = "Select a color you wish your silk to be!", default = silk_color, ui_refresh = src)
+			om_ask(ui.user, /datum/om/prompt/color, PROC_REF(silk_color_picked), message = "Select a color you wish your silk to be!", default = silk_color, ui_refresh = src, title = "Color Selector")
 			return FALSE
 		if("toggle_silk_production")
 			silk_production = !(silk_production)

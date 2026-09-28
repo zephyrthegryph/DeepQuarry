@@ -311,10 +311,6 @@
 	title = "Join as Voice?"
 	var/prefs_name
 
-/datum/om/prompt/choice/voice_request_recipient
-	title = "Recipient Choice"
-	message = "Send a voice request to whom?"
-
 /mob/observer/dead/proc/join_as_voice_confirmed(datum/om/prompt/confirm/join_as_voice/ask)
 	var/prefs_name = ask.prefs_name
 
@@ -343,9 +339,9 @@
 		to_chat(src, span_danger("There are no available communicators, sorry."))
 		return
 
-	om_ask(src, /datum/om/prompt/choice/voice_request_recipient, PROC_REF(voice_request_target_chosen), choices = choices)
+	om_ask(src, /datum/om/prompt/choice, PROC_REF(voice_request_target_chosen), choices = choices, title = "Recipient Choice", message = "Send a voice request to whom?")
 
-/mob/observer/dead/proc/voice_request_target_chosen(datum/om/prompt/choice/voice_request_recipient/ask)
+/mob/observer/dead/proc/voice_request_target_chosen(datum/om/prompt/choice/ask)
 	var/obj/item/communicator/chosen_communicator = ask.choice
 	var/mob/observer/dead/O = src
 	if(O.exonet && chosen_communicator.exonet)

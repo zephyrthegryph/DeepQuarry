@@ -144,14 +144,9 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	om_ask(user, /datum/om/prompt/confirm/royal_spider_egg, PROC_REF(release_confirmed))
+	om_ask(user, /datum/om/prompt/confirm, PROC_REF(release_confirmed), title = "Royal Spider Egg", message = "Are you sure you want to release the royal spiderling right now? It appears ready to imprint the moment its born.", ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
-/datum/om/prompt/confirm/royal_spider_egg
-	title = "Royal Spider Egg"
-	message = "Are you sure you want to release the royal spiderling right now? It appears ready to imprint the moment its born."
-	ask_flags = ASK_CARRIED | ASK_CAPABLE
-
-/obj/item/royal_spider_egg/proc/release_confirmed(datum/om/prompt/confirm/royal_spider_egg/ask)
+/obj/item/royal_spider_egg/proc/release_confirmed(datum/om/prompt/confirm/ask)
 	var/mob/user = ask.answerer
 	var/turf/drop_loc = user.loc
 	if(istype(drop_loc))

@@ -138,10 +138,6 @@
 /datum/om/prompt/choice/floor_painter/direction/valid()
 	return isnull(choices[choice]) ? "not a direction" : null
 
-/datum/om/prompt/color/floor_painter
-	message = "Choose a colour."
-	ask_flags = ASK_CARRIED | ASK_CAPABLE
-
 /obj/item/floor_painter/proc/modify_chosen(datum/om/prompt/choice/floor_painter/modify/ask)
 	var/mob/user = ask.answerer
 	switch(ask.choice)
@@ -167,9 +163,9 @@
 	to_chat(ask.answerer, span_notice("You set \the [src] direction to '[paint_dir]'."))
 
 /obj/item/floor_painter/proc/ask_colour(mob/user)
-	om_ask(user, /datum/om/prompt/color/floor_painter, PROC_REF(colour_chosen), title = name, default = paint_colour)
+	om_ask(user, /datum/om/prompt/color, PROC_REF(colour_chosen), title = name, default = paint_colour, message = "Choose a colour.", ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
-/obj/item/floor_painter/proc/colour_chosen(datum/om/prompt/color/floor_painter/ask)
+/obj/item/floor_painter/proc/colour_chosen(datum/om/prompt/color/ask)
 	if(ask.picked_color && ask.picked_color != paint_colour)
 		paint_colour = ask.picked_color
 		to_chat(ask.answerer, span_notice("You set \the [src] to paint with <font color='[paint_colour]'>a new colour</font>."))

@@ -1053,14 +1053,14 @@ SUBSYSTEM_DEF(job)
 /// A refused vore or item spawn: the one who refused may leave the joiner a message.
 /datum/controller/subsystem/job/proc/late_spawn_declined(client/spawn_client, mob/refuser, title)
 	to_chat(spawn_client, span_warning("[refuser] has declined your spawn request."))
-	om_ask(refuser, /datum/om/prompt/text/late_spawn_decline, GLOBAL_PROC_REF(late_spawn_decline_message), title = title, joiner = spawn_client)
+	om_ask(refuser, /datum/om/prompt/text/late_spawn_decline, PROC_REF(late_spawn_decline_message), title = title, joiner = spawn_client)
 
 /// The one who refused a late spawn may leave the joiner a message.
 /datum/om/prompt/text/late_spawn_decline
 	message = "Do you want to leave them a message?"
 	var/client/joiner
 
-/proc/late_spawn_decline_message(datum/om/prompt/text/late_spawn_decline/ask)
+/datum/controller/subsystem/job/proc/late_spawn_decline_message(datum/om/prompt/text/late_spawn_decline/ask)
 	var/mob/refuser = ask.answerer
 	var/client/spawn_client = ask.joiner
 	var/message = ask.text

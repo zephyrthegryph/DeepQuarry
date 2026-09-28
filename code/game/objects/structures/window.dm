@@ -530,12 +530,7 @@
 	// So, they should block stuff like lasers at that time.
 	return opacity
 
-/datum/om/prompt/text/window_tint_id
-	message = "Enter the new ID for the window."
-	encode = FALSE
-	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
-
-/obj/structure/window/reinforced/polarized/proc/window_id_entered(datum/om/prompt/text/window_tint_id/ask)
+/obj/structure/window/reinforced/polarized/proc/window_id_entered(datum/om/prompt/text/ask)
 	var/mob/user = ask.answerer
 	var/t = sanitizeSafe(ask.text, MAX_NAME_LEN)
 	if(t)
@@ -555,7 +550,7 @@
 		// Otherwise fall back to asking them... and remind them what the current ID is.
 		if(id)
 			to_chat(user, "The window's current ID is [id].")
-		om_ask(user, /datum/om/prompt/text/window_tint_id, PROC_REF(window_id_entered), title = name, default = id)
+		om_ask(user, /datum/om/prompt/text, PROC_REF(window_id_entered), title = name, default = id, message = "Enter the new ID for the window.", encode = FALSE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 		return TRUE
 	return ..()
 

@@ -232,7 +232,7 @@ GLOBAL_LIST_EMPTY(Holiday) //Holidays are lists now, so we can have more than on
 ADMIN_VERB(Set_Holiday, R_SERVER, "Set Holiday", "Force-set the Holiday variable to make the game think it's a certain day.", ADMIN_CATEGORY_FUN_EVENT_KIT)
 	GLOB.Holiday = list()
 
-	om_ask(user, /datum/om/prompt/text/set_holiday, GLOBAL_PROC_REF(set_holiday_named), message = "What holiday is it today?")
+	om_ask(user, /datum/om/prompt/text/set_holiday, TYPE_PROC_REF(/client, set_holiday_named), receiver = user, message = "What holiday is it today?")
 
 /// "Set Holiday": its name, then what it's about (`holiday` carries the name).
 /datum/om/prompt/text/set_holiday
@@ -240,13 +240,12 @@ ADMIN_VERB(Set_Holiday, R_SERVER, "Set Holiday", "Force-set the Holiday variable
 	requires = PROMPT_ADMIN(R_SERVER)
 	var/holiday
 
-/proc/set_holiday_named(datum/om/prompt/text/set_holiday/ask)
+/client/proc/set_holiday_named(datum/om/prompt/text/set_holiday/ask)
 	if(!ask.text)
 		return
-	om_ask(ask.answerer, /datum/om/prompt/text/set_holiday, GLOBAL_PROC_REF(set_holiday_answered), message = "Now explain what the holiday is about", multiline = TRUE, holiday = ask.text)
+	om_ask(mob, /datum/om/prompt/text/set_holiday, PROC_REF(set_holiday_answered), message = "Now explain what the holiday is about", multiline = TRUE, holiday = ask.text)
 
-/proc/set_holiday_answered(datum/om/prompt/text/set_holiday/ask)
-	var/mob/user = ask.answerer
+/client/proc/set_holiday_answered(datum/om/prompt/text/set_holiday/ask)
 	var/H = ask.holiday
 	var/B = ask.text
 	if(!H || !B)
@@ -259,8 +258,8 @@ ADMIN_VERB(Set_Holiday, R_SERVER, "Set Holiday", "Force-set the Holiday variable
 	world.update_status()
 	Holiday_Game_Start()
 
-	message_admins(span_notice("ADMIN: Event: [key_name(user)] force-set Holiday to \"[GLOB.Holiday]\""))
-	log_admin("[key_name(user)] force-set Holiday to \"[GLOB.Holiday]\"")
+	message_admins(span_notice("ADMIN: Event: [key_name(src)] force-set Holiday to \"[GLOB.Holiday]\""))
+	log_admin("[key_name(src)] force-set Holiday to \"[GLOB.Holiday]\"")
 
 //Run at the  start of a round
 /proc/Holiday_Game_Start()

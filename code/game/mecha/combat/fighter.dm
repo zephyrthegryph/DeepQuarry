@@ -315,15 +315,8 @@
 
 /obj/mecha/combat/fighter/gunpod/attackby(obj/item/W as obj, mob/user as mob)
 	if(istype(W,/obj/item/multitool) && state == 1)
-		om_ask(user, /datum/om/prompt/choice/mech_paint_zone, PROC_REF(ask_stripe_color), subject = W)
+		om_ask(user, /datum/om/prompt/choice, PROC_REF(ask_stripe_color), subject = W, title = "Paint Zone", message = "Please select a target zone.", choices = list("Fore Stripe", "Aft Stripe", "CANCEL"), ask_flags = ASK_HELD | ASK_CAPABLE)
 	else ..()
-
-/// Painting a small craft with a multitool (gunpod stripes, shuttlecraft hull): the subject is the multitool, still in hand.
-/datum/om/prompt/choice/mech_paint_zone
-	title = "Paint Zone"
-	message = "Please select a target zone."
-	choices = list("Fore Stripe", "Aft Stripe", "CANCEL")
-	ask_flags = ASK_HELD | ASK_CAPABLE
 
 /datum/om/prompt/color/mech_paint
 	title = "Paint Color"
@@ -331,7 +324,7 @@
 	ask_flags = ASK_HELD | ASK_CAPABLE
 	var/zone
 
-/obj/mecha/combat/fighter/gunpod/proc/ask_stripe_color(datum/om/prompt/choice/mech_paint_zone/ask)
+/obj/mecha/combat/fighter/gunpod/proc/ask_stripe_color(datum/om/prompt/choice/ask)
 	if(ask.choice != "CANCEL")
 		om_ask(ask.answerer, /datum/om/prompt/color/mech_paint, PROC_REF(stripe_painted), subject = ask.subject, zone = ask.choice)
 

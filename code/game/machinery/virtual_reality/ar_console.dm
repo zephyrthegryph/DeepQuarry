@@ -120,18 +120,11 @@
 
 	if(avatar && !occupant.stat)
 		to_chat(occupant,span_alien("\The [src] begins to [pick("whir","hum","pulse")] as a screen appears in front of you."))
-		om_ask(occupant, /datum/om/prompt/confirm/alien_vr_engage, PROC_REF(alien_engage_answered))
+		om_ask(occupant, /datum/om/prompt/confirm, PROC_REF(alien_engage_answered), title = "Commmit?", message = "This pod is already linked. Are you certain you wish to engage?", requires = list(/datum/om/check/inside_target), answer_on_no = TRUE)
 		return
 	alien_engage(occupant)
 
-/// Re-checked on the answer: the occupant is still inside the pod.
-/datum/om/prompt/confirm/alien_vr_engage
-	title = "Commmit?"
-	message = "This pod is already linked. Are you certain you wish to engage?"
-	requires = list(/datum/om/check/inside_target)
-	answer_on_no = TRUE
-
-/obj/machinery/vr_sleeper/alien/proc/alien_engage_answered(datum/om/prompt/confirm/alien_vr_engage/ask)
+/obj/machinery/vr_sleeper/alien/proc/alien_engage_answered(datum/om/prompt/confirm/ask)
 	var/mob/living/carbon/human/occupant = ask.answerer
 	if(!ask.yes)
 		visible_message(span_alien("\The [src] pulses!"))

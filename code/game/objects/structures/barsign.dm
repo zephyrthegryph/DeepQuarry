@@ -37,12 +37,7 @@
 	)
 	..()
 
-/datum/om/prompt/choice/barsign
-	title = "Bar Sign Choice"
-	message = "What would you like to change the barsign to?"
-	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
-
-/obj/structure/sign/double/barsign/proc/sign_chosen(datum/om/prompt/choice/barsign/ask)
+/obj/structure/sign/double/barsign/proc/sign_chosen(datum/om/prompt/choice/ask)
 	var/mob/user = ask.answerer
 	if(cult)
 		return
@@ -63,7 +58,7 @@
 	var/obj/item/card/id/card = I.GetID()
 	if(istype(card))
 		if(ACCESS_BAR in card.GetAccess())
-			om_ask(user, /datum/om/prompt/choice/barsign, PROC_REF(sign_chosen), choices = get_valid_states(0))
+			om_ask(user, /datum/om/prompt/choice, PROC_REF(sign_chosen), choices = get_valid_states(0), title = "Bar Sign Choice", message = "What would you like to change the barsign to?", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 		else
 			to_chat(user, span_warning("Access denied."))
 	return TRUE

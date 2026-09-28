@@ -877,7 +877,7 @@ REF_OWNED(/obj/machinery/alarm, "soundloop")
 		var/list/selected = TLV["temperature"]
 		var/max_temperature = min(selected[3] - T0C, MAX_TEMPERATURE)
 		var/min_temperature = max(selected[2] - T0C, MIN_TEMPERATURE)
-		om_ask(ui.user, /datum/om/prompt/number/air_alarm_thermostat, PROC_REF(thermostat_entered), message = "What temperature would you like the system to mantain? (Capped between [min_temperature] and [max_temperature]C)", default = target_temperature - T0C, max = max_temperature, min = min_temperature)
+		om_ask(ui.user, /datum/om/prompt/number, PROC_REF(thermostat_entered), message = "What temperature would you like the system to mantain? (Capped between [min_temperature] and [max_temperature]C)", default = target_temperature - T0C, max = max_temperature, min = min_temperature, title = "Thermostat Controls", round_entry = FALSE, requires = PROMPT_USABLE_BY("default"))
 		return TRUE
 
 	// Account for remote users here.
@@ -944,13 +944,7 @@ REF_OWNED(/obj/machinery/alarm, "soundloop")
 	for(var/obj/machinery/alarm/AA in alarm_area.air_alarms)
 		AA.update_icon()
 
-/// The thermostat target (the default tgui state, not the remote one, must still allow it).
-/datum/om/prompt/number/air_alarm_thermostat
-	title = "Thermostat Controls"
-	round_entry = FALSE
-	requires = PROMPT_USABLE_BY("default")
-
-/obj/machinery/alarm/proc/thermostat_entered(datum/om/prompt/number/air_alarm_thermostat/ask)
+/obj/machinery/alarm/proc/thermostat_entered(datum/om/prompt/number/ask)
 	var/mob/user = ask.answerer
 	var/input_temperature = ask.number
 	var/max_temperature = ask.max

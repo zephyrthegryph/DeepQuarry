@@ -10,13 +10,9 @@
 		to_chat(src, span_warning("You can't speak any languages."))
 		return
 
-	om_ask(src, /datum/om/prompt/choice/default_language, PROC_REF(default_language_chosen), choices = languages)
+	om_ask(src, /datum/om/prompt/choice, PROC_REF(default_language_chosen), choices = languages, title = "Available languages", message = "Select your default language")
 
-/datum/om/prompt/choice/default_language
-	title = "Available languages"
-	message = "Select your default language"
-
-/mob/living/proc/default_language_chosen(datum/om/prompt/choice/default_language/ask)
+/mob/living/proc/default_language_chosen(datum/om/prompt/choice/ask)
 	apply_default_language(ask.choice)
 
 // Silicons can't neccessarily speak everything in their languages list
@@ -24,7 +20,7 @@
 	if(!LAZYLEN(speech_synthesizer_langs))
 		to_chat(src, span_warning("You can't speak any languages."))
 		return
-	om_ask(src, /datum/om/prompt/choice/default_language, PROC_REF(default_language_chosen), choices = speech_synthesizer_langs)
+	om_ask(src, /datum/om/prompt/choice, PROC_REF(default_language_chosen), choices = speech_synthesizer_langs, title = "Available languages", message = "Select your default language")
 
 /mob/living/proc/apply_default_language(language)
 	if (only_species_language && language != GLOB.all_languages[species_language])

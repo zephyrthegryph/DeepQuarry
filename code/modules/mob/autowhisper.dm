@@ -26,16 +26,9 @@
 	set category = "IC.Settings"
 
 
-	om_ask(src, /datum/om/prompt/choice/autowhisper_mode, PROC_REF(autowhisper_mode_chosen))
+	om_ask(src, /datum/om/prompt/choice, PROC_REF(autowhisper_mode_chosen), title = "Custom Subtle Mode", message = "Select Custom Subtle Mode", choices = list("Adjacent Turfs (Default)", "My Turf", "My Table", "Current Belly (Prey)", "Specific Belly (Pred)", "Specific Person", "Psay/Pme"), cancel_answer = "Adjacent Turfs (Default)")
 
-/// The autowhisper mode; a closed window returns to the default.
-/datum/om/prompt/choice/autowhisper_mode
-	title = "Custom Subtle Mode"
-	message = "Select Custom Subtle Mode"
-	choices = list("Adjacent Turfs (Default)", "My Turf", "My Table", "Current Belly (Prey)", "Specific Belly (Pred)", "Specific Person", "Psay/Pme")
-	cancel_answer = "Adjacent Turfs (Default)"
-
-/mob/living/proc/autowhisper_mode_chosen(datum/om/prompt/choice/autowhisper_mode/ask)
+/mob/living/proc/autowhisper_mode_chosen(datum/om/prompt/choice/ask)
 	var/choice = ask.choice
 	if(!choice || choice == "Adjacent Turfs (Default)")
 		autowhisper_mode = null

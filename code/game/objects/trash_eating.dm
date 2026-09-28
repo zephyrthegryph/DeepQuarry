@@ -63,15 +63,7 @@
 	user.visible_message(span_warning("[user] successfully makes [src] disappear!"))
 	user.swallow_trash(src)
 
-/// Re-checked: the PDA is still on the eater.
-/datum/om/prompt/confirm/pda_eat_risk
-	title = "Confirmation"
-	message = "The PDA you're holding contains a vulnerable ID card. Will you risk it?"
-	yes_text = "Definitely"
-	no_text = "Cancel"
-	ask_flags = ASK_CARRIED | ASK_CAPABLE
-
-/obj/item/pda/proc/eat_risk_confirmed(datum/om/prompt/confirm/pda_eat_risk/ask)
+/obj/item/pda/proc/eat_risk_confirmed(datum/om/prompt/confirm/ask)
 	var/mob/living/user = ask.answerer
 	om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(threat_eaten), done_args = list(user))
 
@@ -89,7 +81,7 @@
 		else
 			user.visible_message(span_warning("[user] is threatening to make [src] disappear!"))
 			if(id)
-				om_ask(user, /datum/om/prompt/confirm/pda_eat_risk, PROC_REF(eat_risk_confirmed))
+				om_ask(user, /datum/om/prompt/confirm, PROC_REF(eat_risk_confirmed), title = "Confirmation", message = "The PDA you're holding contains a vulnerable ID card. Will you risk it?", yes_text = "Definitely", no_text = "Cancel", ask_flags = ASK_CARRIED | ASK_CAPABLE)
 				return FALSE
 			om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(threat_eaten), done_args = list(user))
 			return FALSE

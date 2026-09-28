@@ -350,13 +350,9 @@
 	if(isnull(_answer_k349))
 		return
 	if(_answer_k349 == "Yes")
-		om_ask(user, /datum/om/prompt/color/robotic_blade, PROC_REF(blade_color_picked), default = lcolor)
+		om_ask(user, /datum/om/prompt/color, PROC_REF(blade_color_picked), default = lcolor, title = "Choose Energy Color", ask_flags = ASK_CAPABLE)
 
-/datum/om/prompt/color/robotic_blade
-	title = "Choose Energy Color"
-	ask_flags = ASK_CAPABLE
-
-/obj/item/melee/robotic/blade/proc/blade_color_picked(datum/om/prompt/color/robotic_blade/ask)
+/obj/item/melee/robotic/blade/proc/blade_color_picked(datum/om/prompt/color/ask)
 	if(ask.picked_color)
 		lcolor = sanitize_hexcolor(ask.picked_color)
 	update_icon()

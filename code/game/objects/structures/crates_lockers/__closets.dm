@@ -616,15 +616,9 @@ REF_OWNED(/obj/structure/closet, "door_obj")
 		to_chat(src, span_notice("No eligible targets found."))
 		return
 
-	om_ask(usr, /datum/om/prompt/choice/closet_vore_target, PROC_REF(hidden_vore_target_chosen), choices = targets)
+	om_ask(usr, /datum/om/prompt/choice, PROC_REF(hidden_vore_target_chosen), choices = targets, title = "Victim", message = "Please select a target.", requires = list(/datum/om/check/inside_target))
 
-/// Re-checked: the picker is still inside the closet.
-/datum/om/prompt/choice/closet_vore_target
-	title = "Victim"
-	message = "Please select a target."
-	requires = list(/datum/om/check/inside_target)
-
-/obj/structure/closet/proc/hidden_vore_target_chosen(datum/om/prompt/choice/closet_vore_target/ask)
+/obj/structure/closet/proc/hidden_vore_target_chosen(datum/om/prompt/choice/ask)
 	var/mob/living/user = ask.answerer
 	var/mob/living/target = ask.choice
 	if(!isliving(target)) //Safety.

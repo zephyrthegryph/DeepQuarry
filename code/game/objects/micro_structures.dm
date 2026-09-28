@@ -116,7 +116,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 
 		our_options |= "Cancel"
 
-		om_ask(user, /datum/om/prompt/choice/tunnel_action, PROC_REF(tunnel_action_chosen), choices = our_options)
+		om_ask(user, /datum/om/prompt/choice, PROC_REF(tunnel_action_chosen), choices = our_options, title = "Tunnel", message = "It's dark and gloomy in here. What would you like to do?", buttons = TRUE, requires = list(/datum/om/check/inside_target))
 		return
 
 	if(!can_enter(user))
@@ -147,23 +147,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 	/// Asked from a mouse drop: only entering does anything.
 	var/dropped = FALSE
 
-/// Someone inside the tunnel picks what to do. Re-checked: still inside.
-/datum/om/prompt/choice/tunnel_action
-	title = "Tunnel"
-	message = "It's dark and gloomy in here. What would you like to do?"
-	buttons = TRUE
-	requires = list(/datum/om/check/inside_target)
-
-/datum/om/prompt/choice/tunnel_destination
-	title = "Pick a tunnel"
-	message = "Where would you like to go?"
-	requires = list(/datum/om/check/inside_target)
-
-/datum/om/prompt/choice/tunnel_eat_target
-	title = "Pick a target to eat"
-	message = "Who would you like to eat?"
-	requires = list(/datum/om/check/inside_target)
-
 /obj/structure/micro_tunnel/proc/enter_or_reach_chosen(datum/om/prompt/choice/tunnel_enter_or_reach/ask)
 	var/mob/living/user = ask.answerer
 	if(ask.dropped)
@@ -175,7 +158,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 	else
 		tunnel_reach(user)
 
-/obj/structure/micro_tunnel/proc/tunnel_action_chosen(datum/om/prompt/choice/tunnel_action/ask)
+/obj/structure/micro_tunnel/proc/tunnel_action_chosen(datum/om/prompt/choice/ask)
 	var/mob/living/user = ask.answerer
 	switch(ask.choice)
 		if("Exit")
@@ -190,7 +173,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 			if(destinations.len == 1 || random)
 				tunnel_move(user, pick(destinations))
 				return
-			om_ask(user, /datum/om/prompt/choice/tunnel_destination, PROC_REF(tunnel_move_chosen), choices = destinations)
+			om_ask(user, /datum/om/prompt/choice, PROC_REF(tunnel_move_chosen), choices = destinations, title = "Pick a tunnel", message = "Where would you like to go?", requires = list(/datum/om/check/inside_target))
 		if("Eat")
 			var/list/our_targets = list()
 			for(var/mob/living/L in src.contents)
@@ -203,16 +186,16 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 			if(our_targets.len == 1)
 				tunnel_eat(user, pick(our_targets))
 				return
-			om_ask(user, /datum/om/prompt/choice/tunnel_eat_target, PROC_REF(tunnel_eat_chosen), choices = our_targets)
+			om_ask(user, /datum/om/prompt/choice, PROC_REF(tunnel_eat_chosen), choices = our_targets, title = "Pick a target to eat", message = "Who would you like to eat?", requires = list(/datum/om/check/inside_target))
 
-/obj/structure/micro_tunnel/proc/tunnel_move_chosen(datum/om/prompt/choice/tunnel_destination/ask)
+/obj/structure/micro_tunnel/proc/tunnel_move_chosen(datum/om/prompt/choice/ask)
 	tunnel_move(ask.answerer, ask.choice)
 
 /obj/structure/micro_tunnel/proc/tunnel_move(mob/living/user, choice)
 	to_chat(user,span_notice("You begin moving..."))
 	om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(tunnel_interact_timed_done), done_args = list(user, choice))
 
-/obj/structure/micro_tunnel/proc/tunnel_eat_chosen(datum/om/prompt/choice/tunnel_eat_target/ask)
+/obj/structure/micro_tunnel/proc/tunnel_eat_chosen(datum/om/prompt/choice/ask)
 	tunnel_eat(ask.answerer, ask.choice)
 
 /obj/structure/micro_tunnel/proc/tunnel_eat(mob/living/user, mob/our_choice)
@@ -355,11 +338,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 	title = "[subject]"
 	return TRUE
 
-/datum/om/prompt/choice/micro_destination
-	title = "Pick a destination"
-	message = "Where would you like to go?"
-	requires = list(/datum/om/check/inside_target)
-
 /obj/proc/micro_action_chosen(datum/om/prompt/choice/micro_action/ask)
 	var/mob/living/user = ask.answerer
 	switch(ask.choice)
@@ -384,9 +362,9 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 			if(destinations.len == 1)
 				micro_move(user, pick(destinations))
 				return
-			om_ask(user, /datum/om/prompt/choice/micro_destination, PROC_REF(micro_move_chosen), choices = destinations)
+			om_ask(user, /datum/om/prompt/choice, PROC_REF(micro_move_chosen), choices = destinations, title = "Pick a destination", message = "Where would you like to go?", requires = list(/datum/om/check/inside_target))
 
-/obj/proc/micro_move_chosen(datum/om/prompt/choice/micro_destination/ask)
+/obj/proc/micro_move_chosen(datum/om/prompt/choice/ask)
 	micro_move(ask.answerer, ask.choice)
 
 /obj/proc/micro_move(mob/living/user, choice)

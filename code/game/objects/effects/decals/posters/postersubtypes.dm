@@ -36,14 +36,9 @@
 	for(var/option in posters)
 		options[posters[option].name] = posters[option]
 
-	om_ask(M, /datum/om/prompt/choice/custom_poster, PROC_REF(poster_chosen), choices = options)
+	om_ask(M, /datum/om/prompt/choice, PROC_REF(poster_chosen), choices = options, title = "Customize Poster", message = "Choose a poster!", requires = PROMPT_ADJACENT)
 
-/datum/om/prompt/choice/custom_poster
-	title = "Customize Poster"
-	message = "Choose a poster!"
-	requires = PROMPT_ADJACENT
-
-/obj/item/poster/custom/proc/poster_chosen(datum/om/prompt/choice/custom_poster/ask)
+/obj/item/poster/custom/proc/poster_chosen(datum/om/prompt/choice/ask)
 	if(ask.choices[ask.choice])
 		poster_decl = ask.choices[ask.choice]
 		name = "rolled-up poly-poster - [poster_decl.name]"

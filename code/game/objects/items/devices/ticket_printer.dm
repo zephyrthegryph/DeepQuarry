@@ -21,14 +21,7 @@
 		to_chat(user, span_warning("\The [src] is not ready to print another ticket yet."))
 
 /obj/item/ticket_printer/proc/print_a_ticket(mob/user)
-	om_ask(user, /datum/om/prompt/text/ticket_name, PROC_REF(ticket_named))
-
-/// Who the ticket is for. Re-checked on the answer: the printer is still carried.
-/datum/om/prompt/text/ticket_name
-	title = "Name"
-	message = "The Name of the person you are issuing the ticket to."
-	max_length = 100
-	ask_flags = ASK_CARRIED | ASK_CAPABLE
+	om_ask(user, /datum/om/prompt/text, PROC_REF(ticket_named), title = "Name", message = "The Name of the person you are issuing the ticket to.", max_length = 100, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
 /// What the ticket is for, carrying the name already given.
 /datum/om/prompt/text/ticket_details
@@ -38,7 +31,7 @@
 	ask_flags = ASK_CARRIED | ASK_CAPABLE
 	var/ticket_name
 
-/obj/item/ticket_printer/proc/ticket_named(datum/om/prompt/text/ticket_name/ask)
+/obj/item/ticket_printer/proc/ticket_named(datum/om/prompt/text/ask)
 	if(!ask.text)
 		return
 	om_ask(ask.answerer, /datum/om/prompt/text/ticket_details, PROC_REF(ticket_written), ticket_name = ask.text, message = ticket_details_prompt())

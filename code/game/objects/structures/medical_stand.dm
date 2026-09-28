@@ -114,11 +114,6 @@
 	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
 	var/mob/living/carbon/human/patient
 
-/datum/om/prompt/choice/medical_stand_action
-	title = "Stand Choice"
-	message = "What do you want to do?"
-	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
-
 /datum/om/prompt/choice/medical_stand_transfer
 	message = "Amount per transfer from this:"
 	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
@@ -222,12 +217,12 @@
 		available_options += "Remove vessel"
 
 	if(available_options.len > 1)
-		om_ask(user, /datum/om/prompt/choice/medical_stand_action, PROC_REF(stand_action_chosen), choices = available_options)
+		om_ask(user, /datum/om/prompt/choice, PROC_REF(stand_action_chosen), choices = available_options, title = "Stand Choice", message = "What do you want to do?", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 		return
 	if(available_options.len)
 		stand_action(user, available_options[1])
 
-/obj/structure/medical_stand/proc/stand_action_chosen(datum/om/prompt/choice/medical_stand_action/ask)
+/obj/structure/medical_stand/proc/stand_action_chosen(datum/om/prompt/choice/ask)
 	stand_action(ask.answerer, ask.choice)
 
 /obj/structure/medical_stand/proc/stand_action(mob/user, action_type)

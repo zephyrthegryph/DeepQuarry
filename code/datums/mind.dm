@@ -168,7 +168,7 @@
 		if(antag) antag.place_mob(src.current)
 
 	else if (href_list["role_edit"])
-		om_ask(usr, /datum/om/prompt/choice/mind_edit, PROC_REF(role_edited), title = "Assigned role", message = "Select new role", default = assigned_role, choices = SSjob.occupations_by_name)
+		om_ask(usr, /datum/om/prompt/choice, PROC_REF(role_edited), title = "Assigned role", message = "Select new role", default = assigned_role, choices = SSjob.occupations_by_name, requires = PROMPT_ADMIN(R_ADMIN))
 
 	else if (href_list["memory_edit"])
 		om_ask(usr, /datum/om/prompt/text/mind_edit, PROC_REF(memory_edited), message = "Write new memory", default = memory)
@@ -267,7 +267,7 @@
 			if("crystals")
 				if (check_rights_for(usr.client, R_FUN))
 				//	var/obj/item/uplink/hidden/suplink = find_syndicate_uplink() No longer needed, uses stored in mind
-					om_ask(usr, /datum/om/prompt/number/mind_telecrystals, PROC_REF(telecrystals_set), message = "Amount of telecrystals for [key]", default = tcrystals)
+					om_ask(usr, /datum/om/prompt/number, PROC_REF(telecrystals_set), message = "Amount of telecrystals for [key]", default = tcrystals, requires = PROMPT_ADMIN(R_FUN))
 
 	else if (href_list["obj_announce"])
 		var/obj_count = 1
@@ -277,10 +277,6 @@
 			obj_count++
 	edit_memory(usr)
 
-/// The admin mind editor's questions (Topic()).
-/datum/om/prompt/choice/mind_edit
-	requires = PROMPT_ADMIN(R_ADMIN)
-
 /datum/om/prompt/text/mind_edit
 	title = "Memory"
 	multiline = TRUE
@@ -288,10 +284,7 @@
 	/// The mind whose ambitions are edited.
 	var/datum/mind/edited
 
-/datum/om/prompt/number/mind_telecrystals
-	requires = PROMPT_ADMIN(R_FUN)
-
-/datum/mind/proc/role_edited(datum/om/prompt/choice/mind_edit/ask)
+/datum/mind/proc/role_edited(datum/om/prompt/choice/ask)
 	assigned_role = ask.choice
 	edit_memory(ask.answerer)
 
@@ -474,7 +467,7 @@
 	else
 		objectives += new_objective
 
-/datum/mind/proc/telecrystals_set(datum/om/prompt/number/mind_telecrystals/ask)
+/datum/mind/proc/telecrystals_set(datum/om/prompt/number/ask)
 	tcrystals = ask.number
 	edit_memory(ask.answerer)
 

@@ -2071,20 +2071,17 @@
 		return
 	//allow it to bug them again now that we've waited
 	M.gender_change_cooldown = 0
-	om_ask(M, /datum/om/prompt/confirm/gender_change_drug, GLOBAL_PROC_REF(change_drug_answered), gender_change = gender_change)
+	om_ask(M, /datum/om/prompt/confirm/gender_change_drug, TYPE_PROC_REF(/mob/living/carbon/human, gender_change_drug_answered), receiver = M, gender_change = gender_change)
 
 /datum/om/prompt/confirm/gender_change_drug
 	title = "Warning"
 	message = "This chemical will change your gender, proceed?"
 	var/gender_change
 
-/proc/change_drug_answered(datum/om/prompt/confirm/gender_change_drug/ask)
-	var/mob/living/carbon/human/M = ask.answerer
-	if(!istype(M))
-		return
-	M.change_gender_identity(ask.gender_change)
-	M.change_gender(ask.gender_change)
-	to_chat(M, span_warning("You feel like a new person."))
+/mob/living/carbon/human/proc/gender_change_drug_answered(datum/om/prompt/confirm/gender_change_drug/ask)
+	change_gender_identity(ask.gender_change)
+	change_gender(ask.gender_change)
+	to_chat(src, span_warning("You feel like a new person."))
 
 //Chemist expansion
 //deathblood

@@ -39,13 +39,7 @@
 	if(warrants.len == 0)
 		to_chat(user,span_notice("There are no warrants available"))
 		return
-	om_ask(user, /datum/om/prompt/choice/holowarrant, PROC_REF(warrant_chosen), choices = warrants)
-
-/// Re-checked on the answer: the projector is still carried.
-/datum/om/prompt/choice/holowarrant
-	title = "Warrant Selection"
-	message = "Which warrant would you like to load?"
-	ask_flags = ASK_CARRIED | ASK_CAPABLE
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(warrant_chosen), choices = warrants, title = "Warrant Selection", message = "Which warrant would you like to load?", ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
 /// Swiping an ID (the subject, still in hand) to authorize the loaded warrant.
 /datum/om/prompt/confirm/holowarrant_authorize
@@ -56,7 +50,7 @@
 	var/obj/item/card/id/card
 	var/datum/data/record/warrant/warrant
 
-/obj/item/holowarrant/proc/warrant_chosen(datum/om/prompt/choice/holowarrant/ask)
+/obj/item/holowarrant/proc/warrant_chosen(datum/om/prompt/choice/ask)
 	for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
 		if(W.fields["namewarrant"] == ask.choice)
 			active = W

@@ -426,14 +426,10 @@ This device records all warnings given and teleport events for admin review in c
 /obj/item/perfect_tele_beacon/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if((user.ckey != creator) && !(user.ckey in warned_users))
 		warned_users |= user.ckey
-		om_ask(user, /datum/om/prompt/confirm/tele_beacon_warning, PROC_REF(warning_answered))
+		om_ask(user, /datum/om/prompt/confirm, PROC_REF(warning_answered), title = "OOC Warning", message = {")
 		return TRUE
 	return FALSE
 
-/// The OOC warning before first picking up someone else's beacon. Re-checked on the answer: still next to it.
-/datum/om/prompt/confirm/tele_beacon_warning
-	title = "OOC Warning"
-	message = {"
 This device is a translocator beacon. Having it on your person may mean that anyone
 who teleports to this beacon gets teleported into your selected vore-belly. If you are prey-only
 or don't wish to potentially have a random person teleported into you, it's suggested that you
@@ -442,7 +438,7 @@ not carry this around."}
 	no_text = "Leave It"
 	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
 
-/obj/item/perfect_tele_beacon/proc/warning_answered(datum/om/prompt/confirm/tele_beacon_warning/ask)
+/obj/item/perfect_tele_beacon/proc/warning_answered(datum/om/prompt/confirm/ask)
 	attack_hand(ask.answerer)
 
 /obj/item/perfect_tele_beacon/stationary
@@ -457,26 +453,13 @@ REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEAC
 /obj/item/perfect_tele_beacon/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!isliving(user))
 		return
-	om_ask(user, /datum/om/prompt/confirm/tele_beacon_eat, PROC_REF(ask_belly))
+	om_ask(user, /datum/om/prompt/confirm, PROC_REF(ask_belly), title = "Eat beacon?", message = "You COULD eat the beacon...", yes_text = "Eat it!", no_text = "No, thanks.", ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
-/// Eating the beacon, then which belly. Re-checked on each answer: the beacon is still carried.
-/datum/om/prompt/confirm/tele_beacon_eat
-	title = "Eat beacon?"
-	message = "You COULD eat the beacon..."
-	yes_text = "Eat it!"
-	no_text = "No, thanks."
-	ask_flags = ASK_CARRIED | ASK_CAPABLE
-
-/datum/om/prompt/choice/tele_beacon_belly
-	title = "Select A Belly"
-	message = "Which belly?"
-	ask_flags = ASK_CARRIED | ASK_CAPABLE
-
-/obj/item/perfect_tele_beacon/proc/ask_belly(datum/om/prompt/confirm/tele_beacon_eat/ask)
+/obj/item/perfect_tele_beacon/proc/ask_belly(datum/om/prompt/confirm/ask)
 	var/mob/living/user = ask.answerer
-	om_ask(user, /datum/om/prompt/choice/tele_beacon_belly, PROC_REF(belly_chosen), choices = user.vore_organs)
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(belly_chosen), choices = user.vore_organs, title = "Select A Belly", message = "Which belly?", ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
-/obj/item/perfect_tele_beacon/proc/belly_chosen(datum/om/prompt/choice/tele_beacon_belly/ask)
+/obj/item/perfect_tele_beacon/proc/belly_chosen(datum/om/prompt/choice/ask)
 	var/mob/living/user = ask.answerer
 	var/obj/belly/bellychoice = ask.choice
 	if(istype(bellychoice) && bellychoice.owner == user)

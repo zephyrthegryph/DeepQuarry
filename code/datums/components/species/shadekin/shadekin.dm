@@ -238,7 +238,7 @@ REF_OWNED_LIST(/datum/component/shadekin, "active_dark_maws")
 	SScharacter_setup.queue_preferences_save(user?.client?.prefs)
 	. = ..()
 
-/datum/component/shadekin/proc/flicker_color_picked(datum/om/prompt/color/panel_setting/ask)
+/datum/component/shadekin/proc/flicker_color_picked(datum/om/prompt/color/ask)
 	if(!ask.picked_color)
 		return
 	flicker_color = ask.picked_color
@@ -258,7 +258,7 @@ REF_OWNED_LIST(/datum/component/shadekin, "active_dark_maws")
 			ui.user.write_preference_directly(/datum/preference/numeric/living/flicker_time, new_time, WRITE_PREF_MANUAL, save_to_played_slot = TRUE)
 			return TRUE
 		if("adjust_color")
-			om_ask(ui.user, /datum/om/prompt/color/panel_setting, PROC_REF(flicker_color_picked), message = "Select a color you wish the lights to flicker as (Default is #E0EFF0)", default = flicker_color, ui_refresh = src)
+			om_ask(ui.user, /datum/om/prompt/color, PROC_REF(flicker_color_picked), message = "Select a color you wish the lights to flicker as (Default is #E0EFF0)", default = flicker_color, ui_refresh = src, title = "Color Selector")
 			return FALSE
 		if("adjust_break")
 			var/new_break_chance = text2num(params["val"])

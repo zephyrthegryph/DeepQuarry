@@ -639,18 +639,10 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 // returns 0 if the rune is not used. returns 1 if the rune is used.
 /obj/effect/rune/proc/communicate(mob/living/user)
 	. = 1 // Default output is 1. If the rune is deleted it will return 1
-	om_ask(user, /datum/om/prompt/text/cult_communicate, PROC_REF(communicate_entered))
+	om_ask(user, /datum/om/prompt/text, PROC_REF(communicate_entered), title = "Voice of Blood", message = "Please choose a message to tell to the other acolytes.", default = "", ask_flags = ASK_ADJACENT | ASK_CAPABLE, cancel_answer = "")
 	return 1
 
-/// The communicate rune's message; a cancel fizzles the rune (an empty answer).
-/datum/om/prompt/text/cult_communicate
-	title = "Voice of Blood"
-	message = "Please choose a message to tell to the other acolytes."
-	default = ""
-	ask_flags = ASK_ADJACENT | ASK_CAPABLE
-	cancel_answer = ""
-
-/obj/effect/rune/proc/communicate_entered(datum/om/prompt/text/cult_communicate/ask)
+/obj/effect/rune/proc/communicate_entered(datum/om/prompt/text/ask)
 	var/mob/living/user = ask.answerer
 	var/input = ask.text
 	if(!input)

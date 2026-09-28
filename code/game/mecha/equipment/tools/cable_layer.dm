@@ -38,18 +38,12 @@
 		return
 	if(href_list["cut"])
 		if(cable && cable.get_amount())
-			om_ask(chassis?.slot_item(MECHA_SLOT_PILOT), /datum/om/prompt/number/mech_cable_cut, PROC_REF(cable_length_entered), default = min(cable.get_amount(), 30), subject = chassis)
+			om_ask(chassis?.slot_item(MECHA_SLOT_PILOT), /datum/om/prompt/number, PROC_REF(cable_length_entered), default = min(cable.get_amount(), 30), subject = chassis, title = "Cut cable", message = "Please specify the length of cable to cut", requires = list(/datum/om/check/inside_target))
 		else
 			occupant_message("There's no more cable on the reel.")
 	return
 
-/// Re-checked on the answer: the pilot is still inside the chassis.
-/datum/om/prompt/number/mech_cable_cut
-	title = "Cut cable"
-	message = "Please specify the length of cable to cut"
-	requires = list(/datum/om/check/inside_target)
-
-/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/cable_length_entered(datum/om/prompt/number/mech_cable_cut/ask)
+/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/cable_length_entered(datum/om/prompt/number/ask)
 	if(!cable)
 		return
 	var/m = min(ask.number, cable.get_amount())

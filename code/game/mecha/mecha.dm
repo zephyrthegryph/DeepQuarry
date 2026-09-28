@@ -2784,7 +2784,7 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 		return
 	if (href_list["change_name"])
 		if(usr != src?.slot_item(MECHA_SLOT_PILOT))	return
-		om_ask(occupant, /datum/om/prompt/text/exosuit_name, PROC_REF(exosuit_renamed), default = initial(name))
+		om_ask(occupant, /datum/om/prompt/text, PROC_REF(exosuit_renamed), default = initial(name), title = "Rename exosuit", message = "Choose new exosuit name", max_length = MAX_NAME_LEN, encode = FALSE, requires = list(/datum/om/check/inside_target))
 		return
 	if (href_list["toggle_id_upload"])
 		if(usr != src?.slot_item(MECHA_SLOT_PILOT))	return
@@ -2892,15 +2892,7 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 		return
 	*/
 
-/// Re-checked on the answer: the pilot is still inside.
-/datum/om/prompt/text/exosuit_name
-	title = "Rename exosuit"
-	message = "Choose new exosuit name"
-	max_length = MAX_NAME_LEN
-	encode = FALSE
-	requires = list(/datum/om/check/inside_target)
-
-/obj/mecha/proc/exosuit_renamed(datum/om/prompt/text/exosuit_name/ask)
+/obj/mecha/proc/exosuit_renamed(datum/om/prompt/text/ask)
 	var/newname = sanitizeSafe(ask.text, MAX_NAME_LEN)
 	if(newname)
 		name = newname

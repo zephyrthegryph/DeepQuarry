@@ -106,15 +106,6 @@ SUBSYSTEM_DEF(media_tracks)
 	requires = PROMPT_ADMIN(R_DEBUG|R_FUN)
 	max_length = MAX_TGUI_INPUT
 
-/datum/om/prompt/number/media_track
-	requires = PROMPT_ADMIN(R_DEBUG|R_FUN)
-
-/// A Yes/Cancel/No mark; Cancel ends the questions.
-/datum/om/prompt/choice/media_track_mark
-	requires = PROMPT_ADMIN(R_DEBUG|R_FUN)
-	buttons = TRUE
-	choices = list("Yes", "Cancel", "No")
-
 /datum/om/flow/media_track_add/start()
 	om_ask(actor, /datum/om/prompt/text/media_track, PROC_REF(url_entered), title = "Track URL", message = "REQUIRED: Provide URL for track, or paste JSON if you know what you're doing. See code comments.", multiline = TRUE)
 
@@ -135,9 +126,9 @@ SUBSYSTEM_DEF(media_tracks)
 	title = ask.text
 	if(!title)
 		return
-	om_ask(actor, /datum/om/prompt/number/media_track, PROC_REF(duration_entered), title = "Track Duration", message = "REQUIRED: Provide duration for track (in deciseconds, aka seconds*10)")
+	om_ask(actor, /datum/om/prompt/number, PROC_REF(duration_entered), title = "Track Duration", message = "REQUIRED: Provide duration for track (in deciseconds, aka seconds*10)", requires = PROMPT_ADMIN(R_DEBUG|R_FUN))
 
-/datum/om/flow/media_track_add/proc/duration_entered(datum/om/prompt/number/media_track/ask)
+/datum/om/flow/media_track_add/proc/duration_entered(datum/om/prompt/number/ask)
 	duration = ask.number
 	if(!duration)
 		return
@@ -149,21 +140,21 @@ SUBSYSTEM_DEF(media_tracks)
 
 /datum/om/flow/media_track_add/proc/genre_entered(datum/om/prompt/text/media_track/ask)
 	genre = ask.text
-	om_ask(actor, /datum/om/prompt/choice/media_track_mark, PROC_REF(secret_chosen), title = "Track Secret", message = "Optional: Mark track as secret?")
+	om_ask(actor, /datum/om/prompt/choice, PROC_REF(secret_chosen), title = "Track Secret", message = "Optional: Mark track as secret?", requires = PROMPT_ADMIN(R_DEBUG|R_FUN), buttons = TRUE, choices = list("Yes", "Cancel", "No"))
 
-/datum/om/flow/media_track_add/proc/secret_chosen(datum/om/prompt/choice/media_track_mark/ask)
+/datum/om/flow/media_track_add/proc/secret_chosen(datum/om/prompt/choice/ask)
 	if(ask.choice == "Cancel")
 		return
 	secret = (ask.choice == "Yes")
-	om_ask(actor, /datum/om/prompt/choice/media_track_mark, PROC_REF(lobby_chosen), title = "Track Lobby", message = "Optional: Mark track as lobby music?")
+	om_ask(actor, /datum/om/prompt/choice, PROC_REF(lobby_chosen), title = "Track Lobby", message = "Optional: Mark track as lobby music?", requires = PROMPT_ADMIN(R_DEBUG|R_FUN), buttons = TRUE, choices = list("Yes", "Cancel", "No"))
 
-/datum/om/flow/media_track_add/proc/lobby_chosen(datum/om/prompt/choice/media_track_mark/ask)
+/datum/om/flow/media_track_add/proc/lobby_chosen(datum/om/prompt/choice/ask)
 	if(ask.choice == "Cancel")
 		return
 	lobby = (ask.choice == "Yes")
-	om_ask(actor, /datum/om/prompt/choice/media_track_mark, PROC_REF(casino_chosen), title = "Track Casino", message = "Optional: Mark track as casino music?")
+	om_ask(actor, /datum/om/prompt/choice, PROC_REF(casino_chosen), title = "Track Casino", message = "Optional: Mark track as casino music?", requires = PROMPT_ADMIN(R_DEBUG|R_FUN), buttons = TRUE, choices = list("Yes", "Cancel", "No"))
 
-/datum/om/flow/media_track_add/proc/casino_chosen(datum/om/prompt/choice/media_track_mark/ask)
+/datum/om/flow/media_track_add/proc/casino_chosen(datum/om/prompt/choice/ask)
 	if(ask.choice == "Cancel")
 		return
 	tracks.manual_track_entered(actor, src, ask.choice == "Yes")

@@ -269,17 +269,11 @@
 		return
 
 	if(M == L)
-		om_ask(M, /datum/om/prompt/choice/glamour_ring, PROC_REF(ring_action_chosen), message = "Do you want to destroy the ring, or restore energy?", choices = list("Yes", "No", "Restore Energy"))
+		om_ask(M, /datum/om/prompt/choice, PROC_REF(ring_action_chosen), message = "Do you want to destroy the ring, or restore energy?", choices = list("Yes", "No", "Restore Energy"), title = "Destroy ring", buttons = TRUE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 	else
-		om_ask(M, /datum/om/prompt/choice/glamour_ring, PROC_REF(ring_action_chosen), message = "Do you want to destroy the ring, the owner of it may be aware that you have done this?", choices = list("Yes", "No"))
+		om_ask(M, /datum/om/prompt/choice, PROC_REF(ring_action_chosen), message = "Do you want to destroy the ring, the owner of it may be aware that you have done this?", choices = list("Yes", "No"), title = "Destroy ring", buttons = TRUE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 
-/// Re-checked on the answer: still next to the ring and able to act.
-/datum/om/prompt/choice/glamour_ring
-	title = "Destroy ring"
-	buttons = TRUE
-	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
-
-/obj/structure/glamour_ring/proc/ring_action_chosen(datum/om/prompt/choice/glamour_ring/ask)
+/obj/structure/glamour_ring/proc/ring_action_chosen(datum/om/prompt/choice/ask)
 	var/mob/living/M = ask.answerer
 	var/m_action = ask.choice
 	var/mob/living/carbon/human/L = connected_mob

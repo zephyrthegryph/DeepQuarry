@@ -192,7 +192,7 @@ SUBSYSTEM_DEF(pai)
 
 	// Send it!
 	to_chat(inquirer, span_info("A request has been sent!"))
-	om_ask(ghost, /datum/om/prompt/choice/pai_invite, GLOBAL_PROC_REF(pai_invite_answered), subject = card, inquirer = inquirer, ghost_ref = ghost_ref)
+	om_ask(ghost, /datum/om/prompt/choice/pai_invite, PROC_REF(pai_invite_answered), subject = card, inquirer = inquirer, ghost_ref = ghost_ref)
 
 /// A ghost is asked to play a pAI. Re-checked on the answer: still that ghost, with a client.
 /datum/om/prompt/choice/pai_invite
@@ -213,9 +213,9 @@ SUBSYSTEM_DEF(pai)
 	return null
 
 /// The ghost's answer to a pAI invite.
-/proc/pai_invite_answered(datum/om/prompt/choice/pai_invite/ask)
+/datum/controller/subsystem/pai/proc/pai_invite_answered(datum/om/prompt/choice/pai_invite/ask)
 	var/mob/observer/ghost = ask.answerer
-	SSpai.pai_invite_answer(ask.inquirer, ghost, ask.subject, ask.choice, ghost.client)
+	pai_invite_answer(ask.inquirer, ghost, ask.subject, ask.choice, ghost.client)
 
 /datum/controller/subsystem/pai/proc/pai_invite_answer(mob/inquirer, mob/observer/ghost, obj/item/paicard/card, response, client/target)
 	if(check_is_already_pai(target.ckey))

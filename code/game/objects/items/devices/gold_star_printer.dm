@@ -23,14 +23,7 @@
 
 /obj/item/gold_star_printer/proc/make_star(mob/user)
 
-	om_ask(user, /datum/om/prompt/text/gold_star_title, PROC_REF(star_titled))
-
-/// Re-checked on the answer: the printer is still carried.
-/datum/om/prompt/text/gold_star_title
-	title = "Title"
-	message = "Choose a title for the star, this can be an action or name. The name of the star will read Gold Star for 'Title'."
-	max_length = 32
-	ask_flags = ASK_CARRIED | ASK_CAPABLE
+	om_ask(user, /datum/om/prompt/text, PROC_REF(star_titled), title = "Title", message = "Choose a title for the star, this can be an action or name. The name of the star will read Gold Star for 'Title'.", max_length = 32, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
 /datum/om/prompt/text/gold_star_desc
 	title = "Ticket Details"
@@ -42,7 +35,7 @@
 	message = "Choose the description of the 'Gold Star for [star_title]', this is what it will read on examination. (Max length: 200)"
 	return TRUE
 
-/obj/item/gold_star_printer/proc/star_titled(datum/om/prompt/text/gold_star_title/ask)
+/obj/item/gold_star_printer/proc/star_titled(datum/om/prompt/text/ask)
 	if(!ask.text)
 		return
 	om_ask(ask.answerer, /datum/om/prompt/text/gold_star_desc, PROC_REF(star_described), star_title = ask.text)

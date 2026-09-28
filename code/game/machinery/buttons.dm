@@ -85,15 +85,10 @@
 	effect = /obj/machinery/button/mob_spawner_button/proc/interaction_spawn
 
 /obj/machinery/button/mob_spawner_button/proc/interaction_spawn(mob/living/user, obj/item/held, datum/interaction/interaction)
-	om_ask(user, /datum/om/prompt/choice/mob_spawner_mob, PROC_REF(spawn_mob_chosen), choices = GLOB.vr_mob_spawner_options)
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(spawn_mob_chosen), choices = GLOB.vr_mob_spawner_options, title = "Mob spawn", message = "Which Mob do you want to spawn?", requires = PROMPT_ADJACENT)
 	return TRUE
 
-/datum/om/prompt/choice/mob_spawner_mob
-	title = "Mob spawn"
-	message = "Which Mob do you want to spawn?"
-	requires = PROMPT_ADJACENT
-
-/obj/machinery/button/mob_spawner_button/proc/spawn_mob_chosen(datum/om/prompt/choice/mob_spawner_mob/ask)
+/obj/machinery/button/mob_spawner_button/proc/spawn_mob_chosen(datum/om/prompt/choice/ask)
 	var/mobtype = GLOB.vr_mob_spawner_options[ask.choice]
 	if(!mobtype)
 		return

@@ -23,10 +23,10 @@
 		user.bombing_core = 0
 		return
 
-	om_ask(user, /datum/om/prompt/confirm/malf, GLOBAL_PROC_REF(malf_core_bomb_confirmed), title = "Core self-destruct", message = "Really destroy core?", yes_text = "YES", no_text = "NO", price = 0, precheck_override = 1)
+	om_ask(user, /datum/om/prompt/confirm/malf, TYPE_PROC_REF(/mob/living/silicon/ai, malf_core_bomb_confirmed), receiver = user, title = "Core self-destruct", message = "Really destroy core?", yes_text = "YES", no_text = "NO", price = 0, precheck_override = 1)
 
-/proc/malf_core_bomb_confirmed(datum/om/prompt/confirm/malf/ask)
-	var/mob/living/silicon/ai/user = ask.answerer
+/mob/living/silicon/ai/proc/malf_core_bomb_confirmed(datum/om/prompt/confirm/malf/ask)
+	var/mob/living/silicon/ai/user = src
 	if(user.bombing_core)
 		return
 
@@ -34,7 +34,7 @@
 
 	to_chat(user, "***** CORE SELF-DESTRUCT SEQUENCE ACTIVATED *****")
 	to_chat(user, "Use command again to cancel self-destruct. Destroying in 15 seconds.")
-	om_after(user, 1 SECOND, GLOBAL_PROC_REF(malf_core_bomb_tick), user, 14)
+	om_after(user, 1 SECOND, TYPE_PROC_REF(/mob/living/silicon/ai, malf_core_bomb_tick), receiver = user, user, 14)
 
 /// The core bomb's countdown, once a second; it goes off at zero unless cancelled.
 /proc/malf_core_bomb_tick(mob/living/silicon/ai/user, timer)
@@ -42,7 +42,7 @@
 		return
 	to_chat(user, "** [timer] **")
 	if(timer > 0)
-		om_after(user, 1 SECOND, GLOBAL_PROC_REF(malf_core_bomb_tick), user, timer - 1)
+		om_after(user, 1 SECOND, TYPE_PROC_REF(/mob/living/silicon/ai, malf_core_bomb_tick), receiver = user, user, timer - 1)
 		return
 	explosion(user.loc, 3,6,12,24)
 	qdel(user)
@@ -84,10 +84,10 @@
 		user.bombing_station = 0
 		return
 
-	om_ask(user, /datum/om/prompt/confirm/malf, GLOBAL_PROC_REF(malf_station_bomb_confirmed), title = "Station self-destruct", message = "Really destroy station?", yes_text = "YES", no_text = "NO", price = 0)
+	om_ask(user, /datum/om/prompt/confirm/malf, TYPE_PROC_REF(/mob/living/silicon/ai, malf_station_bomb_confirmed), receiver = user, title = "Station self-destruct", message = "Really destroy station?", yes_text = "YES", no_text = "NO", price = 0)
 
-/proc/malf_station_bomb_confirmed(datum/om/prompt/confirm/malf/ask)
-	var/mob/living/silicon/ai/user = ask.answerer
+/mob/living/silicon/ai/proc/malf_station_bomb_confirmed(datum/om/prompt/confirm/malf/ask)
+	var/mob/living/silicon/ai/user = src
 	if(user.bombing_station)
 		return
 	var/obj/item/radio/radio = new/obj/item/radio()
@@ -97,7 +97,7 @@
 	set_security_level("delta")
 	radio.autosay("Self destruct sequence has been activated. Self-destructing in 120 seconds.", "Self-Destruct Control")
 
-	om_after(user, 1 SECOND, GLOBAL_PROC_REF(malf_station_bomb_tick), user, radio, 120)
+	om_after(user, 1 SECOND, TYPE_PROC_REF(/mob/living/silicon/ai, malf_station_bomb_tick), receiver = user, user, radio, 120)
 
 /// The station self-destruct countdown, once a second.
 /proc/malf_station_bomb_tick(mob/living/silicon/ai/user, obj/item/radio/radio, timer)
@@ -109,14 +109,14 @@
 	if(timer == 1)
 		radio.autosay("Self destructing now. Have a nice day.", "Self-Destruct Control")
 	if(timer > 1)
-		om_after(user, 1 SECOND, GLOBAL_PROC_REF(malf_station_bomb_tick), user, radio, timer - 1)
+		om_after(user, 1 SECOND, TYPE_PROC_REF(/mob/living/silicon/ai, malf_station_bomb_tick), receiver = user, user, radio, timer - 1)
 		return
 
 	if(SSticker)
 		var/datum/cinematic/malf/malf_type = /datum/cinematic/malf
 		play_cinematic(malf_type)
 		// The station dies at the blast, once the intro has played (it slept through it before S10b).
-		om_after(null, initial(malf_type.intro_time), GLOBAL_PROC_REF(malf_station_blast))
+		om_after(null, initial(malf_type.intro_time), TYPE_PROC_REF(/mob/living/silicon/ai, malf_station_blast), receiver = user)
 
 /// The doomsday blast, after its cinematic's intro: kills the station.
 /proc/malf_station_blast()

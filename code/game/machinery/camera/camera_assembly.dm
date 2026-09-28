@@ -104,14 +104,10 @@
 	if(state != 3)
 		return FALSE
 	playsound(src, tool.usesound, 50, TRUE)
-	om_ask(user, /datum/om/prompt/text/camera_networks, PROC_REF(camera_networks_entered), message = "Which networks would you like to connect this camera to? Separate networks with a comma. No Spaces!\nFor example: "+using_map.station_short+",Security,Secret ", default = camera_network ? camera_network : NETWORK_DEFAULT)
+	om_ask(user, /datum/om/prompt/text, PROC_REF(camera_networks_entered), message = "Which networks would you like to connect this camera to? Separate networks with a comma. No Spaces!\nFor example: "+using_map.station_short+",Security,Secret ", default = camera_network ? camera_network : NETWORK_DEFAULT, title = "Set Network", requires = PROMPT_ADJACENT)
 	return TRUE
 
-/datum/om/prompt/text/camera_networks
-	title = "Set Network"
-	requires = PROMPT_ADJACENT
-
-/obj/item/camera_assembly/proc/camera_networks_entered(datum/om/prompt/text/camera_networks/ask)
+/obj/item/camera_assembly/proc/camera_networks_entered(datum/om/prompt/text/ask)
 	if(!ask.text)
 		to_chat(ask.answerer, "No input found please hang up and try your call again.")
 		return

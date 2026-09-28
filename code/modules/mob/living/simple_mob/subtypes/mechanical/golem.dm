@@ -84,15 +84,9 @@ REF_OWNED(/mob/living/simple_mob/mechanical/technomancer_golem, "core")
 	active_spell = new path(src)
 
 /mob/living/simple_mob/mechanical/technomancer_golem/verb/test_giving_spells()
-	om_ask(usr, /datum/om/prompt/choice/golem_test_spell, PROC_REF(test_spell_chosen), choices = known_spells)
+	om_ask(usr, /datum/om/prompt/choice, PROC_REF(test_spell_chosen), choices = known_spells, title = "Give spell", message = "What spell?", optional = TRUE)
 
-/// Debug verb: pick a spell for the golem's hand; a cancel clears it.
-/datum/om/prompt/choice/golem_test_spell
-	title = "Give spell"
-	message = "What spell?"
-	optional = TRUE
-
-/mob/living/simple_mob/mechanical/technomancer_golem/proc/test_spell_chosen(datum/om/prompt/choice/golem_test_spell/ask)
+/mob/living/simple_mob/mechanical/technomancer_golem/proc/test_spell_chosen(datum/om/prompt/choice/ask)
 	if(isnull(ask.choice))
 		qdel(active_spell)
 		return

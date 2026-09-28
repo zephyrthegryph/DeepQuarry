@@ -8,21 +8,8 @@
 
 /obj/structure/portal_event/resize/attack_ghost(mob/observer/dead/user)
 	if(!target && check_rights_for(user?.client, R_HOLDER))
-		om_ask(user, /datum/om/prompt/confirm/portal_size_adjust, PROC_REF(ask_size_mode))
+		om_ask(user, /datum/om/prompt/confirm, PROC_REF(ask_size_mode), title = "Change portal size settings", message = "Would you like to adjust the portal's size settings?", no_first = TRUE, requires = PROMPT_ADMIN(R_HOLDER))
 	return ..()
-
-/datum/om/prompt/confirm/portal_size_adjust
-	title = "Change portal size settings"
-	message = "Would you like to adjust the portal's size settings?"
-	no_first = TRUE
-	requires = PROMPT_ADMIN(R_HOLDER)
-
-/datum/om/prompt/choice/portal_size_mode
-	title = "Change portal size settings"
-	message = "Should this portal shrink people who are over the limit, or grow people who are under the limit?"
-	choices = list("Shrink","Grow")
-	buttons = TRUE
-	requires = PROMPT_ADMIN(R_HOLDER)
 
 /datum/om/prompt/number/portal_size_limit
 	title = "Pick a Size"
@@ -35,10 +22,10 @@
 	message = shrinking ? "What should the size limit be? Anyone over this limit will be shrunk to this size. (1 = 100%, etc)" : "What should the size limit be? Anyone under this limit will be grown to this size. (1 = 100%, etc)"
 	return TRUE
 
-/obj/structure/portal_event/resize/proc/ask_size_mode(datum/om/prompt/confirm/portal_size_adjust/ask)
-	om_ask(ask.answerer, /datum/om/prompt/choice/portal_size_mode, PROC_REF(ask_size_limit))
+/obj/structure/portal_event/resize/proc/ask_size_mode(datum/om/prompt/confirm/ask)
+	om_ask(ask.answerer, /datum/om/prompt/choice, PROC_REF(ask_size_limit), title = "Change portal size settings", message = "Should this portal shrink people who are over the limit, or grow people who are under the limit?", choices = list("Shrink","Grow"), buttons = TRUE, requires = PROMPT_ADMIN(R_HOLDER))
 
-/obj/structure/portal_event/resize/proc/ask_size_limit(datum/om/prompt/choice/portal_size_mode/ask)
+/obj/structure/portal_event/resize/proc/ask_size_limit(datum/om/prompt/choice/ask)
 	om_ask(ask.answerer, /datum/om/prompt/number/portal_size_limit, PROC_REF(size_settings_chosen), shrinking = (ask.choice == "Shrink"))
 
 /obj/structure/portal_event/resize/proc/size_settings_chosen(datum/om/prompt/number/portal_size_limit/ask)

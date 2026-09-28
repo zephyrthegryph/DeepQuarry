@@ -317,11 +317,6 @@
 	message = "Enter a name for the Sensor/Meter."
 	var/obj/machinery/device
 
-/// Picking a sensor/meter to remove (choices: name -> tag).
-/datum/om/prompt/choice/air_control_sensor_remove
-	title = "Sensor/Meter Removal"
-	message = "Select a sensor/meter to remove"
-
 /// Confirming the removal.
 /datum/om/prompt/confirm/air_control_sensor_remove
 	title = "Warning"
@@ -372,7 +367,7 @@
 			var/list/sensor_names = list()
 			for(var/tag in sensors)
 				sensor_names[LAZYACCESS(sensors, tag)] = tag
-			om_ask(user, /datum/om/prompt/choice/air_control_sensor_remove, PROC_REF(sensor_removal_chosen), choices = sensor_names)
+			om_ask(user, /datum/om/prompt/choice, PROC_REF(sensor_removal_chosen), choices = sensor_names, title = "Sensor/Meter Removal", message = "Select a sensor/meter to remove")
 
 /obj/machinery/computer/general_air_control/proc/sensor_named(datum/om/prompt/text/air_control_sensor_name/ask)
 	var/mob/living/user = ask.answerer
@@ -389,7 +384,7 @@
 		LAZYSET(sensors, M.id, device_name)
 	to_chat(user, span_notice("You have added the [device] to the [src] under the name [device_name]!"))
 
-/obj/machinery/computer/general_air_control/proc/sensor_removal_chosen(datum/om/prompt/choice/air_control_sensor_remove/ask)
+/obj/machinery/computer/general_air_control/proc/sensor_removal_chosen(datum/om/prompt/choice/ask)
 	om_ask(ask.answerer, /datum/om/prompt/confirm/air_control_sensor_remove, PROC_REF(sensor_removal_confirmed), sensor_names = ask.choices, to_remove = ask.choice)
 
 /obj/machinery/computer/general_air_control/proc/sensor_removal_confirmed(datum/om/prompt/confirm/air_control_sensor_remove/ask)

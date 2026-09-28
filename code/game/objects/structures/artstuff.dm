@@ -253,14 +253,9 @@
 		update_appearance()
 
 /obj/item/canvas/proc/try_rename(mob/user)
-	om_ask(user, /datum/om/prompt/text/canvas_name, PROC_REF(renamed))
+	om_ask(user, /datum/om/prompt/text, PROC_REF(renamed), message = "What do you want to name the painting?", max_length = 250, requires = PROMPT_USABLE_BY("physical"))
 
-/datum/om/prompt/text/canvas_name
-	message = "What do you want to name the painting?"
-	max_length = 250
-	requires = PROMPT_USABLE_BY("physical")
-
-/obj/item/canvas/proc/renamed(datum/om/prompt/text/canvas_name/ask)
+/obj/item/canvas/proc/renamed(datum/om/prompt/text/ask)
 	var/new_name = ask.text
 	if(new_name != painting_name && new_name)
 		painting_name = new_name
@@ -652,11 +647,6 @@
 	no_text = "Cancel"
 	requires = PROMPT_ADMIN(R_HOLDER)
 
-/datum/om/prompt/choice/painting_pick
-	title = "Spawn painting"
-	message = "Choose which painting to spawn!"
-	requires = PROMPT_ADMIN(R_HOLDER)
-
 /obj/structure/sign/painting/proc/lateload_list_confirmed(datum/om/prompt/confirm/painting_list/ask)
 	var/list/paintings = list()
 	var/current = 1
@@ -664,9 +654,9 @@
 		var/key = "[entry["title"]] by [entry["author"]]"
 		paintings[key] = current
 		current += 1
-	om_ask(ask.answerer, /datum/om/prompt/choice/painting_pick, PROC_REF(lateload_picked), choices = paintings)
+	om_ask(ask.answerer, /datum/om/prompt/choice, PROC_REF(lateload_picked), choices = paintings, title = "Spawn painting", message = "Choose which painting to spawn!", requires = PROMPT_ADMIN(R_HOLDER))
 
-/obj/structure/sign/painting/proc/lateload_picked(datum/om/prompt/choice/painting_pick/ask)
+/obj/structure/sign/painting/proc/lateload_picked(datum/om/prompt/choice/ask)
 	admin_lateload_painting(1, ask.choices[ask.choice])
 
 /obj/structure/sign/painting/proc/lateload_confirmed(datum/om/prompt/confirm/painting_lateload/ask)

@@ -950,13 +950,9 @@
 
 	//Again, no real need for a check on this. I'm unsure how it could be somehow abused.
 	//Even if they open the box 900 times, who cares, they get the wrong color and do it again.
-	om_ask(src, /datum/om/prompt/color/body_glow, PROC_REF(glow_color_picked), default = glow_color)
+	om_ask(src, /datum/om/prompt/color, PROC_REF(glow_color_picked), default = glow_color, title = "Body Glow", message = "Select a new color")
 
-/datum/om/prompt/color/body_glow
-	title = "Body Glow"
-	message = "Select a new color"
-
-/mob/living/proc/glow_color_picked(datum/om/prompt/color/body_glow/ask)
+/mob/living/proc/glow_color_picked(datum/om/prompt/color/ask)
 	if(ask.picked_color)
 		set_glow_color(ask.picked_color)
 

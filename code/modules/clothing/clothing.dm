@@ -185,14 +185,9 @@
 	if(usr.stat || usr.restrained() || usr.incapacitated())
 		return
 
-	om_ask(usr, /datum/om/prompt/color/carried_item, PROC_REF(recolor_picked), title = "Color", message = "Pick a new color", default = color)
+	om_ask(usr, /datum/om/prompt/color, PROC_REF(recolor_picked), title = "Color", message = "Pick a new color", default = color, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
-/// A colour for something you carry (a verb on an item in your inventory). Re-checked on the
-/// answer: still carried, and you are able to act.
-/datum/om/prompt/color/carried_item
-	ask_flags = ASK_CARRIED | ASK_CAPABLE
-
-/obj/item/clothing/proc/recolor_picked(datum/om/prompt/color/carried_item/ask)
+/obj/item/clothing/proc/recolor_picked(datum/om/prompt/color/ask)
 	if(ask.picked_color && (ask.picked_color != color))
 		color = ask.picked_color
 	update_icon()

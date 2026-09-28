@@ -44,7 +44,7 @@
 			var/fallback = "[src.adult_name] ([instance_num])"
 			adult.fully_replace_character_name(name, fallback)
 			// The answer runs on the adult (src is deleted below), so the receiver is passed explicitly.
-			om_ask(adult, /datum/om/prompt/text/adult_name, TYPE_PROC_REF(/mob/living/carbon/human, adult_name_chosen), receiver = adult)
+			om_ask(adult, /datum/om/prompt/text, TYPE_PROC_REF(/mob/living/carbon/human, adult_name_chosen), receiver = adult, title = "Adult Name", message = "You have become an adult. Choose a name for yourself.", max_length = MAX_NAME_LEN)
 
 	for (var/obj/item/W in src.contents)
 		src.drop_from_inventory(W)
@@ -62,12 +62,7 @@
 /mob/living/carbon/alien/proc/confirm_evolution()
 	return
 
-/datum/om/prompt/text/adult_name
-	title = "Adult Name"
-	message = "You have become an adult. Choose a name for yourself."
-	max_length = MAX_NAME_LEN
-
-/mob/living/carbon/human/proc/adult_name_chosen(datum/om/prompt/text/adult_name/ask)
+/mob/living/carbon/human/proc/adult_name_chosen(datum/om/prompt/text/ask)
 	if(ask.text)
 		fully_replace_character_name(real_name, ask.text)
 

@@ -300,17 +300,11 @@
 	avatar = occupant.vr_link
 	// If they've already enterred VR, and are reconnecting, prompt if they want a new body
 	if(avatar)
-		om_ask(occupant, /datum/om/prompt/confirm/vr_reuse, PROC_REF(vr_reuse_answered), message = "You already have a [avatar.stat == DEAD ? "" : "deceased "]Virtual Reality avatar. Would you like to use it?")
+		om_ask(occupant, /datum/om/prompt/confirm, PROC_REF(vr_reuse_answered), message = "You already have a [avatar.stat == DEAD ? "" : "deceased "]Virtual Reality avatar. Would you like to use it?", title = "New avatar", answer_on_no = TRUE, requires = list(/datum/om/check/inside_target))
 		return
 	vr_choose_avatar(occupant)
 
-/// Re-checked on the answer: the occupant is still inside the pod.
-/datum/om/prompt/confirm/vr_reuse
-	title = "New avatar"
-	answer_on_no = TRUE
-	requires = list(/datum/om/check/inside_target)
-
-/obj/machinery/vr_sleeper/proc/vr_reuse_answered(datum/om/prompt/confirm/vr_reuse/ask)
+/obj/machinery/vr_sleeper/proc/vr_reuse_answered(datum/om/prompt/confirm/ask)
 	var/mob/living/carbon/human/occupant = ask.answerer
 	if(ask.yes && avatar)
 		vr_reenter(occupant)
@@ -334,36 +328,22 @@
 	var/location
 
 /datum/om/flow/vr_choose_avatar/start()
-	om_ask(actor, /datum/om/prompt/choice/vr_spawn_location, PROC_REF(location_chosen), choices = landmarks)
+	om_ask(actor, /datum/om/prompt/choice, PROC_REF(location_chosen), choices = landmarks, title = "Spawn location", message = "Please select a location to spawn your avatar at:")
 
-/datum/om/flow/vr_choose_avatar/proc/location_chosen(datum/om/prompt/choice/vr_spawn_location/ask)
+/datum/om/flow/vr_choose_avatar/proc/location_chosen(datum/om/prompt/choice/ask)
 	location = ask.choice
-	om_ask(actor, /datum/om/prompt/confirm/vr_as_mob, PROC_REF(as_mob_answered))
+	om_ask(actor, /datum/om/prompt/confirm, PROC_REF(as_mob_answered), title = "Join as a mob?", message = "Would you like to play as a different creature?", answer_on_no = TRUE)
 
-/datum/om/flow/vr_choose_avatar/proc/as_mob_answered(datum/om/prompt/confirm/vr_as_mob/ask)
+/datum/om/flow/vr_choose_avatar/proc/as_mob_answered(datum/om/prompt/confirm/ask)
 	if(ask.yes)
-		om_ask(actor, /datum/om/prompt/choice/vr_creature, PROC_REF(creature_chosen), choices = GLOB.vr_mob_tf_options)
+		om_ask(actor, /datum/om/prompt/choice, PROC_REF(creature_chosen), choices = GLOB.vr_mob_tf_options, title = "Mob list", message = "Please select a creature:")
 		return
 	var/obj/machinery/vr_sleeper/pod = target
 	pod.vr_avatar_chosen(actor, location, null)
 
-/datum/om/flow/vr_choose_avatar/proc/creature_chosen(datum/om/prompt/choice/vr_creature/ask)
+/datum/om/flow/vr_choose_avatar/proc/creature_chosen(datum/om/prompt/choice/ask)
 	var/obj/machinery/vr_sleeper/pod = target
 	pod.vr_avatar_chosen(actor, location, GLOB.vr_mob_tf_options[ask.choice])
-
-/datum/om/prompt/choice/vr_spawn_location
-	title = "Spawn location"
-	message = "Please select a location to spawn your avatar at:"
-
-/datum/om/prompt/confirm/vr_as_mob
-	title = "Join as a mob?"
-	message = "Would you like to play as a different creature?"
-	answer_on_no = TRUE
-
-/// Picking a VR creature form (the pod's avatar flow, and the avatar's own transform verb).
-/datum/om/prompt/choice/vr_creature
-	title = "Mob list"
-	message = "Please select a creature:"
 
 /obj/machinery/vr_sleeper/proc/vr_avatar_chosen(mob/living/carbon/human/occupant, S, tf)
 	if(avatar)

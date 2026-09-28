@@ -72,18 +72,10 @@
 	if(!O.move_into(src, OCCUPANT_SLOT_TRANSPORTPOD))
 		return
 	update_icon()
-	om_ask(O, /datum/om/prompt/confirm/transportpod_launch, PROC_REF(launch_answered))
+	om_ask(O, /datum/om/prompt/confirm, PROC_REF(launch_answered), title = "Transport Pod", message = "Are you sure you're ready to launch?", requires = list(/datum/om/check/inside_target), answer_on_no = TRUE, cancel_answer = "No")
 	return 1
 
-/// Re-checked on the answer: still inside the pod. A cancel counts as no.
-/datum/om/prompt/confirm/transportpod_launch
-	title = "Transport Pod"
-	message = "Are you sure you're ready to launch?"
-	requires = list(/datum/om/check/inside_target)
-	answer_on_no = TRUE
-	cancel_answer = "No"
-
-/obj/machinery/transportpod/proc/launch_answered(datum/om/prompt/confirm/transportpod_launch/ask)
+/obj/machinery/transportpod/proc/launch_answered(datum/om/prompt/confirm/ask)
 	if(ask.yes)
 		in_transit = 1
 		MACHINE_WAKE(src)

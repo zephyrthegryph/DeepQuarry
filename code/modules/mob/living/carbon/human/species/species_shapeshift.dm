@@ -119,20 +119,9 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	// A cancel picks none (bald, no gradient, shaved).
 	om_flow_start(/datum/om/flow/shapeshift_hair, src, src, hairs = valid_hairstyles, grads = valid_gradstyles, facials = valid_facialhairstyles)
 
-/// A shapeshifter pick a cancel skips (it answers ""). Re-checked on the answer: conscious.
-/datum/om/prompt/choice/shapeshift_optional
-	ask_flags = ASK_CONSCIOUS
-	cancel_answer = ""
-
 /datum/om/prompt/color/shapeshift_optional
 	ask_flags = ASK_CONSCIOUS
 	cancel_answer = ""
-
-/datum/om/prompt/number/shapeshift_alpha
-	ask_flags = ASK_CONSCIOUS
-	cancel_answer = ""
-	min = 0
-	max = 255
 
 /// Hair, gradient and facial hair styles in turn (each only if there are any to pick).
 /datum/om/flow/shapeshift_hair
@@ -148,7 +137,7 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	if(!length(hairs))
 		ask_gradient()
 		return
-	om_ask(actor, /datum/om/prompt/choice/shapeshift_optional, PROC_REF(hair_chosen), message = "Select a hairstyle.", title = "Shapeshifter Hair", choices = hairs)
+	om_ask(actor, /datum/om/prompt/choice, PROC_REF(hair_chosen), message = "Select a hairstyle.", title = "Shapeshifter Hair", choices = hairs, ask_flags = ASK_CONSCIOUS, cancel_answer = "")
 
 /datum/om/flow/shapeshift_hair/proc/hair_chosen(datum/om/prompt/choice/ask)
 	hair = ask.choice || "Bald"
@@ -158,7 +147,7 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	if(!length(grads))
 		ask_facial()
 		return
-	om_ask(actor, /datum/om/prompt/choice/shapeshift_optional, PROC_REF(gradient_chosen), message = "Select a hair gradient style.", title = "Shapeshifter Hair", choices = grads)
+	om_ask(actor, /datum/om/prompt/choice, PROC_REF(gradient_chosen), message = "Select a hair gradient style.", title = "Shapeshifter Hair", choices = grads, ask_flags = ASK_CONSCIOUS, cancel_answer = "")
 
 /datum/om/flow/shapeshift_hair/proc/gradient_chosen(datum/om/prompt/choice/ask)
 	gradient = ask.choice || "None"
@@ -168,7 +157,7 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	if(!length(facials))
 		finish()
 		return
-	om_ask(actor, /datum/om/prompt/choice/shapeshift_optional, PROC_REF(facial_chosen), message = "Select a facial hair style.", title = "Shapeshifter Hair", choices = facials)
+	om_ask(actor, /datum/om/prompt/choice, PROC_REF(facial_chosen), message = "Select a facial hair style.", title = "Shapeshifter Hair", choices = facials, ask_flags = ASK_CONSCIOUS, cancel_answer = "")
 
 /datum/om/flow/shapeshift_hair/proc/facial_chosen(datum/om/prompt/choice/ask)
 	facial = ask.choice || "Shaved"
@@ -484,7 +473,7 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 
 /datum/om/flow/shapeshift_accessory/proc/ask_alpha()
 	var/mob/living/carbon/human/H = actor
-	om_ask(actor, /datum/om/prompt/number/shapeshift_alpha, PROC_REF(alpha_chosen), message = "Set [info["noun"]] alpha (0-255):", title = "[info["title"]] Alpha", default = H.vars["a_[info["prefix"]]"])
+	om_ask(actor, /datum/om/prompt/number, PROC_REF(alpha_chosen), message = "Set [info["noun"]] alpha (0-255):", title = "[info["title"]] Alpha", default = H.vars["a_[info["prefix"]]"], ask_flags = ASK_CONSCIOUS, cancel_answer = "", min = 0, max = 255)
 
 /datum/om/flow/shapeshift_accessory/proc/alpha_chosen(datum/om/prompt/number/ask)
 	var/mob/living/carbon/human/H = actor
@@ -566,7 +555,7 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	channel++
 	if(channel > length(defaults))
 		var/mob/living/carbon/human/H = actor
-		om_ask(actor, /datum/om/prompt/number/shapeshift_alpha, PROC_REF(alpha_chosen), message = "Set ear alpha (0-255):", title = "Ear Alpha", default = H.a_ears2)
+		om_ask(actor, /datum/om/prompt/number, PROC_REF(alpha_chosen), message = "Set ear alpha (0-255):", title = "Ear Alpha", default = H.a_ears2, ask_flags = ASK_CONSCIOUS, cancel_answer = "", min = 0, max = 255)
 		return
 	var/channel_name = GLOB.fancy_sprite_accessory_color_channel_names[channel]
 	om_ask(actor, /datum/om/prompt/color/shapeshift_optional, PROC_REF(channel_chosen), message = "Pick [channel_name]", title = "Ear Color ([channel_name])", default = defaults[channel])
@@ -653,25 +642,19 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	var/finish_proc
 	var/flavour
 
-/datum/om/prompt/choice/reform_include
-	title = "Reformation"
-	choices = list("Yes","No","Cancel")
-	buttons = TRUE
-	ask_flags = ASK_CONSCIOUS
-
 /datum/om/flow/shapeshift_reform/start()
 	om_ask(actor, /datum/om/prompt/confirm, PROC_REF(confirmed), title = confirm_title, message = confirm_message, yes_text = confirm_yes, no_text = "Cancel", ask_flags = ASK_CONSCIOUS)
 
 /datum/om/flow/shapeshift_reform/proc/confirmed(datum/om/prompt/confirm/ask)
-	om_ask(actor, /datum/om/prompt/choice/reform_include, PROC_REF(flavour_chosen), message = "Include Flavourtext?")
+	om_ask(actor, /datum/om/prompt/choice, PROC_REF(flavour_chosen), message = "Include Flavourtext?", title = "Reformation", choices = list("Yes","No","Cancel"), buttons = TRUE, ask_flags = ASK_CONSCIOUS)
 
-/datum/om/flow/shapeshift_reform/proc/flavour_chosen(datum/om/prompt/choice/reform_include/ask)
+/datum/om/flow/shapeshift_reform/proc/flavour_chosen(datum/om/prompt/choice/ask)
 	if(ask.choice == "Cancel")
 		return
 	flavour = (ask.choice == "Yes")
-	om_ask(actor, /datum/om/prompt/choice/reform_include, PROC_REF(ooc_chosen), message = "Include OOC notes?")
+	om_ask(actor, /datum/om/prompt/choice, PROC_REF(ooc_chosen), message = "Include OOC notes?", title = "Reformation", choices = list("Yes","No","Cancel"), buttons = TRUE, ask_flags = ASK_CONSCIOUS)
 
-/datum/om/flow/shapeshift_reform/proc/ooc_chosen(datum/om/prompt/choice/reform_include/ask)
+/datum/om/flow/shapeshift_reform/proc/ooc_chosen(datum/om/prompt/choice/ask)
 	if(ask.choice == "Cancel")
 		return
 	call(actor, finish_proc)(flavour, ask.choice == "Yes")
@@ -751,18 +734,12 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	message = "Allow [asker] to copy what you look like?"
 	return TRUE
 
-/datum/om/prompt/choice/copy_body_flavour
-	title = "Copy Form"
-	choices = list("Yes","No","Cancel")
-	buttons = TRUE
-	ask_flags = ASK_CONSCIOUS
-
 /datum/om/flow/copy_body/start()
 	om_ask(target, /datum/om/prompt/confirm/copy_body_consent, PROC_REF(consent_given))
 
 /datum/om/flow/copy_body/proc/consent_given(datum/om/prompt/confirm/ask)
 	consented = TRUE
-	om_ask(actor, /datum/om/prompt/choice/copy_body_flavour, PROC_REF(flavour_chosen), message = "Copy [target]'s flavourtext?")
+	om_ask(actor, /datum/om/prompt/choice, PROC_REF(flavour_chosen), message = "Copy [target]'s flavourtext?", title = "Copy Form", choices = list("Yes","No","Cancel"), buttons = TRUE, ask_flags = ASK_CONSCIOUS)
 
 /datum/om/flow/copy_body/proc/flavour_chosen(datum/om/prompt/choice/ask)
 	var/mob/living/carbon/human/H = actor

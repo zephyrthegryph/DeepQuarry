@@ -147,18 +147,11 @@
 		return
 
 	if(container)
-		om_ask(user, /datum/om/prompt/confirm/bioprinter_menu, PROC_REF(bioprinter_menu_answered))
+		om_ask(user, /datum/om/prompt/confirm, PROC_REF(bioprinter_menu_answered), title = "Bioprinter Menu", message = "What do you want to do?", yes_text = "Print Limbs", no_text = "Cancel", requires = PROMPT_ADJACENT)
 	else
 		to_chat(user, span_warning("\The [src] can't operate without a reagent reservoir!"))
 
-/datum/om/prompt/confirm/bioprinter_menu
-	title = "Bioprinter Menu"
-	message = "What do you want to do?"
-	yes_text = "Print Limbs"
-	no_text = "Cancel"
-	requires = PROMPT_ADJACENT
-
-/obj/machinery/organ_printer/proc/bioprinter_menu_answered(datum/om/prompt/confirm/bioprinter_menu/ask)
+/obj/machinery/organ_printer/proc/bioprinter_menu_answered(datum/om/prompt/confirm/ask)
 	printing_menu(ask.answerer)
 
 /obj/machinery/organ_printer/proc/printing_menu(mob/user)

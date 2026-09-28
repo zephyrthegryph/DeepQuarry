@@ -632,7 +632,7 @@ REF_OWNED(/mob/living/silicon/ai, list("announcement", "psupply", "aiPDA", "aiCo
 	if(check_unable(AI_CHECK_WIRELESS))
 		return
 
-	set_ai_status_displays(src)
+	set_ai_status_displays()
 	return
 
 //I am the icon meister. Bow fefore me.	//>fefore

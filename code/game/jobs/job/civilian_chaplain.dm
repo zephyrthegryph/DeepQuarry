@@ -68,22 +68,18 @@
 	var/religion
 	var/deity
 
-/datum/om/prompt/text/chaplain_religion
-	title = "Name change"
-	max_length = MAX_NAME_LEN
-
 /datum/om/flow/chaplain_religion/start()
-	om_ask(actor, /datum/om/prompt/text/chaplain_religion, PROC_REF(religion_entered), message = "You are the crew services officer. Would you like to change your religion? Default is Unitarianism", default = "Unitarianism")
+	om_ask(actor, /datum/om/prompt/text, PROC_REF(religion_entered), message = "You are the crew services officer. Would you like to change your religion? Default is Unitarianism", default = "Unitarianism", title = "Name change", max_length = MAX_NAME_LEN)
 
-/datum/om/flow/chaplain_religion/proc/religion_entered(datum/om/prompt/text/chaplain_religion/ask)
+/datum/om/flow/chaplain_religion/proc/religion_entered(datum/om/prompt/text/ask)
 	religion = ask.text
-	om_ask(actor, /datum/om/prompt/text/chaplain_religion, PROC_REF(deity_entered), message = "Would you like to change your deity? Default is Hashem", default = "Hashem")
+	om_ask(actor, /datum/om/prompt/text, PROC_REF(deity_entered), message = "Would you like to change your deity? Default is Hashem", default = "Hashem", title = "Name change", max_length = MAX_NAME_LEN)
 
-/datum/om/flow/chaplain_religion/proc/deity_entered(datum/om/prompt/text/chaplain_religion/ask)
+/datum/om/flow/chaplain_religion/proc/deity_entered(datum/om/prompt/text/ask)
 	deity = ask.text
-	om_ask(actor, /datum/om/prompt/text/chaplain_religion, PROC_REF(title_entered), title = "Title Change", message = "Would you like to change your title?", default = id.assignment)
+	om_ask(actor, /datum/om/prompt/text, PROC_REF(title_entered), title = "Title Change", message = "Would you like to change your title?", default = id.assignment, max_length = MAX_NAME_LEN)
 
-/datum/om/flow/chaplain_religion/proc/title_entered(datum/om/prompt/text/chaplain_religion/ask)
+/datum/om/flow/chaplain_religion/proc/title_entered(datum/om/prompt/text/ask)
 	chaplain_religion_chosen(actor, bible, id, religion, deity, ask.text)
 
 /proc/chaplain_religion_chosen(mob/living/carbon/human/H, obj/item/storage/bible/B, obj/item/card/id/I, new_religion, new_deity, new_title)

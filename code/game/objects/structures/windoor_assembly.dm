@@ -65,9 +65,9 @@
 		return TRUE
 
 /obj/structure/windoor_assembly/proc/rename_door(mob/living/user)
-	om_ask(user, /datum/om/prompt/text/assembly_name, PROC_REF(windoor_named), title = name, message = "Enter the name for the windoor.", default = created_name)
+	om_ask(user, /datum/om/prompt/text, PROC_REF(windoor_named), title = name, message = "Enter the name for the windoor.", default = created_name, max_length = MAX_NAME_LEN, encode = FALSE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 
-/obj/structure/windoor_assembly/proc/windoor_named(datum/om/prompt/text/assembly_name/ask)
+/obj/structure/windoor_assembly/proc/windoor_named(datum/om/prompt/text/ask)
 	created_name = sanitizeSafe(ask.text, MAX_NAME_LEN)
 	update_state()
 

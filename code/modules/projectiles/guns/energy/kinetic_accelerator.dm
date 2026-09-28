@@ -716,14 +716,9 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	om_ask(user, /datum/om/prompt/color/tracer_bolt, PROC_REF(bolt_color_picked), default = bolt_color)
+	om_ask(user, /datum/om/prompt/color, PROC_REF(bolt_color_picked), default = bolt_color, title = "Choose Color", ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
-/// Re-checked on the answer: the modkit is still on the user, who is able.
-/datum/om/prompt/color/tracer_bolt
-	title = "Choose Color"
-	ask_flags = ASK_CARRIED | ASK_CAPABLE
-
-/obj/item/borg/upgrade/modkit/tracer/adjustable/proc/bolt_color_picked(datum/om/prompt/color/tracer_bolt/ask)
+/obj/item/borg/upgrade/modkit/tracer/adjustable/proc/bolt_color_picked(datum/om/prompt/color/ask)
 	if(ask.picked_color)
 		bolt_color = ask.picked_color
 

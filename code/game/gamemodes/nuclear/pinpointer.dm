@@ -133,9 +133,6 @@
 	requires = list(CHECK(/datum/om/check/can_see, 1))
 	var/location_x
 
-/datum/om/prompt/text/carried_item
-	ask_flags = ASK_CARRIED | ASK_CAPABLE
-
 /obj/item/pinpointer/advpinpointer/proc/pinpointer_mode_chosen(datum/om/prompt/choice/carried_item/ask)
 	var/mob/user = ask.answerer
 	switch(ask.choice)
@@ -171,7 +168,7 @@
 				itemlist = new
 			om_ask(ask.answerer, /datum/om/prompt/choice/carried_item, PROC_REF(pinpointer_item_chosen), title = "Item Mode Select", message = "Select item to search for.", choices = itemlist.possible_items)
 		if("DNA")
-			om_ask(ask.answerer, /datum/om/prompt/text/carried_item, PROC_REF(pinpointer_dna_entered), title = "Please Enter String.", message = "Input DNA string to search for.", default = "")
+			om_ask(ask.answerer, /datum/om/prompt/text, PROC_REF(pinpointer_dna_entered), title = "Please Enter String.", message = "Input DNA string to search for.", default = "", ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
 /obj/item/pinpointer/advpinpointer/proc/pinpointer_item_chosen(datum/om/prompt/choice/carried_item/ask)
 	var/mob/user = ask.answerer
@@ -185,7 +182,7 @@
 	to_chat(user, "You set the pinpointer to locate [targetitem]")
 	attack_self(user)
 
-/obj/item/pinpointer/advpinpointer/proc/pinpointer_dna_entered(datum/om/prompt/text/carried_item/ask)
+/obj/item/pinpointer/advpinpointer/proc/pinpointer_dna_entered(datum/om/prompt/text/ask)
 	var/mob/user = ask.answerer
 	var/DNAstring = ask.text
 	if(!DNAstring)

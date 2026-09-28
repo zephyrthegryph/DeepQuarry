@@ -148,26 +148,15 @@ ADMIN_VERB(makepAI, R_ADMIN|R_EVENT|R_DEBUG, "Make pAI", "Spawn someone in as a 
 
 /// An admin-spawned pAI loads its saved data, or else names itself.
 /mob/living/silicon/pai/proc/offer_admin_spawn_load()
-	om_ask(src, /datum/om/prompt/confirm/pai_admin_load, PROC_REF(admin_spawn_load_chosen))
+	om_ask(src, /datum/om/prompt/confirm, PROC_REF(admin_spawn_load_chosen), title = "Load", message = "Do you want to load your pAI data?", answer_on_no = TRUE)
 
-/datum/om/prompt/confirm/pai_admin_load
-	title = "Load"
-	message = "Do you want to load your pAI data?"
-	answer_on_no = TRUE
-
-/datum/om/prompt/text/pai_admin_name
-	title = "pAI Name"
-	message = "Enter your pAI name:"
-	default = "Personal AI"
-	encode = FALSE
-
-/mob/living/silicon/pai/proc/admin_spawn_load_chosen(datum/om/prompt/confirm/pai_admin_load/ask)
+/mob/living/silicon/pai/proc/admin_spawn_load_chosen(datum/om/prompt/confirm/ask)
 	if(ask.yes)
 		apply_preferences(client)
 		return
-	om_ask(src, /datum/om/prompt/text/pai_admin_name, PROC_REF(admin_spawn_name_entered))
+	om_ask(src, /datum/om/prompt/text, PROC_REF(admin_spawn_name_entered), title = "pAI Name", message = "Enter your pAI name:", default = "Personal AI", encode = FALSE)
 
-/mob/living/silicon/pai/proc/admin_spawn_name_entered(datum/om/prompt/text/pai_admin_name/ask)
+/mob/living/silicon/pai/proc/admin_spawn_name_entered(datum/om/prompt/text/ask)
 	var/new_name = sanitizeName(ask.text, allow_numbers = TRUE)
 	if(new_name)
 		name = new_name
@@ -724,14 +713,9 @@ ADMIN_VERB(reload_configuration, R_DEBUG, "Reload Configuration", "Reloads the c
 	if(!check_rights(R_ADMIN|R_EVENT|R_DEBUG)) // TFF 24/4/19: Allow Devs to use Quick-NIF verb.
 		return
 
-	om_ask(usr, /datum/om/prompt/choice/quick_authentic_nif, PROC_REF(quick_authentic_nif_chosen), choices = REGISTRY_MEMBERS(REGISTRY_PLAYERS))
+	om_ask(usr, /datum/om/prompt/choice, PROC_REF(quick_authentic_nif_chosen), choices = REGISTRY_MEMBERS(REGISTRY_PLAYERS), title = "Quick Authentic NIF", message = "Pick a mob with a player", requires = PROMPT_ADMIN(R_ADMIN|R_EVENT|R_DEBUG))
 
-/datum/om/prompt/choice/quick_authentic_nif
-	title = "Quick Authentic NIF"
-	message = "Pick a mob with a player"
-	requires = PROMPT_ADMIN(R_ADMIN|R_EVENT|R_DEBUG)
-
-/datum/admins/proc/quick_authentic_nif_chosen(datum/om/prompt/choice/quick_authentic_nif/ask)
+/datum/admins/proc/quick_authentic_nif_chosen(datum/om/prompt/choice/ask)
 	var/mob/admin = ask.answerer
 	var/mob/living/carbon/human/H = ask.choice
 	if(!istype(H))
@@ -761,13 +745,7 @@ ADMIN_VERB(reload_configuration, R_DEBUG, "Reload Configuration", "Reloads the c
 	set desc = "Force config reload to world default"
 	if(!check_rights(R_DEBUG))
 		return
-	om_ask(usr, /datum/om/prompt/confirm/reload_configuration, PROC_REF(reload_configuration_confirmed))
+	om_ask(usr, /datum/om/prompt/confirm, PROC_REF(reload_configuration_confirmed), title = "Really reset?", message = "Are you absolutely sure you want to reload the configuration from the default path on the disk, wiping any in-round modifications?", no_first = TRUE, requires = PROMPT_ADMIN(R_DEBUG))
 
-/datum/om/prompt/confirm/reload_configuration
-	title = "Really reset?"
-	message = "Are you absolutely sure you want to reload the configuration from the default path on the disk, wiping any in-round modifications?"
-	no_first = TRUE
-	requires = PROMPT_ADMIN(R_DEBUG)
-
-/client/proc/reload_configuration_confirmed(datum/om/prompt/confirm/reload_configuration/ask)
+/client/proc/reload_configuration_confirmed(datum/om/prompt/confirm/ask)
 	config.admin_reload()

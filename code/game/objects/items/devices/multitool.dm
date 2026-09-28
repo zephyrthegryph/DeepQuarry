@@ -48,16 +48,9 @@
 		return
 
 	update_icon()
-	om_ask(user, /datum/om/prompt/choice/multitool_menu, PROC_REF(menu_chosen), message = "What do you want to do with \the [src]?")
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(menu_chosen), message = "What do you want to do with \the [src]?", title = "Multitool Menu", choices = list("Switch Mode", "Clear Buffers", "Cancel"), buttons = TRUE, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
-/// Re-checked on the answer: the multitool is still carried.
-/datum/om/prompt/choice/multitool_menu
-	title = "Multitool Menu"
-	choices = list("Switch Mode", "Clear Buffers", "Cancel")
-	buttons = TRUE
-	ask_flags = ASK_CARRIED | ASK_CAPABLE
-
-/obj/item/multitool/proc/menu_chosen(datum/om/prompt/choice/multitool_menu/ask)
+/obj/item/multitool/proc/menu_chosen(datum/om/prompt/choice/ask)
 	var/mob/living/user = ask.answerer
 	switch(ask.choice)
 		if("Clear Buffers")

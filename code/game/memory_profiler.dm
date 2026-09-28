@@ -9,7 +9,7 @@
 
 /proc/profile_memory()
 	if(usr?.client)
-		om_ask(usr, /datum/om/prompt/confirm/profile_memory, GLOBAL_PROC_REF(profile_memory_run))
+		om_ask(usr, /datum/om/prompt/confirm/profile_memory, TYPE_PROC_REF(/client, profile_memory_confirmed), receiver = usr.client)
 		return
 	profile_memory_run()
 
@@ -18,6 +18,10 @@
 	title = "Profile memory"
 	message = "Running this will likely cause minor lag for around 20 minutes and the server will freeze for a bit at the end"
 	requires = PROMPT_ADMIN(R_DEBUG)
+
+/// The debug admin confirmed the memory profile.
+/client/proc/profile_memory_confirmed(datum/om/prompt/confirm/profile_memory/ask)
+	profile_memory_run()
 
 /proc/profile_memory_run()
 	var/list/types_count = list()

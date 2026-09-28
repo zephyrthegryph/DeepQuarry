@@ -206,22 +206,12 @@
 		to_chat(user, span_warning("You can't do that right now!"))
 		return
 
-	om_ask(user, /datum/om/prompt/confirm/energy_recolor, PROC_REF(ask_blade_color), message = "Are you sure you want to recolor your blade?")
+	om_ask(user, /datum/om/prompt/confirm, PROC_REF(ask_blade_color), message = "Are you sure you want to recolor your blade?", title = "Confirm Recolor", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 
-/// "Are you sure?" before recolouring an energy blade or shield (toy ones too). Re-checked on the answer: still next to it.
-/datum/om/prompt/confirm/energy_recolor
-	title = "Confirm Recolor"
-	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+/obj/item/melee/energy/proc/ask_blade_color(datum/om/prompt/confirm/ask)
+	om_ask(ask.answerer, /datum/om/prompt/color, PROC_REF(blade_recolored), default = lcolor, title = "Choose Energy Color", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 
-/// The energy colour itself, after /datum/om/prompt/confirm/energy_recolor.
-/datum/om/prompt/color/energy
-	title = "Choose Energy Color"
-	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
-
-/obj/item/melee/energy/proc/ask_blade_color(datum/om/prompt/confirm/energy_recolor/ask)
-	om_ask(ask.answerer, /datum/om/prompt/color/energy, PROC_REF(blade_recolored), default = lcolor)
-
-/obj/item/melee/energy/proc/blade_recolored(datum/om/prompt/color/energy/ask)
+/obj/item/melee/energy/proc/blade_recolored(datum/om/prompt/color/ask)
 	if(ask.picked_color)
 		lcolor = sanitize_hexcolor(ask.picked_color)
 	update_icon()

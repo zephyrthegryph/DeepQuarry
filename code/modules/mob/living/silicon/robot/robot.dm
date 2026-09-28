@@ -1182,20 +1182,15 @@
 
 /mob/living/silicon/robot/proc/grab_vore_interact(mob/living/carbon/human/H)
 	if(is_vore_predator(H) && H.devourable && src.feeding && src.devourable)
-		om_ask(H, /datum/om/prompt/choice/robot_grab_vore, PROC_REF(grab_vore_chosen), title = "Feed or Eat", message = "Do you wish to eat [src] or feed yourself to them?", choices = list("Nevermind!", "Eat", "Feed"))
+		om_ask(H, /datum/om/prompt/choice, PROC_REF(grab_vore_chosen), title = "Feed or Eat", message = "Do you wish to eat [src] or feed yourself to them?", choices = list("Nevermind!", "Eat", "Feed"), buttons = TRUE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 		return
 	if(is_vore_predator(H) && src.devourable)
-		om_ask(H, /datum/om/prompt/choice/robot_grab_vore, PROC_REF(grab_vore_chosen), title = "Eat?", message = "Do you wish to eat [src]?", choices = list("Nevermind!", "Eat"))
+		om_ask(H, /datum/om/prompt/choice, PROC_REF(grab_vore_chosen), title = "Eat?", message = "Do you wish to eat [src]?", choices = list("Nevermind!", "Eat"), buttons = TRUE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 		return
 	if(H.devourable && src.feeding)
-		om_ask(H, /datum/om/prompt/choice/robot_grab_vore, PROC_REF(grab_vore_chosen), title = "Feed?", message = "Do you wish to feed yourself to [src]?", choices = list("Nevermind!", "Feed"))
+		om_ask(H, /datum/om/prompt/choice, PROC_REF(grab_vore_chosen), title = "Feed?", message = "Do you wish to feed yourself to [src]?", choices = list("Nevermind!", "Feed"), buttons = TRUE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 
-/// Grabbing a borg on grab intent: eat it or feed yourself to it. Re-checked on the answer: next to it and able.
-/datum/om/prompt/choice/robot_grab_vore
-	buttons = TRUE
-	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
-
-/mob/living/silicon/robot/proc/grab_vore_chosen(datum/om/prompt/choice/robot_grab_vore/ask)
+/mob/living/silicon/robot/proc/grab_vore_chosen(datum/om/prompt/choice/ask)
 	var/mob/living/carbon/human/H = ask.answerer
 	switch(ask.choice)
 		if("Eat")

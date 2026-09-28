@@ -86,9 +86,6 @@
 /datum/om/prompt/choice/carried_item
 	ask_flags = ASK_CARRIED | ASK_CAPABLE
 
-/datum/om/prompt/confirm/carried_item
-	ask_flags = ASK_CARRIED | ASK_CAPABLE
-
 /obj/item/paper/talisman/proc/talisman_chant_chosen(datum/om/prompt/choice/carried_item/ask)
 	var/rune = ask.choices[ask.choice]
 	if(rune && uses > 0)

@@ -295,7 +295,7 @@ REF_OWNED(/obj/effect/bmode/buildholder, list("builddir", "buildhelp", "buildmod
 				om_ask(usr, /datum/om/prompt/text/buildmode, PROC_REF(ask_edit_type), title = "Name", message = "Enter variable name:", default = "name")
 
 			if(BUILDMODE_ROOM)
-				om_ask(usr, /datum/om/prompt/confirm/buildmode_room_area, PROC_REF(ask_area_name))
+				om_ask(usr, /datum/om/prompt/confirm, PROC_REF(ask_area_name), title = "Room Builder", message = "Would you like to generate a new area as well?", no_first = TRUE, answer_on_no = TRUE, requires = PROMPT_ADMIN(R_BUILDMODE))
 
 			if(BUILDMODE_LIGHTS)
 				om_ask(usr, /datum/om/prompt/choice/buildmode, PROC_REF(ask_light_value), title = "Light Maker", message = "Change the new light range, power, or color?", choices = list("Range", "Power", "Color"), buttons = TRUE)
@@ -744,13 +744,6 @@ REF_OWNED(/obj/effect/bmode/buildholder, list("builddir", "buildhelp", "buildmod
 	requires = PROMPT_ADMIN(R_BUILDMODE)
 	var/step
 
-/datum/om/prompt/confirm/buildmode_room_area
-	title = "Room Builder"
-	message = "Would you like to generate a new area as well?"
-	no_first = TRUE
-	answer_on_no = TRUE
-	requires = PROMPT_ADMIN(R_BUILDMODE)
-
 /obj/effect/bmode/buildmode/proc/ask_edit_type(datum/om/prompt/text/buildmode/ask)
 	om_ask(ask.answerer, /datum/om/prompt/choice/buildmode, PROC_REF(ask_edit_value), title = "Type", message = "Select variable type:", choices = list("text","number","mob-reference","obj-reference","turf-reference"), step = ask.text)
 
@@ -783,7 +776,7 @@ REF_OWNED(/obj/effect/bmode/buildholder, list("builddir", "buildhelp", "buildmod
 	master.buildmode.valueholder = value
 	log_admin("BUILDMODE: [key_name(user)] set var-edit: [valueholder].")
 
-/obj/effect/bmode/buildmode/proc/ask_area_name(datum/om/prompt/confirm/buildmode_room_area/ask)
+/obj/effect/bmode/buildmode/proc/ask_area_name(datum/om/prompt/confirm/ask)
 	if(ask.yes)
 		om_ask(ask.answerer, /datum/om/prompt/text/buildmode, PROC_REF(area_name_entered), title = "Room Buildmode", message = "New area name", max_length = MAX_NAME_LEN)
 		return

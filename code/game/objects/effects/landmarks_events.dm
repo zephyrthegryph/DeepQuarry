@@ -36,42 +36,34 @@ Admin verb is called by code\modules\admin\verbs\event_triggers.dm
 	var/repeat = FALSE
 	var/cooldown_seconds = 0
 
-/// An event trigger setup yes/no (no first, like the old alerts).
-/datum/om/prompt/confirm/event_trigger
-	no_first = TRUE
-	answer_on_no = TRUE
-
-/datum/om/prompt/text/event_trigger
-	max_length = MAX_MESSAGE_LEN
-
 /datum/om/flow/event_trigger_setup/ended(reason)
 	qdel(target)
 
 /datum/om/flow/event_trigger_setup/start()
-	om_ask(actor, /datum/om/prompt/text/event_trigger, PROC_REF(named), title = "Naming", message = "Input Name for the trigger", default = "Event Trigger")
+	om_ask(actor, /datum/om/prompt/text, PROC_REF(named), title = "Naming", message = "Input Name for the trigger", default = "Event Trigger", max_length = MAX_MESSAGE_LEN)
 
-/datum/om/flow/event_trigger_setup/proc/named(datum/om/prompt/text/event_trigger/ask)
+/datum/om/flow/event_trigger_setup/proc/named(datum/om/prompt/text/ask)
 	if(!ask.text)
 		qdel(target)
 		return
 	trigger_name = ask.text
-	om_ask(actor, /datum/om/prompt/confirm/event_trigger, PROC_REF(team_answered), title = "Teamwork", message = "Notify rest of team?")
+	om_ask(actor, /datum/om/prompt/confirm, PROC_REF(team_answered), title = "Teamwork", message = "Notify rest of team?", no_first = TRUE, answer_on_no = TRUE)
 
-/datum/om/flow/event_trigger_setup/proc/team_answered(datum/om/prompt/confirm/event_trigger/ask)
+/datum/om/flow/event_trigger_setup/proc/team_answered(datum/om/prompt/confirm/ask)
 	team = ask.yes
 	if(team)
 		ask_repeat()
 		return
-	om_ask(actor, /datum/om/prompt/confirm/event_trigger, PROC_REF(loud_answered), title = "bwoink", message = "Should it make a bwoink when triggered for YOU?")
+	om_ask(actor, /datum/om/prompt/confirm, PROC_REF(loud_answered), title = "bwoink", message = "Should it make a bwoink when triggered for YOU?", no_first = TRUE, answer_on_no = TRUE)
 
-/datum/om/flow/event_trigger_setup/proc/loud_answered(datum/om/prompt/confirm/event_trigger/ask)
+/datum/om/flow/event_trigger_setup/proc/loud_answered(datum/om/prompt/confirm/ask)
 	loud = ask.yes
 	ask_repeat()
 
 /datum/om/flow/event_trigger_setup/proc/ask_repeat()
-	om_ask(actor, /datum/om/prompt/confirm/event_trigger, PROC_REF(repeat_answered), title = "Repetition", message = "Make it fire repeatedly?")
+	om_ask(actor, /datum/om/prompt/confirm, PROC_REF(repeat_answered), title = "Repetition", message = "Make it fire repeatedly?", no_first = TRUE, answer_on_no = TRUE)
 
-/datum/om/flow/event_trigger_setup/proc/repeat_answered(datum/om/prompt/confirm/event_trigger/ask)
+/datum/om/flow/event_trigger_setup/proc/repeat_answered(datum/om/prompt/confirm/ask)
 	repeat = ask.yes
 	if(!repeat)
 		basics_done()
@@ -168,9 +160,9 @@ Admin verb is called by code\modules\admin\verbs\event_triggers.dm
 	var/range = 11
 
 /datum/om/flow/event_trigger_setup/narrate/basics_done()
-	om_ask(actor, /datum/om/prompt/text/event_trigger, PROC_REF(narration_entered), title = "Message", message = "What should the automatic narration say?", default = "")
+	om_ask(actor, /datum/om/prompt/text, PROC_REF(narration_entered), title = "Message", message = "What should the automatic narration say?", default = "", max_length = MAX_MESSAGE_LEN)
 
-/datum/om/flow/event_trigger_setup/narrate/proc/narration_entered(datum/om/prompt/text/event_trigger/ask)
+/datum/om/flow/event_trigger_setup/narrate/proc/narration_entered(datum/om/prompt/text/ask)
 	narration = ask.text
 	om_ask(actor, /datum/om/prompt/choice, PROC_REF(target_chosen), title = "Target", message = "Should it send directly to the player, or send to the turf?", choices = list("Player", "Turf"), buttons = TRUE)
 

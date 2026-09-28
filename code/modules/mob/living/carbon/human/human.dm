@@ -972,43 +972,33 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	var/mob/living/carbon/human/H = actor
 	return H.has_mutation(mMorph) ? null : "not a morph"
 
-/datum/om/prompt/color/morph
-	title = "Character Generation"
-	ask_flags = ASK_CONSCIOUS
-	cancel_answer = ""
-
-/datum/om/prompt/choice/morph
-	title = "Character Generation"
-	ask_flags = ASK_CONSCIOUS
-	cancel_answer = ""
-
 /datum/om/flow/morph/start()
 	var/mob/living/carbon/human/H = actor
-	om_ask(H, /datum/om/prompt/color/morph, PROC_REF(facial_color_picked), message = "Please select facial hair color.", default = rgb(H.r_facial, H.g_facial, H.b_facial))
+	om_ask(H, /datum/om/prompt/color, PROC_REF(facial_color_picked), message = "Please select facial hair color.", default = rgb(H.r_facial, H.g_facial, H.b_facial), title = "Character Generation", ask_flags = ASK_CONSCIOUS, cancel_answer = "")
 
-/datum/om/flow/morph/proc/facial_color_picked(datum/om/prompt/color/morph/ask)
+/datum/om/flow/morph/proc/facial_color_picked(datum/om/prompt/color/ask)
 	facial_color = ask.picked_color
 	var/mob/living/carbon/human/H = actor
-	om_ask(H, /datum/om/prompt/color/morph, PROC_REF(hair_color_picked), message = "Please select hair color.", default = rgb(H.r_hair, H.g_hair, H.b_hair))
+	om_ask(H, /datum/om/prompt/color, PROC_REF(hair_color_picked), message = "Please select hair color.", default = rgb(H.r_hair, H.g_hair, H.b_hair), title = "Character Generation", ask_flags = ASK_CONSCIOUS, cancel_answer = "")
 
-/datum/om/flow/morph/proc/hair_color_picked(datum/om/prompt/color/morph/ask)
+/datum/om/flow/morph/proc/hair_color_picked(datum/om/prompt/color/ask)
 	hair_color = ask.picked_color
 	var/mob/living/carbon/human/H = actor
-	om_ask(H, /datum/om/prompt/color/morph, PROC_REF(eye_color_picked), message = "Please select eye color.", default = rgb(H.r_eyes, H.g_eyes, H.b_eyes))
+	om_ask(H, /datum/om/prompt/color, PROC_REF(eye_color_picked), message = "Please select eye color.", default = rgb(H.r_eyes, H.g_eyes, H.b_eyes), title = "Character Generation", ask_flags = ASK_CONSCIOUS, cancel_answer = "")
 
-/datum/om/flow/morph/proc/eye_color_picked(datum/om/prompt/color/morph/ask)
+/datum/om/flow/morph/proc/eye_color_picked(datum/om/prompt/color/ask)
 	eye_color = ask.picked_color
-	om_ask(actor, /datum/om/prompt/choice/morph, PROC_REF(hair_picked), message = "Please select hair style", choices = hairs)
+	om_ask(actor, /datum/om/prompt/choice, PROC_REF(hair_picked), message = "Please select hair style", choices = hairs, title = "Character Generation", ask_flags = ASK_CONSCIOUS, cancel_answer = "")
 
-/datum/om/flow/morph/proc/hair_picked(datum/om/prompt/choice/morph/ask)
+/datum/om/flow/morph/proc/hair_picked(datum/om/prompt/choice/ask)
 	hair = ask.choice
-	om_ask(actor, /datum/om/prompt/choice/morph, PROC_REF(facial_picked), message = "Please select facial style", choices = fhairs)
+	om_ask(actor, /datum/om/prompt/choice, PROC_REF(facial_picked), message = "Please select facial style", choices = fhairs, title = "Character Generation", ask_flags = ASK_CONSCIOUS, cancel_answer = "")
 
-/datum/om/flow/morph/proc/facial_picked(datum/om/prompt/choice/morph/ask)
+/datum/om/flow/morph/proc/facial_picked(datum/om/prompt/choice/ask)
 	facial = ask.choice
-	om_ask(actor, /datum/om/prompt/choice/morph, PROC_REF(gender_picked), message = "Please select gender.", choices = list("Male", "Female", "Neutral"), buttons = TRUE)
+	om_ask(actor, /datum/om/prompt/choice, PROC_REF(gender_picked), message = "Please select gender.", choices = list("Male", "Female", "Neutral"), buttons = TRUE, title = "Character Generation", ask_flags = ASK_CONSCIOUS, cancel_answer = "")
 
-/datum/om/flow/morph/proc/gender_picked(datum/om/prompt/choice/morph/ask)
+/datum/om/flow/morph/proc/gender_picked(datum/om/prompt/choice/ask)
 	var/mob/living/carbon/human/H = actor
 	H.morph_answered(facial_color, hair_color, eye_color, hair, facial, ask.choice)
 

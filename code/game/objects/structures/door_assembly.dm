@@ -152,15 +152,9 @@
 		bound_height = width * world.icon_size
 
 /obj/structure/door_assembly/proc/rename_door(mob/living/user)
-	om_ask(user, /datum/om/prompt/text/assembly_name, PROC_REF(door_named), title = name, message = "Enter the name for the [base_name].", default = created_name)
+	om_ask(user, /datum/om/prompt/text, PROC_REF(door_named), title = name, message = "Enter the name for the [base_name].", default = created_name, max_length = MAX_NAME_LEN, encode = FALSE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 
-/// Naming a door or windoor assembly (shared with windoor_assembly.dm): title, message and default set at the call.
-/datum/om/prompt/text/assembly_name
-	max_length = MAX_NAME_LEN
-	encode = FALSE
-	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
-
-/obj/structure/door_assembly/proc/door_named(datum/om/prompt/text/assembly_name/ask)
+/obj/structure/door_assembly/proc/door_named(datum/om/prompt/text/ask)
 	created_name = sanitizeSafe(ask.text, MAX_NAME_LEN)
 	update_state()
 

@@ -188,16 +188,11 @@ REF_OWNED(/obj/structure/closet/body_bag/cryobag, list("syringe", "tank"))
 
 /obj/structure/closet/body_bag/cryobag/attack_hand(mob/living/user)
 	if(used)
-		om_ask(user, /datum/om/prompt/confirm/cryobag_open, PROC_REF(open_confirmed), message = "Are you sure you want to open \the [src]? \The [src] will expire upon opening it.")
+		om_ask(user, /datum/om/prompt/confirm, PROC_REF(open_confirmed), message = "Are you sure you want to open \the [src]? \The [src] will expire upon opening it.", title = "Confirm Opening", no_first = TRUE, requires = PROMPT_ADJACENT)
 	else
 		..()
 
-/datum/om/prompt/confirm/cryobag_open
-	title = "Confirm Opening"
-	no_first = TRUE
-	requires = PROMPT_ADJACENT
-
-/obj/structure/closet/body_bag/cryobag/proc/open_confirmed(datum/om/prompt/confirm/cryobag_open/ask)
+/obj/structure/closet/body_bag/cryobag/proc/open_confirmed(datum/om/prompt/confirm/ask)
 	add_fingerprint(ask.answerer)
 	toggle(ask.answerer) // What the parent attack_hand does: opens the bag.
 

@@ -26,15 +26,6 @@
 	requires = PROMPT_ADMIN(R_VAREDIT)
 	min = -INFINITY
 
-/datum/om/prompt/choice/vv_edit
-	requires = PROMPT_ADMIN(R_VAREDIT)
-
-/datum/om/prompt/confirm/vv_edit
-	requires = PROMPT_ADMIN(R_VAREDIT)
-
-/datum/om/prompt/text/vv_edit
-	requires = PROMPT_ADMIN(R_VAREDIT)
-
 /// "Modify Transform": the kind, then the x (and for all but a rotation, the y) mod.
 /datum/om/flow/vv_transform
 	requires = PROMPT_ADMIN(R_VAREDIT)
@@ -42,9 +33,9 @@
 	var/x_mod
 
 /datum/om/flow/vv_transform/start()
-	om_ask(actor, /datum/om/prompt/choice/vv_edit, PROC_REF(kind_chosen), title = "Transform Mod", message = "Choose the transformation to apply", choices = list("Scale","Translate","Rotate","Shear"))
+	om_ask(actor, /datum/om/prompt/choice, PROC_REF(kind_chosen), title = "Transform Mod", message = "Choose the transformation to apply", choices = list("Scale","Translate","Rotate","Shear"), requires = PROMPT_ADMIN(R_VAREDIT))
 
-/datum/om/flow/vv_transform/proc/kind_chosen(datum/om/prompt/choice/vv_edit/ask)
+/datum/om/flow/vv_transform/proc/kind_chosen(datum/om/prompt/choice/ask)
 	transform_kind = ask.choice
 	var/question
 	switch(transform_kind)
@@ -94,9 +85,9 @@
 	var/spins_per_sec
 
 /datum/om/flow/vv_spin/start()
-	om_ask(actor, /datum/om/prompt/confirm/vv_edit, PROC_REF(infinite_answered), title = "Spin Animation", message = "Do you want infinite spins?", answer_on_no = TRUE)
+	om_ask(actor, /datum/om/prompt/confirm, PROC_REF(infinite_answered), title = "Spin Animation", message = "Do you want infinite spins?", answer_on_no = TRUE, requires = PROMPT_ADMIN(R_VAREDIT))
 
-/datum/om/flow/vv_spin/proc/infinite_answered(datum/om/prompt/confirm/vv_edit/ask)
+/datum/om/flow/vv_spin/proc/infinite_answered(datum/om/prompt/confirm/ask)
 	if(ask.yes)
 		ask_rate()
 		return
@@ -111,18 +102,18 @@
 
 /datum/om/flow/vv_spin/proc/rate_entered(datum/om/prompt/number/vv_edit/ask)
 	spins_per_sec = ask.number
-	om_ask(actor, /datum/om/prompt/choice/vv_edit, PROC_REF(direction_chosen), title = "Spin Animation", message = "Which direction?", choices = list("Clockwise", "Counter-clockwise"), buttons = TRUE)
+	om_ask(actor, /datum/om/prompt/choice, PROC_REF(direction_chosen), title = "Spin Animation", message = "Which direction?", choices = list("Clockwise", "Counter-clockwise"), buttons = TRUE, requires = PROMPT_ADMIN(R_VAREDIT))
 
-/datum/om/flow/vv_spin/proc/direction_chosen(datum/om/prompt/choice/vv_edit/ask)
+/datum/om/flow/vv_spin/proc/direction_chosen(datum/om/prompt/choice/ask)
 	if(!num_spins || !spins_per_sec)
 		return
 	var/atom/A = target
 	A.SpinAnimation(1 SECONDS / spins_per_sec, num_spins, ask.choice == "Clockwise" ? 1 : 0)
 
-/atom/proc/vv_stop_animations_answered(datum/om/prompt/confirm/vv_edit/ask)
+/atom/proc/vv_stop_animations_answered(datum/om/prompt/confirm/ask)
 	animate(src, transform = null, flags = ANIMATION_END_NOW) // Literally just fucking stop animating entirely because admin said so
 
-/atom/proc/vv_auto_rename_entered(datum/om/prompt/text/vv_edit/ask)
+/atom/proc/vv_auto_rename_entered(datum/om/prompt/text/ask)
 	if(ask.text)
 		vv_auto_rename(src, ask.text)
 
@@ -151,13 +142,13 @@
 	if(href_list[VV_HK_STOP_ALL_ANIMATIONS])
 		if(!check_rights(R_VAREDIT))
 			return
-		om_ask(usr, /datum/om/prompt/confirm/vv_edit, TYPE_PROC_REF(/atom, vv_stop_animations_answered), title = "Stop Animating", message = "Are you sure?")
+		om_ask(usr, /datum/om/prompt/confirm, TYPE_PROC_REF(/atom, vv_stop_animations_answered), title = "Stop Animating", message = "Are you sure?", requires = PROMPT_ADMIN(R_VAREDIT))
 		return
 
 	if(href_list[VV_HK_AUTO_RENAME])
 		if(!check_rights(R_VAREDIT))
 			return
-		om_ask(usr, /datum/om/prompt/text/vv_edit, TYPE_PROC_REF(/atom, vv_auto_rename_entered), title = "Automatic Rename", message = "What do you want to rename this to?")
+		om_ask(usr, /datum/om/prompt/text, TYPE_PROC_REF(/atom, vv_auto_rename_entered), title = "Automatic Rename", message = "What do you want to rename this to?", requires = PROMPT_ADMIN(R_VAREDIT))
 		// Check the new name against the chat filter. If it triggers the IC chat filter, give an option to confirm.
 		//if(newname && !(is_ic_filtered(newname) || is_soft_ic_filtered(newname) && tgui_alert(usr, "Your selected name contains words restricted by IC chat filters. Confirm this new name?", "IC Chat Filter Conflict", list("Confirm", "Cancel")) != "Confirm"))
 

@@ -23,7 +23,7 @@
 	for(var/datum/malf_hardware/H in hardware_list)
 		possible_choices += H.name
 
-	om_ask(user, /datum/om/prompt/choice/malf, GLOBAL_PROC_REF(malf_hardware_chosen), title = "Hardware Choice", message = "Select desired hardware. You may only choose one hardware piece!: ", choices = possible_choices, options = hardware_list)
+	om_ask(user, /datum/om/prompt/choice/malf, TYPE_PROC_REF(/mob/living/silicon/ai, malf_hardware_chosen), receiver = user, title = "Hardware Choice", message = "Select desired hardware. You may only choose one hardware piece!: ", choices = possible_choices, options = hardware_list)
 
 /// A malfunctioning AI's question. Re-checked: conscious, and, when `price` is set, that the
 /// AI can still use the ability (ability_prechecks(), which does not spend the CPU).
@@ -58,8 +58,8 @@
 	/// The message title, once asked.
 	var/message_title
 
-/proc/malf_hardware_chosen(datum/om/prompt/choice/malf/ask)
-	var/mob/living/silicon/ai/user = ask.answerer
+/mob/living/silicon/ai/proc/malf_hardware_chosen(datum/om/prompt/choice/malf/ask)
+	var/mob/living/silicon/ai/user = src
 	var/datum/malf_hardware/C
 	for (var/datum/malf_hardware/H in ask.options)
 		if(H.name == ask.choice)
@@ -71,10 +71,10 @@
 	if(!C.desc)
 		log_world("## ERROR Hardware without description: [C]")
 		return
-	om_ask(user, /datum/om/prompt/confirm/malf, GLOBAL_PROC_REF(malf_hardware_confirmed), title = "Hardware selection", message = "[C.desc] - Is this what you want?", answer_on_no = TRUE, hardware = C, hold_strong = list("hardware"))
+	om_ask(user, /datum/om/prompt/confirm/malf, TYPE_PROC_REF(/mob/living/silicon/ai, malf_hardware_confirmed), receiver = user, title = "Hardware selection", message = "[C.desc] - Is this what you want?", answer_on_no = TRUE, hardware = C, hold_strong = list("hardware"))
 
-/proc/malf_hardware_confirmed(datum/om/prompt/confirm/malf/ask)
-	var/mob/living/silicon/ai/user = ask.answerer
+/mob/living/silicon/ai/proc/malf_hardware_confirmed(datum/om/prompt/confirm/malf/ask)
+	var/mob/living/silicon/ai/user = src
 	if(!ask.yes)
 		to_chat(user, "Selection cancelled. Use command again to select")
 		return
@@ -115,10 +115,10 @@
 		return
 
 	var/datum/malf_research/res = user.research
-	om_ask(user, /datum/om/prompt/choice/malf, GLOBAL_PROC_REF(malf_research_chosen), title = "Select Research", message = "Select your next research target", choices = res.available_abilities)
+	om_ask(user, /datum/om/prompt/choice/malf, TYPE_PROC_REF(/mob/living/silicon/ai, malf_research_chosen), receiver = user, title = "Select Research", message = "Select your next research target", choices = res.available_abilities)
 
-/proc/malf_research_chosen(datum/om/prompt/choice/malf/ask)
-	var/mob/living/silicon/ai/user = ask.answerer
+/mob/living/silicon/ai/proc/malf_research_chosen(datum/om/prompt/choice/malf/ask)
+	var/mob/living/silicon/ai/user = src
 	var/datum/malf_research_ability/tar = ask.choice
 	var/datum/malf_research/res = user.research
 	res.focus = tar

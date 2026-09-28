@@ -333,21 +333,13 @@ REF_OWNED(/obj/effect/rune, "blood_image")
 			tgui_alert_async(user, "The cloth of reality can't take that much of a strain. Remove some runes first!")
 			return
 		else
-			om_ask(user, /datum/om/prompt/choice/tome_menu, PROC_REF(tome_menu_chosen))
+			om_ask(user, /datum/om/prompt/choice, PROC_REF(tome_menu_chosen), title = "Tome", message = "You open the tome", buttons = TRUE, choices = list("Read it", "Scribe a rune", "Cancel"), ask_flags = ASK_HELD | ASK_CAPABLE)
 			return
 	else
 		to_chat(user, "The book seems full of illegible scribbles. Is this a joke?")
 		return
 
-/// The tome's menu. Re-checked on the answer: the tome is still in the reader's hands.
-/datum/om/prompt/choice/tome_menu
-	title = "Tome"
-	message = "You open the tome"
-	buttons = TRUE
-	choices = list("Read it", "Scribe a rune", "Cancel")
-	ask_flags = ASK_HELD | ASK_CAPABLE
-
-/obj/item/book/tome/proc/tome_menu_chosen(datum/om/prompt/choice/tome_menu/ask)
+/obj/item/book/tome/proc/tome_menu_chosen(datum/om/prompt/choice/ask)
 	switch(ask.choice)
 		if("Read it")
 			// structured TGUI AdminReport.

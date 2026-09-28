@@ -174,12 +174,7 @@ REF_SPILL(/obj/machinery/gear_painter, "inserted")
 		.["item_sprite"] = null
 		.["item_preview"] = null
 
-/datum/om/prompt/color/gear_painter
-	title = "ColorMate colour picking"
-	message = "Choose a color: "
-	requires = PROMPT_USABLE
-
-/obj/machinery/gear_painter/proc/color_chosen(datum/om/prompt/color/gear_painter/ask)
+/obj/machinery/gear_painter/proc/color_chosen(datum/om/prompt/color/ask)
 	if(ask.picked_color)
 		activecolor = ask.picked_color
 		SStgui.update_uis(src)
@@ -194,7 +189,7 @@ REF_SPILL(/obj/machinery/gear_painter, "inserted")
 				active_mode = text2num(params["mode"])
 				return TRUE
 			if("choose_color")
-				om_ask(ui.user, /datum/om/prompt/color/gear_painter, PROC_REF(color_chosen), default = activecolor)
+				om_ask(ui.user, /datum/om/prompt/color, PROC_REF(color_chosen), default = activecolor, title = "ColorMate colour picking", message = "Choose a color: ", requires = PROMPT_USABLE)
 				return TRUE
 			if("paint")
 				if(!do_paint(ui.user))

@@ -327,7 +327,7 @@ REF_PAIR(/obj/machinery/sleeper, list("console" = "sleeper"))
 		if("ejectify")
 			go_out()
 		if("changestasis")
-			om_ask(ui.user, /datum/om/prompt/choice/machine_ui, PROC_REF(stasis_level_chosen), title = "Stasis Level", message = "Levels deeper than 50% stasis level will render the patient unconscious.", choices = stasis_choices)
+			om_ask(ui.user, /datum/om/prompt/choice, PROC_REF(stasis_level_chosen), title = "Stasis Level", message = "Levels deeper than 50% stasis level will render the patient unconscious.", choices = stasis_choices, requires = PROMPT_USABLE)
 		if("auto_eject_dead_on")
 			auto_eject_dead = TRUE
 		if("auto_eject_dead_off")
@@ -336,18 +336,13 @@ REF_PAIR(/obj/machinery/sleeper, list("console" = "sleeper"))
 			return FALSE
 	add_fingerprint(ui.user)
 
-/// A question asked from a machine's tgui panel. Re-checked: the answerer can still use the
-/// machine's UI (ui_usable, the machine's default state).
-/datum/om/prompt/choice/machine_ui
-	requires = PROMPT_USABLE
-
 /datum/om/prompt/number/machine_ui
 	requires = PROMPT_USABLE
 	/// The setting being changed (the air alarm's environment and threshold).
 	var/env
 	var/setting
 
-/obj/machinery/sleeper/proc/stasis_level_chosen(datum/om/prompt/choice/machine_ui/ask)
+/obj/machinery/sleeper/proc/stasis_level_chosen(datum/om/prompt/choice/ask)
 	var/mob/user = ask.answerer
 	var/new_stasis = ask.choice
 	var/mob/living/carbon/human/occupant = slot_item(OCCUPANT_SLOT_SLEEPER)

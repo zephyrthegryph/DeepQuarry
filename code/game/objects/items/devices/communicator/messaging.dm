@@ -161,11 +161,7 @@
 		to_chat(src, span_danger("There are no available communicators, sorry."))
 		return
 
-	om_ask(src, /datum/om/prompt/choice/ghost_text_recipient, PROC_REF(ghost_text_recipient_chosen), choices = choices)
-
-/datum/om/prompt/choice/ghost_text_recipient
-	title = "Recipient Choice"
-	message = "Send a text message to whom?"
+	om_ask(src, /datum/om/prompt/choice, PROC_REF(ghost_text_recipient_chosen), choices = choices, title = "Recipient Choice", message = "Send a text message to whom?")
 
 /datum/om/prompt/text/ghost_text
 	message = "What do you want the message to say?"
@@ -173,7 +169,7 @@
 	multiline = TRUE
 	var/obj/item/communicator/recipient
 
-/mob/observer/dead/proc/ghost_text_recipient_chosen(datum/om/prompt/choice/ghost_text_recipient/ask)
+/mob/observer/dead/proc/ghost_text_recipient_chosen(datum/om/prompt/choice/ask)
 	om_ask(src, /datum/om/prompt/text/ghost_text, PROC_REF(ghost_text_written), recipient = ask.choice)
 
 /mob/observer/dead/proc/ghost_text_written(datum/om/prompt/text/ghost_text/ask)
