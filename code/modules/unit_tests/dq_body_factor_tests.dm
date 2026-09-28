@@ -130,13 +130,21 @@
 	TEST_ASSERT_EQUAL(H.factor(BF_HEALING_RECEIVED), 1, "ending the effect drops its table")
 
 
+/// A plain severity-scaled affliction (no continuous factors, unlike the airway family,
+/// whose patency follows severity on every change).
+/datum/affliction/dq_test_banded
+	name = "test banded affliction"
+	catalogued = FALSE
+	progression_rate = 0
+	factors = alist(BF_HEART_RATE = 20, BF_BP_SYSTOLIC = -15)
+
 /// Afflictions scale by severity and recompute only on a band crossing.
 /datum/unit_test/dq_body_factor_affliction_bands
 
 /datum/unit_test/dq_body_factor_affliction_bands/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/datum/affliction/A = H.body.afflict(/datum/affliction/airway_edema)
-	TEST_ASSERT_NOTNULL(A, "airway edema should afflict")
+	var/datum/affliction/A = H.body.afflict(/datum/affliction/dq_test_banded)
+	TEST_ASSERT_NOTNULL(A, "the test affliction should afflict")
 	A.set_severity(100)
 	TEST_ASSERT(dq_near(H.factor(BF_HEART_RATE), 20), "edema at full severity should raise the heart rate by 20, got [H.factor(BF_HEART_RATE)]")
 	TEST_ASSERT(dq_near(H.factor(BF_BP_SYSTOLIC), -15), "edema at full severity should drop systolic pressure by 15")

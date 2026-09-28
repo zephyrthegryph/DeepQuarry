@@ -81,7 +81,7 @@
 	if(!isnull(reason))
 		F.done = TRUE
 		return reason
-	F.run_step(/datum/om/flow/proc/start, null)
+	F.run_step(TYPE_PROC_REF(/datum/om/flow, start), null) // by name: a raw proc path would skip the subtype override
 	return F
 
 /// Null while the flow may go on, else the reason: its actor or target is gone, a requires or valid() fails.

@@ -22,10 +22,10 @@
 	TEST_ASSERT_NULL(GLOB.prompt_flow, "and leaves no flow running")
 	TEST_ASSERT_EQUAL(E.log.Join(","), "run:a", "it ran once, up to the read")
 	TEST_ASSERT_EQUAL(om_io_count(/datum/om/io/test), 1, "one job is in flight")
-	scheduler_advance(1)
+	scheduler_advance(0.1) // one I/O pass: each pass answers the jobs started before it
 	TEST_ASSERT_EQUAL(E.log.Join(","), "run:a,run:a", "the first answer re-ran it, up to the second read")
-	scheduler_advance(1)
-	TEST_ASSERT_EQUAL(E.log.Join(","), "run:a,run:a,done:first:second", "the second answer finished it with both stored answers")
+	scheduler_advance(0.1)
+	TEST_ASSERT_EQUAL(E.log.Join(","), "run:a,run:a,run:a,done:first:second", "the second answer finished it with both stored answers")
 	TEST_ASSERT(!om_io_count(), "no jobs left")
 	TEST_ASSERT(!length(GLOB.om_rerun_answers), "the re-run's answers are cleared")
 
@@ -36,7 +36,7 @@
 	E.flow_two_reads("fail")
 	scheduler_advance(1)
 	scheduler_advance(1)
-	TEST_ASSERT_EQUAL(E.log.Join(","), "run:fail,run:fail,error:failed", "a failed job reaches the flow as its error")
+	TEST_ASSERT_EQUAL(E.log.Join(","), "run:fail,run:fail,run:fail,error:failed", "a failed job reaches the flow as its error")
 
 /datum/unit_test/om/flow_io_dropped_when_asker_gone
 

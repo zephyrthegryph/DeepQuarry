@@ -846,6 +846,8 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 
 /// A spec list may be a single spec (typepath, name, combinator) or a list of specs.
 /proc/om_spec_list(spec)
+	if(isnull(spec))
+		return list() // no requires: nothing to check
 	if(!islist(spec))
 		return list(spec)
 	var/list/L = spec
