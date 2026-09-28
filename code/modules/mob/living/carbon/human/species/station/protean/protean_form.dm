@@ -502,6 +502,9 @@
 	states[6] = (states[3] == "dullahanmetal2") ? "dullahanextendedon" : "dullahanextendedoff"
 
 /// The character's protean forms, or null when it is not a protean.
-/mob/living/carbon/human/proc/get_protean_forms()
+/mob/living/proc/get_protean_forms()
 	RETURN_TYPE(/datum/forms/protean)
+	return null
+
+/mob/living/carbon/human/get_protean_forms()
 	return istype(character_forms, /datum/forms/protean) ? character_forms : null

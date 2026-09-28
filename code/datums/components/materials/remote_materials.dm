@@ -41,7 +41,7 @@ REF_OWNED(/datum/remote_materials, "local_container")
 )
 	..()
 	if (!isatom(new_owner))
-		log_debug("remote_materials: created without an atom owner ([new_owner])")
+		log_world("remote_materials: created without an atom owner ([new_owner])")
 		return
 	owner = new_owner
 

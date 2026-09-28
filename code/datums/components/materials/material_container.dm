@@ -48,7 +48,7 @@ REF_BACK(/datum/material_container, list("owner" = null))
 )
 	..()
 	if(!isatom(new_owner))
-		log_debug("material_container: created without an atom owner ([new_owner])")
+		log_world("material_container: created without an atom owner ([new_owner])")
 		return
 	owner = new_owner
 

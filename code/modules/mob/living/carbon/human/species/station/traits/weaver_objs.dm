@@ -108,7 +108,6 @@ EXTEND_INTERACTIONS(/obj/structure/bed/double/weaversilk_nest, \
 	if(istype(L) && L.get_weaver_state())
 		return
 	if(isliving(AM) && trap_active)
-		var/mob/living/L = AM
 		if(L.m_intent == I_RUN)
 			L.visible_message(
 				span_danger("[L] steps on \the [src]."),

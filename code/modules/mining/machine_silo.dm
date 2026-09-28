@@ -107,7 +107,7 @@
 
 	data["machines"] = list()
 	for(var/datum/remote_materials/remote as anything in ore_connected_machines)
-		var/atom/parent = remote.parent
+		var/atom/parent = remote.owner
 		data["machines"] += list(
 			list(
 				"icon" = icon2base64(icon(initial(parent.icon), initial(parent.icon_state), frame = 1)),

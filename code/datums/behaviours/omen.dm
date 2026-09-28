@@ -103,7 +103,7 @@
 	L.omen_check_pickup(L, event.item)
 
 /datum/om/behaviour/omen/on_before_dice_roll(mob/living/L, datum/om/event/before/dice_roll/event)
-	var/override = L.omen_check_roll(L, event.dice, event.silent, event.result)
+	var/override = L.omen_check_roll(L, event.dice, event.silent, event.roll_result)
 	if(override)
 		event.result_override = override
 
@@ -554,14 +554,14 @@
 /datum/om/event/before/dice_roll
 	var/dice
 	var/silent
-	var/result
+	var/roll_result
 	/// Set by a handler to force the roll.
 	var/result_override
 
-/datum/om/event/before/dice_roll/New(dice, silent, result)
+/datum/om/event/before/dice_roll/New(dice, silent, roll_result)
 	src.dice = dice
 	src.silent = silent
-	src.result = result
+	src.roll_result = roll_result
 
 /datum/om/event/before/dice_roll/dispatch(datum/om/behaviour/B, datum/E)
 	return B.on_before_dice_roll(E, src)

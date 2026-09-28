@@ -31,7 +31,7 @@ REF_OWNED(/datum/artifact_effect, "active_effect")
 	else
 		return master()
 
-/datum/artifact_effect/New(datum/component/artifact_master/newmaster)
+/datum/artifact_effect/New(datum/artifact_master/newmaster)
 	..()
 
 	master_handle = om_handle(newmaster)

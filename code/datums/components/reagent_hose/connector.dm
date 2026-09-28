@@ -21,7 +21,7 @@ REF_OWNED_LIST(/atom/movable, "hose_connectors")
 	RETURN_TYPE(/datum/hose_connector)
 	var/datum/hose_connector/HC = new connector_type()
 	if(!HC.attach(src, set_unique_name))
-		log_debug("hose_connector: [connector_type] refused carrier [src] ([type])")
+		log_world("hose_connector: [connector_type] refused carrier [src] ([type])")
 		qdel(HC)
 		return null
 	return HC
