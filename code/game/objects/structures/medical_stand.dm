@@ -260,26 +260,20 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 				beaker = null
 				update_icon()
 
-/obj/structure/medical_stand/verb/toggle_mode()
-	set category = "Object"
-	set name = "Toggle IV Mode"
-	set src in view(1)
+/obj/structure/medical_stand/proc/medical_stand_toggle_mode_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	if(!isliving(usr))
-		to_chat(usr, span_warning("You can't do that."))
+	if(!isliving(user))
+		to_chat(user, span_warning("You can't do that."))
 		return
 
-	if(usr.incapacitated())
+	if(user.incapacitated())
 		return
 
 	mode = !mode
-	to_chat(usr, "The IV drip is now [mode ? "injecting" : "taking blood"].")
+	to_chat(user, "The IV drip is now [mode ? "injecting" : "taking blood"].")
 
-/obj/structure/medical_stand/verb/set_APTFT()
-	set name = "Set IV transfer amount"
-	set category = "Object"
-	set src in range(1)
-	om_prompt(src, usr, list("kind" = "list", "message" = "Amount per transfer from this:", "title" = "[src]", "choices" = transfer_amounts, "requires" = PROMPT_ADJACENT), PROC_REF(transfer_amount_chosen))
+/obj/structure/medical_stand/proc/set_APTFT_effect(mob/user, obj/item/held, datum/interaction/interaction)
+	om_prompt(src, user, list("kind" = "list", "message" = "Amount per transfer from this:", "title" = "[src]", "choices" = transfer_amounts, "requires" = PROMPT_ADJACENT), PROC_REF(transfer_amount_chosen))
 
 /obj/structure/medical_stand/proc/transfer_amount_chosen(mob/user, N, datum/om/prompt/ask)
 	if(N)
@@ -477,3 +471,9 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 	spawn_type = /obj/item/tank/anesthetic
 	mask_type = /obj/item/clothing/mask/breath/medical
 	is_loosen = FALSE
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/structure/medical_stand, \
+	INTERACT_VERB("Toggle IV Mode", PROC_REF(medical_stand_toggle_mode_effect)), \
+	INTERACT_VERB("Set IV transfer amount", PROC_REF(set_APTFT_effect)), \
+)

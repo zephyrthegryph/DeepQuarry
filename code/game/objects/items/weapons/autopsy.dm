@@ -66,12 +66,9 @@
 		if(O.trace_chemicals[V] > 0 && !LAZYFIND(chemtraces, V))
 			LAZYADD(chemtraces, V)
 
-/obj/item/autopsy_scanner/verb/print_data()
-	set category = "Object"
-	set src in view(usr, 1)
-	set name = "Print Data"
-	if(usr.stat || !(ishuman(usr)))
-		to_chat(usr, "No.")
+/obj/item/autopsy_scanner/proc/print_data_effect(mob/user, obj/item/held, datum/interaction/interaction)
+	if(user.stat || !(ishuman(user)))
+		to_chat(user, "No.")
 		return
 
 	var/scan_data = ""
@@ -140,10 +137,10 @@
 			scan_data += chemID
 			scan_data += "<br>"
 
-	for(var/mob/O in viewers(usr))
+	for(var/mob/O in viewers(user))
 		O.show_message(span_notice("\The [src] rattles and prints out a sheet of paper."), 1)
 
-	om_after(src, 1 SECOND, PROC_REF(print_report), usr, scan_data)
+	om_after(src, 1 SECOND, PROC_REF(print_report), user, scan_data)
 
 /obj/item/autopsy_scanner/proc/print_report(mob/usr_mob, scan_data)
 	var/obj/item/paper/P = new(usr_mob.loc)
@@ -184,3 +181,8 @@
 	SEND_GLOBAL_SIGNAL(COMSIG_GLOB_AUTOPSY_PERFORMED, user, M)
 
 	return 1
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/autopsy_scanner, \
+	INTERACT_VERB("Print Data", PROC_REF(print_data_effect)), \
+)

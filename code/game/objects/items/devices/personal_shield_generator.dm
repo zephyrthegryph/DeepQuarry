@@ -53,8 +53,6 @@
 		else
 			active_weapon = new(src, src)
 			active_weapon.power_supply = bcell
-	else
-		verbs -= /obj/item/personal_shield_generator/verb/weapon_toggle
 	PERIODIC_STOP(src) //We do this so it doesn't start processing until it's first used.
 	update_icon()
 
@@ -116,7 +114,7 @@ REF_OWNED(/obj/item/personal_shield_generator, list("active_weapon", "bcell"))
 	//Intentionally not calling ..() here, as we have special cell handling.
 
 /obj/item/personal_shield_generator/ui_action_click(mob/user, actiontype)
-	toggle_shield()
+	toggle_shield_effect(user)
 
 DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
@@ -126,12 +124,12 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 
 /obj/item/personal_shield_generator/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(loc == user)
-		toggle_shield()
+		toggle_shield_effect(user)
 		return TRUE
 	return FALSE
 
 /obj/item/personal_shield_generator/proc/interaction_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
-	weapon_toggle()
+	weapon_toggle_effect(user)
 	return TRUE
 
 /obj/item/personal_shield_generator/MouseDrop()
@@ -217,11 +215,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 
 //Gun stuff
 
-/obj/item/personal_shield_generator/verb/toggle_shield()
-	set name = "Toggle Shield"
-	set category = "Object"
-
-	var/mob/living/carbon/human/user = usr
+/obj/item/personal_shield_generator/proc/toggle_shield_effect(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
 
 	if(!COOLDOWN_FINISHED(user, last_special))
 		return
@@ -251,11 +245,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 			playsound(src, 'sound/weapons/saberon.ogg', 50, 1) //Shield turning off! PLACEHOLDER
 	update_icon()
 
-/obj/item/personal_shield_generator/verb/weapon_toggle() //Make this work on Alt-Click
-	set name = "Toggle Gun"
-	set category = "Object"
-
-	var/mob/living/carbon/human/user = usr
+/obj/item/personal_shield_generator/proc/weapon_toggle_effect(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction) //Make this work on Alt-Click
 
 	if(!COOLDOWN_FINISHED(user, last_special))
 		return
@@ -276,7 +266,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 	if(!slot_check())
 		to_chat(user, span_warning("You need to equip [src] before taking out [active_weapon]."))
 	else
-		if(!usr.put_in_hands(active_weapon)) //Detach the gun into the user's hands
+		if(!user.put_in_hands(active_weapon)) //Detach the gun into the user's hands
 			to_chat(user, span_warning("You need a free hand to hold the gun!"))
 		update_icon() //success
 
@@ -593,3 +583,13 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 	maxcharge = 200 // 100 to 200.
 	charge_amount = 200 // 100 to 200.
 	charge_delay = 30 // Starts charging three seconds after it's discharged.
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/personal_shield_generator, \
+	INTERACT_VERB("Toggle Shield", PROC_REF(toggle_shield_effect), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Toggle Gun", PROC_REF(weapon_toggle_effect), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/personal_shield_generator/proc/pred_has_weapon, "it has no gun")), \
+)
+
+/// Requirement for "Toggle Gun" (old: the verb was removed from generators without a weapon).
+/obj/item/personal_shield_generator/proc/pred_has_weapon(mob/actor, atom/target, obj/item/held)
+	return has_weapon

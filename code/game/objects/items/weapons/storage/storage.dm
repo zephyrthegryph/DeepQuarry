@@ -131,16 +131,6 @@
 /obj/item/storage/Initialize(mapload)
 	. = ..()
 
-	if(allow_quick_empty)
-		verbs += /obj/item/storage/verb/quick_empty
-	else
-		verbs -= /obj/item/storage/verb/quick_empty
-
-	if(allow_quick_gather)
-		verbs += /obj/item/storage/verb/toggle_gathering_mode
-	else
-		verbs -= /obj/item/storage/verb/toggle_gathering_mode
-
 	if(LAZYLEN(starts_with) && !empty)
 		// starts_with values are list(count, variant). See code/datums/variants/spawn_with_variant.dm.
 		// Latent-safe types without a variant stay declared until the storage
@@ -341,23 +331,26 @@ REF_OWNED(/obj/item/storage, "hud")
 	else
 		to_chat(user, span_notice("You fail to pick anything up with \the [src]."))
 
-/obj/item/storage/verb/toggle_gathering_mode()
-	set name = "Switch Gathering Method"
-	set category = "Object"
+/obj/item/storage/proc/toggle_gathering_mode_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
 	collection_mode = !collection_mode
 	switch (collection_mode)
 		if(1)
-			to_chat(usr, "[src] now picks up all items on a tile at once.")
+			to_chat(user, "[src] now picks up all items on a tile at once.")
 		if(0)
-			to_chat(usr, "[src] now picks up one item at a time.")
+			to_chat(user, "[src] now picks up one item at a time.")
 
-/obj/item/storage/verb/quick_empty()
-	set name = "Empty Contents"
-	set category = "Object"
-	set src in view(1)
+/// Requirement for "Switch Gathering Method" (old: the verb was only added when allow_quick_gather).
+/obj/item/storage/proc/pred_can_toggle_gathering(mob/actor, atom/target, obj/item/held)
+	return allow_quick_gather
 
-	try_quick_empty(usr)
+/// Requirement for "Empty Contents" (old: the verb was only added when allow_quick_empty).
+/obj/item/storage/proc/pred_can_quick_empty(mob/actor, atom/target, obj/item/held)
+	return allow_quick_empty
+
+/obj/item/storage/proc/quick_empty_effect(mob/user, obj/item/held, datum/interaction/interaction)
+
+	try_quick_empty(user)
 
 /// Quick-empty onto the floor, if `user` can.
 /obj/item/storage/proc/try_quick_empty(mob/user)
@@ -544,7 +537,7 @@ REF_OWNED(/obj/item/storage, "hud")
 	if(special_handling)
 		return FALSE
 	if((user.get_active_hand() == src) || (isrobot(user)) && allow_quick_empty)
-		if(src.verbs.Find(/obj/item/storage/verb/quick_empty))
+		if(allow_quick_empty)
 			try_quick_empty(user)
 			return TRUE
 	return FALSE
@@ -1061,3 +1054,9 @@ EXTEND_INTERACTIONS(/obj/item/storage/trinketbox, INTERACT_USE("Open", PROC_REF(
 	if(open && length(held))
 		var/display_item = held[1]
 		. += span_notice("\The [src] contains \the [display_item]!")
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/storage, \
+	INTERACT_VERB("Switch Gathering Method", PROC_REF(toggle_gathering_mode_effect), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/storage/proc/pred_can_toggle_gathering, "it has only one gathering method")), \
+	INTERACT_VERB("Empty Contents", PROC_REF(quick_empty_effect), REQ_ON(PRED_TARGET, /obj/item/storage/proc/pred_can_quick_empty, "it can't be emptied that way")), \
+)

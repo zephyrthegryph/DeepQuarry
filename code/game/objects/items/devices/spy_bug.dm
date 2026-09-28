@@ -32,15 +32,13 @@
 /*	else
 		radio.interact(user)
 */
-/obj/item/camerabug/verb/reset()
-	set name = "Reset camera bug"
-	set category = "Object"
+/obj/item/camerabug/proc/camerabug_reset_effect(mob/user, obj/item/held, datum/interaction/interaction)
 	if(linkedmonitor)
 		linkedmonitor.unpair(src)
 	linkedmonitor = null
 	qdel(camera)
 	camera = new camtype(src)
-	to_chat(usr, span_notice("You turn the [src] off and on again, delinking it from any monitors."))
+	to_chat(user, span_notice("You turn the [src] off and on again, delinking it from any monitors."))
 
 /obj/item/brokenbug
 	name = "broken mobile camera pod"
@@ -261,3 +259,7 @@ DECLARE_INTERACTIONS(/obj/item/bug_monitor, \
 	name = "DV-136ZB #[rand(1000,9999)]"
 	c_tag = name
 
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/camerabug, \
+	INTERACT_VERB("Reset camera bug", PROC_REF(camerabug_reset_effect), REQ_IN_INVENTORY), \
+)

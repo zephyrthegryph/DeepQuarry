@@ -74,6 +74,8 @@
 	into += list(
 		/datum/interaction/entry_hand/mousetrap_hand,
 	)
+	var/static/list/hide_spec = INTERACT_VERB("Hide", PROC_REF(mousetrap_hide_under_effect))
+	into += dq_interaction_from_spec(/obj/item/assembly/mousetrap, hide_spec)
 	..()
 
 /// Old attack_hand: trigger it early if armed and the user fumbles; otherwise not handled
@@ -127,13 +129,10 @@
 	icon_state = "mousetraparmed"
 	armed = 1
 
-/obj/item/assembly/mousetrap/verb/hide_under()
-	set src in oview(1)
-	set name = "Hide"
-	set category = "Object"
+/obj/item/assembly/mousetrap/proc/mousetrap_hide_under_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	if(usr.stat)
+	if(user.stat)
 		return
 
 	layer = HIDING_LAYER
-	to_chat(usr, span_notice("You hide [src]."))
+	to_chat(user, span_notice("You hide [src]."))

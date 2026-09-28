@@ -361,7 +361,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/pai, \
 	// We don't want to pick these up, just toggle them
 	if(istype(A,/obj/item/flashlight/lamp))
 		var/obj/item/flashlight/lamp/L = A
-		L.toggle_light()
+		L.lamp_toggle_light_effect(src)
 		return
 
 	// All other computers explain why it's not accessible by showing a firewall warning

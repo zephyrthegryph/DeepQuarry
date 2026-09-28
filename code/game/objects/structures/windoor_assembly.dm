@@ -80,6 +80,7 @@
 /obj/structure/windoor_assembly/declare_interactions(list/into)
 	var/static/list/actor_specs = list(
 		INTERACT_ROBOT("Rename", PROC_REF(windoor_robot_rename)),
+		INTERACT_VERB("Flip Windoor Assembly", PROC_REF(windoor_assembly_flip_effect)),
 	)
 	for(var/actor_spec in actor_specs)
 		into += dq_interaction_from_spec(type, actor_spec)
@@ -303,17 +304,14 @@
 		update_icon()
 
 //Flips the windoor assembly, determines whather the door opens to the left or the right
-/obj/structure/windoor_assembly/verb/flip()
-	set name = "Flip Windoor Assembly"
-	set category = "Object"
-	set src in oview(1)
+/obj/structure/windoor_assembly/proc/windoor_assembly_flip_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
 	if(src.facing == "l")
-		to_chat(usr,"The windoor will now slide to the right.")
+		to_chat(user,"The windoor will now slide to the right.")
 		src.facing = "r"
 	else
 		src.facing = "l"
-		to_chat(usr,"The windoor will now slide to the left.")
+		to_chat(user,"The windoor will now slide to the left.")
 
 	update_icon()
 	return

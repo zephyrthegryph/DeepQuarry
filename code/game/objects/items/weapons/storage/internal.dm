@@ -11,7 +11,6 @@
 	if(!istype(master_item))
 		return INITIALIZE_HINT_QDEL
 	name = master_item.name
-	verbs -= /obj/item/verb/verb_pickup	//make sure this is never picked up.
 
 EXTEND_INTERACTIONS(/obj/item/storage/internal, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_never_pick_up)))
 

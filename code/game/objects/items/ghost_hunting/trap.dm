@@ -45,11 +45,8 @@ REF_OWNED(/obj/item/ghost_trap, "ghost_reporter")
 		our_entity.forceMove(get_turf(src))
 	. = ..()
 
-/obj/item/ghost_trap/verb/release_occupant()
-	set src in oview(1)
-	set category = "Object"
-	set name = "Relase Entity"
-	release_entity(usr)
+/obj/item/ghost_trap/proc/release_occupant_effect(mob/user, obj/item/held, datum/interaction/interaction)
+	release_entity(user)
 
 /obj/item/ghost_trap/proc/release_entity(mob/living/user)
 	if(!isliving(user)) //no ghosts
@@ -248,11 +245,8 @@ DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
 		update_icon()
 		log_and_message_admins("has been captured at \the [get_area(loc)] by the [name], last touched by [forensic_data?.get_lastprint()]", passing_entity)
 
-/obj/item/ghost_trap/verb/hidden_vore()
-	set src in oview(1)
-	set category = "Object"
-	set name = "Eat Entity"
-	eat_entity(usr)
+/obj/item/ghost_trap/proc/ghost_trap_hidden_vore_effect(mob/user, obj/item/held, datum/interaction/interaction)
+	eat_entity(user)
 
 /obj/item/ghost_trap/proc/eat_entity(mob/living/user)
 	if(!isliving(user)) //no ghosts
@@ -272,3 +266,9 @@ DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
 
 	to_chat(user, span_info("There appears to be nothing in the trap to eat!"))
 	return
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/ghost_trap, \
+	INTERACT_VERB("Relase Entity", PROC_REF(release_occupant_effect)), \
+	INTERACT_VERB("Eat Entity", PROC_REF(ghost_trap_hidden_vore_effect)), \
+)

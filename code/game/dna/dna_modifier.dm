@@ -132,17 +132,14 @@
 	src.go_out()
 	return
 
-/obj/machinery/dna_scannernew/verb/eject()
-	set src in oview(1)
-	set category = "Object"
-	set name = "Eject DNA Scanner"
+/obj/machinery/dna_scannernew/proc/dna_scannernew_eject_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	if(usr.stat != 0)
+	if(user.stat != 0)
 		return
 
 	eject_occupant()
 
-	add_fingerprint(usr)
+	add_fingerprint(user)
 	return
 
 /obj/machinery/dna_scannernew/proc/eject_occupant()
@@ -158,6 +155,8 @@
 EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
 	INTERACT_ITEM(null, PROC_REF(dna_scanner_interaction_item)), \
 	INTERACT_DRAG("Put inside", PROC_REF(dna_scanner_interaction_drag)), \
+	INTERACT_VERB("Eject DNA Scanner", PROC_REF(dna_scannernew_eject_effect)), \
+	INTERACT_VERB("Enter DNA Scanner", PROC_REF(dna_scannernew_move_inside_effect)), \
 )
 
 /// Old MouseDrop_T: allows borgs to clone people without external assistance.
@@ -175,33 +174,30 @@ EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
 	put_in(target)
 	return TRUE
 
-/obj/machinery/dna_scannernew/verb/move_inside()
-	set src in oview(1)
-	set category = "Object"
-	set name = "Enter DNA Scanner"
+/obj/machinery/dna_scannernew/proc/dna_scannernew_move_inside_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	if(usr.stat != 0)
+	if(user.stat != 0)
 		return
-	if(!ishuman(usr) && !issmall(usr)) //Make sure they're a mob that has dna
-		to_chat(usr, span_notice("Try as you might, you can not climb up into the scanner."))
+	if(!ishuman(user) && !issmall(user)) //Make sure they're a mob that has dna
+		to_chat(user, span_notice("Try as you might, you can not climb up into the scanner."))
 		return
 	var/mob/living/carbon/WC = get_occupant()
 	if(WC)
-		to_chat(usr, span_warning("The scanner is already occupied!"))
+		to_chat(user, span_warning("The scanner is already occupied!"))
 		return
-	if(usr.abiotic())
-		to_chat(usr, span_warning("The subject cannot have abiotic items on."))
+	if(user.abiotic())
+		to_chat(user, span_warning("The subject cannot have abiotic items on."))
 		return
 	if(WC)
-		to_chat(usr, span_warning("There is already something inside."))
+		to_chat(user, span_warning("There is already something inside."))
 		return
-	usr.stop_pulling()
-	if(!usr.move_into(src, OCCUPANT_SLOT_DNA_SCANNER, usr))
-		to_chat(usr, span_warning("\The [src] won't take you!"))
+	user.stop_pulling()
+	if(!user.move_into(src, OCCUPANT_SLOT_DNA_SCANNER, user))
+		to_chat(user, span_warning("\The [src] won't take you!"))
 		return
-	set_occupant(usr)
+	set_occupant(user)
 	icon_state = "scanner_1"
-	add_fingerprint(usr)
+	add_fingerprint(user)
 	SStgui.update_uis(src)
 
 /// Old attackby.

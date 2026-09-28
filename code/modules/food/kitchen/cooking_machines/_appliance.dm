@@ -127,12 +127,9 @@
 	else
 		icon_state = off_icon
 
-/obj/machinery/appliance/verb/toggle_power()
-	set name = "Toggle Power"
-	set category  = "Object"
-	set src in view()
+/obj/machinery/appliance/proc/appliance_toggle_power_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	attempt_toggle_power(usr)
+	attempt_toggle_power(user)
 
 /obj/machinery/appliance/proc/attempt_toggle_power(mob/user)
 	if (!isliving(user))
@@ -236,6 +233,7 @@
 EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 	INTERACT_ITEM(null, PROC_REF(appliance_interaction_item)), \
 	INTERACT_HAND(null, PROC_REF(appliance_interaction_hand)), \
+	INTERACT_VERB("Toggle Power", PROC_REF(appliance_toggle_power_effect)), \
 )
 
 /// Old subtype attackby: part replacement first, then the appliance's own item handling.

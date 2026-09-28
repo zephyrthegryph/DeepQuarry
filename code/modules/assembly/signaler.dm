@@ -75,6 +75,7 @@
 /// see doc/rewrite/interactions.md §5a for why get_interactions() itself doesn't chain here.
 /obj/item/assembly/signaler/declare_interactions(list/into)
 	into += dq_interaction_from_spec(type, INTERACT_ITEM("Transfer", PROC_REF(interaction_transfer)))
+	into += dq_interaction_from_spec(type, INTERACT_VERB("Threaten to push the button!", PROC_REF(deadman_it_effect), REQ_IN_INVENTORY))
 	..()
 
 /// Old attackby: tap two secured signalers together to copy frequency/code.
@@ -162,13 +163,10 @@
 	else if(prob(5))
 		M.visible_message("[M]'s finger twitches a bit over [src]'s signal button!")
 
-/obj/item/assembly/signaler/verb/deadman_it()
-	set src in usr
-	set name = "Threaten to push the button!"
-	set desc = "BOOOOM!"
+/obj/item/assembly/signaler/proc/deadman_it_effect(mob/user, obj/item/held, datum/interaction/interaction)
 	deadman = TRUE
 	PERIODIC_START(src, PERIODIC_SLOW)
-	log_and_message_admins("is threatening to trigger a signaler deadman's switch")
-	usr.visible_message("<font color='red'>[usr] moves their finger over [src]'s signal button...</font>")
+	log_and_message_admins("is threatening to trigger a signaler deadman's switch", user)
+	user.visible_message("<font color='red'>[user] moves their finger over [src]'s signal button...</font>")
 // end
 

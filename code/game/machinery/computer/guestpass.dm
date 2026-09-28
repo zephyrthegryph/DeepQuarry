@@ -30,18 +30,18 @@
 	else
 		. += span_warning("It expired at [worldtime2stationtime(expiration_time)].")
 
-/obj/item/card/id/guest/read()
-	if(!Adjacent(usr))
+/obj/item/card/id/guest/id_read_effect(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!Adjacent(user))
 		return //Too far to read
 	if(world.time > expiration_time)
-		to_chat(usr, span_notice("This pass expired at [worldtime2stationtime(expiration_time)]."))
+		to_chat(user, span_notice("This pass expired at [worldtime2stationtime(expiration_time)]."))
 	else
-		to_chat(usr, span_notice("This pass expires at [worldtime2stationtime(expiration_time)]."))
+		to_chat(user, span_notice("This pass expires at [worldtime2stationtime(expiration_time)]."))
 
-	to_chat(usr, span_notice("It grants access to following areas:"))
+	to_chat(user, span_notice("It grants access to following areas:"))
 	for (var/A in temp_access)
-		to_chat(usr, span_notice("[SSaccess.get_access_desc(A)]."))
-	to_chat(usr, span_notice("Issuing reason: [reason]."))
+		to_chat(user, span_notice("[SSaccess.get_access_desc(A)]."))
+	to_chat(user, span_notice("Issuing reason: [reason]."))
 	return
 
 // Replaces the card's own flash: the old override ran both and flashed the pass twice.

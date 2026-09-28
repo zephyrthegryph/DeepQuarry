@@ -28,6 +28,8 @@
 	)
 	into += dq_interaction_from_spec(type, INTERACT_SILICON("Toggle lock", PROC_REF(fireaxecabinet_silicon_lock)))
 	into += dq_interaction_from_spec(type, INTERACT_TK(null, PROC_REF(interaction_tk)))
+	into += dq_interaction_from_spec(type, INTERACT_VERB("Open/Close", PROC_REF(toggle_openness_effect)))
+	into += dq_interaction_from_spec(type, INTERACT_VERB("Remove Fire Axe", PROC_REF(remove_fire_axe_effect)))
 	..()
 
 /// Old attackby: unlock/lock the case, smash the glass, or take/replace the axe, depending on state and item.

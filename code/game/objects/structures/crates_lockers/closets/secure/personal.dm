@@ -88,18 +88,15 @@
 			visible_message(span_warning("[visual_feedback]"), span_warning("[audible_feedback]"))
 		return 1
 
-/obj/structure/closet/secure_closet/personal/verb/reset()
-	set src in oview(1) // One square distance
-	set category = "Object"
-	set name = "Reset Lock"
-	if(!usr.canmove || usr.stat || usr.restrained()) // Don't use it if you're not able to! Checks for stuns, ghost and restrain
+/obj/structure/closet/secure_closet/personal/proc/personal_reset_effect(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!user.canmove || user.stat || user.restrained()) // Don't use it if you're not able to! Checks for stuns, ghost and restrain
 		return
-	if(ishuman(usr))
-		src.add_fingerprint(usr)
+	if(ishuman(user))
+		src.add_fingerprint(user)
 		if (src.locked || !src.registered_name)
-			to_chat(usr, span_warning("You need to unlock it first."))
+			to_chat(user, span_warning("You need to unlock it first."))
 		else if (src.broken)
-			to_chat(usr, span_warning("It appears to be broken."))
+			to_chat(user, span_warning("It appears to be broken."))
 		else
 			if (src.opened)
 				if(!src.close())
@@ -108,3 +105,8 @@
 			update_icon()
 			src.registered_name = null
 			src.desc = "It's a secure locker for personnel. The first card swiped gains control."
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/structure/closet/secure_closet/personal, \
+	INTERACT_VERB("Reset Lock", PROC_REF(personal_reset_effect)), \
+)

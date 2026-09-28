@@ -349,12 +349,9 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 	. = ..()
 	icon_state = "sucker_drop"
 
-/obj/item/vac_attachment/verb/hide_pack()
-	set name = "Toggle Vac-Pack Sprites"
-	set desc = "Toggle Vac-Pack sprite visibility"
-	set category = "Object"
+/obj/item/vac_attachment/proc/hide_pack_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	om_prompt(src, usr, list("kind" = "list", "message" = "Vac-Pack Visibility Options", "title" = "Vac-Pack Visibility Options", "choices" = list("Show Pack", "Show Tube", "Hidden"), "requires" = PROMPT_HELD), PROC_REF(visibility_chosen))
+	om_prompt(src, user, list("kind" = "list", "message" = "Vac-Pack Visibility Options", "title" = "Vac-Pack Visibility Options", "choices" = list("Show Pack", "Show Tube", "Hidden"), "requires" = PROMPT_HELD), PROC_REF(visibility_chosen))
 
 /obj/item/vac_attachment/proc/visibility_chosen(mob/user, choice, datum/om/prompt/ask)
 	switch(choice)
@@ -403,3 +400,8 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 
 /obj/effect/vac_visual/proc/ready(effect_time)
 	expire(effect_time)
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/vac_attachment, \
+	INTERACT_VERB("Toggle Vac-Pack Sprites", PROC_REF(hide_pack_effect), REQ_IN_INVENTORY), \
+)

@@ -11,12 +11,9 @@
 	w_class = ITEMSIZE_SMALL
 
 
-/obj/item/godfig/verb/resprite_figure()
-	set name = "Customize Figure"
-	set category = "Object"
-	set desc = "Click to choose an appearance for your icon."
+/obj/item/godfig/proc/resprite_figure_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	var/mob/M = usr
+	var/mob/M = user
 	var/list/options = list()
 	options["Painted - Robed Human Female"] = "frobe"
 	options["Painted - Robed Human Male (Pale)"] = "mrobe"
@@ -117,12 +114,9 @@
 
 
 
-/obj/item/godfig/verb/rename_fig()
-	set name = "Name Figure"
-	set category = "Object"
-	set desc = "Rename your icon."
+/obj/item/godfig/proc/rename_fig_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	var/mob/M = usr
+	var/mob/M = user
 	if(!M.mind)	return 0
 
 	om_prompt(src, M, list("kind" = "text", "message" = "What do you want to name the icon?", "default" = "", "max_length" = MAX_NAME_LEN, "requires" = PROMPT_ADJACENT), PROC_REF(figure_named))
@@ -131,3 +125,9 @@
 	if(input)
 		name = "icon of " + input
 		to_chat(M, "You name the figure. Glory to [input]!.")
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/godfig, \
+	INTERACT_VERB("Customize Figure", PROC_REF(resprite_figure_effect), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Name Figure", PROC_REF(rename_fig_effect), REQ_IN_INVENTORY), \
+)

@@ -16,12 +16,9 @@
 	var/list/food_inserted_micros
 	resistance_flags = FLAMMABLE
 
-/obj/item/reagent_containers/food/verb/change_name()
-	set name = "Rename Food"
-	set category = "Object"
-	set src in view(0)
+/obj/item/reagent_containers/food/proc/food_change_name_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	handle_name_change(usr)
+	handle_name_change(user)
 
 /obj/item/reagent_containers/food/proc/handle_name_change(mob/living/user)
 	if(user.stat == DEAD || !(ishuman(user) || isrobot(user)))
@@ -79,3 +76,8 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/food, INTERACT_ITEM(null, PROC
 
 #undef CELLS
 #undef CELLSIZE
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/reagent_containers/food, \
+	INTERACT_VERB("Rename Food", PROC_REF(food_change_name_effect)), \
+)

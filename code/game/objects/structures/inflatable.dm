@@ -40,6 +40,8 @@ DECLARE_INTERACTIONS(/obj/item/inflatable, INTERACT_SELF("Inflate", PROC_REF(inf
 	icon_state = "wall"
 
 	max_integrity = 50
+	/// Set once a hand deflate starts (old: the Deflate verb removed itself).
+	var/deflating = FALSE
 
 /obj/structure/inflatable/Initialize(mapload)
 	. = ..()
@@ -53,6 +55,7 @@ DECLARE_INTERACTIONS(/obj/item/inflatable, INTERACT_SELF("Inflate", PROC_REF(inf
 		/datum/interaction/entry_hand/inflatable_hand,
 		/datum/interaction/entry_item/inflatable_item,
 	)
+	into += dq_interaction_from_spec(type, INTERACT_VERB("Deflate", PROC_REF(hand_deflate_effect)))
 	..()
 
 /// Old attack_hand: just leaves a fingerprint.
@@ -80,8 +83,8 @@ DECLARE_INTERACTIONS(/obj/item/inflatable, INTERACT_SELF("Inflate", PROC_REF(inf
 		receive_weapon_hit(W, user)
 	return TRUE
 
-/obj/structure/inflatable/click_ctrl()
-	hand_deflate()
+/obj/structure/inflatable/click_ctrl(mob/user)
+	hand_deflate_effect(user)
 
 /obj/item/inflatable/proc/inflate(mob/user,location)
 	playsound(location, 'sound/items/zip.ogg', 75, 1)
@@ -109,15 +112,14 @@ DECLARE_INTERACTIONS(/obj/item/inflatable, INTERACT_SELF("Inflate", PROC_REF(inf
 	src.transfer_fingerprints_to(R)
 	replace_with(src, R)
 
-/obj/structure/inflatable/verb/hand_deflate()
-	set name = "Deflate"
-	set category = "Object"
-	set src in oview(1)
+/obj/structure/inflatable/proc/hand_deflate_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	if(isobserver(usr) || usr.restrained() || !usr.Adjacent(src))
+	if(isobserver(user) || user.restrained() || !user.Adjacent(src))
 		return
 
-	verbs -= /obj/structure/inflatable/verb/hand_deflate
+	if(deflating)
+		return
+	deflating = TRUE
 	deflate()
 
 /obj/structure/inflatable/attack_generic(mob/user, damage, attack_verb)
@@ -167,6 +169,7 @@ DECLARE_INTERACTIONS(/obj/item/inflatable, INTERACT_SELF("Inflate", PROC_REF(inf
 		/datum/interaction/entry_hand/inflatable_door_hand,
 	)
 	into += dq_interaction_from_spec(type, INTERACT_SILICON("Open", PROC_REF(inflatable_door_silicon_use)))
+	into += dq_interaction_from_spec(type, INTERACT_VERB("Deflate", PROC_REF(hand_deflate_effect)))
 
 /// Old attack_hand: open/close the door.
 /datum/interaction/entry_hand/inflatable_door_hand

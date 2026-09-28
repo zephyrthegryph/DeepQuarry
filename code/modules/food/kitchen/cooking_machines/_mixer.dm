@@ -93,27 +93,24 @@ REF_OWNED(/obj/machinery/appliance/mixer, "mixer_loop")
 	. = ..()
 	.["icon_used"] = off_icon
 
-/obj/machinery/appliance/mixer/toggle_power()
-	set src in view(1)
-	set name = "Toggle Power"
-	set category = "Object"
+/obj/machinery/appliance/mixer/appliance_toggle_power_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
 	var/datum/cooking_item/CI = LAZYACCESS(cooking_objs, 1)
 	if(!CI.container.check_contents())
-		to_chat(usr, span_filter_notice("There's nothing in it! Add ingredients before turning [src] on!"))
+		to_chat(user, span_filter_notice("There's nothing in it! Add ingredients before turning [src] on!"))
 		return
 
 	if(stat & POWEROFF)//Its turned off
 		stat &= ~POWEROFF
-		if(usr)
-			usr.visible_message(span_filter_notice("[usr] turns the [src] on."), span_filter_notice("You turn on \the [src]."))
+		if(user)
+			user.visible_message(span_filter_notice("[user] turns the [src] on."), span_filter_notice("You turn on \the [src]."))
 			get_cooking_work(CI)
 			use_power = 2
 	else //Its on, turn it off
 		stat |= POWEROFF
 		use_power = 0
-		if(usr)
-			usr.visible_message(span_filter_notice("[usr] turns the [src] off."), span_filter_notice("You turn off \the [src]."))
+		if(user)
+			user.visible_message(span_filter_notice("[user] turns the [src] off."), span_filter_notice("You turn off \the [src]."))
 	playsound(src, 'sound/machines/click.ogg', 40, 1)
 	update_icon()
 

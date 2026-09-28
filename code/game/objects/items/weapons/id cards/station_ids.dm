@@ -120,15 +120,12 @@ DECLARE_INTERACTIONS(/obj/item/card/id, INTERACT_SELF("Show", PROC_REF(interacti
 /obj/item/card/id/GetID()
 	return src
 
-/obj/item/card/id/verb/read()
-	set name = "Read ID Card"
-	set category = "Object"
-	set src in usr
+/obj/item/card/id/proc/id_read_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	to_chat(usr, "[icon2html(src, usr.client)] [src.name]: The current assignment on the card is [src.assignment].")
-	to_chat(usr, "The blood type on the card is [blood_type].")
-	to_chat(usr, "The DNA hash on the card is [dna_hash].")
-	to_chat(usr, "The fingerprint hash on the card is [fingerprint_hash].")
+	to_chat(user, "[icon2html(src, user.client)] [src.name]: The current assignment on the card is [src.assignment].")
+	to_chat(user, "The blood type on the card is [blood_type].")
+	to_chat(user, "The DNA hash on the card is [dna_hash].")
+	to_chat(user, "The fingerprint hash on the card is [fingerprint_hash].")
 	return
 
 /obj/item/card/id/get_worn_icon_state(slot_name)
@@ -616,3 +613,8 @@ EXTEND_INTERACTIONS(/obj/item/card/id/event/polymorphic/itg, INTERACT_ITEM("Copy
 	name = "\improper ITG identification card"
 	desc = "A small card designating affiliation with the Ironcrest Transport Group. It has a NanoTrasen insignia and a lot of very small print on the back to do with practices and regulations for contractors to use."
 	polymorphic_type = 2
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/card/id, \
+	INTERACT_VERB("Read ID Card", PROC_REF(id_read_effect), REQ_IN_INVENTORY), \
+)

@@ -23,15 +23,12 @@ DECLARE_INTERACTIONS(/obj/item/implanter, INTERACT_SELF("Toggle", PROC_REF(impla
 	update()
 	return TRUE
 
-/obj/item/implanter/verb/remove_implant()
-	set category = "Object"
-	set name = "Remove Implant"
-	set src in usr
+/obj/item/implanter/proc/remove_implant_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
 	if(!imp)
 		return
-	if(istype(usr, /mob))
-		var/mob/M = usr
+	if(istype(user, /mob))
+		var/mob/M = user
 		imp.loc = get_turf(src)
 		if(M.get_active_hand() == null)
 			M.put_in_hands(imp)
@@ -191,3 +188,8 @@ DECLARE_INTERACTIONS(/obj/item/implanter, INTERACT_SELF("Toggle", PROC_REF(impla
 	. = ..()
 	imp = new /obj/item/implant/vrlanguage( src )
 	update()
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/implanter, \
+	INTERACT_VERB("Remove Implant", PROC_REF(remove_implant_effect), REQ_IN_INVENTORY), \
+)

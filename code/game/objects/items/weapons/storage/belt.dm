@@ -20,12 +20,10 @@
 /obj/item/storage/belt/hold_constraint()
 	return list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
-/obj/item/storage/belt/verb/toggle_layer()
-	set name = "Switch Belt Layer"
-	set category = "Object"
+/obj/item/storage/belt/proc/toggle_layer_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
 	if(show_above_suit == -1)
-		to_chat(usr, span_notice("\The [src] cannot be worn above your suit!"))
+		to_chat(user, span_notice("\The [src] cannot be worn above your suit!"))
 		return
 	show_above_suit = !show_above_suit
 	update_icon()
@@ -853,3 +851,8 @@
 		/obj/item/seeds
 		)
 	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_LARGE))
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/storage/belt, \
+	INTERACT_VERB("Switch Belt Layer", PROC_REF(toggle_layer_effect), REQ_IN_INVENTORY), \
+)

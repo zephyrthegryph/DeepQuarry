@@ -148,34 +148,29 @@ DECLARE_INTERACTIONS(/obj/item/floor_painter, INTERACT_USE(null, PROC_REF(intera
 	. = ..()
 	. += "It is configured to produce the '[decal]' decal with a direction of '[paint_dir]' using [paint_colour] paint."
 
-/obj/item/floor_painter/verb/choose_colour()
-	set name = "Choose Colour"
-	set desc = "Choose a paint colour."
-	set category = "Object"
-	set src in usr
+/obj/item/floor_painter/proc/choose_colour_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	if(usr.incapacitated())
+	if(user.incapacitated())
 		return
-	ask_colour(usr)
+	ask_colour(user)
 
-/obj/item/floor_painter/verb/choose_decal()
-	set name = "Choose Decal"
-	set desc = "Choose a painting decal."
-	set category = "Object"
-	set src in usr
+/obj/item/floor_painter/proc/choose_decal_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	if(usr.incapacitated())
+	if(user.incapacitated())
 		return
 
-	ask_decal(usr)
+	ask_decal(user)
 
-/obj/item/floor_painter/verb/choose_direction()
-	set name = "Choose Direction"
-	set desc = "Choose a painting direction."
-	set category = "Object"
-	set src in usr
+/obj/item/floor_painter/proc/choose_direction_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	if(usr.incapacitated())
+	if(user.incapacitated())
 		return
 
-	ask_direction(usr)
+	ask_direction(user)
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/floor_painter, \
+	INTERACT_VERB("Choose Colour", PROC_REF(choose_colour_effect), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Choose Decal", PROC_REF(choose_decal_effect), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Choose Direction", PROC_REF(choose_direction_effect), REQ_IN_INVENTORY), \
+)

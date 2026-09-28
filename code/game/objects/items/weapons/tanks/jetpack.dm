@@ -37,15 +37,11 @@ REF_OWNED(/obj/item/tank/jetpack, "ion_trail")
 		. += span_danger("The meter on \the [src] indicates you are almost out of gas!")
 		playsound(src, 'sound/effects/alert.ogg', 50, 1)
 
-/obj/item/tank/jetpack/verb/toggle_rockets()
-	set name = "Toggle Jetpack Stabilization"
-	set category = "Object"
+/obj/item/tank/jetpack/proc/toggle_rockets_effect(mob/user, obj/item/held, datum/interaction/interaction)
 	stabilization_on = !( stabilization_on )
-	to_chat(usr, "You toggle the stabilization [stabilization_on? "on":"off"].")
+	to_chat(user, "You toggle the stabilization [stabilization_on? "on":"off"].")
 
-/obj/item/tank/jetpack/verb/toggle()
-	set name = "Toggle Jetpack"
-	set category = "Object"
+/obj/item/tank/jetpack/proc/jetpack_toggle_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
 	on = !on
 	if(on)
@@ -55,12 +51,12 @@ REF_OWNED(/obj/item/tank/jetpack, "ion_trail")
 		icon_state = initial(icon_state)
 		ion_trail.stop()
 
-	if (ismob(usr))
-		var/mob/M = usr
+	if (ismob(user))
+		var/mob/M = user
 		M.update_inv_back()
 		M.update_mob_action_buttons()
 
-	to_chat(usr, "You toggle the thrusters [on? "on":"off"].")
+	to_chat(user, "You toggle the thrusters [on? "on":"off"].")
 
 /obj/item/tank/jetpack/proc/get_gas_supply()
 	return air_contents
@@ -85,7 +81,7 @@ REF_OWNED(/obj/item/tank/jetpack, "ion_trail")
 	return 1
 
 /obj/item/tank/jetpack/ui_action_click(mob/user, actiontype)
-	toggle()
+	jetpack_toggle_effect(user)
 
 /obj/item/tank/jetpack/void
 	name = "void jetpack (oxygen)"
@@ -139,3 +135,8 @@ REF_OWNED(/obj/item/tank/jetpack, "ion_trail")
 /obj/item/tank/jetpack/rig/get_gas_supply()
 	return holder?.air_supply?.air_contents
 
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/tank/jetpack, \
+	INTERACT_VERB("Toggle Jetpack Stabilization", PROC_REF(toggle_rockets_effect), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Toggle Jetpack", PROC_REF(jetpack_toggle_effect), REQ_IN_INVENTORY), \
+)

@@ -115,17 +115,14 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 		if(16 to INFINITY)
 			icon_state = "pinonfar"
 
-/obj/item/pinpointer/advpinpointer/verb/toggle_mode()
-	set category = "Object"
-	set name = "Toggle Pinpointer Mode"
-	set src in view(1)
+/obj/item/pinpointer/advpinpointer/proc/advpinpointer_toggle_mode_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
 	active = 0
 	icon_state = "pinoff"
 	target=null
 	location = null
 
-	om_prompt(src, usr, list("message" = "Please select the mode you want to put the pinpointer in.", "title" = "Pinpointer Mode Select", "choices" = list("Location", "Disk Recovery", "Other Signature"), "requires" = PROMPT_HELD), PROC_REF(pinpointer_mode_chosen))
+	om_prompt(src, user, list("message" = "Please select the mode you want to put the pinpointer in.", "title" = "Pinpointer Mode Select", "choices" = list("Location", "Disk Recovery", "Other Signature"), "requires" = PROMPT_HELD), PROC_REF(pinpointer_mode_chosen))
 
 /obj/item/pinpointer/advpinpointer/proc/pinpointer_mode_chosen(mob/user, choice, datum/om/prompt/ask)
 	switch(choice)
@@ -330,3 +327,8 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer/shuttle, INTERACT_USE("Toggle", PROC_R
 
 /obj/item/pinpointer/shuttle/heist
 	shuttle_comp_id = "Skipjack"
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/pinpointer/advpinpointer, \
+	INTERACT_VERB("Toggle Pinpointer Mode", PROC_REF(advpinpointer_toggle_mode_effect)), \
+)

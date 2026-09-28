@@ -17,6 +17,7 @@
 EXTEND_INTERACTIONS(/obj/item/storage/quickdraw, \
 	INTERACT_HAND_UNGATED("Draw", PROC_REF(interaction_quickdraw)), \
 	INTERACT_ALT("Switch quickdraw mode", PROC_REF(interaction_quickdraw_alt)), \
+	INTERACT_VERB("Switch Quickdraw Mode", PROC_REF(toggle_quickdraw_effect), REQ_IN_INVENTORY), \
 )
 
 /// Old attack_hand: in quickdraw mode a worn case hands over its first item; a pocketed one opens.
@@ -40,22 +41,20 @@ EXTEND_INTERACTIONS(/obj/item/storage/quickdraw, \
 	return FALSE //Nothing special happened: the storage's own touch
 
 
-/obj/item/storage/quickdraw/verb/toggle_quickdraw()
-	set name = "Switch Quickdraw Mode"
-	set category = "Object"
+/obj/item/storage/quickdraw/proc/toggle_quickdraw_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
 	quickmode = !quickmode
 	switch (quickmode)
 		if(1)
-			to_chat(usr, "[src] now draws the first object inside.")
+			to_chat(user, "[src] now draws the first object inside.")
 		if(0)
-			to_chat(usr, "[src] now opens as a container.")
+			to_chat(user, "[src] now opens as a container.")
 
 /// Old click_alt: the storage's own alt-click, then a carried case switches mode.
 /obj/item/storage/quickdraw/proc/interaction_quickdraw_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	. = interaction_alt(user, held, interaction)
 	if(src.loc == user) //Are they carrying us?
-		toggle_quickdraw()
+		toggle_quickdraw_effect(user)
 		return TRUE
 
 

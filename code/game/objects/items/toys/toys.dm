@@ -902,11 +902,8 @@ DECLARE_INTERACTIONS(/obj/structure/plushie, \
 	atom_say("[pokephrase]")
 	name = adjusted_name
 
-/obj/item/toy/plushie/verb/rename_plushie()
-	set name = "Name Plushie"
-	set category = "Object"
-	set desc = "Give your plushie a cute name!"
-	var/mob/M = usr
+/obj/item/toy/plushie/proc/rename_plushie_effect(mob/user, obj/item/held, datum/interaction/interaction)
+	var/mob/M = user
 	if(!M.mind)
 		return 0
 
@@ -2907,11 +2904,8 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/dragon, INTERACT_USE("Squeeze", PROC_R
 		slot_back_str = 'icons/mob/toy_worn.dmi',
 		slot_head_str = 'icons/mob/toy_worn.dmi')
 
-/obj/item/toy/plushie/teshari/strix/rename_plushie()
-	set name = "Name Plushie"
-	set category = "Object"
-	set desc = "Give your plushie a cute name!"
-	var/mob/M = usr
+/obj/item/toy/plushie/teshari/strix/rename_plushie_effect(mob/user, obj/item/held, datum/interaction/interaction)
+	var/mob/M = user
 	if(!M.mind)
 		return 0
 
@@ -2933,11 +2927,8 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/dragon, INTERACT_USE("Squeeze", PROC_R
 		slot_back_str = 'icons/vore/custom_onmob_yw.dmi',
 		slot_head_str = 'icons/vore/custom_onmob_yw.dmi')
 
-/obj/item/toy/plushie/teshari/eili/rename_plushie()
-	set name = "Name Plushie"
-	set category = "Object"
-	set desc = "Give your plushie a cute name!"
-	var/mob/M = usr
+/obj/item/toy/plushie/teshari/eili/rename_plushie_effect(mob/user, obj/item/held, datum/interaction/interaction)
+	var/mob/M = user
 	if(!M.mind)
 		return 0
 
@@ -3007,3 +2998,8 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/dragon, INTERACT_USE("Squeeze", PROC_R
 	playsound(src, 'sound/machines/Alarm.ogg', 10, 0, 0)
 	om_after(src, 135, TYPE_PROC_REF(/atom, set_icon_state), "nuketoycool")
 	om_after(src, 135 + (cooldown - world.time), TYPE_PROC_REF(/atom, set_icon_state), "nuketoyidle")
+
+/// Old object verbs.
+EXTEND_INTERACTIONS(/obj/item/toy/plushie, \
+	INTERACT_VERB("Name Plushie", PROC_REF(rename_plushie_effect), REQ_IN_INVENTORY), \
+)

@@ -127,24 +127,21 @@ DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor
 	if(.)
 		update_icon()
 
-/obj/structure/railing/verb/flip() // This will help push railing to remote places, such as open space turfs
-	set name = "Flip Railing"
-	set category = "Object"
-	set src in oview(1)
+/obj/structure/railing/proc/railing_flip_effect(mob/user, obj/item/held, datum/interaction/interaction) // This will help push railing to remote places, such as open space turfs
 
-	if(usr.incapacitated())
+	if(user.incapacitated())
 		return 0
 
-	if (!can_touch(usr) || HAS_TRAIT(usr, TRAIT_AMBIENT_PEST_MOB))
+	if (!can_touch(user) || HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB))
 		return
 
 	if(anchored)
-		to_chat(usr, "It is fastened to the floor therefore you can't flip it!")
+		to_chat(user, "It is fastened to the floor therefore you can't flip it!")
 		return 0
 
 	var/obj/occupied = can_climb_neighbor_turf(src)
 	if(occupied)
-		to_chat(usr, "You can't flip \the [src] because there's \a [occupied] in the way.")
+		to_chat(user, "You can't flip \the [src] because there's \a [occupied] in the way.")
 		return 0
 
 	src.loc = get_step(src, src.dir)
@@ -156,6 +153,8 @@ DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor
 	into += list(
 		/datum/interaction/entry_item/railing_item,
 	)
+	var/static/list/flip_spec = INTERACT_VERB("Flip Railing", PROC_REF(railing_flip_effect))
+	into += dq_interaction_from_spec(/obj/structure/railing, flip_spec)
 	..()
 
 /// Old attackby: slam/throw a grabbed mob over the railing, or take a weapon hit.

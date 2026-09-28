@@ -282,12 +282,9 @@
 		else if(M.get_equipped_item(SLOT_ID_HAND_R) == src)
 			M.update_inv_r_hand()
 
-/obj/item/verb/move_to_top()
-	set name = "Move To Top"
-	set category = "Object"
-	set src in oview(1)
+/obj/item/proc/move_to_top_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	if(!istype(src.loc, /turf) || usr.stat || usr.restrained() )
+	if(!istype(src.loc, /turf) || user.stat || user.restrained() )
 		return
 
 	var/turf/T = src.loc
@@ -336,6 +333,14 @@
 	// Old /obj/item/attack_ai. Offered only on a module's items, so it never competes with an item's own.
 	var/static/list/module_spec = INTERACT_SILICON("Equip", PROC_REF(item_silicon_equip_module), REQ_TARGET_STATE(/obj/item/proc/item_in_robot_module))
 	into += dq_interaction_from_spec(/obj/item, module_spec)
+	// Old /obj/item object verbs.
+	var/static/list/verb_specs = list(
+		INTERACT_VERB("Move To Top", PROC_REF(move_to_top_effect)),
+		INTERACT_VERB("Pick up", PROC_REF(verb_pickup_effect)),
+		INTERACT_VERB("Toggle Digestable", PROC_REF(toggle_digestable_effect), REQ_IN_INVENTORY),
+	)
+	for(var/spec in verb_specs)
+		into += dq_interaction_from_spec(/obj/item, spec)
 
 /// A pickup-mode storage bag used on the item collects it (or its whole tile).
 /obj/item/proc/interaction_collected(mob/user, obj/item/storage/bag, datum/interaction/interaction)
@@ -564,38 +569,35 @@
 		return 0
 	return 1
 
-/obj/item/verb/verb_pickup()
-	set src in oview(1)
-	set category = "Object"
-	set name = "Pick up"
+/obj/item/proc/verb_pickup_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	if(!(usr))
+	if(!(user))
 		return
-	if(!usr.canmove || usr.stat || usr.restrained() || !Adjacent(usr) || usr.is_incorporeal())
+	if(!user.canmove || user.stat || user.restrained() || !Adjacent(user) || user.is_incorporeal())
 		return
-	if(isanimal(usr)) // Allows simple mobs with hands to use the pickup verb
-		var/mob/living/simple_mob/s = usr
+	if(isanimal(user)) // Allows simple mobs with hands to use the pickup verb
+		var/mob/living/simple_mob/s = user
 		if(!s.has_hands)
-			to_chat(usr, span_warning("You can't pick things up!"))
+			to_chat(user, span_warning("You can't pick things up!"))
 			return
-	else if((!iscarbon(usr)) || (isbrain(usr)))//Is humanoid, and is not a brain
-		to_chat(usr, span_warning("You can't pick things up!"))
+	else if((!iscarbon(user)) || (isbrain(user)))//Is humanoid, and is not a brain
+		to_chat(user, span_warning("You can't pick things up!"))
 		return
-	var/mob/living/L = usr
-	if( usr.stat || usr.restrained() )//Is not asleep/dead and is not restrained
-		to_chat(usr, span_warning("You can't pick things up!"))
+	var/mob/living/L = user
+	if( user.stat || user.restrained() )//Is not asleep/dead and is not restrained
+		to_chat(user, span_warning("You can't pick things up!"))
 		return
 	if(src.anchored) //Object isn't anchored
-		to_chat(usr, span_warning("You can't pick that up!"))
+		to_chat(user, span_warning("You can't pick that up!"))
 		return
 	if(L.get_active_hand()) // Hand is not full //
-		to_chat(usr, span_warning("Your hand is full."))
+		to_chat(user, span_warning("Your hand is full."))
 		return
 	if(!isturf(src.loc)) //Object is on a turf
-		to_chat(usr, span_warning("You can't pick that up!"))
+		to_chat(user, span_warning("You can't pick that up!"))
 		return
 	//All checks are done, time to pick it up!
-	usr.UnarmedAttack(src)
+	user.UnarmedAttack(src)
 	return
 
 //This proc is executed when someone clicks the on-screen UI button.
@@ -1059,13 +1061,10 @@ Note: This proc can be overwritten to allow for different types of auto-alignmen
 /obj/item/proc/get_multitool()
 	return
 
-/obj/item/verb/toggle_digestable()
-	set category = "Object"
-	set name = "Toggle Digestable"
-	set desc = "Toggle item's digestability."
+/obj/item/proc/toggle_digestable_effect(mob/user, obj/item/held, datum/interaction/interaction)
 	digestable = !digestable
 	if(!digestable)
-		to_chat(usr, span_notice("[src] is now protected from digestion."))
+		to_chat(user, span_notice("[src] is now protected from digestion."))
 
 REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_ITEM_TF_SPAWNPOINTS)
 
