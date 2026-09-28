@@ -3092,7 +3092,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 	P.air_contents.adjust_gas(/datum/gas/nitrogen, 200)
 	P.air_contents.set_temperature(T20C)
-	P.on = TRUE
+	P.set_on(TRUE)
 	P.direction_out = TRUE
 	P.target_pressure = 5 * ONE_ATMOSPHERE
 	// Make sure the power gate doesn't short-circuit the test.
@@ -3131,7 +3131,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	TEST_ASSERT_NOTNULL(S, "portable scrubber construction failed")
 	TEST_ASSERT_NOTNULL(S.air_contents, "portable scrubber has no internal tank")
 
-	S.on = TRUE
+	S.set_on(TRUE)
 	if(S.cell)
 		S.cell.charge = S.cell.maxcharge
 
@@ -4510,7 +4510,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_EQUAL(R.machine_step(), PROCESS_KILL, "empty recharger remained scheduled")
 	var/obj/item/cell/C = new(R)
 	C.charge = C.maxcharge
-	R.charging = C
+	R.set_charging(C)
 	TEST_ASSERT_EQUAL(R.machine_step(), PROCESS_KILL, "recharger holding a full cell remained scheduled")
 	qdel(R)
 
@@ -4530,7 +4530,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_NOTNULL(T, "no floor for recharger spill test")
 	var/obj/machinery/recharger/R = new(T)
 	var/obj/item/cell/dq_spill_probe/C = new(R)
-	R.charging = C
+	R.set_charging(C)
 	C.refreshed = FALSE
 	qdel(R)
 	TEST_ASSERT(!QDELETED(C), "the charging item was deleted with the recharger")

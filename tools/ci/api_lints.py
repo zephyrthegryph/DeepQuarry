@@ -22,8 +22,9 @@ never rise. Most are at 0; the rest are ratchets a sweep lowers.
                      (M.buckled_to(), I.slot_item(slot)) so it chains
     raw_relation     om_relation_of()/om_source_of()/om_related(_to)() outside
                      code/datums/om: call the relation's typed accessor proc
-    field_write      a direct write to a declared field (fields.dm) outside its setter and
-                     Initialize()/New(): om_set() or the OM_SETTER() setter raises its channel
+    field_write      a direct write to a declared field (OM_FIELD, fields.dm) anywhere but its
+                     generated set_<name>() setter, unit tests and Initialize()/New() included:
+                     call the setter (or om_set()), which raises its channel
                      (tools/ci/field_write_lint.py has the rules)
     raw_world_bind   a vg_world_* subscription or step bind outside code/datums/om/world_watch.dm:
                      subscribe with om_world_at/on_key/on_change/when/on_rate (sec 4.8)
@@ -171,16 +172,22 @@ def read_allowlist():
     return allowed
 
 
+# Checks that also scan code/modules/unit_tests: a test that writes a declared field directly
+# is how a missed wake hides (the write skips the channel the code under test depends on).
+SCANS_TESTS = {"field_write"}
+
+
 def scan():
     allowed = read_allowlist()
     sites = {name: [] for name in NAMES}
     for path in glob.glob(os.path.join(ROOT, "code", "**", "*.dm"), recursive=True):
         rel = os.path.relpath(path, ROOT).replace(os.sep, "/")
-        if "/unit_tests/" in rel:
-            continue
+        in_tests = "/unit_tests/" in rel
         with open(path, encoding="utf-8", errors="replace") as handle:
             text = code_only(handle.read())
         for name, check in CHECKS:
+            if in_tests and name not in SCANS_TESTS:
+                continue
             if (name, rel) in allowed:
                 continue
             for line in check(rel, text):

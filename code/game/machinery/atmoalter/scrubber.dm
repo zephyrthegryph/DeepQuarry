@@ -7,7 +7,6 @@
 	density = TRUE
 	w_class = ITEMSIZE_NORMAL
 
-	var/on = 0
 	var/volume_rate = 800
 
 	volume = 750

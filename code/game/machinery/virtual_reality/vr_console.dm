@@ -349,7 +349,7 @@
 	add_verb(avatar,/mob/living/carbon/human/proc/perform_exit_vr)
 	add_verb(avatar,/mob/living/carbon/human/proc/vr_transform_into_mob)
 	add_verb(avatar,/mob/living/proc/set_size)
-	avatar.virtual_reality_mob = TRUE
+	avatar.set_virtual_reality_mob(TRUE)
 
 	//This handles all the 'We make it look like ourself' code.
 	//We do this BEFORE any mob tf so prefs  carry over properly!

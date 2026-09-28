@@ -263,7 +263,7 @@
 	reads = list("purge")
 	order = LIFE_PHASE_TAIL + 120
 	name = "supernatural"
-	wake_on = CHANGE_MOB_STATUS
+	wake_on = 0 // only its reads' channels (CHANGE_MOB_STATUS)
 	run_if = FACT("alive")
 	of = /mob/living/simple_mob
 

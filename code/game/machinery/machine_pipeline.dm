@@ -438,7 +438,7 @@
 /// (idle() below) until scan_atmo() reports the room has settled.
 /datum/om/stage/machine/power/alarm
 	of = /obj/machinery/alarm
-	wake_on = CHANGE_MACHINE_POWER | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_ANCHORED | CHANGE_MACHINE_OCCUPANT | CHANGE_MACHINE_SETTINGS | CHANGE_MACHINE_GAS
+	wake_on = CHANGE_MACHINE_POWER | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_ANCHORED | CHANGE_MACHINE_OCCUPANT | CHANGE_MACHINE_GAS
 	woken_by = "power_change(); atom_break()/atom_fix(); wire shorts; TLV/thermostat settings; elect_main_air_alarm(); a watched gas crossing"
 	reads = list("regulating_temperature")
 
@@ -482,7 +482,7 @@
 /// closed and pipenet-connected (only the displayed gauge band matters then).
 /datum/om/stage/machine/power/canister
 	of = /obj/machinery/portable_atmospherics/canister
-	wake_on = CHANGE_MACHINE_POWER | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_ANCHORED | CHANGE_MACHINE_SETTINGS | CHANGE_MACHINE_GAS
+	wake_on = CHANGE_MACHINE_POWER | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_ANCHORED | CHANGE_MACHINE_GAS
 	woken_by = "power_change(); atom_break()/atom_fix(); valve/label/eject topic actions; a subscribed gas mixture changing"
 	reads = list("om_settled", "valve_open")
 
@@ -545,7 +545,7 @@
 /// generic /datum/om/stage/machine/power frame alongside their unaffected SSmachines polling.
 /datum/om/stage/machine/power/portable_pump
 	of = /obj/machinery/portable_atmospherics/powered/pump
-	wake_on = CHANGE_MACHINE_POWER | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_ANCHORED | CHANGE_MACHINE_SETTINGS
+	wake_on = CHANGE_MACHINE_POWER | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_ANCHORED
 	woken_by = "power_change(); atom_break()/atom_fix(); the power toggle; an EMP"
 	reads = list("on")
 
@@ -558,7 +558,7 @@
 
 /datum/om/stage/machine/power/portable_scrubber
 	of = /obj/machinery/portable_atmospherics/powered/scrubber
-	wake_on = CHANGE_MACHINE_POWER | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_ANCHORED | CHANGE_MACHINE_SETTINGS
+	wake_on = CHANGE_MACHINE_POWER | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_ANCHORED
 	woken_by = "power_change(); atom_break()/atom_fix(); the power toggle; an EMP"
 	reads = list("on")
 
@@ -630,62 +630,30 @@
 
 // ---------------------------------------------------------------- declared fields (code/datums/om/fields.dm)
 // What the machine stages read to decide there is work, and the channel each raises. Written only
-// through the setters below (or om_set()); the registry checks each stage's wake_on covers them.
+// through the generated set_<name>() setters (or om_set()); stages that read them wake on them.
 
-/datum/om/decl/machine_fields
-	of = /obj/machinery
-	fields = list(
-		"step_active" = CHANGE_EXPLICIT,
-		"step_waiting_power" = CHANGE_MACHINE_POWER,
-		"speed_process" = CHANGE_MACHINE_SETTINGS,
-	)
+/// TRUE while machine_step() has work: set by MACHINE_WAKE(), cleared when machine_step() returns
+/// PROCESS_KILL or by MACHINE_SLEEP(). The step stage idles while it is FALSE.
+OM_FIELD_TYPED(/obj/machinery, tmp, step_active, FALSE, CHANGE_EXPLICIT)
+/// Set by sleep_until_powered(): power_change()/atom_fix() restart the step work.
+OM_FIELD_TYPED(/obj/machinery, tmp, step_waiting_power, FALSE, CHANGE_MACHINE_POWER)
+/// TRUE: machine_step() runs every 0.2 s on the fast periodic pipeline instead of the machine
+/// pipeline (PERIODIC_FAST, code/datums/om/periodic.dm).
+OM_FIELD(/obj/machinery, speed_process, FALSE, CHANGE_MACHINE_SETTINGS)
 
-OM_SETTER(/obj/machinery, step_active)
-OM_SETTER(/obj/machinery, step_waiting_power)
-OM_SETTER(/obj/machinery, speed_process)
-
-/datum/om/decl/recharger_fields
-	of = /obj/machinery/recharger
-	fields = list("charging" = CHANGE_MACHINE_OCCUPANT)
-
-OM_SETTER(/obj/machinery/recharger, charging)
-
-/datum/om/decl/cell_charger_fields
-	of = /obj/machinery/cell_charger
-	fields = list("charging" = CHANGE_MACHINE_OCCUPANT)
-
-OM_SETTER(/obj/machinery/cell_charger, charging)
-
-/datum/om/decl/firealarm_fields
-	of = /obj/machinery/firealarm
-	fields = list("timing" = CHANGE_MACHINE_SETTINGS)
-
-OM_SETTER(/obj/machinery/firealarm, timing)
-
-/datum/om/decl/air_alarm_fields
-	of = /obj/machinery/alarm
-	fields = list("regulating_temperature" = CHANGE_MACHINE_SETTINGS)
-
-OM_SETTER(/obj/machinery/alarm, regulating_temperature)
-
-/datum/om/decl/canister_fields
-	of = /obj/machinery/portable_atmospherics/canister
-	fields = list(
-		"valve_open" = CHANGE_MACHINE_SETTINGS,
-		"om_settled" = CHANGE_MACHINE_SETTINGS,
-	)
-
-OM_SETTER(/obj/machinery/portable_atmospherics/canister, valve_open)
-OM_SETTER(/obj/machinery/portable_atmospherics/canister, om_settled)
-
-/datum/om/decl/portable_pump_fields
-	of = /obj/machinery/portable_atmospherics/powered/pump
-	fields = list("on" = CHANGE_MACHINE_SETTINGS)
-
-OM_SETTER(/obj/machinery/portable_atmospherics/powered/pump, on)
-
-/datum/om/decl/portable_scrubber_fields
-	of = /obj/machinery/portable_atmospherics/powered/scrubber
-	fields = list("on" = CHANGE_MACHINE_SETTINGS)
-
-OM_SETTER(/obj/machinery/portable_atmospherics/powered/scrubber, on)
+/// The item being recharged.
+OM_FIELD_TYPED(/obj/machinery/recharger, obj/item, charging, null, CHANGE_MACHINE_OCCUPANT)
+/// The cell being charged.
+OM_FIELD_TYPED(/obj/machinery/cell_charger, obj/item/cell, charging, null, CHANGE_MACHINE_OCCUPANT)
+/// TRUE while the fire alarm's countdown runs.
+OM_FIELD(/obj/machinery/firealarm, timing, 0, CHANGE_MACHINE_SETTINGS)
+/// Heating/cooling mode of the air alarm's thermostat (0 off).
+OM_FIELD(/obj/machinery/alarm, regulating_temperature, 0, CHANGE_MACHINE_SETTINGS)
+/// The canister's release valve.
+OM_FIELD(/obj/machinery/portable_atmospherics/canister, valve_open, 0, CHANGE_MACHINE_SETTINGS)
+/// TRUE while the canister has nothing to do; until arm_wakes() or a frame says otherwise.
+OM_FIELD(/obj/machinery/portable_atmospherics/canister, om_settled, TRUE, CHANGE_MACHINE_SETTINGS)
+/// The portable pump's power switch.
+OM_FIELD(/obj/machinery/portable_atmospherics/powered/pump, on, 0, CHANGE_MACHINE_SETTINGS)
+/// The portable scrubber's power switch.
+OM_FIELD(/obj/machinery/portable_atmospherics/powered/scrubber, on, 0, CHANGE_MACHINE_SETTINGS)

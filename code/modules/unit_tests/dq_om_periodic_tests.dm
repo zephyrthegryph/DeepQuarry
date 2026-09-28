@@ -112,13 +112,13 @@
 	var/obj/machinery/dq_step_probe/M = allocate(/obj/machinery/dq_step_probe, test_floor())
 	M.work = 10
 	MACHINE_WAKE(M)
-	M.speed_process = TRUE
+	M.set_speed_process(TRUE)
 	PERIODIC_START(M, PERIODIC_FAST)
 	om_run_frame_now(M, /datum/om/pipeline/machine)
 	TEST_ASSERT_EQUAL(M.steps, 0, "a fast machine stepped on the machine pipeline")
 	om_run_frame_now(M, PERIODIC_FAST)
 	TEST_ASSERT_EQUAL(M.steps, 1, "a fast machine did not step on the fast lane")
-	M.speed_process = FALSE
+	M.set_speed_process(FALSE)
 	PERIODIC_STOP(M)
 
 /// Change channels and timers for sleepers: a watcher wakes on a watched channel and not on

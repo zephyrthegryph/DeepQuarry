@@ -493,8 +493,7 @@
 	TEST_ASSERT(S.parked, "an empty recharger parks")
 	var/obj/item/cell/C = new /obj/item/cell/high(R)
 	C.charge = C.maxcharge - C.maxcharge / 100
-	R.charging = C
-	om_changed(R, CHANGE_MACHINE_OCCUPANT)
+	R.set_charging(C) // raises CHANGE_MACHINE_OCCUPANT
 	sched.run_pass(1e9)
 	TEST_ASSERT(!S.parked, "inserting something wakes it")
 	var/frames = 0
@@ -512,7 +511,7 @@
 	sched.run_pass(1e9)
 	TEST_ASSERT(!S.parked, "losing power wakes it (power_change raises CHANGE_MACHINE_POWER)")
 	R.stat &= ~NOPOWER
-	R.charging = null
+	R.set_charging(null)
 	qdel(C)
 
 /// An APC and an SMES settle and park on the machine pipeline; an APC power failure ends by the
@@ -572,9 +571,8 @@
 	for(var/i in 1 to 3)
 		om_run_frame_now(F, /datum/om/pipeline/machine)
 	TEST_ASSERT(S.parked, "an idle fire alarm parks")
-	F.timing = 1
 	F.time = 1
-	om_changed(F, CHANGE_MACHINE_SETTINGS)
+	F.set_timing(1) // raises CHANGE_MACHINE_SETTINGS
 	sched.run_pass(1e9)
 	TEST_ASSERT(!S.parked, "arming a countdown wakes it")
 	var/frames = 0
@@ -616,8 +614,7 @@
 	for(var/i in 1 to 3)
 		om_run_frame_now(C, /datum/om/pipeline/machine)
 	TEST_ASSERT(S.parked, "it settles and parks again")
-	C.set_valve_open(TRUE)
-	om_changed(C, CHANGE_MACHINE_SETTINGS)
+	C.set_valve_open(TRUE) // raises CHANGE_MACHINE_SETTINGS
 	sched.run_pass(1e9)
 	TEST_ASSERT(!S.parked, "opening the valve wakes it")
 	qdel(C)

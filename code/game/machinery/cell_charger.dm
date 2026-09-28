@@ -10,7 +10,6 @@
 	var/efficiency = 60000 //will provide the modified power rate when upgraded
 	power_channel = EQUIP
 	/// Runs on the machine pipeline (machine_pipeline.dm): the power/cell_charger stage charges.
-	var/obj/item/cell/charging = null
 	var/chargelevel = -1
 	circuit = /obj/item/circuitboard/cell_charger
 	maintenance_flags = MACHINE_MAINT_STANDARD

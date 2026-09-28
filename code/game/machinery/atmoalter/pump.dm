@@ -6,7 +6,6 @@
 	density = TRUE
 	w_class = ITEMSIZE_NORMAL
 
-	var/on = 0
 	var/direction_out = 0 //0 = siphoning, 1 = releasing
 	var/target_pressure = ONE_ATMOSPHERE
 
