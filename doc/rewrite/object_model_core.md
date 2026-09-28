@@ -733,6 +733,13 @@ deadline wheel; nothing polls. `om_ui_rate(R)` returns
   the same call. `/datum/om/event/before/x` is synchronous and may return
   `EVENT_VETO`; emitting one on an entity already delivering one is an
   error, reported and answered with a veto, never dropped silently.
+- **Senders.** `om_wants(E, /datum/om/event/x)` is TRUE when a started behaviour on E
+  handles x (or a task could be interrupted by it); hot senders (movement, examine,
+  crossing, attacks) test it before allocating the event. Shared atom events (examine,
+  moved, hitby, before/cross, before/attack_self, before/attackby, before/attack_hand)
+  live in `code/datums/om_events/atom_events.dm`; a behaviour's own events sit next to it
+  (`code/datums/behaviours/`). A before/ event can also carry a result field the sender
+  reads back (`before/dice_roll.result_override`).
 - **Checks:** `/datum/om/check/x/why_not(actor, target)` returns null or a
   reason; `depends_on` lists the channels that can flip it; `arg` is the
   parameter. `om_why_not(spec, actor, target)`, `om_can(...)`,
