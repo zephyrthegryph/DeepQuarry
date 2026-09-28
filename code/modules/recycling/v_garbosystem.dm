@@ -235,3 +235,7 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/v_garbosystem/step_start_condition()
 	return operating
+
+// The grinder and its switch point at each other; either going clears both sides.
+REF_PAIR(/obj/machinery/v_garbosystem, list("button" = "grinder"))
+REF_PAIR(/obj/machinery/button/garbosystem, list("grinder" = "button"))

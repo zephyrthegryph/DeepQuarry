@@ -284,6 +284,9 @@ REF_OWNED(/datum/generated_room_fragment_placement, "fragment")
 	var/strict_room_contracts = TRUE
 
 REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validation", "tile_plan"))
+// A running job and its materializer point at each other; either going clears both sides.
+REF_PAIR(/datum/generated_station_materializer, list("active_job" = "materializer"))
+REF_PAIR(/datum/generated_station_materialization_job, list("materializer" = "active_job"))
 
 /datum/generated_station_materializer/proc/materialize(datum/generated_station_spec/new_spec, new_z, origin_x = 1, origin_y = 1, datum/flight_plan/flight_plan = null, fast_mode = FALSE)
 	var/datum/generated_station_materialization_job/job = new(src, flight_plan, fast_mode)

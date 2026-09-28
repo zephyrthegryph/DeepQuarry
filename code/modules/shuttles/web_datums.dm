@@ -78,6 +78,8 @@
 	master = new_master
 
 REF_OWNED_LIST(/datum/shuttle_destination, "routes")
+// The master also holds us as current/future/starting destination; `master` must be let go or the two outlive each other.
+REF_BACKLIST(/datum/shuttle_destination, list("master" = "destinations"))
 
 //	build_destinations()
 
@@ -183,7 +185,7 @@ REF_OWNED_LIST(/datum/shuttle_destination, "routes")
 	current_destination = get_destination_by_type(starting_destination)
 	build_autopaths()
 
-REF_OWNED_LIST(/datum/shuttle_web_master, "destinations")
+REF_OWNED_LIST(/datum/shuttle_web_master, list("destinations", "autopaths"))
 
 /datum/shuttle_web_master/proc/build_destinations()
 	// First, instantiate all the destination subtypes relevant to this datum.
@@ -332,3 +334,6 @@ REF_OWNED_LIST(/datum/shuttle_web_master, "destinations")
 /datum/shuttle_autopath/proc/finish_path()
 	reset_path()
 	master.path_finished(src)
+
+// The master also holds us as its active `autopath`; `master` must be let go or the two outlive each other.
+REF_BACKLIST(/datum/shuttle_autopath, list("master" = "autopaths"))

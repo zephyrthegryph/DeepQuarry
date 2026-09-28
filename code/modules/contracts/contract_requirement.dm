@@ -207,6 +207,10 @@
 	second_fact_times = list()
 	event_types = list(first_event_type, second_event_type)
 
+// Contracts hold their requirements in `requirements` and again in typed vars (observation_requirement, ...);
+// `contract` must be let go or the two outlive each other.
+REF_BACKLIST(/datum/contract_requirement, list("contract" = "requirements"))
+
 REF_OWNED(/datum/contract_requirement/paired_facts, list("first_filter", "second_filter"))
 
 /datum/contract_requirement/paired_facts/handle_event(datum/contract_event/event)

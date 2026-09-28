@@ -98,3 +98,10 @@
 	update_underlays()
 
 	return null
+
+/// Phase 1, after the shared topology teardown: let go of the arms and network wrappers the
+/// base unbind doesn't know about, so two doomed neighbours can't keep each other alive.
+/obj/machinery/atmospherics/binary/lifecycle_unbind()
+	. = ..()
+	network1 = null
+	network2 = null
