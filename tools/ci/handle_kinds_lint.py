@@ -20,6 +20,11 @@ mistakes follow from using one anyway, and this lint refuses both:
                       or holds it (REF_HELD / a tmp strong var). Atoms created on
                       a location are owned by that location and are not flagged.
 
+  (c) non-datum       om_handle() of an /image, /mutable_appearance, list, icon,
+                      matrix or sound (a local or argument declared as one, or
+                      one built in the call): only datums get handle slots, so
+                      the handle is always null.
+
 A justified keep carries `// ALLOW(handle_kinds): <reason>` on the line or the
 comment line above it (tools/ci/allow_annotations.py).
 
@@ -41,7 +46,11 @@ SUBSYSTEM_HANDLE = re.compile(r"\bom_handle\(\s*SS\w+\s*\)")
 NEW_DATUM_HANDLE = re.compile(r"\bom_handle\(\s*new\s*(/datum/[\w/]*)?\s*[(\)]")
 # A handle to a copy made on the spot: nothing else holds the copy.
 COPY_HANDLE = re.compile(r"om_handle\([^()]*\.(?:clone|diverge|Copy|copy_\w+|duplicate)\(")
-PROC_START = re.compile(r"^/\S")
+# Non-datums have no handle slot: om_handle() of one returns null.
+NONDATUM_TYPES = r"(?:image|mutable_appearance|list|icon|matrix|sound)"
+NONDATUM_DIRECT = re.compile(r"\bom_handle\(\s*(?:new\s*/%s\b|(?:image|list|icon|matrix|sound|mutable_appearance)\s*\()" % NONDATUM_TYPES)
+NONDATUM_DECL = re.compile(r"(?:^|[(,\s])(?:var/)?(?:tmp/)?%s(?:/\w+)*/(\w+)" % NONDATUM_TYPES)
+PROC_START = re.compile(r"^/[^/*\s]")
 NEW_LOCAL = re.compile(r"^\s*var/((?:[\w]+/)*)(\w+)\s*=\s*new\b")
 ATOM_ROOTS = ("atom/", "turf/", "area/", "obj/", "mob/", "image/")
 
@@ -107,11 +116,24 @@ def main(argv):
                 sites.append((rel, no, "static-target", "om_handle() of a subsystem: hold it strongly or read SSfoo directly"))
             if COPY_HANDLE.search(code) and not allowed(lines, no, LINT):
                 sites.append((rel, no, "orphan", "om_handle() of a fresh copy: nothing owns the copy, so it is collected at once"))
+            if NONDATUM_DIRECT.search(code) and not allowed(lines, no, LINT):
+                sites.append((rel, no, "non-datum", "om_handle() of an image/appearance/list: it is not a datum and gets no handle; hold it in a typed var"))
             if NEW_DATUM_HANDLE.search(code) and not allowed(lines, no, LINT):
                 sites.append((rel, no, "orphan", "om_handle(new datum): nothing owns it, so it is collected at once"))
         starts = [i for i, l in enumerate(lines) if PROC_START.match(l)] + [len(lines)]
         for a, b in zip(starts, starts[1:]):
             body = lines[a:b]
+            nondatum = set(NONDATUM_DECL.findall(body[0]))
+            for line in body[1:]:
+                m = re.match(r"^\s*var/(?:tmp/)?%s(?:/\w+)*/(\w+)" % NONDATUM_TYPES, line)
+                if m:
+                    nondatum.add(m.group(1))
+            for i, line in enumerate(body):
+                code = code_part(line)
+                for name in re.findall(r"\bom_handle\(\s*(\w+)\s*\)", code):
+                    no = a + i + 1
+                    if name in nondatum and not allowed(lines, no, LINT):
+                        sites.append((rel, no, "non-datum", "`%s` is an image/appearance/list, not a datum: om_handle() of it is always null; hold it in a typed var" % name))
             for i, name in orphan_locals(body):
                 no = a + i + 1
                 if not allowed(lines, no, LINT):

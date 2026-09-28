@@ -6,7 +6,6 @@
 	unknown_name = "unknown planet"
 	unknown_state = "planet"
 
-	var/tmp/atmosphere_handle
 
 	var/atmosphere_color = "FFFFFF"
 	var/mountain_color = "#735555"
@@ -49,23 +48,6 @@
 		ice.appearance_flags = PIXEL_SCALE
 		skybox_image.add_overlay(ice)
 
-	if(atmosphere() && atmosphere().return_pressure() > SOUND_MINIMUM_PRESSURE)
-
-		var/atmo_color = get_atmosphere_color()
-		if(!atmo_color)
-			atmo_color = COLOR_WHITE
-
-		var/image/clouds = image('icons/skybox/planet.dmi', "weak_clouds")
-
-		if(water_color)
-			clouds.add_overlay(image('icons/skybox/planet.dmi', "clouds"))
-
-		clouds.color = atmo_color
-		skybox_image.add_overlay(clouds)
-
-		var/image/atmo = image('icons/skybox/planet.dmi', "atmoring")
-		skybox_image.underlays += atmo
-
 	var/image/shadow = image('icons/skybox/planet.dmi', "shadow")
 	shadow.blend_mode = BLEND_MULTIPLY
 	skybox_image.add_overlay(shadow)
@@ -100,6 +82,3 @@
 /obj/effect/overmap/visitable/planet/proc/get_atmosphere_color()
 	return atmosphere_color
 
-/// LC-refs: the atmosphere this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
-/obj/effect/overmap/visitable/planet/proc/atmosphere() as /datum/gas_mixture
-	return om_resolve(atmosphere_handle)
