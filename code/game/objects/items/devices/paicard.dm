@@ -948,3 +948,5 @@ DECLARE_INTERACTIONS(/obj/item/paicard, \
 		return ..()
 
 REF_HELD(/obj/machinery, list("paicard"))
+
+REF_HELD(/obj/item/paicard, "pai")

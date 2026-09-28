@@ -497,3 +497,5 @@
 
 #undef PRESSURE_CHECK_EXTERNAL
 #undef PRESSURE_CHECK_INTERNAL
+
+REF_STATIC(/obj/machinery/atmospherics/unary/vent_pump, list("initial_loc", "radio_connection"))

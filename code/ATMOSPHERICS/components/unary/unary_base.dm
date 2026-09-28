@@ -169,3 +169,5 @@
 /obj/machinery/atmospherics/unary/arm_wakes()
 	..()
 	register_gas_dependencies()
+
+REF_HELD(/obj/machinery/atmospherics/unary, list("air_contents", "node", "network"))

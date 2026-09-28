@@ -836,3 +836,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 			rval = 2
 		return 0
 	return rval
+
+REF_BACKLIST(/datum/objective, list("owner" = "objectives"))
+// Minds live for the round; the objective only reads its target.
+REF_HELD(/datum/objective, "target")

@@ -116,3 +116,5 @@
 			return null
 
 REF_BACKLIST(/datum/omni_port, list("master" = "ports"))
+
+REF_HELD(/datum/omni_port, list("air", "node", "network"))

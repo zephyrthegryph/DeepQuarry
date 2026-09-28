@@ -585,3 +585,6 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 	else
 		to_chat(usr, span_notice(span_italics("Shhhh") + ". It's a secret."))
 	return
+
+// Antagonist definitions are round-long singletons.
+REF_STATIC(/datum/game_mode, "antag_templates")

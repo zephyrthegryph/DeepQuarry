@@ -348,3 +348,5 @@
 		. += "You are too far away to read the gauge."
 	if(welded)
 		. += "It is welded shut."
+
+REF_STATIC(/obj/machinery/atmospherics/unary/vent_scrubber, list("initial_loc", "radio_connection"))

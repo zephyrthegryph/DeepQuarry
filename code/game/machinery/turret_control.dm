@@ -266,3 +266,5 @@
 	if(!enabled)
 		enabled = TRUE
 		updateTurrets()
+
+REF_STATIC(/obj/machinery/turretid, "control_area")

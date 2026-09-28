@@ -904,3 +904,5 @@ EXTEND_INTERACTIONS(/obj/item/implanter/compliance, INTERACT_USE("Set laws", PRO
 /// LC-refs: scanned -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/implant/compressed/proc/scanned() as /obj/item
 	return om_resolve(scanned_handle)
+
+REF_HELD(/obj/item/implant, "part")

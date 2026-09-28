@@ -155,7 +155,8 @@ DECLARE_INTERACTIONS(/obj/item/camerabug, \
 
 //	var/obj/item/radio/bug/radio
 	var/selected_camera_handle
-	var/list/obj/machinery/camera/bug/cameras = new() // ALLOW(instance_list): d: the monitor's linked bugs
+	/// om_handle()s of the paired bugs' cameras (each camera is owned by its bug); read with paired_cameras().
+	var/list/camera_handles
 
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
@@ -177,16 +178,28 @@ DECLARE_INTERACTIONS(/obj/item/bug_monitor, \
 	return TRUE
 
 /obj/item/bug_monitor/proc/unpair(obj/item/camerabug/SB)
-	if(SB.camera in cameras)
-		cameras -= SB.camera
+	LAZYREMOVE(camera_handles, om_handle(SB.camera))
 
 /obj/item/bug_monitor/proc/pair(obj/item/camerabug/SB)
-	cameras += SB.camera
+	var/handle = om_handle(SB.camera)
+	if(handle)
+		LAZYDISTINCTADD(camera_handles, handle)
+
+/// The paired cameras still alive; handles of deleted ones are dropped.
+/obj/item/bug_monitor/proc/paired_cameras()
+	. = list()
+	for(var/handle in camera_handles?.Copy())
+		var/obj/machinery/camera/bug/cam = om_resolve(handle)
+		if(cam)
+			. += cam
+		else
+			LAZYREMOVE(camera_handles, handle)
 
 /obj/item/bug_monitor/proc/view_cameras(mob/user)
 	if(in_use)
 		return
 
+	var/list/cameras = paired_cameras()
 	if(cameras.len == 1 && user.is_remote_viewing())
 		user.reset_perspective()
 		return
@@ -232,13 +245,13 @@ DECLARE_INTERACTIONS(/obj/item/bug_monitor, \
 	var/turf/T = get_turf(selected_camera())
 	if(!T || !is_on_same_plane_or_station(T.z, user.z) || !selected_camera().can_use())
 		to_chat(user, span_notice("Link to [selected_camera()] has been lost."))
-		unpair(selected_camera())
+		LAZYREMOVE(camera_handles, selected_camera_handle)
 		selected_camera_handle = null
 		return
 	user.begin_remote_view(/datum/remote_view/item_zoom, selected_camera(), null, /datum/remote_view_config/camera_standard, src, 0, TRUE)
 
 /obj/item/bug_monitor/proc/can_use_cam(mob/user)
-	if(!cameras.len)
+	if(!length(paired_cameras()))
 		to_chat(user, span_warning("No paired cameras detected!"))
 		to_chat(user, span_warning("Bring a camera in contact with this device to pair the camera."))
 		return FALSE

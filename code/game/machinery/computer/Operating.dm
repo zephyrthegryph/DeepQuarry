@@ -29,7 +29,6 @@
 			break
 
 REF_PAIR(/obj/machinery/computer/operating, list("table" = "computer"))
-REF_PAIR(/obj/machinery/optable, list("computer" = "table"))
 
 EXTEND_INTERACTIONS(/obj/machinery/computer/operating, \
 	INTERACT_HAND_UNGATED(null, TYPE_PROC_REF(/obj/machinery, interaction_open_ui_powered_fingerprint)), \
@@ -161,3 +160,5 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/operating, \
 		. += "[S.name]: [english_list(allowed_tools_by_name)]"
 
 #undef OP_COMPUTER_COOLDOWN
+
+REF_HELD(/obj/machinery/computer/operating, "victim")

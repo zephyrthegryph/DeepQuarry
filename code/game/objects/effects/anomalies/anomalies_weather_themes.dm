@@ -210,3 +210,5 @@
 		new cat_or_dog(T.loc)
 		T.visible_message(span_danger("A [cat_or_dog.name] falls from within the strange clouds!"))
 */
+
+REF_OWNED(/datum/anomalous_weather, list("reagent_holder", "visuals", "loop_sounds"))

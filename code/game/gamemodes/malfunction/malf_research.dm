@@ -71,3 +71,5 @@
 /datum/malf_research/proc/get_focus() as /datum/malf_research_ability
 	return focus_static
 REF_STATIC(/datum/malf_research, "focus_static")
+
+REF_OWNED_LIST(/datum/malf_research, "available_abilities")

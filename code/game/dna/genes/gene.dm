@@ -51,7 +51,6 @@
 	var/list/conflict_traits // Lazy. Cache known traits that don't work with this one, instead of doing it all at once, or EVERY time we do a mutation check
 
 REF_PAIR(/datum/gene/trait, list("linked_trait" = "linked_gene"))
-REF_PAIR(/datum/trait, list("linked_gene" = "linked_trait"))
 
 // Use these when displaying info to players
 /datum/gene/trait/proc/get_name()

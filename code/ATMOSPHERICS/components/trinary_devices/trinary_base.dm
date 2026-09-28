@@ -231,3 +231,5 @@
 	network1 = null
 	network2 = null
 	network3 = null
+
+REF_HELD(/obj/machinery/atmospherics/trinary, list("air1", "air2", "air3", "node3", "network1", "network2", "network3"))

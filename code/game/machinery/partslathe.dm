@@ -387,3 +387,5 @@
 	return busy
 
 REF_HELD(/obj/machinery/partslathe, list("copy_board"))
+
+REF_STATIC(/obj/machinery/partslathe, "queue")

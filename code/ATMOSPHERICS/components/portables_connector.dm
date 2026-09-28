@@ -222,3 +222,5 @@
 		span_notice("You have unfastened \the [src]."), \
 		"You hear a ratchet.")
 	atom_deconstruct()
+
+REF_HELD(/obj/machinery/atmospherics/portables_connector, list("connected_device", "node", "network"))

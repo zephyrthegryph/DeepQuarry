@@ -119,3 +119,5 @@
 		span_notice("You have unfastened \the [src]."), \
 		"You hear a ratchet.")
 	atom_deconstruct()
+
+REF_PAIR(/obj/machinery/atmospherics/unary/heat_exchanger, list("partner" = "partner"))

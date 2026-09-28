@@ -257,3 +257,5 @@
 /obj/machinery/atmospherics/trinary/atmos_filter/arm_wakes()
 	..()
 	hibernate_until_input_changes()
+
+REF_STATIC(/obj/machinery/atmospherics/trinary/atmos_filter, "radio_connection")

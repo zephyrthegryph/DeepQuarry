@@ -27,14 +27,6 @@
 		src.pixel_y = rand(0, 4)
 	create_reagents(scoop_volume)
 
-// ALLOW(lifecycle): micros on the utensil drop off.
-/obj/item/material/kitchen/utensil/Destroy()
-	if(food_inserted_micros)
-		for(var/mob/M in food_inserted_micros)
-			M.dropInto(loc)
-			food_inserted_micros -= M
-	. = ..()
-
 	return
 
 /obj/item/material/kitchen/utensil/update_icon()
@@ -232,3 +224,5 @@
 		user.status_at_least(EFFECT_PARALYZED, 2)
 		return ITEM_INTERACT_SUCCESS
 	return ..()
+
+REF_SPILL_LIST(/obj/item/material/kitchen/utensil, "food_inserted_micros")

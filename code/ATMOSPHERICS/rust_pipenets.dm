@@ -808,3 +808,5 @@
 /obj/machinery/atmospherics/declared_owned_list_vars()
 	. = ..()
 	. = (. || list()) + "rust_unbound_port_air"
+
+REF_BACK(/datum/pipe_port, list("machine" = null))

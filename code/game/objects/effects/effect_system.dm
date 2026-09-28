@@ -705,3 +705,5 @@ would spawn and follow the beaker, even if it is carried or thrown.
 /// LC-refs: oldposition -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/effect/effect/system/steam_trail_follow/proc/oldposition() as /turf
 	return om_resolve(oldposition_handle)
+
+REF_HELD(/datum/effect/effect/system, "holder")

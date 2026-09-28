@@ -286,3 +286,7 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/chest, INTERACT_ITEM(null, PROC_REF(i
 		to_chat(user, span_warning("You short out the safeties."))
 		sabotaged = 1
 		return 1
+
+REF_HELD(/obj/item/robot_parts/chest, "cell")
+REF_HELD(/obj/item/robot_parts/head, list("flash1", "flash2"))
+REF_HELD(/obj/item/robot_parts/robot_suit, list("l_arm", "r_arm", "l_leg", "r_leg", "chest", "head"))

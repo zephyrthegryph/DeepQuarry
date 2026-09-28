@@ -50,8 +50,6 @@ GLOBAL_LIST_INIT(contrast_colors, list("#ff0000", "#00ff00", "#0000ff", "#ffff00
 /obj/machinery
 	var/tmp/rebuilding = FALSE
 
-/obj/item
-	var/tmp/datum/gas_mixture/air_temporary
 
 
 // === /tg/ hud + debug viz ===
@@ -369,3 +367,5 @@ GLOBAL_LIST_INIT(diagonals_multiz, list(NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWE
 
 // /atom/proc/process_atmos removed alongside SSair.atmos_machinery.
 // /atom/proc/process_exposure removed alongside SSair.atom_process.
+
+REF_BACK(/datum/looping_sound, list("parent" = null))

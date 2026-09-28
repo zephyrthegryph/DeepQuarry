@@ -223,3 +223,5 @@ REGISTRY_MEMBERSHIP(/obj/machinery/atmospherics/valve/shutoff, REGISTRY_SHUTOFF_
 	// We broke out of the loop, so we see no leaks
 	// The leaks therefore must be on the other side of another shutoff valve
 	return
+
+REF_HELD(/obj/machinery/atmospherics/valve/shutoff, list("network1_token", "network2_token"))

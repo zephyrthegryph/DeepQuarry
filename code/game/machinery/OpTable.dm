@@ -139,3 +139,6 @@ EXTEND_INTERACTIONS(/obj/machinery/optable, \
 		to_chat(user, span_notice("Unbuckle \the [patient] first!"))
 		return 0
 	return 1
+
+REF_HELD(/obj/machinery/optable, "victim")
+REF_PAIR(/obj/machinery/optable, list("computer" = "table"))

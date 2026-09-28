@@ -61,7 +61,6 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 	. = ..()
 	default_apply_parts()
 
-REF_SPILL(/obj/machinery/recharger, "charging")
 
 /obj/machinery/recharger/examine(mob/user)
 	. = ..()

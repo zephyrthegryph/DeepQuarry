@@ -352,3 +352,5 @@ Thus, the two variables affect pump operation are set in New():
 		icon_state = "off"
 	else
 		icon_state = "[use_power ? "on" : "off"]"
+
+REF_STATIC(/obj/machinery/atmospherics/binary/pump, "radio_connection")

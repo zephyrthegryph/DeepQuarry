@@ -114,3 +114,5 @@
 			theme.apply_theme(turf, show_effect = TRUE)
 
 REF_OWNED(/obj/effect/anomaly/dimensional, list("theme", "theme_icon"))
+
+REF_STATIC(/obj/effect/anomaly/dimensional, "target_turfs")

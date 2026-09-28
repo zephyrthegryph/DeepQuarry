@@ -52,6 +52,7 @@
 				if(ATM_OUTPUT)
 					output = P
 				if(ATM_O2 to ATM_LASTGAS)
+					// ALLOW(object_keyed_lists): subset of the owned ports list (REF_OWNED_LIST on /omni), rebuilt from it
 					atmos_filters += P
 	if(any_updated)
 		rebuild_filtering_list()
@@ -333,3 +334,5 @@
 			initialize_directions |= P.dir
 			P.connect()
 	P.update = 1
+
+REF_HELD(/obj/machinery/atmospherics/omni/atmos_filter, list("input", "output"))

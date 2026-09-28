@@ -319,3 +319,6 @@ ADMIN_VERB(empty_ai_core_toggle_latejoin, R_ADMIN|R_SERVER|R_EVENT, "Toggle AI C
 
 /obj/structure/AIcore/deactivated/proc/unbolt_abandoned(mob/user)
 	user?.visible_message(span_bold("\The [user]") + " decides not to unbolt \the [src].")
+
+// laws are handed to the AI built from this core, so they aren't owned here.
+REF_HELD(/obj/structure/AIcore, list("laws", "circuit", "brain"))

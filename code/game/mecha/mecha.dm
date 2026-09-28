@@ -383,12 +383,7 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 	cell = null
 	internal_tank = null
 
-	if(smoke_possible)	//Just making sure nothing is running.
-		qdel(smoke_system)
-
 	GLOB.mech_destroyed_roundstat++
-
-	QDEL_NULL(spark_system)
 
 	. = ..()
 
@@ -3169,3 +3164,9 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 		if(INJURY_PAIN)
 			return "halloss"
 	return "brute"
+
+REF_OWNED(/obj/mecha, list("spark_system", "smoke_system", "radio"))
+REF_OWNED(/obj/mecha, list("eject_action", "internals_action", "lights_action", "stats_action", "strafing_action", "defence_action", "overload_action", "smoke_action", "zoom_action", "thrusters_action", "cycle_action", "switch_damtype_action", "phasing_action", "cloak_action"))
+// cell and internal_tank become wreckage salvage in Destroy(); selected is one of the mounted equipment;
+// cabin_air may be rebound to a connected port's network mixture (set_port_network_air()).
+REF_HELD(/obj/mecha, list("cell", "internal_tank", "connected_port", "selected", "cabin_air"))

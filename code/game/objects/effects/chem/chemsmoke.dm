@@ -240,3 +240,5 @@ REF_OWNED(/datum/effect/effect/system/smoke_spread/chem, "chemholder")
 /datum/effect/effect/system/smoke_spread/chem/spores/proc/seed() as /datum/seed
 	return seed_static
 REF_STATIC(/datum/effect/effect/system/smoke_spread/chem/spores, "seed_static")
+
+REF_STATIC(/datum/effect/effect/system/smoke_spread/chem, list("targetTurfs", "wallList"))

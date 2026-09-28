@@ -286,3 +286,6 @@
 	network_node1 = null
 	network_node2 = null
 	network_node3 = null
+
+REF_HELD(/obj/machinery/atmospherics/tvalve, list("node3", "network_node1", "network_node2", "network_node3"))
+REF_STATIC(/obj/machinery/atmospherics/tvalve/digital, "radio_connection")

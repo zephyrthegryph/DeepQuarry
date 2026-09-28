@@ -71,6 +71,7 @@
 		if(den_faction)
 			L.faction = den_faction
 		visible_message(span_warning("\The [L] crawls out of \the [src]."))
+		// ALLOW(object_keyed_lists): spawned creatures remove themselves on death/Destroy (remove_creature())
 		den_mobs += L
 		tally++
 
