@@ -77,7 +77,7 @@
 	self.status_set(EFFECT_PARALYZED, 0)
 
 	if(self.on && !self.client && !om_busy(self) && !self.paicard)
-		self.handleAI() // no longer sleeps: bot actions are om_do_after tasks
+		om_after(self, 0, TYPE_PROC_REF(/mob/living/bot, handleAI)) // deferred off the Life stage (was spawn)
 
 /datum/om/stage/life/type_post/bot
 	of = /mob/living/bot

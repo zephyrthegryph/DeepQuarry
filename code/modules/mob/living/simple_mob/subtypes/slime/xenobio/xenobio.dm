@@ -56,7 +56,7 @@
 
 /datum/om/stage/life/special/slime/xenobio/perform(mob/living/simple_mob/slime/xenobio/self, datum/om/frame/life/ctx)
 	if(self.stat != DEAD)
-		self.handle_nutrition()
+		om_after(self, 0, TYPE_PROC_REF(/mob/living/simple_mob/slime/xenobio, handle_nutrition))
 
 		if(self.victim)
 			self.handle_consumption()

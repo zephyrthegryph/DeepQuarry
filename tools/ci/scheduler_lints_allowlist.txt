@@ -108,3 +108,4 @@ set_waitfor code/_helpers/chat.dm 2  # TGS chat bridge (blocking topic to TGS)
 set_waitfor code/_helpers/roundend.dm 1  # SQL (SSdbcore.SetRoundEnd) and TGS chat
 set_waitfor code/_helpers/logging/log_to_db.dm 1  # SQL leaf (dialog log insert)
 set_waitfor code/__defines/tgs.dm 1  # vendored TGS API
+invoke_async code/modules/balloon_alert/balloon_alert.dm 1  # MeasureText is a client round trip
