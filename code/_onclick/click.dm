@@ -78,23 +78,23 @@
 	return
 
 /*
-	Middle click
-	Only used for swapping hands
+	Action procs. The input router turns a click into an abstract action
+	(code/__defines/input_actions.dm) and runs the mob proc named after it
+	(/datum/input_adapter/proc/handler_for); which keys produce which action is
+	the click tables' business, never these procs'. Mob types override an action
+	proc to change what the action does for them (AI, cyborgs, hardsuits).
 */
-/mob/proc/MiddleClickOn(atom/A)
+
+/// Swap hands (default: middle click).
+/mob/proc/action_swap_hands(atom/A)
 	swap_hand()
-	return
 
-/*
-	Shift click
-	For most mobs, examine.
-	This is overridden in ai.dm
-*/
-/mob/proc/ShiftClickOn(atom/A)
-	A.ShiftClick(src)
-	return
+/// Inspect (default: shift click): examine, through the target's inspected_by().
+/mob/proc/action_inspect(atom/A)
+	A.inspected_by(src)
 
-/atom/proc/ShiftClick(mob/user)
+/// What a target does when inspected. Override for a custom Inspect.
+/atom/proc/inspected_by(mob/user)
 	if(user.client && !user.is_remote_viewing())
 		user.examinate(src)
 	return
@@ -102,9 +102,9 @@
 /mob/proc/TurfAdjacent(turf/tile)
 	return tile.Adjacent(src)
 
-/mob/proc/ShiftMiddleClickOn(atom/A)
-	src.pointed(A)
-	return
+/// Point (default: shift + middle click).
+/mob/proc/action_point(atom/A)
+	pointed(A)
 
 /*
 	Misc helpers

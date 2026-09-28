@@ -69,27 +69,20 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 	return GLOB.input_router.standard_click_table()
 
 /// The mob proc that runs a non-Use action, or null if the action does nothing.
+/// Each action is one mob proc named after it; mob types override the proc (AI, cyborgs, hardsuits).
 /datum/input_adapter/proc/handler_for(action)
-	switch(action)
-		if(INPUT_ACTION_INSPECT)
-			return TYPE_PROC_REF(/mob, ShiftClickOn)
-		if(INPUT_ACTION_POINT)
-			return TYPE_PROC_REF(/mob, ShiftMiddleClickOn)
-		if(INPUT_ACTION_QUICK)
-			return TYPE_PROC_REF(/mob, CtrlShiftClickOn)
-		if(INPUT_ACTION_LOOT)
-			return TYPE_PROC_REF(/mob, alt_shift_click_on)
-		if(INPUT_ACTION_TAG)
-			return TYPE_PROC_REF(/mob, CtrlMiddleClickOn)
-		if(INPUT_ACTION_SWAP_HANDS)
-			return TYPE_PROC_REF(/mob, MiddleClickOn)
-		if(INPUT_ACTION_ALTERNATE_SECONDARY)
-			return TYPE_PROC_REF(/mob, AltClickSecondaryOn)
-		if(INPUT_ACTION_ALTERNATE)
-			return TYPE_PROC_REF(/mob, AltClickOn)
-		if(INPUT_ACTION_PULL)
-			return TYPE_PROC_REF(/mob, CtrlClickOn)
-	return null
+	var/static/list/handlers = list(
+		INPUT_ACTION_INSPECT = TYPE_PROC_REF(/mob, action_inspect),
+		INPUT_ACTION_POINT = TYPE_PROC_REF(/mob, action_point),
+		INPUT_ACTION_QUICK = TYPE_PROC_REF(/mob, action_quick),
+		INPUT_ACTION_LOOT = TYPE_PROC_REF(/mob, action_loot),
+		INPUT_ACTION_TAG = TYPE_PROC_REF(/mob, action_tag),
+		INPUT_ACTION_SWAP_HANDS = TYPE_PROC_REF(/mob, action_swap_hands),
+		INPUT_ACTION_ALTERNATE_SECONDARY = TYPE_PROC_REF(/mob, action_alternate_secondary),
+		INPUT_ACTION_ALTERNATE = TYPE_PROC_REF(/mob, action_alternate),
+		INPUT_ACTION_PULL = TYPE_PROC_REF(/mob, action_pull),
+	)
+	return handlers[action]
 
 /datum/input_adapter/proc/perform(mob/user, atom/target, action, list/modifiers, params)
 	switch(action)

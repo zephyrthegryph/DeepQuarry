@@ -41,8 +41,29 @@ GLOBAL_DATUM_INIT(input_router, /datum/input_router, new)
 	var/static/list/table = list(list(list(SHIFT_CLICK), INPUT_ACTION_INSPECT))
 	return table
 
-/// Turns click modifiers into an action with a click table.
-/datum/input_router/proc/classify(list/modifiers, list/table, right_click_binding = INPUT_ACTION_MENU)
+/// Alt alone means Alternate (screen buttons and consoles with an alt-click toggle).
+/datum/input_router/proc/alternate_table()
+	var/static/list/table = list(list(list(ALT_CLICK), INPUT_ACTION_ALTERNATE))
+	return table
+
+/// Right-click means the secondary action (screen buttons, secondary item interactions, click intercepts).
+/datum/input_router/proc/secondary_table()
+	var/static/list/table = list(list(list(RIGHT_CLICK), INPUT_ACTION_ALTERNATE_SECONDARY))
+	return table
+
+/// A plain left click means Use (click intercepts that ignore middle clicks).
+/datum/input_router/proc/primary_table()
+	var/static/list/table = list(list(list(LEFT_CLICK), INPUT_ACTION_USE))
+	return table
+
+/// Whether a click (params text or list) produces `action` with `table`. No match is no action.
+/// For screen objects and click intercepts that read one action outside the adapters.
+/datum/input_router/proc/click_is(params, list/table, action)
+	var/list/modifiers = islist(params) ? params : params2list(params)
+	return classify(modifiers, table, INPUT_ACTION_MENU, INPUT_ACTION_NONE) == action
+
+/// Turns click modifiers into an action with a click table; `fallback` when no row matches.
+/datum/input_router/proc/classify(list/modifiers, list/table, right_click_binding = INPUT_ACTION_MENU, fallback = INPUT_ACTION_USE)
 	for(var/list/row as anything in table)
 		var/matched = TRUE
 		for(var/modifier in row[1])
@@ -53,7 +74,7 @@ GLOBAL_DATUM_INIT(input_router, /datum/input_router, new)
 			continue
 		var/action = row[2]
 		return action == INPUT_ACTION_RIGHT_CLICK_BINDING ? right_click_binding : action
-	return INPUT_ACTION_USE
+	return fallback
 
 /// The action a click with these params produces for this mob.
 /datum/input_router/proc/action_for_click(mob/user, params)

@@ -258,26 +258,26 @@
 /datum/unit_test/dq_input_standard_click_table/Run()
 	var/list/rows = list(
 		list("left=1", INPUT_ACTION_MENU, "use"),
-		list("left=1;shift=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, ShiftClickOn)),
-		list("right=1;shift=1", INPUT_ACTION_ALTERNATE, TYPE_PROC_REF(/mob, ShiftClickOn)),
-		list("middle=1;shift=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, ShiftMiddleClickOn)),
-		list("middle=1;shift=1;ctrl=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, ShiftMiddleClickOn)),
-		list("left=1;shift=1;ctrl=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, CtrlShiftClickOn)),
-		list("left=1;shift=1;ctrl=1;alt=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, CtrlShiftClickOn)),
-		list("left=1;shift=1;alt=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, alt_shift_click_on)),
-		list("middle=1;ctrl=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, CtrlMiddleClickOn)),
-		list("middle=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, MiddleClickOn)),
-		list("middle=1;alt=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, MiddleClickOn)),
-		list("right=1;alt=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, AltClickSecondaryOn)),
-		list("left=1;alt=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, AltClickOn)),
-		list("left=1;alt=1;ctrl=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, AltClickOn)),
-		list("left=1;ctrl=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, CtrlClickOn)),
+		list("left=1;shift=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, action_inspect)),
+		list("right=1;shift=1", INPUT_ACTION_ALTERNATE, TYPE_PROC_REF(/mob, action_inspect)),
+		list("middle=1;shift=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, action_point)),
+		list("middle=1;shift=1;ctrl=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, action_point)),
+		list("left=1;shift=1;ctrl=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, action_quick)),
+		list("left=1;shift=1;ctrl=1;alt=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, action_quick)),
+		list("left=1;shift=1;alt=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, action_loot)),
+		list("middle=1;ctrl=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, action_tag)),
+		list("middle=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, action_swap_hands)),
+		list("middle=1;alt=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, action_swap_hands)),
+		list("right=1;alt=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, action_alternate_secondary)),
+		list("left=1;alt=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, action_alternate)),
+		list("left=1;alt=1;ctrl=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, action_alternate)),
+		list("left=1;ctrl=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, action_pull)),
 		list("xbutton1=1", INPUT_ACTION_MENU, "none"),
 		list("xbutton2=1;shift=1", INPUT_ACTION_MENU, "none"),
 		// Right-click is new (B21): it follows the player's binding.
 		list("right=1", INPUT_ACTION_MENU, "none"),
-		list("right=1", INPUT_ACTION_ALTERNATE, TYPE_PROC_REF(/mob, AltClickOn)),
-		list("right=1;ctrl=1", INPUT_ACTION_ALTERNATE, TYPE_PROC_REF(/mob, CtrlClickOn)),
+		list("right=1", INPUT_ACTION_ALTERNATE, TYPE_PROC_REF(/mob, action_alternate)),
+		list("right=1;ctrl=1", INPUT_ACTION_ALTERNATE, TYPE_PROC_REF(/mob, action_pull)),
 	)
 	for(var/adapter_type in list(/datum/input_adapter/hands, /datum/input_adapter/ghost, /datum/input_adapter/robot))
 		dq_check_click_rows(GLOB.input_adapters[adapter_type], rows)
@@ -288,16 +288,16 @@
 /datum/unit_test/dq_input_ai_click_table/Run()
 	dq_check_click_rows(INPUT_ADAPTER(ai), list(
 		list("left=1", INPUT_ACTION_MENU, "use"),
-		list("left=1;shift=1;ctrl=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, CtrlShiftClickOn)),
-		list("middle=1;shift=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, MiddleClickOn)),
-		list("middle=1;ctrl=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, MiddleClickOn)),
-		list("left=1;shift=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, ShiftClickOn)),
-		list("left=1;shift=1;alt=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, ShiftClickOn)),
-		list("right=1;alt=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, AltClickOn)),
-		list("left=1;alt=1;ctrl=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, AltClickOn)),
-		list("left=1;ctrl=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, CtrlClickOn)),
+		list("left=1;shift=1;ctrl=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, action_quick)),
+		list("middle=1;shift=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, action_swap_hands)),
+		list("middle=1;ctrl=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, action_swap_hands)),
+		list("left=1;shift=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, action_inspect)),
+		list("left=1;shift=1;alt=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, action_inspect)),
+		list("right=1;alt=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, action_alternate)),
+		list("left=1;alt=1;ctrl=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, action_alternate)),
+		list("left=1;ctrl=1", INPUT_ACTION_MENU, TYPE_PROC_REF(/mob, action_pull)),
 		list("xbutton1=1", INPUT_ACTION_MENU, "use"),
-		list("right=1", INPUT_ACTION_ALTERNATE, TYPE_PROC_REF(/mob, AltClickOn)),
+		list("right=1", INPUT_ACTION_ALTERNATE, TYPE_PROC_REF(/mob, action_alternate)),
 	))
 
 /// Records which actor-kind interaction the router reached (named after the handler it replaced).
@@ -381,7 +381,7 @@ DECLARE_INTERACTIONS(/obj/item/dq_input_probe_item, INTERACT_USE(null, PROC_REF(
 	TEST_ASSERT_EQUAL(R.input_adapter(), INPUT_ADAPTER(robot), "cyborgs use the robot adapter")
 	TEST_ASSERT_EQUAL(R.keybind_profile(), KEYBIND_PROFILE_ROBOT, "cyborgs get the robot keybinding profile")
 	TEST_ASSERT_EQUAL(dq_route(R, probe, "left=1"), "attack_robot", "a cyborg's Use with no module reaches attack_robot")
-	TEST_ASSERT_EQUAL(dq_route(R, probe, "left=1;alt=1"), "click_alt", "a cyborg's Alternate reaches click_alt through BorgAltClick")
+	TEST_ASSERT_EQUAL(dq_route(R, probe, "left=1;alt=1"), "click_alt", "a cyborg's Alternate reaches click_alt through silicon_alternate")
 
 	var/mob/observer/dead/ghost = allocate(/mob/observer/dead, T)
 	TEST_ASSERT_EQUAL(ghost.input_adapter(), INPUT_ADAPTER(ghost), "ghosts use the ghost adapter")
@@ -391,7 +391,7 @@ DECLARE_INTERACTIONS(/obj/item/dq_input_probe_item, INTERACT_USE(null, PROC_REF(
 	var/mob/living/silicon/ai/AI = allocate(/mob/living/silicon/ai, T)
 	TEST_ASSERT_EQUAL(AI.input_adapter(), INPUT_ADAPTER(ai), "the AI uses the AI adapter")
 	TEST_ASSERT_EQUAL(dq_route(AI, probe, "left=1"), "attack_ai", "the AI's Use reaches attack_ai")
-	TEST_ASSERT_EQUAL(dq_route(AI, probe, "left=1;alt=1"), "click_alt", "the AI's Alternate reaches click_alt through AIAltClick")
+	TEST_ASSERT_EQUAL(dq_route(AI, probe, "left=1;alt=1"), "click_alt", "the AI's Alternate reaches click_alt through silicon_alternate")
 	AI.control_disabled = TRUE
 	TEST_ASSERT_NULL(dq_route(AI, probe, "left=1"), "an AI with control disabled does nothing")
 

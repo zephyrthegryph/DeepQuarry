@@ -31,66 +31,32 @@
 
 // Cyborg clicks route through the input router with the robot adapter (adapters.dm).
 
-//Middle click cycles through selected modules.
-/mob/living/silicon/robot/MiddleClickOn(atom/A)
+// A cyborg's modifier actions: a target's silicon hook (ai.dm), else the ordinary effect.
+// The restraining bolt is checked once, here. Middle click cycles through modules.
+/mob/living/silicon/robot/action_swap_hands(atom/A)
 	cycle_modules()
-	return
 
-//Give cyborgs hotkey clicks without breaking existing uses of hotkey clicks
-// for non-doors/apcs. The restraining bolt is checked once, here.
-/mob/living/silicon/robot/CtrlShiftClickOn(atom/target)
+/mob/living/silicon/robot/action_quick(atom/target)
 	if(remote_interface_blocked(target))
 		return
-	target.BorgCtrlShiftClick(src)
+	target.silicon_quick(src)
 
-/mob/living/silicon/robot/ShiftClickOn(atom/target)
+/mob/living/silicon/robot/action_inspect(atom/target)
 	if(remote_interface_blocked(target))
 		return
-	target.BorgShiftClick(src)
+	if(!target.silicon_inspect(src))
+		target.inspected_by(src)
 
-/mob/living/silicon/robot/CtrlClickOn(atom/target)
+/mob/living/silicon/robot/action_pull(atom/target)
 	if(remote_interface_blocked(target))
 		return
-	target.BorgCtrlClick(src)
+	if(!target.silicon_pull(src))
+		base_click_ctrl(target)
 
-/mob/living/silicon/robot/AltClickOn(atom/target)
+/mob/living/silicon/robot/action_alternate(atom/target)
 	if(remote_interface_blocked(target))
 		return
-	target.BorgAltClick(src)
-
-/atom/proc/BorgCtrlShiftClick(mob/living/silicon/robot/user) //forward to human click if not overriden
-	click_ctrl_shift(user)
-
-/obj/machinery/door/airlock/BorgCtrlShiftClick(mob/living/silicon/robot/user)
-	AIclick_ctrl_shift(user)
-
-/atom/proc/BorgShiftClick(mob/living/silicon/robot/user) //forward to human click if not overriden
-	ShiftClick(user)
-
-/obj/machinery/door/airlock/BorgShiftClick(mob/living/silicon/robot/user)  // Opens and closes doors! Forwards to AI code.
-	AIShiftClick(user)
-
-/atom/proc/BorgCtrlClick(mob/living/silicon/robot/user) //forward to human click if not overriden
-	user.base_click_ctrl(src)
-
-/obj/machinery/door/airlock/BorgCtrlClick(mob/living/silicon/robot/user) // Bolts doors. Forwards to AI code.
-	ctrl_click_ai(user)
-
-/obj/machinery/power/apc/BorgCtrlClick(mob/living/silicon/robot/user) // turns off/on APCs. Forwards to AI code.
-	ctrl_click_ai(user)
-
-/obj/machinery/turretid/BorgCtrlClick(mob/living/silicon/robot/user) //turret control on/off. Forwards to AI code.
-	ctrl_click_ai(user)
-
-/atom/proc/BorgAltClick(mob/living/silicon/robot/user)
-	click_alt(user)
-	return
-
-/obj/machinery/door/airlock/BorgAltClick(mob/living/silicon/robot/user) // Eletrifies doors. Forwards to AI code.
-	AIAltClick(user)
-
-/obj/machinery/turretid/BorgAltClick(mob/living/silicon/robot/user) //turret lethal on/off. Forwards to AI code.
-	AIAltClick(user)
+	target.silicon_alternate(src)
 
 // Not used by click code (the robot adapter handles Use); here for anything that calls them.
 /mob/living/silicon/robot/UnarmedAttack(atom/A)

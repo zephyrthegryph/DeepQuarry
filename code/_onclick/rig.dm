@@ -1,54 +1,43 @@
-
-#define HARDSUIT_MIDDLE_CLICK 0
-#define HARDSUIT_ALT_CLICK 1
-#define HARDSUIT_CTRL_CLICK 2
-#define MAX_HARDSUIT_CLICK_MODE 2
+/// The actions that can engage a hardsuit module, with the default input shown to the player.
+#define HARDSUIT_CLICK_ACTIONS list(INPUT_ACTION_SWAP_HANDS = "middle-click", INPUT_ACTION_ALTERNATE = "alt-click", INPUT_ACTION_PULL = "control-click")
 
 /client
-	var/hardsuit_click_mode = HARDSUIT_MIDDLE_CLICK
+	/// The INPUT_ACTION_* that engages the selected hardsuit module.
+	var/hardsuit_click_action = INPUT_ACTION_SWAP_HANDS
 
 /client/verb/toggle_hardsuit_mode()
 	set name = "Toggle Hardsuit Activation Mode"
 	set desc = "Switch between hardsuit activation modes."
 	set category = "OOC.Game Settings"
 
-	hardsuit_click_mode++
-	if(hardsuit_click_mode > MAX_HARDSUIT_CLICK_MODE)
-		hardsuit_click_mode = 0
+	var/list/actions = HARDSUIT_CLICK_ACTIONS
+	var/index = actions.Find(hardsuit_click_action) + 1
+	if(index > length(actions))
+		index = 1
+	hardsuit_click_action = actions[index]
+	to_chat(src, "Hardsuit activation mode set to [actions[hardsuit_click_action]].")
 
-	switch(hardsuit_click_mode)
-		if(HARDSUIT_MIDDLE_CLICK)
-			to_chat(src, "Hardsuit activation mode set to middle-click.")
-		if(HARDSUIT_ALT_CLICK)
-			to_chat(src, "Hardsuit activation mode set to alt-click.")
-		if(HARDSUIT_CTRL_CLICK)
-			to_chat(src, "Hardsuit activation mode set to control-click.")
-		else
-			// should never get here, but just in case:
-			soft_assert(0, "Bad hardsuit click mode: [hardsuit_click_mode] - expected 0 to [MAX_HARDSUIT_CLICK_MODE]")
-			to_chat(src, "Somehow you bugged the system. Setting your hardsuit mode to middle-click.")
-			hardsuit_click_mode = HARDSUIT_MIDDLE_CLICK
+/// Whether `action` on `A` engaged a hardsuit module instead of its usual effect.
+/mob/living/proc/hardsuit_intercepts(action, atom/A)
+	return client?.hardsuit_click_action == action && HardsuitClickOn(A)
 
-/mob/living/MiddleClickOn(atom/A)
-	if(client && client.hardsuit_click_mode == HARDSUIT_MIDDLE_CLICK)
-		if(HardsuitClickOn(A))
-			return
+/mob/living/action_swap_hands(atom/A)
+	if(hardsuit_intercepts(INPUT_ACTION_SWAP_HANDS, A))
+		return
 	..()
 
-// The only /mob/living AltClickOn: hardsuit activation first, then ventcrawl entry.
-/mob/living/AltClickOn(atom/A)
-	if(client && client.hardsuit_click_mode == HARDSUIT_ALT_CLICK)
-		if(HardsuitClickOn(A))
-			return
+// The only /mob/living action_alternate: hardsuit activation first, then ventcrawl entry.
+/mob/living/action_alternate(atom/A)
+	if(hardsuit_intercepts(INPUT_ACTION_ALTERNATE, A))
+		return
 	if(is_type_in_list(A, GLOB.ventcrawl_machinery))
 		handle_ventcrawl(A)
 		return
 	..()
 
-/mob/living/CtrlClickOn(atom/A)
-	if(client && client.hardsuit_click_mode == HARDSUIT_CTRL_CLICK)
-		if(HardsuitClickOn(A))
-			return
+/mob/living/action_pull(atom/A)
+	if(hardsuit_intercepts(INPUT_ACTION_PULL, A))
+		return
 	..()
 
 /mob/living/proc/can_use_rig()
@@ -82,7 +71,4 @@
 		return 1
 	return 0
 
-#undef HARDSUIT_MIDDLE_CLICK
-#undef HARDSUIT_ALT_CLICK
-#undef HARDSUIT_CTRL_CLICK
-#undef MAX_HARDSUIT_CLICK_MODE
+#undef HARDSUIT_CLICK_ACTIONS

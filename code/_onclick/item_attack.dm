@@ -57,7 +57,7 @@ avoid code duplication. This includes items that may sometimes act as a standard
 /obj/item/proc/resolve_attackby(atom/A, mob/user, attack_modifier = 1, click_parameters)
 	add_fingerprint(user)
 	var/list/modifiers = islist(click_parameters) ? click_parameters : params2list(click_parameters)
-	var/secondary = !!LAZYACCESS(modifiers, RIGHT_CLICK)
+	var/secondary = GLOB.input_router.click_is(modifiers, GLOB.input_router.secondary_table(), INPUT_ACTION_ALTERNATE_SECONDARY)
 	if(!secondary)
 		. = pre_attack(A, user, click_parameters)
 		if(.)	// We're returning the value of pre_attack, important if it has a special return.

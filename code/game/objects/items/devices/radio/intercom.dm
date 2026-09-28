@@ -209,11 +209,15 @@ DECLARE_INTERACTIONS(/obj/item/radio/intercom, \
 			set_light(2)
 			set_light_on(TRUE)
 
-/obj/item/radio/intercom/ctrl_click_ai(mob/user)
+/obj/item/radio/intercom/silicon_pull(mob/living/silicon/user)
+	if(!isAI(user))
+		return FALSE
 	ToggleBroadcast()
 	to_chat(user, span_notice("\The [src]'s microphone is now <b>[broadcasting ? "enabled" : "disabled"]</b>."))
 
-/obj/item/radio/intercom/AIAltClick(mob/user)
+/obj/item/radio/intercom/silicon_alternate(mob/living/silicon/user)
+	if(!isAI(user))
+		return ..()
 	if(frequency == AI_FREQ)
 		set_frequency(initial(frequency))
 		to_chat(user, span_notice("\The [src]'s frequency is now set to [span_green(span_bold("Default"))]."))

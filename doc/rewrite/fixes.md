@@ -13,7 +13,7 @@ Later tracks will replace some of this code, but the bugs still get fixed now: t
 | B3 | `/mob/living/carbon/resolve_item_attack` (`carbon_defense.dm:2`) | It throws away the parent's return value and its signature doesn't match, so weapon melee never lands on non-human carbons (aliens, nymphs) | Fix the signature and the return | — |
 | B4 | `code/controllers/subsystems/machines.dm`: `machine_wake_reason_counts` (:93, :827, :1150) and `reactive_revisions` (:86-94) | Both tables grow all round. Their keys embed mixture IDs and REFs, and they are only cleared while profiling is on. | Count wake reasons only while profiling; prune revisions that have no subscribers | S2 |
 | B5 | `cyborg.dm:171` | Ctrl-shift-click calls `click_ctrl_shift` on the borg itself instead of the target | Pass the target | I1 |
-| B6 | `rig.dm:38` and `ventcrawl.dm:100` | `/mob/living/AltClickOn` is defined twice, and the last include wins | Merge them | I1 |
+| B6 | `rig.dm:38` and `ventcrawl.dm:100` | `/mob/living/action_alternate` is defined twice, and the last include wins | Merge them | I1 |
 | B7 | `code/datums/wires/wires.dm:28-52` | Non-randomized types share `GLOB.wire_color_directory[holder_type]`, so changing one machine's colours changes them for its whole type | Copy on write | C6 |
 | B8 | `wall_icon.dm:15-17`, `material_composites.dm:16-20` | `material_thermal_conductance` is always at least 10 for walls, so the clamp makes every wall 0.25 and material differences have no effect | Fix the scale | M4 |
 | B9 | `cold_sink.dm:124-163`, `spaceheater.dm:214-252`, `airconditioner.dm:52-88` | Cooling deletes the heat it removes | Reject the heat to the hot side | H4 |

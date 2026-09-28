@@ -68,11 +68,6 @@ REF_BACK(/obj/effect/overlay/aiholo, list("master" = null))
 	if(holo && LAZYACCESS(holo.masters, src))
 		feed_grabbed_to_self(src, prey)
 
-/mob/living/AIShiftClick(mob/user) //Shift-click as AI overridden on mobs to examine.
-	if(user.client)
-		examine(user)
-	return
-
 //This can go here with all the references.
 /obj/effect/overlay/aiholo/examine(mob/user)
 	. = ..()

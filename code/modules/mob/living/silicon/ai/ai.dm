@@ -948,7 +948,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/ai, INTERACT_INSERT(/obj/item/aicard, PR
 	var/obj/machinery/door/airlock/A = ask.door
 	var/mob/living/target = ask.requester
 	if(ask.yes && !check_unable(AI_CHECK_WIRELESS))
-		A.AIShiftClick(src)
+		A.silicon_inspect(src)
 		to_chat(src, span_notice("You open \the [A] for [target]."))
 	else
 		to_chat(src, span_warning("You deny the request."))

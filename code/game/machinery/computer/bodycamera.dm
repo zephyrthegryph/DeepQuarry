@@ -57,13 +57,13 @@ REF_OWNED(/obj/machinery/computer/security/telescreen/bodycamera, list("bpinboar
 
 /obj/machinery/computer/security/telescreen/bodycamera/Click(location, control, params)
 	var/list/modifiers = params2list(params)
-	if(modifiers["alt"])
+	if(GLOB.input_router.click_is(modifiers, GLOB.input_router.alternate_table(), INPUT_ACTION_ALTERNATE))
 		if(isliving(usr) && Adjacent(usr) && !usr.incapacitated())
 			bodycam_toggle()
 			visible_message("<b>[usr]</b> toggles [src] [enabled ? "on" : "off"].","You toggle [src] [enabled ? "on" : "off"].", runemessage = "click")
 	//Changing click to only come into play when shift or alt clicking. These things are ANNOYING.
 			return
-	if(modifiers["shift"])
+	if(GLOB.input_router.click_is(modifiers, GLOB.input_router.shift_table(), INPUT_ACTION_INSPECT))
 		attack_hand(usr)
 		return
 	..()

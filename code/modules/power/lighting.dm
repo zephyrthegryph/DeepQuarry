@@ -861,7 +861,9 @@ REF_OWNED(/obj/machinery/light, list("cell", "overlay_layer"))
 	return TRUE
 
 // ai alt click - Make light flicker.  Very important for atmosphere.
-/obj/machinery/light/AIAltClick(mob/user)
+/obj/machinery/light/silicon_alternate(mob/living/silicon/user)
+	if(!isAI(user))
+		return ..()
 	flicker(1)
 
 // attack with hand - remove tube/bulb

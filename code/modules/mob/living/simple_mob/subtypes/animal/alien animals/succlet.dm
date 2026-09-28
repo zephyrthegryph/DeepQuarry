@@ -87,7 +87,7 @@
 /mob/living/simple_mob/vore/alienanimals/succlet/checkMoveCooldown()
 	return FALSE
 
-/mob/living/simple_mob/vore/alienanimals/succlet/AltClickOn(atom/A)
+/mob/living/simple_mob/vore/alienanimals/succlet/action_alternate(atom/A)
 	if(get_dist(get_turf(src),get_turf(A)) > 1)
 		succlet_move(A)
 	else
