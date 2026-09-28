@@ -332,9 +332,8 @@ GLOBAL_PROTECT(protected_ranks)
 	#endif
 	return dbfail
 
+/// Writes the protected ranks to the database on the I/O lane (om_io); returns at once.
 /proc/sync_ranks_with_db()
-	set waitfor = FALSE // S10b keeps: SQL leaf (rank sync)
-
 	if(IsAdminAdvancedProcCall())
 		to_chat(usr, span_adminprefix("Admin rank DB Sync blocked: Advanced ProcCall detected."), confidential = TRUE)
 		return
@@ -342,9 +341,17 @@ GLOBAL_PROTECT(protected_ranks)
 	var/list/sql_ranks = list()
 	for(var/datum/admin_rank/R as anything in GLOB.protected_ranks)
 		sql_ranks += list(list("rank" = R.name, "flags" = R.include_rights, "exclude_flags" = R.exclude_rights, "can_edit_flags" = R.can_edit_rights))
-	SSdbcore.MassInsert(format_table_name("admin_ranks"), sql_ranks, duplicate_key = TRUE)
+	if(!SSdbcore.mass_insert_io(null, format_table_name("admin_ranks"), sql_ranks, TRUE, FALSE, null, /proc/sync_ranks_with_db_done))
+		update_everything_flag_in_db()
+
+/// om_io() callback: the rank rows are written; now fix up R_EVERYTHING flags.
+/proc/sync_ranks_with_db_done(list/result, error)
+	if(error)
+		log_sql("Admin rank DB sync failed: [error]")
+		return
 	update_everything_flag_in_db()
 
+/// For each rank holding R_EVERYTHING, checks (then fixes) its stored flags on the I/O lane.
 /proc/update_everything_flag_in_db()
 	for(var/datum/admin_rank/R as anything in GLOB.admin_ranks)
 		var/list/flags = list()
@@ -357,25 +364,25 @@ GLOBAL_PROTECT(protected_ranks)
 		if(!flags.len)
 			continue
 		var/flags_to_check = flags.Join(" != [R_EVERYTHING] AND ") + " != [R_EVERYTHING]"
-		var/datum/db_query/query_check_everything_ranks = SSdbcore.NewQuery(
+		var/flags_to_update = flags.Join(" = [R_EVERYTHING], ") + " = [R_EVERYTHING]"
+		om_io(null, /datum/om/io/sql,
 			"SELECT flags, exclude_flags, can_edit_flags FROM [format_table_name("admin_ranks")] WHERE rank = :rank AND ([flags_to_check])",
-			list("rank" = R.name)
-		)
-		if(!query_check_everything_ranks.Execute())
-			qdel(query_check_everything_ranks)
-			return
-		if(query_check_everything_ranks.NextRow()) //no row is returned if the rank already has the correct flag value
-			var/flags_to_update = flags.Join(" = [R_EVERYTHING], ") + " = [R_EVERYTHING]"
-			var/datum/db_query/query_update_everything_ranks = SSdbcore.NewQuery(
-				"UPDATE [format_table_name("admin_ranks")] SET [flags_to_update] WHERE rank = :rank",
-				list("rank" = R.name)
-			)
-			if(!query_update_everything_ranks.Execute())
-				qdel(query_update_everything_ranks)
-				return
-			qdel(query_update_everything_ranks)
-		qdel(query_check_everything_ranks)
+			list("rank" = R.name),
+			/proc/update_everything_flag_checked, R.name, flags_to_update)
 
+/// om_io() callback: a row back means the rank's stored flags are stale; rewrite them.
+/proc/update_everything_flag_checked(list/result, error, rank_name, flags_to_update)
+	if(error)
+		log_sql("Admin rank R_EVERYTHING check failed for [rank_name]: [error]")
+		return
+	if(!length(result["rows"])) //no row is returned if the rank already has the correct flag value
+		return
+	om_sql_write(
+		"UPDATE [format_table_name("admin_ranks")] SET [flags_to_update] WHERE rank = :rank",
+		list("rank" = rank_name)
+	)
+
+/// Writes the protected ranks and admins to the database on the I/O lane; returns at once.
 /proc/sync_admins_with_db()
 	if(IsAdminAdvancedProcCall())
 		to_chat(usr, span_adminprefix("Admin rank DB Sync blocked: Advanced ProcCall detected."))
@@ -388,10 +395,15 @@ GLOBAL_PROTECT(protected_ranks)
 	for(var/holder_ckey in GLOB.protected_admins)
 		var/datum/admins/holder = GLOB.protected_admins[holder_ckey]
 		sql_admins += list(list("ckey" = holder.target, "rank" = holder.rank_names()))
-	SSdbcore.MassInsert(format_table_name("admin"), sql_admins, duplicate_key = TRUE)
-	var/datum/db_query/query_admin_rank_update = SSdbcore.NewQuery("UPDATE [format_table_name("erro_player")] AS p INNER JOIN [format_table_name("admin")] AS a ON p.ckey = a.ckey SET p.lastadminrank = a.rank")
-	query_admin_rank_update.Execute()
-	qdel(query_admin_rank_update)
+	if(!SSdbcore.mass_insert_io(null, format_table_name("admin"), sql_admins, TRUE, FALSE, null, /proc/sync_admins_with_db_done))
+		sync_admins_with_db_done()
+
+/// om_io() callback: the admin rows are written; copy each admin's rank onto their player row.
+/proc/sync_admins_with_db_done(list/result, error)
+	if(error)
+		log_sql("Admin DB sync failed: [error]")
+		return
+	om_sql_write("UPDATE [format_table_name("erro_player")] AS p INNER JOIN [format_table_name("admin")] AS a ON p.ckey = a.ckey SET p.lastadminrank = a.rank")
 
 /proc/save_admin_backup()
 	if(IsAdminAdvancedProcCall())
