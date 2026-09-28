@@ -22,7 +22,7 @@
 	var/datum/mind/mind
 
 	var/stat = CONSCIOUS //Whether a mob is alive or dead.
-	var/next_move = null // world.time when mob is next allowed to self-move.
+	COOLDOWN_DECLARE(next_move) // world.time when mob is next allowed to self-move.
 
 	/**
 	 * Whether and how a mob is incapacitated
@@ -284,7 +284,7 @@
 	VAR_PRIVATE/wants_to_see_motion_echos = TRUE
 
 	var/is_slipping = FALSE
-	var/slip_protect = 1
+	COOLDOWN_DECLARE(slip_protect)
 
 
 /mob

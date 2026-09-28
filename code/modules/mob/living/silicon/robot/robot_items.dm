@@ -445,8 +445,8 @@ DECLARE_INTERACTIONS(/obj/item/form_printer, INTERACT_USE(null, PROC_REF(interac
 	var/flash_count = 0				//Counter for how many times the shield has been flashed
 	var/overload_threshold = 3		//Number of flashes it takes to overload the shield
 	var/shield_refresh = 15 SECONDS	//Time it takes for the shield to reboot after destabilizing
-	var/overload_time = 0			//Stores the time of overload
-	var/last_flash = 0				//Stores the time of last flash
+	COOLDOWN_DECLARE(overload_cooldown)	//When the shield reboots after an overload
+	COOLDOWN_DECLARE(flash_refresh_cooldown)	//When the flash count clears after the last flash
 
 /obj/item/borg/combat/shield/Initialize(mapload)
 	. = ..()
@@ -467,13 +467,13 @@ DECLARE_INTERACTIONS(/obj/item/borg/combat/shield, \
 	if(active && !flash_count)
 		return PROCESS_KILL
 	if(active)
-		if(flash_count && (last_flash + shield_refresh < world.time)) // ALLOW(cooldown): shield refresh timers
+		if(flash_count && COOLDOWN_FINISHED(src, flash_refresh_cooldown))
 			flash_count = 0
-			last_flash = 0
-	else if(overload_time + shield_refresh < world.time) // ALLOW(cooldown): shield refresh timers
+			COOLDOWN_RESET(src, flash_refresh_cooldown)
+	else if(COOLDOWN_FINISHED(src, overload_cooldown))
 		active = 1
 		flash_count = 0
-		overload_time = 0
+		COOLDOWN_RESET(src, overload_cooldown)
 
 		var/mob/living/user = src.loc
 		if(isliving(user))
@@ -486,7 +486,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/combat/shield, \
 		PERIODIC_START(src, PERIODIC_SLOW)
 
 		if(amount > 0)
-			last_flash = world.time
+			COOLDOWN_START(src, flash_refresh_cooldown, shield_refresh)
 			if(flash_count >= overload_threshold)
 				overload(user)
 
@@ -494,7 +494,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/combat/shield, \
 	active = 0
 	user.visible_message(span_danger("[user]'s shield destabilizes!"), span_danger("Your shield destabilizes!"))
 	user.update_icon()
-	overload_time = world.time
+	COOLDOWN_START(src, overload_cooldown, shield_refresh)
 	PERIODIC_START(src, PERIODIC_SLOW)
 
 /// Old Set shield level verb.

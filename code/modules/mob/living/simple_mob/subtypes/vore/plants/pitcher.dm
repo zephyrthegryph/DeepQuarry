@@ -50,7 +50,7 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 	var/meatspeed = 5 //How many units of meat is converted to nutrition each tick?
 	var/pitcher_metabolism = 0.1 //How much nutriment does the pitcher lose every 2 seconds? 0.1 should be around 30 every 10 minutes.
 	var/scent_strength = 5 //How much can a hungry pitcher confuse nearby people?
-	var/last_lifechecks = 0 //Timing variable to limit vore/hungry proc calls
+	COOLDOWN_DECLARE(lifechecks_cooldown) //Throttle to limit vore/hungry proc calls
 	var/list/pitcher_plant_lure_messages = null
 	can_be_drop_prey = FALSE
 
@@ -140,8 +140,8 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 		self.mend(TREAT_ANTITOXIN, digested * 3)
 	if(self.nutrition < self.pitcher_metabolism) // Starving.
 		self.injure(INJURY_TOXIN, self.pitcher_metabolism, flags = INJURE_SILENT)
-	if(world.time > self.last_lifechecks + 30 SECONDS) // ALLOW(cooldown): periodic AI life-check interval
-		self.last_lifechecks = world.time
+	if(COOLDOWN_FINISHED(self, lifechecks_cooldown))
+		COOLDOWN_START(self, lifechecks_cooldown, 30 SECONDS)
 		self.vore_checks()
 		self.handle_hungry()
 	if (!self.anchored)

@@ -32,7 +32,6 @@
 	var/flushing = FALSE	// true if flushing in progress
 	var/flush_every_ticks = 30 //Every 30 ticks it will look whether it is ready to flush
 	var/flush_count = 0 //this var adds 1 once per tick. When it reaches flush_every_ticks it resets and tries to flush.
-	var/last_sound
 	active_power_usage = 2200	//the pneumatic pump power. 3 HP ~ 2200W
 	idle_power_usage = 100
 	var/stat_tracking = TRUE
@@ -644,9 +643,7 @@
 
 /obj/machinery/disposal/proc/flush_startup()
 	PROTECTED_PROC(TRUE)
-	if(last_sound < world.time + 1) // ALLOW(cooldown): always-true legacy guard, not a rate limit
-		playsound(src, 'sound/machines/disposalflush.ogg', 50, 0, 0)
-		last_sound = world.time
+	playsound(src, 'sound/machines/disposalflush.ogg', 50, 0, 0)
 	om_after(src, 0.5 SECONDS, PROC_REF(flush_complete)) // wait for animation to finish
 
 /obj/machinery/disposal/proc/flush_complete()

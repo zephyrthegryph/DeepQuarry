@@ -360,14 +360,16 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 
 /// Per-application state of redspace corruption (body_effect_state() on the corrupted mob).
 /datum/redspace_corruption_state
-	///Time since we last revived
-	var/time_since_revival = 0
+	///Revival lockout after we last revived
+	COOLDOWN_DECLARE(revival_cooldown_until)
 	///When did we last do a 'heal tick' ?
 	COOLDOWN_DECLARE(heal_tick_cooldown_until)
 	///If we have our flesh armor deployed or not.
 	var/armor_deployed = FALSE
-	///At what time did we deploy our armor?
-	var/armor_deployed_time = 0
+	///When deployed armor expires while alive (armor_duration after deploy)
+	COOLDOWN_DECLARE(armor_expire_cooldown)
+	///When deployed armor expires while dead (armor_duration * 2 after deploy)
+	COOLDOWN_DECLARE(armor_expire_dead_cooldown)
 	///What is our hivemind name?
 	var/speech_name = "The Unseen Horror"
 
@@ -447,7 +449,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	if(bellied)
 		return
 
-	if(state.armor_deployed && ((state.armor_deployed_time + armor_duration) < world.time)) //Time ran out. // ALLOW(cooldown): duration timers on state datum
+	if(state.armor_deployed && COOLDOWN_FINISHED(state, armor_expire_cooldown)) //Time ran out.
 
 		//Are we still in panic mode?
 		if(unfortunate_soul.has_status(EFFECT_STUNNED) || unfortunate_soul.has_status(EFFECT_WEAKENED) || unfortunate_soul.has_status(EFFECT_PARALYZED) || (unfortunate_soul.vitality() < 0.75))
@@ -497,7 +499,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 
 	//Cooldown?
 
-	if(state.armor_deployed && (state.armor_deployed_time + (armor_duration * 2)) < world.time) //Takes longer for armor to undeploy when dead. // ALLOW(cooldown): duration timers on state datum
+	if(state.armor_deployed && COOLDOWN_FINISHED(state, armor_expire_dead_cooldown)) //Takes longer for armor to undeploy when dead.
 		exit_battle_stance(unfortunate_soul, state)
 
 	if(!COOLDOWN_FINISHED(state, heal_tick_cooldown_until))
@@ -554,7 +556,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	COOLDOWN_START(state, heal_tick_cooldown_until, heal_tick_cooldown)
 
 	//Big checks to see if there's a reason we CAN'T revive.
-	if(state.time_since_revival + revival_cooldown > world.time) //On cooldown. // ALLOW(cooldown): duration timers on state datum
+	if(!COOLDOWN_FINISHED(state, revival_cooldown_until)) //On cooldown.
 		return
 	if(lethal_blood) //Blood volume is low enough we'd immediately die upon revival.
 		return
@@ -583,7 +585,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	//Awaken!
 	unfortunate_soul.emote("gasp")
 	unfortunate_soul.status_at_least(EFFECT_WEAKENED, rand(10,25))
-	state.time_since_revival = world.time
+	COOLDOWN_START(state, revival_cooldown_until, revival_cooldown)
 
 //Returns TRUE If we succeeded. FALSE if we failed.
 /datum/body_effect/redspace_corruption/proc/attempt_armblade(mob/living/carbon/human/unfortunate_soul)
@@ -670,7 +672,8 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	if(equip_flesh_armor(unfortunate_soul, /obj/item/clothing/suit/space/changeling/armored,/obj/item/clothing/head/helmet/space/changeling/armored,/obj/item/clothing/shoes/magboots/changeling/armored, /obj/item/clothing/gloves/combat/changeling))
 		to_chat(unfortunate_soul, span_warning("Your flesh shifts and hardens into a protective armor!"))
 		state.armor_deployed = TRUE
-		state.armor_deployed_time = world.time
+		COOLDOWN_START(state, armor_expire_cooldown, armor_duration)
+		COOLDOWN_START(state, armor_expire_dead_cooldown, armor_duration * 2)
 		unfortunate_soul.drop_l_hand()
 		unfortunate_soul.drop_r_hand()
 		deploy_armblade(unfortunate_soul)

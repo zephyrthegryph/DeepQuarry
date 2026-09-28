@@ -100,7 +100,7 @@
 		return
 
 	if(IS_HELPING(user) && harvest_tool && istype(O, harvest_tool) && stat != DEAD)
-		if(world.time > (harvest_recent + harvest_cooldown)) // ALLOW(cooldown): harvest recency with per-mob cooldown
+		if(COOLDOWN_FINISHED(src, harvest_ready_cooldown))
 			livestock_harvest(O, user)
 			return
 		else

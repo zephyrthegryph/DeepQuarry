@@ -37,8 +37,8 @@
 
 	var/atom/movable/A = extra_data[1]
 
-	if(isliving(A) && world.time > (B.last_passive_use + B.passive_ability_cooldown) && B.should_tick) // ALLOW(cooldown): reads core chunk shared timestamp
-		B.last_passive_use = world.time
+	if(isliving(A) && COOLDOWN_FINISHED(B, passive_use_cooldown) && B.should_tick)
+		COOLDOWN_START(B, passive_use_cooldown, B.passive_ability_cooldown)
 		var/mob/living/L = A
 
 		var/mob/living/carrier = B.get_carrier()

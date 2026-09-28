@@ -589,7 +589,7 @@ emp_act
 	if(prob(organ_chance))
 		var/obj/item/organ/internal/selected_organ = pick(chest.internal_organs)
 		injure(INJURY_CUT, damage * 0.5, selected_organ, W, affliction = /datum/affliction/lesion/laceration)
-		G.last_action = world.time
+		G.note_action()
 		flick(G.hud.icon_state, G.hud)
 
 	return 1

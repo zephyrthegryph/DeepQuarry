@@ -34,7 +34,7 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 	var/tmp/datum/ore/mineral_static
 	var/sand_dug
 	var/mined_ore = 0
-	var/last_act = 0
+	COOLDOWN_DECLARE(dig_cooldown)
 	var/overlay_detail
 	var/overlay_detail_icon_path = 'icons/turf/flooring/decals.dmi' // Override this on a subtype turf if you want a custom icon
 
@@ -469,9 +469,9 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 				return INTERACTION_HANDLED_PASS
 
 			var/obj/item/pickaxe/P = W
-			if(last_act + P.digspeed > world.time)//prevents message spam // ALLOW(cooldown): dig timing uses tool speed
+			if(!COOLDOWN_FINISHED(src, dig_cooldown))//prevents message spam
 				return INTERACTION_HANDLED_PASS
-			last_act = world.time
+			COOLDOWN_START(src, dig_cooldown, P.digspeed)
 
 			playsound(user, P.drill_sound, 20, 1)
 			var/newDepth = excavation_level + P.excavation_amount // Used commonly below

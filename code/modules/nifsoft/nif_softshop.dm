@@ -141,9 +141,9 @@ REF_OWNED(/obj/machinery/vending/nifsoft_shop, "entopic")
 			coin = null
 			categories &= ~CAT_COIN
 
-	if(((last_reply + (vend_delay + 200)) <= world.time) && vend_reply) // ALLOW(cooldown): vend reply delay derived from vend_delay
+	if(!COOLDOWN_TIMELEFT(src, reply_cooldown) && vend_reply)
 		speak(vend_reply)
-		last_reply = world.time
+		COOLDOWN_START(src, reply_cooldown, vend_delay + 20 SECONDS)
 
 	use_power(vend_power_usage)	//actuators and stuff
 	om_after(src, vend_delay, PROC_REF(finish_nifsoft_vend), R, H, user)

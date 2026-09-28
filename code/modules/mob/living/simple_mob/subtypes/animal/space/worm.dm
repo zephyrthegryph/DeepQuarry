@@ -52,7 +52,7 @@
 	var/z_transitioning = FALSE	// Are we currently moving between Z-levels, or doing something that might mean we can't rely on distance checking for segments?
 	var/sever_chunks = FALSE	// Do we fall apart when dying?
 
-	var/time_maw_opened = 0
+	COOLDOWN_DECLARE(maw_cooldown_until)	// Ends maw_cooldown after the maw opens; also the auto-stop time while open.
 	var/maw_cooldown = 30 SECONDS
 	var/open_maw = FALSE	// Are we trying to eat things?
 
@@ -126,10 +126,10 @@
 	set desc = "Extends your teeth for 30 seconds so that you can chew through mobs and structures alike."
 	set category = "Abilities.Worm"
 
-	if(world.time < time_maw_opened + maw_cooldown) // ALLOW(cooldown): maw open timestamp also drives auto-stop
+	if(!COOLDOWN_FINISHED(src, maw_cooldown_until))
 		if(open_maw)
 			to_chat(src, span_notice("You retract your teeth."))
-			time_maw_opened -= maw_cooldown / 2	// Recovers half cooldown if you end it early manually.
+			maw_cooldown_until -= maw_cooldown / 2	// Recovers half cooldown if you end it early manually.
 		else
 			to_chat(src, span_notice("You are too tired to do this.."))
 		set_maw(FALSE)
@@ -139,7 +139,7 @@
 /mob/living/simple_mob/animal/space/space_worm/proc/set_maw(state = FALSE)
 	open_maw = state
 	if(open_maw)
-		time_maw_opened = world.time
+		COOLDOWN_START(src, maw_cooldown_until, maw_cooldown)
 		movement_cooldown = initial(movement_cooldown) + 1.5
 	else
 		movement_cooldown = initial(movement_cooldown)
@@ -159,7 +159,7 @@
 /datum/om/stage/life/special/animal/space/space_worm/perform(mob/living/simple_mob/animal/space/space_worm/self, datum/om/frame/life/ctx)
 	..()
 
-	if(world.time > self.time_maw_opened + self.maw_cooldown)	// Auto-stop eating. // ALLOW(cooldown): auto-stop timeout on maw open time
+	if(COOLDOWN_FINISHED(self, maw_cooldown_until))	// Auto-stop eating.
 		if(self.open_maw)
 			to_chat(self, span_notice("Your jaws cannot remain open.."))
 			self.set_maw(FALSE)

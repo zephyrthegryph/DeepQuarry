@@ -294,7 +294,7 @@
 /obj/item/grab/proc/pin_down_grab_done(mob/target, mob/attacker)
 	if(!(target))
 		return
-	last_action = world.time
+	note_action()
 	attacker.visible_message(span_danger("[attacker] forces [target] to the ground!"))
 	apply_pinning(target, attacker)
 

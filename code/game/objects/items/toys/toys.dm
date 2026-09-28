@@ -2208,7 +2208,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/nuke, \
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "gibber"
 	attack_verb = list("grinded", "gibbed")
-	var/cooldown = 0
+	COOLDOWN_DECLARE(cooldown)
 	var/obj/stored_minature = null // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 
 REF_OWNED(/obj/item/toy/minigibber, "stored_minature")
@@ -2224,11 +2224,11 @@ DECLARE_INTERACTIONS(/obj/item/toy/minigibber, \
 		to_chat(user, span_danger("\The [src] makes a violent grinding noise as it tears apart the miniature figure inside!"))
 		playsound(src, 'sound/effects/splat.ogg', 50, 1)
 		QDEL_NULL(stored_minature)
-		cooldown = world.time
-	if(cooldown < world.time - 8) // ALLOW(cooldown): tiny spam gate with a gib-reset timestamp
+		COOLDOWN_START(src, cooldown, 0.8 SECONDS)
+	if(COOLDOWN_FINISHED(src, cooldown))
 		to_chat(user, span_notice("You hit the gib button on \the [src]."))
 
-		cooldown = world.time
+		COOLDOWN_START(src, cooldown, 0.8 SECONDS)
 	return TRUE
 
 /// Old attackby: feed a figure into the gibber.

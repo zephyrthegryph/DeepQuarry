@@ -537,7 +537,7 @@ REF_BACKLIST(/obj/belly, list("owner" = "vore_organs"))
 
 	if(isliving(M))
 		var/mob/living/slip = M
-		slip.slip_protect = world.time + 25 // This is to prevent slipping back into your pred if they stand on soap or something.
+		COOLDOWN_START(slip, slip_protect, 2.5 SECONDS) // This is to prevent slipping back into your pred if they stand on soap or something.
 	//Place them into our drop_location
 	belly_release_to(M, drop_location())
 	LAZYREMOVE(items_preserved, M)

@@ -93,7 +93,6 @@
 	var/dna_lock = 0				//whether or not the gun is locked to dna
 	var/obj/item/dnalockingchip/attached_lock
 
-	var/last_shot = 0			//records the last shot fired
 	var/recoil_mode = 1 // If the gun will hurt micros if shot or not. Disabled on Virgo, used downstream. // Enabled
 	var/mounted_gun = 0				//If the gun is mounted within a rigsuit or elsewhere. This makes it so the gun can be shot even if it's loc != a mob
 
@@ -449,7 +448,7 @@ EXTEND_INTERACTIONS(/obj/item/gun, \
 
 			if(!zoom) //If we're not zoomed, reset our accuracy to our initial accuracy.
 				accuracy = initial(accuracy) //Reset our accuracy
-			last_shot = world.time
+			note_shot()
 			user.hud_used?.update_ammo_hud(user, src)
 			user.setClickCooldown(DEFAULT_QUICK_COOLDOWN)
 
@@ -530,7 +529,7 @@ EXTEND_INTERACTIONS(/obj/item/gun, \
 			P.fire()
 
 			accuracy = initial(accuracy)
-			last_shot = world.time
+			note_shot()
 
 			play_fire_sound()
 
@@ -855,3 +854,9 @@ REF_HELD(/obj/item/gun, "attached_lock")
 /// LC-refs: Used to fire faster at more than one person. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/gun/proc/last_moved_mob() as /mob/living
 	return om_resolve(last_moved_mob_handle)
+
+/// Called after each shot; starts the post-fire cooldowns that hold off recharging.
+/// Loaded smart magazines wait their own production_delay before forming new rounds.
+/obj/item/gun/proc/note_shot()
+	for(var/obj/item/ammo_magazine/smart/M in contents)
+		COOLDOWN_START(M, gun_fired_cooldown, M.production_delay)

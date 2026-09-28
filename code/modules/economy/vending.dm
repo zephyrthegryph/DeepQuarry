@@ -63,7 +63,7 @@
 	var/list/slogan_list // Lazy
 	var/shut_up = 1 //Stop spouting those godawful pitches!
 	var/vend_reply //Thank you for shopping!
-	var/last_reply = 0
+	COOLDOWN_DECLARE(reply_cooldown)
 	COOLDOWN_DECLARE(slogan_cooldown) //When did we last pitch?
 	var/slogan_delay = 6000 //How long until we can pitch again?
 
@@ -646,9 +646,9 @@ REF_OWNED_LIST(/obj/machinery/vending, "product_records")
 			coin = null
 			categories &= ~CAT_COIN
 
-	if(((last_reply + (vend_delay + 200)) <= world.time) && vend_reply) // ALLOW(cooldown): shared reply timestamp
+	if(!COOLDOWN_TIMELEFT(src, reply_cooldown) && vend_reply)
 		speak(vend_reply)
-		last_reply = world.time
+		COOLDOWN_START(src, reply_cooldown, vend_delay + 20 SECONDS)
 
 	use_power(vend_power_usage)	//actuators and stuff
 	flick("[icon_state]-vend",src)

@@ -401,6 +401,8 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine, \
 //-------------------------------------------------------
 /obj/vehicle/train/trolley_tank
 	name = "cargo train tanker"
+	/// Refinery hubs wait TROLLEY_TANK_SETTLE_TIME after the tank last moved before transferring.
+	COOLDOWN_DECLARE(settle_cooldown)
 	desc = "A large, tank made for transporting liquids."
 	icon = 'icons/obj/vehicles.dmi'
 	icon_state = "cargo_tank"
@@ -544,3 +546,8 @@ REF_HELD(/obj/vehicle/train/engine, "key")
 
 /obj/vehicle/train/engine/proc/pred_engine_has_key(mob/actor, atom/target, obj/item/held)
 	return !!key
+
+/obj/vehicle/train/trolley_tank/Move(atom/newloc, direct = 0, movetime)
+	. = ..()
+	if(.)
+		COOLDOWN_START(src, settle_cooldown, TROLLEY_TANK_SETTLE_TIME)

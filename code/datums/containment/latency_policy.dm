@@ -83,7 +83,7 @@
 	if(record && record[LEDGER_E_SLOT] == CONTAINER_SLOT_STOCK)
 		return FALSE
 	var/delay = A.loc.latent_idle_delay
-	if(world.time < A.latent_last_touch + delay) // ALLOW(cooldown): latency policy deadline tables
+	if(world.time < A.latent_last_touch + delay) // ALLOW(cooldown): idle-since data timestamp; the delay is the holder's, read at check time
 		return FALSE
 	return TRUE
 
@@ -211,7 +211,7 @@ GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 			LAZYADD(dead, holder)
 			continue
 		for(var/atom/movable/A as anything in holder.contents)
-			if(world.time < A.latent_refused_until) // ALLOW(cooldown): latency policy deadline tables
+			if(COOLDOWN_TIMELEFT(A, latent_refused_until))
 				continue
 			var/eligible = FALSE
 			try
@@ -219,7 +219,7 @@ GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 			catch(var/exception/e)
 				// One bad atom must not end the whole frame (and with it every
 				// other holder's turn): log it with context and back it off.
-				A.latent_refused_until = world.time + max(holder.latent_idle_delay, LATENCY_REFUSAL_BACKOFF_MIN)
+				COOLDOWN_START(A, latent_refused_until, max(holder.latent_idle_delay, LATENCY_REFUSAL_BACKOFF_MIN))
 				stack_trace("LATENCY_SWEEP: can_be_latent([A.type] in [holder.type]) runtimed: [e.name] at [e.file]:[e.line] -- [e.desc]")
 				continue
 			if(!eligible)
@@ -230,8 +230,8 @@ GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 				break // holder.contents changed; the rest wait for next turn
 			// Refused by latent_collapse() itself: back off for the holder's idle
 			// delay instead of re-offering it (and re-running its refusal) every frame.
-			A.latent_refused_until = world.time + max(holder.latent_idle_delay, LATENCY_REFUSAL_BACKOFF_MIN)
-			log_runtime("LATENCY_SWEEP: [A.type] in [holder.type] refused collapse, retry after [DisplayTimeText(A.latent_refused_until - world.time)]: [GLOB.latent_last_refusal]")
+			COOLDOWN_START(A, latent_refused_until, max(holder.latent_idle_delay, LATENCY_REFUSAL_BACKOFF_MIN))
+			log_runtime("LATENCY_SWEEP: [A.type] in [holder.type] refused collapse, retry after [DisplayTimeText(COOLDOWN_TIMELEFT(A, latent_refused_until))]: [GLOB.latent_last_refusal]")
 	if(dead)
 		holders -= dead
 	cursor = index % max(length(holders), 1)

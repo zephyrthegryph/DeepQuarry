@@ -29,6 +29,8 @@
 	var/emagged = 0
 	var/powered = 0		//set if vehicle is powered and should use fuel when moving
 	var/move_delay = 1	//set this to limit the speed of the vehicle
+	/// Blocks the next flat move until move_delay after the last move (inclusive: moving is allowed on the tick it ends).
+	COOLDOWN_DECLARE(move_cooldown)
 
 	var/obj/item/cell/cell
 	var/charge_use = 5	//set this to adjust the amount of power the vehicle uses per move
@@ -76,7 +78,7 @@ REF_OWNED(/obj/vehicle, list("riding_datum", "soundloop"))
 	var/turf/newturf = newloc
 	var/zmove = (newturf && z != newturf.z)
 
-	if(!zmove && world.time < l_move_time + move_delay) //This AND the riding datum move speed limit? // ALLOW(cooldown): l_move_time shared movement timestamp
+	if(!zmove && COOLDOWN_TIMELEFT(src, move_cooldown) > 0) //This AND the riding datum move speed limit?
 		return FALSE
 
 	if(!zmove && mechanical && on && powered && cell.charge < charge_use)
@@ -84,6 +86,8 @@ REF_OWNED(/obj/vehicle, list("riding_datum", "soundloop"))
 		return FALSE
 
 	. = ..()
+	if(.)
+		COOLDOWN_START(src, move_cooldown, move_delay)
 
 	if(!zmove && mechanical && on && powered)
 		cell.use(charge_use)

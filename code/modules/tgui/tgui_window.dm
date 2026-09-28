@@ -35,8 +35,8 @@
 	/// world.time at which a prewarm initialize() was issued, so an idle shell that
 	/// never reports `ready` can be timed out and replaced.
 	var/prewarm_started_at = 0
-	/// Start of the current one-second payloadChunk accounting window.
-	var/payload_chunk_window_started_at = 0
+	/// Ends the current one-second payload chunk budget window.
+	COOLDOWN_DECLARE(payload_chunk_window_cooldown)
 	/// payloadChunk topics accepted during the current accounting window.
 	var/payload_chunks_this_window = 0
 	var/tmp/locked_by_handle
@@ -620,8 +620,8 @@
 /// Per-window, per-second budget for payloadChunk topics (which bypass the
 /// client Topic rate limiter).
 /datum/tgui_window/proc/accept_payload_chunk()
-	if(world.time >= payload_chunk_window_started_at + 1 SECOND) // ALLOW(cooldown): rolling payload window start
-		payload_chunk_window_started_at = world.time
+	if(!COOLDOWN_TIMELEFT(src, payload_chunk_window_cooldown))
+		COOLDOWN_START(src, payload_chunk_window_cooldown, 1 SECOND)
 		payload_chunks_this_window = 0
 	if(payload_chunks_this_window >= TGUI_MAX_PAYLOAD_CHUNKS_PER_SECOND)
 		return FALSE

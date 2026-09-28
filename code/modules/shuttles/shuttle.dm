@@ -4,6 +4,8 @@
 	var/name = ""
 	var/warmup_time = 0
 	var/moving_status = SHUTTLE_IDLE
+	/// Throttles the hyperspace progress sound during a long jump (every 4 seconds).
+	COOLDOWN_DECLARE(progress_sound_cooldown)
 
 	var/list/shuttle_area // Initial value can be either a single area type or a list of area types
 	var/tmp/current_location_handle	//Set current_location_tag, not this: New() resolves the tag into the landmark.
@@ -207,24 +209,25 @@
 	if(process_longjump(current_location(), destination)) // To hook custom shuttle code in
 		return // It handled it for us (shuttle crash or such)
 
-	long_jump_transit(start_location, destination, 0, FALSE)
+	COOLDOWN_RESET(src, progress_sound_cooldown)
+	long_jump_transit(start_location, destination, FALSE)
 
 /// In transit: every half second until arrival time, the travel sound every four seconds
 /// (the sound file is five) and the landing warning five seconds out.
-/datum/shuttle/proc/long_jump_transit(obj/effect/shuttle_landmark/start_location, obj/effect/shuttle_landmark/destination, last_progress_sound, made_warning)
+/datum/shuttle/proc/long_jump_transit(obj/effect/shuttle_landmark/start_location, obj/effect/shuttle_landmark/destination, made_warning)
 	if(world.time >= arrive_time) // ALLOW(cooldown): shuttle arrival schedule
 		if(!attempt_move(destination))
 			attempt_move(start_location) //try to go back to where we started. If that fails, I guess we're stuck in the interim location
 		long_jump_arrived(start_location, destination)
 		return
-	if(last_progress_sound + 4 SECONDS < world.time) // ALLOW(cooldown): timestamp passed through callback args
+	if(COOLDOWN_FINISHED(src, progress_sound_cooldown))
 		make_sounds(HYPERSPACE_PROGRESS)
-		last_progress_sound = world.time
+		COOLDOWN_START(src, progress_sound_cooldown, 4 SECONDS)
 
 	if(arrive_time - world.time <= 5 SECONDS && !made_warning) // ALLOW(cooldown): shuttle arrival schedule
 		made_warning = TRUE
 		create_warning_effect(destination)
-	om_after(src, 5, PROC_REF(long_jump_transit), start_location, destination, last_progress_sound, made_warning)
+	om_after(src, 5, PROC_REF(long_jump_transit), start_location, destination, made_warning)
 
 /datum/shuttle/proc/long_jump_arrived(obj/effect/shuttle_landmark/start_location, obj/effect/shuttle_landmark/destination)
 	moving_status = SHUTTLE_IDLE

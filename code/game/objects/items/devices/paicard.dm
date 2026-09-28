@@ -13,7 +13,7 @@
 	var/image/screen_layer
 	var/screen_color = "#00ff0d"
 	var/current_emotion = 1
-	var/last_notify = 0
+	COOLDOWN_DECLARE(notify_cooldown)
 	var/screen_msg
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
@@ -379,9 +379,9 @@ REF_OWNED(/obj/item/paicard, list("radio", "multitool", "signaler", "screen_laye
 /obj/item/paicard/proc/alertUpdate()
 	if(pai)
 		return
-	if(last_notify == 0 || (5 MINUTES <= world.time - last_notify)) // ALLOW(cooldown): last_notify also used as never-notified sentinel
+	if(!COOLDOWN_TIMELEFT(src, notify_cooldown))
 		audible_message(span_notice("\The [src] flashes a message across its screen, \"Additional personalities available for download.\""), hearing_distance = world.view, runemessage = "bleeps!")
-		last_notify = world.time
+		COOLDOWN_START(src, notify_cooldown, 5 MINUTES)
 /*
 /obj/item/paicard/emp_act(severity, recursive)
 	for(var/mob/M in src)

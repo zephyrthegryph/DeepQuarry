@@ -13,7 +13,9 @@
 
 	var/current_program = "Off"
 	var/tmp/my_area_handle
-	var/last_gravity_change = 0
+	/// Two-tier gravity toggle throttle: ignore inside the short window, warn inside the long one.
+	COOLDOWN_DECLARE(gravity_short_cooldown)
+	COOLDOWN_DECLARE(gravity_long_cooldown)
 	COOLDOWN_DECLARE(ready)
 	var/immersion = FALSE
 
@@ -130,13 +132,14 @@
 	my_area()?.end_program()
 
 /obj/machinery/computer/looking_glass/proc/toggle_gravity(area/A)
-	if(world.time < (last_gravity_change + 3 SECONDS)) // ALLOW(cooldown): two-tier spam throttle
-		if(world.time < (last_gravity_change + 1 SECOND)) // ALLOW(cooldown): two-tier spam throttle
+	if(COOLDOWN_TIMELEFT(src, gravity_long_cooldown))
+		if(COOLDOWN_TIMELEFT(src, gravity_short_cooldown))
 			return
 		visible_message(span_warning("ERROR. Recalibrating gravity field."))
 		return
 
-	last_gravity_change = world.time
+	COOLDOWN_START(src, gravity_short_cooldown, 1 SECOND)
+	COOLDOWN_START(src, gravity_long_cooldown, 3 SECONDS)
 
 	if(A.get_gravity())
 		A.gravitychange(0)

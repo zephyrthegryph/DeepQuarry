@@ -13,6 +13,7 @@ Admin verb is called by code\modules\admin\verbs\event_triggers.dm
 	var/coordinates = ""
 	var/cooldown = 0 //Given in seconds in set_vars() but stored in ticks
 	var/last_trigger = 0
+	COOLDOWN_DECLARE(trigger_cooldown)
 	var/isLoud = FALSE
 	var/isNarrate = FALSE
 	/// The setup questions set_vars() asks.
@@ -109,11 +110,12 @@ Admin verb is called by code\modules\admin\verbs\event_triggers.dm
 	var/mob/living/L = AM
 	if(!L.ckey) return FALSE
 
-	if(world.time < (last_trigger + cooldown)) // ALLOW(cooldown): admin-configured cooldown, last_trigger also used as fired flag
+	if(COOLDOWN_TIMELEFT(src, trigger_cooldown))
 		return FALSE
 	if(!isRepeating && last_trigger) //Used to avoid spam if qdel(src) fires too slowly
 		return FALSE
 	last_trigger = world.time
+	COOLDOWN_START(src, trigger_cooldown, cooldown)
 
 	if(!creator_ckey)	//For some reason, the user didn't have a ckey. Let's clean up
 		qdel(src)

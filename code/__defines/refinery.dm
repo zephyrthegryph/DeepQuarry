@@ -51,3 +51,6 @@
 #define REFINERYEXPORT_REASON_COSMETIC "cosmetic coatings and drugs"
 #define REFINERYEXPORT_REASON_CLEAN "cleaning products"
 #define REFINERYEXPORT_REASON_LUBE "industrial lubricants"
+
+/// How long a trolley tank must sit still after moving before a refinery hub will pump into or out of it.
+#define TROLLEY_TANK_SETTLE_TIME (4 SECONDS)
