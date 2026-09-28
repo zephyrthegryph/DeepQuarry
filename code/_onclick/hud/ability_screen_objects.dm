@@ -34,7 +34,6 @@ REF_BACK_HANDLE(/atom/movable/screen/movable/ability_master, list("my_mob_handle
 
 /atom/movable/screen/movable/ability_master/Click()
 	if(!length(ability_objects)) // If we're empty for some reason.
-//		qdel(src)
 		return
 
 	toggle_open()
@@ -44,7 +43,6 @@ REF_BACK_HANDLE(/atom/movable/screen/movable/ability_master, list("my_mob_handle
 		for(var/atom/movable/screen/ability/O in ability_objects)
 			if(my_mob() && my_mob().client)
 				my_mob().client.screen -= O
-//			O.handle_icon_updates = 0
 		showing = 0
 		overlays.len = 0
 		overlays.Add(closed_state)
@@ -77,7 +75,6 @@ REF_BACK_HANDLE(/atom/movable/screen/movable/ability_master, list("my_mob_handle
 		if(my_mob() && my_mob().client)
 			my_mob().client.screen += A
 			my_mob().client.screen |= src
-//			A.handle_icon_updates = 1
 
 /atom/movable/screen/movable/ability_master/proc/update_abilities(forced = 0, mob/user)
 	update_icon()
@@ -100,14 +97,10 @@ REF_BACK_HANDLE(/atom/movable/screen/movable/ability_master, list("my_mob_handle
 /atom/movable/screen/movable/ability_master/proc/add_ability(name_given)
 	if(!name_given) return
 
-//	if(spell.spell_flags & NO_BUTTON) //no button to add if we don't get one
-//		return
 
 	var/atom/movable/screen/ability/new_button = new /atom/movable/screen/ability
 	new_button.ability_master_handle = om_handle(src)
-//	new_button.spell = spell
 
-//	spell.connected_button = newscreen
 
 	new_button.name = name_given
 	new_button.ability_icon_state = name_given
@@ -125,8 +118,6 @@ REF_BACK_HANDLE(/atom/movable/screen/movable/ability_master, list("my_mob_handle
 	if(length(ability_objects))
 		toggle_open(showing + 1)
 	update_icon()
-//	else
-//		qdel(src)
 
 /atom/movable/screen/movable/ability_master/proc/remove_all_abilities()
 	for(var/atom/movable/screen/ability/A in ability_objects)
@@ -154,7 +145,6 @@ REF_BACK_HANDLE(/atom/movable/screen/movable/ability_master, list("my_mob_handle
 	..()
 	if(ability_master)
 		ability_master.toggle_open(2) //Force it to open on login.
-		//client.screen -= ability_master
 
 /mob/Initialize(mapload)
 	. = ..()
@@ -172,10 +162,8 @@ REF_BACK_HANDLE(/atom/movable/screen/movable/ability_master, list("my_mob_handle
 	var/ability_icon_state = null
 	var/index = 0
 
-//	var/spell/spell = null
 	var/ability_master_handle
 
-//	var/icon/last_charged_icon
 
 // an ability leaves its master's list (the master owns the list; the ability can go first).
 /atom/movable/screen/ability/on_destroy(force)
@@ -188,24 +176,18 @@ REF_BACK_HANDLE(/atom/movable/screen/movable/ability_master, list("my_mob_handle
 
 /atom/movable/screen/ability/update_icon()
 
-//	if((last_charge == spell.charge_counter || !handle_icon_updates) && !forced_update)
-//		return //nothing to see here
 
-//	cut_overlay(spell.hud_state)
 
 	cut_overlays()
 	icon_state = "[background_base_state]_spell_base"
 
 	overlays += ability_icon_state
 
-//	last_charge = spell.charge_counter
 
 /atom/movable/screen/ability/Click()
 	if(!usr)
-//		qdel(src)
 		return
 
-//	spell.perform(usr)
 	activate()
 
 /atom/movable/screen/ability/MouseDrop(atom/A)

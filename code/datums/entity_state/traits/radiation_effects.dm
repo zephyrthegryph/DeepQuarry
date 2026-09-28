@@ -188,7 +188,6 @@
 	//End of the calculation.
 
 	if(contamination && living_guy.radiation > contamination_threshold)
-		//GLOB.radiation_service.radiate(living_guy, rads * contamination_strength * rad_removal_mod)
 		radiation_pulse(
 			living_guy,
 			max_range = 2,
@@ -246,7 +245,6 @@
 /datum/trait_state/radiation_effects/proc/handle_irradiate_effect(mob/living/living_guy, effect, effecttype, blocked, check_protection, rad_protection)
 	///If we're not contaminating, don't worry about this. Proceed like normal.
 	if(!contamination || (contamination && living_guy.radiation < contamination_threshold))
-		//to_chat(world, "Radiation like normal. Current rads = [living_guy.radiation]. Amount of rads being added = [effect].")
 		return
 
 	var/rad_removal_mod = 1
@@ -257,7 +255,6 @@
 	var/radiation_offput = ((living_guy.radiation * 0.04) * contamination_strength * rad_removal_mod)
 	var/radiation_to_apply = (effect - radiation_offput)
 	if(radiation_to_apply > 0)
-		// to_chat(world, "Radiation blocker. Current rads = [living_guy.radiation]. Original = [effect] RTA = [radiation_to_apply] After protection = [radiation_to_apply * rad_protection]. Amount of rads we're offputting = [radiation_offput]")
 
 		//This stops MOST of the radiation we're offputting from hitting us.
 		//If we linger in one place for a prolonged period, the area around us will become irradiated and give us a small bit of radiation back. (only got ~1 rad per tick when we were offputting 60 rads for example)

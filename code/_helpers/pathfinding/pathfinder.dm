@@ -147,7 +147,6 @@
 	// )
 	pass_silicons_astar = !!length(pass_silicons_astar)
 	pass_silicons_jps = !!length(pass_silicons_jps)
-	// pass_old_astar = !!length(pass_old_astar)
 	if(pass_silicons_astar != pass_silicons_jps)
 		log_and_message_admins("turf pair [COORD(start)], [COORD(goal)] mismatch silicons-astar [pass_silicons_astar] silicons-jps [pass_silicons_jps]")
 	else

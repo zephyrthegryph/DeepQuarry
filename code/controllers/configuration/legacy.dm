@@ -2,8 +2,6 @@
 	gamemode_cache = typecacheof(/datum/game_mode, TRUE)
 	modes = list()
 	mode_names = list()
-	//mode_reports = list()
-	//mode_false_report_weight = list()
 	votable_modes = list()
 	var/list/probabilities = CONFIG_GET(keyed_list/probabilities)
 	for(var/T in gamemode_cache)

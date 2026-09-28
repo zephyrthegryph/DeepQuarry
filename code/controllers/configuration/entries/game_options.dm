@@ -18,7 +18,6 @@
 
 // FIXME: Unused
 ///datum/config_entry/flag/revival_pod_plants
-//	default = TRUE
 
 /datum/config_entry/flag/revival_cloning
 	default = TRUE
@@ -45,11 +44,9 @@
 
 // FIXME: Unused
 ///datum/config_entry/number/monkey_delay
-//	default = 0
 
 // FIXME: Unused
 ///datum/config_entry/number/alien_delay
-//	default = 0
 
 // FIXME: Unused
 //datum/config_entry/number/slime_delay

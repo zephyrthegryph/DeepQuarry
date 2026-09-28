@@ -367,7 +367,6 @@ Keep outfits simple. Spawn with basic uniforms and minimal gear. Gear instead go
 /datum/decl/hierarchy/outfit/job/medical/sar
 	name = OUTFIT_JOB_NAME(JOB_FIELD_MEDIC)
 	uniform = /obj/item/clothing/under/utility/blue
-	//suit = /obj/item/clothing/suit/storage/hooded/wintercoat/medical/sar
 	shoes = /obj/item/clothing/shoes/boots/winter/explorer
 	l_hand = /obj/item/storage/firstaid/regular
 	belt = /obj/item/storage/belt/medical/emt

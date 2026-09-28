@@ -45,7 +45,6 @@ SUBSYSTEM_DEF(dbcore)
 
 	var/connection  // Arbitrary handle returned from rust_g.
 
-	//var/db_daemon_started = FALSE
 
 /datum/controller/subsystem/dbcore/Initialize()
 	// Load slow_query_timeout_ms from config and convert to deciseconds.
@@ -188,7 +187,6 @@ SUBSYSTEM_DEF(dbcore)
 	log_sql("Done clearing DB queries standby:[length(queries_standby)] active: [length(queries_active)] all: [length(all_queries)]")
 	if(IsConnected())
 		Disconnect()
-	//stop_db_daemon()
 
 //nu
 /datum/controller/subsystem/dbcore/can_vv_get(var_name)
@@ -232,7 +230,6 @@ SUBSYSTEM_DEF(dbcore)
 	if(!CONFIG_GET(flag/sql_enabled))
 		return FALSE
 
-	//start_db_daemon()
 
 	var/user = CONFIG_GET(string/feedback_login)
 	var/pass = CONFIG_GET(string/feedback_password)
@@ -298,7 +295,6 @@ SUBSYSTEM_DEF(dbcore)
 		return
 	om_sql_write(
 		"UPDATE [format_table_name("round")] SET end_datetime = Now(), game_mode_result = :game_mode_result, station_name = :station_name WHERE id = :round_id",
-		//list("game_mode_result" = SSticker.mode_result, "station_name" = station_name(), "round_id" = GLOB.round_id)
 		list("game_mode_result" = "extended", "station_name" = station_name(), "round_id" = GLOB.round_id) // FIXME: temporary solution as we only use extended so far
 	)
 

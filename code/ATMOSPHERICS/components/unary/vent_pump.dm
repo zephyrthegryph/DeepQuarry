@@ -47,7 +47,6 @@
 	var/radio_filter_out
 	var/radio_filter_in
 
-	//var/datum/looping_sound/air_pump/soundloop
 	var/static/start_sound = 'sound/machines/air_pump/airpumpstart.ogg'
 	var/static/stop_sound = 'sound/machines/air_pump/airpumpshutdown.ogg'
 
@@ -330,7 +329,6 @@
 	if(stat & (NOPOWER|BROKEN))
 		return
 
-	//log_admin("DEBUG \[[world.timeofday]\]: /obj/machinery/atmospherics/unary/vent_pump/receive_signal([signal.debug_print()])")
 	if(!signal.data["tag"] || (signal.data["tag"] != id_tag) || (signal.data["sigtype"]!="command"))
 		return 0
 
@@ -394,7 +392,6 @@
 		om_after(src, 2, PROC_REF(broadcast_status))
 		return //do not update_icon
 
-		//log_admin("DEBUG \[[world.timeofday]\]: vent_pump/receive_signal: unknown command \"[signal.data["command"]]\"\n[signal.debug_print()]")
 	om_after(src, 2, PROC_REF(broadcast_status))
 	update_icon()
 	return

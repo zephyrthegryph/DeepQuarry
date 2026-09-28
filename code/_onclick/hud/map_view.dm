@@ -69,7 +69,6 @@ REF_OWNED_LIST(/atom/movable/screen/map_view_tg, "popup_plane_masters")
 	LAZYOR(viewing_clients, om_handle(show_to))
 
 /atom/movable/screen/map_view_tg/proc/hide_from(mob/hide_from)
-	// hide_from_client(hide_from?.canon_client)
 	hide_from_client(hide_from?.client)
 
 /atom/movable/screen/map_view_tg/proc/hide_from_client(client/hide_from)

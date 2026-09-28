@@ -5,11 +5,8 @@
 	pref_check = /datum/preference/toggle/looping_alarms
 
 /datum/looping_sound/alarm/fire_alarm // Commented out start/end as I don't feel they're very fitting
-	// start_sound = 'sound/effects/alarms/fire_alarm/fire_alarm_start.ogg'
-	// start_length = 40
 	mid_sounds = list('sound/effects/alarms/fire_alarm/Fire_alarm_mid.ogg' = 1)
 	mid_length = 6 SECONDS // Exact loop, these things should be constantly running while there's a fire actively going
-	// end_sound = 'sound/effects/alarms/fire_alarm/fire_alarm_stop.ogg'
 	volume = 30
 	extra_range = 60 // Alarms should be clearly heard from far away
 

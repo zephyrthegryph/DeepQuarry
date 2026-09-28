@@ -50,7 +50,6 @@
 	var/text
 	var/transform
 	var/list/underlays
-	// var/vis_flags
 
 //! vis_flags missing even though byond ref says it's there, fuck off why is this possible
 

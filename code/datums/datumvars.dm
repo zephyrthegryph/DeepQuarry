@@ -39,7 +39,6 @@
 	VV_DROPDOWN_OPTION(VV_HK_ADDCOMPONENT, "Attach OM Behaviour")
 	VV_DROPDOWN_OPTION(VV_HK_REMOVECOMPONENT, "Detach OM Behaviour")
 	VV_DROPDOWN_OPTION(VV_HK_MASS_REMOVECOMPONENT, "Mass Detach OM Behaviour")
-	//VV_DROPDOWN_OPTION(VV_HK_MODIFY_TRAITS, "Modify Traits")
 
 /**
  * This proc is only called if everything topic-wise is verified. The only verifications that should happen here is things like permission checks!
@@ -49,8 +48,6 @@
 /datum/proc/vv_do_topic(list/href_list)
 	if(!usr || !usr.client || !usr.client.holder || !check_rights(R_VAREDIT))
 		return FALSE //This is VV, not to be called by anything else.
-	//if(href_list[VV_HK_MODIFY_TRAITS])
-	//	usr.client.holder.modify_traits(src)
 	return TRUE
 
 //This proc is only called if everything topic-wise is verified. The only verifications that should happen here is things like permission checks!

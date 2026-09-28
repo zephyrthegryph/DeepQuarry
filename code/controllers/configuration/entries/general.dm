@@ -92,7 +92,6 @@
 
 // FIXME: Unused
 ///datum/config_entry/string/nudge_script_path // where the nudge.py script is located
-//	default = "nudge.py"
 
 /// allows admins with relevant permissions to have their own ooc colour
 /datum/config_entry/flag/allow_admin_ooccolor
@@ -162,7 +161,6 @@
 // FIXME: Unused
 /// del's new players if they log before they spawn in
 ///datum/config_entry/flag/del_new_on_log
-//	default = TRUE
 
 // FIXME: Unused
 /// spawns a spellbook which gives object-type spells instead of verb-type spells for the wizard
@@ -403,8 +401,6 @@
 
 // FIXME: Unused
 ///datum/config_entry/number/alien_to_human_ratio
-//	default = 0.5
-//	integer = FALSE
 
 /datum/config_entry/flag/allow_extra_antags
 
@@ -499,7 +495,6 @@
 
 // FIXME: Unused
 ///datum/config_entry/number/simultaneous_pm_warning_timeout
-//	default = 100
 
 /// Multiplier for how much weaker explosions are on neighboring z levels.
 /datum/config_entry/number/multi_z_explosion_scalar
@@ -591,7 +586,6 @@
 
 // FIXME: Unused
 ///datum/config_entry/str_list/ert_species
-//	default = list(SPECIES_HUMAN)
 
 /datum/config_entry/string/law_zero
 	default = "ERROR ER0RR $R0RRO$!R41.%%!!(%$^^__+ @#F0E4'ALL LAWS OVERRIDDEN#*?&110010"

@@ -86,7 +86,6 @@ SUBSYSTEM_DEF(ticker)
 /datum/controller/subsystem/ticker/fire(resumed = FALSE)
 	switch(current_state)
 		if(GAME_STATE_STARTUP)
-			// if(Master.initializations_finished_with_no_players_logged_in) // We want to wait the full time after the startup finished
 			start_at = world.time + (CONFIG_GET(number/lobby_countdown) * 10)
 			for(var/client/C in GLOB.clients)
 				window_flash(C, ignorepref = TRUE) //let them know lobby has opened up.
@@ -195,7 +194,6 @@ SUBSYSTEM_DEF(ticker)
 	collect_minds()
 	equip_characters()
 
-	//	data_core.manifest()
 
 	for(var/I in round_start_events)
 		var/datum/callback/cb = I

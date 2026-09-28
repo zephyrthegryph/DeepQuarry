@@ -68,7 +68,6 @@ SUBSYSTEM_DEF(overlays)
 	if(priority)
 		priority_overlays = null
 	overlays = null
-	//POST_OVERLAY_CHANGE(src)
 	STAT_STOP_STOPWATCH
 	STAT_LOG_ENTRY(SSoverlays.stats, type)
 
@@ -84,7 +83,6 @@ SUBSYSTEM_DEF(overlays)
 	if(islist(remove_overlays))
 		remove_overlays = remove_overlays.Copy() //May not be ideal to copy, but as build_appearance_list modifies lists in place which breaks certain things
 	overlays -= build_appearance_list(remove_overlays)
-	//POST_OVERLAY_CHANGE(src)
 	STAT_STOP_STOPWATCH
 	STAT_LOG_ENTRY(SSoverlays.stats, type)
 
@@ -105,7 +103,6 @@ SUBSYSTEM_DEF(overlays)
 		add_overlays = add_overlays.Copy() //May not be ideal to copy, but as build_appearance_list modifies lists in place which breaks certain things
 	overlays += build_appearance_list(add_overlays) //May not be ideal to copy, but as build_appearance_list modifies lists in place which breaks certain things
 	VALIDATE_OVERLAY_LIMIT(src)
-	//POST_OVERLAY_CHANGE(src)
 	STAT_STOP_STOPWATCH
 	STAT_LOG_ENTRY(SSoverlays.stats, type)
 
@@ -123,13 +120,11 @@ SUBSYSTEM_DEF(overlays)
 		else
 			overlays = null
 		VALIDATE_OVERLAY_LIMIT(src)
-		//POST_OVERLAY_CHANGE(src)
 		STAT_STOP_STOPWATCH
 		STAT_LOG_ENTRY(SSoverlays.stats, type)
 	else if(cached_other)
 		overlays += cached_other
 		VALIDATE_OVERLAY_LIMIT(src)
-		//POST_OVERLAY_CHANGE(src)
 		STAT_STOP_STOPWATCH
 		STAT_LOG_ENTRY(SSoverlays.stats, type)
 

@@ -34,7 +34,6 @@
 	/// Do we self-terminate when a fullheal is called?
 	var/remove_on_fullheal = FALSE
 	/// If remove_on_fullheal is TRUE, what flag do we need to be removed?
-	// var/heal_flag_necessary = HEAL_STATUS
 	/// A particle effect, for things like embers - Should be set on update_particles()
 	VAR_FINAL/obj/effect/abstract/particle_holder/particle_effect
 
@@ -198,7 +197,6 @@ REF_BACKLIST(/datum/status_effect, list("owner" = "status_effects"))
 	if(!remove_on_fullheal)
 		return
 
-	// if(!heal_flag_necessary || (heal_flags & heal_flag_necessary))
 	qdel(src)
 
 /// Remove [seconds] of duration from the status effect, qdeling / ending if we eclipse the current world time.
@@ -238,7 +236,6 @@ REF_BACKLIST(/datum/status_effect, list("owner" = "status_effects"))
 /atom/movable/screen/alert/status_effect
 	name = "Curse of Mundanity"
 	desc = "You don't feel any different..."
-	// maptext_y = 2
 	/// The status effect we're linked to
 	var/attached_effect_handle
 

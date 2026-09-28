@@ -700,8 +700,6 @@ GLOBAL_LIST_EMPTY(cached_examine_icons)
 /proc/icon2html(atom/thing, client/target, icon_state, dir = SOUTH, frame = 1, moving = FALSE, sourceonly = FALSE, extra_classes = null)
 	if (!thing)
 		return
-	//if(SSlag_switch.measures[DISABLE_USR_ICON2HTML] && usr && !HAS_TRAIT(usr, TRAIT_BYPASS_MEASURES))
-		//return
 
 	var/key
 	var/icon/icon2collapse = thing
@@ -813,8 +811,6 @@ GLOBAL_LIST_EMPTY(cached_examine_icons)
 /proc/costly_icon2html(thing, target, sourceonly = FALSE, force_south = FALSE)
 	if (!thing)
 		return
-	//if(SSlag_switch.measures[DISABLE_USR_ICON2HTML] && usr && !HAS_TRAIT(usr, TRAIT_BYPASS_MEASURES))
-		//return
 
 	if (isicon(thing))
 		return icon2html(thing, target)

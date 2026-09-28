@@ -1,6 +1,5 @@
 /datum/decl/hierarchy/outfit/noncrew
 	name = OUTFIT_JOB_NAME(JOB_OUTSIDER)
-	//hierarchy_type = /decl/hierarchy/outfit/noncrew
 	uniform = /obj/item/clothing/under/primitive
 	shoes = /obj/item/clothing/shoes/primitive
 	r_pocket = /obj/item/spacecash/ewallet
@@ -34,7 +33,6 @@
 
 /datum/decl/hierarchy/outfit/shadekin
 	name = OUTFIT_JOB_NAME(JOB_ANOMALY)
-	//hierarchy_type = /decl/hierarchy/outfit/noncrew
 	uniform = /obj/item/clothing/under/primitive
 	shoes = /obj/item/clothing/shoes/primitive
 	r_pocket = /obj/item/spacecash/ewallet

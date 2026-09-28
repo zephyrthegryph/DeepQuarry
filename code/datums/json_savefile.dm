@@ -112,7 +112,6 @@ GENERAL_PROTECT_DATUM(/datum/json_savefile)
 	if(!json_export_checks(requester, account_name))
 		return
 
-	// COOLDOWN_START(src, download_cooldown, (CONFIG_GET(number/seconds_cooldown_for_preferences_export) * (1 SECONDS)))
 	COOLDOWN_START(src, download_cooldown, (10 SECONDS))
 	var/file_name = "[account_name ? "[account_name]_" : ""]preferences_[time2text(world.timeofday, "MMM_DD_YYYY_hh-mm-ss")].json"
 	var/temporary_file_storage = "data/preferences_export_working_directory/[file_name]"

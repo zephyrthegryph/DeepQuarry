@@ -110,7 +110,6 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 /datum/gas_mixture/proc/garbage_collect(list/tocheck)
 	return
 
-//PV = nRT
 
 ///joules per kelvin
 /datum/gas_mixture/proc/heat_capacity(data = MOLES)

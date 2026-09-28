@@ -390,7 +390,6 @@ SUBSYSTEM_DEF(job)
 
 	// Loop through all levels from high to low
 	var/list/shuffledoccupations = shuffle(occupations)
-	// var/list/disabled_jobs = SSticker.mode.disabled_jobs  // So we can use .Find down below without a colon.
 	for(var/level = 1 to 3)
 		//Check the head jobs first each level
 		check_head_position(level)

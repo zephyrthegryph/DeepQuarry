@@ -146,7 +146,6 @@
 		var/old_icon1 = T.icon
 		var/old_decals = T.decals ? T.decals.Copy() : null
 
-		//B.Destroy()
 		X = B.ChangeTurf(T.type)
 		X.set_dir(old_dir1)
 		X.icon_state = old_icon_state1

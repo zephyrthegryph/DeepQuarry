@@ -130,7 +130,6 @@
 		owner.clear_alert(ALERT_FIRE)
 	else if(!was_on_fire && owner.on_fire)
 		owner.throw_alert(ALERT_FIRE, /atom/movable/screen/alert/fire)
-	// owner.update_appearance(UPDATE_OVERLAYS)
 	owner.update_fire()
 	update_particles()
 
@@ -159,11 +158,9 @@
 // /datum/status_effect/fire_handler/fire_stacks/proc/owner_touched_sparks()
 // 	SIGNAL_HANDLER
 
-// 	ignite()
 
 /datum/status_effect/fire_handler/fire_stacks/on_creation(mob/living/new_owner, new_stacks, forced = FALSE)
 	. = ..()
-	// RegisterSignal(owner, COMSIG_ATOM_TOUCHED_SPARKS, PROC_REF(owner_touched_sparks))
 
 /datum/status_effect/fire_handler/fire_stacks/tick(seconds_between_ticks)
 	if(stacks <= 0)
@@ -245,8 +242,6 @@
 	var/fire_temp_add = (BODYTEMP_HEATING_MAX + (stacks + 15)) * (1 - thermal_protection)
 	victim.adjust_bodytemperature(fire_temp_add)
 
-	// var/mob/living/carbon/human/victim = owner
-	// var/thermal_protection = victim.get_heat_protection(stacks)
 
 /**
  * Handles mob ignition, should be the only way to set on_fire to TRUE
@@ -284,7 +279,6 @@
 /datum/status_effect/fire_handler/fire_stacks/proc/extinguish()
 	QDEL_NULL(moblight)
 	on_fire = FALSE
-	// owner.clear_mood_event("on_fire")
 	cache_stacks()
 	for(var/obj/item/equipped in (owner.get_equipped_items()))
 		equipped.extinguish()
@@ -296,16 +290,12 @@
 	owner.update_fire()
 	if (cached_state)
 		owner.remove_shared_particles(cached_state)
-	// UnregisterSignal(owner, COMSIG_MOB_UPDATE_ICONS)
-	// owner.update_appearance(UPDATE_OVERLAYS)
 	return ..()
 
 /datum/status_effect/fire_handler/fire_stacks/on_apply()
 	. = ..()
 	om_hook(owner, /datum/om/event/before/atom_extinguish, src, PROC_REF(on_extinguish_event))
 	owner.update_fire()
-	// add_fire_overlay(owner)
-	// owner.update_appearance(UPDATE_OVERLAYS)
 
 /datum/status_effect/fire_handler/fire_stacks/proc/add_fire_overlay(mob/living/source)
 	if(stacks <= 0 || !on_fire)
@@ -366,7 +356,6 @@
 	ADD_TRAIT(owner, TRAIT_NO_SLIP_WATER, TRAIT_STATUS_EFFECT(id))
 
 /datum/status_effect/fire_handler/wet_stacks/proc/no_longer_slippery()
-	// QDEL_NULL(slipperiness)
 	REMOVE_TRAIT(owner, TRAIT_NO_SLIP_WATER, TRAIT_STATUS_EFFECT(id))
 
 /datum/status_effect/fire_handler/wet_stacks/get_examine_text()

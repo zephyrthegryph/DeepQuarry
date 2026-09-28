@@ -54,7 +54,6 @@ Turf and target are seperate in case you want to teleport some distance from a t
 
 	errorx = abs(errorx)//Error should never be negative.
 	errory = abs(errory)
-	//var/errorxy = round((errorx+errory)/2)//Used for diagonal boxes.
 
 	switch(target.dir)//This can be done through equations but switch is the simpler method. And works fast to boot.
 	//Directs on what values need modifying.
@@ -96,7 +95,6 @@ Turf and target are seperate in case you want to teleport some distance from a t
 	if(destination)//If there is a destination.
 		if(errorx||errory)//If errorx or y were specified.
 			var/destination_list[] = list()//To add turfs to list.
-			//destination_list = new()
 			/*This will draw a block around the target turf, given what the error is.
 			Specifying the values above will basically draw a different sort of block.
 			If the values are the same, it will be a square. If they are different, it will be a rectengle.
@@ -940,7 +938,6 @@ Turf and target are seperate in case you want to teleport some distance from a t
 					copiedobjs += newobjs
 					copiedobjs += newmobs
 
-//					var/area/AR = X.loc
 
 //					if(AR.dynamic_lighting)
 //						X.opacity = !X.opacity

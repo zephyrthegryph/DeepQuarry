@@ -39,4 +39,3 @@
 	containertype = /obj/structure/closet/crate
 	containername = "keyed instruments crate"
 
-// /obj/item/instrument/piano_synth/headphones

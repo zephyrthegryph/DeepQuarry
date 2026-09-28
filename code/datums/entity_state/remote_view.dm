@@ -385,7 +385,6 @@ REF_BACK(/datum/remote_view/item_zoom, list("host_item" = null))
 		if(show_message)
 			host_mob.visible_message(span_filter_notice("[host_item.zoomdevicename ? "[host_mob] looks up from the [host_item.name]" : "[host_mob] lowers the [host_item.name]"]."))
 		host_item.zoom = FALSE
-		// return view offset
 		if(host_mob.client)
 			host_mob.client.pixel_x = 0
 			host_mob.client.pixel_y = 0

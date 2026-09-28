@@ -301,7 +301,6 @@ or shoot a gun to move around via Newton's 3rd Law of Motion."
 /atom/movable/screen/alert/irradiated
 	name = "Irradiated"
 	desc = "You're irradiated! Heal your radiation quick, and stand under a shower to wash some radiation off from yourself!"
-//	use_user_hud_icon = TRUE
 	icon_state = "irradiated"
 
 //ALIENS
@@ -392,26 +391,6 @@ so as to remain in compliance with the most up-to-date laws."
 	if(!usr || !usr.client) return
 	var/mob/observer/dead/G = usr
 	G.reenter_corpse()
-
-// /atom/movable/screen/alert/notify_jump
-// 	name = "Body created"
-// 	desc = "A body was created. You can enter it."
-// 	icon_state = "template"
-// 	timeout = 300
-// 	var/atom/jump_target = null
-// 	var/attack_not_jump = null
-
-// /atom/movable/screen/alert/notify_jump/Click()
-// 	if(!usr || !usr.client) return
-// 	if(!jump_target) return
-// 	var/mob/observer/dead/G = usr
-// 	if(!istype(G)) return
-// 	if(attack_not_jump)
-// 		jump_target.attack_ghost(G)
-// 	else
-// 		var/turf/T = get_turf(jump_target)
-// 		if(T && isturf(T))
-// 			G.loc = T
 
 //OBJECT-BASED
 

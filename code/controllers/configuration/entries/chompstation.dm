@@ -1,13 +1,11 @@
 // FIXME: Unused
 ///datum/config_entry/flag/discord_restriction
-//	default = FALSE
 
 /datum/config_entry/flag/use_jobwhitelist
 	default = TRUE
 
 // FIXME: Unused
 ///datum/config_entry/flag/emojis
-//	default = FALSE
 
 /// So, nodebot is a supplement to the TGS discord bot pretty much. For things likes faxes and the manifest it's very helpful because it's able to render html into an image and post it.
 /datum/config_entry/flag/nodebot_enabled

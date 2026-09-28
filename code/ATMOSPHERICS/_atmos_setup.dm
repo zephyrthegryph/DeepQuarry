@@ -62,7 +62,6 @@
 		gen_device_icons()
 	if(!omni_icons)
 		gen_omni_icons()
-	//if(!underlays_intact || !underlays_down || !underlays_exposed || !pipe_underlays_exposed || !pipe_underlays_intact)
 	if(!underlays)
 		gen_underlay_icons()
 

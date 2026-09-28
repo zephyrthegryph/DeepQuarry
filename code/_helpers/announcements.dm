@@ -50,7 +50,6 @@
 	if(islist(players))
 		for(var/mob/target in players)
 			to_chat(target, finalized_announcement)
-			//if(play_sound && target.client?.prefs.read_preference(/datum/preference/toggle/sound_announcements))
 			if(play_sound && target.client?.prefs.read_preference(/datum/preference/toggle/holder/play_adminhelp_ping))
 				SEND_SOUND(target, sound(sound_override))
 	else
@@ -60,7 +59,6 @@
 			return
 
 		for(var/mob/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-			//if(player.client?.prefs.read_preference(/datum/preference/toggle/sound_announcements))
 			if(player.client?.prefs.read_preference(/datum/preference/toggle/holder/play_adminhelp_ping))
 				SEND_SOUND(player, sound(sound_override))
 

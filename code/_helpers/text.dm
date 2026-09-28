@@ -21,7 +21,6 @@ GLOBAL_LIST_INIT(alphabet_upper, list("A","B","C","D","E","F","G","H","I","J","K
 	return t
 
 /proc/format_table_name(table as text)
-	//return CONFIG_GET(string/feedback_tableprefix) + table
 	return table // We don't implement tableprefix
 
 /*

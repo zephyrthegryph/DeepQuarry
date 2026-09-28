@@ -71,8 +71,6 @@
 		if(!answered.consumes_input)
 			return NONE
 		return (INTERACTION_TRY_RAN in outcome) ? CLICK_ACTION_SUCCESS : CLICK_ACTION_BLOCKING
-	// if(!user.can_interact_with(src))
-	// 	return FALSE
 
 	if(OM_EMIT(src, /datum/om/event/before/click_alt, user) & CLICK_ACTION_SUCCESS)
 		return TRUE

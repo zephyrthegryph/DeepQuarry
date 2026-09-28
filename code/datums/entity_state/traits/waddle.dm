@@ -10,7 +10,6 @@
 	if(!isliving(owner))
 		return FALSE
 	add_verb(owner, /mob/living/proc/waddle_adjust)
-	//add_verb(living_owner(), /mob/living/proc/waddle_debug)
 	return TRUE
 
 /datum/trait_state/waddle_trait/attach()

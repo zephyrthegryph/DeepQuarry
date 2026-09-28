@@ -27,7 +27,6 @@
 	icon = 'icons/obj/magic.dmi'//Needs sprites
 	icon_state = "2"
 	flags = NOBLUDGEON
-	//item_state = null
 	w_class = ITEMSIZE_NO_CONTAINER
 	layer = HUD_LAYER
 

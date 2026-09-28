@@ -316,7 +316,6 @@
 		else
 			remain_con -= P.concentration
 
-	//return if no adjustable ports
 	if(non_locked < 1)
 		return
 

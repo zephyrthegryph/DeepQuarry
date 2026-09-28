@@ -99,7 +99,6 @@
 			else
 				if(istype(item, /obj/item/reagent_containers))
 					var/obj/item/reagent_containers/container = item
-					// if(container.is_drainable())
 					if(container.is_open_container()) // this isn't exactly the same
 						for(var/datum/reagent/reagent in container.reagents.reagent_list)
 							.["other"][reagent.type] += reagent.volume
@@ -161,7 +160,6 @@
 	var/list/present_qualities = list()
 
 	for(var/obj/item/contained_item in contents_of(source))
-		// if(contained_item.GetComponent(/datum/component/storage))
 		if(istype(contained_item, /obj/item/storage)) // cursed
 			for(var/obj/item/subcontained_item in contents_of(contained_item))
 				available_tools[subcontained_item.type] = TRUE
@@ -219,7 +217,6 @@
 /// anything else, the item at once.
 /datum/personal_crafting/proc/construct_item(atom/a, datum/crafting_recipe/R, list/material_choices, on_built, busy)
 	var/list/surroundings = get_surroundings(a,R.blacklist)
-	// var/send_feedback = 1
 	. = check_requirements(a, R, surroundings)
 	if(.)
 		return
@@ -279,8 +276,6 @@
 	if(blueprint && isobj(I))
 		var/obj/product = I
 		product.apply_material_construction(resolved_materials, R.material_template, R.material_total)
-	// if(send_feedback)
-		// SSblackbox.record_feedback("tally", "object_crafted", 1, I.type)
 	return I //Send the item back to whatever called this proc so it can handle whatever it wants to do with the new item
 
 /// Sheets of each chosen material a recipe's blueprint needs.
@@ -435,7 +430,6 @@
 				if(istype(I, /obj/item/reagent_containers))
 					var/obj/item/reagent_containers/container = I
 					container.reagents.clear_reagents()
-					// container.reagents.expose(container.loc, TOUCH)
 				else if(istype(I, /obj/item/storage))
 					var/obj/item/storage/container = I
 					container.spill()

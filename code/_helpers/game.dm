@@ -96,7 +96,6 @@
 		if(dx*dx + dy*dy <= rsq)
 			turfs += T
 
-	//turfs += centerturf
 	return turfs
 
 /proc/circleview(center=usr,radius=3)
@@ -111,7 +110,6 @@
 		if(dx*dx + dy*dy <= rsq)
 			atoms += A
 
-	//turfs += centerturf
 	return atoms
 
 /proc/trange(rad = 0, turf/centre = null) //alternative to range (ONLY processes turfs and thus less intensive)
@@ -696,7 +694,6 @@
 			if(sight_check && !isInSight(A, O))
 				continue
 			L |= M
-			//log_world("[recursion_limit] = [M] - [get_turf(M)] - ([M.x], [M.y], [M.z])")
 
 		else if(include_radio && istype(A, /obj/item/radio))
 			if(sight_check && !isInSight(A, O))
@@ -726,7 +723,6 @@
 			var/mob/M = A
 			if(M.client || include_clientless)
 				hear += M
-			//log_world("Start = [M] - [get_turf(M)] - ([M.x], [M.y], [M.z])")
 		else if(istype(A, /obj/item/radio))
 			hear += A
 

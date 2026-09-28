@@ -581,7 +581,6 @@ Checks if a list has the same entries and values as an element of big.
 
 //Don't use this on lists larger than half a dozen or so
 /proc/insertion_sort_numeric_list_ascending(list/L)
-	//to_world_log("ascending len input: [L.len]")
 	var/list/out = list(pop(L))
 	for(var/entry in L)
 		if(isnum(entry))
@@ -594,13 +593,10 @@ Checks if a list has the same entries and values as an element of big.
 			if(!success)
 				out.Add(entry)
 
-	//to_world_log("	output: [out.len]")
 	return out
 
 /proc/insertion_sort_numeric_list_descending(list/L)
-	//to_world_log("descending len input: [L.len]")
 	var/list/out = insertion_sort_numeric_list_ascending(L)
-	//to_world_log("	output: [out.len]")
 	return reverseList(out)
 
 /proc/dd_sortedObjectList(list/L, cache=list())

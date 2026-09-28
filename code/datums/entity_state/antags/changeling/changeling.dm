@@ -370,7 +370,6 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 	var/datum/power/changeling/Thepower = Pname
 
 	for (var/datum/power/changeling/P in GLOB.powerinstances)
-		//to_world("[P] - [Pname] = [P.name == Pname ? "True" : "False"]")
 		if(P.name == Pname)
 			Thepower = P
 			break

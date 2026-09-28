@@ -83,7 +83,6 @@ GLOBAL_VAR_INIT(round_start_time, 0)
 		return GLOB.last_round_duration
 
 	var/mills = round_duration_in_ds // 1/10 of a second, not real milliseconds but whatever
-	//var/secs = ((mills % 36000) % 600) / 10 //Not really needed, but I'll leave it here for refrence.. or something
 	var/mins = round((mills % 36000) / 600)
 	var/hours = round(mills / 36000)
 

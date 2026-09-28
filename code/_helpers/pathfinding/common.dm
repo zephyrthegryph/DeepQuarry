@@ -8,8 +8,6 @@ GLOBAL_DATUM_INIT(generic_pathfinding_actor, /atom/movable/pathfinding_predicate
 
 /atom/movable/pathfinding_predicate
 	invisibility = INVISIBILITY_ABSTRACT
-	//pass_flags = ATOM_PASS_CLICK
-	//pass_flags_self = NONE
 
 /**
  * datum used for pathfinding

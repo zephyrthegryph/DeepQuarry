@@ -35,7 +35,6 @@ Thus, the two variables affect pump operation are set in New():
 	// ancestor var is deleted.
 	init_target_pressure = ONE_ATMOSPHERE
 
-	//var/max_volume_transfer = 10000
 
 	use_power = USE_POWER_OFF
 	idle_power_usage = 150		//internal circuitry, friction losses and stuff

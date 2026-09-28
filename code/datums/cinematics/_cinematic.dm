@@ -71,7 +71,6 @@ REF_OWNED(/datum/cinematic, "screen")
 
 	// Place the /atom/movable/screen/cinematic into everyone's screens, and prevent movement.
 	for(var/mob/watching_mob in watchers)
-		//show_to(watching_mob, GET_CLIENT(watching_mob)) // NOT IMPLEMENTED (GET_CLIENT)
 		show_to(watching_mob, watching_mob.client)
 		om_hook(watching_mob, /datum/om/event/mob_client_login, src, PROC_REF(on_watcher_client_login))
 		// Close watcher ui's, too, so they can watch it.

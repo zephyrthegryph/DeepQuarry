@@ -475,9 +475,6 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 		if("module")
 			if(isrobot(usr))
 				var/mob/living/silicon/robot/R = usr
-//				if(R.module)
-//					R.hud_used.toggle_show_robot_modules()
-//					return 1
 				R.pick_module()
 
 		if("inventory")

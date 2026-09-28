@@ -20,7 +20,6 @@
 	/// Region wrapper retained by the Rust topology owner. Legacy component code
 	/// may request deletion, but only the Rust commit may actually retire it.
 	var/rust_authoritative = FALSE
-	//var/datum/gas_mixture/air_transient = null
 
 
 // Rust-owned networks refuse deletion.

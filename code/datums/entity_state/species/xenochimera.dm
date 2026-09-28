@@ -357,7 +357,6 @@ REF_VAR(/mob/living/carbon/human, OWNED, /datum/xenochimera, xenochimera)
 		owner.throw_alert("regen", /atom/movable/screen/alert/xenochimera/reconstitution)
 		om_after(src, time SECONDS, PROC_REF(chimera_regenerate_nutrition))
 	owner.lying = TRUE
-	// open_appearance_editor()
 
 /datum/xenochimera/proc/chimera_regenerate_nutrition()
 	if(!owner)

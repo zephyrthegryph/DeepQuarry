@@ -184,7 +184,6 @@
 		for(var/obj/belly/B as anything in vore_organs)
 			B.escapable = initial(B.escapable)
 
-		//cut_overlays()
 		invisibility = initial(invisibility)
 		see_invisible = initial(see_invisible)
 		incorporeal_move = initial(incorporeal_move)

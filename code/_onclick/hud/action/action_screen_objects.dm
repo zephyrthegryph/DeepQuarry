@@ -261,14 +261,12 @@ REF_BACK_HANDLE(/atom/movable/screen/button_palette, list("our_hud_handle" = "to
 
 /atom/movable/screen/button_palette/Initialize(mapload)
 	. = ..()
-	// update_appearance()
 	update_name()
 
 /atom/movable/screen/button_palette/proc/set_hud(datum/hud/our_hud)
 	src.our_hud_handle = om_handle(our_hud)
 	refresh_owner()
 
-// /atom/movable/screen/button_palette/update_name(updates)
 /atom/movable/screen/button_palette/proc/update_name()
 	// . = ..()
 	if(expanded)
@@ -281,7 +279,6 @@ REF_BACK_HANDLE(/atom/movable/screen/button_palette, list("our_hud_handle" = "to
 	if(viewer.client)
 		viewer.client.screen |= src
 
-	// icon_state = "[ui_name]_palette"
 
 /atom/movable/screen/button_palette/MouseEntered(location, control, params)
 	. = ..()
@@ -355,7 +352,6 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 
 	expanded = new_expanded
 	our_group.refresh_actions()
-	// update_appearance()
 	update_name()
 
 	if(!usr.client)
@@ -393,8 +389,6 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	if(viewer.client)
 		viewer.client.screen |= src
 
-	// var/list/settings = our_hud.get_action_buttons_icons()
-	// icon = settings["bg_icon"]
 
 /atom/movable/screen/palette_scroll/Click(location, control, params)
 	if(!can_use(usr))
@@ -459,8 +453,6 @@ REF_BACK_HANDLE(/atom/movable/screen/palette_scroll/up, list("our_hud_handle" = 
 	if(viewer.client)
 		viewer.client.screen |= src
 
-	// var/list/settings = our_hud.get_action_buttons_icons()
-	// icon = settings["bg_icon"]
 
 /// Reacts to having a button dropped on it
 /atom/movable/screen/action_landing/proc/hit_by(atom/movable/screen/movable/action_button/button)

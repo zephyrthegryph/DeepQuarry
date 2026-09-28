@@ -264,7 +264,6 @@
 				memory = null//Remove any memory they may have had.
 			if("crystals")
 				if (check_rights_for(usr.client, R_FUN))
-				//	var/obj/item/uplink/hidden/suplink = find_syndicate_uplink() No longer needed, uses stored in mind
 					om_ask(usr, /datum/om/prompt/number, PROC_REF(telecrystals_set), message = "Amount of telecrystals for [key]", default = tcrystals, requires = PROMPT_ADMIN(R_FUN))
 
 	else if (href_list["obj_announce"])

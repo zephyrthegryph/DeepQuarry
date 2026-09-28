@@ -27,7 +27,6 @@
 //  Arguments: event_type as text, any number of additional arguments to pass to event handler
 //  Returns: null
 /datum/events/proc/fireEvent()
-	//to_world("Events in [args[1]] called")
 	var/list/event = listgetindex(events,args[1])
 	if(istype(event))
 		for(var/datum/event/E in event.Copy())
@@ -55,7 +54,6 @@
 	return ..()
 
 /datum/event/proc/Fire()
-	//to_world("Event fired")
 	if(listener)
 		call(listener,proc_name)(arglist(args))
 		return 1
