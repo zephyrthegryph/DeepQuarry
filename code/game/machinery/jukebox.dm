@@ -101,11 +101,7 @@
 	id = "jukebox_fingerprint"
 	name = "Use"
 	held_type = /obj/item
-	effect = /obj/machinery/media/jukebox/proc/interaction_fingerprint
-
-/obj/machinery/media/jukebox/proc/interaction_fingerprint(mob/user, obj/item/W, datum/interaction/interaction)
-	src.add_fingerprint(user)
-	return FALSE
+	effect = /atom/proc/interaction_fingerprint
 
 /obj/machinery/media/jukebox/wirecutter_act(mob/user, obj/item/tool)
 	wires.Interact(user)
@@ -258,11 +254,7 @@
 /datum/interaction/machine_hand/ungated/jukebox_interact
 	id = "jukebox_interact"
 	name = "Use"
-	effect = /obj/machinery/media/jukebox/proc/interaction_interact_impl
-
-/obj/machinery/media/jukebox/proc/interaction_interact_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	interact(user)
-	return TRUE
+	effect = /atom/proc/interaction_interact
 
 /obj/machinery/media/jukebox/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag

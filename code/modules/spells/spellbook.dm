@@ -187,7 +187,7 @@
 
 EXTEND_INTERACTIONS(/obj/item/spellbook/oneuse, \
 	INTERACT_USE("Read", PROC_REF(interaction_learn_spell)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_ignore_item)), \
+	INTERACT_ITEM(null, TYPE_PROC_REF(/atom, interaction_pass)), \
 )
 
 /// Old attack_self: learn the book's one spell.
@@ -216,10 +216,6 @@ EXTEND_INTERACTIONS(/obj/item/spellbook/oneuse, \
 /obj/item/spellbook/oneuse/proc/onlearned(mob/user as mob)
 	used = 1
 	user.visible_message(span_warning("[src] glows dark for a second!"))
-
-/// Old attackby: nothing.
-/obj/item/spellbook/oneuse/proc/interaction_ignore_item(mob/user, obj/item/W, datum/interaction/interaction)
-	return INTERACTION_HANDLED_PASS
 
 /obj/item/spellbook/oneuse/fireball
 	spell = /datum/spell/targeted/projectile/dumbfire/fireball

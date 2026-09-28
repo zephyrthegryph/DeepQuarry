@@ -49,13 +49,9 @@
 // Mops and soap on an effect (decals, runes, overlays) go straight to their afterattack
 // cleaning: nothing else about the effect (signals, less specific interactions) reacts.
 EXTEND_INTERACTIONS(/obj/effect, \
-	INTERACT_INSERT(/obj/item/mop_deploy, PROC_REF(interaction_effect_clean_pass), null), \
-	INTERACT_INSERT(/obj/item/soap, PROC_REF(interaction_effect_clean_pass), null), \
+	INTERACT_INSERT(/obj/item/mop_deploy, TYPE_PROC_REF(/atom, interaction_pass), null), \
+	INTERACT_INSERT(/obj/item/soap, TYPE_PROC_REF(/atom, interaction_pass), null), \
 )
-
-/// Old /obj/effect/attackby: let the cleaning tool's afterattack do the work.
-/obj/effect/proc/interaction_effect_clean_pass(mob/user, obj/item/held, datum/interaction/interaction)
-	return INTERACTION_HANDLED_PASS
 
 DECLARE_INTERACTIONS(/obj/item/mop_deploy, INTERACT_USE(null, PROC_REF(interaction_self)))
 

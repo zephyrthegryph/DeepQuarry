@@ -47,11 +47,7 @@
 /datum/interaction/entry_hand/dispenser_open_ui
 	id = "dispenser_open_ui"
 	name = "Use"
-	effect = /obj/structure/dispenser/proc/interaction_open_ui
-
-/obj/structure/dispenser/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
-	tgui_interact(user)
-	return TRUE
+	effect = /atom/proc/interaction_open_ui
 
 /obj/structure/dispenser/tgui_state(mob/user)
 	return GLOB.tgui_physical_state

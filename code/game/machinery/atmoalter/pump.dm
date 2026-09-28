@@ -130,13 +130,8 @@
 	into += list(
 		/datum/interaction/machine_hand/ungated/open_ui,
 	)
-	into += dq_interaction_from_spec(type, INTERACT_OBSERVER("View", PROC_REF(pump_observer)))
+	into += dq_interaction_from_spec(type, INTERACT_OBSERVER("View", TYPE_PROC_REF(/atom, interaction_as_touch)))
 	..()
-
-/// Old attack_ghost: a ghost uses it as a hand would.
-/obj/machinery/portable_atmospherics/powered/pump/proc/pump_observer(mob/user, obj/item/held, datum/interaction/interaction)
-	attack_hand(user)
-	return TRUE
 
 /obj/machinery/portable_atmospherics/powered/pump/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -317,10 +312,7 @@
 	name = "Use"
 	category = INTERACTION_CAT_INSERT
 	held_type = list(/obj/item/cell, /obj/item/tank)
-	effect = /obj/machinery/portable_atmospherics/powered/pump/huge/proc/interaction_reject_item
-
-/obj/machinery/portable_atmospherics/powered/pump/huge/proc/interaction_reject_item(mob/user, obj/item/held, datum/interaction/interaction)
-	return TRUE
+	effect = /atom/proc/interaction_swallow
 
 /obj/machinery/portable_atmospherics/powered/pump/huge/wrench_act(mob/user, obj/item/tool)
 	if(on)

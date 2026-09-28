@@ -67,7 +67,7 @@
 /turf/simulated/wall/skipjack/Initialize(mapload)
 	. = ..(mapload, MAT_ALIENALLOY)
 // Old attackby: items do nothing here.
-EXTEND_INTERACTIONS(/turf/simulated/wall/skipjack, INTERACT_ITEM("Nothing", PROC_REF(turf_ignore_item)))
+EXTEND_INTERACTIONS(/turf/simulated/wall/skipjack, INTERACT_ITEM("Nothing", TYPE_PROC_REF(/atom, interaction_pass)))
 /turf/simulated/wall/titanium/Initialize(mapload)
 	. = ..(mapload, MAT_TITANIUM)
 
@@ -508,7 +508,7 @@ EXTEND_INTERACTIONS(/turf/simulated/wall/skipjack, INTERACT_ITEM("Nothing", PROC
 	blocks_air = 1
 
 // Old attackby: items do nothing here.
-EXTEND_INTERACTIONS(/turf/simulated/flesh, INTERACT_ITEM("Nothing", PROC_REF(turf_ignore_item)))
+EXTEND_INTERACTIONS(/turf/simulated/flesh, INTERACT_ITEM("Nothing", TYPE_PROC_REF(/atom, interaction_pass)))
 
 /turf/simulated/flesh/Initialize(mapload)
 	. = ..()

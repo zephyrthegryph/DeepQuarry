@@ -864,11 +864,6 @@ REF_OWNED(/obj/machinery/light, "cell")
 /obj/machinery/light/AIAltClick(mob/user)
 	flicker(1)
 
-/// Old attack_ai: the hand's Use (the old body called attack_hand() without passing the user).
-/obj/machinery/light/flamp/proc/flamp_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
-	attack_hand(user)
-	return TRUE
-
 // attack with hand - remove tube/bulb
 // if hands aren't protected and the light is on, burn the player
 /// Old attack_hand (never called ..()): remove the tube/bulb; burns hands if not protected while on.
@@ -931,7 +926,7 @@ REF_OWNED(/obj/machinery/light, "cell")
 
 /obj/machinery/light/flamp/declare_interactions(list/into)
 	var/static/list/actor_specs = list(
-		INTERACT_SILICON("Use", PROC_REF(flamp_silicon_use)),
+		INTERACT_SILICON("Use", TYPE_PROC_REF(/atom, interaction_as_touch)),
 	)
 	for(var/actor_spec in actor_specs)
 		into += dq_interaction_from_spec(type, actor_spec)
@@ -1738,10 +1733,7 @@ DECLARE_INTERACTIONS(/obj/item/light, INTERACT_ITEM(null, PROC_REF(interaction_i
 	id = "light_torch_swallow"
 	name = "Use"
 	held_type = /obj/item
-	effect = /obj/machinery/light/small/torch/proc/interaction_swallow
-
-/obj/machinery/light/small/torch/proc/interaction_swallow(mob/user, obj/item/held, datum/interaction/interaction)
-	return TRUE
+	effect = /atom/proc/interaction_swallow
 
 /obj/machinery/light/broken
 	icon_state = "tube-broken"

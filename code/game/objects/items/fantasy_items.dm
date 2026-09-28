@@ -151,13 +151,9 @@ EXTEND_INTERACTIONS(/obj/structure/bed/bath, INTERACT_ITEM(null, PROC_REF(bath_i
 	open = 1
 
 EXTEND_INTERACTIONS(/obj/structure/toilet/wooden, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(wooden_interaction_hand)), \
+	INTERACT_HAND_UNGATED(null, TYPE_PROC_REF(/atom, interaction_swallow)), \
 	INTERACT_ITEM(null, PROC_REF(wooden_interaction_item)), \
 )
-
-/// Old attack_hand.
-/obj/structure/toilet/wooden/proc/wooden_interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
-	return TRUE
 
 /// Old attackby.
 /obj/structure/toilet/wooden/proc/wooden_interaction_item(mob/living/user, obj/item/I, datum/interaction/interaction)

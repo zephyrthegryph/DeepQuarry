@@ -233,9 +233,5 @@ EXTEND_INTERACTIONS(/obj/item/storage/secure/briefcase, INTERACT_HAND_UNGATED("O
 	var/list/refuses = list(/obj/item/storage/secure/briefcase)
 	return list(HOLD_NOT(refuses), HOLD_MAX_SIZE(ITEMSIZE_LARGE))
 
-EXTEND_INTERACTIONS(/obj/item/storage/secure/safe, INTERACT_HAND_UNGATED("Keypad", PROC_REF(interaction_safe_hand)))
+EXTEND_INTERACTIONS(/obj/item/storage/secure/safe, INTERACT_HAND_UNGATED("Keypad", TYPE_PROC_REF(/atom, interaction_open_ui)))
 
-/// Old attack_hand: the keypad, never a pickup.
-/obj/item/storage/secure/safe/proc/interaction_safe_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	tgui_interact(user)
-	return TRUE

@@ -68,7 +68,7 @@
 				M.update_icon()
 
 // Old attackby: items do nothing here.
-EXTEND_INTERACTIONS(/turf/simulated/wall/solidrock, INTERACT_ITEM("Nothing", PROC_REF(turf_ignore_item)))
+EXTEND_INTERACTIONS(/turf/simulated/wall/solidrock, INTERACT_ITEM("Nothing", TYPE_PROC_REF(/atom, interaction_pass)))
 
 /turf/simulated/wall/solidrock/ex_act()
 	return

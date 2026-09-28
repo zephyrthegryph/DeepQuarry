@@ -571,10 +571,7 @@ REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
 	id = "shower_swallow"
 	name = "Use"
 	held_type = /obj/item
-	effect = /obj/machinery/shower/proc/interaction_swallow
-
-/obj/machinery/shower/proc/interaction_swallow(mob/user, obj/item/held, datum/interaction/interaction)
-	return TRUE
+	effect = /atom/proc/interaction_swallow
 
 /obj/machinery/shower/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag

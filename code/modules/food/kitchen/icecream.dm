@@ -63,14 +63,9 @@
 	reagents.add_reagent(REAGENT_ID_ICE, 5)
 
 EXTEND_INTERACTIONS(/obj/machinery/icecream_vat, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(icecream_vat_interaction_hand)), \
+	INTERACT_HAND_UNGATED(null, TYPE_PROC_REF(/atom, interaction_open_ui)), \
 	INTERACT_ITEM(null, PROC_REF(icecream_vat_interaction_item)), \
 )
-
-/// Old attack_hand.
-/obj/machinery/icecream_vat/proc/icecream_vat_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	tgui_interact(user)
-	return TRUE
 
 /obj/machinery/icecream_vat/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui, custom_state)
 	. = ..()

@@ -22,10 +22,7 @@
 /datum/interaction/machine_alt/delivery_chute_no_flush
 	id = "delivery_chute_no_flush"
 	name = "Alt-click"
-	effect = /obj/machinery/disposal/deliveryChute/proc/interaction_no_flush
-
-/obj/machinery/disposal/deliveryChute/proc/interaction_no_flush(mob/user, obj/item/held, datum/interaction/interaction)
-	return TRUE
+	effect = /atom/proc/interaction_swallow
 
 /obj/machinery/disposal/deliveryChute/Bumped(atom/movable/AM) //Go straight into the chute
 	if(QDELETED(AM) || istype(AM, /obj/item/projectile) || istype(AM, /obj/effect) || istype(AM, /obj/mecha))	return

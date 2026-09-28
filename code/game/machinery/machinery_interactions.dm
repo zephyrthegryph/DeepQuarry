@@ -64,28 +64,20 @@
 /datum/interaction/machine_hand/open_ui
 	id = "machine_open_ui"
 	name = "Use"
-	effect = /obj/machinery/proc/interaction_open_ui
+	effect = /atom/proc/interaction_open_ui
 
 /// The same, for types whose attack_hand opened the interface without the machinery checks.
 /datum/interaction/machine_hand/ungated/open_ui
 	id = "machine_open_ui_ungated"
 	name = "Use"
 	category = INTERACTION_CAT_CONFIGURE
-	effect = /obj/machinery/proc/interaction_open_ui
-
-/obj/machinery/proc/interaction_open_ui(mob/actor, obj/item/held, datum/interaction/interaction)
-	tgui_interact(actor)
-	return TRUE
+	effect = /atom/proc/interaction_open_ui
 
 /// Old attack_hand: `if(..()) return; interact(user)`.
 /datum/interaction/machine_hand/interact
 	id = "machine_interact"
 	name = "Use"
-	effect = /obj/machinery/proc/interaction_interact
-
-/obj/machinery/proc/interaction_interact(mob/actor, obj/item/held, datum/interaction/interaction)
-	interact(actor)
-	return TRUE
+	effect = /atom/proc/interaction_interact
 
 /// Old attackby: `if(default_part_replacement(user, W)) return`. Shows the parts, and swaps in better ones.
 /datum/interaction/machine_item/part_replacement
@@ -94,9 +86,6 @@
 	category = INTERACTION_CAT_MAINTAIN
 	held_type = /obj/item/storage/part_replacer
 	effect = /obj/machinery/proc/interaction_part_replacement
-
-/obj/machinery/proc/interaction_part_replacement(mob/actor, obj/item/held, datum/interaction/interaction)
-	return default_part_replacement(actor, held) ? TRUE : FALSE
 
 // ---- Requirement clauses ----
 

@@ -371,17 +371,12 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/synthprinter, \
 	blur_amount = (48 - manip_rating * 8)
 
 EXTEND_INTERACTIONS(/obj/machinery/transhuman/resleever, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(resleever_interaction_hand)), \
+	INTERACT_HAND_UNGATED(null, TYPE_PROC_REF(/atom, interaction_open_ui)), \
 	INTERACT_ITEM(null, PROC_REF(resleever_interaction_item)), \
 	INTERACT_DRAG("Put inside", PROC_REF(resleever_interaction_drag)), \
 	INTERACT_VERB("EJECT Occupant", PROC_REF(resleever_verb_eject)), \
 	INTERACT_VERB("Move INSIDE", PROC_REF(resleever_verb_move_inside)), \
 )
-
-/// Old attack_hand.
-/obj/machinery/transhuman/resleever/proc/resleever_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	tgui_interact(user)
-	return TRUE
 
 /obj/machinery/transhuman/resleever/tgui_interact(mob/user, datum/tgui/ui = null)
 	if(stat & (NOPOWER|BROKEN))

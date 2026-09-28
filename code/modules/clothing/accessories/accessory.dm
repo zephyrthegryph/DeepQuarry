@@ -1255,11 +1255,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace/malfunct
 	special_collar = TRUE
 
 //keeping self-use blank so people don't tag and reset collar status
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/casinosentientprize, INTERACT_USE(null, PROC_REF(casino_collar_self)))
-
-/// Old attack_self: does nothing on purpose.
-/obj/item/clothing/accessory/collar/casinosentientprize/proc/casino_collar_self(mob/user, obj/item/held, datum/interaction/interaction)
-	return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/casinosentientprize, INTERACT_USE(null, TYPE_PROC_REF(/atom, interaction_swallow)))
 
 /obj/item/clothing/accessory/collar/casinosentientprize_fake
 	name = "Sentient Prize Collar"

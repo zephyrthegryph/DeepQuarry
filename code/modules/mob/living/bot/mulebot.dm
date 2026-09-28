@@ -58,7 +58,7 @@
 // so the inherited bot spec must not run a second time.
 DECLARE_INTERACTIONS(/mob/living/bot/mulebot, \
 	INTERACT_ITEM(null, PROC_REF(mulebot_interaction_item)), \
-	INTERACT_HAND_UNGATED("Open controls", PROC_REF(mulebot_interaction_hand)), \
+	INTERACT_HAND_UNGATED("Open controls", TYPE_PROC_REF(/atom, interaction_open_ui)), \
 	INTERACT_DRAG("Load", PROC_REF(mulebot_interaction_drag)))
 
 /// Old MouseDrop_T: load the dropped thing. Takes every drop (the old override never reached the drag-buckle).
@@ -70,11 +70,6 @@ DECLARE_INTERACTIONS(/mob/living/bot/mulebot, \
 		return TRUE
 
 	load(C)
-	return TRUE
-
-/// Old attack_hand (no gate, no default touch): open the controls.
-/mob/living/bot/mulebot/proc/mulebot_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	tgui_interact(user)
 	return TRUE
 
 /mob/living/bot/mulebot/tgui_interact(mob/user, datum/tgui/ui)

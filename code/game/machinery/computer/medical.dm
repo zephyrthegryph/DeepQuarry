@@ -78,7 +78,7 @@
 
 EXTEND_INTERACTIONS(/obj/machinery/computer/med_data, \
 	INTERACT_ITEM(null, PROC_REF(med_data_interaction_item)), \
-	INTERACT_HAND(null, PROC_REF(med_data_interaction_hand)), \
+	INTERACT_HAND(null, TYPE_PROC_REF(/atom, interaction_open_ui_fingerprint)), \
 	INTERACT_VERB("Eject ID Card", PROC_REF(med_data_eject_id)), \
 )
 
@@ -91,12 +91,6 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/med_data, \
 		tgui_interact(user)
 		return TRUE
 	return FALSE
-
-/// Old attack_hand.
-/obj/machinery/computer/med_data/proc/med_data_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
-	tgui_interact(user)
-	return TRUE
 
 /obj/machinery/computer/med_data/tgui_interact(mob/user, datum/tgui/ui = null)
 	ui = SStgui.try_update_ui(user, src, ui)

@@ -868,6 +868,7 @@
 #include "code\datums\interactions\presentation.dm"
 #include "code\datums\interactions\resolver.dm"
 #include "code\datums\interactions\tools.dm"
+#include "code\datums\interactions\shared_effects.dm"
 #include "code\datums\interfaces\appearance.dm"
 #include "code\datums\locations\locations.dm"
 #include "code\datums\locations\nyx.dm"

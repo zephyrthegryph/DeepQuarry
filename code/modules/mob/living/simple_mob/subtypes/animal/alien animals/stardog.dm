@@ -394,7 +394,7 @@ REF_PAIR(/mob/living/simple_mob/vore/overmap/stardog, list("control_node" = "hos
 	var/tree_type = /obj/structure/flora/tree/fur
 
 EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/fur, \
-	INTERACT_ITEM("Nothing", PROC_REF(turf_ignore_item)), \
+	INTERACT_ITEM("Nothing", TYPE_PROC_REF(/atom, interaction_pass)), \
 	INTERACT_HAND_UNGATED("Pet", PROC_REF(fur_pet)), \
 	INTERACT_VERB("Pet Fur", PROC_REF(fur_verb_pet)), \
 	INTERACT_VERB("Emote Beyond", PROC_REF(fur_verb_emote_beyond)), \
@@ -610,11 +610,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/fur, \
 	name = "dense fur"
 	desc = "Silky and soft, but too thick to pass or cut!"
 
-EXTEND_INTERACTIONS(/obj/structure/flora/tree/fur/wall, INTERACT_ITEM(null, PROC_REF(wall_interaction_item)))
-
-/// Old attackby.
-/obj/structure/flora/tree/fur/wall/proc/wall_interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
-	return INTERACTION_HANDLED_PASS
+EXTEND_INTERACTIONS(/obj/structure/flora/tree/fur/wall, INTERACT_ITEM(null, TYPE_PROC_REF(/atom, interaction_pass)))
 
 /area/redgate/stardog
 	name = "dog"
@@ -911,10 +907,7 @@ DECLARE_INTERACTIONS(/obj/structure/control_pod, INTERACT_HAND(null, PROC_REF(in
 /datum/interaction/machine_item/dog_eye_swallow
 	id = "dog_eye_swallow"
 	name = "Use"
-	effect = /obj/machinery/computer/ship/navigation/telescreen/dog_eye/proc/interaction_dog_eye_swallow
-
-/obj/machinery/computer/ship/navigation/telescreen/dog_eye/proc/interaction_dog_eye_swallow(mob/user, obj/item/held, datum/interaction/interaction)
-	return TRUE
+	effect = /atom/proc/interaction_swallow
 
 /obj/machinery/computer/ship/navigation/telescreen/dog_eye/update_icon()
 	. = ..()

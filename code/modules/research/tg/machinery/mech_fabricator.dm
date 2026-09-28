@@ -567,10 +567,7 @@ REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, "print_sound")
 	name = "Replace parts"
 	category = INTERACTION_CAT_MAINTAIN
 	held_type = /obj/item/storage/part_replacer
-	effect = /obj/machinery/mecha_part_fabricator_tg/proc/interaction_part_replace
-
-/obj/machinery/mecha_part_fabricator_tg/proc/interaction_part_replace(mob/user, obj/item/held, datum/interaction/interaction)
-	return default_part_replacement(user, held) ? TRUE : FALSE
+	effect = /obj/machinery/proc/interaction_part_replacement
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/mecha_part_fabricator_tg/step_start_condition()

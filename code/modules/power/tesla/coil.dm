@@ -77,11 +77,7 @@
 	id = "tesla_coil_fingerprint"
 	name = "Touch"
 	held_type = /obj/item
-	effect = /obj/machinery/power/tesla_coil/proc/interaction_fingerprint
-
-/obj/machinery/power/tesla_coil/proc/interaction_fingerprint(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
-	return FALSE
+	effect = /atom/proc/interaction_fingerprint
 
 /obj/machinery/power/tesla_coil/screwdriver_act(mob/user, obj/item/W)
 	return ..()

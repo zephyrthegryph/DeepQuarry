@@ -18,9 +18,9 @@
 /datum/interaction/entry_hand/undies_wardrobe_open_ui
 	id = "undies_wardrobe_open_ui"
 	name = "Use"
-	effect = /obj/structure/undies_wardrobe/proc/interaction_open_ui
+	effect = /obj/structure/undies_wardrobe/proc/wardrobe_open_ui
 
-/obj/structure/undies_wardrobe/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/undies_wardrobe/proc/wardrobe_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!human_who_can_use_underwear(user))
 		to_chat(user, span_warning("Sadly there's nothing in here for you to wear."))
 		return TRUE

@@ -354,23 +354,6 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 
 	return
 
-/obj/item/deck/verb_pickup_effect(mob/user, obj/item/held, datum/interaction/interaction) // Snowflaked so pick up verb work as intended
-	if((istype(user) && (!( user.restrained() ) && (!( user.stat ) && (user.contents.Find(src) || in_range(src, user))))))
-		if(!isanimal(user))
-			if( !user.get_active_hand() )		//if active hand is empty
-				var/mob/living/carbon/human/H = user
-				var/obj/item/organ/external/temp = H.organs_by_name[BP_R_HAND]
-
-				if (H.hand)
-					temp = H.organs_by_name[BP_L_HAND]
-				if(temp && !temp.is_usable())
-					to_chat(user,span_notice("You try to move your [temp.name], but cannot!"))
-					return
-
-				to_chat(user,span_notice("You pick up [src]."))
-				user.put_in_hands(src)
-	return
-
 /obj/item/deck/cards/triple
 	name = "big deck of cards"
 	desc = "A simple deck of playing cards with triple the number of cards."

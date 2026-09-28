@@ -286,11 +286,7 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/horoscope, INTERACT_USE(null, PROC_R
 	icon = 'icons/obj/entrepreneur.dmi'
 	icon_state = "exercise_mat"
 
-EXTEND_INTERACTIONS(/obj/item/bedsheet/pillow/exercise, INTERACT_ITEM(null, PROC_REF(exercise_interaction_item)))
-
-/// Old attackby.
-/obj/item/bedsheet/pillow/exercise/proc/exercise_interaction_item(mob/user, obj/item/component, datum/interaction/interaction)
-	return INTERACTION_HANDLED_PASS
+EXTEND_INTERACTIONS(/obj/item/bedsheet/pillow/exercise, INTERACT_ITEM(null, TYPE_PROC_REF(/atom, interaction_pass)))
 
 /obj/item/entrepreneur/dumbbell
 	name = "dumbbell"

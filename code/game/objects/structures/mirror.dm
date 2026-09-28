@@ -35,9 +35,9 @@ REF_OWNED(/obj/structure/mirror, "M")
 /datum/interaction/entry_hand/mirror_open_ui
 	id = "mirror_open_ui"
 	name = "Use"
-	effect = /obj/structure/mirror/proc/interaction_open_ui
+	effect = /obj/structure/mirror/proc/mirror_open_ui
 
-/obj/structure/mirror/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/mirror/proc/mirror_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!glass) return TRUE
 	if(shattered)	return TRUE
 
@@ -150,8 +150,8 @@ REF_OWNED(/obj/structure/mirror, "M")
 	icon_state = "mirror_broke"
 	shattered = 1
 
-/// Overrides mirror's interaction_open_ui(): raiders may become Vox here, then the mirror opens as usual.
-/obj/structure/mirror/raider/interaction_open_ui(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
+/// Overrides mirror's mirror_open_ui(): raiders may become Vox here, then the mirror opens as usual.
+/obj/structure/mirror/raider/mirror_open_ui(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
 	if(istype(get_area(src),/area/syndicate_mothership))
 		if(istype(user) && user.mind && user.mind.special_role == "Raider" && user.species.name != SPECIES_VOX && is_alien_whitelisted(user.client, SPECIES_VOX))
 			om_prompt(src, user, list("message" = "Do you wish to become a true Vox of the Shoal? This is not reversible.", "title" = "Become Vox?", "choices" = list("No","Yes"), "requires" = PROMPT_ADJACENT), PROC_REF(become_vox_answered))

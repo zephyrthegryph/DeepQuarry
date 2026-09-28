@@ -147,10 +147,7 @@
 	id = "injector_maker_swallow"
 	name = "Use"
 	held_type = /obj/item
-	effect = /obj/machinery/injector_maker/proc/interaction_swallow
-
-/obj/machinery/injector_maker/proc/interaction_swallow(mob/user, obj/item/held, datum/interaction/interaction)
-	return TRUE
+	effect = /atom/proc/interaction_swallow
 
 /datum/interaction/machine_drag/injector_maker_add_plastic
 	id = "injector_maker_drag_add_plastic"

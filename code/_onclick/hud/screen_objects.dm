@@ -90,10 +90,7 @@
 	return 1
 
 // Screen grabs are clicked through Click() above; touches and items do nothing.
-DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing", PROC_REF(screen_grab_ignore)), 	INTERACT_ITEM("Nothing", PROC_REF(screen_grab_ignore)), )
-
-/atom/movable/screen/grab/proc/screen_grab_ignore(mob/user, obj/item/held, datum/interaction/interaction)
-	return TRUE
+DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing", TYPE_PROC_REF(/atom, interaction_swallow)), 	INTERACT_ITEM("Nothing", TYPE_PROC_REF(/atom, interaction_swallow)), )
 
 /atom/movable/screen/storage
 	name = "storage"

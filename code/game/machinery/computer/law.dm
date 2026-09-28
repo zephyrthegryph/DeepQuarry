@@ -16,7 +16,7 @@
 		/datum/interaction/machine_item/aiupload_install,
 		/datum/interaction/machine_hand/ungated/aiupload_select_ai,
 	)
-	into += dq_interaction_from_spec(type, INTERACT_OBSERVER("View", PROC_REF(aiupload_observer_block)))
+	into += dq_interaction_from_spec(type, INTERACT_OBSERVER("View", TYPE_PROC_REF(/atom, interaction_swallow)))
 	..()
 
 /// The old "Access Computer's Internals" object verb.
@@ -77,11 +77,6 @@
 		to_chat(user, "[src.current.name] selected for law changes.")
 	return TRUE
 
-/// Old attack_ghost: ghosts can't open the upload console, not even to view.
-/obj/machinery/computer/aiupload/proc/aiupload_observer_block(mob/user, obj/item/held, datum/interaction/interaction)
-	return TRUE
-
-
 /obj/machinery/computer/borgupload
 	name = "cyborg upload console"
 	desc = "Used to upload laws to Cyborgs."
@@ -96,7 +91,7 @@
 		/datum/interaction/machine_item/borgupload_install,
 		/datum/interaction/machine_hand/ungated/borgupload_select_borg,
 	)
-	into += dq_interaction_from_spec(type, INTERACT_OBSERVER("View", PROC_REF(borgupload_observer_block)))
+	into += dq_interaction_from_spec(type, INTERACT_OBSERVER("View", TYPE_PROC_REF(/atom, interaction_swallow)))
 	..()
 
 /// The old attackby: installs an AI module, else falls through to the base behaviour.
@@ -133,6 +128,3 @@
 		to_chat(user, "[src.current.name] selected for law changes.")
 	return TRUE
 
-/// Old attack_ghost: ghosts can't open the upload console, not even to view.
-/obj/machinery/computer/borgupload/proc/borgupload_observer_block(mob/user, obj/item/held, datum/interaction/interaction)
-	return TRUE

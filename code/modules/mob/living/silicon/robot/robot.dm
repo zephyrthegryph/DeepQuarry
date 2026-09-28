@@ -780,7 +780,7 @@
 EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	INTERACT_ITEM(null, PROC_REF(robot_interaction_item)), \
 	INTERACT_HAND_UNGATED(null, PROC_REF(robot_interaction_hand)), \
-	INTERACT_DRAG("Block drag", PROC_REF(robot_interaction_drag_block)), \
+	INTERACT_DRAG("Block drag", TYPE_PROC_REF(/atom, interaction_swallow)), \
 	INTERACT_ROBOT("Drop hat", PROC_REF(robot_drop_own_hat)), \
 	INTERACT_SILICON("Deploy to shell", PROC_REF(robot_ai_deploy_shell)))
 
@@ -1748,11 +1748,6 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	if(.)
 		riding_datum.rider_size = M.size_multiplier
 		src?.buckled_mob_list()[M] = "riding"
-
-/// Old MouseDrop_T: prevents forced relocation by the base drag-buckle (can_buckle). Takes every drop.
-/mob/living/silicon/robot/proc/robot_interaction_drag_block(mob/user, atom/dropping, datum/interaction/interaction)
-	return TRUE
-
 
 /mob/living/silicon/robot/get_scooped(mob/living/carbon/grabber, self_drop)
 	var/obj/item/holder/H = ..(grabber, self_drop)

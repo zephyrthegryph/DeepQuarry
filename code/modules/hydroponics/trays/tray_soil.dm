@@ -19,10 +19,7 @@
 	id = "soil_tank_block"
 	name = "Use"
 	held_type = /obj/item/tank
-	effect = /obj/machinery/portable_atmospherics/hydroponics/soil/proc/interaction_tank_block
-
-/obj/machinery/portable_atmospherics/hydroponics/soil/proc/interaction_tank_block(mob/user, obj/item/O, datum/interaction/interaction)
-	return TRUE
+	effect = /atom/proc/interaction_swallow
 
 /datum/interaction/machine_item/soil_shovel
 	id = "soil_shovel"

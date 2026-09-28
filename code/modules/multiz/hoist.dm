@@ -31,13 +31,9 @@ DECLARE_INTERACTIONS(/obj/item/hoist_kit, INTERACT_USE(null, PROC_REF(interactio
 	plane = ABOVE_MOB_PLANE
 
 EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hoist_hook_touch)), \
+	INTERACT_HAND_UNGATED(null, TYPE_PROC_REF(/atom, interaction_swallow)), \
 	INTERACT_DRAG("Attach", PROC_REF(interaction_hoist_hook_attach)), \
 )
-
-/// Old attack_hand: a bare touch does nothing, not even unbuckling the hoistee (that goes through the hoist).
-/obj/effect/hoist_hook/proc/interaction_hoist_hook_touch(mob/user, obj/item/held, datum/interaction/interaction)
-	return TRUE
 
 /// Old MouseDrop_T: clamp the dragged thing onto the hook. Replaces the buckle drag.
 /obj/effect/hoist_hook/proc/interaction_hoist_hook_attach(mob/user, atom/movable/AM, datum/interaction/interaction)

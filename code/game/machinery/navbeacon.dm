@@ -66,7 +66,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/navbeacon, REGISTRY_NAVBEACONS)
 	id = "navbeacon_use"
 	name = "Use"
 	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_ACTOR, /obj/machinery/navbeacon/proc/actor_has_dexterity, "you don't have the dexterity"))
-	effect = /obj/machinery/proc/interaction_open_ui
+	effect = /atom/proc/interaction_open_ui
 
 /obj/machinery/navbeacon/proc/actor_has_dexterity(mob/actor, atom/target, obj/item/held)
 	return actor.IsAdvancedToolUser()

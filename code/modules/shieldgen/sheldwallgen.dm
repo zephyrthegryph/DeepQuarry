@@ -296,10 +296,7 @@
 /datum/interaction/machine_hand/ungated/shieldwall_touch_block
 	id = "shieldwall_touch_block"
 	name = "Touch"
-	effect = /obj/machinery/shieldwall/proc/interaction_touch_block
-
-/obj/machinery/shieldwall/proc/interaction_touch_block(mob/user, obj/item/held, datum/interaction/interaction)
-	return TRUE
+	effect = /atom/proc/interaction_swallow
 
 /obj/machinery/shieldwall/machine_step()
 	if(needs_power)

@@ -8,13 +8,9 @@
 	special_handling = TRUE
 
 EXTEND_INTERACTIONS(/obj/item/paicard/sleevecard, \
-	INTERACT_OBSERVER(null, PROC_REF(sleevecard_interaction_ghost)), \
+	INTERACT_OBSERVER(null, TYPE_PROC_REF(/atom, interaction_swallow)), \
 	INTERACT_ITEM(null, PROC_REF(sleevecard_interaction_item)), \
 )
-
-/// Old attack_ghost: no ghosts can invite, these are intended for sleevemates only.
-/obj/item/paicard/sleevecard/proc/sleevecard_interaction_ghost(mob/user, obj/item/held, datum/interaction/interaction)
-	return TRUE
 
 /datum/om/task/timed/sleevecard_upload_mind
 	duration = 8 SECONDS

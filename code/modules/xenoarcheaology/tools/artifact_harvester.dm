@@ -87,14 +87,7 @@
 /datum/interaction/machine_hand/artifact_harvester_use
 	id = "artifact_harvester_use"
 	name = "Use"
-	effect = /obj/machinery/artifact_harvester/proc/interaction_artifact_harvester_use
-
-/obj/machinery/artifact_harvester/proc/interaction_artifact_harvester_use(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
-	if(stat & (NOPOWER|BROKEN))
-		return TRUE
-	tgui_interact(user)
-	return TRUE
+	effect = /obj/machinery/proc/interaction_open_ui_powered_fingerprint
 
 /obj/machinery/artifact_harvester/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

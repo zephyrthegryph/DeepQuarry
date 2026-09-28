@@ -58,11 +58,7 @@
 	id = "doorbell_chime_fingerprint"
 	name = "Touch"
 	held_type = /obj/item
-	effect = /obj/machinery/doorbell_chime/proc/interaction_fingerprint
-
-/obj/machinery/doorbell_chime/proc/interaction_fingerprint(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
-	return FALSE
+	effect = /atom/proc/interaction_fingerprint
 
 /obj/machinery/doorbell_chime/multitool_act(mob/user, obj/item/tool)
 	if(!panel_open)

@@ -101,12 +101,7 @@
 /datum/interaction/machine_hand/secure_data_use
 	id = "secure_data_use"
 	name = "Use"
-	effect = /obj/machinery/computer/secure_data/proc/interaction_secure_data_use
-
-/obj/machinery/computer/secure_data/proc/interaction_secure_data_use(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
-	tgui_interact(user)
-	return TRUE
+	effect = /atom/proc/interaction_open_ui_fingerprint
 
 /obj/machinery/computer/secure_data/tgui_interact(mob/user, datum/tgui/ui = null)
 	ui = SStgui.try_update_ui(user, src, ui)

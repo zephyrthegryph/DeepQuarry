@@ -642,11 +642,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	id = "newscaster_item_open"
 	name = "Use"
 	held_type = /obj/item
-	effect = /obj/machinery/newscaster/proc/interaction_item_open
-
-/obj/machinery/newscaster/proc/interaction_item_open(mob/user, obj/item/held, datum/interaction/interaction)
-	attack_hand(user)
-	return TRUE
+	effect = /atom/proc/interaction_as_touch
 
 /obj/machinery/newscaster/screwdriver_act(mob/user, obj/item/tool)
 	return deconstruct_display(user, tool)

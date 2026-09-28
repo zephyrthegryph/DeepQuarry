@@ -231,13 +231,9 @@ DECLARE_INTERACTIONS(/obj/item/mmi, \
 	return
 
 EXTEND_INTERACTIONS(/obj/item/mmi/digital, \
-	INTERACT_ITEM(null, PROC_REF(digital_interaction_item)), \
+	INTERACT_ITEM(null, TYPE_PROC_REF(/atom, interaction_pass)), \
 	INTERACT_SELF("Boot", PROC_REF(digital_mmi_self)), \
 )
-
-/// Old attackby.
-/obj/item/mmi/digital/proc/digital_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	return INTERACTION_HANDLED_PASS
 
 /obj/item/mmi/digital/examine(mob/user)
 	. = ..()

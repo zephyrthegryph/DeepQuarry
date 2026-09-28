@@ -45,7 +45,7 @@ REF_PAIR(/obj/machinery/sleep_console, list("sleeper" = "console"))
 
 EXTEND_INTERACTIONS(/obj/machinery/sleep_console, \
 	INTERACT_HAND(null, PROC_REF(sleep_console_interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(sleep_console_interaction_item)), \
+	INTERACT_ITEM(null, TYPE_PROC_REF(/atom, interaction_as_touch)), \
 )
 
 /// Old attack_hand.
@@ -62,11 +62,6 @@ EXTEND_INTERACTIONS(/obj/machinery/sleep_console, \
 
 	if(sleeper)
 		tgui_interact(user)
-	return TRUE
-
-/// Old attackby: any item just opens the console.
-/obj/machinery/sleep_console/proc/sleep_console_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	attack_hand(user)
 	return TRUE
 
 /obj/machinery/sleep_console/screwdriver_act(mob/user, obj/item/tool)

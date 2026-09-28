@@ -212,12 +212,7 @@
 	else
 		icon_state = "cleanbot[on]"
 
-EXTEND_INTERACTIONS(/mob/living/bot/cleanbot, INTERACT_HAND_UNGATED("Open controls", PROC_REF(cleanbot_interaction_hand)))
-
-/// Old attack_hand (no gate, no default touch): open the controls.
-/mob/living/bot/cleanbot/proc/cleanbot_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	tgui_interact(user)
-	return TRUE
+EXTEND_INTERACTIONS(/mob/living/bot/cleanbot, INTERACT_HAND_UNGATED("Open controls", TYPE_PROC_REF(/atom, interaction_open_ui)))
 
 /mob/living/bot/cleanbot/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

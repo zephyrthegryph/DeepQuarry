@@ -336,7 +336,6 @@
 	// Old /obj/item object verbs.
 	var/static/list/verb_specs = list(
 		INTERACT_VERB("Move To Top", PROC_REF(move_to_top_effect)),
-		INTERACT_VERB("Pick up", PROC_REF(verb_pickup_effect)),
 		INTERACT_VERB("Toggle Digestable", PROC_REF(toggle_digestable_effect), REQ_IN_INVENTORY),
 	)
 	for(var/spec in verb_specs)
@@ -568,37 +567,6 @@
 	if(!M.slot_is_accessible(slot, src, disable_warning? null : M))
 		return 0
 	return 1
-
-/obj/item/proc/verb_pickup_effect(mob/user, obj/item/held, datum/interaction/interaction)
-
-	if(!(user))
-		return
-	if(!user.canmove || user.stat || user.restrained() || !Adjacent(user) || user.is_incorporeal())
-		return
-	if(isanimal(user)) // Allows simple mobs with hands to use the pickup verb
-		var/mob/living/simple_mob/s = user
-		if(!s.has_hands)
-			to_chat(user, span_warning("You can't pick things up!"))
-			return
-	else if((!iscarbon(user)) || (isbrain(user)))//Is humanoid, and is not a brain
-		to_chat(user, span_warning("You can't pick things up!"))
-		return
-	var/mob/living/L = user
-	if( user.stat || user.restrained() )//Is not asleep/dead and is not restrained
-		to_chat(user, span_warning("You can't pick things up!"))
-		return
-	if(src.anchored) //Object isn't anchored
-		to_chat(user, span_warning("You can't pick that up!"))
-		return
-	if(L.get_active_hand()) // Hand is not full //
-		to_chat(user, span_warning("Your hand is full."))
-		return
-	if(!isturf(src.loc)) //Object is on a turf
-		to_chat(user, span_warning("You can't pick that up!"))
-		return
-	//All checks are done, time to pick it up!
-	user.UnarmedAttack(src)
-	return
 
 //This proc is executed when someone clicks the on-screen UI button.
 //The default action is attack_self().

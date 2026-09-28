@@ -201,10 +201,6 @@ DECLARE_INTERACTIONS(/turf, \
 /turf
 	silicon_use = ROBOT_USE_HAND
 
-/// Used with an item: nothing, and nothing else handles it (turfs that can't be built on or dug).
-/turf/proc/turf_ignore_item(mob/user, obj/item/W, datum/interaction/interaction)
-	return INTERACTION_HANDLED_PASS
-
 // Hits a mob on the tile.
 /turf/proc/attack_tile(obj/item/W, mob/living/user)
 	if(!istype(W))

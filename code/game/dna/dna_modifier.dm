@@ -335,7 +335,7 @@ EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
 
 EXTEND_INTERACTIONS(/obj/machinery/computer/scan_consolenew, \
 	INTERACT_ITEM(null, PROC_REF(dna_console_interaction_item)), \
-	INTERACT_HAND(null, PROC_REF(dna_console_interaction_hand)), \
+	INTERACT_HAND(null, TYPE_PROC_REF(/atom, interaction_open_ui)), \
 )
 
 /// Old attackby.
@@ -388,11 +388,6 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/scan_consolenew, \
 
 /obj/machinery/computer/scan_consolenew
 	silicon_use = SILICON_USE_UI
-
-/// Old attack_hand.
-/obj/machinery/computer/scan_consolenew/proc/dna_console_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	tgui_interact(user)
-	return TRUE
 
 /obj/machinery/computer/scan_consolenew/tgui_interact(mob/user, datum/tgui/ui)
 	var/mob/living/carbon/WC = connected?.get_occupant()

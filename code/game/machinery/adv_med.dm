@@ -313,15 +313,10 @@ EXTEND_INTERACTIONS(/obj/machinery/bodyscanner, \
 REF_PAIR(/obj/machinery/body_scanconsole, list("scanner" = "console"))
 
 EXTEND_INTERACTIONS(/obj/machinery/body_scanconsole, \
-	INTERACT_ITEM(null, PROC_REF(body_scanconsole_interaction_item)), \
+	INTERACT_ITEM(null, TYPE_PROC_REF(/atom, interaction_as_touch)), \
 	INTERACT_HAND_UNGATED(null, PROC_REF(body_scanconsole_interaction_hand)), \
 	INTERACT_OBSERVER("View", PROC_REF(body_scanconsole_observer)), \
 )
-
-/// Old attackby: any item just opens the console.
-/obj/machinery/body_scanconsole/proc/body_scanconsole_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	attack_hand(user)
-	return TRUE
 
 /obj/machinery/body_scanconsole/multitool_act(mob/user, obj/item/tool)
 	if(!istype(tool, /obj/item/multitool))

@@ -9,7 +9,7 @@
 	flags = TURF_ACID_IMMUNE
 
 // Old attackby: the holofloor ignores items.
-EXTEND_INTERACTIONS(/turf/simulated/floor/holofloor, INTERACT_ITEM("Nothing", PROC_REF(turf_ignore_item)))
+EXTEND_INTERACTIONS(/turf/simulated/floor/holofloor, INTERACT_ITEM("Nothing", TYPE_PROC_REF(/atom, interaction_pass)))
 
 /turf/simulated/floor/holofloor/set_flooring()
 	return

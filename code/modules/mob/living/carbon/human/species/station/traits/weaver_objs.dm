@@ -133,12 +133,8 @@ EXTEND_INTERACTIONS(/obj/structure/bed/double/weaversilk_nest, \
 
 
 EXTEND_INTERACTIONS(/obj/effect/weaversilk/trap, \
-	INTERACT_DRAG(null, PROC_REF(interaction_trap_refuse_drag)), \
+	INTERACT_DRAG(null, TYPE_PROC_REF(/atom, interaction_swallow)), \
 )
-
-/// Old MouseDrop_T: nothing can be buckled into the trap by dragging.
-/obj/effect/weaversilk/trap/proc/interaction_trap_refuse_drag(mob/user, atom/movable/dropping, datum/interaction/interaction)
-	return TRUE
 
 // Items
 

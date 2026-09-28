@@ -62,10 +62,7 @@ REF_OWNED_LIST(/obj/machinery/particle_smasher, "recipes")
 	id = "particle_smasher_analyzer"
 	name = "Use"
 	held_type = /obj/item/analyzer
-	effect = /obj/machinery/particle_smasher/proc/interaction_analyzer
-
-/obj/machinery/particle_smasher/proc/interaction_analyzer(mob/user, obj/item/held, datum/interaction/interaction)
-	return TRUE
+	effect = /atom/proc/interaction_swallow
 
 /datum/interaction/machine_item/particle_smasher_fill_target
 	id = "particle_smasher_fill_target"

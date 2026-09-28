@@ -379,7 +379,7 @@
 	icon = 'icons/turf/stomach_vr.dmi'
 
 // Old attackby: items do nothing here.
-EXTEND_INTERACTIONS(/turf/simulated/floor/flesh, INTERACT_ITEM("Nothing", PROC_REF(turf_ignore_item)))
+EXTEND_INTERACTIONS(/turf/simulated/floor/flesh, INTERACT_ITEM("Nothing", TYPE_PROC_REF(/atom, interaction_pass)))
 
 /turf/simulated/floor/flesh/ex_act(severity)
 	return

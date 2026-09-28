@@ -87,12 +87,7 @@ FLOOR SAFES
 /datum/interaction/entry_hand/safe_open_ui
 	id = "safe_open_ui"
 	name = "Use"
-	effect = /obj/structure/safe/proc/interaction_open_ui
-
-/obj/structure/safe/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
-	user.set_machine(src)
-	tgui_interact(user)
-	return TRUE
+	effect = /atom/proc/interaction_open_ui
 
 /obj/structure/safe/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

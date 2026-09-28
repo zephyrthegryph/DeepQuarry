@@ -4,7 +4,7 @@
 
 //Overwrite because we dont want people building rods in space.
 // Old attackby: no building rods in transit space.
-EXTEND_INTERACTIONS(/turf/space/transit, INTERACT_ITEM("Nothing", PROC_REF(turf_ignore_item)))
+EXTEND_INTERACTIONS(/turf/space/transit, INTERACT_ITEM("Nothing", TYPE_PROC_REF(/atom, interaction_pass)))
 
 /turf/space/transit/Initialize(mapload)
 	. = ..()

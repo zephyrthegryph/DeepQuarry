@@ -123,12 +123,7 @@
 
 	return data
 
-EXTEND_INTERACTIONS(/mob/living/bot/secbot, INTERACT_HAND_UNGATED("Open controls", PROC_REF(secbot_interaction_hand)))
-
-/// Old attack_hand (no gate, no default touch): open the controls.
-/mob/living/bot/secbot/proc/secbot_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	tgui_interact(user)
-	return TRUE
+EXTEND_INTERACTIONS(/mob/living/bot/secbot, INTERACT_HAND_UNGATED("Open controls", TYPE_PROC_REF(/atom, interaction_open_ui)))
 
 /mob/living/bot/secbot/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	if(..())

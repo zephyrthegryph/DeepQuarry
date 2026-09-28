@@ -32,17 +32,9 @@ REF_PAIR(/obj/machinery/computer/operating, list("table" = "computer"))
 REF_PAIR(/obj/machinery/optable, list("computer" = "table"))
 
 EXTEND_INTERACTIONS(/obj/machinery/computer/operating, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(operating_console_interaction_hand)), \
-	INTERACT_SILICON("Use", PROC_REF(operating_console_interaction_hand)), \
+	INTERACT_HAND_UNGATED(null, TYPE_PROC_REF(/obj/machinery, interaction_open_ui_powered_fingerprint)), \
+	INTERACT_SILICON("Use", TYPE_PROC_REF(/obj/machinery, interaction_open_ui_powered_fingerprint)), \
 )
-
-/// Old attack_hand (it never reached the machinery gate), and old attack_ai (the same body).
-/obj/machinery/computer/operating/proc/operating_console_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
-	if(stat & (BROKEN|NOPOWER))
-		return TRUE
-	tgui_interact(user)
-	return TRUE
 
 /obj/machinery/computer/operating/tgui_interact(mob/user, datum/tgui/ui = null)
 	ui = SStgui.try_update_ui(user, src, ui)

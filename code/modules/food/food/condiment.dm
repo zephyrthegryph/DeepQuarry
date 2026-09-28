@@ -18,11 +18,7 @@
 	center_of_mass_y = 6
 	volume = 50
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/condiment, INTERACT_ITEM(null, PROC_REF(condiment_item)))
-
-/// Old attackby: swallowed every item (no food handling), but afterattack (pouring) still follows.
-/obj/item/reagent_containers/food/condiment/proc/condiment_item(mob/user, obj/item/W, datum/interaction/interaction)
-	return INTERACTION_HANDLED_PASS
+EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/condiment, INTERACT_ITEM(null, TYPE_PROC_REF(/atom, interaction_pass)))
 
 /obj/item/reagent_containers/food/condiment/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(standard_feed_mob(user, M))

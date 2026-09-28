@@ -213,11 +213,7 @@
 	id = "station_map_fingerprint"
 	name = "Touch"
 	held_type = /obj/item
-	effect = /obj/machinery/station_map/proc/interaction_fingerprint
-
-/obj/machinery/station_map/proc/interaction_fingerprint(mob/user, obj/item/W, datum/interaction/interaction)
-	src.add_fingerprint(user)
-	return FALSE
+	effect = /atom/proc/interaction_fingerprint
 
 /datum/frame/frame_types/station_map
 	name = "Station Map Frame"

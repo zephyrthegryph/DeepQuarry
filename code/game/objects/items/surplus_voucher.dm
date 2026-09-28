@@ -7,17 +7,20 @@
 	throw_range = 4
 	force = 0
 
-/obj/item/surplus_voucher/com
-	name = "Reward Surplus Voucher"
-	desc = "A surplus voucher! This one is meant to reward valued employees! Activate it for your surplus delivery!"
-DECLARE_INTERACTIONS(/obj/item/surplus_voucher/com, INTERACT_USE(null, PROC_REF(interaction_self)))
+DECLARE_INTERACTIONS(/obj/item/surplus_voucher, INTERACT_USE("Redeem", PROC_REF(interaction_redeem)))
 
-/// Old attack_self.
-/obj/item/surplus_voucher/com/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Redeem the voucher: its surplus delivery lands here. Each kind of voucher overrides spawn_item().
+/obj/item/surplus_voucher/proc/interaction_redeem(mob/user, obj/item/held, datum/interaction/interaction)
 	spawn_item(get_turf(src))
 	return TRUE
 
-/obj/item/surplus_voucher/com/proc/spawn_item(turf/T)
+/obj/item/surplus_voucher/proc/spawn_item(turf/T)
+	return
+
+/obj/item/surplus_voucher/com
+	name = "Reward Surplus Voucher"
+	desc = "A surplus voucher! This one is meant to reward valued employees! Activate it for your surplus delivery!"
+/obj/item/surplus_voucher/com/spawn_item(turf/T)
 	var/path = pick(prob(6);/obj/item/reagent_containers/food/drinks/bottle/whiskey,
 					prob(3);/obj/item/reagent_containers/food/drinks/bottle/specialwhiskey,
 					prob(3);/obj/item/reagent_containers/food/drinks/bottle/vodka,
@@ -52,14 +55,7 @@ DECLARE_INTERACTIONS(/obj/item/surplus_voucher/com, INTERACT_USE(null, PROC_REF(
 /obj/item/surplus_voucher/eng
 	name = "Engineering Surplus Voucher"
 	desc = "A surplus voucher! This one is meant to resupply engineering with tools! Activate it for your surplus delivery!"
-DECLARE_INTERACTIONS(/obj/item/surplus_voucher/eng, INTERACT_USE(null, PROC_REF(interaction_self)))
-
-/// Old attack_self.
-/obj/item/surplus_voucher/eng/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	spawn_item(get_turf(src))
-	return TRUE
-
-/obj/item/surplus_voucher/eng/proc/spawn_item(turf/T)
+/obj/item/surplus_voucher/eng/spawn_item(turf/T)
 	var/path = pick(prob(2);/obj/item/storage/briefcase/inflatable,
 					prob(2);/obj/item/clamp,
 					prob(3);/obj/item/extinguisher,
@@ -80,14 +76,7 @@ DECLARE_INTERACTIONS(/obj/item/surplus_voucher/eng, INTERACT_USE(null, PROC_REF(
 /obj/item/surplus_voucher/med
 	name = "Medical Surplus Voucher"
 	desc = "A surplus voucher! This one is meant to resupply medical with chemicals and kits! Activate it for your surplus delivery!"
-DECLARE_INTERACTIONS(/obj/item/surplus_voucher/med, INTERACT_USE(null, PROC_REF(interaction_self)))
-
-/// Old attack_self.
-/obj/item/surplus_voucher/med/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	spawn_item(get_turf(src))
-	return TRUE
-
-/obj/item/surplus_voucher/med/proc/spawn_item(turf/T)
+/obj/item/surplus_voucher/med/spawn_item(turf/T)
 	var/path = pick(prob(6);/obj/item/storage/firstaid/regular,
 					prob(6);/obj/item/storage/firstaid/fire,
 					prob(6);/obj/item/storage/firstaid/toxin,
@@ -114,14 +103,7 @@ DECLARE_INTERACTIONS(/obj/item/surplus_voucher/med, INTERACT_USE(null, PROC_REF(
 /obj/item/surplus_voucher/sci
 	name = "Science Surplus Voucher"
 	desc = "A surplus voucher! This one is meant to supply science with a variety of miscellaneous items! Activate it for your surplus delivery!"
-DECLARE_INTERACTIONS(/obj/item/surplus_voucher/sci, INTERACT_USE(null, PROC_REF(interaction_self)))
-
-/// Old attack_self.
-/obj/item/surplus_voucher/sci/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	spawn_item(get_turf(src))
-	return TRUE
-
-/obj/item/surplus_voucher/sci/proc/spawn_item(turf/T)
+/obj/item/surplus_voucher/sci/spawn_item(turf/T)
 	var/path = pick(prob(1);/obj/item/kit/paint/ripley,
 					prob(1);/obj/item/kit/paint/ripley/death,
 					prob(1);/obj/item/kit/paint/ripley/flames_red,
@@ -148,14 +130,7 @@ DECLARE_INTERACTIONS(/obj/item/surplus_voucher/sci, INTERACT_USE(null, PROC_REF(
 /obj/item/surplus_voucher/sec
 	name = "Security Surplus Voucher"
 	desc = "A surplus voucher! This one is meant to resupply security with gear... and donuts! Activate it for your surplus delivery!"
-DECLARE_INTERACTIONS(/obj/item/surplus_voucher/sec, INTERACT_USE(null, PROC_REF(interaction_self)))
-
-/// Old attack_self.
-/obj/item/surplus_voucher/sec/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	spawn_item(get_turf(src))
-	return TRUE
-
-/obj/item/surplus_voucher/sec/proc/spawn_item(turf/T)
+/obj/item/surplus_voucher/sec/spawn_item(turf/T)
 	var/path = pick(prob(2);/obj/item/storage/box/flashbangs,
 					prob(4);/obj/item/storage/box/flare,
 					prob(5);/obj/item/storage/box/donut,
@@ -175,14 +150,7 @@ DECLARE_INTERACTIONS(/obj/item/surplus_voucher/sec, INTERACT_USE(null, PROC_REF(
 /obj/item/surplus_voucher/ser
 	name = "Service Surplus Voucher"
 	desc = "A surplus voucher! This one is meant to generally resupply service employees! Activate it for your surplus delivery!"
-DECLARE_INTERACTIONS(/obj/item/surplus_voucher/ser, INTERACT_USE(null, PROC_REF(interaction_self)))
-
-/// Old attack_self.
-/obj/item/surplus_voucher/ser/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	spawn_item(get_turf(src))
-	return TRUE
-
-/obj/item/surplus_voucher/ser/proc/spawn_item(turf/T)
+/obj/item/surplus_voucher/ser/spawn_item(turf/T)
 	var/path = pick(prob(4);/obj/item/reagent_containers/food/drinks/milk,
 					prob(4);/obj/item/reagent_containers/food/condiment/carton/flour,
 					prob(4);/obj/item/reagent_containers/food/drinks/soymilk,
