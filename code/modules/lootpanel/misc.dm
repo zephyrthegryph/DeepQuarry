@@ -33,12 +33,12 @@
 		if(QDELETED(index) || index.icon)
 			continue
 
-		index.generate_icon(owner)
+		index.generate_icon(owner())
 
 		if(TICK_CHECK)
 			break
 
-	var/datum/tgui/window = SStgui.get_open_ui(owner.mob, src)
+	var/datum/tgui/window = SStgui.get_open_ui(owner().mob, src)
 	if(isnull(window))
 		reset_contents()
 		return TRUE

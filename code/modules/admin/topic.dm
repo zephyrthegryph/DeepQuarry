@@ -19,7 +19,7 @@
 /datum/admins/Topic(href, href_list)
 	..()
 
-	if(usr.client != src.owner || !check_rights(0))
+	if(usr.client != src.owner() || !check_rights(0))
 		log_admin("[key_name(usr)] tried to use the admin panel without authorization.")
 		message_admins("[usr.key] has attempted to override the admin panel!")
 		return
@@ -994,9 +994,9 @@
 			return
 
 		if(href_list["viewruntime_backto"])
-			error_viewer.show_to(owner, locate(href_list["viewruntime_backto"]), href_list["viewruntime_linear"])
+			error_viewer.show_to(owner(), locate(href_list["viewruntime_backto"]), href_list["viewruntime_linear"])
 		else
-			error_viewer.show_to(owner, null, href_list["viewruntime_linear"])
+			error_viewer.show_to(owner(), null, href_list["viewruntime_linear"])
 
 	else if(href_list["adminchecklaws"])
 		output_ai_laws()
@@ -1044,7 +1044,7 @@
 			if(MALE,FEMALE)	gender_description = "[M.gender]"
 			else			gender_description = span_red(span_bold("[M.gender]"))
 
-		to_chat(src.owner, "<span class='filter_adminlog'><b>Info about [M.name]:</b><br>\
+		to_chat(src.owner(), "<span class='filter_adminlog'><b>Info about [M.name]:</b><br>\
 							Mob type = [M.type]; Gender = [gender_description] Damage = [health_description]<br>\
 							Name = <b>[M.name]</b>; Real_name = [M.real_name]; Mind_name = [M.mind?"[M.mind.name]":""]; Key = <b>[M.key]</b>;<br>\
 							Location = [location_description];<br>\
@@ -1064,15 +1064,15 @@
 		if(!(istype(H.get_equipped_item(SLOT_ID_HAND_L),/obj/item/reagent_containers/food/snacks/cookie)))
 			H.equip_to_slot_or_del( new /obj/item/reagent_containers/food/snacks/cookie(H), slot_r_hand )
 			if(!(istype(H.get_equipped_item(SLOT_ID_HAND_R),/obj/item/reagent_containers/food/snacks/cookie)))
-				log_admin("[key_name(H)] has their hands full, so they did not receive their cookie, spawned by [key_name(src.owner)].")
-				message_admins("[key_name(H)] has their hands full, so they did not receive their cookie, spawned by [key_name(src.owner)].")
+				log_admin("[key_name(H)] has their hands full, so they did not receive their cookie, spawned by [key_name(src.owner())].")
+				message_admins("[key_name(H)] has their hands full, so they did not receive their cookie, spawned by [key_name(src.owner())].")
 				return
 			else
 				H.update_inv_r_hand()//To ensure the icon appears in the HUD
 		else
 			H.update_inv_l_hand()
-		log_admin("[key_name(H)] got their cookie, spawned by [key_name(src.owner)]")
-		message_admins("[key_name(H)] got their cookie, spawned by [key_name(src.owner)]")
+		log_admin("[key_name(H)] got their cookie, spawned by [key_name(src.owner())]")
+		message_admins("[key_name(H)] got their cookie, spawned by [key_name(src.owner())]")
 		feedback_inc("admin_cookies_spawned",1)
 		to_chat(H, span_notice("Your prayers have been answered!! You received the <b>best cookie</b>!"))
 
@@ -1084,7 +1084,7 @@
 			to_chat(usr, span_filter_adminlog("This can only be used on instances of type /mob/living/carbon/human"))
 			return
 
-		owner.smite(H)
+		owner().smite(H)
 
 	else if(href_list["BlueSpaceArtillery"])
 		if(!check_rights(R_ADMIN|R_FUN|R_EVENT))	return
@@ -1094,7 +1094,7 @@
 			to_chat(usr, span_filter_adminlog("This can only be used on instances of type /mob/living"))
 			return
 
-		if(tgui_alert(src.owner, "Are you sure you wish to hit [key_name(M)] with Blue Space Artillery?", "Confirm Firing?", list("Yes", "No")) != "Yes")
+		if(tgui_alert(src.owner(), "Are you sure you wish to hit [key_name(M)] with Blue Space Artillery?", "Confirm Firing?", list("Yes", "No")) != "Yes")
 			return
 
 		bluespace_artillery(M,src)
@@ -1106,12 +1106,12 @@
 			return
 
 		if(L.can_centcom_reply())
-			var/input = tgui_input_text(src.owner, "Please enter a message to reply to [key_name(L)] via their headset.","Outgoing message from CentCom", "", MAX_MESSAGE_LEN)
+			var/input = tgui_input_text(src.owner(), "Please enter a message to reply to [key_name(L)] via their headset.","Outgoing message from CentCom", "", MAX_MESSAGE_LEN)
 			if(!input)		return
 
-			to_chat(src.owner, span_filter_adminlog("You sent [input] to [L] via a secure channel."))
-			log_admin("[src.owner] replied to [key_name(L)]'s CentCom message with the message [input].")
-			message_admins("[src.owner] replied to [key_name(L)]'s CentCom message with: \"[input]\"")
+			to_chat(src.owner(), span_filter_adminlog("You sent [input] to [L] via a secure channel."))
+			log_admin("[src.owner()] replied to [key_name(L)]'s CentCom message with the message [input].")
+			message_admins("[src.owner()] replied to [key_name(L)]'s CentCom message with: \"[input]\"")
 			if(!isAI(L))
 				to_chat(L, span_info("You hear something crackle in your headset for a moment before a voice speaks."))
 			to_chat(L, span_info("Please stand by for a message from Central Command."))
@@ -1119,7 +1119,7 @@
 			to_chat(L, span_notice("[input]"))
 			to_chat(L, span_info("Message ends."))
 		else
-			to_chat(src.owner, span_filter_adminlog("The person you are trying to contact does not have functional radio equipment."))
+			to_chat(src.owner(), span_filter_adminlog("The person you are trying to contact does not have functional radio equipment."))
 
 
 	else if(href_list["SyndicateReply"])
@@ -1131,11 +1131,11 @@
 			to_chat(usr, span_filter_adminlog("The person you are trying to contact is not wearing a headset"))
 			return
 
-		var/input = tgui_input_text(src.owner, "Please enter a message to reply to [key_name(H)] via their headset.","Outgoing message from a shadowy figure...", "", MAX_MESSAGE_LEN)
+		var/input = tgui_input_text(src.owner(), "Please enter a message to reply to [key_name(H)] via their headset.","Outgoing message from a shadowy figure...", "", MAX_MESSAGE_LEN)
 		if(!input)	return
 
-		to_chat(src.owner, span_filter_adminlog("You sent [input] to [H] via a secure channel."))
-		log_admin("[src.owner] replied to [key_name(H)]'s illegal message with the message [input].")
+		to_chat(src.owner(), span_filter_adminlog("You sent [input] to [H] via a secure channel."))
+		log_admin("[src.owner()] replied to [key_name(H)]'s illegal message with the message [input].")
 		to_chat(H, "<span class='filter_notice'>You hear something crackle in your headset for a moment before a voice speaks.  \
 					\"Please stand by for a message from your benefactor.  Message as follows, agent. <b>\"[input]\"</b>  Message ends.\"</span>")
 
@@ -1163,10 +1163,10 @@
 
 		if (istype(bundle.pages[page], /obj/item/paper))
 			var/obj/item/paper/P = bundle.pages[page]
-			P.show_content(src.owner, 1)
+			P.show_content(src.owner(), 1)
 		else if (istype(bundle.pages[page], /obj/item/photo))
 			var/obj/item/photo/H = bundle.pages[page]
-			H.show(src.owner)
+			H.show(src.owner())
 		return
 
 	else if(href_list["FaxReply"])
@@ -1484,7 +1484,7 @@
 
 	else if(href_list["populate_inactive_customitems"])
 		if(check_rights(R_ADMIN|R_SERVER))
-			populate_inactive_customitems_list(src.owner)
+			populate_inactive_customitems_list(src.owner())
 
 	// GLOB.vsc was a ZAS atmos-tuning settings holder; removed in LINDA
 	// migration since LINDA tuning is compile-time in auxmos. Stub admin response.

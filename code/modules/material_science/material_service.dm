@@ -171,7 +171,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	return MATERIAL_TANK_REFERENCE_THICKNESS
 
 /datum/material_service
-	var/obj/owner
+	var/owner_handle
 	var/list/mixture_ids
 	/// Last pressure published for each watched mixture. Stable, harmless
 	/// pressure jitter updates this cache without waking the physical model.
@@ -211,9 +211,9 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 
 /datum/material_service/New(obj/assembly)
 	..()
-	owner = assembly
-	if(!owner.material_assembly_id)
-		owner.material_assembly_id = "ME-[++GLOB.next_material_assembly_id]"
+	owner_handle = om_handle(assembly)
+	if(!owner().material_assembly_id)
+		owner().material_assembly_id = "ME-[++GLOB.next_material_assembly_id]"
 	last_update = world.time
 	chemical_last_update = world.time
 	initialize_thermal_stock()
@@ -225,16 +225,16 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	unregister_diagnostics()
 	om_cancel_after(src, /datum/om/behaviour/material_service)
 	clear_watches()
-	if(owner?.material_service == src)
-		owner.material_service = null
-	owner = null
+	if(owner()?.material_service == src)
+		owner().material_service = null
+	owner_handle = null
 	last_delivery_mixture = null
 	thermal_stock_handle = null
 	electrical_stock_handle = null
 	return ..()
 
 /datum/material_service/proc/schedule(delay = MATERIAL_SERVICE_INTERVAL)
-	if(QDELETED(owner))
+	if(QDELETED(owner()))
 		return
 	var/due = world.time + delay
 	if(!timer)
@@ -288,7 +288,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 /// wake whenever their turf's atmos revision advances.
 /datum/material_service/proc/gas_dependency_interest_mask()
 	var/mask = GAS_DEPENDENCY_TEMPERATURE | GAS_DEPENDENCY_COMPOSITION
-	if(owner.material_service_rating() > 0)
+	if(owner().material_service_rating() > 0)
 		mask |= GAS_DEPENDENCY_PRESSURE
 	return mask
 
@@ -320,7 +320,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 			return TRUE
 	if((change_mask & GAS_DEPENDENCY_TEMPERATURE) && abs(new_temperature - temperature) >= MATERIAL_THERMAL_RESOLUTION)
 		return TRUE
-	var/rating = owner.material_service_rating()
+	var/rating = owner().material_service_rating()
 	if(!(change_mask & GAS_DEPENDENCY_PRESSURE) || rating <= 0)
 		return FALSE
 	var/lowest = new_pressure
@@ -329,16 +329,16 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 		var/pressure = mixture_pressures[id]
 		lowest = min(lowest, pressure)
 		highest = max(highest, pressure)
-	var/limit = owner.material_environment_pressure_limit(rating, owner.material_service_radius(), owner.material_service_thickness(), temperature)
-	return owner.material_environment_leaking || (highest - lowest) / max(limit, ONE_ATMOSPHERE) >= MATERIAL_PRESSURE_STRESS_RATIO
+	var/limit = owner().material_environment_pressure_limit(rating, owner().material_service_radius(), owner().material_service_thickness(), temperature)
+	return owner().material_environment_leaking || (highest - lowest) / max(limit, ONE_ATMOSPHERE) >= MATERIAL_PRESSURE_STRESS_RATIO
 
 /datum/material_service/proc/rebind()
 	watches_dirty = FALSE
 	var/list/next_ids = list()
 	var/list/next_pressures = list()
 	var/list/next_corrosion = list()
-	var/list/air_ports = owner.material_service_gases()
-	var/turf/location = get_turf(owner)
+	var/list/air_ports = owner().material_service_gases()
+	var/turf/location = get_turf(owner())
 	if(location != watched_turf())
 		if(watched_turf())
 			UnregisterSignal(watched_turf(), COMSIG_TURF_CHANGE)
@@ -367,7 +367,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	mixture_pressures = next_pressures
 	mixture_corrosion = next_corrosion
 	var/list/next_sources = list()
-	var/atom/movable/location_source = owner
+	var/atom/movable/location_source = owner()
 	while(istype(location_source))
 		next_sources += location_source
 		location_source = location_source.loc
@@ -380,16 +380,16 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	movement_sources = next_sources
 
 /datum/material_service/proc/contents_changed()
-	if(QDELETED(owner))
+	if(QDELETED(owner()))
 		return
 	settle_chemical()
-	if(QDELETED(owner))
+	if(QDELETED(owner()))
 		return
 	chemical_rate = 0
-	var/datum/material/liner = owner.material_for_role(MATERIAL_ROLE_LINER)
-	if(liner && owner.reagents?.total_volume)
-		for(var/datum/reagent/chemical in owner.reagents.reagent_list)
-			chemical_rate += liner.material_corrosion_rate(chemical.id, temperature) * chemical.volume / owner.reagents.total_volume
+	var/datum/material/liner = owner().material_for_role(MATERIAL_ROLE_LINER)
+	if(liner && owner().reagents?.total_volume)
+		for(var/datum/reagent/chemical in owner().reagents.reagent_list)
+			chemical_rate += liner.material_corrosion_rate(chemical.id, temperature) * chemical.volume / owner().reagents.total_volume
 	if(chemical_rate)
 		schedule()
 
@@ -397,18 +397,18 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	var/elapsed = max(0, (world.time - chemical_last_update) / 10)
 	chemical_last_update = world.time
 	if(chemical_rate && elapsed)
-		owner.material_environment_liner_integrity = max(0, owner.material_environment_liner_integrity - chemical_rate * elapsed)
-		if(owner.material_environment_liner_integrity <= 0)
+		owner().material_environment_liner_integrity = max(0, owner().material_environment_liner_integrity - chemical_rate * elapsed)
+		if(owner().material_environment_liner_integrity <= 0)
 			chemical_rate = 0
-			owner.material_environment_rupture()
+			owner().material_environment_rupture()
 
 /datum/material_service/proc/thermal_mass()
 	return thermal_capacity
 
 /datum/material_service/proc/initialize_thermal_stock()
-	var/datum/material/thermal = owner.material_for_role(MATERIAL_ROLE_THERMAL) || owner.primary_construction_material()
+	var/datum/material/thermal = owner().material_for_role(MATERIAL_ROLE_THERMAL) || owner().primary_construction_material()
 	thermal_stock_handle = om_handle(thermal)
-	electrical_stock_handle = om_handle(owner.material_for_role(MATERIAL_ROLE_CONDUCTOR))
+	electrical_stock_handle = om_handle(owner().material_for_role(MATERIAL_ROLE_CONDUCTOR))
 	thermal_capacity = max((thermal?.specific_heat || 125) * MATERIAL_SERVICE_REFERENCE_MASS, 1000)
 	if(thermal_material_id == thermal?.name)
 		return
@@ -420,7 +420,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 /// Positive heat enters this solid, negative heat leaves. Phase storage belongs
 /// to this assembly and survives material recalculation.
 /datum/material_service/proc/add_heat(joules)
-	if(!joules || QDELETED(owner))
+	if(!joules || QDELETED(owner()))
 		return 0
 	var/datum/material/thermal = thermal_stock()
 	var/mass = thermal_mass()
@@ -450,12 +450,12 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 		accepted -= minimum_heat - joules
 		joules = minimum_heat
 	temperature += joules / mass
-	if(temperature != old_temperature && owner.reagents?.total_volume)
+	if(temperature != old_temperature && owner().reagents?.total_volume)
 		// Temperature is an input to chemical attack. Settle the previous rate
 		// and publish the new one at the mutation, not at the next reagent edit.
 		contents_changed()
-	if(istype(owner, /obj/structure/cable))
-		var/obj/structure/cable/cable = owner
+	if(istype(owner(), /obj/structure/cable))
+		var/obj/structure/cable/cable = owner()
 		var/datum/material/conductor = electrical_stock()
 		var/crossed_critical = conductor?.critical_temperature && ((temperature < conductor.critical_temperature) != (electrical_reference_temperature < conductor.critical_temperature))
 		if(abs(temperature - electrical_reference_temperature) >= 0.1 || crossed_critical)
@@ -486,26 +486,26 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	service.advance()
 
 /datum/material_service/proc/advance()
-	if(updating || QDELETED(owner))
+	if(updating || QDELETED(owner()))
 		return
 	updating = TRUE
 	var/elapsed = has_sampled ? clamp((world.time - last_update) / 10, 0, MATERIAL_SERVICE_MAX_ELAPSED) : 0
 	has_sampled = TRUE
 	settle_chemical()
 	last_update = world.time
-	if(QDELETED(owner))
+	if(QDELETED(owner()))
 		updating = FALSE
 		return
 	if(watches_dirty)
 		rebind()
-	var/turf/location = get_turf(owner)
+	var/turf/location = get_turf(owner())
 	var/datum/gas_mixture/ambient = location?.return_air()
 	active = chemical_rate > 0
-	var/datum/material/thermal_output = owner.material_for_role(MATERIAL_ROLE_THERMAL) || owner.primary_construction_material()
+	var/datum/material/thermal_output = owner().material_for_role(MATERIAL_ROLE_THERMAL) || owner().primary_construction_material()
 	if(elapsed > 0 && thermal_output?.exothermic_heat_rate > 0)
 		add_heat(thermal_output.exothermic_heat_rate * elapsed)
 		active = TRUE
-	var/list/air_ports = owner.material_service_gases()
+	var/list/air_ports = owner().material_service_gases()
 	var/datum/gas_mixture/highest_load_port
 	var/highest_pressure_delta = -1
 	var/ambient_pressure = ambient?.return_pressure() || 0
@@ -514,24 +514,24 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 		if(delta > highest_pressure_delta)
 			highest_pressure_delta = delta
 			highest_load_port = air
-	var/rating = owner.material_service_rating()
-	var/effective_limit = rating > 0 ? owner.material_environment_pressure_limit(rating, owner.material_service_radius(), owner.material_service_thickness(), temperature) : 0
+	var/rating = owner().material_service_rating()
+	var/effective_limit = rating > 0 ? owner().material_environment_pressure_limit(rating, owner().material_service_radius(), owner().material_service_thickness(), temperature) : 0
 	last_pressure_load = effective_limit > 0 ? highest_pressure_delta / effective_limit : 0
 	for(var/datum/gas_mixture/air as anything in air_ports)
-		active = owner.process_material_environment(air, ambient, elapsed, owner.material_service_rating(), owner.material_service_radius(), owner.material_service_thickness(), air == highest_load_port, TRUE, 1 / length(air_ports)) || active
-		if(!QDELETED(owner) && owner.material_service_conducts_contents())
+		active = owner().process_material_environment(air, ambient, elapsed, owner().material_service_rating(), owner().material_service_radius(), owner().material_service_thickness(), air == highest_load_port, TRUE, 1 / length(air_ports)) || active
+		if(!QDELETED(owner()) && owner().material_service_conducts_contents())
 			active = exchange_with_gas(air, elapsed / length(air_ports)) || active
-		if(QDELETED(owner))
+		if(QDELETED(owner()))
 			updating = FALSE
 			return
 	if(!length(air_ports))
-		active = owner.process_material_exterior(ambient, elapsed) || active
-	if(QDELETED(owner))
+		active = owner().process_material_exterior(ambient, elapsed) || active
+	if(QDELETED(owner()))
 		updating = FALSE
 		return
 	if(ambient && elapsed > 0)
 		var/ambient_capacity = ambient.heat_capacity()
-		var/conductance = owner.construction_thermal_conductance(0.1, 0.004, temperature) || 0
+		var/conductance = owner().construction_thermal_conductance(0.1, 0.004, temperature) || 0
 		if(ambient_capacity > 0 && conductance > 0)
 			var/equilibrium = (temperature - ambient.return_temperature()) / (1 / thermal_mass() + 1 / ambient_capacity)
 			var/exchange = equilibrium * (1 - 2.718281828 ** (-conductance * elapsed * (1 / thermal_mass() + 1 / ambient_capacity)))
@@ -542,18 +542,18 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 				else
 					ambient.add_thermal_energy(-add_heat(-exchange - converted) - converted)
 				active = TRUE
-	var/datum/material/structure = owner.material_for_role(MATERIAL_ROLE_STRUCTURE) || owner.primary_construction_material()
+	var/datum/material/structure = owner().material_for_role(MATERIAL_ROLE_STRUCTURE) || owner().primary_construction_material()
 	last_stress = structure ? temperature / max(structure.melting_point, 1) : 0
-	status = owner.material_environment_leaking ? "Leaking" : (last_stress >= 1 ? "Overheated" : (last_pressure_load >= MATERIAL_PRESSURE_FATIGUE_RATIO ? "Pressure fatigue" : (last_pressure_load >= MATERIAL_PRESSURE_STRESS_RATIO ? "Pressure stress" : (last_stress > 0.8 ? "Thermal stress" : "Nominal"))))
+	status = owner().material_environment_leaking ? "Leaking" : (last_stress >= 1 ? "Overheated" : (last_pressure_load >= MATERIAL_PRESSURE_FATIGUE_RATIO ? "Pressure fatigue" : (last_pressure_load >= MATERIAL_PRESSURE_STRESS_RATIO ? "Pressure stress" : (last_stress > 0.8 ? "Thermal stress" : "Nominal"))))
 	if(last_stress >= 1 && elapsed > 0)
-		owner.take_damage((last_stress - 0.9) * 5 * elapsed, BURN, FIRE)
+		owner().take_damage((last_stress - 0.9) * 5 * elapsed, BURN, FIRE)
 		active = TRUE
 	updating = FALSE
 	last_environment_temperature = temperature
 	active = sample_observation() || active
 	if(active)
 		schedule(monitor_tool ? 1 SECOND : MATERIAL_SERVICE_INTERVAL)
-	else if(owner.material_service_can_retire(src))
+	else if(owner().material_service_can_retire(src))
 		qdel(src)
 
 /obj/proc/material_service_conducts_contents()
@@ -570,7 +570,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	if(abs(air.return_temperature() - temperature) < MATERIAL_THERMAL_RESOLUTION)
 		return FALSE
 	var/capacity = air.heat_capacity()
-	var/conductance = owner.construction_thermal_conductance(0.25, max(owner.material_service_thickness() / 1000, 0.001), temperature) || 0
+	var/conductance = owner().construction_thermal_conductance(0.25, max(owner().material_service_thickness() / 1000, 0.001), temperature) || 0
 	var/equilibrium = (air.return_temperature() - temperature) / (1 / thermal_mass() + 1 / capacity)
 	var/exchange = equilibrium * (1 - 2.718281828 ** (-conductance * elapsed * (1 / thermal_mass() + 1 / capacity)))
 	if(abs(exchange) < 0.01)
@@ -581,10 +581,10 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 /// A thermoelectric cell converts only a fraction of actual hot-to-cold heat
 /// flow, bounded by Carnot efficiency and available charge capacity.
 /datum/material_service/proc/convert_transferred_heat(heat, ambient_temperature)
-	if(!istype(owner, /obj/item/cell) || !heat)
+	if(!istype(owner(), /obj/item/cell) || !heat)
 		return 0
-	var/obj/item/cell/cell = owner
-	var/datum/material/conductor = owner.material_for_role(MATERIAL_ROLE_CONDUCTOR)
+	var/obj/item/cell/cell = owner()
+	var/datum/material/conductor = owner().material_for_role(MATERIAL_ROLE_CONDUCTOR)
 	if(!conductor?.thermoelectric_coefficient)
 		return 0
 	var/hot = max(temperature, ambient_temperature, TCMB)
@@ -594,7 +594,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	return cell.give(converted * CELLRATE) / CELLRATE
 
 /datum/material_service/proc/summary()
-	return "[status]. Assembly [round(temperature, 0.1)] K; pressure load [round(last_pressure_load * 100, 0.1)]%; thermal buffer [round(buffer_energy)] J. Liner [round(owner.material_environment_liner_integrity)]%, exterior [round(owner.material_environment_exterior_integrity)]%. Fatigue [round(owner.material_environment_fatigue)]%."
+	return "[status]. Assembly [round(temperature, 0.1)] K; pressure load [round(last_pressure_load * 100, 0.1)]%; thermal buffer [round(buffer_energy)] J. Liner [round(owner().material_environment_liner_integrity)]%, exterior [round(owner().material_environment_exterior_integrity)]%. Fatigue [round(owner().material_environment_fatigue)]%."
 
 /obj/proc/material_service_changed()
 	material_configuration_revision++
@@ -630,3 +630,7 @@ REF_OWNED(/obj, "material_service")
 /// LC-refs: the electrical_stock this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/material_service/proc/electrical_stock() as /datum/material
 	return om_resolve(electrical_stock_handle)
+
+/// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/material_service/proc/owner() as /obj
+	return om_resolve(owner_handle)

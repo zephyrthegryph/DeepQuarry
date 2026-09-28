@@ -198,7 +198,7 @@
 	PlayerNotesPageLegacy(1)
 
 /datum/admins/proc/PlayerNotesFilterLegacy()
-	var/filter = tgui_input_text(owner, "Filter string (case-insensitive regex)", "Player notes filter")
+	var/filter = tgui_input_text(owner(), "Filter string (case-insensitive regex)", "Player notes filter")
 	PlayerNotesPageLegacy(1, filter)
 
 /datum/admins/proc/PlayerNotesPageLegacy(page, filter)

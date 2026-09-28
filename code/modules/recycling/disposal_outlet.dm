@@ -10,7 +10,7 @@
 	density = TRUE
 	anchored = TRUE
 	var/active = FALSE // Code appendix.
-	var/turf/target // this will be where the output objects are 'thrown' to.
+	var/target_handle	// this will be where the output objects are 'thrown' to.
 	var/mode = 0
 	var/start_eject = 0
 	var/eject_range = 3 //Did you know, in TGcode, it's a default of 2 tiles?
@@ -29,7 +29,7 @@
 // LIFECYCLE: it unlinks from its trunk.
 /obj/structure/disposaloutlet/Destroy()
 	SEND_SIGNAL(src, COMSIG_DISPOSAL_UNLINK) //Just to be safe.
-	target = null
+	target_handle = null
 	. = ..()
 
 /obj/structure/disposaloutlet/attackby(obj/item/I, mob/user)
@@ -93,7 +93,7 @@
 	for(var/atom/movable/AM in ejected_items)
 		AM.forceMove(T)
 		AM.pipe_eject(dir)
-		AM.throw_at(target, eject_range, 1)
+		AM.throw_at(target(), eject_range, 1)
 
 	T.assume_air(gas)
 
@@ -102,7 +102,11 @@
 	update_target()
 
 /obj/structure/disposaloutlet/proc/update_target()
-	target = get_ranged_target_turf(src, dir, 10)
+	target_handle = om_handle(get_ranged_target_turf(src, dir, 10))
 
 #undef OUTLET_SCREWED
 #undef OUTLET_UNSCREWED
+
+/// LC-refs: this will be where the output objects are 'thrown' to. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/structure/disposaloutlet/proc/target() as /turf
+	return om_resolve(target_handle)

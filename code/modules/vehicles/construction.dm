@@ -19,7 +19,7 @@
 	w_class = ITEMSIZE_HUGE
 
 	var/build_stage = 0
-	var/obj/item/cell/cell = null
+	var/cell_handle
 
 /obj/item/vehicle_assembly/Initialize(mapload)
 	. = ..()
@@ -162,7 +162,7 @@
 
 /datum/interaction/construction/vehicle/quadbike/power/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/item/vehicle_assembly/quadbike/assembly = target
-	assembly.cell = held
+	assembly.cell_handle = om_handle(held)
 	assembly.set_build_visuals(after, "powered [initial(assembly.name)]")
 	to_chat(actor, span_notice("You add the power supply to \the [assembly]."))
 	return TRUE
@@ -211,9 +211,9 @@
 	var/obj/vehicle/train/engine/quadbike/built/product = new(assembly)
 	to_chat(actor, span_notice("You finish \the [product]"))
 	product.loc = get_turf(assembly)
-	product.cell = assembly.cell
-	assembly.cell.forceMove(product)
-	assembly.cell = null
+	product.cell = assembly.cell()
+	assembly.cell().forceMove(product)
+	assembly.cell_handle = null
 	consume(assembly, actor)
 	return TRUE
 
@@ -398,7 +398,7 @@
 
 /datum/interaction/construction/vehicle/spacebike/power/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/item/vehicle_assembly/spacebike/assembly = target
-	assembly.cell = held
+	assembly.cell_handle = om_handle(held)
 	assembly.set_build_visuals(after, "powered [initial(assembly.name)]")
 	to_chat(actor, span_notice("You add the power supply to \the [assembly]."))
 	return TRUE
@@ -417,9 +417,9 @@
 	var/obj/vehicle/bike/built/product = new(assembly)
 	to_chat(actor, span_notice("You finish \the [product]"))
 	product.loc = get_turf(assembly)
-	product.cell = assembly.cell
-	assembly.cell.forceMove(product)
-	assembly.cell = null
+	product.cell = assembly.cell()
+	assembly.cell().forceMove(product)
+	assembly.cell_handle = null
 	consume(assembly, actor)
 	return TRUE
 
@@ -527,7 +527,7 @@
 
 /datum/interaction/construction/vehicle/snowmobile/power/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/item/vehicle_assembly/snowmobile/assembly = target
-	assembly.cell = held
+	assembly.cell_handle = om_handle(held)
 	assembly.set_build_visuals(after, "powered [initial(assembly.name)]")
 	to_chat(actor, span_notice("You add the power supply to \the [assembly]."))
 	return TRUE
@@ -576,9 +576,9 @@
 	var/obj/vehicle/train/engine/quadbike/snowmobile/built/product = new(assembly)
 	to_chat(actor, span_notice("You finish \the [product]"))
 	product.loc = get_turf(assembly)
-	product.cell = assembly.cell
-	assembly.cell.forceMove(product)
-	assembly.cell = null
+	product.cell = assembly.cell()
+	assembly.cell().forceMove(product)
+	assembly.cell_handle = null
 	consume(assembly, actor)
 	return TRUE
 
@@ -589,3 +589,7 @@
 /datum/interaction/construction/vehicle/snowmobile/finish_screwdriver
 	parent_type = /datum/interaction/construction/vehicle/snowmobile/finish
 	tool = TOOL_SCREWDRIVER
+
+/// LC-refs: the cell this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/vehicle_assembly/proc/cell() as /obj/item/cell
+	return om_resolve(cell_handle)

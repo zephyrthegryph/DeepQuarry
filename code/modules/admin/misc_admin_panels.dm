@@ -278,41 +278,41 @@
 GLOBAL_LIST_EMPTY(dq_jobban_panels)
 
 /datum/admins/proc/dq_open_jobban_panel(mob/target)
-	if(!owner?.mob || !target)
+	if(!owner()?.mob || !target)
 		return
 	var/key = "[REF(src)]-[REF(target)]"
 	var/datum/jobban_panel/panel = LAZYACCESS(GLOB.dq_jobban_panels, key)
 	if(!panel)
 		panel = new(src, target)
 		GLOB.dq_jobban_panels[key] = panel
-	panel.tgui_interact(owner.mob)
+	panel.tgui_interact(owner().mob)
 
 /datum/jobban_panel
 	var/holder_handle
-	var/mob/target
+	var/target_handle
 
 /datum/jobban_panel/New(datum/admins/owner_holder, mob/target_mob)
 	..()
 	holder_handle = om_handle(owner_holder)
-	target = target_mob
+	target_handle = om_handle(target_mob)
 
 // LIFECYCLE: leaves the per-admin panel index.
 /datum/jobban_panel/Destroy(force, ...)
-	if(holder() && target)
-		GLOB.dq_jobban_panels -= "[REF(holder())]-[REF(target)]"
+	if(holder() && target())
+		GLOB.dq_jobban_panels -= "[REF(holder())]-[REF(target())]"
 	holder_handle = null
-	target = null
+	target_handle = null
 	return ..()
 
 /datum/jobban_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN|R_MOD)
 
 /datum/jobban_panel/tgui_interact(mob/user, datum/tgui/ui)
-	if(!holder() || !target)
+	if(!holder() || !target())
 		return
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
-		ui = new(user, src, "JobBanPanel", "Job-Ban Panel: [target.name]")
+		ui = new(user, src, "JobBanPanel", "Job-Ban Panel: [target().name]")
 		ui.open()
 	ui.set_autoupdate(FALSE)
 
@@ -368,22 +368,22 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 	for(var/title in get_dept_job_titles(dept_const))
 		jobs += list(list(
 			"title" = title,
-			"is_banned" = !!jobban_isbanned(target, title),
+			"is_banned" = !!jobban_isbanned(target(), title),
 		))
 	return list(
 		"title" = dept_title,
 		"color" = color,
 		"dept_bantype" = dept_bantype,
-		"is_dept_banned" = dept_bantype ? !!jobban_isbanned(target, dept_bantype) : FALSE,
+		"is_dept_banned" = dept_bantype ? !!jobban_isbanned(target(), dept_bantype) : FALSE,
 		"jobs" = jobs,
 	)
 
 /datum/jobban_panel/tgui_data(mob/user)
 	var/list/data = list()
-	if(!target)
+	if(!target())
 		return data
-	data["target_name"] = target.name
-	data["target_ref"] = "\ref[target]"
+	data["target_name"] = target().name
+	data["target_ref"] = "\ref[target()]"
 	var/list/departments = list()
 	for(var/list/layout_entry in get_dept_layout())
 		departments += list(build_dept_block(layout_entry["dept_const"], layout_entry["title"], layout_entry["dept_bantype"], layout_entry["color"]))
@@ -393,13 +393,13 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 	for(var/title in get_offmap_job_titles())
 		offmap_block_jobs += list(list(
 			"title" = title,
-			"is_banned" = !!jobban_isbanned(target, title),
+			"is_banned" = !!jobban_isbanned(target(), title),
 		))
 	departments += list(list(
 		"title" = "Offmap Positions",
 		"color" = "#00ffff",
 		"dept_bantype" = "offmapdept",
-		"is_dept_banned" = !!jobban_isbanned(target, "offmapdept"),
+		"is_dept_banned" = !!jobban_isbanned(target(), "offmapdept"),
 		"jobs" = offmap_block_jobs,
 	))
 
@@ -408,7 +408,7 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 	var/list/civ_jobs = civilian["jobs"]
 	civ_jobs += list(list(
 		"title" = JOB_INTERNAL_AFFAIRS_AGENT,
-		"is_banned" = !!jobban_isbanned(target, JOB_INTERNAL_AFFAIRS_AGENT),
+		"is_banned" = !!jobban_isbanned(target(), JOB_INTERNAL_AFFAIRS_AGENT),
 	))
 	civilian["jobs"] = civ_jobs
 	departments += list(civilian)
@@ -416,7 +416,7 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 
 	// Antagonist block — driven by SSantag_job, not by SSjob department.
 	var/list/antag_jobs = list()
-	var/dept_antag_ban = !!jobban_isbanned(target, JOB_SYNDICATE)
+	var/dept_antag_ban = !!jobban_isbanned(target(), JOB_SYNDICATE)
 	for(var/antag_type in SSantag_job.all_antag_types)
 		var/datum/antagonist/antag = SSantag_job.all_antag_types[antag_type]
 		if(!antag || !antag.bantype)
@@ -424,7 +424,7 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 		antag_jobs += list(list(
 			"title" = "[antag.bantype]",
 			"display" = "[antag.role_text]",
-			"is_banned" = !!jobban_isbanned(target, "[antag.bantype]") || dept_antag_ban,
+			"is_banned" = !!jobban_isbanned(target(), "[antag.bantype]") || dept_antag_ban,
 		))
 	departments += list(list(
 		"title" = "Antagonist Positions",
@@ -440,7 +440,7 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 	for(var/entry in misc_roles)
 		misc_jobs += list(list(
 			"title" = entry,
-			"is_banned" = !!jobban_isbanned(target, entry),
+			"is_banned" = !!jobban_isbanned(target(), entry),
 		))
 	departments += list(list(
 		"title" = "Other Roles",
@@ -455,18 +455,18 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 
 /datum/jobban_panel/tgui_act(action, list/params, datum/tgui/ui)
 	. = ..()
-	if(. || !holder() || !target)
+	if(. || !holder() || !target())
 		return
 	switch(action)
 		if("toggle_job")
 			var/title = "[params["title"]]"
 			// use REF() macro (canonical form) instead of legacy \ref[target] interpolation.
-			holder().Topic("jobban3=[title];jobban4=[REF(target)]", list("_src_" = "holder", "jobban3" = title, "jobban4" = REF(target)))
+			holder().Topic("jobban3=[title];jobban4=[REF(target())]", list("_src_" = "holder", "jobban3" = title, "jobban4" = REF(target())))
 			SStgui.update_uis(src)
 			return TRUE
 		if("toggle_dept")
 			var/bantype = "[params["bantype"]]"
-			holder().Topic("jobban3=[bantype];jobban4=[REF(target)]", list("_src_" = "holder", "jobban3" = bantype, "jobban4" = REF(target)))
+			holder().Topic("jobban3=[bantype];jobban4=[REF(target())]", list("_src_" = "holder", "jobban3" = bantype, "jobban4" = REF(target())))
 			SStgui.update_uis(src)
 			return TRUE
 		if("refresh")
@@ -640,3 +640,7 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 /// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/jobban_panel/proc/holder() as /datum/admins
 	return om_resolve(holder_handle)
+
+/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/jobban_panel/proc/target() as /mob
+	return om_resolve(target_handle)

@@ -35,10 +35,10 @@
 	/// Force delta (melee damage).
 	var/force_delta = 0
 	/// The clothing item this modifier was applied to.
-	var/obj/item/clothing/target
+	var/target_handle
 
 /datum/accessory_stat_modifier/New(obj/item/clothing/new_target, label_str)
-	target = new_target
+	target_handle = om_handle(new_target)
 	if(label_str)
 		label = label_str
 
@@ -139,7 +139,7 @@
 	if(!istype(accessory) || !istype(clothing) || !istype(modifier))
 		return
 
-	modifier.target = clothing
+	modifier.target_handle = om_handle(clothing)
 	modifier.apply(clothing)
 
 	var/key = "[REF(accessory)]:[REF(clothing)]"
@@ -177,7 +177,7 @@
 		for(var/key in active_modifiers)
 			var/list/mods = active_modifiers[key]
 			for(var/datum/accessory_stat_modifier/mod in mods)
-				mod.revert(mod.target)
+				mod.revert(mod.target())
 				qdel(mod)
 	active_modifiers = null
 	slot_names = null
@@ -207,3 +207,7 @@ GLOBAL_DATUM_INIT(accessory_slot_registry, /datum/accessory_slot_registry, new)
 	register_slot(ACCESSORY_SLOT_HELM_C,   "Helmet (crest)")
 	register_slot(ACCESSORY_SLOT_RING,     "Ring")
 	register_slot(ACCESSORY_SLOT_WRIST,    "Wrist")
+
+/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/accessory_stat_modifier/proc/target() as /obj/item/clothing
+	return om_resolve(target_handle)

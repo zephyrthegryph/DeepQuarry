@@ -65,7 +65,7 @@
 	/// The prompt's body, if any, of the TGUI window.
 	var/message
 	/// The target for our display
-	var/atom/movable/target
+	var/target_handle
 	/// The base color matrix
 	var/list/default
 	/// static mode users can't change
@@ -102,7 +102,7 @@
 /datum/tgui_input_colormatrix/New(mob/user, message, title, atom/movable/target, list/default, matrix_only, timeout, ui_state, was_path)
 	src.default = default
 	src.message = message
-	src.target = target
+	src.target_handle = om_handle(target)
 	src.title = title
 	src.state_handle = om_handle(ui_state)
 	src.was_path = was_path
@@ -141,8 +141,8 @@
 	var/list/data = list()
 	data["message"] = message
 	data["title"] = title
-	data["item_name"] = target.name
-	data["item_sprite"] = icon2base64(get_flat_icon(target,dir=SOUTH,no_anim=TRUE))
+	data["item_name"] = target().name
+	data["item_sprite"] = icon2base64(get_flat_icon(target(),dir=SOUTH,no_anim=TRUE))
 	data["matrix_only"] = matrix_only
 	return data
 
@@ -202,7 +202,7 @@
 			SStgui.close_uis(src)
 			return TRUE
 		if("clear")
-			target.remove_atom_colour(FIXED_COLOUR_PRIORITY)
+			target().remove_atom_colour(FIXED_COLOUR_PRIORITY)
 			playsound(src, 'sound/effects/spray3.ogg', 50, 1)
 			temp = "Cleared Successfully!"
 			color_matrix_last = DEFAULT_COLORMATRIX
@@ -261,19 +261,19 @@
 		temp = "Invalid color!"
 		return FALSE
 	if(apply)
-		target.add_atom_colour(color_to_use, FIXED_COLOUR_PRIORITY)
+		target().add_atom_colour(color_to_use, FIXED_COLOUR_PRIORITY)
 		playsound(src, 'sound/effects/spray3.ogg', 50, 1)
-		if(isanimal(target))
-			var/mob/living/simple_mob/M = target
+		if(isanimal(target()))
+			var/mob/living/simple_mob/M = target()
 			M.has_recoloured = TRUE
-		if(isrobot(target))
-			var/mob/living/silicon/robot/R = target
+		if(isrobot(target()))
+			var/mob/living/silicon/robot/R = target()
 			R.has_recoloured = TRUE
 	return TRUE
 
 /// Produces the preview image of the item, used in the UI, the way the color is not stacking is a sin.
 /datum/tgui_input_colormatrix/proc/build_preview(mob/user)
-	if(target) //sanity
+	if(target()) //sanity
 		var/list/cm
 		switch(active_mode)
 			if(COLORMATE_MATRIX, COLORMATE_MATRIX_AUTO)
@@ -292,23 +292,23 @@
 					text2num(color_matrix_last[12]),
 				)
 				if(!check_valid_color(cm, user))
-					return get_flat_icon(target, dir=SOUTH, no_anim=TRUE)
+					return get_flat_icon(target(), dir=SOUTH, no_anim=TRUE)
 
 			if(COLORMATE_TINT)
 				if(!check_valid_color(activecolor, user))
-					return get_flat_icon(target, dir=SOUTH, no_anim=TRUE)
+					return get_flat_icon(target(), dir=SOUTH, no_anim=TRUE)
 
 			if(COLORMATE_HSV)
 				cm = color_matrix_hsv(build_hue, build_sat, build_val)
 				color_matrix_last = cm
 				if(!check_valid_color(cm, user))
-					return get_flat_icon(target, dir=SOUTH, no_anim=TRUE)
+					return get_flat_icon(target(), dir=SOUTH, no_anim=TRUE)
 
-		var/cur_color = target.color
-		target.color = null
-		target.color = (active_mode == COLORMATE_TINT ? activecolor : cm)
-		var/icon/preview = get_flat_icon(target, dir=SOUTH, no_anim=TRUE)
-		target.color = cur_color
+		var/cur_color = target().color
+		target().color = null
+		target().color = (active_mode == COLORMATE_TINT ? activecolor : cm)
+		var/icon/preview = get_flat_icon(target(), dir=SOUTH, no_anim=TRUE)
+		target().color = cur_color
 		temp = ""
 
 		. = preview
@@ -338,3 +338,7 @@
 /// LC-refs: the state this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_input_colormatrix/proc/state() as /datum/tgui_state
 	return om_resolve(state_handle)
+
+/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_input_colormatrix/proc/target() as /atom/movable
+	return om_resolve(target_handle)

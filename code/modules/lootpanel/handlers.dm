@@ -5,7 +5,7 @@
 	contents -= source
 	LAZYREMOVE(to_image, source)
 
-	var/datum/tgui/window = SStgui.get_open_ui(owner.mob, src)
+	var/datum/tgui/window = SStgui.get_open_ui(owner().mob, src)
 #if !defined(UNIT_TESTS) // we dont want to delete contents if we're testing
 	if(isnull(window))
 		reset_contents()

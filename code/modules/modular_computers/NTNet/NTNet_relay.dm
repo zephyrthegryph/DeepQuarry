@@ -133,7 +133,7 @@
 		GLOB.ntnet_global.add_log("Quantum relay connection severed. Current amount of linked relays: [length(NTNet().relays)]")
 		NTNet_handle = null
 	for(var/datum/computer_file/program/ntnet_dos/D in dos_sources)
-		D.target = null
+		D.target_handle = null
 		D.error = "Connection to quantum relay severed"
 	QDEL_NULL(soundloop)
 	. = ..()

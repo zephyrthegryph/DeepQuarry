@@ -26,7 +26,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	var/fixture_type = /obj/machinery/light
 	var/sheets_refunded = 2
 	var/newlight_handle
-	var/obj/item/cell/cell = null
+	var/cell_handle
 
 	var/cell_connectors = TRUE
 
@@ -61,8 +61,8 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 			if(3)
 				. += "The casing is closed."
 		if(cell_connectors)
-			if(cell)
-				. += "You see [cell] inside the casing."
+			if(cell())
+				. += "You see [cell()] inside the casing."
 			else
 				. += "The casing has no power cell for backup power."
 		else
@@ -83,11 +83,11 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	effect = /obj/machinery/light_construct/proc/interaction_remove_cell
 
 /obj/machinery/light_construct/proc/interaction_remove_cell(mob/user, obj/item/held, datum/interaction/interaction)
-	if(cell)
-		user.visible_message("[user] removes [cell] from [src]!",span_notice("You remove [cell]."))
-		user.put_in_hands(cell)
-		cell.update_icon()
-		cell = null
+	if(cell())
+		user.visible_message("[user] removes [cell()] from [src]!",span_notice("You remove [cell()]."))
+		user.put_in_hands(cell())
+		cell().update_icon()
+		cell_handle = null
 	return TRUE
 
 /datum/interaction/machine_item/light_construct_insert_cell
@@ -104,14 +104,14 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	if(!user.unEquip(W))
 		to_chat(user, span_warning("[W] is stuck to your hand!"))
 		return TRUE
-	if(cell)
+	if(cell())
 		to_chat(user, span_warning("There is a power cell already installed!"))
 	else if(user.drop_from_inventory(W))
 		user.visible_message(span_notice("[user] hooks up [W] to [src]."), \
 		span_notice("You add [W] to [src]."))
 		playsound(src, 'sound/machines/click.ogg', 50, TRUE)
 		W.forceMove(src)
-		cell = W
+		cell_handle = om_handle(W)
 		add_fingerprint(user)
 	return TRUE
 
@@ -169,11 +169,11 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	var/obj/machinery/light/finished_light = new fixture_type(loc, src)
 	finished_light.set_dir(dir)
 	transfer_fingerprints_to(finished_light)
-	if(cell)
+	if(cell())
 		finished_light.latent_cell_charge = null
-		finished_light.cell = cell
-		cell.forceMove(finished_light)
-		cell = null
+		finished_light.cell = cell()
+		cell().forceMove(finished_light)
+		cell_handle = null
 	replace_with(src, finished_light)
 	return ITEM_INTERACT_SUCCESS
 
@@ -1743,3 +1743,7 @@ REF_HELD(/obj/machinery/light, "installed_light")
 /// LC-refs: the area_power_token this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/light/proc/area_power_token() as /area
 	return om_resolve(area_power_token_handle)
+
+/// LC-refs: the cell this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/light_construct/proc/cell() as /obj/item/cell
+	return om_resolve(cell_handle)

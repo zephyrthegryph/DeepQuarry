@@ -1,7 +1,7 @@
 /obj/soulgem
 	name = "Mind imprintation matrix"
 	desc = "A mind storage and processing system capable of capturing and supporting human-level minds in a small VR space."
-	var/tmp/mob/living/owner
+	var/tmp/owner_handle
 	var/tmp/own_mind_handle
 	var/linked_belly_handle
 	var/tmp/taken_over_name
@@ -24,7 +24,7 @@
 /obj/soulgem/Initialize(mapload)
 	. = ..()
 	if(ismob(loc))
-		owner = loc
+		owner_handle = om_handle(loc)
 
 /// Saves the linked belly by name, and relinks it to the owner's belly of that name.
 /datum/state_codec/soulgem_belly
@@ -38,10 +38,10 @@
 	if(gem.apply_stored_belly(encoded, TRUE))
 		return
 	gem.linked_belly_handle = null
-	gem.owner?.recalculate_vis()
+	gem.owner()?.recalculate_vis()
 
 /obj/soulgem/proc/apply_stored_belly(belly_string, skip_unreg = FALSE)
-	for(var/obj/belly in owner.vore_organs)
+	for(var/obj/belly in owner().vore_organs)
 		if(belly.name == belly_string)
 			update_linked_belly(belly, TRUE)
 			return TRUE
@@ -50,9 +50,9 @@
 // Allows to transfer the soulgem to the given mob
 /obj/soulgem/proc/transfer_self(mob/target)
 	QDEL_NULL(target.soulgem)
-	owner.soulgem = null
+	owner().soulgem = null
 	forceMove(target)
-	owner = target
+	owner_handle = om_handle(target)
 	target.soulgem = src
 
 // Cleaning up our refs before deletion
@@ -61,7 +61,7 @@ REF_OWNED_LIST(/obj/soulgem, "brainmobs")
 // Sends messages to the owner of the soulcatcher
 /obj/soulgem/proc/notify_holder(message)
 	message = span_nif(span_bold("[name]") + " displays, \"" + span_notice("[message]") + "\"")
-	to_chat(owner, message)
+	to_chat(owner(), message)
 
 	for(var/mob/living/carbon/brain/caught_soul/CS as anything in brainmobs)
 		to_chat(CS, message)
@@ -84,7 +84,7 @@ REF_OWNED_LIST(/obj/soulgem, "brainmobs")
 	else
 		var/speak_verb = "speaks"
 		message = span_nif(span_bold("\[SC\] [sender_name]") + " [speak_verb], \"[message]\"")
-		to_chat(owner, message)
+		to_chat(owner(), message)
 		if(whisper)
 			speak_verb = "whispers"
 			to_chat(sender, span_italics(message))
@@ -92,7 +92,7 @@ REF_OWNED_LIST(/obj/soulgem, "brainmobs")
 			for(var/mob/living/carbon/brain/caught_soul/CS as anything in brainmobs)
 				to_chat(CS, message)
 
-	sender.log_talk("NSAY (SC:[owner.real_name]): [message]", LOG_SAY, color="#ff006f")
+	sender.log_talk("NSAY (SC:[owner().real_name]): [message]", LOG_SAY, color="#ff006f")
 
 // Forwards the emotes of captured souls
 /obj/soulgem/proc/use_emote(message, mob/living/sender, mob/eyeobj, whisper)
@@ -108,20 +108,20 @@ REF_OWNED_LIST(/obj/soulgem, "brainmobs")
 	//Not AR Projecting
 	else
 		message = span_nif(span_bold("[sender_name]") + " [message]")
-		to_chat(owner, message)
+		to_chat(owner(), message)
 		if(whisper)
 			to_chat(sender, span_italics(message))
 		else
 			for(var/mob/living/carbon/brain/caught_soul/CS as anything in brainmobs)
 				to_chat(CS, message)
 
-	sender.log_message("NME (SC:[owner.real_name]): [message]", LOG_EMOTE, color="#ff006f")
+	sender.log_message("NME (SC:[owner().real_name]): [message]", LOG_EMOTE, color="#ff006f")
 
 // The capture function which transfers the given mob's mind into the soulcatcher
 /obj/soulgem/proc/catch_mob(mob/M, custom_name)
 	if(!(M.soulcatcher_pref_flags & SOULCATCHER_ALLOW_CAPTURE) && !isobserver(M)) return // Bypass pref check for observer join
 	if(!M.mind)	return
-	if(isbrain(owner)) return
+	if(isbrain(owner())) return
 	//Create a new brain mob
 	var/mob/living/carbon/brain/caught_soul/vore/brainmob = new(src)
 	brainmob.gem_handle = om_handle(src)
@@ -140,7 +140,7 @@ REF_OWNED_LIST(/obj/soulgem, "brainmobs")
 	brainmob.real_name = custom_name ? custom_name : brainmob.mind.name
 
 	//If we caught our owner, special settings.
-	if(M == owner && !own_mind()) // Need some more sanity if we allow takeover
+	if(M == owner() && !own_mind()) // Need some more sanity if we allow takeover
 		brainmob.ext_deaf = FALSE
 		brainmob.ext_blind = FALSE
 		brainmob.parent_mob = TRUE
@@ -165,7 +165,7 @@ REF_OWNED_LIST(/obj/soulgem, "brainmobs")
 
 	//Reminder on how this works to host
 	if(brainmobs.len == 1) //Only spam this on the first one
-		to_chat(owner, span_notice("Your occupant's messages/actions can only be seen by you, and you can \
+		to_chat(owner(), span_notice("Your occupant's messages/actions can only be seen by you, and you can \
 		send messages that only they can hear/see by using the NSay and NMe verbs (or the *nsay and *nme emotes)."))
 
 	//Announce to host and other minds
@@ -194,9 +194,9 @@ REF_OWNED_LIST(/obj/soulgem, "brainmobs")
 			break
 	if(!self)
 		return
-	if(owner.mind)
-		catch_mob(owner, taken_over_name)
-	self.mind.transfer_to(owner)
+	if(owner().mind)
+		catch_mob(owner(), taken_over_name)
+	self.mind.transfer_to(owner())
 	own_mind_handle = null
 	taken_over_name = null
 	qdel(self)
@@ -219,7 +219,7 @@ REF_OWNED_LIST(/obj/soulgem, "brainmobs")
 // Allows to rename the soulgem
 /obj/soulgem/proc/rename(new_name)
 	if(length(new_name) < 3 || length(new_name) > 60)
-		to_chat(owner, span_warning("Your soulcatcher's name needs to be between 3 and 60 characters long!"))
+		to_chat(owner(), span_warning("Your soulcatcher's name needs to be between 3 and 60 characters long!"))
 		return FALSE
 	new_name = sanitize(new_name, 60, FALSE, TRUE, FALSE)
 	name = new_name
@@ -240,7 +240,7 @@ REF_OWNED_LIST(/obj/soulgem, "brainmobs")
 	if(flag & NIF_SC_PROJECTING)
 		soulgem_projecting()
 	if(flag & SOULGEM_SEE_SR_SOULS)
-		owner.recalculate_vis()
+		owner().recalculate_vis()
 
 // Checks a single flag, or if all combined flags are true
 /obj/soulgem/proc/flag_check(flag, match_all = FALSE)
@@ -345,7 +345,7 @@ REF_OWNED_LIST(/obj/soulgem, "brainmobs")
 /obj/soulgem/proc/take_control_selected()
 	if(!selected_soul()) return
 	take_control(selected_soul())
-	if(owner.mind == own_mind())
+	if(owner().mind == own_mind())
 		own_mind_handle = null
 		taken_over_name = null
 
@@ -363,14 +363,14 @@ REF_OWNED_LIST(/obj/soulgem, "brainmobs")
 	taken_over_name = null
 
 /obj/soulgem/proc/take_control(mob/M)
-	if(!(owner.soulcatcher_pref_flags & SOULCATCHER_ALLOW_CAPTURE) || !(owner.soulcatcher_pref_flags & SOULCATCHER_ALLOW_TAKEOVER)) return
+	if(!(owner().soulcatcher_pref_flags & SOULCATCHER_ALLOW_CAPTURE) || !(owner().soulcatcher_pref_flags & SOULCATCHER_ALLOW_TAKEOVER)) return
 	if(!(M.soulcatcher_pref_flags & SOULCATCHER_ALLOW_CAPTURE) || !(M.soulcatcher_pref_flags & SOULCATCHER_ALLOW_TAKEOVER)) return
 	if(!own_mind())
-		if(issilicon(owner) || isanimal(owner))
-			taken_over_name = owner.name
-	catch_mob(owner, taken_over_name)
+		if(issilicon(owner()) || isanimal(owner()))
+			taken_over_name = owner().name
+	catch_mob(owner(), taken_over_name)
 	taken_over_name = M.name
-	M.mind.transfer_to(owner)
+	M.mind.transfer_to(owner())
 	brainmobs -= M
 	if(M == selected_soul())
 		update_selected_soul()
@@ -378,7 +378,7 @@ REF_OWNED_LIST(/obj/soulgem, "brainmobs")
 
 // Funtion to test if the owner's body has been taken over
 /obj/soulgem/proc/is_taken_over()
-	return (own_mind() && owner.mind && owner.mind != own_mind())
+	return (own_mind() && owner().mind && owner().mind != own_mind())
 
 // Transfer section to transfer captured souls
 
@@ -389,28 +389,28 @@ REF_OWNED_LIST(/obj/soulgem, "brainmobs")
 		/obj/item/mmi
 	)
 	var/list/valid_objects = list()
-	if(isrobot(owner))
-		var/mob/living/silicon/robot/R = owner
+	if(isrobot(owner()))
+		var/mob/living/silicon/robot/R = owner()
 		if(istype(R.module_active, /obj/item/sleevemate))
 			valid_objects += R.module_active
-	if(ishuman(owner))
-		var/mob/living/carbon/human/H = owner
+	if(ishuman(owner()))
+		var/mob/living/carbon/human/H = owner()
 		if(is_type_in_list(H.get_left_hand(), valid_trasfer_objects))
 			valid_objects += H.get_left_hand()
 		if(is_type_in_list(H.get_right_hand(), valid_trasfer_objects))
 			valid_objects += H.get_right_hand()
-	for(var/obj/item/I in range(0, get_turf(owner)))
+	for(var/obj/item/I in range(0, get_turf(owner())))
 		if(is_type_in_list(I, valid_trasfer_objects))
 			valid_objects += I
-	for(var/mob/M in range(1, get_turf(owner)))
-		if(M == owner)
+	for(var/mob/M in range(1, get_turf(owner())))
+		if(M == owner())
 			continue
 		if(!(M.soulcatcher_pref_flags & SOULCATCHER_ALLOW_TRANSFER))
 			continue
 		if(M.client && M.soulgem)
 			valid_objects += M.soulgem
 	if(!valid_objects.len)
-		to_chat(owner, span_warning("No valid objects found!"))
+		to_chat(owner(), span_warning("No valid objects found!"))
 		return
 	return valid_objects
 
@@ -421,7 +421,7 @@ REF_OWNED_LIST(/obj/soulgem, "brainmobs")
 	var/list/valid_objects = find_transfer_objects()
 	if(!valid_objects || !valid_objects.len)
 		return
-	var/obj/target = tgui_input_list(owner, "Select where you want to store the mind into.", "Mind Transfer Target", valid_objects)
+	var/obj/target = tgui_input_list(owner(), "Select where you want to store the mind into.", "Mind Transfer Target", valid_objects)
 	transfer_mob_selector(selected_soul(), target)
 
 // Transfer selector proc
@@ -439,7 +439,7 @@ REF_OWNED_LIST(/obj/soulgem, "brainmobs")
 	if(istype(target, /obj/item/sleevemate))
 		var/obj/item/sleevemate/mate = target
 		if(!mate.stored_mind)
-			to_chat(owner, span_notice("You scan yourself to transfer the soul into the [target]!"))
+			to_chat(owner(), span_notice("You scan yourself to transfer the soul into the [target]!"))
 			to_chat(M, span_notice("[transfer_message]"))
 			if(M.mind == own_mind())
 				own_mind_handle = null
@@ -449,7 +449,7 @@ REF_OWNED_LIST(/obj/soulgem, "brainmobs")
 		if(!mm.get_occupant()?.mind)
 			if(M.mind == own_mind())
 				own_mind_handle = null
-			to_chat(owner, span_notice("You transfer the soul into the [target]!"))
+			to_chat(owner(), span_notice("You transfer the soul into the [target]!"))
 			to_chat(M, span_notice("[transfer_message]"))
 			mm.take_identity(M, TRUE)
 	else
@@ -463,12 +463,12 @@ REF_OWNED_LIST(/obj/soulgem, "brainmobs")
 /obj/soulgem/proc/transfer_mob_soulcatcher(mob/living/carbon/brain/caught_soul/vore/M, obj/soulgem/gem)
 	if(is_taken_over()) return
 	if(!istype(M) || !gem) return
-	if(!gem.owner) return
-	if((tgui_alert(gem.owner, "Do you want to allow [owner] to transfer [selected_soul()] to your soulcatcher?", "Allow Transfer", list("No", "Yes")) != "Yes"))
+	if(!gem.owner()) return
+	if((tgui_alert(gem.owner(), "Do you want to allow [owner()] to transfer [selected_soul()] to your soulcatcher?", "Allow Transfer", list("No", "Yes")) != "Yes"))
 		return
-	if(!in_range(gem.owner, owner))
+	if(!in_range(gem.owner(), owner()))
 		return
-	if(!(gem.owner.soulcatcher_pref_flags & SOULCATCHER_ALLOW_TRANSFER))
+	if(!(gem.owner().soulcatcher_pref_flags & SOULCATCHER_ALLOW_TRANSFER))
 		return
 	if(M.mind == own_mind())
 		own_mind_handle = null
@@ -523,7 +523,7 @@ REF_OWNED_LIST(/obj/soulgem, "brainmobs")
 	if(!(M.soulcatcher_pref_flags & SOULCATCHER_ALLOW_DELETION))
 		return release_mob(M)
 	if(!(M.soulcatcher_pref_flags & SOULCATCHER_ALLOW_DELETION_INSTANT))
-		if(tgui_alert(M, "Do you really want to allow [owner] to delete you? On decline, you'll be ghosted.", "Allow Deletion", list("No", "Yes"), timeout=1 MINUTES) != "Yes")
+		if(tgui_alert(M, "Do you really want to allow [owner()] to delete you? On decline, you'll be ghosted.", "Allow Deletion", list("No", "Yes"), timeout=1 MINUTES) != "Yes")
 			return release_mob(M)
 	to_chat(M, span_danger("[delete_message]"))
 	brainmobs -= M
@@ -543,3 +543,7 @@ REF_OWNED_LIST(/obj/soulgem, "brainmobs")
 /// LC-refs: the selected_soul this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/soulgem/proc/selected_soul() as /mob
 	return om_resolve(selected_soul_handle)
+
+/// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/soulgem/proc/owner() as /mob/living
+	return om_resolve(owner_handle)

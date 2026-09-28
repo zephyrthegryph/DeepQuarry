@@ -8,11 +8,11 @@
  * to implement interesting matrix transformations without the hassle if needing to know... algebra? Damn, i'm stupid.
  */
 /datum/nobody_wants_to_learn_matrix_math
-	var/atom/target
+	var/target_handle
 	var/matrix/testing_matrix
 
 /datum/nobody_wants_to_learn_matrix_math/New(atom/target)
-	src.target = target
+	src.target_handle = om_handle(target)
 	testing_matrix = matrix(target.transform)
 
 REF_OWNED(/datum/nobody_wants_to_learn_matrix_math, "testing_matrix")
@@ -37,7 +37,7 @@ REF_OWNED(/datum/nobody_wants_to_learn_matrix_math, "testing_matrix")
 	data["matrix_d"] = testing_matrix.d
 	data["matrix_e"] = testing_matrix.e
 	data["matrix_f"] = testing_matrix.f
-	data["pixelated"] = target.appearance_flags & PIXEL_SCALE
+	data["pixelated"] = target().appearance_flags & PIXEL_SCALE
 	return data
 
 /datum/nobody_wants_to_learn_matrix_math/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
@@ -66,13 +66,17 @@ REF_OWNED(/datum/nobody_wants_to_learn_matrix_math, "testing_matrix")
 			testing_matrix.Turn(params["angle"])
 			set_transform()
 		if("toggle_pixel")
-			target.appearance_flags ^= PIXEL_SCALE
+			target().appearance_flags ^= PIXEL_SCALE
 
 /datum/nobody_wants_to_learn_matrix_math/proc/set_transform()
-	animate(target, transform = testing_matrix, time = 0.5 SECONDS)
-	testing_matrix = matrix(target.transform)
+	animate(target(), transform = testing_matrix, time = 0.5 SECONDS)
+	testing_matrix = matrix(target().transform)
 
 /client/proc/open_matrix_tester(atom/in_atom)
 	if(holder)
 		var/datum/nobody_wants_to_learn_matrix_math/matrix_tester = new(in_atom)
 		matrix_tester.tgui_interact(mob)
+
+/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/nobody_wants_to_learn_matrix_math/proc/target() as /atom
+	return om_resolve(target_handle)

@@ -7,7 +7,7 @@
 	prevent_saving = TRUE
 
 /obj/belly/special/teleporter
-	var/atom/movable/target = null
+	var/target_handle
 	var/target_turf = TRUE
 	var/teleport_delay = 3 SECONDS
 
@@ -19,16 +19,20 @@
 	addtimer(CALLBACK(src, PROC_REF(try_tele), thing), teleport_delay, TIMER_DELETE_ME)
 
 /obj/belly/special/teleporter/periodic_step(wait)
-	if(istype(target))
+	if(istype(target()))
 		return ..()
 	for(var/atom/movable/AM in contents)
 		try_tele(AM)
 	. = ..()
 
 /obj/belly/special/teleporter/proc/try_tele(atom/movable/thing)
-	if(!istype(target))
+	if(!istype(target()))
 		return
-	if(isturf(target)) // if it's a turf, we dont need to do anything else, just teleport to it
-		thing.forceMove(target)
+	if(isturf(target())) // if it's a turf, we dont need to do anything else, just teleport to it
+		thing.forceMove(target())
 	else
-		thing.forceMove(target_turf ? get_turf(target) : target )
+		thing.forceMove(target_turf ? get_turf(target()) : target() )
+
+/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/belly/special/teleporter/proc/target() as /atom/movable
+	return om_resolve(target_handle)

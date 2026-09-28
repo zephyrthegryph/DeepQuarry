@@ -5,7 +5,7 @@
  */
 /datum/lootpanel
 	/// The owner of the panel
-	var/client/owner
+	var/owner_handle
 	/// The list of all search objects indexed.
 	var/list/datum/search_object/contents = list()
 	/// The list of search_objects needing processed
@@ -18,12 +18,12 @@
 /datum/lootpanel/New(client/owner)
 	. = ..()
 
-	src.owner = owner
+	src.owner_handle = om_handle(owner)
 
 // LIFECYCLE: its searched contents are reset.
 /datum/lootpanel/Destroy(force)
 	reset_contents()
-	owner = null
+	owner_handle = null
 	source_turf_handle = null
 
 	return ..()
@@ -76,3 +76,7 @@
 /// LC-refs: the source_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/lootpanel/proc/source_turf() as /turf
 	return om_resolve(source_turf_handle)
+
+/// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/lootpanel/proc/owner() as /client
+	return om_resolve(owner_handle)

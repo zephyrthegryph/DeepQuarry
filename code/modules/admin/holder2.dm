@@ -11,7 +11,7 @@ GLOBAL_PROTECT(href_token)
 
 	var/target
 	var/name = "nobody's admin datum (no rank)" //Makes for better runtimes
-	var/client/owner = null
+	var/owner_handle
 	var/fakekey = null
 
 	var/marked_datum_handle
@@ -93,7 +93,7 @@ GLOBAL_PROTECT(href_token)
 	//QDEL_NULL(plane_debug)
 	deadmined = TRUE
 
-	var/client/client = owner || GLOB.directory[target]
+	var/client/client = owner() || GLOB.directory[target]
 
 	if (!isnull(client))
 		disassociate()
@@ -118,11 +118,11 @@ GLOBAL_PROTECT(href_token)
 	if (deadmined)
 		activate()
 
-	owner = client
-	owner.holder = src
-	owner.add_admin_verbs()
-	remove_verb(owner, /client/proc/readmin)
-	owner.init_verbs() //re-initialize the verb list
+	owner_handle = om_handle(client)
+	owner().holder = src
+	owner().add_admin_verbs()
+	remove_verb(owner(), /client/proc/readmin)
+	owner().init_verbs() //re-initialize the verb list
 	//owner.update_special_keybinds()
 	GLOB.admins |= client
 
@@ -132,12 +132,12 @@ GLOBAL_PROTECT(href_token)
 	if(IsAdminAdvancedProcCall())
 		alert_to_permissions_elevation_attempt(usr)
 		return
-	if(owner)
-		GLOB.admins -= owner
-		owner.remove_admin_verbs()
+	if(owner())
+		GLOB.admins -= owner()
+		owner().remove_admin_verbs()
 		// owner.init_verbs() //re-initialize the verb list
-		owner.holder = null
-		owner = null
+		owner().holder = null
+		owner_handle = null
 
 /// Returns the feedback forum thread for the admin holder's owner, as according to DB.
 /datum/admins/proc/feedback_link()
@@ -152,7 +152,7 @@ GLOBAL_PROTECT(href_token)
 	if (!SSdbcore.IsConnected())
 		return FALSE
 
-	var/datum/db_query/feedback_query = SSdbcore.NewQuery("SELECT feedback FROM [format_table_name("admin")] WHERE ckey = :ckey", list("ckey" = owner.ckey))
+	var/datum/db_query/feedback_query = SSdbcore.NewQuery("SELECT feedback FROM [format_table_name("admin")] WHERE ckey = :ckey", list("ckey" = owner().ckey))
 
 	if(!feedback_query.Execute())
 		log_sql("Error retrieving feedback link for [src]")
@@ -221,7 +221,7 @@ GLOBAL_PROTECT(href_token)
 		return
 
 	given_profiling = TRUE
-	world.SetConfig("APP/admin", owner.ckey, "role=admin")
+	world.SetConfig("APP/admin", owner().ckey, "role=admin")
 
 /datum/admins/vv_edit_var(var_name, var_value)
 	return FALSE //nice try trialmin
@@ -292,3 +292,7 @@ REF_OWNED(/datum/admins, list("admincaster_feed_message", "filteriffic", "partic
 /// LC-refs: the marked_datum this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/admins/proc/marked_datum() as /datum
 	return om_resolve(marked_datum_handle)
+
+/// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/admins/proc/owner() as /client
+	return om_resolve(owner_handle)

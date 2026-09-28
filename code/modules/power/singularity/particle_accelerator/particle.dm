@@ -15,7 +15,7 @@
 	var/ionizing = 0
 	var/particle_type
 	var/additional_particles = 0
-	var/turf/target
+	var/target_handle
 	var/source_handle
 	var/movetotarget = 1
 
@@ -76,11 +76,11 @@
 
 
 /obj/effect/accelerated_particle/proc/move(lag)
-	if(target)
+	if(target())
 		if(movetotarget)
-			if(!step_towards(src,target))
-				src.loc = get_step(src, get_dir(src,target))
-			if(get_dist(src,target) < 1)
+			if(!step_towards(src,target()))
+				src.loc = get_step(src, get_dir(src,target()))
+			if(get_dist(src,target()) < 1)
 				movetotarget = 0
 		else
 			if(!step(src, get_step_away(src,source())))
@@ -98,3 +98,7 @@
 /// LC-refs: the source this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/effect/accelerated_particle/proc/source() as /turf
 	return om_resolve(source_handle)
+
+/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/effect/accelerated_particle/proc/target() as /turf
+	return om_resolve(target_handle)

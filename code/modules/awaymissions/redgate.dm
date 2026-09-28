@@ -8,7 +8,7 @@
 	anchored = TRUE
 	pixel_x = -16
 
-	var/obj/structure/redgate/target
+	var/target_handle
 	var/secret = FALSE	//If either end of the redgate has this enabled, ghosts will not be able to click to teleport
 	var/static/list/exceptions = list(
 		/obj/structure/ore_box,
@@ -21,10 +21,10 @@
 
 // LIFECYCLE: its paired gate closes.
 /obj/structure/redgate/Destroy()
-	if(target)
-		target.target = null
-		target.toggle_portal()
-		target = null
+	if(target())
+		target().target_handle = null
+		target().toggle_portal()
+		target_handle = null
 		set_light(0)
 
 	return ..()
@@ -54,7 +54,7 @@
 		if(!M.ckey)		//We only want players, no bringing the weird stuff on the other side back
 			return
 
-	if(!target)
+	if(!target())
 		toggle_portal()
 
 	var/turf/ourturf = find_our_turf(M)		//Find the turf on the opposite side of the target
@@ -83,12 +83,12 @@
 	var/offset_x = x - AM.x										//used for more smooth teleporting
 	var/offset_y = y - AM.y
 
-	var/turf/temptarg = locate((target.x + offset_x),(target.y + offset_y),target.z)
+	var/turf/temptarg = locate((target().x + offset_x),(target().y + offset_y),target().z)
 
 	return temptarg
 
 /obj/structure/redgate/proc/toggle_portal()
-	if(target)
+	if(target())
 		icon_state = "on"
 		density = TRUE
 		plane = ABOVE_MOB_PLANE
@@ -134,9 +134,9 @@
 
 /obj/structure/redgate/attack_ghost(mob/observer/dead/user)
 
-	if(target)
-		if(!(secret || target.secret) || check_rights_for(user?.client, R_HOLDER))
-			user.forceMove(get_turf(target))
+	if(target())
+		if(!(secret || target().secret) || check_rights_for(user?.client, R_HOLDER))
+			user.forceMove(get_turf(target()))
 	else
 		return ..()
 
@@ -148,23 +148,23 @@
 /obj/structure/redgate/proc/find_partner()
 	for(var/obj/structure/redgate/g in world)
 		if(istype(g, /obj/structure/redgate))
-			if(g.target)
+			if(g.target())
 				continue
 			else if(g == src)
 				continue
 			else if(g.z in using_map.station_levels)
-				target = g
+				target_handle = om_handle(g)
 				//legacy .target reference removed (no equivalent on /datum/ai_brain).
 				toggle_portal()
-				target.toggle_portal()
+				target().toggle_portal()
 				break
 			else if(g != src)
-				target = g
+				target_handle = om_handle(g)
 				//legacy .target reference removed (no equivalent on /datum/ai_brain).
 				toggle_portal()
-				target.toggle_portal()
+				target().toggle_portal()
 				break
-	if(!target)
+	if(!target())
 		return FALSE
 	else
 		return TRUE
@@ -534,3 +534,7 @@
 	FIRST TO SCORE: WHEN PLAYER HIT, RETURN TO SPAWN! FIRST PLAYER (OR TEAM) TO ELIMINATE AGREED NUMBER OF OTHERS IS WINNING!
 	OR, PLAY HOWEVER MOST ENJOYED!
 	GOOD LUCK!!!"}
+
+/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/structure/redgate/proc/target() as /obj/structure/redgate
+	return om_resolve(target_handle)

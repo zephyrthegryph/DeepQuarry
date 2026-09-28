@@ -36,7 +36,7 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 /datum/admins/proc/edit_admin_permissions(action, log_target, log_actor, log_operation, log_page)
 	if(!check_rights(R_PERMISSIONS))
 		return
-	if(!owner?.mob)
+	if(!owner()?.mob)
 		return
 	dq_perms_page = action || PERMISSIONS_PAGE_PERMISSIONS
 	if(dq_perms_page == PERMISSIONS_PAGE_LOGGING)
@@ -49,8 +49,8 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 		dq_perms_log_page = text2num(log_page) || 0
 	if(!dq_permissions_panel)
 		dq_permissions_panel = new(src)
-	if(QDELETED(usr) || usr.client != owner)
-		dq_permissions_panel.tgui_interact(owner.mob)
+	if(QDELETED(usr) || usr.client != owner())
+		dq_permissions_panel.tgui_interact(owner().mob)
 	else
 		dq_permissions_panel.tgui_interact(usr)
 		SStgui.update_uis(dq_permissions_panel)
@@ -89,8 +89,8 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 			if(!admin_datum)
 				continue
 		var/display_ckey = admin_ckey
-		if(admin_datum.owner)
-			display_ckey = admin_datum.owner.key
+		if(admin_datum.owner())
+			display_ckey = admin_datum.owner().key
 		rows += list(list(
 			"ckey" = display_ckey,
 			"rank" = admin_datum.rank_names(),

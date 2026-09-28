@@ -104,11 +104,11 @@ ADMIN_VERB(access_news_network, R_ADMIN|R_EVENT, "Access Newscaster Network", "A
 	dat += "</table>"
 
 	// structured TGUI AdminReport; byond:// links forwarded to host.
-	dq_admin_report_html(owner, "Job Bans", dat, src)
+	dq_admin_report_html(owner(), "Job Bans", dat, src)
 
 /datum/admins/proc/Game()
 	if(!check_rights(0))	return
-	open_game_panel(owner?.mob)
+	open_game_panel(owner()?.mob)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////admins2.dm merge
 //i.e. buttons/verbs
@@ -791,7 +791,7 @@ ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this mach
 /datum/admins/var/obj/item/paper/admin/faxreply // var to hold fax replies in
 
 /datum/admins/proc/faxCallback(obj/item/paper/admin/P, obj/machinery/photocopier/faxmachine/destination)
-	var/customname = tgui_input_text(src.owner, "Pick a title for the report", "Title")
+	var/customname = tgui_input_text(src.owner(), "Pick a title for the report", "Title")
 
 	P.name = "[P.origin] - [customname]"
 	P.desc = "This is a paper titled '" + P.name + "'."
@@ -830,17 +830,17 @@ ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this mach
 
 
 	if(destination.receivefax(P))
-		to_chat(src.owner, span_notice("Message reply to transmitted successfully."))
+		to_chat(src.owner(), span_notice("Message reply to transmitted successfully."))
 		if(P.sender()) // sent as a reply
-			log_admin("[key_name(src.owner)] replied to a fax message from [key_name(P.sender())]")
+			log_admin("[key_name(src.owner())] replied to a fax message from [key_name(P.sender())]")
 			for(var/client/C in GLOB.admins)
 				if(check_rights_for(C, (R_ADMIN | R_MOD | R_EVENT)))
-					to_chat(C, span_log_message("[span_prefix("FAX LOG:")][key_name_admin(src.owner)] replied to a fax message from [key_name_admin(P.sender())] (<a href='byond://?_src_=holder;[HrefToken()];AdminFaxView=[REF(rcvdcopy)]'>VIEW</a>)"))
+					to_chat(C, span_log_message("[span_prefix("FAX LOG:")][key_name_admin(src.owner())] replied to a fax message from [key_name_admin(P.sender())] (<a href='byond://?_src_=holder;[HrefToken()];AdminFaxView=[REF(rcvdcopy)]'>VIEW</a>)"))
 		else
-			log_admin("[key_name(src.owner)] has sent a fax message to [destination.department]")
+			log_admin("[key_name(src.owner())] has sent a fax message to [destination.department]")
 			for(var/client/C in GLOB.admins)
 				if(check_rights_for(C, (R_ADMIN | R_MOD | R_EVENT)))
-					to_chat(C, span_log_message("[span_prefix("FAX LOG:")][key_name_admin(src.owner)] has sent a fax message to [destination.department] (<a href='byond://?_src_=holder;[HrefToken()];AdminFaxView=[REF(rcvdcopy)]'>VIEW</a>)"))
+					to_chat(C, span_log_message("[span_prefix("FAX LOG:")][key_name_admin(src.owner())] has sent a fax message to [destination.department] (<a href='byond://?_src_=holder;[HrefToken()];AdminFaxView=[REF(rcvdcopy)]'>VIEW</a>)"))
 
 		var/plaintext_title = P.sender() ? "replied to [key_name(P.sender())]'s fax" : "sent a fax message to [destination.department]"
 		var/fax_text = paper_html_to_plaintext(P.info)
@@ -848,7 +848,7 @@ ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this mach
 		log_game(fax_text)
 
 	else
-		to_chat(src.owner, span_warning("Message reply failed."))
+		to_chat(src.owner(), span_warning("Message reply failed."))
 
 	spawn(100) // S7 keeps: admin verb (allowlist)
 		qdel(P)

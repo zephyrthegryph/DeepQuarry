@@ -9,7 +9,7 @@
 	var/item_power_usage = 500
 
 	var/linkedholodeck_handle
-	var/area/target = null
+	var/target_handle
 	var/active = 0
 	var/list/holographic_objs
 	var/list/holographic_mobs
@@ -392,3 +392,7 @@
 /// LC-refs: the last_to_emag this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/computer/HolodeckControl/proc/last_to_emag() as /mob
 	return om_resolve(last_to_emag_handle)
+
+/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/HolodeckControl/proc/target() as /area
+	return om_resolve(target_handle)

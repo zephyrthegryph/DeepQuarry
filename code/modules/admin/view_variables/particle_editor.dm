@@ -1,9 +1,9 @@
 /datum/particle_editor
 	/// movable whose particles we want to be editing
-	var/atom/movable/target
+	var/target_handle
 
 /datum/particle_editor/New(atom/target)
-	src.target = target
+	src.target_handle = om_handle(target)
 
 /datum/particle_editor/tgui_state(mob/user)
 	return ADMIN_STATE(R_VAREDIT)
@@ -107,10 +107,10 @@
 
 /datum/particle_editor/tgui_data(mob/user)
 	var/list/data = list()
-	data["target_name"] = target.name
-	if(!target.particles)
-		target.particles = new /particles
-	data["particle_data"] = target.particles.return_ui_representation(user)
+	data["target_name"] = target().name
+	if(!target().particles)
+		target().particles = new /particles
+	data["particle_data"] = target().particles.return_ui_representation(user)
 	return data
 
 /datum/particle_editor/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
@@ -121,15 +121,15 @@
 	switch(action)
 		if("delete_and_close")
 			ui.close()
-			target.particles = null
-			target = null
+			target().particles = null
+			target_handle = null
 			. = FALSE
 		if("new_type")
 			var/new_type = pick_closest_path(/particles, make_types_fancy(typesof(/particles)))
 			if(!new_type)
 				return FALSE
-			target.particles = new new_type
-			target.particles.datum_flags |= DF_VAR_EDITED
+			target().particles = new new_type
+			target().particles.datum_flags |= DF_VAR_EDITED
 			. = TRUE
 		if("transform_size")
 			var/list/matrix_size = list("Simple Matrix" = 6, "Complex Matrix" = 12, "Projection Matrix" = 16)
@@ -137,18 +137,18 @@
 			if(!new_size)
 				return FALSE
 			. = TRUE
-			target.particles.datum_flags |= DF_VAR_EDITED
-			if(!target.particles.transform || length(target.particles.transform) != new_size)
+			target().particles.datum_flags |= DF_VAR_EDITED
+			if(!target().particles.transform || length(target().particles.transform) != new_size)
 				switch(new_size)
 					if(6)
-						target.particles.transform = list(1,0,0, 1,0,0) // TRANSFORM_MATRIX_IDENTITY seems wrong for only particles?
+						target().particles.transform = list(1,0,0, 1,0,0) // TRANSFORM_MATRIX_IDENTITY seems wrong for only particles?
 					if(12)
-						target.particles.transform = TRANSFORM_COMPLEX_MATRIX_IDENTITY
+						target().particles.transform = TRANSFORM_COMPLEX_MATRIX_IDENTITY
 					if(16)
-						target.particles.transform = TRANSFORM_PROJECTION_MATRIX_IDENTITY
+						target().particles.transform = TRANSFORM_PROJECTION_MATRIX_IDENTITY
 				return
 		if("edit")
-			var/particles/owner = target.particles
+			var/particles/owner = target().particles
 			var/param_var_name = params["var"]
 			if(!(param_var_name in owner.vars))
 				return FALSE
@@ -182,14 +182,14 @@
 						owner.icon[var_value] = 1
 					else
 						owner.icon = new_values
-					target.particles.datum_flags |= DF_VAR_EDITED
+					target().particles.datum_flags |= DF_VAR_EDITED
 					return TRUE
 				if(P_DATA_ICON_REMOVE)
 					for(var/file in owner.icon)
 						if("[file]" == var_value)
 							owner.icon -= file
 					UNSETEMPTY(owner.icon)
-					target.particles.datum_flags |= DF_VAR_EDITED
+					target().particles.datum_flags |= DF_VAR_EDITED
 					return TRUE
 				if(P_DATA_ICON_WEIGHT)
 					// [filename, new_weight]
@@ -197,16 +197,20 @@
 					for(var/file in owner.icon)
 						if("[file]" == mod_data[1])
 							owner.icon[file] = mod_data[2]
-					target.particles.datum_flags |= DF_VAR_EDITED
+					target().particles.datum_flags |= DF_VAR_EDITED
 					return TRUE
 				if(P_DATA_GRADIENT)
 					var/list/new_grad_list = list()
 					for(var/entry in var_value)
 						new_grad_list += entry // Unpackage nested lists
 					owner.gradient = new_grad_list
-					target.particles.datum_flags |= DF_VAR_EDITED
+					target().particles.datum_flags |= DF_VAR_EDITED
 					return TRUE
 
 			owner.vars[param_var_name] = var_value
-			target.particles.datum_flags |= DF_VAR_EDITED
+			target().particles.datum_flags |= DF_VAR_EDITED
 			return TRUE
+
+/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/particle_editor/proc/target() as /atom/movable
+	return om_resolve(target_handle)

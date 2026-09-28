@@ -1,11 +1,11 @@
 
 ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a player character with various 'special treatments' from a list.", ADMIN_CATEGORY_FUN_EVENT_KIT, mob/target in get_mob_with_client_list())
 	var/datum/eventkit/player_effects/spawner = new()
-	spawner.target = target
+	spawner.target_handle = om_handle(target)
 	spawner.tgui_interact(user.mob)
 
 /datum/eventkit/player_effects
-	var/mob/target //The target of the effects
+	var/target_handle	//The target of the effects
 
 /datum/eventkit/player_effects/New()
 	. = ..()
@@ -19,9 +19,9 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 /datum/eventkit/player_effects/tgui_static_data(mob/user)
 	var/list/data = list()
 
-	data["real_name"] = target.name;
-	data["player_ckey"] = target.ckey;
-	data["target_mob"] = target;
+	data["real_name"] = target().name;
+	data["player_ckey"] = target().ckey;
+	data["target_mob"] = target();
 
 	return data
 
@@ -35,13 +35,13 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 	if(!check_rights_for(ui.user.client, R_SPAWN))
 		return
 
-	log_and_message_admins("used player effect: [action] on [target.ckey] playing [target.name]", ui.user)
+	log_and_message_admins("used player effect: [action] on [target().ckey] playing [target().name]", ui.user)
 
 	switch(action)
 
 		////////////SMITES/////////////
 		if("break_legs")
-			var/mob/living/carbon/human/Tar = target
+			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
 			var/broken_legs = 0
@@ -52,39 +52,39 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			if(right_leg && right_leg.fracture())
 				broken_legs++
 			if(!broken_legs)
-				to_chat(ui.user,"[target] didn't have any breakable legs, sorry.")
+				to_chat(ui.user,"[target()] didn't have any breakable legs, sorry.")
 
 		if("bluespace_artillery")
-			bluespace_artillery(target, ui.user)
+			bluespace_artillery(target(), ui.user)
 
 		if("spont_combustion")
-			var/mob/living/carbon/human/Tar = target
+			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
 			Tar.adjust_fire_stacks(10)
 			Tar.ignite_mob()
-			Tar.visible_message(span_danger("[target] bursts into flames!"))
+			Tar.visible_message(span_danger("[target()] bursts into flames!"))
 
 		if("lightning_strike")
-			var/mob/living/carbon/human/Tar = target
+			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
-			var/turf/T = get_step(get_step(target, NORTH), NORTH)
-			T.Beam(target, icon_state="lightning[rand(1,12)]", time = 5)
+			var/turf/T = get_step(get_step(target(), NORTH), NORTH)
+			T.Beam(target(), icon_state="lightning[rand(1,12)]", time = 5)
 			Tar.electrocute_act(75,def_zone = BP_HEAD)
-			target.visible_message(span_danger("[target] is struck by lightning!"))
+			target().visible_message(span_danger("[target()] is struck by lightning!"))
 
 		if("shadekin_attack")
-			var/turf/Tt = get_turf(target) //Turf for target
+			var/turf/Tt = get_turf(target()) //Turf for target
 
-			if(target.loc != Tt)
+			if(target().loc != Tt)
 				return //Too hard to attack someone in something
 
 			var/turf/Ts //Turf for shadekin
 
 			//Try to find nondense turf
 			for(var/direction in GLOB.cardinal)
-				var/turf/T = get_step(target,direction)
+				var/turf/T = get_step(target(),direction)
 				if(T && !T.density)
 					Ts = T //Found shadekin spawn turf
 			if(!Ts)
@@ -96,7 +96,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			shadekin.init_vore(TRUE)
 			shadekin.ability_flags |= 0x1
 			shadekin.phase_out(get_turf(shadekin))
-			shadekin.ai_brain?.give_target(target, TRUE)
+			shadekin.ai_brain?.give_target(target(), TRUE)
 			shadekin.ai_brain?.set_hostile(FALSE)
 			if(shadekin.ai_brain)
 				shadekin.ai_brain.mauling = TRUE
@@ -127,23 +127,23 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				"Orange Eyes (Light)" = /mob/living/simple_mob/shadekin/orange/white,
 				"Orange Eyes (Brown)" = /mob/living/simple_mob/shadekin/orange/brown,
 				"Rivyr (Unique)" = /mob/living/simple_mob/shadekin/blue/rivyr)
-			var/kin_type = tgui_input_list(ui.user, "Select the type of shadekin for [target] nomf","Shadekin Type Choice", kin_types)
-			if(!kin_type || !target)
+			var/kin_type = tgui_input_list(ui.user, "Select the type of shadekin for [target()] nomf","Shadekin Type Choice", kin_types)
+			if(!kin_type || !target())
 				return
 
 			kin_type = kin_types[kin_type]
 
 			var/myself = tgui_alert(ui.user, "Control the shadekin yourself or delete pred and prey after?","Control Shadekin?",list("Control","Cancel","Delete"))
-			if(!myself || myself == "Cancel" || !target)
+			if(!myself || myself == "Cancel" || !target())
 				return
 
-			var/turf/Tt = get_turf(target)
+			var/turf/Tt = get_turf(target())
 
-			if(target.loc != Tt)
+			if(target().loc != Tt)
 				return //Can't nom when not exposed
 
 			//Begin abuse
-			target.transforming = TRUE //Cheap hack to stop them from moving
+			target().transforming = TRUE //Cheap hack to stop them from moving
 			var/mob/living/simple_mob/shadekin/shadekin = new kin_type(Tt)
 			shadekin.real_name = shadekin.name
 			shadekin.init_vore(TRUE)
@@ -153,40 +153,40 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			shadekin.phase_out(get_turf(shadekin)) //Homf
 			shadekin.comp.dark_energy = initial(shadekin.comp.dark_energy)
 			//For fun: a timed sequence (shadekin_smite_step), nothing sleeps.
-			shadekin_smite_step(shadekin, target, myself == "Control" ? target.ckey : null, 1)
+			shadekin_smite_step(shadekin, target(), myself == "Control" ? target().ckey : null, 1)
 
 		if("redspace_abduct")
-			redspace_abduction(target, ui.user)
+			redspace_abduction(target(), ui.user)
 
 		if("autosave")
-			fake_autosave(target, ui.user)
+			fake_autosave(target(), ui.user)
 
 		if("autosave2")
-			fake_autosave(target, ui.user, TRUE)
+			fake_autosave(target(), ui.user, TRUE)
 
 		if("adspam")
-			if(target.client)
-				target.client.create_fake_ad_popup_multiple(/atom/movable/screen/popup/default, 15)
+			if(target().client)
+				target().client.create_fake_ad_popup_multiple(/atom/movable/screen/popup/default, 15)
 
 		if("peppernade")
 			var/obj/item/grenade/chem_grenade/teargas/grenade = new /obj/item/grenade/chem_grenade/teargas
-			grenade.loc = target.loc
-			to_chat(target,span_warning("GRENADE?!"))
+			grenade.loc = target().loc
+			to_chat(target(),span_warning("GRENADE?!"))
 			grenade.detonate()
 
 		if("spicerequest")
 			var/obj/item/reagent_containers/food/condiment/spacespice/spice = new /obj/item/reagent_containers/food/condiment/spacespice
-			spice.loc = target.loc
-			to_chat(target,"A bottle of spices appears at your feet... be careful what you wish for!")
+			spice.loc = target().loc
+			to_chat(target(),"A bottle of spices appears at your feet... be careful what you wish for!")
 
 		if("terror")
-			var/mob/living/carbon/human/Tar = target
+			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
 			Tar.fear = 200
 
 		if("terror_aoe")
-			var/mob/living/carbon/human/Tar = target
+			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
 			for(var/mob/living/carbon/human/L in orange(Tar.client.view, Tar))
@@ -206,36 +206,36 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				direction = 0
 			if(direction_ask == "Cancel")
 				return
-			target.SpinAnimation(speed, loops, direction)
+			target().SpinAnimation(speed, loops, direction)
 
 		if("squish")
-			var/is_squished = target.tf_scale_x || target.tf_scale_y
-			playsound(target, 'sound/items/hooh.ogg', 50, 1)
+			var/is_squished = target().tf_scale_x || target().tf_scale_y
+			playsound(target(), 'sound/items/hooh.ogg', 50, 1)
 			if(!is_squished)
-				target.SetTransform(null, (target.size_multiplier * 1.2), (target.size_multiplier * 0.5))
+				target().SetTransform(null, (target().size_multiplier * 1.2), (target().size_multiplier * 0.5))
 			else
-				target.ClearTransform()
-				target.update_transform()
+				target().ClearTransform()
+				target().update_transform()
 
 		if("pie_splat")
-			new/obj/effect/decal/cleanable/pie_smudge(get_turf(target))
-			playsound(target, 'sound/effects/slime_squish.ogg', 100, 1, get_rand_frequency(), falloff = 5)
-			target.status_at_least(EFFECT_WEAKENED, 1)
-			target.visible_message(span_danger("[target] is struck by pie!"))
+			new/obj/effect/decal/cleanable/pie_smudge(get_turf(target()))
+			playsound(target(), 'sound/effects/slime_squish.ogg', 100, 1, get_rand_frequency(), falloff = 5)
+			target().status_at_least(EFFECT_WEAKENED, 1)
+			target().visible_message(span_danger("[target()] is struck by pie!"))
 
 		if("spicy_air")
-			to_chat(target, span_warning("Spice spice baby!"))
-			target.status_at_least(EFFECT_BLURRY, 25)
-			target.status_at_least(EFFECT_BLINDED, 10)
-			target.status_at_least(EFFECT_STUNNED, 5)
-			target.status_at_least(EFFECT_WEAKENED, 5)
-			playsound(target, 'sound/effects/spray2.ogg', 100, 1, get_rand_frequency(), falloff = 5)
+			to_chat(target(), span_warning("Spice spice baby!"))
+			target().status_at_least(EFFECT_BLURRY, 25)
+			target().status_at_least(EFFECT_BLINDED, 10)
+			target().status_at_least(EFFECT_STUNNED, 5)
+			target().status_at_least(EFFECT_WEAKENED, 5)
+			playsound(target(), 'sound/effects/spray2.ogg', 100, 1, get_rand_frequency(), falloff = 5)
 
 		if("hot_dog")
-			hotdog_smite(target)
+			hotdog_smite(target())
 
 		if("mob_tf")
-			var/mob/living/M = target
+			var/mob/living/M = target()
 
 			if(!istype(M))
 				return
@@ -251,7 +251,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			M.tf_into(new_mob)
 
 		if("item_tf")
-			var/mob/living/M = target
+			var/mob/living/M = target()
 
 			if(!istype(M))
 				return
@@ -273,10 +273,10 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			M.tf_into(spawned_obj, TRUE, original_name)
 
 		if("elder_smite")
-			if(!target.ckey)
+			if(!target().ckey)
 				return
-			target.overlay_fullscreen("scrolls", /atom/movable/screen/fullscreen/scrolls, 1)
-			addtimer(CALLBACK(target, TYPE_PROC_REF(/mob, clear_fullscreen), "scrolls"), 20 SECONDS)
+			target().overlay_fullscreen("scrolls", /atom/movable/screen/fullscreen/scrolls, 1)
+			addtimer(CALLBACK(target(), TYPE_PROC_REF(/mob, clear_fullscreen), "scrolls"), 20 SECONDS)
 
 		if("wet_floors")
 			var/chem
@@ -294,10 +294,10 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 					return
 				chem = chemical.id
 
-			if(!target)
+			if(!target())
 				return //Check target still exists after choices were made
-			var/turf/target_turf = get_turf(target)
-			for(var/turf/simulated/floor/surroundings in orange(1,target))
+			var/turf/target_turf = get_turf(target())
+			for(var/turf/simulated/floor/surroundings in orange(1,target()))
 				if(target_turf == surroundings) //Don't put it directly on our turf, just neighbouring ones
 					continue
 				var/datum/reagents/our_chem = new /datum/reagents(30) //Create some reagents, move them over, and clean up the datum afterwards
@@ -308,7 +308,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 		////////MEDICAL//////////////
 
 		if("health_scan")
-			var/mob/living/Tar = target
+			var/mob/living/Tar = target()
 			if(!istype(Tar))
 				return
 			var/datum/diagnosis/D = Tar.diagnose(/datum/diagnostic_profile/admin)
@@ -317,12 +317,12 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				qdel(D)
 
 		if("appendicitis")
-			var/mob/living/carbon/human/Tar = target
+			var/mob/living/carbon/human/Tar = target()
 			if(istype(Tar))
 				Tar.appendicitis()
 
 		if("damage_organ")
-			var/mob/living/carbon/human/Tar = target
+			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
 			var/list/organs = list()
@@ -346,7 +346,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				our_organ.bruise()
 
 		if("assist_organ")
-			var/mob/living/carbon/human/Tar = target
+			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
 			var/list/organs = list()
@@ -360,7 +360,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			our_organ.mechassist()
 
 		if("robot_organ")
-			var/mob/living/carbon/human/Tar = target
+			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
 			var/list/organs = list()
@@ -374,7 +374,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			our_organ.robotize()
 
 		if("repair_organ")
-			var/mob/living/carbon/human/Tar = target
+			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
 			var/list/organs = list()
@@ -396,7 +396,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				our_organ.rejuvenate()
 
 		if("drop_organ")
-			var/mob/living/carbon/human/Tar = target
+			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
 			var/list/organs = list()
@@ -410,7 +410,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			our_organ.removed()
 
 		if("break_bone")
-			var/mob/living/carbon/human/Tar = target
+			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
 			var/list/organs = list()
@@ -422,7 +422,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			our_organ.fracture()
 
 		if("stasis")
-			var/mob/living/Tar = target
+			var/mob/living/Tar = target()
 			if(!istype(Tar))
 				return
 			if(Tar.has_stasis_from(null))
@@ -431,7 +431,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				Tar.set_stasis(/datum/modifier/stasis/total, null)
 
 		if("give_chem")
-			var/mob/living/carbon/human/Tar = target
+			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
 			var/list/chem_list = typesof(/datum/reagent)
@@ -458,7 +458,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				Tar.touching.add_reagent(chem, amount)
 
 		if("purge")
-			var/mob/living/carbon/Tar = target
+			var/mob/living/carbon/Tar = target()
 			if(!istype(Tar))
 				return
 			Tar.bloodstr.clear_reagents()
@@ -466,13 +466,13 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			Tar.touching.clear_reagents()
 
 		if("medical_issue")
-			var/mob/living/carbon/human/Tar = target
+			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
 			Tar.custom_medical_issue(ui.user)
 
 		if("clear_issue")
-			var/mob/living/carbon/human/Tar = target
+			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
 			Tar.clear_medical_issue(ui.user)
@@ -480,13 +480,13 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 		////////ABILITIES//////////////
 
 		if("vent_crawl")
-			var/mob/living/Tar = target
+			var/mob/living/Tar = target()
 			if(!istype(Tar))
 				return
 			add_verb(Tar, /mob/living/proc/ventcrawl)
 
 		if("darksight")
-			var/mob/living/carbon/human/Tar = target
+			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
 			var/current_darksight = Tar.species.darksight
@@ -495,13 +495,13 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				Tar.species.darksight = change_sight
 
 		if("cocoon")
-			var/mob/living/carbon/human/Tar = target
+			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
 			add_verb(Tar, /mob/living/carbon/human/proc/enter_cocoon)
 
 		if("transformation")
-			var/mob/living/carbon/human/Tar = target
+			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
 			add_verb(Tar, /mob/living/carbon/human/proc/shapeshifter_select_hair)
@@ -514,13 +514,13 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			add_verb(Tar, /mob/living/carbon/human/proc/lleill_select_colour)
 
 		if("set_size")
-			var/mob/living/Tar = target
+			var/mob/living/Tar = target()
 			if(!istype(Tar))
 				return
 			add_verb(Tar, /mob/living/proc/set_size)
 
 		if("lleill_energy")
-			var/mob/living/carbon/human/Tar = target
+			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
 			var/energy_max = tgui_input_number(ui.user, "What should their max lleill energy be set to? It is currently [Tar.species.lleill_energy_max].", "Max energy")
@@ -529,64 +529,64 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			Tar.species.lleill_energy = energy_new
 
 		if("lleill_invisibility")
-			var/mob/living/carbon/human/Tar = target
+			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
 			add_verb(Tar, /mob/living/carbon/human/proc/lleill_invisibility)
 
 		if("beast_form")
-			var/mob/living/carbon/human/Tar = target
+			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
 			add_verb(Tar, /mob/living/carbon/human/proc/lleill_beast_form)
 
 		if("lleill_transmute")
-			var/mob/living/carbon/human/Tar = target
+			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
 			add_verb(Tar, /mob/living/carbon/human/proc/lleill_transmute)
 
 		if("lleill_alchemy")
-			var/mob/living/carbon/human/Tar = target
+			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
 			add_verb(Tar, /mob/living/carbon/human/proc/lleill_alchemy)
 
 		if("lleill_drain")
-			var/mob/living/carbon/human/Tar = target
+			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
 			add_verb(Tar, /mob/living/carbon/human/proc/lleill_contact)
 
 		if("brutal_pred")
-			var/mob/living/Tar = target
+			var/mob/living/Tar = target()
 			if(!istype(Tar))
 				return
 			add_verb(Tar, /mob/living/proc/shred_limb)
 
 		if("trash_eater")
-			var/mob/living/carbon/human/Tar = target
+			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
 			add_verb(Tar, /mob/living/proc/eat_trash)
 			add_verb(Tar, /mob/living/proc/toggle_trash_catching)
 
 		if("active_cloaking")
-			var/mob/living/Tar = target
+			var/mob/living/Tar = target()
 			if(!istype(Tar))
 				return
 			add_verb(Tar, /mob/living/proc/toggle_active_cloaking)
 
 		if("colormate")
-			if(istype(target,/mob/living/simple_mob))
-				var/mob/living/simple_mob/Tar = target
+			if(istype(target(),/mob/living/simple_mob))
+				var/mob/living/simple_mob/Tar = target()
 				add_verb(Tar, /mob/living/simple_mob/proc/ColorMate)
-			if(istype(target,/mob/living/silicon/robot))
-				var/mob/living/silicon/robot/Tar = target
+			if(istype(target(),/mob/living/silicon/robot))
+				var/mob/living/silicon/robot/Tar = target()
 				add_verb(Tar, /mob/living/silicon/robot/proc/ColorMate)
 
 		if("be_event_invis")
-			var/mob/living/Tar = target
+			var/mob/living/Tar = target()
 			if(!istype(Tar)) //Technically does not need this restriction, but prevents ghosts accidentally being placed in mob layer
 				return
 			if(Tar.plane != PLANE_INVIS_EVENT)
@@ -601,17 +601,17 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 					Tar.vis_enabled -= VIS_EVENT_INVIS
 
 		if("see_event_invis")
-			if(!(VIS_EVENT_INVIS in target.vis_enabled))
-				target.plane_holder.set_vis(VIS_EVENT_INVIS,TRUE)
-				target.vis_enabled += VIS_EVENT_INVIS
-			else if(VIS_EVENT_INVIS in target.vis_enabled)
-				target.plane_holder.set_vis(VIS_EVENT_INVIS,FALSE)
-				target.vis_enabled -= VIS_EVENT_INVIS
+			if(!(VIS_EVENT_INVIS in target().vis_enabled))
+				target().plane_holder.set_vis(VIS_EVENT_INVIS,TRUE)
+				target().vis_enabled += VIS_EVENT_INVIS
+			else if(VIS_EVENT_INVIS in target().vis_enabled)
+				target().plane_holder.set_vis(VIS_EVENT_INVIS,FALSE)
+				target().vis_enabled -= VIS_EVENT_INVIS
 
 		////////INVENTORY//////////////
 
 		if("drop_all")
-			var/mob/living/carbon/human/Tar = target
+			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
 			var/confirm = tgui_alert(ui.user, "Make [Tar] drop everything?", "Message", list("Yes", "No"))
@@ -624,7 +624,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				Tar.drop_from_inventory(W)
 
 		if("drop_specific")
-			var/mob/living/carbon/human/Tar = target
+			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
 
@@ -634,20 +634,20 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				Tar.drop_from_inventory(item_to_drop)
 
 		if("drop_held")
-			var/mob/living/carbon/human/Tar = target
+			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
 			Tar.drop_l_hand()
 			Tar.drop_r_hand()
 
 		if("list_all")
-			var/mob/living/carbon/human/Tar = target
+			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
 			Tar.get_equipped_items()
 
 		if("give_item")
-			var/mob/living/carbon/human/Tar = target
+			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
 			if(!check_rights_for(ui.user.client, R_HOLDER))
@@ -658,7 +658,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			Tar.put_in_hands(X)
 
 		if("equip_item")
-			var/mob/living/carbon/human/Tar = target
+			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
 			if(!check_rights_for(ui.user.client, R_HOLDER))
@@ -674,7 +674,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 		////////ADMIN//////////////
 
 		if("quick_nif")
-			var/mob/living/carbon/human/Tar = target
+			var/mob/living/carbon/human/Tar = target()
 			if(!istype(Tar))
 				return
 			var/input_NIF
@@ -708,64 +708,64 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			log_and_message_admins("Quick NIF'd [Tar.real_name] with a [input_NIF].", ui.user)
 
 		if("resize")
-			SSadmin_verbs.dynamic_invoke_verb(ui.user.client, /datum/admin_verb/resize, target)
+			SSadmin_verbs.dynamic_invoke_verb(ui.user.client, /datum/admin_verb/resize, target())
 
 		if("teleport")
 			var/where = tgui_alert(ui.user, "Where to teleport?", "Where?", list("To Me", "To Mob", "To Area", "Cancel"))
 			if(where == "Cancel")
 				return
 			if(where == "To Me")
-				SSadmin_verbs.dynamic_invoke_verb(ui.user.client, /datum/admin_verb/Getmob, target)
+				SSadmin_verbs.dynamic_invoke_verb(ui.user.client, /datum/admin_verb/Getmob, target())
 			if(where == "To Mob")
-				var/mob/selection = tgui_input_list(ui.user, "Select a mob to jump [target] to:", "Jump to mob", REGISTRY_MEMBERS(REGISTRY_MOBS))
-				target.on_mob_jump()
-				target.forceMove(get_turf(selection))
-				log_admin("[key_name(ui.user)] jumped [target] to [selection]")
+				var/mob/selection = tgui_input_list(ui.user, "Select a mob to jump [target()] to:", "Jump to mob", REGISTRY_MEMBERS(REGISTRY_MOBS))
+				target().on_mob_jump()
+				target().forceMove(get_turf(selection))
+				log_admin("[key_name(ui.user)] jumped [target()] to [selection]")
 			if(where == "To Area")
 				var/area/A
-				A = tgui_input_list(ui.user, "Pick an area to teleport [target] to:", "Jump to Area", return_sorted_areas())
-				target.on_mob_jump()
-				target.forceMove(pick(get_area_turfs(A)))
-				log_admin("[key_name(ui.user)] jumped [target] to [A]")
+				A = tgui_input_list(ui.user, "Pick an area to teleport [target()] to:", "Jump to Area", return_sorted_areas())
+				target().on_mob_jump()
+				target().forceMove(pick(get_area_turfs(A)))
+				log_admin("[key_name(ui.user)] jumped [target()] to [A]")
 
 		if("gib")
-			var/death = tgui_alert(ui.user, "Are you sure you want to destroy [target]?", "Gib?", list("KILL", "Cancel"))
+			var/death = tgui_alert(ui.user, "Are you sure you want to destroy [target()]?", "Gib?", list("KILL", "Cancel"))
 			if(death == "KILL")
-				target.gib()
+				target().gib()
 
 		if("dust")
-			var/death = tgui_alert(ui.user, "Are you sure you want to destroy [target]?", "Dust?", list("KILL", "Cancel"))
+			var/death = tgui_alert(ui.user, "Are you sure you want to destroy [target()]?", "Dust?", list("KILL", "Cancel"))
 			if(death == "KILL")
-				target.dust()
+				target().dust()
 
 		if("paralyse")
-			if(!isliving(target))
+			if(!isliving(target()))
 				return
-			SSadmin_verbs.dynamic_invoke_verb(ui.user.client, /datum/admin_verb/paralyze_mob, target)
+			SSadmin_verbs.dynamic_invoke_verb(ui.user.client, /datum/admin_verb/paralyze_mob, target())
 
 		if("subtle_message")
-			SSadmin_verbs.dynamic_invoke_verb(ui.user.client, /datum/admin_verb/cmd_admin_subtle_message, target)
+			SSadmin_verbs.dynamic_invoke_verb(ui.user.client, /datum/admin_verb/cmd_admin_subtle_message, target())
 
 		if("direct_narrate")
-			SSadmin_verbs.dynamic_invoke_verb(ui.user.client, /datum/admin_verb/cmd_admin_direct_narrate, target)
+			SSadmin_verbs.dynamic_invoke_verb(ui.user.client, /datum/admin_verb/cmd_admin_direct_narrate, target())
 
 		if("player_panel")
-			SSadmin_verbs.dynamic_invoke_verb(ui.user.client, /datum/admin_verb/show_player_panel, target)
+			SSadmin_verbs.dynamic_invoke_verb(ui.user.client, /datum/admin_verb/show_player_panel, target())
 
 		if("view_variables")
-			ui.user.client.debug_variables(target)
+			ui.user.client.debug_variables(target())
 
 		if("orbit")
 			if(!ui.user.client.holder.marked_datum())
 				return
 			var/atom/movable/X = ui.user.client.holder.marked_datum()
-			X.orbit(target)
+			X.orbit(target())
 
 		if("ai")
-			if(!isliving(target))
+			if(!isliving(target()))
 				to_chat(ui.user, span_notice("This can only be used on instances of type /mob/living"))
 				return
-			var/mob/living/L = target
+			var/mob/living/L = target()
 			if(L.client || L.teleop)
 				to_chat(ui.user, span_warning("This cannot be used on player mobs!"))
 				return
@@ -783,13 +783,13 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				L.status_adjust(EFFECT_SLEEPING, -100)
 
 		if("cloaking")
-			if(dq_get_cloaked(target))
-				target.uncloak()
-			else if(!dq_get_cloaked(target))
-				target.cloak()
+			if(dq_get_cloaked(target()))
+				target().uncloak()
+			else if(!dq_get_cloaked(target()))
+				target().cloak()
 
 		if("give_quest")
-			if(!target)
+			if(!target())
 				return
 			var/admin_quest =  tgui_alert(ui.user, "Do you want to give a random quest or a personalised one?", "Quest!", list("Random", "Personalised", "Cancel"))
 			if(!admin_quest || (admin_quest == "Cancel"))
@@ -798,14 +798,14 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				var/specific_quest = tgui_input_text(ui.user, "What is their quest?", "Quest!!!")
 				if(!specific_quest)
 					return
-				quest_from_above(target, specific_quest)
+				quest_from_above(target(), specific_quest)
 			else
-				quest_from_above(target)
+				quest_from_above(target())
 
 		////////FIXES//////////////
 
 		if("rejuvenate")
-			var/mob/living/Tar = target
+			var/mob/living/Tar = target()
 			if(!istype(Tar))
 				return
 			Tar.rejuvenate()
@@ -814,17 +814,21 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			var/message = tgui_input_text(ui.user, "Write a message to send to the user with a space for them to reply without using the text box:", "Message")
 			if(!message)
 				return
-			log_admin("[key_name(ui.user)] sent message to [target]: [message]")
-			var/reply = tgui_input_text(target, "An admin has sent you a message: [message]", "Reply")
+			log_admin("[key_name(ui.user)] sent message to [target()]: [message]")
+			var/reply = tgui_input_text(target(), "An admin has sent you a message: [message]", "Reply")
 			if(!reply)
 				return
-			log_and_message_admins("replied to [ui.user]'s message: [reply].", target)
+			log_and_message_admins("replied to [ui.user]'s message: [reply].", target())
 
 		if("stop-orbits")
-			target.stop_orbiters()
+			target().stop_orbiters()
 
 		if("revert-mob-tf")
-			var/mob/living/Tar = target
+			var/mob/living/Tar = target()
 			if(!istype(Tar))
 				return
 			Tar.revert_mob_tf()
+
+/// LC-refs: The target of the effects -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/eventkit/player_effects/proc/target() as /mob
+	return om_resolve(target_handle)

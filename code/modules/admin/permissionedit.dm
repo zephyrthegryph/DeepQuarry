@@ -199,13 +199,13 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 	target_holder.deactivate() //after logs so the deadmined admin can see the message.
 
 /datum/admins/proc/auto_deadmin()
-	if(owner.is_localhost())
+	if(owner().is_localhost())
 		return FALSE
 	//if(owner.prefs.read_preference(/datum/preference/toggle/bypass_deadmin_in_centcom) && is_centcom_level(owner.mob.z) && !istype(owner.mob, /mob/observer/dead))
 	//	return FALSE
 
-	to_chat(owner, span_interface("You are now a normal player."), confidential = TRUE)
-	var/old_owner = owner
+	to_chat(owner(), span_interface("You are now a normal player."), confidential = TRUE)
+	var/old_owner = owner()
 	deactivate()
 	message_admins("[old_owner] deadmined via auto-deadmin config.")
 	log_admin("[old_owner] deadmined via auto-deadmin config.")
@@ -760,11 +760,11 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		var/list/datum/admins/impacted_admins_to_client = list()
 		for(var/admin_key in GLOB.admin_datums)
 			var/datum/admins/checking = GLOB.admin_datums[admin_key]
-			if(!checking.owner)
+			if(!checking.owner())
 				continue
 			if(!(target_rank in checking.ranks))
 				continue
-			impacted_admins_to_client[checking] = checking.owner
+			impacted_admins_to_client[checking] = checking.owner()
 			checking.disassociate()
 
 		switch(what_to_edit)

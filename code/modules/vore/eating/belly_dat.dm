@@ -32,7 +32,7 @@
 
 	var/tmp/digest_mode = DM_HOLD				// Whether or not to digest. Default to not digest.
 	var/tmp/list/digest_modes = list(DM_HOLD,DM_DIGEST,DM_HEAL,DM_ABSORB,DM_DRAIN,DM_UNABSORB,DM_SHRINK,DM_GROW,DM_SIZE_STEAL,DM_EGG)	// Possible digest modes
-	var/tmp/mob/living/owner					// The mob whose belly this is.
+	var/tmp/owner_handle	// The mob whose belly this is.
 	var/tmp/list/internal_contents = list()		// People/Things you've eaten into this belly!
 	var/tmp/emotePend = FALSE					// If there's already a spawned thing counting for the next emote
 	var/tmp/list/items_preserved = list()		// Stuff that wont digest.
@@ -154,3 +154,7 @@
 /// LC-refs: Location that the prey is released if they struggle and get dropped off. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/belly/proc/transferlocation() as /datum/belly
 	return om_resolve(transferlocation_handle)
+
+/// LC-refs: The mob whose belly this is. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/belly/proc/owner() as /mob/living
+	return om_resolve(owner_handle)

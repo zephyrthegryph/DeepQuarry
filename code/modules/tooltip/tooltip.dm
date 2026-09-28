@@ -17,7 +17,7 @@
 // React owns is-visible (it shows the element after sizing it).
 
 /datum/tooltip
-	var/client/owner
+	var/owner_handle
 	var/control = "mapwindow.tooltip"
 	var/showing = 0
 	var/queueHide = 0
@@ -41,7 +41,7 @@
 /datum/tooltip/New(client/C)
 	if(!C)
 		return
-	owner = C
+	owner_handle = om_handle(C)
 	tooltip_window = new(C, control)
 	// The tgui ui is opened lazily in show(), bound to the CURRENT mob. Opening it
 	// here (at login) binds it to the lobby new_player mob, which is deleted on
@@ -56,7 +56,7 @@
 
 /datum/tooltip/Destroy(force)
 	last_target_handle = null
-	owner = null
+	owner_handle = null
 	return ..()
 
 /datum/tooltip/tgui_state(mob/user)
@@ -79,7 +79,7 @@
 	)
 
 /datum/tooltip/proc/show(atom/movable/thing, params = null, title = null, content = null, theme = "default", special = "none")
-	if(!thing || !params || (!title && !content) || !owner)
+	if(!thing || !params || (!title && !content) || !owner())
 		return FALSE
 	if(!isnum(world.icon_size))
 		return FALSE
@@ -102,7 +102,7 @@
 		content = "<p>[content]</p>"
 	title = strip_improper(title)
 
-	var/view_size = getviewsize(owner.view)
+	var/view_size = getviewsize(owner().view)
 	_visible = TRUE
 	_title = "[title][content]"
 	_theme = theme
@@ -117,9 +117,9 @@
 	// data to React (and mounts it on first hover). Tooltip.tsx measures the box,
 	// sizes the element to it at the cursor, and shows it — DM never winsets
 	// is-visible here, so the element only ever appears already positioned.
-	var/datum/tgui/ui = SStgui.try_update_ui(owner.mob, src, null)
+	var/datum/tgui/ui = SStgui.try_update_ui(owner().mob, src, null)
 	if(!ui)
-		ui = new(owner.mob, src, "Tooltip", window = tooltip_window)
+		ui = new(owner().mob, src, "Tooltip", window = tooltip_window)
 		ui.closeable = FALSE
 		ui.open()
 
@@ -136,8 +136,8 @@
 	// Hide the native control synchronously. Waiting for a TGUI update here can
 	// leave the old tooltip painted indefinitely when MouseExited is the last
 	// mouse event received.
-	if(owner)
-		winset(owner, control, "is-visible=false")
+	if(owner())
+		winset(owner(), control, "is-visible=false")
 	// A previously-started Byond.winget() can finish after the immediate winset
 	// and briefly show the browser again. Reassert hidden after that async turn,
 	// but only if no newer hover has superseded this revision.
@@ -159,7 +159,7 @@
 		queueHide = FALSE
 		return
 	queueHide = FALSE
-	if(!owner)
+	if(!owner())
 		return
 	if(last_target())
 		UnregisterSignal(last_target(), COMSIG_QDELETING)
@@ -170,8 +170,8 @@
 /datum/tooltip/proc/ensure_hidden(hide_revision)
 	if(hide_revision != _revision || _visible)
 		return
-	if(owner)
-		winset(owner, control, "is-visible=false")
+	if(owner())
+		winset(owner(), control, "is-visible=false")
 
 /datum/tooltip/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	. = ..()
@@ -206,3 +206,7 @@ REF_OWNED(/datum/tooltip, "tooltip_window")
 /// LC-refs: the last_target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tooltip/proc/last_target() as /atom
 	return om_resolve(last_target_handle)
+
+/// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tooltip/proc/owner() as /client
+	return om_resolve(owner_handle)

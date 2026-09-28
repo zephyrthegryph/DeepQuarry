@@ -13,7 +13,7 @@
 		reset_contents()
 
 	// Add source turf first
-	var/datum/search_object/source = new(owner, source_turf())
+	var/datum/search_object/source = new(owner(), source_turf())
 	add_to_index(source)
 
 	for(var/atom/thing as anything in source_turf().contents)
@@ -27,14 +27,14 @@
 			continue
 		// if(thing.IsObscured())
 		// 	continue
-		if(thing.invisibility > owner.mob.see_invisible)
+		if(thing.invisibility > owner().mob.see_invisible)
 			continue
 
 		// convert
-		var/datum/search_object/index = new(owner, thing)
+		var/datum/search_object/index = new(owner(), thing)
 		add_to_index(index)
 
-	var/datum/tgui/window = SStgui.get_open_ui(owner.mob, src)
+	var/datum/tgui/window = SStgui.get_open_ui(owner().mob, src)
 	window?.send_update()
 
 	if(length(to_image))

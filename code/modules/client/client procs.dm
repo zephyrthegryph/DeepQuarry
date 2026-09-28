@@ -420,7 +420,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	log_access("Logout: [key_name(src)]")
 	GLOB.tickets.ClientLogout(src)
 	if(holder)
-		holder.owner = null
+		holder.owner_handle = null
 		GLOB.admins -= src
 	if(skybox)
 		QDEL_NULL(skybox)
