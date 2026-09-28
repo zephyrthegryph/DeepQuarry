@@ -928,6 +928,14 @@ else
 	fi
 fi;
 
+part "blocking shell toast enabled in example config"
+# TOAST_NOTIFICATION_ON_INIT calls world.shelleo() right after init; under DreamDaemon -safe that
+# blocks the VM on an (invisible with -invisible) "Safe Mode" permission dialog and hangs the server.
+if grep -Eq '^[[:space:]]*TOAST_NOTIFICATION_ON_INIT' config/example/config.txt; then
+	echo -e "${RED}config/example/config.txt enables TOAST_NOTIFICATION_ON_INIT; it hangs -safe servers after init. Keep it commented.${NC}"
+	FAILED=1
+fi;
+
 if [ $FAILED = 0 ]; then
 	echo
 	echo -e "${GREEN}No errors found using $grep!${NC}"
