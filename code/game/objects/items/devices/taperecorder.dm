@@ -383,9 +383,6 @@ DECLARE_INTERACTIONS(/obj/item/taperecorder, \
 		add_overlay("ribbonoverlay")
 
 
-/obj/item/rectape/fire_act()
-	ruin()
-
 DECLARE_INTERACTIONS(/obj/item/rectape, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
 	INTERACT_INSERT(/obj/item/pen, PROC_REF(interaction_item), "Label"), \

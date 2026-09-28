@@ -454,6 +454,20 @@ if [ "$modifier_type_count" -gt "$modifier_type_max" ]; then
 	FAILED=1
 fi;
 
+part "heat: ratchet on fire_act() overrides (H3)"
+# Heat behaviour is declared: thermal properties, temperature thresholds and
+# heat rules (code/datums/rules/declarations.dm) on the heat node that
+# /obj/fire_act() heats. Don't add a per-type fire_act() override; declare a
+# rule. Remaining: /atom, /obj, floor + wall turfs, mob body heat (living,
+# carbon, robot, three slimes) and unit-test probes. This count may only go down.
+fire_act_max=12
+fire_act_count=$($grep -c '^/[A-Za-z0-9_/]*/fire_act\(' "${code_files[@]}" | awk -F: '{s += $NF} END {print s + 0}')
+if [ "$fire_act_count" -gt "$fire_act_max" ]; then
+	echo
+	echo -e "${RED}ERROR: $fire_act_count fire_act() overrides (ratchet: $fire_act_max). Declare a heat rule (code/datums/rules/declarations.dm) or a temperature threshold instead.${NC}"
+	FAILED=1
+fi;
+
 part "weapon vocabulary: injury kinds, not damage types"
 # Weapons, projectiles, blobs, unarmed and animal attacks declare what they
 # inflict as INJURY_* kinds (`injury_kind`, or an `injury_kinds` alist for a
