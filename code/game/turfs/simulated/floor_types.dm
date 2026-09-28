@@ -386,8 +386,8 @@
 // Old attackby: items do nothing here.
 EXTEND_INTERACTIONS(/turf/simulated/floor/flesh, INTERACT_ITEM("Nothing", TYPE_PROC_REF(/atom, interaction_pass)))
 
-/turf/simulated/floor/flesh/ex_act(severity)
-	return
+/turf/simulated/floor/flesh
+	resistance_flags = INDESTRUCTIBLE | BOMB_PROOF
 
 /turf/simulated/floor/flock
 	icon = 'icons/goonstation/featherzone.dmi'

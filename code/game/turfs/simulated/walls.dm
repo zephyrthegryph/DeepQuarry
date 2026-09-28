@@ -227,14 +227,12 @@
 
 	ChangeTurf(/turf/simulated/floor/plating)
 
-/// Explosion adapter: the wall is a sink of the blast packet (damage.md §5).
-/turf/simulated/wall/ex_act(severity)
-	receive_explosion(severity)
-
 /// Walls take blast on their own ladder, not a fraction of max integrity, so a
 /// heavy blast still breaches ordinary walls. The epicentre obliterates
 /// outright; a strong girder may survive it.
 /turf/simulated/wall/receive_explosion(severity)
+	if(resistance_flags & BOMB_PROOF)
+		return 0
 	switch(round(severity))
 		if(1)
 			if(girder_material.explosion_resistance >= 25 && prob(girder_material.explosion_resistance))

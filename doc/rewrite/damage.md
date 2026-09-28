@@ -140,6 +140,8 @@ These are applied in order:
 - The **energy shield** segment has no pool of its own: it drains the generator's shared energy. It gains a `receive_damage()` sink that maps kinds to shield damage types.
 - **Mechs:** `receive_damage()` now applies packets through the mech's own model (`take_damage` → `absorbDamage` → `components_handle_damage`). Projectiles and throws keep `dynbulletdamage`/`dynhitby`. The body-model step above is still to do.
 
+**D-turf status (Sept 2026).** Every turf is a sink of the blast packet: `/turf/ex_act()` calls `receive_explosion()`, and no turf overrides `ex_act` any more. Floors use integrity (`FLOOR_INTEGRITY`, failure at `FLOOR_INTEGRITY_FAILURE`): crossing the failure fraction calls `atom_break()` → `break_tile()`, zero integrity tears the tile up to plating (and torn-up plating opens to lattice or the base turf). `broken`/`burnt` are only the icon state of that condition. Laying new flooring and welding dents out restore integrity. Flame tears tiles up through a thermal packet. Floors ignore projectile and blob hits, as before. Unbreakable turfs (lava, flesh, solid rock) declare `INDESTRUCTIBLE | BOMB_PROOF` instead of an empty `ex_act`. Outdoor ground (`demote()`) and rock (`GetDrilled()`) change turf rather than lose integrity, so they override `receive_explosion()` with their ladder. Tests: `dq_turf_floor_integrity`, `dq_turf_bomb_proof`.
+
 **D5 shims.** Some explosion and EMP procs still read or write an old var, so a mirror or accumulator survives until D5 deletes the ladder:
 - simple door `hardness`: `ex_act` subtracts from it, and `CheckHardness()` moves it onto integrity;
 - shield projector `max_shield_health`: `emp_act` reads it, and it mirrors `max_integrity`;

@@ -50,8 +50,8 @@ REF_OWNED(/turf/simulated/floor/lava, "soundloop")
 		return ..()
 	return
 
-/turf/simulated/floor/lava/ex_act(severity)
-	return
+/turf/simulated/floor/lava
+	resistance_flags = INDESTRUCTIBLE | BOMB_PROOF
 
 /turf/simulated/floor/lava/Entered(atom/movable/AM)
 	if(burn_stuff(AM))

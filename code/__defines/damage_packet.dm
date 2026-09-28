@@ -28,3 +28,8 @@
 /// Delivered by a thrown atom.
 #define DAMAGE_PACKET_THROWN            (1<<4)
 
+
+/// Floor tile integrity (D-turf): a tile breaks below the failure fraction and
+/// is torn up at zero.
+#define FLOOR_INTEGRITY 100
+#define FLOOR_INTEGRITY_FAILURE 0.5

@@ -55,6 +55,7 @@
 		swap_decals()
 	flooring = newflooring
 	if(!initializing)
+		restore_floor_integrity()
 		update_icon(1)
 	levelupdate()
 

@@ -250,9 +250,11 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 				if(istype(T, /turf/simulated/wall/solidrock))
 					T.update_icon()
 
-/turf/simulated/mineral/ex_act(severity)
-
-	switch(severity)
+/// Rock is drilled out by a blast rather than losing integrity.
+/turf/simulated/mineral/receive_explosion(severity)
+	if(resistance_flags & BOMB_PROOF)
+		return 0
+	switch(round(severity))
 		if(2.0)
 			if (prob(70))
 				mined_ore = 1 //some of the stuff gets blown up
