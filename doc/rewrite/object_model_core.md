@@ -552,9 +552,10 @@ Escape: `// ALLOW(handle_kinds): <reason>`.
 Teardown that must still read declared vars (a holder ending its busy state, a hologram handing
 bellies back to its master, a projectile drawing tracers from its owned segments) goes in
 `lifecycle_prerelease()`, which the destroy transaction runs just before phase 4 clears the links.
-A behaviour's teardown goes in its `on_destroy(E)`, run right after that. What is left, a real
-domain consequence, is the type's `on_destroy(force)` (phase 7, before the core `Destroy()`
-chain). `Destroy()` itself is overridden only by the core chain (`/datum`, `/atom`,
+What is left, a real domain consequence, is the type's `on_destroy(force)`, run right after
+`lifecycle_prerelease()` (declared vars and handles still live), then each behaviour's
+`on_destroy(E)`; the core `Destroy()` chain runs later, in phase 7. A partner that holds us in a
+list and that we name by handle is `REF_BACKLIST_HANDLE(type, list("gen_handle" = "fields"))`. `Destroy()` itself is overridden only by the core chain (`/datum`, `/atom`,
 `/atom/movable`, `/client`, `/datum/controller`); `lifecycle_counts_lint.py` bans every other
 override. The GC hint is the `destroy_hint` type var; refusing deletion is `lifecycle_keep(force)`
 or `LIFECYCLE_KEEP_UNLESS_FORCED(type)`, checked before the transaction starts.
