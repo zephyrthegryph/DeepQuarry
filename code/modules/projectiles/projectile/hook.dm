@@ -200,3 +200,5 @@
 	icon_state = "green_laser"
 	beam_state = "n_beam"
 	damage = 3
+
+REF_OWNED(/obj/item/projectile/energy/hook, "chain")

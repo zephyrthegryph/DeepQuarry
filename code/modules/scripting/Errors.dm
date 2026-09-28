@@ -120,3 +120,5 @@
 /datum/runtimeError/MaxCPU
 	name="MaxComputationalUse"
 	message="Maximum amount of computational cycles reached (>= 1000)."
+
+REF_OWNED(/datum/runtimeError, "stack")

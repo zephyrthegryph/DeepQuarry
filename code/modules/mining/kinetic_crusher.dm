@@ -352,3 +352,5 @@
 		if(hammer_synced.can_mark(L))
 			L.add_modifier(/datum/modifier/crusher_mark, 30 SECONDS, firer, TRUE)
 	..()
+
+REF_OWNED(/obj/item/kinetic_crusher/machete/gauntlets, "offhand")

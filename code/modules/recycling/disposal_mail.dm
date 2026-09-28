@@ -242,3 +242,5 @@
 			. += span_notice("It is labeled \"[sortTag]\"")
 		if(examtext)
 			. += span_notice("It has a note attached which reads, \"[examtext]\"")
+
+REF_HELD(/obj/item/smallDelivery, "wrapped")

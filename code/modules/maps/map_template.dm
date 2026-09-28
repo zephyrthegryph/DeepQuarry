@@ -431,3 +431,5 @@ GLOBAL_LIST_EMPTY(map_templates_loaded)
 			T.lighting_build_overlay()
 
 	return
+
+REF_OWNED(/datum/map_template, "cached_map")

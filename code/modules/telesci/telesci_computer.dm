@@ -408,3 +408,5 @@ REF_SPILL(/obj/machinery/computer/telescience, "inserted_gps")
 		log_msg += "nothing"
 	log_msg += " [sending ? "to" : "from"] [trueX], [trueY], [z_co] ([A ? A.name : "null area"])"
 	investigate_log(log_msg, "telesci")
+
+REF_OWNED(/obj/machinery/computer/telescience, "last_tele_data")

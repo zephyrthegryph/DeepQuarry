@@ -393,3 +393,5 @@ REGISTRY_MEMBERSHIP(/datum/component/experiment_handler, REGISTRY_EXPERIMENT_HAN
 			unlink_experiment()
 		if("start_experiment_callback")
 			start_experiment_callback.Invoke(selected_experiment)
+
+REF_OWNED(/datum/component/experiment_handler, "start_experiment_callback")

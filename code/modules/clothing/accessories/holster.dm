@@ -285,3 +285,5 @@
 /obj/item/clothing/accessory/holster/case/hold_constraint()
 	var/list/holds = list(/obj/item/instrument)
 	return list(HOLD_ONLY(holds))
+
+REF_HELD(/obj/item/clothing/accessory/holster, "holstered")

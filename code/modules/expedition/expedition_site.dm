@@ -60,7 +60,7 @@
 	last_occupied = world.time
 	participants = list()
 
-REF_OWNED(/datum/expedition_site, list("station_defense", "station_director", "station_simulation", "station_utilities", "mission", "biome", "station_spec", "station_materialization"))
+REF_OWNED(/datum/expedition_site, list("station_defense", "station_director", "station_simulation", "mission", "biome", "station_spec", "station_materialization", "landing_waypoint"))
 REF_OWNED_LIST(/datum/expedition_site, "station_controls")
 
 // A random walkable floor on this site (prefers the cached list, falls back to

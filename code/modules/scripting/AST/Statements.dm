@@ -109,6 +109,8 @@ REF_OWNED(/datum/node/statement/FunctionDefinition, "block")
 
 REF_OWNED(/datum/node/statement/VariableAssignment, list("var_name", "value"))
 
-REF_OWNED(/datum/node/statement/IfStatement, list("block", "else_block"))
+REF_OWNED(/datum/node/statement/IfStatement, list("block", "else_block", "cond"))
 
-REF_OWNED(/datum/node/statement/WhileLoop, "block")
+REF_OWNED(/datum/node/statement/WhileLoop, list("block", "cond"))
+
+REF_OWNED(/datum/node/statement/ReturnStatement, "value")

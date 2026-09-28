@@ -387,4 +387,4 @@ S     - The scope the variable resides in. If it is null, a scope with the varia
 #undef BREAKING
 #undef CONTINUING
 
-REF_OWNED(/datum/n_Interpreter, list("scopes", "functions"))
+REF_OWNED(/datum/n_Interpreter, list("scopes", "functions", "globalScope", "program"))

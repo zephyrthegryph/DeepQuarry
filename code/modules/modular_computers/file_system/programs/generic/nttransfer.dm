@@ -176,3 +176,5 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 		if("PRG_uploadmenu")
 			upload_menu = 1
 			return TRUE
+
+REF_OWNED(/datum/computer_file/program/nttransfer, "downloaded_file")

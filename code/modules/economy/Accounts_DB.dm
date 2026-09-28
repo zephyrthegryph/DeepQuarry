@@ -303,3 +303,5 @@
 
 	P.info = text
 	state("The terminal prints out a report.")
+
+REF_HELD(/obj/machinery/account_database, "held_card")

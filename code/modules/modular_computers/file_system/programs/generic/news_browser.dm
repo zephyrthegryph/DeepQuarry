@@ -118,3 +118,5 @@
 		if("PRG_toggle_archived")
 			. = TRUE
 			show_archived = !show_archived
+
+REF_OWNED(/datum/computer_file/program/newsbrowser, "loaded_article")

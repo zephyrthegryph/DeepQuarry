@@ -230,3 +230,5 @@
 /obj/item/ore/proc/scatter_if_dropped()
 	if(isturf(loc))
 		qdel(src)
+
+REF_OWNED(/obj/item/ore, "geologic_data")

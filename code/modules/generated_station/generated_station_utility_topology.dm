@@ -812,3 +812,5 @@ REF_OWNED_LIST(/datum/generated_station_utility_topology, list("power_objects", 
 	return !(stat & BROKEN)
 
 REF_OWNED(/datum/generated_station_utility_builder, "result")
+
+REF_OWNED(/datum/expedition_site, "station_utilities")

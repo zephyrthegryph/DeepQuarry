@@ -473,3 +473,5 @@
 		if("remove_attachment")
 			msg_attachment = null
 			return 1
+
+REF_OWNED(/datum/tgui_module/email_client, list("msg_attachment", "downloading"))

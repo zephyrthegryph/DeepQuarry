@@ -235,3 +235,5 @@
 				to_chat(usr, span_notice("Timer can't be [ntime <= 0 ? "negative" : "more than 1000 seconds"]."))
 	else
 		to_chat(usr, span_notice("You cannot do this while [usr.stat ? "unconscious/dead" : "restrained"]."))
+
+REF_HELD(/obj/item/assembly_holder, list("a_left", "a_right"))

@@ -352,3 +352,5 @@
 	return temp
 
 
+
+REF_OWNED(/datum/spell, "connected_button")

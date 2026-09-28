@@ -161,3 +161,5 @@ REGISTRY_MEMBERSHIP(/mob/observer/blob, REGISTRY_OVERMINDS)
 
 	log_talk(message, LOG_SAY)
 	return 1
+
+REF_OWNED(/mob/observer/blob, "blob_type")

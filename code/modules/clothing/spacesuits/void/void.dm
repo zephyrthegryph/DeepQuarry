@@ -486,4 +486,4 @@
 /obj/item/clothing/suit/space/void
 	can_breach = 0
 
-REF_HELD(/obj/item/clothing/suit/space/void, list("boots", "tank"))
+REF_HELD(/obj/item/clothing/suit/space/void, list("boots", "tank", "cooler"))

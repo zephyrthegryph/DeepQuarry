@@ -195,3 +195,5 @@
 	if(P && P.is_supported_by_hardware(hardflag,0))
 		return "Compatible"
 	return "Incompatible!"
+
+REF_OWNED(/datum/computer_file/program/ntnetdownload, "downloaded_file")
