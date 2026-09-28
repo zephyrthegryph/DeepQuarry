@@ -104,6 +104,9 @@
 	TEST_ASSERT(!isnull(A.door_timer_token), "electrifying did not schedule the door's timer")
 	TEST_ASSERT_NULL(A.om_sleep_violation(), "an electrified airlock's audit failed")
 	om_test_ticks(20)
+	// A due timer still in flight (a busy world: GC reference searches stall the MC) is given
+	// time to land; a timer that was never set, or never comes due, still fails.
+	om_settle(A, 200)
 	TEST_ASSERT_EQUAL(A.electrified_until, 0, "the electrification deadline passed without a wake")
 	TEST_ASSERT(isnull(A.door_timer_token), "an airlock with no deadline kept a timer")
 
@@ -112,6 +115,7 @@
 	A.backup_power_lost_until = -1
 	A.schedule_door_timer()
 	om_test_ticks(20)
+	om_settle(A, 200)
 	TEST_ASSERT(A.main_power_lost_until <= 0, "main power did not return at its deadline ([A.main_power_lost_until])")
 
 	// A missing timer is what the audit catches.

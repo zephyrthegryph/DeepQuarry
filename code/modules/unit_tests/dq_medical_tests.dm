@@ -670,10 +670,13 @@
 	TEST_ASSERT_NOTNULL(C, "cellulitis didn't spawn")
 	C.set_severity(80)
 
-	var/temp_before = H.bodytemperature
+	// C16: the fever is a raised thermoregulation set point (BF_TEMPERATURE); thermoregulation
+	// then walks the real body temperature toward it. The affliction never writes it directly.
+	var/base = H.species.body_temperature
 	for(var/i in 1 to 10)
 		C.tick()
-	TEST_ASSERT(H.bodytemperature > temp_before, "cellulitis at high severity should raise body temperature ([temp_before] -> [H.bodytemperature])")
+	H.body.invalidate(BODY_DIRTY_FACTORS)
+	TEST_ASSERT(H.thermal_setpoint() > base + 1, "cellulitis at high severity should raise the temperature set point ([base] -> [H.thermal_setpoint()])")
 
 
 // --- contraindicated reagent worsens severity --------------------------

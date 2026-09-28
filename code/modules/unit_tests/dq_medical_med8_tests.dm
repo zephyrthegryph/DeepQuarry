@@ -7,10 +7,17 @@
 /datum/unit_test/dq_med8_d3_disintegrate/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/turf/T = get_turf(H)
+	var/remains = H.species.remains_type
 	H.dust()
 	TEST_ASSERT_EQUAL(H.stat, DEAD, "a dusted mob is dead")
 	TEST_ASSERT_EQUAL(H.invisibility, INVISIBILITY_ABSTRACT, "a dusted mob is hidden behind its animation")
-	TEST_ASSERT(locate_within(T, /obj/effect/decal/cleanable/ash), "dust() leaves its remains")
+	var/atom/left = locate_within(T, remains)
+	TEST_ASSERT(left, "dust() leaves its species remains ([remains])")
+	// The remains and the (deferred-delete) animation overlay are the test's own litter.
+	qdel(left)
+	for(var/atom/movable/overlay/O as anything in contents_of(T, /atom/movable/overlay))
+		if(O.master == H)
+			qdel(O)
 
 /// P2-D10: one vitality -> health meter band table, dead and feigned death at the bottom.
 /datum/unit_test/dq_med8_d10_health_band
