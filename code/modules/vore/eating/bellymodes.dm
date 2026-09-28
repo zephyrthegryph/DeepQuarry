@@ -231,14 +231,14 @@
 				//Worn items flag
 				if((mode_flags & DM_FLAG_AFFECTWORN) && vore_consents(/datum/predicate/vore_affect_worn, owner, H))
 					for(var/slot in slots)
-						var/obj/item/I = H.get_equipped_item(slot = slot)
+						var/obj/item/I = H.get_equipped_item(slot)
 						if(I && I.canremove)
 							touchable_atoms |= I
 
 				//Stripping flag
 				if((mode_flags & DM_FLAG_STRIPPING) && vore_consents(/datum/predicate/vore_strip, owner, H)) //Stripping pref check
 					for(var/slot in slots)
-						var/obj/item/I = H.get_equipped_item(slot = slot)
+						var/obj/item/I = H.get_equipped_item(slot)
 						if(!I || I.flags & NOSTRIP)
 							continue
 						if(H.unEquip(I, force = FALSE))

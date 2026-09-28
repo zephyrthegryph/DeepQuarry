@@ -49,7 +49,7 @@
 	if(om_traced_count(C))
 		log_test("dq_om_keys_wake_shield_capacitor: unrelated wake(s) in the window, bits [stray]")
 	om_untrace(C)
-	qdel(P)
+	power_test_drop_grid(P)
 
 /datum/unit_test/dq_om_keys_wake_turret
 

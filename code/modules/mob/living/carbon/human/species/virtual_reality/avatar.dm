@@ -127,7 +127,7 @@
 /mob/living/carbon/human/proc/cleanup_vr()
 	var/list/slots = list(SLOT_ID_BACK,SLOT_ID_HANDCUFFED,SLOT_ID_POCKET_L,SLOT_ID_POCKET_R,SLOT_ID_MASK,SLOT_ID_HAND_L,SLOT_ID_HAND_R,SLOT_ID_ID,SLOT_ID_EYES,SLOT_ID_GLOVES,SLOT_ID_HEAD,SLOT_ID_SHOES,SLOT_ID_BELT,SLOT_ID_SUIT,SLOT_ID_UNIFORM,SLOT_ID_SUIT_STORAGE,SLOT_ID_EAR_L,SLOT_ID_EAR_R)
 	for(var/slot in slots)
-		var/obj/item/I = get_equipped_item(slot = slot)
+		var/obj/item/I = get_equipped_item(slot)
 		if(I)
 			unEquip(I,force = TRUE)
 	release_vore_contents(include_absorbed = TRUE, silent = TRUE)
