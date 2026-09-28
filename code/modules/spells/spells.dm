@@ -123,7 +123,7 @@
 	throwforce = 0
 	force = 0
 	show_examine = FALSE
-	owner = null
+	owner_handle = null
 	core = null
 	cast_methods = null			// Controls how the spell is casted.
 	aspect = ASPECT_UNHOLY		// Not used for everything we do
@@ -135,20 +135,20 @@
 /obj/item/spell/unrestricted/Initialize(mapload, coreless)
 	. = ..()
 	if(isliving(loc))
-		owner = loc
-	if(!owner)
+		owner_handle = om_handle(loc)
+	if(!owner_ref())
 		return INITIALIZE_HINT_QDEL
 	update_icon()
 
 /obj/item/spell/unrestricted/run_checks()
-	if(owner)
+	if(owner_ref())
 		if(world.time >= (last_castcheck + cooldown)) //Are they a cultist or a construct, and has the cooldown time passed?
 			last_castcheck = world.time
 			return 1
 	return 0
 
 /obj/item/spell/unrestricted/pay_energy(amount)
-	if(owner)
+	if(owner_ref())
 		return 1
 
 /obj/item/spell/unrestricted/afterattack(atom/target, mob/user, proximity_flag, click_parameters)
@@ -185,7 +185,7 @@
 /// A shot after its pre-shot delay: on_ranged_cast() again, past the delay.
 /obj/item/spell/unrestricted/projectile/proc/delayed_shot(atom/hit_atom, mob/living/user, image/target_image)
 	qdel(target_image)
-	if(!owner)
+	if(!owner_ref())
 		return // We got dropped before the firing occured.
 	shot_ready = TRUE
 	on_ranged_cast(hit_atom, user)

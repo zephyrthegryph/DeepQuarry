@@ -40,7 +40,7 @@
 	var/width = 1
 
 	// turf animation
-	var/atom/movable/overlay/c_animation = null
+	var/c_animation_handle
 
 	var/reinforcing = 0
 	var/tintable = 0
@@ -652,3 +652,7 @@
 	for(var/obj/machinery/door/D in range(src,range))
 		if(D.icon_tinted && (D.id_tint == src.id || !D.id_tint))
 			D.toggle()
+
+/// LC-refs: c animation -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/door/proc/c_animation() as /atom/movable/overlay
+	return om_resolve(c_animation_handle)

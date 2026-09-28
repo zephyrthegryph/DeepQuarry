@@ -8,7 +8,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/portal, REGISTRY_PORTALS)
 	density = TRUE
 	unacidable = TRUE//Can't destroy energy portals.
 	var/failchance = 5
-	var/obj/item/target = null
+	var/target_handle
 	var/creator = null
 	anchored = TRUE
 	var/event = FALSE
@@ -50,7 +50,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/portal, REGISTRY_PORTALS)
 		return
 	if (icon_state == "portal1")
 		return
-	if (!( target ))
+	if (!( target_ref() ))
 		qdel(src)
 		return
 	if (istype(M, /atom/movable))
@@ -62,16 +62,20 @@ REGISTRY_MEMBERSHIP(/obj/effect/portal, REGISTRY_PORTALS)
 				for(var/rider in L?.buckled_mob_list())
 					R.force_dismount(rider)
 		// ition End: Prevent taurriding abuse
-		if(isbelly(target))
-			if(target == M)
+		if(isbelly(target_ref()))
+			if(target_ref() == M)
 				return
 			if(istype(M, /mob/living))
 				var/mob/living/L = M
 				if(L.can_be_drop_prey && L.devourable)
-					do_teleport(M, target)
+					do_teleport(M, target_ref())
 					return
 		if(prob(failchance)) //oh dear a problem, put em in deep space
 			src.icon_state = "portal1"
 			do_teleport(M, locate(rand(5, world.maxx - 5), rand(5, world.maxy -5), 3), 0)
 		else
-			do_teleport(M, target, 1) ///You will appear adjacent to the beacon
+			do_teleport(M, target_ref(), 1) ///You will appear adjacent to the beacon
+
+/// LC-refs: target -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/effect/portal/proc/target_ref() as /obj/item
+	return om_resolve(target_handle)

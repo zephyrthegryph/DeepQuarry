@@ -16,14 +16,14 @@
 	number = n
 	cardinals = c
 	if(istype(loca, /turf/))
-		location = loca
+		location_handle = om_handle(loca)
 	else
-		location = get_turf(loca)
+		location_handle = om_handle(get_turf(loca))
 
 /datum/effect/effect/system/confetti_spread/proc/emit_one_confetti_spark()
 	if(holder)
-		src.location = get_turf(holder)
-	var/obj/effect/effect/sparks/confetti = new /obj/effect/effect/sparks/confetti(src.location)
+		src.location_handle = om_handle(get_turf(holder))
+	var/obj/effect/effect/sparks/confetti = new /obj/effect/effect/sparks/confetti(src.get_location())
 	src.total_sparks++
 	var/direction
 	if(src.cardinals)

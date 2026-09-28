@@ -901,3 +901,5 @@ REF_OWNED(/obj/item/paicard, list("radio", "multitool", "signaler", "screen_laye
 /obj/item/paicard/digest_act(atom/movable/item_storage = null)
 	if(pai?.digestable)
 		return ..()
+
+REF_HELD(/obj/machinery, list("paicard"))

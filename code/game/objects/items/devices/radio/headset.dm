@@ -706,7 +706,7 @@ REF_OWNED(/obj/item/radio/headset, list("keyslot1", "keyslot2"))
 	desc = "A headset with numerous toolkits appended to it, applying a wide variety of effects to its wearer set as per its manufacturer."
 	icon_state = "cent_headset_alt"
 	item_state = "headset"
-	var/mob/living/carbon/human/wearer
+	var/wearer_handle
 	var/effect_icon = 'icons/effects/effects.dmi'	//Cosmetic Effect that will be applied to the mob as an overlay
 	var/effect_icon_state = "arrow2"
 	var/image/effect_overlay = null	//Reference to an overlay so we can remove it on unequip
@@ -729,7 +729,7 @@ REF_OWNED(/obj/item/radio/headset, list("keyslot1", "keyslot2"))
 	worn_factors = slowdown_to_set ? alist(BF_SLOWDOWN = slowdown_to_set) : null
 	. = ..()
 	if(H && ((H.get_equipped_item(SLOT_ID_EAR_L) == src) || (H.get_equipped_item(SLOT_ID_EAR_R) == src)))
-		wearer = H
+		wearer_handle = om_handle(H)
 		if(light_power)
 			set_light(light_range,light_power,light_color,1)
 		if(effect_icon)
@@ -749,8 +749,8 @@ REF_OWNED(/obj/item/radio/headset, list("keyslot1", "keyslot2"))
 
 /obj/item/radio/headset/event/dropped(mob/living/carbon/human/H, equipping, slot)
 	..()
-	if(wearer)
-		wearer = null
+	if(wearer())
+		wearer_handle = null
 		if(light_power)
 			light_on = 0
 		if(effect_icon)
@@ -818,3 +818,7 @@ REF_OWNED(/obj/item/radio/headset, list("keyslot1", "keyslot2"))
 	desc = "Bowman headset used by explorers for exploring. Access to the explorer channel."
 
 REF_OWNED(/obj/item/radio/headset/event, list("effect_overlay"))
+
+/// LC-refs: wearer -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/radio/headset/event/proc/wearer() as /mob/living/carbon/human
+	return om_resolve(wearer_handle)

@@ -69,9 +69,9 @@
 		var/obj/item/multitool/P = get_multitool(user)
 		data["multitool"] = !!P
 		data["multitool_buffer"] = null
-		if(P && P.buffer)
+		if(P && P.buffer())
 			P.update_icon()
-			data["multitool_buffer"] = list("name" = "[P.buffer]", "id" = "[P.buffer.id]")
+			data["multitool_buffer"] = list("name" = "[P.buffer()]", "id" = "[P.buffer().id]")
 
 		var/i = 0
 		var/list/linked = list()
@@ -326,14 +326,14 @@
 
 		if("link")
 			if(P)
-				if(P.buffer && P.buffer != src)
-					if(!(src in P.buffer.links))
-						LAZYADD(P.buffer.links, src)
+				if(P.buffer() && P.buffer() != src)
+					if(!(src in P.buffer().links))
+						LAZYADD(P.buffer().links, src)
 
-					if(!(P.buffer in src.links))
-						LAZYADD(src.links, P.buffer)
+					if(!(P.buffer() in src.links))
+						LAZYADD(src.links, P.buffer())
 
-					set_temp("-% Successfully linked with \ref[P.buffer] [P.buffer.name] %-", "average")
+					set_temp("-% Successfully linked with \ref[P.buffer()] [P.buffer().name] %-", "average")
 
 				else
 					set_temp("-% Unable to acquire buffer %-", "average")
@@ -341,14 +341,14 @@
 
 		if("buffer")
 			if(P)
-				P.buffer = src
-				set_temp("-% Successfully stored \ref[P.buffer] [P.buffer.name] in buffer %-", "average")
+				P.buffer_handle = om_handle(src)
+				set_temp("-% Successfully stored \ref[P.buffer()] [P.buffer().name] in buffer %-", "average")
 			. = TRUE
 
 		if("flush")
 			if(P)
 				set_temp("-% Buffer successfully flushed. %-", "average")
-				P.buffer = null
+				P.buffer_handle = null
 			. = TRUE
 
 		if("cleartemp")

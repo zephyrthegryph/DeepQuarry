@@ -474,7 +474,7 @@
 
 		if("-SAVE TO BUFFER-")
 			var/obj/item/multitool/tool = W
-			tool.connectable = src
+			tool.connectable_handle = om_handle(src)
 
 		if("Direction")
 			pump_direction = !pump_direction

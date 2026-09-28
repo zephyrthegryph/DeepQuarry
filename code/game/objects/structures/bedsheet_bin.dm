@@ -206,7 +206,7 @@ LINEN BINS
 	anchored = TRUE
 	var/amount = 20
 	var/list/sheets = list()
-	var/obj/item/hidden = null
+	var/hidden_handle
 
 
 /obj/structure/bedsheetbin/examine(mob/user)
@@ -235,10 +235,10 @@ LINEN BINS
 		sheets.Add(I)
 		amount++
 		to_chat(user, span_notice("You put [I] in [src]."))
-	else if(amount && !hidden && I.w_class < ITEMSIZE_LARGE)	//make sure there's sheets to hide it among, make sure nothing else is hidden in there.
+	else if(amount && !hidden() && I.w_class < ITEMSIZE_LARGE)	//make sure there's sheets to hide it among, make sure nothing else is hidden in there.
 		user.drop_item()
 		I.loc = src
-		hidden = I
+		hidden_handle = om_handle(I)
 		to_chat(user, span_notice("You hide [I] among the sheets."))
 
 /obj/structure/bedsheetbin/attack_hand(mob/user as mob)
@@ -257,10 +257,10 @@ LINEN BINS
 		user.put_in_hands(B)
 		to_chat(user, span_notice("You take [B] out of [src]."))
 
-		if(hidden)
-			hidden.loc = user.loc
-			to_chat(user, span_notice("[hidden] falls out of [B]!"))
-			hidden = null
+		if(hidden())
+			hidden().loc = user.loc
+			to_chat(user, span_notice("[hidden()] falls out of [B]!"))
+			hidden_handle = null
 
 
 	add_fingerprint(user)
@@ -281,9 +281,9 @@ LINEN BINS
 		to_chat(user, span_notice("You telekinetically remove [B] from [src]."))
 		update_icon()
 
-		if(hidden)
-			hidden.loc = loc
-			hidden = null
+		if(hidden())
+			hidden().loc = loc
+			hidden_handle = null
 
 
 	add_fingerprint(user)
@@ -304,3 +304,7 @@ LINEN BINS
 /obj/item/bedsheet/piratedouble
 	icon = 'icons/obj/items.dmi'
 	icon_state = "doublesheetpirate"
+
+/// LC-refs: hidden -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/structure/bedsheetbin/proc/hidden() as /obj/item
+	return om_resolve(hidden_handle)

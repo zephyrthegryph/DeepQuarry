@@ -2,7 +2,7 @@
 	var/name
 	var/description
 	var/value
-	var/obj/effect/anomaly/attached_anomaly = null
+	var/attached_anomaly_handle
 
 /datum/anomaly_modifiers/proc/get_description()
 	return description
@@ -11,14 +11,14 @@
 	return value
 
 /datum/anomaly_modifiers/proc/on_add(anomaly)
-	attached_anomaly = om_resolve(anomaly)
-	if(!istype(attached_anomaly))
+	attached_anomaly_handle = om_handle(om_resolve(anomaly))
+	if(!istype(attached_anomaly(), /obj/effect/anomaly))
 		return FALSE
 	return TRUE
 
 /datum/anomaly_modifiers/proc/on_remove(anomaly)
-	attached_anomaly = om_resolve(anomaly)
-	if(!istype(attached_anomaly))
+	attached_anomaly_handle = om_handle(om_resolve(anomaly))
+	if(!istype(attached_anomaly(), /obj/effect/anomaly))
 		return FALSE
 	return TRUE
 
@@ -35,12 +35,12 @@
 /datum/anomaly_modifiers/invisible/on_add(anomaly)
 	if(!..())
 		return
-	addtimer(CALLBACK(attached_anomaly, TYPE_PROC_REF(/atom/movable, cloak)), 2 SECONDS)
+	addtimer(CALLBACK(attached_anomaly(), TYPE_PROC_REF(/atom/movable, cloak)), 2 SECONDS)
 
 /datum/anomaly_modifiers/invisible/on_remove(anomaly)
 	if(!..())
 		return
-	addtimer(CALLBACK(attached_anomaly, TYPE_PROC_REF(/atom/movable, uncloak)), 2 SECONDS)
+	addtimer(CALLBACK(attached_anomaly(), TYPE_PROC_REF(/atom/movable, uncloak)), 2 SECONDS)
 
 /datum/anomaly_modifiers/move
 	name = "Move"
@@ -50,12 +50,12 @@
 /datum/anomaly_modifiers/move/on_add(anomaly)
 	if(!..())
 		return
-	attached_anomaly.move_chance = ANOMALY_MOVECHANCE
+	attached_anomaly().move_chance = ANOMALY_MOVECHANCE
 
 /datum/anomaly_modifiers/move/on_remove(anomaly)
 	if(!..())
 		return
-	attached_anomaly.move_chance = 0
+	attached_anomaly().move_chance = 0
 
 /datum/anomaly_modifiers/fast
 	name = "Faster Pulses"
@@ -66,7 +66,7 @@
 	if(!..())
 		return
 
-	var/datum/anomaly_stats/stats = attached_anomaly.stats
+	var/datum/anomaly_stats/stats = attached_anomaly().stats
 	stats.min_activation = 25 SECONDS
 	stats.max_activation = 45 SECONDS
 
@@ -74,7 +74,11 @@
 	if(!..())
 		return
 
-	var/datum/anomaly_stats/stats = attached_anomaly.stats
+	var/datum/anomaly_stats/stats = attached_anomaly().stats
 
 	stats.min_activation = initial(stats.min_activation)
 	stats.max_activation = initial(stats.max_activation)
+
+/// LC-refs: attached anomaly -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/anomaly_modifiers/proc/attached_anomaly() as /obj/effect/anomaly
+	return om_resolve(attached_anomaly_handle)

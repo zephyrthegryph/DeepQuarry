@@ -6,7 +6,7 @@
 	show_messages = TRUE
 
 	var/implanted = null
-	var/mob/imp_in = null
+	var/imp_in_handle
 	var/obj/item/organ/external/part = null
 	var/implant_color = "b"
 	var/allow_reagents = 0
@@ -44,7 +44,7 @@
 		// No organ to embed in (a non-human host, or no matching limb):
 		// imp_in has no relation to keep it in sync with, since there's no
 		// reverse list on a bare mob the way an organ's `implants` is one.
-		imp_in = source
+		imp_in_handle = om_handle(source)
 		forceMove(source)
 
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
@@ -62,8 +62,8 @@
 	return 0
 
 /obj/item/implant/proc/meltdown()	//breaks it down, making implant unrecongizible
-	to_chat(imp_in, span_warning("You feel something melting inside [part ? "your [part.name]" : "you"]!"))
-	var/mob/living/M = imp_in
+	to_chat(imp_in(), span_warning("You feel something melting inside [part ? "your [part.name]" : "you"]!"))
+	var/mob/living/M = imp_in()
 	M?.injure(INJURY_BURN, 15, part, src)
 	name = "melted implant"
 	desc = "Charred circuit in melted plastic case. Wonder what that used to be..."
@@ -115,7 +115,7 @@ REGISTRY_MEMBERSHIP(/obj/item/implant/tracking, REGISTRY_TRACKING_IMPLANTS)
 /obj/item/implant/tracking/Destroy()
 	if(part)
 		part.implants -= src
-	part = imp_in = null
+	part = imp_in_handle = null
 	return ..()
 
 /obj/item/implant/tracking/periodic_step()
@@ -197,10 +197,10 @@ Implant Specifics:<BR>"}
 	return
 
 /obj/item/implant/dexplosive/activate(cause)
-	if((!cause) || (!src.imp_in))	return 0
+	if((!cause) || (!src.imp_in()))	return 0
 	explosion(src, -1, 0, 2, 3, 0)//This might be a bit much, dono will have to see.
-	if(src.imp_in)
-		src.imp_in.gib()
+	if(src.imp_in())
+		src.imp_in().gib()
 
 /obj/item/implant/dexplosive/islegal()
 	return 0
@@ -247,10 +247,10 @@ Implant Specifics:<BR>"}
 		istype(part,/obj/item/organ/external/groin) ||	\
 		istype(part,/obj/item/organ/external/head))
 		part.owner?.injure(INJURY_BLUNT, 80, part.organ_tag, src, flags = INJURE_IGNORE_RESISTANCE)	//mangle them instead
-		explosion(get_turf(imp_in), -1, -1, 1, 3)
+		explosion(get_turf(imp_in()), -1, -1, 1, 3)
 		qdel(src)
 	else
-		explosion(get_turf(imp_in), -1, -1, 1, 3)
+		explosion(get_turf(imp_in()), -1, -1, 1, 3)
 		part.droplimb(0,DROPLIMB_BLUNT)
 		qdel(src)
 
@@ -258,15 +258,15 @@ Implant Specifics:<BR>"}
 	if (malfunction == MALFUNCTION_PERMANENT)
 		return
 
-	if(istype(imp_in, /mob/))
-		var/mob/T = imp_in
+	if(istype(imp_in(), /mob/))
+		var/mob/T = imp_in()
 		message_admins("Explosive implant triggered in [T] ([T.key]). (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[T.x];Y=[T.y];Z=[T.z]'>JMP</a>) ")
 		log_game("Explosive implant triggered in [T] ([T.key]).")
 
-		if(ishuman(imp_in))
+		if(ishuman(imp_in()))
 			if (elevel == "Localized Limb")
 				if(part) //For some reason, small_boom() didn't work. So have this bit of working copypaste.
-					imp_in.visible_message(span_warning("Something beeps inside [imp_in][part ? "'s [part.name]" : ""]!"))
+					imp_in().visible_message(span_warning("Something beeps inside [imp_in()][part ? "'s [part.name]" : ""]!"))
 					playsound(src, 'sound/items/countdown.ogg', 75, 1, -3)
 					om_after(src, 2.5 SECONDS, PROC_REF(limb_boom))
 			if (elevel == "Destroy Body")
@@ -277,9 +277,9 @@ Implant Specifics:<BR>"}
 				T.gib()
 
 		else
-			explosion(get_turf(imp_in), 0, 1, 3, 6)
+			explosion(get_turf(imp_in()), 0, 1, 3, 6)
 
-	var/turf/t = get_turf(imp_in)
+	var/turf/t = get_turf(imp_in())
 
 	if(t)
 		t.hotspot_expose(3500,125)
@@ -328,8 +328,8 @@ Implant Specifics:<BR>"}
 	return 0
 
 /obj/item/implant/explosive/proc/small_boom()
-	if (ishuman(imp_in) && part)
-		imp_in.visible_message(span_warning("Something beeps inside [imp_in][part ? "'s [part.name]" : ""]!"))
+	if (ishuman(imp_in()) && part)
+		imp_in().visible_message(span_warning("Something beeps inside [imp_in()][part ? "'s [part.name]" : ""]!"))
 		playsound(src, 'sound/items/countdown.ogg', 75, 1, -3)
 		om_after(src, 25, PROC_REF(small_boom_goes))
 
@@ -374,8 +374,8 @@ the implant may become unstable and either pre-maturely inject the subject or si
 	return
 
 /obj/item/implant/chem/activate(cause)
-	if((!cause) || (!src.imp_in))	return 0
-	var/mob/living/carbon/R = src.imp_in
+	if((!cause) || (!src.imp_in()))	return 0
+	var/mob/living/carbon/R = src.imp_in()
 	src.reagents.trans_to_mob(R, cause, CHEM_BLOOD)
 	to_chat(R, "You hear a faint *beep*.")
 	if(!src.reagents.total_volume)
@@ -504,7 +504,7 @@ the implant may become unstable and either pre-maturely inject the subject or si
 
 /obj/item/implant/death_alarm/periodic_step()
 	if (!implanted) return
-	var/mob/M = imp_in
+	var/mob/M = imp_in()
 
 	if(isnull(M)) // If the mob got gibbed
 		activate()
@@ -512,7 +512,7 @@ the implant may become unstable and either pre-maturely inject the subject or si
 		activate("death")
 
 /obj/item/implant/death_alarm/activate(cause)
-	var/mob/M = imp_in
+	var/mob/M = imp_in()
 	var/area/t = get_area(M)
 	if(!t) // Failsafe
 		PERIODIC_STOP(src)
@@ -574,7 +574,7 @@ the implant may become unstable and either pre-maturely inject the subject or si
 	desc = "Based on compressed matter technology, can store a single item."
 	icon_state = "implant_evil"
 	var/activation_emote = "sigh"
-	var/obj/item/scanned = null
+	var/scanned_handle
 
 /obj/item/implant/compressed/get_data()
 	var/dat = {"
@@ -590,19 +590,19 @@ the implant may become unstable and either pre-maturely inject the subject or si
 	return dat
 
 /obj/item/implant/compressed/trigger(emote, mob/source as mob)
-	if (src.scanned == null)
+	if (src.scanned() == null)
 		return 0
 
 	if (emote == src.activation_emote)
-		to_chat(source, "The air glows as \the [src.scanned.name] uncompresses.")
+		to_chat(source, "The air glows as \the [src.scanned().name] uncompresses.")
 		activate()
 
 /obj/item/implant/compressed/activate()
 	var/turf/t = get_turf(src)
-	if (imp_in)
-		imp_in.put_in_hands(scanned)
+	if (imp_in())
+		imp_in().put_in_hands(scanned())
 	else
-		scanned.loc = t
+		scanned().loc = t
 	consume(src)
 
 /obj/item/implant/compressed/post_implant(mob/source)
@@ -679,7 +679,7 @@ the implant may become unstable and either pre-maturely inject the subject or si
 	return dat
 
 /obj/item/implant/sizecontrol/hear_talk(mob/M, list/message_pieces)
-	if(M == imp_in)
+	if(M == imp_in())
 		return
 	if(owner)
 		if(M != owner)
@@ -693,7 +693,7 @@ the implant may become unstable and either pre-maturely inject the subject or si
 	return
 
 /obj/item/implant/sizecontrol/see_emote(mob/living/M, message, m_type)
-	if(M == imp_in)
+	if(M == imp_in())
 		return
 	if(owner)
 		if(M != owner)
@@ -710,8 +710,8 @@ the implant may become unstable and either pre-maturely inject the subject or si
 	if (malfunction)
 		return
 
-	if(isliving(imp_in))
-		var/mob/living/H = imp_in
+	if(isliving(imp_in()))
+		var/mob/living/H = imp_in()
 		if(findtext(msg,"implant-toggle"))
 			active = !active
 		if(active)
@@ -733,9 +733,9 @@ the implant may become unstable and either pre-maturely inject the subject or si
 	. = ..()
 	if (. & EMP_PROTECT_SELF)
 		return
-	if(isliving(imp_in))
+	if(isliving(imp_in()))
 		var/newsize = pick(RESIZE_HUGE,RESIZE_BIG,RESIZE_NORMAL,RESIZE_SMALL,RESIZE_TINY,RESIZE_A_HUGEBIG,RESIZE_A_BIGNORMAL,RESIZE_A_NORMALSMALL,RESIZE_A_SMALLTINY)
-		var/mob/living/H = imp_in
+		var/mob/living/H = imp_in()
 		H.resize(newsize)
 
 /obj/item/implanter/sizecontrol
@@ -831,7 +831,7 @@ Due to the small chemical capacity of the implant, the life of the implant is re
 	malfunction--
 
 /obj/item/implant/explosive/proc/small_boom_goes()
-	if (ishuman(imp_in) && part)
+	if (ishuman(imp_in()) && part)
 		//No tearing off these parts since it's pretty much killing
 		//and you can't replace groins
 		if (istype(part,/obj/item/organ/external/chest) ||	\
@@ -840,5 +840,13 @@ Due to the small chemical capacity of the implant, the life of the implant is re
 			part.owner?.injure(INJURY_BLUNT, 80, part.organ_tag, src, flags = INJURE_IGNORE_RESISTANCE)	//mangle them instead
 		else
 			part.droplimb(0,DROPLIMB_BLUNT)
-	explosion(get_turf(imp_in), -1, -1, 1, 3)
+	explosion(get_turf(imp_in()), -1, -1, 1, 3)
 	qdel(src)
+
+/// LC-refs: imp in -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/implant/proc/imp_in() as /mob
+	return om_resolve(imp_in_handle)
+
+/// LC-refs: scanned -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/implant/compressed/proc/scanned() as /obj/item
+	return om_resolve(scanned_handle)

@@ -442,7 +442,7 @@
 	w_class = ITEMSIZE_HUGE//So you can't hide it in your pocket or some such. //CHOMP Edit
 	flags = NOBLOODY
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
-	var/mob/living/creator
+	var/creator_handle
 	var/datum/effect/effect/system/spark_spread/spark_system
 	projectile_parry_chance = 60
 	lcolor = "#00FF00"
@@ -467,7 +467,7 @@
 /// Goes away once it leaves its creator's hands: checked after it is made, dropped or moved
 /// between hands, never polled.
 /obj/item/melee/energy/blade/proc/check_held()
-	if(!creator || loc != creator || !creator.item_is_in_hands(src))
+	if(!creator() || loc != creator() || !creator().item_is_in_hands(src))
 		// Tidy up a bit.
 		if(isliving(loc))
 			var/mob/living/carbon/human/host = loc
@@ -595,3 +595,7 @@
 
 REF_HELD(/obj/item/melee/energy, list("bcell"))
 REF_OWNED(/obj/item/melee/energy/blade, list("spark_system"))
+
+/// LC-refs: creator -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/melee/energy/blade/proc/creator() as /mob/living
+	return om_resolve(creator_handle)

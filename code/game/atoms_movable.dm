@@ -10,7 +10,7 @@
 	var/tmp/move_speed = 10
 	var/tmp/l_move_time = 1
 	var/datum/thrownthing/throwing
-	var/tmp/turf/throw_source = null
+	var/tmp/throw_source_handle
 	var/throw_speed = 2
 	var/throw_range = 7
 	// moved_recently moved to /datum/component/movable_state
@@ -159,7 +159,7 @@
 		pulledby.stop_pulling()
 
 	stop_orbit()
-	throw_source = null
+	throw_source_handle = null
 	QDEL_NULL(riding_datum)
 	set_listening(NON_LISTENING_ATOM)
 
@@ -867,3 +867,7 @@
 		C?.open_particle_editor(src)
 
 REF_OWNED(/atom/movable, list("riding_datum"))
+
+/// LC-refs: throw source -- an OM handle (om_handle()), so it reads null once that is deleted.
+/atom/movable/proc/throw_source() as /turf
+	return om_resolve(throw_source_handle)

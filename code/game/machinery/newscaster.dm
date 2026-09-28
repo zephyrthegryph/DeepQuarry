@@ -7,7 +7,7 @@
 	var/title
 	var/body =""
 	var/message_type ="Story"
-	var/datum/feed_channel/parent_channel
+	var/parent_channel_handle
 	var/is_admin_message = 0
 	var/img = null
 	var/caption = ""
@@ -39,7 +39,7 @@
 	src.backup_author = ""
 	src.backup_caption = ""
 	src.backup_img = null
-	parent_channel.update()
+	parent_channel().update()
 
 /datum/feed_channel/proc/update()
 	updated = world.time
@@ -57,7 +57,7 @@
 
 /datum/feed_network
 	var/list/datum/feed_channel/network_channels
-	var/datum/feed_message/wanted_issue
+	var/wanted_issue_handle
 
 /datum/feed_network/proc/CreateFeedChannel(channel_name, author, locked, adminChannel = 0, announcement_message)
 	var/datum/feed_channel/newChannel = new /datum/feed_channel
@@ -94,7 +94,7 @@
 
 /datum/feed_network/proc/insert_message_in_channel(datum/feed_channel/FC, datum/feed_message/newMsg)
 	FC.messages += newMsg
-	newMsg.parent_channel = FC
+	newMsg.parent_channel_handle = om_handle(FC)
 	FC.update()
 	alert_readers(FC.announcement)
 
@@ -158,10 +158,10 @@
 	var/channel_name = ""; //the feed channel which will be receiving the feed, or being created
 	var/c_locked=0;        //Will our new channel be locked to public submissions?
 	var/hitstaken = 0      //Death at 3 hits from an item with force>=15
-	var/datum/feed_channel/viewing_channel = null
+	var/viewing_channel_handle
 	light_range = 0
 	anchored = TRUE
-	var/obj/machinery/exonet_node/node = null
+	var/node_handle
 	circuit = /obj/item/circuitboard/newscaster
 	// TGUI
 	var/list/temp = null
@@ -180,7 +180,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	return INITIALIZE_HINT_LATELOAD
 
 /obj/machinery/newscaster/LateInitialize()
-	node = get_exonet_node()
+	node_handle = om_handle(get_exonet_node())
 	update_icon()
 
 /obj/machinery/newscaster/update_icon()
@@ -193,7 +193,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 		set_light_on(FALSE)
 		return
 
-	if(GLOB.news_network.wanted_issue) //wanted icon state, there can be no overlays on it as it's a priority message
+	if(GLOB.news_network.wanted_issue()) //wanted icon state, there can be no overlays on it as it's a priority message
 		icon_state = "newscaster_wanted"
 		add_overlay(mutable_appearance(icon, "newscaster_wanted_ov"))
 		add_overlay(emissive_appearance(icon, "newscaster_wanted_ov"))
@@ -256,10 +256,10 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	if(!ispowered || isbroken)
 		return TRUE
 
-	if(!node)
-		node = get_exonet_node()
+	if(!node())
+		node_handle = om_handle(get_exonet_node())
 
-	if(!node || !node.on || !node.allow_external_newscasters)
+	if(!node() || !node().on || !node().allow_external_newscasters)
 		to_chat(user, span_danger("Error: Cannot connect to external content.  Please try again in a few minutes.  If this error persists, please \
 		contact the system administrator."))
 		return TRUE
@@ -301,15 +301,15 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	data["unit_no"] = unit_no
 
 	var/list/wanted_issue = null
-	if(GLOB.news_network.wanted_issue)
+	if(GLOB.news_network.wanted_issue())
 		wanted_issue = list(
-			"author" = GLOB.news_network.wanted_issue.backup_author,
-			"criminal" = GLOB.news_network.wanted_issue.author,
-			"desc" = GLOB.news_network.wanted_issue.body,
+			"author" = GLOB.news_network.wanted_issue().backup_author,
+			"criminal" = GLOB.news_network.wanted_issue().author,
+			"desc" = GLOB.news_network.wanted_issue().body,
 			"img" = null
 		)
-		if(GLOB.news_network.wanted_issue.img)
-			wanted_issue["img"] = icon2base64(GLOB.news_network.wanted_issue.img)
+		if(GLOB.news_network.wanted_issue().img)
+			wanted_issue["img"] = icon2base64(GLOB.news_network.wanted_issue().img)
 
 	data["wanted_issue"] = wanted_issue
 
@@ -351,17 +351,17 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 
 	// Viewing a specific channel
 	var/list/viewing = null
-	if(viewing_channel)
+	if(viewing_channel())
 		var/list/messages = list()
 		viewing = list(
-			"name" = viewing_channel.channel_name,
-			"author" = viewing_channel.author,
-			"censored" = viewing_channel.censored,
+			"name" = viewing_channel().channel_name,
+			"author" = viewing_channel().author,
+			"censored" = viewing_channel().censored,
 			"messages" = messages,
-			"ref" = REF(viewing_channel),
+			"ref" = REF(viewing_channel()),
 		)
-		if(!viewing_channel.censored)
-			for(var/datum/feed_message/M in viewing_channel.messages)
+		if(!viewing_channel().censored)
+			for(var/datum/feed_message/M in viewing_channel().messages)
 				var/list/msgdata = list(
 					"title" = M.title,
 					"body" = M.body,
@@ -472,7 +472,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 				set_temp("Error: Invalid Title.", "danger", FALSE)
 				return TRUE
 
-			var/image = photo_data ? photo_data.photo : null
+			var/image = photo_data ? photo_data.photo() : null
 			feedback_inc("newscaster_stories",1)
 			GLOB.news_network.SubmitArticle(msg, our_user, channel_name, image, 0, "", title)
 			set_temp("Feed message created successfully.", "success", FALSE)
@@ -507,15 +507,15 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 
 			var/choice = tgui_alert(ui.user, "Please confirm Wanted Issue change.", "Network Security Handler", list("Confirm", "Cancel"))
 			if(choice == "Confirm")
-				if(GLOB.news_network.wanted_issue)
-					if(GLOB.news_network.wanted_issue && GLOB.news_network.wanted_issue.is_admin_message)
+				if(GLOB.news_network.wanted_issue())
+					if(GLOB.news_network.wanted_issue() && GLOB.news_network.wanted_issue().is_admin_message)
 						tgui_alert_async(ui.user, "The wanted issue has been distributed by a [using_map.company_name] higherup. You cannot edit it.")
 						return
-					GLOB.news_network.wanted_issue.author = channel_name
-					GLOB.news_network.wanted_issue.body = msg
-					GLOB.news_network.wanted_issue.backup_author = scanned_user
+					GLOB.news_network.wanted_issue().author = channel_name
+					GLOB.news_network.wanted_issue().body = msg
+					GLOB.news_network.wanted_issue().backup_author = scanned_user
 					if(photo_data)
-						GLOB.news_network.wanted_issue.img = photo_data.photo.img
+						GLOB.news_network.wanted_issue().img = photo_data.photo().img
 					set_temp("Wanted issue for [channel_name] successfully edited.", "success", FALSE)
 					return TRUE
 
@@ -524,8 +524,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 				WANTED.body = msg
 				WANTED.backup_author = scanned_user //I know, a bit wacky
 				if(photo_data)
-					WANTED.img = photo_data.photo.img
-				GLOB.news_network.wanted_issue = WANTED
+					WANTED.img = photo_data.photo().img
+				GLOB.news_network.wanted_issue_handle = om_handle(WANTED)
 				GLOB.news_network.alert_readers()
 				set_temp("Wanted issue for [channel_name] is now in Network Circulation.", "success", FALSE)
 				return TRUE
@@ -533,12 +533,12 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 		if("cancel_wanted")
 			if(!securityCaster)
 				return FALSE
-			if(GLOB.news_network.wanted_issue.is_admin_message)
+			if(GLOB.news_network.wanted_issue().is_admin_message)
 				tgui_alert_async(ui.user, "The wanted issue has been distributed by a [using_map.company_name] higherup. You cannot take it down.")
 				return
 			var/choice = tgui_alert(ui.user, "Please confirm Wanted Issue removal","Network Security Handler",list("Confirm","Cancel"))
 			if(choice=="Confirm")
-				GLOB.news_network.wanted_issue = null
+				GLOB.news_network.wanted_issue_handle = null
 				for(var/obj/machinery/newscaster/NEWSCASTER in REGISTRY_MEMBERS(REGISTRY_CASTERS))
 					NEWSCASTER.update_icon()
 				set_temp("Wanted issue taken down.", "success", FALSE)
@@ -571,7 +571,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 				MSG.author = "\[REDACTED\]"
 			else
 				MSG.author = MSG.backup_author
-			MSG.parent_channel.update()
+			MSG.parent_channel().update()
 			return TRUE
 
 		if("censor_channel_story_body")
@@ -593,7 +593,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 				MSG.caption = MSG.caption
 				MSG.img = MSG.backup_img
 
-			MSG.parent_channel.update()
+			MSG.parent_channel().update()
 			return TRUE
 
 		if("toggle_d_notice")
@@ -609,7 +609,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 
 		if("show_channel")
 			var/datum/feed_channel/FC = locate(params["show_channel"])
-			viewing_channel = FC
+			viewing_channel_handle = om_handle(FC)
 			return TRUE
 
 /// Old attackby: any item used on the newscaster just forwarded to attack_hand().
@@ -628,18 +628,18 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 
 /datum/news_photo
 	var/is_synth = 0
-	var/obj/item/photo/photo = null
+	var/photo_handle
 
 /datum/news_photo/New(obj/item/photo/p, synth)
 	is_synth = synth
-	photo = p
+	photo_handle = om_handle(p)
 
 /obj/machinery/newscaster/proc/AttachPhoto(mob/user)
 	if(photo_data)
 		if(!photo_data.is_synth)
-			photo_data.photo.loc = src.loc
+			photo_data.photo().loc = src.loc
 			if(!issilicon(user))
-				user.put_in_inactive_hand(photo_data.photo)
+				user.put_in_inactive_hand(photo_data.photo())
 		qdel(photo_data)
 
 	if(istype(user.get_active_hand(), /obj/item/photo))
@@ -686,14 +686,14 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	var/obj/item/newspaper/NEWSPAPER = new /obj/item/newspaper
 	for(var/datum/feed_channel/FC in GLOB.news_network.network_channels)
 		LAZYADD(NEWSPAPER.news_content, FC)
-	if(GLOB.news_network.wanted_issue)
-		NEWSPAPER.important_message = GLOB.news_network.wanted_issue
+	if(GLOB.news_network.wanted_issue())
+		NEWSPAPER.important_message = GLOB.news_network.wanted_issue()
 	NEWSPAPER.loc = get_turf(src)
 	paper_remaining--
 	return
 
 /obj/machinery/newscaster/proc/newsAlert(news_call)
-	if(!node || !node.on || !node.allow_external_newscasters) //The messages will still be there once the connection returns.
+	if(!node() || !node().on || !node().allow_external_newscasters) //The messages will still be there once the connection returns.
 		return
 	var/turf/T = get_turf(src)
 	if(news_call)
@@ -718,3 +718,26 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	update_icon()
 
 REF_OWNED(/obj/machinery/newscaster, list("photo_data"))
+
+/// LC-refs: parent channel -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/feed_message/proc/parent_channel() as /datum/feed_channel
+	return om_resolve(parent_channel_handle)
+
+/// LC-refs: wanted issue -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/feed_network/proc/wanted_issue() as /datum/feed_message
+	return om_resolve(wanted_issue_handle)
+
+/// LC-refs: viewing channel -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/newscaster/proc/viewing_channel() as /datum/feed_channel
+	return om_resolve(viewing_channel_handle)
+
+/// LC-refs: node -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/newscaster/proc/node() as /obj/machinery/exonet_node
+	return om_resolve(node_handle)
+
+/// LC-refs: photo -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/news_photo/proc/photo() as /obj/item/photo
+	return om_resolve(photo_handle)
+
+REF_OWNED_LIST(/datum/feed_channel, list("messages"))
+REF_OWNED_LIST(/datum/feed_network, list("network_channels"))

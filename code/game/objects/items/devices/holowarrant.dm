@@ -8,15 +8,15 @@
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 4
 	throw_range = 10
-	var/datum/data/record/warrant/active
+	var/active_handle
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
 //look at it
 /obj/item/holowarrant/examine(mob/user)
 	. = ..()
-	if(active)
-		. += "It's a holographic warrant for '[active.fields["namewarrant"]]'."
+	if(active())
+		. += "It's a holographic warrant for '[active().fields["namewarrant"]]'."
 	if(in_range(user, src) || isobserver(user))
 		show_content(user) //Opens a browse window, not chatbox related
 	else
@@ -27,7 +27,7 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	active = null
+	active_handle = null
 	var/list/warrants = list()
 	if(!isnull(GLOB.data_core.general))
 		for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
@@ -39,16 +39,16 @@
 	temp = tgui_input_list(user, "Which warrant would you like to load?", "Warrant Selection", warrants)
 	for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
 		if(W.fields["namewarrant"] == temp)
-			active = W
+			active_handle = om_handle(W)
 	update_icon()
 
 /obj/item/holowarrant/attackby(obj/item/W, mob/user)
-	if(active)
+	if(active())
 		var/obj/item/card/id/I = W.GetIdCard()
 		if(I && (ACCESS_HOS in I.GetAccess()))
 			var/choice = tgui_alert(user, "Would you like to authorize this warrant?","Warrant authorization",list("Yes","No"))
 			if(choice == "Yes")
-				active.fields["auth"] = "[I.registered_name] - [I.assignment ? I.assignment : "(Unknown)"]"
+				active().fields["auth"] = "[I.registered_name] - [I.assignment ? I.assignment : "(Unknown)"]"
 			user.visible_message(span_notice("You swipe \the [I] through the [src]."), \
 					span_notice("[user] swipes \the [I] through the [src]."))
 			return 1
@@ -64,7 +64,7 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/holowarrant/update_icon()
-	if(active)
+	if(active())
 		icon_state = "holowarrant_filled"
 	else
 		icon_state = "holowarrant"
@@ -79,3 +79,7 @@
 	. = ..()
 	for(var/i = 0 to 3)
 		new /obj/item/holowarrant(src) // addition ends
+
+/// LC-refs: active -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/holowarrant/proc/active() as /datum/data/record/warrant
+	return om_resolve(active_handle)

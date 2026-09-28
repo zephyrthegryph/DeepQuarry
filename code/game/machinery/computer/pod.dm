@@ -7,7 +7,7 @@
 	light_color = "#00b000"
 	circuit = /obj/item/circuitboard/pod
 	var/id = 1.0
-	var/obj/machinery/mass_driver/connected = null
+	var/connected_handle
 	var/timing = FALSE
 	var/time = 30.0
 	var/title = "Mass Driver Controls"
@@ -19,14 +19,14 @@
 /obj/machinery/computer/pod/LateInitialize()
 	for(var/obj/machinery/mass_driver/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(M.id == id)
-			connected = M
+			connected_handle = om_handle(M)
 			break
 
 /obj/machinery/computer/pod/proc/alarm()
 	if(stat & (NOPOWER|BROKEN))
 		return
 
-	if(!( connected ))
+	if(!( connected() ))
 		to_chat(viewers(null, null),"Cannot locate mass driver connector. Cancelling firing sequence!")
 		return
 
@@ -39,7 +39,7 @@
 /obj/machinery/computer/pod/proc/alarm_drive()
 	for(var/obj/machinery/mass_driver/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(M.id == id)
-			M.power = connected?.power
+			M.power = connected()?.power
 			M.drive()
 	om_after(src, 5 SECONDS, PROC_REF(alarm_close))
 
@@ -77,10 +77,10 @@
 /obj/machinery/computer/pod/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 
 	return list(
-		"connected" = connected,
+		"connected" = connected(),
 		"timing" = timing,
 		"time" = time,
-		"power_level" = connected?.power
+		"power_level" = connected()?.power
 	)
 
 /obj/machinery/computer/pod/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
@@ -108,13 +108,13 @@
 		if("test_drive")
 			for(var/obj/machinery/mass_driver/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 				if(M.id == id)
-					M.power = connected.power
+					M.power = connected().power
 					M.drive()
 			return TRUE
 		if("adjust_power")
-			if(!connected)
+			if(!connected())
 				return FALSE
-			connected.power = CLAMP(text2num(params["value"]), 0.25, 16)
+			connected().power = CLAMP(text2num(params["value"]), 0.25, 16)
 			return TRUE
 		if("adjust_time")
 			time = CLAMP(round(text2num(params["value"])), 0, 120)
@@ -164,3 +164,7 @@
 /obj/machinery/computer/pod/old/swf
 	name = "Magix System IV"
 	desc = "An arcane artifact that holds much magic. Running E-Knock 2.2: Sorceror's Edition"
+
+/// LC-refs: connected -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/pod/proc/connected() as /obj/machinery/mass_driver
+	return om_resolve(connected_handle)

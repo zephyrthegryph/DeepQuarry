@@ -11,12 +11,12 @@
 /datum/technomancer_marker
 	var/U
 	var/image/I
-	var/turf/T
+	var/T_handle
 
 /datum/technomancer_marker/New(mob/user)
 	U = om_handle(user)
-	T = get_turf(user)
-	I = image('icons/goonstation/featherzone.dmi', T, "spawn-wall")
+	T_handle = om_handle(get_turf(user))
+	I = image('icons/goonstation/featherzone.dmi', T(), "spawn-wall")
 	I.plane = TURF_PLANE
 	I.layer = ABOVE_TURF_LAYER
 	user.client?.images |= I
@@ -108,7 +108,7 @@ GLOBAL_LIST_INIT(mark_spells, list())
 		set_light(light_intensity, light_intensity, l_color = "#006AFF")
 		om_after(src, 1 SECOND, PROC_REF(recall_glow), user, marker, time_left - 1, light_intensity + 1)
 		return
-	var/turf/target_turf = marker.T // Multiple technomancer support
+	var/turf/target_turf = marker.T() // Multiple technomancer support
 	var/turf/old_turf = get_turf(user)
 
 	for(var/obj/item/grab/G in user.contents) // People the Technomancer is grabbing come along for the ride.
@@ -129,3 +129,7 @@ GLOBAL_LIST_INIT(mark_spells, list())
 	consume(src, user)
 
 REF_OWNED(/datum/technomancer_marker, list("I"))
+
+/// LC-refs: T -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/technomancer_marker/proc/T() as /turf
+	return om_resolve(T_handle)

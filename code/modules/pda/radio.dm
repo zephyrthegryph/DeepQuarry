@@ -99,7 +99,7 @@
 /obj/item/radio/integrated/signal/set_frequency(new_frequency)
 	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection = SSradio.add_object(src, frequency)
+	radio_connection_handle = om_handle(SSradio.add_object(src, frequency))
 
 /obj/item/radio/integrated/signal/proc/send_signal(message="ACTIVATE")
 	if(last_transmission && world.time < (last_transmission + 5))
@@ -115,4 +115,4 @@
 	signal.encryption = code
 	signal.data["message"] = message
 
-	radio_connection.post_signal(src, signal)
+	radio_connection().post_signal(src, signal)

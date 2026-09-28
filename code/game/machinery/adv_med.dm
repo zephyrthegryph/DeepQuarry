@@ -311,14 +311,14 @@ REF_PAIR(/obj/machinery/body_scanconsole, list("scanner" = "console"))
 	if(!istype(tool, /obj/item/multitool))
 		return ITEM_INTERACT_BLOCKING
 	var/obj/item/multitool/multitool = tool
-	if(istype(multitool.connectable, /obj/machinery/bodyscanner))
-		var/obj/machinery/bodyscanner/body_scanner = multitool.connectable
+	if(istype(multitool.connectable(), /obj/machinery/bodyscanner))
+		var/obj/machinery/bodyscanner/body_scanner = multitool.connectable()
 		scanner = body_scanner
 		body_scanner.console = src
 		to_chat(user, span_warning("You link [src] to [body_scanner]!"))
 	else
 		to_chat(user, span_warning("You store [src] in [multitool]'s buffer!"))
-		multitool.connectable = src
+		multitool.connectable_handle = om_handle(src)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/body_scanconsole/power_change()

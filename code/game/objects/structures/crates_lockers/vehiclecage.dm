@@ -4,19 +4,19 @@
 	icon = 'icons/obj/storage.dmi'
 	icon_state = "vehicle_cage"
 	density = TRUE
-	var/obj/vehicle/my_vehicle
+	var/my_vehicle_handle
 	var/my_vehicle_type
 	var/paint_color = "#666666"
 
 /obj/structure/vehiclecage/examine(mob/user)
 	. = ..()
-	if(my_vehicle)
-		. += span_notice("It seems to contain \the [my_vehicle].")
+	if(my_vehicle())
+		. += span_notice("It seems to contain \the [my_vehicle()].")
 
 /obj/structure/vehiclecage/Initialize(mapload)
 	. = ..()
 	if(my_vehicle_type)
-		my_vehicle = new my_vehicle_type(src)
+		my_vehicle_handle = om_handle(new my_vehicle_type(src))
 		for(var/obj/I in get_turf(src))
 			if(I.density || I.anchored || I == src || !I.simulated || !istype(I, my_vehicle_type))
 				continue
@@ -71,7 +71,7 @@
 	if(!V)
 		return
 
-	if(!my_vehicle)
+	if(!my_vehicle())
 		load_vehicle(V, user)
 
 /obj/structure/vehiclecage/proc/load_vehicle(obj/vehicle/V, mob/user as mob)
@@ -94,7 +94,7 @@
 		if(AM.simulated)
 			AM.forceMove(T)
 
-	my_vehicle = null
+	my_vehicle_handle = null
 	user.visible_message(span_notice("[user] release \the [src]."), \
 							span_notice("You finally release \the [src]."), \
 							span_notice("You hear creaking metal."))
@@ -108,3 +108,7 @@
 
 /obj/structure/vehiclecage/quadtrailer
 	my_vehicle_type = /obj/vehicle/train/trolley/trailer/random
+
+/// LC-refs: my vehicle -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/structure/vehiclecage/proc/my_vehicle() as /obj/vehicle
+	return om_resolve(my_vehicle_handle)

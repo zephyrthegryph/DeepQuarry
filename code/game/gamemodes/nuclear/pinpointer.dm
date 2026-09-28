@@ -9,7 +9,7 @@
 	throw_range = 20
 	MATERIAL_BULK(MAT_STEEL, 500)
 	preserve_item = 1
-	var/obj/item/disk/nuclear/the_disk = null
+	var/the_disk_handle
 	var/active = 0
 
 	///TODO: Clear up click code entirely. This is used exclusively for attack_self
@@ -39,15 +39,15 @@
 	if(!active)
 		return PROCESS_KILL
 
-	if(!the_disk)
-		the_disk = locate()
-		if(!the_disk)
+	if(!the_disk())
+		the_disk_handle = om_handle(locate(/obj/item/disk/nuclear))
+		if(!the_disk())
 			icon_state = "pinonnull"
 			return
 
-	set_dir(get_dir(src,the_disk))
+	set_dir(get_dir(src,the_disk()))
 
-	switch(get_dist(src,the_disk))
+	switch(get_dist(src,the_disk()))
 		if(0)
 			icon_state = "pinondirect"
 		if(1 to 8)
@@ -68,8 +68,8 @@
 	icon = 'icons/obj/device.dmi'
 	desc = "A larger version of the normal pinpointer, this unit features a helpful quantum entanglement detection system to locate various objects that do not broadcast a locator signal."
 	var/mode = 0  // Mode 0 locates disk, mode 1 locates coordinates.
-	var/turf/location = null
-	var/obj/target = null
+	var/location_handle
+	var/target_handle
 
 /obj/item/pinpointer/advpinpointer/periodic_step()
 	if(!active)
@@ -82,13 +82,13 @@
 		workobj()
 
 /obj/item/pinpointer/advpinpointer/proc/worklocation()
-	if(!location)
+	if(!get_location())
 		icon_state = "pinonnull"
 		return
 
-	set_dir(get_dir(src,location))
+	set_dir(get_dir(src,get_location()))
 
-	switch(get_dist(src,location))
+	switch(get_dist(src,get_location()))
 		if(0)
 			icon_state = "pinondirect"
 		if(1 to 8)
@@ -99,13 +99,13 @@
 			icon_state = "pinonfar"
 
 /obj/item/pinpointer/advpinpointer/proc/workobj()
-	if(!target)
+	if(!target_ref())
 		icon_state = "pinonnull"
 		return
 
-	set_dir(get_dir(src,target))
+	set_dir(get_dir(src,target_ref()))
 
-	switch(get_dist(src,target))
+	switch(get_dist(src,target_ref()))
 		if(0)
 			icon_state = "pinondirect"
 		if(1 to 8)
@@ -122,8 +122,8 @@
 
 	active = 0
 	icon_state = "pinoff"
-	target=null
-	location = null
+	target_handle = null
+	location_handle = null
 
 	switch(tgui_alert(usr, "Please select the mode you want to put the pinpointer in.", "Pinpointer Mode Select", list("Location", "Disk Recovery", "Other Signature")))
 		if("Location")
@@ -138,7 +138,7 @@
 
 			var/turf/Z = get_turf(src)
 
-			location = locate(locationx,locationy,Z.z)
+			location_handle = om_handle(locate(locationx,locationy,Z.z))
 
 			to_chat(usr, "You set the pinpointer to locate [locationx],[locationy]")
 
@@ -159,8 +159,8 @@
 					var/targetitem = tgui_input_list(usr, "Select item to search for.", "Item Mode Select", itemlist.possible_items)
 					if(!targetitem)
 						return
-					target=locate(itemlist.possible_items[targetitem])
-					if(!target)
+					target_handle = om_handle(locate(itemlist.possible_items[targetitem]))
+					if(!target_ref())
 						to_chat(usr, "Failed to locate [targetitem]!")
 						return
 					to_chat(usr, "You set the pinpointer to locate [targetitem]")
@@ -173,7 +173,7 @@
 						if(!M.dna)
 							continue
 						if(M.dna.unique_enzymes == DNAstring)
-							target = M
+							target_handle = om_handle(M)
 							break
 
 			return attack_self()
@@ -184,7 +184,7 @@
 
 /obj/item/pinpointer/nukeop
 	var/mode = 0	//Mode 0 locates disk, mode 1 locates the shuttle
-	var/obj/machinery/computer/shuttle_control/multi/syndicate/home = null
+	var/home_handle
 
 /obj/item/pinpointer/nukeop/attack_self(mob/user)
 	. = ..(user)
@@ -222,15 +222,15 @@
 		visible_message(span_notice("Shuttle Locator active."))			//Lets the mob holding it know that the mode has changed
 		return		//Get outta here
 
-	if(!the_disk)
-		the_disk = locate()
-		if(!the_disk)
+	if(!the_disk())
+		the_disk_handle = om_handle(locate(/obj/item/disk/nuclear))
+		if(!the_disk())
 			icon_state = "pinonnull"
 			return
 
-	set_dir(get_dir(src, the_disk))
+	set_dir(get_dir(src, the_disk()))
 
-	switch(get_dist(src, the_disk))
+	switch(get_dist(src, the_disk()))
 		if(0)
 			icon_state = "pinondirect"
 		if(1 to 8)
@@ -247,19 +247,19 @@
 		visible_message(span_notice("Authentication Disk Locator active."))
 		return
 
-	if(!home)
-		home = locate()
-		if(!home)
+	if(!home())
+		home_handle = om_handle(locate(/obj/machinery/computer/shuttle_control/multi/syndicate))
+		if(!home())
 			icon_state = "pinonnull"
 			return
 
-	if(loc.z != home.z)	//If you are on a different z-level from the shuttle
+	if(loc.z != home().z)	//If you are on a different z-level from the shuttle
 		icon_state = "pinonnull"
 
 	else
-		set_dir(get_dir(src, home))
+		set_dir(get_dir(src, home()))
 
-		switch(get_dist(src, home))
+		switch(get_dist(src, home()))
 			if(0)
 				icon_state = "pinondirect"
 			if(1 to 8)
@@ -272,7 +272,7 @@
 // This one only points to the ship.  Useful if there is no nuking to occur today.
 /obj/item/pinpointer/shuttle
 	var/shuttle_comp_id = null
-	var/obj/machinery/computer/shuttle_control/our_shuttle = null
+	var/our_shuttle_handle
 
 /obj/item/pinpointer/shuttle/attack_self(mob/user)
 	. = ..(user)
@@ -292,23 +292,23 @@
 	if(!active)
 		return PROCESS_KILL
 
-	if(!our_shuttle)
+	if(!our_shuttle())
 		for(var/obj/machinery/computer/shuttle_control/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(S.shuttle_tag == shuttle_comp_id) // Shuttle tags are used so that it will work if the computer path changes, as it does on the southern cross map.
-				our_shuttle = S
+				our_shuttle_handle = om_handle(S)
 				break
 
-		if(!our_shuttle)
+		if(!our_shuttle())
 			icon_state = "pinonnull"
 			return
 
-	if(loc.z != our_shuttle.z)	//If you are on a different z-level from the shuttle
+	if(loc.z != our_shuttle().z)	//If you are on a different z-level from the shuttle
 		icon_state = "pinonnull"
 
 	else
-		set_dir(get_dir(src, our_shuttle))
+		set_dir(get_dir(src, our_shuttle()))
 
-		switch(get_dist(src, our_shuttle))
+		switch(get_dist(src, our_shuttle()))
 			if(0)
 				icon_state = "pinondirect"
 			if(1 to 8)
@@ -323,3 +323,23 @@
 
 /obj/item/pinpointer/shuttle/heist
 	shuttle_comp_id = "Skipjack"
+
+/// LC-refs: the disk -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/pinpointer/proc/the_disk() as /obj/item/disk/nuclear
+	return om_resolve(the_disk_handle)
+
+/// LC-refs: location -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/pinpointer/advpinpointer/proc/get_location() as /turf
+	return om_resolve(location_handle)
+
+/// LC-refs: target -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/pinpointer/advpinpointer/proc/target_ref() as /obj
+	return om_resolve(target_handle)
+
+/// LC-refs: home -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/pinpointer/nukeop/proc/home() as /obj/machinery/computer/shuttle_control/multi/syndicate
+	return om_resolve(home_handle)
+
+/// LC-refs: our shuttle -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/pinpointer/shuttle/proc/our_shuttle() as /obj/machinery/computer/shuttle_control
+	return om_resolve(our_shuttle_handle)

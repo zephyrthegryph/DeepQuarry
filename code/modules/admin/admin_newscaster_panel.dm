@@ -71,7 +71,7 @@ REF_PAIR(/datum/admins, list("dq_newscaster_panel" = "holder"))
 	data["screen"] = holder.admincaster_screen
 	data["signature"] = holder.admincaster_signature
 	data["company_name"] = using_map.company_name
-	data["has_wanted"] = !!GLOB.news_network.wanted_issue
+	data["has_wanted"] = !!GLOB.news_network.wanted_issue()
 	data["channel"] = pack_channel(holder.admincaster_feed_channel)
 	data["message"] = pack_message(holder.admincaster_feed_message)
 
@@ -89,8 +89,8 @@ REF_PAIR(/datum/admins, list("dq_newscaster_panel" = "holder"))
 	data["channel_messages"] = channel_messages
 
 	// Wanted issue (screen 18).
-	if(GLOB.news_network.wanted_issue)
-		var/datum/feed_message/W = GLOB.news_network.wanted_issue
+	if(GLOB.news_network.wanted_issue())
+		var/datum/feed_message/W = GLOB.news_network.wanted_issue()
 		data["wanted_issue"] = list(
 			"author" = W.author,
 			"body" = W.body,

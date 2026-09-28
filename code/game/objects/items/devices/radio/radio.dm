@@ -40,7 +40,7 @@
 	var/const/FREQ_LISTENING = 1
 	var/list/internal_channels
 
-	var/datum/radio_frequency/radio_connection
+	var/radio_connection_handle
 	var/list/datum/radio_frequency/secure_radio_connections
 
 	///If we're a syndicate beacon or not.
@@ -51,7 +51,7 @@
 /obj/item/radio/proc/set_frequency(new_frequency)
 	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection = SSradio.add_object(src, frequency, RADIO_CHAT)
+	radio_connection_handle = om_handle(SSradio.add_object(src, frequency, RADIO_CHAT))
 
 /obj/item/radio/Initialize(mapload)
 	. = ..()
@@ -84,7 +84,7 @@
 		SSradio.remove_object(src, frequency)
 		for (var/ch_name in channels)
 			SSradio.remove_object(src, GLOB.radiochannels[ch_name])
-	radio_connection = null
+	radio_connection_handle = null
 	return ..()
 
 /obj/item/radio/LateInitialize()
@@ -250,8 +250,8 @@ REF_OWNED(/obj/item/radio, "wires")
 			if((new_frequency < PUBLIC_LOW_FREQ || new_frequency > PUBLIC_HIGH_FREQ))
 				new_frequency = sanitize_frequency(new_frequency)
 			set_frequency(new_frequency)
-			if(hidden_uplink)
-				if(hidden_uplink.check_trigger(ui.user, frequency, traitor_frequency))
+			if(hidden_uplink())
+				if(hidden_uplink().check_trigger(ui.user, frequency, traitor_frequency))
 					// close the TGUI Radio when the uplink trips (was browse(null)).
 					SStgui.close_uis(src)
 			. = TRUE
@@ -309,7 +309,7 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 			channel = channels[1]
 		connection = secure_radio_connections[channel]
 	else
-		connection = radio_connection
+		connection = radio_connection()
 		channel = null
 	if(!istype(connection))
 		return
@@ -328,7 +328,7 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 /obj/item/radio/proc/handle_message_mode(mob/living/M as mob, list/message_pieces, message_mode)
 	// If a channel isn't specified, send to common.
 	if(!message_mode || message_mode == "headset")
-		return radio_connection
+		return radio_connection()
 
 	// Otherwise, if a channel is specified, look for it.
 	if(channels && LAZYLEN(channels))
@@ -356,7 +356,7 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 	if(wires.is_cut(WIRE_RADIO_TRANSMIT)) // The device has to have all its wires and shit intact
 		return FALSE
 
-	if(!radio_connection)
+	if(!radio_connection())
 		set_frequency(frequency)
 
 	/* Quick introduction:
@@ -629,7 +629,7 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 //Giving borgs their own radio to have some more room to work with -Sieve
 
 /obj/item/radio/borg
-	var/mob/living/silicon/robot/myborg = null // Cyborg which owns this radio. Used for power checks
+	var/myborg_handle // Cyborg which owns this radio. Used for power checks
 	var/obj/item/encryptionkey/keyslot = null//Borg radios can handle a single encryption key
 	icon = 'icons/obj/robot_component.dmi' // Cyborgs radio icons should look like the component.
 	icon_state = "radio"
@@ -870,3 +870,11 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 
 REF_OWNED_LIST(/obj/item/radio, list("secure_radio_connections"))
 REF_HELD(/obj/item/radio/borg, list("keyslot"))
+
+/// LC-refs: radio connection -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/radio/proc/radio_connection() as /datum/radio_frequency
+	return om_resolve(radio_connection_handle)
+
+/// LC-refs: myborg -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/radio/borg/proc/myborg() as /mob/living/silicon/robot
+	return om_resolve(myborg_handle)

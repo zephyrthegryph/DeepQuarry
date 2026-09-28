@@ -31,7 +31,7 @@
 	anchored = TRUE
 	density = TRUE
 
-	var/mob/living/active_user
+	var/active_user_handle
 	var/db_key
 
 	//These are the variables that control 'When we were
@@ -46,7 +46,7 @@
 	. = ..()
 	if(panel_open)
 		icon_state = "kiosk_open" // panel
-	else if((stat & (NOPOWER|BROKEN)) || !active_user)
+	else if((stat & (NOPOWER|BROKEN)) || !active_user())
 		icon_state = "kiosk_off" // asleep or no power
 	else
 		icon_state = "kiosk" // waiting for user or to finish processing
@@ -56,7 +56,7 @@
 	if(istype(user) && Adjacent(user))
 		if(inoperable() || panel_open)
 			to_chat(user, span_warning("\The [src] seems to be nonfunctional..."))
-		else if(active_user && active_user != user)
+		else if(active_user() && active_user() != user)
 			to_chat(user, span_warning("Another patient has begin using this machine. Please wait for them to finish, or their session to time out."))
 		else
 			start_using(user)
@@ -67,12 +67,12 @@
 		return
 
 /obj/machinery/medical_kiosk/proc/wake_lock(mob/living/user)
-	active_user = user
+	active_user_handle = om_handle(user)
 	update_icon()
 	update_use_power(USE_POWER_ACTIVE)
 
 /obj/machinery/medical_kiosk/proc/suspend()
-	active_user = null
+	active_user_handle = null
 	update_icon()
 	update_use_power(USE_POWER_IDLE)
 
@@ -369,3 +369,7 @@
 /// LC-refs: the transcore database this uses, looked up by db_key (the databases are a registry).
 /obj/machinery/medical_kiosk/proc/our_db() as /datum/transcore_db
 	return SStranscore.db_by_key(db_key)
+
+/// LC-refs: active user -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/medical_kiosk/proc/active_user() as /mob/living
+	return om_resolve(active_user_handle)

@@ -99,7 +99,7 @@
 	var/t = tgui_input_text(user, "Please enter new ringtone", name, ttone)
 	if(in_range(src, user) && loc == user)
 		if(t)
-			if(hidden_uplink && hidden_uplink.check_trigger(user, lowertext(t), lowertext(lock_code)))
+			if(hidden_uplink() && hidden_uplink().check_trigger(user, lowertext(t), lowertext(lock_code)))
 				to_chat(user, "The PDA softly beeps.")
 				close(user)
 			else

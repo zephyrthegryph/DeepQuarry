@@ -33,11 +33,11 @@
 			break
 
 	if(istype(station))
-		station.com = hub
+		station.com_handle = om_handle(hub)
 		teleport_control.hub = hub
 
 	if(istype(hub))
-		hub.com = src
+		hub.com_handle = om_handle(src)
 		teleport_control.station = station
 
 REF_OWNED(/obj/machinery/computer/teleporter, "teleport_control")
@@ -147,7 +147,7 @@ REF_OWNED(/obj/machinery/computer/teleporter, "teleport_control")
 	idle_power_usage = 10
 	active_power_usage = 2000
 	circuit = /obj/item/circuitboard/teleporter_hub
-	var/obj/machinery/computer/teleporter/com
+	var/com_handle
 
 /obj/machinery/teleport/hub/Initialize(mapload)
 	. = ..()
@@ -156,8 +156,8 @@ REF_OWNED(/obj/machinery/computer/teleporter, "teleport_control")
 
 // LIFECYCLE: the teleporter console forgets its hub.
 /obj/machinery/teleport/hub/Destroy()
-	com?.teleport_control.hub = null
-	com = null
+	com()?.teleport_control.hub = null
+	com_handle = null
 	return ..()
 
 /obj/machinery/teleport/hub/Bumped(M as mob|obj)
@@ -167,9 +167,9 @@ REF_OWNED(/obj/machinery/computer/teleporter, "teleport_control")
 	return
 
 /obj/machinery/teleport/hub/proc/teleport(atom/movable/M as mob|obj)
-	if(!com)
+	if(!com())
 		return
-	if(!com.teleport_control.locked)
+	if(!com().teleport_control.locked)
 		for(var/mob/O in hearers(src, null))
 			O.show_message(span_warning("Failure: Cannot authenticate locked on coordinates. Please reinstate coordinate matrix."))
 		return
@@ -185,11 +185,11 @@ REF_OWNED(/obj/machinery/computer/teleporter, "teleport_control")
 		if(prob(5) && !accurate) //oh dear a problem, put em in deep space
 			do_teleport(M, locate(rand((2*TRANSITIONEDGE), world.maxx - (2*TRANSITIONEDGE)), rand((2*TRANSITIONEDGE), world.maxy - (2*TRANSITIONEDGE)), 3), 2)
 		else
-			do_teleport(M, com.teleport_control.locked) //dead-on precision
+			do_teleport(M, com().teleport_control.locked) //dead-on precision
 
-		if(com.one_time_use) //Make one-time-use cards only usable one time!
-			com.one_time_use = 0
-			com.teleport_control.locked = null
+		if(com().one_time_use) //Make one-time-use cards only usable one time!
+			com().one_time_use = 0
+			com().teleport_control.locked = null
 	else
 		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 		s.set_up(5, 1, src)
@@ -214,7 +214,7 @@ REF_OWNED(/obj/machinery/computer/teleporter, "teleport_control")
 	idle_power_usage = 10
 	active_power_usage = 2000
 	circuit = /obj/item/circuitboard/teleporter_station
-	var/obj/machinery/teleport/hub/com
+	var/com_handle
 
 /obj/machinery/teleport/station/Initialize(mapload)
 	. = ..()
@@ -223,19 +223,19 @@ REF_OWNED(/obj/machinery/computer/teleporter, "teleport_control")
 
 // LIFECYCLE: the teleporter console forgets its station.
 /obj/machinery/teleport/station/Destroy()
-	com?.com?.teleport_control.station = null
-	com = null
+	com()?.com()?.teleport_control.station = null
+	com_handle = null
 	return ..()
 
 /obj/machinery/teleport/station/proc/engage(mob/user)
 	if(stat & (BROKEN|NOPOWER))
 		return
 
-	if(com)
-		com.icon_state = "tele1"
+	if(com())
+		com().icon_state = "tele1"
 		use_power(5000)
 		update_use_power(USE_POWER_ACTIVE)
-		com.update_use_power(USE_POWER_ACTIVE)
+		com().update_use_power(USE_POWER_ACTIVE)
 		for(var/mob/O in hearers(src, null))
 			O.show_message(span_notice("Teleporter engaged!"), 2)
 	if(user)
@@ -247,10 +247,10 @@ REF_OWNED(/obj/machinery/computer/teleporter, "teleport_control")
 	if(stat & (BROKEN|NOPOWER))
 		return
 
-	if(com)
-		com.icon_state = "tele0"
-		com.accurate = 0
-		com.update_use_power(USE_POWER_IDLE)
+	if(com())
+		com().icon_state = "tele0"
+		com().accurate = 0
+		com().update_use_power(USE_POWER_IDLE)
 		update_use_power(USE_POWER_IDLE)
 		for(var/mob/O in hearers(src, null))
 			O.show_message(span_notice("Teleporter disengaged!"), 2)
@@ -260,12 +260,12 @@ REF_OWNED(/obj/machinery/computer/teleporter, "teleport_control")
 	return
 
 /obj/machinery/teleport/station/proc/testfire()
-	if(!com || active)
+	if(!com() || active)
 		return
 
 	active = TRUE
 	visible_message(span_notice("Test firing!"))
-	com.teleport()
+	com().teleport()
 	use_power(5000)
 	flick(src, "controller-c")
 
@@ -276,8 +276,8 @@ REF_OWNED(/obj/machinery/computer/teleporter, "teleport_control")
 	if(stat & NOPOWER)
 		icon_state = "controller-p"
 
-		if(com)
-			com.icon_state = "tele0"
+		if(com())
+			com().icon_state = "tele0"
 	else
 		icon_state = "controller"
 
@@ -292,3 +292,11 @@ REF_OWNED(/obj/machinery/computer/teleporter, "teleport_control")
 /// A test fire's calibration lapses.
 /obj/machinery/teleport/hub/proc/calibration_lapses()
 	accurate = 0
+
+/// LC-refs: com -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/teleport/hub/proc/com() as /obj/machinery/computer/teleporter
+	return om_resolve(com_handle)
+
+/// LC-refs: com -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/teleport/station/proc/com() as /obj/machinery/teleport/hub
+	return om_resolve(com_handle)

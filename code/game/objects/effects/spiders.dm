@@ -131,7 +131,7 @@
 	max_integrity = 3
 	var/last_itch = 0
 	var/amount_grown = 0
-	var/obj/machinery/atmospherics/unary/vent_pump/entry_vent
+	var/entry_vent_handle
 	var/travelling_in_vent = 0
 	var/list/grow_as = list(/mob/living/simple_mob/animal/giant_spider, /mob/living/simple_mob/animal/giant_spider/hunter)
 	var/faction = FACTION_SPIDERS
@@ -173,13 +173,13 @@
 	if(travelling_in_vent)
 		if(istype(src.loc, /turf))
 			travelling_in_vent = 0
-			entry_vent = null
-	else if(entry_vent)
-		if(get_dist(src, entry_vent) <= 1)
-			var/obj/machinery/atmospherics/unary/vent_pump/exit_vent = get_safe_ventcrawl_target(entry_vent)
+			entry_vent_handle = null
+	else if(entry_vent())
+		if(get_dist(src, entry_vent()) <= 1)
+			var/obj/machinery/atmospherics/unary/vent_pump/exit_vent = get_safe_ventcrawl_target(entry_vent())
 			if(!exit_vent)
 				return
-			INVOKE_ASYNC(src, PROC_REF(vent_crawl_async), entry_vent, exit_vent)
+			INVOKE_ASYNC(src, PROC_REF(vent_crawl_async), entry_vent(), exit_vent)
 
 	if(isturf(loc))
 		skitter()
@@ -215,7 +215,7 @@
 /obj/effect/spider/spiderling/proc/vent_crawl_midway(obj/machinery/atmospherics/unary/vent_pump/entry, obj/machinery/atmospherics/unary/vent_pump/exit_vent, travel_time)
 	if(!exit_vent || exit_vent.welded)
 		loc = entry
-		entry_vent = null
+		entry_vent_handle = null
 		return
 
 	if(prob(50))
@@ -226,10 +226,10 @@
 /obj/effect/spider/spiderling/proc/vent_crawl_exit(obj/machinery/atmospherics/unary/vent_pump/entry, obj/machinery/atmospherics/unary/vent_pump/exit_vent)
 	if(!exit_vent || exit_vent.welded)
 		loc = entry
-		entry_vent = null
+		entry_vent_handle = null
 		return
 	loc = exit_vent.loc
-	entry_vent = null
+	entry_vent_handle = null
 	var/area/new_area = get_area(loc)
 	if(new_area)
 		new_area.Entered(src)
@@ -248,8 +248,8 @@
 			//vent crawl!
 			for(var/obj/machinery/atmospherics/unary/vent_pump/v in view(7,src))
 				if(!v.welded)
-					entry_vent = v
-					walk_to(src, entry_vent, 5)
+					entry_vent_handle = om_handle(v)
+					walk_to(src, entry_vent(), 5)
 					break
 		if(amount_grown >= 100)
 			var/spawn_type = pick(grow_as)
@@ -362,3 +362,7 @@
 	while(grown < 100)
 		grown += rand(0, 2)
 		.++
+
+/// LC-refs: entry vent -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/effect/spider/spiderling/proc/entry_vent() as /obj/machinery/atmospherics/unary/vent_pump
+	return om_resolve(entry_vent_handle)

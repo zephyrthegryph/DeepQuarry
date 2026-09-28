@@ -151,7 +151,7 @@
 	. = 0
 	if(holding)
 		. |= 1
-	if(connected_port)
+	if(connected_port())
 		. |= 2
 
 	var/tank_pressure = air_contents.return_pressure()
@@ -169,7 +169,7 @@
 // band, so it watches desired_update_flag() (an om_watch value watch) instead of "any change"
 // in that state; otherwise it falls back to the portable_atmospherics base "any change" watch.
 /obj/machinery/portable_atmospherics/canister/hibernate_until_gas_changes()
-	if(connected_port && !valve_open)
+	if(connected_port() && !valve_open)
 		var/mixture_id = air_contents?.arena_id()
 		if(isnull(mixture_id))
 			return
@@ -348,7 +348,7 @@ update_flag
 
 /obj/machinery/portable_atmospherics/canister/proc/welder_act_tool_done(mob/user)
 	to_chat(user, span_notice("You deconstruct [src]."))
-	if(connected_port)
+	if(connected_port())
 		disconnect()
 	replace_with(src, /obj/item/stack/material/steel, 10)
 
@@ -366,7 +366,7 @@ update_flag
 /obj/machinery/portable_atmospherics/canister/tgui_data(mob/user)
 	var/list/data = list()
 	data["can_relabel"] = can_label ? 1 : 0
-	data["connected"] = connected_port ? 1 : 0
+	data["connected"] = connected_port() ? 1 : 0
 	data["pressure"] = round(air_contents.return_pressure() ? air_contents.return_pressure() : 0)
 	data["releasePressure"] = round(release_pressure ? release_pressure : 0)
 	data["defaultReleasePressure"] = round(initial(release_pressure))

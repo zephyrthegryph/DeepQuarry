@@ -4,9 +4,9 @@
 // If it returns true, I recommend closing the item's normal menu
 /obj/item/proc/active_uplink_check(mob/user as mob)
 	// Activates the uplink if it's active
-	if(hidden_uplink)
-		if(hidden_uplink.active)
-			hidden_uplink.trigger(user)
+	if(hidden_uplink())
+		if(hidden_uplink().active)
+			hidden_uplink().trigger(user)
 			return TRUE
 	return FALSE
 
@@ -19,7 +19,7 @@
 
 	var/offer_time = 10 MINUTES			//The time increment per discount offered
 	var/next_offer_time
-	var/datum/uplink_item/discount_item	//The item to be discounted
+	var/discount_item_handle	//The item to be discounted
 	var/discount_amount					//The amount as a percent the item will be discounted by
 	var/compact_mode = FALSE
 
@@ -32,7 +32,7 @@
 	addtimer(CALLBACK(src, PROC_REF(next_offer)), offer_time) //It seems like only the /hidden type actually makes use of this...
 
 /obj/item/uplink/get_item_cost(item_type, item_cost)
-	return (discount_item && (item_type == discount_item)) ? max(1, round(item_cost*discount_amount)) : item_cost
+	return (discount_item() && (item_type == discount_item())) ? max(1, round(item_cost*discount_amount)) : item_cost
 
 /obj/item/uplink/proc/next_offer()
 	return //Stub, used on children.
@@ -63,7 +63,7 @@
 		return INITIALIZE_HINT_QDEL
 
 /obj/item/uplink/hidden/next_offer()
-	discount_item = GLOB.default_uplink_selection.get_random_item(INFINITY)
+	discount_item_handle = om_handle(GLOB.default_uplink_selection.get_random_item(INFINITY))
 	discount_amount = pick(90;0.9, 80;0.8, 70;0.7, 60;0.6, 50;0.5, 40;0.4, 30;0.3, 20;0.2, 10;0.1)
 	next_offer_time = world.time + offer_time
 	SStgui.update_uis(src)
@@ -122,7 +122,7 @@
 	data["lockable"] = TRUE
 	data["compactMode"] = compact_mode
 
-	data["discount_name"] = discount_item ? discount_item.name : ""
+	data["discount_name"] = discount_item() ? discount_item().name : ""
 	data["discount_amount"] = (1-discount_amount)*100
 	data["offer_expiry"] = worldtime2stationtime(next_offer_time)
 
@@ -223,33 +223,37 @@
 
 /obj/item/radio/uplink/Initialize(mapload)
 	. = ..()
-	hidden_uplink = new(src)
+	hidden_uplink_handle = om_handle(new /obj/item/uplink/hidden(src))
 	icon_state = "radio"
 
 /obj/item/radio/uplink/attack_self(mob/user)
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(hidden_uplink)
-		hidden_uplink.trigger(user)
+	if(hidden_uplink())
+		hidden_uplink().trigger(user)
 
 /obj/item/multitool/uplink
 	uplink = TRUE
 
 /obj/item/multitool/uplink/Initialize(mapload)
 	. = ..()
-	hidden_uplink = new(src)
+	hidden_uplink_handle = om_handle(new /obj/item/uplink/hidden(src))
 
 /obj/item/multitool/uplink/attack_self(mob/user)
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(hidden_uplink)
-		hidden_uplink.trigger(user)
+	if(hidden_uplink())
+		hidden_uplink().trigger(user)
 
 /obj/item/radio/headset/uplink
 	traitor_frequency = BEACON_FREQ
 
 /obj/item/radio/headset/uplink/Initialize(mapload)
 	. = ..()
-	hidden_uplink = new(src)
+	hidden_uplink_handle = om_handle(new /obj/item/uplink/hidden(src))
+
+/// LC-refs: discount item -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/uplink/proc/discount_item() as /datum/uplink_item
+	return om_resolve(discount_item_handle)

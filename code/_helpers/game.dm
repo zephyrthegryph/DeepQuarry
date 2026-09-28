@@ -246,7 +246,7 @@
 	var/obj/item/radio/borg/R = hearturfs[T] // this should be an assoc list of turf-to-radio
 
 	// We heard it on our own radio? We use power for that.
-	if(istype(R) && R.myborg == src)
+	if(istype(R) && R.myborg() == src)
 		if(!use_component(ROBOT_SLOT_RADIO))
 			return FALSE // Sorry, couldn't hear
 

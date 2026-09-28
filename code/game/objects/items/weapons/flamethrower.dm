@@ -26,7 +26,7 @@
 	var/throw_amount = THROWER_MIN
 	var/lit = FALSE	//on or off
 	var/operating = FALSE //cooldown
-	var/turf/previousturf = null
+	var/previousturf_handle
 	var/obj/item/weldingtool/weldtool = null
 	var/obj/item/assembly/igniter/igniter = null
 	var/obj/item/tank/phoron/ptank = null
@@ -232,3 +232,7 @@ REF_OWNED(/obj/item/flamethrower, list("weldtool", "igniter", "ptank"))
 
 #undef THROWER_MIN
 #undef THROWER_MAX
+
+/// LC-refs: previousturf -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/flamethrower/proc/previousturf() as /turf
+	return om_resolve(previousturf_handle)

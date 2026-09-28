@@ -168,3 +168,5 @@
 
 /obj/machinery/implantchair/proc/set_ready()
 	ready = 1
+
+REF_OWNED_LIST(/obj/machinery/implantchair, list("implant_list"))

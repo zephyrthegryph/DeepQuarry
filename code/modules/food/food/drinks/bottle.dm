@@ -31,13 +31,13 @@ REF_SPILL(/obj/item/reagent_containers/food/drinks/bottle, "rag")
 	. = ..()
 	if(istype(thrower) && IS_HARMING(thrower))
 		violent_throw = TRUE
-		throw_source = get_turf(thrower)
+		throw_source_handle = om_handle(get_turf(thrower))
 
 /obj/item/reagent_containers/food/drinks/bottle/throw_impact(atom/hit_atom)
 	..()
 
 	if(isGlass && violent_throw)
-		var/throw_dist = get_dist(throw_source, loc)
+		var/throw_dist = get_dist(throw_source(), loc)
 		if(smash_check(throw_dist)) //not as reliable as smashing directly
 			if(reagents)
 				hit_atom.visible_message(span_notice("The contents of \the [src] splash all over [hit_atom]!"))
@@ -45,7 +45,7 @@ REF_SPILL(/obj/item/reagent_containers/food/drinks/bottle, "rag")
 			src.smash(loc, hit_atom)
 
 	violent_throw = FALSE
-	throw_source = null
+	throw_source_handle = null
 
 /obj/item/reagent_containers/food/drinks/bottle/proc/smash_check(distance)
 	if(!isGlass || !smash_duration)

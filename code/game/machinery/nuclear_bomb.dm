@@ -18,7 +18,7 @@ GLOBAL_VAR(bomb_set)
 	var/code = ""
 	var/yes_code = 0.0
 	var/safety = 1.0
-	var/obj/item/disk/nuclear/auth = null
+	var/auth_handle
 	var/list/wires_list
 	var/light_wire
 	var/safety_wire
@@ -83,14 +83,14 @@ GLOBAL_VAR(bomb_set)
 /obj/machinery/nuclearbomb/proc/interaction_insert_disk(mob/user, obj/item/O, datum/interaction/interaction)
 	user.drop_item()
 	O.loc = src
-	auth = O
+	auth_handle = om_handle(O)
 	add_fingerprint(user)
 	return TRUE
 
 /obj/machinery/nuclearbomb/screwdriver_act(mob/user, obj/item/tool)
 	playsound(src, tool.usesound, 50, 1)
 	add_fingerprint(user)
-	if(auth)
+	if(auth())
 		if(opened == 0)
 			opened = 1
 			add_overlay("npanel_open")
@@ -230,7 +230,7 @@ GLOBAL_VAR(bomb_set)
 			"cut" = !!LAZYACCESS(wires_list, wire),
 		))
 	data["wires"] = wires_out
-	data["auth"] = !!auth
+	data["auth"] = !!auth()
 	data["yes_code"] = !!yes_code
 	data["timing"] = !!timing
 	data["timeleft"] = timeleft
@@ -238,7 +238,7 @@ GLOBAL_VAR(bomb_set)
 	data["anchored"] = !!anchored
 	var/safe_label = safety ? "Safe" : "Engaged"
 	var/status
-	if(auth)
+	if(auth())
 		if(yes_code)
 			status = "[timing ? "Func/Set" : "Functional"]-[safe_label]"
 		else
@@ -249,7 +249,7 @@ GLOBAL_VAR(bomb_set)
 		status = "Auth. S1-[safe_label]"
 	data["status_label"] = status
 	var/display
-	if(!auth)
+	if(!auth())
 		display = "AUTH"
 	else if(yes_code)
 		display = "*****"
@@ -269,19 +269,19 @@ GLOBAL_VAR(bomb_set)
 	add_fingerprint(usr)
 	switch(action)
 		if("auth")
-			if(auth)
-				auth.loc = src.loc
+			if(auth())
+				auth().loc = src.loc
 				yes_code = 0
-				auth = null
+				auth_handle = null
 			else
 				var/obj/item/I = usr.get_active_hand()
 				if(istype(I, /obj/item/disk/nuclear))
 					usr.drop_item()
 					I.loc = src
-					auth = I
+					auth_handle = om_handle(I)
 			return TRUE
 		if("type")
-			if(!auth)
+			if(!auth())
 				return TRUE
 			var/key = params["key"]
 			if(key == "E")
@@ -299,14 +299,14 @@ GLOBAL_VAR(bomb_set)
 					code = "ERROR"
 			return TRUE
 		if("time")
-			if(!auth || !yes_code)
+			if(!auth() || !yes_code)
 				return TRUE
 			var/delta = text2num(params["delta"])
 			timeleft += delta
 			timeleft = min(max(round(timeleft), 60), 600)
 			return TRUE
 		if("timer")
-			if(!auth || !yes_code || timing == -1.0)
+			if(!auth() || !yes_code || timing == -1.0)
 				return TRUE
 			if(safety)
 				to_chat(usr, span_warning("The safety is still on."))
@@ -328,7 +328,7 @@ GLOBAL_VAR(bomb_set)
 					icon_state = "nuclearbomb1"
 			return TRUE
 		if("safety")
-			if(!auth || !yes_code)
+			if(!auth() || !yes_code)
 				return TRUE
 			safety = !safety
 			if(safety)
@@ -337,7 +337,7 @@ GLOBAL_VAR(bomb_set)
 				set_security_level("red")
 			return TRUE
 		if("anchor")
-			if(!auth || !yes_code)
+			if(!auth() || !yes_code)
 				return TRUE
 			if(removal_stage == 5)
 				anchored = FALSE
@@ -523,3 +523,7 @@ REGISTRY_MEMBERSHIP(/obj/item/disk/nuclear, REGISTRY_NUKE_DISKS)
 
 /obj/machinery/nuclearbomb/proc/toggle_safety()
 	safety = !safety
+
+/// LC-refs: auth -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/nuclearbomb/proc/auth() as /obj/item/disk/nuclear
+	return om_resolve(auth_handle)

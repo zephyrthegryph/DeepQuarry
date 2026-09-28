@@ -31,7 +31,7 @@
 	///modifier for lathe build speed. Lower values are faster.
 	var/lathe_build_rate = 0.8
 	///Designs related to the autolathe
-	var/datum/techweb/autounlocking/stored_research
+	var/stored_research_handle
 	///Designs imported from technology disks that we can print.
 	var/list/imported_designs
 	///The container to hold materials
@@ -56,7 +56,7 @@
 
 	if(!GLOB.autounlock_techwebs[/datum/techweb/autounlocking/autolathe])
 		GLOB.autounlock_techwebs[/datum/techweb/autounlocking/autolathe] = new /datum/techweb/autounlocking/autolathe
-	stored_research = GLOB.autounlock_techwebs[/datum/techweb/autounlocking/autolathe]
+	stored_research_handle = om_handle(GLOB.autounlock_techwebs[/datum/techweb/autounlocking/autolathe])
 
 	default_apply_parts()
 	RefreshParts()
@@ -198,7 +198,7 @@ REF_OWNED(/obj/machinery/autolathe, list("wires", "print_sound"))
 /obj/machinery/autolathe/tgui_static_data(mob/user)
 	var/list/data = materials.tgui_static_data()
 
-	data["designs"] = handle_designs(stored_research.researched_designs)
+	data["designs"] = handle_designs(stored_research().researched_designs)
 	data["designs"] += handle_designs(imported_designs)
 
 	return data
@@ -243,7 +243,7 @@ REF_OWNED(/obj/machinery/autolathe, list("wires", "print_sound"))
 	var/design_id = params["id"]
 	if(!design_id)
 		return
-	var/valid_design = LAZYACCESS(stored_research.researched_designs, design_id)
+	var/valid_design = LAZYACCESS(stored_research().researched_designs, design_id)
 	valid_design ||= LAZYACCESS(imported_designs, design_id)
 	if(!valid_design)
 		return
@@ -514,7 +514,7 @@ REF_OWNED(/obj/machinery/autolathe, list("wires", "print_sound"))
 		for(var/datum/design_techweb/blueprint as anything in disky.blueprints)
 			if(!blueprint)
 				continue
-			if(LAZYACCESS(imported_designs, blueprint.id) || LAZYACCESS(stored_research.researched_designs, blueprint.id))
+			if(LAZYACCESS(imported_designs, blueprint.id) || LAZYACCESS(stored_research().researched_designs, blueprint.id))
 				continue
 			if(blueprint.build_type & AUTOLATHE)
 				LAZYSET(imported_designs, blueprint.id, TRUE)
@@ -528,7 +528,7 @@ REF_OWNED(/obj/machinery/autolathe, list("wires", "print_sound"))
 		var/datum/techweb/disk_web = disky.stored_research
 		for(var/design_id in disk_web.researched_designs)
 			var/datum/design_techweb/blueprint = SSresearch.techweb_design_by_id(design_id)
-			if(LAZYACCESS(imported_designs, blueprint.id) || LAZYACCESS(stored_research.researched_designs, blueprint.id))
+			if(LAZYACCESS(imported_designs, blueprint.id) || LAZYACCESS(stored_research().researched_designs, blueprint.id))
 				continue
 			if(blueprint.build_type & AUTOLATHE)
 				LAZYSET(imported_designs, blueprint.id, TRUE)
@@ -570,3 +570,7 @@ REF_OWNED(/obj/machinery/autolathe, list("wires", "print_sound"))
 		return
 	if(om_busy(src))
 		icon_state = "[icon_state]_work"
+
+/// LC-refs: stored research -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/autolathe/proc/stored_research() as /datum/techweb/autounlocking
+	return om_resolve(stored_research_handle)

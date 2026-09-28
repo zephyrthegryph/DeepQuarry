@@ -16,7 +16,7 @@
 	var/tint = "#ffffff"
 	var/able_to_unpetrify = TRUE
 	var/discard_clothes = TRUE
-	var/mob/living/carbon/human/target
+	var/target_handle
 	var/list/remotes
 
 /obj/machinery/petrification/Initialize(mapload)
@@ -67,7 +67,7 @@
 /obj/machinery/petrification/proc/popup_msg(mob/user, message, notice = TRUE)
 	if (notice)
 		message = "A notice pops up on the interface: \"[message]\""
-	if (target)
+	if (target_ref())
 		to_chat(user, span_notice("[message]"))
 
 /obj/machinery/petrification/proc/petrify(mob/user, obj/item/petrifier/petrifier = null)
@@ -78,7 +78,7 @@
 	var/tnt = tint
 	var/can_unpetrify = able_to_unpetrify
 	var/no_clothes = discard_clothes
-	var/mob/living/carbon/human/statue = target
+	var/mob/living/carbon/human/statue = target_ref()
 	if (petrifier && istype(petrifier))
 		mat = petrifier.material
 		idt = petrifier.identifier
@@ -86,7 +86,7 @@
 		tnt = petrifier.tint
 		can_unpetrify = petrifier.able_to_unpetrify
 		no_clothes = petrifier.discard_clothes
-		statue = petrifier.target
+		statue = petrifier.target_ref()
 	if (QDELETED(statue) || !istype(statue))
 		popup_msg(user, "Invalid target.")
 		return
@@ -161,10 +161,10 @@
 	data["tint"] = tint
 	var/list/h = rgb2num(tint)
 	data["t"] = ((h[1]*0.299)+(h[2]*0.587)+(h[3]*0.114)) > 102 //0.4 luminance
-	data["target"] = "[target ? target : "None"]"
+	data["target"] = "[target_ref() ? target_ref() : "None"]"
 	data["able_to_unpetrify"] = able_to_unpetrify
 	data["discard_clothes"] = discard_clothes
-	data["can_remote"] = is_valid_target(target) && istext(material) && istext(identifier) && istext(adjective) && istext(tint)
+	data["can_remote"] = is_valid_target(target_ref()) && istext(material) && istext(identifier) && istext(adjective) && istext(tint)
 	return data
 
 /obj/machinery/petrification/proc/set_input(option, mob/user)
@@ -212,7 +212,7 @@
 					return
 				var/double = tgui_alert(targets[selected], "This is your last warning, are you -certain-?","Petrification Target",list("Confirm", "Cancel"))
 				if (confirmation == "Confirm" && double == "Confirm")
-					target = targets[selected]
+					target_handle = om_handle(targets[selected])
 				else
 					popup_msg(user, "They declined the request.", FALSE)
 
@@ -233,8 +233,8 @@
 			petrify(ui.user)
 			return TRUE
 		if("remote")
-			if (is_valid_target(target) && istext(material) && istext(identifier) && istext(adjective) && istext(tint))
-				var/obj/item/petrifier/PE = LAZYACCESS(remotes, target)
+			if (is_valid_target(target_ref()) && istext(material) && istext(identifier) && istext(adjective) && istext(tint))
+				var/obj/item/petrifier/PE = LAZYACCESS(remotes, target_ref())
 				if (!QDELETED(PE))
 					PE.visible_message(span_warning("\The [PE] disappears!"))
 					qdel(PE)
@@ -245,8 +245,8 @@
 				P.tint = tint
 				P.able_to_unpetrify = able_to_unpetrify
 				P.discard_clothes = discard_clothes
-				P.target = target
-				LAZYSET(remotes, target, P)
+				P.target_handle = om_handle(target_ref())
+				LAZYSET(remotes, target_ref(), P)
 				ui.user.put_in_hands(P)
 			return TRUE
 	return TRUE
@@ -254,3 +254,7 @@
 /obj/item/paper/petrification_notes
 	name = "written notes"
 	info = "<font face=\"Times New Roman\">" + span_italics("Found this buried in the machine over there after digging through it a bit- I hooked it up to one of our displays so it was a bit more usable- seems to be a spare part, it was right next to another one that actually " + span_bold("was") + " hooked up. Turns things into other materials, probably one of the components that makes that machine work.") + "</font>"
+
+/// LC-refs: target -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/petrification/proc/target_ref() as /mob/living/carbon/human
+	return om_resolve(target_handle)

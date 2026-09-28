@@ -8,7 +8,7 @@
 	var/face_state = null
 	var/icon/face_overlay
 
-	var/pilot_image
+	var/icon/pilot_image
 
 	// How many pixels do we bump the pilot upward?
 	var/pilot_lift = 0
@@ -64,3 +64,5 @@
 	for(var/obj/item/mecha_parts/mecha_equipment/ME in equipment)
 		ME.add_equip_overlay(src)
 	return
+
+REF_OWNED(/obj/mecha, list("face_overlay", "pilot_image"))

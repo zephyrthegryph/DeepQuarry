@@ -312,7 +312,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 /datum/om/relation/slot/mecha_cargo/drop_resolver(atom/holder, atom/movable/thing, atom/drop)
 	return get_turf(holder)
 
-REF_OWNED(/obj/mecha, list("minihud", "face_overlay"))
+REF_OWNED(/obj/mecha, "minihud")
 REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 
 // LIFECYCLE: the mech leaves wreckage with salvage, or drops its equipment; pilot slot is holder-resolved.

@@ -8,7 +8,7 @@
 	slot_flags = SLOT_BELT
 	MATERIAL_MIX(list(MAT_GLASS = 500, MAT_STEEL = 500))
 	w_class = ITEMSIZE_SMALL //Increased to 2, because diodes are w_class 2. Conservation of matter.
-	var/turf/pointer_loc
+	var/pointer_loc_handle
 	var/energy = 8
 	var/max_energy = 8
 	var/effectchance = 20
@@ -231,3 +231,7 @@
 			..()
 
 REF_HELD(/obj/item/laser_pointer, list("diode"))
+
+/// LC-refs: pointer loc -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/laser_pointer/proc/pointer_loc() as /turf
+	return om_resolve(pointer_loc_handle)

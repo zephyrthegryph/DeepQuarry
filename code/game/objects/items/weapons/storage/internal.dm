@@ -2,15 +2,15 @@
 //Types that use this should consider overriding emp_act() and hear_talk(), unless they shield their contents somehow.
 /obj/item/storage/internal
 	preserve_item = 1
-	var/obj/item/master_item
+	var/master_item_handle
 	item_flags = ABSTRACT
 
 /obj/item/storage/internal/Initialize(mapload)
 	. = ..()
-	master_item = loc
-	if(!istype(master_item))
+	master_item_handle = om_handle(loc)
+	if(!istype(master_item(), /obj/item))
 		return INITIALIZE_HINT_QDEL
-	name = master_item.name
+	name = master_item().name
 	verbs -= /obj/item/verb/verb_pickup	//make sure this is never picked up.
 
 /obj/item/storage/internal/attack_hand()
@@ -45,18 +45,18 @@
 
 		//makes sure master_item is equipped before putting it in hand, so that we can't drag it into our hand from miles away.
 		//there's got to be a better way of doing this...
-		if (!(master_item.loc == user) || (master_item.loc && master_item.loc.loc == user))
+		if (!(master_item().loc == user) || (master_item().loc && master_item().loc.loc == user))
 			return 0
 
 		if (!( user.restrained() ) && !( user.stat ))
 			switch(over_object.name)
 				if("r_hand")
-					user.unEquip(master_item)
-					user.put_in_r_hand(master_item)
+					user.unEquip(master_item())
+					user.put_in_r_hand(master_item())
 				if("l_hand")
-					user.unEquip(master_item)
-					user.put_in_l_hand(master_item)
-			master_item.add_fingerprint(user)
+					user.unEquip(master_item())
+					user.put_in_l_hand(master_item())
+			master_item().add_fingerprint(user)
 			return 0
 	return 0
 
@@ -67,22 +67,26 @@
 
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
-		if(H.get_equipped_item(SLOT_ID_POCKET_L) == master_item && !H.get_active_hand())	//Prevents opening if it's in a pocket.
-			H.put_in_hands(master_item)
+		if(H.get_equipped_item(SLOT_ID_POCKET_L) == master_item() && !H.get_active_hand())	//Prevents opening if it's in a pocket.
+			H.put_in_hands(master_item())
 			return 0
-		if(H.get_equipped_item(SLOT_ID_POCKET_R) == master_item && !H.get_active_hand())
-			H.put_in_hands(master_item)
+		if(H.get_equipped_item(SLOT_ID_POCKET_R) == master_item() && !H.get_active_hand())
+			H.put_in_hands(master_item())
 			return 0
 
 	src.add_fingerprint(user)
-	if (master_item.loc == user)
+	if (master_item().loc == user)
 		src.open(user)
 		return 0
 
-	for(var/mob/M in range(1, master_item.loc))
+	for(var/mob/M in range(1, master_item().loc))
 		if (M.s_active == src)
 			src.close(M)
 	return 1
 
 /obj/item/storage/internal/Adjacent(atom/neighbor)
-	return master_item.Adjacent(neighbor)
+	return master_item().Adjacent(neighbor)
+
+/// LC-refs: master item -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/storage/internal/proc/master_item() as /obj/item
+	return om_resolve(master_item_handle)

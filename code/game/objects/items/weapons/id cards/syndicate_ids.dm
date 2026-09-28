@@ -3,7 +3,7 @@
 	icon_state = "generic-s"
 	assignment = "Agent"
 	var/electronic_warfare = 1
-	var/mob/registered_user = null
+	var/registered_user_handle
 
 	var/datum/tgui_module/agentcard/agentcard_module
 
@@ -25,7 +25,7 @@ REF_OWNED(/obj/item/card/id/syndicate, "agentcard_module")
 
 // LIFECYCLE: the card's registered user is unset.
 /obj/item/card/id/syndicate/Destroy()
-	unset_registered_user(registered_user)
+	unset_registered_user(registered_user())
 	return ..()
 
 /obj/item/card/id/syndicate/prevent_tracking()
@@ -36,7 +36,7 @@ REF_OWNED(/obj/item/card/id/syndicate, "agentcard_module")
 	if(istype(O, /obj/item/card/id))
 		var/obj/item/card/id/I = O
 		src.access |= I.GetAccess()
-		if(SSantag_job.player_is_antag(user.mind) || registered_user == user)
+		if(SSantag_job.player_is_antag(user.mind) || registered_user() == user)
 			to_chat(user, span_notice("The microscanner activates as you pass it over the ID, copying its access."))
 
 /obj/item/card/id/syndicate/attack_self(mob/user)
@@ -44,9 +44,9 @@ REF_OWNED(/obj/item/card/id/syndicate, "agentcard_module")
 	if(.)
 		return TRUE
 	// We use the fact that registered_name is not unset should the owner be vaporized, to ensure the id doesn't magically become unlocked.
-	if(!registered_user && register_user(user))
+	if(!registered_user() && register_user(user))
 		to_chat(user, span_notice("The microscanner marks you as its owner, preventing others from accessing its internals."))
-	if(registered_user == user)
+	if(registered_user() == user)
 		switch(tgui_alert(user, "Would you like to edit the ID, or show it?","Show or Edit?", list("Edit","Show")))
 			if(null)
 				return
@@ -56,19 +56,19 @@ REF_OWNED(/obj/item/card/id/syndicate, "agentcard_module")
 				..(user, TRUE)
 
 /obj/item/card/id/syndicate/proc/register_user(mob/user)
-	if(!istype(user) || user == registered_user)
+	if(!istype(user) || user == registered_user())
 		return FALSE
 	unset_registered_user()
-	registered_user = user
+	registered_user_handle = om_handle(user)
 	user.set_id_info(src)
 	user.register(OBSERVER_EVENT_DESTROY, src, /obj/item/card/id/syndicate/proc/unset_registered_user)
 	return TRUE
 
 /obj/item/card/id/syndicate/proc/unset_registered_user(mob/user)
-	if(!registered_user || (user && user != registered_user))
+	if(!registered_user() || (user && user != registered_user()))
 		return
-	registered_user.unregister(OBSERVER_EVENT_DESTROY, src)
-	registered_user = null
+	registered_user().unregister(OBSERVER_EVENT_DESTROY, src)
+	registered_user_handle = null
 
 /proc/id_card_states()
 	if(!GLOB.id_card_states)
@@ -101,3 +101,7 @@ REF_OWNED(/obj/item/card/id/syndicate, "agentcard_module")
 	assignment = "Operative Commander"
 	icon_state = "syndicate-id"
 	access = list(ACCESS_SYNDICATE, ACCESS_EXTERNAL_AIRLOCKS)
+
+/// LC-refs: registered user -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/card/id/syndicate/proc/registered_user() as /mob
+	return om_resolve(registered_user_handle)

@@ -200,3 +200,5 @@
 #undef TRACKS_CRUSTIFY_TIME
 
 REF_OWNED(/datum/fluidtrack, list("overlay"))
+
+REF_OWNED_LIST(/obj/effect/decal/cleanable/blood/tracks, list("stack"))

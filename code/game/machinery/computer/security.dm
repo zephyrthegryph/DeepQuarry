@@ -16,8 +16,8 @@
 	var/authenticated = null
 	var/rank = null
 	var/screen = null
-	var/datum/data/record/active1 = null
-	var/datum/data/record/active2 = null
+	var/active1_handle
+	var/active2_handle
 	var/list/temp = null
 	var/printing = null
 	// The below are used to make modal generation more convenient
@@ -157,42 +157,42 @@
 			if(SEC_DATA_RECORD)
 				var/list/general = list()
 				data["general"] = general
-				if(istype(active1, /datum/data/record) && GLOB.data_core.general.Find(active1))
+				if(istype(active1(), /datum/data/record) && GLOB.data_core.general.Find(active1()))
 					var/list/fields = list()
 					general["fields"] = fields
-					fields[++fields.len] = FIELD("Name", active1.fields["name"], "name")
-					fields[++fields.len] = FIELD("ID", active1.fields["id"], "id")
-					fields[++fields.len] = FIELD("Entity Classification", active1.fields["brain_type"], "brain_type")
-					fields[++fields.len] = FIELD("Sex", active1.fields["sex"], "sex")
-					fields[++fields.len] = FIELD("Species", active1.fields["species"], "species")
-					fields[++fields.len] = FIELD("Age", "[active1.fields["age"]]", "age")
-					fields[++fields.len] = FIELD("Rank", active1.fields["rank"], "rank")
-					fields[++fields.len] = FIELD("Fingerprint", active1.fields["fingerprint"], "fingerprint")
-					fields[++fields.len] = FIELD("Physical Status", active1.fields["p_stat"], null)
-					fields[++fields.len] = FIELD("Mental Status", active1.fields["m_stat"], null)
+					fields[++fields.len] = FIELD("Name", active1().fields["name"], "name")
+					fields[++fields.len] = FIELD("ID", active1().fields["id"], "id")
+					fields[++fields.len] = FIELD("Entity Classification", active1().fields["brain_type"], "brain_type")
+					fields[++fields.len] = FIELD("Sex", active1().fields["sex"], "sex")
+					fields[++fields.len] = FIELD("Species", active1().fields["species"], "species")
+					fields[++fields.len] = FIELD("Age", "[active1().fields["age"]]", "age")
+					fields[++fields.len] = FIELD("Rank", active1().fields["rank"], "rank")
+					fields[++fields.len] = FIELD("Fingerprint", active1().fields["fingerprint"], "fingerprint")
+					fields[++fields.len] = FIELD("Physical Status", active1().fields["p_stat"], null)
+					fields[++fields.len] = FIELD("Mental Status", active1().fields["m_stat"], null)
 					var/list/photos = list()
 					general["photos"] = photos
-					photos[++photos.len] = active1.fields["photo-south"]
-					photos[++photos.len] = active1.fields["photo-west"]
-					general["has_photos"] = (active1.fields["photo-south"] || active1.fields["photo-west"] ? 1 : 0)
+					photos[++photos.len] = active1().fields["photo-south"]
+					photos[++photos.len] = active1().fields["photo-west"]
+					general["has_photos"] = (active1().fields["photo-south"] || active1().fields["photo-west"] ? 1 : 0)
 					general["empty"] = 0
 				else
 					general["empty"] = 1
 
 				var/list/security = list()
 				data["security"] = security
-				if(istype(active2, /datum/data/record) && GLOB.data_core.security.Find(active2))
+				if(istype(active2(), /datum/data/record) && GLOB.data_core.security.Find(active2()))
 					var/list/fields = list()
 					security["fields"] = fields
-					fields[++fields.len] = FIELD("Criminal Status", active2.fields["criminal"], "criminal")
-					fields[++fields.len] = FIELD("Minor Crimes", active2.fields["mi_crim"], "mi_crim")
-					fields[++fields.len] = FIELD("Details", active2.fields["mi_crim_d"], "mi_crim_d")
-					fields[++fields.len] = FIELD("Major Crimes", active2.fields["ma_crim"], "ma_crim")
-					fields[++fields.len] = FIELD("Details", active2.fields["ma_crim_d"], "ma_crim_d")
-					fields[++fields.len] = FIELD("Important Notes", active2.fields["notes"], "notes")
-					if(!active2.fields["comments"] || !islist(active2.fields["comments"]))
-						active2.fields["comments"] = list()
-					security["comments"] = active2.fields["comments"]
+					fields[++fields.len] = FIELD("Criminal Status", active2().fields["criminal"], "criminal")
+					fields[++fields.len] = FIELD("Minor Crimes", active2().fields["mi_crim"], "mi_crim")
+					fields[++fields.len] = FIELD("Details", active2().fields["mi_crim_d"], "mi_crim_d")
+					fields[++fields.len] = FIELD("Major Crimes", active2().fields["ma_crim"], "ma_crim")
+					fields[++fields.len] = FIELD("Details", active2().fields["ma_crim_d"], "ma_crim_d")
+					fields[++fields.len] = FIELD("Important Notes", active2().fields["notes"], "notes")
+					if(!active2().fields["comments"] || !islist(active2().fields["comments"]))
+						active2().fields["comments"] = list()
+					security["comments"] = active2().fields["comments"]
 					security["empty"] = 0
 				else
 					security["empty"] = 1
@@ -204,10 +204,10 @@
 	if(..())
 		return TRUE
 
-	if(!GLOB.data_core.general.Find(active1))
-		active1 = null
-	if(!GLOB.data_core.security.Find(active2))
-		active2 = null
+	if(!GLOB.data_core.general.Find(active1()))
+		active1_handle = null
+	if(!GLOB.data_core.security.Find(active2()))
+		active2_handle = null
 
 	. = TRUE
 	if(tgui_act_modal(action, params, ui.user))
@@ -242,8 +242,8 @@
 				var/mob/living/silicon/robot/R = ui.user
 				rank = "[R.modtype] [R.braintype]"
 			if(authenticated)
-				active1 = null
-				active2 = null
+				active1_handle = null
+				active2_handle = null
 				screen = SEC_DATA_R_LIST
 		else
 			. = FALSE
@@ -262,39 +262,39 @@
 					scan = null
 				authenticated = null
 				screen = null
-				active1 = null
-				active2 = null
+				active1_handle = null
+				active2_handle = null
 			if("screen")
 				screen = clamp(text2num(params["screen"]) || 0, SEC_DATA_R_LIST, SEC_DATA_RECORD)
-				active1 = null
-				active2 = null
+				active1_handle = null
+				active2_handle = null
 			if("del_all")
 				for(var/datum/data/record/R in GLOB.data_core.security)
 					qdel(R)
 				set_temp("All security records deleted.")
 			if("del_r")
-				if(active2)
+				if(active2())
 					set_temp("Security record deleted.")
-					qdel(active2)
+					qdel(active2())
 			if("del_r_2")
-				if(active1)
-					set_temp("All records for [active1.fields["name"]] deleted.")
+				if(active1())
+					set_temp("All records for [active1().fields["name"]] deleted.")
 					for(var/datum/data/record/R in GLOB.data_core.medical)
-						if((R.fields["name"] == active1.fields["name"] || R.fields["id"] == active1.fields["id"]))
+						if((R.fields["name"] == active1().fields["name"] || R.fields["id"] == active1().fields["id"]))
 							qdel(R)
-					qdel(active1)
-				if(active2)
-					qdel(active2)
+					qdel(active1())
+				if(active2())
+					qdel(active2())
 			if("sync_r")
-				if(active2)
+				if(active2())
 					set_temp(client_update_record(src,ui.user))
 			if("edit_notes")
 				// The modal input in tgui is busted for this sadly...
-				var/new_notes = strip_html_simple(tgui_input_text(ui.user,"Enter new information here.","Character Preference", html_decode(active2.fields["notes"]), MAX_RECORD_LENGTH, TRUE, prevent_enter = TRUE), MAX_RECORD_LENGTH)
+				var/new_notes = strip_html_simple(tgui_input_text(ui.user,"Enter new information here.","Character Preference", html_decode(active2().fields["notes"]), MAX_RECORD_LENGTH, TRUE, prevent_enter = TRUE), MAX_RECORD_LENGTH)
 				if(ui.user.Adjacent(src))
 					if(new_notes != "" || tgui_alert(ui.user, "Are you sure you want to delete the current record's notes?", "Confirm Delete", list("Delete", "No")) == "Delete")
 						if(ui.user.Adjacent(src))
-							active2.fields["notes"] = new_notes
+							active2().fields["notes"] = new_notes
 			if("d_rec")
 				var/datum/data/record/general_record = locate(params["d_rec"] || "")
 				if(!GLOB.data_core.general.Find(general_record))
@@ -307,14 +307,14 @@
 						security_record = M
 						break
 
-				active1 = general_record
-				active2 = security_record
+				active1_handle = om_handle(general_record)
+				active2_handle = om_handle(security_record)
 				screen = SEC_DATA_RECORD
 			if("new")
-				if(istype(active1, /datum/data/record) && !istype(active2, /datum/data/record))
+				if(istype(active1(), /datum/data/record) && !istype(active2(), /datum/data/record))
 					var/datum/data/record/R = new /datum/data/record()
-					R.fields["name"] = active1.fields["name"]
-					R.fields["id"] = active1.fields["id"]
+					R.fields["name"] = active1().fields["name"]
+					R.fields["id"] = active1().fields["id"]
 					R.name = "Security Record #[R.fields["id"]]"
 					R.fields["brain_type"]	= "Unknown"
 					R.fields["criminal"]	= "None"
@@ -325,35 +325,35 @@
 					R.fields["notes"]		= "No notes."
 					R.fields["notes"]		= "No notes."
 					GLOB.data_core.security += R
-					active2 = R
+					active2_handle = om_handle(R)
 					screen = SEC_DATA_RECORD
 					set_temp("Security record created.", "success")
 			if("del_c")
 				var/index = text2num(params["del_c"] || "")
-				if(!index || !istype(active2, /datum/data/record))
+				if(!index || !istype(active2(), /datum/data/record))
 					return
 
-				var/list/comments = active2.fields["comments"]
+				var/list/comments = active2().fields["comments"]
 				index = clamp(index, 1, length(comments))
 				if(comments[index])
 					comments.Cut(index, index + 1)
 			if("search")
-				active1 = null
-				active2 = null
+				active1_handle = null
+				active2_handle = null
 				var/t1 = lowertext(params["t1"] || "")
 				if(!length(t1))
 					return
 
 				for(var/datum/data/record/R in GLOB.data_core.general)
 					if(t1 == lowertext(R.fields["name"]) || t1 == lowertext(R.fields["id"]) || t1 == lowertext(R.fields["fingerprint"]))
-						active1 = R
+						active1_handle = om_handle(R)
 						break
-				if(!active1)
+				if(!active1())
 					set_temp("Security record not found. You must enter the person's exact name, ID, or fingerprint.", "danger")
 					return
 				for(var/datum/data/record/E in GLOB.data_core.security)
-					if(E.fields["name"] == active1.fields["name"] && E.fields["id"] == active1.fields["id"])
-						active2 = E
+					if(E.fields["name"] == active1().fields["name"] && E.fields["id"] == active1().fields["id"])
+						active2_handle = om_handle(E)
 						break
 				screen = SEC_DATA_RECORD
 			if("print_p")
@@ -364,14 +364,14 @@
 					addtimer(CALLBACK(src, PROC_REF(print_finish)), 5 SECONDS)
 			if("photo_front")
 				var/icon/photo = get_photo(ui.user)
-				if(photo && active1)
-					active1.fields["photo_front"] = photo
-					active1.fields["photo-south"] = "'data:image/png;base64,[icon2base64(photo)]'"
+				if(photo && active1())
+					active1().fields["photo_front"] = photo
+					active1().fields["photo-south"] = "'data:image/png;base64,[icon2base64(photo)]'"
 			if("photo_side")
 				var/icon/photo = get_photo(ui.user)
-				if(photo && active1)
-					active1.fields["photo_side"] = photo
-					active1.fields["photo-west"] = "'data:image/png;base64,[icon2base64(photo)]'"
+				if(photo && active1())
+					active1().fields["photo_side"] = photo
+					active1().fields["photo-west"] = "'data:image/png;base64,[icon2base64(photo)]'"
 			else
 				return FALSE
 
@@ -419,24 +419,24 @@
 
 					if(field == "rank")
 						if(answer in SSjob.occupations_by_name)
-							active1.fields["real_rank"] = answer
+							active1().fields["real_rank"] = answer
 
 					var/old_criminal_status
 					if(field == "criminal")
-						old_criminal_status = active2?.fields?["criminal"]
+						old_criminal_status = active2()?.fields?["criminal"]
 						for(var/mob/living/carbon/human/H in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 							BITSET(H.hud_updateflag, WANTED_HUD)
 
-					if(istype(active2) && (field in active2.fields))
-						active2.fields[field] = answer
-					if(istype(active1) && (field in active1.fields))
-						active1.fields[field] = answer
+					if(istype(active2(), /datum/data/record) && (field in active2().fields))
+						active2().fields[field] = answer
+					if(istype(active1(), /datum/data/record) && (field in active1().fields))
+						active1().fields[field] = answer
 					if(field == "criminal" && old_criminal_status != answer)
 						record_security_disposition(old_criminal_status, answer, user)
 				if("add_c")
-					if(!length(answer) || !istype(active2) || !length(authenticated))
+					if(!length(answer) || !istype(active2(), /datum/data/record) || !length(authenticated))
 						return
-					active2.fields["comments"] += list(list(
+					active2().fields["comments"] += list(list(
 						header = "Made by [authenticated] ([rank]) at [worldtime2stationtime(world.time)]",
 						text = answer
 					))
@@ -446,10 +446,10 @@
 			return FALSE
 
 /obj/machinery/computer/secure_data/proc/record_security_disposition(old_status, new_status, mob/living/user)
-	if(!istype(active2, /datum/data/record) || !istext(new_status))
+	if(!istype(active2(), /datum/data/record) || !istext(new_status))
 		return FALSE
-	var/record_id = active1?.fields?["id"] || active2.fields["id"] || REF(active2)
-	var/subject_name = active1?.fields?["name"] || active2.fields["name"]
+	var/record_id = active1()?.fields?["id"] || active2().fields["id"] || REF(active2())
+	var/subject_name = active1()?.fields?["name"] || active2().fields["name"]
 	var/list/custody = SScontracts.physical_custody_snapshot(record_id, subject_name)
 	var/custody_duration = custody["duration"] || 0
 	var/list/event_tags = list()
@@ -457,8 +457,8 @@
 		event_tags += "custody_resolution"
 	else if(new_status == "None" && old_status == "Incarcerated" && custody["verified"])
 		event_tags += "record_cleared"
-	LAZYINITLIST(active2.disposition_history)
-	active2.disposition_history.Add(list(list(
+	LAZYINITLIST(active2().disposition_history)
+	active2().disposition_history.Add(list(list(
 		"occurred_at" = world.time,
 		"actor_account" = contract_account_for_mob(user)?.account_number,
 		"actor_name" = user?.real_name,
@@ -483,11 +483,11 @@
 		"disposition" = new_status,
 		"tags" = event_tags,
 		"fact_id" = "security-record:[record_id]",
-		"fact_revision" = length(active2.disposition_history),
+		"fact_revision" = length(active2().disposition_history),
 		"fact_active" = new_status != "None",
 		"metrics" = list("custody_duration" = custody_duration),
 		"detail" = "Recorded [new_status] disposition with [DisplayTimeText(custody_duration)] of physically verified custody",
-	), "security-disposition:[REF(active2)]:[length(active2.disposition_history)]", src, user)
+	), "security-disposition:[REF(active2())]:[length(active2().disposition_history)]", src, user)
 	return TRUE
 
 /**
@@ -496,33 +496,33 @@
 /obj/machinery/computer/secure_data/proc/print_finish()
 	var/obj/item/paper/P = new(loc)
 	P.info = "<center>" + span_bold("Security Record") + "</center><br>"
-	if(istype(active1, /datum/data/record) && GLOB.data_core.general.Find(active1))
-		P.info += {"Name: [active1.fields["name"]] ID: [active1.fields["id"]]
-		<br>\nSex: [active1.fields["sex"]]
-		<br>\nSpecies: [active1.fields["species"]]
-		<br>\nAge: [active1.fields["age"]]
-		<br>\nFingerprint: [active1.fields["fingerprint"]]
-		<br>\nPhysical Status: [active1.fields["p_stat"]]
-		<br>\nMental Status: [active1.fields["m_stat"]]<br>"}
+	if(istype(active1(), /datum/data/record) && GLOB.data_core.general.Find(active1()))
+		P.info += {"Name: [active1().fields["name"]] ID: [active1().fields["id"]]
+		<br>\nSex: [active1().fields["sex"]]
+		<br>\nSpecies: [active1().fields["species"]]
+		<br>\nAge: [active1().fields["age"]]
+		<br>\nFingerprint: [active1().fields["fingerprint"]]
+		<br>\nPhysical Status: [active1().fields["p_stat"]]
+		<br>\nMental Status: [active1().fields["m_stat"]]<br>"}
 	else
 		P.info += span_bold("General Record Lost!") + "<br>"
-	if(istype(active2, /datum/data/record) && GLOB.data_core.security.Find(active2))
+	if(istype(active2(), /datum/data/record) && GLOB.data_core.security.Find(active2()))
 		P.info += {"<br>\n<center><b>Security Data</b></center>
-		<br>\nCriminal Status: [active2.fields["criminal"]]<br>\n
-		<br>\nMinor Crimes: [active2.fields["mi_crim"]]
-		<br>\nDetails: [active2.fields["mi_crim_d"]]<br>\n
-		<br>\nMajor Crimes: [active2.fields["ma_crim"]]
-		<br>\nDetails: [active2.fields["ma_crim_d"]]<br>\n
+		<br>\nCriminal Status: [active2().fields["criminal"]]<br>\n
+		<br>\nMinor Crimes: [active2().fields["mi_crim"]]
+		<br>\nDetails: [active2().fields["mi_crim_d"]]<br>\n
+		<br>\nMajor Crimes: [active2().fields["ma_crim"]]
+		<br>\nDetails: [active2().fields["ma_crim_d"]]<br>\n
 		<br>\nImportant Notes:
-		<br>\n\t[active2.fields["notes"]]<br>\n
+		<br>\n\t[active2().fields["notes"]]<br>\n
 		<br>\n
 		<center><b>Comments/Log</b></center><br>"}
-		for(var/c in active2.fields["comments"])
+		for(var/c in active2().fields["comments"])
 			P.info += "[c["header"]]<br>[c["text"]]<br>"
 	else
 		P.info += span_bold("Security Record Lost!") + "<br>"
 	P.info += "</tt>"
-	P.name = "paper - 'Security Record: [active1.fields["name"]]'"
+	P.name = "paper - 'Security Record: [active1().fields["name"]]'"
 	printing = FALSE
 	SStgui.update_uis(src)
 
@@ -589,3 +589,11 @@
 #undef FIELD
 
 REF_HELD(/obj/machinery/computer/secure_data, list("scan"))
+
+/// LC-refs: active1 -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/secure_data/proc/active1() as /datum/data/record
+	return om_resolve(active1_handle)
+
+/// LC-refs: active2 -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/secure_data/proc/active2() as /datum/data/record
+	return om_resolve(active2_handle)

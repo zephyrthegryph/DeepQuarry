@@ -326,7 +326,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 	var/is_sacrifice_target = 0
 	for(var/mob/living/carbon/human/M in src.loc)
 		if(M.stat == DEAD)
-			if(GLOB.cult && M.mind == GLOB.cult.sacrifice_target)
+			if(GLOB.cult && M.mind == GLOB.cult.sacrifice_target())
 				is_sacrifice_target = 1
 			else
 				corpse_to_raise = M
@@ -343,7 +343,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 		for(var/obj/effect/rune/R in REGISTRY_MEMBERS(REGISTRY_RUNES))
 			if(R.word1==GLOB.cultwords["blood"] && R.word2==GLOB.cultwords["join"] && R.word3==GLOB.cultwords["hell"])
 				for(var/mob/living/carbon/human/N in R.loc)
-					if(GLOB.cult && N.mind && N.mind == GLOB.cult.sacrifice_target)
+					if(GLOB.cult && N.mind && N.mind == GLOB.cult.sacrifice_target())
 						is_sacrifice_target = 1
 					else
 						if(N.stat!= DEAD)
@@ -681,7 +681,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 				worth = 1
 
 		if (SSticker.mode.name == "cult")
-			if(H.mind == GLOB.cult.sacrifice_target)
+			if(H.mind == GLOB.cult.sacrifice_target())
 				if(cultsinrange.len >= 3)
 					registry_join(REGISTRY_SACRIFICED, H.mind)
 					if(isrobot(H))

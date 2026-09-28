@@ -33,8 +33,8 @@
 	if(issmall(user)) // Smaller shields are more efficent.
 		damage_to_energy_cost *= 0.75
 
-	if(ishuman(owner))
-		var/mob/living/carbon/human/H = owner
+	if(ishuman(owner_ref()))
+		var/mob/living/carbon/human/H = owner_ref()
 		if(istype(H.get_other_hand(src), src.type)) // Two shields in both hands.
 			damage_to_energy_cost *= 0.75
 
@@ -42,7 +42,7 @@
 		damage_to_energy_cost *= 0.50
 
 	if(!pay_energy(damage_to_energy_cost))
-		to_chat(owner, span_danger("Your shield fades due to lack of energy!"))
+		to_chat(owner_ref(), span_danger("Your shield fades due to lack of energy!"))
 		consume(src, user)
 		return 0
 

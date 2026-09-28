@@ -129,15 +129,15 @@ handles linking back and forth.
 	SIGNAL_HANDLER
 
 	. = NONE
-	if (!QDELETED(M.buffer) && istype(M.buffer, /obj/machinery/ore_silo))
-		if (silo == M.buffer)
+	if (!QDELETED(M.buffer()) && istype(M.buffer(), /obj/machinery/ore_silo))
+		if (silo == M.buffer())
 			to_chat(user, span_warning("[parent] is already connected to [silo]!"))
 			return FALSE
-		if(!check_z_level(M.buffer))
+		if(!check_z_level(M.buffer()))
 			to_chat(user, span_warning("[parent] is too far away to get a connection signal!"))
 			return FALSE
 
-		var/obj/machinery/ore_silo/new_silo = M.buffer
+		var/obj/machinery/ore_silo/new_silo = M.buffer()
 		var/datum/component/material_container/new_container = new_silo.GetComponent(/datum/component/material_container)
 		if (silo)
 			LAZYREMOVE(silo.ore_connected_machines, src)

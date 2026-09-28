@@ -38,7 +38,7 @@
 			if(!C.implanted)
 				continue
 			chemImplants.Add(list(list(
-				"host" = C.imp_in,
+				"host" = C.imp_in(),
 				"units" = C.reagents.total_volume,
 				"ref" = "\ref[C]"
 			)))
@@ -49,7 +49,7 @@
 			if(!track.implanted)
 				continue
 			var/loc_display = "Unknown"
-			var/mob/living/L = track.imp_in
+			var/mob/living/L = track.imp_in()
 			if((get_z(L) in using_map.station_levels) && !istype(L.loc, /turf/space))
 				loc_display = T.loc
 			if(track.malfunction)
@@ -86,7 +86,7 @@
 			if(!warning)
 				return
 			var/obj/item/implant/I = locate(params["imp"])
-			if(I && I.imp_in)
-				to_chat(I.imp_in, span_notice("You hear a voice in your head saying: '[warning]'"))
+			if(I && I.imp_in())
+				to_chat(I.imp_in(), span_notice("You hear a voice in your head saying: '[warning]'"))
 			. = TRUE
 	add_fingerprint(ui.user)

@@ -6,7 +6,7 @@
 
 	//gas stuff
 	var/obj/item/tank/tank
-	var/mob/living/carbon/human/breather
+	var/breather_handle
 	var/obj/item/clothing/mask/breath/contained
 
 	var/spawn_type = null
@@ -15,7 +15,7 @@
 	var/is_loosen = TRUE
 	var/valve_opened = FALSE
 	//blood stuff
-	var/mob/living/carbon/attached
+	var/attached_handle
 	var/mode = 1 // 1 is injecting, 0 is taking blood.
 	var/obj/item/reagent_containers/beaker
 	var/static/list/transfer_amounts = list(REM, 1, 2)
@@ -32,7 +32,7 @@
 	cut_overlays()
 
 	if (tank)
-		if (breather)
+		if (breather())
 			add_overlay("tube_active")
 		else
 			add_overlay("tube")
@@ -51,7 +51,7 @@
 
 	if(beaker)
 		add_overlay("beaker")
-		if(attached)
+		if(attached())
 			add_overlay("line_active")
 		else
 			add_overlay("line")
@@ -73,19 +73,19 @@
 
 // LIFECYCLE: the breathing mask retracts from its patient.
 /obj/structure/medical_stand/Destroy()
-	if(breather)
-		breather.internal = null
-		breather.internals?.icon_state = "internal0"
+	if(breather())
+		breather().internal = null
+		breather().internals?.icon_state = "internal0"
 	if(tank)
 		qdel(tank)
-	if(breather)
-		breather.remove_from_mob(contained)
+	if(breather())
+		breather().remove_from_mob(contained)
 		src.visible_message(span_notice("The mask rapidly retracts just before /the [src] is destroyed!"))
 	qdel(contained)
 	contained = null
-	breather = null
+	breather_handle = null
 
-	attached = null
+	attached_handle = null
 	qdel(beaker)
 	beaker = null
 	return ..()
@@ -117,7 +117,7 @@
 			if("Gas mask")
 				if(!can_apply_to_target(target, user)) // There is no point in attempting to apply a mask if it's impossible.
 					return
-				if (breather)
+				if (breather())
 					src.add_fingerprint(user)
 					om_do_after(user, 3 SECONDS, target = target, receiver = src, on_done = PROC_REF(MouseDrop_timed_done), done_args = list(target, user))
 					return
@@ -126,7 +126,7 @@
 				om_do_after(user, 10 SECONDS, target = target, receiver = src, on_done = PROC_REF(MouseDrop_timed_done2), done_args = list(target, user))
 				return
 			if("Drip needle")
-				if(attached)
+				if(attached())
 					om_do_after(user, 2 SECONDS, target = target, receiver = src, on_done = PROC_REF(needle_removed))
 				else if(ishuman(target))
 					user.visible_message(span_infoplain(span_bold("\The [user]") + " begins inserting needle into [target]'s vein."),
@@ -135,10 +135,10 @@
 				update_icon()
 
 /obj/structure/medical_stand/proc/needle_removed()
-	if(!attached)
+	if(!attached())
 		return
-	visible_message("\The [attached] is taken off \the [src]")
-	attached = null
+	visible_message("\The [attached()] is taken off \the [src]")
+	attached_handle = null
 	update_icon()
 
 /obj/structure/medical_stand/proc/needle_slipped(datum/om/task/timed/medical_stand_needle_inserted/task)
@@ -158,11 +158,11 @@
 /obj/structure/medical_stand/proc/needle_inserted(datum/om/task/timed/medical_stand_needle_inserted/task)
 	var/mob/living/carbon/human/target = task.target
 	var/mob/user = task.actor
-	if(attached)
+	if(attached())
 		return
 	user.visible_message(span_infoplain(span_bold("\The [user]") + "hooks \the [target] up to \the [src]."),
 					span_notice("You hook \the [target] up to \the [src]."))
-	attached = target
+	attached_handle = om_handle(target)
 	PERIODIC_START(src, PERIODIC_SLOW)
 	update_icon()
 
@@ -171,13 +171,13 @@
 		return
 	if(tank)
 		tank.forceMove(src)
-	if (breather.get_equipped_item(SLOT_ID_MASK) == contained)
-		breather.remove_from_mob(contained)
+	if (breather().get_equipped_item(SLOT_ID_MASK) == contained)
+		breather().remove_from_mob(contained)
 		contained.forceMove(src)
 	else
 		qdel(contained)
 		contained = new mask_type(src)
-	breather = null
+	breather_handle = null
 	src.visible_message(span_infoplain(span_bold("\The [contained]") + " slips to \the [src]!"))
 	update_icon()
 	return
@@ -230,17 +230,17 @@
 				if (valve_opened)
 					src.visible_message(span_infoplain(span_bold("\The [user]") + " closes valve on \the [src]!"),
 						span_notice("You close valve on \the [src]."))
-					if(breather)
-						breather.internals?.icon_state = "internal0"
-						breather.internal = null
+					if(breather())
+						breather().internals?.icon_state = "internal0"
+						breather().internal = null
 					valve_opened = FALSE
 					update_icon()
 				else
 					src.visible_message(span_infoplain(span_bold("\The [user]") + " opens valve on \the [src]!"),
 										span_notice("You open valve on \the [src]."))
-					if(breather)
-						breather.internal = tank
-						breather.internals?.icon_state = "internal1"
+					if(breather())
+						breather().internal = tank
+						breather().internals?.icon_state = "internal1"
 					valve_opened = TRUE
 					//playsound(src, 'sound/effects/internals.ogg', 100, 1)
 					update_icon()
@@ -279,7 +279,7 @@
 		if(C.equip_to_slot_if_possible(contained, slot_wear_mask))
 			if(tank)
 				tank.forceMove(C)
-			breather = C
+			breather_handle = om_handle(C)
 			return TRUE
 
 /obj/structure/medical_stand/proc/can_apply_to_target(mob/living/carbon/human/target, mob/user)
@@ -295,7 +295,7 @@
 	if(!target.check_has_mouth())
 		to_chat(user, span_warning("\The [target] doesn't have a mouth."))
 		return
-	if(target.get_equipped_item(SLOT_ID_MASK) && target != breather)
+	if(target.get_equipped_item(SLOT_ID_MASK) && target != breather())
 		to_chat(user, span_warning("\The [target] is already wearing a mask."))
 		return
 	if(target.get_equipped_item(SLOT_ID_HEAD) && (target.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE))
@@ -310,11 +310,11 @@
 	if(!Adjacent(target))
 		return
 	//when there is a breather:
-	if(breather && target != breather)
+	if(breather() && target != breather())
 		to_chat(user, span_warning("\The [src] is already in use."))
 		return
 	//Checking if breather is still valid
-	if(target == breather && target.get_equipped_item(SLOT_ID_MASK) != contained)
+	if(target == breather() && target.get_equipped_item(SLOT_ID_MASK) != contained)
 		to_chat(user, span_warning("\The [target] is not using the supplied mask."))
 		return
 	return 1
@@ -371,7 +371,7 @@
 			. += span_notice("Attached is \a [beaker] with [beaker.reagents.total_volume] units of liquid.")
 		else
 			. += span_notice("Attached is an empty [beaker].")
-		. += span_notice("[attached ? attached : "No one"] is hooked up to it.")
+		. += span_notice("[attached() ? attached() : "No one"] is hooked up to it.")
 	else
 		. += span_notice("There is no vessel.")
 
@@ -386,44 +386,44 @@
 
 /obj/structure/medical_stand/periodic_step()
 	//Gas Stuff
-	if(breather)
-		if(!can_apply_to_target(breather))
+	if(breather())
+		if(!can_apply_to_target(breather()))
 			if(tank)
 				tank.forceMove(src)
-			if (breather.get_equipped_item(SLOT_ID_MASK) == contained)
-				breather.remove_from_mob(contained)
+			if (breather().get_equipped_item(SLOT_ID_MASK) == contained)
+				breather().remove_from_mob(contained)
 				contained.forceMove(src)
 			else
 				qdel(contained)
 				contained = new mask_type (src)
 			src.visible_message(span_bold("\The [contained]") + " slips to \the [src]!")
-			breather = null
+			breather_handle = null
 			update_icon()
 			return
 		if(valve_opened)
 			if (tank)
-				breather.internal = tank
-				breather.internals?.icon_state = "internal1"
+				breather().internal = tank
+				breather().internals?.icon_state = "internal1"
 		else
-			breather.internals?.icon_state = "internal0"
-			breather.internal = null
+			breather().internals?.icon_state = "internal0"
+			breather().internal = null
 	else if (valve_opened)
 		var/datum/gas_mixture/removed = tank.remove_air(0.01)
 		var/datum/gas_mixture/environment = loc.return_air()
 		environment.merge(removed)
 
 	//Reagent Stuff
-	if(attached)
-		if(!Adjacent(attached))
-			visible_message("The needle is ripped out of [src.attached], doesn't that hurt?")
-			attached.injure(INJURY_PIERCE, 3, pick(BP_R_ARM, BP_L_ARM), src)
-			attached = null
+	if(attached())
+		if(!Adjacent(attached()))
+			visible_message("The needle is ripped out of [src.attached()], doesn't that hurt?")
+			attached().injure(INJURY_PIERCE, 3, pick(BP_R_ARM, BP_L_ARM), src)
+			attached_handle = null
 			update_icon()
 
 	if(beaker)
 		if(mode) // Give blood
 			if(beaker.volume > 0)
-				beaker.reagents.trans_to_mob(attached, transfer_amount, CHEM_BLOOD)
+				beaker.reagents.trans_to_mob(attached(), transfer_amount, CHEM_BLOOD)
 				update_icon()
 		else // Take blood
 			var/amount = beaker.reagents.maximum_volume - beaker.reagents.total_volume
@@ -433,7 +433,7 @@
 				if(prob(5)) visible_message("\The [src] pings.")
 				return
 
-			var/mob/living/carbon/human/H = attached
+			var/mob/living/carbon/human/H = attached()
 			if(!istype(H))
 				return
 			if(!H.dna)
@@ -457,7 +457,7 @@
 				beaker.reagents.handle_reactions()
 				update_icon()
 
-	if ((!valve_opened || tank.distribute_pressure == 0) && !breather && !attached)
+	if ((!valve_opened || tank.distribute_pressure == 0) && !breather() && !attached())
 		return PROCESS_KILL
 
 /obj/structure/medical_stand/anesthetic
@@ -466,3 +466,11 @@
 	is_loosen = FALSE
 
 REF_OWNED(/obj/structure/medical_stand, list("tank", "contained", "beaker"))
+
+/// LC-refs: breather -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/structure/medical_stand/proc/breather() as /mob/living/carbon/human
+	return om_resolve(breather_handle)
+
+/// LC-refs: attached -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/structure/medical_stand/proc/attached() as /mob/living/carbon
+	return om_resolve(attached_handle)

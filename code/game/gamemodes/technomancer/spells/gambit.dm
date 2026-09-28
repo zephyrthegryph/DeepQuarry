@@ -30,8 +30,8 @@
 		consume(src, user)
 
 /obj/item/spell/gambit/proc/give_new_spell(spell_type)
-	owner.drop_from_inventory(src, null)
-	owner.place_spell_in_hand(spell_type)
+	owner_ref().drop_from_inventory(src, null)
+	owner_ref().place_spell_in_hand(spell_type)
 
 // Gives a random spell.
 /obj/item/spell/gambit/proc/random_spell()
@@ -39,7 +39,7 @@
 	var/rare_spell_chance = between(0, calculate_spell_power(100) - 100, 100) // Having 120% spellpower means a 20% chance to get to roll for rare spells.
 	if(prob(rare_spell_chance))
 		potential_spells += rare_spells.Copy()
-		to_chat(owner, span_notice("You feel a bit luckier..."))
+		to_chat(owner_ref(), span_notice("You feel a bit luckier..."))
 	return pick(potential_spells)
 
 // Gives a "random" spell.
@@ -49,11 +49,11 @@
 	var/give_rare_spells = FALSE
 	if(prob(rare_spell_chance))
 		give_rare_spells = TRUE
-		to_chat(owner, span_notice("You feel a bit luckier..."))
+		to_chat(owner_ref(), span_notice("You feel a bit luckier..."))
 
 	// First the spell will concern itself with the health of the technomancer.
-	if(prob(owner.injury_load(INJURY_CATEGORY_PHYSICAL) * 2)) // Having 20 brute means a 40% chance of being added to the pool.
-		if(!owner.isSynthetic())
+	if(prob(owner_ref().injury_load(INJURY_CATEGORY_PHYSICAL) * 2)) // Having 20 brute means a 40% chance of being added to the pool.
+		if(!owner_ref().isSynthetic())
 			potential_spells |= /obj/item/spell/modifier/mend_life
 		else
 			potential_spells |= /obj/item/spell/modifier/mend_synthetic
@@ -63,7 +63,7 @@
 	// Second, the spell will try to prepare the technomancer for threats.
 	var/hostile_mobs = 0 // Counts how many hostile mobs.  Higher numbers make it more likely for AoE spells to be chosen.
 
-	for(var/mob/living/L in view(owner))
+	for(var/mob/living/L in view(owner_ref()))
 		// Spiders, carp... bears.
 		if(isanimal(L))
 			var/mob/living/simple_mob/SM = L

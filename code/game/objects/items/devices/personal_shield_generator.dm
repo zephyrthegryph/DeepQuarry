@@ -365,14 +365,14 @@ REF_OWNED(/obj/item/personal_shield_generator, list("active_weapon", "bcell"))
 		list(mode_name="lethal", projectile_type=/obj/item/projectile/beam, modifystate="egunkill", fire_sound='sound/weapons/Laser.ogg', charge_cost = 480),
 		)
 
-	var/obj/item/personal_shield_generator/shield_generator //The generator we are linked to!
+	var/shield_generator_handle //The generator we are linked to!
 	var/wielded = 0
 	var/cooldown = 0
 
 /obj/item/gun/energy/gun/generator/Initialize(mapload, obj/item/personal_shield_generator/shield_gen)
 	. = ..()
-	shield_generator = shield_gen
-	power_supply = shield_generator.bcell
+	shield_generator_handle = om_handle(shield_gen)
+	power_supply = shield_generator().bcell
 
 /obj/item/gun/energy/gun/generator/proc/can_use(mob/user, mob/M)
 	if(!check_charge(charge_cost))
@@ -388,8 +388,8 @@ REF_OWNED(/obj/item/personal_shield_generator, list("active_weapon", "bcell"))
 
 /obj/item/gun/energy/gun/generator/dropped(mob/user, equipping, slot)
 	..() //update twohanding
-	if(shield_generator)
-		shield_generator.reattach_gun(user)
+	if(shield_generator())
+		shield_generator().reattach_gun(user)
 
 /obj/item/gun/energy/proc/check_charge(charge_amt) //In case using any other guns.
 	return 0
@@ -398,10 +398,10 @@ REF_OWNED(/obj/item/personal_shield_generator, list("active_weapon", "bcell"))
 	return 0
 
 /obj/item/gun/energy/gun/generator/check_charge(charge_amt)
-	return (shield_generator.bcell && shield_generator.bcell.check_charge(charge_amt))
+	return (shield_generator().bcell && shield_generator().bcell.check_charge(charge_amt))
 
 /obj/item/gun/energy/gun/generator/checked_use(charge_amt)
-	return (shield_generator.bcell && shield_generator.bcell.checked_use(charge_amt))
+	return (shield_generator().bcell && shield_generator().bcell.checked_use(charge_amt))
 
 //VARIANTS.
 
@@ -579,3 +579,7 @@ REF_OWNED(/obj/item/personal_shield_generator, list("active_weapon", "bcell"))
 	maxcharge = 200 // 100 to 200.
 	charge_amount = 200 // 100 to 200.
 	charge_delay = 30 // Starts charging three seconds after it's discharged.
+
+/// LC-refs: shield generator -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/gun/energy/gun/generator/proc/shield_generator() as /obj/item/personal_shield_generator
+	return om_resolve(shield_generator_handle)

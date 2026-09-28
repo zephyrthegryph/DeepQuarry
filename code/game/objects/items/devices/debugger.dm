@@ -19,7 +19,7 @@
 	drop_sound = 'sound/items/drop/device.ogg'
 
 	MATERIAL_MIX(list(MAT_STEEL = 50,MAT_GLASS = 20))
-	var/obj/machinery/telecomms/buffer // simple machine buffer for device linkage
+	var/buffer_handle // simple machine buffer for device linkage
 
 /obj/item/debugger/is_used_on(obj/O, mob/user)
 	if(istype(O, /obj/machinery/power/apc))
@@ -43,3 +43,7 @@
 		else
 			to_chat(user, span_notice("The device's software appears to be fine."))
 		return 1
+
+/// LC-refs: buffer -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/debugger/proc/buffer() as /obj/machinery/telecomms
+	return om_resolve(buffer_handle)

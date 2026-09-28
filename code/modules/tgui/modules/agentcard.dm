@@ -31,7 +31,7 @@
 	var/obj/item/card/id/syndicate/S = tgui_host()
 	if(!istype(S))
 		return STATUS_CLOSE
-	if(user != S.registered_user)
+	if(user != S.registered_user())
 		return STATUS_CLOSE
 	return ..()
 

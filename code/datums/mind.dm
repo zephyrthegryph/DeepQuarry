@@ -396,8 +396,8 @@
 /datum/mind/proc/find_syndicate_uplink()
 	var/list/L = current.get_contents()
 	for (var/obj/item/I in L)
-		if (I.hidden_uplink)
-			return I.hidden_uplink
+		if (I.hidden_uplink())
+			return I.hidden_uplink()
 	return null
 
 /datum/mind/proc/take_uplink()

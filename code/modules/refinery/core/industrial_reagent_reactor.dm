@@ -107,7 +107,7 @@ REF_OWNED(/obj/machinery/reagent_refinery/reactor, "internal_tank")
 	if(pad && !pad.connected_device)
 		if(anchored)
 			// Perform the connection, forcibly... we're ignoring adjacency checks with this
-			internal_tank.connected_port = pad
+			internal_tank.connected_port_handle = om_handle(pad)
 			pad.connected_device = internal_tank
 			pad.on = 1 //Activate port updates
 			// Actually enforce the air sharing
@@ -117,7 +117,7 @@ REF_OWNED(/obj/machinery/reagent_refinery/reactor, "internal_tank")
 		else
 			internal_tank.disconnect()
 			playsound(src, 'sound/mecha/gasdisconnected.ogg', 50, 1)
-	else if(internal_tank.connected_port)
+	else if(internal_tank.connected_port())
 		internal_tank.disconnect() // How did we get here? qdelled pad?
 		playsound(src, 'sound/mecha/gasdisconnected.ogg', 50, 1)
 

@@ -19,8 +19,8 @@
 	var/authenticated = null
 	var/rank = null
 	var/screen = null
-	var/datum/data/record/active1 = null
-	var/datum/data/record/active2 = null
+	var/active1_handle
+	var/active2_handle
 	var/list/temp = null
 	var/printing = null
 	// The below are used to make modal generation more convenient
@@ -125,40 +125,40 @@
 			if(MED_DATA_RECORD)
 				var/list/general = list()
 				data["general"] = general
-				if(istype(active1, /datum/data/record) && GLOB.data_core.general.Find(active1))
+				if(istype(active1(), /datum/data/record) && GLOB.data_core.general.Find(active1()))
 					var/list/fields = list()
 					general["fields"] = fields
-					fields[++fields.len] = FIELD("Name", active1.fields["name"], null)
-					fields[++fields.len] = FIELD("ID", active1.fields["id"], null)
-					fields[++fields.len] = FIELD("Sex", active1.fields["sex"], "sex")
-					fields[++fields.len] = FIELD("Species", active1.fields["species"], "species")
-					fields[++fields.len] = FIELD("Age", "[active1.fields["age"]]", "age")
-					fields[++fields.len] = FIELD("Fingerprint", active1.fields["fingerprint"], "fingerprint")
-					fields[++fields.len] = FIELD("Physical Status", active1.fields["p_stat"], "p_stat")
-					fields[++fields.len] = FIELD("Mental Status", active1.fields["m_stat"], "m_stat")
+					fields[++fields.len] = FIELD("Name", active1().fields["name"], null)
+					fields[++fields.len] = FIELD("ID", active1().fields["id"], null)
+					fields[++fields.len] = FIELD("Sex", active1().fields["sex"], "sex")
+					fields[++fields.len] = FIELD("Species", active1().fields["species"], "species")
+					fields[++fields.len] = FIELD("Age", "[active1().fields["age"]]", "age")
+					fields[++fields.len] = FIELD("Fingerprint", active1().fields["fingerprint"], "fingerprint")
+					fields[++fields.len] = FIELD("Physical Status", active1().fields["p_stat"], "p_stat")
+					fields[++fields.len] = FIELD("Mental Status", active1().fields["m_stat"], "m_stat")
 					var/list/photos = list()
 					general["photos"] = photos
-					photos[++photos.len] = active1.fields["photo-south"]
-					photos[++photos.len] = active1.fields["photo-west"]
-					general["has_photos"] = (active1.fields["photo-south"] || active1.fields["photo-west"] ? 1 : 0)
+					photos[++photos.len] = active1().fields["photo-south"]
+					photos[++photos.len] = active1().fields["photo-west"]
+					general["has_photos"] = (active1().fields["photo-south"] || active1().fields["photo-west"] ? 1 : 0)
 					general["empty"] = 0
 				else
 					general["empty"] = 1
 
 				var/list/medical = list()
 				data["medical"] = medical
-				if(istype(active2, /datum/data/record) && GLOB.data_core.medical.Find(active2))
+				if(istype(active2(), /datum/data/record) && GLOB.data_core.medical.Find(active2()))
 					var/list/fields = list()
 					medical["fields"] = fields
-					fields[++fields.len] = MED_FIELD("Gender identity", active2.fields["id_gender"], "id_gender", TRUE)
-					fields[++fields.len] = MED_FIELD("Blood Type", active2.fields["b_type"], "blood_type", FALSE)
-					fields[++fields.len] = MED_FIELD("Blood Basis", active2.fields["blood_reagent"], "blood_reagent", FALSE)
-					fields[++fields.len] = MED_FIELD("DNA", active2.fields["b_dna"], "b_dna", TRUE)
-					fields[++fields.len] = MED_FIELD("Brain Type", active2.fields["brain_type"], "brain_type", TRUE)
-					fields[++fields.len] = MED_FIELD("Important Notes", active2.fields["notes"], "notes", TRUE)
-					if(!active2.fields["comments"] || !islist(active2.fields["comments"]))
-						active2.fields["comments"] = list()
-					medical["comments"] = active2.fields["comments"]
+					fields[++fields.len] = MED_FIELD("Gender identity", active2().fields["id_gender"], "id_gender", TRUE)
+					fields[++fields.len] = MED_FIELD("Blood Type", active2().fields["b_type"], "blood_type", FALSE)
+					fields[++fields.len] = MED_FIELD("Blood Basis", active2().fields["blood_reagent"], "blood_reagent", FALSE)
+					fields[++fields.len] = MED_FIELD("DNA", active2().fields["b_dna"], "b_dna", TRUE)
+					fields[++fields.len] = MED_FIELD("Brain Type", active2().fields["brain_type"], "brain_type", TRUE)
+					fields[++fields.len] = MED_FIELD("Important Notes", active2().fields["notes"], "notes", TRUE)
+					if(!active2().fields["comments"] || !islist(active2().fields["comments"]))
+						active2().fields["comments"] = list()
+					medical["comments"] = active2().fields["comments"]
 					medical["empty"] = 0
 				else
 					medical["empty"] = 1
@@ -195,10 +195,10 @@
 	if(..())
 		return TRUE
 
-	if(!GLOB.data_core.general.Find(active1))
-		active1 = null
-	if(!GLOB.data_core.medical.Find(active2))
-		active2 = null
+	if(!GLOB.data_core.general.Find(active1()))
+		active1_handle = null
+	if(!GLOB.data_core.medical.Find(active2()))
+		active2_handle = null
 
 	. = TRUE
 	if(tgui_act_modal(action, params))
@@ -233,8 +233,8 @@
 				var/mob/living/silicon/robot/R = ui.user
 				rank = "[R.modtype] [R.braintype]"
 			if(authenticated)
-				active1 = null
-				active2 = null
+				active1_handle = null
+				active2_handle = null
 				screen = MED_DATA_R_LIST
 		else
 			. = FALSE
@@ -253,12 +253,12 @@
 					scan = null
 				authenticated = null
 				screen = null
-				active1 = null
-				active2 = null
+				active1_handle = null
+				active2_handle = null
 			if("screen")
 				screen = clamp(text2num(params["screen"]) || 0, MED_DATA_R_LIST, MED_DATA_MEDBOT)
-				active1 = null
-				active2 = null
+				active1_handle = null
+				active2_handle = null
 			if("vir")
 				var/datum/data/record/v = locate(params["vir"])
 				if(!istype(v))
@@ -269,9 +269,9 @@
 					qdel(R)
 				set_temp("All medical records deleted.")
 			if("del_r")
-				if(active2)
+				if(active2())
 					set_temp("Medical record deleted.")
-					qdel(active2)
+					qdel(active2())
 			if("d_rec")
 				var/datum/data/record/general_record = locate(params["d_rec"] || "")
 				if(!GLOB.data_core.general.Find(general_record))
@@ -284,24 +284,24 @@
 						medical_record = M
 						break
 
-				active1 = general_record
-				active2 = medical_record
+				active1_handle = om_handle(general_record)
+				active2_handle = om_handle(medical_record)
 				screen = MED_DATA_RECORD
 			if("sync_r")
-				if(active2)
+				if(active2())
 					set_temp(client_update_record(src,ui.user))
 			if("edit_notes")
 				// The modal input in tgui is busted for this sadly...
-				var/new_notes = strip_html_simple(tgui_input_text(ui.user,"Enter new information here.","Character Preference", html_decode(active2.fields["notes"]), MAX_RECORD_LENGTH, TRUE, prevent_enter = TRUE), MAX_RECORD_LENGTH)
+				var/new_notes = strip_html_simple(tgui_input_text(ui.user,"Enter new information here.","Character Preference", html_decode(active2().fields["notes"]), MAX_RECORD_LENGTH, TRUE, prevent_enter = TRUE), MAX_RECORD_LENGTH)
 				if(ui.user.Adjacent(src))
 					if(new_notes != "" || tgui_alert(ui.user, "Are you sure you want to delete the current record's notes?", "Confirm Delete", list("Delete", "No")) == "Delete")
 						if(ui.user.Adjacent(src))
-							active2.fields["notes"] = new_notes
+							active2().fields["notes"] = new_notes
 			if("new")
-				if(istype(active1, /datum/data/record) && !istype(active2, /datum/data/record))
+				if(istype(active1(), /datum/data/record) && !istype(active2(), /datum/data/record))
 					var/datum/data/record/R = new /datum/data/record()
-					R.fields["name"] = active1.fields["name"]
-					R.fields["id"] = active1.fields["id"]
+					R.fields["name"] = active1().fields["name"]
+					R.fields["id"] = active1().fields["id"]
 					R.name = "Medical Record #[R.fields["id"]]"
 					R.fields["b_type"] = "Unknown"
 					R.fields["blood_reagent"] = "Unknown"
@@ -316,35 +316,35 @@
 					R.fields["cdi_d"] = "No diseases have been diagnosed at the moment."
 					R.fields["notes"] = "No notes."
 					GLOB.data_core.medical += R
-					active2 = R
+					active2_handle = om_handle(R)
 					screen = MED_DATA_RECORD
 					set_temp("Medical record created.", "success")
 			if("del_c")
 				var/index = text2num(params["del_c"] || "")
-				if(!index || !istype(active2, /datum/data/record))
+				if(!index || !istype(active2(), /datum/data/record))
 					return
 
-				var/list/comments = active2.fields["comments"]
+				var/list/comments = active2().fields["comments"]
 				index = clamp(index, 1, length(comments))
 				if(comments[index])
 					comments.Cut(index, index + 1)
 			if("search")
-				active1 = null
-				active2 = null
+				active1_handle = null
+				active2_handle = null
 				var/t1 = lowertext(params["t1"] || "")
 				if(!length(t1))
 					return
 
 				for(var/datum/data/record/R in GLOB.data_core.medical)
 					if(t1 == lowertext(R.fields["name"]) || t1 == lowertext(R.fields["id"]) || t1 == lowertext(R.fields["b_dna"]))
-						active2 = R
+						active2_handle = om_handle(R)
 						break
-				if(!active2)
+				if(!active2())
 					set_temp("Medical record not found. You must enter the person's exact name, ID or DNA.", "danger")
 					return
 				for(var/datum/data/record/E in GLOB.data_core.general)
-					if(E.fields["name"] == active2.fields["name"] && E.fields["id"] == active2.fields["id"])
-						active1 = E
+					if(E.fields["name"] == active2().fields["name"] && E.fields["id"] == active2().fields["id"])
+						active1_handle = om_handle(E)
 						break
 				screen = MED_DATA_RECORD
 			if("print_p")
@@ -398,14 +398,14 @@
 					if(field == "age")
 						answer = text2num(answer)
 
-					if(istype(active2) && (field in active2.fields))
-						active2.fields[field] = answer
-					else if(istype(active1) && (field in active1.fields))
-						active1.fields[field] = answer
+					if(istype(active2(), /datum/data/record) && (field in active2().fields))
+						active2().fields[field] = answer
+					else if(istype(active1(), /datum/data/record) && (field in active1().fields))
+						active1().fields[field] = answer
 				if("add_c")
-					if(!length(answer) || !istype(active2) || !length(authenticated))
+					if(!length(answer) || !istype(active2(), /datum/data/record) || !length(authenticated))
 						return
-					active2.fields["comments"] += list(list(
+					active2().fields["comments"] += list(list(
 						header = "Made by [authenticated] ([rank]) at [worldtime2stationtime(world.time)]",
 						text = answer
 					))
@@ -420,40 +420,40 @@
 /obj/machinery/computer/med_data/proc/print_finish()
 	var/obj/item/paper/P = new(loc)
 	P.info = "<center>" + span_bold("Medical Record") + "</center><br>"
-	if(istype(active1, /datum/data/record) && GLOB.data_core.general.Find(active1))
-		P.info += {"Name: [active1.fields["name"]] ID: [active1.fields["id"]]
-		<br>\nSex: [active1.fields["sex"]]
-		<br>\nSpecies: [active1.fields["species"]]
-		<br>\nAge: [active1.fields["age"]]
-		<br>\nFingerprint: [active1.fields["fingerprint"]]
-		<br>\nPhysical Status: [active1.fields["p_stat"]]
-		<br>\nMental Status: [active1.fields["m_stat"]]<br>"}
+	if(istype(active1(), /datum/data/record) && GLOB.data_core.general.Find(active1()))
+		P.info += {"Name: [active1().fields["name"]] ID: [active1().fields["id"]]
+		<br>\nSex: [active1().fields["sex"]]
+		<br>\nSpecies: [active1().fields["species"]]
+		<br>\nAge: [active1().fields["age"]]
+		<br>\nFingerprint: [active1().fields["fingerprint"]]
+		<br>\nPhysical Status: [active1().fields["p_stat"]]
+		<br>\nMental Status: [active1().fields["m_stat"]]<br>"}
 	else
 		P.info += span_bold("General Record Lost!") + "<br>"
-	if(istype(active2, /datum/data/record) && GLOB.data_core.medical.Find(active2))
+	if(istype(active2(), /datum/data/record) && GLOB.data_core.medical.Find(active2()))
 		P.info += {"<br>\n<center><b>Medical Data</b></center>
-		<br>\nGender Identity: [active2.fields["id_gender"]]
-		<br>\nBlood Type: [active2.fields["b_type"]]
-		<br>\nBlood Basis: [active2.fields["blood_reagent"]]
-		<br>\nDNA: [active2.fields["b_dna"]]<br>\n
-		<br>\nMinor Disabilities: [active2.fields["mi_dis"]]
-		<br>\nDetails: [active2.fields["mi_dis_d"]]<br>\n
-		<br>\nMajor Disabilities: [active2.fields["ma_dis"]]
-		<br>\nDetails: [active2.fields["ma_dis_d"]]<br>\n
-		<br>\nAllergies: [active2.fields["alg"]]
-		<br>\nDetails: [active2.fields["alg_d"]]<br>\n
-		<br>\nCurrent Diseases: [active2.fields["cdi"]] (per disease info placed in log/comment section)
-		<br>\nDetails: [active2.fields["cdi_d"]]<br>\n
+		<br>\nGender Identity: [active2().fields["id_gender"]]
+		<br>\nBlood Type: [active2().fields["b_type"]]
+		<br>\nBlood Basis: [active2().fields["blood_reagent"]]
+		<br>\nDNA: [active2().fields["b_dna"]]<br>\n
+		<br>\nMinor Disabilities: [active2().fields["mi_dis"]]
+		<br>\nDetails: [active2().fields["mi_dis_d"]]<br>\n
+		<br>\nMajor Disabilities: [active2().fields["ma_dis"]]
+		<br>\nDetails: [active2().fields["ma_dis_d"]]<br>\n
+		<br>\nAllergies: [active2().fields["alg"]]
+		<br>\nDetails: [active2().fields["alg_d"]]<br>\n
+		<br>\nCurrent Diseases: [active2().fields["cdi"]] (per disease info placed in log/comment section)
+		<br>\nDetails: [active2().fields["cdi_d"]]<br>\n
 		<br>\nImportant Notes:
-		<br>\n\t[active2.fields["notes"]]<br>\n
+		<br>\n\t[active2().fields["notes"]]<br>\n
 		<br>\n
 		<center><b>Comments/Log</b></center><br>"}
-		for(var/c in active2.fields["comments"])
+		for(var/c in active2().fields["comments"])
 			P.info += "[c["header"]]<br>[c["text"]]<br>"
 	else
 		P.info += span_bold("Medical Record Lost!") + "<br>"
 	P.info += "</tt>"
-	P.name = "paper - 'Medical Record: [active1.fields["name"]]'"
+	P.name = "paper - 'Medical Record: [active1().fields["name"]]'"
 	printing = FALSE
 	SStgui.update_uis(src)
 
@@ -517,3 +517,11 @@
 #undef MED_FIELD
 
 REF_HELD(/obj/machinery/computer/med_data, list("scan"))
+
+/// LC-refs: active1 -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/med_data/proc/active1() as /datum/data/record
+	return om_resolve(active1_handle)
+
+/// LC-refs: active2 -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/med_data/proc/active2() as /datum/data/record
+	return om_resolve(active2_handle)

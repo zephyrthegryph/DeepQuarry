@@ -16,7 +16,7 @@
 	icon_state = "energy_siphon"
 	cast_methods = CAST_RANGED
 	aspect = ASPECT_SHOCK
-	var/atom/movable/siphoning = null // What the spell is currently draining.  Does nothing if null.
+	var/siphoning_handle // What the spell is currently draining.  Does nothing if null.
 	var/list/things_to_siphon = list() //Things which are actually drained as a result of the above not being null.
 	var/flow_rate = 1000 // Limits how much electricity can be drained per second.  Measured by default in god knows what.
 
@@ -30,21 +30,21 @@
 
 /// Drains every 2 s while linked (on_ranged_cast() starts it); unlinked, it sleeps.
 /obj/item/spell/energy_siphon/periodic_step()
-	if(!siphoning)
+	if(!siphoning())
 		return PROCESS_KILL
 	if(!pay_energy(100))
-		to_chat(owner, span_warning("You can't afford to maintain the siphon link!"))
+		to_chat(owner_ref(), span_warning("You can't afford to maintain the siphon link!"))
 		stop_siphoning()
 		return
-	if(get_dist(siphoning, get_turf(src)) > 4)
-		to_chat(owner, span_warning("\The [siphoning] is too far to drain from!"))
+	if(get_dist(siphoning(), get_turf(src)) > 4)
+		to_chat(owner_ref(), span_warning("\The [siphoning()] is too far to drain from!"))
 		stop_siphoning()
 		return
-	if(!(siphoning in view(owner)))
-		to_chat(owner, span_warning("\The [siphoning] cannot be seen!"))
+	if(!(siphoning() in view(owner_ref())))
+		to_chat(owner_ref(), span_warning("\The [siphoning()] cannot be seen!"))
 		stop_siphoning()
 		return
-	siphon(siphoning, owner)
+	siphon(siphoning(), owner_ref())
 
 /obj/item/spell/energy_siphon/on_ranged_cast(atom/hit_atom, mob/user)
 	if(istype(hit_atom, /atom/movable) && within_range(hit_atom, 4))
@@ -53,7 +53,7 @@
 		if(!things_to_siphon.len)
 			to_chat(user, span_warning("You cannot steal energy from \a [AM]."))
 			return 0
-		siphoning = AM
+		siphoning_handle = om_handle(AM)
 		PERIODIC_START(src, PERIODIC_SLOW)
 		update_icon()
 		add_attack_logs(user,AM,"Siphoned energy from [src]")
@@ -73,7 +73,7 @@
 			things_to_siphon.Remove(AM)
 
 /obj/item/spell/energy_siphon/proc/stop_siphoning()
-	siphoning = null
+	siphoning_handle = null
 	things_to_siphon.Cut()
 	update_icon()
 
@@ -152,7 +152,7 @@
 
 /obj/item/spell/energy_siphon/update_icon()
 	..()
-	if(siphoning)
+	if(siphoning())
 		icon_state = "energy_siphon_drain"
 	else
 		icon_state = "energy_siphon"
@@ -202,3 +202,7 @@
 #undef SIPHON_CELL_TO_ENERGY
 #undef SIPHON_FBP_TO_ENERGY
 #undef SIPHON_CORE_TO_ENERGY
+
+/// LC-refs: siphoning -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/spell/energy_siphon/proc/siphoning() as /atom/movable
+	return om_resolve(siphoning_handle)

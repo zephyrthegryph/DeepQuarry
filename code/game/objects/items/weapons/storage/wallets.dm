@@ -7,7 +7,7 @@
 	w_class = ITEMSIZE_SMALL
 	slot_flags = SLOT_ID
 
-	var/obj/item/card/id/front_id = null
+	var/front_id_handle
 
 	drop_sound = 'sound/items/drop/leather.ogg'
 	pickup_sound = 'sound/items/pickup/leather.ogg'
@@ -55,33 +55,33 @@
 /obj/item/storage/wallet/remove_from_storage(obj/item/W, atom/new_location, mob/user)
 	. = ..()
 	if(.)
-		if(W == front_id)
-			front_id = null
+		if(W == front_id())
+			front_id_handle = null
 			name = original_name || initial(name)
 			update_icon()
 
 /obj/item/storage/wallet/insert_item(obj/item/W, mob/user, prevent_warning = FALSE)
 	. = ..()
 	if(.)
-		if(!front_id && istype(W, /obj/item/card/id))
-			front_id = W
+		if(!front_id() && istype(W, /obj/item/card/id))
+			front_id_handle = om_handle(W)
 			if(!original_name)
 				original_name = name
-			name = "[original_name] ([front_id])"
+			name = "[original_name] ([front_id()])"
 			update_icon()
 
 /obj/item/storage/wallet/update_icon()
 	cut_overlays()
-	if(front_id)
+	if(front_id())
 		var/tiny_state = "id-generic"
-		if(icon_exists(icon, "id-[front_id.icon_state]"))
-			tiny_state = "id-"+front_id.icon_state
+		if(icon_exists(icon, "id-[front_id().icon_state]"))
+			tiny_state = "id-"+front_id().icon_state
 		var/image/tiny_image = new/image(icon, icon_state = tiny_state)
 		tiny_image.appearance_flags = RESET_COLOR
 		add_overlay(tiny_image)
 
 /obj/item/storage/wallet/GetID()
-	return front_id
+	return front_id()
 
 /obj/item/storage/wallet/GetAccess()
 	var/obj/item/I = GetID()
@@ -148,3 +148,7 @@
 	if(src)
 		icon_state = original_state
 		update_icon()
+
+/// LC-refs: front id -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/storage/wallet/proc/front_id() as /obj/item/card/id
+	return om_resolve(front_id_handle)

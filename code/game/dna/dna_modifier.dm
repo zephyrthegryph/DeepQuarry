@@ -255,8 +255,8 @@
 	// Disconnect from our terminal
 	for(var/dirfind in GLOB.cardinal)
 		var/obj/machinery/computer/scan_consolenew/console = locate(/obj/machinery/computer/scan_consolenew, get_step(src, dirfind))
-		if(console && console.connected == src)
-			console.connected = null
+		if(console && console.connected() == src)
+			console.connected_handle = null
 			SStgui.close_uis(console)
 			break
 	. = ..()
@@ -317,7 +317,7 @@
 	var/list/datum/transhuman/body_record/buffers[3] // Traitgenes Use bodyrecords
 	var/irradiating = 0
 	var/injector_ready = 0	//Quick fix for issue 286 (screwdriver the screen twice to restore injector)	-Pete
-	var/obj/machinery/dna_scannernew/connected = null
+	var/connected_handle
 	// Traitgenes body record disks are used instead of a unique disk
 	var/obj/item/disk/body_record/disk = null
 	var/selected_menu_key = PAGE_SE
@@ -329,7 +329,7 @@
 /obj/machinery/computer/scan_consolenew/attackby(obj/item/I as obj, mob/user as mob)
 	// Traitgenes body record disks are used instead of a unique disk
 	if(istype(I, /obj/item/disk/body_record)) //INSERT SOME diskS
-		if(connected)
+		if(connected())
 			if(!disk)
 				user.drop_item()
 				I.forceMove(src)
@@ -356,8 +356,8 @@
 		buffers[i+1]=R
 	// Traitgenes don't alter direction of computer as this scans for neighbour
 	for(var/dirfind in GLOB.cardinal)
-		connected = locate(/obj/machinery/dna_scannernew, get_step(src, dirfind))
-		if(connected)
+		connected_handle = om_handle(locate(/obj/machinery/dna_scannernew, get_step(src, dirfind)))
+		if(connected())
 			break
 	VARSET_IN(src, injector_ready, TRUE, 25 SECONDS)
 
@@ -384,8 +384,8 @@
 		tgui_interact(user)
 
 /obj/machinery/computer/scan_consolenew/tgui_interact(mob/user, datum/tgui/ui)
-	var/mob/living/carbon/WC = connected?.get_occupant()
-	if(!connected || user == WC || user.stat)
+	var/mob/living/carbon/WC = connected()?.get_occupant()
+	if(!connected() || user == WC || user.stat)
 		return
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
@@ -396,8 +396,8 @@
 	// this is the data which will be sent to the ui
 	var/data[0]
 	data["selectedMenuKey"] = selected_menu_key
-	data["locked"] = src.connected.locked
-	data["hasOccupant"] = connected.get_occupant() ? 1 : 0
+	data["locked"] = src.connected().locked
+	data["hasOccupant"] = connected().get_occupant() ? 1 : 0
 
 	data["isInjectorReady"] = injector_ready
 
@@ -437,7 +437,7 @@
 	data["selectedUITargetHex"] = selected_ui_target_hex
 
 	var/occupantData[0]
-	var/mob/living/carbon/WC = connected?.get_occupant()
+	var/mob/living/carbon/WC = connected()?.get_occupant()
 	if(!WC || !WC.dna)
 		occupantData["name"] = null
 		occupantData["stat"] = null
@@ -473,13 +473,13 @@
 		occupantData["radiationLevel"] = WC.radiation
 	data["occupant"] = occupantData;
 
-	data["isBeakerLoaded"] = connected.beaker ? 1 : 0
+	data["isBeakerLoaded"] = connected().beaker ? 1 : 0
 	data["beakerLabel"] = null
 	data["beakerVolume"] = 0
-	if(connected.beaker)
-		data["beakerLabel"] = connected.beaker.label_text ? connected.beaker.label_text : null
-		if(connected.beaker.reagents && connected.beaker.reagents.reagent_list.len)
-			for(var/datum/reagent/R in connected.beaker.reagents.reagent_list)
+	if(connected().beaker)
+		data["beakerLabel"] = connected().beaker.label_text ? connected().beaker.label_text : null
+		if(connected().beaker.reagents && connected().beaker.reagents.reagent_list.len)
+			for(var/datum/reagent/R in connected().beaker.reagents.reagent_list)
 				data["beakerVolume"] += R.volume
 
 	// Transfer modal information if there is one
@@ -492,7 +492,7 @@
 		return TRUE
 	if(!istype(ui.user.loc, /turf))
 		return TRUE
-	if(!src || !connected)
+	if(!src || !connected())
 		return TRUE
 	if(irradiating) // Make sure that it isn't already irradiating someone...
 		return TRUE
@@ -512,15 +512,15 @@
 			return TRUE
 		if("toggleLock")
 			playsound(src, 'sound/machines/button.ogg', 30, 1, 0)
-			if(connected && connected.get_occupant())
-				connected.locked = !(connected.locked)
+			if(connected() && connected().get_occupant())
+				connected().locked = !(connected().locked)
 			return TRUE
 
 		if("pulseRadiation")
 			playsound(src, 'sound/machines/button.ogg', 30, 1, 0)
 			irradiating = radiation_duration
-			var/lock_state = connected.locked
-			connected.locked = TRUE //lock it
+			var/lock_state = connected().locked
+			connected().locked = TRUE //lock it
 			addtimer(CALLBACK(src, PROC_REF(do_pulse), lock_state), radiation_duration SECONDS, TIMER_DELETE_ME)
 			return TRUE
 		if("radiationDuration")
@@ -531,13 +531,13 @@
 			return TRUE
 		if("injectRejuvenators")
 			playsound(src, 'sound/machines/button.ogg', 30, 1, 0)
-			if(!connected.get_occupant() || !connected.beaker)
+			if(!connected().get_occupant() || !connected().beaker)
 				return TRUE
-			var/mob/living/carbon/WC = connected?.get_occupant()
+			var/mob/living/carbon/WC = connected()?.get_occupant()
 			var/inject_amount = clamp(round(text2num(params["amount"]), 5), 0, 50) // round to nearest 5 and clamp to 0-50
 			if(!inject_amount)
 				return TRUE
-			connected.beaker.reagents.trans_to_mob(WC, inject_amount, CHEM_BLOOD)
+			connected().beaker.reagents.trans_to_mob(WC, inject_amount, CHEM_BLOOD)
 			return TRUE
 	////////////////////////////////////////////////////////
 		if("selectSEBlock") // This chunk of code updates selected block / sub-block based on click (se stands for strutural enzymes)
@@ -551,17 +551,17 @@
 			selected_se_subblock = clamp(select_subblock, 1, DNA_BLOCK_SIZE)
 			return TRUE
 		if("pulseSERadiation")
-			if(!connected?.get_occupant())
+			if(!connected()?.get_occupant())
 				return TRUE
-			var/mob/living/carbon/WC = connected?.get_occupant()
+			var/mob/living/carbon/WC = connected()?.get_occupant()
 			playsound(src, "keyboard", 40)
 			var/block = WC.dna.GetSESubBlock(selected_se_block,selected_se_subblock)
 			//var/original_block=block
 			//testing("Irradiating SE block [selected_se_block]:[selected_se_subblock] ([block])...")
 
 			irradiating = radiation_duration
-			var/lock_state = connected.locked
-			connected.locked = TRUE //lock it
+			var/lock_state = connected().locked
+			connected().locked = TRUE //lock it
 
 			//We call the do_irradiate proc here after radation_duration SECONDS
 			addtimer(CALLBACK(src, PROC_REF(do_irradiate), lock_state, block), radiation_duration SECONDS, TIMER_DELETE_ME)
@@ -569,14 +569,14 @@
 
 		if("ejectBeaker")
 			playsound(src, 'sound/machines/button.ogg', 30, 1, 0)
-			if(connected.beaker)
-				var/obj/item/reagent_containers/glass/B = connected.beaker
-				B.forceMove(connected.loc)
-				connected.beaker = null
+			if(connected().beaker)
+				var/obj/item/reagent_containers/glass/B = connected().beaker
+				B.forceMove(connected().loc)
+				connected().beaker = null
 			return TRUE
 		if("ejectOccupant")
 			playsound(src, 'sound/machines/button.ogg', 30, 1, 0)
-			connected.eject_occupant()
+			connected().eject_occupant()
 			// Eject disk too, because we can't get to the UI otherwise
 			if(!disk)
 				return TRUE
@@ -594,7 +594,7 @@
 				// Traitgenes Moved SE and UI saves to storing the entire body record
 				if("saveDNA")
 					playsound(src, "keyboard", 40) // into console
-					var/mob/living/carbon/WC = connected?.get_occupant()
+					var/mob/living/carbon/WC = connected()?.get_occupant()
 					if(WC && WC.dna)
 						// Traitgenes Properly clone records
 						var/datum/transhuman/body_record/databuf = new /datum/transhuman/body_record()
@@ -621,12 +621,12 @@
 					tgui_modal_input(src, "changeBufferLabel", "Please enter the new buffer label:", null, list("id" = bufferId), buffer.mydna.name, TGUI_MODAL_INPUT_MAX_LENGTH_NAME)
 					return TRUE
 				if("transfer")
-					var/mob/living/carbon/WC = connected?.get_occupant()
+					var/mob/living/carbon/WC = connected()?.get_occupant()
 					if(!WC || (WC.has_mutation(NOCLONE)) || !WC.dna)
 						return TRUE
 					irradiating = 2
-					var/lock_state = connected.locked
-					connected.locked = 1//lock it
+					var/lock_state = connected().locked
+					connected().locked = 1//lock it
 					addtimer(CALLBACK(src, PROC_REF(do_transfer), lock_state, bufferId), 2 SECONDS, TIMER_DELETE_ME)
 					return TRUE
 				if("createInjector")
@@ -794,9 +794,9 @@
 	to_chat(user, span_notice( "Initiating growing cycle..."))
 
 /obj/machinery/computer/scan_consolenew/proc/do_irradiate(lock_state, block)
-	var/mob/living/carbon/WC = connected?.get_occupant()
+	var/mob/living/carbon/WC = connected()?.get_occupant()
 	irradiating = 0
-	connected.locked = lock_state
+	connected().locked = lock_state
 	if(!WC)
 		return
 
@@ -829,9 +829,9 @@
 	WC.regenerate_icons()
 
 /obj/machinery/computer/scan_consolenew/proc/do_pulse(lock_state)
-	var/mob/living/carbon/WC = connected?.get_occupant()
+	var/mob/living/carbon/WC = connected()?.get_occupant()
 	irradiating = 0
-	connected.locked = lock_state
+	connected().locked = lock_state
 
 	if(!WC)
 		return
@@ -856,11 +856,11 @@
 
 /obj/machinery/computer/scan_consolenew/proc/do_transfer(lock_state, bufferId)
 	irradiating = 0
-	connected.locked = lock_state
+	connected().locked = lock_state
 
 	playsound(src, "keyboard", 40)
 
-	var/mob/living/carbon/WC = connected?.get_occupant()
+	var/mob/living/carbon/WC = connected()?.get_occupant()
 	if(!WC)
 		return TRUE
 	var/datum/transhuman/body_record/buf = buffers[bufferId] // Traitgenes- Use bodyrecords
@@ -868,7 +868,7 @@
 		// Apply SEs only to the current occupant!
 		WC.dna.SE = buf.mydna.dna.SE.Copy()
 		WC.dna.UpdateSE()
-		domutcheck(WC,connected, MUTCHK_FORCED | MUTCHK_HIDEMSG) // TOO MANY MUTATIONS FOR MESSAGES
+		domutcheck(WC,connected(), MUTCHK_FORCED | MUTCHK_HIDEMSG) // TOO MANY MUTATIONS FOR MESSAGES
 		WC.UpdateAppearance()
 		to_chat(WC, span_warning("Your body stings as it wildly changes!"))
 
@@ -890,3 +890,7 @@
 REF_OWNED(/datum/dna2/record, list("dna"))
 REF_HELD(/obj/machinery/dna_scannernew, list("beaker"))
 REF_HELD(/obj/machinery/computer/scan_consolenew, list("disk"))
+
+/// LC-refs: connected -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/scan_consolenew/proc/connected() as /obj/machinery/dna_scannernew
+	return om_resolve(connected_handle)

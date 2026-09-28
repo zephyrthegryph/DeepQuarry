@@ -10,7 +10,7 @@
 	anchored = TRUE
 	var/hatch_open = FALSE
 	var/plating_color = null
-	var/obj/item/stack/tile/plated_tile = null
+	var/plated_tile
 	var/static/plating_colors = list(
 		/obj/item/stack/tile/floor = "#858a8f",
 		/obj/item/stack/tile/floor/dark = "#4f4f4f",
@@ -192,3 +192,4 @@
 	icon_state = "catwalk_techfloor"
 	tile = /obj/item/stack/tile/floor/techgrey
 	platecolor = "#363f43"
+

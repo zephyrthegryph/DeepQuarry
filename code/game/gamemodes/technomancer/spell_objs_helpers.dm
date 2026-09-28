@@ -15,28 +15,28 @@
 
 // Used to distinguish friend from foe.
 /obj/item/spell/proc/is_ally(mob/living/L)
-	if(L == owner) // The best ally is ourselves.
+	if(L == owner_ref()) // The best ally is ourselves.
 		return 1
 	if(L.mind && GLOB.technomancers.is_antagonist(L.mind)) // This should be done better since we might want opposing technomancers later.
 		return 1
 	if(isanimal(L)) // Mind controlled simple mobs count as allies too.
 		var/mob/living/simple_mob/SM = L
-		if(owner in SM.friends)
+		if(owner_ref() in SM.friends)
 			return 1
 	return 0
 
 /obj/item/spell/proc/allowed_to_teleport()
-	if(owner)
-		if(owner.z in using_map.admin_levels)
+	if(owner_ref())
+		if(owner_ref().z in using_map.admin_levels)
 			return FALSE
 
-		var/turf/T = get_turf(owner)
+		var/turf/T = get_turf(owner_ref())
 		if(T.block_tele)
 			return FALSE
 	return TRUE
 
 /obj/item/spell/proc/within_range(atom/target, max_range = 7) // Beyond 7 is off the screen.
-	if(target in view(max_range, owner))
+	if(target in view(max_range, owner_ref()))
 		return TRUE
 	return FALSE
 
@@ -51,9 +51,9 @@
 	for(var/mob/living/L in potential_targets)
 		if(is_ally(L)) // Don't shoot our friends.
 			continue
-		if(L.invisibility > owner.see_invisible) // Don't target ourselves or people we can't see.
+		if(L.invisibility > owner_ref().see_invisible) // Don't target ourselves or people we can't see.
 			continue
-		if(!(L in viewers(owner))) // So we don't shoot at walls if someone is hiding behind one.
+		if(!(L in viewers(owner_ref()))) // So we don't shoot at walls if someone is hiding behind one.
 			continue
 		if(!L.stat) // Don't want to target dead people or SSDs.
 			chosen_target = L

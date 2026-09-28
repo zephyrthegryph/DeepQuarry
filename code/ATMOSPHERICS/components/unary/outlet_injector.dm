@@ -209,7 +209,7 @@
 
 		if("-SAVE TO BUFFER-")
 			var/obj/item/multitool/tool = W
-			tool.connectable = src
+			tool.connectable_handle = om_handle(src)
 			to_chat(user, span_notice("You copied the [src] into the [tool]'s buffer!"))
 
 	return ITEM_INTERACT_SUCCESS

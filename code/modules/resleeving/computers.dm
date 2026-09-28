@@ -54,7 +54,7 @@
 
 /obj/machinery/computer/transhuman/resleeving/proc/releasepods()
 	for(var/obj/machinery/clonepod/transhuman/P in pods)
-		P.connected = null
+		P.connected_handle = null
 		P.name = initial(P.name)
 	pods.Cut()
 	for(var/obj/machinery/transhuman/synthprinter/P in spods)
@@ -70,9 +70,9 @@
 	var/num = 1
 	var/area/A = get_area(src)
 	for(var/obj/machinery/clonepod/transhuman/P in A.get_contents())
-		if(!P.connected)
+		if(!P.connected())
 			pods += P
-			P.connected = src
+			P.connected_handle = om_handle(src)
 			P.name = "[initial(P.name)] #[num++]"
 	for(var/obj/machinery/transhuman/synthprinter/P in A.get_contents())
 		if(!P.connected)
@@ -107,11 +107,11 @@
 
 /obj/machinery/computer/transhuman/resleeving/multitool_act(mob/user, obj/item/tool)
 	var/obj/item/multitool/multitool = tool
-	var/obj/machinery/clonepod/transhuman/pod = multitool.connecting
+	var/obj/machinery/clonepod/transhuman/pod = multitool.connecting()
 	if(!istype(pod) || (pod in pods))
 		return ITEM_INTERACT_BLOCKING
 	pods += pod
-	pod.connected = src
+	pod.connected_handle = om_handle(src)
 	pod.name = "[initial(pod.name)] #[pods.len]"
 	to_chat(user, span_notice("You connect [pod] to [src]."))
 	return ITEM_INTERACT_SUCCESS

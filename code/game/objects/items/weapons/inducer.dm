@@ -267,13 +267,13 @@
 	maxcharge = 100
 	item_flags = ABSTRACT
 
-	var/mob/living/carbon/human/hume
+	var/hume_handle
 
 /obj/item/cell/standin/Initialize(mapload, mob/living/carbon/human/H)
 	. = ..()
 	if(!istype(H))
 		return INITIALIZE_HINT_QDEL
-	hume = H
+	hume_handle = om_handle(H)
 	charge = H.nutrition
 	maxcharge = initial(H.nutrition)
 
@@ -282,7 +282,7 @@
 
 /obj/item/cell/standin/give(amount, update_appearance = TRUE)
 	. = ..(amount * NUTRITION_COEFF, update_appearance) //Shrink amount to store
-	hume.adjust_nutrition(.) //Add the amount we really stored
+	hume().adjust_nutrition(.) //Add the amount we really stored
 	. /= NUTRITION_COEFF //Inflate amount to take from the giver
 
 #undef NUTRITION_COEFF
@@ -296,3 +296,7 @@
 
 REF_OWNED(/obj/item/inducer, list("spark_system"))
 REF_HELD(/obj/item/inducer, list("cell"))
+
+/// LC-refs: hume -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/cell/standin/proc/hume() as /mob/living/carbon/human
+	return om_resolve(hume_handle)

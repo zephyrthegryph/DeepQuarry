@@ -246,18 +246,18 @@
 	/// code/game/atom/armor.dm). Read it through get_armor().
 	var/armor_spec
 	/// This instance's armour when it differs from its type's (set_armor()).
-	var/tmp/datum/armor/armor_override
+	var/tmp/armor_override_handle
 
 /// This atom's armour. The one accessor: never read armour any other way.
 /atom/proc/get_armor()
 	RETURN_TYPE(/datum/armor)
-	return armor_override || dq_armor_from_spec(armor_spec)
+	return armor_override() || dq_armor_from_spec(armor_spec)
 
 /// Give this instance armour `new_armor` (an interned datum); null restores
 /// its type's.
 /atom/proc/set_armor(datum/armor/new_armor)
 	var/datum/armor/type_armor = dq_armor_from_spec(armor_spec)
-	armor_override = (!new_armor || new_armor == type_armor) ? null : new_armor
+	armor_override_handle = om_handle((!new_armor || new_armor == type_armor) ? null : new_armor)
 	armor_changed()
 
 /// Set one armour key on this instance.
@@ -294,3 +294,7 @@
 		if(.)
 			return
 	return 0
+
+/// LC-refs: armor override -- an OM handle (om_handle()), so it reads null once that is deleted.
+/atom/proc/armor_override() as /datum/armor
+	return om_resolve(armor_override_handle)

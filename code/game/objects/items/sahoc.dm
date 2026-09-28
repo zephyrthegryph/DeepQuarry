@@ -9,12 +9,12 @@
 	throw_range = 20
 	force = 0
 	var/colorindex = 0
-	var/mob/living/capsuleowner = null //taken from Capsule Code
+	var/capsuleowner_handle //taken from Capsule Code
 	var/sizetouse = 0.25
 
 /obj/item/buttonofnormal/pickup(mob/user)
-	if(!capsuleowner)
-		capsuleowner = user
+	if(!capsuleowner())
+		capsuleowner_handle = om_handle(user)
 
 /obj/item/buttonofnormal/attack_self(mob/user)
 	. = ..(user)
@@ -22,7 +22,7 @@
 		return TRUE
 	if(colorindex)
 		nonrandom()
-	addtimer(CALLBACK(src, PROC_REF(do_size_effect), capsuleowner), 10, TIMER_DELETE_ME)
+	addtimer(CALLBACK(src, PROC_REF(do_size_effect), capsuleowner()), 10, TIMER_DELETE_ME)
 
 /obj/item/buttonofnormal/throw_impact(atom/A, speed, mob/user)
 	..()
@@ -44,7 +44,7 @@
 		icon_state = "mobcap[colorindex]"
 		update_icon()
 	if(istype(W, /obj/item/card/id))
-		capsuleowner = null
+		capsuleowner_handle = null
 	..()
 
 /obj/item/buttonofnormal/proc/nonrandom() //Secret ball randmoizer rig code
@@ -160,3 +160,7 @@
 		H.update_icon()
 	else
 		return 1
+
+/// LC-refs: capsuleowner -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/buttonofnormal/proc/capsuleowner() as /mob/living
+	return om_resolve(capsuleowner_handle)

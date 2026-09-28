@@ -19,7 +19,7 @@
 	var/electricity_level = 1 // intensity of the magnetic pull
 	var/magnetic_field = 1 // the range of magnetic attraction
 	var/code = 0 // frequency code, they should be different unless you have a group of magnets working together or something
-	var/turf/center // the center of magnetic attraction
+	var/center_handle // the center of magnetic attraction
 	var/on = 0
 	var/magnet_active = 0
 
@@ -32,7 +32,7 @@
 	. = ..()
 	var/turf/T = loc
 	hide(!T.is_plating())
-	center = T
+	center_handle = om_handle(T)
 
 	if(SSradio)
 		SSradio.add_object(src, freq, RADIO_MAGNETS)
@@ -160,15 +160,15 @@
 
 	if(on)
 		magnet_active = 1
-		center = locate(x+center_x, y+center_y, z)
-		if(center)
-			for(var/obj/M in orange(magnetic_field, center))
+		center_handle = om_handle(locate(x+center_x, y+center_y, z))
+		if(get_center())
+			for(var/obj/M in orange(magnetic_field, get_center()))
 				if(!M.anchored && !(M.flags & NOCONDUCT))
-					step_towards(M, center)
+					step_towards(M, get_center())
 
-			for(var/mob/living/silicon/S in orange(magnetic_field, center))
+			for(var/mob/living/silicon/S in orange(magnetic_field, get_center()))
 				if(isAI(S)) continue
-				step_towards(S, center)
+				step_towards(S, get_center())
 
 		use_power(electricity_level * 5)
 		addtimer(CALLBACK(src, PROC_REF(magnetic_process), TRUE), 13 - electricity_level, TIMER_DELETE_ME)
@@ -197,7 +197,7 @@
 	var/moving = 0 // 1 if scheduled to loop
 	var/looping = 0 // 1 if looping
 
-	var/datum/radio_frequency/radio_connection
+	var/radio_connection_handle
 
 /obj/machinery/magnetic_controller/Initialize(mapload)
 	. = ..()
@@ -208,7 +208,7 @@
 				LAZYADD(magnets, M)
 
 	if(SSradio)
-		radio_connection = SSradio.add_object(src, frequency, RADIO_MAGNETS)
+		radio_connection_handle = om_handle(SSradio.add_object(src, frequency, RADIO_MAGNETS))
 
 	if(path) // check for default path
 		filter_path() // renders rpath
@@ -273,7 +273,7 @@
 
 		// Broadcast the signal
 
-		radio_connection.post_signal(src, signal, radio_filter = RADIO_MAGNETS)
+		radio_connection().post_signal(src, signal, radio_filter = RADIO_MAGNETS)
 
 	if(href_list["operation"])
 		switch(href_list["operation"])
@@ -334,7 +334,7 @@
 	pathpos++ // increase iterator
 
 	// Broadcast the signal
-	radio_connection.post_signal(src, signal, radio_filter = RADIO_MAGNETS)
+	radio_connection().post_signal(src, signal, radio_filter = RADIO_MAGNETS)
 
 	om_after(src, speed == 10 ? 1 : 12 - speed, PROC_REF(magnet_move_step))
 
@@ -356,3 +356,11 @@
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/magnetic_module/step_start_condition()
 	return TRUE // its power draw
+
+/// LC-refs: center -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/magnetic_module/proc/get_center() as /turf
+	return om_resolve(center_handle)
+
+/// LC-refs: radio connection -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/magnetic_controller/proc/radio_connection() as /datum/radio_frequency
+	return om_resolve(radio_connection_handle)

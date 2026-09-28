@@ -225,7 +225,7 @@
 	var/time_entered = 0          // Used to keep track of the safe period.
 	var/obj/item/radio/intercom/announce //
 
-	var/obj/machinery/computer/cryopod/control_computer
+	var/control_computer_handle
 	var/last_no_computer_message = 0
 	var/applies_stasis = 0 // allow people to change their mind
 
@@ -317,21 +317,21 @@
 	find_control_computer()
 
 /obj/machinery/cryopod/proc/find_control_computer(urgent=0)
-	control_computer = null
+	control_computer_handle = null
 
 	var/area/my_area = get_area(src)
-	control_computer = locate(/obj/machinery/computer/cryopod) in my_area
+	control_computer_handle = om_handle(locate(/obj/machinery/computer/cryopod) in my_area)
 
-	if(!control_computer) //Fallback to old method.
-		control_computer = locate(/obj/machinery/computer/cryopod) in range(6,src)
+	if(!control_computer()) //Fallback to old method.
+		control_computer_handle = om_handle(locate(/obj/machinery/computer/cryopod) in range(6,src))
 
 	// Don't send messages unless we *need* the computer, and less than five minutes have passed since last time we messaged
-	if(!control_computer && urgent && last_no_computer_message + 5 MINUTES < world.time)
+	if(!control_computer() && urgent && last_no_computer_message + 5 MINUTES < world.time)
 		log_admin("Cryopod in [my_area] could not find control computer!")
 		message_admins("Cryopod in [my_area] could not find control computer!")
 		last_no_computer_message = world.time
 
-	return control_computer != null
+	return control_computer() != null
 
 /obj/machinery/cryopod/proc/check_occupant_allowed(mob/M)
 	var/correct_type = 0
@@ -362,7 +362,7 @@
 			return
 
 		if(!occupant.client && occupant.stat<2) //Occupant is living and has no client.
-			if(!control_computer)
+			if(!control_computer())
 				if(!find_control_computer(urgent=1))
 					return
 
@@ -543,8 +543,8 @@
 		//TODO: Check objectives/mode, update new targets if this mob is the target, spawn new antags?
 
 		//Make an announcement and log the person entering storage.
-		LAZYADD(control_computer.frozen_crew, "[to_despawn.real_name], [to_despawn.mind.role_alt_title] - [stationtime2text()]")
-		LAZYADD(control_computer._admin_logs, "[key_name(to_despawn)] ([to_despawn.mind.role_alt_title]) at [stationtime2text()]")
+		LAZYADD(control_computer().frozen_crew, "[to_despawn.real_name], [to_despawn.mind.role_alt_title] - [stationtime2text()]")
+		LAZYADD(control_computer()._admin_logs, "[key_name(to_despawn)] ([to_despawn.mind.role_alt_title]) at [stationtime2text()]")
 		log_and_message_admins("([to_despawn.mind.role_alt_title]) entered cryostorage.", to_despawn)
 
 		var/depart_announce = TRUE
@@ -871,8 +871,8 @@
 	log_game("CRYO [loaded_from_key]/([to_despawn.name]) cryo'd with [item_name] ([item.type])")
 	qdel(item)
 
-	if(control_computer && control_computer.allow_items)
-		LAZYADD(control_computer.frozen_items, "[item_name] ([char_name])")
+	if(control_computer() && control_computer().allow_items)
+		LAZYADD(control_computer().frozen_items, "[item_name] ([char_name])")
 
 /obj/machinery/cryopod/robot/door/gateway/quiet
 	name = "departure teleporter"
@@ -885,3 +885,7 @@
 	quiet = TRUE
 
 REF_HELD(/obj/machinery/cryopod, list("announce"))
+
+/// LC-refs: control computer -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/cryopod/proc/control_computer() as /obj/machinery/computer/cryopod
+	return om_resolve(control_computer_handle)

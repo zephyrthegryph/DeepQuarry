@@ -1360,12 +1360,12 @@
 
 	else if(href_list["ac_menu_wanted"])
 		var/already_wanted = 0
-		if(GLOB.news_network.wanted_issue)
+		if(GLOB.news_network.wanted_issue())
 			already_wanted = 1
 
 		if(already_wanted)
-			src.admincaster_feed_message.author = GLOB.news_network.wanted_issue.author
-			src.admincaster_feed_message.body = GLOB.news_network.wanted_issue.body
+			src.admincaster_feed_message.author = GLOB.news_network.wanted_issue().author
+			src.admincaster_feed_message.body = GLOB.news_network.wanted_issue().body
 		src.admincaster_screen = 14
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
 
@@ -1390,15 +1390,15 @@
 					WANTED.body = src.admincaster_feed_message.body                   //Wanted desc
 					WANTED.backup_author = src.admincaster_signature                  //Submitted by
 					WANTED.is_admin_message = 1
-					GLOB.news_network.wanted_issue = WANTED
+					GLOB.news_network.wanted_issue_handle = om_handle(WANTED)
 					for(var/obj/machinery/newscaster/NEWSCASTER in REGISTRY_MEMBERS(REGISTRY_CASTERS))
 						NEWSCASTER.newsAlert()
 						NEWSCASTER.update_icon()
 					src.admincaster_screen = 15
 				else
-					GLOB.news_network.wanted_issue.author = src.admincaster_feed_message.author
-					GLOB.news_network.wanted_issue.body = src.admincaster_feed_message.body
-					GLOB.news_network.wanted_issue.backup_author = src.admincaster_feed_message.backup_author
+					GLOB.news_network.wanted_issue().author = src.admincaster_feed_message.author
+					GLOB.news_network.wanted_issue().body = src.admincaster_feed_message.body
+					GLOB.news_network.wanted_issue().backup_author = src.admincaster_feed_message.backup_author
 					src.admincaster_screen = 19
 				log_admin("[key_name_admin(usr)] issued a Station-wide Wanted Notification for [src.admincaster_feed_message.author]!")
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
@@ -1406,7 +1406,7 @@
 	else if(href_list["ac_cancel_wanted"])
 		var/choice = tgui_alert(usr, "Please confirm Wanted Issue removal","Network Security Handler",list("Confirm","Cancel"))
 		if(choice=="Confirm")
-			GLOB.news_network.wanted_issue = null
+			GLOB.news_network.wanted_issue_handle = null
 			for(var/obj/machinery/newscaster/NEWSCASTER in REGISTRY_MEMBERS(REGISTRY_CASTERS))
 				NEWSCASTER.update_icon()
 			src.admincaster_screen=17

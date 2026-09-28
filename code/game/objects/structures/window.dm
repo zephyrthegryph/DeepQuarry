@@ -518,8 +518,8 @@
 	var/obj/item/multitool/MT = W.get_multitool()
 	if(MT && !anchored) // Only allow programming if unanchored!
 		// First check if they have a windowtint button buffered
-		if(istype(MT.connectable, /obj/machinery/button/windowtint))
-			var/obj/machinery/button/windowtint/buffered_button = MT.connectable
+		if(istype(MT.connectable(), /obj/machinery/button/windowtint))
+			var/obj/machinery/button/windowtint/buffered_button = MT.connectable()
 			src.id = buffered_button.id
 			to_chat(user, span_notice("\The [src] is linked to \the [buffered_button] with ID '[id]'."))
 			return TRUE
@@ -595,7 +595,7 @@
 			to_chat(user, span_notice("The new ID of \the [src] is '[id]'. To reset this, rebuild the control."))
 	if(id)
 		to_chat(user, span_notice("You store \the [src] ID ('[id]') in \the [multitool]'s buffer!"))
-		multitool.connectable = src
+		multitool.connectable_handle = om_handle(src)
 		multitool.update_icon()
 	return ITEM_INTERACT_SUCCESS
 

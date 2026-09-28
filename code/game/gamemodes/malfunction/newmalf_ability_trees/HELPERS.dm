@@ -52,7 +52,7 @@
 		return
 
 	if(C)
-		C.owner = user
+		C.owner_handle = om_handle(user)
 		C.install()
 
 // Verb: ai_help()
@@ -88,7 +88,7 @@
 	var/datum/malf_research_ability/tar = tgui_input_list(user, "Select your next research target", "Select Research", res.available_abilities)
 	if(!tar)
 		return
-	res.focus = tar
+	res.focus_handle = om_handle(tar)
 	to_chat(user, "Research set: [tar.name]")
 
 // HELPER PROCS

@@ -77,7 +77,7 @@ SUBSYSTEM_DEF(transcore)
 		//In a human
 		BITSET(H.hud_updateflag, BACKUP_HUD)
 
-		if(H == imp.imp_in && H.stat < DEAD)
+		if(H == imp.imp_in() && H.stat < DEAD)
 			if(H.mind)
 				db.m_backup(H.mind,H.nif)
 			else if(H.vr_link && H.vr_link.mind)

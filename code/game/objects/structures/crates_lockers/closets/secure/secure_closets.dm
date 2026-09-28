@@ -147,7 +147,7 @@
 
 /obj/structure/closet/secure_closet/mind
 	name = "mind secured locker"
-	var/datum/mind/owner
+	var/owner_handle
 	var/self_del = 1
 	anchored = 0
 
@@ -155,17 +155,17 @@
 	. = ..()
 	self_del = del_self
 	if(mind_target)
-		owner = mind_target
-		name = "Owned by [owner.name]"
-		if(owner.current)
-			var/icon/I = get_flat_icon(owner.current, dir=SOUTH, no_anim=TRUE)
+		owner_handle = om_handle(mind_target)
+		name = "Owned by [owner_ref().name]"
+		if(owner_ref().current)
+			var/icon/I = get_flat_icon(owner_ref().current, dir=SOUTH, no_anim=TRUE)
 			var/image/IM = image(I, pixel_x = (32 - I.Width()))
 			//icon2base64(get_flat_icon(owner.current,dir=SOUTH,no_anim=TRUE))
 			add_overlay(IM)
 			qdel(I)
 
 /obj/structure/closet/secure_closet/mind/allowed(mob/user)
-	if(user.mind == owner)
+	if(user.mind == owner_ref())
 		return TRUE
 	else
 		return FALSE
@@ -182,3 +182,7 @@
 			icon = closet_appearance.icon
 			color = null
 	update_icon()
+
+/// LC-refs: owner -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/structure/closet/secure_closet/mind/proc/owner_ref() as /datum/mind
+	return om_resolve(owner_handle)

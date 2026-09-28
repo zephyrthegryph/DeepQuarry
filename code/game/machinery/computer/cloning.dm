@@ -8,17 +8,19 @@
 	icon_screen = "dna"
 	circuit = /obj/item/circuitboard/cloning
 	req_access = list(ACCESS_HEADS) //Only used for record deletion right now.
-	var/obj/machinery/dna_scannernew/scanner = null //Linked scanner. For scanning.
+	var/scanner_handle //Linked scanner. For scanning.
 	var/list/pods = null //Linked cloning pods.
 	var/list/temp = null
 	var/list/scantemp = null
 	var/menu = MENU_MAIN //Which menu screen to display
 	var/list/records = null
-	var/datum/transhuman/body_record/active_BR = null
+	var/active_BR_handle
+	/// A record loaded from a disk: the console is its only holder, so it owns it (active_BR is a handle).
+	var/datum/transhuman/body_record/loaded_BR
 	var/obj/item/disk/body_record/diskette = null // Traitgenes - Storing the entire body record
 	var/loading = 0 // Nice loading text
 	var/autoprocess = 0
-	var/obj/machinery/clonepod/selected_pod
+	var/selected_pod_handle
 	// 0: Standard body scan
 	// 1: The "Best" scan available
 	var/scan_mode = 1
@@ -42,11 +44,11 @@ REF_OWNED_LIST(/obj/machinery/computer/cloning, "records")
 /obj/machinery/computer/cloning/machine_step()
 	if(!autoprocess)
 		return PROCESS_KILL
-	if(!scanner || !pods.len || stat & NOPOWER)
+	if(!scanner() || !pods.len || stat & NOPOWER)
 		return
 
-	if(scanner.get_occupant() && can_autoprocess())
-		scan_mob(scanner.get_occupant())
+	if(scanner().get_occupant() && can_autoprocess())
+		scan_mob(scanner().get_occupant())
 
 	if(!LAZYLEN(records))
 		return
@@ -59,11 +61,11 @@ REF_OWNED_LIST(/obj/machinery/computer/cloning, "records")
 						records.Remove(BR)
 
 /obj/machinery/computer/cloning/proc/updatemodules()
-	scanner = findscanner()
+	scanner_handle = om_handle(findscanner())
 	releasecloner()
 	findcloner()
-	if(!selected_pod && pods.len)
-		selected_pod = pods[1]
+	if(!selected_pod() && pods.len)
+		selected_pod_handle = om_handle(pods[1])
 
 /obj/machinery/computer/cloning/proc/findscanner()
 	var/obj/machinery/dna_scannernew/scannerf = null
@@ -83,16 +85,16 @@ REF_OWNED_LIST(/obj/machinery/computer/cloning, "records")
 
 /obj/machinery/computer/cloning/proc/releasecloner()
 	for(var/obj/machinery/clonepod/P in pods)
-		P.connected = null
+		P.connected_handle = null
 		P.name = initial(P.name)
 	pods.Cut()
 
 /obj/machinery/computer/cloning/proc/findcloner()
 	var/num = 1
 	for(var/obj/machinery/clonepod/P in get_area(src))
-		if(!P.connected)
+		if(!P.connected())
 			pods += P
-			P.connected = src
+			P.connected_handle = om_handle(src)
 			P.name = "[initial(P.name)] #[num++]"
 
 /obj/machinery/computer/cloning/attackby(obj/item/W as obj, mob/user as mob, params)
@@ -111,10 +113,10 @@ REF_OWNED_LIST(/obj/machinery/computer/cloning, "records")
 	if(!istype(tool, /obj/item/multitool))
 		return ITEM_INTERACT_BLOCKING
 	var/obj/item/multitool/multitool = tool
-	var/obj/machinery/clonepod/pod = multitool.connecting
+	var/obj/machinery/clonepod/pod = multitool.connecting()
 	if(pod && !(pod in pods))
 		pods += pod
-		pod.connected = src
+		pod.connected_handle = om_handle(src)
 		pod.name = "[initial(pod.name)] #[length(pods)]"
 		to_chat(user, span_notice("You connect [pod] to [src]."))
 	return ITEM_INTERACT_SUCCESS
@@ -148,7 +150,7 @@ REF_OWNED_LIST(/obj/machinery/computer/cloning, "records")
 /obj/machinery/computer/cloning/tgui_data(mob/user)
 	var/data[0]
 	data["menu"] = menu
-	data["scanner"] = sanitize("[scanner]")
+	data["scanner"] = sanitize("[scanner()]")
 
 	var/canpodautoprocess = 0
 	if(pods.len)
@@ -179,24 +181,24 @@ REF_OWNED_LIST(/obj/machinery/computer/cloning, "records")
 	data["can_brainscan"] = can_brainscan() // You'll need tier 4s for this
 	data["scan_mode"] = scan_mode
 
-	if(scanner && pods.len && ((scanner.scan_level > 2) || canpodautoprocess))
+	if(scanner() && pods.len && ((scanner().scan_level > 2) || canpodautoprocess))
 		data["autoallowed"] = 1
 	else
 		data["autoallowed"] = 0
-	if(scanner)
-		data["occupant"] = scanner.get_occupant()
-		data["locked"] = scanner.locked
+	if(scanner())
+		data["occupant"] = scanner().get_occupant()
+		data["locked"] = scanner().locked
 	data["temp"] = temp
 	data["scantemp"] = scantemp
 	data["disk"] = diskette
-	data["selected_pod"] = "\ref[selected_pod]"
+	data["selected_pod"] = "\ref[selected_pod()]"
 	var/list/temprecords[0]
 	for(var/datum/transhuman/body_record/BR in records)
 		var tempRealName = BR.mydna.dna.real_name
 		temprecords.Add(list(list("record" = "\ref[BR]", "realname" = sanitize(tempRealName))))
 	data["records"] = temprecords
 
-	if(selected_pod && (selected_pod in pods) && selected_pod.get_biomass() >= CLONE_BIOMASS)
+	if(selected_pod() && (selected_pod() in pods) && selected_pod().get_biomass() >= CLONE_BIOMASS)
 		data["podready"] = 1
 	else
 		data["podready"] = 0
@@ -212,25 +214,25 @@ REF_OWNED_LIST(/obj/machinery/computer/cloning, "records")
 	. = TRUE
 	switch(tgui_modal_act(src, action, params))
 		if(TGUI_MODAL_ANSWER)
-			if(params["id"] == "del_rec" && active_BR)
+			if(params["id"] == "del_rec" && active_BR())
 				var/obj/item/card/id/C = ui.user.get_active_hand()
 				if(!istype(C) && !istype(C, /obj/item/pda))
 					set_temp("ID not in hand.", "danger")
 					return
 				if(check_access(C))
-					records.Remove(active_BR)
-					qdel(active_BR) // Already deletes dna in destroy()
+					records.Remove(active_BR())
+					qdel(active_BR()) // Already deletes dna in destroy()
 					set_temp("Record deleted.", "success")
 					menu = MENU_RECORDS
 				else
 					set_temp("Access denied.", "danger")
 			return
 
-	var/mob/living/carbon/human/scanner_occupant = scanner?.get_occupant()
+	var/mob/living/carbon/human/scanner_occupant = scanner()?.get_occupant()
 
 	switch(action)
 		if("scan")
-			if(!scanner || !scanner_occupant || loading)
+			if(!scanner() || !scanner_occupant || loading)
 				return
 			set_scan_temp("Scanner ready.", "good")
 			loading = TRUE
@@ -243,35 +245,35 @@ REF_OWNED_LIST(/obj/machinery/computer/cloning, "records")
 			else
 				MACHINE_SLEEP(src)
 		if("lock")
-			if(isnull(scanner) || !scanner_occupant) //No locking an open scanner.
+			if(isnull(scanner()) || !scanner_occupant) //No locking an open scanner.
 				return
-			scanner.locked = !scanner.locked
+			scanner().locked = !scanner().locked
 		if("view_rec")
 			var/ref = params["ref"]
 			if(!length(ref))
 				return
-			active_BR = locate(ref)
-			if(istype(active_BR))
-				if(isnull(active_BR.ckey))
-					qdel(active_BR)
+			active_BR_handle = om_handle(locate(ref))
+			if(istype(active_BR(), /datum/transhuman/body_record))
+				if(isnull(active_BR().ckey))
+					qdel(active_BR())
 					set_temp("Error: Record corrupt.", "danger")
 				else
 					var/obj/item/implant/health/H = null
-					if(active_BR.mydna.implant)
-						H = locate(active_BR.mydna.implant)
+					if(active_BR().mydna.implant)
+						H = locate(active_BR().mydna.implant)
 					var/list/payload = list(
-						activerecord = "\ref[active_BR]",
+						activerecord = "\ref[active_BR()]",
 						health = (H && istype(H)) ? H.sensehealth() : "",
-						realname = sanitize(active_BR.mydna.dna.real_name),
-						unidentity = active_BR.mydna.dna.GetUniIdentity(),
-						strucenzymes = active_BR.mydna.dna.GetStrucEnzymes(),
+						realname = sanitize(active_BR().mydna.dna.real_name),
+						unidentity = active_BR().mydna.dna.GetUniIdentity(),
+						strucenzymes = active_BR().mydna.dna.GetStrucEnzymes(),
 					)
 					tgui_modal_message(src, action, "", null, payload)
 			else
-				active_BR = null
+				active_BR_handle = null
 				set_temp("Error: Record missing.", "danger")
 		if("del_rec")
-			if(!active_BR)
+			if(!active_BR())
 				return
 			tgui_modal_boolean(src, action, "Please confirm that you want to delete the record by holding your ID and pressing Delete:", yes_text = "Delete", no_text = "Cancel")
 		if("disk") // Disk management.
@@ -282,20 +284,21 @@ REF_OWNED_LIST(/obj/machinery/computer/cloning, "records")
 					if(isnull(diskette) || isnull(diskette.stored)) // Traitgenes Storing the entire body record
 						set_temp("Error: The disk's data could not be read.", "danger")
 						return
-					else if(isnull(active_BR))
+					else if(isnull(active_BR()))
 						set_temp("Error: No active record was found.", "danger")
 						menu = MENU_MAIN
 						return
 
-					active_BR = new(diskette.stored) // Traitgenes Storing the entire body record
+					loaded_BR = new /datum/transhuman/body_record(diskette.stored)
+					active_BR_handle = om_handle(loaded_BR) // Traitgenes Storing the entire body record
 					set_temp("Successfully loaded from disk.", "success")
 				if("save")
-					if(isnull(diskette) || isnull(active_BR)) // Traitgenes Removed readonly
+					if(isnull(diskette) || isnull(active_BR())) // Traitgenes Removed readonly
 						set_temp("Error: The data could not be saved.", "danger")
 						return
 
-					diskette.stored = new(active_BR) // Traitgenes Storing the entire body record
-					diskette.name = "data disk - '[active_BR.mydna.dna.real_name]'"
+					diskette.stored = new(active_BR()) // Traitgenes Storing the entire body record
+					diskette.name = "data disk - '[active_BR().mydna.dna.real_name]'"
 					set_temp("Successfully saved to disk.", "success")
 				if("eject")
 					if(!isnull(diskette))
@@ -309,7 +312,7 @@ REF_OWNED_LIST(/obj/machinery/computer/cloning, "records")
 				return
 			var/obj/machinery/clonepod/selected = locate(ref)
 			if(istype(selected) && (selected in pods))
-				selected_pod = selected
+				selected_pod_handle = om_handle(selected)
 		if("clone")
 			var/ref = params["ref"]
 			if(!length(ref))
@@ -322,9 +325,9 @@ REF_OWNED_LIST(/obj/machinery/computer/cloning, "records")
 				if(!length(pods))
 					set_temp("Error: No cloning pod detected.", "danger")
 				else
-					var/obj/machinery/clonepod/pod = selected_pod
+					var/obj/machinery/clonepod/pod = selected_pod()
 					var/cloneresult
-					if(!selected_pod)
+					if(!selected_pod())
 						set_temp("Error: No cloning pod selected.", "danger")
 					else if(pod.get_occupant())
 						set_temp("Error: The cloning pod is currently occupied.", "danger")
@@ -356,10 +359,10 @@ REF_OWNED_LIST(/obj/machinery/computer/cloning, "records")
 			else
 				scan_mode = FALSE
 		if("eject")
-			if(ui.user.incapacitated() || !scanner || loading)
+			if(ui.user.incapacitated() || !scanner() || loading)
 				return
-			scanner.eject_occupant(ui.user)
-			scanner.add_fingerprint(ui.user)
+			scanner().eject_occupant(ui.user)
+			scanner().add_fingerprint(ui.user)
 		if("cleartemp")
 			temp = null
 		else
@@ -370,7 +373,7 @@ REF_OWNED_LIST(/obj/machinery/computer/cloning, "records")
 /obj/machinery/computer/cloning/proc/scan_mob(mob/living/carbon/human/subject as mob, scan_brain = 0)
 	if(stat & NOPOWER)
 		return
-	if(scanner.stat & (NOPOWER|BROKEN))
+	if(scanner().stat & (NOPOWER|BROKEN))
 		return
 	if(scan_brain && !can_brainscan())
 		return
@@ -447,10 +450,10 @@ REF_OWNED_LIST(/obj/machinery/computer/cloning, "records")
 	return selected_record
 
 /obj/machinery/computer/cloning/proc/can_autoprocess()
-	return (scanner && scanner.scan_level > 2)
+	return (scanner() && scanner().scan_level > 2)
 
 /obj/machinery/computer/cloning/proc/can_brainscan()
-	return (scanner && scanner.scan_level > 3)
+	return (scanner() && scanner().scan_level > 3)
 
 /**
  * Sets a temporary message to display to the user
@@ -492,3 +495,17 @@ REF_OWNED_LIST(/obj/machinery/computer/cloning, "records")
 	return autoprocess
 
 REF_HELD(/obj/machinery/computer/cloning, list("diskette"))
+
+/// LC-refs: scanner -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/cloning/proc/scanner() as /obj/machinery/dna_scannernew
+	return om_resolve(scanner_handle)
+
+/// LC-refs: active BR -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/cloning/proc/active_BR() as /datum/transhuman/body_record
+	return om_resolve(active_BR_handle)
+
+/// LC-refs: selected pod -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/cloning/proc/selected_pod() as /obj/machinery/clonepod
+	return om_resolve(selected_pod_handle)
+
+REF_OWNED(/obj/machinery/computer/cloning, list("loaded_BR"))

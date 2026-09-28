@@ -3,7 +3,7 @@
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "pipe_d"
 	density = TRUE
-	var/turf/old_turf
+	var/old_turf_handle
 	var/on = 0
 	var/obj/item/stack/tile/T
 	var/list/mode = list("dismantle"=0,"laying"=0,"collect"=0)
@@ -17,16 +17,16 @@
 
 	if(on)
 		if(mode["dismantle"])
-			dismantleFloor(old_turf)
+			dismantleFloor(old_turf())
 
 		if(mode["laying"])
-			layFloor(old_turf)
+			layFloor(old_turf())
 
 		if(mode["collect"])
-			CollectTiles(old_turf)
+			CollectTiles(old_turf())
 
 
-	old_turf = loc
+	old_turf_handle = om_handle(loc)
 
 /obj/machinery/floorlayer/declare_interactions(list/into)
 	into += list(
@@ -131,3 +131,7 @@
 		TakeTile(tile)
 
 REF_HELD(/obj/machinery/floorlayer, list("T"))
+
+/// LC-refs: old turf -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/floorlayer/proc/old_turf() as /turf
+	return om_resolve(old_turf_handle)

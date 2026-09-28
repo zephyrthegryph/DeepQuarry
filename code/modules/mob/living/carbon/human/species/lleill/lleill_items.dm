@@ -215,10 +215,10 @@
 
 		new_message += (S.message + " ")
 
-	if(!L.say_understands(null, langset))
-		new_message = langset.scramble(new_message)
+	if(!L.say_understands(null, langset()))
+		new_message = langset().scramble(new_message)
 
-	to_chat(L, span_filter_say("<i><b>[src]</b> translates, </i>\"<span class='[langset.colour]'>[new_message]</span>\""))
+	to_chat(L, span_filter_say("<i><b>[src]</b> translates, </i>\"<span class='[langset().colour]'>[new_message]</span>\""))
 
 //Teleporter ring
 

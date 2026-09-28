@@ -6,7 +6,7 @@
 	var/obj/item/tank/tank_one
 	var/obj/item/tank/tank_two
 	var/obj/item/assembly/attached_device
-	var/mob/attacher = null
+	var/attacher_handle
 	var/valve_open = 0
 	var/toggle = 1
 
@@ -51,7 +51,7 @@
 		GLOB.bombers += "[key_name(user)] attached a [item] to a transfer valve."
 		message_admins("[key_name_admin(user)] attached a [item] to a transfer valve. [ADMIN_JMP(location)]")
 		log_game("[key_name_admin(user)] attached a [item] to a transfer valve.")
-		attacher = user
+		attacher_handle = om_handle(user)
 		SStgui.update_uis(src) // update all UIs attached to src
 	return
 
@@ -195,16 +195,16 @@
 		var/area/A = get_area(bombturf)
 
 		var/attacher_name = ""
-		if(!attacher)
+		if(!attacher())
 			attacher_name = "Unknown"
 		else
-			attacher_name = "[attacher.name]([attacher.ckey])"
+			attacher_name = "[attacher().name]([attacher().ckey])"
 
 		var/log_str = "Bomb valve opened in <A href='byond://?_src_=holder;[HrefToken(TRUE)];adminplayerobservecoodjump=1;X=[bombturf.x];Y=[bombturf.y];Z=[bombturf.z]'>[A.name]</a> "
 		log_str += "with [attached_device ? attached_device : "no device"] attacher: [attacher_name]"
 
-		if(attacher)
-			log_str += ADMIN_QUE(attacher)
+		if(attacher())
+			log_str += ADMIN_QUE(attacher())
 
 		var/mob/mob = get_mob_by_key(forensic_data?.get_lastprint())
 		var/last_touch_info = ""
@@ -228,3 +228,7 @@
 	return
 
 REF_HELD(/obj/item/transfer_valve, list("tank_one", "tank_two", "attached_device"))
+
+/// LC-refs: attacher -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/transfer_valve/proc/attacher() as /mob
+	return om_resolve(attacher_handle)

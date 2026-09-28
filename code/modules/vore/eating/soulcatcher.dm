@@ -438,7 +438,7 @@ REF_OWNED_LIST(/obj/soulgem, "brainmobs")
 	if(!M || !target) return
 	if(istype(target, /obj/item/sleevemate))
 		var/obj/item/sleevemate/mate = target
-		if(!mate.stored_mind)
+		if(!mate.stored_mind())
 			to_chat(owner, span_notice("You scan yourself to transfer the soul into the [target]!"))
 			to_chat(M, span_notice("[transfer_message]"))
 			if(M.mind == own_mind)

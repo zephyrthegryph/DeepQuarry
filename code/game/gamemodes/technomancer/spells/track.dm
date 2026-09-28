@@ -19,14 +19,14 @@ REGISTRY_MEMBERSHIP(/obj, REGISTRY_TECHNOMANCER_BELONGINGS)
 	desc = "Never lose your stuff again!"
 	cast_methods = CAST_USE
 	aspect = ASPECT_TELE
-	var/atom/movable/tracked = null // The thing to point towards.
+	var/tracked_handle // The thing to point towards.
 	var/tracking = 0 // If one, points towards tracked.
 
 /obj/item/spell/track/on_use_cast(mob/user)
 	if(tracking)
 		tracking = 0
-		to_chat(user, span_notice("You stop tracking for \the [tracked]'s whereabouts."))
-		tracked = null
+		to_chat(user, span_notice("You stop tracking for \the [tracked()]'s whereabouts."))
+		tracked_handle = null
 		return
 
 	var/can_track_non_allies = 0
@@ -42,7 +42,7 @@ REGISTRY_MEMBERSHIP(/obj, REGISTRY_TECHNOMANCER_BELONGINGS)
 		mob_choices += L
 	var/choice = tgui_input_list(user, "Decide what or who to track.", "Tracking", (object_choices + mob_choices))
 	if(choice)
-		tracked = choice
+		tracked_handle = om_handle(choice)
 		tracking = 1
 		track()
 
@@ -51,16 +51,16 @@ REGISTRY_MEMBERSHIP(/obj, REGISTRY_TECHNOMANCER_BELONGINGS)
 		icon_state = "track"
 		return
 
-	if(!tracked)
+	if(!tracked())
 		icon_state = "track_unknown"
 
-	if(tracked.z != owner.z)
+	if(tracked().z != owner_ref().z)
 		icon_state = "track_unknown"
 
 	else
-		set_dir(get_dir(src,get_turf(tracked)))
+		set_dir(get_dir(src,get_turf(tracked())))
 
-		switch(get_dist(src,get_turf(tracked)))
+		switch(get_dist(src,get_turf(tracked())))
 			if(0)
 				icon_state = "track_direct"
 			if(1 to 8)
@@ -71,3 +71,7 @@ REGISTRY_MEMBERSHIP(/obj, REGISTRY_TECHNOMANCER_BELONGINGS)
 				icon_state = "track_far"
 
 	addtimer(CALLBACK(src, PROC_REF(track)), 5)
+
+/// LC-refs: tracked -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/spell/track/proc/tracked() as /atom/movable
+	return om_resolve(tracked_handle)

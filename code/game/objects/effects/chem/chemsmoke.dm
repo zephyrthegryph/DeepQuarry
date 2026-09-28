@@ -37,12 +37,12 @@
 
 /datum/effect/effect/system/smoke_spread/chem/spores
 	show_log = 0
-	var/datum/seed/seed
+	var/seed_handle
 
 /datum/effect/effect/system/smoke_spread/chem/spores/New(_seed)
-	seed = _seed
-	if(!istype(seed))
-		CRASH("Invalid seed datum passed! [seed] ([seed?.type])")
+	seed_handle = om_handle(_seed)
+	if(!istype(seed(), /datum/seed))
+		CRASH("Invalid seed datum passed! [seed()] ([seed()?.type])")
 	..()
 
 /datum/effect/effect/system/smoke_spread/chem/blob
@@ -66,18 +66,18 @@ REF_OWNED(/datum/effect/effect/system/smoke_spread/chem, "chemholder")
 	carry.trans_to_obj(chemholder, carry.total_volume, copy = 1)
 
 	if(istype(loca, /turf/))
-		location = loca
+		location_handle = om_handle(loca)
 	else
-		location = get_turf(loca)
-	if(!location)
+		location_handle = om_handle(get_turf(loca))
+	if(!get_location())
 		return
 
 	targetTurfs = new()
 
 	//build affected area list
-	for(var/turf/T in view(range, location))
+	for(var/turf/T in view(range, get_location()))
 		//cull turfs to circle
-		if(sqrt((T.x - location.x)**2 + (T.y - location.y)**2) <= range)
+		if(sqrt((T.x - get_location().x)**2 + (T.y - get_location().y)**2) <= range)
 			targetTurfs += T
 
 	wallList = new()
@@ -89,10 +89,10 @@ REF_OWNED(/datum/effect/effect/system/smoke_spread/chem, "chemholder")
 
 	//Admin messaging
 	var/contained = carry.get_reagents()
-	var/area/A = get_area(location)
+	var/area/A = get_area(get_location())
 
-	var/where = "[A.name] | [location.x], [location.y]"
-	var/whereLink = "<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[location.x];Y=[location.y];Z=[location.z]'>[where]</a>"
+	var/where = "[A.name] | [get_location().x], [get_location().y]"
+	var/whereLink = "<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[get_location().x];Y=[get_location().y];Z=[get_location().z]'>[where]</a>"
 
 	if(show_log)
 		var/print_name = carry.my_atom.forensic_data?.get_lastprint()
@@ -113,7 +113,7 @@ REF_OWNED(/datum/effect/effect/system/smoke_spread/chem, "chemholder")
 // Also calculates target locations to spawn the visual smoke effect on, so the whole area
 // is covered fairly evenly.
 /datum/effect/effect/system/smoke_spread/chem/start()
-	if(!location)
+	if(!get_location())
 		return
 
 	if(chemholder.reagents.reagent_list.len) //reagent application - only run if there are extra reagents in the smoke
@@ -140,7 +140,7 @@ REF_OWNED(/datum/effect/effect/system/smoke_spread/chem, "chemholder")
 	for(var/i = 0, i < range, i++) //calculate positions for smoke coverage - then spawn smoke
 		var/radius = i * 1.5
 		if(!radius)
-			spawnSmoke(location, I, 1)
+			spawnSmoke(get_location(), I, 1)
 			continue
 
 		var/offset = 0
@@ -152,9 +152,9 @@ REF_OWNED(/datum/effect/effect/system/smoke_spread/chem, "chemholder")
 
 		for(var/j = 0, j < points, j++)
 			var/a = (angle * j) + offset
-			var/x = round(radius * cos(a) + location.x, 1)
-			var/y = round(radius * sin(a) + location.y, 1)
-			var/turf/T = locate(x,y,location.z)
+			var/x = round(radius * cos(a) + get_location().x, 1)
+			var/y = round(radius * sin(a) + get_location().y, 1)
+			var/turf/T = locate(x,y,get_location().z)
 			if(!T)
 				continue
 			if(T in targetTurfs)
@@ -170,7 +170,7 @@ REF_OWNED(/datum/effect/effect/system/smoke_spread/chem, "chemholder")
 	if(passed_smoke)
 		smoke = passed_smoke
 	else
-		smoke = new smoke_type(location)
+		smoke = new smoke_type(get_location())
 
 	if(chemholder.reagents.reagent_list.len)
 		chemholder.reagents.trans_to_obj(smoke, chemholder.reagents.total_volume / dist, copy = 1) //copy reagents to the smoke so mob/breathe() can handle inhaling the reagents
@@ -186,8 +186,8 @@ REF_OWNED(/datum/effect/effect/system/smoke_spread/chem, "chemholder")
 	addtimer(CALLBACK(src, PROC_REF(fadeOut), smoke), lifespan)
 
 /datum/effect/effect/system/smoke_spread/chem/spores/spawnSmoke(turf/T, icon/I, dist = 1)
-	var/obj/effect/effect/smoke/chem/spores = new /obj/effect/effect/smoke/chem(location)
-	spores.name = "cloud of [seed.seed_name] [seed.seed_noun]"
+	var/obj/effect/effect/smoke/chem/spores = new /obj/effect/effect/smoke/chem(get_location())
+	spores.name = "cloud of [seed().seed_name] [seed().seed_noun]"
 	..(T, I, dist, spores)
 
 /datum/effect/effect/system/smoke_spread/chem/proc/fadeOut(atom/A, frames = 16) // Fades out the smoke smoothly using it's alpha variable.
@@ -205,7 +205,7 @@ REF_OWNED(/datum/effect/effect/system/smoke_spread/chem, "chemholder")
 	var/list/pending = new()
 	var/list/complete = new()
 
-	pending += location
+	pending += get_location()
 
 	while(pending.len)
 		for(var/turf/current in pending)
@@ -235,3 +235,7 @@ REF_OWNED(/datum/effect/effect/system/smoke_spread/chem, "chemholder")
 	targetTurfs = complete
 
 	return
+
+/// LC-refs: seed -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/effect/effect/system/smoke_spread/chem/spores/proc/seed() as /datum/seed
+	return om_resolve(seed_handle)

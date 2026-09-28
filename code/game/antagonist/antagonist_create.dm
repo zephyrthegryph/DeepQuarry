@@ -69,8 +69,8 @@
 
 	if(code)
 		if(!paper_spawn_loc)
-			if(leader && leader.current)
-				paper_spawn_loc = get_turf(leader.current)
+			if(leader() && leader().current)
+				paper_spawn_loc = get_turf(leader().current)
 			else
 				paper_spawn_loc = get_turf(locate("landmark*Nuclear-Code"))
 
@@ -79,12 +79,12 @@
 			var/obj/item/paper/P = new(paper_spawn_loc)
 			P.info = "The nuclear authorization code is: <b>[code]</b>"
 			P.name = "nuclear bomb code"
-			if(leader && leader.current)
-				if(get_turf(P) == get_turf(leader.current))
-					leader.current.put_in_hands(P)
+			if(leader() && leader().current)
+				if(get_turf(P) == get_turf(leader().current))
+					leader().current.put_in_hands(P)
 
-		if(!code_owner && leader)
-			code_owner = leader
+		if(!code_owner && leader())
+			code_owner = leader()
 		if(code_owner)
 			code_owner.store_memory(span_bold("Nuclear Bomb Code") + ": [code]", 0, 0)
 			to_chat(code_owner.current, "The nuclear authorization code is: <B>[code]</B>")
@@ -103,7 +103,7 @@
 
 	// Basic intro text.
 	to_chat(player.current, span_danger(span_large("You are a [role_text]!")))
-	if(leader_welcome_text && player == leader)
+	if(leader_welcome_text && player == leader())
 		to_chat(player.current, span_notice("[leader_welcome_text]"))
 	else
 		to_chat(player.current, span_notice("[welcome_text]"))

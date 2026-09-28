@@ -323,3 +323,6 @@
 	EXTRAPOLATOR_ACT_ADD_DISEASES(., viruses)
 
 #undef DRYING_TIME
+
+REF_OWNED_LIST(/obj/effect/decal/cleanable/blood, list("viruses"))
+REF_OWNED_LIST(/obj/effect/decal/cleanable/mucus, list("viruses"))

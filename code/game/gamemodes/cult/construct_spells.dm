@@ -429,7 +429,7 @@
 	throwforce = 0
 	force = 0
 	show_examine = FALSE
-	owner = null
+	owner_handle = null
 	core = null
 	cast_methods = null			// Controls how the spell is casted.
 	aspect = ASPECT_UNHOLY		// Used for combining spells. Pretty much any cult spell is unholy.
@@ -440,30 +440,30 @@
 
 /obj/item/spell/construct/Initialize(mapload)
 	. = ..(mapload, TRUE)
-	if(!owner)
+	if(!owner_ref())
 		return INITIALIZE_HINT_QDEL
 
 /obj/item/spell/construct/adjust_instability(amount) //The only drawback to the boons of the geometer is the use of a mortal's blood as fuel. Constructs have already paid that price long ago.
 	return
 
 /obj/item/spell/construct/run_checks()
-	if(owner)
-		if((iscultist(owner) || istype(owner, /mob/living/simple_mob/construct)) && (world.time >= (last_castcheck + cooldown))) //Are they a cultist or a construct, and has the cooldown time passed?
+	if(owner_ref())
+		if((iscultist(owner_ref()) || istype(owner_ref(), /mob/living/simple_mob/construct)) && (world.time >= (last_castcheck + cooldown))) //Are they a cultist or a construct, and has the cooldown time passed?
 			last_castcheck = world.time
 			return 1
 	return 0
 
 /obj/item/spell/construct/pay_energy(amount)
-	if(owner)
-		if(istype(owner, /mob/living/simple_mob/construct))
+	if(owner_ref())
+		if(istype(owner_ref(), /mob/living/simple_mob/construct))
 			return 1
-		if(iscultist(owner) && pay_blood(amount))
+		if(iscultist(owner_ref()) && pay_blood(amount))
 			return 1
 	return 0
 
 /obj/item/spell/construct/proc/pay_blood(amount) //If, for some reason, this is put into the hands of a cultist, by a talisnam or whatever.
-	if(ishuman(owner))
-		var/mob/living/carbon/human/H = owner
+	if(ishuman(owner_ref()))
+		var/mob/living/carbon/human/H = owner_ref()
 		if(!H.should_have_organ(O_HEART))
 			return 1
 		if(H.remove_blood(amount))
@@ -520,7 +520,7 @@
 /obj/item/spell/construct/projectile/proc/set_up(atom/hit_atom, mob/living/user)
 	if(shot_ready)
 		return TRUE
-	if(!spell_projectile || !pay_energy(energy_cost_per_shot) || !owner)
+	if(!spell_projectile || !pay_energy(energy_cost_per_shot) || !owner_ref())
 		return FALSE
 	if(!pre_shot_delay)
 		return TRUE

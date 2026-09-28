@@ -1,7 +1,7 @@
 // Etc UI-only vars
 /obj/item/communicator
 	// Stuff for moving cameras
-	var/turf/last_camera_turf
+	var/last_camera_turf_handle
 	// Stuff needed to render the map
 	var/map_name
 	var/atom/movable/screen/map_view/cam_screen
@@ -9,7 +9,7 @@
 	var/atom/movable/screen/background/cam_background
 	var/atom/movable/screen/skybox/local_skybox
 
-REF_OWNED(/obj/item/communicator, list("cam_screen", "cam_background"))
+REF_OWNED(/obj/item/communicator, list("cam_screen", "cam_background", "local_skybox"))
 REF_OWNED_LIST(/obj/item/communicator, "cam_plane_masters")
 
 // Proc: setup_tgui_camera()
@@ -71,18 +71,18 @@ REF_OWNED_LIST(/obj/item/communicator, "cam_plane_masters")
 
 	// If we're not forcing an update for some reason and the cameras are in the same location,
 	// we don't need to update anything.
-	if(last_camera_turf == newturf)
+	if(last_camera_turf() == newturf)
 		return
 
 	// We get a new turf in case they've moved in the last half decisecond (it's BYOND, it might happen)
-	last_camera_turf = get_turf(video_source)
+	last_camera_turf_handle = om_handle(get_turf(video_source))
 
-	if(!is_on_same_plane_or_station(get_z(last_camera_turf), get_z(src)))
+	if(!is_on_same_plane_or_station(get_z(last_camera_turf()), get_z(src)))
 		show_static()
 		return
 
 	var/list/visible_turfs = list()
-	var/list/visible_things = view(video_range, last_camera_turf)
+	var/list/visible_things = view(video_range, last_camera_turf())
 	for(var/turf/visible_turf in visible_things)
 		visible_turfs += visible_turf
 
@@ -91,9 +91,9 @@ REF_OWNED_LIST(/obj/item/communicator, "cam_plane_masters")
 	cam_background.fill_rect(1, 1, (video_range * 2), (video_range * 2))
 
 	local_skybox.cut_overlays()
-	local_skybox.add_overlay(SSskybox.get_skybox(get_z(last_camera_turf)))
+	local_skybox.add_overlay(SSskybox.get_skybox(get_z(last_camera_turf())))
 	local_skybox.scale_to_view(video_range * 2)
-	local_skybox.set_position("CENTER", "CENTER", (world.maxx>>1) - last_camera_turf.x, (world.maxy>>1) - last_camera_turf.y)
+	local_skybox.set_position("CENTER", "CENTER", (world.maxx>>1) - last_camera_turf().x, (world.maxy>>1) - last_camera_turf().y)
 
 /obj/item/communicator/proc/show_static()
 	cam_screen.vis_contents.Cut()
@@ -444,3 +444,7 @@ REF_OWNED_LIST(/obj/item/communicator, "cam_plane_masters")
 
 		if("newsfeed")
 			newsfeed_channel = text2num(params["newsfeed"])
+
+/// LC-refs: last camera turf -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/communicator/proc/last_camera_turf() as /turf
+	return om_resolve(last_camera_turf_handle)

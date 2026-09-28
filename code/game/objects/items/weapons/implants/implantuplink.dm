@@ -5,7 +5,7 @@
 
 /obj/item/implant/uplink/Initialize(mapload)
 	activation_emote = pick("blink", "blink_r", "eyebrow", "chuckle", "twitch", "frown", "nod", "blush", "giggle", "grin", "groan", "shrug", "smile", "pale", "sniff", "whimper", "wink")
-	hidden_uplink = new(src)
+	hidden_uplink_handle = om_handle(new /obj/item/uplink/hidden(src))
 	//hidden_uplink.uses = 5
 	//Code currently uses a mind var for telecrystals, balancing is currently an issue. Will investigate.
 	. = ..()
@@ -19,5 +19,5 @@
 	to_chat(source, "The implanted uplink implant can be activated by using the [src.activation_emote] emote, <B>say *[src.activation_emote]</B> to attempt to activate.")
 
 /obj/item/implant/uplink/trigger(emote, mob/source as mob)
-	if(hidden_uplink && usr == source) // Let's not have another people activate our uplink
-		hidden_uplink.check_trigger(source, emote, activation_emote)
+	if(hidden_uplink() && usr == source) // Let's not have another people activate our uplink
+		hidden_uplink().check_trigger(source, emote, activation_emote)

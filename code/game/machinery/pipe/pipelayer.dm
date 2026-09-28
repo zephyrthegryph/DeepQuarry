@@ -5,7 +5,7 @@
 	icon_state = "pipe_d"
 	density = TRUE
 	circuit = /obj/item/circuitboard/pipelayer
-	var/turf/old_turf		// Last turf we were on.
+	var/old_turf_handle		// Last turf we were on.
 	var/old_dir				// Last direction we were facing.
 	var/on = 0				// Pipelaying online?
 	var/a_dis = 0			// Auto-dismantling - If enabled it will remove floor tiles
@@ -43,10 +43,10 @@ REF_OWNED(/obj/machinery/pipelayer, "W")
 	. = ..()
 
 	if(on && a_dis)
-		dismantleFloor(old_turf)
-	layPipe(old_turf, direction, old_dir)
+		dismantleFloor(old_turf())
+	layPipe(old_turf(), direction, old_dir)
 
-	old_turf = loc
+	old_turf_handle = om_handle(loc)
 	old_dir = turn(direction, 180)
 
 /obj/machinery/pipelayer/declare_interactions(list/into)
@@ -79,7 +79,7 @@ REF_OWNED(/obj/machinery/pipelayer, "W")
 		to_chat(user, span_warning("\The [src] doesn't work without metal."))
 		return TRUE
 	on = !on
-	old_turf = get_turf(src)
+	old_turf_handle = om_handle(get_turf(src))
 	old_dir = dir
 	user.visible_message(span_notice("[user] has [!on?"de":""]activated \the [src]."), span_notice("You [!on?"de":""]activate \the [src]."))
 	return TRUE
@@ -208,3 +208,7 @@ REF_OWNED(/obj/machinery/pipelayer, "W")
 	P.attackby(W , src)
 
 	return 1
+
+/// LC-refs: old turf -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/pipelayer/proc/old_turf() as /turf
+	return om_resolve(old_turf_handle)

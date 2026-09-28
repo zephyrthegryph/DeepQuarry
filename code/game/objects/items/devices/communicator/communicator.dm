@@ -375,7 +375,7 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 // Parameters: None
 // Description: Deletes all the voice mobs, disconnects all linked communicators, and cuts lists to allow successful qdel()
 // ITION: Remvovess any slotted in IDs before deleting
-REF_OWNED(/obj/item/communicator, list("camera", "exonet", "cam_screen", "cam_background", "local_skybox"))
+REF_OWNED(/obj/item/communicator, list("camera", "exonet", "cam_screen", "cam_background"))
 REF_OWNED_LIST(/obj/item/communicator, "cam_plane_masters")
 
 // LIFECYCLE: its ID drops out, connected voices time out and its calls close.

@@ -12,16 +12,16 @@
 
 /datum/effect/system/expl_particles
 	var/number = 10
-	var/turf/location
+	var/location_handle
 	var/total_particles = 0
 
 /datum/effect/system/expl_particles/proc/set_up(n = 10, loca)
 	number = n
-	if(istype(loca, /turf/)) location = loca
-	else location = get_turf(loca)
+	if(istype(loca, /turf/)) location_handle = om_handle(loca)
+	else location_handle = om_handle(get_turf(loca))
 
 /datum/effect/system/expl_particles/proc/emit_one_particle()
-	var/obj/effect/expl_particles/expl = new /obj/effect/expl_particles(src.location)
+	var/obj/effect/expl_particles/expl = new /obj/effect/expl_particles(src.get_location())
 	var/direct = pick(GLOB.alldirs)
 	om_drift(expl, direct, pick(1;25,2;50,3,4;200), 1)
 
@@ -45,16 +45,16 @@
 	expire(1 SECOND)
 
 /datum/effect/system/explosion
-	var/turf/location
+	var/location_handle
 
 /datum/effect/system/explosion/proc/set_up(loca)
-	if(istype(loca, /turf/)) location = loca
-	else location = get_turf(loca)
+	if(istype(loca, /turf/)) location_handle = om_handle(loca)
+	else location_handle = om_handle(get_turf(loca))
 
 /datum/effect/system/explosion/proc/start()
-	new/obj/effect/explosion( location )
+	new/obj/effect/explosion( get_location() )
 	var/datum/effect/system/expl_particles/P = new/datum/effect/system/expl_particles()
-	P.set_up(10,location)
+	P.set_up(10,get_location())
 	P.start()
 	addtimer(CALLBACK(src, PROC_REF(spread_smoke)), 0.5 SECONDS)
 
@@ -62,11 +62,19 @@
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	var/datum/effect/effect/system/smoke_spread/S = new/datum/effect/effect/system/smoke_spread()
-	S.set_up(5,0,location,null)
+	S.set_up(5,0,get_location(),null)
 	S.start()
 
 /datum/effect/system/explosion/smokeless/start()
-	new/obj/effect/explosion(location)
+	new/obj/effect/explosion(get_location())
 	var/datum/effect/system/expl_particles/P = new/datum/effect/system/expl_particles()
-	P.set_up(10,location)
+	P.set_up(10,get_location())
 	P.start()
+
+/// LC-refs: location -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/effect/system/expl_particles/proc/get_location() as /turf
+	return om_resolve(location_handle)
+
+/// LC-refs: location -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/effect/system/explosion/proc/get_location() as /turf
+	return om_resolve(location_handle)

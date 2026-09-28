@@ -1,22 +1,22 @@
 /obj/item/bork_medigun/linked
-	var/obj/item/medigun_backpack/medigun_base_unit
+	var/medigun_base_unit_handle
 
 // LIFECYCLE: the base unit's icon and wearer update.
 /obj/item/bork_medigun/linked/Destroy()
-	if(medigun_base_unit)
-		var/obj/item/bork_medigun/medigun = medigun_base_unit.get_medigun()
+	if(medigun_base_unit())
+		var/obj/item/bork_medigun/medigun = medigun_base_unit().get_medigun()
 		//ensure the base unit's icon updates
 		if(medigun == src)
 			medigun = null
-			medigun_base_unit.replace_icon()
+			medigun_base_unit().replace_icon()
 			if(ismob(loc))
 				var/mob/user = loc
 				user.update_inv_back()
-		medigun_base_unit = null
+		medigun_base_unit_handle = null
 	return ..()
 
 /obj/item/bork_medigun/linked/forceMove(atom/destination, direction, movetime) //Forcemove override, ugh
-	if(destination == medigun_base_unit || destination == medigun_base_unit.loc || isturf(destination))
+	if(destination == medigun_base_unit() || destination == medigun_base_unit().loc || isturf(destination))
 		. = doMove(destination, 0, 0)
 		if(isturf(destination))
 			for(var/atom/A as anything in destination) // If we can't scan the turf, see if we can scan anything on it, to help with aiming.
@@ -24,25 +24,25 @@
 					break
 
 /obj/item/bork_medigun/linked/proc/check_charge(charge_amt)
-	return (medigun_base_unit.bcell && medigun_base_unit.bcell.check_charge(charge_amt))
+	return (medigun_base_unit().bcell && medigun_base_unit().bcell.check_charge(charge_amt))
 
 /obj/item/bork_medigun/linked/proc/checked_use(charge_amt)
-	return (medigun_base_unit.bcell && medigun_base_unit.bcell.checked_use(charge_amt))
+	return (medigun_base_unit().bcell && medigun_base_unit().bcell.checked_use(charge_amt))
 
 /obj/item/bork_medigun/linked/attack_self(mob/living/user)
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(medigun_base_unit.is_twohanded())
+	if(medigun_base_unit().is_twohanded())
 		update_twohanding()
 	if(busy)
 		busy = MEDIGUN_CANCELLED
 
 /obj/item/bork_medigun/linked/proc/should_stop(mob/living/target, mob/living/user, active_hand)
-	if(!target || !user || (!active_hand && medigun_base_unit.is_twohanded()) || !istype(target) || !istype(user) || busy < MEDIGUN_BUSY)
+	if(!target || !user || (!active_hand && medigun_base_unit().is_twohanded()) || !istype(target) || !istype(user) || busy < MEDIGUN_BUSY)
 		return TRUE
 
-	if((user.get_active_hand() != active_hand || wielded == 0) && medigun_base_unit.is_twohanded())
+	if((user.get_active_hand() != active_hand || wielded == 0) && medigun_base_unit().is_twohanded())
 		to_chat(user, span_warning("Please keep your hands free!"))
 		return TRUE
 
@@ -60,7 +60,7 @@
 		return TRUE
 
 	//if(get_dist(user, target) > beam_range)
-	if(!(target in range(beam_range, user)) || (!(target in view(10, user)) && !(medigun_base_unit.smodule.get_rating() >= 5)))
+	if(!(target in range(beam_range, user)) || (!(target in view(10, user)) && !(medigun_base_unit().smodule.get_rating() >= 5)))
 		to_chat(user, span_warning("You are too far away from \the [target] to heal them, Or they are not in view. Get closer."))
 		return TRUE
 
@@ -80,25 +80,25 @@
 			if(isliving(A))
 				target = A
 				break
-	if(!istype(medigun_base_unit, /obj/item/medigun_backpack/cmo))
+	if(!istype(medigun_base_unit(), /obj/item/medigun_backpack/cmo))
 		update_twohanding()
-	if(busy && !(target == current_target) && isliving(target))
+	if(busy && !(target == current_target()) && isliving(target))
 		to_chat(user, span_warning("\The [src] is already targeting something."))
 		return
 
 	if(!ishuman(target))
 		return
 
-	if(!medigun_base_unit.smanipulator)
+	if(!medigun_base_unit().smanipulator)
 		to_chat(user, span_warning("\The [src] Blinks a red error light, Manipulator missing."))
 		return
-	if(!medigun_base_unit.scapacitor)
+	if(!medigun_base_unit().scapacitor)
 		to_chat(user, span_warning("\The [src] Blinks a blue error light, capacitor missing."))
 		return
-	if(!medigun_base_unit.slaser)
+	if(!medigun_base_unit().slaser)
 		to_chat(user, span_warning("\The [src] Blinks an orange error light, laser missing."))
 		return
-	if(!medigun_base_unit.smodule)
+	if(!medigun_base_unit().smodule)
 		to_chat(user, span_warning("\The [src] Blinks a pink error light, scanning module missing."))
 		return
 	if(!check_charge(5))
@@ -108,17 +108,17 @@
 		to_chat(user, span_warning("You are too far away from \the [target] to affect it. Get closer."))
 		return
 
-	if(target == current_target && busy)
+	if(target == current_target() && busy)
 		busy = MEDIGUN_CANCELLED
 		return
 	if(target == user)
 		to_chat(user, span_warning("Cant heal yourself."))
 		return
-	if(!(target in range(beam_range, user)) || (!(target in view(10, user)) && !medigun_base_unit.smodule))
+	if(!(target in range(beam_range, user)) || (!(target in view(10, user)) && !medigun_base_unit().smodule))
 		to_chat(user, span_warning("You are too far away from \the [target] to heal them, Or they are not in view. Get closer."))
 		return
 
-	current_target = target
+	current_target_handle = om_handle(target)
 	busy = MEDIGUN_BUSY
 	update_icon()
 	var/myicon = "medbeam_basic"
@@ -137,7 +137,7 @@
 
 	action_cancelled = FALSE
 	busy = MEDIGUN_IDLE
-	current_target = null
+	current_target_handle = null
 
 	// Now clean up the effects.
 	update_icon()
@@ -174,7 +174,7 @@
 	if(H.stat == DEAD)
 		process_medigun(H, user, filter)
 		return
-	var/lastier = medigun_base_unit.slaser.get_rating()
+	var/lastier = medigun_base_unit().slaser.get_rating()
 	if(lastier >= 2)
 		if(checked_use(5))
 			H.add_modifier(/datum/modifier/medbeameffect, 2 SECONDS)
@@ -188,8 +188,8 @@
 
 	var/healmod = lastier
 	if(H.injury_load(INJURY_CATEGORY_TOXIC))
-		healmod = min(lastier,medigun_base_unit.toxcharge,H.injury_load(INJURY_CATEGORY_TOXIC))
-		if(medigun_base_unit.toxcharge >= healmod)
+		healmod = min(lastier,medigun_base_unit().toxcharge,H.injury_load(INJURY_CATEGORY_TOXIC))
+		if(medigun_base_unit().toxcharge >= healmod)
 			if(!checked_use(healmod))
 				to_chat(user, span_warning("\The [src] doesn't have enough charge left to do that."))
 				return
@@ -197,7 +197,7 @@
 				healmod = 0
 			else
 				H.mend(TREAT_ANTITOXIN, healmod)
-				medigun_base_unit.toxcharge -= healmod
+				medigun_base_unit().toxcharge -= healmod
 				ishealing = TRUE
 	if(H.oxygen_debt())
 		healmod = min(10*lastier,H.oxygen_debt())
@@ -209,7 +209,7 @@
 
 	ishealing = process_wounds(H, lastier, lastier, ishealing)
 	//if(medigun_base_unit.brutecharge <= 0 || medigun_base_unit.burncharge <= 0 || medigun_base_unit.toxcharge <= 0)
-	medigun_base_unit.update_icon()
+	medigun_base_unit().update_icon()
 	//if(medigun_base_unit.slaser.get_rating() >= 5)
 	//Blood regeneration if there is some space
 	if(lastier >= 5)
@@ -229,7 +229,7 @@
 	while(heal_ticks > 0)
 		if(remaining_strength <= 0)
 			return ishealing
-		if((!H.injury_load(INJURY_CATEGORY_THERMAL) || medigun_base_unit.burncharge <= 0) && (!H.injury_load(INJURY_CATEGORY_PHYSICAL) || medigun_base_unit.burncharge <= 0))
+		if((!H.injury_load(INJURY_CATEGORY_THERMAL) || medigun_base_unit().burncharge <= 0) && (!H.injury_load(INJURY_CATEGORY_PHYSICAL) || medigun_base_unit().burncharge <= 0))
 			return ishealing
 
 		for(var/name in BP_ALL)
@@ -240,25 +240,25 @@
 				//if (W.bandaged && W.disinfected)
 				//	continue
 				if (W.damage_type == BRUISE || W.damage_type == CUT || W.damage_type == PIERCE)
-					if(medigun_base_unit.brutecharge >= 1)
+					if(medigun_base_unit().brutecharge >= 1)
 						if(W.damage <= 1)
 							O.remove_wound(W)
-							medigun_base_unit.brutecharge -= 1
+							medigun_base_unit().brutecharge -= 1
 							ishealing = TRUE
-						else if(medigun_base_unit.brutecharge >= 1)
+						else if(medigun_base_unit().brutecharge >= 1)
 							W.heal_damage(1)
-							medigun_base_unit.brutecharge -= 1
+							medigun_base_unit().brutecharge -= 1
 							remaining_strength -= 1
 							ishealing = TRUE
 				if (W.damage_type == BURN)
-					if(medigun_base_unit.burncharge >= 1)
+					if(medigun_base_unit().burncharge >= 1)
 						if(W.damage <= 1)
 							O.remove_wound(W)
-							medigun_base_unit.burncharge -= 1
+							medigun_base_unit().burncharge -= 1
 							ishealing = TRUE
-						else if(medigun_base_unit.burncharge >= 1)
+						else if(medigun_base_unit().burncharge >= 1)
 							W.heal_damage(1)
-							medigun_base_unit.burncharge -= 1
+							medigun_base_unit().burncharge -= 1
 							remaining_strength -= 1
 							ishealing = TRUE
 				if(remaining_strength <= 0)
@@ -267,3 +267,7 @@
 				return ishealing
 		heal_ticks--
 	return ishealing
+
+/// LC-refs: medigun base unit -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/bork_medigun/linked/proc/medigun_base_unit() as /obj/item/medigun_backpack
+	return om_resolve(medigun_base_unit_handle)

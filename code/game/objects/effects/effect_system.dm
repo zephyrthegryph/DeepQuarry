@@ -21,7 +21,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 /datum/effect/effect/system
 	var/number = 3
 	var/cardinals = 0
-	var/turf/location
+	var/location_handle
 	var/atom/holder
 	var/setup = 0
 
@@ -30,7 +30,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 		n = 10
 	number = n
 	cardinals = c
-	location = loc
+	location_handle = om_handle(loc)
 	setup = 1
 
 /datum/effect/effect/system/proc/attach(atom/atom)
@@ -64,12 +64,12 @@ would spawn and follow the beaker, even if it is carried or thrown.
 		n = 10
 	number = n
 	cardinals = c
-	location = loc
+	location_handle = om_handle(loc)
 
 /datum/effect/effect/system/steam_spread/proc/emit_one_steam()
 	if(holder)
-		src.location = get_turf(holder)
-	var/obj/effect/effect/steam/steam = new /obj/effect/effect/steam(src.location)
+		src.location_handle = om_handle(get_turf(holder))
+	var/obj/effect/effect/steam/steam = new /obj/effect/effect/steam(src.get_location())
 	var/direction
 	if(src.cardinals)
 		direction = pick(GLOB.cardinal)
@@ -128,14 +128,14 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	number = n
 	cardinals = c
 	if(istype(loca, /turf/))
-		location = loca
+		location_handle = om_handle(loca)
 	else
-		location = get_turf(loca)
+		location_handle = om_handle(get_turf(loca))
 
 /datum/effect/effect/system/spark_spread/proc/emit_one_spark()
 	if(holder)
-		src.location = get_turf(holder)
-	var/obj/effect/effect/sparks/sparks = new /obj/effect/effect/sparks(src.location)
+		src.location_handle = om_handle(get_turf(holder))
+	var/obj/effect/effect/sparks/sparks = new /obj/effect/effect/sparks(src.get_location())
 	src.total_sparks++
 	var/direction
 	if(src.cardinals)
@@ -357,16 +357,16 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	number = n
 	cardinals = c
 	if(istype(loca, /turf/))
-		location = loca
+		location_handle = om_handle(loca)
 	else
-		location = get_turf(loca)
+		location_handle = om_handle(get_turf(loca))
 	if(direct)
 		direction = direct
 
 /datum/effect/effect/system/smoke_spread/proc/emit_one_smoke(color_override)
 	if(holder)
-		src.location = get_turf(holder)
-	var/obj/effect/effect/smoke/smoke = new smoke_type(src.location)
+		src.location_handle = om_handle(get_turf(holder))
+	var/obj/effect/effect/smoke/smoke = new smoke_type(src.get_location())
 	src.total_smoke++
 	if(color_override)
 		smoke.color = color_override
@@ -426,13 +426,13 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	anchored = TRUE
 
 /datum/effect/effect/system/ion_trail_follow
-	var/turf/oldposition
+	var/oldposition_handle
 	var/processing = 1
 	var/on = 1
 
 /datum/effect/effect/system/ion_trail_follow/set_up(atom/atom)
 	attach(atom)
-	oldposition = get_turf(atom)
+	oldposition_handle = om_handle(get_turf(atom))
 
 /datum/effect/effect/system/ion_trail_follow/proc/trail_step()
 	var/turf/T
@@ -444,10 +444,10 @@ would spawn and follow the beaker, even if it is carried or thrown.
 			T = get_turf(AM)
 	else //when would this ever be attached a non-atom/movable?
 		T = get_turf(src.holder)
-	if(T != src.oldposition)
+	if(T != src.oldposition())
 		if(isturf(T))
-			var/obj/effect/effect/ion_trails/I = new /obj/effect/effect/ion_trails(src.oldposition)
-			src.oldposition = T
+			var/obj/effect/effect/ion_trails/I = new /obj/effect/effect/ion_trails(src.oldposition())
+			src.oldposition_handle = om_handle(T)
 			I.set_dir(src.holder.dir)
 			flick("ion_fade", I)
 			I.icon_state = "blank"
@@ -477,19 +477,19 @@ would spawn and follow the beaker, even if it is carried or thrown.
 /////////////////////////////////////////////
 
 /datum/effect/effect/system/steam_trail_follow
-	var/turf/oldposition
+	var/oldposition_handle
 	var/processing = 1
 	var/on = 1
 
 /datum/effect/effect/system/steam_trail_follow/set_up(atom/atom)
 	attach(atom)
-	oldposition = get_turf(atom)
+	oldposition_handle = om_handle(get_turf(atom))
 
 /datum/effect/effect/system/steam_trail_follow/proc/steam_step()
 	if(src.number < 3)
-		var/obj/effect/effect/steam/I = new /obj/effect/effect/steam(src.oldposition)
+		var/obj/effect/effect/steam/I = new /obj/effect/effect/steam(src.oldposition())
 		src.number++
-		src.oldposition = get_turf(holder)
+		src.oldposition_handle = om_handle(get_turf(holder))
 		I.set_dir(src.holder.dir)
 		addtimer(CALLBACK(src, PROC_REF(expire_steam_trail), I), 10)
 	addtimer(CALLBACK(src, PROC_REF(reschedule_steam)), 2)
@@ -523,9 +523,9 @@ would spawn and follow the beaker, even if it is carried or thrown.
 /datum/effect/effect/system/reagents_explosion/set_up(amt, loc, flash = 0, flash_fact = 0)
 	amount = amt
 	if(istype(loc, /turf/))
-		location = loc
+		location_handle = om_handle(loc)
 	else
-		location = get_turf(loc)
+		location_handle = om_handle(get_turf(loc))
 
 	flashing = flash
 	flashing_factor = flash_fact
@@ -535,12 +535,12 @@ would spawn and follow the beaker, even if it is carried or thrown.
 /datum/effect/effect/system/reagents_explosion/start()
 	if (amount <= 2)
 		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread()
-		s.set_up(2, 1, location)
+		s.set_up(2, 1, get_location())
 		s.start()
 
-		for(var/mob/M in viewers(5, location))
+		for(var/mob/M in viewers(5, get_location()))
 			to_chat(M, span_warning("The solution violently explodes."))
-		for(var/mob/M in viewers(1, location))
+		for(var/mob/M in viewers(1, get_location()))
 			if (prob (50 * amount))
 				to_chat(M, span_warning("The explosion knocks you down."))
 				M.status_at_least(EFFECT_WEAKENED, rand(1,5))
@@ -564,11 +564,11 @@ would spawn and follow the beaker, even if it is carried or thrown.
 		if (flashing && flashing_factor)
 			flash = (amount/4) * flashing_factor
 
-		for(var/mob/M in viewers(8, location))
+		for(var/mob/M in viewers(8, get_location()))
 			to_chat(M, span_warning("The solution violently explodes."))
 
 		explosion(
-			location,
+			get_location(),
 			round(min(devst, BOMBCAP_DVSTN_RADIUS)),
 			round(min(heavy, BOMBCAP_HEAVY_RADIUS)),
 			round(min(light, BOMBCAP_LIGHT_RADIUS)),
@@ -593,13 +593,13 @@ would spawn and follow the beaker, even if it is carried or thrown.
 
 /datum/effect/effect/system/teleport_greyscale/set_up(cl, loca)
 	if(istype(loca, /turf/))
-		location = loca
+		location_handle = om_handle(loca)
 	else
-		location = get_turf(loca)
+		location_handle = om_handle(get_turf(loca))
 	color = cl
 
 /datum/effect/effect/system/teleport_greyscale/start()
-	var/obj/effect/effect/teleport_greyscale/tele = new /obj/effect/effect/teleport_greyscale(src.location)
+	var/obj/effect/effect/teleport_greyscale/tele = new /obj/effect/effect/teleport_greyscale(src.get_location())
 	tele.color = color
 
 // === merged from effect_system_ch.dm during hard-fork de-suffix (verified no override-order change) ===
@@ -636,16 +636,16 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	number = n
 	cardinals = c
 	if(istype(loca, /turf/))
-		location = loca
+		location_handle = om_handle(loca)
 	else
-		location = get_turf(loca)
+		location_handle = om_handle(get_turf(loca))
 	if(direct)
 		direction = direct
 
 /datum/effect/effect/system/confetti_spread/proc/emit_one_confetti(color_override)
 	if(holder)
-		src.location = get_turf(holder)
-	var/obj/effect/effect/confetti/confetti = new confetti_type(src.location)
+		src.location_handle = om_handle(get_turf(holder))
+	var/obj/effect/effect/confetti/confetti = new confetti_type(src.get_location())
 	src.total_confetti++
 	if(color_override)
 		confetti.color = color_override
@@ -693,3 +693,15 @@ would spawn and follow the beaker, even if it is carried or thrown.
 /obj/effect/effect/snow/heavy
 	name = "heavy snowfall"
 	icon_state = "snowfall_heavy"
+
+/// LC-refs: location -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/effect/effect/system/proc/get_location() as /turf
+	return om_resolve(location_handle)
+
+/// LC-refs: oldposition -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/effect/effect/system/ion_trail_follow/proc/oldposition() as /turf
+	return om_resolve(oldposition_handle)
+
+/// LC-refs: oldposition -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/effect/effect/system/steam_trail_follow/proc/oldposition() as /turf
+	return om_resolve(oldposition_handle)

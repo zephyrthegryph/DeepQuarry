@@ -25,7 +25,7 @@
 	var/freq = 0 // Currently no effect, will return in phase II of mediamanager.
 	var/loop_mode = JUKEMODE_PLAY_ONCE			// Behavior when finished playing a song
 	var/list/obj/item/juke_remote/remotes
-	var/datum/track/current_track
+	var/current_track_handle
 
 /obj/machinery/media/jukebox/Initialize(mapload)
 	. = ..()
@@ -49,24 +49,24 @@ REF_OWNED(/obj/machinery/media/jukebox, "wires")
 		playing = 0
 		return PROCESS_KILL
 	// If the current track isn't finished playing, let it keep going
-	if(current_track && world.time < media_start_time + current_track.duration)
+	if(current_track() && world.time < media_start_time + current_track().duration)
 		return
 	// Oh... nothing in queue? Well then pick next according to our rules
 	var/list/tracks = getTracksList()
 	switch(loop_mode)
 		if(JUKEMODE_NEXT)
-			var/curTrackIndex = max(1, tracks.Find(current_track))
+			var/curTrackIndex = max(1, tracks.Find(current_track()))
 			var/newTrackIndex = (curTrackIndex % tracks.len) + 1  // Loop back around if past end
-			current_track = tracks[newTrackIndex]
+			current_track_handle = om_handle(tracks[newTrackIndex])
 		if(JUKEMODE_RANDOM)
-			var/previous_track = current_track
+			var/previous_track = current_track()
 			do
-				current_track = pick(tracks)
-			while(current_track == previous_track && tracks.len > 1)
+				current_track_handle = om_handle(pick(tracks))
+			while(current_track() == previous_track && tracks.len > 1)
 		if(JUKEMODE_REPEAT_SONG)
-			current_track = current_track
+			current_track_handle = om_handle(current_track())
 		if(JUKEMODE_PLAY_ONCE)
-			current_track = null
+			current_track_handle = null
 			playing = 0
 			update_icon()
 	start_stop_song()
@@ -75,10 +75,10 @@ REF_OWNED(/obj/machinery/media/jukebox, "wires")
 
 // Tells the media manager to start or stop playing based on current settings.
 /obj/machinery/media/jukebox/proc/start_stop_song()
-	if(current_track && playing)
-		media_url = current_track.url
+	if(current_track() && playing)
+		media_url = current_track().url
 		media_start_time = world.time
-		audible_message(span_notice("\The [src] begins to play [current_track.display()]."), runemessage = "[current_track.display()]")
+		audible_message(span_notice("\The [src] begins to play [current_track().display()]."), runemessage = "[current_track().display()]")
 	else
 		media_url = ""
 		media_start_time = 0
@@ -189,11 +189,11 @@ REF_OWNED(/obj/machinery/media/jukebox, "wires")
 	data["current_track_ref"] = null
 	data["current_track"] = null
 	data["current_genre"] = null
-	if(current_track)
-		data["current_track_ref"] = "\ref[current_track]"  // Convenient shortcut
-		data["current_track"] = current_track.toTguiList()
-		data["current_genre"] = current_track.genre
-	data["percent"] = playing ? min(100, round(world.time - media_start_time) / current_track.duration) : 0;
+	if(current_track())
+		data["current_track_ref"] = "\ref[current_track()]"  // Convenient shortcut
+		data["current_track"] = current_track().toTguiList()
+		data["current_genre"] = current_track().genre
+	data["percent"] = playing ? min(100, round(world.time - media_start_time) / current_track().duration) : 0;
 
 	var/list/tgui_tracks = list()
 	for(var/datum/track/T in getTracksList())
@@ -211,7 +211,7 @@ REF_OWNED(/obj/machinery/media/jukebox, "wires")
 		if("change_track")
 			var/datum/track/T = locate(params["change_track"]) in getTracksList()
 			if(istype(T))
-				current_track = T
+				current_track_handle = om_handle(T)
 				StartPlaying()
 			return TRUE
 		if("loopmode")
@@ -243,7 +243,7 @@ REF_OWNED(/obj/machinery/media/jukebox, "wires")
 					else
 						M.status_adjust(EFFECT_JITTERY, 500)
 				addtimer(CALLBACK(src, PROC_REF(explode)), 1.5 SECONDS, TIMER_DELETE_ME|TIMER_UNIQUE)
-			else if(current_track == null)
+			else if(current_track() == null)
 				to_chat(ui.user, "No track selected.")
 			else
 				StartPlaying()
@@ -252,7 +252,7 @@ REF_OWNED(/obj/machinery/media/jukebox, "wires")
 			SSmedia_tracks.add_track(ui.user, params["url"], params["title"], text2num(params["duration"]) * 10, params["artist"], params["genre"], text2num(params["secret"]), text2num(params["lobby"]))
 		if("remove_new_track")
 			var/datum/track/track_to_remove = locate(params["ref"]) in getTracksList()
-			if(track_to_remove == current_track && playing)
+			if(track_to_remove == current_track() && playing)
 				StopPlaying()
 			SSmedia_tracks.remove_track(ui.user, track_to_remove)
 
@@ -297,7 +297,7 @@ REF_OWNED(/obj/machinery/media/jukebox, "wires")
 	start_stop_song()
 
 /obj/machinery/media/jukebox/proc/StartPlaying()
-	if(!current_track)
+	if(!current_track())
 		return
 	playing = 1
 	MACHINE_WAKE(src)
@@ -309,9 +309,9 @@ REF_OWNED(/obj/machinery/media/jukebox, "wires")
 /obj/machinery/media/jukebox/proc/NextTrack()
 	var/list/tracks = getTracksList()
 	if(!tracks.len) return
-	var/curTrackIndex = max(1, tracks.Find(current_track))
+	var/curTrackIndex = max(1, tracks.Find(current_track()))
 	var/newTrackIndex = (curTrackIndex % tracks.len) + 1  // Loop back around if past end
-	current_track = tracks[newTrackIndex]
+	current_track_handle = om_handle(tracks[newTrackIndex])
 	if(playing)
 		start_stop_song()
 
@@ -319,9 +319,9 @@ REF_OWNED(/obj/machinery/media/jukebox, "wires")
 /obj/machinery/media/jukebox/proc/PrevTrack()
 	var/list/tracks = getTracksList()
 	if(!tracks.len) return
-	var/curTrackIndex = max(1, tracks.Find(current_track))
+	var/curTrackIndex = max(1, tracks.Find(current_track()))
 	var/newTrackIndex = curTrackIndex == 1 ? tracks.len : curTrackIndex - 1
-	current_track = tracks[newTrackIndex]
+	current_track_handle = om_handle(tracks[newTrackIndex])
 	if(playing)
 		start_stop_song()
 
@@ -385,8 +385,8 @@ REF_OWNED(/obj/machinery/media/jukebox, "wires")
 
 	if(check_rights(R_FUN|R_ADMIN, show_msg=0))
 		interact(M)
-	else if(current_track)
-		to_chat(M, "\The [src] is playing [current_track.display()].")
+	else if(current_track())
+		to_chat(M, "\The [src] is playing [current_track().display()].")
 	else
 		to_chat(M, "\The [src] is not playing any music.")
 
@@ -468,3 +468,7 @@ REF_OWNED(/obj/machinery/media/jukebox, "wires")
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/media/jukebox/step_start_condition()
 	return playing
+
+/// LC-refs: current track -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/media/jukebox/proc/current_track() as /datum/track
+	return om_resolve(current_track_handle)

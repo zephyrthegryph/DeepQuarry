@@ -189,23 +189,23 @@
 
 /obj/item/implant/reagent_generator/periodic_step()
 	var/before_gen
-	if(isliving(imp_in) && generated_reagents)
+	if(isliving(imp_in()) && generated_reagents)
 		before_gen = reagents.total_volume
-		var/mob/living/L = imp_in
+		var/mob/living/L = imp_in()
 		if(reagents.total_volume < reagents.maximum_volume)
 			if(L.nutrition >= gen_cost)
 				do_generation(L)
 		else
 			return
 	else
-		remove_verb(imp_in, assigned_proc)
+		remove_verb(imp_in(), assigned_proc)
 		return
 
 	if(reagents)
 		if(reagents.total_volume == reagents.maximum_volume * 0.05)
-			to_chat(imp_in, span_notice("[pick(empty_message)]"))
+			to_chat(imp_in(), span_notice("[pick(empty_message)]"))
 		else if(reagents.total_volume == reagents.maximum_volume && before_gen < reagents.maximum_volume)
-			to_chat(imp_in, span_warning("[pick(full_message)]"))
+			to_chat(imp_in(), span_warning("[pick(full_message)]"))
 
 /obj/item/implant/reagent_generator/proc/do_generation(mob/living/L)
 	L.adjust_nutrition(-gen_cost)

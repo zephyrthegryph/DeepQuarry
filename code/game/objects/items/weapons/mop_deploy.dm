@@ -11,7 +11,7 @@
 	throw_range = 1
 	w_class = ITEMSIZE_LARGE//So you can't hide it in your pocket or some such.
 	attack_verb = list("mopped", "bashed", "bludgeoned", "whacked")
-	var/mob/living/creator
+	var/creator_handle
 	var/mopping = 0
 	var/mopcount = 0
 
@@ -61,7 +61,7 @@
 /// Goes away once it leaves its creator's hands: checked after it is made, dropped or moved
 /// between hands, never polled.
 /obj/item/mop_deploy/proc/check_held()
-	if(!creator || loc != creator || !creator.item_is_in_hands(src))
+	if(!creator() || loc != creator() || !creator().item_is_in_hands(src))
 		// Tidy up a bit.
 		if(isliving(loc))
 			var/mob/living/carbon/human/host = loc
@@ -82,3 +82,7 @@
 /obj/item/mop_deploy/equipped(mob/user, slot)
 	. = ..()
 	om_after(src, 0, PROC_REF(check_held))
+
+/// LC-refs: creator -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/mop_deploy/proc/creator() as /mob/living
+	return om_resolve(creator_handle)

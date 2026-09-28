@@ -27,9 +27,9 @@
 /obj/effect/anomaly/bluespace/detonate()
 	playsound(src, 'sound/effects/cosmic_energy.ogg', vol = 50)
 
-	if(!impact_area)
+	if(!impact_area())
 		return
-	var/turf/impact_turf = pick(get_area_turfs(impact_area))
+	var/turf/impact_turf = pick(get_area_turfs(impact_area()))
 
 	var/obj/item/radio/beacon/chosen
 	var/list/possible = list()

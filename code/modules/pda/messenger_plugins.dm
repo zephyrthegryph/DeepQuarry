@@ -54,7 +54,7 @@
 		else
 			difficulty += 2
 
-		if(!P.detonate || P.hidden_uplink)
+		if(!P.detonate || P.hidden_uplink())
 			user.show_message(span_warning("The target PDA does not seem to respond to the detonation command."), 1)
 			pda.cartridge.charges++
 		else if(prob(difficulty * 12))
@@ -79,10 +79,10 @@
 	if(.)
 		var/lock_code = "[rand(100,999)] [pick("Alpha","Bravo","Charlie","Delta","Echo","Foxtrot","Golf","Hotel","India","Juliet","Kilo","Lima","Mike","November","Oscar","Papa","Quebec","Romeo","Sierra","Tango","Uniform","Victor","Whiskey","X-ray","Yankee","Zulu")]"
 		user.show_message(span_notice("Virus Sent!  The unlock code to the target is: [lock_code]"))
-		if(!P.hidden_uplink)
+		if(!P.hidden_uplink())
 			var/obj/item/uplink/hidden/uplink = new(P)
-			P.hidden_uplink = uplink
+			P.hidden_uplink_handle = om_handle(uplink)
 			P.lock_code = lock_code
 		// else
 			// P.hidden_uplink.hidden_crystals += P.hidden_uplink.uses //Temporarially hide the PDA's crystals, so you can't steal telecrystals.
-		P.hidden_uplink.active = TRUE
+		P.hidden_uplink().active = TRUE

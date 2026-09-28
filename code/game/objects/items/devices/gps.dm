@@ -16,7 +16,7 @@
 	var/hide_signal = FALSE		// If true, signal is not visible to other GPS devices.
 	var/can_hide_signal = FALSE	// If it can toggle the above var.
 
-	var/mob/holder
+	var/holder_handle
 	var/is_in_processing_list = FALSE
 	var/list/tracking_devices
 	var/list/showing_tracked_names
@@ -38,36 +38,36 @@ REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
 	update_icon()
 
 /obj/item/gps/proc/check_visible_to_holder()
-	. = (holder && (holder.get_active_hand() == src || holder.get_inactive_hand() == src))
+	. = (holder_ref() && (holder_ref().get_active_hand() == src || holder_ref().get_inactive_hand() == src))
 
 /obj/item/gps/proc/update_holder()
 
-	if(holder && loc != holder)
-		UnregisterSignal(holder, COMSIG_MOVABLE_ATTEMPTED_MOVE)
+	if(holder_ref() && loc != holder_ref())
+		UnregisterSignal(holder_ref(), COMSIG_MOVABLE_ATTEMPTED_MOVE)
 		//GLOB.dir_set_event.unregister(holder, src)
-		holder.client?.screen -= compass
-		holder = null
+		holder_ref().client?.screen -= compass
+		holder_handle = null
 
 	if(istype(loc, /mob))
-		holder = loc
-		RegisterSignal(holder, COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(update_compass), override = TRUE)
-		holder.AddComponent(/datum/component/recursive_move)
+		holder_handle = om_handle(loc)
+		RegisterSignal(holder_ref(), COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(update_compass), override = TRUE)
+		holder_ref().AddComponent(/datum/component/recursive_move)
 		//GLOB.dir_set_event.register(holder, src, PROC_REF(update_compass))
 
-	if(holder && tracking)
+	if(holder_ref() && tracking)
 		if(!is_in_processing_list)
 			PERIODIC_START(src, PERIODIC_SLOW)
 			is_in_processing_list = TRUE
-		if(holder.client)
+		if(holder_ref().client)
 			if(check_visible_to_holder())
-				holder.client.screen |= compass
+				holder_ref().client.screen |= compass
 			else
-				holder.client.screen -= compass
+				holder_ref().client.screen -= compass
 	else
 		PERIODIC_STOP(src)
 		is_in_processing_list = FALSE
-		if(holder?.client)
-			holder.client.screen -= compass
+		if(holder_ref()?.client)
+			holder_ref().client.screen -= compass
 
 /obj/item/gps/pickup()
 	. = ..()
@@ -90,7 +90,7 @@ REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
 		is_in_processing_list = FALSE
 		return PROCESS_KILL
 	update_holder()
-	if(holder)
+	if(holder_ref())
 		update_compass(src, TRUE)
 
 REF_OWNED(/obj/item/gps, "compass")
@@ -458,3 +458,7 @@ REF_OWNED(/obj/item/gps, "compass")
 	emped = FALSE
 	update_icon()
 	visible_message("\The [src] appears to be functional again.")
+
+/// LC-refs: holder -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/gps/proc/holder_ref() as /mob
+	return om_resolve(holder_handle)

@@ -62,7 +62,7 @@
 		alarms[++alarms.len] = list(
 			"name" = sanitize(alarm.name),
 			"ref"= "\ref[alarm]",
-			"danger" = max(alarm.danger_level, alarm.alarm_area.atmosalm),
+			"danger" = max(alarm.danger_level, alarm.alarm_area_ref().atmosalm),
 			"x" = alarm.x,
 			"y" = alarm.y,
 			"z" = alarm.z)
@@ -100,7 +100,7 @@
 	return STATUS_UPDATE
 
 /datum/tgui_state/air_alarm_remote/proc/has_access(mob/user)
-	return user && (isAI(user) || atmos_control.access.allowed(user) || atmos_control.emagged || air_alarm.rcon_setting == RCON_YES || (air_alarm.alarm_area.atmosalm && air_alarm.rcon_setting == RCON_AUTO) || (ACCESS_CE in user.GetAccess()))
+	return user && (isAI(user) || atmos_control.access.allowed(user) || atmos_control.emagged || air_alarm.rcon_setting == RCON_YES || (air_alarm.alarm_area_ref().atmosalm && air_alarm.rcon_setting == RCON_AUTO) || (ACCESS_CE in user.GetAccess()))
 
 /datum/tgui_module/atmos_control/ntos
 	ntos = TRUE

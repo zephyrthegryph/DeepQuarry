@@ -13,7 +13,7 @@ Any frequency works, it's self-setting, but it seems like people have decided AU
 	alpha = 170
 
 	//The controller we're wanting our device to use
-	var/obj/machinery/embedded_controller/radio/my_controller
+	var/my_controller_handle
 	var/my_controller_type = /obj/machinery/embedded_controller/radio/airlock
 	//The device we're setting up
 	var/my_device
@@ -23,15 +23,15 @@ Any frequency works, it's self-setting, but it seems like people have decided AU
 
 /obj/effect/map_helper/airlock/Initialize(mapload)
 	..()
-	my_controller = get_controller(get_area(src))
+	my_controller_handle = om_handle(get_controller(get_area(src)))
 	my_device = locate(my_device_type) in get_turf(src)
 	if(!my_device)
 		to_chat(world, span_world("[span_red("WARNING:")][span_black("Airlock helper '[name]' couldn't find what it wanted at: X:[x] Y:[y] Z:[z]")]"))
 		log_mapping("WARNING: Airlock helper '[name]' couldn't find what it wanted at: X:[x] Y:[y] Z:[z]")
-	else if(!my_controller)
+	else if(!my_controller())
 		to_chat(world, span_world("[span_red("WARNING:")][span_black("Airlock helper '[name]' couldn't find a controller at: X:[x] Y:[y] Z:[z]")]"))
 		log_mapping("WARNING: Airlock helper '[name]' couldn't find a controller at: X:[x] Y:[y] Z:[z]")
-	else if(!my_controller.id_tag)
+	else if(!my_controller().id_tag)
 		to_chat(world, span_world("[span_red("WARNING:")][span_black("Airlock helper '[name]' found a controller without an 'id_tag' set: X:[x] Y:[y] Z:[z]")]"))
 		log_mapping("WARNING: Airlock helper '[name]' found a controller without an 'id_tag' set: X:[x] Y:[y] Z:[z]")
 	else
@@ -82,11 +82,11 @@ Any frequency works, it's self-setting, but it seems like people have decided AU
 /obj/effect/map_helper/airlock/door/setup()
 	var/obj/machinery/door/airlock/my_airlock = my_device
 	my_airlock.lock()
-	my_airlock.id_tag = my_controller.id_tag + tag_addon
-	my_airlock.frequency = my_controller.frequency
-	my_airlock.set_frequency(my_controller.frequency)
-	my_airlock.req_access = my_controller.req_access
-	my_airlock.req_one_access = my_controller.req_one_access
+	my_airlock.id_tag = my_controller().id_tag + tag_addon
+	my_airlock.frequency = my_controller().frequency
+	my_airlock.set_frequency(my_controller().frequency)
+	my_airlock.req_access = my_controller().req_access
+	my_airlock.req_one_access = my_controller().req_one_access
 
 /obj/effect/map_helper/airlock/door/ext_door
 	name = "exterior airlock door"
@@ -113,8 +113,8 @@ Any frequency works, it's self-setting, but it seems like people have decided AU
 
 /obj/effect/map_helper/airlock/atmos/setup()
 	var/obj/machinery/atmospherics/unary/vent_pump/my_pump = my_device
-	my_pump.frequency = my_controller.frequency //Unlike doors, these set up their radios in atmos init, so they won't have gone before us.
-	my_pump.id_tag = my_controller.id_tag + tag_addon
+	my_pump.frequency = my_controller().frequency //Unlike doors, these set up their radios in atmos init, so they won't have gone before us.
+	my_pump.id_tag = my_controller().id_tag + tag_addon
 
 /obj/effect/map_helper/airlock/atmos/chamber_pump
 	name = "chamber pump"
@@ -144,12 +144,12 @@ Any frequency works, it's self-setting, but it seems like people have decided AU
 
 /obj/effect/map_helper/airlock/sensor/setup()
 	var/obj/machinery/airlock_sensor/my_sensor = my_device
-	my_sensor.id_tag = my_controller.id_tag + tag_addon
-	my_sensor.master_tag = my_controller.id_tag
-	my_sensor.frequency = my_controller.frequency
-	my_sensor.set_frequency(my_controller.frequency)
-	my_sensor.req_access = my_controller.req_access
-	my_sensor.req_one_access = my_controller.req_one_access
+	my_sensor.id_tag = my_controller().id_tag + tag_addon
+	my_sensor.master_tag = my_controller().id_tag
+	my_sensor.frequency = my_controller().frequency
+	my_sensor.set_frequency(my_controller().frequency)
+	my_sensor.req_access = my_controller().req_access
+	my_sensor.req_one_access = my_controller().req_one_access
 	if(command)
 		my_sensor.command = command
 
@@ -183,11 +183,11 @@ Any frequency works, it's self-setting, but it seems like people have decided AU
 
 /obj/effect/map_helper/airlock/button/setup()
 	var/obj/machinery/access_button/my_button = my_device
-	my_button.master_tag = my_controller.id_tag
-	my_button.frequency = my_controller.frequency
-	my_button.set_frequency(my_controller.frequency)
-	my_button.req_access = my_controller.req_access
-	my_button.req_one_access = my_controller.req_one_access
+	my_button.master_tag = my_controller().id_tag
+	my_button.frequency = my_controller().frequency
+	my_button.set_frequency(my_controller().frequency)
+	my_button.req_access = my_controller().req_access
+	my_button.req_one_access = my_controller().req_one_access
 	if(command)
 		my_button.command = command
 
@@ -203,3 +203,7 @@ Any frequency works, it's self-setting, but it seems like people have decided AU
 	tag_addon = "_interior_button"
 	command = "cycle_interior"
 // ition End
+
+/// LC-refs: my controller -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/effect/map_helper/airlock/proc/my_controller() as /obj/machinery/embedded_controller/radio
+	return om_resolve(my_controller_handle)

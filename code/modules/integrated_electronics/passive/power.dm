@@ -91,8 +91,8 @@
 	var/mob/living/carbon/human/host = null
 	if(assembly && istype(assembly, /obj/item/electronic_assembly/implant))
 		var/obj/item/electronic_assembly/implant/implant_assembly = assembly
-		if(implant_assembly.implant.imp_in)
-			host = implant_assembly.implant.imp_in
+		if(implant_assembly.implant.imp_in())
+			host = implant_assembly.implant.imp_in()
 	if(host && test_validity(host))
 		assembly.give_power(10)
 		host.nutrition = max(host.nutrition - DEFAULT_HUNGER_FACTOR, 0)

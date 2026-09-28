@@ -43,7 +43,7 @@
 	if(holding)
 		add_overlay("siphon-open")
 
-	if(connected_port)
+	if(connected_port())
 		add_overlay("siphon-connector")
 
 	return
@@ -149,7 +149,7 @@
 	var/list/data[0]
 	data["on"] = on ? TRUE : FALSE
 	data["direction"] = !direction_out ? TRUE : FALSE
-	data["connected"] = connected_port ? TRUE : FALSE
+	data["connected"] = connected_port() ? TRUE : FALSE
 	data["pressure"] = round(air_contents.return_pressure() > 0 ? air_contents.return_pressure() : 0)
 	data["target_pressure"] = round(target_pressure ? target_pressure : 0)
 	data["default_pressure"] = round(initial(target_pressure))

@@ -9,7 +9,7 @@
 	throwforce = 5.0
 	throw_range = 15
 	throw_speed = 3
-	var/obj/item/bug_monitor/linkedmonitor
+	var/linkedmonitor_handle
 	var/brokentype = /obj/item/brokenbug
 
 //	var/obj/item/radio/bug/radio
@@ -38,9 +38,9 @@
 /obj/item/camerabug/verb/reset()
 	set name = "Reset camera bug"
 	set category = "Object"
-	if(linkedmonitor)
-		linkedmonitor.unpair(src)
-	linkedmonitor = null
+	if(linkedmonitor())
+		linkedmonitor().unpair(src)
+	linkedmonitor_handle = null
 	qdel(camera)
 	camera = new camtype(src)
 	to_chat(usr, span_notice("You turn the [src] off and on again, delinking it from any monitors."))
@@ -101,14 +101,14 @@
 /obj/item/camerabug/attackby(obj/item/W as obj, mob/living/user as mob)
 	if(istype(W, /obj/item/bug_monitor))
 		var/obj/item/bug_monitor/SM = W
-		if(!linkedmonitor)
+		if(!linkedmonitor())
 			to_chat(user, span_notice("\The [src] has been paired with \the [SM]."))
 			SM.pair(src)
-			linkedmonitor = SM
-		else if (linkedmonitor == SM)
+			linkedmonitor_handle = om_handle(SM)
+		else if (linkedmonitor() == SM)
 			to_chat(user, span_notice("\The [src] has been unpaired from \the [SM]."))
-			linkedmonitor.unpair(src)
-			linkedmonitor = null
+			linkedmonitor().unpair(src)
+			linkedmonitor_handle = null
 		else
 			to_chat(user, "Error: The device is linked to another monitor.")
 
@@ -116,9 +116,9 @@
 		if(W.force >= 5)
 			visible_message("\The [src] lens shatters!")
 			new brokentype(get_turf(src))
-			if(linkedmonitor)
-				linkedmonitor.unpair(src)
-			linkedmonitor = null
+			if(linkedmonitor())
+				linkedmonitor().unpair(src)
+			linkedmonitor_handle = null
 			consume(src, user)
 		..()
 
@@ -132,16 +132,16 @@
 
 /obj/item/camerabug/bullet_act()
 	visible_message("The [src] lens shatters!")
-	if(linkedmonitor)
-		linkedmonitor.unpair(src)
-	linkedmonitor = null
+	if(linkedmonitor())
+		linkedmonitor().unpair(src)
+	linkedmonitor_handle = null
 	replace_with(src, brokentype)
 
 // LIFECYCLE: its monitor unpairs it.
 /obj/item/camerabug/Destroy()
-	if(linkedmonitor)
-		linkedmonitor.unpair(src)
-	linkedmonitor = null
+	if(linkedmonitor())
+		linkedmonitor().unpair(src)
+	linkedmonitor_handle = null
 	. = ..()
 
 /obj/item/bug_monitor
@@ -153,7 +153,7 @@
 	w_class  = ITEMSIZE_SMALL
 
 //	var/obj/item/radio/bug/radio
-	var/obj/machinery/camera/bug/selected_camera
+	var/selected_camera_handle
 	var/list/obj/machinery/camera/bug/cameras = new()
 
 	pickup_sound = 'sound/items/pickup/device.ogg'
@@ -193,23 +193,23 @@
 		return
 
 	if(cameras.len == 1)
-		selected_camera = cameras[1]
+		selected_camera_handle = om_handle(cameras[1])
 	else
 		in_use = TRUE // Don't allow spamming tgui menus
-		selected_camera = tgui_input_list(user, "Select camera to view.", "Camera Choice", cameras)
+		selected_camera_handle = om_handle(tgui_input_list(user, "Select camera to view.", "Camera Choice", cameras))
 		in_use = FALSE
 	view_camera(user)
 
 /obj/item/bug_monitor/proc/view_camera(mob/user)
 	if(loc != user) // Nice try smartass, must be in your hand and not in a box in your inventory
 		return
-	var/turf/T = get_turf(selected_camera)
-	if(!T || !is_on_same_plane_or_station(T.z, user.z) || !selected_camera.can_use())
-		to_chat(user, span_notice("Link to [selected_camera] has been lost."))
-		unpair(selected_camera)
-		selected_camera = null
+	var/turf/T = get_turf(selected_camera())
+	if(!T || !is_on_same_plane_or_station(T.z, user.z) || !selected_camera().can_use())
+		to_chat(user, span_notice("Link to [selected_camera()] has been lost."))
+		unpair(selected_camera())
+		selected_camera_handle = null
 		return
-	user.AddComponent(/datum/component/remote_view/item_zoom, focused_on = selected_camera, vconfig_path = /datum/remote_view_config/camera_standard, our_item = src, viewsize = null, tileoffset = 0, show_visible_messages = TRUE)
+	user.AddComponent(/datum/component/remote_view/item_zoom, focused_on = selected_camera(), vconfig_path = /datum/remote_view_config/camera_standard, our_item = src, viewsize = null, tileoffset = 0, show_visible_messages = TRUE)
 
 /obj/item/bug_monitor/proc/can_use_cam(mob/user)
 	if(!cameras.len)
@@ -248,3 +248,11 @@
 	c_tag = name
 
 REF_OWNED(/obj/item/camerabug, list("camera"))
+
+/// LC-refs: linkedmonitor -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/camerabug/proc/linkedmonitor() as /obj/item/bug_monitor
+	return om_resolve(linkedmonitor_handle)
+
+/// LC-refs: selected camera -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/bug_monitor/proc/selected_camera() as /obj/machinery/camera/bug
+	return om_resolve(selected_camera_handle)
