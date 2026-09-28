@@ -52,10 +52,9 @@
 		front_handle = om_handle(F)
 		middle_handle = om_handle(M)
 		back_handle = om_handle(B)
+		// The parts are OM handles: one that is destroyed reads null, so is_valid_setup() fails
+		// without a destruction signal on each.
 		if(is_valid_setup())
-			RegisterSignal(F, COMSIG_OBSERVER_DESTROYED, PROC_REF(release_links))
-			RegisterSignal(M, COMSIG_OBSERVER_DESTROYED, PROC_REF(release_links))
-			RegisterSignal(B, COMSIG_OBSERVER_DESTROYED, PROC_REF(release_links))
 			return TRUE
 	return FALSE
 
@@ -67,10 +66,6 @@
 	return FALSE
 
 /obj/machinery/computer/ship/disperser/proc/release_links()
-	SIGNAL_HANDLER
-	UnregisterSignal(front(), COMSIG_OBSERVER_DESTROYED)
-	UnregisterSignal(middle(), COMSIG_OBSERVER_DESTROYED)
-	UnregisterSignal(back(), COMSIG_OBSERVER_DESTROYED)
 	front_handle = null
 	middle_handle = null
 	back_handle = null
