@@ -236,11 +236,51 @@
 /datum/body
 	/// Flat list indexed by BF_*, or null when every factor is at baseline.
 	var/list/factors
+	/// C12: reagent id -> dose band of every factor-contributing reagent at the
+	/// last treatment snapshot, or null. A change here is what dirties factors.
+	var/tmp/list/reagent_factor_bands
+	/// A reagent holder changed since the bands were last compared.
+	var/tmp/reagent_bands_pending = FALSE
 
 /datum/body/proc/get_factor(id)
-	if(dirty & BODY_DIRTY_FACTORS)
+	if(factors_stale())
 		recompute_factors()
 	return factors ? factors[id] : body_factor_baseline(id)
+
+/// Are the factors stale? Resolves a pending reagent change first (C12), so
+/// every "should I recompute?" check sees band crossings.
+/datum/body/proc/factors_stale()
+	if(reagent_bands_pending)
+		build_treatment_snapshot()
+	return (dirty & BODY_DIRTY_FACTORS) ? TRUE : FALSE
+
+/// C12: compare each factor reagent's dose band with the last snapshot's and
+/// dirty the factors only on a band crossing, or when a factor reagent appears
+/// or leaves. Called by build_treatment_snapshot() with fresh volumes.
+/datum/body/proc/update_reagent_factor_bands()
+	reagent_bands_pending = FALSE
+	var/list/bands = null
+	for(var/reagent_id in reagent_volumes)
+		var/datum/reagent/R = chemistry_service().chemical_reagents[reagent_id]
+		if(!R || !R.contributes_factors(owner))
+			continue
+		LAZYSET(bands, reagent_id, reagent_factor_band(reagent_volumes[reagent_id]))
+	var/list/old = reagent_factor_bands
+	reagent_factor_bands = bands
+	if(!reagent_bands_equal(old, bands))
+		invalidate(BODY_DIRTY_FACTORS)
+
+/datum/body/proc/reagent_bands_equal(list/a, list/b)
+	if(length(a) != length(b))
+		return FALSE
+	for(var/reagent_id in a)
+		if(!(reagent_id in b) || a[reagent_id] != b[reagent_id])
+			return FALSE
+	return TRUE
+
+/// Dose band of `volume` for factor dirtying (DQ_CHEM_FACTOR_BAND of the dose scale).
+/proc/reagent_factor_band(volume)
+	return round(dq_chem_dose_scale(volume) / DQ_CHEM_FACTOR_BAND)
 
 /// Rebuild `factors` from every source. Visits each source's static table
 /// once; allocates only when something contributes.
@@ -398,6 +438,20 @@
 /proc/dq_reagent_acts_on(reagent_id, mob/living/L)
 	var/datum/reagent/R = chemistry_service().chemical_reagents[reagent_id]
 	return R ? R.acts_on_body(L) : FALSE
+
+/// C12: can this reagent change `L`'s body factors at all? (Its own table, or a
+/// patient-side contribution in accumulate_special_factors().) Reagents that
+/// can't never dirty the factors when their dose moves.
+/datum/reagent/proc/contributes_factors(mob/living/L)
+	if(length(get_factors(L)))
+		return TRUE
+	if(ishuman(L))
+		var/mob/living/carbon/human/H = L
+		if((H.species.allergens & allergen_type) || (H.species.medallergens & medallergen_type))
+			return TRUE
+		if(id == H.species.blood_reagents)
+			return TRUE
+	return FALSE
 
 /// Contributions that depend on the patient rather than the reagent: the
 /// mob's allergies, and blood rebuilt from its own blood reagent. Called at

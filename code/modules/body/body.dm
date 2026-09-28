@@ -42,10 +42,15 @@ REF_OWNED(/mob/living, "body")
 	return body ? body.biology_of(null) : biology
 
 /// Any reagent holder owned by this mob changed: the treatment snapshot and
-/// the chem-caused afflictions are stale.
+/// the chem-caused afflictions are stale. The factors are NOT dirtied here
+/// (C12): the snapshot rebuild dirties them only when a factor reagent crosses
+/// a dose band, appears or leaves (update_reagent_factor_bands()).
 /mob/living/on_reagent_change(changetype)
 	. = ..()
-	body?.invalidate(BODY_DIRTY_TREATMENT | BODY_DIRTY_CHEMS | BODY_DIRTY_FACTORS)
+	if(!body)
+		return
+	body.reagent_bands_pending = TRUE
+	body.invalidate(BODY_DIRTY_TREATMENT | BODY_DIRTY_CHEMS)
 
 /datum/body
 	/// The mob this body belongs to.
@@ -362,6 +367,7 @@ REF_OWNED_LIST(/datum/body, "supports")
 
 	// Regeneration is patched in on read (refresh_regeneration()); force a re-read.
 	regeneration_read_at = null
+	update_reagent_factor_bands()
 
 /// Reagent ID -> volume across every holder the mob metabolises from, or
 /// null when there are none. `reuse` (the previous result) is emptied and refilled
@@ -403,7 +409,7 @@ REF_OWNED_LIST(/datum/body, "supports")
 
 /// Called once per Life tick. Healthy bodies return immediately.
 /datum/body/proc/life_tick()
-	if(dirty & BODY_DIRTY_FACTORS)
+	if(factors_stale())
 		recompute_factors()
 	if(factors)
 		tick_factor_effects()

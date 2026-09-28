@@ -290,7 +290,11 @@
 	return type == /datum/om/stage/life/chemicals
 
 /// Runs the chemicals system now (extra circulation from CPR, horror modifiers, ...).
+/// A run-now frame has no stasis fact of its own, so the paused biology clock is honoured here:
+/// extra circulation can't metabolise faster than stasis allows (P2-S6).
 /mob/living/proc/process_chemicals()
+	if(body?.stasis_paused)
+		return null
 	return om_stage_run_now(src, /datum/om/stage/life/chemicals)
 
 /// Environment: temperature and pressure differences between body and surroundings.
@@ -401,7 +405,7 @@
 /// TRUE when life_tick() has nothing to do: no afflictions, no factor effects, nothing
 /// stale. Plans that evaluate every tick (humanoids) never settle.
 /datum/body/proc/life_settled()
-	return !always_evaluate && !LAZYLEN(afflictions) && !factors && !(dirty & (BODY_DIRTY_VITALS | BODY_DIRTY_FACTORS))
+	return !always_evaluate && !LAZYLEN(afflictions) && !factors && !(dirty & BODY_DIRTY_VITALS) && !factors_stale()
 
 /// The simple plan's life_tick() ignores factors: it works only on afflictions and vitals.
 /datum/body/simple/life_settled()

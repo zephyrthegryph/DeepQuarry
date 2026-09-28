@@ -215,6 +215,9 @@
 // Reference dose for chemical treatment scaling, and its cap multiple.
 #define DQ_CHEM_STANDARD_DOSE 10
 #define DQ_CHEM_DOSE_CAP 4.0
+/// Dose-scale width of one factor band (C12): body factors are recomputed when a
+/// factor reagent's dose crosses a band (1u at the standard dose), not every tick.
+#define DQ_CHEM_FACTOR_BAND 0.1
 /// A reagent burst that closes a fracture or arterial bleed outright (mend() amount).
 #define DQ_REAGENT_KNIT_AMOUNT 100
 /// Hemostatic treatment level that alone arrests a growing internal bleed (D18a).

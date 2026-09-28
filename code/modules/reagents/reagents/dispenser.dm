@@ -126,6 +126,9 @@
 /// Intoxication, and liver toxicity past the toxic threshold: both depend
 /// on the drinker (synthetics, alcohol tolerance), so they are computed per
 /// patient at each factor recompute from the volume in their system.
+/datum/reagent/ethanol/contributes_factors(mob/living/L)
+	return ishuman(L) || ..()
+
 /datum/reagent/ethanol/accumulate_special_factors(list/acc, mob/living/L, volume)
 	acc = ..()
 	if(!ishuman(L) || volume <= 0)

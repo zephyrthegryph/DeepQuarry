@@ -137,7 +137,7 @@
 	var/datum/body/B = self.body
 	if(!B)
 		return TRUE
-	if(B.dirty & (BODY_DIRTY_CONDITIONS | BODY_DIRTY_FACTORS))
+	if((B.dirty & BODY_DIRTY_CONDITIONS) || B.factors_stale())
 		return FALSE
 	if(LAZYLEN(self.side_effects))
 		return FALSE
@@ -198,10 +198,8 @@
 
 /datum/om/stage/life/breathing/carbon/human
 	of = /mob/living/carbon/human
-
-/datum/om/stage/life/breathing/carbon/human/breathe(mob/living/carbon/human/self)
-	if(!self.inStasisNow())
-		..()
+	// P2-S6: a paused (stasis) frame takes no breath and advances no breath cycle.
+	run_if = LIFE_RUN_IF_PLACED_LIVE_BIOLOGY
 
 // Calculate how vulnerable the human is to the current pressure.
 // Returns 0 (equals 0 %) if sealed in an undamaged suit that's rated for the pressure, 1 if unprotected (equals 100%).
@@ -637,12 +635,11 @@
 	return null
 
 
+/// One lung breath's gas exchange (P2-F1: split into the steps below). Reports the breath's
+/// quality (0..1) to the physiology, which decides whether the body suffocates.
 /datum/om/stage/life/breathing/carbon/human/exchange(mob/living/carbon/human/self, datum/gas_mixture/breath)
 	if(om_has(self, EFFECT_GODMODE))
 		return 0	// Cancelled by a component
-
-	if(self.has_mutation(mNobreath))
-		return
 
 	if(self.suiciding)
 		// Holding the breath: nothing is drawn in.
@@ -656,278 +653,195 @@
 		self.body?.set_breath_quality(1)
 		return
 
-	if(self.does_not_breathe)
-		self.failed_last_breath = 0
-		return
-
 	// XGM .total_moles var → LINDA proc. Cache to avoid 12 proc calls.
 	var/breath_moles = breath ? breath.total_moles() : 0
-	if(!breath || (breath_moles == 0))
+	if(!breath_moles)
 		// Nothing to breathe: a closed airway, apnea, or vacuum.
 		self.failed_last_breath = 1
 		self.body?.set_breath_quality(0)
 		self.throw_alert("oxy", /atom/movable/screen/alert/not_enough_atmos)
 		return 0
-	else
-		self.clear_alert("oxy")
-
-	// Minimum safe partial pressure of breathable gas in kPa. Lung damage is
-	// the physiology's business (gas exchange), not the air's.
-	var/safe_pressure_min = self.species.minimum_breath_pressure
-	/// How good this breath is, 0..1, reported to the physiology.
-	var/quality = 1
-
-	var/safe_exhaled_max = 10
-	var/safe_toxins_min = 0.05
-	var/safe_toxins_max = 0.2
-	var/SA_para_min = 1
-	var/SA_sleep_min = 5
-	var/inhaled_gas_used = 0
+	self.clear_alert("oxy")
 
 	var/breath_pressure = (breath_moles*R_IDEAL_GAS_EQUATION*breath.return_temperature())/BREATH_VOLUME
 
-	var/inhaling
-	var/poison_toxin
-	var/poison_methane
-	var/exhaling
+	// Each step returns a quality multiplier; below 1 means that part of the breath failed.
+	var/inhale_quality = inhale_breath_gas(self, breath, breath_moles, breath_pressure)
+	var/exhale_quality = exhaled_gas_buildup(self, breath, breath_moles, breath_pressure)
+	var/quality = inhale_quality * exhale_quality * methane_displacement(self, breath, breath_moles, breath_pressure)
+	self.breathe_poison(breath, self.species.poison_type || GAS_PHORON, breath_moles, breath_pressure)
+	self.breathe_sleeping_gas(breath, breath_moles, breath_pressure)
+	hallucinated_breath_alerts(self)
 
-	var/breath_type
-	var/poison_type
-	var/exhale_type
+	// Were we able to breathe?
+	var/failed_inhale = inhale_quality < 1
+	var/failed_exhale = exhale_quality < 1
+	self.failed_last_breath = (failed_inhale || failed_exhale) ? 1 : 0
+	self.body?.set_breath_quality(quality)
 
-	var/failed_inhale = 0
-	var/failed_exhale = 0
+	suit_breath_sounds(self, failed_inhale, failed_exhale)
+	breath_temperature_effects(self, breath, breath_moles)
+	return 1
 
-	if(self.species.breath_type)
-		breath_type = self.species.breath_type
-	else
-		breath_type = GAS_O2
-	inhaling = LINDA_GAS_AMT(breath, breath_type)
-
-	if(self.species.poison_type)
-		poison_type = self.species.poison_type
-	else
-		poison_type = GAS_PHORON
-	poison_toxin = LINDA_GAS_AMT(breath, poison_type)
-
-	if(self.species.breath_type != GAS_CH4)
-		poison_methane = LINDA_GAS_AMT(breath, GAS_CH4)
-
-	if(self.species.exhale_type)
-		exhale_type = self.species.exhale_type
-		exhaling = LINDA_GAS_AMT(breath, exhale_type)
-	else
-		exhaling = 0
-
+/// The species' breath gas. Too little: the breath is only as good as its share (and a vacuum
+/// pops the lungs). Uses up a sixth of it. Returns the quality multiplier.
+/datum/om/stage/life/breathing/carbon/human/proc/inhale_breath_gas(mob/living/carbon/human/self, datum/gas_mixture/breath, breath_moles, breath_pressure)
+	// Minimum safe partial pressure of breathable gas in kPa. Lung damage is
+	// the physiology's business (gas exchange), not the air's.
+	var/safe_pressure_min = self.species.minimum_breath_pressure
+	var/breath_type = self.species.breath_type || GAS_O2
+	var/inhaling = LINDA_GAS_AMT(breath, breath_type)
 	var/inhale_pp = (inhaling/breath_moles)*breath_pressure
-	var/toxins_pp = (poison_toxin/breath_moles)*breath_pressure
-	var/methane_pp = (poison_methane/breath_moles)*breath_pressure
-	// To be clear, this isn't how much they're exhaling -- it's the amount of the species exhale_gas that they just
-	var/exhaled_pp = (exhaling/breath_moles)*breath_pressure
-
-	// Not enough to breathe
+	. = 1
 	if(inhale_pp < safe_pressure_min)
 		if(prob(20))
 			self.emote("gasp")
 		if(is_below_sound_pressure(get_turf(self)))	//No more popped lungs from choking/drowning. You also have ~20 seconds to get internals on before your lungs pop.
 			self.rupture_lung(TRUE)
-
 		// Too little of the breath gas: the breath is only as good as its share.
-		quality = safe_pressure_min > 0 ? clamp(inhale_pp / safe_pressure_min, 0, 1) : 0
-		failed_inhale = 1
-
-		switch(breath_type)
-			if(GAS_O2)
-				self.throw_alert("oxy", /atom/movable/screen/alert/not_enough_oxy)
-			if(GAS_PHORON)
-				self.throw_alert("oxy", /atom/movable/screen/alert/not_enough_tox)
-			if(GAS_N2)
-				self.throw_alert("oxy", /atom/movable/screen/alert/not_enough_nitro)
-			if(GAS_CO2)
-				self.throw_alert("oxy", /atom/movable/screen/alert/not_enough_co2)
-			if(GAS_CH4)
-				self.throw_alert("oxy", /atom/movable/screen/alert/not_enough_methane)
-			if(GAS_VOLATILE_FUEL)
-				self.throw_alert("oxy", /atom/movable/screen/alert/not_enough_fuel)
-			if(GAS_N2O)
-				self.throw_alert("oxy", /atom/movable/screen/alert/not_enough_n2o)
-
+		. = safe_pressure_min > 0 ? clamp(inhale_pp / safe_pressure_min, 0, 1) : 0
+		var/static/list/low_breath_alerts = list(
+			GAS_O2 = /atom/movable/screen/alert/not_enough_oxy,
+			GAS_PHORON = /atom/movable/screen/alert/not_enough_tox,
+			GAS_N2 = /atom/movable/screen/alert/not_enough_nitro,
+			GAS_CO2 = /atom/movable/screen/alert/not_enough_co2,
+			GAS_CH4 = /atom/movable/screen/alert/not_enough_methane,
+			GAS_VOLATILE_FUEL = /atom/movable/screen/alert/not_enough_fuel,
+			GAS_N2O = /atom/movable/screen/alert/not_enough_n2o,
+		)
+		var/alert_type = low_breath_alerts[breath_type]
+		if(alert_type)
+			self.throw_alert("oxy", alert_type)
 	else
-		// We're in safe limits
 		self.clear_alert("oxy")
 
-	inhaled_gas_used = inhaling/6
-
+	var/inhaled_gas_used = inhaling/6
 	breath.adjust_gas(breath_type, -inhaled_gas_used, update = 0) //update afterwards
+	if(self.species.exhale_type)
+		breath.adjust_gas_temp(self.species.exhale_type, inhaled_gas_used, self.bodytemperature, update = 0) //update afterwards
 
-	if(exhale_type)
-		breath.adjust_gas_temp(exhale_type, inhaled_gas_used, self.bodytemperature, update = 0) //update afterwards
+/// Too much of the species' exhale gas in the air: hypercapnia crowds out the breath.
+/// Returns the quality multiplier.
+/datum/om/stage/life/breathing/carbon/human/proc/exhaled_gas_buildup(mob/living/carbon/human/self, datum/gas_mixture/breath, breath_moles, breath_pressure)
+	. = 1
+	var/exhale_type = self.species.exhale_type
+	if(!exhale_type)
+		return
+	var/safe_exhaled_max = 10
+	// To be clear, this isn't how much they're exhaling -- it's the amount of the species exhale gas in the breath.
+	var/exhaled_pp = (LINDA_GAS_AMT(breath, exhale_type)/breath_moles)*breath_pressure
+	if(exhaled_pp > safe_exhaled_max)
+		if (prob(15))
+			var/word = pick("extremely dizzy","short of breath","faint","confused")
+			to_chat(self, span_danger("You feel [word]."))
+		// Hypercapnia: the exhaled gas crowds out the breath.
+		return 0.4
+	if(exhaled_pp > safe_exhaled_max * 0.7)
+		if (!prob(1))
+			var/word = pick("dizzy","short of breath","faint","momentarily confused")
+			to_chat(self, span_warning("You feel [word]."))
+		//scale linearly from 0 to 1 between safe_exhaled_max and safe_exhaled_max*0.7
+		var/ratio = 1.0 - (safe_exhaled_max - exhaled_pp)/(safe_exhaled_max*0.3)
+		// Mild hypercapnia: the breath worsens as the exhaled gas nears its limit.
+		return 1 - 0.5 * ratio
+	if(exhaled_pp > safe_exhaled_max * 0.6)
+		if(prob(0.3))
+			var/word = pick("a little dizzy","short of breath")
+			to_chat(self, span_warning("You feel [word]."))
 
-		// Too much exhaled gas in the air
-		if(exhaled_pp > safe_exhaled_max)
-			if (prob(15))
-				var/word = pick("extremely dizzy","short of breath","faint","confused")
-				to_chat(self, span_danger("You feel [word]."))
-
-			// Hypercapnia: the exhaled gas crowds out the breath.
-			quality *= 0.4
-			failed_exhale = 1
-
-		else if(exhaled_pp > safe_exhaled_max * 0.7)
-			if (!prob(1))
-				var/word = pick("dizzy","short of breath","faint","momentarily confused")
-				to_chat(self, span_warning("You feel [word]."))
-
-			//scale linearly from 0 to 1 between safe_exhaled_max and safe_exhaled_max*0.7
-			var/ratio = 1.0 - (safe_exhaled_max - exhaled_pp)/(safe_exhaled_max*0.3)
-
-			// Mild hypercapnia: the breath worsens as the exhaled gas nears its limit.
-			quality *= 1 - 0.5 * ratio
-			failed_exhale = 1
-
-		else if(exhaled_pp > safe_exhaled_max * 0.6)
-			if(prob(0.3))
-				var/word = pick("a little dizzy","short of breath")
-				to_chat(self, span_warning("You feel [word]."))
-
-	// Too much phoron in the air.
-	if(toxins_pp > safe_toxins_min)
-		var/SA_pp = (LINDA_GAS_AMT(breath, GAS_PHORON) / breath_moles) * breath_pressure
-		if(SA_pp > 0.05)
-			if(prob(3))
-				to_chat(self,span_warning("Something burns as you breathe."))
-	if(toxins_pp > safe_toxins_max)
-		var/ratio = (poison_toxin/safe_toxins_max) * 10
-		if(self.reagents)
-			self.reagents.add_reagent(REAGENT_ID_TOXIN, CLAMP(ratio, MIN_TOXIN_DAMAGE, MAX_TOXIN_DAMAGE))
-			breath.adjust_gas(poison_type, -poison_toxin/6, update = 0) //update after
-		self.throw_alert("tox_in_air", /atom/movable/screen/alert/tox_in_air)
-	else
-		self.clear_alert("tox_in_air")
-
-	// Too much methane in the air
-	if(methane_pp > safe_toxins_min)
-		var/SA_pp = (LINDA_GAS_AMT(breath, GAS_CH4) / breath_moles) * breath_pressure
-		if(SA_pp > 0.05)
-			if(prob(5))
-				to_chat(self,span_warning("You smell rotten eggs."))
+/// Methane displaces the breath (unless the species breathes it): slow suffocation.
+/// Returns the quality multiplier.
+/datum/om/stage/life/breathing/carbon/human/proc/methane_displacement(mob/living/carbon/human/self, datum/gas_mixture/breath, breath_moles, breath_pressure)
+	. = 1
+	if(self.species.breath_type == GAS_CH4)
+		return
+	var/safe_toxins_min = 0.05
+	var/safe_toxins_max = 0.2
+	var/poison_methane = LINDA_GAS_AMT(breath, GAS_CH4)
+	var/methane_pp = (poison_methane/breath_moles)*breath_pressure
+	if(methane_pp > safe_toxins_min && prob(5))
+		to_chat(self,span_warning("You smell rotten eggs."))
 	if(methane_pp > safe_toxins_max)
-		// Methane displaces the breath: slow suffocation.
-		quality *= 1 - clamp(methane_pp / (safe_toxins_max * 20), 0.1, 0.8)
+		. = 1 - clamp(methane_pp / (safe_toxins_max * 20), 0.1, 0.8)
 		if(prob(20))
 			self.emote("gasp")
-		breath.adjust_gas(GAS_CH4, -poison_methane/6, update = 0) // update after // removed duplicate line; poison_methane already equals LINDA_GAS_AMT(breath, GAS_CH4) from line 608
+		breath.adjust_gas(GAS_CH4, -poison_methane/6, update = 0) // update after
 		self.throw_alert("methane_in_air", /atom/movable/screen/alert/methane_in_air)
 	else
 		self.clear_alert("methane_in_air")
 
-	// If there's some other shit in the air lets deal with it here.
-	if(LINDA_GAS_AMT(breath, GAS_N2O))
-		var/SA_pp = (LINDA_GAS_AMT(breath, GAS_N2O) / breath_moles) * breath_pressure
-
-		// Enough to make us paralysed for a bit
-		if(SA_pp > SA_para_min)
-
-			// 3 gives them one second to wake up and run away a bit!
-			self.status_at_least(EFFECT_PARALYZED, 3)
-			self.status_at_least(EFFECT_SLEEPING, 1)
-
-			// Enough to make us sleep as well
-			if(SA_pp > SA_sleep_min)
-				self.status_at_least(EFFECT_SLEEPING, 5)
-
-		// There is sleeping gas in their lungs, but only a little, so give them a bit of a warning
-		else if(SA_pp > 0.15)
-			if(prob(20))
-				self.emote(pick("giggle", "laugh"))
-		breath.adjust_gas(GAS_N2O, -LINDA_GAS_AMT(breath, GAS_N2O)/6, update = 0) //update after
-
-	if(self.get_hallucination_state()?.get_hud_state() == HUD_HALLUCINATION_OXY)
+/datum/om/stage/life/breathing/carbon/human/proc/hallucinated_breath_alerts(mob/living/carbon/human/self)
+	var/hud_state = self.get_hallucination_state()?.get_hud_state()
+	if(hud_state == HUD_HALLUCINATION_OXY)
 		self.throw_alert("oxy", /atom/movable/screen/alert/not_enough_atmos)
-	else if(self.get_hallucination_state()?.get_hud_state() == HUD_HALLUCINATION_TOXIN)
+	else if(hud_state == HUD_HALLUCINATION_TOXIN)
 		self.throw_alert("tox_in_air", /atom/movable/screen/alert/tox_in_air)
 
-	// Were we able to breathe?
-	self.failed_last_breath = (failed_inhale || failed_exhale) ? 1 : 0
-	self.body?.set_breath_quality(quality)
+/// Suit breathing sounds for organic lungs on internals below audible pressure.
+/datum/om/stage/life/breathing/carbon/human/proc/suit_breath_sounds(mob/living/carbon/human/self, failed_inhale, failed_exhale)
+	if(!self.client || !self.internal)
+		return
+	var/obj/item/organ/internal/lungs/L = self.internal_organs_by_name[O_LUNGS]
+	if(!L || L.is_robotic() || !is_below_sound_pressure(get_turf(self)))
+		return
+	if(!failed_inhale && COOLDOWN_FINISHED(self, breath_sound_cooldown)) // Were we able to inhale successfully? Play inhale.
+		self.play_inhale(self, failed_exhale) // Pass through if we passed exhale or not
+		COOLDOWN_START(self, breath_sound_cooldown, 7 SECONDS)
 
-	if(!self.does_not_breathe && self.client) // If we breathe, and have an active client, check if we have synthetic lungs.
-		var/obj/item/organ/internal/lungs/L = self.internal_organs_by_name[O_LUNGS]
-		var/turf = get_turf(self)
-		var/mob/living/carbon/human/M = self
-		if(L && !L.is_robotic() && is_below_sound_pressure(turf) && M.internal) // Only non-synthetic lungs, please, and only play these while the pressure is below that which we can hear sounds normally AND we're on internals.
-			if(!failed_inhale && (COOLDOWN_FINISHED(self, breath_sound_cooldown))) // Were we able to inhale successfully? Play inhale.
-				var/exhale = failed_exhale // Pass through if we passed exhale or not
-				self.play_inhale(M, exhale)
-				COOLDOWN_START(self, breath_sound_cooldown, 7 SECONDS)
+/// Hot or cold breath: burns or frostbite to the airway, temperature alerts, and a little body heat exchange.
+/datum/om/stage/life/breathing/carbon/human/proc/breath_temperature_effects(mob/living/carbon/human/self, datum/gas_mixture/breath, breath_moles)
+	if(isbelly(self.loc)) //None of this happens anyway whilst inside of a belly, belly temperatures are all handled as body temperature
+		return
+	var/datum/species/S = self.species
+	var/breath_temperature = breath.return_temperature()
+	if(!(breath_temperature <= S.cold_discomfort_level || breath_temperature >= S.heat_discomfort_level) || self.has_mutation(COLD_RESISTANCE))
+		self.clear_alert("temp")
+		return
 
+	if(breath_temperature <= S.breath_cold_level_1)
+		if(prob(20))
+			to_chat(self, span_danger("You feel your face freezing and icicles forming in your lungs!"))
+	else if(breath_temperature >= S.breath_heat_level_1)
+		if(prob(20))
+			to_chat(self, span_danger("You feel your face burning and a searing heat in your lungs!"))
 
-	// Hot air hurts :(
-	if(!isbelly(self.loc)) //None of this happens anyway whilst inside of a belly, belly temperatures are all handled as body temperature
-		var/breath_temperature = breath.return_temperature()
-		if((breath_temperature <= self.species.cold_discomfort_level || breath_temperature >= self.species.heat_discomfort_level) && !(self.has_mutation(COLD_RESISTANCE)))
-
-			if(breath_temperature <= self.species.breath_cold_level_1)
-				if(prob(20))
-					to_chat(self, span_danger("You feel your face freezing and icicles forming in your lungs!"))
-			else if(breath_temperature >= self.species.breath_heat_level_1)
-				if(prob(20))
-					to_chat(self, span_danger("You feel your face burning and a searing heat in your lungs!"))
-
-			if(breath_temperature >= self.species.heat_discomfort_level)
-
-				if(breath_temperature >= self.species.breath_heat_level_3)
-					self.injure(INJURY_BURN, HEAT_GAS_DAMAGE_LEVEL_3, BP_HEAD)
-					self.throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_MAX)
-				else if(breath_temperature >= self.species.breath_heat_level_2)
-					self.injure(INJURY_BURN, HEAT_GAS_DAMAGE_LEVEL_2, BP_HEAD)
-					self.throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_MODERATE)
-				else if(breath_temperature >= self.species.breath_heat_level_1)
-					self.injure(INJURY_BURN, HEAT_GAS_DAMAGE_LEVEL_1, BP_HEAD)
-					self.throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_LOW)
-				else if(self.species.get_environment_discomfort(self, ENVIRONMENT_COMFORT_MARKER_HOT))
-					self.throw_alert("temp", /atom/movable/screen/alert/warm, HOT_ALERT_SEVERITY_LOW)
-				else
-					self.clear_alert("temp")
-
-			else if(breath_temperature <= self.species.cold_discomfort_level)
-
-				if(breath_temperature <= self.species.breath_cold_level_3)
-					self.injure(INJURY_FROSTBITE, COLD_GAS_DAMAGE_LEVEL_3, BP_HEAD)
-					self.throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_MAX)
-				else if(breath_temperature <= self.species.breath_cold_level_2)
-					self.injure(INJURY_FROSTBITE, COLD_GAS_DAMAGE_LEVEL_2, BP_HEAD)
-					self.throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_MODERATE)
-				else if(breath_temperature <= self.species.breath_cold_level_1)
-					self.injure(INJURY_FROSTBITE, COLD_GAS_DAMAGE_LEVEL_1, BP_HEAD)
-					self.throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_LOW)
-				else if(self.species.get_environment_discomfort(self, ENVIRONMENT_COMFORT_MARKER_COLD))
-					self.throw_alert("temp", /atom/movable/screen/alert/chilly, COLD_ALERT_SEVERITY_LOW)
-				else
-					self.clear_alert("temp")
-
-			//breathing in hot/cold air also heats/cools you a bit
-			var/temp_adj = breath_temperature - self.bodytemperature
-			if (temp_adj < 0)
-				temp_adj /= (BODYTEMP_COLD_DIVISOR * 5)	//don't raise temperature as much as if we were directly exposed
-			else
-				temp_adj /= (BODYTEMP_HEAT_DIVISOR * 5)	//don't raise temperature as much as if we were directly exposed
-
-			var/relative_density = breath_moles / (MOLES_CELLSTANDARD * BREATH_PERCENTAGE)
-			temp_adj *= relative_density
-
-			if(temp_adj > BODYTEMP_HEATING_MAX)
-				temp_adj = BODYTEMP_HEATING_MAX
-			if(temp_adj < BODYTEMP_COOLING_MAX)
-				temp_adj = BODYTEMP_COOLING_MAX
-
-			self.adjust_bodytemperature(temp_adj)
-
+	if(breath_temperature >= S.heat_discomfort_level)
+		if(breath_temperature >= S.breath_heat_level_3)
+			self.injure(INJURY_BURN, HEAT_GAS_DAMAGE_LEVEL_3, BP_HEAD)
+			self.throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_MAX)
+		else if(breath_temperature >= S.breath_heat_level_2)
+			self.injure(INJURY_BURN, HEAT_GAS_DAMAGE_LEVEL_2, BP_HEAD)
+			self.throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_MODERATE)
+		else if(breath_temperature >= S.breath_heat_level_1)
+			self.injure(INJURY_BURN, HEAT_GAS_DAMAGE_LEVEL_1, BP_HEAD)
+			self.throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_LOW)
+		else if(S.get_environment_discomfort(self, ENVIRONMENT_COMFORT_MARKER_HOT))
+			self.throw_alert("temp", /atom/movable/screen/alert/warm, HOT_ALERT_SEVERITY_LOW)
+		else
+			self.clear_alert("temp")
+	else
+		if(breath_temperature <= S.breath_cold_level_3)
+			self.injure(INJURY_FROSTBITE, COLD_GAS_DAMAGE_LEVEL_3, BP_HEAD)
+			self.throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_MAX)
+		else if(breath_temperature <= S.breath_cold_level_2)
+			self.injure(INJURY_FROSTBITE, COLD_GAS_DAMAGE_LEVEL_2, BP_HEAD)
+			self.throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_MODERATE)
+		else if(breath_temperature <= S.breath_cold_level_1)
+			self.injure(INJURY_FROSTBITE, COLD_GAS_DAMAGE_LEVEL_1, BP_HEAD)
+			self.throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_LOW)
+		else if(S.get_environment_discomfort(self, ENVIRONMENT_COMFORT_MARKER_COLD))
+			self.throw_alert("temp", /atom/movable/screen/alert/chilly, COLD_ALERT_SEVERITY_LOW)
 		else
 			self.clear_alert("temp")
 
-	// breath.update_values() removed; no-op under LINDA.
-	return 1
+	//breathing in hot/cold air also heats/cools you a bit
+	var/temp_adj = breath_temperature - self.bodytemperature
+	if (temp_adj < 0)
+		temp_adj /= (BODYTEMP_COLD_DIVISOR * 5)	//don't raise temperature as much as if we were directly exposed
+	else
+		temp_adj /= (BODYTEMP_HEAT_DIVISOR * 5)	//don't raise temperature as much as if we were directly exposed
+	temp_adj *= breath_moles / (MOLES_CELLSTANDARD * BREATH_PERCENTAGE)
+	self.adjust_bodytemperature(clamp(temp_adj, BODYTEMP_COOLING_MAX, BODYTEMP_HEATING_MAX))
 
 /mob/living/carbon/human/proc/play_inhale(mob/living/M, exhale)
 	var/suit_inhale_sound
@@ -982,9 +896,7 @@
 /// Species and traits with their own environment effects stay awake.
 /datum/om/stage/life/environment/carbon/human/idle(mob/living/carbon/human/self)
 	var/static/list/active_environment_species = typecacheof(list(
-		/datum/species/alraune,
 		/datum/species/grey,
-		/datum/species/diona,
 		/datum/species/spider,
 		/datum/species/xenochimera,
 		/datum/species/xenomorph_hybrid,
@@ -1250,16 +1162,13 @@
 		if(self.nutrition >= 2) //If we are very, very cold we'll use up quite a bit of nutriment to heat us up.
 			self.adjust_nutrition(-2)
 		var/recovery_amt = max((body_temperature_difference / BODYTEMP_AUTORECOVERY_DIVISOR), BODYTEMP_AUTORECOVERY_MINIMUM)
-		//to_world("Cold. Difference = [body_temperature_difference]. Recovering [recovery_amt]")
 		self.adjust_bodytemperature(recovery_amt)
 	else if(self.species.cold_level_1 <= self.bodytemperature && self.bodytemperature <= self.species.heat_level_1)
 		var/recovery_amt = body_temperature_difference / BODYTEMP_AUTORECOVERY_DIVISOR
-		//to_world("Norm. Difference = [body_temperature_difference]. Recovering [recovery_amt]")
 		self.adjust_bodytemperature(recovery_amt)
 	else if(self.bodytemperature > self.species.heat_level_1) //360.15 is 310.15 + 50, the temperature where you start to feel effects.
 		//We totally need a sweat system cause it totally makes sense...~
 		var/recovery_amt = min((body_temperature_difference / BODYTEMP_AUTORECOVERY_DIVISOR), -BODYTEMP_AUTORECOVERY_MINIMUM)	//We're dealing with negative numbers
-		//to_world("Hot. Difference = [body_temperature_difference]. Recovering [recovery_amt]")
 		self.adjust_bodytemperature(recovery_amt)
 
 /// Body part flags protected from heat at `temperature` (worn protection cache).
@@ -1286,12 +1195,10 @@
 
 /datum/om/stage/life/chemicals/carbon/human
 	of = /mob/living/carbon/human
+	// P2-S6: a paused (stasis) frame metabolises nothing; the pipeline skips the stage.
+	run_if = LIFE_RUN_IF_PLACED_UNPAUSED
 
 /datum/om/stage/life/chemicals/carbon/human/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
-
-	if(self.inStasisNow())
-		return
-
 	if(self.reagents)
 		if(self.touching)
 			self.touching.metabolize()
@@ -1665,8 +1572,6 @@
 		switch(self.nutrition)
 			if(450 to INFINITY)
 				self.throw_alert("nutrition", fat_alert)
-			// if(350 to 450)
-			// if(250 to 350) // Alternative more-detailed tiers, not used.
 			if(250 to 450)
 				self.clear_alert("nutrition")
 			if(150 to 250)
@@ -1977,7 +1882,6 @@
 		comp.regenerate()
 		if(self.hud_used)
 			self.ling_chem_display.invisibility = INVISIBILITY_NONE
-//			ling_chem_display.maptext = "<div align='center' valign='middle' style='position:relative; top:0px; left:6px'><font color='#dd66dd'>[round(mind.changeling.chem_charges)]</font></div>"
 			switch(comp.chem_storage)
 				if(1 to 50)
 					switch(comp.chem_charges)
@@ -2396,7 +2300,6 @@
 
 /mob/living/carbon/human/on_fire_stack(seconds_per_tick, datum/status_effect/fire_handler/fire_stacks/fire_handler)
 	OM_EMIT(src, /datum/om/event/human_burning)
-	// burn_clothing(seconds_per_tick, fire_handler.stacks)
 	var/no_protection = FALSE
 	if(HAS_TRAIT(src, TRAIT_IGNORE_FIRE_PROTECTION))
 		no_protection = TRUE
