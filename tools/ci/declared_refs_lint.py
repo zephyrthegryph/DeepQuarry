@@ -14,6 +14,8 @@ Every object-typed var on a datum is declared as exactly one kind:
     REF_DEF              a frozen definition / registry object, never deleted --
                          declared_def_vars(); implicit for types in DEF_TYPES
                          (state_schema_lint.py), which need no declaration
+    REF_STATIC           a round-long singleton or shared flyweight held strongly,
+                         never cleared, never a leak -- declared_static_vars()
     REF_TRANSIENT        a pooled type's per-use field, reset by pool_release() --
                          declared_transient_vars(); an error on a type that isn't
                          POOL_DECLAREd
@@ -87,6 +89,7 @@ UNSAVED_MODS = {"tmp", "static", "global", "const", "final"}
 from ref_kinds import DECLARED_PROCS, REF_MACRO, REF_MACRO_PROC, is_def_type, is_pooled, ref_var_decl  # noqa: E402
 # Declarations that make an instance list var a legitimate holder of objects.
 OBJLIST_PROCS = ("declared_owned_list_vars", "declared_owned_value_vars", "declared_spill_list_vars", "declared_def_vars",
+                 "declared_static_vars",
                  "declared_cache_vars")
 CACHE_ENTRY = re.compile(r'"(\w+)"\s*(=\s*(\S.*?))?\s*,?\s*$')
 CACHE_RULE = re.compile(r"^CACHE_ON_(CHANGE|EVENT|RELATION)\(")

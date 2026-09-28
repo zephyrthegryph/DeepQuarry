@@ -33,6 +33,7 @@ LINTS = {
     "cooldown": "tools/ci/cooldown_lint.py",
     "dcs": "tools/ci/dcs_lints.py",
     "declared_refs": "tools/ci/declared_refs_lint.py (undeclared object-typed vars)",
+    "handle_kinds": "tools/ci/handle_kinds_lint.py (handles to singletons; handles that are a new datum's only owner)",
     "instance_list": "tools/ci/instance_list_lint.py",
     "latent": "tools/ci/latent_lint.py",
     "lifecycle": "tools/ci/lifecycle_counts_lint.py (Destroy() overrides and qdel( sites)",

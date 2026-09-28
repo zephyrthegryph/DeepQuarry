@@ -25,7 +25,7 @@ GLOBAL_VAR_INIT(warrant_uid, 0)
 	tgui_id = "NtosDigitalWarrant"
 	category = PROG_SEC
 
-	var/tmp/activewarrant_handle
+	var/tmp/datum/data/record/warrant/activewarrant_ref
 
 /datum/computer_file/program/digitalwarrant/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = get_header_data()
@@ -61,13 +61,13 @@ GLOBAL_VAR_INIT(warrant_uid, 0)
 	switch(action)
 		if("back")
 			. = TRUE
-			activewarrant_handle = null
+			activewarrant_ref = null
 
 		if("editwarrant")
 			. = TRUE
 			for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
 				if(W.warrant_id == text2num(params["id"]))
-					activewarrant_handle = om_handle(W)
+					activewarrant_ref = W
 					break
 
 	// The following actions will only be possible if the user has an ID with security access equipped. This is in line with modular computer framework's authentication methods,
@@ -98,17 +98,17 @@ GLOBAL_VAR_INIT(warrant_uid, 0)
 					W.fields["charges"] = "No reason given"
 					W.fields["auth"] = "Unauthorized"
 					W.fields["arrestsearch"] = "search"
-				activewarrant_handle = om_handle(W)
+				activewarrant_ref = W
 
 		if("savewarrant")
 			. = TRUE
 			LAZYOR(GLOB.data_core.warrants, activewarrant())
-			activewarrant_handle = null
+			activewarrant_ref = null
 
 		if("deletewarrant")
 			. = TRUE
 			LAZYREMOVE(GLOB.data_core.warrants, activewarrant())
-			activewarrant_handle = null
+			activewarrant_ref = null
 
 		if("editwarrantname")
 			. = TRUE
@@ -154,6 +154,6 @@ GLOBAL_VAR_INIT(warrant_uid, 0)
 				return // end
 			activewarrant().fields["auth"] = "[I.registered_name] - [I.assignment ? I.assignment : "(Unknown)"]"
 
-/// LC-refs: the activewarrant this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// A strong internal reference (tmp): this holder is what keeps it alive.
 /datum/computer_file/program/digitalwarrant/proc/activewarrant() as /datum/data/record/warrant
-	return om_resolve(activewarrant_handle)
+	return activewarrant_ref
