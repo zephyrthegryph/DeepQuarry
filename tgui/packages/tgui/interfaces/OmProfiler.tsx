@@ -27,6 +27,8 @@ type Behaviour = {
   errors: number;
   wakes: number;
   parks: number;
+  population: number;
+  parked: number;
 };
 
 type Lane = {
@@ -36,6 +38,29 @@ type Lane = {
   runs: number;
   ms: number;
   ms_per_s: number;
+  wake_queue: number;
+  world_queue: number;
+};
+
+type Service = {
+  name: string;
+  type: string;
+  initialized: BooleanLike;
+  on_demand: BooleanLike;
+  parked: BooleanLike;
+  resuming: BooleanLike;
+  steps: number;
+  ms: number;
+  ms_per_s: number;
+  avg_ms: number;
+  status: string;
+};
+
+type WorldStep = {
+  step_ms: number;
+  total_wakes: number;
+  last_wakes: number;
+  dropped: number;
 };
 
 type Stage = {
@@ -54,6 +79,8 @@ type Data = {
   behaviours: Behaviour[];
   lanes: Lane[];
   stages: Stage[];
+  services: Service[];
+  world_step?: WorldStep;
 };
 
 type SortKey = 'ms' | 'runs' | 'us_per_run' | 'errors';
@@ -97,10 +124,14 @@ export const OmProfiler = (props) => {
           <Tabs.Tab selected={tab === 2} onClick={() => setTab(2)}>
             Pipeline stages
           </Tabs.Tab>
+          <Tabs.Tab selected={tab === 3} onClick={() => setTab(3)}>
+            World services
+          </Tabs.Tab>
         </Tabs>
         {tab === 0 && <LanesTab />}
         {tab === 1 && <BehavioursTab />}
         {tab === 2 && <StagesTab />}
+        {tab === 3 && <ServicesTab />}
       </Window.Content>
     </Window>
   );
@@ -119,6 +150,8 @@ const LanesTab = (props) => {
           <Table.Cell>Runs</Table.Cell>
           <Table.Cell>Total ms</Table.Cell>
           <Table.Cell>ms/s</Table.Cell>
+          <Table.Cell>Wakes queued</Table.Cell>
+          <Table.Cell>World wakes queued</Table.Cell>
         </Table.Row>
         {lanes.map((lane) => (
           <Table.Row key={lane.name}>
@@ -128,6 +161,8 @@ const LanesTab = (props) => {
             <Table.Cell>{lane.runs}</Table.Cell>
             <Table.Cell>{lane.ms}</Table.Cell>
             <Table.Cell>{lane.ms_per_s}</Table.Cell>
+            <Table.Cell>{lane.wake_queue}</Table.Cell>
+            <Table.Cell>{lane.world_queue}</Table.Cell>
           </Table.Row>
         ))}
       </Table>
@@ -184,6 +219,8 @@ const BehavioursTab = (props) => {
           <Table.Cell>Defer</Table.Cell>
           <Table.Cell>Breach</Table.Cell>
           <Table.Cell>Err</Table.Cell>
+          <Table.Cell>On ring</Table.Cell>
+          <Table.Cell>Parked</Table.Cell>
         </Table.Row>
         {rows.map((b) => (
           <Table.Row key={b.type}>
@@ -200,6 +237,8 @@ const BehavioursTab = (props) => {
             <Table.Cell color={b.errors ? 'bad' : undefined}>
               {b.errors}
             </Table.Cell>
+            <Table.Cell>{b.population}</Table.Cell>
+            <Table.Cell>{b.parked}</Table.Cell>
           </Table.Row>
         ))}
       </Table>
@@ -214,8 +253,8 @@ const StagesTab = (props) => {
   if (!rows.length) {
     return (
       <NoticeBox>
-        No stage timings. A pipeline records them when its profile_stride is
-        set (every Nth frame is timed per stage).
+        No stage timings. A pipeline records them when its profile_stride is set
+        (every Nth frame is timed per stage).
       </NoticeBox>
     );
   }
@@ -238,5 +277,64 @@ const StagesTab = (props) => {
         ))}
       </Table>
     </Section>
+  );
+};
+
+const ServicesTab = (props) => {
+  const { data } = useBackend<Data>();
+  const { services = [], world_step } = data;
+  const rows = [...services].sort((a, b) => b.ms - a.ms);
+  return (
+    <>
+      {world_step && (
+        <Section title="World step (Rust scheduler)">
+          <LabeledList>
+            <LabeledList.Item label="Last step">
+              {world_step.step_ms} ms
+            </LabeledList.Item>
+            <LabeledList.Item label="Wakes (last / total)">
+              {world_step.last_wakes} / {world_step.total_wakes}
+            </LabeledList.Item>
+            <LabeledList.Item label="Dropped">
+              {world_step.dropped}
+            </LabeledList.Item>
+          </LabeledList>
+        </Section>
+      )}
+      <Section title="World services (totals since boot)">
+        <Table>
+          <Table.Row header>
+            <Table.Cell>Service</Table.Cell>
+            <Table.Cell>State</Table.Cell>
+            <Table.Cell>Steps</Table.Cell>
+            <Table.Cell>Total ms</Table.Cell>
+            <Table.Cell>ms/s</Table.Cell>
+            <Table.Cell>Avg step ms</Table.Cell>
+            <Table.Cell>Status</Table.Cell>
+          </Table.Row>
+          {rows.map((s) => (
+            <Table.Row key={s.type}>
+              <Table.Cell>{s.name}</Table.Cell>
+              <Table.Cell>
+                {!s.initialized
+                  ? 'not initialized'
+                  : s.parked
+                    ? 'parked'
+                    : s.resuming
+                      ? 'resuming'
+                      : s.on_demand
+                        ? 'on demand'
+                        : 'running'}
+              </Table.Cell>
+              <Table.Cell>{s.steps}</Table.Cell>
+              <Table.Cell>{s.ms}</Table.Cell>
+              <Table.Cell>{s.ms_per_s}</Table.Cell>
+              <Table.Cell>{s.avg_ms}</Table.Cell>
+              <Table.Cell>{s.status}</Table.Cell>
+            </Table.Row>
+          ))}
+        </Table>
+      </Section>
+    </>
   );
 };

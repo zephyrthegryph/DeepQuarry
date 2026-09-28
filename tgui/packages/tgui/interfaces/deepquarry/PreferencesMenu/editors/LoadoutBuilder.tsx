@@ -464,7 +464,7 @@ export const LoadoutBuilder = ({ data, staticData }: EditorProps) => {
                       key={cellKey}
                       label="Accessories"
                       hudState="hair"
-                      occupants={d.by_body_slot?.['tie'] ?? []}
+                      occupants={d.by_body_slot?.tie ?? []}
                       selected={filterSlot === 'tie'}
                       onClick={() => setFilterSlot('tie')}
                     />
