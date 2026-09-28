@@ -1,6 +1,6 @@
 /datum/reagent/proc/handle_addiction(mob/living/carbon/M, alien)
 	// overridable proc for custom withdrawl behaviors, standard is chills, cravings, vomiting, weakness and BF_WITHDRAWAL organ damage
-	if(alien == IS_DIONA)
+	if(inert_for(M))
 		return 0
 	var/current_addiction = M.get_addiction_to_reagent(id)
 	// slow degrade

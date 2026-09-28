@@ -147,11 +147,8 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_COMMON
 	industrial_use = REFINERYEXPORT_REASON_DRUG
 	medallergen_type = MEDALLERGEN_KELOTANE
-
-/datum/reagent/kelotane/affect_blood(mob/living/carbon/M, alien, removed)
-	// Burn care is the treatment_tags profile; only the Promethean side effect lives here.
-	if(alien == IS_SLIME)
-		M.injure(INJURY_BLUNT, 2 * removed, source = src) //Mends burns, but has negative effects with a Promethean's skeletal structure.
+	// Burn care is the treatment_tags profile. Mends burns, but has negative effects with a Promethean's skeletal structure.
+	species_injuries_blood = alist(IS_SLIME = alist(INJURY_BLUNT = 2))
 
 /datum/reagent/dermaline
 	id = REAGENT_ID_DERMALINE
@@ -203,16 +200,16 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_COMMON
 	industrial_use = REFINERYEXPORT_REASON_DRUG
 	medallergen_type = MEDALLERGEN_DYLO
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA)
+	species_strength = alist(IS_SLIME = 0.66)
 
 /datum/reagent/dylovene/affect_blood(mob/living/carbon/M, alien, removed)
-	var/chem_effective = 1 * M.species.chem_strength_heal
-	if(alien == IS_SLIME)
-		chem_effective = 0.66
-		if(dose >= 15)
-			M.status_at_least(EFFECT_DRUGGED, 5)
-	if(alien != IS_DIONA)
-		M.status_adjust(EFFECT_DROWSY, -(6 * removed * chem_effective))
-		M.status_adjust(EFFECT_HALLUCINATING, -(9 * removed * chem_effective))
+	var/chem_effective = M.species.chem_strength_heal * species_mult(M)
+	// Kept: a dose-gated status effect, not a factor or a strength.
+	if(alien == IS_SLIME && dose >= 15)
+		M.status_at_least(EFFECT_DRUGGED, 5)
+	M.status_adjust(EFFECT_DROWSY, -(6 * removed * chem_effective))
+	M.status_adjust(EFFECT_HALLUCINATING, -(9 * removed * chem_effective))
 
 /datum/reagent/carthatoline
 	name = REAGENT_CARTHATOLINE
@@ -265,12 +262,11 @@
 	metabolism = REM * 0.25
 	supply_conversion_value = REFINERYEXPORT_VALUE_COMMON
 	industrial_use = REFINERYEXPORT_REASON_DRUG
+	species_injuries_blood = alist(IS_VOX = alist(INJURY_TOXIN = 24))
 
 /datum/reagent/dexalin/affect_blood(mob/living/carbon/M, alien, removed)
-	// Oxygenation is the treatment_tags profile.
-	if(alien == IS_VOX)
-		M.injure(INJURY_TOXIN, removed * 24, source = src)
-	else if(alien == IS_SLIME && dose >= 15)
+	// Oxygenation is the treatment_tags profile. Kept: a random dose-gated burst.
+	if(alien == IS_SLIME && dose >= 15)
 		if(prob(15))
 			to_chat(M, span_notice("You have a moment of clarity as you collapse."))
 			// Random burst, not a continuous effect: mend directly.
@@ -294,12 +290,11 @@
 	scannable = SCANNABLE_BENEFICIAL
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_SPECIALDRUG
+	species_injuries_blood = alist(IS_VOX = alist(INJURY_TOXIN = 9))
 
 /datum/reagent/dexalinp/affect_blood(mob/living/carbon/M, alien, removed)
-	// Oxygenation is the treatment_tags profile.
-	if(alien == IS_VOX)
-		M.injure(INJURY_TOXIN, removed * 9, source = src)
-	else if(alien == IS_SLIME && dose >= 10)
+	// Oxygenation is the treatment_tags profile. Kept: a random dose-gated burst.
+	if(alien == IS_SLIME && dose >= 10)
 		if(prob(25))
 			to_chat(M, span_notice("You have a moment of clarity, as you feel your tubes lose pressure rapidly."))
 			// Random burst, not a continuous effect: mend directly.
@@ -375,12 +370,13 @@
 	scannable = SCANNABLE_BENEFICIAL
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_CLONEDRUG
+	species_strength = alist(IS_SLIME = 0.25)
 
 /datum/reagent/cryoxadone/affect_blood(mob/living/carbon/M, alien, removed)
 	if(M.bodytemperature < 170)
-		var/chem_effective = 1 * M.species.chem_strength_heal
+		var/chem_effective = M.species.chem_strength_heal * species_mult(M)
+		// Kept: temperature-gated status side effects.
 		if(alien == IS_SLIME)
-			chem_effective = 0.25
 			to_chat(M, span_danger("It's cold. Something causes your cellular mass to harden occasionally, resulting in vibration."))
 			M.status_at_least(EFFECT_WEAKENED, 10)
 			M.status_at_least(EFFECT_MUTED, 10)
@@ -402,14 +398,15 @@
 	scannable = SCANNABLE_BENEFICIAL
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_CLONEDRUG
+	species_strength = alist(IS_SLIME = 0.5)
 
 /datum/reagent/clonexadone/affect_blood(mob/living/carbon/M, alien, removed)
 	if(M.bodytemperature < 170)
-		var/chem_effective = 1 * M.species.chem_strength_heal
+		var/chem_effective = M.species.chem_strength_heal * species_mult(M)
+		// Kept: temperature-gated status side effects.
 		if(alien == IS_SLIME)
 			if(prob(10))
 				to_chat(M, span_danger("It's so cold. Something causes your cellular mass to harden sporadically, resulting in seizure-like twitching."))
-			chem_effective = 0.5
 			M.status_at_least(EFFECT_WEAKENED, 20)
 			M.status_at_least(EFFECT_MUTED, 20)
 			M.status_adjust(EFFECT_JITTERY, 4)
@@ -439,17 +436,18 @@
 	scannable = SCANNABLE_BENEFICIAL
 	supply_conversion_value = REFINERYEXPORT_VALUE_MASSINDUSTRY
 	industrial_use = REFINERYEXPORT_REASON_CLONEDRUG
+	species_strength = alist(IS_SLIME = 0.5)
 
 /datum/reagent/mortiferin/on_mob_life(mob/living/carbon/M, alien, datum/reagents/metabolism/location)
 	. = ..(M, alien, location)
 
 /datum/reagent/mortiferin/affect_blood(mob/living/carbon/M, alien, removed)
 	if(M.bodytemperature < (T0C - 10) || (M.stat == DEAD))
-		var/chem_effective = 1 * M.species.chem_strength_heal
+		var/chem_effective = M.species.chem_strength_heal * species_mult(M)
+		// Kept: cold-gated status side effects.
 		if(alien == IS_SLIME)
 			if(prob(10))
 				to_chat(M, span_danger("It's so cold. Something causes your cellular mass to solidify sporadically, resulting in uncontrollable twitching."))
-			chem_effective = 0.5
 			M.status_at_least(EFFECT_WEAKENED, 10)
 			M.status_at_least(EFFECT_MUTED, 10)
 			M.status_adjust(EFFECT_JITTERY, 4)
@@ -482,14 +480,15 @@
 	affects_dead = TRUE
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_CLONEDRUG
+	species_strength = alist(IS_SLIME = 0.5)
 
 /datum/reagent/necroxadone/affect_blood(mob/living/carbon/M, alien, removed)
-	var/chem_effective = 1 * M.species.chem_strength_heal
+	var/chem_effective = M.species.chem_strength_heal * species_mult(M)
 	if(M.bodytemperature < 170 || (M.stat == DEAD && M.has_body_effect(/datum/body_effect/bloodpump_corpse)))
+		// Kept: cold-gated status side effects.
 		if(alien == IS_SLIME)
 			if(prob(10))
 				to_chat(M, span_danger("It's so cold. Something causes your cellular mass to harden sporadically, resulting in seizure-like twitching."))
-			chem_effective = 0.5
 			M.status_at_least(EFFECT_WEAKENED, 20)
 			M.status_at_least(EFFECT_MUTED, 20)
 			M.status_adjust(EFFECT_JITTERY, 4)
@@ -562,11 +561,12 @@
 	mrate_static = TRUE
 	supply_conversion_value = REFINERYEXPORT_VALUE_MASSINDUSTRY
 	industrial_use = REFINERYEXPORT_REASON_SPECIALDRUG
+	species_strength = alist(IS_SLIME = 0.75)
 
 /datum/reagent/oxycodone/affect_blood(mob/living/carbon/M, alien, removed)
-	var/chem_effective = 1 * M.species.chem_strength_pain
+	var/chem_effective = M.species.chem_strength_pain * species_mult(M)
+	// Kept: a species-only status side effect.
 	if(alien == IS_SLIME)
-		chem_effective = 0.75
 		M.status_set(EFFECT_STUTTERING, min(50, max(0, M.status_units(EFFECT_STUTTERING) + 5))) //If you can't feel yourself, and your main mode of speech is resonation, there's a problem.
 	M.status_set(EFFECT_BLURRY, min(M.status_units(EFFECT_BLURRY) + 10, 250 * chem_effective))
 
@@ -596,16 +596,17 @@
 
 /datum/reagent/synaptizine
 	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+	species_strength = alist(IS_SLIME = 0.5)
 
 /datum/reagent/synaptizine/affect_blood(mob/living/carbon/M, alien, removed)
-	var/chem_effective = 1 * M.species.chem_strength_heal
+	var/chem_effective = M.species.chem_strength_heal * species_mult(M)
+	// Kept: a species-only, dose-gated regeneration burst.
 	if(alien == IS_SLIME)
 		if(dose >= 5) //Not effective in small doses, though it causes toxins at higher ones, it will make the regeneration for brute and burn more 'efficient' at the cost of more nutrition.
 			// Species-specific dose-gated regeneration boost: mends directly.
 			M.adjust_nutrition(removed * 2)
 			M.mend(TREAT_TISSUE_REPAIR, 2 * removed)
 			M.mend(TREAT_BURN_CARE, 1 * removed)
-		chem_effective = 0.5
 	M.status_adjust(EFFECT_DROWSY, -5)
 	M.status_adjust(EFFECT_PARALYZED, -1)
 	M.status_adjust(EFFECT_STUNNED, -1)
@@ -628,10 +629,11 @@
 	overdose_mod = 0.25
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_COMSTIM
+	species_strength = alist(IS_TAJARA = 1.25)
 
 /datum/reagent/hyperzine/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_TAJARA)
-		removed *= 1.25
+	removed *= species_mult(M)
+	// Kept: a species-only, dose-gated status/nutrition side effect.
 	if(alien == IS_SLIME)
 		M.status_adjust(EFFECT_JITTERY, 4) //Hyperactive fluid pumping results in unstable 'skeleton', resulting in vibration.
 		if(dose >= 5)
@@ -994,25 +996,16 @@
 	metabolism = REM * 0.06
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_SPECIALDRUG
+	// Diona: it's a tree. Slime: difficulty bonding with internal cellular structure.
+	// Unathi: natural regeneration, robust biology. Tajara: highest metabolism.
+	species_strength = alist(IS_DIONA = 4, IS_SLIME = 1.3, IS_UNATHI = 0.6, IS_TAJARA = 0.5)
 
 /datum/reagent/immunosuprizine/affect_blood(mob/living/carbon/M, alien, removed)
-	var/strength_mod = 1 // * M.species.chem_strength_heal //Just removing the chem strength adjustment. It'd require division, which is best avoided.
-
-	if(alien == IS_DIONA)	// It's a tree.
-		strength_mod = 4
-
-	if(alien == IS_SLIME)	// Diffculty bonding with internal cellular structure.
-		strength_mod = 1.3
-
-	if(alien == IS_UNATHI)	// Natural regeneration, robust biology.
-		strength_mod = 0.6
-
-	if(alien == IS_TAJARA)	// Highest metabolism.
-		strength_mod = 0.5
+	var/strength_mod = species_mult(M) // * M.species.chem_strength_heal //Just removing the chem strength adjustment. It'd require division, which is best avoided.
 
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		if(alien != IS_DIONA)
+		if(!inert_for(H)) // inert_species (diona): no rejection toxin
 			H.injure(INJURY_TOXIN, (30 * strength_mod) * removed, source = src)
 
 		var/list/organtotal = list()
@@ -1052,6 +1045,8 @@
 	scannable = SCANNABLE_BENEFICIAL
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_SPECIALDRUG
+	/// Skrell take none of the rejection toxin (a multiplier on that toxin only).
+	species_strength = alist(IS_SKRELL = 0)
 
 /datum/reagent/skrellimmuno/affect_blood(mob/living/carbon/M, alien, removed)
 	var/strength_mod = 0.5 * M.species.chem_strength_heal
@@ -1060,8 +1055,9 @@
 
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		if(alien != IS_SKRELL)
-			H.injure(INJURY_TOXIN, 20 * removed, source = src)
+		var/toxin_mult = species_mult(H)
+		if(toxin_mult)
+			H.injure(INJURY_TOXIN, 20 * removed * toxin_mult, source = src)
 
 		var/list/organtotal = list()
 		organtotal |= H.organs
@@ -1366,21 +1362,14 @@
 	touch_met = 5
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_CLEAN
-
-/datum/reagent/sterilizine/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_SLIME)
-		M.injure(INJURY_CORROSIVE, removed, source = src)
-		M.injure(INJURY_TOXIN, 2 * removed, source = src)
-	return
+	species_injuries_blood = alist(IS_SLIME = alist(INJURY_CORROSIVE = 1, INJURY_TOXIN = 2))
+	species_injuries_touch = alist(IS_SLIME = alist(INJURY_CORROSIVE = 1, INJURY_TOXIN = 2))
 
 /datum/reagent/sterilizine/affect_touch(mob/living/carbon/M, alien, removed)
 	M.adjust_germ_level(-removed * 20)
 	for(var/obj/item/I in contents_of(M))
 		dq_set_was_bloodied(I, null)
 	dq_set_was_bloodied(M, null)
-	if(alien == IS_SLIME)
-		M.injure(INJURY_CORROSIVE, removed, source = src)
-		M.injure(INJURY_TOXIN, 2 * removed, source = src)
 
 /datum/reagent/sterilizine/touch_obj(obj/O)
 	..()
@@ -1606,17 +1595,17 @@
 	scannable = 1
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_DRUG
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA)
 
 /datum/reagent/claridyl/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien != IS_DIONA)
-		// Its trauma repair is the treatment_tags profile; mending hurts.
-		if(M.injury_load(INJURY_CATEGORY_PHYSICAL))
-			M.injure(INJURY_PAIN, 1.5, source = src)
-		if(prob(0.0001))
-			M.injure(INJURY_TOXIN, 50, source = src)//instant crit for tesh
+	// Its trauma repair is the treatment_tags profile; mending hurts.
+	if(M.injury_load(INJURY_CATEGORY_PHYSICAL))
+		M.injure(INJURY_PAIN, 1.5, source = src)
+	if(prob(0.0001))
+		M.injure(INJURY_TOXIN, 50, source = src)//instant crit for tesh
 
-		if(prob(0.1))
-			claridyl_side_effect(M, rand(1, 10))
+	if(prob(0.1))
+		claridyl_side_effect(M, rand(1, 10))
 
 /// One of claridyl's rare side effects (B5: pick() used to evaluate all ten at once).
 /datum/reagent/claridyl/proc/claridyl_side_effect(mob/living/carbon/M, which)
@@ -1653,6 +1642,7 @@
 	// B19: a stomach-scouring agent, not a painkiller: none of claridyl's factors.
 	factors = null
 	species_factors = null
+	immune_species_blood = 0
 
 /datum/reagent/claridyl/bloodburn/affect_blood(mob/living/carbon/M, alien, removed)
 	if(M.bloodstr)//No seriously dont inject this wtf is wrong with you.
@@ -1678,10 +1668,9 @@
 	metabolism = REM * 0.5
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_DRUG
+	immune_species_blood = SPECIES_TAG_BIT(IS_SLIME) | SPECIES_TAG_BIT(IS_DIONA)
 
 /datum/reagent/eden/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_SLIME || alien == IS_DIONA)
-		return
 	// Antitoxin action is the treatment_tags profile; purging impurities burns.
 	if(M.injury_load(INJURY_CATEGORY_TOXIC))
 		M.injure(INJURY_BURN, 1.2, source = src)
@@ -1693,6 +1682,7 @@
 	description = "It used to be an anti toxin until it was tainted."
 	taste_description = "hellfire"
 	color = "#FF0000"
+	immune_species_blood = 0
 
 /datum/reagent/eden/snake/affect_blood(mob/living/carbon/M, alien, removed)
 	M.injure_many(alist(INJURY_BURN = 1, INJURY_BLUNT = 1, INJURY_TOXIN = 1), source = src)
@@ -1770,9 +1760,10 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_DRUG
 
+/datum/reagent/bullvalene
+	immune_species_blood = SPECIES_TAG_BIT(IS_SLIME) | SPECIES_TAG_BIT(IS_DIONA)
+
 /datum/reagent/bullvalene/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_SLIME || alien == IS_DIONA)
-		return
 	// Repair is the treatment_tags profile; the catalysis toxifies the host
 	// while it has something to convert.
 	if(M.injury_load(INJURY_CATEGORY_PHYSICAL) || M.injury_load(INJURY_CATEGORY_THERMAL) || M.oxygen_debt())
@@ -1791,12 +1782,11 @@
 	dermal_absorption = 0.25
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_DRUG
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA)
 
 /datum/reagent/serazine/affect_blood(mob/living/carbon/M, alien, removed)
-	var/chem_effective = 1
-	if(alien != IS_DIONA)
-		M.status_adjust(EFFECT_DROWSY, -(3 * removed * chem_effective))
-		M.status_adjust(EFFECT_HALLUCINATING, -(6 * removed * chem_effective))
+	M.status_adjust(EFFECT_DROWSY, -(3 * removed))
+	M.status_adjust(EFFECT_HALLUCINATING, -(6 * removed))
 
 /datum/reagent/alizene
 	name = REAGENT_ALIZENE
@@ -2133,8 +2123,11 @@
 	gender_change = "plural"
 	scannable = 1
 
+/datum/reagent/change_drug
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA)
+
 /datum/reagent/change_drug/affect_blood(mob/living/carbon/human/M, alien, removed)
-	if (!(alien == IS_DIONA || M.gender == gender_change || M.gender_change_cooldown == 1) && M.allow_spontaneous_tf)
+	if (!(M.gender == gender_change || M.gender_change_cooldown == 1) && M.allow_spontaneous_tf)
 		//set not to bug them because the chem is activating
 		M.gender_change_cooldown = 1
 		M.visible_message(
@@ -2177,10 +2170,12 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_MEDSCI
 
+/datum/reagent/cleansingagent
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA)
+
 /datum/reagent/cleansingagent/affect_blood(mob/living/carbon/M, alien, removed)
 	// Antitoxin action is the treatment_tags profile.
-	if(alien != IS_DIONA)
-		M.status_at_least(EFFECT_DRUGGED, 5)
+	M.status_at_least(EFFECT_DRUGGED, 5)
 
 /datum/reagent/purifyingagent
 	name = REAGENT_PURIFYINGAGENT
@@ -2213,10 +2208,12 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_MEDSCI
 
+/datum/reagent/burncard
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA)
+
 /datum/reagent/burncard/affect_blood(mob/living/carbon/M, alien, removed)
 	// Trauma repair is the treatment_tags profile; liquid fire still burns.
-	if(alien != IS_DIONA)
-		M.injure(INJURY_BURN, 1 * removed, source = src)
+	M.injure(INJURY_BURN, 1 * removed, source = src)
 
 /datum/reagent/burncard/overdose(mob/living/carbon/M, alien, removed)
 	..()
@@ -2267,12 +2264,13 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_MEDSCI
 
+/datum/reagent/neotane
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA)
+	species_injuries_blood = alist(IS_SLIME = alist(INJURY_BLUNT = 3))
+
 /datum/reagent/neotane/affect_blood(mob/living/carbon/M, alien, removed)
 	// Burn care is the treatment_tags profile; the side effects stay here.
-	if(alien == IS_SLIME)
-		M.injure(INJURY_BLUNT, 3 * removed, source = src)
-	if(alien != IS_DIONA)
-		M.injure(INJURY_BLUNT, 1 * removed, source = src)
+	M.injure(INJURY_BLUNT, 1 * removed, source = src)
 
 /datum/reagent/bloodsealer
 	factors = alist(BF_STABILIZATION = 25)
@@ -2477,11 +2475,9 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_INDUSTRY
 
-/datum/reagent/dryagent/affect_blood(mob/living/carbon/M, alien, removed)
-	var/chem_effective = 1 * M.species.chem_strength_heal
-	if(alien == IS_SLIME)
-		chem_effective = 1.25
-		M.injure(INJURY_BURN, 2 * removed * chem_effective, source = src) // Why are you giving this to Prometheans or Dionas. You're going to DRY them.
+/datum/reagent/dryagent
+	// Why are you giving this to Prometheans or Dionas. You're going to DRY them. (2 burn x 1.25)
+	species_injuries_blood = alist(IS_SLIME = alist(INJURY_BURN = 2.5))
 
 /datum/reagent/dryagent/touch_obj(obj/O, amount)
 	if(istype(O, /obj/item/clothing/shoes/galoshes) && O.loc)

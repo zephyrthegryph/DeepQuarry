@@ -69,6 +69,49 @@
 	var/immune_species_blood = 0
 	var/immune_species_ingest = 0
 	var/immune_species_touch = 0
+	/// SPECIES_TAG_BIT mask of species for which this type's own extra effects are
+	/// inert (read with `inert_for()`): parent-type effects a proc chains to still
+	/// run, only the extras it gates are skipped. Also gates the base overdose and
+	/// withdrawal. Default: diona, who ignore most drugs.
+	var/inert_species = SPECIES_TAG_BIT(IS_DIONA)
+	/// Per-species multiplier on this reagent's own effect strength: IS_* -> mult.
+	/// Read with `species_mult()`; unlisted species get 1.
+	var/alist/species_strength
+	/// Species reactions by route: IS_* -> alist(INJURY_* = amount per unit
+	/// metabolised). Applied by `on_mob_life` every tick that route metabolises,
+	/// even when the species is immune to the route's own effects (so an immune
+	/// mask plus a table expresses "this species reacts instead").
+	var/alist/species_injuries_blood
+	var/alist/species_injuries_ingest
+	var/alist/species_injuries_touch
+
+/// Are this reagent's type-specific extras inert for `owner`'s species (`inert_species`)?
+/datum/reagent/proc/inert_for(mob/living/owner)
+	var/tag = owner?.reagent_tag()
+	if(isnull(tag))
+		return FALSE
+	return (inert_species & SPECIES_TAG_BIT(tag)) ? TRUE : FALSE
+
+/// The multiplier `owner`'s species applies to this reagent's own effect strength.
+/datum/reagent/proc/species_mult(mob/living/owner)
+	if(!species_strength)
+		return 1
+	var/tag = owner?.reagent_tag()
+	if(isnull(tag))
+		return 1
+	var/mult = species_strength[tag]
+	return isnull(mult) ? 1 : mult
+
+/// Deal `owner`'s species' entry in a `species_injuries_*` table for `amount` units.
+/datum/reagent/proc/apply_species_injuries(mob/living/owner, alist/table, amount)
+	if(!table || !owner || amount <= 0)
+		return
+	var/tag = owner.reagent_tag()
+	if(isnull(tag))
+		return
+	var/alist/injuries = table[tag]
+	for(var/kind in injuries)
+		owner.injure(kind, injuries[kind] * amount, source = src)
 
 /// Does `owner`'s species ignore this reagent by metabolism route `route_class`
 /// (CHEM_*)? Null route: every route.
@@ -224,6 +267,13 @@
 				affect_ingest(M, alien, removed * ingest_abs_mult)
 			if(CHEM_TOUCH)
 				affect_touch(M, alien, removed)
+	switch(route_class)
+		if(CHEM_BLOOD)
+			apply_species_injuries(M, species_injuries_blood, removed)
+		if(CHEM_INGEST)
+			apply_species_injuries(M, species_injuries_ingest, removed * ingest_abs_mult)
+		if(CHEM_TOUCH)
+			apply_species_injuries(M, species_injuries_touch, removed)
 	on_mob_metabolize(M, location)
 	if(overdose && (volume > overdose * M?.species.chemOD_threshold) && (active_metab.metabolism_class != CHEM_TOUCH || can_overdose_touch))
 		overdose(M, alien, removed)
@@ -242,7 +292,7 @@
 	return
 
 /datum/reagent/proc/overdose(mob/living/carbon/M, alien, removed) // Overdose effect.
-	if(alien == IS_DIONA)
+	if(inert_for(M))
 		return
 	// B6: species scaling is applied per call, never written back onto the reagent.
 	var/od_mod = overdose_mod
@@ -327,12 +377,16 @@
 	var/static/list/shared_by_type = list()
 	var/list/shared = shared_by_type[type]
 	if(!shared)
-		shared = list(treatment_tags, filtered_organs, factors, species_factors)
+		shared = list(treatment_tags, filtered_organs, factors, species_factors, species_strength, species_injuries_blood, species_injuries_ingest, species_injuries_touch)
 		shared_by_type[type] = shared
 	treatment_tags = shared[1]
 	filtered_organs = shared[2]
 	factors = shared[3]
 	species_factors = shared[4]
+	species_strength = shared[5]
+	species_injuries_blood = shared[6]
+	species_injuries_ingest = shared[7]
+	species_injuries_touch = shared[8]
 	return ..()
 
 REF_BACK(/datum/reagent, list("holder" = null))
