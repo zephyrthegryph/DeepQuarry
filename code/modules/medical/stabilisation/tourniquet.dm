@@ -111,11 +111,11 @@ REF_HELD(/obj/item/organ/external, "tourniquet")
 	if(!QDELETED(src))
 		update_damages()
 
-/obj/item/tourniquet/Destroy()
+/obj/item/tourniquet/on_destroy(force)
 	var/obj/item/organ/external/E = loc
 	if(istype(E) && E.tourniquet == src)
 		E.release_lost_tourniquet()
-	return ..()
+	..()
 
 /// Is blood flow into this limb cut off by a tourniquet here or on a limb above it?
 /obj/item/organ/external/proc/flow_occluded()

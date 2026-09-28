@@ -123,7 +123,7 @@
 	LAZYADD(arm.detached_afflictions, N)
 	arm.clear_necrosis()
 	var/list/remaining = arm.afflictions_here()
-	var/datum/affliction/tissue_necrosis/left = locate() in remaining
+	var/datum/affliction/tissue_necrosis/left = locate_in_list(remaining, /datum/affliction/tissue_necrosis)
 	TEST_ASSERT_NULL(left, "bioregeneration removes the necrosis")
 
 /// D20: verb compatibility with a missing parent limb answers FALSE instead of runtiming.
