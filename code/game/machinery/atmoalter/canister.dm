@@ -8,7 +8,6 @@
 
 	layer = TABLE_LAYER	// Above catwalks, hopefully below other things
 
-	var/valve_open = 0
 	var/release_pressure = ONE_ATMOSPHERE
 	var/release_flow_rate = ATMOS_DEFAULT_VOLUME_PUMP //in L/s
 
@@ -18,7 +17,6 @@
 	/// the material vessel is doing anything, mirroring the settle check the old process() made
 	/// right before it called hibernate_until_gas_changes(). Read by
 	/// /datum/om/stage/machine/power/portable_atmospherics/canister/idle() (machine_pipeline.dm).
-	var/om_settled = TRUE // until arm_wakes() or a frame says otherwise
 	start_pressure = 45 * ONE_ATMOSPHERE
 	pressure_resistance = 7 * ONE_ATMOSPHERE
 	var/temperature_resistance = 1000 + T0C

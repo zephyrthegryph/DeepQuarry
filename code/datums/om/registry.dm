@@ -450,6 +450,8 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 			continue
 		if(!B.name)
 			B.name = "[path]"
+		// wake_on is derived from reads (fields.dm): a read field's channel always wakes it.
+		B.wake_on |= field_reads_mask(B.reads_of, B.reads)
 		pending += B
 		behaviour_by_type[path] = B
 	expiry_behaviour = behaviour_by_type[/datum/om/behaviour/internal/expiry]
@@ -557,6 +559,8 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 			root = parent
 		T.family = root
 		T.depth = om_type_depth(T.of)
+		// wake_on is derived from reads (fields.dm): a read field's channel always wakes the stage.
+		T.wake_on |= field_reads_mask(T.of, T.reads)
 	for(var/datum/om/bundle/B as anything in bundles)
 		for(var/path in B.stages)
 			var/datum/om/stage/T = stage_by_type[path]

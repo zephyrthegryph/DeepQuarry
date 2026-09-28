@@ -87,11 +87,9 @@
 	var/other_mobs = null
 	var/memory = ""
 	var/poll_answer = 0.0
-	var/sdisabilities = 0	//Carbon
 	var/disabilities = 0	//Carbon
 	var/transforming = null	//Carbon
 	var/other = 0.0
-	var/ear_damage = null	//Carbon
 	var/real_name = null
 	var/nickname = null
 	var/flavor_text = ""

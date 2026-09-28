@@ -48,7 +48,6 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 	active_power_usage = 40000	//40 kW
 	var/efficiency = 40000 //will provide the modified power rate when upgraded
 	/// Runs on the machine pipeline (machine_pipeline.dm): the power/recharger stage charges.
-	var/obj/item/charging = null
 	var/icon_state_charged = "recharger2"
 	var/icon_state_charging = "recharger1"
 	var/icon_state_idle = "recharger0" //also when unpowered

@@ -9,7 +9,6 @@
 
 
 /mob/living
-	var/instability = 0
 	var/last_instability = 0 // Used to calculate instability delta.
 	var/last_instability_event = null // most recent world.time that something bad happened due to instability.
 

@@ -94,7 +94,6 @@
 	var/area/alarm_area
 
 	var/target_temperature = T0C+20
-	var/regulating_temperature = 0
 
 	var/datum/radio_frequency/radio_connection
 

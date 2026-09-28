@@ -43,8 +43,8 @@
 	var/list/relevance
 	/// Channels on the entity that wake this behaviour (on_wake).
 	var/wake_on = 0
-	/// Declared fields (fields.dm) of `reads_of` this behaviour reads to decide there is work;
-	/// the registry checks at boot that wake_on covers each one's channel.
+	/// Declared fields (fields.dm) of `reads_of` this behaviour reads to decide there is work.
+	/// The registry ORs their channels into wake_on at boot; list only the other channels there.
 	var/list/reads
 	var/reads_of
 	/// relation type (or list of relation types, a path) -> channel mask on the

@@ -134,21 +134,12 @@ Class Procs:
 	var/tmp/gas_dependency_wake_count = 0
 	/// Monotonic diagnostic counter: MACHINE_WAKE() calls on this machine.
 	var/tmp/machine_wake_count = 0
-	/// TRUE while machine_step() has work: set by MACHINE_WAKE(), cleared when machine_step()
-	/// returns PROCESS_KILL or by MACHINE_SLEEP(). The step stage idles while it is FALSE
-	/// (machine_pipeline.dm).
-	var/tmp/step_active = FALSE
-	/// Set by sleep_until_powered(): power_change()/atom_fix() restart the step work.
-	var/tmp/step_waiting_power = FALSE
 	/// The pending materialize_wakes() timer, or 0.
 	var/tmp/materialize_timer = 0
 	/// TRUE for a type whose machine_step() reconciles its state with its power: every power or
 	/// break change (power_change(), atom_break(), atom_fix()) runs one step.
 	var/step_on_power_change = FALSE
 
-	/// TRUE: machine_step() runs every 0.2 s on the fast periodic pipeline instead of the machine
-	/// pipeline (PERIODIC_FAST, code/datums/om/periodic.dm).
-	var/speed_process = FALSE
 
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 

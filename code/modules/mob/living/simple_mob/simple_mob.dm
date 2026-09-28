@@ -138,7 +138,6 @@
 	var/water_resist = 1.0
 	var/poison_resist = 0.0
 	var/thick_armor = FALSE // Stops injections and "injections".
-	var/purge = 0					// Cult stuff.
 	var/supernatural = FALSE		// Ditto.
 
 	// don't process me if there's nobody around to see it

@@ -399,7 +399,20 @@
 
 // ---------------------------------------------------------------- declared fields (code/datums/om/fields.dm)
 
-/// Generates `T/proc/set_F(value)`, the typed setter of declared field F: it writes the var and
-/// raises the field's declared channel, and does nothing when the value is unchanged. Returns
-/// TRUE on a change. tools/ci/api_lints.py (field_write) checks F is declared for T.
-#define OM_SETTER(T, F) T/proc/set_##F(value) { if(F == value) { return FALSE } else { F = value; om_changed(src, om_field_channel(src, #F)); return TRUE } }
+/// Declares field F of type T in one place: the var `T/var/F = D`, its typed setter
+/// `T/proc/set_F(value)` and its registration (`/datum/om/field_def<T>/F`, read by
+/// fields_of()). The setter writes the var and raises channel C, does nothing when the value is
+/// unchanged, and returns TRUE on a change. F is a bare identifier, so a misspelt field in a
+/// setter call or a second declaration is a compile error.
+///
+/// The expansion is deliberately fixed so tools can treat it as tracked without parsing macros:
+/// the var is always named exactly F and its only writer is the proc named exactly `set_F` on T
+/// (the external AST linter tools/dm-health may model an OM_FIELD field as
+/// `tracked(setter=set_F)`; tools/ci/field_write_lint.py enforces it today). Don't change the
+/// naming without updating both.
+#define OM_FIELD(T, F, D, C) T/var/F = D;T/proc/set_##F(value) { if(F == value) { return FALSE } else { F = value; om_changed(src, C); return TRUE } };/datum/om/field_def##T/F { of = T; field = #F; channel = C }
+
+/// OM_FIELD() for a var with a declared type or modifier: VT is what goes between `var/` and the
+/// name (`tmp`, `obj/item/cell`, `tmp/mob/living`). Expands to `T/var/VT/F = D`; otherwise
+/// identical, including the `set_F` naming.
+#define OM_FIELD_TYPED(T, VT, F, D, C) T/var/VT/F = D;T/proc/set_##F(value) { if(F == value) { return FALSE } else { F = value; om_changed(src, C); return TRUE } };/datum/om/field_def##T/F { of = T; field = #F; channel = C }
