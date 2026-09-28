@@ -8,6 +8,7 @@
 		"reagents" = /datum/state_codec/reagents,
 		"forensic_data" = /datum/state_codec/owned,
 		"wires" = /datum/state_codec/owned,
+		"artifact_master" = /datum/state_codec/pinned,
 	)
 
 /// Integrity starts at max_integrity (set by Initialize()), so it is only state once it differs.
@@ -78,3 +79,15 @@
 		return "has a recursive move relay, which cannot be serialized"
 	if(dq_movable_state_set(src))
 		return "has live movement state (sparse movable vars), which cannot be serialized"
+
+/// Owned children with live wiring pin their holder (/datum/state_codec/pinned).
+/obj/item/state_codecs()
+	return ..() + list(
+		"mind_host" = /datum/state_codec/pinned,
+		"economic_adoption" = /datum/state_codec/pinned,
+		"material_response" = /datum/state_codec/pinned,
+		"carried_afflictions" = /datum/state_codec/pinned,
+	)
+
+/obj/item/paper/state_codecs()
+	return ..() + list("contract_document" = /datum/state_codec/pinned)

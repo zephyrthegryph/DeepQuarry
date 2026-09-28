@@ -370,7 +370,8 @@ DECLARE_REF(/datum/robot_component, "wrapped", OWNED, null)
 	..()
 	holder = part
 
-/obj/item/var/datum/carried_afflictions/carried_afflictions // ALLOW(state_ref): owned child (DECLARE_REF OWNED); saved as before, the one-line REF_VAR form hid it from this lint
+/obj/item/var/datum/carried_afflictions/carried_afflictions
+/// Pinned in the saved state (code/datums/state/codecs.dm, /datum/state_codec/pinned).
 DECLARE_REF(/obj/item, "carried_afflictions", OWNED, null)
 DECLARE_REF(/datum/carried_afflictions, "afflictions", OWNED_LIST, null)
 DECLARE_REF(/datum/carried_afflictions, "holder", BACK, "carried_afflictions")

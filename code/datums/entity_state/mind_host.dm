@@ -50,7 +50,8 @@
 	return mind_host
 
 /// Owned: this item's mind host, if it holds minds.
-/obj/item/var/datum/mind_host/mind_host // ALLOW(state_ref): owned child (DECLARE_REF OWNED); saved as before, the one-line REF_VAR form hid it from this lint
+/obj/item/var/datum/mind_host/mind_host
+/// Pinned in the saved state (code/datums/state/codecs.dm, /datum/state_codec/pinned).
 DECLARE_REF(/obj/item, "mind_host", OWNED, null)
 
 DECLARE_REF(/datum/mind_host, "owner", BACK, "mind_host")
