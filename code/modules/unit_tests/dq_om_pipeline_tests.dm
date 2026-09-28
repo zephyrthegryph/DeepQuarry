@@ -571,6 +571,7 @@
 	for(var/i in 1 to 3)
 		om_run_frame_now(F, /datum/om/pipeline/machine)
 	TEST_ASSERT(S.parked, "an idle fire alarm parks")
+	F.stat &= ~(NOPOWER | BROKEN) // the countdown only runs on a powered alarm
 	F.time = 1
 	F.set_timing(1) // raises CHANGE_MACHINE_SETTINGS
 	sched.run_pass(1e9)
@@ -595,6 +596,8 @@
 	TEST_ASSERT(om_attached(C, /datum/om/pipeline/machine), "a canister runs the machine pipeline")
 	TEST_ASSERT(!machine_stepping(C), "and doesn't poll")
 	var/datum/om/frame/S = om_pipe_state(C, /datum/om/pipeline/machine, TRUE)
+	// Machines join asleep: the zero-delay materialize_wakes() timer arms the gas watch.
+	sched.run_pass(1e9)
 	for(var/i in 1 to 3)
 		om_run_frame_now(C, /datum/om/pipeline/machine)
 	TEST_ASSERT(S.parked, "a closed, unreactive canister parks")

@@ -784,6 +784,19 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 	var/datum/om/pipeline/def = om_registry().behaviour(P)
 	if(!om_pipe_state(E, def) && om_attached(E, def))
 		om_pipe_state(E, def, TRUE)
+	// A real pass drains the wake queue before it runs frames: deliver the wakes already raised
+	// for this pipeline on E (a setter called just before), so the frame sees them instead of
+	// running against stages still idle from before the change. The queue entry left behind
+	// finds nothing pending and is skipped.
+	var/datum/om/rec/rec = E.om_rec
+	var/att_i = rec?.att.Find(def)
+	if(att_i && rec.att_pend[att_i] && (rec.att_state[att_i] & OM_ATT_STARTED))
+		var/bits = rec.att_pend[att_i]
+		rec.att_pend[att_i] = 0
+		rec.pend_union &= ~bits
+		rec.sched.call_hook(rec, def, OM_HOOK_WAKE, bits)
+		if(rec.torn_down)
+			return
 	def.run_frame(E, def.step_interval || def.every / 10)
 
 /// Frames `P` has run on the live scheduler (or `sched`).

@@ -83,6 +83,10 @@ Pipelines + Other Objects -> Pipe network
 	for(var/datum/pipe_network/network as anything in network_memberships?.Copy())
 		rust_release_network_wrapper(network)
 	network_memberships = null
+	// Our own side of every edge: a neighbour destroyed in the same batch skips us (it is
+	// QDELETED above), so nothing else clears these and the pair would pin each other.
+	node1 = null
+	node2 = null
 
 /obj/machinery/atmospherics/proc/engineered_material()
 	return material_for_role(MATERIAL_ROLE_STRUCTURE) || (engineered_material_id ? get_material_by_name(engineered_material_id) : null)

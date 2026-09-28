@@ -4298,6 +4298,9 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// datum_flags & DF_ISPROCESSING.
 	var/obj/machinery/portable_atmospherics/canister/oxygen/canister = new(T)
 	var/datum/om/frame/canister_state = om_pipe_state(canister, /datum/om/pipeline/machine, TRUE)
+	// Machines join asleep; their watches are armed by the zero-delay materialize_wakes() timer,
+	// which the live scheduler hasn't reached inside this synchronous test. Run it now.
+	canister.materialize_wakes()
 	for(var/i in 1 to 2)
 		om_run_frame_now(canister, /datum/om/pipeline/machine)
 	TEST_ASSERT(canister_state.parked, "closed inert canister remained scheduled")
