@@ -41,6 +41,7 @@
 
 		return 1
 
+MATERIAL_MIX(/obj/item/backup_implanter, list(MAT_STEEL = 2000, MAT_GLASS = 2000))
 //New, modern implanter instead of old style implanter.
 /obj/item/backup_implanter
 	name = "backup implanter"
@@ -52,7 +53,6 @@
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_SMALL
-	MATERIAL_MIX(list(MAT_STEEL = 2000, MAT_GLASS = 2000))
 	var/list/obj/item/implant/backup/imps = list() // ALLOW(instance_list): d: the implanter's loaded implants, filled in New()
 	var/max_implants = 4 //Iconstates need to exist due to the update proc!
 

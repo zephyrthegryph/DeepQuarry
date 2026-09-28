@@ -205,13 +205,15 @@
 #define MATERIAL_BULK(material_id, total) material_template = /datum/material_template/bulk; material_bulk_material = material_id; material_total = total
 
 /**
- * An object made of a fixed mix of plain materials, in its type body:
- *     MATERIAL_MIX(list(MAT_STEEL = 500, MAT_GLASS = 250))
- * Expands to a declared_material_mix() override returning a proc-local static, interned
- * mix template (one per distinct mix, shared by every instance). The static initialiser
- * also registers it by type at world start, so it can be read without an instance.
+ * An object made of a fixed mix of plain materials, declared at top level (not inside the
+ * type body) just before the type:
+ *     MATERIAL_MIX(/obj/item/foo, list(MAT_STEEL = 500, MAT_GLASS = 250))
+ * Expands to an absolute declared_material_mix() override returning a proc-local static,
+ * interned mix template (one per distinct mix, shared by every instance). The static
+ * initialiser also registers it by type at world start, so it can be read without an instance.
+ * Top level because DreamChecker forbids relatively pathed procs inside a type body.
  */
-#define MATERIAL_MIX(L) material_template = /datum/material_template/mix; declared_material_mix() { var/static/datum/material_template/mix/_material_mix = dq_register_material_mix(__TYPE__, L); return _material_mix; }
+#define MATERIAL_MIX(P, L) P/material_template = /datum/material_template/mix; P/declared_material_mix() { var/static/datum/material_template/mix/_material_mix = dq_register_material_mix(P, L); return _material_mix; }
 
 /// An object with no material composition, clearing any inherited one.
 #define MATERIAL_NONE material_template = null

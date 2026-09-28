@@ -1,3 +1,4 @@
+MATERIAL_MIX(/obj/item/nifrepairer, list(MAT_STEEL = 4000, MAT_GLASS = 6000))
 //Programs nanopaste into NIF repair nanites
 /obj/item/nifrepairer
 	name = "advanced NIF repair tool"
@@ -10,7 +11,6 @@
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 5
 	throw_range = 10
-	MATERIAL_MIX(list(MAT_STEEL = 4000, MAT_GLASS = 6000))
 	var/datum/reagents/supply
 	var/efficiency = 15 //How many units reagent per 1 unit nanopaste
 	pickup_sound = 'sound/items/pickup/device.ogg'

@@ -416,10 +416,10 @@
 	name = "top mounted magazine (9mm practice)"
 	ammo_type = /obj/item/ammo_casing/a9mm/practice
 
+MATERIAL_MIX(/obj/item/ammo_magazine/m9mmt/ap, list(MAT_STEEL = 1000, MAT_PLASTEEL = 2000))
 /obj/item/ammo_magazine/m9mmt/ap
 	name = "top mounted magazine (9mm armor piercing)"
 	ammo_type = /obj/item/ammo_casing/a9mm/ap
-	MATERIAL_MIX(list(MAT_STEEL = 1000, MAT_PLASTEEL = 2000))
 
 /obj/item/ammo_magazine/m9mmp90
 	name = "large capacity top mounted magazine (9mm armor-piercing)"
@@ -434,11 +434,11 @@
 /obj/item/ammo_magazine/m9mmp90/empty
 	initial_ammo = 0
 
+MATERIAL_MIX(/obj/item/ammo_magazine/m9mmp90/rubber, list(MAT_STEEL = 2000, MAT_PLASTIC = 1000))
 // begin
 /obj/item/ammo_magazine/m9mmp90/rubber
 	name = "large capacity top mounted magazine (9mm rubber)"
 	ammo_type = /obj/item/ammo_casing/a9mm/rubber
-	MATERIAL_MIX(list(MAT_STEEL = 2000, MAT_PLASTIC = 1000))
 // end
 
 // Stripper Clip
@@ -509,9 +509,9 @@
 	MATERIAL_BULK(MAT_STEEL, 1000)
 	ammo_type = /obj/item/ammo_casing/a10mm/rubber
 
+MATERIAL_MIX(/obj/item/ammo_magazine/m10mm/emp, list(MAT_STEEL = 1500, MAT_URANIUM = 2000))
 /obj/item/ammo_magazine/m10mm/emp
 	name = "magazine (10mm haywire)"
-	MATERIAL_MIX(list(MAT_STEEL = 1500, MAT_URANIUM = 2000))
 	ammo_type = /obj/item/ammo_casing/a10mm/emp
 
 // Pistol
@@ -530,9 +530,9 @@
 	MATERIAL_BULK(MAT_STEEL, 800)
 	ammo_type = /obj/item/ammo_casing/a10mm/rubber
 
+MATERIAL_MIX(/obj/item/ammo_magazine/m10mm/pistol/emp, list(MAT_STEEL = 1000, MAT_URANIUM = 1500))
 /obj/item/ammo_magazine/m10mm/pistol/emp
 	name = "magazine (10mm haywire)"
-	MATERIAL_MIX(list(MAT_STEEL = 1000, MAT_URANIUM = 1500))
 	ammo_type = /obj/item/ammo_casing/a10mm/emp
 
 /obj/item/ammo_magazine/m10mm/pistol/empty

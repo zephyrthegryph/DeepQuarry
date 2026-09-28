@@ -13,12 +13,12 @@
 /*
  * Welding mask
  */
+MATERIAL_MIX(/obj/item/clothing/head/welding, list(MAT_STEEL = 3000, MAT_GLASS = 1000))
 /obj/item/clothing/head/welding
 	name = "welding helmet"
 	desc = "A head-mounted face cover designed to protect the wearer completely from space-arc eye."
 	icon_state = "welding"
 	item_state_slots = list(slot_r_hand_str = "welding", slot_l_hand_str = "welding")
-	MATERIAL_MIX(list(MAT_STEEL = 3000, MAT_GLASS = 1000))
 	var/up = 0
 	armor_spec = "melee=10"
 	flags_inv = (HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)

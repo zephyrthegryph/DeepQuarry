@@ -443,7 +443,6 @@
 #include "code\controllers\hooks.dm"
 #include "code\controllers\boot_dependencies.dm"
 #include "code\controllers\master.dm"
-#include "code\controllers\master.dm"
 #include "code\controllers\subsystem.dm"
 #include "code\controllers\configuration\config_entry.dm"
 #include "code\controllers\configuration\configuration.dm"

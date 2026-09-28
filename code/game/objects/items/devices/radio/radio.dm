@@ -1,5 +1,6 @@
 #define CANBROADCAST_INNERBOX 0.7071067811865476	//This is sqrt(2)/2
 
+MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 /obj/item/radio
 	icon = 'icons/obj/radio.dmi'
 	name = "shortwave radio"
@@ -37,7 +38,6 @@
 	var/bs_tx_preload_id
 	var/bs_rx_preload_id
 
-	MATERIAL_MIX(list(MAT_GLASS = 25,MAT_STEEL = 75))
 	var/const/FREQ_LISTENING = 1
 	var/list/internal_channels
 

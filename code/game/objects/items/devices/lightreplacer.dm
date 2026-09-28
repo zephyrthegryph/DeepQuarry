@@ -228,6 +228,7 @@ DECLARE_INTERACTIONS(/obj/item/lightreplacer, \
 
 // Light Painter.
 
+MATERIAL_MIX(/obj/item/lightpainter, list(MAT_STEEL = 5000,MAT_GLASS = 1500))
 /obj/item/lightpainter
 	name = "light painter"
 	desc = "A device to configure the emission color of lighting fixtures. Use this device in-hand to set/reset the color. Use the device on a light fixture to assign the color."
@@ -236,7 +237,6 @@ DECLARE_INTERACTIONS(/obj/item/lightreplacer, \
 	color = "#bbbbff"
 	slot_flags = SLOT_BELT
 
-	MATERIAL_MIX(list(MAT_STEEL = 5000,MAT_GLASS = 1500))
 
 	var/static/dcolor = "#e0eff0"
 	var/static/dnightcolor = "#efcc86"

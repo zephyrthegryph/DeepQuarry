@@ -3,9 +3,9 @@
 
 // ---- Fixtures ----
 
+MATERIAL_MIX(/obj/item/dq_matter_test, list(MAT_STEEL = 100, MAT_GLASS = 50))
 /obj/item/dq_matter_test
 	name = "matter test item"
-	MATERIAL_MIX(list(MAT_STEEL = 100, MAT_GLASS = 50))
 
 /// Inherits its parent's mix without redeclaring it.
 /obj/item/dq_matter_test/child

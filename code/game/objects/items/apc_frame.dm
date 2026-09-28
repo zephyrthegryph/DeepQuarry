@@ -1,5 +1,6 @@
 // APC HULL
 
+MATERIAL_MIX(/obj/item/frame/apc, list(MAT_STEEL = 100, MAT_GLASS = 30))
 /obj/item/frame/apc
 	name = "\improper APC frame"
 	desc = "Used for repairing or building APCs"
@@ -7,7 +8,6 @@
 	icon_state = "apc_frame"
 	refund_amt = 2
 	build_wall_only = TRUE
-	MATERIAL_MIX(list(MAT_STEEL = 100, MAT_GLASS = 30))
 
 /obj/item/frame/apc/try_build(turf/on_wall, mob/user as mob)
 	if (get_dist(on_wall, user)>1)

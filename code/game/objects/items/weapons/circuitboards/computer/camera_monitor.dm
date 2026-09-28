@@ -34,22 +34,22 @@
 	network = list(NETWORK_MINE)
 	req_access = list()
 
+MATERIAL_MIX(/obj/item/circuitboard/security/telescreen/entertainment, list(MAT_STEEL = 50, MAT_GLASS = 50))
 /obj/item/circuitboard/security/telescreen/entertainment
 	name = T_BOARD("entertainment camera monitor")
 	build_path = /obj/machinery/computer/security/telescreen/entertainment
 	board_type = new /datum/frame/frame_types/display
-	MATERIAL_MIX(list(MAT_STEEL = 50, MAT_GLASS = 50))
 
 /obj/item/circuitboard/security/telescreen/entertainment/Initialize(mapload)
 	. = ..()
 	network = list(NETWORK_THUNDER)
 
+MATERIAL_MIX(/obj/item/circuitboard/security/telescreen/bodycamera, list(MAT_STEEL = 50, MAT_GLASS = 50))
 // Bodycam
 /obj/item/circuitboard/security/telescreen/bodycamera
 	name = T_BOARD("security bodycamera monitor")
 	build_path = /obj/machinery/computer/security/telescreen/bodycamera
 	board_type = new /datum/frame/frame_types/display
-	MATERIAL_MIX(list(MAT_STEEL = 50, MAT_GLASS = 50))
 
 /obj/item/circuitboard/security/telescreen/bodycamera/Initialize(mapload)
 	. = ..()

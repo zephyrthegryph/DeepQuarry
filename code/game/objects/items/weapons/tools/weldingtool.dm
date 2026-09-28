@@ -2,6 +2,7 @@
 /*
  * Welding Tool
  */
+MATERIAL_MIX(/obj/item/weldingtool, list(MAT_STEEL = 70, MAT_GLASS = 30))
 /obj/item/weldingtool
 	name = "\improper welding tool"
 	icon = 'icons/obj/tools.dmi'
@@ -17,7 +18,6 @@
 	w_class = ITEMSIZE_SMALL
 
 	//Cost to make in the autolathe
-	MATERIAL_MIX(list(MAT_STEEL = 70, MAT_GLASS = 30))
 
 	//R&D tech level
 
@@ -354,28 +354,28 @@ DECLARE_INTERACTIONS(/obj/item/weldingtool, \
 /obj/item/weldingtool/is_hot()
 	return isOn()
 
+MATERIAL_MIX(/obj/item/weldingtool/largetank, list(MAT_STEEL = 70, MAT_GLASS = 60))
 /obj/item/weldingtool/largetank
 	name = "industrial welding tool"
 	desc = "A slightly larger welder with a larger tank."
 	icon_state = "indwelder"
 	max_fuel = 40
-	MATERIAL_MIX(list(MAT_STEEL = 70, MAT_GLASS = 60))
 
+MATERIAL_MIX(/obj/item/weldingtool/hugetank, list(MAT_STEEL = 70, MAT_GLASS = 120))
 /obj/item/weldingtool/hugetank
 	name = "upgraded welding tool"
 	desc = "A much larger welder with a huge tank."
 	icon_state = "upindwelder"
 	max_fuel = 80
 	w_class = ITEMSIZE_NORMAL
-	MATERIAL_MIX(list(MAT_STEEL = 70, MAT_GLASS = 120))
 
+MATERIAL_MIX(/obj/item/weldingtool/mini, list(MAT_METAL = 30, MAT_GLASS = 10))
 /obj/item/weldingtool/mini
 	name = "emergency welding tool"
 	desc = "A miniature welder used during emergencies."
 	icon_state = "miniwelder"
 	max_fuel = 10
 	w_class = ITEMSIZE_SMALL
-	MATERIAL_MIX(list(MAT_METAL = 30, MAT_GLASS = 10))
 	change_icons = 0
 	toolspeed = 2
 	eye_safety_modifier = 1 // Safer on eyes.
@@ -424,13 +424,13 @@ DECLARE_INTERACTIONS(/obj/item/weldingtool, \
 		reagents.add_reagent(REAGENT_ID_FUEL, 1)
 	..()
 
+MATERIAL_MIX(/obj/item/weldingtool/experimental, list(MAT_STEEL = 70, MAT_GLASS = 120))
 /obj/item/weldingtool/experimental
 	name = "experimental welding tool"
 	desc = "An experimental welder capable of synthesizing its own fuel from waste compounds. It can output a flame hotter than regular welders."
 	icon_state = "exwelder"
 	max_fuel = 40
 	w_class = ITEMSIZE_NORMAL
-	MATERIAL_MIX(list(MAT_STEEL = 70, MAT_GLASS = 120))
 	toolspeed = 0.5
 	change_icons = 0
 	flame_intensity = 3

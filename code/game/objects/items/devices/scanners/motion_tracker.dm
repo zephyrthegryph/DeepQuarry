@@ -1,3 +1,4 @@
+MATERIAL_MIX(/obj/item/motiontracker, list(MAT_STEEL = 30,MAT_GLASS = 20))
 /obj/item/motiontracker
 	name = "Motion Tracker"
 	desc = "The \"Vibromaster V1.7\", a handheld motion tracker. Often picks up nearby vibrations as motion however."
@@ -10,7 +11,6 @@
 	throw_speed = 4
 	throw_range = 20
 
-	MATERIAL_MIX(list(MAT_STEEL = 30,MAT_GLASS = 20))
 
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'

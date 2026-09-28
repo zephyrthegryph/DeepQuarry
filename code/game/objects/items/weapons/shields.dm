@@ -56,6 +56,7 @@
 /obj/item/shield/proc/get_block_chance(mob/user, damage, atom/damage_source = null, mob/attacker = null)
 	return base_block_chance
 
+MATERIAL_MIX(/obj/item/shield/riot, list(MAT_GLASS = 7500, MAT_STEEL = 1000))
 /obj/item/shield/riot
 	name = "riot shield"
 	desc = "A shield adept for close quarters engagement.  It's also capable of protecting from less powerful projectiles."
@@ -67,7 +68,6 @@
 	throw_speed = 1
 	throw_range = 4
 	w_class = ITEMSIZE_LARGE
-	MATERIAL_MIX(list(MAT_GLASS = 7500, MAT_STEEL = 1000))
 	attack_verb = list("shoved", "bashed")
 	var/cooldown = 0 //shield bash cooldown. based on world.time
 

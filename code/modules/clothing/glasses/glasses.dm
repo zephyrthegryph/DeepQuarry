@@ -392,13 +392,13 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/sunglasses/bigshot, INTERACT_ALT(
 		update_clothing_icon()
 	return TRUE
 
+MATERIAL_MIX(/obj/item/clothing/glasses/welding, list(MAT_STEEL = 1500, MAT_GLASS = 1000))
 /obj/item/clothing/glasses/welding
 	name = "welding goggles"
 	desc = "Protects the eyes from welders, approved by the mad scientist association."
 	icon_state = "welding-g"
 	item_state_slots = list(slot_r_hand_str = "welding-g", slot_l_hand_str = "welding-g")
 	actions_types = list(/datum/action/item_action/flip_welding_goggles)
-	MATERIAL_MIX(list(MAT_STEEL = 1500, MAT_GLASS = 1000))
 	item_flags = AIRTIGHT
 	var/up = 0
 	flash_protection = FLASH_PROTECTION_MAJOR

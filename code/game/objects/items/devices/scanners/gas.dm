@@ -1,3 +1,4 @@
+MATERIAL_MIX(/obj/item/analyzer, list(MAT_STEEL = 30,MAT_GLASS = 20))
 /obj/item/analyzer
 	name = "gas analyzer"
 	desc = "A hand-held environmental scanner which reports current gas levels."
@@ -10,7 +11,6 @@
 	throw_speed = 4
 	throw_range = 20
 
-	MATERIAL_MIX(list(MAT_STEEL = 30,MAT_GLASS = 20))
 
 
 	pickup_sound = 'sound/items/pickup/device.ogg'

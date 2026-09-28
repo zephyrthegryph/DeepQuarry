@@ -1,3 +1,4 @@
+MATERIAL_MIX(/obj/item/gun/energy/freezegun, list(MAT_DURASTEEL = 1000, MAT_MORPHIUM = 500))
 /obj/item/gun/energy/freezegun
 	name = "Pulse Froster Prototype"
 	desc = "A strange gun pulsing with energy, it's touch chilling you to the core."
@@ -5,7 +6,6 @@
 	icon_state = "cryogun"
 	item_state = "cryogun"
 	wielded_item_state = "cryogun-wielded"
-	MATERIAL_MIX(list(MAT_DURASTEEL = 1000, MAT_MORPHIUM = 500))
 
 	charge_cost = 80 //How much energy is needed to fire.
 

@@ -4,6 +4,7 @@
  *
  */
 
+MATERIAL_MIX(/obj/item/multitool, list(MAT_STEEL = 50,MAT_GLASS = 20))
 /obj/item/multitool
 	name = "multitool"
 	desc = "Used for pulsing wires to test which to cut. Not recommended by doctors."
@@ -18,7 +19,6 @@
 	drop_sound = 'sound/items/drop/multitool.ogg'
 	pickup_sound = 'sound/items/pickup/multitool.ogg'
 
-	MATERIAL_MIX(list(MAT_STEEL = 50,MAT_GLASS = 20))
 
 	var/mode_index = 1
 	var/toolmode = MULTITOOL_MODE_STANDARD

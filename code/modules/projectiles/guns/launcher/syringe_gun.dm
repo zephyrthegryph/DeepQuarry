@@ -1,10 +1,10 @@
+MATERIAL_MIX(/obj/item/syringe_cartridge, list(MAT_STEEL = 125, MAT_GLASS = 375))
 /obj/item/syringe_cartridge
 	name = "syringe gun cartridge"
 	desc = "An impact-triggered compressed gas cartridge that can be fitted to a syringe for rapid injection."
 	icon = 'icons/obj/ammo.dmi'
 	icon_state = "syringe-cartridge"
 	var/icon_flight = "syringe-cartridge-flight" //so it doesn't look so weird when shot
-	MATERIAL_MIX(list(MAT_STEEL = 125, MAT_GLASS = 375))
 	slot_flags = SLOT_BELT | SLOT_EARS
 	throwforce = 3
 	force = 3

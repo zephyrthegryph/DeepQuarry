@@ -13,6 +13,7 @@
 #define MANITAB 8
 #define SETTTAB 9
 
+MATERIAL_MIX(/obj/item/communicator, list(MAT_STEEL = 30,MAT_GLASS = 10))
 /obj/item/communicator
 	name = "communicator"
 	desc = "A personal device used to enable long range dialog between two people, utilizing existing telecommunications infrastructure to allow \
@@ -23,7 +24,6 @@
 	slot_flags = SLOT_ID | SLOT_BELT
 	show_messages = 1
 
-	MATERIAL_MIX(list(MAT_STEEL = 30,MAT_GLASS = 10))
 
 	var/video_range = 3
 	var/obj/machinery/camera/communicator/video_source	// Their camera

@@ -1,11 +1,11 @@
 GLOBAL_LIST_EMPTY(floor_light_cache)
 
+MATERIAL_MIX(/obj/item/floor_light, list(MAT_STEEL = 2500, MAT_GLASS = 2750))
 /obj/item/floor_light
 	name = "floor light kit"
 	desc = "A backlit floor panel, ready for installation!"
 	icon = 'icons/obj/machines/floor_light.dmi'
 	icon_state = "item"
-	MATERIAL_MIX(list(MAT_STEEL = 2500, MAT_GLASS = 2750))
 
 DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interaction_self)))
 

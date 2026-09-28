@@ -1,3 +1,4 @@
+MATERIAL_MIX(/obj/item/geiger, list(/datum/material/steel = SHEET_MATERIAL_AMOUNT * 1.5, /datum/material/glass = SHEET_MATERIAL_AMOUNT * 1.5))
 /obj/item/geiger //DISCLAIMER: I know nothing about how real-life Geiger counters work. This will not be realistic. ~Xhuis
 	name = "\improper Geiger counter"
 	desc = "A handheld device used for detecting and measuring radiation pulses."
@@ -11,7 +12,6 @@
 	w_class = ITEMSIZE_SMALL
 	slot_flags = SLOT_BELT
 	item_flags = NOBLUDGEON
-	MATERIAL_MIX(list(/datum/material/steel = SHEET_MATERIAL_AMOUNT * 1.5, /datum/material/glass = SHEET_MATERIAL_AMOUNT * 1.5))
 
 	var/last_perceived_radiation_danger = null
 	///How strong the last radiation pulse was, at the source.

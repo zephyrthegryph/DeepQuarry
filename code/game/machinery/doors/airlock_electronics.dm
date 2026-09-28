@@ -1,10 +1,10 @@
+MATERIAL_MIX(/obj/item/airlock_electronics, list(MAT_STEEL = 50,MAT_GLASS = 50))
 /obj/item/airlock_electronics
 	name = "airlock electronics"
 	icon = 'icons/obj/doors/door_assembly.dmi'
 	icon_state = "door_electronics"
 	w_class = ITEMSIZE_SMALL //It should be tiny! -Agouri
 
-	MATERIAL_MIX(list(MAT_STEEL = 50,MAT_GLASS = 50))
 
 	req_one_access = list(ACCESS_ENGINE, ACCESS_TALON_ENGINEER) // Access to unlock the device, ignored if emagged // Add talon
 	var/static/list/apply_any_access = list(ACCESS_ENGINE) // Can apply any access, not just their own

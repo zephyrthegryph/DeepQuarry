@@ -281,11 +281,11 @@ DECLARE_INTERACTIONS(/obj/item/camera_bug, INTERACT_USE(null, PROC_REF(interacti
 	icon_state = "screen"
 	MATERIAL_BULK(MAT_GLASS, 200)
 
+MATERIAL_MIX(/obj/item/stock_parts/capacitor, list(MAT_STEEL = 50,MAT_GLASS = 50))
 /obj/item/stock_parts/capacitor
 	name = "capacitor"
 	desc = "A basic capacitor used in the construction of a variety of devices."
 	icon_state = "capacitor"
-	MATERIAL_MIX(list(MAT_STEEL = 50,MAT_GLASS = 50))
 
 	var/charge = 0
 	var/max_charge = 1000
@@ -305,11 +305,11 @@ DECLARE_INTERACTIONS(/obj/item/camera_bug, INTERACT_USE(null, PROC_REF(interacti
 		if(charge < 0)
 			charge = 0
 
+MATERIAL_MIX(/obj/item/stock_parts/scanning_module, list(MAT_STEEL = 50,MAT_GLASS = 20))
 /obj/item/stock_parts/scanning_module
 	name = "scanning module"
 	desc = "A compact, high resolution scanning module used in the construction of certain devices."
 	icon_state = "scan_module"
-	MATERIAL_MIX(list(MAT_STEEL = 50,MAT_GLASS = 20))
 
 /obj/item/stock_parts/manipulator
 	name = "micro-manipulator"
@@ -317,11 +317,11 @@ DECLARE_INTERACTIONS(/obj/item/camera_bug, INTERACT_USE(null, PROC_REF(interacti
 	icon_state = "micro_mani"
 	MATERIAL_BULK(MAT_STEEL, 30)
 
+MATERIAL_MIX(/obj/item/stock_parts/micro_laser, list(MAT_STEEL = 10,MAT_GLASS = 20))
 /obj/item/stock_parts/micro_laser
 	name = "micro-laser"
 	desc = "A tiny laser used in certain devices."
 	icon_state = "micro_laser"
-	MATERIAL_MIX(list(MAT_STEEL = 10,MAT_GLASS = 20))
 
 /obj/item/stock_parts/matter_bin
 	name = "matter bin"
@@ -339,35 +339,35 @@ DECLARE_INTERACTIONS(/obj/item/camera_bug, INTERACT_USE(null, PROC_REF(interacti
 
 // Subspace stock parts
 
+MATERIAL_MIX(/obj/item/stock_parts/subspace/ansible, list(MAT_STEEL = 30,MAT_GLASS = 10))
 /obj/item/stock_parts/subspace/ansible
 	name = "subspace ansible"
 	icon_state = "subspace_ansible"
 	desc = "A compact module capable of sensing extradimensional activity."
-	MATERIAL_MIX(list(MAT_STEEL = 30,MAT_GLASS = 10))
 
+MATERIAL_MIX(/obj/item/stock_parts/subspace/sub_filter, list(MAT_STEEL = 30,MAT_GLASS = 10))
 /obj/item/stock_parts/subspace/sub_filter
 	name = "hyperwave filter"
 	icon_state = "hyperwave_filter"
 	desc = "A tiny device capable of filtering and converting super-intense radiowaves."
-	MATERIAL_MIX(list(MAT_STEEL = 30,MAT_GLASS = 10))
 
+MATERIAL_MIX(/obj/item/stock_parts/subspace/amplifier, list(MAT_STEEL = 30,MAT_GLASS = 10))
 /obj/item/stock_parts/subspace/amplifier
 	name = "subspace amplifier"
 	icon_state = "subspace_amplifier"
 	desc = "A compact micro-machine capable of amplifying weak subspace transmissions."
-	MATERIAL_MIX(list(MAT_STEEL = 30,MAT_GLASS = 10))
 
+MATERIAL_MIX(/obj/item/stock_parts/subspace/treatment, list(MAT_STEEL = 30,MAT_GLASS = 10))
 /obj/item/stock_parts/subspace/treatment
 	name = "subspace treatment disk"
 	icon_state = "treatment_disk"
 	desc = "A compact micro-machine capable of stretching out hyper-compressed radio waves."
-	MATERIAL_MIX(list(MAT_STEEL = 30,MAT_GLASS = 10))
 
+MATERIAL_MIX(/obj/item/stock_parts/subspace/analyzer, list(MAT_STEEL = 30,MAT_GLASS = 10))
 /obj/item/stock_parts/subspace/analyzer
 	name = "subspace wavelength analyzer"
 	icon_state = "wavelength_analyzer"
 	desc = "A sophisticated analyzer capable of analyzing cryptic subspace wavelengths."
-	MATERIAL_MIX(list(MAT_STEEL = 30,MAT_GLASS = 10))
 
 /obj/item/stock_parts/subspace/crystal
 	name = "ansible crystal"
@@ -397,12 +397,12 @@ DECLARE_INTERACTIONS(/obj/item/camera_bug, INTERACT_USE(null, PROC_REF(interacti
 	icon_state = "gear"
 	MATERIAL_BULK(MAT_STEEL, 50)
 
+MATERIAL_MIX(/obj/item/stock_parts/motor, list(MAT_STEEL = 60, MAT_GLASS = 10))
 /obj/item/stock_parts/motor
 	name = "motor"
 	desc = "A motor used for construction."
 	icon = 'icons/obj/stock_parts.dmi'
 	icon_state = "motor"
-	MATERIAL_MIX(list(MAT_STEEL = 60, MAT_GLASS = 10))
 
 /obj/item/stock_parts/spring
 	name = "spring"

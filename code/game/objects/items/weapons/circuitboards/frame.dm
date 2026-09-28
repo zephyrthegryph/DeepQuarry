@@ -168,11 +168,11 @@
 							/obj/item/stock_parts/motor = 2,
 							/obj/item/stock_parts/gear = 1)
 
+MATERIAL_MIX(/obj/item/circuitboard/teleporter_hub, list(MAT_STEEL = 50, MAT_GLASS = 50, MAT_GOLD = 100))
 /obj/item/circuitboard/teleporter_hub
 	name = T_BOARD("teleporter hub")
 	build_path = /obj/machinery/teleport/hub
 	board_type = new /datum/frame/frame_types/machine // makes buildable
-	MATERIAL_MIX(list(MAT_STEEL = 50, MAT_GLASS = 50, MAT_GOLD = 100))
 // Balance
 	req_components = list(
 							/obj/item/bluespace_crystal = 2,
@@ -182,11 +182,11 @@
 							/obj/item/stack/cable_coil = 5)
 // End
 
+MATERIAL_MIX(/obj/item/circuitboard/teleporter_station, list(MAT_STEEL = 50, MAT_GLASS = 50, MAT_GOLD = 100))
 /obj/item/circuitboard/teleporter_station
 	name = T_BOARD("teleporter station")
 	build_path = /obj/machinery/teleport/station
 	board_type = new /datum/frame/frame_types/machine // makes buildable
-	MATERIAL_MIX(list(MAT_STEEL = 50, MAT_GLASS = 50, MAT_GOLD = 100))
 	req_components = list(
 							/obj/item/stock_parts/console_screen = 1,
 							/obj/item/stock_parts/capacitor = 2,
@@ -404,11 +404,11 @@
 							/obj/item/stock_parts/manipulator = 2,
 							/obj/item/stock_parts/console_screen = 1)
 
+MATERIAL_MIX(/obj/item/circuitboard/microwave/advanced, list(MAT_STEEL = 50, MAT_GLASS = 50))
 /obj/item/circuitboard/microwave/advanced
 	name = T_BOARD("deluxe microwave")
 	build_path = /obj/machinery/microwave/advanced
 	board_type = new /datum/frame/frame_types/microwave
-	MATERIAL_MIX(list(MAT_STEEL = 50, MAT_GLASS = 50))
 	req_components = list(
 							/obj/item/stock_parts/console_screen = 1,
 							/obj/item/stock_parts/motor = 1,

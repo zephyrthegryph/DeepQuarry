@@ -299,6 +299,7 @@ EXTEND_INTERACTIONS(/obj/item/rcd/debug, INTERACT_INSERT(/obj/item/rcd_ammo, PRO
 /obj/item/rcd/debug/display_resources()
 	return "It has UNLIMITED POWER!"
 
+MATERIAL_MIX(/obj/item/rcd_ammo, list(DEFAULT_WALL_MATERIAL = 30000,MAT_GLASS = 15000))
 // Ammo for the (non-electric) RCDs.
 /obj/item/rcd_ammo
 	name = "compressed matter cartridge"
@@ -307,13 +308,12 @@ EXTEND_INTERACTIONS(/obj/item/rcd/debug, INTERACT_INSERT(/obj/item/rcd_ammo, PRO
 	icon_state = "rcd"
 	item_state = "rcdammo"
 	w_class = ITEMSIZE_SMALL
-	MATERIAL_MIX(list(DEFAULT_WALL_MATERIAL = 30000,MAT_GLASS = 15000))
 	var/remaining = RCD_MAX_CAPACITY / 0.75
 
+MATERIAL_MIX(/obj/item/rcd_ammo/large, list(DEFAULT_WALL_MATERIAL = 45000,MAT_GLASS = 22500))
 /obj/item/rcd_ammo/large
 	name = "high-capacity matter cartridge"
 	desc = "Do not ingest."
-	MATERIAL_MIX(list(DEFAULT_WALL_MATERIAL = 45000,MAT_GLASS = 22500))
 	remaining = RCD_MAX_CAPACITY * 2
 
 // === merged from RCD_vr.dm during hard-fork de-suffix (verified no override-order change) ===
