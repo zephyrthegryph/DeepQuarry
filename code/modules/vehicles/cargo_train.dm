@@ -433,7 +433,7 @@
 	AddComponent(/datum/component/hose_connector/input)
 	AddComponent(/datum/component/hose_connector/output)
 	make_climbable()
-	AddElement(/datum/element/sellable/trolley_tank)
+	make_sellable(/datum/sellable/trolley_tank)
 
 /obj/vehicle/train/trolley_tank/insert_cell(obj/item/cell/C, mob/living/carbon/human/H)
 	return

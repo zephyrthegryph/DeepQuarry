@@ -9,7 +9,7 @@
 /obj/item/organ/internal/Initialize(mapload, internal)
 	. = ..()
 	if(supply_conversion_value)
-		AddElement(/datum/element/sellable/organ)
+		make_sellable(/datum/sellable/organ)
 
 /obj/item/organ/internal/die()
 	..()

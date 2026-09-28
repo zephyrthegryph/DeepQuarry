@@ -21,7 +21,6 @@
 	var/economic_department
 	var/economic_export_value = 0
 	var/economic_producer_account = 0
-	var/economic_sellable_attached = FALSE
 	/// The finalized department checkout which last sold this physical item.
 	/// Prevents one object being presented repeatedly as several distinct sales.
 	var/economic_sale_invoice_id = 0
@@ -53,8 +52,7 @@
 		"detail" = "Fabricated [name] for [department].",
 	), "item-produced:[REF(src)]", src)
 	// Preserve specialized export valuation and never count an object twice.
-	if(!economic_sellable_attached)
-		AddElement(/datum/element/sellable/manufactured)
+	make_sellable(/datum/sellable/manufactured)
 
 /// Phase 1 (unbind): an object that blocked air reopens its tile. It is
 /// already QDELETED (phase 0), so the recomputed air_block_mask() skips it.

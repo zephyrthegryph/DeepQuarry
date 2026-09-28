@@ -1,43 +1,65 @@
-/datum/element/sellable
+/// Sale profiles (was /datum/element/sellable). Object state, not an OM behaviour:
+/// an object's `sellable_type` names a shared profile singleton (get_sellable_profile())
+/// and the cargo shuttle / retail scanner ask the object directly through
+/// export_sale() and scan_profit(). Subtypes override the valuation procs.
+/datum/sellable
 	var/sale_info = "This can be sold on the cargo shuttle if packed in a crate."
 	var/needs_crate = TRUE
 
-/datum/element/sellable/Attach(datum/target)
+/// The shared profile singleton for sellable type `path`.
+/proc/get_sellable_profile(path)
+	var/static/list/profiles = list()
+	. = profiles[path]
+	if(!.)
+		. = new path
+		profiles[path] = .
+
+/obj
+	/// The /datum/sellable profile this object sells under, or null.
+	var/sellable_type
+
+/// Makes this object sellable under profile `path`. The first profile wins.
+/obj/proc/make_sellable(path = /datum/sellable)
+	if(sellable_type)
+		return
+	sellable_type = path
+
+/// Offered to the cargo shuttle: TRUE if sold (the crate record is filled in).
+/atom/proc/export_sale(datum/exported_crate/EC, in_crate)
+	return FALSE
+
+/obj/export_sale(datum/exported_crate/EC, in_crate)
+	if(!sellable_type)
+		return FALSE
+	var/datum/sellable/profile = get_sellable_profile(sellable_type)
+	return profile.sell(src, EC, in_crate)
+
+/// The sale value a retail scanner reads, or null when not sellable.
+/obj/proc/scan_profit()
+	if(!sellable_type)
+		return null
+	var/datum/sellable/profile = get_sellable_profile(sellable_type)
+	return profile.calculate_sell_value(src)
+
+/obj/examine(mob/user, infix = "", suffix = "")
 	. = ..()
-	if(!isobj(target))
-		return ELEMENT_INCOMPATIBLE
-	var/obj/sellable_object = target
-	if(sellable_object.economic_sellable_attached)
-		return ELEMENT_INCOMPATIBLE
-	sellable_object.economic_sellable_attached = TRUE
-	RegisterSignal(target, COMSIG_ITEM_EXPORTED, PROC_REF(sell))
-	RegisterSignal(target, COMSIG_ITEM_SCAN_PROFIT, PROC_REF(calculate_sell_value))
-	RegisterSignal(target, COMSIG_ATOM_EXAMINE, PROC_REF(on_examine))
-	return
+	if(sellable_type)
+		var/datum/sellable/profile = get_sellable_profile(sellable_type)
+		if(profile.sale_info)
+			. += span_notice(profile.sale_info)
 
-/datum/element/sellable/Detach(datum/source)
-	var/obj/sellable_object = source
-	if(istype(sellable_object))
-		sellable_object.economic_sellable_attached = FALSE
-	UnregisterSignal(source, COMSIG_ITEM_EXPORTED)
-	UnregisterSignal(source, COMSIG_ITEM_SCAN_PROFIT)
-	UnregisterSignal(source, COMSIG_ATOM_EXAMINE)
-	return ..()
-
-// Override this for sub elements that need to do complex calculations when sold
-/datum/element/sellable/proc/sell_error(obj/source)
+// Override this for sub profiles that need to do complex calculations when sold
+/datum/sellable/proc/sell_error(obj/source)
 	return null // returns a string explaining why the item couldn't be sold. Otherwise null to allow it to be sold.
 
-/datum/element/sellable/proc/calculate_sell_value(obj/source)
-	SIGNAL_HANDLER
+/datum/sellable/proc/calculate_sell_value(obj/source)
 	return 1
 
-/datum/element/sellable/proc/calculate_sell_quantity(obj/source)
+/datum/sellable/proc/calculate_sell_quantity(obj/source)
 	return 1
 // End overrides
 
-/datum/element/sellable/proc/sell(obj/source, datum/exported_crate/EC, in_crate)
-	SIGNAL_HANDLER
+/datum/sellable/proc/sell(obj/source, datum/exported_crate/EC, in_crate)
 
 	if(needs_crate && !in_crate)
 		EC.contents = list("error" = "Error: Product was improperly packaged. Payment rendered null under terms of agreement.")
@@ -105,18 +127,12 @@
 	emit_contract_event(CONTRACT_EVENT_ITEM_EXPORTED, contract_context, "item-exported:[REF(source)]", source)
 	return TRUE
 
-/datum/element/sellable/proc/on_examine(datum/source, mob/user, list/examine_texts)
-	SIGNAL_HANDLER
-	SHOULD_NOT_OVERRIDE(TRUE)
-	if(sale_info)
-		examine_texts += span_notice(sale_info)
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 // Subtypes
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Manifest papers
-/datum/element/sellable/manifest/calculate_sell_value(obj/source)
+/datum/sellable/manifest/calculate_sell_value(obj/source)
 	var/obj/item/paper/manifest/slip = source
 	if(!slip.is_copy && slip.stamped && slip.stamped.len) //yes, the clown stamp will work. clown is the highest authority on the station, it makes sense
 		return SSsupply.points_per_slip
@@ -124,39 +140,39 @@
 
 
 // Material stacks
-/datum/element/sellable/material_stack/calculate_sell_value(obj/source)
+/datum/sellable/material_stack/calculate_sell_value(obj/source)
 	var/obj/item/stack/P = source
 	var/datum/material/mat = P.get_material()
 	if(!mat || !mat.supply_conversion_value)
 		return 0
 	return P.get_amount() * mat.supply_conversion_value
 
-/datum/element/sellable/material_stack/calculate_sell_quantity(obj/source)
+/datum/sellable/material_stack/calculate_sell_quantity(obj/source)
 	var/obj/item/stack/P = source
 	return P.get_amount()
 
 
 // Money
-/datum/element/sellable/spacecash/calculate_sell_value(obj/source)
+/datum/sellable/spacecash/calculate_sell_value(obj/source)
 	var/obj/item/spacecash/cashmoney = source
 	return cashmoney.worth * SSsupply.points_per_money
 
-/datum/element/sellable/spacecash/calculate_sell_quantity(obj/source)
+/datum/sellable/spacecash/calculate_sell_quantity(obj/source)
 	var/obj/item/spacecash/cashmoney = source
 	return cashmoney.worth
 
-/datum/element/sellable/manufactured/calculate_sell_value(obj/source)
+/datum/sellable/manufactured/calculate_sell_value(obj/source)
 	return max(1, source.economic_export_value)
 
 
 // Research samples
-/datum/element/sellable/research_sample/calculate_sell_value(obj/source)
+/datum/sellable/research_sample/calculate_sell_value(obj/source)
 	var/obj/item/research_sample/sample = source
 	return sample.supply_value
 
 
 // Research containers
-/datum/element/sellable/sample_container/calculate_sell_value(obj/source)
+/datum/sellable/sample_container/calculate_sell_value(obj/source)
 	var/obj/item/storage/sample_container/sample_can = source
 	var/sample_sum = 0
 	var/obj/item/research_sample/stored_sample
@@ -165,16 +181,16 @@
 			sample_sum += stored_sample.supply_value
 	return sample_sum
 
-/datum/element/sellable/sample_container/calculate_sell_quantity(obj/source)
+/datum/sellable/sample_container/calculate_sell_quantity(obj/source)
 	var/obj/item/storage/sample_container/sample_can = source
 	return "[sample_can.contents.len] sample(s) "
 
 
 // Vaccine samples
-/datum/element/sellable/vaccine
+/datum/sellable/vaccine
 	sale_info = "This can be sold on the cargo shuttle if packed in a freezer crate."
 
-/datum/element/sellable/vaccine/sell_error(obj/source)
+/datum/sellable/vaccine/sell_error(obj/source)
 	if(!istype(source.loc, /obj/structure/closet/crate/freezer))
 		return "Error: Product was improperly packaged. Vaccines must be sold in a freezer crate to preserve for transport. Payment rendered null under terms of agreement."
 	var/obj/item/reagent_containers/glass/beaker/vial/vaccine/sale_bottle = source
@@ -182,16 +198,16 @@
 		return "Error: Tainted product in vaccine batch. Was opened, contaminated, or wasn't filled to full. Payment rendered null under terms of agreement."
 	return null
 
-/datum/element/sellable/vaccine/calculate_sell_value(obj/source)
+/datum/sellable/vaccine/calculate_sell_value(obj/source)
 	return 5
 
 
 // Refinery chemical tanks
-/datum/element/sellable/trolley_tank
+/datum/sellable/trolley_tank
 	sale_info = "This can be sold on the cargo shuttle if filled with a single reagent."
 	needs_crate = FALSE
 
-/datum/element/sellable/trolley_tank/sell_error(obj/source)
+/datum/sellable/trolley_tank/sell_error(obj/source)
 	var/obj/vehicle/train/trolley_tank/tank = source
 	if(!tank.reagents || tank.reagents.reagent_list.len == 0)
 		return "Error: Product was not filled with any reagents to sell. Payment rendered null under terms of agreement."
@@ -202,7 +218,7 @@
 		return "Error: Product was improperly refined. Send purified mixtures only (too many reagents in tank). Payment rendered null under terms of agreement."
 	return null
 
-/datum/element/sellable/trolley_tank/calculate_sell_value(obj/source)
+/datum/sellable/trolley_tank/calculate_sell_value(obj/source)
 	var/obj/vehicle/train/trolley_tank/tank = source
 	if(!length(tank.reagents.reagent_list))
 		return 0
@@ -213,14 +229,14 @@
 
 	return reagent_value
 
-/datum/element/sellable/trolley_tank/calculate_sell_quantity(obj/source)
+/datum/sellable/trolley_tank/calculate_sell_quantity(obj/source)
 	var/obj/vehicle/train/trolley_tank/tank = source
 	if(!tank.reagents || tank.reagents.reagent_list.len == 0)
 		return "0u "
 	var/datum/reagent/R = tank.reagents.reagent_list[1]
 	return "[R.name] [tank.reagents.total_volume]u "
 
-/datum/element/sellable/trolley_tank/sell(obj/source, datum/exported_crate/EC, in_crate)
+/datum/sellable/trolley_tank/sell(obj/source, datum/exported_crate/EC, in_crate)
 	. = ..()
 	var/obj/vehicle/train/trolley_tank/tank = source
 	if(. && tank.reagents?.reagent_list?.len)
@@ -237,18 +253,18 @@
 				GLOB.refined_chems_sold[R.industrial_use]["units"] += FLOOR(R.volume, 1)
 				GLOB.refined_chems_sold[R.industrial_use]["value"] += reagent_value
 
-/datum/element/sellable/salvage //For selling /obj/item/salvage
+/datum/sellable/salvage //For selling /obj/item/salvage
 
-/datum/element/sellable/salvage/calculate_sell_value(obj/source)
+/datum/sellable/salvage/calculate_sell_value(obj/source)
 	var/obj/item/salvage/salvagedStuff = source
 	return salvagedStuff.worth
 
-/datum/element/sellable/organ //For selling /obj/item/organ/internal
-/datum/element/sellable/organ/calculate_sell_value(obj/source)
+/datum/sellable/organ //For selling /obj/item/organ/internal
+/datum/sellable/organ/calculate_sell_value(obj/source)
 	var/obj/item/organ/internal/organ_stuff = source
 	return organ_stuff.supply_conversion_value
 
-/datum/element/sellable/organ/sell_error(obj/source)
+/datum/sellable/organ/sell_error(obj/source)
 	if(!istype(source.loc, /obj/structure/closet/crate/freezer))
 		return "Error: Product was improperly packaged. Send contents in freezer crate to preserve contents for transport."
 	var/obj/item/organ/internal/organ_stuff = source

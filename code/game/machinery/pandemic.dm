@@ -23,7 +23,7 @@
 
 /obj/item/reagent_containers/glass/beaker/vial/vaccine/Initialize(mapload)
 	. = ..()
-	AddElement(/datum/element/sellable/vaccine)
+	make_sellable(/datum/sellable/vaccine)
 
 /obj/machinery/computer/pandemic/Initialize(mapload)
 	. = ..()
