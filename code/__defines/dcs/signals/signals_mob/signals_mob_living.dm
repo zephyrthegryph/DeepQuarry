@@ -41,8 +41,6 @@
 #define COMSIG_LIVING_STATUS_WEAKEN "living_weaken"
 ///before a blindness increase (amount)
 #define COMSIG_LIVING_STATUS_BLIND "living_blind"
-///from /mob/living/proc/stun_effect_act(var/stun_amount, var/agony_amount, var/def_zone, var/used_weapon=null, var/electric = FALSE)
-#define COMSIG_STUN_EFFECT_ACT "stun_effect_act"
 
 ///from the radiation life system
 #define COMSIG_HANDLE_RADIATION "handle_radiation"

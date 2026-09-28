@@ -118,9 +118,11 @@
 		else if(prob(75)) //makeshift weighted dice don't always work
 			result = loaded
 	icon_state = "[name][result]"
-	var/result_override = SEND_SIGNAL(user, COMSIG_MOB_ROLLED_DICE, src, silent, result) //We can override dice rolls!
-	if(result_override)
-		result = result_override
+	if(om_wants(user, /datum/om/event/before/dice_roll)) //We can override dice rolls!
+		var/datum/om/event/before/dice_roll/roll = new(src, silent, result)
+		om_emit(user, roll)
+		if(roll.result_override)
+			result = roll.result_override
 
 	if(!silent)
 		var/comment = ""
@@ -274,23 +276,7 @@
 	if(result == 1)
 		to_chat(user, span_cult("You feel extraordinarily unlucky..."))
 		if(evil)
-			user.AddComponent(
-			/datum/component/omen,\
-			incidents_left = 1,\
-			luck_mod = 1,\
-			damage_mod = 1,\
-			evil = TRUE,\
-			safe_disposals = FALSE,\
-			vorish = TRUE,\
-			)
+			user.add_omen(incidents_left = 1, luck_mod = 1, damage_mod = 1, evil = TRUE, safe_disposals = FALSE, vorish = TRUE)
 
 		else
-			user.AddComponent(
-			/datum/component/omen,\
-			incidents_left = 1,\
-			luck_mod = 0.3,\
-			damage_mod = 1,\
-			evil = FALSE,\
-			safe_disposals = FALSE,\
-			vorish = TRUE,\
-			)
+			user.add_omen(incidents_left = 1, luck_mod = 0.3, damage_mod = 1, evil = FALSE, safe_disposals = FALSE, vorish = TRUE)

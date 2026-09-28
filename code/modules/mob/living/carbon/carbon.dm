@@ -414,7 +414,8 @@ REF_OWNED(/mob/living/carbon, list("ingested", "touching", "cozyloop"))
 	return
 
 /mob/living/carbon/slip(slipped_on,stun_duration=8)
-	SEND_SIGNAL(src, COMSIG_ON_CARBON_SLIP, slipped_on, stun_duration)
+	if(om_wants(src, /datum/om/event/carbon_slip))
+		om_emit(src, new /datum/om/event/carbon_slip(slipped_on, stun_duration))
 	if(src?.buckled_to())
 		return FALSE
 	stop_pulling()
