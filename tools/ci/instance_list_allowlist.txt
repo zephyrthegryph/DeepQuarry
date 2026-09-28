@@ -623,3 +623,4 @@
 /datum/destroy_batch/registry_leaves # one per batched destroy, filled in the teardown pass
 /datum/destroy_batch/effect_turfs # one per batched destroy, filled in the teardown pass
 /datum/destroy_batch/after_effects # one per batched destroy, filled in the teardown pass
+/datum/object_pool/free # one pool per pooled type (a handful per round), always used as the free list

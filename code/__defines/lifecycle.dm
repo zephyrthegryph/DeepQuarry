@@ -70,3 +70,18 @@
 /// REF_VAR for a backlist: LIST_VAR is the owner's list var src sits in.
 #define REF_BACKLIST_VAR(PATH, VARTYPE, NAME, LIST_VAR) ##PATH { var##VARTYPE/##NAME; } REF_BACKLIST(PATH, list(#NAME = LIST_VAR))
 
+// ---- Object pools (code/datums/lifecycle/pool.dm, lifecycle.md §4.1) ----
+/// /datum/var/pool_state values. Null: the datum is not pooled.
+#define POOL_STATE_FREE 1
+#define POOL_STATE_TAKEN 2
+/// Released while poisoning was on: never handed out again, and every
+/// POOL_ASSERT_LIVE on it crashes.
+#define POOL_STATE_POISONED 3
+
+/// Makes PATH a pooled type: take one with pool_take(PATH), give it back with
+/// pool_release(obj) or obj.release(). Pooled objects refuse a normal qdel.
+#define POOL_DECLARE(PATH) ##PATH { is_pooled() { return TRUE; } proc/release() { pool_release(src); } Destroy(force) { if(!force) { pool_refused_qdel(src); return QDEL_HINT_LETMELIVE; } return ..(); } }
+
+/// First line of a pooled type's procs: crashes when the object was released
+/// (poisoned) or is sitting in the pool, catching use after release.
+#define POOL_ASSERT_LIVE(D) if((D).pool_state != POOL_STATE_TAKEN) { pool_use_after_release(D); }

@@ -3,6 +3,7 @@
 # an admin, so no typed setter exists to call. A new gameplay site gets a setter instead.
 vars_write code/datums/datumvars.dm  # VV: admins edit any var by name
 vars_write code/datums/lifecycle/links.dm  # REF_* link plumbing: clears/pairs the declared var named by the link
+vars_write code/datums/lifecycle/pool.dm  # pool_release(): resets the REF_TRANSIENT vars named by the declaration
 vars_write code/datums/om/status.dm  # status rows copied onto a status datum from om_library_effects()
 vars_write code/datums/om/task.dm  # om_task_start() params and task_holds clearing: task state by name
 vars_write code/datums/rules/binding.dm  # rule effects of kind RULE_SET_VAR: the var is named by the rule table
