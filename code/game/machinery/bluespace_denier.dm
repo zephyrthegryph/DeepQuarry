@@ -5,7 +5,7 @@
 	icon_state = "pflash1"
 	layer = ABOVE_WINDOW_LAYER
 	var/range = 4
-	var/last_pulse = 0 //Don't want it getting spammed like regular flashes
+	COOLDOWN_DECLARE(pulse_cooldown) //Don't want it getting spammed like regular flashes
 	var/base_state = "mflash"
 	anchored = FALSE
 	base_state = "pflash"
@@ -44,12 +44,12 @@ EXTEND_INTERACTIONS(/obj/machinery/bluespace_denier, INTERACT_SILICON("Pulse", P
 	if(!(powered()))
 		return
 
-	if((last_pulse && world.time < last_pulse + 150))
+	if(!COOLDOWN_FINISHED(src, pulse_cooldown))
 		return
 
 	playsound(src, 'sound/weapons/flash.ogg', 100, 1)
 	flick("[base_state]_flash", src)
-	last_pulse = world.time
+	COOLDOWN_START(src, pulse_cooldown, 15 SECONDS)
 	use_power(1500)
 
 	for(var/mob/living/O in range(range, src))
@@ -75,7 +75,7 @@ EXTEND_INTERACTIONS(/obj/machinery/bluespace_denier, INTERACT_SILICON("Pulse", P
 		log_runtime("DEBUG: HasProximity called without reference on [src].")
 		return
 
-	if(!anchored || (last_pulse && world.time < last_pulse + 150))
+	if(!anchored || !COOLDOWN_FINISHED(src, pulse_cooldown))
 		return
 
 	if(ishuman(AM))

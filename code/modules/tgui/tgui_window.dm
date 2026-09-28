@@ -620,7 +620,7 @@
 /// Per-window, per-second budget for payloadChunk topics (which bypass the
 /// client Topic rate limiter).
 /datum/tgui_window/proc/accept_payload_chunk()
-	if(world.time >= payload_chunk_window_started_at + 1 SECOND)
+	if(world.time >= payload_chunk_window_started_at + 1 SECOND) // ALLOW(cooldown): rolling payload window start
 		payload_chunk_window_started_at = world.time
 		payload_chunks_this_window = 0
 	if(payload_chunks_this_window >= TGUI_MAX_PAYLOAD_CHUNKS_PER_SECOND)

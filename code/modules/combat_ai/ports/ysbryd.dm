@@ -63,7 +63,7 @@
 	if(threat)
 		// Honor the legacy 1-minute re-acquire gate: don't abandon a live victim
 		// for a new one until the cooldown lapses. Once bound, stay bound.
-		if(Y.chosen_target && Y.chosen_target != threat && world.time < Y.ysbryd_reacquire_after && Y.chosen_target.stat < DEAD)
+		if(Y.chosen_target && Y.chosen_target != threat && world.time < Y.ysbryd_reacquire_after && Y.chosen_target.stat < DEAD) // ALLOW(cooldown): AI reacquire schedule
 			return DQ_BEHAVIOR_DONE
 		if(threat != Y.chosen_target)
 			if(Y.chosen_target)

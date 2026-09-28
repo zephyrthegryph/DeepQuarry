@@ -24,7 +24,7 @@
 				buckled_mob.old_y = 0
 				unbuckle_mob(buckled_mob)
 			else
-				if(world.time <= buckled_mob.last_special+NEST_RESIST_TIME)
+				if(world.time <= buckled_mob.last_special+NEST_RESIST_TIME) // ALLOW(cooldown): shared mob last_special timestamp
 					return
 				buckled_mob.last_special = world.time
 				buckled_mob.visible_message(\

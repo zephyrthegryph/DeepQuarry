@@ -83,7 +83,7 @@
 	if(record && record[LEDGER_E_SLOT] == CONTAINER_SLOT_STOCK)
 		return FALSE
 	var/delay = A.loc.latent_idle_delay
-	if(world.time < A.latent_last_touch + delay)
+	if(world.time < A.latent_last_touch + delay) // ALLOW(cooldown): latency policy deadline tables
 		return FALSE
 	return TRUE
 
@@ -211,7 +211,7 @@ GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 			LAZYADD(dead, holder)
 			continue
 		for(var/atom/movable/A as anything in holder.contents)
-			if(world.time < A.latent_refused_until)
+			if(world.time < A.latent_refused_until) // ALLOW(cooldown): latency policy deadline tables
 				continue
 			var/eligible = FALSE
 			try

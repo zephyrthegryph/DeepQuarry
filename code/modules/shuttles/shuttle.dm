@@ -217,7 +217,7 @@
 			attempt_move(start_location) //try to go back to where we started. If that fails, I guess we're stuck in the interim location
 		long_jump_arrived(start_location, destination)
 		return
-	if(last_progress_sound + 4 SECONDS < world.time)
+	if(last_progress_sound + 4 SECONDS < world.time) // ALLOW(cooldown): timestamp passed through callback args
 		make_sounds(HYPERSPACE_PROGRESS)
 		last_progress_sound = world.time
 

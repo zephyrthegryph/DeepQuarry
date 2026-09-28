@@ -83,7 +83,7 @@
 
 // Proc helper for attachment verb.
 /mob/living/carbon/human/proc/check_can_attach_modular_limb(obj/item/organ/external/E)
-	if(world.time < last_special + (2 SECONDS) || get_active_hand() != E)
+	if(world.time < last_special + (2 SECONDS) || get_active_hand() != E) // ALLOW(cooldown): shared last_special timestamp
 		return FALSE
 	if(incapacitated() || restrained())
 		to_chat(src, span_warning("You can't do that in your current state!"))
@@ -115,7 +115,7 @@
 
 // Proc helper for detachment verb.
 /mob/living/carbon/human/proc/check_can_detach_modular_limb(obj/item/organ/external/E)
-	if(world.time < last_special + (2 SECONDS))
+	if(world.time < last_special + (2 SECONDS)) // ALLOW(cooldown): shared last_special timestamp
 		return FALSE
 	if(incapacitated() || restrained())
 		to_chat(src, span_warning("You can't do that in your current state!"))

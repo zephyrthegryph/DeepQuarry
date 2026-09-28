@@ -160,7 +160,7 @@
 	if(!brain.model || !length(brain.model.visible_friendlies))
 		return null
 	// Only worth rallying once we're actually in a fight (recently swung).
-	if(world.time > brain.last_attack_at + 5 SECONDS)
+	if(world.time > brain.last_attack_at + 5 SECONDS) // ALLOW(cooldown): AI brain attack recency
 		return null
 	return DQAI_RESULT(48, threat)
 

@@ -76,7 +76,7 @@ REF_OWNED(/obj/vehicle, list("riding_datum", "soundloop"))
 	var/turf/newturf = newloc
 	var/zmove = (newturf && z != newturf.z)
 
-	if(!zmove && world.time < l_move_time + move_delay) //This AND the riding datum move speed limit?
+	if(!zmove && world.time < l_move_time + move_delay) //This AND the riding datum move speed limit? // ALLOW(cooldown): l_move_time shared movement timestamp
 		return FALSE
 
 	if(!zmove && mechanical && on && powered && cell.charge < charge_use)

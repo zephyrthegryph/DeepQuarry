@@ -7,7 +7,7 @@
 	actions_types = list(/datum/action/item_action/halt)
 	body_parts_covered = FACE
 	var/hailer_handle
-	var/cooldown = 0
+	COOLDOWN_DECLARE(hail_cooldown)
 	var/phrase = 1
 	var/aggressiveness = 1
 	var/safety = 1
@@ -157,17 +157,17 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/sechailer, \
 	var/key = phrase_list[phrase]
 	var/message = phrase_list[key]
 
-	if(cooldown < world.time - 35) // A cooldown, to stop people being jerks
+	if(COOLDOWN_FINISHED(src, hail_cooldown)) // A cooldown, to stop people being jerks
 		if(!safety)
 			message = "FUCK YOUR CUNT YOU SHIT EATING COCKSUCKER MAN EAT A DONG FUCKING ASS RAMMING SHIT FUCK EAT PENISES IN YOUR FUCK FACE AND SHIT OUT ABORTIONS OF FUCK AND DO SHIT IN YOUR ASS YOU COCK FUCK SHIT MONKEY FUCK ASS WANKER FROM THE DEPTHS OF SHIT."
 			user.visible_message(span_infoplain("[user]'s Compli-o-Nator: " + span_red(span_huge(span_bold("[message]")))))
 			playsound(src, 'sound/voice/binsult.ogg', 50, 0, 4) //Future sound channel = something like SFX
-			cooldown = world.time
+			COOLDOWN_START(src, hail_cooldown, 3.5 SECONDS)
 			return
 
 		user.visible_message(span_infoplain("[user]'s Compli-o-Nator: " + span_red(span_huge(span_bold("[message]")))))
 		playsound(src, "sound/voice/complionator/[key].ogg", 50, 0, 4) //future sound channel = something like SFX
-		cooldown = world.time
+		COOLDOWN_START(src, hail_cooldown, 3.5 SECONDS)
 
 
 /obj/item/clothing/mask/gas/sechailer/swat/officer //Just a little nicer to begin with. Can always up the anger with a screwdriver!

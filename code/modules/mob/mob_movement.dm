@@ -2,7 +2,7 @@
 	next_move = max(world.time + timeout, next_move)
 
 /mob/proc/checkMoveCooldown()
-	if(world.time < next_move)
+	if(world.time < next_move) // ALLOW(cooldown): next_move click-delay scheduler
 		return FALSE // Need to wait more.
 	return TRUE
 

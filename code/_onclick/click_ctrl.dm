@@ -30,7 +30,7 @@
 	SHOULD_NOT_OVERRIDE(TRUE)
 
 	. = ..()
-	if(. || world.time < next_move) // || !can_perform_action(target, NOT_INSIDE_TARGET | SILENT_ADJACENCY | ALLOW_RESTING | FORBID_TELEKINESIS_REACH))
+	if(. || world.time < next_move) // || !can_perform_action(target, NOT_INSIDE_TARGET | SILENT_ADJACENCY | ALLOW_RESTING | FORBID_TELEKINESIS_REACH)) // ALLOW(cooldown): core next_move action delay
 		return
 
 	. = TRUE

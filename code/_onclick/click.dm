@@ -14,7 +14,7 @@
 	next_click = max(world.time + timeout, next_click)
 
 /mob/proc/checkClickCooldown()
-	if(next_click > world.time && !CONFIG_GET(flag/no_click_cooldown))
+	if(next_click > world.time && !CONFIG_GET(flag/no_click_cooldown)) // ALLOW(cooldown): core click-delay next_click deadline
 		return FALSE
 	return TRUE
 

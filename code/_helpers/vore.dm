@@ -77,6 +77,6 @@
 		return FALSE
 	if(!pred.is_slipping && !prey.is_slipping)
 		return FALSE
-	if(world.time <= prey.slip_protect)
+	if(world.time <= prey.slip_protect) // ALLOW(cooldown): protection deadline set by other systems
 		return FALSE
 	return TRUE

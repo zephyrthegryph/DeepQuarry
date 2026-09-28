@@ -379,7 +379,7 @@ REF_OWNED(/obj/item/paicard, list("radio", "multitool", "signaler", "screen_laye
 /obj/item/paicard/proc/alertUpdate()
 	if(pai)
 		return
-	if(last_notify == 0 || (5 MINUTES <= world.time - last_notify))
+	if(last_notify == 0 || (5 MINUTES <= world.time - last_notify)) // ALLOW(cooldown): last_notify also used as never-notified sentinel
 		audible_message(span_notice("\The [src] flashes a message across its screen, \"Additional personalities available for download.\""), hearing_distance = world.view, runemessage = "bleeps!")
 		last_notify = world.time
 /*

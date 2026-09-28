@@ -2225,7 +2225,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/minigibber, \
 		playsound(src, 'sound/effects/splat.ogg', 50, 1)
 		QDEL_NULL(stored_minature)
 		cooldown = world.time
-	if(cooldown < world.time - 8)
+	if(cooldown < world.time - 8) // ALLOW(cooldown): tiny spam gate with a gib-reset timestamp
 		to_chat(user, span_notice("You hit the gib button on \the [src]."))
 
 		cooldown = world.time

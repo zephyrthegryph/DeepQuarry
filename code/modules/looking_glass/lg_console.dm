@@ -130,8 +130,8 @@
 	my_area()?.end_program()
 
 /obj/machinery/computer/looking_glass/proc/toggle_gravity(area/A)
-	if(world.time < (last_gravity_change + 3 SECONDS))
-		if(world.time < (last_gravity_change + 1 SECOND))
+	if(world.time < (last_gravity_change + 3 SECONDS)) // ALLOW(cooldown): two-tier spam throttle
+		if(world.time < (last_gravity_change + 1 SECOND)) // ALLOW(cooldown): two-tier spam throttle
 			return
 		visible_message(span_warning("ERROR. Recalibrating gravity field."))
 		return

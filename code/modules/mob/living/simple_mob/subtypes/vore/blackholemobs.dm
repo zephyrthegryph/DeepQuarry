@@ -658,7 +658,7 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 	..()
 	if(!ctx.fact("alive"))
 		return
-	if(world.time > self.last_lifechecks + 15 SECONDS)
+	if(world.time > self.last_lifechecks + 15 SECONDS) // ALLOW(cooldown): periodic AI life-check interval
 		self.last_lifechecks = world.time
 		self.handle_hungry()
 

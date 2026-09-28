@@ -48,7 +48,7 @@
 
 /obj/item/gun/energy/periodic_step()
 	if(self_recharge) //Every [recharge_time] ticks, recharge a shot for the battery
-		if(world.time > last_shot + charge_delay)	//Doesn't work if you've fired recently
+		if(world.time > last_shot + charge_delay)	//Doesn't work if you've fired recently // ALLOW(cooldown): last_shot shared timestamp for recharge
 			if(!power_supply || power_supply.charge >= power_supply.maxcharge)
 				return PROCESS_KILL
 

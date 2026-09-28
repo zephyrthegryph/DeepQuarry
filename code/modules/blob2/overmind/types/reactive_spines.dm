@@ -37,7 +37,7 @@
 
 	var/atom/movable/A = extra_data[1]
 
-	if(isliving(A) && world.time > (B.last_passive_use + B.passive_ability_cooldown) && B.should_tick)
+	if(isliving(A) && world.time > (B.last_passive_use + B.passive_ability_cooldown) && B.should_tick) // ALLOW(cooldown): reads core chunk shared timestamp
 		B.last_passive_use = world.time
 		var/mob/living/L = A
 

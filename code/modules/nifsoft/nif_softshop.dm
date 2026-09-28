@@ -141,7 +141,7 @@ REF_OWNED(/obj/machinery/vending/nifsoft_shop, "entopic")
 			coin = null
 			categories &= ~CAT_COIN
 
-	if(((last_reply + (vend_delay + 200)) <= world.time) && vend_reply)
+	if(((last_reply + (vend_delay + 200)) <= world.time) && vend_reply) // ALLOW(cooldown): vend reply delay derived from vend_delay
 		speak(vend_reply)
 		last_reply = world.time
 

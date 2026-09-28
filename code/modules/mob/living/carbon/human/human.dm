@@ -16,7 +16,8 @@
 
 	var/embedded_flag					//To check if we've need to roll for damage on movement while an item is imbedded in us.
 	var/obj/item/rig/wearing_rig // This is very not good, but it's much much better than calling get_rig() every update_canmove() call.
-	var/last_push_time					//For human_attackhand.dm, keeps track of the last use of disarm
+	COOLDOWN_DECLARE(push_lying_cooldown) //For human_attackhand.dm: lying-struggle antispam
+	COOLDOWN_DECLARE(disarm_cooldown) //For human_attackhand.dm: repeat-disarm window
 
 	var/spitting = 0 					//Spitting and spitting related things. Any human based ranged attacks, be it innate or added abilities.
 	var/spit_projectile = null			//Projectile type.

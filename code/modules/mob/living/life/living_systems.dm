@@ -331,7 +331,7 @@
 	if(!pref)
 		return
 
-	if(world.time >= (self.lastareachange + pref MINUTES)) // Every 5 minutes (by default, set per-client), we're going to run a 35% chance (by default, also set per-client) to play ambience.
+	if(world.time >= (self.lastareachange + pref MINUTES)) // Every 5 minutes (by default, set per-client), we're going to run a 35% chance (by default, also set per-client) to play ambience. // ALLOW(cooldown): ambience interval with per-client pref
 		var/area/A = get_area(self)
 		if(A)
 			self.lastareachange = world.time // This will refresh the last area change to prevent this call happening LITERALLY every life tick.

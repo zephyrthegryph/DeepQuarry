@@ -26,7 +26,7 @@
 
 /obj/item/deck/tarot/shuffle()
 	var/mob/living/user = usr
-	if (cooldown < world.time - 10)
+	if (COOLDOWN_FINISHED(src, shuffle_cooldown))
 		var/list/newcards = list()
 		while(cards.len)
 			var/datum/playingcard/P = pick(cards)
@@ -38,7 +38,7 @@
 		cards = newcards
 		playsound(src, 'sound/items/cardshuffle.ogg', 50, 1)
 		user.visible_message("\The [user] shuffles [src].")
-		cooldown = world.time
+		COOLDOWN_START(src, shuffle_cooldown, 1 SECOND)
 	else
 		return
 
@@ -81,7 +81,7 @@
 			cards += P
 
 /obj/item/deck/dark_tarot/shuffle(mob/user)
-	if (cooldown < world.time - 10)
+	if (COOLDOWN_FINISHED(src, shuffle_cooldown))
 		var/list/newcards = list()
 		while(cards.len)
 			var/datum/playingcard/P = pick(cards)
@@ -93,6 +93,6 @@
 		cards = newcards
 		playsound(src, 'sound/items/cardshuffle.ogg', 50, 1)
 		user.visible_message("\The [user] shuffles [src].")
-		cooldown = world.time
+		COOLDOWN_START(src, shuffle_cooldown, 1 SECOND)
 	else
 		return

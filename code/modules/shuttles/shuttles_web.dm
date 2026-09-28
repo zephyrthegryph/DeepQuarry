@@ -356,7 +356,7 @@ REF_OWNED(/datum/shuttle/autodock/web_shuttle, "web_master")
 				to_chat(ui.user, span_warning("The autopilot must be disabled before you can control the vessel manually."))
 				return
 
-			if((WS.last_move + WS.cooldown) > world.time)
+			if((WS.last_move + WS.cooldown) > world.time) // ALLOW(cooldown): last_move shared timestamp with per-shuttle cooldown
 				to_chat(ui.user, span_red("The ship's drive is inoperable while the engines are charging."))
 				return
 

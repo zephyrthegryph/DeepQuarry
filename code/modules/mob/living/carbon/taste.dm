@@ -1,5 +1,5 @@
 /mob/living/carbon/proc/ingest(datum/reagents/from, datum/reagents/target, amount = 1, multiplier = 1, copy = 0) //we kind of 'sneak' a proc in here for ingesting stuff so we can play with it.
-	if(last_taste_time + 50 < world.time)
+	if(COOLDOWN_FINISHED(src, taste_cooldown))
 		var/datum/reagents/temp = new(amount) //temporary holder used to analyse what gets transfered.
 		from.trans_to_holder(temp, amount, multiplier, 1)
 
@@ -7,11 +7,12 @@
 		if(accumulated_rads >= 100) //If you're irradiated, you can't taste!
 			text_output = "nothing"
 
-		if(text_output != last_taste_text || last_taste_time + 100 < world.time) //We dont want to spam the same message over and over again at the person. Give it a bit of a buffer.
+		if(text_output != last_taste_text || COOLDOWN_FINISHED(src, taste_repeat_cooldown)) //We dont want to spam the same message over and over again at the person. Give it a bit of a buffer.
 			to_chat(src, span_notice("You can taste [text_output].")) //no taste means there are too many tastes and not enough flavor.
 			balloon_alert(src, "you taste [text_output]...")
 
-			last_taste_time = world.time
+			COOLDOWN_START(src, taste_cooldown, 5 SECONDS)
+			COOLDOWN_START(src, taste_repeat_cooldown, 10 SECONDS)
 			last_taste_text = text_output
 	return from.trans_to_holder(target,amount,multiplier,copy) //complete transfer
 

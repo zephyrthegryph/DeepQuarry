@@ -59,7 +59,7 @@
 	. = ..()
 	if(!.)
 		// Give up if nobody was reachable for five minutes.
-		if(last_spam_time + give_up_after < world.time)
+		if(last_spam_time + give_up_after < world.time) // ALLOW(cooldown): event give-up timeout
 			log_game("PDA Spam event giving up after not being able to spam for awhile.")
 			return TRUE
 

@@ -169,10 +169,11 @@
 		get_equipped_item(SLOT_ID_UNIFORM).add_fingerprint(M)
 
 	if(M.lying && (M.loc == src.loc)) //If we are on the ground and they're on top of us, we don't have enough space to push them! Also antispam.
-		if(world.time <= (last_push_time + 6 SECONDS))
+		if(!COOLDOWN_FINISHED(src, push_lying_cooldown))
 			return
 		visible_message(span_warning("[M] struggles under [src]!"))
-		last_push_time = world.time
+		COOLDOWN_START(src, push_lying_cooldown, 6 SECONDS)
+		COOLDOWN_START(src, disarm_cooldown, 3 SECONDS)
 		return
 
 	add_attack_logs(H,src,"Disarmed")
@@ -192,7 +193,7 @@
 				visible_message(span_danger("[src]'s [W] goes off during the struggle!"))
 				return W.afterattack(target,src)
 
-	if(last_push_time + 30 > world.time) //The fact that we're repeatedly doing it doesn't lessen the severity of the action! Send it full blast!
+	if(COOLDOWN_TIMELEFT(src, disarm_cooldown)) //The fact that we're repeatedly doing it doesn't lessen the severity of the action! Send it full blast!
 		if(M.lying)
 			visible_message(span_filter_combat("[span_red(span_bold("[M] attempted to sweep [src] to the floor!"))]"))
 		else
@@ -200,7 +201,8 @@
 		return
 
 	var/randn = rand(1, 100)
-	last_push_time = world.time
+	COOLDOWN_START(src, push_lying_cooldown, 6 SECONDS)
+	COOLDOWN_START(src, disarm_cooldown, 3 SECONDS)
 	// We ARE wearing shoes OR
 	// We as a species CAN be slipped when barefoot
 	// And also 1 in 4 because rngesus

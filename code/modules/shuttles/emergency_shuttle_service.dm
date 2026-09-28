@@ -45,9 +45,9 @@ GLOBAL_DATUM_INIT(emergency_shuttle_service, /datum/world_service/emergency_shut
 		if(!wait_for_launch)
 			return TRUE
 
-		if(evac && auto_recall && world.time >= auto_recall_time)
+		if(evac && auto_recall && world.time >= auto_recall_time) // ALLOW(cooldown): scheduled recall time in service
 			recall()
-		if(world.time >= launch_time)	//time to launch the shuttle
+		if(world.time >= launch_time)	//time to launch the shuttle // ALLOW(cooldown): scheduled launch time in service
 			stop_launch_countdown()
 
 			if(!shuttle.location)	//leaving from the station

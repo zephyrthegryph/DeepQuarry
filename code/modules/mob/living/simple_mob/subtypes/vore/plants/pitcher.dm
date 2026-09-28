@@ -140,7 +140,7 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 		self.mend(TREAT_ANTITOXIN, digested * 3)
 	if(self.nutrition < self.pitcher_metabolism) // Starving.
 		self.injure(INJURY_TOXIN, self.pitcher_metabolism, flags = INJURE_SILENT)
-	if(world.time > self.last_lifechecks + 30 SECONDS)
+	if(world.time > self.last_lifechecks + 30 SECONDS) // ALLOW(cooldown): periodic AI life-check interval
 		self.last_lifechecks = world.time
 		self.vore_checks()
 		self.handle_hungry()

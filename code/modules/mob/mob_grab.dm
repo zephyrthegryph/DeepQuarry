@@ -236,7 +236,7 @@ DECLARE_INTERACTIONS(/obj/item/grab, INTERACT_USE("Tighten grip", PROC_REF(inter
 		return
 	if(state == GRAB_UPGRADING)
 		return
-	if(world.time < (last_action + UPGRADE_COOLDOWN))
+	if(world.time < (last_action + UPGRADE_COOLDOWN)) // ALLOW(cooldown): last_action shared grab state timestamp
 		return
 	if(!assailant.canmove || assailant.lying)
 		qdel(src)
@@ -304,7 +304,7 @@ DECLARE_INTERACTIONS(/obj/item/grab, INTERACT_USE("Tighten grip", PROC_REF(inter
 	var/mob/living/affecting = src?.grab_target()
 	if(!affecting)
 		return ITEM_INTERACT_FAILURE
-	if(world.time < (last_action + 20))
+	if(world.time < (last_action + 20)) // ALLOW(cooldown): last_action shared grab state timestamp
 		return ITEM_INTERACT_FAILURE
 
 	last_action = world.time

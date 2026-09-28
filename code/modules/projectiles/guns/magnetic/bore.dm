@@ -277,7 +277,7 @@ REF_OWNED(/obj/item/gun/magnetic/matfed/phoronbore, "soundloop")
 		generator_state = GEN_STARTING
 		pull_cord(user, (!cell || cell.charge < 100) ? rand(1,4) : 0)
 
-	else if(generator_state > GEN_OFF && time_started + 3 SECONDS < world.time)
+	else if(generator_state > GEN_OFF && time_started + 3 SECONDS < world.time) // ALLOW(cooldown): generator spin-up elapsed time
 		soundloop.stop()
 		audible_message(span_notice("\The [src] goes quiet."),span_notice("A motor noise cuts out."), runemessage = "goes quiet")
 		generator_state = GEN_OFF

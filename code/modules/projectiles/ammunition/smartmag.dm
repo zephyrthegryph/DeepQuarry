@@ -39,9 +39,9 @@
 		if(stored_ammo.len == max_ammo)
 			last_production_time = world.time	// Otherwise the max_ammo var is basically always off by 1
 			return
-		if(holding_gun() && world.time < holding_gun().last_shot + production_delay)	// Same as recharging energy weapons.
+		if(holding_gun() && world.time < holding_gun().last_shot + production_delay)	// Same as recharging energy weapons. // ALLOW(cooldown): reads gun last_shot shared timestamp
 			return
-		if(world.time > last_production_time + production_time)
+		if(world.time > last_production_time + production_time) // ALLOW(cooldown): production progress timer
 			last_production_time = world.time
 			produce()
 

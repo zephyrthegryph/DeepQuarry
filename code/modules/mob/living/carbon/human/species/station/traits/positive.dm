@@ -682,14 +682,14 @@
 	cost = 6
 	special_env = TRUE
 	can_take = ORGANICS
-	var/last_adrenaline_rush
+	COOLDOWN_DECLARE(adrenaline_rush_cooldown)
 
 /datum/trait/positive/adrenaline_rush/environment_effects(mob/living/carbon/human/H)
 	if(!(H.is_critical() || H.vitality() <= 0.5)) // Critically hurt
 		return
-	if(last_adrenaline_rush && last_adrenaline_rush + (30 MINUTES) > world.time)
+	if(COOLDOWN_TIMELEFT(src, adrenaline_rush_cooldown))
 		return
-	last_adrenaline_rush = world.time
+	COOLDOWN_START(src, adrenaline_rush_cooldown, 30 MINUTES)
 	log_and_message_admins("[H]'s adrenaline rush trait just activated!", H)
 	H.apply_body_effect(/datum/body_effect/adrenaline, 30 SECONDS)
 

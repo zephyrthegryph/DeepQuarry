@@ -164,7 +164,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/artifact_blade, INTERACT_USE(null, PROC_REF
 
 /// Old attack_self.
 /obj/item/melee/artifact_blade/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(last_special > world.time - 12 SECONDS)
+	if(last_special > world.time - 12 SECONDS) // ALLOW(cooldown): admin-settable last_special lockout
 		to_chat(user, span_cult("The blade does not respond to your attempts, having recently performed an action!"))
 		return TRUE
 	last_special = world.time

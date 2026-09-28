@@ -100,7 +100,7 @@
 	var/alarms_hidden = FALSE       // if TRUE, power alarms from this APC are hidden on consoles
 	var/nightshift_lights = FALSE
 	var/nightshift_setting = NIGHTSHIFT_AUTO
-	var/last_nightshift_switch = 0
+	COOLDOWN_DECLARE(nightshift_switch_cooldown)
 
 	// ── delegate datums ──────────────────────────────────────────────────────
 	/// The power alarm is raised (as Rust last reported).
@@ -972,7 +972,7 @@ REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 		if("breaker")
 			toggle_breaker()
 		if("nightshift")
-			if(last_nightshift_switch > world.time - 1 SECOND)
+			if(!COOLDOWN_FINISHED(src, nightshift_switch_cooldown))
 				to_chat(ui.user, span_warning("[src]'s night lighting circuit breaker is still cycling!"))
 				return 0
 			var/requested_nightshift = text2num("[params["nightshift"]]")
@@ -980,7 +980,7 @@ REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 				return 0
 			if(requested_nightshift == nightshift_setting)
 				return 0
-			last_nightshift_switch = world.time
+			COOLDOWN_START(src, nightshift_switch_cooldown, 1 SECOND)
 			nightshift_setting = requested_nightshift
 			update_nightshift()
 		if("charge")

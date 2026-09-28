@@ -287,8 +287,8 @@
 		return
 
 	if(check_delay)
-		if(world.time < (last_change + 25))
-			if(world.time < (last_change + 15))//To prevent super-spam clicking, reduced process size and annoyance -Sieve
+		if(world.time < (last_change + 25)) // ALLOW(cooldown): two-tier spam throttle on shared timestamp
+			if(world.time < (last_change + 15))//To prevent super-spam clicking, reduced process size and annoyance -Sieve // ALLOW(cooldown): two-tier spam throttle on shared timestamp
 				return 0
 			for(var/mob/M in range(3,src))
 				M.show_message(span_warningplain(span_bold("ERROR. Recalibrating projection apparatus.")))
@@ -350,8 +350,8 @@
 	return 1
 
 /obj/machinery/computer/HolodeckControl/proc/toggleGravity(area/A)
-	if(world.time < (last_gravity_change + 25))
-		if(world.time < (last_gravity_change + 15))//To prevent super-spam clicking
+	if(world.time < (last_gravity_change + 25)) // ALLOW(cooldown): two-tier spam throttle on shared timestamp
+		if(world.time < (last_gravity_change + 15))//To prevent super-spam clicking // ALLOW(cooldown): two-tier spam throttle on shared timestamp
 			return
 		for(var/mob/M in range(3,src))
 			M.show_message(span_warningplain(span_bold("ERROR. Recalibrating gravity field.")))

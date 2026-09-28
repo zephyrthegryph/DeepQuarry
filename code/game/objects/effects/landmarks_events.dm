@@ -109,7 +109,7 @@ Admin verb is called by code\modules\admin\verbs\event_triggers.dm
 	var/mob/living/L = AM
 	if(!L.ckey) return FALSE
 
-	if(world.time < (last_trigger + cooldown))
+	if(world.time < (last_trigger + cooldown)) // ALLOW(cooldown): admin-configured cooldown, last_trigger also used as fired flag
 		return FALSE
 	if(!isRepeating && last_trigger) //Used to avoid spam if qdel(src) fires too slowly
 		return FALSE

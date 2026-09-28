@@ -82,7 +82,7 @@ DECLARE_INTERACTIONS(/obj/item/blobcore_chunk, \
 
 /// Old attack_self.
 /obj/item/blobcore_chunk/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(blob_type && world.time > active_ability_cooldown + last_active_use)
+	if(blob_type && world.time > active_ability_cooldown + last_active_use) // ALLOW(cooldown): per-blob-type variable ability durations on shared timestamps
 		last_active_use = world.time
 		to_chat(user, span_alien("[icon2html(src, user.client)] \The [src] gesticulates."))
 		blob_type.on_chunk_use(src, user)
@@ -91,7 +91,7 @@ DECLARE_INTERACTIONS(/obj/item/blobcore_chunk, \
 	return TRUE
 
 /obj/item/blobcore_chunk/periodic_step()
-	if(blob_type && should_tick && world.time > passive_ability_cooldown + last_passive_use)
+	if(blob_type && should_tick && world.time > passive_ability_cooldown + last_passive_use) // ALLOW(cooldown): per-blob-type variable ability durations on shared timestamps
 		last_passive_use = world.time
 		blob_type.on_chunk_tick(src)
 

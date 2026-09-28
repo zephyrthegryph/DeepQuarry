@@ -159,7 +159,7 @@
 	var/injury_enrages = FALSE			// Do injuries enrage (aka strengthen) our mob? If yes, we'll interpret how hurt we are differently.
 
 	var/has_recoloured = FALSE
-	var/hunting_cooldown = 0
+	COOLDOWN_DECLARE(hunting_cooldown)
 	var/hasthermals = TRUE
 	var/isthermal = 0
 
@@ -424,12 +424,12 @@ REF_OWNED(/mob/living/simple_mob, list("myid", "mob_radio"))
 	set category = "Abilities.Mob"
 	set desc = "Uses you natural predatory instincts to seek out prey even through walls, or your natural survival instincts to spot predators from a distance."
 
-	if(hunting_cooldown + 5 MINUTES < world.time)
+	if(COOLDOWN_FINISHED(src, hunting_cooldown))
 		to_chat(src, "You can sense other creatures by focusing carefully on your surroundings.")
 		sight |= SEE_MOBS
-		hunting_cooldown = world.time
+		COOLDOWN_START(src, hunting_cooldown, 5 MINUTES)
 		om_after(src, 1 MINUTE, PROC_REF(hunting_vision_ends))
-	else if(hunting_cooldown + 5 MINUTES > world.time)
+	else if(COOLDOWN_TIMELEFT(src, hunting_cooldown))
 		to_chat(src, "You must wait for a while before using this again.")
 
 /mob/living/simple_mob/proc/hunting_vision_plus()

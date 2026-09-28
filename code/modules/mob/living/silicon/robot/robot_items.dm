@@ -467,10 +467,10 @@ DECLARE_INTERACTIONS(/obj/item/borg/combat/shield, \
 	if(active && !flash_count)
 		return PROCESS_KILL
 	if(active)
-		if(flash_count && (last_flash + shield_refresh < world.time))
+		if(flash_count && (last_flash + shield_refresh < world.time)) // ALLOW(cooldown): shield refresh timers
 			flash_count = 0
 			last_flash = 0
-	else if(overload_time + shield_refresh < world.time)
+	else if(overload_time + shield_refresh < world.time) // ALLOW(cooldown): shield refresh timers
 		active = 1
 		flash_count = 0
 		overload_time = 0

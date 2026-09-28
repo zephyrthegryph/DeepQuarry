@@ -646,7 +646,7 @@ REF_OWNED_LIST(/obj/machinery/vending, "product_records")
 			coin = null
 			categories &= ~CAT_COIN
 
-	if(((last_reply + (vend_delay + 200)) <= world.time) && vend_reply)
+	if(((last_reply + (vend_delay + 200)) <= world.time) && vend_reply) // ALLOW(cooldown): shared reply timestamp
 		speak(vend_reply)
 		last_reply = world.time
 

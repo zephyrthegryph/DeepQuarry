@@ -469,7 +469,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 				return INTERACTION_HANDLED_PASS
 
 			var/obj/item/pickaxe/P = W
-			if(last_act + P.digspeed > world.time)//prevents message spam
+			if(last_act + P.digspeed > world.time)//prevents message spam // ALLOW(cooldown): dig timing uses tool speed
 				return INTERACTION_HANDLED_PASS
 			last_act = world.time
 

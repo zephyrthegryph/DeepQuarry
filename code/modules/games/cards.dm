@@ -8,7 +8,7 @@
 	icon = 'icons/obj/playing_cards.dmi'
 	description_info = "Alt click to shuffle, Ctrl click to deal, Ctrl+Shift click to deal multiple."
 	var/list/cards = list() // ALLOW(instance_list): d: a deck always holds cards
-	var/cooldown = 0 // to prevent spam shuffle
+	COOLDOWN_DECLARE(shuffle_cooldown) // to prevent spam shuffle
 
 /obj/item/deck/holder
 	name = "card box"
@@ -314,7 +314,7 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 	shuffle(user)
 
 /obj/item/deck/proc/shuffle(mob/user)
-	if (cooldown < world.time - 10) // 15 ticks cooldown
+	if (COOLDOWN_FINISHED(src, shuffle_cooldown))
 		var/list/newcards = list()
 		while(cards.len)
 			var/datum/playingcard/P = pick(cards)
@@ -323,7 +323,7 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 		cards = newcards
 		user.visible_message(span_notice("\The [user] shuffles [src]."))
 		playsound(src, 'sound/items/cardshuffle.ogg', 50, 1)
-		cooldown = world.time
+		COOLDOWN_START(src, shuffle_cooldown, 1 SECOND)
 	else
 		return
 

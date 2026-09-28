@@ -31,7 +31,7 @@
 		return
 	if(isliving(M))
 		var/area/A = src.loc.loc
-		if(last_trigger > world.time - cooldown)
+		if(last_trigger > world.time - cooldown) // ALLOW(cooldown): timestamp shared across scanners and alarm lifetimes
 			return
 		for(var/obj/O in contents_of(M))
 			if(is_type_in_list(O,contraband))
@@ -40,7 +40,7 @@
 				for(var/obj/O2 in contents_of(O))	//one layer deep is fine for now I think
 					if(is_type_in_list(O2,contraband))
 						contraband_count++
-		if(contraband_count && last_trigger < world.time - cooldown)
+		if(contraband_count && last_trigger < world.time - cooldown) // ALLOW(cooldown): timestamp shared across scanners and alarm lifetimes
 			visible_message(span_danger(trigger_message))
 			playsound(src, trigger_sound, 25, 0, 4, volume_channel = VOLUME_CHANNEL_ALARMS)
 			for(var/obj/machinery/contraband_scanner/CS in area_contents_of_type(A, /obj/machinery/contraband_scanner))

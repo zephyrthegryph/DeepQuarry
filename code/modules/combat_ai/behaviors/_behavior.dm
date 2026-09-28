@@ -136,7 +136,7 @@ GLOBAL_LIST_EMPTY(dq_behaviors)
 
 /// True if the behavior's cooldown (per-source if item-granted) has expired.
 /datum/ai_behavior/proc/is_off_cooldown(datum/ai_brain/brain, atom/source)
-	return brain.cooldown_until(type, source) <= world.time
+	return brain.cooldown_until(type, source) <= world.time // ALLOW(cooldown): AI scheduling cooldown table
 
 /// Override to limit a behavior to a specific mob shape. Cheaper than checking
 /// in evaluate() because the brain caches eligibility once per slow tick.

@@ -171,7 +171,7 @@
 	data["preset_long"] = PRESET_LONG
 	for(var/obj/machinery/flasher/F in targets)
 		data["flash_found"] = TRUE
-		if(F.last_flash && (F.last_flash + 150) > world.time)
+		if(!COOLDOWN_FINISHED(F, flash_cooldown))
 			data["flash_charging"] = TRUE
 			break
 	return data

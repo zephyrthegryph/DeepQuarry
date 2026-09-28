@@ -20,12 +20,12 @@
 	icon = "smile-o"
 	category = "Clown"
 
-	var/last_honk //Also no honk spamming that's bad too
+	COOLDOWN_DECLARE(honk_cooldown) //Also no honk spamming that's bad too
 
 /datum/data/pda/utility/honk/start()
-	if(!(last_honk && world.time < last_honk + 20))
+	if(COOLDOWN_FINISHED(src, honk_cooldown))
 		playsound(pda().loc, 'sound/items/bikehorn.ogg', 50, 1)
-		last_honk = world.time
+		COOLDOWN_START(src, honk_cooldown, 2 SECONDS)
 
 /datum/data/pda/utility/toggle_door
 	name = "Toggle Door"

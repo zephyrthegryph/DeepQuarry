@@ -447,7 +447,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	if(bellied)
 		return
 
-	if(state.armor_deployed && ((state.armor_deployed_time + armor_duration) < world.time)) //Time ran out.
+	if(state.armor_deployed && ((state.armor_deployed_time + armor_duration) < world.time)) //Time ran out. // ALLOW(cooldown): duration timers on state datum
 
 		//Are we still in panic mode?
 		if(unfortunate_soul.has_status(EFFECT_STUNNED) || unfortunate_soul.has_status(EFFECT_WEAKENED) || unfortunate_soul.has_status(EFFECT_PARALYZED) || (unfortunate_soul.vitality() < 0.75))
@@ -497,7 +497,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 
 	//Cooldown?
 
-	if(state.armor_deployed && (state.armor_deployed_time + (armor_duration * 2)) < world.time) //Takes longer for armor to undeploy when dead.
+	if(state.armor_deployed && (state.armor_deployed_time + (armor_duration * 2)) < world.time) //Takes longer for armor to undeploy when dead. // ALLOW(cooldown): duration timers on state datum
 		exit_battle_stance(unfortunate_soul, state)
 
 	if(!COOLDOWN_FINISHED(state, heal_tick_cooldown_until))
@@ -554,7 +554,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	COOLDOWN_START(state, heal_tick_cooldown_until, heal_tick_cooldown)
 
 	//Big checks to see if there's a reason we CAN'T revive.
-	if(state.time_since_revival + revival_cooldown > world.time) //On cooldown.
+	if(state.time_since_revival + revival_cooldown > world.time) //On cooldown. // ALLOW(cooldown): duration timers on state datum
 		return
 	if(lethal_blood) //Blood volume is low enough we'd immediately die upon revival.
 		return

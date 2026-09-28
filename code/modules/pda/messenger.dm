@@ -7,7 +7,7 @@
 
 	var/toff = 0 //If 1, messenger disabled
 	var/list/tnote  //Current Texts
-	var/last_text //No text spamming
+	COOLDOWN_DECLARE(text_cooldown) //No text spamming
 
 	var/m_hidden = 0 // Is the PDA hidden from the PDA list?
 	var/active_conversation = null // New variable that allows us to only view a single conversation.
@@ -140,13 +140,13 @@
 	if(!PM || PM.toff || toff)
 		return
 
-	if(last_text && world.time < last_text + 5)
+	if(!COOLDOWN_FINISHED(src, text_cooldown))
 		return
 
 	if(!pda().can_use(U))
 		return
 
-	last_text = world.time
+	COOLDOWN_START(src, text_cooldown, 0.5 SECONDS)
 	// check if telecomms I/O route 1459 is stable
 	//var/telecomms_intact = telecomms_process(P.owner, owner, t)
 	var/obj/machinery/message_server/useMS = null

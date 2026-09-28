@@ -102,7 +102,7 @@
 	radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency))
 
 /obj/item/radio/integrated/signal/proc/send_signal(message="ACTIVATE")
-	if(last_transmission && world.time < (last_transmission + 5))
+	if(last_transmission && world.time < (last_transmission + 5)) // ALLOW(cooldown): last_transmission var owned by radio type
 		return
 	last_transmission = world.time
 

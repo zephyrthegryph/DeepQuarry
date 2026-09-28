@@ -292,7 +292,7 @@ DECLARE_INTERACTIONS(/obj/structure/glamour_ring, INTERACT_HAND_UNGATED(null, PR
 		return
 
 	if(m_action == "Restore Energy")
-		if(LL.ring_cooldown + 10 MINUTES > world.time)
+		if(LL.ring_cooldown + 10 MINUTES > world.time) // ALLOW(cooldown): ring_cooldown is never written; converting would change behaviour
 			to_chat(M, span_warning("You must wait a while before drawing energy from the glamour again."))
 			return
 		om_task_start(/datum/om/task/timed/glamour_ring_attack_hand_glamour_ring, M, src, receiver = src, LL = LL)

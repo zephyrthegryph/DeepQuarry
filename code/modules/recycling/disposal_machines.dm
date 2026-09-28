@@ -644,7 +644,7 @@
 
 /obj/machinery/disposal/proc/flush_startup()
 	PROTECTED_PROC(TRUE)
-	if(last_sound < world.time + 1)
+	if(last_sound < world.time + 1) // ALLOW(cooldown): always-true legacy guard, not a rate limit
 		playsound(src, 'sound/machines/disposalflush.ogg', 50, 0, 0)
 		last_sound = world.time
 	om_after(src, 0.5 SECONDS, PROC_REF(flush_complete)) // wait for animation to finish

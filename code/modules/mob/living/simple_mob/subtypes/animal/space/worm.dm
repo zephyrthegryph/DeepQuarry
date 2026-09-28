@@ -126,7 +126,7 @@
 	set desc = "Extends your teeth for 30 seconds so that you can chew through mobs and structures alike."
 	set category = "Abilities.Worm"
 
-	if(world.time < time_maw_opened + maw_cooldown)
+	if(world.time < time_maw_opened + maw_cooldown) // ALLOW(cooldown): maw open timestamp also drives auto-stop
 		if(open_maw)
 			to_chat(src, span_notice("You retract your teeth."))
 			time_maw_opened -= maw_cooldown / 2	// Recovers half cooldown if you end it early manually.
@@ -159,7 +159,7 @@
 /datum/om/stage/life/special/animal/space/space_worm/perform(mob/living/simple_mob/animal/space/space_worm/self, datum/om/frame/life/ctx)
 	..()
 
-	if(world.time > self.time_maw_opened + self.maw_cooldown)	// Auto-stop eating.
+	if(world.time > self.time_maw_opened + self.maw_cooldown)	// Auto-stop eating. // ALLOW(cooldown): auto-stop timeout on maw open time
 		if(self.open_maw)
 			to_chat(self, span_notice("Your jaws cannot remain open.."))
 			self.set_maw(FALSE)

@@ -31,7 +31,7 @@
 	var/obj/machinery/reagent_refinery/target = locate_within(get_step(loc,dir), /obj/machinery/reagent_refinery)
 	if(target && target.dir != GLOB.reverse_dir[dir])
 		var/obj/vehicle/train/trolley_tank/tanker = locate_within(loc, /obj/vehicle/train/trolley_tank)
-		if(tanker && tanker.reagents.total_volume > 0 && world.time > tanker.l_move_time + wait_delay)
+		if(tanker && tanker.reagents.total_volume > 0 && world.time > tanker.l_move_time + wait_delay) // ALLOW(cooldown): reads vehicle l_move_time shared timestamp
 			// dump reagents to next refinery machine
 			transfer_tank( tanker.reagents, target, dir)
 
@@ -73,7 +73,7 @@
 	var/obj/vehicle/train/trolley_tank/tanker = locate_within(get_turf(src), /obj/vehicle/train/trolley_tank)
 	if(!tanker)
 		return 0
-	if(world.time < tanker.l_move_time + wait_delay) // await cooldown to avoid spamming moving tanks
+	if(world.time < tanker.l_move_time + wait_delay) // await cooldown to avoid spamming moving tanks // ALLOW(cooldown): reads vehicle l_move_time shared timestamp
 		return 0
 	// Don't call parent, we're transfering into the holding tank instead
 	if(filter_id == "")

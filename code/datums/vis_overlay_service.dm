@@ -19,7 +19,7 @@ GLOBAL_DATUM_INIT(vis_overlays_service, /datum/world_service/vis_overlays, new)
 		current_run.len--
 		if(!overlay.unused && !length(overlay.vis_locs))
 			overlay.unused = world.time
-		else if(overlay.unused && overlay.unused + overlay.cache_expiration < world.time)
+		else if(overlay.unused && overlay.unused + overlay.cache_expiration < world.time) // ALLOW(cooldown): cache expiry in a service
 			vis_overlay_cache -= key
 			qdel(overlay)
 		if(TICK_CHECK)

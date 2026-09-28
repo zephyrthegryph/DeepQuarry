@@ -23,7 +23,7 @@
 	// Only relevant immediately after a melee strike.
 	if(!brain.primary_threat)
 		return null
-	if(!brain.last_attack_at || world.time > brain.last_attack_at + 4)
+	if(!brain.last_attack_at || world.time > brain.last_attack_at + 4) // ALLOW(cooldown): AI brain attack timing, last_attack_at used elsewhere
 		return null
 	if(brain.last_juke_at == brain.last_attack_at)
 		return null
@@ -97,7 +97,7 @@
 	var/mob/threat = brain.primary_threat
 	if(!threat || !ismob(threat))
 		return null
-	if(!brain.last_attack_at || world.time > brain.last_attack_at + 6)
+	if(!brain.last_attack_at || world.time > brain.last_attack_at + 6) // ALLOW(cooldown): AI brain attack timing, last_attack_at used elsewhere
 		return null
 	var/mob/living/owner = brain.get_owner()
 	if(!owner)
