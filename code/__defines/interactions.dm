@@ -200,3 +200,12 @@
 #define INTERACT_ROBOT(name, effect, requires...) list(INTERACT_KIND_ROBOT, name, effect, list(requires))
 /// A ghost's Use (old attack_ghost). `effect(actor, held, interaction)`.
 #define INTERACT_OBSERVER(name, effect, requires...) list(INTERACT_KIND_OBSERVER, name, effect, list(requires))
+
+// Object verbs as interactions (I7). A Menu entry with no key or click of its own: what an
+// object verb (the right-click popup) did. Reach is the entry's usual (adjacent, or carried);
+// add REQ_IN_INVENTORY for an old `set src in usr`.
+#define INTERACT_KIND_VERB "verb"
+/// An action chosen from the Menu (old object verb). `effect(actor, held, interaction)`.
+#define INTERACT_VERB(name, effect, requires...) list(INTERACT_KIND_VERB, name, effect, list(requires))
+/// Requirement: the target is on the actor (held, worn or in their bags), as an old `set src in usr`.
+#define REQ_IN_INVENTORY REQ_PROC(/proc/dq_interaction_in_inventory, "you need to be carrying it")

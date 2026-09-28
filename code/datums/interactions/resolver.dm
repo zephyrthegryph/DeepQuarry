@@ -404,3 +404,9 @@ GLOBAL_LIST_EMPTY(interaction_entry_click_params)
 	if(GLOB.interaction_entry_actors[actor])
 		return TRUE
 	return actor.get_active_hand() == target || actor.get_inactive_hand() == target
+
+/// Requirement clause REQ_IN_INVENTORY: the target is somewhere on the actor.
+/proc/dq_interaction_in_inventory(mob/actor, atom/target, obj/item/held)
+	if(!actor || !target)
+		return FALSE
+	return get(target, /mob) == actor

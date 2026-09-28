@@ -139,6 +139,10 @@
 			entry = INTERACTION_ENTRY_ALT
 			category = INTERACTION_CAT_TOGGLE
 			default_action = INPUT_ACTION_ALTERNATE
+		// Object verb (I7): resolver-native, chosen from the Menu (no key or click runs it).
+		if(INTERACT_KIND_VERB)
+			category = INTERACTION_CAT_CONFIGURE
+			default_action = null
 		// Actor-kind Use (I3): resolver-native, offered only to the actors their tags name.
 		if(INTERACT_KIND_SILICON)
 			category = INTERACTION_CAT_OPEN
