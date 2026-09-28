@@ -20,6 +20,8 @@
 #define TYPE_TABLE_HAS_RULES (1<<2)
 /// The type has object-model declarations (code/datums/om/).
 #define TYPE_TABLE_HAS_OM (1<<3)
+/// Any of these means on_materialize() has work for the type.
+#define TYPE_TABLE_MATERIALIZE_WORK (TYPE_TABLE_JOINS_REGISTRIES|TYPE_TABLE_HAS_RULES|TYPE_TABLE_HAS_OM)
 /// Set on every built row, so a type with no facts is still cached.
 #define TYPE_TABLE_BUILT (1<<23)
 

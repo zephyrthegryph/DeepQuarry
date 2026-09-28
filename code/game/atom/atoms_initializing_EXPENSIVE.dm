@@ -54,7 +54,13 @@
 		// deferred to the end of the batch; materializing does not wait for it,
 		// so the registrations moved out of Initialize() keep their old timing.
 		if(!materialize_suppressed && !qdeleted && !QDELING(A))
-			A.materialize()
+			// Type-table fast path (atom_type_table.dm): turfs have no on_materialize() of their
+			// own (tools/ci/init_lint.py keeps it so), so a turf whose type needs no registries,
+			// rules or OM is live once flagged. Most of the ~390 k map turfs take this path.
+			if(isturf(A) && !A.ledger && !(atom_type_table(A) & TYPE_TABLE_MATERIALIZE_WORK))
+				A.flags |= ATOM_MATERIALIZED
+			else
+				A.materialize()
 		var/atom/location = A.loc
 		if(location)
 			/// Emits that the new atom `src`, has been created at `loc`

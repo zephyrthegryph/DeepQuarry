@@ -14,6 +14,10 @@ first-use accessor. This lint ratchets four counts:
     world_reads         lines inside an Initialize() body that reach outside
                         the instance: range(, orange(, view(, GetAbove,
                         GetBelow, GLOB., START_PROCESSING
+    turf_on_materialize `/turf/.../on_materialize(` overrides. Ceiling 0:
+                        SSatoms.InitAtom() flags a turf whose type table
+                        needs no work as materialized without calling
+                        on_materialize(), so a turf override would be skipped.
 
 A line or override carrying `// ALLOW(init): <reason>` does not count
 (tools/ci/allow_annotations.py). The counts live in
@@ -36,6 +40,7 @@ BASELINE = os.path.join(ROOT, "tools", "ci", "init_baseline.txt")
 
 INIT_HEADER = re.compile(r"^(/[\w/]+)/Initialize\s*\(")
 LATE_HEADER = re.compile(r"^(/[\w/]+)/LateInitialize\s*\(")
+TURF_MATERIALIZE = re.compile(r"^/turf(/[\w/]*)?/on_materialize\s*\(")
 REASON = re.compile(r"//\s*INIT:\s*\S")
 WORLD_READ = re.compile(r"(?<![\w.])(?:o?range|view)\s*\(|\bGetAbove\s*\(|\bGetBelow\s*\(|\bGLOB\.|\bSTART_PROCESSING\s*\(")
 # Unit tests and benchmarks build worlds on purpose.
@@ -56,9 +61,11 @@ def dm_files():
 
 
 def scan(lines):
-    sites = {"initialize": [], "late_initialize": [], "unreasoned": [], "world_reads": []}
+    sites = {"initialize": [], "late_initialize": [], "unreasoned": [], "world_reads": [], "turf_on_materialize": []}
     in_init = False
     for number, line in enumerate(lines, 1):
+        if TURF_MATERIALIZE.match(line):
+            sites["turf_on_materialize"].append(number)
         init = INIT_HEADER.match(line)
         late = LATE_HEADER.match(line)
         if init or late:
@@ -81,7 +88,7 @@ def scan(lines):
 
 
 def main():
-    totals = {"initialize": 0, "late_initialize": 0, "unreasoned": 0, "world_reads": 0}
+    totals = {"initialize": 0, "late_initialize": 0, "unreasoned": 0, "world_reads": 0, "turf_on_materialize": 0}
     where = []
     for path in dm_files():
         rel = os.path.relpath(path, ROOT).replace("\\", "/")

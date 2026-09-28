@@ -5,3 +5,4 @@ initialize 3325
 late_initialize 95
 unreasoned 3420
 world_reads 312
+turf_on_materialize 0
