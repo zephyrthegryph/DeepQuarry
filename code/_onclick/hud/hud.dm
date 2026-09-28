@@ -225,13 +225,6 @@ REF_PAIR(/datum/hud, list("toggle_palette" = "our_hud", "palette_down" = "our_hu
 		remove_ammo_hud(mymob, x)
 	ammo_hud_list = null
 	return ..()
-//	item_action_list = null // ?
-	for (var/x in ammo_hud_list)
-		remove_ammo_hud(mymob, x)
-	ammo_hud_list = null
-	mymob = null
-
-	return ..()
 
 /datum/hud/proc/hidden_inventory_update()
 	if(!mymob) return

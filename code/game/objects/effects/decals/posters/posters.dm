@@ -81,10 +81,6 @@
 	om_do_after(user, 17, target = src, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(user))
 	return TRUE
 
-	P.roll_and_drop(P.loc)
-	consume(src, user)
-	return FALSE
-
 /obj/item/poster/proc/afterattack_timed_done(mob/user)
 	to_chat(user, span_notice("You place the poster!"))
 	consume(src, user)

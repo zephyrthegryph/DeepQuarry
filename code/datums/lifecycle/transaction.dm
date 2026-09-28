@@ -14,7 +14,6 @@
 /// rely on ad-hoc Destroy() comments for. Returns what phase 7's Destroy()
 /// (or, for a plain /datum with no override, the base no-op) returned.
 /proc/destroy_transaction(datum/D, force, datum/qdel_item/trash)
-	SHOULD_NOT_OVERRIDE(TRUE)
 	// Indexed by LIFECYCLE_PHASE_* id, so it must have a slot per phase
 	// (an empty lazy list made every phase write an out-of-bounds runtime).
 	if(length(trash.phase_ms) < LIFECYCLE_PHASE_COUNT)

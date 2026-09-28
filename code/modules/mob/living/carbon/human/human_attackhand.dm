@@ -467,7 +467,6 @@
 	user.visible_message(span_warning("[user] begins to dislocate [src]'s [organ.joint]!"))
 	om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(grab_joint_human_done), done_args = list(organ))
 	return TRUE
-	return FALSE
 
 /mob/living/carbon/human/proc/grab_joint_human_done(obj/item/organ/external/organ)
 	organ.dislocate(1)

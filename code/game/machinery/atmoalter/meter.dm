@@ -121,7 +121,6 @@
 		radio_connection.post_signal(src, signal)
 	register_gas_dependency()
 	return PROCESS_KILL
-	return PROCESS_KILL
 
 /obj/machinery/meter/examine(mob/user)
 	. = ..()

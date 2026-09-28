@@ -642,10 +642,6 @@ REF_OWNED(/obj/item/gun/projectile, "ammo_provider")
 				else
 					to_chat(user,span_warning("You can't manually chamber rounds with an open bolt gun!"))
 					return
-				user.remove_from_mob(C)
-				C.loc = src
-				update_icon()
-				return
 			else
 				return
 		if(only_open_load && !bolt_open)

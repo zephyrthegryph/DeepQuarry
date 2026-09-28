@@ -20,9 +20,9 @@
 
 // This entire section is awful and a relic of ancient times. It needs to be replaced
 /mob/living/simple_mob/animal/borer/proc/finish_bond_brain()
-	var/mob/living/carbon/human/host = src?.borer_host()
 	PRIVATE_PROC(TRUE)
 	RETURN_TYPE(null)
+	var/mob/living/carbon/human/host = src?.borer_host()
 
 	if(!host || QDELETED(src) || controlling)
 		return
@@ -98,8 +98,8 @@
 	addtimer(CALLBACK(src, PROC_REF(finish_release_host)), 10 SECONDS, TIMER_DELETE_ME)
 
 /mob/living/simple_mob/animal/borer/proc/finish_release_host()
-	var/mob/living/carbon/human/host = src?.borer_host()
 	PRIVATE_PROC(TRUE)
+	var/mob/living/carbon/human/host = src?.borer_host()
 
 	if(!host || QDELETED(src))
 		return

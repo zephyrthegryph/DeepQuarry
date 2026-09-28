@@ -386,7 +386,7 @@ GLOBAL_LIST_INIT(construction_graphs, init_construction_graphs())
 		parts += item_text()
 	return length(parts) ? "needs [jointext(parts, " and ")]" : null
 
-#ifdef UNIT_TESTS
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 /// Unit tests set this to run construction steps with no wait.
 GLOBAL_VAR_INIT(dq_construction_instant, FALSE)
 #endif

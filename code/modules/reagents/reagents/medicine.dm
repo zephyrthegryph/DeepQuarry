@@ -1567,9 +1567,9 @@
 			M.status_adjust(EFFECT_WEAKENED, 10),
 			M.status_adjust(EFFECT_STUNNED, 1),
 			M.status_adjust(EFFECT_PARALYZED, 0.1),
-			M.status_set(EFFECT_HALLUCINATING, max(M.status_units(EFFECT_HALLUCINATING), 2),)
+			M.status_set(EFFECT_HALLUCINATING, max(M.status_units(EFFECT_HALLUCINATING), 2)),
 			M.flash_eyes(),
-			M.custom_pain("Your vision becomes blurred!",30),)
+			M.custom_pain("Your vision becomes blurred!",30))
 
 /datum/reagent/claridyl/bloodburn
 	name = REAGENT_BLOODBURN

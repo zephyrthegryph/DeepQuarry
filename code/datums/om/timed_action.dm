@@ -29,7 +29,7 @@
 /// Re-check channels for a timed action: everything that can break one, on the user or the target.
 #define TIMED_ACTION_CHANNELS (CHANGE_MOB_LOC | CHANGE_MOB_HANDS | CHANGE_MOB_STAT | CHANGE_MOB_STATUS | CHANGE_MOB_TARGETING | CHANGE_ITEM_LOC | CHANGE_EXPLICIT)
 
-#ifdef UNIT_TESTS
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 /// Unit tests that drive gameplay procs synchronously set this: every timed action completes at once.
 GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 #endif

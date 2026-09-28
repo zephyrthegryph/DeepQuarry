@@ -942,7 +942,7 @@ export function render(root: string): { dm: string; typesDm: string; rs: string;
 
 #define VERDIGRIS (__verdigris || __detect_verdigris())
 
-#if defined(BENCHMARK) || defined(UNIT_TESTS)
+#if defined(BENCHMARK) || defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 /// FFI calls made through the vg_* procs. Benchmark and unit-test builds
 /// only: the benchmarks report it per window (code/modules/benchmarks/_benchmark.dm)
 /// and tests assert that DM-only paths make none.

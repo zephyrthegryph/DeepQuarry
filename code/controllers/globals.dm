@@ -55,19 +55,19 @@ GLOBAL_REAL(GLOB, /datum/controller/global_vars)
 
 	for(var/I in global_procs)
 		var/start_tick = world.time
-#ifdef BENCHMARK
+#if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 		var/started = REALTIMEOFDAY
 		var/mb_before = benchmark_early_private_mb()
 #endif
 		call(src, I)()
-#ifdef BENCHMARK
+#if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 		benchmark_early_note("global [replacetext("[I]", "/datum/controller/global_vars/proc/InitGlobal", "")]", REALTIMEOFDAY - started, mb_before)
 #endif
 		var/end_tick = world.time
 		if(end_tick - start_tick)
 			WARNING("Global [replacetext("[I]", "InitGlobal", "")] slept during initialization!")
 
-#ifdef BENCHMARK
+#if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 /// Early boot notes for the memory breakdown (init_and_turfs.md §0.4), kept
 /// in a plain global because GLOB may not exist yet: list(name, ds, MB
 /// before, MB after) for every step that took time or memory.
