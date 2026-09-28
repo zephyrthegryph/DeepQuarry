@@ -296,18 +296,18 @@
 	if(!outdoor_sounds)
 		return
 	if(adding)
-		outdoor_sounds.output_atoms |= M
+		outdoor_sounds.add_output(M)
 		return
-	outdoor_sounds.output_atoms -= M
+	outdoor_sounds.remove_output(M)
 
 // Ditto, for indoors.
 /datum/weather/proc/hear_indoor_sounds(mob/M, adding)
 	if(!indoor_sounds)
 		return
 	if(adding)
-		indoor_sounds.output_atoms |= M
+		indoor_sounds.add_output(M)
 		return
-	indoor_sounds.output_atoms -= M
+	indoor_sounds.remove_output(M)
 
 /// Gets a hex color value for blending with a player's client.color.
 /datum/weather/proc/get_color_tint()

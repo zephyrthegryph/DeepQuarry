@@ -248,7 +248,7 @@ REF_OWNED(/obj/machinery/rnd/production, "print_sound")
 	data["designs"] = designs
 	data["fabName"] = name
 
-	var/list/material_data = materials.mat_container?.tgui_static_data(user)
+	var/list/material_data = materials.mat_container()?.tgui_static_data(user)
 	if(material_data)
 		data += material_data
 
@@ -257,7 +257,7 @@ REF_OWNED(/obj/machinery/rnd/production, "print_sound")
 /obj/machinery/rnd/production/tgui_data(mob/user)
 	var/list/data = list()
 
-	var/list/material_data = materials.mat_container?.tgui_data(user)
+	var/list/material_data = materials.mat_container()?.tgui_data(user)
 	if(material_data)
 		data["materials"] = material_data
 	// Loaded materials offered in the per-design material picker (selectable designs).
@@ -270,7 +270,7 @@ REF_OWNED(/obj/machinery/rnd/production, "print_sound")
 	return data
 
 /obj/machinery/rnd/production/proc/material_choice_list()
-	return lathe_material_choice_list(materials?.mat_container)
+	return lathe_material_choice_list(materials?.mat_container())
 
 // Shared: loaded materials (>= 1 sheet) offered in a lathe's per-design material
 // picker. Used by both the protolathe family and the autolathe.
@@ -383,7 +383,7 @@ REF_OWNED(/obj/machinery/rnd/production, "print_sound")
 			//check for materials
 			if(!materials.can_use_resource())
 				return
-			if(!materials.mat_container.has_materials(effective_mats, coefficient, print_quantity))
+			if(!materials.mat_container().has_materials(effective_mats, coefficient, print_quantity))
 				atom_say("Not enough materials to complete prototype[print_quantity > 1 ? "s" : ""].")
 				return FALSE
 
@@ -453,7 +453,7 @@ REF_OWNED(/obj/machinery/rnd/production, "print_sound")
 
 	var/is_stack = ispath(design.build_path, /obj/item/stack)
 	var/list/design_materials = design.effective_materials(chosen_materials)
-	if(!materials.mat_container.has_materials(design_materials, material_cost_coefficient, is_stack ? items_remaining : 1))
+	if(!materials.mat_container().has_materials(design_materials, material_cost_coefficient, is_stack ? items_remaining : 1))
 		atom_say("Unable to continue production, missing materials.")
 		finalize_build()
 		return

@@ -1,8 +1,8 @@
 /datum/proximity_monitor
 	///The atom we are tracking
-	var/atom/host
+	var/host_handle
 	///The atom that will receive HasProximity calls.
-	var/atom/hasprox_receiver
+	var/hasprox_receiver_handle
 	///The range of the proximity monitor. Things moving wihin it will trigger HasProximity calls.
 	var/current_range
 	///If we don't check turfs in range if the host's loc isn't a turf
@@ -20,24 +20,24 @@
 	set_host(_host)
 
 /datum/proximity_monitor/proc/set_host(atom/new_host, atom/new_receiver)
-	if(new_host == host)
+	if(new_host == host())
 		return
-	if(host) //No need to delete the connect range and containers comps. They'll be updated with the new tracked host.
-		UnregisterSignal(host, list(COMSIG_MOVABLE_MOVED, COMSIG_QDELETING))
-	if(hasprox_receiver)
-		UnregisterSignal(hasprox_receiver, COMSIG_QDELETING)
+	if(host()) //No need to delete the connect range and containers comps. They'll be updated with the new tracked host.
+		UnregisterSignal(host(), list(COMSIG_MOVABLE_MOVED, COMSIG_QDELETING))
+	if(hasprox_receiver())
+		UnregisterSignal(hasprox_receiver(), COMSIG_QDELETING)
 	if(new_receiver)
-		hasprox_receiver = new_receiver
+		hasprox_receiver_handle = om_handle(new_receiver)
 		if(new_receiver != new_host)
 			RegisterSignal(new_receiver, COMSIG_QDELETING, PROC_REF(on_host_or_receiver_del))
-	else if(hasprox_receiver == host) //Default case
-		hasprox_receiver = new_host
-	host = new_host
+	else if(hasprox_receiver() == host()) //Default case
+		hasprox_receiver_handle = om_handle(new_host)
+	host_handle = om_handle(new_host)
 	RegisterSignal(new_host, COMSIG_QDELETING, PROC_REF(on_host_or_receiver_del))
 	var/static/list/containers_connections = list(COMSIG_MOVABLE_MOVED = PROC_REF(on_moved), COMSIG_MOVABLE_Z_CHANGED = PROC_REF(on_z_change))
-	AddComponent(/datum/component/connect_containers, host, containers_connections)
-	RegisterSignal(host, COMSIG_MOVABLE_MOVED, PROC_REF(on_moved))
-	RegisterSignal(host, COMSIG_MOVABLE_Z_CHANGED, PROC_REF(on_z_change))
+	AddComponent(/datum/component/connect_containers, host(), containers_connections)
+	RegisterSignal(host(), COMSIG_MOVABLE_MOVED, PROC_REF(on_moved))
+	RegisterSignal(host(), COMSIG_MOVABLE_Z_CHANGED, PROC_REF(on_z_change))
 	set_range(current_range, TRUE)
 
 /datum/proximity_monitor/proc/on_host_or_receiver_del(datum/source)
@@ -51,12 +51,12 @@
 	current_range = range
 
 	//If the connect_range component exists already, this will just update its range. No errors or duplicates.
-	AddComponent(/datum/component/connect_range, host, loc_connections, range, !ignore_if_not_on_turf)
+	AddComponent(/datum/component/connect_range, host(), loc_connections, range, !ignore_if_not_on_turf)
 
 /datum/proximity_monitor/proc/on_moved(atom/movable/source, atom/old_loc)
 	SIGNAL_HANDLER
-	if(source == host)
-		hasprox_receiver?.HasProximity(host)
+	if(source == host())
+		hasprox_receiver()?.HasProximity(host())
 
 /datum/proximity_monitor/proc/on_z_change()
 	SIGNAL_HANDLER
@@ -67,7 +67,7 @@
 		return
 	ignore_if_not_on_turf = does_ignore
 	//Update the ignore_if_not_on_turf
-	AddComponent(/datum/component/connect_range, host, loc_connections, current_range, ignore_if_not_on_turf)
+	AddComponent(/datum/component/connect_range, host(), loc_connections, current_range, ignore_if_not_on_turf)
 
 /datum/proximity_monitor/proc/on_uncrossed()
 	SIGNAL_HANDLER
@@ -75,16 +75,24 @@
 
 /datum/proximity_monitor/proc/on_entered(atom/source, atom/movable/arrived)
 	SIGNAL_HANDLER
-	if(source != host)
-		hasprox_receiver?.HasProximity(arrived)
+	if(source != host())
+		hasprox_receiver()?.HasProximity(arrived)
 
 /datum/proximity_monitor/mobspawner
 
 /datum/proximity_monitor/mobspawner/on_uncrossed(atom/source, atom/movable/AM, atom/new_loc)
-	var/obj/structure/mob_spawner/scanner/scanner = host
+	var/obj/structure/mob_spawner/scanner/scanner = host()
 	scanner.CheckProximity(AM,new_loc)
 
 /datum/proximity_monitor/mobspawner/on_entered(atom/source, atom/movable/arrived)
-	var/obj/structure/mob_spawner/scanner/scanner = host
-	if(source != host)
+	var/obj/structure/mob_spawner/scanner/scanner = host()
+	if(source != host())
 		scanner.NewProximity(arrived)
+
+/// LC-refs: the atom this monitor follows -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/proximity_monitor/proc/host() as /atom
+	return om_resolve(host_handle)
+
+/// LC-refs: the atom told about proximity -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/proximity_monitor/proc/hasprox_receiver() as /atom
+	return om_resolve(hasprox_receiver_handle)

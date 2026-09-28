@@ -36,7 +36,7 @@
 
 /proc/contract_account_for_mob(mob/living/actor) as /datum/money_account
 	var/obj/item/card/id/id_card = actor?.GetIdCard()
-	return id_card ? get_account(id_card.associated_account_number) : actor?.mind?.initial_account
+	return id_card ? get_account(id_card.associated_account_number) : actor?.mind?.initial_account()
 
 /datum/contract_event/New(_event_type, atom/source, mob/living/actor, mob/living/subject, list/context, _occurrence_id)
 	. = ..()

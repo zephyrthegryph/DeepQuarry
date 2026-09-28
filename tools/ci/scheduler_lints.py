@@ -59,6 +59,8 @@ PATTERNS = [
 NAMES = [name for name, _ in PATTERNS] + ["lc_refs"]
 
 UNSAVED_MODS = {"static", "global", "const"}
+STRUCTURAL_TYPES = ("/datum/om/task", "/datum/om/edge", "/datum/om/rec", "/datum/om/frame", "/datum/om/event",
+                    "/datum/om/scheduler", "/datum/ledger", "/datum/registry")
 ALL_MODS = {"tmp", "static", "global", "const", "final"}
 DECLARED_PROCS = (
     "declared_owned_vars",
@@ -150,9 +152,9 @@ def lc_ref_sites(rel, raw_text, code_text):
             continue
         if name in declared.get(owner_type, ()):
             continue
-        # A task's vars are its state: every datum in them is held by the task_holds
-        # relation, which clears the var and cancels the task when the datum is deleted.
-        if owner_type == "/datum/om/task" or owner_type.startswith("/datum/om/task/"):
+        # Tasks, edges, records, ledgers and registries hold references by construction
+        # (declared_refs_lint.STRUCTURAL_TYPES says why each).
+        if any(owner_type == t or owner_type.startswith(t + "/") for t in STRUCTURAL_TYPES):
             continue
         sites.append((rel, no, "%s var/%s %s" % (owner_type, vtype.strip("/"), name)))
     return sites

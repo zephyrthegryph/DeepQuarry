@@ -507,3 +507,7 @@ GLOBAL_LIST_EMPTY(om_gas_native_watches)
 			else // OM_WATCH_BANDS
 				if(W.evaluate_gas(observation, observation_index))
 					om_watch_fire(W, entity)
+
+REF_OWNED(/datum/om_watch, list("wake_callback", "value_getter", "raw_observer"))
+
+REF_OWNED_LIST(/datum/om_watch, "bands")

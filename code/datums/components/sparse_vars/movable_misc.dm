@@ -266,3 +266,5 @@ GLOBAL_LIST_EMPTY(_dq_hovering_resolved)
 /proc/dq_clear_softfall(atom/movable/am)
 	var/datum/component/movable_state/c = am.GetComponent(/datum/component/movable_state)
 	if(c) c.softfall_set = FALSE
+
+REF_OWNED(/datum/component/movable_state, "cloaked_selfimage")

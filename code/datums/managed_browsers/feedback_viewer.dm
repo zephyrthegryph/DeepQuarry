@@ -29,8 +29,8 @@ ADMIN_VERB(view_feedback, R_ADMIN|R_DEBUG|R_EVENT, "View Feedback", "Open the Fe
 
 // LIFECYCLE: clears the client's back-reference (clients aren't datums).
 /datum/managed_browser/feedback_viewer/Destroy()
-	if(my_client)
-		my_client.feedback_viewer = null
+	if(my_client())
+		my_client().feedback_viewer = null
 	return ..()
 
 /datum/managed_browser/feedback_viewer/proc/feedback_filter(row_name, thing_to_find, exact = FALSE)
@@ -113,10 +113,10 @@ ADMIN_VERB(view_feedback, R_ADMIN|R_DEBUG|R_EVENT, "View Feedback", "Open the Fe
 /datum/managed_browser/feedback_viewer/proc/display_big_feedback(author, text)
 	var/dat = replacetext(text, "\n", "<br>")
 	// structured TGUI AdminReport.
-	dq_admin_report_html(my_client.mob, "[author]'s Feedback", dat, src)
+	dq_admin_report_html(my_client().mob, "[author]'s Feedback", dat, src)
 
 /datum/managed_browser/feedback_viewer/Topic(href, href_list[])
-	if(!my_client)
+	if(!my_client())
 		return FALSE
 
 	if(href_list["close"]) // To avoid refreshing.
@@ -127,31 +127,35 @@ ADMIN_VERB(view_feedback, R_ADMIN|R_DEBUG|R_EVENT, "View Feedback", "Open the Fe
 		return
 
 	if(href_list["filter_id"])
-		var/id_to_search = tgui_input_number(my_client, "Write feedback ID here.", "Filter by ID", null)
+		var/id_to_search = tgui_input_number(my_client(), "Write feedback ID here.", "Filter by ID", null)
 		if(id_to_search)
 			last_query = feedback_filter(SQLITE_FEEDBACK_COLUMN_ID, id_to_search, TRUE)
 
 	if(href_list["filter_author"])
-		var/author_to_search = tgui_input_text(my_client, "Write desired key or hash here. Partial keys/hashes are allowed.", "Filter by Author", null)
+		var/author_to_search = tgui_input_text(my_client(), "Write desired key or hash here. Partial keys/hashes are allowed.", "Filter by Author", null)
 		if(author_to_search)
 			last_query = feedback_filter(SQLITE_FEEDBACK_COLUMN_AUTHOR, author_to_search)
 
 	if(href_list["filter_topic"])
-		var/topic_to_search = tgui_input_text(my_client, "Write desired topic here. Partial topics are allowed. \
+		var/topic_to_search = tgui_input_text(my_client(), "Write desired topic here. Partial topics are allowed. \
 		\nThe current topics in the config are [english_list(CONFIG_GET(str_list/sqlite_feedback_topics))].", "Filter by Topic", null)
 		if(topic_to_search)
 			last_query = feedback_filter(SQLITE_FEEDBACK_COLUMN_TOPIC, topic_to_search)
 
 	if(href_list["filter_content"])
-		var/content_to_search = tgui_input_text(my_client, "Write desired content to find here. Partial matches are allowed.", "Filter by Content", null, multiline = TRUE)
+		var/content_to_search = tgui_input_text(my_client(), "Write desired content to find here. Partial matches are allowed.", "Filter by Content", null, multiline = TRUE)
 		if(content_to_search)
 			last_query = feedback_filter(SQLITE_FEEDBACK_COLUMN_CONTENT, content_to_search)
 
 	if(href_list["filter_datetime"])
-		var/datetime_to_search = tgui_input_text(my_client, "Write desired datetime. Partial matches are allowed.\n\
+		var/datetime_to_search = tgui_input_text(my_client(), "Write desired datetime. Partial matches are allowed.\n\
 		Format is 'YYYY-MM-DD HH:MM:SS'.", "Filter by Datetime", null)
 		if(datetime_to_search)
 			last_query = feedback_filter(SQLITE_FEEDBACK_COLUMN_DATETIME, datetime_to_search)
 
 	// Refresh.
 	display()
+
+REF_OWNED(/client, "feedback_viewer")
+
+REF_OWNED(/datum/managed_browser/feedback_viewer, "last_query")

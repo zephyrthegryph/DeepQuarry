@@ -177,7 +177,7 @@ It is used to destroy hand-held objects and advance technological research. Used
 	playsound(get_turf(src), 'sound/machines/chime.ogg', 50, 1)
 
 /obj/machinery/rnd/destructive_analyzer/proc/get_silo_material_container_datum(verbose)
-	var/datum/component/material_container/materials = rmat.mat_container
+	var/datum/component/material_container/materials = rmat.mat_container()
 	if(!materials)
 		if(verbose)
 			atom_say("No access to material storage, please contact the quartermaster.")

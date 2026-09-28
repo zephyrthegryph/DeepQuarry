@@ -66,12 +66,9 @@ SUBSYSTEM_DEF(verb_manager)
 		stack_trace("_queue_verb() returned false because it was given a deleted callback! [destroyed_string]")
 		return FALSE
 
-	if(!istext(incoming_callback.object) && QDELETED(incoming_callback.object)) //just in case the object is GLOBAL_PROC
-		var/destroyed_string
-		if(!incoming_callback.object)
-			destroyed_string = "callback.object is null."
-		else
-			destroyed_string = "callback.object was deleted [DS2TICKS(world.time - incoming_callback.object.gc_destroyed)] ticks ago. callback was created [DS2TICKS(world.time) - incoming_callback.creation_time] ticks ago."
+	var/datum/callback_target = incoming_callback.target_object()
+	if(!callback_target) //GLOBAL_PROC reads as itself
+		var/destroyed_string = "callback.object is null or deleted. callback was created [DS2TICKS(world.time) - incoming_callback.creation_time] ticks ago."
 
 		stack_trace("_queue_verb() returned false because it was given a callback acting on a qdeleted object! [destroyed_string]")
 		return FALSE
@@ -79,10 +76,10 @@ SUBSYSTEM_DEF(verb_manager)
 	//we want unit tests to be able to directly call verbs that attempt to queue, and since unit tests should test internal behavior, we want the queue
 	//to happen as if it was actually from player input if its called on a mob.
 #ifdef UNIT_TESTS
-	if(QDELETED(usr) && ismob(incoming_callback.object))
-		incoming_callback.user = om_handle(incoming_callback.object)
+	if(QDELETED(usr) && ismob(callback_target))
+		incoming_callback.user = om_handle(callback_target)
 		var/datum/callback/new_us = CALLBACK(arglist(list(GLOBAL_PROC, GLOBAL_PROC_REF(_queue_verb)) + args.Copy()))
-		return world.push_usr(incoming_callback.object, new_us)
+		return world.push_usr(callback_target, new_us)
 
 #else
 
@@ -136,7 +133,7 @@ SUBSYSTEM_DEF(verb_manager)
 /datum/controller/subsystem/verb_manager/proc/queue_verb(datum/callback/verb_callback/incoming_callback)
 	. = FALSE //errored
 	if(message_admins_on_queue)
-		message_admins("[name] verb queuing: tick usage: [TICK_USAGE]%, proc: [incoming_callback.delegate], object: [incoming_callback.object], usr: [usr]")
+		message_admins("[name] verb queuing: tick usage: [TICK_USAGE]%, proc: [incoming_callback.delegate], object: [incoming_callback.target_object()], usr: [usr]")
 	verb_queue += incoming_callback
 	return TRUE
 

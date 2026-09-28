@@ -123,10 +123,10 @@
 	only_one_driver = TRUE			// If true, only the person in 'front' (first on list of riding mobs) can drive.
 
 /datum/riding/dogborg/handle_vehicle_layer()
-	ridden.layer = initial(ridden.layer)
+	ridden().restore_initial_layer()
 
 /datum/riding/dogborg/ride_check(mob/living/M)
-	var/mob/living/L = ridden
+	var/mob/living/L = ridden()
 	if(L.stat)
 		force_dismount(M)
 		return FALSE
@@ -134,11 +134,11 @@
 
 /datum/riding/dogborg/force_dismount(mob/M)
 	. =..()
-	ridden.visible_message(span_notice("[M] stops riding [ridden]!"))
+	ridden().visible_message(span_notice("[M] stops riding [ridden()]!"))
 
 //Hoooo boy.
 /datum/riding/dogborg/get_offsets(pass_index) // list(dir = x, y, layer)
-	var/mob/living/L = ridden
+	var/mob/living/L = ridden()
 	var/scale = L.size_multiplier
 	var/scale_difference = (L.size_multiplier - rider_size) * 10
 

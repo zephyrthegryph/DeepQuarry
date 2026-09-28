@@ -29,8 +29,8 @@ GLOBAL_DATUM_INIT(uplink, /datum/uplink, new)
 	var/name
 	var/desc
 	var/item_cost = 0
-	var/datum/uplink_category/category		// Item category
-	var/list/datum/antagonist/antag_roles	// Antag roles this item is displayed to. If empty, display to all.
+	var/category		// Item category: an /datum/uplink_category type path
+	var/list/antag_roles	// Antag roles this item is displayed to. If empty, display to all.
 	var/blacklisted = FALSE
 
 /datum/uplink_item/item
@@ -201,3 +201,7 @@ GLOBAL_DATUM_INIT(uplink, /datum/uplink, new)
 		remaining_TC -= I.cost(U, remaining_TC)
 
 	return bought_items
+
+REF_OWNED_LIST(/datum/uplink, list("items", "categories"))
+
+REF_OWNED_VALUES(/datum/uplink, "items_assoc")

@@ -163,7 +163,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore, REGISTRY_EMPTY_AI_CORES)
 				var/mob/living/silicon/ai/A = new /mob/living/silicon/ai(loc, FALSE, laws, brain)
 				if(A) //if there's no brain, the mob is deleted and a structure/AIcore is created
 					A.rename_self("ai", 1)
-					for(var/datum/language/L in A.identity.languages)
+					for(var/datum/language/L in A.identity().languages)
 						A.add_language(L.name)
 			feedback_inc("cyborg_ais_created",1)
 			qdel(src)

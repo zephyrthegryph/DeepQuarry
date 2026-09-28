@@ -1,6 +1,6 @@
 /datum/disease/advance/random
 	var/randomname = TRUE
-	var/datum/symptom/setsymptom = null
+	var/setsymptom = null
 	var/max_symptoms_override
 
 /datum/disease/advance/random/minor

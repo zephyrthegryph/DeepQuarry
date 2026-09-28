@@ -36,7 +36,7 @@ REF_OWNED(/datum/component/geiger_sound, "sound")
 	SIGNAL_HANDLER
 
 	sound.last_insulation_to_target = insulation_to_target
-	sound.last_radiation_pulse = pulse_information
+	sound.last_radiation_pulse_handle = om_handle(pulse_information)
 	sound.start(source)
 
 	addtimer(CALLBACK(sound, TYPE_PROC_REF(/datum/looping_sound,stop)), TIME_WITHOUT_RADIATION_BEFORE_RESET, TIMER_UNIQUE | TIMER_OVERRIDE)
@@ -68,7 +68,7 @@ REF_OWNED(/datum/component/geiger_sound, "sound")
 	mid_length = 2
 	volume = 25
 
-	var/datum/radiation_pulse_information/last_radiation_pulse
+	var/last_radiation_pulse_handle
 	var/last_insulation_to_target
 	var/wall_mounted = FALSE
 
@@ -76,9 +76,9 @@ REF_OWNED(/datum/component/geiger_sound, "sound")
 	if(wall_mounted) //Child does all the work.
 		return ..(starttime, mid_sounds[danger])
 
-	if (isnull(last_radiation_pulse))
+	if (isnull(last_radiation_pulse()))
 		return null
-	danger = get_perceived_radiation_danger(last_radiation_pulse, last_insulation_to_target)
+	danger = get_perceived_radiation_danger(last_radiation_pulse(), last_insulation_to_target)
 
 	if(danger >= PERCEIVED_RADIATION_DANGER_HIGH)
 		chance = 100
@@ -91,7 +91,7 @@ REF_OWNED(/datum/component/geiger_sound, "sound")
 /datum/looping_sound/geiger/stop(null_parent = FALSE)
 	. = ..()
 
-	last_radiation_pulse = null
+	last_radiation_pulse_handle = null
 
 /datum/component/geiger_sound/wall
 	wall_mounted = TRUE
@@ -105,10 +105,10 @@ REF_OWNED(/datum/component/geiger_sound, "sound")
 	wall_mounted = TRUE
 
 /datum/looping_sound/geiger/wall/get_sound(starttime, _mid_sounds)
-	if (isnull(last_radiation_pulse))
+	if (isnull(last_radiation_pulse()))
 		return null
 
-	var/danger = get_perceived_radiation_danger(last_radiation_pulse, last_insulation_to_target)
+	var/danger = get_perceived_radiation_danger(last_radiation_pulse(), last_insulation_to_target)
 
 	if(danger >= PERCEIVED_RADIATION_DANGER_HIGH)
 		chance = 100
@@ -118,3 +118,7 @@ REF_OWNED(/datum/component/geiger_sound, "sound")
 		volume = 0
 
 	return ..(starttime, mid_sounds[danger], danger)
+
+/// LC-refs: the last radiation pulse that reached us -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/looping_sound/geiger/proc/last_radiation_pulse() as /datum/radiation_pulse_information
+	return om_resolve(last_radiation_pulse_handle)

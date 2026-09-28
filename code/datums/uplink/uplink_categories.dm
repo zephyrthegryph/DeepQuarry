@@ -47,3 +47,5 @@
 
 /datum/uplink_category/backup
 	name = "Backup"
+
+REF_OWNED_LIST(/datum/uplink_category, "items")

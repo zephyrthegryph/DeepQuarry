@@ -205,7 +205,7 @@
 			if(host?.release_mind(O, "borged by [key_name(user)]"))
 				if(O.mind && O.mind.special_role)
 					O.mind.store_memory("In case you look at this after being borged, the objectives are only here until I find a way to make them not show up for you, as I can't simply delete them without screwing up round-end reporting. --NeoFite")
-				for(var/datum/language/L in O.identity.languages)
+				for(var/datum/language/L in O.identity().languages)
 					O.add_language(L.name)
 			O.job = JOB_CYBORG
 			O.set_cell(chest.cell)

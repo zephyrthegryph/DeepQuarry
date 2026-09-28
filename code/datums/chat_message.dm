@@ -40,9 +40,9 @@ GLOBAL_LIST_EMPTY(runechat_image_cache)
 	/// The visual element of the chat messsage
 	var/image/message
 	/// The location in which the message is appearing
-	var/atom/message_loc
+	var/message_loc_handle
 	/// The client who heard this message
-	var/client/owned_by
+	var/owned_by_handle
 	/// Contains the scheduled destruction time
 	var/scheduled_destruction
 	/// Contains the approximate amount of lines for height decay
@@ -76,15 +76,18 @@ GLOBAL_LIST_EMPTY(runechat_image_cache)
 		return
 	INVOKE_ASYNC(src, PROC_REF(generate_image), text, target, owner, extra_classes, lifespan)
 
-// LIFECYCLE: a message leaves its client's screen and seen list (clients aren't datums).
-/datum/chatmessage/Destroy()
-	if(istype(owned_by, /client))
-		if(owned_by.seen_messages)
-			LAZYREMOVEASSOC(owned_by.seen_messages, message_loc, src)
-		owned_by.images.Remove(message)
+/// Phase 1: a message leaves its client's images and seen list (keyed by the loc's handle), and
+/// SSrunechat's queue, while its image and callback (owned, dropped in phase 4) still exist.
+/datum/chatmessage/lifecycle_unbind()
+	var/client/owner = owned_by()
+	if(owner)
+		if(owner.seen_messages)
+			LAZYREMOVEASSOC(owner.seen_messages, message_loc_handle, src)
+		owner.images.Remove(message)
 	if (finish_callback)
 		SSrunechat.message_queue -= finish_callback
-	return ..()
+
+REF_OWNED(/datum/chatmessage, list("message", "finish_callback"))
 
 /**
  * Generates a chat message image representation
@@ -103,10 +106,10 @@ GLOBAL_LIST_EMPTY(runechat_image_cache)
 		return
 
 	// Register client who owns this message
-	owned_by = owner.client
-	RegisterSignal(owned_by, COMSIG_QDELETING, PROC_REF(unregister_qdel_self)) // this should only call owned_by if the client is destroyed
+	owned_by_handle = om_handle(owner.client)
+	RegisterSignal(owned_by(), COMSIG_QDELETING, PROC_REF(unregister_qdel_self)) // this should only call owned_by if the client is destroyed
 
-	var/extra_length = owned_by.prefs?.read_preference(/datum/preference/toggle/runechat_long_messages)
+	var/extra_length = owned_by().prefs?.read_preference(/datum/preference/toggle/runechat_long_messages)
 	var/maxlen = extra_length ? CHAT_MESSAGE_EXT_LENGTH : CHAT_MESSAGE_LENGTH
 
 	// Clip message
@@ -181,7 +184,7 @@ GLOBAL_LIST_EMPTY(runechat_image_cache)
 
 	var/msgwidth = extra_length ? CHAT_MESSAGE_EXT_WIDTH : CHAT_MESSAGE_WIDTH
 	var/mheight
-	WXH_TO_HEIGHT(owned_by.MeasureText(complete_text, null, msgwidth), mheight)
+	WXH_TO_HEIGHT(owned_by().MeasureText(complete_text, null, msgwidth), mheight)
 
 	if(!VERB_SHOULD_YIELD)
 		return finish_image_generation(msgwidth, mheight, target, owner, complete_text, lifespan)
@@ -197,15 +200,15 @@ GLOBAL_LIST_EMPTY(runechat_image_cache)
 	var/starting_height = target.runechat_y_offset()
 
 	// Translate any existing messages upwards, apply exponential decay factors to timers
-	message_loc = target.runechat_holder(src)
-	if(!owned_by)
+	message_loc_handle = om_handle(target.runechat_holder(src))
+	if(!owned_by())
 		qdel(src)
 		return
-	RegisterSignal(message_loc, COMSIG_QDELETING, PROC_REF(qdel_self))
-	if(owned_by.seen_messages)
+	RegisterSignal(message_loc(), COMSIG_QDELETING, PROC_REF(qdel_self))
+	if(owned_by().seen_messages)
 		var/idx = 1
 		var/combined_height = approx_lines
-		for(var/datum/chatmessage/m as anything in owned_by.seen_messages[message_loc])
+		for(var/datum/chatmessage/m as anything in owned_by().seen_messages[message_loc_handle])
 			combined_height += m.approx_lines
 
 			var/time_spent = rough_time - m.animate_start
@@ -256,13 +259,13 @@ GLOBAL_LIST_EMPTY(runechat_image_cache)
 				continuing |= ANIMATION_CONTINUE
 
 	// Build message image
-	message = image(loc = message_loc, layer = ABOVE_MOB_LAYER)
+	message = image(loc = message_loc(), layer = ABOVE_MOB_LAYER)
 	message.plane = PLANE_RUNECHAT
 	message.appearance_flags = APPEARANCE_UI_IGNORE_ALPHA | KEEP_APART
 	message.alpha = 0
 	message.maptext_width = msgwidth
 	message.maptext_height = mheight
-	message.pixel_x = message_loc.runechat_x_offset(msgwidth, mheight)
+	message.pixel_x = message_loc().runechat_x_offset(msgwidth, mheight)
 	message.pixel_y = starting_height
 	message.maptext = complete_text
 
@@ -276,8 +279,8 @@ GLOBAL_LIST_EMPTY(runechat_image_cache)
 		message.plane = PLANE_PLAYER_HUD_ABOVE
 
 	// View the message
-	LAZYADDASSOCLIST(owned_by.seen_messages, message_loc, src)
-	owned_by.images |= message
+	LAZYADDASSOCLIST(owned_by().seen_messages, message_loc_handle, src)
+	owned_by().images |= message
 
 	// Fade in
 	animate(message, alpha = 255, time = CHAT_MESSAGE_SPAWN_TIME)
@@ -292,8 +295,8 @@ GLOBAL_LIST_EMPTY(runechat_image_cache)
 
 /datum/chatmessage/proc/unregister_qdel_self()  // this should only call owned_by if the client is destroyed
 	SIGNAL_HANDLER
-	UnregisterSignal(owned_by, COMSIG_QDELETING)
-	owned_by = null
+	UnregisterSignal(owned_by(), COMSIG_QDELETING)
+	owned_by_handle = null
 	qdel_self()
 
 /datum/chatmessage/proc/get_current_alpha(time_spent)
@@ -485,3 +488,11 @@ GLOBAL_LIST_EMPTY(runechat_image_cache)
 
 #undef CHAT_RUNE_EMOTE
 #undef CHAT_RUNE_RADIO
+
+/// LC-refs: the atom the message floats over -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/chatmessage/proc/message_loc() as /atom
+	return om_resolve(message_loc_handle)
+
+/// LC-refs: the client who heard the message -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/chatmessage/proc/owned_by() as /client
+	return om_resolve(owned_by_handle)

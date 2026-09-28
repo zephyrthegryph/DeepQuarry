@@ -5,14 +5,12 @@
  */
 /datum/component/recursive_move
 	dupe_mode = COMPONENT_DUPE_UNIQUE_PASSARGS //This makes it so pretty much nothing happens when a duplicate component is created since we only use it to regenerate our parent list
-	var/atom/movable/holder
 	var/list/parents
 	var/noparents = FALSE
 
 /datum/component/recursive_move/RegisterWithParent()
 	. = ..()
-	holder = parent
-	RegisterSignal(holder, COMSIG_QDELETING, PROC_REF(on_holder_qdel))
+	RegisterSignal(holder(), COMSIG_QDELETING, PROC_REF(on_holder_qdel))
 	om_after(src, 0, PROC_REF(setup_parents)) // Delayed action if our holder is spawned in nullspace and then loc = target, hopefully this catches it. VV Add item does this, for example.
 
 /datum/component/recursive_move/InheritComponent(datum/component/recursive_move/C, i_am_original)
@@ -25,15 +23,15 @@
 	SIGNAL_HANDLER
 	if(length(parents)) // safety check just incase this was called without clearing
 		reset_parents()
-	var/atom/movable/cur_parent = holder?.loc // first loc could be null
+	var/atom/movable/cur_parent = holder()?.loc // first loc could be null
 	var/recursion = 0 // safety check - max iterations
 	while(istype(cur_parent) && (recursion < 64))
 		if(cur_parent == cur_parent.loc) //safety check incase a thing is somehow inside itself, cancel
-			log_runtime("RECURSIVE_MOVE: Parent is inside itself. ([holder]) ([holder.type])")
+			log_runtime("RECURSIVE_MOVE: Parent is inside itself. ([holder()]) ([holder().type])")
 			reset_parents()
 			break
 		if(cur_parent in parents) //safety check incase of circular contents. (A inside B, B inside C, C inside A), cancel
-			log_runtime("RECURSIVE_MOVE: Parent is inside a circular inventory. ([holder]) ([holder.type])")
+			log_runtime("RECURSIVE_MOVE: Parent is inside a circular inventory. ([holder()]) ([holder().type])")
 			reset_parents()
 			break
 		recursion++
@@ -47,7 +45,7 @@
 		cur_parent = cur_parent.loc
 
 	if(recursion >= 64) // If we escaped due to iteration limit, cancel
-		log_runtime("RECURSIVE_MOVE: Parent hit recursion limit. ([holder]) ([holder.type])")
+		log_runtime("RECURSIVE_MOVE: Parent hit recursion limit. ([holder()]) ([holder().type])")
 		reset_parents()
 		LAZYCLEARLIST(parents)
 
@@ -58,16 +56,16 @@
 	//If we have no parents of type atom/movable then we wait to see if that changes, checking every time our holder moves.
 	if(!length(parents) && !noparents)
 		noparents = TRUE
-		RegisterSignal(holder, COMSIG_ATOM_ENTERING, PROC_REF(setup_parents))
+		RegisterSignal(holder(), COMSIG_ATOM_ENTERING, PROC_REF(setup_parents))
 
 	if(length(parents) && noparents)
 		noparents = FALSE
-		UnregisterSignal(holder, COMSIG_ATOM_ENTERING)
+		UnregisterSignal(holder(), COMSIG_ATOM_ENTERING)
 
 /datum/component/recursive_move/proc/unregister_signals()
 	if(noparents) // safety check
 		noparents = FALSE
-		UnregisterSignal(holder, COMSIG_ATOM_ENTERING)
+		UnregisterSignal(holder(), COMSIG_ATOM_ENTERING)
 	if(!length(parents))
 		return
 	for(var/atom/movable/cur_parent in parents)
@@ -80,12 +78,12 @@
 //Parent at top of heirarchy moved.
 /datum/component/recursive_move/proc/top_moved(atom/movable/am, atom/new_loc, atom/old_loc)
 	SIGNAL_HANDLER
-	SEND_SIGNAL(holder, COMSIG_MOVABLE_ATTEMPTED_MOVE, old_loc, new_loc)
+	SEND_SIGNAL(holder(), COMSIG_MOVABLE_ATTEMPTED_MOVE, old_loc, new_loc)
 
 //One of the parents other than the top parent moved.
 /datum/component/recursive_move/proc/heirarchy_changed(atom/old_loc, atom/movable/am, atom/new_loc)
 	SIGNAL_HANDLER
-	SEND_SIGNAL(holder, COMSIG_MOVABLE_ATTEMPTED_MOVE, old_loc, new_loc)
+	SEND_SIGNAL(holder(), COMSIG_MOVABLE_ATTEMPTED_MOVE, old_loc, new_loc)
 	//Rebuild our list of parents
 	reset_parents()
 	setup_parents()
@@ -96,13 +94,12 @@
 	SIGNAL_HANDLER
 	reset_parents()
 	noparents = TRUE
-	RegisterSignal(holder, COMSIG_ATOM_ENTERING, PROC_REF(setup_parents))
+	RegisterSignal(holder(), COMSIG_ATOM_ENTERING, PROC_REF(setup_parents))
 
 /datum/component/recursive_move/proc/on_holder_qdel()
 	SIGNAL_HANDLER
-	UnregisterSignal(holder, COMSIG_QDELETING)
+	UnregisterSignal(holder(), COMSIG_QDELETING)
 	reset_parents()
-	holder = null
 	qdel(src)
 
 /datum/component/recursive_move/proc/reset_parents()
@@ -122,3 +119,7 @@
 	. = ..()
 	AddComponent(/datum/component/recursive_move)
 	RegisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(shmove))
+
+/// LC-refs: the tracked movable (our parent) (was a var copying parent).
+/datum/component/recursive_move/proc/holder() as /atom/movable
+	return parent

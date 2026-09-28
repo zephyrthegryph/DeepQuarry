@@ -7,9 +7,9 @@
  * examine and screentips all read this one list.
  */
 /datum/interaction_resolution
-	var/mob/actor
-	var/atom/target
-	var/obj/item/held
+	var/actor_handle
+	var/target_handle
+	var/held_handle
 	/// Available interactions, highest priority first.
 	var/list/available = list()
 	/// Blocked interactions -> reason, highest priority first.
@@ -18,9 +18,9 @@
 	var/list/priorities = list()
 
 /datum/interaction_resolution/New(mob/actor, atom/target, obj/item/held)
-	src.actor = actor
-	src.target = target
-	src.held = held
+	src.actor_handle = om_handle(actor)
+	src.target_handle = om_handle(target)
+	src.held_handle = om_handle(held)
 
 /// The available interactions that answer `action` at the best priority. Several means a tie.
 /datum/interaction_resolution/proc/best_for_action(action)
@@ -73,19 +73,19 @@
 			continue
 		if(quality && interaction.tool != quality)
 			continue
-		if(!interaction.tool || !held?.has_tool_quality(interaction.tool))
+		if(!interaction.tool || !held()?.has_tool_quality(interaction.tool))
 			continue
 		return interaction
 	return null
 
 /**
- * Everything `actor` could do to `target` holding `held`, sorted by priority.
- * The actor's capability adapter drops what that kind of actor can never do.
+ * Everything `actor()` could do to `target()` holding `held()`, sorted by priority.
+ * The actor()'s capability adapter drops what that kind of actor can never do.
  * Combat mode (I6) orders the list: with it on, hostile interactions come
  * before the rest; with it off, after. `modifiers` is the click's modifier
  * list; the router has already turned modifiers into the action, so the
  * resolver itself needs none of them.
- * `adapter` overrides the actor's own, e.g. telekinesis acting for a human.
+ * `adapter` overrides the actor()'s own, e.g. telekinesis acting for a human.
  */
 /proc/interactions_for(mob/actor, atom/target, obj/item/held, list/modifiers, datum/input_adapter/adapter)
 	var/datum/interaction_resolution/resolution = new(actor, target, held)
@@ -361,3 +361,15 @@ GLOBAL_LIST_EMPTY(interaction_entry_actors)
 	if(issilicon(actor) && (target.silicon_use & (SILICON_USE_HAND | ROBOT_USE_HAND)))
 		return TRUE
 	return FALSE
+
+/// LC-refs: the mob acting -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/interaction_resolution/proc/actor() as /mob
+	return om_resolve(actor_handle)
+
+/// LC-refs: the atom acted on -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/interaction_resolution/proc/target() as /atom
+	return om_resolve(target_handle)
+
+/// LC-refs: the item in hand -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/interaction_resolution/proc/held() as /obj/item
+	return om_resolve(held_handle)

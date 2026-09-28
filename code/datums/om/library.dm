@@ -118,7 +118,7 @@
 	source.update_canmove()
 	source.update_floating(source.Check_Dense_Object())
 	if(target.riding_datum)
-		target.riding_datum.ridden = target
+		target.riding_datum.ridden_handle = om_handle(target)
 		target.riding_datum.handle_vehicle_offsets()
 	source.update_water()
 	target.post_buckle_mob(source)

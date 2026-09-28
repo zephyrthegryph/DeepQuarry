@@ -6,11 +6,11 @@
  */
 /datum/cogbar
 	/// Who's doing the thing
-	var/mob/user
+	var/user_handle
 	/// The user client
-	var/client/user_client
+	var/user_client_handle
 	/// The visible element to other players
-	var/obj/effect/overlay/vis/cog
+	var/cog_handle
 	/// The blank image that overlaps the cog - hides it from the source user
 	var/image/blank
 	/// The offset of the icon
@@ -21,8 +21,8 @@
 	var/cogiconstate
 
 /datum/cogbar/New(mob/user, cogicon, cogiconstate)
-	src.user = user
-	src.user_client = user.client
+	src.user_handle = om_handle(user)
+	src.user_client_handle = om_handle(user.client)
 	src.cogicon = cogicon
 	src.cogiconstate = cogiconstate
 	var/list/icon_offsets = user.get_oversized_icon_offsets()
@@ -42,16 +42,16 @@
 
 REF_OWNED(/datum/cogbar, "blank")
 
-// LIFECYCLE: takes its overlay off the user and its image off the user's client.
-/datum/cogbar/Destroy()
+/// Phase 1: take the overlay off the user and the blank image (owned, dropped in phase 4) off the client.
+/datum/cogbar/lifecycle_unbind()
+	var/mob/user = user()
 	if(user)
 		SSvis_overlays.remove_vis_overlay(user, user.managed_vis_overlays)
-		user_client?.images -= blank
-	return ..()
+		user_client()?.images -= blank
 
 /// Adds the cog to the user, visible by other players
 /datum/cogbar/proc/add_cog_to_user()
-	cog = SSvis_overlays.add_vis_overlay(user,
+	var/obj/effect/overlay/vis/cog = SSvis_overlays.add_vis_overlay(user(),
 		icon = cogicon,
 		iconstate = cogiconstate,
 		plane = ABOVE_PLANE,
@@ -59,10 +59,11 @@ REF_OWNED(/datum/cogbar, "blank")
 		unique = TRUE,
 		alpha = 0,
 	)
+	cog_handle = om_handle(cog)
 	cog.pixel_y = ICON_SIZE_Y + offset_y
-	animate(cog, alpha = user.alpha, time = COGBAR_ANIMATION_TIME)
+	animate(cog, alpha = user().alpha, time = COGBAR_ANIMATION_TIME)
 
-	if(isnull(user_client))
+	if(isnull(user_client()))
 		return
 
 	blank = image('icons/system/blank_32x32.dmi', cog, "nothing")
@@ -70,15 +71,15 @@ REF_OWNED(/datum/cogbar, "blank")
 	blank.appearance_flags = APPEARANCE_UI_IGNORE_ALPHA
 	blank.override = TRUE
 
-	user_client.images += blank
+	user_client().images += blank
 
 /// Removes the cog from the user
 /datum/cogbar/proc/remove()
-	if(isnull(cog))
+	if(isnull(cog()))
 		qdel(src)
 		return
 
-	animate(cog, alpha = 0, time = COGBAR_ANIMATION_TIME)
+	animate(cog(), alpha = 0, time = COGBAR_ANIMATION_TIME)
 
 	QDEL_IN(src, COGBAR_ANIMATION_TIME)
 
@@ -89,3 +90,15 @@ REF_OWNED(/datum/cogbar, "blank")
 	qdel(src)
 
 #undef COGBAR_ANIMATION_TIME
+
+/// LC-refs: the busy mob -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/cogbar/proc/user() as /mob
+	return om_resolve(user_handle)
+
+/// LC-refs: the busy mob's client -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/cogbar/proc/user_client() as /client
+	return om_resolve(user_client_handle)
+
+/// LC-refs: the cog vis overlay (SSvis_overlays owns it) -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/cogbar/proc/cog() as /obj/effect/overlay/vis
+	return om_resolve(cog_handle)

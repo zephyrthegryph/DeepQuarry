@@ -86,7 +86,7 @@ REF_OWNED_LIST(/obj/structure/cult/pylon/swarm, "active_beams")
 	for(var/mob/living/silicon/robot/drone/swarm/S in view(3, src))
 		var/has_beam = FALSE
 		for(var/datum/beam/B in active_beams)
-			if(B.target == S)
+			if(B.target() == S)
 				has_beam = TRUE
 				break
 

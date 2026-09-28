@@ -1,5 +1,5 @@
 /datum/tgs_event_handler/impl
-	var/datum/timedevent/reattach_timer
+	var/reattach_timer // a timer id
 
 /datum/tgs_event_handler/impl/HandleEvent(event_code, ...)
 	switch(event_code)

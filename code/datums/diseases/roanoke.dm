@@ -15,19 +15,12 @@
 	disease_flags = CURABLE | CAN_CARRY | CAN_NOT_POPULATE
 	virus_modifiers = BYPASSES_IMMUNITY | SPREAD_DEAD
 
-	var/list/obj/item/organ/organ_list
-	var/obj/item/organ/O
-
-/datum/disease/roanoke/Start()
-	var/mob/living/carbon/human/M = affected_mob
-
-	LAZYADD(organ_list, M.organs)
-	LAZYADD(organ_list, M.internal_organs)
 
 /datum/disease/roanoke/stage_act()
 	if(!..())
 		return FALSE
 	var/mob/living/carbon/human/M = affected_mob
+	var/obj/item/organ/O // picked from the host's current organs, not a snapshot taken at infection
 	switch(stage)
 		if(2)
 			if(prob(1))
@@ -44,7 +37,7 @@
 				if(M.bodytemperature < BODYTEMP_HEAT_DAMAGE_LIMIT)
 					fever(M)
 			if(prob(1))
-				O = DEFAULTPICK(organ_list, null)
+				O = DEFAULTPICK(M.organs + M.internal_organs, null)
 				O.adjust_germ_level(rand(5, 10))
 		if(4)
 			if(prob(1))
@@ -52,7 +45,7 @@
 				if(M.bodytemperature < BODYTEMP_HEAT_DAMAGE_LIMIT)
 					fever(M)
 			if(prob(2))
-				O = DEFAULTPICK(organ_list, null)
+				O = DEFAULTPICK(M.organs + M.internal_organs, null)
 				O.adjust_germ_level(rand(5, 10))
 		if(5)
 			if(prob(1))
@@ -60,10 +53,10 @@
 				if(M.bodytemperature < BODYTEMP_HEAT_DAMAGE_LIMIT)
 					fever(M)
 			if(prob(2))
-				O = DEFAULTPICK(organ_list, null)
+				O = DEFAULTPICK(M.organs + M.internal_organs, null)
 				O.adjust_germ_level(rand(5, 10))
 			if(prob(1))
-				O = DEFAULTPICK(organ_list, null)
+				O = DEFAULTPICK(M.organs + M.internal_organs, null)
 				M.injure(INJURY_BLUNT, rand(1, 3), O)
 		if(6)
 			if(prob(1))
@@ -72,15 +65,15 @@
 					fever(M)
 
 			if(prob(2))
-				O = DEFAULTPICK(organ_list, null)
+				O = DEFAULTPICK(M.organs + M.internal_organs, null)
 				O.adjust_germ_level(rand(5, 10))
 
 			if(prob(2))
-				O = DEFAULTPICK(organ_list, null)
+				O = DEFAULTPICK(M.organs + M.internal_organs, null)
 				M.injure(INJURY_BLUNT, rand(1, 3), O)
 
 			if(prob(1) && prob(10))
-				O = DEFAULTPICK(organ_list, null)
+				O = DEFAULTPICK(M.organs + M.internal_organs, null)
 				var/obj/item/organ/external/E = O.parent_organ
 				var/datum/affliction/wound/internal_bleeding/W = new(5)
 				E.add_wound(W)

@@ -770,10 +770,10 @@ REF_OWNED(/mob/living/simple_mob, list("myid", "mob_radio"))
 	only_one_driver = TRUE			// If true, only the person in 'front' (first on list of riding mobs) can drive.
 
 /datum/riding/simple_mob/handle_vehicle_layer()
-	ridden.layer = initial(ridden.layer)
+	ridden().restore_initial_layer()
 
 /datum/riding/simple_mob/ride_check(mob/living/M)
-	var/mob/living/L = ridden
+	var/mob/living/L = ridden()
 	if(L.stat)
 		force_dismount(M)
 		return FALSE
@@ -781,10 +781,10 @@ REF_OWNED(/mob/living/simple_mob, list("myid", "mob_radio"))
 
 /datum/riding/simple_mob/force_dismount(mob/M)
 	. =..()
-	ridden.visible_message(span_notice("[M] stops riding [ridden]!"))
+	ridden().visible_message(span_notice("[M] stops riding [ridden()]!"))
 
 /datum/riding/simple_mob/get_offsets(pass_index) // list(dir = x, y, layer)
-	var/mob/living/simple_mob/L = ridden
+	var/mob/living/simple_mob/L = ridden()
 	var/scale = L.size_multiplier
 	var/scale_difference = (L.size_multiplier - rider_size) * 10
 

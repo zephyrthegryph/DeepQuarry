@@ -1,9 +1,8 @@
 ///Disposal connection component, allows an atom to recieve and send disposal packages if attached to a disposal trunk.
 /datum/component/disposal_system_connection
 	//The connected trunk. Also determines if we're linked already or not.
-	var/obj/structure/disposalpipe/trunk/connected_trunk = null
+	var/connected_trunk_handle
 
-	var/atom/disposal_owner
 	/// The proc that the owner has that'll accept a list of items from recieved disposal packets.
 	var/visible_connection
 
@@ -12,20 +11,19 @@
 		return COMPONENT_INCOMPATIBLE
 	if(isarea(parent))
 		return COMPONENT_INCOMPATIBLE
-	disposal_owner = parent
 	visible_connection = visibly_connects
 
 /datum/component/disposal_system_connection/RegisterWithParent()
-	RegisterSignal(disposal_owner, COMSIG_DISPOSAL_FLUSH, PROC_REF(on_flush))
-	RegisterSignal(disposal_owner, COMSIG_DISPOSAL_LINK, PROC_REF(link_to_trunk))
-	RegisterSignal(disposal_owner, COMSIG_DISPOSAL_UNLINK, PROC_REF(unlink_from_trunk))
-	RegisterSignal(disposal_owner, COMSIG_ATOM_EXAMINE, PROC_REF(on_examine))
+	RegisterSignal(disposal_owner(), COMSIG_DISPOSAL_FLUSH, PROC_REF(on_flush))
+	RegisterSignal(disposal_owner(), COMSIG_DISPOSAL_LINK, PROC_REF(link_to_trunk))
+	RegisterSignal(disposal_owner(), COMSIG_DISPOSAL_UNLINK, PROC_REF(unlink_from_trunk))
+	RegisterSignal(disposal_owner(), COMSIG_ATOM_EXAMINE, PROC_REF(on_examine))
 
 /datum/component/disposal_system_connection/UnregisterFromParent()
-	UnregisterSignal(disposal_owner, COMSIG_DISPOSAL_FLUSH)
-	UnregisterSignal(disposal_owner, COMSIG_DISPOSAL_LINK)
-	UnregisterSignal(disposal_owner, COMSIG_DISPOSAL_UNLINK)
-	UnregisterSignal(disposal_owner, COMSIG_ATOM_EXAMINE)
+	UnregisterSignal(disposal_owner(), COMSIG_DISPOSAL_FLUSH)
+	UnregisterSignal(disposal_owner(), COMSIG_DISPOSAL_LINK)
+	UnregisterSignal(disposal_owner(), COMSIG_DISPOSAL_UNLINK)
+	UnregisterSignal(disposal_owner(), COMSIG_ATOM_EXAMINE)
 
 // Signal handling
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -42,17 +40,17 @@
 		return FALSE
 	if(trunk.linked) //Already linked to something
 		return FALSE
-	connected_trunk = trunk
-	trunk.linked = disposal_owner
+	connected_trunk_handle = om_handle(trunk)
+	trunk.linked = disposal_owner()
 	RegisterSignal(trunk, COMSIG_DISPOSAL_SEND, PROC_REF(on_recieve))
 
 /datum/component/disposal_system_connection/proc/unlink_from_trunk(datum/source)
 	SIGNAL_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)
-	if(connected_trunk)
-		connected_trunk.linked = null
-		UnregisterSignal(connected_trunk, COMSIG_DISPOSAL_SEND)
-		connected_trunk = null
+	if(connected_trunk())
+		connected_trunk().linked = null
+		UnregisterSignal(connected_trunk(), COMSIG_DISPOSAL_SEND)
+		connected_trunk_handle = null
 
 /datum/component/disposal_system_connection/proc/on_recieve(datum/source, obj/structure/disposalholder/packet)
 	SIGNAL_HANDLER
@@ -63,7 +61,7 @@
 	SIGNAL_HANDLER
 	if(!visible_connection)
 		return
-	examine_texts += span_notice("It [connected_trunk ? "is connected" : "can be connected"] to a disposal pipe network.")
+	examine_texts += span_notice("It [connected_trunk() ? "is connected" : "can be connected"] to a disposal pipe network.")
 
 // Flush handling, can be override by subtypes but excepts parent proc to handle core logic
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -71,14 +69,14 @@
 	PROTECTED_PROC(TRUE)
 	SHOULD_CALL_PARENT(TRUE)
 	// if no trunk connected, return false
-	if(!connected_trunk)
+	if(!connected_trunk())
 		return FALSE
 
 	var/obj/structure/disposalholder/packet = new()	// virtual holder object which actually travels through the pipes.
 	packet.init(flushed_items, flush_gas)
 
 	// start the holder processing movement
-	packet.forceMove(connected_trunk)
+	packet.forceMove(connected_trunk())
 	packet.active = TRUE
 	packet.set_dir(DOWN)
 	packet.move()
@@ -97,9 +95,17 @@
 	var/list/expelled_items = list()
 	for(var/atom/movable/AM in packet)
 		expelled_items += AM
-		AM.forceMove(disposal_owner)
+		AM.forceMove(disposal_owner())
 	var/datum/gas_mixture/gas = new()
 	gas.copy_from(packet.gas)
 	qdel(packet)
-	SEND_SIGNAL(disposal_owner, COMSIG_DISPOSAL_RECEIVE, expelled_items, gas)
+	SEND_SIGNAL(disposal_owner(), COMSIG_DISPOSAL_RECEIVE, expelled_items, gas)
 	return TRUE
+
+/// LC-refs: the connected machine (our parent) (was a var copying parent).
+/datum/component/disposal_system_connection/proc/disposal_owner() as /atom
+	return parent
+
+/// LC-refs: the trunk we are linked to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/component/disposal_system_connection/proc/connected_trunk() as /obj/structure/disposalpipe/trunk
+	return om_resolve(connected_trunk_handle)

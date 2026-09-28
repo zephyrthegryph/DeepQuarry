@@ -14,7 +14,7 @@
 	 * The atom the component is tracking. The component will delete itself if the tracked is deleted.
 	 * Signals will also be updated whenever it moves (if it's a movable).
 	 */
-	var/atom/tracked
+	var/tracked_handle
 
 	/// The component will hook into signals only on turfs not farther from tracked than this.
 	var/range
@@ -34,7 +34,7 @@
 	if(!compare_list(src.connections, connections))
 		stack_trace("connect_range component attached to [parent] tried to inherit another connect_range component with different connections")
 		return
-	if(src.tracked != tracked)
+	if(src.tracked() != tracked)
 		set_tracked(tracked)
 	if(src.range == range && src.works_in_containers == works_in_containers)
 		return
@@ -43,22 +43,22 @@
 	src.range = range
 	src.works_in_containers = works_in_containers
 	//Re-register the signals with the new settings.
-	update_signals(src.tracked)
+	update_signals(src.tracked())
 
 /datum/component/connect_range/proc/set_tracked(atom/new_tracked)
-	if(tracked) //Unregister the signals from the old tracked and its surroundings
-		unregister_signals(isturf(tracked) ? tracked : tracked.loc, turfs)
-		UnregisterSignal(tracked, list(
+	if(tracked()) //Unregister the signals from the old tracked and its surroundings
+		unregister_signals(isturf(tracked()) ? tracked() : tracked().loc, turfs)
+		UnregisterSignal(tracked(), list(
 			COMSIG_MOVABLE_MOVED,
 			COMSIG_QDELETING,
 		))
-	tracked = new_tracked
-	if(!tracked)
+	tracked_handle = om_handle(new_tracked)
+	if(!tracked())
 		return
 	//Register signals on the new tracked atom and its surroundings.
-	RegisterSignal(tracked, COMSIG_MOVABLE_MOVED, PROC_REF(on_moved))
-	RegisterSignal(tracked, COMSIG_QDELETING, PROC_REF(handle_tracked_qdel))
-	update_signals(tracked)
+	RegisterSignal(tracked(), COMSIG_MOVABLE_MOVED, PROC_REF(on_moved))
+	RegisterSignal(tracked(), COMSIG_QDELETING, PROC_REF(handle_tracked_qdel))
+	update_signals(tracked())
 
 /datum/component/connect_range/proc/handle_tracked_qdel()
 	SIGNAL_HANDLER
@@ -111,3 +111,7 @@
 /datum/component/connect_range/proc/on_moved(atom/movable/movable, atom/old_loc)
 	SIGNAL_HANDLER
 	update_signals(movable, old_loc)
+
+/// LC-refs: the atom being tracked -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/component/connect_range/proc/tracked() as /atom
+	return om_resolve(tracked_handle)

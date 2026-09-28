@@ -75,7 +75,7 @@
 	account.owner_name = "Stable Reputation Tester"
 	registry_join(REGISTRY_MONEY_ACCOUNTS, account)
 	var/datum/mind/test_mind = new("stable_reputation_tester")
-	test_mind.initial_account = account
+	test_mind.initial_account_handle = om_handle(account)
 	var/mob/living/carbon/human/first_body = new(test_turf)
 	test_mind.transfer_to(first_body)
 	var/list/affiliations = list()
@@ -112,7 +112,7 @@
 	account.owner_name = "Agency Tester"
 	registry_join(REGISTRY_MONEY_ACCOUNTS, account)
 	var/datum/mind/test_mind = new("agency_tester")
-	test_mind.initial_account = account
+	test_mind.initial_account_handle = om_handle(account)
 	var/mob/living/carbon/human/test_agent = new(test_turf)
 	test_mind.transfer_to(test_agent)
 	var/datum/faction_reputation_ledger/ledger = GLOB.station_faction_relations.get_personal_ledger(account.account_number)
@@ -228,7 +228,7 @@
 	account.owner_name = "Operation Terms Tester"
 	registry_join(REGISTRY_MONEY_ACCOUNTS, account)
 	var/datum/mind/test_mind = new("operation_terms_tester")
-	test_mind.initial_account = account
+	test_mind.initial_account_handle = om_handle(account)
 	var/mob/living/carbon/human/agent = new(test_turf)
 	test_mind.transfer_to(agent)
 	var/datum/contract/faction_agent/registered = new

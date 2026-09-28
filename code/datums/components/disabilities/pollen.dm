@@ -1,13 +1,11 @@
 /datum/component/pollen_disability
-	var/mob/living/carbon/human/owner
 	var/allergy_chance = 20
 
 /datum/component/pollen_disability/Initialize()
 	if (!ishuman(parent))
 		return COMPONENT_INCOMPATIBLE
 
-	owner = parent
-	RegisterSignal(owner, COMSIG_HANDLE_DISABILITIES, PROC_REF(process_component))
+	RegisterSignal(owner(), COMSIG_HANDLE_DISABILITIES, PROC_REF(process_component))
 
 /datum/component/pollen_disability/proc/process_component()
 	SIGNAL_HANDLER
@@ -16,40 +14,40 @@
 		return
 	if(!prob(allergy_chance))
 		return
-	if(!isturf(owner.loc))
+	if(!isturf(owner().loc))
 		return
-	if(owner.stat != CONSCIOUS)
+	if(owner().stat != CONSCIOUS)
 		return
-	if(owner.transforming)
+	if(owner().transforming)
 		return
 
 	// Check for masks or internals
-	if(istype(owner.get_equipped_item(SLOT_ID_HEAD),/obj/item/clothing/head/helmet/space) && owner.internal) // Hardsuits
+	if(istype(owner().get_equipped_item(SLOT_ID_HEAD),/obj/item/clothing/head/helmet/space) && owner().internal) // Hardsuits
 		return
-	if(owner.get_equipped_item(SLOT_ID_MASK)) // masks block it entirely
-		if(owner.get_equipped_item(SLOT_ID_MASK).item_flags & AIRTIGHT)
-			if(owner.internal) // gas on
+	if(owner().get_equipped_item(SLOT_ID_MASK)) // masks block it entirely
+		if(owner().get_equipped_item(SLOT_ID_MASK).item_flags & AIRTIGHT)
+			if(owner().internal) // gas on
 				return
-		if(owner.get_equipped_item(SLOT_ID_MASK).item_flags & BLOCK_GAS_SMOKE_EFFECT)
+		if(owner().get_equipped_item(SLOT_ID_MASK).item_flags & BLOCK_GAS_SMOKE_EFFECT)
 			return
 
 	// Time to ENGAGE THE ALLERGY
-	if(prob(5) && istype(owner.loc,/turf/simulated/floor/grass))
+	if(prob(5) && istype(owner().loc,/turf/simulated/floor/grass))
 		trigger_allergy()
 		return
 
 	// Hand check
 	var/list/things = list()
 	if(prob(32))
-		if(!isnull(owner.get_equipped_item(SLOT_ID_HAND_R)))
-			things += owner.get_equipped_item(SLOT_ID_HAND_R)
-		if(!isnull(owner.get_equipped_item(SLOT_ID_HAND_L)))
-			things += owner.get_equipped_item(SLOT_ID_HAND_L)
+		if(!isnull(owner().get_equipped_item(SLOT_ID_HAND_R)))
+			things += owner().get_equipped_item(SLOT_ID_HAND_R)
+		if(!isnull(owner().get_equipped_item(SLOT_ID_HAND_L)))
+			things += owner().get_equipped_item(SLOT_ID_HAND_L)
 
 	// terrain tests
-	things += owner.loc.contents
+	things += owner().loc.contents
 	if(prob(25)) // ranged check
-		things += orange(2,owner.loc)
+		things += orange(2,owner().loc)
 
 	// scan irritants!
 	if(things.len)
@@ -70,6 +68,10 @@
 				return
 
 /datum/component/pollen_disability/proc/trigger_allergy()
-	to_chat(owner, span_danger("[pick("The air feels itchy!","Your face feels uncomfortable!","Your body tingles!")]"))
-	owner.add_modifier(/datum/modifier/allergic_flare, 3 SECONDS)
+	to_chat(owner(), span_danger("[pick("The air feels itchy!","Your face feels uncomfortable!","Your body tingles!")]"))
+	owner().add_modifier(/datum/modifier/allergic_flare, 3 SECONDS)
 
+
+/// LC-refs: the afflicted mob (our parent) (was a var copying parent).
+/datum/component/pollen_disability/proc/owner() as /mob/living/carbon/human
+	return parent

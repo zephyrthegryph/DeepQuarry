@@ -3,7 +3,7 @@
 /datum/component/squeak
 	var/static/list/default_squeak_sounds = list('sound/items/bikehorn.ogg'=1, 'sound/voice/quack.ogg'=1)
 	var/list/override_squeak_sounds
-	var/mob/holder
+	var/holder_handle
 
 	var/squeak_chance = 100
 	var/volume = 30
@@ -121,9 +121,9 @@
 
 /datum/component/squeak/proc/on_equip(datum/source, mob/equipper, slot)
 	SIGNAL_HANDLER
-	holder = equipper
+	holder_handle = om_handle(equipper)
 	//RegisterSignal(holder, COMSIG_MOVABLE_DISPOSING, PROC_REF(disposing_react), override=TRUE)
-	RegisterSignal(holder, COMSIG_QDELETING, PROC_REF(holder_deleted), override=TRUE)
+	RegisterSignal(holder(), COMSIG_QDELETING, PROC_REF(holder_deleted), override=TRUE)
 	//override for the preqdeleted is necessary because putting parent in hands sends the signal that this proc is registered towards,
 	//so putting an object in hands and then equipping the item on a clothing slot (without dropping it first)
 	//will always runtime without override = TRUE
@@ -132,13 +132,13 @@
 	SIGNAL_HANDLER
 	//UnregisterSignal(user, COMSIG_MOVABLE_DISPOSING)
 	UnregisterSignal(user, COMSIG_QDELETING)
-	holder = null
+	holder_handle = null
 
 ///just gets rid of the reference to holder in the case that theyre qdeleted
 /datum/component/squeak/proc/holder_deleted(datum/source, datum/possible_holder)
 	SIGNAL_HANDLER
-	if(possible_holder == holder)
-		holder = null
+	if(possible_holder == holder())
+		holder_handle = null
 
 /*	We don't have comsigs set up for these
 // Disposal pipes related shits
@@ -160,3 +160,7 @@
 
 	qdel(src)
 */
+
+/// LC-refs: the mob wearing the squeaky thing -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/component/squeak/proc/holder() as /mob
+	return om_resolve(holder_handle)

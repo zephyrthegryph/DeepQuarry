@@ -30,7 +30,7 @@
 		return
 	if(H.mind)
 		var/datum/mind/M = H.mind
-		if(M.initial_account)
-			var/datum/money_account/A = M.initial_account
+		if(M.initial_account())
+			var/datum/money_account/A = M.initial_account()
 			C.associated_account_number = A.account_number
 	return C

@@ -48,19 +48,19 @@
 /// character's DNA and languages by reference.
 /mob/living/carbon/brain/on_identity_bound()
 	..()
-	if(identity.real_name)
-		real_name = identity.real_name
+	if(identity().real_name)
+		real_name = identity().real_name
 		name = real_name
-	if(identity.get_dna())
-		dna = identity.dna
-	if(identity.languages)
-		languages = identity.languages
+	if(identity().get_dna())
+		dna = identity().dna()
+	if(identity().languages)
+		languages = identity().languages
 	else
-		identity.languages = languages
+		identity().languages = languages
 
 /// The brain tissue this view shows, if any.
 /mob/living/carbon/brain/proc/host_tissue()
-	return host?.tissue
+	return host?.tissue()
 
 /// Sync stat with the host: the view is dead exactly when its brain tissue is
 /// brain dead (/obj/item/organ/internal/brain/proc/is_brain_dead()), or when a
@@ -68,7 +68,7 @@
 /mob/living/carbon/brain/proc/refresh_host_status()
 	if(!host)
 		return
-	var/obj/item/organ/internal/brain/tissue = host.tissue
+	var/obj/item/organ/internal/brain/tissue = host.tissue()
 	if(tissue)
 		had_tissue = TRUE
 	if(tissue ? tissue.is_brain_dead() : had_tissue)
@@ -121,7 +121,7 @@
 	if(db)
 		var/datum/transhuman/mind_record/record = db.backed_up[src.mind.name]
 		if(!(record.dead_state == MR_DEAD))
-			if((world.time - identity.time_of_death) > 5 MINUTES)	//Allows notify transcore to be used if you have an entry but for some reason weren't marked as dead
+			if((world.time - identity().time_of_death) > 5 MINUTES)	//Allows notify transcore to be used if you have an entry but for some reason weren't marked as dead
 				record.dead_state = MR_DEAD				//Such as if you got scanned but didn't take an implant. It's a little funky, but I mean, you got scanned
 				db.notify(record)						//So you probably will want to let someone know if you die.
 				record.last_notification = world.time

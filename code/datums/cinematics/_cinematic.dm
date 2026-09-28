@@ -30,8 +30,8 @@
 
 /// Cinematic datum. Used to show an animation to everyone.
 /datum/cinematic
-	/// A list of all clients watching the cinematic
-	var/list/client/watching
+	/// OM handles ("@ckey") of all clients watching the cinematic
+	var/list/watching
 	/// A list of all mobs who have TRAIT_NO_TRANSFORM set while watching the cinematic
 	var/list/locked = list()
 	/// Whether the cinematic is a global cinematic or not
@@ -107,10 +107,10 @@ REF_OWNED(/datum/cinematic, "screen")
 		lock_mob(watching_mob)
 
 	// Only show the actual cinematic to cliented mobs.
-	if(!watching_client || (watching_client in watching))
+	if(!watching_client || (om_handle(watching_client) in watching))
 		return
 
-	LAZYADD(watching, watching_client)
+	LAZYADD(watching, om_handle(watching_client))
 	watching_mob.overlay_fullscreen("cinematic", /atom/movable/screen/fullscreen/cinematic_backdrop)
 	watching_client.screen += screen
 	RegisterSignal(watching_client, COMSIG_QDELETING, PROC_REF(remove_watcher))
@@ -120,8 +120,10 @@ REF_OWNED(/datum/cinematic, "screen")
 	if(is_global)
 		SEND_SOUND(world, sound_to_play)
 	else
-		for(var/client/watching_client as anything in watching)
-			SEND_SOUND(watching_client, sound_to_play)
+		for(var/watcher_handle in watching)
+			var/client/watching_client = om_resolve(watcher_handle)
+			if(watching_client)
+				SEND_SOUND(watching_client, sound_to_play)
 
 /// Invoke any special callbacks for actual effects synchronized with animation.
 /// (Such as a real nuke explosion happening midway)
@@ -134,8 +136,12 @@ REF_OWNED(/datum/cinematic, "screen")
 
 /// Stops the cinematic and removes it from all the viewers.
 /datum/cinematic/proc/stop_cinematic()
-	for(var/client/viewing_client as anything in watching)
-		remove_watcher(viewing_client)
+	for(var/watcher_handle in watching?.Copy())
+		var/client/viewing_client = om_resolve(watcher_handle)
+		if(viewing_client)
+			remove_watcher(viewing_client)
+		else
+			LAZYREMOVE(watching, watcher_handle)
 
 	for(var/locked_ref as anything in locked)
 		unlock_mob(locked_ref)
@@ -159,7 +165,8 @@ REF_OWNED(/datum/cinematic, "screen")
 /datum/cinematic/proc/remove_watcher(client/no_longer_watching)
 	SIGNAL_HANDLER
 
-	if(!(no_longer_watching in watching))
+	var/watcher_handle = om_handle(no_longer_watching)
+	if(!(watcher_handle in watching))
 		CRASH("cinematic remove_watcher was passed a client which wasn't watching.")
 
 	UnregisterSignal(no_longer_watching, COMSIG_QDELETING)
@@ -168,6 +175,8 @@ REF_OWNED(/datum/cinematic, "screen")
 	no_longer_watching.mob?.clear_fullscreen("cinematic")
 	no_longer_watching.screen -= screen
 
-	LAZYREMOVE(watching, no_longer_watching)
+	LAZYREMOVE(watching, watcher_handle)
 
 #undef CINEMATIC_SOURCE
+
+REF_OWNED(/datum/cinematic, "special_callback")

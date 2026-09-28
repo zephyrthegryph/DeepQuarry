@@ -8,7 +8,7 @@
 	 * The atom the component is tracking. The component will delete itself if the tracked is deleted.
 	 * Signals will also be updated whenever it moves.
 	 */
-	var/atom/movable/tracked
+	var/tracked_handle
 
 /datum/component/connect_containers/Initialize(atom/movable/tracked, list/connections)
 	. = ..()
@@ -22,20 +22,20 @@
 	// Not equivalent. Checks if they are not the same list via shallow comparison.
 	if(!compare_list(src.connections, connections))
 		return FALSE // Different set of connections.
-	if(src.tracked != tracked)
+	if(src.tracked() != tracked)
 		set_tracked(tracked) // Different target for the same set of connections, track the new target.
 	return TRUE // No new component.
 
 /datum/component/connect_containers/proc/set_tracked(atom/movable/new_tracked)
-	if(tracked)
-		UnregisterSignal(tracked, list(COMSIG_MOVABLE_MOVED, COMSIG_QDELETING))
-		unregister_signals(tracked)
-	tracked = new_tracked
-	if(!tracked)
+	if(tracked())
+		UnregisterSignal(tracked(), list(COMSIG_MOVABLE_MOVED, COMSIG_QDELETING))
+		unregister_signals(tracked())
+	tracked_handle = om_handle(new_tracked)
+	if(!tracked())
 		return
-	RegisterSignal(tracked, COMSIG_MOVABLE_MOVED, PROC_REF(on_moved))
-	RegisterSignal(tracked, COMSIG_QDELETING, PROC_REF(handle_tracked_qdel))
-	update_signals(tracked)
+	RegisterSignal(tracked(), COMSIG_MOVABLE_MOVED, PROC_REF(on_moved))
+	RegisterSignal(tracked(), COMSIG_QDELETING, PROC_REF(handle_tracked_qdel))
+	update_signals(tracked())
 
 /datum/component/connect_containers/proc/handle_tracked_qdel()
 	SIGNAL_HANDLER
@@ -62,3 +62,7 @@
 	SIGNAL_HANDLER
 	unregister_signals(old_loc)
 	update_signals(listener)
+
+/// LC-refs: the movable being tracked -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/component/connect_containers/proc/tracked() as /atom/movable
+	return om_resolve(tracked_handle)

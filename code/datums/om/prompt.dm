@@ -97,88 +97,106 @@
 			if(L.invalid)
 				qdel(L)
 				return null
-			L.om_prompt = P
+			L.om_prompt_handle = om_handle(P)
 			L.tgui_interact(user)
 			return L
 		if("text")
 			var/datum/tgui_input_text/om/T = new(user, S["message"], S["title"] || "Text Input", S["default"], MAX_TGUI_INPUT, FALSE, TRUE, timeout, GLOB.tgui_always_state)
-			T.om_prompt = P
+			T.om_prompt_handle = om_handle(P)
 			T.tgui_interact(user)
 			return T
 		if("number")
 			var/datum/tgui_input_number/om/N = new(user, S["message"], S["title"] || "Number Input", S["default"] || 0, isnull(S["max"]) ? INFINITY : S["max"], S["min"] || 0, timeout, TRUE, GLOB.tgui_always_state)
-			N.om_prompt = P
+			N.om_prompt_handle = om_handle(P)
 			N.tgui_interact(user)
 			return N
 	var/datum/tgui_alert/om/A = new(user, S["message"], S["title"], S["choices"] || list("Ok"), timeout, TRUE, GLOB.tgui_always_state)
-	A.om_prompt = P
+	A.om_prompt_handle = om_handle(P)
 	A.tgui_interact(user)
 	return A
 
 /datum/tgui_alert/om
-	var/datum/om/prompt/om_prompt
+	var/om_prompt_handle
 
 /datum/tgui_alert/om/set_choice(choice)
 	. = ..()
-	if(om_prompt && !isnull(src.choice))
-		var/datum/om/prompt/P = om_prompt
-		om_prompt = null
+	if(prompt_of() && !isnull(src.choice))
+		var/datum/om/prompt/P = prompt_of()
+		om_prompt_handle = null
 		om_prompt_answer(P, src.choice)
 
 /datum/tgui_alert/om/tgui_close(mob/user)
 	. = ..()
-	if(om_prompt)
-		om_prompt_closed(om_prompt)
-		om_prompt = null
+	if(prompt_of())
+		om_prompt_closed(prompt_of())
+		om_prompt_handle = null
 	qdel(src)
 
 /datum/tgui_list_input/om
-	var/datum/om/prompt/om_prompt
+	var/om_prompt_handle
 
 /datum/tgui_list_input/om/set_choice(choice)
 	. = ..()
-	if(om_prompt && !isnull(src.choice))
-		var/datum/om/prompt/P = om_prompt
-		om_prompt = null
+	if(prompt_of() && !isnull(src.choice))
+		var/datum/om/prompt/P = prompt_of()
+		om_prompt_handle = null
 		om_prompt_answer(P, src.choice)
 
 /datum/tgui_list_input/om/tgui_close(mob/user)
 	. = ..()
-	if(om_prompt)
-		om_prompt_closed(om_prompt)
-		om_prompt = null
+	if(prompt_of())
+		om_prompt_closed(prompt_of())
+		om_prompt_handle = null
 	qdel(src)
 
 /datum/tgui_input_text/om
-	var/datum/om/prompt/om_prompt
+	var/om_prompt_handle
 
 /datum/tgui_input_text/om/set_entry(entry)
 	. = ..()
-	if(om_prompt && !isnull(src.entry))
-		var/datum/om/prompt/P = om_prompt
-		om_prompt = null
+	if(prompt_of() && !isnull(src.entry))
+		var/datum/om/prompt/P = prompt_of()
+		om_prompt_handle = null
 		om_prompt_answer(P, src.entry)
 
 /datum/tgui_input_text/om/tgui_close(mob/user)
 	. = ..()
-	if(om_prompt)
-		om_prompt_closed(om_prompt)
-		om_prompt = null
+	if(prompt_of())
+		om_prompt_closed(prompt_of())
+		om_prompt_handle = null
 	qdel(src)
 
 /datum/tgui_input_number/om
-	var/datum/om/prompt/om_prompt
+	var/om_prompt_handle
 
 /datum/tgui_input_number/om/set_entry(entry)
 	. = ..()
-	if(om_prompt && !isnull(src.entry))
-		var/datum/om/prompt/P = om_prompt
-		om_prompt = null
+	if(prompt_of() && !isnull(src.entry))
+		var/datum/om/prompt/P = prompt_of()
+		om_prompt_handle = null
 		om_prompt_answer(P, src.entry)
 
 /datum/tgui_input_number/om/tgui_close(mob/user)
 	. = ..()
-	if(om_prompt)
-		om_prompt_closed(om_prompt)
-		om_prompt = null
+	if(prompt_of())
+		om_prompt_closed(prompt_of())
+		om_prompt_handle = null
 	qdel(src)
+
+/// LC-refs: the OM prompt this window answers -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_alert/om/proc/prompt_of() as /datum/om/prompt
+	return om_resolve(om_prompt_handle)
+
+/// LC-refs: the OM prompt this window answers -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_list_input/om/proc/prompt_of() as /datum/om/prompt
+	return om_resolve(om_prompt_handle)
+
+/// LC-refs: the OM prompt this window answers -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_input_text/om/proc/prompt_of() as /datum/om/prompt
+	return om_resolve(om_prompt_handle)
+
+/// LC-refs: the OM prompt this window answers -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_input_number/om/proc/prompt_of() as /datum/om/prompt
+	return om_resolve(om_prompt_handle)
+
+REF_OWNED(/datum/om/prompt, "ui")

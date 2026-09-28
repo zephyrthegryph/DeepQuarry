@@ -51,10 +51,11 @@
  * to it.
  */
 /datum/element/footstep_override/proc/occupy_turf(atom/movable/movable, turf/location)
-	if(occupied_turfs[location])
-		occupied_turfs[location] |= movable
+	var/turf_handle = om_handle(location)
+	if(occupied_turfs[turf_handle])
+		occupied_turfs[turf_handle] |= om_handle(movable)
 		return
-	occupied_turfs[location] = list(movable)
+	occupied_turfs[turf_handle] = list(om_handle(movable))
 	RegisterSignal(location, COMSIG_TURF_PREPARE_STEP_SOUND, PROC_REF(prepare_steps))
 
 /**
@@ -63,9 +64,10 @@
  * unregistered from it
  */
 /datum/element/footstep_override/proc/vacate_turf(atom/movable/movable, turf/location)
-	LAZYREMOVE(occupied_turfs[location], movable)
-	if(!occupied_turfs[location])
-		occupied_turfs -= location
+	var/turf_handle = om_handle(location)
+	LAZYREMOVE(occupied_turfs[turf_handle], om_handle_of(movable))
+	if(!occupied_turfs[turf_handle])
+		occupied_turfs -= turf_handle
 		UnregisterSignal(location, COMSIG_TURF_PREPARE_STEP_SOUND)
 
 ///Changes the sound types to be played if the element priority is higher than the one in the steps list.

@@ -16,7 +16,7 @@
 	life_leave_z()
 	remove_all_modifiers(TRUE)
 	// The character's DNA outlives this body when the identity references it.
-	if(dna && identity?.dna == dna)
+	if(dna && identity()?.dna() == dna)
 		dna = null
 	QDEL_NULL(say_list)
 
@@ -350,7 +350,7 @@
 /mob/living/proc/do_examine_ooc(mob/user)
 	//Makes it so SSD people have prefs with fallback to original style.
 	if(CONFIG_GET(flag/allow_metadata))
-		if(identity.ooc_notes)
+		if(identity().ooc_notes)
 			ooc_notes_window(user)
 //			to_chat(user, span_filter_notice("[src]'s Metainfo:<br>[ooc_notes]"))
 		else if(client)
@@ -1056,11 +1056,11 @@
 /mob/living/proc/set_metainfo_favs(mob/user, reopen = TRUE)
 	if(user != src)
 		return
-	var/new_metadata = strip_html_simple(tgui_input_text(user, "Enter any information you'd like others to see relating to your FAVOURITE roleplay preferences. This will not be saved permanently unless you click save in the OOC notes panel! Type \"!clear\" to empty.", "Game Preference" , html_decode(identity.ooc_notes_favs), multiline = TRUE,  prevent_enter = TRUE))
+	var/new_metadata = strip_html_simple(tgui_input_text(user, "Enter any information you'd like others to see relating to your FAVOURITE roleplay preferences. This will not be saved permanently unless you click save in the OOC notes panel! Type \"!clear\" to empty.", "Game Preference" , html_decode(identity().ooc_notes_favs), multiline = TRUE,  prevent_enter = TRUE))
 	if(new_metadata && CanUseTopic(user))
 		if(new_metadata == "!clear")
 			new_metadata = ""
-		identity.ooc_notes_favs = new_metadata
+		identity().ooc_notes_favs = new_metadata
 		client.prefs.update_preference_by_type(/datum/preference/text/living/ooc_notes_favs, new_metadata)
 		to_chat(user, span_filter_notice("OOC note favs have been updated. Don't forget to save!"))
 		log_admin("[key_name(user)] updated their OOC note favs mid-round.")
@@ -1070,11 +1070,11 @@
 /mob/living/proc/set_metainfo_maybes(mob/user, reopen = TRUE)
 	if(user != src)
 		return
-	var/new_metadata = strip_html_simple(tgui_input_text(user, "Enter any information you'd like others to see relating to your MAYBE roleplay preferences. This will not be saved permanently unless you click save in the OOC notes panel! Type \"!clear\" to empty.", "Game Preference" , html_decode(identity.ooc_notes_maybes), multiline = TRUE,  prevent_enter = TRUE))
+	var/new_metadata = strip_html_simple(tgui_input_text(user, "Enter any information you'd like others to see relating to your MAYBE roleplay preferences. This will not be saved permanently unless you click save in the OOC notes panel! Type \"!clear\" to empty.", "Game Preference" , html_decode(identity().ooc_notes_maybes), multiline = TRUE,  prevent_enter = TRUE))
 	if(new_metadata && CanUseTopic(user))
 		if(new_metadata == "!clear")
 			new_metadata = ""
-		identity.ooc_notes_maybes = new_metadata
+		identity().ooc_notes_maybes = new_metadata
 		client.prefs.update_preference_by_type(/datum/preference/text/living/ooc_notes_maybes, new_metadata)
 		to_chat(user, span_filter_notice("OOC note maybes have been updated. Don't forget to save!"))
 		log_admin("[key_name(user)] updated their OOC note maybes mid-round.")
@@ -1084,8 +1084,8 @@
 /mob/living/proc/set_metainfo_ooc_style(mob/user, reopen = TRUE)
 	if(user != src)
 		return
-	identity.ooc_notes_style = !identity.ooc_notes_style
-	client.prefs.update_preference_by_type(/datum/preference/toggle/living/ooc_notes_style, identity.ooc_notes_style)
+	identity().ooc_notes_style = !identity().ooc_notes_style
+	client.prefs.update_preference_by_type(/datum/preference/toggle/living/ooc_notes_style, identity().ooc_notes_style)
 	if(reopen)
 		ooc_notes_window(user)
 
@@ -1178,9 +1178,9 @@ Maybe later, gotta figure out a way to click yourself when in a locker etc.
 
 	if(usr != src)
 		return
-	var/new_metadata = strip_html_simple(tgui_input_text(src, "Enter any information you'd like others to see, such as Roleplay-preferences. This will not be saved permanently unless you click save in the OOC notes panel!", "Game Preference" , html_decode(identity.ooc_notes), multiline = TRUE,  prevent_enter = TRUE))
+	var/new_metadata = strip_html_simple(tgui_input_text(src, "Enter any information you'd like others to see, such as Roleplay-preferences. This will not be saved permanently unless you click save in the OOC notes panel!", "Game Preference" , html_decode(identity().ooc_notes), multiline = TRUE,  prevent_enter = TRUE))
 	if(new_metadata && CanUseTopic(src))
-		identity.ooc_notes = new_metadata
+		identity().ooc_notes = new_metadata
 		client.prefs.update_preference_by_type(/datum/preference/text/living/ooc_notes, new_metadata)
 		to_chat(src, span_filter_notice("OOC notes updated. Don't forget to save!"))
 		log_admin("[key_name(src)] updated their OOC notes mid-round.")
@@ -1194,9 +1194,9 @@ Maybe later, gotta figure out a way to click yourself when in a locker etc.
 /mob/living/proc/set_metainfo_panel(mob/user)
 	if(user != src)
 		return
-	var/new_metadata = strip_html_simple(tgui_input_text(src, "Enter any information you'd like others to see, such as Roleplay-preferences. This will not be saved permanently unless you click save in the OOC notes panel!", "Game Preference" , html_decode(identity.ooc_notes), multiline = TRUE,  prevent_enter = TRUE))
+	var/new_metadata = strip_html_simple(tgui_input_text(src, "Enter any information you'd like others to see, such as Roleplay-preferences. This will not be saved permanently unless you click save in the OOC notes panel!", "Game Preference" , html_decode(identity().ooc_notes), multiline = TRUE,  prevent_enter = TRUE))
 	if(new_metadata && CanUseTopic(src))
-		identity.ooc_notes = new_metadata
+		identity().ooc_notes = new_metadata
 		client.prefs.update_preference_by_type(/datum/preference/text/living/ooc_notes, new_metadata)
 		to_chat(src, span_filter_notice("OOC notes updated. Don't forget to save!"))
 		log_admin("[key_name(src)] updated their OOC notes mid-round.")
@@ -1205,11 +1205,11 @@ Maybe later, gotta figure out a way to click yourself when in a locker etc.
 /mob/living/proc/set_metainfo_likes(mob/user, reopen = TRUE)
 	if(user != src)
 		return
-	var/new_metadata = strip_html_simple(tgui_input_text(src, "Enter any information you'd like others to see relating to your LIKED roleplay preferences. This will not be saved permanently unless you click save in the OOC notes panel! Type \"!clear\" to empty.", "Game Preference" , html_decode(identity.ooc_notes_likes), multiline = TRUE,  prevent_enter = TRUE))
+	var/new_metadata = strip_html_simple(tgui_input_text(src, "Enter any information you'd like others to see relating to your LIKED roleplay preferences. This will not be saved permanently unless you click save in the OOC notes panel! Type \"!clear\" to empty.", "Game Preference" , html_decode(identity().ooc_notes_likes), multiline = TRUE,  prevent_enter = TRUE))
 	if(new_metadata && CanUseTopic(src))
 		if(new_metadata == "!clear")
 			new_metadata = ""
-		identity.ooc_notes_likes = new_metadata
+		identity().ooc_notes_likes = new_metadata
 		client.prefs.update_preference_by_type(/datum/preference/text/living/ooc_notes_likes, new_metadata)
 		to_chat(src, span_filter_notice("OOC note likes have been updated. Don't forget to save!"))
 		log_admin("[key_name(src)] updated their OOC note likes mid-round.")
@@ -1219,11 +1219,11 @@ Maybe later, gotta figure out a way to click yourself when in a locker etc.
 /mob/living/proc/set_metainfo_dislikes(mob/user, reopen = TRUE)
 	if(user != src)
 		return
-	var/new_metadata = strip_html_simple(tgui_input_text(src, "Enter any information you'd like others to see relating to your DISLIKED roleplay preferences. This will not be saved permanently unless you click save in the OOC notes panel! Type \"!clear\" to empty.", "Game Preference" , html_decode(identity.ooc_notes_dislikes), multiline = TRUE,  prevent_enter = TRUE))
+	var/new_metadata = strip_html_simple(tgui_input_text(src, "Enter any information you'd like others to see relating to your DISLIKED roleplay preferences. This will not be saved permanently unless you click save in the OOC notes panel! Type \"!clear\" to empty.", "Game Preference" , html_decode(identity().ooc_notes_dislikes), multiline = TRUE,  prevent_enter = TRUE))
 	if(new_metadata && CanUseTopic(src))
 		if(new_metadata == "!clear")
 			new_metadata = ""
-		identity.ooc_notes_dislikes = new_metadata
+		identity().ooc_notes_dislikes = new_metadata
 		client.prefs.update_preference_by_type(/datum/preference/text/living/ooc_notes_dislikes, new_metadata)
 		to_chat(src, span_filter_notice("OOC note dislikes have been updated. Don't forget to save!"))
 		log_admin("[key_name(src)] updated their OOC note dislikes mid-round.")
@@ -1240,51 +1240,51 @@ Maybe later, gotta figure out a way to click yourself when in a locker etc.
 		to_chat(src, span_filter_notice("Character preferences saved."))
 
 /mob/living/proc/print_ooc_notes_chat(mob/user)
-	if(!identity.ooc_notes)
+	if(!identity().ooc_notes)
 		return
-	var/msg = identity.ooc_notes
-	if(identity.ooc_notes_style && (identity.ooc_notes_favs || identity.ooc_notes_likes || identity.ooc_notes_maybes || identity.ooc_notes_dislikes) && !user.client?.prefs?.read_preference(/datum/preference/toggle/vchat_enable)) // Oldchat hates proper formatting
+	var/msg = identity().ooc_notes
+	if(identity().ooc_notes_style && (identity().ooc_notes_favs || identity().ooc_notes_likes || identity().ooc_notes_maybes || identity().ooc_notes_dislikes) && !user.client?.prefs?.read_preference(/datum/preference/toggle/vchat_enable)) // Oldchat hates proper formatting
 		msg += "<br><br>"
 		msg += "<table><tr>"
-		if(identity.ooc_notes_favs)
+		if(identity().ooc_notes_favs)
 			msg += "<th><b>\t[span_blue("FAVOURITES")]</b></th>"
-		if(identity.ooc_notes_likes)
+		if(identity().ooc_notes_likes)
 			msg += "<th><b>\t[span_green("LIKES")]</b></th>"
-		if(identity.ooc_notes_maybes)
+		if(identity().ooc_notes_maybes)
 			msg += "<th><b>\t[span_yellow("MAYBES")]</b></th>"
-		if(identity.ooc_notes_dislikes)
+		if(identity().ooc_notes_dislikes)
 			msg += "<th><b>\t[span_red("DISLIKES")]</b></th>"
 		msg += "</tr><tr>"
-		if(identity.ooc_notes_favs)
+		if(identity().ooc_notes_favs)
 			msg += "<td>"
-			for(var/line in splittext(identity.ooc_notes_favs, "\n"))
+			for(var/line in splittext(identity().ooc_notes_favs, "\n"))
 				msg += "\t[line]\n"
 			msg += "</td>"
-		if(identity.ooc_notes_likes)
+		if(identity().ooc_notes_likes)
 			msg += "<td>"
-			for(var/line in splittext(identity.ooc_notes_likes, "\n"))
+			for(var/line in splittext(identity().ooc_notes_likes, "\n"))
 				msg += "\t[line]\n"
 			msg += "</td>"
-		if(identity.ooc_notes_maybes)
+		if(identity().ooc_notes_maybes)
 			msg += "<td>"
-			for(var/line in splittext(identity.ooc_notes_maybes, "\n"))
+			for(var/line in splittext(identity().ooc_notes_maybes, "\n"))
 				msg += "\t[line]\n"
 			msg += "</td>"
-		if(identity.ooc_notes_dislikes)
+		if(identity().ooc_notes_dislikes)
 			msg += "<td>"
-			for(var/line in splittext(identity.ooc_notes_dislikes, "\n"))
+			for(var/line in splittext(identity().ooc_notes_dislikes, "\n"))
 				msg += "\t[line]\n"
 			msg += "</td>"
 		msg += "</tr></table>"
 	else
-		if(identity.ooc_notes_favs)
-			msg += "<br><br><b>[span_blue("FAVOURITES")]</b><br>[identity.ooc_notes_favs]"
-		if(identity.ooc_notes_likes)
-			msg += "<br><br><b>[span_green("LIKES")]</b><br>[identity.ooc_notes_likes]"
-		if(identity.ooc_notes_maybes)
-			msg += "<br><br><b>[span_yellow("MAYBES")]</b><br>[identity.ooc_notes_maybes]"
-		if(identity.ooc_notes_dislikes)
-			msg += "<br><br><b>[span_red("DISLIKES")]</b><br>[identity.ooc_notes_dislikes]"
+		if(identity().ooc_notes_favs)
+			msg += "<br><br><b>[span_blue("FAVOURITES")]</b><br>[identity().ooc_notes_favs]"
+		if(identity().ooc_notes_likes)
+			msg += "<br><br><b>[span_green("LIKES")]</b><br>[identity().ooc_notes_likes]"
+		if(identity().ooc_notes_maybes)
+			msg += "<br><br><b>[span_yellow("MAYBES")]</b><br>[identity().ooc_notes_maybes]"
+		if(identity().ooc_notes_dislikes)
+			msg += "<br><br><b>[span_red("DISLIKES")]</b><br>[identity().ooc_notes_dislikes]"
 	to_chat(user, span_chatexport("<b>[src]'s Metainfo:</b><br>[msg]"))
 /mob/living/verb/set_custom_link()
 	set name = "Set Custom Link"

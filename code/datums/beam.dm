@@ -1,7 +1,7 @@
 //Beam Datum and effect
 /datum/beam
-	var/atom/origin = null
-	var/atom/target = null
+	var/origin_handle
+	var/target_handle
 	var/list/elements
 	var/icon/base_icon = null
 	var/icon
@@ -18,12 +18,12 @@
 
 /datum/beam/New(beam_origin,beam_target,beam_icon='icons/effects/beam.dmi',beam_icon_state="b_beam",time=50,maxdistance=10,btype = /obj/effect/ebeam,beam_sleep_time=3,new_beam_color = null)
 	endtime = world.time+time
-	origin = beam_origin
-	origin_oldloc =	get_turf(origin)
-	target = beam_target
-	target_oldloc = get_turf(target)
+	origin_handle = om_handle(beam_origin)
+	origin_oldloc =	get_turf(origin())
+	target_handle = om_handle(beam_target)
+	target_oldloc = get_turf(target())
 	sleep_time = beam_sleep_time
-	if(origin_oldloc == origin && target_oldloc == target)
+	if(origin_oldloc == origin() && target_oldloc == target())
 		static_beam = 1
 	max_distance = maxdistance
 	base_icon = new(beam_icon,beam_icon_state)
@@ -39,11 +39,11 @@
 
 /// Every `sleep_time`: redraw if an end moved; ends the beam when it runs out or breaks.
 /datum/beam/proc/beam_tick()
-	if(finished || !origin || !target || world.time >= endtime || get_dist(origin,target) >= max_distance || origin.z != target.z)
+	if(finished || !origin() || !target() || world.time >= endtime || get_dist(origin(),target()) >= max_distance || origin().z != target().z)
 		qdel(src)
 		return
-	var/origin_turf = get_turf(origin)
-	var/target_turf = get_turf(target)
+	var/origin_turf = get_turf(origin())
+	var/target_turf = get_turf(target())
 	if(!static_beam && (origin_turf != origin_oldloc || target_turf != target_oldloc))
 		origin_oldloc = origin_turf //so we don't keep checking against their initial positions, leading to endless Reset()+Draw() calls
 		target_oldloc = target_turf
@@ -62,21 +62,21 @@
 REF_OWNED_LIST(/datum/beam, "elements")
 
 /datum/beam/proc/Draw()
-	if(QDELETED(target) || QDELETED(origin))
+	if(QDELETED(target()) || QDELETED(origin()))
 		qdel(src)
 		return
 
-	var/Angle = round(Get_Angle(origin,target))
+	var/Angle = round(Get_Angle(origin(),target()))
 
 	var/matrix/rot_matrix = matrix()
 	rot_matrix.Turn(Angle)
 
-	var/turf/T_target = get_turf(target)	//Turfs are referenced instead of the objects directly so that beams will link between 2 objects inside other objects.
-	var/turf/T_origin = get_turf(origin)
+	var/turf/T_target = get_turf(target())	//Turfs are referenced instead of the objects directly so that beams will link between 2 objects inside other objects.
+	var/turf/T_origin = get_turf(origin())
 
 	//Translation vector for origin and target
-	var/DX = (32*T_target.x+target.pixel_x)-(32*T_origin.x+origin.pixel_x)
-	var/DY = (32*T_target.y+target.pixel_y)-(32*T_origin.y+origin.pixel_y)
+	var/DX = (32*T_target.x+target().pixel_x)-(32*T_origin.x+origin().pixel_x)
+	var/DY = (32*T_target.y+target().pixel_y)-(32*T_origin.y+origin().pixel_y)
 	var/N = 0
 	var/length = round(sqrt((DX)**2+(DY)**2)) //hypotenuse of the triangle formed by target and origin's displacement
 
@@ -88,7 +88,7 @@ REF_OWNED_LIST(/datum/beam, "elements")
 		if(beam_color)
 			X.color = beam_color
 
-		X.owner = src
+		X.owner_handle = om_handle(src)
 		LAZYOR(elements, X)
 
 		//Assign icon, for main segments it's base_icon, for the end, it's icon+icon_state
@@ -132,7 +132,7 @@ REF_OWNED_LIST(/datum/beam, "elements")
 /obj/effect/ebeam
 	mouse_opacity = 0
 	anchored = TRUE
-	var/datum/beam/owner
+	var/owner_handle
 
 /obj/effect/ebeam/singularity_pull()
 	return
@@ -187,3 +187,17 @@ REF_OWNED_LIST(/datum/beam, "elements")
 	var/datum/beam/newbeam = new(src,BeamTarget,icon,icon_state,time,maxdistance,beam_type,beam_sleep_time,beam_color)
 	newbeam.Start()
 	return newbeam
+
+/// LC-refs: the atom the beam starts at -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/beam/proc/origin() as /atom
+	return om_resolve(origin_handle)
+
+/// LC-refs: the atom the beam ends at -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/beam/proc/target() as /atom
+	return om_resolve(target_handle)
+
+/// LC-refs: the beam this segment belongs to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/effect/ebeam/proc/owner() as /datum/beam
+	return om_resolve(owner_handle)
+
+REF_OWNED(/datum/beam, "base_icon")

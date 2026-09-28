@@ -16,7 +16,7 @@
 		return
 	if(subject.mind)
 		mind_ref = REF(subject.mind)
-		account_number = subject.mind.initial_account?.account_number
+		account_number = subject.mind.initial_account()?.account_number
 	display_name = subject.real_name
 	body_ref = om_handle(subject)
 
@@ -83,7 +83,7 @@
 
 /datum/controller/subsystem/contracts/proc/find_mob_by_account(account_number) as /mob/living
 	for(var/mob/living/subject in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-		if(subject.mind?.initial_account?.account_number == account_number)
+		if(subject.mind?.initial_account()?.account_number == account_number)
 			return subject
 
 /datum/controller/subsystem/contracts/proc/register_evidence(kind, subject_id, creator_account, atom/source, list/payload)

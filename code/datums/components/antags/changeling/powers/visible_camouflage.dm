@@ -46,47 +46,49 @@
 	name = "Camoflauge"
 	desc = "We are near-impossible to see."
 	var/must_walk = TRUE
-	var/datum/component/antag/changeling/comp
+	var/comp_handle
 	var/old_regen_rate
-	var/mob/living/carbon/human/owner
 
 
 /datum/modifier/changeling_camouflage/recursive
 	must_walk = FALSE
 
 /datum/modifier/changeling_camouflage/can_apply(mob/living/L, suppress_failure = FALSE)
-	comp = L.GetComponent(/datum/component/antag/changeling)
-	if(!comp)
+	comp_handle = om_handle(L.GetComponent(/datum/component/antag/changeling))
+	if(!comp())
 		return FALSE
 
 /datum/modifier/changeling_camouflage/on_applied()
-	comp = holder.GetComponent(/datum/component/antag/changeling)
+	comp_handle = om_handle(holder.GetComponent(/datum/component/antag/changeling))
 	if(must_walk)
 		holder.set_m_intent(I_WALK)
-	old_regen_rate = comp.chem_recharge_rate
-	comp.chem_recharge_rate = 0
+	old_regen_rate = comp().chem_recharge_rate
+	comp().chem_recharge_rate = 0
 	animate(holder,alpha = 255, alpha = 10, time = 10)
 
 /datum/modifier/changeling_camouflage/on_expire()
 	animate(holder,alpha = 10, alpha = 255, time = 10)
-	owner.invisibility = initial(owner.invisibility)
+	holder.invisibility = initial(holder.invisibility)
 	holder.visible_message(span_warning("[holder] suddenly fades in, seemingly from nowhere!"),
 	span_notice("We revert our camouflage, revealing ourselves."))
 	holder.set_m_intent(I_RUN)
-	dq_set_cloaked(comp, FALSE)
-	comp.chem_recharge_rate = old_regen_rate
-	comp = null
-	owner = null
+	dq_set_cloaked(comp(), FALSE)
+	comp().chem_recharge_rate = old_regen_rate
+	comp_handle = null
 
 /datum/modifier/changeling_camouflage/tick()
 	if(holder.m_intent != I_WALK && must_walk) // Moving too fast uncloaks you.
 		expire(silent = TRUE)
-	if(!dq_get_cloaked(comp))
+	if(!dq_get_cloaked(comp()))
 		expire(silent = TRUE)
 	if(holder.stat) // Dead or unconscious lings can't stay dq_get_cloaked(src).
 		expire(silent = TRUE)
 	if(holder.incapacitated(INCAPACITATION_DISABLED)) // Stunned lings also can't stay dq_get_cloaked(src).
 		expire(silent = TRUE)
-	if(comp.chem_recharge_rate != 0) //Without this, there is an exploit that can be done, if one buys engorged chem sacks while dq_get_cloaked(src).
-		old_regen_rate += comp.chem_recharge_rate
-		comp.chem_recharge_rate = 0
+	if(comp().chem_recharge_rate != 0) //Without this, there is an exploit that can be done, if one buys engorged chem sacks while dq_get_cloaked(src).
+		old_regen_rate += comp().chem_recharge_rate
+		comp().chem_recharge_rate = 0
+
+/// LC-refs: the holder's changeling component -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/modifier/changeling_camouflage/proc/comp() as /datum/component/antag/changeling
+	return om_resolve(comp_handle)

@@ -62,7 +62,7 @@ REF_OWNED(/obj/vehicle, list("riding_datum", "soundloop"))
 	. = ..()
 	M.update_water()
 	if(riding_datum)
-		riding_datum.ridden = src
+		riding_datum.ridden_handle = om_handle(src)
 		riding_datum.handle_vehicle_offsets()
 
 /obj/vehicle/unbuckle_mob(mob/living/buckled_mob, force = FALSE)

@@ -420,17 +420,19 @@ SUBSYSTEM_DEF(timer)
 	if ((timeToRun < world.time || timeToRun < timer_subsystem.head_offset) && !(flags & TIMER_CLIENT_TIME))
 		CRASH("Invalid timer state: Timer created that would require a backtrack to run (addtimer would never let this happen): [SStimer.get_timer_debug_string(src)]")
 
-	if (callBack.object != GLOBAL_PROC && !QDESTROYING(callBack.object))
-		LAZYADD(callBack.object._active_timers, src)
+	var/datum/callback_target = callBack.target_object()
+	if (callback_target && callback_target != GLOBAL_PROC && !QDESTROYING(callback_target))
+		LAZYADD(callback_target._active_timers, src)
 
 	bucketJoin()
 
 /// Phase 1: leave the callback target's active-timer list while the callback (owned, deleted
 /// in phase 4) still names it.
 /datum/timedevent/lifecycle_unbind()
-	if (callBack && callBack.object && callBack.object != GLOBAL_PROC && callBack.object._active_timers)
-		callBack.object._active_timers -= src
-		UNSETEMPTY(callBack.object._active_timers)
+	var/datum/callback_target = callBack?.target_object()
+	if (callback_target && callback_target != GLOBAL_PROC && callback_target._active_timers)
+		callback_target._active_timers -= src
+		UNSETEMPTY(callback_target._active_timers)
 
 REF_OWNED(/datum/timedevent, list("callBack"))
 
@@ -510,7 +512,7 @@ REF_OWNED(/datum/timedevent, list("callBack"))
 	// Without TIMER_DEBUG nothing is snapshotted at insert time (Q10); read the live fields instead.
 	if(!callBack)
 		return "Timer: [id] ([text_ref(src)]), TTR: [timeToRun], wait:[wait], source: [source]"
-	return "Timer: [id] ([text_ref(src)]), TTR: [timeToRun], wait:[wait] Flags: [jointext(bitfield_to_list(flags, bitfield_flags), ", ")], 		callBack: [text_ref(callBack)], callBack.object: [callBack.object], 		callBack.delegate:[callBack.delegate], source: [source]"
+	return "Timer: [id] ([text_ref(src)]), TTR: [timeToRun], wait:[wait] Flags: [jointext(bitfield_to_list(flags, bitfield_flags), ", ")], 		callBack: [text_ref(callBack)], callBack.object: [callBack.target_object()], 		callBack.delegate:[callBack.delegate], source: [source]"
 #endif
 
 /**
@@ -530,8 +532,8 @@ REF_OWNED(/datum/timedevent, list("callBack"))
 		/* 3 = */ wait,
 		/* 4 = */ flags,
 		/* 5 = */ callBack, /* Safe to hold this directly because it's never del'd */
-		/* 6 = */ "[callBack.object]",
-		/* 7 = */ text_ref(callBack.object),
+		/* 6 = */ "[callBack.target_object()]",
+		/* 7 = */ text_ref(callBack.target_object()),
 		/* 8 = */ getcallingtype(),
 		/* 9 = */ callBack.delegate,
 		/* 10 = */ callBack.arguments ? callBack.arguments.Copy() : null,
@@ -586,10 +588,11 @@ REF_OWNED(/datum/timedevent, list("callBack"))
  */
 /datum/timedevent/proc/getcallingtype()
 	. = "ERROR"
-	if (callBack.object == GLOBAL_PROC)
+	var/datum/callback_target = callBack.target_object()
+	if (callback_target == GLOBAL_PROC)
 		. = "GLOBAL_PROC"
-	else
-		. = "[callBack.object.type]"
+	else if (callback_target)
+		. = "[callback_target.type]"
 
 /**
  * Create a new timer and insert it in the queue.
@@ -608,7 +611,8 @@ REF_OWNED(/datum/timedevent, list("callBack"))
 	if (wait < 0)
 		stack_trace("addtimer called with a negative wait. Converting to [world.tick_lag]")
 
-	if (callback.object != GLOBAL_PROC && QDELETED(callback.object) && !QDESTROYING(callback.object))
+	var/datum/callback_target = callback.target_object()
+	if (callback.object_handle && callback_target != GLOBAL_PROC && QDELETED(callback_target))
 		stack_trace("addtimer called with a callback assigned to a qdeleted object. In the future such timers will not \
 			be supported and may refuse to run or run with a 0 wait")
 
@@ -625,7 +629,7 @@ REF_OWNED(/datum/timedevent, list("callBack"))
 	// Generate hash if relevant for timed events with the TIMER_UNIQUE flag
 	var/hash
 	if (flags & TIMER_UNIQUE)
-		var/list/hashlist = list(callback.object, "([REF(callback.object)])", callback.delegate, flags & TIMER_CLIENT_TIME)
+		var/list/hashlist = list(callback_target, "([REF(callback_target)])", callback.delegate, flags & TIMER_CLIENT_TIME)
 		if(!(flags & TIMER_NO_HASH_WAIT))
 			hashlist += wait
 		hashlist += callback.arguments

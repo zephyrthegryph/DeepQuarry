@@ -27,7 +27,7 @@
 	var/mob/living/carbon/brain/view
 	/// Brain organ whose state decides the view's status. Null for synthetic
 	/// hosts (posibrain, robot intelligence circuit).
-	var/obj/item/organ/internal/brain/tissue
+	var/tissue_handle
 	/// Type of view mob to create.
 	var/view_type = /mob/living/carbon/brain
 
@@ -36,9 +36,9 @@
 		return COMPONENT_INCOMPATIBLE
 	set_tissue(tissue)
 
-// LIFECYCLE: the brain view is detached before the tissue drops, so it isn't killed on the way out.
-/datum/component/mind_host/Destroy(force)
-	// Detach the view before dropping the tissue, so it isn't put through a death on the way out.
+/// Phase 1: the view (owned) is detached before the tissue drops, so it isn't put through a
+/// death on the way out.
+/datum/component/mind_host/lifecycle_unbind()
 	if(view)
 		var/mob/living/carbon/brain/old_view = view
 		view = null
@@ -47,17 +47,18 @@
 		if(!QDELETED(old_view))
 			qdel(old_view)
 	set_tissue(null)
-	return ..()
+
+REF_OWNED(/datum/component/mind_host, "view")
 
 /// The brain organ backing the view's status.
 /datum/component/mind_host/proc/set_tissue(obj/item/organ/internal/brain/new_tissue)
-	if(tissue == new_tissue)
+	if(tissue() == new_tissue)
 		return
-	if(tissue)
-		UnregisterSignal(tissue, COMSIG_QDELETING)
-	tissue = new_tissue
-	if(tissue)
-		RegisterSignal(tissue, COMSIG_QDELETING, PROC_REF(on_tissue_deleted))
+	if(tissue())
+		UnregisterSignal(tissue(), COMSIG_QDELETING)
+	tissue_handle = om_handle(new_tissue)
+	if(tissue())
+		RegisterSignal(tissue(), COMSIG_QDELETING, PROC_REF(on_tissue_deleted))
 	view?.refresh_host_status()
 
 /datum/component/mind_host/proc/on_tissue_deleted(datum/source)
@@ -128,3 +129,7 @@
 /obj/proc/hosted_view()
 	var/datum/component/mind_host/host = GetComponent(/datum/component/mind_host)
 	return host?.view
+
+/// LC-refs: the brain organ backing the view -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/component/mind_host/proc/tissue() as /obj/item/organ/internal/brain
+	return om_resolve(tissue_handle)

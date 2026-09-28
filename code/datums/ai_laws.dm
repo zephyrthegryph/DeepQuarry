@@ -298,3 +298,13 @@
 	var/index = laws.Find(law)
 	if(index)
 		state[index] = do_state
+
+REF_OWNED(/datum/ai_laws, list("zeroth_law", "zeroth_law_borg"))
+
+REF_OWNED_LIST(/datum/ai_laws, list("inherent_laws", "supplied_laws", "ion_laws"))
+
+/datum/ai_laws/declared_cache_vars()
+	var/list/L = ..()
+	L = L ? L.Copy() : list()
+	L["sorted_laws"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
+	return L

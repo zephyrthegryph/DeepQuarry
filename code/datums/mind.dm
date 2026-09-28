@@ -35,14 +35,12 @@
 
 	var/role_alt_title
 
-	var/datum/job/assigned_job
 
 	var/list/datum/objective/objectives = list()
-	var/list/datum/objective/special_verbs
+	var/list/special_verbs // verb paths
 
 	var/has_been_rev = 0//Tracks if this mind has been a rev or not
 
-	var/datum/faction/faction 			//associated faction
 
 	var/rev_cooldown = 0
 	var/tcrystals = 0
@@ -55,7 +53,7 @@
 	var/brigged_since = -1
 
 	//put this here for easier tracking ingame
-	var/datum/money_account/initial_account
+	var/initial_account_handle
 
 	//used for antag tcrystal trading, more info in code\game\objects\items\telecrystals.dm
 	var/accept_tcrystals = 0
@@ -81,7 +79,7 @@
 	// yet, else the new body's (a brand-new character).
 	var/datum/character_identity/carried_identity = get_identity()
 	if(!carried_identity && isliving(new_character))
-		carried_identity = new_character.identity
+		carried_identity = new_character.identity()
 	identity = carried_identity
 	var/datum/component/antag/changeling/changeling_comp
 	var/mob/living/old_character = current
@@ -436,10 +434,8 @@
 	assigned_role =   null
 	special_role =    null
 	role_alt_title =  null
-	assigned_job =    null
-	//faction =       null //Uncommenting this causes a compile error due to 'undefined type', fucked if I know.
 	//changeling =    null //TODO: Figure out where this is all used and move it from mind to mob.
-	initial_account = null
+	initial_account_handle = null
 	objectives =      list()
 	special_verbs =   list()
 	has_been_rev =    0
@@ -491,7 +487,7 @@
 	if(mind.identity)
 		bind_identity(mind.identity)
 	else
-		mind.identity = identity
+		mind.identity = identity()
 	if(SSantag_job.player_is_antag(mind))
 		add_verb(src.client, /client/proc/aooc)
 	if (client?.prefs)
@@ -576,3 +572,11 @@
 	var/directory_gendertag
 	var/directory_sexualitytag
 
+
+/// LC-refs: the character's bank account -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/mind/proc/initial_account() as /datum/money_account
+	return om_resolve(initial_account_handle)
+
+REF_OWNED(/datum/mind, list("antag_holder", "my_religion"))
+
+REF_OWNED_LIST(/datum/mind, "objectives")

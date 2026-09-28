@@ -7,7 +7,6 @@
 	var/silk_generation_amount = 2
 	var/nutrtion_per_silk = 0.2
 
-	var/mob/living/owner
 
 	dupe_mode = COMPONENT_DUPE_UNIQUE
 
@@ -16,10 +15,9 @@
 	if (!isliving(parent))
 		return COMPONENT_INCOMPATIBLE
 
-	owner = parent
-	add_verb(owner, /mob/living/proc/weaver_control_panel)
+	add_verb(owner(), /mob/living/proc/weaver_control_panel)
 	if(ishuman(parent))
-		add_verb(owner, /mob/living/carbon/human/proc/enter_cocoon)
+		add_verb(owner(), /mob/living/carbon/human/proc/enter_cocoon)
 
 	//Processing
 /datum/component/weaver/proc/process_component()
@@ -30,9 +28,9 @@
 
 // LIFECYCLE: the owner loses the weaver verbs.
 /datum/component/weaver/Destroy(force = FALSE)
-	remove_verb(owner, /mob/living/proc/weaver_control_panel)
+	remove_verb(owner(), /mob/living/proc/weaver_control_panel)
 	if(ishuman(parent))
-		remove_verb(owner, /mob/living/carbon/human/proc/enter_cocoon)
+		remove_verb(owner(), /mob/living/carbon/human/proc/enter_cocoon)
 	. = ..()
 
 /datum/component/weaver/RegisterWithParent()
@@ -42,23 +40,23 @@
 	om_stage_remove(parent, /datum/om/stage/life/trait/weaver)
 
 /datum/component/weaver/proc/process_weaver_silk()
-	if(silk_reserve < silk_max_reserve && silk_production == TRUE && owner.nutrition > 100)
+	if(silk_reserve < silk_max_reserve && silk_production == TRUE && owner().nutrition > 100)
 		silk_reserve = min(silk_reserve + silk_generation_amount, silk_max_reserve)
-		owner.adjust_nutrition(-(nutrtion_per_silk*silk_generation_amount))
+		owner().adjust_nutrition(-(nutrtion_per_silk*silk_generation_amount))
 
 /datum/component/weaver/proc/weave_item()
 	var/choice
 	var/datum/weaver_recipe/item/desired_result
 	var/finalized = "No"
 
-	while(finalized == "No" && owner.client)
-		choice = tgui_input_list(owner,"What would you like to weave?", "Weave Choice", GLOB.all_weavable)
+	while(finalized == "No" && owner().client)
+		choice = tgui_input_list(owner(),"What would you like to weave?", "Weave Choice", GLOB.all_weavable)
 		desired_result = GLOB.all_weavable[choice]
 		if(!desired_result || !istype(desired_result))
 			return
 
 		if(choice)
-			finalized = tgui_alert(owner, "Are you sure you want to weave [desired_result.title]? It will cost you [desired_result.cost] silk.","Confirmation",list("Yes","No"))
+			finalized = tgui_alert(owner(), "Are you sure you want to weave [desired_result.title]? It will cost you [desired_result.cost] silk.","Confirmation",list("Yes","No"))
 
 	weave_check(desired_result.cost, desired_result.result_type)
 
@@ -102,7 +100,7 @@
 	. = ..()
 
 /datum/component/weaver/proc/correct_savefile_selected()
-	if(owner.client.prefs.default_slot == owner.mind.loaded_from_slot)
+	if(owner().client.prefs.default_slot == owner().mind.loaded_from_slot)
 		return TRUE
 	return FALSE
 
@@ -119,10 +117,10 @@
 			return TRUE
 		if("toggle_silk_production")
 			silk_production = !(silk_production)
-			to_chat(owner, span_info("You are [silk_production ? "now" : "no longer"] producing silk."))
+			to_chat(owner(), span_info("You are [silk_production ? "now" : "no longer"] producing silk."))
 			return FALSE
 		if("check_silk_amount")
-			to_chat(owner, span_info("Your silk reserves are at [silk_reserve]/[silk_max_reserve]."))
+			to_chat(owner(), span_info("Your silk reserves are at [silk_reserve]/[silk_max_reserve]."))
 			return FALSE
 		if("weave_binding")
 			weave_check(50, /obj/item/clothing/suit/weaversilk_bindings)
@@ -144,38 +142,38 @@
 */
 /datum/component/weaver/proc/weave_check(cost, weaved_object)
 	if(cost > silk_reserve)
-		to_chat(owner, span_warning("You don't have enough silk to weave that!"))
+		to_chat(owner(), span_warning("You don't have enough silk to weave that!"))
 		return
 
-	if(owner.stat)
-		to_chat(owner, span_warning("You can't do that in your current state!"))
+	if(owner().stat)
+		to_chat(owner(), span_warning("You can't do that in your current state!"))
 		return
 
-	if(!isturf(owner.loc))
-		to_chat(owner, span_warning("You can't weave here!"))
+	if(!isturf(owner().loc))
+		to_chat(owner(), span_warning("You can't weave here!"))
 		return
 
-	if(locate(weaved_object) in owner.loc)
-		to_chat(owner, span_warning("You can't create another one in the same tile here!"))
+	if(locate(weaved_object) in owner().loc)
+		to_chat(owner(), span_warning("You can't create another one in the same tile here!"))
 		return
 
-	om_do_after(owner, ((cost/25) SECONDS), owner, src, PROC_REF(weave_done), list(cost, weaved_object))
+	om_do_after(owner(), ((cost/25) SECONDS), owner(), src, PROC_REF(weave_done), list(cost, weaved_object))
 
 /datum/component/weaver/proc/weave_done(cost, weaved_object)
 	if(cost > silk_reserve)
-		to_chat(owner, span_warning("You don't have enough silk to weave that!"))
+		to_chat(owner(), span_warning("You don't have enough silk to weave that!"))
 		return
 
-	if(!isturf(owner.loc))
-		to_chat(owner, span_warning("You can't weave here!"))
+	if(!isturf(owner().loc))
+		to_chat(owner(), span_warning("You can't weave here!"))
 		return
 
-	if(locate(weaved_object) in owner.loc)
-		to_chat(owner, span_warning("You can't create another one in the same tile!"))
+	if(locate(weaved_object) in owner().loc)
+		to_chat(owner(), span_warning("You can't create another one in the same tile!"))
 		return
 
 	silk_reserve = max(silk_reserve - cost, 0)
-	var/atom/object = new weaved_object(owner.loc)
+	var/atom/object = new weaved_object(owner().loc)
 	object.color = silk_color
 	return
 
@@ -186,3 +184,7 @@
 
 /datum/om/stage/life/trait/weaver/tick_component(mob/living/self, datum/component/weaver/component)
 	component.process_component()
+
+/// LC-refs: the weaver (our parent) (was a var copying parent).
+/datum/component/weaver/proc/owner() as /mob/living
+	return parent

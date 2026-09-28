@@ -108,7 +108,7 @@
 /// Nothing ticks it. Thresholds publish `channel` on the owner when crossed,
 /// found by the deadline wheel.
 /datum/om/rate
-	var/datum/owner
+	var/owner_handle
 	var/name
 	var/value = 0
 	var/per_second = 0
@@ -152,7 +152,7 @@
 	return null
 
 /datum/om/rate/proc/sched_now()
-	var/datum/om/rec/rec = owner?.om_rec
+	var/datum/om/rec/rec = owner()?.om_rec
 	return rec ? rec.sched.now() : world.time
 
 /// Value now.
@@ -187,7 +187,7 @@
 
 /datum/om/rate/proc/after_change()
 	check_thresholds()
-	var/datum/om/rec/rec = owner?.om_rec
+	var/datum/om/rec/rec = owner()?.om_rec
 	if(rec)
 		om_rates_reschedule(rec)
 
@@ -202,8 +202,8 @@
 		if(is_above != above[i])
 			above[i] = is_above
 			crossed = TRUE
-	if(crossed && channel && owner)
-		om_changed(owner, channel)
+	if(crossed && channel && owner())
+		om_changed(owner(), channel)
 
 /// Next crossing among all the owner's rates, as one deadline.
 /proc/om_rates_reschedule(datum/om/rec/rec)
@@ -230,3 +230,7 @@
 	for(var/datum/om/rate/R as anything in rec.rates)
 		R.check_thresholds()
 	om_rates_reschedule(rec)
+
+/// LC-refs: the entity whose rate this is -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/om/rate/proc/owner() as /datum
+	return om_resolve(owner_handle)

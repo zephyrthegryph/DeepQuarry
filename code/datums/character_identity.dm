@@ -17,7 +17,7 @@
 	var/real_name
 	/// The DNA of the body the character last lived in. A reference, never a
 	/// clone: the embodying human's dna datum (see get_dna()).
-	var/datum/dna/dna
+	var/dna_handle
 	/// OOC notes (every field).
 	var/ooc_notes
 	var/ooc_notes_likes
@@ -36,9 +36,9 @@
 
 /// The identity's DNA, or null if the datum was replaced and deleted.
 /datum/character_identity/proc/get_dna()
-	if(QDELETED(dna))
-		dna = null
-	return dna
+	if(QDELETED(dna()))
+		dna_handle = null
+	return dna()
 
 /// Does the character carry a persistent trait of `modifier_type` (or a subtype)?
 /datum/character_identity/proc/has_genetic_modifier(modifier_type)
@@ -50,23 +50,31 @@
 // --- Mob side ------------------------------------------------------------------------
 
 /mob/living
-	/// The identity of the character this mob embodies. Owned by the mind when
-	/// one is present; always non-null so readers never need to check.
-	var/datum/character_identity/identity = new
+	/// The mob's own identity (owned): what it embodies until a mind brings its character.
+	var/datum/character_identity/own_identity = new
+	/// OM handle of the identity this mob embodies (its mind's, or its own). Read with identity().
+	var/identity_handle
+
+REF_OWNED(/mob/living, "own_identity")
+
+/// The identity of the character this mob embodies: its mind's when one is (or was) bound, else
+/// its own. Always non-null so readers never need to check.
+/mob/living/proc/identity() as /datum/character_identity
+	return om_resolve(identity_handle) || own_identity
 
 /// Point this mob at `I` and sync the engine-facing vars from it. The ONE place
 /// mob vars are synced from identity.
 /mob/living/proc/bind_identity(datum/character_identity/I)
 	if(!I)
 		return
-	identity = I
+	identity_handle = om_handle(I)
 	on_identity_bound()
 
 /// Per-type sync hook for bind_identity(). By default a mob only records its
 /// name when the identity has none (a new character).
 /mob/living/proc/on_identity_bound()
-	if(!identity.real_name)
-		identity.real_name = real_name
+	if(!identity().real_name)
+		identity().real_name = real_name
 
 /// A human embodies the character: the identity references the body's DNA
 /// (the body the character lives in now), and the body takes the character's
@@ -76,17 +84,17 @@
 /// printed from one gets it here, when its mind arrives.
 /mob/living/carbon/human/on_identity_bound()
 	..()
-	identity.dna = dna
-	if(identity.flavor_texts)
-		flavor_texts = identity.flavor_texts
+	identity().dna_handle = om_handle(dna)
+	if(identity().flavor_texts)
+		flavor_texts = identity().flavor_texts
 	else
-		identity.flavor_texts = flavor_texts
-	if(identity.languages)
-		languages = identity.languages
+		identity().flavor_texts = flavor_texts
+	if(identity().languages)
+		languages = identity().languages
 	else
-		identity.languages = languages
+		identity().languages = languages
 	if(!isSynthetic())
-		var/list/traits = identity.genetic_modifiers?.Copy()
+		var/list/traits = identity().genetic_modifiers?.Copy()
 		for(var/modifier_type in traits)
 			add_modifier(modifier_type)
 
@@ -97,16 +105,16 @@
 /mob/living/proc/share_identity(datum/character_identity/I)
 	if(!I)
 		return
-	identity = I
+	identity_handle = om_handle(I)
 	if(mind)
 		mind.identity = I
 
 /// Add/remove bookkeeping for persistent traits (see modifiers.dm).
 /mob/living/proc/record_genetic_modifier(modifier_type, present)
 	if(present)
-		LAZYDISTINCTADD(identity.genetic_modifiers, modifier_type)
+		LAZYDISTINCTADD(identity().genetic_modifiers, modifier_type)
 	else
-		LAZYREMOVE(identity.genetic_modifiers, modifier_type)
+		LAZYREMOVE(identity().genetic_modifiers, modifier_type)
 
 // --- Mind side -----------------------------------------------------------------------
 
@@ -119,7 +127,7 @@
 /datum/mind/proc/get_identity()
 	if(!identity && isliving(current))
 		var/mob/living/L = current
-		identity = L.identity
+		identity = L.identity()
 	return identity
 
 // --- Moving minds --------------------------------------------------------------------
@@ -161,3 +169,9 @@
 		mind_initialize()
 		log_game("MIND: created a mind for [key] in [src] ([type]) to move it")
 	return mind
+
+/// LC-refs: the dna of the body the character last lived in -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/character_identity/proc/dna() as /datum/dna
+	return om_resolve(dna_handle)
+
+REF_OWNED(/datum/mind, "identity")

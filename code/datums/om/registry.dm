@@ -256,9 +256,9 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 			var/datum/om/clock_def/C = clock_by_id[row["clock"]]
 			E.clock_idx = C?.idx
 			if(E.kind == OM_EFFECT_CLOCK_MULT)
-				C.mult = E
+				C.mult_idx = length(effects) + 1
 			else if(E.kind == OM_EFFECT_CLOCK_INHIBIT)
-				C.inhibit = E
+				C.inhibit_idx = length(effects) + 1
 		effects += E
 		E.idx = length(effects)
 		effect_by_id[id] = E
@@ -1288,3 +1288,9 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 	if(!R)
 		CRASH("om: unknown relation [path]")
 	return R
+
+REF_OWNED(/datum/om/registry, list("expiry_behaviour", "rate_behaviour", "task_behaviour", "timer_behaviour", "ui_behaviour", "edge_behaviour"))
+
+REF_OWNED_LIST(/datum/om/registry, list("bundles", "decls", "clocks", "effects", "relations", "pipelines", "derived", "tasks", "services"))
+
+REF_OWNED_VALUES(/datum/om/registry, list("bundle_by_type", "clock_by_id", "effect_by_id", "relation_by_type", "behaviour_by_type", "stage_by_type", "derived_by_name", "task_by_type", "task_by_name", "type_tables"))

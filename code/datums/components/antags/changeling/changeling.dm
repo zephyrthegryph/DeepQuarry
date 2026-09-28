@@ -357,7 +357,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 			GLOB.powerinstances += new changeling_power()
 	if(!comp.power_panel)
 		comp.power_panel = new()
-		comp.power_panel.comp = comp
+		comp.power_panel.comp_handle = om_handle(comp)
 
 	comp.power_panel.tgui_interact(src)
 
@@ -433,7 +433,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 
 ///Changeling Panel
 /datum/changeling_panel
-	var/datum/component/antag/changeling/comp
+	var/comp_handle
 
 /datum/changeling_panel/tgui_state(mob/user)
 	return GLOB.tgui_always_state
@@ -457,12 +457,12 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 		var/list/all_powers = list(
 			"power_name" = P.name,
 			"power_cost" = P.genomecost,
-			"power_purchased" = (P in comp.purchased_powers),
+			"power_purchased" = (P in comp().purchased_powers),
 			"power_desc" = P.desc,
 		)
 		UNTYPED_LIST_ADD(power_list, all_powers)
 
-	data["available_points"] = comp.geneticpoints
+	data["available_points"] = comp().geneticpoints
 	data["power_list"] = power_list
 
 	return data
@@ -473,6 +473,14 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 
 	switch(action)
 		if("evolve_power")
-			comp.purchasePower(comp.owner, params["val"]) //The power must be the power's NAME.
+			comp().purchasePower(comp().owner, params["val"]) //The power must be the power's NAME.
 			return TRUE
 	return TRUE
+
+/// LC-refs: the changeling this panel shows -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/changeling_panel/proc/comp() as /datum/component/antag/changeling
+	return om_resolve(comp_handle)
+
+REF_OWNED_LIST(/datum/component/antag/changeling, "absorbed_dna")
+
+REF_OWNED(/datum/component/antag/changeling, "power_panel")

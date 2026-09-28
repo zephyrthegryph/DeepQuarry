@@ -577,7 +577,7 @@ REF_OWNED_VALUES(/datum/contract, "negotiation_clauses")
 
 /datum/contract/proc/find_mob_by_account(account_number)
 	for(var/mob/living/living_mob in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-		if(living_mob.mind?.initial_account?.account_number == account_number)
+		if(living_mob.mind?.initial_account()?.account_number == account_number)
 			return living_mob
 
 /// Contributor evidence remains the preferred distribution. Some outcomes,

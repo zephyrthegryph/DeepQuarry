@@ -1059,7 +1059,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 		for (var/obj/item/organ/internal/brain/H in REGISTRY_MEMBERS(REGISTRY_BRAIN_ORGANS))
 			var/datum/component/mind_host/host = get_mind_host(H)
 			var/datum/mind/brain_mind = host?.hosted_mind()
-			if(brain_mind && brain_mind.get_identity() == identity)
+			if(brain_mind && brain_mind.get_identity() == identity())
 				host.release_mind(src, "revived body reclaimed its brain")
 				qdel(H)
 				break
