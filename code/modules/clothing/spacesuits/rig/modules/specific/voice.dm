@@ -15,9 +15,10 @@
 
 	var/obj/item/voice_changer/voice_holder
 
+DECLARE_DEFAULT_CHILD(/obj/item/rig_module/voice, "voice_holder", /obj/item/voice_changer)
+
 /obj/item/rig_module/voice/Initialize(mapload)
 	. = ..()
-	voice_holder = new(src)
 	voice_holder.active = 0
 
 /obj/item/rig_module/voice/installed()

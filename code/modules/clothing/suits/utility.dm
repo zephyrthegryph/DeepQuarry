@@ -99,9 +99,7 @@
 	armor_spec = "bio=60;rad=100"
 
 
-/obj/item/clothing/head/radiation/Initialize(mapload)
-	. = ..()
-	om_attach(src, /datum/om/behaviour/radiation_protected_clothing)
+DECLARE_BEHAVIOUR(/obj/item/clothing/head/radiation, /datum/om/behaviour/radiation_protected_clothing)
 
 /obj/item/clothing/suit/radiation
 	name = "Radiation suit"
@@ -120,9 +118,7 @@
 	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/radiation)
 	return list(HOLD_ONLY(stores))
 
-/obj/item/clothing/suit/radiation/Initialize(mapload)
-	. = ..()
-	om_attach(src, /datum/om/behaviour/radiation_protected_clothing)
+DECLARE_BEHAVIOUR(/obj/item/clothing/suit/radiation, /datum/om/behaviour/radiation_protected_clothing)
 
 /obj/item/clothing/suit/radiation/teshari
 	name = "Small radiation suit"

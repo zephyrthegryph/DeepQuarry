@@ -10,10 +10,7 @@
 /mob/living/simple_mob/slime
 	use_modern_ai = TRUE
 
-/mob/living/simple_mob/slime/xenobio/Initialize(mapload)
-	. = ..()
-	if(!slime_state)
-		slime_state = new /datum/slime_state(src)
+DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/slime/xenobio, "slime_state", /datum/slime_state)
 
 DECLARE_REF(/mob/living/simple_mob/slime/xenobio, "slime_state", OWNED, null)
 

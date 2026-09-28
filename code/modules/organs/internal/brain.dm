@@ -226,9 +226,10 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 /obj/item/organ/internal/brain/slime/is_open_container()
 	return 1
 
+DECLARE_REAGENTS(/obj/item/organ/internal/brain/slime, 50, null)
+
 /obj/item/organ/internal/brain/slime/Initialize(mapload)
 	. = ..()
-	create_reagents(50)
 	return INITIALIZE_HINT_LATELOAD
 
 /obj/item/organ/internal/brain/slime/LateInitialize()

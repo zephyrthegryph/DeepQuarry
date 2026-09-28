@@ -18,10 +18,11 @@
 	filter_side = 1 // R
 	icon_state = "furnace_r"
 
+DECLARE_DEFAULT_CHILD(/obj/machinery/reagent_refinery/furnace, "beaker", /obj/item/reagent_containers/glass/beaker/bluespace)
+
 /obj/machinery/reagent_refinery/furnace/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	beaker = new /obj/item/reagent_containers/glass/beaker/bluespace(src) // Get it all out as fast as possible
 	// Update neighbours and self for state
 	update_neighbours()
 	update_icon()

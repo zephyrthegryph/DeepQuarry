@@ -110,10 +110,10 @@
 		if(capacity && current_capacity)
 			. += "The drill currently has [current_capacity] capacity taken up and can fit [capacity - current_capacity] more ore."
 
+DECLARE_DEFAULT_CHILD(/obj/machinery/mining/drill, "cell", "cell")
+
 /obj/machinery/mining/drill/Initialize(mapload)
 	. = ..()
-	if(ispath(cell))
-		cell = new cell(src)
 	default_apply_parts()
 	faultreporter = new /obj/item/radio/intercom{channels=list("Supply")}(null)
 	make_climbable()

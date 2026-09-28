@@ -14,10 +14,7 @@
 		GAME_TIC_TAC_TOE = /datum/board_game/four_row/tic_tac_toe
 	)
 
-/obj/structure/casino_table/board_game/Initialize(mapload)
-	. = ..()
-	if(ispath(game_ui))
-		game_ui = new game_ui(src)
+DECLARE_DEFAULT_CHILD(/obj/structure/casino_table/board_game, "game_ui", "game_ui")
 
 DECLARE_REF(/obj/structure/casino_table/board_game, "game_ui", OWNED, null)
 

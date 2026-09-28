@@ -8,11 +8,8 @@
 	icon_state = "leaves"
 	bitesize = 1
 
-/obj/item/reagent_containers/food/snacks/weatherlily/Initialize(mapload)
-	. = ..()
-	//reagents.add_reagent(REAGENT_ID_AMATOXIN, 1) I want this for lore of this being a strange bioenginered thing to mess with organic things buuuut it's one of two food sources
-	reagents.add_reagent(REAGENT_ID_LUMINOL,1)
-	reagents.add_reagent(REAGENT_ID_PROTEIN,1)
+// REAGENT_ID_AMATOXIN would suit the lore of this being a strange bioengineered thing to mess with organic things, but it's one of two food sources
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/weatherlily, null, list(REAGENT_ID_LUMINOL = 1, REAGENT_ID_PROTEIN = 1))
 
 //The source of the materials
 /obj/structure/outcrop/weathered_gate
@@ -378,9 +375,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/mutatedmeat, null, lis
 		slot_r_hand_str = 'icons/obj/guns/precursor/righthand.dmi',
 		)
 
-/obj/item/melee/energy/tyr_chainsaw/Initialize(mapload)
-	. = ..()
-	bcell = new/obj/item/cell/device/weapon/recharge/alien/tyr(src)
+DECLARE_DEFAULT_CHILD(/obj/item/melee/energy/tyr_chainsaw, "bcell", /obj/item/cell/device/weapon/recharge/alien/tyr)
 
 /obj/item/shield/tyr_shield
 	name = "tyrian portable energy barrier"

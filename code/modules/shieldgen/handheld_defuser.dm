@@ -9,9 +9,7 @@
 	var/obj/item/cell/device/cell
 	var/enabled = 0
 
-/obj/item/shield_diffuser/Initialize(mapload)
-	. = ..()
-	cell = new(src)
+DECLARE_DEFAULT_CHILD(/obj/item/shield_diffuser, "cell", /obj/item/cell/device)
 
 DECLARE_REF(/obj/item/shield_diffuser, "cell", OWNED, null)
 

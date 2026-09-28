@@ -26,10 +26,11 @@
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "rift"
 
+DECLARE_PERIODIC(/obj/effect/phase_shift, PERIODIC_SLOW)
+
 /obj/effect/phase_shift/Initialize(mapload)
 	. = ..()
 	set_light(3, 5, l_color = "#FA58F4")
-	om_task_periodic(src, PERIODIC_SLOW)
 
 // whatever phased inside comes back out on the turf.
 DECLARE_REF(/obj/effect/phase_shift, "contents", SPILL_LIST, null)	// everything inside is put out

@@ -177,9 +177,10 @@ DECLARE_INTERACTIONS(/obj/item/slime_crystal, INTERACT_USE(null, PROC_REF(intera
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
 
+DECLARE_PERIODIC(/obj/item/slime_irradiator, PERIODIC_SLOW)
+
 /obj/item/slime_irradiator/Initialize(mapload)
 	. = ..()
-	om_task_periodic(src, PERIODIC_SLOW)
 	set_light(light_range, light_power, light_color)
 
 /// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.

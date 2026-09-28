@@ -24,9 +24,7 @@
 	/// null on circuit add/remove via Entered()/Exited() and recomputed lazily.
 	var/tmp/power_relevant = null
 
-/obj/item/electronic_assembly/Initialize(mapload)
-	battery = new(src)
-	return ..()
+DECLARE_DEFAULT_CHILD(/obj/item/electronic_assembly, "battery", /obj/item/cell/device)
 
 /obj/item/electronic_assembly/periodic_step(seconds_per_tick)
 	if(isnull(power_relevant))

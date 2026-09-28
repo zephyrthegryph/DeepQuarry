@@ -449,6 +449,5 @@
 /obj/item/clothing/shoes/dry_galoshes/fit_constraint()
 	return null
 
-/obj/item/clothing/shoes/dry_galoshes/Initialize(mapload)
-	.=..()
-	om_attach(src, /datum/om/behaviour/dry)
+DECLARE_BEHAVIOUR(/obj/item/clothing/shoes/dry_galoshes, /datum/om/behaviour/dry)
+

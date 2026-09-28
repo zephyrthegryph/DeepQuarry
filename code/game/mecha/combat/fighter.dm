@@ -49,9 +49,10 @@
 		/obj/item/mecha_parts/component/electrical
 		)
 
+DECLARE_DEFAULT_CHILD(/obj/mecha/combat/fighter, "ion_trail", /datum/effect/effect/system/ion_trail_follow)
+
 /obj/mecha/combat/fighter/Initialize(mapload)
 	. = ..()
-	ion_trail = new /datum/effect/effect/system/ion_trail_follow()
 	ion_trail.set_up(src)
 	ion_trail.stop()
 

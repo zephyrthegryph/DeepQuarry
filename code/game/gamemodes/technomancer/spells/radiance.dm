@@ -21,10 +21,11 @@
 	var/power = 250
 	toggled = 1
 
+DECLARE_PERIODIC(/obj/item/spell/radiance, PERIODIC_SLOW)
+
 /obj/item/spell/radiance/Initialize(mapload, coreless)
 	. = ..()
 	set_light(7, 4, l_color = "#D9D900")
-	om_task_periodic(src, PERIODIC_SLOW)
 	log_and_message_admins("has casted [src].")
 
 // admins are told the maintained spell stopped.

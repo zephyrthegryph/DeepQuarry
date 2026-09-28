@@ -18,9 +18,7 @@
 	icon_scale_x = 1.2
 	icon_scale_y = 1.2
 
-/obj/mecha/medical/odysseus/Initialize(mapload)
-	. = ..()
-	hud = new /obj/item/clothing/glasses/hud/health/mech(src)
+DECLARE_DEFAULT_CHILD(/obj/mecha/medical/odysseus, "hud", /obj/item/clothing/glasses/hud/health/mech)
 
 /obj/mecha/medical/odysseus/moved_inside(mob/living/carbon/human/H as mob)
 	if(..())

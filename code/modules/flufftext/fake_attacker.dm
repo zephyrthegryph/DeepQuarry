@@ -148,9 +148,10 @@
 	VAR_PROTECTED/target = null
 	var/requires_hallucinating = TRUE // Mob will qdel if the target is not hallucinating if this is true
 
+DECLARE_PERIODIC(/obj/effect/fake_attacker/human, PERIODIC_SLOW)
+
 /obj/effect/fake_attacker/human/Initialize(mapload,mob/targeting_mob,atom/clone_appearance_from)
 	. = ..()
-	om_task_periodic(src, PERIODIC_SLOW)
 	set_target(targeting_mob)
 	create_images_from(clone_appearance_from)
 	append_client(targeting_mob.client)

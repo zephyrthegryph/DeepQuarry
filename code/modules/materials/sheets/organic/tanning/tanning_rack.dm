@@ -6,9 +6,7 @@
 
 	var/tmp/drying_handle
 
-/obj/structure/tanning_rack/Initialize(mapload)
-	. = ..()
-	om_task_periodic(src, PERIODIC_SLOW) // SSObj fires ~every 2s , starting from wetness 30 takes ~1m
+DECLARE_PERIODIC(/obj/structure/tanning_rack, PERIODIC_SLOW) // SSObj fires ~every 2s , starting from wetness 30 takes ~1m
 
 /// Dries its leather while it holds wet leather; otherwise it sleeps until some is hung on it.
 /obj/structure/tanning_rack/periodic_step()

@@ -16,9 +16,10 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 	var/list/affecting
 	var/voracity = 5 //How much stuff is swallowed at once.
 
+DECLARE_REAGENTS(/obj/machinery/v_garbosystem, CARGOTANKER_VOLUME * 2, null)
+
 /obj/machinery/v_garbosystem/Initialize(mapload)
 	. = ..()
-	create_reagents(CARGOTANKER_VOLUME * 2)
 	add_hose_connector(/datum/hose_connector/output)
 	for(var/dir in GLOB.cardinal)
 		src.crusher_handle = om_handle(locate(/obj/machinery/recycling/crusher, get_step(src, dir)))

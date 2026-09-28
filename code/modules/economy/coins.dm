@@ -99,9 +99,7 @@
 	COOLDOWN_DECLARE(event_cooldown)
 	var/active = 0
 
-/obj/item/coin/uranium/Initialize(mapload)
-	. = ..()
-	om_task_periodic(src, PERIODIC_SLOW)
+DECLARE_PERIODIC(/obj/item/coin/uranium, PERIODIC_SLOW)
 
 /// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.
 /obj/item/coin/uranium/periodic_step()

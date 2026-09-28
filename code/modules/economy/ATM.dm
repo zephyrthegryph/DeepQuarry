@@ -36,10 +36,11 @@ log transactions
 	var/view_screen = NO_SCREEN
 	var/datum/effect/effect/system/spark_spread/spark_system
 
+DECLARE_DEFAULT_CHILD(/obj/machinery/atm, "spark_system", /datum/effect/effect/system/spark_spread)
+
 /obj/machinery/atm/Initialize(mapload)
 	machine_id = "[station_name()] RT #[GLOB.num_financial_terminals++]"
 	. = ..()
-	spark_system = new /datum/effect/effect/system/spark_spread
 	spark_system.set_up(5, 0, src)
 	spark_system.attach(src)
 

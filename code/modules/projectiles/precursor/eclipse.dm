@@ -33,6 +33,8 @@ MATERIAL_MIX(/obj/item/gun/energy/freezegun, list(MAT_DURASTEEL = 1000, MAT_MORP
 	stage = 2
 	sealed = TRUE
 
+DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/frost, "detonator", /obj/item/assembly_holder/timer_igniter)
+
 /obj/item/grenade/chem_grenade/frost/Initialize(mapload)
 	. = ..()
 	var/obj/item/reagent_containers/glass/beaker/bluespace/B1 = new(src)
@@ -42,8 +44,6 @@ MATERIAL_MIX(/obj/item/gun/energy/freezegun, list(MAT_DURASTEEL = 1000, MAT_MORP
 	B1.reagents.add_reagent(REAGENT_ID_POTASSIUM, 150)
 	B2.reagents.add_reagent(REAGENT_ID_PHOSPHORUS, 150)
 	B2.reagents.add_reagent(REAGENT_ID_SUGAR, 150)
-
-	detonator = new/obj/item/assembly_holder/timer_igniter(src)
 
 	LAZYADD(beakers, B1)
 	LAZYADD(beakers, B2)

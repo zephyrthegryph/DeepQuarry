@@ -967,9 +967,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/holo/detective/ruda, INTE
 	var/base_name = "stunstaff"
 	special_handling = TRUE
 
+DECLARE_DEFAULT_CHILD(/obj/item/melee/baton/fluff/stunstaff, "bcell", /obj/item/cell/device/weapon)
+
 /obj/item/melee/baton/fluff/stunstaff/Initialize(mapload)
 	. = ..()
-	bcell = new/obj/item/cell/device/weapon(src)
 	update_icon()
 
 /obj/item/melee/baton/fluff/stunstaff/update_held_icon()

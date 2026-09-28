@@ -106,9 +106,7 @@
 
 	var/obj/item/clothing/glasses/hud/health/mech/hud
 
-/obj/mecha/combat/gygax/serenity/Initialize(mapload)
-	. = ..()
-	hud = new /obj/item/clothing/glasses/hud/health/mech(src)
+DECLARE_DEFAULT_CHILD(/obj/mecha/combat/gygax/serenity, "hud", /obj/item/clothing/glasses/hud/health/mech)
 
 /obj/mecha/combat/gygax/serenity/moved_inside(mob/living/carbon/human/H as mob)
 	if(..())

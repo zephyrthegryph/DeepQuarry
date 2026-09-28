@@ -167,9 +167,7 @@ EXTEND_INTERACTIONS(/obj/effect/blob, \
 /obj/effect/blob/core/update_icon()
 	return
 
-/obj/effect/blob/core/Initialize(mapload)
-	. = ..()
-	om_task_periodic(src, PERIODIC_SLOW)
+DECLARE_PERIODIC(/obj/effect/blob/core, PERIODIC_SLOW)
 
 /obj/effect/blob/core/periodic_step()
 	pulse(20, list(NORTH, EAST))

@@ -306,9 +306,10 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 	circuit = /obj/item/circuitboard/nav
 	var/datum/tgui_module/ship/nav/nav_tgui
 
+DECLARE_DEFAULT_CHILD(/obj/machinery/computer/ship/navigation, "nav_tgui", /datum/tgui_module/ship/nav)
+
 /obj/machinery/computer/ship/navigation/Initialize(mapload)
 	. = ..()
-	nav_tgui = new(src)
 	if(linked())
 		nav_tgui.attempt_hook_up(linked())
 

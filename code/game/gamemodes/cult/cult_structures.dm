@@ -32,9 +32,7 @@
 	var/activation_cooldown = 30 SECONDS
 	COOLDOWN_DECLARE(activation_cooldown_until)
 
-/obj/structure/cult/pylon/Initialize(mapload)
-	. = ..()
-	om_task_periodic(src, PERIODIC_SLOW)
+DECLARE_PERIODIC(/obj/structure/cult/pylon, PERIODIC_SLOW)
 
 DECLARE_INTERACTIONS(/obj/structure/cult/pylon, \
 	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \

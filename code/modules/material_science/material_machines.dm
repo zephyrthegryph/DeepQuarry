@@ -60,14 +60,15 @@
 	var/firing_timer
 	var/datum/gas_mixture/chamber_air
 
+DECLARE_GAS(/obj/machinery/material_furnace, "chamber_air", 500, T20C, null)
+DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
+
 /obj/machinery/material_furnace/Initialize(mapload)
 	. = ..()
-	chamber_air = new(500)
 	var/turf/furnace_turf = get_turf(src)
 	var/datum/gas_mixture/environment = furnace_turf?.return_air()
 	if(environment)
 		chamber_air.copy_from(environment)
-	create_reagents(120)
 
 DECLARE_REF(/obj/machinery/material_furnace, "chamber_air", OWNED, null)
 

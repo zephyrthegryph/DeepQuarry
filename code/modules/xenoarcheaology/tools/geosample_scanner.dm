@@ -44,9 +44,7 @@
 
 	var/heat = 0
 
-/obj/machinery/radiocarbon_spectrometer/Initialize(mapload)
-	. = ..()
-	create_reagents(COOLANT_MAX)
+DECLARE_REAGENTS(/obj/machinery/radiocarbon_spectrometer, COOLANT_MAX, null)
 
 /obj/machinery/radiocarbon_spectrometer/declare_interactions(list/into)
 	into += list(

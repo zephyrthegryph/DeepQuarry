@@ -162,9 +162,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/output/video_camera, INTERACT_
 	var/list/obj/item/integrated_circuit/output/video_camera/paired_cameras
 	var/datum/tgui_module/camera/intcircuit/camera_module
 
-/obj/item/integrated_circuit/input/video_camera_input/Initialize(mapload)
-	. = ..()
-	camera_module = new(src)
+DECLARE_DEFAULT_CHILD(/obj/item/integrated_circuit/input/video_camera_input, "camera_module", /datum/tgui_module/camera/intcircuit)
 
 DECLARE_REF(/obj/item/integrated_circuit/input/video_camera_input, "camera_module", OWNED, null)
 

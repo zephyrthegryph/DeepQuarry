@@ -22,10 +22,10 @@
 /obj/item/blobcore_chunk/is_open_container()
 	return 1
 
+DECLARE_REAGENTS(/obj/item/blobcore_chunk, 120, null)
+
 /obj/item/blobcore_chunk/Initialize(mapload, datum/blob_type/parentblob = null)
 	. = ..()
-
-	create_reagents(120)
 	setup_blobtype(parentblob)
 
 /obj/item/blobcore_chunk/proc/setup_blobtype(datum/blob_type/parentblob = null)

@@ -56,6 +56,8 @@
 	color = material().icon_colour
 	return INITIALIZE_HINT_NORMAL
 
+DECLARE_DEFAULT_CHILD(/obj/vehicle/boat, "riding_datum", "riding_datum_type")
+
 /obj/vehicle/boat/Initialize(mapload, material_name)
 	..(mapload)
 	if(!material_name)
@@ -64,7 +66,6 @@
 	if(!material())
 		return INITIALIZE_HINT_QDEL
 	color = material().icon_colour
-	riding_datum = new riding_datum_type(src)
 	return INITIALIZE_HINT_NORMAL
 
 // Boarding.

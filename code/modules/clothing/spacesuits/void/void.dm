@@ -62,14 +62,10 @@
 /obj/item/clothing/suit/space/void/suit_storage_constraint()
 	var/list/stores = list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS)
 	return list(HOLD_ONLY(stores))
-/obj/item/clothing/suit/space/void/Initialize(mapload)
-	. = ..()
-	if(boots && ispath(boots))
-		boots = new boots(src)
-	if(hood && ispath(hood))
-		hood = new hood(src)
-	if(tank && ispath(tank))
-		tank = new tank(src)
+// A path in boots/hood/tank is created in the suit; null deploys nothing.
+DECLARE_DEFAULT_CHILD(/obj/item/clothing/suit/space/void, "boots", "boots")
+DECLARE_DEFAULT_CHILD(/obj/item/clothing/suit/space/void, "hood", "hood")
+DECLARE_DEFAULT_CHILD(/obj/item/clothing/suit/space/void, "tank", "tank")
 
 /obj/item/clothing/suit/space/void/examine(mob/user)
 	. = ..()
@@ -373,14 +369,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void, \
 	default_worn_icon = 'icons/inventory/suit/mob.dmi'
 	sprite_sheets = ALL_SPRITE_SHEETS_SUIT_MOB
 	sprite_sheets_obj = null
+	hood = /obj/item/clothing/head/helmet/space/void/autolok // autoinstall the helmet
 
 /obj/item/clothing/suit/space/void/autolok/fit_constraint()
 	var/list/bodytypes = list("exclude",SPECIES_DIONA,SPECIES_VOX)
 	return list(REQ_FITS_BODYTYPES(bodytypes))
-
-/obj/item/clothing/suit/space/void/autolok/Initialize(mapload)
-	. = ..()
-	hood = new /obj/item/clothing/head/helmet/space/void/autolok //autoinstall the helmet
 
 EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/autolok, INTERACT_ITEM(null, PROC_REF(autolok_worn_item)))
 

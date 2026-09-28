@@ -25,9 +25,10 @@
 		return can_telecomm(src,node)
 	return 0
 
+DECLARE_DEFAULT_CHILD(/obj/item/integrated_circuit/illegal/EPv2_Discoverer, "exonet", /datum/exonet_protocol)
+
 /obj/item/integrated_circuit/illegal/EPv2_Discoverer/Initialize(mapload)
 	. = ..()
-	exonet = new(src)
 	exonet.make_address("EPv2_Discovery_circuit-\ref[src]")
 	desc += "<br>This circuit's EPv2 address is: [exonet.address]"
 	node = get_exonet_node()

@@ -15,9 +15,10 @@
 	var/gun_type = /obj/item/gun/energy/lasercannon/mounted
 	var/obj/item/gun/gun
 
+DECLARE_DEFAULT_CHILD(/obj/item/rig_module/mounted, "gun", "gun_type")
+
 /obj/item/rig_module/mounted/Initialize(mapload)
 	. = ..()
-	gun = new gun_type(src)
 	gun.mounted_gun = TRUE
 
 /obj/item/rig_module/mounted/engage(atom/target)

@@ -34,11 +34,12 @@
 DECLARE_REF(/obj/item/organ/internal/augment, "integrated_object", OWNED, null)
 DECLARE_REF(/obj/item/organ/internal/augment, "my_radial_icon", OWNED, null)
 
+DECLARE_DEFAULT_CHILD(/obj/item/organ/internal/augment, "integrated_object", "integrated_object_type")
+
 /obj/item/organ/internal/augment/Initialize(mapload)
 	. = ..()
 	setup_radial_icon()
-	if(integrated_object_type)
-		integrated_object = new integrated_object_type(src)
+	if(integrated_object) // declared child
 		integrated_object.canremove = FALSE
 
 /obj/item/organ/internal/augment/proc/setup_radial_icon()

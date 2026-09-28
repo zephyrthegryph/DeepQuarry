@@ -134,6 +134,8 @@ DECLARE_INTERACTIONS(/obj/structure/bigDelivery, \
 			. += span_notice("It has a note attached which reads, \"[examtext]\"")
 
 // the wrapped thing is unwrapped onto the floor.
+DESTROY_EFFECTS(/obj/structure/bigDelivery, new /datum/destroy_effects_data(drop_contents = TRUE))
+
 /obj/structure/bigDelivery/on_destroy(force)
 	if(wrapped()) //sometimes items can disappear. For example, bombs. --rastaf0
 		wrapped().forceMove(get_turf(src))
@@ -141,9 +143,6 @@ DECLARE_INTERACTIONS(/obj/structure/bigDelivery, \
 			var/obj/structure/closet/O = wrapped()
 			O.sealed = 0
 		wrapped_handle = null
-	var/turf/T = get_turf(src)
-	for(var/atom/movable/AM in contents)
-		AM.forceMove(T)
 	..()
 
 /obj/item/smallDelivery
