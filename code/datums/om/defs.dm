@@ -156,6 +156,16 @@
 	var/coalesce = TRUE
 	/// Dropped inside bulk_begin()/bulk_end().
 	var/skip_in_bulk = FALSE
+	/// Delivered at once even inside another delivery (never queued), like a direct call.
+	/// Hooked (om_hook) cross-entity events are sync so their listeners see the state
+	/// the sender is in.
+	var/sync = FALSE
+	/// before/ events only: every handler runs and their numeric returns are ORed into
+	/// `result` (the event's documented result bits), instead of stopping at the first
+	/// EVENT_VETO. Such events may nest on one entity.
+	var/accumulate = FALSE
+	/// Numeric handler returns, ORed. om_emit() returns it for sync and accumulate events.
+	var/result = 0
 	/// Set by om_emit().
 	var/datum/entity
 

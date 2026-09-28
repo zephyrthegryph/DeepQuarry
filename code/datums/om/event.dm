@@ -21,6 +21,12 @@
 	if(sched.bulk_depth && event.skip_in_bulk)
 		return null
 	if(event.before)
+		if(event.accumulate)
+			try
+				om_deliver(rec, event, FALSE)
+			catch(var/exception/e0)
+				sched.report_caught(e0, "[event.type]: [e0]")
+			return event.result
 		if(rec.in_veto)
 			sched.error("re-entrant [event.type] on [E]: vetoed")
 			return EVENT_VETO
@@ -32,6 +38,12 @@
 			sched.report_caught(e1, "[event.type]: [e1]")
 		rec.in_veto = FALSE
 		return
+	if(event.sync)
+		try
+			om_deliver(rec, event, FALSE)
+		catch(var/exception/e4)
+			sched.report_caught(e4, "[event.type]: [e4]")
+		return event.result
 	if(sched.emit_depth)
 		if(event.coalesce)
 			var/list/Q = sched.event_queue
@@ -73,8 +85,22 @@
 			if(!flags[B.id] || !(rec.att_state[i] & OM_ATT_STARTED))
 				continue
 			var/result = event.dispatch(B, E)
-			if(veto && result == EVENT_VETO)
-				return EVENT_VETO
+			if(isnum(result) && result)
+				event.result |= result
+				if(veto && result == EVENT_VETO)
+					return EVENT_VETO
+			if(rec.torn_down)
+				return null
+	var/list/hooks = rec.hooks_in?[event.type]
+	if(hooks)
+		// A handler may hook or unhook while we deliver.
+		hooks = hooks.Copy()
+		for(var/i in 1 to length(hooks) step 2)
+			var/result = call(hooks[i], hooks[i + 1])(E, event)
+			if(isnum(result) && result)
+				event.result |= result
+				if(veto && result == EVENT_VETO)
+					return EVENT_VETO
 			if(rec.torn_down)
 				return null
 	if(rec.tasks)
@@ -85,14 +111,17 @@
 					break
 	return null
 
-/// TRUE when a started behaviour on E handles `path` (or a task on E could be
-/// interrupted by it). Senders on hot paths (movement, examine) test this before
-/// allocating the event, so entities with no interested behaviour pay a lookup.
+/// TRUE when a started behaviour on E handles `path`, something hooked it on E
+/// (om_hook), or a task on E could be interrupted by it. Senders on hot paths
+/// (movement, examine) test this before allocating the event, so entities with
+/// no interested behaviour pay a lookup.
 /proc/om_wants(datum/E, path)
 	var/datum/om/rec/rec = E?.om_rec
 	if(!rec || rec.torn_down)
 		return FALSE
 	if(length(rec.tasks))
+		return TRUE
+	if(rec.hooks_in && rec.hooks_in[path])
 		return TRUE
 	var/datum/om/registry/reg = om_registry()
 	var/e = reg.event_idx[path]
