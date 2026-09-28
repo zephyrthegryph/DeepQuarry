@@ -132,14 +132,24 @@
 			var/datum/gear_tweak/gt = locate(params["tweak"])
 			if(!gt)
 				return TRUE
-			gt.ask_metadata(H, get_metadata(H, underwear, gt), null, "Wardrobe Underwear Selection", src, PROC_REF(underwear_tweak_answered), list("category" = underwear, "tweak" = gt), PROMPT_USABLE)
+			gt.ask_metadata(H, get_metadata(H, underwear, gt), null, "Wardrobe Underwear Selection", src, PROC_REF(underwear_tweak_answered), new /datum/om/flow/ask_sequence/gear_tweak/underwear(underwear, gt), PROMPT_USABLE)
 	if(changed)
 		H.update_underwear()
 	return TRUE
 
-/obj/structure/undies_wardrobe/proc/underwear_tweak_answered(mob/living/carbon/human/H, new_metadata, datum/om/flow/ask_sequence/seq)
-	var/underwear = seq.get("category")
-	var/datum/gear_tweak/gt = seq.get("tweak")
+/// An underwear gear tweak change: which underwear category and tweak it is for.
+/datum/om/flow/ask_sequence/gear_tweak/underwear
+	var/category
+	var/datum/gear_tweak/tweak
+
+/datum/om/flow/ask_sequence/gear_tweak/underwear/New(category, datum/gear_tweak/tweak)
+	..()
+	src.category = category
+	src.tweak = tweak
+
+/obj/structure/undies_wardrobe/proc/underwear_tweak_answered(mob/living/carbon/human/H, new_metadata, datum/om/flow/ask_sequence/gear_tweak/underwear/seq)
+	var/underwear = seq.category
+	var/datum/gear_tweak/gt = seq.tweak
 	if(!istype(H) || !(underwear in H.all_underwear))
 		return
 	set_metadata(H, underwear, gt, new_metadata)

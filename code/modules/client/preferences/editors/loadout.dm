@@ -558,12 +558,26 @@
 			cost += existing.cost
 	return cost
 
+/// A loadout gear tweak change: which prefs, gear, tweak and loadout slot it is for.
+/datum/om/flow/ask_sequence/gear_tweak/loadout
+	var/datum/preferences/preferences
+	var/gear_name
+	var/tweak_idx
+	var/loadout_key
+
+/datum/om/flow/ask_sequence/gear_tweak/loadout/New(datum/preferences/preferences, gear_name, tweak_idx, loadout_key)
+	..()
+	src.preferences = preferences
+	src.gear_name = gear_name
+	src.tweak_idx = tweak_idx
+	src.loadout_key = loadout_key
+
 /// A gear tweak's new value: the item must still be equipped in the same loadout.
-/datum/preference_editor/loadout/proc/tweak_answered(mob/user, new_value, datum/om/flow/ask_sequence/seq)
-	var/datum/preferences/preferences = seq.get("preferences")
-	var/gear_name = seq.get("gear")
-	var/tweak_idx = seq.get("tweak")
-	var/loadout_key = seq.get("slot")
+/datum/preference_editor/loadout/proc/tweak_answered(mob/user, new_value, datum/om/flow/ask_sequence/gear_tweak/loadout/seq)
+	var/datum/preferences/preferences = seq.preferences
+	var/gear_name = seq.gear_name
+	var/tweak_idx = seq.tweak_idx
+	var/loadout_key = seq.loadout_key
 	var/datum/gear/G = GLOB.gear_datums[gear_name]
 	if(!preferences || !G || tweak_idx > length(G.gear_tweaks) || _current_slot(preferences) != loadout_key)
 		return
@@ -735,7 +749,7 @@
 				item_meta = list()
 			var/cur_value = item_meta["[tweak_idx]"]
 			// Asks, then tweak_answered() saves the new value.
-			gt.ask_metadata(user, cur_value, G, null, src, PROC_REF(tweak_answered), list("preferences" = preferences, "gear" = gear_name, "tweak" = tweak_idx, "slot" = loadout_key))
+			gt.ask_metadata(user, cur_value, G, null, src, PROC_REF(tweak_answered), new /datum/om/flow/ask_sequence/gear_tweak/loadout(preferences, gear_name, tweak_idx, loadout_key))
 			return PREF_UPDATE_UNCHANGED
 
 		if("set_tweak_value")

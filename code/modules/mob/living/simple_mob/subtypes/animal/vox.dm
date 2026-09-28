@@ -72,10 +72,15 @@
 	set name = "Commune with creature"
 	set desc = "Send a telepathic message to an unlucky recipient."
 
-	om_ask_sequence(src, src, list(/datum/om/prompt/choice/armalis_commune_target, /datum/om/prompt/text/armalis_commune_text), PROC_REF(message_mob_answered))
+	om_ask_sequence(/datum/om/flow/ask_sequence/armalis_commune, src, null, steps = list(/datum/om/prompt/choice/armalis_commune_target, /datum/om/prompt/text/armalis_commune_text), on_done = PROC_REF(message_mob_answered))
+
+/datum/om/flow/ask_sequence/armalis_commune
+	/// The chosen mob's getmobs() name.
+	var/recipient
+	var/message_text
 
 /datum/om/prompt/choice/armalis_commune_target
-	key = "target"
+	key = "recipient"
 	title = "Speak to creature"
 	message = "Select a creature!"
 
@@ -84,14 +89,14 @@
 	return TRUE
 
 /datum/om/prompt/text/armalis_commune_text
-	key = "text"
+	key = "message_text"
 	title = "Speak to creature"
 	message = "What would you like to say?"
 
-/mob/living/simple_mob/vox/armalis/proc/message_mob_answered(datum/om/flow/ask_sequence/seq)
-	var/text = seq.get("text")
+/mob/living/simple_mob/vox/armalis/proc/message_mob_answered(datum/om/flow/ask_sequence/armalis_commune/seq)
+	var/text = seq.message_text
 	var/list/targets = getmobs()
-	var/mob/M = targets[seq.get("target")]
+	var/mob/M = targets[seq.recipient]
 	if(!M)
 		return
 

@@ -265,15 +265,19 @@
 				possible_mobs += H
 			else
 				continue
-	om_ask_sequence(src, src, list(
+	om_ask_sequence(/datum/om/flow/ask_sequence/morph_takeover, src, null, on_done = PROC_REF(take_over_agreed), steps = list(
 		new /datum/om/prompt/choice/morph_takeover_target(possible_mobs),
 		PROC_REF(take_over_ask_sure),
 		PROC_REF(take_over_ask_consent),
 		PROC_REF(take_over_ask_consent_again),
-	), PROC_REF(take_over_agreed))
+	))
+
+/datum/om/flow/ask_sequence/morph_takeover
+	/// The answer of the prompt keyed "prey".
+	var/mob/living/prey
 
 /datum/om/prompt/choice/morph_takeover_target
-	key = "target"
+	key = "prey"
 	title = "Take Over Prey"
 	message = "Select a mob to take over:"
 
@@ -307,8 +311,8 @@
 	message = "Are you sure? The only way to undo this on your own is to OOC Escape."
 	return TRUE
 
-/mob/living/simple_mob/vore/morph/proc/take_over_ask_sure(datum/om/flow/ask_sequence/seq)
-	var/mob/living/L = seq.get("target")
+/mob/living/simple_mob/vore/morph/proc/take_over_ask_sure(datum/om/flow/ask_sequence/morph_takeover/seq)
+	var/mob/living/L = seq.prey
 	if(!L.allow_mimicry)
 		to_chat(src, span_warning("\The [L] cannot be impersonated!"))
 		return ASK_STOP
@@ -316,20 +320,20 @@
 	ask.message = "You selected [L] to attempt to take over. Are you sure?"
 	return ask
 
-/mob/living/simple_mob/vore/morph/proc/take_over_ask_consent(datum/om/flow/ask_sequence/seq)
-	var/mob/living/L = seq.get("target")
+/mob/living/simple_mob/vore/morph/proc/take_over_ask_consent(datum/om/flow/ask_sequence/morph_takeover/seq)
+	var/mob/living/L = seq.prey
 	log_admin("[key_name_admin(src)] offered [L] to swap bodies as a morph.")
 	var/datum/om/prompt/confirm/morph_takeover_consent/ask = new
 	ask.answerer = L
 	return ask
 
-/mob/living/simple_mob/vore/morph/proc/take_over_ask_consent_again(datum/om/flow/ask_sequence/seq)
+/mob/living/simple_mob/vore/morph/proc/take_over_ask_consent_again(datum/om/flow/ask_sequence/morph_takeover/seq)
 	var/datum/om/prompt/confirm/morph_takeover_consent/again/ask = new
-	ask.answerer = seq.get("target")
+	ask.answerer = seq.prey
 	return ask
 
-/mob/living/simple_mob/vore/morph/proc/take_over_agreed(datum/om/flow/ask_sequence/seq)
-	var/mob/living/L = seq.get("target")
+/mob/living/simple_mob/vore/morph/proc/take_over_agreed(datum/om/flow/ask_sequence/morph_takeover/seq)
+	var/mob/living/L = seq.prey
 	if(morphed || !isbelly(L.loc) || L.loc.loc != src)
 		return
 	var/obj/buckled = src?.buckled_to()

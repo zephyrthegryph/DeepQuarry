@@ -24,26 +24,26 @@ GLOBAL_DATUM_INIT(gear_tweak_item_tf_spawn, /datum/gear_tweak/item_tf_spawn, new
 /datum/gear_tweak/item_tf_spawn/metadata_steps(mob/user, list/metadata, datum/gear/gear, title = "Character Preference")
 	metadata = islist(metadata) ? metadata : get_default()
 	return list(
-		gear_ask_choice("state", title, "Choose an entry.", list("Not Enabled", "Anyone", "Only Specific Players"), metadata["state"]),
+		gear_ask_choice("value", title, "Choose an entry.", list("Not Enabled", "Anyone", "Only Specific Players"), metadata["state"]),
 		TYPE_PROC_REF(/datum/gear_tweak/item_tf_spawn, ask_valid_ckeys),
 	)
 
 /// Step proc (run with the tweak as the sequence owner): only specific players need a ckey list.
-/datum/gear_tweak/item_tf_spawn/proc/ask_valid_ckeys(datum/om/flow/ask_sequence/seq)
-	if(seq.get("state") != "Only Specific Players")
+/datum/gear_tweak/item_tf_spawn/proc/ask_valid_ckeys(datum/om/flow/ask_sequence/gear_tweak/seq)
+	if(seq.value != "Only Specific Players")
 		return null
-	var/list/current = seq.get("metadata")
-	return gear_ask_text("valid", "Allowed Players", "Input ckeys allowed to join on separate lines", islist(current) ? jointext(current["valid"], "\n") : "", MAX_MESSAGE_LEN, TRUE)
+	var/list/current = seq.metadata
+	return gear_ask_text("detail", "Allowed Players", "Input ckeys allowed to join on separate lines", islist(current) ? jointext(current["valid"], "\n") : "", MAX_MESSAGE_LEN, TRUE)
 
-/datum/gear_tweak/item_tf_spawn/metadata_answered(datum/om/flow/ask_sequence/seq, list/metadata)
-	var/entry = seq.get("state")
+/datum/gear_tweak/item_tf_spawn/metadata_answered(datum/om/flow/ask_sequence/gear_tweak/seq)
+	var/entry = seq.value
 	if(!entry)
 		return null
-	metadata = islist(metadata) ? metadata : get_default()
+	var/list/metadata = islist(seq.metadata) ? seq.metadata : get_default()
 	. = get_default()
 	.["state"] = entry
 	if(entry == "Only Specific Players")
-		.["valid"] = splittext(lowertext(seq.get("valid")), "\n")
+		.["valid"] = splittext(lowertext(seq.detail), "\n")
 	else
 		.["valid"] = metadata["valid"]
 

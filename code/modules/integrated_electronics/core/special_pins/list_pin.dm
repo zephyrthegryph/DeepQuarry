@@ -18,7 +18,7 @@
 	if(is_valid(new_entry))
 		Add(new_entry)
 
-/datum/integrated_io/list/proc/list_entry_chosen(mob/user, new_entry, datum/om/flow/ask_sequence/seq)
+/datum/integrated_io/list/proc/list_entry_chosen(mob/user, new_entry, datum/om/flow/ask_sequence/pin_value/seq)
 	if(is_valid(new_entry))
 		Add(new_entry)
 
@@ -63,19 +63,29 @@
 			return
 		target_entry = _answer_k58
 	if(target_entry)
-		ask_for_data_type(user, target_entry, on_value = PROC_REF(list_entry_edited), data = list("target" = target_entry))
+		ask_for_data_type(user, target_entry, on_value = PROC_REF(list_entry_edited), sequence = new /datum/om/flow/ask_sequence/pin_value/list_edit(target_entry))
+
+/// A list entry being edited: the entry, and its position when edited by position.
+/datum/om/flow/ask_sequence/pin_value/list_edit
+	var/entry
+	var/position
+
+/datum/om/flow/ask_sequence/pin_value/list_edit/New(entry, position)
+	..()
+	src.entry = entry
+	src.position = position
 
 /// The entry is found again by value: it may have moved while they typed.
-/datum/integrated_io/list/proc/list_entry_edited(mob/user, edited_entry, datum/om/flow/ask_sequence/seq)
+/datum/integrated_io/list/proc/list_entry_edited(mob/user, edited_entry, datum/om/flow/ask_sequence/pin_value/list_edit/seq)
 	var/list/my_list = data
 	if(!edited_entry)
 		return
-	var/position = seq.get("position")
+	var/position = seq.position
 	if(position)
-		if(position <= my_list.len && my_list[position] == seq.get("target"))
+		if(position <= my_list.len && my_list[position] == seq.entry)
 			my_list[position] = edited_entry
 		return
-	var/idx = my_list.Find(seq.get("target"))
+	var/idx = my_list.Find(seq.entry)
 	if(idx)
 		my_list[idx] = edited_entry
 
@@ -88,7 +98,7 @@
 		return
 	var/target_entry = my_list[position]
 	if(target_entry)
-		ask_for_data_type(user, target_entry, on_value = PROC_REF(list_entry_edited), data = list("target" = target_entry, "position" = position))
+		ask_for_data_type(user, target_entry, on_value = PROC_REF(list_entry_edited), sequence = new /datum/om/flow/ask_sequence/pin_value/list_edit(target_entry, position))
 
 /datum/integrated_io/list/proc/swap_inside_list(mob/user, first_target, second_target)
 	var/list/my_list = data

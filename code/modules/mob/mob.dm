@@ -1463,14 +1463,20 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	rem_organ.removed()
 	qdel(rem_organ)
 
-/mob/proc/vv_ai_configured(datum/om/flow/ask_sequence/seq)
+/// A VV AI brain setup: the answers of the vv_ai_* prompts.
+/datum/om/flow/ask_sequence/vv_ai_setup
+	var/faction
+	var/stance
+	var/wake
+
+/mob/proc/vv_ai_configured(datum/om/flow/ask_sequence/vv_ai_setup/seq)
 	var/mob/living/L = src
 	if(!istype(L) || !L.ai_brain)
 		return
-	L.faction = seq.get("faction")
-	if(seq.get("stance"))
-		L.set_use_stance(seq.get("stance"))
-	if(seq.get("wake"))
+	L.faction = seq.faction
+	if(seq.stance)
+		L.set_use_stance(seq.stance)
+	if(seq.wake)
 		L.status_adjust(EFFECT_SLEEPING, -100)
 
 /mob/vv_do_topic(list/href_list)
@@ -1604,7 +1610,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 			L.ai_brain = null
 			qdel(old_brain)	//Only way I could make #TESTING - Unable to be GC'd to stop. del() logs show it works.
 		L.initialize_ai_brain()
-		om_ask_sequence(src, usr, list(/datum/om/prompt/text/vv_ai_faction, /datum/om/prompt/choice/vv_ai_stance, /datum/om/prompt/confirm/vv_ai_wake), PROC_REF(vv_ai_configured), null, PROMPT_ADMIN(R_HOLDER))
+		om_ask_sequence(/datum/om/flow/ask_sequence/vv_ai_setup, usr, null, steps = list(/datum/om/prompt/text/vv_ai_faction, /datum/om/prompt/choice/vv_ai_stance, /datum/om/prompt/confirm/vv_ai_wake), on_done = PROC_REF(vv_ai_configured), requires = PROMPT_ADMIN(R_HOLDER))
 
 	//if(href_list[VV_HK_GIVE_AI_SPEECH])
 	//	return SSadmin_verbs.dynamic_invoke_verb(usr, /datum/admin_verb/give_ai_speech, src)
