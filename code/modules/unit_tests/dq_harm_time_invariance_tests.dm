@@ -80,7 +80,7 @@
 	var/obj/belly/B = vore_rate_belly(pair, DM_HOLD)
 	TEST_ASSERT_EQUAL(B.get_interior_temperature(), pred.bodytemperature, "a belly's interior is the predator's body temperature")
 	TEST_ASSERT_EQUAL(prey.get_ambient_temperature(), pred.bodytemperature, "the prey's surroundings are the predator's body")
-	pred.bodytemperature = pred.species.heat_level_1 + 5
+	pred.set_bodytemperature(pred.species.heat_level_1 + 5)
 	TEST_ASSERT_EQUAL(B.get_interior_temperature(), pred.bodytemperature, "the belly follows a feverish predator")
 	var/datum/gas_mixture/air = B.return_air_for_internal_lifeform(prey)
 	TEST_ASSERT(abs(air.return_temperature() - pred.bodytemperature) < 0.01, "belly air should be at the predator's temperature, is [air.return_temperature()]")

@@ -442,6 +442,16 @@ if $grep -n '\b(M|mod|modifier)\.(slowdown|haste|evasion|accuracy|siemens_coeffi
 	FAILED=1
 fi;
 
+part "heat: direct bodytemperature writes (H2)"
+# Body temperature is tracked state: heat a mob with add_heat(joules),
+# adjust_bodytemperature(kelvin) or set_bodytemperature(kelvin)
+# (code/modules/heat/heat_mobs.dm), which wake the Life stages that read it.
+if $grep -n '(^|[^A-Za-z0-9_])bodytemperature\s*([-+*/]?=[^=]|\+\+|--)' "${code_files[@]}" 	| $grep -v '^code/modules/heat/heat_mobs\.dm:' 	| $grep -v ':\s*//|var/'; then
+	echo
+	echo -e "${RED}ERROR: bodytemperature written directly. Use add_heat(), adjust_bodytemperature() or set_bodytemperature().${NC}"
+	FAILED=1
+fi;
+
 part "modifiers: ratchet on /datum/modifier types (MED-5)"
 # Factor-only timed effects are body effects (code/modules/body/body_effects.dm: OM contributions
 # on the body clock); medically real conditions are afflictions. /datum/modifier is kept only for

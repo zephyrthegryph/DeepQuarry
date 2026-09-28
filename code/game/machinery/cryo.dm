@@ -225,7 +225,7 @@ REF_SPILL(/obj/machinery/atmospherics/unary/cryo_cell, "beaker")
 		// heat the body loses is what the gas gains.
 		var/air_heat_capacity = air_contents.heat_capacity()
 		var/equilibrium_temperature = (HUMAN_HEAT_CAPACITY * occupant.bodytemperature + air_heat_capacity * air_contents.return_temperature()) / (HUMAN_HEAT_CAPACITY + air_heat_capacity)
-		occupant.bodytemperature = equilibrium_temperature
+		occupant.set_bodytemperature(equilibrium_temperature)
 		air_contents.set_temperature(equilibrium_temperature)
 		occupant.set_stat(UNCONSCIOUS)
 		occupant.dir = SOUTH
@@ -312,7 +312,7 @@ REF_SPILL(/obj/machinery/atmospherics/unary/cryo_cell, "beaker")
 	occupant.pixel_x = occupant.default_pixel_x
 	occupant.pixel_y = occupant.default_pixel_y
 	if(occupant.bodytemperature < 261 && occupant.bodytemperature >= 70) //Patch by Aranclanos to stop people from taking burn damage after being ejected
-		occupant.bodytemperature = 261									  // Changed to 70 from 140 by Zuhayr due to reoccurance of bug.
+		occupant.set_bodytemperature(261) // Changed to 70 from 140 by Zuhayr due to reoccurance of bug.
 	unbuckle_mob(occupant, force = TRUE)
 	occupant.cozyloop.stop() // Cozy Music
 	//this doesn't account for walls or anything, but i don't forsee that being a problem.

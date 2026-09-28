@@ -41,7 +41,7 @@
 
 /datum/reagent/modapplying/cryofluid/affect_blood(mob/living/carbon/M, alien, removed)
 	..(M, alien, removed)
-	M.bodytemperature -= removed * 20
+	M.adjust_bodytemperature(-(removed * 20))
 
 /datum/reagent/modapplying/cryofluid/affect_ingest(mob/living/carbon/M, alien, removed)
 	affect_blood(M, alien, removed * 2.5)

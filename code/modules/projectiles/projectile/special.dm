@@ -88,7 +88,7 @@
 		var/temp_factor = abs(protection - 1)
 
 		new_temperature = round(new_temperature * temp_factor)
-		L.bodytemperature = new_temperature
+		L.set_bodytemperature(new_temperature)
 	// The last metroid has escaped from captivity, the galaxy is no longer safe.
 		if(istype(L, /mob/living/simple_mob/vore/alienanimals/space_jellyfish) && target_temperature <= T0C)
 			var/mob/living/simple_mob/vore/alienanimals/space_jellyfish/J = L

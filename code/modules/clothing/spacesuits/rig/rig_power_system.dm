@@ -106,7 +106,7 @@
 		return
 
 	var/charge_usage = (temp_adj / max_cooling) * charge_consumption
-	H.bodytemperature -= temp_adj * efficiency
+	H.adjust_bodytemperature(-(temp_adj * efficiency))
 	holder().draw_power(charge_usage / CELLRATE, src, partial = TRUE)
 
 	if(holder().cell.charge <= 0)

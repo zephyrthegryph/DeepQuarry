@@ -243,7 +243,7 @@
 			return
 
 	var/fire_temp_add = (BODYTEMP_HEATING_MAX + (stacks + 15)) * (1 - thermal_protection)
-	victim.bodytemperature += fire_temp_add
+	victim.adjust_bodytemperature(fire_temp_add)
 
 	// var/mob/living/carbon/human/victim = owner
 	// var/thermal_protection = victim.get_heat_protection(stacks)

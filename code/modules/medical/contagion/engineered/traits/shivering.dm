@@ -67,6 +67,6 @@ Bonus
 
 /datum/viral_trait/shivering/proc/set_body_temp(mob/living/carbon/H, datum/affliction/contagion/engineered/A)
 	if(!unsafe)
-		H.bodytemperature = max(-((3 * power) * A.stage), (BODYTEMP_COLD_DAMAGE_LIMIT + 1))
+		H.adjust_bodytemperature(-((3 * power) * A.stage), min_temp = BODYTEMP_COLD_DAMAGE_LIMIT + 1)
 	else
-		H.bodytemperature = max(-((3 * power) * A.stage), (BODYTEMP_COLD_DAMAGE_LIMIT - 20))
+		H.adjust_bodytemperature(-((3 * power) * A.stage), min_temp = BODYTEMP_COLD_DAMAGE_LIMIT - 20)

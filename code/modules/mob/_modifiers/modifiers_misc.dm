@@ -273,7 +273,7 @@ the artifact triggers the rage.
 
 /datum/modifier/homeothermic/tick()
 	..()
-	holder.bodytemperature = round((holder.bodytemperature + T20C) / 2)
+	holder.set_bodytemperature(round((holder.bodytemperature + T20C) / 2))
 
 /datum/modifier/exothermic
 	name = "heat resistance"
@@ -286,7 +286,7 @@ the artifact triggers the rage.
 /datum/modifier/exothermic/tick()
 	..()
 	if(holder.bodytemperature > T20C)
-		holder.bodytemperature = round((holder.bodytemperature + T20C) / 2)
+		holder.set_bodytemperature(round((holder.bodytemperature + T20C) / 2))
 
 /datum/modifier/endothermic
 	name = "cold resistance"
@@ -299,7 +299,7 @@ the artifact triggers the rage.
 /datum/modifier/endothermic/tick()
 	..()
 	if(holder.bodytemperature < T20C)
-		holder.bodytemperature = round((holder.bodytemperature + T20C) / 2)
+		holder.set_bodytemperature(round((holder.bodytemperature + T20C) / 2))
 
 // Nullifies EMP.
 /datum/body_effect/faraday

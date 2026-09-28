@@ -70,6 +70,6 @@ Bonus
 
 /datum/viral_trait/fever/proc/set_body_temp(mob/living/M, datum/affliction/contagion/engineered/A)
 	if(!unsafe)
-		M.bodytemperature = min(M.bodytemperature + (3 * power) * A.stage, BODYTEMP_HEAT_DAMAGE_LIMIT - 1)
+		M.adjust_bodytemperature((3 * power) * A.stage, max_temp = BODYTEMP_HEAT_DAMAGE_LIMIT - 1)
 	else
-		M.bodytemperature = min(M.bodytemperature + (3 * power) * A.stage, BODYTEMP_HEAT_DAMAGE_LIMIT + 20)
+		M.adjust_bodytemperature((3 * power) * A.stage, max_temp = BODYTEMP_HEAT_DAMAGE_LIMIT + 20)

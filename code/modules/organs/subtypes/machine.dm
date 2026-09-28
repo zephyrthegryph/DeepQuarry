@@ -26,7 +26,7 @@
 /obj/item/organ/internal/cell/machine/handle_organ_proc_special()
 	..()
 	if(owner && owner.is_alive())
-		owner.bodytemperature += round(owner.robobody_count * 0.5, 0.1)
+		owner.adjust_bodytemperature(round(owner.robobody_count * 0.5, 0.1))
 
 	return
 

@@ -26,7 +26,7 @@
 				host.emote("sniff")
 		if(2)
 			if(prob(10))
-				host.bodytemperature -= 2
+				host.adjust_bodytemperature(-(2))
 			if(prob(1) && prob(10))
 				to_chat(host, span_notice("You feel better."))
 				cure()
@@ -41,7 +41,7 @@
 				to_chat(host, span_danger("You feel stiff."))
 		if(3)
 			if(prob(10))
-				host.bodytemperature -= 5
+				host.adjust_bodytemperature(-(5))
 			if(prob(1))
 				host.emote("sneeze")
 			if(prob(1))

@@ -154,7 +154,7 @@
 				var/hc = pipe_air.heat_capacity()
 				var/avg_temp = (pipe_air.return_temperature() * hc + L.bodytemperature * HUMAN_HEAT_CAPACITY) / (hc + HUMAN_HEAT_CAPACITY)
 				pipe_air.set_temperature(avg_temp)
-				L.bodytemperature = avg_temp
+				L.set_bodytemperature(avg_temp)
 
 				var/heat_limit = 1000
 

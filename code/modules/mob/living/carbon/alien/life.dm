@@ -171,4 +171,4 @@
 		self.clear_alert("alien_fire")
 
 /mob/living/carbon/alien/on_fire_stack(seconds_per_tick, datum/status_effect/fire_handler/fire_stacks/fire_handler)
-	bodytemperature += BODYTEMP_HEATING_MAX
+	adjust_bodytemperature(BODYTEMP_HEATING_MAX)

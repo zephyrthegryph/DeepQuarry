@@ -295,7 +295,7 @@
 		if (temp_adj > BODYTEMP_HEATING_MAX) temp_adj = BODYTEMP_HEATING_MAX
 		if (temp_adj < BODYTEMP_COOLING_MAX) temp_adj = BODYTEMP_COOLING_MAX
 		//to_world("Breath: [breath.temperature], [src]: [bodytemperature], Adjusting: [temp_adj]")
-		H.bodytemperature += temp_adj
+		H.adjust_bodytemperature(temp_adj)
 
 	else if(breath_temperature >= heat_discomfort_level)
 		get_environment_discomfort(H,"heat") // P2-F9: the mob, not the species datum

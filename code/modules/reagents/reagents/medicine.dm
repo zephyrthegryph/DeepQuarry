@@ -1364,9 +1364,9 @@
 		var/mob/living/carbon/human/H = M
 		temp = H.species.body_temperature
 	if(M.bodytemperature > temp)
-		M.bodytemperature = max(temp, M.bodytemperature - (40 * TEMPERATURE_DAMAGE_COEFFICIENT))
+		M.set_bodytemperature(max(temp, M.bodytemperature - (40 * TEMPERATURE_DAMAGE_COEFFICIENT)))
 	else if(M.bodytemperature < temp+1)
-		M.bodytemperature = min(temp, M.bodytemperature + (40 * TEMPERATURE_DAMAGE_COEFFICIENT))
+		M.set_bodytemperature(min(temp, M.bodytemperature + (40 * TEMPERATURE_DAMAGE_COEFFICIENT)))
 
 /datum/reagent/rezadone
 	name = REAGENT_REZADONE

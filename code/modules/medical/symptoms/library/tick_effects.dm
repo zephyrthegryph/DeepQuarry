@@ -34,7 +34,7 @@
 	// minutes, giving the metric_threshold/heat_exposure cause room to
 	// fire without the symptom being responsible for spawning the
 	// condition itself.
-	M.bodytemperature += 0.4 * scale
+	M.adjust_bodytemperature(0.4 * scale)
 
 
 /datum/affliction_symptom/chills/tick(mob/living/M, datum/affliction/source)
@@ -48,7 +48,7 @@
 		return
 	// Equivalent to fever in the other direction — drop temp toward
 	// hypothermia. Same magnitude.
-	M.bodytemperature -= 0.4 * scale
+	M.adjust_bodytemperature(-(0.4 * scale))
 
 
 /datum/affliction_symptom/palpitations/tick(mob/living/M, datum/affliction/source)

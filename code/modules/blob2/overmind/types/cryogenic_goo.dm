@@ -32,7 +32,7 @@
 			var/cold_factor = abs(protection - 1)
 			temp_change *= cold_factor // If protection was at 0.5, then they only lose 40 kelvin.
 
-			H.bodytemperature = max(H.bodytemperature - temp_change, temp_cap)
+			H.adjust_bodytemperature(-(temp_change), min_temp = temp_cap)
 	else // Just do some extra burn for mobs who don't process bodytemp
 		victim.injure(INJURY_FROSTBITE, 20, null, B)
 

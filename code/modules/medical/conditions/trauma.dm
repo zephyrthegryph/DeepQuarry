@@ -442,7 +442,7 @@
 	// Modest fever — local infection, not systemic yet.
 	if(severity > 0 && istype(owner, /mob/living/carbon/human))
 		var/target_offset_k = (severity / 100) * 1.2
-		owner.bodytemperature = min(owner.bodytemperature + target_offset_k * 0.1, BODYTEMP_NORMAL + 1.5)
+		owner.adjust_bodytemperature(target_offset_k * 0.1, max_temp = BODYTEMP_NORMAL + 1.5)
 	var/germ_level = location.germ_level
 	// Above INFECTION_LEVEL_ONE the wound is actively feeding the
 	// condition. The extra delta scales with how far past threshold
