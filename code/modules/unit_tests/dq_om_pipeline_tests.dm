@@ -616,7 +616,7 @@
 	for(var/i in 1 to 3)
 		om_run_frame_now(C, /datum/om/pipeline/machine)
 	TEST_ASSERT(S.parked, "it settles and parks again")
-	C.valve_open = TRUE
+	C.set_valve_open(TRUE)
 	om_changed(C, CHANGE_MACHINE_SETTINGS)
 	sched.run_pass(1e9)
 	TEST_ASSERT(!S.parked, "opening the valve wakes it")

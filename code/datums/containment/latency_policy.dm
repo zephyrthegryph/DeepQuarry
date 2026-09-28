@@ -190,19 +190,24 @@ GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 	var/checked = 0
 	var/collapsed = 0
 	var/index = cursor % count
-	var/list/keys = holders
+	// Snapshot the keys: deleted holders are pruned after the pass, never mid-iteration,
+	// so the indexes below stay valid for the whole frame.
+	var/list/keys = holders.Copy()
+	var/list/dead
 	while(checked < LATENCY_SWEEP_BUDGET && checked < count)
 		var/atom/holder = keys[(index % count) + 1]
 		index++
 		checked++
 		if(QDELETED(holder))
-			holders -= holder
+			LAZYADD(dead, holder)
 			continue
 		for(var/atom/movable/A as anything in holder.contents)
 			if(dq_latent_attempt_collapse(A))
 				collapsed++
 				break // holder.contents changed; the rest wait for next turn
-	cursor = index % max(count, 1)
+	if(dead)
+		holders -= dead
+	cursor = index % max(length(holders), 1)
 
 #undef LATENCY_SWEEP_BUDGET
 
