@@ -39,14 +39,23 @@ impl<D: Domain> Direct<D> {
             return true;
         }
         let mut pending = Some(rows);
-        let direct = w
-            .sim_mut()
-            .write_direct(key, |store| {
-                for (cell, value) in pending.take().unwrap_or_default() {
-                    store.set(cell, value);
+        let shared = w.sim_mut().write_direct(key, |store| {
+            let layout = store.layout();
+            let mut touched = Vec::new();
+            for (cell, value) in pending.take().unwrap_or_default() {
+                if let Some((chunk, _)) = layout.locate(cell) {
+                    if touched.last() != Some(&chunk) {
+                        touched.push(chunk);
+                    }
                 }
-            })
-            .is_some();
+                store.set(cell, value);
+            }
+            touched.sort_unstable();
+            touched.dedup();
+            // Space is most of a station grid: its identical vacuum
+            // chunks share one allocation instead of one each.
+            store.share_uniform_chunks(&touched)
+        });
         let metrics = crate::metrics::registry();
         if let Some(rows) = pending {
             // Not quiescent: the same rows through commands and the overlay.
@@ -61,6 +70,9 @@ impl<D: Domain> Direct<D> {
         } else {
             metrics.counter("bulk.direct_flushes").inc();
         }
-        direct
+        if let Some(n) = shared {
+            metrics.counter("bulk.shared_uniform_chunks").add(n as u64);
+        }
+        shared.is_some()
     }
 }
