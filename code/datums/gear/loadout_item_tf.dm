@@ -33,8 +33,7 @@ GLOBAL_DATUM_INIT(gear_tweak_item_tf_spawn, /datum/gear_tweak/item_tf_spawn, new
 	if(seq.get("state") != "Only Specific Players")
 		return null
 	var/list/current = seq.get("metadata")
-	return gear_ask_text("valid", "Allowed Players", "Input ckeys allowed to join on separate lines", islist(current) ? jointext(current["valid"], "
-") : "", MAX_MESSAGE_LEN, TRUE)
+	return gear_ask_text("valid", "Allowed Players", "Input ckeys allowed to join on separate lines", islist(current) ? jointext(current["valid"], "\n") : "", MAX_MESSAGE_LEN, TRUE)
 
 /datum/gear_tweak/item_tf_spawn/metadata_answered(datum/om/flow/ask_sequence/seq, list/metadata)
 	var/entry = seq.get("state")

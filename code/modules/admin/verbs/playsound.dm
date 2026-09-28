@@ -175,8 +175,7 @@ ADMIN_VERB(play_server_sound, R_SOUNDS, "Play Server Sound", "Plays a sound from
 		ask_show()
 
 /datum/om/flow/web_sound/proc/ask_show()
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(show_answered), buttons = TRUE, title = "Show Info?", message = "Show the title of and link to this song to the players?
-[song_title]", choices = list("Yes", "No", "Cancel"))
+	om_ask(actor, /datum/om/prompt/choice, PROC_REF(show_answered), buttons = TRUE, title = "Show Info?", message = "Show the title of and link to this song to the players?\n[song_title]", choices = list("Yes", "No", "Cancel"))
 
 /datum/om/flow/web_sound/proc/show_answered(datum/om/prompt/choice/ask)
 	if(ask.choice == "Cancel")

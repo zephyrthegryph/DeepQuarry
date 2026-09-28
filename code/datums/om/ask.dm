@@ -286,7 +286,7 @@
 	var/list/default
 	var/matrix_only = FALSE
 	/// The tgui state the window uses (null: always).
-	var/datum/ui_state/ui_state
+	var/datum/tgui_state/ui_state
 	/// The answer: the matrix.
 	var/list/matrix
 

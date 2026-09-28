@@ -41,7 +41,11 @@
 /obj/item/ticket_printer/proc/ticket_named(datum/om/prompt/text/ticket_name/ask)
 	if(!ask.text)
 		return
-	om_ask(ask.answerer, /datum/om/prompt/text/ticket_details, PROC_REF(ticket_written), ticket_name = ask.text)
+	om_ask(ask.answerer, /datum/om/prompt/text/ticket_details, PROC_REF(ticket_written), ticket_name = ask.text, message = ticket_details_prompt())
+
+/// The details question's text (the permit printer asks it differently).
+/obj/item/ticket_printer/proc/ticket_details_prompt()
+	return initial(/datum/om/prompt/text/ticket_details::message)
 
 /obj/item/ticket_printer/proc/ticket_written(datum/om/prompt/text/ticket_details/ask)
 	if(!ask.ticket_name || !ask.text)

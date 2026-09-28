@@ -372,9 +372,10 @@ REF_OWNED(/datum/protean_power, "button")
 	log_game("PROTEAN: [key_name(H)] rebuilt themselves with Total Reassembly ([TOTAL_REBUILD_STEEL_COST] steel, [repaired] points repaired).")
 
 /datum/protean_power/reform_body/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
-	om_ask(H, /datum/om/prompt/choice/protean_power, PROC_REF(reform_chosen), power = src, form = F, title = "Reassembly", choices = list("Rebuild", "Reassemble", "Cancel"), buttons = TRUE, message = {"Do you want to rebuild or reassemble yourself?
+	var/question = {"Do you want to rebuild or reassemble yourself?
 	Rebuilding will cost [TOTAL_REBUILD_STEEL_COST] steel and will rebuild all of your limbs and your cohesion, and spend the steel repairing your plating and wiring over a 40s period.
-	Reassembling costs no steel and will copy the appearance data of your currently loaded save slot."})
+	Reassembling costs no steel and will copy the appearance data of your currently loaded save slot."}
+	om_ask(H, /datum/om/prompt/choice/protean_power, PROC_REF(reform_chosen), power = src, form = F, title = "Reassembly", choices = list("Rebuild", "Reassemble", "Cancel"), buttons = TRUE, message = question)
 
 /// Whether to include flavour text / OOC notes in a reassembly; carries the flavour answer.
 /datum/om/prompt/choice/protean_power/reassemble_include

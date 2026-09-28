@@ -113,7 +113,7 @@
 	else if(options[choice] == "catrobe")
 		desc = "A painted holy figure of a plain looking Tajaran in a robe."
 
-	to_chat(M, "The religious icon is now a [choice]. All hail!")
+	to_chat(ask.answerer, "The religious icon is now a [choice]. All hail!")
 	return 1
 
 

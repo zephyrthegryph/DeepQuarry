@@ -708,7 +708,7 @@
 	current_canvas = new_canvas
 	loaded = TRUE
 	update_appearance()
-	log_and_message_admins("spawned painting from [author_ckey] with title [title]", user)
+	log_and_message_admins("spawned painting from [author_ckey] with title [title]", ask.answerer)
 
 /obj/structure/sign/painting/proc/save_persistent()
 	if(!persistence_id || !current_canvas || current_canvas.no_save)
