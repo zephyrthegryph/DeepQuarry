@@ -416,7 +416,17 @@ GLOBAL_VAR(dq_test_select_names)
 	return hash || 1
 
 /datum/unit_test/proc/RunWrapped()
-	Run()
+	// Run() starts inside RunUnitTest()'s own call stack (INVOKE_ASYNC only
+	// detaches at the first sleep). Uncaught, a runtime before that sleep
+	// unwinds RunUnitTest() and RunUnitTests() too -- and RunUnitTests() runs
+	// under the OM sleep-guard trampoline, whose try/catch swallows it, so the
+	// whole suite silently stops and the watchdog kills the world with no
+	// results. Catch it here: the test fails with the runtime, the suite goes on.
+	try
+		Run()
+	catch(var/exception/e)
+		log_world("UNIT TEST RUNTIME: [type]: [e.name] at [e.file]:[e.line] -- [e.desc]")
+		Fail("runtime in Run(): [e.name]", e.file || "RUNTIME", e.line || 0)
 	run_finished = TRUE
 
 /proc/cmp_unit_test_priority(datum/unit_test/a, datum/unit_test/b)
@@ -863,7 +873,18 @@ GLOBAL_VAR(dq_test_select_names)
 	for(var/unit_path in tests_to_run)
 		CHECK_TICK //We check tick first because the unit test we run last may be so expensive that checking tick will lock up this loop forever
 		current_test_index++
-		RunUnitTest(unit_path, test_results, current_test_index, total_tests)
+		// A runtime anywhere in RunUnitTest() outside the test's own Run()
+		// (block release, cleanup of what the test left behind) would otherwise
+		// unwind this loop into the OM trampoline's try/catch and stop the
+		// suite silently. Fail the run and carry on with the next test.
+		try
+			RunUnitTest(unit_path, test_results, current_test_index, total_tests)
+		catch(var/exception/e)
+			GLOB.failed_any_test = TRUE
+			GLOB.current_test = null
+			log_world("::error::[TEST_OUTPUT_RED("FAIL")] [unit_path]: harness runtime: [e.name] at [e.file]:[e.line]")
+			log_test("HARNESS RUNTIME in [unit_path]: [e.name] at [e.file]:[e.line] -- [e.desc]")
+			test_results[unit_path] = list("status" = UNIT_TEST_FAILED, "message" = "harness runtime: [e.name] at [e.file]:[e.line]", "name" = unit_path, "duration_ds" = 0, "runtimes" = 1, "ticks" = null)
 	SSticker.delay_end = FALSE
 	if(length(GLOB.dq_refsearch_type_counts))
 		var/list/searched = list()

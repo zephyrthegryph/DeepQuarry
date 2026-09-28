@@ -100,6 +100,20 @@
 			"spill_list" = D.declared_spill_list_vars(),
 			"held" = D.declared_held_vars(),
 		)
+		// A declaration naming a var the type no longer has (the var was
+		// removed, the REF_* line wasn't) would runtime on D.vars[name] in the
+		// middle of a destroy transaction, abandoning it half done. Drop it
+		// here, once per type, loudly.
+		for(var/kind in table)
+			var/list/names = table[kind]
+			if(!length(names))
+				continue
+			for(var/name in names.Copy())
+				if(!(name in D.vars))
+					stack_trace("LIFECYCLE: [D.type] declares [kind] var '[name]', which it doesn't have; ignoring it")
+					names = names.Copy()
+					names -= name
+					table[kind] = names
 		cache[key] = table
 	return table
 
@@ -164,6 +178,8 @@
 	// Object-model relations, watches and forwards (code/datums/om/entity.dm).
 	if(D.om_rec)
 		om_teardown_links(D)
+	if(GLOB.dq_lifecycle_trace_depth)
+		log_world("LIFECYCLE_TRACE: [D.type] [ref(D)] links: om teardown done")
 	var/list/table = dq_lifecycle_link_table(D)
 	if(!table)
 		return
@@ -172,8 +188,16 @@
 		var/datum/child = D.vars[var_name]
 		D.vars[var_name] = null
 		// A typed var may still hold a type path (never materialized) or a list.
-		if(isdatum(child))
+		// An owned child already being destroyed (two objects that own each
+		// other, like an overmap mob and its marker) is only let go: its own
+		// transaction is further up this stack, and qdel() on it again is the
+		// "destroy proc was called multiple times" CRASH.
+		if(isdatum(child) && !QDELETED(child))
+			if(GLOB.dq_lifecycle_trace_depth)
+				log_world("LIFECYCLE_TRACE: [D.type] [ref(D)] links: deleting owned [var_name] ([child.type])")
 			qdel(child)
+	if(GLOB.dq_lifecycle_trace_depth)
+		log_world("LIFECYCLE_TRACE: [D.type] [ref(D)] links: owned vars done")
 	var/list/owned_list = table["owned_list"]
 	for(var/var_name in owned_list)
 		var/list/children = D.vars[var_name]
@@ -182,7 +206,8 @@
 		var/list/copy = children.Copy()
 		children.Cut()
 		for(var/datum/child in copy)
-			qdel(child)
+			if(!QDELETED(child))
+				qdel(child)
 	var/list/owned_values = table["owned_values"]
 	for(var/var_name in owned_values)
 		var/list/by_key = D.vars[var_name]
@@ -192,8 +217,10 @@
 		by_key.Cut()
 		for(var/key in copy)
 			var/datum/child = copy[key]
-			if(isdatum(child))
+			if(isdatum(child) && !QDELETED(child))
 				qdel(child)
+	if(GLOB.dq_lifecycle_trace_depth)
+		log_world("LIFECYCLE_TRACE: [D.type] [ref(D)] links: owned lists done")
 	var/datum/destroy_batch/batch = GLOB.dq_destroy_batch
 	var/list/pairs = table["pair"]
 	for(var/our_var in pairs)

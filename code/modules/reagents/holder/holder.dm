@@ -31,6 +31,11 @@ REF_OWNED_LIST(/datum/reagents, "reagent_list")
 
 // LIFECYCLE: its atom forgets it (atoms delete their reagents late, in /atom/Destroy()).
 /datum/reagents/Destroy()
+	// reagent_by_id isn't a declared owned list (REF_OWNED_LIST above already
+	// deleted its members through reagent_list), but it still points at every
+	// reagent, and each reagent's `holder` points back here: left set, the pair
+	// is a reference cycle that never collects (every holder hard-deleted).
+	reagent_by_id = null
 	if(my_atom && my_atom.reagents == src)
 		my_atom.reagents = null
 	return ..()

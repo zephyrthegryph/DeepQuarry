@@ -43,7 +43,10 @@
 ///Used for doing dry runs of the reference finder, to test for feature completeness
 #define REFERENCE_TRACKING_DEBUG
 
-#ifdef FIND_REF_NO_CHECK_TICK
+// Test builds keep BYOND's infinite-loop detection: with it off, a runaway
+// loop anywhere (not just in the reference finder) hangs the suite silently
+// until the watchdog kills it, with no stack to say where.
+#if defined(FIND_REF_NO_CHECK_TICK) && !defined(UNIT_TESTS)
 /world
 	loop_checks = FALSE
 #endif

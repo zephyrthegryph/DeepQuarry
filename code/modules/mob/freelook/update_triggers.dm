@@ -37,7 +37,11 @@
 
 /// Phase 2: freelook nets see the effect go.
 /obj/effect/lifecycle_dematerialize()
+	if(GLOB.dq_lifecycle_trace_depth)
+		log_world("LIFECYCLE_TRACE: [type] /obj/effect dematerialize: calling parent")
 	. = ..()
+	if(GLOB.dq_lifecycle_trace_depth)
+		log_world("LIFECYCLE_TRACE: [type] /obj/effect dematerialize: parent returned, updating visibility")
 	updateVisibility(src)
 
 /obj/effect/Initialize(mapload)

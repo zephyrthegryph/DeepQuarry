@@ -30,5 +30,7 @@
 				continue
 			TEST_FAIL("[test_mob] uses a non existing belly_fullscreen [test_fullscreen].")
 		log_test("vbo: [test_path] bellies checked, deleting")
+		GLOB.dq_lifecycle_trace_depth++
 		qdel(test_mob)
+		GLOB.dq_lifecycle_trace_depth--
 		log_test("vbo: [test_path] deleted at [(REALTIMEOFDAY - started) / 10]s")
