@@ -202,8 +202,8 @@
 
 /datum/spawnpanel/proc/InterceptClickOn(mob/user, params, atom/target)
 	var/list/modifiers = params2list(params)
-	var/left_click = LAZYACCESS(modifiers, LEFT_CLICK)
-	var/right_click = LAZYACCESS(modifiers, RIGHT_CLICK)
+	var/left_click = GLOB.input_router.click_is(modifiers, GLOB.input_router.primary_table(), INPUT_ACTION_USE)
+	var/right_click = GLOB.input_router.click_is(modifiers, GLOB.input_router.secondary_table(), INPUT_ACTION_ALTERNATE_SECONDARY)
 
 	if(right_click)
 		toggle_precise_mode(PRECISE_MODE_OFF, user)

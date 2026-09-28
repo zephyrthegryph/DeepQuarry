@@ -112,11 +112,10 @@ REF_OWNED(/datum/protean_power, "button")
 	icon_state = power.icon_state
 
 /obj/effect/protean_power_button/Click(location, control, params)
-	var/list/modifiers = params2list(params)
 	var/mob/living/carbon/human/H = usr
 	if(!istype(H) || !power)
 		return
-	if(modifiers["shift"])
+	if(GLOB.input_router.click_is(params, GLOB.input_router.shift_table(), INPUT_ACTION_INSPECT))
 		to_chat(H, span_notice(span_bold("[power.name]") + " - [power.desc]"))
 		return
 	power.try_activate(H)

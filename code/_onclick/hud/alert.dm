@@ -490,8 +490,7 @@ so as to remain in compliance with the most up-to-date laws."
 /atom/movable/screen/alert/Click(location, control, params)
 	if(!usr || !usr.client)
 		return
-	var/paramslist = params2list(params)
-	if(paramslist["shift"]) // screen objects don't do the normal Click() stuff so we'll cheat
+	if(GLOB.input_router.click_is(params, GLOB.input_router.shift_table(), INPUT_ACTION_INSPECT)) // screen objects don't do the normal Click() stuff so we'll cheat
 		to_chat(usr,span_boldnotice(name) + " - " + span_info(desc))
 		return
 	var/obj/master = om_resolve(master_ref)
