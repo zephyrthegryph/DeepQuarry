@@ -137,8 +137,6 @@ code/datums/containment/latent.dm 1
 code/datums/containment/ledger.dm 1
 code/datums/crafting/items.dm 1
 code/datums/datum.dm 1
-code/datums/diseases/_disease.dm 1
-code/datums/diseases/advance/advance.dm 1
 code/datums/elements/_element.dm 1
 code/datums/elements/topturfcrossed.dm 1
 code/datums/ghost_query.dm 1
@@ -1085,8 +1083,6 @@ code/datums/components/turfslip.dm 6
 code/datums/containment/latent.dm 3
 code/datums/containment/stock.dm 1
 code/datums/datum.dm 3
-code/datums/diseases/_disease.dm 1
-code/datums/diseases/advance/advance.dm 1
 code/datums/elements/lootable/_lootable.dm 1
 code/datums/ghost_spawn.dm 1
 code/datums/helper_datums/teleport.dm 1

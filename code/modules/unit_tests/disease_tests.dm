@@ -3,7 +3,7 @@
 /datum/unit_test/disease_tests/Run()
 	var/list/used_ids = list()
 
-	for(var/datum/disease/D as anything in subtypesof(/datum/disease))
+	for(var/datum/affliction/contagion/D as anything in subtypesof(/datum/affliction/contagion))
 		if(initial(D.name) == DEVELOPER_WARNING_NAME)
 			continue
 

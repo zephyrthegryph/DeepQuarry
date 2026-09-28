@@ -125,10 +125,6 @@ code/datums/components/traits/waddle.dm 2
 code/datums/components/traits/weaver.dm 1
 code/datums/components/turfslip.dm 1
 code/datums/components/xenoqueen.dm 2
-code/datums/diseases/_disease.dm 1
-code/datums/diseases/advance/disease_preset.dm 1
-code/datums/diseases/advance/symptoms/heal.dm 1
-code/datums/diseases/roanoke.dm 2
 code/datums/elements/topturfcrossed.dm 2
 code/datums/helper_datums/stack_end_detector.dm 1
 code/datums/hierarchy.dm 2
@@ -1025,7 +1021,7 @@ code/modules/reagents/machinery/pump.dm 1
 code/modules/reagents/reactions/instant/virology.dm 1
 code/modules/reagents/reagent_containers/hypospray.dm 1
 code/modules/reagents/reagent_containers/spray.dm 1
-code/modules/reagents/reagent_containers/syringes.dm 2
+code/modules/reagents/reagent_containers/syringes.dm 1
 code/modules/recycling/disposal_holder.dm 1
 code/modules/recycling/disposal_machines.dm 1
 code/modules/recycling/disposal_mail.dm 2

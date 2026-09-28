@@ -376,6 +376,9 @@ accident or assume they work:
   - **Diagnosis** (`code/modules/medical/diagnosis/`): readouts go through
     `diagnose(profile)` and renderers; no four-number damage readouts.
   - **Hibernation**: life systems sleep by rule and wake on events (see the Mob life entry).
+  - **Contagions** (`code/modules/medical/contagion/`): diseases are `/datum/affliction/contagion`
+    (stages, cures, host immunity, carriers); spread is `/datum/affliction_trigger/contagion` on a
+    parkable periodic lane. There is no `/datum/disease`, `viruses` or `resistances` on mobs.
 - **Body factors — every numeric mob stat.** `code/modules/body/factors.dm`, defines in
   `code/__defines/body_factors.dm`. Slowdown, accuracy, evasion, attack speed, incoming
   injury per category, stun duration, healing received, metabolism, bleeding, analgesia,
