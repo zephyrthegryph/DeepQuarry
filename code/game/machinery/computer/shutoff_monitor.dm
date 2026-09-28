@@ -7,9 +7,7 @@
 	circuit = /obj/item/circuitboard/shutoff_monitor
 	var/datum/tgui_module/shutoff_monitor/monitor
 
-/obj/machinery/computer/shutoff_monitor/Initialize(mapload)
-	. = ..()
-	monitor = new(src)
+DECLARE_DEFAULT_CHILD(/obj/machinery/computer/shutoff_monitor, "monitor", /datum/tgui_module/shutoff_monitor)
 
 DECLARE_REF(/obj/machinery/computer/shutoff_monitor, "monitor", OWNED, null)
 

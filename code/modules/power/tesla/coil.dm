@@ -381,7 +381,6 @@
 
 /obj/machinery/power/tesla_coil/pre_mapped/Initialize(mapload)
 	. = ..()
-	connect_to_network()
 	update_icon()
 
 /obj/machinery/power/tesla_coil/relay/pre_mapped
@@ -389,7 +388,6 @@
 
 /obj/machinery/power/tesla_coil/relay/pre_mapped/Initialize(mapload)
 	. = ..()
-	connect_to_network()
 	update_icon()
 
 /obj/machinery/power/tesla_coil/splitter/pre_mapped
@@ -397,7 +395,6 @@
 
 /obj/machinery/power/tesla_coil/splitter/pre_mapped/Initialize(mapload)
 	. = ..()
-	connect_to_network()
 	update_icon()
 
 /obj/machinery/power/tesla_coil/amplifier/pre_mapped
@@ -405,7 +402,6 @@
 
 /obj/machinery/power/tesla_coil/amplifier/pre_mapped/Initialize(mapload)
 	. = ..()
-	connect_to_network()
 	update_icon()
 
 /obj/machinery/power/tesla_coil/recaster/pre_mapped
@@ -413,7 +409,6 @@
 
 /obj/machinery/power/tesla_coil/recaster/pre_mapped/Initialize(mapload)
 	. = ..()
-	connect_to_network()
 	update_icon()
 
 /obj/machinery/power/tesla_coil/collector/pre_mapped
@@ -421,7 +416,6 @@
 
 /obj/machinery/power/tesla_coil/collector/pre_mapped/Initialize(mapload)
 	. = ..()
-	connect_to_network()
 	update_icon()
 
 /obj/machinery/power/grounding_rod/pre_mapped
@@ -429,7 +423,6 @@
 
 /obj/machinery/power/grounding_rod/pre_mapped/Initialize(mapload)
 	. = ..()
-	connect_to_network()
 	update_icon()
 
 #undef AMPLIFIER_STRENGTH

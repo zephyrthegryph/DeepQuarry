@@ -103,6 +103,8 @@ DECLARE_REF(/obj/machinery/computer/security, "camera", OWNED, null)
 
 REGISTRY_MEMBERSHIP(/obj/machinery/computer/security/telescreen/entertainment, REGISTRY_ENTERTAINMENT_SCREENS)
 
+DECLARE_DEFAULT_CHILD(/obj/machinery/computer/security/telescreen/entertainment, "radio", /obj/item/radio)
+
 /obj/machinery/computer/security/telescreen/entertainment/Initialize(mapload)
 
 	var/static/icon/mask = icon('icons/obj/entertainment_monitor.dmi', "mask")
@@ -124,7 +126,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/computer/security/telescreen/entertainment, R
 
 	. = ..()
 
-	radio = new(src)
 	radio.listening = TRUE
 	radio.broadcasting = FALSE
 	radio.set_frequency(ENT_FREQ)

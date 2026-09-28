@@ -34,18 +34,15 @@
 
 REGISTRY_MEMBERSHIP(/obj/machinery/power/fusion_core, REGISTRY_FUSION_CORES)
 
+DECLARE_REAGENTS(/obj/machinery/power/fusion_core, 10000, null)
+
 /obj/machinery/power/fusion_core/Initialize(mapload)
 	. = ..()
 
 	add_hose_connector(/datum/hose_connector/output)
 
-	create_reagents(10000)
 
 	default_apply_parts()
-
-/obj/machinery/power/fusion_core/mapped/Initialize(mapload)
-	. = ..()
-	connect_to_network()
 
 DECLARE_REF(/obj/machinery/power/fusion_core, "material_sample", SPILL, null)
 

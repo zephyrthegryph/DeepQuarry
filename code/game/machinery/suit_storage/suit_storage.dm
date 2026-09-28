@@ -25,14 +25,12 @@
 	var/safetieson = 1
 	var/cycletime_left = 0
 
+DECLARE_DEFAULT_CHILD(/obj/machinery/suit_storage_unit, "SUIT", "suit_type")
+DECLARE_DEFAULT_CHILD(/obj/machinery/suit_storage_unit, "HELMET", "helmet_type")
+DECLARE_DEFAULT_CHILD(/obj/machinery/suit_storage_unit, "MASK", "mask_type")
+
 /obj/machinery/suit_storage_unit/Initialize(mapload)
 	. = ..()
-	if(suit_type)
-		SUIT = new suit_type(src)
-	if(helmet_type)
-		HELMET = new helmet_type(src)
-	if(mask_type)
-		MASK = new mask_type(src)
 	update_icon()
 
 /// Sealed occupant slot (C8a, containment.md §10). Suit, helmet and mask stay

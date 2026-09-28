@@ -142,8 +142,6 @@
 /obj/machinery/power/port_gen/pacman/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	if(anchored)
-		connect_to_network()
 
 // its unburnt fuel drops as sheets.
 /obj/machinery/power/port_gen/pacman/on_destroy(force)
@@ -593,7 +591,6 @@
 /obj/machinery/power/rtg/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	connect_to_network()
 	if(mapload)
 		return INITIALIZE_HINT_LATELOAD
 
@@ -835,9 +832,10 @@
 /obj/machinery/power/rtg/abductor/built
 	icon_state = "core"
 
+DECLARE_DEFAULT_CHILD(/obj/machinery/power/rtg/abductor/built, "cell", /obj/item/cell/void)
+
 /obj/machinery/power/rtg/abductor/built/Initialize(mapload)
 	. = ..()
-	cell = new(src)
 	RefreshParts()
 
 // Bloo version
@@ -849,9 +847,10 @@
 /obj/machinery/power/rtg/abductor/hybrid/built
 	icon_state = "coreb"
 
+DECLARE_DEFAULT_CHILD(/obj/machinery/power/rtg/abductor/hybrid/built, "cell", /obj/item/cell/void/hybrid)
+
 /obj/machinery/power/rtg/abductor/hybrid/built/Initialize(mapload)
 	. = ..()
-	cell = new /obj/item/cell/void/hybrid(src)
 	RefreshParts()
 
 // Kugelblitz generator, confined black hole like a singulo but smoller and higher tech
@@ -1037,11 +1036,6 @@
 	var/sheet_left = 0		//How much is left of the current sheet
 	var/time_per_sheet = 120		//fuel efficiency - how long 1 sheet lasts at power level 1
 	var/max_sheets = 100 		//max capacity of the hopper
-
-/obj/machinery/power/port_gen/large_altevian/Initialize(mapload)
-	.=..()
-	if(anchored)
-		connect_to_network()
 
 // its unburnt fuel drops as sheets.
 /obj/machinery/power/port_gen/large_altevian/on_destroy(force)

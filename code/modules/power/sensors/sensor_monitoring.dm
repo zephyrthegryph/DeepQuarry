@@ -36,9 +36,7 @@
 		sleep_until_keys(keys)
 		return PROCESS_KILL
 // On creation automatically connects to active sensors. This is delayed to ensure sensors already exist.
-/obj/machinery/computer/power_monitor/Initialize(mapload)
-	. = ..()
-	power_monitor = new(src)
+DECLARE_DEFAULT_CHILD(/obj/machinery/computer/power_monitor, "power_monitor", /datum/tgui_module/power_monitor)
 
 DECLARE_REF(/obj/machinery/computer/power_monitor, "power_monitor", OWNED, null)
 

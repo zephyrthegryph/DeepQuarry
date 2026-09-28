@@ -12,9 +12,7 @@
 
 	var/datum/tgui_module/communications/communications
 
-/obj/machinery/computer/communications/Initialize(mapload)
-	. = ..()
-	communications = new(src)
+DECLARE_DEFAULT_CHILD(/obj/machinery/computer/communications, "communications", /datum/tgui_module/communications)
 
 /obj/machinery/computer/communications/emag_act(remaining_charges, mob/user)
 	if(!emagged)

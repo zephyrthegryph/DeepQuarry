@@ -316,7 +316,6 @@ DECLARE_INTERACTIONS(/obj/item/solar_assembly, \
 
 /obj/machinery/power/solar_control/Initialize(mapload)
 	. = ..()
-	connect_to_network()
 	set_panels(cdir)
 
 // its panels and tracker lose their controller.

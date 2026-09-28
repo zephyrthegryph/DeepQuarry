@@ -10,9 +10,7 @@
 	circuit = /obj/item/circuitboard/crew
 	var/datum/tgui_module/crew_monitor/crew_monitor
 
-/obj/machinery/computer/crew/Initialize(mapload)
-	. = ..()
-	crew_monitor = new(src)
+DECLARE_DEFAULT_CHILD(/obj/machinery/computer/crew, "crew_monitor", /datum/tgui_module/crew_monitor)
 
 DECLARE_REF(/obj/machinery/computer/crew, "crew_monitor", OWNED, null)
 

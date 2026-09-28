@@ -306,9 +306,10 @@
 	name = "cryopod"
 	// The slot IS the occupant: read it with SLOT_ITEM(holder, slot_id).
 
+DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/intercom)
+
 /obj/machinery/cryopod/Initialize(mapload)
 	. = ..()
-	announce = new /obj/item/radio/intercom(src)
 
 	find_control_computer()
 

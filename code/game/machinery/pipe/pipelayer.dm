@@ -22,9 +22,10 @@
 		"heat exchange pipes" = /obj/machinery/atmospherics/pipe/simple/heat_exchanging
 	)
 
+DECLARE_DEFAULT_CHILD(/obj/machinery/pipelayer, "W", /obj/item/tool/wrench)
+
 /obj/machinery/pipelayer/Initialize(mapload)
 	. = ..()
-	W = new(src)
 	default_apply_parts()
 	update_icon()
 

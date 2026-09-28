@@ -1,7 +1,5 @@
 # Declarative-lifecycle backlog (tools/ci/decl_lint.py, doc/rewrite/declarative_lifecycle.md).
 # rule<TAB>file<TAB>normalized line. Shrink-only: convert sites, then `python tools/ci/decl_lint.py --update`.
-init_reagents	code/ATMOSPHERICS/components/unary/cold_sink.dm	create_reagents(120)
-init_reagents	code/ATMOSPHERICS/components/unary/heat_source.dm	create_reagents(120)
 init_reagents	code/game/mecha/equipment/tools/extinguisher.dm	reagents.add_reagent(REAGENT_ID_FIREFOAM, max_water)
 init_reagents	code/game/mecha/equipment/tools/syringe_gun.dm	create_reagents(max_volume)
 init_reagents	code/game/objects/effects/chem/chemsmoke.dm	create_reagents(500)
@@ -236,7 +234,6 @@ init_reagents	code/modules/paperwork/pen.dm	create_reagents(30)
 init_reagents	code/modules/paperwork/pen.dm	reagents.add_reagent(REAGENT_ID_CHLORALHYDRATE, 22)
 init_reagents	code/modules/paperwork/pen.dm	reagents.add_reagent(REAGENT_ID_ZOMBIEPOWDER, 5)
 init_reagents	code/modules/paperwork/pen.dm	reagents.add_reagent(REAGENT_ID_CRYPTOBIOLIN, 10)
-init_reagents	code/modules/power/fusion/core/_core.dm	create_reagents(10000)
 init_reagents	code/modules/projectiles/guns/projectile/dartgun.dm	B.reagents.add_reagent(chem, 60)
 init_reagents	code/modules/projectiles/precursor/eclipse.dm	B1.reagents.add_reagent(REAGENT_ID_CRYOSLURRY, 150)
 init_reagents	code/modules/projectiles/precursor/eclipse.dm	B1.reagents.add_reagent(REAGENT_ID_POTASSIUM, 150)
@@ -367,21 +364,6 @@ init_service	code/game/objects/items/devices/radio/radio.dm	secure_radio_connect
 init_service	code/game/turfs/simulated.dm	GLOB.planet_service.addTurf(src)
 init_service	code/game/turfs/unsimulated/planetary.dm	GLOB.planet_service.addTurf(src)
 init_service	code/modules/clothing/accessories/accessory.dm	radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency, RADIO_CHAT)) // Makes it so you don't need to change the frequency off of default for it to work.
-init_bind	code/modules/power/fusion/core/_core.dm	connect_to_network()
-init_bind	code/modules/power/port_gen.dm	connect_to_network()
-init_bind	code/modules/power/port_gen.dm	connect_to_network()
-init_bind	code/modules/power/port_gen.dm	connect_to_network()
-init_bind	code/modules/power/singularity/emitter.dm	connect_to_network()
-init_bind	code/modules/power/singularity/emitter.dm	connect_to_network()
-init_bind	code/modules/power/singularity/emitter.dm	connect_to_network()
-init_bind	code/modules/power/solar.dm	connect_to_network()
-init_bind	code/modules/power/tesla/coil.dm	connect_to_network()
-init_bind	code/modules/power/tesla/coil.dm	connect_to_network()
-init_bind	code/modules/power/tesla/coil.dm	connect_to_network()
-init_bind	code/modules/power/tesla/coil.dm	connect_to_network()
-init_bind	code/modules/power/tesla/coil.dm	connect_to_network()
-init_bind	code/modules/power/tesla/coil.dm	connect_to_network()
-init_bind	code/modules/power/tesla/coil.dm	connect_to_network()
 init_bind	code/modules/shieldgen/shield_generator.dm	connect_to_network()
 init_bind	code/modules/telesci/quantum_pad.dm	connect_to_network()
 init_scheduling	code/ATMOSPHERICS/components/shutoff.dm	om_attach(src, /datum/om/behaviour/sleeper/shutoff_valve)
@@ -396,8 +378,6 @@ init_scheduling	code/game/gamemodes/events/black_hole.dm	om_after(src, 0.4 SECON
 init_scheduling	code/game/gamemodes/technomancer/spells/aura/aura.dm	om_task_periodic(src, PERIODIC_SLOW)
 init_scheduling	code/game/gamemodes/technomancer/spells/phase_shift.dm	om_task_periodic(src, PERIODIC_SLOW)
 init_scheduling	code/game/gamemodes/technomancer/spells/radiance.dm	om_task_periodic(src, PERIODIC_SLOW)
-init_scheduling	code/game/machinery/bluespace_denier.dm	timerid = om_after(src, 10 SECONDS, PROC_REF(start_up))
-init_scheduling	code/game/machinery/computer/guestpass.dm	om_task_periodic(src, PERIODIC_SLOW)
 init_scheduling	code/game/machinery/machinery.dm	om_task_periodic(src, PERIODIC_FAST)
 init_scheduling	code/game/mecha/mecha.dm	om_task_periodic(src, PERIODIC_SLOW)
 init_scheduling	code/game/objects/effects/alien/aliens.dm	om_task_periodic(src, PERIODIC_SLOW) // Only the node processes in a subsystem, the rest are process()'d by the node
@@ -475,7 +455,6 @@ init_scheduling	code/modules/mob/living/simple_mob/subtypes/metroid/metObjects.d
 init_scheduling	code/modules/modular_computers/computers/modular_computer/core.dm	om_task_periodic(src, PERIODIC_SLOW)
 init_scheduling	code/modules/power/cell.dm	om_task_periodic(src, PERIODIC_SLOW)
 init_scheduling	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	om_task_periodic(src, PERIODIC_SLOW)
-init_scheduling	code/modules/power/singularity/singularity.dm	om_task_periodic(src, PERIODIC_SLOW)
 init_scheduling	code/modules/projectiles/ammunition/smartmag.dm	om_task_periodic(src, PERIODIC_SLOW)
 init_scheduling	code/modules/projectiles/broken.dm	om_after(src, 30 SECONDS, PROC_REF(validate_gun_type))
 init_scheduling	code/modules/projectiles/guns/energy.dm	om_task_periodic(src, PERIODIC_SLOW)
@@ -491,15 +470,6 @@ init_scheduling	code/modules/xenoarcheaology/finds/special.dm	om_task_periodic(s
 init_scheduling	code/modules/xenobio/items/slime_objects.dm	om_task_periodic(src, PERIODIC_SLOW)
 init_visuals	code/ATMOSPHERICS/components/binary_devices/algae_generator.dm	add_overlay(I)
 init_visuals	code/ATMOSPHERICS/components/binary_devices/algae_generator.dm	add_overlay(I)
-init_visuals	code/ATMOSPHERICS/components/omni_devices/omni_base.dm	icon_state = "base"
-init_visuals	code/ATMOSPHERICS/pipes/tank.dm	icon_state = "air"
-init_visuals	code/ATMOSPHERICS/pipes/tank.dm	icon_state = "air"
-init_visuals	code/ATMOSPHERICS/pipes/tank.dm	icon_state = "o2"
-init_visuals	code/ATMOSPHERICS/pipes/tank.dm	icon_state = "n2"
-init_visuals	code/ATMOSPHERICS/pipes/tank.dm	icon_state = "co2"
-init_visuals	code/ATMOSPHERICS/pipes/tank.dm	icon_state = "phoron"
-init_visuals	code/ATMOSPHERICS/pipes/tank.dm	icon_state = "n2o"
-init_visuals	code/ATMOSPHERICS/pipes/tank.dm	icon_state = "ch4"
 init_visuals	code/_onclick/hud/popups.dm	icon_state = "popup[rand(1,10)]"
 init_visuals	code/datums/entity_state/reactive_icon_update.dm	icon_state = "screwdriver"
 init_visuals	code/datums/entity_state/species/shadekin/powers/dark_maw.dm	icon_state = "dark_maw_used"
@@ -510,12 +480,10 @@ init_visuals	code/game/machinery/computer/bodycamera.dm	add_overlay("glass")
 init_visuals	code/game/machinery/computer/camera.dm	add_overlay(MAT_GLASS)
 init_visuals	code/game/machinery/cryo.dm	icon_state = "base"
 init_visuals	code/game/machinery/cryo.dm	add_overlay(tank)
-init_visuals	code/game/machinery/deployable.dm	icon_state = "barrier[locked]"
 init_visuals	code/game/machinery/doors/windowdoor.dm	icon_state = "[icon_state]"
 init_visuals	code/game/machinery/event/christmas.dm	icon_state = "gift[pick("1", "2", "3")]_[pick("g", "r", "b", "y", "p")]"
 init_visuals	code/game/machinery/gear_dispenser.dm	icon_state = "suit_storage"
 init_visuals	code/game/machinery/gear_dispenser.dm	add_overlay(special_frame)
-init_visuals	code/game/machinery/igniter.dm	icon_state = "igniter[on]"
 init_visuals	code/game/machinery/portable_turret.dm	add_overlay(turret_opened_overlay)
 init_visuals	code/game/machinery/teleporter.dm	add_overlay("controller-wires")
 init_visuals	code/game/objects/effects/decals/Cleanable/humans.dm	icon_state = DEFAULTPICK(random_icon_states, null)
@@ -779,7 +747,6 @@ init_new_child	code/game/gamemodes/technomancer/spells/shield.dm	spark_system = 
 init_new_child	code/game/gamemodes/technomancer/spells/warp_strike.dm	sparks = new /datum/effect/effect/system/spark_spread()
 init_new_child	code/game/machinery/Beacon.dm	Beacon = new /obj/item/radio/beacon
 init_new_child	code/game/machinery/CableLayer.dm	cable = new(src, max_cable)
-init_new_child	code/game/machinery/Sleeper.dm	beaker = new /obj/item/reagent_containers/glass/beaker/large(src)
 init_new_child	code/game/machinery/air_alarm.dm	soundloop = new(list(src), FALSE)
 init_new_child	code/game/machinery/atmoalter/canister.dm	air_contents = new
 init_new_child	code/game/machinery/atmoalter/portable_atmospherics.dm	air_contents = new
@@ -787,44 +754,25 @@ init_new_child	code/game/machinery/atmoalter/pump.dm	cell = new/obj/item/cell/ap
 init_new_child	code/game/machinery/atmoalter/scrubber.dm	cell = new/obj/item/cell/apc(src)
 init_new_child	code/game/machinery/autolathe.dm	print_sound = new(list(src), FALSE, TRUE)
 init_new_child	code/game/machinery/autolathe.dm	materials = new /datum/material_container( \
-init_new_child	code/game/machinery/biogenerator.dm	beaker = new /obj/item/reagent_containers/glass/bottle(src)
-init_new_child	code/game/machinery/bioprinter.dm	container = new /obj/item/reagent_containers/glass/bottle/biomass(src)
 init_new_child	code/game/machinery/bomb_tester.dm	faketank = new
 init_new_child	code/game/machinery/camera/camera.dm	assembly = new(src)
-init_new_child	code/game/machinery/computer/RCON_Console.dm	rcon = new(src)
 init_new_child	code/game/machinery/computer/ai_core.dm	laws = new using_map.default_law_type
-init_new_child	code/game/machinery/computer/bodycamera.dm	bradio = new(src)
 init_new_child	code/game/machinery/computer/camera.dm	camera = new camera_datum_type(src, network)
 init_new_child	code/game/machinery/computer/camera.dm	pinboard = new()
-init_new_child	code/game/machinery/computer/camera.dm	radio = new(src)
-init_new_child	code/game/machinery/computer/communications.dm	communications = new(src)
-init_new_child	code/game/machinery/computer/crew.dm	crew_monitor = new(src)
-init_new_child	code/game/machinery/computer/shutoff_monitor.dm	monitor = new(src)
 init_new_child	code/game/machinery/computer/station_alert.dm	alarm_monitor = new monitor_type(src)
-init_new_child	code/game/machinery/computer/timeclock.dm	announce = new /obj/item/radio/intercom(src)
-init_new_child	code/game/machinery/cryopod.dm	announce = new /obj/item/radio/intercom(src)
-init_new_child	code/game/machinery/embedded_controller/airlock_docking_controller.dm	airlock_program = new/datum/embedded_program/airlock/docking(src)
 init_new_child	code/game/machinery/embedded_controller/airlock_docking_controller.dm	docking_program = new/datum/embedded_program/docking/airlock(src, airlock_program)
 init_new_child	code/game/machinery/exonet_node.dm	soundloop = new(list(src), FALSE)
 init_new_child	code/game/machinery/fire_alarm.dm	soundloop = new(list(src), FALSE) // Create soundloop
 init_new_child	code/game/machinery/fire_alarm.dm	engalarm = new(list(src), FALSE) // Create soundloop
 init_new_child	code/game/machinery/fire_alarm.dm	critalarm = new(list(src), FALSE) // Create soundloop
 init_new_child	code/game/machinery/fire_alarm.dm	causality = new(list(src), FALSE) // Create soundloop
-init_new_child	code/game/machinery/floorlayer.dm	T = new/obj/item/stack/tile/floor(src)
 init_new_child	code/game/machinery/frame.dm	circuit = new frame_type.circuit(src)
 init_new_child	code/game/machinery/gear_dispenser.dm	one_setting = new one_setting
-init_new_child	code/game/machinery/oxygen_pump.dm	tank = new spawn_type (src)
-init_new_child	code/game/machinery/oxygen_pump.dm	contained = new mask_type (src)
 init_new_child	code/game/machinery/pda_multicaster.dm	soundloop = new(list(src), FALSE)
-init_new_child	code/game/machinery/pipe/pipelayer.dm	W = new(src)
 init_new_child	code/game/machinery/portable_turret.dm	spark_system = new /datum/effect/effect/system/spark_spread
 init_new_child	code/game/machinery/requests_console.dm	announcement = new
-init_new_child	code/game/machinery/suit_storage/suit_storage.dm	SUIT = new suit_type(src)
-init_new_child	code/game/machinery/suit_storage/suit_storage.dm	HELMET = new helmet_type(src)
-init_new_child	code/game/machinery/suit_storage/suit_storage.dm	MASK = new mask_type(src)
 init_new_child	code/game/machinery/telecomms/telecomunications.dm	Compiler = new()
 init_new_child	code/game/machinery/telecomms/telecomunications.dm	server_radio = new()
-init_new_child	code/game/machinery/teleporter.dm	teleport_control = new(src)
 init_new_child	code/game/machinery/virtual_reality/vr_console.dm	smoke = new
 init_new_child	code/game/mecha/combat/fighter.dm	ion_trail = new /datum/effect/effect/system/ion_trail_follow()
 init_new_child	code/game/mecha/combat/gygax.dm	hud = new /obj/item/clothing/glasses/hud/health/mech(src)
@@ -1149,13 +1097,7 @@ init_new_child	code/modules/pda/cart.dm	radio = new /obj/item/radio/integrated/s
 init_new_child	code/modules/pda/cart.dm	hold = new/obj/item/storage/internal(src)
 init_new_child	code/modules/pda/pda.dm	cartridge = new default_cartridge(src)
 init_new_child	code/modules/power/apc.dm	icon_renderer = new /datum/apc_icon_renderer()
-init_new_child	code/modules/power/fusion/core/core_control.dm	monitor = new(src)
-init_new_child	code/modules/power/fusion/fuel_assembly/fuel_control.dm	monitor = new(src)
-init_new_child	code/modules/power/fusion/gyrotron/gyrotron_control.dm	monitor = new(src)
 init_new_child	code/modules/power/generator.dm	soundloop = new(list(src), FALSE)
-init_new_child	code/modules/power/port_gen.dm	cell = new(src)
-init_new_child	code/modules/power/port_gen.dm	cell = new /obj/item/cell/void/hybrid(src)
-init_new_child	code/modules/power/sensors/sensor_monitoring.dm	power_monitor = new(src)
 init_new_child	code/modules/power/smes.dm	soundloop = new(list(src), FALSE) // hmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
 init_new_child	code/modules/power/supermatter/supermatter.dm	soundloop = new(list(src), TRUE)
 init_new_child	code/modules/power/turbine.dm	gas_contained = new()
