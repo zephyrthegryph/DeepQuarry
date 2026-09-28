@@ -1567,10 +1567,7 @@ REF_BACK(/datum/vore_panel_button, list("owner" = "vore_panel_button"))
 
 	var/mob/living/user = src
 
-	var/list/transfer_from = mobs_in_view(1,user)
-	for(var/obj/belly/B in vore_organs)
-		for(var/mob/living/L in contents_of(B))
-			transfer_from |= L
+	var/list/transfer_from = vore_transfer_candidates()
 	var/mob/living/TG = rerun_ask(user, "a1", PROC_REF(vore_transfer_reagents), args, /datum/om/prompt/choice, message = "Choose who to transfer from", title = "Transfer From", choices = transfer_from)
 	if(isnull(TG))
 		return
@@ -1602,161 +1599,179 @@ REF_BACK(/datum/vore_panel_button, list("owner" = "vore_panel_button"))
 		if("Cancel")
 			return FALSE
 		if("Vore belly")
-			var/list/transfer_to = mobs_in_view(1,user)
-			for(var/obj/belly/B in vore_organs)
-				for(var/mob/living/L in contents_of(B))
-					transfer_to |= L
-			var/mob/living/TR = rerun_ask(user, "a5", PROC_REF(vore_transfer_reagents), args, /datum/om/prompt/choice, message = "Choose who to transfer to", title = "Select Target", choices = transfer_to)
-			if(isnull(TR))
-				return
-			if(!TR)  return FALSE
-
-			if(TR == user) //Proceed, we dont need to have prefs enabled for transfer within user
-				var/obj/belly/TB = rerun_ask(user, "a6", PROC_REF(vore_transfer_reagents), args, /datum/om/prompt/choice, message = "Choose which organ to transfer to", title = "Select Belly", choices = user.vore_organs)
-				if(isnull(TB))
-					return
-				if(!TB)
-					return FALSE
-				if(!Adjacent(TR) || !Adjacent(TG))
-					return //No long distance transfer
-				if(!TB.reagents?.get_free_space())
-					to_chat(user, span_vnotice("[TB] is full!"))
-					return FALSE
-
-				if(TG == user)
-					user.custom_emote_vr(1, span_vnotice("[RTB.reagent_transfer_verb] [RTB.reagent_name] from their [RTB.get_belly_name()] into their [TB.get_belly_name()]."))
-				else
-					user.custom_emote_vr(1, span_vnotice("[RTB.reagent_transfer_verb] [RTB.reagent_name] from [TG]'s [RTB.get_belly_name()] into their [TB.get_belly_name()]."))
-					add_attack_logs(user,TR,"Transfered [RTB.reagent_name] from [TG]'s [RTB] to [TR]'s [TB]")	//Bonus for staff so they can see if people have abused transfer and done pref breaks
-				RTB.reagents.vore_trans_to_mob(TR, transfer_amount, CHEM_VORE, 1, 0, TB)
-				if(RTB.count_liquid_for_sprite || TB.count_liquid_for_sprite)
-					handle_belly_update()
-
-			else if(TR.receive_reagents == FALSE)
-				to_chat(user, span_vwarning("This person's prefs dont allow that!"))
-				return FALSE
-
-			else
-				var/obj/belly/TB = rerun_ask(user, "a7", PROC_REF(vore_transfer_reagents), args, /datum/om/prompt/choice, message = "Choose which organ to transfer to", title = "Select Belly", choices = TR.vore_organs)
-				if(isnull(TB))
-					return
-				if(!TB)
-					return FALSE
-				if(!Adjacent(TR) || !Adjacent(TG))
-					return //No long distance transfer
-				if(!TB.reagents?.get_free_space())
-					to_chat(user, span_vnotice("[TR]'s [TB.get_belly_name()] is full!"))
-					return FALSE
-
-				if(TG == user)
-					user.custom_emote_vr(1, span_vnotice("[RTB.reagent_transfer_verb] [RTB.reagent_name] from their [RTB.get_belly_name()] into [TR]'s [TB.get_belly_name()]."))
-				else
-					user.custom_emote_vr(1, span_vnotice("[RTB.reagent_transfer_verb] [RTB.reagent_name] from [TG]s [RTB.get_belly_name()] into [TR]'s [TB.get_belly_name()]."))
-
-				RTB.reagents.vore_trans_to_mob(TR, transfer_amount, CHEM_VORE, 1, 0, TB)
-				add_attack_logs(user,TR,"Transfered reagents from [TG]'s [RTB] to [TR]'s [TB]")	//Bonus for staff so they can see if people have abused transfer and done pref breaks
-				if(RTB.count_liquid_for_sprite)
-					handle_belly_update()
-				if(TB.count_liquid_for_sprite)
-					TR.handle_belly_update()
-
-
+			return vore_transfer_to_belly(TG, RTB, transfer_amount)
 		if("Stomach")
-			var/list/transfer_to = mobs_in_view(1,user)
-			for(var/obj/belly/B in vore_organs)
-				for(var/mob/living/L in contents_of(B))
-					transfer_to |= L
-			var/mob/living/TR = rerun_ask(user, "a8", PROC_REF(vore_transfer_reagents), args, /datum/om/prompt/choice, message = "Choose who to transfer to", title = "Select Target", choices = transfer_to)
-			if(isnull(TR))
-				return
-			if(!TR)  return
-			if(!Adjacent(TR) || !Adjacent(TG))
-				return //No long distance transfer
-
-			if(TR == user) //Proceed, we dont need to have prefs enabled for transfer within user
-				if(TG == user)
-					user.custom_emote_vr(1, span_vnotice("[RTB.reagent_transfer_verb] [RTB.reagent_name] from their [RTB.get_belly_name()] into their stomach."))
-				else
-					user.custom_emote_vr(1, span_vnotice("[RTB.reagent_transfer_verb] [RTB.reagent_name] from [TG]'s [RTB.get_belly_name()] into their stomach."))
-				RTB.reagents.vore_trans_to_mob(TR, transfer_amount, CHEM_INGEST, 1, 0, null)
-				add_attack_logs(user,TR,"Transfered [RTB.reagent_name] from [TG]'s [RTB] to [TR]'s Stomach")
-				if(RTB.count_liquid_for_sprite)
-					handle_belly_update()
-
-			else if(TR.receive_reagents == FALSE)
-				to_chat(user, span_vwarning("This person's prefs dont allow that!"))
-				return FALSE
-
-			else
-				if(TG == user)
-					user.custom_emote_vr(1, span_vnotice("[RTB.reagent_transfer_verb] [RTB.reagent_name] from their [RTB.get_belly_name()] into [TR]'s stomach."))
-				else
-					user.custom_emote_vr(1, span_vnotice("[RTB.reagent_transfer_verb] [RTB.reagent_name] from [TG]'s [RTB.get_belly_name()] into [TR]'s stomach."))
-
-				RTB.reagents.vore_trans_to_mob(TR, transfer_amount, CHEM_INGEST, 1, 0, null)
-				add_attack_logs(user,TR,"Transfered [RTB.reagent_name] from [TG]'s [RTB] to [TR]'s Stomach")	//Bonus for staff so they can see if people have abused transfer and done pref breaks
-				if(RTB.count_liquid_for_sprite)
-					handle_belly_update()
-
+			return vore_transfer_to_stomach(TG, RTB, transfer_amount)
 		if("Container")
-			if(RTB.reagentid == REAGENT_ID_STOMACID)
-				return
-			var/list/choices = list()
-			for(var/obj/item/reagent_containers/rc in view(1,user.loc))
-				choices += rc
-			var/obj/item/reagent_containers/arc = user.get_active_hand()
-			if(istype(arc,/obj/item/reagent_containers))
-				choices += arc
-			var/obj/item/reagent_containers/irc = user.get_inactive_hand()
-			if(istype(irc,/obj/item/reagent_containers))
-				choices += irc
-
-			var/obj/item/reagent_containers/T = rerun_ask(user, "a9", PROC_REF(vore_transfer_reagents), args, /datum/om/prompt/choice, message = "Choose what to transfer to", title = "Select Target", choices = choices)
-			if(isnull(T))
-				return
-			if(!T)
-				return FALSE
-			if(!Adjacent(T) || !Adjacent(TG))
-				return //No long distance transfer
-
-			if(TG == user)
-				user.custom_emote_vr(1, span_vnotice("[RTB.reagent_transfer_verb] [RTB.reagent_name] from their [RTB.get_belly_name()] into [T]."))
-			else
-				user.custom_emote_vr(1, span_vnotice("[RTB.reagent_transfer_verb] [RTB.reagent_name] from [TG]'s [RTB.get_belly_name()] into [T]."))
-
-			RTB.reagents.vore_trans_to_con(T, transfer_amount, 1, 0)
-			add_attack_logs(user, T,"Transfered [RTB.reagent_name] from [TG]'s [RTB] to a [T]")	//Bonus for staff so they can see if people have abused transfer and done pref breaks
-			if(RTB.count_liquid_for_sprite)
-				handle_belly_update()
+			return vore_transfer_to_container(TG, RTB, transfer_amount)
 		if("Floor")
-			if(RTB.reagentid == REAGENT_ID_WATER)
-				return
-			var/amount_removed = RTB.reagents.remove_any(transfer_amount)
-			if(RTB.count_liquid_for_sprite)
-				handle_belly_update()
-			var/puddle_amount = round(amount_removed/5)
+			return vore_transfer_to_floor(TG, RTB, transfer_amount)
 
-			if(puddle_amount == 0)
-				to_chat(user,span_vnotice("[RTB.reagent_name] dripples from the [RTB.get_belly_name()], not enough to form a puddle."))
-				return
+/// Mobs a liquid transfer can reach: adjacent mobs and our own prey.
+/mob/living/proc/vore_transfer_candidates()
+	. = mobs_in_view(1, src)
+	for(var/obj/belly/B in vore_organs)
+		for(var/mob/living/L in contents_of(B))
+			. |= L
 
-			if(TG == user)
-				user.custom_emote_vr(1, span_vnotice("spills [RTB.reagent_name] from their [RTB.get_belly_name()] onto the floor!"))
-			else
-				user.custom_emote_vr(1, span_vnotice("spills [RTB.reagent_name] from [TG]'s [RTB.get_belly_name()] onto the floor!"))
+/// Transfer into a vore belly of the user or an adjacent mob. Its prompts belong to the vore_transfer_reagents verb re-run.
+/mob/living/proc/vore_transfer_to_belly(mob/living/TG, obj/belly/RTB, transfer_amount)
+	var/mob/living/user = src
+	var/list/transfer_to = vore_transfer_candidates()
+	var/mob/living/TR = rerun_ask(user, "a5", PROC_REF(vore_transfer_reagents), list(), /datum/om/prompt/choice, message = "Choose who to transfer to", title = "Select Target", choices = transfer_to)
+	if(isnull(TR))
+		return
+	if(!TR)  return FALSE
 
-			if (RTB.custom_reagentcolor)
-				new /obj/effect/decal/cleanable/blood/reagent(TG.loc, RTB.reagent_name, RTB.custom_reagentcolor, RTB.reagentid, puddle_amount, user.ckey, TG.ckey)
-			else
-				new /obj/effect/decal/cleanable/blood/reagent(TG.loc, RTB.reagent_name, RTB.reagentcolor, RTB.reagentid, puddle_amount, user.ckey, TG.ckey)
+	if(TR == user) //Proceed, we dont need to have prefs enabled for transfer within user
+		var/obj/belly/TB = rerun_ask(user, "a6", PROC_REF(vore_transfer_reagents), list(), /datum/om/prompt/choice, message = "Choose which organ to transfer to", title = "Select Belly", choices = user.vore_organs)
+		if(isnull(TB))
+			return
+		if(!TB)
+			return FALSE
+		if(!Adjacent(TR) || !Adjacent(TG))
+			return //No long distance transfer
+		if(!TB.reagents?.get_free_space())
+			to_chat(user, span_vnotice("[TB] is full!"))
+			return FALSE
 
-			var/soundfile
-			if(!RTB.fancy_vore)
-				soundfile = GLOB.classic_release_sounds[RTB.release_sound]
-			else
-				soundfile = GLOB.fancy_release_sounds[RTB.release_sound]
-			if(soundfile)
-				playsound(src, soundfile, vol = 100, vary = 1, falloff = VORE_SOUND_FALLOFF, preference = /datum/preference/toggle/eating_noises)
+		if(TG == user)
+			user.custom_emote_vr(1, span_vnotice("[RTB.reagent_transfer_verb] [RTB.reagent_name] from their [RTB.get_belly_name()] into their [TB.get_belly_name()]."))
+		else
+			user.custom_emote_vr(1, span_vnotice("[RTB.reagent_transfer_verb] [RTB.reagent_name] from [TG]'s [RTB.get_belly_name()] into their [TB.get_belly_name()]."))
+			add_attack_logs(user,TR,"Transfered [RTB.reagent_name] from [TG]'s [RTB] to [TR]'s [TB]")	//Bonus for staff so they can see if people have abused transfer and done pref breaks
+		RTB.reagents.vore_trans_to_mob(TR, transfer_amount, CHEM_VORE, 1, 0, TB)
+		if(RTB.count_liquid_for_sprite || TB.count_liquid_for_sprite)
+			handle_belly_update()
+
+	else if(TR.receive_reagents == FALSE)
+		to_chat(user, span_vwarning("This person's prefs dont allow that!"))
+		return FALSE
+
+	else
+		var/obj/belly/TB = rerun_ask(user, "a7", PROC_REF(vore_transfer_reagents), list(), /datum/om/prompt/choice, message = "Choose which organ to transfer to", title = "Select Belly", choices = TR.vore_organs)
+		if(isnull(TB))
+			return
+		if(!TB)
+			return FALSE
+		if(!Adjacent(TR) || !Adjacent(TG))
+			return //No long distance transfer
+		if(!TB.reagents?.get_free_space())
+			to_chat(user, span_vnotice("[TR]'s [TB.get_belly_name()] is full!"))
+			return FALSE
+
+		if(TG == user)
+			user.custom_emote_vr(1, span_vnotice("[RTB.reagent_transfer_verb] [RTB.reagent_name] from their [RTB.get_belly_name()] into [TR]'s [TB.get_belly_name()]."))
+		else
+			user.custom_emote_vr(1, span_vnotice("[RTB.reagent_transfer_verb] [RTB.reagent_name] from [TG]s [RTB.get_belly_name()] into [TR]'s [TB.get_belly_name()]."))
+
+		RTB.reagents.vore_trans_to_mob(TR, transfer_amount, CHEM_VORE, 1, 0, TB)
+		add_attack_logs(user,TR,"Transfered reagents from [TG]'s [RTB] to [TR]'s [TB]")	//Bonus for staff so they can see if people have abused transfer and done pref breaks
+		if(RTB.count_liquid_for_sprite)
+			handle_belly_update()
+		if(TB.count_liquid_for_sprite)
+			TR.handle_belly_update()
+
+/// Transfer into the stomach (ingested) of the user or an adjacent mob. Its prompts belong to the vore_transfer_reagents verb re-run.
+/mob/living/proc/vore_transfer_to_stomach(mob/living/TG, obj/belly/RTB, transfer_amount)
+	var/mob/living/user = src
+	var/list/transfer_to = vore_transfer_candidates()
+	var/mob/living/TR = rerun_ask(user, "a8", PROC_REF(vore_transfer_reagents), list(), /datum/om/prompt/choice, message = "Choose who to transfer to", title = "Select Target", choices = transfer_to)
+	if(isnull(TR))
+		return
+	if(!TR)  return
+	if(!Adjacent(TR) || !Adjacent(TG))
+		return //No long distance transfer
+
+	if(TR == user) //Proceed, we dont need to have prefs enabled for transfer within user
+		if(TG == user)
+			user.custom_emote_vr(1, span_vnotice("[RTB.reagent_transfer_verb] [RTB.reagent_name] from their [RTB.get_belly_name()] into their stomach."))
+		else
+			user.custom_emote_vr(1, span_vnotice("[RTB.reagent_transfer_verb] [RTB.reagent_name] from [TG]'s [RTB.get_belly_name()] into their stomach."))
+		RTB.reagents.vore_trans_to_mob(TR, transfer_amount, CHEM_INGEST, 1, 0, null)
+		add_attack_logs(user,TR,"Transfered [RTB.reagent_name] from [TG]'s [RTB] to [TR]'s Stomach")
+		if(RTB.count_liquid_for_sprite)
+			handle_belly_update()
+
+	else if(TR.receive_reagents == FALSE)
+		to_chat(user, span_vwarning("This person's prefs dont allow that!"))
+		return FALSE
+
+	else
+		if(TG == user)
+			user.custom_emote_vr(1, span_vnotice("[RTB.reagent_transfer_verb] [RTB.reagent_name] from their [RTB.get_belly_name()] into [TR]'s stomach."))
+		else
+			user.custom_emote_vr(1, span_vnotice("[RTB.reagent_transfer_verb] [RTB.reagent_name] from [TG]'s [RTB.get_belly_name()] into [TR]'s stomach."))
+
+		RTB.reagents.vore_trans_to_mob(TR, transfer_amount, CHEM_INGEST, 1, 0, null)
+		add_attack_logs(user,TR,"Transfered [RTB.reagent_name] from [TG]'s [RTB] to [TR]'s Stomach")	//Bonus for staff so they can see if people have abused transfer and done pref breaks
+		if(RTB.count_liquid_for_sprite)
+			handle_belly_update()
+
+/// Transfer into an adjacent or held reagent container. Its prompts belong to the vore_transfer_reagents verb re-run.
+/mob/living/proc/vore_transfer_to_container(mob/living/TG, obj/belly/RTB, transfer_amount)
+	var/mob/living/user = src
+	if(RTB.reagentid == REAGENT_ID_STOMACID)
+		return
+	var/list/choices = list()
+	for(var/obj/item/reagent_containers/rc in view(1,user.loc))
+		choices += rc
+	var/obj/item/reagent_containers/arc = user.get_active_hand()
+	if(istype(arc,/obj/item/reagent_containers))
+		choices += arc
+	var/obj/item/reagent_containers/irc = user.get_inactive_hand()
+	if(istype(irc,/obj/item/reagent_containers))
+		choices += irc
+
+	var/obj/item/reagent_containers/T = rerun_ask(user, "a9", PROC_REF(vore_transfer_reagents), list(), /datum/om/prompt/choice, message = "Choose what to transfer to", title = "Select Target", choices = choices)
+	if(isnull(T))
+		return
+	if(!T)
+		return FALSE
+	if(!Adjacent(T) || !Adjacent(TG))
+		return //No long distance transfer
+
+	if(TG == user)
+		user.custom_emote_vr(1, span_vnotice("[RTB.reagent_transfer_verb] [RTB.reagent_name] from their [RTB.get_belly_name()] into [T]."))
+	else
+		user.custom_emote_vr(1, span_vnotice("[RTB.reagent_transfer_verb] [RTB.reagent_name] from [TG]'s [RTB.get_belly_name()] into [T]."))
+
+	RTB.reagents.vore_trans_to_con(T, transfer_amount, 1, 0)
+	add_attack_logs(user, T,"Transfered [RTB.reagent_name] from [TG]'s [RTB] to a [T]")	//Bonus for staff so they can see if people have abused transfer and done pref breaks
+	if(RTB.count_liquid_for_sprite)
+		handle_belly_update()
+
+/// Spill onto the floor as a puddle. Its prompts belong to the vore_transfer_reagents verb re-run.
+/mob/living/proc/vore_transfer_to_floor(mob/living/TG, obj/belly/RTB, transfer_amount)
+	var/mob/living/user = src
+	if(RTB.reagentid == REAGENT_ID_WATER)
+		return
+	var/amount_removed = RTB.reagents.remove_any(transfer_amount)
+	if(RTB.count_liquid_for_sprite)
+		handle_belly_update()
+	var/puddle_amount = round(amount_removed/5)
+
+	if(puddle_amount == 0)
+		to_chat(user,span_vnotice("[RTB.reagent_name] dripples from the [RTB.get_belly_name()], not enough to form a puddle."))
+		return
+
+	if(TG == user)
+		user.custom_emote_vr(1, span_vnotice("spills [RTB.reagent_name] from their [RTB.get_belly_name()] onto the floor!"))
+	else
+		user.custom_emote_vr(1, span_vnotice("spills [RTB.reagent_name] from [TG]'s [RTB.get_belly_name()] onto the floor!"))
+
+	if (RTB.custom_reagentcolor)
+		new /obj/effect/decal/cleanable/blood/reagent(TG.loc, RTB.reagent_name, RTB.custom_reagentcolor, RTB.reagentid, puddle_amount, user.ckey, TG.ckey)
+	else
+		new /obj/effect/decal/cleanable/blood/reagent(TG.loc, RTB.reagent_name, RTB.reagentcolor, RTB.reagentid, puddle_amount, user.ckey, TG.ckey)
+
+	var/soundfile
+	if(!RTB.fancy_vore)
+		soundfile = GLOB.classic_release_sounds[RTB.release_sound]
+	else
+		soundfile = GLOB.fancy_release_sounds[RTB.release_sound]
+	if(soundfile)
+		playsound(src, soundfile, vol = 100, vary = 1, falloff = VORE_SOUND_FALLOFF, preference = /datum/preference/toggle/eating_noises)
 
 /mob/living/proc/vore_bellyrub(mob/living/T in view(1,src))
 
