@@ -66,6 +66,36 @@
 /datum/proc/declared_back_handle_vars()
 	return null
 
+/// Assoc: a path to a partner -> the partner's var(s) that name us (REF_BACK_VIA).
+/// The path is one var name or several joined by "." ("master_handle.cl_handle"),
+/// read hop by hop from src; each hop may hold a reference or an OM handle. The
+/// value is a var name, a list of them, or list(/partner/type = name or names)
+/// (lifecycle_backlist_handle_lists()). Phase 4 finds the partner and, for each
+/// named var: a list loses us (and our handle); anything else naming us (by
+/// reference or handle) is nulled. Our own vars are left alone.
+/datum/proc/declared_back_via_vars()
+	return null
+
+/// Assoc: our list var -> the member var(s) that name us back (REF_LIST_BACK): the
+/// owner side of a back-list. Phase 4 visits each member (keys and assoc values,
+/// references or OM handles) and, for each named var, removes us from it if it is a
+/// list or nulls it if it names us. The list itself is dropped once the links clear.
+/datum/proc/declared_list_back_vars()
+	return null
+
+/// Names of `src`'s vars simply dropped in phase 4 (REF_DROP): the target is not
+/// deleted, not cut and not told. For scratch tables keyed by other objects and
+/// lists src was handed (and may share), which only must stop pinning their contents.
+/datum/proc/declared_drop_vars()
+	return null
+
+/// Assoc: a var of src that says whether src is queued (or LIFECYCLE_QUEUE_ALWAYS)
+/// -> a global proc path, or a list of them, returning the list src sits in
+/// (REF_QUEUE_MEMBER): a subsystem work queue, or a global list that isn't an OM
+/// registry. Phase 4 removes src from each list whose flag var is set.
+/datum/proc/declared_queue_vars()
+	return null
+
 /// Names of `src`'s vars holding one inserted thing (a beaker, a card, a
 /// charging cell) that goes back to the room when src is destroyed: phase 3
 /// moves it to src's drop location if it is still inside src. The one-thing
@@ -179,6 +209,10 @@
 			"keep" = D.declared_keep_vars(),
 			"static" = D.declared_static_vars(),
 			"weak_list" = D.declared_weak_list_vars(),
+			"back_via" = D.declared_back_via_vars(),
+			"list_back" = D.declared_list_back_vars(),
+			"drop" = D.declared_drop_vars(),
+			"queue" = D.declared_queue_vars(),
 		)
 		// A declaration naming a var the type no longer has (the var was
 		// removed, the REF_* line wasn't) would runtime on D.vars[name] in the
@@ -189,7 +223,14 @@
 			if(!length(names))
 				continue
 			for(var/name in names.Copy())
-				if(!(name in D.vars))
+				var/checked = name
+				if(kind == "queue" && name == LIFECYCLE_QUEUE_ALWAYS)
+					continue
+				if(kind == "back_via") // a path: its first hop must be ours
+					var/dot = findtext(name, ".")
+					if(dot)
+						checked = copytext(name, 1, dot)
+				if(!(checked in D.vars))
 					stack_trace("LIFECYCLE: [D.type] declares [kind] var '[name]', which it doesn't have; ignoring it")
 					names = names.Copy()
 					names -= name
@@ -278,6 +319,11 @@
 	var/list/table = dq_lifecycle_link_table(D)
 	if(!table)
 		return
+	// Partners found through a path, and the members of our back-lists, are told
+	// first: the vars they are reached through (a REF_HELD part, an owned list) are
+	// nulled or emptied below.
+	if(table["back_via"] || table["list_back"])
+		dq_lifecycle_clear_found_partners(D, table)
 	var/list/owned = table["owned"]
 	for(var/var_name in owned)
 		var/datum/child = D.vars[var_name]
@@ -375,6 +421,89 @@
 		var/theirs = partner.vars[their_var]
 		if(theirs == D || (istext(theirs) && om_handle_is(theirs, D)))
 			partner.vars[their_var] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
+	var/list/queues = table["queue"]
+	for(var/flag in queues)
+		if(flag != LIFECYCLE_QUEUE_ALWAYS && !D.vars[flag])
+			continue
+		var/getters = queues[flag]
+		for(var/getter in (islist(getters) ? getters : list(getters)))
+			var/list/Q = call(getter)()
+			if(islist(Q))
+				Q.Remove(D)
+	for(var/var_name in table["drop"])
+		D.vars[var_name] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
+	for(var/var_name in table["list_back"])
+		if(var_name != "contents")
+			D.vars[var_name] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
+
+/// Reads a REF_BACK_VIA path ("a" or "a.b.c") from `D`: each hop is a var of the
+/// object reached so far, holding a reference or an OM handle. Null when a hop is
+/// missing, unset or no longer resolves, or when the path leads back to `D`.
+/// The result may be a /client (clients aren't datums but have vars).
+/proc/lifecycle_follow_path(datum/D, path)
+	var/static/list/split_paths = list()
+	var/list/hops = split_paths[path]
+	if(!hops)
+		hops = splittext(path, ".")
+		split_paths[path] = hops
+	var/datum/at = D
+	for(var/hop in hops)
+		if(!(hop in at.vars))
+			return null
+		var/value = at.vars[hop]
+		if(istext(value))
+			value = om_resolve(value)
+		if(!value || isnum(value) || ispath(value) || islist(value))
+			return null
+		at = value
+	return at == D ? null : at
+
+/// Takes `D` out of `partner.vars[their_var]`: removed (with its handle `h`) from a
+/// list, or the var nulled when it names `D` by reference or handle.
+/proc/lifecycle_unname(datum/partner, their_var, datum/D, h)
+	if(!(their_var in partner.vars))
+		return
+	var/theirs = partner.vars[their_var]
+	if(islist(theirs))
+		var/list/L = theirs
+		L.Remove(D)
+		if(h)
+			L.Remove(h)
+	else if(theirs == D || (h && theirs == h))
+		partner.vars[their_var] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
+
+/// Phase 4, REF_BACK_VIA and REF_LIST_BACK: every partner `D` reaches through a
+/// declared path, and every member of `D`'s declared back-lists, stops naming it.
+/proc/dq_lifecycle_clear_found_partners(datum/D, list/table)
+	var/datum/destroy_batch/batch = GLOB.dq_destroy_batch
+	var/h = om_handle_of(D)
+	var/list/back_via = table["back_via"]
+	for(var/path in back_via)
+		var/datum/partner = lifecycle_follow_path(D, path)
+		if(!partner || (batch && batch.doomed[partner]))
+			continue
+		for(var/their_var in lifecycle_backlist_handle_lists(partner, back_via[path]))
+			lifecycle_unname(partner, their_var, D, h)
+	var/list/list_back = table["list_back"]
+	for(var/our_var in list_back)
+		var/list/members = D.vars[our_var]
+		if(!islist(members) || !length(members))
+			continue
+		var/member_vars = list_back[our_var]
+		for(var/key in members.Copy())
+			var/list/found = list(key)
+			if(!isnum(key))
+				var/value = members[key]
+				if(value)
+					found += value
+			for(var/entry in found)
+				var/datum/member = istext(entry) ? om_resolve(entry) : entry
+				if(!member || member == D || isnum(member) || ispath(member) || islist(member))
+					continue
+				if(batch && batch.doomed[member])
+					continue
+				for(var/their_var in lifecycle_backlist_handle_lists(member, member_vars))
+					lifecycle_unname(member, their_var, D, h)
 
 
 /// The partner's list var names a REF_BACKLIST_HANDLE value picks for `owner`:
@@ -404,7 +533,7 @@
 	// A destroyed object holds nothing: held things (a datum has no contents, so
 	// phase 2 never released them) and the emptied owned lists are dropped too.
 	// `contents` is built in and can't be nulled.
-	var/static/list/drop_keys = list("held", "owned_list", "owned_values")
+	var/static/list/drop_keys = list("held", "owned_list", "owned_values", "drop", "list_back")
 	for(var/key in drop_keys)
 		for(var/var_name in table[key])
 			if(var_name != "contents")

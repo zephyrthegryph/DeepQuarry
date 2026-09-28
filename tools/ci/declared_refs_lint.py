@@ -87,7 +87,7 @@ UNSAVED_MODS = {"tmp", "static", "global", "const", "final"}
 from ref_kinds import DECLARED_PROCS, REF_MACRO, REF_MACRO_PROC, is_def_type, is_pooled, ref_var_decl  # noqa: E402
 # Declarations that make an instance list var a legitimate holder of objects.
 OBJLIST_PROCS = ("declared_owned_list_vars", "declared_owned_value_vars", "declared_spill_list_vars", "declared_def_vars",
-                 "declared_static_vars",
+                 "declared_static_vars", "declared_drop_vars", "declared_list_back_vars",
                  "declared_cache_vars")
 CACHE_ENTRY = re.compile(r'"(\w+)"\s*(=\s*(\S.*?))?\s*,?\s*$')
 CACHE_RULE = re.compile(r"^CACHE_ON_(CHANGE|EVENT|RELATION)\(")

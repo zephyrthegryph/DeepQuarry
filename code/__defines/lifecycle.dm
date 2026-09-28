@@ -46,6 +46,33 @@
 /// A partner we name by OM handle whose var names us back (by reference or handle):
 /// list("our_handle_var" = "their_var"). Phase 4 nulls their var if it still names us.
 #define REF_BACK_HANDLE(PATH, BACKS) ##PATH/declared_back_handle_vars() { return lifecycle_merge_assoc(..(), BACKS); }
+/// A partner reached through a path of our vars, whose var(s) name us back:
+/// list("path" = "their_var"). The path is one var or several joined by "."
+/// ("master_handle.cl_handle"); each hop may hold a reference or an OM handle, and
+/// the end may be a /client. The value is a var name, a list of them, or
+/// list(/partner/type = name or names), applied only when the partner is that type
+/// (list("loc" = list(/obj/machinery = "component_parts"))). Phase 4 removes us
+/// (and our handle) from each named list var and nulls each other named var that
+/// names us. Our own vars are untouched. Replaces `partner()?.their_var = null` and
+/// `LAZYREMOVE(partner().list, src)` bodies where the partner isn't a plain var of ours.
+#define REF_BACK_VIA(PATH, PATHS) ##PATH/declared_back_via_vars() { return lifecycle_merge_assoc(..(), PATHS); }
+/// The owner side of a back-list: list("our_list" = "member_var"). Each member of our
+/// list (keys and assoc values; references or OM handles) whose named var(s) name us
+/// has them cleared as REF_BACK_VIA clears a partner's; the value takes the same
+/// forms. Then our list is dropped. Replaces `for(x in list) x.back = null` bodies.
+#define REF_LIST_BACK(PATH, LISTS) ##PATH/declared_list_back_vars() { return lifecycle_merge_assoc(..(), LISTS); }
+/// Vars just dropped (nulled) in phase 4: the target is not deleted, cut or told.
+/// For scratch tables keyed by other objects, and lists src was handed and may share
+/// with its caller (cutting those would empty someone else's list).
+#define REF_DROP(PATH, NAMES) ##PATH/declared_drop_vars() { . = ..(); . = (. || list()) + NAMES; }
+/// Membership in a global or subsystem list that isn't an OM registry (a work
+/// queue): list("flag_var" = /proc/getter). When src.flag_var is true (or the key is
+/// LIFECYCLE_QUEUE_ALWAYS) phase 4 removes src from the list the global proc returns
+/// (null-safe; a list of getters is allowed). The flag keeps a big queue from being
+/// scanned for objects that aren't in it.
+#define REF_QUEUE_MEMBER(PATH, QUEUES) ##PATH/declared_queue_vars() { return lifecycle_merge_assoc(..(), QUEUES); }
+/// REF_QUEUE_MEMBER key for a membership that holds for the object's whole life.
+#define LIFECYCLE_QUEUE_ALWAYS "*"
 
 /// Back-references, our var -> the var on the referenced object that points at
 /// us (or null): the non-owning side of an owner/child pair. Phase 4 nulls
@@ -107,7 +134,7 @@
 // REF_VAR(/obj/machinery/foo, OWNED, /datum/bar, helper) declares
 // `/obj/machinery/foo/var/datum/bar/helper` and adds "helper" to the type's
 // REF_OWNED list. KIND is any single-name kind: OWNED, OWNED_LIST, OWNED_VALUES,
-// SPILL, SPILL_LIST, HELD, DEF, STATIC, TRANSIENT, WEAK_LIST. VARTYPE is the full type path (/list
+// SPILL, SPILL_LIST, HELD, DEF, STATIC, TRANSIENT, WEAK_LIST, DROP. VARTYPE is the full type path (/list
 // for list kinds). The older REF_* forms keep working.
 #define REF_VAR(PATH, KIND, VARTYPE, NAME) ##PATH { var##VARTYPE/##NAME; } REF_##KIND(PATH, #NAME)
 /// REF_VAR for a pair: OTHER is the partner's var pointing back.
