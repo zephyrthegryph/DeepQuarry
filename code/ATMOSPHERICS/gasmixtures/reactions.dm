@@ -901,8 +901,8 @@
 	var/turf/open/location = holder
 	// /tg/'s foam type is /obj/effect/particle_effect/fluid/foam; CHOMP
 	// has /obj/effect/effect/foam. Use CHOMP's path so the locate() resolves.
-	var/obj/effect/effect/foam/foam = locate() in location
-	var/obj/structure/foamedmetal/resin = locate() in location
+	var/obj/effect/effect/foam/foam = locate_within(location, /obj/effect/effect/foam)
+	var/obj/structure/foamedmetal/resin = locate_within(location, /obj/structure/foamedmetal)
 	if(heat_efficiency > HALON_COMBUSTION_MINIMUM_RESIN_MOLES && isopenturf(location) && !foam && !resin) // Don't resin if there is aleady resin or we are not in an open turf.
 		do_foam(amount = HALON_COMBUSTION_RESIN_VOLUME, holder = holder, location = location, foam_type = /datum/effect_system/fluid_spread/foam/metal/resin/halon)
 		. |= VOLATILE_REACTION

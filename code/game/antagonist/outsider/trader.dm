@@ -61,8 +61,8 @@ GLOBAL_DATUM(traders, /datum/antagonist/trader)
 	return 1
 
 /datum/antagonist/trader/update_access(mob/living/player)
-	for(var/obj/item/storage/wallet/W in player.contents)
-		for(var/obj/item/card/id/id in W.contents)
+	for(var/obj/item/storage/wallet/W in contents_of(player))
+		for(var/obj/item/card/id/id in contents_of(W))
 			id.name = "[player.real_name]'s Passport"
 			id.registered_name = player.real_name
 			W.name = "[initial(W.name)] ([id.name])"

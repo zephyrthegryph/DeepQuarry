@@ -441,7 +441,7 @@
 	var/deleted_atoms = 0
 	var/affected = get_affected_turfs(deploy_location, centered=TRUE)
 	for(var/turf/T in affected)
-		for(var/obj/structure/flora/AM in T)
+		for(var/obj/structure/flora/AM in contents_of(T))
 			++deleted_atoms
 			qdel(AM)
 	admin_notice(span_danger("Annihilated [deleted_atoms] plants."), R_DEBUG)

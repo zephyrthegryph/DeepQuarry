@@ -1309,7 +1309,7 @@
 
 /datum/reagent/sterilizine/affect_touch(mob/living/carbon/M, alien, removed)
 	M.germ_level -= min(removed*20, M.germ_level)
-	for(var/obj/item/I in M.contents)
+	for(var/obj/item/I in contents_of(M))
 		dq_set_was_bloodied(I, null)
 	dq_set_was_bloodied(M, null)
 	if(alien == IS_SLIME)

@@ -66,7 +66,7 @@
 
 	if(sprite_flag_check(ROBOT_HAS_SHIELD_SPRITE))
 		if(ourborg.has_active_type(/obj/item/borg/combat/shield))
-			var/obj/item/borg/combat/shield/shield = locate() in ourborg
+			var/obj/item/borg/combat/shield/shield = locate_in_list(ourborg, /obj/item/borg/combat/shield)
 			if(shield && shield.active)
 				ourborg.add_overlay("[sprite_icon_state]-shield")
 
@@ -216,7 +216,7 @@
 
 /datum/robot_sprite/proc/do_equipment_glamour(obj/item/robot_module/module)
 	if(!dogborg_sprites)
-		var/obj/item/melee/robotic/jaws/small/small_jaws = locate() in module.modules
+		var/obj/item/melee/robotic/jaws/small/small_jaws = locate_in_list(module.modules, /obj/item/melee/robotic/jaws/small)
 		if(small_jaws)
 			small_jaws.name = "self defense knife"
 			small_jaws.icon = 'icons/obj/tools_robot.dmi'
@@ -224,7 +224,7 @@
 			small_jaws.hitsound = 'sound/weapons/slash.ogg'
 			small_jaws.desc = "A sharp knife used for defending crew against hostile threats. Not effective for non-defense use. If emagged, can be upgraded to a claymore."
 			small_jaws.attack_verb = list("sliced", "slashed", "jabbed", "stabbed")
-		var/obj/item/melee/robotic/jaws/big/big_jaws = locate() in module.modules
+		var/obj/item/melee/robotic/jaws/big/big_jaws = locate_in_list(module.modules, /obj/item/melee/robotic/jaws/big)
 		if(big_jaws)
 			big_jaws.name = "claymore"
 			big_jaws.desc = "Now this is a knife!"

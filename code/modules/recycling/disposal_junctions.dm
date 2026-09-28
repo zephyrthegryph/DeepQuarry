@@ -167,7 +167,7 @@ DECLARE_INTERACTIONS(/obj/structure/disposalpipe/sortjunction, INTERACT_ITEM(nul
 
 	if(P)
 		// find other holder in next loc, if inactive merge it with current
-		var/obj/structure/disposalholder/H2 = locate() in P
+		var/obj/structure/disposalholder/H2 = locate_within(P, /obj/structure/disposalholder)
 		if(H2 && !H2.active)
 			H.merge(H2)
 

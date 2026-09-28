@@ -805,7 +805,7 @@ REF_OWNED(/obj/machinery/porta_turret, "spark_system")
 	if(emagged)		// If emagged not even the dead get a rest
 		return L.stat ? TURRET_SECONDARY_TARGET : TURRET_PRIORITY_TARGET
 
-	if(lethal && locate(/mob/living/silicon/ai) in get_turf(L))		//don't accidentally kill the AI!
+	if(lethal && locate_within(get_turf(L), /mob/living/silicon/ai))		//don't accidentally kill the AI!
 		return TURRET_NOT_TARGET
 
 	if(check_synth || check_all)	//If it's set to attack all non-silicons or everything, target them!
@@ -979,7 +979,7 @@ REF_OWNED(/obj/machinery/porta_turret, "spark_system")
 	//Turrets aim for the center of mass by default.
 	//If the target is grabbing someone then the turret smartly aims for extremities
 	var/def_zone
-	var/obj/item/grab/G = locate() in target
+	var/obj/item/grab/G = locate_within(target, /obj/item/grab)
 	if(G && G.state >= GRAB_NECK) //works because mobs are currently not allowed to upgrade to NECK if they are grabbing two people.
 		def_zone = pick(BP_HEAD, BP_L_HAND, BP_R_HAND, BP_L_FOOT, BP_R_FOOT, BP_L_ARM, BP_R_ARM, BP_L_LEG, BP_R_LEG)
 	else

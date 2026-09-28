@@ -104,7 +104,7 @@
 /// Old attackby.
 /obj/item/core_sampler/proc/interaction_item(mob/living/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/evidencebag))
-		if(I.contents.len)
+		if(contents_count(I))
 			to_chat(user, span_warning("\The [I] is full."))
 			return INTERACTION_HANDLED_PASS
 		if(num_stored_bags < 10)

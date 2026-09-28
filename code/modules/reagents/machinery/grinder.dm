@@ -92,7 +92,7 @@
 	if(istype(O,/obj/item/storage/bag/plants))
 		var/obj/item/storage/bag/plants/bag = O
 		var/failed = 1
-		for(var/obj/item/G in O.contents)
+		for(var/obj/item/G in contents_of(O))
 			if(!G.reagents || !G.reagents.total_volume)
 				continue
 			failed = 0
@@ -105,7 +105,7 @@
 			to_chat(user, "Nothing in the plant bag is usable.")
 			return TRUE
 
-		if(!O.contents.len)
+		if(!contents_count(O))
 			to_chat(user, "You empty \the [O] into \the [src].")
 		else
 			to_chat(user, "You fill \the [src] from \the [O].")

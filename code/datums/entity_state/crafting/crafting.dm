@@ -160,10 +160,10 @@
 	var/list/available_tools = list()
 	var/list/present_qualities = list()
 
-	for(var/obj/item/contained_item in source.contents)
+	for(var/obj/item/contained_item in contents_of(source))
 		// if(contained_item.GetComponent(/datum/component/storage))
 		if(istype(contained_item, /obj/item/storage)) // cursed
-			for(var/obj/item/subcontained_item in contained_item.contents)
+			for(var/obj/item/subcontained_item in contents_of(contained_item))
 				available_tools[subcontained_item.type] = TRUE
 				for(var/behavior in subcontained_item.tool_qualities)
 					present_qualities[behavior] = TRUE
@@ -557,7 +557,7 @@
 		return
 	switch(action)
 		if("make")
-			do_make(ui.user, locate(params["recipe"]) in GLOB.crafting_recipes, params["materialSlots"])
+			do_make(ui.user, locate_in_list(GLOB.crafting_recipes, params["recipe"]), params["materialSlots"])
 		if("toggle_recipes")
 			display_craftable_only = !display_craftable_only
 			. = TRUE

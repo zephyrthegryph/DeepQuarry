@@ -74,7 +74,7 @@ default behaviour is:
 		if(loc.density || tmob.loc.density)
 			can_swap = FALSE
 		if(can_swap)
-			for(var/atom/movable/A in loc)
+			for(var/atom/movable/A in contents_of(loc))
 				if(A == src)
 					continue
 				if(!A.CanPass(tmob, loc))

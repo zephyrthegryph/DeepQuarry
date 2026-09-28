@@ -725,7 +725,7 @@ GLOBAL_DATUM_INIT(backplane, /image, generate_backplane())
 		living += living_in_view
 		if(!count_held)
 			continue
-		for(var/obj/item/holder/mob_holder in living_in_view.contents)
+		for(var/obj/item/holder/mob_holder in contents_of(living_in_view))
 			if(!isliving(mob_holder.held_mob))
 				continue
 			var/mob/living/held_living = mob_holder.held_mob

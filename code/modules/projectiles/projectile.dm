@@ -601,7 +601,7 @@ REF_BACK_HANDLE(/obj/item/projectile, list("my_case_handle" = "BB"))
 		var/mob/M = A
 		if(isliving(A))
 			//if they have a neck grab on someone, that person gets hit instead
-			var/obj/item/grab/G = locate() in M
+			var/obj/item/grab/G = locate_within(M, /obj/item/grab)
 			if(G && G.state >= GRAB_NECK)
 				var/mob/grabbed = G?.grab_target()
 				if(grabbed.stat == DEAD)
@@ -629,9 +629,9 @@ REF_BACK_HANDLE(/obj/item/projectile, list("my_case_handle" = "BB"))
 		passthrough = (A.bullet_act(src, def_zone) == PROJECTILE_CONTINUE) //backwards compatibility
 		if(bump_targets) // only attack/act a turf's contents if our projectile is not a raytrace
 			if(isturf(A))
-				for(var/obj/O in A)
+				for(var/obj/O in contents_of(A))
 					O.bullet_act(src)
-				for(var/mob/living/M in A)
+				for(var/mob/living/M in contents_of(A))
 					attack_mob(M, distance)
 
 	//penetrating projectiles can pass through things that otherwise would not let them

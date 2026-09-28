@@ -103,7 +103,7 @@ It is used to destroy hand-held objects and advance technological research. Used
 			return TRUE
 		if(LAZYLEN(O.contents))
 			var/bad_item = FALSE
-			for(var/obj/item/thing in O.contents)
+			for(var/obj/item/thing in contents_of(O))
 				if(thing.item_flags & ABSTRACT)
 					continue
 				bad_item = TRUE
@@ -146,7 +146,7 @@ It is used to destroy hand-held objects and advance technological research. Used
 	// We want the lowest-part tier rating in the RPED so we only recycle the lowest-tier parts.
 	var/lowest_rating = INFINITY
 	replacer.latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/B in replacer.contents) // ALLOW(latent): materialized above
+	for(var/obj/item/B in contents_of(replacer)) // ALLOW(latent): materialized above
 		if(B.rped_rating() < lowest_rating)
 			lowest_rating = B.rped_rating()
 	if(lowest_rating == INFINITY)
@@ -157,7 +157,7 @@ It is used to destroy hand-held objects and advance technological research. Used
 	if(!materials)
 		return TRUE
 	replacer.latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/B in replacer.contents) // ALLOW(latent): materialized above
+	for(var/obj/item/B in contents_of(replacer)) // ALLOW(latent): materialized above
 		if(B.rped_rating() > lowest_rating)
 			continue
 		materials.insert_item(B, decon_mod, src)
@@ -274,7 +274,7 @@ It is used to destroy hand-held objects and advance technological research. Used
 	// Destroy items inside
 	var/list/destructing = list()
 	destructing += current_item
-	for(var/atom/movable/AM in current_item.contents)
+	for(var/atom/movable/AM in contents_of(current_item))
 		AM.forceMove(get_turf(src))
 		destructing += AM
 	for(var/atom/thing_destroying in destructing) // For all contents and itself

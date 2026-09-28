@@ -609,7 +609,7 @@
 
 	// Gather up our friends
 	if(mapload)
-		var/atom/movable/AM = locate() in loc
+		var/atom/movable/AM = locate_within(loc, /atom/movable)
 		AM?.forceMove(src)
 
 /obj/structure/prop/machine/nt_pod/Entered(atom/movable/mover)
@@ -648,7 +648,7 @@ EXTEND_INTERACTIONS(/obj/structure/prop/machine/nt_pod, INTERACT_DRAG(null, PROC
 
 /// Old MouseDrop_T.
 /obj/structure/prop/machine/nt_pod/proc/interaction_drag(mob/user, atom/movable/AM, datum/interaction/interaction)
-	if(contents.len)
+	if(contents_count(src))
 		return INTERACTION_HANDLED_PASS
 	if(!ismovable(AM))
 		return INTERACTION_HANDLED_PASS
@@ -709,7 +709,7 @@ EXTEND_INTERACTIONS(/obj/structure/prop/machine/nt_pod, INTERACT_DRAG(null, PROC
 
 /obj/structure/prop/machine/nt_pod/proc/get_out()
 	outside.layer = BELOW_MOB_LAYER
-	if(contents.len)
+	if(contents_count(src))
 		for(var/atom/movable/AM as anything in contents)
 			unduct(AM)
 	changing_state = FALSE

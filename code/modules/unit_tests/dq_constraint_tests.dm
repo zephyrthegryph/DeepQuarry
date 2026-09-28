@@ -89,7 +89,7 @@
 		// materialize before clearing so none of it counts against capacity.
 		if(holder.has_latent())
 			holder.latent_materialize_all()
-		for(var/atom/movable/A in holder)
+		for(var/atom/movable/A in contents_of(holder))
 			qdel(A)
 		var/hex = patterns[holders[holder_name] + 1]
 		for(var/i in 1 to length(items))

@@ -55,7 +55,7 @@
 
 	for(var/areapath in typesof(spawn_area_type))
 		var/area/A = locate(areapath)
-		for(var/turf/simulated/floor/F in A.contents)
+		for(var/turf/simulated/floor/F in contents_of(A))
 			if(turf_clear(F))
 				turfs += F
 

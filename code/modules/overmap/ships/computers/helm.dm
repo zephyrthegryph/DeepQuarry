@@ -40,6 +40,7 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 	get_known_sectors()
 
 /obj/machinery/computer/ship/helm/proc/get_known_sectors()
+	// ALLOW(spatial): world search
 	var/area/overmap/map = locate() in world
 	for(var/obj/effect/overmap/visitable/S in area_contents_of_type(map, /obj/effect/overmap/visitable))
 		if(!istype(S,/obj/effect/overmap/visitable/sector) && !istype(S,/obj/effect/overmap/visitable/planet)) // let planets also be favorited via GPS

@@ -45,7 +45,7 @@ REF_BACK_HANDLE(/obj/effect/overmap/visitable/sector/expedition, list("site_hand
 	site().deployed_at = world.time
 	site().last_occupied = world.time
 	for(var/area/A in shuttle.shuttle_area)
-		for(var/mob/living/L in A)
+		for(var/mob/living/L in contents_of(A))
 			site().participants |= L
 
 // its site forgets its landing waypoint.

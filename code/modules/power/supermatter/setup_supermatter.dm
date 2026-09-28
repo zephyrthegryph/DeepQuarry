@@ -123,7 +123,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 
 /obj/effect/engine_setup/pump_max/activate()
 	..()
-	var/obj/machinery/atmospherics/binary/pump/P = locate() in get_turf(src)
+	var/obj/machinery/atmospherics/binary/pump/P = locate_within(get_turf(src), /obj/machinery/atmospherics/binary/pump)
 	if(!P)
 		log_and_message_admins("## WARNING: Unable to locate pump at [x] [y] [z]!")
 		return SETUP_WARNING
@@ -142,7 +142,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 
 /obj/effect/engine_setup/empty_canister/activate()
 	..()
-	var/obj/machinery/atmospherics/portables_connector/P = locate() in get_turf(src)
+	var/obj/machinery/atmospherics/portables_connector/P = locate_within(get_turf(src), /obj/machinery/atmospherics/portables_connector)
 	if(!P)
 		log_and_message_admins("## WARNING: Unable to locate connector port at [x] [y] [z]!")
 		return SETUP_WARNING
@@ -160,7 +160,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 
 /obj/effect/engine_setup/coolant_canister/activate()
 	..()
-	var/obj/machinery/atmospherics/portables_connector/P = locate() in get_turf(src)
+	var/obj/machinery/atmospherics/portables_connector/P = locate_within(get_turf(src), /obj/machinery/atmospherics/portables_connector)
 	if(!P)
 		log_and_message_admins("## ERROR: Unable to locate coolant connector port at [x] [y] [z]!")
 		return SETUP_ERROR
@@ -181,7 +181,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 	if(!last)
 		return SETUP_DELAYED
 	..()
-	var/obj/machinery/power/supermatter/SM = locate() in get_turf(src)
+	var/obj/machinery/power/supermatter/SM = locate_within(get_turf(src), /obj/machinery/power/supermatter)
 	if(!SM)
 		log_and_message_admins("## ERROR: Unable to locate supermatter core at [x] [y] [z]!")
 		return SETUP_ERROR
@@ -205,7 +205,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 
 /obj/effect/engine_setup/smes/activate()
 	..()
-	var/obj/machinery/power/smes/S = locate() in get_turf(src)
+	var/obj/machinery/power/smes/S = locate_within(get_turf(src), /obj/machinery/power/smes)
 	if(!S)
 		log_and_message_admins("## WARNING: Unable to locate SMES unit at [x] [y] [z]!")
 		return SETUP_WARNING
@@ -239,7 +239,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 
 /obj/effect/engine_setup/atmo_filter/activate()
 	..()
-	var/obj/machinery/atmospherics/omni/atmos_filter/F = locate() in get_turf(src)
+	var/obj/machinery/atmospherics/omni/atmos_filter/F = locate_within(get_turf(src), /obj/machinery/atmospherics/omni/atmos_filter)
 	if(!F)
 		log_and_message_admins("## WARNING: Unable to locate omni filter at [x] [y] [z]!")
 		return SETUP_WARNING

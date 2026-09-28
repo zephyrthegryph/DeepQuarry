@@ -2,7 +2,7 @@
 
 // ventcrawlers inside are put out; its pipe image comes off players' clients.
 /obj/machinery/atmospherics/on_destroy(force)
-	for(var/mob/living/M in src) //ventcrawling is serious business // ALLOW(latent): mobs are never latent
+	for(var/mob/living/M in contents_of(src)) //ventcrawling is serious business // ALLOW(latent): mobs are never latent
 		M.remove_ventcrawl()
 		M.forceMove(get_turf(src))
 	..()

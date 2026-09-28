@@ -341,7 +341,7 @@ EXTEND_INTERACTIONS(/obj/machinery/organ_printer/flesh, INTERACT_ITEM(null, PROC
 	// DNA sample from syringe.
 	if(istype(W,/obj/item/reagent_containers/syringe))	//TODO: Make this actually empty the syringe
 		var/obj/item/reagent_containers/syringe/S = W
-		var/datum/reagent/blood/injected = locate() in S.reagents.reagent_list //Grab some blood
+		var/datum/reagent/blood/injected = locate_in_list(S.reagents.reagent_list, /datum/reagent/blood) //Grab some blood
 		if(injected && injected.data)
 			loaded_dna = injected.data.Copy()
 			S.reagents.remove_reagent(REAGENT_ID_BLOOD, injected.volume)

@@ -619,10 +619,10 @@ ADMIN_VERB(respawn_character, (R_ADMIN|R_REJUVINATE), "Spawn Character", "(Re)Sp
 	//If customised job title, modify here.
 	if(custom_job && custom_job_title)
 		var/character_name = new_character.name
-		for(var/obj/item/card/id/player_id in new_character.contents)
+		for(var/obj/item/card/id/player_id in contents_of(new_character))
 			player_id.name = "[character_name]'s ID Card ([custom_job_title])"
 			player_id.assignment = custom_job_title
-		for(var/obj/item/pda/player_pda in new_character.contents)
+		for(var/obj/item/pda/player_pda in contents_of(new_character))
 			player_pda.name = "PDA-[character_name] ([custom_job_title])"
 			player_pda.ownjob = custom_job_title
 		new_character.mind.assigned_role = custom_job_title

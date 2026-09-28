@@ -55,7 +55,7 @@ GLOBAL_LIST_INIT(marker_beacon_colors, list(
 	if(!isturf(user.loc))
 		to_chat(user, span_warning("You need more space to place a [singular_name] here."))
 		return
-	if(locate(/obj/structure/marker_beacon) in user.loc)
+	if(locate_within(user.loc, /obj/structure/marker_beacon))
 		to_chat(user, span_warning("There is already a [singular_name] here."))
 		return
 	if(use(1))

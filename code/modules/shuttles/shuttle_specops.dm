@@ -69,7 +69,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/shuttle_control/specops, INTERACT_SI
 
 /datum/shuttle/autodock/ferry/specops/proc/launch_now(user)
 	if (location)
-		var/obj/machinery/light/small/readylight/light = locate() in shuttle_area
+		var/obj/machinery/light/small/readylight/light = locate_within(shuttle_area, /obj/machinery/light/small/readylight)
 		if(light) light.set_state(0)
 
 	//launch
@@ -190,15 +190,15 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/shuttle_control/specops, INTERACT_SI
 /datum/shuttle/autodock/ferry/specops/proc/announce_arrival()
 	if (!location)	//just arrived home
 		for(var/turf/T in get_area_turfs(shuttle_area))
-			var/mob/M = locate(/mob) in T
+			var/mob/M = locate_within(T, /mob)
 			to_chat(M, span_danger("You have arrived at [using_map.boss_name]. Operation has ended!"))
 	else	//just left for the station
 		launch_mauraders()
 		for(var/turf/T in get_area_turfs(shuttle_area))
-			var/mob/M = locate(/mob) in T
+			var/mob/M = locate_within(T, /mob)
 			to_chat(M, span_danger("You have arrived at [station_name()]. Commence operation!"))
 
-			var/obj/machinery/light/small/readylight/light = locate() in T
+			var/obj/machinery/light/small/readylight/light = locate_within(T, /obj/machinery/light/small/readylight)
 			if(light) light.set_state(1)
 
 REF_OWNED(/datum/shuttle/autodock/ferry/specops, "announcer")

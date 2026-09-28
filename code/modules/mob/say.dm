@@ -642,7 +642,7 @@
 
 	if(pb)	//We are prey, let's do the prey thing.
 
-		for(var/I in pb.contents)
+		for(var/I in contents_of(pb))
 			if(istype(I, /mob/living/dominated_brain) && I != M)
 				var/mob/living/dominated_brain/db = I
 				to_chat(db, span_psay("The captive mind of \the [M] thinks, \"[message]\""))	//To any dominated brains in the pred
@@ -660,7 +660,7 @@
 					f = TRUE
 
 	//Let's also check and see if there's anyone inside of us to send the message to.
-	for(var/I in M.contents)
+	for(var/I in contents_of(M))
 		if(istype(I, /mob/living/dominated_brain))
 			var/mob/living/dominated_brain/db = I
 			to_chat(db, span_psay(span_bold("[formatted_name] thinks, \"[message]\"")))	//To any dominated brains inside us
@@ -757,7 +757,7 @@
 
 	if(pb)	//We are prey, let's do the prey thing.
 
-		for(var/I in pb.contents)
+		for(var/I in contents_of(pb))
 			if(istype(I, /mob/living/dominated_brain) && I != M)
 				var/mob/living/dominated_brain/db = I
 				to_chat(db, span_pemote("[formatted_name] [message]"))	//To any dominated brains in the pred
@@ -775,7 +775,7 @@
 					f = TRUE
 
 	//Let's also check and see if there's anyone inside of us to send the message to.
-	for(var/I in M.contents)
+	for(var/I in contents_of(M))
 		if(istype(I, /mob/living/dominated_brain))
 			var/mob/living/dominated_brain/db = I
 			to_chat(db, span_pemote(span_bold("[formatted_name] [message]")))	//To any dominated brains inside us

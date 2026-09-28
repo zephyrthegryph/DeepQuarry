@@ -181,7 +181,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable, INTERACT_SELF("Unwrap", PR
 	cut_overlays()
 	if(open)
 		icon_state = open_state
-		if(contents.len >= 1)
+		if(contents_count(src) >= 1)
 			add_overlay("chew_nico[contents.len]")
 	else
 		icon_state = closed_state
@@ -190,7 +190,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable, INTERACT_SELF("Unwrap", PR
 	if(open)
 		return
 	open = TRUE
-	if(contents.len == 0)
+	if(contents_count(src) == 0)
 		icon_state = "[initial(icon_state)]_empty"
 	else
 		update_icon()
@@ -198,7 +198,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable, INTERACT_SELF("Unwrap", PR
 
 /obj/item/storage/box/fancy/chewables/tobacco/nico/close(mob/user as mob)
 	open = FALSE
-	if(contents.len == 0)
+	if(contents_count(src) == 0)
 		icon_state = "[initial(icon_state)]_empty"
 	else
 		update_icon()

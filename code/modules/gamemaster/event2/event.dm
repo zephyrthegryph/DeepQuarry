@@ -90,6 +90,7 @@ This allows for events that have their announcement happen after the end itself.
 
 	for(var/list/A as anything in grand_list_of_areas)
 		var/list/turfs = list()
+		// ALLOW(spatial): iterates a list, not contents
 		for(var/turf/T in A)
 			if(!T.check_density())
 				turfs += T

@@ -258,7 +258,7 @@
 	var/cap_rating = get_part_rating(/obj/item/stock_parts/capacitor)
 	man_rating += get_part_rating(/obj/item/stock_parts/manipulator)
 	materialize_parts()
-	cell = locate(/obj/item/cell) in component_parts
+	cell = locate_in_list(component_parts, /obj/item/cell)
 
 	charging_power = 40000 + 40000 * cap_rating
 	restore_power_active = 10000 + 15000 * cap_rating

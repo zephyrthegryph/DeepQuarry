@@ -19,7 +19,7 @@
 
 	var/has_spread = 0
 	//Be absorbed by any other liquid fuel in the tile.
-	for(var/obj/effect/decal/cleanable/liquid_fuel/other in loc)
+	for(var/obj/effect/decal/cleanable/liquid_fuel/other in contents_of(loc))
 		if(other != src)
 			other.amount += src.amount
 			other.Spread()

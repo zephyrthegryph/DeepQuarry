@@ -5,7 +5,7 @@
 
 	// This could use work.
 	if(flags & ANTAG_CLEAR_EQUIPMENT)
-		for(var/obj/item/thing in player.contents)
+		for(var/obj/item/thing in contents_of(player))
 			player.drop_from_inventory(thing)
 			if(thing.loc != player)
 				qdel(thing)

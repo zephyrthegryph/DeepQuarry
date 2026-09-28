@@ -69,7 +69,7 @@
 	if(!istype(H))
 		return 0
 
-	var/obj/machinery/door/airlock/A = locate(/obj/machinery/door/airlock) in get_step(H,H.dir)
+	var/obj/machinery/door/airlock/A = locate_in_list(get_step(H,H.dir), /obj/machinery/door/airlock)
 
 	//Okay, we either found an airlock or we're about to give up.
 	if(!A || !A.density || !A.can_open() || !..())

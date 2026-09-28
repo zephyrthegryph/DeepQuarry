@@ -330,7 +330,7 @@ DECLARE_INTERACTIONS(/obj/item/holder, INTERACT_ITEM(null, PROC_REF(interaction_
 /obj/item/holder/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	// ITION: MicroHandCrush
 	if(W == src && IS_HARMING(user))
-		for(var/mob/living/M in src.contents)
+		for(var/mob/living/M in contents_of(src))
 			if(user.size_multiplier > M.size_multiplier)
 				var/dam = (user.size_multiplier - M.size_multiplier)*(rand(2,5))
 				to_chat(user, span_danger("You roughly squeeze [M]!"))
@@ -338,7 +338,7 @@ DECLARE_INTERACTIONS(/obj/item/holder, INTERACT_ITEM(null, PROC_REF(interaction_
 				log_and_message_admins("[key_name(M)] has been harmsqueezed by [key_name(user)]")
 				M.injure(INJURY_BLUNT, dam, null, user)
 	// ITION: MicroHandCrush END
-	for(var/mob/M in src.contents)
+	for(var/mob/M in contents_of(src))
 		M.attackby(W,user)
 	return INTERACTION_HANDLED_PASS
 

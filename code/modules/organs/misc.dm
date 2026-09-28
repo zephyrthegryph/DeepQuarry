@@ -23,9 +23,9 @@
 		if(!istype(H))
 			return
 
-		var/datum/reagent/blood/B = locate(/datum/reagent/blood) in H.vessel.reagent_list
+		var/datum/reagent/blood/B = locate_in_list(H.vessel.reagent_list, /datum/reagent/blood)
 		blood_splatter(H,B,1)
-		var/obj/effect/decal/cleanable/blood/splatter/goo = locate() in get_turf(owner)
+		var/obj/effect/decal/cleanable/blood/splatter/goo = locate_within(get_turf(owner), /obj/effect/decal/cleanable/blood/splatter)
 		if(goo)
 			goo.name = "husk ichor"
 			goo.desc = "It's thick and stinks of decay."

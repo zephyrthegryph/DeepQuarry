@@ -161,7 +161,7 @@
 
 /obj/item/robot_module/robot/syndicate/combat_medic/respawn_consumable(mob/living/silicon/robot/R, amount)
 
-	var/obj/item/reagent_containers/syringe/S = locate() in src.modules
+	var/obj/item/reagent_containers/syringe/S = locate_in_list(src.modules, /obj/item/reagent_containers/syringe)
 	if(S && S.mode == 2)
 		S.reagents.clear_reagents()
 		S.mode = initial(S.mode)
@@ -183,7 +183,7 @@
 	src.modules += new /obj/item/melee/robotic/blade/ninja(src)
 	src.modules += new /obj/item/borg/cloak(src)
 	//Removes the default sblade
-	var/obj/item/melee/robotic/blade/syndicate/sblade = locate() in src.modules
+	var/obj/item/melee/robotic/blade/syndicate/sblade = locate_in_list(src.modules, /obj/item/melee/robotic/blade/syndicate)
 	if(sblade)
 		src.modules -= sblade
 		qdel(sblade)

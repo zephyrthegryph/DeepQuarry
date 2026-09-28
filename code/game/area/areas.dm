@@ -86,7 +86,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 /// contents write by design. Callers still run their own lighting/power
 /// follow-up (ChangeArea(), or turf.change_area()).
 /turf/proc/assign_area(area/A)
-	A.contents += src
+	A.contents += src // ALLOW(containment): area membership of a turf, not containment
 
 // Changes the area of T to A. Do not do this manually.
 // Area is expected to be a non-null instance.

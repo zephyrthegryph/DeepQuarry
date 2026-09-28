@@ -92,7 +92,7 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 	var/list/cells = list()
 	for(var/turf/T as anything in dirty_turfs)
 		var/transmission = T.rad_insulation
-		for(var/atom/movable/on_turf as anything in T.contents)
+		for(var/atom/movable/on_turf as anything in contents_of(T))
 			transmission *= on_turf.rad_insulation
 		cells += T.x
 		cells += T.y

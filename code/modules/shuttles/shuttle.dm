@@ -92,7 +92,7 @@
 /datum/shuttle/proc/populate_shuttle_objects()
 	// Scan for shuttle consoles on them needing auto-config.
 	for(var/area/A in find_childfree_areas()) // Let sub-shuttles handle their areas, only do our own.
-		for(var/obj/machinery/computer/shuttle_control/SC in A)
+		for(var/obj/machinery/computer/shuttle_control/SC in contents_of(A))
 			if(!SC.shuttle_tag)
 				SC.set_shuttle_tag(src.name)
 	return
@@ -356,12 +356,12 @@
 	for(var/area/A in shuttle_area)
 		// If there was a zlevel above our origin and we own the ceiling, erase our ceiling now we're leaving
 		if(ceiling_type && HasAbove(current_location().z))
-			for(var/turf/TO in A.contents)
+			for(var/turf/TO in contents_of(A))
 				var/turf/TA = GetAbove(TO)
 				if(istype(TA, ceiling_type))
 					TA.ChangeTurf(get_base_turf_by_area(TA), 1, 1)
 		if(knockdown)
-			for(var/mob/living/M in A)
+			for(var/mob/living/M in contents_of(A))
 				if(M.is_incorporeal())
 					continue
 				if(M?.buckled_to())
@@ -377,7 +377,7 @@
 						M.status_at_least(EFFECT_WEAKENED, 3)
 						if(move_direction)
 							throw_a_mob(M,move_direction)
-		for(var/obj/item/radio/intercom/I in A)
+		for(var/obj/item/radio/intercom/I in contents_of(A))
 			radios |= I
 
 	// Update our base turfs before we move, so that transparent turfs look good.
@@ -392,7 +392,7 @@
 	// If there's a zlevel above our destination, paint in a ceiling on it so we retain our air
 	if(ceiling_type && HasAbove(current_location().z))
 		for(var/area/A in shuttle_area)
-			for(var/turf/TD in A.contents)
+			for(var/turf/TD in contents_of(A))
 				var/turf/TA = GetAbove(TD)
 				if(istype(TA, get_base_turf_by_area(TA)) || isopenspace(TA))
 					if(get_area(TA) in shuttle_area)
@@ -433,12 +433,12 @@
 		if(HYPERSPACE_END)
 			sound_to_play = 'sound/effects/shuttles/hyperspace_end.ogg'
 	for(var/area/A in shuttle_area)
-		for(var/obj/machinery/door/E in A)	//dumb, I know, but playing it on the engines doesn't do it justice
+		for(var/obj/machinery/door/E in contents_of(A))	//dumb, I know, but playing it on the engines doesn't do it justice
 			playsound(E, sound_to_play, 50, FALSE)
 
 /datum/shuttle/proc/message_passengers(message)
 	for(var/area/A in shuttle_area)
-		for(var/mob/M in A)
+		for(var/mob/M in contents_of(A))
 			M.show_message(message, 2)
 
 /datum/shuttle/proc/find_children()

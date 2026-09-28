@@ -361,7 +361,7 @@
 		var/open = TRUE
 		if(T.density)
 			continue
-		for(var/atom/movable/AM in T)
+		for(var/atom/movable/AM in contents_of(T))
 			if(AM.density)
 				open = FALSE
 				break

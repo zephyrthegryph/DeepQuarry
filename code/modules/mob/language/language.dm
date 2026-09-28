@@ -189,7 +189,7 @@
 
 			if(src.name in H.species.assisted_langs)
 				. = FALSE
-				var/obj/item/organ/internal/voicebox/vox = locate() in H.internal_organs	// Only voiceboxes for now. Maybe someday it'll include other organs, but I'm not that clever
+				var/obj/item/organ/internal/voicebox/vox = locate_in_list(H.internal_organs, /obj/item/organ/internal/voicebox)	// Only voiceboxes for now. Maybe someday it'll include other organs, but I'm not that clever
 				if(vox)
 					if(!vox.is_broken() && (src in vox.assists_languages))
 						. = TRUE

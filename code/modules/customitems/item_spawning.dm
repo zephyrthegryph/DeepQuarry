@@ -212,9 +212,9 @@ GLOBAL_LIST_INIT(custom_items, load_custom_items())
 		if(citem.item_path == /obj/item/card/id && istype(current_id)) //Set earlier.
 			existing_item = M.get_equipped_item(SLOT_ID_ID)
 		else if(citem.item_path == /obj/item/pda)
-			existing_item = locate(/obj/item/pda) in M.contents
+			existing_item = locate_within(M, /obj/item/pda)
 		else if(citem.item_path == /obj/item/storage/backpack)
-			existing_item = locate(/obj/item/storage/backpack) in M.contents
+			existing_item = locate_within(M, /obj/item/storage/backpack)
 
 		// Spawn and equip the item.
 		if(existing_item)

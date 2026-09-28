@@ -26,7 +26,7 @@
 
 
 /obj/structure/filingcabinet/Initialize(mapload)
-	for(var/obj/item/I in loc)
+	for(var/obj/item/I in contents_of(loc))
 		if(istype(I, /obj/item/paper) || istype(I, /obj/item/folder) || istype(I, /obj/item/photo) || istype(I, /obj/item/paper_bundle))
 			I.forceMove(src)
 	. = ..()
@@ -71,7 +71,7 @@ DECLARE_INTERACTIONS(/obj/structure/filingcabinet, \
 
 /// Old attack_hand.
 /obj/structure/filingcabinet/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(contents.len <= 0)
+	if(contents_count(src) <= 0)
 		to_chat(user, span_notice("\The [src] is empty."))
 		return TRUE
 
@@ -86,8 +86,8 @@ DECLARE_INTERACTIONS(/obj/structure/filingcabinet, \
 	return TRUE
 
 /obj/structure/filingcabinet/attack_self_tk(mob/user)
-	if(contents.len)
-		if(prob(40 + contents.len * 5))
+	if(contents_count(src))
+		if(prob(40 + contents_count(src) * 5))
 			var/obj/item/I = pick(contents)
 			I.forceMove(loc)
 			if(prob(25))
@@ -112,7 +112,7 @@ DECLARE_INTERACTIONS(/obj/structure/filingcabinet, \
 	data["cabinet_name"] = "[name]"
 	data["contents"] = list()
 	data["contents_ref"] = list()
-	for(var/obj/item/content in src)
+	for(var/obj/item/content in contents_of(src))
 		data["contents"] += "[content]"
 		data["contents_ref"] += "[REF(content)]"
 
@@ -125,7 +125,7 @@ DECLARE_INTERACTIONS(/obj/structure/filingcabinet, \
 
 	switch(action)
 		if("remove_object")
-			var/obj/item/content = locate(params["ref"]) in src
+			var/obj/item/content = locate_within(src, params["ref"])
 			if(istype(content) && (content.loc == src) && usr.Adjacent(src))
 				usr.put_in_hands(content)
 				open_animation()

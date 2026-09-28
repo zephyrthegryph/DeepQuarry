@@ -111,7 +111,7 @@
 		return
 	switch(action)
 		if("phoron")
-			var/obj/item/tank/phoron/tank = locate() in src
+			var/obj/item/tank/phoron/tank = locate_within(src, /obj/item/tank/phoron)
 			if(tank && Adjacent(ui.user))
 				ui.user.put_in_hands(tank)
 				phorontanks--
@@ -119,7 +119,7 @@
 			playsound(src, 'sound/items/drop/gascan.ogg', 100, 1, 1)
 		if("oxygen")
 			var/obj/item/tank/tank = null
-			for(var/obj/item/tank/T in src)
+			for(var/obj/item/tank/T in contents_of(src))
 				if(istype(T, /obj/item/tank/oxygen) || istype(T, /obj/item/tank/air) || istype(T, /obj/item/tank/anesthetic))
 					tank = T
 					break

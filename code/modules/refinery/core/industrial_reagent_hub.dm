@@ -28,9 +28,9 @@
 	if (amount_per_transfer_from_this <= 0)
 		return
 
-	var/obj/machinery/reagent_refinery/target = locate(/obj/machinery/reagent_refinery) in get_step(loc,dir)
+	var/obj/machinery/reagent_refinery/target = locate_within(get_step(loc,dir), /obj/machinery/reagent_refinery)
 	if(target && target.dir != GLOB.reverse_dir[dir])
-		var/obj/vehicle/train/trolley_tank/tanker = locate(/obj/vehicle/train/trolley_tank) in loc
+		var/obj/vehicle/train/trolley_tank/tanker = locate_within(loc, /obj/vehicle/train/trolley_tank)
 		if(tanker && tanker.reagents.total_volume > 0 && world.time > tanker.l_move_time + wait_delay)
 			// dump reagents to next refinery machine
 			transfer_tank( tanker.reagents, target, dir)
@@ -70,7 +70,7 @@
 		return 0
 	if(dir != GLOB.reverse_dir[source_forward_dir] ) // The hub must be facing into its source to accept input, unlike others
 		return 0
-	var/obj/vehicle/train/trolley_tank/tanker = locate(/obj/vehicle/train/trolley_tank) in get_turf(src)
+	var/obj/vehicle/train/trolley_tank/tanker = locate_within(get_turf(src), /obj/vehicle/train/trolley_tank)
 	if(!tanker)
 		return 0
 	if(world.time < tanker.l_move_time + wait_delay) // await cooldown to avoid spamming moving tanks
@@ -89,7 +89,7 @@
 
 /// Busy while a tanker with reagents sits on it; a tanker rolling on wakes it.
 /obj/machinery/reagent_refinery/hub/refinery_busy()
-	var/obj/vehicle/train/trolley_tank/tanker = locate(/obj/vehicle/train/trolley_tank) in loc
+	var/obj/vehicle/train/trolley_tank/tanker = locate_within(loc, /obj/vehicle/train/trolley_tank)
 	return tanker && tanker.reagents.total_volume > 0
 
 /obj/machinery/reagent_refinery/hub/Crossed(atom/movable/AM)

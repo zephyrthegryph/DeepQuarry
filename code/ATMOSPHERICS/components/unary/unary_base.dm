@@ -133,7 +133,7 @@
 // Intended for use when a frame-constructable machine (i.e. not made from pipe fittings) wants to wrench down and connect.
 // Returns TRUE if something is blocking, FALSE if its okay to continue.
 /obj/machinery/atmospherics/unary/proc/check_for_obstacles()
-	for(var/obj/machinery/atmospherics/M in loc)
+	for(var/obj/machinery/atmospherics/M in contents_of(loc))
 		if(M == src) continue
 		if((M.pipe_flags & pipe_flags & PIPING_ONE_PER_TURF))	//Only one dense/requires density object per tile, eg connectors/cryo/heater/coolers.
 			visible_message(span_warning("\The [src]'s cannot be connected, something is hogging the tile!"))

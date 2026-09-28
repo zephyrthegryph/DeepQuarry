@@ -99,7 +99,7 @@
 		remove_verb(src, /mob/living/carbon/human/proc/lay_egg)
 		return
 
-	if(locate(/obj/structure/ghost_pod/automatic/xenomorph_egg) in get_turf(src))
+	if(locate_within(get_turf(src), /obj/structure/ghost_pod/automatic/xenomorph_egg))
 		to_chat(src, "There's already an egg here.")
 		return
 
@@ -367,7 +367,7 @@
 		to_chat(src, span_danger("You cannot do that in your current state."))
 		return
 
-	var/obj/item/grab/G = locate() in src
+	var/obj/item/grab/G = locate_within(src, /obj/item/grab)
 	if(!G || !istype(G))
 		to_chat(src, span_danger("You are not grabbing anyone."))
 		return

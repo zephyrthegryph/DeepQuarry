@@ -114,7 +114,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 /obj/machinery/power/smes/buildable/apply_mapped_upgrades()
 	// Detect new coils placed by mappers
 	var/list/parts_found = list()
-	for(var/i = 1, i <= loc.contents.len, i++)
+	for(var/i = 1, i <= contents_count(loc), i++)
 		var/obj/item/W = loc.contents[i]
 		if(istype(W, /obj/item/smes_coil))
 			parts_found.Add(W)
@@ -122,7 +122,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 	if(parts_found.len == 0)
 		return
 	while(TRUE)
-		var/obj/item/smes_coil/C = locate(/obj/item/smes_coil) in component_parts
+		var/obj/item/smes_coil/C = locate_in_list(component_parts, /obj/item/smes_coil)
 		if(isnull(C))
 			break
 		component_parts.Remove(C)

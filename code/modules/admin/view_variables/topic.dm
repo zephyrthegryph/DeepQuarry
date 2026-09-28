@@ -21,7 +21,7 @@
 //~CARN: for renaming mobs (updates their name, real_name, mind.name, their ID/PDA and datacore records).
 	if(href_list["rename"])
 
-		var/mob/M = locate(href_list["rename"]) in REGISTRY_MEMBERS(REGISTRY_MOBS)
+		var/mob/M = locate_in_list(REGISTRY_MEMBERS(REGISTRY_MOBS), href_list["rename"])
 		if(!istype(M))
 			to_chat(usr, "This can only be used on instances of type /mob", confidential = TRUE)
 			return
@@ -58,7 +58,7 @@
 
 
 	else if(href_list["adjustBody"] && href_list["mobToDamage"])
-		var/mob/living/L = locate(href_list["mobToDamage"]) in REGISTRY_MEMBERS(REGISTRY_MOBS)
+		var/mob/living/L = locate_in_list(REGISTRY_MEMBERS(REGISTRY_MOBS), href_list["mobToDamage"])
 		if(!istype(L) || !L.body)
 			return
 		var/action = href_list["adjustBody"]

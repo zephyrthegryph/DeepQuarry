@@ -313,7 +313,7 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 			occupation = idcard.assignment
 			to_chat(user, span_notice(">Occupation updated."))
 		// ITION START Communicator ID slotting if we have an ID thats also already scanned
-		else if(((src in user.contents) && (C in user.contents)) || (istype(loc, /turf) && in_range(src, user) && (C in user.contents)) )
+		else if(((is_in_holder(src, user)) && (is_in_holder(C, user))) || (istype(loc, /turf) && in_range(src, user) && (is_in_holder(C, user))) )
 			if(id_check(user, 2))
 				to_chat(user, span_notice("You put the ID into \the [src]'s slot."))
 				add_overlay("pda-id")

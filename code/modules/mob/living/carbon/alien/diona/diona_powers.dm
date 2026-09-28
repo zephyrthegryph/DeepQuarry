@@ -74,6 +74,6 @@
 	add_verb(src, /mob/living/carbon/alien/diona/proc/merge)
 
 	if(istype(M))
-		for(var/atom/A in M.contents)
+		for(var/atom/A in contents_of(M))
 			if(istype(A,/mob/living/simple_mob/animal/borer) || istype(A,/obj/item/holder))
 				return

@@ -37,11 +37,11 @@
 
 /obj/machinery/meter/proc/select_target()
 	var/obj/machinery/atmospherics/pipe/P
-	for(P in loc)
+	for(is_in_holder(P, loc))
 		if(!P.hides_under_flooring())
 			break
 	if(!P)
-		P = locate(/obj/machinery/atmospherics/pipe) in loc
+		P = locate_within(loc, /obj/machinery/atmospherics/pipe)
 	return P
 
 /// A meter wakes only when what it shows or broadcasts would change: local meters when their
@@ -169,7 +169,7 @@
 	if(open)
 		om_ask(user, /datum/om/prompt/text/meter_id, PROC_REF(meter_id_entered), message = "Please insert an ID tag for [src], example 'exhaust_pipe'.", default = id, tool = tool)
 		return ITEM_INTERACT_SUCCESS
-	for(var/obj/machinery/atmospherics/pipe/pipe in loc)
+	for(var/obj/machinery/atmospherics/pipe/pipe in contents_of(loc))
 		LAZYOR(pipes_on_turf, pipe)
 	if(!length(pipes_on_turf))
 		return ITEM_INTERACT_BLOCKING

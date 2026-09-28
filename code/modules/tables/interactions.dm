@@ -9,9 +9,9 @@
 		return TRUE
 	if(istype(mover) && mover.checkpass(PASSTABLE))
 		return TRUE
-	if(locate(/obj/structure/table/bench) in get_turf(mover))
+	if(locate_within(get_turf(mover), /obj/structure/table/bench))
 		return FALSE
-	var/obj/structure/table/table = locate(/obj/structure/table) in get_turf(mover)
+	var/obj/structure/table/table = locate_within(get_turf(mover), /obj/structure/table)
 	if(table && !(table.flipped == 1))
 		return TRUE
 	return FALSE

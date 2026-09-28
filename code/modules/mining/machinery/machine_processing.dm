@@ -24,7 +24,7 @@
 
 /obj/machinery/mineral/processing_unit_console/Initialize(mapload)
 	. = ..()
-	src.machine_handle = om_handle(locate(/obj/machinery/mineral/processing_unit) in range(5, src))
+	src.machine_handle = om_handle(locate_in_list(range(5, src), /obj/machinery/mineral/processing_unit))
 	if (machine())
 		machine().console_handle = om_handle(src)
 	else
@@ -242,11 +242,11 @@ REF_SPILL(/obj/machinery/mineral/processing_unit_console, "inserted_id")
 	else // low gear
 		PERIODIC_STOP(src)
 		MACHINE_WAKE(src)
-	for(var/obj/machinery/mineral/unloading_machine/unloader in refinery_area.contents)
+	for(var/obj/machinery/mineral/unloading_machine/unloader in contents_of(refinery_area))
 		unloader.toggle_speed()
-	for(var/obj/machinery/conveyor_switch/cswitch in refinery_area.contents)
+	for(var/obj/machinery/conveyor_switch/cswitch in contents_of(refinery_area))
 		cswitch.toggle_speed()
-	for(var/obj/machinery/mineral/stacking_machine/stacker in refinery_area.contents)
+	for(var/obj/machinery/mineral/stacking_machine/stacker in contents_of(refinery_area))
 		stacker.toggle_speed()
 
 /// Takes in what is on its input plate and smelts while active; with nothing to take in and nothing

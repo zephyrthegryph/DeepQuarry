@@ -1292,7 +1292,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/galaxy, INTERACT_USE("Squeeze
 	effect = /obj/structure/biowaste_tank/proc/interaction_hand
 
 /obj/structure/biowaste_tank/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(contents.len)
+	if(contents_count(src))
 		om_ask(user, /datum/om/prompt/choice, PROC_REF(eject_chosen), choices = contents, title = "Item Retrieval Console", message = "It appears the machine has caught some items in the lost-and-found filter system. Would you like to eject something?", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 	return TRUE
 

@@ -15,7 +15,7 @@
 			return back
 
 	// Try to place it in any item that can store stuff, on the mob.
-	for(var/obj/item/storage/S in src.contents)
+	for(var/obj/item/storage/S in contents_of(src))
 		if(!S.insert_refusal(newitem, user_initiated ? src : null))
 			if(user_initiated)
 				S.handle_item_insertion(newitem)

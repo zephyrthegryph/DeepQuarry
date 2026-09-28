@@ -44,6 +44,6 @@
 	backpack_contents = list(/obj/item/stack/tile/floor = 6)
 
 /datum/decl/hierarchy/outfit/tournament_gear/janitor/post_equip(mob/living/carbon/human/H)
-	var/obj/item/reagent_containers/glass/bucket/bucket = locate(/obj/item/reagent_containers/glass/bucket) in H
+	var/obj/item/reagent_containers/glass/bucket/bucket = locate_within(H, /obj/item/reagent_containers/glass/bucket)
 	if(bucket)
 		bucket.reagents.add_reagent(REAGENT_ID_WATER, 70)

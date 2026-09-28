@@ -257,7 +257,7 @@
 
 /// Only mobs carrying real organ objects process them (most list organ paths for butchery).
 /datum/om/stage/life/guts/idle(mob/living/simple_mob/self)
-	return !(LAZYLEN(self.internal_organs) && (locate(/obj/item/organ) in self.internal_organs)) && !(LAZYLEN(self.organs) && (locate(/obj/item/organ) in self.organs))
+	return !(LAZYLEN(self.internal_organs) && (locate_in_list(self.internal_organs, /obj/item/organ))) && !(LAZYLEN(self.organs) && (locate_in_list(self.organs, /obj/item/organ)))
 
 /datum/om/stage/life/supernatural
 	reads = list("purge")

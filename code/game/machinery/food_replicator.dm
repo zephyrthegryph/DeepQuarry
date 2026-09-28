@@ -163,7 +163,7 @@
 	return TRUE
 
 /obj/machinery/food_replicator/proc/foodcheck(obj/item/reagent_containers/food)
-	var/mob/living/mob = locate(/mob/living) in food
+	var/mob/living/mob = locate_within(food, /mob/living)
 	if(mob)
 		playsound(src, "sound/machines/buzz-two.ogg", 25, 0)
 		return

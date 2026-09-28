@@ -78,7 +78,7 @@ GLOBAL_VAR_INIT(dq_destroy_collect_time, 0)
 	// 1. Mark first.
 	var/list/order = list()
 	for(var/turf/T as anything in doomed_turfs)
-		for(var/atom/movable/AM as anything in T)
+		for(var/atom/movable/AM as anything in contents_of(T))
 			dq_batch_mark(batch, AM, order, force, TRUE)
 	for(var/datum/D as anything in roots)
 		var/root_force = roots[D]
@@ -129,7 +129,7 @@ GLOBAL_VAR_INIT(dq_destroy_collect_time, 0)
 	var/atom/drop = holder.drop_location()
 	if(drop && !batch.doomed[drop] && !batch.doomed_places[drop])
 		return
-	for(var/atom/movable/thing as anything in holder.contents)
+	for(var/atom/movable/thing as anything in contents_of(holder))
 		dq_batch_mark(batch, thing, order, force, TRUE)
 
 /// End of batch: the one unbind call, one pass per registry, merged effects.

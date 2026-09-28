@@ -41,7 +41,7 @@
 /// Empties ore boxes and moves items from its input plate while there are any; then it sleeps
 /// until something arrives (on_input_entered()).
 /obj/machinery/mineral/unloading_machine/machine_step()
-	if(!output_marker() || !input_marker() || !(locate(/obj/structure/ore_box) in input_marker().loc) && !(locate(/obj/item) in input_marker().loc))
+	if(!output_marker() || !input_marker() || !(locate_within(input_marker().loc, /obj/structure/ore_box)) && !(locate_within(input_marker().loc, /obj/item)))
 		return PROCESS_KILL
 	if (src.output_marker() && src.input_marker())
 		if (locate(/obj/structure/ore_box, input_marker().loc))

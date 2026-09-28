@@ -728,7 +728,6 @@
 	C.icon_scale_y = 0.25 * C.w_class
 	C.update_transform()
 	//egg_contents -= src
-	C.contents -= src
 	var/datum/tgui_module/appearance_changer/cocoon/V = new(src, src)
 	V.tgui_interact(src)
 
@@ -790,7 +789,7 @@
 
 	for(var/turf/T in range(1, src))
 		if(istype(T, /turf/simulated/floor/water))
-			for(var/mob/living/L in T)
+			for(var/mob/living/L in contents_of(T))
 				if(L == src) //no eating yourself. 1984.
 					continue
 				if(L.devourable && L.can_be_drop_prey)

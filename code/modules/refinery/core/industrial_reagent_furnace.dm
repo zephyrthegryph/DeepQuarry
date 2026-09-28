@@ -110,7 +110,7 @@ REF_OWNED(/obj/machinery/reagent_refinery/furnace, "beaker")
 						if(!istype(S))
 							warning("[src] tried to eject material '[printing]', which didn't generate a proper stack when asked!")
 	// dump reagents to next refinery machine if all of the target reagent has been filtered out
-	var/obj/machinery/reagent_refinery/target = locate(/obj/machinery/reagent_refinery) in get_step(get_turf(src),dir)
+	var/obj/machinery/reagent_refinery/target = locate_within(get_step(get_turf(src),dir), /obj/machinery/reagent_refinery)
 	if(target && reagents.total_volume > 0)
 		transfer_tank( reagents, target, dir)
 

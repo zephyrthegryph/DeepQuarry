@@ -79,7 +79,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/env_message, REGISTRY_ENV_MESSAGES)
 
 	var/ourturf = get_turf(src)
 
-	var/obj/effect/env_message/EM = locate(/obj/effect/env_message) in ourturf
+	var/obj/effect/env_message/EM = locate_within(ourturf, /obj/effect/env_message)
 
 	if(!EM)
 		EM = new /obj/effect/env_message(ourturf)
@@ -97,7 +97,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/env_message, REGISTRY_ENV_MESSAGES)
 
 	var/ourturf = get_turf(src)
 
-	var/obj/effect/env_message/EM = locate(/obj/effect/env_message) in ourturf
+	var/obj/effect/env_message/EM = locate_within(ourturf, /obj/effect/env_message)
 
 	if(EM)
 		var/answer = rerun_ask(src, "k104", VERB_REF(remove_env_message), args, /datum/om/prompt/choice/alert, message = "Do you want to remove this env message? (Note: Selecting 'Yes' will remove other players' messages on this tyle too. Please don't remove other players' messages for no reason. Use 'Only My Message' to remove yours only.)", title = "Env Message", choices = list("Yes", "Only My Message", "No"))
@@ -141,7 +141,7 @@ ADMIN_VERB(create_gm_message, R_FUN, "Map Message - Create", "Create an ooc mess
 
 	var/ourturf = get_turf(user_mob)
 
-	var/obj/effect/env_message/new_env_message = locate(/obj/effect/env_message) in ourturf
+	var/obj/effect/env_message/new_env_message = locate_within(ourturf, /obj/effect/env_message)
 
 	if(!new_env_message)
 		new_env_message = new /obj/effect/env_message/admin(ourturf)

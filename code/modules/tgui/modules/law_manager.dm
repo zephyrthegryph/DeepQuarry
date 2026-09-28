@@ -24,7 +24,7 @@
 			return TRUE
 
 		if("state_law")
-			var/datum/ai_law/AL = locate(params["ref"]) in owner().laws.all_laws()
+			var/datum/ai_law/AL = locate_in_list(owner().laws.all_laws(), params["ref"])
 			if(AL)
 				var/state_law = text2num(params["state_law"])
 				owner().laws.set_state_law(AL, state_law)
@@ -84,7 +84,7 @@
 
 		if("edit_law")
 			if(is_malf(ui.user))
-				var/datum/ai_law/AL = locate(params["edit_law"]) in owner().laws.all_laws()
+				var/datum/ai_law/AL = locate_in_list(owner().laws.all_laws(), params["edit_law"])
 				if(AL)
 					var/new_law = act_ask(ui.user, action, params, ui, "a2", /datum/om/prompt/text, message = "Enter new law. Leaving the field blank will cancel the edit.", title = "Edit Law", default = AL.law)
 					if(isnull(new_law))
@@ -96,7 +96,7 @@
 
 		if("delete_law")
 			if(is_malf(ui.user))
-				var/datum/ai_law/AL = locate(params["delete_law"]) in owner().laws.all_laws()
+				var/datum/ai_law/AL = locate_in_list(owner().laws.all_laws(), params["delete_law"])
 				if(AL && is_malf(ui.user))
 					owner().delete_law(AL)
 			return TRUE
@@ -106,14 +106,14 @@
 			return TRUE
 
 		if("state_law_set")
-			var/datum/ai_laws/ALs = locate(params["state_law_set"]) in (is_admin(ui.user) ? GLOB.admin_laws : GLOB.player_laws)
+			var/datum/ai_laws/ALs = locate_in_list((is_admin(ui.user) ? GLOB.admin_laws : GLOB.player_laws), params["state_law_set"])
 			if(ALs)
 				owner().statelaws(ALs)
 			return TRUE
 
 		if("transfer_laws")
 			if(is_malf(ui.user))
-				var/datum/ai_laws/ALs = locate(params["transfer_laws"]) in (is_admin(ui.user) ? GLOB.admin_laws : GLOB.player_laws)
+				var/datum/ai_laws/ALs = locate_in_list((is_admin(ui.user) ? GLOB.admin_laws : GLOB.player_laws), params["transfer_laws"])
 				if(ALs)
 					log_and_message_admins("has transfered the [ALs.name] laws to [owner()].")
 					ALs.sync(owner(), 0)

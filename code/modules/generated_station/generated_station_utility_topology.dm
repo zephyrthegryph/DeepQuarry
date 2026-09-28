@@ -724,7 +724,7 @@ REF_OWNED_LIST(/datum/generated_station_utility_topology, list("power_objects", 
 			continue
 		var/required_state = "0-[directions[1]]"
 		var/found = FALSE
-		for(var/obj/structure/cable/cable in T)
+		for(var/obj/structure/cable/cable in contents_of(T))
 			if(cable.icon_state == required_state)
 				found = TRUE
 				break

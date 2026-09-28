@@ -46,7 +46,7 @@
 		to_chat(user, span_notice("[I] won't fit in [src]."))
 		return
 
-	if(contents.len)
+	if(contents_count(src))
 		to_chat(user, span_notice("[src] already has something inside it."))
 		return
 

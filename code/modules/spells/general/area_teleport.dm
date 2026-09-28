@@ -45,7 +45,7 @@
 	for(var/turf/T in get_area_turfs(thearea.type))
 		if(!T.density)
 			var/clear = 1
-			for(var/obj/O in T)
+			for(var/obj/O in contents_of(T))
 				if(O.density)
 					clear = 0
 					break

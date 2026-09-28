@@ -709,7 +709,7 @@
 // this function returns the robots jetpack, if one is installed
 /mob/living/silicon/robot/proc/installed_jetpack()
 	if(module)
-		return (locate(/obj/item/tank/jetpack) in module.modules)
+		return (locate_in_list(module.modules, /obj/item/tank/jetpack))
 	return 0
 
 // this function displays the cyborgs current cell charge in the stat panel
@@ -1826,11 +1826,11 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 /mob/living/silicon/robot/proc/has_upgrade_module(given_type)
 	if(!module) //If we don't have a module, don't even bother.
 		return null
-	var/obj/T = locate(given_type) in module
+	var/obj/T = locate_in_list(module, given_type)
 	if(!T)
-		T = locate(given_type) in module.contents
+		T = locate_within(module, given_type)
 	if(!T)
-		T = locate(given_type) in module.modules
+		T = locate_in_list(module.modules, given_type)
 	return T
 
 // Do we support specific upgrades?

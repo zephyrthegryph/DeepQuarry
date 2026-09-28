@@ -78,7 +78,7 @@
 	var/mob/living/entrant = arrived
 	if(entrant.faction == GENERATED_STATION_DEFENDER_FACTION)
 		return
-	for(var/obj/machinery/generated_station_data_relay/relay in src)
+	for(var/obj/machinery/generated_station_data_relay/relay in contents_of(src))
 		if(relay.department_id == department_id && relay.report_hostile(entrant, 85))
 			return
 

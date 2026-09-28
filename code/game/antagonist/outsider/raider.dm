@@ -111,8 +111,8 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 	GLOB.raiders = src
 
 /datum/antagonist/raider/update_access(mob/living/player)
-	for(var/obj/item/storage/wallet/W in player.contents)
-		for(var/obj/item/card/id/id in W.contents)
+	for(var/obj/item/storage/wallet/W in contents_of(player))
+		for(var/obj/item/card/id/id in contents_of(W))
 			id.name = "[player.real_name]'s Passport"
 			id.registered_name = player.real_name
 			W.name = "[initial(W.name)] ([id.name])"
@@ -313,7 +313,7 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 	player.equip_to_slot_or_del(new /obj/item/tank/vox(player), SLOT_ID_BACK)
 	player.equip_to_slot_or_del(new /obj/item/flashlight(player), SLOT_ID_POCKET_R)
 
-	player.internal = locate(/obj/item/tank) in player.contents
+	player.internal = locate_within(player, /obj/item/tank)
 	if(istype(player.internal,/obj/item/tank) && player.internals)
 		player.internals.icon_state = "internal1"
 

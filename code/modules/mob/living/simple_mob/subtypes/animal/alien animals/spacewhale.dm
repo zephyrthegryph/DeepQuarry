@@ -74,12 +74,12 @@
 	if(restless && prob(5))
 		handle_restless()
 
-	for(var/obj/effect/decal/cleanable/C in loc)
+	for(var/obj/effect/decal/cleanable/C in contents_of(loc))
 		qdel(C)
-	for(var/obj/item/organ/O in loc)
+	for(var/obj/item/organ/O in contents_of(loc))
 		qdel(O)
 	var/detected = FALSE
-	for(var/obj/effect/overmap/event/E in loc)
+	for(var/obj/effect/overmap/event/E in contents_of(loc))
 		detected = TRUE
 		if(istype(E, /obj/effect/overmap/event/carp))
 			qdel(E)
@@ -89,7 +89,7 @@
 			qdel(E)
 			return
 	if(held_hazard && !detected && prob(hazard_drop_chance))
-		if(!(locate(/obj/effect/overmap/visitable/sector) in loc))
+		if(!(locate_within(loc, /obj/effect/overmap/visitable/sector)))
 			new held_hazard(loc)
 			held_hazard = null
 

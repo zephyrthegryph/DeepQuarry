@@ -138,10 +138,10 @@
 	var/area/department_area = get_area(origin)
 	var/turf/fallback
 	for(var/turf/simulated/floor/T in range(8, origin))
-		if(get_area(T) != department_area || T.density || locate(/obj/machinery/door) in T)
+		if(get_area(T) != department_area || T.density || locate_within(T, /obj/machinery/door))
 			continue
 		var/blocked = FALSE
-		for(var/atom/movable/occupant in T)
+		for(var/atom/movable/occupant in contents_of(T))
 			if(occupant.density || istype(occupant, /obj/machinery))
 				blocked = TRUE
 				break
@@ -157,10 +157,10 @@
 	// Search the complete department before accepting the local fallback so every
 	// planned department deterministically receives its control node.
 	for(var/turf/simulated/floor/T in area_contents_of_type(department_area, /turf/simulated/floor))
-		if(T.density || locate(/obj/machinery/door) in T)
+		if(T.density || locate_within(T, /obj/machinery/door))
 			continue
 		var/blocked = FALSE
-		for(var/atom/movable/occupant in T)
+		for(var/atom/movable/occupant in contents_of(T))
 			if(occupant.density || istype(occupant, /obj/machinery))
 				blocked = TRUE
 				break

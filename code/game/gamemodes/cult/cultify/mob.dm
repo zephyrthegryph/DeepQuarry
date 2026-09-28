@@ -52,8 +52,8 @@
 		narsimage.pixel_y = new_y
 		narglow.pixel_x = new_x
 		narglow.pixel_y = new_y
-		narsimage.loc = loc
-		narglow.loc = loc
+		image_anchor(narsimage, loc)
+		image_anchor(narglow, loc)
 		//Display the new narsimage to the player
 		src << narsimage
 		src << narglow

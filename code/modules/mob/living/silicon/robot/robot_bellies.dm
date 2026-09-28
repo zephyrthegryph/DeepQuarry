@@ -31,9 +31,9 @@
 		for (var/belly in vore_organs)
 			var/obj/belly/B = belly
 			if(b_class == "sleeper" && (B.silicon_belly_overlay_preference == "Vorebelly" || B.silicon_belly_overlay_preference == "Both") || b_class != "sleeper")
-				if(B.digest_mode != DM_DIGEST || B.belly_sprite_to_affect != b_class || !B.contents.len)
+				if(B.digest_mode != DM_DIGEST || B.belly_sprite_to_affect != b_class || !contents_count(B))
 					continue
-				for(var/contents in B.contents)
+				for(var/contents in contents_of(B))
 					if(isliving(contents))
 						LAZYSET(vore_light_states, b_class, 1)
 						return

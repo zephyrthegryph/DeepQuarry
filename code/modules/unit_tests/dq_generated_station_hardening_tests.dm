@@ -50,7 +50,7 @@
 		var/atom_count = 0
 		var/breathable_floor_count = 0
 		for(var/turf/open/T in block(locate(origin_x, origin_y, world.maxz), locate(origin_x + 71, origin_y + 71, world.maxz)))
-			for(var/atom/movable/thing in T)
+			for(var/atom/movable/thing in contents_of(T))
 				if(!QDELETED(thing))
 					atom_count++
 			if(istype(T, /turf/simulated/floor) && istype(get_area(T), /area/generated_station))

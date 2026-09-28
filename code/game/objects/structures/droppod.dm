@@ -90,7 +90,7 @@ REF_OWNED(/obj/structure/drop_pod, "air")
 	if(auto_open)
 		om_after(src, 2 SECONDS, PROC_REF(open_pod), TRUE)
 	else
-		for(var/mob/M in src)
+		for(var/mob/M in contents_of(src))
 			to_chat(M, span_danger("You've landed! Open the hatch if you think it's safe! \The [src] has enough air to last for a while..."))
 
 /obj/structure/drop_pod/proc/open_pod(dropped)
@@ -100,7 +100,7 @@ REF_OWNED(/obj/structure/drop_pod, "air")
 		return
 	icon_state = "[initial(icon_state)]_open"
 	playsound(src, 'sound/effects/magnetclamp.ogg', 100, 1)
-	for(var/atom/movable/AM in src)
+	for(var/atom/movable/AM in contents_of(src))
 		AM.forceMove(loc)
 		AM.set_dir(SOUTH) // cus
 	QDEL_NULL(air)
@@ -119,7 +119,7 @@ REF_OWNED(/obj/structure/drop_pod, "air")
 	effect = /obj/structure/drop_pod/proc/interaction_open
 
 /obj/structure/drop_pod/proc/interaction_open(mob/living/user, obj/item/held, datum/interaction/interaction)
-	if(istype(user) && (Adjacent(user) || (user in src)) && !user.incapacitated())
+	if(istype(user) && (Adjacent(user) || (is_in_holder(user, src))) && !user.incapacitated())
 		if(finished)
 			to_chat(user, span_warning("Nothing left to do with it now. Maybe you can break it down into materials."))
 		else

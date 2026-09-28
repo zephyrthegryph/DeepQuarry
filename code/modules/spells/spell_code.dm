@@ -250,7 +250,7 @@ GLOBAL_LIST_EMPTY(spell_cast_args)
 				to_chat(user, "Mmmf mrrfff!")
 				return 0
 
-	var/datum/spell/noclothes/spell = locate() in user.spell_list
+	var/datum/spell/noclothes/spell = locate_in_list(user.spell_list, /datum/spell/noclothes)
 	if((spell_flags & NEEDSCLOTHES) && !(spell && istype(spell)) && holder() == user)//clothes check
 		if(!user.wearing_wiz_garb())
 			return 0

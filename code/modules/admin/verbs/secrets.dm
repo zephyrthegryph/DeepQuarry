@@ -110,7 +110,7 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 							security++
 				if(!security)
 					//strip their stuff before they teleport into a cell :downs:
-					for(var/obj/item/W in H)
+					for(var/obj/item/W in contents_of(H))
 						if(istype(W, /obj/item/organ/external))
 							continue
 							//don't strip organs

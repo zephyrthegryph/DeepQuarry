@@ -161,7 +161,7 @@ REF_STATIC(/obj/item/organ, "assists_languages")
 		return
 
 	if(!owner && reagents)
-		var/datum/reagent/blood/B = locate(/datum/reagent/blood) in reagents.reagent_list
+		var/datum/reagent/blood/B = locate_in_list(reagents.reagent_list, /datum/reagent/blood)
 		if(B && prob(40) && !isbelly(loc))
 			reagents.remove_reagent(REAGENT_ID_BLOOD,0.1)
 			blood_splatter(src,B,1)
@@ -421,7 +421,7 @@ REF_STATIC(/obj/item/organ, "assists_languages")
 	. = ..()
 	if (. & EMP_PROTECT_SELF)
 		return
-	for(var/obj/O as anything in src.contents)
+	for(var/obj/O as anything in contents_of(src))
 		O.emp_act(severity, recursive)
 
 	if(!(robotic >= ORGAN_ASSISTED))
@@ -473,7 +473,7 @@ REF_STATIC(/obj/item/organ, "assists_languages")
 /obj/item/organ/proc/capture_transplant_data(mob/living/carbon/human/target)
 	var/datum/reagent/blood/transplant_blood = null
 	if(reagents)
-		transplant_blood = locate(/datum/reagent/blood) in reagents.reagent_list
+		transplant_blood = locate_in_list(reagents.reagent_list, /datum/reagent/blood)
 	transplant_data = list()
 	if(!transplant_blood)
 		transplant_data["species"] =    target?.species.name
@@ -520,7 +520,7 @@ REF_STATIC(/obj/item/organ, "assists_languages")
 		return
 
 	to_chat(user, span_notice("You take an experimental bite out of \the [src]."))
-	var/datum/reagent/blood/B = locate(/datum/reagent/blood) in reagents.reagent_list
+	var/datum/reagent/blood/B = locate_in_list(reagents.reagent_list, /datum/reagent/blood)
 	blood_splatter(src,B,1)
 
 	user.drop_from_inventory(src)

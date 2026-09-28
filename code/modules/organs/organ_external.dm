@@ -166,7 +166,7 @@ REF_BACK(/obj/item/organ/external, list("parent" = null, "applied_pressure" = nu
 	. = ..()
 	if (. & EMP_PROTECT_SELF)
 		return
-	for(var/obj/O as anything in src.contents)
+	for(var/obj/O as anything in contents_of(src))
 		O.emp_act(severity, recursive)
 
 	if(!(robotic >= ORGAN_ROBOT))
@@ -190,13 +190,13 @@ REF_BACK(/obj/item/organ/external, list("parent" = null, "applied_pressure" = nu
 
 /// Old attack_self (virtual: /obj/item/organ/proc/organ_self()): rip out embedded objects, then the organ's own self-use.
 /obj/item/organ/external/organ_self(mob/living/user, obj/item/held, datum/interaction/interaction, callback)
-	if(!contents.len)
+	if(!contents_count(src))
 		return ..(user, held, interaction, TRUE)
 	var/list/removable_objects = list()
 	for(var/obj/item/organ/external/E in (contents + src))
 		if(!istype(E))
 			continue
-		for(var/obj/item/I in E.contents)
+		for(var/obj/item/I in contents_of(E))
 			if(istype(I,/obj/item/organ))
 				continue
 			removable_objects |= I
@@ -828,7 +828,7 @@ This function completely restores a damaged organ to perfect condition.
 //external organs handle brokenness a bit differently when it comes to damage. Instead get_trauma() is checked in update_damages()
 //this also ensures that an external organ cannot be "broken" without broken_description being set.
 /obj/item/organ/external/is_broken()
-	return ((status & ORGAN_CUT_AWAY) || is_fractured() && (!splinted || (splinted && (splinted in src.contents) && prob(30))))
+	return ((status & ORGAN_CUT_AWAY) || is_fractured() && (!splinted || (splinted && (splinted?.loc == src) && prob(30))))
 
 //Determines if we even need to process this organ.
 /obj/item/organ/external/proc/need_process()

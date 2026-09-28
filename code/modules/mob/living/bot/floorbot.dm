@@ -330,7 +330,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/toolbox/mechanical, INTERACT_INSERT(/obj/i
 
 /// Old attackby: ten floor tiles in an empty toolbox start a floorbot.
 /obj/item/storage/toolbox/mechanical/proc/interaction_floorbot_tiles(mob/living/user, obj/item/stack/tile/floor/T, datum/interaction/interaction)
-	if(contents.len >= 1 || has_latent()) // ALLOW(latent): latent entries checked
+	if(contents_count(src) >= 1 || has_latent()) // ALLOW(latent): latent entries checked
 		to_chat(user, span_notice("They wont fit in as there is already stuff inside."))
 		return INTERACTION_HANDLED_PASS
 	if(user.s_active)

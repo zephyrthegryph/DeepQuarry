@@ -325,7 +325,7 @@ EXTEND_INTERACTIONS(/obj/effect/plant, \
 	var/list/turf/simulated/floor/turfs = list() // list of all the empty floor turfs in the hallway areas // start: keeping old method over upstream's landmark method
 	for(var/areapath in typesof(/area/hallway))
 		var/area/A = locate(areapath)
-		for(var/turf/simulated/floor/F in A.contents)
+		for(var/turf/simulated/floor/F in contents_of(A))
 			if(!F.check_density())
 				turfs += F
 

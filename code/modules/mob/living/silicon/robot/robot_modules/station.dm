@@ -380,14 +380,14 @@ REF_OWNED_LIST(/obj/item/robot_module, list("modules", "emag", "synths"))
 
 /obj/item/robot_module/robot/medical/surgeon/respawn_consumable(mob/living/silicon/robot/R, amount)
 
-	var/obj/item/reagent_containers/syringe/S = locate() in src.modules
+	var/obj/item/reagent_containers/syringe/S = locate_in_list(src.modules, /obj/item/reagent_containers/syringe)
 	if(S && S.mode == 2)
 		S.reagents.clear_reagents()
 		S.mode = initial(S.mode)
 		S.desc = initial(S.desc)
 		S.update_icon()
 
-	var/obj/item/reagent_containers/spray/PS = locate() in src.emag
+	var/obj/item/reagent_containers/spray/PS = locate_in_list(src.emag, /obj/item/reagent_containers/spray)
 	if(PS)
 		PS.reagents.add_reagent(REAGENT_ID_PACID, 2 * amount)
 
@@ -448,14 +448,14 @@ REF_OWNED_LIST(/obj/item/robot_module, list("modules", "emag", "synths"))
 
 /obj/item/robot_module/robot/medical/crisis/respawn_consumable(mob/living/silicon/robot/R, amount)
 
-	var/obj/item/reagent_containers/syringe/S = locate() in src.modules
+	var/obj/item/reagent_containers/syringe/S = locate_in_list(src.modules, /obj/item/reagent_containers/syringe)
 	if(S && S.mode == 2)
 		S.reagents.clear_reagents()
 		S.mode = initial(S.mode)
 		S.desc = initial(S.desc)
 		S.update_icon()
 
-	var/obj/item/reagent_containers/spray/PS = locate() in src.emag
+	var/obj/item/reagent_containers/spray/PS = locate_in_list(src.emag, /obj/item/reagent_containers/spray)
 	if(PS)
 		PS.reagents.add_reagent(REAGENT_ID_PACID, 2 * amount)
 
@@ -547,14 +547,14 @@ REF_OWNED_LIST(/obj/item/robot_module, list("modules", "emag", "synths"))
 
 /obj/item/robot_module/robot/security/respawn_consumable(mob/living/silicon/robot/R, amount)
 	..()
-	var/obj/item/flash/F = locate() in src.modules
+	var/obj/item/flash/F = locate_in_list(src.modules, /obj/item/flash)
 	if(F && F.broken)
 		F.broken = 0
 		F.times_used = 0
 		F.icon_state = "flash"
 	else if(F.times_used)
 		F.times_used--
-	var/obj/item/gun/energy/robotic/taser/T = locate() in src.modules
+	var/obj/item/gun/energy/robotic/taser/T = locate_in_list(src.modules, /obj/item/gun/energy/robotic/taser)
 	if(!T)
 		return
 	if(T.power_supply.charge < T.power_supply.maxcharge)
@@ -627,10 +627,10 @@ REF_OWNED_LIST(/obj/item/robot_module, list("modules", "emag", "synths"))
 
 /obj/item/robot_module/robot/janitor/respawn_consumable(mob/living/silicon/robot/R, amount)
 	..()
-	var/obj/item/lightreplacer/LR = locate() in src.modules
+	var/obj/item/lightreplacer/LR = locate_in_list(src.modules, /obj/item/lightreplacer)
 	LR?.Charge(R, amount)
 
-	var/obj/item/reagent_containers/spray/LS = locate() in src.emag
+	var/obj/item/reagent_containers/spray/LS = locate_in_list(src.emag, /obj/item/reagent_containers/spray)
 	if(LS)
 		LS.reagents.add_reagent(REAGENT_ID_LUBE, 2 * amount)
 
@@ -702,7 +702,7 @@ REF_OWNED_LIST(/obj/item/robot_module, list("modules", "emag", "synths"))
 
 /obj/item/robot_module/robot/clerical/butler/respawn_consumable(mob/living/silicon/robot/R, amount)
 	..()
-	var/obj/item/reagent_containers/food/drinks/bottle/small/beer/PB = locate() in src.emag
+	var/obj/item/reagent_containers/food/drinks/bottle/small/beer/PB = locate_in_list(src.emag, /obj/item/reagent_containers/food/drinks/bottle/small/beer)
 	if(PB)
 		PB.reagents.add_reagent(REAGENT_ID_BEER2, 2 * amount)
 
@@ -745,7 +745,7 @@ REF_OWNED_LIST(/obj/item/robot_module, list("modules", "emag", "synths"))
 
 /obj/item/robot_module/robot/clerical/honkborg/respawn_consumable(mob/living/silicon/robot/R, amount)
 	..()
-	var/obj/item/reagent_containers/spray/LS = locate() in src.emag
+	var/obj/item/reagent_containers/spray/LS = locate_in_list(src.emag, /obj/item/reagent_containers/spray)
 	if(LS)
 		LS.reagents.add_reagent(REAGENT_ID_LUBE, 2 * amount)
 
@@ -862,7 +862,7 @@ REF_OWNED_LIST(/obj/item/robot_module, list("modules", "emag", "synths"))
 
 /obj/item/robot_module/robot/research/respawn_consumable(mob/living/silicon/robot/R, amount)
 
-	var/obj/item/reagent_containers/syringe/S = locate() in src.modules
+	var/obj/item/reagent_containers/syringe/S = locate_in_list(src.modules, /obj/item/reagent_containers/syringe)
 	if(S && S.mode == 2)
 		S.reagents.clear_reagents()
 		S.mode = initial(S.mode)
@@ -961,7 +961,7 @@ REF_OWNED_LIST(/obj/item/robot_module, list("modules", "emag", "synths"))
 	src.modules += new /obj/item/rcd/electric/mounted/borg/lesser(src)
 
 /obj/item/robot_module/drone/respawn_consumable(mob/living/silicon/robot/R, amount)
-	var/obj/item/lightreplacer/LR = locate() in src.modules
+	var/obj/item/lightreplacer/LR = locate_in_list(src.modules, /obj/item/lightreplacer)
 	LR?.Charge(R, amount)
 	..()
 	return

@@ -169,7 +169,7 @@
 				om_ask(user, /datum/om/prompt/choice/commcard_export_field, PROC_REF(export_item_field_chosen), crate = E, index = href_list["index"], edit_message = href_list["edit"], edit_default = href_list["default"])
 
 			if(href_list["delete"])
-				E.contents.Cut(href_list["index"], href_list["index"] + 1)
+				E.contents.Cut(href_list["index"], href_list["index"] + 1) // ALLOW(containment): datum field list named contents, not atom contents
 
 		// Else clause means they're editing/deleting the whole export report, rather than a specific item in it
 		else if(href_list["edit"])

@@ -31,7 +31,7 @@
 
 	for(var/area/A in hidden_areas)
 
-		for(var/turf/T in A.contents)
+		for(var/turf/T in contents_of(A))
 			invisible[T] = T
 
 // Don't call the parernt, we work inverted!

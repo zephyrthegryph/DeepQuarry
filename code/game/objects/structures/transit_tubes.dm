@@ -241,7 +241,7 @@
 	moving = 1
 
 	var/obj/structure/transit_tube/current_tube = null
-	for(var/obj/structure/transit_tube/tube in loc)
+	for(var/obj/structure/transit_tube/tube in contents_of(loc))
 		if(tube.has_exit(dir))
 			current_tube = tube
 			break

@@ -24,7 +24,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/csandwich, INTERACT
 		update()
 		return INTERACTION_HANDLED_PASS
 	else if(istype(W,/obj/item/reagent_containers/food/snacks))
-		if(src.contents.len > sandwich_limit)
+		if(contents_count(src) > sandwich_limit)
 			to_chat(user, span_red("If you put anything else on \the [src] it's going to collapse."))
 			return INTERACTION_HANDLED_PASS
 		to_chat(user, span_blue("You layer [W] over \the [src]."))
@@ -72,7 +72,7 @@ REF_OWNED_LIST(/obj/item/reagent_containers/food/snacks/csandwich, "ingredients"
 
 /obj/item/reagent_containers/food/snacks/csandwich/examine(mob/user)
 	. = ..()
-	if(contents.len)
+	if(contents_count(src))
 		var/obj/item/O = pick(contents)
 		. += span_blue("You think you can see [O.name] in there.")
 

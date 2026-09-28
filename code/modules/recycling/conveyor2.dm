@@ -138,7 +138,7 @@
 		return PROCESS_KILL
 
 	var/list/movable_contents = list()
-	for(var/atom/movable/A in loc)
+	for(var/atom/movable/A in contents_of(loc))
 		if(A == src || A.anchored || istype(A, /obj/effect/abstract) || A.is_incorporeal())
 			continue
 		movable_contents += A
@@ -213,11 +213,11 @@
 	atom_break()
 	update()
 
-	var/obj/machinery/conveyor/C = locate() in get_step(src, dir)
+	var/obj/machinery/conveyor/C = locate_within(get_step(src, dir), /obj/machinery/conveyor)
 	if(C)
 		C.set_operable(dir, id, 0)
 
-	C = locate() in get_step(src, turn(dir,180))
+	C = locate_within(get_step(src, turn(dir,180)), /obj/machinery/conveyor)
 	if(C)
 		C.set_operable(turn(dir,180), id, 0)
 
@@ -230,7 +230,7 @@
 	operable = op
 
 	update()
-	var/obj/machinery/conveyor/C = locate() in get_step(src, stepdir)
+	var/obj/machinery/conveyor/C = locate_within(get_step(src, stepdir), /obj/machinery/conveyor)
 	if(C)
 		C.set_operable(stepdir, id, op)
 

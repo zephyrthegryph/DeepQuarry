@@ -300,7 +300,7 @@
 
 /obj/item/projectile/webball/on_hit(atom/target, blocked = 0)
 	if(isturf(target.loc))
-		var/obj/effect/spider/stickyweb/W = locate() in get_turf(target)
+		var/obj/effect/spider/stickyweb/W = locate_within(get_turf(target), /obj/effect/spider/stickyweb)
 		if(!W && prob(75))
 			visible_message(span_danger("\The [src] splatters a layer of web on \the [target]!"))
 			new /obj/effect/spider/stickyweb(target.loc)

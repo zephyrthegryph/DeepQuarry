@@ -90,7 +90,7 @@
 	var/eligible_value = 0
 	var/list/ineligible = list()
 	var/list/producer_values = list()
-	for(var/obj/item/cargo as anything in crate.contents)
+	for(var/obj/item/cargo as anything in contents_of(crate))
 		if(istype(cargo, /obj/item/paper))
 			var/obj/item/paper/document = cargo
 			if(document.shipping_ledger_data)
@@ -298,7 +298,7 @@
 		return
 	var/item_ref = params["ref"]
 	latent_materialize_all() // a walk needs real things (C5)
-	var/obj/item/item = locate(item_ref) in contents // ALLOW(latent): materialized above
+	var/obj/item/item = locate_within(src, item_ref) // ALLOW(latent): materialized above
 	switch(action)
 		if("buy")
 			return storefront_purchase(item, ui.user)

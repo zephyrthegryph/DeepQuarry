@@ -22,7 +22,7 @@
 	var/can_charge = TRUE
 
 /obj/item/gun/magic/consume_next_projectile()
-	if(checks_antimagic && locate(/obj/item/nullrod) in usr) return null
+	if(checks_antimagic && locate_within(usr, /obj/item/nullrod)) return null
 	if(!ispath(projectile_type)) return null
 	if(charges <= 0) return null
 

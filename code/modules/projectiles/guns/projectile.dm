@@ -51,8 +51,10 @@
 			allowed_magazines += /obj/item/ammo_magazine/smart
 			if(random_start_ammo)
 				var/ammo_cut = rand(0,ammo_magazine.max_ammo)
-				ammo_magazine.contents.Cut(0,ammo_cut)
-				ammo_magazine.stored_ammo.Cut(0,ammo_cut)
+				for(var/i in 1 to min(ammo_cut, length(ammo_magazine.stored_ammo)))
+					var/obj/item/ammo_casing/spent = ammo_magazine.stored_ammo[1]
+					ammo_magazine.stored_ammo.Cut(1, 2)
+					qdel(spent)
 
 	update_icon()
 
@@ -659,7 +661,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 		to_chat(user, span_notice("You start loading \the [src]."))
 		var/list/rounds = list()
 		storage.latent_materialize_all() // a walk needs real things (C5)
-		for(var/obj/item/ammo_casing/ammo in storage.contents) // ALLOW(latent): materialized above
+		for(var/obj/item/ammo_casing/ammo in contents_of(storage)) // ALLOW(latent): materialized above
 			if(caliber == ammo.caliber)
 				rounds += ammo
 		om_after(src, 1 SECOND, PROC_REF(load_from_storage), user, rounds)

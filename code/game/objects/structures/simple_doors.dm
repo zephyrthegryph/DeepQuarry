@@ -398,7 +398,7 @@
 		return FALSE // a Hulk destroys it, anyone else opens it: interaction_resin_hand()
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	var/mob/living/carbon/M = user
-	if(locate(/obj/item/organ/internal/xenos/hivenode) in M.internal_organs)
+	if(locate_in_list(M.internal_organs, /obj/item/organ/internal/xenos/hivenode))
 		visible_message (span_warning("[user] strokes the [name] and it melts away!"), 1)
 		Dismantle(1)
 		return TRUE

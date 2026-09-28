@@ -22,7 +22,7 @@
 				continue
 			else
 				T.ex_act(1)
-		for(var/atom/A in T)
+		for(var/atom/A in contents_of(T))
 			if(A.density)
 				if(distance < 7)
 					explosion(A,1,2,3)

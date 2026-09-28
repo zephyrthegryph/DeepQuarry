@@ -176,7 +176,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water, \
 		if(flying)
 			adjust_nutrition(-0.5)
 		return 0
-	if(locate(/obj/structure/catwalk) in loc)
+	if(locate_within(loc, /obj/structure/catwalk))
 		return 0
 	var/turf/simulated/floor/water/T = loc
 	if(istype(T))

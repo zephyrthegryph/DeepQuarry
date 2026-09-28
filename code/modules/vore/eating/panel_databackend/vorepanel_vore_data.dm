@@ -79,7 +79,7 @@
 			"our_type" = our_type
 		)
 		if(show_pictures) //disables icon mode
-			if(inside_belly.contents.len <= max_icon_content)
+			if(contents_count(inside_belly) <= max_icon_content)
 				icon_overflow = FALSE
 				info["icon"] = cached_nom_icon(O)
 			else
@@ -349,7 +349,7 @@
 					"our_type" = our_type
 				)
 				if(show_pictures) //disables icon mode
-					if(selected.contents.len <= max_icon_content)
+					if(contents_count(selected) <= max_icon_content)
 						icon_overflow = FALSE
 						info["icon"] = cached_nom_icon(O)
 					else

@@ -40,17 +40,17 @@
 			if(self.udder && prob(5))
 				self.udder.add_reagent(REAGENT_ID_MILK, rand(5, 10))
 
-		if(locate(/obj/effect/plant) in self.loc)
-			var/obj/effect/plant/SV = locate() in self.loc
+		if(locate_in_list(self.loc, /obj/effect/plant))
+			var/obj/effect/plant/SV = locate_in_list(self.loc, /obj/effect/plant)
 			SV.die_off(1)
 
-		if(locate(/obj/machinery/portable_atmospherics/hydroponics/soil/invisible) in self.loc)
-			var/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/SP = locate() in self.loc
+		if(locate_in_list(self.loc, /obj/machinery/portable_atmospherics/hydroponics/soil/invisible))
+			var/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/SP = locate_in_list(self.loc, /obj/machinery/portable_atmospherics/hydroponics/soil/invisible)
 			qdel(SP)
 
 		if(!self?.pulled_by_mob())
 			var/obj/effect/plant/food
-			food = locate(/obj/effect/plant) in oview(5,self.loc)
+			food = locate_in_list(oview(5,self.loc), /obj/effect/plant)
 			if(food)
 				var/step = get_step_to(self, food, 0)
 				self.Move(step)
@@ -58,7 +58,7 @@
 /mob/living/simple_mob/animal/goat/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
 	if(!stat)
-		for(var/obj/effect/plant/SV in loc)
+		for(var/obj/effect/plant/SV in contents_of(loc))
 			SV.die_off(1)
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/goat, INTERACT_ITEM(null, PROC_REF(goat_interaction_item)))

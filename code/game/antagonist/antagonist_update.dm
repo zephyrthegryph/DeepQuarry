@@ -21,7 +21,7 @@
 		H.change_appearance(APPEARANCE_ALL, H, species_whitelist = valid_species, state = GLOB.tgui_self_state)
 
 /datum/antagonist/proc/update_access(mob/living/player)
-	for(var/obj/item/card/id/id in player.contents)
+	for(var/obj/item/card/id/id in contents_of(player))
 		player.set_id_info(id)
 
 /datum/antagonist/proc/clear_indicators(datum/mind/recipient)

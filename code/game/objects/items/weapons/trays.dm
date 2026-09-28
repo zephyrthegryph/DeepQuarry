@@ -127,7 +127,7 @@ DECLARE_INTERACTIONS(/obj/item/tray, INTERACT_ITEM(null, PROC_REF(interaction_it
 	if(!isturf(loc))
 		return
 
-	for(var/obj/item/I in loc)
+	for(var/obj/item/I in contents_of(loc))
 		if( I != src && !I.anchored && !istype(I, /obj/item/clothing/under) && !istype(I, /obj/item/clothing/suit) && !istype(I, /obj/item/projectile) )
 			var/add = 0
 			if(I.w_class == ITEMSIZE_TINY)
@@ -158,10 +158,10 @@ DECLARE_INTERACTIONS(/obj/item/tray, INTERACT_ITEM(null, PROC_REF(interaction_it
 
 /obj/item/tray/proc/spill_where_dropped()
 	var/noTable = null
-	if(isturf(loc) && !(locate(/obj/structure/table) in loc))
+	if(isturf(loc) && !(locate_within(loc, /obj/structure/table)))
 		noTable = 1
 
-	if(isturf(loc) && !(locate(/mob/living) in loc))
+	if(isturf(loc) && !(locate_within(loc, /mob/living)))
 		cut_overlays()
 		for(var/obj/item/I in carrying)
 			I.forceMove(loc)

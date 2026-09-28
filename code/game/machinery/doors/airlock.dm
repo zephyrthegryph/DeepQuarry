@@ -1098,7 +1098,7 @@ About the new airlock wires panel:
 	..()
 	take_damage(crush_damage, BRUTE)
 	latent_materialize_all() // crushing reaches the contents (C5)
-	for(var/atom/movable/AM in src) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
+	for(var/atom/movable/AM in contents_of(src)) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
 		AM.airlock_crush()
 	return TRUE
 
@@ -1194,7 +1194,7 @@ About the new airlock wires panel:
 	GLOB.motiontracker_service.ping(src,100)
 
 	for(var/turf/turf in locs)
-		var/obj/structure/window/killthis = (locate(/obj/structure/window) in turf)
+		var/obj/structure/window/killthis = (locate_within(turf, /obj/structure/window))
 		if(killthis)
 			killthis.ex_act(2)//Smashin windows
 	. = ..()

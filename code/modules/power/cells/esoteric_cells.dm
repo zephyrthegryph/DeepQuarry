@@ -17,7 +17,7 @@
 
 		if(prob(round(charge / 250)) && charge >= (maxcharge / 4))
 
-			if(locate(/obj/effect/temporary_effect/pulse/staticshock) in T)
+			if(locate_within(T, /obj/effect/temporary_effect/pulse/staticshock))
 				continue
 
 			var/conductive = FALSE
@@ -61,7 +61,7 @@
 			var/obj/item/projectile/beam/shock/weak/P = new (get_turf(src))
 			P.launch_projectile_from_turf(L, BP_TORSO)
 
-	var/obj/item/plastique/C4 = locate() in get_turf(src)
+	var/obj/item/plastique/C4 = locate_within(get_turf(src), /obj/item/plastique)
 
 	if(C4)
 		C4.visible_message(span_danger("The current fries \the [C4]!"))

@@ -433,7 +433,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	var/list/batch
 	do
 		batch = list()
-		for(var/atom/movable/existing as anything in A.contents)
+		for(var/atom/movable/existing as anything in contents_of(A))
 			if(ismob(existing) || QDELETED(existing))
 				continue
 			batch += existing

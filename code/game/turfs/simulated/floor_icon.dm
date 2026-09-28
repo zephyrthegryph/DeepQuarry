@@ -198,7 +198,7 @@ GLOBAL_DATUM_INIT(no_ceiling_image, /image, new)
 					continue
 
 				//Ok, now we start testing all the atoms in the target turf
-				for (var/a in T) //No implicit typecasting here, faster
+				FOR_CONTENTS(var/a, T) //No implicit typecasting here, faster
 
 					if (istype(a, d_type))
 						//It's the right type, so we're sure it will have the vars we want.
@@ -241,7 +241,7 @@ GLOBAL_DATUM_INIT(no_ceiling_image, /image, new)
 					continue
 
 				//Ok, now we start testing all the atoms in the target turf
-				for (var/a in T) //No implicit typecasting here, faster
+				FOR_CONTENTS(var/a, T) //No implicit typecasting here, faster
 
 					if (istype(a, d_type))
 						//It's the right type, so we're sure it will have the vars we want.

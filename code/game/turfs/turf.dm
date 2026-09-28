@@ -504,7 +504,7 @@ DECLARE_INTERACTIONS(/turf, \
 	var/obj/effect/decal/cleanable/vomit/V = new /obj/effect/decal/cleanable/vomit(src, contagion_copies(M.get_spreadable_contagions()))
 
 	if (QDELETED(V))
-		V = locate() in src
+		V = locate_within(src, /obj/effect/decal/cleanable/vomit)
 	if(!V)
 		return
 	if(toxvomit == VOMIT_PURPLE)
@@ -538,7 +538,7 @@ DECLARE_INTERACTIONS(/turf, \
 		var/turf/simulated/T = src
 		T.dirt = 0
 
-	for(var/am in src)
+	for(var/am in contents_of(src))
 		if(am == src)
 			continue
 		var/atom/movable/movable_content = am

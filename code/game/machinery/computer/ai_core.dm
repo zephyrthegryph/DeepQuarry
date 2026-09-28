@@ -28,7 +28,7 @@ DECLARE_INTERACTIONS(/obj/structure/AIcore, INTERACT_ITEM(null, PROC_REF(interac
 				icon_state = "1"
 				circuit = P
 				user.drop_item()
-				P.loc = src
+				P.forceMove(src)
 		if(2)
 			if(istype(P, /obj/item/stack/cable_coil))
 				var/obj/item/stack/cable_coil/C = P
@@ -89,7 +89,7 @@ DECLARE_INTERACTIONS(/obj/structure/AIcore, INTERACT_ITEM(null, PROC_REF(interac
 					GLOB.antag_service.clear_antag_roles(occupant.mind, 1)
 
 				user.drop_item()
-				P.loc = src
+				P.forceMove(src)
 				brain = P
 				to_chat(user, "Added [P].")
 				icon_state = "3b"
@@ -183,14 +183,14 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore, REGISTRY_EMPTY_AI_CORES)
 				to_chat(user, span_notice("You remove the circuit board."))
 				state = 1
 				icon_state = "0"
-				circuit.loc = loc
+				circuit.forceMove(loc)
 				circuit = null
 				return ITEM_INTERACT_SUCCESS
 		if(3)
 			if(brain)
 				playsound(src, tool.usesound, 50, 1)
 				to_chat(user, span_notice("You remove the brain."))
-				brain.loc = loc
+				brain.forceMove(loc)
 				brain = null
 				icon_state = "3"
 				return ITEM_INTERACT_SUCCESS
@@ -230,7 +230,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore/deactivated, REGISTRY_AI_CORES_DEACTIV
 
 /obj/structure/AIcore/deactivated/proc/load_ai(mob/living/silicon/ai/transfer, obj/item/aicard/card, mob/user)
 
-	if(!istype(transfer) || locate(/mob/living/silicon/ai) in src)
+	if(!istype(transfer) || locate_within(src, /mob/living/silicon/ai))
 		return
 
 	if(transfer.deployed_shell)
@@ -263,7 +263,7 @@ EXTEND_INTERACTIONS(/obj/structure/AIcore/deactivated, INTERACT_ITEM(null, PROC_
 
 	if(istype(W, /obj/item/aicard))
 		var/obj/item/aicard/card = W
-		var/mob/living/silicon/ai/transfer = locate() in card
+		var/mob/living/silicon/ai/transfer = locate_within(card, /mob/living/silicon/ai)
 		if(transfer)
 			load_ai(transfer,card,user)
 		else

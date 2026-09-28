@@ -196,7 +196,7 @@
 
 	switch(action)
 		if("buy")
-			var/datum/uplink_item/UI = (locate(params["ref"]) in GLOB.uplink.items)
+			var/datum/uplink_item/UI = (locate_in_list(GLOB.uplink.items, params["ref"]))
 			UI.buy(src, ui.user)
 			return TRUE
 		if("lock")

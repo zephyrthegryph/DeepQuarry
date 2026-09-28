@@ -605,7 +605,7 @@
 /obj/machinery/power/rtg/apply_mapped_upgrades()
 	// Detect new parts placed by mappers
 	var/list/parts_found = list()
-	for(var/i = 1, i <= loc.contents.len, i++)
+	for(var/i = 1, i <= contents_count(loc), i++)
 		var/obj/item/W = loc.contents[i]
 		if(istype(W, /obj/item/stock_parts/capacitor))
 			parts_found.Add(W)
@@ -616,16 +616,16 @@
 	if(parts_found.len == 0)
 		return
 	materialize_parts()
-	if(locate(/obj/item/stock_parts/capacitor) in parts_found)
+	if(locate_in_list(parts_found, /obj/item/stock_parts/capacitor))
 		while(TRUE)
-			var/obj/item/stock_parts/capacitor/C = locate(/obj/item/stock_parts/capacitor) in component_parts
+			var/obj/item/stock_parts/capacitor/C = locate_in_list(component_parts, /obj/item/stock_parts/capacitor)
 			if(isnull(C))
 				break
 			component_parts.Remove(C)
 			qdel(C)
-	if(locate(/obj/item/stock_parts/micro_laser) in parts_found)
+	if(locate_in_list(parts_found, /obj/item/stock_parts/micro_laser))
 		while(TRUE)
-			var/obj/item/stock_parts/micro_laser/M = locate(/obj/item/stock_parts/micro_laser) in component_parts
+			var/obj/item/stock_parts/micro_laser/M = locate_in_list(component_parts, /obj/item/stock_parts/micro_laser)
 			if(isnull(M))
 				break
 			component_parts.Remove(M)

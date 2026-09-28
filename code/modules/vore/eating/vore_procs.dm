@@ -87,7 +87,7 @@
 	// Actually shove prey into the belly.
 	if(istype(prey.loc, /obj/item/holder))
 		var/obj/item/holder/H = prey.loc
-		for(var/mob/living/M in H.contents)
+		for(var/mob/living/M in contents_of(H))
 			belly.nom_atom(M, user)
 			if(M.loc == H) // In case nom_atom failed somehow.
 				M.forceMove(get_turf(user))

@@ -47,7 +47,7 @@ REF_OWNED(/obj/machinery/pump, "cell")
 	qdel(src.reagents)
 	src.reagents = R
 
-	cell = locate(/obj/item/cell) in src
+	cell = locate_within(src, /obj/item/cell)
 
 /obj/machinery/pump/update_icon()
 	..()

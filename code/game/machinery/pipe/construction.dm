@@ -195,7 +195,7 @@ DECLARE_INTERACTIONS(/obj/item/pipe, \
 
 	var/obj/machinery/atmospherics/fakeA = pipe_type
 	var/flags = initial(fakeA.pipe_flags)
-	for(var/obj/machinery/atmospherics/M in loc)
+	for(var/obj/machinery/atmospherics/M in contents_of(loc))
 		if((M.pipe_flags & flags & PIPING_ONE_PER_TURF))	//Only one dense/requires density object per tile, eg connectors/cryo/heater/coolers.
 			to_chat(user, span_warning("Something is hogging the tile!"))
 			return TRUE
@@ -272,7 +272,7 @@ DECLARE_INTERACTIONS(/obj/item/pipe, \
 
 /obj/item/pipe_meter/wrench_act(mob/user, obj/item/W)
 	var/obj/machinery/atmospherics/pipe/pipe
-	for(var/obj/machinery/atmospherics/pipe/P in loc)
+	for(var/obj/machinery/atmospherics/pipe/P in contents_of(loc))
 		if(P.piping_layer == piping_layer)
 			pipe = P
 			break

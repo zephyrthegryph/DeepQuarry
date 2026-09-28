@@ -25,7 +25,7 @@
 
 	// We nullspace ourselves because some objects use their contents (e.g. storage) and some items may drop everything in their contents on deconstruct.
 	parent_handle = om_handle(loc)
-	loc = null
+	moveToNullspace()
 
 	// Mouse opacity can get set to opaque by some objects when placed into the object's contents (storage containers).
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT

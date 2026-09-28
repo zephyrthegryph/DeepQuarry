@@ -21,7 +21,7 @@
 	var/mob/owner = src?.eye_owner()
 	if(owner)
 		T = get_turf(T)
-		loc = T
+		loc = T // ALLOW(containment): camera eye abstract move: must not trigger Entered/Crossed
 
 		var/mob/living/silicon/ai/ai = owner
 		if(cancel_tracking)

@@ -40,7 +40,7 @@ EXTEND_INTERACTIONS(/obj/effect/wingrille_spawn, \
 
 /obj/effect/wingrille_spawn/proc/activate()
 	if(activated) return
-	if (!locate(/obj/structure/grille) in get_turf(src))
+	if (!locate_within(get_turf(src), /obj/structure/grille))
 		var/obj/structure/grille/G = new /obj/structure/grille(src.loc)
 		handle_grille_spawn(G)
 	var/list/neighbours = list()

@@ -71,7 +71,7 @@
 	H.forceMove(T)
 	phase_in(H,get_turf(H))
 
-	for(var/obj/item/grab/G in H.contents)
+	for(var/obj/item/grab/G in contents_of(H))
 		var/mob/grabbed = G?.grab_target()
 		if(grabbed)
 			phase_out(grabbed,get_turf(grabbed))

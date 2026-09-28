@@ -410,8 +410,8 @@
 	circuit.construct(B)
 	circuit.moveToNullspace()
 	B.circuit = circuit
-	var/obj/machinery/computer/LC = locate() in get_step(B, turn(B.dir, 90))
-	var/obj/machinery/computer/RC = locate() in get_step(B, turn(B.dir, -90))
+	var/obj/machinery/computer/LC = locate_within(get_step(B, turn(B.dir, 90)), /obj/machinery/computer)
+	var/obj/machinery/computer/RC = locate_within(get_step(B, turn(B.dir, -90)), /obj/machinery/computer)
 	if(LC)
 		LC.update_icon()
 	if(RC)

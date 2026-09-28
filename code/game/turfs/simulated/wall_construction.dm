@@ -240,7 +240,7 @@
 	effect = /turf/simulated/wall/proc/burn_away_rot
 
 /datum/interaction/wall_burn_rot/applies_to(atom/target)
-	return (locate(/obj/effect/overlay/wallrot) in target) ? TRUE : FALSE
+	return (locate_within(target, /obj/effect/overlay/wallrot)) ? TRUE : FALSE
 
 /datum/interaction/wall_burn_rot/messages(mob/actor, atom/target, obj/item/held)
 	return list("You burn away the fungi with \the [held].", null)

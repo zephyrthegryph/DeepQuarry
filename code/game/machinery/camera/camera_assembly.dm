@@ -93,7 +93,7 @@
 /obj/item/camera_assembly/crowbar_act(mob/user, obj/item/tool)
 	if(!LAZYLEN(upgrades))
 		return FALSE
-	var/obj/upgrade = locate(/obj) in upgrades
+	var/obj/upgrade = locate_in_list(upgrades, /obj)
 	if(upgrade)
 		to_chat(user, span_notice("You unattach an upgrade from the assembly."))
 		playsound(src, tool.usesound, 50, TRUE)

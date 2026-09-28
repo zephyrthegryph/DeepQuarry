@@ -166,7 +166,7 @@
 	// the base attack() skip its instant cooldown/animation — already paid above.
 	melee_swing_resolving = TRUE
 	for(var/turf/T as anything in swing_tiles)
-		for(var/mob/living/victim in T)
+		for(var/mob/living/victim in contents_of(T))
 			if(victim == src)
 				continue
 			if(QDELETED(weapon))

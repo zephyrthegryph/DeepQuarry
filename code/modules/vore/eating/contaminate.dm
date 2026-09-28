@@ -118,6 +118,6 @@ EXTEND_INTERACTIONS(/obj/structure/sink, INTERACT_ITEM("Wash", PROC_REF(sink_was
 /obj/item/clothing/suit/storage/gurgle_contaminate(atom/movable/item_storage = null, contamination_flavor = "Generic", contamination_color = "green")
 	if(pockets)
 		if(pockets.contents)
-			for(var/obj/item/O in pockets.contents)
+			for(var/obj/item/O in contents_of(pockets))
 				O.gurgle_contaminate(item_storage, contamination_flavor, contamination_color)
 	..()

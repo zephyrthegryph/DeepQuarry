@@ -114,7 +114,7 @@
 
 /mob/observer/dead/Topic(href, href_list)
 	if (href_list["track"])
-		var/mob/target = locate(href_list["track"]) in REGISTRY_MEMBERS(REGISTRY_MOBS)
+		var/mob/target = locate_in_list(REGISTRY_MEMBERS(REGISTRY_MOBS), href_list["track"])
 		if(target)
 			ManualFollow(target)
 	if(href_list["reenter"])

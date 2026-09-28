@@ -28,7 +28,7 @@
 	switch(action)
 		if("alarm")
 			if(ui_ref)
-				var/obj/machinery/alarm/alarm = locate(params["alarm"]) in (LAZYLEN(monitored_alarms) ? weak_list_live(monitored_alarms) : REGISTRY_MEMBERS(REGISTRY_MACHINES))
+				var/obj/machinery/alarm/alarm = locate_in_list((LAZYLEN(monitored_alarms) ? weak_list_live(monitored_alarms) : REGISTRY_MEMBERS(REGISTRY_MACHINES)), params["alarm"])
 				if(alarm)
 					var/datum/tgui_state/TS = generate_state(alarm)
 					alarm.tgui_interact(ui.user, parent_ui = ui_ref, state = TS)

@@ -50,8 +50,8 @@
 	if(!ask_questions)
 		return
 
-	var/obj/item/storage/bible/B = locate(/obj/item/storage/bible) in H
-	var/obj/item/card/id/I = locate(/obj/item/card/id) in H
+	var/obj/item/storage/bible/B = locate_within(H, /obj/item/storage/bible)
+	var/obj/item/card/id/I = locate_within(H, /obj/item/card/id)
 
 	if(!B || !I)
 		return

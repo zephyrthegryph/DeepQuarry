@@ -53,7 +53,7 @@ DECLARE_INTERACTIONS(/obj/item/moneybag, \
 		C.forceMove(src)
 	if (istype(W, /obj/item/moneybag))
 		var/obj/item/moneybag/C = W
-		for (var/obj/O in C.contents)
+		for (var/obj/O in contents_of(C))
 			O.forceMove(src)
 		to_chat(user, span_blue("You empty the [C.name] into the bag."))
 	return INTERACTION_HANDLED_PASS

@@ -81,7 +81,7 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 
 /datum/decl/hierarchy/outfit/proc/post_equip(mob/living/carbon/human/H)
 	if(flags & OUTFIT_HAS_JETPACK)
-		var/obj/item/tank/jetpack/J = locate(/obj/item/tank/jetpack) in H
+		var/obj/item/tank/jetpack/J = locate_within(H, /obj/item/tank/jetpack)
 		if(!J)
 			return
 		J.jetpack_toggle_effect(H)

@@ -79,7 +79,7 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/board_game, \
 		if("invite_player")
 			var/list/possible_mobs = ui.user.living_mobs_in_view(1, TRUE, TRUE)
 			for(var/obj/belly/our_belly in ui.user.vore_organs)
-				for(var/mob/living/prey in our_belly.contents)
+				for(var/mob/living/prey in contents_of(our_belly))
 					if(prey.client)
 						possible_mobs += prey
 			var/mob/living/new_player = act_ask(ui.user, action, params, ui, "k83", /datum/om/prompt/choice, message = "Invite a nearby player to the game.", title = "Invite Player", choices = possible_mobs)

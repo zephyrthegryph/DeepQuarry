@@ -91,7 +91,7 @@
 /datum/unit_test/dq_shuttle_repeated_moves_preserve_air/proc/measure_oxygen(datum/shuttle/shuttle)
 	. = 0
 	for(var/area/A as anything in shuttle.shuttle_area)
-		for(var/turf/open/T in A)
+		for(var/turf/open/T in contents_of(A))
 			if(!T.blocks_air && T.air)
 				. += T.air.get_moles(/datum/gas/oxygen)
 
@@ -100,7 +100,7 @@
 	var/total_moles = 0
 	var/oxygen = 0
 	for(var/area/A as anything in shuttle.shuttle_area)
-		for(var/turf/open/T in A)
+		for(var/turf/open/T in contents_of(A))
 			if(T.blocks_air || !T.air)
 				continue
 			turf_count++
@@ -117,7 +117,7 @@
 	var/list/visited = list()
 	var/list/queue = list()
 	for(var/area/A as anything in shuttle.shuttle_area)
-		for(var/turf/open/T in A)
+		for(var/turf/open/T in contents_of(A))
 			if(!T.blocks_air && T.air?.return_pressure() > 80)
 				visited[T] = TRUE
 				queue += T
@@ -154,7 +154,7 @@
 	for(var/attempt in 1 to 100)
 		var/all_closed = TRUE
 		for(var/area/A as anything in shuttle.shuttle_area)
-			for(var/obj/machinery/door/airlock/D in A)
+			for(var/obj/machinery/door/airlock/D in contents_of(A))
 				if(!D.density)
 					all_closed = FALSE
 					if(!D.operating)
@@ -164,7 +164,7 @@
 			break
 		sleep(1)
 	for(var/area/A as anything in shuttle.shuttle_area)
-		for(var/obj/machinery/door/airlock/D in A)
+		for(var/obj/machinery/door/airlock/D in contents_of(A))
 			TEST_ASSERT(D.density, "Ferry-Demo test hatch did not close before repeated moves")
 	dq_unit_test_wait_air_until_quiescent(5, 1)
 	var/baseline = measure_oxygen(shuttle)
@@ -198,7 +198,7 @@
 /datum/unit_test/dq_arrivals_shuttle_preserves_air/proc/measure_oxygen(datum/shuttle/shuttle)
 	. = 0
 	for(var/area/A as anything in shuttle.shuttle_area)
-		for(var/turf/open/T in A)
+		for(var/turf/open/T in contents_of(A))
 			if(!T.blocks_air && T.air)
 				. += T.air.get_moles(/datum/gas/oxygen)
 
@@ -213,6 +213,7 @@
 	TEST_ASSERT(shuttle.always_process, "arrivals shuttle is not configured for subsystem-owned idle automation")
 	TEST_ASSERT(shuttle in SSshuttles.process_shuttles, "arrivals shuttle is absent from the shuttle processing set")
 	TEST_ASSERT(shuttle in SSshuttles.active_process_shuttles, "always-processing arrivals shuttle is absent from the active processing set")
+	// ALLOW(spatial): world search
 	var/obj/machinery/computer/shuttle_control/arrivals/console = locate() in world
 	TEST_ASSERT_NOTNULL(console, "Southern Cross arrivals control console was not mapped")
 	TEST_ASSERT_EQUAL(console.machine_step(), PROCESS_KILL, "arrivals console still performs idle polling instead of hibernating")
@@ -220,7 +221,7 @@
 	var/total_o2_before = 0
 	var/pressurized_turfs_before = 0
 	for(var/area/A as anything in shuttle.shuttle_area)
-		for(var/turf/open/T in A)
+		for(var/turf/open/T in contents_of(A))
 			if(T.blocks_air || !T.air)
 				continue
 			total_o2_before += T.air.get_moles(/datum/gas/oxygen)
@@ -229,7 +230,7 @@
 	TEST_ASSERT(pressurized_turfs_before > 0, "arrivals shuttle is already airless off-station")
 	var/list/visited = list()
 	for(var/area/A as anything in shuttle.shuttle_area)
-		for(var/turf/open/component_seed in A)
+		for(var/turf/open/component_seed in contents_of(A))
 			if(component_seed.blocks_air || component_seed.initial_gas_mix != OPENTURF_DEFAULT_ATMOS || visited[component_seed])
 				continue
 			visited[component_seed] = TRUE
@@ -253,7 +254,7 @@
 		sleep(max(SSair.wait, 1))
 	var/soaked_o2 = 0
 	for(var/area/A as anything in shuttle.shuttle_area)
-		for(var/turf/open/T in A)
+		for(var/turf/open/T in contents_of(A))
 			if(!T.blocks_air && T.air)
 				soaked_o2 += T.air.get_moles(/datum/gas/oxygen)
 				if(T.initial_gas_mix == OPENTURF_DEFAULT_ATMOS)
@@ -263,7 +264,7 @@
 	var/total_o2_after = 0
 	var/pressurized_turfs_after = 0
 	for(var/area/A as anything in shuttle.shuttle_area)
-		for(var/turf/open/T in A)
+		for(var/turf/open/T in contents_of(A))
 			if(T.blocks_air || !T.air)
 				continue
 			total_o2_after += T.air.get_moles(/datum/gas/oxygen)
@@ -292,7 +293,7 @@
 	var/total_o2_before = 0
 	var/turf/open/component_start
 	for(var/area/A as anything in shuttle.shuttle_area)
-		for(var/turf/open/T in A)
+		for(var/turf/open/T in contents_of(A))
 			if(T.blocks_air || !T.air)
 				continue
 			total_o2_before += T.air.get_moles(/datum/gas/oxygen)
@@ -320,14 +321,14 @@
 		sleep(max(SSair.wait, 1))
 	var/soaked_o2 = 0
 	for(var/area/A as anything in shuttle.shuttle_area)
-		for(var/turf/open/T in A)
+		for(var/turf/open/T in contents_of(A))
 			if(!T.blocks_air && T.air)
 				soaked_o2 += T.air.get_moles(/datum/gas/oxygen)
 	TEST_ASSERT(soaked_o2 >= total_o2_before * 0.99, "escape shuttle lost oxygen while waiting off-station: [total_o2_before] -> [soaked_o2]")
 	TEST_ASSERT(shuttle.attempt_move(shuttle.landmark_station()), "escape shuttle could not move to its station landmark")
 	var/total_o2_after = 0
 	for(var/area/A as anything in shuttle.shuttle_area)
-		for(var/turf/open/T in A)
+		for(var/turf/open/T in contents_of(A))
 			if(!T.blocks_air && T.air)
 				total_o2_after += T.air.get_moles(/datum/gas/oxygen)
 	TEST_ASSERT(total_o2_after >= soaked_o2 * 0.99, "escape shuttle lost oxygen while moving: [soaked_o2] -> [total_o2_after]")

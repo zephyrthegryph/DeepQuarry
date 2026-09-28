@@ -1114,7 +1114,7 @@
 
 			var/list/backup_implants = list()
 			for(var/obj/item/organ/I in H.organs)
-				for(var/obj/item/implant/backup/BI in I.contents)
+				for(var/obj/item/implant/backup/BI in contents_of(I))
 					backup_implants += BI
 			if(backup_implants.len)
 				for(var/obj/item/implant/backup/BI in backup_implants)

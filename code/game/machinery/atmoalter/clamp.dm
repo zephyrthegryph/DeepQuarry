@@ -18,7 +18,7 @@
 	if(istype(to_attach))
 		target_handle = om_handle(to_attach)
 	else
-		target_handle = om_handle(locate(/obj/machinery/atmospherics/pipe/simple) in loc)
+		target_handle = om_handle(locate_within(loc, /obj/machinery/atmospherics/pipe/simple))
 	if(target_ref())
 		update_networks()
 		dir = target_ref().dir
@@ -121,7 +121,7 @@
 
 	if (istype(A, /obj/machinery/atmospherics/pipe/simple))
 		to_chat(user, span_notice("You begin to attach \the [src] to \the [A]..."))
-		var/C = locate(/obj/machinery/clamp) in get_turf(A)
+		var/C = locate_within(get_turf(A), /obj/machinery/clamp)
 		om_task_start(/datum/om/task/timed/clamp_afterattack, user, src, receiver = src, A = A, C = C)
 		if(C)
 			to_chat(user, span_notice("\The [C] is already attached to the pipe at this location!"))

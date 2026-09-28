@@ -644,7 +644,7 @@
 	om_run_frame_now(ourmob, /datum/om/pipeline/life)
 
 	if(ishuman(src))
-		for(var/obj/item/W in src)
+		for(var/obj/item/W in contents_of(src))
 			if(istype(W, /obj/item/implant/backup) || istype(W, /obj/item/nif))
 				continue
 			src.drop_from_inventory(W)

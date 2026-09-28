@@ -204,13 +204,13 @@ GLOBAL_LIST_INIT(engineering_networks, list(
 /obj/machinery/camera/proc/isEmpProof()
 	if(!assembly)
 		return FALSE
-	var/O = locate(/obj/item/stack/material/osmium) in assembly.upgrades
+	var/O = locate_in_list(assembly.upgrades, /obj/item/stack/material/osmium)
 	return O
 
 /obj/machinery/camera/proc/isXRay()
 	if(!assembly)
 		return FALSE
-	var/obj/item/stock_parts/scanning_module/O = locate(/obj/item/stock_parts/scanning_module) in assembly.upgrades
+	var/obj/item/stock_parts/scanning_module/O = locate_in_list(assembly.upgrades, /obj/item/stock_parts/scanning_module)
 	if (O && O.rating >= 2)
 		return O
 	return null
@@ -218,7 +218,7 @@ GLOBAL_LIST_INIT(engineering_networks, list(
 /obj/machinery/camera/proc/isMotion()
 	if(!assembly)
 		return FALSE
-	var/O = locate(/obj/item/assembly/prox_sensor) in assembly.upgrades
+	var/O = locate_in_list(assembly.upgrades, /obj/item/assembly/prox_sensor)
 	return O
 
 // UPGRADE PROCS

@@ -97,7 +97,7 @@
 
 /obj/structure/meteorite/proc/break_apart_done(mob/M)
 	M.visible_message(span_warning("[M] breaks apart \the [src]."), span_warning("You break apart \the [src]."))
-	for(var/obj/O in src)
+	for(var/obj/O in contents_of(src))
 		O.forceMove(get_turf(src))
 	qdel(src)
 

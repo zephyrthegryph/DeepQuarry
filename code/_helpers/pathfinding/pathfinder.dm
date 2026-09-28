@@ -108,7 +108,7 @@
 	RETURN_TYPE(/datum/om/service/pathfinder)
 	var/static/datum/om/service/pathfinder/service
 	if(!service)
-		service = locate(/datum/om/service/pathfinder) in om_registry().services
+		service = locate_in_list(om_registry().services, /datum/om/service/pathfinder)
 		if(!service)
 			service = new
 	return service

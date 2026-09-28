@@ -80,7 +80,7 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 /obj/item/sleevemate/proc/scan_target(mob/living/user, mob/living/M)
 	if(isrobot(M))
 		var/mob/living/silicon/robot/R = M
-		var/obj/item/dogborg/sleeper/S = locate() in R.module.modules
+		var/obj/item/dogborg/sleeper/S = locate_in_list(R.module.modules, /obj/item/dogborg/sleeper)
 		if(S && S.patient)
 			scan_mob(S.patient, user)
 			return ITEM_INTERACT_SUCCESS
@@ -200,7 +200,7 @@ DECLARE_INTERACTIONS(/obj/item/sleevemate, INTERACT_USE(null, PROC_REF(interacti
 		return
 
 	var/target_ref = href_list["target"]
-	var/mob/living/target = locate(target_ref) in REGISTRY_MEMBERS(REGISTRY_MOBS)
+	var/mob/living/target = locate_in_list(REGISTRY_MEMBERS(REGISTRY_MOBS), target_ref)
 	if(!target)
 		to_chat(usr,span_warning("Unable to operate on that target."))
 		return

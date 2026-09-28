@@ -564,7 +564,7 @@ DESTROY_EFFECTS(/obj/structure/grille/bay, new /datum/destroy_effects_data(neigh
 
 /obj/effect/low_wall_spawner/Initialize(mapload)
 	. = ..()
-	if(locate(/obj/effect/low_wall_spawner) in oview(0, src))
+	if(locate_in_list(oview(0, src), /obj/effect/low_wall_spawner))
 		WARNING("Duplicate low wall spawners in [x],[y],[z]!")
 		return INITIALIZE_HINT_QDEL
 

@@ -53,9 +53,9 @@ EXTEND_INTERACTIONS(/turf/simulated/floor, \
 					if(B)
 						cardinalTurfs += B
 
-				var/turf/simulated/A = locate(/turf/simulated/floor) in cardinalTurfs
+				var/turf/simulated/A = locate_in_list(cardinalTurfs, /turf/simulated/floor)
 				if(!A)
-					A = locate(/turf/simulated/wall) in cardinalTurfs
+					A = locate_in_list(cardinalTurfs, /turf/simulated/wall)
 				if(!A)
 					to_chat(user, span_warning("There's nothing to attach the ceiling to!"))
 					return INTERACTION_HANDLED_PASS

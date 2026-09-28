@@ -62,7 +62,7 @@ ADMIN_VERB(capture_map, R_ADMIN, "Capture Map Part", "Usage: Capture-Map-Part ta
 		var/list/atoms = list()
 		for(var/turf/T in turfstocapture)
 			atoms.Add(T)
-			for(var/atom/A in T)
+			for(var/atom/A in contents_of(T))
 				if(A.invisibility) continue
 				atoms.Add(A)
 

@@ -51,16 +51,16 @@
 
 /obj/structure/closet/crate/mimic/ex_act(severity)
 	latent_discard()
-	for(var/obj/O in src.contents) // ALLOW(latent): discarded above
+	for(var/obj/O in contents_of(src)) // ALLOW(latent): discarded above
 		consume(O)
 	qdel(src)
 	return
 
 /obj/structure/closet/crate/mimic/take_damage(damage_amount, damage_type = BRUTE, damage_flag = "", sound_effect = TRUE, attack_dir, armour_penetration = 0)
-	if(contents.len || has_latent()) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
+	if(contents_count(src) || has_latent()) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
 		visible_message(span_bolddanger("[src] makes out a crunchy noise as its contents are destroyed!"))
 		latent_discard()
-		for(var/obj/O in src.contents) // ALLOW(latent): discarded above
+		for(var/obj/O in contents_of(src)) // ALLOW(latent): discarded above
 			consume(O)
 	return ..()
 
@@ -187,16 +187,16 @@
 
 /obj/structure/closet/crate/mimic/airlock/ex_act(severity) //Stores Mimic Contents for later
 	latent_discard()
-	for(var/obj/O in src.contents) // ALLOW(latent): discarded above
+	for(var/obj/O in contents_of(src)) // ALLOW(latent): discarded above
 		consume(O)
 	qdel(src)
 	return
 
 /obj/structure/closet/crate/mimic/airlock/take_damage(damage_amount, damage_type = BRUTE, damage_flag = "", sound_effect = TRUE, attack_dir, armour_penetration = 0)
-	if(contents.len || has_latent()) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
+	if(contents_count(src) || has_latent()) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
 		visible_message(span_bolddanger("The [src] let's out an enraged screach!"))
 		latent_discard()
-		for(var/obj/O in src.contents) // ALLOW(latent): discarded above
+		for(var/obj/O in contents_of(src)) // ALLOW(latent): discarded above
 			consume(O)
 	return ..()
 
@@ -277,16 +277,16 @@
 
 /obj/structure/closet/crate/mimic/closet/ex_act(severity) //Stores Mimic Contents for later
 	latent_discard()
-	for(var/obj/O in src.contents) // ALLOW(latent): discarded above
+	for(var/obj/O in contents_of(src)) // ALLOW(latent): discarded above
 		consume(O)
 	qdel(src)
 	return
 
 /obj/structure/closet/crate/mimic/closet/take_damage(damage_amount, damage_type = BRUTE, damage_flag = "", sound_effect = TRUE, attack_dir, armour_penetration = 0)
-	if(contents.len || has_latent()) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
+	if(contents_count(src) || has_latent()) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
 		visible_message(span_bolddanger("The [src] makes out a crunchy noise as its contents are destroyed!"))
 		latent_discard()
-		for(var/obj/O in src.contents) // ALLOW(latent): discarded above
+		for(var/obj/O in contents_of(src)) // ALLOW(latent): discarded above
 			consume(O)
 	return ..()
 

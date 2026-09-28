@@ -40,13 +40,13 @@
 /atom/movable/proc/end_fall(crushing = FALSE)
 	if(isliving(src))
 		var/mob/living/L = src
-		for(var/mob/living/P in loc)
+		for(var/mob/living/P in contents_of(loc))
 			if(can_drop_vore(L, P))
 				L.feed_grabbed_to_self_falling_nom(L,P)
 				L.visible_message(span_vdanger("\The [L] falls right onto \the [P]!"))
 
 	if(crushing)
-		for(var/atom/movable/AM in loc)
+		for(var/atom/movable/AM in contents_of(loc))
 			if(AM != src)
 				AM.ex_act(1)
 

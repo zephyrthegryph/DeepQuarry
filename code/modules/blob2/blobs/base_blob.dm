@@ -197,7 +197,7 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = 'so
 	return null
 
 /obj/structure/blob/proc/consume_tile()
-	for(var/atom/A in loc)
+	for(var/atom/A in contents_of(loc))
 		A.blob_act(src)
 	if(loc && loc.density)
 		loc.blob_act(src) //don't ask how a wall got on top of the core, just eat it

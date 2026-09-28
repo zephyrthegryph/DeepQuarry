@@ -43,10 +43,10 @@
 		if(get_dist(src, F) >= link_range)
 			continue
 		var/backwards = turn(F.dir, 180)
-		var/obj/machinery/disperser/middle/M = locate() in get_step(F, backwards)
+		var/obj/machinery/disperser/middle/M = locate_within(get_step(F, backwards), /obj/machinery/disperser/middle)
 		if(!M || get_dist(src, M) >= link_range)
 			continue
-		var/obj/machinery/disperser/back/B = locate() in get_step(M, backwards)
+		var/obj/machinery/disperser/back/B = locate_within(get_step(M, backwards), /obj/machinery/disperser/back)
 		if(!B || get_dist(src, B) >= link_range)
 			continue
 		front_handle = om_handle(F)
@@ -102,13 +102,13 @@
 	return get_next_shot_seconds() * 1000 / coolinterval
 
 /obj/machinery/computer/ship/disperser/proc/get_charge_type()
-	var/obj/structure/ship_munition/disperser_charge/B = locate() in get_turf(back())
+	var/obj/structure/ship_munition/disperser_charge/B = locate_within(get_turf(back()), /obj/structure/ship_munition/disperser_charge)
 	if(B)
 		return B.chargetype
 	return OVERMAP_WEAKNESS_NONE
 
 /obj/machinery/computer/ship/disperser/proc/get_charge()
-	var/obj/structure/ship_munition/disperser_charge/B = locate() in get_turf(back())
+	var/obj/structure/ship_munition/disperser_charge/B = locate_within(get_turf(back()), /obj/structure/ship_munition/disperser_charge)
 	if(B)
 		return B
 

@@ -69,7 +69,7 @@ I said no!
 
 /datum/recipe/donkpocket/warm/make_food(obj/container)
 	var/list/results = list()
-	var/obj/item/reagent_containers/food/snacks/donkpocket/D = locate(/obj/item/reagent_containers/food/snacks/donkpocket) in container
+	var/obj/item/reagent_containers/food/snacks/donkpocket/D = locate_in_list(container, /obj/item/reagent_containers/food/snacks/donkpocket)
 	if(!D)
 		return results
 	if(!D.warm)

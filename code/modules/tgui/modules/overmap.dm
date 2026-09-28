@@ -173,6 +173,7 @@
 	linked_handle = om_handle(new_linked)
 	name = initial(name) + " ([linked().name])"
 	// HELM
+	// ALLOW(spatial): world search
 	var/area/overmap/map = locate() in world
 	for(var/obj/effect/overmap/visitable/sector/S in area_contents_of_type(map, /obj/effect/overmap/visitable/sector))
 		if(S.known)

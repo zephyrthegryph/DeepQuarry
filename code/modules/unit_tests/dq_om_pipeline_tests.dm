@@ -562,6 +562,7 @@
 /datum/unit_test/om_pipeline/firealarm_parks_and_wakes
 
 /datum/unit_test/om_pipeline/firealarm_parks_and_wakes/run_pipeline()
+	// ALLOW(spatial): world search
 	var/turf/simulated/floor/T = locate() in world
 	TEST_ASSERT_NOTNULL(T, "no floor for fire alarm pipeline test")
 	var/obj/machinery/firealarm/F = allocate(/obj/machinery/firealarm, T)
@@ -590,6 +591,7 @@
 /datum/unit_test/om_pipeline/canister_parks_and_wakes
 
 /datum/unit_test/om_pipeline/canister_parks_and_wakes/run_pipeline()
+	// ALLOW(spatial): world search
 	var/turf/simulated/floor/T = locate() in world
 	TEST_ASSERT_NOTNULL(T, "no floor for canister pipeline test")
 	var/obj/machinery/portable_atmospherics/canister/oxygen/C = allocate(/obj/machinery/portable_atmospherics/canister/oxygen, T)

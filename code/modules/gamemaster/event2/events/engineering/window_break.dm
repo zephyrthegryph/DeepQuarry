@@ -35,7 +35,7 @@
 		var/area/area = pick(areas)
 		areas -= area
 
-		for(var/obj/structure/window/W in area.contents)
+		for(var/obj/structure/window/W in contents_of(area))
 			if(!is_window_to_space(W))
 				continue
 			chosen_turf_with_windows_handle = om_handle(get_turf(W))

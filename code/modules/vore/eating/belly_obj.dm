@@ -294,14 +294,14 @@ REF_BACKLIST(/obj/belly, list("owner" = "vore_organs"))
 
 // ghosts inside are let out.
 /obj/belly/on_destroy(force)
-	for(var/mob/observer/G in src)
+	for(var/mob/observer/G in contents_of(src))
 		G.forceMove(get_turf(src))
 	..()
 
 /obj/belly/Moved(atom/old_loc)
 	. = ..()
 
-	for(var/mob/living/L in src)
+	for(var/mob/living/L in contents_of(src))
 		if(L.ckey)
 			log_admin("[key_name(owner)]'s belly `[src]` moved from [old_loc] ([old_loc?.x],[old_loc?.y],[old_loc?.z]) to [loc] ([loc?.x],[loc?.y],[loc?.z]) while containing [key_name(L)].")
 			break
@@ -411,7 +411,7 @@ REF_BACKLIST(/obj/belly, list("owner" = "vore_organs"))
 	if(QDELETED(owner))
 		return
 	thing.exit_belly(src) // atom movable proc, does nothing by default. Overridden in children for special behavior.
-	if(!length(contents))
+	if(!contents_count(src))
 		belly_reschedule()
 	if(isbelly(thing.loc))
 		var/obj/belly/NB = thing.loc
@@ -470,7 +470,7 @@ REF_BACKLIST(/obj/belly, list("owner" = "vore_organs"))
 // Returns the number of mobs so released.
 /obj/belly/proc/release_all_contents(include_absorbed = FALSE, silent = FALSE)
 	//Don't bother if we don't have contents
-	if(!contents.len)
+	if(!contents_count(src))
 		return FALSE
 
 	//Find where we should drop things into (certainly not the owner)
@@ -530,11 +530,11 @@ REF_BACKLIST(/obj/belly, list("owner" = "vore_organs"))
 		var/mob/living/simple_mob/vore/morph/dominated_prey/p = M
 		p.undo_prey_takeover(FALSE)
 		return 0
-	for(var/mob/living/L in M.contents)
+	for(var/mob/living/L in contents_of(M))
 		L.muffled = FALSE
 		L.forced_psay = FALSE
 
-	for(var/obj/item/holder/H in M.contents)
+	for(var/obj/item/holder/H in contents_of(M))
 		H.held_mob.muffled = FALSE
 		H.held_mob.forced_psay = FALSE
 
@@ -676,7 +676,7 @@ REF_BACKLIST(/obj/belly, list("owner" = "vore_organs"))
 
 	//Drop all items into the belly.
 	if(CONFIG_GET(flag/items_survive_digestion))
-		for(var/obj/item/W in M)
+		for(var/obj/item/W in contents_of(M))
 			if(istype(W, /obj/item/organ/internal/mmi_holder/posibrain))
 				var/obj/item/organ/internal/mmi_holder/MMI = W
 				var/obj/item/mmi/brainbox = MMI.removed()
@@ -896,16 +896,16 @@ REF_BACKLIST(/obj/belly, list("owner" = "vore_organs"))
 	see["mobs"] = belly_mobs
 	var/list/belly_objs = list()
 	see["objs"] = belly_objs
-	for(var/mob/living/L in loc.contents)
+	for(var/mob/living/L in contents_of(loc))
 		belly_mobs |= L
-	for(var/obj/O in loc.contents)
+	for(var/obj/O in contents_of(loc))
 		belly_objs |= O
 
 	return see
 
 //Transfers contents from one belly to another
 /obj/belly/proc/transfer_contents(atom/movable/content, obj/belly/target, silent = FALSE)
-	if(!(content in src) || !istype(target))
+	if(!(content?.loc == src) || !istype(target))
 		return
 	if(dq_get_belly_cycles(content)) // Reset only a count that exists: no component per eaten thing.
 		dq_set_belly_cycles(content, 0)
@@ -1110,7 +1110,7 @@ REF_BACKLIST(/obj/belly, list("owner" = "vore_organs"))
 	if(!affects_vore_sprites)
 		return 0
 	var/belly_fullness = 0
-	for(var/mob/living/M in src)
+	for(var/mob/living/M in contents_of(src))
 		if(count_absorbed_prey_for_sprite || !M.absorbed)
 			var/fullness_to_add = M.size_multiplier
 			fullness_to_add *= M.mob_size / 20
@@ -1123,7 +1123,7 @@ REF_BACKLIST(/obj/belly, list("owner" = "vore_organs"))
 	if(count_liquid_for_sprite)
 		belly_fullness += (reagents.total_volume / 100) * liquid_multiplier
 	if(count_items_for_sprite)
-		for(var/obj/item/I in src)
+		for(var/obj/item/I in contents_of(src))
 			var/fullness_to_add = 0
 			if(I.w_class == ITEMSIZE_TINY)
 				fullness_to_add = ITEMSIZE_COST_TINY
@@ -1221,7 +1221,7 @@ REF_BACKLIST(/obj/belly, list("owner" = "vore_organs"))
 
 // Updates the belly_surrounding list variable. Called in bellymodes_vr.dm
 /obj/belly/proc/update_belly_surrounding()
-	if(!contents.len && !LAZYLEN(owner.soulgem?.brainmobs))
+	if(!contents_count(src) && !LAZYLEN(owner.soulgem?.brainmobs))
 		// An empty belly surrounds nobody and holds no list.
 		belly_surrounding = null
 		return

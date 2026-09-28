@@ -541,7 +541,7 @@
 		update_icon()
 		return
 	var/list/mobs = list()
-	for(var/mob/living/carbon/M in loc)
+	for(var/mob/living/carbon/M in contents_of(loc))
 		mobs += M
 	var/mob/living/carbon/M = safepick(mobs)
 	if(M)

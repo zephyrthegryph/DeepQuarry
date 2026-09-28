@@ -34,6 +34,6 @@
 		for(var/T in types)
 			// Test for existance.
 			var/area/A = locate(T)
-			if(!istype(A) || !A.contents.len) // Empty contents list means it's not on the map.
+			if(!istype(A) || !contents_count(A)) // Empty contents list means it's not on the map.
 				continue
 			. += A

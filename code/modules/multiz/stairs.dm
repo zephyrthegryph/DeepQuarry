@@ -94,7 +94,7 @@ REF_PAIR(/obj/structure/stairs/bottom, list("top" = "bottom", "middle" = "bottom
 
 	// If we're already configured, just check those
 	else if(istype(top) && istype(middle))
-		O = locate(/turf/simulated/open) in GetAbove(src)
+		O = locate_within(GetAbove(src), /turf/simulated/open)
 		if(..(src, middle, top, O))
 			return TRUE
 
@@ -263,7 +263,7 @@ REF_PAIR(/obj/structure/stairs/middle, list("top" = "middle", "bottom" = "middle
 		return TRUE
 
 	else if(istype(top) && istype(bottom))
-		O = locate(/turf/simulated/open) in GetAbove(bottom)
+		O = locate_within(GetAbove(bottom), /turf/simulated/open)
 		if(..(bottom, src, top, O))
 			return TRUE
 
@@ -343,7 +343,7 @@ REF_PAIR(/obj/structure/stairs/top, list("middle" = "top", "bottom" = "top"))
 		return
 
 	else if(istype(middle) && istype(bottom))
-		O = locate(/turf/simulated/open) in GetAbove(bottom)
+		O = locate_within(GetAbove(bottom), /turf/simulated/open)
 		if(..(bottom, middle, src, O))
 			return TRUE
 

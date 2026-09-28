@@ -95,7 +95,7 @@ GLOBAL_DATUM(technomancers, /datum/antagonist/technomancer)
 	var/obj/item/technomancer_core/core
 	var/mob/living/original = om_resolve(player.original_character)
 	if(original)
-		core = locate() in original
+		core = locate_within(original, /obj/item/technomancer_core)
 		if(core)
 			text += "<br>Bought [english_list(core.spells)], and used \a [core]."
 		else

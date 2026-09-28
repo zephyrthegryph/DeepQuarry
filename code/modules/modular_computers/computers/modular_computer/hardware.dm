@@ -85,6 +85,6 @@
 	// Iterate every item currently inside src; only typed computer_hardware counts.
 	// This naturally picks up any hardware slot, including future additions,
 	// without requiring an explicit list here.
-	for(var/obj/item/computer_hardware/H in src)
+	for(var/obj/item/computer_hardware/H in contents_of(src))
 		all_components.Add(H)
 	return all_components

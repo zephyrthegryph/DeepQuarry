@@ -30,9 +30,9 @@
 
 /obj/machinery/artifact_analyser/proc/reconnect_scanner()
 	//connect to a nearby scanner pad
-	owned_scanner_handle = om_handle(locate(/obj/machinery/artifact_scanpad) in get_step(src, dir))
+	owned_scanner_handle = om_handle(locate_within(get_step(src, dir), /obj/machinery/artifact_scanpad))
 	if(!owned_scanner())
-		owned_scanner_handle = om_handle(locate(/obj/machinery/artifact_scanpad) in orange(1, src))
+		owned_scanner_handle = om_handle(locate_in_list(orange(1, src), /obj/machinery/artifact_scanpad))
 
 /obj/machinery/artifact_analyser/declare_interactions(list/into)
 	into += list(

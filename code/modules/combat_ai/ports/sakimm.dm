@@ -87,7 +87,7 @@
 	var/obj/item/best = null
 	var/best_dist = INFINITY
 	for(var/obj/item/I in view(range, S))
-		if(I.anchored || (I in S.contents))
+		if(I.anchored || (is_in_holder(I, S)))
 			continue
 		if(home && get_dist(I, home) <= 1)
 			continue  // already in the hoard

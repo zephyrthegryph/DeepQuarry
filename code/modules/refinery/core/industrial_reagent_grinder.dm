@@ -47,7 +47,7 @@ REF_SPILL_LIST(/obj/machinery/reagent_refinery/grinder, "holdingitems")
 	if(istype(O,/obj/item/storage/bag))
 		var/obj/item/storage/bag/bag = O
 		var/failed = 1
-		for(var/obj/item/G in O.contents)
+		for(var/obj/item/G in contents_of(O))
 			if(!G.reagents || !G.reagents.total_volume)
 				continue
 			failed = 0
@@ -60,7 +60,7 @@ REF_SPILL_LIST(/obj/machinery/reagent_refinery/grinder, "holdingitems")
 			to_chat(user, "Nothing in \the [O] is usable.")
 			return TRUE
 
-		if(!O.contents.len)
+		if(!contents_count(O))
 			to_chat(user, "You empty \the [O] into \the [src].")
 		else
 			to_chat(user, "You fill \the [src] from \the [O].")
@@ -105,7 +105,7 @@ REF_SPILL_LIST(/obj/machinery/reagent_refinery/grinder, "holdingitems")
 			if(!T)
 				continue
 			var/obj/machinery/conveyor/C = locate_on(T, /obj/machinery/conveyor)
-			if(C && !C.stat && C.operating && C.dir == GLOB.reverse_dir[D] && T.contents.len > 1) // If an operating conveyor points into us... Check if it's moving anything
+			if(C && !C.stat && C.operating && C.dir == GLOB.reverse_dir[D] && contents_count(T) > 1) // If an operating conveyor points into us... Check if it's moving anything
 				var/obj/item/I = pick(T.contents - list(C))
 				if(istype(I) && conveyor_load(I))
 					break
@@ -163,7 +163,7 @@ REF_SPILL_LIST(/obj/machinery/reagent_refinery/grinder, "holdingitems")
 	if(length(holdingitems))
 		return TRUE
 	for(var/D in GLOB.cardinal)
-		var/obj/machinery/conveyor/C = locate() in get_step(src, D)
+		var/obj/machinery/conveyor/C = locate_within(get_step(src, D), /obj/machinery/conveyor)
 		if(C && !C.stat && C.operating && C.dir == GLOB.reverse_dir[D])
 			return TRUE
 	return FALSE

@@ -89,6 +89,7 @@
 			var/filters_to_copy = target().filters
 			var/filter_data_to_copy = target().filter_data
 			var/count = 0
+			// ALLOW(spatial): world search
 			for(var/thing in world.contents)
 				if(istype(thing, target_path))
 					var/atom/thing_at = thing

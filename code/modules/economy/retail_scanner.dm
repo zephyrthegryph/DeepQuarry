@@ -38,7 +38,7 @@ REGISTRY_MEMBERSHIP(/obj/item/retail_scanner, REGISTRY_TRANSACTION_DEVICES)
 /obj/item/retail_scanner/Initialize(mapload)
 	. = ..()
 	machine_id = "[station_name()] RETAIL #[GLOB.num_financial_terminals++]"
-	if(locate(/obj/structure/table) in loc)
+	if(locate_within(loc, /obj/structure/table))
 		pixel_y = 3
 	if(GLOB.economy_init && account_to_connect)
 		linked_account = GLOB.department_accounts[account_to_connect]

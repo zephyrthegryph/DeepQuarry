@@ -243,7 +243,7 @@
 
 	var/list/things = orange(1, src)
 
-	if(locate(/obj/structure/grille) in things || locate(/obj/structure/lattice) in things || locate(/turf/simulated) in things || locate(/turf/unsimulated) in things)
+	if(locate_in_list(things, /obj/structure/grille) || locate_in_list(things, /obj/structure/lattice) || locate_in_list(things, /turf/simulated) || locate_in_list(things, /turf/unsimulated))
 		return 1
 	else
 		return 0

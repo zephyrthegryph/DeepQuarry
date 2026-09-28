@@ -927,7 +927,7 @@ GLOBAL_LIST_EMPTY(map_model_default)
 					CRASH("[area_type] failed to be new'd, what'd you do?")
 			LAZYSET(loaded_areas, area_type, area_instance)
 
-		area_instance.contents.Add(crds)
+		area_instance.contents.Add(crds) // ALLOW(containment): area membership of turfs during map load
 
 		if(GLOB.use_preloader)
 			world.preloader_load(area_instance)

@@ -137,11 +137,11 @@
 					if(get_dir(chassis,M)&chassis.dir)
 						M.GetDrilled()
 				src.mecha_log_message("Drilled through [target]")
-				var/obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop/ore_box = (locate(/obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop) in chassis.equipment)
+				var/obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop/ore_box = (locate_in_list(chassis.equipment, /obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop))
 				if(ore_box)
 					for(var/obj/item/ore/ore in range(chassis,1))
 						if(get_dir(chassis,ore)&chassis.dir)
-							if (ore_box.contents.len >= ore_box.orecapacity)
+							if (contents_count(ore_box) >= ore_box.orecapacity)
 								occupant_message(span_warning("The ore compartment is full."))
 								return 1
 							else
@@ -176,7 +176,7 @@
 		if(T == chassis.loc && src == chassis.selected)
 			for(var/obj/item/ore/ore in range(chassis,1))
 				if(get_dir(chassis,ore)&chassis.dir)
-					if (contents.len >= orecapacity)
+					if (contents_count(src) >= orecapacity)
 						occupant_message(span_warning("The ore compartment is full."))
 						return 1
 					else
@@ -186,7 +186,7 @@
 /obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop/Topic(href,href_list)
 	..()
 	if (href_list["empty_box"])
-		if(contents.len < 1)
+		if(contents_count(src) < 1)
 			occupant_message("The ore compartment is empty.")
 			return
 		for (var/obj/item/ore/O in contents)
@@ -215,7 +215,7 @@ EXTEND_INTERACTIONS(/obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop, \
 
 	add_fingerprint(user)
 
-	if(contents.len < 1)
+	if(contents_count(src) < 1)
 		to_chat(user, span_warning("The ore box is empty"))
 		return
 

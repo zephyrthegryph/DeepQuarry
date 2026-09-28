@@ -87,7 +87,7 @@ DECLARE_INTERACTIONS(/obj/singularity, INTERACT_HAND_UNGATED(null, PROC_REF(inte
 
 /obj/singularity/proc/admin_investigate_setup()
 	last_warning = world.time
-	var/count = locate(/obj/machinery/containment_field) in orange(30, src)
+	var/count = locate_in_list(orange(30, src), /obj/machinery/containment_field)
 
 	if (!count)
 		message_admins("A singulo has been created without containment fields active ([x], [y], [z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>).")

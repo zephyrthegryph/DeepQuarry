@@ -32,7 +32,7 @@
 				to_chat(M, span_warning("[pick("You feel tingly","You feel like floating","It is hard to speak","You can barely move")]."))
 
 		for(var/obj/item/I in turf_contents_of_type(T, /obj/item))
-			if(!suspension_field.contents.len)
+			if(!contents_count(suspension_field))
 				suspension_field.icon_state = "energynet"
 				suspension_field.add_overlay("shield2")
 			I.forceMove(suspension_field)

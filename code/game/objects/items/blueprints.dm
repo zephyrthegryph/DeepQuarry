@@ -736,7 +736,7 @@ EXTEND_INTERACTIONS(/obj/item/areaeditor/blueprints, INTERACT_USE("Read", PROC_R
 			continue // Don't overlay all of space!
 		var/icon/areaColor = new('icons/misc/debug_rebuild.dmi', "[++i]")
 		to_chat(user, "- [A] as [i]")
-		for(var/turf/T in A.contents)
+		for(var/turf/T in contents_of(A))
 			user << image(areaColor, T, "blueprints", TURF_LAYER)
 			LAZYADD(areaColor_turfs, T)
 

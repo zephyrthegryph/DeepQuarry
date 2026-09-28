@@ -84,7 +84,7 @@
 
 	var/mob/living/M = hit_atom
 
-	if(!istype(M) || locate(/obj/effect/energy_net) in M.loc)
+	if(!istype(M) || locate_within(M.loc, /obj/effect/energy_net))
 		qdel(src)
 		return 0
 

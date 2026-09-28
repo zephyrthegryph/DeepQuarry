@@ -10,7 +10,7 @@
 
 	switch(action)
 		if("toggle_active")
-			var/obj/machinery/fusion_fuel_injector/FI = locate(params["fuel"]) in REGISTRY_MEMBERS(REGISTRY_FUEL_INJECTORS)
+			var/obj/machinery/fusion_fuel_injector/FI = locate_in_list(REGISTRY_MEMBERS(REGISTRY_FUEL_INJECTORS), params["fuel"])
 			if(!istype(FI))
 				return FALSE
 

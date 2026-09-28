@@ -129,7 +129,7 @@ REF_OWNED(/datum/anomaly_stats, "modifier")
 	if(!istype(anom))
 		return
 
-	if(locate(/obj/effect/suspension_field) in get_turf(anom))
+	if(locate_within(get_turf(anom), /obj/effect/suspension_field))
 		return
 
 	switch(stability)

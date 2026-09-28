@@ -389,7 +389,7 @@
 /obj/machinery/photocopier/can_buckle_check(mob/living/M, forced = FALSE)
 	if(!..())
 		return FALSE
-	for(var/obj/item/clothing/C in M)
+	for(var/obj/item/clothing/C in contents_of(M))
 		if(M.item_is_in_hands(C))
 			continue
 		if((C.body_parts_covered & LOWER_TORSO) && !istype(C,/obj/item/clothing/under/permit))

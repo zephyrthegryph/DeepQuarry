@@ -33,7 +33,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 // the tunnel collapses and spits out the micros inside it.
 /obj/structure/micro_tunnel/on_destroy(force)
 	visible_message(span_warning("\The [src] collapses!"))
-	for(var/mob/thing in src.contents)
+	for(var/mob/thing in contents_of(src))
 		visible_message(span_warning("\The [thing] tumbles out!"))
 		thing.forceMove(get_turf(src.loc))
 		thing.cancel_camera()
@@ -114,7 +114,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 		var/list/our_options = list("Exit", "Move")
 
 		if(is_type_in_list(user, non_micro_types))
-			if(src.contents.len > 1)
+			if(contents_count(src) > 1)
 				our_options |= "Eat"
 
 		our_options |= "Cancel"
@@ -179,7 +179,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 			om_ask(user, /datum/om/prompt/choice, PROC_REF(tunnel_move_chosen), choices = destinations, title = "Pick a tunnel", message = "Where would you like to go?", requires = list(/datum/om/check/inside_target))
 		if("Eat")
 			var/list/our_targets = list()
-			for(var/mob/living/L in src.contents)
+			for(var/mob/living/L in contents_of(src))
 				if(L == user)
 					continue
 				our_targets |= L
@@ -224,7 +224,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 /// Reached into the tunnel: pull whatever is inside out.
 /obj/structure/micro_tunnel/proc/tunnel_reach_done(datum/om/task/timed/micro_reach/tunnel/task)
 	var/mob/living/user = task.actor
-	if(!src.contents.len)
+	if(!contents_count(src))
 		to_chat(user, span_warning("There was nothing inside."))
 		user.visible_message(span_notice("\The [user] pulls their hand out of \the [src]."),span_warning("You pull your hand out of \the [src]"))
 		return
@@ -311,7 +311,7 @@ DECLARE_INTERACTIONS(/obj/structure/micro_tunnel, \
 	to_chat(user, span_notice("You arrive inside \the [src]."))
 	var/our_message = "You can see "
 	var/found_stuff = FALSE
-	for(var/thing in src.contents)
+	for(var/thing in contents_of(src))
 		if(thing == user)
 			continue
 		found_stuff = TRUE
@@ -378,7 +378,7 @@ DECLARE_INTERACTIONS(/obj/structure/micro_tunnel, \
 
 /obj/proc/micro_move(mob/living/user, choice)
 	var/list/contained_mobs = list()
-	for(var/mob/living/issamob in src.contents)
+	for(var/mob/living/issamob in contents_of(src))
 		contained_mobs |= issamob
 	to_chat(user,span_notice("You begin moving..."))
 	om_task_start(/datum/om/task/timed/obj_micro_interact, user, src, contained_mobs = contained_mobs, choice = choice)
@@ -393,7 +393,7 @@ DECLARE_INTERACTIONS(/obj/structure/micro_tunnel, \
 		return
 
 	var/list/contained_mobs = list()
-	for(var/mob/living/issamob in src.contents)
+	for(var/mob/living/issamob in contents_of(src))
 		if(isliving(issamob))
 			contained_mobs |= issamob
 
@@ -482,7 +482,7 @@ DECLARE_INTERACTIONS(/obj/structure/micro_tunnel, \
 	var/obj/our_choice = choice
 
 	var/list/new_contained_mobs = list()
-	for(var/mob/living/issamob in src.contents)
+	for(var/mob/living/issamob in contents_of(src))
 		if(isliving(issamob))
 			contained_mobs |= issamob
 

@@ -17,7 +17,6 @@
 
 /mob/living/proc/mob_belly_transfer(mob/living/M)
 	for(var/obj/belly/B as anything in M.vore_organs)
-		B.loc = src
 		B.forceMove(src)
 		B.owner = src
 		M.vore_organs -= B
@@ -110,7 +109,7 @@
 	om_run_frame_now(ourmob, /datum/om/pipeline/life)
 
 	if(ishuman(src))
-		for(var/obj/item/W in src)
+		for(var/obj/item/W in contents_of(src))
 			if(istype(W, /obj/item/implant/backup) || istype(W, /obj/item/nif))
 				continue
 			src.drop_from_inventory(W)

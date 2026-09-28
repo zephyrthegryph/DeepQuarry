@@ -219,7 +219,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/holster, \
 /obj/item/clothing/accessory/holster/machete/rapier/proc/occupied()
 	if(!has_full_icon)
 		return
-	if(contents.len)
+	if(contents_count(src))
 		overlay_state = "[initial(overlay_state)]-rapier"
 	else
 		overlay_state = initial(overlay_state)
@@ -227,7 +227,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/holster, \
 /obj/item/clothing/accessory/holster/machete/rapier/swords/occupied()
 	if(!has_full_icon)
 		return
-	if(contents.len)
+	if(contents_count(src))
 		overlay_state = "[initial(overlay_state)]-secondary"
 	else
 		overlay_state = initial(overlay_state)

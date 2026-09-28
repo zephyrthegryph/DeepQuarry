@@ -55,7 +55,7 @@
 		return 0
 	var/count = 0
 	for(var/area/A in shuttle.shuttle_area)
-		for(var/atom/movable/AM in A)
+		for(var/atom/movable/AM in contents_of(A))
 			if(istype(AM, typepath))
 				count++
 	return count
@@ -355,7 +355,7 @@
 	if(!corner || !template.load(corner))
 		return
 	for(var/turf/T in template.get_affected_turfs(corner))
-		var/obj/machinery/power/generator/G = locate(/obj/machinery/power/generator) in T
+		var/obj/machinery/power/generator/G = locate_within(T, /obj/machinery/power/generator)
 		if(G)
 			generators += om_handle(G)
 			// `tracked` is what has_viable_objectives() inspects; leaving it empty

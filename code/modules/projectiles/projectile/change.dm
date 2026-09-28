@@ -22,7 +22,7 @@
 			if(Robot.mmi)
 				qdel(Robot.mmi)
 		else
-			for(var/obj/item/W in M)
+			for(var/obj/item/W in contents_of(M))
 				if(istype(W, /obj/item/implant))	//TODO: Carn. give implants a dropped() or something
 					qdel(W)
 					continue

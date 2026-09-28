@@ -111,7 +111,7 @@ DECLARE_INTERACTIONS(/obj/item/lightreplacer, \
 		var/replaced_something = TRUE
 
 		S.latent_materialize_all() // a walk needs real things (C5)
-		for(var/obj/item/I in S.contents) // ALLOW(latent): materialized above
+		for(var/obj/item/I in contents_of(S)) // ALLOW(latent): materialized above
 			if(istype(I,/obj/item/light))
 				var/obj/item/light/L = I
 				found_lightbulbs = TRUE

@@ -14,7 +14,7 @@
 /// "path=count;..." of the things directly in `where`, sorted.
 /proc/dq_latent_census(atom/where, list/only)
 	var/list/counts = list()
-	for(var/atom/movable/thing as anything in where.contents)
+	for(var/atom/movable/thing as anything in contents_of(where))
 		if(only && !(thing in only))
 			continue
 		if(!isitem(thing))
@@ -53,7 +53,7 @@
 	var/list/problems = L.verify()
 	TEST_ASSERT(!length(problems), "ledger mismatch: [jointext(problems, "; ")]")
 	var/expected_used = 0
-	for(var/atom/movable/thing as anything in closet.contents)
+	for(var/atom/movable/thing as anything in contents_of(closet))
 		expected_used += closet.storage_cost_of(thing)
 	expected_used += 2 * closet.storage_cost_of_type(/obj/item/pen) + closet.storage_cost_of_type(/obj/item/paper)
 	TEST_ASSERT_EQUAL(closet.slot_used(CONTAINER_SLOT_INTERIOR), expected_used, "entries take capacity")
@@ -240,7 +240,7 @@
 		if(QDELETED(closet))
 			continue
 		if(!closet.has_latent())
-			for(var/atom/movable/thing as anything in closet.contents)
+			for(var/atom/movable/thing as anything in contents_of(closet))
 				if(!ismob(thing))
 					qdel(thing)
 			qdel(closet)
@@ -262,7 +262,7 @@
 				var/list/copy_blob = state_serialize(copy, STATE_FULL)
 				if(dq_latent_census(closet) != dq_latent_census(copy))
 					failures += "[path]: real contents changed: [dq_latent_census(closet)] vs [dq_latent_census(copy)]"
-				for(var/atom/movable/thing as anything in copy.contents)
+				for(var/atom/movable/thing as anything in contents_of(copy))
 					if(!ismob(thing))
 						qdel(thing)
 				if(state_canonical(list("l" = blob[STATE_KEY_LATENT])) != state_canonical(list("l" = copy_blob?[STATE_KEY_LATENT])))
@@ -278,12 +278,12 @@
 					continue
 				var/want = dq_latent_spawn_count(generator[item_path])
 				var/have = 0
-				for(var/atom/movable/thing as anything in closet.contents)
+				for(var/atom/movable/thing as anything in contents_of(closet))
 					if(thing.type == item_path)
 						have++
 				if(have < want)
 					failures += "[path]: [item_path] [have] of [want]"
-		for(var/atom/movable/thing as anything in closet.contents)
+		for(var/atom/movable/thing as anything in contents_of(closet))
 			if(!ismob(thing))
 				qdel(thing)
 		qdel(closet)
@@ -369,7 +369,7 @@
 	var/expect_cell = L.start_with_cell && !L.no_emergency
 	TEST_ASSERT_EQUAL(!!L.has_cell(), !!expect_cell, "the cell is declared")
 	TEST_ASSERT(isnull(L.cell), "no cell atom yet")
-	for(var/atom/movable/thing as anything in L.contents)
+	for(var/atom/movable/thing as anything in contents_of(L))
 		TEST_ASSERT(!istype(thing, /obj/item/light) && !istype(thing, /obj/item/cell), "no parts in contents: [thing.type]")
 	var/latent_charge = L.latent_cell_charge
 	L.status = LIGHT_BURNED

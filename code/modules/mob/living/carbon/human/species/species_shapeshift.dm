@@ -741,7 +741,7 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 
 /// TRUE while we still hold `victim` in at least an aggressive grab.
 /mob/living/carbon/human/proc/copy_body_gripping(mob/living/carbon/human/victim)
-	for(var/obj/item/grab/G in src)
+	for(var/obj/item/grab/G in contents_of(src))
 		if(G?.grab_target() == victim && G.state >= GRAB_AGGRESSIVE)
 			return TRUE
 	return FALSE

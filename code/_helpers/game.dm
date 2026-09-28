@@ -167,7 +167,7 @@
 	if(!recursion_limit)
 		return L
 
-	for(var/I in O.contents)
+	for(var/I in contents_of(O))
 
 		if(ismob(I))
 			if(!sight_check || isInSight(I, O))
@@ -224,7 +224,7 @@
 	for(var/obj/item/radio/R as anything in radios)
 		if(get_turf(R))
 			for(var/turf/T in R.can_broadcast_to())
-				for (var/atom/movable/hearing in T)
+				for (var/atom/movable/hearing in contents_of(T))
 					var/list/hearing_listeners = dq_get_recursive_listeners(hearing)
 					if (hearing_listeners)
 						. |= hearing_listeners
@@ -686,7 +686,7 @@
 
 	if(!recursion_limit)
 		return L
-	for(var/atom/A in O.contents)
+	for(var/atom/A in contents_of(O))
 
 		if(ismob(A))
 			var/mob/M = A
@@ -754,7 +754,7 @@
 		return result
 
 	for(var/obj/belly/B in L.vore_organs)
-		for(var/mob/living/P in B.contents)
+		for(var/mob/living/P in contents_of(B))
 			if(istype(P))
 				if(client_check && P.client)
 					result |= P

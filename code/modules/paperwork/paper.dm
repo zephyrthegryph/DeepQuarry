@@ -262,7 +262,7 @@
 		var/mob/living/M = user
 		if(istype(M) && M.get_equipped_item(SLOT_ID_BACK) && istype(M.get_equipped_item(SLOT_ID_BACK), /obj/item/rig))
 			var/obj/item/rig/r = M.get_equipped_item(SLOT_ID_BACK)
-			var/obj/item/rig_module/device/pen/m = locate(/obj/item/rig_module/device/pen) in r.installed_modules
+			var/obj/item/rig_module/device/pen/m = locate_in_list(r.installed_modules, /obj/item/rig_module/device/pen)
 			if(!r.offline && m)
 				i = m.device
 			else

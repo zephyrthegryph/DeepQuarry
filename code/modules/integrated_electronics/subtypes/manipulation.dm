@@ -82,7 +82,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/manipulation/weapon_firing, \
 		if(is_type_in_list(our_position, banned_positions))
 			return
 	//Prevents shoving 40 of these into a closet, opening it, and having it annihilate some poor sap.
-	else if(isturf(our_position) && (locate(/obj/structure/closet) in range(0, our_position)))
+	else if(isturf(our_position) && (locate_in_list(range(0, our_position), /obj/structure/closet)))
 		return
 
 	var/datum/integrated_io/target_x = inputs[1]

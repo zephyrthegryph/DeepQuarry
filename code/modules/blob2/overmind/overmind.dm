@@ -81,7 +81,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/blob, REGISTRY_OVERMINDS)
 
 /mob/observer/blob/Move(atom/NewLoc, Dir = 0)
 	if(placed)
-		var/obj/structure/blob/B = (locate() in view("5x5", NewLoc))
+		var/obj/structure/blob/B = (locate_in_list(view("5x5", NewLoc), /obj/structure/blob))
 		if(B)
 			forceMove(NewLoc)
 			return TRUE

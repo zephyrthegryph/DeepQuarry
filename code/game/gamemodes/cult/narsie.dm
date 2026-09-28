@@ -171,7 +171,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 	else if (isturf(A))
 		var/dist = get_dist(A, src)
 
-		for (var/atom/movable/AM in A.contents)
+		for (var/atom/movable/AM in contents_of(A))
 			if (dist <= consume_range)
 				consume(AM)
 				continue
@@ -202,7 +202,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 	else if (isturf(A))
 		var/dist = get_dist(A, src)
 
-		for (var/atom/movable/AM2 in A.contents)
+		for (var/atom/movable/AM2 in contents_of(A))
 			if (AM2 == src) // This is the snowflake.
 				continue
 
@@ -234,7 +234,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 	else if (isturf(A))
 		var/dist = get_dist(A, src)
 
-		for (var/atom/movable/AM2 in A.contents)
+		for (var/atom/movable/AM2 in contents_of(A))
 			if (AM2 == src) // This is the snowflake.
 				continue
 

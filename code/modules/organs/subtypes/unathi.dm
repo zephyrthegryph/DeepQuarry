@@ -34,14 +34,14 @@
 	..()
 	if(!owner) return
 
-	var/datum/reagent/coffee = locate(/datum/reagent/drink/coffee) in owner.reagents.reagent_list
+	var/datum/reagent/coffee = locate_in_list(owner.reagents.reagent_list, /datum/reagent/drink/coffee)
 	if(coffee)
 		if(is_bruised())
 			owner.injure(INJURY_TOXIN, 0.1 * PROCESS_ACCURACY, flags = INJURE_SILENT)
 		else if(is_broken())
 			owner.injure(INJURY_TOXIN, 0.3 * PROCESS_ACCURACY, flags = INJURE_SILENT)
 
-	var/datum/reagent/sugar = locate(/datum/reagent/sugar) in owner.reagents.reagent_list
+	var/datum/reagent/sugar = locate_in_list(owner.reagents.reagent_list, /datum/reagent/sugar)
 	if(sugar)
 		if(is_bruised())
 			owner.injure(INJURY_TOXIN, 0.1 * PROCESS_ACCURACY, flags = INJURE_SILENT)

@@ -205,7 +205,7 @@ DECLARE_INTERACTIONS(/obj/item/walkpod, \
 
 	switch(action)
 		if("change_track")
-			var/datum/track/T = locate(params["change_track"]) in getTracksList()
+			var/datum/track/T = locate_in_list(getTracksList(), params["change_track"])
 			if(istype(T))
 				current_track_handle = om_handle(T)
 				StartPlaying()

@@ -274,7 +274,7 @@
 		if(!check_rights(R_BAN))
 			return
 
-		var/mob/M = locate(href_list["jobban2"]) in REGISTRY_MEMBERS(REGISTRY_MOBS)
+		var/mob/M = locate_in_list(REGISTRY_MEMBERS(REGISTRY_MOBS), href_list["jobban2"])
 		if(!ismob(M))
 			to_chat(usr, span_filter_adminlog("This can only be used on instances of type /mob"))
 			return
@@ -775,7 +775,7 @@
 		locker.locked = 1
 
 		//strip their stuff and stick it in the crate
-		for(var/obj/item/I in M)
+		for(var/obj/item/I in contents_of(M))
 			M.drop_from_inventory(I, locker)
 
 		//so they black out before warping
@@ -835,7 +835,7 @@
 			to_chat(usr, span_filter_adminlog("This cannot be used on instances of type /mob/living/silicon/ai"))
 			return
 
-		for(var/obj/item/I in M)
+		for(var/obj/item/I in contents_of(M))
 			M.drop_from_inventory(I)
 
 		M.status_at_least(EFFECT_PARALYZED, 5)
@@ -862,7 +862,7 @@
 			to_chat(usr, span_filter_adminlog("This cannot be used on instances of type /mob/living/silicon/ai"))
 			return
 
-		for(var/obj/item/I in M)
+		for(var/obj/item/I in contents_of(M))
 			M.drop_from_inventory(I)
 
 		M.status_at_least(EFFECT_PARALYZED, 5)
@@ -913,7 +913,7 @@
 			to_chat(usr, span_filter_adminlog("This cannot be used on instances of type /mob/living/silicon/ai"))
 			return
 
-		for(var/obj/item/I in M)
+		for(var/obj/item/I in contents_of(M))
 			M.drop_from_inventory(I)
 
 		if(ishuman(M))

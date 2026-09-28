@@ -170,7 +170,7 @@ REF_OWNED(/obj/item/clothing/head/pilot, "pilot_hud")
 // its HUD images are detached.
 /obj/item/clothing/head/pilot/on_destroy(force)
 	for(var/image/I as anything in raw_images)
-		I.loc = null
+		image_anchor(I, null)
 	..()
 
 /obj/item/clothing/head/pilot/equipped(mob/user,slot)

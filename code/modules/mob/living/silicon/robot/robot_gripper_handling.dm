@@ -440,7 +440,7 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 	for(var/obj/item/storage/internal/gripper/pocket in pockets)
 		if(!LAZYLEN(pocket.contents))
 			continue
-		for(var/obj/item/stack/stack in pocket.contents)
+		for(var/obj/item/stack/stack in contents_of(pocket))
 			if(istype(stack_to_consolidate, stack.type))
 				stack_to_consolidate.transfer_to(stack)
 				return

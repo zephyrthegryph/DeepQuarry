@@ -303,7 +303,7 @@
 
 /// Starts building on `T`: a 5 s task (stays in place, conscious, one builder per turf).
 /mob/living/simple_mob/animal/tyr/mineral_ants/builder/proc/build_tile(turf/T)
-	if(nutrition < 75 || !istype(T) || (locate(/obj/effect/ant_structure) in T))
+	if(nutrition < 75 || !istype(T) || (locate_within(T, /obj/effect/ant_structure)))
 		return FALSE
 	if(istext(om_task_start(/datum/om/task/mob_work/ant_build, src, T)))
 		return FALSE
@@ -373,7 +373,7 @@
 
 /// Starts building on `T`: a 5 s task (stays in place, conscious, one builder per turf).
 /mob/living/simple_mob/animal/tyr/mineral_ants/queen/proc/build_tile(turf/T)
-	if(nutrition < 75 || !istype(T) || (locate(/obj/effect/ant_structure) in T))
+	if(nutrition < 75 || !istype(T) || (locate_within(T, /obj/effect/ant_structure)))
 		return FALSE
 	if(istext(om_task_start(/datum/om/task/mob_work/ant_build, src, T)))
 		return FALSE
@@ -578,7 +578,7 @@ EXTEND_INTERACTIONS(/obj/effect/ant_structure, \
 /mob/living/simple_mob/animal/tyr/mineral_ants/proc/build_done(datum/om/task/task)
 	var/turf/T = task.target
 	var/product = build_product()
-	if(!product || (locate(/obj/effect/ant_structure) in T))
+	if(!product || (locate_within(T, /obj/effect/ant_structure)))
 		return
 	adjust_nutrition(-30)
 	new product(T)

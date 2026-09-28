@@ -228,12 +228,12 @@ DECLARE_INTERACTIONS(/obj/item/robot_tongue, INTERACT_USE(null, PROC_REF(interac
 /obj/item/robot_tongue/proc/afterattack_robot_tongue_done3(atom/target, mob/user)
 	to_chat(user, span_notice("You clean \the [target.name]."))
 	water.use_charge(5)
-	var/obj/effect/decal/cleanable/C = locate() in target
+	var/obj/effect/decal/cleanable/C = locate_in_list(target, /obj/effect/decal/cleanable)
 	qdel(C)
 	target.wash(CLEAN_WASH)
 /obj/item/robot_tongue/proc/afterattack_robot_tongue_done4(atom/target, mob/user)
 	to_chat(user, span_notice("You clean \the [target.name]."))
-	var/obj/effect/decal/cleanable/C = locate() in target
+	var/obj/effect/decal/cleanable/C = locate_in_list(target, /obj/effect/decal/cleanable)
 	qdel(C)
 	target.wash(CLEAN_WASH)
 	water.use_charge(5)

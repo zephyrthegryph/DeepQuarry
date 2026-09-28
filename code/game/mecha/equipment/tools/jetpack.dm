@@ -9,7 +9,7 @@
 
 
 /obj/item/mecha_parts/mecha_equipment/tool/jetpack/can_attach(obj/mecha/M as obj)
-	if(!(locate(src.type) in M.equipment) && !LAZYACCESS(M.proc_res, "dyndomove"))
+	if(!(locate_in_list(M.equipment, src.type)) && !LAZYACCESS(M.proc_res, "dyndomove"))
 		return ..()
 
 /obj/item/mecha_parts/mecha_equipment/tool/jetpack/detach()

@@ -136,7 +136,7 @@
 			else
 				to_chat(user, span_notice("You can't reach."))
 				return TRUE //Only works for GLOB.cardinal direcitons, diagonals aren't supposed to work like this.
-		for(var/obj/structure/window/WINDOW in loc)
+		for(var/obj/structure/window/WINDOW in contents_of(loc))
 			if(WINDOW.dir == dir_to_set)
 				to_chat(user, span_notice("There is already a window facing this way there."))
 				return TRUE
@@ -167,7 +167,7 @@
 	var/mob/user = task.actor
 	var/obj/item/stack/material/ST = task.ST
 	var/dir_to_set = task.dir_to_set
-	for(var/obj/structure/window/WINDOW in loc)
+	for(var/obj/structure/window/WINDOW in contents_of(loc))
 		if(WINDOW.dir == dir_to_set)//checking this for a 2nd time to check if a window was made while we were waiting.
 			to_chat(user, span_notice("There is already a window facing this way there."))
 			return

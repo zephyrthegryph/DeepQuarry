@@ -379,7 +379,7 @@ REF_OWNED(/obj/machinery/mining/drill, list("faultreporter", "cell"))
 	var/cap_rating = get_part_rating(/obj/item/stock_parts/capacitor)
 	if(cap_rating)
 		charge_use -= 10 * cap_rating
-	cell = locate(/obj/item/cell) in src
+	cell = locate_within(src, /obj/item/cell)
 
 /obj/machinery/mining/drill/proc/check_supports()
 
@@ -458,7 +458,7 @@ REF_OWNED(/obj/machinery/mining/drill, list("faultreporter", "cell"))
 	effect = /obj/machinery/mining/drill/proc/interaction_unload
 
 /obj/machinery/mining/drill/proc/interaction_unload(mob/user, obj/item/held, datum/interaction/interaction)
-	var/obj/structure/ore_box/B = locate() in orange(1)
+	var/obj/structure/ore_box/B = locate_in_list(orange(1), /obj/structure/ore_box)
 	if(B)
 		for(var/ore in stored_ore)
 			if(stored_ore[ore] > 0)
@@ -546,7 +546,7 @@ REF_OWNED(/obj/machinery/mining/drill, list("faultreporter", "cell"))
 
 	var/turf/T = get_step(get_turf(src), src.dir)
 
-	for(var/thing in T.contents)
+	for(var/thing in contents_of(T))
 		if(istype(thing, /obj/machinery/mining/drill))
 			connected_handle = om_handle(thing)
 			break

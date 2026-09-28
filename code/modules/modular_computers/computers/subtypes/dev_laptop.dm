@@ -30,7 +30,7 @@ EXTEND_INTERACTIONS(/obj/item/modular_computer/laptop, INTERACT_ALT(null, PROC_R
 		return TRUE
 	// ition Begin
 	var/supported = FALSE
-	for(var/obj/structure/table/S in loc)
+	for(var/obj/structure/table/S in contents_of(loc))
 		supported = TRUE
 	if(!supported && !anchored)
 		to_chat(user, "You will need a better supporting surface before opening \the [src]!")

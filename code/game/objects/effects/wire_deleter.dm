@@ -10,7 +10,7 @@
 /obj/effect/wire_deleter/Initialize(mapload)
 	. = ..()
 
-	for(var/c in loc.contents)
+	for(var/c in contents_of(loc))
 		if(istype(c, /obj/structure/cable))
 			if(prob(33))
 				qdel(c)

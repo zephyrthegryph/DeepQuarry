@@ -18,7 +18,7 @@
 
 
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/destroy()
-	for(var/atom/movable/AM in src)
+	for(var/atom/movable/AM in contents_of(src))
 		AM.forceMove(get_turf(src))
 		to_chat(AM, span_danger("You tumble out of the destroyed [src.name]!"))
 	return ..()
@@ -155,7 +155,7 @@
 
 	//search for a valid passenger compartment
 	var/feedback = 0 //for nicer user feedback
-	for(var/obj/item/mecha_parts/mecha_equipment/tool/passenger/P in src)
+	for(var/obj/item/mecha_parts/mecha_equipment/tool/passenger/P in contents_of(src))
 		if (P?.slot_item(MECHA_SLOT_PILOT))
 			feedback |= OCCUPIED
 			continue

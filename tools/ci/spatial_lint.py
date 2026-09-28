@@ -18,15 +18,13 @@ Four patterns, each counted separately per file:
   - `locate(...) in` -- a locate search over a raw list/contents/loc instead of
     the spatial API's typed helper.
 
-The migration is gradual: tools/ci/spatial_baseline.txt holds the ceiling on
-legacy sites, which may fall, never rise. A read that is right as it is carries
+This is an outright ban (C11): any unannotated site fails CI. A read that is right as it is carries
 `// ALLOW(spatial): <reason>` on its line or the comment line above it
 (tools/ci/allow_annotations.py) and is not counted.
 
 Usage:
     python tools/ci/spatial_lint.py            # the CI check
     python tools/ci/spatial_lint.py --report   # every site, and totals per pattern
-    python tools/ci/spatial_lint.py --update   # rewrite the ceiling to today's count
 """
 import glob
 import os
@@ -35,10 +33,9 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 from state_schema_lint import code_only  # noqa: E402
-from allow_annotations import allowed, check_ceilings, read_baseline, write_baseline  # noqa: E402
+from allow_annotations import allowed  # noqa: E402
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
-BASELINE = os.path.join(ROOT, "tools", "ci", "spatial_baseline.txt")
 
 # Files that implement the ledger/spatial API itself: they're allowed to
 # touch raw contents/loc/locate freely since they're what the lint is
@@ -65,7 +62,7 @@ PATTERNS = [
     ("locate_in", re.compile(
         r"\blocate\s*\([^()]*\)\s*in\s+"
         r"(?!(?:[\w.]+\.)?(?:slot_contents|latent_entries|latent_materialize_all|get_all_contents|"
-        r"turf_contents_of_type|area_contents_of_type|contents_property)\s*\()"
+        r"turf_contents_of_type|area_contents_of_type|contents_property|contents_of)\s*\()"
     )),
 ]
 
@@ -121,19 +118,15 @@ def main():
         return 0
 
     total = sum(counts.values())
-    if "--update" in args:
-        write_baseline(BASELINE, [
-            "Legacy raw contents/loc reads: `in X.contents`, implicit `in src`/`in loc`/`in T` loops,",
-            "`contents.len`/`length(contents)`, `locate() in` (roadmap C11). tools/ci/spatial_lint.py",
-            "fails when the count rises above this ceiling. Convert sites to the ledger read API or the",
-            "spatial API (doc/rewrite/containment.md section 2a), then lower it with --update.",
-        ], {"raw_reads": total})
-        print("Wrote %s: %d sites in %d files" % (BASELINE, total, len(counts)))
-        return 0
-
-    failed = check_ceilings("spatial", {"raw_reads": total}, read_baseline(BASELINE),
-                            "Containment reads go through the ledger/spatial API (doc/rewrite/containment.md section 2a).")
-    return 1 if failed else 0
+    if total:
+        for rel, number, kind, text in all_sites:
+            print("%s:%d: %s: %s" % (rel, number, kind, text))
+        print("spatial: %d raw contents reads. Use contents_of()/FOR_CONTENTS/is_inside()/locate_within()/"
+              "contents_count()/locate_in_list() or the ledger read API (doc/rewrite/containment.md section 2a); "
+              "a justified keep takes `// ALLOW(spatial): <reason>`." % total)
+        return 1
+    print("spatial raw_reads 0  ok")
+    return 0
 
 
 if __name__ == "__main__":

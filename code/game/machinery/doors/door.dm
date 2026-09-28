@@ -567,7 +567,7 @@
 	// LINDA tracks hotspots via /obj/effect/hotspot (vendored under
 	// code/atmospherics/environmental/LINDA_fire.dm). Switch to the
 	// LINDA type so doors still extinguish fire underneath when they close.
-	var/obj/effect/hotspot/hotspot = locate() in loc
+	var/obj/effect/hotspot/hotspot = locate_within(loc, /obj/effect/hotspot)
 	if(hotspot)
 		qdel(hotspot)
 

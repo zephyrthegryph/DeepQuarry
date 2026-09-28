@@ -92,7 +92,7 @@
 	if(!isturf(O.loc))
 		to_chat(user, span_warning("You need to put \the [O] on the ground, a table, or other worksurface before modifying it."))
 		return
-	if(!skip_content_check && O.contents.len) //check if we're loaded/modified, in the event of gun/suit kits, to avoid purging stuff like ammo, badges, armbands, or suit helmets
+	if(!skip_content_check && contents_count(O)) //check if we're loaded/modified, in the event of gun/suit kits, to avoid purging stuff like ammo, badges, armbands, or suit helmets
 		to_chat(user, span_warning("You should probably remove any attached items or loaded ammunition before trying to modify that!"))
 		return
 	if(cost > parts)
@@ -1362,7 +1362,7 @@ EXTEND_INTERACTIONS(/obj/item/rig/nikki, INTERACT_ITEM(null, PROC_REF(nikki_rig_
 	cut_overlays()
 	if(open)
 		icon_state = open_state
-		if(contents.len >= 1)
+		if(contents_count(src) >= 1)
 			add_overlay("charlottebox[contents.len]")
 	else
 		icon_state = closed_state

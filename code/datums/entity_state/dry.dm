@@ -9,7 +9,7 @@
 	if(!istype(E, /obj/item/clothing/shoes))
 		return
 	var/turf/simulated/T = get_turf(E)
-	var/obj/effect/decal/cleanable/blood/B = locate(/obj/effect/decal/cleanable/blood) in T
+	var/obj/effect/decal/cleanable/blood/B = locate_within(T, /obj/effect/decal/cleanable/blood)
 
 	if(istype(T))
 		T.wet_floor_finish()

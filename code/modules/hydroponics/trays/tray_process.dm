@@ -141,7 +141,7 @@
 	if(!closed_system && \
 		seed.get_trait(TRAIT_SPREAD) == 2 && \
 		2 * age >= seed.get_trait(TRAIT_MATURATION) && \
-		!(locate(/obj/effect/plant) in get_turf(src)) && \
+		!(locate_within(get_turf(src), /obj/effect/plant)) && \
 		prob(2 * seed.get_trait(TRAIT_POTENCY)))
 		// Need to start processing the vine or it'll never spread.
 		var/obj/effect/plant/D = new /obj/effect/plant(get_turf(src), seed)

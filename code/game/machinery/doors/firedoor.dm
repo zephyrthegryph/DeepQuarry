@@ -56,7 +56,7 @@
 /obj/machinery/door/firedoor/Initialize(mapload)
 	. = ..()
 	//Delete ourselves if we find extra mapped in firedoors
-	for(var/obj/machinery/door/firedoor/F in loc)
+	for(var/obj/machinery/door/firedoor/F in contents_of(loc))
 		if(F != src)
 			log_mapping("Duplicate firedoors at [x],[y],[z]")
 			return INITIALIZE_HINT_QDEL

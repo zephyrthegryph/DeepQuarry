@@ -460,7 +460,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 		new /obj/item/material/shard(src.loc)
 		var/obj/item/circuitboard/solar_control/M = new /obj/item/circuitboard/solar_control(A)
 		latent_materialize_all() // a walk needs real things (C5)
-		for(var/obj/C in src) // ALLOW(latent): materialized above
+		for(var/obj/C in contents_of(src)) // ALLOW(latent): materialized above
 			C.forceMove(src.loc)
 		A.circuit = M
 		A.state = 3
@@ -472,7 +472,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 		var/obj/structure/frame/A = new /obj/structure/frame/computer(src.loc)
 		var/obj/item/circuitboard/solar_control/M = new /obj/item/circuitboard/solar_control(A)
 		latent_materialize_all() // a walk needs real things (C5)
-		for(var/obj/C in src) // ALLOW(latent): materialized above
+		for(var/obj/C in contents_of(src)) // ALLOW(latent): materialized above
 			C.forceMove(src.loc)
 		A.circuit = M
 		A.state = 4

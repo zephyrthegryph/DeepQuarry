@@ -9,7 +9,7 @@
 
 /obj/structure/foodcart/Initialize(mapload)
 	. = ..()
-	for(var/obj/item/I in loc)
+	for(var/obj/item/I in contents_of(loc))
 		if(istype(I, /obj/item/reagent_containers/food))
 			I.forceMove(src)
 	update_icon()
@@ -41,7 +41,7 @@
 	effect = /obj/structure/foodcart/proc/interaction_hand
 
 /obj/structure/foodcart/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(contents.len)
+	if(contents_count(src))
 		om_ask(user, /datum/om/prompt/choice, PROC_REF(food_chosen), choices = contents, title = "Grab Choice", message = "What would you like to grab from the cart?", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 	return TRUE
 
@@ -59,7 +59,7 @@
 		update_icon()
 
 /obj/structure/foodcart/update_icon()
-	if(contents.len < 5)
+	if(contents_count(src) < 5)
 		icon_state = "foodcart-[contents.len]"
 	else
 		icon_state = "foodcart-5"

@@ -229,7 +229,7 @@
 				to_chat(target, span_vwarning("\The [src] phases into you, [target.vore_selected.vore_verb]ing them into your [target.vore_selected.get_belly_name()]!"))
 				to_chat(src, span_vwarning("You phase into [target], having them [target.vore_selected.vore_verb] you into their [target.vore_selected.get_belly_name()]!"))
 			if(our_prey)
-				for(var/obj/item/flashlight/held_lights in our_prey.contents)
+				for(var/obj/item/flashlight/held_lights in contents_of(our_prey))
 					if(istype(held_lights,/obj/item/flashlight/glowstick) ||istype(held_lights,/obj/item/flashlight/flare) ) //No affecting glowsticks or flares...As funny as that is
 						continue
 					held_lights.on = 0
@@ -256,7 +256,7 @@
 	for(var/mob/living/creatures in range(SK.flicker_distance, src))
 		if(isbelly(creatures.loc)) //don't flicker anyone that gets nomphed.
 			continue
-		for(var/obj/item/flashlight/held_lights in creatures.contents)
+		for(var/obj/item/flashlight/held_lights in contents_of(creatures))
 			if(istype(held_lights,/obj/item/flashlight/glowstick) ||istype(held_lights,/obj/item/flashlight/flare) ) //No affecting glowsticks or flares...As funny as that is
 				continue
 			held_lights.flicker(SK.flicker_time, SK.flicker_color, TRUE)

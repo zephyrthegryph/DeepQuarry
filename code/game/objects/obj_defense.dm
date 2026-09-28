@@ -17,7 +17,7 @@
 	if(HAS_TRAIT(src, TRAIT_UNDERFLOOR) || !isnum(exposed_temperature))
 		return
 	// Heat reaches the holder's contents through its slots' paths (C2).
-	if(length(contents))
+	if(contents_count(src))
 		propagate_fire(exposed_temperature, exposed_volume)
 		if(QDELETED(src))
 			return

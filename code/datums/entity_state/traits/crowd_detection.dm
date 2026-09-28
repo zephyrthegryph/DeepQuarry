@@ -76,7 +76,7 @@
 	var/list/in_range = list()
 	if(!item || !istype(item) || current_layer > max_layer)
 		return in_range
-	for(var/datum/content in item.contents)
+	for(var/datum/content in contents_of(item))
 		if(istype(content,/obj/item/holder))
 			var/obj/item/holder/contentholder = content
 			in_range |= check_mob_company(contentholder.held_mob)
@@ -103,7 +103,7 @@
 		in_range |= check_contents(M)
 		if(M.vore_organs)
 			for(var/obj/belly/B in M.vore_organs)
-				for(var/mob/living/content in B.contents)
+				for(var/mob/living/content in contents_of(B))
 					if(istype(content))
 						in_range |= check_mob_company(content)
 	return in_range
@@ -180,7 +180,7 @@
 	//Check to see if there's anyone in our belly
 	if(human_parent.vore_organs)
 		for(var/obj/belly/B in human_parent.vore_organs)
-			for(var/mob/living/content in B.contents)
+			for(var/mob/living/content in contents_of(B))
 				if(istype(content))
 					if(length(check_mob_company(content)))
 						calm_discomfort()

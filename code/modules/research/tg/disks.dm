@@ -20,7 +20,7 @@
 	desc = "A debug item for research"
 
 /obj/item/disk/tech_disk/debug/Initialize(mapload)
-	stored_research_static = locate(/datum/techweb/admin) in GLOB.research_service.techwebs
+	stored_research_static = locate_in_list(GLOB.research_service.techwebs, /datum/techweb/admin)
 	return ..()
 
 /obj/item/disk/design_disk

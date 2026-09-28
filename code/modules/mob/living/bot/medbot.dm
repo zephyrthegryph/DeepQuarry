@@ -503,7 +503,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/firstaid, INTERACT_ITEM("Add robot arm", P
 	if(!is_robot_arm && !is_robotic_organ)
 		return FALSE
 
-	if(contents.len >= 1 || has_latent()) // ALLOW(latent): latent entries checked
+	if(contents_count(src) >= 1 || has_latent()) // ALLOW(latent): latent entries checked
 		to_chat(user, span_notice("You need to empty [src] out first."))
 		return INTERACTION_HANDLED_PASS
 

@@ -204,7 +204,7 @@
 
 	switch(action)
 		if("change_track")
-			var/datum/track/T = locate(params["change_track"]) in getTracksList()
+			var/datum/track/T = locate_in_list(getTracksList(), params["change_track"])
 			if(istype(T))
 				current_track_handle = om_handle(T)
 				StartPlaying()
@@ -246,7 +246,7 @@
 		if("add_new_track")
 			SSmedia_tracks.add_track(ui.user, params["url"], params["title"], text2num(params["duration"]) * 10, params["artist"], params["genre"], text2num(params["secret"]), text2num(params["lobby"]))
 		if("remove_new_track")
-			var/datum/track/track_to_remove = locate(params["ref"]) in getTracksList()
+			var/datum/track/track_to_remove = locate_in_list(getTracksList(), params["ref"])
 			if(track_to_remove == current_track() && playing)
 				StopPlaying()
 			SSmedia_tracks.remove_track(ui.user, track_to_remove)

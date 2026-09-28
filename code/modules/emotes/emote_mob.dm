@@ -114,7 +114,7 @@
 		return
 
 	use_emote.do_emote(src, message)
-	for (var/obj/item/implant/I in src)
+	for (var/obj/item/implant/I in contents_of(src))
 		if (I.implanted)
 			I.trigger(act, src)
 

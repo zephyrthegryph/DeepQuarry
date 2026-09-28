@@ -73,7 +73,7 @@
 
 	// Its motor draws the spin down; wake it while there is spin to draw.
 	if(kin_energy >= TURBINE_MIN_KIN_ENERGY)
-		var/obj/machinery/power/turbinemotor/motor = locate() in get_step(src, dir)
+		var/obj/machinery/power/turbinemotor/motor = locate_within(get_step(src, dir), /obj/machinery/power/turbinemotor)
 		if(motor)
 			MACHINE_WAKE(motor)
 		return
@@ -223,7 +223,7 @@
 /obj/machinery/power/turbinemotor/proc/updateConnection()
 	turbine = null
 	if(src.loc && anchored)
-		turbine = locate(/obj/machinery/atmospherics/pipeturbine) in get_step(src,dir)
+		turbine = locate_within(get_step(src,dir), /obj/machinery/atmospherics/pipeturbine)
 		if(!turbine)
 			return
 		if (turbine.stat & (BROKEN) || !turbine.anchored || turn(turbine.dir,180) != dir)

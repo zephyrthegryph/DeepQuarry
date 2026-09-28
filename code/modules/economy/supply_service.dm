@@ -513,7 +513,7 @@ GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
 	if(istype(A,/obj/structure/extraction_point )) // Fulton beacons
 		return 1
 
-	for(var/atom/B in A.contents)
+	for(var/atom/B in contents_of(A))
 		if(.(B))
 			return 1
 
@@ -592,7 +592,7 @@ GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
 			if(T.density)
 				continue
 			var/occupied = 0
-			for(var/atom/A in T.contents)
+			for(var/atom/A in contents_of(T))
 				if(!A.simulated)
 					continue
 				occupied = 1
@@ -974,6 +974,7 @@ GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
 	if(!(E in exported_crates) || !new_name || !new_quantity || !new_value)
 		return
 
+	// ALLOW(spatial): export datum list, not atom contents
 	E.contents[++E.contents.len] = list(
 			"object" = new_name,
 			"quantity" = new_quantity,

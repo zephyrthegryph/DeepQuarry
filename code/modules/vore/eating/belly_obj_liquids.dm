@@ -283,7 +283,7 @@
 /obj/belly/proc/quick_cycle() //For manual belly cycling without straining the bellies subsystem.
 	HandleBellyReagents()	//reagent belly stuff.
 	// VERY early exit
-	if(!contents.len)
+	if(!contents_count(src))
 		return
 
 	var/to_update = FALSE //Did anything update worthy happen?

@@ -119,7 +119,7 @@
 	if(is_bruised()) //They heal theirselves.
 		owner?.mend(TREAT_RESTORATION, 1, src)
 
-	var/datum/reagent/coffee = locate(/datum/reagent/drink/coffee) in owner.reagents.reagent_list
+	var/datum/reagent/coffee = locate_in_list(owner.reagents.reagent_list, /datum/reagent/drink/coffee)
 	if(coffee && owner.ingested)
 		for(var/datum/reagent/drink/coffee/R in owner.ingested.reagent_list)
 			R.holder.remove_reagent(REAGENT_ID_COFFEE, REM)
@@ -139,7 +139,7 @@
 		return
 	if(is_bruised()) //They heal theirselves.
 		owner?.mend(TREAT_RESTORATION, 1, src)
-	var/datum/reagent/toxin/toxins = locate(/datum/reagent/toxin) in owner.reagents.reagent_list
+	var/datum/reagent/toxin/toxins = locate_in_list(owner.reagents.reagent_list, /datum/reagent/toxin)
 	if(toxins)
 		for(var/datum/reagent/toxin/R in owner.bloodstr.reagent_list)
 			R.holder.remove_reagent(R.id, REM)

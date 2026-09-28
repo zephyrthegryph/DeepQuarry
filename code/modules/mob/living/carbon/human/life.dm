@@ -1802,7 +1802,7 @@
 			if(!self.has_status(EFFECT_DRUGGED))		self.see_invisible = SEE_INVISIBLE_LEVEL_TWO
 
 		if(self.seer==1)
-			var/obj/effect/rune/R = locate() in self.loc
+			var/obj/effect/rune/R = locate_within(self.loc, /obj/effect/rune)
 			if(R && R.word1 == GLOB.cultwords["see"] && R.word2 == GLOB.cultwords["hell"] && R.word3 == GLOB.cultwords["join"])
 				self.see_invisible = SEE_INVISIBLE_CULT
 			else

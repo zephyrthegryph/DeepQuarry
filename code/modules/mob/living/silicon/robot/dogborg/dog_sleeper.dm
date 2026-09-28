@@ -113,7 +113,7 @@ REF_SPILL_LIST(/obj/item/dogborg/sleeper, "items_preserved")
 		return
 	if(target in hound.module.modules)
 		return
-	if(length(contents) >= max_item_count)
+	if(contents_count(src) >= max_item_count)
 		to_chat(user, span_warning("Your [src.name] is full. Eject or process contents to continue."))
 		return
 
@@ -159,7 +159,7 @@ REF_SPILL_LIST(/obj/item/dogborg/sleeper, "items_preserved")
 		om_do_after(user, 50, target = H, receiver = src, on_done = PROC_REF(intake_patient_done), done_args = list(H, user))
 
 /obj/item/dogborg/sleeper/proc/afterattack_sleeper_done(atom/movable/target, mob/living/silicon/user)
-	if(!(length(contents) < max_item_count))
+	if(!(contents_count(src) < max_item_count))
 		return
 	target.forceMove(src)
 	user.visible_message(span_warning("[hound.name]'s [src.name] groans lightly as [target.name] slips inside."), span_notice("Your [src.name] groans lightly as [target] slips inside."))
@@ -170,7 +170,7 @@ REF_SPILL_LIST(/obj/item/dogborg/sleeper, "items_preserved")
 		to_chat(user, span_notice("\The [target.name] added to cargo compartment slot: [delivery_tag]."))
 	update_patient()
 /obj/item/dogborg/sleeper/proc/afterattack_sleeper_done2(mob/living/silicon/user, mob/living/simple_mob/trashmouse)
-	if(!(length(contents) < max_item_count))
+	if(!(contents_count(src) < max_item_count))
 		return
 	trashmouse.forceMove(src)
 	user.visible_message(span_warning("[hound.name]'s [src.name] groans lightly as [trashmouse] slips inside."), span_notice("Your [src.name] groans lightly as [trashmouse] slips inside."))
@@ -181,7 +181,7 @@ REF_SPILL_LIST(/obj/item/dogborg/sleeper, "items_preserved")
 		to_chat(user, span_notice("\The [trashmouse] added to cargo compartment slot: [delivery_tag]."))
 	update_patient()
 /obj/item/dogborg/sleeper/proc/afterattack_sleeper_done3(mob/living/silicon/user, mob/living/carbon/human/trashman)
-	if(!(!patient && !trashman?.buckled_to() && length(contents) < max_item_count))
+	if(!(!patient && !trashman?.buckled_to() && contents_count(src) < max_item_count))
 		return
 	trashman.forceMove(src)
 	PERIODIC_START(src, PERIODIC_SLOW)
@@ -210,7 +210,7 @@ REF_SPILL_LIST(/obj/item/dogborg/sleeper, "items_preserved")
 		if (istype(to_eat, /obj/item/holder)) //just in case
 			var/obj/item/holder/micro = ingesting
 			var/delete_holder = TRUE
-			for (var/mob/living/M in micro.contents)
+			for (var/mob/living/M in contents_of(micro))
 				if (!ingest_living(M, belly) || M.loc == micro)
 					delete_holder = FALSE
 			if (delete_holder)
@@ -234,7 +234,7 @@ REF_SPILL_LIST(/obj/item/dogborg/sleeper, "items_preserved")
 	cleaning = 0
 	for(var/list/dlist in deliverylists)
 		dlist.Cut()
-	if(length(contents) > 0)
+	if(contents_count(src) > 0)
 		hound.visible_message(span_warning("[hound.name] empties out their contents via their [eject_port] port."), span_notice("You empty your contents via your [eject_port] port."))
 		for(var/atom/movable/content in contents)
 			content.forceMove(get_turf(src))
@@ -243,7 +243,7 @@ REF_SPILL_LIST(/obj/item/dogborg/sleeper, "items_preserved")
 
 /obj/item/dogborg/sleeper/proc/vore_ingest_all()
 	hound = src.loc
-	if (!istype(hound) || length(contents) <= 0)
+	if (!istype(hound) || contents_count(src) <= 0)
 		return
 	if (!hound.vore_selected)
 		to_chat(hound, span_warning("You don't have a belly selected to empty the contents into!"))
@@ -449,7 +449,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 		return
 
 	//Cleaning looks better with red on, even with nobody in it
-	if(cleaning || (length(contents) > 10) || (decompiler && (length(contents) > 5)) || (analyzer && (length(contents) > 1)))
+	if(cleaning || (contents_count(src) > 10) || (decompiler && (contents_count(src) > 5)) || (analyzer && (contents_count(src) > 1)))
 		set_hound_sleeper_state(SLEEPER_STATE_BUSY)
 		return
 
@@ -563,7 +563,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 								thing.forceMove(src)
 								if(ismob(thing))
 									to_chat(thing, span_filter_notice("As [T] melts away around you, you find yourself in [hound]'s [name]."))
-					for(var/obj/item/I in T)
+					for(var/obj/item/I in contents_of(T))
 						if(istype(I,/obj/item/organ/internal/mmi_holder/posibrain))
 							var/obj/item/organ/internal/mmi_holder/MMI = I
 							var/atom/movable/brain = MMI.removed()

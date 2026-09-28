@@ -159,7 +159,7 @@
 /// Starts spinning a web on `T`: a 5 s task that holds its claim on the turf and ends when the
 /// spider moves off, stops being conscious, or dies. TRUE when it started.
 /mob/living/simple_mob/animal/giant_spider/nurse/proc/web_tile(turf/T)
-	if(!istype(T) || (locate(/obj/effect/spider/stickyweb) in T))
+	if(!istype(T) || (locate_within(T, /obj/effect/spider/stickyweb)))
 		return FALSE
 	if(istext(om_task_start(/datum/om/task/mob_work/spider_web, src, T)))
 		return FALSE
@@ -168,7 +168,7 @@
 
 /mob/living/simple_mob/animal/giant_spider/nurse/proc/web_done(datum/om/task/task)
 	var/turf/T = task.target
-	if(!(locate(/obj/effect/spider/stickyweb) in T))
+	if(!(locate_within(T, /obj/effect/spider/stickyweb)))
 		new web_type(T)
 
 /mob/living/simple_mob/animal/giant_spider/nurse/proc/work_interrupted(datum/om/task/task)
@@ -187,7 +187,7 @@
 
 /mob/living/simple_mob/animal/giant_spider/nurse/proc/eggs_done(datum/om/task/task)
 	var/turf/T = task.target
-	if(locate(/obj/effect/spider/eggcluster) in T)
+	if(locate_within(T, /obj/effect/spider/eggcluster))
 		return // Spamclick protection.
 	var/obj/effect/spider/eggcluster/eggs = new egg_type(T)
 	eggs.faction = faction

@@ -657,7 +657,7 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 /obj/machinery/button/remote/airlock/survival_pod/proc/interaction_glass(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!door())
 		var/turf/dT = get_step(src,dir)
-		door_handle = om_handle(locate(/obj/machinery/door/airlock/voidcraft/survival_pod) in dT)
+		door_handle = om_handle(locate_within(dT, /obj/machinery/door/airlock/voidcraft/survival_pod))
 	if(door())
 		door().glass = !door().glass
 		door().opacity = !door().opacity
@@ -716,7 +716,7 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 	playsound(src, 'sound/machines/button.ogg', 100, 1, 0)
 	if(!target_light())
 		var/turf/dT = get_step(src, dir)
-		target_light_handle = om_handle(locate(/obj/machinery/light) in dT)
+		target_light_handle = om_handle(locate_within(dT, /obj/machinery/light))
 	if(target_light())
 		target_light().on = on
 		target_light().update()
@@ -847,7 +847,7 @@ EXTEND_INTERACTIONS(/obj/item/gps/computer, INTERACT_HAND_UNGATED(null, PROC_REF
 
 /obj/machinery/smartfridge/survival_pod/Initialize(mapload)
 	. = ..()
-	for(var/obj/item/O in loc)
+	for(var/obj/item/O in contents_of(loc))
 		if(accept_check(O))
 			stock(O)
 

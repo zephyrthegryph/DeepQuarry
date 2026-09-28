@@ -157,7 +157,7 @@
 	if(!owner_ref())
 		return 0
 	if(!core)
-		core = locate(/obj/item/technomancer_core) in owner_ref()
+		core = locate_within(owner_ref(), /obj/item/technomancer_core)
 		if(!core)
 			to_chat(owner_ref(), span_danger("You need to be wearing a core on your back!"))
 			return 0

@@ -202,7 +202,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 
 /obj/effect/overmap/visitable/proc/get_waypoints(shuttle_name)
 	. = list()
-	for(var/obj/effect/overmap/visitable/contained in src)
+	for(var/obj/effect/overmap/visitable/contained in contents_of(src))
 		. += contained.get_waypoints(shuttle_name)
 	for(var/thing in generic_waypoints)
 		.[thing] = name

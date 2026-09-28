@@ -37,9 +37,9 @@
 	if(A != src)
 		LAZYOR(hit, A)
 	if(isturf(A))
-		for(var/obj/O in A)
+		for(var/obj/O in contents_of(A))
 			LAZYOR(hit, O)
-		for(var/mob/living/M in A)
+		for(var/mob/living/M in contents_of(A))
 			LAZYOR(hit, M)
 	return ..()
 

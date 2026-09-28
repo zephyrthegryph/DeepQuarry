@@ -11,7 +11,7 @@
 	for(var/i in 1 to 10)
 		var/area/A = pick(grand_list_of_areas)
 		var/list/obj/machinery/door/airlock/target_doors = list()
-		for(var/obj/machinery/door/airlock/target_door in A.contents)
+		for(var/obj/machinery/door/airlock/target_door in contents_of(A))
 			target_doors += target_door
 		target_doors = shuffle(target_doors)
 

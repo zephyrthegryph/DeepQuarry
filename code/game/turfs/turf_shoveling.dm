@@ -10,7 +10,7 @@
 	use_tool(user, our_shovel, src, delay = 3 SECONDS, volume = 0, message_self = "\The [user] begins digging into \the [src] with \the [our_shovel].", receiver = src, on_done = PROC_REF(handle_turf_dig_tool_done), done_args = list(user, our_shovel))
 
 /turf/proc/handle_turf_dig_tool_done(mob/user, obj/item/shovel/our_shovel)
-	if(shovel_can_cultivate() && !(locate(/obj/machinery/portable_atmospherics/hydroponics/soil) in contents) && !(locate(/obj/structure/closet/grave/dirthole) in contents))
+	if(shovel_can_cultivate() && !(locate_within(src, /obj/machinery/portable_atmospherics/hydroponics/soil)) && !(locate_within(src, /obj/structure/closet/grave/dirthole)))
 		var/obj/machinery/portable_atmospherics/hydroponics/soil/soil = new(src)
 		user.visible_message(span_notice("\The [src] digs \a [soil] into \the [src]."))
 		return
@@ -31,7 +31,7 @@
 		dig_exhaustion_chance = TURF_DIG_LOOT_EXHAUSTED
 
 /turf/proc/shovel_dig_grave(mob/user, obj/item/shovel/our_shovel)
-	if(length(contents))
+	if(contents_count(src))
 		to_chat(user, span_warning("You can't dig here!"))
 		return
 	// Make a grave
@@ -41,7 +41,7 @@
 	om_do_after(user, delay, src, src, PROC_REF(grave_dug), list(user))
 
 /turf/proc/grave_dug(mob/user)
-	if(!(locate(/obj/structure/closet/grave/dirthole) in contents))
+	if(!(locate_within(src, /obj/structure/closet/grave/dirthole)))
 		new /obj/structure/closet/grave/dirthole(src)
 	to_chat(user, span_notice("You dug up a hole!"))
 

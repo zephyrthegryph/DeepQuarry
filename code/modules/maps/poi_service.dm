@@ -64,7 +64,7 @@ GLOBAL_DATUM_INIT(poi_service, /datum/world_service/pois, new)
 	if(length(turfs_to_clean))
 		for(var/x in 1 to 2) // Requires two passes to get everything.
 			for(var/turf/T in turfs_to_clean)
-				for(var/atom/movable/AM in T)
+				for(var/atom/movable/AM in contents_of(T))
 					//++deleted_atoms
 					qdel(AM)
 	//admin_notice(span_danger("Annihilated [deleted_atoms] objects."), R_DEBUG)

@@ -211,7 +211,7 @@ REF_PAIR(/mob/living/simple_mob/vore/overmap/stardog, list("control_node" = "hos
 	var/heal = FALSE
 	var/delet = TRUE
 
-	for(var/obj/effect/overmap/event/e in loc)
+	for(var/obj/effect/overmap/event/e in contents_of(loc))
 		if(istype(e, /obj/effect/overmap/event/carp))
 			E = e
 			nut = 250
@@ -338,7 +338,7 @@ REF_PAIR(/mob/living/simple_mob/vore/overmap/stardog, list("control_node" = "hos
 	if(istype(loc, /turf/unsimulated/map))
 		var/list/destinations = list()
 		var/list/our_maps = list()
-		for(var/obj/effect/overmap/visitable/v in loc)
+		for(var/obj/effect/overmap/visitable/v in contents_of(loc))
 			if(v == child_om_marker)
 				continue
 			if(!v.map_z.len)
@@ -1015,7 +1015,7 @@ DECLARE_INTERACTIONS(/obj/structure/control_pod, INTERACT_HAND(null, PROC_REF(in
 	var/close = FALSE
 	var/list/check = get_area_turfs(/area/redgate/stardog/eyes)
 	for(var/turf/t in check)
-		for(var/thing in t.contents)
+		for(var/thing in contents_of(t))
 			if(istype(thing, /obj/effect/dog_eye))	//We can have eyes in our eyes, it's fine
 				continue
 			if(isobserver(thing))	//Ghosts aren't real
@@ -1329,7 +1329,7 @@ EXTEND_INTERACTIONS(/obj/effect/dog_teleporter, \
 	if(linked_mob)	//Please for the love of all that is good, make all this mob shit its own proc, future me
 		damage += clamp(((500 - linked_mob.nutrition) / 100), 1 , 5)
 	var/list/stuff = list()
-	for(var/thing in src)
+	for(var/thing in contents_of(src))
 		if(can_digest(thing))
 			stuff |= thing
 	if(!stuff.len)
@@ -1344,7 +1344,7 @@ EXTEND_INTERACTIONS(/obj/effect/dog_teleporter, \
 		if(H.stat == DEAD)
 			H.unacidable = TRUE	//Don't touch this one again, we're gonna delete it in a second
 			H.release_vore_contents()
-			for(var/obj/item/W in H)
+			for(var/obj/item/W in contents_of(H))
 				if(istype(W, /obj/item/organ/internal/mmi_holder/posibrain))
 					var/obj/item/organ/internal/mmi_holder/MMI = W
 					MMI.removed()
@@ -1426,7 +1426,7 @@ EXTEND_INTERACTIONS(/obj/effect/dog_teleporter, \
 	else
 		countdown --
 	if(!state)
-		for(var/mob/living/L in src.loc.contents)
+		for(var/mob/living/L in contents_of(src.loc))
 			if(isliving(L))
 				L.status_at_least(EFFECT_WEAKENED, 3)
 				if(prob(5))
@@ -1511,7 +1511,7 @@ DECLARE_INTERACTIONS(/obj/structure/auto_flesh_door, INTERACT_HAND(null, PROC_RE
 	countdown = rand(50,250)
 	layer = ABOVE_MOB_LAYER
 	plane = ABOVE_MOB_PLANE
-	for(var/mob/living/L in src.loc.contents)
+	for(var/mob/living/L in contents_of(src.loc))
 		if(isliving(L))
 			L.status_at_least(EFFECT_WEAKENED, 3)
 			L.visible_message(span_danger("\The [src] closes up on \the [L]!"),span_danger("The weight of \the [src] closes in on you, squeezing you on all sides so tightly that you can hardly move! It throbs against you as the way is sealed, with you stuck in the middle!!!"))

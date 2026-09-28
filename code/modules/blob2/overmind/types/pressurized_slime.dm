@@ -45,7 +45,7 @@
 	for(var/turf/simulated/T in range(1, get_turf(B)))
 		if(prob(probability))
 			T.wet_floor()
-		for(var/atom/movable/AM in T)
+		for(var/atom/movable/AM in contents_of(T))
 			AM.water_act(2)
 
 /datum/blob_type/pressurized_slime/on_chunk_tick(obj/item/blobcore_chunk/B)

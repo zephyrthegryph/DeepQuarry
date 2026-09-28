@@ -35,7 +35,7 @@
 	var/turf_move = isturf(loc) && isturf(old_loc)
 	for(var/img in dir_images)
 		var/image/G = dir_images[img]
-		G.loc = loc
+		image_anchor(G, loc)
 		if(turf_move)
 			var/MT = 0.7 SECONDS
 			G.pixel_x = (old_loc.x - loc.x) * WORLD_ICON_SIZE
@@ -62,7 +62,7 @@
 		G.plane = clone.plane
 		G.appearance_flags = clone.appearance_flags
 		G.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
-		G.loc = loc
+		image_anchor(G, loc)
 
 /obj/effect/fake_attacker/proc/append_client(client/C)
 	SHOULD_NOT_OVERRIDE(TRUE)

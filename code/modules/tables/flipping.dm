@@ -4,10 +4,10 @@
 		return 0
 	var/obj/structure/table/T
 	for(var/angle in list(-90,90))
-		T = locate() in get_step(src.loc,turn(direction,angle))
+		T = locate_within(get_step(src.loc,turn(direction,angle)), /obj/structure/table)
 		if(T && T.flipped == 0 && T.material() && T.material().name == material().name)
 			return 0
-	T = locate() in get_step(src.loc,direction)
+	T = locate_within(get_step(src.loc,direction), /obj/structure/table)
 	if (!T || T.flipped == 1 || T.material() != material())
 		return 1
 	return T.straight_table_check(direction)
@@ -58,7 +58,7 @@ EXTEND_INTERACTIONS(/obj/structure/table, \
 		L.Add(turn(src.dir,-90))
 		L.Add(turn(src.dir,90))
 	for(var/new_dir in L)
-		var/obj/structure/table/T = locate() in get_step(src.loc,new_dir)
+		var/obj/structure/table/T = locate_within(get_step(src.loc,new_dir), /obj/structure/table)
 		if(T && T.material() && T.material().name == material().name)
 			if(T.flipped == 1 && T.dir == src.dir && !T.unflipping_check(new_dir))
 				return 0
@@ -91,7 +91,7 @@ EXTEND_INTERACTIONS(/obj/structure/table, \
 	flipped = 1
 	flags |= ON_BORDER
 	for(var/D in list(turn(direction, 90), turn(direction, -90)))
-		var/obj/structure/table/T = locate() in get_step(src,D)
+		var/obj/structure/table/T = locate_within(get_step(src,D), /obj/structure/table)
 		if(T && T.flipped == 0 && material() && T.material() && T.material().name == material().name)
 			T.flip(direction)
 	take_damage(rand(5, 10), BRUTE, MELEE)
@@ -106,7 +106,7 @@ EXTEND_INTERACTIONS(/obj/structure/table, \
 	//climbable = initial(climbable)
 	flags &= ~ON_BORDER
 	for(var/D in list(turn(dir, 90), turn(dir, -90)))
-		var/obj/structure/table/T = locate() in get_step(src.loc,D)
+		var/obj/structure/table/T = locate_within(get_step(src.loc,D), /obj/structure/table)
 		if(T && T.flipped == 1 && T.dir == src.dir && material() && T.material()&& T.material().name == material().name)
 			T.unflip()
 

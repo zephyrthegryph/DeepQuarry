@@ -72,7 +72,7 @@
 REF_OWNED(/obj/effect/anomaly, list("countdown", "anomaly_core", "stats"))
 
 /obj/effect/anomaly/proc/anomalyEffect(seconds_per_tick)
-	if(prob(move_chance) && !locate(/obj/effect/suspension_field) in get_turf(src))
+	if(prob(move_chance) && !locate_within(get_turf(src), /obj/effect/suspension_field))
 		move_anomaly()
 
 // Used in anomaly harvesting - Normal anomalies shouldn't pulse

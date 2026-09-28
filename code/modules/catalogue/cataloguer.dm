@@ -72,7 +72,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 
 	if(isturf(target) && (!target.can_catalogue()))
 		var/turf/T = target
-		for(var/atom/A as anything in T) // If we can't scan the turf, see if we can scan anything on it, to help with aiming.
+		for(var/atom/A as anything in contents_of(T)) // If we can't scan the turf, see if we can scan anything on it, to help with aiming.
 			if(A.can_catalogue())
 				target = A
 				break
@@ -203,7 +203,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 		if(contributers.len)
 			for(var/mob/M in contributers)
 				var/list/things = M.GetAllContents(3) // Depth of two should reach into bags but just in case lets make it three.
-				var/obj/item/cataloguer/other_cataloguer = locate() in things // If someone has two or more scanners this only adds points to one.
+				var/obj/item/cataloguer/other_cataloguer = locate_in_list(things, /obj/item/cataloguer) // If someone has two or more scanners this only adds points to one.
 				if(other_cataloguer)
 					to_chat(M, span_notice("Gained [points_gained] points from \the [user]'s scan of \the [target]."))
 					other_cataloguer.adjust_points(points_gained)

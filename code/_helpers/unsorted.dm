@@ -585,7 +585,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 
 	for(var/atom/part in contents)
 		toReturn += part
-		if((part.contents.len || part.latent_contents) && searchDepth)
+		if((contents_count(part) || part.latent_contents) && searchDepth)
 			toReturn += part.GetAllContents(searchDepth - 1)
 
 	return toReturn
@@ -659,7 +659,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 		return null
 
 	var/list/turfs = new/list()
-	for(var/turf/counted_turfs in checked_area.contents) //Cheap. Efficient. Lovely.
+	for(var/turf/counted_turfs in contents_of(checked_area)) //Cheap. Efficient. Lovely.
 		turfs += counted_turfs
 	return turfs
 
@@ -686,7 +686,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 		return null
 
 	var/list/atoms = new/list()
-	for(var/atom/A in checked_area.contents)
+	for(var/atom/A in contents_of(checked_area))
 		atoms += A
 	return atoms
 
@@ -788,7 +788,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 						z_level_change = TRUE
 
 					//Move the objects. Not forceMove because the object isn't "moving" really, it's supposed to be on the "same" turf.
-					for(var/obj/O in T)
+					for(var/obj/O in contents_of(T))
 						O.forceMove(X)
 						if(O.light_system == STATIC_LIGHT)
 							O.update_light()
@@ -799,7 +799,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 							O.onTransitZ(T.z, X.z)
 
 					//Move the mobs unless it's an AI eye or other eye type.
-					for(var/mob/M in T)
+					for(var/mob/M in contents_of(T))
 						if(isEye(M)) continue // If we need to check for more mobs, I'll add a variable
 						M.forceMove(X)
 
@@ -913,7 +913,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 					var/list/mobs = new/list()
 					var/list/newmobs = new/list()
 
-					for(var/obj/O in T)
+					for(var/obj/O in contents_of(T))
 
 						if(!istype(O,/obj))
 							continue
@@ -926,7 +926,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 					for(var/obj/O in newobjs)
 						O.forceMove(X)
 
-					for(var/mob/M in T)
+					for(var/mob/M in contents_of(T))
 
 						if(!ismob(M) || isEye(M)) continue // If we need to check for more mobs, I'll add a variable
 						mobs += M
@@ -1103,7 +1103,7 @@ GLOBAL_LIST_INIT(common_tools, list(
 	if(!lying && user != src)
 		return null // Not lying down means no surface (blocks surgery)
 	var/cleanliness = 0
-	for(var/obj/O in loc) // Looks for the best surface.
+	for(var/obj/O in contents_of(loc)) // Looks for the best surface.
 		if(O.surgery_cleanliness)
 			if(!cleanliness || cleanliness < O.surgery_cleanliness)
 				cleanliness = O.surgery_cleanliness
@@ -1121,7 +1121,7 @@ GLOBAL_LIST_INIT(common_tools, list(
 	return GLOB.reverse_dir[dir]
 
 /proc/gotwallitem(loc, dir)
-	for(var/obj/O in loc)
+	for(var/obj/O in contents_of(loc))
 		if(O.flags & WALL_ITEM)
 			//Direction works sometimes
 			if(O.dir == dir)
@@ -1179,12 +1179,12 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 	if(!GLOB.dview_mob) // Debugging
 		GLOB.dview_mob = new
 
-	GLOB.dview_mob.loc = center
+	GLOB.dview_mob.loc = center // ALLOW(containment): dview mob: hot view() helper, abstract placement without Enter/Crossed
 
 	GLOB.dview_mob.see_invisible = invis_flags
 
 	. = view(range, GLOB.dview_mob)
-	GLOB.dview_mob.loc = null
+	GLOB.dview_mob.loc = null // ALLOW(containment): dview mob: hot view() helper, abstract nullspace park
 
 /mob/dview
 	invisibility = INVISIBILITY_ABSTRACT

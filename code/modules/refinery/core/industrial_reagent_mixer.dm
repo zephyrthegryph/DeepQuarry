@@ -39,7 +39,7 @@
 	// Check if we were filled...
 	if(mixer_angle % 90 != 0) // Not cardinal, keep going
 		got_input = TRUE
-	else if(!(locate(/obj/machinery/reagent_refinery) in get_step(src,angle2dir(mixer_angle)))) // If nothing, keep rotating
+	else if(!(locate_within(get_step(src,angle2dir(mixer_angle)), /obj/machinery/reagent_refinery))) // If nothing, keep rotating
 		got_input = TRUE
 
 	if(!got_input)
@@ -137,6 +137,6 @@
 		return reagents.total_volume <= 0
 	if(mixer_angle % 90)
 		return TRUE
-	if(!(locate(/obj/machinery/reagent_refinery) in get_step(src, angle2dir(mixer_angle))))
+	if(!(locate_within(get_step(src, angle2dir(mixer_angle)), /obj/machinery/reagent_refinery)))
 		return TRUE
 	return got_input

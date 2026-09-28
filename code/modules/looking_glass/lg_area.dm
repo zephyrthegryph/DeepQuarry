@@ -11,7 +11,7 @@
 
 /area/looking_glass/Initialize(mapload)
 	. = ..()
-	our_landmark_handle = om_handle(locate(/obj/effect/landmark/looking_glass) in src)
+	our_landmark_handle = om_handle(locate_within(src, /obj/effect/landmark/looking_glass))
 	if(!our_landmark())
 		log_mapping("Looking glass area [name] couldn't find a landmark")
 	for(var/turf/simulated/floor/looking_glass/lgt in area_contents_of_type(src, /turf/simulated/floor/looking_glass))

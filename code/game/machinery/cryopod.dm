@@ -318,7 +318,7 @@
 	var/area/my_area = get_area(src)
 	control_computer_handle = om_handle(locate_in_area(my_area, /obj/machinery/computer/cryopod))
 	if(!control_computer()) //Fallback to old method.
-		control_computer_handle = om_handle(locate(/obj/machinery/computer/cryopod) in range(6,src))
+		control_computer_handle = om_handle(locate_in_list(range(6,src), /obj/machinery/computer/cryopod))
 
 	// Don't send messages unless we *need* the computer, and less than five minutes have passed since last time we messaged
 	if(!control_computer() && urgent && COOLDOWN_FINISHED(src, no_computer_message_cooldown))
@@ -400,8 +400,8 @@
 				despawn_occupant(sub_L)
 			for(var/obj/item/W in B)
 				W.forceMove(src)
-				if(W.contents.len)
-					for(var/obj/item/O in W.contents)
+				if(contents_count(W))
+					for(var/obj/item/O in contents_of(W))
 						if(istype(O,/obj/item/storage/internal))
 							continue
 						O.forceMove(src)
@@ -420,8 +420,8 @@
 		to_despawn.drop_from_inventory(W)
 		W.forceMove(src)
 
-		if(W.contents.len) //Make sure we catch anything not handled by qdel() on the items.
-			for(var/obj/item/O in W.contents)
+		if(contents_count(W)) //Make sure we catch anything not handled by qdel() on the items.
+			for(var/obj/item/O in contents_of(W))
 				if(istype(O,/obj/item/storage/internal)) //Stop eating pockets, you fuck!
 					continue
 				O.forceMove(src)

@@ -133,7 +133,7 @@
 	flags = SIGNLANG|NO_STUTTER|NONVERBAL
 
 /datum/language/sign/can_speak_special(mob/speaker)	// TODO: If ever we make external organs assist languages, convert this over to the new format
-	var/obj/item/organ/external/hand/hands = locate() in speaker //you can't sign without hands
+	var/obj/item/organ/external/hand/hands = locate_in_list(speaker, /obj/item/organ/external/hand) //you can't sign without hands
 	return (hands || !iscarbon(speaker))
 
 /datum/language/sign/scramble(input, list/known_languages)

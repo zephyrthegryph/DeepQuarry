@@ -12,7 +12,7 @@
 	// If the command requires a gyrotron, and we can't find it, we don't need to check any further
 	var/obj/machinery/power/emitter/gyrotron/G = null
 	if(params["gyro"])
-		G = locate(params["gyro"]) in REGISTRY_MEMBERS(REGISTRY_GYROTRONS)
+		G = locate_in_list(REGISTRY_MEMBERS(REGISTRY_GYROTRONS), params["gyro"])
 		if(!istype(G))
 			return FALSE
 

@@ -25,7 +25,7 @@ GLOBAL_DATUM(infiltrators, /datum/antagonist/traitor/infiltrator)
 	// Humans and the AI.
 	if(istype(traitor_mob) || isAI(traitor_mob))
 		var/obj/item/radio/headset/R
-		R = locate(/obj/item/radio/headset) in traitor_mob.contents
+		R = locate_within(traitor_mob, /obj/item/radio/headset)
 		if(!R)
 			to_chat(traitor_mob, "Unfortunately, a headset could not be found.  You have been given an encryption key \
 			to put into a new headset.  Once that is done, you can talk to your team using <b>:t</b>")

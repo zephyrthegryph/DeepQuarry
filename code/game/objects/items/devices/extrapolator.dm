@@ -175,7 +175,7 @@ DECLARE_INTERACTIONS(/obj/item/extrapolator, \
 	var/turf/target_turf = get_turf(target)
 	if(!target_turf)
 		return
-	for(var/atom/target_to_try in target_turf.contents - target)
+	for(var/atom/target_to_try in contents_of(target_turf) - target)
 		var/list/result = target_to_try.extrapolator_act(user, src, dry_run = TRUE)
 		if(length(result[EXTRAPOLATOR_RESULT_DISEASES]))
 			. += target_to_try

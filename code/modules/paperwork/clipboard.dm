@@ -101,7 +101,7 @@ DECLARE_INTERACTIONS(/obj/item/clipboard, \
 			"kind" = "paper",
 			"is_top" = TRUE,
 		))
-	for(var/obj/item/paper/P in src)
+	for(var/obj/item/paper/P in contents_of(src))
 		if(P == toppaper())
 			continue
 		items += list(list(
@@ -110,7 +110,7 @@ DECLARE_INTERACTIONS(/obj/item/clipboard, \
 			"kind" = "paper",
 			"is_top" = FALSE,
 		))
-	for(var/obj/item/photo/Ph in src)
+	for(var/obj/item/photo/Ph in contents_of(src))
 		items += list(list(
 			"ref" = "\ref[Ph]",
 			"name" = Ph.name,
@@ -159,7 +159,7 @@ DECLARE_INTERACTIONS(/obj/item/clipboard, \
 				O.forceMove(usr.loc)
 				usr.put_in_hands(O)
 				if(O == toppaper())
-					toppaper_handle = om_handle(locate(/obj/item/paper) in src)
+					toppaper_handle = om_handle(locate_within(src, /obj/item/paper))
 				update_icon()
 			return TRUE
 		if("rename")

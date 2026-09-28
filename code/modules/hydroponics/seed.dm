@@ -208,7 +208,7 @@
 			if(!M.reagents)
 				continue
 			var/body_coverage = HEAD|FACE|EYES|CHEST|LEGS|FEET|ARMS|HANDS
-			for(var/obj/item/clothing/clothes in M)
+			for(var/obj/item/clothing/clothes in contents_of(M))
 				if(M.item_is_in_hands(clothes))
 					continue
 				body_coverage &= ~(clothes.body_parts_covered)
@@ -281,7 +281,7 @@
 		splatted = apply_special_effect(target,thrown)
 	else if(istype(target,/turf))
 		splatted = 1
-		for(var/mob/living/M in target.contents)
+		for(var/mob/living/M in contents_of(target))
 			apply_special_effect(M)
 
 	if(get_trait(TRAIT_JUICY) && splatted)

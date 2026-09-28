@@ -113,7 +113,7 @@
 		for(var/obj/item/gear in list(get_equipped_item(SLOT_ID_MASK),get_equipped_item(SLOT_ID_SUIT),get_equipped_item(SLOT_ID_HEAD)))
 			if(!gear)
 				continue
-			var/obj/item/voice_changer/changer = locate() in gear
+			var/obj/item/voice_changer/changer = locate_in_list(gear, /obj/item/voice_changer)
 			if(changer && changer.active)
 				if(changer.voice)
 					voice_sub = changer.voice

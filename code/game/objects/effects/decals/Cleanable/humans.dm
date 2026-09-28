@@ -179,7 +179,7 @@ EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/blood, \
 /obj/effect/decal/cleanable/blood/writing/Initialize(mapload)
 	. = ..()
 	if(length(random_icon_states))
-		for(var/obj/effect/decal/cleanable/blood/writing/W in loc)
+		for(var/obj/effect/decal/cleanable/blood/writing/W in contents_of(loc))
 			LAZYREMOVE(random_icon_states, W.icon_state)
 		icon_state = DEFAULTPICK(random_icon_states, null)
 	else

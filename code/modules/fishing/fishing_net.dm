@@ -36,7 +36,7 @@
 	if(istype(A, /turf))
 		var/mob/living/Target
 		for(var/type in accepted_mobs)
-			Target = locate(type) in A.contents
+			Target = locate_within(A, type)
 			if(Target)
 				afterattack(Target, user, proximity)
 				break
@@ -46,7 +46,7 @@
 		for(var/D in accepted_mobs)
 			if(istype(A, D))
 				accept = TRUE
-		for(var/atom/At in src.contents)
+		for(var/atom/At in contents_of(src))
 			if(isliving(At))
 				to_chat(user, span_notice("Your net is already holding something!"))
 				accept = FALSE
@@ -70,10 +70,10 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_net, \
 /obj/item/material/fishing_net/proc/fishing_net_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(special_handling)
 		return FALSE
-	for(var/mob/M in src)
+	for(var/mob/M in contents_of(src))
 		M.forceMove(get_turf(src))
 		user.visible_message(span_notice("[user] releases [M] from \the [src]."), span_notice("You release [M] from \the [src]."))
-	for(var/obj/item/I in src)
+	for(var/obj/item/I in contents_of(src))
 		I.forceMove(get_turf(src))
 		user.visible_message(span_notice("[user] dumps \the [I] out of \the [src]."), span_notice("You dump \the [I] out of \the [src]."))
 	update_icon()
@@ -97,7 +97,7 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_net, \
 	name = initial(name)
 	desc = initial(desc)
 	var/contains_mob = FALSE
-	for(var/mob/M in src)
+	for(var/mob/M in contents_of(src))
 		var/image/victim = image(M.icon, M.icon_state)
 		underlays += victim
 		name = "filled net"
@@ -150,7 +150,7 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_net, \
 	if(istype(A, /turf))
 		var/mob/living/Target
 		for(var/type in accepted_mobs)
-			Target = locate(type) in A.contents
+			Target = locate_within(A, type)
 			if(Target)
 				afterattack(Target, user, proximity)
 				break
@@ -166,7 +166,7 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_net, \
 					accept = FALSE
 				else
 					accept = TRUE
-		for(var/atom/At in src.contents)
+		for(var/atom/At in contents_of(src))
 			if(isliving(At))
 				to_chat(user, span_notice("Your net is already holding something!"))
 				accept = FALSE
@@ -186,7 +186,7 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_net/butterfly_net, INTERACT_USE("
 
 /// Old attack_self.
 /obj/item/material/fishing_net/butterfly_net/proc/butterfly_net_self(mob/user, obj/item/held, datum/interaction/interaction)
-	for(var/mob/living/M in src)
+	for(var/mob/living/M in contents_of(src))
 		if(!user.get_inactive_hand()) //Check if the inactive hand is empty
 			M.forceMove(get_turf(src))
 			M.attempt_to_scoop(user)
@@ -194,7 +194,7 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_net/butterfly_net, INTERACT_USE("
 		else
 			M.forceMove(get_turf(src))
 			user.visible_message(span_notice("[user] releases [M] from \the [src]."), span_notice("You release [M] from \the [src]."))
-	for(var/obj/item/I in src)
+	for(var/obj/item/I in contents_of(src))
 		I.forceMove(get_turf(src))
 		user.visible_message(span_notice("[user] dumps \the [I] out of \the [src]."), span_notice("You dump \the [I] out of \the [src]."))
 	update_icon()
@@ -220,7 +220,7 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_net/butterfly_net, INTERACT_USE("
 	name = initial(name)
 	desc = initial(desc)
 	var/contains_mob = FALSE
-	for(var/mob/M in src)
+	for(var/mob/M in contents_of(src))
 		name = "filled butterfly net"
 		desc = "A net with [M] inside."
 		contains_mob = TRUE

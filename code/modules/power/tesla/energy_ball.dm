@@ -76,7 +76,7 @@
 	if(can_move(T))
 		forceMove(T)
 		set_dir(move_dir)
-		for(var/mob/living/carbon/C in loc)
+		for(var/mob/living/carbon/C in contents_of(loc))
 			dust_mob(C)
 		moved = TRUE
 	if(left <= 0)

@@ -33,7 +33,7 @@
 	for(var/obj/O in range(0, src))
 		if(O.anchored)
 			continue
-		var/mob/living/target = locate() in view(4, src)
+		var/mob/living/target = locate_in_list(view(4, src), /mob/living)
 		if(target && !target.stat && prob(object_launch_prob))
 			O.throw_at(target, 5, 10)
 

@@ -60,7 +60,7 @@ REF_OWNED(/obj/machinery/reagent_refinery/reactor, "internal_tank")
 		reagents.handle_reactions()
 	else
 		// dump reagents to next refinery machine
-		var/obj/machinery/reagent_refinery/target = locate(/obj/machinery/reagent_refinery) in get_step(loc,dir)
+		var/obj/machinery/reagent_refinery/target = locate_within(get_step(loc,dir), /obj/machinery/reagent_refinery)
 		if(target)
 			transfer_tank( reagents, target, dir)
 
@@ -103,7 +103,7 @@ REF_OWNED(/obj/machinery/reagent_refinery/reactor, "internal_tank")
 	if(!internal_tank)
 		return
 	// think of this as we JUST anchored/deanchored
-	var/obj/machinery/atmospherics/portables_connector/pad = locate() in get_turf(src)
+	var/obj/machinery/atmospherics/portables_connector/pad = locate_within(get_turf(src), /obj/machinery/atmospherics/portables_connector)
 	if(pad && !pad.connected_device)
 		if(anchored)
 			// Perform the connection, forcibly... we're ignoring adjacency checks with this

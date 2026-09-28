@@ -47,7 +47,7 @@
 	newimage.appearance_flags = RESET_TRANSFORM
 	newimage.mouse_opacity = 0
 	newimage.pixel_y = newimage.pixel_x = (LG_IMAGE_SIZE/-2) + 16
-	newimage.loc = src
+	image_anchor(newimage, src)
 
 	for(var/client in viewers)
 		show_to(client)
@@ -59,7 +59,7 @@
 	for(var/client in viewers)
 		unshow_to(client)
 
-	holding.loc = null
+	image_anchor(holding, null)
 	holding = null
 
 

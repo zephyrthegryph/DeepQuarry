@@ -72,3 +72,55 @@
 	if(!A)
 		return null
 	return locate(type) in A
+
+// Generic reads (C11): the named replacements for raw `in X.contents` loops,
+// implicit `for(var/T/A in holder)` loops, `X.contents.len` and `locate() in`
+// over an arbitrary list. They work on any atom (turf, mob, obj, area), so a
+// call site does not have to care whether its holder is ledger-tracked.
+
+/// A copy of `A`'s direct contents, filtered to `type` when given. Iterating
+/// it is exactly the old `for(var/type/X in A)` (DM copies contents for a
+/// for-in anyway), and nothing breaks when the loop body moves things.
+///
+/// # Examples
+///
+/// ```
+/// for(var/obj/item/I in contents_of(src))
+/// var/list/obj/item/cell/cells = contents_of(holder, /obj/item/cell)
+/// ```
+/proc/contents_of(atom/A, type)
+	if(!A)
+		return list()
+	if(!type)
+		return A.contents.Copy()
+	. = list()
+	for(var/atom/X as anything in A.contents)
+		if(istype(X, type))
+			. += X
+
+/// The first direct content of `A` that is a `type`, or null. Equivalent to
+/// `locate(type) in A` (or `in A.contents`) for any atom, turf or not.
+/proc/locate_within(atom/A, type)
+	if(!A)
+		return null
+	return locate(type) in A.contents
+
+/// How many things `A` directly contains. Equivalent to `A.contents.len`.
+/proc/contents_count(atom/A)
+	return A ? length(A.contents) : 0
+
+/// `locate(what) in L` over a plain list (a registry, a view() result, a
+/// Topic() whitelist): `what` is a type, a ref string or an instance.
+/// Returns null for a null list.
+/proc/locate_in_list(list/L, what)
+	if(!L)
+		return null
+	return locate(what) in L
+
+/// Anchor an /image (not a movable: it has no ledger entry and no Move())
+/// to `A`, or detach it with null. The one place an image's loc is written,
+/// so the containment lint can ban raw `loc =` everywhere else.
+/proc/image_anchor(image/I, atom/A)
+	if(!I)
+		return
+	I.loc = A // ALLOW(containment): images are not movables; this is their only anchor

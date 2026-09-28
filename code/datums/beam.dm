@@ -157,7 +157,7 @@ REF_OWNED_LIST(/datum/beam, "elements")
 	return ..()
 
 /obj/effect/ebeam/reactive/on_drawn()
-	for(var/A in loc)
+	for(var/A in contents_of(loc))
 		on_contact(A)
 
 /obj/effect/ebeam/reactive/Crossed(atom/A)
@@ -167,7 +167,7 @@ REF_OWNED_LIST(/datum/beam, "elements")
 	on_contact(A)
 
 /obj/effect/ebeam/reactive/periodic_step()
-	for(var/A in loc)
+	for(var/A in contents_of(loc))
 		on_contact(A)
 
 // Override for things to do when someone touches the beam.
