@@ -27,9 +27,11 @@ const BATCH: usize = 8192;
 /// registration dirtied, which is where the old peak came from.
 const FRAMES: usize = 6;
 /// The bound. This path measured 255 MB before the bulk direct writes and
-/// lazy flux buffers and 113 MB after; the live boot peak was 384 MB and
-/// once 1.85 GB.
-const PEAK_CEILING_MB: f64 = 160.0;
+/// lazy flux buffers, 113 MB after, and 55 MB once uniform vacuum chunks
+/// shared one allocation, substeps stopped snapshotting and owner fluxes
+/// were summed per cell (the ceiling is that plus ~25%); the live boot
+/// peak was 384 MB and once 1.85 GB.
+const PEAK_CEILING_MB: f64 = 70.0;
 
 fn mb(bytes: u64) -> f64 {
     bytes as f64 / 1_048_576.0
@@ -114,12 +116,25 @@ fn southern_cross_boot_rust_heap_peak_is_bounded() {
     }
     stage(&mut stages, "turfs registered");
 
-    for _ in 0..FRAMES {
+    for i in 0..FRAMES {
         with_world(|w| {
             w.step_blocking();
+            if std::env::var_os("VG_BOOT_MEM_DETAIL").is_some() {
+                for (name, m) in w.sim().memory() {
+                    eprintln!("  frame {i} port {name}: {m:?}");
+                }
+            }
             Ok(())
         })
         .unwrap();
+        if std::env::var_os("VG_BOOT_MEM_DETAIL").is_some() {
+            let (c, p) = allocator::diagnostics();
+            eprintln!(
+                "  frame {i}: current {:.1} peak {:.1}",
+                mb(c) - mb(base),
+                mb(p) - mb(base)
+            );
+        }
     }
     stage(&mut stages, "first frames");
 

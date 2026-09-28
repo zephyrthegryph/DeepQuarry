@@ -295,18 +295,71 @@ impl<K: FieldKind> fmt::Debug for FieldState<K> {
     }
 }
 
-/// Fluxes of one owner chunk for one sub-step.
+/// Summed fluxes for a run of cells, allocated on the first write (most
+/// owner chunks on a station map are space; a full-size buffer for each was
+/// most of the first frames' transient heap, Phase 4b).
+struct Strip<F> {
+    sum: Vec<F>,
+    /// Whether any edge reached the cell (an untouched cell is not written).
+    hit: Vec<bool>,
+}
+
+impl<F: Copy + Default + std::ops::Add<Output = F>> Strip<F> {
+    const fn new() -> Self {
+        Self {
+            sum: Vec::new(),
+            hit: Vec::new(),
+        }
+    }
+
+    fn add(&mut self, len: usize, at: usize, f: F) {
+        if self.sum.is_empty() {
+            self.sum = vec![F::default(); len];
+            self.hit = vec![false; len];
+        }
+        if self.hit[at] {
+            self.sum[at] = self.sum[at] + f;
+        } else {
+            self.sum[at] = f;
+            self.hit[at] = true;
+        }
+    }
+
+    fn get(&self, at: usize) -> Option<F> {
+        self.hit
+            .get(at)
+            .copied()
+            .unwrap_or(false)
+            .then(|| self.sum[at])
+    }
+}
+
+/// Fluxes of one owner chunk for one sub-step, already summed per receiving
+/// cell: one value per cell of the chunk, plus the edges that leave it
+/// across its east and north faces (keyed by the source cell's row or
+/// column) and its vertical faces (keyed by the source cell). One summed
+/// flux per cell instead of one per cell and axis: a third of the old
+/// per-owner buffer, and the vertical strip only where air crosses levels.
 struct ChunkFlux<F> {
-    /// Per cell, one flux per positive axis. Empty (with `present`) until the
-    /// chunk's first live edge: most owner chunks on a station map are
-    /// space, and a full-size pair for each of them was most of the first
-    /// frames' transient heap (Phase 4b).
-    flux: Vec<[F; 3]>,
-    /// Bit `axis` set where the edge exists and is live (empty: none).
-    present: Vec<u8>,
+    net: Strip<F>,
+    east: Strip<F>,
+    north: Strip<F>,
+    up: Strip<F>,
     ledger: Vec<f64>,
     wake: Vec<usize>,
     live: u32,
+}
+
+impl<F: Copy + Default + std::ops::Add<Output = F>> ChunkFlux<F> {
+    /// What the edges leaving this chunk along `axis` from its local cell
+    /// `source` carry into the neighbouring chunk.
+    fn crossing(&self, axis: usize, source: usize) -> Option<F> {
+        match axis {
+            0 => self.east.get(source / CHUNK_EDGE as usize),
+            1 => self.north.get(source % CHUNK_EDGE as usize),
+            _ => self.up.get(source),
+        }
+    }
 }
 
 impl<K: FieldKind> FieldState<K> {
@@ -541,7 +594,8 @@ impl<K: FieldKind> FieldState<K> {
             .filter(|&c| {
                 target[c]
                     && geom
-                        .store.chunk(c)
+                        .store
+                        .chunk(c)
                         .is_some_and(|g| g.iter().any(|g| g.is_node() && !g.reservoir))
             })
             .collect();
@@ -581,12 +635,15 @@ impl<K: FieldKind> FieldState<K> {
         let mut next = vec![false; chunks];
         for s in 0..substeps {
             let last = s + 1 == substeps;
-            let old = cells.snapshot();
+            // Every flux is computed from the substep's start before any
+            // cell is written, so they read `cells` directly: a snapshot
+            // here would make each substep copy every target chunk.
             let fluxes: Vec<ChunkFlux<K::Flux>> = {
                 let this = &*self;
+                let old = &*cells;
                 owners
                     .par_iter()
-                    .map(|&c| this.chunk_flux(c, &old, geom, sub_dt, last))
+                    .map(|&c| this.chunk_flux(c, old, geom, sub_dt, last))
                     .collect()
             };
             let mut live = 0u32;
@@ -614,11 +671,8 @@ impl<K: FieldKind> FieldState<K> {
                     let mut net: Option<K::Flux> = None;
                     let mut add = |f: K::Flux| net = Some(net.map_or(f, |n| n + f));
                     if owner[chunk] {
-                        let own = &fluxes[slot[chunk] as usize];
-                        for axis in 0..3 {
-                            if own.present.get(i).is_some_and(|p| p & (1 << axis) != 0) {
-                                add(-own.flux[i][axis]);
-                            }
+                        if let Some(f) = fluxes[slot[chunk] as usize].net.get(i) {
+                            add(f);
                         }
                     }
                     for (axis, (_, minus)) in AXES.iter().enumerate() {
@@ -628,11 +682,15 @@ impl<K: FieldKind> FieldState<K> {
                         let Some((nc, ni)) = layout.locate(nb) else {
                             continue;
                         };
+                        if nc == chunk {
+                            // Summed into this chunk's own `net` already.
+                            continue;
+                        }
                         let Some(from) = fluxes.get(slot[nc] as usize) else {
                             continue;
                         };
-                        if from.present.get(ni).is_some_and(|p| p & (1 << axis) != 0) {
-                            add(from.flux[ni][axis]);
+                        if let Some(f) = from.crossing(axis, ni) {
+                            add(f);
                         }
                     }
                     if let Some(net) = net {
@@ -763,15 +821,19 @@ impl<K: FieldKind> FieldState<K> {
         last: bool,
     ) -> ChunkFlux<K::Flux> {
         let len = self.layout.chunk_len();
+        let edge = CHUNK_EDGE as usize;
         let mut out = ChunkFlux {
-            flux: Vec::new(),
-            present: Vec::new(),
+            net: Strip::new(),
+            east: Strip::new(),
+            north: Strip::new(),
+            up: Strip::new(),
             ledger: vec![0.0; K::QUANTITIES],
             wake: Vec::new(),
             live: 0,
         };
         self.for_live_edges(chunk, geom, |i, axis, a, ga, b, gb| {
-            let nc = self.layout.locate(b).map_or(chunk, |(c, _)| c);
+            let located = self.layout.locate(b);
+            let nc = located.map_or(chunk, |(c, _)| c);
             // An edge into a sleeping chunk only flows once it is unsettled,
             // so a sleeping chunk is never written until it wakes.
             let boundary = self.active[chunk] != self.active[nc];
@@ -790,12 +852,16 @@ impl<K: FieldKind> FieldState<K> {
             if boundary && settled {
                 return;
             }
-            if out.present.is_empty() {
-                out.flux = vec![[K::Flux::default(); 3]; len];
-                out.present = vec![0; len];
+            // `a` (here) gives the flux up, `b` receives it.
+            out.net.add(len, i, -flux);
+            match located {
+                Some((c, ni)) if c == chunk => out.net.add(len, ni, flux),
+                _ => match axis {
+                    0 => out.east.add(edge, i / edge, flux),
+                    1 => out.north.add(edge, i % edge, flux),
+                    _ => out.up.add(len, i, flux),
+                },
             }
-            out.flux[i][axis] = flux;
-            out.present[i] |= 1 << axis;
             out.live += 1;
             if gb.reservoir {
                 K::flux_totals(&flux, &mut out.ledger);

@@ -1,0 +1,5 @@
+author: "claude"
+delete-after: true
+changes:
+  - code_imp: "Map load materializes turfs through a per-type table and smooths walls once per load batch instead of once per neighbour."
+  - code_imp: "Added an Initialize() ratchet lint (tools/ci/init_lint.py)."

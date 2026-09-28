@@ -102,6 +102,77 @@ drives the same path on a 256x256x5 grid: 255 MB peak before, 113 MB after
 (registration 173 โ’ 63 MB). It fails above 160 MB. The DM unit test
 `dq_rust_heap_peak_bounded` checks the live world against 512 MB.
 
+Phase 4 track 4b (2026-09-28, `rewrite/k-boot`) took the same test from
+113 MB to **55 MB peak** (ceiling now 70 MB):
+
+| Mark | current before | peak before | current after | peak after |
+|---|---|---|---|---|
+| world built | 6.3 | 7.0 | 6.3 | 7.0 |
+| turfs registered | 62.9 | 63.7 | 12.4 | 14.6 |
+| first frames | 76.5 | 113.4 | 33.2 | 54.9 |
+
+- Uniform chunks share one allocation. Space is ~85% of the grid and every
+  space cell holds the same immutable vacuum, so a bulk flush now points each
+  all-identical chunk it touched at one shared chunk
+  (`CowStore::share_uniform_chunks`, counter `bulk.shared_uniform_chunks`).
+  Gas registration went from 43 MB of chunks to ~7 MB. A later write copies
+  the chunk as for any shared one. Field steps never list pure-space chunks,
+  so they stay shared.
+- Substeps don't snapshot. `FieldState::advance` took a snapshot of the
+  cells each substep, so the apply pass copied every target chunk again each
+  substep. The fluxes are all computed before anything is written, so they
+  read the live store directly. First-frame peak went from 113 to 70 MB.
+- Owner fluxes are summed per receiving cell. Before, the buffer held one
+  flux per cell and axis. It now holds one sum per cell of the chunk, plus
+  strips for the edges that leave it east, north and up, each allocated on
+  first use. Gas fluxes are 92 bytes, so this took the per-substep buffers
+  from ~21 MB to ~14 MB. The peak went from 70 to 55 MB.
+
+What is left at the peak: two copies of the ~8 MB station gas chunks (the
+live store being written and the snapshot the step started from, which the
+pinned view and `last_cells` share), ~14 MB of per-substep flux buffers
+(the vertical strip is as big as the per-cell sum wherever decks are open to
+each other), and ~12 MB of registered state. The live boot is not
+reproduced by this test. A base-tree bench boot with the old DLL logged
+73 MB after turf registration and 182 MB current / 404 MB peak after SSair
+init and the first frames. The unmeasured part is SSair init (14.8 s:
+pipenets, machinery, heat bodies), and it needs `RUST_ALLOC_PROFILE` marks
+around its stages to find out what allocates there.
+
+### 0.2b Phase 4 on the live map (2026-09-28, `rewrite/k-boot`)
+
+Southern Cross bench boots (`bench -DCITESTING_FULL_MAP --scenario=boot_profile`),
+one boot each on a quiet machine. The base is integrate/b7 (7c907512ab) with
+its prebuilt DLL; "after" is `rewrite/k-boot` with the 4b DLL.
+
+| | Base | After (2 boots) |
+|---|---|---|
+| Init total | 65.6 s | 59.8 s, 55.9 s |
+| Atoms | 47.2 s | 41.1 s, 37.5 s |
+| Atmospherics | 8.9 s | 9.0 s, 8.5 s |
+| Lighting | 4.0 s | 3.9 s, 4.1 s |
+| Rust heap peak | **403 MB** | **176 MB**, 176 MB |
+| Rust heap steady | 189 MB | 151 MB |
+| DreamDaemon private, booted | ~1,550 MB | 1,440-1,540 MB |
+
+Two earlier base boots taken while two Rust/DM builds ran on the machine gave
+110 s and 85 s, so treat single-boot timings as ฑ5 s.
+
+`benchmark_rust_mark()` now also logs `BENCH_RUST_MARK` lines, and SSair marks
+its turf visuals step and its first eight fires, so a boot keeps its memory
+marks even when the scenario never starts. After-boot marks: 70 MB after Atoms,
+137 MB after `air: turfs registered` (+67 MB: the uniform-chunk sharing
+that took the vg-ffi test's registration from 64 to 15 MB does not show up
+here yet), 153 MB peak after pipenets, 168 MB at round start, then 118-126 MB
+over the first fires.
+
+**Measuring caveat.** On this tree the bench scenario never starts on the full
+map: after round start the latency sweep keeps hitting a runtime in
+`state_count_refs_in` (a recharge station's circuit board) and the test-build
+reference finder spends its whole 323 s budget on it, while atmos uses ~125 ms
+a tick. The numbers above come from the boot log (`Initialized ... within`,
+`RUST_ALLOC_PROFILE`, `BENCH_RUST_MARK`) and `data/bench/process.json`.
+
 ### 0.3 DM memory census (boot_memory, sampled)
 
 809,798 instances: 393,216 turfs, 85,819 objs, 321,633 datums. The per-type
@@ -692,6 +763,22 @@ burnt, decal set).
 
 ### 3.6 Ratchet lint on Initialize overrides
 
+**Built (k-boot):** `tools/ci/init_lint.py`, run by `check_ratchets.sh`, with
+ceilings in `tools/ci/init_baseline.txt`: `initialize` (3,325 overrides),
+`late_initialize` (95), `unreasoned` (overrides without `// INIT: <reason>`,
+3,420), `world_reads` (`range(`/`orange(`/`view(`/`GetAbove`/`GetBelow`/`GLOB.`/
+`START_PROCESSING` inside an `Initialize()` body, 312) and
+`turf_on_materialize` (0). All may fall, never rise. The first type table is
+`atom_type_table()` (`code/game/atom/atom_type_table.dm`): one cached row per
+type saying whether materialize must join registries, subscribe rules or start
+OM. `on_materialize()`/`on_dematerialize()` read it, and `InitAtom()` flags a
+turf whose row needs none of the three as materialized without the call chain
+(hence the zero ceiling on turf `on_materialize()` overrides). Space turfs pick
+their dust appearance from a flat index and share one immutable-air lookup;
+`/turf/Initialize` checks multi-z neighbours without `GetAbove`/`GetBelow`.
+Not done: skipping `Initialize()` altogether for no-state types, the per-type
+appearance cache (ง3.5), and the air template / material facts as table data.
+
 `tools/ci/check_grep.sh` gets a count of `/Initialize(` overrides (and
 separately of `/LateInitialize(`), with the baseline in the ratchet file.
 New overrides must carry `// INIT: <reason>` naming the per-instance state
@@ -728,6 +815,13 @@ its cached appearance (ยง3.5). Today each wall re-smooths its neighbours
 (17,279 `update_connections` for 7,261 walls at boot). The explosion subsystem
 already does this for appearances (`deferred_appearance_updates`); the same
 deferral belongs in the map loader and in `ChangeTurf` under any batch.
+
+**Built for walls (k-boot):** inside `SSatoms.InitializeAtoms()` a wall's
+`update_material()` and integrity change queue it in
+`SSatoms.deferred_wall_smoothing` instead of smoothing it and its neighbours;
+`flush_wall_smoothing()` smooths each queued wall and its wall neighbours once
+after the batch's atoms are initialized, before `LateInitialize()`. Windows,
+low walls, tables and catwalks still propagate per object.
 
 ### 4.3 One Rust field write per batch
 
@@ -767,6 +861,28 @@ lifecycle.md ยง2's phases, run across a doomed set instead of per object:
 The measured destroy transaction is 1.0 s for 10.2 k qdels; batching the
 phases saves most of guard, links and scrub (~0.35 s) and the moves (~0.2 s).
 The large win is the domain hooks in step 6 (~5 s).
+
+**Status (rewrite/k-boot).** Implemented in `code/datums/lifecycle/batch.dm`:
+`qdel_batch()` and the collecting scope (`dq_destroy_collect_begin()`/`_end()`,
+used by explosion blast delivery, `gib()`, `death` and shuttle crush) do
+steps 1-3 (mark first with `GC_BATCH_DOOMED`, contents bound for a doomed
+destination are deleted unmoved, links to doomed ends dropped without
+back-list bookkeeping), step 4 for entity handles (`vg_entity_unbind_list()`)
+and SSvg's bound list, the one pass per registry (`registry_leaves` ->
+`remove_many()`), and step 5 for declared `destroy_effects()` (one per turf,
+neighbour updates once per turf). Step 6: contract damage reporting batches
+per atom and flushes once (`code/modules/contracts/damage_batch.dm`); the
+explosion epoch opens that batch, and now every collecting scope does too,
+so gibs and shuttle crushes are covered. `dq_destroy_effects_once(atom)` is
+the per-turf gate for cosmetic effects outside `destroy_effects()`: machinery
+destruction sparks and sound, catwalk and railing break messages use it.
+
+Remaining: heat bodies, pipe ports and power nodes still unbind one call each
+(Verdigris has no bulk release for them); material service cleanup is still
+per service (its `om_unhook` calls on a doomed owner could be skipped once OM
+teardown is confirmed to drop inbound hooks); other `atom_destruction()`
+messages (material weapons and armour, mob spawners, grave markers,
+expedition structures) can adopt `dq_destroy_effects_once()` the same way.
 
 ## 5. Lighting
 

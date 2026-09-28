@@ -976,6 +976,7 @@
 #include "code\game\atom\damage_flavour.dm"
 #include "code\game\atom\damage_packet.dm"
 #include "code\game\atom\atom_vv.dm"
+#include "code\game\atom\atom_type_table.dm"
 #include "code\game\atom\atom_materialize.dm"
 #include "code\game\atom\atoms_initializing_EXPENSIVE.dm"
 #include "code\game\dna\dna2.dm"

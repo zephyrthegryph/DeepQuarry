@@ -61,20 +61,25 @@
 /atom/proc/on_materialize()
 	SHOULD_CALL_PARENT(TRUE)
 	SHOULD_NOT_SLEEP(TRUE)
-	join_registries() // L3: code/__defines/registries.dm
+	// One type-table lookup (atom_type_table.dm) says which of the three this type needs.
+	var/table = atom_type_table(src)
+	if(table & TYPE_TABLE_JOINS_REGISTRIES)
+		join_registries() // L3: code/__defines/registries.dm
 	// Rules (code/datums/rules/): subscribe the type's rules, if it has any.
-	if(dq_rules_for_type(type))
+	if(table & TYPE_TABLE_HAS_RULES)
 		dq_rules_on_materialize(src)
 	// Object model: attach the type's declared behaviours (code/datums/om/entity.dm).
-	if(om_type_has_decl(type))
+	if(table & TYPE_TABLE_HAS_OM)
 		om_start(src)
 
 /// The exact inverse of on_materialize(). See the top of this file.
 /atom/proc/on_dematerialize()
 	SHOULD_CALL_PARENT(TRUE)
 	SHOULD_NOT_SLEEP(TRUE)
-	leave_registries() // L3: code/__defines/registries.dm
-	dq_rules_on_dematerialize(src)
+	if(atom_type_table(src) & TYPE_TABLE_HAS_REGISTRIES)
+		leave_registries() // L3: code/__defines/registries.dm
+	if(rule_binding)
+		dq_rules_on_dematerialize(src)
 	if(om_rec)
 		om_teardown_rest(src)
 

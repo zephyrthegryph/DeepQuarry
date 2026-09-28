@@ -149,6 +149,9 @@ SUBSYSTEM_DEF(air)
 	// Rust setup is the sole pipenet topology build. Compatibility wrappers are
 	// materialized from its connected-region publication.
 	setup_turf_visuals()
+#ifdef BENCHMARK
+	benchmark_rust_mark("air: turf visuals")
+#endif
 	// atmos_handbooks_init() removed. /tg/'s gas handbook is an
 	// in-game wiki UI that DQ doesn't ship; the call had nothing to do.
 	return SS_INIT_SUCCESS
@@ -156,6 +159,13 @@ SUBSYSTEM_DEF(air)
 
 /datum/controller/subsystem/air/fire(resumed = FALSE)
 	var/timer = TICK_USAGE_REAL
+#ifdef BENCHMARK
+	// The Rust heap peaks in the first frames after init (init_and_turfs.md sec 0.2a).
+	var/static/benchmark_fires = 0
+	if(benchmark_fires < 8 && !resumed)
+		benchmark_fires++
+		benchmark_rust_mark("air: fire [benchmark_fires]")
+#endif
 
 	//Rebuilds can happen at any time, so this needs to be done outside of the normal system
 	cost_rebuilds = 0

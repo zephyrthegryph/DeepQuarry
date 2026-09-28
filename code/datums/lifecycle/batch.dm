@@ -40,6 +40,10 @@ GLOBAL_LIST_EMPTY(dq_destroy_collected)
 /// world.time the outermost collecting scope opened. A scope never spans a
 /// sleep; one still open on a later tick was left by a runtime and is closed.
 GLOBAL_VAR_INIT(dq_destroy_collect_time, 0)
+/// Turfs where a destroy effect (sparks, debris, a destruction message or
+/// sound) already played in the open collecting scope or running batch:
+/// turf -> TRUE. Cleared when the outermost scope/batch ends.
+GLOBAL_LIST_EMPTY(dq_destroy_effect_turfs)
 
 /datum/destroy_batch
 	/// Doomed datum -> TRUE, in marking (pre-)order.
@@ -100,6 +104,8 @@ GLOBAL_VAR_INIT(dq_destroy_collect_time, 0)
 		dq_qdel_run(D, batch.forced[D])
 	dq_batch_flush(batch)
 	GLOB.dq_destroy_batch = outer
+	if(!outer && !GLOB.dq_destroy_collect_depth)
+		GLOB.dq_destroy_effect_turfs.Cut()
 	return length(order)
 
 /// Adds `D` to the set. Returns FALSE when it can't be (already deleted,
@@ -178,7 +184,7 @@ GLOBAL_VAR_INIT(dq_destroy_collect_time, 0)
 	var/turf/T = get_turf(D)
 	if(!T)
 		return TRUE
-	if(batch.effect_turfs[T])
+	if(batch.effect_turfs[T] || !dq_destroy_effects_once(T))
 		batch.effects_merged++
 	else
 		batch.effect_turfs[T] = TRUE
@@ -197,6 +203,11 @@ GLOBAL_VAR_INIT(dq_destroy_collect_time, 0)
 		return dq_destroy_collect_begin()
 	if(!GLOB.dq_destroy_collect_depth)
 		GLOB.dq_destroy_collect_time = world.time
+		GLOB.dq_destroy_effect_turfs.Cut()
+		// Contract damage reports accumulate per atom and publish once when
+		// the outermost scope ends (code/modules/contracts/damage_batch.dm),
+		// for every collecting scope, not only explosion epochs.
+		SScontracts?.begin_contract_batch()
 	GLOB.dq_destroy_collect_depth++
 
 /// TRUE while the open collecting scope is current. A scope left open by a
@@ -213,17 +224,37 @@ GLOBAL_VAR_INIT(dq_destroy_collect_time, 0)
 /// Closes a collecting scope; the outermost one runs everything collected as
 /// one batch. Returns how many datums that batch destroyed.
 /proc/dq_destroy_collect_end()
+	if(GLOB.dq_destroy_collect_depth <= 0) // unbalanced end: nothing is open (keeps the contract batch balanced)
+		GLOB.dq_destroy_collect_depth = 0
+		return 0
 	if(--GLOB.dq_destroy_collect_depth > 0)
 		return 0
 	GLOB.dq_destroy_collect_depth = 0
 	. = 0
 	// A batch's own leftover Destroy() may qdel() more movables; they run
-	// normally (the scope is closed), so this loop runs once.
+	// normally (the scope is closed), so this runs once.
 	var/list/collected = GLOB.dq_destroy_collected
-	if(!length(collected))
-		return
-	GLOB.dq_destroy_collected = list()
-	for(var/datum/D as anything in collected)
-		if(D?.gc_destroyed == GC_BATCH_DOOMED)
-			D.gc_destroyed = null // re-marked by qdel_batch(), in its order
-	return qdel_batch(collected)
+	if(length(collected))
+		GLOB.dq_destroy_collected = list()
+		for(var/datum/D as anything in collected)
+			if(D?.gc_destroyed == GC_BATCH_DOOMED)
+				D.gc_destroyed = null // re-marked by qdel_batch(), in its order
+		. = qdel_batch(collected)
+	GLOB.dq_destroy_effect_turfs.Cut()
+	SScontracts?.end_contract_batch()
+
+/// Per-turf destroy effects (init_and_turfs.md §4.4 step 5). Outside a
+/// collecting scope or batch this is always TRUE. Inside one it is TRUE for
+/// the first caller on `A`'s turf and FALSE after, so a blast plays at most
+/// one spark/debris roll, destruction message and sound per turf instead of
+/// one per object. Wrap cosmetic destruction effects in it; never gameplay.
+/proc/dq_destroy_effects_once(atom/A)
+	if(!GLOB.dq_destroy_collect_depth && !GLOB.dq_destroy_batch)
+		return TRUE
+	var/turf/T = get_turf(A)
+	if(!T)
+		return TRUE
+	if(GLOB.dq_destroy_effect_turfs[T])
+		return FALSE
+	GLOB.dq_destroy_effect_turfs[T] = TRUE
+	return TRUE

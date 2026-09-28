@@ -41,7 +41,12 @@
 	if(edge) //Magic edges
 		appearance = skybox_service().mapedge_cache["[edge]"]
 	else //Dust
-		appearance = skybox_service().dust_cache["[((x + y) ^ ~(x * y) + z) % 25]"]
+		var/dust = ((x + y) ^ ~(x * y) + z) % 25
+		var/list/dust_by_index = skybox_service().dust_by_index
+		if(dust >= 0 && dust < length(dust_by_index))
+			appearance = dust_by_index[dust + 1]
+		else
+			appearance = skybox_service().dust_cache["[dust]"]
 
 	return ..()
 

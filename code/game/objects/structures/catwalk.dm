@@ -137,8 +137,9 @@
 	return
 
 /obj/structure/catwalk/atom_destruction(damage_flag)
-	visible_message(span_warning("\The [src] breaks down!"))
-	playsound(src, 'sound/effects/grillehit.ogg', 50, 1)
+	if(dq_destroy_effects_once(src))
+		visible_message(span_warning("\The [src] breaks down!"))
+		playsound(src, 'sound/effects/grillehit.ogg', 50, 1)
 	return ..()
 
 /obj/structure/catwalk/Crossed(atom/movable/AM)

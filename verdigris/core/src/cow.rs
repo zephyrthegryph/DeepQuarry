@@ -298,6 +298,49 @@ impl<T: Clone + Default> CowStore<T> {
         }
     }
 
+    /// Makes every listed chunk whose cells all hold one value share a single
+    /// allocation with the other chunks holding that same uniform value
+    /// (bulk registration: most of a station grid is identical vacuum).
+    /// Values are unchanged; a later write copies the chunk as for any
+    /// shared chunk. Returns how many chunk allocations were released.
+    pub fn share_uniform_chunks(&mut self, candidates: &[usize]) -> usize
+    where
+        T: PartialEq,
+    {
+        fn uniform<T: PartialEq>(c: &[T]) -> Option<&T> {
+            let first = c.first()?;
+            c.iter().all(|v| v == first).then_some(first)
+        }
+        // Canonical chunks: already shared uniform chunks (from earlier calls).
+        let mut canon: Vec<Arc<Vec<T>>> = Vec::new();
+        for c in self.chunks.iter().flatten() {
+            if Arc::strong_count(c) > 1
+                && !canon.iter().any(|k| Arc::ptr_eq(k, c))
+                && uniform(c).is_some()
+            {
+                canon.push(Arc::clone(c));
+            }
+        }
+        let mut released = 0;
+        for &i in candidates {
+            let Some(Some(chunk)) = self.chunks.get(i) else {
+                continue;
+            };
+            let Some(value) = uniform(chunk) else {
+                continue;
+            };
+            match canon.iter().find(|k| k[0] == *value) {
+                Some(k) if !Arc::ptr_eq(k, chunk) => {
+                    self.chunks[i] = Some(Arc::clone(k));
+                    released += 1;
+                }
+                Some(_) => {}
+                None => canon.push(Arc::clone(chunk)),
+            }
+        }
+        released
+    }
+
     /// Bytes held by allocated chunks (a shared chunk is counted by every
     /// store that holds it).
     #[must_use]
@@ -402,6 +445,24 @@ mod tests {
         let before = store.chunk(1).unwrap().as_ptr();
         store.set(16, 1);
         assert_eq!(store.chunk(1).unwrap().as_ptr(), before);
+    }
+
+    #[test]
+    fn uniform_chunks_share_one_allocation() {
+        let mut store = CowStore::<u32>::new(ChunkLayout::linear_with_chunk(40, 10));
+        for i in 0..40 {
+            store.set(i, if i == 25 { 1 } else { 7 });
+        }
+        assert_eq!(store.share_uniform_chunks(&[0, 1, 2, 3]), 2);
+        let shared = |s: &CowStore<u32>, a: usize, b: usize| {
+            Arc::ptr_eq(s.chunks[a].as_ref().unwrap(), s.chunks[b].as_ref().unwrap())
+        };
+        assert!(shared(&store, 0, 1) && shared(&store, 0, 3) && !shared(&store, 0, 2));
+        store.set(5, 9);
+        assert_eq!(store.get(5), Some(9));
+        assert_eq!(store.get(15), Some(7));
+        assert_eq!(store.get(35), Some(7));
+        assert_eq!(store.get(25), Some(1));
     }
 
     #[test]

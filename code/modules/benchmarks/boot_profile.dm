@@ -80,6 +80,8 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 		"peak_mb" = round(heap[2] / 1048576, 0.1),
 		"parts" = parts,
 	))
+	// Also in the log: a boot whose scenario never starts still keeps its marks.
+	log_world("BENCH_RUST_MARK [name]: current [round(heap[1] / 1048576, 0.1)] MB, peak [round(heap[2] / 1048576, 0.1)] MB, private [islist(process) ? process["private_mb"] : "?"] MB")
 
 /proc/benchmark_init_frame_begin()
 	var/datum/benchmark_init_stats/S = GLOB.bench_init_stats

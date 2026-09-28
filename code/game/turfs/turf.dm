@@ -114,12 +114,13 @@
 	if(movement_cost && path_weight == 1) // This updates pathweight automatically. //
 		path_weight = movement_cost
 
-	var/turf/Ab = GetAbove(src)
-	if(Ab)
-		Ab.multiz_turf_new(src, DOWN)
-	var/turf/Be = GetBelow(src)
-	if(Be)
-		Be.multiz_turf_new(src, UP)
+	// GetAbove()/GetBelow() inlined: src is already the turf, and most z-levels have no neighbour.
+	if(HasAbove(z))
+		var/turf/Ab = get_step(src, UP)
+		Ab?.multiz_turf_new(src, DOWN)
+	if(HasBelow(z))
+		var/turf/Be = get_step(src, DOWN)
+		Be?.multiz_turf_new(src, UP)
 
 	if(uses_integrity)
 		atom_integrity = max_integrity

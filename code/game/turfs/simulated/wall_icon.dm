@@ -36,8 +36,13 @@
 	else if(material.opacity < 0.5 && opacity)
 		set_light(0)
 
-	update_connections(1)
-	update_icon()
+	// Inside a map-load batch the batch smooths every wall once at its end (atoms.dm).
+	var/list/deferred = SSatoms?.deferred_wall_smoothing
+	if(deferred)
+		deferred[src] = TRUE
+	else
+		update_connections(1)
+		update_icon()
 	if(SSair?.initialized)
 		update_air_ref(0)
 
