@@ -208,6 +208,7 @@
 #include "dq_medical_damage_model_tests.dm"
 #include "dq_medical_p0_tests.dm"
 #include "dq_medical_p1_tests.dm"
+#include "dq_medical_med7_own_tests.dm"
 #include "dq_mutation_tests.dm"
 #include "dq_dna_storage_tests.dm"
 #include "dq_lesion_tests.dm"
