@@ -201,7 +201,7 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 			// the block and is re-reported by every later test that draws it.
 			if(QDELETED(AM))
 				log_world("UNIT TEST LEAK: [test ? test.type : "?"] -- [AM.type] was already destroyed but sat on the block; pulled off")
-				AM.loc = null
+				AM.moveToNullspace()
 				continue
 			// A leaked object whose Destroy() runtimes must not abort the release:
 			// the block would stay in_use forever and starve every later test.

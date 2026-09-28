@@ -193,7 +193,7 @@
 		qdel(I)
 	// Deleting the probes drops their removable parts where they lay, as in
 	// play (a stun glove's cell, a circuit's attached grenade): clear them.
-	for(var/atom/movable/salvage in T)
+	for(var/atom/movable/salvage in contents_of(T))
 		if(!istype(salvage, /obj/effect/landmark))
 			qdel(salvage)
 	finish("equip", cells)
