@@ -10,14 +10,12 @@
 	anchored = TRUE
 	var/list/log
 
-/obj/dq_compact_probe/get_interactions()
-	var/static/list/L = list(
-		INTERACT_USE("Zoom", PROC_REF(zoom)),
-		INTERACT_HAND("Poke", PROC_REF(poke)),
-		INTERACT_ALT("Eject", PROC_REF(eject)),
-		INTERACT_INSERT(/obj/item/tool/crowbar, PROC_REF(insert_crowbar), null),
-	)
-	return L
+DECLARE_INTERACTIONS(/obj/dq_compact_probe, \
+	INTERACT_USE("Zoom", PROC_REF(zoom)), \
+	INTERACT_HAND("Poke", PROC_REF(poke)), \
+	INTERACT_ALT("Eject", PROC_REF(eject)), \
+	INTERACT_INSERT(/obj/item/tool/crowbar, PROC_REF(insert_crowbar), null), \
+)
 
 /obj/dq_compact_probe/proc/zoom()
 	LAZYADD(log, "zoom")
@@ -60,12 +58,10 @@
  */
 /obj/dq_compact_probe/declining
 
-/obj/dq_compact_probe/declining/get_interactions()
-	var/static/list/L = list(
-		INTERACT_HAND("Poke", PROC_REF(decline)),
-		INTERACT_ALT("Eject", PROC_REF(decline)),
-	)
-	return L
+DECLARE_INTERACTIONS(/obj/dq_compact_probe/declining, \
+	INTERACT_HAND("Poke", PROC_REF(decline)), \
+	INTERACT_ALT("Eject", PROC_REF(decline)), \
+)
 
 /obj/dq_compact_probe/declining/proc/decline(mob/user, obj/item/held, datum/interaction/interaction)
 	LAZYADD(log, "declined")

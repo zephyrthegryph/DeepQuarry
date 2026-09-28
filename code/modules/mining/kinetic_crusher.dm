@@ -235,11 +235,12 @@
 	PERIODIC_STOP(src)
 	. = ..()
 
-/obj/item/kinetic_crusher/machete/gauntlets/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/kinetic_crusher/machete/gauntlets, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/kinetic_crusher/machete/gauntlets/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	ready_toggle()
+	return TRUE
 
 /obj/item/kinetic_crusher/machete/gauntlets/periodic_step()
 	if(wielded) // are we supposed to be wielded

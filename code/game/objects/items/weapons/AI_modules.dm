@@ -154,11 +154,12 @@ AI MODULES
 	var/targetName = ""
 	desc = "A 'safeguard' AI module: 'Safeguard <name>. Anyone threatening or attempting to harm <name> is no longer to be considered a crew member, and is a threat which must be neutralized.'"
 
-/obj/item/aiModule/safeguard/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/aiModule/safeguard, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/aiModule/safeguard/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	om_prompt(src, user, list("kind" = "text", "message" = "Please enter the name of the person to safeguard.", "title" = "Safeguard who?", "default" = user.name, "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_HELD), PROC_REF(target_named))
+	return TRUE
 
 /obj/item/aiModule/safeguard/proc/target_named(mob/user, targName, datum/om/prompt/ask)
 	targetName = targName
@@ -183,11 +184,12 @@ AI MODULES
 	var/targetName = ""
 	desc = "A 'one crew member' AI module: 'Only <name> is a crew member.'"
 
-/obj/item/aiModule/oneHuman/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/aiModule/oneHuman, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/aiModule/oneHuman/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	om_prompt(src, user, list("kind" = "text", "message" = "Please enter the name of the person who is the only crew member.", "title" = "Who?", "default" = user.real_name, "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_HELD), PROC_REF(target_named))
+	return TRUE
 
 /obj/item/aiModule/oneHuman/proc/target_named(mob/user, targName, datum/om/prompt/ask)
 	targetName = targName
@@ -262,11 +264,12 @@ AI MODULES
 	var/lawpos = 15
 	desc = "A 'freeform' AI module: '<freeform>'"
 
-/obj/item/aiModule/freeform/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/aiModule/freeform, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/aiModule/freeform/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	om_prompt(src, user, list("kind" = "number", "message" = "Please enter the priority for your new law. Can only write to law sectors 15 and above.", "title" = "Law Priority (15+)", "default" = lawpos, "requires" = PROMPT_HELD), PROC_REF(law_position_entered))
+	return TRUE
 
 /obj/item/aiModule/freeform/proc/law_position_entered(mob/user, new_lawpos, datum/om/prompt/ask)
 	if(new_lawpos < MIN_SUPPLIED_LAW_NUMBER)
@@ -380,11 +383,12 @@ AI MODULES
 	var/newFreeFormLaw = ""
 	desc = "A 'freeform' Core AI module: '<freeform>'"
 
-/obj/item/aiModule/freeformcore/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/aiModule/freeformcore, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/aiModule/freeformcore/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	om_prompt(src, user, list("kind" = "text", "message" = "Please enter a new core law for the AI.", "title" = "Freeform Law Entry", "default" = "", "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_HELD), PROC_REF(law_entered))
+	return TRUE
 
 /obj/item/aiModule/freeformcore/proc/law_entered(mob/user, targName, datum/om/prompt/ask)
 	newFreeFormLaw = targName
@@ -406,11 +410,12 @@ AI MODULES
 	var/newFreeFormLaw = ""
 	desc = "A hacked AI law module: '<freeform>'"
 
-/obj/item/aiModule/syndicate/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/aiModule/syndicate, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/aiModule/syndicate/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	om_prompt(src, user, list("kind" = "text", "message" = "Please enter a new law for the AI.", "title" = "Freeform Law Entry", "default" = "", "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_HELD), PROC_REF(law_entered))
+	return TRUE
 
 /obj/item/aiModule/syndicate/proc/law_entered(mob/user, targName, datum/om/prompt/ask)
 	newFreeFormLaw = targName

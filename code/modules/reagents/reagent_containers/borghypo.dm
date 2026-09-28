@@ -181,12 +181,12 @@
 					return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_FAILURE
 
-/obj/item/reagent_containers/borghypo/attack_self(mob/user) //Change the mode
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/reagent_containers/borghypo, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/reagent_containers/borghypo/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
-	return
+	return TRUE
 
 /obj/item/reagent_containers/borghypo/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui, custom_state)
 	. = ..()

@@ -1430,12 +1430,15 @@ REF_SPILL_LIST(/obj/item/clothing, "contents")
 /obj/item/clothing
 	MATERIAL_BULK(MAT_FIBERS, 50)
 
-/obj/item/clothing/shoes/MouseDrop_T(mob/living/target, mob/living/user)
-	if(!istype(user)) return ..() // If the user passed in isn't a living mob, exit
-	if(target != user) return ..() // If the user didn't drag themselves, exit
-	if(user.incapacitated() || user?.buckled_to()) return ..() // If user is incapacitated or src?.buckled_to(), exit
-	if(get_holder_of_type(src, /mob/living/carbon/human) == user) return ..() // No jumping into your own equipment
-	if(ishuman(user) && user.get_effective_size() > 0.25) return ..() // Only micro characters
+DECLARE_INTERACTIONS(/obj/item/clothing/shoes, INTERACT_DRAG(null, PROC_REF(interaction_drag)))
+
+/// Old MouseDrop_T.
+/obj/item/clothing/shoes/proc/interaction_drag(mob/living/user, mob/living/target, datum/interaction/interaction)
+	if(!istype(user)) return FALSE // If the user passed in isn't a living mob, exit
+	if(target != user) return FALSE // If the user didn't drag themselves, exit
+	if(user.incapacitated() || user?.buckled_to()) return FALSE // If user is incapacitated or src?.buckled_to(), exit
+	if(get_holder_of_type(src, /mob/living/carbon/human) == user) return FALSE // No jumping into your own equipment
+	if(ishuman(user) && user.get_effective_size() > 0.25) return FALSE // Only micro characters
 
 	var/full = 0
 	for(var/mob/M in src)
@@ -1448,7 +1451,7 @@ REF_SPILL_LIST(/obj/item/clothing, "contents")
 		to_chat(user, span_warning("You crawl into \the [src]!"))
 		user.forceMove(src)
 
-	return ..()
+	return FALSE
 
 /obj/item/clothing
 	COOLDOWN_DECLARE(struggle_cooldown)

@@ -40,13 +40,14 @@
 
 // TGUI migration. attack_self opens Soulstone.tsx; Topic
 // "Summon" handler moves to tgui_act.
-/obj/item/soulstone/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/soulstone, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/soulstone/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!in_range(src, user))
-		return
+		return TRUE
 	tgui_interact(user)
+	return TRUE
 
 /obj/item/soulstone/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -93,10 +94,14 @@
 	icon_state = "construct-cult"
 	desc = "This eerie contraption looks like it would come alive if supplied with a missing ingredient."
 
-/obj/structure/constructshell/attackby(obj/item/O as obj, mob/user as mob)
+DECLARE_INTERACTIONS(/obj/structure/constructshell, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/structure/constructshell/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	if(istype(O, /obj/item/soulstone))
 		var/obj/item/soulstone/S = O;
 		S.transfer_soul("CONSTRUCT",src,user)
+	return INTERACTION_HANDLED_PASS
 
 
 ////////////////////////////Proc for moving soul in and out off stone//////////////////////////////////////

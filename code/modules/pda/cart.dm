@@ -339,28 +339,36 @@ REF_OWNED_LIST(/obj/item/cartridge, list("programs", "messenger_plugins"))
 
 REF_OWNED(/obj/item/cartridge/storage, "hold")
 
-/obj/item/cartridge/storage/attack_hand(mob/user)
-	if (hold.handle_attack_hand(user))	//otherwise interact as a regular storage item
-		..(user)
+DECLARE_INTERACTIONS(/obj/item/cartridge/storage, \
+	INTERACT_ITEM("Store", PROC_REF(interaction_store)), \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+)
 
-/obj/item/cartridge/storage/attackby(obj/item/W, mob/user)
-	..()
-	return hold.attackby(W, user)
+/// Old attack_hand.
+/obj/item/cartridge/storage/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	if (hold.handle_attack_hand(user))	//otherwise interact as a regular storage item
+		return FALSE
+	return TRUE
+
+
+/// Old attackby: put the item in the cartridge's storage.
+/obj/item/cartridge/storage/proc/interaction_store(mob/user, obj/item/W, datum/interaction/interaction)
+	return hold.attackby(W, user) ? TRUE : INTERACTION_HANDLED_PASS
 
 /obj/item/cartridge/storage/MouseDrop(obj/over_object)
 	if (hold.handle_mousedrop(usr, over_object))
 		..(over_object)
 
-/obj/item/cartridge/storage/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self.
+/obj/item/cartridge/storage/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_notice("You empty [src]."))
 	var/turf/T = get_turf(src)
 	hold.hide_from(user)
 	for(var/obj/item/I in hold.contents)
 		hold.remove_from_storage(I, T, user)
 	add_fingerprint(user)
+	return TRUE
 
 /obj/item/cartridge/storage/deluxe
 	name = "\improper BLU-PAK DELUXE cartridge"

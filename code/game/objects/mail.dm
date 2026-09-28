@@ -135,9 +135,12 @@
 			B.set_recipient = TRUE
 		return TRUE
 
-/obj/item/mail/blank/click_alt(mob/user)
+EXTEND_INTERACTIONS(/obj/item/mail/blank, INTERACT_ALT(null, PROC_REF(interaction_alt)))
+
+/// Old click_alt.
+/obj/item/mail/blank/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	if(sealed)
-		return
+		return TRUE
 
 	for(var/obj/stuff as anything in contents)
 		if(isitem(stuff))
@@ -146,6 +149,7 @@
 			stuff.forceMove(drop_location())
 	set_content = FALSE
 	description_info = initial(description_info)
+	return TRUE
 
 /obj/item/mail/blank/ShiftClick(mob/user)
 	..()
@@ -218,11 +222,13 @@
 			balloon_alert(user, "destination not set!")
 		return
 
-/obj/item/mail/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
-	return unwrap(user)
+
+DECLARE_INTERACTIONS(/obj/item/mail, INTERACT_USE("Unwrap", PROC_REF(interaction_unwrap)))
+
+/// Old attack_self: open the letter.
+/obj/item/mail/proc/interaction_unwrap(mob/user, obj/item/held, datum/interaction/interaction)
+	unwrap(user)
+	return TRUE
 
 /obj/item/mail/proc/unwrap(mob/user)
 	if(recipient_ref)

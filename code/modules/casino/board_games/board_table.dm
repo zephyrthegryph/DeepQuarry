@@ -21,16 +21,24 @@
 
 REF_OWNED(/obj/structure/casino_table/board_game, "game_ui")
 
-/obj/structure/casino_table/board_game/attack_hand(mob/user)
-	. = ..()
+EXTEND_INTERACTIONS(/obj/structure/casino_table/board_game, \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+)
+
+/// Old attack_hand.
+/obj/structure/casino_table/board_game/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(isliving(user))
 		if(!game_ui)
 			pick_game(user)
 		if(game_ui)
 			game_ui.tgui_interact(user)
+	return TRUE
 
-/obj/structure/casino_table/board_game/click_alt(mob/user)
+/// Old click_alt.
+/obj/structure/casino_table/board_game/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	pick_game(user)
+	return TRUE
 
 /obj/structure/casino_table/board_game/proc/pick_game(mob/user)
 	if(game_ui?.game_state != GAME_SETUP)

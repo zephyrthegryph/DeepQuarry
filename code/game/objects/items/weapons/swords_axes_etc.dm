@@ -55,10 +55,10 @@
 	pickup_sound = 'sound/items/pickup/crowbar.ogg'
 	var/on = 0
 
-/obj/item/melee/telebaton/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/melee/telebaton, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/melee/telebaton/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	on = !on
 	if(on)
 		user.visible_message(span_warning("With a flick of their wrist, [user] extends their telescopic baton."),\
@@ -97,7 +97,7 @@
 
 		add_overlay(blood_overlay)
 
-	return
+	return TRUE
 
 /obj/item/melee/telebaton/attack(mob/living/target, mob/living/user, target_zone, attack_modifier)
 	if(on)

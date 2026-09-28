@@ -32,7 +32,8 @@
 	. = ..()
 	AddElement(/datum/element/climbable)
 
-/obj/structure/filingcabinet/attackby(obj/item/P as obj, mob/user as mob)
+/// Old attackby.
+/obj/structure/filingcabinet/proc/interaction_item(mob/user, obj/item/P, datum/interaction/interaction)
 	if(istype(P, /obj/item/paper) || istype(P, /obj/item/folder) || istype(P, /obj/item/photo) || istype(P, /obj/item/paper_bundle))
 		to_chat(user, span_notice("You put [P] in [src]."))
 		user.drop_item()
@@ -41,6 +42,7 @@
 		SStgui.update_uis(src)
 	else
 		to_chat(user, span_notice("You can't put [P] in [src]!"))
+	return INTERACTION_HANDLED_PASS
 
 /obj/structure/filingcabinet/wrench_act(mob/user, obj/item/tool)
 	playsound(src, tool.usesound, 50, TRUE)
@@ -61,12 +63,19 @@
 	qdel(src)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/structure/filingcabinet/attack_hand(mob/user as mob)
+DECLARE_INTERACTIONS(/obj/structure/filingcabinet, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/structure/filingcabinet/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(contents.len <= 0)
 		to_chat(user, span_notice("\The [src] is empty."))
-		return
+		return TRUE
 
 	tgui_interact(user)
+	return TRUE
 
 /obj/structure/filingcabinet/attack_tk(mob/user)
 	if(anchored)
@@ -151,9 +160,12 @@
 			virgin = 0	//tabbing here is correct- it's possible for people to try and use it
 						//before the records have been generated, so we do this inside the loop.
 
-/obj/structure/filingcabinet/security/attack_hand()
+EXTEND_INTERACTIONS(/obj/structure/filingcabinet/security, INTERACT_HAND(null, PROC_REF(security_interaction_hand)))
+
+/// Old attack_hand.
+/obj/structure/filingcabinet/security/proc/security_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	populate()
-	..()
+	return FALSE
 
 /obj/structure/filingcabinet/security/attack_tk()
 	populate()
@@ -188,9 +200,12 @@
 			virgin = 0	//tabbing here is correct- it's possible for people to try and use it
 						//before the records have been generated, so we do this inside the loop.
 
-/obj/structure/filingcabinet/medical/attack_hand()
+EXTEND_INTERACTIONS(/obj/structure/filingcabinet/medical, INTERACT_HAND(null, PROC_REF(medical_interaction_hand)))
+
+/// Old attack_hand.
+/obj/structure/filingcabinet/medical/proc/medical_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	populate()
-	..()
+	return FALSE
 
 /obj/structure/filingcabinet/medical/attack_tk()
 	populate()

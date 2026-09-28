@@ -17,11 +17,12 @@
 		underlays += image(syringe.icon, src, syringe.icon_state)
 		if(length(syringe.filling)) underlays += syringe.filling
 
-/obj/item/syringe_cartridge/attackby(obj/item/I, mob/user)
+/// Old attackby.
+/obj/item/syringe_cartridge/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/reagent_containers/syringe))
 		if(syringe)
 			to_chat(user, span_warning("[src] already has a syringe loaded!"))
-			return
+			return INTERACTION_HANDLED_PASS
 		syringe = I
 		to_chat(user, span_notice("You carefully insert [syringe] into [src]."))
 		user.remove_from_mob(syringe)
@@ -29,11 +30,15 @@
 		sharp = TRUE
 		name = "syringe dart"
 		update_icon()
+	return INTERACTION_HANDLED_PASS
 
-/obj/item/syringe_cartridge/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/syringe_cartridge, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/syringe_cartridge/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(syringe)
 		to_chat(user, span_notice("You remove [syringe] from [src]."))
 		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
@@ -42,6 +47,7 @@
 		sharp = initial(sharp)
 		name = initial(name)
 		update_icon()
+	return TRUE
 
 /obj/item/syringe_cartridge/proc/prime()
 	//the icon state will revert back when update_icon() is called from throw_impact()
@@ -115,21 +121,25 @@
 		next = LAZYACCESS(darts, 1)
 	add_fingerprint(user)
 
-/obj/item/gun/launcher/syringe/attack_hand(mob/living/user as mob)
+DECLARE_INTERACTIONS(/obj/item/gun/launcher/syringe, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/item/gun/launcher/syringe/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(user.get_inactive_hand() == src)
 		if(!length(darts))
 			to_chat(user, span_warning("[src] is empty."))
-			return
+			return TRUE
 		if(next)
 			to_chat(user, span_warning("[src]'s cover is locked shut."))
-			return
+			return TRUE
 		var/obj/item/syringe_cartridge/C = LAZYACCESS(darts, 1)
 		LAZYREMOVE(darts, C)
 		user.put_in_hands(C)
 		user.visible_message("[user] removes \a [C] from [src].", span_notice("You remove \a [C] from [src]."))
 		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
 	else
-		..()
+		return FALSE
+	return TRUE
 
 /obj/item/gun/launcher/syringe/attackby(obj/item/A as obj, mob/user as mob)
 	if(istype(A, /obj/item/syringe_cartridge))

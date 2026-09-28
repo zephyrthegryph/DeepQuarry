@@ -815,8 +815,12 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 /obj/item/gps/computer/proc/disassemble_done()
 	replace_with(src, /obj/item/gps)
 
-/obj/item/gps/computer/attack_hand(mob/user)
+EXTEND_INTERACTIONS(/obj/item/gps/computer, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/item/gps/computer/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	attack_self(user)
+	return TRUE
 
 //Bed
 /obj/structure/bed/pod

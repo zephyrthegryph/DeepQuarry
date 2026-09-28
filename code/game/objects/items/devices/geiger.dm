@@ -68,12 +68,10 @@ REGISTRY_MEMBERSHIP(/obj/item/geiger, REGISTRY_GEIGER_COUNTERS)
 			icon_state = "geiger_on_5"
 	return ..()
 
-/obj/item/geiger/get_interactions()
-	var/static/list/L = list(
-		INTERACT_USE(null, PROC_REF(interaction_self)),
-		INTERACT_ALT("Reset", PROC_REF(interaction_alt)),
-	)
-	return L
+DECLARE_INTERACTIONS(/obj/item/geiger, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ALT("Reset", PROC_REF(interaction_alt)), \
+)
 
 /obj/item/geiger/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	scanning = !scanning
@@ -195,9 +193,13 @@ REGISTRY_MEMBERSHIP(/obj/item/geiger, REGISTRY_GEIGER_COUNTERS)
 	src.add_fingerprint(user)
 	om_after(src, 0, PROC_REF(attack_self), user)
 
-/obj/item/geiger/wall/attack_hand(mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/geiger/wall, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/item/geiger/wall/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	src.add_fingerprint(user)
 	om_after(src, 0, PROC_REF(attack_self), user)
+	return TRUE
 
 /obj/item/geiger/wall/north
 	pixel_y = 28

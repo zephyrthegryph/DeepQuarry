@@ -360,7 +360,10 @@
 		tank = theTank
 		tank.forceMove(src)
 
-/obj/structure/reagent_dispensers/watertank/attackby(obj/item/S, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/watertank, INTERACT_ITEM(null, PROC_REF(watertank_interaction_item)))
+
+/// Old attackby.
+/obj/structure/reagent_dispensers/watertank/proc/watertank_interaction_item(mob/user, obj/item/S, datum/interaction/interaction)
 	// Accept either a robotic arm part or a robotic external arm organ to build the assembly.
 	var/is_robot_arm = istype(S, /obj/item/robot_parts/l_arm) || istype(S, /obj/item/robot_parts/r_arm)
 	var/is_robotic_organ = FALSE
@@ -369,16 +372,17 @@
 		is_robotic_organ = (organ_arm.robotic == ORGAN_ROBOT)
 
 	if(!is_robot_arm && !is_robotic_organ)
-		return ..()
+		return FALSE
 
 	to_chat(user, "You add the robot arm to [src].")
 
 	consume(S, user)
 
 	new /obj/item/farmbot_arm_assembly(loc, src)
+	return INTERACTION_HANDLED_PASS
 
-/obj/item/farmbot_arm_assembly/attackby(obj/item/W as obj, mob/user as mob)
-	..()
+/// Old attackby.
+/obj/item/farmbot_arm_assembly/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if((istype(W, /obj/item/analyzer/plant_analyzer)) && (build_step == 0))
 		build_step++
 		to_chat(user, "You add the plant analyzer to [src].")
@@ -412,9 +416,16 @@
 
 	else if(istype(W, /obj/item/pen))
 		ask_name_var(user)
+	return INTERACTION_HANDLED_PASS
 
-/obj/item/farmbot_arm_assembly/attack_hand(mob/user as mob)
-	return //it's a converted watertank, no you cannot pick it up and put it in your backpack
+DECLARE_INTERACTIONS(/obj/item/farmbot_arm_assembly, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/item/farmbot_arm_assembly/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	return TRUE
 
 #undef FARMBOT_COLLECT
 #undef FARMBOT_WATER

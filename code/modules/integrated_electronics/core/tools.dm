@@ -79,10 +79,10 @@
 			return
 	return
 
-/obj/item/integrated_electronics/wirer/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/integrated_electronics/wirer, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/integrated_electronics/wirer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	switch(mode)
 		if(WIRE)
 			mode = UNWIRE
@@ -100,6 +100,7 @@
 			mode = UNWIRE
 	update_icon()
 	to_chat(user, span_notice("You set \the [src] to [mode]."))
+	return TRUE
 
 #undef WIRE
 #undef WIRING
@@ -116,21 +117,21 @@
 	var/data_to_write = null
 	var/accepting_refs = 0
 
-/obj/item/integrated_electronics/debugger/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
-	var/type_to_use = rerun_prompt(user, "k123", list("kind" = "list", "message" = "Please choose a type to use.", "title" = "[src] type setting", "choices" = list("string","number","ref", "null")), PROC_REF(attack_self), args)
+DECLARE_INTERACTIONS(/obj/item/integrated_electronics/debugger, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/integrated_electronics/debugger/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+	var/type_to_use = rerun_prompt(user, "k123", list("kind" = "list", "message" = "Please choose a type to use.", "title" = "[src] type setting", "choices" = list("string","number","ref", "null")), PROC_REF(interaction_self), args)
 	if(isnull(type_to_use))
 		return TRUE
 	if(!CanInteract(user, GLOB.tgui_physical_state))
-		return
+		return TRUE
 
 	var/new_data = null
 	switch(type_to_use)
 		if("string")
 			accepting_refs = 0
-			var/_answer_k131 = rerun_prompt(user, "k131", list("kind" = "text", "message" = "Now type in a string.", "title" = "[src] string writing", "max_length" = MAX_MESSAGE_LEN, "encode" = FALSE), PROC_REF(attack_self), args)
+			var/_answer_k131 = rerun_prompt(user, "k131", list("kind" = "text", "message" = "Now type in a string.", "title" = "[src] string writing", "max_length" = MAX_MESSAGE_LEN, "encode" = FALSE), PROC_REF(interaction_self), args)
 			if(isnull(_answer_k131))
 				return TRUE
 			new_data = _answer_k131
@@ -140,7 +141,7 @@
 				to_chat(user, span_notice("You set \the [src]'s memory to \"[new_data]\"."))
 		if("number")
 			accepting_refs = 0
-			var/_answer_k138 = rerun_prompt(user, "k138", list("kind" = "number", "message" = "Now type in a number.", "title" = "[src] number writing", "min" = -INFINITY, "round" = FALSE), PROC_REF(attack_self), args)
+			var/_answer_k138 = rerun_prompt(user, "k138", list("kind" = "number", "message" = "Now type in a number.", "title" = "[src] number writing", "min" = -INFINITY, "round" = FALSE), PROC_REF(interaction_self), args)
 			if(isnull(_answer_k138))
 				return TRUE
 			new_data = _answer_k138
@@ -154,6 +155,7 @@
 		if("null")
 			data_to_write = null
 			to_chat(user, span_notice("You set \the [src]'s memory to absolutely nothing."))
+	return TRUE
 
 /obj/item/integrated_electronics/debugger/afterattack(atom/target, mob/living/user, proximity)
 	if(accepting_refs && proximity)

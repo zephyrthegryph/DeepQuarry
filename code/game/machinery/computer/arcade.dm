@@ -999,12 +999,12 @@
 		else
 			. += span_notice("There's a little switch on the bottom. It's flipped up.")
 
-/obj/item/orion_ship/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/orion_ship, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/orion_ship/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(active)
-		return
+		return TRUE
 
 	message_admins("[key_name_admin(user)] primed an explosive Orion ship for detonation.")
 	log_game("[key_name(user)] primed an explosive Orion ship for detonation.")
@@ -1014,6 +1014,7 @@
 	src.visible_message(span_notice("[src] softly beeps and whirs to life!"))
 	src.audible_message(span_bold("\The [src]") + " says, 'This is ship ID #[rand(1,1000)] to Orion Port Authority. We're coming in for landing, over.'")
 	om_after(src, 2 SECONDS, PROC_REF(countdown), 1)
+	return TRUE
 
 /obj/item/orion_ship/proc/countdown(stage)
 	switch(stage)

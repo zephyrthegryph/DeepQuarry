@@ -33,9 +33,7 @@
 
 	var/uplink = FALSE
 
-/obj/item/multitool/get_interactions()
-	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))
-	return L
+DECLARE_INTERACTIONS(/obj/item/multitool, INTERACT_USE(null, PROC_REF(interaction_self)))
 
 /obj/item/multitool/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(uplink)

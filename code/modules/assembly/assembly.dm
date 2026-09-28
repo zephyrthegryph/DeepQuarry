@@ -63,12 +63,10 @@
 		to_chat(user, span_notice("You attach \the [A] to \the [src]!"))
 		return TRUE
 
-/obj/item/assembly/get_interactions()
-	var/static/list/L = list(
-		INTERACT_ITEM("Use", PROC_REF(interaction_item)),
-		INTERACT_USE("Use", PROC_REF(interaction_self)),
-	)
-	return L
+DECLARE_INTERACTIONS(/obj/item/assembly, \
+	INTERACT_ITEM("Use", PROC_REF(interaction_item)), \
+	INTERACT_USE("Use", PROC_REF(interaction_self)), \
+)
 
 /// Old attackby: attach another unsecured assembly.
 /obj/item/assembly/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)

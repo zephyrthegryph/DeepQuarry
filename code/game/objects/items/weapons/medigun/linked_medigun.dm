@@ -29,14 +29,15 @@
 /obj/item/bork_medigun/linked/proc/checked_use(charge_amt)
 	return (medigun_base_unit().bcell && medigun_base_unit().bcell.checked_use(charge_amt))
 
-/obj/item/bork_medigun/linked/attack_self(mob/living/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/bork_medigun/linked, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/bork_medigun/linked/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(medigun_base_unit().is_twohanded())
 		update_twohanding()
 	if(busy)
 		busy = MEDIGUN_CANCELLED
+	return TRUE
 
 /obj/item/bork_medigun/linked/proc/should_stop(mob/living/target, mob/living/user, active_hand)
 	if(!target || !user || (!active_hand && medigun_base_unit().is_twohanded()) || !istype(target) || !istype(user) || busy < MEDIGUN_BUSY)

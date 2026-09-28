@@ -29,9 +29,7 @@
 	disrupt()
 	..()
 
-/obj/item/chameleon/get_interactions()
-	var/static/list/L = list(INTERACT_USE(null, PROC_REF(toggle)))
-	return L
+DECLARE_INTERACTIONS(/obj/item/chameleon, INTERACT_USE(null, PROC_REF(toggle)))
 
 /obj/item/chameleon/afterattack(atom/target, mob/user, proximity)
 	if(!proximity) return
@@ -111,12 +109,10 @@
 	master = C
 	master.active_dummy = src
 
-/obj/effect/dummy/chameleon/get_interactions()
-	var/static/list/L = list(
-		INTERACT_ITEM("Disrupt", PROC_REF(interaction_disrupt)),
-		INTERACT_HAND("Disrupt", PROC_REF(interaction_disrupt)),
-	)
-	return L
+DECLARE_INTERACTIONS(/obj/effect/dummy/chameleon, \
+	INTERACT_ITEM("Disrupt", PROC_REF(interaction_disrupt)), \
+	INTERACT_HAND("Disrupt", PROC_REF(interaction_disrupt)), \
+)
 
 /obj/effect/dummy/chameleon/proc/interaction_disrupt(mob/user, obj/item/held, datum/interaction/interaction)
 	for(var/mob/M in src)

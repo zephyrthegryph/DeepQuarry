@@ -41,11 +41,12 @@
 	wires.Interact(user)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/plastique/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/plastique, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/plastique/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	om_prompt(src, user, list("kind" = "number", "message" = "Please set the timer.", "title" = "Timer", "default" = 10, "max" = 60000, "min" = 10, "requires" = PROMPT_IN_HAND), PROC_REF(timer_set))
+	return TRUE
 
 /obj/item/plastique/proc/timer_set(mob/user, newtime, datum/om/prompt/ask)
 	newtime = CLAMP(newtime, 10, 60000)

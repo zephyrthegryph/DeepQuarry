@@ -140,11 +140,12 @@
 	icon_state = "egg_slimeglob"
 
 
-/obj/item/royal_spider_egg/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/royal_spider_egg, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/royal_spider_egg/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	om_prompt(src, user, list("message" = "Are you sure you want to release the royal spiderling right now? It appears ready to imprint the moment its born.", "title" = "Royal Spider Egg", "choices" = list("Yes", "No"), "requires" = PROMPT_HELD), PROC_REF(release_confirmed))
+	return TRUE
 
 /obj/item/royal_spider_egg/proc/release_confirmed(mob/user, response, datum/om/prompt/ask)
 	if(response == "Yes")

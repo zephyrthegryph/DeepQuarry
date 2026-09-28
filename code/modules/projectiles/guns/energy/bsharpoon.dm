@@ -52,21 +52,28 @@
 	update_fail_chance()
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/bluespace_harpoon/attackby(obj/item/I, mob/living/user)
+DECLARE_INTERACTIONS(/obj/item/bluespace_harpoon, \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_USE("Change fire mode", PROC_REF(interaction_fire_mode)), \
+)
+
+/// Old attackby.
+/obj/item/bluespace_harpoon/proc/interaction_item(mob/living/user, obj/item/I, datum/interaction/interaction)
 	if(!istype(user))
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(istype(I, /obj/item/stock_parts/scanning_module))
 		if(scanmod)
 			to_chat(user, span_warning("There's already [scanmod] installed! Remove it first."))
-			return
+			return INTERACTION_HANDLED_PASS
 		user.remove_from_mob(I)
 		I.forceMove(src)
 		scanmod = I
 		to_chat(user, span_notice("You install [scanmod] into [src]."))
 		update_fail_chance()
 	else
-		return ..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/bluespace_harpoon/afterattack(atom/A, mob/user as mob)
 	if(!user || !A || isstorage(A))
@@ -202,11 +209,11 @@
 						to_chat(M, span_vnotice("You materialize around [living_user] as they end up in your [belly_dest]!"))
 
 
-/obj/item/bluespace_harpoon/attack_self(mob/living/user)
-	. = ..(user)
-	if(.)
-		return TRUE
-	return change_fire_mode(user)
+
+/// Old attack_self: switch the fire mode.
+/obj/item/bluespace_harpoon/proc/interaction_fire_mode(mob/user, obj/item/held, datum/interaction/interaction)
+	change_fire_mode(user)
+	return TRUE
 
 /obj/item/bluespace_harpoon/verb/change_fire_mode(mob/user)
 	set name = "Change Fire Mode"

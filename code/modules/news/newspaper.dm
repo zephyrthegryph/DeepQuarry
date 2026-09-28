@@ -24,14 +24,18 @@
 // single TGUI window with all channels/messages shipped in one payload
 // and curr_page driving the view. Photo embedding (browse_rsc) is not
 // yet wired through TGUI assets, so message photos are omitted.
-/obj/item/newspaper/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/newspaper, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/newspaper/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!ishuman(user))
 		to_chat(user, span_infoplain("The paper is full of intelligible symbols!"))
-		return
+		return TRUE
 	tgui_interact(user)
+	return TRUE
 
 /obj/item/newspaper/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -100,19 +104,21 @@
 			playsound(src, "pageturn", 50, 1)
 			return TRUE
 
-/obj/item/newspaper/attackby(obj/item/W, mob/user)
+/// Old attackby.
+/obj/item/newspaper/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/pen))
 		if(scribble_page == curr_page)
 			to_chat(user, span_blue("There's already a scribble in this page... You wouldn't want to make things too cluttered, would you?"))
 		else
-			var/s = rerun_prompt(user, "k108", list("kind" = "text", "message" = "Write something", "title" = "Newspaper", "max_length" = MAX_MESSAGE_LEN), TYPE_PROC_REF(/atom, attackby), args)
+			var/s = rerun_prompt(user, "k108", list("kind" = "text", "message" = "Write something", "title" = "Newspaper", "max_length" = MAX_MESSAGE_LEN), PROC_REF(interaction_item), args)
 			if(isnull(s))
 				return TRUE
 			if(!s)
-				return
+				return INTERACTION_HANDLED_PASS
 			if(!in_range(src, user) && src.loc != user)
-				return
+				return INTERACTION_HANDLED_PASS
 			scribble_page = curr_page
 			scribble = s
 			attack_self(user)
-		return
+		return INTERACTION_HANDLED_PASS
+	return INTERACTION_HANDLED_PASS

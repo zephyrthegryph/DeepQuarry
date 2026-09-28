@@ -121,16 +121,14 @@ REF_OWNED(/obj/item/mapping_unit, "extras_holder")
 	if(loc != user) // Not just a juggle
 		hide_device()
 
-/obj/item/mapping_unit/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self.
+/obj/item/mapping_unit/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.stat != CONSCIOUS)
-		return
+		return TRUE
 
 	if(!ishuman(user))
 		to_chat(user, span_warning("Only humanoids can use this device."))
-		return
+		return TRUE
 
 	var/mob/living/carbon/human/H = user
 
@@ -143,8 +141,16 @@ REF_OWNED(/obj/item/mapping_unit, "extras_holder")
 	else
 		show_device(H)
 		to_chat(H, span_notice("You hold \the [src] where you can see it."))
+	return TRUE
 
-/obj/item/mapping_unit/attack_hand(mob/user)
+DECLARE_INTERACTIONS(/obj/item/mapping_unit, \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/item/mapping_unit/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(cell && user.get_inactive_hand() == src) // click with empty off hand
 		to_chat(user,span_notice("You eject \the [cell] from \the [src]."))
 		user.put_in_hands(cell)
@@ -152,15 +158,18 @@ REF_OWNED(/obj/item/mapping_unit, "extras_holder")
 		if(updating)
 			stop_updates()
 	else
-		return ..()
+		return FALSE
+	return TRUE
 
-/obj/item/mapping_unit/attackby(obj/W, mob/user)
+/// Old attackby.
+/obj/item/mapping_unit/proc/interaction_item(mob/user, obj/W, datum/interaction/interaction)
 	if(istype(W,cell_type) && !cell)
 		cell = W
 		cell.update_icon() //Why doesn't a cell do this already? :|
 		user.unEquip(cell)
 		cell.forceMove(src)
 		to_chat(user,span_notice("You insert \the [cell] into \the [src]."))
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/mapping_unit/proc/first_run(mob/user)
 	hud_datum = new(user.hud_used, src)
@@ -412,10 +421,10 @@ REGISTRY_MEMBERSHIP(/obj/item/holomap_beacon, REGISTRY_MAPPING_BEACONS)
 		registry_join(REGISTRY_MAPPING_BEACONS, src)
 		icon_state = initial(icon_state) + (in_list ? "_on" : "")
 
-/obj/item/holomap_beacon/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/holomap_beacon, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/holomap_beacon/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!in_list)
 		in_list = TRUE
 		registry_join(REGISTRY_MAPPING_BEACONS, src)
@@ -424,6 +433,7 @@ REGISTRY_MEMBERSHIP(/obj/item/holomap_beacon, REGISTRY_MAPPING_BEACONS)
 		registry_leave(REGISTRY_MAPPING_BEACONS, src)
 	icon_state = "[initial(icon_state)][in_list ? "_on" : ""]"
 	to_chat(user,span_notice("The [src] is now [in_list ? "broadcasting" : "disabled"]."))
+	return TRUE
 
 /obj/item/holomap_beacon/deathsquad
 	name = "deathsquad holomap beacon"

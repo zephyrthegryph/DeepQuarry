@@ -116,11 +116,14 @@
 	if(!material.build_windows(user, src))
 		tgui_interact(user)
 
-/obj/item/stack/material/attackby(obj/item/W, mob/user)
+EXTEND_INTERACTIONS(/obj/item/stack/material, INTERACT_ITEM(null, PROC_REF(material_interaction_item)))
+
+/// Old attackby.
+/obj/item/stack/material/proc/material_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W,/obj/item/stack/cable_coil))
 		material.build_wired_product(user, W, src)
-		return
+		return INTERACTION_HANDLED_PASS
 	else if(istype(W, /obj/item/stack/rods))
 		material.build_rod_product(user, W, src)
-		return
-	return ..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE

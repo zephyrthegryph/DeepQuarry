@@ -159,6 +159,7 @@ REF_PAIR(/obj/structure/morgue, list("connected" = "connected"))
 /obj/structure/m_tray/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/entry_hand/m_tray_hand,
+		/datum/interaction/entry_drag/m_tray_drag,
 	)
 	..()
 
@@ -181,19 +182,25 @@ REF_PAIR(/obj/structure/morgue, list("connected" = "connected"))
 		qdel(src)
 	return TRUE
 
-/obj/structure/m_tray/MouseDrop_T(atom/movable/O as mob|obj, mob/user as mob)
+/// Old MouseDrop_T: slide a body (or body bag) onto the tray.
+/datum/interaction/entry_drag/m_tray_drag
+	id = "m_tray_drag"
+	name = "Place on tray"
+	effect = /obj/structure/m_tray/proc/interaction_drag
+
+/obj/structure/m_tray/proc/interaction_drag(mob/user, atom/movable/O, datum/interaction/interaction)
 	if ((!( istype(O, /atom/movable) ) || O.anchored || get_dist(user, src) > 1 || get_dist(user, O) > 1 || user.contents.Find(src) || user.contents.Find(O)))
-		return
+		return INTERACTION_HANDLED_PASS
 	if (!ismob(O) && !istype(O, /obj/structure/closet/body_bag))
-		return
+		return INTERACTION_HANDLED_PASS
 	if (!ismob(user) || user.stat || user.lying || user.has_status(EFFECT_STUNNED))
-		return
+		return INTERACTION_HANDLED_PASS
 	O.forceMove(src.loc)
 	if (user != O)
 		for(var/mob/B in viewers(user, 3))
 			if ((B.client && !( B.blinded )))
 				to_chat(B, span_warning("\The [user] stuffs [O] into [src]!"))
-	return
+	return INTERACTION_HANDLED_PASS
 
 /*
  * Crematorium

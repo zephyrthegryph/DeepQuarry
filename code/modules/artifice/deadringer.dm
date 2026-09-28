@@ -28,14 +28,14 @@
 		reveal()
 		watchowner = null
 
-/obj/item/deadringer/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/deadringer, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/deadringer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/living/H = src.loc
 	if (!ishuman(H))
 		to_chat(H, span_blue("You have no clue what to do with this thing."))
-		return
+		return TRUE
 	if(!activated)
 		if(timer == 0)
 			to_chat(H, span_blue("You press a small button on [src]'s side. It starts to hum quietly."))
@@ -43,14 +43,15 @@
 			fireloss_prev = H.injury_load(INJURY_CATEGORY_THERMAL)
 			activated = 1
 			PERIODIC_START(src, PERIODIC_SLOW)
-			return
+			return TRUE
 		else
 			to_chat(H, span_blue("You press a small button on [src]'s side. It buzzes a little."))
-			return
+			return TRUE
 	if(activated)
 		to_chat(H, span_blue("You press a small button on [src]'s side. It stops humming."))
 		activated = 0
-		return
+		return TRUE
+	return TRUE
 
 /obj/item/deadringer/proc/deathprevent()
 	for(var/mob/living/simple_mob/D in oviewers(7, src))

@@ -160,15 +160,22 @@
 	else if(metal == 1 || prob(50))
 		qdel(src)
 
-/obj/structure/foamedmetal/attack_hand(mob/user)
+DECLARE_INTERACTIONS(/obj/structure/foamedmetal, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/structure/foamedmetal/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if ((user.has_mutation(HULK)) || (prob(75 - metal * 25)))
 		user.visible_message(span_warning("[user] smashes through the foamed metal."), span_notice("You smash through the metal foam wall."))
 		qdel(src)
 	else
 		to_chat(user, span_notice("You hit the metal foam but bounce off it."))
-	return
+	return TRUE
 
-/obj/structure/foamedmetal/attackby(obj/item/I, mob/user)
+/// Old attackby.
+/obj/structure/foamedmetal/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/grab))
 		var/obj/item/grab/G = I
 		var/mob/grabbed = G?.grab_target()
@@ -176,13 +183,14 @@
 		visible_message(span_warning("[G?.grab_assailant()] smashes [grabbed] through the foamed metal wall."))
 		consume(I, user)
 		qdel(src)
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(prob(I.force * 20 - metal * 25))
 		user.visible_message(span_warning("[user] smashes through the foamed metal."), span_notice("You smash through the foamed metal with \the [I]."))
 		qdel(src)
 	else
 		to_chat(user, span_notice("You hit the metal foam to no effect."))
+	return INTERACTION_HANDLED_PASS
 
 /obj/effect/effect/foam/firefighting
 	name = "firefighting foam"

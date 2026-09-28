@@ -29,12 +29,15 @@
 
 /obj/structure/generic_structure/var/delay_passed = FALSE
 
-/obj/structure/generic_structure/attack_hand(mob/user)
+DECLARE_INTERACTIONS(/obj/structure/generic_structure, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/structure/generic_structure/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(activatable_hand)
 		if(!on)
 			if(delay_time && !delay_passed)
 				om_do_after(user, delay_time, src, src, PROC_REF(delayed_use), list(user))
-				return 0
+				return TRUE
 			on = 1
 			icon_state = icon_state_on
 			if(icon_on)
@@ -72,7 +75,7 @@
 						flash_time *= H.species.flash_mod
 						var/obj/item/organ/internal/eyes/E = H.internal_organs_by_name[O_EYES]
 						if(!E)
-							return
+							return TRUE
 						if(E.is_bruised() && prob(E.damage + 50))
 							H.flash_eyes()
 							H.injure(INJURY_BURN, rand(1, 5), E, src, flags = INJURE_SILENT)
@@ -97,7 +100,7 @@
 		else if(togglable)
 			if(delay_time && !delay_passed)
 				om_do_after(user, delay_time, src, src, PROC_REF(delayed_use), list(user))
-				return 0
+				return TRUE
 			on = 0
 			icon_state = icon_state_off
 			if(icon_off)
@@ -106,7 +109,7 @@
 				icon = 'icons/obj/props/decor.dmi'
 			src.visible_message(span_notice("[text_deactivated]"))
 			update_icon()
-	return ..()
+	return FALSE
 
 /obj/structure/generic_structure/wrench_act(mob/user, obj/item/tool)
 	if(!wrenchable)

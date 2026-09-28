@@ -188,11 +188,14 @@
 	AddComponent(/datum/component/tethered_item, who_ya_gunna_call)
 	. = ..()
 
-/obj/item/proton_pack/attack_hand(mob/living/user)
+DECLARE_INTERACTIONS(/obj/item/proton_pack, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/item/proton_pack/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	// See important note in tethered_item.dm
 	if(SEND_SIGNAL(src,COMSIG_ITEM_ATTACK_SELF,user) & COMPONENT_CANCEL_ATTACK_CHAIN)
 		return TRUE
-	. = ..()
+	return FALSE
 
 /obj/item/proton_pack/MouseDrop()
 	if(ismob(src.loc))

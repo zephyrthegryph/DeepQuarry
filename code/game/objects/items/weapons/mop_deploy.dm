@@ -51,12 +51,13 @@
 		return
 	..()
 
-/obj/item/mop_deploy/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/mop_deploy, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/mop_deploy/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	user.drop_from_inventory(src)
 	om_qdel_after(src, 1)
+	return TRUE
 
 /// Goes away once it leaves its creator's hands: checked after it is made, dropped or moved
 /// between hands, never polled.

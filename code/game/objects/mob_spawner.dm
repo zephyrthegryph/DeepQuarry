@@ -87,14 +87,18 @@
 	if(L in spawned_mobs)
 		LAZYREMOVE(spawned_mobs, L)
 
-/obj/structure/mob_spawner/attackby(obj/item/I, mob/living/user)
+DECLARE_INTERACTIONS(/obj/structure/mob_spawner, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/structure/mob_spawner/proc/interaction_item(mob/living/user, obj/item/I, datum/interaction/interaction)
 	if(!I.force || I.flags & NOBLUDGEON || !destructible)
-		return
+		return INTERACTION_HANDLED_PASS
 
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	user.do_attack_animation(src)
 	visible_message(span_warning("\The [src] has been [LAZYLEN(I.attack_verb) ? "[pick(I.attack_verb)]":"attacked"] with \the [I] by [user]."))
 	receive_weapon_hit(I, user, silent = FALSE)
+	return INTERACTION_HANDLED_PASS
 
 /obj/structure/mob_spawner/receive_damage(datum/damage_packet/packet)
 	if(!destructible)

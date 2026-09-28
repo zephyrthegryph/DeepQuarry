@@ -52,16 +52,17 @@
 		label = ""
 		name = initial(name)
 
-/obj/item/reagent_containers/chem_disp_cartridge/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/reagent_containers/chem_disp_cartridge, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/reagent_containers/chem_disp_cartridge/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(is_open_container())
 		to_chat(user, span_notice("You put the cap on \the [src]."))
 		flags ^= OPENCONTAINER
 	else
 		to_chat(user, span_notice("You take the cap off \the [src]."))
 		flags |= OPENCONTAINER
+	return TRUE
 
 /obj/item/reagent_containers/chem_disp_cartridge/afterattack(obj/target, mob/user , flag)
 	if (!is_open_container() || !flag)

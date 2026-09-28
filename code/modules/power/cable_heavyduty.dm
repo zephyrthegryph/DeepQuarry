@@ -40,11 +40,14 @@
 
 	qdel(src)
 
-/obj/structure/cable/heavyduty/attackby(obj/item/W, mob/user)
+EXTEND_INTERACTIONS(/obj/structure/cable/heavyduty, INTERACT_ITEM(null, PROC_REF(heavyduty_interaction_item)))
+
+/// Old attackby.
+/obj/structure/cable/heavyduty/proc/heavyduty_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/stack/cable_coil) && !istype(W, /obj/item/stack/cable_coil/heavyduty))
 		to_chat(user, span_notice("You will need heavier cables to connect to these."))
-		return
-	return ..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
 /obj/item/stack/cable_coil/heavyduty/turf_place(turf/simulated/F, mob/user)
 	if(istype(F, /turf/simulated/open))

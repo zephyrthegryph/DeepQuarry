@@ -1411,7 +1411,10 @@ REF_OWNED(/obj/machinery/light, "cell")
 
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/light/attackby(obj/item/I, mob/user)
+DECLARE_INTERACTIONS(/obj/item/light, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/light/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/reagent_containers/syringe))
 		var/obj/item/reagent_containers/syringe/S = I
 
@@ -1426,7 +1429,7 @@ REF_OWNED(/obj/machinery/light, "cell")
 
 		S.reagents.clear_reagents()
 	else
-		return ..()
+		return FALSE
 	return TRUE
 
 // called after an attack with a light item

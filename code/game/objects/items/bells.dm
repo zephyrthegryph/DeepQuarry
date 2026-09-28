@@ -23,7 +23,13 @@
 		playsound(src, 'sound/effects/deskbell.ogg', 50, 1)
 	..()
 
-/obj/item/deskbell/attack_hand(mob/user)
+DECLARE_INTERACTIONS(/obj/item/deskbell, \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/item/deskbell/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 
 	//This defines the radials and what call we're assiging to them.
 	var/list/options = list()
@@ -35,7 +41,7 @@
 
 	// Just an example, if the bell had no options, due to conditionals, nothing would happen here.
 	if(length(options) < 1)
-		return
+		return TRUE
 
 	// Right, if there's only one available radial...
 	// For example, say, the bell's broken so you can only examine, it just does that (doesn't show radial)..
@@ -58,7 +64,8 @@
 				add_fingerprint(user)
 
 		if("pick up")
-			..()
+			return FALSE
+	return TRUE
 
 /obj/item/deskbell/proc/ring(mob/user)
 	if(IS_HARMING(user))
@@ -84,11 +91,13 @@
 		to_chat(user,span_notice("You are not able to ring [src]."))
 	return 0
 
-/obj/item/deskbell/attackby(obj/item/W, mob/user, params)
+/// Old attackby.
+/obj/item/deskbell/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(!istype(W))
-		return
+		return INTERACTION_HANDLED_PASS
 	if(!broken)
 		ring(user)
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/deskbell/wrench_act(mob/user, obj/item/W)
 	if(!isturf(loc))

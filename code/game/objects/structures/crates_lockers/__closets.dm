@@ -284,8 +284,15 @@ REF_OWNED(/obj/structure/closet, "door_obj")
 	into += list(
 		/datum/interaction/entry_item/closet_item,
 		/datum/interaction/entry_hand/closet_hand,
+		/datum/interaction/entry_drag/closet_drag,
 	)
 	..()
+
+/// Old MouseDrop_T: stuff a dragged mob or object in while open, or climb it while closed.
+/datum/interaction/entry_drag/closet_drag
+	id = "closet_drag"
+	name = "Stuff inside"
+	effect = /obj/structure/closet/proc/interaction_drag
 
 /// Old attackby: stuff items/grabs in while open, or seal/weld while closed.
 /datum/interaction/entry_item/closet_item
@@ -375,29 +382,29 @@ REF_OWNED(/obj/structure/closet, "door_obj")
 	for(var/mob/M in viewers(src))
 		M.show_message(span_warning("[src] has been [sealed ? "sealed" : "unsealed"] by [user.name]."), 3)
 
-/obj/structure/closet/MouseDrop_T(atom/movable/O as mob|obj, mob/user as mob)
+/obj/structure/closet/proc/interaction_drag(mob/user, atom/movable/O, datum/interaction/interaction)
 	if(istype(O, /atom/movable/screen))	//fix for HUD elements making their way into the world	-Pete
-		return
+		return INTERACTION_HANDLED_PASS
 	if(O.loc == user)
-		return
+		return INTERACTION_HANDLED_PASS
 	if(user.restrained() || user.stat || user.has_status(EFFECT_WEAKENED) || user.has_status(EFFECT_STUNNED) || user.has_status(EFFECT_PARALYZED))
-		return
+		return INTERACTION_HANDLED_PASS
 	if((!( istype(O, /atom/movable) ) || O.anchored || !Adjacent(user) || !Adjacent(O) || !user.Adjacent(O) || user.contents.Find(src)))
-		return
+		return INTERACTION_HANDLED_PASS
 	if(!isturf(user.loc)) // are you in a container/closet/pod/etc?
-		return
+		return INTERACTION_HANDLED_PASS
 	if(!opened)
 		// Attempt to climb if not opened!
 		if(O == user)
 			SEND_SIGNAL(src, COMSIG_CLIMBABLE_START_CLIMB, user)
-		return
+		return INTERACTION_HANDLED_PASS
 	if(istype(O, /obj/structure/closet))
-		return
+		return INTERACTION_HANDLED_PASS
 	step_towards(O, loc)
 	if(user != O)
 		user.show_viewers(span_danger("[user] stuffs [O] into [src]!"))
 	add_fingerprint(user)
-	return
+	return INTERACTION_HANDLED_PASS
 
 /obj/structure/closet
 	silicon_use = ROBOT_USE_HAND_ADJACENT

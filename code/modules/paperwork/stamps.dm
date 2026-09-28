@@ -106,10 +106,10 @@
 	icon_state = "stamp-zenghu"
 
 // Syndicate stamp to forge documents.
-/obj/item/stamp/chameleon/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/stamp/chameleon, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/stamp/chameleon/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 
 	var/list/stamp_types = typesof(/obj/item/stamp) - src.type // Get all stamp types except our own
 	var/list/stamps = list()
@@ -121,7 +121,7 @@
 
 	var/list/show_stamps = list("EXIT" = null) + sortList(stamps) // the list that will be shown to the user to pick from
 
-	var/input_stamp = rerun_prompt(user, "k124", list("kind" = "list", "message" = "Choose a stamp to disguise as:", "title" = "Stamp Choice", "choices" = show_stamps), PROC_REF(attack_self), args)
+	var/input_stamp = rerun_prompt(user, "k124", list("kind" = "list", "message" = "Choose a stamp to disguise as:", "title" = "Stamp Choice", "choices" = show_stamps), PROC_REF(interaction_self), args)
 	if(isnull(input_stamp))
 		return TRUE
 
@@ -136,3 +136,4 @@
 	// Clean up the temporary picker instances we created above.
 	for(var/stamp_key in stamps)
 		qdel(stamps[stamp_key])
+	return TRUE

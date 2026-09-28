@@ -26,9 +26,7 @@
 
 	return atmosanalyzer_scan(src, air, user)
 
-/obj/item/analyzer/get_interactions()
-	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))
-	return L
+DECLARE_INTERACTIONS(/obj/item/analyzer, INTERACT_USE(null, PROC_REF(interaction_self)))
 
 /obj/item/analyzer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(special_handling)

@@ -67,7 +67,10 @@
 		icon_state = "bath3"
 	return // Doesn't care about material or anything else.
 
-/obj/structure/bed/bath/attackby(obj/item/I, mob/user)
+EXTEND_INTERACTIONS(/obj/structure/bed/bath, INTERACT_ITEM(null, PROC_REF(bath_interaction_item)))
+
+/// Old attackby.
+/obj/structure/bed/bath/proc/bath_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/mop) || istype(I, /obj/item/soap)) // "Allows soap and rags to be used on mopbuckets"
 		if(reagents.total_volume < 1)
 			to_chat(user, span_warning("\The [src] is out of water!"))
@@ -77,15 +80,16 @@
 			playsound(src, 'sound/effects/slosh.ogg', 25, 1)
 	if(istype(I, /obj/item/reagent_containers/glass))
 		update_icon()
-		return
+		return INTERACTION_HANDLED_PASS
 	else if(istype(I, /obj/item/grab))
 		var/obj/item/grab/G = I
 		var/mob/living/affecting = G?.grab_target()
 		if(has_buckled_mobs()) //Handles trying to buckle someone else to a chair when someone else is on it
 			to_chat(user, span_notice("\The [src] already has someone buckled to it."))
-			return
+			return INTERACTION_HANDLED_PASS
 		user.visible_message(span_notice("[user] attempts to buckle [affecting] into \the [src]!"))
 		om_task_start(/datum/om/task/timed/bath_bath_buckle, user, G?.grab_target(), list("receiver" = src, "I" = I, "affecting" = affecting))
+	return INTERACTION_HANDLED_PASS
 
 /datum/om/task/timed/bath_bath_buckle
 	duration = 2 SECONDS
@@ -146,10 +150,17 @@
 	icon_state = "toilet3"
 	open = 1
 
-/obj/structure/toilet/wooden/attack_hand(mob/living/user)
-	return //No lid
+EXTEND_INTERACTIONS(/obj/structure/toilet/wooden, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(wooden_interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(wooden_interaction_item)), \
+)
 
-/obj/structure/toilet/wooden/attackby(obj/item/I, mob/living/user) //simpler interactions
+/// Old attack_hand.
+/obj/structure/toilet/wooden/proc/wooden_interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+	return TRUE
+
+/// Old attackby.
+/obj/structure/toilet/wooden/proc/wooden_interaction_item(mob/living/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/grab))
 		user.setClickCooldown(user.get_attack_speed(I))
 		var/obj/item/grab/G = I
@@ -160,7 +171,7 @@
 			if(G.state>1)
 				if(!GM.loc == get_turf(src))
 					to_chat(user, span_notice("[GM.name] needs to be on the toilet."))
-					return
+					return INTERACTION_HANDLED_PASS
 				var/mob/living/swirlie = om_resolve(swirlie_mob)
 				if(open && !swirlie)
 					user.visible_message(span_danger("[user] starts to give [GM.name] a swirlie!"), span_notice("You start to give [GM.name] a swirlie!"))
@@ -176,15 +187,16 @@
 	if(cistern && !istype(user,/mob/living/silicon/robot)) //STOP PUTTING YOUR MODULES IN THE TOILET.
 		if(I.w_class > 3)
 			to_chat(user, span_notice("\The [I] does not fit."))
-			return
+			return INTERACTION_HANDLED_PASS
 		if(w_items + I.w_class > 5)
 			to_chat(user, span_notice("The cistern is full."))
-			return
+			return INTERACTION_HANDLED_PASS
 		user.drop_item()
 		I.forceMove(src)
 		w_items += I.w_class
 		to_chat(user, "You carefully place \the [I] into the cistern.")
-		return
+		return INTERACTION_HANDLED_PASS
+	return INTERACTION_HANDLED_PASS
 
 /datum/om/task/timed/wooden_wooden_swirlie
 	duration = 3 SECONDS

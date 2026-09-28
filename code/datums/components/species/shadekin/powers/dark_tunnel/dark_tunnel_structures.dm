@@ -49,23 +49,26 @@ REGISTRY_MEMBERSHIP(/obj/structure/dark_portal/minion, REGISTRY_DARKPORTAL_MINIO
 	locked_name = src.name
 	precision = 1
 
-/obj/structure/dark_portal/hub/attack_hand(mob/living/user)
+DECLARE_INTERACTIONS(/obj/structure/dark_portal/hub, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/structure/dark_portal/hub/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(!isliving(user))
-		return
+		return TRUE
 	var/datum/component/shadekin/SK = user.GetComponent(/datum/component/shadekin)
 	if(SK)
 		if(SK.in_dark_respite)
 			to_chat(user, span_warning("You can't use this so soon after an emergency warp!"))
-			return
+			return TRUE
 		if(SK.in_phase)
 			to_chat(user, span_warning("You can't use this while phase shifted!"))
-			return
+			return TRUE
 		if(locked != src)
-			var/confirm = rerun_prompt(user, "a1", list("message" = "This portal is currently open to [locked_name]. Change the portal destination?", "title" = "Change Portal Destination", "choices" = list("Yes", "Cancel")), TYPE_PROC_REF(/atom, attack_hand), args)
+			var/confirm = rerun_prompt(user, "a1", list("message" = "This portal is currently open to [locked_name]. Change the portal destination?", "title" = "Change Portal Destination", "choices" = list("Yes", "Cancel")), PROC_REF(interaction_hand), args)
 			if(isnull(confirm))
 				return TRUE
 			if(!confirm || confirm == "Cancel")
-				return
+				return TRUE
 		var/list/L = list()
 		for(var/obj/structure/dark_portal/hub/H in REGISTRY_MEMBERS(REGISTRY_DARKPORTAL_HUBS))
 			if(H == src)
@@ -75,17 +78,17 @@ REGISTRY_MEMBERSHIP(/obj/structure/dark_portal/minion, REGISTRY_DARKPORTAL_MINIO
 		for(var/obj/structure/dark_portal/minion/M in REGISTRY_MEMBERS(REGISTRY_DARKPORTAL_MINIONS))
 			var/tmpname = "Dark Portal ([get_area(M)])"
 			L[tmpname] = M
-		var/desc = rerun_prompt(user, "a2", list("kind" = "list", "message" = "Please select a hub portal to connect to.", "title" = "Portal Menu", "choices" = L), TYPE_PROC_REF(/atom, attack_hand), args)
+		var/desc = rerun_prompt(user, "a2", list("kind" = "list", "message" = "Please select a hub portal to connect to.", "title" = "Portal Menu", "choices" = L), PROC_REF(interaction_hand), args)
 		if(isnull(desc))
 			return TRUE
 		if(!desc)
-			return
+			return TRUE
 		locked = L[desc]
 		locked_name = desc
-		return
+		return TRUE
 	else if(locked_name == "somewhere on the station" || locked_name == "somewhere in the wilderness")
 		to_chat(user, span_warning("The portal distorts for a moment, before returning to how it was, seemingly already determined where to send you."))
-		return
+		return TRUE
 	else if(istype(user, /mob/living/carbon/human))
 		var/mob/living/carbon/human/H = user
 		if(H.job && H.job != JOB_OUTSIDER && LAZYLEN(destination_station_areas))
@@ -98,17 +101,17 @@ REGISTRY_MEMBERSHIP(/obj/structure/dark_portal/minion, REGISTRY_DARKPORTAL_MINIO
 				to_chat(user, span_warning("The portal distorts for a moment, seemingly unable to determine where to send you."))
 				close_portal()
 				destination_station_areas.Remove(picked_area)
-				return
+				return TRUE
 			locked = pick(floors)
 			locked_name = "somewhere on the station"
 			one_time_use = TRUE
 			precision = 0
 			to_chat(user, span_notice("The portal distorts for a moment, resolving itself soon after. You feel like it will lead you to the station now."))
-			return
+			return TRUE
 	if(!LAZYLEN(destination_wilderness_areas))
 		to_chat(user, span_warning("The portal distorts for a moment, seemingly unable to determine where to send you."))
 		close_portal()
-		return
+		return TRUE
 	var/list/floors = list()
 	var/area/picked_area = pick(destination_wilderness_areas)
 	for(var/turf/simulated/floor/floor in get_area_turfs(picked_area))
@@ -118,13 +121,13 @@ REGISTRY_MEMBERSHIP(/obj/structure/dark_portal/minion, REGISTRY_DARKPORTAL_MINIO
 		to_chat(user, span_warning("The portal distorts for a moment, seemingly unable to determine where to send you."))
 		close_portal()
 		destination_wilderness_areas.Remove(picked_area)
-		return
+		return TRUE
 	locked = pick(floors)
 	locked_name = "somewhere in the wilderness"
 	one_time_use = TRUE
 	precision = 0
 	to_chat(user, span_notice("The portal distorts for a moment, resolving itself soon after. You feel like it will lead you to somewhere in the wilderness now."))
-	return
+	return TRUE
 
 /obj/structure/dark_portal/hub/Bumped(M as mob|obj)
 	teleport(M)
@@ -140,32 +143,35 @@ REGISTRY_MEMBERSHIP(/obj/structure/dark_portal/minion, REGISTRY_DARKPORTAL_MINIO
 	precision = 1
 	icon_state = "minion0"
 
-/obj/structure/dark_portal/minion/attack_hand(mob/living/user)
+DECLARE_INTERACTIONS(/obj/structure/dark_portal/minion, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/structure/dark_portal/minion/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(!isliving(user))
-		return
+		return TRUE
 	var/datum/component/shadekin/SK = user.GetComponent(/datum/component/shadekin)
 	if(SK)
 		if(SK.in_dark_respite)
 			to_chat(user, span_warning("You can't use this so soon after an emergency warp!"))
-			return FALSE
+			return TRUE
 		if(SK.in_phase)
 			to_chat(user, span_warning("You can't use this while phase shifted!"))
-			return FALSE
+			return TRUE
 		if(icon_state == "minion1")
-			var/confirm = rerun_prompt(user, "a3", list("message" = "This portal is currently open to [locked_name]. Close this portal to the dark?", "title" = "Close Portal", "choices" = list("Yes", "Cancel")), TYPE_PROC_REF(/atom, attack_hand), args)
+			var/confirm = rerun_prompt(user, "a3", list("message" = "This portal is currently open to [locked_name]. Close this portal to the dark?", "title" = "Close Portal", "choices" = list("Yes", "Cancel")), PROC_REF(interaction_hand), args)
 			if(isnull(confirm))
 				return TRUE
 			if(!confirm || confirm == "Cancel")
-				return
+				return TRUE
 			if(confirm == "Yes")
 				close_portal()
-				return
+				return TRUE
 		if(SK.shadekin_get_energy() < 10)
 			to_chat(user, span_warning("Not enough energy to open up the portal! (10 required)"))
-			return
+			return TRUE
 		if(!LAZYLEN(REGISTRY_MEMBERS(REGISTRY_DARKPORTAL_HUBS)))
 			to_chat(user, span_warning("No hub portals exist!"))
-			return
+			return TRUE
 		if(LAZYLEN(REGISTRY_MEMBERS(REGISTRY_DARKPORTAL_HUBS)) == 1)
 			SK.shadekin_adjust_energy(-10)
 			var/obj/structure/dark_portal/target = REGISTRY_MEMBERS(REGISTRY_DARKPORTAL_HUBS)[1]
@@ -173,26 +179,27 @@ REGISTRY_MEMBERSHIP(/obj/structure/dark_portal/minion, REGISTRY_DARKPORTAL_MINIO
 			locked_name = target.name
 			icon_state = "minion1"
 			om_after(src, 5 MINUTES, PROC_REF(check_to_close), target)
-			return
+			return TRUE
 		var/list/L = list()
 		for(var/obj/structure/dark_portal/hub/H in REGISTRY_MEMBERS(REGISTRY_DARKPORTAL_HUBS))
 			L[H.name] = H
-		var/desc = rerun_prompt(user, "a4", list("kind" = "list", "message" = "Please select a hub portal to connect to.", "title" = "Portal Menu", "choices" = L), TYPE_PROC_REF(/atom, attack_hand), args)
+		var/desc = rerun_prompt(user, "a4", list("kind" = "list", "message" = "Please select a hub portal to connect to.", "title" = "Portal Menu", "choices" = L), PROC_REF(interaction_hand), args)
 		if(isnull(desc))
 			return TRUE
 		if(!desc)
-			return
+			return TRUE
 		locked = L[desc]
 		locked_name = desc
 		icon_state = "minion1"
 		om_after(src, 5 MINUTES, PROC_REF(check_to_close_desc), locked)
-		return
+		return TRUE
 	else if(!istype(user, /mob/living))
-		return
+		return TRUE
 	else if(icon_state == "minion0")
 		to_chat(user, span_notice("You touch the portal... nothing happens."))
 	else
 		to_chat(user, span_notice("You touch the portal, your hand able to pass through without harm."))
+	return TRUE
 
 /obj/structure/dark_portal/proc/check_to_close(obj/structure/dark_portal/target)
 	if(locked == target)

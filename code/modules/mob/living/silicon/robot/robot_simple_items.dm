@@ -82,13 +82,13 @@
 	QDEL_LIST_ASSOC_VAL(cyborg_integrated_tools)
 	. = ..()
 
-/obj/item/robotic_multibelt/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/robotic_multibelt/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!cyborg_integrated_tools || !LAZYLEN(cyborg_integrated_tools))
 		to_chat(user, "Your multibelt is empty!")
-		return
+		return TRUE
 
 	var/list/options = list()
 
@@ -102,9 +102,10 @@
 	else
 		choice = show_radial_menu(user, src, options, radius = 40, require_near = TRUE)
 	if(!choice)
-		return
+		return TRUE
 	cut_overlays()
 	assume_selected_item(integrated_tools_by_name[choice])
+	return TRUE
 
 /obj/item/robotic_multibelt/proc/assume_selected_item(obj/item/chosen_item)
 	if(!chosen_item)
@@ -608,9 +609,11 @@ REF_OWNED_LIST(/obj/item/gripper, "pockets")
 	if(wrapped && !is_in_use(user, FALSE))
 		wrapped.attack_self(user)
 
-/obj/item/gripper/click_alt(mob/user)
+/// Old click_alt.
+/obj/item/gripper/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!is_in_use(user, FALSE))
 		drop_item(user)
+	return TRUE
 
 /obj/item/gripper/verb/drop_gripper_item()
 
@@ -716,11 +719,6 @@ REF_OWNED_LIST(/obj/item/gripper, "pockets")
 
 /obj/item/gripper/no_use //Used when you want to hold and put items in other things, but not able to 'use' the item
 
-/obj/item/gripper/no_use/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
-	return
 
 /obj/item/gripper/no_use/loader //This is used to disallow building with metal.
 	name = "sheet loader"

@@ -27,9 +27,7 @@
 		icon_state = "[initial(icon_state)]1"
 	to_chat(user, span_notice("You enable \the [src], translating into [langset().name]."))
 
-/obj/item/universal_translator/get_interactions()
-	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))
-	return L
+DECLARE_INTERACTIONS(/obj/item/universal_translator, INTERACT_USE(null, PROC_REF(interaction_self)))
 
 /obj/item/universal_translator/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!listening) //Turning ON

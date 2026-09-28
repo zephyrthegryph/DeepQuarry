@@ -265,10 +265,10 @@ REF_OWNED(/obj/item/rms, "spark_system")
 		to_chat(user, span_notice("Invalid target for the device."))
 		return
 
-/obj/item/rms/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/rms, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/rms/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/list/choices = list(
 		"Steel" = radial_image_steel,
 		"Glass" = radial_image_glass,
@@ -280,7 +280,7 @@ REF_OWNED(/obj/item/rms, "spark_system")
 
 	var/choice = show_radial_menu(user, src, choices, custom_check = CALLBACK(src, PROC_REF(check_menu), user), require_near = TRUE, tooltips = TRUE)
 	if(!check_menu(user))
-		return
+		return TRUE
 	switch(choice)
 		if("Steel")
 			mode_index = modes.Find(RMS_STEEL)
@@ -301,10 +301,11 @@ REF_OWNED(/obj/item/rms, "spark_system")
 			mode_index = modes.Find(RMS_RAND)
 			charge_cost = charge_cost_random
 		else
-			return
+			return TRUE
 
 	to_chat(user, span_notice("Changed mode to '[choice]'."))
 	playsound(src.loc, 'sound/effects/pop.ogg', 50, 0)
+	return TRUE
 
 /obj/item/rms/multitool_act(mob/user, obj/item/tool)
 	overcharge = !overcharge

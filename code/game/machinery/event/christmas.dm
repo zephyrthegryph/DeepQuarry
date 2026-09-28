@@ -45,17 +45,20 @@
 		to_chat(usr, span_warning("Only Santa can bind and unbind his sack!"))
 	return
 
-/obj/structure/event/santa_sack/attack_hand(mob/user)
-	. = ..()
+DECLARE_INTERACTIONS(/obj/structure/event/santa_sack, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/structure/event/santa_sack/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(usr.ckey != santa_ckey)
 		to_chat(usr, span_warning("Only Santa can give presents! (Be nice or you might end up in Santa's sack!)"))
-		return
+		return TRUE
 
 	var/list/receivers = list()
 	for(var/mob/living/R in oview(user.loc,1))
 		receivers += R
 
 	om_prompt(src, user, list("kind" = "list", "message" = "Choose who to give a present to.", "title" = "Give Present", "choices" = mobs_in_view(1, user), "requires" = PROMPT_ADJACENT), PROC_REF(present_receiver_chosen))
+	return TRUE
 
 /obj/structure/event/santa_sack/proc/present_receiver_chosen(mob/user, mob/living/T, datum/om/prompt/ask)
 	if(!T.ckey)

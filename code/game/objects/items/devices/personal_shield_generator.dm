@@ -118,13 +118,11 @@ REF_OWNED(/obj/item/personal_shield_generator, list("active_weapon", "bcell"))
 /obj/item/personal_shield_generator/ui_action_click(mob/user, actiontype)
 	toggle_shield()
 
-/obj/item/personal_shield_generator/get_interactions()
-	var/static/list/L = list(
-		INTERACT_HAND(null, PROC_REF(interaction_hand)),
-		INTERACT_ALT(null, PROC_REF(interaction_alt)),
-		INTERACT_ITEM(null, PROC_REF(interaction_item)),
-	)
-	return L
+DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
 
 /obj/item/personal_shield_generator/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(loc == user)

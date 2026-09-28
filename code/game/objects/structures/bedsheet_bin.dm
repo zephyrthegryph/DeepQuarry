@@ -44,12 +44,15 @@ LINEN BINS
 	add_fingerprint(user)
 	return
 
-/obj/item/bedsheet/attackby(obj/item/I, mob/user)
+DECLARE_INTERACTIONS(/obj/item/bedsheet, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/bedsheet/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(is_sharp(I))
 		user.visible_message(span_infoplain(span_bold("\The [user]") + " begins cutting up [src] with [I]."), span_notice("You begin cutting up [src] with [I]."))
 		om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
-		return
-	..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
 /obj/item/bedsheet/proc/attackby_timed_done(mob/user)
 	to_chat(user, span_notice("You cut [src] into pieces!"))

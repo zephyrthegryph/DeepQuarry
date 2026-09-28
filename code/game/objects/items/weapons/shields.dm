@@ -97,14 +97,18 @@
 			return 1
 	return 0
 
-/obj/item/shield/riot/attackby(obj/item/W as obj, mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/shield/riot, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/shield/riot/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/melee/baton))
 		if(cooldown < world.time - 25)
 			user.visible_message(span_warning("[user] bashes [src] with [W]!"))
 			playsound(src, 'sound/effects/shieldbash.ogg', 50, 1)
 			cooldown = world.time
 	else
-		..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /*
  * Energy Shield
@@ -151,10 +155,13 @@
 			return (base_block_chance - round(damage / 3)) //block bullets and beams using the old block chance
 	return base_block_chance
 
-/obj/item/shield/energy/attack_self(mob/living/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/shield/energy, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+)
+
+/// Old attack_self.
+/obj/item/shield/energy/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if (CLUMSY_FAIL_CHANCE(user))
 		to_chat(user, span_warning("You beat yourself in the head with [src]."))
 		user.injure(INJURY_BLUNT, 5, source = src)
@@ -181,7 +188,7 @@
 		H.update_inv_r_hand()
 
 	add_fingerprint(user)
-	return
+	return TRUE
 
 /obj/item/shield/energy/update_icon()
 	var/mutable_appearance/blade_overlay = mutable_appearance(icon, "[icon_state]_blade")
@@ -203,16 +210,18 @@
 		H.update_inv_l_hand()
 		H.update_inv_r_hand()
 
-/obj/item/shield/energy/click_alt(mob/living/user)
+/// Old click_alt.
+/obj/item/shield/energy/proc/interaction_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(!in_range(src, user))	//Basic checks to prevent abuse
-		return
+		return TRUE
 	if(user.incapacitated() || !istype(user))
 		to_chat(user, span_warning("You can't do that right now!"))
-		return
+		return TRUE
 	om_prompt_sequence(src, user, list(
 		list("key" = "sure", "message" = "Are you sure you want to recolor your shield?", "title" = "Confirm Recolor", "choices" = list("Yes", "No")),
 		PROC_REF(ask_shield_color),
 	), PROC_REF(shield_recolored), list("requires" = PROMPT_ADJACENT))
+	return TRUE
 
 /obj/item/shield/energy/proc/ask_shield_color(mob/user, datum/om/prompt/ask)
 	if(ask.get("sure") == "Yes")
@@ -248,10 +257,10 @@
 	else
 		return 0
 */
-/obj/item/shield/riot/tele/attack_self(mob/living/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/shield/riot/tele, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/shield/riot/tele/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
 	active = !active
 	icon_state = "teleriot[active]"
 	playsound(src, 'sound/weapons/empty.ogg', 50, 1)
@@ -277,7 +286,7 @@
 		H.update_inv_r_hand()
 
 	add_fingerprint(user)
-	return
+	return TRUE
 
 
 // === merged from shields_vr.dm during hard-fork de-suffix (verified no override-order change) ===
@@ -322,14 +331,17 @@
 
 //POURPEL WHY U NO COVER
 
-/obj/item/shield/riot/explorer/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/shield/riot/explorer, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(explorer_interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/shield/riot/explorer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(brightness_on)
 		if(!isturf(user.loc))
 			to_chat(user, "You cannot turn the light on while in this [user.loc]")
-			return
+			return TRUE
 		on = !on
 		to_chat(user, "You [on ? "enable" : "disable"] the shield light.")
 		update_flashlight(user)
@@ -338,6 +350,7 @@
 			var/mob/living/carbon/human/H = user
 			H.update_inv_l_hand()
 			H.update_inv_r_hand()
+	return TRUE
 
 /obj/item/shield/riot/explorer/proc/update_flashlight(mob/user = null)
 	if(on && !light_applied)
@@ -361,14 +374,16 @@
 	desc = "A shield issued to exploration teams to help protect them when advancing into the unknown. It is lighter and cheaper but less protective than some of its counterparts. It has a flashlight straight in the middle to help draw attention. This one is POURPEL"
 	icon_state = "explorer_shield_P"
 
-/obj/item/shield/riot/explorer/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby.
+/obj/item/shield/riot/explorer/proc/explorer_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/material/knife/machete))
 		if(cooldown < world.time - 25)
 			user.visible_message(span_warning("[user] bashes [src] with [W]!"))
 			playsound(src, 'sound/effects/shieldbash.ogg', 50, 1)
 			cooldown = world.time
 	else
-		..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/shield/riot/explorer/purple/update_icon()
 	if(on)

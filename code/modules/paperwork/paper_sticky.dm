@@ -23,23 +23,24 @@
 	if(written_text)
 		icon_state = "[icon_state]_writing"
 
-/obj/item/sticky_pad/attackby(obj/item/thing, mob/user)
+/// Old attackby.
+/obj/item/sticky_pad/proc/interaction_item(mob/user, obj/item/thing, datum/interaction/interaction)
 	if(istype(thing, /obj/item/pen))
 
 		if(jobban_isbanned(user, JOB_GRAFFITI))
 			to_chat(user, span_warning("You are banned from leaving persistent information across rounds."))
-			return
+			return INTERACTION_HANDLED_PASS
 
 		var/writing_space = MAX_MESSAGE_LEN - length(written_text)
 		if(writing_space <= 0)
 			to_chat(user, span_warning("There is no room left on \the [src]."))
-			return
-		var/_answer_k37 = rerun_prompt(user, "k37", list("kind" = "text", "message" = "What would you like to write?", "max_length" = writing_space, "encode" = FALSE), TYPE_PROC_REF(/atom, attackby), args)
+			return INTERACTION_HANDLED_PASS
+		var/_answer_k37 = rerun_prompt(user, "k37", list("kind" = "text", "message" = "What would you like to write?", "max_length" = writing_space, "encode" = FALSE), PROC_REF(interaction_item), args)
 		if(isnull(_answer_k37))
 			return TRUE
 		var/text = sanitizeSafe(_answer_k37, writing_space)
 		if(!text || thing.loc != user || (!Adjacent(user) && loc != user) || user.incapacitated())
-			return
+			return INTERACTION_HANDLED_PASS
 		user.visible_message(span_infoplain(span_bold("\The [user]") + " jots a note down on \the [src]."))
 		written_by = user.ckey
 		if(written_text)
@@ -47,15 +48,21 @@
 		else
 			written_text = text
 		update_icon()
-		return
-	..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
 /obj/item/sticky_pad/examine(mob/user)
 	. = ..()
 	if(.)
 		to_chat(user, span_notice("It has [papers] sticky note\s left."))
 
-/obj/item/sticky_pad/attack_hand(mob/user)
+DECLARE_INTERACTIONS(/obj/item/sticky_pad, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/item/sticky_pad/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	var/obj/item/paper/paper = new paper_type(get_turf(src))
 	paper.set_content(written_text, "sticky note")
 	paper.last_modified_ckey = written_by
@@ -68,6 +75,7 @@
 		consume(src, user)
 	else
 		update_icon()
+	return TRUE
 
 /obj/item/sticky_pad/MouseDrop(mob/user)
 	if(user == usr && !(user.restrained() || user.stat) && (user.contents.Find(src) || in_range(src, user)))
@@ -120,7 +128,8 @@
 		icon_state = info ? "paper_words" : "paper"
 
 // Copied from duct tape.
-/obj/item/paper/sticky/attack_hand()
+/// Old attack_hand: runs after the touch tried to pick it up (hand_pickup()).
+/obj/item/paper/sticky/hand_pickup(mob/user)
 	. = ..()
 	if(!istype(loc, /turf))
 		reset_persistence_tracking()

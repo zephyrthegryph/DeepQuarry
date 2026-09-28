@@ -116,37 +116,45 @@ REMOVAL
 	else
 		.+= "There appears to be an empty slot for attaching a [loadable_name]."
 
-/obj/item/xenobio/attack_hand(mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/xenobio, \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/item/xenobio/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.get_inactive_hand() == src && loaded_item)
 		user.put_in_hands(loaded_item)
 		user.visible_message(span_notice("[user] removes [loaded_item] from [src]."), span_notice("You remove [loaded_item] from [src]."))
 		loaded_item = null
 		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
 	else
-		return ..()
+		return FALSE
+	return TRUE
 
-/obj/item/xenobio/attackby(obj/item/I as obj, mob/user as mob)
+/// Old attackby.
+/obj/item/xenobio/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, loadable_item))
 		if(loaded_item)
 			to_chat(user, span_warning("[I] doesn't seem to fit into [src]."))
-			return
+			return INTERACTION_HANDLED_PASS
 		//var/obj/item/reagent_containers/glass/beaker/B = I
 		user.drop_item()
 		I.forceMove(src)
 		loaded_item = I
 		user.visible_message(span_notice("[user] inserts [I] into [src]."), span_notice("You slot [I] into [src]."))
 		return 1
-	..()
+	return FALSE
 
-/obj/item/xenobio/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self.
+/obj/item/xenobio/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(loaded_item)
 		user.put_in_hands(loaded_item)
 		user.visible_message(span_notice("[user] removes [loaded_item] from [src]."), span_notice("You remove [loaded_item] from [src]."))
 		loaded_item = null
 		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+	return TRUE
 
 /obj/item/xenobio/afterattack(atom/A, mob/user as mob)
 	if(!loaded_item)

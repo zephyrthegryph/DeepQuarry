@@ -75,16 +75,24 @@
 /obj/structure/bed/double/weaversilk_nest/update_icon()
 	return
 
-/obj/structure/bed/double/weaversilk_nest/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_WRENCH) || istype(W,/obj/item/stack) || W.has_tool_quality(TOOL_WIRECUTTER))
-		return
-	..()
+EXTEND_INTERACTIONS(/obj/structure/bed/double/weaversilk_nest, \
+	INTERACT_HAND_HOSTILE("Tear down", PROC_REF(interaction_tear_down)), \
+	INTERACT_ITEM(null, PROC_REF(weaversilk_nest_interaction_item)), \
+)
 
-/obj/structure/bed/double/weaversilk_nest/attack_hand(mob/user as mob)
-	..()
-	if(IS_HARMING(user) && !has_buckled_mobs())
-		to_chat(user,span_warning("You easily tear down [name]."))
-		qdel(src)
+/// Old attackby.
+/obj/structure/bed/double/weaversilk_nest/proc/weaversilk_nest_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+	if(W.has_tool_quality(TOOL_WRENCH) || istype(W,/obj/item/stack) || W.has_tool_quality(TOOL_WIRECUTTER))
+		return INTERACTION_HANDLED_PASS
+	return FALSE
+
+/// Old attack_hand's harm branch: tear the empty nest down (combat mode only).
+/obj/structure/bed/double/weaversilk_nest/proc/interaction_tear_down(mob/user, obj/item/held, datum/interaction/interaction)
+	if(has_buckled_mobs())
+		return FALSE
+	to_chat(user,span_warning("You easily tear down [name]."))
+	qdel(src)
+	return TRUE
 
 /obj/effect/weaversilk/trap
 	name = "weaversilk trap"

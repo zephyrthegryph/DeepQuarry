@@ -81,11 +81,15 @@
 	else
 		..()
 
-/obj/item/gun/launcher/grenade/attack_hand(mob/user)
+DECLARE_INTERACTIONS(/obj/item/gun/launcher/grenade, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/item/gun/launcher/grenade/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.get_inactive_hand() == src)
 		unload(user)
 	else
-		..()
+		return FALSE
+	return TRUE
 
 /obj/item/gun/launcher/grenade/consume_next_projectile()
 	if(chambered)

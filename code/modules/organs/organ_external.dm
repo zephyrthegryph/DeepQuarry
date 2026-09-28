@@ -267,49 +267,52 @@
 				if(2)
 					. += span_danger("The [name] is cut open and the skin retracted.")
 
-/obj/item/organ/external/attackby(obj/item/W, mob/living/user)
+EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(external_interaction_item)))
+
+/// Old attackby.
+/obj/item/organ/external/proc/external_interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
 	switch(stage)
 		if(0)
 			if(istype(W,/obj/item/surgical/scalpel))
 				user.visible_message(span_danger(span_bold("[user]") + " cuts [src] open with [W]!"))
 				stage++
-				return
+				return INTERACTION_HANDLED_PASS
 		if(1)
 			if(istype(W,/obj/item/surgical/retractor))
 				user.visible_message(span_danger(span_bold("[user]") + " cracks [src] open like an egg with [W]!"))
 				stage++
-				return
+				return INTERACTION_HANDLED_PASS
 			if(istype(W,/obj/item/surgical/cautery))
 				user.visible_message(span_danger(span_bold("[user]") + " closes [src] with [W]!"))
 				stage--
-				return
+				return INTERACTION_HANDLED_PASS
 		if(2)
 			if(istype(W,/obj/item/surgical/hemostat))
 				if(LAZYLEN(contents))
-					var/obj/item/removing = rerun_prompt(user, "k308", list("kind" = "list", "message" = "What would you like to remove?", "title" = "Extraction", "choices" = contents, "timeout" = 20 SECONDS), TYPE_PROC_REF(/atom, attackby), args)
+					var/obj/item/removing = rerun_prompt(user, "k308", list("kind" = "list", "message" = "What would you like to remove?", "title" = "Extraction", "choices" = contents, "timeout" = 20 SECONDS), PROC_REF(external_interaction_item), args)
 					if(isnull(removing))
 						return TRUE
 					if(!removing || removing.loc != src || !Adjacent(user)) //Didn't select anything or selected something that was already removed OR we walked away.
 						user.visible_message(span_danger(span_bold("[user]") + " decides against removing anything from [src]"))
-						return
+						return INTERACTION_HANDLED_PASS
 					removing.forceMove(get_turf(user.loc))
 					user.put_in_hands(removing)
 					user.visible_message(span_danger(span_bold("[user]") + " extracts [removing] from [src] with [W]!"))
 				else
 					user.visible_message(span_danger(span_bold("[user]") + " fishes around fruitlessly in [src] with [W]."))
-				return
+				return INTERACTION_HANDLED_PASS
 			if(istype(W,/obj/item/surgical/FixOVein))
 				user.visible_message(span_danger(span_bold("[user]") + " partially closes [src] with [W]!"))
 				stage--
-				return
+				return INTERACTION_HANDLED_PASS
 			//Begin necrosis surgery
 			if(istype(W,/obj/item/surgical/scalpel))
 				if(!(status & ORGAN_DEAD))
 					to_chat(user, span_notice("The limb isn't necrotic, there's no need to fix it!"))
-					return
+					return INTERACTION_HANDLED_PASS
 				user.visible_message(span_danger(span_bold("[user]") + " cuts necrotic tissue off [src] with [W]!"))
 				stage++
-				return
+				return INTERACTION_HANDLED_PASS
 		if(3)
 			if(istype(W,/obj/item/surgical/bioregen))
 				user.visible_message(span_danger(span_bold("[user]") + " rejuvinates formerly necrotic tissue on [src] with [W]!"))
@@ -318,8 +321,8 @@
 				damage = 0 //Fix the damage on it as well.
 				PERIODIC_START(src, PERIODIC_SLOW) //Dead limbs stop processing, so we restart the process.
 				stage-- //Go back to stage 2
-				return
-	..()
+				return INTERACTION_HANDLED_PASS
+	return FALSE
 
 /obj/item/organ/external/proc/is_dislocated()
 	if(dislocated > 0)

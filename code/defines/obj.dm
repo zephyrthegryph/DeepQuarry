@@ -4,16 +4,24 @@
 	anchored = TRUE
 	density = TRUE
 
-/obj/structure/signpost/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby.
+/obj/structure/signpost/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	return attack_hand(user)
 
-/obj/structure/signpost/attack_hand(mob/user as mob)
-	var/_answer_k11 = rerun_prompt(user, "k11", list("message" = "Travel back to ss13?", "title" = "Return?", "choices" = list("Yes","No")), TYPE_PROC_REF(/atom, attack_hand), args)
+DECLARE_INTERACTIONS(/obj/structure/signpost, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/structure/signpost/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	var/_answer_k11 = rerun_prompt(user, "k11", list("message" = "Travel back to ss13?", "title" = "Return?", "choices" = list("Yes","No")), PROC_REF(interaction_hand), args)
 	if(isnull(_answer_k11))
 		return TRUE
 	if(_answer_k11 == "Yes")
-		if(user.z != src.z)	return
+		if(user.z != src.z)	return TRUE
 		user.forceMove(get_turf(pick(REGISTRY_MEMBERS(REGISTRY_LATEJOIN))))
+	return TRUE
 
 /obj/structure/signpost_fake
 	icon = 'icons/obj/stationobjs.dmi'

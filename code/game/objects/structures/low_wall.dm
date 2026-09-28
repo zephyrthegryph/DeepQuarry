@@ -56,13 +56,11 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 /obj/structure/low_wall/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/entry_item/low_wall_item,
+		/datum/interaction/entry_drag/low_wall_drag,
 	)
 	..()
 
 /// Old attackby: build a grille from rods, a window from glass, or drop an item on the wall.
-/// Precision placement (auto_align against the exact click position) isn't available here:
-/// run_interaction_entry() doesn't thread click_parameters through to the effect proc, so a
-/// dropped item is aligned by its center of mass instead of the exact click cell.
 /datum/interaction/entry_item/low_wall_item
 	id = "low_wall_item"
 	name = "Use"
@@ -89,7 +87,7 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 		return TRUE
 
 	if(can_place_items() && user.unEquip(W, 0, src.loc) && user.client?.prefs?.read_preference(/datum/preference/toggle/precision_placement))
-		auto_align(W, null)
+		auto_align(W, dq_interaction_click_params(user))
 		return TRUE
 
 	return TRUE
@@ -119,27 +117,34 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 			return FALSE
 	return TRUE
 
-/obj/structure/low_wall/MouseDrop_T(atom/movable/AM, mob/user, src_location, over_location, src_control, over_control, params)
+/// Old MouseDrop_T: climb, hoist a window up, or place or push an item onto the wall.
+/// Items align to the click through dq_interaction_click_params().
+/datum/interaction/entry_drag/low_wall_drag
+	id = "low_wall_drag"
+	name = "Place on wall"
+	effect = /obj/structure/low_wall/proc/interaction_drag
+
+/obj/structure/low_wall/proc/interaction_drag(mob/user, atom/movable/AM, datum/interaction/interaction)
 	if(AM == user)
 		SEND_SIGNAL(src, COMSIG_CLIMBABLE_START_CLIMB, user)
-		return
+		return INTERACTION_HANDLED_PASS
 	var/obj/O = AM
 	if(!istype(O))
-		return
+		return INTERACTION_HANDLED_PASS
 	if(istype(O, /obj/structure/window))
 		var/obj/structure/window/W = O
 		if(Adjacent(W) && !W.anchored)
 			to_chat(user, span_notice("You hoist [W] up onto [src]."))
 			W.forceMove(loc)
-			return
+			return INTERACTION_HANDLED_PASS
 	if(isrobot(user))
-		return
+		return INTERACTION_HANDLED_PASS
 	if(can_place_items())
 		if(ismob(O.loc)) //If placing an item
 			if(!isitem(O) || user.get_active_hand() != O)
-				return ..()
+				return FALSE
 			if(isrobot(user))
-				return
+				return INTERACTION_HANDLED_PASS
 			user.drop_item()
 			if(O.loc != src.loc)
 				step(O, get_dir(O, src))
@@ -147,15 +152,16 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 		else if(isturf(O.loc) && isitem(O)) //If pushing an item on the tabletop
 			var/obj/item/I = O
 			if(I.anchored)
-				return
+				return INTERACTION_HANDLED_PASS
 
 			if((isliving(user)) && (Adjacent(user)) && !(user.incapacitated()))
 				if(O.w_class <= user.can_pull_size)
 					O.forceMove(loc)
-					auto_align(I, params, TRUE)
+					auto_align(I, dq_interaction_click_params(user), TRUE)
 				else
 					to_chat(user, span_warning("\The [I] is too big for you to move!"))
-				return
+				return INTERACTION_HANDLED_PASS
+	return INTERACTION_HANDLED_PASS
 
 /obj/structure/low_wall/proc/handle_rod_use(mob/user, obj/item/stack/rods/R)
 	if(!grille_type)

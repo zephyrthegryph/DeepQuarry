@@ -39,11 +39,13 @@ REF_OWNED(/obj/item/implant/integrated_circuit, "IC")
 	. = ..()
 	. += IC.examine(user)
 
-/obj/item/implant/integrated_circuit/attackby(obj/item/O, mob/user)
+/// Old attackby.
+/obj/item/implant/integrated_circuit/proc/integrated_circuit_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	if(istype(O, /obj/item/integrated_electronics) || istype(O, /obj/item/integrated_circuit) || istype(O, /obj/item/cell/device))
 		IC.attackby(O, user)
 	else
-		return ..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/implant/integrated_circuit/crowbar_act(mob/user, obj/item/tool)
 	return IC.crowbar_act(user, tool)
@@ -51,8 +53,12 @@ REF_OWNED(/obj/item/implant/integrated_circuit, "IC")
 /obj/item/implant/integrated_circuit/screwdriver_act(mob/user, obj/item/tool)
 	return IC.screwdriver_act(user, tool)
 
-/obj/item/implant/integrated_circuit/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/implant/integrated_circuit, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(integrated_circuit_interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/implant/integrated_circuit/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	IC.attack_self(user)
+	return TRUE

@@ -61,8 +61,10 @@
 /obj/item/oldtwohanded/pickup(mob/user)
 	unwield()
 
-/obj/item/oldtwohanded/attack_self(mob/user, modifiers)
-	..()
+DECLARE_INTERACTIONS(/obj/item/oldtwohanded, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/oldtwohanded/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 
 	if(wielded) //Trying to unwield it
 		unwield()
@@ -77,7 +79,7 @@
 	else //Trying to wield it
 		if(user.get_inactive_hand())
 			to_chat(user, span_warning("You need your other hand to be empty"))
-			return
+			return TRUE
 		wield()
 		to_chat(user, span_notice("You grab the [initial(name)] with both hands."))
 		if (src.wieldsound)
@@ -93,7 +95,7 @@
 		H.update_inv_l_hand()
 		H.update_inv_r_hand()
 
-	return
+	return TRUE
 
 ///////////OFFHAND///////////////
 /obj/item/oldtwohanded/offhand

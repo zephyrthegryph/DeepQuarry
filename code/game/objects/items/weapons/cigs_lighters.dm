@@ -538,15 +538,16 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 	volume = 45
 	crafted_type = /obj/item/clothing/mask/smokable/cigarette/joint/blunt
 
-/obj/item/reagent_containers/rollingpaper/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby.
+/obj/item/reagent_containers/rollingpaper/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if (istype(W, /obj/item/reagent_containers/food/snacks))
 		var/obj/item/reagent_containers/food/snacks/grown/G = W
 		if (!G.dry)                                                                                          //This prevents people from just stuffing cheeseburgers into their joint
 			to_chat(user, span_notice("[G.name] must be dried before you add it to [src]."))
-			return
+			return INTERACTION_HANDLED_PASS
 		if (G.reagents.total_volume + src.reagents.total_volume > src.reagents.maximum_volume)               //Check that we don't have too much already in the paper before adding things
 			to_chat(user, span_warning("The [src] is too full to add [G.name]."))
-			return
+			return INTERACTION_HANDLED_PASS
 		if (src.reagents.total_volume == 0)
 			if (istype(src, /obj/item/reagent_containers/rollingpaper/blunt))                         //update the icon if this is the first thing we're adding to the paper
 				src.icon_state = "blunt_full"
@@ -557,14 +558,18 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 		if(G.reagents)
 			G.reagents.trans_to_obj(src, G.reagents.total_volume)                                            //adds the reagents from the plant into the paper
 		consume(G, user)
+	return INTERACTION_HANDLED_PASS
 
-/obj/item/reagent_containers/rollingpaper/attack_self(mob/living/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/reagent_containers/rollingpaper, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/reagent_containers/rollingpaper/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(!reagents)                                                                                        //don't roll an empty joint
 		to_chat(user, span_warning("There is nothing in [src]. Add something to it first."))
-		return
+		return TRUE
 	var/obj/item/clothing/mask/smokable/cigarette/J = new crafted_type()
 	to_chat(user,span_notice("You roll the [src] into a blunt!"))
 	J.add_fingerprint(user)
@@ -573,6 +578,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 	user.drop_from_inventory(src)
 	user.put_in_hands(J)
 	consume(src, user)
+	return TRUE
 
 /////////
 //CHEAP//

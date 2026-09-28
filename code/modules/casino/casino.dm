@@ -20,13 +20,17 @@
 	. = ..()
 	AddElement(/datum/element/climbable)
 
-/obj/structure/casino_table/attackby(obj/item/W, mob/user, hit_modifier, click_parameters)
+DECLARE_INTERACTIONS(/obj/structure/casino_table, INTERACT_ITEM("Place", PROC_REF(interaction_place)))
+
+/// Old attackby: put the held item on the table.
+/obj/structure/casino_table/proc/interaction_place(mob/user, obj/item/W, datum/interaction/interaction)
 	if(!item_place)
-		return
+		return INTERACTION_HANDLED_PASS
 	if(user.unEquip(W, 0, loc) && user.client?.prefs?.read_preference(/datum/preference/toggle/precision_placement))
-		auto_align(W, click_parameters) // Precisely place item like this is a normal table
-		return
+		auto_align(W, dq_interaction_click_params(user)) // Precisely place item like this is a normal table
+		return INTERACTION_HANDLED_PASS
 	user.drop_item(loc)
+	return INTERACTION_HANDLED_PASS
 
 /obj/structure/casino_table/roulette_table
 	name = "roulette"
@@ -51,13 +55,19 @@
 	else
 		. += "It doesn't have a ball."
 
-/obj/structure/casino_table/roulette_table/attack_hand(mob/user)
+EXTEND_INTERACTIONS(/obj/structure/casino_table/roulette_table, \
+	INTERACT_HAND_UNGATED("Spin", PROC_REF(interaction_hand)), \
+	INTERACT_INSERT(/obj/item/roulette_ball, PROC_REF(interaction_insert_ball), null), \
+)
+
+/// Old attack_hand.
+/obj/structure/casino_table/roulette_table/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(om_busy(src))
 		to_chat(user,span_notice("You cannot spin now! The roulette is already spinning."))
-		return
+		return TRUE
 	if(!ball)
 		to_chat(user,span_notice("This roulette wheel has no ball!"))
-		return
+		return TRUE
 	visible_message(span_notice("\The [user] spins the roulette and throws [ball.get_ball_desc()] into it."))
 	playsound(src.loc, 'sound/machines/roulette.ogg', 40, 1)
 	om_hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
@@ -81,16 +91,17 @@
 	if(result == 37)
 		result = "00"
 	om_after(src, 5 SECONDS, PROC_REF(roulette_stops), result, color)
+	return TRUE
 
-/obj/structure/casino_table/roulette_table/attackby(obj/item/W, mob/user)
-	if(istype(W, /obj/item/roulette_ball))
-		if(!ball)
-			user.drop_from_inventory(W)
-			W.forceMove(src)
-			ball = W
-			to_chat(user, span_notice("You insert [W] into [src]."))
-			return
-	..()
+/// Old attackby: load a ball into an empty wheel; with one already in, it goes on the table.
+/obj/structure/casino_table/roulette_table/proc/interaction_insert_ball(mob/user, obj/item/W, datum/interaction/interaction)
+	if(ball)
+		return FALSE
+	user.drop_from_inventory(W)
+	W.forceMove(src)
+	ball = W
+	to_chat(user, span_notice("You insert [W] into [src]."))
+	return INTERACTION_HANDLED_PASS
 
 /obj/structure/casino_table/roulette_table/verb/remove_ball()
 	set name = "Remove Roulette Ball"
@@ -225,24 +236,26 @@
 		. += " with [trapped.name] trapped within"
 	return
 
-/obj/item/roulette_ball/hollow/attackby(obj/item/W, mob/user)
+/// Old attackby.
+/obj/item/roulette_ball/hollow/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(trapped)
 		to_chat(user, span_notice("This ball already has something trapped in it!"))
-		return
+		return INTERACTION_HANDLED_PASS
 	if(istype(W, /obj/item/holder))
 		var/obj/item/holder/H = W
 		if(!H.held_mob)
 			to_chat(user, span_warning("This holder has nobody in it? Yell at a developer!"))
-			return
+			return INTERACTION_HANDLED_PASS
 		if(H.held_mob.get_effective_size(TRUE) > 50)
 			to_chat(user, span_warning("\The [H] is too big to fit inside!"))
-			return
+			return INTERACTION_HANDLED_PASS
 		user.drop_from_inventory(H)
 		H.forceMove(src)
 		trapped = H
 		to_chat(user, span_notice("You trap \the [H] inside the glass roulette ball."))
 		to_chat(H.held_mob, span_warning("\The [user] traps you inside a glass roulette ball!"))
 		update_icon()
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/roulette_ball/hollow/update_icon()
 	if(trapped && trapped.held_mob)
@@ -250,13 +263,16 @@
 	else
 		icon_state = "roulette_ball_glass"
 
-/obj/item/roulette_ball/hollow/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/roulette_ball/hollow, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/roulette_ball/hollow/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!trapped)
 		to_chat(user, span_notice("\The [src] is empty!"))
-		return
+		return TRUE
 	else
 		user.put_in_hands(trapped)
 		if(trapped.held_mob)
@@ -264,6 +280,7 @@
 			to_chat(trapped.held_mob, span_notice("\The [user] takes you out of a glass roulette ball."))
 		trapped = null
 		update_icon()
+	return TRUE
 
 /obj/item/roulette_ball/hollow/on_holder_escape()
 	trapped = null

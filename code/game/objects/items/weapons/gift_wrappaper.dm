@@ -28,10 +28,10 @@
 	else
 		icon_state = "gift[pick(1, 2, 3)]" + "_[pick("g","r","b","y","p")]"
 
-/obj/item/gift/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/gift, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/gift/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	user.drop_item()
 	playsound(src, 'sound/items/package_unwrap.ogg', 50,1)
 	if(gift)
@@ -42,7 +42,7 @@
 	else
 		to_chat(user, span_warning("The gift was empty!"))
 	consume(src, user)
-	return
+	return TRUE
 
 /obj/effect/spresent/relaymove(mob/user as mob)
 	if(user.stat)
@@ -129,25 +129,27 @@
 	drop_sound = 'sound/items/drop/wrapper.ogg'
 	pickup_sound = 'sound/items/pickup/wrapper.ogg'
 
-/obj/item/wrapping_paper/attackby(obj/item/W as obj, mob/living/user as mob)
-	..()
+DECLARE_INTERACTIONS(/obj/item/wrapping_paper, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/wrapping_paper/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
 	if (!( locate(/obj/structure/table, src.loc) ))
 		to_chat(user, span_warning("You MUST put the paper on a table!"))
 	if (W.w_class >= ITEMSIZE_LARGE)
 		to_chat(user, span_warning("The object is FAR too large!"))
-		return
+		return INTERACTION_HANDLED_PASS
 
 	var/obj/item/I = user.get_inactive_hand()
 	if(!I?.has_tool_quality(TOOL_WIRECUTTER))
 		to_chat(user, span_warning("You need scissors!"))
-		return
+		return INTERACTION_HANDLED_PASS
 	var/a_used = 2 ** (src.w_class - 1)
 	if (src.amount < a_used)
 		to_chat(user, span_warning("You need more paper!"))
-		return
+		return INTERACTION_HANDLED_PASS
 	if(istype(W, /obj/item/smallDelivery) || istype(W, /obj/item/gift)) //No gift wrapping gifts!
 		to_chat(user, span_warning("You can't wrap something that's already wrapped!"))
-		return
+		return INTERACTION_HANDLED_PASS
 
 	src.amount -= a_used
 	user.drop_item()
@@ -163,6 +165,7 @@
 
 	if(src.amount <= 0)
 		replace_with(src, /obj/item/c_tube)
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/wrapping_paper/examine(mob/user)
 	. = ..()

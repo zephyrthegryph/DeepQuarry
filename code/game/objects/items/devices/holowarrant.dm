@@ -23,12 +23,10 @@
 		. += span_notice("You have to go closer if you want to read it.")
 
 //hit yourself with it
-/obj/item/holowarrant/get_interactions()
-	var/static/list/L = list(
-		INTERACT_USE(null, PROC_REF(interaction_self)),
-		INTERACT_ITEM(null, PROC_REF(interaction_item)),
-	)
-	return L
+DECLARE_INTERACTIONS(/obj/item/holowarrant, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
 
 /obj/item/holowarrant/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	active_handle = null

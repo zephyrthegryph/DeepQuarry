@@ -41,13 +41,16 @@
 	to_chat(user, span_notice("You overlay \the [src] and \the [supplied], combining the print records."))
 	return 1
 
-/obj/item/sample/attackby(obj/O, mob/user)
+DECLARE_INTERACTIONS(/obj/item/sample, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/sample/proc/interaction_item(mob/user, obj/O, datum/interaction/interaction)
 	if(O.type == src.type)
 		user.unEquip(O)
 		if(merge_evidence(O, user))
 			qdel(O)
 		return 1
-	return ..()
+	return FALSE
 
 /obj/item/sample/fibers
 	name = "fiber bag"
@@ -61,24 +64,25 @@
 	icon_state = "fingerprint0"
 	item_state = "paper"
 
-/obj/item/sample/print/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/sample/print, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/sample/print/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(evidence && length(evidence))
-		return
+		return TRUE
 	if(!ishuman(user))
-		return
+		return TRUE
 	var/mob/living/carbon/human/H = user
 	if(H.get_equipped_item(SLOT_ID_GLOVES))
 		to_chat(user, span_warning("Take \the [H.get_equipped_item(SLOT_ID_GLOVES)] off first."))
-		return
+		return TRUE
 
 	to_chat(user, span_notice("You firmly press your fingertips onto the card."))
 	var/fullprint = H.get_full_print()
 	LAZYSET(evidence, fullprint, fullprint)
 	name = "[initial(name)] (\the [H])"
 	icon_state = "fingerprint1"
+	return TRUE
 
 /obj/item/sample/print/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 

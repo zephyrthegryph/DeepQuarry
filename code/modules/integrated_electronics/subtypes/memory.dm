@@ -88,22 +88,22 @@
 	// Prevents default EMP behavior for single-slot constants memory.
 	return
 */
-/obj/item/integrated_circuit/memory/constant/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/integrated_circuit/memory/constant, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/integrated_circuit/memory/constant/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/datum/integrated_io/O = outputs[1]
-	var/type_to_use = rerun_prompt(user, "k96", list("kind" = "list", "message" = "Please choose a type to use.", "title" = "[src] type setting", "choices" = list("string","number","ref", "null")), PROC_REF(attack_self), args)
+	var/type_to_use = rerun_prompt(user, "k96", list("kind" = "list", "message" = "Please choose a type to use.", "title" = "[src] type setting", "choices" = list("string","number","ref", "null")), PROC_REF(interaction_self), args)
 	if(isnull(type_to_use))
 		return TRUE
 	if(!CanInteract(user, GLOB.tgui_physical_state))
-		return
+		return TRUE
 
 	var/new_data = null
 	switch(type_to_use)
 		if("string")
 			accepting_refs = 0
-			var/_answer_k104 = rerun_prompt(user, "k104", list("kind" = "text", "message" = "Now type in a string.", "title" = "[src] string writing", "max_length" = MAX_NAME_LEN, "encode" = FALSE), PROC_REF(attack_self), args)
+			var/_answer_k104 = rerun_prompt(user, "k104", list("kind" = "text", "message" = "Now type in a string.", "title" = "[src] string writing", "max_length" = MAX_NAME_LEN, "encode" = FALSE), PROC_REF(interaction_self), args)
 			if(isnull(_answer_k104))
 				return TRUE
 			new_data = sanitizeSafe(_answer_k104, MAX_NAME_LEN, 0, 0)
@@ -112,7 +112,7 @@
 				to_chat(user, span_notice("You set \the [src]'s memory to [O.display_data(O.data)]."))
 		if("number")
 			accepting_refs = 0
-			var/_answer_k110 = rerun_prompt(user, "k110", list("kind" = "number", "message" = "Now type in a number.", "title" = "[src] number writing", "default" = 0), PROC_REF(attack_self), args)
+			var/_answer_k110 = rerun_prompt(user, "k110", list("kind" = "number", "message" = "Now type in a number.", "title" = "[src] number writing", "default" = 0), PROC_REF(interaction_self), args)
 			if(isnull(_answer_k110))
 				return TRUE
 			new_data = _answer_k110
@@ -126,6 +126,7 @@
 		if("null")
 			O.data = null
 			to_chat(user, span_notice("You set \the [src]'s memory to absolutely nothing."))
+	return TRUE
 
 /obj/item/integrated_circuit/memory/constant/afterattack(atom/target, mob/living/user, proximity)
 	if(accepting_refs && proximity)

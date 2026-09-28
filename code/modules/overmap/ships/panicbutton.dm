@@ -24,12 +24,15 @@
 	else
 		icon_state = "[initial(icon_state)]"
 
-/obj/structure/panic_button/attack_hand(mob/living/user)
+DECLARE_INTERACTIONS(/obj/structure/panic_button, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/structure/panic_button/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(!istype(user))
-		return ..()
+		return FALSE
 
 	if(user.incapacitated())
-		return
+		return TRUE
 
 	// Already launched
 	if(launched)
@@ -50,6 +53,7 @@
 		launch(user)
 		playsound(src, get_sfx("button"))
 		update_icon()
+	return TRUE
 
 /obj/structure/panic_button/proc/launch(mob/living/user)
 	if(launched)

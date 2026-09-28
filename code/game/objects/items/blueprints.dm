@@ -58,21 +58,25 @@
 		if(!charges)
 			. += "There seems to be no more room for any more edits!"
 
-/obj/item/areaeditor/attackby(obj/item/W, mob/user, params)
+DECLARE_INTERACTIONS(/obj/item/areaeditor, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/areaeditor/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(uses_charges && (charges < initial_charges) && istype(W, /obj/item/areaeditor)) //Do we have a reason to add charges? And is it something that COULD add charges?
 		var/missing_charges = initial_charges-charges
 		var/obj/item/areaeditor/blueprint = W
 		if(blueprint.station_master) //Master can refill.
 			charges = initial_charges
 			to_chat(user, span_notice("You add some more writing material to the [src] with the [blueprint]!"))
-			return
+			return INTERACTION_HANDLED_PASS
 		else if(blueprint.uses_charges && blueprint.charges) //Getting from another with limited charges.
 			om_prompt(src, user, list("kind" = "number", "message" = "How many charges do you want to add to the [src]?", "title" = "[blueprint]", "default" = missing_charges, "max" = blueprint.charges, "target" = blueprint, "requires" = PROMPT_IN_HAND, "on_cancel" = PROC_REF(charges_not_added), "data" = list("from" = blueprint)), PROC_REF(add_charges))
-			return
+			return INTERACTION_HANDLED_PASS
 		else if(!blueprint.uses_charges || !blueprint.charges) // The item it's being hit by doesn't use charges OR doesn't have any charges.
 			to_chat(user, span_warning("You can't add find any suitable material to add from the [blueprint]!"))
 	else
-		..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/areaeditor/attack_self(mob/user) //Convert this to TGUI some time.
 	. = ..(user)

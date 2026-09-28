@@ -44,10 +44,10 @@
 	force_divisor = 0.1 // 6 when wielded with hardness 60 (steel)
 	thrown_force_divisor = 0.2 // 4 when thrown with weight 20 (steel)
 
-/obj/item/material/butterfly/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/material/butterfly, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/material/butterfly/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	active = !active
 	update_force()
 
@@ -58,6 +58,7 @@
 		else
 			to_chat(user, span_notice("\The [src] can now be concealed."))
 		add_fingerprint(user)
+	return TRUE
 
 /*
  * Kitchen knives

@@ -19,7 +19,10 @@
 	if (..(SC))
 		contraband_enabled = SC.can_order_contraband
 
-/obj/item/circuitboard/supplycomp/attackby(obj/item/I as obj, mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/circuitboard/supplycomp, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/circuitboard/supplycomp/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(I.has_tool_quality(TOOL_MULTITOOL))
 		var/catastasis = src.contraband_enabled
 		var/opposite_catastasis
@@ -31,7 +34,7 @@
 			catastasis = "STANDARD"
 
 		om_prompt(src, user, list("message" = "Current receiver spectrum is set to: [catastasis]", "title" = "Multitool-Circuitboard interface", "choices" = list("Switch to [opposite_catastasis]","Cancel"), "requires" = PROMPT_ADJACENT), PROC_REF(spectrum_chosen))
-	return
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/circuitboard/supplycomp/proc/spectrum_chosen(mob/user, choice, datum/om/prompt/ask)
 	if(choice == "Switch to STANDARD" || choice == "Switch to BROAD")

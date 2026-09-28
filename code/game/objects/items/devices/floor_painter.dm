@@ -106,9 +106,7 @@
 
 	new painting_decal(F, painting_dir, painting_colour)
 
-/obj/item/floor_painter/get_interactions()
-	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))
-	return L
+DECLARE_INTERACTIONS(/obj/item/floor_painter, INTERACT_USE(null, PROC_REF(interaction_self)))
 
 /obj/item/floor_painter/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	om_prompt(src, user, list("message" = "Do you wish to change the decal type, paint direction, or paint colour?", "title" = "Modify What?", "choices" = list("Decal","Direction","Colour","Cancel"), "requires" = PROMPT_HELD), PROC_REF(modify_chosen))

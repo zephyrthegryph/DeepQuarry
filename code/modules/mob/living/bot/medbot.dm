@@ -526,8 +526,10 @@
 	if(skin)
 		add_overlay("kit_skin_[src.skin]")
 
-/obj/item/firstaid_arm_assembly/attackby(obj/item/W as obj, mob/user as mob)
-	..()
+DECLARE_INTERACTIONS(/obj/item/firstaid_arm_assembly, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/firstaid_arm_assembly/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/pen))
 		ask_name_var(user)
 	else
@@ -551,6 +553,7 @@
 					S.skin = skin
 					S.name = created_name
 					consume(src, user)
+	return INTERACTION_HANDLED_PASS
 
 // Undefine these.
 #undef MEDBOT_PANIC_NONE

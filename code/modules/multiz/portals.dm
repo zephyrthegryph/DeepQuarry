@@ -19,16 +19,20 @@
 		return	//do not send ghosts, zshadows, ai eyes, etc
 	teleport(AM)
 
-/obj/structure/portal_event/attack_hand(mob/user as mob)
+DECLARE_INTERACTIONS(/obj/structure/portal_event, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/structure/portal_event/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!istype(user))
-		return
+		return TRUE
 	if(!target)
 		if(isliving(user))
 			to_chat(user, span_notice("Your hand scatters \the [src]..."))
 			qdel(src)	//Delete portals which aren't set that people mess with.
-		else return		//do not send ghosts, zshadows, ai eyes, etc
+		else return TRUE
 	else if(isliving(user) || isobserver(user) && check_rights_for(user?.client, R_HOLDER))	//unless they're staff
 		teleport(user)
+	return TRUE
 
 /obj/structure/portal_event/attack_ghost(mob/observer/dead/user)
 	if(!target && check_rights_for(user?.client, R_HOLDER))

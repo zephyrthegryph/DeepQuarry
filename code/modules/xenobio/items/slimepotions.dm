@@ -301,14 +301,17 @@
 
 
 // === merged from slimepotions_vr.dm during hard-fork de-suffix (verified no override-order change) ===
-/obj/item/slimepotion/attackby(obj/item/O, mob/user)
+DECLARE_INTERACTIONS(/obj/item/slimepotion, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/slimepotion/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	if(istype(O, /obj/item/slimepotion/mimic))
 		to_chat(user, span_notice("You apply the mimic to the slime potion as it copies it's effects."))
 		playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
 		var/newtype = src.type
 		new newtype(get_turf(src))
 		consume(O, user)
-	..()
+	return FALSE
 
 
 /obj/item/slimepotion/infertility
@@ -446,7 +449,10 @@
 	icon_state = "potsilver"
 	description_info = "Warning: avoid combining multiple doses of mimic agent."
 
-/obj/item/slimepotion/mimic/attackby(mob/living/M, mob/living/user, target_zone, attack_modifier)
+EXTEND_INTERACTIONS(/obj/item/slimepotion/mimic, INTERACT_ITEM(null, PROC_REF(mimic_interaction_item)))
+
+/// Old attackby.
+/obj/item/slimepotion/mimic/proc/mimic_interaction_item(mob/living/user, mob/living/M, datum/interaction/interaction)
 	if(istype(M, /obj/item/slimepotion/mimic))
 		to_chat(user, span_warning("You apply the mimic to the mimic, resulting a mimic that copies a mimic that copies a mimic that copies a mimic that-"))
 		var/location = get_turf(src)
@@ -457,7 +463,7 @@
 		qdel(M)
 		consume(src, user)
 		return ITEM_INTERACT_SUCCESS
-	..()
+	return FALSE
 
 /obj/item/slimepotion/sapience
 	name = "slime sapience agent"

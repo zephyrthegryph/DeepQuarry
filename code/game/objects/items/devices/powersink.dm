@@ -54,9 +54,7 @@
 /obj/item/powersink/attack_ai()
 	return
 
-/obj/item/powersink/get_interactions()
-	var/static/list/L = list(INTERACT_HAND(null, PROC_REF(interaction_hand)))
-	return L
+DECLARE_INTERACTIONS(/obj/item/powersink, INTERACT_HAND(null, PROC_REF(interaction_hand)))
 
 /obj/item/powersink/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	switch(mode)

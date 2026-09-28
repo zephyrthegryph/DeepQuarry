@@ -181,11 +181,15 @@
 	..()
 	load_ammo(A, user)
 
-/obj/item/gun/energy/attack_hand(mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/gun/energy, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/item/gun/energy/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.get_inactive_hand() == src)
 		unload_ammo(user)
 	else
-		return ..()
+		return FALSE
+	return TRUE
 
 /obj/item/gun/energy/proc/get_external_power_supply()
 	if(isrobot(src.loc))

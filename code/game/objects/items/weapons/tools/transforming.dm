@@ -17,18 +17,19 @@ REF_OWNED(/obj/item/tool/transforming, "welder")
 /obj/item/tool/transforming/get_welder()
 	return welder
 
-/obj/item/tool/transforming/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/tool/transforming, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/tool/transforming/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!length(possible_tooltypes) || length(possible_tooltypes) < 2)
-		return
+		return TRUE
 	if(current_tooltype == length(possible_tooltypes))
 		current_tooltype = 1
 	else
 		current_tooltype++
 
 	on_tool_switch(user)
+	return TRUE
 
 /obj/item/tool/transforming/proc/on_tool_switch(mob/user)
 	return

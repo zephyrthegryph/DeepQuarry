@@ -19,5 +19,15 @@
 
 /// Something dragged onto this. Converted handlers (I7) are interactions with entry = INTERACTION_ENTRY_DRAG, `held` being the dragged atom.
 /atom/proc/MouseDrop_T(atom/dropping, mob/user, src_location, over_location, src_control, over_control, params)
-	var/datum/interaction/answered = run_interaction_entry(user, src, dropping, INTERACTION_ENTRY_DRAG)
-	return answered ? answered.consumes_input : FALSE
+	var/list/outcome = list()
+	var/saved_params = dq_interaction_set_click_params(user, params)
+	var/datum/interaction/answered
+	try
+		answered = run_interaction_entry(user, src, dropping, INTERACTION_ENTRY_DRAG, outcome)
+	catch(var/exception/error)
+		dq_interaction_set_click_params(user, saved_params)
+		throw error
+	dq_interaction_set_click_params(user, saved_params)
+	if(!answered || (INTERACTION_TRY_PASS in outcome))
+		return FALSE
+	return answered.consumes_input

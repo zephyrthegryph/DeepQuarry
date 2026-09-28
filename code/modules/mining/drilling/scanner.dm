@@ -10,14 +10,15 @@
 	var/exact = FALSE
 	var/sediment_scan = TRUE
 
-/obj/item/mining_scanner/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/mining_scanner, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/mining_scanner/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_notice("You begin sweeping \the [src] about, scanning for metal deposits."))
 	playsound(src, 'sound/items/goggles_charge.ogg', 50, 1, -6)
 
 	om_do_after(user, scan_time, src, src, PROC_REF(sweep_done), list(user))
+	return TRUE
 
 /obj/item/mining_scanner/proc/sweep_done(mob/user)
 	ScanTurf(get_turf(user), user)
@@ -111,8 +112,12 @@
 	scan_time = 0.5 SECONDS
 	exact = TRUE
 
-/obj/item/mining_scanner/advanced/click_alt(mob/user)
+EXTEND_INTERACTIONS(/obj/item/mining_scanner/advanced, INTERACT_ALT(null, PROC_REF(interaction_alt)))
+
+/// Old click_alt.
+/obj/item/mining_scanner/advanced/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	change_size()
+	return TRUE
 
 /obj/item/mining_scanner/advanced/verb/change_size()
 	set name = "Set Scanner Range"

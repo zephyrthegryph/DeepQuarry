@@ -52,7 +52,10 @@
 		src.update_icon()
 	return
 
-/obj/item/toy/balloon/attackby(obj/O as obj, mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/toy/balloon, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/toy/balloon/proc/interaction_item(mob/user, obj/O, datum/interaction/interaction)
 	if(istype(O, /obj/item/reagent_containers/glass))
 		if(O.reagents)
 			if(O.reagents.total_volume < 1)
@@ -67,7 +70,7 @@
 					to_chat(user, span_notice("You fill the balloon with the contents of [O]."))
 					O.reagents.trans_to_obj(src, 10)
 	src.update_icon()
-	return
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/toy/balloon/throw_impact(atom/hit_atom)
 	if(src.reagents.total_volume >= 1)
@@ -159,10 +162,14 @@
 	w_class = ITEMSIZE_SMALL
 	attack_verb = list("attacked", "struck", "hit")
 
-/obj/item/toy/sword/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/toy/sword, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+)
+
+/// Old attack_self.
+/obj/item/toy/sword/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	active = !active
 	if(active)
 		to_chat(user, span_notice("You extend the plastic blade with a quick flick of your wrist."))
@@ -176,7 +183,7 @@
 		w_class = ITEMSIZE_SMALL
 	update_icon()
 	add_fingerprint(user)
-	return
+	return TRUE
 
 /obj/item/toy/sword/update_icon()
 	. = ..()
@@ -190,17 +197,19 @@
 		H.update_inv_l_hand()
 		H.update_inv_r_hand()
 
-/obj/item/toy/sword/click_alt(mob/living/user)
+/// Old click_alt.
+/obj/item/toy/sword/proc/interaction_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(!in_range(src, user))	//Basic checks to prevent abuse
-		return
+		return TRUE
 	if(user.incapacitated() || !istype(user))
 		to_chat(user, span_warning("You can't do that right now!"))
-		return
+		return TRUE
 
 	om_prompt_sequence(src, user, list(
 		list("key" = "sure", "message" = "Are you sure you want to recolor your blade?", "title" = "Confirm Recolor", "choices" = list("Yes", "No")),
 		PROC_REF(ask_blade_color),
 	), PROC_REF(blade_recolored), list("requires" = PROMPT_ADJACENT))
+	return TRUE
 
 /obj/item/toy/sword/proc/ask_blade_color(mob/user, datum/om/prompt/ask)
 	if(ask.get("sure") == "Yes")
@@ -215,7 +224,8 @@
 	. = ..()
 	. += span_notice("Alt-click to recolor it.")
 
-/obj/item/toy/sword/attackby(obj/item/W, mob/user)
+/// Old attackby.
+/obj/item/toy/sword/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(W.has_tool_quality(TOOL_MULTITOOL) && !active)
 		if(!rainbow)
 			rainbow = TRUE
@@ -223,6 +233,7 @@
 			rainbow = FALSE
 		to_chat(user, span_notice("You manipulate the color controller in [src]."))
 		update_icon()
+	return INTERACTION_HANDLED_PASS
 /obj/item/toy/katana
 	name = "replica katana"
 	desc = "Woefully underpowered in D20."
@@ -287,14 +298,15 @@
 	w_class = ITEMSIZE_TINY
 	slot_flags = SLOT_EARS | SLOT_HOLSTER
 
-/obj/item/toy/bosunwhistle/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/toy/bosunwhistle, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/toy/bosunwhistle/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(cooldown < world.time - 35)
 		to_chat(user, span_notice("You blow on [src], creating an ear-splitting noise!"))
 		playsound(src, 'sound/misc/boatswain.ogg', 20, 1)
 		cooldown = world.time
+	return TRUE
 
 /*
  * Action figures
@@ -313,14 +325,15 @@
 	. = ..()
 	desc = "A \"Space Life\" brand [name]"
 
-/obj/item/toy/figure/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/toy/figure, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/toy/figure/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(COOLDOWN_FINISHED(src, cooldown))
 		COOLDOWN_START(src, cooldown, 3 SECONDS)
 		user.visible_message(span_notice("The [src] says \"[toysay]\"."))
 		playsound(src, 'sound/machines/click.ogg', 20, 1)
+	return TRUE
 
 /obj/item/toy/figure/cmo
 	name = JOB_CHIEF_MEDICAL_OFFICER + " action figure"
@@ -715,22 +728,38 @@
 		if(in_range(user, src) && stored_item)
 			. += span_italics("You can see something in there...")
 
-/obj/structure/plushie/attack_hand(mob/user)
-	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
+DECLARE_INTERACTIONS(/obj/structure/plushie, \
+	INTERACT_HAND_HOSTILE("Punch", PROC_REF(interaction_punch)), \
+	INTERACT_HAND_UNGATED("Hug", PROC_REF(interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
 
+/// Old attack_hand's harm branch: punch the plushie (combat mode only).
+/obj/structure/plushie/proc/interaction_punch(mob/user, obj/item/held, datum/interaction/interaction)
+	touch_started(user)
+	user.visible_message(span_warning(span_bold("\The [user]") + " punches [src]!"),span_warning("You punch [src]!"))
+	if(phrase)
+		atom_say("[phrase]")
+	return TRUE
+
+/// A touch of any kind: take out whatever is hidden inside.
+/obj/structure/plushie/proc/touch_started(mob/user)
+	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(stored_item && opened && !om_busy(src))
 		om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), claims = TRUE)
 
+/// Old attack_hand: hug it (or, holding Grab, strangle it; Disarm pokes it).
+/obj/structure/plushie/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	touch_started(user)
 	if(IS_HELPING(user))
 		user.visible_message(span_notice(span_bold("\The [user]") + " hugs [src]!"),span_notice("You hug [src]!"))
-	else if (IS_HARMING(user))
-		user.visible_message(span_warning(span_bold("\The [user]") + " punches [src]!"),span_warning("You punch [src]!"))
 	else if (IS_GRABBING(user))
 		user.visible_message(span_warning(span_bold("\The [user]") + " attempts to strangle [src]!"),span_warning("You attempt to strangle [src]!"))
 	else
 		user.visible_message(span_notice(span_bold("\The [user]") + " pokes the [src]."),span_notice("You poke the [src]."))
 	if(phrase) //There was no indiciation you had to use disarm intent to make it speak...So now it speaks if you touch it at all!
 		atom_say("[phrase]")
+	return TRUE
 
 /obj/structure/plushie/proc/attack_hand_timed_done(mob/user)
 	to_chat(user, "You find [icon2html(stored_item, user.client)] [stored_item] in [src]!")
@@ -738,32 +767,33 @@
 	stored_item = null
 	return
 
-/obj/structure/plushie/attackby(obj/item/I as obj, mob/user as mob)
+/// Old attackby.
+/obj/structure/plushie/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/threadneedle) && opened)
 		to_chat(user, "You sew the hole in [src].")
 		opened = FALSE
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(is_sharp(I) && !opened)
 		to_chat(user, "You open a small incision in [src]. You can place tiny items inside.")
 		opened = TRUE
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(opened)
 		if(stored_item)
 			to_chat(user, "There is already something in here.")
-			return
+			return INTERACTION_HANDLED_PASS
 
 		if(!(I.w_class > w_class))
 			to_chat(user, "You place [I] inside [src].")
 			user.drop_from_inventory(I, src)
 			I.forceMove(src)
 			stored_item = I
-			return
+			return INTERACTION_HANDLED_PASS
 		else
 			to_chat(user, "You open a small incision in [src]. You can place tiny items inside.")
 
-	..()
+	return FALSE
 
 /obj/structure/plushie/ian
 	name = "plush corgi"
@@ -895,35 +925,38 @@
 		to_chat(M, "You name the plushie [input], giving it a hug for good luck.")
 		return 1
 
-/obj/item/toy/plushie/attackby(obj/item/I as obj, mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/toy/plushie, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/toy/plushie/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/toy/plushie) || istype(I, /obj/item/organ/external/head))
 		user.visible_message(span_notice("[user] makes \the [I] kiss \the [src]!."), \
 		span_notice("You make \the [I] kiss \the [src]!."))
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(istype(I, /obj/item/threadneedle) && opened)
 		to_chat(user, "You sew the hole underneath [src].")
 		opened = FALSE
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(is_sharp(I) && !opened)
 		to_chat(user, "You open a small incision in [src]. You can place tiny items inside.")
 		opened = TRUE
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if( (!(I.w_class > w_class)) && opened)
 		if(stored_item)
 			to_chat(user, "There is already something in here.")
-			return
+			return INTERACTION_HANDLED_PASS
 
 		to_chat(user, "You place [I] inside [src].")
 		user.drop_from_inventory(I, src)
 		I.forceMove(src)
 		stored_item = I
 		to_chat(user, "You placed [I] into [src].")
-		return
+		return INTERACTION_HANDLED_PASS
 
-	return ..()
+	return FALSE
 
 /obj/item/toy/plushie/nymph
 	name = "diona nymph plush"
@@ -1261,16 +1294,17 @@
 	COOLDOWN_DECLARE(cooldown)
 	var/list/possible_answers = list("Definitely.", "All signs point to yes.", "Most likely.", "Yes.", "Ask again later.", "Better not tell you now.", "Future unclear.", "Maybe.", "Doubtful.", "No.", "Don't count on it.", "Never.") // ALLOW(instance_list): c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
 
-/obj/item/toy/eight_ball/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/toy/eight_ball, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/toy/eight_ball/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(COOLDOWN_FINISHED(src, cooldown))
 		COOLDOWN_START(src, cooldown, 3 SECONDS)
 		var/answer = pick(possible_answers)
 		user.visible_message(span_notice("[user] focuses on their question and [use_action]..."))
 		user.visible_message(span_notice("The [src] says \"[answer]\""))
-		return
+		return TRUE
+	return TRUE
 
 /obj/item/toy/eight_ball/conch
 	name = "Magic Conch shell"
@@ -1335,16 +1369,17 @@
 	w_class = ITEMSIZE_SMALL
 	COOLDOWN_DECLARE(cooldown)
 
-/obj/item/toy/owl/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/toy/owl, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/toy/owl/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(COOLDOWN_FINISHED(src, cooldown)) //for the sanity of everyone
 		var/message = pick("You won't get away this time, Griffin!", "Stop right there, criminal!", "Hoot! Hoot!", "I am the night!")
 		to_chat(user, span_notice("You pull the string on the [src]."))
 		//playsound(src, 'sound/misc/hoot.ogg', 25, 1)
 		visible_message(span_danger("[message]"))
 		COOLDOWN_START(src, cooldown, 3 SECONDS)
+	return TRUE
 
 /obj/item/toy/griffin
 	name = "griffin action figure"
@@ -1354,16 +1389,17 @@
 	w_class = ITEMSIZE_SMALL
 	COOLDOWN_DECLARE(cooldown)
 
-/obj/item/toy/griffin/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/toy/griffin, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/toy/griffin/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(COOLDOWN_FINISHED(src, cooldown)) //for the sanity of everyone
 		var/message = pick("You can't stop me, Owl!", "My plan is flawless! The vault is mine!", "Caaaawwww!", "You will never catch me!")
 		to_chat(user, span_notice("You pull the string on the [src]."))
 		//playsound(src, 'sound/misc/caw.ogg', 25, 1)
 		visible_message(span_danger("[message]"))
 		COOLDOWN_START(src, cooldown, 3 SECONDS)
+	return TRUE
 
 //This should really be somewhere else but I don't know where. w/e
 
@@ -1469,17 +1505,28 @@
 	anchored = FALSE
 	density = FALSE
 
-/obj/structure/balloon/attack_hand(mob/user)
+DECLARE_INTERACTIONS(/obj/structure/balloon, \
+	INTERACT_HAND_HOSTILE("Punch", PROC_REF(interaction_punch)), \
+	INTERACT_HAND_UNGATED("Poke", PROC_REF(interaction_hand)), \
+)
+
+/// Old attack_hand's harm branch: punch the balloon (combat mode only).
+/obj/structure/balloon/proc/interaction_punch(mob/user, obj/item/held, datum/interaction/interaction)
+	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
+	user.visible_message(span_warning(span_bold("\The [user]") + " punches [src]!"),span_warning("You punch [src]!"))
+	return TRUE
+
+/// Old attack_hand: poke it (or, holding Grab, try to pop it; Disarm bats it).
+/obj/structure/balloon/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 
 	if(IS_HELPING(user))
 		user.visible_message(span_notice(span_bold("\The [user]") + " pokes [src]!"),span_notice("You poke [src]!"))
-	else if (IS_HARMING(user))
-		user.visible_message(span_warning(span_bold("\The [user]") + " punches [src]!"),span_warning("You punch [src]!"))
 	else if (IS_GRABBING(user))
 		user.visible_message(span_warning(span_bold("\The [user]") + " attempts to pop [src]!"),span_warning("You attempt to pop [src]!"))
 	else
 		user.visible_message(span_notice(span_bold("\The [user]") + " lightly bats the [src]."),span_notice("You lightly bat the [src]."))
+	return TRUE
 
 /obj/structure/balloon/bat
 	name = "giant bat balloon"
@@ -1675,14 +1722,17 @@
 	icon = 'icons/obj/drakietoy.dmi'
 	var/lights_glowing = FALSE
 
-/obj/item/toy/plushie/borgplushie/drake/click_alt(mob/living/user)
-	. = ..()
+EXTEND_INTERACTIONS(/obj/item/toy/plushie/borgplushie/drake, INTERACT_ALT(null, PROC_REF(interaction_alt)))
+
+/// Old click_alt.
+/obj/item/toy/plushie/borgplushie/drake/proc/interaction_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
 	var/turf/T = get_turf(src)
 	if(!T.AdjacentQuick(user)) // So people aren't messing with these from across the room
-		return FALSE
+		return TRUE
 	lights_glowing = !lights_glowing
 	to_chat(user, span_notice("You turn the [src]'s glow-fabric [lights_glowing ? "on" : "off"]."))
 	update_icon()
+	return TRUE
 
 /obj/item/toy/plushie/borgplushie/drake/update_icon()
 	cut_overlays()
@@ -1787,7 +1837,10 @@
 		to_chat(user, span_notice(" You insert bread into the toaster. "))
 		playsound(loc, 'sound/machines/ding.ogg', 50, 1)
 
-/obj/item/toy/plushie/ipc/attackby(obj/item/I as obj, mob/living/user as mob)
+EXTEND_INTERACTIONS(/obj/item/toy/plushie/ipc, INTERACT_ITEM(null, PROC_REF(ipc_interaction_item)))
+
+/// Old attackby.
+/obj/item/toy/plushie/ipc/proc/ipc_interaction_item(mob/living/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/material/kitchen/utensil))
 		to_chat(user, span_notice(" You insert the [I] into the toaster. "))
 		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
@@ -1795,7 +1848,8 @@
 		s.start()
 		user.electrocute_act(15,src,0.75)
 	else
-		return ..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/toy/plushie/ipc/toaster
 	name = "toaster plushie"
@@ -1829,7 +1883,10 @@
 	icon_state = "marketable_pip"
 	squeeze_sound = 'sound/effects/whistle.ogg'
 
-/obj/item/toy/plushie/marketable_pip/attackby(obj/item/I, mob/user)
+EXTEND_INTERACTIONS(/obj/item/toy/plushie/marketable_pip, INTERACT_ITEM(null, PROC_REF(marketable_pip_interaction_item)))
+
+/// Old attackby.
+/obj/item/toy/plushie/marketable_pip/proc/marketable_pip_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	var/obj/item/card/id/id = I.GetID()
 	if(istype(id) && COOLDOWN_FINISHED(src, cooldown_timer))
 		var/responses = list("I'm not giving you all-access.", "Do you want an ID modification?", "Where are you swiping that!?", "Congratulations! You've been promoted to unemployed!")
@@ -1838,7 +1895,8 @@
 		playsound(user, 'sound/effects/whistle.ogg', 10, 0)
 		say_phrase()
 		COOLDOWN_START(src, cooldown_timer, cooldown_length)
-		return ..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/toy/plushie/marketable_pip/attack_self(mob/user as mob)
 	if(COOLDOWN_FINISHED(src, cooldown))
@@ -1981,12 +2039,13 @@
 	desc = "A hard-rubber chewtoy shaped vaguely like a snowman. Perfect for your dog! You wouldn't want to chew on it, right?"
 	icon_state = "chewtoy_poly"
 
-/obj/item/toy/chewtoy/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/toy/chewtoy, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/toy/chewtoy/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	playsound(loc, 'sound/items/drop/plushie.ogg', 50, 1)
 	user.visible_message(span_notice(span_bold("\The [user]") + " gnaws on [src]!"),span_notice("You gnaw on [src]!"))
+	return TRUE
 
 /*
  * Cat toys
@@ -2049,10 +2108,10 @@
 	w_class = ITEMSIZE_SMALL
 	var/cooldown = 0
 
-/obj/item/toy/redbutton/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/toy/redbutton, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/toy/redbutton/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(COOLDOWN_FINISHED(src, cooldown))
 		COOLDOWN_START(src, cooldown, 300) // Sets cooldown at 30 seconds
 		user.visible_message(span_warning("[user] presses the big red button."), span_notice("You press the button, it plays a loud noise!"), span_notice("The button clicks loudly."))
@@ -2062,6 +2121,7 @@
 				om_after(M, 0.2 SECONDS, GLOBAL_PROC_REF(shake_camera), M, 2, 1)
 	else
 		to_chat(user, span_warning("Nothing happens."))
+	return TRUE
 
 /*
  * Garden gnome
@@ -2084,12 +2144,12 @@
 	var/cooldown = 0
 	var/list/possible_answers = null
 
-/obj/item/toy/AI/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/toy/AI, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/toy/AI/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!COOLDOWN_FINISHED(src, cooldown)) //No, I'm not allowing you to spamclick this to do a search over REGISTRY_MEMBERS(REGISTRY_PLAYERS)
-		return
+		return TRUE
 	var/list/players = list()
 
 	for(var/mob/living/carbon/human/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
@@ -2107,6 +2167,7 @@
 			var/answer = pick(possible_answers)
 			user.visible_message(span_notice("[user] asks the AI core to state laws."))
 			user.visible_message(span_notice("[src] says \"[answer]\""))
+	return TRUE
 
 /*
  * Toy cuffs
@@ -2148,10 +2209,13 @@
 	icon_state = "nuketoyidle"
 	var/cooldown = 0
 
-/obj/item/toy/nuke/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/toy/nuke, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/toy/nuke/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(COOLDOWN_FINISHED(src, cooldown))
 		COOLDOWN_START(src, cooldown, 1800) //3 minutes
 		user.visible_message(span_warning("[user] presses a button on [src]"), span_notice("You activate [src], it plays a loud noise!"), span_notice("You hear the click of a button."))
@@ -2159,10 +2223,13 @@
 	else
 		var/timeleft = (cooldown - world.time)
 		to_chat(user, span_warning("Nothing happens, and") + " '[round(timeleft/10)]' " + span_warning("appears on a small display."))
+	return TRUE
 
-/obj/item/toy/nuke/attackby(obj/item/I as obj, mob/living/user as mob)
+/// Old attackby.
+/obj/item/toy/nuke/proc/interaction_item(mob/living/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/disk/nuclear))
 		to_chat(user, span_warning("Nice try. Put that disk back where it belongs."))
+	return INTERACTION_HANDLED_PASS
 
 /*
  * Toy gibber
@@ -2178,10 +2245,10 @@
 
 REF_OWNED(/obj/item/toy/minigibber, "stored_minature")
 
-/obj/item/toy/minigibber/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/toy/minigibber, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/toy/minigibber/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stored_minature)
 		to_chat(user, span_danger("\The [src] makes a violent grinding noise as it tears apart the miniature figure inside!"))
 		playsound(src, 'sound/effects/splat.ogg', 50, 1)
@@ -2191,6 +2258,7 @@ REF_OWNED(/obj/item/toy/minigibber, "stored_minature")
 		to_chat(user, span_notice("You hit the gib button on \the [src]."))
 
 		cooldown = world.time
+	return TRUE
 
 /obj/item/toy/minigibber/attackby(obj/O, mob/user, params)
 	if(istype(O,/obj/item/toy/figure) || istype(O,/obj/item/toy/character) && O.loc == user)
@@ -2242,10 +2310,10 @@ REF_OWNED(/obj/item/toy/minigibber, "stored_minature")
 /obj/item/toy/toy_xeno/proc/hiss_rewound()
 	icon_state = "[initial(icon_state)]"
 
-/obj/item/toy/toy_xeno/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/toy/toy_xeno, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/toy/toy_xeno/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(COOLDOWN_FINISHED(src, cooldown))
 		COOLDOWN_START(src, cooldown, 50) //5 second cooldown
 		user.visible_message(span_notice("[user] pulls back the string on [src]."))
@@ -2253,7 +2321,8 @@ REF_OWNED(/obj/item/toy/minigibber, "stored_minature")
 		om_after(src, 5, PROC_REF(hiss))
 	else
 		to_chat(user, span_warning("The string on [src] hasn't rewound all the way!"))
-		return
+		return TRUE
+	return TRUE
 
 /*
  * Russian revolver
@@ -2281,10 +2350,10 @@ REF_OWNED(/obj/item/toy/minigibber, "stored_minature")
 	. = ..()
 	spin_cylinder()
 
-/obj/item/toy/russian_revolver/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/toy/russian_revolver, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/toy/russian_revolver/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!bullets_left)
 		user.visible_message(span_warning("[user] loads a bullet into [src]'s cylinder before spinning it."))
 		spin_cylinder()
@@ -2292,6 +2361,7 @@ REF_OWNED(/obj/item/toy/minigibber, "stored_minature")
 		user.visible_message(span_warning("[user] spins the cylinder on [src]!"))
 		playsound(src, 'sound/weapons/revolver_spin.ogg', 100, 1)
 		spin_cylinder()
+	return TRUE
 
 /obj/item/toy/russian_revolver/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	return NONE
@@ -2375,14 +2445,15 @@ REF_OWNED(/obj/item/toy/minigibber, "stored_minature")
 	attack_verb = list("sawed", "cut", "hacked", "carved", "cleaved", "butchered", "felled", "timbered")
 	var/cooldown = 0
 
-/obj/item/toy/chainsaw/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/toy/chainsaw, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/toy/chainsaw/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!cooldown)
 		playsound(user, 'sound/weapons/chainsaw_startup.ogg', 10, 0)
 		cooldown = 1
 		om_after(src, 50, PROC_REF(cooldownreset))
+	return TRUE
 
 /obj/item/toy/chainsaw/proc/cooldownreset()
 	cooldown = 0
@@ -2416,10 +2487,13 @@ REF_OWNED(/obj/item/toy/minigibber, "stored_minature")
 	if(prob(0.1))
 		real = 1
 
-/obj/item/toy/snake_popper/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/toy/snake_popper, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/toy/snake_popper/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!popped)
 		to_chat(user, span_warning("A snake popped out of [src]!"))
 		if(real == 0)
@@ -2442,13 +2516,16 @@ REF_OWNED(/obj/item/toy/minigibber, "stored_minature")
 		var/datum/effect/effect/system/confetti_spread/s = new /datum/effect/effect/system/confetti_spread
 		s.set_up(5, 1, src)
 		s.start()
+	return TRUE
 
-/obj/item/toy/snake_popper/attackby(obj/O, mob/user, params)
+/// Old attackby.
+/obj/item/toy/snake_popper/proc/interaction_item(mob/user, obj/O, datum/interaction/interaction)
 	if(istype(O, /obj/item/toy/plushie/snakeplushie) || !real)
 		if(popped && !real)
 			qdel(O)
 			popped = 0
 			icon_state = "tastybread"
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/toy/snake_popper/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(ishuman(M))
@@ -2603,14 +2680,20 @@ REF_OWNED(/obj/item/toy/minigibber, "stored_minature")
 	update_icon()
 	return 1
 
-/obj/item/toy/desk/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
-	activate(user)
+DECLARE_INTERACTIONS(/obj/item/toy/desk, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+)
 
-/obj/item/toy/desk/click_alt(mob/user)
+/// Old attack_self.
+/obj/item/toy/desk/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	activate(user)
+	return TRUE
+
+/// Old click_alt.
+/obj/item/toy/desk/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
+	activate(user)
+	return TRUE
 
 /obj/item/toy/desk/MouseDrop(mob/user as mob) // Code from Paper bin, so you can still pick up the deck
 	if((user == usr && (!( user.restrained() ) && (!( user.stat ) && (user.contents.Find(src) || in_range(src, user))))))
@@ -2675,10 +2758,10 @@ REF_OWNED(/obj/item/toy/minigibber, "stored_minature")
 	drop_sound = 'sound/items/drop/cardboardbox.ogg'
 	pickup_sound = 'sound/items/pickup/cardboardbox.ogg'
 
-/obj/item/toy/partypopper/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/toy/partypopper, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/toy/partypopper/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(icon_state == "partypopper")
 		user.visible_message(span_notice("[user] pulls on the string, releasing a burst of confetti!"), span_notice("You pull on the string, releasing a burst of confetti!"))
 		playsound(src, 'sound/effects/snap.ogg', 50, TRUE)
@@ -2692,6 +2775,7 @@ REF_OWNED(/obj/item/toy/minigibber, "stored_minature")
 		new /obj/effect/decal/cleanable/confetti(T)
 	else
 		to_chat(user, span_notice("The [src] is already spent!"))
+	return TRUE
 
 /*
  * Snow Globes
@@ -2752,30 +2836,31 @@ REF_OWNED(/obj/item/toy/minigibber, "stored_minature")
 	var/next_use = 0
 	var/registered_mob //On request, only one person is able to use it at a time.
 
-/obj/item/toy/acorn_branch/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/toy/acorn_branch, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/toy/acorn_branch/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.stat || !ishuman(user))
-		return
+		return TRUE
 	if(!COOLDOWN_FINISHED(src, next_use))
 		to_chat(user, span_notice("You need to wait a bit longer before you can pull out another acorn!"))
-		return
+		return TRUE
 	var/mob/living/carbon/human/H = user
 	if(registered_mob)
 		if(registered_mob != H)
 			to_chat(user, span_notice("It's a lovely branch!"))
-			return
+			return TRUE
 	else
 		registered_mob = H
 	if(H.get_inactive_hand())
 		to_chat(user, span_notice("You need to have a free hand to pick an acorn out!"))
-		return
+		return TRUE
 	var/spawnloc = get_turf(H)
 	var/obj/item/I = new /obj/item/reagent_containers/food/snacks/acorn(spawnloc)
 	H.put_in_inactive_hand(I)
 	next_use = (world.time + 30 SECONDS)
 	H.visible_message(span_notice("\The [H] pulls an acorn from \the [src]!"))
+	return TRUE
 
 /obj/item/toy/plushie/dragon
 	name = "dragon plushie"

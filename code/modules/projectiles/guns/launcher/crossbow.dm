@@ -264,7 +264,10 @@
 		update_icon()
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/crossbowframe/attackby(obj/item/W as obj, mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/crossbowframe, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/crossbowframe/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W,/obj/item/stack/rods))
 		if(buildstate == 0)
 			var/obj/item/stack/rods/R = W
@@ -274,7 +277,7 @@
 				update_icon()
 			else
 				to_chat(user, span_notice("You need at least three rods to complete this task."))
-			return
+			return INTERACTION_HANDLED_PASS
 	else if(istype(W, /obj/item/stack/cable_coil))
 		var/obj/item/stack/cable_coil/C = W
 		if(buildstate == 2)
@@ -284,7 +287,7 @@
 				update_icon()
 			else
 				to_chat(user, span_notice("You need at least five segments of cable coil to complete this task."))
-			return
+			return INTERACTION_HANDLED_PASS
 		else if(buildstate == 4)
 			if(C.use(5))
 				to_chat(user, span_notice("You string a steel cable across the crossbow's lath."))
@@ -292,7 +295,7 @@
 				update_icon()
 			else
 				to_chat(user, span_notice("You need at least five segments of cable coil to complete this task."))
-			return
+			return INTERACTION_HANDLED_PASS
 	else if(istype(W,/obj/item/stack/material) && W.get_material_name() == MAT_PLASTIC)
 		if(buildstate == 3)
 			var/obj/item/stack/material/P = W
@@ -302,6 +305,7 @@
 				update_icon()
 			else
 				to_chat(user, span_notice("You need at least three plastic sheets to complete this task."))
-			return
+			return INTERACTION_HANDLED_PASS
 	else
-		..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS

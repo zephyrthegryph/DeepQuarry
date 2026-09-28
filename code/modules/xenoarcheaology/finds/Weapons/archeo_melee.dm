@@ -161,36 +161,37 @@
 		last_touched = user
 		PERIODIC_START(src, PERIODIC_SLOW)
 
-/obj/item/melee/artifact_blade/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/melee/artifact_blade, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/melee/artifact_blade/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(last_special > world.time - 12 SECONDS)
 		to_chat(user, span_cult("The blade does not respond to your attempts, having recently performed an action!"))
-		return
+		return TRUE
 	last_special = world.time
 	if(stored_blood < 10)
 		to_chat(user, span_cult("The blade does not respond to your attempts, seeming to have not enough blood to perform any actions!"))
-		return
+		return TRUE
 	if(stored_blood >= 10)
-		var/choice = rerun_prompt(user, "k176", list("kind" = "list", "message" = "What action do you wish to have the blade perform?", "title" = "Download", "choices" = abilities), PROC_REF(attack_self), args)
+		var/choice = rerun_prompt(user, "k176", list("kind" = "list", "message" = "What action do you wish to have the blade perform?", "title" = "Download", "choices" = abilities), PROC_REF(interaction_self), args)
 		if(isnull(choice))
 			return TRUE
 		if(choice && loc == user)
 			switch(choice)
 				if("Consecrate")
-					var/decision2 = rerun_prompt(user, "k180", list("message" = "Do you wish to toggle the sword's 'consecrate' mode? If enabled, this will allow the sword to turn floors and walls into a more cult-like appearance! It requires [consecration_cost] per use!", "title" = "Consecrate!", "choices" = list("Toggle on", "Toggle off")), PROC_REF(attack_self), args)
+					var/decision2 = rerun_prompt(user, "k180", list("message" = "Do you wish to toggle the sword's 'consecrate' mode? If enabled, this will allow the sword to turn floors and walls into a more cult-like appearance! It requires [consecration_cost] per use!", "title" = "Consecrate!", "choices" = list("Toggle on", "Toggle off")), PROC_REF(interaction_self), args)
 					if(isnull(decision2))
 						return TRUE
 					consecrate_toggle(user, decision2)
-					return
+					return TRUE
 				/// Spawning logic. Checks the 'summonables' list.
 				if("Summon")
-					var/summoned_item = rerun_prompt(user, "k185", list("kind" = "list", "message" = "What do you wish to summon?", "title" = "Summon", "choices" = summonables), PROC_REF(attack_self), args)
+					var/summoned_item = rerun_prompt(user, "k185", list("kind" = "list", "message" = "What do you wish to summon?", "title" = "Summon", "choices" = summonables), PROC_REF(interaction_self), args)
 					if(isnull(summoned_item))
 						return TRUE
 					summon_item(user, summoned_item)
-					return
+					return TRUE
+	return TRUE
 
 /obj/item/melee/artifact_blade/proc/consecrate_toggle(mob/user as mob, toggle)
 	switch(toggle)

@@ -42,9 +42,7 @@
 	else
 		user.audible_message(span_infoplain(span_bold("[user.GetVoice()]") + "[user.GetAltName()] broadcasts, " + span_large("\"[message]\"")), runemessage = message)
 
-/obj/item/megaphone/get_interactions()
-	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))
-	return L
+DECLARE_INTERACTIONS(/obj/item/megaphone, INTERACT_USE(null, PROC_REF(interaction_self)))
 
 /obj/item/megaphone/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	om_prompt(src, user, list("kind" = "text", "message" = "Shout a message?", "title" = "Megaphone", "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_HELD), PROC_REF(shout_entered))

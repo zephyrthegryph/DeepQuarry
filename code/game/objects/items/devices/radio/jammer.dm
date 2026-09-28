@@ -77,13 +77,11 @@ REGISTRY_MEMBERSHIP(/obj/item/radio_jammer, REGISTRY_RADIO_JAMMERS)
 		update_icon()
 
 
-/obj/item/radio_jammer/get_interactions()
-	var/static/list/L = list(
-		INTERACT_HAND(null, PROC_REF(interaction_hand)),
-		INTERACT_USE(null, PROC_REF(interaction_self)),
-		INTERACT_INSERT(/obj/item/cell/device/weapon, PROC_REF(interaction_item), "Insert cell"),
-	)
-	return L
+DECLARE_INTERACTIONS(/obj/item/radio_jammer, \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_INSERT(/obj/item/cell/device/weapon, PROC_REF(interaction_item), "Insert cell"), \
+)
 
 /obj/item/radio_jammer/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.get_inactive_hand() == src && power_source)

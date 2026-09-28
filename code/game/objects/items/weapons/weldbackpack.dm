@@ -52,7 +52,8 @@ REF_OWNED(/obj/item/weldpack, "nozzle")
 	nozzle.forceMove(src)
 	nozzle_attached = 1
 
-/obj/item/weldpack/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby.
+/obj/item/weldpack/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	var/obj/item/weldingtool/T = W.get_welder()
 	if(T && !(W == nozzle))
 		if(T.welding && prob(50))
@@ -62,30 +63,36 @@ REF_OWNED(/obj/item/weldpack, "nozzle")
 			explosion(get_turf(src),-1,0,2)
 			if(src)
 				consume(src, user)
-			return
+			return INTERACTION_HANDLED_PASS
 		else if(T.status)
 			if(T.welding)
 				to_chat(user, span_danger("That was close!"))
 			src.reagents.trans_to_obj(T, T.max_fuel)
 			to_chat(user, span_notice("Welder refilled!"))
 			playsound(src, 'sound/effects/refill.ogg', 50, 1, -6)
-			return
+			return INTERACTION_HANDLED_PASS
 	else if(nozzle)
 		if(nozzle == W)
 			if(!user.unEquip(W))
 				to_chat(user, span_notice("\The [W] seems to be stuck to your hand."))
-				return
+				return INTERACTION_HANDLED_PASS
 			if(!nozzle_attached)
 				return_nozzle()
 				to_chat(user, span_notice("You attach \the [W] to the [src]."))
-				return
+				return INTERACTION_HANDLED_PASS
 		else
 			to_chat(user, span_notice("The [src] already has a nozzle!"))
 	else
 		to_chat(user, span_warning("The tank scoffs at your insolence. It only provides services to welders."))
-	return
+	return INTERACTION_HANDLED_PASS
 
-/obj/item/weldpack/attack_hand(mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/weldpack, \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/item/weldpack/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(ishuman(user))
 		var/mob/living/carbon/human/wearer = user
 		if(wearer.get_equipped_item(SLOT_ID_BACK) == src)
@@ -95,9 +102,10 @@ REF_OWNED(/obj/item/weldpack, "nozzle")
 			else
 				to_chat(user, span_notice("\The [src] does not have a nozzle attached!"))
 		else
-			..()
+			return FALSE
 	else
-		..()
+		return FALSE
+	return TRUE
 
 /obj/item/weldpack/afterattack(obj/O as obj, mob/user as mob, proximity)
 	if(!proximity) // this replaces and improves the get_dist(src,O) <= 1 checks used previously

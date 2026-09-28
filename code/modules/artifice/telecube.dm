@@ -238,9 +238,13 @@
 	if(Adjacent(user) && teleport_to_mate(user))
 		cooldown(mate_too = FALSE)
 
-/obj/item/telecube/click_alt(mob/user)
+DECLARE_INTERACTIONS(/obj/item/telecube, INTERACT_ALT(null, PROC_REF(interaction_alt)))
+
+/// Old click_alt.
+/obj/item/telecube/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	if(Adjacent(user) && swap_with_mate())
 		cooldown(mate_too = TRUE)
+	return TRUE
 
 /obj/item/telecube/Bump(atom/movable/AM)
 	if(teleport_to_mate(AM))

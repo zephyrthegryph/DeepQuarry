@@ -87,7 +87,10 @@
 /obj/structure/construction/update_icon()
 	icon_state = "[base_icon][stage]"
 
-/obj/structure/construction/attackby(obj/item/W as obj, mob/user as mob)
+DECLARE_INTERACTIONS(/obj/structure/construction, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/structure/construction/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	add_fingerprint(user)
 	if(istype(W, /obj/item/stack/cable_coil))
 		if (stage == FRAME_FASTENED)
@@ -99,9 +102,9 @@
 					"You add wires to \the [src].", "You hear a noise.")
 				playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
 				update_icon()
-		return
+		return INTERACTION_HANDLED_PASS
 
-	. = ..()
+	return FALSE
 
 /obj/structure/construction/welder_act(mob/user, obj/item/W)
 	if(stage != FRAME_UNFASTENED)

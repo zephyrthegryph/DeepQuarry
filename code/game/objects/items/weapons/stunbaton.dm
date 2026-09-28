@@ -119,7 +119,8 @@
 		if(!bcell)
 			. += span_warning("The baton does not have a power source installed.")
 
-/obj/item/melee/baton/attackby(obj/item/W, mob/user)
+/// Old attackby.
+/obj/item/melee/baton/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/cell))
 		if(istype(W, /obj/item/cell/device))
 			if(!bcell)
@@ -143,8 +144,15 @@
 		if(taped_safety)
 			to_chat(user, span_notice("You painstakingly scrape away the tape over the grip safety."))
 			taped_safety = FALSE
+	return INTERACTION_HANDLED_PASS
 
-/obj/item/melee/baton/attack_hand(mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/melee/baton, \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/item/melee/baton/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.get_inactive_hand() == src)
 		if(bcell)
 			bcell.update_icon()
@@ -153,10 +161,10 @@
 			to_chat(user, span_notice("You remove the cell from the [src]."))
 			status = 0
 			update_icon()
-			return
-		..()
+			return TRUE
+		return FALSE
 	else
-		return ..()
+		return FALSE
 
 /obj/item/melee/baton/attack_self(mob/user)
 	. = ..(user)
@@ -239,7 +247,10 @@
 	slot_flags = null
 	grip_safety = FALSE
 
-/obj/item/melee/baton/cattleprod/attackby(obj/item/W, mob/user)
+EXTEND_INTERACTIONS(/obj/item/melee/baton/cattleprod, INTERACT_ITEM(null, PROC_REF(cattleprod_interaction_item)))
+
+/// Old attackby.
+/obj/item/melee/baton/cattleprod/proc/cattleprod_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/cell))
 		if(!istype(W, /obj/item/cell/device))
 			if(!bcell)
@@ -252,6 +263,7 @@
 				to_chat(user, span_notice("[src] already has a cell."))
 		else
 			to_chat(user, span_notice("This cell is not fitted for [src]."))
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/melee/baton/get_description_interaction()
 	var/list/results = list()

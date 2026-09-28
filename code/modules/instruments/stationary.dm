@@ -29,11 +29,15 @@ REF_OWNED(/obj/structure/musician, "song")
 		return FALSE
 	return TRUE
 
-/obj/structure/musician/attack_hand(mob/M)
+DECLARE_INTERACTIONS(/obj/structure/musician, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/structure/musician/proc/interaction_hand(mob/M, obj/item/held, datum/interaction/interaction)
 	if(!M.IsAdvancedToolUser())
-		return
+		return TRUE
 
 	tgui_interact(M)
+	return TRUE
 
 /obj/structure/musician/tgui_interact(mob/user)
 	return song.tgui_interact(user)

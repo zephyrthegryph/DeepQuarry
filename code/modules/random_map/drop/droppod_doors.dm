@@ -23,11 +23,15 @@
 /obj/structure/droppod_door/attack_generic(mob/user)
 	attack_hand(user)
 
-/obj/structure/droppod_door/attack_hand(mob/user)
-	if(deploying) return
+DECLARE_INTERACTIONS(/obj/structure/droppod_door, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/structure/droppod_door/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	if(deploying) return TRUE
 	deploying = TRUE
 	to_chat(user, span_danger("You prime the explosive bolts. Better get clear!"))
 	om_after(src, 3 SECONDS, PROC_REF(deploy))
+	return TRUE
 
 /obj/structure/droppod_door/proc/deploy()
 	if(deployed)

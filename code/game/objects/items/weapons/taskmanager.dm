@@ -308,8 +308,10 @@
 		return FALSE
 	return TRUE
 
-/obj/item/taskmanager/attack_self(mob/user)
-	. = ..()
+DECLARE_INTERACTIONS(/obj/item/taskmanager, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/taskmanager/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/list/choices = list(
 		TM_MODE_BRIDGE = radial_image_bridge,
 		TM_MODE_ENGINEERING = radial_image_engineering,
@@ -321,7 +323,7 @@
 
 	var/choice = show_radial_menu(user, src, choices, custom_check = CALLBACK(src, PROC_REF(check_menu), user), require_near = TRUE, tooltips = TRUE)
 	if(!(choice in choices) || !check_menu(user))
-		return
+		return TRUE
 
 	mode = choice
 	scancount = 0
@@ -330,6 +332,7 @@
 	scanreq = rand(3,9)
 	to_chat(user, span_notice("Changed mode to '[choice]'."))
 	playsound(loc, 'sound/effects/pop.ogg', 50, 0)
+	return TRUE
 
 /obj/item/taskmanager/afterattack(atom/target, mob/user, proximity)
 	if(!proximity)

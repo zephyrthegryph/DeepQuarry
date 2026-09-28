@@ -113,16 +113,21 @@
 	return TRUE
 
 //all credit to skasi for toy mech fun ideas
-/obj/item/toy/mecha/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/toy/mecha, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/toy/mecha/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(COOLDOWN_FINISHED(src, timer))
 		to_chat(user, span_notice("You play with [src]."))
 		COOLDOWN_START(src, timer, cooldown)
 		playsound(user, 'sound/mecha/mechstep.ogg', 20, TRUE)
+	return TRUE
 
-/obj/item/toy/mecha/attack_hand(mob/user)
+/// Old attack_hand: runs after the touch tried to pick it up (hand_pickup()).
+/obj/item/toy/mecha/hand_pickup(mob/user)
 	. = ..()
 	if(.)
 		return
@@ -132,12 +137,13 @@
 /**
  * If you attack a mech with a mech, initiate combat between them
  */
-/obj/item/toy/mecha/attackby(obj/item/user_toy, mob/living/user)
+/// Old attackby.
+/obj/item/toy/mecha/proc/interaction_item(mob/living/user, obj/item/user_toy, datum/interaction/interaction)
 	if(istype(user_toy, /obj/item/toy/mecha))
 		var/obj/item/toy/mecha/M = user_toy
 		if(check_battle_start(user, M))
 			mecha_brawl(M, user)
-	..()
+	return FALSE
 
 /**
  * Attack is called from the user's toy, aimed at target(another human), checking for target's toy.

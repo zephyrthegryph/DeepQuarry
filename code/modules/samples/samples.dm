@@ -57,7 +57,8 @@
 		name = "[name_prefix] [name_suffix]"
 	AddElement(/datum/element/sellable/research_sample)
 
-/obj/item/research_sample/attack_hand(mob/user)
+/// Old attack_hand: runs after the touch tried to pick it up (hand_pickup()).
+/obj/item/research_sample/hand_pickup(mob/user)
 	. = ..()
 	var/mob/living/M = user
 	if(!istype(M))
@@ -123,13 +124,16 @@
 	H.drop_from_inventory(src,get_turf(H))
 	consume(src, H)
 
-/obj/item/research_sample/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/research_sample, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/research_sample/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/living/M = user
 	if(!istype(M))
-		return
+		return TRUE
 
 	var/burn_user = TRUE
 	if(ishuman(M))
@@ -173,30 +177,32 @@
 				else
 					H.visible_message(span_notice("\The [src] flickers with kaleidoscopic light. You should report this to someone immediately."))
 			H.drop_from_inventory(src, get_turf(H))
-			return
+			return TRUE
 
 		else	//short delay, so you can abort/cancel if you misclick
 			om_do_after(user, 3 SECONDS, src, src, PROC_REF(crush_done), list(H))
-			return
+			return TRUE
 
 	if(isrobot(user))
 		burn_user = FALSE
 
 	if(burn_user)
 		M.injure(INJURY_BURN, rand(min_damage,max_damage), null, src)
+	return TRUE
 
-/obj/item/research_sample/attackby(obj/item/P as obj, mob/user as mob)
-	..()
+/// Old attackby.
+/obj/item/research_sample/proc/interaction_item(mob/user, obj/item/P, datum/interaction/interaction)
 
 	if(istype(P, /obj/item/storage/sample_container))
 		var/obj/item/storage/sample_container/SC = P
 		if(SC.contents.len >= SC.max_storage_space)
 			to_chat(user, span_notice("\The [SC] is full!"))
-			return
+			return INTERACTION_HANDLED_PASS
 		else
 			src.forceMove(SC)
 			SC.update_icon()
 			to_chat(user, span_notice("You store \the [src] in \the [SC]."))
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/research_sample/common
 	catalogue_data = list(/datum/category_item/catalogue/information/research_sample/common)

@@ -57,7 +57,8 @@ REF_OWNED_LIST(/obj/structure/noticeboard, "notices")
 /obj/structure/noticeboard/update_icon()
 	icon_state = "[base_icon_state][LAZYLEN(notices)]"
 
-/obj/structure/noticeboard/attackby(obj/item/I, mob/user)
+/// Old attackby.
+/obj/structure/noticeboard/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/paper) || istype(I, /obj/item/photo))
 		if(jobban_isbanned(user, JOB_GRAFFITI))
 			to_chat(user, span_warning("You are banned from leaving persistent information across rounds."))
@@ -69,8 +70,8 @@ REF_OWNED_LIST(/obj/structure/noticeboard, "notices")
 				SSpersistence.track_value(I, /datum/persistent/paper)
 			else
 				to_chat(user, span_warning("You hesitate, certain [I] will not be seen among the many others already attached to \the [src]."))
-		return
-	return ..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
 /obj/structure/noticeboard/screwdriver_act(mob/user, obj/item/tool)
 	var/choice = rerun_prompt(user, "k79", list("kind" = "list", "message" = "Which direction do you wish to place the noticeboard?", "title" = "Noticeboard Offset", "choices" = list("North", "South", "East", "West", "No Offset")), TYPE_PROC_REF(/atom, screwdriver_act), args)
@@ -109,8 +110,15 @@ REF_OWNED_LIST(/obj/structure/noticeboard, "notices")
 /obj/structure/noticeboard/attack_ai(mob/user)
 	examine(user)
 
-/obj/structure/noticeboard/attack_hand(mob/user)
+DECLARE_INTERACTIONS(/obj/structure/noticeboard, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/structure/noticeboard/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	examine(user)
+	return TRUE
 
 /obj/structure/noticeboard/examine(mob/user)
 	tgui_interact(user)

@@ -16,26 +16,30 @@
 	w_class = ITEMSIZE_NORMAL
 	var/icon_state_closed = "laptop-closed"
 
-/obj/item/modular_computer/laptop/click_alt(mob/living/carbon/user)
+EXTEND_INTERACTIONS(/obj/item/modular_computer/laptop, INTERACT_ALT(null, PROC_REF(interaction_alt)))
+
+/// Old click_alt.
+/obj/item/modular_computer/laptop/proc/interaction_alt(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
 	// We need to be close to it to open it
 	if((!in_range(src, user)) || user.stat || user.restrained())
-		return
+		return TRUE
 	// Prevents carrying of open laptops inhand.
 	// While they work inhand, i feel it'd make tablets lose some of their high-mobility advantage they have over laptops now.
 	if(!istype(loc, /turf/))
 		to_chat(user, "\The [src] has to be on a stable surface first!")
-		return
+		return TRUE
 	// ition Begin
 	var/supported = FALSE
 	for(var/obj/structure/table/S in loc)
 		supported = TRUE
 	if(!supported && !anchored)
 		to_chat(user, "You will need a better supporting surface before opening \the [src]!")
-		return
+		return TRUE
 	// ition End
 	anchored = !anchored
 	screen_on = anchored
 	update_icon()
+	return TRUE
 
 /obj/item/modular_computer/laptop/update_icon()
 	if(anchored)

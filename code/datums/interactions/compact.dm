@@ -51,6 +51,9 @@
 
 /datum/interaction/generic/run_effect(mob/actor, atom/target, obj/item/held)
 	var/ran = call(target, effect)(actor, held, src)
+	// Handled, but the input isn't used up: the entry's caller lets afterattack / the loot panel follow.
+	if(ran == INTERACTION_HANDLED_PASS && GLOB.interaction_entry_actors[actor])
+		GLOB.interaction_entry_pass[actor] = TRUE
 	return always_handled ? TRUE : ran
 
 /**
@@ -78,17 +81,28 @@
 	var/effect = spec[3]
 	var/list/requires = spec[4]
 	var/held_type = length(spec) >= 5 ? spec[5] : null
+	// INTERACT_STANCE_*: a hostile/peaceful shape is only meant in that combat stance (offered_when).
+	var/stance = length(spec) >= 6 ? spec[6] : null
+	var/list/offered_when
+	var/list/tags
+	switch(stance)
+		if(INTERACT_STANCE_HOSTILE)
+			offered_when = list(REQ_HARMING)
+			tags = list(INTERACTION_TAG_HOSTILE)
+		if(INTERACT_STANCE_PEACEFUL)
+			offered_when = list(REQ_HELPING)
 
 	var/effect_key = "[effect]"
 	var/entry
 	var/category
 	var/default_action = INPUT_ACTION_USE
 	var/always_handled = FALSE
+	var/behind_gate = TRUE
 	// The entry base types' own requirements (entries.dm): a compact spec lists only
 	// what it adds, so an item's self-use still needs it in hand and the rest need reach.
 	var/list/base_requires
-	if(kind == INTERACT_KIND_USE)
-		base_requires = ispath(owner_type, /obj/item) ? list(REQ_TARGET_IN_HAND) : list()
+	if(kind == INTERACT_KIND_USE || kind == INTERACT_KIND_SELF)
+		base_requires = ispath(owner_type, /obj/item) ? list(REQ_SELF_USE_REACH) : list()
 	else
 		base_requires = list(REQ_INTERACTION_REACH)
 	requires = base_requires + (requires || list())
@@ -97,9 +111,20 @@
 			entry = INTERACTION_ENTRY_SELF
 			category = INTERACTION_CAT_TOGGLE
 			always_handled = TRUE
+		if(INTERACT_KIND_SELF)
+			entry = INTERACTION_ENTRY_SELF
+			category = INTERACTION_CAT_TOGGLE
 		if(INTERACT_KIND_HAND)
 			entry = INTERACTION_ENTRY_HAND
 			category = INTERACTION_CAT_OPEN
+		if(INTERACT_KIND_HAND_UNGATED)
+			entry = INTERACTION_ENTRY_HAND
+			category = INTERACTION_CAT_OPEN
+			behind_gate = FALSE
+		if(INTERACT_KIND_DRAG)
+			entry = INTERACTION_ENTRY_DRAG
+			category = INTERACTION_CAT_INSERT
+			default_action = null
 		if(INTERACT_KIND_ITEM)
 			entry = INTERACTION_ENTRY_ITEM
 			category = INTERACTION_CAT_INSERT
@@ -120,14 +145,15 @@
 	// still want the same auto-generated id text (two "interaction_self" procs on
 	// unrelated types); this seed just needs to vary between them, not to be a
 	// lookup key on its own.
-	var/id_seed = "[kind]|[effect_key]|[held_type]|[owner_type]" // deterministic across builds (a \ref is not)
+	var/id_seed = "[kind]|[effect_key]|[held_type]|[owner_type]|[stance]" // deterministic across builds (a \ref is not)
 	var/base_id = "gen_[dq_interaction_slug(kind)]_[dq_interaction_slug(effect_key)]"
 	var/id = base_id
 	var/attempt = 0
 	while(interaction_by_id(id) || cache_has_id(cache, id))
 		id = "[base_id]_[md5("[id_seed]|[attempt++]")]"
 
-	var/datum/interaction/generic/interaction = new(id, name, category, /* priority */ 0, default_action, requires, effect, entry, held_type, /* offered_when */ null, /* consumes_input */ TRUE, /* behind_gate */ TRUE, always_handled)
+	var/datum/interaction/generic/interaction = new(id, name, category, /* priority */ 0, default_action, requires, effect, entry, held_type, offered_when, /* consumes_input */ TRUE, behind_gate, always_handled)
+	interaction.tags = tags
 	cache[spec] = interaction
 	return interaction
 
@@ -153,6 +179,14 @@
 /proc/dq_interaction_name_from_effect(effect_key)
 	var/slash = findlasttext(effect_key, "/")
 	var/tail = slash ? copytext(effect_key, slash + 1) : effect_key
+	// A converted handler's effect is named after the old proc (interaction_item, <type>_interaction_hand...):
+	// name it for what the player does, not for the proc.
+	var/static/list/converted_names = list("item" = "Use", "hand" = "Use", "self" = "Use", "alt" = "Alternate use", "drag" = "Drop onto")
+	var/marker = findlasttext(tail, "interaction_")
+	if(marker && (marker == 1 || copytext(tail, marker - 1, marker) == "_"))
+		var/converted = converted_names[copytext(tail, marker + length("interaction_"))]
+		if(converted)
+			return converted
 	tail = replacetext(tail, "_", " ")
 	return capitalize(tail)
 

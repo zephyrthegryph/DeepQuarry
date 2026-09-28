@@ -46,11 +46,12 @@
 	var/last_repopulation_time = 0
 	var/repopulation_delay = 600 //Anti spam.
 
-/obj/item/ano_scanner/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/ano_scanner, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/ano_scanner/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	interact(user)
+	return TRUE
 
 /obj/item/ano_scanner/interact(mob/user)
 	if(world.time - last_scan_time >= scan_delay)
@@ -156,11 +157,12 @@
 
 			to_chat(user, span_notice("[icon2html(src, user.client)] [src] pings [pick("madly","wildly","excitedly","crazily")]!"))
 
-/obj/item/depth_scanner/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/depth_scanner, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/depth_scanner/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
+	return TRUE
 
 /obj/item/depth_scanner/tgui_state(mob/user)
 	return GLOB.tgui_deep_inventory_state
@@ -282,11 +284,13 @@
 		else
 			icon_state = "pinoff"
 
-/obj/item/beacon_locator/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
-	return tgui_interact(user)
+
+DECLARE_INTERACTIONS(/obj/item/beacon_locator, INTERACT_USE("Open", PROC_REF(interaction_open)))
+
+/// Old attack_self: open the interface.
+/obj/item/beacon_locator/proc/interaction_open(mob/user, obj/item/held, datum/interaction/interaction)
+	tgui_interact(user)
+	return TRUE
 
 /obj/item/beacon_locator/tgui_state(mob/user)
 	return GLOB.tgui_inventory_state
@@ -345,11 +349,12 @@
 	anomaly_scanner = new/obj/item/ano_scanner(src)
 	depth_scanner = new/obj/item/depth_scanner(src)
 
-/obj/item/xenoarch_multi_tool/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/xenoarch_multi_tool, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/xenoarch_multi_tool/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	depth_scanner.tgui_interact(user)
+	return TRUE
 
 /obj/item/xenoarch_multi_tool/verb/swap_settings()
 	var/mob/living/user = usr

@@ -16,8 +16,14 @@
 
 	var/open_top = FALSE
 
-/obj/structure/reagent_dispensers/attackby(obj/item/W as obj, mob/user as mob)
-	return
+DECLARE_INTERACTIONS(/obj/structure/reagent_dispensers, \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+)
+
+/// Old attackby.
+/obj/structure/reagent_dispensers/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+	return INTERACTION_HANDLED_PASS
 
 /obj/structure/reagent_dispensers/Initialize(mapload)
 	var/datum/reagents/R = new/datum/reagents(5000)
@@ -55,9 +61,10 @@
 /obj/structure/reagent_dispensers/blob_act()
 	qdel(src)
 
-/obj/structure/reagent_dispensers/click_alt(mob/user)
+/// Old click_alt.
+/obj/structure/reagent_dispensers/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!Adjacent(user))
-		return
+		return TRUE
 
 	if(flags & OPENCONTAINER)
 		to_chat(user, span_notice("You close the input on \the [src]"))
@@ -67,6 +74,7 @@
 		to_chat(user, span_notice("You open the input on \the [src], allowing you to pour reagents in."))
 		flags |= OPENCONTAINER
 		open_top = TRUE
+	return TRUE
 
 /*
  * Tanks
@@ -181,10 +189,17 @@
 		if(rig)
 			. += span_notice("There is some kind of device rigged to the tank.")
 
-/obj/structure/reagent_dispensers/fueltank/attack_hand(mob/user)
+EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/fueltank, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(fueltank_interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/structure/reagent_dispensers/fueltank/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if (rig)
 		user.visible_message("[user] begins to detach [rig] from \the [src].", "You begin to detach [rig] from \the [src]")
 		om_do_after(user, 2 SECONDS, src, src, PROC_REF(detach_rig_done), list(user))
+	return TRUE
 
 /obj/structure/reagent_dispensers/fueltank/proc/detach_rig_done(mob/user)
 	if(!rig)
@@ -194,16 +209,17 @@
 	rig = null
 	overlays = new/list()
 
-/obj/structure/reagent_dispensers/fueltank/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby.
+/obj/structure/reagent_dispensers/fueltank/proc/fueltank_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	src.add_fingerprint(user)
 	if (istype(W,/obj/item/assembly_holder))
 		if (rig)
 			to_chat(user, span_warning("There is another device in the way."))
-			return ..()
+			return FALSE
 		user.visible_message("[user] begins rigging [W] to \the [src].", "You begin rigging [W] to \the [src]")
 		om_do_after(user, 2 SECONDS, src, src, PROC_REF(rig_assembly_done), list(user, W))
 
-	return ..()
+	return FALSE
 
 /obj/structure/reagent_dispensers/fueltank/proc/rig_assembly_done(mob/user, obj/item/assembly_holder/H)
 	if(rig)
@@ -350,7 +366,8 @@
 	if(cupholder)
 		. += span_notice("There are [cups] cups in the cup dispenser.")
 
-/obj/structure/reagent_dispensers/water_cooler/attackby(obj/item/I as obj, mob/user as mob)
+/// Old attackby.
+/obj/structure/reagent_dispensers/water_cooler/proc/water_cooler_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/reagent_containers/glass/cooler_bottle))
 		src.add_fingerprint(user)
 		if(!bottle)
@@ -376,7 +393,8 @@
 				to_chat(user, span_warning("You need to wrench down the cooler first."))
 		else
 			to_chat(user, span_warning("There is already a cup dispenser there!"))
-		return
+		return INTERACTION_HANDLED_PASS
+	return INTERACTION_HANDLED_PASS
 
 /obj/structure/reagent_dispensers/water_cooler/proc/bottle_done(mob/user, obj/item/reagent_containers/glass/cooler_bottle/G)
 	if(bottle || !anchored)
@@ -446,12 +464,19 @@
 	replace_with(src, /obj/item/stack/material/plastic, 4)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/structure/reagent_dispensers/water_cooler/attack_hand(mob/user)
+EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/water_cooler, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(water_cooler_interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/structure/reagent_dispensers/water_cooler/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(cups)
 		new /obj/item/reagent_containers/food/drinks/sillycup(src.loc)
 		cups--
 		flick("[icon_state]-vend", src)
-		return
+		return TRUE
+	return TRUE
 
 /obj/structure/reagent_dispensers/water_cooler/update_icon()
 	icon_state = "water_cooler"

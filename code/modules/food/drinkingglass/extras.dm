@@ -26,19 +26,22 @@
 	else
 		return ..()
 
-/obj/item/reagent_containers/food/drinks/glass2/attack_hand(mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/glass2, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/item/reagent_containers/food/drinks/glass2/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(src != user.get_inactive_hand())
-		return ..()
+		return FALSE
 
 	if(!length(extras))
 		to_chat(user, span_warning("There's nothing on the glass to remove!"))
-		return
+		return TRUE
 
-	var/choice = rerun_prompt(user, "k37", list("kind" = "list", "message" = "What would you like to remove from the glass?", "title" = "Removal Choice", "choices" = extras), TYPE_PROC_REF(/atom, attack_hand), args)
+	var/choice = rerun_prompt(user, "k37", list("kind" = "list", "message" = "What would you like to remove from the glass?", "title" = "Removal Choice", "choices" = extras), PROC_REF(interaction_hand), args)
 	if(isnull(choice))
 		return TRUE
 	if(!choice || !(choice in extras))
-		return
+		return TRUE
 
 	if(user.put_in_active_hand(choice))
 		to_chat(user, span_notice("You remove \the [choice] from \the [src]."))
@@ -47,6 +50,7 @@
 		to_chat(user, span_warning("Something went wrong, please try again."))
 
 	update_icon()
+	return TRUE
 
 /obj/item/glass_extra
 	name = "generic glass addition"

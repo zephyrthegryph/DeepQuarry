@@ -365,37 +365,44 @@ REF_OWNED(/obj/machinery/material_furnace, "chamber_air")
 	density = TRUE
 	var/obj/item/stack/material/processed_alloy/stock
 
-/obj/structure/material_anvil/attackby(obj/item/item, mob/user)
+/// Old attackby.
+/obj/structure/material_anvil/proc/interaction_item(mob/user, obj/item/item, datum/interaction/interaction)
 	if(istype(item, /obj/item/stack/material/processed_alloy))
 		if(stock)
 			to_chat(user, span_warning("There is already stock on [src]."))
-			return
+			return INTERACTION_HANDLED_PASS
 		var/obj/item/stack/material/processed_alloy/incoming = item
 		if(!istype(incoming.material, /datum/material/processed_alloy))
 			to_chat(user, span_warning("[incoming] is not processed stock."))
-			return
+			return INTERACTION_HANDLED_PASS
 		if(!user.drop_from_inventory(incoming))
-			return
+			return INTERACTION_HANDLED_PASS
 		incoming.forceMove(src)
 		stock = incoming
-		return
+		return INTERACTION_HANDLED_PASS
 	if(istype(item, /obj/item/melee/hammer) && stock)
 		var/datum/material_batch/batch = stock.physical_batch().copy_batch()
 		if(!batch.apply_process(MATERIAL_PROCESS_FORGE))
 			to_chat(user, span_warning("The stock is outside its forging range; heat it in the alloy furnace first."))
 			qdel(batch)
-			return
+			return INTERACTION_HANDLED_PASS
 		var/obj/item/stack/material/processed_alloy/replacement = replace_processed_stack(stock, batch, src)
 		stock = replacement
 		stock.forceMove(src)
 		qdel(batch)
 		visible_message(span_notice("[user] works the alloy under the hammer, refining its shape and internal structure."))
-		return
-	return ..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
-/obj/structure/material_anvil/attack_hand(mob/user)
+DECLARE_INTERACTIONS(/obj/structure/material_anvil, \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/structure/material_anvil/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!stock)
-		return ..()
+		return FALSE
 	stock.forceMove(get_turf(src))
 	stock = null
 	return TRUE
@@ -410,19 +417,22 @@ REF_OWNED(/obj/machinery/material_furnace, "chamber_air")
 	. = ..()
 	create_reagents(200)
 
-/obj/structure/bed/bath/material_treatment/attackby(obj/item/item, mob/user)
+EXTEND_INTERACTIONS(/obj/structure/bed/bath/material_treatment, INTERACT_ITEM(null, PROC_REF(material_treatment_interaction_item)))
+
+/// Old attackby.
+/obj/structure/bed/bath/material_treatment/proc/material_treatment_interaction_item(mob/user, obj/item/item, datum/interaction/interaction)
 	if(!istype(item, /obj/item/stack/material/processed_alloy))
-		return ..()
+		return FALSE
 	if(!reagents?.total_volume)
 		to_chat(user, span_warning("The bath contains no treatment medium."))
-		return
+		return INTERACTION_HANDLED_PASS
 	var/obj/item/stack/material/processed_alloy/stock = item
 	var/datum/material_batch/batch = stock.physical_batch().copy_batch()
 	var/required_medium = max(2, stock.get_amount() * 2)
 	if(reagents.total_volume < required_medium)
 		to_chat(user, span_warning("Treating [stock.get_amount()] sheets requires at least [required_medium] units of medium."))
 		qdel(batch)
-		return
+		return INTERACTION_HANDLED_PASS
 	var/acid = reagents.get_reagent_amount(REAGENT_ID_SACID) + reagents.get_reagent_amount(REAGENT_ID_PACID)
 	var/process_succeeded
 	var/process_description
@@ -440,12 +450,13 @@ REF_OWNED(/obj/machinery/material_furnace, "chamber_air")
 	if(!process_succeeded)
 		to_chat(user, span_warning("The stock is not hot and solution-treated enough to quench. Heat-treat it in the alloy furnace first."))
 		qdel(batch)
-		return
+		return INTERACTION_HANDLED_PASS
 	var/obj/item/stack/material/processed_alloy/replacement = replace_processed_stack(stock, batch, user.drop_location())
 	user.put_in_hands(replacement)
 	reagents.remove_any(required_medium)
 	qdel(batch)
 	visible_message(span_notice("[user] [process_description] [stock] in [src]."))
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/stack/material/processed_alloy/attackby(obj/item/item, mob/user)
 	if(!istype(material, /datum/material/processed_alloy))

@@ -112,33 +112,34 @@
 								"a bottle", "a boat", "a spaceship",
 								"Nanotrasen logo", "a geometric-looking letter S", "a dodecahedron")
 
-/obj/item/firework_star/aesthetic/configurable/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
-	var/choice = rerun_prompt(user, "k119", list("message" = "What setting do you want to adjust?", "title" = "Firework Star", "choices" = list("Color", "Shape", "Nothing")), PROC_REF(attack_self), args)
+DECLARE_INTERACTIONS(/obj/item/firework_star/aesthetic/configurable, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/firework_star/aesthetic/configurable/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+	var/choice = rerun_prompt(user, "k119", list("message" = "What setting do you want to adjust?", "title" = "Firework Star", "choices" = list("Color", "Shape", "Nothing")), PROC_REF(interaction_self), args)
 	if(isnull(choice))
 		return TRUE
 	if(src.loc != user)
-		return
+		return TRUE
 
 	if(choice == "Color")
-		var/color_choice = rerun_prompt(user, "k124", list("kind" = "list", "message" = "What color would you like firework to be?", "title" = "Firework Star", "choices" = firework_colors), PROC_REF(attack_self), args)
+		var/color_choice = rerun_prompt(user, "k124", list("kind" = "list", "message" = "What color would you like firework to be?", "title" = "Firework Star", "choices" = firework_colors), PROC_REF(interaction_self), args)
 		if(isnull(color_choice))
 			return TRUE
 		if(src.loc != user)
-			return
+			return TRUE
 		if(color_choice)
 			current_color = color_choice
 
 	if(choice == "Shape")
-		var/shape_choice = rerun_prompt(user, "k131", list("kind" = "list", "message" = "What shape would you like firework to be?", "title" = "Firework Star", "choices" = firework_shapes), PROC_REF(attack_self), args)
+		var/shape_choice = rerun_prompt(user, "k131", list("kind" = "list", "message" = "What shape would you like firework to be?", "title" = "Firework Star", "choices" = firework_shapes), PROC_REF(interaction_self), args)
 		if(isnull(shape_choice))
 			return TRUE
 		if(src.loc != user)
-			return
+			return TRUE
 		if(shape_choice)
 			current_shape = shape_choice
+	return TRUE
 
 /obj/item/firework_star/aesthetic/configurable/get_firework_message()
 	var/temp_shape = current_shape

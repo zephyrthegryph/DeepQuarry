@@ -40,7 +40,14 @@
 /obj/structure/flora/tree/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/entry_item/tree_item,
+		/datum/interaction/entry_hand/ungated/tree_hand,
 	)
+
+/// Old attack_hand: search the tree for loose sticks (survival_action.dm).
+/datum/interaction/entry_hand/ungated/tree_hand
+	id = "tree_hand"
+	name = "Search for sticks"
+	effect = /obj/structure/flora/tree/proc/interaction_search_sticks
 
 /// Old attackby: harvest (delegates to flora's own harvest logic), dig up a stump, or take a hit.
 /datum/interaction/entry_item/tree_item

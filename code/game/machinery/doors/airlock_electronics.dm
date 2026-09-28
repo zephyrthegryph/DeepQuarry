@@ -24,13 +24,14 @@
 
 // TGUI migration. attack_self opens AirlockElectronics.tsx;
 // the Topic dispatch moves to tgui_act.
-/obj/item/airlock_electronics/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/airlock_electronics, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/airlock_electronics/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!ishuman(user) && !istype(user, /mob/living/silicon/robot))
-		return FALSE
+		return TRUE
 	tgui_interact(user)
+	return TRUE
 
 /obj/item/airlock_electronics/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

@@ -25,15 +25,15 @@
 
 /obj/item/generic_item/var/delay_passed = FALSE
 
-/obj/item/generic_item/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/generic_item, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/generic_item/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(activatable_hand)
 		if(!on)
 			if(delay_time && !delay_passed)
 				om_do_after(user, delay_time, src, src, PROC_REF(delayed_use), list(user))
-				return 0
+				return TRUE
 			on = 1
 			if(icon_on)
 				icon = icon_on
@@ -71,7 +71,7 @@
 						flash_time *= H.species.flash_mod
 						var/obj/item/organ/internal/eyes/E = H.internal_organs_by_name[O_EYES]
 						if(!E)
-							return
+							return TRUE
 						if(E.is_bruised() && prob(E.damage + 50))
 							H.flash_eyes()
 							H.injure(INJURY_BURN, rand(1, 5), E, src, flags = INJURE_SILENT)
@@ -88,7 +88,7 @@
 		else if(togglable)
 			if(delay_time && !delay_passed)
 				om_do_after(user, delay_time, src, src, PROC_REF(delayed_use), list(user))
-				return 0
+				return TRUE
 			on = 0
 			icon_state = icon_state_off
 			if(icon_off)
@@ -98,6 +98,7 @@
 			if(user)
 				user.visible_message(span_notice("[text_deactivated]"))
 			update_icon()
+	return TRUE
 
 ADMIN_VERB(generic_item, R_SPAWN, "Spawn Generic Item", "Spawn a customisable item with a range of different options.", ADMIN_CATEGORY_FUN_EVENT_KIT)
 	var/s_activatable = 0

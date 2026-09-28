@@ -324,7 +324,10 @@
 		if(prob(10))
 			L.status_at_least(EFFECT_STUNNED, 2)
 
-/obj/item/holder/attackby(obj/item/W as obj, mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/holder, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/holder/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	// ITION: MicroHandCrush
 	if(W == src && IS_HARMING(user))
 		for(var/mob/living/M in src.contents)
@@ -337,6 +340,7 @@
 	// ITION: MicroHandCrush END
 	for(var/mob/M in src.contents)
 		M.attackby(W,user)
+	return INTERACTION_HANDLED_PASS
 
 //Mob procs and vars for scooping up
 /mob/living/var/holder_type

@@ -72,10 +72,10 @@
 	return
 
 
-/obj/item/evidencebag/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/evidencebag, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/evidencebag/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(LAZYLEN(contents))
 		var/obj/item/I = contents[1]
 		user.visible_message("[user] takes [I] out of [src]", "You take [I] out of [src].",\
@@ -91,7 +91,7 @@
 	else
 		to_chat(user, "[src] is empty.")
 		icon_state = "evidenceobj"
-	return
+	return TRUE
 
 /obj/item/evidencebag/examine(mob/user)
 	. = ..()

@@ -321,7 +321,18 @@
 
 /obj/item/attack_hand(mob/living/user as mob)
 	if (!user) return
-	..()
+	// A gate or a converted hand interaction (I7) answered the touch: no pickup, as the old override's early return.
+	if(..())
+		return TRUE
+	return hand_pickup(user)
+
+/**
+ * An empty-hand touch that no interaction answered: pick the item up (or use it, when
+ * anchored). Reactions to being picked up by hand override it as `. = ..()` then their
+ * own work, as the old `attack_hand() { . = ..(); ... }` overrides did: they are not
+ * interactions of their own.
+ */
+/obj/item/proc/hand_pickup(mob/living/user)
 	if(anchored) // Start
 		if(hascall(src, "attack_self"))
 			return src.attack_self(user)
@@ -384,6 +395,9 @@
 
 /obj/item/attackby(obj/item/W as obj, mob/user as mob)
 	. = ..()
+	// A converted item interaction (I7) answered: nothing else, as the old override's early return.
+	if(.)
+		return
 	if(istype(W, /obj/item/storage))
 		var/obj/item/storage/S = W
 		if(S.use_to_pickup)

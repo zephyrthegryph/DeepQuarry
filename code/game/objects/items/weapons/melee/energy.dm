@@ -145,7 +145,13 @@
 			return ITEM_INTERACT_FAILURE
 	return ..()
 
-/obj/item/melee/energy/attackby(obj/item/W, mob/user)
+DECLARE_INTERACTIONS(/obj/item/melee/energy, \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+)
+
+/// Old attackby.
+/obj/item/melee/energy/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(use_cell)
 		if(istype(W, cell_type))
 			if(!bcell)
@@ -156,7 +162,7 @@
 				update_icon()
 			else
 				to_chat(user, span_notice("[src] already has a cell."))
-	return ..()
+	return FALSE
 
 /obj/item/melee/energy/multitool_act(mob/user, obj/item/tool)
 	if(!colorable || active)
@@ -197,19 +203,21 @@
 		H.update_inv_l_hand()
 		H.update_inv_r_hand()
 
-/obj/item/melee/energy/click_alt(mob/living/user)
+/// Old click_alt.
+/obj/item/melee/energy/proc/interaction_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(!colorable) //checks if is not colorable
-		return
+		return TRUE
 	if(!in_range(src, user))	//Basic checks to prevent abuse
-		return
+		return TRUE
 	if(user.incapacitated() || !istype(user))
 		to_chat(user, span_warning("You can't do that right now!"))
-		return
+		return TRUE
 
 	om_prompt_sequence(src, user, list(
 		list("key" = "sure", "message" = "Are you sure you want to recolor your blade?", "title" = "Confirm Recolor", "choices" = list("Yes", "No")),
 		PROC_REF(ask_blade_color),
 	), PROC_REF(blade_recolored), list("requires" = PROMPT_ADJACENT))
+	return TRUE
 
 /obj/item/melee/energy/proc/ask_blade_color(mob/user, datum/om/prompt/ask)
 	if(ask.get("sure") == "Yes")

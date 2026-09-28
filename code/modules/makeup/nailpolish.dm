@@ -25,13 +25,14 @@
 	desc = "<font color='[colour]'>Nail polish,</font> " + initial(desc)
 	update_icon()
 
-/obj/item/nailpolish/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/nailpolish, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/nailpolish/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	open = !open
 	to_chat(user, span_notice("You [open ? "open" : "close"] \the [src]."))
 	update_icon()
+	return TRUE
 
 /obj/item/nailpolish/update_icon()
 	. = ..()
@@ -117,13 +118,14 @@
 	icon_state = "nailpolishremover"
 	var/open = FALSE
 
-/obj/item/nailpolish_remover/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/nailpolish_remover, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/nailpolish_remover/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	open = !open
 	to_chat(user, span_notice("You [open ? "open" : "close"] \the [src]."))
 	update_icon()
+	return TRUE
 
 /obj/item/nailpolish_remover/update_icon()
 	. = ..()

@@ -10,13 +10,14 @@
 	icon = 'icons/obj/hoists.dmi'
 	icon_state = "hoist_case"
 
-/obj/item/hoist_kit/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/hoist_kit, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/hoist_kit/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	new /obj/structure/hoist (get_turf(user), user.dir)
 	user.visible_message(span_warning("[user] deploys the hoist kit!"), span_notice("You deploy the hoist kit!"), span_notice("You hear the sound of parts snapping into place."))
 	consume(src, user)
+	return TRUE
 
 /obj/effect/hoist_hook
 	name = "hoist clamp"
@@ -156,32 +157,35 @@ REF_OWNED(/obj/structure/hoist, "source_hook")
 /obj/structure/hoist
 	silicon_use = ROBOT_USE_HAND
 
-/obj/structure/hoist/attack_hand(mob/living/user)
+DECLARE_INTERACTIONS(/obj/structure/hoist, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/structure/hoist/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if (!(ishuman(user) || issilicon(user)))
-		return
+		return TRUE
 
 	if (user.incapacitated())
 		to_chat(user, span_notice("You can't do that while incapacitated."))
-		return
+		return TRUE
 
 	if (!user.IsAdvancedToolUser())
 		to_chat(user, span_notice("You stare cluelessly at \the [src]."))
-		return
+		return TRUE
 
 	if(broken)
 		to_chat(user, span_warning("The hoist is broken!"))
-		return
+		return TRUE
 	var/can = can_move_dir(movedir)
 	var/movtext = movedir == UP ? "raise" : "lower"
 	if (!can) // If you can't...
 		movedir = movedir == UP ? DOWN : UP // switch directions!
 		to_chat(user, span_notice("You switch the direction of the pulley."))
-		return
+		return TRUE
 
 	if (!hoistee)
 		user.visible_message(span_notice("[user] begins to [movtext] the clamp."), span_notice("You begin to [movtext] the clamp."), span_notice("You hear the sound of a crank."))
 		move_dir(movedir, 0)
-		return
+		return TRUE
 
 	check_consistency()
 
@@ -195,6 +199,7 @@ REF_OWNED(/obj/structure/hoist, "source_hook")
 
 	user.visible_message(span_notice("[user] begins to [movtext] \the [hoistee]!"), span_notice("You begin to [movtext] \the [hoistee]!"), span_notice("You hear the sound of a crank."))
 	om_do_after(user, (1 SECONDS) * size / 4, src, src, PROC_REF(move_dir), list(movedir, 1))
+	return TRUE
 
 /obj/structure/hoist/proc/collapse_kit()
 	replace_with(src, /obj/item/hoist_kit)

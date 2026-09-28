@@ -34,22 +34,31 @@
 	/// Set TRUE once a scanner logs its data; the survey objective polls this.
 	var/scanned = FALSE
 
-/obj/structure/expedition_survey_beacon/attack_hand(mob/user)
+DECLARE_INTERACTIONS(/obj/structure/expedition_survey_beacon, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/structure/expedition_survey_beacon/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_warning("[src] needs a survey scanner or analyzer to log its readings — your bare hands won't cut it."))
+	return TRUE
 
 // Scanned with a survey scanner or any handheld analyzer.
-/obj/structure/expedition_survey_beacon/attackby(obj/item/W, mob/user)
+/// Old attackby.
+/obj/structure/expedition_survey_beacon/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(!istype(W, /obj/item/survey_scanner) && !istype(W, /obj/item/analyzer))
-		return ..()
+		return FALSE
 	if(scanned)
 		to_chat(user, span_notice("[src] has already been logged."))
-		return
+		return INTERACTION_HANDLED_PASS
 	user.visible_message(
 		span_notice("[user] sweeps [W] across [src]."),
 		span_notice("You begin logging [src]'s readings with [W]...")
 	)
 	playsound(src, 'sound/items/Deconstruct.ogg', 30, 1)
 	om_do_after(user, 3 SECONDS, src, src, PROC_REF(log_readings_done), list(W, user))
+	return INTERACTION_HANDLED_PASS
 
 /obj/structure/expedition_survey_beacon/proc/log_readings_done(obj/item/W, mob/user)
 	if(scanned)
@@ -90,15 +99,18 @@
 	new /obj/effect/decal/cleanable/ash(get_turf(src))
 	return ..()
 
-/obj/structure/expedition_demo_target/attackby(obj/item/W, mob/user)
+DECLARE_INTERACTIONS(/obj/structure/expedition_demo_target, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/structure/expedition_demo_target/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(!istype(W))
-		return ..()
+		return FALSE
 	user.setClickCooldown(user.get_attack_speed(W))
 	if(W.obj_damage_type())
 		user.do_attack_animation(src)
 		receive_weapon_hit(W, user, silent = FALSE)
-		return
-	return ..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
 /obj/structure/expedition_demo_target/ex_act(severity)
 	switch(severity)

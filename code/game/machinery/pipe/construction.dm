@@ -151,12 +151,16 @@ Buildable meters
 	if(dir in GLOB.cornerdirs)
 		set_dir(turn(dir, 45))
 
-/obj/item/pipe/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/pipe, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/pipe/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	set_dir(turn(dir,-90))
 	fixdir()
+	return TRUE
 
 //called when a turf is attacked with a pipe item
 /obj/item/pipe/afterattack(turf/simulated/floor/target, mob/user, proximity)
@@ -166,22 +170,23 @@ Buildable meters
 	else
 		return ..()
 
-/obj/item/pipe/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby.
+/obj/item/pipe/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/stack/material))
 		var/obj/item/stack/material/stock = W
 		if(engineered_material_id)
 			to_chat(user, span_warning("[src] already has a material liner and shell."))
-			return
+			return INTERACTION_HANDLED_PASS
 		if(stock.get_amount() < 1 || !stock.material)
-			return
+			return INTERACTION_HANDLED_PASS
 		var/datum/material/material = stock.material
 		engineered_material_id = material.name
 		apply_material_construction(list(MATERIAL_ROLE_STRUCTURE = material.name, MATERIAL_ROLE_LINER = material.name), /datum/material_template/pressure, SHEET_MATERIAL_AMOUNT)
 		stock.use(1)
 		color = material.icon_colour
 		to_chat(user, span_notice("You form [material.display_name] around [src]. Its installed geometry will determine pressure strength, heat transfer, and chemical exposure."))
-		return
-	return ..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
 /obj/item/pipe/wrench_act(mob/user, obj/item/W)
 	if(!isturf(loc))

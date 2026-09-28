@@ -91,13 +91,11 @@ REF_OWNED(/obj/item/perfect_tele, list("power_source", "spk"))
 		I.add_overlay(radial_plus)
 		LAZYSET(radial_images, "New Beacon", I)
 
-/obj/item/perfect_tele/get_interactions()
-	var/static/list/L = list(
-		INTERACT_HAND(null, PROC_REF(interaction_hand)),
-		INTERACT_USE(null, PROC_REF(interaction_self)),
-		INTERACT_ITEM(null, PROC_REF(interaction_item)),
-	)
-	return L
+DECLARE_INTERACTIONS(/obj/item/perfect_tele, \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
 
 /obj/item/perfect_tele/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.get_inactive_hand() == src)
@@ -414,12 +412,10 @@ This device records all warnings given and teleport events for admin review in c
 	var/tele_network = null
 	flags = NOBLUDGEON
 
-/obj/item/perfect_tele_beacon/get_interactions()
-	var/static/list/L = list(
-		INTERACT_HAND(null, PROC_REF(interaction_hand)),
-		INTERACT_USE(null, PROC_REF(interaction_self)),
-	)
-	return L
+DECLARE_INTERACTIONS(/obj/item/perfect_tele_beacon, \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+)
 
 /obj/item/perfect_tele_beacon/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if((user.ckey != creator) && !(user.ckey in warned_users))

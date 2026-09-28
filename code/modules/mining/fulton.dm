@@ -14,10 +14,10 @@
 	. = ..()
 	. += "It has [uses_left] use\s remaining."
 
-/obj/item/extraction_pack/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/extraction_pack, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/extraction_pack/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/list/possible_beacons = list()
 	for(var/obj/structure/extraction_point/EP as anything in REGISTRY_MEMBERS(REGISTRY_EXTRACTION_BEACONS))
 		if(EP.beacon_network in beacon_networks)
@@ -25,20 +25,21 @@
 
 	if(!possible_beacons.len)
 		to_chat(user, "There are no extraction beacons in existence!")
-		return
+		return TRUE
 
 	else
 		var/A
 
-		var/_answer_k33 = rerun_prompt(user, "k33", list("kind" = "list", "message" = "Select a beacon to connect to", "title" = "Balloon Extraction Pack", "choices" = possible_beacons), PROC_REF(attack_self), args)
+		var/_answer_k33 = rerun_prompt(user, "k33", list("kind" = "list", "message" = "Select a beacon to connect to", "title" = "Balloon Extraction Pack", "choices" = possible_beacons), PROC_REF(interaction_self), args)
 		if(isnull(_answer_k33))
 			return TRUE
 		A = _answer_k33
 
 		if(!A)
-			return
+			return TRUE
 		beacon = A
 		to_chat(user, "You link the extraction pack to the beacon system.")
+	return TRUE
 
 /obj/item/extraction_pack/afterattack(atom/movable/A, mob/living/carbon/human/user, flag, params)
 	if(!beacon)
@@ -151,15 +152,16 @@
 	icon = 'icons/obj/fulton.dmi'
 	icon_state = "extraction_pointoff"
 
-/obj/item/fulton_core/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/fulton_core, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/fulton_core/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/turf/T = get_turf(user)
 	if(!T)
 		to_chat(user, span_warning("You must be standing on solid ground to deploy an extraction beacon!"))
-		return
+		return TRUE
 	om_do_after(user, 1.5 SECONDS, user, src, PROC_REF(deploy_done), list(user))
+	return TRUE
 
 /obj/item/fulton_core/proc/deploy_done(mob/user)
 	replace_with(src, /obj/structure/extraction_point)

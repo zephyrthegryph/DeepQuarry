@@ -63,14 +63,15 @@
 	if(get_dist(user, src) == 0)
 		. += "[src] has [src.reagents.total_volume] units of foam left!"
 
-/obj/item/extinguisher/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/extinguisher, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/extinguisher/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	safety = !safety
 	icon_state = "[sprite_name][!safety]"
 	desc = "The safety is [safety ? "on" : "off"]."
 	to_chat(user, "The safety is [safety ? "on" : "off"].")
+	return TRUE
 
 /obj/item/extinguisher/proc/propel_object(obj/O, mob/user, movementdirection)
 	if(O.anchored) return

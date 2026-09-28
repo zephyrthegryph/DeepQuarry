@@ -6,12 +6,10 @@
 	w_class = ITEMSIZE_SMALL
 	var/named
 
-/obj/item/text_to_speech/get_interactions()
-	var/static/list/L = list(
-		INTERACT_USE(null, PROC_REF(interaction_self)),
-		INTERACT_ALT(null, PROC_REF(interaction_alt)),
-	)
-	return L
+DECLARE_INTERACTIONS(/obj/item/text_to_speech, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+)
 
 /obj/item/text_to_speech/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.incapacitated(INCAPACITATION_DISABLED))

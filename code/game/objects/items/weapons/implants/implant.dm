@@ -77,17 +77,21 @@
 		known_implant = TRUE
 		post_implant(H)
 
-/obj/item/implant/attackby(obj/item/I, mob/user)
+DECLARE_INTERACTIONS(/obj/item/implant, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/implant/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/implanter))
 		var/obj/item/implanter/implanter = I
 		if(implanter.imp)
-			return // It's full.
+			return INTERACTION_HANDLED_PASS
 		user.drop_from_inventory(src)
 		forceMove(implanter)
 		implanter.imp = src
 		implanter.update()
 	else
-		..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 //////////////////////////////
 //	Tracking Implant

@@ -75,12 +75,16 @@
 	update_icon()
 	..()
 
-/obj/item/gun/launcher/crossbow/bow/attack_hand(mob/living/user)
+DECLARE_INTERACTIONS(/obj/item/gun/launcher/crossbow/bow, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/item/gun/launcher/crossbow/bow/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(loc == user && bolt && !drawn)
 		user.visible_message(span_infoplain(span_bold("[user]") + " removes [bolt] from [src]."),span_infoplain("You remove [bolt] from [src]."))
 		unload(user)
 	else
-		return ..()
+		return FALSE
+	return TRUE
 
 /obj/item/gun/launcher/crossbow/bow/attack_self(mob/living/user)
 	. = ..(user)

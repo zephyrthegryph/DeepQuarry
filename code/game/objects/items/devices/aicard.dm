@@ -22,9 +22,7 @@
 		to_chat(user, span_infoplain(span_bold("ERROR ERROR ERROR")))
 		return ITEM_INTERACT_SUCCESS
 
-/obj/item/aicard/get_interactions()
-	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))
-	return L
+DECLARE_INTERACTIONS(/obj/item/aicard, INTERACT_USE(null, PROC_REF(interaction_self)))
 
 /// tgui_interact()'s own signature doesn't match the (actor, held, interaction) effect
 /// contract (its 2nd/3rd args are the UI and its state), so this stays a thin wrapper.

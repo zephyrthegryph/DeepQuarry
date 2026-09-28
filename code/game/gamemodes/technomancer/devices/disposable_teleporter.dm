@@ -25,15 +25,16 @@
 	. = ..()
 	. += "[uses] uses remaining."
 
-/obj/item/disposable_teleporter/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/disposable_teleporter, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/disposable_teleporter/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!uses)
 		to_chat(user, span_danger("\The [src] has ran out of uses, and is now useless to you!"))
-		return
+		return TRUE
 	else
 		om_prompt(src, user, list("kind" = "list", "message" = "Area to teleport to", "title" = "Teleportation", "choices" = GLOB.teleportlocs, "requires" = PROMPT_HELD), PROC_REF(teleport_area_chosen))
+	return TRUE
 
 /obj/item/disposable_teleporter/proc/teleport_area_chosen(mob/user, area_wanted, datum/om/prompt/ask)
 	if(!uses)

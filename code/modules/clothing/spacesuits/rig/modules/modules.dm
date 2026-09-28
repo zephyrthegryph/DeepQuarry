@@ -65,37 +65,40 @@
 		if(2)
 			. += "It is almost completely destroyed."
 
-/obj/item/rig_module/attackby(obj/item/W as obj, mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/rig_module/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 
 	if(istype(W,/obj/item/stack/nanopaste))
 
 		if(damage == 0)
 			to_chat(user, "There is no damage to mend.")
-			return
+			return INTERACTION_HANDLED_PASS
 
 		to_chat(user, "You start mending the damaged portions of \the [src]...")
 		om_do_after(user, 3 SECONDS, src, src, PROC_REF(mend_with_paste), list(user, W))
-		return
+		return INTERACTION_HANDLED_PASS
 
 	else if(istype(W,/obj/item/stack/cable_coil))
 
 		switch(damage)
 			if(0)
 				to_chat(user, "There is no damage to mend.")
-				return
+				return INTERACTION_HANDLED_PASS
 			if(2)
 				to_chat(user, "There is no damage that you are capable of mending with such crude tools.")
-				return
+				return INTERACTION_HANDLED_PASS
 
 		var/obj/item/stack/cable_coil/cable = W
 		if(cable.get_amount() < 5)
 			to_chat(user, "You need five units of cable to repair \the [src].")
-			return
+			return INTERACTION_HANDLED_PASS
 
 		to_chat(user, "You start mending the damaged portions of \the [src]...")
 		om_do_after(user, 3 SECONDS, src, src, PROC_REF(mend_with_cable), list(user, cable))
-		return
-	..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
 /obj/item/rig_module/proc/mend_with_paste(mob/user, obj/item/stack/nanopaste/paste)
 	damage = 0

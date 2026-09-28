@@ -49,9 +49,7 @@
 	laser_act(M, user)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/laser_pointer/get_interactions()
-	var/static/list/L = list(INTERACT_INSERT(/obj/item/stock_parts/micro_laser, PROC_REF(interaction_item), "Install"))
-	return L
+DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_parts/micro_laser, PROC_REF(interaction_item), "Install"))
 
 /obj/item/laser_pointer/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(!diode)

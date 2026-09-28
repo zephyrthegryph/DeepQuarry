@@ -95,15 +95,18 @@
 		padding_material.place_sheet(get_turf(src), 1)
 	qdel(src)
 
-/obj/item/stool/attackby(obj/item/W as obj, mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/stool, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/stool/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W,/obj/item/stack))
 		if(padding_material)
 			to_chat(user, "\The [src] is already padded.")
-			return
+			return INTERACTION_HANDLED_PASS
 		var/obj/item/stack/C = W
 		if(C.get_amount() < 1) // How??
 			consume(C, user)
-			return
+			return INTERACTION_HANDLED_PASS
 		var/padding_type
 		//CHOMPstation Start: making carpets different and not just the boring basic red no matter carpet type, consider merging material variables at stack level in future - Jack
 		if(istype(W,/obj/item/stack/tile/carpet))
@@ -117,16 +120,16 @@
 				padding_type = "[M.material.name]"
 		if(!padding_type)
 			to_chat(user, "You cannot pad \the [src] with that.")
-			return
+			return INTERACTION_HANDLED_PASS
 		C.use(1)
 		if(!istype(src.loc, /turf))
 			user.drop_from_inventory(src)
 			src.forceMove(get_turf(src))
 		to_chat(user, "You add padding to \the [src].")
 		add_padding(padding_type)
-		return
+		return INTERACTION_HANDLED_PASS
 	else
-		..()
+		return FALSE
 
 /obj/item/stool/wrench_act(mob/user, obj/item/W)
 	playsound(src, W.usesound, 50, 1)

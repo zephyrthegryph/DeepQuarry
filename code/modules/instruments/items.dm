@@ -33,14 +33,15 @@ REF_OWNED(/obj/item/instrument, "song")
 		return FALSE
 	return TRUE
 
-/obj/item/instrument/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/instrument, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/instrument/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!user.IsAdvancedToolUser())
-		return
+		return TRUE
 
 	tgui_interact(user)
+	return TRUE
 
 /obj/item/instrument/tgui_interact(mob/user, datum/tgui/ui)
 	return song.tgui_interact(user)

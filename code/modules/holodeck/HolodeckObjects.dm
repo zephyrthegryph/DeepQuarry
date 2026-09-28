@@ -175,9 +175,12 @@
 
 	return TRUE
 
-/obj/structure/window/reinforced/holowindow/attackby(obj/item/W as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/structure/window/reinforced/holowindow, INTERACT_ITEM(null, PROC_REF(holowindow_interaction_item)))
+
+/// Old attackby: slam a grabbed mob against it, or take a hit; then the window's own handling.
+/obj/structure/window/reinforced/holowindow/proc/holowindow_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(!istype(W))
-		return//I really wish I did not need this
+		return INTERACTION_HANDLED_PASS
 	if (istype(W, /obj/item/grab) && get_dist(src,user)<2)
 		var/obj/item/grab/G = W
 		if(isliving(G?.grab_target()))
@@ -200,9 +203,9 @@
 					M.status_at_least(EFFECT_WEAKENED, 5)
 					M.injure(INJURY_PAIN, 20, null, src)
 					hit(50)
-			return
+			return INTERACTION_HANDLED_PASS
 
-	if(W.flags & NOBLUDGEON) return
+	if(W.flags & NOBLUDGEON) return INTERACTION_HANDLED_PASS
 
 	if(W.obj_damage_type())
 		hit(W.force)
@@ -212,8 +215,7 @@
 			step(src, get_dir(user, src))
 	else
 		playsound(src, 'sound/effects/Glasshit.ogg', 75, TRUE)
-	..()
-	return
+	return FALSE
 
 /obj/structure/window/reinforced/holowindow/screwdriver_act(mob/user, obj/item/tool)
 	to_chat(user, span_notice("It's a holowindow, you can't unfasten it!"))
@@ -345,10 +347,13 @@
 		return TRUE
 	return FALSE
 
-/obj/item/holo/esword/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/holo/esword, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/holo/esword/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	active = !active
 	if (active)
 		force = 30
@@ -365,9 +370,10 @@
 
 	update_icon()
 	add_fingerprint(user)
-	return
+	return TRUE
 
-/obj/item/holo/esword/attackby(obj/item/W, mob/user)
+/// Old attackby.
+/obj/item/holo/esword/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(W.has_tool_quality(TOOL_MULTITOOL) && !active)
 		if(!rainbow)
 			rainbow = TRUE
@@ -375,7 +381,7 @@
 			rainbow = FALSE
 		to_chat(user, span_notice("You manipulate the color controller in [src]."))
 		update_icon()
-	return ..()
+	return FALSE
 
 /obj/item/holo/esword/update_icon()
 	. = ..()
@@ -411,22 +417,26 @@
 	unacidable = TRUE
 	throwpass = 1
 
-/obj/structure/holohoop/attackby(obj/item/W as obj, mob/user as mob)
+DECLARE_INTERACTIONS(/obj/structure/holohoop, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/structure/holohoop/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if (istype(W, /obj/item/grab) && get_dist(src,user)<2)
 		var/obj/item/grab/G = W
 		if(G.state<2)
 			to_chat(user, span_warning("You need a better grip to do that!"))
-			return
+			return INTERACTION_HANDLED_PASS
 		var/mob/grabbed = G?.grab_target()
 		grabbed.forceMove(src.loc)
 		grabbed.status_at_least(EFFECT_WEAKENED, 5)
 		visible_message(span_warning("[G?.grab_assailant()] dunks [grabbed] into the [src]!"), 3)
 		consume(W, user)
-		return
+		return INTERACTION_HANDLED_PASS
 	else if (istype(W, /obj/item) && get_dist(src,user)<2)
 		user.drop_item(src.loc)
 		visible_message(span_notice("[user] dunks [W] into the [src]!"), 3)
-		return
+		return INTERACTION_HANDLED_PASS
+	return INTERACTION_HANDLED_PASS
 
 /obj/structure/holohoop/CanPass(atom/movable/mover, turf/target)
 	if (istype(mover,/obj/item) && mover.throwing)

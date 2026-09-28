@@ -63,10 +63,13 @@ REF_OWNED_LIST(/obj/item/reagent_containers/syringe, "viruses")
 	..()
 	update_icon()
 
-/obj/item/reagent_containers/syringe/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/reagent_containers/syringe, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/reagent_containers/syringe/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	switch(mode)
 		if(SYRINGE_CAPPED)
 			mode = SYRINGE_DRAW
@@ -76,15 +79,18 @@ REF_OWNED_LIST(/obj/item/reagent_containers/syringe, "viruses")
 		if(SYRINGE_INJECT)
 			mode = SYRINGE_DRAW
 		if(SYRINGE_BROKEN)
-			return
+			return TRUE
+	update_icon()
+	return TRUE
+
+/// Old attack_hand: runs after the touch tried to pick it up (hand_pickup()).
+/obj/item/reagent_containers/syringe/hand_pickup(mob/user)
+	. = ..()
 	update_icon()
 
-/obj/item/reagent_containers/syringe/attack_hand()
-	..()
-	update_icon()
-
-/obj/item/reagent_containers/syringe/attackby(obj/item/I as obj, mob/user as mob)
-	return
+/// Old attackby.
+/obj/item/reagent_containers/syringe/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/reagent_containers/syringe/extrapolator_act(mob/living/user, obj/item/extrapolator/extrapolator, dry_run)
 	. = ..()

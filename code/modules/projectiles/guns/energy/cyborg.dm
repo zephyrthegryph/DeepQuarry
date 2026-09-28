@@ -176,13 +176,13 @@
 	defend_chance = 5
 	attack_verb = list("nibbled", "bit", "gnawed", "chomped", "nommed")
 	var/emagged = 0
-/obj/item/melee/robotic/jaws/small/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/melee/robotic/jaws/small, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/melee/robotic/jaws/small/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/living/silicon/robot/R = user
 	if(!istype(R))
-		return
+		return TRUE
 	if(R.emagged || R.emag_items)
 		emagged = !emagged
 		if(R.sprite_datum?.dogborg_sprites)
@@ -224,6 +224,7 @@
 				armor_penetration = 0
 				defend_chance = 5
 		update_icon()
+	return TRUE
 
 
 /obj/item/melee/robotic/borg_combat_shocker //Like a baton, but is always on.
@@ -309,10 +310,13 @@
 	var/active = 0 //Off by default.
 	var/lcolor = "#38e541"
 
-/obj/item/melee/robotic/blade/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/melee/robotic/blade, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+)
+
+/// Old attack_self.
+/obj/item/melee/robotic/blade/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(active) //turning off
 		playsound(src, 'sound/weapons/saberoff.ogg', 50, 1)
 		force = 0
@@ -322,6 +326,7 @@
 	active = !active
 	to_chat(user, span_notice("[src] is now [active ? "on" : "off"]."))
 	update_icon()
+	return TRUE
 
 /obj/item/melee/robotic/blade/update_icon()
 	cut_overlays()		//So that it doesn't keep stacking overlays non-stop on top of each other
@@ -339,21 +344,23 @@
 	else
 		set_light(0)
 
-/obj/item/melee/robotic/blade/click_alt(mob/living/user)
+/// Old click_alt.
+/obj/item/melee/robotic/blade/proc/interaction_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(!in_range(src, user))	//Basic checks to prevent abuse
-		return
+		return TRUE
 	if(user.incapacitated() || !istype(user))
 		to_chat(user, span_warning("You can't do that right now!"))
-		return
+		return TRUE
 
-	var/_answer_k349 = rerun_prompt(user, "k349", list("message" = "Are you sure you want to recolor your blade?", "title" = "Confirm Recolor", "choices" = list("Yes", "No")), TYPE_PROC_REF(/atom, click_alt), args)
+	var/_answer_k349 = rerun_prompt(user, "k349", list("message" = "Are you sure you want to recolor your blade?", "title" = "Confirm Recolor", "choices" = list("Yes", "No")), PROC_REF(interaction_alt), args)
 	if(isnull(_answer_k349))
-		return
+		return TRUE
 	if(_answer_k349 == "Yes")
 		var/energy_color_input = tgui_color_picker(user,"","Choose Energy Color",lcolor)
 		if(energy_color_input)
 			lcolor = sanitize_hexcolor(energy_color_input)
 		update_icon()
+	return TRUE
 
 /obj/item/melee/robotic/blade/examine(mob/user)
 	. = ..()
@@ -450,20 +457,27 @@
 	else
 		set_light(0)
 
-/obj/item/melee/robotic/baton/attack_hand(mob/user as mob)
-	return
+DECLARE_INTERACTIONS(/obj/item/melee/robotic/baton, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
 
-/obj/item/melee/robotic/baton/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_hand.
+/obj/item/melee/robotic/baton/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	return TRUE
+
+/// Old attack_self.
+/obj/item/melee/robotic/baton/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	status = !status
 	to_chat(user, span_notice("[src] is now [status ? "on" : "off"]."))
 	playsound(src, "sparks", 75, 1, -1)
 	update_icon()
+	return TRUE
 
-/obj/item/melee/robotic/baton/attackby(obj/item/W, mob/user)
-	return
+/// Old attackby.
+/obj/item/melee/robotic/baton/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/melee/robotic/baton/proc/deductcharge()
 	var/mob/living/silicon/robot/R = loc

@@ -57,12 +57,21 @@
 /// Something dragged onto the target (held is the dragged atom): /atom/proc/MouseDrop_T.
 #define INTERACTION_ENTRY_DRAG "drag"
 
+/// An entry effect's return: it handled the input but didn't use it up, as an old handler that
+/// returned nothing without calling ..(): attackby's afterattack and drag's defaults still follow.
+#define INTERACTION_HANDLED_PASS "handled_pass"
+/// run_interaction_entry()'s `result` also gets this when the answering effect returned INTERACTION_HANDLED_PASS.
+#define INTERACTION_TRY_PASS "pass"
 /// run_interaction_entry(): the entry's gate (hand_gate()) stopped the input before any interaction.
 #define INTERACTION_GATE_STOPPED "gate_stopped"
 
 /// Requirement: in reach. Adjacent, or a silicon the target lets use it remotely (silicon_use),
 /// or already dispatched by the legacy entry (which decided reach itself: telekinesis, the AI).
 #define REQ_INTERACTION_REACH REQ_PROC(/proc/dq_interaction_reach, "too far away")
+
+/// Requirement: a held item's self-use. In hand; or already dispatched by attack_self(), whose
+/// callers decided that themselves (a worn item's action button, an anchored item's touch).
+#define REQ_SELF_USE_REACH REQ_PROC(/proc/dq_interaction_self_reach, "not in your hand")
 
 /// use_tool() and pay_cost(): the job is a timed action that has started; its on_done runs later.
 #define USE_TOOL_PENDING 2
@@ -88,11 +97,22 @@
 #define INTERACT_KIND_ITEM "item"
 #define INTERACT_KIND_INSERT "insert"
 #define INTERACT_KIND_ALT "alt"
+#define INTERACT_KIND_HAND_UNGATED "hand_ungated"
+#define INTERACT_KIND_DRAG "drag"
+#define INTERACT_KIND_SELF "self"
 
 /// Self-use (old attack_self): the held item used on itself. `effect(actor, held, interaction)`.
 #define INTERACT_USE(name, effect, requires...) list(INTERACT_KIND_USE, name, effect, list(requires))
+/// Self-use whose effect's return counts (old attack_self that fell through to its parent's with `return ..()`):
+/// FALSE moves on to the next self-use candidate (an ancestor's). `effect(actor, held, interaction)`.
+#define INTERACT_SELF(name, effect, requires...) list(INTERACT_KIND_SELF, name, effect, list(requires))
 /// Touched with an empty hand, or a silicon's Use (old attack_hand). `effect(actor, held, interaction)`.
 #define INTERACT_HAND(name, effect, requires...) list(INTERACT_KIND_HAND, name, effect, list(requires))
+/// Touched with an empty hand, ahead of the type's hand_gate() (old attack_hand that never called ..():
+/// no signal, no unbuckling, no structure smash first). `effect(actor, held, interaction)`.
+#define INTERACT_HAND_UNGATED(name, effect, requires...) list(INTERACT_KIND_HAND_UNGATED, name, effect, list(requires))
+/// Something dragged onto the target (old MouseDrop_T). `effect(actor, dropped, interaction)`.
+#define INTERACT_DRAG(name, effect, requires...) list(INTERACT_KIND_DRAG, name, effect, list(requires))
 /// Used with any item (old attackby, no type check). `effect(actor, item, interaction)` returns
 /// FALSE to fall through to the next candidate, as an old attackby fell through to ..().
 #define INTERACT_ITEM(name, effect, requires...) list(INTERACT_KIND_ITEM, name, effect, list(requires))
@@ -101,3 +121,55 @@
 /// Used with an item of `held_type` (old attackby with an istype(W, held_type) guard at the top).
 /// name may be null to derive one ("Insert " + the item type's article+name).
 #define INTERACT_INSERT(held_type, effect, name, requires...) list(INTERACT_KIND_INSERT, name, effect, list(requires), held_type)
+
+/**
+ * Declares a type's compact interaction specs: generates its get_interactions()
+ * getter returning a proc-local `var/static/list` (allocated once, ever; AGENTS.md §3a).
+ *
+ *   DECLARE_INTERACTIONS(/obj/item/binoculars, \
+ *   	INTERACT_USE("Zoom", PROC_REF(zoom)), \
+ *   	INTERACT_ALT(null, PROC_REF(eject)), \
+ *   )
+ *
+ * A multi-line call needs a trailing backslash on each line (DM does not continue a
+ * macro call across lines at its top paren depth). PROC_REF() inside the specs resolves against `T`, since the getter is defined on it.
+ * Like any get_interactions() override it replaces an ancestor's specs; to add to
+ * them, override declare_interactions() and use dq_interaction_from_spec() (§5a).
+ */
+#define DECLARE_INTERACTIONS(T, specs...) ##T/get_interactions(){\
+	var/static/list/dq_interaction_specs = list(specs);\
+	return dq_interaction_specs;\
+}
+
+/**
+ * Like DECLARE_INTERACTIONS, but adds to the specs the type inherits instead of
+ * replacing them: generates a declare_interactions() override that adds its own
+ * specs first (most specific first, as an override chain ran) and then calls ..().
+ * Use it on a subtype of a type that declares interactions of its own.
+ */
+#define EXTEND_INTERACTIONS(T, specs...) ##T/declare_interactions(list/into){\
+	var/static/list/dq_interaction_specs = list(specs);\
+	for(var/dq_spec in dq_interaction_specs){\
+		into += dq_interaction_from_spec(type, dq_spec);\
+	}\
+	..();\
+}
+
+// Hostile and peaceful compact shapes (combat mode, §12). They replace a legacy
+// handler's IS_HARMING()/IS_HELPING() gate: the interaction is only *meant* while
+// the actor's Use has that stance (an offered_when clause), so the other stance
+// falls through to the next candidate as the old `return ..()` did. Hostile ones
+// carry INTERACTION_TAG_HOSTILE, so the resolver ranks them by combat mode.
+/// Spec element 6: which stance the interaction is offered in.
+#define INTERACT_STANCE_HOSTILE "hostile"
+#define INTERACT_STANCE_PEACEFUL "peaceful"
+/// Used with any item, only in combat mode (old `if(IS_HARMING(user))` branch of attackby).
+#define INTERACT_ITEM_HOSTILE(name, effect, requires...) list(INTERACT_KIND_ITEM, name, effect, list(requires), null, INTERACT_STANCE_HOSTILE)
+/// Used with any item, only with combat mode off (old `if(IS_HELPING(user))` branch of attackby).
+#define INTERACT_ITEM_PEACEFUL(name, effect, requires...) list(INTERACT_KIND_ITEM, name, effect, list(requires), null, INTERACT_STANCE_PEACEFUL)
+/// Used with an item of `held_type`, only in combat mode.
+#define INTERACT_INSERT_HOSTILE(held_type, effect, name, requires...) list(INTERACT_KIND_INSERT, name, effect, list(requires), held_type, INTERACT_STANCE_HOSTILE)
+/// Touched with an empty hand, only in combat mode (old `if(IS_HARMING(user))` branch of attack_hand).
+#define INTERACT_HAND_HOSTILE(name, effect, requires...) list(INTERACT_KIND_HAND, name, effect, list(requires), null, INTERACT_STANCE_HOSTILE)
+/// Touched with an empty hand, only with combat mode off.
+#define INTERACT_HAND_PEACEFUL(name, effect, requires...) list(INTERACT_KIND_HAND, name, effect, list(requires), null, INTERACT_STANCE_PEACEFUL)

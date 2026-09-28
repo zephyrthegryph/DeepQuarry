@@ -10,12 +10,12 @@
 	w_class = ITEMSIZE_TINY
 	flags = NOBLUDGEON //No more attack messages
 
-/obj/item/boop_module/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/boop_module, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/boop_module/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if (!( istype(user.loc, /turf) ))
-		return
+		return TRUE
 
 	var/datum/gas_mixture/environment = user.loc.return_air()
 
@@ -38,6 +38,7 @@
 			to_chat(user, span_notice("[initial(g.name)]: [round((moles / total_moles) * 100)]%"))
 		var/environment_temperature = environment.return_temperature()
 		to_chat(user, span_notice("Temperature: [round(environment_temperature-T0C,0.1)]&deg;C ([round(environment_temperature,0.1)]K)"))
+	return TRUE
 
 /obj/item/boop_module/afterattack(obj/O, mob/user as mob, proximity)
 	if(!proximity)
@@ -107,10 +108,10 @@
 	var/datum/matter_synth/water = null // readds water
 	flags = NOBLUDGEON //No more attack messages
 
-/obj/item/robot_tongue/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/robot_tongue, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/robot_tongue/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/living/silicon/robot/R = user
 	if(R.emagged || R.emag_items)
 		emagged = !emagged
@@ -125,6 +126,7 @@
 			icon = 'icons/mob/dogborg_vr.dmi'
 			icon_state = "synthtongue"
 		update_icon()
+	return TRUE
 
 /obj/item/robot_tongue/proc/tongue_eat_trash(atom/target, mob/user)
 	user.visible_message(span_filter_notice("[user] finishes eating \the [target.name]."), span_notice("You finish eating \the [target.name]."))
@@ -247,10 +249,10 @@
 	var/enabled = FALSE
 	flags = NOBLUDGEON
 
-/obj/item/pupscrubber/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/pupscrubber, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/pupscrubber/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/living/silicon/robot/R = user
 	if(!enabled)
 		R.scrubbing = TRUE
@@ -260,6 +262,7 @@
 		R.scrubbing = FALSE
 		enabled = FALSE
 		icon_state = "scrub0"
+	return TRUE
 
 /obj/item/lightreplacer/dogborg
 	name = "light replacer"
@@ -337,12 +340,13 @@
 	var/bluespace = FALSE
 	flags = NOBLUDGEON
 
-/obj/item/dogborg/pounce/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/dogborg/pounce, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/dogborg/pounce/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/living/silicon/robot/R = user
 	R.leap(bluespace)
+	return TRUE
 
 /mob/living/silicon/robot/proc/leap(bluespace = FALSE)
 	if(!COOLDOWN_FINISHED(src, last_special))
@@ -465,8 +469,12 @@
 	scan_time = 0.5 SECONDS
 	exact = TRUE
 
-/obj/item/mining_scanner/robot/click_alt(mob/user)
+EXTEND_INTERACTIONS(/obj/item/mining_scanner/robot, INTERACT_ALT(null, PROC_REF(interaction_alt)))
+
+/// Old click_alt.
+/obj/item/mining_scanner/robot/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	change_size(user)
+	return TRUE
 
 /obj/item/mining_scanner/robot/proc/change_size(mob/user)
 	if(!exact)

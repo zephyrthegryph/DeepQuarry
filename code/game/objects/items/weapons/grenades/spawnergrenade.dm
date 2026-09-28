@@ -88,7 +88,10 @@
 			return 0
 	return ..()
 
-/obj/item/grenade/spawnergrenade/manhacks/station/locked/attackby(obj/item/I, mob/user)
+DECLARE_INTERACTIONS(/obj/item/grenade/spawnergrenade/manhacks/station/locked, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/grenade/spawnergrenade/manhacks/station/locked/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	var/obj/item/card/id/id = I.GetID()
 	if(istype(id))
 		if(check_access(id))
@@ -98,7 +101,8 @@
 			to_chat(user, span_warning("Access denied."))
 		user.visible_message(span_notice("[user] swipes \the [I] against \the [src]."))
 	else
-		return ..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/grenade/spawnergrenade/manhacks/station/locked/emag_act(remaining_charges,mob/user)
 	..()

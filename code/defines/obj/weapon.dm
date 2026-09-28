@@ -207,12 +207,12 @@
 	throw_speed = 4
 	throw_range = 20
 
-/obj/item/camera_bug/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/camera_bug, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/camera_bug/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(in_use)
-		return
+		return TRUE
 
 	var/list/cameras = new/list()
 	for (var/obj/machinery/camera/C in REGISTRY_MEMBERS(REGISTRY_CAMERAS))
@@ -220,7 +220,7 @@
 			cameras.Add(C)
 	if (length(cameras) == 0)
 		to_chat(user, span_warning("No bugged functioning cameras found."))
-		return
+		return TRUE
 
 	var/list/friendly_cameras = new/list()
 
@@ -228,20 +228,21 @@
 		friendly_cameras.Add(C.c_tag)
 
 	in_use = TRUE
-	var/target = rerun_prompt(user, "k232", list("kind" = "list", "message" = "Select the camera to observe", "title" = "Select Camera", "choices" = friendly_cameras), PROC_REF(attack_self), args)
+	var/target = rerun_prompt(user, "k232", list("kind" = "list", "message" = "Select the camera to observe", "title" = "Select Camera", "choices" = friendly_cameras), PROC_REF(interaction_self), args)
 	if(isnull(target))
 		return TRUE
 	in_use = FALSE
 
 	if (!target)
-		return
+		return TRUE
 	for (var/obj/machinery/camera/C in cameras)
 		if (C.c_tag == target)
 			target = C
 			break
-	if (user.stat == 2) return
+	if (user.stat == 2) return TRUE
 
 	user.AddComponent(/datum/component/remote_view/item_zoom, focused_on = target, vconfig_path = /datum/remote_view_config/camera_standard, our_item = src, viewsize = null, tileoffset = 0, show_visible_messages = FALSE)
+	return TRUE
 
 /obj/item/pai_cable
 	desc = "A flexible coated cable with a universal jack on one end."

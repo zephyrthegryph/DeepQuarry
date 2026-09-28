@@ -257,18 +257,19 @@ REF_OWNED(/obj/item/tank, list("air_contents", "proxyassembly"))
 			update_integrity(max_integrity)
 		src.air_contents.add_thermal_energy(rand(2000,50000))
 
-/obj/item/tank/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return
+DECLARE_INTERACTIONS(/obj/item/tank, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/tank/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	if (!(src.air_contents))
-		return
+		return TRUE
 	tgui_interact(user)
 
-// There's GOT to be a better way to do this
+	// There's GOT to be a better way to do this
 	if (src.proxyassembly.assembly)
 		src.proxyassembly.assembly.attack_self(user)
+	return TRUE
 
 /obj/item/tank/tgui_state(mob/user)
 	return GLOB.tgui_deep_inventory_state

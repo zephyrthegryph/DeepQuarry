@@ -247,15 +247,19 @@ REF_OWNED_LIST(/obj/item/reagent_containers/food/snacks/customizable, "ingredien
 	icon = 'icons/obj/food_custom.dmi'
 	icon_state = "soup"
 
-/obj/item/trash/bowl/attackby(obj/item/I, mob/user)
+DECLARE_INTERACTIONS(/obj/item/trash/bowl, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/trash/bowl/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I,/obj/item/reagent_containers/food/snacks))
 		if(istype(I, /obj/item/reagent_containers/food/snacks/customizable))
 			to_chat(user, span_warning("Sorry, no recursive food."))
-			return
+			return INTERACTION_HANDLED_PASS
 		var/obj/F = new/obj/item/reagent_containers/food/snacks/customizable/soup(get_turf(src),I)
 		F.attackby(I, user)
 		consume(src, user)
 	else
-		return ..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 #undef INGREDIENT_LIMIT

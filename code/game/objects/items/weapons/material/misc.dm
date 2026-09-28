@@ -68,10 +68,10 @@
 	w_class = ITEMSIZE_SMALL
 	attack_verb = list("mushed", "splatted", "splooshed", "splushed") // Words that totally exist.
 
-/obj/item/material/snow/snowball/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/material/snow/snowball, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/material/snow/snowball/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(IS_HARMING(user))
 		to_chat(user, span_notice("You smash the snowball in your hand."))
 		var/atom/S = replace_with(src, /obj/item/stack/material/snow)
@@ -79,6 +79,7 @@
 	else
 		to_chat(user, span_notice("You start compacting the snowball."))
 		om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
+	return TRUE
 
 /obj/item/material/snow/snowball/proc/attack_self_timed_done(mob/user)
 	var/atom/S = replace_with(src, /obj/item/material/snow/snowball/reinforced)
@@ -194,12 +195,13 @@
 						playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
 						return
 
-/obj/item/material/whip/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/material/whip, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/material/whip/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	user.visible_message(span_warning("\The [user] cracks \the [src]!"))
 	playsound(src, 'sound/effects/snap.ogg', 50, 1)
+	return TRUE
 
 
 /obj/item/material/knife/machete/hatchet/stone

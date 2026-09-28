@@ -107,31 +107,32 @@ REF_OWNED(/obj/item/flamethrower, list("weldtool", "igniter", "ptank"))
 /obj/item/flamethrower/proc/check_fuel()
 	return ptank != null && ptank.air_contents.total_moles() > 5 // minimum fuel usage is five moles, for EXTREMELY hot mix or super low pressure
 
-/obj/item/flamethrower/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby.
+/obj/item/flamethrower/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(user.stat || user.restrained() || user.lying)
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(isigniter(W))
 		var/obj/item/assembly/igniter/I = W
-		if(I.secured)	return
-		if(igniter)		return
+		if(I.secured)	return INTERACTION_HANDLED_PASS
+		if(igniter)		return INTERACTION_HANDLED_PASS
 		user.drop_item()
 		I.forceMove(src)
 		igniter = I
 		update_icon()
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(istype(W,/obj/item/tank/phoron))
 		if(ptank)
 			to_chat(user, span_notice("There appears to already be a phoron tank loaded in [src]!"))
-			return
+			return INTERACTION_HANDLED_PASS
 		user.drop_item()
 		ptank = W
 		W.forceMove(src)
 		update_icon()
-		return
+		return INTERACTION_HANDLED_PASS
 
-	..()
+	return FALSE
 
 /obj/item/flamethrower/wrench_act(mob/user, obj/item/tool)
 	if(status || user.stat || user.restrained() || user.lying)
@@ -158,13 +159,17 @@ REF_OWNED(/obj/item/flamethrower, list("weldtool", "igniter", "ptank"))
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/flamethrower/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/flamethrower, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/flamethrower/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.stat || user.restrained() || user.lying)
-		return
+		return TRUE
 	tgui_interact(user)
+	return TRUE
 
 /obj/item/flamethrower/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

@@ -24,10 +24,13 @@
 /obj/structure/window/maintenance_panel/is_fulltile()
 	return FALSE // NEVER
 
-/obj/structure/window/maintenance_panel/attackby(obj/item/W, mob/user)
+EXTEND_INTERACTIONS(/obj/structure/window/maintenance_panel, INTERACT_ITEM(null, PROC_REF(maintenance_panel_interaction_item)))
+
+/// Old attackby.
+/obj/structure/window/maintenance_panel/proc/maintenance_panel_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/stack/cable_coil))
-		return // Cannot be electrochromed
-	. = ..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
 /obj/structure/window/maintenance_panel/screwdriver_act(mob/user, obj/item/tool)
 	return ITEM_INTERACT_BLOCKING

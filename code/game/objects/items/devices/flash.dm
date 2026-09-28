@@ -262,9 +262,7 @@ REF_OWNED(/obj/item/flash, "power_supply")
 	return TRUE
 
 
-/obj/item/flash/get_interactions()
-	var/static/list/L = list(INTERACT_USE("Flash", PROC_REF(interaction_self)))
-	return L
+DECLARE_INTERACTIONS(/obj/item/flash, INTERACT_USE("Flash", PROC_REF(interaction_self)))
 
 /obj/item/flash/proc/interaction_self(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
 	if(!istype(user) || !clown_check(user)) 	return

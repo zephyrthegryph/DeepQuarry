@@ -62,17 +62,18 @@
 	else
 		return ..()
 
-/obj/item/integrated_circuit_printer/attackby(obj/item/O, mob/user)
+/// Old attackby.
+/obj/item/integrated_circuit_printer/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	if(istype(O,/obj/item/stack/material))
 		var/obj/item/stack/material/stack = O
 		if(stack.material.name == MAT_STEEL)
 			if(debug)
 				to_chat(user, span_warning("\The [src] does not need any material."))
-				return
+				return INTERACTION_HANDLED_PASS
 			var/num = min((max_metal - metal) / metal_per_sheet, stack.get_amount())
 			if(num < 1)
 				to_chat(user, span_warning("\The [src] is too full to add more metal."))
-				return
+				return INTERACTION_HANDLED_PASS
 			if(stack.use(max(1, round(num)))) // We don't want to create stacks that aren't whole numbers
 				to_chat(user, span_notice("You add [num] sheet\s to \the [src]."))
 				metal += num * metal_per_sheet
@@ -116,7 +117,7 @@
 		attack_self(user)
 		return TRUE
 
-	return ..()
+	return FALSE
 
 /obj/item/integrated_circuit_printer/vv_edit_var(var_name, var_value)
 	// Gotta update the static data in case an admin VV's the upgraded var for some reason..!
@@ -124,11 +125,15 @@
 		dirty_items = TRUE
 	return ..()
 
-/obj/item/integrated_circuit_printer/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/integrated_circuit_printer, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/integrated_circuit_printer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
+	return TRUE
 
 /obj/item/integrated_circuit_printer/tgui_state(mob/user)
 	return GLOB.tgui_physical_state

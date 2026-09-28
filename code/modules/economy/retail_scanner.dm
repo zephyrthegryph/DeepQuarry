@@ -60,15 +60,22 @@ REGISTRY_MEMBERSHIP(/obj/item/retail_scanner, REGISTRY_TRANSACTION_DEVICES)
 	src.dir = SOUTH
 	src.pixel_y = 0
 
-/obj/item/retail_scanner/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
-	tgui_interact(user)
+DECLARE_INTERACTIONS(/obj/item/retail_scanner, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+)
 
-/obj/item/retail_scanner/click_alt(mob/user)
+/// Old attack_self.
+/obj/item/retail_scanner/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+	tgui_interact(user)
+	return TRUE
+
+/// Old click_alt.
+/obj/item/retail_scanner/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	if(Adjacent(user))
 		tgui_interact(user)
+	return TRUE
 
 /obj/item/retail_scanner/examine(mob/user)
 	. = ..()
@@ -231,17 +238,18 @@ REGISTRY_MEMBERSHIP(/obj/item/retail_scanner, REGISTRY_TRANSACTION_DEVICES)
 			to_chat(user, "[icon2html(src, user.client)]" + span_notice("Transaction log reset."))
 			return TRUE
 
-/obj/item/retail_scanner/attackby(obj/O, mob/user)
+/// Old attackby.
+/obj/item/retail_scanner/proc/interaction_item(mob/user, obj/O, datum/interaction/interaction)
 	if(istype(O, /obj/item/paper))
 		var/obj/item/paper/form = O
 		if(form.info || form.shipping_ledger_data)
 			to_chat(user, span_warning("The freight printer accepts only blank ordinary paper."))
-			return
+			return INTERACTION_HANDLED_PASS
 		if(!user.drop_from_inventory(form, src))
-			return
+			return INTERACTION_HANDLED_PASS
 		LAZYADD(freight_form_paper, form)
 		to_chat(user, span_notice("You load [form] into [src]'s freight printer."))
-		return
+		return INTERACTION_HANDLED_PASS
 	// Check for a method of paying (ID, PDA, e-wallet, cash, ect.)
 	var/obj/item/card/id/I = O.GetID()
 	if(I)
@@ -253,10 +261,11 @@ REGISTRY_MEMBERSHIP(/obj/item/retail_scanner, REGISTRY_TRANSACTION_DEVICES)
 		to_chat(user, span_warning("This device does not accept cash."))
 
 	else if(istype(O, /obj/item/card/emag))
-		return ..()
+		return FALSE
 	// Not paying: Look up price and add it to transaction_amount
 	else
 		scan_item_price(O, user)
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/retail_scanner/showoff(mob/user)
 	for (var/mob/M in view(user))

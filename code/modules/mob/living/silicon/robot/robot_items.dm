@@ -202,11 +202,12 @@ REF_OWNED(/obj/item/card/robot, "dummy_card")
 	if(istype(target,/obj/structure/table))
 		deploy_paper(user)
 
-/obj/item/form_printer/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/form_printer, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/form_printer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	deploy_paper(user)
+	return TRUE
 
 /obj/item/form_printer/proc/deploy_paper(mob/user)
 	om_prompt(src, user, list("message" = "Would you like dispense and empty page or print a form?", "title" = "Dispense", "choices" = list("Paper","Form"), "requires" = PROMPT_HELD), PROC_REF(deploy_choice_made))
@@ -449,11 +450,12 @@ REF_OWNED(/obj/item/card/robot, "dummy_card")
 /obj/item/borg/combat/shield/Initialize(mapload)
 	. = ..()
 
-/obj/item/borg/combat/shield/attack_self(mob/living/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/borg/combat/shield, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/borg/combat/shield/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
 	set_shield_level()
+	return TRUE
 
 /// Cools its flash count or recovers from an overload every 2 s while either is pending (a flash
 /// or an overload starts it); otherwise it sleeps.
@@ -532,12 +534,13 @@ REF_OWNED(/obj/item/card/robot, "dummy_card")
 	. += "It has [stored_walls] wall segment\s and [stored_doors] door segment\s stored."
 	. += "It is set to deploy [mode ? "doors" : "walls"]"
 
-/obj/item/inflatable_dispenser/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/inflatable_dispenser, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/inflatable_dispenser/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	mode = !mode
 	to_chat(user, span_filter_notice("You set \the [src] to deploy [mode ? "doors" : "walls"]."))
+	return TRUE
 
 /obj/item/inflatable_dispenser/afterattack(atom/A, mob/user)
 	..(A, user)
@@ -616,8 +619,10 @@ REF_OWNED(/obj/item/card/robot, "dummy_card")
 	icon = 'icons/obj/integrated_electronics/electronic_setups.dmi'
 	icon_state = "setup_device_box"
 
-/obj/item/robo_dice/attack_self(mob/user)
-	. = ..(user)
+DECLARE_INTERACTIONS(/obj/item/robo_dice, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/robo_dice/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/DI = 'icons/obj/dice.dmi'
 	var/dice_options = list(
 		"roll a custom die"	= image(icon = 'icons/obj/integrated_electronics/electronic_setups.dmi', icon_state = "setup_device_box"),
@@ -648,8 +653,9 @@ REF_OWNED(/obj/item/card/robot, "dummy_card")
 			sides = 100
 		if("roll a custom die")
 			om_prompt(src, user, list("kind" = "number", "message" = "Enter how many faces you want your virtual dice to have, (no more than 1000 sides):", "title" = "Custom Dice Roll", "default" = 6, "max" = 1000, "min" = 0, "requires" = PROMPT_HELD), PROC_REF(roll_die))
-			return
+			return TRUE
 	roll_die(user, sides)
+	return TRUE
 
 /obj/item/robo_dice/proc/roll_die(mob/user, sides, datum/om/prompt/ask)
 	if(sides <= 0)

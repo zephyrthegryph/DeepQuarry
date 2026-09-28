@@ -44,7 +44,10 @@
 		to_chat(user, "You slice off [src]'s uneven chunks of aluminum and scorch marks.")
 	return TRUE
 
-/obj/item/target/attack_hand(mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/target, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/item/target/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	// taking pinned targets off!
 	var/obj/structure/target_stake/stake
 	for(var/obj/structure/target_stake/T in view(3,src))
@@ -68,10 +71,11 @@
 				to_chat(user, "You take the target out of the stake.")
 
 			stake.pinned_target = null
-			return
+			return TRUE
 
 	else
-		..()
+		return FALSE
+	return TRUE
 
 /obj/item/target/syndicate
 	icon_state = "target_s"

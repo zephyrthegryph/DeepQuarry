@@ -191,14 +191,15 @@
 	slot_flags = SLOT_BELT
 	attack_verb = list("beaten", "smashed", "struck", "whacked")
 
-/obj/item/scepter/attack_self(mob/living/carbon/human/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/scepter, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/scepter/proc/interaction_self(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
 	var/obj/item/item_to_test = user.get_other_hand(src)
 	if(istype(item_to_test, /obj/item/spell))
 		var/obj/item/spell/S = item_to_test
 		S.on_scepter_use_cast(user)
+	return TRUE
 
 /obj/item/scepter/afterattack(atom/target, mob/living/carbon/human/user, proximity_flag, click_parameters)
 	if(proximity_flag)

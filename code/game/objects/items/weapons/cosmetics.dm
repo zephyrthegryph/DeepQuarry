@@ -31,16 +31,17 @@
 	colour = pick("red","purple","jade","black")
 	name = "[colour] lipstick"
 
-/obj/item/lipstick/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/lipstick, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/lipstick/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_notice("You twist \the [src] [open ? "closed" : "open"]."))
 	open = !open
 	if(open)
 		icon_state = "[initial(icon_state)]_[colour]"
 	else
 		icon_state = initial(icon_state)
+	return TRUE
 
 /obj/item/lipstick/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(!open)
@@ -83,10 +84,10 @@
 	icon = 'icons/obj/items.dmi'
 	icon_state = "purplecomb"
 
-/obj/item/haircomb/attack_self(mob/living/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/haircomb, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/haircomb/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
 	var/text = "person"
 	if(ishuman(user))
 		var/mob/living/carbon/human/U = user
@@ -102,6 +103,7 @@
 			if(FEMALE)
 				text = "lady"
 	user.visible_message(span_notice("[user] uses [src] to comb their hair with incredible style and sophistication. What a [text]."))
+	return TRUE
 
 /obj/item/makeover
 	name = "makeover kit"
@@ -115,10 +117,10 @@
 	. = ..()
 	M = new(src, null)
 
-/obj/item/makeover/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/makeover, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/makeover/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(ishuman(user))
 		to_chat(user, span_notice("You flip open \the [src] and begin to adjust your appearance."))
 		M.tgui_interact(user)
@@ -126,5 +128,6 @@
 		var/obj/item/organ/internal/eyes/E = H.internal_organs_by_name[O_EYES]
 		if(istype(E))
 			E.change_eye_color()
+	return TRUE
 
 REF_OWNED(/obj/item/makeover, "M")

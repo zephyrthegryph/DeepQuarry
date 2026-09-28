@@ -24,8 +24,8 @@
 	icon_state = "[icon_type][i][lit ? "_lit" : ""]"
 
 
-/obj/item/flame/candle/attackby(obj/item/W as obj, mob/user as mob)
-	..()
+/// Old attackby.
+/obj/item/flame/candle/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/flame/lighter))
 		var/obj/item/flame/lighter/L = W
 		if(L.lit)
@@ -38,6 +38,7 @@
 		var/obj/item/flame/candle/C = W
 		if(C.lit)
 			light()
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/flame/candle/welder_act(mob/user, obj/item/W)
 	var/obj/item/weldingtool/WT = W.get_welder()
@@ -67,14 +68,18 @@
 		var/turf/T = loc
 		T.hotspot_expose(700, 5)
 
-/obj/item/flame/candle/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/flame/candle, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/flame/candle/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(lit)
 		lit = FALSE
 		update_icon()
 		set_light(0)
+	return TRUE
 
 /obj/item/flame/candle/small
 	name = "small red candle"

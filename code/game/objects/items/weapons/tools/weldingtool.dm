@@ -98,18 +98,19 @@
 /obj/item/weldingtool/proc/robo_repair_used(mob/living/user)
 	remove_fuel(1, user)
 
-/obj/item/weldingtool/attackby(obj/item/W as obj, mob/living/user as mob)
+/// Old attackby.
+/obj/item/weldingtool/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
 	if(W.has_tool_quality(TOOL_SCREWDRIVER))
 		if(welding)
 			to_chat(user, span_danger("Stop welding first!"))
-			return
+			return INTERACTION_HANDLED_PASS
 		status = !status
 		if(status)
 			to_chat(user, span_notice("You secure the welder."))
 		else
 			to_chat(user, span_notice("The welder can now be attached and modified."))
 		add_fingerprint(user)
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if((!status) && (istype(W,/obj/item/stack/rods)))
 		var/obj/item/stack/rods/R = W
@@ -118,9 +119,9 @@
 		user.drop_from_inventory(src,F)
 		F.weldtool = src
 		add_fingerprint(user)
-		return
+		return INTERACTION_HANDLED_PASS
 
-	..()
+	return FALSE
 
 /obj/item/weldingtool/periodic_step()
 	if(welding)
@@ -165,11 +166,15 @@
 			L.ignite_mob()
 		if (istype(location, /turf))
 			location.hotspot_expose(700, 50, 1)
-/obj/item/weldingtool/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/weldingtool, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/weldingtool/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	setWelding(!welding, user)
+	return TRUE
 
 //Returns the amount of fuel in the welder
 /obj/item/weldingtool/proc/get_fuel()
@@ -594,7 +599,13 @@ REF_PAIR(/obj/item/weldpack, list("nozzle" = "mounted_pack"))
 		update_icon()
 		return 0
 
-/obj/item/weldingtool/electric/attack_hand(mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/weldingtool/electric, \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(electric_interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/item/weldingtool/electric/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.get_inactive_hand() == src)
 		if(power_supply)
 			power_supply.update_icon()
@@ -603,12 +614,13 @@ REF_PAIR(/obj/item/weldpack, list("nozzle" = "mounted_pack"))
 			to_chat(user, span_notice("You remove the cell from the [src]."))
 			setWelding(0)
 			update_icon()
-			return
-		..()
+			return TRUE
+		return FALSE
 	else
-		return ..()
+		return FALSE
 
-/obj/item/weldingtool/electric/attackby(obj/item/W, mob/user as mob)
+/// Old attackby.
+/obj/item/weldingtool/electric/proc/electric_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/cell))
 		if(istype(W, /obj/item/cell/device))
 			if(!power_supply)
@@ -622,7 +634,8 @@ REF_PAIR(/obj/item/weldpack, list("nozzle" = "mounted_pack"))
 		else
 			to_chat(user, span_notice("\The [src] cannot use that type of cell."))
 	else
-		..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/weldingtool/electric/proc/get_external_power_supply()
 	if(isrobotmultibelt(src.loc)) //We are in a multibelt

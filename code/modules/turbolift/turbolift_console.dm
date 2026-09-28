@@ -39,7 +39,10 @@
 /obj/structure/lift/attack_generic(mob/user)
 	return attack_hand(user)
 
-/obj/structure/lift/attack_hand(mob/user)
+DECLARE_INTERACTIONS(/obj/structure/lift, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/structure/lift/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	return interact(user)
 
 /obj/structure/lift/interact(mob/user)
@@ -65,19 +68,22 @@ REF_PAIR(/datum/turbolift_floor, list("ext_panel" = "floor"))
 	update_icon()
 
 // Hit it with a PDA or ID to enable priority call mode
-/obj/structure/lift/button/attackby(obj/item/W as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/structure/lift/button, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/structure/lift/button/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	var/obj/item/card/id/id = W.GetID()
 	if(istype(id))
 		if(!check_access(id))
 			playsound(src, 'sound/machines/buzz-two.ogg', 50, 0)
-			return
+			return INTERACTION_HANDLED_PASS
 		lift.priority_mode()
 		if(floor == lift.current_floor)
 			lift.open_doors()
 		else
 			lift.queue_move_to(floor)
-		return
-	. = ..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
 /obj/structure/lift/button/interact(mob/user)
 	if(!..())
@@ -121,20 +127,23 @@ REF_PAIR(/datum/turbolift_floor, list("ext_panel" = "floor"))
 	req_one_access = list(ACCESS_HEADS, ACCESS_ATMOSPHERICS, ACCESS_MEDICAL)
 
 // Hit it with a PDA or ID to enable priority call mode
-/obj/structure/lift/panel/attackby(obj/item/W as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/structure/lift/panel, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/structure/lift/panel/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	var/obj/item/card/id/id = W.GetID()
 	if(istype(id))
 		if(!check_access(id))
 			playsound(src, 'sound/machines/buzz-two.ogg', 50, 0)
-			return
+			return INTERACTION_HANDLED_PASS
 		lift.update_fire_mode(!lift.fire_mode)
 		if(lift.fire_mode)
 			audible_message(span_danger("Firefighter Mode Activated.  Door safeties disabled.  Manual control engaged."), runemessage = "SCREECH")
 			playsound(src, 'sound/machines/airalarm.ogg', 25, 0, 4, volume_channel = VOLUME_CHANNEL_ALARMS)
 		else
 			audible_message(span_warning("Firefighter Mode Deactivated. Door safeties enabled.  Automatic control engaged."), runemessage = "ding")
-		return
-	. = ..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
 /obj/structure/lift/panel/attack_ghost(mob/user)
 	return interact(user)

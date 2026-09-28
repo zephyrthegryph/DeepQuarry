@@ -67,7 +67,13 @@
 	last_user_touched = user
 	..()
 
-/obj/item/anodevice/attackby(obj/I as obj, mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/anodevice, \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_USE("Open", PROC_REF(interaction_open)), \
+)
+
+/// Old attackby.
+/obj/item/anodevice/proc/interaction_item(mob/user, obj/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/anobattery))
 		if(!inserted_battery)
 			to_chat(user, span_blue("You insert the battery."))
@@ -76,13 +82,14 @@
 			inserted_battery = I
 			UpdateSprite()
 	else
-		return ..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
-/obj/item/anodevice/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
-	return tgui_interact(user)
+
+/// Old attack_self: open the interface.
+/obj/item/anodevice/proc/interaction_open(mob/user, obj/item/held, datum/interaction/interaction)
+	tgui_interact(user)
+	return TRUE
 
 /obj/item/anodevice/tgui_state(mob/user)
 	return GLOB.tgui_inventory_state

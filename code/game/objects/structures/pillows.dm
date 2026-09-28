@@ -23,7 +23,10 @@
 	..()
 	icon_state = initial(icon_state)
 
-/obj/item/bedsheet/pillow/attackby(obj/item/component, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/bedsheet/pillow, INTERACT_ITEM(null, PROC_REF(pillow_interaction_item)))
+
+/// Old attackby.
+/obj/item/bedsheet/pillow/proc/pillow_interaction_item(mob/user, obj/item/component, datum/interaction/interaction)
 	if (istype(component,src))
 		to_chat(user, span_notice("You assemble a pillow pile!"))
 		user.drop_item()
@@ -33,6 +36,7 @@
 		consume(src, user)
 	else
 		to_chat(user, span_notice("You can't assemble a pillow pile out of mismatched stuff, it'd look hideous!"))
+	return INTERACTION_HANDLED_PASS
 
 //Pillow Piles, they're piles of pillows! 	layer = BELOW_MOB_LAYER
 

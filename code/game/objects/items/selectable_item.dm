@@ -10,14 +10,15 @@
 	var/list/item_options = list("Gift" = /obj/item/a_gift, // ALLOW(instance_list): c: read-only per-subtype constant table (2 subtype overrides); a getter would share it, not worth it on a rare type
 									"Health Analyzer" = /obj/item/healthanalyzer)
 
-/obj/item/selectable_item/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/selectable_item, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/selectable_item/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	om_prompt_sequence(src, user, list(
 		list("key" = "preface", "message" = {"[preface_string]"}, "title" = preface_title),
 		list("key" = "item", "kind" = "list", "message" = selection_string, "title" = selection_title, "choices" = item_options),
 	), PROC_REF(item_selected), list("requires" = PROMPT_HELD))
+	return TRUE
 
 /obj/item/selectable_item/proc/item_selected(mob/user, datum/om/prompt/ask)
 	var/chosen_item = item_options[ask.get("item")]

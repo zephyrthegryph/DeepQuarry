@@ -80,27 +80,31 @@ REF_OWNED(/obj/item/ammo_casing, "BB")
 		to_chat(user, span_warning("You fail to collect anything!"))
 	box.reloading = FALSE
 
-/obj/item/ammo_casing/attackby(obj/item/I as obj, mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/ammo_casing, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/ammo_casing/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/ammo_magazine) && isturf(loc)) // Mass magazine reloading.
 		var/obj/item/ammo_magazine/box = I
 		if (!box.can_remove_ammo || box.reloading)
-			return ..()
+			return FALSE
 		box.reloading = TRUE
 		collect_shell(user, box, loc)
 	else if(istype(I, /obj/item/ammo_casing)) // Gather two loose rounds into a handful.
 		var/obj/item/ammo_casing/other = I
 		if(other == src)
-			return
+			return INTERACTION_HANDLED_PASS
 		if(other.caliber != caliber)
 			to_chat(user, span_warning("Those rounds aren't the same caliber."))
-			return
+			return INTERACTION_HANDLED_PASS
 		var/obj/item/ammo_magazine/handful/H = make_ammo_handful(src, other, user)
 		if(H)
 			user.put_in_hands(H)
 			user.visible_message("[user] gathers some rounds into a handful.", span_notice("You gather the rounds into a handful."))
 			playsound(H, 'sound/weapons/empty.ogg', 25, 1)
 	else
-		return ..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/ammo_casing/screwdriver_act(mob/user, obj/item/tool)
 	if(!BB)
@@ -351,7 +355,10 @@ GLOBAL_LIST_EMPTY(magazine_icondata_states)
 	drop_sound = 'sound/items/drop/matchbox.ogg'
 	pickup_sound = 'sound/items/pickup/matchbox.ogg'
 
-/obj/item/ammo_magazine/ammo_box/click_alt(mob/user)
+DECLARE_INTERACTIONS(/obj/item/ammo_magazine/ammo_box, INTERACT_ALT(null, PROC_REF(interaction_alt)))
+
+/// Old click_alt.
+/obj/item/ammo_magazine/ammo_box/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	make_rounds_real()
 	if(can_remove_ammo)
 		if(isliving(user) && Adjacent(user))
@@ -361,8 +368,8 @@ GLOBAL_LIST_EMPTY(magazine_icondata_states)
 				user.put_in_hands(C)
 				user.visible_message("\The [user] removes \a [C] from [src].", span_notice("You remove \a [C] from [src]."))
 				update_icon()
-				return
-	..()
+				return TRUE
+	return FALSE
 
 /obj/item/ammo_magazine/ammo_box/examine(mob/user)
 	. = ..()

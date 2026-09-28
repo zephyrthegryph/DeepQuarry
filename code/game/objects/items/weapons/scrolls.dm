@@ -13,18 +13,19 @@
 	throw_speed = 4
 	throw_range = 20
 
-/obj/item/teleportation_scroll/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/teleportation_scroll, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/teleportation_scroll/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if((user.mind && !GLOB.wizards.is_antagonist(user.mind)))
 		to_chat(user, span_warning("You stare at the scroll but cannot make sense of the markings!"))
-		return
+		return TRUE
 
 	// single-action panel; tgui_alert with the existing
 	// uses count is the right primitive.
 	user.set_machine(src)
 	om_prompt(src, user, list("message" = "You have [uses] uses left.\n\nKind regards, the Wizards Federation.\nP.S. Don't forget to bring your gear, you'll need it to cast most spells.", "title" = "Teleportation Scroll", "choices" = list("Teleport", "Cancel"), "requires" = PROMPT_HELD), PROC_REF(scroll_answered))
+	return TRUE
 
 /obj/item/teleportation_scroll/proc/scroll_answered(mob/living/carbon/human/user, choice, datum/om/prompt/ask)
 	if(choice == "Teleport" && ishuman(user) && !user.stat && !user.restrained() && uses >= 1)

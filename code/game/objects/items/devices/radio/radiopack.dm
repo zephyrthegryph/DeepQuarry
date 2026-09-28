@@ -16,9 +16,7 @@
 	AddComponent(/datum/component/tethered_item, handset_path)
 	. = ..()
 
-/obj/item/bluespaceradio/get_interactions()
-	var/static/list/L = list(INTERACT_HAND(null, PROC_REF(interaction_hand)))
-	return L
+DECLARE_INTERACTIONS(/obj/item/bluespaceradio, INTERACT_HAND(null, PROC_REF(interaction_hand)))
 
 /// See important note in tethered_item.dm
 /obj/item/bluespaceradio/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)

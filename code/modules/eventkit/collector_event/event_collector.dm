@@ -173,21 +173,24 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 			//following's for debug, comment out if ur happy with it
 		//. += "There are uhhhh this many things blocking: [blocker_count]."
 
-/obj/structure/event_collector/attackby(obj/item/O, mob/user)
+DECLARE_INTERACTIONS(/obj/structure/event_collector, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/structure/event_collector/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	if(blocker_insertion_impedement_threshold > 0 && ( get_blockers() > blocker_insertion_impedement_threshold) )
 		to_chat(usr,"It's fucked! Fix it first!")
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(!COOLDOWN_FINISHED(src, next_item_added))
 		to_chat(user,span_warning("It's not ready to take another item yet!"))
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(active_recipe.len > 0) //do we have something active at all
 		var/stored_index = -1 //shortcut
 		if(need_recipe_in_order) //can we put this in?
 			if(!(istype(O,active_recipe[1]))) //if we need the recipe in order, check the first thing in the list
 				to_chat(user,span_warning("That's not the next object in the recipe!"))
-				return
+				return INTERACTION_HANDLED_PASS
 			else
 				stored_index = 1
 		else
@@ -204,6 +207,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 		user.visible_message("[user] begins to [pick(step_initiation_verbs)] \The [O] into \The [src]")
 		//wait a second or two
 		om_task_start(/datum/om/task/timed/event_collector_insert, user, src, list("receiver" = src, "duration" = step_insertion_time, "O" = O, "stored_index" = stored_index))
+	return INTERACTION_HANDLED_PASS
 
 /obj/structure/event_collector/proc/insert_gave_up(datum/om/task/timed/event_collector_insert/task)
 	var/mob/user = task.actor

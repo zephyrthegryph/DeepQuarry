@@ -195,8 +195,9 @@
 	..()
 	update_icon()
 
-/obj/item/reagent_containers/glass/beaker/attack_hand()
-	..()
+/// Old attack_hand: runs after the touch tried to pick it up (hand_pickup()).
+/obj/item/reagent_containers/glass/beaker/hand_pickup(mob/user)
+	. = ..()
 	update_icon()
 
 /obj/item/reagent_containers/glass/beaker/update_icon()

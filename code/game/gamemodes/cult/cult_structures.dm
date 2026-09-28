@@ -36,14 +36,23 @@
 	. = ..()
 	PERIODIC_START(src, PERIODIC_SLOW)
 
-/obj/structure/cult/pylon/attack_hand(mob/M as mob)
+DECLARE_INTERACTIONS(/obj/structure/cult/pylon, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/structure/cult/pylon/proc/interaction_hand(mob/M, obj/item/held, datum/interaction/interaction)
 	attackpylon(M, 5)
+	return TRUE
 
 /obj/structure/cult/pylon/attack_generic(mob/user, damage)
 	attackpylon(user, damage)
 
-/obj/structure/cult/pylon/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby.
+/obj/structure/cult/pylon/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	attackpylon(user, W.force)
+	return INTERACTION_HANDLED_PASS
 
 /obj/structure/cult/pylon/take_damage(damage)
 	pylonhit(damage)

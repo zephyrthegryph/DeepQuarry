@@ -106,10 +106,10 @@
 	desc = "Shiny green " + MAT_VERDANTIUM + ", pressed into a coin. It almost seems to glimmer under starlight."
 	icon_state = "coin_verdantium"
 
-/obj/item/fake_coin/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/fake_coin, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/fake_coin/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/result = rand(1, sides)
 	var/comment = ""
 	if(result == 1)
@@ -118,3 +118,4 @@
 		comment = "heads"
 	user.visible_message(span_notice("[user] has thrown \the [src]. It lands on [comment]!"), \
 							span_notice("You throw \the [src]. It lands on [comment]!"))
+	return TRUE

@@ -25,9 +25,10 @@
 	. = ..()
 	AddElement(/datum/element/sellable/spacecash)
 
-/obj/item/spacecash/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby.
+/obj/item/spacecash/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/spacecash))
-		if(istype(W, /obj/item/spacecash/ewallet)) return 0
+		if(istype(W, /obj/item/spacecash/ewallet)) return INTERACTION_HANDLED_PASS
 
 		var/obj/item/spacecash/SC = W
 
@@ -40,6 +41,7 @@
 			h_user.put_in_hands(SC)
 		to_chat(user, span_notice("You combine the [initial_name]s to a bundle of [SC.worth] [initial_name]s."))
 		consume(src, user)
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/spacecash/update_icon()
 	cut_overlays()
@@ -85,24 +87,28 @@
 		update_icon()
 	return worth
 
-/obj/item/spacecash/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
-	var/amount = rerun_prompt(user, "k92", list("kind" = "number", "message" = "How many [initial_name]s do you want to take? (0 to [src.worth])", "title" = "Take Money", "default" = 20, "max" = src.worth), PROC_REF(attack_self), args)
+DECLARE_INTERACTIONS(/obj/item/spacecash, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/spacecash/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+	var/amount = rerun_prompt(user, "k92", list("kind" = "number", "message" = "How many [initial_name]s do you want to take? (0 to [src.worth])", "title" = "Take Money", "default" = 20, "max" = src.worth), PROC_REF(interaction_self), args)
 	if(isnull(amount))
 		return TRUE
 	if(!src || QDELETED(src))
-		return
+		return TRUE
 	amount = round(CLAMP(amount, 0, src.worth))
 
 	if(!amount)
-		return
+		return TRUE
 
 	adjust_worth(-amount)
 	var/obj/item/spacecash/SC = new (user.loc)
 	SC.set_worth(amount)
 	user.put_in_hands(SC)
+	return TRUE
 
 /obj/item/spacecash/c1
 	name = "1 Thaler"
@@ -176,10 +182,6 @@
 	var/owner_name = "" //So the ATM can set it so the EFTPOS can put a valid name on transactions.
 	special_handling = TRUE
 
-/obj/item/spacecash/ewallet/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
 /obj/item/spacecash/ewallet/attackby()    return  //like actual
 /obj/item/spacecash/ewallet/update_icon() return  //space cash
 

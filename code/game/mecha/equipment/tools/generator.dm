@@ -96,7 +96,10 @@ REF_OWNED(/obj/item/mecha_parts/mecha_equipment/generator, "fuel")
 			return 0
 	return
 
-/obj/item/mecha_parts/mecha_equipment/generator/attackby(weapon,mob/user)
+DECLARE_INTERACTIONS(/obj/item/mecha_parts/mecha_equipment/generator, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/mecha_parts/mecha_equipment/generator/proc/interaction_item(mob/user, obj/item/weapon, datum/interaction/interaction)
 	var/result = load_fuel(weapon)
 	if(isnull(result))
 		user.visible_message("[user] tries to shove [weapon] into [src]. What a dumb-ass.",span_warning("[fuel] traces minimal. [weapon] cannot be used as fuel."))
@@ -104,7 +107,7 @@ REF_OWNED(/obj/item/mecha_parts/mecha_equipment/generator, "fuel")
 		to_chat(user, "Unit is full.")
 	else
 		user.visible_message("[user] loads [src] with [fuel].","[result] unit\s of [fuel] successfully loaded.")
-	return
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/mecha_parts/mecha_equipment/generator/critfail()
 	..()

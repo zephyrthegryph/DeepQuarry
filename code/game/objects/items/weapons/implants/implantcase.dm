@@ -27,13 +27,15 @@
 	else
 		name = "Glass Case"
 
-/obj/item/implantcase/attackby(obj/item/I as obj, mob/user as mob)
-	..()
+DECLARE_INTERACTIONS(/obj/item/implantcase, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/implantcase/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if (istype(I, /obj/item/pen))
 		om_prompt(src, user, list("kind" = "text", "message" = "What would you like the label to be?", "title" = "[name]", "max_length" = MAX_NAME_LEN, "target" = I, "requires" = PROMPT_IN_HAND, "data" = list("case" = src)), PROC_REF(label_entered))
 	else if(istype(I, /obj/item/reagent_containers/syringe))
-		if(!imp)	return
-		if(!imp.allow_reagents)	return
+		if(!imp)	return INTERACTION_HANDLED_PASS
+		if(!imp.allow_reagents)	return INTERACTION_HANDLED_PASS
 		if(imp.reagents.total_volume >= imp.reagents.maximum_volume)
 			to_chat(user, span_warning("\The [src] is full."))
 		else
@@ -42,7 +44,7 @@
 		var/obj/item/implanter/M = I
 		if (M.imp)
 			if ((imp || M.imp.implanted))
-				return
+				return INTERACTION_HANDLED_PASS
 			M.imp.forceMove(src)
 			imp = M.imp
 			M.imp = null
@@ -55,7 +57,7 @@
 				imp = null
 				update()
 			M.update()
-	return
+	return INTERACTION_HANDLED_PASS
 
 
 /obj/item/implantcase/tracking

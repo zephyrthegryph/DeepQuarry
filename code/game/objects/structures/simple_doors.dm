@@ -3,7 +3,6 @@
 
 /obj/structure/simple_door
 	name = "door"
-	description_info = "If you hold left alt whilst left-clicking on a door, you can knock on it to announce your presence to anyone on the other side! Alternately if you are on HARM intent when doing this, you will bang loudly on the door!"
 	density = TRUE
 	anchored = TRUE
 	can_atmos_pass = ATMOS_PASS_DENSITY
@@ -93,23 +92,6 @@
 /obj/structure/simple_door/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	TryToSwitchState(user)
 	return TRUE
-
-/* // disabling becaue alt-clicking to view a turf is pretty important.
-/obj/structure/simple_door/click_alt(mob/user as mob)
-	. = ..()
-	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	if(!Adjacent(user))
-		return
-	else if(IS_HARMING(user))
-		src.visible_message(span_warning("[user] hammers on \the [src]!"), span_warning("Someone hammers loudly on \the [src]!"))
-		src.add_fingerprint(user)
-		playsound(src, knock_hammer_sound, 50, 0, 3)
-	else if(IS_HELPING(user))
-		src.visible_message("[user] knocks on \the [src].", "Someone knocks on \the [src].")
-		src.add_fingerprint(user)
-		playsound(src, knock_sound, 50, 0, 3)
-	return
-*/
 
 /obj/structure/simple_door/CanPass(atom/movable/mover, turf/target)
 	if(istype(mover, /obj/effect/beam))
@@ -381,6 +363,7 @@
 // ..() into it either), so it declares its own interaction.
 /obj/structure/simple_door/resin/declare_interactions(list/into)
 	into += list(
+		/datum/interaction/entry_hand/simple_door_resin_tear,
 		/datum/interaction/entry_hand/simple_door_resin_hand,
 	)
 
@@ -396,21 +379,28 @@
 		visible_message(span_warning("[user] destroys the [name]!"))
 		Dismantle(1)
 		return TRUE
-	else
-
-		// Carbons can get straight through these.
-		if(istype(user,/mob/living/carbon))
-			if(IS_HARMING(user))
-				var/mob/living/carbon/M = user
-				if(locate(/obj/item/organ/internal/xenos/hivenode) in M.internal_organs)
-					visible_message (span_warning("[user] strokes the [name] and it melts away!"), 1)
-					Dismantle(1)
-					return TRUE
-				else
-					visible_message(span_warning("[user] tears at the [name]!"))
-					take_damage(20, BRUTE, MELEE, FALSE)
-					return TRUE
 	TryToSwitchState(user)
+	return TRUE
+
+/// Old attack_hand's harm branch: a carbon tears at the resin, or a xenomorph melts it (combat mode only).
+/datum/interaction/entry_hand/simple_door_resin_tear
+	id = "simple_door_resin_tear"
+	name = "Tear at"
+	effect = /obj/structure/simple_door/resin/proc/interaction_resin_tear
+	offered_when = list(REQ_HARMING)
+	tags = list(INTERACTION_TAG_HOSTILE)
+
+/obj/structure/simple_door/resin/proc/interaction_resin_tear(mob/user, obj/item/held, datum/interaction/interaction)
+	if((HULK in user.mutations) || !istype(user, /mob/living/carbon))
+		return FALSE // a Hulk destroys it, anyone else opens it: interaction_resin_hand()
+	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
+	var/mob/living/carbon/M = user
+	if(locate(/obj/item/organ/internal/xenos/hivenode) in M.internal_organs)
+		visible_message (span_warning("[user] strokes the [name] and it melts away!"), 1)
+		Dismantle(1)
+		return TRUE
+	visible_message(span_warning("[user] tears at the [name]!"))
+	take_damage(20, BRUTE, MELEE, FALSE)
 	return TRUE
 // end.
 

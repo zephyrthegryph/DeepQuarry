@@ -75,23 +75,28 @@
 
 	return
 
-/obj/item/blobcore_chunk/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/blobcore_chunk, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+)
+
+/// Old attack_self.
+/obj/item/blobcore_chunk/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(blob_type && world.time > active_ability_cooldown + last_active_use)
 		last_active_use = world.time
 		to_chat(user, span_alien("[icon2html(src, user.client)] \The [src] gesticulates."))
 		blob_type.on_chunk_use(src, user)
 	else
 		to_chat(user, span_notice("\The [src] doesn't seem to respond."))
+	return TRUE
 
 /obj/item/blobcore_chunk/periodic_step()
 	if(blob_type && should_tick && world.time > passive_ability_cooldown + last_passive_use)
 		last_passive_use = world.time
 		blob_type.on_chunk_tick(src)
 
-/obj/item/blobcore_chunk/click_alt(mob/living/carbon/user)
+/// Old click_alt.
+/obj/item/blobcore_chunk/proc/interaction_alt(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
 	if(blob_type && blob_type.chunk_active_type == BLOB_CHUNK_TOGGLE)
 		should_tick = !should_tick
 
@@ -99,6 +104,7 @@
 			to_chat(user, span_alien("\The [src] shudders with life."))
 		else
 			to_chat(user, span_alien("\The [src] stills, returning to a death-like state."))
+	return TRUE
 
 /obj/item/blobcore_chunk/proc/regen(newfaction = null)
 	if(istype(blob_type))

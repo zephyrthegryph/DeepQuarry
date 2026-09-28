@@ -79,7 +79,10 @@
 
 	return ..()
 
-/obj/item/reagent_containers/food/drinks/MouseDrop_T(mob/living/M, mob/user)
+DECLARE_INTERACTIONS(/obj/item/reagent_containers/food/drinks, INTERACT_DRAG(null, PROC_REF(interaction_drag)))
+
+/// Old MouseDrop_T.
+/obj/item/reagent_containers/food/drinks/proc/interaction_drag(mob/user, mob/living/M, datum/interaction/interaction)
 	if(!user.stat && istype(M) && (M == user) && Adjacent(M) && (M.get_effective_size(TRUE) <= 0.50) && food_can_insert_micro)
 		if(!food_inserted_micros)
 			food_inserted_micros = list()
@@ -89,9 +92,9 @@
 		food_inserted_micros += M
 
 		to_chat(user, span_warning("You climb into \the [src]."))
-		return
+		return INTERACTION_HANDLED_PASS
 
-	return ..()
+	return FALSE
 
 /obj/item/reagent_containers/food/drinks/proc/On_Consume(mob/living/eater, mob/feeder, changed = FALSE)
 	SEND_SIGNAL(src, COMSIG_GLASS_DRANK, eater, feeder)

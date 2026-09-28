@@ -101,11 +101,12 @@
 	if(get_dist(user, src) <= 2)
 		. += span_notice("Used to extract geological core samples - this one is [sampled_turf ? "full" : "empty"], and has [num_stored_bags] bag[num_stored_bags != 1 ? "s" : ""] remaining.")
 
-/obj/item/core_sampler/attackby(obj/item/I, mob/living/user)
+/// Old attackby.
+/obj/item/core_sampler/proc/interaction_item(mob/living/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/evidencebag))
 		if(I.contents.len)
 			to_chat(user, span_warning("\The [I] is full."))
-			return
+			return INTERACTION_HANDLED_PASS
 		if(num_stored_bags < 10)
 			consume(I, user)
 			num_stored_bags += 1
@@ -113,7 +114,8 @@
 		else
 			to_chat(user, span_warning("\The [src] can not fit any more bags."))
 	else
-		return ..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/core_sampler/proc/sample_item(item_to_sample, mob/user)
 	var/datum/geosample/geo_data
@@ -155,10 +157,13 @@
 	else
 		to_chat(user, span_warning("You are unable to take a sample of [item_to_sample]."))
 
-/obj/item/core_sampler/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/core_sampler, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/core_sampler/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(filled_bag)
 		to_chat(user, span_notice("You eject the full sample bag."))
 		var/success = 0
@@ -171,3 +176,4 @@
 		icon_state = "sampler0"
 	else
 		to_chat(user, span_warning("The core sampler is empty."))
+	return TRUE

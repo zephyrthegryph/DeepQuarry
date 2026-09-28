@@ -201,12 +201,13 @@
 	var/new_canalyzer = "[drone_name] [examine_canalyzer]"	//Only way I could think to dynamically insert drone name here
 	examine_canalyzer = new_canalyzer
 
-/obj/item/poi/broken_drone_circuit/attackby(obj/item/I as obj, mob/living/user as mob)
+/// Old attackby.
+/obj/item/poi/broken_drone_circuit/proc/interaction_item(mob/living/user, obj/item/I, datum/interaction/interaction)
 	if(!istype(user))
-		return FALSE
+		return INTERACTION_HANDLED_PASS
 	if(fried)
 		to_chat(user, span_warning("[src] is covered in black marks. You feel there's nothing more you can do..."))
-		return FALSE
+		return INTERACTION_HANDLED_PASS
 
 	var/turf/message_turf = get_turf(user)	//We use this to ensure everyone can see it!
 	if(I.has_tool_quality(TOOL_SCREWDRIVER))
@@ -264,19 +265,22 @@
 				P.info = "[examine_canalyzer_printed ? examine_canalyzer_printed : examine_canalyzer]"
 				has_paper = FALSE
 
-	return ..()
+	return FALSE
 
-/obj/item/poi/broken_drone_circuit/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/poi/broken_drone_circuit, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/poi/broken_drone_circuit/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 
 	user.visible_message(message = "[user] is studiously examining [src]", self_message = "You take your time to analyze the circuit...")
 	var/message = ""
 	if(fried)
 		message += "Amidst the scorch mark, you barely make out [drone_name] stenciled on the board... \n"
 		to_chat(user, message)
-		return FALSE
+		return TRUE
 	else
 		message += "You see [drone_name] stenciled onto the board on close inspection! This looks like a secure drone intelligence strata. \n"
 
@@ -295,6 +299,7 @@
 		message += "Looks like there's a printer without any paper in it."
 
 	om_do_after(user, delay = 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, message))
+	return TRUE
 
 /obj/item/poi/broken_drone_circuit/proc/attack_self_timed_done(mob/user, message)
 	to_chat(user, message)

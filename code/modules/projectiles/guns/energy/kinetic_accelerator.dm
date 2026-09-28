@@ -359,11 +359,15 @@
 	. = ..()
 	. += span_notice("Occupies <b>[cost]%</b> of mod capacity.")
 
-/obj/item/borg/upgrade/modkit/attackby(obj/item/A, mob/user)
+DECLARE_INTERACTIONS(/obj/item/borg/upgrade/modkit, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/borg/upgrade/modkit/proc/interaction_item(mob/user, obj/item/A, datum/interaction/interaction)
 	if(istype(A, /obj/item/gun/energy/kinetic_accelerator))
 		install(A, user)
 	else
-		..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /*
 /obj/item/borg/upgrade/modkit/afterInstall(mob/living/silicon/robot/R)
@@ -712,11 +716,12 @@
 	name = "adjustable tracer bolts"
 	desc = "Causes kinetic accelerator bolts to have an adjustable-colored tracer trail and explosion. Use in-hand to change color."
 
-/obj/item/borg/upgrade/modkit/tracer/adjustable/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/borg/upgrade/modkit/tracer/adjustable, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/borg/upgrade/modkit/tracer/adjustable/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	bolt_color = tgui_color_picker(user,"","Choose Color",bolt_color)
+	return TRUE
 
 #undef KA_ENVIRO_TYPE_COLD
 #undef KA_ENVIRO_TYPE_HOT

@@ -142,14 +142,12 @@ INTERACT_ALT(name, effect, requires...)              // old click_alt
 A type declares its specs from a **getter**, not a plain var:
 
 ```dm
-/obj/item/binoculars/get_interactions()
-	var/static/list/L = list(
-		INTERACT_USE("Zoom", PROC_REF(zoom)),
-	)
-	return L
+DECLARE_INTERACTIONS(/obj/item/binoculars, \
+	INTERACT_USE("Zoom", PROC_REF(zoom)), \
+)
 ```
 
-Not `interactions = list(...)` as a type-level var default: DM reallocates a list-valued var's default per *instance* (the list-allocation anti-pattern, [AGENTS.md §3a](../../AGENTS.md)), which would cost memory per item in the world - the opposite of the goal. A `var/static/list` local to the getter is allocated once, ever, and is what AGENTS.md already prescribes for a per-subtype constant table. `get_interactions()` is a proc override like any other, so it costs nothing extra either.
+Not `interactions = list(...)` as a type-level var default: DM reallocates a list-valued var's default per *instance* (the list-allocation anti-pattern, [AGENTS.md §3a](../../AGENTS.md)), which would cost memory per item in the world - the opposite of the goal. A `var/static/list` local to the getter is allocated once, ever, and is what AGENTS.md already prescribes for a per-subtype constant table. `get_interactions()` is a proc override like any other, so it costs nothing extra either. `DECLARE_INTERACTIONS(type, specs...)` (`code/__defines/interactions.dm`) generates exactly that getter, so a type writes only its specs; a multi-line call ends each line with a backslash, because DM does not continue a macro call across lines at its top paren depth.
 
 **Compiling.** `declare_interactions()` (interaction.dm) calls `get_interactions()` and turns each spec into a `/datum/interaction/generic` singleton via `dq_interaction_from_spec()` (`code/datums/interactions/compact.dm`), interned by the spec list's own reference identity, not its printed content: `PROC_REF(x)` is `nameof(.proc/x)`, a bare proc name with no type prefix, so two unrelated types that happen to name their effect proc the same thing (`interaction_self` is a common choice) would collide on a string key. A spec is stable across calls that share it - a `get_interactions()` override returns a `var/static/list`, computed once per *declaring* proc and handed back unchanged by every subtype that inherits it without overriding the getter (the assembly hierarchy's shared `assembly_self` spec) - and distinct for two types that each build their own list, even when the content looks similar (`aicard` and `bodysnatcher` both naming their own `interaction_self`). Generated interactions carry a real `id` (derived from the kind and the effect proc, deduplicated against a collision with an md5 suffix) and plug into `GLOB.interactions_by_type`'s sibling registry the same way, so the resolver, the Menu, examine, screentips and keybinds need no changes to support them - `interaction_candidates()` accepts either a `/datum/interaction` type path (full form) or a live instance (compact form) in the same list.
 
@@ -166,9 +164,7 @@ Not `interactions = list(...)` as a type-level var default: DM reallocates a lis
 		return TRUE
 	zoom()
 // After:
-/obj/item/binoculars/get_interactions()
-	var/static/list/L = list(INTERACT_USE(null, PROC_REF(zoom)))
-	return L
+DECLARE_INTERACTIONS(/obj/item/binoculars, INTERACT_USE(null, PROC_REF(zoom)))
 ```
 
 ```dm
@@ -181,9 +177,7 @@ Not `interactions = list(...)` as a type-level var default: DM reallocates a lis
 			supply.add_reagent(id = REAGENT_ID_NIFREPAIRNANITES, amount = efficiency)
 			update_icon()
 // After:
-/obj/item/nifrepairer/get_interactions()
-	var/static/list/L = list(INTERACT_INSERT(/obj/item/stack/nanopaste, PROC_REF(interaction_item), "Load"))
-	return L
+DECLARE_INTERACTIONS(/obj/item/nifrepairer, INTERACT_INSERT(/obj/item/stack/nanopaste, PROC_REF(interaction_item), "Load"))
 
 /obj/item/nifrepairer/proc/interaction_item(mob/user, obj/item/stack/nanopaste/np, datum/interaction/interaction)
 	if((supply.get_free_space() >= efficiency) && np.use(1))
@@ -200,9 +194,7 @@ Not `interactions = list(...)` as a type-level var default: DM reallocates a lis
 		return
 	remove_id()
 // After:
-/obj/item/communicator/get_interactions()
-	var/static/list/L = list(INTERACT_ALT("Remove ID", PROC_REF(remove_id_alt)))
-	return L
+DECLARE_INTERACTIONS(/obj/item/communicator, INTERACT_ALT("Remove ID", PROC_REF(remove_id_alt)))
 
 /obj/item/communicator/proc/remove_id_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	if(issilicon(user))
@@ -220,6 +212,16 @@ Not `interactions = list(...)` as a type-level var default: DM reallocates a lis
 ```
 
 A plain `get_interactions()` override is for a type with no compact-declaring ancestor of its own (the common case: most items aren't subtypes of something that also uses the compact form).
+
+**`EXTEND_INTERACTIONS(type, specs...)`** generates that `declare_interactions()` override: the type's own specs first, then `..()`, so inherited interactions follow the way an override chain fell through to its parent. Use it on any type whose ancestor declares interactions in any form: an ancestor's full-form `declare_interactions()` adds its entries before `..()`, so a subtype's `get_interactions()` getter would otherwise run *after* them.
+
+**More shapes** (all in `code/__defines/interactions.dm`):
+- `INTERACT_HAND_UNGATED` - an old `attack_hand` that never called `..()`: it runs ahead of `hand_gate()` (no signal, no unbuckling, no structure smash first).
+- `INTERACT_DRAG` - an old `MouseDrop_T`; `held` is the dragged atom.
+- `INTERACT_SELF` - an old `attack_self` that fell through with `return ..()`: its FALSE moves on to the next self-use candidate, unlike `INTERACT_USE`.
+- `INTERACT_ITEM_HOSTILE`, `INTERACT_INSERT_HOSTILE`, `INTERACT_HAND_HOSTILE` (and `_PEACEFUL`) - replace an `IS_HARMING()`/`IS_HELPING()` gate. The stance is an `offered_when` clause (`REQ_HARMING`/`REQ_HELPING`), so in the other stance the interaction isn't meant and the input falls through; hostile ones carry `INTERACTION_TAG_HOSTILE` for the resolver's combat-mode ranking. Full-form interactions set `offered_when = list(REQ_HARMING)` and `tags = list(INTERACTION_TAG_HOSTILE)` for the same.
+
+**Effect results.** An item or drag effect that returns `INTERACTION_HANDLED_PASS` handled the input without using it up, as an old `attackby` that returned nothing: the item's afterattack still follows. `dq_interaction_click_params(user)` gives an item or drag effect the click parameters (precise placement). A self-use needs no hand when `attack_self()` dispatched it (action buttons, anchored items: `REQ_SELF_USE_REACH`). An item's post-pickup reaction (an old `attack_hand` that ran `..()` first) overrides `/obj/item/hand_pickup()` (`. = ..()`, then its own work), not an interaction. Inside an effect, a `rerun_prompt()` re-calls the effect (`PROC_REF(effect), args`), never the old handler: the argument order differs.
 
 **When to reach for the full form instead:** a menu that asks the player which of several things to do, an interaction whose display name or requirement varies with target state (`display_name()`/`applies_to()` overrides), one that needs the tool cost pipeline (`tool`/`duration`), or one two types must NOT share despite an identical-looking spec (interning is opt-out by writing distinct effect procs, even trivially different ones).
 
@@ -361,6 +363,11 @@ The resolver shows the next steps, and examine explains them ("Next: weld the fr
 - `attackby`, `attack_hand`, `attack_self`, `click_alt`, `MouseDrop_T` and object verbs.
 - The domain's `description_info` strings are deleted.
 - Its interaction snapshot is recorded.
+
+**Progress** (handler overrides of `attackby`/`attack_hand`/`attack_self`/`click_alt`/`MouseDrop_T`; `tools/ci/i7_handler_lint.py` ratchets the counts, `check_grep.sh` bans them on fully converted domains):
+- machinery: converted, except files other work owns (medical, cooking, vore, resleeving).
+- structures: converted (154 to 14, the rest owned elsewhere: medical stand, resleeving, vore, test fixtures). Object verbs are not converted yet.
+- items: 910 to 428. What's left sits in hierarchies where a type keeps an override that needs a hand conversion (a parent call mid-body, a leading `..()` under an ancestor that handles the same input, extra click parameters), so its relatives stay legacy too.
 
 **Order within the plan**
 - The tool pipeline (I4) and construction graphs (I5) come first.

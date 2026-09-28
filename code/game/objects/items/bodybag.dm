@@ -94,11 +94,14 @@
 	else
 		src.name = "body bag"
 
-/obj/structure/closet/body_bag/attackby(obj/item/W as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/structure/closet/body_bag, INTERACT_ITEM(null, PROC_REF(body_bag_interaction_item)))
+
+/// Old attackby: label it with a pen. Nothing else reaches the closet's item handling
+/// (a body bag can't be welded or have things stuffed in by hand).
+/obj/structure/closet/body_bag/proc/body_bag_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if (istype(W, /obj/item/pen))
 		om_prompt(src, user, list("kind" = "text", "message" = "What would you like the label to be?", "title" = "[src.name]", "max_length" = MAX_NAME_LEN, "target" = W, "requires" = PROMPT_IN_HAND), PROC_REF(label_entered))
-	//..() //Doesn't need to run the parent. Since when can fucking bodybags be welded shut? -Agouri
-		return
+	return INTERACTION_HANDLED_PASS
 
 /obj/structure/closet/body_bag/store_mobs()
 	contains_body = ..()
@@ -178,11 +181,18 @@
 
 REF_OWNED(/obj/structure/closet/body_bag/cryobag, list("syringe", "tank"))
 
-/obj/structure/closet/body_bag/cryobag/attack_hand(mob/living/user)
+EXTEND_INTERACTIONS(/obj/structure/closet/body_bag/cryobag, \
+	INTERACT_HAND(null, PROC_REF(cryobag_interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(cryobag_interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/structure/closet/body_bag/cryobag/proc/cryobag_interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(used)
 		om_prompt(src, user, list("message" = "Are you sure you want to open \the [src]? \The [src] will expire upon opening it.", "title" = "Confirm Opening", "choices" = list("No", "Yes"), "requires" = PROMPT_ADJACENT), PROC_REF(open_confirmed))
 	else
-		..()
+		return FALSE
+	return TRUE
 
 /obj/structure/closet/body_bag/cryobag/proc/open_confirmed(mob/living/user, confirm, datum/om/prompt/ask)
 	if(confirm == "Yes")
@@ -258,9 +268,10 @@ REF_OWNED(/obj/structure/closet/body_bag/cryobag, list("syringe", "tank"))
 		for(var/mob/living/L in contents) // ALLOW(latent): mobs are never latent
 			. += L.examine(user)
 
-/obj/structure/closet/body_bag/cryobag/attackby(obj/item/W, mob/user)
+/// Old attackby: while closed, scan the occupant or load an injector.
+/obj/structure/closet/body_bag/cryobag/proc/cryobag_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(opened)
-		..()
+		return FALSE
 	else //Allows the bag to respond to a health analyzer by analyzing the mob inside without needing to open it.
 		if(istype(W,/obj/item/healthanalyzer))
 			var/obj/item/healthanalyzer/analyzer = W
@@ -281,7 +292,8 @@ REF_OWNED(/obj/structure/closet/body_bag/cryobag, list("syringe", "tank"))
 					break
 
 		else
-			..()
+			return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /obj/structure/closet/body_bag/wirecutter_act(mob/user, obj/item/W)
 	to_chat(user, "You cut the tag off the bodybag")

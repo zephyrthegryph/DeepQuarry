@@ -244,22 +244,23 @@
 		return ITEM_INTERACT_FAILURE
 
 //Tries to unleash or recall your stored mob
-/obj/item/capture_crystal/attack_self(mob/living/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/capture_crystal/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(loadout && !bound_mob)
 		to_chat(user, span_notice("\The [src] emits an unpleasant tone... It is not ready yet."))
 		playsound(src, 'sound/effects/capture-crystal-problem.ogg', 75, 1, -1)
-		return
+		return TRUE
 	if(bound_mob && !owner)
 		if(bound_mob == user)
 			to_chat(user, span_notice("\The [src] emits an unpleasant tone... It does not activate for you."))
 			playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
-			return
+			return TRUE
 		om_prompt(src, user, list("message" = "\The [src] hasn't got an owner. It has \the [bound_mob] registered to it. Would you like to claim this as yours?", "title" = "Claim ownership", "choices" = list("No", "Yes"), "requires" = PROMPT_HELD), PROC_REF(claim_answered))
-		return
+		return TRUE
 	use_crystal(user)
+	return TRUE
 
 /obj/item/capture_crystal/proc/claim_answered(mob/living/user, answer, datum/om/prompt/ask)
 	if(answer == "Yes" && !owner && bound_mob && bound_mob != user)

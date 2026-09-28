@@ -15,10 +15,11 @@
 	. = ..()
 	icon_state = "[name][rand(1,sides)]"
 
-/obj/item/dice/attackby(obj/item/W, mob/user)
-	..()
+/// Old attackby.
+/obj/item/dice/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/flame/lighter))
 		weight_die(user)
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/dice/welder_act(mob/user, obj/item/tool)
 	weight_die(user)
@@ -41,21 +42,22 @@
 			loaded = to_weight
 	return TRUE
 
-/obj/item/dice/click_alt(mob/user)
-	..()
+/// Old click_alt.
+/obj/item/dice/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	if(cheater)
 		if(!loaded)
-			var/to_weight = rerun_prompt(user, "k46", list("kind" = "number", "message" = "What should the [name] be weighted towards?", "title" = "Set the desired result", "default" = 1, "max" = sides, "min" = 1), TYPE_PROC_REF(/atom, click_alt), args)
+			var/to_weight = rerun_prompt(user, "k46", list("kind" = "number", "message" = "What should the [name] be weighted towards?", "title" = "Set the desired result", "default" = 1, "max" = sides, "min" = 1), PROC_REF(interaction_alt), args)
 			if(isnull(to_weight))
-				return
+				return TRUE
 			if(isnull(to_weight) || (to_weight < 1) || (to_weight > sides) ) //You must input a number higher than 0 and no greater than the number of sides
-				return 0
+				return TRUE
 			else
 				to_chat(user, "You sneakily set the [name] to land on [to_weight]...")
 				loaded = to_weight
 		else
 			to_chat(user, "You set the [name] to roll randomly again.")
 			loaded = null
+	return TRUE
 
 /obj/item/dice/loaded
 	description_info = "This is a loaded die! To change the number it's weighted to, alt-click it. To put it back to normal, alt-click it again."
@@ -103,11 +105,16 @@
 	sides = 10
 	result = 10
 
-/obj/item/dice/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/dice, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+)
+
+/// Old attack_self.
+/obj/item/dice/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	rollDice(user, 0)
+	return TRUE
 
 /obj/item/dice/proc/rollDice(mob/user, silent = FALSE)
 	result = rand(1, sides)

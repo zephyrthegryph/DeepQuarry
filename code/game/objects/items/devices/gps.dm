@@ -184,12 +184,10 @@ REF_OWNED(/obj/item/gps, "compass")
 	else if(tracking)
 		add_overlay("working")
 
-/obj/item/gps/get_interactions()
-	var/static/list/L = list(
-		INTERACT_USE(null, PROC_REF(interaction_self)),
-		INTERACT_ALT(null, PROC_REF(interaction_alt)),
-	)
-	return L
+DECLARE_INTERACTIONS(/obj/item/gps, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+)
 
 /obj/item/gps/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(special_handling)

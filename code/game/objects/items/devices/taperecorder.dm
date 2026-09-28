@@ -33,13 +33,11 @@
 
 REF_OWNED(/obj/item/taperecorder, "mytape")
 
-/obj/item/taperecorder/get_interactions()
-	var/static/list/L = list(
-		INTERACT_INSERT(/obj/item/rectape, PROC_REF(interaction_item), "Insert tape"),
-		INTERACT_HAND(null, PROC_REF(interaction_hand)),
-		INTERACT_USE(null, PROC_REF(interaction_self)),
-	)
-	return L
+DECLARE_INTERACTIONS(/obj/item/taperecorder, \
+	INTERACT_INSERT(/obj/item/rectape, PROC_REF(interaction_item), "Insert tape"), \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+)
 
 /obj/item/taperecorder/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(mytape)
@@ -388,12 +386,10 @@ REF_OWNED(/obj/item/taperecorder, "mytape")
 /obj/item/rectape/fire_act()
 	ruin()
 
-/obj/item/rectape/get_interactions()
-	var/static/list/L = list(
-		INTERACT_USE(null, PROC_REF(interaction_self)),
-		INTERACT_INSERT(/obj/item/pen, PROC_REF(interaction_item), "Label"),
-	)
-	return L
+DECLARE_INTERACTIONS(/obj/item/rectape, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_INSERT(/obj/item/pen, PROC_REF(interaction_item), "Label"), \
+)
 
 /obj/item/rectape/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!ruined)

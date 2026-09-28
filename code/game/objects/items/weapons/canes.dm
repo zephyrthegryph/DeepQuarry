@@ -26,10 +26,13 @@
 	. = ..()
 	concealed_blade = new(src)
 
-/obj/item/cane/concealed/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/cane/concealed, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/cane/concealed/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(concealed_blade)
 		user.visible_message(span_warning("[user] has unsheathed \a [concealed_blade] from [user.p_their()] [src]!"), "You unsheathe \the [concealed_blade] from \the [src].")
 		// Calling drop/put in hands to properly call item drop/pickup procs
@@ -41,8 +44,10 @@
 		user.update_inv_r_hand()
 		concealed_blade = null
 		update_icon()
+	return TRUE
 
-/obj/item/cane/concealed/attackby(obj/item/material/butterfly/W, mob/user)
+/// Old attackby.
+/obj/item/cane/concealed/proc/interaction_item(mob/user, obj/item/material/butterfly/W, datum/interaction/interaction)
 	if(!src.concealed_blade && istype(W))
 		user.visible_message(span_warning("[user] has sheathed \a [W] into [user.p_their()] [src]!"), "You sheathe \the [W] into \the [src].")
 		playsound(src, 'sound/weapons/holster/sheathin.ogg', 50, 1)
@@ -51,7 +56,8 @@
 		src.concealed_blade = W
 		update_icon()
 	else
-		..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/cane/concealed/update_icon()
 	if(concealed_blade)
@@ -91,10 +97,10 @@
 	force = 3
 	var/on = 0
 
-/obj/item/cane/white/collapsible/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/cane/white/collapsible, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/cane/white/collapsible/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	on = !on
 	if(on)
 		user.visible_message(span_infoplain(span_bold("\The [user]") + " extends the white cane."),\

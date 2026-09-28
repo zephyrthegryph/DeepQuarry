@@ -89,9 +89,7 @@
 		return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_BLOCKING
 
-/obj/item/bodysnatcher/get_interactions()
-	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))
-	return L
+DECLARE_INTERACTIONS(/obj/item/bodysnatcher, INTERACT_USE(null, PROC_REF(interaction_self)))
 
 /obj/item/bodysnatcher/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user,span_warning(" A message pops up on the LED display, informing you that you that the mind transfer to yourself was successful... Wait, did that even do anything?"))

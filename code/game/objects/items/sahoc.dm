@@ -16,13 +16,17 @@
 	if(!capsuleowner())
 		capsuleowner_handle = om_handle(user)
 
-/obj/item/buttonofnormal/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/buttonofnormal, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/buttonofnormal/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(colorindex)
 		nonrandom()
 	om_after(src, 10, PROC_REF(do_size_effect), capsuleowner())
+	return TRUE
 
 /obj/item/buttonofnormal/throw_impact(atom/A, speed, mob/user)
 	..()
@@ -38,14 +42,15 @@
 	capsulehit.resize(sizetouse)
 	sizetouse = rand(25,200)/100 //randmization occurs after press
 
-/obj/item/buttonofnormal/attackby(obj/item/W, mob/user)
+/// Old attackby.
+/obj/item/buttonofnormal/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/pen))
 		colorindex = (colorindex + 1) % 6
 		icon_state = "mobcap[colorindex]"
 		update_icon()
 	if(istype(W, /obj/item/card/id))
 		capsuleowner_handle = null
-	..()
+	return FALSE
 
 /obj/item/buttonofnormal/proc/nonrandom() //Secret ball randmoizer rig code
 	switch(colorindex)
@@ -74,23 +79,28 @@
 				/obj/item/reagent_containers/syringe/drugs,
 	)
 
-/obj/item/daredevice/attackby(obj/item/W, mob/user)
+/// Old attackby.
+/obj/item/daredevice/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/pen))
 		colorindex += 1
 		if(colorindex >= 6)
 			colorindex = 0
 		icon_state = "mobcap[colorindex]"
 		update_icon()
-	..()
+	return FALSE
 
-/obj/item/daredevice/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/daredevice, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/daredevice/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/living/capsuleowner = user
 	playsound(src, 'sound/effects/splat.ogg', 30, 1)
 	var/item = pick(winitems)
 	om_after(src, 10 SECONDS, PROC_REF(capsule_result), capsuleowner, item)
+	return TRUE
 
 /obj/item/daredevice/proc/capsule_result(mob/living/capsuleowner, item)
 	switch(luckynumber7)

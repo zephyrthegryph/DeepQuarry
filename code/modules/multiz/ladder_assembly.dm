@@ -10,17 +10,20 @@
 	var/state = 0
 	var/created_name = null
 
-/obj/structure/ladder_assembly/attackby(obj/item/W, mob/user)
+DECLARE_INTERACTIONS(/obj/structure/ladder_assembly, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/structure/ladder_assembly/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/pen))
-		var/_answer_k15 = rerun_prompt(user, "k15", list("kind" = "text", "message" = "Enter the name for the ladder.", "title" = "Ladder Name", "default" = src.created_name, "max_length" = MAX_NAME_LEN, "encode" = FALSE), TYPE_PROC_REF(/atom, attackby), args)
+		var/_answer_k15 = rerun_prompt(user, "k15", list("kind" = "text", "message" = "Enter the name for the ladder.", "title" = "Ladder Name", "default" = src.created_name, "max_length" = MAX_NAME_LEN, "encode" = FALSE), PROC_REF(interaction_item), args)
 		if(isnull(_answer_k15))
 			return TRUE
 		var/t = sanitizeSafe(_answer_k15, MAX_NAME_LEN)
 		if(in_range(src, user))
 			created_name = t
-		return
+		return INTERACTION_HANDLED_PASS
 
-	return ..()
+	return FALSE
 
 /obj/structure/ladder_assembly/wrench_act(mob/user, obj/item/W)
 	if(istype(get_area(src), /area/shuttle))

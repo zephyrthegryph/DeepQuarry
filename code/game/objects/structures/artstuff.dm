@@ -91,11 +91,15 @@
 		for(var/y in 1 to height)
 			grid[x][y] = canvas_color
 
-/obj/item/canvas/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/canvas, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/canvas/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
+	return TRUE
 
 /obj/item/canvas/dropped(mob/user, equipping, slot)
 	pixel_x = initial(pixel_x)
@@ -115,18 +119,20 @@
 		ui.set_autoupdate(FALSE)
 		ui.open()
 
-/obj/item/canvas/attackby(obj/item/I, mob/living/user, params)
+/// Old attackby.
+/obj/item/canvas/proc/interaction_item(mob/living/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/paint_palette))
 		om_prompt_sequence(src, user, list(
 			list("key" = "confirm", "message" = "Adjusting the base color of this canvas will replace ALL pixels with the selected color. Are you sure?", "title" = "Confirm Color Fill", "choices" = list("Yes", "No")),
 			PROC_REF(ask_base_color),
 		), PROC_REF(base_color_chosen), list("target" = I, "requires" = PROMPT_IN_HAND, "data" = list("palette" = I)))
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(IS_HELPING(user))
 		tgui_interact(user)
 	else
-		return ..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/canvas/tgui_data(mob/user)
 	. = ..()
@@ -327,14 +333,18 @@
 	icon = 'icons/obj/artstuff.dmi'
 	icon_state = "palette"
 
-/obj/item/paint_palette/attackby(obj/item/W, mob/user)
+DECLARE_INTERACTIONS(/obj/item/paint_palette, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/paint_palette/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/paint_brush))
 		var/obj/item/paint_brush/P = W
 		var/newcolor = tgui_color_picker(user, "Select a new paint color:", "Paint Palette", P.selected_color)
 		if(newcolor && Adjacent(user, P) && Adjacent(user, src))
 			P.update_paint(newcolor)
 	else
-		return ..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/frame/painting
 	name = "painting frame"

@@ -19,15 +19,15 @@
 	var/list/pages = list()  // Ordered list of pages as they are to be displayed. Can be different order than src.contents.
 
 
-/obj/item/paper_bundle/attackby(obj/item/W, mob/user)
-	..()
+/// Old attackby.
+/obj/item/paper_bundle/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 
 	if (istype(W, /obj/item/paper/carbon))
 		var/obj/item/paper/carbon/C = W
 		if (!C.iscopy && !C.copied)
 			to_chat(user, span_notice("Take off the carbon copy first."))
 			add_fingerprint(user)
-			return
+			return INTERACTION_HANDLED_PASS
 	// adding sheets
 	if(istype(W, /obj/item/paper) || istype(W, /obj/item/photo))
 		insert_sheet_at(user, pages.len+1, W)
@@ -48,7 +48,7 @@
 		consume(W, user)
 	else
 		if(istype(W, /obj/item/tape_roll))
-			return 0
+			return INTERACTION_HANDLED_PASS
 		if(istype(W, /obj/item/pen))
 			// legacy close (TGUI handles paper_bundle now)
 			SStgui.close_uis(src)
@@ -58,7 +58,7 @@
 	update_icon()
 	attack_self(user) //Update the browsed page.
 	add_fingerprint(user)
-	return
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/paper_bundle/proc/insert_sheet_at(mob/user, index, obj/item/sheet)
 	if(istype(sheet, /obj/item/paper))
@@ -99,13 +99,17 @@
 /obj/item/paper_bundle/proc/show_content(mob/user)
 	tgui_interact(user)
 
-/obj/item/paper_bundle/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/paper_bundle, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/paper_bundle/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	update_icon()
 	tgui_interact(user)
+	return TRUE
 
 /obj/item/paper_bundle/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

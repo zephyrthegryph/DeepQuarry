@@ -39,20 +39,21 @@ GLOBAL_LIST_INIT(robot_glass_options, list(
 	if(get_dist(user, src) == 0)
 		. += span_notice("It currently holds [stored_matter]/30 fabrication-units.")
 
-/obj/item/rsf/attackby(obj/item/W as obj, mob/user as mob)
-	..()
+/// Old attackby.
+/obj/item/rsf/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if (istype(W, /obj/item/rcd_ammo))
 
 		if ((stored_matter + 10) > 30)
 			balloon_alert(user, "the fabricator can't hold any more matter.")
-			return
+			return INTERACTION_HANDLED_PASS
 
 		consume(W, user)
 
 		stored_matter += 10
 		playsound(src, 'sound/machines/click.ogg', 10, 1)
 		balloon_alert(user,"the fabricator now holds [stored_matter]/30 fabrication-units.")
-		return
+		return INTERACTION_HANDLED_PASS
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/rsf/item_ctrl_click(mob/living/user)
 	if(!Adjacent(user) || !istype(user))
@@ -65,10 +66,13 @@ GLOBAL_LIST_INIT(robot_glass_options, list(
 		balloon_alert(user, "container chosen: [glass_choice]")
 		glasstype_name = glass_choice
 
-/obj/item/rsf/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/rsf, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/rsf/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/options = list(
 		"card deck" = image(icon = 'icons/obj/playing_cards.dmi', icon_state = "deck"),
 		"card deck (big)" = image(icon = 'icons/obj/playing_cards.dmi', icon_state = "deck"),
@@ -84,6 +88,7 @@ GLOBAL_LIST_INIT(robot_glass_options, list(
 		mode = choice
 		playsound(src, 'sound/effects/pop.ogg', 50, 0)
 		balloon_alert(user, "you will synthesize: [mode]")
+	return TRUE
 
 /obj/item/rsf/afterattack(atom/A, mob/user as mob, proximity)
 

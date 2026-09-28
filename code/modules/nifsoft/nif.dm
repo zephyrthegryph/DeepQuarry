@@ -211,20 +211,24 @@ REF_OWNED_LIST(/obj/item/nif, "nifsofts")
 		persist_nif_data(human)
 
 //Attackby proc, for maintenance
-/obj/item/nif/attackby(obj/item/W, mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/nif/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(open == 1 && istype(W,/obj/item/stack/cable_coil))
 		var/obj/item/stack/cable_coil/C = W
 		if(C.get_amount() < 3)
 			to_chat(user,span_warning("You need at least three coils of wire to add them to \the [src]."))
-			return
+			return INTERACTION_HANDLED_PASS
 		if(durability >= initial(durability))
 			to_chat(user,span_notice("There's no damaged wiring that needs replacing!"))
 			open = 3
 			update_icon()
-			return
+			return INTERACTION_HANDLED_PASS
 		om_do_after(user, 6 SECONDS, src, src, PROC_REF(rewire_done), list(user, C))
 	else
-		return ..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/nif/proc/rewire_done(mob/user, obj/item/stack/cable_coil/C)
 	if(open == 1 && C.use(3))

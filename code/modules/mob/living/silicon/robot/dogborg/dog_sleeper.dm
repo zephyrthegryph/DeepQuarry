@@ -260,11 +260,12 @@ REF_OWNED(/obj/item/dogborg/sleeper, list("ore_bag", "med_analyzer"))
 	hound = R
 	return R.draw_power(ROBOT_CELL_JOULES(amt), src, 0, TRUE)
 
-/obj/item/dogborg/sleeper/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/dogborg/sleeper/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
+	return TRUE
 
 /obj/item/dogborg/sleeper/tgui_state(mob/user)
 	return GLOB.tgui_conscious_state

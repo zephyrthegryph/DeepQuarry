@@ -72,11 +72,14 @@
 	locked = 0
 	return 1
 
-/obj/item/circuitboard/security/attackby(obj/item/I as obj, mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/circuitboard/security, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/circuitboard/security/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I,/obj/item/card/id))
 		if(emagged)
 			to_chat(user, span_warning("Circuit lock does not respond."))
-			return
+			return INTERACTION_HANDLED_PASS
 		if(check_access(I))
 			locked = !locked
 			to_chat(user, span_notice("You [locked ? "" : "un"]lock the circuit controls."))
@@ -85,10 +88,10 @@
 	else if(I.has_tool_quality(TOOL_MULTITOOL))
 		if(locked)
 			to_chat(user, span_warning("Circuit controls are locked."))
-			return
+			return INTERACTION_HANDLED_PASS
 		var/existing_networks = jointext(network,",")
 		om_prompt(src, user, list("kind" = "text", "message" = "Which networks would you like to connect this camera console circuit to? Separate networks with a comma. No Spaces!\nFor example: SS13,Security,Secret ", "title" = "Multitool-Circuitboard interface", "default" = existing_networks, "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_ADJACENT), PROC_REF(networks_entered))
-	return
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/circuitboard/security/proc/networks_entered(mob/user, input, datum/om/prompt/ask)
 	if(locked)

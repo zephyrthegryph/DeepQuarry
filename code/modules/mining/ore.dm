@@ -163,12 +163,16 @@
 	. = ..()
 	randpixel_xy()
 
-/obj/item/ore/attackby(obj/item/W as obj, mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/ore, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/ore/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W,/obj/item/core_sampler))
 		var/obj/item/core_sampler/C = W
 		C.sample_item(src, user)
 	else
-		return ..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/ore/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(M.handle_eat_minerals(src, user))

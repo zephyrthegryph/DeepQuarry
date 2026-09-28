@@ -168,19 +168,22 @@
 	else
 		paste_repair_step(user, NP, site)
 
-/obj/item/mecha_parts/component/attackby(obj/item/W as obj, mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/mecha_parts/component, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/mecha_parts/component/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W,/obj/item/stack/nanopaste))
 		var/obj/item/stack/nanopaste/NP = W
 
 		if(get_integrity() < max_integrity)
 			to_chat(user, span_notice("You start to repair damage to \the [src]."))
 			paste_repair_step(user, NP, src)
-			return
+			return INTERACTION_HANDLED_PASS
 
 		else
 			to_chat(user, span_notice("\The [src] doesn't require repairs."))
 
-	return ..()
+	return FALSE
 
 // Various procs to handle different calls by Exosuits. IE, movement actions, damage actions, etc.
 

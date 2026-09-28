@@ -102,11 +102,11 @@ So, hopefully this is helpful if any more icons are to be added/changed/wonderin
 		if(3)
 			. += "It is assembled."
 
-/obj/structure/particle_accelerator/attackby(obj/item/W, mob/user)
-	if(istype(W, /obj/item/stack/cable_coil) && process_tool_hit(W, user))
-		return
-	..()
-	return
+DECLARE_INTERACTIONS(/obj/structure/particle_accelerator, INTERACT_INSERT(/obj/item/stack/cable_coil, PROC_REF(interaction_wire), "Wire"))
+
+/// Old attackby: wire the part (a construction step).
+/obj/structure/particle_accelerator/proc/interaction_wire(mob/user, obj/item/stack/cable_coil/W, datum/interaction/interaction)
+	return process_tool_hit(W, user) ? INTERACTION_HANDLED_PASS : FALSE
 
 /obj/structure/particle_accelerator/wrench_act(mob/user, obj/item/W)
 	return process_tool_hit(W, user, TOOL_WRENCH) ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING

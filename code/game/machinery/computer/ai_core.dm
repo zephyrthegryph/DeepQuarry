@@ -15,7 +15,10 @@
 	if(mapload)
 		laws = new using_map.default_law_type
 
-/obj/structure/AIcore/attackby(obj/item/P as obj, mob/user as mob)
+DECLARE_INTERACTIONS(/obj/structure/AIcore, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/structure/AIcore/proc/interaction_item(mob/user, obj/item/P, datum/interaction/interaction)
 
 	switch(state)
 		if(1)
@@ -31,17 +34,17 @@
 				var/obj/item/stack/cable_coil/C = P
 				if (C.get_amount() < 5)
 					to_chat(user, span_warning("You need five coils of wire to add them to the frame."))
-					return
+					return INTERACTION_HANDLED_PASS
 				to_chat(user, span_notice("You start to add cables to the frame."))
 				playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
 				om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, C))
-				return
+				return INTERACTION_HANDLED_PASS
 		if(3)
 			if(istype(P, /obj/item/stack/material) && P.get_material_name() == MAT_RGLASS)
 				var/obj/item/stack/RG = P
 				if (RG.get_amount() < 2)
 					to_chat(user, span_warning("You need two sheets of glass to put in the glass panel."))
-					return
+					return INTERACTION_HANDLED_PASS
 				to_chat(user, span_notice("You start to put in the glass panel."))
 				playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
 				om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(user, RG))
@@ -73,14 +76,14 @@
 				var/mob/living/carbon/brain/occupant = M.get_occupant()
 				if(!occupant)
 					to_chat(user, span_warning("Sticking an empty [P] into the frame would sort of defeat the purpose."))
-					return
+					return INTERACTION_HANDLED_PASS
 				if(occupant.stat == DEAD)
 					to_chat(user, span_warning("Sticking a dead [P] into the frame would sort of defeat the purpose."))
-					return
+					return INTERACTION_HANDLED_PASS
 
 				if(jobban_isbanned(occupant, JOB_AI))
 					to_chat(user, span_warning("This [P] does not seem to fit."))
-					return
+					return INTERACTION_HANDLED_PASS
 
 				if(occupant.mind)
 					SSantag_job.clear_antag_roles(occupant.mind, 1)
@@ -90,6 +93,7 @@
 				brain = P
 				to_chat(user, "Added [P].")
 				icon_state = "3b"
+	return INTERACTION_HANDLED_PASS
 
 /obj/structure/AIcore/proc/attackby_timed_done(mob/user, obj/item/stack/cable_coil/C)
 	if(!(state == 2))
@@ -253,7 +257,10 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore/deactivated, REGISTRY_AI_CORES_DEACTIV
 		if (ai.mind == malfai)
 			return 1
 
-/obj/structure/AIcore/deactivated/attackby(obj/item/W, mob/user)
+EXTEND_INTERACTIONS(/obj/structure/AIcore/deactivated, INTERACT_ITEM(null, PROC_REF(deactivated_interaction_item)))
+
+/// Old attackby.
+/obj/structure/AIcore/deactivated/proc/deactivated_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 
 	if(istype(W, /obj/item/aicard))
 		var/obj/item/aicard/card = W
@@ -262,9 +269,9 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore/deactivated, REGISTRY_AI_CORES_DEACTIV
 			load_ai(transfer,card,user)
 		else
 			to_chat(user, span_danger("ERROR:") + " Unable to locate artificial intelligence.")
-		return
+		return INTERACTION_HANDLED_PASS
 
-	return ..()
+	return FALSE
 
 /obj/structure/AIcore/deactivated/wrench_act(mob/user, obj/item/tool)
 	if(anchored)

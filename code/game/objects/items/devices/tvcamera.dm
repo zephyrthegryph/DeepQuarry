@@ -38,9 +38,7 @@ REF_OWNED(/obj/item/tvcamera, list("camera", "radio"))
 	radio.hear_talk(M, message_pieces, verb)
 	. = ..()
 
-/obj/item/tvcamera/get_interactions()
-	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))
-	return L
+DECLARE_INTERACTIONS(/obj/item/tvcamera, INTERACT_USE(null, PROC_REF(interaction_self)))
 
 /obj/item/tvcamera/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
@@ -188,9 +186,7 @@ REF_OWNED(/obj/item/clothing/accessory/bodycam, list("bcamera", "bradio"))
 	bradio.hear_talk(M, message_pieces, verb)
 	. = ..()
 
-/obj/item/clothing/accessory/bodycam/get_interactions()
-	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))
-	return L
+DECLARE_INTERACTIONS(/obj/item/clothing/accessory/bodycam, INTERACT_USE(null, PROC_REF(interaction_self)))
 
 /obj/item/clothing/accessory/bodycam/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
@@ -287,9 +283,7 @@ REF_OWNED(/obj/item/clothing/accessory/bodycam, list("bcamera", "bradio"))
 
 //Assembly by roboticist
 
-/obj/item/robot_parts/head/get_interactions()
-	var/static/list/L = list(INTERACT_INSERT(/obj/item/assembly/infra, PROC_REF(interaction_item), null))
-	return L
+DECLARE_INTERACTIONS(/obj/item/robot_parts/head, INTERACT_INSERT(/obj/item/assembly/infra, PROC_REF(interaction_item), null))
 
 /obj/item/robot_parts/head/proc/interaction_item(mob/user, obj/item/assembly/S, datum/interaction/interaction)
 	var/obj/item/TVAssembly/A = new(user)
@@ -308,9 +302,7 @@ REF_OWNED(/obj/item/clothing/accessory/bodycam, list("bcamera", "bradio"))
 	var/buildstep = 0
 	w_class = ITEMSIZE_LARGE
 
-/obj/item/TVAssembly/get_interactions()
-	var/static/list/L = list(INTERACT_ITEM(null, PROC_REF(interaction_item)))
-	return L
+DECLARE_INTERACTIONS(/obj/item/TVAssembly, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 
 /// Old attackby: a construction step machine. Faithfully preserved, including that a
 /// successful buildstep 0/1 match still falls through to ..() afterward (no early return there).

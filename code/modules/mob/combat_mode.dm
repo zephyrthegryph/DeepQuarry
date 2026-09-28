@@ -90,6 +90,14 @@
 /mob/proc/pred_no_combat_mode(mob/actor, atom/target, obj/item/held)
 	return !combat_mode
 
+/// REQ_HARMING: combat mode on and no Disarm/Grab variant held.
+/proc/dq_pred_harming(mob/actor, atom/target, obj/item/held)
+	return istype(actor) && IS_HARMING(actor)
+
+/// REQ_HELPING: combat mode off and no Disarm/Grab variant held.
+/proc/dq_pred_helping(mob/actor, atom/target, obj/item/held)
+	return istype(actor) && IS_HELPING(actor)
+
 /**
  * Runs one Use on `target` as `variant` (the Disarm or Grab interaction), then
  * puts the previous variant back. Returns what the Use returned.

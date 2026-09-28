@@ -71,6 +71,9 @@
 	else
 		icon_state = "displaced"
 
+/// Spawned by the random reinforced-girder mapping spawner.
+/obj/structure/girder/reinforced
+
 /obj/structure/girder/displaced
 	icon_state = "displaced"
 	anchored = FALSE

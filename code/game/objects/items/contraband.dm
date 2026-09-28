@@ -77,13 +77,16 @@
 
 /// Snorting.
 
-/obj/item/reagent_containers/powder/attackby(obj/item/W, mob/living/user)
+DECLARE_INTERACTIONS(/obj/item/reagent_containers/powder, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/reagent_containers/powder/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
 
 	if(!ishuman(user)) /// You gotta be fleshy to snort the naughty drugs.
-		return ..()
+		return FALSE
 
 	if(!istype(W, /obj/item/glass_extra/straw) && !istype(W, /obj/item/reagent_containers/rollingpaper))
-		return ..()
+		return FALSE
 
 	user.visible_message(span_warning("[user] snorts [src] with [W]!"))
 	playsound(loc, 'sound/effects/snort.ogg', 50, 1)
@@ -93,6 +96,7 @@
 
 	if(!reagents.total_volume) /// Did we use all of it?
 		consume(src, user)
+	return INTERACTION_HANDLED_PASS
 
 ////// End powder. /////////
 
@@ -105,10 +109,10 @@
 	item_state = "table_parts"
 	w_class = ITEMSIZE_HUGE
 
-/obj/item/stolenpackage/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/stolenpackage, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/stolenpackage/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	// Another way of doing this. Commented out because the other method is better for this application.
 	/*var/spawn_chance = rand(1,100)
 	switch(spawn_chance)
@@ -121,7 +125,7 @@
 			to_chat(user, "You got two things!")
 		if(100)
 			to_chat(user, "The box contained nothing!")
-			return
+			return TRUE
 	*/
 	var/loot = pick(/obj/effect/landmark/costume,
 					/obj/item/clothing/glasses/thermal,
@@ -200,6 +204,7 @@
 	new loot(user.loc)
 	to_chat(user, "You unwrap the package.")
 	consume(src, user)
+	return TRUE
 
 /obj/item/miscdisc
 	name = "strange artefact"
@@ -208,11 +213,12 @@
 	icon = 'icons/obj/contraband_vr.dmi'
 	w_class = ITEMSIZE_NORMAL
 
-/obj/item/miscdisc/attack_self(mob/living/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/miscdisc, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/miscdisc/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, "As you hold the large disc in your open palm, fingers cusped around the edge, the crystal embedded in the item begins to vibrate. It lifts itself from the disc a few cenimetres, before beginning to glow with a bright red light. The glow lasts for a few seconds, before the crystal embeds itself back into the disc with a quick snap.")
+	return TRUE
 
 
 /obj/item/contraband

@@ -86,9 +86,7 @@ REF_OWNED(/obj/item/radio/headset, list("keyslot1", "keyslot2"))
 /obj/item/radio/headset/tgui_state(mob/user)
 	return GLOB.tgui_inventory_state
 
-/obj/item/radio/headset/get_interactions()
-	var/static/list/L = list(INTERACT_INSERT(/obj/item/encryptionkey, PROC_REF(interaction_item), "Insert key"))
-	return L
+DECLARE_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptionkey, PROC_REF(interaction_item), "Insert key"))
 
 /obj/item/radio/headset/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(keyslot1 && keyslot2)

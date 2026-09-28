@@ -340,15 +340,18 @@ REF_OWNED(/obj/effect/mine, "trap")
 
 	var/list/allowed_gadgets = null
 
-/obj/item/mine/attack_self(mob/user)	// You do not want to move or throw a land mine while priming it... Explosives + Sudden Movement = Bad Times
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/mine, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/mine/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	msg_admin_attack("[key_name_admin(user)] primed \a [src]")
 	user.visible_message("[user] starts priming \the [src.name].", "You start priming \the [src.name]. Hold still!")
 	om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user), on_fail = PROC_REF(attack_self_timed_failed), fail_args = list(user))
-	return
+	return TRUE
 
 /obj/item/mine/proc/attack_self_timed_done(mob/user)
 	playsound(src, 'sound/weapons/armbomb.ogg', 75, 1, -3)
@@ -358,7 +361,8 @@ REF_OWNED(/obj/effect/mine, "trap")
 	visible_message("[user] triggers \the [src.name]!", "You accidentally trigger \the [src.name]!")
 	prime(user, TRUE)
 
-/obj/item/mine/attackby(obj/item/W as obj, mob/living/user as mob)
+/// Old attackby.
+/obj/item/mine/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
 	if(LAZYLEN(allowed_gadgets) && !trap)
 		var/allowed = FALSE
 
@@ -372,7 +376,7 @@ REF_OWNED(/obj/effect/mine, "trap")
 			W.forceMove(src)
 			trap = W
 
-	..()
+	return FALSE
 
 /obj/item/mine/proc/prime(mob/user as mob, explode_now = FALSE)
 	visible_message("\The [src.name] beeps as the priming sequence completes.")

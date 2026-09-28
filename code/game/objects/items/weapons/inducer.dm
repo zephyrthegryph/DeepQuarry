@@ -71,7 +71,8 @@
 	return FALSE
 
 
-/obj/item/inducer/attackby(obj/item/W, mob/user)
+/// Old attackby.
+/obj/item/inducer/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/cell))
 		if(opened)
 			if(!cell)
@@ -80,18 +81,18 @@
 				to_chat(user, span_notice("You insert [W] into [src]."))
 				cell = W
 				update_icon()
-				return
+				return INTERACTION_HANDLED_PASS
 			else
 				to_chat(user, span_warning("[src] already has \a [cell] installed!"))
-				return
+				return INTERACTION_HANDLED_PASS
 
 	if(cantbeused(user))
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(recharge(W, user))
-		return
+		return INTERACTION_HANDLED_PASS
 
-	return ..()
+	return FALSE
 
 /obj/item/inducer/screwdriver_act(mob/user, obj/item/tool)
 	playsound(src, tool.usesound, 50, 1)
@@ -196,16 +197,20 @@
 		user.visible_message(span_notice("[user] recharged [A]!"), span_notice("You recharged [A]!"))
 	recharging = FALSE
 
-/obj/item/inducer/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/inducer, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/inducer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(opened && cell)
 		user.visible_message(span_notice("[user] removes [cell] from [src]!"), span_notice("You remove [cell]."))
 		cell.update_icon()
 		user.put_in_hands(cell)
 		cell = null
 		update_icon()
+	return TRUE
 
 /obj/item/inducer/examine(mob/living/M)
 	. = ..()
