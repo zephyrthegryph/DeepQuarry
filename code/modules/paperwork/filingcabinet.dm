@@ -112,7 +112,7 @@ DECLARE_INTERACTIONS(/obj/structure/filingcabinet, \
 	data["cabinet_name"] = "[name]"
 	data["contents"] = list()
 	data["contents_ref"] = list()
-	for(var/obj/item/content in contents_of(src))
+	FOR_REAL_CONTENTS(var/obj/item/content, src)
 		data["contents"] += "[content]"
 		data["contents_ref"] += "[REF(content)]"
 

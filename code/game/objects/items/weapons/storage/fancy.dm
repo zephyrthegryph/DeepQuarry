@@ -37,12 +37,14 @@
 	. = ..()
 
 	if(Adjacent(user))
-		if(!length(slot_contents(CONTAINER_SLOT_STORAGE)))
+		// Counted without materializing: real things plus latent entries (systems.md §18).
+		var/left = contents_count(src) + (has_latent() ? latent_count(CONTAINER_SLOT_STORAGE) : 0)
+		if(!left)
 			. += "There are no [icon_type]s left in the box."
-		else if(length(slot_contents(CONTAINER_SLOT_STORAGE)) == 1)
+		else if(left == 1)
 			. += "There is one [icon_type] left in the box."
 		else
-			. += "There are [length(slot_contents(CONTAINER_SLOT_STORAGE))] [icon_type]s in the box."
+			. += "There are [left] [icon_type]s in the box."
 
 /*
  * Egg Box

@@ -1871,7 +1871,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 			data["maint_can_req_access"] = !!add_req_access
 			data["maint_can_maint_access"] = !!maint_access
 			data["maint_can_set_air"] = (state > 0)
-			data["maint_can_remove_passenger"] = (state > 0) && (locate(/obj/item/mecha_parts/mecha_equipment/tool/passenger) in slot_contents())
+			data["maint_can_remove_passenger"] = (state > 0) && !!locate_within(src, /obj/item/mecha_parts/mecha_equipment/tool/passenger)
 			return data
 	// Damage banner.
 	var/list/dam = list()

@@ -599,8 +599,7 @@
 	data["has_cache"] = !!cache()
 	data["cache_name"] = cache() ? cache().name : ""
 	var/has_book = FALSE
-	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/book/B in contents) // ALLOW(latent): materialized above
+	FOR_REAL_CONTENTS(var/obj/item/book/B, src)
 		has_book = TRUE
 		break
 	data["has_book"] = has_book

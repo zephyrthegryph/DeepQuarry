@@ -101,7 +101,7 @@ DECLARE_INTERACTIONS(/obj/item/clipboard, \
 			"kind" = "paper",
 			"is_top" = TRUE,
 		))
-	for(var/obj/item/paper/P in contents_of(src))
+	FOR_REAL_CONTENTS(var/obj/item/paper/P, src)
 		if(P == toppaper())
 			continue
 		items += list(list(
@@ -110,7 +110,7 @@ DECLARE_INTERACTIONS(/obj/item/clipboard, \
 			"kind" = "paper",
 			"is_top" = FALSE,
 		))
-	for(var/obj/item/photo/Ph in contents_of(src))
+	FOR_REAL_CONTENTS(var/obj/item/photo/Ph, src)
 		items += list(list(
 			"ref" = "\ref[Ph]",
 			"name" = Ph.name,

@@ -1055,10 +1055,11 @@ EXTEND_INTERACTIONS(/obj/item/storage/trinketbox, INTERACT_USE("Open", PROC_REF(
 
 /obj/item/storage/trinketbox/examine(mob/user)
 	. = ..()
-	var/list/held = slot_contents(CONTAINER_SLOT_STORAGE)
-	if(open && length(held))
-		var/display_item = held[1]
+	if(!open)
+		return
+	FOR_REAL_CONTENTS(var/atom/movable/display_item as anything, src)
 		. += span_notice("\The [src] contains \the [display_item]!")
+		return
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/storage, \
