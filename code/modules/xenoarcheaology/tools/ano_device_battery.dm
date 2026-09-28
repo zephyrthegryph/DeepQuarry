@@ -135,7 +135,7 @@ DECLARE_INTERACTIONS(/obj/item/anodevice, \
 		if("startup")
 			if(inserted_battery() && inserted_battery().battery_effect && (inserted_battery().stored_charge > 0))
 				activated = TRUE
-				PERIODIC_START(src, PERIODIC_SLOW)
+				om_task_periodic(src, PERIODIC_SLOW)
 				visible_message(span_blue("[icon2html(src,viewers(src))] [src] whirrs."), span_blue("[icon2html(src,viewers(src))]You hear something whirr."))
 				if(!inserted_battery().battery_effect.activated)
 					inserted_battery().battery_effect.ToggleActivate(1)

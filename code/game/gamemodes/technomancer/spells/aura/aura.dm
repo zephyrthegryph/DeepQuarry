@@ -9,7 +9,7 @@
 /obj/item/spell/aura/Initialize(mapload)
 	. = ..()
 	set_light(calculate_spell_power(7), calculate_spell_power(4), l_color = glow_color)
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 	log_and_message_admins("has started casting [src].")
 
 // admins are told the maintained spell stopped.

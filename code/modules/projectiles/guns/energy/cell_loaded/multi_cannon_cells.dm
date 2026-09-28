@@ -20,10 +20,10 @@
 /// The recharge loop is running behaviour, so it starts when the cell goes live.
 /obj/item/ammo_casing/macrobattery/on_materialize()
 	. = ..()
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 
 /obj/item/ammo_casing/macrobattery/on_dematerialize()
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 	return ..()
 
 /obj/item/ammo_casing/macrobattery/periodic_step()
@@ -37,7 +37,7 @@
 	if(charge)
 		charge --
 		ticks = 1 //so we have to start over on the charge time.
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 		. = BB
 		//alright, the below seems jank. it IS jank, but for whatever reason I can't reuse BB. big bad
 		BB = null
@@ -59,7 +59,7 @@
 		if(!BB)
 			BB = new projectile_type
 	if(charge >= max_charge)
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 	if(istype(loc,/obj/item/gun/projectile/multi_cannon))
 		loc.update_icon()
 

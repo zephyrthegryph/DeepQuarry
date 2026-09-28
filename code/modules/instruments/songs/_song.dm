@@ -212,7 +212,7 @@ REF_BACK_VIA(/datum/song, list("using_instrument_static" = "songs_using"))
 	delay_by = 0
 	current_chord = 1
 	music_player_handle = om_handle(user)
-	PERIODIC_START(src, PERIODIC_INSTRUMENTS)
+	om_task_periodic(src, PERIODIC_INSTRUMENTS)
 	if(id)
 		sync_play()
 
@@ -254,7 +254,7 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 	playing = FALSE
 	if(!debug_mode)
 		compiled_chords = null
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 	OM_EMIT(parent(), /datum/om/event/instrument_end, finished)
 	terminate_all_sounds(TRUE)
 	hearing_mobs.len = 0

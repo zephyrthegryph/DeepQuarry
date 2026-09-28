@@ -185,7 +185,7 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 		span_notice("You start to clean \the [src].") \
 	)
 
-	om_do_after(user, 2 SECONDS, src, src, PROC_REF(clean_done), list(user))
+	om_task_timed(user, 2 SECONDS, src, src, PROC_REF(clean_done), list(user))
 	return TRUE
 
 /obj/machinery/microwave/proc/clean_done(mob/user)
@@ -576,7 +576,7 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 	span_notice("You try to open [src] and remove its contents.")
 	)
 
-	om_do_after(user, 1 SECOND, src, src, PROC_REF(eject_done), list(user))
+	om_task_timed(user, 1 SECOND, src, src, PROC_REF(eject_done), list(user))
 	return TRUE
 
 /obj/machinery/microwave/proc/eject_done(mob/user)

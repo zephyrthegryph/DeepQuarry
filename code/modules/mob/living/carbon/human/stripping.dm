@@ -25,19 +25,19 @@
 		// Handle things that are part of this interface but not removing/replacing a given item.
 		if("pockets")
 			visible_message(span_danger("\The [user] is trying to empty \the [src]'s pockets!"))
-			om_do_after(user, HUMAN_STRIP_DELAY, target = src, receiver = src, on_done = PROC_REF(handle_strip_human_done), done_args = list(user))
+			om_task_timed(user, HUMAN_STRIP_DELAY, target = src, receiver = src, on_done = PROC_REF(handle_strip_human_done), done_args = list(user))
 			return
 		if("splints")
 			visible_message(span_danger("\The [user] is trying to remove \the [src]'s splints!"))
-			om_do_after(user, HUMAN_STRIP_DELAY, target = src, receiver = src, on_done = PROC_REF(handle_strip_human_done2), done_args = list(user))
+			om_task_timed(user, HUMAN_STRIP_DELAY, target = src, receiver = src, on_done = PROC_REF(handle_strip_human_done2), done_args = list(user))
 			return
 		if("sensors")
 			visible_message(span_danger("\The [user] is trying to set \the [src]'s sensors!"))
-			om_do_after(user, HUMAN_STRIP_DELAY, target = src, receiver = src, on_done = PROC_REF(handle_strip_human_done3), done_args = list(user))
+			om_task_timed(user, HUMAN_STRIP_DELAY, target = src, receiver = src, on_done = PROC_REF(handle_strip_human_done3), done_args = list(user))
 			return
 		if("internals")
 			visible_message(span_danger("\The [user] is trying to set \the [src]'s internals!"))
-			om_do_after(user, HUMAN_STRIP_DELAY, target = src, receiver = src, on_done = PROC_REF(handle_strip_human_done4), done_args = list(user))
+			om_task_timed(user, HUMAN_STRIP_DELAY, target = src, receiver = src, on_done = PROC_REF(handle_strip_human_done4), done_args = list(user))
 			return
 		if("tie")
 			var/obj/item/clothing/under/suit = get_equipped_item(SLOT_ID_UNIFORM)

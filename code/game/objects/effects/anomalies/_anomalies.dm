@@ -26,7 +26,7 @@
 /obj/effect/anomaly/Initialize(mapload, new_lifespan, drops_core = TRUE)
 	. = ..()
 
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 	impact_area_handle = om_handle(get_area(src))
 
 	if(!impact_area())
@@ -134,7 +134,7 @@ EXTEND_INTERACTIONS(/obj/effect/anomaly, \
 			return TRUE
 	if(istype(I, /obj/item/anomaly_scanner) && stats)
 		var/obj/item/anomaly_scanner/scanner = I
-		om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, scanner))
+		om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, scanner))
 		return TRUE
 	return FALSE
 

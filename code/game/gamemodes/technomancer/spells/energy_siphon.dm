@@ -52,7 +52,7 @@
 			to_chat(user, span_warning("You cannot steal energy from \a [AM]."))
 			return 0
 		siphoning_handle = om_handle(AM)
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 		update_icon()
 		add_attack_logs(user,AM,"Siphoned energy from [src]")
 	else

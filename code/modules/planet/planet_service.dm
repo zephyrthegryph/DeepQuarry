@@ -31,7 +31,7 @@ GLOBAL_DATUM_INIT(planet_service, /datum/world_service/planets, new)
 	for(var/P in planet_datums)
 		var/datum/planet/NP = new P()
 		planets += NP
-		PERIODIC_START(NP, PERIODIC_SLOW)
+		om_task_periodic(NP, PERIODIC_SLOW)
 		for(var/index in 1 to length(NP.expected_z_levels))
 			var/Z = LAZYACCESS(NP.expected_z_levels, index)
 			if(!isnum(Z))

@@ -66,7 +66,7 @@ DECLARE_INTERACTIONS(/obj/item/plastique, \
 	to_chat(user, "Planting explosives...")
 	user.do_attack_animation(target)
 
-	om_do_after(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(target, user))
+	om_task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(target, user))
 
 /obj/item/plastique/proc/afterattack_timed_done(atom/movable/target, mob/user)
 	if(!(in_range(user, target)))

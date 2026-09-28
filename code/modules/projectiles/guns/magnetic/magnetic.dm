@@ -39,7 +39,7 @@
 		loaded = new loaded(src)
 
 	if(capacitor && capacitor.charge < capacitor.max_charge)
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 
 	if(capacitor)
 		power_per_tick = (power_cost*0.15) * capacitor.rating
@@ -162,7 +162,7 @@ REF_OWNED(/obj/item/gun/magnetic, list("cell", "loaded", "capacitor"))
 				to_chat(user, span_warning("\The [src] already has \a [cell] installed."))
 				return
 			cell = thing
-			PERIODIC_START(src, PERIODIC_SLOW)
+			om_task_periodic(src, PERIODIC_SLOW)
 			user.drop_from_inventory(cell, src)
 			playsound(src, 'sound/machines/click.ogg', 10, 1)
 			user.visible_message(span_infoplain(span_bold("\The [user]") + " slots \the [cell] into \the [src]."))
@@ -174,7 +174,7 @@ REF_OWNED(/obj/item/gun/magnetic, list("cell", "loaded", "capacitor"))
 				to_chat(user, span_warning("\The [src] already has \a [capacitor] installed."))
 				return
 			capacitor = thing
-			PERIODIC_START(src, PERIODIC_SLOW)
+			om_task_periodic(src, PERIODIC_SLOW)
 			user.drop_from_inventory(capacitor, src)
 			playsound(src, 'sound/machines/click.ogg', 10, 1)
 			power_per_tick = (power_cost*0.15) * capacitor.rating
@@ -218,7 +218,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/magnetic, INTERACT_HAND(null, PROC_REF(intera
 		else if(cell && removable_components)
 			removing = cell
 			cell = null
-			PERIODIC_START(src, PERIODIC_SLOW)
+			om_task_periodic(src, PERIODIC_SLOW)
 
 		if(removing)
 			removing.forceMove(get_turf(src))
@@ -243,7 +243,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/magnetic, INTERACT_HAND(null, PROC_REF(intera
 
 	use_ammo()
 	capacitor.use(power_cost)
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 	update_icon()
 
 	if(gun_unreliable && prob(gun_unreliable))
@@ -312,7 +312,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/magnetic, INTERACT_HAND(null, PROC_REF(intera
 					projectile_type = /obj/item/projectile/bullet/magnetic/fuelrod
 	use_ammo()
 	capacitor.use(power_cost)
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 	update_icon()
 	if(projectile_type)
 		return new projectile_type(src)

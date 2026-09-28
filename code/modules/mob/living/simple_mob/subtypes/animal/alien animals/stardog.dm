@@ -107,7 +107,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/overmap/stardog, INTERACT_HAND_U
 	var/mob/living/user = ask.answerer
 	var/mob/living/that_one = ask.choice
 	to_chat(that_one, span_danger("\The [user]'s hand reaches toward you!!!"))
-	om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(fur_pick_done), done_args = list(user, that_one))
+	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(fur_pick_done), done_args = list(user, that_one))
 	return TRUE
 
 /datum/om/stage/life/type_post/simple_mob/vore/overmap/stardog
@@ -360,7 +360,7 @@ REF_PAIR(/mob/living/simple_mob/vore/overmap/stardog, list("control_node" = "hos
 
 	else
 		to_chat(src, span_notice("You begin to transition back to space, stay still..."))
-		om_do_after(src, 15 SECONDS, target = src, receiver = src, on_done = PROC_REF(transition_stardog_done), done_args = list(), on_fail = PROC_REF(transition_stardog_failed), fail_args = list())
+		om_task_timed(src, 15 SECONDS, target = src, receiver = src, on_done = PROC_REF(transition_stardog_done), done_args = list(), on_fail = PROC_REF(transition_stardog_failed), fail_args = list())
 		return
 
 /// Where to land. A cancel (or the timeout) decides not to.
@@ -376,7 +376,7 @@ REF_PAIR(/mob/living/simple_mob/vore/overmap/stardog, list("control_node" = "hos
 /mob/living/simple_mob/vore/overmap/stardog/proc/transition_destination_chosen(datum/om/prompt/choice/stardog_transition/ask)
 	var/obj/effect/overmap/visitable/our_dest = ask.choice
 	to_chat(src, span_notice("You begin to transition down to \the [our_dest], stay still..."))
-	om_do_after(src, 15 SECONDS, target = src, receiver = src, on_done = PROC_REF(transition_down_done), done_args = list(our_dest), on_fail = PROC_REF(transition_stardog_failed))
+	om_task_timed(src, 15 SECONDS, target = src, receiver = src, on_done = PROC_REF(transition_down_done), done_args = list(our_dest), on_fail = PROC_REF(transition_stardog_failed))
 
 /mob/living/simple_mob/vore/overmap/stardog/proc/transition_stardog_done()
 
@@ -862,7 +862,7 @@ DECLARE_INTERACTIONS(/obj/structure/control_pod, INTERACT_HAND(null, PROC_REF(in
 		to_chat(user, span_warning("You can see \the [controller] inside! Tendrils of nerves seem to have attached themselves to \the [controller]! There's no room for you right now!"))
 		return
 	user.visible_message(span_notice("\The [user] reaches out to touch \the [src]..."),span_notice("You reach out to touch \the [src]..."))
-	om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(control_control_pod_done), done_args = list(user), on_fail = PROC_REF(control_control_pod_failed), fail_args = list(user))
+	om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(control_control_pod_done), done_args = list(user), on_fail = PROC_REF(control_control_pod_failed), fail_args = list(user))
 	return TRUE
 
 /obj/structure/control_pod/proc/control_control_pod_done(mob/living/user)
@@ -1269,12 +1269,12 @@ EXTEND_INTERACTIONS(/obj/effect/dog_teleporter, \
 
 /turf/simulated/floor/water/digestive_enzymes/Entered(atom/movable/source)
 	if(digest_stuff(source) && !we_process)
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 		we_process = TRUE
 
 /turf/simulated/floor/water/digestive_enzymes/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	if(digest_stuff(source) && !we_process)
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 		we_process = TRUE
 
 /turf/simulated/floor/water/digestive_enzymes/periodic_step()
@@ -1413,7 +1413,7 @@ EXTEND_INTERACTIONS(/obj/effect/dog_teleporter, \
 /obj/structure/auto_flesh_door/Initialize(mapload)
 	. = ..()
 	countdown = rand(50,250)
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 	update_icon()
 
 /// Opens and closes (and squeezes whoever is inside) only while a mob is near; otherwise it sleeps.

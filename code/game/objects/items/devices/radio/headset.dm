@@ -86,7 +86,8 @@ REF_OWNED(/obj/item/radio/headset, list("keyslot1", "keyslot2"))
 /obj/item/radio/headset/tgui_state(mob/user)
 	return GLOB.tgui_inventory_state
 
-DECLARE_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptionkey, PROC_REF(interaction_item), "Insert key"))
+// Extends the radio's own Use (the radio UI; interaction_self declines for packs/beacons).
+EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptionkey, PROC_REF(interaction_item), "Insert key"))
 
 /obj/item/radio/headset/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(keyslot1 && keyslot2)

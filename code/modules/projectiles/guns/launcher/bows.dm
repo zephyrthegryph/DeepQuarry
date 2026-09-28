@@ -110,7 +110,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/crossbow/bow, INTERACT_HAND(null, PR
 
 	current_user = user
 	user.visible_message(span_infoplain(span_bold("[user]") + " begins to draw back the string of [src]."),span_notice("You begin to draw back the string of [src]."))
-	om_do_after(user, 2.5 SECONDS, src, src, PROC_REF(drawn_fully), list(user))
+	om_task_timed(user, 2.5 SECONDS, src, src, PROC_REF(drawn_fully), list(user))
 	update_icon()
 
 /obj/item/gun/launcher/crossbow/bow/proc/drawn_fully(mob/user)

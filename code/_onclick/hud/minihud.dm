@@ -6,7 +6,7 @@
 /datum/mini_hud/New(datum/hud/other)
 	apply_to_hud(other)
 	if(needs_processing)
-		PERIODIC_START(src, PERIODIC_SECOND)
+		om_task_periodic(src, PERIODIC_SECOND)
 
 REF_OWNED_LIST(/datum/mini_hud, "screenobjs")
 

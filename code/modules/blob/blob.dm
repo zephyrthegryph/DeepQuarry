@@ -169,7 +169,7 @@ EXTEND_INTERACTIONS(/obj/effect/blob, \
 
 /obj/effect/blob/core/Initialize(mapload)
 	. = ..()
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 
 /obj/effect/blob/core/periodic_step()
 	pulse(20, list(NORTH, EAST))

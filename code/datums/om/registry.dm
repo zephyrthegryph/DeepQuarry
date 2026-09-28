@@ -42,6 +42,8 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 	var/list/event_types = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
 	var/list/event_idx = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
 	/// event idx -> list of behaviour ids handling it (subtypes flattened).
+	/// Per event index: list(type, parent, ...) up to (not including) /datum/om/event.
+	var/list/event_lineage
 	var/list/event_handlers = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
 	var/list/derived = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
 	var/list/derived_by_name = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
@@ -436,6 +438,16 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 	for(var/path in subtypesof(/datum/om/event))
 		event_types += path
 		event_idx[path] = length(event_types)
+	// Per event index: the event's type and its ancestors below /datum/om/event,
+	// most-derived first (hook delivery honours ancestry, as behaviour tables do).
+	event_lineage = new /list(length(event_types))
+	for(var/e in 1 to length(event_types))
+		var/list/lineage = list()
+		var/path = event_types[e]
+		while(path && path != /datum/om/event)
+			lineage += path
+			path = type2parent(path)
+		event_lineage[e] = lineage
 
 // ---------------------------------------------------------------- behaviours
 
@@ -1270,10 +1282,14 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 					T.self_grants += list(kind, id)
 	T.behaviours = sortTim(behaviour_set, GLOBAL_PROC_REF(cmp_om_behaviour_id))
 	for(var/datum/om/service/S as anything in services)
+		var/mine = 0
 		for(var/observed in S.wake_on_any)
 			if(ispath(path, observed))
-				T.service_mask |= S.wake_on_any[observed]
-				LAZYOR(T.services, S)
+				mine |= S.wake_on_any[observed]
+		if(mine)
+			T.service_mask |= mine
+			LAZYADD(T.services, S)
+			LAZYADD(T.service_masks, mine)
 	return T
 
 /proc/cmp_om_behaviour_id(datum/om/behaviour/a, datum/om/behaviour/b)

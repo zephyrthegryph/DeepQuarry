@@ -78,7 +78,7 @@ REF_OWNED(/obj/item/multitool/hacktool, "hack_state")
 		var/obj/structure/closet/crate/secure/A = target
 		if(A.locked)
 			to_chat(user, span_notice("Overriding access. Stand by."))
-			om_do_after(user, (((5 SECONDS + rand(0, 5 SECONDS) + rand(0, 5 SECONDS))*hackspeed)), target = src, receiver = src, on_done = PROC_REF(attempt_hack_timed_done), done_args = list(user, A), claims = TRUE)
+			om_task_timed(user, (((5 SECONDS + rand(0, 5 SECONDS) + rand(0, 5 SECONDS))*hackspeed)), target = src, receiver = src, on_done = PROC_REF(attempt_hack_timed_done), done_args = list(user, A), claims = TRUE)
 		else
 			return
 
@@ -86,7 +86,7 @@ REF_OWNED(/obj/item/multitool/hacktool, "hack_state")
 		var/obj/structure/closet/secure_closet/A = target
 		if(A.locked)
 			to_chat(user, span_notice("Overriding access. Stand by."))
-			om_do_after(user, (((5 SECONDS + rand(0, 5 SECONDS) + rand(0, 5 SECONDS))*hackspeed)), target = src, receiver = src, on_done = PROC_REF(attempt_hack_timed_done2), done_args = list(user, A), claims = TRUE)
+			om_task_timed(user, (((5 SECONDS + rand(0, 5 SECONDS) + rand(0, 5 SECONDS))*hackspeed)), target = src, receiver = src, on_done = PROC_REF(attempt_hack_timed_done2), done_args = list(user, A), claims = TRUE)
 		else
 			return
 

@@ -78,10 +78,10 @@ EXTEND_INTERACTIONS(/obj/item/card/id/guest, INTERACT_USE("Show or deactivate", 
 /// Expiry ticking is world registration (L3): start it when the pass is live.
 /obj/item/card/id/guest/on_materialize()
 	. = ..()
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 
 /obj/item/card/id/guest/on_dematerialize()
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 	return ..()
 
 /obj/item/card/id/guest/periodic_step()

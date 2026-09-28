@@ -36,7 +36,7 @@
 	if(chassis)
 		chassis.cloak()
 	src.mecha_log_message("Activated.")
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 	set_ready_state(FALSE)
 	playsound(src, 'sound/effects/EMPulse.ogg', 100, 1)
 
@@ -44,6 +44,6 @@
 	if(chassis)
 		chassis.uncloak()
 	src.mecha_log_message("Deactivated.")
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 	set_ready_state(TRUE)
 	playsound(src, 'sound/effects/EMPulse.ogg', 100, 1)

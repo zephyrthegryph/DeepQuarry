@@ -173,7 +173,7 @@ REGISTRY_MEMBERSHIP(/datum/event, REGISTRY_ACTIVE_EVENTS)
 	// event needs to be responsible for this, as stuff like APLUs currently make their own events for curious reasons
 	if(!external_use)
 		registry_join(REGISTRY_ACTIVE_EVENTS, src)
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 
 		event_meta_handle = om_handle(EM)
 		severity = event_meta().severity

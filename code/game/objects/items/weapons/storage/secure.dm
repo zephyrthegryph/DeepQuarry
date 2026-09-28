@@ -74,7 +74,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/secure, \
 	if(!locked || !open || om_busy(src))
 		return ..()
 	user.show_message(span_notice("Now attempting to reset internal memory, please hold."), 1)
-	om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(multitool_act_timed_done), done_args = list(user), claims = TRUE)
+	om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(multitool_act_timed_done), done_args = list(user), claims = TRUE)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/storage/secure/proc/multitool_act_timed_done(mob/user)

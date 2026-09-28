@@ -83,7 +83,7 @@
 		return
 	to_chat(src, span_danger("You begin to resist \the [prey_name]'s control!!!"))
 	to_chat(pred_body, span_danger("You feel the captive mind of [src] begin to resist your control."))
-	om_do_after(src, 10 SECONDS, target = pred_body, receiver = src, on_done = PROC_REF(process_resist_dominated_brain_done), done_args = list(), on_fail = PROC_REF(process_resist_dominated_brain_failed), fail_args = list())
+	om_task_timed(src, 10 SECONDS, target = pred_body, receiver = src, on_done = PROC_REF(process_resist_dominated_brain_done), done_args = list(), on_fail = PROC_REF(process_resist_dominated_brain_failed), fail_args = list())
 
 /mob/living/dominated_brain/proc/process_resist_dominated_brain_done()
 	restore_control()
@@ -313,7 +313,7 @@
 		to_chat(src, span_danger("You begin to resist \the [prey_name]'s control!!!"))
 		to_chat(pred_body, span_danger("You feel the captive mind of [src] begin to resist your control."))
 
-		om_do_after(src, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(resist_control_dominated_brain_done), done_args = list(), on_fail = PROC_REF(resist_control_dominated_brain_failed), fail_args = list())
+		om_task_timed(src, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(resist_control_dominated_brain_done), done_args = list(), on_fail = PROC_REF(resist_control_dominated_brain_failed), fail_args = list())
 	else
 		to_chat(src, span_warning("\The [pred_body] is already dominated, and cannot be controlled at this time."))
 
@@ -430,7 +430,7 @@
 	if(prey_body && prey_body.loc.loc == pred_body)
 		to_chat(src, span_notice("You exert your will and attempt to return to your body!!!"))
 		to_chat(pred_body, span_warning("\The [src] resists your hold and attempts to return to their body!"))
-		om_do_after(src, 10 SECONDS, target = pred_body, receiver = src, on_done = PROC_REF(cease_this_foolishness_dominated_brain_done), done_args = list(), on_fail = PROC_REF(cease_this_foolishness_dominated_brain_failed), fail_args = list())
+		om_task_timed(src, 10 SECONDS, target = pred_body, receiver = src, on_done = PROC_REF(cease_this_foolishness_dominated_brain_done), done_args = list(), on_fail = PROC_REF(cease_this_foolishness_dominated_brain_failed), fail_args = list())
 	else if(prey_body)
 		to_chat(src, span_warning("You can sense your body... but it is not contained within [pred_body]... You cannot return to it at this time."))
 	else

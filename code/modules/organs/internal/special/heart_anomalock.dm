@@ -91,7 +91,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/internal/heart/machine/anomalock, INTERACT_I
 		if(core)
 			balloon_alert(user, "core already in!")
 			return INTERACTION_HANDLED_PASS
-		om_do_after(user, 3 SECONDS, src, src, PROC_REF(install_core), list(user, W))
+		om_task_timed(user, 3 SECONDS, src, src, PROC_REF(install_core), list(user, W))
 		return TRUE
 
 	if(W.has_tool_quality(IS_SCREWDRIVER))

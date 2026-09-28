@@ -148,7 +148,7 @@
 
 		H.visible_message(span_danger("\The [H] is trying to perform CPR on \the [src]!"))
 
-		om_do_after(H, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(cpr_done), done_args = list(H))
+		om_task_timed(H, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(cpr_done), done_args = list(H))
 
 	else if(!(M == src && apply_pressure(M, M.zone_sel.selecting)))
 		help_shake_act(M)
@@ -464,7 +464,7 @@
 		return FALSE
 
 	user.visible_message(span_warning("[user] begins to dislocate [src]'s [organ.joint]!"))
-	om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(grab_joint_human_done), done_args = list(organ))
+	om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(grab_joint_human_done), done_args = list(organ))
 	return TRUE
 
 /mob/living/carbon/human/proc/grab_joint_human_done(obj/item/organ/external/organ)
@@ -497,7 +497,7 @@
 
 /*
 	We want to ensure that a mob may only apply pressure to one organ of one mob at any given time. Currently this is done mostly implicitly through
-	the behaviour of timed actions (om_do_after) and the fact that applying pressure to someone else requires a grab:
+	the behaviour of timed actions (om_task_timed) and the fact that applying pressure to someone else requires a grab:
 	If you are applying pressure to yourself and attempt to grab someone else, you'll change what you are holding in your active hand which will stop do_mob()
 	If you are applying pressure to another and attempt to apply pressure to yourself, you'll have to switch to an empty hand which will also stop do_mob()
 	Changing targeted zones should also stop do_mob(), preventing you from applying pressure to more than one body part at once.
@@ -649,7 +649,7 @@
 /// Abdominal thrusts to dislodge an airway obstruction.
 /mob/living/carbon/human/proc/perform_heimlich(mob/living/carbon/human/rescuer, datum/affliction/airway_obstruction/choke)
 	rescuer.visible_message(span_danger("\The [rescuer] wraps [rescuer.p_their()] arms around \the [src] and thrusts hard under the ribs!"))
-	om_do_after(rescuer, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(perform_heimlich_human_done), done_args = list(choke))
+	om_task_timed(rescuer, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(perform_heimlich_human_done), done_args = list(choke))
 	return TRUE
 
 /mob/living/carbon/human/proc/perform_heimlich_human_done(datum/affliction/airway_obstruction/choke)

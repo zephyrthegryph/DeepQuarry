@@ -16,10 +16,15 @@
 // deleted datum's slot is freed and its generation bumped, so a stale handle never
 // resolves to whatever reuses the id.
 
-/// Stride of rec.timers: id, due (timer-clock ds), proc, args, handle positions.
-#define OM_TIMER_STRIDE 5
+/// Stride of rec.timers: id, due (timer-clock ds), proc, args, handle positions, is-global-proc.
+/// Ids only grow and entries are only appended or cut, so the list is sorted by id
+/// (om_timer_index() binary-searches it).
+#define OM_TIMER_STRIDE 6
 
 /datum/om/rec/var/list/timers
+/// The soonest due time in rec.timers (timer-clock ds), or null with no timers. Kept in step by
+/// every add/remove so arming the wheel never rescans the list.
+/datum/om/rec/var/timer_soonest
 /// Timer ids, per record.
 /datum/om/rec/var/timer_seq = 0
 /// The record's timer clock: list(local ds, settled at (sched ds), rate). Null until a timer.
@@ -212,23 +217,70 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 		positions = capture[2]
 	var/local = om_timer_local(rec)
 	var/id = ++rec.timer_seq
-	LAZYADD(rec.timers, list(id, local + max(delay, 0), proc_ref, captured, positions))
-	om_timers_reschedule(rec)
+	var/due = local + max(delay, 0)
+	LAZYADD(rec.timers, list(id, due, proc_ref, captured, positions, om_proc_is_global(proc_ref)))
+	if(isnull(rec.timer_soonest) || due < rec.timer_soonest)
+		rec.timer_soonest = due
+		om_timers_arm(rec)
 	return id
+
+/// TRUE when `proc_ref` is a global proc (/proc/x), FALSE for a type proc. Decided once, when a
+/// deferred call is recorded, so firing never stringifies the proc.
+/proc/om_proc_is_global(proc_ref)
+	return copytext("[proc_ref]", 1, 7) == "/proc/"
+
+/// The position in rec.timers of timer `id`, or 0. Binary search: the list is sorted by id.
+/proc/om_timer_index(datum/om/rec/rec, id)
+	var/list/T = rec?.timers
+	if(!T || !isnum(id))
+		return 0
+	var/lo = 1
+	var/hi = length(T) / OM_TIMER_STRIDE
+	while(lo <= hi)
+		var/mid = round((lo + hi) / 2)
+		var/at = (mid - 1) * OM_TIMER_STRIDE + 1
+		var/mid_id = T[at]
+		if(mid_id == id)
+			return at
+		if(mid_id < id)
+			lo = mid + 1
+		else
+			hi = mid - 1
+	return 0
+
+/// Removes the timer at position `at`, keeping timer_soonest right (a rescan only when the
+/// soonest one leaves). Does not arm the wheel: the caller does, once.
+/proc/om_timer_remove_at(datum/om/rec/rec, at)
+	var/list/T = rec.timers
+	var/due = T[at + 1]
+	T.Cut(at, at + OM_TIMER_STRIDE)
+	if(!length(T))
+		rec.timers = null
+		rec.timer_soonest = null
+		return TRUE
+	if(due <= rec.timer_soonest)
+		om_timers_recompute_soonest(rec)
+		return TRUE
+	return FALSE
+
+/proc/om_timers_recompute_soonest(datum/om/rec/rec)
+	var/list/T = rec.timers
+	var/soonest = null
+	for(var/i in 1 to length(T) step OM_TIMER_STRIDE)
+		if(isnull(soonest) || T[i + 1] < soonest)
+			soonest = T[i + 1]
+	rec.timer_soonest = soonest
 
 /// Cancels timer `id` on E. Always safe: nothing is suspended inside a timer.
 /proc/om_cancel_timer(datum/E, id)
 	var/datum/owner = E || om_global_owner()
 	var/datum/om/rec/rec = owner.om_rec
-	var/list/T = rec?.timers
-	for(var/i in 1 to length(T) step OM_TIMER_STRIDE)
-		if(T[i] == id)
-			T.Cut(i, i + OM_TIMER_STRIDE)
-			if(!length(T))
-				rec.timers = null
-			om_timers_reschedule(rec)
-			return TRUE
-	return FALSE
+	var/at = om_timer_index(rec, id)
+	if(!at)
+		return FALSE
+	if(om_timer_remove_at(rec, at))
+		om_timers_arm(rec)
+	return TRUE
 
 /// How many om_after() timers E has pending.
 /datum/om/scheduler/proc/timer_count(datum/E)
@@ -236,22 +288,16 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 
 /proc/om_timer_pending(datum/E, id)
 	var/datum/owner = E || om_global_owner()
-	var/datum/om/rec/rec = owner.om_rec
-	var/list/T = rec?.timers
-	for(var/i in 1 to length(T) step OM_TIMER_STRIDE)
-		if(T[i] == id)
-			return TRUE
-	return FALSE
+	return om_timer_index(owner.om_rec, id) != 0
 
 /// Deciseconds of E's timer clock left on timer `id`, or null.
 /proc/om_timer_left(datum/E, id)
 	var/datum/owner = E || om_global_owner()
 	var/datum/om/rec/rec = owner.om_rec
-	var/list/T = rec?.timers
-	for(var/i in 1 to length(T) step OM_TIMER_STRIDE)
-		if(T[i] == id)
-			return max(T[i + 1] - om_timer_local(rec), 0)
-	return null
+	var/at = om_timer_index(rec, id)
+	if(!at)
+		return null
+	return max(rec.timers[at + 1] - om_timer_local(rec), 0)
 
 /// The rate of E's timer clock: 0 while suspended, else its clock domain's rate.
 /proc/om_timer_rate(datum/om/rec/rec)
@@ -281,20 +327,22 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 	K[1] = om_timer_local(rec)
 	K[2] = rec.sched.now()
 	K[3] = new_rate
-	om_timers_reschedule(rec)
+	om_timers_arm(rec)
 
+/// Rescans rec.timers for the soonest due time and arms the wheel for it.
 /proc/om_timers_reschedule(datum/om/rec/rec)
+	om_timers_recompute_soonest(rec)
+	om_timers_arm(rec)
+
+/// Arms (or cancels) the owner's wheel deadline for the cached timer_soonest. O(1) in timers.
+/proc/om_timers_arm(datum/om/rec/rec)
 	if(rec.torn_down || !rec.owner)
 		return
 	var/datum/om/behaviour/B = om_registry().timer_behaviour
-	var/list/T = rec.timers
-	if(!T)
+	var/soonest = rec.timer_soonest
+	if(!rec.timers || isnull(soonest))
 		om_cancel_after(rec.owner, B)
 		return
-	var/soonest = null
-	for(var/i in 1 to length(T) step OM_TIMER_STRIDE)
-		if(isnull(soonest) || T[i + 1] < soonest)
-			soonest = T[i + 1]
 	var/rate = rec.tclock[3]
 	if(rate <= 0)
 		om_cancel_after(rec.owner, B)
@@ -302,12 +350,15 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 	om_deadline(rec.owner, CEILING(max(soonest - om_timer_local(rec), 0) / rate, 1), B)
 
 /// Calls a stored proc: a global proc with the arguments, or a type proc on `E`.
-/proc/om_invoke(datum/E, proc_ref, list/call_args)
+/// `is_global`: om_proc_is_global(proc_ref), when the caller recorded it; null decides here.
+/proc/om_invoke(datum/E, proc_ref, list/call_args, is_global = null)
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 	if(E && GLOB.om_traced[E])
 		GLOB.om_traced[E]++
 #endif
-	if(copytext("[proc_ref]", 1, 7) == "/proc/")
+	if(isnull(is_global))
+		is_global = om_proc_is_global(proc_ref)
+	if(is_global)
 		return call(proc_ref)(arglist(call_args || list()))
 	return call(E, proc_ref)(arglist(call_args || list()))
 
@@ -321,9 +372,9 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 /// a waitfor = FALSE trampoline: if the callee sleeps, control comes back here at once, the
 /// rest of the callee finishes on its own later, and the sleep is reported. Returns the
 /// callee's return value, or OM_CALLEE_SLEPT. Runtimes re-throw as before.
-/proc/om_guarded_call(datum/E, proc_ref, list/call_args)
+/proc/om_guarded_call(datum/E, proc_ref, list/call_args, is_global = null)
 	var/list/state = list(TRUE, null, null, FALSE) // running, result, exception, abandoned
-	om_trampoline(state, E, proc_ref, call_args)
+	om_trampoline(state, E, proc_ref, call_args, is_global)
 	if(state[3])
 		throw state[3]
 	if(!state[1])
@@ -341,11 +392,11 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 #endif
 	return OM_CALLEE_SLEPT
 
-/proc/om_trampoline(list/state, datum/E, proc_ref, list/call_args)
+/proc/om_trampoline(list/state, datum/E, proc_ref, list/call_args, is_global = null)
 	set waitfor = FALSE // ALLOW(scheduler): OM sleep-guard trampoline (detects callees that sleep)
 	try
 		if(E)
-			state[2] = om_invoke(E, proc_ref, call_args)
+			state[2] = om_invoke(E, proc_ref, call_args, is_global)
 		else
 			state[2] = call(proc_ref)(arglist(call_args || list()))
 	catch(var/exception/e)
@@ -469,6 +520,7 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 		var/proc_ref = T[best + 2]
 		var/list/captured = T[best + 3]
 		var/list/positions = T[best + 4]
+		var/is_global = T[best + 5]
 		T.Cut(best, best + OM_TIMER_STRIDE)
 		if(!length(T))
 			rec.timers = null
@@ -477,7 +529,7 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 			log_qdel("OM: dropped timer [proc_ref] on [E] ([E.type]): a captured argument was deleted before it fired")
 			continue
 		try
-			om_guarded_call(E, proc_ref, captured)
+			om_guarded_call(E, proc_ref, captured, is_global)
 		catch(var/exception/e)
 			dq_report_caught(e, "om timer [proc_ref] on [E]")
 	om_timers_reschedule(rec)
@@ -584,7 +636,7 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 	if(left > 0)
 		om_after(arglist(list(null, left, /proc/om_realtime_fire, due, proc_ref) + call_args))
 		return
-	if(copytext("[proc_ref]", 1, 7) == "/proc/")
+	if(om_proc_is_global(proc_ref))
 		call(proc_ref)(arglist(call_args))
 	else if(length(call_args))
 		// A type proc: the first argument is the datum it runs on.

@@ -58,6 +58,7 @@ DECLARE_INTERACTIONS(/obj/dq_compact_probe, \
  */
 /obj/dq_compact_probe/declining
 
+// ALLOW(interactions): the probe tests that a subtype replaces its parent's Poke/Eject with declining ones
 DECLARE_INTERACTIONS(/obj/dq_compact_probe/declining, \
 	INTERACT_HAND("Poke", PROC_REF(decline)), \
 	INTERACT_ALT("Eject", PROC_REF(decline)), \

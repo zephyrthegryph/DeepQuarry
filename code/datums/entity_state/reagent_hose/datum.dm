@@ -32,7 +32,7 @@
 
 /datum/hose/proc/disconnect(mob/user = null)
 	// Stop processing, we're disconnecting anyway
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 	var/list/drop_locs = list()
 	if(node1)
 		var/atom/A = node1.get_carrier()
@@ -69,7 +69,7 @@
 
 	initial_distance = distancetonode
 	if(update_beam()) // Somehow you screwed this up from the start?
-		PERIODIC_START(src, PERIODIC_FAST)
+		om_task_periodic(src, PERIODIC_FAST)
 
 		// Poip!~
 		var/atom/A = node1.get_carrier()

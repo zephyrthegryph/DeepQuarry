@@ -123,7 +123,7 @@ REF_OWNED(/obj/item/ghost_trap, "ghost_reporter")
 			span_danger("You begin deploying \the [src]!")
 			)
 
-		om_do_after(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
+		om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
 	return TRUE
 
 /obj/item/ghost_trap/proc/attack_self_timed_done(mob/user)
@@ -143,7 +143,7 @@ REF_OWNED(/obj/item/ghost_trap, "ghost_reporter")
 	if(!ismob(escapee))
 		return
 	visible_message(span_danger("Lights flicker and buzzers beep from \the [src], alerting that a containment breach is imminent!"))
-	om_do_after(escapee, 2 MINUTES, target = src, receiver = src, on_done = PROC_REF(container_resist_timed_done), done_args = list(escapee))
+	om_task_timed(escapee, 2 MINUTES, target = src, receiver = src, on_done = PROC_REF(container_resist_timed_done), done_args = list(escapee))
 
 /obj/item/ghost_trap/proc/container_resist_timed_done(mob/living/escapee)
 	REMOVE_TRAIT(escapee, TRAIT_NO_TRANSFORM, src)
@@ -165,7 +165,7 @@ DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
 			span_notice("[user] begins freeing something from \the [src]."),
 			span_notice("You carefully begin to free something from \the [src]."),
 			)
-		om_do_after(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
+		om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
 	else if(deployed && can_use(user))
 		user.visible_message(
 			span_danger("[user] starts to deactivate \the [src]."),
@@ -173,7 +173,7 @@ DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
 			)
 		playsound(src, 'sound/machines/click.ogg', 50, 1)
 
-		om_do_after(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done2), done_args = list(user))
+		om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done2), done_args = list(user))
 	else
 		return FALSE
 	return TRUE
@@ -197,7 +197,7 @@ DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
 	if(!ismob(passing_entity)) //wtf did you do
 		return
 	captured_entity = om_handle(passing_entity)
-	PERIODIC_START(src, PERIODIC_SLOW) // watches for an escape while it holds something
+	om_task_periodic(src, PERIODIC_SLOW) // watches for an escape while it holds something
 
 	if(isliving(passing_entity))
 		var/mob/living/living_entity = passing_entity

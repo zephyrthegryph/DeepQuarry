@@ -205,7 +205,7 @@ DECLARE_INTERACTIONS(/obj/structure/hoist, \
 		size = O.w_class
 
 	user.visible_message(span_notice("[user] begins to [movtext] \the [hoistee()]!"), span_notice("You begin to [movtext] \the [hoistee()]!"), span_notice("You hear the sound of a crank."))
-	om_do_after(user, (1 SECONDS) * size / 4, src, src, PROC_REF(move_dir), list(movedir, 1))
+	om_task_timed(user, (1 SECONDS) * size / 4, src, src, PROC_REF(move_dir), list(movedir, 1))
 	return TRUE
 
 /obj/structure/hoist/proc/collapse_kit()

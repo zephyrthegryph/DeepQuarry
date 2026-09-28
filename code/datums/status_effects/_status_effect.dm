@@ -72,11 +72,11 @@
 	if(duration > world.time || tick_interval > world.time) //don't process if we don't care
 		switch(processing_speed)
 			if(STATUS_EFFECT_FAST_PROCESS)
-				PERIODIC_START(src, PERIODIC_FAST)
+				om_task_periodic(src, PERIODIC_FAST)
 			if(STATUS_EFFECT_NORMAL_PROCESS)
-				PERIODIC_START(src, PERIODIC_SECOND)
+				om_task_periodic(src, PERIODIC_SECOND)
 			if(STATUS_EFFECT_PRIORITY)
-				PERIODIC_START(src, PERIODIC_STATUS_EFFECTS)
+				om_task_periodic(src, PERIODIC_STATUS_EFFECTS)
 
 	update_particles()
 	return TRUE

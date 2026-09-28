@@ -236,7 +236,7 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 			open = 3
 			update_icon()
 			return INTERACTION_HANDLED_PASS
-		om_do_after(user, 6 SECONDS, src, src, PROC_REF(rewire_done), list(user, C))
+		om_task_timed(user, 6 SECONDS, src, src, PROC_REF(rewire_done), list(user, C))
 	else
 		return FALSE
 	return INTERACTION_HANDLED_PASS
@@ -275,17 +275,17 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 
 /obj/item/nif/screwdriver_act(mob/user, obj/item/tool)
 	if(open == 0)
-		om_do_after(user, 4 SECONDS, src, src, PROC_REF(pry_open_done), list(user, tool))
+		om_task_timed(user, 4 SECONDS, src, src, PROC_REF(pry_open_done), list(user, tool))
 		return ITEM_INTERACT_SUCCESS
 	if(open == 3)
-		om_do_after(user, 3 SECONDS, src, src, PROC_REF(reseal_done), list(user, tool))
+		om_task_timed(user, 3 SECONDS, src, src, PROC_REF(reseal_done), list(user, tool))
 		return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_BLOCKING
 
 /obj/item/nif/multitool_act(mob/user, obj/item/tool)
 	if(open != 2)
 		return ITEM_INTERACT_BLOCKING
-	om_do_after(user, 8 SECONDS, src, src, PROC_REF(reset_circuits_done), list(user))
+	om_task_timed(user, 8 SECONDS, src, src, PROC_REF(reset_circuits_done), list(user))
 	return ITEM_INTERACT_SUCCESS
 
 //Icon updating

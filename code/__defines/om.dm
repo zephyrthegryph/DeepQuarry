@@ -355,11 +355,11 @@
 // ---------------------------------------------------------------- periodic work (code/datums/om/periodic.dm)
 
 /// Starts `E`'s periodic work on pipeline type `P` (idempotent). Wakes it if parked.
-#define PERIODIC_START(E, P) periodic_start(E, P)
+#define om_task_periodic(E, P) _om_periodic_start(E, P)
 /// Ends `E`'s periodic work: its stage idles and it parks. Does nothing when it isn't running.
-#define PERIODIC_STOP(E) periodic_stop(E)
+#define om_task_periodic_stop(E) _om_periodic_stop(E)
 /// TRUE while `E` has periodic work on any pipeline.
-#define PERIODIC_RUNNING(E) (!isnull((E).periodic_pipe))
+#define om_task_periodic_running(E) (!isnull((E).periodic_pipe))
 
 #define PERIODIC_SLOW /datum/om/pipeline/periodic/slow
 #define PERIODIC_SECOND /datum/om/pipeline/periodic/second

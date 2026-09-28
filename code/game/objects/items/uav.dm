@@ -100,7 +100,7 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 		if("(Dis)Assemble")
 			if(can_transition_to(state == UAV_PACKED ? UAV_OFF : UAV_PACKED, user))
 				user.visible_message(span_infoplain(span_bold("[user]") + " starts [state == UAV_PACKED ? "unpacking" : "packing"] [src]."), span_info("You start [state == UAV_PACKED ? "unpacking" : "packing"] [src]."))
-				om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
+				om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
 		// Can toggle power from on and off
 		if("Toggle Power")
 			if(can_transition_to(state == UAV_ON ? UAV_OFF : UAV_ON, user))
@@ -124,7 +124,7 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 		toggle_pairing()
 
 	else if(istype(I, /obj/item/cell) && !cell)
-		om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(I, user))
+		om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(I, user))
 
 	else if(istype(I, /obj/item/pen) || istype(I, /obj/item/flashlight/pen))
 		om_ask(user, /datum/om/prompt/text, PROC_REF(nickname_entered), title = "Nickname", message = "Enter a nickname for [src]", default = nickname, max_length = MAX_NAME_LEN, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
@@ -153,7 +153,7 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 /obj/item/uav/screwdriver_act(mob/user, obj/item/tool)
 	if(!cell)
 		return ITEM_INTERACT_BLOCKING
-	om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(screwdriver_act_timed_done), done_args = list(user, tool))
+	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(screwdriver_act_timed_done), done_args = list(user, tool))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/uav/proc/screwdriver_act_timed_done(mob/user, obj/item/tool)
@@ -263,7 +263,7 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 	update_icon()
 	start_hover()
 	set_light_on(TRUE)
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 	no_masters_time = 0
 	visible_message(span_notice("[nickname] buzzes and lifts into the air."))
 
@@ -276,7 +276,7 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 	stop_hover()
 	set_light_on(FALSE)
 	clear_masters()
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 	visible_message(span_notice("[nickname] gracefully settles onto the ground."))
 
 //////////////// Helpers

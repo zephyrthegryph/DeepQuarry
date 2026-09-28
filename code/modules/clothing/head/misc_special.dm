@@ -131,7 +131,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/welding, \
 
 /obj/item/clothing/head/cakehat/periodic_step()
 	if(!onfire)
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 		return
 
 	var/turf/location = src.loc
@@ -152,7 +152,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/cakehat, INTERACT_USE("Light", PROC_
 		force = 3
 		injury_kind = INJURY_BURN
 		icon_state = "cake1"
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 	else
 		force = null
 		injury_kind = INJURY_BLUNT
@@ -279,7 +279,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/ushanka, INTERACT_USE("Toggle ear fl
 /obj/item/clothing/head/psy_crown/equipped(mob/living/carbon/human/user)
 	..()
 	if(istype(user) && user.get_equipped_item(SLOT_ID_HEAD) == src && user.is_sentient())
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 		if(flavor_equip)
 			to_chat(user, flavor_equip)
 
@@ -287,7 +287,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/ushanka, INTERACT_USE("Toggle ear fl
 	if(equipping || loc == user)
 		return ..()
 	..()
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 	if(user.is_sentient())
 		if(loc == user) // Still inhand.
 			if(flavor_unequip)

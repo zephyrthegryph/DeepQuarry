@@ -60,7 +60,7 @@
 /obj/machinery/power/tracker/crowbar_act(mob/user, obj/item/W)
 	playsound(src, 'sound/machines/click.ogg', 50, 1)
 	user.visible_message(span_notice("[user] begins to take the glass off the solar tracker."))
-	om_do_after(user, 5 SECONDS, src, src, PROC_REF(remove_glass_done), list(user))
+	om_task_timed(user, 5 SECONDS, src, src, PROC_REF(remove_glass_done), list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/power/tracker/proc/remove_glass_done(mob/user)

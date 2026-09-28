@@ -260,7 +260,7 @@
 		if(species.lleill_energy < energy_cost_spawn)
 			to_chat(src, span_warning("You do not have enough energy to do that!"))
 			return
-		om_do_after(src, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(lleill_ring_placed), done_args = list(energy_cost_spawn), on_fail = PROC_REF(lleill_ring_interrupted))
+		om_task_timed(src, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(lleill_ring_placed), done_args = list(energy_cost_spawn), on_fail = PROC_REF(lleill_ring_interrupted))
 		return
 	if(findtext(r_action,"Teleport to Ring"))
 		if(species.lleill_energy < energy_cost_tele)
@@ -407,7 +407,7 @@
 		src.visible_message(span_infoplain(span_bold("\The [src]") + " boops [chosen_target] on the nose."))
 	if(contact_type == "Custom")
 		src.visible_message(span_infoplain("[custom_text]"))
-	om_do_after(src, 10 SECONDS, target = chosen_target, receiver = src, on_done = PROC_REF(lleill_contact_done), done_args = list(chosen_target), on_fail = PROC_REF(lleill_contact_broken), fail_args = list(chosen_target))
+	om_task_timed(src, 10 SECONDS, target = chosen_target, receiver = src, on_done = PROC_REF(lleill_contact_done), done_args = list(chosen_target), on_fail = PROC_REF(lleill_contact_broken), fail_args = list(chosen_target))
 	species.update_lleill_hud(src)
 
 /mob/living/carbon/human/proc/lleill_contact_broken(mob/living/carbon/human/chosen_target)
@@ -615,7 +615,7 @@
 		return
 
 	visible_message(span_infoplain(span_bold("\The [src]") + " begins significantly shifting their form."))
-	om_do_after(src, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(revert_beast_form_living_done), done_args = list(), on_fail = PROC_REF(revert_beast_form_living_failed), fail_args = list())
+	om_task_timed(src, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(revert_beast_form_living_done), done_args = list(), on_fail = PROC_REF(revert_beast_form_living_failed), fail_args = list())
 	return TRUE
 
 /mob/living/proc/revert_beast_form_living_done()

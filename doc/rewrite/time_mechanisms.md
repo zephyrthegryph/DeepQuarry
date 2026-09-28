@@ -4,6 +4,26 @@ One page. Every mechanism below runs on the object-model scheduler (SSbehaviours
 plain time comparison; there is no SStimer, no `spawn()`, no gameplay `sleep()`, no
 `process()`. Details: [object_model_core.md](object_model_core.md) §4.5 to §4.12, §16.
 
+## The public API: three entry points
+
+Outside `code/datums/om/`, time goes through exactly these families:
+
+| Entry point | For | Forms |
+|---|---|---|
+| `om_after*` | call a proc later | `om_after`, `om_after_unique`, `om_after_replace`, `om_after_realtime` (wall clock, only for client-facing delays), `om_after_stagger`, `om_after_drift`, `om_qdel_after`; cancel/query with `om_cancel_timer`, `om_timer_left`, `om_cancel_calls` |
+| `om_deadline` | wake one behaviour hook later | `om_deadline`, `om_cancel_after`, `om_deadline_pending` |
+| `om_task*` | work that takes time | `om_task_start` (a declared task), `om_task_timed` (a stateless timed action, was `om_do_after`), `om_task_periodic` / `om_task_periodic_stop` / `om_task_periodic_running` (periodic lanes, was `PERIODIC_START/STOP/RUNNING`), `om_task_slices` (budgeted slices, was `om_lane_work`) |
+
+Declarative forms need no call: behaviour `every =` cadences, stage `rewake_delay()`, stage
+`min_interval`, clock domains, world services, `COOLDOWN_*` (a compared time, not a mechanism).
+The event side stays separate: watches (`om_watch_*`, `om_world_*`) and field channels
+(`wake_on` / `reads`) say *when something changes*, not *when time passes*.
+
+Internal: the machinery under these (`_om_periodic_start`, `_om_slices_run`, `_om_stagger_step`,
+`_om_drift_step`, `_om_start_world_lanes`, ...) is named `_om_*`. `tools/ci/om_internal_lint.py`
+fails on any `_om_*` name outside `code/datums/om/` and `code/__defines/om.dm` unless the line
+carries `// ALLOW(om_internal): reason`.
+
 ## Pick by question
 
 | I want to... | Use | Owned by / cancelled when | Not |
@@ -18,13 +38,13 @@ plain time comparison; there is no SStimer, no `spawn()`, no gameplay `sleep()`,
 | Wake one behaviour hook after a delay | `om_deadline(E, delay, B, sub)` -> `B.on_deadline(E)` / `on_keyed_deadline(E, sub)`; `om_cancel_after`, `om_deadline_pending` | E + behaviour; one per (E, B, sub), re-arming replaces | a `world.time` compare in periodic work |
 | Rate-limit an action ("not more than once per N") | `COOLDOWN_DECLARE(x)`, `COOLDOWN_START(src, x, d)`, `COOLDOWN_FINISHED(src, x)` | nothing to cancel: it is a stored time compared on read | `TIMER_COOLDOWN_*`, hand-kept timestamps |
 | Run a behaviour at a steady rate | behaviour `every = d` (+ `max_interval`, `max_dt`, `step_interval`/`max_catchup` for fixed steps) -> `tick(E, dt)` | ring membership: park/suspend/requires/relevance take it off | `process()`, `START_PROCESSING` |
-| Run periodic per-object work that should stop when idle | a periodic lane: `PERIODIC_START(E, PERIODIC_SLOW/FAST/...)`, parks when its stage idles | the entity | `process()` |
+| Run periodic per-object work that should stop when idle | a periodic lane: `om_task_periodic(E, PERIODIC_SLOW/FAST/...)`, parks when its stage idles | the entity | `process()` |
 | A pipeline stage that is idle but still drifts | the stage's `rewake_delay(E)` (a keyed deadline) | entity + stage | a cadence that polls |
 | A stage that runs no more than every N | stage/behaviour `min_interval` (wakes coalesce into one deadline) | - | throttling by hand |
 | Time that runs slower/faster per object (stasis, freezers, bio time) | a clock domain: behaviour `clock = CLOCK_X`; `om_clock_now(E, CLOCK_X)`, `om_clock_rate_of()`; slow things by holding `EFFECT_CLOCK_X_INHIBIT` / `_MULT` | contributions | `world.time` in biological code |
 | Take time over an action with a progress bar | a task: `om_task_start(/datum/om/task/timed/x, actor, target, var = value...)`; steps return `STEP_NEXT`, `STEP_REPEAT(d)`, `STEP_DONE`, `STEP_FAIL(r)` | actor + target; cancelled on move, deletion, failed `requires`, `interrupted_by` | `do_after` |
 | Time, then ask, then act | a flow: `om_flow_start(/datum/om/flow/x, actor, target, ...)` with `wait(d, next)` and `om_ask()` steps | the task or prompt it waits on | procs chained by hand |
-| Long loop that must not hog a tick | `om_lane_work(E, slice_proc, cursor, on_done)`: slices resumed by cursor within the budget | E | `stoplag()`, `CHECK_TICK` sleeps |
+| Long loop that must not hog a tick | `om_task_slices(E, slice_proc, cursor, on_done)`: slices resumed by cursor within the budget | E | `stoplag()`, `CHECK_TICK` sleeps |
 | World-level periodic work (no entity) | a `/datum/world_service` with a `lane` behaviour on the global owner; `on_demand` + `demand()` parks it while idle | the service | a subsystem `fire()` |
 | Wake at an exact tick, on a Rust-owned value, a DM key or a rate crossing | a world watch: `om_world_at`, `om_world_on_change`, `om_world_when`, `om_world_on_key`, `om_world_on_rate` (delivered on the watch's `lane`) | owner keeps the watch, `qdel(watch)` cancels | polling gas/heat each tick |
 | React when a declared field changes | `OM_FIELD` + behaviour `wake_on` / stage `reads` -> `on_wake(E, changes)` | - | a timer that re-checks |

@@ -84,7 +84,7 @@ REF_OWNED(/obj/structure/mirror, "M")
 				to_chat(user, span_warning("You need two sheets of glass to add them to the frame."))
 				return TRUE
 			to_chat(user, span_notice("You start to add the glass to the frame."))
-			om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, G))
+			om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, G))
 			return TRUE
 
 	if(shattered && glass)

@@ -61,7 +61,7 @@ DECLARE_INTERACTIONS(/obj/item/lipstick, INTERACT_USE(null, PROC_REF(interaction
 		else
 			user.visible_message(span_warning("[user] begins to do [H]'s lips with \the [src]."), \
 									span_notice("You begin to apply \the [src]."))
-			om_do_after(user, 2 SECONDS, target = H, receiver = src, on_done = PROC_REF(attack_timed_done), done_args = list(user, H))
+			om_task_timed(user, 2 SECONDS, target = H, receiver = src, on_done = PROC_REF(attack_timed_done), done_args = list(user, H))
 			return ITEM_INTERACT_SUCCESS
 	else
 		to_chat(user, span_notice("Where are the lips on that?"))

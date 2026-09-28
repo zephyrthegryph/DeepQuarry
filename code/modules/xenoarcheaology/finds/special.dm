@@ -4,7 +4,7 @@
 
 /obj/item/reagent_containers/glass/replenishing/Initialize(mapload)
 	. = ..()
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 	for(var/x=1;x<=10;x++) //You got 10 chances to hit a reagent that is NOT banned.
 		var/new_chem = pick(chemistry_service().chemical_reagents)
 		if(new_chem in GLOB.obtainable_chemical_blacklist)
@@ -37,7 +37,7 @@
 		LAZYREMOVE(heard_talk, DEFAULTPICK(heard_talk, null))
 	LAZYADD(heard_talk, multilingual_to_message(message_pieces))
 	if(isliving(loc))
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 	if(isliving(src.loc) && world.time - last_twitch > 50)
 		last_twitch = world.time
 
@@ -58,7 +58,7 @@
 
 /obj/item/vampiric/Initialize(mapload)
 	. = ..()
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 
 /// Acts only while a player is near; otherwise it sleeps until one comes near.
 /obj/item/vampiric/periodic_step()
@@ -149,7 +149,7 @@
 
 /obj/effect/decal/cleanable/blood/splatter/animated/Initialize(mapload, _age)
 	. = ..()
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 	loc_last_process = src.loc
 
 /// Crawls toward its target turf every 2 s; arrived, it sleeps.
@@ -183,7 +183,7 @@
 
 /obj/effect/shadow_wight/Initialize(mapload)
 	. = ..()
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 
 /// Acts only while a player is near; otherwise it sleeps until one comes near.
 /obj/effect/shadow_wight/periodic_step()
@@ -213,7 +213,7 @@
 
 			src.moveToNullspace()
 	else
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 		qdel(src) //Let's not just sit in nullspace forever, yeah?
 
 /obj/effect/shadow_wight/Bump(atom/obstacle)
@@ -222,7 +222,7 @@
 /obj/item/clothing/mask/gas/poltergeist/equipped(mob/user, slot)
 	. = ..()
 	if(length(heard_talk))
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 
 /// LC-refs: the target_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/effect/decal/cleanable/blood/splatter/animated/proc/target_turf() as /turf

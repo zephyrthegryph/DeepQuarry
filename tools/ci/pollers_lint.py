@@ -163,7 +163,7 @@ def main():
         for n in p:
             errors.append(f"{rel}:{n}: process() definition -- put the work on a pipeline (code/datums/om/periodic.dm)")
         for n in st:
-            errors.append(f"{rel}:{n}: START_*PROCESSING call -- use PERIODIC_START or a machine wake")
+            errors.append(f"{rel}:{n}: START_*PROCESSING call -- use om_task_periodic() or a machine wake")
     if "--report" in sys.argv:
         for e in errors:
             print(e)

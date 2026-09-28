@@ -26,7 +26,7 @@
  * Returns FALSE when a check refused the job, TRUE when it was done at once (no wait;
  * on_done has run), or USE_TOOL_PENDING when the timed action started. `claims`: the target is
  * exclusive while the job runs (another claiming job on it is refused); `busy`: a datum the job
- * also claims (om_busy() holds while it runs; see om_do_after()).
+ * also claims (om_busy() holds while it runs; see om_task_timed()).
  */
 /// The last use_tool() call: its unscaled delay, quality, amount and volume. Parity tests read it; only unit tests write it.
 GLOBAL_LIST_EMPTY(dq_tool_last_use)

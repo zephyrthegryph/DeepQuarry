@@ -115,4 +115,4 @@
 /// Senses while carried (picking it up starts it); set down, it sleeps.
 /obj/item/multitool/ai_detector/equipped(mob/user, slot)
 	. = ..()
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)

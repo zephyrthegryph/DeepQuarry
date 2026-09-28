@@ -48,12 +48,12 @@
 		visible_message(span_danger("[src] is trying to break [I]!"),
 			span_warning("You attempt to break your [I]. (This will take around 5 seconds and you need to stand still)"))
 
-		om_do_after(src, 5 SECONDS, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(cuff_resist_carbon_done), done_args = list(I), on_fail = PROC_REF(cuff_resist_carbon_failed), fail_args = list(I))
+		om_task_timed(src, 5 SECONDS, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(cuff_resist_carbon_done), done_args = list(I), on_fail = PROC_REF(cuff_resist_carbon_failed), fail_args = list(I))
 		return
 
 	visible_message(span_danger("[src] attempts to remove [I]!"),
 		span_warning("You attempt to remove [I]. (This will take around [displaytime] seconds and you need to stand still)"))
-	om_do_after(src, breakouttime, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(cuff_resist_carbon_done2), done_args = list(I))
+	om_task_timed(src, breakouttime, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(cuff_resist_carbon_done2), done_args = list(I))
 
 /mob/living/carbon/proc/cuff_resist_carbon_done(obj/item/handcuffs/I)
 	if(!I || src?.buckled_to())
@@ -90,7 +90,7 @@
 		span_warning("You attempt to unbuckle yourself. (This will take around 2 minutes and you need to stand still)")
 		)
 
-	om_do_after(src, 2 MINUTES, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(resist_buckle_carbon_done), done_args = list())
+	om_task_timed(src, 2 MINUTES, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(resist_buckle_carbon_done), done_args = list())
 
 /mob/living/carbon/proc/resist_buckle_carbon_done()
 	var/obj/buckled = src?.buckled_to()

@@ -42,7 +42,7 @@
 		playsound(src, tool.usesound, 50, 1)
 		return ITEM_INTERACT_SUCCESS
 	if(mode == 2)
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 		anchored = FALSE
 	mode = 0
 	visible_message(span_notice("[user] detaches [src] from the cable!"))
@@ -62,13 +62,13 @@ DECLARE_INTERACTIONS(/obj/item/powersink, INTERACT_HAND(null, PROC_REF(interacti
 			src.visible_message(span_notice("[user] activates [src]!"))
 			mode = 2
 			icon_state = "powersink1"
-			PERIODIC_START(src, PERIODIC_SLOW)
+			om_task_periodic(src, PERIODIC_SLOW)
 		if(2)  //This switch option wasn't originally included. It exists now. --NeoFite
 			src.visible_message(span_notice("[user] deactivates [src]!"))
 			mode = 1
 			set_light(0)
 			icon_state = "powersink0"
-			PERIODIC_STOP(src)
+			om_task_periodic_stop(src)
 		
 	return TRUE
 /obj/item/powersink/pwr_drain()

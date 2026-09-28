@@ -183,7 +183,7 @@
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_notice("You start repairing the damage to [src]."))
 	playsound(src, 'sound/items/Welder.ogg', 100, TRUE)
-	om_do_after(user, max(5, damage / 5), src, src, PROC_REF(weld_repair_done), list(user, welder))
+	om_task_timed(user, max(5, damage / 5), src, src, PROC_REF(weld_repair_done), list(user, welder))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/shipsensors/proc/weld_repair_done(mob/user, obj/item/weldingtool/welder)

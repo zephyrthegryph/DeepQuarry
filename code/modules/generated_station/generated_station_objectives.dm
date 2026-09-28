@@ -102,7 +102,7 @@
 		to_chat(user, span_notice("The payload is already resident."))
 		return TRUE
 	user.visible_message(span_notice("[user] begins uploading a control payload."), span_notice("You begin uploading the malware payload."))
-	om_do_after(user, 5 SECONDS, src, src, PROC_REF(upload_done), list(user))
+	om_task_timed(user, 5 SECONDS, src, src, PROC_REF(upload_done), list(user))
 	return TRUE
 
 /obj/machinery/generated_station_upload_terminal/proc/upload_done(mob/user)

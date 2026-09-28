@@ -34,7 +34,7 @@
 	else
 		log_and_message_admins("attempted to body swap with [key_name(M)].")
 	user.visible_message(span_warning("[user] pushes the device up their forehead and [M]'s head, the device beginning to let out a series of light beeps!"),span_notice("You begin swap minds with [M]!"))
-	om_do_after(user, 35 SECONDS, target = M, receiver = src, on_done = PROC_REF(attack_timed_done), done_args = list(M, user))
+	om_task_timed(user, 35 SECONDS, target = M, receiver = src, on_done = PROC_REF(attack_timed_done), done_args = list(M, user))
 
 /obj/item/bodysnatcher/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)

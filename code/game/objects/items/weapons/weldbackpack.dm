@@ -43,12 +43,12 @@ REF_OWNED(/obj/item/weldpack, "nozzle")
 	var/obj/item/F = nozzle
 	H.put_in_hands(F)
 	nozzle_attached = 0
-	PERIODIC_START(nozzle, PERIODIC_SLOW)
+	om_task_periodic(nozzle, PERIODIC_SLOW)
 
 	return 1
 
 /obj/item/weldpack/proc/return_nozzle(mob/living/user)
-	PERIODIC_STOP(nozzle)
+	om_task_periodic_stop(nozzle)
 	nozzle.forceMove(src)
 	nozzle_attached = 1
 

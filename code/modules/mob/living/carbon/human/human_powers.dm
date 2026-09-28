@@ -296,7 +296,7 @@
 		src.visible_message(span_filter_notice(span_bold("[src]") + "'s flesh begins to mend..."))
 
 	var/delay_length = round(active_regen_delay * species.active_regen_mult)
-	om_do_after(src, delay_length, target = src, receiver = src, on_done = PROC_REF(regenerate_human_done), done_args = list(), on_fail = PROC_REF(regenerate_human_failed), fail_args = list())
+	om_task_timed(src, delay_length, target = src, receiver = src, on_done = PROC_REF(regenerate_human_done), done_args = list(), on_fail = PROC_REF(regenerate_human_failed), fail_args = list())
 
 /mob/living/carbon/human/proc/regenerate_human_done()
 	adjust_nutrition(-200)

@@ -60,7 +60,7 @@ EXTEND_INTERACTIONS(/obj/item/material/ashtray, INTERACT_ITEM(null, PROC_REF(ash
 			var/obj/item/clothing/mask/smokable/cigarette/cig = W
 			if (cig.lit == 1)
 				src.visible_message("[user] crushes [cig] in \the [src], putting it out.")
-				PERIODIC_STOP(cig)
+				om_task_periodic_stop(cig)
 				var/obj/item/butt = new cig.type_butt(src)
 				cig.transfer_fingerprints_to(butt)
 				// Turn mind bound cigs into butts

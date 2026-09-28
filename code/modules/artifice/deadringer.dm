@@ -39,7 +39,7 @@ DECLARE_INTERACTIONS(/obj/item/deadringer, INTERACT_USE(null, PROC_REF(interacti
 			bruteloss_prev = H.injury_load(INJURY_CATEGORY_PHYSICAL)
 			fireloss_prev = H.injury_load(INJURY_CATEGORY_THERMAL)
 			activated = 1
-			PERIODIC_START(src, PERIODIC_SLOW)
+			om_task_periodic(src, PERIODIC_SLOW)
 			return TRUE
 		else
 			to_chat(H, span_blue("You press a small button on [src]'s side. It buzzes a little."))

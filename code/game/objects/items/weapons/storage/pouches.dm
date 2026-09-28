@@ -28,7 +28,7 @@
 
 	if(!insert_delay || stall_passed)
 		return TRUE //Now we're allowed to put the item in the pouch
-	om_do_after(user, insert_delay, target = src, receiver = src, on_done = PROC_REF(stalled_insert), done_args = list(W, user))
+	om_task_timed(user, insert_delay, target = src, receiver = src, on_done = PROC_REF(stalled_insert), done_args = list(W, user))
 	return FALSE // the delay runs first; stalled_insert() retries the move
 
 /obj/item/storage/pouch/proc/stalled_insert(obj/item/W, mob/user)

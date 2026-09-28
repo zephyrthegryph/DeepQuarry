@@ -122,15 +122,15 @@
 				return
 			if (breather())
 				src.add_fingerprint(user)
-				om_do_after(user, 3 SECONDS, target = target, receiver = src, on_done = PROC_REF(MouseDrop_timed_done), done_args = list(target, user))
+				om_task_timed(user, 3 SECONDS, target = target, receiver = src, on_done = PROC_REF(MouseDrop_timed_done), done_args = list(target, user))
 				return
 			user.visible_message(span_infoplain(span_bold("\The [user]") + " begins carefully placing the mask onto [target]."),
 						span_notice("You begin carefully placing the mask onto [target]."))
-			om_do_after(user, 10 SECONDS, target = target, receiver = src, on_done = PROC_REF(MouseDrop_timed_done2), done_args = list(target, user))
+			om_task_timed(user, 10 SECONDS, target = target, receiver = src, on_done = PROC_REF(MouseDrop_timed_done2), done_args = list(target, user))
 			return
 		if("Drip needle")
 			if(attached())
-				om_do_after(user, 2 SECONDS, target = target, receiver = src, on_done = PROC_REF(needle_removed))
+				om_task_timed(user, 2 SECONDS, target = target, receiver = src, on_done = PROC_REF(needle_removed))
 			else if(ishuman(target))
 				user.visible_message(span_infoplain(span_bold("\The [user]") + " begins inserting needle into [target]'s vein."),
 								span_notice("You begin inserting needle into [target]'s vein."))
@@ -166,7 +166,7 @@
 	user.visible_message(span_infoplain(span_bold("\The [user]") + "hooks \the [target] up to \the [src]."),
 					span_notice("You hook \the [target] up to \the [src]."))
 	attached_handle = om_handle(target)
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 	update_icon()
 
 /obj/structure/medical_stand/proc/MouseDrop_timed_done(mob/living/carbon/human/target, mob/user)
@@ -193,7 +193,7 @@
 	if(attach_mask(target))
 		src.add_fingerprint(user)
 		update_icon()
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 	return
 
 DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
@@ -231,7 +231,7 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 				user.put_in_hands(tank)
 				tank = null
 				valve_opened = FALSE
-				PERIODIC_STOP(src)
+				om_task_periodic_stop(src)
 				update_icon()
 				return
 			else if (!is_loosen)
@@ -258,7 +258,7 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 						breather().internals?.icon_state = "internal1"
 					valve_opened = TRUE
 					update_icon()
-					PERIODIC_START(src, PERIODIC_SLOW)
+					om_task_periodic(src, PERIODIC_SLOW)
 		if ("Remove vessel")
 			if(beaker)
 				beaker.forceMove(loc)

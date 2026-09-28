@@ -44,7 +44,7 @@
 /obj/item/gun/launcher/spikethrower/consume_next_projectile()
 	if(spikes < 1) return null
 	spikes--
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 	return new /obj/item/spike(src)
 
 /*

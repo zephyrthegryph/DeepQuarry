@@ -8,7 +8,7 @@
 
 /obj/structure/tanning_rack/Initialize(mapload)
 	. = ..()
-	PERIODIC_START(src, PERIODIC_SLOW) // SSObj fires ~every 2s , starting from wetness 30 takes ~1m
+	om_task_periodic(src, PERIODIC_SLOW) // SSObj fires ~every 2s , starting from wetness 30 takes ~1m
 
 /// Dries its leather while it holds wet leather; otherwise it sleeps until some is hung on it.
 /obj/structure/tanning_rack/periodic_step()
@@ -42,11 +42,11 @@
 		if(!drying()) // If not drying anything, start drying the thing
 			if(user.unEquip(A, target = src))
 				drying_handle = om_handle(A)
-				PERIODIC_START(src, PERIODIC_SLOW)
+				om_task_periodic(src, PERIODIC_SLOW)
 		else // Drying something, add if possible
 			var/obj/item/stack/wetleather/W = A
 			W.transfer_to(drying(), W.get_amount(), TRUE)
-			PERIODIC_START(src, PERIODIC_SLOW)
+			om_task_periodic(src, PERIODIC_SLOW)
 		update_icon()
 		return TRUE
 	return FALSE

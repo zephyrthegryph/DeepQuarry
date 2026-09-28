@@ -170,9 +170,9 @@ REF_OWNED(/obj/item/rig, list("power_system", "spark_system", "boots", "chest", 
 // We only care about processing when we're on a mob
 /obj/item/rig/Moved(old_loc, direction, forced)
 	if(ismob(loc))
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 	else
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 		QDEL_NULL(minihud) // Just in case we get removed some other way
 
 		// The control module has left the wearer's body — dropped, force-dropped on
@@ -649,7 +649,7 @@ REF_OWNED(/obj/item/rig, list("power_system", "spark_system", "boots", "chest", 
 
 	if(seal_delay > 0 && istype(M) && (M.get_equipped_item(SLOT_ID_BACK) == src || M.get_equipped_item(SLOT_ID_BELT) == src))
 		M.visible_message(span_notice("[M] starts putting on \the [src]..."), span_notice("You start putting on \the [src]..."))
-		om_do_after(M, seal_delay, src, src, PROC_REF(put_on_done), list(M), IGNORE_TARGET_LOC_CHANGE, PROC_REF(put_on_failed), list(M))
+		om_task_timed(M, seal_delay, src, src, PROC_REF(put_on_done), list(M), IGNORE_TARGET_LOC_CHANGE, PROC_REF(put_on_failed), list(M))
 		return
 	put_on_done(M)
 

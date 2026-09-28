@@ -229,7 +229,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pitcher_plant, \
 		else
 			user.visible_message(span_infoplain("[user] uses a loop of wire to try fishing someone out of \the [src]."), span_infoplain("You use a loop of wire to try snagging someone trapped in \the [src]..."))
 			//You can just spam click to stack attempts if you feel like abusing it.
-			om_do_after(user, rand(3 SECONDS, 7 SECONDS), target = src, receiver = src, on_done = PROC_REF(fish_out_done), done_args = list(user, H))
+			om_task_timed(user, rand(3 SECONDS, 7 SECONDS), target = src, receiver = src, on_done = PROC_REF(fish_out_done), done_args = list(user, H))
 	if(istype(O, /obj/item/newspaper))
 		user.visible_message(span_notice("[user] baps \the [src], but it doesn't seem to do anything."), span_notice("You whap \the [src] with a rolled up newspaper."))
 		to_chat(user, span_notice("Weird. That usually works. Maybe you can fish out its victim with some string or wire or something? Or maybe kill the thing with some plant-b-gone. Both would probably be safer than hacking it up with a person still inside."))

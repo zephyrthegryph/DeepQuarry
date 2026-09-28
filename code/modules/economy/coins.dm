@@ -101,7 +101,7 @@
 
 /obj/item/coin/uranium/Initialize(mapload)
 	. = ..()
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 
 /// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.
 /obj/item/coin/uranium/periodic_step()

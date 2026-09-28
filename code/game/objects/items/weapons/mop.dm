@@ -31,7 +31,7 @@ REGISTRY_MEMBERSHIP(/obj/item/mop, REGISTRY_MOPS)
 
 		user.visible_message(span_warning("[user] begins to clean \the [get_turf(A)]."))
 
-		om_do_after(user, mop_time, target = get_turf(A), receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(A, user))
+		om_task_timed(user, mop_time, target = get_turf(A), receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(A, user))
 
 /obj/item/mop/proc/afterattack_timed_done(atom/A, mob/user)
 	var/turf/T = get_turf(A)

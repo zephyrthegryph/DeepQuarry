@@ -151,7 +151,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/emptysandbag, INTERACT_USE("Fill", PROC_REF(
 
 /// Fills one sandbag a second while the user stays put on outdoor ground.
 /obj/item/stack/emptysandbag/proc/fill_next_bag(mob/user)
-	om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(fill_bag_done), done_args = list(user))
+	om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(fill_bag_done), done_args = list(user))
 
 /obj/item/stack/emptysandbag/proc/fill_bag_done(mob/user)
 	if(!can_use(1) || !istype(get_turf(src), /turf/simulated/floor/outdoors))

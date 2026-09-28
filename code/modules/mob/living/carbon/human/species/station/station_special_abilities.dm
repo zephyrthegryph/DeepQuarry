@@ -713,7 +713,7 @@
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
-	om_do_after(src, 25, target = src, receiver = src, on_done = PROC_REF(enter_cocoon_human_done), done_args = list())
+	om_task_timed(src, 25, target = src, receiver = src, on_done = PROC_REF(enter_cocoon_human_done), done_args = list())
 
 /mob/living/carbon/human/proc/enter_cocoon_human_done()
 	var/obj/item/storage/vore_egg/bugcocoon/C = new(loc)
@@ -819,7 +819,7 @@
 	to_chat(target, span_critical("Something begins to circle around you in the water!")) //Dun dun...
 	var/starting_loc = target.loc
 
-	om_do_after(src, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(underwater_devour_human_done), done_args = list(target, starting_loc))
+	om_task_timed(src, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(underwater_devour_human_done), done_args = list(target, starting_loc))
 
 /mob/living/carbon/human/proc/underwater_devour_human_done(mob/living/target, starting_loc)
 	if(target.loc != starting_loc)
@@ -1254,7 +1254,7 @@
 		return
 
 	visible_message(span_warning("[src] is preparing to [trait_injection_verb] [target]!"))
-	om_do_after(src, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(injection_living_done), done_args = list(target, synth))
+	om_task_timed(src, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(injection_living_done), done_args = list(target, synth))
 
 /mob/living/proc/injection_living_done(mob/living/target, synth)
 	add_attack_logs(src,target,"Injection trait ([trait_injection_selected], [trait_injection_amount])")
@@ -1335,7 +1335,7 @@
 	var/choice = ask.choice
 	src.visible_message(span_bolddanger("[src] moves their head next to [T]'s neck, seemingly looking for something!"))
 
-	om_do_after(src, 30 SECONDS, target = T, receiver = src, on_done = PROC_REF(succubus_bite_living_done), done_args = list(T, choice))
+	om_task_timed(src, 30 SECONDS, target = T, receiver = src, on_done = PROC_REF(succubus_bite_living_done), done_args = list(T, choice))
 
 /mob/living/proc/succubus_bite_living_done(mob/living/carbon/human/T, choice)
 	if(choice == REAGENT_APHRODISIAC)
@@ -1422,7 +1422,7 @@
 	om_ask(src, /datum/om/prompt/choice, PROC_REF(mobegglaying_chosen), message = "What do you want to do?", title = "Egg Option", choices = list("Make a Egg", "lay your Eggs"), ask_flags = ASK_CONSCIOUS)
 
 /mob/living/proc/mobegglaying_chosen(datum/om/prompt/choice/ask)
-	om_do_after(src, 30 SECONDS, target = src, receiver = src, on_done = PROC_REF(mobegglaying_living_done), done_args = list(src, ask.choice))
+	om_task_timed(src, 30 SECONDS, target = src, receiver = src, on_done = PROC_REF(mobegglaying_living_done), done_args = list(src, ask.choice))
 
 /mob/living/proc/mobegglaying_living_done(mob/living/carbon/human/C, choice)
 	if(choice == "Make a Egg" && eggs > 5)

@@ -247,7 +247,7 @@ DECLARE_INTERACTIONS(/obj/structure/event_collector, INTERACT_ITEM(null, PROC_RE
 
 /obj/structure/event_collector/proc/start_recipe_process()
 	awaiting_next_recipe = TRUE
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 	calls_remaining = completion_time * 10
 	message_admins("\[EVENT\] Event Collection object [src] has started processing its current recipe! ETA: [(calls_remaining/10) / 2] ish seconds.")
 

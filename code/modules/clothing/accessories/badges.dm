@@ -298,14 +298,14 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/sheriff, INTERACT_USE("Fl
 	. = ..()
 	current_film = new /obj/item/dosimeter_film(src)
 	update_state(current_film.state)
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 
 REF_OWNED(/obj/item/clothing/accessory/dosimeter, "current_film")
 
 /obj/item/clothing/accessory/dosimeter/periodic_step()
 	check_holder()
 	if(current_film.state > 1)
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 
 EXTEND_INTERACTIONS(/obj/item/clothing/accessory/dosimeter, \
 	INTERACT_HAND_UNGATED(null, PROC_REF(dosimeter_remove_film_hand)), \
@@ -320,7 +320,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/dosimeter, \
 			current_film = null
 			to_chat(user, span_notice("You pulled out the film out of \the [src]."))
 			desc = "This seems like a dosimeter, but there is no film inside."
-			PERIODIC_STOP(src)
+			om_task_periodic_stop(src)
 			update_state(0)
 			return TRUE
 	return FALSE
@@ -337,7 +337,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/dosimeter, \
 		desc = "This seems like a dosimeter. It has a film inside."
 
 		if(current_film.state < 2)
-			PERIODIC_START(src, PERIODIC_SLOW)
+			om_task_periodic(src, PERIODIC_SLOW)
 	else
 		to_chat(user, span_notice("\The [src] already has a film inside."))
 	return INTERACTION_HANDLED_PASS

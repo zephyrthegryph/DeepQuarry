@@ -97,7 +97,7 @@
 		om_after(src, world.tick_lag, PROC_REF(plan_poll), state)
 		return
 	if(plan_ready(state, status))
-		om_lane_work(src, PROC_REF(plan_fetch_slice), state)
+		om_task_slices(src, PROC_REF(plan_fetch_slice), state)
 
 /// The job finished: TRUE with the header read and the pages ready to fetch; FALSE when it failed
 /// (the failure is handed on).

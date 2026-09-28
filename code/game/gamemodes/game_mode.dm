@@ -291,7 +291,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 
 /// One antagonist summary a second, then the completion declaration.
 /datum/game_mode/proc/declare_antag_goals()
-	om_stagger(src, antag_templates, 1 SECOND, PROC_REF(declare_antag_goal), 1, null, PROC_REF(finish_antag_goals))
+	om_after_stagger(src, antag_templates, 1 SECOND, PROC_REF(declare_antag_goal), 1, null, PROC_REF(finish_antag_goals))
 
 /datum/game_mode/proc/declare_antag_goal(datum/antagonist/antag)
 	antag.check_victory()

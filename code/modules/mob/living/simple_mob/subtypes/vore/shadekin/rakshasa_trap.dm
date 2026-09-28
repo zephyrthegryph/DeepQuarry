@@ -33,7 +33,7 @@ DECLARE_INTERACTIONS(/obj/structure/gootrap, INTERACT_HAND(null, PROC_REF(intera
 			span_notice("[user] begins freeing [victim] from \the [src]."),
 			span_notice("You carefully begin to free [victim] from \the [src]."),
 			)
-		om_do_after(user, 5, target = src, receiver = src, on_done = PROC_REF(attack_hand_gootrap_done), done_args = list(user, victim))
+		om_task_timed(user, 5, target = src, receiver = src, on_done = PROC_REF(attack_hand_gootrap_done), done_args = list(user, victim))
 	else
 		return FALSE
 	return TRUE

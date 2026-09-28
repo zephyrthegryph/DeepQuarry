@@ -39,7 +39,7 @@
 	if(iswall(targetLoc))
 		targetLoc = get_turf(src)
 
-	om_do_after(src, xeno_build_time, target = src, receiver = src, on_done = PROC_REF(xeno_build_done), done_args = list(choice, targetLoc))
+	om_task_timed(src, xeno_build_time, target = src, receiver = src, on_done = PROC_REF(xeno_build_done), done_args = list(choice, targetLoc))
 
 
 

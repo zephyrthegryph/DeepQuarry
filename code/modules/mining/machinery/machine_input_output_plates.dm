@@ -28,7 +28,7 @@
 /// Wakes this ore machine on whichever lane it runs (fast mode or the machine pipeline).
 /obj/machinery/mineral/proc/wake_mining()
 	if(speed_process)
-		PERIODIC_START(src, PERIODIC_FAST)
+		om_task_periodic(src, PERIODIC_FAST)
 	else
 		MACHINE_WAKE(src)
 

@@ -106,7 +106,7 @@
 			return
 		busy_bank = TRUE
 		icon_state = "item_bank_o"
-		om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(retrieve_done), done_args = list(user, I), on_fail = PROC_REF(bank_interrupted))
+		om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(retrieve_done), done_args = list(user, I), on_fail = PROC_REF(bank_interrupted))
 		return
 	else if(choice == "Info")
 		to_chat(user, span_notice("\The [src] can store a single item for you between shifts! Anything that has been retrieved from the bank cannot be stored again in the same shift. Anyone can withdraw from the bank one time per shift. Some items are not able to be accepted by the bank."))
@@ -176,7 +176,7 @@
 		busy_bank = TRUE
 		user.visible_message(span_notice("\The [user] begins storing \the [O] in \the [src]."),span_notice("You begin storing \the [O] in \the [src]."))
 		icon_state = "item_bank_o"
-		om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(store_done), done_args = list(user, O), on_fail = PROC_REF(bank_interrupted))
+		om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(store_done), done_args = list(user, O), on_fail = PROC_REF(bank_interrupted))
 		return TRUE
 	else
 		to_chat(user, span_warning("You cannot store \the [O]. \The [src] either does not accept that, or it has already been retrieved from storage this shift."))

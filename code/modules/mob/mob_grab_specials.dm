@@ -289,7 +289,7 @@
 		return
 
 	attacker.visible_message(span_danger("[attacker] starts forcing [target] to the ground!"))
-	om_do_after(attacker, 2 SECONDS, target = target, receiver = src, on_done = PROC_REF(pin_down_grab_done), done_args = list(target, attacker))
+	om_task_timed(attacker, 2 SECONDS, target = target, receiver = src, on_done = PROC_REF(pin_down_grab_done), done_args = list(target, attacker))
 
 /obj/item/grab/proc/pin_down_grab_done(mob/target, mob/attacker)
 	if(!(target))

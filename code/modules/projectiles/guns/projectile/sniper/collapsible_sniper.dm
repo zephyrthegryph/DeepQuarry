@@ -16,7 +16,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/heavysniper/collapsible, INTERACT_V
 
 /obj/item/gun/projectile/heavysniper/proc/collapse_rifle(mob/user)
 	to_chat(user, span_warning("You begin removing \the [src]'s barrel."))
-	om_do_after(user, 4 SECONDS, src, src, PROC_REF(barrel_removed), list(user))
+	om_task_timed(user, 4 SECONDS, src, src, PROC_REF(barrel_removed), list(user))
 
 /obj/item/gun/projectile/heavysniper/proc/barrel_removed(mob/user)
 	if(user.unEquip(src, force=1))
@@ -82,7 +82,7 @@ DECLARE_INTERACTIONS(/obj/item/sniper_rifle_part, \
 		return TRUE
 
 	to_chat(user, span_notice("You start disassembling \the [src]."))
-	om_do_after(user, 4 SECONDS, src, src, PROC_REF(disassembled), list(user))
+	om_task_timed(user, 4 SECONDS, src, src, PROC_REF(disassembled), list(user))
 	return TRUE
 
 /obj/item/sniper_rifle_part/proc/disassembled(mob/user)
@@ -106,7 +106,7 @@ DECLARE_INTERACTIONS(/obj/item/sniper_rifle_part, \
 /obj/item/sniper_rifle_part/proc/interaction_item(mob/user, obj/item/sniper_rifle_part/A, datum/interaction/interaction)
 
 	to_chat(user, span_notice("You begin adding \the [A] to \the [src]."))
-	om_do_after(user, 3 SECONDS, src, src, PROC_REF(part_added), list(A, user))
+	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(part_added), list(A, user))
 	return INTERACTION_HANDLED_PASS
 
 /obj/item/sniper_rifle_part/proc/part_added(obj/item/sniper_rifle_part/A, mob/user)

@@ -175,7 +175,7 @@
 /obj/machinery/button/doorbell/wrench_act(mob/user, obj/item/tool)
 	to_chat(user, span_notice("You start to unwrench \the [src]."))
 	playsound(src, 'sound/items/Ratchet.ogg', 50, TRUE)
-	om_do_after(user, 15, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
+	om_task_timed(user, 15, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/button/doorbell/proc/wrench_act_timed_done(mob/user)

@@ -28,7 +28,7 @@
 
 /obj/item/ammo_magazine/smart/Initialize(mapload)
 	. = ..()
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 
 /obj/item/ammo_magazine/smart/periodic_step()
 	if(!holding_gun())	// Yes, this is awful, sorry. Don't know a better way to figure out if we've been moved into or out of a gun.
@@ -83,7 +83,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/smart, \
 			return INTERACTION_HANDLED_PASS
 		else
 			to_chat(user, "You begin inserting \the [I] into \the [src].")
-			om_do_after(user, 2.5 SECONDS, src, src, PROC_REF(cell_installed), list(user, I))
+			om_task_timed(user, 2.5 SECONDS, src, src, PROC_REF(cell_installed), list(user, I))
 			return INTERACTION_HANDLED_PASS
 
 	else if(istype(I, /obj/item/ammo_magazine) || istype(I, /obj/item/ammo_casing))
@@ -119,7 +119,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/smart, \
 	if(user.get_inactive_hand() == src)
 		if(attached_cell())
 			to_chat(user, "You struggle to remove \the [attached_cell()] from \the [src].")
-			om_do_after(user, 4 SECONDS, src, src, PROC_REF(cell_removed), list(user))
+			om_task_timed(user, 4 SECONDS, src, src, PROC_REF(cell_removed), list(user))
 			return TRUE
 	return FALSE
 

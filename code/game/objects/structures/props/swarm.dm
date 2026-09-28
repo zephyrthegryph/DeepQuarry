@@ -32,7 +32,7 @@ REF_OWNED_LIST(/obj/structure/cult/pylon/swarm, "active_beams")
 	if(!isbroken)
 		if(prob(1 + damage * 3))
 			visible_message(span_danger("[shatter_message]"))
-			PERIODIC_STOP(src)
+			om_task_periodic_stop(src)
 			playsound(src,shatter_sound, 75, 1)
 			isbroken = 1
 			density = FALSE
@@ -47,7 +47,7 @@ REF_OWNED_LIST(/obj/structure/cult/pylon/swarm, "active_beams")
 				span_warning("You hit \the [src], and its crystal breaks apart!"),
 				"You hear a tinkle of crystalline shards."
 				)
-			PERIODIC_STOP(src)
+			om_task_periodic_stop(src)
 			user.do_attack_animation(src)
 			playsound(src,shatter_sound, 75, 1)
 			isbroken = 1
@@ -112,7 +112,7 @@ REF_OWNED_LIST(/obj/structure/cult/pylon/swarm, "active_beams")
 	if(!isbroken)
 		if(prob(1 + damage * 3) && damage >= 25)
 			visible_message(span_danger("[shatter_message]"))
-			PERIODIC_STOP(src)
+			om_task_periodic_stop(src)
 			playsound(src,shatter_sound, 75, 1)
 			isbroken = 1
 			density = FALSE
@@ -127,7 +127,7 @@ REF_OWNED_LIST(/obj/structure/cult/pylon/swarm, "active_beams")
 				span_warning("You hit \the [src], and its crystal breaks apart!"),
 				"You hear a tinkle of crystalline shards."
 				)
-			PERIODIC_STOP(src)
+			om_task_periodic_stop(src)
 			user.do_attack_animation(src)
 			playsound(src,shatter_sound, 75, 1)
 			isbroken = 1

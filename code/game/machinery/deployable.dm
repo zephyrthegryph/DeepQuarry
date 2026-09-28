@@ -232,7 +232,7 @@ EXTEND_INTERACTIONS(/obj/structure/barricade/cutout, \
 	var/choice = ask.choice
 	if(!Adjacent(user))
 		return
-	om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(cutout_paint_done), done_args = list(choice))
+	om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(cutout_paint_done), done_args = list(choice))
 	return TRUE
 
 /obj/structure/barricade/cutout/proc/cutout_paint_done(choice)

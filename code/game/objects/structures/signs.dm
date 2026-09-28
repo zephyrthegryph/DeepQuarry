@@ -1704,7 +1704,7 @@ REF_PAIR(/obj/structure/sign/flag, list("linked_flag" = "linked_flag"))
 /obj/structure/sign/flag/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/flame/lighter) || W.has_tool_quality(TOOL_WELDER))
 		visible_message(span_warning("\The [user] starts to burn \the [src] down!"))
-		om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
+		om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
 		return TRUE
 
 /obj/structure/sign/flag/proc/attackby_timed_done(mob/user)

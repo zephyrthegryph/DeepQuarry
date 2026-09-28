@@ -73,7 +73,7 @@ EXTEND_INTERACTIONS(/obj/effect/overlay/snow, \
 /// Old attackby: shovel the snow away.
 /obj/effect/overlay/snow/proc/interaction_shovel_snow(mob/user, obj/item/held, datum/interaction/interaction)
 	user.visible_message(span_notice("[user] begins to shovel away \the [src]."))
-	om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
+	om_task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
 	return INTERACTION_HANDLED_PASS
 
 /obj/effect/overlay/snow/proc/attackby_timed_done(mob/user)

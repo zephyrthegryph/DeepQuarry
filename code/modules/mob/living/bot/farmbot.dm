@@ -251,7 +251,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/farmbot, INTERACT_HAND("Open controls", PROC
 /// One second of refilling from a sink, repeated until the tank is full or interrupted.
 /mob/living/bot/farmbot/proc/refill_step(atom/A)
 	if(tank.reagents.total_volume < tank.reagents.maximum_volume)
-		om_do_after(src, 1 SECOND, target = A, receiver = src, on_done = PROC_REF(refill_pulse), done_args = list(A), on_fail = PROC_REF(refill_end), busy = src)
+		om_task_timed(src, 1 SECOND, target = A, receiver = src, on_done = PROC_REF(refill_pulse), done_args = list(A), on_fail = PROC_REF(refill_end), busy = src)
 		return
 	refill_end()
 

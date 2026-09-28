@@ -432,7 +432,7 @@ REF_OWNED(/obj/machinery/power/smes, "soundloop")
 		to_chat(user, span_filter_notice("\The [src] is already fully repaired."))
 		return ITEM_INTERACT_BLOCKING
 	if(welder.remove_fuel(0, user))
-		om_do_after(user, missing_integrity, src, src, PROC_REF(weld_repair_done), list(user))
+		om_task_timed(user, missing_integrity, src, src, PROC_REF(weld_repair_done), list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/power/smes/proc/weld_repair_done(mob/user)

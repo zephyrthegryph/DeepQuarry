@@ -129,7 +129,7 @@
 /obj/item/gun/launcher/crossbow/proc/draw_step(mob/user)
 	if(!(bolt && tension && loc == current_user))
 		return
-	om_do_after(user, 2.5 SECONDS, src, src, PROC_REF(draw_notch), list(user), on_fail = PROC_REF(draw_relaxed), fail_args = list(user))
+	om_task_timed(user, 2.5 SECONDS, src, src, PROC_REF(draw_notch), list(user), on_fail = PROC_REF(draw_relaxed), fail_args = list(user))
 
 /obj/item/gun/launcher/crossbow/proc/draw_relaxed(mob/user)
 	user?.visible_message("[user] stops drawing and relaxes the string of [src].",span_warning("You stop drawing back and relax the string of [src]."))

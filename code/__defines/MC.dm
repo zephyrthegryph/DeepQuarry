@@ -29,7 +29,7 @@
 #define NEW_SS_GLOBAL(varname) if(varname != src){if(istype(varname)){Recover();qdel(varname);}varname = src;}
 
 // START_PROCESSING/STOP_PROCESSING are gone (roadmap S4): periodic work runs on object-model
-// pipelines, PERIODIC_START()/PERIODIC_STOP() (code/__defines/om.dm, code/datums/om/periodic.dm).
+// pipelines, om_task_periodic()/om_task_periodic_stop() (code/__defines/om.dm, code/datums/om/periodic.dm).
 
 /// Returns true if the MC is initialized and running.
 /// Optional argument init_stage controls what stage the mc must have initialized to count as initialized. Defaults to INITSTAGE_MAX if not specified.

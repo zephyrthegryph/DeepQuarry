@@ -99,7 +99,7 @@
 
 /obj/structure/catwalk/proc/interaction_plate(mob/user, obj/item/stack/tile/floor/ST, datum/interaction/interaction)
 	to_chat(user, span_notice("Placing tile..."))
-	om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(plate_done), done_args = list(user, ST))
+	om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(plate_done), done_args = list(user, ST))
 	return TRUE
 
 /obj/structure/catwalk/proc/plate_done(mob/user, obj/item/stack/tile/floor/ST)

@@ -427,7 +427,11 @@ emit(/event/moved, src, old_loc, dir)
 - **Ordering** is declaration order by default. `after` and `before` are
   declared where order matters.
 - **Re-entrancy.** There's a guard per (source, event kind), plus a cascade
-  depth limit.
+  depth limit (`OM_VETO_DEPTH_MAX` nested before-events per entity). A before
+  event may raise a *different* before event on the same entity; re-raising
+  the same kind while it is being delivered is vetoed and reported.
+- **Ancestry.** Behaviour tables and dynamic hooks (`om_hook`) both match an
+  event's ancestors: a hook on `/event/x` hears every subtype of `x`.
 - **Bubbling** up the ownership tree, where an event declares it: from an item
   to its wearer, replacing hand-written relay signals.
 - **Handlers never sleep.** Checked statically.
@@ -452,6 +456,14 @@ wake lanes, `RateModel` crossings) is its backend.
 | **Periodic behaviour** | `period` on a behaviour; only the active set, staggered | 445 `process()` procs, 224 `START_PROCESSING` calls, list-walking subsystems |
 | **Task** | §13 | `do_after` (660), `spawn` (677), `sleep` (546), `tgui_input`/`tgui_alert` (2,440) |
 
+- **Three public entry points.** Code outside the scheduler core does time
+  through `om_after*` (call a proc later; `om_after_realtime` for wall-clock
+  delays), `om_deadline` (wake a behaviour hook later) and `om_task*` (work
+  that takes time: `om_task_start`, `om_task_timed`, `om_task_periodic`,
+  `om_task_slices`). Periodic lanes, timed-action plumbing, stage rewakes and
+  lane slices are internal (`_om_*`, banned outside `code/datums/om` by
+  `tools/ci/om_internal_lint.py`); watches and channels stay the event-side
+  API. See [time_mechanisms.md](time_mechanisms.md).
 - **Hibernation is universal.** An entity with no active behaviours costs
   nothing.
 - **Missed-wake audit.** This generalises today's

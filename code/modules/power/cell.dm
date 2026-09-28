@@ -55,7 +55,7 @@
 	c_uid = cell_uid++
 	update_icon()
 	if(self_recharge)
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 
 /obj/item/cell/get_cell()
 	return src
@@ -275,7 +275,7 @@
 	update_superconducting_state(amount)
 	COOLDOWN_START(src, charge_cooldown, charge_delay)
 	if(used && self_recharge)
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 	if(used && istype(loc, /obj/machinery/power/apc))
 		var/obj/machinery/power/apc/A = loc
 		A.wake_for_power_dependency()

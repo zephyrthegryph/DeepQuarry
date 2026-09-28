@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Headsets, intercoms and electropacks keep the radio's own interactions (headset in-hand opens the radio again)."
+  - code_imp: "OM core: safer event delivery, cheaper timers/deadlines/services/click resolution, and one public time API (om_after / om_deadline / om_task_*)."

@@ -480,7 +480,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/combat/shield, \
 /obj/item/borg/combat/shield/proc/adjust_flash_count(mob/living/user, amount)
 	if(active)			//Can't destabilize a shield that's not on
 		flash_count += amount
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 
 		if(amount > 0)
 			last_flash = world.time
@@ -492,7 +492,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/combat/shield, \
 	user.visible_message(span_danger("[user]'s shield destabilizes!"), span_danger("Your shield destabilizes!"))
 	user.update_icon()
 	overload_time = world.time
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 
 /// Old Set shield level verb.
 /obj/item/borg/combat/shield/proc/borg_shield_verb_set_level(mob/user, obj/item/held, datum/interaction/interaction)

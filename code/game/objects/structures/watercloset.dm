@@ -175,12 +175,12 @@
 
 	if(cistern && !teleplumb_crystal && istype(I, /obj/item/bluespace_crystal))
 		to_chat(user, span_notice("You begin to insert \the [I] into \the [src]..."))
-		om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(I, user))
+		om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(I, user))
 		return TRUE
 
 	if(cistern && istype(I, /obj/item/stock_parts/matter_bin))
 		to_chat(user, span_notice("You begin to replace \the [bin] in \the [src] with \the [I]."))
-		om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done3), done_args = list(I, user))
+		om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done3), done_args = list(I, user))
 		return TRUE
 
 	if(cistern && !istype(user,/mob/living/silicon/robot)) //STOP PUTTING YOUR MODULES IN THE TOILET.
@@ -506,7 +506,7 @@ REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
 /obj/structure/toilet/crowbar_act(mob/user, obj/item/I)
 	to_chat(user, span_notice("You start to [cistern ? "replace the lid on the cistern" : "lift the lid off the cistern"]."))
 	playsound(src, 'sound/effects/stonedoor_openclose.ogg', 50, 1)
-	om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(crowbar_act_timed_done), done_args = list(user))
+	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(crowbar_act_timed_done), done_args = list(user))
 	return TRUE
 
 /obj/structure/toilet/proc/crowbar_act_timed_done(mob/user)
@@ -521,7 +521,7 @@ REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
 		to_chat(user, span_notice("Wait for \the [src] to finish refilling..."))
 		return TRUE
 	to_chat(user, span_notice("You begin to dismantle \the [src]..."))
-	om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
+	om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
 	return TRUE
 
 /obj/structure/toilet/proc/wrench_act_timed_done(mob/user)
@@ -595,7 +595,7 @@ REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
 	var/mob/user = ask.answerer
 	var/newtemp = ask.choice
 	to_chat(user, span_notice("You begin to adjust the temperature..."))
-	om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_set_temperature_timed_done), done_args = list(user, newtemp))
+	om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_set_temperature_timed_done), done_args = list(user, newtemp))
 	handle_mist()
 
 /obj/machinery/shower/proc/interaction_set_temperature_timed_done(mob/user, newtemp)
@@ -1073,7 +1073,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/galaxy, INTERACT_USE("Squeeze
 	to_chat(user, span_notice("You start washing your hands."))
 	playsound(src, 'sound/effects/sink_long.ogg', 75, 1)
 
-	om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), on_fail = PROC_REF(attack_hand_timed_failed), fail_args = list(user), claims = TRUE)
+	om_task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), on_fail = PROC_REF(attack_hand_timed_failed), fail_args = list(user), claims = TRUE)
 	return TRUE
 
 /obj/structure/sink/proc/attack_hand_timed_done(mob/user)

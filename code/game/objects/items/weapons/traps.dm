@@ -42,7 +42,7 @@
 			"You hear the slow creaking of a spring."
 			)
 
-		om_do_after(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
+		om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
 	return TRUE
 
 /obj/item/beartrap/proc/attack_self_timed_done(mob/user)
@@ -72,7 +72,7 @@ DECLARE_INTERACTIONS(/obj/item/beartrap, \
 			span_notice("[user] begins freeing [victim] from \the [src]."),
 			span_notice("You carefully begin to free [victim] from \the [src]."),
 			)
-		om_do_after(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user, victim))
+		om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user, victim))
 	else if(deployed && can_use(user))
 		user.visible_message(
 			span_danger("[user] starts to disarm \the [src]."),
@@ -81,7 +81,7 @@ DECLARE_INTERACTIONS(/obj/item/beartrap, \
 			)
 		playsound(src, 'sound/machines/click.ogg', 50, 1)
 
-		om_do_after(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done2), done_args = list(user))
+		om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done2), done_args = list(user))
 	else
 		return FALSE
 	return TRUE
@@ -228,7 +228,7 @@ EXTEND_INTERACTIONS(/obj/item/material/barbedwire, \
 			)
 		playsound(src, 'sound/machines/click.ogg', 50, 1)
 
-		om_do_after(user, get_integrity() / MATERIAL_WEAR_UNIT, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done3), done_args = list(user))
+		om_task_timed(user, get_integrity() / MATERIAL_WEAR_UNIT, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done3), done_args = list(user))
 	else
 		return FALSE
 	return TRUE
@@ -250,7 +250,7 @@ EXTEND_INTERACTIONS(/obj/item/material/barbedwire, \
 			"You hear the rustling of [material.name]."
 			)
 
-		om_do_after(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done2), done_args = list(user))
+		om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done2), done_args = list(user))
 	return TRUE
 
 /obj/item/material/barbedwire/proc/attack_self_timed_done2(mob/user)

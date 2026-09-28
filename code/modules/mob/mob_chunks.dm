@@ -117,7 +117,7 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
 	if(QDELETED(A) || !A.proximity_chunks)
 		return
 	A.proximity_chunks = unwatch_mob_chunks(A, A.proximity_chunks, A.proximity_mask, /datum/om/behaviour/sleeper/proximity)
-	PERIODIC_START(A, A.proximity_lane)
+	om_task_periodic(A, A.proximity_lane)
 
 /atom/movable/var/tmp/list/proximity_chunks
 /atom/movable/var/tmp/proximity_mask = 0
@@ -148,6 +148,6 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
 	return PROCESS_KILL
 
 /atom/movable/om_sleep_violation()
-	if(proximity_chunks && PERIODIC_RUNNING(src))
+	if(proximity_chunks && om_task_periodic_running(src))
 		return "watching for mobs while already running"
 	return ..()

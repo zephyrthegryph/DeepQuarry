@@ -35,7 +35,7 @@
 /obj/item/emergency_beacon/proc/activation_answered(datum/om/prompt/confirm/emergency_beacon/ask)
 	var/mob/user = ask.answerer
 	//short delay, so they can still abort if they want to
-	om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(activate_done), done_args = list(user))
+	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(activate_done), done_args = list(user))
 
 DECLARE_INTERACTIONS(/obj/item/emergency_beacon, \
 	INTERACT_USE("Activate", PROC_REF(interaction_self)), \

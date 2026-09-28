@@ -110,7 +110,7 @@
 /obj/structure/prop/dark_node/Initialize(mapload)
 	. = ..()
 	set_light(light_range, -20, "#FFFFFF")
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 
 // its dark tiles unlink and wither.
 /obj/structure/prop/dark_node/on_destroy(force)

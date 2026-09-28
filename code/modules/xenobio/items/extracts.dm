@@ -1580,7 +1580,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 	playsound(extract, 'sound/effects/phasein.ogg', 75, 1)
 
 /proc/slime_extract_start_emitting(atom/extract)
-	PERIODIC_START(extract, PERIODIC_SLOW)
+	om_task_periodic(extract, PERIODIC_SLOW)
 
 /proc/slime_extract_explode(atom/extract, power)
 	explosion(get_turf(extract), 1 * power, 3 * power, 6 * power)

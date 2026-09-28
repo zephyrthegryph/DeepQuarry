@@ -101,7 +101,7 @@
 		LAZYREMOVE(stored_atoms, remove_ref)
 	else
 		user.visible_message(span_infoplain(span_bold("\The [user]") + " begins unloading \the [removing] from \the [src]'s cargo compartment."))
-		om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(try_remove_cargo_platform_done), done_args = list(user, removing))
+		om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(try_remove_cargo_platform_done), done_args = list(user, removing))
 	return TRUE
 
 /mob/living/silicon/robot/platform/proc/try_remove_cargo_platform_done(mob/user, atom/movable/removing)
@@ -144,7 +144,7 @@
 		visible_message(span_infoplain(span_bold("\The [src]") + " begins loading \the [dropping] into its cargo compartment."))
 	else
 		user.visible_message(span_infoplain(span_bold("\The [user]") + " begins loading \the [dropping] into \the [src]'s cargo compartment."))
-	om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(MouseDrop_T_platform_done), done_args = list(dropping, user))
+	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(MouseDrop_T_platform_done), done_args = list(dropping, user))
 	return TRUE
 
 /mob/living/silicon/robot/platform/proc/MouseDrop_T_platform_done(atom/movable/dropping, mob/living/user)

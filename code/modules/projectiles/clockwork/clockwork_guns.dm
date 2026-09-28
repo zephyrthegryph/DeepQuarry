@@ -35,7 +35,7 @@
 	user.visible_message(span_notice("[user] pulls the charging handle on \the [src] and it whirrs to life!"), \
 						span_notice("You pull the charging handle on \the [src] and begin the reloading sequence."))
 	playsound(src,'sound/weapons/clockwork/cwc_rifle_fabricate.ogg',25,5)
-	om_do_after(user, 5 SECONDS, src, src, PROC_REF(recharge_cycle), list(user), on_fail = PROC_REF(recharge_end), fail_args = list(user))
+	om_task_timed(user, 5 SECONDS, src, src, PROC_REF(recharge_cycle), list(user), on_fail = PROC_REF(recharge_end), fail_args = list(user))
 
 /// One charging cycle every 5 seconds (a timed action each) until full.
 /obj/item/gun/energy/clockwork/proc/recharge_cycle(mob/user)
@@ -43,7 +43,7 @@
 	if(power_supply.give(phase_power) < phase_power)
 		recharge_end(user)
 		return
-	om_do_after(user, 5 SECONDS, src, src, PROC_REF(recharge_cycle), list(user), on_fail = PROC_REF(recharge_end), fail_args = list(user))
+	om_task_timed(user, 5 SECONDS, src, src, PROC_REF(recharge_cycle), list(user), on_fail = PROC_REF(recharge_end), fail_args = list(user))
 
 /obj/item/gun/energy/clockwork/proc/recharge_end(mob/user)
 	recharging = 0

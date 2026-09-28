@@ -7,6 +7,7 @@
 	w_class = ITEMSIZE_HUGE
 
 // The package's own unwrap replaces the parent's: the old override ran both and handed out two items.
+// ALLOW(interactions): its Unwrap replaces the parent's (both ran and handed out two items)
 DECLARE_INTERACTIONS(/obj/item/contraband/package, INTERACT_USE("Unwrap", PROC_REF(interaction_unwrap_package)))
 
 /// Old attack_self.

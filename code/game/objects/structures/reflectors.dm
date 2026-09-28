@@ -83,7 +83,7 @@
 
 /obj/structure/reflector/proc/redirect_projectile(obj/item/projectile/P,pangle)
 	LAZYSET(has_projectiles, P, pangle)
-	PERIODIC_START(src, PERIODIC_REFLECTORS)
+	om_task_periodic(src, PERIODIC_REFLECTORS)
 	qdel(P)
 
 /obj/structure/reflector/set_dir(new_dir)
@@ -140,7 +140,7 @@
 			return TRUE
 		user.visible_message(span_notice("[user] starts to dismantle [src]."), span_notice("You start to dismantle [src]..."))
 
-		om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
+		om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
 	else if(W.get_welder())
 		var/obj/item/weldingtool/I = W.get_welder()
 		if(!anchored)
@@ -152,7 +152,7 @@
 								span_notice("You start to weld [src] to the floor..."),
 								span_hear("You hear welding."))
 
-			om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(user, I))
+			om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(user, I))
 			return TRUE
 		else
 			if(!I.remove_fuel(1,user))

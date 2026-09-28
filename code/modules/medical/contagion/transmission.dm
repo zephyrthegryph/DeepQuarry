@@ -193,9 +193,9 @@
 /// a body, the host dying, a strain refresh (engineered) or going active.
 /datum/affliction/contagion/proc/update_spread_lane()
 	if(!QDELETED(src) && (can_shed_airborne() || acts_in_dead_host()))
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 	else
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 
 /// One lane step (every 2 s): a SPREAD_DEAD strain in a corpse keeps its
 /// course, and an airborne strain rolls infectivity and sheds. Parks once

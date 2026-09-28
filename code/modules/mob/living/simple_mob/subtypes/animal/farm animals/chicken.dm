@@ -81,7 +81,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/chicken, INTERACT_ITEM
 		E.pixel_x = rand(-6,6)
 		E.pixel_y = rand(-6,6)
 		if(GLOB.chicken_count < GLOB.MAX_CHICKENS && prob(10))
-			PERIODIC_START(E, PERIODIC_SLOW)
+			om_task_periodic(E, PERIODIC_SLOW)
 
 /obj/item/reagent_containers/food/snacks/egg/var/amount_grown = 0
 
@@ -91,10 +91,10 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/chicken, INTERACT_ITEM
 		amount_grown += rand(1,2)
 		if(amount_grown >= 100)
 			visible_message("[src] hatches with a quiet cracking sound.")
-			PERIODIC_STOP(src)
+			om_task_periodic_stop(src)
 			replace_with(src, /mob/living/simple_mob/animal/passive/chick)
 	else
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 
 /mob/living/simple_mob/animal/passive/chick
 	name = "chick"

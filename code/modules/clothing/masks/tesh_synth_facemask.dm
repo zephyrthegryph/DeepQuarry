@@ -18,12 +18,12 @@
 	if(istype(H) && H.get_equipped_item(SLOT_ID_MASK) == src)
 		canremove = FALSE
 		maskmaster_handle = om_handle(H)
-		PERIODIC_START(src, PERIODIC_SECOND)
+		om_task_periodic(src, PERIODIC_SECOND)
 
 /obj/item/clothing/mask/synthfacemask/dropped(mob/user, equipping, slot)
 	canremove = TRUE
 	maskmaster_handle = null
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 	..()
 
 /obj/item/clothing/mask/synthfacemask/equip_constraint()

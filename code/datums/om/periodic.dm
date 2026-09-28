@@ -3,10 +3,10 @@
 // This replaces the polling processing subsystems (SSobj, SSprocessing, SSfastprocess, SSturfs,
 // SSburning, SSprojectiles, SSinstruments, SSpriority_effects, SSobj_tab_items). A datum with
 // periodic work defines periodic_step(delta) -- the body its old process() had -- and is woken
-// onto one of the pipelines below with PERIODIC_START(E, pipeline). Its stage runs every frame of
-// that pipeline while it has work; periodic_step() returning PROCESS_KILL, or PERIODIC_STOP(E),
+// onto one of the pipelines below with om_task_periodic(E, pipeline). Its stage runs every frame of
+// that pipeline while it has work; periodic_step() returning PROCESS_KILL, or om_task_periodic_stop(E),
 // idles the stage and the entity parks (off the ring, costing nothing) until the next
-// PERIODIC_START. That call is the type's wake rule: whatever made the work possible (lighting a
+// om_task_periodic(). That call is the type's wake rule: whatever made the work possible (lighting a
 // cigarette, arming a grenade, a mob stepping on a trap) starts it; the work itself says when it
 // is done.
 //
@@ -30,7 +30,7 @@
 /// periodic work. DF_ISPROCESSING mirrors it for code that only asks "is this running".
 /datum/var/tmp/periodic_pipe
 
-/proc/periodic_start(datum/E, P)
+/proc/_om_periodic_start(datum/E, P)
 	if(!E || QDELETED(E))
 		return FALSE
 	if(E.periodic_pipe == P)
@@ -43,7 +43,7 @@
 		om_attach(E, P)
 	return TRUE
 
-/proc/periodic_stop(datum/E)
+/proc/_om_periodic_stop(datum/E)
 	if(!E)
 		return
 	E.periodic_pipe = null
@@ -52,7 +52,7 @@
 /// One frame of periodic work: the body a process() override used to have. `delta` is the
 /// pipeline's nominal step in the units the old subsystem passed (deciseconds for most; see the
 /// table above). Return PROCESS_KILL when there is nothing left to do until the next
-/// PERIODIC_START. Like the old process(), a body that sleeps doesn't hold up the frame.
+/// om_task_periodic(). Like the old process(), a body that sleeps doesn't hold up the frame.
 /datum/proc/periodic_step(delta)
 	set waitfor = FALSE // ALLOW(scheduler): core dispatch hook: guards the frame against a periodic_step() override that still sleeps
 	return PROCESS_KILL
@@ -166,14 +166,14 @@
 /datum/om/stage/periodic
 	category = /datum/om/stage/periodic
 	name = "periodic step"
-	woken_by = "PERIODIC_START()"
+	woken_by = "om_task_periodic()"
 
 /datum/om/stage/periodic/perform(datum/E, datum/om/frame/F)
 	if(E.periodic_pipe != pipeline)
 		return STAGE_IDLE
 	var/datum/om/pipeline/periodic/P = F.pipeline
 	if(E.periodic_step(P.delta) == PROCESS_KILL && E.periodic_pipe == pipeline)
-		periodic_stop(E)
+		_om_periodic_stop(E)
 	if(E.periodic_pipe != pipeline)
 		return STAGE_IDLE
 
@@ -226,4 +226,4 @@
 
 /// A timer target that restarts periodic work on the slow lane (om_after(src, delay, /datum/proc/periodic_resume)).
 /datum/proc/periodic_resume()
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)

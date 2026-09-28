@@ -51,7 +51,7 @@ MATERIAL_MIX(/obj/item/weldingtool, list(MAT_STEEL = 70, MAT_GLASS = 30))
 	R.add_reagent(REAGENT_ID_FUEL, max_fuel)
 	update_icon()
 	if(always_process)
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 
 /obj/item/weldingtool/get_welder()
 	return src
@@ -283,7 +283,7 @@ DECLARE_INTERACTIONS(/obj/item/weldingtool, \
 			welding = 1
 			update_icon()
 			if(!always_process)
-				PERIODIC_START(src, PERIODIC_SLOW)
+				om_task_periodic(src, PERIODIC_SLOW)
 		else
 			if(M)
 				var/msg = max_fuel ? "welding fuel" : "charge"
@@ -292,7 +292,7 @@ DECLARE_INTERACTIONS(/obj/item/weldingtool, \
 	//Otherwise
 	else if(!set_welding && welding)
 		if(!always_process)
-			PERIODIC_STOP(src)
+			om_task_periodic_stop(src)
 		if(M)
 			to_chat(M, span_notice("You switch \the [src] off."))
 		else if(T)

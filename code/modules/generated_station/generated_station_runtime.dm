@@ -55,7 +55,7 @@
 
 /obj/machinery/generated_station_department_control/proc/interaction_override(mob/user, obj/item/held, datum/interaction/interaction)
 	user.visible_message(span_notice("[user] begins overriding [src]."), span_notice("You begin overriding [src]."))
-	om_do_after(user, 3 SECONDS, src, src, PROC_REF(override_done), list(user))
+	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(override_done), list(user))
 	return TRUE
 
 /obj/machinery/generated_station_department_control/proc/override_done(mob/user)

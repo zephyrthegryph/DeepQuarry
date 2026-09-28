@@ -839,7 +839,7 @@ REF_OWNED(/obj/item/clothing/shoes, list("shoes", "holding"))
 		return
 	if(!istype(macro))
 		to_chat(micro, span_notice("You start to climb out of [src]!"))
-		om_do_after(micro, 5 SECONDS, src, src, PROC_REF(micro_climbed_out), list(micro))
+		om_task_timed(micro, 5 SECONDS, src, src, PROC_REF(micro_climbed_out), list(micro))
 		return
 
 	var/escape_message_micro = "You start to climb out of [src]!"
@@ -1443,7 +1443,7 @@ REF_OWNED_LIST(/obj/item/clothing, "accessories")
 		return TRUE
 
 	balloon_alert(user, "picking up hat...")
-	om_do_after(user, 3 SECONDS, src, src, PROC_REF(robot_hat_done), list(user))
+	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(robot_hat_done), list(user))
 	return TRUE
 
 /obj/item/clothing/head/proc/robot_hat_done(mob/living/silicon/robot/user)

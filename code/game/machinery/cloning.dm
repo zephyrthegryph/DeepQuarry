@@ -282,7 +282,7 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 		if(LAZYLEN(containers) >= container_limit)
 			to_chat(user, span_warning("\The [src] has too many containers loaded!"))
 		else
-			om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(load_container_done), done_args = list(user, W))
+			om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(load_container_done), done_args = list(user, W))
 		return TRUE
 	return FALSE
 

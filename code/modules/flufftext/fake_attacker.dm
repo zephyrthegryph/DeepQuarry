@@ -150,7 +150,7 @@
 
 /obj/effect/fake_attacker/human/Initialize(mapload,mob/targeting_mob,atom/clone_appearance_from)
 	. = ..()
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 	set_target(targeting_mob)
 	create_images_from(clone_appearance_from)
 	append_client(targeting_mob.client)

@@ -169,8 +169,8 @@ GLOBAL_LIST_EMPTY(latency_sweep_holders)
 		return
 	if(holder.latent_contents)
 		GLOB.latency_sweep_holders[holder] = TRUE
-		if(!PERIODIC_RUNNING(GLOB.latency_sweep))
-			PERIODIC_START(GLOB.latency_sweep, PERIODIC_SLOW)
+		if(!om_task_periodic_running(GLOB.latency_sweep))
+			om_task_periodic(GLOB.latency_sweep, PERIODIC_SLOW)
 
 /proc/dq_latency_sweep_unregister(atom/holder)
 	GLOB.latency_sweep_holders -= holder

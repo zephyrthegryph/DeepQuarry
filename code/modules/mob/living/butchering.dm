@@ -23,7 +23,7 @@
 /// Carves one cut of meat per timed action until none is left, then butchers.
 /mob/living/proc/harvest_step(mob/user, obj/item/I)
 	if(meat_amount > 0)
-		om_do_after(user, 0.5 SECONDS * (mob_size / 10), target = src, receiver = src, on_done = PROC_REF(harvest_cut), done_args = list(user, I), claims = TRUE)
+		om_task_timed(user, 0.5 SECONDS * (mob_size / 10), target = src, receiver = src, on_done = PROC_REF(harvest_cut), done_args = list(user, I), claims = TRUE)
 		return
 	handle_butcher(user, I)
 
@@ -47,7 +47,7 @@
 	if(!user)
 		butcher_done(user, I)
 		return
-	om_do_after(user, 2 SECONDS * mob_size / 10, target = src, receiver = src, on_done = PROC_REF(butcher_done), done_args = list(user, I), claims = TRUE)
+	om_task_timed(user, 2 SECONDS * mob_size / 10, target = src, receiver = src, on_done = PROC_REF(butcher_done), done_args = list(user, I), claims = TRUE)
 
 /mob/living/proc/butcher_done(mob/user, obj/item/I)
 	if(LAZYLEN(butchery_loot))

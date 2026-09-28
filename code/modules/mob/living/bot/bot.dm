@@ -160,7 +160,7 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 	if(!open || !paicard)
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_notice("You are attempting to remove the pAI."))
-	om_do_after(user, 1 SECOND * tool.toolspeed, target = src, receiver = src, on_done = PROC_REF(crowbar_act_bot_done), done_args = list(user))
+	om_task_timed(user, 1 SECOND * tool.toolspeed, target = src, receiver = src, on_done = PROC_REF(crowbar_act_bot_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /mob/living/bot/proc/crowbar_act_bot_done(mob/user)
@@ -403,7 +403,7 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 /// the work ends, then `on_done`(done_args...) runs and the icon refreshes (also on failure).
 /// Returns the task, or a reason it didn't start.
 /mob/living/bot/proc/bot_work(delay, atom/A, on_done, list/done_args, timed_action_flags = NONE)
-	. = om_do_after(src, delay, target = A, receiver = src, on_done = PROC_REF(bot_work_done), done_args = list(on_done) + (done_args || list()), timed_action_flags = timed_action_flags, on_fail = PROC_REF(update_icons), busy = src)
+	. = om_task_timed(src, delay, target = A, receiver = src, on_done = PROC_REF(bot_work_done), done_args = list(on_done) + (done_args || list()), timed_action_flags = timed_action_flags, on_fail = PROC_REF(update_icons), busy = src)
 	update_icons()
 
 /mob/living/bot/proc/bot_work_done(on_done, ...)

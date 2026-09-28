@@ -153,7 +153,7 @@ REF_OWNED_LIST(/datum/beam, "elements")
 /obj/effect/ebeam/reactive
 
 /obj/effect/ebeam/reactive/Initialize(mapload)
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 	return ..()
 
 /obj/effect/ebeam/reactive/on_drawn()

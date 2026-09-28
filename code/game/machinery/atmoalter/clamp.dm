@@ -96,7 +96,7 @@
 
 	if(open && over_object == usr && Adjacent(usr))
 		to_chat(usr, span_notice("You begin to remove \the [src]..."))
-		om_do_after(usr, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(MouseDrop_timed_done), done_args = list(usr))
+		om_task_timed(usr, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(MouseDrop_timed_done), done_args = list(usr))
 	else
 		to_chat(usr, span_warning("You can't remove \the [src] while it's active!"))
 

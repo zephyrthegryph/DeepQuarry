@@ -49,7 +49,7 @@ REF_OWNED(/obj/item/reagent_containers/syringe, "filling")
 /obj/item/reagent_containers/syringe/periodic_step()
 	dirtiness = min(dirtiness + targets.len,75)
 	if(dirtiness >= 75)
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 	return 1
 
 /obj/item/reagent_containers/syringe/on_reagent_change()
@@ -489,7 +489,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/syringe, INTERACT_HAND_DEFAULT(
 				target.force_contagion(virus)
 
 	if(!used)
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 
 /obj/item/reagent_containers/syringe/proc/infect_limb(obj/item/organ/external/eo)
 	om_after(eo, rand(5 MINUTES,10 MINUTES), TYPE_PROC_REF(/obj/item/organ/external, syringe_infection))

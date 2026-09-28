@@ -40,7 +40,7 @@
 	if(ishuman(target) && user.zone_sel.selecting == O_MOUTH)
 		if(target == user)
 			to_chat(user, span_warning("You raise the soap to your mouth and prepare to take a bite..."))
-			om_do_after(user, 0.5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(user))
+			om_task_timed(user, 0.5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(user))
 		else
 			user.visible_message(span_danger("\The [user] washes \the [target]'s mouth out with \the [src]!"))
 			//Add pieface cleaning here if that ever gets ported.
@@ -54,7 +54,7 @@
 		to_chat(user, span_warning("You need to take that [target] off before cleaning it."))
 	else if(istype(target,/obj/effect/decal/cleanable))
 		user.visible_message("[user] begins to scrub \the [target] out with [src].", span_warning("You begin to scrub \the [target] out with [src]..."))
-		om_do_after(user, src.cleanspeed, target = target, receiver = src, on_done = PROC_REF(afterattack_timed_done2), done_args = list(target, user))
+		om_task_timed(user, src.cleanspeed, target = target, receiver = src, on_done = PROC_REF(afterattack_timed_done2), done_args = list(target, user))
 	else
 		if(istype(target,/turf))
 			if(reagents.has_reagent(REAGENT_ID_WATER, 1) || reagents.has_reagent(REAGENT_ID_CLEANER, 1)) //Instant floorcleaning with wetness
@@ -64,10 +64,10 @@
 				reagents.trans_to_turf(T, 1, 10)
 				return
 			user.visible_message("[user] begins to scrub \the [target] out with [src].", span_warning("You begin to scrub \the [target] out with [src]..."))
-			om_do_after(user, src.cleanspeed, target = target, receiver = src, on_done = PROC_REF(afterattack_timed_done3), done_args = list(target, user))
+			om_task_timed(user, src.cleanspeed, target = target, receiver = src, on_done = PROC_REF(afterattack_timed_done3), done_args = list(target, user))
 			return
 		user.visible_message("[user] begins to clean \the [target.name] with [src]...", span_notice("You begin to clean \the [target.name] with [src]..."))
-		om_do_after(user, src.cleanspeed, target = target, receiver = src, on_done = PROC_REF(afterattack_timed_done4), done_args = list(target))
+		om_task_timed(user, src.cleanspeed, target = target, receiver = src, on_done = PROC_REF(afterattack_timed_done4), done_args = list(target))
 	return
 
 /obj/item/soap/proc/afterattack_timed_done(mob/user)

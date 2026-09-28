@@ -211,6 +211,7 @@ DECLARE_INTERACTIONS(/obj/item/wrapping_paper, INTERACT_ITEM(null, PROC_REF(inte
 		name = "chaotic present"
 		desc = "The casino dev messed up and gave you the wrong present! This one pulses with potential for good or evil!"
 
+// ALLOW(interactions): its Open replaces the basic gift's Open (a different loot table)
 DECLARE_INTERACTIONS(/obj/item/a_gift/advanced, INTERACT_USE("Open", PROC_REF(interaction_open_advanced)))
 
 /// Old attack_self. WIP - ALWAYS add more items to list! - Jack

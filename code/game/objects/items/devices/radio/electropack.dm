@@ -16,7 +16,8 @@ MATERIAL_MIX(/obj/item/radio/electropack, list(MAT_STEEL = 10000,MAT_GLASS = 250
 	var/code = 2
 	electric_pack = TRUE
 
-DECLARE_INTERACTIONS(/obj/item/radio/electropack, \
+// Extends the radio's own Use (the radio UI; interaction_self declines for packs/beacons).
+EXTEND_INTERACTIONS(/obj/item/radio/electropack, \
 	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 )

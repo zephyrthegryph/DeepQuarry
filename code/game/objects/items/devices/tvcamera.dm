@@ -89,14 +89,14 @@ DECLARE_INTERACTIONS(/obj/item/tvcamera, INTERACT_USE(null, PROC_REF(interaction
 	for(var/obj/machinery/computer/security/telescreen/entertainment/ES as anything in REGISTRY_MEMBERS(REGISTRY_ENTERTAINMENT_SCREENS))
 		ES.show_thing(thing)
 
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 
 /obj/item/tvcamera/proc/hide_tvs()
 	if(!showing)
 		return
 	for(var/obj/machinery/computer/security/telescreen/entertainment/ES as anything in REGISTRY_MEMBERS(REGISTRY_ENTERTAINMENT_SCREENS))
 		ES.maybe_stop_showing(showing)
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 	showing = null
 	showing_name = null
 
@@ -244,14 +244,14 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/bodycam, INTERACT_USE(null, PRO
 	for(var/obj/machinery/computer/security/telescreen/bodycamera/ES as anything in REGISTRY_MEMBERS(REGISTRY_BODYCAMERA_SCREENS))
 		ES.show_thing(thing, src)
 
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 
 /obj/item/clothing/accessory/bodycam/proc/hide_bodycamera_tvs()
 	if(!showing)
 		return
 	for(var/obj/machinery/computer/security/telescreen/bodycamera/ES as anything in REGISTRY_MEMBERS(REGISTRY_BODYCAMERA_SCREENS))
 		ES.maybe_stop_showing(showing)
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 	showing = null
 	showing_name = null
 

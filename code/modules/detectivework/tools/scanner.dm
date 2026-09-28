@@ -186,13 +186,13 @@
 /// Shows the stored records one per second (a timed action each, so moving stops the spam).
 /obj/item/detective_scanner/proc/display_data(mob/user)
 	if(user && stored && stored.len)
-		om_do_after(user, 1 SECOND, src, src, PROC_REF(display_record), list(user, 1))
+		om_task_timed(user, 1 SECOND, src, src, PROC_REF(display_record), list(user, 1))
 
 /obj/item/detective_scanner/proc/display_record(mob/user, index)
 	if(index > length(stored))
 		return
 	if(index < length(stored))
-		om_do_after(user, 1 SECOND, src, src, PROC_REF(display_record), list(user, index + 1))
+		om_task_timed(user, 1 SECOND, src, src, PROC_REF(display_record), list(user, index + 1))
 	var/datum/data/record/forensic/F = stored[stored[index]]
 	var/list/fprints = F.fields["fprints"]
 	var/list/fibers = F.fields["fibers"]

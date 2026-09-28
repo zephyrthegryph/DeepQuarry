@@ -55,11 +55,11 @@ REF_OWNED(/turf/simulated/floor/lava, "soundloop")
 
 /turf/simulated/floor/lava/Entered(atom/movable/AM)
 	if(burn_stuff(AM))
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 
 /turf/simulated/floor/lava/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	if(burn_stuff(source))
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 
 /turf/simulated/floor/lava/periodic_step()
 	if(!burn_stuff())

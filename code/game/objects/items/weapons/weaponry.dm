@@ -134,7 +134,7 @@
 /obj/effect/energy_net/user_unbuckle_mob(mob/living/buckled_mob, mob/user)
 	user.setClickCooldown(user.get_attack_speed())
 	visible_message(span_danger("[user] begins to tear at \the [src]!"))
-	om_do_after(user, escape_time, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(user_unbuckle_mob_timed_done), done_args = list(buckled_mob, user))
+	om_task_timed(user, escape_time, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(user_unbuckle_mob_timed_done), done_args = list(buckled_mob, user))
 
 /obj/effect/energy_net/proc/user_unbuckle_mob_timed_done(mob/living/buckled_mob, mob/user)
 	if(!has_buckled_mobs())

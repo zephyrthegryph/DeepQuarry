@@ -153,7 +153,7 @@ EXTEND_INTERACTIONS(/obj/machinery/gibber, \
 
 	user.visible_message(span_danger("[user] starts to put [victim] into the gibber!"))
 	src.add_fingerprint(user)
-	om_do_after(user, 3 SECONDS, src, src, PROC_REF(stuff_done), list(user, victim))
+	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(stuff_done), list(user, victim))
 
 /obj/machinery/gibber/proc/stuff_done(mob/user, mob/living/victim)
 	if(!victim.Adjacent(src) || !user.Adjacent(src) || !victim.Adjacent(user) || src?.slot_item(OCCUPANT_SLOT_GIBBER))

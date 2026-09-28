@@ -44,7 +44,7 @@ REF_OWNED(/obj/item/mecha_parts/mecha_equipment/generator, "fuel")
 	update_equip_info()
 
 /obj/item/mecha_parts/mecha_equipment/generator/detach()
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 	..()
 	return
 
@@ -52,11 +52,11 @@ REF_OWNED(/obj/item/mecha_parts/mecha_equipment/generator, "fuel")
 	..()
 	if(href_list["toggle"])
 		if(datum_flags & DF_ISPROCESSING)
-			PERIODIC_STOP(src)
+			om_task_periodic_stop(src)
 			set_ready_state(TRUE)
 			src.mecha_log_message("Deactivated.")
 		else
-			PERIODIC_START(src, PERIODIC_FAST)
+			om_task_periodic(src, PERIODIC_FAST)
 			set_ready_state(FALSE)
 			src.mecha_log_message("Activated.")
 	return

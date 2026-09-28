@@ -102,7 +102,7 @@ DECLARE_INTERACTIONS(/obj/item/deskbell, \
 /obj/item/deskbell/wrench_act(mob/user, obj/item/W)
 	if(!isturf(loc))
 		return TRUE
-	om_do_after(user, 0.5 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
+	om_task_timed(user, 0.5 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
 	return TRUE
 
 /obj/item/deskbell/proc/wrench_act_timed_done(mob/user)

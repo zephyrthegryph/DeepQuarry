@@ -114,7 +114,7 @@
 		to_chat(user, span_warning("This disk seems to be corrupted!"))
 	else
 		to_chat(user, span_notice("Installing blueprint files for [D.company]..."))
-		om_do_after(user, 5 SECONDS, src, src, PROC_REF(limb_disk_done), list(user, D))
+		om_task_timed(user, 5 SECONDS, src, src, PROC_REF(limb_disk_done), list(user, D))
 	return TRUE
 
 /obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/limb_disk_done(mob/user, obj/item/disk/limb/D)
@@ -136,7 +136,7 @@
 		to_chat(user, span_warning("This disk seems to be corrupted!"))
 	else
 		to_chat(user, span_notice("Uploading modification files for [D.species]..."))
-		om_do_after(user, 5 SECONDS, src, src, PROC_REF(species_disk_done), list(user, D))
+		om_task_timed(user, 5 SECONDS, src, src, PROC_REF(species_disk_done), list(user, D))
 	return TRUE
 
 /obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/species_disk_done(mob/user, obj/item/disk/species/D)

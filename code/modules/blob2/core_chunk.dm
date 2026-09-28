@@ -50,7 +50,7 @@
 
 		blob_type.chunk_setup(src)
 
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 
 /obj/item/blobcore_chunk/proc/call_chunk_unique(datum/source, datum/om/event/event)
 	EVENT_HANDLER

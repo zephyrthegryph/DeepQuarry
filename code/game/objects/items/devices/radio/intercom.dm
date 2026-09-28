@@ -127,7 +127,8 @@ REF_OWNED(/obj/item/radio/intercom, "circuit")
 	. = ..()
 	internal_channels[num2text(RAID_FREQ)] = list(ACCESS_SYNDICATE)
 
-DECLARE_INTERACTIONS(/obj/item/radio/intercom, \
+// Extends the radio's own Use (the radio UI; interaction_self declines for packs/beacons).
+EXTEND_INTERACTIONS(/obj/item/radio/intercom, \
 	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 	INTERACT_SILICON("Use", PROC_REF(interaction_hand)), \

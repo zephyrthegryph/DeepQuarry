@@ -213,7 +213,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			var/obj/item/mecha_parts/mecha_equipment/ME = new path(src)
 			ME.attach(src)
 
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 
 	update_transform()
 
@@ -2028,7 +2028,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 		H.stop_pulling()
 		if(!H.move_into(src, MECHA_SLOT_PILOT))
 			return
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 		src.add_fingerprint(H)
 		src.log_append_to_last("[H] moved in as pilot.")
 		update_icon()
@@ -2902,7 +2902,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 	var/mob/passenger_occupant = P?.slot_item(MECHA_SLOT_PILOT)
 
 	user.visible_message(span_infoplain(span_bold("\The [user]") + " begins opening the hatch on \the [P]..."), span_notice("You begin opening the hatch on \the [P]..."))
-	om_do_after(user, 4 SECONDS, src, P, TYPE_PROC_REF(/obj/item/mecha_parts/mecha_equipment/tool/passenger, forced_out), list(user, passenger_occupant))
+	om_task_timed(user, 4 SECONDS, src, P, TYPE_PROC_REF(/obj/item/mecha_parts/mecha_equipment/tool/passenger, forced_out), list(user, passenger_occupant))
 	return
 
 
@@ -3043,7 +3043,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 
 /obj/mecha/proc/start_process(process)
 	current_processes |= process
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 
 /////////////
 /obj/mecha/cloak()

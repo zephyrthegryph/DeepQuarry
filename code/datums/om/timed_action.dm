@@ -23,7 +23,7 @@
 //	om_task_start(/datum/om/task/timed/lockpick, user, src, duration = 5 SECONDS, door = D)
 //
 // Every declaration var below (flags, progress, interaction_key, max_distance, busy, ...) can
-// be set per run as a named argument. om_do_after() remains for the zero-state case: a proc and at
+// be set per run as a named argument. om_task_timed() remains for the zero-state case: a proc and at
 // most two plain arguments.
 
 /// Re-check channels for a timed action: everything that can break one, on the user or the target.
@@ -192,9 +192,9 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 	if(captured)
 		OM_EMIT(user, /datum/om/event/do_after_ended)
 
-// ---------------------------------------------------------------- om_do_after: the zero-state shape
+// ---------------------------------------------------------------- om_task_timed: the zero-state shape
 
-/// om_do_after()'s task: a proc on the receiver with a short argument list.
+/// om_task_timed()'s task: a proc on the receiver with a short argument list.
 /datum/om/task/timed/simple
 	name = "timed_action"
 	var/done_proc
@@ -248,11 +248,11 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
  *
  * timed_action_flags: IGNORE_* (flags.dm). The named arguments are the timed task's vars.
  */
-/proc/om_do_after(mob/user, delay, atom/target, datum/receiver, on_done, list/done_args, timed_action_flags = NONE, on_fail, list/fail_args, check_proc, list/check_args, progress = TRUE, interaction_key, max_interact_count = 1, hidden = FALSE, icon = 'icons/effects/progressbar.dmi', iconstate = "cog", target_zone, max_distance, claims = FALSE, busy)
+/proc/om_task_timed(mob/user, delay, atom/target, datum/receiver, on_done, list/done_args, timed_action_flags = NONE, on_fail, list/fail_args, check_proc, list/check_args, progress = TRUE, interaction_key, max_interact_count = 1, hidden = FALSE, icon = 'icons/effects/progressbar.dmi', iconstate = "cog", target_zone, max_distance, claims = FALSE, busy)
 	if(!istype(user) || QDELETED(user))
 		return "gone"
 	if(!isnum(delay))
-		CRASH("om_do_after was passed a non-number delay: [delay || "null"].")
+		CRASH("om_task_timed was passed a non-number delay: [delay || "null"].")
 	var/list/done = om_capture_args(done_args)
 	var/list/fail = om_capture_args(fail_args)
 	var/list/check = om_capture_args(check_args)
@@ -323,20 +323,20 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
  */
 /// Steps `A` `steps` times in `direction`, one step every `delay` deciseconds
 /// (the old `for(...) sleep(delay); step(A, dir)` drift). Stops if A is deleted.
-/proc/om_drift(atom/movable/A, direction, steps, delay)
+/proc/om_after_drift(atom/movable/A, direction, steps, delay)
 	if(steps <= 0 || QDELETED(A))
 		return
-	om_after(A, delay, /proc/om_drift_step, A, direction, steps, delay)
+	om_after(A, delay, /proc/_om_drift_step, A, direction, steps, delay)
 
-/proc/om_drift_step(atom/movable/A, direction, steps, delay)
+/proc/_om_drift_step(atom/movable/A, direction, steps, delay)
 	step(A, direction)
 	if(steps > 1)
-		om_after(A, delay, /proc/om_drift_step, A, direction, steps - 1, delay)
+		om_after(A, delay, /proc/_om_drift_step, A, direction, steps - 1, delay)
 
-/proc/om_stagger(datum/E, list/items, delay, proc_ref, per_step = 1, list/extra, on_end)
-	om_stagger_step(E, items ? items.Copy() : list(), 1, delay, proc_ref, per_step, extra, on_end)
+/proc/om_after_stagger(datum/E, list/items, delay, proc_ref, per_step = 1, list/extra, on_end)
+	_om_stagger_step(E, items ? items.Copy() : list(), 1, delay, proc_ref, per_step, extra, on_end)
 
-/proc/om_stagger_step(datum/E, list/items, index, delay, proc_ref, per_step, list/extra, on_end)
+/proc/_om_stagger_step(datum/E, list/items, index, delay, proc_ref, per_step, list/extra, on_end)
 	var/last = min(index + max(per_step, 1) - 1, length(items))
 	var/global_proc = copytext("[proc_ref]", 1, 7) == "/proc/"
 	for(var/i in index to last)
@@ -349,9 +349,9 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 			else
 				call(E, proc_ref)(arglist(list(D) + (extra || list())))
 		catch(var/exception/e)
-			dq_report_caught(e, "om_stagger [proc_ref] on [E]")
+			dq_report_caught(e, "om_after_stagger [proc_ref] on [E]")
 	if(last < length(items))
-		om_after(E, delay, /proc/om_stagger_step, E, items, last + 1, delay, proc_ref, per_step, extra, on_end)
+		om_after(E, delay, /proc/_om_stagger_step, E, items, last + 1, delay, proc_ref, per_step, extra, on_end)
 	else if(on_end)
 		if(copytext("[on_end]", 1, 7) == "/proc/")
 			call(on_end)(arglist(list(E) + (extra || list())))
@@ -368,28 +368,28 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
  * a /datum/callback, runs after the last slice. Before the live scheduler runs (world init), or with `now`, every
  * slice runs at once. Deleting E drops the rest.
  */
-/proc/om_lane_work(datum/E, slice_proc, cursor, on_done, now = FALSE)
+/proc/om_task_slices(datum/E, slice_proc, cursor, on_done, now = FALSE)
 	if(now || !SSbehaviours?.initialized || !Master?.processing)
 		while(!isnull(cursor) && !QDELETED(E))
 			cursor = call(E, slice_proc)(cursor)
 		if(!QDELETED(E))
-			om_lane_work_done(E, on_done)
+			_om_slices_done(E, on_done)
 		return
 	// on_done travels in a list: a callback passed to om_after() on its own is held weakly.
-	om_after(E, 0, /proc/om_lane_work_run, E, slice_proc, cursor, list(on_done))
+	om_after(E, 0, /proc/_om_slices_run, E, slice_proc, cursor, list(on_done))
 
-/proc/om_lane_work_run(datum/E, slice_proc, cursor, list/done_box)
+/proc/_om_slices_run(datum/E, slice_proc, cursor, list/done_box)
 	var/datum/om/scheduler/sched = E.om_rec?.sched || om_scheduler()
 	do
 		cursor = call(E, slice_proc)(cursor)
 	while(!isnull(cursor) && !sched.out_of_budget())
 	if(!isnull(cursor))
-		om_after(E, world.tick_lag, /proc/om_lane_work_run, E, slice_proc, cursor, done_box)
+		om_after(E, world.tick_lag, /proc/_om_slices_run, E, slice_proc, cursor, done_box)
 		return
-	om_lane_work_done(E, done_box[1])
+	_om_slices_done(E, done_box[1])
 
 /// `on_done`: a proc on E, or a /datum/callback.
-/proc/om_lane_work_done(datum/E, on_done)
+/proc/_om_slices_done(datum/E, on_done)
 	if(istype(on_done, /datum/callback))
 		var/datum/callback/C = on_done
 		C.Invoke()

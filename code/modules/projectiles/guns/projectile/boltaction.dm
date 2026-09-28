@@ -80,7 +80,7 @@
 			playsound(src, fire_sound, 50, 1)
 			user.visible_message(span_danger("[src] goes off!"), span_danger("The rifle goes off in your face!"))
 			return
-		om_do_after(user, 3 SECONDS, src, src, PROC_REF(saw_off_done), list(user))
+		om_task_timed(user, 3 SECONDS, src, src, PROC_REF(saw_off_done), list(user))
 	else
 		return ..()
 

@@ -555,7 +555,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 			return FALSE
 		if(resting)
 			user.visible_message(span_attack("\The [user] approaches \the [src]'s neck with \the [O]."),span_attack("You approach \the [src]'s neck with \the [O]."))
-			om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_teppi_done), done_args = list(user))
+			om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_teppi_done), done_args = list(user))
 		else
 			return FALSE
 	if(istype(O, /obj/item/clothing/accessory/collar/craftable))
@@ -745,7 +745,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 		sheartime *= 2
 	else
 		return FALSE
-	om_do_after(user, sheartime, target = src, receiver = src, on_done = PROC_REF(teppi_shear_teppi_done), done_args = list(user, tool))
+	om_task_timed(user, sheartime, target = src, receiver = src, on_done = PROC_REF(teppi_shear_teppi_done), done_args = list(user, tool))
 	return TRUE
 
 /mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_shear_teppi_done(mob/user, obj/item/tool)

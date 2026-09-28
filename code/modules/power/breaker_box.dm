@@ -62,7 +62,7 @@
 		return TRUE
 
 	to_chat(user, span_green("Updating power settings..."))
-	om_do_after(user, 5 SECONDS, src, src, PROC_REF(toggle_done), list(user, FALSE), claims = TRUE)
+	om_task_timed(user, 5 SECONDS, src, src, PROC_REF(toggle_done), list(user, FALSE), claims = TRUE)
 	return TRUE
 
 /obj/machinery/power/breakerbox/proc/unlock_updates()
@@ -111,7 +111,7 @@
 	for(var/mob/O in viewers(user))
 		O.show_message(span_red(text("[user] started reprogramming [src]!")), 1)
 
-	om_do_after(user, 5 SECONDS, src, src, PROC_REF(toggle_done), list(user, TRUE), claims = TRUE)
+	om_task_timed(user, 5 SECONDS, src, src, PROC_REF(toggle_done), list(user, TRUE), claims = TRUE)
 	return TRUE
 
 /**

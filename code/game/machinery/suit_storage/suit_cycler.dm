@@ -167,7 +167,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 
 	visible_message(span_notice("[user] starts putting [grabbed.name] into the suit cycler."), 3)
 
-	om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_insert_grab_timed_done), done_args = list(user, G))
+	om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_insert_grab_timed_done), done_args = list(user, G))
 
 	return TRUE
 

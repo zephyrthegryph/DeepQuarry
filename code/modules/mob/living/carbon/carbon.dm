@@ -270,7 +270,7 @@ REF_OWNED(/mob/living/carbon, "cozyloop")
 			else
 				M.visible_message(span_warning("[M] tries to pat out [src]'s flames!"),
 				span_warning("You try to pat out [src]'s flames! Hot!"))
-				om_do_after(M, 1.5 SECONDS, target = src, receiver = src, on_done = PROC_REF(help_shake_act_carbon_done), done_args = list(M))
+				om_task_timed(M, 1.5 SECONDS, target = src, receiver = src, on_done = PROC_REF(help_shake_act_carbon_done), done_args = list(M))
 		else
 			if (ishuman(src))
 				var/mob/living/carbon/human/H = src

@@ -644,7 +644,7 @@
 
 	visible_message("[user] [on_enter_visible_message] [src].", 3)
 
-	om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_enter_timed_done), done_args = list(user))
+	om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_enter_timed_done), done_args = list(user))
 
 	return TRUE
 
@@ -758,7 +758,7 @@
 		else
 			visible_message("\The [user] starts putting [M] into \the [src].", 3)
 
-		om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(go_in_timed_done), done_args = list(M, user))
+		om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(go_in_timed_done), done_args = list(M, user))
 
 /obj/machinery/cryopod/proc/go_in_finish(mob/M, mob/user)
 	icon_state = occupied_icon_state

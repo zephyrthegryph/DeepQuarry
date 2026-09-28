@@ -57,7 +57,7 @@ REF_OWNED_LIST(/atom/movable, "hose_connectors")
 
 	// A disconnected, empty connector has no time-based work. connect() wakes it.
 	if(my_hose || reagents.total_volume)
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 	return TRUE
 
 REF_OWNED(/datum/hose_connector, list("reagents"))
@@ -142,7 +142,7 @@ REF_BACK(/datum/hose_connector, list("carrier" = null, "my_hose" = null))
 /datum/hose_connector/proc/connect(datum/hose/H = null)
 	my_hose = H
 	if(my_hose)
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 
 /// Connects a hose to `target`, using `distancetonode` of `tubing` when done. An inflation end
 /// is a timed action first (inflation_setup()); either way setup_hoses_finish() connects.
@@ -198,7 +198,7 @@ REF_BACK(/datum/hose_connector, list("carrier" = null, "my_hose" = null))
 	// Flush the connector immediately, then leave the object subsystem. There is
 	// no reason to wait up to one SSobj period merely to discover disconnection.
 	periodic_step()
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 
 /datum/hose_connector/proc/on_examine(datum/source, datum/om/event/examine/event)
 	EVENT_HANDLER

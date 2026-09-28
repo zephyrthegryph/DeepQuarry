@@ -173,7 +173,7 @@ DECLARE_INTERACTIONS(/obj/item/pipe_dispenser, INTERACT_USE(null, PROC_REF(inter
 	if((mode & DESTROY_MODE) && can_destroy_pipe)
 		to_chat(user, span_notice("You start destroying a pipe..."))
 		playsound(src, 'sound/machines/click.ogg', 50, 1)
-		om_do_after(user, 2, target = A, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(A))
+		om_task_timed(user, 2, target = A, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(A))
 		return
 
 	if((mode & PAINT_MODE)) //Paint pipes
@@ -195,7 +195,7 @@ DECLARE_INTERACTIONS(/obj/item/pipe_dispenser, INTERACT_USE(null, PROC_REF(inter
 					om_task_start(/datum/om/task/timed/pipe_dispenser_afterattack, user, A, queued_piping_layer = queued_piping_layer)
 				else if(istype(recipe(), /datum/pipe_recipe/air_sensor))
 					to_chat(user, span_notice("You start building an air sensor..."))
-					om_do_after(user, 2, target = A, receiver = src, on_done = PROC_REF(afterattack_timed_done3), done_args = list(A, user))
+					om_task_timed(user, 2, target = A, receiver = src, on_done = PROC_REF(afterattack_timed_done3), done_args = list(A, user))
 				else if(istype(recipe(), /datum/pipe_recipe/pipe))
 					var/datum/pipe_recipe/pipe/R = recipe()
 					to_chat(user, span_notice("You start building a pipe..."))

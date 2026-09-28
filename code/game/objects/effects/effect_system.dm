@@ -76,7 +76,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	else
 		direction = pick(GLOB.alldirs)
 	var/steps = pick(1,2,3)
-	om_drift(steam, direction, steps, 5)
+	om_after_drift(steam, direction, steps, 5)
 	steam.expire(20 + steps * 5)
 
 /datum/effect/effect/system/steam_spread/start()
@@ -143,7 +143,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	else
 		direction = pick(GLOB.alldirs)
 	var/steps = pick(1,2,3)
-	om_drift(sparks, direction, steps, 5)
+	om_after_drift(sparks, direction, steps, 5)
 	om_after(src, 20 + steps * 5, PROC_REF(dec_sparks))
 
 /datum/effect/effect/system/spark_spread/proc/dec_sparks()
@@ -288,7 +288,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	var/strength = 5 // How much damage to do inside each affect()
 
 /obj/effect/effect/smoke/elemental/Initialize(mapload)
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 	return ..()
 
 /obj/effect/effect/smoke/elemental/Moved(atom/old_loc, direction, forced = FALSE)
@@ -376,7 +376,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 		else
 			direction = pick(GLOB.alldirs)
 	var/steps = pick(0,1,1,1,2,2,2,3)
-	om_drift(smoke, direction, steps, 10)
+	om_after_drift(smoke, direction, steps, 10)
 	om_after(src, steps * 10 + smoke.time_to_live*0.75+rand(10,30), PROC_REF(expire_smoke), smoke)
 
 /datum/effect/effect/system/smoke_spread/proc/expire_smoke(obj/effect/effect/smoke/smoke)
@@ -655,7 +655,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 		else
 			direction = pick(GLOB.alldirs)
 	var/steps = pick(0,1,1,1,2,2,2,3)
-	om_drift(confetti, direction, steps, 10)
+	om_after_drift(confetti, direction, steps, 10)
 	om_after(src, steps * 10 + confetti.time_to_live*0.75+rand(10,30), PROC_REF(expire_confetti), confetti)
 
 /datum/effect/effect/system/confetti_spread/proc/expire_confetti(obj/effect/effect/confetti/confetti)

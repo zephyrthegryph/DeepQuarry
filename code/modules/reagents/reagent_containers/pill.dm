@@ -59,7 +59,7 @@
 		user.balloon_alert_visible("[user] attempts to force [M] to swallow \the [src].")
 
 		user.setClickCooldown(user.get_attack_speed(src))
-		om_do_after(user, 3 SECONDS, M, src, PROC_REF(force_swallow_done), list(user, M))
+		om_task_timed(user, 3 SECONDS, M, src, PROC_REF(force_swallow_done), list(user, M))
 		return ITEM_INTERACT_SUCCESS
 
 	return ITEM_INTERACT_FAILURE

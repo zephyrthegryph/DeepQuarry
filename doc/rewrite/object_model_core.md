@@ -333,7 +333,7 @@ current state; never count wakes.
   the heat drain through `om_native_dispatch()`; the rules adapter
   (`code/datums/rules/world_adapter.dm`) is the one place rules touch either kind.
 - **Continuous work is not a watch.** What really changes every tick is a declared continuous
-  periodic lane (`PERIODIC_START`, §4.10, each with a `continuous_why`), or a clock (§4.6).
+  periodic lane (`om_task_periodic()`, §4.10, each with a `continuous_why`), or a clock (§4.6).
 - `wake_on_native` bits are unioned per entity and passed to `om_native_bridge_watch(E, bits)` on
   attach and detach; `om_native_deliver(E, bits)` runs `on_native(E, bits)` on each started
   behaviour declaring those bits.
@@ -446,7 +446,7 @@ plus its `idle()` check. Parked entities cost nothing.
 
 **Periodic lanes and machine steps** (roadmap S3-S5; no processing subsystem is left). A
 datum with periodic work defines `periodic_step(delta)` and is started on a lane with
-`PERIODIC_START(E, lane)` by whatever gives it work; `PROCESS_KILL` or `PERIODIC_STOP(E)` ends
+`om_task_periodic(E, lane)` by whatever gives it work; `PROCESS_KILL` or `om_task_periodic_stop(E)` ends
 it and it parks (`code/datums/om/periodic.dm`). The lanes are pipelines on the core runner:
 `PERIODIC_SLOW` (2 s), `PERIODIC_SECOND`, `PERIODIC_FAST` (0.2 s), `PERIODIC_PLANTS` (7.5 s),
 plus declared continuous lanes, each with a `continuous_why` (projectiles, instruments, priority
@@ -490,7 +490,7 @@ A framework in which gameplay code never sleeps doesn't need it. The rule is **n
 A task step is a proc that returns: `STEP_NEXT`, `STEP_REPEAT(d)`, `STEP_DONE` or `STEP_FAIL(reason)`. Cancelling a task is always safe because no proc is ever suspended inside it. `om_after` and task deadlines share the wheel with stage rewakes, so they get lanes, budgets, relevance and parking for free: a timer on a parked entity is due on its clock, not on the wall clock.
 
 **What stays.**
-- `sleep` remains only in the MC (master.dm, failsafe.dm), vendored TGS and `stoplag()` itself. Map and station generation runs as lane work (`om_lane_work()`: a slice proc resumed by cursor within the scheduler's budget); world hooks, client init and admin verb delays are `om_after` timers; NTSL `delay()` is a task step. External I/O (rust-g SQL and HTTP) is an `om_io` job (§4.12): the caller gets a callback, nothing waits. There is no legacy wait: `db_query/sync()` is gone, and code that reads rows inline runs as a prompt flow (§4.12, "I/O in prompt flows"). BYOND's blocking built-ins (`winget`, `winexists`, `MeasureText`, `shell`) go through DX-exec (§4.12). Prompts are `om_prompt` (the `prompts` count is 0).
+- `sleep` remains only in the MC (master.dm, failsafe.dm), vendored TGS and `stoplag()` itself. Map and station generation runs as lane work (`om_task_slices()`: a slice proc resumed by cursor within the scheduler's budget); world hooks, client init and admin verb delays are `om_after` timers; NTSL `delay()` is a task step. External I/O (rust-g SQL and HTTP) is an `om_io` job (§4.12): the caller gets a callback, nothing waits. There is no legacy wait: `db_query/sync()` is gone, and code that reads rows inline runs as a prompt flow (§4.12, "I/O in prompt flows"). BYOND's blocking built-ins (`winget`, `winexists`, `MeasureText`, `shell`) go through DX-exec (§4.12). Prompts are `om_prompt` (the `prompts` count is 0).
 - Timers with no entity owner (round events, client real-time) use a global owner entity on the same wheel.
 
 **Timer variants (S9: SStimer is deleted).** Every former `addtimer` flag has one replacement:
@@ -959,7 +959,7 @@ deadline wheel; nothing polls. `om_ui_rate(R)` returns
   completes inside `om_task_start()`, so "instant or timed" is one call with
   `"duration" = instant ? 0 : d`. Repeating work (one sheet, round or pulse at a time) is a
   steps task returning `STEP_REPEAT(d)`, with a fresh bar per step.
-  `om_do_after(user, delay, target, receiver, on_done, done_args, ...)` remains only for the
+  `om_task_timed(user, delay, target, receiver, on_done, done_args, ...)` remains only for the
   zero-state case: at most two arguments across `done_args`, `fail_args` and `check_args`
   (`tools/ci/api_lints.py`, `do_after_state`, is 0). A done proc taking a third argument, or a
   `*_timed_done2` proc threading the same arguments through, is a task type instead.
@@ -977,7 +977,7 @@ deadline wheel; nothing polls. `om_ui_rate(R)` returns
   ```dm
   om_task_start(/datum/om/task/timed/splint_attack, user, affecting, list("receiver" = src, "M" = M, "limb" = limb))
 
-  om_do_after(user, 5 SECONDS, target, src, PROC_REF(prescribe_done), list(user, G))
+  om_task_timed(user, 5 SECONDS, target, src, PROC_REF(prescribe_done), list(user, G))
 
   /obj/item/glasses_kit/proc/prescribe_done(mob/living/carbon/human/user, obj/item/clothing/glasses/G)
   ```
@@ -1085,7 +1085,7 @@ deadline wheel; nothing polls. `om_ui_rate(R)` returns
   data list, re-checks by hand:
 
   ```dm
-  	om_do_after(user, leashtime, target = C, receiver = src, on_done = PROC_REF(attack_timed_done), done_args = list(C, user))
+  	om_task_timed(user, leashtime, target = C, receiver = src, on_done = PROC_REF(attack_timed_done), done_args = list(C, user))
 
   /obj/item/leash/proc/attack_timed_done(mob/living/C, mob/living/user)
   	om_prompt(src, C, list("message" = "Would you like to be leased by [user]? ...", "title" = "Become Leashed", "choices" = list("No","Yes"), "target" = user, "requires" = PROMPT_ADJACENT, "data" = list("holder" = user)), PROC_REF(leash_accepted))
@@ -1141,7 +1141,7 @@ deadline wheel; nothing polls. `om_ui_rate(R)` returns
   (`vore/eating/inbelly_spawn.dm`: six consent prompts across two players, with `ended()`
   telling both sides by the step it stopped at).
 - **Busy is a claim, not a flag.** A task can also claim what does the work: its actor
-  (`claims_actor`), or a tool, bot or machine (`om_task_claim()`, `om_do_after(..., busy = X)`,
+  (`claims_actor`), or a tool, bot or machine (`om_task_claim()`, `om_task_timed(..., busy = X)`,
   `use_tool(..., busy = X)`), on the `busy` relation so a busy worker can still be someone's
   target. `om_busy(X)` is the query (a running task claims X, as worker or exclusive target);
   `om_in_use(X)` asks only about target claims. The claim is released on complete, cancel or
@@ -1274,7 +1274,7 @@ qdel(M)
 | To... | The one way | Not | Lint (count) |
 |---|---|---|---|
 | Do something after a delay | `om_after(E, delay, proc, args...)` (§4.11) | `addtimer()`, `spawn()`, `sleep()` | `scheduler_lints.py` (`addtimer`, `spawn`, `sleep`) |
-| Take time over an action with state | a named task type, `om_task_start(/datum/om/task/timed/x, actor, target, var = value...)` (§11) | `om_do_after()`/`use_tool()` carrying more than two args, `do_after()`; a `list("key" = value)` params list | `api_lints.py` (`do_after_state`, `use_tool_state`, `task_params_list`), `scheduler_lints.py` (`do_after`) |
+| Take time over an action with state | a named task type, `om_task_start(/datum/om/task/timed/x, actor, target, var = value...)` (§11) | `om_task_timed()`/`use_tool()` carrying more than two args, `do_after()`; a `list("key" = value)` params list | `api_lints.py` (`do_after_state`, `use_tool_state`, `task_params_list`), `scheduler_lints.py` (`do_after`) |
 | Ask a player | a typed prompt, `om_ask(answerer, /datum/om/prompt/<kind>/x, PROC_REF(cb), var = value...)` (§11) | `input()`, `alert()`, `tgui_input_*()`, `tgui_alert()`; the removed spec-list forms (`om_prompt()`, `topic_prompt()`, `rerun_prompt()` and kin) | `scheduler_lints.py` (`prompts`), `api_lints.py` (`prompt_spec`) |
 | Do an action in steps (take time, ask, act) | one flow type, `om_flow_start(/datum/om/flow/x, actor, target, var = value...)`, its steps chained with `wait()` / `om_ask()` (§11) | several procs passing state through `done_args`, prompt `data` or chained task params, each re-checking by hand | `api_lints.py` (`prompt_spec`, `task_params_list`) |
 | Do I/O (SQL, HTTP) | `om_io(E, /datum/om/io/<kind>, args..., on_done)` with kind `sql` or `http` (§4.12); `om_sql_write()`, `om_http_get()`; inline reads inside a prompt flow; `om_sql_view()` for panels | `Execute()` outside a flow, `world.Export()`, `set waitfor` / `INVOKE_ASYNC` around a query | `scheduler_lints.py` (`set_waitfor`, `invoke_async`, `stoplag`) |
@@ -1286,7 +1286,7 @@ qdel(M)
 | Read a relation or a slot | the typed accessor proc, `M.buckled_to()`, `I.slot_item(slot)` (§7) | `BUCKLED()`, `PULLING()`, `SLOT_ITEM()`... macros; `om_relation_of()` outside `code/datums/om` | `api_lints.py` (`accessor_macros`, `raw_relation`) |
 | Wake on Rust-owned state, a DM key, a rate crossing or a tick-precise time | a world watch, `om_world_at/on_key/on_change/when/on_rate()`, delivered on the watch's lane (§4.8) | `SSreactor`, `REACT_*`, `on_react()`; a raw `vg_world_*` subscription bind | `api_lints.py` (`reactor_api`, `raw_world_bind`) |
 | Name a DM-owned key | a number from `om_world_key_id()` | a string key | `api_lints.py` (`string_keys`), `check_grep.sh` |
-| Run periodic work | a periodic lane (`PERIODIC_START(E, lane)`) or the machine pipeline, parked when idle (§4.10) | `process()`, `START_PROCESSING` | `pollers_lint.py` |
+| Run periodic work | a periodic lane (`om_task_periodic(E, lane)`) or the machine pipeline, parked when idle (§4.10) | `process()`, `START_PROCESSING` | `pollers_lint.py` |
 | Wait for a deadline | `om_after()` / `om_deadline()` | comparing `world.time` with a stored deadline in periodic work | `check_deadline_polling.py` |
 | Remember an object | an OM handle, `om_handle(E)` / `om_resolve(h)` (§4.11), for another live entity only | `weakref`; a handle to a singleton/flyweight; a handle as a new datum's only owner | `scheduler_lints.py` (`weakref`), `handle_kinds_lint.py` |
 | Hold an object reference | a relation or slot, an owned child, an OM handle, a declared cache (§4.11), `REF_DEF` for a frozen definition or registry object (implicit for `DEF_TYPES`), or `REF_TRANSIENT` on a pooled type; declared with the `REF_*` forms or one-place `REF_VAR` ([lifecycle.md §4](lifecycle.md#4-declared-references)) | an undeclared object-typed var; `REF_TRANSIENT` on a type that isn't pooled | `scheduler_lints.py` (`lc_refs`), `declared_refs_lint.py` |

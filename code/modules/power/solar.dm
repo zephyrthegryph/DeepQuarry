@@ -450,7 +450,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 
 /obj/machinery/power/solar_control/screwdriver_act(mob/user, obj/item/I)
 	playsound(src, I.usesound, 50, 1)
-	om_do_after(user, 2 SECONDS, src, src, PROC_REF(disassemble_done), list(user))
+	om_task_timed(user, 2 SECONDS, src, src, PROC_REF(disassemble_done), list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/power/solar_control/proc/disassemble_done(mob/user)

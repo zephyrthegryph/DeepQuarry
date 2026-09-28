@@ -80,7 +80,7 @@
 		if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
 			if(locked || welded)
 				visible_message(span_danger("\The [user] begins breaking into \the [src] internals!"))
-				om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_generic_timed_done), done_args = list(user), busy = user)
+				om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_generic_timed_done), done_args = list(user), busy = user)
 			else if(density)
 				visible_message(span_danger("\The [user] forces \the [src] open!"))
 				open(TRUE)
@@ -108,10 +108,10 @@
 		if(locked || welded)
 			visible_message(span_alium("\The [user] begins tearing into \the [src] internals!"))
 			do_animate("deny")
-			om_do_after(user, 15 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_alien_timed_done), done_args = list(user), busy = user)
+			om_task_timed(user, 15 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_alien_timed_done), done_args = list(user), busy = user)
 		else if(density)
 			visible_message(span_alium("\The [user] begins forcing \the [src] open!"))
-			om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_alien_timed_done2), done_args = list(user), busy = user)
+			om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_alien_timed_done2), done_args = list(user), busy = user)
 		else
 			visible_message(span_danger("\The [user] forces \the [src] closed!"))
 			close(1)
@@ -794,7 +794,7 @@ About the new airlock wires panel:
 	if(frozen)
 		// Melting with hot objects that don't take fuel
 		if(C.is_hot())
-			om_do_after(user, 9 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_use_item_timed_done), done_args = list(user), busy = user)
+			om_task_timed(user, 9 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_use_item_timed_done), done_args = list(user), busy = user)
 			return TRUE
 
 		// This is just funny
@@ -859,7 +859,7 @@ About the new airlock wires panel:
 		if(welder.remove_fuel(0,user) && welder.isOn())
 			to_chat(user, span_notice("You start to melt the ice off \the [src]"))
 			playsound(src, welder.usesound, 50, 1)
-			om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(welder_act_timed_done), done_args = list(user), busy = user)
+			om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(welder_act_timed_done), done_args = list(user), busy = user)
 		return ITEM_INTERACT_SUCCESS
 	if(!issilicon(user) && isElectrified() && shock(user, 75))
 		return ITEM_INTERACT_BLOCKING
@@ -968,7 +968,7 @@ About the new airlock wires panel:
 
 /obj/machinery/door/airlock/proc/handleRemoveIce(obj/item/W, mob/user as mob, time = 15)
 	to_chat(user, span_notice("You start to chip at the ice covering \the [src]"))
-	om_do_after(user, time SECONDS, target = src, receiver = src, on_done = PROC_REF(handleRemoveIce_timed_done), done_args = list(user), busy = user)
+	om_task_timed(user, time SECONDS, target = src, receiver = src, on_done = PROC_REF(handleRemoveIce_timed_done), done_args = list(user), busy = user)
 
 /obj/machinery/door/airlock/proc/handleRemoveIce_timed_done(mob/user)
 	unFreeze()

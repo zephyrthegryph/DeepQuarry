@@ -18,7 +18,7 @@
 	playsound(src, 'sound/misc/bloop.ogg', 50, 1)
 	flick("health2", src)
 
-	om_do_after(user, 6 SECONDS, target = AM, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(AM, user))
+	om_task_timed(user, 6 SECONDS, target = AM, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(AM, user))
 
 /obj/item/gene_scanner/proc/afterattack_timed_done(atom/movable/AM, mob/user)
 	scan_genes(AM,user)

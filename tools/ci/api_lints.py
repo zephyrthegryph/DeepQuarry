@@ -6,7 +6,7 @@ never rise. A justified site (framework reflection: the serializer, links,
 tasks, VV) carries `// ALLOW(api): <reason>` on its line or the comment line
 above it (tools/ci/allow_annotations.py) and is not counted. Most are at 0; the rest are ratchets a sweep lowers.
 
-    do_after_state   om_do_after() with more than two arguments across done_args,
+    do_after_state   om_task_timed() with more than two arguments across done_args,
                      fail_args and check_args, or a list built elsewhere: state
                      belongs on a named task type (/datum/om/task/timed/x)
     use_tool_state   the same for use_tool()'s done_args/fail_args
@@ -109,7 +109,7 @@ def state_args(argtext, positional_lists, named_lists):
 
 
 def do_after_state(rel, text):
-    for line, args in calls(text, "om_do_after"):
+    for line, args in calls(text, "om_task_timed"):
         if state_args(args, {5, 8, 10}, {"done_args", "fail_args", "check_args"}) > 2:
             yield line
 

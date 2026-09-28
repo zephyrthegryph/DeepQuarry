@@ -34,7 +34,7 @@
 	. = ..()
 	charges = max_charges
 	if(can_charge)
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 
 /obj/item/gun/magic/periodic_step()
 	if (charges >= max_charges)

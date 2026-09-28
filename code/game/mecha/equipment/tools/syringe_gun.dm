@@ -25,7 +25,7 @@
 	create_reagents(max_volume)
 
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/detach()
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 	return ..()
 
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/critfail()
@@ -94,7 +94,7 @@
 				m++
 		if(processed_reagents.len)
 			message += " added to production"
-			PERIODIC_START(src, PERIODIC_FAST)
+			om_task_periodic(src, PERIODIC_FAST)
 			occupant_message(message)
 			occupant_message("Reagent processing started.")
 			src.mecha_log_message("Reagent processing started.")
@@ -161,7 +161,7 @@
 					processed_reagents += reagent_id
 					m++
 			if(processed_reagents.len)
-				PERIODIC_START(src, PERIODIC_FAST)
+				om_task_periodic(src, PERIODIC_FAST)
 				occupant_message("Reagent processing started.")
 				src.mecha_log_message("Reagent processing started.")
 			return TRUE
@@ -347,16 +347,16 @@
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/attach(obj/mecha/M as obj)
 	. = ..(M)
 	if(chassis)
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/detach(atom/moveto=null)
 	shut_down()
 	. = ..(moveto)
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/critfail()
 	. = ..()
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 	shut_down()
 	if(chassis && chassis?.slot_item(MECHA_SLOT_PILOT))
 		to_chat(chassis?.slot_item(MECHA_SLOT_PILOT), span_notice("\The [chassis] shudders as something jams!"))

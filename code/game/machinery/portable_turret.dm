@@ -526,7 +526,7 @@ REF_OWNED(/obj/machinery/porta_turret, "spark_system")
 	//If the turret is destroyed, you can remove it with a crowbar to
 	//try and salvage its components
 	to_chat(user, span_notice("You begin prying the metal coverings off."))
-	om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(crowbar_act_timed_done), done_args = list(user))
+	om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(crowbar_act_timed_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/porta_turret/proc/crowbar_act_timed_done(mob/user)
@@ -768,11 +768,11 @@ REF_OWNED(/obj/machinery/porta_turret, "spark_system")
 	// high gear
 	if(speed_process)
 		MACHINE_SLEEP(src)
-		PERIODIC_START(src, PERIODIC_FAST)
+		om_task_periodic(src, PERIODIC_FAST)
 		return
 
 	// low gear
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 	MACHINE_WAKE(src)
 
 /obj/machinery/porta_turret/proc/assess_and_assign(mob/living/L, list/targets, list/secondarytargets)

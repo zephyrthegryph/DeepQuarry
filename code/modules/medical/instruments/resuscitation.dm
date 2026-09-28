@@ -27,7 +27,7 @@
 		to_chat(user, span_warning("You can't get a seal over [H]'s face."))
 		return ITEM_INTERACT_SUCCESS
 	user.visible_message(span_notice("[user] seals \the [src] over [H]'s face and starts squeezing."), span_notice("You seal \the [src] over [H]'s face and start squeezing."))
-	om_do_after(user, 2 SECONDS, H, src, PROC_REF(squeeze_done), list(user, H))
+	om_task_timed(user, 2 SECONDS, H, src, PROC_REF(squeeze_done), list(user, H))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/bag_valve_mask/proc/squeeze_done(mob/living/user, mob/living/carbon/human/H)
@@ -65,7 +65,7 @@
 		to_chat(user, span_warning("You can't get into [H]'s mouth."))
 		return ITEM_INTERACT_SUCCESS
 	user.visible_message(span_notice("[user] starts working \the [src] into [H]'s airway."), span_notice("You start working \the [src] into [H]'s airway."))
-	om_do_after(user, 4 SECONDS, H, src, PROC_REF(airway_done), list(user, H))
+	om_task_timed(user, 4 SECONDS, H, src, PROC_REF(airway_done), list(user, H))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/airway_kit/proc/airway_done(mob/living/user, mob/living/carbon/human/H)
@@ -100,7 +100,7 @@
 		to_chat(user, span_warning("Aim for [H]'s chest."))
 		return ITEM_INTERACT_SUCCESS
 	user.visible_message(span_warning("[user] lines \the [src] up between [H]'s ribs."), span_notice("You line \the [src] up between [H]'s ribs."))
-	om_do_after(user, 3 SECONDS, H, src, PROC_REF(needle_done), list(user, H))
+	om_task_timed(user, 3 SECONDS, H, src, PROC_REF(needle_done), list(user, H))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/decompression_needle/proc/needle_done(mob/living/user, mob/living/carbon/human/H)

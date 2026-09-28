@@ -51,9 +51,9 @@
 /// never joins it (walls are numerous). Call after its materials change.
 /turf/simulated/wall/proc/check_radioactive()
 	if(wall_radioactivity())
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 	else
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 
 /turf/simulated/wall/proc/wall_radioactivity()
 	return dq_material_radioactivity(material) + (reinf_material ? dq_material_radioactivity(reinf_material) / 2 : 0) + (girder_material ? dq_material_radioactivity(girder_material) / 2 : 0)

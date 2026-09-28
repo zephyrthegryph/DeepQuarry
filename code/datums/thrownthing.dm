@@ -115,7 +115,7 @@ REF_OWNED(/datum/thrownthing, list("callback"))
 /// Phase 2: the throw leaves the throwing lane (the throw_of unlink clears the movable's `throwing`).
 /datum/thrownthing/lifecycle_dematerialize()
 	. = ..()
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 
 /// One server tick of flight on the throwing lane (was SSthrowing.fire()).
 /datum/thrownthing/periodic_step(delta)

@@ -286,7 +286,7 @@ REF_OWNED(/obj/item/gun/magnetic/matfed/phoronbore, "soundloop")
 /obj/item/gun/magnetic/matfed/phoronbore/proc/pull_cord(mob/living/user, pulls)
 	if(pulls > 0)
 		playsound(src, 'sound/items/small_motor/motor_pull_attempt.ogg', 100)
-		om_do_after(user, 2 SECONDS, src, src, PROC_REF(pull_cord), list(user, pulls - 1), on_fail = PROC_REF(pull_abandoned))
+		om_task_timed(user, 2 SECONDS, src, src, PROC_REF(pull_cord), list(user, pulls - 1), on_fail = PROC_REF(pull_abandoned))
 		return
 	soundloop.start()
 	time_started = world.time

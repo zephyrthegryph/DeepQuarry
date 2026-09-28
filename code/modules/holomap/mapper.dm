@@ -183,12 +183,12 @@ REGISTRY_MEMBERSHIP(/obj/item/mapping_unit, REGISTRY_MAPPING_UNITS)
 /obj/item/mapping_unit/proc/start_updates()
 	registry_join(REGISTRY_MAPPING_UNITS, src)
 	updating = TRUE
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 	periodic_step()
 
 /obj/item/mapping_unit/proc/stop_updates()
 	registry_leave(REGISTRY_MAPPING_UNITS, src)
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 	updating = FALSE
 	if(hud_item)
 		hud_item.off(FALSE)

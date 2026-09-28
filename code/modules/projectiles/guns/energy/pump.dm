@@ -114,7 +114,7 @@
 	update_icon()
 	user.visible_message(span_notice("[user] opens \the [src] and starts pumping the handle."), \
 						span_notice("You open \the [src] and start pumping the handle."))
-	om_do_after(user, 1 SECOND, src, src, PROC_REF(pump_cycle), list(user), on_fail = PROC_REF(pump_end), fail_args = list(user))
+	om_task_timed(user, 1 SECOND, src, src, PROC_REF(pump_cycle), list(user), on_fail = PROC_REF(pump_end), fail_args = list(user))
 
 /// One pump every second (a timed action each) until full.
 /obj/item/gun/energy/locked/frontier/proc/pump_cycle(mob/user)
@@ -123,7 +123,7 @@
 	if(power_supply.give(phase_power) < phase_power)
 		pump_end(user)
 		return
-	om_do_after(user, 1 SECOND, src, src, PROC_REF(pump_cycle), list(user), on_fail = PROC_REF(pump_end), fail_args = list(user))
+	om_task_timed(user, 1 SECOND, src, src, PROC_REF(pump_cycle), list(user), on_fail = PROC_REF(pump_end), fail_args = list(user))
 
 /obj/item/gun/energy/locked/frontier/proc/pump_end(mob/user)
 	recharging = 0

@@ -89,7 +89,7 @@ DECLARE_INTERACTIONS(/obj/item/material/gravemarker, INTERACT_USE(null, PROC_REF
 		return TRUE
 	else
 		to_chat(user, span_notice("You begin to place \the [src.name]."))
-		om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(place_done), done_args = list(user))
+		om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(place_done), done_args = list(user))
 	return TRUE
 
 /obj/item/material/gravemarker/proc/place_done(mob/user)

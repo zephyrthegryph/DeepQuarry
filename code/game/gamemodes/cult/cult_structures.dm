@@ -34,7 +34,7 @@
 
 /obj/structure/cult/pylon/Initialize(mapload)
 	. = ..()
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 
 DECLARE_INTERACTIONS(/obj/structure/cult/pylon, \
 	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
@@ -64,7 +64,7 @@ DECLARE_INTERACTIONS(/obj/structure/cult/pylon, \
 	if(!isbroken)
 		if(prob(1+ damage * 5))
 			visible_message(span_danger("[shatter_message]"))
-			PERIODIC_STOP(src)
+			om_task_periodic_stop(src)
 			playsound(src,shatter_sound, 75, 1)
 			isbroken = 1
 			density = FALSE
@@ -79,7 +79,7 @@ DECLARE_INTERACTIONS(/obj/structure/cult/pylon, \
 				span_warning("You hit \the [src], and its crystal breaks apart!"),
 				"You hear a tinkle of crystal shards."
 				)
-			PERIODIC_STOP(src)
+			om_task_periodic_stop(src)
 			user.do_attack_animation(src)
 			playsound(src,shatter_sound, 75, 1)
 			isbroken = 1
@@ -99,7 +99,7 @@ DECLARE_INTERACTIONS(/obj/structure/cult/pylon, \
 
 /obj/structure/cult/pylon/proc/repair(mob/user as mob)
 	if(isbroken)
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 		to_chat(user, "You repair \the [src].")
 		isbroken = 0
 		density = TRUE

@@ -44,9 +44,9 @@ DECLARE_INTERACTIONS(/obj/item/shield_diffuser, INTERACT_USE(null, PROC_REF(inte
 	enabled = !enabled
 	update_icon()
 	if(enabled)
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 	else
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 	to_chat(user, "You turn \the [src] [enabled ? "on" : "off"].")
 	return TRUE
 

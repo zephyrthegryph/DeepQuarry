@@ -45,7 +45,7 @@
 /// declines (returns FALSE) after doing its work, letting the base attackby chain still run.
 /obj/machinery/the_singularitygen/proc/interaction_install(mob/user, obj/item/W, datum/interaction/interaction)
 	visible_message(span_infoplain(span_bold("\The [user]") + " begins to modify \the [src] with \the [W]."))
-	om_do_after(user, 30 SECONDS, src, src, PROC_REF(install_done), list(user, W))
+	om_task_timed(user, 30 SECONDS, src, src, PROC_REF(install_done), list(user, W))
 	return FALSE
 
 /obj/machinery/the_singularitygen/proc/install_done(mob/user, obj/item/W)
@@ -70,7 +70,7 @@
 	playsound(src, W.usesound, 50, 1)
 	visible_message(span_infoplain(span_bold("\The [user]") + " adjusts \the [src]'s mechanisms."))
 	if(panel_open)
-		om_do_after(user, 3 SECONDS, src, src, PROC_REF(inspect_done), list(user, W))
+		om_task_timed(user, 3 SECONDS, src, src, PROC_REF(inspect_done), list(user, W))
 	else
 		to_chat(user, span_notice("\The [src]'s mechanisms look secure."))
 	return ITEM_INTERACT_SUCCESS

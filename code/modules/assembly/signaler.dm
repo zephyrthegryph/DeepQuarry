@@ -153,19 +153,19 @@ MATERIAL_MIX(/obj/item/assembly/signaler, list(MAT_STEEL = 1000, MAT_GLASS = 200
 // BEGIN re-adds stealth removal
 /obj/item/assembly/signaler/periodic_step()
 	if(!deadman)
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 	var/mob/M = src.loc
 	if(!M || !ismob(M))
 		if(prob(5))
 			signal()
 		deadman = FALSE
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 	else if(prob(5))
 		M.visible_message("[M]'s finger twitches a bit over [src]'s signal button!")
 
 /obj/item/assembly/signaler/proc/deadman_it_effect(mob/user, obj/item/held, datum/interaction/interaction)
 	deadman = TRUE
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 	log_and_message_admins("is threatening to trigger a signaler deadman's switch", user)
 	user.visible_message("<font color='red'>[user] moves their finger over [src]'s signal button...</font>")
 // end

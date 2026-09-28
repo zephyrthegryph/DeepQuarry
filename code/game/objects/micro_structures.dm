@@ -138,7 +138,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 
 /obj/structure/micro_tunnel/proc/tunnel_climb(mob/living/user)
 	user.visible_message(span_notice("\The [user] begins climbing into \the [src]!"))
-	om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(tunnel_interact_timed_done2), done_args = list(user), on_fail = PROC_REF(tunnel_interact_timed_failed2), fail_args = list(user))
+	om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(tunnel_interact_timed_done2), done_args = list(user), on_fail = PROC_REF(tunnel_interact_timed_failed2), fail_args = list(user))
 
 /// A big mob picks between squeezing into the tunnel and reaching in.
 /datum/om/prompt/choice/tunnel_enter_or_reach
@@ -196,7 +196,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 
 /obj/structure/micro_tunnel/proc/tunnel_move(mob/living/user, choice)
 	to_chat(user,span_notice("You begin moving..."))
-	om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(tunnel_interact_timed_done), done_args = list(user, choice))
+	om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(tunnel_interact_timed_done), done_args = list(user, choice))
 
 /obj/structure/micro_tunnel/proc/tunnel_eat_chosen(datum/om/prompt/choice/ask)
 	tunnel_eat(ask.answerer, ask.choice)
@@ -290,7 +290,7 @@ DECLARE_INTERACTIONS(/obj/structure/micro_tunnel, \
 
 /obj/structure/micro_tunnel/proc/mouse_drop_climb(mob/living/k)
 	k.visible_message(span_notice("\The [k] begins climbing into \the [src]!"))
-	om_do_after(k, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(MouseDrop_T_timed_done), done_args = list(k), on_fail = PROC_REF(MouseDrop_T_timed_failed), fail_args = list(k))
+	om_task_timed(k, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(MouseDrop_T_timed_done), done_args = list(k), on_fail = PROC_REF(MouseDrop_T_timed_failed), fail_args = list(k))
 
 /obj/structure/micro_tunnel/proc/MouseDrop_T_timed_done(mob/living/k)
 

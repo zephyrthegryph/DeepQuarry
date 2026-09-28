@@ -198,7 +198,7 @@ REF_OWNED(/obj/machinery/appliance/cooker/fryer, list("fry_loop", "oil"))
 
 	fry_loop.start(src)
 
-	om_do_after(user, 2 SECONDS, victim, src, PROC_REF(cook_mob_done), list(victim, user), on_fail = PROC_REF(cook_mob_stopped))
+	om_task_timed(user, 2 SECONDS, victim, src, PROC_REF(cook_mob_done), list(victim, user), on_fail = PROC_REF(cook_mob_stopped))
 
 /obj/machinery/appliance/cooker/fryer/proc/cook_mob_stopped()
 	cooking = FALSE

@@ -36,7 +36,7 @@
 	to_chat(target, span_vwarning("You feel yourself being pulled up by something... Or someone?!"))
 	var/starting_loc = target.loc
 
-	om_do_after(src, 5 SECONDS, target, src, PROC_REF(vertical_nom_done), list(target, starting_loc))
+	om_task_timed(src, 5 SECONDS, target, src, PROC_REF(vertical_nom_done), list(target, starting_loc))
 
 /mob/living/proc/vertical_nom_done(mob/living/target, starting_loc)
 	if(target.loc != starting_loc)

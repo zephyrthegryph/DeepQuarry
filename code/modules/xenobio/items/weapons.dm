@@ -220,7 +220,7 @@ DECLARE_INTERACTIONS(/obj/item/xenobio, \
 		return
 	if(istype(AM, /mob/living/carbon/human/monkey))
 		playsound(src, 'sound/machines/juicer.ogg', 25, 1)
-		om_do_after(user, 1.5 SECONDS, src, src, PROC_REF(grind_monkey), list(AM), on_fail = PROC_REF(grind_ended))
+		om_task_timed(user, 1.5 SECONDS, src, src, PROC_REF(grind_monkey), list(AM), on_fail = PROC_REF(grind_ended))
 		return
 	processing = FALSE
 
@@ -230,7 +230,7 @@ DECLARE_INTERACTIONS(/obj/item/xenobio, \
 		processing = FALSE
 		return
 	playsound(src, 'sound/machines/juicer.ogg', 25, 1)
-	om_do_after(user, 1.5 SECONDS, src, src, PROC_REF(grind_core_done), list(S, user), on_fail = PROC_REF(grind_ended))
+	om_task_timed(user, 1.5 SECONDS, src, src, PROC_REF(grind_core_done), list(S, user), on_fail = PROC_REF(grind_ended))
 
 /obj/item/slime_grinder/proc/grind_core_done(mob/living/simple_mob/slime/S, mob/living/user)
 	new S.coretype(get_turf(S))

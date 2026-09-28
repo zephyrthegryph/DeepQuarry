@@ -460,7 +460,7 @@ REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEAC
 	var/obj/belly/bellychoice = ask.choice
 	if(istype(bellychoice) && bellychoice.owner == user)
 		user.visible_message(span_warning("[user] is trying to stuff \the [src] into [user.gender == MALE ? "his" : user.gender == FEMALE ? "her" : "their"] [bellychoice.name]!"),span_notice("You begin putting \the [src] into your [bellychoice.name]!"))
-		om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, bellychoice))
+		om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, bellychoice))
 
 /obj/item/perfect_tele_beacon/proc/attack_self_timed_done(mob/user, obj/belly/bellychoice)
 	user.unEquip(src)
@@ -521,7 +521,7 @@ REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEAC
 
 /// One second of pumping the handle per call, until the cell is full or the user stops.
 /obj/item/perfect_tele/frontier/proc/pump_handle(mob/user)
-	om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(pump_stroke), done_args = list(user), on_fail = PROC_REF(pump_done))
+	om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(pump_stroke), done_args = list(user), on_fail = PROC_REF(pump_done))
 
 /obj/item/perfect_tele/frontier/proc/pump_stroke(mob/user)
 	playsound(src,'sound/items/change_drill.ogg',25,1)

@@ -238,9 +238,9 @@ REF_SPILL(/obj/machinery/mineral/processing_unit_console, "inserted_id")
 		set_speed_process(!speed_process) // switching gears
 	if(speed_process) // high gear
 		MACHINE_SLEEP(src)
-		PERIODIC_START(src, PERIODIC_FAST)
+		om_task_periodic(src, PERIODIC_FAST)
 	else // low gear
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 		MACHINE_WAKE(src)
 	for(var/obj/machinery/mineral/unloading_machine/unloader in contents_of(refinery_area))
 		unloader.toggle_speed()

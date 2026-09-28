@@ -70,7 +70,7 @@
 /obj/structure/curtain/wirecutter_act(mob/user, obj/item/P)
 	playsound(src, P.usesound, 50, 1)
 	to_chat(user, span_notice("You start to cut the shower curtains."))
-	om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(wirecutter_act_timed_done), done_args = list(user))
+	om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(wirecutter_act_timed_done), done_args = list(user))
 	return TRUE
 
 /obj/structure/curtain/proc/wirecutter_act_timed_done(mob/user)

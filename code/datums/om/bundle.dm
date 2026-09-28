@@ -82,6 +82,8 @@
 	var/service_mask = 0
 	/// Services observing this type.
 	var/list/services
+	/// Parallel to services: the channels each service observes on this type (per-(service, type) mask).
+	var/list/service_masks
 	/// Declared caches (declared_cache_vars(), read from the first instance by
 	/// om_cache_scan()): the change bits that clear one, and stride-2 rules
 	/// (bits, var) / (event path, var) / (relation id, var).

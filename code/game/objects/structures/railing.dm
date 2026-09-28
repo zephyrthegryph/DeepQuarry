@@ -204,7 +204,7 @@ DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor
 	if(anchored)
 		return TRUE
 	playsound(src, W.usesound, 50, 1)
-	om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
+	om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
 	return TRUE
 
 /obj/structure/railing/proc/wrench_act_timed_done(mob/user)
@@ -217,7 +217,7 @@ DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor
 	var/obj/item/weldingtool/F = W.get_welder()
 	if(F.welding)
 		playsound(src, F.usesound, 50, 1)
-		om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(welder_act_timed_done), done_args = list(user))
+		om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(welder_act_timed_done), done_args = list(user))
 	return TRUE
 
 /obj/structure/railing/proc/welder_act_timed_done(mob/user)
@@ -227,7 +227,7 @@ DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor
 /obj/structure/railing/screwdriver_act(mob/user, obj/item/W)
 	user.visible_message(span_info(span_bold("\The [user]") + " begins [anchored ? "unscrewing" : "fastening"] \the [src]."))
 	playsound(src, W.usesound, 75, 1)
-	om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(screwdriver_act_timed_done), done_args = list(user))
+	om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(screwdriver_act_timed_done), done_args = list(user))
 	return TRUE
 
 /obj/structure/railing/proc/screwdriver_act_timed_done(mob/user)

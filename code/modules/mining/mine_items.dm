@@ -332,7 +332,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/lightpole, INTERACT_USE("Plant", PROC_REF(li
 	if(F)
 		to_chat(user, span_warning("There is already a light here."))
 		return TRUE
-	om_do_after(user, 8 SECONDS, src, src, PROC_REF(plant_done), list(user, T))
+	om_task_timed(user, 8 SECONDS, src, src, PROC_REF(plant_done), list(user, T))
 	return TRUE
 
 /obj/item/stack/lightpole/proc/plant_done(mob/user, turf/T)
@@ -376,7 +376,7 @@ DECLARE_INTERACTIONS(/obj/structure/trailblazer, INTERACT_HAND_UNGATED(null, PRO
 
 /// Old attack_hand.
 /obj/structure/trailblazer/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!istext(om_do_after(user, 8 SECONDS, src, src, PROC_REF(knock_down_done), list(user))))
+	if(!istext(om_task_timed(user, 8 SECONDS, src, src, PROC_REF(knock_down_done), list(user))))
 		return TRUE
 	return TRUE
 

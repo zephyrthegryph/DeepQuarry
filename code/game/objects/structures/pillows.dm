@@ -94,7 +94,7 @@ REF_PAIR(/obj/structure/bed/pillowpilefront, list("pile" = "front"))
 
 /obj/structure/bed/pillowpile/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_notice("Now disassembling the large pillow pile..."))
-	om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
+	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
 	return TRUE
 
 /obj/structure/bed/pillowpile/proc/attack_hand_timed_done(mob/user)
@@ -117,7 +117,7 @@ REF_PAIR(/obj/structure/bed/pillowpilefront, list("pile" = "front"))
 
 /obj/structure/bed/pillowpilefront/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_notice("Now disassembling the front of the pillow pile..."))
-	om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done2), done_args = list(user))
+	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done2), done_args = list(user))
 	return TRUE
 
 /obj/structure/bed/pillowpilefront/proc/attack_hand_timed_done2(mob/user)
