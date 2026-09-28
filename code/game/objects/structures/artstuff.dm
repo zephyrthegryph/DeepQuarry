@@ -15,7 +15,7 @@
 
 /obj/structure/easel/Initialize(mapload)
 	. = ..()
-	AddElement(/datum/element/climbable)
+	make_climbable()
 
 /obj/structure/easel/declare_interactions(list/into)
 	into += list(

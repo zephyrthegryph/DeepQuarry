@@ -93,7 +93,7 @@
 				new /obj/item/ore/diamond(src)
 		if(91 to 100)
 			new /obj/machinery/artifact(src)
-	AddElement(/datum/element/climbable)
+	make_climbable()
 
 /obj/structure/meteorite/proc/break_apart_done(mob/M)
 	M.visible_message(span_warning("[M] breaks apart \the [src]."), span_warning("You break apart \the [src]."))

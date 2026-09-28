@@ -389,7 +389,7 @@ REF_OWNED(/obj/structure/closet, "door_obj")
 	if(!opened)
 		// Attempt to climb if not opened!
 		if(O == user)
-			SEND_SIGNAL(src, COMSIG_CLIMBABLE_START_CLIMB, user)
+			om_emit(src, new /datum/om/event/climb_start(user))
 		return
 	if(istype(O, /obj/structure/closet))
 		return

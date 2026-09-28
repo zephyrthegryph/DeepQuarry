@@ -22,7 +22,7 @@
 
 /obj/machinery/shield_capacitor/Initialize(mapload)
 	. = ..()
-	AddElement(/datum/element/climbable)
+	make_climbable()
 	AddElement(/datum/element/rotatable)
 
 /obj/machinery/shield_capacitor/advanced

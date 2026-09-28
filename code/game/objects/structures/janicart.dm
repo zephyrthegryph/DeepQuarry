@@ -25,7 +25,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/janitorialcart, REGISTRY_JANITORIAL_CARTS)
 
 /obj/structure/janitorialcart/Initialize(mapload, ...)
 	. = ..()
-	AddElement(/datum/element/climbable)
+	make_climbable()
 
 /obj/structure/janitorialcart/proc/equip_janicart_item(mob/user, obj/item/I)
 	if(!equippable_item_whitelist)

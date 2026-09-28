@@ -367,7 +367,7 @@
 	previous_state = state
 	if(state == 2 && anchored)
 		connect_to_network()
-	AddElement(/datum/element/climbable)
+	make_climbable()
 	AddElement(/datum/element/rotatable)
 	AddElement(/datum/element/empprotection, EMP_PROTECT_SELF)
 

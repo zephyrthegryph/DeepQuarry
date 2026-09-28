@@ -351,7 +351,7 @@
 
 /obj/machinery/power/grounding_rod/Initialize(mapload)
 	. = ..()
-	AddElement(/datum/element/climbable)
+	make_climbable()
 
 /obj/machinery/power/grounding_rod/examine(user)
 	. = ..()

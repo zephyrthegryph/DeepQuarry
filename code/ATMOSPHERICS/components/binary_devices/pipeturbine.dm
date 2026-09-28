@@ -36,7 +36,7 @@
 		if(WEST)
 			initialize_directions = NORTH|SOUTH
 
-	AddElement(/datum/element/climbable)
+	make_climbable()
 	AddElement(/datum/element/rotatable)
 
 /obj/machinery/atmospherics/pipeturbine/machine_step()
@@ -217,7 +217,7 @@
 /obj/machinery/power/turbinemotor/Initialize(mapload)
 	. = ..()
 	updateConnection()
-	AddElement(/datum/element/climbable)
+	make_climbable()
 	AddElement(/datum/element/rotatable)
 
 /obj/machinery/power/turbinemotor/proc/updateConnection()

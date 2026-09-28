@@ -44,7 +44,7 @@
 /obj/machinery/account_database/Initialize(mapload)
 	machine_id = "[station_name()] Acc. DB #[GLOB.num_financial_terminals++]"
 	. = ..()
-	AddElement(/datum/element/climbable)
+	make_climbable()
 
 /obj/machinery/account_database/declare_interactions(list/into)
 	into += list(

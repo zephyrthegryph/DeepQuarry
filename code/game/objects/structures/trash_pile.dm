@@ -26,7 +26,7 @@
 		"brokecomp")
 	mouse_nest = new(src)
 	AddElement(/datum/element/lootable/trash_pile)
-	AddElement(/datum/element/climbable)
+	make_climbable()
 
 REF_OWNED(/obj/structure/trash_pile, "mouse_nest")
 

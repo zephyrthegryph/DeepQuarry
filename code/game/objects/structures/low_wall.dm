@@ -43,7 +43,7 @@
 	max_integrity = material.integrity
 	update_integrity(max_integrity)
 
-	AddElement(/datum/element/climbable)
+	make_climbable()
 
 	return INITIALIZE_HINT_LATELOAD
 
@@ -121,7 +121,7 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 
 /obj/structure/low_wall/MouseDrop_T(atom/movable/AM, mob/user, src_location, over_location, src_control, over_control, params)
 	if(AM == user)
-		SEND_SIGNAL(src, COMSIG_CLIMBABLE_START_CLIMB, user)
+		om_emit(src, new /datum/om/event/climb_start(user))
 		return
 	var/obj/O = AM
 	if(!istype(O))

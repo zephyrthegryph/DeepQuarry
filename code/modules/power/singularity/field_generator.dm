@@ -70,7 +70,7 @@
 	. = ..()
 	fields = list()
 	connected_gens = list()
-	AddElement(/datum/element/climbable)
+	make_climbable()
 	AddElement(/datum/element/empprotection, EMP_PROTECT_SELF)
 
 /obj/machinery/field_generator/machine_step()

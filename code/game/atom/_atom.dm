@@ -259,6 +259,7 @@
 		output += damage_flavour_text(damage_band)
 
 	SEND_SIGNAL(src, COMSIG_ATOM_EXAMINE, user, output)
+	om_emit_examine(src, user, output)
 	return output
 
 // Don't make these call bicon or anything, these are what bicon uses. They need to return an icon.

@@ -31,7 +31,7 @@
 
 /obj/structure/ore_box/Initialize(mapload)
 	. = ..()
-	AddElement(/datum/element/climbable)
+	make_climbable()
 
 /obj/structure/ore_box/attackby(obj/item/W, mob/user)
 	if(istype(W, /obj/item/ore))

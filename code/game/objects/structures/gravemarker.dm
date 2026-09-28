@@ -27,7 +27,7 @@
 		stack_trace("Material of type: [material_name] does not exist.")
 		return INITIALIZE_HINT_QDEL
 	color = material.icon_colour
-	AddElement(/datum/element/climbable)
+	make_climbable()
 	AddElement(/datum/element/rotatable)
 
 /obj/structure/gravemarker/examine(mob/user)

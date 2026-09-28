@@ -18,7 +18,7 @@
 
 /obj/structure/closet/crate/Initialize(mapload)
 	. = ..()
-	AddElement(/datum/element/climbable)
+	make_climbable()
 	AddElement(/datum/element/rotatable)
 
 /obj/structure/closet/crate/can_close()
@@ -51,7 +51,7 @@
 	slot_empty(CONTAINER_SLOT_INTERIOR, get_turf(src))
 	src.opened = 1
 
-	SEND_SIGNAL(src, COMSIG_CLIMBABLE_SHAKE_CLIMBERS, null)
+	om_emit(src, new /datum/om/event/climb_shake(null))
 	update_icon()
 	return 1
 

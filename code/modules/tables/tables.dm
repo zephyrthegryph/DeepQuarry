@@ -80,7 +80,7 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 	update_desc()
 	update_material()
 
-	AddElement(/datum/element/climbable/table)
+	make_climbable(/datum/om/behaviour/climbable/table)
 
 // LIFECYCLE: neighbouring tables re-smooth without it.
 /obj/structure/table/Destroy()
