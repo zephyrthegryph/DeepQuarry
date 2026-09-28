@@ -117,9 +117,9 @@
 		set_speed_process(!speed_process) // switching gears
 	if(speed_process) // high gear
 		MACHINE_SLEEP(src)
-		PERIODIC_START(src, PERIODIC_FAST)
+		om_task_periodic(src, PERIODIC_FAST)
 	else // low gear
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 		MACHINE_WAKE(src)
 
 /obj/machinery/mineral/stacking_machine/machine_step()

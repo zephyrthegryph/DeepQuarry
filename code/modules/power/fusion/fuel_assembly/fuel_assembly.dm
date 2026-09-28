@@ -50,7 +50,7 @@
 		if(mat_rad)
 			radioactivity = mat_rad
 			desc += " It is warm to the touch."
-			PERIODIC_START(src, PERIODIC_SLOW)
+			om_task_periodic(src, PERIODIC_SLOW)
 		if(mat_lum)
 			set_light(mat_lum, mat_lum, material.icon_colour)
 	else

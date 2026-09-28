@@ -63,7 +63,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 	icon_state = "match_lit"
 	name = "burning match"
 	desc = "A match. This one is presently on fire."
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 
 /obj/item/flame/match/proc/burn_out()
 	lit = 0
@@ -73,7 +73,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 	item_state = "cigoff"
 	name = "burnt match"
 	desc = "A match. This one has seen better days."
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 
 //////////////////
 //FINE SMOKABLES//
@@ -184,13 +184,13 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 		T.visible_message(flavor_text)
 		update_icon()
 		set_light(2, 0.25, "#E38F46")
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 
 /obj/item/clothing/mask/smokable/proc/die(nomessage = 0)
 	var/turf/T = get_turf(src)
 	set_light(0)
 	playsound(src, 'sound/items/cigs_lighters/cig_snuff.ogg', 50, 1)
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 	if (type_butt)
 		var/obj/item/butt = new type_butt(T)
 		transfer_fingerprints_to(butt)
@@ -225,7 +225,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 
 /obj/item/clothing/mask/smokable/proc/quench()
 	lit = 0
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 	update_icon()
 
 /obj/item/clothing/mask/smokable/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
@@ -668,7 +668,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter, INTERACT_SELF(null, PROC_REF(lighte
 		user.visible_message(span_notice("After a few attempts, [user] manages to light the [src]."))
 
 		set_light(2, 0.5, "#FF9933")
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 		update_icon()
 	else
 		lit = FALSE
@@ -677,7 +677,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter, INTERACT_SELF(null, PROC_REF(lighte
 		user.visible_message(span_notice("[user] quietly shuts off the [src]."))
 
 		set_light(0)
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 		update_icon()
 	return TRUE
 
@@ -735,7 +735,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/zippo, INTERACT_SELF(null, PROC_REF(
 		user.visible_message(span_notice(span_rose("Without even breaking stride, [user] flips open and lights [src] in one smooth movement.")))
 
 		set_light(2, 0.5, "#FF9933")
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 	else
 		lit = FALSE
 		icon_state = "[base_state]"
@@ -744,7 +744,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/zippo, INTERACT_SELF(null, PROC_REF(
 		user.visible_message(span_notice(span_rose("You hear a quiet click, as [user] shuts off [src] without even looking at what they're doing.")))
 
 		set_light(0)
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 	return TRUE
 
 //Here we add Zippo skins.
@@ -878,7 +878,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter, INTERACT_SELF(null, PRO
 				user.visible_message(span_notice("After a few attempts, [user] manages to activate the [src], they however sting themselves on the shielding!"))
 
 		set_light(2)
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 	else
 		lit = 0
 		icon_state = "[base_state]"
@@ -890,7 +890,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter, INTERACT_SELF(null, PRO
 			user.visible_message(span_notice("[user] quietly shuts the [src]."))
 
 		set_light(0)
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 	return ITEM_INTERACT_SUCCESS
 
 
@@ -951,7 +951,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter/syndismzippo, INTERACT_S
 				user.visible_message(span_notice("After a few attempts, [user] manages to activate the [src], they however burn themselves with the heated phoron field!"))
 
 		set_light(2)
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 	else
 		lit = 0
 		icon_state = "[base_state]"
@@ -963,7 +963,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter/syndismzippo, INTERACT_S
 			user.visible_message(span_notice("[user] quietly shuts the [src]."))
 
 		set_light(0)
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 	return ITEM_INTERACT_SUCCESS
 
 
@@ -1128,7 +1128,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter/expsmzippo, INTERACT_SEL
 					strength = 300
 				)
 		set_light(5)
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 	else
 		lit = 0
 		icon_state = "[base_state]"
@@ -1140,7 +1140,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter/expsmzippo, INTERACT_SEL
 			user.visible_message(span_notice("[user] quietly shuts the [src]."))
 
 		set_light(0)
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/flame/lighter/supermatter/expsmzippo/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)

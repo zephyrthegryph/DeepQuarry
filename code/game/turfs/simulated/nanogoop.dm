@@ -103,11 +103,11 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 			else
 				to_chat(checker, span_warning("You realize there is no way for the simplistic [src] to ignore your form, if you set it to recycle."))
 			checker.visible_message(span_warning("\The [checker] inspects \the [src]"), span_warning("You begin to interface with \the [src]."))
-			om_do_after(checker, 3 SECONDS, src, src, PROC_REF(interface_on), list(checker, targets))
+			om_task_timed(checker, 3 SECONDS, src, src, PROC_REF(interface_on), list(checker, targets))
 		if("Off")
 			if(active)
 				checker.visible_message(span_warning("\The [checker] inspects \the [src]"), span_warning("You begin to interface with \the [src]."))
-				om_do_after(checker, 3 SECONDS, src, src, PROC_REF(toggle_all), list(FALSE))
+				om_task_timed(checker, 3 SECONDS, src, src, PROC_REF(toggle_all), list(FALSE))
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/interface_on(mob/user, choice2)
 	moblink = om_handle(user)

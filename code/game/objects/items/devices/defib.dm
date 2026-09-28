@@ -359,7 +359,7 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 
 	//beginning to place the paddles on patient's chest to allow some time for people to move away to stop the process
 	user.visible_message(span_warning("\The [user] begins to place [src] on [H]'s chest."), span_warning("You begin to place [src] on [H]'s chest..."))
-	om_do_after(user, 3 SECONDS, target = H, receiver = src, on_done = PROC_REF(do_revive_timed_done), done_args = list(H, user), busy = src)
+	om_task_timed(user, 3 SECONDS, target = H, receiver = src, on_done = PROC_REF(do_revive_timed_done), done_args = list(H, user), busy = src)
 	return TRUE
 
 /obj/item/shockpaddles/proc/do_revive_timed_done(mob/living/carbon/human/H, mob/user)
@@ -642,7 +642,7 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 		)
 		fail_counter--
 	else
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 
 /obj/item/shockpaddles/standalone/emp_act(severity, recursive)
 	. = ..()
@@ -659,7 +659,7 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 				to_chat(loc, span_warning("\The [src] feel pleasantly warm."))
 
 	if(new_fail && !fail_counter)
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 	fail_counter = new_fail
 
 /* From the Bay port, this doesn't seem to have a sprite.

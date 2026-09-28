@@ -57,7 +57,7 @@
 	else
 		set_opacity(1)
 	if(material.products_need_process())
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 	update_nearby_tiles(need_rebuild=1)
 
 /obj/structure/simple_door/get_material()
@@ -183,7 +183,7 @@
 	if(istype(W,/obj/item/pickaxe) && breakable)
 		var/obj/item/pickaxe/digTool = W
 		visible_message(span_danger("[user] starts digging [src]!"))
-		om_do_after(user, digTool.digspeed*get_integrity()/10, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
+		om_task_timed(user, digTool.digspeed*get_integrity()/10, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
 	else if(istype(W,/obj/item) && breakable) //not sure, can't not just weapons get passed to this proc?
 		visible_message(span_danger("[user] hits [src] with [W]!"))
 		if(material == get_material_by_name(MAT_RESIN))
@@ -263,7 +263,7 @@
 
 /obj/structure/simple_door/uranium/Initialize(mapload,material_name)
 	. = ..(mapload, material_name || MAT_URANIUM)
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 
 // Use the uranium-specific rate-limited pulse instead of the base generic material radiation.
 /// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.

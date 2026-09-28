@@ -32,7 +32,7 @@
 	. = ..()
 	if(self_recharge)
 		power_supply = new /obj/item/cell/device/weapon(src)
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 	else
 		if(cell_type)
 			power_supply = new cell_type(src)
@@ -116,7 +116,7 @@
 	if(!power_supply.checked_use(enhanced_cost)) return null
 	power_supply.material_record_enhanced_output(charge_cost, output_envelope)
 	if(self_recharge)
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 	var/mob/living/M = loc // TGMC Ammo HUD
 	if(istype(M)) // TGMC Ammo HUD
 		M?.hud_used?.update_ammo_hud(M, src)
@@ -150,7 +150,7 @@
 				to_chat(user, span_notice("[src] already has a power cell."))
 			else
 				user.visible_message("[user] is reloading [src].", span_notice("You start to insert [P] into [src]."))
-				om_do_after(user, reload_time * P.w_class, src, src, PROC_REF(cell_inserted), list(user, P))
+				om_task_timed(user, reload_time * P.w_class, src, src, PROC_REF(cell_inserted), list(user, P))
 		else
 			to_chat(user, span_notice("This cell is not fitted for [src]."))
 	return
@@ -245,7 +245,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/energy, INTERACT_HAND(null, PROC_REF(interact
 	if(power_supply == null)
 		power_supply = new /obj/item/cell/device/weapon(src)
 	self_recharge = 1
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 	update_icon()
 
 /obj/item/gun/energy/get_description_interaction()

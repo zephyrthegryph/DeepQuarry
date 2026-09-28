@@ -39,9 +39,9 @@ MATERIAL_MIX(/obj/item/assembly/infra, list(MAT_STEEL = 1000, MAT_GLASS = 500))
 		on = !on
 
 	if(secured && on)
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 	else
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 		QDEL_LIST_NULL(i_beams)
 	return on
 
@@ -155,7 +155,7 @@ MATERIAL_MIX(/obj/item/assembly/infra, list(MAT_STEEL = 1000, MAT_GLASS = 500))
 
 /obj/effect/beam/i_beam/Initialize(mapload)
 	. = ..()
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 
 /obj/effect/beam/i_beam/proc/hit()
 	master()?.trigger_beam()

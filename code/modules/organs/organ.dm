@@ -150,7 +150,7 @@ REF_STATIC(/obj/item/organ, "assists_languages")
 	if(!is_robotic())
 		status |= ORGAN_DEAD
 	saturate_damage()
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 	handle_organ_mod_special(TRUE)
 	if(owner && vital)
 		owner.can_defib = FALSE
@@ -592,7 +592,7 @@ DECLARE_INTERACTIONS(/obj/item/organ, \
 			else
 				damage--
 			//Fix JUST enough damage so it doesn't immediately die again. For full repair, use denec removal surgery.
-			PERIODIC_START(src, PERIODIC_SLOW) //When an organ dies, it stops processing. This restarts it.
+			om_task_periodic(src, PERIODIC_SLOW) //When an organ dies, it stops processing. This restarts it.
 			container.reagents.remove_reagent(REAGENT_ID_PERIDAXON, 5)
 			to_chat(user, "You use the [container] to revive \the [src]")
 			return INTERACTION_HANDLED_PASS

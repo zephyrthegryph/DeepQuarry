@@ -28,7 +28,7 @@
 	// ALLOW(instance_list): d: the generated map grid
 	var/list/map = list()           // Actual map.
 
-	// If set, the map is applied at once instead of as lane work (om_lane_work()).
+	// If set, the map is applied at once instead of as lane work (om_task_slices()).
 	// Test to see if rand_seed() can be used reliably.
 	var/priority_process
 
@@ -167,7 +167,7 @@
 	if(!origin_x) origin_x = 1
 	if(!origin_y) origin_y = 1
 	if(!origin_z) origin_z = 1
-	om_lane_work(src, PROC_REF(apply_column), 1, PROC_REF(apply_finished), priority_process)
+	om_task_slices(src, PROC_REF(apply_column), 1, PROC_REF(apply_finished), priority_process)
 
 /// One column of the map. The next column, or null after the last.
 /datum/random_map/proc/apply_column(x)

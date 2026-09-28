@@ -751,7 +751,7 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 
 	to_chat(src, span_notify("You begin to reassemble into [victim]. You will need to remain still."))
 	visible_message(span_notify("[src] rapidly contorts and shifts!"), span_danger("You begin to reassemble into [victim]."))
-	om_do_after(src, 4 SECONDS, target = victim, receiver = src, on_done = PROC_REF(copy_body_done), done_args = list(victim, flavour))
+	om_task_timed(src, 4 SECONDS, target = victim, receiver = src, on_done = PROC_REF(copy_body_done), done_args = list(victim, flavour))
 
 /mob/living/carbon/human/proc/copy_body_done(mob/living/carbon/human/victim, flavour)
 	if (!copy_body_gripping(victim))
@@ -777,7 +777,7 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 /mob/living/carbon/human/proc/shapeshifter_reassemble_answered(flavour, oocnotes)
 	to_chat(src, span_notify("You begin to reform. You will need to remain still."))
 	visible_message(span_notify("[src] rapidly contorts and shifts!"), span_danger("You begin to reform."))
-	om_do_after(src, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(shapeshifter_reassemble_human_done), done_args = list(flavour, oocnotes))
+	om_task_timed(src, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(shapeshifter_reassemble_human_done), done_args = list(flavour, oocnotes))
 
 /mob/living/carbon/human/proc/shapeshifter_reassemble_human_done(flavour, oocnotes)
 	if (client?.prefs)

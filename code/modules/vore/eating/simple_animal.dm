@@ -133,7 +133,7 @@
 	var/missing = round((1 - vitality()) * get_endurance()) // re-read after the input prompt
 	heal_amount = CLAMP(heal_amount, 1, max(1, missing))
 	heal_amount = CLAMP(heal_amount, 1, nutrition / 10)
-	om_do_after(src, 10 * heal_amount, null, src, PROC_REF(nutrition_heal_done), list(heal_amount))
+	om_task_timed(src, 10 * heal_amount, null, src, PROC_REF(nutrition_heal_done), list(heal_amount))
 
 /mob/living/simple_mob/proc/nutrition_heal_done(heal_amount)
 	adjust_nutrition(-(10 * heal_amount))

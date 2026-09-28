@@ -143,7 +143,7 @@
 	)
 
 /// Attaches every world service's lane to the live scheduler's global owner (SSbehaviours init).
-/proc/om_start_world_lanes()
+/proc/_om_start_world_lanes()
 	var/datum/om/global_owner/owner = om_global_owner()
 	for(var/datum/world_service/S as anything in world_services())
 		if(!S?.lane)

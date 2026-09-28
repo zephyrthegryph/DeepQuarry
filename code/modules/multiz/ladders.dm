@@ -46,7 +46,7 @@ REF_PAIR(/obj/structure/ladder, list("target_down" = "target_up", "target_up" = 
 	if(WT.remove_fuel(0, user))
 		playsound(src, 'sound/items/Welder2.ogg', 50, TRUE)
 		user.visible_message("\The [user] starts to deconstruct \the [src].", "You start to deconstruct \the [src].", "You hear welding")
-		om_do_after(user, 2 SECONDS, src, src, PROC_REF(deconstruct_done), list(user, WT))
+		om_task_timed(user, 2 SECONDS, src, src, PROC_REF(deconstruct_done), list(user, WT))
 		return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_BLOCKING
 
@@ -150,7 +150,7 @@ DECLARE_INTERACTIONS(/obj/structure/ladder, \
 		var/mob/living/carbon/human/MS = M
 		climb_modifier = MS.species.climb_mult
 
-	om_do_after(M, (climb_time * climb_modifier), src, src, PROC_REF(climb_done), list(M, target_ladder))
+	om_task_timed(M, (climb_time * climb_modifier), src, src, PROC_REF(climb_done), list(M, target_ladder))
 	return FALSE
 
 /obj/structure/ladder/proc/climb_done(mob/M, obj/target_ladder)

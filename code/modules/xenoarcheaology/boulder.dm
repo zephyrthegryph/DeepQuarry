@@ -42,13 +42,13 @@ DECLARE_INTERACTIONS(/obj/structure/boulder, INTERACT_ITEM(null, PROC_REF(intera
 			return INTERACTION_HANDLED_PASS
 		else
 			user.visible_message(span_bold("\The [user]") + " extends \the [C] over \the [src], a flurry of red beams scanning \the [src]'s surface!", span_notice("You extend \the [C] over \the [src], a flurry of red beams scanning \the [src]'s surface!"))
-			om_do_after(user, 1.5 SECONDS, src, src, PROC_REF(measure_done), list(user))
+			om_task_timed(user, 1.5 SECONDS, src, src, PROC_REF(measure_done), list(user))
 			return INTERACTION_HANDLED_PASS
 
 	if(istype(I, /obj/item/measuring_tape))
 		var/obj/item/measuring_tape/P = I
 		user.visible_message(span_bold("\The [user]") + " extends \the [P] towards \the [src].", span_notice("You extend \the [P] towards \the [src]."))
-		om_do_after(user, 1.5 SECONDS, src, src, PROC_REF(measure_done), list(user))
+		om_task_timed(user, 1.5 SECONDS, src, src, PROC_REF(measure_done), list(user))
 		return INTERACTION_HANDLED_PASS
 
 	if(istype(I, /obj/item/pickaxe))
@@ -59,7 +59,7 @@ DECLARE_INTERACTIONS(/obj/structure/boulder, INTERACT_ITEM(null, PROC_REF(intera
 		last_act = world.time
 
 		to_chat(user, span_warning("You start [P.drill_verb] [src]."))
-		om_do_after(user, P.digspeed, src, src, PROC_REF(dig_done), list(user, P))
+		om_task_timed(user, P.digspeed, src, src, PROC_REF(dig_done), list(user, P))
 		return INTERACTION_HANDLED_PASS
 	return INTERACTION_HANDLED_PASS
 

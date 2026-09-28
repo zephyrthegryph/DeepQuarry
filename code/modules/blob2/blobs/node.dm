@@ -12,7 +12,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/node, REGISTRY_BLOB_NODES)
 
 /obj/structure/blob/node/Initialize(mapload, new_overmind)
 	. = ..()
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 	update_icon()
 
 /obj/structure/blob/node/update_icon()

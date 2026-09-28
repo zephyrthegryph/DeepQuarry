@@ -20,7 +20,7 @@ DECLARE_INTERACTIONS(/obj/item/mining_scanner, \
 	to_chat(user, span_notice("You begin sweeping \the [src] about, scanning for metal deposits."))
 	playsound(src, 'sound/items/goggles_charge.ogg', 50, 1, -6)
 
-	om_do_after(user, scan_time, src, src, PROC_REF(sweep_done), list(user))
+	om_task_timed(user, scan_time, src, src, PROC_REF(sweep_done), list(user))
 	return TRUE
 
 /obj/item/mining_scanner/proc/sweep_done(mob/user)

@@ -562,7 +562,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/fluff/purp_robes, \
 /obj/item/clothing/accessory/collar/khcrystal/periodic_step()
 	check_owner()
 	if((state > 1) || !owner)
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 
 EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/khcrystal, INTERACT_SELF("Pair", PROC_REF(khcrystal_pair_self)))
 
@@ -577,7 +577,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/khcrystal, INTERACT_SELF
 	owner_c = user.client	//This is his client
 	update_state(1)
 	to_chat(user, span_notice("The [name] glows pleasantly blue."))
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 
 /obj/item/clothing/accessory/collar/khcrystal/proc/check_owner()
 	//He's dead, jim
@@ -730,7 +730,7 @@ REF_OWNED(/obj/item/storage/backpack/saddlebag/tempest, "soundloop")
 /obj/item/storage/backpack/saddlebag/tempest/ui_action_click(mob/user, actiontype)
 	ambulance = !(ambulance)
 	if(ambulance)
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 		item_state = "tempestsaddlebag-amb"
 		icon_state = "tempestbag-amb"
 		if (ismob(loc))
@@ -750,7 +750,7 @@ REF_OWNED(/obj/item/storage/backpack/saddlebag/tempest, "soundloop")
 
 /obj/item/storage/backpack/saddlebag/tempest/periodic_step()
 	if(!ambulance)
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 		return
 	if(world.time - ambulance_last_switch > 15)
 		ambulance_state = !(ambulance_state)
@@ -1529,7 +1529,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/fluff/seona_mofuorb, INTERACT_SELF("Sq
 /obj/item/toy/plushie/fluff/seona_mofuorb/proc/mofuorb_squeeze_self(mob/user, obj/item/held, datum/interaction/interaction)
 	. = TRUE
 	if(stored_item && opened && !om_busy(src))
-		om_do_after(user, 1 SECOND, src, src, PROC_REF(search_done), list(user), claims = TRUE)
+		om_task_timed(user, 1 SECOND, src, src, PROC_REF(search_done), list(user), claims = TRUE)
 		return
 
 	if(world.time - last_message <= 5 SECONDS)

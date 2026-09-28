@@ -43,12 +43,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable, INTERACT_SELF("Unwrap", PR
 	if(slot == SLOT_ID_MASK)
 		var/mob/living/carbon/human/C = user
 		if(C.check_has_mouth())
-			PERIODIC_START(src, PERIODIC_SECOND)
+			om_task_periodic(src, PERIODIC_SECOND)
 		else
 			to_chat(user, span_notice("You don't have a mouth, and can't make much use of \the [src]."))
 
 /obj/item/clothing/mask/chewable/dropped(mob/user, equipping, slot)
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 	..()
 
 /obj/item/clothing/mask/chewable/proc/chew()
@@ -59,7 +59,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable, INTERACT_SELF("Unwrap", PR
 			if (src == C.get_equipped_item(SLOT_ID_MASK) && C.check_has_mouth())
 				reagents.trans_to_mob(C, REM, CHEM_INGEST, 0.2)
 		else
-			PERIODIC_STOP(src)
+			om_task_periodic_stop(src)
 
 /obj/item/clothing/mask/chewable/periodic_step()
 	chew()
@@ -97,7 +97,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable, INTERACT_SELF("Unwrap", PR
 					M.update_inv_l_hand(0)
 					M.update_inv_r_hand(1)
 					M.put_in_hands(butt)
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 	qdel(src)
 
 /obj/item/clothing/mask/chewable/tobacco/cheap

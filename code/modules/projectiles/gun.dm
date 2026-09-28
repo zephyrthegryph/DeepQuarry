@@ -731,7 +731,7 @@ EXTEND_INTERACTIONS(/obj/item/gun, \
 
 	mouthshoot = 1
 	M.visible_message(span_red("[user] sticks their gun in their mouth, ready to pull the trigger..."))
-	om_do_after(user, 4 SECONDS, src, src, PROC_REF(suicide_trigger), list(M), on_fail = PROC_REF(suicide_reconsidered), fail_args = list(M))
+	om_task_timed(user, 4 SECONDS, src, src, PROC_REF(suicide_trigger), list(M), on_fail = PROC_REF(suicide_reconsidered), fail_args = list(M))
 
 /obj/item/gun/proc/suicide_reconsidered(mob/living/carbon/human/M)
 	M?.visible_message(span_blue("[M] decided life was worth living"))

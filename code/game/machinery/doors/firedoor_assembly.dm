@@ -29,7 +29,7 @@ DECLARE_INTERACTIONS(/obj/structure/firedoor_assembly, INTERACT_ITEM(null, PROC_
 			to_chat(user, span_warning("You need one length of coil to wire \the [src]."))
 			return INTERACTION_HANDLED_PASS
 		user.visible_message("[user] wires \the [src].", "You start to wire \the [src].")
-		om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, cable))
+		om_task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, cable))
 
 	else if(istype(C, /obj/item/circuitboard/airalarm) && wired)
 		if(anchored)
@@ -50,7 +50,7 @@ DECLARE_INTERACTIONS(/obj/structure/firedoor_assembly, INTERACT_ITEM(null, PROC_
 			playsound(src, 'sound/items/Crowbar.ogg', 100, 1)
 			user.visible_message(span_info("[user] adds [S.name] to \the [src]."),
 								span_notice("You start to install [S.name] into \the [src]."))
-			om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(user, S))
+			om_task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(user, S))
 
 	else
 		return FALSE
@@ -74,7 +74,7 @@ DECLARE_INTERACTIONS(/obj/structure/firedoor_assembly, INTERACT_ITEM(null, PROC_
 		return FALSE
 	playsound(src, tool.usesound, 100, TRUE)
 	user.visible_message("[user] cuts the wires from \the [src].", "You start to cut the wires from \the [src].")
-	om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(wirecutter_act_timed_done), done_args = list(user))
+	om_task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(wirecutter_act_timed_done), done_args = list(user))
 	return TRUE
 
 /obj/structure/firedoor_assembly/proc/wirecutter_act_timed_done(mob/user)

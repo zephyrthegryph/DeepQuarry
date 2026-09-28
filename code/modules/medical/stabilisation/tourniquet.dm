@@ -196,7 +196,7 @@ REF_HELD(/obj/item/organ/external, "tourniquet")
 		return
 	var/obj/item/organ/external/E = cinched[choice]
 	user.visible_message(span_notice("[user] starts loosening the tourniquet on [src == user ? "their" : "[src]'s"] [E.name]."), span_notice("You start loosening the tourniquet on the [E.name]."))
-	om_do_after(user, TOURNIQUET_REMOVE_TIME, src, src, PROC_REF(loosen_tourniquet_done), list(user, E))
+	om_task_timed(user, TOURNIQUET_REMOVE_TIME, src, src, PROC_REF(loosen_tourniquet_done), list(user, E))
 
 /mob/living/carbon/human/proc/loosen_tourniquet_done(mob/living/user, obj/item/organ/external/E)
 	// Re-validate after the delay.

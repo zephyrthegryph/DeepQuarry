@@ -198,7 +198,7 @@
 /datum/point/vector/processed/proc/start()
 	last_process = world.time
 	last_move = world.time
-	PERIODIC_START(src, PERIODIC_PROJECTILES)
+	om_task_periodic(src, PERIODIC_PROJECTILES)
 
 /datum/point/vector/processed/periodic_step()
 	if(paused)

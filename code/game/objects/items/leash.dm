@@ -37,7 +37,7 @@
 	source.apply_body_effect(/datum/body_effect/leash)
 	source.throw_alert("leashed", /atom/movable/screen/alert/leash_pet, new_master = target)
 	om_hook(source, /datum/om/event/moved, target, TYPE_PROC_REF(/obj/item/leash, on_pet_move))
-	PERIODIC_START(target, PERIODIC_SLOW)
+	om_task_periodic(target, PERIODIC_SLOW)
 
 /datum/om/relation/leashed_to/on_unlink(mob/living/source, obj/item/leash/target, datum/om/edge/edge)
 	if(istype(source) && !QDELETED(source))
@@ -45,7 +45,7 @@
 		source.remove_body_effect(/datum/body_effect/leash)
 	if(istype(target))
 		om_unhook(source, /datum/om/event/moved, target)
-		PERIODIC_STOP(target)
+		om_task_periodic_stop(target)
 		// No pet, no leash: let go of the holder too.
 		var/mob/living/master = target?.leash_master()
 		if(master)
@@ -311,7 +311,7 @@ DECLARE_INTERACTIONS(/obj/item/leash, INTERACT_USE("Tug", PROC_REF(interaction_s
 	leash_pet.visible_message(span_danger("\The [leash_pet] is attempting to unhook [leash_pet.p_their()] leash!"), span_danger("You attempt to unhook your leash"))
 	add_attack_logs(leash_master,leash_pet,"Self-unleash (attempt)")
 
-	om_do_after(leash_pet, 3.5 SECONDS, target = leash_pet, receiver = src, on_done = PROC_REF(released))
+	om_task_timed(leash_pet, 3.5 SECONDS, target = leash_pet, receiver = src, on_done = PROC_REF(released))
 	return TRUE
 
 /obj/item/leash/proc/unleash()
@@ -322,7 +322,7 @@ DECLARE_INTERACTIONS(/obj/item/leash, INTERACT_USE("Tug", PROC_REF(interaction_s
 	leash_pet.visible_message(span_danger("\The [leash_master] is attempting to remove the leash on \the [leash_pet]!"), span_danger("\The [leash_master] tries to remove leash from you"))
 	add_attack_logs(leash_master,leash_pet,"Unleashed (attempt)")
 
-	om_do_after(leash_master, 1.5 SECONDS, target = leash_pet, receiver = src, on_done = PROC_REF(released))
+	om_task_timed(leash_master, 1.5 SECONDS, target = leash_pet, receiver = src, on_done = PROC_REF(released))
 	return TRUE
 
 /// A timed unhook finished (by the pet or the holder): the pet is free.

@@ -151,7 +151,7 @@ REF_BACKLIST(/obj/effect/directional_shield, list("projector" = "active_shields"
 	. = ..()
 	if(new_value < old_value)
 		COOLDOWN_START(src, regen_cooldown, shield_regen_delay)
-		PERIODIC_START(src, PERIODIC_SLOW) // regenerates after its delay
+		om_task_periodic(src, PERIODIC_SLOW) // regenerates after its delay
 		if(new_value > 0)
 			if(new_value < max_integrity / 4) // Play a more urgent sounding beep if it's at 25% health.
 				playsound(src, 'sound/machines/defib_success.ogg', 75, 0)

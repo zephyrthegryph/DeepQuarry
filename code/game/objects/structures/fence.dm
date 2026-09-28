@@ -237,7 +237,7 @@
 		else
 			to_chat(user, span_notice("You start to [L.pick_verb] the lock on \the [src]..."))
 			playsound(src, keysound,100, 1)
-			om_do_after(user, L.pick_time * lock_difficulty, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
+			om_task_timed(user, L.pick_time * lock_difficulty, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
 		return TRUE
 
 	else

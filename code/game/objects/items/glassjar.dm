@@ -57,7 +57,7 @@
 		var/obj/effect/spider/spiderling/S = A
 		user.visible_message(span_notice("[user] scoops [S] into \the [src]."), span_notice("You scoop [S] into \the [src]."))
 		S.forceMove(src)
-		PERIODIC_STOP(S) // No growing inside jars
+		om_task_periodic_stop(S) // No growing inside jars
 		contains = JAR_SPIDER
 		update_icon()
 		return
@@ -108,7 +108,7 @@ DECLARE_INTERACTIONS(/obj/item/glass_jar, \
 			for(var/obj/effect/spider/spiderling/S in contents_of(src))
 				S.forceMove(user.loc)
 				user.visible_message(span_notice("[user] releases [S] from \the [src]."), span_notice("You release [S] from \the [src]."))
-				PERIODIC_START(S, PERIODIC_SLOW) // They can grow after being let out though
+				om_task_periodic(S, PERIODIC_SLOW) // They can grow after being let out though
 			contains = JAR_NOTHING
 			update_icon()
 			return TRUE

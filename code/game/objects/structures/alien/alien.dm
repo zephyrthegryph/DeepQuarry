@@ -65,7 +65,7 @@
 					take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
 					return TRUE
 				if(locate_in_list(M.internal_organs, /obj/item/organ/internal/xenos/resinspinner/replicant))
-					om_do_after(M, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(usr))
+					om_task_timed(M, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(usr))
 					return TRUE
 			visible_message(span_warning("[usr] claws at the [name]!"))
 			take_damage(rand(5,10), BRUTE, MELEE, sound_effect = FALSE)

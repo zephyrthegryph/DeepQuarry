@@ -27,7 +27,7 @@
 
 /obj/effect/map_effect/interval/Initialize(mapload)
 	. = ..()
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 
 // Override this for the specific thing to do.
 /obj/effect/map_effect/interval/proc/trigger()

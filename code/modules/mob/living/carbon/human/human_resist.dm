@@ -57,7 +57,7 @@
 			span_warning("You gnaw on \the [SJ]. (This will take around [round(breakouttime / 600)] minutes and you need to stand still.)")
 			)
 
-	om_do_after(src, breakouttime, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(escape_straight_jacket_human_done), done_args = list())
+	om_task_timed(src, breakouttime, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(escape_straight_jacket_human_done), done_args = list())
 
 /mob/living/carbon/human/proc/escape_straight_jacket_human_done()
 	if(!get_equipped_item(SLOT_ID_SUIT))
@@ -82,7 +82,7 @@
 		span_warning("You attempt to rip your [get_equipped_item(SLOT_ID_SUIT).name] apart. (This will take around 5 seconds and you need to stand still)")
 		)
 
-	om_do_after(src, 20 SECONDS, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(break_straight_jacket_human_done), done_args = list())
+	om_task_timed(src, 20 SECONDS, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(break_straight_jacket_human_done), done_args = list())
 
 /mob/living/carbon/human/proc/break_straight_jacket_human_done()
 	if(!get_equipped_item(SLOT_ID_SUIT) || src?.buckled_to())

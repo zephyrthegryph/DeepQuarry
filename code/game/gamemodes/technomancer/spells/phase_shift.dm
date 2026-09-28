@@ -29,7 +29,7 @@
 /obj/effect/phase_shift/Initialize(mapload)
 	. = ..()
 	set_light(3, 5, l_color = "#FA58F4")
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 
 // whatever phased inside comes back out on the turf.
 REF_SPILL_LIST(/obj/effect/phase_shift, "contents") // everything inside is put out

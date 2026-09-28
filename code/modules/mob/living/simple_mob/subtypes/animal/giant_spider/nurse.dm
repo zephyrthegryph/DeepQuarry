@@ -100,7 +100,7 @@
 	visible_message(span_notice("\The [src] begins to secrete a sticky substance around \the [AM]."))
 
 	// The work claims the spider: its AI stays still.
-	om_do_after(src, 5 SECONDS, target = AM, receiver = src, on_done = PROC_REF(spin_cocoon_nurse_done), done_args = list(AM), on_fail = PROC_REF(spin_cocoon_nurse_failed), fail_args = list(AM), busy = src)
+	om_task_timed(src, 5 SECONDS, target = AM, receiver = src, on_done = PROC_REF(spin_cocoon_nurse_done), done_args = list(AM), on_fail = PROC_REF(spin_cocoon_nurse_failed), fail_args = list(AM), busy = src)
 	return TRUE
 
 /mob/living/simple_mob/animal/giant_spider/nurse/proc/spin_cocoon_nurse_done(atom/movable/AM)

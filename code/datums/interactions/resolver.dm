@@ -86,8 +86,13 @@
  * list; the router has already turned modifiers into the action, so the
  * resolver itself needs none of them.
  * `adapter` overrides the actor()'s own, e.g. telekinesis acting for a human.
+ *
+ * Narrowing (a click that already knows what it wants): `action` / `quality` keep only
+ * interactions answering that action / needing that tool quality, `skip_entries` drops
+ * converted legacy handlers, all before any why_not() runs. `collect_blocked` FALSE
+ * skips building the blocked list (and its sort) entirely.
  */
-/proc/interactions_for(mob/actor, atom/target, obj/item/held, list/modifiers, datum/input_adapter/adapter)
+/proc/interactions_for(mob/actor, atom/target, obj/item/held, list/modifiers, datum/input_adapter/adapter, action = null, quality = null, skip_entries = FALSE, collect_blocked = TRUE)
 	var/datum/interaction_resolution/resolution = new(actor, target, held)
 	if(!actor || !target)
 		return resolution
@@ -97,15 +102,24 @@
 	var/list/priorities = resolution.priorities
 	// The type's interactions, then the construction edges leaving its current state (construction.dm).
 	for(var/datum/interaction/interaction as anything in interaction_candidates(target) + construction_edges_for(target))
+		if(action && interaction.default_action != action)
+			continue
+		if(quality && interaction.tool != quality)
+			continue
+		if(skip_entries && interaction.entry)
+			continue
 		if(!interaction.applies_to(target) || !adapter.allows_interaction(actor, target, interaction))
 			continue
 		priorities[interaction] = interaction_priority_for(actor, interaction)
 		var/reason = interaction.why_not(actor, target, held)
 		if(reason)
-			blocked[interaction] = reason
+			if(collect_blocked)
+				blocked[interaction] = reason
 		else
 			available += interaction
 	resolution.available = sort_interactions(available, priorities)
+	if(!length(blocked))
+		return resolution
 	var/list/sorted_blocked = list()
 	for(var/datum/interaction/interaction as anything in sort_interactions(blocked, priorities))
 		sorted_blocked[interaction] = blocked[interaction]
@@ -151,25 +165,17 @@
 /proc/try_interaction(mob/actor, atom/target, obj/item/held, action, quality, no_tool = FALSE, datum/input_adapter/adapter)
 	if(!actor || !target)
 		return null
-	var/datum/interaction_resolution/resolution = interactions_for(actor, target, held, null, adapter)
+	// Narrowed before any why_not(): only this action (and quality) is resolved, converted legacy
+	// handlers (I7, run from their own entry procs, run_interaction_entry()) are skipped, and
+	// the blocked list is only built below when nothing is available.
+	// With `quality`, the best of that quality's interactions for the action is what the old
+	// full pass found (best for the action filtered to the quality, else the quality's best).
+	var/datum/interaction_resolution/resolution = interactions_for(actor, target, held, null, adapter, action, quality, TRUE, FALSE)
 	var/list/best = list()
-	// Converted legacy handlers (I7) run from their own entry procs (run_interaction_entry()), not from here.
-	for(var/datum/interaction/interaction as anything in resolution.best_of(resolution.available - resolution.entry_interactions(), action, null))
-		if(quality && interaction.tool != quality)
-			continue
+	for(var/datum/interaction/interaction as anything in resolution.best_of(resolution.available, action, null))
 		if(no_tool && interaction.tool)
 			continue
 		best += interaction
-	if(!length(best) && quality)
-		// The best for the action may have used another quality; look again among this quality's.
-		var/datum/interaction/first
-		for(var/datum/interaction/interaction as anything in resolution.available)
-			if(interaction.entry || interaction.default_action != action || interaction.tool != quality)
-				continue
-			if(first && resolution.priority_of(interaction) < resolution.priority_of(first))
-				break
-			first ||= interaction
-			best += interaction
 	if(length(best) > 1)
 		open_interaction_menu(actor, target)
 		return INTERACTION_TRY_MENU
@@ -177,7 +183,9 @@
 		var/datum/interaction/interaction = best[1]
 		// An effect that declined (returned FALSE) leaves the input to the actor's default.
 		return interaction.attempt(actor, target, held)
-	if(quality)
+	if(quality && !length(resolution.available))
+		// Nothing of this quality is available: now build the blocked list to say why.
+		resolution = interactions_for(actor, target, held, null, adapter, action, quality, TRUE, TRUE)
 		var/datum/interaction/meant = resolution.intended_blocked(action, quality)
 		if(meant)
 			meant.tell_blocked(actor, target, resolution.blocked[meant])

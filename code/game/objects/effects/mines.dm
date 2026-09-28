@@ -350,7 +350,7 @@ DECLARE_INTERACTIONS(/obj/item/mine, \
 	add_fingerprint(user)
 	msg_admin_attack("[key_name_admin(user)] primed \a [src]")
 	user.visible_message("[user] starts priming \the [src.name].", "You start priming \the [src.name]. Hold still!")
-	om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user), on_fail = PROC_REF(attack_self_timed_failed), fail_args = list(user))
+	om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user), on_fail = PROC_REF(attack_self_timed_failed), fail_args = list(user))
 	return TRUE
 
 /obj/item/mine/proc/attack_self_timed_done(mob/user)
@@ -457,7 +457,7 @@ DECLARE_INTERACTIONS(/obj/item/mine, \
 	if(!trap)
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_notice("You begin removing \the [trap]."))
-	om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(screwdriver_act_timed_done), done_args = list(user))
+	om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(screwdriver_act_timed_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/mine/proc/screwdriver_act_timed_done(mob/living/user)

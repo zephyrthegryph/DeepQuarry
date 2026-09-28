@@ -75,7 +75,10 @@
 	var/list/throttle
 	var/bulk_bits = 0
 	var/service_pend = 0
-	var/in_veto = FALSE
+	/// Stack of before_* event types being delivered on this entity (lazy).
+	var/list/in_veto
+	/// Event type -> count of running tasks it interrupts (lazy; om_task_interrupts_add()).
+	var/list/task_interrupts
 	var/native_bits = 0
 
 /datum/om/rec/New(datum/owner, datum/om/scheduler/sched)
@@ -548,6 +551,7 @@
 	rec.torn_down = TRUE
 	rec.deadlines = null
 	rec.timers = null
+	rec.timer_soonest = null
 	rec.dv = null
 	rec.rates = null
 	E.om_listen = 0

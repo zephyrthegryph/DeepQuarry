@@ -41,13 +41,13 @@
 	. = ..()
 	if(istype(AM, /obj/item/integrated_circuit) || istype(AM, /obj/item/cell))
 		power_relevant = null
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 
 /obj/item/electronic_assembly/Exited(atom/movable/AM, atom/new_loc)
 	. = ..()
 	if(istype(AM, /obj/item/integrated_circuit) || istype(AM, /obj/item/cell))
 		power_relevant = null
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 
 // (Re)computes whether handle_idle_power() has anything to do: a battery to draw
 // from plus at least one circuit that makes or draws idle power.

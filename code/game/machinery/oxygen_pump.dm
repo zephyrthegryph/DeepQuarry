@@ -46,7 +46,7 @@ REF_OWNED(/obj/machinery/oxygen_pump, list("tank", "contained"))
 		if(!can_apply_to_target(target, user)) // There is no point in attempting to apply a mask if it's impossible.
 			return
 		user.visible_message("\The [user] begins placing \the [contained] onto [target].")
-		om_do_after(user, 2.5 SECONDS, target = target, receiver = src, on_done = PROC_REF(place_mask_done), done_args = list(user, target))
+		om_task_timed(user, 2.5 SECONDS, target = target, receiver = src, on_done = PROC_REF(place_mask_done), done_args = list(user, target))
 
 /obj/machinery/oxygen_pump/proc/place_mask_done(mob/living/user, mob/living/carbon/human/target)
 	if(!can_apply_to_target(target, user))

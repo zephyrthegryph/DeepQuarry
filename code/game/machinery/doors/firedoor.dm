@@ -222,10 +222,10 @@ REF_BACKLIST(/obj/machinery/door/firedoor, list("turbolift_floor" = "doors"))
 		if(istype(X.species, /datum/species/xenos))
 			if(src.blocked)
 				visible_message(span_alium("\The [user] begins digging into \the [src] internals!"))
-				om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_alien_timed_done), done_args = list())
+				om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_alien_timed_done), done_args = list())
 			else if(src.density)
 				visible_message(span_alium("\The [user] begins forcing \the [src] open!"))
-				om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_alien_timed_done2), done_args = list(user), busy = user)
+				om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_alien_timed_done2), done_args = list(user), busy = user)
 			else
 				visible_message(span_danger("\The [user] forces \the [src] closed!"))
 				close(1)
@@ -250,11 +250,11 @@ REF_BACKLIST(/obj/machinery/door/firedoor, list("turbolift_floor" = "doors"))
 			var/time_to_force = (2 + (2 * blocked)) * 5
 			if(src.density)
 				visible_message(span_danger("\The [user] starts forcing \the [src] open!"))
-				om_do_after(user, time_to_force, target = src, receiver = src, on_done = PROC_REF(attack_generic_timed_done), done_args = list(user), busy = user)
+				om_task_timed(user, time_to_force, target = src, receiver = src, on_done = PROC_REF(attack_generic_timed_done), done_args = list(user), busy = user)
 			else
 				time_to_force = (time_to_force / 2)
 				visible_message(span_danger("\The [user] starts forcing \the [src] closed!"))
-				om_do_after(user, time_to_force, target = src, receiver = src, on_done = PROC_REF(attack_generic_timed_done2), done_args = list(user), busy = user)
+				om_task_timed(user, time_to_force, target = src, receiver = src, on_done = PROC_REF(attack_generic_timed_done2), done_args = list(user), busy = user)
 		else
 			visible_message(span_notice("\The [user] strains fruitlessly to force \the [src] [density ? "open" : "closed"]."))
 		return
@@ -353,7 +353,7 @@ REF_BACKLIST(/obj/machinery/door/firedoor, list("turbolift_floor" = "doors"))
 			to_chat(user, span_danger("You must open the maintenance hatch first!"))
 			return TRUE
 		user.visible_message(span_danger("[user] is removing the electronics from \the [src]."), "You start to remove the electronics from [src].")
-		om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(crowbar_act_timed_done), done_args = list(user, tool))
+		om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(crowbar_act_timed_done), done_args = list(user, tool))
 		return TRUE
 	if(om_busy(src))
 		to_chat(user, span_notice("Someone's already prying that [density ? "open" : "closed"]."))

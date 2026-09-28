@@ -98,7 +98,7 @@ REF_SPILL_LIST(/obj/item/dogborg/sleeper, "items_preserved")
 	else //If you don't have someone in you, proceed.
 		H.forceMove(src)
 		update_patient()
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 		user.visible_message(span_warning("[hound.name]'s [src.name] lights up as [H.name] slips inside."), span_notice("Your [src] lights up as [H] slips inside. Life support functions engaged."))
 		log_admin("[key_name(hound)] has eaten [key_name(patient)] with a cyborg belly. ([hound ? "<a href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[hound.x];Y=[hound.y];Z=[hound.z]'>JMP</a>" : "null"])")
 		playsound(src, gulpsound, vol = 100, vary = 1, falloff = 0.1, preference = /datum/preference/toggle/eating_noises)
@@ -127,12 +127,12 @@ REF_SPILL_LIST(/obj/item/dogborg/sleeper, "items_preserved")
 				to_chat(user, span_warning("\The [target] is too large to fit into your [src.name]"))
 				return
 			user.visible_message(span_warning("[hound.name] is ingesting [target.name] into their [src.name]."), span_notice("You start ingesting [target] into your [src.name]..."))
-			om_do_after(user, 3 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_sleeper_done), done_args = list(target, user))
+			om_task_timed(user, 3 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_sleeper_done), done_args = list(target, user))
 			return
 		if(istype(target, /mob/living/simple_mob/animal/passive/mouse)) //Edible mice, dead or alive whatever. Mostly for carcass picking you cruel bastard :v
 			var/mob/living/simple_mob/trashmouse = target
 			user.visible_message(span_warning("[hound.name] is ingesting [trashmouse] into their [src.name]."), span_notice("You start ingesting [trashmouse] into your [src.name]..."))
-			om_do_after(user, 3 SECONDS, target = trashmouse, receiver = src, on_done = PROC_REF(afterattack_sleeper_done2), done_args = list(user, trashmouse))
+			om_task_timed(user, 3 SECONDS, target = trashmouse, receiver = src, on_done = PROC_REF(afterattack_sleeper_done2), done_args = list(user, trashmouse))
 			return
 		else if(ishuman(target))
 			var/mob/living/carbon/human/trashman = target
@@ -143,7 +143,7 @@ REF_SPILL_LIST(/obj/item/dogborg/sleeper, "items_preserved")
 				to_chat(user, span_warning("[trashman] is buckled and can not be put into your [src.name]."))
 				return
 			user.visible_message(span_warning("[hound.name] is ingesting [trashman] into their [src.name]."), span_notice("You start ingesting [trashman] into your [src.name]..."))
-			om_do_after(user, 3 SECONDS, target = trashman, receiver = src, on_done = PROC_REF(afterattack_sleeper_done3), done_args = list(user, trashman))
+			om_task_timed(user, 3 SECONDS, target = trashman, receiver = src, on_done = PROC_REF(afterattack_sleeper_done3), done_args = list(user, trashman))
 			return
 		return
 
@@ -156,7 +156,7 @@ REF_SPILL_LIST(/obj/item/dogborg/sleeper, "items_preserved")
 			to_chat(user, span_warning("Your [src.name] is already occupied."))
 			return
 		user.visible_message(span_warning("[hound.name] is ingesting [H.name] into their [src.name]."), span_notice("You start ingesting [H] into your [src]..."))
-		om_do_after(user, 50, target = H, receiver = src, on_done = PROC_REF(intake_patient_done), done_args = list(H, user))
+		om_task_timed(user, 50, target = H, receiver = src, on_done = PROC_REF(intake_patient_done), done_args = list(H, user))
 
 /obj/item/dogborg/sleeper/proc/afterattack_sleeper_done(atom/movable/target, mob/living/silicon/user)
 	if(!(contents_count(src) < max_item_count))
@@ -184,7 +184,7 @@ REF_SPILL_LIST(/obj/item/dogborg/sleeper, "items_preserved")
 	if(!(!patient && !trashman?.buckled_to() && contents_count(src) < max_item_count))
 		return
 	trashman.forceMove(src)
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 	user.visible_message(span_warning("[hound.name]'s [src.name] groans lightly as [trashman] slips inside."), span_notice("Your [src.name] groans lightly as [trashman] slips inside."))
 	log_attack("[key_name(hound)] has eaten [key_name(patient)] with a cyborg belly. ([hound ? "<a href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[hound.x];Y=[hound.y];Z=[hound.z]'>JMP</a>" : "null"])")
 	playsound(src, gulpsound, vol = 100, vary = 1, falloff = 0.1, preference = /datum/preference/toggle/eating_noises)
@@ -371,7 +371,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 				return FALSE
 			cleaning = TRUE
 			drain(startdrain)
-			PERIODIC_START(src, PERIODIC_SLOW)
+			om_task_periodic(src, PERIODIC_SLOW)
 			update_patient()
 			if(patient)
 				to_chat(patient, span_danger("[hound.name]'s [src.name] fills with caustic enzymes around you!"))
@@ -669,7 +669,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 
 	if(!patient && !cleaning) //We think we're done working.
 		if(!update_patient()) //One last try to find someone
-			PERIODIC_STOP(src)
+			om_task_periodic_stop(src)
 			return
 
 /obj/item/dogborg/sleeper/proc/get_experiment_handler()

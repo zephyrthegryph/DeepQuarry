@@ -198,7 +198,7 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/fueltank, \
 /obj/structure/reagent_dispensers/fueltank/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if (rig)
 		user.visible_message("[user] begins to detach [rig] from \the [src].", "You begin to detach [rig] from \the [src]")
-		om_do_after(user, 2 SECONDS, src, src, PROC_REF(detach_rig_done), list(user))
+		om_task_timed(user, 2 SECONDS, src, src, PROC_REF(detach_rig_done), list(user))
 	return TRUE
 
 /obj/structure/reagent_dispensers/fueltank/proc/detach_rig_done(mob/user)
@@ -217,7 +217,7 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/fueltank, \
 			to_chat(user, span_warning("There is another device in the way."))
 			return FALSE
 		user.visible_message("[user] begins rigging [W] to \the [src].", "You begin rigging [W] to \the [src]")
-		om_do_after(user, 2 SECONDS, src, src, PROC_REF(rig_assembly_done), list(user, W))
+		om_task_timed(user, 2 SECONDS, src, src, PROC_REF(rig_assembly_done), list(user, W))
 
 	return FALSE
 
@@ -374,7 +374,7 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/fueltank, \
 			if(anchored)
 				var/obj/item/reagent_containers/glass/cooler_bottle/G = I
 				to_chat(user, span_notice("You start to screw the bottle onto the water-cooler."))
-				om_do_after(user, 2 SECONDS, src, src, PROC_REF(bottle_done), list(user, G))
+				om_task_timed(user, 2 SECONDS, src, src, PROC_REF(bottle_done), list(user, G))
 			else
 				to_chat(user, span_warning("You need to wrench down the cooler first."))
 		else
@@ -388,7 +388,7 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/fueltank, \
 				src.add_fingerprint(user)
 				to_chat(user, span_notice("You start to attach a cup dispenser onto the water-cooler."))
 				playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
-				om_do_after(user, 2 SECONDS, src, src, PROC_REF(cupholder_done), list(user, P))
+				om_task_timed(user, 2 SECONDS, src, src, PROC_REF(cupholder_done), list(user, P))
 			else
 				to_chat(user, span_warning("You need to wrench down the cooler first."))
 		else
@@ -430,7 +430,7 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/fueltank, \
 	add_fingerprint(user)
 	if(bottle)
 		playsound(src, tool.usesound, 50, TRUE)
-		om_do_after(user, 2 SECONDS, src, src, PROC_REF(unfasten_jug_done), list(user))
+		om_task_timed(user, 2 SECONDS, src, src, PROC_REF(unfasten_jug_done), list(user))
 		return ITEM_INTERACT_SUCCESS
 	use_tool(user, tool, src, delay = 2 SECONDS, volume = 0, receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user, tool))
 	return ITEM_INTERACT_SUCCESS

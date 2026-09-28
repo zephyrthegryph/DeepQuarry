@@ -106,14 +106,14 @@ SUBSYSTEM_DEF(shuttles)
 	if(!shuttle || QDELETED(shuttle) || !(shuttle.flags & SHUTTLE_FLAGS_PROCESS))
 		active_process_shuttles -= shuttle
 		if(shuttle)
-			PERIODIC_STOP(shuttle)
+			om_task_periodic_stop(shuttle)
 		return
 	if(shuttle.always_process || shuttle.process_state != IDLE_STATE)
 		active_process_shuttles |= shuttle
-		PERIODIC_START(shuttle, PERIODIC_SLOW)
+		om_task_periodic(shuttle, PERIODIC_SLOW)
 	else
 		active_process_shuttles -= shuttle
-		PERIODIC_STOP(shuttle)
+		om_task_periodic_stop(shuttle)
 
 /datum/controller/subsystem/shuttles/proc/process_init_queues()
 	if(block_init_queue)

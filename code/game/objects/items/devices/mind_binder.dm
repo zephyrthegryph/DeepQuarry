@@ -95,14 +95,14 @@
 	var/mob/living/target = ask.subject
 	user.visible_message(span_warning("[user] presses [src] against [target]. The device beginning to let out a series of beeps!"),span_notice("You begin to bind yourself into [target]!"))
 	log_and_message_admins("attempted to bind themselves to \an [target] with a Mind Binder.", user)
-	om_do_after(user, 30 SECONDS, target = target, receiver = src, on_done = PROC_REF(bind_mob_timed_done), done_args = list(target, user))
+	om_task_timed(user, 30 SECONDS, target = target, receiver = src, on_done = PROC_REF(bind_mob_timed_done), done_args = list(target, user))
 
 /obj/item/mindbinder/proc/self_bind_item_confirmed(datum/om/prompt/confirm/mindbinder/self_bind/item/ask)
 	var/mob/user = ask.answerer
 	var/obj/item/item = ask.subject
 	log_and_message_admins("attempted to bind themselves to \an [item] with a Mind Binder.", user)
 	user.visible_message(span_warning("[user] presses [src] against [item]. The device beginning to let out a series of beeps!"),span_notice("You begin to bind yourself into [item]!"))
-	om_do_after(user, 30 SECONDS, target = item, receiver = src, on_done = PROC_REF(bind_item_timed_done), done_args = list(item, user))
+	om_task_timed(user, 30 SECONDS, target = item, receiver = src, on_done = PROC_REF(bind_item_timed_done), done_args = list(item, user))
 
 /obj/item/mindbinder/proc/store_mob_confirmed(datum/om/prompt/confirm/mindbinder/store_mob/ask)
 	var/mob/user = ask.answerer
@@ -112,7 +112,7 @@
 	else
 		log_and_message_admins("attempted to take [key_name(target)]'s mind with a Mind Binder.", user)
 	user.visible_message(span_warning("[user] presses [src] against [target]'s head. The device beginning to let out a series of beeps!"),span_notice("You begin to download [target]'s mind!"))
-	om_do_after(user, 30 SECONDS, target = target, receiver = src, on_done = PROC_REF(store_mob_timed_done), done_args = list(target, user))
+	om_task_timed(user, 30 SECONDS, target = target, receiver = src, on_done = PROC_REF(store_mob_timed_done), done_args = list(target, user))
 
 /obj/item/mindbinder/proc/bind_mob(mob/living/target)
 	if(possessed_voice.len == 0 && !self_bind)
@@ -132,7 +132,7 @@
 	var/doTime = 30 SECONDS
 	if(ishuman(target) || issilicon(target) || isanimal(target))
 		doTime = 5 SECONDS
-	om_do_after(usr, doTime, target = target, receiver = src, on_done = PROC_REF(bind_mob_timed_done2), done_args = list(target, usr))
+	om_task_timed(usr, doTime, target = target, receiver = src, on_done = PROC_REF(bind_mob_timed_done2), done_args = list(target, usr))
 
 	update_icon()
 
@@ -178,7 +178,7 @@
 
 	log_and_message_admins("attempted to bind [key_name(src.possessed_voice[1])] to \an [item] with a Mind Binder.")
 	usr.visible_message(span_warning("[usr] presses [src] against [item]. The device beginning to let out a series of beeps!"),span_notice("You begin to bind someone's mind into [item]!"))
-	om_do_after(usr, 5 SECONDS, target = item, receiver = src, on_done = PROC_REF(bind_item_timed_done2), done_args = list(item, usr))
+	om_task_timed(usr, 5 SECONDS, target = item, receiver = src, on_done = PROC_REF(bind_item_timed_done2), done_args = list(item, usr))
 
 	update_icon()
 

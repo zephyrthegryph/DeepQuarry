@@ -52,14 +52,14 @@
 		if(H != user && prototype)
 			balloon_alert(user, "injecting [H] with \the [src]")
 			balloon_alert(H, "[user] is trying to inject you with \the [src]")
-			om_do_after(user, 3 SECONDS, H, src, PROC_REF(do_injection), list(H, user))
+			om_task_timed(user, 3 SECONDS, H, src, PROC_REF(do_injection), list(H, user))
 			return ITEM_INTERACT_SUCCESS
 		else if(!H.stat && !prototype)
 			if(H != user)
 				if(!IS_HELPING(H))
 					balloon_alert(user, "[H] resists your attempt to inject them with \the [src].")
 					balloon_alert(H, "[user] is trying to inject you with \the [src]")
-					om_do_after(user, 3 SECONDS, H, src, PROC_REF(do_injection), list(H, user))
+					om_task_timed(user, 3 SECONDS, H, src, PROC_REF(do_injection), list(H, user))
 					return ITEM_INTERACT_SUCCESS
 
 	do_injection(H, user)
@@ -151,7 +151,7 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/hypospray/vial, \
 	if(istype(W, /obj/item/reagent_containers/glass/beaker/vial))
 		if(!loaded_vial)
 			balloon_alert_visible("[user] begins loading [W] into \the [src].", "loading [W] into \the [src].")
-			om_do_after(user, 3 SECONDS, src, src, PROC_REF(load_vial_done), list(user, W))
+			om_task_timed(user, 3 SECONDS, src, src, PROC_REF(load_vial_done), list(user, W))
 		else
 			balloon_alert(user, "\the [src] already has a vial.")
 	else

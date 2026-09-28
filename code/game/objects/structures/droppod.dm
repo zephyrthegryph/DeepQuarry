@@ -132,7 +132,7 @@ REF_OWNED(/obj/structure/drop_pod, "air")
 		to_chat(user, span_warning("\The [src] hasn't been opened yet. Do that first."))
 		return TRUE
 	to_chat(user, span_notice("You start breaking down \the [src]."))
-	om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user, O))
+	om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user, O))
 	return TRUE
 
 /obj/structure/drop_pod/proc/wrench_act_timed_done(mob/user, obj/item/O)

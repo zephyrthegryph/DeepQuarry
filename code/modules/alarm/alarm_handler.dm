@@ -36,7 +36,7 @@ REF_OWNED_LIST(/datum/alarm_handler, "alarms")
 
 	alarms |= existing
 	LAZYSET(alarms_assoc, origin, existing)
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 	if(new_alarm)
 		alarms = dd_sortedObjectList(alarms)
 		on_alarm_change(existing, ALARM_RAISED)

@@ -101,7 +101,7 @@
 		if(SK)
 			LAZYADD(SK.active_dark_maws, src)
 		flick("dark_maw", src)
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 
 ///Called when we get a signal that our owner is being qdel'd
 /obj/effect/abstract/dark_maw/proc/drop_everything_and_delete(datum/source, datum/om/event/qdeleting/event)
@@ -135,7 +135,7 @@ REF_BACK_VIA(/obj/effect/abstract/dark_maw, list("owner_handle.shadekin" = "acti
 	qdel(src)
 
 /obj/effect/abstract/dark_maw/proc/triggered_by(mob/living/L, triggered_instantly = 0)
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 	icon_state = "dark_maw_used"
 	flick("dark_maw_tr", src)
 	L.status_adjust(EFFECT_STUNNED, 4)

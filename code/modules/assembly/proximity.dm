@@ -23,11 +23,11 @@ MATERIAL_MIX(/obj/item/assembly/prox_sensor, list(MAT_STEEL = 800, MAT_GLASS = 2
 /obj/item/assembly/prox_sensor/toggle_secure()
 	secured = !secured
 	if(secured)
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 	else
 		scanning = 0
 		timing = 0
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 	update_icon()
 	return secured
 

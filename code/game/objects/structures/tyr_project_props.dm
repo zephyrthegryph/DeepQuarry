@@ -21,7 +21,7 @@
 	effect = /obj/structure/prop/tyr_elevator/proc/interaction_item
 
 /obj/structure/prop/tyr_elevator/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	om_do_after(user, 30, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
+	om_task_timed(user, 30, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
 	return TRUE
 
 /obj/structure/prop/tyr_elevator/proc/attackby_timed_done(mob/user)

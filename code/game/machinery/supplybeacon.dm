@@ -16,7 +16,7 @@ DECLARE_INTERACTIONS(/obj/item/supply_beacon, INTERACT_USE(null, PROC_REF(intera
 /// Old attack_self.
 /obj/item/supply_beacon/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	user.visible_message(span_infoplain(span_bold("\The [user]") + " begins setting up \the [src]."))
-	om_do_after(user, deploy_time, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
+	om_task_timed(user, deploy_time, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
 	return TRUE
 
 /obj/item/supply_beacon/proc/attack_self_timed_done(mob/user)

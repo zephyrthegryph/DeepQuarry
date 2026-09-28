@@ -47,6 +47,7 @@ DECLARE_INTERACTIONS(/obj/item/gunbox, INTERACT_USE("Open", PROC_REF(interaction
 	name = "non-lethal sidearm box"
 	desc = "A secure box containing a non-lethal sidearm."
 	variant_gunbox = TRUE
+// ALLOW(interactions): this variant's Open replaces the base gunbox's Open (its own loadout)
 DECLARE_INTERACTIONS(/obj/item/gunbox/stun, INTERACT_USE("Open", PROC_REF(stun_interaction_self)))
 
 /// Old attack_self.
@@ -64,6 +65,7 @@ DECLARE_INTERACTIONS(/obj/item/gunbox/stun, INTERACT_USE("Open", PROC_REF(stun_i
 	desc = "A secure box containing a lethal sidearm used by Central Command."
 	w_class = ITEMSIZE_HUGE
 	variant_gunbox = TRUE
+// ALLOW(interactions): this variant's Open replaces the base gunbox's Open (its own loadout)
 DECLARE_INTERACTIONS(/obj/item/gunbox/centcom, INTERACT_USE("Open", PROC_REF(centcom_interaction_self)))
 
 /// Old attack_self.
@@ -85,6 +87,7 @@ DECLARE_INTERACTIONS(/obj/item/gunbox/centcom, INTERACT_USE("Open", PROC_REF(cen
 	icon_state = "gunboxw"
 	variant_gunbox = TRUE
 
+// ALLOW(interactions): this variant's Open replaces the base gunbox's Open (its own loadout)
 DECLARE_INTERACTIONS(/obj/item/gunbox/warden, INTERACT_USE("Open", PROC_REF(warden_interaction_self)))
 
 /// Old attack_self.
@@ -103,6 +106,7 @@ DECLARE_INTERACTIONS(/obj/item/gunbox/warden, INTERACT_USE("Open", PROC_REF(ward
 	icon = 'icons/obj/storage.dmi'
 	icon_state = "gunbox"
 	variant_gunbox = TRUE
+// ALLOW(interactions): this variant's Open replaces the base gunbox's Open (its own loadout)
 DECLARE_INTERACTIONS(/obj/item/gunbox/captain, INTERACT_USE("Open", PROC_REF(captain_interaction_self)))
 
 /// Old attack_self.
@@ -120,6 +124,7 @@ DECLARE_INTERACTIONS(/obj/item/gunbox/captain, INTERACT_USE("Open", PROC_REF(cap
 	desc = "A secure box containing a lethal sidearm."
 	variant_gunbox = TRUE
 
+// ALLOW(interactions): this variant's Open replaces the base gunbox's Open (its own loadout)
 DECLARE_INTERACTIONS(/obj/item/gunbox/sec_officer, INTERACT_USE("Open", PROC_REF(sec_officer_interaction_self)))
 
 /// Old attack_self.

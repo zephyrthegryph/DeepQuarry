@@ -80,7 +80,7 @@
 
 	user.visible_message(span_danger("\The [user] is attempting to put [cuff_type] on \the [victim]!"))
 
-	om_do_after(user, use_time, target = src, receiver = src, on_done = PROC_REF(attempt_to_cuff_timed_done), done_args = list(victim, user))
+	om_task_timed(user, use_time, target = src, receiver = src, on_done = PROC_REF(attempt_to_cuff_timed_done), done_args = list(victim, user))
 	return TRUE
 
 /obj/item/handcuffs/proc/attempt_to_cuff_timed_done(mob/living/carbon/victim, mob/user)

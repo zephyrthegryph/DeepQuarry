@@ -53,7 +53,7 @@
 		else
 			active_weapon = new(src, src)
 			active_weapon.power_supply = bcell
-	PERIODIC_STOP(src) //We do this so it doesn't start processing until it's first used.
+	om_task_periodic_stop(src) //We do this so it doesn't start processing until it's first used.
 	update_icon()
 
 REF_OWNED(/obj/item/personal_shield_generator, list("active_weapon", "bcell"))
@@ -106,7 +106,7 @@ REF_OWNED(/obj/item/personal_shield_generator, list("active_weapon", "bcell"))
 						else //It won't blow up unless you turn it back on again. Upside of using non-charging cells.
 							to_chat(src.loc, span_critical("Your shield generator sparks and suddenly goes down! A warning message pops up on screen: \
 							'WARNING, INTERNAL CELL CRITICALLY DAMAGED. REPLACE CELL IMMEDIATELY.'"))
-						PERIODIC_STOP(src)
+						om_task_periodic_stop(src)
 						update_icon()
 			else
 				if(prob(25))
@@ -247,7 +247,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 			shield_active = !shield_active //Deactivate the shield!
 			to_chat(user, span_warning("You deactive the shield!"))
 			user.remove_body_effect(/datum/body_effect/shield_projection)
-			PERIODIC_STOP(src)
+			om_task_periodic_stop(src)
 			playsound(src, 'sound/weapons/saberoff.ogg', 50, 1) //Shield turning off! PLACEHOLDER
 		else
 			shield_active = !shield_active
@@ -255,7 +255,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 			user.remove_body_effect(/datum/body_effect/shield_projection) //Just to make sure they aren't using two at once!
 			user.apply_body_effect(modifier_type)
 			user.update_modifier_visuals() //Forces coloration to WORK.
-			PERIODIC_START(src, PERIODIC_SLOW) //Let's only bother draining power when we're being used!
+			om_task_periodic(src, PERIODIC_SLOW) //Let's only bother draining power when we're being used!
 			playsound(src, 'sound/weapons/saberon.ogg', 50, 1) //Shield turning off! PLACEHOLDER
 	update_icon()
 
@@ -291,7 +291,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 			to_chat(user, span_warning("The shield deactivates! An error message pops up on screen: 'Cell missing. Cell replacement required.'"))
 			user.remove_body_effect(/datum/body_effect/shield_projection)
 		shield_active = 0
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 		update_icon()
 		playsound(src, 'sound/weapons/saberoff.ogg', 50, 1) //Shield turning off! PLACEHOLDER
 		return
@@ -310,7 +310,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 			bcell.use(generator_active_cost) //Causes it to go boom.
 			bcell = null
 			shield_active = 0
-			PERIODIC_STOP(src)
+			om_task_periodic_stop(src)
 			update_icon()
 			return
 
@@ -323,7 +323,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 			var/mob/living/carbon/human/user = loc
 			to_chat(user, span_warning("The shield deactivates, an error message popping up on screen: 'Cell out of charge.'"))
 			user.remove_body_effect(/datum/body_effect/shield_projection)
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 		update_icon()
 		playsound(src, 'sound/weapons/saberoff.ogg', 50, 1) //Shield turning off! PLACEHOLDER
 		return

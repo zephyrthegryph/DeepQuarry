@@ -135,10 +135,10 @@ REF_SPILL_LIST(/obj/machinery/washing_machine, "washing")
 		return
 	if(state in list(EMPTY_OPEN, FULL_OPEN, BLOODY_OPEN)) //Door is open, we can climb out easily.
 		visible_message("[user] begins to climb out of the [src]!")
-		om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(user_climb_out_timed_done), done_args = list(user))
+		om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(user_climb_out_timed_done), done_args = list(user))
 	else if(state in list(EMPTY_CLOSED, FULL_CLOSED, BLOODY_CLOSED)) //Door is shut.
 		visible_message("[src] begins to rattle and shake!")
-		om_do_after(user, 60 SECONDS, target = src, receiver = src, on_done = PROC_REF(user_climb_out_timed_done2), done_args = list(user))
+		om_task_timed(user, 60 SECONDS, target = src, receiver = src, on_done = PROC_REF(user_climb_out_timed_done2), done_args = list(user))
 
 /obj/machinery/washing_machine/proc/user_climb_out_timed_done(mob/user)
 	if(!(state in list(EMPTY_CLOSED, FULL_CLOSED, BLOODY_CLOSED))) //Someone shut the door while we were trying to climb out!
@@ -183,7 +183,7 @@ REF_SPILL_LIST(/obj/machinery/washing_machine, "washing")
 			var/obj/item/grab/G = W
 			if(ishuman(G?.grab_assailant()) && (iscorgi(G?.grab_target()) || ishuman(G?.grab_target())))
 				user.visible_message("[user] begins stuffing [G?.grab_target()] into the [src]!", "You begin stuffing [G?.grab_target()] into the [src]!")
-				om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_washing_machine_use_item_timed_done), done_args = list(user, G))
+				om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_washing_machine_use_item_timed_done), done_args = list(user, G))
 		//else: old fell through to a bare ..() (approximated as a no-op)
 
 	else if(is_type_in_list(W, disallowed_types))

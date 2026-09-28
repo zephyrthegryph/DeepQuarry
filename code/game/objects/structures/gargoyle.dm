@@ -129,7 +129,7 @@
 
 	can_revert = revert
 
-	PERIODIC_START(src, PERIODIC_SECOND)
+	om_task_periodic(src, PERIODIC_SECOND)
 
 // the petrified gargoyle reverts, or crumbles.
 /obj/structure/gargoyle/on_destroy(force)

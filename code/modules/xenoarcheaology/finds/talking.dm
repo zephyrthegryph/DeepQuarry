@@ -14,11 +14,11 @@ REF_OWNED(/obj, list("talking_atom"))
 
 /datum/talking_atom/proc/init()
 	if(holder_atom())
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 
 /datum/talking_atom/periodic_step()
 	if(!holder_atom())
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 
 	else if(heard_words.len >= 1 && COOLDOWN_FINISHED(src, talk_cooldown) && prob(talk_chance))
 		SaySomething()

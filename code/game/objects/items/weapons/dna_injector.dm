@@ -123,7 +123,7 @@
 	user.visible_message(span_danger("\The [user] is trying to inject \the [M] with \the [src]!"))
 
 
-	om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_timed_done), done_args = list(M, user), claims = TRUE)
+	om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_timed_done), done_args = list(M, user), claims = TRUE)
 	return TRUE
 
 /obj/item/dnainjector/proc/attack_timed_done(mob/living/M, mob/living/user)

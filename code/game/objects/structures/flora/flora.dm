@@ -77,7 +77,7 @@
 
 	if(removal_tool && istype(W, removal_tool))
 		to_chat(user, span_warning("You start uprooting \the [src]..."))
-		om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
+		om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
 		return TRUE
 
 	return TRUE
@@ -345,7 +345,7 @@
 	if(!stored_item)
 		to_chat(user, span_filter_notice(span_bold("You see nothing of interest in [src]...")))
 	else
-		om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
+		om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
 	return TRUE
 
 /obj/structure/flora/pottedplant/proc/attack_hand_timed_done(mob/user)

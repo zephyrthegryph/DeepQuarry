@@ -160,7 +160,7 @@
 
 
 /mob/living/simple_mob/proc/try_reload()
-	om_do_after(src, reload_time, target = src, receiver = src, on_done = PROC_REF(reload_done), busy = src)
+	om_task_timed(src, reload_time, target = src, receiver = src, on_done = PROC_REF(reload_done), busy = src)
 
 /mob/living/simple_mob/proc/reload_done()
 	if(reload_sound)

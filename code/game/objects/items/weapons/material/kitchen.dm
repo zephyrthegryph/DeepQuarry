@@ -114,7 +114,7 @@
 			user.visible_message(span_warning("\The [user] begins to feed \the [M]!"))
 			if(!M.can_force_feed(user, loaded))
 				return ITEM_INTERACT_FAILURE
-			om_do_after(user, 5 SECONDS, target = M, receiver = src, on_done = PROC_REF(force_feed_done), done_args = list(M, user))
+			om_task_timed(user, 5 SECONDS, target = M, receiver = src, on_done = PROC_REF(force_feed_done), done_args = list(M, user))
 			return ITEM_INTERACT_SUCCESS
 		playsound(src,'sound/items/eatfood.ogg', rand(10,40), 1)
 		loaded = null

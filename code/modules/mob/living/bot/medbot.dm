@@ -225,11 +225,11 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 			say(message)
 			playsound(src, messagevoice[message], 70, FALSE)
 
-		om_do_after(H, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_medbot_done), done_args = list(H))
+		om_task_timed(H, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_medbot_done), done_args = list(H))
 
 	else if(istype(H) && IS_HELPING(H) && is_tipped)
 		H.visible_message(span_notice("[H] begins righting [src]."), span_notice("You begin righting [src]..."))
-		om_do_after(H, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_medbot_done2), done_args = list(H))
+		om_task_timed(H, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_medbot_done2), done_args = list(H))
 	else
 		tgui_interact(H)
 

@@ -78,7 +78,7 @@
 
 	var/obj/structure/sign/poster/P = new poster_type(user.loc, get_dir(user, W), src)
 
-	om_do_after(user, 17, target = src, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(user))
+	om_task_timed(user, 17, target = src, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(user))
 	return TRUE
 
 /obj/item/poster/proc/afterattack_timed_done(mob/user)

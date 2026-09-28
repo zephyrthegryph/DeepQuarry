@@ -141,7 +141,7 @@
 			to_chat(user, span_notice("[src] already has a power cell."))
 		else
 			user.visible_message("[user] is reloading [src].", span_notice("You start to insert [P] into [src]."))
-			om_do_after(user, 1 SECOND, src, src, PROC_REF(cell_inserted), list(user, P))
+			om_task_timed(user, 1 SECOND, src, src, PROC_REF(cell_inserted), list(user, P))
 		return
 
 /obj/item/gun/energy/modular/pistol

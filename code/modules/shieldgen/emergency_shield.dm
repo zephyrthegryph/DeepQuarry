@@ -281,7 +281,7 @@ REF_OWNED_LIST(/obj/machinery/shieldgen, "deployed_shields")
 
 /obj/machinery/shieldgen/proc/interaction_repair(mob/user, obj/item/stack/cable_coil/coil, datum/interaction/interaction)
 	to_chat(user, span_notice("You begin to replace the wires."))
-	om_do_after(user, 3 SECONDS, src, src, PROC_REF(rewire_done), list(user, coil))
+	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(rewire_done), list(user, coil))
 	return TRUE
 
 /obj/machinery/shieldgen/proc/rewire_done(mob/user, obj/item/stack/cable_coil/coil)

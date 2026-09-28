@@ -61,7 +61,7 @@
 
 	if(is_stump)
 		if(istype(W,/obj/item/shovel))
-			om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(chop_done), done_args = list(W, user))
+			om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(chop_done), done_args = list(W, user))
 		return TRUE
 
 	visible_message(span_danger("\The [user] hits \the [src] with \the [W]!"))

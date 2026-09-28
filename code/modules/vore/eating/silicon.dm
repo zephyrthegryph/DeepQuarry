@@ -56,7 +56,7 @@ REF_BACK(/obj/effect/overlay/aiholo, list("master" = null))
 
 	hologram.visible_message("[hologram] starts engulfing [prey] in hardlight holograms!")
 	to_chat(src, span_vnotice("You begin engulfing [prey] in hardlight holograms.")) //Can't be part of the above, because the above is from the hologram.
-	om_do_after(eyeobj, 5 SECONDS, prey, src, PROC_REF(holo_nom_done), list(prey))
+	om_task_timed(eyeobj, 5 SECONDS, prey, src, PROC_REF(holo_nom_done), list(prey))
 
 /mob/living/silicon/ai/proc/holo_nom_done(mob/living/prey)
 	//Didn't move and still projecting and effect exists and no other bellied people

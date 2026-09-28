@@ -87,6 +87,8 @@
 	var/list/compiled_requires
 	var/requires_mask = 0
 	var/claim_rel
+	/// Every event type (interrupted_by and their subtypes) that cancels this task: path -> TRUE.
+	var/list/compiled_interrupts
 
 /datum/om/task/proc/compile(datum/om/registry/reg)
 	compiled_requires = list()
@@ -105,6 +107,10 @@
 	for(var/path in interrupted_by)
 		if(!ispath(path, /datum/om/event))
 			reg.error("task [name]: interrupted_by [path] is not an event")
+			continue
+		for(var/event_path in reg.event_types)
+			if(ispath(event_path, path))
+				LAZYSET(compiled_interrupts, event_path, TRUE)
 	if(length(steps))
 		compiled_steps = list()
 		for(var/step_proc in steps)
@@ -187,7 +193,7 @@
 	return om_task_launch(task, actor, target, params, starter)
 
 /// Starts a task from a built params list (var name -> value): om_task_begin() and the helpers
-/// that build their own (om_do_after(), flows, use_tool()).
+/// that build their own (om_task_timed(), flows, use_tool()).
 /proc/om_task_launch(task, datum/actor, datum/target, list/params, datum/starter)
 	var/datum/om/registry/reg = om_registry()
 	var/datum/om/task/spec = ispath(task) ? reg.task_by_type[task] : reg.task_by_name[task]
@@ -261,6 +267,7 @@
 		T.step_no = 1
 		T.ends_at = t + spec.compiled_steps[2]
 	LAZYADD(rec.tasks, T)
+	om_task_interrupts_add(rec, spec)
 	var/datum/om/behaviour/B = reg.task_behaviour
 	om_attach(actor, B)
 	var/mask = spec.requires_mask | T.interrupt_on | extra_mask
@@ -399,6 +406,8 @@
 		om_teardown_rest(T)
 	if(!rec)
 		return
+	if(T in rec.tasks)
+		om_task_interrupts_remove(rec, T.spec)
 	LAZYREMOVE(rec.tasks, T)
 	var/datum/om/behaviour/B = om_registry().task_behaviour
 	if(!rec.tasks && !rec.torn_down)

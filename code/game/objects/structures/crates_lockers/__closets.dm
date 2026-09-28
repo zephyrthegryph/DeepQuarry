@@ -496,7 +496,7 @@ REF_OWNED(/obj/structure/closet, "door_obj")
 
 /// One 5-second shove; (6 * breakout_time * 2) of them break the closet open.
 /obj/structure/closet/proc/breakout_push(mob/living/escapee, i)
-	om_do_after(escapee, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(breakout_pushed), done_args = list(escapee, i), on_fail = PROC_REF(breakout_stop))
+	om_task_timed(escapee, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(breakout_pushed), done_args = list(escapee, i), on_fail = PROC_REF(breakout_stop))
 
 /obj/structure/closet/proc/breakout_stop()
 	breakout = 0

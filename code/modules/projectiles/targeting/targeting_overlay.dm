@@ -169,7 +169,7 @@ REF_BACKLIST(/obj/aiming_overlay, list("aiming_at" = "aimed"))
 	if(istype(aiming_with(), /obj/item/gun))
 		playsound(owner(), 'sound/weapons/targeton.ogg', 50,1)
 	forceMove(get_turf(target))
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 
 	aiming_at.aimed |= src
 	toggle_active(1)
@@ -215,7 +215,7 @@ REF_BACKLIST(/obj/aiming_overlay, list("aiming_at" = "aimed"))
 	aiming_at.aimed -= src
 	aiming_at = null
 	moveToNullspace()
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 
 /// LC-refs: What are we targeting with? -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/aiming_overlay/proc/aiming_with() as /obj/item

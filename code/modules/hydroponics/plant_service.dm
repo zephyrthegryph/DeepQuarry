@@ -124,11 +124,11 @@ REF_STATIC(/datum/world_service/plants, list("seeds", "plant_gene_datums"))
 /datum/world_service/plants/proc/add_plant(obj/effect/plant/plant)
 	if(!QDELETED(plant))
 		registry_join(REGISTRY_GROWING_PLANTS, plant)
-		PERIODIC_START(plant, PERIODIC_PLANTS)
+		om_task_periodic(plant, PERIODIC_PLANTS)
 
 /datum/world_service/plants/proc/remove_plant(obj/effect/plant/plant)
 	registry_leave(REGISTRY_GROWING_PLANTS, plant)
-	PERIODIC_STOP(plant)
+	om_task_periodic_stop(plant)
 
 
 // Debug for testing seed genes.

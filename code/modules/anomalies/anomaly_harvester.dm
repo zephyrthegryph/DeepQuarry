@@ -91,7 +91,7 @@
 		to_chat(user, span_danger("The [src] is not anchored!"))
 		return TRUE
 	if(scanner.buffered_anomaly)
-		om_do_after(user, 2 SECONDS, src, src, PROC_REF(attach_scanned_anomaly), list(scanner))
+		om_task_timed(user, 2 SECONDS, src, src, PROC_REF(attach_scanned_anomaly), list(scanner))
 	return TRUE
 
 /obj/machinery/anomaly_harvester/proc/attach_scanned_anomaly(obj/item/anomaly_scanner/scanner)

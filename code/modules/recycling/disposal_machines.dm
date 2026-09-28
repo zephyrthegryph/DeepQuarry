@@ -390,7 +390,7 @@
 	else
 		target.visible_message(span_danger("[user] starts stuffing [target] into [src]."), span_userdanger("[user] starts stuffing you into [src]!"))
 
-	om_do_after(user, 2 SECONDS, target, src, PROC_REF(stuff_mob_done), list(target, user))
+	om_task_timed(user, 2 SECONDS, target, src, PROC_REF(stuff_mob_done), list(target, user))
 
 /obj/machinery/disposal/proc/stuff_mob_done(mob/living/target, mob/living/user)
 	if(!loc)

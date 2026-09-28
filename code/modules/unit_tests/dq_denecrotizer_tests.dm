@@ -30,7 +30,7 @@
 	// signal fires (return_from_death() emits living_revived after resetting the senses).
 	om_hook(target, /datum/om/event/living_revived, src, PROC_REF(set_custom_see_in_dark))
 
-	// The om_do_after callback: what runs when the revive time is up.
+	// The om_task_timed callback: what runs when the revive time is up.
 	D.ghostjoin_rez_timed_done(target, user)
 
 	TEST_ASSERT_EQUAL(target.see_in_dark, custom_see_in_dark, "the denecrotizer must not reset see_in_dark back to initial() after another system set a legitimate post-revival value")

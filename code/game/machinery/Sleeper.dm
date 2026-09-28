@@ -430,7 +430,7 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 				return
 			if(UNCONSCIOUS)
 				to_chat(user, span_notice("You struggle through the haze to hit the eject button. This will take a couple of minutes..."))
-				om_do_after(user, 2 MINUTES, target = src, receiver = src, on_done = PROC_REF(move_eject_timed_done), done_args = list())
+				om_task_timed(user, 2 MINUTES, target = src, receiver = src, on_done = PROC_REF(move_eject_timed_done), done_args = list())
 			if(CONSCIOUS)
 				go_out()
 	else
@@ -507,7 +507,7 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 	else
 		visible_message("\The [user] starts putting [M] into \the [src].")
 
-	om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(go_in_timed_done), done_args = list(M, user))
+	om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(go_in_timed_done), done_args = list(M, user))
 
 /obj/machinery/sleeper/proc/go_in_timed_done(mob/M, mob/user)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)

@@ -298,7 +298,7 @@
 		sbin = new sbin(src)
 	if(ispath(smodule))
 		smodule = new smodule(src)
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 	if(ispath(smanipulator))
 		smanipulator = new smanipulator(src)
 	if(ispath(scapacitor))
@@ -354,7 +354,7 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 			smodule = null
 
 		if(smanipulator)
-			PERIODIC_STOP(src)
+			om_task_periodic_stop(src)
 			smanipulator.forceMove(get_turf(loc))
 			smanipulator = null
 			smaniptier = 0
@@ -364,12 +364,12 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 			slaser = null
 
 		if(scapacitor)
-			PERIODIC_STOP(src)
+			om_task_periodic_stop(src)
 			scapacitor.forceMove(get_turf(loc))
 			scapacitor = null
 
 		if(sbin)
-			PERIODIC_STOP(src)
+			om_task_periodic_stop(src)
 			sbin.forceMove(get_turf(loc))
 			sbin = null
 			sbintier = 0
@@ -422,7 +422,7 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 			W.forceMove(src)
 			smanipulator = W
 			smaniptier = smanipulator.get_rating()
-			if(sbin && scapacitor)PERIODIC_START(src, PERIODIC_SLOW)
+			if(sbin && scapacitor)om_task_periodic(src, PERIODIC_SLOW)
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
 			update_icon()
 			return INTERACTION_HANDLED_PASS
@@ -474,7 +474,7 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 				if(bcell.charge > chargecap)
 					bcell.charge = chargecap
 
-			if(sbin && smanipulator)PERIODIC_START(src, PERIODIC_SLOW)
+			if(sbin && smanipulator)om_task_periodic(src, PERIODIC_SLOW)
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
 			update_icon()
 			return INTERACTION_HANDLED_PASS
@@ -506,7 +506,7 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 				burncharge = tankmax
 			if(toxcharge > tankmax)
 				toxcharge = tankmax
-			if(scapacitor && smanipulator)PERIODIC_START(src, PERIODIC_SLOW)
+			if(scapacitor && smanipulator)om_task_periodic(src, PERIODIC_SLOW)
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
 			update_icon()
 			return INTERACTION_HANDLED_PASS

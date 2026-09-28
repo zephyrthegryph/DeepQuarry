@@ -131,7 +131,7 @@ DECLARE_INTERACTIONS(/obj/structure/marker_beacon, \
 	if(perma)
 		return TRUE
 	to_chat(user, span_notice("You start picking [src] up..."))
-	om_do_after(user, remove_speed, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
+	om_task_timed(user, remove_speed, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
 	return TRUE
 
 /obj/structure/marker_beacon/proc/attack_hand_timed_done(mob/living/user)
@@ -150,7 +150,7 @@ DECLARE_INTERACTIONS(/obj/structure/marker_beacon, \
 	if(istype(I, /obj/item/stack/marker_beacon))
 		var/obj/item/stack/marker_beacon/M = I
 		to_chat(user, span_notice("You start picking [src] up..."))
-		om_do_after(user, remove_speed, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(M))
+		om_task_timed(user, remove_speed, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(M))
 	else
 		return FALSE
 	return INTERACTION_HANDLED_PASS

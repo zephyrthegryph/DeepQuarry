@@ -31,14 +31,14 @@
 	z_level = new_site?.z_level
 	reason = new_reason
 
-/// Clears the z as lane work (om_lane_work(), object_model_core.md §4.11): a turf at a time,
+/// Clears the z as lane work (om_task_slices(), object_model_core.md §4.11): a turf at a time,
 /// resuming by cursor, within the scheduler's budget. Nothing sleeps.
 /datum/expedition_teardown_job/proc/execute()
 	if(!controller() || !site() || QDELETED(site()))
 		qdel(src)
 		return
 	turfs = block(locate(1, 1, z_level), locate(world.maxx, world.maxy, z_level))
-	om_lane_work(src, PROC_REF(wipe_slice), 1, PROC_REF(finish))
+	om_task_slices(src, PROC_REF(wipe_slice), 1, PROC_REF(finish))
 
 /// A slice of the wipe: turfs from `cursor` while the slice's budget lasts.
 /datum/expedition_teardown_job/proc/wipe_slice(cursor)
@@ -511,7 +511,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 /// wipe_z() as lane work: a turf at a time within the scheduler's budget, then `on_done`.
 /datum/world_service/expedition/proc/wipe_z_async(z, datum/callback/on_done)
 	evacuate_mobs_from_z(z)
-	om_lane_work(src, PROC_REF(wipe_z_slice), list(block(locate(1, 1, z), locate(world.maxx, world.maxy, z)), 1), on_done)
+	om_task_slices(src, PROC_REF(wipe_z_slice), list(block(locate(1, 1, z), locate(world.maxx, world.maxy, z)), 1), on_done)
 
 /datum/world_service/expedition/proc/wipe_z_slice(list/cursor)
 	var/list/turfs = cursor[1]

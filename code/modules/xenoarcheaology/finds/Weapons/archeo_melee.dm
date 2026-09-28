@@ -38,7 +38,7 @@
 
 /obj/item/melee/artifact_blade/Initialize(mapload) //We will never spawn without xenoarch or SOMEONE unearthing us.
 	. = ..()
-	//PERIODIC_START(src, PERIODIC_SLOW) //We could start processing here, but let's wait until someone touches us. Uncomment this if more stuff is added and you want it to do spooky passive things.
+	//om_task_periodic(src, PERIODIC_SLOW) //We could start processing here, but let's wait until someone touches us. Uncomment this if more stuff is added and you want it to do spooky passive things.
 
 /obj/item/melee/artifact_blade/examine(mob/user)
 	. = ..()
@@ -49,7 +49,7 @@
 	if(!last_touched() || !stored_blood) //Nobody has touched us yet or we have no energy...For now.
 		return
 	if(!last_touched() || last_touched().stat == DEAD) //If our user doesn't exist or is dead, stop processing until the next unlucky sod touches us.
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 		last_touched_handle = null
 		return
 	if(loc == last_touched() && (last_touched().life_tick % 30 == 0)) //We are currently being wielded by our owner. One proc every minute.
@@ -158,7 +158,7 @@
 	if((user != last_touched()) && !iscultist(user) && ishuman(user))
 		to_chat(user, span_cult("An overwhelming feeling of dread comes over you as you pick up the sword. You feel as though it has become attached to you."))
 		last_touched_handle = om_handle(user)
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 
 DECLARE_INTERACTIONS(/obj/item/melee/artifact_blade, INTERACT_USE(null, PROC_REF(interaction_self)))
 
@@ -299,7 +299,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/artifact_blade, INTERACT_USE(null, PROC_REF
 		to_chat(user, span_cult("\The [src] lacks enough lifeforce to convert."))
 		return FALSE
 	conjure_animation(A, toolspeed)
-	om_do_after(user, toolspeed, A, src, PROC_REF(convert_turf_done), list(A, user))
+	om_task_timed(user, toolspeed, A, src, PROC_REF(convert_turf_done), list(A, user))
 	return TRUE
 
 /obj/item/melee/artifact_blade/proc/convert_turf_done(atom/A, mob/living/user)

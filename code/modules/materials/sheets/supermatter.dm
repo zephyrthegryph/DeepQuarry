@@ -11,7 +11,7 @@
 
 /obj/item/stack/material/supermatter/Initialize(mapload)
 	. = ..()
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 
 /// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.
 /obj/item/stack/material/supermatter/periodic_step()

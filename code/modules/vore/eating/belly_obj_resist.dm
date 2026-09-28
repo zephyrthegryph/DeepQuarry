@@ -134,7 +134,7 @@
 	var/escape_attempt_prey_message = span_vwarning(belly_format_string(escape_attempt_messages_prey, living_prey))
 	to_chat(living_prey, escape_attempt_prey_message)
 	to_chat(owner, escape_attempt_owner_message)
-	om_do_after(living_prey, escapetime, src, src, PROC_REF(chance_escape_done), list(living_prey, prey_item))
+	om_task_timed(living_prey, escapetime, src, src, PROC_REF(chance_escape_done), list(living_prey, prey_item))
 	return TRUE
 
 /obj/belly/proc/chance_escape_done(mob/living/living_prey, obj/item/prey_item)
@@ -298,7 +298,7 @@
 
 	to_chat(living_prey, escape_attempt_absorbed_prey_message)
 	to_chat(owner, escape_attempt_absorbed_owner_message)
-	om_do_after(living_prey, escapetime, src, src, PROC_REF(absorbed_escape_done), list(living_prey))
+	om_task_timed(living_prey, escapetime, src, src, PROC_REF(absorbed_escape_done), list(living_prey))
 	return TRUE
 
 /obj/belly/proc/absorbed_escape_done(mob/living/living_prey)

@@ -742,7 +742,7 @@ DECLARE_INTERACTIONS(/obj/structure/plushie, \
 /obj/structure/plushie/proc/touch_started(mob/user)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(stored_item && opened && !om_busy(src))
-		om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), claims = TRUE)
+		om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), claims = TRUE)
 
 /// Old attack_hand: hug it (or, holding Grab, strangle it; Disarm pokes it).
 /obj/structure/plushie/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
@@ -862,7 +862,7 @@ DECLARE_INTERACTIONS(/obj/structure/plushie, \
 	if(special_handling)
 		return
 	if(stored_item && opened && !om_busy(src))
-		om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user), claims = TRUE)
+		om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user), claims = TRUE)
 
 	if(world.time - last_message <= 1 SECOND)
 		return

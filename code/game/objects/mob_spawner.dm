@@ -24,7 +24,7 @@
 
 /obj/structure/mob_spawner/Initialize(mapload)
 	. = ..()
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 	COOLDOWN_START(src, spawn_cooldown, spawn_delay + rand(0, spawn_delay))
 
 // its spawned mobs lose their nest.

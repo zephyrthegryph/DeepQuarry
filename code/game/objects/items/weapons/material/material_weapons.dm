@@ -141,7 +141,7 @@ EXTEND_INTERACTIONS(/obj/item/material, INTERACT_ITEM("Repair", PROC_REF(materia
 	if(!fragile)
 		if(get_integrity() < max_integrity)
 			user.visible_message("[user] begins repairing \the [src].", "You begin repairing \the [src].")
-			om_do_after(user, repair_time, target = src, receiver = src, on_done = PROC_REF(repair_timed_done), done_args = list(repair_amount, user))
+			om_task_timed(user, repair_time, target = src, receiver = src, on_done = PROC_REF(repair_timed_done), done_args = list(repair_amount, user))
 		else
 			to_chat(user, span_notice("[src] doesn't need repairs."))
 	else
@@ -161,7 +161,7 @@ EXTEND_INTERACTIONS(/obj/item/material, INTERACT_ITEM("Repair", PROC_REF(materia
 			to_chat(M, "You should repair [src] first. Try using [kit] on it.")
 			return FALSE
 		M.visible_message("[M] begins to replace parts of [src] with [kit].", "You begin to replace parts of [src] with [kit].")
-		om_do_after(M, sharpen_time, target = src, receiver = src, on_done = PROC_REF(sharpen_timed_done), done_args = list(material, M))
+		om_task_timed(M, sharpen_time, target = src, receiver = src, on_done = PROC_REF(sharpen_timed_done), done_args = list(material, M))
 		return TRUE
 	else
 		to_chat(M, span_warning("You can't sharpen and re-edge [src]."))

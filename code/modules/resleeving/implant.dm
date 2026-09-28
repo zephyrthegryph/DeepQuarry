@@ -193,7 +193,7 @@ EXTEND_INTERACTIONS(/obj/structure/backup_implanter_ch, \
 
 		user.setClickCooldown(DEFAULT_QUICK_COOLDOWN)
 
-		om_do_after(user, 2.5 SECONDS, src, src, PROC_REF(self_implant_done), list(user))
+		om_task_timed(user, 2.5 SECONDS, src, src, PROC_REF(self_implant_done), list(user))
 	return TRUE
 
 /obj/structure/backup_implanter_ch/proc/self_implant_done(mob/user)
@@ -219,14 +219,14 @@ EXTEND_INTERACTIONS(/obj/structure/backup_implanter_ch, \
 			to_chat(user, span_notice("You start to unwrench the implanter."))
 			playsound(src, O.usesound, 50, 1)
 
-			om_do_after(user, 15 * O.toolspeed, src, src, PROC_REF(wrench_done), list(user, FALSE))
+			om_task_timed(user, 15 * O.toolspeed, src, src, PROC_REF(wrench_done), list(user, FALSE))
 			return INTERACTION_HANDLED_PASS
 
 		else
 			to_chat(user, span_notice("You start to wrench the implanter into place."))
 			playsound(src, O.usesound, 50, 1)
 
-			om_do_after(user, 15 * O.toolspeed, src, src, PROC_REF(wrench_done), list(user, TRUE))
+			om_task_timed(user, 15 * O.toolspeed, src, src, PROC_REF(wrench_done), list(user, TRUE))
 			return INTERACTION_HANDLED_PASS
 	return FALSE
 

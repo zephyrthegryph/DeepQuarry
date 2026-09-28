@@ -81,7 +81,7 @@ REF_OWNED(/obj/item/tank, list("air_contents", "proxyassembly"))
 
 /obj/item/tank/material_environment_begin_leak()
 	leaking = TRUE
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 	return ..()
 
 /obj/item/tank/material_environment_repaired()
@@ -97,7 +97,7 @@ REF_OWNED(/obj/item/tank, list("air_contents", "proxyassembly"))
 	// explosion strength. Drive it by state instead of bypassing it with qdel.
 	update_integrity(0)
 	leaking = TRUE
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 	check_status()
 
 /obj/item/tank/equipped() // Note that even grabbing into a hand calls this, so it should be fine as a 'has a player touched this'
@@ -105,7 +105,7 @@ REF_OWNED(/obj/item/tank, list("air_contents", "proxyassembly"))
 	// An attempt at optimization. There are MANY tanks during rounds that will never get touched.
 	// Don't see why any of those would explode spontaneously. So only tanks that players touch get processed.
 	// This could be optimized more, but it's a start!
-	PERIODIC_START(src, PERIODIC_SLOW) // This has a built in safety to avoid multi-processing
+	om_task_periodic(src, PERIODIC_SLOW) // This has a built in safety to avoid multi-processing
 
 /obj/item/tank/examine(mob/user)
 	. = ..()
@@ -181,10 +181,10 @@ REF_OWNED(/obj/item/tank, list("air_contents", "proxyassembly"))
 	if(wired && src.proxyassembly.assembly)
 
 		to_chat(user, span_notice("You carefully begin clipping the wires that attach to the tank."))
-		om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(wirecutter_act_timed_done), done_args = list(user), on_fail = PROC_REF(wire_clip_slipped), fail_args = list(user))
+		om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(wirecutter_act_timed_done), done_args = list(user), on_fail = PROC_REF(wire_clip_slipped), fail_args = list(user))
 
 	else if(wired)
-		om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(wirecutter_act_timed_done2), done_args = list(user))
+		om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(wirecutter_act_timed_done2), done_args = list(user))
 
 	else
 		to_chat(user, span_notice("There are no wires to cut!"))
@@ -576,7 +576,7 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 /obj/item/tank/atom_destruction(damage_flag)
 	if(damage_flag == FIRE || damage_flag == ACID)
 		return ..()
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 
 /////////////////////////////////
 ///Prewelded tanks

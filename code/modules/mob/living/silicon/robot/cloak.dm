@@ -87,7 +87,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/cloak, \
 
 	active = !active
 	if(active)
-		PERIODIC_START(src, PERIODIC_SLOW) // draws power while cloaked
+		om_task_periodic(src, PERIODIC_SLOW) // draws power while cloaked
 	to_chat(R, span_notice("You [active ? "re" : "de"]activate your personal cloaking device."))
 	update_cloak(R)
 

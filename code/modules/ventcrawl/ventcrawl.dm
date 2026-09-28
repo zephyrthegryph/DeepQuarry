@@ -181,7 +181,7 @@
 
 			// Handle animation delay
 			fade_towards(vent_found, vent_crawl_time)
-			om_do_after(src, vent_crawl_time, src, src, PROC_REF(ventcrawl_in_done), list(vent_found), busy = src)
+			om_task_timed(src, vent_crawl_time, src, src, PROC_REF(ventcrawl_in_done), list(vent_found), busy = src)
 		else
 			to_chat(src, "This vent is not connected to anything.")
 

@@ -218,7 +218,7 @@
 	else
 		visible_message("\The [user] starts putting [M] into \the [src].")
 
-	om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(go_in_timed_done), done_args = list(M, user))
+	om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(go_in_timed_done), done_args = list(M, user))
 	return
 
 /obj/machinery/vr_sleeper/proc/go_in_timed_done(mob/M, mob/user)

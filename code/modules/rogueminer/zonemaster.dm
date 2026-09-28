@@ -385,7 +385,7 @@
 	clean_pass(delay, 1)
 	return myarea()
 
-/// One cleaning pass: turfs to space at once, then the objects one per `delay` (om_stagger).
+/// One cleaning pass: turfs to space at once, then the objects one per `delay` (om_after_stagger).
 /// The second pass catches what the first uncovered ("a deletion so nice that I give it twice").
 /datum/rogue/zonemaster/proc/clean_pass(delay, pass)
 	var/static/list/ignored = list(
@@ -411,7 +411,7 @@
 		else if(I.type in ignored)
 			continue
 		doomed += I
-	om_stagger(src, doomed, delay, PROC_REF(clean_atom), 1, null, pass == 1 ? PROC_REF(clean_second_pass) : PROC_REF(clean_done))
+	om_after_stagger(src, doomed, delay, PROC_REF(clean_atom), 1, null, pass == 1 ? PROC_REF(clean_second_pass) : PROC_REF(clean_done))
 
 /datum/rogue/zonemaster/proc/clean_atom(atom/I)
 	qdel(I)

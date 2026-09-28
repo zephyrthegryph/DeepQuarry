@@ -227,11 +227,11 @@
 
 /obj/item/kinetic_crusher/machete/gauntlets/equipped()
 	. = ..()
-	PERIODIC_START(src, PERIODIC_SECOND)
+	om_task_periodic(src, PERIODIC_SECOND)
 
 /obj/item/kinetic_crusher/machete/gauntlets/dropped(mob/user, equipping, slot)
 	ready_toggle(TRUE)
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 	. = ..()
 
 DECLARE_INTERACTIONS(/obj/item/kinetic_crusher/machete/gauntlets, INTERACT_USE(null, PROC_REF(interaction_self)))

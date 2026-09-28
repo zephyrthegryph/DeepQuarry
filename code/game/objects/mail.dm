@@ -169,7 +169,7 @@ EXTEND_INTERACTIONS(/obj/item/mail/blank, \
 /// Old attack_self: seal an open envelope, or open a sealed one.
 /obj/item/mail/blank/proc/interaction_seal(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!sealed)
-		om_do_after(user, 1.5 SECONDS, target = user, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(), on_fail = PROC_REF(attack_self_timed_failed), fail_args = list())
+		om_task_timed(user, 1.5 SECONDS, target = user, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(), on_fail = PROC_REF(attack_self_timed_failed), fail_args = list())
 		return
 	return unwrap(user)
 
@@ -245,7 +245,7 @@ DECLARE_INTERACTIONS(/obj/item/mail, \
 		balloon_alert(user, "already opening that!")
 		return FALSE
 
-	return !istext(om_do_after(user, 1.5 SECONDS, target = user, receiver = src, on_done = PROC_REF(unwrap_timed_done), done_args = list(user), busy = src))
+	return !istext(om_task_timed(user, 1.5 SECONDS, target = user, receiver = src, on_done = PROC_REF(unwrap_timed_done), done_args = list(user), busy = src))
 
 /// Opened: out come the contents (special handling keeps them in).
 /obj/item/mail/proc/unwrap_timed_done(mob/user)

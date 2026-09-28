@@ -22,7 +22,7 @@
 /obj/structure/prop/nest/Initialize(mapload)
 	. = ..()
 	den_mobs = list()
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 	COOLDOWN_START(src, spawn_cooldown, spawn_delay)
 	if(randomize_spawning) //Not the biggest shift in spawntime, but it's here.
 		var/delayshift_clamp = spawn_delay / 10

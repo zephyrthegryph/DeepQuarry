@@ -48,7 +48,7 @@ REF_OWNED(/obj/item/flamethrower, list("weldtool", "igniter", "ptank"))
 
 /obj/item/flamethrower/periodic_step()
 	if(!lit)
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 		return null
 	var/turf/location = loc
 	if(istype(location, /mob/))
@@ -201,7 +201,7 @@ DECLARE_INTERACTIONS(/obj/item/flamethrower, \
 				return FALSE
 			lit = !lit
 			if(lit)
-				PERIODIC_START(src, PERIODIC_SLOW)
+				om_task_periodic(src, PERIODIC_SLOW)
 				playsound(src, 'sound/items/welderactivate.ogg', 50, 1)
 			else
 				playsound(src, 'sound/items/welderdeactivate.ogg', 50, 1)

@@ -31,10 +31,10 @@ DECLARE_INTERACTIONS(/obj/item/t_scanner, INTERACT_USE(null, PROC_REF(interactio
 /obj/item/t_scanner/proc/set_active(active)
 	on = active
 	if(on)
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 		flicker = 0
 	else
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 		set_user_client(null)
 	update_icon()
 

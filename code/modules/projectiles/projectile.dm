@@ -380,7 +380,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	fired = TRUE
 	if(hitscan)
 		. = process_hitscan()
-	PERIODIC_START(src, PERIODIC_PROJECTILES)
+	om_task_periodic(src, PERIODIC_PROJECTILES)
 	pixel_move(1, FALSE)	//move it now!
 
 /obj/item/projectile/Moved(atom/old_loc, direction, forced = FALSE)

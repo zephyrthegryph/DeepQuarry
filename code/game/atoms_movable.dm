@@ -565,7 +565,7 @@
 	if(spin && does_spin)
 		SpinAnimation(4,1)
 
-	PERIODIC_START(TT, PERIODIC_THROWING) // code/datums/thrownthing.dm
+	om_task_periodic(TT, PERIODIC_THROWING) // code/datums/thrownthing.dm
 
 //Overlays
 /atom/movable/overlay

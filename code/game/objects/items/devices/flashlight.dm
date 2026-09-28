@@ -113,9 +113,9 @@ DECLARE_INTERACTIONS(/obj/item/flashlight, \
 			return FALSE
 	on = !on
 	if(on && power_use)
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 	else if(power_use)
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 	playsound(src, 'sound/weapons/empty.ogg', 15, 1, -3)
 	update_brightness()
 	user.update_mob_action_buttons()
@@ -423,7 +423,7 @@ MATERIAL_MIX(/obj/item/flashlight/maglight, list(MAT_STEEL = 200,MAT_GLASS = 50)
 		turn_off()
 		if(!fuel)
 			src.icon_state = "[initial(icon_state)]-empty"
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 
 /obj/item/flashlight/flare/proc/turn_off()
 	on = 0
@@ -444,14 +444,14 @@ MATERIAL_MIX(/obj/item/flashlight/maglight, list(MAT_STEEL = 200,MAT_GLASS = 50)
 		user.visible_message(span_notice("[user] activates the flare."), span_notice("You pull the cord on the flare, activating it!"))
 		force = on_damage
 		injury_kind = INJURY_BURN
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 
 /obj/item/flashlight/flare/proc/ignite() //Used for flare launchers.
 	on = !on
 	update_brightness()
 	force = on_damage
 	injury_kind = INJURY_BURN
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 	return 1
 
 /*
@@ -482,7 +482,7 @@ MATERIAL_MIX(/obj/item/flashlight/maglight, list(MAT_STEEL = 200,MAT_GLASS = 50)
 		turn_off()
 		if(!fuel)
 			src.icon_state = "[initial(icon_state)]-empty"
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 
 /obj/item/flashlight/glowstick/proc/turn_off()
 	on = FALSE
@@ -498,7 +498,7 @@ MATERIAL_MIX(/obj/item/flashlight/maglight, list(MAT_STEEL = 200,MAT_GLASS = 50)
 
 	if(. == CAN_USE)
 		user.visible_message(span_notice("[user] cracks and shakes \the [name]."), span_notice("You crack and shake \the [src], turning it on!"))
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 
 /obj/item/flashlight/glowstick/red
 	name = "red glowstick"

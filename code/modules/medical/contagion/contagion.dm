@@ -140,7 +140,7 @@ REF_BACK(/datum/affliction/contagion, list("host" = null))
 	update_spread_lane()
 
 /datum/affliction/contagion/on_removed()
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 	if(global_flag_check(virus_modifiers, PROCESSING))
 		virus_modifiers &= ~PROCESSING
 		End()

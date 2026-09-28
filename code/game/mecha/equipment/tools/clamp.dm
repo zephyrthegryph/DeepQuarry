@@ -60,10 +60,10 @@
 					var/obj/machinery/door/firedoor/FD = O
 					if(FD.blocked)
 						FD.visible_message(span_danger("\The [chassis] begins prying on \the [FD]!"))
-						om_do_after(chassis?.slot_item(MECHA_SLOT_PILOT), 10 SECONDS, FD, src, PROC_REF(pry_firedoor), list(FD, TRUE), IGNORE_HELD_ITEM)
+						om_task_timed(chassis?.slot_item(MECHA_SLOT_PILOT), 10 SECONDS, FD, src, PROC_REF(pry_firedoor), list(FD, TRUE), IGNORE_HELD_ITEM)
 					else if(FD.density)
 						FD.visible_message(span_warning("\The [chassis] begins forcing \the [FD] open!"))
-						om_do_after(chassis?.slot_item(MECHA_SLOT_PILOT), 5 SECONDS, FD, src, PROC_REF(pry_firedoor), list(FD, FALSE), IGNORE_HELD_ITEM)
+						om_task_timed(chassis?.slot_item(MECHA_SLOT_PILOT), 5 SECONDS, FD, src, PROC_REF(pry_firedoor), list(FD, FALSE), IGNORE_HELD_ITEM)
 					else
 						FD.visible_message(span_danger("\The [chassis] forces \the [FD] closed!"))
 						FD.close(1)
@@ -74,7 +74,7 @@
 					else if(!AD.operating)
 						if(AD.welded)
 							AD.visible_message(span_warning("\The [chassis] begins prying on \the [AD]!"))
-							om_do_after(chassis?.slot_item(MECHA_SLOT_PILOT), 15 SECONDS, AD, src, PROC_REF(pry_airlock), list(AD), IGNORE_HELD_ITEM)
+							om_task_timed(chassis?.slot_item(MECHA_SLOT_PILOT), 15 SECONDS, AD, src, PROC_REF(pry_airlock), list(AD), IGNORE_HELD_ITEM)
 						else
 							toggle_airlock(AD)
 				return

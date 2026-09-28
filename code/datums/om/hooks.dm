@@ -9,7 +9,8 @@
 // Both ends hold the hook: it goes away with om_unhook(), or when either end is
 // deleted (lifecycle phase 4, om_teardown_hooks()), so a hook never keeps a
 // deleted datum alive and a listener never needs a deleting hook just to clean up.
-// Hooks key on the exact event type.
+// Hooks honour event ancestry, as behaviours do: a hook on /datum/om/event/x also
+// hears every subtype of x (om_deliver() walks reg.event_lineage).
 
 /// Hooks `listener`'s `proc_ref` to `event_path` (a type or a list of types) emitted
 /// on `source`. Re-hooking the same listener and event replaces the proc.

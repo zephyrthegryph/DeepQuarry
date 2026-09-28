@@ -101,7 +101,7 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 			return TRUE
 	playsound(loc, 'sound/items/Ratchet.ogg', 100, 1)
 	to_chat(user, span_notice("Now disassembling the low wall..."))
-	om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
+	om_task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
 	return TRUE
 
 /obj/structure/low_wall/proc/wrench_act_timed_done(mob/user)
@@ -174,7 +174,7 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 		to_chat(user, span_warning("You need at least two rods to do this."))
 		return
 	to_chat(user, span_notice("Assembling grille..."))
-	om_do_after(user, 1 SECONDS, target = R, receiver = src, on_done = PROC_REF(handle_rod_use_timed_done), done_args = list(R))
+	om_task_timed(user, 1 SECONDS, target = R, receiver = src, on_done = PROC_REF(handle_rod_use_timed_done), done_args = list(R))
 	return TRUE
 
 /obj/structure/low_wall/proc/handle_rod_use_timed_done(obj/item/stack/rods/R)
@@ -196,7 +196,7 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 		to_chat(user, span_warning("You need at least four sheets of glass to do this."))
 		return
 	to_chat(user, span_notice("Assembling window..."))
-	om_do_after(user, 4 SECONDS, target = G, receiver = src, on_done = PROC_REF(handle_glass_use_timed_done), done_args = list(G, window_type))
+	om_task_timed(user, 4 SECONDS, target = G, receiver = src, on_done = PROC_REF(handle_glass_use_timed_done), done_args = list(G, window_type))
 	return TRUE
 
 /obj/structure/low_wall/proc/handle_glass_use_timed_done(obj/item/stack/material/glass/G, window_type)

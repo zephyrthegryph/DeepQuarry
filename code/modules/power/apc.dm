@@ -535,7 +535,7 @@ REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 		to_chat(user, span_warning("You need to remove the power cell first."))
 		return ITEM_INTERACT_BLOCKING
 	user.visible_message(span_warning("[user.name] connects [tool] to the APC and begins resetting it."), "You begin resetting the APC...")
-	om_do_after(user, 5 SECONDS, src, src, PROC_REF(reset_done), list(user, tool))
+	om_task_timed(user, 5 SECONDS, src, src, PROC_REF(reset_done), list(user, tool))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/power/apc/proc/reset_done(mob/user, obj/item/tool)
@@ -640,12 +640,12 @@ REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 		user.visible_message(span_warning("[user.name] adds cables to the APC frame."), \
 			"You start adding cables to the APC frame...")
 		playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
-		om_do_after(user, 2 SECONDS, src, src, PROC_REF(add_cables_done), list(user, C))
+		om_task_timed(user, 2 SECONDS, src, src, PROC_REF(add_cables_done), list(user, C))
 	else if(istype(W, /obj/item/module/power_control) && opened && has_electronics == APC_HAS_ELECTRONICS_NONE && !((stat & BROKEN)))
 		user.visible_message(span_warning("[user.name] inserts the power control board into [src]."), \
 			"You start to insert the power control board into the frame...")
 		playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
-		om_do_after(user, 1 SECOND, src, src, PROC_REF(insert_board_done), list(user, W))
+		om_task_timed(user, 1 SECOND, src, src, PROC_REF(insert_board_done), list(user, W))
 	else if(istype(W, /obj/item/module/power_control) && opened && has_electronics == APC_HAS_ELECTRONICS_NONE && (stat & BROKEN))
 		to_chat(user, span_warning("The [src] is too broken for that. Repair it first."))
 		return TRUE
@@ -656,7 +656,7 @@ REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 				return TRUE
 			user.visible_message(span_warning("[user.name] begins replacing the damaged APC cover with a new one."),\
 				"You begin to replace the damaged APC cover...")
-			om_do_after(user, 5 SECONDS, src, src, PROC_REF(replace_cover_done), list(user, W))
+			om_task_timed(user, 5 SECONDS, src, src, PROC_REF(replace_cover_done), list(user, W))
 	else
 		if((stat & BROKEN) \
 				&& !opened \
@@ -721,7 +721,7 @@ REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 			to_chat(user, "The [src] isn't working.")
 		else
 			flick("apc-spark", src)
-			om_do_after(user, 0.6 SECONDS, src, src, PROC_REF(emag_done), list(user))
+			om_task_timed(user, 0.6 SECONDS, src, src, PROC_REF(emag_done), list(user))
 			return 1
 
 /obj/machinery/power/apc/proc/emag_done(mob/user)

@@ -205,7 +205,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/shock_maul, \
 	if(!user.IsAdvancedToolUser())
 		return TRUE
 	if(!status && bcell && bcell.charge >= hitcost)
-		om_do_after(user, charge_time, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
+		om_task_timed(user, charge_time, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
 	else if(status)
 		status = 0
 		user.visible_message(span_notice("[user] safely disengages \the [src]'s power field."),span_notice("\The [src] is now off."))

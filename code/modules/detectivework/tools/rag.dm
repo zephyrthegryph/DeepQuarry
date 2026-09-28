@@ -117,7 +117,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/rag, \
 	else
 		user.visible_message("[user] starts to wipe [A] with [src].")
 		update_name()
-		om_do_after(user, 3 SECONDS, src, src, PROC_REF(wipe_done), list(user, A))
+		om_task_timed(user, 3 SECONDS, src, src, PROC_REF(wipe_done), list(user, A))
 
 /obj/item/reagent_containers/glass/rag/proc/wipe_done(mob/user, atom/A)
 	user.visible_message("[user] finishes wiping [A]!")
@@ -217,7 +217,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/rag, \
 		qdel(src)
 		return
 
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 	set_light(2, null, "#E38F46")
 	on_fire = 1
 	update_name()
@@ -225,7 +225,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/rag, \
 
 /obj/item/reagent_containers/glass/rag/extinguish()
 	. = ..()
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 	set_light(0)
 	on_fire = 0
 
@@ -252,7 +252,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/rag, \
 		location.hotspot_expose(700, 5)
 
 	if(burn_time <= 0)
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 		new /obj/effect/decal/cleanable/ash(location)
 		qdel(src)
 		return

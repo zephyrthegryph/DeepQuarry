@@ -92,7 +92,7 @@
 		return
 	if(cast_delay)
 		var/flags = IGNORE_HELD_ITEM | ((spell_flags & (STATALLOWED|GHOSTCAST)) ? IGNORE_INCAPACITATED : NONE)
-		om_do_after(user, cast_delay, null, src, PROC_REF(perform_cast), list(user, skipcharge), flags, progress = FALSE)
+		om_task_timed(user, cast_delay, null, src, PROC_REF(perform_cast), list(user, skipcharge), flags, progress = FALSE)
 		return
 	perform_cast(user, skipcharge)
 

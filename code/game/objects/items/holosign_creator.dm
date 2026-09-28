@@ -39,7 +39,7 @@
 		if(length(signs) < max_signs)
 			playsound(src.loc, 'sound/machines/click.ogg', 20, 1)
 			if(creation_time)
-				om_do_after(user, creation_time, target = target, receiver = src, on_done = PROC_REF(create_sign), done_args = list(user, T), busy = src)
+				om_task_timed(user, creation_time, target = target, receiver = src, on_done = PROC_REF(create_sign), done_args = list(user, T), busy = src)
 				return
 			create_sign(user, T, FALSE)
 		else

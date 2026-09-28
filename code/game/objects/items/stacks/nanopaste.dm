@@ -17,7 +17,7 @@
 		var/mob/living/silicon/robot/R = M
 		var/list/demand = R.treatment_demand(/datum/diagnostic_profile/robot_analyzer)
 		if(demand?[TREAT_PLATING_REPAIR] || demand?[TREAT_WIRING_REPAIR])
-			om_do_after(user, 7 * toolspeed, target = R, receiver = src, on_done = PROC_REF(attack_timed_done), done_args = list(user, R))
+			om_task_timed(user, 7 * toolspeed, target = R, receiver = src, on_done = PROC_REF(attack_timed_done), done_args = list(user, R))
 			return ITEM_INTERACT_SUCCESS
 		else
 			balloon_alert(user, "all [R]'s systems are nominal.")

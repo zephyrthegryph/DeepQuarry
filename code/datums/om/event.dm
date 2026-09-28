@@ -8,9 +8,14 @@
 // Re-entrancy: an ordinary event emitted while another is being delivered
 // is queued (coalesced per entity and type unless coalesce = FALSE) and
 // delivered right after, in the same call. A before_* event is synchronous
-// so it can be vetoed; emitting one on an entity that is already delivering
-// a before_* event is an error, reported loudly and answered with a veto,
-// never silently dropped.
+// so it can be vetoed. The re-entrancy guard is keyed by event type: a
+// before_* event may emit a DIFFERENT before_* event on the same entity (a
+// before_move asking before_drop), but re-emitting the SAME type while it is
+// being delivered, or nesting deeper than OM_VETO_DEPTH_MAX, is an error,
+// reported loudly and answered with a veto, never silently dropped.
+
+/// Deepest nesting of distinct before_* events on one entity before the next is vetoed.
+#define OM_VETO_DEPTH_MAX 8
 
 /proc/om_emit(datum/E, datum/om/event/event)
 	var/datum/om/rec/rec = E?.om_rec
@@ -27,16 +32,28 @@
 			catch(var/exception/e0)
 				sched.report_caught(e0, "[event.type]: [e0]")
 			return event.result
-		if(rec.in_veto)
-			sched.error("re-entrant [event.type] on [E]: vetoed")
+		var/etype = event.type
+		if(rec.in_veto && (etype in rec.in_veto))
+			sched.error("re-entrant [etype] on [E]: vetoed")
 			return EVENT_VETO
-		rec.in_veto = TRUE
+		if(length(rec.in_veto) >= OM_VETO_DEPTH_MAX)
+			sched.error("before-event nesting deeper than [OM_VETO_DEPTH_MAX] on [E] ([etype] inside [jointext(rec.in_veto, ", ")]): vetoed")
+			return EVENT_VETO
+		LAZYADD(rec.in_veto, etype)
 		. = null
 		try
 			. = om_deliver(rec, event, TRUE)
 		catch(var/exception/e1)
-			sched.report_caught(e1, "[event.type]: [e1]")
-		rec.in_veto = FALSE
+			sched.report_caught(e1, "[etype]: [e1]")
+		// Remove the innermost occurrence only (the list is a stack).
+		if(rec.in_veto)
+			var/at = length(rec.in_veto)
+			while(at && rec.in_veto[at] != etype)
+				at--
+			if(at)
+				rec.in_veto.Cut(at, at + 1)
+			if(!length(rec.in_veto))
+				rec.in_veto = null
 		return
 	if(event.sync)
 		try
@@ -74,16 +91,22 @@
 
 /proc/om_deliver(datum/om/rec/rec, datum/om/event/event, veto)
 	var/datum/om/registry/reg = om_registry()
-	var/e = reg.event_idx[event.type]
+	var/etype = event.type
+	var/e = reg.event_idx[etype]
 	var/list/flags = e ? reg.event_handlers[e] : null
 	var/datum/E = rec.owner
 	if(rec.table.cache_events)
-		om_cache_clear(E, rec.table.cache_events, event.type)
+		om_cache_clear(E, rec.table.cache_events, etype)
 	if(flags)
-		for(var/i in 1 to length(rec.att))
+		// A handler may attach or detach behaviours: snapshot att_ver and re-find
+		// the behaviour just run when it changes (as scheduler run_wakes() does).
+		var/i = 1
+		while(i <= length(rec.att))
 			var/datum/om/behaviour/B = rec.att[i]
 			if(!flags[B.id] || !(rec.att_state[i] & OM_ATT_STARTED))
+				i++
 				continue
+			var/ver = rec.att_ver
 			var/result = event.dispatch(B, E)
 			if(isnum(result) && result)
 				event.result |= result
@@ -91,40 +114,50 @@
 					return EVENT_VETO
 			if(rec.torn_down)
 				return null
-	var/list/hooks = rec.hooks_in?[event.type]
-	if(hooks)
-		// A handler may hook or unhook while we deliver.
-		hooks = hooks.Copy()
-		for(var/i in 1 to length(hooks) step 2)
-			var/result = call(hooks[i], hooks[i + 1])(E, event)
-			if(isnum(result) && result)
-				event.result |= result
-				if(veto && result == EVENT_VETO)
-					return EVENT_VETO
-			if(rec.torn_down)
-				return null
-	if(rec.tasks)
+			if(rec.att_ver != ver)
+				var/at = rec.att.Find(B)
+				i = (at ? at : i - 1) + 1
+			else
+				i++
+	if(rec.hooks_in)
+		// Hooks honour event ancestry, as behaviours do: a hook on /datum/om/event/x
+		// also hears x's subtypes. Most-derived first.
+		for(var/path in (e ? reg.event_lineage[e] : list(etype)))
+			var/list/hooks = rec.hooks_in?[path]
+			if(!hooks)
+				continue
+			// A handler may hook or unhook while we deliver.
+			hooks = hooks.Copy()
+			for(var/i in 1 to length(hooks) step 2)
+				var/result = call(hooks[i], hooks[i + 1])(E, event)
+				if(isnum(result) && result)
+					event.result |= result
+					if(veto && result == EVENT_VETO)
+						return EVENT_VETO
+				if(rec.torn_down)
+					return null
+	if(rec.task_interrupts?[etype])
 		for(var/datum/om/task/T as anything in rec.tasks.Copy())
-			for(var/path in T.spec.interrupted_by)
-				if(istype(event, path))
-					om_task_cancel(T, "interrupted")
-					break
+			if(T.spec.compiled_interrupts?[etype])
+				om_task_cancel(T, "interrupted")
 	return null
 
-/// TRUE when a started behaviour on E handles `path`, something hooked it on E
-/// (om_hook), or a task on E could be interrupted by it. Senders on hot paths
-/// (movement, examine) test this before allocating the event, so entities with
-/// no interested behaviour pay a lookup.
+/// TRUE when a started behaviour on E handles `path`, something hooked it (or an
+/// ancestor event) on E (om_hook), or a task on E is interrupted by it. Senders on
+/// hot paths (movement, examine) test this before allocating the event, so entities
+/// with no interested behaviour pay a lookup.
 /proc/om_wants(datum/E, path)
 	var/datum/om/rec/rec = E?.om_rec
 	if(!rec || rec.torn_down)
 		return FALSE
-	if(length(rec.tasks))
-		return TRUE
-	if(rec.hooks_in && rec.hooks_in[path])
+	if(rec.task_interrupts?[path])
 		return TRUE
 	var/datum/om/registry/reg = om_registry()
 	var/e = reg.event_idx[path]
+	if(rec.hooks_in)
+		for(var/p in (e ? reg.event_lineage[e] : list(path)))
+			if(rec.hooks_in[p])
+				return TRUE
 	var/list/flags = e ? reg.event_handlers[e] : null
 	if(!flags)
 		return FALSE
@@ -133,3 +166,22 @@
 		if(flags[B.id] && (rec.att_state[i] & OM_ATT_STARTED))
 			return TRUE
 	return FALSE
+
+/// Tasks: keeps rec.task_interrupts (event type -> number of running tasks it
+/// interrupts) in step with rec.tasks, so delivery and om_wants() read one assoc.
+/proc/om_task_interrupts_add(datum/om/rec/rec, datum/om/task/spec)
+	for(var/path in spec.compiled_interrupts)
+		LAZYINITLIST(rec.task_interrupts)
+		rec.task_interrupts[path] = (rec.task_interrupts[path] || 0) + 1
+
+/proc/om_task_interrupts_remove(datum/om/rec/rec, datum/om/task/spec)
+	if(!rec.task_interrupts)
+		return
+	for(var/path in spec.compiled_interrupts)
+		var/n = (rec.task_interrupts[path] || 0) - 1
+		if(n > 0)
+			rec.task_interrupts[path] = n
+		else
+			rec.task_interrupts -= path
+	if(!length(rec.task_interrupts))
+		rec.task_interrupts = null

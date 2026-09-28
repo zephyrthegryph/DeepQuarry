@@ -111,13 +111,13 @@ REF_OWNED(/obj/item/suit_cooling_unit, "cell")
 		return
 
 	on = 1
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 	update_icon()
 
 /obj/item/suit_cooling_unit/proc/turn_off(failed)
 	if(failed) visible_message("\The [src] clicks and whines as it powers down.")
 	on = 0
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 	update_icon()
 
 DECLARE_INTERACTIONS(/obj/item/suit_cooling_unit, \

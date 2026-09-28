@@ -183,11 +183,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 /obj/machinery/on_materialize()
 	. = ..()
 	if(speed_process)
-		PERIODIC_START(src, PERIODIC_FAST)
+		om_task_periodic(src, PERIODIC_FAST)
 
 /obj/machinery/on_dematerialize()
 	if(speed_process)
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 	return ..()
 
 // the base machine: board and parts deleted, occupants put out.

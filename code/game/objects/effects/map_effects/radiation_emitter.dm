@@ -34,7 +34,7 @@
 	active = FALSE
 
 /obj/effect/map_effect/radiation_emitter/Initialize(mapload)
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 	return ..()
 
 /obj/effect/map_effect/radiation_emitter/strong

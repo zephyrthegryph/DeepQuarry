@@ -32,7 +32,7 @@ DECLARE_INTERACTIONS(/obj/item/generic_item, INTERACT_USE(null, PROC_REF(interac
 	if(activatable_hand)
 		if(!on)
 			if(delay_time && !delay_passed)
-				om_do_after(user, delay_time, src, src, PROC_REF(delayed_use), list(user))
+				om_task_timed(user, delay_time, src, src, PROC_REF(delayed_use), list(user))
 				return TRUE
 			on = 1
 			if(icon_on)
@@ -87,7 +87,7 @@ DECLARE_INTERACTIONS(/obj/item/generic_item, INTERACT_USE(null, PROC_REF(interac
 				playsound(src, sound_activated, 50, 1)
 		else if(togglable)
 			if(delay_time && !delay_passed)
-				om_do_after(user, delay_time, src, src, PROC_REF(delayed_use), list(user))
+				om_task_timed(user, delay_time, src, src, PROC_REF(delayed_use), list(user))
 				return TRUE
 			on = 0
 			icon_state = icon_state_off

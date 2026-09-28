@@ -36,7 +36,7 @@ EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/ash, \
 /obj/effect/decal/cleanable/greenglow/Initialize(mapload, _age)
 	. = ..()
 	expire(2 MINUTES)
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 
 /// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.
 /obj/effect/decal/cleanable/greenglow/periodic_step()
@@ -241,7 +241,7 @@ EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/confetti, \
 /// Old attack_hand: slowly pick the confetti up.
 /obj/effect/decal/cleanable/confetti/proc/interaction_pick_confetti(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_notice("You start to meticulously pick up the confetti."))
-	om_do_after(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list())
+	om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list())
 	return TRUE
 
 /obj/effect/decal/cleanable/confetti/proc/attack_hand_timed_done()

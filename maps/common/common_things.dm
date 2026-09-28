@@ -246,7 +246,7 @@
 		log_mapping("Mob spawner at [x],[y],[z] ([get_area(src)]) had no mobs_to_pick_from set on it!")
 		flags |= ATOM_INITIALIZED
 		return INITIALIZE_HINT_QDEL
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 
 /obj/sc_away_spawner/periodic_step()
 	if(my_mob && my_mob.stat != DEAD)
@@ -287,7 +287,7 @@
 */
 		return
 	else
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 		depleted = TRUE
 		return
 

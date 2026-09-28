@@ -70,7 +70,7 @@
 	var/amount_to_add = min(amount, reagent_volumes[reagent_id])
 	target_reagents.add_reagent(reagent_id, amount_to_add)
 	reagent_volumes[reagent_id] -= amount_to_add
-	PERIODIC_START(src, PERIODIC_SLOW) // refill what was used
+	om_task_periodic(src, PERIODIC_SLOW) // refill what was used
 	return BORGHYPO_STATUS_SUCCESS
 
 /// Attempts to add one reagent or multiple reagents, depending on if this hypo is currently set to dispense a recipe, (see `is_dispensing_recipe`.) Returns its success (or error) status at doing so.

@@ -247,13 +247,13 @@
 	if(istype(target,/turf/simulated/wall))
 		var/turf/simulated/wall/W = target
 		// 10 seconds for an R-wall, 5 seconds for a normal one.
-		om_do_after(src, W.reinf_material ? 10 SECONDS : 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(eat_wall_done), done_args = list(W), on_fail = PROC_REF(eat_finished), fail_args = list(FALSE))
+		om_task_timed(src, W.reinf_material ? 10 SECONDS : 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(eat_wall_done), done_args = list(W), on_fail = PROC_REF(eat_finished), fail_args = list(FALSE))
 		return
 	if(istype(target,/atom/movable))
 		if(istype(target,/mob))
 			eat_movable(target)
 		else // 5 ticks to eat stuff like tables.
-			om_do_after(src, 5, target = target, receiver = src, on_done = PROC_REF(eat_movable), done_args = list(target), on_fail = PROC_REF(eat_finished), fail_args = list(FALSE))
+			om_task_timed(src, 5, target = target, receiver = src, on_done = PROC_REF(eat_movable), done_args = list(target), on_fail = PROC_REF(eat_finished), fail_args = list(FALSE))
 		return
 	eat_finished(FALSE)
 
@@ -278,7 +278,7 @@
 		else
 			EF.visible_message(span_danger("\The [src] begins forcing itself through \the [EF]!"))
 		// No eating shields.
-		om_do_after(src, EF.get_strength() * 5, target = EF, receiver = src, on_done = PROC_REF(eat_field_done), done_args = list(EF), on_fail = PROC_REF(eat_field_failed), fail_args = list(EF))
+		om_task_timed(src, EF.get_strength() * 5, target = EF, receiver = src, on_done = PROC_REF(eat_field_done), done_args = list(EF), on_fail = PROC_REF(eat_field_failed), fail_args = list(EF))
 		return
 	eat_consume(objectOrMob)
 

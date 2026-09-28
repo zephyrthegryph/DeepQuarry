@@ -119,7 +119,7 @@ DECLARE_INTERACTIONS(/obj/item/aicard, INTERACT_USE(null, PROC_REF(interaction_s
 	user.visible_message("\The [user] starts transferring \the [ai] into \the [src]...", "You start transferring \the [ai] into \the [src]...")
 	show_message(span_critical("\The [user] is transferring you into \the [src]!"))
 
-	om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(grab_ai_timed_done), done_args = list(ai, user))
+	om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(grab_ai_timed_done), done_args = list(ai, user))
 	return 1
 
 /obj/item/aicard/proc/grab_ai_timed_done(mob/living/silicon/ai/ai, mob/living/user)

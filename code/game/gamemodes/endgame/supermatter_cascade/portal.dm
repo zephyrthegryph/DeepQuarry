@@ -16,7 +16,7 @@
 
 /obj/singularity/narsie/large/exit/Initialize(mapload, ...)
 	. = ..()
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 
 /obj/singularity/narsie/large/exit/update_icon()
 	overlays = 0

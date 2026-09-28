@@ -261,10 +261,10 @@
 		if(istype(X.species, /datum/species/xenos))
 			if(src.density)
 				visible_message(span_alium("\The [user] begins forcing \the [src] open!"))
-				om_do_after(user, 15 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_alien_timed_done), done_args = list(user), busy = user)
+				om_task_timed(user, 15 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_alien_timed_done), done_args = list(user), busy = user)
 			else
 				visible_message(span_alium("\The [user] begins forcing \the [src] closed!"))
-				om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_alien_timed_done2), done_args = list(user), busy = user)
+				om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_alien_timed_done2), done_args = list(user), busy = user)
 		else
 			visible_message(span_notice("\The [user] strains fruitlessly to force \the [src] [density ? "open" : "closed"]."))
 			return
@@ -287,10 +287,10 @@
 		if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
 			if(src.density)
 				visible_message(span_danger("\The [user] starts forcing \the [src] open!"))
-				om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_generic_timed_done), done_args = list(user), busy = user)
+				om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_generic_timed_done), done_args = list(user), busy = user)
 			else
 				visible_message(span_danger("\The [user] starts forcing \the [src] closed!"))
-				om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_generic_timed_done2), done_args = list(user), busy = user)
+				om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_generic_timed_done2), done_args = list(user), busy = user)
 		else
 			visible_message(span_notice("\The [user] strains fruitlessly to force \the [src] [density ? "open" : "closed"]."))
 		return

@@ -23,7 +23,7 @@ SUBSYSTEM_DEF(behaviours)
 	om_registry()
 	om_scheduler()
 	// World services' periodic lanes on the global owner (machines, mobs; world_lanes.dm).
-	om_start_world_lanes()
+	_om_start_world_lanes() // ALLOW(om_internal): SSbehaviours is the scheduler core that boots the world lanes
 	return SS_INIT_SUCCESS
 
 /datum/controller/subsystem/behaviours/fire(resumed)

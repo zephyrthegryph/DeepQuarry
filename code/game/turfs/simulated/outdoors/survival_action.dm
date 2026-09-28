@@ -12,7 +12,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/newdirt, INTERACT_HAND_UNGATE
 		return FALSE
 	if(icon_state in GLOB.has_rocks)
 		user.visible_message("[user] loosens rocks from \the [src]...", "You loosen rocks from \the [src]...")
-		om_do_after(user, 5 SECONDS, src, src, PROC_REF(loosen_rocks_done))
+		om_task_timed(user, 5 SECONDS, src, src, PROC_REF(loosen_rocks_done))
 		return TRUE
 	if(locate_on(src, /obj))
 		to_chat(user, span_notice("The [name] isn't clear."))
@@ -33,7 +33,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/newdirt, INTERACT_HAND_UNGATE
 /turf/simulated/floor/outdoors/newdirt/proc/growplot_answered(datum/om/prompt/confirm/build_growplot/ask)
 	var/mob/user = ask.answerer
 	user.visible_message("[user] starts piling up \the [src]...", "You start piling up \the [src]...")
-	om_do_after(user, 5 SECONDS, src, src, PROC_REF(pile_done))
+	om_task_timed(user, 5 SECONDS, src, src, PROC_REF(pile_done))
 
 /turf/simulated/floor/outdoors/newdirt/proc/loosen_rocks_done()
 	if(!(icon_state in GLOB.has_rocks))
@@ -87,7 +87,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/newdirt, INTERACT_HAND_UNGATE
 /obj/structure/flora/tree/proc/interaction_search_sticks(mob/user, obj/item/held, datum/interaction/interaction)
 	if(sticks)
 		user.visible_message("[user] searches \the [src] for loose sticks...", "You search \the [src] for loose sticks...")
-		om_do_after(user, 5 SECONDS, src, src, PROC_REF(sticks_found), list(user))
+		om_task_timed(user, 5 SECONDS, src, src, PROC_REF(sticks_found), list(user))
 	else
 		to_chat(user, span_notice("You don't see any loose sticks..."))
 	return TRUE

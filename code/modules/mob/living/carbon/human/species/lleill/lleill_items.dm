@@ -288,7 +288,7 @@ DECLARE_INTERACTIONS(/obj/structure/glamour_ring, INTERACT_HAND_UNGATED(null, PR
 
 	if(m_action == "Yes")
 		to_chat(M, span_warning("You begin to break the lines of the glamour ring."))
-		om_do_after(M, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(ring_broken), done_args = list(M), on_fail = PROC_REF(ring_left_alone), fail_args = list(M))
+		om_task_timed(M, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(ring_broken), done_args = list(M), on_fail = PROC_REF(ring_left_alone), fail_args = list(M))
 		return
 
 	if(m_action == "Restore Energy")

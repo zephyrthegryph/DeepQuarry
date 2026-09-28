@@ -25,9 +25,9 @@
 	visible_message("You start pulling the string on \the [src].", "[user] starts pulling the string on the [src].")
 
 	if(max_fuel <= 0)
-		om_do_after(user, 15, target = src, receiver = src, on_done = PROC_REF(turnOn_timed_done), done_args = list(user), on_fail = PROC_REF(turnOn_timed_failed), fail_args = list(user))
+		om_task_timed(user, 15, target = src, receiver = src, on_done = PROC_REF(turnOn_timed_done), done_args = list(user), on_fail = PROC_REF(turnOn_timed_failed), fail_args = list(user))
 	else
-		om_do_after(user, 15, target = src, receiver = src, on_done = PROC_REF(turnOn_timed_done2), done_args = list(user), on_fail = PROC_REF(turnOn_timed_failed2), fail_args = list(user))
+		om_task_timed(user, 15, target = src, receiver = src, on_done = PROC_REF(turnOn_timed_done2), done_args = list(user), on_fail = PROC_REF(turnOn_timed_failed2), fail_args = list(user))
 
 /obj/item/chainsaw/proc/turnOn_timed_done(mob/user)
 	to_chat(user, "\The [src] won't start!")

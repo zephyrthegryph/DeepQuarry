@@ -55,7 +55,7 @@
 				to_chat(user, span_warning("You need one sheet of [material.display_name] to repair \the [src]."))
 				return TRUE
 			visible_message(span_notice("[user] begins to repair \the [src]."))
-			om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, D))
+			om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, D))
 			return TRUE
 		return TRUE
 

@@ -52,7 +52,7 @@
 		lit = TRUE
 		visible_message(flavor_text)
 		set_light(CANDLE_LUM)
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 
 /obj/item/flame/candle/periodic_step()
 	if(!lit)

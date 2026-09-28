@@ -16,8 +16,8 @@
 	if(--work <= 0)
 		return PROCESS_KILL
 
-/// PERIODIC_START runs periodic_step() every frame until it returns PROCESS_KILL; the entity then
-/// idles and parks, PERIODIC_START wakes it again, PERIODIC_STOP ends the work early, and the
+/// om_task_periodic() runs periodic_step() every frame until it returns PROCESS_KILL; the entity then
+/// idles and parks, om_task_periodic() wakes it again, om_task_periodic_stop() ends the work early, and the
 /// audit never sees a missed wake.
 /datum/unit_test/dq_om_periodic_park_wake
 
@@ -25,14 +25,14 @@
 	var/datum/dq_periodic_probe/D = allocate(/datum/dq_periodic_probe)
 	var/P = PERIODIC_SLOW
 	D.work = 2
-	PERIODIC_START(D, P)
-	TEST_ASSERT(om_attached(D, P), "PERIODIC_START did not put it on the pipeline")
-	TEST_ASSERT(PERIODIC_RUNNING(D) && (D.datum_flags & DF_ISPROCESSING), "a started entity is not marked running")
+	om_task_periodic(D, P)
+	TEST_ASSERT(om_attached(D, P), "om_task_periodic() did not put it on the pipeline")
+	TEST_ASSERT(om_task_periodic_running(D) && (D.datum_flags & DF_ISPROCESSING), "a started entity is not marked running")
 	for(var/i in 1 to 2)
 		om_run_frame_now(D, P)
 	TEST_ASSERT_EQUAL(D.steps, 2, "it did not step once per frame while it had work")
 	TEST_ASSERT_EQUAL(D.last_delta, 20, "the slow lane passes the old SSobj delta")
-	TEST_ASSERT(!PERIODIC_RUNNING(D), "PROCESS_KILL did not end the work")
+	TEST_ASSERT(!om_task_periodic_running(D), "PROCESS_KILL did not end the work")
 	for(var/i in 1 to 3)
 		om_run_frame_now(D, P)
 	TEST_ASSERT_EQUAL(D.steps, 2, "it stepped with no work")
@@ -40,26 +40,26 @@
 	TEST_ASSERT(!length(om_pipeline_audit(null, 400, 100, TRUE)), "the audit reported a missed wake")
 
 	D.work = 5
-	PERIODIC_START(D, P)
+	om_task_periodic(D, P)
 	D.om_rec.sched.run_pass(1e9)
-	TEST_ASSERT(!om_pipe_parked(D, P), "PERIODIC_START did not unpark it")
+	TEST_ASSERT(!om_pipe_parked(D, P), "om_task_periodic() did not unpark it")
 	om_run_frame_now(D, P)
 	TEST_ASSERT_EQUAL(D.steps, 3, "a woken entity did not step")
-	PERIODIC_STOP(D)
+	om_task_periodic_stop(D)
 	for(var/i in 1 to 3)
 		om_run_frame_now(D, P)
-	TEST_ASSERT_EQUAL(D.steps, 3, "PERIODIC_STOP did not end the work")
+	TEST_ASSERT_EQUAL(D.steps, 3, "om_task_periodic_stop() did not end the work")
 	TEST_ASSERT(om_pipe_parked(D, P), "a stopped entity did not park")
 
 	// Moving to another lane leaves the first one idle, not missed.
 	D.work = 5
-	PERIODIC_START(D, PERIODIC_FAST)
+	om_task_periodic(D, PERIODIC_FAST)
 	om_run_frame_now(D, P)
 	TEST_ASSERT_EQUAL(D.steps, 3, "the old lane kept stepping after a move")
 	om_run_frame_now(D, PERIODIC_FAST)
 	TEST_ASSERT_EQUAL(D.steps, 4, "the new lane did not step")
 	TEST_ASSERT_EQUAL(D.last_delta, 2, "the fast lane passes the old SSfastprocess delta")
-	PERIODIC_STOP(D)
+	om_task_periodic_stop(D)
 
 /// A machine with explicitly started work (the old START_MACHINE_PROCESSING contract).
 /obj/machinery/dq_step_probe
@@ -113,13 +113,13 @@
 	M.work = 10
 	MACHINE_WAKE(M)
 	M.set_speed_process(TRUE)
-	PERIODIC_START(M, PERIODIC_FAST)
+	om_task_periodic(M, PERIODIC_FAST)
 	om_run_frame_now(M, /datum/om/pipeline/machine)
 	TEST_ASSERT_EQUAL(M.steps, 0, "a fast machine stepped on the machine pipeline")
 	om_run_frame_now(M, PERIODIC_FAST)
 	TEST_ASSERT_EQUAL(M.steps, 1, "a fast machine did not step on the fast lane")
 	M.set_speed_process(FALSE)
-	PERIODIC_STOP(M)
+	om_task_periodic_stop(M)
 
 /// Change channels and timers for sleepers: a watcher wakes on a watched channel and not on
 /// another; unwatching stops it; an om_after() timer fires once.
@@ -256,7 +256,7 @@
 	var/datum/alarm_handler/AH = GLOB.power_alarm
 	var/obj/item/origin = allocate(/obj/item, test_floor())
 	if(!length(AH.alarms))
-		PERIODIC_STOP(AH)
+		om_task_periodic_stop(AH)
 	AH.triggerAlarm(origin, origin, duration = 1)
 	TEST_ASSERT(AH.periodic_pipe == PERIODIC_SLOW, "raising an alarm did not start its handler")
 	AH.clearAlarm(origin, origin)
@@ -290,7 +290,7 @@
 	var/obj/item/modular_computer/tablet/T = allocate(/obj/item/modular_computer/tablet, test_floor())
 	T.enabled = FALSE
 	TEST_ASSERT_EQUAL(T.periodic_step(20), PROCESS_KILL, "a switched-off computer kept stepping")
-	PERIODIC_STOP(T)
+	om_task_periodic_stop(T)
 	T.enable_computer()
 	TEST_ASSERT(T.periodic_pipe == PERIODIC_SLOW, "switching a computer on did not start it")
 	T.enabled = FALSE
@@ -327,7 +327,7 @@
 	var/datum/event/E = new /datum/event/nothing(EM)
 	TEST_ASSERT(E.periodic_pipe == PERIODIC_SLOW, "a new event is not on the slow lane")
 	E.kill()
-	TEST_ASSERT(!PERIODIC_RUNNING(E), "a killed event kept its lane")
+	TEST_ASSERT(!om_task_periodic_running(E), "a killed event kept its lane")
 	GLOB.event_service.finished_events -= E
 	for(var/i = EVENT_LEVEL_MUNDANE to EVENT_LEVEL_MAJOR)
 		var/datum/event_container/EC = GLOB.event_service.event_containers[i]
@@ -364,11 +364,11 @@
 
 /datum/unit_test/dq_om_plants_on_lane/Run()
 	var/datum/probe = allocate(/datum/dq_periodic_probe)
-	PERIODIC_START(probe, PERIODIC_PLANTS)
+	om_task_periodic(probe, PERIODIC_PLANTS)
 	TEST_ASSERT(probe.periodic_pipe == PERIODIC_PLANTS, "the plant lane did not take a datum")
 	var/datum/om/pipeline/periodic/P = om_registry().behaviour(PERIODIC_PLANTS)
 	TEST_ASSERT_EQUAL(P.every, 7.5 SECONDS, "the plant lane lost the old SSplants cadence")
-	PERIODIC_STOP(probe)
+	om_task_periodic_stop(probe)
 
 #endif
 
@@ -425,7 +425,7 @@
 	var/obj/item/coin/uranium/coin = allocate(/obj/item/coin/uranium, T)
 	TEST_ASSERT_EQUAL(coin.periodic_step(20), PROCESS_KILL, "a radiation source with nobody near kept stepping")
 	TEST_ASSERT(length(coin.proximity_chunks), "a sleeping radiation source watches no chunks")
-	PERIODIC_STOP(coin)
+	om_task_periodic_stop(coin)
 	var/mob/living/visitor = allocate(/mob/living, locate(1, 1, T.z))
 	visitor.forceMove(get_step(T, WEST))
 	for(var/i in 1 to 40)

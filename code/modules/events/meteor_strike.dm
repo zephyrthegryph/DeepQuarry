@@ -109,7 +109,7 @@ DECLARE_INTERACTIONS(/obj/structure/meteorite, INTERACT_ITEM(null, PROC_REF(inte
 		var/obj/item/pickaxe/P = I
 		M.visible_message(span_warning("[M] starts [P.drill_verb] \the [src]."), span_warning("You start [P.drill_verb] \the [src]."))
 
-		om_do_after(M, P.digspeed*3, src, src, PROC_REF(break_apart_done), list(M))
+		om_task_timed(M, P.digspeed*3, src, src, PROC_REF(break_apart_done), list(M))
 		return INTERACTION_HANDLED_PASS
 	return INTERACTION_HANDLED_PASS
 

@@ -215,7 +215,7 @@
 	floor.pending_move(src)
 	LAZYOR(queued_floors, floor)
 	busy_state = LIFT_MOVING
-	PERIODIC_START(src, PERIODIC_SECOND)
+	om_task_periodic(src, PERIODIC_SECOND)
 
 // TODO: dummy machine ('lift mechanism') in powered area for functionality/blackout checks.
 /datum/turbolift/proc/is_functional()

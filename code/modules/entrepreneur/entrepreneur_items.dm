@@ -302,7 +302,7 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/dumbbell, INTERACT_USE(null, PROC_RE
 	if(M.nutrition <= 100)
 		to_chat(user, span_notice("You are too hungry to exercise right now."))
 		return TRUE
-	om_do_after(user, 3 SECONDS, src, src, PROC_REF(exercise_done), list(M))
+	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(exercise_done), list(M))
 	return TRUE
 
 /obj/item/entrepreneur/dumbbell/proc/exercise_done(mob/living/M)
@@ -443,7 +443,7 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/spirit_board, \
 	if(!istype(W))
 		to_chat(user, span_notice("You need some sort of glass, bottle or cup to contact the spirit world."))
 		return INTERACTION_HANDLED_PASS
-	om_do_after(user, 3 SECONDS, src, src, PROC_REF(spirit_slide_done), list(W, user))
+	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(spirit_slide_done), list(W, user))
 	return INTERACTION_HANDLED_PASS
 
 /obj/item/entrepreneur/spirit_board/proc/spirit_slide_done(obj/item/reagent_containers/food/drinks/W, mob/living/user)
@@ -628,4 +628,4 @@ EXTEND_INTERACTIONS(/obj/structure/bed/roller/massage, INTERACT_ALT(null, PROC_R
 /// Senses while carried (picking it up starts it); set down, it sleeps.
 /obj/item/entrepreneur/emf/equipped(mob/user, slot)
 	. = ..()
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)

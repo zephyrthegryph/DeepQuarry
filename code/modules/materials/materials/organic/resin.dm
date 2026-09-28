@@ -30,7 +30,7 @@
 	if(istype(M) && ((locate_in_list(M.internal_organs, /obj/item/organ/internal/xenos/hivenode)) || (locate_in_list(M.internal_organs, /obj/item/organ/internal/xenos/resinspinner/replicant))))
 		to_chat(M, "\The [W] shudders under your touch, starting to become porous.")
 		playsound(W, 'sound/effects/attackblob.ogg', 50, 1)
-		om_do_after(L, 5 SECONDS, W, null, GLOBAL_PROC_REF(resin_wall_dissolve), list(W))
+		om_task_timed(L, 5 SECONDS, W, null, GLOBAL_PROC_REF(resin_wall_dissolve), list(W))
 		return TRUE
 	return FALSE
 

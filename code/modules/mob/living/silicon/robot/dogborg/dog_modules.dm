@@ -167,28 +167,28 @@ DECLARE_INTERACTIONS(/obj/item/robot_tongue, INTERACT_USE(null, PROC_REF(interac
 			to_chat(user, span_notice("You refrain from lapping water from the [target.name] with your reserves filled."))
 			return
 		user.visible_message(span_filter_notice("[user] begins to lap up water from [target.name]."), span_notice("You begin to lap up water from [target.name]."))
-		om_do_after(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_robot_tongue_done), done_args = list(), busy = src)
+		om_task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_robot_tongue_done), done_args = list(), busy = src)
 	else if(water.energy < 5)
 		to_chat(user, span_notice("Your mouth feels dry. You should drink up some water ."))
 		return
 	else if(istype(target,/obj/effect/decal/cleanable))
 		user.visible_message(span_filter_notice("[user] begins to lick off \the [target.name]."), span_notice("You begin to lick off \the [target.name]..."))
-		om_do_after(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_robot_tongue_done2), done_args = list(target, user), busy = src)
+		om_task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_robot_tongue_done2), done_args = list(target, user), busy = src)
 	else if(istype(target,/obj/item))
 		if(istype(target,/obj/item/trash))
 			user.visible_message(span_filter_notice("[user] nibbles away at \the [target.name]."), span_notice("You begin to nibble away at \the [target.name]..."))
-			om_do_after(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(tongue_eat_trash), done_args = list(target, user), busy = src)
+			om_task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(tongue_eat_trash), done_args = list(target, user), busy = src)
 			return
 		if(istype(target,/obj/item/reagent_containers/food))
 			user.visible_message("[user] nibbles away at \the [target.name].", span_notice("You begin to nibble away at \the [target.name]..."))
-			om_do_after(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(tongue_eat_food), done_args = list(target, user), busy = src)
+			om_task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(tongue_eat_food), done_args = list(target, user), busy = src)
 			return
 		if(istype(target,/obj/item/cell))
 			user.visible_message(span_filter_notice("[user] begins cramming \the [target.name] down its throat."), span_notice("You begin cramming \the [target.name] down your throat..."))
-			om_do_after(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(tongue_eat_cell), done_args = list(target, user), busy = src)
+			om_task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(tongue_eat_cell), done_args = list(target, user), busy = src)
 			return
 		user.visible_message(span_filter_notice("[user] begins to lick \the [target.name] clean..."), span_notice("You begin to lick \the [target.name] clean..."))
-		om_do_after(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_robot_tongue_done3), done_args = list(target, user), busy = src)
+		om_task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_robot_tongue_done3), done_args = list(target, user), busy = src)
 		return
 	else if(ishuman(target))
 		if(src.emagged)
@@ -212,7 +212,7 @@ DECLARE_INTERACTIONS(/obj/item/robot_tongue, INTERACT_USE(null, PROC_REF(interac
 				H.status_at_least(EFFECT_WEAKENED, 3)
 	else
 		user.visible_message(span_filter_notice("[user] begins to lick \the [target.name] clean..."), span_notice("You begin to lick \the [target.name] clean..."))
-		om_do_after(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_robot_tongue_done4), done_args = list(target, user), busy = src)
+		om_task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_robot_tongue_done4), done_args = list(target, user), busy = src)
 		return
 
 /obj/item/robot_tongue/proc/afterattack_robot_tongue_done()
@@ -298,7 +298,7 @@ DECLARE_INTERACTIONS(/obj/item/pupscrubber, INTERACT_USE(null, PROC_REF(interact
 				return
 			to_chat(user, span_filter_notice("It has [uses] lights remaining. Attempting to fabricate a replacement. Please stand still."))
 			cooldown = 1
-			om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_dogborg_done), done_args = list(), on_fail = PROC_REF(attack_self_dogborg_failed), fail_args = list())
+			om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_dogborg_done), done_args = list(), on_fail = PROC_REF(attack_self_dogborg_failed), fail_args = list())
 		else
 			to_chat(user, span_filter_notice("It has [uses] lights remaining."))
 			return

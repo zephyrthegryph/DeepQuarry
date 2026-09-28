@@ -313,10 +313,10 @@ REF_OWNED(/obj/item/stack/material/processed_alloy, "batch_state")
 	var/datum/material_batch/batch = physical_batch()
 	if(batch?.temperature > T20C + 40)
 		set_light(2, 1, "#ff7b22")
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 	else
 		set_light(0)
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 
 /obj/item/stack/material/processed_alloy/periodic_step()
 	var/datum/material_batch/batch = physical_batch()

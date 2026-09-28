@@ -140,7 +140,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor, \
 				to_chat(user, span_warning("You require at least [use_flooring.build_cost] [S.name] to complete the [use_flooring.descriptor]."))
 				return INTERACTION_HANDLED_PASS
 			// Stay still and focus...
-			om_do_after(user, use_flooring.build_time || 0, src, src, PROC_REF(lay_flooring), list(S, use_flooring))
+			om_task_timed(user, use_flooring.build_time || 0, src, src, PROC_REF(lay_flooring), list(S, use_flooring))
 			return INTERACTION_HANDLED_PASS
 	return INTERACTION_HANDLED_PASS
 

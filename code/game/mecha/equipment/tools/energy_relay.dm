@@ -33,7 +33,7 @@
 	return
 
 /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/detach()
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 //	chassis.proc_res["dynusepower"] = null
 	LAZYSET(chassis.proc_res, "dyngetcharge", null)
 	..()
@@ -76,11 +76,11 @@
 	..()
 	if(href_list["toggle_relay"])
 		if(datum_flags & DF_ISPROCESSING)
-			PERIODIC_STOP(src)
+			om_task_periodic_stop(src)
 			set_ready_state(TRUE)
 			src.mecha_log_message("Deactivated.")
 		else
-			PERIODIC_START(src, PERIODIC_FAST)
+			om_task_periodic(src, PERIODIC_FAST)
 			set_ready_state(FALSE)
 			src.mecha_log_message("Activated.")
 	return

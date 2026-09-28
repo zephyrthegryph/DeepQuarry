@@ -42,7 +42,7 @@ nothing meaningful. `om_attach(E, B)`, `om_park(E, B)` / `om_unpark(E, B)`.
 **Pipelines** (§4.10) are behaviours that run ordered **stages** sharing a frame; each stage
 idles and wakes on its own channels (`reads`, `wake_on`, `rewake_delay`), and an entity whose
 stages are all idle **parks** off the ring. Mob Life, machines and periodic lanes
-(`PERIODIC_START`) are pipelines.
+(`om_task_periodic()`) are pipelines.
 
 **Change channels.** State a stage or behaviour reads is declared with
 `OM_FIELD(type, name, default, CHANGE_X)`, which generates `set_<name>()`; the setter raises the

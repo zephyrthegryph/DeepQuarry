@@ -114,7 +114,7 @@
 /obj/structure/bonfire/proc/dismantle(mob/user)
 	if(!burning)
 		user.visible_message("[user] starts dismantling \the [src].", "You start dismantling \the [src].")
-		om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(dismantle_timed_done), done_args = list(user))
+		om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(dismantle_timed_done), done_args = list(user))
 	else
 		to_chat(user, span_warning("\The [src] is still burning. Extinguish it first if you want to dismantle it."))
 
@@ -199,14 +199,14 @@
 	if(burning)
 		burning = FALSE
 		update_icon()
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 		visible_message(span_infoplain(span_bold("\The [src]") + " stops burning."))
 
 /obj/structure/bonfire/proc/ignite()
 	if(!burning && get_fuel_amount())
 		burning = TRUE
 		update_icon()
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 		visible_message(span_warning("\The [src] starts burning!"))
 
 /obj/structure/bonfire/proc/burn_bonfire()
@@ -415,14 +415,14 @@
 	if(burning)
 		burning = FALSE
 		update_icon()
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 		visible_message(span_infoplain(span_bold("\The [src]") + " stops burning."))
 
 /obj/structure/fireplace/proc/ignite()
 	if(!burning && get_fuel_amount())
 		burning = TRUE
 		update_icon()
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 		visible_message(span_warning("\The [src] starts burning!"))
 
 /obj/structure/fireplace/proc/burn_bonfire()

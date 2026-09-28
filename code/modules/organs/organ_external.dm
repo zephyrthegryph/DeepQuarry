@@ -332,7 +332,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 				germ_level = 0
 				status &= ~ORGAN_DEAD
 				clear_necrosis() // the dead-tissue afflictions go too (audit D12)
-				PERIODIC_START(src, PERIODIC_SLOW) //Dead limbs stop processing, so we restart the process.
+				om_task_periodic(src, PERIODIC_SLOW) //Dead limbs stop processing, so we restart the process.
 				stage-- //Go back to stage 2
 				return INTERACTION_HANDLED_PASS
 	return FALSE

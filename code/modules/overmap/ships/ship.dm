@@ -147,7 +147,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJEC
 		return
 	// If it is now still, stopped moving
 	else if(still)
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 		for(var/zz in map_z)
 			GLOB.starmover_service.toggle_move_stars(zz)
 		if(!COOLDOWN_FINISHED(src, sound_cooldown_until))
@@ -159,7 +159,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJEC
 
 	// If it started moving
 	else
-		PERIODIC_START(src, PERIODIC_SECOND)
+		om_task_periodic(src, PERIODIC_SECOND)
 		glide_size = WORLD_ICON_SIZE/max(DS2TICKS(1 SECOND), 1) //Down to whatever decimal
 		for(var/zz in map_z)
 			GLOB.starmover_service.toggle_move_stars(zz, fore_dir)
@@ -295,7 +295,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJEC
 			return
 		if(bellychoice)
 			L.visible_message(span_warning("[L] is trying to stuff \the [src] into [L.gender == MALE ? "his" : L.gender == FEMALE ? "her" : "their"] [bellychoice]!"),span_notice("You begin putting \the [src] into your [bellychoice]!"))
-			om_do_after(L, 5 SECONDS, src, src, PROC_REF(eaten_by), list(L, bellychoice))
+			om_task_timed(L, 5 SECONDS, src, src, PROC_REF(eaten_by), list(L, bellychoice))
 
 /obj/effect/overmap/visitable/ship/proc/eaten_by(mob/living/L, obj/belly/bellychoice)
 	forceMove(bellychoice)

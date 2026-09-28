@@ -113,7 +113,7 @@ REGISTRY_MEMBERSHIP(/obj/item/implant/tracking, REGISTRY_TRACKING_IMPLANTS)
 	id = rand(1, 1000)
 
 /obj/item/implant/tracking/post_implant(mob/source)
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 
 // leaves its limb's implant list.
 REF_BACK_VIA(/obj/item/implant/tracking, list("part" = "implants"))
@@ -130,7 +130,7 @@ REF_BACK_VIA(/obj/item/implant/tracking, list("part" = "implants"))
 			desc = "Charred circuit in melted plastic case. Wonder what that used to be..."
 			icon_state = "implant_melted"
 			malfunction = MALFUNCTION_PERMANENT
-			PERIODIC_STOP(src)
+			om_task_periodic_stop(src)
 	return 1
 
 /obj/item/implant/tracking/get_data()
@@ -536,7 +536,7 @@ the implant may become unstable and either pre-maturely inject the subject or si
 	var/mob/M = imp_in()
 	var/area/t = get_area(M)
 	if(!t) // Failsafe
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 		return
 	switch (cause)
 		if("death")
@@ -547,7 +547,7 @@ the implant may become unstable and either pre-maturely inject the subject or si
 			else
 				a.autosay("[mobname] has died in [t.name]!", "[mobname]'s Death Alarm")
 			qdel(a)
-			PERIODIC_STOP(src)
+			om_task_periodic_stop(src)
 		if ("emp")
 			var/obj/item/radio/headset/a = new /obj/item/radio/headset/heads/captain(null)
 			var/name = prob(50) ? t.name : pick(GLOB.teleportlocs)
@@ -557,7 +557,7 @@ the implant may become unstable and either pre-maturely inject the subject or si
 			var/obj/item/radio/headset/a = new /obj/item/radio/headset/heads/captain(null)
 			a.autosay("[mobname] has died-zzzzt in-in-in...", "[mobname]'s Death Alarm")
 			qdel(a)
-			PERIODIC_STOP(src)
+			om_task_periodic_stop(src)
 
 /obj/item/implant/death_alarm/emp_act(severity, recursive)			//for some reason alarms stop going off in case they are emp'd, even without this
 	. = ..()
@@ -571,13 +571,13 @@ the implant may become unstable and either pre-maturely inject the subject or si
 			meltdown()
 		else if (prob(60))	//but more likely it will just quietly die
 			malfunction = MALFUNCTION_PERMANENT
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 
 	om_after(src, 2 SECONDS, PROC_REF(malfunction_recover))
 
 /obj/item/implant/death_alarm/post_implant(mob/source as mob)
 	mobname = source.real_name
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 
 //////////////////////////////
 //	Compressed Matter Implant

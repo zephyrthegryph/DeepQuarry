@@ -1462,7 +1462,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hectate, INTERACT_V
 			Fire_userless(user)
 			burst = burstsetting
 			return
-		om_do_after(user, 3 SECONDS, src, src, PROC_REF(sawed_off), list(user))	//SHIT IS STEALTHY EYYYYY
+		om_task_timed(user, 3 SECONDS, src, src, PROC_REF(sawed_off), list(user))	//SHIT IS STEALTHY EYYYYY
 	else
 		return ..()
 

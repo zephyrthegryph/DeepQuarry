@@ -372,7 +372,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 			to_chat(user, span_notice("You start digging."))
 			playsound(user, 'sound/effects/rustle1.ogg', 50, 1)
 
-			om_do_after(user, digspeed, src, src, PROC_REF(dig_hole_done), list(user))
+			om_task_timed(user, digspeed, src, src, PROC_REF(dig_hole_done), list(user))
 
 		else if(istype(W,/obj/item/storage/bag/fossils))
 			var/obj/item/storage/bag/fossils/S = W
@@ -407,7 +407,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 		if (istype(W, /obj/item/measuring_tape))
 			var/obj/item/measuring_tape/P = W
 			user.visible_message(span_infoplain(span_bold("\The [user]") + " extends \a [P] towards \the [src]."),span_notice("You extend \the [P] towards \the [src]."))
-			om_do_after(user, 1.5 SECONDS, src, src, PROC_REF(measure_done), list(user))
+			om_task_timed(user, 1.5 SECONDS, src, src, PROC_REF(measure_done), list(user))
 			return INTERACTION_HANDLED_PASS
 
 		if(istype(W, /obj/item/xenoarch_multi_tool))
@@ -416,7 +416,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 				C.depth_scanner.scan_atom(user, src)
 			else
 				user.visible_message(span_infoplain(span_bold("\The [user]") + " extends \the [C] over \the [src], a flurry of red beams scanning \the [src]'s surface!"), span_notice("You extend \the [C] over \the [src], a flurry of red beams scanning \the [src]'s surface!"))
-				om_do_after(user, 1.5 SECONDS, src, src, PROC_REF(measure_done), list(user))
+				om_task_timed(user, 1.5 SECONDS, src, src, PROC_REF(measure_done), list(user))
 			return INTERACTION_HANDLED_PASS
 
 		if (istype(W, /obj/item/melee/shock_maul))
@@ -484,7 +484,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 					fail_message = ". <b>[pick("There is a crunching noise","[W] collides with some different rock","Part of the rock face crumbles away","Something breaks under [W]")]</b>"
 					wreckfinds(P.destroy_artefacts)
 			user.balloon_alert(user, "you start [P.drill_verb][fail_message].")
-			om_do_after(user, P.digspeed, src, src, PROC_REF(pick_done), list(user, P))
+			om_task_timed(user, P.digspeed, src, src, PROC_REF(pick_done), list(user, P))
 			return INTERACTION_HANDLED_PASS
 
 	return attack_hand(user) ? TRUE : INTERACTION_HANDLED_PASS

@@ -4209,7 +4209,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	L.auto_flicker = FALSE
 	L.begin_emergency_discharge()
 	TEST_ASSERT(L.emergency_discharge_at && !isnull(L.light_timer_token), "emergency light did not schedule its discharge timer")
-	TEST_ASSERT(!PERIODIC_RUNNING(L), "ordinary emergency light retained SSobj polling")
+	TEST_ASSERT(!om_task_periodic_running(L), "ordinary emergency light retained SSobj polling")
 	qdel(L)
 
 /datum/unit_test/dq_idle_cooker_hibernates

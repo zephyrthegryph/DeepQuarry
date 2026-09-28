@@ -184,7 +184,7 @@ REF_OWNED(/obj/structure/trash_pile, "mouse_nest")
 			to_chat(hider(),span_warning("[user] is searching the trash pile you're in!"))
 
 		//Do the searching
-		om_do_after(user, rand(4 SECONDS,6 SECONDS), target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), claims = TRUE)
+		om_task_timed(user, rand(4 SECONDS,6 SECONDS), target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), claims = TRUE)
 	return TRUE
 
 /obj/structure/trash_pile/proc/attack_hand_timed_done(mob/user)

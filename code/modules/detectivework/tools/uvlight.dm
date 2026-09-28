@@ -26,12 +26,12 @@ DECLARE_INTERACTIONS(/obj/item/uv_light, INTERACT_USE(null, PROC_REF(interaction
 	on = !on
 	if(on)
 		set_light(range, 2, "#007fff")
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 		icon_state = "uv_on"
 	else
 		set_light(0)
 		clear_last_scan()
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 		icon_state = "uv_off"
 	return TRUE
 

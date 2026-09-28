@@ -394,7 +394,7 @@ REF_OWNED(/datum/protean_power, "button")
 			to_chat(H, span_warning("You do not have enough steel stored for this operation."))
 			return
 		to_chat(H, span_notify("You begin to rebuild. You will need to remain still."))
-		om_do_after(H, 40 SECONDS, target = H, receiver = src, on_done = PROC_REF(rebuild_done), done_args = list(H))
+		om_task_timed(H, 40 SECONDS, target = H, receiver = src, on_done = PROC_REF(rebuild_done), done_args = list(H))
 		return
 	om_ask(H, /datum/om/prompt/choice/protean_power/reassemble_include, PROC_REF(reassemble_flavour_chosen), message = "Include Flavourtext?", power = src, form = ask.form)
 

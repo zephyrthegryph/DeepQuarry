@@ -40,7 +40,7 @@ EXTEND_INTERACTIONS(/obj/item/assembly/signaler/anomaly, INTERACT_ITEM(null, PRO
 		var/obj/item/anomaly_releaser/releaser = W
 		if(releaser.used)
 			return INTERACTION_HANDLED_PASS
-		om_do_after(user, 3 SECONDS, src, src, PROC_REF(release_done), list(user, releaser))
+		om_task_timed(user, 3 SECONDS, src, src, PROC_REF(release_done), list(user, releaser))
 		return TRUE
 	return FALSE
 

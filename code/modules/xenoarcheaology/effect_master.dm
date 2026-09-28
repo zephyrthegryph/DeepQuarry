@@ -56,7 +56,7 @@ REF_VAR(/atom, OWNED, /datum/artifact_master, artifact_master)
 
 	my_effects = list()
 
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 
 	do_setup()
 	return
@@ -423,7 +423,7 @@ REF_VAR(/atom, OWNED, /datum/artifact_master, artifact_master)
 
 /datum/artifact_master/periodic_step()
 	if(!holder())	// Some instances can be created and rapidly lose their holder, if they are destroyed rapidly on creation. IE, during excavation.
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 		if(!QDELETED(src))
 			qdel(src)
 			return

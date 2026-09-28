@@ -277,7 +277,7 @@ MATERIAL_MIX(/obj/item/beacon_locator, list(MAT_STEEL = 1000,MAT_GLASS = 500))
 
 				scan_ticks = 0
 				if(target_radio())
-					PERIODIC_START(src, PERIODIC_SLOW)
+					om_task_periodic(src, PERIODIC_SLOW)
 					T.visible_message("[icon2html(src,viewers(src))] [src] [pick("chirps","chirrups","cheeps")] happily.")
 				else
 					T.visible_message("[icon2html(src,viewers(src))] [src] [pick("chirps","chirrups","cheeps")] sadly.")
@@ -323,7 +323,7 @@ DECLARE_INTERACTIONS(/obj/item/beacon_locator, INTERACT_USE("Open", PROC_REF(int
 		if("reset_tracking")
 			scan_ticks = 1
 			target_radio_handle = null
-			PERIODIC_START(src, PERIODIC_SLOW)
+			om_task_periodic(src, PERIODIC_SLOW)
 			return TRUE
 		if("setFrequency")
 			var/new_frequency = (text2num(params["freq"]))

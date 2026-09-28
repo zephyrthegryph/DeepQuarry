@@ -809,7 +809,7 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 /obj/item/gps/computer/wrench_act(mob/user, obj/item/tool)
 	user.visible_message(span_warning("[user] disassembles [src]."),
 		span_notice("You start to disassemble [src]..."), "You hear clanking and banging noises.")
-	om_do_after(user, 4 SECONDS, src, src, PROC_REF(disassemble_done))
+	om_task_timed(user, 4 SECONDS, src, src, PROC_REF(disassemble_done))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/gps/computer/proc/disassemble_done()
@@ -883,7 +883,7 @@ EXTEND_INTERACTIONS(/obj/item/gps/computer, INTERACT_HAND_UNGATED(null, PROC_REF
 /obj/structure/fans/wrench_act(mob/user, obj/item/tool)
 	user.visible_message(span_warning("[user] disassembles [src]."),
 		span_notice("You start to disassemble [src]..."), "You hear clanking and banging noises.")
-	om_do_after(user, 4 SECONDS, src, src, TYPE_PROC_REF(/obj, atom_deconstruct), list(TRUE))
+	om_task_timed(user, 4 SECONDS, src, src, TYPE_PROC_REF(/obj, atom_deconstruct), list(TRUE))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/fans/tiny

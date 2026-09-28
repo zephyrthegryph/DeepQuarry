@@ -26,7 +26,7 @@ GLOBAL_DATUM_INIT(event_service, /datum/world_service/events, new)
 			/*EVENT_LEVEL_MAJOR 	= */ new/datum/event_container/major
 		)
 	for(var/i = EVENT_LEVEL_MUNDANE to EVENT_LEVEL_MAJOR)
-		PERIODIC_START(event_containers[i], PERIODIC_SLOW)
+		om_task_periodic(event_containers[i], PERIODIC_SLOW)
 	if(using_map.use_overmap)
 		if(using_map.overmap_z)
 			GLOB.overmap_event_handler.create_events(using_map.overmap_z, using_map.overmap_size, using_map.overmap_event_areas)
@@ -41,7 +41,7 @@ GLOBAL_DATUM_INIT(event_service, /datum/world_service/events, new)
 
 /datum/world_service/events/proc/event_complete(datum/event/E)
 	registry_leave(REGISTRY_ACTIVE_EVENTS, E)
-	PERIODIC_STOP(E)
+	om_task_periodic_stop(E)
 
 	if(!E.event_meta() || !E.severity)	// datum/event is used here and there for random reasons, maintaining "backwards compatibility"
 		log_game("Event of '[E.type]' with missing meta-data has completed.")

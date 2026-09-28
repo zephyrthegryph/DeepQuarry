@@ -123,7 +123,7 @@
 
 	else
 		other_feed_message_start(user, target)
-		om_do_after(user, 3 SECONDS, target, src, PROC_REF(standard_feed_done), list(user, target))
+		om_task_timed(user, 3 SECONDS, target, src, PROC_REF(standard_feed_done), list(user, target))
 		return TRUE
 
 /obj/item/reagent_containers/proc/standard_feed_done(mob/user, mob/target)

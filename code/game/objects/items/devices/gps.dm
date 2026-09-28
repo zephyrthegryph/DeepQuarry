@@ -54,7 +54,7 @@ REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
 
 	if(holder_ref() && tracking)
 		if(!is_in_processing_list)
-			PERIODIC_START(src, PERIODIC_SLOW)
+			om_task_periodic(src, PERIODIC_SLOW)
 			is_in_processing_list = TRUE
 		if(holder_ref().client)
 			if(check_visible_to_holder())
@@ -62,7 +62,7 @@ REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
 			else
 				holder_ref().client.screen -= compass
 	else
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 		is_in_processing_list = FALSE
 		if(holder_ref()?.client)
 			holder_ref().client.screen -= compass
@@ -160,11 +160,11 @@ REF_OWNED(/obj/item/gps, "compass")
 	if(tracking)
 		if(!is_in_processing_list)
 			is_in_processing_list = TRUE
-			PERIODIC_START(src, PERIODIC_SLOW)
+			om_task_periodic(src, PERIODIC_SLOW)
 			update_compass(src, TRUE)
 	else
 		is_in_processing_list = FALSE
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 		update_compass(src)
 	update_holder()
 	update_icon()

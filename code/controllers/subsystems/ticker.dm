@@ -142,7 +142,7 @@ SUBSYSTEM_DEF(ticker)
 
 			if(force_ending)
 				current_state = GAME_STATE_FINISHED
-				PERIODIC_STOP(mode)
+				om_task_periodic_stop(mode)
 				declare_completion(force_ending)
 				Master.SetRunLevel(RUNLEVEL_POSTGAME)
 			else
@@ -159,7 +159,7 @@ SUBSYSTEM_DEF(ticker)
 				if(game_finished && mode_finished)
 					end_game_state = END_GAME_READY_TO_END
 					current_state = GAME_STATE_FINISHED
-					PERIODIC_STOP(mode)
+					om_task_periodic_stop(mode)
 					Master.SetRunLevel(RUNLEVEL_POSTGAME)
 					declare_completion() // its SQL and TGS chat run off-thread (om_io, send2chat)
 				else if (mode_finished && (end_game_state < END_GAME_MODE_FINISHED))
@@ -232,7 +232,7 @@ SUBSYSTEM_DEF(ticker)
 	play_simple_announcement(world, ANNOUNCER_MSG_ROUND_START)
 
 	current_state = GAME_STATE_PLAYING
-	PERIODIC_START(mode, PERIODIC_SLOW)
+	om_task_periodic(mode, PERIODIC_SLOW)
 	Master.SetRunLevel(RUNLEVEL_GAME)
 
 	//Holiday Round-start stuff	~Carn

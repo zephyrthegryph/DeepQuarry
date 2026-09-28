@@ -223,7 +223,7 @@ REF_OWNED(/obj/machinery/material_furnace, "chamber_air")
 		span_notice("[user] begins opening [src]."),
 		span_notice("You begin opening [src].")
 	)
-	om_do_after(user, 1 SECOND, src, src, PROC_REF(eject_contents_done), list(user))
+	om_task_timed(user, 1 SECOND, src, src, PROC_REF(eject_contents_done), list(user))
 	return TRUE
 
 /obj/machinery/material_furnace/proc/eject_contents_done(mob/user)

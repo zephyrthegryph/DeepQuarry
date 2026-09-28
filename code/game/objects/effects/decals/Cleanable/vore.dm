@@ -34,7 +34,7 @@
 	custombasecolor = spill_color
 
 	update_icon()
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 
 /obj/effect/decal/cleanable/blood/reagent/update_icon()
 	if(custombasecolor == "rainbow") custombasecolor = get_random_colour(1)

@@ -2019,7 +2019,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage/fluff/jacket, \
 	translocator_unequip(translocator, user)
 
 /obj/item/clothing/head/fluff/nikki/proc/translocator_equip(obj/item/perfect_tele/T, mob/living/carbon/human/user)
-	om_do_after(user, 2 SECONDS, T, src, PROC_REF(translocator_equip_done), list(T, user))
+	om_task_timed(user, 2 SECONDS, T, src, PROC_REF(translocator_equip_done), list(T, user))
 
 /obj/item/clothing/head/fluff/nikki/proc/translocator_equip_done(obj/item/perfect_tele/T, mob/living/carbon/human/user)
 	user.unEquip(T)

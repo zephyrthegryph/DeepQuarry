@@ -34,7 +34,7 @@
 /obj/machinery/portable_atmospherics/hydroponics/soil/proc/interaction_shovel(mob/user, obj/item/O, datum/interaction/interaction)
 	if(IS_HARMING(user))
 		user.visible_message(span_notice("\The [user] begins filling in \the [src]."))
-		om_do_after(user, 3 SECONDS, src, src, PROC_REF(fill_in_done), list(user))
+		om_task_timed(user, 3 SECONDS, src, src, PROC_REF(fill_in_done), list(user))
 		return TRUE
 	if(!seed)
 		var/choice= rerun_ask(user, "k43", PROC_REF(interaction_shovel), args, /datum/om/prompt/choice/alert, message = "Do you want to destroy the growplot?", title = "Destroy growplot?", choices = list("Yes", "No"))
@@ -43,7 +43,7 @@
 		if(!choice||choice=="No")
 			return TRUE
 		user.visible_message("[user] starts dispersing the [src]...", runemessage = "disperses the [src]")
-		om_do_after(user, 5 SECONDS, src, src, TYPE_PROC_REF(/datum, om_qdel_self))
+		om_task_timed(user, 5 SECONDS, src, src, TYPE_PROC_REF(/datum, om_qdel_self))
 	else
 		to_chat(user, span_notice("There is something growing here."))
 	return TRUE

@@ -42,7 +42,7 @@
 
 			var/time = 20 //2/3rds the time of a syringe
 			user.visible_message(span_warning("[user] is trying to squirt something into [target]'s eyes!"))
-			om_do_after(user, time, target, src, PROC_REF(squirt_done), list(user, target))
+			om_task_timed(user, time, target, src, PROC_REF(squirt_done), list(user, target))
 			return
 
 		else

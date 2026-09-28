@@ -92,7 +92,7 @@ EXTEND_INTERACTIONS(/obj/item/rig, \
 
 			var/obj/item/rig_module/mod = W
 			to_chat(user, "You begin installing \the [mod] into \the [src].")
-			om_do_after(user, 4 SECONDS, src, src, PROC_REF(install_module_done), list(user, mod))
+			om_task_timed(user, 4 SECONDS, src, src, PROC_REF(install_module_done), list(user, mod))
 			return TRUE
 
 		else if(!cell && istype(W,/obj/item/cell))

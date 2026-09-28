@@ -352,7 +352,7 @@ EXTEND_INTERACTIONS(/obj/machinery/organ_printer/flesh, INTERACT_ITEM(null, PROC
 		if(container)
 			to_chat(user, span_warning("\The [src] already has a container loaded!"))
 			return TRUE
-		om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(load_container_done), done_args = list(user, G))
+		om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(load_container_done), done_args = list(user, G))
 		return TRUE
 
 	return FALSE

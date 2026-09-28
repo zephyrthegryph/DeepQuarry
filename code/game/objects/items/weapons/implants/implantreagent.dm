@@ -14,7 +14,7 @@
 	var/cascade
 
 /obj/item/implant/reagent_generator/egg/post_implant(mob/living/carbon/source)
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 	to_chat(source, span_notice("You implant [source] with \the [src]."))
 	add_verb(source,assigned_proc) // TGPanel
 	add_verb(source,/mob/living/carbon/human/proc/toggle_cascade) // TGPanel
@@ -55,7 +55,7 @@
 		to_chat(src, span_notice("[pick(rimplant.empty_message)]"))
 		return
 	visible_message(span_danger("[usr] starts squeezing [src]'s lower body firmly..."))
-	om_do_after(usr, 120, target = src, receiver = src, on_done = PROC_REF(use_reagent_implant_egg_done), done_args = list(usr, rimplant))
+	om_task_timed(usr, 120, target = src, receiver = src, on_done = PROC_REF(use_reagent_implant_egg_done), done_args = list(usr, rimplant))
 
 /mob/living/carbon/human/proc/use_reagent_implant_egg_done(mob/usr_mob, obj/item/implant/reagent_generator/egg/rimplant)
 	if(src.Adjacent(usr_mob))
@@ -85,7 +85,7 @@
 
 /mob/living/carbon/human/proc/egg_cascade_next(obj/item/implant/reagent_generator/egg/rimplant, egg)
 	if(rimplant.reagents.total_volume >= rimplant.transfer_amount)
-		om_do_after(src, 30, target = src, receiver = src, on_done = PROC_REF(use_reagent_implant_egg_timed_done), done_args = list(rimplant, egg))
+		om_task_timed(src, 30, target = src, receiver = src, on_done = PROC_REF(use_reagent_implant_egg_timed_done), done_args = list(rimplant, egg))
 
 /mob/living/carbon/human/proc/use_reagent_implant_egg_timed_done(obj/item/implant/reagent_generator/egg/rimplant, egg)
 	src.status_set(EFFECT_STUNNED, 3)
@@ -184,7 +184,7 @@
 	update()
 
 /obj/item/implant/reagent_generator/post_implant(mob/living/carbon/source)
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 	to_chat(source, span_notice("You implant [source] with \the [src]."))
 	assigned_proc = new assigned_proc(source, verb_name, verb_desc)
 	return 1

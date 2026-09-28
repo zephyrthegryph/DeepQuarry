@@ -101,13 +101,13 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/lasertag, \
 
 /obj/item/clothing/suit/lasertag/dropped(mob/user, equipping, slot)
 	..()
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 	visible_message(span_notice("[src] is unequipped, its health going back to full!"))
 	lasertag_health = lasertag_max_health
 
 /obj/item/clothing/suit/lasertag/equipped()
 	..()
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 
 /obj/item/clothing/suit/lasertag/periodic_step()
 	if(lasertag_health >= lasertag_max_health) //If we're at or above max health(due to admemes), no need to process.

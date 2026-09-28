@@ -51,7 +51,7 @@
 			return
 		occupant.set_stasis(/datum/body_effect/stasis/moderate, src)
 		set_ready_state(FALSE)
-		PERIODIC_START(src, PERIODIC_SECOND)
+		om_task_periodic(src, PERIODIC_SECOND)
 		occupant_message(span_notice("[target] successfully loaded into [src]. Life support functions engaged."))
 		chassis.visible_message(span_infoplain("[chassis] loads [target] into [src]."))
 		src.mecha_log_message("[target] loaded. Life support functions engaged.")
@@ -65,7 +65,7 @@
 	src.mecha_log_message("[occupant] ejected. Life support functions disabled.")
 	occupant.set_stasis(null, src)
 	slot_remove(occupant, get_turf(src))
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 	set_ready_state(TRUE)
 	return
 
@@ -74,7 +74,7 @@
 	if(occupant)
 		occupant_message(span_infoplain("Unable to detach [src] - equipment occupied."))
 		return
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 	return ..()
 
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/get_equip_info()

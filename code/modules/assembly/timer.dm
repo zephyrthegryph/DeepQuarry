@@ -24,18 +24,18 @@ MATERIAL_MIX(/obj/item/assembly/timer, list(MAT_STEEL = 500, MAT_GLASS = 50))
 /obj/item/assembly/timer/toggle_secure()
 	secured = !secured
 	if(secured)
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 	else
 		timing = 0
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 	update_icon()
 	return secured
 
 /obj/item/assembly/timer/proc/set_state(state)
 	if(state && !timing) //Not running, starting though
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 	else if(timing && !state) //Running, stopping though
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 	timing = state
 
 /obj/item/assembly/timer/proc/timer_end()

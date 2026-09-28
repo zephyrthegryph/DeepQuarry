@@ -69,6 +69,10 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	/// lane -> an empty list swapped in for wake_q[lane] while it drains.
 	var/list/wake_spare
 	var/list/service_queue = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	/// run_services()' second buffer.
+	var/list/service_spare = list() // ALLOW(instance_list): scheduler singleton's double buffer
+	/// run_bucket()'s buffer for deadlines inserted into the bucket being run.
+	var/list/bucket_spare = list() // ALLOW(instance_list): scheduler singleton's double buffer
 	/// Recs with eager derived values to recompute.
 	var/list/derived_queue = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
 
@@ -710,8 +714,10 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 /datum/om/scheduler/proc/run_services()
 	if(!length(service_queue))
 		return TRUE
+	// Double-buffered: services queued while this pass runs go to the spare list.
 	var/list/Q = service_queue
-	service_queue = list()
+	service_queue = service_spare
+	service_spare = Q
 	for(var/idx in 1 to length(Q))
 		var/datum/om/rec/rec = Q[idx]
 		var/bits = rec.service_pend
@@ -719,19 +725,26 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 		if(rec.torn_down || !bits)
 			continue
 		var/datum/E = rec.owner
-		for(var/datum/om/service/S as anything in rec.table.services)
-			var/mine = 0
-			for(var/observed in S.wake_on_any)
-				if(istype(E, observed))
-					mine |= S.wake_on_any[observed]
-			if(mine & bits)
-				try
-					S.on_changes(E, mine & bits)
-				catch(var/exception/e)
-					report_caught(e, "[S.type] on_changes: [e]")
+		var/list/services = rec.table.services
+		var/list/masks = rec.table.service_masks
+		for(var/s in 1 to length(services))
+			var/mine = masks[s] & bits
+			if(!mine)
+				continue
+			var/datum/om/service/S = services[s]
+			try
+				S.on_changes(E, mine)
+			catch(var/exception/e)
+				report_caught(e, "[S.type] on_changes: [e]")
 		if(out_of_budget() && idx < length(Q))
-			service_queue = Q.Copy(idx + 1) + service_queue
+			// Unprocessed recs go first next pass, then whatever this pass queued.
+			Q.Cut(1, idx + 1)
+			Q += service_queue
+			service_queue.Cut()
+			service_spare = service_queue
+			service_queue = Q
 			return FALSE
+	Q.Cut()
 	return TRUE
 
 // ---------------------------------------------------------------- deadlines
@@ -777,27 +790,39 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	var/list/L = buckets[b]
 	if(!length(L))
 		return TRUE
-	buckets[b] = list()
-	var/list/keep = list()
+	// Entries a firing deadline inserts into this bucket land in the spare list; the bucket
+	// itself is compacted in place (kept entries slide down over fired ones). No allocation.
+	var/list/added = bucket_spare
+	buckets[b] = added
 	var/datum/om/registry/reg = om_registry()
+	var/n = length(L)
 	var/i = 1
+	var/w = 1
 	var/ok = TRUE
-	while(i <= length(L))
+	while(i <= n)
+		var/due = L[i + 3]
+		if(!ok || due > t)
+			if(w != i)
+				L[w] = L[i]
+				L[w + 1] = L[i + 1]
+				L[w + 2] = L[i + 2]
+				L[w + 3] = due
+			w += 4
+			i += 4
+			continue
 		var/datum/om/rec/rec = L[i]
 		var/bid = L[i + 1]
 		var/gen_i = L[i + 2]
-		var/due = L[i + 3]
 		i += 4
-		if(due > t)
-			keep.Add(rec, bid, gen_i, due)
-			continue
 		fire_deadline(rec, bid, gen_i, t, reg)
-		if(out_of_budget() && i <= length(L))
-			keep += L.Copy(i)
+		if(i <= n && out_of_budget())
 			ok = FALSE
-			break
-	var/list/added = buckets[b]
-	buckets[b] = keep + added
+	L.len = w - 1
+	if(length(added))
+		L += added
+		added.Cut()
+	bucket_spare = added
+	buckets[b] = L
 	return ok
 
 /datum/om/scheduler/proc/fire_deadline(datum/om/rec/rec, key, gen_i, t, datum/om/registry/reg)

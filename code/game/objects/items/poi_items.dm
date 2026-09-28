@@ -33,7 +33,7 @@
 
 /obj/item/poi/pascalb/Initialize(mapload)
 	. = ..()
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 
 /// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.
 /obj/item/poi/pascalb/periodic_step()
@@ -122,7 +122,7 @@
 
 /obj/item/poi/brokenoldreactor/Initialize(mapload)
 	. = ..()
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 
 /// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.
 /obj/item/poi/brokenoldreactor/periodic_step()
@@ -296,7 +296,7 @@ DECLARE_INTERACTIONS(/obj/item/poi/broken_drone_circuit, \
 	if(unscrewed && !has_paper)
 		message += "Looks like there's a printer without any paper in it."
 
-	om_do_after(user, delay = 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, message))
+	om_task_timed(user, delay = 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, message))
 	return TRUE
 
 /obj/item/poi/broken_drone_circuit/proc/attack_self_timed_done(mob/user, message)

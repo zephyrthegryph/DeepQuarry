@@ -27,11 +27,11 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 		return
 	if(!active)
 		active = TRUE
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 		to_chat(user, span_notice("You activate the pinpointer"))
 	else
 		active = FALSE
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 		icon_state = "pinoff"
 		to_chat(user, span_notice("You deactivate the pinpointer"))
 
@@ -200,6 +200,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 	var/mode = 0	//Mode 0 locates disk, mode 1 locates the shuttle
 	var/home_handle
 
+// ALLOW(interactions): its Toggle replaces the base pinpointer's (it runs the parent's body itself)
 DECLARE_INTERACTIONS(/obj/item/pinpointer/nukeop, INTERACT_USE("Toggle", PROC_REF(nukeop_interaction_self)))
 
 /// Old attack_self. The old override ran the parent's body first (its ..()), so this does too.
@@ -207,7 +208,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer/nukeop, INTERACT_USE("Toggle", PROC_RE
 	interaction_self(user, held, interaction)
 	if(!active)
 		active = 1
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 		if(!mode)
 			workdisk()
 			to_chat(user, span_notice("Authentication Disk Locator active."))
@@ -216,7 +217,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer/nukeop, INTERACT_USE("Toggle", PROC_RE
 			to_chat(user, span_notice("Shuttle Locator active."))
 	else
 		active = 0
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 		icon_state = "pinoff"
 		to_chat(user, span_notice("You deactivate the pinpointer."))
 
@@ -289,6 +290,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer/nukeop, INTERACT_USE("Toggle", PROC_RE
 	var/shuttle_comp_id = null
 	var/our_shuttle_handle
 
+// ALLOW(interactions): its Toggle replaces the base pinpointer's (it runs the parent's body itself)
 DECLARE_INTERACTIONS(/obj/item/pinpointer/shuttle, INTERACT_USE("Toggle", PROC_REF(shuttle_interaction_self)))
 
 /// Old attack_self. The old override ran the parent's body first (its ..()), so this does too.
@@ -296,11 +298,11 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer/shuttle, INTERACT_USE("Toggle", PROC_R
 	interaction_self(user, held, interaction)
 	if(!active)
 		active = TRUE
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 		to_chat(user, span_notice("Shuttle Locator active."))
 	else
 		active = FALSE
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 		icon_state = "pinoff"
 		to_chat(user, span_notice("You deactivate the pinpointer."))
 

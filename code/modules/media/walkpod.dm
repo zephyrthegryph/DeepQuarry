@@ -52,7 +52,7 @@
 /obj/item/walkpod/proc/remove_listener()
 	if(playing)
 		StopPlaying()
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 	if(deployed_headpods)
 		restore_headpods()
 	to_chat(listener(), span_notice("You are no longer wearing the [src]'s headphones."))
@@ -63,7 +63,7 @@
 	if(listener())
 		remove_listener()
 	listener_handle = om_handle(L)
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 	to_chat(L, span_notice("You put the [src]'s headphones on and power it up, preparing to listen to some <b>sick tunes</b>."))
 	update_icon()
 

@@ -79,7 +79,7 @@ EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 /obj/machinery/iv_drip/screwdriver_act(mob/user, obj/item/tool)
 	playsound(src, tool.usesound, 50, TRUE)
 	to_chat(user, span_notice("You start to dismantle the IV drip."))
-	om_do_after(user, 1.5 SECONDS, target = src, receiver = src, on_done = PROC_REF(screwdriver_act_timed_done), done_args = list(user))
+	om_task_timed(user, 1.5 SECONDS, target = src, receiver = src, on_done = PROC_REF(screwdriver_act_timed_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/iv_drip/proc/screwdriver_act_timed_done(mob/user)

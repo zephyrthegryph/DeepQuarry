@@ -29,7 +29,7 @@
 		span_notice("[user] takes [H]'s temperature."),
 		span_notice("You take [H]'s temperature."),
 	)
-	om_do_after(user, 3 SECONDS, H, src, PROC_REF(read_temperature), list(user, H))
+	om_task_timed(user, 3 SECONDS, H, src, PROC_REF(read_temperature), list(user, H))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/thermometer_medical/proc/read_temperature(mob/living/user, mob/living/carbon/human/H)
@@ -56,7 +56,7 @@
 		span_notice("[user] starts wrapping [src] around [H]'s arm."),
 		span_notice("You wrap [src] around [H]'s arm and begin pumping."),
 	)
-	om_do_after(user, 12 SECONDS, H, src, PROC_REF(read_pressure), list(user, H))
+	om_task_timed(user, 12 SECONDS, H, src, PROC_REF(read_pressure), list(user, H))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/bp_cuff/proc/read_pressure(mob/living/user, mob/living/carbon/human/H)
@@ -85,7 +85,7 @@
 		span_notice("[user] clips [src] to [H]'s fingertip."),
 		span_notice("You clip [src] to [H]'s fingertip and wait for the reading."),
 	)
-	om_do_after(user, 4 SECONDS, H, src, PROC_REF(read_oximetry), list(user, H))
+	om_task_timed(user, 4 SECONDS, H, src, PROC_REF(read_oximetry), list(user, H))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/pulse_oximeter/proc/read_oximetry(mob/living/user, mob/living/carbon/human/H)

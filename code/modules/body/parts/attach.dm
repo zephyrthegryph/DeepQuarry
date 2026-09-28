@@ -303,7 +303,7 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 /// This part just joined `M`'s body. Runs inside the move: must not sleep,
 /// move or delete anything.
 /obj/item/organ/proc/joined_body(mob/living/M)
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 	handle_organ_mod_special()
 
 /obj/item/organ/external/joined_body(mob/living/M)
@@ -319,7 +319,7 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 /// being destroyed.
 /obj/item/organ/proc/left_body(mob/living/M)
 	handle_organ_mod_special(TRUE)
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 	rejecting = null
 	// Keep a blood sample, for transplant matching and forensics.
 	var/mob/living/carbon/human/C = M

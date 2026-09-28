@@ -487,7 +487,7 @@ REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, list("print_sound", "rmat"))
 					return
 
 				process_queue = TRUE
-				PERIODIC_START(src, PERIODIC_FAST)
+				om_task_periodic(src, PERIODIC_FAST)
 			return
 
 		if("del_queue_part")
@@ -510,7 +510,7 @@ REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, list("print_sound", "rmat"))
 				return
 
 			process_queue = TRUE
-			PERIODIC_START(src, PERIODIC_FAST)
+			om_task_periodic(src, PERIODIC_FAST)
 			return
 
 		if("stop_queue")

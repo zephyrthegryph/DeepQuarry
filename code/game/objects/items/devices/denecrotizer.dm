@@ -164,7 +164,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_RE
 			return FALSE
 		if(!target.mind)
 			user.visible_message("[user] gently presses [src] to [target]...", runemessage = "presses [src] to [target]")
-			om_do_after(user, revive_time, target = target, receiver = src, on_done = PROC_REF(check_target_timed_done), done_args = list(target, user))
+			om_task_timed(user, revive_time, target = target, receiver = src, on_done = PROC_REF(check_target_timed_done), done_args = list(target, user))
 			return FALSE
 		else
 			to_chat(user, span_notice("[src] doesn't seem to work on that."))
@@ -187,7 +187,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_RE
 
 /obj/item/denecrotizer/proc/ghostjoin_rez(mob/living/simple_mob/target, mob/living/user)
 	user.visible_message("[user] gently presses [src] to [target]...", runemessage = "presses [src] to [target]")
-	om_do_after(user, revive_time, target = target, receiver = src, on_done = PROC_REF(ghostjoin_rez_timed_done), done_args = list(target, user))
+	om_task_timed(user, revive_time, target = target, receiver = src, on_done = PROC_REF(ghostjoin_rez_timed_done), done_args = list(target, user))
 	return
 
 /obj/item/denecrotizer/proc/ghostjoin_rez_timed_done(mob/living/simple_mob/target, mob/living/user)

@@ -68,4 +68,4 @@
 /obj/item/clothing/gloves/regen/equipped(mob/user, slot)
 	. = ..()
 	if(om_resolve(wearer))
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)

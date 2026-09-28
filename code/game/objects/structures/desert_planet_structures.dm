@@ -26,7 +26,7 @@
 		return TRUE
 	to_chat(user, "You push on the [src].")
 	var/movedir = user.dir
-	om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(movedir))
+	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(movedir))
 	return TRUE
 
 /obj/structure/prop/desert_rock/rock/proc/attack_hand_timed_done(movedir)

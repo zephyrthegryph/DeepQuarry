@@ -96,7 +96,7 @@ DECLARE_INTERACTIONS(/obj/structure/candybowl, \
 		to_chat(user, span_warning("Someone is already looking through \the [src]!"))
 		return TRUE
 
-	om_do_after(user, 5 SECONDS, src, src, PROC_REF(search_done), list(user), claims = TRUE)
+	om_task_timed(user, 5 SECONDS, src, src, PROC_REF(search_done), list(user), claims = TRUE)
 	return TRUE
 
 /obj/structure/candybowl/proc/search_done(mob/user)
@@ -229,7 +229,7 @@ DECLARE_INTERACTIONS(/obj/structure/boxpile, INTERACT_HAND_UNGATED(null, PROC_RE
 
 /// Old attack_hand.
 /obj/structure/boxpile/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
-	om_do_after(user, 5 SECONDS, src, src, PROC_REF(rummage_done), list(user), claims = TRUE)
+	om_task_timed(user, 5 SECONDS, src, src, PROC_REF(rummage_done), list(user), claims = TRUE)
 	return TRUE
 
 /obj/structure/boxpile/proc/rummage_done(mob/living/user)

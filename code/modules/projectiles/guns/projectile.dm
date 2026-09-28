@@ -169,7 +169,7 @@
 	if(special_weapon_handling && !callback)
 		return FALSE
 	if(manual_chamber) // Gun Rework
-		om_do_after(user, 0.4 SECONDS, src, src, PROC_REF(bolt_handle), list(user)) // Gun Rework
+		om_task_timed(user, 0.4 SECONDS, src, src, PROC_REF(bolt_handle), list(user)) // Gun Rework
 	else if(length(firemodes) > 1) // Gun Rework
 		switch_firemodes(user)
 	else

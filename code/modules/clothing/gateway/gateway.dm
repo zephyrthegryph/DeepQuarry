@@ -132,13 +132,13 @@
 /obj/item/clothing/suit/armor/buffvest/equipped(mob/living/carbon/human/H, slot)
 	..()
 	if(istype(H) && H.get_equipped_item(SLOT_ID_SUIT) == src && H.is_sentient())
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 		if(flavor_equip)
 			to_chat(H, span_info(flavor_equip))
 
 /obj/item/clothing/suit/armor/buffvest/dropped(mob/living/carbon/human/H, equipping, slot)
 	..()
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 	if(H.is_sentient())
 		if(loc == H) // Still inhand.
 			if(flavor_unequip)
@@ -195,4 +195,4 @@
 /obj/item/clothing/gloves/stamina/equipped(mob/user, slot)
 	. = ..()
 	if(om_resolve(wearer))
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)

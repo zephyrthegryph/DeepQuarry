@@ -152,7 +152,7 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 	DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_LINKS done")
 
 	// Phase 5: teardown. Processing (auto-stopped via
-	// periodic_pipe, set by PERIODIC_START), screens,
+	// periodic_pipe, set by om_task_periodic()), screens,
 	// clock callbacks (hook point, DQ Medical w6/k1) and grants (hook point).
 	// Timers, reactor, components, signals and tgui are already handled by
 	// /datum/Destroy() itself (phase 7) and are not duplicated here.
@@ -284,12 +284,12 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 
 // ---- Phase 5: teardown ----
 
-/// Ends any periodic work (PERIODIC_START, code/datums/om/periodic.dm),
+/// Ends any periodic work (om_task_periodic(), code/datums/om/periodic.dm),
 /// releases HUD/screen objects from any client they're shown to, and calls
 /// the clock and grants teardown hook points.
 /proc/dq_lifecycle_teardown(datum/D)
 	if(D.periodic_pipe)
-		periodic_stop(D)
+		om_task_periodic_stop(D)
 	if(isatom(D))
 		var/atom/AT = D
 		AT.dq_lifecycle_release_screen()

@@ -16,12 +16,12 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	if(IS_HARMING(user) && !is_open_container())
 		to_chat(user, span_warning("You shake [src]."))
 		if(!shaken)
-			PERIODIC_START(src, PERIODIC_SLOW)
+			om_task_periodic(src, PERIODIC_SLOW)
 		shaken += 3
 		return TRUE
 	if(HAS_TRAIT(user, TRAIT_UNLUCKY) && prob(10)) // Because it's always funny
 		if(!shaken)
-			PERIODIC_START(src, PERIODIC_SLOW)
+			om_task_periodic(src, PERIODIC_SLOW)
 		shaken += 10
 	return TRUE
 

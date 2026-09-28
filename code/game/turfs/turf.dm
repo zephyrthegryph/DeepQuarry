@@ -250,7 +250,7 @@ DECLARE_INTERACTIONS(/turf, \
 		return FALSE
 	if(isanimal(user) && O != user)
 		return FALSE
-	om_do_after(user, 25 + (5 * user.status_units(EFFECT_WEAKENED)), O, src, PROC_REF(crawl_drag_done), list(O, user))
+	om_task_timed(user, 25 + (5 * user.status_units(EFFECT_WEAKENED)), O, src, PROC_REF(crawl_drag_done), list(O, user))
 	return TRUE
 
 /turf/proc/crawl_drag_done(atom/movable/O, mob/user)

@@ -29,7 +29,7 @@
 
 /obj/structure/girder/periodic_step()
 	if(!radiate())
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 		return
 
 /obj/structure/girder/proc/radiate()
@@ -58,9 +58,9 @@
 	if(applies_material_colour)
 		color = girder_material.icon_colour
 	if(girder_material.products_need_process()) //Am I radioactive or some other? Process me!
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 	else if(datum_flags & DF_ISPROCESSING) //If I happened to be radioactive or s.o. previously, and am not now, stop processing.
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 
 /obj/structure/girder/get_material()
 	return girder_material
@@ -167,7 +167,7 @@
 /obj/structure/girder/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/pickaxe/plasmacutter))
 		to_chat(user, span_notice("Now slicing apart the girder..."))
-		om_do_after(user, 3 SECONDS * W.toolspeed, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
+		om_task_timed(user, 3 SECONDS * W.toolspeed, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
 
 	else if(istype(W, /obj/item/pickaxe/diamonddrill))
 		to_chat(user, span_notice("You drill through the girder!"))
@@ -348,7 +348,7 @@
 /obj/structure/girder/cult/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/pickaxe/plasmacutter))
 		to_chat(user, span_notice("Now slicing apart the girder..."))
-		om_do_after(user, 3 SECONDS * W.toolspeed, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(user))
+		om_task_timed(user, 3 SECONDS * W.toolspeed, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(user))
 	else if(istype(W, /obj/item/pickaxe/diamonddrill))
 		to_chat(user, span_notice("You drill through the girder!"))
 		new /obj/effect/decal/remains/human(get_turf(src))

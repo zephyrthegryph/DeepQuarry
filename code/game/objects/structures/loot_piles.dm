@@ -52,7 +52,7 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 		L.visible_message("[user] searches through \the [src].",span_notice("You search through \the [src]."))
 
 		//Do the searching
-		om_do_after(user, rand(4 SECONDS,6 SECONDS), target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(L), claims = TRUE)
+		om_task_timed(user, rand(4 SECONDS,6 SECONDS), target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(L), claims = TRUE)
 	return TRUE
 
 /obj/structure/loot_pile/proc/attack_hand_timed_done(mob/living/L)

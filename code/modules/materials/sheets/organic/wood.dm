@@ -86,7 +86,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/material/log, INTERACT_ITEM(null, PROC_REF(l
 	if(W.sharp && W.edge)
 		var/time = (3 SECONDS / max(W.force / 10, 1)) * W.toolspeed
 		user.setClickCooldown(time)
-		om_do_after(user, time, src, src, PROC_REF(cut_planks_done), list(user, src.material.name))
+		om_task_timed(user, time, src, src, PROC_REF(cut_planks_done), list(user, src.material.name))
 	else
 		return FALSE
 	return INTERACTION_HANDLED_PASS

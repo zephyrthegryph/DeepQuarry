@@ -38,7 +38,7 @@
 	if(istype(A, /turf) || istype(A, /obj/effect/decal/cleanable) || istype(A, /obj/effect/overlay) || istype(A, /obj/effect/rune))
 		user.visible_message(span_warning("[user] begins to clean \the [get_turf(A)]."))
 
-		om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(A, user))
+		om_task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(A, user))
 
 /obj/item/mop_deploy/proc/afterattack_timed_done(atom/A, mob/user)
 	var/turf/T = get_turf(A)

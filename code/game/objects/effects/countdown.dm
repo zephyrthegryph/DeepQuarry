@@ -41,13 +41,13 @@
 
 /obj/effect/countdown/proc/start()
 	if(!started)
-		PERIODIC_START(src, PERIODIC_FAST)
+		om_task_periodic(src, PERIODIC_FAST)
 		started = TRUE
 
 /obj/effect/countdown/proc/stop()
 	if(started)
 		maptext = null
-		PERIODIC_STOP(src)
+		om_task_periodic_stop(src)
 		started = FALSE
 
 /obj/effect/countdown/proc/get_value()

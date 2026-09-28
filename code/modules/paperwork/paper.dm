@@ -380,7 +380,7 @@
 			else
 				user.visible_message(span_warning("[user] begins to wipe [H]'s lipstick off with \the [src]."), \
 										span_notice("You begin to wipe off [H]'s lipstick."))
-				om_do_after(user, 1 SECOND, H, src, PROC_REF(wipe_lipstick_done), list(user, H))
+				om_task_timed(user, 1 SECOND, H, src, PROC_REF(wipe_lipstick_done), list(user, H))
 				return ITEM_INTERACT_SUCCESS
 
 /obj/item/paper/proc/set_content(text,title)

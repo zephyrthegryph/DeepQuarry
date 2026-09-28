@@ -200,7 +200,7 @@ REF_OWNED(/obj/structure/janitorialcart, list("mybag", "mymop", "myspray", "myre
 /obj/structure/janitorialcart/wrench_act(mob/user, obj/item/I)
 	if(has_items)
 		return TRUE
-	om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
+	om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
 	return TRUE
 
 /obj/structure/janitorialcart/proc/wrench_act_timed_done(mob/user)

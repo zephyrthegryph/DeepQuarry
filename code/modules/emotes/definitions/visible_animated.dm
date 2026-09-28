@@ -64,7 +64,7 @@
 	)
 
 /datum/decl/emote/visible/floorspin/proc/spin_dir(mob/user)
-	om_stagger(user, spin_dirs, 0.1 SECONDS, TYPE_PROC_REF(/atom, set_dir))
+	om_after_stagger(user, spin_dirs, 0.1 SECONDS, TYPE_PROC_REF(/atom, set_dir))
 
 /datum/decl/emote/visible/floorspin/proc/spin_anim(mob/user)
 	om_after(user, 0.1 SECONDS, TYPE_PROC_REF(/atom, SpinAnimation), 10, 1)

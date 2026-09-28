@@ -562,7 +562,7 @@ DECLARE_INTERACTIONS(/obj/structure/theonepizza, INTERACT_ITEM(null, PROC_REF(in
 /obj/structure/theonepizza/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W,/obj/item/material/knife))
 		user.visible_message(span_bold("\The [user]") + " starts to slowly cut through The One Pizza.", span_notice("You start to slowly cut through The One Pizza."))
-		om_do_after(user, slicetime, src, src, PROC_REF(slice_done), list(user))
+		om_task_timed(user, slicetime, src, src, PROC_REF(slice_done), list(user))
 	return INTERACTION_HANDLED_PASS
 
 /obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita/bigslice

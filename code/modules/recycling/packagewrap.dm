@@ -133,4 +133,4 @@
 	return
 
 /obj/item/packageWrap/borg/wrap_used()
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)

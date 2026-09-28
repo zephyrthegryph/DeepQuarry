@@ -160,7 +160,7 @@ REF_BACK_VIA(/obj/effect/spider/eggcluster, list("loc" = list(/obj/item/organ/ex
 	. = ..()
 	pixel_x = rand(6,-6)
 	pixel_y = rand(6,-6)
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 	//50% chance to grow up
 	if(amount_grown != -1 && prob(50))
 		amount_grown = 1

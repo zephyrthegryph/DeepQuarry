@@ -106,7 +106,7 @@
 			user.visible_message("[user] wires the windoor assembly.", "You start to wire the windoor assembly.")
 
 			var/obj/item/stack/cable_coil/CC = W
-			om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, CC))
+			om_task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, CC))
 
 	else if(state == "02")
 		//Adding airlock electronics for access. Step 6 complete.

@@ -78,7 +78,7 @@ DECLARE_INTERACTIONS(/obj/item/material/snow/snowball, INTERACT_USE(null, PROC_R
 		user.put_in_hands(S)
 	else
 		to_chat(user, span_notice("You start compacting the snowball."))
-		om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
+		om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
 	return TRUE
 
 /obj/item/material/snow/snowball/proc/attack_self_timed_done(mob/user)

@@ -70,7 +70,7 @@
 /obj/item/modular_computer/Initialize(mapload)
 	if(!overlay_icon)
 		overlay_icon = icon
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 	install_default_hardware()
 	if(hard_drive)
 		install_default_programs()
@@ -197,7 +197,7 @@
 
 /obj/item/modular_computer/proc/enable_computer(mob/user = null)
 	enabled = 1
-	PERIODIC_START(src, PERIODIC_SLOW)
+	om_task_periodic(src, PERIODIC_SLOW)
 	update_icon()
 
 	// Autorun feature

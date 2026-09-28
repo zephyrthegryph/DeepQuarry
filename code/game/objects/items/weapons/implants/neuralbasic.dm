@@ -17,7 +17,7 @@
 		if(HAS_SYNTHETIC_BIOLOGY(H) && H.get_FBP_type() != FBP_CYBORG)		//If this on an FBP, it's just an extra inefficient attachment to whatever their brain is.
 			robotic_brain = TRUE
 	if(istype(my_brain(), /obj/item/organ/internal/brain) && my_brain().can_assist())
-		PERIODIC_START(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW)
 
 // the brain's owner feels it ripped away.
 /obj/item/implant/neural/on_destroy(force)
@@ -89,7 +89,7 @@ Implant Specifics:<BR>"}
 
 /obj/item/implant/neural/meltdown()
 	..()
-	PERIODIC_STOP(src)
+	om_task_periodic_stop(src)
 	var/mob/living/carbon/human/H = null
 	if(my_brain() && my_brain().owner)
 		if(ishuman(my_brain().owner))
