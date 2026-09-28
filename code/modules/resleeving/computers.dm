@@ -87,7 +87,13 @@
 			P.connected = src
 			P.name = "[initial(P.name)] #[num++]"
 
-/obj/machinery/computer/transhuman/resleeving/attackby(obj/item/W as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
+	INTERACT_ITEM(null, PROC_REF(resleeving_console_interaction_item)), \
+	INTERACT_HAND_UNGATED(null, PROC_REF(resleeving_console_interaction_hand)), \
+)
+
+/// Old attackby.
+/obj/machinery/computer/transhuman/resleeving/proc/resleeving_console_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/disk/transcore) && !our_db.core_dumped)
 		user.unEquip(W)
 		disk = W
@@ -97,15 +103,15 @@
 		var/obj/item/disk/body_record/brDisk = W
 		if(!brDisk.stored)
 			to_chat(user, span_warning("\The [W] does not contain a stored body record."))
-			return
+			return INTERACTION_HANDLED_PASS
 		user.unEquip(W)
 		W.forceMove(get_turf(src)) // Drop on top of us
 		current_br = om_handle(brDisk.stored)
 		to_chat(user, span_notice("\The [src] loads the body record from \the [W] before ejecting it."))
 		attack_hand(user)
 		view_b_rec(REF(brDisk.stored))
-	else
-		..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
 /obj/machinery/computer/transhuman/resleeving/multitool_act(mob/user, obj/item/tool)
 	var/obj/item/multitool/multitool = tool
@@ -118,14 +124,16 @@
 	to_chat(user, span_notice("You connect [pod] to [src]."))
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/computer/transhuman/resleeving/attack_hand(mob/user as mob)
+/// Old attack_hand.
+/obj/machinery/computer/transhuman/resleeving/proc/resleeving_console_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 
 	if(stat & (BROKEN|NOPOWER))
-		return
+		return TRUE
 
 	updatemodules()
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/computer/transhuman/resleeving/ui_assets(mob/user)
 	return list(
@@ -516,10 +524,10 @@
 	icon_state = "cmoemergency"
 	item_state = "card-id"
 
-/obj/item/cmo_disk_holder/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/cmo_disk_holder, INTERACT_USE("Tear open", PROC_REF(cmo_disk_holder_interaction_tear)))
+
+/// Old attack_self.
+/obj/item/cmo_disk_holder/proc/cmo_disk_holder_interaction_tear(mob/user, obj/item/held, datum/interaction/interaction)
 	playsound(src, 'sound/items/poster_ripped.ogg', 50)
 	to_chat(user, span_warning("You tear open \the [name]."))
 	user.unEquip(src)

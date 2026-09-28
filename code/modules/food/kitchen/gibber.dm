@@ -78,14 +78,21 @@
 	src.go_out()
 	return
 
-/obj/machinery/gibber/attack_hand(mob/user as mob)
+EXTEND_INTERACTIONS(/obj/machinery/gibber, \
+	INTERACT_HAND_UNGATED("Start gibbing", PROC_REF(gibber_interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(gibber_interaction_item)), \
+	INTERACT_DRAG("Put inside", PROC_REF(gibber_interaction_drag)), \
+)
+
+/// Old attack_hand.
+/obj/machinery/gibber/proc/gibber_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & (NOPOWER|BROKEN))
-		return
+		return TRUE
 	if(operating)
 		to_chat(user, span_danger("The gibber is locked and running, wait for it to finish."))
-		return
-	else
-		src.startgibbing(user)
+		return TRUE
+	src.startgibbing(user)
+	return TRUE
 
 /obj/machinery/gibber/examine()
 	. = ..()
@@ -96,25 +103,29 @@
 	to_chat(user, span_danger("You [emagged ? "disable" : "enable"] the gibber safety guard."))
 	return 1
 
-/obj/machinery/gibber/attackby(obj/item/W, mob/user)
+/// Old attackby.
+/obj/machinery/gibber/proc/gibber_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(default_part_replacement(user, W))
-		return
+		return INTERACTION_HANDLED_PASS
 
 	var/obj/item/grab/G = W
 	if(!istype(G))
-		return ..()
+		return FALSE
 
 	if(G.state < 2)
 		to_chat(user, span_danger("You need a better grip to do that!"))
-		return
+		return INTERACTION_HANDLED_PASS
 
 	move_into_gibber(user,G?.grab_target())
 	// Grab() process should clean up the grab item, no need to del it.
+	return INTERACTION_HANDLED_PASS
 
-/obj/machinery/gibber/MouseDrop_T(mob/target, mob/user)
+/// Old MouseDrop_T.
+/obj/machinery/gibber/proc/gibber_interaction_drag(mob/user, mob/target, datum/interaction/interaction)
 	if(user.stat || user.restrained())
-		return
+		return TRUE
 	move_into_gibber(user,target)
+	return TRUE
 
 /obj/machinery/gibber/proc/move_into_gibber(mob/user,mob/living/victim)
 	var/mob/living/occupant = src?.slot_item(OCCUPANT_SLOT_GIBBER)

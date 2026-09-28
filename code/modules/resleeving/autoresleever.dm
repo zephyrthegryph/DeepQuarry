@@ -30,7 +30,14 @@ REGISTRY_MEMBERSHIP(/obj/machinery/transhuman/autoresleever, REGISTRY_AUTORESLEE
 	. = ..()
 	update_icon()
 
-/obj/machinery/transhuman/autoresleever/attack_ghost(mob/observer/dead/user as mob)
+EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
+	INTERACT_OBSERVER("Respawn", PROC_REF(autoresleever_interaction_ghost)), \
+	INTERACT_ITEM(null, PROC_REF(autoresleever_interaction_item)), \
+)
+
+/// Old attack_ghost.
+/obj/machinery/transhuman/autoresleever/proc/autoresleever_interaction_ghost(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
+	. = TRUE
 	update_icon()
 	if(spawn_slots == 0)
 		to_chat(user, span_warning("There are no more respawn slots."))
@@ -48,13 +55,13 @@ REGISTRY_MEMBERSHIP(/obj/machinery/transhuman/autoresleever, REGISTRY_AUTORESLEE
 			to_chat(user, span_warning("You must wait [((respawn - (world.time - user.timeofdeath)) * 0.1) /60] minutes to use \the [src]."))
 			return
 	else if(spawntype)
-		var/_answer_k54 = rerun_prompt(user, "k54", list("message" = "This [src] spawns something special, would you like to play as it?", "title" = "Creachur", "choices" = list("No","Yes")), TYPE_PROC_REF(/atom, attack_ghost), args)
+		var/_answer_k54 = rerun_prompt(user, "k54", list("message" = "This [src] spawns something special, would you like to play as it?", "title" = "Creachur", "choices" = list("No","Yes")), PROC_REF(autoresleever_interaction_ghost), args)
 		if(isnull(_answer_k54))
 			return
 		if(_answer_k54 == "Yes")
 			autoresleeve(user)
 	else if(ghost_spawns)
-		var/_answer_k57 = rerun_prompt(user, "k57", list("message" = "Would you like to be spawned here as your presently loaded character?", "title" = "Spawn here", "choices" = list("No","Yes")), TYPE_PROC_REF(/atom, attack_ghost), args)
+		var/_answer_k57 = rerun_prompt(user, "k57", list("message" = "Would you like to be spawned here as your presently loaded character?", "title" = "Spawn here", "choices" = list("No","Yes")), PROC_REF(autoresleever_interaction_ghost), args)
 		if(isnull(_answer_k57))
 			return
 		if(_answer_k57 == "Yes")
@@ -62,12 +69,10 @@ REGISTRY_MEMBERSHIP(/obj/machinery/transhuman/autoresleever, REGISTRY_AUTORESLEE
 	else
 		to_chat(user, span_warning("You need to have been spawned in order to respawn here."))
 
-/obj/machinery/transhuman/autoresleever/attackby(mob/user)	//Let's not let people mess with this.
+/// Old attackby: let's not let people mess with this.
+/obj/machinery/transhuman/autoresleever/proc/autoresleever_interaction_item(mob/user, obj/item/held, datum/interaction/interaction)
 	update_icon()
-	if(isobserver(user))
-		attack_ghost(user)
-	else
-		return
+	return INTERACTION_HANDLED_PASS
 
 /obj/machinery/transhuman/autoresleever/proc/autoresleeve(mob/observer/dead/ghost)
 	if(stat & (BROKEN | MAINT | EMPED)) // Let it still work when power is just off, it has it's own backup reserve or something.

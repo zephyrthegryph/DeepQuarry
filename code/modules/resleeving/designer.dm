@@ -35,17 +35,23 @@ REF_SPILL(/obj/machinery/computer/transhuman/designer, "disk")
 		disk = null
 	. = ..()
 
-/obj/machinery/computer/transhuman/designer/attackby(obj/item/W, mob/user)
-	if(istype(W, /obj/item/disk/body_record))
-		user.unEquip(W)
-		disk = W
-		disk.forceMove(src)
-		to_chat(user, span_notice("You insert \the [W] into \the [src]."))
-		SStgui.update_uis(src)
-	else
-		. = ..()
+EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/designer, \
+	INTERACT_INSERT(/obj/item/disk/body_record, PROC_REF(body_designer_interaction_insert_disk), "Insert disk"), \
+	INTERACT_HAND_UNGATED(null, PROC_REF(body_designer_interaction_hand)), \
+)
 
-/obj/machinery/computer/transhuman/designer/attack_hand(mob/user)
+/// Old attackby.
+/obj/machinery/computer/transhuman/designer/proc/body_designer_interaction_insert_disk(mob/user, obj/item/W, datum/interaction/interaction)
+	user.unEquip(W)
+	disk = W
+	disk.forceMove(src)
+	to_chat(user, span_notice("You insert \the [W] into \the [src]."))
+	SStgui.update_uis(src)
+	return INTERACTION_HANDLED_PASS
+
+/// Old attack_hand.
+/obj/machinery/computer/transhuman/designer/proc/body_designer_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	. = TRUE
 	add_fingerprint(user)
 	if(inoperable())
 		return

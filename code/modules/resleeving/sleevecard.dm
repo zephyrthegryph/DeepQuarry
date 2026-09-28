@@ -7,8 +7,14 @@
 	has_emag_toolkit = FALSE // sleevecards don't have multitools or signalers,  you can just change their laws
 	special_handling = TRUE
 
-/obj/item/paicard/sleevecard/attack_ghost(mob/user as mob)
-	return // No ghosts can invite, these are intended for sleevemates only
+EXTEND_INTERACTIONS(/obj/item/paicard/sleevecard, \
+	INTERACT_OBSERVER(null, PROC_REF(sleevecard_interaction_ghost)), \
+	INTERACT_ITEM(null, PROC_REF(sleevecard_interaction_item)), \
+)
+
+/// Old attack_ghost: no ghosts can invite, these are intended for sleevemates only.
+/obj/item/paicard/sleevecard/proc/sleevecard_interaction_ghost(mob/user, obj/item/held, datum/interaction/interaction)
+	return TRUE
 
 /datum/om/task/timed/sleevecard_upload_mind
 	duration = 8 SECONDS
@@ -28,7 +34,9 @@
 	sleeveInto(record)
 	S.clear_mind()
 
-/obj/item/paicard/sleevecard/attackby(obj/item/I as obj, mob/user as mob)
+/// Old attackby (never reached paicard's own item handling).
+/obj/item/paicard/sleevecard/proc/sleevecard_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+	. = INTERACTION_HANDLED_PASS
 	if(istype(I,/obj/item/sleevemate))
 		var/obj/item/sleevemate/S = I
 		if(S.stored_mind && !pai)

@@ -74,10 +74,13 @@ REF_BACKLIST(/obj/item/implant/backup, list("our_db" = "implants"))
 	icon_state = "[initial(icon_state)][imps.len]"
 	germ_level = 0
 
-/obj/item/backup_implanter/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/backup_implanter, \
+	INTERACT_USE("Eject implant", PROC_REF(backup_implanter_interaction_eject)), \
+	INTERACT_INSERT(/obj/item/implant/backup, PROC_REF(backup_implanter_interaction_load), "Load implant"), \
+)
+
+/// Old attack_self.
+/obj/item/backup_implanter/proc/backup_implanter_interaction_eject(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!istype(user))
 		return
 
@@ -93,17 +96,18 @@ REF_BACKLIST(/obj/item/implant/backup, list("our_db" = "implants"))
 
 	return
 
-/obj/item/backup_implanter/attackby(obj/W, mob/user)
-	if(istype(W,/obj/item/implant/backup))
-		if(imps.len < max_implants)
-			user.unEquip(W)
-			imps |= W
-			W.germ_level = 0
-			W.forceMove(src)
-			update()
-			to_chat(user, span_notice("You load \the [W] into \the [src]."))
-		else
-			to_chat(user, span_warning("\The [src] is already full!"))
+/// Old attackby.
+/obj/item/backup_implanter/proc/backup_implanter_interaction_load(mob/user, obj/item/W, datum/interaction/interaction)
+	if(imps.len < max_implants)
+		user.unEquip(W)
+		imps |= W
+		W.germ_level = 0
+		W.forceMove(src)
+		update()
+		to_chat(user, span_notice("You load \the [W] into \the [src]."))
+	else
+		to_chat(user, span_warning("\The [src] is already full!"))
+	return INTERACTION_HANDLED_PASS
 
 /datum/om/task/timed/backup_implanter_backup_implant
 	complete_proc = /obj/item/backup_implanter/proc/backup_implant_done
@@ -178,11 +182,15 @@ REF_BACKLIST(/obj/item/implant/backup, list("our_db" = "implants"))
 	germ_level = 0
 
 //Click to get implant.
-/obj/structure/backup_implanter_ch/attack_hand(mob/user)
-	..()
+EXTEND_INTERACTIONS(/obj/structure/backup_implanter_ch, \
+	INTERACT_HAND("Get implanted", PROC_REF(backup_implanter_ch_interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(backup_implanter_ch_interaction_item)), \
+)
 
+/// Old attack_hand (its ..() first was the hand gate).
+/obj/structure/backup_implanter_ch/proc/backup_implanter_ch_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!istype(user, /mob/living/carbon))
-		return
+		return FALSE
 
 	if(user)
 		user.visible_message(span_notice("[user] is injecting a backup implant into [user]."))
@@ -190,6 +198,7 @@ REF_BACKLIST(/obj/item/implant/backup, list("our_db" = "implants"))
 		user.setClickCooldown(DEFAULT_QUICK_COOLDOWN)
 
 		om_do_after(user, 2.5 SECONDS, src, src, PROC_REF(self_implant_done), list(user))
+	return TRUE
 
 /obj/structure/backup_implanter_ch/proc/self_implant_done(mob/user)
 	//Create the actual implant.
@@ -206,7 +215,8 @@ REF_BACKLIST(/obj/item/implant/backup, list("our_db" = "implants"))
 	else
 		qdel(imp)
 
-/obj/structure/backup_implanter_ch/attackby(obj/item/O, mob/user)
+/// Old attackby.
+/obj/structure/backup_implanter_ch/proc/backup_implanter_ch_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	if(O.has_tool_quality(TOOL_WRENCH))
 
 		if(anchored)
@@ -214,15 +224,15 @@ REF_BACKLIST(/obj/item/implant/backup, list("our_db" = "implants"))
 			playsound(src, O.usesound, 50, 1)
 
 			om_do_after(user, 15 * O.toolspeed, src, src, PROC_REF(wrench_done), list(user, FALSE))
-			return
+			return INTERACTION_HANDLED_PASS
 
 		else
 			to_chat(user, span_notice("You start to wrench the implanter into place."))
 			playsound(src, O.usesound, 50, 1)
 
 			om_do_after(user, 15 * O.toolspeed, src, src, PROC_REF(wrench_done), list(user, TRUE))
-			return
-	..()
+			return INTERACTION_HANDLED_PASS
+	return FALSE
 
 /obj/structure/backup_implanter_ch/proc/wrench_done(mob/user, anchoring)
 	to_chat(user, span_notice(anchoring ? "You wrench the implanter into place." : "You unwrench the implanter."))

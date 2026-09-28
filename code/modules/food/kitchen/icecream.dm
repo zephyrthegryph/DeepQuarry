@@ -62,8 +62,15 @@
 	reagents.add_reagent(REAGENT_ID_SUGAR, 5)
 	reagents.add_reagent(REAGENT_ID_ICE, 5)
 
-/obj/machinery/icecream_vat/attack_hand(mob/user)
+EXTEND_INTERACTIONS(/obj/machinery/icecream_vat, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(icecream_vat_interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(icecream_vat_interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/machinery/icecream_vat/proc/icecream_vat_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/icecream_vat/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui, custom_state)
 	. = ..()
@@ -136,9 +143,10 @@
 			reagents.del_reagent(reagent_id)
 			return TRUE
 
-/obj/machinery/icecream_vat/attackby(obj/item/O, mob/user)
+/// Old attackby.
+/obj/machinery/icecream_vat/proc/icecream_vat_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	if(default_part_replacement(user, O))
-		return
+		return INTERACTION_HANDLED_PASS
 	if(istype(O, /obj/item/reagent_containers/food/snacks/icecream))
 		var/obj/item/reagent_containers/food/snacks/icecream/I = O
 		if(!I.ice_creamed)
@@ -156,9 +164,8 @@
 			to_chat(user, span_notice("[O] already has icecream in it."))
 		return 1
 	else if(O.is_open_container())
-		return
-	else
-		..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
 /obj/machinery/icecream_vat/proc/make(mob/user, make_type, amount)
 	for(var/R in get_ingredient_list(make_type))

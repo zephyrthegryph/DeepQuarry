@@ -146,10 +146,16 @@ REF_OWNED_LIST(/obj/machinery/smartfridge, "item_records")
 			if(6 to INFINITY)
 				add_overlay("[icon_base]-[icon_contents]3")
 
-/obj/machinery/smartfridge/attackby(obj/item/O, mob/user)
+EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
+	INTERACT_ITEM(null, PROC_REF(smartfridge_interaction_item)), \
+	INTERACT_HAND_UNGATED(null, PROC_REF(smartfridge_interaction_hand)), \
+)
+
+/// Old attackby.
+/obj/machinery/smartfridge/proc/smartfridge_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	if(stat & NOPOWER)
 		to_chat(user, span_notice("\The [src] is unpowered and useless."))
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(accept_check(O))
 		user.remove_from_mob(O)
@@ -187,6 +193,7 @@ REF_OWNED_LIST(/obj/machinery/smartfridge, "item_records")
 	else
 		to_chat(user, span_notice("\The [src] smartly refuses [O]."))
 		return TRUE
+	return INTERACTION_HANDLED_PASS
 
 /obj/machinery/smartfridge/screwdriver_act(mob/user, obj/item/tool)
 	panel_open = !panel_open
@@ -250,11 +257,13 @@ REF_OWNED_LIST(/obj/machinery/smartfridge, "item_records")
 	SStgui.update_uis(src)
 	update_icon()
 
-/obj/machinery/smartfridge/attack_hand(mob/user as mob)
+/// Old attack_hand.
+/obj/machinery/smartfridge/proc/smartfridge_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & (NOPOWER|BROKEN))
-		return
+		return TRUE
 	wires.Interact(user)
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/smartfridge/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

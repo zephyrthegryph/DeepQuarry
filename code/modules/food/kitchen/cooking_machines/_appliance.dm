@@ -233,10 +233,22 @@
 
 	return TRUE
 
-/obj/machinery/appliance/attackby(obj/item/I, mob/user)
+EXTEND_INTERACTIONS(/obj/machinery/appliance, \
+	INTERACT_ITEM(null, PROC_REF(appliance_interaction_item)), \
+	INTERACT_HAND(null, PROC_REF(appliance_interaction_hand)), \
+)
+
+/// Old subtype attackby: part replacement first, then the appliance's own item handling.
+/obj/machinery/appliance/proc/appliance_interaction_part_replace(mob/user, obj/item/O, datum/interaction/interaction)
+	if(default_part_replacement(user, O))
+		return INTERACTION_HANDLED_PASS
+	return FALSE
+
+/// Old attackby.
+/obj/machinery/appliance/proc/appliance_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(!cook_type || (stat & (BROKEN)))
 		to_chat(user, span_warning("\The [src] is not working."))
-		return FALSE
+		return INTERACTION_HANDLED_PASS
 
 	var/obj/item/ToCook = I
 
@@ -250,7 +262,7 @@
 				return TRUE
 			add_content(wrap, user)
 			update_icon()
-			return FALSE
+			return INTERACTION_HANDLED_PASS
 
 		attack_hand(user)
 		return TRUE
@@ -258,17 +270,18 @@
 	var/result = can_insert(I, user)
 	if(!result)
 		default_part_replacement(user, I)
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(result == 2)
 		var/obj/item/grab/G = I
 		if (G && istype(G) && G?.grab_target())
 			cook_mob(G?.grab_target(), user)
-			return
+			return INTERACTION_HANDLED_PASS
 
 	//From here we can start cooking food
 	add_content(ToCook, user)
 	update_icon()
+	return INTERACTION_HANDLED_PASS
 
 //Override for container mechanics
 /obj/machinery/appliance/proc/add_content(obj/item/I, mob/user)
@@ -623,11 +636,12 @@
 			FA.alarm()
 			break
 
-/obj/machinery/appliance/attack_hand(mob/user)
-	if(..())
-		return
+/// Old attack_hand.
+/obj/machinery/appliance/proc/appliance_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(tgui_id)
 		tgui_interact(user)
+		return TRUE
+	return FALSE
 
 /obj/machinery/appliance/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
 	ui = SStgui.try_update_ui(user, src, ui)

@@ -62,7 +62,4 @@ REF_OWNED(/obj/machinery/appliance/mixer/cereal, "cerealmaker_loop")
 	for (var/i in images)
 		result.overlays += images[i]
 
-/obj/machinery/appliance/mixer/cereal/attackby(obj/item/O as obj, mob/user as mob)
-	if(default_part_replacement(user, O))
-		return
-	..()
+EXTEND_INTERACTIONS(/obj/machinery/appliance/mixer/cereal, INTERACT_ITEM(null, PROC_REF(appliance_interaction_part_replace)))

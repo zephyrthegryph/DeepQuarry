@@ -247,13 +247,21 @@
 
 	return 1
 
-/obj/machinery/transhuman/synthprinter/attack_hand(mob/user)
-	if((busy == 0) || (stat & NOPOWER))
-		return
-	to_chat(user, "Current print cycle is [busy]% complete.")
-	return
+EXTEND_INTERACTIONS(/obj/machinery/transhuman/synthprinter, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(synthprinter_interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(synthprinter_interaction_item)), \
+)
 
-/obj/machinery/transhuman/synthprinter/attackby(obj/item/W, mob/user)
+/// Old attack_hand.
+/obj/machinery/transhuman/synthprinter/proc/synthprinter_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	if((busy == 0) || (stat & NOPOWER))
+		return TRUE
+	to_chat(user, "Current print cycle is [busy]% complete.")
+	return TRUE
+
+/// Old attackby.
+/obj/machinery/transhuman/synthprinter/proc/synthprinter_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+	. = INTERACTION_HANDLED_PASS
 	src.add_fingerprint(user)
 	if(busy)
 		to_chat(user, span_notice("\The [src] is busy. Please wait for completion of previous operation."))
@@ -362,8 +370,16 @@
 	var/manip_rating = get_part_rating(/obj/item/stock_parts/manipulator)
 	blur_amount = (48 - manip_rating * 8)
 
-/obj/machinery/transhuman/resleever/attack_hand(mob/user as mob)
+EXTEND_INTERACTIONS(/obj/machinery/transhuman/resleever, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(resleever_interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(resleever_interaction_item)), \
+	INTERACT_DRAG("Put inside", PROC_REF(resleever_interaction_drag)), \
+)
+
+/// Old attack_hand.
+/obj/machinery/transhuman/resleever/proc/resleever_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/transhuman/resleever/tgui_interact(mob/user, datum/tgui/ui = null)
 	if(stat & (NOPOWER|BROKEN))
@@ -387,18 +403,19 @@
 		data["mindName"] = H.mind?.name
 	return data
 
-/obj/machinery/transhuman/resleever/attackby(obj/item/W, mob/user)
+/// Old attackby.
+/obj/machinery/transhuman/resleever/proc/resleever_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	src.add_fingerprint(user)
 	if(default_part_replacement(user, W))
-		return
+		return INTERACTION_HANDLED_PASS
 	if(istype(W, /obj/item/grab))
 		var/obj/item/grab/G = W
 		if(!ismob(G?.grab_target()))
-			return
+			return INTERACTION_HANDLED_PASS
 		var/mob/M = G?.grab_target()
 		if(put_mob(M))
 			consume(G, user)
-			return //Don't call up else we'll get attack messsages
+			return INTERACTION_HANDLED_PASS //Don't call up else we'll get attack messsages
 	if(istype(W, /obj/item/paicard/sleevecard))
 		var/obj/item/paicard/sleevecard/C = W
 		user.unEquip(C)
@@ -406,11 +423,12 @@
 		consume(C, user)
 		sleevecards++
 		to_chat(user, span_notice("You store \the [C] in \the [src]."))
-		return
+		return INTERACTION_HANDLED_PASS
 
-	return ..()
+	return FALSE
 
-/obj/machinery/transhuman/resleever/MouseDrop_T(mob/living/carbon/O, mob/user)
+/// Old MouseDrop_T.
+/obj/machinery/transhuman/resleever/proc/resleever_interaction_drag(mob/user, mob/living/carbon/O, datum/interaction/interaction)
 	if(!istype(O))
 		return 0 //not a mob
 	if(user.incapacitated())
@@ -429,7 +447,7 @@
 		return 0
 	if(O.has_buckled_mobs())
 		to_chat(user, span_warning("\The [O] has other entities attached to it. Remove them first."))
-		return
+		return TRUE
 
 	if(put_mob(O))
 		if(O == user)
@@ -438,6 +456,7 @@
 			visible_message("[user] puts [O] into \the [src].")
 
 	add_fingerprint(user)
+	return TRUE
 
 /obj/machinery/transhuman/resleever/proc/putmind(datum/transhuman/mind_record/MR, mode = 1, mob/living/carbon/human/override = null, db_key)
 	var/mob/living/carbon/human/occupant = get_occupant()
