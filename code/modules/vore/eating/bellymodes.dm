@@ -9,18 +9,8 @@
 	// time this cycle covers, so turbo or late cycles give the same totals over time.
 	var/delta_factor = seconds ? ((seconds SECONDS) / BELLY_BASELINE_TICK) : 1
 
-	if(loc != owner)
-		if(isAI(owner))
-			var/mob/living/silicon/ai/AI = owner
-			if(AI.holo && LAZYACCESS(AI.holo.masters, AI))
-				if(loc != LAZYACCESS(AI.holo.masters, AI))
-					forceMove(owner)
-		else
-			if(istype(owner))
-				forceMove(owner)
-			else
-				qdel(src)
-				return
+	if(!follow_owner())
+		return
 
 	HandleBellyReagents()	// reagent belly stuff, here to jam it into subsystems and avoid too much cpu usage
 	update_belly_surrounding() // Updates belly_surrounding list for indirect vore usage
@@ -30,30 +20,8 @@
 			HandleBellyReagentEffects()
 		return
 
-	// Autotransfer count moved here.
 	if(autotransfer_enabled)
-		var/list/autotransferables = list()
-		var/list/transfer_bellies = compile_autotransfer_bellies()
-		if(transfer_bellies)
-			for(var/atom/movable/M in contents)
-				if(!M || !M.autotransferable)
-					continue
-				// If the prey can't pass the filter of at least one transfer location, skip it
-				if(ismob(M) && !(autotransfer_filter(M, autotransfer_secondary_whitelist, autotransfer_secondary_blacklist) || autotransfer_filter(M, autotransfer_whitelist, autotransfer_blacklist))) continue
-				if(isitem(M) && !(autotransfer_filter(M, autotransfer_secondary_whitelist_items, autotransfer_secondary_blacklist_items) || autotransfer_filter(M, autotransfer_whitelist_items, autotransfer_blacklist_items))) continue
-				dq_set_belly_cycles(M, dq_get_belly_cycles(M) + 1)
-				if(dq_get_belly_cycles(M) < autotransferwait / 60)
-					continue
-				autotransferables += M
-			if(LAZYLEN(autotransferables) >= autotransfer_min_amount)
-				var/tally = 0
-				for(var/atom/movable/M in autotransferables)
-					if(check_autotransfer(M, transfer_bellies))
-						tally++
-					if(autotransfer_max_amount > 0 && tally >= autotransfer_max_amount)
-						break
-				for(var/obj/belly/transfer_belly in (transfer_bellies["primary"] + transfer_bellies["secondary"]))
-					transfer_belly.handle_visual_update()
+		run_autotransfer()
 
 	var/play_sound //Potential sound to play at the end to avoid code duplication.
 	var/to_update = FALSE //Did anything update worthy happen?
@@ -119,15 +87,7 @@
 		if(to_update)
 			updateVRPanels()
 		if(play_sound)
-			for(var/mob/M in hearers(VORE_SOUND_RANGE, get_turf(owner))) //so we don't fill the whole room with the sound effect
-				if(!M.check_sound_preference(/datum/preference/toggle/digestion_noises))
-					continue
-				if(isturf(M.loc) || (M.loc != src)) //to avoid people on the inside getting the outside sounds and their direct sounds + built in sound pref check
-					if(fancy_vore)
-						M.playsound_local(get_turf(owner), play_sound, vol = sound_volume, vary = 1, falloff = VORE_SOUND_FALLOFF, frequency = noise_freq)
-					else
-						M.playsound_local(get_turf(owner), play_sound, vol = sound_volume, vary = 1, falloff = VORE_SOUND_FALLOFF, frequency = noise_freq)
-				//these are all external sound triggers now, so it's ok.
+			play_external_belly_sound(play_sound)
 		return
 
 ///////////////////// Prey Loop Refresh/hack //////////////////////
@@ -149,42 +109,89 @@
 			play_sound = returns["soundToPlay"]
 
 	if(play_sound)
-		for(var/mob/M in hearers(VORE_SOUND_RANGE, get_turf(owner))) //so we don't fill the whole room with the sound effect
-			if(!M.check_sound_preference(/datum/preference/toggle/digestion_noises))
-				continue
-			if(isturf(M.loc) || (M.loc != src)) //to avoid people on the inside getting the outside sounds and their direct sounds + built in sound pref check
-				if(fancy_vore)
-					M.playsound_local(get_turf(owner), play_sound, vol = sound_volume, vary = 1, falloff = VORE_SOUND_FALLOFF, frequency = noise_freq)
-				else
-					M.playsound_local(get_turf(owner), play_sound, vol = sound_volume, vary = 1, falloff = VORE_SOUND_FALLOFF, frequency = noise_freq)
-				//these are all external sound triggers now, so it's ok.
+		play_external_belly_sound(play_sound)
 
 	if(emote_active)
-		// emote_lists can be = ""
-		var/list/EL
-		if(islist(emote_lists))
-			EL = emote_lists[digest_mode]
-
-		if((LAZYLEN(EL) || LAZYLEN(emote_lists[DM_HOLD_ABSORBED]) || (digest_mode == DM_DIGEST && LAZYLEN(emote_lists[DM_HOLD])) || (digest_mode == DM_SELECT && (LAZYLEN(emote_lists[DM_HOLD])||LAZYLEN(emote_lists[DM_DIGEST])||LAZYLEN(emote_lists[DM_ABSORB])) )) && COOLDOWN_FINISHED(src, next_emote))
-			COOLDOWN_START(src, next_emote, (emote_time SECONDS))
-			for(var/mob/living/M in contents)
-				if(M.absorbed)
-					EL = emote_lists[DM_HOLD_ABSORBED]
-					if(LAZYLEN(EL))
-						to_chat(M, span_vnotice(belly_format_string(EL, M, use_absorbed_count = TRUE)))
-				else
-					if (digest_mode == DM_SELECT)
-						var/datum/digest_mode/selective/DM_S = GLOB.digest_modes[DM_SELECT]
-						EL = emote_lists[DM_S.get_selective_mode(src, M)]
-					else if(digest_mode == DM_DIGEST && !M.digestable)
-						EL = emote_lists[DM_HOLD]					// Use Hold's emote list if we're indigestible
-
-					if(LAZYLEN(EL))
-						to_chat(M, span_vnotice(belly_format_string(EL, M)))
+		send_belly_emotes()
 
 	if(to_update)
 		updateVRPanels()
 
+/// Keep the belly inside its owner (an AI's belly follows its hologram). FALSE when the
+/// owner is gone and the belly deleted itself.
+/obj/belly/proc/follow_owner()
+	if(loc == owner)
+		return TRUE
+	if(isAI(owner))
+		var/mob/living/silicon/ai/AI = owner
+		if(AI.holo && LAZYACCESS(AI.holo.masters, AI))
+			if(loc != LAZYACCESS(AI.holo.masters, AI))
+				forceMove(owner)
+	else
+		if(istype(owner))
+			forceMove(owner)
+		else
+			qdel(src)
+			return FALSE
+	return TRUE
+
+/// Count prey cycles and move whatever has waited long enough to the transfer bellies.
+/obj/belly/proc/run_autotransfer()
+	var/list/autotransferables = list()
+	var/list/transfer_bellies = compile_autotransfer_bellies()
+	if(!transfer_bellies)
+		return
+	for(var/atom/movable/M in contents)
+		if(!M || !M.autotransferable)
+			continue
+		// If the prey can't pass the filter of at least one transfer location, skip it
+		if(ismob(M) && !(autotransfer_filter(M, autotransfer_secondary_whitelist, autotransfer_secondary_blacklist) || autotransfer_filter(M, autotransfer_whitelist, autotransfer_blacklist))) continue
+		if(isitem(M) && !(autotransfer_filter(M, autotransfer_secondary_whitelist_items, autotransfer_secondary_blacklist_items) || autotransfer_filter(M, autotransfer_whitelist_items, autotransfer_blacklist_items))) continue
+		dq_set_belly_cycles(M, dq_get_belly_cycles(M) + 1)
+		if(dq_get_belly_cycles(M) < autotransferwait / 60)
+			continue
+		autotransferables += M
+	if(LAZYLEN(autotransferables) >= autotransfer_min_amount)
+		var/tally = 0
+		for(var/atom/movable/M in autotransferables)
+			if(check_autotransfer(M, transfer_bellies))
+				tally++
+			if(autotransfer_max_amount > 0 && tally >= autotransfer_max_amount)
+				break
+		for(var/obj/belly/transfer_belly in (transfer_bellies["primary"] + transfer_bellies["secondary"]))
+			transfer_belly.handle_visual_update()
+
+/// Play a digestion sound to hearers outside the belly who allow it.
+/obj/belly/proc/play_external_belly_sound(sound/play_sound)
+	for(var/mob/M in hearers(VORE_SOUND_RANGE, get_turf(owner))) //so we don't fill the whole room with the sound effect
+		if(!M.check_sound_preference(/datum/preference/toggle/digestion_noises))
+			continue
+		if(isturf(M.loc) || (M.loc != src)) //to avoid people on the inside getting the outside sounds and their direct sounds + built in sound pref check
+			M.playsound_local(get_turf(owner), play_sound, vol = sound_volume, vary = 1, falloff = VORE_SOUND_FALLOFF, frequency = noise_freq)
+
+/// The periodic belly emote to each occupant, from the current mode's emote list.
+/obj/belly/proc/send_belly_emotes()
+	// emote_lists can be = ""
+	var/list/EL
+	if(islist(emote_lists))
+		EL = emote_lists[digest_mode]
+
+	if((LAZYLEN(EL) || LAZYLEN(emote_lists[DM_HOLD_ABSORBED]) || (digest_mode == DM_DIGEST && LAZYLEN(emote_lists[DM_HOLD])) || (digest_mode == DM_SELECT && (LAZYLEN(emote_lists[DM_HOLD])||LAZYLEN(emote_lists[DM_DIGEST])||LAZYLEN(emote_lists[DM_ABSORB])) )) && COOLDOWN_FINISHED(src, next_emote))
+		COOLDOWN_START(src, next_emote, (emote_time SECONDS))
+		for(var/mob/living/M in contents)
+			if(M.absorbed)
+				EL = emote_lists[DM_HOLD_ABSORBED]
+				if(LAZYLEN(EL))
+					to_chat(M, span_vnotice(belly_format_string(EL, M, use_absorbed_count = TRUE)))
+			else
+				if (digest_mode == DM_SELECT)
+					var/datum/digest_mode/selective/DM_S = GLOB.digest_modes[DM_SELECT]
+					EL = emote_lists[DM_S.get_selective_mode(src, M)]
+				else if(digest_mode == DM_DIGEST && !M.digestable)
+					EL = emote_lists[DM_HOLD]					// Use Hold's emote list if we're indigestible
+
+				if(LAZYLEN(EL))
+					to_chat(M, span_vnotice(belly_format_string(EL, M)))
 
 /obj/belly/proc/handle_touchable_atoms(list/touchable_atoms, delta_factor = 1)
 	var/did_an_item = FALSE // Only do one item per cycle.
@@ -300,7 +307,7 @@
 		if(IM_DIGEST_FOOD)
 			if(istype(I,/obj/item/reagent_containers/food) || istype(I, /obj/item/organ))
 				var/obj/item/organ/R = I
-				if(istype(R) && R.robotic >= ORGAN_ROBOT)
+				if(istype(R) && R.is_robotic())
 					LAZYOR(items_preserved, I)
 				else
 					did_an_item = digest_item(I, touchable_amount, delta_factor)
