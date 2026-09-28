@@ -13,11 +13,12 @@
 	var/image/topping
 	var/image/filling
 
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/customizable, null, list(REAGENT_ID_NUTRIMENT = 3))
+
 /obj/item/reagent_containers/food/snacks/customizable/Initialize(mapload,ingredient)
 	. = ..()
 	topping = image(icon,,"[initial(icon_state)]_top")
 	filling = image(icon,,"[initial(icon_state)]_filling")
-	reagents.add_reagent(REAGENT_ID_NUTRIMENT,3)
 	updateName()
 
 EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/customizable, INTERACT_ITEM(null, PROC_REF(customizable_item)))

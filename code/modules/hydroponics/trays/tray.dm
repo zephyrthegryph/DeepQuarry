@@ -206,13 +206,14 @@
 			nymph.visible_message(span_notice(span_bold("[nymph]") + " rolls around in [src] for a bit."),span_notice("You roll around in [src] for a bit."))
 		return
 
+DECLARE_REAGENTS(/obj/machinery/portable_atmospherics/hydroponics, 200, null)
+
 /obj/machinery/portable_atmospherics/hydroponics/Initialize(mapload)
 	..()
 	if(!ov_lowhealth)
 		setup_overlays()
 	temp_chem_holder = new()
-	temp_chem_holder.create_reagents(10)
-	create_reagents(200)
+	temp_chem_holder.create_reagents(10) // ALLOW(decl): holder on a bare scratch /obj child, not on src
 	if(mechanical)
 		connect()
 	update_icon()

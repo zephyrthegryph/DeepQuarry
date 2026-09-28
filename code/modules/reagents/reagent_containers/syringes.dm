@@ -440,10 +440,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/syringe/ld50_syringe/choral, null,
 	name = "Syringe (anabolic steroids)"
 	desc = "Contains drugs for muscle growth."
 
-/obj/item/reagent_containers/syringe/steroid/Initialize(mapload)
-	. = ..()
-	// reagents.add_reagent(REAGENT_ID_ADRENALINE,5) // No thanks.
-	reagents.add_reagent(REAGENT_ID_HYPERZINE,10)
+DECLARE_REAGENTS(/obj/item/reagent_containers/syringe/steroid, null, list(REAGENT_ID_HYPERZINE = 10))
 
 /obj/item/reagent_containers/syringe/proc/dirty(mob/living/carbon/human/target, obj/item/organ/external/eo)
 	if(!ishuman(loc))

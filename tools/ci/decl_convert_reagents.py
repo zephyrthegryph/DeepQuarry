@@ -33,7 +33,7 @@ import sys
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 # Types whose reagent holder is declared (DECLARE_REAGENTS with a volume).
-ROOTS = ("/obj/item/reagent_containers",)
+ROOTS = ("/obj/item/reagent_containers", "/obj/structure/reagent_dispensers")
 
 HEADER = re.compile(r"^(/[\w/]+)/Initialize\s*\(\s*(mapload)?\s*\)\s*(//.*)?$")
 PARENT = re.compile(r"^\.\s*=\s*\.\.\(\)\s*(//.*)?$")
