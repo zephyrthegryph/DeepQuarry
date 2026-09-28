@@ -154,7 +154,6 @@ REF_OWNED(/mob/living/simple_mob/vore/overmap, "child_om_marker")
 	target_single = TRUE
 
 /datum/om/relation/overmap_mob_marker/on_unlink(mob/living/simple_mob/vore/overmap/source, obj/effect/overmap/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
 	if(QDELETED(target) && !QDELETED(source))
 		source.expire(0)
 

@@ -142,14 +142,12 @@ REF_BACK(/obj/item/organ/external, list("parent" = null, "applied_pressure" = nu
 /// Destroy() -- so directly hard-deleting the host mob without going through
 /// organ removal left `imp_in` dangling.
 /datum/om/relation/slot/implant_site/on_link(obj/item/implant/source, obj/item/organ/external/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
 	if(istype(source) && istype(target))
 		source.part = target
 		LAZYADD(target.implants, source)
 		source.imp_in_handle = om_handle(target.owner)
 
 /datum/om/relation/slot/implant_site/on_unlink(obj/item/implant/source, obj/item/organ/external/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
 	if(istype(source) && source.part == target)
 		source.part = null
 	if(istype(target))

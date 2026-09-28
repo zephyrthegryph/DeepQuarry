@@ -11,6 +11,8 @@ GLOBAL_DATUM_INIT(poi_service, /datum/world_service/pois, new)
 	lane = /datum/om/behaviour/world/pois
 	on_demand = TRUE
 	var/list/obj/effect/landmark/poi_loader/poi_queue = list() // ALLOW(instance_list): d: world service singleton
+	/// TRUE while drain_queue() is loading the queue.
+	var/loading = FALSE
 
 /// Queued loader landmarks: each qdels itself once placed.
 /datum/world_service/pois/declared_cache_vars()
@@ -33,19 +35,30 @@ GLOBAL_DATUM_INIT(poi_service, /datum/world_service/pois, new)
 	poi_queue += loader
 	demand()
 
-/datum/world_service/pois/has_work()
-	return length(poi_queue)
-
 /datum/world_service/pois/stat_line()
 	return "Queued: [length(poi_queue)]"
 
-/datum/world_service/pois/service_step(resumed)
-	while (length(poi_queue))
-		load_next_poi()
+/datum/world_service/pois/has_work()
+	return length(poi_queue) && !loading
 
-		if (TICK_CHECK)
-			return FALSE
+/datum/world_service/pois/service_step(resumed)
+	if(loading || !length(poi_queue))
+		return TRUE
+	// A map template load yields (the reader stoplag()s), and the lane must not sleep: the
+	// queue drains in one detached proc, one load at a time.
+	loading = TRUE
+	INVOKE_ASYNC(src, PROC_REF(drain_queue)) // ALLOW(scheduler): map template loads yield (reader stoplag)
 	return TRUE
+
+/// Loads every queued POI, yielding between them; runs detached from the lane.
+/datum/world_service/pois/proc/drain_queue()
+	while(length(poi_queue))
+		try
+			load_next_poi()
+		catch(var/exception/e)
+			dq_report_caught(e, "POI load") // a failed load must not wedge `loading` on
+		CHECK_TICK
+	loading = FALSE
 
 /// We select and fire the next PoI in the list.
 /datum/world_service/pois/proc/load_next_poi()

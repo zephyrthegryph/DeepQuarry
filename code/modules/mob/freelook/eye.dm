@@ -41,7 +41,6 @@
 	source_single = TRUE
 
 /datum/om/relation/eye_of/on_unlink(mob/observer/eye/source, mob/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
 	if(target?.active_eye() == source)
 		om_unlink(target, source, /datum/om/relation/active_eye)
 

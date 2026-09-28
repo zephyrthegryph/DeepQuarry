@@ -69,7 +69,6 @@
 	source_single = TRUE
 
 /datum/om/relation/action_granted_to/on_unlink(datum/action/source, mob/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
 	if(QDELETED(source) || QDELETED(target))
 		source.Remove(target)
 

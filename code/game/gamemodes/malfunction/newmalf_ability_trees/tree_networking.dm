@@ -69,7 +69,7 @@
 	to_chat(user, "Beginning APC system override...")
 	om_after(user, 30 SECONDS, GLOBAL_PROC_REF(to_chat), user, "APC hack completed. Uploading modified operation software..")
 	om_after(user, 50 SECONDS, GLOBAL_PROC_REF(to_chat), user, "Restarting APC to apply changes..")
-	om_after(user, 60 SECONDS, TYPE_PROC_REF(/mob/living/silicon/ai, malf_apc_hack_done), receiver = user, user, REF(A))
+	om_after(user, 60 SECONDS, GLOBAL_PROC_REF(malf_apc_hack_done), user, REF(A))
 
 /proc/malf_apc_hack_done(mob/living/silicon/ai/user, apc_ref)
 	var/obj/machinery/power/apc/A = locate(apc_ref)
@@ -182,7 +182,7 @@
 	user.hacking = 1
 	user.system_override = 1
 	// Now actually begin the hack. Each APC takes 10 seconds.
-	om_after(user, 10 SECONDS, TYPE_PROC_REF(/mob/living/silicon/ai, malf_override_next_apc), receiver = user, user, shuffle(remaining_apcs))
+	om_after(user, 10 SECONDS, GLOBAL_PROC_REF(malf_override_next_apc), user, shuffle(remaining_apcs))
 
 /// Overrides the next APC every 10 seconds; the firewall falls 30 seconds after the last.
 /proc/malf_override_next_apc(mob/living/silicon/ai/user, list/remaining_apcs)
@@ -196,10 +196,10 @@
 			if(A.hacker == user)
 				to_chat(user, "## OVERRIDDEN: [A.name]")
 		if(length(remaining_apcs))
-			om_after(user, 10 SECONDS, TYPE_PROC_REF(/mob/living/silicon/ai, malf_override_next_apc), receiver = user, user, remaining_apcs)
+			om_after(user, 10 SECONDS, GLOBAL_PROC_REF(malf_override_next_apc), user, remaining_apcs)
 			return
 	to_chat(user, "## REACHABLE APC SYSTEMS OVERTAKEN. BYPASSING PRIMARY FIREWALL.")
-	om_after(user, 30 SECONDS, TYPE_PROC_REF(/mob/living/silicon/ai, malf_override_finish), receiver = user, user)
+	om_after(user, 30 SECONDS, GLOBAL_PROC_REF(malf_override_finish), user)
 
 /proc/malf_override_finish(mob/living/silicon/ai/user)
 	// Hack all APCs, including those built during hack sequence.
