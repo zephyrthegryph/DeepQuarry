@@ -494,7 +494,7 @@
 	if(!is_robot_arm && !is_robotic_organ)
 		return ..()
 
-	if(contents.len >= 1)
+	if(contents.len >= 1 || has_latent()) // latent-ok: latent entries checked
 		to_chat(user, span_notice("You need to empty [src] out first."))
 		return
 

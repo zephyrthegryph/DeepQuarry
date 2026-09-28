@@ -226,12 +226,14 @@
 	rollCup(user)
 
 /obj/item/storage/dicecup/proc/rollCup(mob/user)
-	for(var/obj/item/dice/I in src.contents)
+	latent_materialize_all() // a walk needs real things (C5)
+	for(var/obj/item/dice/I in src.contents) // latent-ok: materialized above
 		var/obj/item/dice/D = I
 		D.rollDice(user, 1)
 
 /obj/item/storage/dicecup/proc/revealDice(mob/viewer)
-	for(var/obj/item/dice/I in src.contents)
+	latent_materialize_all() // a walk needs real things (C5)
+	for(var/obj/item/dice/I in src.contents) // latent-ok: materialized above
 		var/obj/item/dice/D = I
 		to_chat(viewer, "The [D.name] shows a [D.result].")
 

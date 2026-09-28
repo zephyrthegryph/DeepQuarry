@@ -69,10 +69,11 @@
 	* see: /tg/ and /vg/'s RPEDs fitting power cells, beakers, etc.
 	* 10/8/21 edit - It's Time.
 	*/
-	for(var/obj/item/B in contents)
+	latent_materialize_all() // a walk needs real things (C5)
+	for(var/obj/item/B in contents) // latent-ok: materialized above
 		if(B.rped_rating() < lowest_rating)
 			lowest_rating = B.rped_rating()
-	for(var/obj/item/B in contents)
+	for(var/obj/item/B in contents) // latent-ok: materialized above
 		if(B.rped_rating() > lowest_rating)
 			continue
 		remove_from_storage(B, T, user)

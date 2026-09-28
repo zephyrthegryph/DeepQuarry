@@ -97,7 +97,7 @@ REF_OWNED(/mob/living/simple_mob/animal/solargrub_larva, list("powermachine", "s
 			return
 		if(!M.idle_power_usage && !M.active_power_usage && !(istype(M, /obj/machinery/power/apc) || istype(M, /obj/machinery/power/smes)))
 			return
-		if(locate(/mob/living/simple_mob/animal/solargrub_larva) in M)
+		if(locate(/mob/living/simple_mob/animal/solargrub_larva) in M) // latent-ok: mobs are never latent
 			return
 		enter_machine(M)
 		return TRUE

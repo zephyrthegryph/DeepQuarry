@@ -160,14 +160,15 @@ REF_OWNED_LIST(/obj/machinery/smartfridge, "item_records")
 	else if(istype(O, /obj/item/storage/bag))
 		var/obj/item/storage/bag/P = O
 		var/plants_loaded = 0
-		for(var/obj/G in P.contents)
+		P.latent_materialize_all() // a walk needs real things (C5)
+		for(var/obj/G in P.contents) // latent-ok: materialized above
 			if(accept_check(G))
 				P.remove_from_storage(G) //fixes ui bug - Pull Request 5515
 				stock(G)
 				plants_loaded = 1
 		if(plants_loaded)
 			user.visible_message(span_notice("[user] loads \the [src] with \the [P]."), span_notice("You load \the [src] with \the [P]."))
-			if(P.contents.len > 0)
+			if(P.contents.len > 0) // latent-ok: materialized above
 				to_chat(user, span_notice("Some items are refused."))
 
 	else if(istype(O, /obj/item/gripper)) // Grippers. ~Mechoid.

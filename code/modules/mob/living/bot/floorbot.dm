@@ -280,7 +280,9 @@
 	var/turf/Tsec = get_turf(src)
 
 	var/obj/item/storage/toolbox/mechanical/N = new /obj/item/storage/toolbox/mechanical(Tsec)
-	N.contents = list()
+	N.latent_discard()
+	for(var/obj/item/I in N.contents) // latent-ok: discarded above
+		qdel(I)
 	new /obj/item/assembly/prox_sensor(Tsec)
 	if(prob(50))
 		new /obj/item/robot_parts/l_arm(Tsec)
@@ -330,7 +332,7 @@
 	if(!istype(T, /obj/item/stack/tile/floor))
 		..()
 		return
-	if(contents.len >= 1)
+	if(contents.len >= 1 || has_latent()) // latent-ok: latent entries checked
 		to_chat(user, span_notice("They wont fit in as there is already stuff inside."))
 		return
 	if(user.s_active)

@@ -570,7 +570,8 @@
 	data["has_cache"] = !!cache
 	data["cache_name"] = cache ? cache.name : ""
 	var/has_book = FALSE
-	for(var/obj/item/book/B in contents)
+	latent_materialize_all() // a walk needs real things (C5)
+	for(var/obj/item/book/B in contents) // latent-ok: materialized above
 		has_book = TRUE
 		break
 	data["has_book"] = has_book
@@ -582,7 +583,8 @@
 		return
 	switch(action)
 		if("scan")
-			for(var/obj/item/book/B in contents)
+			latent_materialize_all() // a walk needs real things (C5)
+			for(var/obj/item/book/B in contents) // latent-ok: materialized above
 				cache = B
 				break
 			add_fingerprint(usr)
@@ -591,7 +593,8 @@
 			cache = null
 			return TRUE
 		if("eject")
-			for(var/obj/item/book/B in contents)
+			latent_materialize_all() // a walk needs real things (C5)
+			for(var/obj/item/book/B in contents) // latent-ok: materialized above
 				B.forceMove(src.loc)
 			return TRUE
 
