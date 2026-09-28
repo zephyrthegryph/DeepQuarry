@@ -1,4 +1,5 @@
 /mob/living/simple_mob/horror/BigTim
+	reaction_sound = 'sound/h_sounds/holla.ogg'
 	name = "Shitty Tim"
 	desc = "A tall figure wearing ripped clothes. Its eyes are placed on the bulb of skin that's folded over the front of its face. He has a gold clock hanging on a gold chain around his neck, and he has a gold and diamond bracelet on his wrist."
 
@@ -33,18 +34,6 @@
 	..()
 
 /mob/living/simple_mob/horror/BigTim/bullet_act()
-	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
-	..()
-
-/mob/living/simple_mob/horror/BigTim/attack_hand()
-	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
-	..()
-
-/mob/living/simple_mob/horror/BigTim/hitby()
-	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
-	..()
-
-/mob/living/simple_mob/horror/BigTim/attackby()
 	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
 	..()
 

@@ -1,4 +1,5 @@
 /mob/living/simple_mob/horror/Smiley
+	reaction_sound = 'sound/h_sounds/holla.ogg'
 	name = "???"
 	desc = "A giant hand, with a large, smiling head on top."
 
@@ -32,18 +33,6 @@
 	..()
 
 /mob/living/simple_mob/horror/Smiley/bullet_act()
-	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
-	..()
-
-/mob/living/simple_mob/horror/Smiley/attack_hand()
-	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
-	..()
-
-/mob/living/simple_mob/horror/Smiley/hitby()
-	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
-	..()
-
-/mob/living/simple_mob/horror/Smiley/attackby()
 	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
 	..()
 

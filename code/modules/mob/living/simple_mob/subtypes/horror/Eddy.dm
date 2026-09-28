@@ -1,4 +1,5 @@
 /mob/living/simple_mob/horror/Eddy
+	reaction_sound = 'sound/h_sounds/holla.ogg'
 	name = "???"
 	desc = "A dark green, sluglike creature, covered in glowing green ooze, and carrying what look to be eggs on its back."
 
@@ -32,18 +33,6 @@
 	..()
 
 /mob/living/simple_mob/horror/Eddy/bullet_act()
-	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
-	..()
-
-/mob/living/simple_mob/horror/Eddy/attack_hand()
-	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
-	..()
-
-/mob/living/simple_mob/horror/Eddy/hitby()
-	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
-	..()
-
-/mob/living/simple_mob/horror/Eddy/attackby()
 	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
 	..()
 

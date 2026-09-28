@@ -1,4 +1,5 @@
 /mob/living/simple_mob/horror/Willy
+	reaction_sound = 'sound/h_sounds/holla.ogg'
 	name = "???"
 	desc = "It looks like a giant mascot costume made of flesh and fabric. The two bulging eyes aren't comforting to look at either. At least it smells like a burger and fries."
 
@@ -32,18 +33,6 @@
 	..()
 
 /mob/living/simple_mob/horror/Willy/bullet_act()
-	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
-	..()
-
-/mob/living/simple_mob/horror/Willy/attack_hand()
-	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
-	..()
-
-/mob/living/simple_mob/horror/Willy/hitby()
-	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
-	..()
-
-/mob/living/simple_mob/horror/Willy/attackby()
 	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
 	..()
 

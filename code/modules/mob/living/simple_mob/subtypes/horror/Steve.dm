@@ -1,4 +1,5 @@
 /mob/living/simple_mob/horror/Steve
+	reaction_sound = 'sound/h_sounds/holla.ogg'
 	name = "???"
 	desc = "A formless blob of flesh with one, giant, everblinking eye. It has a large machine gun and a watercooler stuck stright into its skin."
 
@@ -39,18 +40,6 @@
 	..()
 
 /mob/living/simple_mob/horror/Steve/bullet_act()
-	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
-	..()
-
-/mob/living/simple_mob/horror/Steve/attack_hand()
-	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
-	..()
-
-/mob/living/simple_mob/horror/Steve/hitby()
-	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
-	..()
-
-/mob/living/simple_mob/horror/Steve/attackby()
 	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
 	..()
 

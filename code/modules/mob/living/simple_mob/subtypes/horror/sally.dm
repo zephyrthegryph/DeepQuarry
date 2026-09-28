@@ -1,4 +1,5 @@
 /mob/living/simple_mob/horror/Sally
+	reaction_sound = 'sound/h_sounds/holla.ogg'
 	name = "???"
 	desc = "A mass of tentacles hold up a large head, graced with one of the grandest smiles in the galaxy. It's a shame about the constant oil leaking from its eyes."
 
@@ -32,18 +33,6 @@
 	..()
 
 /mob/living/simple_mob/horror/Sally/bullet_act()
-	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
-	..()
-
-/mob/living/simple_mob/horror/Sally/attack_hand()
-	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
-	..()
-
-/mob/living/simple_mob/horror/Sally/hitby()
-	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
-	..()
-
-/mob/living/simple_mob/horror/Sally/attackby()
 	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
 	..()
 
