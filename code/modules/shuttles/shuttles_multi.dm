@@ -24,8 +24,8 @@
 
 /datum/shuttle/autodock/multi/New()
 	..()
-	start_location = current_location
-	last_location = current_location
+	start_location = current_location()
+	last_location = current_location()
 
 /datum/shuttle/autodock/multi/proc/set_destination(destination_key, mob/user)
 	if(moving_status != SHUTTLE_IDLE)

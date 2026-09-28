@@ -39,7 +39,7 @@ REF_OWNED(/datum/shuttle/autodock/web_shuttle, "web_master")
 
 /datum/shuttle/autodock/web_shuttle/current_dock_target()
 	// TODO - Probably don't even need to override this right?  Debug testing code below will check!
-	. = web_master?.get_current_destination()?.my_landmark?.docking_controller?.id_tag
+	. = web_master?.get_current_destination()?.my_landmark()?.docking_controller()?.id_tag
 	if (. != ..())
 		WARNING("Web shuttle [src] had current_dock_target()=[.] but autodock.current_dock_target() = [..()]")
 
@@ -62,8 +62,8 @@ REF_OWNED(/datum/shuttle/autodock/web_shuttle, "web_master")
 
 /datum/shuttle/autodock/web_shuttle/on_shuttle_arrival()
 	. = ..()
-	set_active_docking_controller(current_location.docking_controller)
-	update_docking_target(current_location)
+	set_active_docking_controller(current_location().docking_controller())
+	update_docking_target(current_location())
 	web_master.on_shuttle_arrival()
 	update_helmets()
 
@@ -371,7 +371,7 @@ REF_OWNED(/datum/shuttle/autodock/web_shuttle, "web_master")
 				message_admins("ERROR: Shuttle computer was asked to travel to a nonexistant destination.")
 				return
 
-			WS.next_location_handle = om_handle(target_destination.my_landmark)
+			WS.next_location_handle = om_handle(target_destination.my_landmark())
 			if(!can_move(WS, ui.user))
 				return
 
@@ -382,9 +382,9 @@ REF_OWNED(/datum/shuttle/autodock/web_shuttle, "web_master")
 			var/travel_time = new_route.travel_time * WS.flight_time_modifier
 			// TODO - Leshana - Change this to use proccess stuff of autodock!
 			if(new_route.interim && new_route.travel_time)
-				WS.long_jump(target_destination.my_landmark, new_route.interim, travel_time / 10)
+				WS.long_jump(target_destination.my_landmark(), new_route.interim, travel_time / 10)
 			else
-				WS.short_jump(target_destination.my_landmark)
+				WS.short_jump(target_destination.my_landmark())
 
 //check if we're undocked, give option to force launch
 /obj/machinery/computer/shuttle_control/web/proc/check_docking(mob/user, datum/shuttle/autodock/MS)

@@ -17151,7 +17151,7 @@
 /obj/effect/shuttle_landmark{
 	base_area = /area/hangar/one;
 	base_turf = /turf/simulated/floor/reinforced;
-	docking_controller = "hangar_1";
+	docking_controller_tag = "hangar_1";
 	landmark_tag = "hangar_1";
 	name = "Hangar One"
 	},
@@ -22160,7 +22160,7 @@
 /obj/effect/shuttle_landmark{
 	base_area = /area/hangar/two;
 	base_turf = /turf/simulated/floor/reinforced;
-	docking_controller = "hangar_2";
+	docking_controller_tag = "hangar_2";
 	landmark_tag = "hangar_2";
 	name = "Hangar Two"
 	},
@@ -107614,7 +107614,7 @@
 /area/maintenance/medbay)
 "ecr" = (
 /obj/effect/shuttle_landmark{
-	docking_controller = "ninja_shuttle_dock_airlock";
+	docking_controller_tag = "ninja_shuttle_dock_airlock";
 	landmark_tag = "ninja_arrivals_dock";
 	name = "SC Aux Dock D"
 	},
@@ -107916,7 +107916,7 @@
 /area/maintenance/apmaint)
 "ecX" = (
 /obj/effect/shuttle_landmark{
-	docking_controller = "shuttle1_dock_airlocksc";
+	docking_controller_tag = "shuttle1_dock_airlocksc";
 	landmark_tag = "shuttle1_arrivals_dock";
 	name = "SC Dock 1-A"
 	},
@@ -108010,7 +108010,7 @@
 /area/shuttle/arrival/station)
 "edk" = (
 /obj/effect/shuttle_landmark{
-	docking_controller = "response_shuttle_dock_airlock";
+	docking_controller_tag = "response_shuttle_dock_airlock";
 	landmark_tag = "response_ship_arrivals_dock";
 	name = "SC Dock 1-C"
 	},
@@ -108031,7 +108031,7 @@
 /area/maintenance/medbay)
 "edn" = (
 /obj/effect/shuttle_landmark{
-	docking_controller = "shuttle2_dock_airlocksc";
+	docking_controller_tag = "shuttle2_dock_airlocksc";
 	landmark_tag = "shuttle2_arrivals_dock";
 	name = "SC Dock 3-C"
 	},
@@ -108085,7 +108085,7 @@
 /area/maintenance/medbay)
 "edu" = (
 /obj/effect/shuttle_landmark{
-	docking_controller = "nuke_shuttle_dock_airlock";
+	docking_controller_tag = "nuke_shuttle_dock_airlock";
 	landmark_tag = "syndie_arrivals_dock";
 	name = "SC Dock 3-E"
 	},

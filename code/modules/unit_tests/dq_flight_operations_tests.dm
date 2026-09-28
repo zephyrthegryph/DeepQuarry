@@ -148,7 +148,7 @@
 	var/list/expected_destination_ids = list()
 	for(var/id in SSflight_operations.vessels)
 		var/datum/flight_vessel/vessel = SSflight_operations.vessels[id]
-		if(!(vessel.shuttle()?.current_location?.landmark_tag in carrier_dock_tags))
+		if(!(vessel.shuttle()?.current_location()?.landmark_tag in carrier_dock_tags))
 			continue
 		var/datum/flight_destination/destination = SSflight_operations.destination_for_target(vessel.ship())
 		TEST_ASSERT_NOTNULL(destination, "Carrier craft [vessel.name] has no render destination")

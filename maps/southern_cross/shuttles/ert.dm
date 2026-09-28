@@ -33,7 +33,7 @@
 	can_cloak = TRUE
 	cloaked = FALSE
 	shuttle_area = /area/shuttle/response_ship/start
-	current_location = "response_ship_start"
+	current_location_tag = "response_ship_start"
 	docking_controller_tag = "response_shuttle"
 	web_master_type = /datum/shuttle_web_master/ert
 	flight_time_modifier = 0.5	// High speed low drag etc
@@ -44,7 +44,7 @@
 
 /datum/shuttle_destination/ert/root
 	name = "Central Command"
-	my_landmark = "response_ship_start"
+	my_landmark_tag = "response_ship_start"
 	preferred_interim_tag = "response_ship_transit"
 
 	routes_to_make = list(
@@ -53,7 +53,7 @@
 
 /datum/shuttle_destination/ert/orbit
 	name = "Orbit of Sif"
-	my_landmark = "response_ship_orbit"
+	my_landmark_tag = "response_ship_orbit"
 	preferred_interim_tag = "response_ship_transit"
 
 	routes_to_make = list(
@@ -65,7 +65,7 @@
 
 /datum/shuttle_destination/ert/outside_SC_1d
 	name = "NLS Southern Cross - Fore Port of First Deck"
-	my_landmark = "response_ship_firstdeck"
+	my_landmark_tag = "response_ship_firstdeck"
 	preferred_interim_tag = "response_ship_transit"
 
 	routes_to_make = list(
@@ -77,7 +77,7 @@
 
 /datum/shuttle_destination/ert/outside_SC_2d
 	name = "NLS Southern Cross - Aft Starboard of Second Deck"
-	my_landmark = "response_ship_seconddeck"
+	my_landmark_tag = "response_ship_seconddeck"
 	preferred_interim_tag = "response_ship_transit"
 
 	routes_to_make = list(
@@ -88,7 +88,7 @@
 
 /datum/shuttle_destination/ert/outside_SC_3d
 	name = "NLS Southern Cross - Aft Starboard of Third Deck"
-	my_landmark = "response_ship_thirddeck"
+	my_landmark_tag = "response_ship_thirddeck"
 	preferred_interim_tag = "response_ship_transit"
 
 	routes_to_make = list(
@@ -99,7 +99,7 @@
 
 /datum/shuttle_destination/ert/docked_SC
 	name = "NLS Southern Cross - Arrivals Docking Port"
-	my_landmark = "response_ship_arrivals_dock"
+	my_landmark_tag = "response_ship_arrivals_dock"
 	preferred_interim_tag = "response_ship_transit"
 
 	announcer = "Southern Cross Docking Computer"
@@ -112,7 +112,7 @@
 
 /datum/shuttle_destination/ert/sky
 	name = "Skies of Sif"
-	my_landmark = "response_ship_sky"
+	my_landmark_tag = "response_ship_sky"
 	preferred_interim_tag = "response_ship_sky_transit"
 
 	routes_to_make = list(
@@ -121,5 +121,5 @@
 
 /datum/shuttle_destination/ert/planet
 	name = "Sif Surface"
-	my_landmark = "response_ship_planet"
+	my_landmark_tag = "response_ship_planet"
 	preferred_interim_tag = "response_ship_sky_transit"

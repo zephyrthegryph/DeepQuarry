@@ -228,12 +228,12 @@ SUBSYSTEM_DEF(flight_operations)
 	ship.flight_vessel_id = vessel.id
 	register_destination(ship)
 	var/obj/effect/overmap/visitable/physical_target
-	if(vessel.shuttle()?.current_location)
-		physical_target = waypoint_sector(vessel.shuttle().current_location)
+	if(vessel.shuttle()?.current_location())
+		physical_target = waypoint_sector(vessel.shuttle().current_location())
 	var/datum/flight_destination/physical_context = destination_for_target(physical_target)
 	vessel.orbit_parent_id = physical_context?.orbit_parent_id || planet_id_named("Sif") || first_planet_id()
-	if(vessel.shuttle()?.current_location)
-		var/datum/flight_port/current_port = port_for_landmark(vessel.shuttle().current_location)
+	if(vessel.shuttle()?.current_location())
+		var/datum/flight_port/current_port = port_for_landmark(vessel.shuttle().current_location())
 		if(current_port)
 			vessel.docked_port_id = current_port.id
 			current_port.occupied_by_handle = om_handle(vessel)
@@ -317,7 +317,7 @@ SUBSYSTEM_DEF(flight_operations)
 		if(istype(vessel.ship(), /obj/effect/overmap/visitable/ship/exploration_carrier))
 			vessel.docked_port_id = null
 			continue
-		var/datum/flight_port/current_port = port_for_landmark(vessel.shuttle()?.current_location)
+		var/datum/flight_port/current_port = port_for_landmark(vessel.shuttle()?.current_location())
 		vessel.docked_port_id = current_port?.id
 		if(current_port)
 			current_port.occupied_by_handle = om_handle(vessel)
@@ -444,7 +444,7 @@ SUBSYSTEM_DEF(flight_operations)
 	if(plan.state == FLIGHT_PLAN_ARRIVING)
 		var/obj/effect/overmap/visitable/ship/landable/landable = plan.vessel.ship()
 		var/obj/effect/shuttle_landmark/expected_landmark = plan.arrival_port()?.landmark() || plan.destination().expedition()?.landing_waypoint
-		if(!plan.vessel.shuttle() || (istype(landable) && landable.status == SHIP_STATUS_LANDED && plan.vessel.shuttle().moving_status == SHUTTLE_IDLE && plan.vessel.shuttle().current_location == expected_landmark))
+		if(!plan.vessel.shuttle() || (istype(landable) && landable.status == SHIP_STATUS_LANDED && plan.vessel.shuttle().moving_status == SHUTTLE_IDLE && plan.vessel.shuttle().current_location() == expected_landmark))
 			set_vessel_docked_port(plan.vessel, plan.arrival_port())
 			plan.state = FLIGHT_PLAN_ARRIVED
 			plan.arrival_at = world.time

@@ -10,7 +10,7 @@
 	can_cloak = TRUE
 	cloaked = TRUE
 	shuttle_area = /area/shuttle/syndicate
-	current_location = "syndie_start"
+	current_location_tag = "syndie_start"
 	docking_controller_tag = "merc_shuttle"
 	destination_tags = list(
 		"syndie_start",

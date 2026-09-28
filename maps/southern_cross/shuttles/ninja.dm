@@ -10,7 +10,7 @@
 	can_cloak = TRUE
 	cloaked = TRUE
 	shuttle_area = /area/ninja_dojo/start
-	current_location = "ninja_start"
+	current_location_tag = "ninja_start"
 	docking_controller_tag = "ninja_shuttle"
 	web_master_type = /datum/shuttle_web_master/ninja
 	flight_time_modifier = 0.5	// Nippon steel.
@@ -21,7 +21,7 @@
 
 /datum/shuttle_destination/ninja/root
 	name = "Dojo Outpost"
-	my_landmark = "ninja_start"
+	my_landmark_tag = "ninja_start"
 	preferred_interim_tag = "ninja_sky_transit"
 
 	routes_to_make = list(
@@ -30,7 +30,7 @@
 
 /datum/shuttle_destination/ninja/orbit
 	name = "Orbit of Sif"
-	my_landmark = "ninja_orbit"
+	my_landmark_tag = "ninja_orbit"
 	preferred_interim_tag = "ninja_transit"
 
 	routes_to_make = list(
@@ -42,7 +42,7 @@
 
 /datum/shuttle_destination/ninja/outside_SC_1d
 	name = "NLS Southern Cross - Aft of First Deck"
-	my_landmark = "ninja_firstdeck"
+	my_landmark_tag = "ninja_firstdeck"
 	preferred_interim_tag = "ninja_transit"
 
 	routes_to_make = list(
@@ -53,7 +53,7 @@
 
 /datum/shuttle_destination/ninja/outside_SC_2d
 	name = "NLS Southern Cross - Fore of Second Deck"
-	my_landmark = "ninja_seconddeck"
+	my_landmark_tag = "ninja_seconddeck"
 	preferred_interim_tag = "ninja_transit"
 
 	routes_to_make = list(
@@ -64,7 +64,7 @@
 
 /datum/shuttle_destination/ninja/outside_SC_3d
 	name = "NLS Southern Cross - Port of Third Deck"
-	my_landmark = "ninja_thirddeck"
+	my_landmark_tag = "ninja_thirddeck"
 	preferred_interim_tag = "ninja_transit"
 
 	routes_to_make = list(
@@ -76,7 +76,7 @@
 
 /datum/shuttle_destination/ninja/docked_SC
 	name = "NLS Southern Cross - Arrivals Docking Port"
-	my_landmark = "ninja_arrivals_dock"
+	my_landmark_tag = "ninja_arrivals_dock"
 	preferred_interim_tag = "ninja_transit"
 
 	announcer = "Southern Cross Docking Computer"
@@ -89,7 +89,7 @@
 
 /datum/shuttle_destination/ninja/sky
 	name = "Skies of Sif"
-	my_landmark = "ninja_sky"
+	my_landmark_tag = "ninja_sky"
 	preferred_interim_tag = "ninja_sky_transit"
 
 	routes_to_make = list(
@@ -98,5 +98,5 @@
 
 /datum/shuttle_destination/ninja/planet
 	name = "Sif Surface"
-	my_landmark = "ninja_planet"
+	my_landmark_tag = "ninja_planet"
 	preferred_interim_tag = "ninja_sky_transit"

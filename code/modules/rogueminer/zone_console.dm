@@ -130,7 +130,7 @@
 
 	//Update shuttle destination.
 	var/datum/shuttle/autodock/ferry/S = SSshuttles.shuttles["Belter"]
-	S.landmark_offsite = ZM_target.myshuttle_landmark()
+	S.landmark_offsite_handle = om_handle(ZM_target.myshuttle_landmark())
 	S.next_location_handle = om_handle(S.get_location_waypoint(!S.location))
 
 	//Re-enable shuttle.

@@ -6,14 +6,14 @@
 /obj/effect/shuttle_landmark/station_dockpoint1
 	name = "Station Docking Point 1"
 	landmark_tag = "nav_station_docking1"
-	docking_controller = "station_dock1"
+	docking_controller_tag = "station_dock1"
 	base_turf = /turf/space
 	base_area = /area/space
 
 /obj/effect/shuttle_landmark/station_dockpoint2
 	name = "Station Docking Point 2"
 	landmark_tag = "nav_station_docking2"
-	docking_controller = "station_dock2"
+	docking_controller_tag = "station_dock2"
 	base_turf = /turf/space
 	base_area = /area/space
 
@@ -21,7 +21,7 @@
 /obj/effect/shuttle_landmark/station_inside
 	name = "Internal Hangar"
 	landmark_tag = "nav_station_inside"
-	docking_controller = "station_hangar"
+	docking_controller_tag = "station_hangar"
 	base_turf = /turf/simulated/floor/tiled
 	base_area = /area/bridge
 
@@ -40,8 +40,8 @@
 	warmup_time = 0
 	shuttle_area = /area/shuttle/ferrydemo
 	docking_controller_tag = "ferrydemo_shuttle"
-	landmark_station = "nav_station_docking1"
-	landmark_offsite = "nav_ferrydemo_space"
+	landmark_station_tag = "nav_station_docking1"
+	landmark_offsite_tag = "nav_ferrydemo_space"
 
 /area/shuttle/ferrydemo
 	name = "Ferry-Demo Suttle"
@@ -67,7 +67,7 @@
 	warmup_time = 0
 	shuttle_area = /area/shuttle/multidemo
 	docking_controller_tag = "multidemo_shuttle"
-	current_location = "nav_multidemo_start"
+	current_location_tag = "nav_multidemo_start"
 	destination_tags = list("nav_station_docking2", "nav_shared_space", "nav_station_docking1", "nav_multidemo_nearby")
 	can_cloak = TRUE
 
@@ -105,7 +105,7 @@
 	name = "Web-Demo"
 	warmup_time = 0
 	shuttle_area = /area/shuttle/webdemo
-	current_location = "nav_station_inside"
+	current_location_tag = "nav_station_inside"
 	docking_controller_tag = "webdemo_docker"
 	web_master_type = /datum/shuttle_web_master/webdemo
 
@@ -121,7 +121,7 @@
 
 /datum/shuttle_destination/webdemo/inside_bridge
 	name = "inside the Bridge"
-	my_landmark = "nav_station_inside"
+	my_landmark_tag = "nav_station_inside"
 	radio_announce = TRUE
 	announcer = "Shuttle Authority"
 
@@ -133,7 +133,7 @@
 
 /datum/shuttle_destination/webdemo/docked_bridge
 	name = "Bridge docking pylon"
-	my_landmark = "nav_station_docking1"
+	my_landmark_tag = "nav_station_docking1"
 	radio_announce = TRUE
 	announcer = "Shuttle Authority"
 
@@ -150,7 +150,7 @@
 
 /datum/shuttle_destination/webdemo/nearby_bridge
 	name = "nearby the Bridge"
-	my_landmark = "nav_shared_space"
+	my_landmark_tag = "nav_shared_space"
 	preferred_interim_tag = "nav_webdemo_transit"
 	routes_to_make = list(
 		/datum/shuttle_destination/webdemo/inside_bridge = 0,
@@ -165,5 +165,5 @@
 
 /datum/shuttle_destination/webdemo/faraway
 	name = "far away"
-	my_landmark = "nav_webdemo_faraway"
+	my_landmark_tag = "nav_webdemo_faraway"
 	preferred_interim_tag = "nav_webdemo_transit"

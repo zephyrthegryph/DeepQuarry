@@ -9,7 +9,7 @@
 	max_integrity = 150
 	point_return = -1
 	health_regen = 0 //we regen in Life() instead of when pulsed
-	var/datum/blob_type/desired_blob_type = null // If this is set, the core always creates an overmind possessing this blob type.
+	var/desired_blob_type = null // If this is set, the core always creates an overmind possessing this blob type.
 	var/difficulty_threshold = null // Otherwise if this is set, it picks a random blob_type that is equal or lower in difficulty.
 	var/difficulty_floor = null // Related to the above var, acts as a floor value to the above, inclusive.
 	var/core_regen = 2

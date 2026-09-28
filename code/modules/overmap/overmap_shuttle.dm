@@ -35,7 +35,7 @@
 		return FALSE
 	if(moving_status == SHUTTLE_INTRANSIT)
 		return FALSE //already going somewhere, current_location may be an intransit location instead of in a sector
-	var/our_sector = waypoint_sector(current_location)
+	var/our_sector = waypoint_sector(current_location())
 	if(myship()?.landmark &next_location()on == myship().landmark)
 		return TRUE //We're not on the overmap yet (admin spawned probably), and we're trying to hook up with our openspace sector
 	if(!our_sector || !waypoint_sector(next_location()))
@@ -49,7 +49,7 @@
 	return ..() && can_go()
 
 /datum/shuttle/autodock/overmap/get_travel_time()
-	var/obj/effect/overmap/visitable/current_sector = waypoint_sector(current_location)
+	var/obj/effect/overmap/visitable/current_sector = waypoint_sector(current_location())
 	var/obj/effect/overmap/visitable/destination_sector = waypoint_sector(next_location())
 	if(!current_sector || !destination_sector)
 		return move_time
@@ -57,12 +57,12 @@
 	return move_time * (1 + distance_mod)
 
 /datum/shuttle/autodock/overmap/proc/set_destination(obj/effect/shuttle_landmark/A)
-	if(A != current_location)
+	if(A != current_location())
 		next_location_handle = om_handle(A)
 
 /datum/shuttle/autodock/overmap/proc/get_possible_destinations()
 	var/list/res = list()
-	var/our_sector = waypoint_sector(current_location)
+	var/our_sector = waypoint_sector(current_location())
 	if(!our_sector && myship()?.landmark)
 		res["Perform Test Jump"] = myship().landmark
 		return res //We're not on the overmap, maybe an admin spawned us on a non-sector map. We're broken until we connect to our space z-level.
@@ -78,7 +78,7 @@
 /datum/shuttle/autodock/overmap/get_location_name()
 	if(moving_status == SHUTTLE_INTRANSIT)
 		return "In transit"
-	return "[waypoint_sector(current_location)] - [current_location]"
+	return "[waypoint_sector(current_location())] - [current_location()]"
 
 /datum/shuttle/autodock/overmap/get_destination_name()
 	if(!next_location())

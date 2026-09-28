@@ -32,7 +32,7 @@
 	..(destination, interim, travel_time, direction)
 
 /datum/shuttle/autodock/ferry/emergency/perform_shuttle_move()
-	if (current_location == landmark_station)	//leaving the station
+	if (current_location() == landmark_station())	//leaving the station
 		SSemergency_shuttle.departed = TRUE
 		var/estimated_time = round(SSemergency_shuttle.estimate_arrival_time()/60,1)
 
@@ -113,9 +113,9 @@
 	location = FERRY_LOCATION_OFFSITE
 	shuttle_area = /area/shuttle/escape
 	warmup_time = 10
-	landmark_offsite = "escape_cc"
-	landmark_station = "escape_station"
-	landmark_transition = "escape_transit"
+	landmark_offsite_tag = "escape_cc"
+	landmark_station_tag = "escape_station"
+	landmark_transition_tag = "escape_transit"
 	move_time = SHUTTLE_TRANSIT_DURATION_RETURN
 	move_direction = SOUTH
 	docking_controller_tag = "escape_shuttle"

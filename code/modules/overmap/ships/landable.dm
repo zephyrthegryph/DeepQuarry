@@ -68,7 +68,7 @@
 		oms.myship_handle = om_handle(src)
 	RegisterSignal(shuttle_datum, COMSIG_OBSERVER_SHUTTLE_PRE_MOVE, PROC_REF(pre_shuttle_jump))
 	RegisterSignal(shuttle_datum, COMSIG_OBSERVER_SHUTTLE_MOVED, PROC_REF(on_shuttle_jump))
-	on_landing(landmark, shuttle_datum.current_location) // We "land" at round start to properly place ourselves on the overmap.
+	on_landing(landmark, shuttle_datum.current_location()) // We "land" at round start to properly place ourselves on the overmap.
 
 //
 // Center Landmark
@@ -128,7 +128,7 @@ REF_BACKLIST(/obj/effect/shuttle_landmark/visiting_shuttle, list("core_landmark"
 	if(!.)
 		return
 	var/datum/shuttle/boss_shuttle = SSshuttles.shuttles[core_landmark.shuttle_name]
-	if(boss_shuttle.current_location != core_landmark)
+	if(boss_shuttle.current_location() != core_landmark)
 		return FALSE // Only available when our governing shuttle is in space.
 	if(shuttle == boss_shuttle) // Boss shuttle only lands on main landmark
 		return FALSE
@@ -160,7 +160,7 @@ REF_BACKLIST(/obj/effect/shuttle_landmark/visiting_shuttle, list("core_landmark"
 	if(given_shuttle != SSshuttles.shuttles[shuttle])
 		return
 	var/datum/shuttle/autodock/auto = given_shuttle
-	if(into == auto.landmark_transition)
+	if(into == auto.landmark_transition())
 		status = SHIP_STATUS_TRANSIT
 		on_takeoff(from, into)
 		return

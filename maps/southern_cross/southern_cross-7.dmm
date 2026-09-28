@@ -125,7 +125,7 @@
 	base_turf = /turf/simulated/floor/reinforced;
 	landmark_tag = "needle_dock";
 	name = "Needle Dock";
-	docking_controller = "needle_dock"
+	docking_controller_tag = "needle_dock"
 	},
 /obj/structure/cable/blue{
 	icon_state = "4-8"
@@ -15946,7 +15946,7 @@
 	base_turf = /turf/simulated/floor/reinforced;
 	landmark_tag = "echidna_dock";
 	name = "Echidna Dock";
-	docking_controller = "echidna_dock"
+	docking_controller_tag = "echidna_dock"
 	},
 /turf/simulated/floor,
 /area/shuttle/echidna)
@@ -17112,7 +17112,7 @@
 	base_turf = /turf/simulated/floor/reinforced;
 	landmark_tag = "baby_mammoth_dock";
 	name = "Baby Mammoth Dock";
-	docking_controller = "baby_mammoth_dock"
+	docking_controller_tag = "baby_mammoth_dock"
 	},
 /obj/effect/floor_decal/industrial/warning{
 	dir = 4
@@ -17613,7 +17613,7 @@
 /obj/effect/shuttle_landmark{
 	base_area = /area/expoutpost/hangarone;
 	base_turf = /turf/simulated/floor/reinforced;
-	docking_controller = "exphangar_1";
+	docking_controller_tag = "exphangar_1";
 	landmark_tag = "exphangar_1";
 	name = "Exploration Carrier Hangar One"
 	},
@@ -21776,7 +21776,7 @@
 	base_turf = /turf/simulated/floor/reinforced;
 	landmark_tag = "stargazer_dock";
 	name = "Stargazer Dock";
-	docking_controller = "stargazer_dock"
+	docking_controller_tag = "stargazer_dock"
 	},
 /obj/structure/cable/blue{
 	icon_state = "4-8"
@@ -22119,7 +22119,7 @@
 	base_turf = /turf/simulated/floor/reinforced;
 	landmark_tag = "ursula_dock";
 	name = "Ursula Dock";
-	docking_controller = "ursula_dock"
+	docking_controller_tag = "ursula_dock"
 	},
 /obj/structure/cable/blue{
 	icon_state = "4-8"

@@ -14,7 +14,7 @@
 	can_cloak = TRUE
 	cloaked = TRUE
 	shuttle_area = /area/skipjack_station/start
-	current_location = "skipjack_start"
+	current_location_tag = "skipjack_start"
 //	docking_controller_tag = "skipjack_shuttle"
 	web_master_type = /datum/shuttle_web_master/heist
 
@@ -26,7 +26,7 @@
 
 /datum/shuttle_destination/heist/root
 	name = "Raider Outpost"
-	my_landmark = "skipjack_start"
+	my_landmark_tag = "skipjack_start"
 	preferred_interim_tag = "skipjack_transit"
 
 //	dock_target = "skipjack_base"
@@ -37,7 +37,7 @@
 
 /datum/shuttle_destination/heist/orbit
 	name = "Orbit of Sif"
-	my_landmark = "skipjack_orbit"
+	my_landmark_tag = "skipjack_orbit"
 	preferred_interim_tag = "skipjack_transit"
 
 	routes_to_make = list(
@@ -49,7 +49,7 @@
 
 /datum/shuttle_destination/heist/outside_SC_1d
 	name = "NLS Southern Cross - Aft of First Deck"
-	my_landmark = "skipjack_firstdeck"
+	my_landmark_tag = "skipjack_firstdeck"
 	preferred_interim_tag = "skipjack_transit"
 
 	routes_to_make = list(
@@ -60,7 +60,7 @@
 
 /datum/shuttle_destination/heist/outside_SC_2d
 	name = "NLS Southern Cross - Fore of Second Deck"
-	my_landmark = "skipjack_seconddeck"
+	my_landmark_tag = "skipjack_seconddeck"
 	preferred_interim_tag = "skipjack_transit"
 
 	routes_to_make = list(
@@ -71,7 +71,7 @@
 
 /datum/shuttle_destination/heist/outside_SC_3d
 	name = "NLS Southern Cross - Starboard of Third Deck"
-	my_landmark = "skipjack_thirddeck"
+	my_landmark_tag = "skipjack_thirddeck"
 	preferred_interim_tag = "skipjack_transit"
 
 	routes_to_make = list(
@@ -83,7 +83,7 @@
 
 /datum/shuttle_destination/heist/docked_SC
 	name = "NLS Southern Cross - Arrivals Docking Port"
-	my_landmark = "skipjack_arrivals_dock"
+	my_landmark_tag = "skipjack_arrivals_dock"
 	preferred_interim_tag = "skipjack_transit"
 
 //	dock_target = "skipjack_shuttle_dock_airlock"
@@ -97,7 +97,7 @@
 
 /datum/shuttle_destination/heist/sky
 	name = "Skies of Sif"
-	my_landmark = "skipjack_sky"
+	my_landmark_tag = "skipjack_sky"
 	preferred_interim_tag = "skipjack_sky_transit"
 
 	routes_to_make = list(
@@ -106,5 +106,5 @@
 
 /datum/shuttle_destination/heist/planet
 	name = "Sif Surface"
-	my_landmark = "skipjack_planet"
+	my_landmark_tag = "skipjack_planet"
 	preferred_interim_tag = "skipjack_sky_transit"
