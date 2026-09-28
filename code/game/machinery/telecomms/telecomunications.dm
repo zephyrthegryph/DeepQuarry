@@ -209,7 +209,7 @@ REF_OWNED(/obj/machinery/telecomms, "soundloop")
 
 	// Preserve the former per-fire probabilities while doing the work once per
 	// thermal interval. Heat itself was emitted once per eleven old fires.
-	var/elapsed_cycles = last_thermal_check ? max(round((world.time - last_thermal_check) / max(SSmachines.wait, 1)), 1) : 1
+	var/elapsed_cycles = last_thermal_check ? max(round((world.time - last_thermal_check) / max(MACHINE_SERVICE_INTERVAL, 1)), 1) : 1
 	last_thermal_check = world.time
 	checkheat(elapsed_cycles)
 
@@ -227,7 +227,7 @@ REF_OWNED(/obj/machinery/telecomms, "soundloop")
 /obj/machinery/telecomms/proc/schedule_thermal_check()
 	if(thermal_timer || QDELETED(src))
 		return
-	thermal_timer = om_after(src, max((initial(delay) + 1) * SSmachines.wait, 1), PROC_REF(thermal_check_due))
+	thermal_timer = om_after(src, max((initial(delay) + 1) * MACHINE_SERVICE_INTERVAL, 1), PROC_REF(thermal_check_due))
 
 /obj/machinery/telecomms/proc/thermal_check_due()
 	thermal_timer = null

@@ -32,7 +32,7 @@
 // out, so it resumes from the same subtask on the next fire().
 #define SSAIR_PIPENETS 1
 // SSAIR_ATMOSMACHINERY (2) deleted with the atmos_machinery process
-// queue; devices run via SSmachines. Don't reuse value 2 — leaving the gap
+// queue; devices run on the machine pipeline. Don't reuse value 2 — leaving the gap
 // keeps the fire() switch identifiers stable if a future merge re-introduces it.
 // SSAIR_ACTIVETURFS (3) deleted — the DM active-turf loop is gone; turf sharing
 // is the auxmos Rust FDM (SSAIR_TURFS below). Value kept vacant.

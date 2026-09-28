@@ -51,11 +51,11 @@
 
 REF_OWNED(/datum/powernet, "material_graph")
 
-/// Phase 1 (unbind): the region leaves SSmachines, its nodes and cables let go.
+/// Phase 1 (unbind): the region leaves the machine service, its nodes and cables let go.
 /datum/powernet/lifecycle_unbind()
 	. = ..()
-	if(region_id && SSmachines.power_regions[region_id] == src)
-		SSmachines.power_regions -= region_id
+	if(region_id && GLOB.machine_service.power_regions[region_id] == src)
+		GLOB.machine_service.power_regions -= region_id
 	for(var/obj/machinery/power/M as anything in nodes)
 		if(M.powernet == src)
 			M.powernet = null

@@ -41,10 +41,10 @@
 	var/datum/seed/new_seed_type
 	if(istype(O, /obj/item/grown))
 		var/obj/item/grown/F = O
-		new_seed_type = SSplants.seeds[F.plantname]
+		new_seed_type = GLOB.plant_service.seeds[F.plantname]
 	else
 		var/obj/item/reagent_containers/food/snacks/grown/F = O
-		new_seed_type = SSplants.seeds[F.plantname]
+		new_seed_type = GLOB.plant_service.seeds[F.plantname]
 
 	if(new_seed_type)
 		to_chat(user, span_notice("You extract some seeds from [O]."))

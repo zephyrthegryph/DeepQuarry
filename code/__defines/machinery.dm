@@ -173,16 +173,16 @@ if (!(DATUM.datum_flags & DF_ISPROCESSING)) {\
 /// Ends a machine's step work until the next MACHINE_WAKE().
 #define MACHINE_SLEEP(M) machine_sleep(M)
 
-// LINDA owns pipenets via SSair, not SSmachines.
-// SSmachines.process_pipenets is a stub; SSair.process_pipenets is the live
+// LINDA owns pipenets via SSair; SSair.process_pipenets is the live
 // dispatcher. Without this redirect, /datum/pipe_network/reconcile() never runs
 // and reconcile_air is silent — multi-pipeline networks don't equalize.
 #define START_PROCESSING_PIPENET(Datum) START_PROCESSING_IN_LIST(Datum, SSair.networks)
 #define STOP_PROCESSING_PIPENET(Datum) STOP_PROCESSING_IN_LIST(Datum, SSair.networks);SSair.currentrun.Remove(Datum)
 
 
-#define START_PROCESSING_POWER_OBJECT(Datum) START_PROCESSING_IN_LIST(Datum, SSmachines.powerobjs)
-#define STOP_PROCESSING_POWER_OBJECT(Datum) STOP_PROCESSING_IN_LIST(Datum, SSmachines.powerobjs);SSmachines.current_run.Remove(Datum)
+/// The machine world service's cadence (code/game/machinery/machine_service.dm): gas wakes, the
+/// pump commit and the power step. Machine timing that used to read SSmachines.wait reads this.
+#define MACHINE_SERVICE_INTERVAL (2 SECONDS)
 
 // GAS_DEPENDENCY_PRESSURE/TEMPERATURE/COMPOSITION and GAS_DEPENDENCY_OBSERVATION_STRIDE
 // are generated from the Rust constants in code/__defines/verdigris/_bindings.dm.

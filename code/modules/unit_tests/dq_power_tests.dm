@@ -68,32 +68,32 @@
 	var/list/cables = dq_power_test_line(run)
 	var/obj/machinery/power/terminal/left = allocate(/obj/machinery/power/terminal, run[1])
 	var/obj/machinery/power/terminal/right = allocate(/obj/machinery/power/terminal, run[5])
-	SSmachines.process_power()
+	GLOB.machine_service.process_power()
 	TEST_ASSERT_NOTNULL(left.powernet, "the left machine is not on the cable")
 	TEST_ASSERT(left.powernet == right.powernet, "one cable run is two networks")
 	var/datum/powernet/before = left.powernet
 
 	qdel(cables[3])
-	SSmachines.process_power()
+	GLOB.machine_service.process_power()
 	TEST_ASSERT_NOTNULL(left.powernet, "the left side lost its network")
 	TEST_ASSERT_NOTNULL(right.powernet, "the right side lost its network")
 	TEST_ASSERT(left.powernet != right.powernet, "a cut cable still joins the two sides")
 	TEST_ASSERT(left.powernet == before || right.powernet == before, "neither side kept the network's identity")
 
 	right.set_power_supply(1000)
-	SSmachines.process_power()
+	GLOB.machine_service.process_power()
 	TEST_ASSERT_EQUAL(left.powernet.avail, 0, "supply crossed the cut")
 	TEST_ASSERT_EQUAL(left.draw_power(100), 0, "a draw crossed the cut")
 
 	cables[3] = dq_power_test_cable(run[3], EAST, WEST)
-	SSmachines.process_power()
+	GLOB.machine_service.process_power()
 	TEST_ASSERT(left.powernet == right.powernet, "a repaired cable did not merge the networks")
 	// `avail` is a per-step law result (ProducerCredit et al, verdigris/domains/power/src/laws.rs),
 	// not pushed on every write. One blocking world step settles the merged
-	// region's ledger before SSmachines.process_power() re-polls it (a paced
+	// region's ledger before GLOB.machine_service.process_power() re-polls it (a paced
 	// vg_world_tick() does nothing while the previous worker frame runs).
 	vg_world_run_steps(1)
-	SSmachines.process_power()
+	GLOB.machine_service.process_power()
 	TEST_ASSERT_EQUAL(left.powernet.avail, 1000, "the merged network does not carry the supply")
 	TEST_ASSERT_EQUAL(left.draw_power(600), 600, "a draw on the merged network failed")
 	TEST_ASSERT_EQUAL(left.draw_power(600), 400, "a draw exceeded the supply left")
@@ -116,9 +116,9 @@
 /// One power step as the game runs it: DM's loads and topology in, one
 /// world step (Rust's laws; SSvg paces it in play), the results polled back.
 /proc/dq_power_test_step()
-	SSmachines.process_power()
+	GLOB.machine_service.process_power()
 	vg_world_run_steps(1)
-	SSmachines.process_power()
+	GLOB.machine_service.process_power()
 
 /proc/dq_power_test_apc()
 	for(var/obj/machinery/power/apc/candidate as anything in REGISTRY_MEMBERS(REGISTRY_APCS))
@@ -188,7 +188,7 @@
 	A.sync_cell_charge()
 	A.update()
 	UnregisterSignal(M, list(COMSIG_MACHINERY_POWER_LOST, COMSIG_MACHINERY_POWER_RESTORED))
-	SSmachines.process_power()
+	GLOB.machine_service.process_power()
 
 /// A settled APC and an idle SMES neither poll nor hear from Rust.
 /datum/unit_test/dq_power_idle_apc_and_smes_sleep
@@ -234,7 +234,7 @@
 	else
 		TEST_NOTICE(src, "no SMES on the test map; checked the APC only")
 	T.set_power_supply(0)
-	SSmachines.process_power()
+	GLOB.machine_service.process_power()
 
 /// A power sensor reads its network's numbers from the Rust ledger.
 /datum/unit_test/dq_power_monitor_reading

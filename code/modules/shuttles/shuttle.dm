@@ -404,7 +404,7 @@
 	var/list/moved_turfs = list()
 	for(var/turf/source in turf_translation)
 		moved_turfs += turf_translation[source]
-	SSmachines.power_reregister(moved_turfs)
+	GLOB.machine_service.power_reregister(moved_turfs)
 	for(var/obj/item/radio/intercom/I in radios)
 		if(istype(I))
 			I.update_broadcast_tiles()

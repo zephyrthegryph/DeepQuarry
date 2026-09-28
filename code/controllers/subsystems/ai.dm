@@ -7,7 +7,6 @@ SUBSYSTEM_DEF(ai)
 
 	dependencies = list(
 		/datum/controller/subsystem/air,
-		/datum/controller/subsystem/mobs
 	)
 
 	var/list/processing = list()

@@ -65,7 +65,7 @@ SUBSYSTEM_DEF(radio)
 	name = "Radio"
 	flags = SS_NO_FIRE
 	dependencies = list(
-		/datum/controller/subsystem/machines
+		/datum/controller/subsystem/air
 	)
 	var/list/datum/radio_frequency/frequencies = list()
 

@@ -9,8 +9,8 @@
 // A type's behaviour is a variant of a base stage, resolved by type depth: power/recharger serves
 // every recharger.
 
-/// One machine frame per SSmachines-equivalent tick.
-#define MACHINE_PIPELINE_INTERVAL (2 SECONDS)
+/// One machine frame per machine service interval (MACHINE_SERVICE_INTERVAL).
+#define MACHINE_PIPELINE_INTERVAL MACHINE_SERVICE_INTERVAL
 
 /datum/om/decl/pipeline_machines
 	of = list(

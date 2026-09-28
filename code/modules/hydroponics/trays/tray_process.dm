@@ -145,7 +145,7 @@
 		prob(2 * seed.get_trait(TRAIT_POTENCY)))
 		// Need to start processing the vine or it'll never spread.
 		var/obj/effect/plant/D = new /obj/effect/plant(get_turf(src), seed)
-		SSplants.add_plant(D)
+		GLOB.plant_service.add_plant(D)
 
 	if(prob(3))  // On each tick, there's a chance the pest population will increase
 		pestlevel += 0.1 * HYDRO_SPEED_MULTIPLIER

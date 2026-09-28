@@ -227,6 +227,7 @@
 #include "dq_om_fields_tests.dm"
 #include "dq_om_key_tests.dm"
 #include "dq_om_periodic_tests.dm"
+#include "dq_world_lanes_tests.dm"
 #include "dq_power_tests.dm"
 #include "dq_om_wake_tests.dm"
 #include "dq_actor_adapter_tests.dm"

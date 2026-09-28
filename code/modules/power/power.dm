@@ -174,7 +174,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 
 /// The machine's node is (or isn't) on region `region_id` now.
 /obj/machinery/power/proc/power_bind(region_id)
-	var/datum/powernet/network = region_id ? SSmachines.power_facade(region_id) : null
+	var/datum/powernet/network = region_id ? GLOB.machine_service.power_facade(region_id) : null
 	if(network == powernet)
 		return
 	var/datum/powernet/old = powernet

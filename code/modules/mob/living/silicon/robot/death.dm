@@ -20,7 +20,7 @@
 		var/obj/item/gripper/G = locate(/obj/item/gripper) in module
 		G?.drop_item()
 	remove_robot_verbs()
-	SSmobs.report_death(src)
+	GLOB.mob_service.report_death(src)
 
 /mob/living/silicon/robot/on_revived(reason, datum/source)
 	. = ..()

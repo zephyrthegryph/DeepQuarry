@@ -101,8 +101,6 @@
 #define FIRE_PRIORITY_SOLARS		76
 #define FIRE_PRIORITY_PRIORITY_EFFECTS 90
 #define FIRE_PRIORITY_EXPLOSIONS 	90
-#define FIRE_PRIORITY_MACHINES		100
-#define FIRE_PRIORITY_MOBS			100
 #define FIRE_PRIORITY_TGUI			110
 #define FIRE_PRIORITY_PROJECTILES	150
 #define FIRE_PRIORITY_STATPANEL		390
@@ -154,7 +152,6 @@
 // Subsystem delta times or tickrates, in seconds. I.e, how many seconds in between each process() call for objects being processed by that subsystem.
 // Only use these defines if you want to access some other objects processing seconds_per_tick, otherwise use the seconds_per_tick that is sent as a parameter to process()
 // #define SSFLUIDS_DT (SSplumbing.wait/10)
-#define SSMACHINES_DT (SSmachines.wait/10)
 
 // SCALE_PROCESS_DELTA(wait, scale)
 // Converts a processing subsystem's raw wait (in deciseconds) to the scaled

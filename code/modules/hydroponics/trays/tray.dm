@@ -436,7 +436,7 @@ REF_OWNED(/obj/machinery/portable_atmospherics/hydroponics, "temp_chem_holder")
 	if(seed)
 		previous_plant = seed.display_name
 		seed = null
-	seed = SSplants.seeds[pick(list(PLANT_REISHI,PLANT_NETTLE,PLANT_AMANITA,PLANT_MUSHROOMS,PLANT_PLUMPHELMET,PLANT_TOWERCAP,PLANT_HAREBELLS,PLANT_WEEDS))]
+	seed = GLOB.plant_service.seeds[pick(list(PLANT_REISHI,PLANT_NETTLE,PLANT_AMANITA,PLANT_MUSHROOMS,PLANT_PLUMPHELMET,PLANT_TOWERCAP,PLANT_HAREBELLS,PLANT_WEEDS))]
 	if(!seed) return //Weed does not exist, someone fucked up.
 
 	dead = 0
@@ -467,7 +467,7 @@ REF_OWNED(/obj/machinery/portable_atmospherics/hydroponics, "temp_chem_holder")
 	// We need to make sure we're not modifying one of the global seed datums.
 	// If it's not in the global list, then no products of the line have been
 	// harvested yet and it's safe to assume it's restricted to this tray.
-	if(!isnull(SSplants.seeds[seed.name]))
+	if(!isnull(GLOB.plant_service.seeds[seed.name]))
 		seed = seed.diverge()
 		seed.mutate(severity,get_turf(src))
 
@@ -523,8 +523,8 @@ REF_OWNED(/obj/machinery/portable_atmospherics/hydroponics, "temp_chem_holder")
 
 	var/previous_plant = seed.display_name
 	var/newseed = seed.get_mutant_variant()
-	if(newseed in SSplants.seeds)
-		seed = SSplants.seeds[newseed]
+	if(newseed in GLOB.plant_service.seeds)
+		seed = GLOB.plant_service.seeds[newseed]
 	else
 		return
 
