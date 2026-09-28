@@ -91,18 +91,23 @@
 			vore_selected.digest_mode = vore_default_mode
 		ai_brain.go_wake()
 
-/mob/living/simple_mob/vore/pakkun/attack_hand(mob/user)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pakkun, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(pakkun_interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(pakkun_interaction_item)), \
+)
+
+/// Old attack_hand: a help-touch shakes a resting pakkun awake; anything else is the normal touch.
+/mob/living/simple_mob/vore/pakkun/proc/pakkun_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat == DEAD)
-		return ..()
+		return FALSE
 	if(!IS_HELPING(user))
-		return ..()
-	if(resting)
-		playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
-		user.visible_message(span_notice("\The [user] shakes \the [src] awake."),span_notice("You shake \the [src] awake!"))
-		lay_down()
-		return
-	else
-		return ..()
+		return FALSE
+	if(!resting)
+		return FALSE
+	playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+	user.visible_message(span_notice("\The [user] shakes \the [src] awake."),span_notice("You shake \the [src] awake!"))
+	lay_down()
+	return TRUE
 
 /mob/living/simple_mob/vore/pakkun/on_throw_vore_special(pred, mob/living/target)
 	if(pred && !extra_possessive && !(LAZYFIND(prey_excludes, target)))
@@ -124,16 +129,17 @@
 	B.digestchance = 0
 	B.digest_mode = DM_SELECT
 
-/mob/living/simple_mob/vore/pakkun/attackby(obj/item/O, mob/user) //if they're newspapered, they'll spit out any junk they've eaten for whatever reason
-	if(istype(O, /obj/item/newspaper) && !ckey && isturf(user.loc))
-		user.visible_message(span_info("[user] swats [src] with [O]!"))
-		release_vore_contents()
-		for(var/mob/living/L in living_mobs(0))
-			if(!(LAZYFIND(prey_excludes, L)))
-				LAZYSET(prey_excludes, L, world.time)
-				om_after(src, 5 MINUTES, PROC_REF(removeMobFromPreyExcludes), om_handle(L))
-	else
-		..()
+/// Old attackby: if they're newspapered, they'll spit out any junk they've eaten for whatever reason.
+/mob/living/simple_mob/vore/pakkun/proc/pakkun_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+	if(!istype(O, /obj/item/newspaper) || ckey || !isturf(user.loc))
+		return FALSE
+	user.visible_message(span_info("[user] swats [src] with [O]!"))
+	release_vore_contents()
+	for(var/mob/living/L in living_mobs(0))
+		if(!(LAZYFIND(prey_excludes, L)))
+			LAZYSET(prey_excludes, L, world.time)
+			om_after(src, 5 MINUTES, PROC_REF(removeMobFromPreyExcludes), om_handle(L))
+	return TRUE
 
 //a palette-swapped version that's a bit bossier, in JRPG tradition
 
@@ -206,11 +212,14 @@
 	vore_default_mode = DM_HOLD
 	var/list/petters = list()
 
-/mob/living/simple_mob/vore/pakkun/snapdragon/snappy/attack_hand(mob/living/carbon/human/M as mob)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pakkun/snapdragon/snappy, INTERACT_HAND_UNGATED(null, PROC_REF(snappy_interaction_hand)))
+
+/// Old attack_hand: remember help-touchers, then carry on to the pakkun touch (FALSE).
+/mob/living/simple_mob/vore/pakkun/snapdragon/snappy/proc/snappy_interaction_hand(mob/living/carbon/human/M, obj/item/held, datum/interaction/interaction)
 	if(IS_HELPING(M) && !(M in petters))
 		to_chat(M, span_notice("\The [src] gets a mischievous glint in her eye!!"))
 		petters += M //YOU HAVE OFFERED YOURSELF TO THE LIZARD
-	return ..()
+	return FALSE
 
 /mob/living/simple_mob/vore/pakkun/snapdragon/snappy/lay_down()
 	if(LAZYLEN(petters) && prob(50) && !resting) //50% chance she'll forgive a random person when she takes a nap

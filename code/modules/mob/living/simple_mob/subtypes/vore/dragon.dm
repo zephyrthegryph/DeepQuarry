@@ -120,8 +120,7 @@
 	add_verb(src, /mob/living/proc/toggle_rider_reins)
 	movement_cooldown = 0
 
-/mob/living/simple_mob/vore/aggressive/dragon/MouseDrop_T(mob/living/M, mob/living/user)
-	return
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/dragon, INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)))
 
 /datum/say_list/dragonboss
 	say_got_target = list("roars and snaps it jaws!")

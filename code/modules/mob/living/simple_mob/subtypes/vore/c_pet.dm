@@ -25,10 +25,14 @@
 
 	can_be_drop_prey = FALSE
 
-/mob/living/simple_mob/animal/passive/honkpet/attack_hand(mob/living/user as mob)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/honkpet, INTERACT_HAND_UNGATED(null, PROC_REF(honkpet_interaction_hand)))
+
+/// Old attack_hand: disarm swaps the sprite instead of the normal touch.
+/mob/living/simple_mob/animal/passive/honkpet/proc/honkpet_interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(IS_DISARMING(user))
-		return icon_state = pick("c_pet", "m_pet")
-	.=..()
+		icon_state = pick("c_pet", "m_pet")
+		return TRUE
+	return FALSE
 
 /mob/living/simple_mob/animal/passive/mimepet
 	name = "Dave"
@@ -54,7 +58,10 @@
 
 	armor_spec = "melee=80;bullet=20"
 
-/mob/living/simple_mob/animal/passive/mimepet/attack_hand(mob/living/user as mob)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/mimepet, INTERACT_HAND_UNGATED(null, PROC_REF(mimepet_interaction_hand)))
+
+/// Old attack_hand: disarm reshuffles Dave's sprite, then the normal touch follows.
+/mob/living/simple_mob/animal/passive/mimepet/proc/mimepet_interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(IS_DISARMING(user))
 		icon_state = pick("dave1", "dave2", "dave3", "dave5" , "dave6" , "dave7" , "dave8" , "dave9" , "dave10")
-	.=..()
+	return FALSE

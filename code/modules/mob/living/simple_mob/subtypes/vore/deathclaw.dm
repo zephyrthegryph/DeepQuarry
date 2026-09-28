@@ -78,8 +78,7 @@
 	add_verb(src, /mob/living/proc/toggle_rider_reins)
 	movement_cooldown = 0
 
-/mob/living/simple_mob/vore/aggressive/deathclaw/MouseDrop_T(mob/living/M, mob/living/user)
-	return
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/deathclaw, INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)))
 
 /mob/living/simple_mob/vore/aggressive/deathclaw/load_default_bellies()
 	. = ..()

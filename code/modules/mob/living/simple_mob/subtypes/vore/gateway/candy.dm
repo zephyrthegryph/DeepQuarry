@@ -52,8 +52,7 @@
 	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
 
-/mob/living/simple_mob/vore/candy/bluecabold/MouseDrop_T(mob/living/M, mob/living/user)
-	return
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/candy/bluecabold, INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)))
 
 /mob/living/simple_mob/vore/candy/bluecabold/load_default_bellies()
 	. = ..()
@@ -78,8 +77,7 @@
 	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
 
-/mob/living/simple_mob/vore/candy/redcabold/MouseDrop_T(mob/living/M, mob/living/user)
-	return
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/candy/redcabold, INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)))
 
 /mob/living/simple_mob/vore/candy/redcabold/load_default_bellies()
 	. = ..()
@@ -104,8 +102,7 @@
 	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
 
-/mob/living/simple_mob/vore/candy/yellowcabold/MouseDrop_T(mob/living/M, mob/living/user)
-	return
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/candy/yellowcabold, INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)))
 
 /mob/living/simple_mob/vore/candy/yellowcabold/load_default_bellies()
 	. = ..()
@@ -130,8 +127,7 @@
 	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
 
-/mob/living/simple_mob/vore/candy/orangecabold/MouseDrop_T(mob/living/M, mob/living/user)
-	return
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/candy/orangecabold, INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)))
 
 /mob/living/simple_mob/vore/candy/orangecabold/load_default_bellies()
 	. = ..()
@@ -156,8 +152,7 @@
 	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
 
-/mob/living/simple_mob/vore/candy/purplecabold/MouseDrop_T(mob/living/M, mob/living/user)
-	return
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/candy/purplecabold, INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)))
 
 /mob/living/simple_mob/vore/candy/purplecabold/load_default_bellies()
 	. = ..()
@@ -182,8 +177,7 @@
 	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
 
-/mob/living/simple_mob/vore/candy/marshmellowserpent/MouseDrop_T(mob/living/M, mob/living/user)
-	return
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/candy/marshmellowserpent, INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)))
 
 /mob/living/simple_mob/vore/candy/marshmellowserpent/load_default_bellies()
 	. = ..()
@@ -630,18 +624,23 @@
 
 	endurance = 10
 
-/mob/living/simple_mob/vore/candy/peppermint/attackby(obj/item/O as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/candy/peppermint, \
+	INTERACT_ITEM(null, PROC_REF(peppermint_interaction_item)), \
+	INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)), \
+)
+
+/// Old attackby: the shell deflects most hits; forceless items only tap it. FALSE = the hit lands (attackby_default).
+/mob/living/simple_mob/vore/candy/peppermint/proc/peppermint_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	if(O.force)
 		if(prob(80))
 			visible_message(span_danger("\The [src] deflects \the [O] with its shell!"))
 			if(user)
 				ai_brain.react_to_attack(user)
-			return
-		else
-			..()
-	else
-		to_chat(user, span_warning("This weapon is ineffective, it does no damage."))
-		visible_message(span_warning("\The [user] gently taps [src] with \the [O]."))
+			return TRUE
+		return FALSE
+	to_chat(user, span_warning("This weapon is ineffective, it does no damage."))
+	visible_message(span_warning("\The [user] gently taps [src] with \the [O]."))
+	return TRUE
 
 /*
 /mob/living/simple_mob/vore/candy/worm
@@ -672,8 +671,7 @@
 	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
 
-/mob/living/simple_mob/vore/candy/worm/MouseDrop_T(mob/living/M, mob/living/user)
-	return
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/candy/worm, INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)))
 
 /mob/living/simple_mob/vore/candy/worm/redcabold/load_default_bellies()
 	. = ..()
@@ -697,9 +695,6 @@
 	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
 	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
-
-/mob/living/simple_mob/vore/candy/peppermint/MouseDrop_T(mob/living/M, mob/living/user)
-	return
 
 /mob/living/simple_mob/vore/candy/peppermint/load_default_bellies()
 	. = ..()

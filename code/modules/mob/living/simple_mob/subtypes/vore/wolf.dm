@@ -118,8 +118,7 @@
 	add_verb(src,/mob/living/simple_mob/proc/pick_color)
 	movement_cooldown = -1
 
-/mob/living/simple_mob/vore/wolf/direwolf/MouseDrop_T(mob/living/M, mob/living/user)
-	return
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/wolf/direwolf, INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)))
 
 /mob/living/simple_mob/vore/wolf/direwolf/dog
 	name = "large dog"

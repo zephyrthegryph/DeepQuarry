@@ -180,14 +180,15 @@
 			hunger = 0
 			food = null
 
-/mob/living/simple_mob/vore/aggressive/rat/tame/attackby(obj/item/O, mob/user) // Feed the rat your food to satisfy it.
-	if(istype(O, /obj/item/reagent_containers/food/snacks))
-		qdel(O)
-		playsound(src,'sound/items/eatfood.ogg', rand(10,50), 1)
-		hunger = 0
-		food = null
-		return
-	. = ..()
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/rat/tame, INTERACT_INSERT(/obj/item/reagent_containers/food/snacks, PROC_REF(tame_rat_interaction_feed), "Feed"))
+
+/// Feed the rat your food to satisfy it.
+/mob/living/simple_mob/vore/aggressive/rat/tame/proc/tame_rat_interaction_feed(mob/user, obj/item/O, datum/interaction/interaction)
+	qdel(O)
+	playsound(src,'sound/items/eatfood.ogg', rand(10,50), 1)
+	hunger = 0
+	food = null
+	return TRUE
 
 /mob/living/simple_mob/vore/aggressive/rat/tame/Found(atom/found_atom)
 	if(!SA_attackable(found_atom))
@@ -227,8 +228,7 @@
 	add_verb(src, /mob/living/proc/toggle_rider_reins)
 	movement_cooldown = 0
 
-/mob/living/simple_mob/vore/aggressive/rat/MouseDrop_T(mob/living/M, mob/living/user)
-	return
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/rat, INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)))
 
 /mob/living/simple_mob/vore/aggressive/rat/phoron
 	name = "phoron rat"

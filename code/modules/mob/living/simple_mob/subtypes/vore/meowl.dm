@@ -99,15 +99,16 @@
 		"Unfortunately, %pred seems to have absolutely no intention of letting you go, and your futile effort goes nowhere.",
 		"Strain as you might, you can't keep up the effort long enough before you sink back into %pred's %belly.")
 
-/mob/living/simple_mob/vore/meowl/attackby(obj/item/O as obj, mob/user as mob)
-	if(istype(O, /obj/item/reagent_containers/food))
-		if(stat == DEAD)
-			return
-		user.visible_message(span_notice("\The [src] happily gulps down \the [O] right out of \the [user]'s hand, it seems pretty content now."),span_notice("\The [src] happily gulps down \the [O] right out of your hand, it seems pretty content now."))
-		consume(O, user)
-		well_fed = world.time
-		return
-	return ..()
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/meowl, INTERACT_INSERT(/obj/item/reagent_containers/food, PROC_REF(meowl_interaction_feed), "Feed"))
+
+/// Old attackby: hand-feeding. Food is never an attack, even on a dead meowl.
+/mob/living/simple_mob/vore/meowl/proc/meowl_interaction_feed(mob/user, obj/item/O, datum/interaction/interaction)
+	if(stat == DEAD)
+		return TRUE
+	user.visible_message(span_notice("\The [src] happily gulps down \the [O] right out of \the [user]'s hand, it seems pretty content now."),span_notice("\The [src] happily gulps down \the [O] right out of your hand, it seems pretty content now."))
+	consume(O, user)
+	well_fed = world.time
+	return TRUE
 
 /mob/living/simple_mob/vore/meowl/PounceTarget(mob/living/M, successrate = 100)
 	COOLDOWN_START(src, vore_pounce_cooldown, 1 SECONDS) // don't attempt another pounce for a while

@@ -263,8 +263,7 @@ I think I covered everything.
 	mob_radio = new /obj/item/radio/headset/mob_headset(src)	//We always give radios to spawned mobs anyway
 	icon_state = "dragon_maneNone"
 
-/mob/living/simple_mob/vore/bigdragon/MouseDrop_T(mob/living/M, mob/living/user)
-	return
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/bigdragon, INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)))
 
 /mob/living/simple_mob/vore/bigdragon/runechat_y_offset(width, height)
 	return (..()*size_multiplier) + 40

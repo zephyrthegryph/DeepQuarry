@@ -124,8 +124,7 @@
 	add_verb(src, /mob/living/proc/toggle_rider_reins)
 	movement_cooldown = 0
 
-/mob/living/simple_mob/vore/aggressive/corrupthound/MouseDrop_T(mob/living/M, mob/living/user)
-	return
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/corrupthound, INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)))
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/space/Process_Spacemove(check_drift = 0)
 	return TRUE
@@ -370,8 +369,7 @@
 	verbs |= /mob/living/proc/toggle_rider_reins
 	movement_cooldown = 3
 
-/mob/living/simple_mob/vore/retaliate/corrupthound/janihound/MouseDrop_T(mob/living/M, mob/living/user)
-	return
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/retaliate/corrupthound/janihound, INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)))
 
 /mob/living/simple_mob/vore/retaliate/corrupthound/janihound/space/Process_Spacemove(check_drift = 0)
 	return TRUE

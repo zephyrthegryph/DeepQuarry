@@ -411,13 +411,19 @@
 	add_overlay(I)
 	qdel(I)
 
-/mob/living/simple_mob/vore/zorgoia/attack_hand(mob/living/carbon/human/M as mob)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/zorgoia, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(zorgoia_interaction_hand)), \
+	INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)), \
+)
+
+/// Old attack_hand (ran before the gate): help pets/tames, grab is refused while alive and AI-run. FALSE = default touch.
+/mob/living/simple_mob/vore/zorgoia/proc/zorgoia_interaction_hand(mob/living/carbon/human/M, obj/item/held, datum/interaction/interaction)
 	switch(M.use_stance())
 		if(I_HELP)
 			if(stat != DEAD)
 				if(M.zone_sel.selecting == BP_GROIN)
 					if(M.vore_bellyrub(src))
-						return
+						return TRUE
 				M.visible_message(span_notice("[M] [response_help] \the [src]."))
 				if(ai_brain)
 					var/datum/ai_brain/AI = ai_brain
@@ -429,6 +435,7 @@
 						if(tamed != 1)
 							tamed = 1
 							faction = M.faction
+			return TRUE
 
 		if(I_GRAB)
 			if(stat != DEAD)
@@ -438,10 +445,10 @@
 					if(M == friend)
 						AI.lose_follow()
 						friend = null
-					return
-			..()
-		else
-			..()
+					return TRUE
+			return FALSE
+
+	return FALSE
 
 /mob/living/simple_mob/vore/zorgoia/Login()
 	. = ..()
@@ -450,9 +457,6 @@
 	add_verb(src,/mob/living/simple_mob/proc/animal_mount)
 	add_verb(src,/mob/living/proc/toggle_rider_reins)
 	movement_cooldown = 0
-
-/mob/living/simple_mob/vore/zorgoia/MouseDrop_T(mob/living/M, mob/living/user)
-	return
 
 /mob/living/simple_mob/vore/zorgoia/on_death(gibbed) //are they going to be ok?
 	. = ..()

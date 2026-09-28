@@ -67,8 +67,7 @@
 	add_verb(src, /mob/living/proc/toggle_rider_reins)
 	movement_cooldown = 0
 
-/mob/living/simple_mob/vore/hippo/MouseDrop_T(mob/living/M, mob/living/user)
-	return
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/hippo, INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)))
 
 /datum/say_list/hippo
 	speak = list("UUUUUUH")

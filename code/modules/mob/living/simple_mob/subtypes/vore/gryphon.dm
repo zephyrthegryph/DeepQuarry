@@ -146,8 +146,7 @@
 	add_verb(src,/mob/living/proc/toggle_rider_reins)
 	movement_cooldown = 0
 
-/mob/living/simple_mob/vore/gryphon/MouseDrop_T(mob/living/M, mob/living/user)
-	return
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/gryphon, INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)))
 
 /datum/say_list/gryphon
 	emote_hear = list("squawks!", "looks around as its stomach growls.")

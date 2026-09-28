@@ -264,19 +264,22 @@
 				return TRUE
 	return FALSE
 
-/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/attack_hand(mob/living/L)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie, INTERACT_HAND_UNGATED(null, PROC_REF(swoopie_interaction_hand)))
+
+/// Old attack_hand: disarm toggles the Vac-Pack, a head grab takes it; otherwise the normal touch.
+/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/proc/swoopie_interaction_hand(mob/living/L, obj/item/held, datum/interaction/interaction)
 	if(stat) //Make sure we're alive
-		return ..()
+		return FALSE
 	if(IS_DISARMING(L) && Vac)
 		Vac.attack_self(L)
-		return
+		return TRUE
 	if(IS_GRABBING(L) && Vac && Vac.loc == src)
 		if(L.zone_sel.selecting == BP_HEAD)
 			if(L.put_in_active_hand(Vac))
 				L.visible_message(span_warning("[L] grabs [src] by the neck, brandishing the thing like a regular vacuum cleaner!"))
 				L.start_pulling(src)
-				return
-	. = ..()
+				return TRUE
+	return FALSE
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/verb/borrow_vac()
 	set name = "Borrow Vac-Pack"

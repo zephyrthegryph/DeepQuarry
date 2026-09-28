@@ -236,20 +236,25 @@
 	icon_living = "hotiesc"
 	icon_rest = "hotiesc_rest"
 
-/mob/living/simple_mob/vore/otie/attackby(obj/item/O, mob/user) // Trade donuts for bellybrig victims.
-	if(istype(O, /obj/item/reagent_containers/food))
-		consume(O, user)
-		playsound(src,'sound/items/eatfood.ogg', rand(10,50), 1)
-		if(!(ai_brain != null))//No autobarf on player control.
-			return
-		if(istype(O, /obj/item/reagent_containers/food/snacks/donut) && istype(src, /mob/living/simple_mob/vore/otie/security))
-			to_chat(user,span_notice("The guard pup accepts your offer for their catch."))
-			release_vore_contents()
-		else if(prob(2)) //Small chance to get prey out from non-sec oties.
-			to_chat(user,span_notice("The pup accepts your offer for their catch."))
-			release_vore_contents()
-		return
-	. = ..()
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/otie, \
+	INTERACT_INSERT(/obj/item/reagent_containers/food, PROC_REF(otie_interaction_feed), "Feed"), \
+	INTERACT_HAND_UNGATED(null, PROC_REF(otie_interaction_hand)), \
+	INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)), \
+)
+
+/// Old attackby: trade donuts for bellybrig victims.
+/mob/living/simple_mob/vore/otie/proc/otie_interaction_feed(mob/user, obj/item/O, datum/interaction/interaction)
+	consume(O, user)
+	playsound(src,'sound/items/eatfood.ogg', rand(10,50), 1)
+	if(!(ai_brain != null))//No autobarf on player control.
+		return TRUE
+	if(istype(O, /obj/item/reagent_containers/food/snacks/donut) && istype(src, /mob/living/simple_mob/vore/otie/security))
+		to_chat(user,span_notice("The guard pup accepts your offer for their catch."))
+		release_vore_contents()
+	else if(prob(2)) //Small chance to get prey out from non-sec oties.
+		to_chat(user,span_notice("The pup accepts your offer for their catch."))
+		release_vore_contents()
+	return TRUE
 
 /mob/living/simple_mob/vore/otie/security/feed_grabbed_to_self(mob/living/user, mob/living/prey) // Make the gut start out safe for bellybrigging.
 	if(ishuman(prey))
@@ -273,14 +278,14 @@
 
 //Pet 4 friendly
 
-/mob/living/simple_mob/vore/otie/attack_hand(mob/living/carbon/human/M as mob)
-
+/// Old attack_hand (ran before the gate): help pets/tames, grab is refused while alive. FALSE = default touch.
+/mob/living/simple_mob/vore/otie/proc/otie_interaction_hand(mob/living/carbon/human/M, obj/item/held, datum/interaction/interaction)
 	switch(M.use_stance())
 		if(I_HELP)
 			if(stat != DEAD)
 				if(M.zone_sel.selecting == BP_GROIN)
 					if(M.vore_bellyrub(src))
-						return
+						return TRUE
 				M.visible_message(span_notice("[M] [response_help] \the [src]."))
 				if(ai_brain)
 					var/datum/ai_brain/AI = ai_brain
@@ -292,6 +297,7 @@
 						if(tamed != 1)
 							tamed = 1
 							faction = M.faction
+			return TRUE
 
 		if(I_GRAB)
 			if(stat != DEAD)
@@ -301,12 +307,10 @@
 					if(M == friend)
 						AI.lose_follow()
 						friend = null
-				return
-			else
-				..()
+				return TRUE
+			return FALSE
 
-		else
-			..()
+	return FALSE
 
 /mob/living/simple_mob/vore/otie
 	death_message = "dies!"
@@ -323,9 +327,6 @@
 	add_verb(src, /mob/living/simple_mob/proc/animal_mount)
 	add_verb(src, /mob/living/proc/toggle_rider_reins)
 	movement_cooldown = 0
-
-/mob/living/simple_mob/vore/otie/MouseDrop_T(mob/living/M, mob/living/user)
-	return
 
 /datum/say_list/otie
 	speak = list("Boof.","Waaf!","Prurr.","Bork!","Rurrr..","Arf.")

@@ -179,17 +179,23 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 				fruit = FALSE //No admeming this to spawn endless pitchers.
 				adjust_nutrition(-NUTRITION_PITCHER)
 
-/mob/living/simple_mob/vore/pitcher_plant/attack_hand(mob/living/user)
-	if(IS_HELPING(user))
-		if(fruit)
-			to_chat(user, span_infoplain("You pick a fruit from \the [src]."))
-			var/obj/F = new /obj/item/reagent_containers/food/snacks/pitcher_fruit(get_turf(user)) //Drops at the user's feet if put_in_hands fails
-			fruit = FALSE
-			user.put_in_hands(F)
-		else
-			to_chat(user, span_infoplain("The [src] hasn't grown any fruit yet!"))
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pitcher_plant, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(pitcher_interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(pitcher_interaction_item)), \
+)
+
+/// Old attack_hand: a help-touch picks the fruit; anything else is the normal touch.
+/mob/living/simple_mob/vore/pitcher_plant/proc/pitcher_interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+	if(!IS_HELPING(user))
+		return FALSE
+	if(fruit)
+		to_chat(user, span_infoplain("You pick a fruit from \the [src]."))
+		var/obj/F = new /obj/item/reagent_containers/food/snacks/pitcher_fruit(get_turf(user)) //Drops at the user's feet if put_in_hands fails
+		fruit = FALSE
+		user.put_in_hands(F)
 	else
-		..()
+		to_chat(user, span_infoplain("The [src] hasn't grown any fruit yet!"))
+	return TRUE
 
 /mob/living/simple_mob/vore/pitcher_plant/examine(mob/user)
 	. = ..()
@@ -207,15 +213,15 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 	else
 		to_chat(user, span_notice("The victim slips from your grasp!"))
 
-/mob/living/simple_mob/vore/pitcher_plant/attackby(obj/item/O, mob/user)
+/// Old attackby: feed meat, fish victims out with cable (the hit still lands, as before), newspaper does nothing.
+/mob/living/simple_mob/vore/pitcher_plant/proc/pitcher_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	if(istype(O, /obj/item/reagent_containers/food/snacks/meat))
 		if(meat > NUTRITION_FRUIT - NUTRITION_MEAT) //Can't exceed 250
 			to_chat(user, span_infoplain("The [src] is full!"))
-			return
-		else
-			meat += NUTRITION_MEAT
-			consume(O, user)
-			return
+			return TRUE
+		meat += NUTRITION_MEAT
+		consume(O, user)
+		return TRUE
 	if(istype(O, /obj/item/stack/cable_coil)) //How to free people without killing the pitcher. I guess cable is SS13 rope.
 		var/mob/living/carbon/human/H = locate() in vore_selected.contents //Only works for carbons, RIP mice. Should pick the first human the code finds.
 		if(!H)
@@ -227,8 +233,8 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 	if(istype(O, /obj/item/newspaper))
 		user.visible_message(span_notice("[user] baps \the [src], but it doesn't seem to do anything."), span_notice("You whap \the [src] with a rolled up newspaper."))
 		to_chat(user, span_notice("Weird. That usually works. Maybe you can fish out its victim with some string or wire or something? Or maybe kill the thing with some plant-b-gone. Both would probably be safer than hacking it up with a person still inside."))
-		return // You can't newspaper people to freedom like you do with other mobs, but since that doesn't work, fucking tell people.
-	..()
+		return TRUE // You can't newspaper people to freedom like you do with other mobs, but since that doesn't work, fucking tell people.
+	return FALSE
 
 /mob/living/simple_mob/vore/pitcher_plant/proc/vore_checks()
 	if(ckey) //This isn't intended to be a playable mob but skip all of this if it's player-controlled.
@@ -320,10 +326,10 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 	pit.loc = user.loc
 	consume(src, user)
 
-/obj/item/reagent_containers/food/snacks/pitcher_fruit/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/pitcher_fruit, INTERACT_USE("Plant", PROC_REF(pitcher_fruit_self)))
+
+/// Old attack_self: plant the fruit.
+/obj/item/reagent_containers/food/snacks/pitcher_fruit/proc/pitcher_fruit_self(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_notice("You plant the fruit."))
 	new /obj/machinery/portable_atmospherics/hydroponics/soil/invisible(get_turf(user),src.seed)
 	GLOB.seed_planted_shift_roundstat++
