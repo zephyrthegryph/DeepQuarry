@@ -433,18 +433,22 @@ The mob API is `get_contagions()`, `has_contagion()`, `force_contagion()`
 `can_contract_contagion()`, `contagion_threat()`, `has_known_contagion()`.
 Admin: "Release Virus", "Create Advanced Virus", "Debug Contagions".
 
-## 7. Species & modifiers
+## 7. Species & body effects
 
 - Species `injury_mods` (flat list indexed by `INJURY_*`) replaces
   `brute_mod`/`burn_mod`/`oxy_mod`/`toxins_mod`/`pain_mod`. `NO_POISON`,
   `NO_PAIN`, no-lungs etc. become `injury_mods[kind] = 0` at species setup.
-- `/datum/modifier`: `incoming_injury_percent` (all) and per-category
-  `incoming_physical_percent`, `incoming_thermal_percent`,
-  `incoming_toxic_percent`, `incoming_genetic_percent`,
-  `incoming_pain_percent`; energy shields use
-  `effective_physical/thermal/toxic/genetic/pain_resistance`. Resistance to
-  suffocation is metabolic demand (`BF_DEMAND`);
-  `max_health_flat/percent` → `endurance_flat/percent`.
+- `/datum/body_effect` (what `/datum/modifier` was; MED-5 removed modifiers): incoming
+  injury is `BF_INCOMING_ALL` and per-category `BF_INCOMING_*` factors; energy shields
+  (`/datum/body_effect/shield_projection`) scale injury by charge in injure() stage 2
+  (`COMSIG_LIVING_SHIELD_INJURY`). Resistance to suffocation is metabolic demand
+  (`BF_DEMAND`); endurance is `BF_ENDURANCE_FLAT` / `BF_ENDURANCE_MULT`.
+- A body effect is a shared definition plus an OM contribution on the mob (one per type,
+  valued by stacks). Timed stacks and `tick_interval` ticks run on `om_after()` on the mob's
+  timer clock (CLOCK_BIO: stasis slows them; `world_clock` effects count real time).
+  Per-application state (origin, a synced item, a counter, a swapped factor table) lives
+  on the mob keyed by type. Genetic effects (`genetic = TRUE`) are recorded on the
+  character identity and reapplied to clones.
 
 ## 8. Performance & memory rules
 
