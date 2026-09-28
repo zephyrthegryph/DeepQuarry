@@ -47,10 +47,6 @@
 #define COMSIG_LIVING_IRRADIATE_EFFECT "living_irradiate_effect"
 	#define COMPONENT_BLOCK_IRRADIATION (1<<0)
 
-///from /mob/living/proc/apply_effect(effect, effecttype, blocked, check_protection)
-#define COMSIG_TAKING_APPLY_EFFECT "applying_effect"
-///Return this in response if you don't want the effect to be applied
-	#define COMSIG_CANCEL_EFFECT (1<<0)
 ///from the mutations life system
 #define COMSIG_HANDLE_MUTATIONS "handle_mutations"
 	#define COMPONENT_BLOCK_LIVING_MUTATIONS (1<<0)
