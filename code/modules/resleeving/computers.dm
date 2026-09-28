@@ -278,180 +278,11 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 				disk_handle = null
 			. = TRUE
 		if("create")
+			act_create_body()
 			. = TRUE
-			var/datum/transhuman/body_record/active_br = om_resolve(current_br)
-			if(istype(active_br))
-				//Tried to grow a synth but no synth pods.
-				if(active_br.synthetic && !spods.len)
-					set_temp("Error: No SynthFabs detected.", "danger")
-				//Tried to grow an organic but no growpods.
-				else if(!active_br.synthetic && !pods.len)
-					set_temp("Error: No growpods detected.", "danger")
-				//We have the machines. We can rebuild them. Probably.
-				else
-					//We're cloning a synth.
-					if(active_br.synthetic)
-						var/obj/machinery/transhuman/synthprinter/spod = selected_printer()
-						if(!istype(spod))
-							set_temp("Error: No SynthFab selected.", "danger")
-							current_br = null
-							return
-
-						//Already doing someone.
-						if(spod.busy)
-							set_temp("Error: SynthFab is currently busy.", "danger")
-							current_br = null
-							return
-
-						//Not enough steel or glass
-						else if(spod.stored_material[MAT_STEEL] < spod.body_cost)
-							set_temp("Error: Not enough [MAT_STEEL] in SynthFab.", "danger")
-							current_br = null
-							return
-						else if(spod.stored_material[MAT_GLASS] < spod.body_cost)
-							set_temp("Error: Not enough glass in SynthFab.", "danger")
-							current_br = null
-							return
-
-						//Gross pod (broke mid-cloning or something).
-						else if(spod.broken)
-							set_temp("Error: SynthFab malfunction.", "danger")
-							current_br = null
-							return
-
-						//Do the cloning!
-						else if(spod.print(current_br))
-							set_temp("Initiating printing cycle...", "success")
-							current_br = null
-							menu = 1
-						else
-							set_temp("Initiating printing cycle... Error: Post-initialisation failed. Printing cycle aborted.", "danger")
-							current_br = null
-							return
-
-					//We're cloning an organic.
-					else
-						var/obj/machinery/clonepod/transhuman/pod = selected_pod()
-						if(!istype(pod))
-							set_temp("Error: No clonepod selected.", "danger")
-							current_br = null
-							return
-
-						//Already doing someone.
-						if(pod.get_occupant())
-							set_temp("Error: Growpod is currently occupied.", "danger")
-							current_br = null
-							return
-
-						//Not enough materials.
-						else if(pod.get_biomass() < CLONE_BIOMASS)
-							set_temp("Error: Not enough biomass.", "danger")
-							current_br = null
-							return
-
-						//Gross pod (broke mid-cloning or something).
-						else if(pod.mess)
-							set_temp("Error: Growpod malfunction.", "danger")
-							current_br = null
-							return
-
-						//Disabled in config.
-						else if(!CONFIG_GET(flag/revival_cloning))
-							set_temp("Error: Unable to initiate growing cycle.", "danger")
-							current_br = null
-							return
-
-						//Do the cloning!
-						else if(pod.growclone(active_br))
-							set_temp("Initiating growing cycle...", "success")
-							current_br = null
-						else
-							set_temp("Initiating growing cycle... Error: Post-initialisation failed. Growing cycle aborted.", "danger")
-							current_br = null
-							return
-			//The body record is broken somehow.
-			else
-				set_temp("Error: Data corruption.", "danger")
-				current_br = null
 		if("sleeve")
-			var/datum/transhuman/mind_record/active_mr = om_resolve(current_mr)
-			if(istype(active_mr))
-				. = TRUE
-				if(!sleevers.len)
-					set_temp("Error: No sleevers detected.", "danger")
-					current_mr = null
-				else
-					var/mode = text2num(params["mode"])
-					var/override
-					var/obj/machinery/transhuman/resleever/sleever = selected_sleever()
-					if(!istype(sleever))
-						set_temp("Error: No resleeving pod selected.", "danger")
-						current_mr = null
-						return
-
-					switch(mode)
-						if(1) //Body resleeving
-							//No body to sleeve into.
-							if(!sleever.get_occupant())
-								set_temp("Error: Resleeving pod is not occupied.", "danger")
-								current_mr = null
-								return
-
-							//OOC body lock thing.
-							if(sleever.get_occupant().resleeve_lock && active_mr.ckey != sleever.get_occupant().resleeve_lock)
-								set_temp("Error: Mind incompatible with body.", "danger")
-								current_mr = null
-								return
-
-							//Changeling lock.
-							if(sleever.get_occupant().changeling_locked && !is_changeling(active_mr.mind_ref))
-								set_temp("Error: Mind incompatible with body", "danger")
-								current_mr = null
-								return TRUE
-
-							var/list/subtargets = list()
-							for(var/mob/living/carbon/human/H in sleever.get_occupant())
-								if(H.resleeve_lock && active_mr.ckey != H.resleeve_lock)
-									continue
-								subtargets += H
-							if(subtargets.len)
-								var/oc_sanity = sleever.get_occupant()
-								var/_answer_k417 = act_ask(ui.user, action, params, ui, "k417", /datum/om/prompt/choice, message = "Multiple bodies detected. Select target for resleeving of [active_mr.mindname] manually. Sleeving of primary body is unsafe with sub-contents, and is not listed.", title = "Resleeving Target", choices = subtargets)
-								if(isnull(_answer_k417))
-									return
-								override = _answer_k417
-								if(!override || oc_sanity != sleever.get_occupant() || !(override in sleever.get_occupant()))
-									set_temp("Error: Target selection aborted.", "danger")
-									current_mr = null
-									return
-
-						if(2) //Card resleeving
-							if(sleever.sleevecards <= 0)
-								set_temp("Error: No available cards in resleever.", "danger")
-								current_mr = null
-								return
-
-					//Body to sleeve into, but mind is in another living body.
-					if(active_mr.mind_ref.current && active_mr.mind_ref.current.stat < DEAD) //Mind is in a body already that's alive
-						var/answer = act_ask(active_mr.mind_ref.current, action, params, ui, "k431", /datum/om/prompt/choice/alert, message = "Someone is attempting to restore a backup of your mind. Do you want to abandon this body, and move there? You MAY suffer memory loss! (Same rules as CMD apply)", title = "Resleeving", choices = list("No","Yes"))
-						if(isnull(answer))
-							return
-
-						//They declined to be moved.
-						if(answer != "Yes")
-							set_temp("Initiating resleeving... Error: Post-initialisation failed. Resleeving cycle aborted.", "danger")
-							current_mr = null
-							return TRUE
-
-					//They were dead, or otherwise available.
-					sleever.putmind(active_mr,mode,override,db_key = db_key)
-					set_temp("Initiating resleeving...")
-					current_mr = null
-			//The mind record is broken somehow.
-			else
-				set_temp("Error: Data corruption.", "danger")
-				current_mr = null
-
+			act_sleeve(action, params, ui)
+			. = TRUE
 		if("selectpod")
 			var/ref = params["ref"]
 			if(!length(ref))
@@ -479,30 +310,178 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 		if("menu")
 			menu = clamp(text2num(params["num"]), MENU_MAIN, MENU_MIND)
 			. = TRUE
-		// Traitgenes edit begin - create a dna injector based off the BR currently selected, to allow normal doctors to reset someone's SEs
 		if("genereset")
-			var/datum/transhuman/body_record/active_br = om_resolve(current_br)
-			if(gene_sequencing)
-				set_temp("Sequencing Record... Please wait.")
-				tgui_modal_clear(src)
-			else if(istype(active_br))
-				set_temp("Sequencing Record...")
-				tgui_modal_clear(src)
-				gene_sequencing = TRUE
-				// Make the injector here, so no desync
-				var/obj/item/dnainjector/I = new(src)
-				I.name += " ([active_br.mydna.name] - Resequencer)"
-				I.desc = "Resequences structural enzymes to match the body record this was created from."
-				I.buf = active_br.mydna.copy()
-				I.buf.types = DNA2_BUF_SE
-				I.has_radiation = FALSE // SAFE!
-				atom_say("Beginning injector synthesis.")
-				om_after(src, 10 SECONDS, PROC_REF(dispense_injector), I)
-			current_br = null
+			act_gene_reset()
 			. = TRUE
 		if("cleartemp")
 			temp = null
 			. = TRUE
+
+/// "create": grow or print the selected body record on the selected pod.
+/obj/machinery/computer/transhuman/resleeving/proc/act_create_body()
+	var/datum/transhuman/body_record/active_br = om_resolve(current_br)
+	if(!istype(active_br))
+		set_temp("Error: Data corruption.", "danger")
+		current_br = null
+		return
+	if(active_br.synthetic)
+		if(!spods.len)
+			set_temp("Error: No SynthFabs detected.", "danger")
+			return
+		print_synthetic_body(active_br)
+	else
+		if(!pods.len)
+			set_temp("Error: No growpods detected.", "danger")
+			return
+		grow_organic_body(active_br)
+
+/// Why the selected SynthFab can't print a body, or null when it can.
+/obj/machinery/computer/transhuman/resleeving/proc/synthprinter_error(obj/machinery/transhuman/synthprinter/spod)
+	if(!istype(spod))
+		return "Error: No SynthFab selected."
+	if(spod.busy)
+		return "Error: SynthFab is currently busy."
+	if(spod.stored_material[MAT_STEEL] < spod.body_cost)
+		return "Error: Not enough [MAT_STEEL] in SynthFab."
+	if(spod.stored_material[MAT_GLASS] < spod.body_cost)
+		return "Error: Not enough glass in SynthFab."
+	if(spod.broken)
+		return "Error: SynthFab malfunction."
+	return null
+
+/obj/machinery/computer/transhuman/resleeving/proc/print_synthetic_body(datum/transhuman/body_record/active_br)
+	var/obj/machinery/transhuman/synthprinter/spod = selected_printer()
+	var/error = synthprinter_error(spod)
+	if(error)
+		set_temp(error, "danger")
+	else if(spod.print(current_br))
+		set_temp("Initiating printing cycle...", "success")
+		menu = 1
+	else
+		set_temp("Initiating printing cycle... Error: Post-initialisation failed. Printing cycle aborted.", "danger")
+	current_br = null
+
+/// Why the selected growpod can't grow a body, or null when it can.
+/obj/machinery/computer/transhuman/resleeving/proc/growpod_error(obj/machinery/clonepod/transhuman/pod)
+	if(!istype(pod))
+		return "Error: No clonepod selected."
+	if(pod.get_occupant())
+		return "Error: Growpod is currently occupied."
+	if(pod.get_biomass() < CLONE_BIOMASS)
+		return "Error: Not enough biomass."
+	if(pod.mess)
+		return "Error: Growpod malfunction."
+	if(!CONFIG_GET(flag/revival_cloning))
+		return "Error: Unable to initiate growing cycle."
+	return null
+
+/obj/machinery/computer/transhuman/resleeving/proc/grow_organic_body(datum/transhuman/body_record/active_br)
+	var/obj/machinery/clonepod/transhuman/pod = selected_pod()
+	var/error = growpod_error(pod)
+	if(error)
+		set_temp(error, "danger")
+	else if(pod.growclone(active_br))
+		set_temp("Initiating growing cycle...", "success")
+	else
+		set_temp("Initiating growing cycle... Error: Post-initialisation failed. Growing cycle aborted.", "danger")
+	current_br = null
+
+/// "sleeve": put the selected mind record into the selected resleever's body (mode 1) or a card (mode 2).
+/// Prompts rerun tgui_act with the same action and params.
+/obj/machinery/computer/transhuman/resleeving/proc/act_sleeve(action, list/params, datum/tgui/ui)
+	var/datum/transhuman/mind_record/active_mr = om_resolve(current_mr)
+	if(!istype(active_mr))
+		set_temp("Error: Data corruption.", "danger")
+		current_mr = null
+		return
+	if(!sleevers.len)
+		set_temp("Error: No sleevers detected.", "danger")
+		current_mr = null
+		return
+	var/mode = text2num(params["mode"])
+	var/override
+	var/obj/machinery/transhuman/resleever/sleever = selected_sleever()
+	if(!istype(sleever))
+		set_temp("Error: No resleeving pod selected.", "danger")
+		current_mr = null
+		return
+
+	switch(mode)
+		if(1) //Body resleeving
+			var/error = sleeve_body_error(sleever, active_mr)
+			if(error)
+				set_temp(error, "danger")
+				current_mr = null
+				return
+			var/list/subtargets = list()
+			for(var/mob/living/carbon/human/H in sleever.get_occupant())
+				if(H.resleeve_lock && active_mr.ckey != H.resleeve_lock)
+					continue
+				subtargets += H
+			if(subtargets.len)
+				var/oc_sanity = sleever.get_occupant()
+				var/_answer_k417 = act_ask(ui.user, action, params, ui, "k417", /datum/om/prompt/choice, message = "Multiple bodies detected. Select target for resleeving of [active_mr.mindname] manually. Sleeving of primary body is unsafe with sub-contents, and is not listed.", title = "Resleeving Target", choices = subtargets)
+				if(isnull(_answer_k417))
+					return
+				override = _answer_k417
+				if(!override || oc_sanity != sleever.get_occupant() || !(override in sleever.get_occupant()))
+					set_temp("Error: Target selection aborted.", "danger")
+					current_mr = null
+					return
+
+		if(2) //Card resleeving
+			if(sleever.sleevecards <= 0)
+				set_temp("Error: No available cards in resleever.", "danger")
+				current_mr = null
+				return
+
+	//Body to sleeve into, but mind is in another living body.
+	if(active_mr.mind_ref.current && active_mr.mind_ref.current.stat < DEAD) //Mind is in a body already that's alive
+		var/answer = act_ask(active_mr.mind_ref.current, action, params, ui, "k431", /datum/om/prompt/choice/alert, message = "Someone is attempting to restore a backup of your mind. Do you want to abandon this body, and move there? You MAY suffer memory loss! (Same rules as CMD apply)", title = "Resleeving", choices = list("No","Yes"))
+		if(isnull(answer))
+			return
+		//They declined to be moved.
+		if(answer != "Yes")
+			set_temp("Initiating resleeving... Error: Post-initialisation failed. Resleeving cycle aborted.", "danger")
+			current_mr = null
+			return
+
+	//They were dead, or otherwise available.
+	sleever.putmind(active_mr, mode, override, db_key = db_key)
+	set_temp("Initiating resleeving...")
+	current_mr = null
+
+/// Why `active_mr` can't be sleeved into the resleever's occupant, or null when it can.
+/obj/machinery/computer/transhuman/resleeving/proc/sleeve_body_error(obj/machinery/transhuman/resleever/sleever, datum/transhuman/mind_record/active_mr)
+	var/mob/living/carbon/human/occupant = sleever.get_occupant()
+	if(!occupant)
+		return "Error: Resleeving pod is not occupied."
+	if(occupant.resleeve_lock && active_mr.ckey != occupant.resleeve_lock) //OOC body lock thing.
+		return "Error: Mind incompatible with body."
+	if(occupant.changeling_locked && !is_changeling(active_mr.mind_ref))
+		return "Error: Mind incompatible with body"
+	return null
+
+/// "genereset": synthesize a DNA injector that resets structural enzymes to the selected body record.
+/obj/machinery/computer/transhuman/resleeving/proc/act_gene_reset()
+	var/datum/transhuman/body_record/active_br = om_resolve(current_br)
+	if(gene_sequencing)
+		set_temp("Sequencing Record... Please wait.")
+		tgui_modal_clear(src)
+	else if(istype(active_br))
+		set_temp("Sequencing Record...")
+		tgui_modal_clear(src)
+		gene_sequencing = TRUE
+		// Make the injector here, so no desync
+		var/obj/item/dnainjector/I = new(src)
+		I.name += " ([active_br.mydna.name] - Resequencer)"
+		I.desc = "Resequences structural enzymes to match the body record this was created from."
+		I.buf = active_br.mydna.copy()
+		I.buf.types = DNA2_BUF_SE
+		I.has_radiation = FALSE // SAFE!
+		atom_say("Beginning injector synthesis.")
+		om_after(src, 10 SECONDS, PROC_REF(dispense_injector), I)
+	current_br = null
 
 /obj/machinery/computer/transhuman/resleeving/proc/dispense_injector(obj/item/dnainjector/I)
 	I.forceMove(loc)
