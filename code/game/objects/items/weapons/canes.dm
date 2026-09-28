@@ -22,9 +22,6 @@
 /obj/item/cane/concealed
 	var/obj/item/material/sword/katana/caneblade/concealed_blade
 
-/obj/item/cane/concealed/Initialize(mapload)
-	. = ..()
-	concealed_blade = new(src)
 
 DECLARE_INTERACTIONS(/obj/item/cane/concealed, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
@@ -131,3 +128,4 @@ DECLARE_INTERACTIONS(/obj/item/cane/white/collapsible, INTERACT_USE(null, PROC_R
 	return TRUE
 
 DECLARE_REF(/obj/item/cane/concealed, "concealed_blade", HELD, null)
+DECLARE_DEFAULT_CHILD(/obj/item/cane/concealed, "concealed_blade", /obj/item/material/sword/katana/caneblade)

@@ -9,7 +9,7 @@
 /obj/item/tool/transforming/Initialize(mapload, no_counterpart = TRUE)
 	. = ..()
 	if(TOOL_WELDER in possible_tooltypes)
-		welder = new weldertype(src)
+		welder = new weldertype(src) // ALLOW(decl): only when a welder mode is possible
 	on_tool_switch()
 
 DECLARE_REF(/obj/item/tool/transforming, "welder", OWNED, null)

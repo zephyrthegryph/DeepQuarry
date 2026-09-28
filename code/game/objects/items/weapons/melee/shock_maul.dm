@@ -106,9 +106,10 @@
 				usr.put_in_l_hand(src)
 		src.add_fingerprint(usr)
 
+DECLARE_DEFAULT_CHILD(/obj/item/melee/shock_maul/loaded, "bcell", /obj/item/cell/device/weapon)
+
 /obj/item/melee/shock_maul/loaded/Initialize(mapload) //this one starts with a cell pre-installed.
 	. = ..()
-	bcell = new/obj/item/cell/device/weapon(src)
 	update_icon()
 
 /obj/item/melee/shock_maul/proc/deductcharge()

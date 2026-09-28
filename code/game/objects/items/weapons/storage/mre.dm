@@ -368,7 +368,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/mrebag, INTERACT_USE("Open", PROC_REF(inte
 	desc = "A packaged [flavor] from a Meal Ready-to-Eat, there is a lengthy list of [pick("obscure", "arcane", "unintelligible", "revolutionary", "sophisticated", "unspellable")] ingredients and addictives printed on the back."
 	. = ..()
 	if(seasoning)
-		reagents.add_reagent(seasoning, 1)
+		reagents.add_reagent(seasoning, 1) // ALLOW(decl): state picked in determinetype()
 
 /obj/item/reagent_containers/food/snacks/tgmc_mre_component/unpackage(mob/user as mob)
 	. = ..()

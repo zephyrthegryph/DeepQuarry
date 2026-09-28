@@ -6,48 +6,6 @@ init_reagents	code/game/mecha/equipment/tools/extinguisher.dm	reagents.add_reage
 init_reagents	code/game/mecha/equipment/tools/syringe_gun.dm	create_reagents(max_volume)
 init_reagents	code/game/objects/effects/chem/chemsmoke.dm	create_reagents(500)
 init_reagents	code/game/objects/effects/chem/coating.dm	create_reagents(100)
-init_reagents	code/game/objects/items/contraband.dm	reagents.add_reagent(reagent, picked_reagents[reagent])
-init_reagents	code/game/objects/items/fantasy_items.dm	create_reagents(300)
-init_reagents	code/game/objects/items/soap.dm	create_reagents(5)
-init_reagents	code/game/objects/items/weapons/chewables.dm	create_reagents(chem_volume) // making the cigarrete a chemical holder with a maximum volume of 15
-init_reagents	code/game/objects/items/weapons/chewables.dm	reagents.add_reagent(R, LAZYACCESS(filling, R))
-init_reagents	code/game/objects/items/weapons/chewables.dm	reagents.add_reagent(REAGENT_ID_NICOTINE, 2)
-init_reagents	code/game/objects/items/weapons/chewables.dm	reagents.add_reagent(pick(REAGENT_ID_BANANA,REAGENT_ID_BERRYJUICE,REAGENT_ID_GRAPEJUICE,REAGENT_ID_LEMONJUICE,REAGENT_ID_LIMEJUICE,REAGENT_ID_ORANGEJUICE,REAGENT_ID_WATERMELONJUICE),10)
-init_reagents	code/game/objects/items/weapons/chewables.dm	reagents.add_reagent(pick(REAGENT_ID_BANANA,REAGENT_ID_BERRYJUICE,REAGENT_ID_GRAPEJUICE,REAGENT_ID_LEMONJUICE,REAGENT_ID_LIMEJUICE,REAGENT_ID_ORANGEJUICE,REAGENT_ID_WATERMELONJUICE),20)
-init_reagents	code/game/objects/items/weapons/cigs_lighters.dm	create_reagents(chem_volume) // making the cigarrete a chemical holder with a maximum volume of 15
-init_reagents	code/game/objects/items/weapons/cigs_lighters.dm	reagents.add_reagent(REAGENT_ID_NICOTINE, nicotine_amt)
-init_reagents	code/game/objects/items/weapons/extinguisher.dm	create_reagents(max_water)
-init_reagents	code/game/objects/items/weapons/extinguisher.dm	reagents.add_reagent(REAGENT_ID_FIREFOAM, max_water)
-init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	create_reagents(1000)
-init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B1.reagents.add_reagent(REAGENT_ID_ALUMINIUM, 30)
-init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B2.reagents.add_reagent(REAGENT_ID_FOAMINGAGENT, 10)
-init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B2.reagents.add_reagent(REAGENT_ID_PACID, 10)
-init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B1.reagents.add_reagent(REAGENT_ID_ALUMINIUM, 15)
-init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B1.reagents.add_reagent(REAGENT_ID_FUEL,20)
-init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B2.reagents.add_reagent(REAGENT_ID_PHORON, 15)
-init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B2.reagents.add_reagent(REAGENT_ID_SACID, 15)
-init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B1.reagents.add_reagent(REAGENT_ID_FUEL,20)
-init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B1.reagents.add_reagent(REAGENT_ID_PLANTBGONE, 25)
-init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B1.reagents.add_reagent(REAGENT_ID_POTASSIUM, 25)
-init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B2.reagents.add_reagent(REAGENT_ID_PHOSPHORUS, 25)
-init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B2.reagents.add_reagent(REAGENT_ID_SUGAR, 25)
-init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B1.reagents.add_reagent(REAGENT_ID_FLUOROSURFACTANT, 40)
-init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B2.reagents.add_reagent(REAGENT_ID_WATER, 40)
-init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B2.reagents.add_reagent(REAGENT_ID_CLEANER, 10)
-init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B1.reagents.add_reagent(REAGENT_ID_PHOSPHORUS, 40)
-init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B1.reagents.add_reagent(REAGENT_ID_POTASSIUM, 40)
-init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B1.reagents.add_reagent(REAGENT_ID_CONDENSEDCAPSAICIN, 40)
-init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B2.reagents.add_reagent(REAGENT_ID_SUGAR, 40)
-init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B2.reagents.add_reagent(REAGENT_ID_CONDENSEDCAPSAICIN, 80)
-init_reagents	code/game/objects/items/weapons/implants/implantreagent.dm	create_reagents(usable_volume)
-init_reagents	code/game/objects/items/weapons/material/kitchen.dm	create_reagents(scoop_volume)
-init_reagents	code/game/objects/items/weapons/mop.dm	create_reagents(30)
-init_reagents	code/game/objects/items/weapons/mop_deploy.dm	create_reagents(5)
-init_reagents	code/game/objects/items/weapons/paint.dm	reagents.add_reagent(REAGENT_ID_PAINT, volume, paint_type)
-init_reagents	code/game/objects/items/weapons/storage/fancy.dm	create_reagents(15 * storage_slots)//so people can inject cigarettes without opening a packet, now with being able to inject the whole one
-init_reagents	code/game/objects/items/weapons/storage/fancy.dm	create_reagents(15 * storage_slots)
-init_reagents	code/game/objects/items/weapons/storage/mre.dm	reagents.add_reagent(seasoning, 1)
-init_reagents	code/game/objects/items/weapons/storage/uplink_kits.dm	pack.reagents.add_reagent(REAGENT_ID_TRICORDRAZINE, 15 * pack.storage_slots)
 init_reagents	code/game/objects/structures/mop_bucket.dm	create_reagents(300)
 init_reagents	code/game/objects/structures/watercloset.dm	create_reagents(reaction_volume)
 init_reagents	code/game/objects/structures/watercloset.dm	reagents.add_reagent(reagent_id, reaction_volume)
@@ -312,38 +270,12 @@ init_gas	code/game/machinery/atmoalter/portable_atmospherics.dm	air_contents = n
 init_gas	code/game/objects/effects/spawners/bombspawner.dm	PT.air_contents.adjust_gas(GAS_PHORON, (phoron_amt) - LINDA_GAS_AMT(PT.air_contents, GAS_PHORON))
 init_gas	code/game/objects/effects/spawners/bombspawner.dm	PT.air_contents.adjust_gas(GAS_CO2, (carbon_amt) - LINDA_GAS_AMT(PT.air_contents, GAS_CO2))
 init_gas	code/game/objects/effects/spawners/bombspawner.dm	OT.air_contents.adjust_gas(GAS_O2, (oxygen_amt) - LINDA_GAS_AMT(OT.air_contents, GAS_O2))
-init_gas	code/game/objects/items/weapons/tanks/jetpack.dm	air_contents.adjust_gas(GAS_O2, (6*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-init_gas	code/game/objects/items/weapons/tanks/jetpack.dm	air_contents.adjust_gas(GAS_O2, (6*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-init_gas	code/game/objects/items/weapons/tanks/jetpack.dm	air_contents.adjust_gas(GAS_VOLATILE_FUEL, (6*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-init_gas	code/game/objects/items/weapons/tanks/jetpack.dm	air_contents.adjust_gas(GAS_CO2, (6*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	air_contents.adjust_gas(GAS_O2, (6*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	air_contents.adjust_gas(GAS_O2, ((3*ONE_ATMOSPHERE)*70/(R_IDEAL_GAS_EQUATION*T20C) * O2STANDARD) - LINDA_GAS_AMT(air_contents, GAS_O2))
-init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	air_contents.adjust_gas(GAS_N2O, ((3*ONE_ATMOSPHERE)*70/(R_IDEAL_GAS_EQUATION*T20C) * N2STANDARD) - LINDA_GAS_AMT(air_contents, GAS_N2O))
-init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	src.air_contents.adjust_gas(GAS_PHORON, (3*ONE_ATMOSPHERE)*70/(R_IDEAL_GAS_EQUATION*T20C))
-init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	air_contents.adjust_gas(GAS_PHORON, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	air_contents.adjust_gas(GAS_PHORON, (7*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	src.air_contents.adjust_gas(GAS_O2, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	src.air_contents.adjust_gas(GAS_O2, (3*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	src.air_contents.adjust_gas(GAS_N2, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	src.air_contents.adjust_gas(GAS_PHORON, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	src.air_contents.adjust_gas(GAS_CO2, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	src.air_contents.adjust_gas(GAS_CO2, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	src.air_contents.adjust_gas(GAS_N2, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	src.air_contents.adjust_gas(GAS_CH4, (3*ONE_ATMOSPHERE)*70/(R_IDEAL_GAS_EQUATION*T20C))
-init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	src.air_contents.adjust_gas(GAS_CO2, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	src.air_contents.adjust_gas(GAS_CH4, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	air_contents.adjust_gas(GAS_PHORON, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-init_gas	code/game/objects/items/weapons/tanks/tanks.dm	src.air_contents = new /datum/gas_mixture()
 init_gas	code/game/objects/structures/transit_tubes.dm	air_contents = new()
 init_gas	code/modules/recycling/disposal_machines.dm	air_contents = new(PRESSURE_TANK_VOLUME)
 init_registry	code/game/objects/effects/landmarks.dm	registry_join(REGISTRY_LATEJOIN, src)
 init_registry	code/game/objects/effects/landmarks.dm	registry_join(REGISTRY_LANDMARKS, src)
 init_registry	code/game/objects/effects/step_triggers.dm	GLOB.mapped_autostrips[targetid] = src
 init_registry	code/game/objects/effects/step_triggers.dm	GLOB.mapped_autostrips_mob[targetid] = src
-init_registry	code/game/objects/items/devices/radio/radio.dm	registry_join(REGISTRY_LISTENING_OBJECTS, src)
-init_registry	code/game/objects/items/devices/taperecorder.dm	registry_join(REGISTRY_LISTENING_OBJECTS, src)
-init_registry	code/game/objects/items/devices/tvcamera.dm	registry_join(REGISTRY_LISTENING_OBJECTS, src)
-init_registry	code/game/objects/items/devices/tvcamera.dm	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 init_registry	code/game/objects/structures/ghost_pods/event.dm	registry_join(REGISTRY_GHOST_PODS, src)
 init_registry	code/game/objects/structures/ghost_pods/event.dm	registry_join(REGISTRY_GHOST_PODS, src)
 init_registry	code/game/objects/structures/ghost_pods/unified_ghost_hole.dm	registry_join(REGISTRY_GHOST_PODS, src)
@@ -362,8 +294,6 @@ init_service	code/game/machinery/magnet.dm	GLOB.radio_service.add_object(src, fr
 init_service	code/game/machinery/magnet.dm	radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency, RADIO_MAGNETS))
 init_service	code/game/machinery/status_display.dm	GLOB.radio_service.add_object(src, frequency)
 init_service	code/game/objects/effects/landmarks_poi.dm	GLOB.poi_service.enqueue(src)
-init_service	code/game/objects/items/devices/communicator/cartridge.dm	GLOB.radio_service.add_object(src, 1435)
-init_service	code/game/objects/items/devices/radio/radio.dm	secure_radio_connections[ch_name] = GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name], RADIO_CHAT)
 init_service	code/game/turfs/simulated.dm	GLOB.planet_service.addTurf(src)
 init_service	code/game/turfs/unsimulated/planetary.dm	GLOB.planet_service.addTurf(src)
 init_service	code/modules/clothing/accessories/accessory.dm	radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency, RADIO_CHAT)) // Makes it so you don't need to change the frequency off of default for it to work.
@@ -421,19 +351,6 @@ init_scheduling	code/game/objects/effects/map_effects/radiation_emitter.dm	om_ta
 init_scheduling	code/game/objects/effects/prop/columnblast.dm	om_after(src, time_to_die - 0.2 SECONDS, PROC_REF(on_eruption), get_turf(src))
 init_scheduling	code/game/objects/effects/spiders.dm	om_after(src, egg_hatch_steps() * 2 SECONDS, PROC_REF(hatch))
 init_scheduling	code/game/objects/effects/spiders.dm	om_task_periodic(src, PERIODIC_SLOW)
-init_scheduling	code/game/objects/items/devices/communicator/communicator.dm	om_task_periodic(src, PERIODIC_SLOW)
-init_scheduling	code/game/objects/items/devices/communicator/communicator.dm	om_after(src, 5 SECONDS, PROC_REF(register_to_holder))
-init_scheduling	code/game/objects/items/devices/uplink.dm	om_after(src, offer_time, PROC_REF(next_offer)) //It seems like only the /hidden type actually makes use of this...
-init_scheduling	code/game/objects/items/falling_object_attack.dm	om_after(src, delay - 0.7 SECONDS, PROC_REF(spawn_object))
-init_scheduling	code/game/objects/items/poi_items.dm	om_task_periodic(src, PERIODIC_SLOW)
-init_scheduling	code/game/objects/items/poi_items.dm	om_task_periodic(src, PERIODIC_SLOW)
-init_scheduling	code/game/objects/items/weapons/grenades/flashbang.dm	om_after(src, rand(15, 60), PROC_REF(detonate))
-init_scheduling	code/game/objects/items/weapons/grenades/flashbang.dm	om_after(src, rand(15, 60), PROC_REF(detonate))
-init_scheduling	code/game/objects/items/weapons/medigun/medigun_backpack.dm	om_task_periodic(src, PERIODIC_SLOW)
-init_scheduling	code/game/objects/items/weapons/melee/energy.dm	om_after(src, 0, PROC_REF(check_held))
-init_scheduling	code/game/objects/items/weapons/mop_deploy.dm	om_after(src, 0, PROC_REF(check_held))
-init_scheduling	code/game/objects/items/weapons/tools/weldingtool.dm	om_task_periodic(src, PERIODIC_SLOW)
-init_scheduling	code/game/objects/items/weapons/weaponry.dm	om_after(src, 2 SECONDS, PROC_REF(check_empty)) // a net that caught nobody goes away
 init_scheduling	code/game/objects/micro_event.dm	om_after(src, time_til_open, /datum/proc/qdel_self)
 init_scheduling	code/game/objects/mob_spawner.dm	om_task_periodic(src, PERIODIC_SLOW)
 init_scheduling	code/game/objects/structures/crates_lockers/closets/statue.dm	om_after(src, timer * 2 SECONDS, PROC_REF(release)) // the old countdown: one per 2 s step
@@ -526,42 +443,6 @@ init_visuals	code/game/objects/effects/decals/warning_stripes.dm	T.add_overlay(I
 init_visuals	code/game/objects/effects/mines.dm	icon_state = "landmine_armed"
 init_visuals	code/game/objects/effects/spiders.dm	icon_state = "stickyweb2"
 init_visuals	code/game/objects/effects/spiders.dm	icon_state = pick("cocoon1","cocoon2","cocoon3")
-init_visuals	code/game/objects/items/devices/taperecorder.dm	icon_state = "tape_[pick("white", "blue", "red", "yellow", "purple")]"
-init_visuals	code/game/objects/items/devices/ticket_printer.dm	icon_state = "sec_ticket"
-init_visuals	code/game/objects/items/devices/ticket_printer.dm	icon_state = "permit_ticket"
-init_visuals	code/game/objects/items/devices/uplink.dm	icon_state = "radio"
-init_visuals	code/game/objects/items/falling_object_attack.dm	icon_state = "[rand(1,33)]"
-init_visuals	code/game/objects/items/fantasy_items.dm	icon_state = "toilet3"
-init_visuals	code/game/objects/items/magazine.dm	icon_state = pick(icon_states_fast('icons/obj/magazine.dmi'))
-init_visuals	code/game/objects/items/soap.dm	icon_state = "[icon_state]-alt"
-init_visuals	code/game/objects/items/trash_material.dm	icon_state = "metal[rand(4)]"
-init_visuals	code/game/objects/items/trash_material.dm	icon_state = "circuit[rand(3)]"
-init_visuals	code/game/objects/items/trash_material.dm	icon_state = "device[rand(3)]"
-init_visuals	code/game/objects/items/weapons/RMS.dm	add_overlay("rms_charge[charge_stage]")
-init_visuals	code/game/objects/items/weapons/cigs_lighters.dm	add_overlay(I)
-init_visuals	code/game/objects/items/weapons/cigs_lighters.dm	cut_overlays() //Prevents the Cheap Lighter overlay from appearing on this
-init_visuals	code/game/objects/items/weapons/extinguisher.dm	add_overlay("[item_state]O[choice]")
-init_visuals	code/game/objects/items/weapons/gift_wrappaper.dm	icon_state = "gift[w_class]" + "_[pick("g","r","b","y","p")]"
-init_visuals	code/game/objects/items/weapons/gift_wrappaper.dm	icon_state = "gift[pick(1, 2, 3)]" + "_[pick("g","r","b","y","p")]"
-init_visuals	code/game/objects/items/weapons/gift_wrappaper.dm	icon_state = "chomp_present_chaos"
-init_visuals	code/game/objects/items/weapons/grenades/chem_grenade.dm	icon_state = "grenade"
-init_visuals	code/game/objects/items/weapons/grenades/flashbang.dm	icon_state = "clusterbang_segment_active"
-init_visuals	code/game/objects/items/weapons/grenades/flashbang.dm	icon_state = "flashbang_active"
-init_visuals	code/game/objects/items/weapons/material/ashtray.dm	icon_state = "blank"
-init_visuals	code/game/objects/items/weapons/storage/backpack.dm	icon_state = "[icon_state]_tilted"
-init_visuals	code/game/objects/items/weapons/storage/backpack.dm	icon_state = "[icon_state]_tilted"
-init_visuals	code/game/objects/items/weapons/storage/firstaid.dm	icon_state = pick(icon_variety)
-init_visuals	code/game/objects/items/weapons/tools/crowbar.dm	icon_state = "prybar[pick("","_green","_aubergine","_blue")]"
-init_visuals	code/game/objects/items/weapons/tools/screwdriver.dm	icon_state = "screwdriver2"
-init_visuals	code/game/objects/items/weapons/tools/screwdriver.dm	icon_state = "screwdriver"
-init_visuals	code/game/objects/items/weapons/tools/screwdriver.dm	icon_state = "screwdriver3"
-init_visuals	code/game/objects/items/weapons/tools/screwdriver.dm	icon_state = "screwdriver4"
-init_visuals	code/game/objects/items/weapons/tools/screwdriver.dm	icon_state = "screwdriver5"
-init_visuals	code/game/objects/items/weapons/tools/screwdriver.dm	icon_state = "screwdriver6"
-init_visuals	code/game/objects/items/weapons/tools/screwdriver.dm	icon_state = "screwdriver7"
-init_visuals	code/game/objects/items/weapons/tools/wirecutters.dm	icon_state = "cutters"
-init_visuals	code/game/objects/items/weapons/tools/wirecutters.dm	icon_state = "cutters-b"
-init_visuals	code/game/objects/items/weapons/tools/wirecutters.dm	icon_state = "cutters-y"
 init_visuals	code/game/objects/mob_spawner.dm	icon_state = "tunnel_hole"
 init_visuals	code/game/objects/structures/barsign.dm	icon_state = pick(get_valid_states())
 init_visuals	code/game/objects/structures/crates_lockers/closets/secure/secure_closets.dm	add_overlay(IM)
@@ -863,118 +744,6 @@ init_new_child	code/game/objects/effects/mines.dm	trap = new trap(src)
 init_new_child	code/game/objects/effects/misc.dm	light_spot = new
 init_new_child	code/game/objects/effects/particle_holder.dm	particles = new particle_path()
 init_new_child	code/game/objects/effects/shared_particle_holder.dm	particles = new particle_path()
-init_new_child	code/game/objects/items/antag_spawners.dm	sparks = new /datum/effect/effect/system/spark_spread()
-init_new_child	code/game/objects/items/bodybag.dm	tank = new tank_type(null) //It's in nullspace to prevent ejection when the bag is opened.
-init_new_child	code/game/objects/items/devices/advnifrepair.dm	supply = new(max = 60, A = src)
-init_new_child	code/game/objects/items/devices/communicator/communicator.dm	camera = new(src)
-init_new_child	code/game/objects/items/devices/communicator/communicator.dm	exonet = new(src)
-init_new_child	code/game/objects/items/devices/defib.dm	bcell = new bcell(src)
-init_new_child	code/game/objects/items/devices/e_beacon.dm	gps = new/obj/item/gps/emergency_beacon(src)
-init_new_child	code/game/objects/items/devices/extrapolator.dm	scanner = new starting_scanner(src)
-init_new_child	code/game/objects/items/devices/flash.dm	power_supply = new cell_type(src)
-init_new_child	code/game/objects/items/devices/flashlight.dm	cell = new cell_type(src)
-init_new_child	code/game/objects/items/devices/flipper.dm	pai = new /mob/living/silicon/pai/flipper(src)
-init_new_child	code/game/objects/items/devices/geiger.dm	geiger_sound = new /datum/geiger_sound/wall(src)
-init_new_child	code/game/objects/items/devices/gps.dm	compass = new(src)
-init_new_child	code/game/objects/items/devices/hacktool.dm	hack_state = new(src)
-init_new_child	code/game/objects/items/devices/laserpointer.dm	diode = new laser_path
-init_new_child	code/game/objects/items/devices/laserpointer.dm	diode = new(src)
-init_new_child	code/game/objects/items/devices/personal_shield_generator.dm	bcell = new bcell(src)
-init_new_child	code/game/objects/items/devices/personal_shield_generator.dm	active_weapon = new active_weapon(src, src)
-init_new_child	code/game/objects/items/devices/personal_shield_generator.dm	active_weapon = new(src, src)
-init_new_child	code/game/objects/items/devices/radio/headset.dm	keyslot1 = new ks1type(src)
-init_new_child	code/game/objects/items/devices/radio/headset.dm	keyslot2 = new ks2type(src)
-init_new_child	code/game/objects/items/devices/radio/intercom.dm	circuit = new circuit(src)
-init_new_child	code/game/objects/items/devices/radio/jammer.dm	power_source = new(src)
-init_new_child	code/game/objects/items/devices/radio/radio.dm	secure_radio_connections = new
-init_new_child	code/game/objects/items/devices/spy_bug.dm	camera = new camtype(src)
-init_new_child	code/game/objects/items/devices/suit_cooling.dm	cell = new cell(src)
-init_new_child	code/game/objects/items/devices/taperecorder.dm	mytape = new mytape(src)
-init_new_child	code/game/objects/items/devices/translocator.dm	power_source = new cell_type(src)
-init_new_child	code/game/objects/items/devices/translocator.dm	power_source = new /obj/item/cell/device(src)
-init_new_child	code/game/objects/items/devices/translocator.dm	spk = new(src)
-init_new_child	code/game/objects/items/devices/tvcamera.dm	camera = new(src)
-init_new_child	code/game/objects/items/devices/tvcamera.dm	radio = new(src)
-init_new_child	code/game/objects/items/devices/tvcamera.dm	bcamera = new(src)
-init_new_child	code/game/objects/items/devices/tvcamera.dm	bradio = new(src)
-init_new_child	code/game/objects/items/ghost_hunting/trap.dm	ghost_reporter = new(null)
-init_new_child	code/game/objects/items/robot/robot_items.dm	hud = new /obj/item/clothing/glasses/hud/health(src)
-init_new_child	code/game/objects/items/robot/robot_items.dm	hud = new /obj/item/clothing/glasses/hud/security(src)
-init_new_child	code/game/objects/items/uav.dm	cell = new cell_type
-init_new_child	code/game/objects/items/uav.dm	ion_trail = new /datum/effect/effect/system/ion_trail_follow()
-init_new_child	code/game/objects/items/weapons/AI_modules.dm	laws = new using_map.default_law_type // Pull from loaded map
-init_new_child	code/game/objects/items/weapons/RCD.dm	src.spark_system = new /datum/effect/effect/system/spark_spread
-init_new_child	code/game/objects/items/weapons/RCD.dm	cell = new /obj/item/cell/high(src)
-init_new_child	code/game/objects/items/weapons/RMS.dm	src.spark_system = new /datum/effect/effect/system/spark_spread
-init_new_child	code/game/objects/items/weapons/RPD.dm	src.spark_system = new /datum/effect/effect/system/spark_spread
-init_new_child	code/game/objects/items/weapons/RPD.dm	tool = new /obj/item/tool/wrench/cyborg(src) // RPDs have wrenches inside of them, so that they can wrench down spawned pipes without being used as superior wrenches themselves.
-init_new_child	code/game/objects/items/weapons/canes.dm	concealed_blade = new(src)
-init_new_child	code/game/objects/items/weapons/cosmetics.dm	M = new(src, null)
-init_new_child	code/game/objects/items/weapons/dna_injector.dm	buf=new
-init_new_child	code/game/objects/items/weapons/ecigs.dm	ec_cartridge = new cartridge_type(src)
-init_new_child	code/game/objects/items/weapons/flamethrower.dm	weldtool = new /obj/item/weldingtool(src)
-init_new_child	code/game/objects/items/weapons/flamethrower.dm	igniter = new /obj/item/assembly/igniter(src)
-init_new_child	code/game/objects/items/weapons/grenades/chem_grenade.dm	detonator = new/obj/item/assembly_holder/timer_igniter(src)
-init_new_child	code/game/objects/items/weapons/grenades/chem_grenade.dm	detonator = new/obj/item/assembly_holder/timer_igniter(src)
-init_new_child	code/game/objects/items/weapons/grenades/chem_grenade.dm	detonator = new/obj/item/assembly_holder/timer_igniter(src)
-init_new_child	code/game/objects/items/weapons/grenades/chem_grenade.dm	detonator = new/obj/item/assembly_holder/timer_igniter(src)
-init_new_child	code/game/objects/items/weapons/grenades/chem_grenade.dm	detonator = new/obj/item/assembly_holder/timer_igniter(src)
-init_new_child	code/game/objects/items/weapons/grenades/confetti.dm	confetti_spread = new /datum/effect/effect/system/confetti_spread()
-init_new_child	code/game/objects/items/weapons/grenades/smokebomb.dm	smoke = new /datum/effect/effect/system/smoke_spread/bad()
-init_new_child	code/game/objects/items/weapons/id cards/syndicate_ids.dm	agentcard_module = new(src)
-init_new_child	code/game/objects/items/weapons/implants/implant.dm	src.imp = new /obj/item/implant/sizecontrol( src )
-init_new_child	code/game/objects/items/weapons/implants/implant.dm	imp = new /obj/item/implant/compliance(src)
-init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/tracking(src)
-init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/explosive(src)
-init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/chem(src)
-init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/loyalty(src)
-init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/death_alarm(src)
-init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/freedom(src)
-init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/adrenalin(src)
-init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/dexplosive(src)
-init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/health(src)
-init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/language(src)
-init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/language/eal(src)
-init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/organ(src)
-init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/organ/limbaugment(src)
-init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/organ/limbaugment/laser(src)
-init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/organ/limbaugment/dart(src)
-init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/organ/limbaugment/upperarm(src)
-init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/organ/limbaugment/upperarm/medkit(src)
-init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/organ/limbaugment/upperarm/surge(src)
-init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/organ/limbaugment/wrist(src)
-init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/organ/limbaugment/wrist/sword(src)
-init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/organ/pelvic/sprint(src)
-init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/organ/pelvic/scanner(src)
-init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/organ/limbaugment/upperarm/blade(src)
-init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/organ/limbaugment/wrist/blade(src)
-init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/restrainingbolt(src)
-init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/vrlanguage(src)
-init_new_child	code/game/objects/items/weapons/implants/implantcircuits.dm	IC = new(src)
-init_new_child	code/game/objects/items/weapons/implants/implanter.dm	imp = new /obj/item/implant/loyalty(src)
-init_new_child	code/game/objects/items/weapons/implants/implanter.dm	imp = new /obj/item/implant/explosive(src)
-init_new_child	code/game/objects/items/weapons/implants/implanter.dm	imp = new /obj/item/implant/adrenalin(src)
-init_new_child	code/game/objects/items/weapons/implants/implanter.dm	imp = new /obj/item/implant/compressed(src)
-init_new_child	code/game/objects/items/weapons/implants/implanter.dm	imp = new /obj/item/implant/restrainingbolt(src)
-init_new_child	code/game/objects/items/weapons/implants/implanter.dm	imp = new /obj/item/implant/vrlanguage( src )
-init_new_child	code/game/objects/items/weapons/implants/implantreagent.dm	imp = new implant_type(src)
-init_new_child	code/game/objects/items/weapons/inducer.dm	cell = new cell_type
-init_new_child	code/game/objects/items/weapons/medigun/medigun_backpack.dm	bcell = new bcell(src)
-init_new_child	code/game/objects/items/weapons/medigun/medigun_backpack.dm	sbin = new sbin(src)
-init_new_child	code/game/objects/items/weapons/medigun/medigun_backpack.dm	smodule = new smodule(src)
-init_new_child	code/game/objects/items/weapons/medigun/medigun_backpack.dm	smanipulator = new smanipulator(src)
-init_new_child	code/game/objects/items/weapons/medigun/medigun_backpack.dm	scapacitor = new scapacitor(src)
-init_new_child	code/game/objects/items/weapons/medigun/medigun_backpack.dm	slaser = new slaser(src)
-init_new_child	code/game/objects/items/weapons/melee/energy.dm	bcell = new/obj/item/cell/device/weapon(src)
-init_new_child	code/game/objects/items/weapons/melee/energy.dm	bcell = new/obj/item/cell/device/weapon(src)
-init_new_child	code/game/objects/items/weapons/melee/energy.dm	spark_system = new /datum/effect/effect/system/spark_spread()
-init_new_child	code/game/objects/items/weapons/melee/shock_maul.dm	bcell = new/obj/item/cell/device/weapon(src)
-init_new_child	code/game/objects/items/weapons/stunbaton.dm	bcell = new/obj/item/cell/device/weapon(src)
-init_new_child	code/game/objects/items/weapons/tanks/jetpack.dm	ion_trail = new /datum/effect/effect/system/ion_trail_follow()
-init_new_child	code/game/objects/items/weapons/tanks/tanks.dm	src.air_contents = new /datum/gas_mixture()
-init_new_child	code/game/objects/items/weapons/tools/transforming.dm	welder = new weldertype(src)
-init_new_child	code/game/objects/items/weapons/tools/weldingtool.dm	power_supply = new cell_type(src)
-init_new_child	code/game/objects/items/weapons/tools/weldingtool.dm	power_supply = new /obj/item/cell/device(src)
 init_new_child	code/game/objects/mob_spawner.dm	prox = new(src, range)
 init_new_child	code/game/objects/structures/droppod.dm	air = new
 init_new_child	code/game/objects/structures/extinguisher.dm	has_extinguisher = new/obj/item/extinguisher(src)
@@ -1231,7 +1000,6 @@ destroy_qdel_owned	code/modules/organs/organ_external.dm	qdel(splinted)
 destroy_qdel_owned	code/modules/organs/organ_external.dm	qdel(tourniquet)
 destroy_qdel_owned	code/modules/pda/pda.dm	QDEL_NULL(id)
 destroy_drop	code/game/machinery/machinery.dm	for(var/mob/living/carbon/human/H in contents)
-destroy_drop	code/game/objects/items/devices/communicator/communicator.dm	for(var/mob/living/voice/voice in contents.Copy())
 destroy_drop	code/game/objects/micro_structures.dm	for(var/mob/thing in contents_of(src))
 destroy_drop	code/game/objects/objs.dm	for(var/thing in contents_of(src))
 destroy_drop	code/game/objects/structures/crates_lockers/closets/statue.dm	dump_contents()

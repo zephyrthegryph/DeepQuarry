@@ -115,9 +115,7 @@
 
 	var/escape_time = 8 SECONDS
 
-/obj/effect/energy_net/Initialize(mapload)
-	. = ..()
-	om_after(src, 2 SECONDS, PROC_REF(check_empty)) // a net that caught nobody goes away
+DECLARE_START_TIMER(/obj/effect/energy_net, 2 SECONDS, PROC_REF(check_empty)) // a net that caught nobody goes away
 
 /obj/effect/energy_net/proc/check_empty()
 	if(!has_buckled_mobs())

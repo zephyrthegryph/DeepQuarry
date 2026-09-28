@@ -9,7 +9,7 @@
 /obj/effect/calldown_attack/Initialize(mapload)
 	. = ..()
 	var/delay = rand(2.5 SECONDS, 3 SECONDS)
-	om_after(src, delay - 0.7 SECONDS, PROC_REF(spawn_object))
+	om_after(src, delay - 0.7 SECONDS, PROC_REF(spawn_object)) // ALLOW(decl): random delay
 
 /obj/effect/calldown_attack/proc/spawn_object()
 	new /obj/effect/falling_effect/calldown_attack(loc)
@@ -28,7 +28,7 @@
 
 /obj/effect/illusionary_fall/Initialize(mapload)
 	. = ..()
-	icon_state = "[rand(1,33)]"
+	icon_state = "[rand(1,33)]" // ALLOW(decl): random pick
 
 /obj/effect/illusionary_fall/end_fall(crushing = FALSE)
 	for(var/mob/living/L in contents_of(loc))

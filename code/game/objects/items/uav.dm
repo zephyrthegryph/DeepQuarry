@@ -50,14 +50,14 @@
 	. = ..()
 
 	if(!cell && cell_type)
-		cell = new cell_type
+		cell = new cell_type // ALLOW(decl): made in nullspace, not in src
 
-	ion_trail = new /datum/effect/effect/system/ion_trail_follow()
 	ion_trail.set_up(src)
 	ion_trail.stop()
 
 DECLARE_REF(/obj/item/uav, "cell", OWNED, null)
 DECLARE_REF(/obj/item/uav, "ion_trail", OWNED, null)
+DECLARE_DEFAULT_CHILD(/obj/item/uav, "ion_trail", /datum/effect/effect/system/ion_trail_follow)
 
 /obj/item/uav/examine(mob/user)
 	. = ..()

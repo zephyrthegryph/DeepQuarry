@@ -25,16 +25,14 @@
 /obj/item/radio/headset/Initialize(mapload)
 	. = ..()
 	internal_channels.Cut()
-	if(ks1type)
-		keyslot1 = new ks1type(src)
-	if(ks2type)
-		keyslot2 = new ks2type(src)
 	// Compute channels but don't register with GLOB.radio_service yet (C5): on_materialize()
 	// (inherited from /obj/item/radio) does that, from the channels computed here.
 	recalculateChannels(TRUE, register = FALSE)
 
 DECLARE_REF(/obj/item/radio/headset, "keyslot1", OWNED, null)
 DECLARE_REF(/obj/item/radio/headset, "keyslot2", OWNED, null)
+DECLARE_DEFAULT_CHILD(/obj/item/radio/headset, "keyslot1", "ks1type")
+DECLARE_DEFAULT_CHILD(/obj/item/radio/headset, "keyslot2", "ks2type")
 
 /obj/item/radio/headset/list_channels(mob/user)
 	return list_secure_channels()

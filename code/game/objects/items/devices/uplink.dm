@@ -27,9 +27,7 @@
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
-/obj/item/uplink/Initialize(mapload)
-	. = ..()
-	om_after(src, offer_time, PROC_REF(next_offer)) //It seems like only the /hidden type actually makes use of this...
+DECLARE_START_TIMER(/obj/item/uplink, "offer_time", PROC_REF(next_offer)) //It seems like only the /hidden type actually makes use of this...
 
 /obj/item/uplink/get_item_cost(item_type, item_cost)
 	return (discount_item() && (item_type == discount_item())) ? max(1, round(item_cost*discount_amount)) : item_cost
@@ -219,12 +217,12 @@
 // implant uplink (not the implant tool) and a preset headset uplink.
 
 /obj/item/radio/uplink
+	icon_state = "radio"
 	uplink = TRUE
 
 /obj/item/radio/uplink/Initialize(mapload)
 	. = ..()
 	hidden_uplink_handle = om_handle(new /obj/item/uplink/hidden(src))
-	icon_state = "radio"
 
 /obj/item/radio/uplink/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	. = ..()

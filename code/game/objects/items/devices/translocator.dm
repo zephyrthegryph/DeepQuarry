@@ -40,11 +40,8 @@
 	. = ..()
 
 	flags |= NOBLUDGEON
-	if(cell_type)
-		power_source = new cell_type(src)
-	else
-		power_source = new /obj/item/cell/device(src)
-	spk = new(src)
+	if(!power_source) // no cell_type
+		power_source = new /obj/item/cell/device(src) // ALLOW(decl): fallback when a subtype clears cell_type
 	spk.set_up(5, 0, src)
 	spk.attach(src)
 
@@ -52,6 +49,8 @@
 
 DECLARE_REF(/obj/item/perfect_tele, "power_source", OWNED, null)
 DECLARE_REF(/obj/item/perfect_tele, "spk", OWNED, null)
+DECLARE_DEFAULT_CHILD(/obj/item/perfect_tele, "power_source", "cell_type")
+DECLARE_DEFAULT_CHILD(/obj/item/perfect_tele, "spk", /datum/effect/effect/system/spark_spread)
 
 // its beacons forget it.
 DECLARE_REF(/obj/item/perfect_tele, "beacons", LIST_BACK, "tele_hand_handle")

@@ -63,12 +63,12 @@ GLOBAL_LIST_INIT(RMS_random_malfunction, list(/obj/item/fbp_backup_cell,
 
 /obj/item/rms/Initialize(mapload)
 	. = ..()
-	src.spark_system = new /datum/effect/effect/system/spark_spread
 	spark_system.set_up(5, 0, src)
 	spark_system.attach(src)
-	add_overlay("rms_charge[charge_stage]")
+	update_icon()
 
 DECLARE_REF(/obj/item/rms, "spark_system", OWNED, null)
+DECLARE_DEFAULT_CHILD(/obj/item/rms, "spark_system", /datum/effect/effect/system/spark_spread)
 
 /obj/item/rms/update_icon()
 	charge_stage = round((stored_charge/max_charge)*4)

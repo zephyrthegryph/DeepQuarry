@@ -26,10 +26,10 @@
 
 /obj/item/tank/jetpack/Initialize(mapload)
 	. = ..()
-	ion_trail = new /datum/effect/effect/system/ion_trail_follow()
 	ion_trail.set_up(src)
 
 DECLARE_REF(/obj/item/tank/jetpack, "ion_trail", OWNED, null)
+DECLARE_DEFAULT_CHILD(/obj/item/tank/jetpack, "ion_trail", /datum/effect/effect/system/ion_trail_follow)
 
 /obj/item/tank/jetpack/examine(mob/user)
 	. = ..()
@@ -89,30 +89,21 @@ DECLARE_REF(/obj/item/tank/jetpack, "ion_trail", OWNED, null)
 	icon_state = "jetpack-void"
 	item_state_slots = list(slot_r_hand_str = "jetpack-void", slot_l_hand_str = "jetpack-void")
 
-/obj/item/tank/jetpack/void/Initialize(mapload)
-	. = ..()
-	air_contents.adjust_gas(GAS_O2, (6*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-
+DECLARE_GAS(/obj/item/tank/jetpack/void, "air_contents", "volume", T20C, list(GAS_O2 = 6*ONE_ATMOSPHERE))
 /obj/item/tank/jetpack/oxygen
 	name = "jetpack (oxygen)"
 	desc = "A tank of compressed oxygen for use as propulsion in zero-gravity areas. Use with caution."
 	icon_state = "jetpack"
 	item_state_slots = list(slot_r_hand_str = "jetpack", slot_l_hand_str = "jetpack")
 
-/obj/item/tank/jetpack/oxygen/Initialize(mapload)
-	. = ..()
-	air_contents.adjust_gas(GAS_O2, (6*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-
+DECLARE_GAS(/obj/item/tank/jetpack/oxygen, "air_contents", "volume", T20C, list(GAS_O2 = 6*ONE_ATMOSPHERE))
 /obj/item/tank/jetpack/breaker
 	name = "CSC industrial jetpack"
 	desc = "A JetFast EVA thruster pack. A warning label clearly states \'WARNING: CONTAINS VOLATILE REACTION MASS TOXIC TO MOST LIFEFORMS. NOT TO BE USED WITH CLOSED CYCLE BREATHING SYSTEMS.\'"
 	icon_state = "jetpack-breaker"
 	item_state_slots = list(slot_r_hand_str = "jetpack", slot_l_hand_str = "jetpack")
 
-/obj/item/tank/jetpack/breaker/Initialize(mapload)
-	. = ..()
-	air_contents.adjust_gas(GAS_VOLATILE_FUEL, (6*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-
+DECLARE_GAS(/obj/item/tank/jetpack/breaker, "air_contents", "volume", T20C, list(GAS_VOLATILE_FUEL = 6*ONE_ATMOSPHERE))
 /obj/item/tank/jetpack/carbondioxide
 	name = "jetpack (carbon dioxide)"
 	desc = "A tank of compressed carbon dioxide for use as propulsion in zero-gravity areas. Painted black to indicate that it should not be used as a source for internals."
@@ -120,10 +111,7 @@ DECLARE_REF(/obj/item/tank/jetpack, "ion_trail", OWNED, null)
 	icon_state = "jetpack-black"
 	item_state_slots = list(slot_r_hand_str = "jetpack-black", slot_l_hand_str = "jetpack-black")
 
-/obj/item/tank/jetpack/carbondioxide/Initialize(mapload)
-	. = ..()
-	air_contents.adjust_gas(GAS_CO2, (6*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-
+DECLARE_GAS(/obj/item/tank/jetpack/carbondioxide, "air_contents", "volume", T20C, list(GAS_CO2 = 6*ONE_ATMOSPHERE))
 /obj/item/tank/jetpack/rig
 	name = "jetpack"
 	var/holder_handle

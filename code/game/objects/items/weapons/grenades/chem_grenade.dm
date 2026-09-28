@@ -19,9 +19,7 @@
 	var/affected_area = 3
 	special_handling = TRUE
 
-/obj/item/grenade/chem_grenade/Initialize(mapload)
-	. = ..()
-	create_reagents(1000)
+DECLARE_REAGENTS(/obj/item/grenade/chem_grenade, 1000, null)
 
 DECLARE_REF(/obj/item/grenade/chem_grenade, "detonator", OWNED, null)
 DECLARE_REF(/obj/item/grenade/chem_grenade, "beakers", OWNED_LIST, null)
@@ -210,19 +208,16 @@ DECLARE_INTERACTIONS(/obj/item/grenade/chem_grenade, \
 	stage = 2
 	sealed = TRUE
 
-/obj/item/grenade/chem_grenade/metalfoam/Initialize(mapload)
-	. = ..()
-	var/obj/item/reagent_containers/glass/beaker/B1 = new(src)
-	var/obj/item/reagent_containers/glass/beaker/B2 = new(src)
+/obj/item/reagent_containers/glass/beaker/grenade_fill_metalfoam_a
 
-	B1.reagents.add_reagent(REAGENT_ID_ALUMINIUM, 30)
-	B2.reagents.add_reagent(REAGENT_ID_FOAMINGAGENT, 10)
-	B2.reagents.add_reagent(REAGENT_ID_PACID, 10)
+DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/grenade_fill_metalfoam_a, null, list(REAGENT_ID_ALUMINIUM = 30))
 
-	detonator = new/obj/item/assembly_holder/timer_igniter(src)
+/obj/item/reagent_containers/glass/beaker/grenade_fill_metalfoam_b
 
-	LAZYADD(beakers, B1)
-	LAZYADD(beakers, B2)
+DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/grenade_fill_metalfoam_b, null, list(REAGENT_ID_FOAMINGAGENT = 10, REAGENT_ID_PACID = 10))
+
+DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/metalfoam, "beakers", list(/obj/item/reagent_containers/glass/beaker/grenade_fill_metalfoam_a, /obj/item/reagent_containers/glass/beaker/grenade_fill_metalfoam_b))
+DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/metalfoam, "detonator", /obj/item/assembly_holder/timer_igniter)
 
 /obj/item/grenade/chem_grenade/incendiary
 	name = "incendiary grenade"
@@ -232,44 +227,35 @@ DECLARE_INTERACTIONS(/obj/item/grenade/chem_grenade, \
 	stage = 2
 	sealed = TRUE
 
-/obj/item/grenade/chem_grenade/incendiary/Initialize(mapload)
-	. = ..()
-	var/obj/item/reagent_containers/glass/beaker/B1 = new(src)
-	var/obj/item/reagent_containers/glass/beaker/B2 = new(src)
+/obj/item/reagent_containers/glass/beaker/grenade_fill_incendiary_a
 
-	B1.reagents.add_reagent(REAGENT_ID_ALUMINIUM, 15)
-	B1.reagents.add_reagent(REAGENT_ID_FUEL,20)
-	B2.reagents.add_reagent(REAGENT_ID_PHORON, 15)
-	B2.reagents.add_reagent(REAGENT_ID_SACID, 15)
-	B1.reagents.add_reagent(REAGENT_ID_FUEL,20)
+DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/grenade_fill_incendiary_a, null, list(REAGENT_ID_ALUMINIUM = 15, REAGENT_ID_FUEL = 40))
 
-	detonator = new/obj/item/assembly_holder/timer_igniter(src)
+/obj/item/reagent_containers/glass/beaker/grenade_fill_incendiary_b
 
-	LAZYADD(beakers, B1)
-	LAZYADD(beakers, B2)
+DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/grenade_fill_incendiary_b, null, list(REAGENT_ID_PHORON = 15, REAGENT_ID_SACID = 15))
+
+DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/incendiary, "beakers", list(/obj/item/reagent_containers/glass/beaker/grenade_fill_incendiary_a, /obj/item/reagent_containers/glass/beaker/grenade_fill_incendiary_b))
+DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/incendiary, "detonator", /obj/item/assembly_holder/timer_igniter)
 
 /obj/item/grenade/chem_grenade/antiweed
+	icon_state = "grenade"
 	name = "weedkiller grenade"
 	desc = "Used for purging large areas of invasive plant species. Contents under pressure. Do not directly inhale contents."
 	path = 1
 	stage = 2
 	sealed = TRUE
 
-/obj/item/grenade/chem_grenade/antiweed/Initialize(mapload)
-	. = ..()
-	var/obj/item/reagent_containers/glass/beaker/B1 = new(src)
-	var/obj/item/reagent_containers/glass/beaker/B2 = new(src)
+/obj/item/reagent_containers/glass/beaker/grenade_fill_antiweed_a
 
-	B1.reagents.add_reagent(REAGENT_ID_PLANTBGONE, 25)
-	B1.reagents.add_reagent(REAGENT_ID_POTASSIUM, 25)
-	B2.reagents.add_reagent(REAGENT_ID_PHOSPHORUS, 25)
-	B2.reagents.add_reagent(REAGENT_ID_SUGAR, 25)
+DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/grenade_fill_antiweed_a, null, list(REAGENT_ID_PLANTBGONE = 25, REAGENT_ID_POTASSIUM = 25))
 
-	detonator = new/obj/item/assembly_holder/timer_igniter(src)
+/obj/item/reagent_containers/glass/beaker/grenade_fill_antiweed_b
 
-	LAZYADD(beakers, B1)
-	LAZYADD(beakers, B2)
-	icon_state = "grenade"
+DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/grenade_fill_antiweed_b, null, list(REAGENT_ID_PHOSPHORUS = 25, REAGENT_ID_SUGAR = 25))
+
+DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/antiweed, "beakers", list(/obj/item/reagent_containers/glass/beaker/grenade_fill_antiweed_a, /obj/item/reagent_containers/glass/beaker/grenade_fill_antiweed_b))
+DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/antiweed, "detonator", /obj/item/assembly_holder/timer_igniter)
 
 /obj/item/grenade/chem_grenade/cleaner
 	name = "cleaner grenade"
@@ -279,19 +265,16 @@ DECLARE_INTERACTIONS(/obj/item/grenade/chem_grenade, \
 	path = 1
 	sealed = TRUE
 
-/obj/item/grenade/chem_grenade/cleaner/Initialize(mapload)
-	. = ..()
-	var/obj/item/reagent_containers/glass/beaker/B1 = new(src)
-	var/obj/item/reagent_containers/glass/beaker/B2 = new(src)
+/obj/item/reagent_containers/glass/beaker/grenade_fill_cleaner_a
 
-	B1.reagents.add_reagent(REAGENT_ID_FLUOROSURFACTANT, 40)
-	B2.reagents.add_reagent(REAGENT_ID_WATER, 40)
-	B2.reagents.add_reagent(REAGENT_ID_CLEANER, 10)
+DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/grenade_fill_cleaner_a, null, list(REAGENT_ID_FLUOROSURFACTANT = 40))
 
-	detonator = new/obj/item/assembly_holder/timer_igniter(src)
+/obj/item/reagent_containers/glass/beaker/grenade_fill_cleaner_b
 
-	LAZYADD(beakers, B1)
-	LAZYADD(beakers, B2)
+DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/grenade_fill_cleaner_b, null, list(REAGENT_ID_WATER = 40, REAGENT_ID_CLEANER = 10))
+
+DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/cleaner, "beakers", list(/obj/item/reagent_containers/glass/beaker/grenade_fill_cleaner_a, /obj/item/reagent_containers/glass/beaker/grenade_fill_cleaner_b))
+DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/cleaner, "detonator", /obj/item/assembly_holder/timer_igniter)
 
 /obj/item/grenade/chem_grenade/teargas
 	name = "tear gas grenade"
@@ -301,21 +284,16 @@ DECLARE_INTERACTIONS(/obj/item/grenade/chem_grenade, \
 	path = 1
 	sealed = TRUE
 
-/obj/item/grenade/chem_grenade/teargas/Initialize(mapload)
-	. = ..()
-	var/obj/item/reagent_containers/glass/beaker/large/B1 = new(src)
-	var/obj/item/reagent_containers/glass/beaker/large/B2 = new(src)
+/obj/item/reagent_containers/glass/beaker/large/grenade_fill_teargas_a
 
-	B1.reagents.add_reagent(REAGENT_ID_PHOSPHORUS, 40)
-	B1.reagents.add_reagent(REAGENT_ID_POTASSIUM, 40)
-	B1.reagents.add_reagent(REAGENT_ID_CONDENSEDCAPSAICIN, 40)
-	B2.reagents.add_reagent(REAGENT_ID_SUGAR, 40)
-	B2.reagents.add_reagent(REAGENT_ID_CONDENSEDCAPSAICIN, 80)
+DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/large/grenade_fill_teargas_a, null, list(REAGENT_ID_PHOSPHORUS = 40, REAGENT_ID_POTASSIUM = 40, REAGENT_ID_CONDENSEDCAPSAICIN = 40))
 
-	detonator = new/obj/item/assembly_holder/timer_igniter(src)
+/obj/item/reagent_containers/glass/beaker/large/grenade_fill_teargas_b
 
-	LAZYADD(beakers, B1)
-	LAZYADD(beakers, B2)
+DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/large/grenade_fill_teargas_b, null, list(REAGENT_ID_SUGAR = 40, REAGENT_ID_CONDENSEDCAPSAICIN = 80))
+
+DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/teargas, "beakers", list(/obj/item/reagent_containers/glass/beaker/large/grenade_fill_teargas_a, /obj/item/reagent_containers/glass/beaker/large/grenade_fill_teargas_b))
+DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/teargas, "detonator", /obj/item/assembly_holder/timer_igniter)
 
 /obj/item/grenade/chem_grenade/proc/sync_det_time()
 	if(istimer(detonator.a_left)) //Make sure description reflects that the timer has been reset

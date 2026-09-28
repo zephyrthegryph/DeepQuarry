@@ -130,34 +130,31 @@
 	desc = "A smaller segment of a clusterbang. Better run."
 	name = "clusterbang segment"
 	icon = 'icons/obj/grenade.dmi'
-	icon_state = "clusterbang_segment"
+	icon_state = "clusterbang_segment_active" // segments only exist primed
 	can_repeat = FALSE
 	banglet = TRUE
 
 /obj/item/grenade/flashbang/clusterbang/segment/Initialize(mapload) //Segments should never exist except part of the clusterbang, since these immediately 'do their thing' and asplode
 	. = ..()
 
-	icon_state = "clusterbang_segment_active"
-
 	var/stepdist = rand(1,4)//How far to step
 	var/temploc = src.loc//Saves the current location to know where to step away from
 	walk_away(src,temploc,stepdist)//I must go, my people need me
 
-	om_after(src, rand(15, 60), PROC_REF(detonate))
+	om_after(src, rand(15, 60), PROC_REF(detonate)) // ALLOW(decl): random delay
 
 /obj/item/grenade/flashbang/cluster
+	icon_state = "flashbang_active" // only exists primed
 	banglet = TRUE
 
 /obj/item/grenade/flashbang/cluster/Initialize(mapload)//Same concept as the segments, so that all of the parts don't become reliant on the clusterbang
 	. = ..()
 
-	icon_state = "flashbang_active"
-
 	var/stepdist = rand(1,3)
 	var/temploc = src.loc
 	walk_away(src,temploc,stepdist)
 
-	om_after(src, rand(15, 60), PROC_REF(detonate))
+	om_after(src, rand(15, 60), PROC_REF(detonate)) // ALLOW(decl): random delay
 
 /obj/item/grenade/flashbang/clusterbang/primed
 	desc = "This clusterbang seems to have already been activated. Uhoh."

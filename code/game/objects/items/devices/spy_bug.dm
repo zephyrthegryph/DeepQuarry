@@ -18,9 +18,6 @@
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
-/obj/item/camerabug/Initialize(mapload)
-	. = ..()
-	camera = new camtype(src)
 
 /obj/item/camerabug/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_notice("You crush the [src] under your foot, breaking it."))
@@ -285,6 +282,7 @@ DECLARE_INTERACTIONS(/obj/item/bug_monitor, \
 	c_tag = name
 
 DECLARE_REF(/obj/item/camerabug, "camera", OWNED, null)
+DECLARE_DEFAULT_CHILD(/obj/item/camerabug, "camera", "camtype")
 
 /// LC-refs: linkedmonitor -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/camerabug/proc/linkedmonitor() as /obj/item/bug_monitor

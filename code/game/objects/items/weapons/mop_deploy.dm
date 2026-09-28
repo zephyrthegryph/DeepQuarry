@@ -15,10 +15,8 @@
 	var/mopping = 0
 	var/mopcount = 0
 
-/obj/item/mop_deploy/Initialize(mapload)
-	. = ..()
-	create_reagents(5)
-	om_after(src, 0, PROC_REF(check_held))
+DECLARE_REAGENTS(/obj/item/mop_deploy, 5, null)
+DECLARE_START_TIMER(/obj/item/mop_deploy, 0, PROC_REF(check_held))
 
 /turf/proc/clean_deploy(atom/source)
 	if(source.reagents.has_reagent(REAGENT_ID_WATER, 1))

@@ -63,9 +63,7 @@
 				usr.put_in_l_hand(src)
 		src.add_fingerprint(usr)
 
-/obj/item/melee/baton/loaded/Initialize(mapload) //this one starts with a cell pre-installed.
-	bcell = new/obj/item/cell/device/weapon(src)
-	. = ..()
+DECLARE_DEFAULT_CHILD(/obj/item/melee/baton/loaded, "bcell", /obj/item/cell/device/weapon) //this one starts with a cell pre-installed.
 
 /obj/item/melee/baton/proc/deductcharge()
 	if(status == 1)		//Only deducts charge when it's on

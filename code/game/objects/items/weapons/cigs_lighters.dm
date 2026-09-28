@@ -98,10 +98,11 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 	blood_sprite_state = null //Can't bloody these
 	drop_sound = 'sound/items/cigs_lighters/cig_snuff.ogg'
 
+DECLARE_REAGENTS(/obj/item/clothing/mask/smokable, "chem_volume", null)
+
 /obj/item/clothing/mask/smokable/Initialize(mapload)
 	. = ..()
 	flags |= NOREACT // so it doesn't react until you light it
-	create_reagents(chem_volume) // making the cigarrete a chemical holder with a maximum volume of 15
 	if(smoketime && !max_smoketime)
 		max_smoketime = smoketime
 
@@ -284,7 +285,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable, INTERACT_ITEM(null, PROC_R
 	chem_volume = 15
 	max_smoketime = 300
 	smoketime = 300
-	var/nicotine_amt = 2
 	matchmes = span_notice("USER lights their NAME with their FLAME.")
 	lightermes = span_notice("USER manages to light their NAME with FLAME.")
 	zippomes = span_notice(span_rose("With a flick of their wrist, USER lights their NAME with their FLAME."))
@@ -292,10 +292,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable, INTERACT_ITEM(null, PROC_R
 	ignitermes = span_notice("USER fiddles with FLAME, and manages to light their NAME.")
 	special_handling = TRUE
 
-/obj/item/clothing/mask/smokable/cigarette/Initialize(mapload)
-	. = ..()
-	if(nicotine_amt)
-		reagents.add_reagent(REAGENT_ID_NICOTINE, nicotine_amt)
+DECLARE_REAGENTS(/obj/item/clothing/mask/smokable/cigarette, null, list(REAGENT_ID_NICOTINE = 2))
+DECLARE_REAGENTS(/obj/item/clothing/mask/smokable/cigarette/cigar, null, list(REAGENT_ID_NICOTINE = 2)) // 4 total
+DECLARE_REAGENTS(/obj/item/clothing/mask/smokable/cigarette/cigar/cohiba, null, list(REAGENT_ID_NICOTINE = 3)) // 7 total
+DECLARE_REAGENTS(/obj/item/clothing/mask/smokable/cigarette/cigar/havana, null, list(REAGENT_ID_NICOTINE = 6)) // 10 total
+DECLARE_REAGENTS(/obj/item/clothing/mask/smokable/cigarette/joint/blunt, null, list(REAGENT_ID_NICOTINE = 2)) // 4 total
 
 EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/cigarette, \
 	INTERACT_SELF_AS(I_HELP, null, PROC_REF(cigarette_self)), \
@@ -358,7 +359,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/cigarette, \
 	max_smoketime = 1500
 	smoketime = 1500
 	chem_volume = 20
-	nicotine_amt = 4
 	matchmes = span_notice("USER lights their NAME with their FLAME.")
 	lightermes = span_notice("USER manages to offend their NAME by lighting it with FLAME.")
 	zippomes = span_notice(span_rose("With a flick of their wrist, USER lights their NAME with their FLAME."))
@@ -373,7 +373,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/cigarette, \
 	limited quantity, making their cigars coveted all through known space. Robusto \
 	is one of their most popular shapes of cigars."
 	icon_state = "cigar2"
-	nicotine_amt = 7
 
 /obj/item/clothing/mask/smokable/cigarette/cigar/havana
 	name = "premium Havanian cigar"
@@ -388,7 +387,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/cigarette, \
 	max_smoketime = 7200
 	smoketime = 7200
 	chem_volume = 30
-	nicotine_amt = 10
 
 /obj/item/trash/cigbutt
 	name = "cigarette butt"
@@ -542,7 +540,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/pipe, \
 	icon_state = "cigar"
 	max_smoketime = 500
 	smoketime = 500
-	nicotine_amt = 4
 	chem_volume = 45
 
 /obj/item/reagent_containers/rollingpaper
@@ -657,7 +654,7 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/rollingpaper, \
 	. = ..()
 	var/image/I = image(icon, "lighter-[pick("trans","tall","matte")]")
 	I.color = pick(available_colors)
-	add_overlay(I)
+	add_overlay(I) // ALLOW(decl): random pick
 
 EXTEND_INTERACTIONS(/obj/item/flame/lighter, INTERACT_SELF(null, PROC_REF(lighter_self)))
 
@@ -723,7 +720,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter, INTERACT_SELF(null, PROC_REF(lighte
 
 /obj/item/flame/lighter/zippo/Initialize(mapload)
 	. = ..()
-	cut_overlays() //Prevents the Cheap Lighter overlay from appearing on this
+	cut_overlays() // ALLOW(decl): removes the parent's random overlay. Prevents the Cheap Lighter overlay from appearing on this
 
 EXTEND_INTERACTIONS(/obj/item/flame/lighter/zippo, INTERACT_SELF(null, PROC_REF(zippo_self)))
 

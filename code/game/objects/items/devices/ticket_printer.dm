@@ -67,8 +67,9 @@ DECLARE_INTERACTIONS(/obj/item/ticket_printer, INTERACT_USE(null, PROC_REF(inter
 
 /obj/item/paper/sec_ticket/Initialize(mapload, text, title)
 	. = ..()
+	// ALLOW(decl): restores the type's icon after the paper base's own update_icon()
 	icon = 'icons/obj/bureaucracy.dmi'
-	icon_state = "sec_ticket"
+	icon_state = "sec_ticket" // ALLOW(decl): see above
 
 /obj/item/paper/sec_ticket/update_icon()
 		icon = icon
@@ -107,8 +108,9 @@ DECLARE_INTERACTIONS(/obj/item/ticket_printer, INTERACT_USE(null, PROC_REF(inter
 
 /obj/item/paper/permit_ticket/Initialize(mapload, text, title)
 	. = ..()
+	// ALLOW(decl): restores the type's icon after the paper base's own update_icon()
 	icon = 'icons/obj/bureaucracy.dmi'
-	icon_state = "permit_ticket"
+	icon_state = "permit_ticket" // ALLOW(decl): see above
 
 /obj/item/paper/permit_ticket/update_icon()
 		icon = icon

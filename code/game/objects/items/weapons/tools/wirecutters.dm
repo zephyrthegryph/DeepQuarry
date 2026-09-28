@@ -32,13 +32,13 @@
 	if(random_color)
 		switch(pick("red","blue","yellow"))
 			if ("red")
-				icon_state = "cutters"
+				icon_state = "cutters" // ALLOW(decl): random pick
 				item_state = "cutters"
 			if ("blue")
-				icon_state = "cutters-b"
+				icon_state = "cutters-b" // ALLOW(decl): random pick
 				item_state = "cutters_blue"
 			if ("yellow")
-				icon_state = "cutters-y"
+				icon_state = "cutters-y" // ALLOW(decl): random pick
 				item_state = "cutters_yellow"
 
 	if (prob(75))

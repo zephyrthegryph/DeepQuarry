@@ -33,9 +33,9 @@ MATERIAL_MIX(/obj/item/laser_pointer, list(MAT_GLASS = 500, MAT_STEEL = 500))
 /obj/item/laser_pointer/Initialize(mapload, laser_path)
 	. = ..()
 	if(ispath(laser_path))
-		diode = new laser_path
+		diode = new laser_path // ALLOW(decl): diode from an Initialize argument
 	else
-		diode = new(src)
+		diode = new(src) // ALLOW(decl): paired with the argument branch above
 	if(!pointer_icon_state)
 		pointer_icon_state = pick("red_laser","green_laser","blue_laser","purple_laser")
 

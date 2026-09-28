@@ -21,13 +21,12 @@
 
 	var/list/food_inserted_micros
 
+DECLARE_REAGENTS(/obj/item/material/kitchen/utensil, "scoop_volume", null)
+
 /obj/item/material/kitchen/utensil/Initialize(mapload)
 	. = ..()
 	if (prob(60))
 		src.pixel_y = rand(0, 4)
-	create_reagents(scoop_volume)
-
-	return
 
 /obj/item/material/kitchen/utensil/update_icon()
 	. = ..()

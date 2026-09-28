@@ -44,13 +44,10 @@ MATERIAL_MIX(/obj/item/flashlight, list(MAT_STEEL = 50,MAT_GLASS = 20))
 
 /obj/item/flashlight/Initialize(mapload)
 	. = ..()
-
-	if(power_use && cell_type)
-		cell = new cell_type(src)
-
 	update_brightness()
 
 DECLARE_REF(/obj/item/flashlight, "cell", OWNED, null)
+DECLARE_DEFAULT_CHILD(/obj/item/flashlight, "cell", "cell_type") // unpowered subtypes clear cell_type
 
 /obj/item/flashlight/get_cell()
 	return cell
@@ -297,6 +294,7 @@ DECLARE_INTERACTIONS(/obj/item/flashlight, \
 	light_range = 2
 	w_class = ITEMSIZE_TINY
 	power_use = 0
+	cell_type = null
 
 /obj/item/flashlight/color	//Default color is blue
 	name = "blue flashlight"
@@ -348,6 +346,7 @@ MATERIAL_MIX(/obj/item/flashlight/maglight, list(MAT_STEEL = 200,MAT_GLASS = 50)
 	light_range = 2
 	w_class = ITEMSIZE_TINY
 	power_use = 0
+	cell_type = null
 
 /*
  * Lamps
@@ -364,6 +363,7 @@ MATERIAL_MIX(/obj/item/flashlight/maglight, list(MAT_STEEL = 200,MAT_GLASS = 50)
 	light_range = 5
 	w_class = ITEMSIZE_LARGE
 	power_use = 0
+	cell_type = null
 	on = 1
 	light_system = STATIC_LIGHT
 
@@ -405,6 +405,7 @@ MATERIAL_MIX(/obj/item/flashlight/maglight, list(MAT_STEEL = 200,MAT_GLASS = 50)
 	var/on_damage = 7
 	var/produce_heat = 1500
 	power_use = 0
+	cell_type = null
 	drop_sound = 'sound/items/drop/gloves.ogg'
 	pickup_sound = 'sound/items/pickup/gloves.ogg'
 	light_system = MOVABLE_LIGHT
@@ -470,6 +471,7 @@ MATERIAL_MIX(/obj/item/flashlight/maglight, list(MAT_STEEL = 200,MAT_GLASS = 50)
 	item_state = "glowstick_green"
 	var/fuel = 1600
 	power_use = FALSE
+	cell_type = null
 	single_use = TRUE
 
 /obj/item/flashlight/glowstick/Initialize(mapload)

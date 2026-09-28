@@ -272,9 +272,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/energy, \
 	use_cell = TRUE
 	hitcost = 120
 
-/obj/item/melee/energy/axe/charge/loaded/Initialize(mapload)
-	. = ..()
-	bcell = new/obj/item/cell/device/weapon(src)
+DECLARE_DEFAULT_CHILD(/obj/item/melee/energy/axe/charge/loaded, "bcell", /obj/item/cell/device/weapon)
 
 /*
  * Energy Sword
@@ -423,9 +421,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/energy, \
 
 	hitcost = 75
 
-/obj/item/melee/energy/sword/charge/loaded/Initialize(mapload)
-	. = ..()
-	bcell = new/obj/item/cell/device/weapon(src)
+DECLARE_DEFAULT_CHILD(/obj/item/melee/energy/sword/charge/loaded, "bcell", /obj/item/cell/device/weapon)
 
 //Energy Blade (ninja uses this)
 
@@ -456,11 +452,9 @@ DECLARE_INTERACTIONS(/obj/item/melee/energy, \
 
 /obj/item/melee/energy/blade/Initialize(mapload)
 	. = ..()
-	spark_system = new /datum/effect/effect/system/spark_spread()
 	spark_system.set_up(5, 0, src)
 	spark_system.attach(src)
 
-	om_after(src, 0, PROC_REF(check_held))
 	set_light(lrange, lpower, lcolor)
 
 EXTEND_INTERACTIONS(/obj/item/melee/energy/blade, INTERACT_USE("Dismiss", PROC_REF(blade_interaction_self)))
@@ -601,6 +595,8 @@ EXTEND_INTERACTIONS(/obj/item/melee/energy/blade, INTERACT_USE("Dismiss", PROC_R
 
 DECLARE_REF(/obj/item/melee/energy, "bcell", HELD, null)
 DECLARE_REF(/obj/item/melee/energy/blade, "spark_system", OWNED, null)
+DECLARE_DEFAULT_CHILD(/obj/item/melee/energy/blade, "spark_system", /datum/effect/effect/system/spark_spread)
+DECLARE_START_TIMER(/obj/item/melee/energy/blade, 0, PROC_REF(check_held))
 
 /// LC-refs: creator -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/melee/energy/blade/proc/creator() as /mob/living
