@@ -61,6 +61,12 @@
 #define IS_LLEILL 15
 #define IS_GREY 16
 
+/// Species masks for reagent effects that several reagents share (SPECIES_TAG_BIT sets).
+/// Species that draw nourishment from nutriment/protein in the blood.
+#define REAGENT_BLOOD_FED_SPECIES (SPECIES_TAG_BIT(IS_SLIME) | SPECIES_TAG_BIT(IS_CHIMERA))
+/// Species unharmed by prion-laden brain matter.
+#define REAGENT_PRION_IMMUNE_SPECIES (SPECIES_TAG_BIT(IS_CHIMERA) | SPECIES_TAG_BIT(IS_SLIME) | SPECIES_TAG_BIT(IS_DIONA) | SPECIES_TAG_BIT(IS_SHADEKIN))
+
 // Injection routes for /mob/living/proc/can_inject() (P2-S9): every injector
 // asks the same question and names how it delivers.
 /// A needle (syringe, syringe gun dart): pierces flesh, not plating.

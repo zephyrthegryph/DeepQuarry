@@ -87,12 +87,16 @@
 	/// SPECIES_TAG_BIT mask of species a sugary reagent sedates (see `sugar_sedation()`).
 	var/sugar_sedated_species = SPECIES_TAG_BIT(IS_UNATHI)
 
-/// Are this reagent's type-specific extras inert for `owner`'s species (`inert_species`)?
-/datum/reagent/proc/inert_for(mob/living/owner)
+/// Is `owner`'s species in the SPECIES_TAG_BIT mask `mask`?
+/datum/reagent/proc/species_in(mob/living/owner, mask)
 	var/tag = owner?.reagent_tag()
 	if(isnull(tag))
 		return FALSE
-	return (inert_species & SPECIES_TAG_BIT(tag)) ? TRUE : FALSE
+	return (mask & SPECIES_TAG_BIT(tag)) ? TRUE : FALSE
+
+/// Are this reagent's type-specific extras inert for `owner`'s species (`inert_species`)?
+/datum/reagent/proc/inert_for(mob/living/owner)
+	return species_in(owner, inert_species)
 
 /// The multiplier `owner`'s species applies to this reagent's own effect strength.
 /datum/reagent/proc/species_mult(mob/living/owner)
@@ -107,8 +111,7 @@
 /// The sugar crash: species in `sugar_sedated_species` grow drowsy, then weak (or,
 /// with `deep_sleep`, asleep) as `effective_dose` of a sugary reagent builds.
 /datum/reagent/proc/sugar_sedation(mob/living/carbon/M, effective_dose, deep_sleep = FALSE)
-	var/tag = M?.reagent_tag()
-	if(isnull(tag) || !(sugar_sedated_species & SPECIES_TAG_BIT(tag)))
+	if(!species_in(M, sugar_sedated_species))
 		return
 	if(effective_dose < 2)
 		if(effective_dose == metabolism * 2 || prob(5))
@@ -417,10 +420,7 @@ REF_BACK(/datum/reagent, list("holder" = null))
 
 // The holder link is a REF_BACK; `data` can hold live refs (blood's donor).
 // drops `data`.
-/datum/reagent/on_destroy(force)
-	if(islist(data))
-		data.Cut()
-	..()
+REF_DROP(/datum/reagent, "data")
 
 /// Called by [/datum/reagents/proc/conditional_update]
 /datum/reagent/proc/on_update(atom/A)

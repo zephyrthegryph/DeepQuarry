@@ -46,7 +46,7 @@
 				data -= taste
 
 /datum/reagent/nutriment/affect_blood(mob/living/carbon/M, alien, removed)
-	if(!injectable && alien != IS_SLIME && alien != IS_CHIMERA && !HAS_SYNTHETIC_BIOLOGY(M))
+	if(!injectable && !species_in(M, REAGENT_BLOOD_FED_SPECIES) && !HAS_SYNTHETIC_BIOLOGY(M))
 		M.injure(INJURY_TOXIN, 0.1 * removed, source = src)
 		return
 	affect_ingest(M, alien, removed) // B18: this already feeds every body; no second add
@@ -375,19 +375,7 @@
 	if(issmall(M))
 		effective_dose *= 2
 
-	if(alien == IS_UNATHI)
-		if(effective_dose < 2)
-			if(effective_dose == metabolism * 2 || prob(5))
-				M.emote("yawn")
-		else if(effective_dose < 5)
-			M.status_at_least(EFFECT_BLURRY, 10)
-		else if(effective_dose < 20)
-			if(prob(50))
-				M.status_at_least(EFFECT_WEAKENED, 2)
-			M.status_at_least(EFFECT_DROWSY, 20)
-		else
-			M.status_at_least(EFFECT_WEAKENED, 10)
-			M.status_at_least(EFFECT_DROWSY, 60)
+	sugar_sedation(M, effective_dose)
 
 /datum/reagent/nutriment/mayo
 	name = REAGENT_MAYO
@@ -697,16 +685,14 @@
 	cup_prefix = "salty"
 	supply_conversion_value = REFINERYEXPORT_VALUE_COMMON
 	industrial_use = REFINERYEXPORT_REASON_FOOD
-
-/datum/reagent/sodiumchloride/affect_blood(mob/living/carbon/M, alien, removed)
-	..()
-	if(alien == IS_SLIME)
-		M.injure(INJURY_BURN, removed, source = src)
+	species_injuries_blood = alist(IS_SLIME = alist(INJURY_BURN = 1))
 
 /datum/reagent/sodiumchloride/affect_ingest(mob/living/carbon/M, alien, removed)
 	var/pass_mod = rand(3,5)
 	var/passthrough = (removed - (removed/pass_mod)) //Some may be nullified during consumption, between one third and one fifth.
 	affect_blood(M, alien, passthrough)
+	// The passthrough acts as blood, so it carries the blood route's species reaction.
+	apply_species_injuries(M, species_injuries_blood, passthrough)
 
 /datum/reagent/blackpepper
 	name = REAGENT_BLACKPEPPER
@@ -806,6 +792,7 @@
 	immune_species_ingest = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
 
 /datum/reagent/frostoil/affect_ingest(mob/living/carbon/M, alien, removed) // Eating frostoil now acts like capsaicin. Wee!
+	// Kept: plant people get a different, mild effect (not a strength).
 	if(alien == IS_ALRAUNE) // It wouldn't affect plants that much.
 		if(prob(5))
 			to_chat(M, span_rose("You feel a chilly, tingling sensation in your mouth."))
@@ -861,8 +848,9 @@
 	handle_spicy(M, alien, removed)
 
 /datum/reagent/proc/handle_spicy(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
+	if(inert_for(M))
 		return
+	// Kept: plant people get a different, mild effect (not a strength).
 	if(alien == IS_ALRAUNE) // It wouldn't affect plants that much.
 		if(prob(5))
 			to_chat(M, span_rose("You feel a pleasant sensation in your mouth."))
@@ -898,10 +886,11 @@
 	cup_prefix = "dangerously hot"
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_WEAPONS
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA)
+	/// SPECIES_TAG_BIT mask of species whose exposed flesh the spray burns (gel bodies).
+	var/skin_burned_species = SPECIES_TAG_BIT(IS_SLIME)
 
 /datum/reagent/condensedcapsaicin/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
 	M.injure(INJURY_TOXIN, 0.5 * removed, source = src)
 
 /datum/reagent/condensedcapsaicin/affect_touch(mob/living/carbon/M, alien, removed)
@@ -919,6 +908,8 @@
 	var/obj/item/safe_thing = null
 
 	var/effective_strength = 5
+	// Species whose whole exposed surface burns (checked per body part below).
+	var/skin_burns = species_in(M, skin_burned_species)
 
 
 	if(ishuman(M))
@@ -944,7 +935,7 @@
 				eyes_covered = 1
 				if(!safe_thing)
 					safe_thing = H.get_equipped_item(SLOT_ID_EYES)
-		if(alien == IS_SLIME)
+		if(skin_burns)
 			for(var/obj/item/clothing/C in H.get_worn_clothing())
 				if(C.body_parts_covered & HEAD)
 					head_covered = 1
@@ -964,7 +955,7 @@
 					break
 	if(eyes_covered && mouth_covered)
 		to_chat(M, span_warning("Your [safe_thing] protects you from the pepperspray!"))
-		if(alien != IS_SLIME)
+		if(!skin_burns)
 			return
 	else if(eyes_covered)
 		to_chat(M, span_warning("Your [safe_thing] protects you from most of the pepperspray!"))
@@ -972,12 +963,12 @@
 		M.status_at_least(EFFECT_BLINDED, effective_strength)
 		M.status_at_least(EFFECT_STUNNED, 5)
 		M.status_at_least(EFFECT_WEAKENED, 5)
-		if(alien != IS_SLIME)
+		if(!skin_burns)
 			return
 	else if(mouth_covered) // Mouth cover is better than eye cover
 		to_chat(M, span_warning("Your [safe_thing] protects your face from the pepperspray!"))
 		M.status_at_least(EFFECT_BLURRY, effective_strength)
-		if(alien != IS_SLIME)
+		if(!skin_burns)
 			return
 	else// Oh dear :D
 		to_chat(M, span_warning("You're sprayed directly in the eyes with pepperspray!"))
@@ -985,9 +976,9 @@
 		M.status_at_least(EFFECT_BLINDED, effective_strength * 2)
 		M.status_at_least(EFFECT_STUNNED, 5)
 		M.status_at_least(EFFECT_WEAKENED, 5)
-		if(alien != IS_SLIME)
+		if(!skin_burns)
 			return
-	if(alien == IS_SLIME)
+	if(skin_burns)
 		if(!head_covered)
 			if(prob(33))
 				to_chat(M, span_warning("The exposed flesh on your head burns!"))
@@ -1045,18 +1036,31 @@
 	var/adj_temp = 0
 	var/nutriment_factor = 0
 	var/water_based = TRUE
+	/// Rate at which this drink pulls species in `chilled_species` toward freezing (0: never).
+	var/species_chill = 0
+	/// SPECIES_TAG_BIT mask of species an iced drink chills (gel bodies take on the cold).
+	var/chilled_species = SPECIES_TAG_BIT(IS_SLIME)
 	dermal_absorption = 0
+	/// SPECIES_TAG_BIT mask of species a water-based drink poisons three times as hard.
+	var/water_sensitive_species = SPECIES_TAG_BIT(IS_SLIME)
 	wiki_flag = WIKI_DRINK
 	supply_conversion_value = REFINERYEXPORT_VALUE_COMMON
 	industrial_use = REFINERYEXPORT_REASON_FOOD
 	coolant_modifier = 0.8
 
 /datum/reagent/drink/affect_blood(mob/living/carbon/M, alien, removed)
-	var/strength_mod = 1
-	if(alien == IS_SLIME && water_based)
-		strength_mod = 3
+	var/strength_mod = (water_based && species_in(M, water_sensitive_species)) ? 3 : 1
 	M.injure(INJURY_TOXIN, removed * strength_mod, source = src) // Probably not a good idea; not very deadly though
 	return
+
+/// The chill rate this tick for `species_chill` (ice overrides it with a random rate).
+/datum/reagent/drink/proc/species_chill_rate()
+	return species_chill
+
+/// Pull a species in `chilled_species` toward freezing, scaled by the amount metabolised.
+/datum/reagent/drink/proc/apply_species_chill(mob/living/carbon/M, removed)
+	if(species_chill && species_in(M, chilled_species))
+		drive_body_temperature(M, T0C, species_chill_rate(), removed)
 
 /// A drink's pull on body temperature toward `target` (B12). A warm drink (adj > 0) only warms
 /// a body below the target and a cold one (adj < 0) only cools a body above it, and neither
@@ -1170,20 +1174,8 @@
 	if(issmall(M))
 		effective_dose *= 2
 
-	if(alien == IS_UNATHI)
-		if(sugary == TRUE)
-			if(effective_dose < 2)
-				if(effective_dose == metabolism * 2 || prob(5))
-					M.emote("yawn")
-			else if(effective_dose < 5)
-				M.status_at_least(EFFECT_BLURRY, 10)
-			else if(effective_dose < 20)
-				if(prob(50))
-					M.status_at_least(EFFECT_WEAKENED, 2)
-				M.status_at_least(EFFECT_DROWSY, 20)
-			else
-				M.status_at_least(EFFECT_WEAKENED, 10)
-				M.status_at_least(EFFECT_DROWSY, 60)
+	if(sugary == TRUE)
+		sugar_sedation(M, effective_dose)
 
 /datum/reagent/drink/juice/lemon
 	name = REAGENT_LEMONJUICE
@@ -1344,7 +1336,7 @@
 
 /datum/reagent/drink/milk/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
-	if(alien == IS_DIONA)
+	if(inert_for(M))
 		return
 	// Milk's light tissue repair is its treatment_tags profile.
 	holder.remove_reagent(REAGENT_ID_CAPSAICIN, 10 * removed)
@@ -1457,15 +1449,16 @@
 	cup_name = "iced tea"
 	cup_desc = "No relation to a certain rap artist/ actor."
 
+/datum/reagent/drink/tea/icetea
+	species_chill = 0.5
+
 /datum/reagent/drink/tea/icetea/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
-	if(alien == IS_SLIME)
-		drive_body_temperature(M, T0C, 0.5, removed)
+	apply_species_chill(M, removed)
 
 /datum/reagent/drink/tea/icetea/affect_blood(mob/living/carbon/M, alien, removed)
 	..()
-	if(alien == IS_SLIME)
-		drive_body_temperature(M, T0C, 0.5, removed)
+	apply_species_chill(M, removed)
 
 /datum/reagent/drink/tea/icetea/decaf
 	name = REAGENT_ICETEADECAF
@@ -1655,7 +1648,7 @@
 	allergen_type = ALLERGEN_COFFEE | ALLERGEN_STIMULANT //Apparently coffee contains coffee
 
 /datum/reagent/drink/coffee/affect_ingest(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
+	if(inert_for(M))
 		return
 	..()
 
@@ -1667,7 +1660,7 @@
 
 
 /datum/reagent/drink/coffee/overdose(mob/living/carbon/M, alien)
-	if(alien == IS_DIONA)
+	if(inert_for(M))
 		return
 	M.status_adjust(EFFECT_JITTERY, 5)
 
@@ -1704,15 +1697,16 @@
 	glass_desc = "A drink to perk you up and refresh you!"
 	glass_special = list(DRINK_ICE)
 
+/datum/reagent/drink/coffee/icecoffee
+	species_chill = 0.5
+
 /datum/reagent/drink/coffee/icecoffee/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
-	if(alien == IS_SLIME)
-		drive_body_temperature(M, T0C, 0.5, removed)
+	apply_species_chill(M, removed)
 
 /datum/reagent/drink/coffee/icecoffee/affect_blood(mob/living/carbon/M, alien, removed)
 	..()
-	if(alien == IS_SLIME)
-		drive_body_temperature(M, T0C, 0.5, removed)
+	apply_species_chill(M, removed)
 
 /datum/reagent/drink/coffee/soy_latte
 	name = REAGENT_SOYLATTE
@@ -2113,19 +2107,7 @@
 	if(issmall(M))
 		effective_dose *= 2
 
-	if(alien == IS_UNATHI)
-		if(effective_dose < 2)
-			if(effective_dose == metabolism * 2 || prob(5))
-				M.emote("yawn")
-		else if(effective_dose < 5)
-			M.status_at_least(EFFECT_BLURRY, 10)
-		else if(effective_dose < 20)
-			if(prob(50))
-				M.status_at_least(EFFECT_WEAKENED, 2)
-			M.status_at_least(EFFECT_DROWSY, 20)
-		else
-			M.status_at_least(EFFECT_WEAKENED, 10)
-			M.status_at_least(EFFECT_DROWSY, 60)
+	sugar_sedation(M, effective_dose)
 
 /datum/reagent/drink/milkshake/chocoshake
 	name = REAGENT_CHOCOSHAKE
@@ -2525,7 +2507,7 @@
 
 /datum/reagent/drink/doctor_delight/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
-	if(alien == IS_DIONA)
+	if(inert_for(M))
 		return
 	// Its healing is the treatment_tags profile.
 	M.status_adjust(EFFECT_DIZZY, -15)
@@ -2589,15 +2571,19 @@
 	glass_desc = "Generally, you're supposed to put something else in there too..."
 	glass_icon = DRINK_ICON_NOISY
 
+/datum/reagent/drink/ice
+	species_chill = 1 // nonzero enables the chill; the rate itself is random (species_chill_rate())
+
+/datum/reagent/drink/ice/species_chill_rate()
+	return rand(1, 3)
+
 /datum/reagent/drink/ice/affect_blood(mob/living/carbon/M, alien, removed)
 	..()
-	if(alien == IS_SLIME)
-		drive_body_temperature(M, T0C, rand(1,3), removed)
+	apply_species_chill(M, removed)
 
 /datum/reagent/drink/ice/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
-	if(alien == IS_SLIME)
-		drive_body_temperature(M, T0C, rand(1,3), removed)
+	apply_species_chill(M, removed)
 
 /datum/reagent/drink/nothing
 	name = REAGENT_NOTHING
@@ -2711,13 +2697,13 @@
 
 /datum/reagent/drink/nuclearwaste/affect_blood(mob/living/carbon/M, alien, removed)
 	..()
-	if(alien == IS_DIONA)
+	if(inert_for(M))
 		return
 	M.bloodstr.add_reagent(REAGENT_ID_RADIUM, 0.3)
 
 /datum/reagent/drink/nuclearwaste/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
-	if(alien == IS_DIONA)
+	if(inert_for(M))
 		return
 	M.ingested.add_reagent(REAGENT_ID_RADIUM, 0.25)
 
@@ -2857,7 +2843,7 @@
 	overdose = REAGENTS_OVERDOSE *1.5
 
 /datum/reagent/drink/syrup/overdose(mob/living/carbon/M, alien)
-	if(alien == IS_DIONA)
+	if(inert_for(M))
 		return
 	M.status_adjust(EFFECT_DIZZY, 1)
 
@@ -3075,7 +3061,7 @@
 /datum/reagent/ethanol/beer/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
 	if(M.species.robo_ethanol_drunk || !(HAS_SYNTHETIC_BIOLOGY(M)))
-		if(alien == IS_DIONA)
+		if(inert_for(M))
 			return
 		M.adjust_nutrition((M.food_preference(allergen_type) / 2) * removed) //RS edit
 		M.status_adjust(EFFECT_JITTERY, -3)
@@ -3136,7 +3122,7 @@
 
 /datum/reagent/ethanol/deadrum/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
-	if(alien == IS_DIONA)
+	if(inert_for(M))
 		return
 	if(M.species.robo_ethanol_drunk || !(HAS_SYNTHETIC_BIOLOGY(M)))
 		M.status_adjust(EFFECT_DIZZY, 5)
@@ -3174,7 +3160,7 @@
 
 /datum/reagent/ethanol/coffee/affect_ingest(mob/living/carbon/M, alien, removed)
 	if(!(HAS_SYNTHETIC_BIOLOGY(M)))
-		if(alien == IS_DIONA)
+		if(inert_for(M))
 			return
 		..()
 		M.status_adjust(EFFECT_DIZZY, -5)
@@ -3188,7 +3174,7 @@
 	return // Coffee liqueur has no blood effect of its own.
 
 /datum/reagent/ethanol/coffee/overdose(mob/living/carbon/M, alien)
-	if(alien == IS_DIONA)
+	if(inert_for(M))
 		return
 	if(!(HAS_SYNTHETIC_BIOLOGY(M)))
 		M.status_adjust(EFFECT_JITTERY, 5)
@@ -3296,7 +3282,7 @@
 	..()
 
 	if(!(HAS_SYNTHETIC_BIOLOGY(M)))
-		if(alien == IS_DIONA)
+		if(inert_for(M))
 			return
 		M.status_adjust(EFFECT_DROWSY, -7)
 		if(M.bodytemperature > BODYTEMP_NORMAL)
@@ -4291,18 +4277,20 @@
 	glass_name = "unathi liquor"
 	glass_desc = "This barely qualifies as a drink, and may cause euphoria and numbness. Imbiber beware!"
 
+/datum/reagent/ethanol/unathiliquor
+	species_strength = alist(IS_SLIME = 0.15) // ~1/6
+
 /datum/reagent/ethanol/unathiliquor/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
 
 	if(M.species.robo_ethanol_drunk || !(HAS_SYNTHETIC_BIOLOGY(M)))
-		if(alien == IS_DIONA)
+		if(inert_for(M))
 			return
 
 		var/drug_strength = 10
 		if(M.species.chem_strength_tox > 0)
 			drug_strength *= M.species.chem_strength_tox
-		if(alien == IS_SLIME)
-			drug_strength *= 0.15 //~ 1/6
+		drug_strength *= species_mult(M)
 
 		M.status_at_least(EFFECT_DRUGGED, drug_strength)
 		if(prob(10) && isturf(M.loc) && !istype(M.loc, /turf/space) && M.canmove && !M.restrained())
@@ -4600,8 +4588,9 @@
 
 /datum/reagent/ethanol/voxdelight/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
-	if(alien == IS_DIONA)
+	if(inert_for(M))
 		return
+	// Kept: vox are treated where everyone else is poisoned (a per-unit mend, not a dose-level tag).
 	if(alien == IS_VOX)
 		// Species-gated: mends directly.
 		M.mend(TREAT_ANTITOXIN, 0.5 * removed)
@@ -4675,7 +4664,7 @@
 
 /datum/reagent/ethanol/slimeshot/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
-	if(alien == IS_DIONA)
+	if(inert_for(M))
 		return
 	M.reagents.add_reagent(REAGENT_ID_SLIMEJELLY, 0.25)
 
@@ -5145,8 +5134,8 @@
 			M.status_adjust(EFFECT_DIZZY, 24)
 		if(dose * strength >= strength * 2.5)
 			M.status_at_least(EFFECT_SLURRING, 30)
-		// Simulating heat effects of spice. Without spice.
-		if(alien == IS_DIONA || alien == IS_ALRAUNE)
+		// Simulating heat effects of spice. Without spice. Plant people don't feel it.
+		if(species_in(M, SPECIES_TAG_BIT(IS_DIONA) | SPECIES_TAG_BIT(IS_ALRAUNE)))
 			return
 		else if(ishuman(M))
 			var/mob/living/carbon/human/H = M
@@ -5203,7 +5192,7 @@
 /datum/reagent/ethanol/monstertamer/affect_blood(mob/living/carbon/M, alien, removed)
 	..()
 	if(M.species.organic_food_coeff)
-		if(alien == IS_SLIME || alien == IS_CHIMERA) //slimes and chimera can get nutrition from injected nutriment and protein
+		if(species_in(M, REAGENT_BLOOD_FED_SPECIES)) //slimes and chimera can get nutrition from injected nutriment and protein
 			M.adjust_nutrition(alt_nutriment_factor * removed)
 
 /datum/reagent/ethanol/pink_russian
@@ -5554,7 +5543,7 @@
 /datum/reagent/ethanol/hairoftherat/affect_blood(mob/living/carbon/M, alien, removed)
 	..()
 	if(M.species.organic_food_coeff)
-		if(alien == IS_SLIME || alien == IS_CHIMERA) //slimes and chimera can get nutrition from injected nutriment and protein
+		if(species_in(M, REAGENT_BLOOD_FED_SPECIES)) //slimes and chimera can get nutrition from injected nutriment and protein
 			M.adjust_nutrition((alt_nutriment_factor * removed))
 
 //////////////////////Bepis Drinks (04/29/2021)//////////////////////
@@ -5626,7 +5615,7 @@
 
 /datum/reagent/nutriment/protein/brainzsnax/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
-	if(prob(5) && !(alien == IS_CHIMERA || alien == IS_SLIME || alien == IS_PLANT || alien == IS_DIONA || alien == IS_SHADEKIN && !HAS_SYNTHETIC_BIOLOGY(M)))
+	if(prob(5) && !species_in(M, REAGENT_PRION_IMMUNE_SPECIES))
 		M.injure(INJURY_NEURAL, removed, source = src) //Any other species risks prion disease.
 		M.status_at_least(EFFECT_CONFUSED, 5)
 		M.status_at_least(EFFECT_HALLUCINATING, 25)
@@ -5973,14 +5962,16 @@
 	color = "#fafafa"
 	taste_description = "moreishness, you could really go for a proper snack right now"
 
+/datum/reagent/drink/coffee/nukie/mega/high
+	species_strength = alist(IS_SLIME = 0.15) // threshold ~1/6
+
 /datum/reagent/drink/coffee/nukie/mega/high/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
 	var/threshold = 1
 	if(M.species.chem_strength_tox > 0) //Closer to 0 means they're more resistant to toxins. Higher than 1 means they're weaker to toxins.
 		threshold /= M.species.chem_strength_tox
 
-	if(alien == IS_SLIME)
-		threshold *= 0.15 //~1/6
+	threshold *= species_mult(M)
 
 	M.status_at_least(EFFECT_DRUGGED, 30)
 	M.adjust_nutrition(-10 * removed)
@@ -6125,11 +6116,12 @@
 			if(istype(R, /datum/reagent/ethanol))
 				R.remove_self(removed * 10)
 
+/datum/reagent/drink/tea/dyloteane
+	immune_species_ingest = SPECIES_TAG_BIT(IS_DIONA)
+
 /datum/reagent/drink/tea/dyloteane/affect_ingest(mob/living/carbon/M, alien, removed)
-	var/chem_effective = 1
-	if(alien != IS_DIONA)
-		M.status_adjust(EFFECT_DROWSY, -(6 * removed * chem_effective))
-		M.status_adjust(EFFECT_HALLUCINATING, -(9 * removed * chem_effective))
+	M.status_adjust(EFFECT_DROWSY, -(6 * removed))
+	M.status_adjust(EFFECT_HALLUCINATING, -(9 * removed))
 
 /datum/reagent/slimedrink
 	name = REAGENT_SLIMEDRINK
@@ -6229,9 +6221,12 @@
 	glass_name = REAGENT_JACKBREW
 	glass_desc = "Irish coffee, and hyperzine. A common mix for panicked drinkers, EMTS, Paramedics, and CMOs alone on the job."
 
+/datum/reagent/ethanol/coffee/jackbrew
+	species_strength = alist(IS_TAJARA = 1.25)
+
 /datum/reagent/ethanol/coffee/jackbrew/affect_ingest(mob/living/carbon/M, alien, removed)
-	if(alien == IS_TAJARA)
-		removed *= 1.25
+	removed *= species_mult(M)
+	// Kept: a species-only, dose-gated status/nutrition side effect.
 	if(alien == IS_SLIME)
 		M.status_adjust(EFFECT_JITTERY, 4) //Hyperactive fluid pumping results in unstable 'skeleton', resulting in vibration.
 		if(dose >= 5)
@@ -6255,14 +6250,11 @@
 
 /datum/reagent/ethanol/bookwyrm
 	immune_species_ingest = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+	// Slime evens to 3 due to the fact they are considered 'small' for flaps.
+	species_strength = alist(IS_SKRELL = 1.2, IS_SLIME = 6)
 
 /datum/reagent/ethanol/bookwyrm/affect_ingest(mob/living/carbon/M, alien, removed)
-	var/threshold = 1
-	if(alien == IS_SKRELL)
-		threshold = 1.2
-
-	if(alien == IS_SLIME)
-		threshold = 6	//Evens to 3 due to the fact they are considered 'small' for flaps.
+	var/threshold = species_mult(M)
 
 	var/effective_dose = dose
 	if(issmall(M))
@@ -6278,6 +6270,7 @@
 			M.status_at_least(EFFECT_WEAKENED, 2)
 		M.status_at_least(EFFECT_DROWSY, 20)
 	else
+		// Kept: a different symptom set, not a strength.
 		if(alien == IS_SLIME) //They don't have eyes, and they don't really 'sleep'. Fumble their general senses.
 			M.status_at_least(EFFECT_BLURRY, 30)
 			if(prob(20))
