@@ -38,12 +38,5 @@
 
 // Organ specific signals
 
-///From /obj/item/organ/external/proc/embed(W, silent)
-#define COMSIG_EMBED_OBJECT "embed_object"
-///Return this in response if you don't want the embed to go through.
-	#define COMSIG_CANCEL_EMBED (1<<0)
 
 //NON TG Signals:
-///called when being electrocuted, from /mob/living/carbon/electrocute_act(shock_damage, source, siemens_coeff, def_zone, stun)
-#define COMSIG_BEING_ELECTROCUTED "being_electrocuted"
-	#define COMPONENT_CARBON_CANCEL_ELECTROCUTE (1<<0) //If this is set, the carbon will be not be electrocuted.

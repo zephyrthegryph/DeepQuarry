@@ -33,7 +33,7 @@
 
 
 /mob/living/proc/apply_effects(stun = 0, weaken = 0, paralyze = 0, irradiate = 0, stutter = 0, eyeblur = 0, drowsy = 0, agony = 0, blocked = 0, ignite = 0, flammable = 0)
-	if(SEND_SIGNAL(src, COMSIG_TAKING_APPLY_EFFECT) & COMSIG_CANCEL_EFFECT)
+	if(om_has(src, EFFECT_GODMODE) || (SEND_SIGNAL(src, COMSIG_TAKING_APPLY_EFFECT) & COMSIG_CANCEL_EFFECT))
 		return 0	// Cancelled by a component
 	if(blocked >= 100)
 		return 0

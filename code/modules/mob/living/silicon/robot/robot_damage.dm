@@ -56,7 +56,7 @@
 /// The cell is shielded from content recursion (set_cell()) and drained here
 /// through the ledger instead.
 /mob/living/silicon/robot/emp_act(severity, recursive)
-	if(SEND_SIGNAL(src, COMSIG_ROBOT_EMP_ACT, severity) & COMPONENT_BLOCK_EMP)
+	if(om_has(src, EFFECT_GODMODE))
 		return EMP_PROTECT_SELF
 	. = ..()
 	if(. & EMP_PROTECT_SELF)

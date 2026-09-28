@@ -27,7 +27,7 @@
 
 /mob/observer/eye/Initialize(mapload)
 	. = ..()
-	AddElement(/datum/element/godmode)
+	godmode_enable(src)
 
 // ---------------------------------------------------------------- relations
 //

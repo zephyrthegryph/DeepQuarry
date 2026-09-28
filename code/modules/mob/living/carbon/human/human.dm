@@ -386,8 +386,8 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 //Now checks siemens_coefficient of the affected area by default
 /mob/living/carbon/human/electrocute_act(shock_damage, obj/source, siemens_coeff = 1.0, def_zone = null, stun)
 
-	if(SEND_SIGNAL(src, COMSIG_BEING_ELECTROCUTED, shock_damage, source, siemens_coeff, def_zone, stun) & COMPONENT_CARBON_CANCEL_ELECTROCUTE)
-		return 0	// Cancelled by a component
+	if(om_has(src, EFFECT_GODMODE))
+		return 0
 
 	if (!def_zone)
 		def_zone = pick(BP_L_HAND, BP_R_HAND)

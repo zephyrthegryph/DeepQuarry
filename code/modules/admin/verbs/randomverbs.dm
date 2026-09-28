@@ -152,10 +152,10 @@ ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_direct_narrate, R_FUN|R_EVENT, "Direct Nar
 
 ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_godmode, R_HOLDER, "Toggle Godmode", "Toggle godmode on the target.", ADMIN_CATEGORY_GAME, mob/target_mob in REGISTRY_MEMBERS(REGISTRY_MOBS))
 	if(om_has(target_mob, EFFECT_GODMODE))
-		target_mob.RemoveElement(/datum/element/godmode)
+		godmode_disable(target_mob)
 
 	else if(!om_has(target_mob, EFFECT_GODMODE))
-		target_mob.AddElement(/datum/element/godmode)
+		godmode_enable(target_mob)
 
 	to_chat(user, span_notice("Toggled [om_has(target_mob, EFFECT_GODMODE) ? "ON" : "OFF"]"))
 

@@ -71,7 +71,7 @@
 	switch(action)
 		if("summon")
 			for(var/mob/living/simple_mob/construct/shade/A in src)
-				A.RemoveElement(/datum/element/godmode)
+				godmode_disable(A)
 				A.canmove = 1
 				to_chat(A, span_infoplain(span_bold("You have been released from your prison, but you are still bound to [usr.name]'s will. Help them suceed in their goals at all costs.")))
 				A.forceMove(usr.loc)
@@ -131,7 +131,7 @@
 
 	var/mob/living/simple_mob/construct/shade/S = new /mob/living/simple_mob/construct/shade( T.loc )
 	S.forceMove(src) //put shade in stone
-	S.AddElement(/datum/element/godmode)
+	godmode_enable(S)
 	S.canmove = 0//Can't move out of the soul stone
 	S.name = "Shade of [T.real_name]"
 	S.real_name = "Shade of [T.real_name]"
@@ -167,7 +167,7 @@
 		return
 
 	T.forceMove(src) //put shade in stone
-	T.AddElement(/datum/element/godmode)
+	godmode_enable(T)
 	T.canmove = 0
 	T.fully_heal()
 	src.icon_state = "soulstone2"

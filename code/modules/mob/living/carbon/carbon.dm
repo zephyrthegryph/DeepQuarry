@@ -155,8 +155,8 @@ REF_OWNED(/mob/living/carbon, list("ingested", "touching", "cozyloop"))
 			add_oxygen_debt(rand(25-(severity*5),35-(severity*5)) * species.emp_dmg_mod, "EMP")
 
 /mob/living/carbon/electrocute_act(shock_damage, obj/source, siemens_coeff = 1.0, def_zone = null, stun = 1)
-	if(SEND_SIGNAL(src, COMSIG_BEING_ELECTROCUTED, shock_damage, source, siemens_coeff, def_zone, stun) & COMPONENT_CARBON_CANCEL_ELECTROCUTE)
-		return 0	// Cancelled by a component
+	if(om_has(src, EFFECT_GODMODE))
+		return 0
 	if(def_zone == BP_L_HAND || def_zone == BP_R_HAND) //Diona (And any other potential plant people) hands don't get shocked.
 		if(species.flags & IS_PLANT)
 			return 0

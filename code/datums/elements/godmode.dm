@@ -1,70 +1,27 @@
 /**
- * Attached to mobs. Holds EFFECT_GODMODE (which implies the incapacitation immunities) and
- * cancels damage, effects, embeds and EMPs. Code asks om_has(mob, EFFECT_GODMODE).
+ * Godmode (was /datum/element/godmode). Holds EFFECT_GODMODE (which implies the
+ * incapacitation immunities); injure(), apply_effects(), electrocute_act(), embedding
+ * and silicon EMPs check om_has(mob, EFFECT_GODMODE) themselves, so nothing listens.
  */
-/datum/element/godmode
-	element_flags = ELEMENT_DETACH_ON_HOST_DESTROY|ELEMENT_BESPOKE
-	argument_hash_start_idx = 2
+/datum/godmode_source
 
-/datum/element/godmode/Attach(datum/target)
-	. = ..()
-	//Must be appliied to mobs.
-	if(!ismob(target))
-		return ELEMENT_INCOMPATIBLE
-	var/mob/our_target = target
-	if(om_has(our_target, EFFECT_GODMODE)) //Already have it.
-		return ELEMENT_INCOMPATIBLE
-	om_hold(our_target, EFFECT_GODMODE, src)
-	if(issilicon(target))
-		RegisterSignal(target, COMSIG_SILICON_EMP_ACT, PROC_REF(on_emp))
+/// The one contribution source for godmode holds.
+/proc/godmode_source()
+	var/static/datum/godmode_source/source = new
+	return source
 
-	if(isrobot(target))
-		RegisterSignal(target, COMSIG_ROBOT_EMP_ACT, PROC_REF(on_emp))
+/// Puts `M` in godmode. FALSE if it already was.
+/proc/godmode_enable(mob/M)
+	if(!ismob(M) || om_has(M, EFFECT_GODMODE))
+		return FALSE
+	om_hold(M, EFFECT_GODMODE, godmode_source())
+	return TRUE
 
-	//Every injury of every kind (injure() also checks EFFECT_GODMODE itself).
-	RegisterSignal(target, COMSIG_LIVING_INJURE, PROC_REF(on_injure))
-
-	RegisterSignal(target, COMSIG_TAKING_APPLY_EFFECT, PROC_REF(on_apply_effect))
-
-	RegisterSignal(target, COMSIG_BEING_ELECTROCUTED, PROC_REF(on_electrocute))
-	RegisterSignal(target, COMSIG_EMBED_OBJECT, PROC_REF(embed_check))
-
-
-/datum/element/godmode/Detach(atom/movable/target)
-	if(issilicon(target))
-		UnregisterSignal(target, list(COMSIG_SILICON_EMP_ACT))
-
-	if(isrobot(target))
-		UnregisterSignal(target, list(COMSIG_ROBOT_EMP_ACT))
-
-	//All the general comsigs.
-	UnregisterSignal(target, list(COMSIG_LIVING_INJURE, COMSIG_TAKING_APPLY_EFFECT, COMSIG_BEING_ELECTROCUTED, COMSIG_EMBED_OBJECT))
-	var/mob/our_target = target
-
-	//And finally, remove the fact we're in godmode.
-	om_release(our_target, EFFECT_GODMODE, src)
-	return ..()
-
-/datum/element/godmode/proc/on_injure()
-	SIGNAL_HANDLER
-	return COMPONENT_CANCEL_INJURY
-
-/datum/element/godmode/proc/on_apply_effect()
-	SIGNAL_HANDLER
-	return COMSIG_CANCEL_EFFECT
-
-/datum/element/godmode/proc/on_electrocute()
-	SIGNAL_HANDLER
-	return COMPONENT_CARBON_CANCEL_ELECTROCUTE
-
-/datum/element/godmode/proc/embed_check()
-	SIGNAL_HANDLER
-	return COMSIG_CANCEL_EMBED
-
-/datum/element/godmode/proc/on_emp()
-	SIGNAL_HANDLER
-	return COMPONENT_BLOCK_EMP
-
+/// Takes `M` out of godmode.
+/proc/godmode_disable(mob/M)
+	if(!ismob(M))
+		return
+	om_release(M, EFFECT_GODMODE, godmode_source())
 
 ///The 'lite' version of godmode
 /datum/element/lite_godmode
