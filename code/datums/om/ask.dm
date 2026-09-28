@@ -37,8 +37,21 @@
 //
 // om_ask() (a macro) passes the caller's src as the receiver: the answer proc runs on it with
 // the prompt as its one argument (a /proc/ path is called globally with the prompt). Named
-// arguments set the prompt's vars. The old om_prompt(E, user, list(...), on_answer) form still
-// works; tools/ci/api_lints.py (prompt_spec) counts it down.
+// arguments set the prompt's vars; `receiver = X` runs the answer proc on X instead of src, and
+// the prompt's `receiver` var is that datum (resolved) in every hook. om_prompt() is the plumbing
+// underneath and is not called outside code/datums/om (tools/ci/api_lints.py, prompt_spec).
+//
+// Options on every kind:
+//   optional = TRUE      a cancel runs the answer proc anyway, with the answer var null
+//                        ("pick one, or cancel for none")
+//   cancel_text          confirm: a third button that cancels (Yes/No/Cancel; cancel stops a flow)
+//   cancel_choice        choice: the choice that counts as a cancel
+//   hold_strong          names of state vars kept as plain references while open (a datum the
+//                        prompt created and nothing else owns); the rest are handles
+//   ui_refresh           a datum whose tgui windows are refreshed after the answer proc runs
+//   key                  the answer's name in an om_ask_sequence()
+// A cancel (and cancel_answer) is always accepted: it is never refused by the re-checks.
+// answer_value() is the kind's answer (yes, choice, text, ...) for a proc serving several kinds.
 
 /datum/om/prompt
 	// ---- declaration (typed prompts; null on the old list form)
@@ -57,11 +70,21 @@
 	/// The answer a cancel, a closed window or a timeout gives instead (re-checked like any
 	/// answer). Null: a cancel calls cancelled().
 	var/cancel_answer
+	/// A cancel runs the answer proc with the answer var null instead of calling cancelled().
+	var/optional = FALSE
+	/// State var names held strongly (not as handles) while the window is open.
+	var/list/hold_strong
+	/// A datum whose tgui windows are refreshed after the answer proc runs.
+	var/datum/ui_refresh
+	/// The answer's name in an om_ask_sequence().
+	var/key
 	// ---- roles (held as handles while open)
 	/// Who sees the window.
 	var/mob/answerer
 	var/mob/asker
 	var/datum/subject
+	/// What the answer proc runs on (om_ask()'s src, or `receiver = X`); null for a global proc.
+	var/datum/receiver
 	// ---- run state
 	/// The answer proc for this run.
 	var/answer_ref
@@ -96,6 +119,14 @@
 /datum/om/prompt/proc/take_answer(answer)
 	return TRUE
 
+/// The kind's answer (yes, choice, text, number, picked_color, picked, matrix).
+/datum/om/prompt/proc/answer_value()
+	return null
+
+/// TRUE when `answer` is the kind's cancel button (confirm cancel_text, choice cancel_choice).
+/datum/om/prompt/proc/is_cancel_answer(answer)
+	return FALSE
+
 /// The spec om_prompt_show() reads, from the typed vars.
 /datum/om/prompt/proc/build_spec()
 	. = list("kind" = kind_name, "title" = title, "message" = message, "timeout" = timeout)
@@ -112,12 +143,23 @@
 	var/no_first = FALSE
 	/// TRUE: the answer proc also runs on no (read `yes`).
 	var/answer_on_no = FALSE
+	/// A third button that cancels (Yes/No/Cancel); null: none.
+	var/cancel_text
 	/// The answer.
 	var/yes = FALSE
 
 /datum/om/prompt/confirm/build_spec()
 	. = ..()
-	.["choices"] = no_first ? list(no_text, yes_text) : list(yes_text, no_text)
+	var/list/buttons = no_first ? list(no_text, yes_text) : list(yes_text, no_text)
+	if(cancel_text)
+		buttons += cancel_text
+	.["choices"] = buttons
+
+/datum/om/prompt/confirm/answer_value()
+	return yes
+
+/datum/om/prompt/confirm/is_cancel_answer(answer)
+	return !isnull(cancel_text) && answer == cancel_text
 
 /datum/om/prompt/confirm/take_answer(answer)
 	yes = (answer == yes_text)
@@ -129,8 +171,16 @@
 	var/default
 	/// TRUE: alert buttons instead of a list.
 	var/buttons = FALSE
+	/// The choice that counts as a cancel ("Cancel" in a button list); null: none.
+	var/cancel_choice
 	/// The answer.
 	var/choice
+
+/datum/om/prompt/choice/answer_value()
+	return choice
+
+/datum/om/prompt/choice/is_cancel_answer(answer)
+	return !isnull(cancel_choice) && answer == cancel_choice
 
 /datum/om/prompt/choice/build_spec()
 	. = ..()
@@ -159,6 +209,9 @@
 	.["multiline"] = multiline
 	.["encode"] = encode
 
+/datum/om/prompt/text/answer_value()
+	return text
+
 /datum/om/prompt/text/take_answer(answer)
 	text = answer
 	return TRUE
@@ -179,6 +232,9 @@
 	.["max"] = max
 	.["round"] = round_entry
 
+/datum/om/prompt/number/answer_value()
+	return number
+
 /datum/om/prompt/number/take_answer(answer)
 	number = answer
 	return TRUE
@@ -192,6 +248,9 @@
 /datum/om/prompt/color/build_spec()
 	. = ..()
 	.["default"] = default
+
+/datum/om/prompt/color/answer_value()
+	return picked_color
 
 /datum/om/prompt/color/take_answer(answer)
 	picked_color = answer
@@ -211,8 +270,38 @@
 	.["min"] = min_picks
 	.["max"] = max_picks
 
+/datum/om/prompt/checklist/answer_value()
+	return picked
+
 /datum/om/prompt/checklist/take_answer(answer)
 	picked = answer
+	return TRUE
+
+/// The ColorMate window. `preview` is the atom painted in place, or a path (a preview is made
+/// for the window and deleted with it). The answer is the colour matrix.
+/datum/om/prompt/colormatrix
+	kind_name = "colormatrix"
+	timeout = 30 MINUTES
+	var/preview
+	var/list/default
+	var/matrix_only = FALSE
+	/// The tgui state the window uses (null: always).
+	var/datum/ui_state/ui_state
+	/// The answer: the matrix.
+	var/list/matrix
+
+/datum/om/prompt/colormatrix/build_spec()
+	. = ..()
+	.["preview"] = preview
+	.["default"] = default
+	.["matrix_only"] = matrix_only
+	.["ui_state"] = ui_state
+
+/datum/om/prompt/colormatrix/answer_value()
+	return matrix
+
+/datum/om/prompt/colormatrix/take_answer(answer)
+	matrix = answer
 	return TRUE
 
 // ---------------------------------------------------------------- launching
@@ -227,6 +316,10 @@
 	var/datum/om/prompt/P = ispath(prompt) ? new prompt : prompt
 	if(!istype(P) || !P.kind_name)
 		CRASH("om_ask: [prompt] is not a typed prompt (/datum/om/prompt/<kind>)")
+	if(params && ("receiver" in params))
+		receiver = params["receiver"]
+		params = params.Copy()
+		params -= "receiver"
 	for(var/key in params)
 		if(!istext(key))
 			CRASH("om_ask: [P.type] was given a positional argument ([key]); name it (var = value)")
@@ -246,6 +339,7 @@
 		if(isnull(P.subject))
 			P.subject = F.target
 	P.answerer = answerer
+	P.receiver = receiver
 	if(isnull(P.asker))
 		P.asker = answerer
 	if(isnull(P.subject) && isatom(receiver))
@@ -258,7 +352,9 @@
 	spec["on_refused"] = /proc/om_ask_refused
 	if(P.flow && !P.flow.park())
 		return null
-	var/list/names = P.state_var_names(/datum/om/prompt, list("answerer", "asker", "subject"))
+	var/list/names = P.state_var_names(/datum/om/prompt, list("answerer", "asker", "subject", "receiver", "ui_refresh"))
+	if(length(P.hold_strong))
+		names = names - P.hold_strong
 	P.parked = P.park_state(names)
 	if(isnull(P.parked))
 		P.flow?.stop("gone")
@@ -290,6 +386,8 @@
 		return "not conscious"
 	if((ask_flags & ASK_CAPABLE) && (answerer.incapacitated() || A.incapacitated()))
 		return "not able to"
+	if((ask_flags & ASK_RESTRAINED) && (!ismob(answerer) || !ismob(A) || answerer.restrained() || A.restrained()))
+		return "restrained"
 	if(ask_flags & ASK_ADJACENT)
 		var/atom/other = (A != answerer) ? A : S
 		if(!istype(other) || !answerer.Adjacent(other))
@@ -319,12 +417,13 @@
 	if(P.flow)
 		P.flow.resume(proc_ref, P)
 		return
-	if(!proc_ref)
-		return
-	if(copytext("[proc_ref]", 1, 7) == "/proc/")
-		call(proc_ref)(P)
-	else
-		call(E, proc_ref)(P)
+	if(proc_ref)
+		if(copytext("[proc_ref]", 1, 7) == "/proc/")
+			call(proc_ref)(P)
+		else
+			call(P.receiver || E, proc_ref)(P)
+	if(P.ui_refresh)
+		SStgui.update_uis(P.ui_refresh)
 
 /proc/om_ask_cancelled(E, mob/user, datum/om/prompt/P)
 	P.unpark()

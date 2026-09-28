@@ -46,6 +46,9 @@
 	var/waiting = FALSE
 	/// name -> wrapped handle of the state held between steps.
 	var/list/parked
+	/// State var names held strongly (not as handles) between steps: datums the flow made
+	/// and nothing else owns.
+	var/list/hold_strong
 
 /// Step 1: runs inside om_flow_start(), after the requires hold.
 /datum/om/flow/proc/start()
@@ -135,6 +138,8 @@
 	if(parked)
 		return TRUE
 	var/list/names = state_var_names(/datum/om/flow, list("actor", "target"))
+	if(length(hold_strong))
+		names = names - hold_strong
 	parked = park_state(names)
 	if(isnull(parked))
 		stop("gone")
@@ -193,3 +198,100 @@
 	var/datum/om/flow/F = flow
 	flow = null
 	F?.stop(reason || "interrupted")
+
+// ---------------------------------------------------------------- data-driven question lists
+//
+// om_ask_sequence(owner, answerer, steps, on_done, subject, requires, on_stop, data) asks a list
+// of typed prompts one after another as a flow. Each step is a typed prompt (a type, or an
+// instance with its vars set), null (skipped), or a proc on the owner called as (sequence) that
+// returns a prompt, null to skip, or ASK_STOP to end there; it reads the answers so far with
+// sequence.get(key), so later questions can depend on earlier ones. Each answer is stored under
+// its prompt's `key` (else the step's index) as answer_value(). A prompt whose `answerer` is
+// set asks that mob instead (consent from the other party). An optional prompt's cancel stores
+// null and goes on; any other cancel, a "no" or a failed re-check ends the sequence and calls
+// on_stop on the owner as (sequence, reason). When the last step is answered, on_done runs on
+// the owner as (sequence). A /proc/ path is called globally with the same arguments.
+// `data` is caller state carried along (read with get(); held as-is, so keep it to values).
+
+/datum/om/flow/ask_sequence
+	name = "ask_sequence"
+	var/list/steps
+	var/step_index = 0
+	/// key -> answer.
+	var/list/answers
+	/// Caller state, read with get().
+	var/list/data
+	/// What step procs, on_done and on_stop run on.
+	var/datum/owner
+	var/on_done
+	var/on_stop
+
+/// An answer so far (by key), else a value from the caller's data.
+/datum/om/flow/ask_sequence/proc/get(key)
+	if(answers && (key in answers))
+		return answers[key]
+	return data?[key]
+
+/// Stores a value readable with get() by later steps.
+/datum/om/flow/ask_sequence/proc/put(key, value)
+	LAZYINITLIST(answers)
+	answers[key] = value
+
+/datum/om/flow/ask_sequence/start()
+	next_step()
+
+/datum/om/flow/ask_sequence/proc/call_owner(proc_ref, ...)
+	var/list/call_args = list(src) + args.Copy(2)
+	if(copytext("[proc_ref]", 1, 7) == "/proc/")
+		return call(proc_ref)(arglist(call_args))
+	if(!owner)
+		return null
+	return call(owner, proc_ref)(arglist(call_args))
+
+/datum/om/flow/ask_sequence/proc/next_step()
+	while(step_index < length(steps))
+		step_index++
+		var/step = steps[step_index]
+		if(isnull(step))
+			continue
+		var/datum/om/prompt/P = step
+		if(!istype(P) && !ispath(step, /datum/om/prompt))
+			var/result = call_owner(step)
+			if(result == ASK_STOP)
+				stop("stopped")
+				return
+			if(isnull(result))
+				continue
+			P = result
+		if(ispath(P))
+			P = new P
+		if(isnull(P.key))
+			P.key = "[step_index]"
+		var/mob/asked = P.answerer || actor
+		if(!om_ask_begin(src, asked, P, PROC_REF(step_answered), null) && !done)
+			stop("not asked")
+		return
+	if(on_done)
+		call_owner(on_done)
+
+/datum/om/flow/ask_sequence/proc/step_answered(datum/om/prompt/P)
+	put(P.key, P.answer_value())
+	next_step()
+
+/datum/om/flow/ask_sequence/ended(reason)
+	if(on_stop)
+		call_owner(on_stop, reason)
+
+/// Starts an om_ask_sequence(). Returns the flow, or the text reason it didn't start.
+/proc/om_ask_sequence(datum/owner, mob/answerer, list/steps, on_done, datum/subject, list/requires, on_stop, list/data)
+	if(istype(answerer, /client))
+		var/client/C = answerer
+		answerer = C.mob
+	var/datum/om/flow/ask_sequence/F = new
+	F.owner = owner
+	F.steps = steps
+	F.on_done = on_done
+	F.on_stop = on_stop
+	F.requires = requires
+	F.data = data
+	return om_flow_begin(F, answerer, subject, null)

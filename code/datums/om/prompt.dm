@@ -34,11 +34,9 @@
 //
 // E may be a /client (admin verbs); it is held by ckey. `user` may be a client too; the
 // continuation always gets the client's current mob.
-// New code asks with typed prompts, om_ask() (ask.dm); multi-step actions are flows (flow.dm).
-// Multi-question flows: om_prompt_chain(P, spec, on_answer) asks the same user about the
-// same E again, carrying P's data, target, requires and on_refused forward (P.put() adds to
-// the data). om_prompt_sequence() runs a
-// list of questions and calls one proc with every answer at the end.
+// This is the plumbing under typed prompts: callers outside code/datums/om ask with om_ask()
+// (ask.dm), om_ask_sequence() or a flow (flow.dm); tools/ci/api_lints.py (prompt_spec) keeps
+// om_prompt() calls inside code/datums/om.
 
 /datum/om/prompt
 	/// Handles (timer.dm), or "ckey:" for a client: the prompt never keeps E or the user alive.
@@ -53,12 +51,6 @@
 	var/list/values
 	/// The tgui input showing it, if any.
 	var/datum/ui
-	/// om_prompt_sequence(): the steps, the one being asked, and the proc called at the end.
-	var/list/seq_steps
-	var/seq_index = 0
-	var/seq_done
-	/// The sequence's own user (a step may ask someone else: its "user").
-	var/seq_user_h
 
 /// The prompt and the tgui input showing it point at each other.
 /datum/om/prompt/declared_pair_vars()
@@ -74,7 +66,7 @@
 		return values[key]
 	return om_prompt_unwrap(data?[key])
 
-/// Adds a value to the data carried by om_prompt_chain().
+/// Adds a value to the prompt's data.
 /datum/om/prompt/proc/put(key, value)
 	LAZYINITLIST(data)
 	data[key] = om_prompt_wrap(value)
@@ -135,170 +127,6 @@
 	P.ui = om_prompt_show(P, user)
 	return P.ui ? P : null
 
-/// Asks P's user about P's E again, carrying P's data (and target, unless `spec` names its own).
-/proc/om_prompt_chain(datum/om/prompt/P, list/spec, on_answer)
-	var/datum/E = om_prompt_entity(P)
-	var/mob/user = om_resolve(P.user_h)
-	if(!E || !user)
-		return null
-	spec = spec ? spec.Copy() : list()
-	for(var/key in list("requires", "on_refused", "timeout"))
-		if(isnull(spec[key]) && !isnull(P.spec[key]))
-			spec[key] = P.spec[key]
-	var/datum/om/prompt/next = om_prompt(E, user, spec, on_answer)
-	if(!next)
-		return null
-	if(P.data)
-		var/list/merged = P.data.Copy()
-		if(next.data)
-			merged |= next.data
-			for(var/key in next.data)
-				merged[key] = next.data[key]
-		next.data = merged
-	if(isnull(spec["target"]) && !isnull(P.spec["target"]))
-		next.spec = next.spec.Copy()
-		next.spec["target"] = P.spec["target"]
-	return next
-
-// ---------------------------------------------------------------- sequences
-//
-// om_prompt_sequence(E, user, steps, on_done, base) asks a list of questions one after another.
-// Each step is a spec (with a "key"), null (skipped), or a proc on E called as (user, P) that returns a spec,
-// null to skip the question, or PROMPT_STOP to end the sequence there; P.get(key) reads the answers so far, so later questions can depend
-// on earlier ones. `base` holds the keys every question shares (requires, target, data,
-// on_refused, on_cancel, timeout). Each answer is stored under its spec's "key" (else the
-// step's name) and re-checked like any prompt; a cancel ends the sequence. When the last step
-// is answered, on_done is called on E as (user, P) (a global proc: (E, user, P)).
-// Per-step keys:
-//   "optional"  TRUE: a cancel stores null under the key and the sequence goes on
-//               ("pick one, or cancel for none").
-//   "confirm"   the answer the sequence needs to go on ("Yes"): any other answer, or a
-//               cancel, ends it quietly. For "are you sure?" steps.
-//   "abort"     an answer (or a list of answers) that ends the sequence quietly ("Cancel").
-//   "on_stop"   proc called on E as (user, P) when this step ends the sequence (a cancel, or an
-//               answer "confirm"/"abort" stops on): "they declined".
-//   "user"      a different mob answers this step (consent from the other party). Held as a
-//               handle; the sequence ends if they're gone. Their answer is re-checked with
-//               them as the actor (give the step "requires" = list() to skip the base checks).
-// on_done and step procs always get the sequence's own user.
-
-/proc/om_prompt_sequence(datum/E, mob/user, list/steps, on_done, list/base)
-	if(isnull(E))
-		E = om_global_owner()
-	if(istype(user, /client))
-		var/client/UC = user
-		user = UC.mob
-	var/eh = om_prompt_wrap(E)
-	if(islist(eh))
-		eh = eh["om_h"]
-	var/uh = om_handle(user)
-	if(!eh || !uh || !length(steps))
-		return null
-	var/datum/om/prompt/P = new
-	P.entity_h = eh
-	P.user_h = uh
-	P.spec = base ? base.Copy() : list()
-	var/list/D = P.spec["data"]
-	if(length(D))
-		P.data = list()
-		for(var/key in D)
-			P.data[key] = om_prompt_wrap(D[key])
-	if(!isnull(P.spec["target"]) && !islist(P.spec["target"]))
-		P.spec["target"] = list(om_prompt_wrap(P.spec["target"]))
-	P.seq_steps = steps.Copy()
-	for(var/i in 1 to length(P.seq_steps))
-		var/list/step = P.seq_steps[i]
-		if(islist(step) && isdatum(step["user"]))
-			step = step.Copy()
-			step["user"] = om_prompt_wrap(step["user"])
-			P.seq_steps[i] = step
-	P.seq_done = on_done
-	P.seq_user_h = uh
-	return om_prompt_sequence_next(P)
-
-/// Asks the sequence's next question, or calls on_done when there are none left.
-/proc/om_prompt_sequence_next(datum/om/prompt/P)
-	var/static/list/inherited = list("requires", "target", "on_refused", "on_cancel", "timeout")
-	var/datum/E = om_prompt_entity(P)
-	var/mob/user = om_resolve(P.seq_user_h || P.user_h)
-	if(!E || !user || !om_prompt_resolve_data(P))
-		return null
-	while(P.seq_index < length(P.seq_steps))
-		P.seq_index++
-		var/step = P.seq_steps[P.seq_index]
-		if(isnull(step))
-			continue
-		var/list/spec = step
-		if(!islist(step))
-			spec = null
-			try
-				if(copytext("[step]", 1, 7) == "/proc/")
-					spec = call(step)(E, user, P)
-				else
-					spec = call(E, step)(user, P)
-			catch(var/exception/e)
-				stack_trace("om prompt sequence step [step] on [E]: [e]")
-				return null
-		if(spec == PROMPT_STOP)
-			return null
-		if(!islist(spec))
-			continue
-		spec = spec.Copy()
-		for(var/key in inherited)
-			if(isnull(spec[key]) && !isnull(P.spec[key]))
-				spec[key] = P.spec[key]
-		spec["om_seq_key"] = spec["key"] || "[step]"
-		if(spec["optional"])
-			spec["on_cancel"] = /proc/om_prompt_sequence_skipped
-		else if(spec["on_stop"])
-			spec["on_cancel"] = /proc/om_prompt_sequence_stopped
-		spec -= "data"
-		var/mob/asked = user
-		if(!isnull(spec["user"]))
-			asked = om_prompt_unwrap(spec["user"])
-			if(!asked)
-				return null
-		var/datum/om/prompt/next = om_prompt(E, asked, spec, /proc/om_prompt_sequence_answered)
-		if(!next)
-			return null
-		next.data = P.data?.Copy()
-		next.seq_steps = P.seq_steps
-		next.seq_index = P.seq_index
-		next.seq_done = P.seq_done
-		next.seq_user_h = P.seq_user_h
-		return next
-	if(P.seq_done)
-		try
-			if(copytext("[P.seq_done]", 1, 7) == "/proc/")
-				call(P.seq_done)(E, user, P)
-			else
-				call(E, P.seq_done)(user, P)
-		catch(var/exception/e)
-			stack_trace("om prompt sequence [P.seq_done] on [E]: [e]")
-	return P
-
-/proc/om_prompt_sequence_answered(datum/E, mob/user, answer, datum/om/prompt/P)
-	var/abort = P.spec["abort"]
-	if((!isnull(P.spec["confirm"]) && answer != P.spec["confirm"]) || (!isnull(abort) && (islist(abort) ? (answer in abort) : answer == abort)))
-		om_prompt_sequence_stopped(E, user, P)
-		return
-	P.put(P.spec["om_seq_key"], answer)
-	om_prompt_sequence_next(P)
-
-/// A step ended the sequence: its on_stop runs with the sequence's user.
-/proc/om_prompt_sequence_stopped(datum/E, mob/user, datum/om/prompt/P)
-	var/mob/owner = om_resolve(P.seq_user_h || P.user_h)
-	if(owner && P.spec["on_stop"])
-		om_prompt_call(E, P.spec["on_stop"], owner, P)
-
-/// An optional step was cancelled: its answer is null, and the sequence goes on once the
-/// requires still hold.
-/proc/om_prompt_sequence_skipped(datum/E, mob/user, datum/om/prompt/P)
-	if(!isnull(om_prompt_recheck(P, E, user)))
-		return
-	P.put(P.spec["om_seq_key"], null)
-	om_prompt_sequence_next(P)
-
 /proc/om_prompt_entity(datum/om/prompt/P)
 	if(copytext(P.entity_h, 1, 6) == "ckey:")
 		return om_prompt_unwrap(P.entity_h)
@@ -316,7 +144,8 @@
 	return TRUE
 
 /// Delivers an answer (tgui, or a test). Returns null when on_answer ran, else the reason it did not.
-/proc/om_prompt_answer(datum/om/prompt/P, answer)
+/// `cancelled`: the answer is the cancel_answer a closed window gave (never refused by re-checks).
+/proc/om_prompt_answer(datum/om/prompt/P, answer, cancelled = FALSE)
 	if(P.answered)
 		return "answered"
 	P.answered = TRUE
@@ -326,6 +155,13 @@
 	if(!E || !user || !om_prompt_resolve_data(P))
 		return "gone"
 	if(P.kind_name && isnull(answer) && isnull(P.spec["cancel_answer"]))
+		if(P.optional)
+			// An optional question: a cancel answers "nothing", unchecked.
+			if(!P.unpark())
+				P.refused("gone")
+				return "gone"
+			om_ask_answered(E, user, null, P)
+			return null
 		// A typed prompt's cancel: om_ask_cancelled() restores its state.
 		if(P.spec["on_cancel"])
 			om_prompt_call(E, P.spec["on_cancel"], user, P)
@@ -333,6 +169,10 @@
 	if(P.kind_name && !P.unpark())
 		P.refused("gone")
 		return "gone"
+	if(P.kind_name && P.is_cancel_answer(answer))
+		// The kind's own cancel button (Yes/No/Cancel).
+		P.cancelled()
+		return "no answer"
 	if(P.spec["kind"] == "typepath" && istext(answer))
 		// The typed part of a path: one match is the answer, several are picked from a list.
 		var/list/matches = om_prompt_typepaths(answer, P.spec["root"] || /atom)
@@ -350,6 +190,7 @@
 			answer = null
 	if(isnull(answer))
 		answer = P.spec["cancel_answer"]
+		cancelled = TRUE
 	if(isnull(answer))
 		if(P.spec["on_cancel"])
 			om_prompt_call(E, P.spec["on_cancel"], user, P)
@@ -362,7 +203,7 @@
 		// A typed prompt answered no (confirm): nothing to re-check.
 		P.declined()
 		return "declined"
-	var/reason = om_prompt_recheck(P, E, user)
+	var/reason = cancelled ? null : om_prompt_recheck(P, E, user)
 	if(!isnull(reason))
 		if((reason != "gone" || P.kind_name) && P.spec["on_refused"])
 			om_prompt_call(E, P.spec["on_refused"], user, reason, P)
@@ -411,7 +252,10 @@
 	if(P.answered)
 		return
 	if(!isnull(P.spec["cancel_answer"]))
-		om_prompt_answer(P, P.spec["cancel_answer"])
+		om_prompt_answer(P, P.spec["cancel_answer"], TRUE)
+		return
+	if(P.kind_name)
+		om_prompt_answer(P, null, TRUE)
 		return
 	P.answered = TRUE
 	P.ui = null

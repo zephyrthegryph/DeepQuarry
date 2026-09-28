@@ -434,8 +434,8 @@
 #define PROMPT_ALIVE list(/datum/om/check/stat_at_most = UNCONSCIOUS)
 /// The user still holds these admin rights (R_* flags; 0 = any admin rank).
 #define PROMPT_ADMIN(rights) list(CHECK(/datum/om/check/admin_rights, rights))
-/// Returned by an om_prompt_sequence() step proc: end the sequence here (on_done does not run).
-#define PROMPT_STOP "om_prompt_stop"
+/// Returned by an om_ask_sequence() step proc: end the sequence here (on_done does not run).
+#define ASK_STOP "om_ask_stop"
 
 // ---------------------------------------------------------------- named-argument launchers
 // DM rejects a named argument a proc doesn't declare, so these are macros: the named arguments
@@ -445,7 +445,8 @@
 /// The target is optional (om_task_start(/datum/om/task/x, actor)).
 #define om_task_start(task, actor, rest...) om_task_begin(task, actor, list(rest), src)
 /// Asks `answerer` a typed prompt (ask.dm): om_ask(answerer, /datum/om/prompt/confirm/x, PROC_REF(cb), var = value, ...).
-/// `prompt` is a /datum/om/prompt/<kind> type or instance; cb runs on the caller's src with the prompt.
+/// `prompt` is a /datum/om/prompt/<kind> type or instance; cb runs on the caller's src with the prompt
+/// (`receiver = X` runs it on X instead; in a global proc, where src is null, pass a /proc/ path).
 #define om_ask(answerer, prompt, on_answer, params...) om_ask_begin(src, answerer, prompt, on_answer, list(params))
 /// Starts a flow (flow.dm): om_flow_start(/datum/om/flow/x, actor, target, var = value, ...).
 #define om_flow_start(flow, actor, target, params...) om_flow_begin(flow, actor, target, list(params))
@@ -469,5 +470,7 @@
 #define ASK_CAPABLE (1<<5)
 /// The subject is next to the answerer.
 #define ASK_NEAR_SUBJECT (1<<6)
+/// Neither the answerer nor the asker is restrained (cuffed, buckled in restraints).
+#define ASK_RESTRAINED (1<<7)
 /// The common "someone offers you something" set: both alive, awake and adjacent.
 #define ASK_FACE_TO_FACE (ASK_CONSCIOUS | ASK_ADJACENT)
