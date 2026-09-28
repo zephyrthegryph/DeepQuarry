@@ -164,11 +164,11 @@ SUBSYSTEM_DEF(radiation)
 			perceived_chance = 100 * (1 - NUM_E ** -perceived_intensity)
 			target_pulse_strength *= (1 - NUM_E ** -perceived_intensity)
 		profile_signal_dispatches++
-		var/irradiation_result = SEND_SIGNAL(target, COMSIG_IN_THRESHOLD_OF_IRRADIATION, pulse_information)
+		var/irradiation_result = target.radiation_countdown_check(pulse_information)
 		if(irradiation_result & CANCEL_IRRADIATION)
 			continue
 		if(pulse_information.minimum_exposure_time && !(irradiation_result & SKIP_MINIMUM_EXPOSURE_TIME_CHECK))
-			target.AddComponent(/datum/component/radiation_countdown, pulse_information.minimum_exposure_time)
+			target.radiation_countdown_start(pulse_information.minimum_exposure_time)
 			continue
 		if(prob(perceived_chance) && irradiate_after_basic_checks(target, target_pulse_strength))
 			profile_irradiations++
