@@ -62,11 +62,11 @@
 		return ..()
 	return 0
 
-// ALLOW(lifecycle): leaves its generator's segment lists.
-/obj/effect/shield/Destroy()
+// leaves its generator's segment lists.
+/obj/effect/shield/on_destroy(force)
 	if(can_atmos_pass != ATMOS_PASS_YES)
 		update_nearby_tiles() //Force ZAS update
-	. = ..()
+	..()
 	if(gen())
 		if(src in gen().field_segments)
 			LAZYREMOVE(gen().field_segments, src)

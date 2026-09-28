@@ -59,11 +59,11 @@
 /datum/wires/state_exclude()
 	return ..() + list("holder", "assemblies")
 
-// ALLOW(lifecycle): attached signalers drop out of the machine.
-/datum/wires/Destroy()
+// attached signalers drop out of the machine.
+/datum/wires/on_destroy(force)
 	for(var/color in assemblies)
 		detach_assembly(color)
-	return ..()
+	..()
 
 /**
  * Randomly generates a new set of wires. and corresponding colors from the given pool. Assigns the information as an associative list, to `colors`.

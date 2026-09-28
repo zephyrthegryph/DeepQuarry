@@ -1353,13 +1353,13 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, \
 
 REF_SPILL_LIST(/obj/item/clothing, "contents")
 
-// ALLOW(lifecycle): its integrated circuit goes with it.
-/obj/item/clothing/Destroy()
+// its integrated circuit goes with it.
+/obj/item/clothing/on_destroy(force)
 	if(IC)
 		IC.clothing_handle = null
 		action_circuit = null
 		QDEL_NULL(IC)
-	return ..()
+	..()
 
 /obj/item/clothing/proc/handle_digitigrade(mob/user)
 	if(ishuman(user))

@@ -61,11 +61,11 @@
 
 	register_entopic()
 
-// ALLOW(lifecycle): it is unregistered from its viewers.
-/datum/entopic/Destroy()
+// it is unregistered from its viewers.
+/datum/entopic/on_destroy(force)
 	unregister_entopic()
 	my_image = null //Bye!
-	return ..()
+	..()
 
 /datum/entopic/proc/register_entopic()
 	if(registered || !my_image)

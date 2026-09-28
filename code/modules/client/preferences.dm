@@ -159,10 +159,10 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 
 REF_OWNED_LIST(/datum/preferences, "middleware")
 
-// ALLOW(lifecycle): in-flight character preview renders discard their result.
-/datum/preferences/Destroy()
+// in-flight character preview renders discard their result.
+/datum/preferences/on_destroy(force)
 	dq_preview_generation++
-	return ..()
+	..()
 
 // transactional batching for constraint cascades and editor actions.
 // Wrap multiple update_preference() calls in update_many(); all the writes are coalesced

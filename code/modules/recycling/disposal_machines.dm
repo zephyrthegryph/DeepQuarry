@@ -88,15 +88,15 @@
 			mode = DISPOSALMODE_CHARGED
 	update_icon()
 
-// ALLOW(lifecycle): it unlinks and ejects its contents.
-/obj/machinery/disposal/Destroy()
+// it unlinks and ejects its contents.
+/obj/machinery/disposal/on_destroy(force)
 	if(power_retry_timer)
 		om_cancel_timer(src, power_retry_timer)
 		power_retry_timer = null
 	clear_gas_dependency()
 	OM_EMIT(src, /datum/om/event/disposal_unlink) //Just to be safe.
 	eject()
-	return ..()
+	..()
 
 /// Contents are the only reason a charged disposal needs periodic autoflush work.
 /obj/machinery/disposal/Entered(atom/movable/thing, atom/old_loc)

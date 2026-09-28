@@ -316,13 +316,13 @@
 		engineering_evidence_id = null
 	engineering_reading = reading.Copy()
 
-// ALLOW(lifecycle): releases its engineering evidence id.
-/obj/item/multitool/Destroy()
+// releases its engineering evidence id.
+/obj/item/multitool/on_destroy(force)
 	if(engineering_evidence_id)
 		SScontracts?.release_evidence(engineering_evidence_id)
 	engineering_evidence_id = null
 	engineering_reading = null
-	return ..()
+	..()
 
 /obj/machinery/photocopier/proc/print_engineering_reading(obj/item/multitool/tool, mob/user)
 	if(!tool.engineering_reading || toner <= 0 || copying || stat & (NOPOWER|BROKEN))

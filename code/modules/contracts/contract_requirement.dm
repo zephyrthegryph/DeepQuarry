@@ -354,10 +354,10 @@ REF_OWNED(/datum/contract_requirement/event_count, "filter")
 
 REF_OWNED(/datum/contract_requirement/sustained_event, "filter")
 
-// ALLOW(lifecycle): pending sustain timers are cancelled.
-/datum/contract_requirement/sustained_event/Destroy()
+// pending sustain timers are cancelled.
+/datum/contract_requirement/sustained_event/on_destroy(force)
 	cancel_pending_timers()
-	return ..()
+	..()
 
 /datum/contract_requirement/sustained_event/proc/require_any_value(key, list/allowed)
 	return filter.require_any_value(key, allowed)
@@ -444,10 +444,10 @@ REF_OWNED(/datum/contract_requirement/sustained_event, "filter")
 
 REF_OWNED(/datum/contract_requirement/staged_sustained_event, "filter")
 
-// ALLOW(lifecycle): pending sustain timers are cancelled.
-/datum/contract_requirement/staged_sustained_event/Destroy()
+// pending sustain timers are cancelled.
+/datum/contract_requirement/staged_sustained_event/on_destroy(force)
 	cancel_pending_timers()
-	return ..()
+	..()
 
 /datum/contract_requirement/staged_sustained_event/proc/set_stages(list/new_stages)
 	if((contract && contract.state != CONTRACT_OFFERED) || !length(new_stages))

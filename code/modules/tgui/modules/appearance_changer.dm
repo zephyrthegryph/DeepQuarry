@@ -1046,14 +1046,14 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 		return STATUS_CLOSE
 	return ..()
 
-// ALLOW(lifecycle): its design console drops the record and gui.
-/datum/tgui_module/appearance_changer/body_designer/Destroy()
+// its design console drops the record and gui.
+/datum/tgui_module/appearance_changer/body_designer/on_destroy(force)
 	var/obj/machinery/computer/transhuman/designer/DC = om_resolve(linked_body_design_console)
 	if(DC)
 		DC.selected_record = FALSE
 		DC.designer_gui = null // no hardrefs
 	linked_body_design_console = null
-	. = ..()
+	..()
 
 /datum/tgui_module/appearance_changer/body_designer/proc/make_fake_owner()
 	// checks for monkey to tell if on the menu

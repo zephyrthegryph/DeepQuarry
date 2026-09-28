@@ -142,10 +142,13 @@
 
 REF_OWNED(/obj/effect/abstract/directional_lighting, "light_spot")
 
-// ALLOW(lifecycle): only its light component may delete it.
-/obj/effect/abstract/directional_lighting/Destroy(force)
-	if(!force)
-		stack_trace("Directional light atom deleted, but not by our component")
-		return QDEL_HINT_LETMELIVE
+// Only its light component may delete it (a forced qdel()).
+/obj/effect/abstract/directional_lighting/lifecycle_keep(force)
+	if(force)
+		return FALSE
+	stack_trace("Directional light atom deleted, but not by our component")
+	return TRUE
+
+/obj/effect/abstract/directional_lighting/on_destroy(force)
 	vis_contents.Cut()
-	return ..()
+	..()

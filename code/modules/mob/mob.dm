@@ -16,7 +16,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	registry_join(stat == DEAD ? REGISTRY_DEAD_MOBS : REGISTRY_LIVING_MOBS, src)
 
 
-/mob/Destroy()//This makes sure that mobs withGLOB.clients/keys are not just deleted from the game.
+/mob/on_destroy(force)//This makes sure that mobs withGLOB.clients/keys are not just deleted from the game.
 	publish_mob_chunk(src)
 	if(client)
 		stack_trace("Mob with client has been deleted.")
@@ -61,7 +61,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 	QDEL_NULL(belly_overlay_tgui) // from belly_overlay_tgui.dm
 
-	. = ..()
+	..()
 	update_client_z(null)
 	//return QDEL_HINT_HARDDEL_NOW
 
@@ -1184,14 +1184,14 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		exploit_record += exploitmsg
 		I.exploit_for = om_handle(src)
 
-// ALLOW(lifecycle): exploit add-ons forget the item (the exploited mob is a handle).
-/obj/item/Destroy(force, ...)
+// exploit add-ons forget the item (the exploited mob is a handle).
+/obj/item/on_destroy(force)
 	if(exploit_for)
 		var/mob/exploited = om_resolve(exploit_for)
 		exploited?.exploit_addons -= src
 		exploit_for = null
 	user_vars_remembered = null
-	. = ..()
+	..()
 
 /client/proc/check_has_body_select()
 	return mob && mob.hud_used && istype(mob.zone_sel, /atom/movable/screen/zone_sel)

@@ -38,12 +38,12 @@
 	if(clear_backlink && edge)
 		edge.unregister_edge_pipeline(src)
 
-// Rust-owned wrappers refuse deletion; a legacy line stores its gas back
-// into its pipes and releases its network.
-// ALLOW(lifecycle): LETMELIVE for rust-owned lines; legacy gas hand-back.
-/datum/pipeline/Destroy()
-	if(network?.rust_authoritative)
-		return QDEL_HINT_LETMELIVE
+// Rust-owned wrappers refuse deletion.
+/datum/pipeline/lifecycle_keep(force)
+	return network?.rust_authoritative
+
+// A legacy line stores its gas back into its pipes and releases its network.
+/datum/pipeline/on_destroy(force)
 	// Drop our backlink before invalidating the shared topology.  The network's
 	// Destroy() clears every other member and is deliberately re-entry safe.
 	var/list/old_memberships = network_memberships
@@ -68,7 +68,7 @@
 			P.parent = null
 	for(var/obj/machinery/atmospherics/pipe/edge in old_edges)
 		edge.unregister_edge_pipeline(src)
-	. = ..()
+	..()
 
 /// Engineered pipes are evaluated whenever their authoritative network gas is
 /// mutated. Ordinary mapped pipes retain the old cheap path.

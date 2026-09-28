@@ -143,12 +143,12 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 
 REF_OWNED(/obj/machinery/power/smes, "soundloop")
 
-// ALLOW(lifecycle): its terminals lose their master.
-/obj/machinery/power/smes/Destroy()
+// its terminals lose their master.
+/obj/machinery/power/smes/on_destroy(force)
 	for(var/obj/machinery/power/terminal/T in terminals)
 		T.master_handle = null
 	terminals = null
-	return ..()
+	..()
 
 /obj/machinery/power/smes/proc/add_nearby_terminals()
 	for(var/d in GLOB.cardinal)

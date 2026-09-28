@@ -34,14 +34,14 @@ REF_BACK(/datum/using_machine_shim, list("owner" = "machine_shim"))
 	if(length(linked_machine().tgui_data()))
 		log_world("## ERROR [machine.type] implements tgui_data(), and has likely been ported to tgui already. It should no longer use set_machine().")
 
-// ALLOW(lifecycle): the machine is free again and the operator's perspective and trait reset.
-/datum/using_machine_shim/Destroy(force)
+// the machine is free again and the operator's perspective and trait reset.
+/datum/using_machine_shim/on_destroy(force)
 	om_unhook_all(src)
 	var/mob/M = owner
 	if(M?.machine_shim == src)
 		M.machine_shim = null
 	owner = null
-	. = ..()
+	..()
 	var/obj/machinery/machine = linked_machine()
 	if(machine)
 		machine.in_use = FALSE

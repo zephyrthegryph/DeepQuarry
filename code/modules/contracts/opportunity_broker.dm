@@ -118,14 +118,14 @@ REF_OWNED(/datum/contract_opportunity_signal, "filter")
 	for(var/datum/contract_opportunity_signal/signal in rule.signals)
 		facts_by_signal[signal.id] = list()
 
-// ALLOW(lifecycle): its facts (nested per signal) go with it.
-/datum/contract_opportunity_window/Destroy()
+// its facts (nested per signal) go with it.
+/datum/contract_opportunity_window/on_destroy(force)
 	for(var/signal_id in facts_by_signal)
 		var/list/facts = facts_by_signal[signal_id]
 		for(var/fact_key in facts)
 			qdel(facts[fact_key])
 	facts_by_signal = null
-	return ..()
+	..()
 
 /datum/contract_opportunity_window/proc/prune(datum/contract_opportunity_rule/rule)
 	var/cutoff = world.time - rule.window_duration

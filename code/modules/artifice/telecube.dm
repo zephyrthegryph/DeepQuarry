@@ -99,8 +99,8 @@
 		cut_overlays()
 		add_overlay(glow)
 
-// ALLOW(lifecycle): its mate collapses into an explosion.
-/obj/item/telecube/Destroy()
+// its mate collapses into an explosion.
+/obj/item/telecube/on_destroy(force)
 	if(mate())
 		var/turf/T = get_turf(mate())
 		mate().visible_message(span_critical("\The [mate()] collapses into itself!"))
@@ -108,7 +108,7 @@
 		mate_handle = null
 		explosion(T,1,3,7)
 
-	return ..()
+	..()
 
 /obj/item/telecube/equipped()
 	. = ..()

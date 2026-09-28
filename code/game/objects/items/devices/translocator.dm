@@ -52,12 +52,12 @@
 
 REF_OWNED(/obj/item/perfect_tele, list("power_source", "spk"))
 
-// ALLOW(lifecycle): its beacons forget it.
-/obj/item/perfect_tele/Destroy()
+// its beacons forget it.
+/obj/item/perfect_tele/on_destroy(force)
 	for(var/obj/item/perfect_tele_beacon/B in beacons)
 		B.tele_hand_handle = null
 	LAZYCLEARLIST(beacons)
-	return ..()
+	..()
 
 /obj/item/perfect_tele/update_icon()
 	if(!power_source)

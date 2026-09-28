@@ -120,12 +120,12 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 REF_OWNED(/obj/item/nif, "comm")
 REF_OWNED_LIST(/obj/item/nif, "nifsofts")
 
-// ALLOW(lifecycle): the NIF unregisters from its human.
-/obj/item/nif/Destroy()
+// the NIF unregisters from its human.
+/obj/item/nif/on_destroy(force)
 	if(human)
 		unregister_human()
 		human = null
-	return ..()
+	..()
 
 //Being implanted in some mob
 /obj/item/nif/proc/implant(mob/living/carbon/human/H)

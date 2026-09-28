@@ -43,9 +43,9 @@
 			animate(G, pixel_x = 0, time = MT, flags = ANIMATION_PARALLEL)
 			animate(G, pixel_y = 0, time = MT, flags = ANIMATION_PARALLEL)
 
-// ALLOW(lifecycle): its images come off every client.
-/obj/effect/fake_attacker/Destroy(force)
-	. = ..()
+// its images come off every client.
+/obj/effect/fake_attacker/on_destroy(force)
+	..()
 	clear_every_clients_images()
 	qdel_all_images()
 	clients.Cut()

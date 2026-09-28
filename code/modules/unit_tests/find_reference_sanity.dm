@@ -7,21 +7,21 @@
 	var/list/test_list = list() // ALLOW(instance_list): d: unit-test fixture; the ref-tracking test needs a real list to find
 	var/list/test_assoc_list = list() // ALLOW(instance_list): d: unit-test fixture; the ref-tracking test needs a real list to find
 
-/atom/movable/ref_holder/Destroy()
+/atom/movable/ref_holder/on_destroy(force)
 	test = null
 	static_test = null
 	test_list.Cut()
 	test_assoc_list.Cut()
-	return ..()
+	..()
 
 /atom/movable/ref_test
 	// Gotta make sure we do a full check
 	references_to_clear = INFINITY
 	var/atom/movable/ref_test/self_ref
 
-/atom/movable/ref_test/Destroy(force)
+/atom/movable/ref_test/on_destroy(force)
 	self_ref = null
-	return ..()
+	..()
 
 /datum/unit_test/find_reference_sanity/Run()
 	var/atom/movable/ref_test/victim = allocate(/atom/movable/ref_test)

@@ -27,10 +27,10 @@
 	PERIODIC_START(src, PERIODIC_SLOW)
 	log_and_message_admins("has casted [src].")
 
-// ALLOW(lifecycle): admins are told the maintained spell stopped.
-/obj/item/spell/radiance/Destroy()
+// admins are told the maintained spell stopped.
+/obj/item/spell/radiance/on_destroy(force)
 	log_and_message_admins("has stopped maintaining [src].")
-	return ..()
+	..()
 
 /obj/item/spell/radiance/periodic_step()
 	var/turf/T = get_turf(src)

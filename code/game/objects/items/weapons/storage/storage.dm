@@ -144,15 +144,15 @@
 
 REF_OWNED(/obj/item/storage, "hud")
 
-// ALLOW(lifecycle): closes on everyone looking into it and leaves its wearer.
-/obj/item/storage/Destroy()
+// closes on everyone looking into it and leaves its wearer.
+/obj/item/storage/on_destroy(force)
 	close_all()
 	for(var/mob/M as anything in is_seeing?.Copy())
 		hide_from(M)
 	if(ismob(loc))
 		var/mob/M = loc
 		M.remove_from_mob(src)
-	. = ..()
+	..()
 
 /obj/item/storage/pickup(mob/user)
 	make_contents_real()
@@ -724,14 +724,14 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 REF_OWNED(/datum/storage_hud, "closer")
 REF_OWNED_LIST(/datum/storage_hud, list("catchers", "backdrop"))
 
-// ALLOW(lifecycle): shown items lose their count text; the global hud count drops.
-/datum/storage_hud/Destroy()
+// shown items lose their count text; the global hud count drops.
+/datum/storage_hud/on_destroy(force)
 	GLOB.storage_hud_count--
 	for(var/obj/item/I as anything in shown)
 		I.maptext = ""
 		// The screen is gone; the item is no longer pinned by being shown (C10).
 		I.latent_unpin(src)
-	return ..()
+	..()
 
 /datum/storage_hud/proc/new_backdrop(master, state)
 	var/atom/movable/screen/storage/B = new()

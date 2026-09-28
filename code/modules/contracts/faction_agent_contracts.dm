@@ -37,8 +37,8 @@
 	stakeholder_departments = list()
 	contact_departments = list(DEPARTMENT_CARGO)
 
-// ALLOW(lifecycle): releases its market reservation.
-/datum/contract/faction_agent/Destroy()
+// releases its market reservation.
+/datum/contract/faction_agent/on_destroy(force)
 	GLOB.supply_service?.release_agent_contract_market(src)
 	market_reservation_ids = null
 	contact_name = null
@@ -47,7 +47,7 @@
 	stakeholder_departments = null
 	contact_departments = null
 	discovery_detail = null
-	return ..()
+	..()
 
 /datum/contract/faction_agent/on_accepted(mob/living/user, atom/source)
 	. = ..()

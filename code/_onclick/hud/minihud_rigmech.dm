@@ -73,12 +73,12 @@
 		S.master_ref = om_handle(owner_mech())
 	..()
 
-// ALLOW(lifecycle): the mech points at its minihud; the minihud going clears that var.
-/datum/mini_hud/mech/Destroy()
+// the mech points at its minihud; the minihud going clears that var.
+/datum/mini_hud/mech/on_destroy(force)
 	if(owner_mech())
 		owner_mech().minihud = null
 		owner_mech_handle = null
-	return ..()
+	..()
 
 /datum/mini_hud/mech/periodic_step()
 	if(!owner_mech())

@@ -46,14 +46,12 @@ GLOBAL_PROTECT(AdminProcCallHandler)
 	return FALSE
 
 // Shit will break if this is allowed to be deleted
-// ALLOW(lifecycle): the global proc-call handler refuses deletion unless forced.
-/mob/proccall_handler/Destroy(force)
-	if(GLOB.AdminProcCallHandler != src)
-		return ..()
-	if(!force)
-		stack_trace("Attempted deletion on [type] - [name], aborting.")
-		return QDEL_HINT_LETMELIVE
-	return ..()
+// The global proc-call handler refuses deletion unless forced.
+/mob/proccall_handler/lifecycle_keep(force)
+	if(force || GLOB.AdminProcCallHandler != src)
+		return FALSE
+	stack_trace("Attempted deletion on [type] - [name], aborting.")
+	return TRUE
 
 /**
  * Handles a userless proccall, used by circuits.

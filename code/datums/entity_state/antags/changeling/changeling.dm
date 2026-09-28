@@ -109,10 +109,10 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 		add_verb(owner,/mob/proc/changeling_respec)
 		owner.add_language("Changeling")
 
-// ALLOW(lifecycle): owned state datum (was a component) unhooks and detaches from its owner.
-/datum/changeling/Destroy(force = FALSE)
+// owned state datum (was a component) unhooks and detaches from its owner.
+/datum/changeling/on_destroy(force)
 	owner = null
-	return ..()
+	..()
 
 //Former /datum/changeling procs
 /datum/changeling/proc/regenerate()

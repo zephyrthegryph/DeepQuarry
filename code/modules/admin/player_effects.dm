@@ -333,7 +333,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				var/datum/reagents/our_chem = new /datum/reagents(30) //Create some reagents, move them over, and clean up the datum afterwards
 				our_chem.add_reagent(chem, 30)
 				our_chem.trans_to_turf(surroundings,30)
-				our_chem.Destroy()
+				qdel(our_chem)
 
 		////////MEDICAL//////////////
 

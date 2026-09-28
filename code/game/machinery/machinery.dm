@@ -180,8 +180,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	if(!mapload)
 		power_change()
 
-// ALLOW(lifecycle): the base machine: board and parts deleted, occupants put out.
-/obj/machinery/Destroy()
+// the base machine: board and parts deleted, occupants put out.
+/obj/machinery/on_destroy(force)
 	cancel_sleep_keys()
 	om_watch_disarm_all(src)
 	// Constructed machinery owns its installed board. Clear the typed reference
@@ -203,7 +203,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 				H.reset_perspective()
 			else
 				qdel(A)
-	return ..()
+	..()
 
 /// One frame of DM-side work for a machine on the machine pipeline (machine_pipeline.dm,
 /// /datum/om/stage/machine/power/step): the same contract process() had on SSmachines' roster.

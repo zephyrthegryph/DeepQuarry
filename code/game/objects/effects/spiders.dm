@@ -97,13 +97,13 @@ EXTEND_INTERACTIONS(/obj/effect/spider/spiderling, \
 	. = ..()
 	get_light_and_color(parent)
 
-// ALLOW(lifecycle): leaves the implant list of the limb it was laid in.
-/obj/effect/spider/eggcluster/Destroy()
+// leaves the implant list of the limb it was laid in.
+/obj/effect/spider/eggcluster/on_destroy(force)
 	if(istype(loc, /obj/item/organ/external))
 		var/obj/item/organ/external/O = loc
 		LAZYREMOVE(O.implants, src)
 
-	return ..()
+	..()
 
 /// Hatches (its growth timer).
 /obj/effect/spider/eggcluster/proc/hatch()
@@ -305,12 +305,12 @@ EXTEND_INTERACTIONS(/obj/effect/spider/spiderling, \
 	. = ..()
 	icon_state = pick("cocoon1","cocoon2","cocoon3")
 
-// ALLOW(lifecycle): the cocoon splits open and drops its contents.
-/obj/effect/spider/cocoon/Destroy()
+// the cocoon splits open and drops its contents.
+/obj/effect/spider/cocoon/on_destroy(force)
 	src.visible_message(span_warning("\The [src] splits open."))
 	for(var/atom/movable/A in contents)
 		A.forceMove(src.loc)
-	return ..()
+	..()
 
 /obj/effect/spider/spiderling/non_growing/horror
 	icon_state = "tendrils"

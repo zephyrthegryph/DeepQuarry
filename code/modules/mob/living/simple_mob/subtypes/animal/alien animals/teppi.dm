@@ -779,12 +779,12 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 		add_verb(src, /mob/living/simple_mob/vore/alienanimals/teppi/proc/toggle_producing_offspring)
 	teppi_setup()
 
-// ALLOW(lifecycle): the population cap counts it out.
-/mob/living/simple_mob/vore/alienanimals/teppi/Destroy()
+// the population cap counts it out.
+/mob/living/simple_mob/vore/alienanimals/teppi/on_destroy(force)
 	GLOB.teppi_count --
 	friend_zone = null
 	//legacy .leader reference removed (no equivalent on /datum/ai_brain).
-	return ..()
+	..()
 
 /mob/living/simple_mob/vore/alienanimals/teppi/lay_down()
 	..()

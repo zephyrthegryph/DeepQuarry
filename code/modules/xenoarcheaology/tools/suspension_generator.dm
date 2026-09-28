@@ -236,10 +236,10 @@
 	playsound(loc, 'sound/machines/quiet_beep.ogg', 40)
 	update_icon()
 
-// ALLOW(lifecycle): its field deactivates.
-/obj/machinery/suspension_gen/Destroy()
+// its field deactivates.
+/obj/machinery/suspension_gen/on_destroy(force)
 	deactivate()
-	. = ..()
+	..()
 
 /obj/machinery/suspension_gen/update_icon()
 	cut_overlays()

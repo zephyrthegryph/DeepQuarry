@@ -152,14 +152,14 @@
 	TEST_ASSERT(moves_done >= 25, "the fuzz exercised real moves ([moves_done])")
 	TEST_ASSERT(moves_refused >= 5, "the fuzz exercised refusals ([moves_refused])")
 
-/datum/unit_test/dq_containment_conservation_fuzz/Destroy()
+/datum/unit_test/dq_containment_conservation_fuzz/on_destroy(force)
 	for(var/datum/D as anything in made)
 		if(!QDELETED(D))
 			qdel(D)
 	made = null
 	holders = null
 	things = null
-	return ..()
+	..()
 
 /datum/unit_test/dq_containment_conservation_fuzz/proc/add_holder(path)
 	var/atom/movable/H = new path(floor)

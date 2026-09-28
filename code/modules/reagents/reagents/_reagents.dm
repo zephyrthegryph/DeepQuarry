@@ -275,11 +275,11 @@
 REF_BACK(/datum/reagent, list("holder" = null))
 
 // The holder link is a REF_BACK; `data` can hold live refs (blood's donor).
-// ALLOW(lifecycle): drops `data`.
-/datum/reagent/Destroy()
+// drops `data`.
+/datum/reagent/on_destroy(force)
 	if(islist(data))
 		data.Cut()
-	return ..()
+	..()
 
 /// Called by [/datum/reagents/proc/conditional_update]
 /datum/reagent/proc/on_update(atom/A)

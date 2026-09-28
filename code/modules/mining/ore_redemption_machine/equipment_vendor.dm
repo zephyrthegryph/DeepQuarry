@@ -21,12 +21,12 @@
 
 REF_SPILL(/obj/machinery/mineral/equipment_vendor, "inserted_id")
 
-// ALLOW(lifecycle): prize entries are nested per category.
-/obj/machinery/mineral/equipment_vendor/Destroy()
+// prize entries are nested per category.
+/obj/machinery/mineral/equipment_vendor/on_destroy(force)
 	for(var/key, value in prize_list)
 		var/list/item_list = value
 		QDEL_LIST_ASSOC_VAL(item_list)
-	. = ..()
+	..()
 
 /datum/data/mining_equipment
 	var/equipment_name = "generic"

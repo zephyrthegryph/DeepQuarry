@@ -107,11 +107,11 @@ REF_BACKLIST(/obj/effect/directional_shield, list("projector" = "active_shields"
 		om_after(src, 0, PROC_REF(create_shields))
 	return ..()
 
-// ALLOW(lifecycle): its shields come down.
-/obj/item/shield_projector/Destroy()
+// its shields come down.
+/obj/item/shield_projector/on_destroy(force)
 	destroy_shields()
 	om_unhook(src, /datum/om/event/movable_attempted_move, src)
-	return ..()
+	..()
 
 /obj/item/shield_projector/proc/moved_event(datum/source, datum/om/event/movable_attempted_move/event)
 	EVENT_HANDLER

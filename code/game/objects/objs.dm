@@ -61,7 +61,7 @@
 	if(can_atmos_pass != ATMOS_PASS_YES && isturf(loc))
 		update_nearby_tiles()
 
-/obj/Destroy()
+/obj/on_destroy(force)
 	QDEL_NULL(material_service)
 
 	// I really am an idiot why did I make it this way
@@ -85,7 +85,7 @@
 					V.stat = DEAD
 					qdel(V)
 
-	return ..()
+	..()
 
 /obj/Topic(href, href_list, datum/tgui_state/state = GLOB.tgui_default_state)
 	if(usr && ..())

@@ -487,14 +487,14 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks, \
 /obj/item/reagent_containers/food/snacks/proc/is_sliceable()
 	return (slices_num && slice_path && slices_num > 0)
 
-// ALLOW(lifecycle): things stuffed inside drop out.
-/obj/item/reagent_containers/food/snacks/Destroy()
+// things stuffed inside drop out.
+/obj/item/reagent_containers/food/snacks/on_destroy(force)
 	if(contents)
 		for(var/atom/movable/something in contents)
 			something.dropInto(loc)
 			if(food_inserted_micros && (something in food_inserted_micros))
 				food_inserted_micros -= something
-	. = ..()
+	..()
 
 	return
 

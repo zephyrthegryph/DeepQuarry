@@ -23,10 +23,10 @@
 
 REF_OWNED(/obj/item/card/id/syndicate, "agentcard_module")
 
-// ALLOW(lifecycle): the card's registered user is unset.
-/obj/item/card/id/syndicate/Destroy()
+// the card's registered user is unset.
+/obj/item/card/id/syndicate/on_destroy(force)
 	unset_registered_user(registered_user())
-	return ..()
+	..()
 
 /obj/item/card/id/syndicate/prevent_tracking()
 	return electronic_warfare

@@ -52,8 +52,8 @@
 	if(trunk)
 		OM_EMIT(src, /datum/om/event/disposal_link, trunk)
 
-// ALLOW(lifecycle): non-basic bins, the teleplumb crystal and flushed objects drop out.
-/obj/structure/toilet/Destroy()
+// non-basic bins, the teleplumb crystal and flushed objects drop out.
+/obj/structure/toilet/on_destroy(force)
 	if(bin)
 		if(bin.type == /obj/item/stock_parts/matter_bin) //Specifically, if this is a basic bin, you dont get it back. Other bins are returned.
 			QDEL_NULL(bin)
@@ -68,7 +68,7 @@
 	currently_held_objects = null
 	swirlie_mob = null
 	teleplumb_dest_ref = null
-	. = ..()
+	..()
 
 /obj/structure/toilet/update_icon()
 	icon_state = "[initial(icon_state)][open][cistern]"

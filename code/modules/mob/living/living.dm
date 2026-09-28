@@ -11,8 +11,8 @@
 	else
 		return name
 
-// ALLOW(lifecycle): the base living mob: Life, body effects, soul links, nest, transformed holder and organs.
-/mob/living/Destroy()
+// the base living mob: Life, body effects, soul links, nest, transformed holder and organs.
+/mob/living/on_destroy(force)
 	life_leave_z()
 	clear_body_effects(TRUE)
 	// The character's DNA outlives this body when the identity references it.
@@ -89,7 +89,7 @@
 	QDEL_NULL(firesoundloop)
 	// QDEL_NULL(stunnedloop)
 
-	. = ..()
+	..()
 
 //mob verbs are faster than object verbs. See mob/verb/examine.
 /mob/living/verb/pulled(atom/movable/AM as mob|obj in oview(1))
@@ -1074,8 +1074,8 @@ REF_BACK(/datum/character_setup_button, list("owner" = "character_setup_button")
 	if(owner.client)
 		create_mob_button(owner)
 
-// ALLOW(lifecycle): owned state datum (was a component) unhooks and detaches from its owner.
-/datum/character_setup_button/Destroy(force)
+// owned state datum (was a component) unhooks and detaches from its owner.
+/datum/character_setup_button/on_destroy(force)
 	if(owner)
 		om_unhook(owner, /datum/om/event/mob_client_login, src)
 	if(screen_icon)
@@ -1087,7 +1087,7 @@ REF_BACK(/datum/character_setup_button, list("owner" = "character_setup_button")
 	if(owner?.character_setup_button == src)
 		owner.character_setup_button = null
 	owner = null
-	return ..()
+	..()
 
 /// Gives the mob its character setup HUD button if it has none.
 /mob/living/proc/add_character_setup_button()

@@ -136,12 +136,8 @@
 	src.percent = percent
 	src.flat = flat
 
-// ALLOW(lifecycle): armor datums are interned and shared; refuse deletion unless forced.
-/datum/armor/Destroy(force)
-	if(!force)
-		// Interned and shared; nothing may delete one.
-		return QDEL_HINT_LETMELIVE
-	return ..()
+// Armor datums are interned and shared; nothing but a forced qdel() may delete one.
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/armor)
 
 /datum/armor/vv_edit_var(var_name, var_value)
 	return FALSE

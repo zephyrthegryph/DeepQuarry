@@ -53,9 +53,9 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	var/static/datum/destroy_effects_data/dq_destroy_transaction_logging_effects/data = new
 	return data
 
-/obj/item/dq_destroy_transaction_phase_probe/Destroy()
+/obj/item/dq_destroy_transaction_phase_probe/on_destroy(force)
 	dq_destroy_transaction_log("destroy")
-	return ..()
+	..()
 
 /datum/om/relation/slot/dq_destroy_transaction_probe_main
 	holder = /obj/item/dq_destroy_transaction_phase_probe
@@ -80,9 +80,9 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 /// A REF_OWNED child: its own Destroy() logs "links" (phase 4 deletes it).
 /datum/dq_destroy_transaction_owned_child
 
-/datum/dq_destroy_transaction_owned_child/Destroy()
+/datum/dq_destroy_transaction_owned_child/on_destroy(force)
 	dq_destroy_transaction_log("links")
-	return ..()
+	..()
 
 /// destroy_effects() data whose apply() logs "effects" before doing the
 /// (harmless, since there's no turf work needed for this assertion) base work.
@@ -152,9 +152,9 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	name = "nesting inner"
 	w_class = ITEMSIZE_SMALL
 
-/obj/item/dq_destroy_transaction_nest_inner/Destroy()
+/obj/item/dq_destroy_transaction_nest_inner/on_destroy(force)
 	dq_destroy_transaction_log("inner-destroy")
-	return ..()
+	..()
 
 /datum/om/relation/slot/dq_destroy_transaction_nest_inner_slot
 	holder = /obj/item/dq_destroy_transaction_nest_inner
@@ -335,13 +335,13 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	var/static/list/vars = list("partner" = "partner")
 	return vars
 
-/datum/dq_destroy_transaction_scrub_fixture/Destroy()
+/datum/dq_destroy_transaction_scrub_fixture/on_destroy(force)
 	// Phase 4 already nulled `partner` (and the partner's own side) by the
 	// time this runs (phase 7). Re-setting it here simulates a leftover
 	// Destroy() body that still assigns a declared pair/owned var by hand --
 	// phase 8 must null it again so nothing keeps this alive past its own death.
 	partner = new /datum/dq_destroy_transaction_pair_fixture
-	return ..()
+	..()
 
 /datum/unit_test/dq_destroy_transaction_scrub_catches_leftover_reset
 

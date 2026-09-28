@@ -56,8 +56,8 @@
 
 REGISTRY_MEMBERSHIP(/mob/observer/blob, REGISTRY_OVERMINDS)
 
-// ALLOW(lifecycle): its blobs and spores lose their overmind and recolour.
-/mob/observer/blob/Destroy()
+// its blobs and spores lose their overmind and recolour.
+/mob/observer/blob/on_destroy(force)
 	for(var/obj/structure/blob/B as anything in REGISTRY_MEMBERS(REGISTRY_BLOBS))
 		if(B && B.overmind == src)
 			B.overmind = null
@@ -68,7 +68,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/blob, REGISTRY_OVERMINDS)
 			BM.overmind = null
 			BM.update_icons()
 
-	return ..()
+	..()
 
 /mob/observer/blob/get_status_tab_items()
 	. = ..()

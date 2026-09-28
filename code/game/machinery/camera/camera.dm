@@ -82,14 +82,14 @@
 
 REF_OWNED(/obj/machinery/camera, "assembly")
 
-// ALLOW(lifecycle): alarm handlers release it, motion sensing stops and viewers are kicked out.
-/obj/machinery/camera/Destroy()
+// alarm handlers release it, motion sensing stops and viewers are kicked out.
+/obj/machinery/camera/on_destroy(force)
 	for(var/datum/alarm_handler/handler as anything in all_alarm_handlers())
 		handler.release_atom(src)
 	if(isMotion())
 		unsense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
 	deactivate(null, 0)
-	return ..()
+	..()
 
 // A camera sleeps on one om_after() timer for its earliest deadline (EMP recovery, the motion alarm
 // delay) and on signals from the mobs it tracks; it never polls.

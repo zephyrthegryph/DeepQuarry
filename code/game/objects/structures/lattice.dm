@@ -27,8 +27,8 @@
 			L = locate(/obj/structure/lattice, get_step(src, dir))
 			L.updateOverlays()
 
-// ALLOW(lifecycle): neighbour lattices redraw and what it held up falls.
-/obj/structure/lattice/Destroy()
+// neighbour lattices redraw and what it held up falls.
+/obj/structure/lattice/on_destroy(force)
 	for (var/dir in GLOB.cardinal)
 		var/obj/structure/lattice/L
 		if(locate(/obj/structure/lattice, get_step(src, dir)))
@@ -37,7 +37,7 @@
 	if(istype(loc, /turf/simulated/open))
 		var/turf/simulated/open/O = loc
 		om_after(O, 1, TYPE_PROC_REF(/turf/simulated/open, update)) // This lattice may be supporting things on top of it.  If it's being deleted, they need to fall down.
-	. = ..()
+	..()
 
 /obj/structure/lattice/declare_interactions(list/into)
 	into += list(

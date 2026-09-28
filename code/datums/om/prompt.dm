@@ -308,10 +308,10 @@
 		om_prompt = null
 	qdel(src)
 
-/datum/tgui_input_colormatrix/om/Destroy(force)
+/datum/tgui_input_colormatrix/om/on_destroy(force)
 	if(was_path && target())
 		qdel(target())
-	return ..()
+	..()
 
 /// kind "bitfield": the flag checkboxes. Submit answers the value; cancel or close cancels.
 /datum/tgui_bitfield_input/om

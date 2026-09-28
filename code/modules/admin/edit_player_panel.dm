@@ -26,13 +26,13 @@ GLOBAL_LIST_EMPTY(dq_edit_player_panels)
 	holder_handle = om_handle(owner_holder)
 	target_handle = om_handle(target_mob)
 
-// ALLOW(lifecycle): leaves the per-admin panel index.
-/datum/edit_player_panel/Destroy(force, ...)
+// leaves the per-admin panel index.
+/datum/edit_player_panel/on_destroy(force)
 	if(holder() && target())
 		GLOB.dq_edit_player_panels -= "[REF(holder())]-[REF(target())]"
 	holder_handle = null
 	target_handle = null
-	return ..()
+	..()
 
 /datum/edit_player_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_HOLDER)

@@ -308,10 +308,10 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 	id = id_assign++
 	qdel_on_finish = finished_qdel
 
-// ALLOW(lifecycle): a running query halts.
-/datum/SDQL2_query/Destroy()
+// a running query halts.
+/datum/SDQL2_query/on_destroy(force)
 	state = SDQL2_STATE_HALTING
-	return ..()
+	..()
 
 /datum/SDQL2_query/proc/get_query_text()
 	var/list/out = list()

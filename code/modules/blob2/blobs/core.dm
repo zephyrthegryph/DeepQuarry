@@ -113,8 +113,8 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 	if(overmind)
 		update_icon()
 
-// ALLOW(lifecycle): leaves a core chunk; its overmind dies with it.
-/obj/structure/blob/core/Destroy()
+// leaves a core chunk; its overmind dies with it.
+/obj/structure/blob/core/on_destroy(force)
 	var/turf/T = get_turf(src)
 	new /obj/item/blobcore_chunk(T, overmind?.blob_type)
 
@@ -122,7 +122,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 		overmind.blob_core_handle = null
 		qdel(overmind)
 	overmind = null
-	return ..()
+	..()
 
 /obj/structure/blob/core/update_icon()
 	cut_overlays()

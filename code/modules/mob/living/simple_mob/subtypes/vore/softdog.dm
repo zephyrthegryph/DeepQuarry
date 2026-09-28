@@ -243,10 +243,10 @@ GLOBAL_VAR_INIT(woof_current, 0)
 		GLOB.woof_maximum = 0 //Let's start duplicating again
 	GLOB.woof_current++
 
-// ALLOW(lifecycle): the population cap counts it out.
-/mob/living/simple_mob/vore/woof/hostile/aweful/Destroy()
+// the population cap counts it out.
+/mob/living/simple_mob/vore/woof/hostile/aweful/on_destroy(force)
 	GLOB.woof_current--
-	. = ..()
+	..()
 
 /mob/living/simple_mob/vore/woof/hostile/aweful
 	delete_on_death = TRUE

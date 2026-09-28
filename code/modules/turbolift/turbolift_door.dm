@@ -11,13 +11,13 @@
 	var/tmp/lift_handle
 	var/tmp/floor_handle
 
-// ALLOW(lifecycle): leaves its lift's and floor's door lists.
-/obj/machinery/door/airlock/lift/Destroy()
+// leaves its lift's and floor's door lists.
+/obj/machinery/door/airlock/lift/on_destroy(force)
 	if(lift())
 		lift().doors -= src
 	if(lift_floor())
 		lift_floor().doors -= src
-	return ..()
+	..()
 
 /obj/machinery/door/airlock/lift/bumpopen(mob/user)
 	return // No accidental sprinting into open elevator shafts.

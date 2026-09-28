@@ -33,8 +33,8 @@
 		detect()
 	set_light(3, 1, newcolor)
 
-// ALLOW(lifecycle): its linked pads go with it; leaves the pad map.
-/obj/machinery/hyperpad/centre/Destroy()
+// its linked pads go with it; leaves the pad map.
+/obj/machinery/hyperpad/centre/on_destroy(force)
 	if(map_pad_id && mapped_hyper_pads[map_pad_id] == src)
 		mapped_hyper_pads -= map_pad_id
 	for(var/obj/machinery/hyperpad/P in linked)
@@ -42,7 +42,7 @@
 		qdel(P)
 	LAZYCLEARLIST(linked)
 	linked_pad_handle = null
-	return ..()
+	..()
 
 /obj/machinery/hyperpad/operable()
 	return 1

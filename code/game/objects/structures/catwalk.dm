@@ -33,11 +33,11 @@
 	update_connections(1)
 	update_icon()
 
-// ALLOW(lifecycle): neighbouring catwalks redraw and things on it may fall.
-/obj/structure/catwalk/Destroy()
+// neighbouring catwalks redraw and things on it may fall.
+/obj/structure/catwalk/on_destroy(force)
 	redraw_nearby_catwalks()
 	update_falling()
-	return ..()
+	..()
 
 /obj/structure/catwalk/proc/update_falling()
 	if(istype(loc, /turf/simulated/open)) om_after(loc, 1, TYPE_PROC_REF(/turf/simulated/open, update)) //We get called in Destroy() and things: the open turf, not us, owns the update.

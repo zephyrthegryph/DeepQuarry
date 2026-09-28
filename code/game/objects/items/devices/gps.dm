@@ -95,11 +95,11 @@ REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
 
 REF_OWNED(/obj/item/gps, "compass")
 
-// ALLOW(lifecycle): the GPS leaves its holder's tracking.
-/obj/item/gps/Destroy()
+// the GPS leaves its holder's tracking.
+/obj/item/gps/on_destroy(force)
 	is_in_processing_list = FALSE
 	update_holder()
-	. = ..()
+	..()
 
 /obj/item/gps/proc/can_track(obj/item/gps/other, reachable_z_levels)
 	if(!other.tracking || other.emped || other.hide_signal || is_vore_jammed(other))

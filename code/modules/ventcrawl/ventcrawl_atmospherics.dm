@@ -1,11 +1,11 @@
 /obj/machinery/atmospherics/var/image/pipe_image
 
-// ALLOW(lifecycle): ventcrawlers inside are put out; its pipe image comes off players' clients.
-/obj/machinery/atmospherics/Destroy()
+// ventcrawlers inside are put out; its pipe image comes off players' clients.
+/obj/machinery/atmospherics/on_destroy(force)
 	for(var/mob/living/M in src) //ventcrawling is serious business // ALLOW(latent): mobs are never latent
 		M.remove_ventcrawl()
 		M.forceMove(get_turf(src))
-	. = ..()
+	..()
 
 /// LC-refs: the pipe image leaves every ventcrawler's screen before phase 4 drops it (REF_OWNED).
 /obj/machinery/atmospherics/lifecycle_dematerialize()

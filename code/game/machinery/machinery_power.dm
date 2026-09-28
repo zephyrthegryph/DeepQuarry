@@ -96,13 +96,13 @@
 		get_area(src)?.power_subscribe(src)
 
 // Or in Destroy at all, but especially after the ..().
-// ALLOW(lifecycle): the base machine: its power draw leaves the area budget.
-/obj/machinery/Destroy()
+// the base machine: its power draw leaves the area budget.
+/obj/machinery/on_destroy(force)
 	var/power = POWER_CONSUMPTION
 	REPORT_POWER_CONSUMPTION_CHANGE(power, 0)
 	if(power_subscriber)
 		get_area(src)?.power_unsubscribe(src)
-	. = ..()
+	..()
 
 // Registering moved_event observers for all machines is too expensive.  Instead we do it ourselves.
 // 99% of machines are always on a turf anyway, very few need recursive move handling.

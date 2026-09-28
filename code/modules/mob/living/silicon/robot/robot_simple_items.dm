@@ -77,10 +77,10 @@
 		tool_image.color = real_tool.color
 		integrated_tool_images[real_tool.name] = tool_image
 
-// ALLOW(lifecycle): its integrated tools (assoc values) go with it.
-/obj/item/robotic_multibelt/Destroy()
+// its integrated tools (assoc values) go with it.
+/obj/item/robotic_multibelt/on_destroy(force)
 	QDEL_LIST_ASSOC_VAL(cyborg_integrated_tools)
-	. = ..()
+	..()
 
 DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(interaction_self)))
 

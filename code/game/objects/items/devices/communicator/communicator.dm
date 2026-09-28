@@ -383,8 +383,8 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 REF_OWNED(/obj/item/communicator, list("camera", "exonet", "cam_screen", "cam_background"))
 REF_OWNED_LIST(/obj/item/communicator, "cam_plane_masters")
 
-// ALLOW(lifecycle): its ID drops out, connected voices time out and its calls close.
-/obj/item/communicator/Destroy()
+// its ID drops out, connected voices time out and its calls close.
+/obj/item/communicator/on_destroy(force)
 	if (src.id)
 		src.id.forceMove(get_turf(src.loc))
 	for(var/mob/living/voice/voice in contents.Copy())
@@ -392,7 +392,7 @@ REF_OWNED_LIST(/obj/item/communicator, "cam_plane_masters")
 		to_chat(voice, span_danger("[icon2html(src, voice.client)] Connection timed out with remote host."))
 		qdel(voice)
 	close_connection(reason = "Connection timed out")
-	return ..()
+	..()
 
 // Proc: update_icon()
 // Parameters: None

@@ -1,8 +1,8 @@
 /obj/item/bork_medigun/linked
 	var/medigun_base_unit_handle
 
-// ALLOW(lifecycle): the base unit's icon and wearer update.
-/obj/item/bork_medigun/linked/Destroy()
+// the base unit's icon and wearer update.
+/obj/item/bork_medigun/linked/on_destroy(force)
 	if(medigun_base_unit())
 		var/obj/item/bork_medigun/medigun = medigun_base_unit().get_medigun()
 		//ensure the base unit's icon updates
@@ -13,7 +13,7 @@
 				var/mob/user = loc
 				user.update_inv_back()
 		medigun_base_unit_handle = null
-	return ..()
+	..()
 
 /obj/item/bork_medigun/linked/forceMove(atom/destination, direction, movetime) //Forcemove override, ugh
 	if(destination == medigun_base_unit() || destination == medigun_base_unit().loc || isturf(destination))

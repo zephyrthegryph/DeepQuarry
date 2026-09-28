@@ -462,14 +462,14 @@ GLOBAL_VAR(dq_test_select_names)
 	TEST_ASSERT(isfloorturf(run_loc_floor_bottom_left), "run_loc_floor_bottom_left was not a floor ([run_loc_floor_bottom_left])")
 	TEST_ASSERT(isfloorturf(run_loc_floor_top_right), "run_loc_floor_top_right was not a floor ([run_loc_floor_top_right])")
 
-/datum/unit_test/Destroy()
+/datum/unit_test/on_destroy(force)
 	// release_unit_test_block() legitimately blocks, so it no longer runs
 	// from here -- RunUnitTest() (the runner) releases the block itself,
 	// after qdel(test) returns, so this Destroy() (and every subtype's
 	// override, which inherits it) can keep the base /datum/proc/Destroy()'s
 	// SHOULD_NOT_SLEEP(TRUE) instead of opting back out of it.
 	QDEL_LIST(allocated)
-	return ..()
+	..()
 
 /datum/unit_test/proc/Run()
 	TEST_FAIL("[type]/Run() called parent or not implemented")

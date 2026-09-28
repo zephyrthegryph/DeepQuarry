@@ -123,14 +123,14 @@
 	if(!has_buckled_mobs())
 		qdel(src)
 
-// ALLOW(lifecycle): netted mobs are told they're free.
-/obj/effect/energy_net/Destroy()
+// netted mobs are told they're free.
+/obj/effect/energy_net/on_destroy(force)
 	if(has_buckled_mobs())
 		for(var/A in src?.buckled_mob_list())
 			to_chat(A, span_notice("You are free of the net!"))
 			unbuckle_mob(A)
 
-	return ..()
+	..()
 
 /obj/effect/energy_net/user_unbuckle_mob(mob/living/buckled_mob, mob/user)
 	user.setClickCooldown(user.get_attack_speed())

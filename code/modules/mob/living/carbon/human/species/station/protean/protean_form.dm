@@ -27,13 +27,13 @@
 		remove_verb(H, power_verbs)
 	return ..()
 
-// ALLOW(lifecycle): the protean's rig forgets its protean.
-/datum/forms/protean/Destroy(force)
+// the protean's rig forgets its protean.
+/datum/forms/protean/on_destroy(force)
 	if(rig && (!owner || rig.myprotean == owner))
 		rig.myprotean = null
 	// A handle-kind var is never cleaned by the lifecycle: drop it here.
 	rig = null
-	return ..()
+	..()
 
 /datum/forms/protean/proc/blob_form()
 	RETURN_TYPE(/datum/form/protean_blob)

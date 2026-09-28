@@ -68,8 +68,8 @@
 		return length(samples)
 	return (length(samples) >= 128)
 
-// ALLOW(lifecycle): songs using it drop it; leaves instrument_service().
-/datum/instrument/Destroy()
+// songs using it drop it; leaves instrument_service().
+/datum/instrument/on_destroy(force)
 	instrument_service().instrument_data -= id
 	for(var/i in om_resolve_all(songs_using))
 		var/datum/song/S = i
@@ -77,7 +77,7 @@
 	real_samples = null
 	samples = null
 	songs_using = null
-	return ..()
+	..()
 
 /**
  * For synthesized instruments, this is how the instrument generates the "keys" that a [/datum/song] uses to play notes.

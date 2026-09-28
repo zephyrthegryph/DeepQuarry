@@ -41,12 +41,12 @@
 	sleevers = list()
 	updatemodules()
 
-// ALLOW(lifecycle): its pods are released.
-/obj/machinery/computer/transhuman/resleeving/Destroy()
+// its pods are released.
+/obj/machinery/computer/transhuman/resleeving/on_destroy(force)
 	releasepods()
 	current_br = null
 	current_mr = null
-	return ..()
+	..()
 
 /obj/machinery/computer/transhuman/resleeving/proc/updatemodules()
 	releasepods()

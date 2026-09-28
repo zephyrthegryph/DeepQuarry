@@ -22,12 +22,12 @@
 	user.client?.images |= I
 	om_after(src, 23, PROC_REF(loop_animation)) //That's just how long the animation is
 
-// ALLOW(lifecycle): the marker image comes off its caster's client.
-/datum/technomancer_marker/Destroy()
+// the marker image comes off its caster's client.
+/datum/technomancer_marker/on_destroy(force)
 	var/mob/user = om_resolve(U)
 	user?.client?.images -= I
 	I?.loc = null
-	return ..()
+	..()
 
 //This is global, to avoid looping through a list of all objects, or god forbid, looping through world.
 GLOBAL_LIST_INIT(mark_spells, list())

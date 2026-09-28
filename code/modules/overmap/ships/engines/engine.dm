@@ -38,12 +38,12 @@ REGISTRY_MEMBERSHIP(/datum/ship_engine, REGISTRY_SHIP_ENGINES)
 /datum/ship_engine/proc/toggle()
 	return 1
 
-// ALLOW(lifecycle): ships drop the engine.
-/datum/ship_engine/Destroy()
+// ships drop the engine.
+/datum/ship_engine/on_destroy(force)
 	for(var/obj/effect/overmap/visitable/ship/S in SSshuttles.ships)
 		LAZYREMOVE(S.engines, src)
 	holder_handle = null
-	. = ..()
+	..()
 
 /// LC-refs: actual engine object -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/ship_engine/proc/holder() as /obj/machinery

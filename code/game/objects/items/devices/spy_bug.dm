@@ -138,12 +138,12 @@ DECLARE_INTERACTIONS(/obj/item/camerabug, \
 	linkedmonitor_handle = null
 	replace_with(src, brokentype)
 
-// ALLOW(lifecycle): its monitor unpairs it.
-/obj/item/camerabug/Destroy()
+// its monitor unpairs it.
+/obj/item/camerabug/on_destroy(force)
 	if(linkedmonitor())
 		linkedmonitor().unpair(src)
 	linkedmonitor_handle = null
-	. = ..()
+	..()
 
 /obj/item/bug_monitor
 	name = "mobile camera pod monitor"

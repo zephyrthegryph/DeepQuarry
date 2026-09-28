@@ -26,11 +26,11 @@
 	connected_parts = list()
 	update_active_power_usage(initial(active_power_usage) * (strength + 1))
 
-// ALLOW(lifecycle): a running accelerator powers down.
-/obj/machinery/particle_accelerator/control_box/Destroy()
+// a running accelerator powers down.
+/obj/machinery/particle_accelerator/control_box/on_destroy(force)
 	if(active)
 		toggle_power()
-	return ..()
+	..()
 
 /obj/machinery/particle_accelerator/control_box/declare_interactions(list/into)
 	into += list(

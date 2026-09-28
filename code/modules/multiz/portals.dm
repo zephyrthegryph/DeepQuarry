@@ -146,8 +146,8 @@ DECLARE_INTERACTIONS(/obj/structure/portal_event, \
 	else if (istype(M, /atom/movable))
 		do_teleport(M, target)
 
-// ALLOW(lifecycle): its target portal goes with it.
-/obj/structure/portal_event/Destroy()
+// its target portal goes with it.
+/obj/structure/portal_event/on_destroy(force)
 	if(target)
 		if(istype(target, /obj/structure/portal_event))
 			var/obj/structure/portal_event/P = target
@@ -156,7 +156,7 @@ DECLARE_INTERACTIONS(/obj/structure/portal_event, \
 			var/obj/structure/portal_target/P = target
 			P.target = null
 		QDEL_NULL(target)
-	. = ..()
+	..()
 
 /obj/structure/portal_target
 	name = "portal destination"
@@ -168,13 +168,13 @@ DECLARE_INTERACTIONS(/obj/structure/portal_event, \
 	invisibility = INVISIBILITY_OBSERVER
 	var/target
 
-// ALLOW(lifecycle): its portal forgets it.
-/obj/structure/portal_target/Destroy()
+// its portal forgets it.
+/obj/structure/portal_target/on_destroy(force)
 	if(target)
 		var/obj/structure/portal_event/T = target
 		T.target = null
 		target = null
-	. = ..()
+	..()
 
 /obj/structure/portal_gateway
 	name = "portal"

@@ -13,8 +13,8 @@
 	var/obj/item/assembly/a_right = null
 	var/tmp/special_assembly_handle
 
-// ALLOW(lifecycle): assemblies still inside it go with it (ones already taken out stay).
-/obj/item/assembly_holder/Destroy()
+// assemblies still inside it go with it (ones already taken out stay).
+/obj/item/assembly_holder/on_destroy(force)
 	if(a_left)
 		a_left.holder_handle = null
 		if(a_left.loc == src && !QDELETED(a_left))
@@ -23,7 +23,7 @@
 		a_right.holder_handle = null
 		if(a_right.loc == src && !QDELETED(a_right))
 			qdel(a_right)
-	return ..()
+	..()
 
 /obj/item/assembly_holder/proc/attach(obj/item/assembly/D, obj/item/assembly/D2, mob/user)
 	if(!D || !D2)

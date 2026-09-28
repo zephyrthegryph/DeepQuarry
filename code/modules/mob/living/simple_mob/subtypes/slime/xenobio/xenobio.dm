@@ -34,11 +34,11 @@
 	if(my_predecessor)
 		inherit_information(my_predecessor)
 
-// ALLOW(lifecycle): it lets go of its victim.
-/mob/living/simple_mob/slime/xenobio/Destroy()
+// it lets go of its victim.
+/mob/living/simple_mob/slime/xenobio/on_destroy(force)
 	if(victim)
 		stop_consumption() // Unbuckle us from our victim.
-	return ..()
+	..()
 
 //body lives in code/modules/combat_ai/ports/slime_mob_overrides.dm where it
 // uses /datum/slime_state instead of the deleted ai_brain. Empty stub here so

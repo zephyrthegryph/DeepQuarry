@@ -4,7 +4,7 @@
 // keeping them as instance methods doesn't add proc-table cost). The internal
 // list lookup goes through the global helper dq_get_listener_list_from_event.
 
-/atom/Destroy()
+/atom/on_destroy(force)
 	// Peek (no component allocation). If nothing ever registered an
 	// observer-event on this atom, there's no component, no listeners,
 	// and we skip the whole iteration — important for transient boot-time
@@ -15,7 +15,7 @@
 		for(var/destroy_listener in destroy_listeners)
 			call(destroy_listener, destroy_listeners[destroy_listener])(src)
 	// Component qdels with the atom; no manual cleanup needed.
-	return ..()
+	..()
 
 /atom/proc/register(event, procOwner, proc_call)
 	var/list/listeners = dq_get_listener_list_from_event(src, event)

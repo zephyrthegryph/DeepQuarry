@@ -15,15 +15,15 @@
 			to_chat(O, span_warning("\The [src] breaks into tiny pieces and collapses!"))
 	return ..()
 
-// ALLOW(lifecycle): the stake it was pinned to forgets it and blocks again.
-/obj/item/target/Destroy()
+// the stake it was pinned to forgets it and blocks again.
+/obj/item/target/on_destroy(force)
 	// if a target is deleted and associated with a stake, force stake to forget
 	for(var/obj/structure/target_stake/T in view(3,src))
 		if(T.pinned_target == src)
 			T.pinned_target = null
 			T.density = TRUE
 			break
-	. = ..() // delete target
+	..()
 
 /obj/item/target/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()

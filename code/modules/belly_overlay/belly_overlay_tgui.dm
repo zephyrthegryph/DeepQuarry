@@ -19,13 +19,13 @@
 /datum/belly_overlay_tgui/New(mob/M)
 	owner_handle = om_handle(M)
 
-// ALLOW(lifecycle): hides the owner's belly overlay window.
-/datum/belly_overlay_tgui/Destroy(force)
+// hides the owner's belly overlay window.
+/datum/belly_overlay_tgui/on_destroy(force)
 	if(owner()?.client)
 		winset(owner().client, "mapwindow.belly_overlay", "is-visible=false")
 	owner_handle = null
 	active_ui = null
-	return ..()
+	..()
 
 /datum/belly_overlay_tgui/tgui_state(mob/user)
 	return GLOB.tgui_always_state

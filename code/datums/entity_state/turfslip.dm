@@ -116,8 +116,8 @@ REF_BACK(/datum/turfslip, list("owner" = "turfslip"))
 		end_slip()
 		return
 
-// ALLOW(lifecycle): the slipping mob stops sliding.
-/datum/turfslip/Destroy(force = FALSE)
+// the slipping mob stops sliding.
+/datum/turfslip/on_destroy(force)
 	if(owner)
 		om_unhook(owner, /datum/om/event/moved, src)
 		owner.inertia_dir = 0
@@ -125,7 +125,7 @@ REF_BACK(/datum/turfslip, list("owner" = "turfslip"))
 		if(owner.turfslip == src)
 			owner.turfslip = null
 	owner = null
-	. = ..()
+	..()
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // Helper proc

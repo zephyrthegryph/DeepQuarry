@@ -364,13 +364,14 @@ GLOBAL_LIST_EMPTY(all_maps)
 	if(custom_skybox)
 		custom_skybox = new custom_skybox()
 
-/datum/map_z_level/Destroy(force)
+/datum/map_z_level/lifecycle_keep(force)
 	stack_trace("Attempt to delete a map_z_level instance [log_info_line(src)]")
-	if(!force)
-		return QDEL_HINT_LETMELIVE // No.
+	return !force
+
+/datum/map_z_level/on_destroy(force)
 	if (using_map.zlevels["[z]"] == src)
 		using_map.zlevels -= "[z]"
-	return ..()
+	..()
 
 /datum/map/proc/get_map_info()
 	return "No map information available"

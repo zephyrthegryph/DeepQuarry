@@ -37,13 +37,13 @@
 
 REF_OWNED(/obj/item/ghost_trap, "ghost_reporter")
 
-// ALLOW(lifecycle): a captured entity is released onto the turf.
-/obj/item/ghost_trap/Destroy()
+// a captured entity is released onto the turf.
+/obj/item/ghost_trap/on_destroy(force)
 	var/mob/our_entity = om_resolve(captured_entity)
 	if(our_entity)
 		REMOVE_TRAIT(our_entity, TRAIT_NO_TRANSFORM, src)
 		our_entity.forceMove(get_turf(src))
-	. = ..()
+	..()
 
 /obj/item/ghost_trap/proc/release_occupant_effect(mob/user, obj/item/held, datum/interaction/interaction)
 	release_entity(user)

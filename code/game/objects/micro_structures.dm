@@ -30,15 +30,15 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 		return
 	offset_tunnel()
 
-// ALLOW(lifecycle): the tunnel collapses and spits out the micros inside it.
-/obj/structure/micro_tunnel/Destroy()
+// the tunnel collapses and spits out the micros inside it.
+/obj/structure/micro_tunnel/on_destroy(force)
 	visible_message(span_warning("\The [src] collapses!"))
 	for(var/mob/thing in src.contents)
 		visible_message(span_warning("\The [thing] tumbles out!"))
 		thing.forceMove(get_turf(src.loc))
 		thing.cancel_camera()
 
-	return ..()
+	..()
 
 /obj/structure/micro_tunnel/set_dir(new_dir)
 	. = ..()

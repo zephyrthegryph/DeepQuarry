@@ -213,8 +213,8 @@ REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 	if(vg_entity)
 		vg_power_unbind_node(vg_entity)
 
-// ALLOW(lifecycle): its area loses power and its power alarm clears.
-/obj/machinery/power/apc/Destroy()
+// its area loses power and its power alarm clears.
+/obj/machinery/power/apc/on_destroy(force)
 	if(power_alarm_raised)
 		GLOB.power_alarm.clearAlarm(loc, src)
 	om_changed(src, CHANGE_MACHINE_MODE)
@@ -225,7 +225,7 @@ REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 		area().power_equip  = 0
 		area().power_environ = 0
 		area().power_change()
-	return ..()
+	..()
 
 /// Something about the APC changed (settings, cell, damage): send it to Rust.
 /obj/machinery/power/apc/proc/wake_for_power_dependency()

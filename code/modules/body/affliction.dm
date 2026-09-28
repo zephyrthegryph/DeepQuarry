@@ -154,12 +154,12 @@ REF_BACK(/datum/affliction, list("body" = null, "owner" = null, "location" = nul
 	src.location = location
 	configure(location)
 
-// ALLOW(lifecycle): an affliction leaves its body (symptoms end, factors recompute).
-/datum/affliction/Destroy()
+// an affliction leaves its body (symptoms end, factors recompute).
+/datum/affliction/on_destroy(force)
 	if(body)
 		body.remove_affliction(src)
 	active_symptoms = null
-	return ..()
+	..()
 
 /// Location-dependent setup, run once at construction (location may be null:
 /// systemic afflictions, reference prototypes). Virtual.

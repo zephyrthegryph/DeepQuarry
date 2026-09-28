@@ -72,11 +72,11 @@
 	if(start_immediately)
 		start()
 
-// ALLOW(lifecycle): stops the sound playing on its atoms.
-/datum/looping_sound/Destroy()
+// stops the sound playing on its atoms.
+/datum/looping_sound/on_destroy(force)
 	stop()
 	output_atoms = null
-	return ..()
+	..()
 
 /datum/looping_sound/proc/start(atom/add_thing, skip_start_sound = FALSE)
 	if(QDELETED(src))

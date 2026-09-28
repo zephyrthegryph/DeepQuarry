@@ -72,8 +72,8 @@
 				filling.icon += reagents.get_color()
 				add_overlay(filling)
 
-// ALLOW(lifecycle): the breathing mask retracts from its patient.
-/obj/structure/medical_stand/Destroy()
+// the breathing mask retracts from its patient.
+/obj/structure/medical_stand/on_destroy(force)
 	if(breather())
 		breather().internal = null
 		breather().internals?.icon_state = "internal0"
@@ -89,7 +89,7 @@
 	attached_handle = null
 	qdel(beaker)
 	beaker = null
-	return ..()
+	..()
 
 /obj/structure/medical_stand/MouseDrop(mob/living/carbon/human/target, src_location, over_location)
 	..()

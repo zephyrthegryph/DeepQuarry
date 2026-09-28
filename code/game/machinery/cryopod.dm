@@ -292,12 +292,12 @@
 // C8a: the occupant's a sealed slot (containment.md §10); the base Destroy()
 // spills it through the ledger's drop policy, so this just keeps the
 // pre-eject "let them fall asleep, not collapse" behaviour.
-// ALLOW(lifecycle): its sleeper is left lying down as the pod goes.
-/obj/machinery/cryopod/Destroy()
+// its sleeper is left lying down as the pod goes.
+/obj/machinery/cryopod/on_destroy(force)
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
 	if(occupant)
 		occupant.resting = 1
-	return ..()
+	..()
 
 /// Sealed: cryosleep is its own environment, same as before (a mob whose loc
 /// became the pod took no heat or damage path either way).

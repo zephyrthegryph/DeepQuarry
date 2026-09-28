@@ -160,11 +160,11 @@ REF_OWNED(/obj/machinery/computer/teleporter, "teleport_control")
 	underlays += image('icons/obj/stationobjs.dmi', icon_state = "tele-wires")
 	default_apply_parts()
 
-// ALLOW(lifecycle): the teleporter console forgets its hub.
-/obj/machinery/teleport/hub/Destroy()
+// the teleporter console forgets its hub.
+/obj/machinery/teleport/hub/on_destroy(force)
 	com()?.teleport_control.hub_handle = null
 	com_handle = null
-	return ..()
+	..()
 
 /obj/machinery/teleport/hub/Bumped(M as mob|obj)
 	if(icon_state == "tele1")
@@ -227,11 +227,11 @@ REF_OWNED(/obj/machinery/computer/teleporter, "teleport_control")
 	add_overlay("controller-wires")
 	default_apply_parts()
 
-// ALLOW(lifecycle): the teleporter console forgets its station.
-/obj/machinery/teleport/station/Destroy()
+// the teleporter console forgets its station.
+/obj/machinery/teleport/station/on_destroy(force)
 	com()?.com()?.teleport_control.station_handle = null
 	com_handle = null
-	return ..()
+	..()
 
 /obj/machinery/teleport/station/proc/engage(mob/user)
 	if(stat & (BROKEN|NOPOWER))

@@ -372,11 +372,11 @@
 	dq_add_recursive_move(src)
 	om_hook(src, /datum/om/event/movable_attempted_move, src, PROC_REF(on_moved))
 
-// ALLOW(lifecycle): its hologram goes with it.
-/obj/item/integrated_circuit/output/holographic_projector/Destroy()
+// its hologram goes with it.
+/obj/item/integrated_circuit/output/holographic_projector/on_destroy(force)
 	destroy_hologram()
 	om_unhook(src, /datum/om/event/movable_attempted_move, src)
-	return ..()
+	..()
 
 /obj/item/integrated_circuit/output/holographic_projector/do_work()
 	var/toggled = get_pin_data(IC_INPUT, 1)

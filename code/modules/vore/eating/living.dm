@@ -1449,8 +1449,8 @@ REF_BACK(/datum/vore_panel_button, list("owner" = "vore_panel_button"))
 	if(!owner.vorePanel)
 		owner.vorePanel = new(owner)
 
-// ALLOW(lifecycle): owned state datum (was a component) unhooks and detaches from its owner.
-/datum/vore_panel_button/Destroy(force)
+// owned state datum (was a component) unhooks and detaches from its owner.
+/datum/vore_panel_button/on_destroy(force)
 	var/mob/living/M = owner
 	if(M)
 		om_unhook(M, /datum/om/event/mob_client_login, src)
@@ -1466,7 +1466,7 @@ REF_BACK(/datum/vore_panel_button, list("owner" = "vore_panel_button"))
 		if(M.vore_panel_button == src)
 			M.vore_panel_button = null
 	owner = null
-	return ..()
+	..()
 
 /// Gives the mob its vore panel HUD button if it has none.
 /mob/living/proc/add_vore_panel_button()

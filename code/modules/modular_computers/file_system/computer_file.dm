@@ -31,17 +31,18 @@ GLOBAL_VAR_INIT(file_uid, 0)
 	if(islist(md))
 		metadata = md.Copy()
 
-// ALLOW(lifecycle): leaves its drive; a running program is killed.
-/datum/computer_file/Destroy()
+// leaves its drive; a running program is killed.
+/datum/computer_file/on_destroy(force)
 	if(!holder())
-		return ..()
+		..()
+		return
 
 	holder().remove_file(src)
 	// holder.holder is the computer that has drive installed. If we are Destroy()ing program that's currently running kill it.
 	if(holder().holder2() && holder().holder2().active_program() == src)
 		holder().holder2().kill_program(1)
 	holder_handle = null
-	return ..()
+	..()
 
 // Returns independent copy of this file.
 /datum/computer_file/proc/clone(rename = 0)

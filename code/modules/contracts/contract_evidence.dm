@@ -202,10 +202,10 @@
 	/// The contract evidence id this paper carries and retains (was the contract_evidence_carrier component).
 	var/carried_evidence_id
 
-// ALLOW(lifecycle): releases its carried evidence id.
-/obj/item/paper/Destroy()
+// releases its carried evidence id.
+/obj/item/paper/on_destroy(force)
 	release_carried_evidence()
-	return ..()
+	..()
 
 /obj/item/paper/proc/release_carried_evidence()
 	if(carried_evidence_id)

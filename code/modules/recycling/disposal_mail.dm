@@ -133,8 +133,8 @@ DECLARE_INTERACTIONS(/obj/structure/bigDelivery, \
 		if(examtext)
 			. += span_notice("It has a note attached which reads, \"[examtext]\"")
 
-// ALLOW(lifecycle): the wrapped thing is unwrapped onto the floor.
-/obj/structure/bigDelivery/Destroy()
+// the wrapped thing is unwrapped onto the floor.
+/obj/structure/bigDelivery/on_destroy(force)
 	if(wrapped()) //sometimes items can disappear. For example, bombs. --rastaf0
 		wrapped().forceMove(get_turf(src))
 		if(istype(wrapped(), /obj/structure/closet))
@@ -144,7 +144,7 @@ DECLARE_INTERACTIONS(/obj/structure/bigDelivery, \
 	var/turf/T = get_turf(src)
 	for(var/atom/movable/AM in contents)
 		AM.forceMove(T)
-	return ..()
+	..()
 
 /obj/item/smallDelivery
 	desc = "A small wrapped package."

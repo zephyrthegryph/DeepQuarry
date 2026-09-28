@@ -36,8 +36,8 @@
 	. = ..()
 	update_nearby_tiles(need_rebuild=1)
 
-// ALLOW(lifecycle): leaves its generator's deployed shields (the generator is a handle).
-/obj/machinery/shield/Destroy()
+// leaves its generator's deployed shields (the generator is a handle).
+/obj/machinery/shield/on_destroy(force)
 	opacity = 0
 	density = FALSE
 	update_nearby_tiles()
@@ -45,7 +45,7 @@
 	if(SG)
 		LAZYREMOVE(SG.deployed_shields, src)
 	our_owner = null
-	. = ..()
+	..()
 
 /obj/machinery/shield/declare_interactions(list/into)
 	into += list(
@@ -126,10 +126,10 @@
 REF_OWNED(/obj/machinery/shieldgen, "cell")
 REF_OWNED_LIST(/obj/machinery/shieldgen, "deployed_shields")
 
-// ALLOW(lifecycle): its shields collapse.
-/obj/machinery/shieldgen/Destroy()
+// its shields collapse.
+/obj/machinery/shieldgen/on_destroy(force)
 	collapse_shields()
-	. = ..()
+	..()
 
 /obj/machinery/shieldgen/examine(mob/user)
 	. = ..()

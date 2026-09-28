@@ -522,6 +522,16 @@
 			LAZYREMOVE(orec.fwd_out, E)
 	rec.fwd_in = null
 
+/// Lifecycle phase 4: every attached behaviour's on_destroy(E), before the links clear.
+/proc/om_behaviours_on_destroy(datum/E)
+	var/datum/om/rec/rec = E.om_rec
+	if(!rec || rec.torn_down)
+		return
+	for(var/datum/om/behaviour/B as anything in rec.att.Copy())
+		if(rec.torn_down)
+			return
+		rec.sched.call_hook(rec, B, OM_HOOK_DESTROY)
+
 /// Lifecycle phase 5 (teardown): contributions both ways, behaviours
 /// (on_stop), deadlines, tasks. Called from dq_lifecycle_revoke_grants().
 /proc/om_teardown_rest(datum/E)

@@ -63,13 +63,13 @@ REF_OWNED_LIST(/atom/movable, "hose_connectors")
 REF_OWNED(/datum/hose_connector, list("my_hose", "reagents"))
 REF_BACK(/datum/hose_connector, list("carrier" = null))
 
-// ALLOW(lifecycle): the carrier loses its disconnect verb.
-/datum/hose_connector/Destroy()
+// the carrier loses its disconnect verb.
+/datum/hose_connector/on_destroy(force)
 	if(carrier)
 		carrier.verbs -= /atom/proc/disconnect_hose
 		LAZYREMOVE(carrier.hose_connectors, src)
 	om_unhook_all(src)
-	. = ..()
+	..()
 
 /datum/hose_connector/proc/get_carrier()
 	RETURN_TYPE(/atom)

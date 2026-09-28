@@ -410,12 +410,12 @@
 	M.status_at_least(EFFECT_MUTED, 10)
 	M.status_set(EFFECT_PARALYZED, max(M.status_units(EFFECT_PARALYZED), 10))
 
-// ALLOW(lifecycle): its mob wakes from fake death.
-/datum/reagent/toxin/zombiepowder/Destroy()
+// its mob wakes from fake death.
+/datum/reagent/toxin/zombiepowder/on_destroy(force)
 	if(holder && holder.my_atom && ismob(holder.my_atom))
 		var/mob/M = holder.my_atom
 		M.status_flags &= ~FAKEDEATH
-	return ..()
+	..()
 
 /datum/reagent/lichpowder
 	name = REAGENT_LICHPOWDER
@@ -445,12 +445,12 @@
 		M.visible_message("[M] wheezes.", "You wheeze sharply... it's cold.")
 		M.adjust_bodytemperature(-(10 * TEMPERATURE_DAMAGE_COEFFICIENT), min_temp = T0C - 10)
 
-// ALLOW(lifecycle): its mob wakes from fake death.
-/datum/reagent/lichpowder/Destroy()
+// its mob wakes from fake death.
+/datum/reagent/lichpowder/on_destroy(force)
 	if(holder && holder.my_atom && ismob(holder.my_atom))
 		var/mob/M = holder.my_atom
 		M.status_flags &= ~FAKEDEATH
-	return ..()
+	..()
 
 /datum/reagent/toxin/fertilizer //Reagents used for plant fertilizers.
 	name = REAGENT_FERTILIZER

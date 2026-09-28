@@ -27,10 +27,10 @@
 
 REF_OWNED(/datum/reagents/distilling, "heat_set_watch")
 
-// ALLOW(lifecycle): stops watching reaction temperatures.
-/datum/reagents/distilling/Destroy()
+// stops watching reaction temperatures.
+/datum/reagents/distilling/on_destroy(force)
 	unwatch_reaction_temperatures()
-	return ..()
+	..()
 
 /datum/reagents/distilling/update_total()
 	. = ..()

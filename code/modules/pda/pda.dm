@@ -480,13 +480,13 @@ DECLARE_INTERACTIONS(/obj/item/pda, \
 REF_OWNED(/obj/item/pda, list("pai", "cartridge"))
 REF_OWNED_LIST(/obj/item/pda, "programs")
 
-// ALLOW(lifecycle): its ID drops out unless flagged to go with it.
-/obj/item/pda/Destroy()
+// its ID drops out unless flagged to go with it.
+/obj/item/pda/on_destroy(force)
 	if (id && !delete_id && id.loc == src)
 		id.forceMove(get_turf(loc))
 	else
 		QDEL_NULL(id)
-	return ..()
+	..()
 
 //Some spare PDAs in a box
 /obj/item/storage/box/PDAs

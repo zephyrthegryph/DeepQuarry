@@ -27,14 +27,14 @@ REF_OWNED_LIST(/datum/reagents, "reagent_list")
 REF_OWNED_VALUES(/datum/reagents, "reagent_by_id")
 REF_BACK(/datum/reagents, list("my_atom" = "reagents"))
 
-// ALLOW(lifecycle): breaks the reagent_by_id cycle (its atom forgets it via REF_BACK my_atom).
-/datum/reagents/Destroy()
+// breaks the reagent_by_id cycle (its atom forgets it via REF_BACK my_atom).
+/datum/reagents/on_destroy(force)
 	// reagent_by_id isn't a declared owned list (REF_OWNED_LIST above already
 	// deleted its members through reagent_list), but it still points at every
 	// reagent, and each reagent's `holder` points back here: left set, the pair
 	// is a reference cycle that never collects (every holder hard-deleted).
 	reagent_by_id = null
-	return ..()
+	..()
 
 /* Internal procs */
 

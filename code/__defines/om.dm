@@ -319,6 +319,8 @@
 #define OM_HOOK_STOP 6
 #define OM_HOOK_NATIVE 7
 #define OM_HOOK_KEYED 8
+/// The entity is being destroyed (destroy transaction phase 4, before links clear).
+#define OM_HOOK_DESTROY 9
 
 // Uncomment (or pass -DOM_PROFILE_CALLS) for per-call timing in the cadence loop.
 // #define OM_PROFILE_CALLS

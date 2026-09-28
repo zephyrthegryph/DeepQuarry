@@ -221,8 +221,8 @@ REF_OWNED(/datum/generated_room_fragment_placement, "fragment")
 				ChangeArea(T, space_area)
 	return ..()
 
-// ALLOW(lifecycle): its transit/maintenance turfs revert to space and its built atoms go with it.
-/datum/generated_station_materialization/Destroy()
+// its transit/maintenance turfs revert to space and its built atoms go with it.
+/datum/generated_station_materialization/on_destroy(force)
 	qdel_handle(entry_handle); entry_handle = null
 	var/area/space/space_area = generated_station_space_area()
 	if(transit_area())
@@ -245,7 +245,7 @@ REF_OWNED(/datum/generated_room_fragment_placement, "fragment")
 	degradation_events = null
 	QDEL_NULL(tile_plan)
 	QDEL_NULL(service_validation)
-	return ..()
+	..()
 
 /// Converts planner-local coordinates into station turfs. This pass deliberately
 /// creates no machinery: utility and room-content passes can safely follow it.

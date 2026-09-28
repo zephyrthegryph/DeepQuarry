@@ -303,8 +303,8 @@
 
 //If there's an MMI in the robot, have it ejected when the mob goes away. --NEO
 //Improved /N
-// ALLOW(lifecycle): the MMI receives the borg's mind on the turf; shells revert; parts and hat drop.
-/mob/living/silicon/robot/Destroy()
+// the MMI receives the borg's mind on the turf; shells revert; parts and hat drop.
+/mob/living/silicon/robot/on_destroy(force)
 	for(var/ability_id in robot_granted_abilities)
 		revoke_ability(ability_id, src)
 	if(mmi)//Safety for when a cyborg gets dust()ed. Or there is no MMI inside.
@@ -352,7 +352,7 @@
 		QDEL_NULL(camera)
 	module_active = null
 
-	return ..()
+	..()
 
 /// Stat changes are events: equipment drops once, senses and sprite refresh once.
 /mob/living/silicon/robot/set_stat(new_stat)

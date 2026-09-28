@@ -28,9 +28,9 @@
 /datum/dq_state_holder
 	var/atom/held
 
-/datum/dq_state_holder/Destroy(force)
+/datum/dq_state_holder/on_destroy(force)
 	held = null
-	return ..()
+	..()
 
 /datum/dq_state_holder/proc/on_signal(datum/source, datum/om/event/qdeleting/event)
 	EVENT_HANDLER

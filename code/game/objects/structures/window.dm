@@ -325,12 +325,12 @@
 		T.update_connections()
 		T.update_icon()
 
-// ALLOW(lifecycle): neighbouring windows and tables re-smooth without it.
-/obj/structure/window/Destroy()
+// neighbouring windows and tables re-smooth without it.
+/obj/structure/window/on_destroy(force)
 	density = FALSE
 	update_nearby_tiles()
 	var/turf/location = loc
-	. = ..()
+	..()
 	for(var/obj/structure/window/W in orange(location, 1))
 		W.update_icon()
 	for(var/obj/structure/table/T in view(location, 1))

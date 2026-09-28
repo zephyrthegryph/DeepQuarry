@@ -139,12 +139,12 @@ EXTEND_INTERACTIONS(/obj/effect/overlay/snow, \
 	vis_flags = NONE
 	blocks_emissive = EMISSIVE_BLOCK_NONE
 
-// ALLOW(lifecycle): only its light component may delete it.
-/obj/effect/overlay/light_visible/Destroy(force)
-	if(!force)
-		stack_trace("Movable light visible mask deleted, but not by our component")
-		return QDEL_HINT_LETMELIVE
-	return ..()
+// Only its light component may delete it (a forced qdel()).
+/obj/effect/overlay/light_visible/lifecycle_keep(force)
+	if(force)
+		return FALSE
+	stack_trace("Movable light visible mask deleted, but not by our component")
+	return TRUE
 
 /obj/effect/overlay/light_cone
 	name = ""
@@ -171,12 +171,12 @@ EXTEND_INTERACTIONS(/obj/effect/overlay/snow, \
 /obj/effect/overlay/light_cone/proc/apply_standard_transform()
 	transform = transform.Translate(-32, -32)
 
-// ALLOW(lifecycle): only its light component may delete it.
-/obj/effect/overlay/light_cone/Destroy(force)
-	if(!force)
-		stack_trace("Directional light cone deleted, but not by our component")
-		return QDEL_HINT_LETMELIVE
-	return ..()
+// Only its light component may delete it (a forced qdel()).
+/obj/effect/overlay/light_cone/lifecycle_keep(force)
+	if(force)
+		return FALSE
+	stack_trace("Directional light cone deleted, but not by our component")
+	return TRUE
 
 /obj/effect/overlay/closet_door
 	anchored = TRUE

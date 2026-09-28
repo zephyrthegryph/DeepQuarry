@@ -23,10 +23,10 @@
 	drop_sound = 'sound/items/drop/accessory.ogg'
 	pickup_sound = 'sound/items/pickup/accessory.ogg'
 
-// ALLOW(lifecycle): an attached accessory is removed from its clothing.
-/obj/item/clothing/accessory/Destroy()
+// an attached accessory is removed from its clothing.
+/obj/item/clothing/accessory/on_destroy(force)
 	on_removed()
-	return ..()
+	..()
 
 // Delegate to the global clothing_appearance_handler singleton.
 // The cached inv_overlay / mob_overlay vars remain on the accessory for

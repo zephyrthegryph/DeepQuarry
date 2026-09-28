@@ -8,12 +8,12 @@
 	src.owner_handle = om_handle(owner)
 	profile = owner?.mob?.keybind_profile() || KEYBIND_PROFILE_DEFAULT
 
-// ALLOW(lifecycle): clears the client's cached editor (clients aren't datums).
-/datum/keybind_editor/Destroy()
+// clears the client's cached editor (clients aren't datums).
+/datum/keybind_editor/on_destroy(force)
 	if(owner()?.keybind_editor == src)
 		owner().keybind_editor = null
 	owner_handle = null
-	return ..()
+	..()
 
 /client/var/tmp/datum/keybind_editor/keybind_editor
 

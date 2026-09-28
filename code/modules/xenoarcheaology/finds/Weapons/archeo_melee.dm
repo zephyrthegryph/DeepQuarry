@@ -64,8 +64,8 @@
 		else
 			return
 
-// ALLOW(lifecycle): a charged blade punishes its wielder.
-/obj/item/melee/artifact_blade/Destroy()
+// a charged blade punishes its wielder.
+/obj/item/melee/artifact_blade/on_destroy(force)
 	if(stored_blood && last_touched() && last_touched().stat != DEAD) //We have been activated (have some energy), an owner and they are alive. They are going to feel pain.
 		to_chat(last_touched(), span_cult("You feel as though your mind is suddenly being torn apart at the seams as the [src] is destroyed!"))
 		last_touched().status_at_least(EFFECT_PARALYZED, 10)
@@ -82,7 +82,7 @@
 		lightning_strike(T, TRUE)
 	playsound(src, 'sound/goonstation/spooky/creepyshriek.ogg', 100, 1, 75) //It plays VERY far.
 	last_touched_handle = null //Get rid of the reference to our owner.
-	. = ..()
+	..()
 
 /obj/item/melee/artifact_blade/cultify()
 	return

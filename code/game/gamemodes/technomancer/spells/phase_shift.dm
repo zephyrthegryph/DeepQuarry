@@ -31,11 +31,11 @@
 	set_light(3, 5, l_color = "#FA58F4")
 	PERIODIC_START(src, PERIODIC_SLOW)
 
-// ALLOW(lifecycle): whatever phased inside comes back out on the turf.
-/obj/effect/phase_shift/Destroy()
+// whatever phased inside comes back out on the turf.
+/obj/effect/phase_shift/on_destroy(force)
 	for(var/atom/movable/AM in contents) //Eject everything out.
 		AM.forceMove(get_turf(src))
-	return ..()
+	..()
 
 /// Wears on whoever hides inside every 2 s; empty, it sleeps.
 /obj/effect/phase_shift/periodic_step()

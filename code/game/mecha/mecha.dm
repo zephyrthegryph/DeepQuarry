@@ -314,8 +314,8 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 REF_OWNED(/obj/mecha, "minihud")
 REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 
-// ALLOW(lifecycle): the mech leaves wreckage with salvage, or drops its equipment; pilot slot is holder-resolved.
-/obj/mecha/Destroy()
+// the mech leaves wreckage with salvage, or drops its equipment; pilot slot is holder-resolved.
+/obj/mecha/on_destroy(force)
 	src.go_out()
 	for(var/mob/M in slot_contents()) //Be Extra Sure
 		M.forceMove(get_turf(src))
@@ -385,7 +385,7 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 
 	GLOB.mech_destroyed_roundstat++
 
-	. = ..()
+	..()
 
 // The main process loop to replace the ancient global iterators.
 // It's a bit hardcoded but I don't see anyone else adding stuff to

@@ -133,17 +133,18 @@
 
 	PERIODIC_START(src, PERIODIC_SECOND)
 
-// ALLOW(lifecycle): the petrified gargoyle reverts, or crumbles.
-/obj/structure/gargoyle/Destroy()
+// the petrified gargoyle reverts, or crumbles.
+/obj/structure/gargoyle/on_destroy(force)
 	var/mob/living/carbon/human/gargoyle = om_resolve(WR_gargoyle)
 	if(!gargoyle)
-		return ..()
+		..()
+		return
 	if(can_revert)
 		unpetrify(deleting = FALSE) //don't delete if we're already deleting!
 	else
 		visible_message(span_warning("The [identifier] loses shape and crumbles into a pile of [material]!"))
 	WR_gargoyle = null
-	. = ..()
+	..()
 
 /obj/structure/gargoyle/periodic_step()
 	var/mob/living/carbon/human/gargoyle = om_resolve(WR_gargoyle)

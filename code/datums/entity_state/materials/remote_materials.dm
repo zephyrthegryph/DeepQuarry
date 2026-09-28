@@ -80,8 +80,8 @@ REF_OWNED(/datum/remote_materials, "local_container")
 	if(!mat_container() && allow_standalone)
 		_MakeLocal()
 
-// ALLOW(lifecycle): disconnects from its ore silo.
-/datum/remote_materials/Destroy()
+// disconnects from its ore silo.
+/datum/remote_materials/on_destroy(force)
 	if(silo())
 		allow_standalone = FALSE
 		disconnect()
@@ -89,7 +89,7 @@ REF_OWNED(/datum/remote_materials, "local_container")
 	om_unhook_all(src)
 	owner = null
 
-	return ..()
+	..()
 
 /datum/remote_materials/proc/_MakeLocal()
 	PRIVATE_PROC(TRUE)

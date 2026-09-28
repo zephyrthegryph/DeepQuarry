@@ -40,8 +40,8 @@
 		return INITIALIZE_HINT_QDEL
 	update_nearby_tiles()
 
-// ALLOW(lifecycle): leaves its generator's field; neighbouring fields redraw.
-/obj/effect/energy_field/Destroy()
+// leaves its generator's field; neighbouring fields redraw.
+/obj/effect/energy_field/on_destroy(force)
 	update_nearby_tiles()
 	if(my_gen())
 		if(istype(my_gen(), /obj/machinery/shield_gen))
@@ -52,7 +52,7 @@
 			LAZYREMOVE(AE.created_field, src)
 			my_gen_handle = null
 	var/turf/current_loc = get_turf(src)
-	. = ..()
+	..()
 	for(var/direction in GLOB.cardinal)
 		var/turf/T = get_step(current_loc, direction)
 		if(T)

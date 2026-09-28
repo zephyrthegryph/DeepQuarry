@@ -20,9 +20,9 @@
 	name = "spell button"
 	source_single = TRUE
 
-// ALLOW(lifecycle): the master leaves its holder's spell_masters list (a handle, so the mob side can't be declared).
-/atom/movable/screen/movable/spell_master/Destroy()
-	. = ..()
+// the master leaves its holder's spell_masters list (a handle, so the mob side can't be declared).
+/atom/movable/screen/movable/spell_master/on_destroy(force)
+	..()
 	var/mob/holder = spell_holder()
 	if(holder)
 		holder.spell_masters -= src

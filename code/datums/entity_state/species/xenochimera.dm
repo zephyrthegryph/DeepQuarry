@@ -30,8 +30,8 @@ REF_OWNED(/datum/xenochimera, "revival_record")
 REF_BACK(/datum/xenochimera, list("owner" = "xenochimera"))
 REF_VAR(/mob/living/carbon/human, OWNED, /datum/xenochimera, xenochimera)
 
-// ALLOW(lifecycle): the owner loses the reconstitute verb and its pointer to us.
-/datum/xenochimera/Destroy(force)
+// the owner loses the reconstitute verb and its pointer to us.
+/datum/xenochimera/on_destroy(force)
 	if(owner)
 		remove_verb(owner, /mob/living/carbon/human/proc/reconstitute_form)
 		om_unhook_all(src)
@@ -39,7 +39,7 @@ REF_VAR(/mob/living/carbon/human, OWNED, /datum/xenochimera, xenochimera)
 			owner.xenochimera = null
 	owner = null
 	QDEL_NULL(revival_record)
-	. = ..()
+	..()
 
 /datum/xenochimera/proc/on_dna_finalized(datum/source, datum/om/event/human_dna_finalized/event)
 	EVENT_HANDLER

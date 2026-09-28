@@ -108,12 +108,12 @@
 	EVENT_HANDLER
 	qdel(src)
 
-// ALLOW(lifecycle): leaves its shadekin's maw list (the shadekin datum lives on the owner, not in a var).
-/obj/effect/abstract/dark_maw/Destroy()
+// leaves its shadekin's maw list (the shadekin datum lives on the owner, not in a var).
+/obj/effect/abstract/dark_maw/on_destroy(force)
 	var/datum/shadekin/SK = owner()?.get_shadekin_state()
 	if(SK)
 		LAZYREMOVE(SK.active_dark_maws, src)
-	return ..()
+	..()
 
 /obj/effect/abstract/dark_maw/Crossed(O)
 	. = ..()

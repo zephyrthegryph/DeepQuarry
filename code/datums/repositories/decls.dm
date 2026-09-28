@@ -63,8 +63,7 @@
 	SHOULD_NOT_SLEEP(TRUE)
 	return
 
-// ALLOW(lifecycle): decls are immutable singletons and refuse deletion.
-/datum/decl/Destroy()
-	SHOULD_CALL_PARENT(FALSE)
+// Decls are immutable singletons and refuse deletion.
+/datum/decl/lifecycle_keep(force)
 	stack_trace("Prevented attempt to delete a decl instance: [log_info_line(src)]")
-	return QDEL_HINT_LETMELIVE // Prevents decl destruction
+	return TRUE

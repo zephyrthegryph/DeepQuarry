@@ -73,8 +73,8 @@
 			CRASH("A supply shuttle is already defined.")
 		GLOB.supply_service.shuttle = src
 
-// ALLOW(lifecycle): leaves SSshuttles and the supply shuttle slot.
-/datum/shuttle/Destroy()
+// leaves SSshuttles and the supply shuttle slot.
+/datum/shuttle/on_destroy(force)
 	current_location_handle = null
 	SSshuttles.shuttles -= src.name
 	SSshuttles.process_shuttles -= src
@@ -82,7 +82,7 @@
 	SSshuttles.shuttle_logs -= src
 	if(GLOB.supply_service.shuttle == src)
 		GLOB.supply_service.shuttle = null
-	. = ..()
+	..()
 
 /datum/shuttle/proc/set_process_state(new_state)
 	process_state = new_state

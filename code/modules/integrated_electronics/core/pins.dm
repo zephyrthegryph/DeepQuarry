@@ -31,12 +31,12 @@ D [1]/  ||
 	if(!istype(holder(), /obj/item/integrated_circuit))
 		message_admins("ERROR: An integrated_io ([src.name]) spawned without a valid holder!  This is a bug.")
 
-// ALLOW(lifecycle): a pin disconnects from its linked pins.
-/datum/integrated_io/Destroy()
+// a pin disconnects from its linked pins.
+/datum/integrated_io/on_destroy(force)
 	disconnect()
 	data = null
 	holder_handle = null
-	. = ..()
+	..()
 
 /datum/integrated_io/tgui_host()
 	return holder().tgui_host()

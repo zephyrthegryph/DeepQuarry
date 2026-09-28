@@ -92,11 +92,9 @@ REGISTRY_MEMBERSHIP(/obj/effect/landmark, REGISTRY_LATEJOIN)
 	else
 		registry_join(REGISTRY_LANDMARKS, src)
 
-// ALLOW(lifecycle): landmarks survive deletion unless flagged delete_me or forced.
-/obj/effect/landmark/Destroy(force = FALSE)
-	if(delete_me || force)
-		return ..()
-	return QDEL_HINT_LETMELIVE
+// Landmarks survive deletion unless flagged delete_me or forced.
+/obj/effect/landmark/lifecycle_keep(force)
+	return !delete_me && !force
 
 /obj/effect/landmark/start
 	name = "start"

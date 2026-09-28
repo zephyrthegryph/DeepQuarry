@@ -19,11 +19,11 @@
 	if(istype(my_brain(), /obj/item/organ/internal/brain) && my_brain().can_assist())
 		PERIODIC_START(src, PERIODIC_SLOW)
 
-// ALLOW(lifecycle): the brain's owner feels it ripped away.
-/obj/item/implant/neural/Destroy()
+// the brain's owner feels it ripped away.
+/obj/item/implant/neural/on_destroy(force)
 	if(my_brain()?.owner)
 		to_chat(my_brain().owner, span_critical("You feel a pressure in your mind as something is ripped away."))
-	return ..()
+	..()
 
 /obj/item/implant/neural/periodic_step()
 	if(my_brain() && part)

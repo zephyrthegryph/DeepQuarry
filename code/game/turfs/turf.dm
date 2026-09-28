@@ -126,15 +126,16 @@
 
 REGISTRY_MEMBERSHIP(/turf, REGISTRY_CLEANBOT_RESERVED_TURFS)
 
-/turf/Destroy()
+/turf
+	destroy_hint = QDEL_HINT_IWILLGC
+
+/turf/on_destroy(force)
 	if (!changing_turf)
 		stack_trace("Improper turf qdel. Do not qdel turfs directly.")
 	changing_turf = FALSE
 	registry_leave(REGISTRY_CLEANBOT_RESERVED_TURFS, src)
-	// ZAS connections.erase_all() removed. Rust owns turf adjacency; the
-	// /turf/open/Destroy unregister drops it.
+	// Rust owns turf adjacency; /turf/open/on_destroy's unregister drops it.
 	..()
-	return QDEL_HINT_IWILLGC
 
 /turf/ex_act(severity)
 	return 0

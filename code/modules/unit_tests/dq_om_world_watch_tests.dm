@@ -337,9 +337,9 @@
 /datum/world_test_gauge/New(cell)
 	watch = om_world_on_change(src, WORLD_PROBE(cell), CH_BIT(CH_PROBE_PRESSURE), PROC_REF(on_pressure))
 
-/datum/world_test_gauge/Destroy()
+/datum/world_test_gauge/on_destroy(force)
 	QDEL_NULL(watch)
-	return ..()
+	..()
 
 /datum/world_test_gauge/declared_owned_vars()
 	. = ..()

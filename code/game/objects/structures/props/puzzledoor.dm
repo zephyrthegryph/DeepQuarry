@@ -45,13 +45,13 @@
 			LAZYOR(L.linked_objects, src)
 			LAZYOR(locks, L)
 
-// ALLOW(lifecycle): many-to-many with locks: leaves each lock's door list.
-/obj/machinery/door/blast/puzzle/Destroy()
+// many-to-many with locks: leaves each lock's door list.
+/obj/machinery/door/blast/puzzle/on_destroy(force)
 	if(length(locks))
 		for(var/obj/structure/prop/lock/L in locks)
 			LAZYREMOVE(L.linked_objects, src)
 			LAZYREMOVE(locks, L)
-	. = ..()
+	..()
 
 /obj/machinery/door/blast/puzzle/declare_interactions(list/into)
 	into += list(

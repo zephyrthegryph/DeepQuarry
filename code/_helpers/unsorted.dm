@@ -1204,13 +1204,14 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 /mob/dview/skips_registry(registry_id)
 	return TRUE
 
-// ALLOW(lifecycle): shared dview mob refuses deletion unless forced, then is replaced.
-/mob/dview/Destroy(force)
+// The shared dview mob refuses deletion unless forced, then is replaced.
+/mob/dview/lifecycle_keep(force)
 	stack_trace("Attempt to delete the dview_mob: [log_info_line(src)]")
-	if (!force)
-		return QDEL_HINT_LETMELIVE
+	return !force
+
+/mob/dview/on_destroy(force)
 	GLOB.dview_mob = new
-	return ..()
+	..()
 
 /proc/screen_loc2turf(scr_loc, turf/origin)
 	var/tX = splittext(scr_loc, ",")

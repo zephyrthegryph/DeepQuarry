@@ -21,9 +21,9 @@
 		if(!(AM in before_contents) && !ismob(AM) && !istype(AM, /obj/effect/landmark))
 			qdel(AM)
 
-/datum/unit_test/dq_integrity_pool/Destroy()
+/datum/unit_test/dq_integrity_pool/on_destroy(force)
 	before_contents = null
-	return ..()
+	..()
 
 
 /// Walls: the material cap is max integrity, damage and repair move integrity,

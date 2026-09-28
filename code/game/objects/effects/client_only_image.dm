@@ -20,9 +20,9 @@ GLOBAL_LIST_EMPTY(client_only_images_expiring)
 	C.images += src
 	LAZYADD(clients, om_handle(C))
 
-// ALLOW(lifecycle): comes off every client it was shown to (clients aren't datums).
-/image/client_only/Destroy(force)
-	. = ..()
+// comes off every client it was shown to (clients aren't datums).
+/image/client_only/on_destroy(force)
+	..()
 	GLOB.client_only_images_expiring -= src
 	for(var/CW in clients)
 		var/client/C = om_resolve(CW)

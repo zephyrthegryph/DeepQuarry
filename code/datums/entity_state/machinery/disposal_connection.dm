@@ -30,13 +30,13 @@ REF_OWNED(/obj, "disposal_connection")
 
 REF_BACK(/datum/disposal_system_connection, list("owner" = "disposal_connection"))
 
-// ALLOW(lifecycle): owned state datum (was a component) unhooks and detaches from its owner.
-/datum/disposal_system_connection/Destroy()
+// owned state datum (was a component) unhooks and detaches from its owner.
+/datum/disposal_system_connection/on_destroy(force)
 	om_unhook_all(src)
 	if(owner?.disposal_connection == src)
 		owner.disposal_connection = null
 	owner = null
-	return ..()
+	..()
 
 // Signal handling
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

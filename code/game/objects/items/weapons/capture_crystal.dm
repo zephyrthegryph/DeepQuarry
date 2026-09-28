@@ -27,8 +27,8 @@
 	update_icon()
 
 //Let's make sure we clean up our references and things if the crystal goes away (such as when it's digested)
-// ALLOW(lifecycle): the bound mob is unleashed and freed of its command.
-/obj/item/capture_crystal/Destroy()
+// the bound mob is unleashed and freed of its command.
+/obj/item/capture_crystal/on_destroy(force)
 	if(bound_mob)
 		if(bound_mob in contents)
 			unleash()
@@ -39,7 +39,7 @@
 	if(owner)
 		om_unhook(owner, /datum/om/event/qdeleting, src)
 		owner = null
-	return ..()
+	..()
 
 /obj/item/capture_crystal/examine(user)
 	. = ..()

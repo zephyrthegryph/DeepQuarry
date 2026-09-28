@@ -9,13 +9,13 @@
 	/// Linked experiment handler
 	var/datum/experiment_handler/linked_experiment_handler
 
-// ALLOW(lifecycle): stops tracking its scanned atom's events.
-/datum/experiment/physical/Destroy()
+// stops tracking its scanned atom's events.
+/datum/experiment/physical/on_destroy(force)
 	if(currently_scanned_atom)
 		unregister_events()
 	currently_scanned_atom = null
 	linked_experiment_handler = null
-	return ..()
+	..()
 
 /datum/experiment/physical/is_complete()
 	return completed

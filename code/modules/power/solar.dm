@@ -48,10 +48,10 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	. = ..()
 	connect_to_network()
 
-// ALLOW(lifecycle): leaves its solar control computer.
-/obj/machinery/power/solar/Destroy()
+// leaves its solar control computer.
+/obj/machinery/power/solar/on_destroy(force)
 	unset_control() //remove from control computer
-	. = ..()
+	..()
 
 //set the control of the panel to a given computer if closer than SOLAR_MAX_DIST
 /obj/machinery/power/solar/proc/set_control(obj/machinery/power/solar_control/SC)
@@ -324,13 +324,13 @@ DECLARE_INTERACTIONS(/obj/item/solar_assembly, \
 	connect_to_network()
 	set_panels(cdir)
 
-// ALLOW(lifecycle): its panels and tracker lose their controller.
-/obj/machinery/power/solar_control/Destroy()
+// its panels and tracker lose their controller.
+/obj/machinery/power/solar_control/on_destroy(force)
 	for(var/obj/machinery/power/solar/M in connected_panels)
 		M.unset_control()
 	if(connected_tracker())
 		connected_tracker().unset_control()
-	return ..()
+	..()
 
 /obj/machinery/power/solar_control/proc/auto_start(forced = FALSE)
 	// Automatically sets the solars, if allowed.

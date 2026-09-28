@@ -109,13 +109,13 @@ REF_BACK(/datum/affliction/contagion, list("host" = null))
 		stage = 1
 	..(null)
 
-// ALLOW(lifecycle): parks the spread lane and drops the host view and strain data.
-/datum/affliction/contagion/Destroy()
+// parks the spread lane and drops the host view and strain data.
+/datum/affliction/contagion/on_destroy(force)
 	PERIODIC_STOP(src)
 	cures = null
 	required_organs = null
 	strain_data = null
-	return ..()
+	..()
 
 
 // --- Joining and leaving a body ----------------------------------------------------

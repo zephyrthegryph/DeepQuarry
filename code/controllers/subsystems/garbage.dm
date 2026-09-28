@@ -446,6 +446,14 @@ SUBSYSTEM_DEF(garbage)
 		trash = SSgarbage.items[to_delete.type] = new /datum/qdel_item(to_delete.type)
 	trash.qdels++
 
+	// A type that refuses deletion (lifecycle_keep(), LIFECYCLE_KEEP_UNLESS_FORCED)
+	// says so before the destroy transaction starts, so a refused qdel() leaves it
+	// whole instead of half torn down (and a forced one is refused too, not queued).
+	if(to_delete.lifecycle_keep(force))
+		to_delete.gc_destroyed = null
+		if(force)
+			trash.no_respect_force++
+		return
 
 	// L1 (doc/rewrite/lifecycle.md §2): destroy_transaction() is the whole
 	// destruction -- phases 0 (this used to be inline here: gc_destroyed,

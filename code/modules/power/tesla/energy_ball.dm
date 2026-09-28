@@ -29,12 +29,12 @@
 	if(!miniball)
 		set_light(10, 7, "#EEEEFF")
 
-// ALLOW(lifecycle): its orbiting mini-balls go with it.
-/obj/singularity/energy_ball/Destroy()
+// its orbiting mini-balls go with it.
+/obj/singularity/energy_ball/on_destroy(force)
 	for(var/obj/singularity/energy_ball/EB as anything in orbiting_balls())
 		qdel(EB)
 
-	. = ..()
+	..()
 
 /obj/singularity/energy_ball/admin_investigate_setup()
 	if(miniball)

@@ -175,10 +175,11 @@
 /datum/lighting_corner/dummy/New()
 	return
 
-// ALLOW(lifecycle): lighting engine: corners leave their sources and turfs; refuse deletion unless forced.
-/datum/lighting_corner/Destroy(force)
-	if (!force)
-		return QDEL_HINT_LETMELIVE
+// Lighting engine: only a forced qdel() deletes a corner.
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lighting_corner)
+
+// Corners leave their sources and turfs.
+/datum/lighting_corner/on_destroy(force)
 
 	for (var/datum/light_source/light_source as anything in affecting)
 		LAZYREMOVE(light_source.effect_str, src)
@@ -199,7 +200,7 @@
 	if(needs_update)
 		SSlighting.corners_queue -= src
 
-	return ..()
+	..()
 
 /datum/lighting_corner/proc/update_sun(datum/planet_sunlight_handler/pshandler)
 	if(!pshandler)

@@ -24,11 +24,11 @@
 	to_chat(owner_ref(), span_notice("Your shield will expire in 5 seconds!"))
 	expire(5 SECONDS)
 
-// ALLOW(lifecycle): the caster is told the shield expired.
-/obj/item/spell/reflect/Destroy()
+// the caster is told the shield expired.
+/obj/item/spell/reflect/on_destroy(force)
 	if(owner_ref())
 		to_chat(owner_ref(), span_danger("Your shield expires!"))
-	return ..()
+	..()
 
 /obj/item/spell/reflect/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(user.incapacitated())

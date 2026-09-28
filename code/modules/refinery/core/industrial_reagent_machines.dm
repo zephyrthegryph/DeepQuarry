@@ -17,10 +17,10 @@
 	update_icon()
 	make_rotatable()
 
-// ALLOW(lifecycle): its reagents are flushed.
-/obj/machinery/reagent_refinery/Destroy()
+// its reagents are flushed.
+/obj/machinery/reagent_refinery/on_destroy(force)
 	reagent_flush()
-	. = ..()
+	..()
 
 /obj/machinery/reagent_refinery/dismantle()
 	reagent_flush()

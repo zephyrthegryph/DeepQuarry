@@ -59,11 +59,11 @@
 			var/datum/pipeline/P2 = node2.parent
 			network_node2_handle = om_handle(P2.network)
 
-// ALLOW(lifecycle): a closed clamp reopens its pipe.
-/obj/machinery/clamp/Destroy()
+// a closed clamp reopens its pipe.
+/obj/machinery/clamp/on_destroy(force)
 	if(!open)
 		open()
-	. = ..()
+	..()
 
 /obj/machinery/clamp/proc/open()
 	if(open || !target_ref())

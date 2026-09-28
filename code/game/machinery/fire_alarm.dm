@@ -67,10 +67,10 @@ FIRE ALARM
 
 REF_OWNED(/obj/machinery/firealarm, list("soundloop", "engalarm", "critalarm", "causality"))
 
-// ALLOW(lifecycle): a sounding alarm is reset for its area.
-/obj/machinery/firealarm/Destroy()
+// a sounding alarm is reset for its area.
+/obj/machinery/firealarm/on_destroy(force)
 	reset()
-	return ..()
+	..()
 
 /obj/machinery/firealarm/proc/offset_alarm()
 	pixel_x = (dir & 3) ? 0 : (dir == 4 ? 26 : -26)

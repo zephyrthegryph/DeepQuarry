@@ -30,14 +30,14 @@
 	if(.)
 		shockdirs = list(turn(dir,90),turn(dir,-90))
 
-// ALLOW(lifecycle): its generators clean up the rest of the field.
-/obj/machinery/containment_field/Destroy()
+// its generators clean up the rest of the field.
+/obj/machinery/containment_field/on_destroy(force)
 	unsense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
 	if(FG1() && !FG1().clean_up)
 		FG1().cleanup()
 	if(FG2() && !FG2().clean_up)
 		FG2().cleanup()
-	. = ..()
+	..()
 
 /obj/machinery/containment_field/declare_interactions(list/into)
 	into += list(

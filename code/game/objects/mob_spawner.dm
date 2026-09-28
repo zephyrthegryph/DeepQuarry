@@ -27,8 +27,8 @@
 	PERIODIC_START(src, PERIODIC_SLOW)
 	COOLDOWN_START(src, spawn_cooldown, spawn_delay + rand(0, spawn_delay))
 
-// ALLOW(lifecycle): its spawned mobs lose their nest.
-/obj/structure/mob_spawner/Destroy()
+// its spawned mobs lose their nest.
+/obj/structure/mob_spawner/on_destroy(force)
 	for(var/spawned in spawned_mobs)
 		if(istype(spawned, /mob/living))
 			var/mob/living/L = spawned
@@ -37,7 +37,7 @@
 			var/obj/structure/closet/crate/mimic/O = spawned
 			O.nest = null
 	LAZYCLEARLIST(spawned_mobs)
-	return ..()
+	..()
 
 /// Acts only while a player is near; otherwise it sleeps until one comes near.
 /obj/structure/mob_spawner/periodic_step()

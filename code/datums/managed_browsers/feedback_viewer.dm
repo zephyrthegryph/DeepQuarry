@@ -27,11 +27,11 @@ ADMIN_VERB(view_feedback, R_ADMIN|R_DEBUG|R_EVENT, "View Feedback", "Open the Fe
 
 	..()
 
-// ALLOW(lifecycle): clears the client's back-reference (clients aren't datums).
-/datum/managed_browser/feedback_viewer/Destroy()
+// clears the client's back-reference (clients aren't datums).
+/datum/managed_browser/feedback_viewer/on_destroy(force)
 	if(my_client())
 		my_client().feedback_viewer = null
-	return ..()
+	..()
 
 /datum/managed_browser/feedback_viewer/proc/feedback_filter(row_name, thing_to_find, exact = FALSE)
 	var/database/query/query = null

@@ -24,10 +24,10 @@
 	GLOB.overmap_event_handler.update_hazards(old_loc)
 	GLOB.overmap_event_handler.update_hazards(loc)
 
-// ALLOW(lifecycle): hazards on its tile update.
-/obj/effect/overmap/event/Destroy()//takes a look at this one as well, make sure everything is A-OK
+// hazards on its tile update.
+/obj/effect/overmap/event/on_destroy(force)//takes a look at this one as well, make sure everything is A-OK
 	var/turf/T = loc
-	. = ..()
+	..()
 	GLOB.overmap_event_handler.update_hazards(T)
 
 //

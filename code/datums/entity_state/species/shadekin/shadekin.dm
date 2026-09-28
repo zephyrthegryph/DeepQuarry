@@ -148,8 +148,8 @@ REF_VAR(/mob/living, OWNED, /datum/shadekin, shadekin)
 /mob/living/proc/remove_shadekin()
 	QDEL_NULL(shadekin)
 
-// ALLOW(lifecycle): revokes its granted abilities, trait stage and verbs; hides the owner's energy hud.
-/datum/shadekin/Destroy(force)
+// revokes its granted abilities, trait stage and verbs; hides the owner's energy hud.
+/datum/shadekin/on_destroy(force)
 	if(owner)
 		for(var/ability_id in shadekin_granted_abilities)
 			owner.revoke_ability(ability_id, src)
@@ -162,7 +162,7 @@ REF_VAR(/mob/living, OWNED, /datum/shadekin, shadekin)
 		if(owner.shadekin == src)
 			owner.shadekin = null
 	owner = null
-	. = ..()
+	..()
 
 /datum/shadekin/proc/recalc_values()
 	set_shadekin_eyecolor() //Gets what eye color we are.

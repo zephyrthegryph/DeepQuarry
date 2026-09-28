@@ -26,11 +26,11 @@ GENERAL_PROTECT_DATUM(/datum/managed_browser/feedback_form)
 	..(new_client)
 	display()
 
-// ALLOW(lifecycle): clears the client's back-reference (clients aren't datums).
-/datum/managed_browser/feedback_form/Destroy()
+// clears the client's back-reference (clients aren't datums).
+/datum/managed_browser/feedback_form/on_destroy(force)
 	if(my_client())
 		my_client().feedback_form = null
-	return ..()
+	..()
 
 // Privacy option is allowed if both the config allows it, and the pepper file exists and isn't blank.
 /datum/managed_browser/feedback_form/proc/can_be_private()

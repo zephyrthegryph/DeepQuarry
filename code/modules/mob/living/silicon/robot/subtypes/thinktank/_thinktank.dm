@@ -80,8 +80,8 @@
 		types[ROBOT_SLOT_ARMOUR] = /datum/robot_component/armour/platform
 	return types
 
-// ALLOW(lifecycle): stored atoms and the recharging item drop out (stored as handles).
-/mob/living/silicon/robot/platform/Destroy()
+// stored atoms and the recharging item drop out (stored as handles).
+/mob/living/silicon/robot/platform/on_destroy(force)
 	revoke_ability(ABILITY_ID_ROBOT_EJECT_CARGO, src)
 	for(var/drop_ref in stored_atoms)
 		var/atom/movable/drop_atom = om_resolve(drop_ref)
@@ -93,7 +93,7 @@
 		if(istype(recharging_atom) && recharging_atom.loc == src)
 			recharging_atom.dropInto(loc)
 		recharging = null
-	. = ..()
+	..()
 
 /mob/living/silicon/robot/platform/examine(mob/user, distance)
 	. = ..()

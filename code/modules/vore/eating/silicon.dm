@@ -13,11 +13,11 @@
 
 REF_BACK(/obj/effect/overlay/aiholo, list("master" = null))
 
-// ALLOW(lifecycle): stops its walk loop.
-/obj/effect/overlay/aiholo/Destroy()
+// stops its walk loop.
+/obj/effect/overlay/aiholo/on_destroy(force)
 
 	walk(src, 0) // Because we might have called walk_to, we must stop the walk loop or BYOND keeps an internal reference to us forever.
-	return ..()
+	..()
 
 /mob/living/silicon/ai/verb/holo_nom()
 	var/mob/observer/eye/eyeobj = src?.active_eye()

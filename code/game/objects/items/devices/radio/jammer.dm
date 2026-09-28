@@ -39,11 +39,11 @@
 
 REF_OWNED(/obj/item/radio_jammer, "power_source")
 
-// ALLOW(lifecycle): a running jammer stops jamming.
-/obj/item/radio_jammer/Destroy()
+// a running jammer stops jamming.
+/obj/item/radio_jammer/on_destroy(force)
 	if(on)
 		turn_off()
-	return ..()
+	..()
 
 /obj/item/radio_jammer/get_cell()
 	return power_source

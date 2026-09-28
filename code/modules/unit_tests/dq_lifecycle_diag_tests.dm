@@ -25,11 +25,11 @@ REF_OWNED(/datum/dq_diag_owner_b, "a")
 /datum/dq_diag_leaker
 	var/tmp/list/members
 
-/datum/dq_diag_leaker/Destroy()
+/datum/dq_diag_leaker/on_destroy(force)
 	for(var/datum/dq_diag_leaked/member as anything in members)
 		qdel(member)
 	// deliberately no `members = null`
-	return ..()
+	..()
 
 /datum/dq_diag_leaked
 	var/tmp/datum/dq_diag_leaker/holder
@@ -150,11 +150,11 @@ REF_OWNED(/datum/dq_diag_owner_b, "a")
 	..()
 	return INITIALIZE_HINT_QDEL
 
-/obj/item/dq_diag_init_refuser/Destroy()
+/obj/item/dq_diag_init_refuser/on_destroy(force)
 	if(fragile_destroy)
 		// Touches state Initialize() never built: a runtime mid-Destroy().
 		made_in_init.other = null
-	return ..()
+	..()
 
 /obj/item/dq_diag_init_refuser/fragile
 	fragile_destroy = TRUE

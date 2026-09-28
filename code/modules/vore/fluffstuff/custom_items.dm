@@ -554,11 +554,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/fluff/purp_robes, \
 	. = ..()
 	update_state(0)
 
-// ALLOW(lifecycle): an active crystal finishes its step.
-/obj/item/clothing/accessory/collar/khcrystal/Destroy() //Waitwaitwait
+// an active crystal finishes its step.
+/obj/item/clothing/accessory/collar/khcrystal/on_destroy(force) //Waitwaitwait
 	if(state == 1)
 		periodic_step() //Nownownow
-	return ..() //Okfine
+	..()
 
 /obj/item/clothing/accessory/collar/khcrystal/periodic_step()
 	check_owner()

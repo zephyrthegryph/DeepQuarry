@@ -124,3 +124,9 @@
 /// First line of a pooled type's procs: crashes when the object was released
 /// (poisoned) or is sitting in the pool, catching use after release.
 #define POOL_ASSERT_LIVE(D) if((D).pool_state != POOL_STATE_TAKEN) { pool_use_after_release(D); }
+
+/// PATH refuses qdel() unless forced (singletons, registries, pooled objects):
+/// the object is left untouched. See /datum/proc/lifecycle_keep().
+#define LIFECYCLE_KEEP_UNLESS_FORCED(PATH) ##PATH/lifecycle_keep(force) { return !force; }
+/// PATH refuses every qdel(), forced or not.
+#define LIFECYCLE_KEEP_ALWAYS(PATH) ##PATH/lifecycle_keep(force) { return TRUE; }

@@ -112,11 +112,11 @@
 	set_light(light_range, -20, "#FFFFFF")
 	PERIODIC_START(src, PERIODIC_SLOW)
 
-// ALLOW(lifecycle): its dark tiles unlink and wither.
-/obj/structure/prop/dark_node/Destroy()
+// its dark tiles unlink and wither.
+/obj/structure/prop/dark_node/on_destroy(force)
 	for(var/obj/effect/dark/dark_tile in children_effects)
 		dark_tile.unlinked()
-	return ..()
+	..()
 
 REF_BACKLIST(/obj/effect/dark, list("linked_node" = "children_effects"))
 

@@ -113,11 +113,11 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 		known = FALSE
 
 // You generally shouldn't destroy these.
-// ALLOW(lifecycle): its z-levels are unregistered.
-/obj/effect/overmap/visitable/Destroy()
+// its z-levels are unregistered.
+/obj/effect/overmap/visitable/on_destroy(force)
 	testing("Deleting [src] overmap sector at [x],[y]")
 	unregister_z_levels()
-	return ..()
+	..()
 
 //This is called later in the init order by SSshuttles to populate sector objects. Importantly for subtypes, shuttles will be created by then.
 /obj/effect/overmap/visitable/proc/populate_sector_objects()

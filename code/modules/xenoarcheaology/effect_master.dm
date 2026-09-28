@@ -130,8 +130,8 @@ REF_VAR(/atom, OWNED, /datum/artifact_master, artifact_master)
 		my_effects.Remove(to_remove_effect)
 		qdel(AE)
 
-// ALLOW(lifecycle): its effects go with it.
-/datum/artifact_master/Destroy()
+// its effects go with it.
+/datum/artifact_master/on_destroy(force)
 	do_unregister()
 	var/atom/H = holder()
 	if(H?.artifact_master == src)
@@ -142,7 +142,7 @@ REF_VAR(/atom, OWNED, /datum/artifact_master, artifact_master)
 		my_effects -= AE
 		qdel(AE)
 
-	. = ..()
+	..()
 
 /datum/artifact_master/proc/do_setup()
 	if(LAZYLEN(make_effects))

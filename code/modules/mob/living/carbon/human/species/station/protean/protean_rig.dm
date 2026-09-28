@@ -105,8 +105,8 @@
 	else
 		to_chat(P, span_notice("You should have spawned with a backpack to assimilate into your RIG. Try clicking it with a backpack."))
 
-// ALLOW(lifecycle): the protean core spills out; a dormant one repairs on the body.
-/obj/item/rig/protean/Destroy()
+// the protean core spills out; a dormant one repairs on the body.
+/obj/item/rig/protean/on_destroy(force)
 	stop_soaking()
 	if(myprotean)
 		var/datum/forms/protean/F = myprotean.get_protean_forms()
@@ -119,7 +119,7 @@
 			log_game("NANOFORM: [key_name(myprotean)]'s control cluster was destroyed during dormancy; repairs continue on the body at [AREACOORD(myprotean)].")
 			myprotean.visible_message(span_warning("[myprotean]'s core spills out of the ruined control cluster."))
 		myprotean = null
-	return ..()
+	..()
 
 /obj/item/rig/proc/AssimilateBag(mob/living/carbon/human/P, spawned, obj/item/storage/backpack/B)
 	if(istype(B,/obj/item/storage/backpack))

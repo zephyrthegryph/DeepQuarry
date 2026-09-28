@@ -176,12 +176,12 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/manipulation/weapon_firing, \
 		var/grenade = new pre_attached_grenade_type(src)
 		attach_grenade(grenade)
 
-// ALLOW(lifecycle): an unarmed grenade drops out.
-/obj/item/integrated_circuit/manipulation/grenade/Destroy()
+// An unarmed grenade drops out.
+/obj/item/integrated_circuit/manipulation/grenade/on_destroy(force)
 	if(attached_grenade && !attached_grenade.active)
 		attached_grenade.dropInto(loc)
 	detach_grenade()
-	. =..()
+	..()
 
 /// Old attackby.
 /obj/item/integrated_circuit/manipulation/grenade/proc/interaction_item(mob/user, obj/item/grenade/G, datum/interaction/interaction)

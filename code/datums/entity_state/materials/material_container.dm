@@ -87,11 +87,11 @@ REF_BACK(/datum/material_container, list("owner" = null))
 	//drop sheets when object is deconstructed but not deleted
 	om_hook(owner, /datum/om/event/obj_deconstruct, src, PROC_REF(drop_sheets))
 
-// ALLOW(lifecycle): owned state datum (was a component) unhooks and detaches from its owner.
-/datum/material_container/Destroy()
+// owned state datum (was a component) unhooks and detaches from its owner.
+/datum/material_container/on_destroy(force)
 	om_unhook_all(src)
 	owner = null
-	return ..()
+	..()
 
 /datum/material_container/proc/drop_sheets(datum/source, datum/om/event/obj_deconstruct/event)
 	EVENT_HANDLER

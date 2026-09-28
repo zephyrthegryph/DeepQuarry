@@ -39,11 +39,11 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/beam_point, REGISTRY_BEAM_POINTS)
 		om_after(src, initial_delay, PROC_REF(handle_beam_timer))
 	return ..()
 
-// ALLOW(lifecycle): its beams go with it.
-/obj/effect/map_effect/beam_point/Destroy()
+// its beams go with it.
+/obj/effect/map_effect/beam_point/on_destroy(force)
 	destroy_all_beams()
 	use_timer = FALSE
-	return ..()
+	..()
 
 // This is the top level proc to make the magic happen.
 /obj/effect/map_effect/beam_point/proc/create_beams()

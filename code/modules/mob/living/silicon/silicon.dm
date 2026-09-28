@@ -50,12 +50,12 @@ REF_HELD(/mob/living/silicon, "common_radio")
 // Languages are shared definitions; alarm handlers are round-long singletons (the queue's keys).
 REF_STATIC(/mob/living/silicon, list("speech_synthesizer_langs", "queued_alarms"))
 
-// ALLOW(lifecycle): leaves every alarm handler and its subsystems.
-/mob/living/silicon/Destroy()
+// leaves every alarm handler and its subsystems.
+/mob/living/silicon/on_destroy(force)
 	common_radio = null
 	for(var/datum/alarm_handler/AH in all_alarm_handlers())
 		AH.unregister_alarm(src)
-	return ..()
+	..()
 
 /mob/living/silicon/proc/init_id(idcard_type)
 	if(!idcard_type)

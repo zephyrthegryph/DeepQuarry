@@ -22,10 +22,10 @@
 			return node1
 	return null
 
-// ALLOW(lifecycle): a hose disconnects both ends.
-/datum/hose/Destroy(force)
+// a hose disconnects both ends.
+/datum/hose/on_destroy(force)
 	disconnect()
-	. = ..()
+	..()
 
 /datum/hose/proc/has_pairing()
 	return (node1 && node2)

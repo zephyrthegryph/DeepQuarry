@@ -12,10 +12,10 @@
 	PERIODIC_START(src, PERIODIC_SLOW)
 	log_and_message_admins("has started casting [src].")
 
-// ALLOW(lifecycle): admins are told the maintained spell stopped.
-/obj/item/spell/aura/Destroy()
+// admins are told the maintained spell stopped.
+/obj/item/spell/aura/on_destroy(force)
 	log_and_message_admins("has stopped maintaining [src].")
-	return ..()
+	..()
 
 /obj/item/spell/aura/periodic_step()
 	return

@@ -40,8 +40,8 @@ REF_BACK(/datum/nif_menu, list("owner" = null))
 	if(owner.client)
 		create_mob_button(owner)
 
-// ALLOW(lifecycle): owned state datum (was a component) unhooks and detaches from its owner.
-/datum/nif_menu/Destroy(force)
+// owned state datum (was a component) unhooks and detaches from its owner.
+/datum/nif_menu/on_destroy(force)
 	if(owner)
 		om_unhook(owner, list(/datum/om/event/mob_client_login, /datum/om/event/qdeleting), src)
 		if(screen_icon)
@@ -52,7 +52,7 @@ REF_BACK(/datum/nif_menu, list("owner" = null))
 		om_unhook(screen_icon, /datum/om/event/click, src)
 		QDEL_NULL(screen_icon)
 	owner = null
-	return ..()
+	..()
 
 /datum/nif_menu/proc/on_owner_qdeleting(datum/source, datum/om/event/qdeleting/event)
 	EVENT_HANDLER

@@ -238,8 +238,8 @@
 
 // pipe is deleted
 // ensure if holder is present, it is expelled
-// ALLOW(lifecycle): a holder travelling in it is expelled.
-/obj/structure/disposalpipe/Destroy()
+// a holder travelling in it is expelled.
+/obj/structure/disposalpipe/on_destroy(force)
 	var/obj/structure/disposalholder/H = locate() in src
 	if(H)
 		// holder was present
@@ -259,7 +259,7 @@
 		// otherwise, do normal expel from turf
 		if(H)
 			pipe_expel(H, T, 0)
-	. = ..()
+	..()
 
 /obj/structure/disposalpipe/hides_under_flooring()
 	return 1

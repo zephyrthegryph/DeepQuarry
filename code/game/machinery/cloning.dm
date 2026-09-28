@@ -63,15 +63,15 @@
 	default_apply_parts()
 	update_icon()
 
-// ALLOW(lifecycle): its containers drop out and the growing clone is ejected.
-/obj/machinery/clonepod/Destroy()
+// its containers drop out and the growing clone is ejected.
+/obj/machinery/clonepod/on_destroy(force)
 	for(var/obj/container in containers)
 		om_unhook(container, /datum/om/event/qdeleting, src)
 		container.forceMove(get_turf(src))
 	LAZYCLEARLIST(containers)
 	locked = FALSE
 	go_out()
-	. = ..()
+	..()
 
 /// Sealed occupant slot (C8, containment.md §10, OM relations step 3): the
 /// pod grows and displays the clone through this, same as before the ledger

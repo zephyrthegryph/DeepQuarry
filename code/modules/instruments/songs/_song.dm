@@ -135,8 +135,8 @@
 	if(new_range)
 		instrument_range = new_range
 
-// ALLOW(lifecycle): stops playing and leaves its instrument.
-/datum/song/Destroy()
+// stops playing and leaves its instrument.
+/datum/song/on_destroy(force)
 	stop_playing()
 	lines = null
 	if(using_instrument())
@@ -144,7 +144,7 @@
 		using_instrument_static = null
 	allowed_instrument_ids = null
 	parent_handle = null
-	return ..()
+	..()
 
 /**
  * Checks and stores which mobs can hear us. Terminates sounds for mobs that leave our range.

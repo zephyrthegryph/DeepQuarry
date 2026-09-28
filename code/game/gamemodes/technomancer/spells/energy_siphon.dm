@@ -24,10 +24,10 @@
 /obj/item/spell/energy_siphon/Initialize(mapload)
 	. = ..()
 
-// ALLOW(lifecycle): the siphon stops draining its target.
-/obj/item/spell/energy_siphon/Destroy()
+// the siphon stops draining its target.
+/obj/item/spell/energy_siphon/on_destroy(force)
 	stop_siphoning()
-	return ..()
+	..()
 
 /// Drains every 2 s while linked (on_ranged_cast() starts it); unlinked, it sleeps.
 /obj/item/spell/energy_siphon/periodic_step()

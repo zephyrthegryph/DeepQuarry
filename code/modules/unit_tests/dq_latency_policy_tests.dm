@@ -295,9 +295,9 @@
 		return FALSE
 	return TRUE
 
-/datum/unit_test/dq_latency_fuzz/Destroy()
+/datum/unit_test/dq_latency_fuzz/on_destroy(force)
 	for(var/datum/D as anything in made)
 		if(!QDELETED(D))
 			qdel(D)
 	made = null
-	return ..()
+	..()

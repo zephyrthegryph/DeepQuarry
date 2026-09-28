@@ -171,8 +171,8 @@ DECLARE_INTERACTIONS(/obj/item/mmi, \
 		if(istype(rig,/obj/item/rig))
 			rig.forced_move(direction, user)
 
-// ALLOW(lifecycle): the occupant view is discarded before the tissue; a borg forgets its MMI.
-/obj/item/mmi/Destroy()
+// the occupant view is discarded before the tissue; a borg forgets its MMI.
+/obj/item/mmi/on_destroy(force)
 	if(isrobot(loc))
 		var/mob/living/silicon/robot/borg = loc
 		borg.mmi = null
@@ -181,7 +181,7 @@ DECLARE_INTERACTIONS(/obj/item/mmi, \
 	host?.discard_view()
 	if(brainobj)
 		QDEL_NULL(brainobj)
-	return ..()
+	..()
 
 /obj/item/mmi/radio_enabled
 	name = "radio-enabled man-machine interface"

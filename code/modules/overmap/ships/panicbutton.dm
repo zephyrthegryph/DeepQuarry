@@ -10,11 +10,11 @@
 	var/launched = FALSE
 
 // In case we're annihilated by a meteor
-// ALLOW(lifecycle): an unlaunched button launches.
-/obj/structure/panic_button/Destroy()
+// an unlaunched button launches.
+/obj/structure/panic_button/on_destroy(force)
 	if(!launched)
 		launch()
-	return ..()
+	..()
 
 /obj/structure/panic_button/update_icon()
 	if(launched)

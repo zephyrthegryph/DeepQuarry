@@ -75,10 +75,10 @@ REF_BACK(/obj/item/dogborg/sleeper, list("hound" = null))
 // Things in our contents spared from digestion; like everything else inside they go out with us.
 REF_SPILL_LIST(/obj/item/dogborg/sleeper, "items_preserved")
 
-// ALLOW(lifecycle): the patient is let out.
-/obj/item/dogborg/sleeper/Destroy()
+// the patient is let out.
+/obj/item/dogborg/sleeper/on_destroy(force)
 	go_out()
-	. = ..()
+	..()
 
 /obj/item/dogborg/sleeper/Exit(atom/movable/O)
 	return 0

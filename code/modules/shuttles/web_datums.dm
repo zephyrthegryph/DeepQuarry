@@ -20,11 +20,11 @@
 	travel_time = _time
 	one_way = _oneway
 
-// ALLOW(lifecycle): leaves both endpoints' route lists.
-/datum/shuttle_route/Destroy()
+// leaves both endpoints' route lists.
+/datum/shuttle_route/on_destroy(force)
 	LAZYREMOVE(start().routes, src)
 	LAZYREMOVE(end().routes, src)
-	return ..()
+	..()
 
 /datum/shuttle_route/proc/get_other_side(datum/shuttle_destination/PoV)
 	if(PoV == start())

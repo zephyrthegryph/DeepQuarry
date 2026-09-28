@@ -127,12 +127,12 @@
 // Proc: Destroy()
 // Parameters: 0
 // Description: Nulls object references so it can qdel() cleanly.
-// ALLOW(lifecycle): the caster forgets the spell.
-/obj/item/spell/Destroy()
+// the caster forgets the spell.
+/obj/item/spell/on_destroy(force)
 	owner_ref()?.unref_spell(src)
 	owner_handle = null
 	core = null
-	return ..()
+	..()
 
 // Proc: unref_spells()
 // Parameters: 0

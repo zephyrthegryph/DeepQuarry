@@ -26,11 +26,11 @@
 	if(trunk)
 		OM_EMIT(src, /datum/om/event/disposal_link, trunk)
 
-// ALLOW(lifecycle): it unlinks from its trunk.
-/obj/structure/disposaloutlet/Destroy()
+// it unlinks from its trunk.
+/obj/structure/disposaloutlet/on_destroy(force)
 	OM_EMIT(src, /datum/om/event/disposal_unlink) //Just to be safe.
 	target_handle = null
-	. = ..()
+	..()
 
 DECLARE_INTERACTIONS(/obj/structure/disposaloutlet, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 

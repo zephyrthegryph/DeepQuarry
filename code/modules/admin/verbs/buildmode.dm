@@ -58,12 +58,12 @@
 	icon = 'icons/misc/buildmode.dmi'
 	var/tmp/master_handle
 
-// ALLOW(lifecycle): comes off its builder's screen (clients aren't datums).
-/obj/effect/bmode/Destroy()
+// comes off its builder's screen (clients aren't datums).
+/obj/effect/bmode/on_destroy(force)
 	if(master() && master().cl())
 		master().cl().screen -= src
 	master_handle = null
-	return ..()
+	..()
 
 /obj/effect/bmode/builddir
 	icon_state = "build"
@@ -215,12 +215,12 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 
 REF_OWNED(/obj/effect/bmode/buildholder, list("builddir", "buildhelp", "buildmode", "buildquit"))
 
-// ALLOW(lifecycle): AI mobs it selected are deselected.
-/obj/effect/bmode/buildholder/Destroy()
+// AI mobs it selected are deselected.
+/obj/effect/bmode/buildholder/on_destroy(force)
 	for(var/mob/living/unit in selected_mobs)
 		deselect_AI_mob(cl(), unit)
 	LAZYCLEARLIST(selected_mobs)
-	return ..()
+	..()
 
 /// The first base-turf deletion asks once; the answer does that deletion.
 /obj/effect/bmode/buildholder/proc/ask_base_turf(mob/user, turf/T)

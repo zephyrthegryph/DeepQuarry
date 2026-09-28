@@ -87,12 +87,12 @@
 
 REF_OWNED(/obj/machinery/microwave, "soundloop")
 
-// ALLOW(lifecycle): its contents are disposed and a pAI inside is ejected.
-/obj/machinery/microwave/Destroy()
+// its contents are disposed and a pAI inside is ejected.
+/obj/machinery/microwave/on_destroy(force)
 	dispose(FALSE)
 	if(paicard)
 		ejectpai()
-	return ..()
+	..()
 
 /*******************
 *   Item Adding

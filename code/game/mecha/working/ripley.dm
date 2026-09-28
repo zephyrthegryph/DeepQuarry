@@ -42,13 +42,13 @@
 
 REF_OWNED(/obj/mecha/working/ripley, "orescanner")
 
-// ALLOW(lifecycle): cargo spills around the wreck.
-/obj/mecha/working/ripley/Destroy()
+// cargo spills around the wreck.
+/obj/mecha/working/ripley/on_destroy(force)
 	for(var/atom/movable/A in src.cargo)
 		A.forceMove(loc)
 		step_rand(A)
 	LAZYCLEARLIST(cargo)
-	. = ..()
+	..()
 
 /obj/mecha/working/ripley/firefighter
 	desc = "Standard APLU chassis was refitted with additional thermal protection and cistern."

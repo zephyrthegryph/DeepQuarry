@@ -23,12 +23,12 @@
 	//var/datum/gas_mixture/air_transient = null
 
 
-// Rust-owned networks refuse deletion; a legacy network hands each member
-// its share of the gas before the topology splits.
-// ALLOW(lifecycle): LETMELIVE for rust-owned networks; legacy gas split.
-/datum/pipe_network/Destroy()
-	if(rust_authoritative)
-		return QDEL_HINT_LETMELIVE
+// Rust-owned networks refuse deletion.
+/datum/pipe_network/lifecycle_keep(force)
+	return rust_authoritative
+
+// A legacy network hands each member its share of the gas before the topology splits.
+/datum/pipe_network/on_destroy(force)
 	STOP_PROCESSING_PIPENET(src)
 	// External reservoirs are real containers and must take their volume share
 	// with them before the fixed topology is split into independent port mixes.
@@ -58,7 +58,7 @@
 		normal_member.reassign_network(src, null)
 	QDEL_NULL(air)
 	volume = 0
-	return ..()
+	..()
 
 /datum/pipe_network/proc/add_normal_member(obj/machinery/atmospherics/member)
 	if(!member || QDELETED(member))

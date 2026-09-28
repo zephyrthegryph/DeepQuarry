@@ -5,8 +5,8 @@
 	var/tmp/gem_handle
 
 // Cleaning up the refs during deletion
-// ALLOW(lifecycle): its gem is told the mind unloaded.
-/mob/living/carbon/brain/caught_soul/vore/Destroy()
+// its gem is told the mind unloaded.
+/mob/living/carbon/brain/caught_soul/vore/on_destroy(force)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(eyeobj)
 		QDEL_NULL(eyeobj)
@@ -16,7 +16,7 @@
 		gem().brainmobs -= src
 		gem_handle = null
 	container = null
-	return ..()
+	..()
 
 // Handling the automatic transcore backups in a set interval
 /datum/om/stage/life/type_post/carbon/brain/caught_soul/vore

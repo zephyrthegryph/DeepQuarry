@@ -253,10 +253,10 @@ REF_BACK(/datum/affliction/core_dormancy, list("held_mob" = null))
 	release()
 	return ..()
 
-// ALLOW(lifecycle): a dormant core is released.
-/datum/affliction/core_dormancy/Destroy()
+// a dormant core is released.
+/datum/affliction/core_dormancy/on_destroy(force)
 	release()
-	return ..()
+	..()
 
 /datum/affliction/core_dormancy/proc/release()
 	if(reboot_timer)

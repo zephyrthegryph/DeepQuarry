@@ -254,15 +254,15 @@ REF_OWNED_VALUES(/datum/contract_negotiation_clause, "options")
 REF_OWNED_LIST(/datum/contract, list("requirements", "audit_log"))
 REF_OWNED_VALUES(/datum/contract, "negotiation_clauses")
 
-// ALLOW(lifecycle): an active contract unsubscribes, leaves SScontracts and orphans its children.
-/datum/contract/Destroy()
+// an active contract unsubscribes, leaves SScontracts and orphans its children.
+/datum/contract/on_destroy(force)
 	if(state in list(CONTRACT_ACTIVE, CONTRACT_GRACE))
 		unsubscribe_events()
 	SScontracts?.unregister_contract(src)
 	for(var/datum/contract/child in children)
 		if(child.parent == src)
 			child.parent = null
-	return ..()
+	..()
 
 /datum/contract/proc/finalize_offer(duration)
 	if(state != CONTRACT_OFFERED || !isnum(duration) || duration <= 0)

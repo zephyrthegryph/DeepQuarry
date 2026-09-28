@@ -325,12 +325,12 @@ EXTEND_INTERACTIONS(/obj/item/storage/mrebag, INTERACT_USE("Open", PROC_REF(inte
 	. = ..()
 	pickflavor()
 
-// ALLOW(lifecycle): leaves its wrapper as trash.
-/obj/item/storage/box/tgmc_mre/Destroy()
+// leaves its wrapper as trash.
+/obj/item/storage/box/tgmc_mre/on_destroy(force)
 	var/turf/T = get_turf(src)
 	if(T)
 		new /obj/item/trash/tgmc_mre(T)
-	return ..()
+	..()
 
 /obj/item/storage/box/tgmc_mre/proc/pickflavor()
 	var/entree = pick("boneless pork ribs", "grilled chicken", "pizza square", "spaghetti", "chicken tenders")

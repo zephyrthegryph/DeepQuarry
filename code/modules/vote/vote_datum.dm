@@ -134,11 +134,11 @@
 		handle_result(result)
 		qdel(src)
 
-// ALLOW(lifecycle): GLOB.vote_service forgets it.
-/datum/vote/Destroy(force)
+// GLOB.vote_service forgets it.
+/datum/vote/on_destroy(force)
 	if(GLOB.vote_service.active_vote == src)
 		GLOB.vote_service.active_vote = null
-	return ..()
+	..()
 
 /datum/vote/proc/handle_result(result)
 	return

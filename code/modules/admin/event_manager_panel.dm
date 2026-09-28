@@ -11,11 +11,11 @@
 
 /datum/event_manager_panel
 
-// ALLOW(lifecycle): the event service forgets its manager panel.
-/datum/event_manager_panel/Destroy()
+// the event service forgets its manager panel.
+/datum/event_manager_panel/on_destroy(force)
 	if(GLOB.event_service?.tgui_event_manager_panel == src)
 		GLOB.event_service.tgui_event_manager_panel = null
-	return ..()
+	..()
 
 /datum/event_manager_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN|R_EVENT)

@@ -25,12 +25,12 @@
 
 REF_OWNED(/obj/item/multitool/hacktool, "hack_state")
 
-// ALLOW(lifecycle): stops observing its known targets' destruction.
-/obj/item/multitool/hacktool/Destroy()
+// stops observing its known targets' destruction.
+/obj/item/multitool/hacktool/on_destroy(force)
 	for(var/atom/target as anything in known_targets)
 		target.unregister(OBSERVER_EVENT_DESTROY, src)
 	known_targets.Cut()
-	return ..()
+	..()
 
 /obj/item/multitool/hacktool/screwdriver_act(mob/user, obj/item/tool)
 	in_hack_mode = !in_hack_mode

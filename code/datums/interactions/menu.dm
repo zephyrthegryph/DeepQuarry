@@ -12,13 +12,13 @@
 /datum/interaction_menu/New(client/owner)
 	src.owner_handle = om_handle(owner)
 
-// ALLOW(lifecycle): clears the client's back-reference (clients aren't datums).
-/datum/interaction_menu/Destroy()
+// clears the client's back-reference (clients aren't datums).
+/datum/interaction_menu/on_destroy(force)
 	if(owner()?.interaction_menu == src)
 		owner().interaction_menu = null
 	owner_handle = null
 	target_ref = null
-	return ..()
+	..()
 
 /client/var/tmp/datum/interaction_menu/interaction_menu
 

@@ -54,11 +54,11 @@
 	tooltip_window?.close()
 	return ..()
 
-// ALLOW(lifecycle): drops its owner and last target.
-/datum/tooltip/Destroy(force)
+// drops its owner and last target.
+/datum/tooltip/on_destroy(force)
 	last_target_handle = null
 	owner_handle = null
-	return ..()
+	..()
 
 /datum/tooltip/tgui_state(mob/user)
 	return GLOB.tgui_always_state

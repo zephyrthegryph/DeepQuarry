@@ -83,8 +83,8 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_ALT_FARMANIMALS)
 
 REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 
-// ALLOW(lifecycle): organs are deleted from a snapshot; nif and blood vessel go with the body.
-/mob/living/carbon/human/Destroy()
+// organs are deleted from a snapshot; nif and blood vessel go with the body.
+/mob/living/carbon/human/on_destroy(force)
 	// Each organ's Destroy() removes itself (and qdels its children/internals)
 	// out of src.organs, so iterating the live list skips entries — skipped
 	// organs never run Destroy() and their lingering `owner` ref pins this mob
@@ -100,7 +100,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 
 	if(vessel)
 		QDEL_NULL(vessel)
-	. = ..()
+	..()
 
 /mob/living/carbon/human/get_status_tab_items()
 	. = ..()

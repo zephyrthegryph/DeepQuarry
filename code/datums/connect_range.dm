@@ -35,8 +35,8 @@ REF_BACK(/datum/connect_range, list("listener" = null))
 	src.works_in_containers = works_in_containers
 	set_tracked(tracked)
 
-// ALLOW(lifecycle): owned state datum (was a component) unhooks and detaches from its owner.
-/datum/connect_range/Destroy()
+// owned state datum (was a component) unhooks and detaches from its owner.
+/datum/connect_range/on_destroy(force)
 	if(tracked())
 		unregister_hooks(isturf(tracked()) ? tracked() : tracked().loc, turfs)
 		om_unhook(tracked(), list(/datum/om/event/moved, /datum/om/event/qdeleting), src)
@@ -44,7 +44,7 @@ REF_BACK(/datum/connect_range, list("listener" = null))
 	turfs = null
 	listener = null
 	tracked_handle = null
-	return ..()
+	..()
 
 /// Was re-adding the component: update the target, range and container setting in place.
 /datum/connect_range/proc/update(atom/tracked, list/new_connections, new_range, new_works_in_containers = TRUE)

@@ -220,8 +220,8 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	register_diagnostics()
 	schedule(1 SECOND)
 
-// ALLOW(lifecycle): unregisters diagnostics and its service behaviour; its owner forgets it.
-/datum/material_service/Destroy()
+// unregisters diagnostics and its service behaviour; its owner forgets it.
+/datum/material_service/on_destroy(force)
 	unregister_diagnostics()
 	om_cancel_after(src, /datum/om/behaviour/material_service)
 	clear_watches()
@@ -231,7 +231,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	last_delivery_mixture = null
 	thermal_stock_static = null
 	electrical_stock_static = null
-	return ..()
+	..()
 
 /datum/material_service/proc/schedule(delay = MATERIAL_SERVICE_INTERVAL)
 	if(QDELETED(owner()))

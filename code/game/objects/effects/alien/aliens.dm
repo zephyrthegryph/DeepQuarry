@@ -54,8 +54,8 @@
 
 	fullUpdateWeedOverlays()
 
-// ALLOW(lifecycle): neighbouring weeds redraw their overlays without it.
-/obj/effect/alien/weeds/Destroy()
+// neighbouring weeds redraw their overlays without it.
+/obj/effect/alien/weeds/on_destroy(force)
 	var/turf/T = get_turf(src)
 	// To not mess up the overlay updates.
 	moveToNullspace()
@@ -64,7 +64,7 @@
 		W.updateWeedOverlays()
 
 	linked_node_handle = null
-	return ..()
+	..()
 
 /obj/effect/alien/weeds/node
 	icon_state = "weednode"

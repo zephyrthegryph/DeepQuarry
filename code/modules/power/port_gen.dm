@@ -147,10 +147,10 @@
 	if(anchored)
 		connect_to_network()
 
-// ALLOW(lifecycle): its unburnt fuel drops as sheets.
-/obj/machinery/power/port_gen/pacman/Destroy()
+// its unburnt fuel drops as sheets.
+/obj/machinery/power/port_gen/pacman/on_destroy(force)
 	DropFuel()
-	return ..()
+	..()
 
 /obj/machinery/power/port_gen/pacman/dismantle()
 	while( sheets > 0 )
@@ -1045,10 +1045,10 @@
 	if(anchored)
 		connect_to_network()
 
-// ALLOW(lifecycle): its unburnt fuel drops as sheets.
-/obj/machinery/power/port_gen/large_altevian/Destroy()
+// its unburnt fuel drops as sheets.
+/obj/machinery/power/port_gen/large_altevian/on_destroy(force)
 	DropFuel()
-	return ..()
+	..()
 
 /obj/machinery/power/port_gen/large_altevian/examine(mob/user)
 	. = ..()

@@ -24,11 +24,11 @@
 	attacker = packet.attacker
 	weapon = packet.weapon
 
-/datum/dq_packet_record/Destroy(force)
+/datum/dq_packet_record/on_destroy(force)
 	source = null
 	attacker = null
 	weapon = null
-	return ..()
+	..()
 
 /// Only `kind` carries damage, and exactly `amount` of it.
 /datum/dq_packet_record/proc/only(kind, amount)
@@ -58,9 +58,9 @@
 	last = new(packet)
 	return 0
 
-/obj/machinery/dq_damage_probe/Destroy()
+/obj/machinery/dq_damage_probe/on_destroy(force)
 	QDEL_NULL(last)
-	return ..()
+	..()
 
 /// A mob that records packets instead of being injured.
 /mob/living/simple_mob/dq_damage_probe
@@ -77,9 +77,9 @@
 	last = new(packet)
 	return 0
 
-/mob/living/simple_mob/dq_damage_probe/Destroy()
+/mob/living/simple_mob/dq_damage_probe/on_destroy(force)
 	QDEL_NULL(last)
-	return ..()
+	..()
 
 /datum/unit_test/dq_damage_packet
 	abstract_type = /datum/unit_test/dq_damage_packet

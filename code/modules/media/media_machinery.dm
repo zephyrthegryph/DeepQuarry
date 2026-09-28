@@ -68,10 +68,10 @@
 	. = ..()
 	update_media_source()
 
-// ALLOW(lifecycle): disconnects from its media source.
-/obj/machinery/media/Destroy()
+// disconnects from its media source.
+/obj/machinery/media/on_destroy(force)
 	disconnect_media_source()
-	. = ..()
+	..()
 
 /// LC-refs: My area -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/media/proc/master_area() as /area

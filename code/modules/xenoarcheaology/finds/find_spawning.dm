@@ -874,6 +874,6 @@
 	if(become_anomalous)
 		become_anomalous()
 
-// ALLOW(lifecycle): its artifact master is owned by /atom/var/artifact_master and deleted with it.
-/obj/item/archaeological_find/Destroy()
-	. = ..()
+// its artifact master is owned by /atom/var/artifact_master and deleted with it.
+/obj/item/archaeological_find/on_destroy(force)
+	..()

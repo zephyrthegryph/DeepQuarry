@@ -22,11 +22,11 @@
 	popup_screen.generate_view("camera-[REF(src)]_map")
 
 
-// ALLOW(lifecycle): hides itself from every client it is shown to.
-/atom/movable/screen/movable/pic_in_pic/Destroy()
+// hides itself from every client it is shown to.
+/atom/movable/screen/movable/pic_in_pic/on_destroy(force)
 	for(var/C in shown_to)
 		unshow_to(C)
-	return ..()
+	..()
 
 /atom/movable/screen/movable/pic_in_pic/component_click(atom/movable/screen/component_button/component, params)
 	if(component == button_x)

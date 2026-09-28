@@ -12,11 +12,11 @@
 	var/number = 0 // This is used to make the metroid semi-unique for indentification.
 	var/harmless = FALSE // Set to true when pacified. Makes the metroid harmless, not get hungry, and not be able to grow/reproduce.
 
-// ALLOW(lifecycle): it lets go of its victim.
-/mob/living/simple_mob/metroid/juvenile/Destroy()
+// it lets go of its victim.
+/mob/living/simple_mob/metroid/juvenile/on_destroy(force)
 	if(victim)
 		stop_consumption() // Unbuckle us from our victim.
-	return ..()
+	..()
 
 /datum/om/stage/life/special/metroid/juvenile
 	of = /mob/living/simple_mob/metroid/juvenile
