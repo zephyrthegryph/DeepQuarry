@@ -146,18 +146,6 @@ DECLARE_INTERACTIONS(/obj/structure/portal_event, \
 	else if (istype(M, /atom/movable))
 		do_teleport(M, target)
 
-// its target portal goes with it.
-/obj/structure/portal_event/on_destroy(force)
-	if(target)
-		if(istype(target, /obj/structure/portal_event))
-			var/obj/structure/portal_event/P = target
-			P.target = null
-		if(istype(target, /obj/structure/portal_target))
-			var/obj/structure/portal_target/P = target
-			P.target = null
-		QDEL_NULL(target)
-	..()
-
 /obj/structure/portal_target
 	name = "portal destination"
 	desc = "you shouldn't see this unless you're a ghost"
@@ -173,7 +161,6 @@ DECLARE_INTERACTIONS(/obj/structure/portal_event, \
 	if(target)
 		var/obj/structure/portal_event/T = target
 		T.target = null
-		target = null
 	..()
 
 /obj/structure/portal_gateway

@@ -285,7 +285,7 @@
 	cut_overlays()
 	icon_state = ""
 	flick("tp_out",src)
-	om_qdel_after(src, 1 SECOND) //Back from whence you came!
+	expire(1 SECOND) //Back from whence you came!
 
 /mob/living/simple_mob/shadekin/enter_the_dark()
 	shadekin.respite_activating = FALSE

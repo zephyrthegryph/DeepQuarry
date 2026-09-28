@@ -185,7 +185,7 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/passive/cat/bluespace/replace_death(gibbed)
 	animate(src, alpha = 0, color = "#0000FF", time = 0.5 SECOND)
-	om_qdel_after(src, 0.5 SECOND)
+	expire(0.5 SECOND)
 	return TRUE
 
 /mob/living/simple_mob/animal/passive/cat/bread
@@ -387,6 +387,6 @@ DECLARE_INTERACTIONS(/obj/item/cat_box, INTERACT_USE(null, PROC_REF(interaction_
 	cut_overlays()
 	icon_state = ""
 	flick("kphaseout",src)
-	om_qdel_after(src, 1 SECOND) //Back from whence you came!
+	expire(1 SECOND) //Back from whence you came!
 
 REF_HELD(/mob/living/simple_mob/animal/passive/cat, "friend")

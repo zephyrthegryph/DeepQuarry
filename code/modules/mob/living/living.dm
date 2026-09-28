@@ -1050,19 +1050,12 @@ REF_BACK(/datum/character_setup_button, list("owner" = "character_setup_button")
 	if(owner.client)
 		create_mob_button(owner)
 
-// owned state datum (was a component) unhooks and detaches from its owner.
+// owned state datum (was a component): its button leaves the owner's screen and HUD.
 /datum/character_setup_button/on_destroy(force)
-	if(owner)
-		om_unhook(owner, /datum/om/event/mob_client_login, src)
 	if(screen_icon)
 		owner?.client?.screen -= screen_icon
-		om_unhook(screen_icon, /datum/om/event/click, src)
 		var/datum/hud/HUD = owner?.hud_used
 		LAZYREMOVE(HUD?.other_important, screen_icon)
-		QDEL_NULL(screen_icon)
-	if(owner?.character_setup_button == src)
-		owner.character_setup_button = null
-	owner = null
 	..()
 
 /// Gives the mob its character setup HUD button if it has none.

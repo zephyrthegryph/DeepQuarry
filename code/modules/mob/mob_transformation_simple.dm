@@ -67,5 +67,5 @@
 		H.set_species(subspecies)
 
 	if(delete_old_mob)
-		om_qdel_after(src, 1)
+		expire(1)
 	return M

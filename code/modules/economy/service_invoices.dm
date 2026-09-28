@@ -338,7 +338,9 @@ REF_BACK(/datum/economic_adoption, list("parent" = "economic_adoption"))
 	provider_department = _provider_department
 	value = _value
 	om_hook(parent, /datum/om/event/before/attack_self, src, PROC_REF(on_attack_self))
-	om_hook(parent, /datum/om/event/item_attack, src, PROC_REF(on_attack))/datum/economic_adoption/proc/on_attack_self(obj/item/source, datum/om/event/before/attack_self/event)
+	om_hook(parent, /datum/om/event/item_attack, src, PROC_REF(on_attack))
+
+/datum/economic_adoption/proc/on_attack_self(obj/item/source, datum/om/event/before/attack_self/event)
 	EVENT_HANDLER
 	record_use(event.user)
 

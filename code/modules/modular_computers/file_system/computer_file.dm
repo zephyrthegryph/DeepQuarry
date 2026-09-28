@@ -31,9 +31,8 @@ GLOBAL_VAR_INIT(file_uid, 0)
 	if(islist(md))
 		metadata = md.Copy()
 
-// leaves its drive; a running program is killed (prerelease: the computer's
-// active_program handle stops naming us in phase 5).
-/datum/computer_file/lifecycle_prerelease()
+// leaves its drive; a running program is killed.
+/datum/computer_file/on_destroy(force)
 	if(holder())
 		holder().remove_file(src)
 		// holder.holder is the computer that has drive installed. If we are deleting the program that's currently running kill it.

@@ -60,7 +60,7 @@ place the ordering hazards now scattered through code comments are encoded:
 | 1 | **Unbind.** Every R10 entity binding (`vg_entity_unbind`), heat bodies and pipe/cable topology, through the declared `bindings`. Must precede dematerialize. | vg bindings | ~20 atmos/heat Destroy blocks and the hard-ordered heat release in `/atom/Destroy` |
 | 2 | **Dematerialize.** Leave registries (L3) and drop rule bindings, as today. Every remaining `GLOB.x += src` moves into a registry declaration. | registries | ~72 list removals |
 | 3 | **Contents.** Resolve every slot's **declared destroy policy** (§3). This is depth-first post-order through nested holders: children before parents. No holder-managed or leftover `contents` loops remain. | containment ledger | hand spills, `QDEL_LIST` of parts, machinery `component_parts` loops, the movable `contents` sweep |
-| 4 | **Links.** `lifecycle_prerelease()`, the type's `on_destroy()` and behaviours' `on_destroy(E)`, then clear every declared relationship (§4), including `REF_BACKLIST_HANDLE` memberships named by handle: owned children deleted, pairs' other sides nulled, back-list memberships removed. | links framework | ~400 null/QDEL_NULL/pair bodies |
+| 4 | **Links.** `lifecycle_prerelease()`, the type's `on_destroy()` and behaviours' `on_entity_destroy(E)`, then clear every declared relationship (§4), including `REF_BACKLIST_HANDLE` memberships named by handle: owned children deleted, pairs' other sides nulled, back-list memberships removed. | links framework | ~400 null/QDEL_NULL/pair bodies |
 | 5 | **Teardown.** Stop every processor (START_PROCESSING records its subsystem on the datum); timers, reactor, components, signals and tgui (already in `/datum/Destroy`); `client.screen` release; OM timers and task steps owned by the datum (`om_teardown_rest`); arguments naming it are handles and stop resolving; grants auto-revoke (source lifetime). | core | ~150 stop/deltimer/unregister/close_uis bodies |
 | 6 | **Effects.** Declared `destroy_effects` data: message, sound, debris type, neighbour update. | effects | ~60 effect bodies |
 | 7 | **Core `Destroy()`.** The core chain (`/atom/movable`, `/atom`, `/datum`). A `Destroy()` override anywhere else is banned outright (`lifecycle_counts_lint.py`); the only other `Destroy()` definitions are `/client` and the MC's `/datum/controller` tree. The GC hint is the type's `destroy_hint` var. | type | every per-type `Destroy()` |
@@ -75,7 +75,7 @@ Around the phases:
   calls `..()`) runs at the start of phase 4, after `lifecycle_prerelease()` and before
   the links clear: contents are resolved, but REF_BACK/BACKLIST/PAIR vars, owned children
   and handles still read, so it can reach its owner and partners.
-- **Behaviours** get `/datum/om/behaviour/proc/on_destroy(E)` right after it, also
+- **Behaviours** get `/datum/om/behaviour/proc/on_entity_destroy(E)` right after it, also
   before the links clear, so the entity's declared vars
   still read; `on_stop(E)` follows in phase 5.
 - **Handles mid-delete.** From phase 0 a handle accessor (`owner()` returning
@@ -241,7 +241,7 @@ Real consequences outside the object's declared relationships, such as:
 These are preferably written as a qdeleting hook owned by **the
 other party**, the pattern grants already uses (the relationship's owner watches
 the lifetime; the dying object doesn't clean up after itself), or as a
-behaviour's `on_destroy(E)`. Otherwise they go in the type's `on_destroy(force)`.
+behaviour's `on_entity_destroy(E)`. Otherwise they go in the type's `on_destroy(force)`.
 
 ## 7. Medical, body, organs, surgery and Life
 

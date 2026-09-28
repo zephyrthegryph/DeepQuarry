@@ -7,7 +7,7 @@ section 3.5, doc/rewrite/lifecycle.md).
                           declaration (REF_*), a phase hook (lifecycle_unbind(),
                           lifecycle_dematerialize(), lifecycle_prerelease(),
                           destroy_effects()), its destroy hook on_destroy(), a
-                          behaviour's on_destroy(E), destroy_hint for the GC
+                          behaviour's on_entity_destroy(E), destroy_hint for the GC
                           hint, or lifecycle_keep() / LIFECYCLE_KEEP_UNLESS_FORCED
                           to refuse deletion. No ALLOW escape; unit tests included.
     qdel( call sites      ~3,070 at the plan's baseline (1,241 of them qdel(src)).

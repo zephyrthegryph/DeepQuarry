@@ -29,8 +29,8 @@
 	in_space = FALSE
 	var/tmp/site_handle
 
-// its site forgets its sector (prerelease: our handle stops naming us in phase 5).
-/obj/effect/overmap/visitable/sector/expedition/lifecycle_prerelease()
+// its site forgets its sector.
+/obj/effect/overmap/visitable/sector/expedition/on_destroy(force)
 	if(site() && om_handle_is(site().overmap_sector_handle, src))
 		site().overmap_sector_handle = null
 	..()
@@ -64,8 +64,8 @@
 
 REF_OWNED(/obj/machinery/computer/shuttle_control/explore, "flight_operations_ui")
 
-// its expedition forgets its origin console (prerelease: our handle stops naming us in phase 5).
-/obj/machinery/computer/shuttle_control/explore/lifecycle_prerelease()
+// its expedition forgets its origin console.
+/obj/machinery/computer/shuttle_control/explore/on_destroy(force)
 	if(om_handle_is(active_expedition()?.origin_console_handle, src))
 		active_expedition().origin_console_handle = null
 	..()

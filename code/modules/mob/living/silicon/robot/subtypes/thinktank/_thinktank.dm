@@ -87,12 +87,9 @@
 		var/atom/movable/drop_atom = om_resolve(drop_ref)
 		if(istype(drop_atom) && !QDELETED(drop_atom) && drop_atom.loc == src)
 			drop_atom.dropInto(loc)
-	stored_atoms = null
-	if(recharging)
-		var/obj/item/recharging_atom = om_resolve(recharging)
-		if(istype(recharging_atom) && recharging_atom.loc == src)
-			recharging_atom.dropInto(loc)
-		recharging = null
+	var/obj/item/recharging_atom = om_resolve(recharging)
+	if(istype(recharging_atom) && recharging_atom.loc == src)
+		recharging_atom.dropInto(loc)
 	..()
 
 /mob/living/silicon/robot/platform/examine(mob/user, distance)

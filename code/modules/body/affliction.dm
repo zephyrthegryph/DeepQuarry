@@ -155,8 +155,7 @@ REF_BACK(/datum/affliction, list("body" = null, "owner" = null, "location" = nul
 	configure(location)
 
 // an affliction leaves its body (symptoms end, factors recompute).
-// Prerelease: `body` is a declared back link, cleared in phase 4.
-/datum/affliction/lifecycle_prerelease()
+/datum/affliction/on_destroy(force)
 	..()
 	if(body)
 		body.remove_affliction(src)

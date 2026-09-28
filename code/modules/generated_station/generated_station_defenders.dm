@@ -92,9 +92,8 @@
 	active_patrols = list()
 	director().defense_runtime_handle = om_handle(src)
 
-// its director forgets it (prerelease: our handle stops naming us in phase 5);
-// its defenders go with it.
-/datum/generated_station_defense_runtime/lifecycle_prerelease()
+// its director forgets it.
+/datum/generated_station_defense_runtime/on_destroy(force)
 	if(om_handle_is(director()?.defense_runtime_handle, src))
 		director().defense_runtime_handle = null
 	..()

@@ -88,9 +88,8 @@ REF_HELD(/datum/forms, "current")
 	REMOVE_TRAIT(H, TRAIT_FORM_HIDES_BODY, FORM_TRAIT)
 	H.holder_type = prior_holder_type
 
-// its form mobs are deleted after it detaches (prerelease: `owner` is a declared
-// back link and the owned forms go in phase 4; detach() needs both).
-/datum/forms/lifecycle_prerelease()
+// its form mobs are deleted after it detaches.
+/datum/forms/on_destroy(force)
 	if(owner)
 		detach()
 	..()

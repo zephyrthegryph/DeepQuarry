@@ -53,7 +53,7 @@
 
 // cooking food and its containers go with the machine.
 /obj/machinery/appliance/on_destroy(force)
-	for(var/datum/cooking_item/CI as anything in cooking_objs)
+	for(var/datum/cooking_item/CI as anything in cooking_objs?.Copy())
 		qdel(CI.container())//Food is fragile, it probably doesnt survive the destruction of the machine
 		LAZYREMOVE(cooking_objs, CI)
 		qdel(CI)

@@ -612,7 +612,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 			if(OM_HOOK_KEYED)
 				B.on_keyed_deadline(E, arg)
 			if(OM_HOOK_DESTROY)
-				B.on_destroy(E)
+				B.on_entity_destroy(E)
 	catch(var/exception/e)
 		failed = TRUE
 		report_caught(e, "[B.name] hook [kind]: [e] ([e.file]:[e.line])")

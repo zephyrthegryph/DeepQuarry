@@ -60,7 +60,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 
 // neighbouring plants resume spreading.
 /obj/effect/plant/on_destroy(force)
-	LAZYCLEARLIST(neighbors)
 	if(seed() && seed().get_trait(TRAIT_SPREAD)==2)
 		unsense_proximity(callback = TYPE_PROC_REF(/atom, HasProximity), center = get_turf(src))
 	GLOB.plant_service.remove_plant(src)

@@ -121,7 +121,7 @@
 /// declared links (REF_*) are cleared, so E's vars still read; on_stop follows in phase 5.
 /// Every attached behaviour gets it, started or not. The behaviour's destroy hook: put teardown
 /// here instead of a Destroy() override on the entity.
-/datum/om/behaviour/proc/on_destroy(datum/E)
+/datum/om/behaviour/proc/on_entity_destroy(datum/E)
 	SHOULD_NOT_SLEEP(TRUE)
 	return
 

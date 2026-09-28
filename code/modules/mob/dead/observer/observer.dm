@@ -529,7 +529,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 
 // its exonet address is released before phase 4 deletes the owned exonet.
-/mob/observer/dead/lifecycle_prerelease()
+/mob/observer/dead/on_destroy(force)
 	exonet?.remove_address()
 	..()
 

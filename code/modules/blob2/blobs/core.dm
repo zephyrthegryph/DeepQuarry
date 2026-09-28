@@ -114,8 +114,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 		update_icon()
 
 // leaves a core chunk; its overmind dies with it.
-// Prerelease: `overmind` is a declared back-list link, cleared in phase 4.
-/obj/structure/blob/core/lifecycle_prerelease()
+/obj/structure/blob/core/on_destroy(force)
 	..()
 	new /obj/item/blobcore_chunk(get_turf(src), overmind?.blob_type)
 	if(overmind)

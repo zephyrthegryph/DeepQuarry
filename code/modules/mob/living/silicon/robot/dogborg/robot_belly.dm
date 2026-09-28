@@ -35,8 +35,7 @@ REF_BACK(/datum/robot_belly, list("owner" = "robot_belly"))
 	om_hook(R, /datum/om/event/robot_belly_fullness, src, PROC_REF(on_belly_fullness))
 
 // owned state datum (was a component): its riders and ore bags are let go.
-// Prerelease: `owner` is a declared back link, cleared (both ways) in phase 4.
-/datum/robot_belly/lifecycle_prerelease()
+/datum/robot_belly/on_destroy(force)
 	var/mob/living/silicon/robot/R = owner
 	if(R)
 		for(var/obj/item/ore_bag/bag as anything in active_ore_bags)

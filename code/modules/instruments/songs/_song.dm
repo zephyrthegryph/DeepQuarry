@@ -135,9 +135,8 @@
 	if(new_range)
 		instrument_range = new_range
 
-// stops playing and leaves its instrument (prerelease: om_handle_of(src) is
-// null once phase 5 releases our handle).
-/datum/song/lifecycle_prerelease()
+// stops playing and leaves its instrument.
+/datum/song/on_destroy(force)
 	stop_playing()
 	if(using_instrument())
 		LAZYREMOVE(using_instrument().songs_using, om_handle_of(src))

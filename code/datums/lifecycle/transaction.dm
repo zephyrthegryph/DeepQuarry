@@ -137,7 +137,7 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 	D.lifecycle_prerelease() // teardown that still reads the declared vars (links.dm)
 	D.on_destroy(force) // the type's destroy hook: back-vars, partners and handles still live
 	if(D.om_rec)
-		om_behaviours_on_destroy(D) // each attached behaviour's on_destroy(E)
+		om_behaviours_on_destroy(D) // each attached behaviour's on_entity_destroy(E)
 	dq_lifecycle_clear_links(D)
 	dq_lifecycle_time(trash, LIFECYCLE_PHASE_LINKS, tick)
 	DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_LINKS done")
@@ -234,7 +234,7 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 /// anything a REF_* declaration, lifecycle_unbind(), lifecycle_dematerialize(),
 /// lifecycle_prerelease() or destroy_effects() expresses goes there instead.
 /// Always call ..(). Returns nothing: the GC hint is destroy_hint.
-/// Behaviours get the same hook as /datum/om/behaviour/proc/on_destroy(E).
+/// Behaviours get the same hook as /datum/om/behaviour/proc/on_entity_destroy(E).
 /datum/proc/on_destroy(force)
 	SHOULD_CALL_PARENT(TRUE)
 	return

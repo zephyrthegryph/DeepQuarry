@@ -522,7 +522,7 @@
 			LAZYREMOVE(orec.fwd_out, E)
 	rec.fwd_in = null
 
-/// Lifecycle phase 4: every attached behaviour's on_destroy(E), before the links clear.
+/// Lifecycle phase 4: every attached behaviour's on_entity_destroy(E), before the links clear.
 /proc/om_behaviours_on_destroy(datum/E)
 	var/datum/om/rec/rec = E.om_rec
 	if(!rec || rec.torn_down)

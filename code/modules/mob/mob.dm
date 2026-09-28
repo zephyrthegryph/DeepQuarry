@@ -16,9 +16,8 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	registry_join(stat == DEAD ? REGISTRY_DEAD_MOBS : REGISTRY_LIVING_MOBS, src)
 
 
-/// The mind forgets us as its original character. Prerelease: om_handle_of(src)
-/// is null once phase 5 releases our handle, so the compare must run first.
-/mob/lifecycle_prerelease()
+// the mind forgets us as its original character.
+/mob/on_destroy(force)
 	if(mind && om_handle_is(mind.original_character, src))
 		mind.original_character = null
 	..()

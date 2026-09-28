@@ -151,9 +151,8 @@ REF_OWNED(/datum/flight_vessel, "active_plan")
 		generation_state = FLIGHT_GENERATION_QUEUED
 		generation_stage = "Awaiting departure"
 
-// its leases are released (prerelease: `vessel` is a declared back link, and
-// the port's reserved_by handle stops naming us in phase 5).
-/datum/flight_plan/lifecycle_prerelease()
+// its leases are released.
+/datum/flight_plan/on_destroy(force)
 	release_leases(state != FLIGHT_PLAN_ARRIVED)
 	..()
 
