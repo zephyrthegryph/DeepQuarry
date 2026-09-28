@@ -89,11 +89,12 @@
 	var/list/rules
 	/// Per rule (same index): TRUE while its condition held at the last look.
 	var/list/holding
-	/// Per rule: fire count.
+	/// Per rule: fire count. Null until a rule first fires (most never do).
 	var/list/fired
 	/// Per rule: its subscription tokens, or null once done.
 	var/list/tokens
 	/// Per rule: hold_for rate model (RULE_HOLD_SPENT once fired this spell) and its watch token.
+	/// Both null until a hold_for rule first holds.
 	var/list/hold_models
 	var/list/hold_tokens
 	/// property -> heat node handle (the owner's heat body, while it has one).
@@ -114,14 +115,10 @@
 	src.rules = rules
 	var/count = length(rules)
 	holding = new /list(count)
-	fired = new /list(count)
 	tokens = new /list(count)
-	hold_models = new /list(count)
-	hold_tokens = new /list(count)
 	owner.rule_binding = src
 	for(var/i in 1 to count)
 		tokens[i] = subscribe(rules[i])
-		fired[i] = 0
 	// Baseline: a rule fires on crossing, not because it already holds.
 	for(var/i in 1 to count)
 		if(tokens[i])
@@ -198,7 +195,7 @@
 	if(rule_tokens)
 		cancel_all(rule_tokens)
 		tokens[i] = null
-	if(!isnull(hold_models[i]) && hold_models[i] != RULE_HOLD_SPENT)
+	if(hold_models && !isnull(hold_models[i]) && hold_models[i] != RULE_HOLD_SPENT)
 		dq_rx_rate_remove(hold_models[i])
 		hold_models[i] = null
 		hold_tokens[i] = null
@@ -248,12 +245,15 @@
 			continue
 		if(now && !was)
 			fire(i)
-		else if(!now && was && fired[i])
+		else if(!now && was && fired?[i])
 			rule.exit(owner)
 
 /// hold_for: a rate model counts seconds held; a rate watch wakes us when it
 /// reaches the hold time. It pauses while the condition doesn't hold.
 /datum/rule_binding/proc/update_hold(i, datum/rule/rule, now)
+	if(!hold_models)
+		hold_models = new /list(length(rules))
+		hold_tokens = new /list(length(rules))
 	var/model = hold_models[i]
 	if(model == RULE_HOLD_SPENT)
 		// Fired during this spell; re-arm once the condition stops holding.
@@ -284,6 +284,8 @@
 
 /datum/rule_binding/proc/fire(i)
 	var/datum/rule/rule = rules[i]
+	if(!fired)
+		fired = new /list(length(rules))
 	fired[i]++
 	if(rule.once)
 		drop(i)
