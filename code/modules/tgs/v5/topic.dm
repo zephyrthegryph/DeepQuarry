@@ -294,5 +294,5 @@
 	return TopicResponse("Unknown command: [command]")
 
 /datum/tgs_api/v5/proc/WorldBroadcast(message)
-	set waitfor = FALSE
+	set waitfor = FALSE // S10b keeps: vendored TGS
 	TGS_WORLD_ANNOUNCE(message)

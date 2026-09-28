@@ -447,8 +447,6 @@
 			if(!port_air)
 				continue
 			rust_queue_pipe_operation(RUST_PIPE_OP_UPSERT, machine.rust_pipe_port_ids[index], port_air.arena_id(), machine.rust_pipe_port_volume(index))
-		if(length(GLOB.clients) && TICK_CHECK)
-			stoplag()
 
 	for(var/obj/machinery/atmospherics/machine in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		for(var/index = 1 to machine.rust_pipe_port_count())
@@ -468,8 +466,6 @@
 			var/first_index = internal_edges[edge_index]
 			var/second_index = internal_edges[edge_index + 1]
 			rust_queue_pipe_operation(RUST_PIPE_OP_CONNECT, machine.rust_pipe_port_ids[first_index], machine.rust_pipe_port_ids[second_index])
-		if(length(GLOB.clients) && TICK_CHECK)
-			stoplag()
 
 	rust_commit_pending_pipenets()
 

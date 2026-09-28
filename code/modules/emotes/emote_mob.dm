@@ -14,7 +14,7 @@
 	return (..() && !(has_status(EFFECT_MUTED) && emote_type == AUDIBLE_MESSAGE))
 
 /mob/proc/emote(act, m_type, message)
-	set waitfor = FALSE
+	set waitfor = FALSE // S10b keeps: waits on a prompt (custom emote tgui_input_text/tgui_alert)
 	// s-s-snowflake
 	if(src.stat == DEAD && act != "deathgasp")
 		return

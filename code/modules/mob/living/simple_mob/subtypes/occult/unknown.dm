@@ -210,7 +210,6 @@
 		om_after(target, 5 SECONDS, TYPE_PROC_REF(/mob/living, glitch_confusion))
 
 /mob/living/simple_mob/glitch_boss/proc/bullethell(atom/A)
-	set waitfor = FALSE
 
 	bullethell_wave(dir2angle(dir), 1)
 

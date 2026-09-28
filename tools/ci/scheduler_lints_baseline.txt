@@ -6,9 +6,9 @@ addtimer 786
 invoke_async 33
 do_after 0
 sleep 24
-stoplag 51
+stoplag 38
 prompts 2234
-set_waitfor 70
+set_waitfor 27
 weakref 0
 del 0
 lc_refs 2684

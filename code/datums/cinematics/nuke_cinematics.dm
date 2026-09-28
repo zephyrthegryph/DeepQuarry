@@ -6,7 +6,11 @@
 
 /datum/cinematic/nuke/play_cinematic()
 	flick("intro_nuke", screen)
-	stoplag(3.5 SECONDS)
+	// The intro runs its course, then the blast (om_after(), no sleep: S10b).
+	om_after(src, 3.5 SECONDS, PROC_REF(play_nuke_blast))
+
+/// The second half of the nuke cinematic, after the intro animation.
+/datum/cinematic/nuke/proc/play_nuke_blast()
 	play_nuke_effect()
 	if(special_callback)
 		special_callback.Invoke()

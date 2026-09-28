@@ -283,7 +283,7 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 	return OM_CALLEE_SLEPT
 
 /proc/om_trampoline(list/state, datum/E, proc_ref, list/call_args)
-	set waitfor = FALSE
+	set waitfor = FALSE // S10b keeps: OM sleep-guard trampoline (detects callees that sleep)
 	try
 		if(E)
 			state[2] = om_invoke(E, proc_ref, call_args)

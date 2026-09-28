@@ -49,7 +49,6 @@
 			launch_microsingularity(A)
 
 /mob/living/simple_mob/mechanical/mecha/combat/phazon/advanced/proc/electric_defense(atom/target)
-	set waitfor = FALSE
 
 	// Telegraph our next move.
 	Beam(target, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)
@@ -67,7 +66,6 @@
 	explosion(T, 1, 1, 1, adminlog = FALSE)
 
 /mob/living/simple_mob/mechanical/mecha/combat/phazon/advanced/proc/launch_rockets(atom/target)
-	set waitfor = FALSE
 
 	// Telegraph our next move.
 	Beam(target, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)
@@ -85,7 +83,6 @@
 	empulse(T, 1, 2, 3, 4)
 
 /mob/living/simple_mob/mechanical/mecha/combat/phazon/advanced/proc/launch_microsingularity(atom/target)
-	set waitfor = FALSE
 
 	// Telegraph our next move.
 	Beam(target, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)

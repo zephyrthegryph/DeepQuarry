@@ -341,7 +341,7 @@ GLOBAL_LIST_EMPTY(radial_menus)
 				return
 			else
 				next_check = world.time + check_delay
-		stoplag(1)
+		stoplag(1) // S10b keeps: waits on the player's radial choice (prompt)
 
 // LIFECYCLE: a menu closes on its viewer and wakes the chooser waiting on it.
 /datum/radial_menu/Destroy()

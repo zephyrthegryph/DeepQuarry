@@ -682,7 +682,7 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 		// Open UI
 		ui = new(user, src, tgui_id, name)
 		ui.open()
-		CallAsync(src, PROC_REF(jiggle_map))
+		jiggle_map()
 	if(custom_state)
 		ui.set_state(custom_state)
 	update_active_camera_screen()

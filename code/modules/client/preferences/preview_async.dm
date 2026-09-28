@@ -325,18 +325,46 @@
 	return generation
 
 /// Waits for a render's iconforge jobs, then applies them unless the render went stale.
+/// Polls once a tick on om_after() timers (S10b: was a stoplag() loop). The global owner
+/// runs the polls and the preferences travel as an OM handle, so the job PNGs are still
+/// cleaned up when the preferences are deleted mid-render.
 /datum/preferences/proc/dq_poll_preview_jobs(generation, list/jobs, list/ready, scale_x, scale_y, had_client)
-	var/list/outputs = list()
-	var/deadline = world.time + DQ_PREVIEW_JOB_TIMEOUT
-	while(length(outputs) < length(jobs) && world.time <= deadline)
-		for(var/dir_key in jobs)
-			if(!isnull(outputs[dir_key]))
-				continue
-			var/output = rustg_iconforge_check(jobs[dir_key][1])
-			if(output != RUSTG_JOB_NO_RESULTS_YET)
-				outputs[dir_key] = output
-		if(length(outputs) < length(jobs))
-			stoplag()
+	var/list/state = list(generation, jobs, ready, scale_x, scale_y, had_client, list(), world.time + DQ_PREVIEW_JOB_TIMEOUT)
+	dq_preview_poll_step(om_handle(src), state)
+
+/// One poll of a render's iconforge jobs. `state`: generation, jobs, ready, scale_x, scale_y,
+/// had_client, outputs, deadline.
+/proc/dq_preview_poll_step(prefs_handle, list/state)
+	var/list/jobs = state[2]
+	var/list/outputs = state[7]
+	for(var/dir_key in jobs)
+		if(!isnull(outputs[dir_key]))
+			continue
+		var/output = rustg_iconforge_check(jobs[dir_key][1])
+		if(output != RUSTG_JOB_NO_RESULTS_YET)
+			outputs[dir_key] = output
+	if(length(outputs) < length(jobs) && world.time <= state[8])
+		om_after(null, world.tick_lag, GLOBAL_PROC_REF(dq_preview_poll_step), prefs_handle, state)
+		return
+	var/datum/preferences/prefs = om_resolve(prefs_handle)
+	if(prefs)
+		prefs.dq_finish_preview_jobs(state)
+		return
+	// The preferences are gone: only clean up the job output.
+	for(var/dir_key in outputs)
+		var/png_path = dq_preview_job_png(jobs[dir_key][2], outputs[dir_key])
+		if(png_path)
+			fdel(png_path)
+
+/// Applies a render's finished iconforge jobs unless the render went stale.
+/datum/preferences/proc/dq_finish_preview_jobs(list/state)
+	var/generation = state[1]
+	var/list/jobs = state[2]
+	var/list/ready = state[3]
+	var/scale_x = state[4]
+	var/scale_y = state[5]
+	var/had_client = state[6]
+	var/list/outputs = state[7]
 	dq_preview_jobs_in_flight--
 
 	var/current = !QDELETED(src) && generation == dq_preview_generation && (!had_client || client)
@@ -361,7 +389,7 @@
 	dq_apply_preview_result(generation, result)
 
 /// Path of the PNG a finished iconforge job wrote, or null if the job failed.
-/datum/preferences/proc/dq_preview_job_png(sheet_name, output)
+/proc/dq_preview_job_png(sheet_name, output)
 	if(output == RUSTG_JOB_ERROR || output == RUSTG_JOB_NO_SUCH_JOB || !findtext(output, "{", 1, 2))
 		stack_trace("Character preview iconforge job failed: [output]")
 		return null

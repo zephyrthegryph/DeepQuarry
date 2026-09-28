@@ -65,7 +65,6 @@
 
 // Yes? Throw the grenade
 /mob/living/simple_mob/humanoid/merc/do_special_attack(atom/A)
-	set waitfor = FALSE
 	ai_busy_begin()
 	var/obj/item/grenade/G = new grenade_type(get_turf(src))
 	if(istype(G))

@@ -86,7 +86,6 @@
 	special_attack_cooldown = 15 SECONDS
 
 /mob/living/simple_mob/mechanical/mecha/imperion/phase1/proc/electric_defense(atom/target)
-	set waitfor = FALSE
 
 	// Telegraph our next move.
 	Beam(target, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)
@@ -210,7 +209,6 @@
 	melee_attack_delay = 2 SECOND
 
 /mob/living/simple_mob/mechanical/mecha/imperion/phase4/proc/electric_defense(atom/target)
-	set waitfor = FALSE
 
 	// Telegraph our next move.
 	Beam(target, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)
@@ -347,7 +345,6 @@
 	A.launch_projectile(target, BP_TORSO, src)
 
 /mob/living/simple_mob/mechanical/mecha/imperion/phase5/proc/launch_microsingularity(atom/target)
-	set waitfor = FALSE
 
 	// Telegraph our next move.
 	Beam(target, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)

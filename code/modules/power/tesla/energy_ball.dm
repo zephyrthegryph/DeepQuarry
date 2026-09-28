@@ -44,7 +44,6 @@
 	..()
 
 /obj/singularity/energy_ball/periodic_step(wait = 20)
-	set waitfor = FALSE
 	if(!src?.orbit_target())
 		if (handle_energy())
 			return

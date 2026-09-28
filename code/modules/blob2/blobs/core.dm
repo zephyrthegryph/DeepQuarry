@@ -135,7 +135,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 	add_overlay("blob_core_overlay")
 
 /obj/structure/blob/core/periodic_step()
-	set waitfor = FALSE
 	if(QDELETED(src))
 		return
 	if(!overmind)

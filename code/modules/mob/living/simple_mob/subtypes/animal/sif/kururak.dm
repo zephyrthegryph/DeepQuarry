@@ -157,7 +157,7 @@
 	tail_flash()
 
 /mob/living/simple_mob/animal/sif/kururak/proc/tail_flash(atom/A)
-	set waitfor = FALSE
+	set waitfor = FALSE // S10b keeps: waits on a prompt (tgui_input_list target choice)
 
 	if(stat)
 		to_chat(src, span_warning("You cannot move your tails in this state.."))

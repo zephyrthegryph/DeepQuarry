@@ -1213,7 +1213,7 @@ REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 	om_changed(src, CHANGE_MACHINE_SETTINGS)
 
 /obj/machinery/power/apc/proc/set_nightshift(on, automated)
-	set waitfor = FALSE
+	set waitfor = FALSE // S10b keeps: update_nightshift() CHECK_TICKs over the area lights
 	if(automated && istype(area, /area/shuttle))
 		return
 	nightshift_lights = on

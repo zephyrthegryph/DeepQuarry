@@ -50,7 +50,6 @@
 
 
 /mob/living/simple_mob/mechanical/hivebot/precusor/chrono/proc/launch_microsingularity(atom/target)
-	set waitfor = FALSE
 	visible_message(span_warning("\The [src] drops a ticking time bomb!"))
 
 	var/obj/item/grenade/G = new grenade_type(get_turf(src))
@@ -61,7 +60,6 @@
 
 	ai_busy_end()
 /mob/living/simple_mob/mechanical/hivebot/precusor/chrono/proc/launch_rockets(atom/target)
-	set waitfor = FALSE
 	visible_message(span_warning("\The [src] creates weak looking hivebots!"))
 
 	var/obj/item/grenade/G = new grenade_type2(get_turf(src))

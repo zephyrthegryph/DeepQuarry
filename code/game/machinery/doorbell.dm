@@ -18,7 +18,6 @@
 	update_icon()
 
 /obj/machinery/doorbell_chime/proc/chime()
-	set waitfor = FALSE
 	if(inoperable())
 		return
 	use_power(active_power_usage)

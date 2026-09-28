@@ -55,14 +55,8 @@ SUBSYSTEM_DEF(lighting)
 		else
 			i -= 1 // update_corners() has removed L from the list, move back so we don't overflow or skip the next element
 
-		// We unroll TICK_CHECK here so we can clear out the queue to ensure any removals/additions when sleeping don't fuck us
-		if(init_tick_checks)
-			if(!TICK_CHECK)
-				continue
-			queue.Cut(1, i + 1)
-			i = 0
-			stoplag()
-		else if (MC_TICK_CHECK)
+		// At init the whole queue drains in one pass (S10b: no stoplag yield); afterwards the MC budget splits it.
+		if(!init_tick_checks && MC_TICK_CHECK)
 			break
 	if (i)
 		queue.Cut(1, i + 1)
@@ -80,14 +74,8 @@ SUBSYSTEM_DEF(lighting)
 		C.needs_update = FALSE //update_objects() can call qdel if the corner is storing no data
 		C.update_objects()
 
-		// We unroll TICK_CHECK here so we can clear out the queue to ensure any removals/additions when sleeping don't fuck us
-		if(init_tick_checks)
-			if(!TICK_CHECK)
-				continue
-			queue.Cut(1, i + 1)
-			i = 0
-			stoplag()
-		else if (MC_TICK_CHECK)
+		// At init the whole queue drains in one pass (S10b: no stoplag yield); afterwards the MC budget splits it.
+		if(!init_tick_checks && MC_TICK_CHECK)
 			break
 	if (i)
 		queue.Cut(1, i + 1)
@@ -107,14 +95,8 @@ SUBSYSTEM_DEF(lighting)
 		O.update()
 		O.needs_update = FALSE
 
-		// We unroll TICK_CHECK here so we can clear out the queue to ensure any removals/additions when sleeping don't fuck us
-		if(init_tick_checks)
-			if(!TICK_CHECK)
-				continue
-			queue.Cut(1, i + 1)
-			i = 0
-			stoplag()
-		else if (MC_TICK_CHECK)
+		// At init the whole queue drains in one pass (S10b: no stoplag yield); afterwards the MC budget splits it.
+		if(!init_tick_checks && MC_TICK_CHECK)
 			break
 	if (i)
 		queue.Cut(1, i + 1)
@@ -134,14 +116,8 @@ SUBSYSTEM_DEF(lighting)
 			continue
 		shandler.sunlight_update()
 
-		// We unroll TICK_CHECK here so we can clear out the queue to ensure any removals/additions when sleeping don't fuck us
-		if(init_tick_checks)
-			if(!TICK_CHECK)
-				continue
-			queue.Cut(1, i + 1)
-			i = 0
-			stoplag()
-		else if (MC_TICK_CHECK)
+		// At init the whole queue drains in one pass (S10b: no stoplag yield); afterwards the MC budget splits it.
+		if(!init_tick_checks && MC_TICK_CHECK)
 			break
 	if (i)
 		queue.Cut(1, i + 1)
