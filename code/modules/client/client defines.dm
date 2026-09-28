@@ -197,8 +197,9 @@ REF_OWNED(/client, list("fakeConversations", "tooltips", "volume_panel", "loot_p
 /client/proc/declared_held_vars()
 	return null
 
-// prefs and persistent_client outlive the connection (GLOB.preferences_datums, GLOB.persistent_clients_by_ckey).
-REF_HELD(/client, list("prefs", "persistent_client"))
+// prefs, persistent_client and the admin holder outlive the connection (GLOB.preferences_datums,
+// GLOB.persistent_clients_by_ckey, GLOB.admin_datums).
+REF_HELD(/client, list("prefs", "persistent_client", "holder"))
 
 /// LC-refs: the click_intercept this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /client/proc/click_intercept() as /datum

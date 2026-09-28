@@ -106,4 +106,4 @@
 
 	var/max_voreoverlay_alpha = 255
 
-REF_HELD(/mob, list("soulgem", "vore_selected"))
+REF_HELD(/mob, list("soulgem", "vore_selected", "spont_belly_front", "spont_belly_rear", "spont_belly_left", "spont_belly_right", "previewing_belly"))

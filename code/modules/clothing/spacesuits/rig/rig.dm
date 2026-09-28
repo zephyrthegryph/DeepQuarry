@@ -1003,4 +1003,4 @@ REF_OWNED(/obj/item/rig, list("power_system", "wires", "spark_system", "boots", 
 	M.client?.screen -= booting_R
 	qdel(booting_R)
 
-REF_HELD(/obj/item/rig, list("air_supply", "cell"))
+REF_HELD(/obj/item/rig, list("air_supply", "cell", "selected_module", "visor", "speech", "rig_storage"))

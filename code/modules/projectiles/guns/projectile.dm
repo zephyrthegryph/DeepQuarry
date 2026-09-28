@@ -750,4 +750,4 @@ REF_OWNED(/obj/item/gun/projectile, "ammo_provider")
 #undef BOLT_CASING_EJECTED
 #undef BOLT_CASING_CHAMBERED
 
-REF_HELD(/obj/item/gun/projectile, "ammo_magazine")
+REF_HELD(/obj/item/gun/projectile, list("ammo_magazine", "chambered"))
