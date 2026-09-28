@@ -108,11 +108,11 @@
 	charge = 0
 	should_be_mapped = 1
 
-// ALLOW(lifecycle): RCON consoles rescan without it.
-/obj/machinery/power/smes/buildable/Destroy()
+// RCON consoles rescan without it.
+/obj/machinery/power/smes/buildable/on_destroy(force)
 	for(var/datum/tgui_module/rcon/R in world)
 		R.FindDevices()
-	return ..()
+	..()
 
 /// With the grounding wire cut, sparks fly every frame and the unit discharges quickly, with a
 /// small chance of breaking lights on the APCs of its powernet. It stays awake until grounded or

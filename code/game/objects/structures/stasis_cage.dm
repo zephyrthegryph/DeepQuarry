@@ -65,11 +65,11 @@
 	underlays.Cut()
 	desc = initial(desc)
 
-// ALLOW(lifecycle): the caged creature is released.
-/obj/structure/stasis_cage/Destroy()
+// the caged creature is released.
+/obj/structure/stasis_cage/on_destroy(force)
 	release()
 
-	return ..()
+	..()
 
 /mob/living/simple_mob/MouseDrop(obj/structure/stasis_cage/over_object)
 	var/mob/user = usr

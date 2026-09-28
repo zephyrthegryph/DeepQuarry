@@ -113,8 +113,8 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 		known = FALSE
 
 // You generally shouldn't destroy these.
-// ALLOW(lifecycle): its z-levels are unregistered.
-/obj/effect/overmap/visitable/Destroy()
+// its z-levels are unregistered.
+/obj/effect/overmap/visitable/lifecycle_dematerialize()
 	testing("Deleting [src] overmap sector at [x],[y]")
 	unregister_z_levels()
 	return ..()

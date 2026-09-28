@@ -17,16 +17,11 @@
 	om_hook(defender(), /datum/om/event/dqai_damage_taken, src, PROC_REF(on_damage))
 	om_hook(defender(), /datum/om/event/mob_death, src, PROC_REF(on_death))
 
-// ALLOW(lifecycle): its director unregisters the defender.
-/datum/generated_station_defender_agent/Destroy()
+// its director unregisters the defender.
+/datum/generated_station_defender_agent/on_destroy(force)
 	if(defender())
-		om_unhook(defender(), list(/datum/om/event/dqai_damage_taken, /datum/om/event/mob_death), src)
 		runtime()?.director()?.unregister_defender(defender())
-	defender_handle = null
-	runtime_handle = null
-	home_handle = null
-	last_contact = null
-	return ..()
+	..()
 
 /// A null or deleted defender must never read as "alive"; `defender?.stat < DEAD`
 /// evaluates `null < DEAD` and is TRUE for a missing mob.
@@ -97,16 +92,8 @@
 	active_patrols = list()
 	director().defense_runtime_handle = om_handle(src)
 
-// ALLOW(lifecycle): its director forgets it; its defenders go with it.
-/datum/generated_station_defense_runtime/Destroy()
-	if(director()?.defense_runtime() == src)
-		director().defense_runtime_handle = null
-	squads_by_department = null
-	department_turfs = null
-	active_patrols = null
-	director_handle = null
-	site_handle = null
-	return ..()
+// its director forgets it.
+REF_BACK_HANDLE(/datum/generated_station_defense_runtime, list("director_handle" = "defense_runtime_handle"))
 
 
 /datum/generated_station_defense_runtime/proc/create_roster()

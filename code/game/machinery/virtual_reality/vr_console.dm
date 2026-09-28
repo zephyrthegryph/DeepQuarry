@@ -49,12 +49,12 @@
 	smoke = new
 	update_icon()
 
-// ALLOW(lifecycle): its occupant exits VR.
-/obj/machinery/vr_sleeper/Destroy()
-	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
+// its occupant exits VR (phase 2, while the slot still holds them; phase 3 spills them).
+/obj/machinery/vr_sleeper/lifecycle_dematerialize()
+	var/mob/living/carbon/human/occupant = slot_item(OCCUPANT_SLOT_VR_POD)
 	if(occupant && occupant.vr_link)
 		occupant.vr_link.exit_vr()
-	. = ..()
+	..()
 
 /// Watches its occupant (death, power loss) while it has one; empty, it sleeps until someone
 /// gets in.

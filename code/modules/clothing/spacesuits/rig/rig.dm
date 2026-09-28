@@ -140,11 +140,10 @@
 
 REF_OWNED(/obj/item/rig, list("power_system", "spark_system", "boots", "chest", "helmet", "gloves", "mob_icon", "minihud", "component_registry"))
 
-// ALLOW(lifecycle): the suit pieces are torn down by the component registry first.
-/obj/item/rig/Destroy()
+// the suit pieces are torn down by its (owned) component registry.
+/obj/item/rig/on_destroy(force)
 	component_registry?.destroy_pieces()
-	QDEL_NULL(component_registry)
-	return ..()
+	..()
 
 /obj/item/rig/MouseDrop(obj/over_object)
 	if(unremovable)

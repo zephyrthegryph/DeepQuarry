@@ -28,7 +28,7 @@
 	light_power = 5
 	light_color = "#FF6A00"
 
-// ALLOW(lifecycle): the blast detonates when it expires.
-/obj/effect/temporary_effect/fire_blast/Destroy()
+// the blast detonates when it expires.
+/obj/effect/temporary_effect/fire_blast/on_destroy(force)
 	explosion(get_turf(src), -1, 1, 2, 5, adminlog = 1)
-	. = ..()
+	..()

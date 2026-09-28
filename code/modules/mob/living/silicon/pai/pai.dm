@@ -194,13 +194,17 @@ REF_OWNED(/mob/living/silicon/pai, list("card", "pai_ui_chassis", "sradio", "com
 // `radio` is the card's radio; the cable is retracted by check_retract_cable(); records belong to the datacore.
 REF_HELD(/mob/living/silicon/pai, list("current", "radio", "cable", "medicalActive1", "medicalActive2", "securityActive1", "securityActive2", "hackdoor"))
 
-// ALLOW(lifecycle): releases its prey, retracts its cable and frees its key.
-/mob/living/silicon/pai/Destroy()
+// releases its prey and retracts its cable.
+/mob/living/silicon/pai/on_destroy(force)
 	release_vore_contents()
 	check_retract_cable()
+	..()
+
+// frees its key.
+/mob/living/silicon/pai/lifecycle_dematerialize()
 	if(ckey)
 		GLOB.paikeys -= ckey
-	return ..()
+	..()
 
 /mob/living/silicon/pai/clear_client()
 	if(ckey)

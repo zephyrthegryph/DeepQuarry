@@ -24,9 +24,9 @@
 	/// Set by Destroy(): how many om edges were still present then.
 	var/edges_at_destroy = -1
 
-/datum/om_test_entity/Destroy()
+/datum/om_test_entity/on_destroy(force)
 	edges_at_destroy = length(om_rec?.edges)
-	return ..()
+	..()
 
 /datum/om_test_entity/om_ui_push()
 	ui_pushes++

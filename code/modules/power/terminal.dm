@@ -18,12 +18,11 @@
 	var/turf/T = src.loc
 	if(level==1) hide(!T.is_plating())
 
-// ALLOW(lifecycle): its master disconnects the terminal.
-/obj/machinery/power/terminal/Destroy()
+// its master disconnects the terminal.
+/obj/machinery/power/terminal/on_destroy(force)
 	if(master())
 		master().disconnect_terminal(src)
-		master_handle = null
-	return ..()
+	..()
 
 /obj/machinery/power/terminal/hide(i)
 	invisibility = i ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE

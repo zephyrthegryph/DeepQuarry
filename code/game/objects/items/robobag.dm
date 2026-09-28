@@ -57,15 +57,17 @@ EXTEND_INTERACTIONS(/obj/structure/closet/body_bag/cryobag/robobag, \
 		return TRUE
 	return FALSE
 
-// ALLOW(lifecycle): its corpse tag drops to the floor.
-/obj/structure/closet/body_bag/cryobag/robobag/Destroy()
-	if(corptag && get_turf(src))
-		var/turf/T = get_turf(src)
+// its corpse tag drops to the floor.
+// The tag is kept in nullspace, not in contents: owned, so phase 4 deletes it
+// unless on_destroy has already dropped it on the bag's turf.
+REF_OWNED(/obj/structure/closet/body_bag/cryobag/robobag, "corptag")
+
+/obj/structure/closet/body_bag/cryobag/robobag/on_destroy(force)
+	var/turf/T = get_turf(src)
+	if(corptag && T)
 		corptag.forceMove(T)
 		corptag = null
-	else
-		QDEL_NULL(corptag)
-	return ..()
+	..()
 
 /obj/structure/closet/body_bag/cryobag/robobag/Entered(atom/movable/AM)
 	..()

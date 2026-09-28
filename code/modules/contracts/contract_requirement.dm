@@ -352,14 +352,7 @@ REF_OWNED(/datum/contract_requirement/event_count, "filter")
 	if(event_type)
 		event_types += event_type
 
-REF_OWNED(/datum/contract_requirement/sustained_event, "filter")
-
-// ALLOW(lifecycle): pending sustain timers are cancelled.
-/datum/contract_requirement/sustained_event/Destroy()
-	cancel_pending_timers()
-	return ..()
-
-/datum/contract_requirement/sustained_event/proc/require_any_value(key, list/allowed)
+REF_OWNED(/datum/contract_requirement/sustained_event, "filter")/datum/contract_requirement/sustained_event/proc/require_any_value(key, list/allowed)
 	return filter.require_any_value(key, allowed)
 
 /datum/contract_requirement/sustained_event/on_contract_closed()
@@ -442,14 +435,7 @@ REF_OWNED(/datum/contract_requirement/sustained_event, "filter")
 	if(event_type)
 		event_types += event_type
 
-REF_OWNED(/datum/contract_requirement/staged_sustained_event, "filter")
-
-// ALLOW(lifecycle): pending sustain timers are cancelled.
-/datum/contract_requirement/staged_sustained_event/Destroy()
-	cancel_pending_timers()
-	return ..()
-
-/datum/contract_requirement/staged_sustained_event/proc/set_stages(list/new_stages)
+REF_OWNED(/datum/contract_requirement/staged_sustained_event, "filter")/datum/contract_requirement/staged_sustained_event/proc/set_stages(list/new_stages)
 	if((contract && contract.state != CONTRACT_OFFERED) || !length(new_stages))
 		return FALSE
 	cancel_pending_timers()

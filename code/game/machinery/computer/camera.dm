@@ -133,12 +133,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery/computer/security/telescreen/entertainment, R
 
 REF_OWNED(/obj/machinery/computer/security/telescreen/entertainment, list("pinboard", "radio"))
 
-// ALLOW(lifecycle): stops showing its feed.
-/obj/machinery/computer/security/telescreen/entertainment/Destroy()
+// stops showing its feed.
+/obj/machinery/computer/security/telescreen/entertainment/on_destroy(force)
 	if(showing)
 		stop_showing()
-	vis_contents.Cut()
-	return ..()
+	..()
 
 /obj/machinery/computer/security/telescreen/entertainment/proc/toggle()
 	enabled = !enabled

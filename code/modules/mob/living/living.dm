@@ -11,31 +11,19 @@
 	else
 		return name
 
-// ALLOW(lifecycle): the base living mob: Life, body effects, soul links, nest, transformed holder and organs.
-/mob/living/Destroy()
+// the base living mob: Life, body effects, soul links, nest, transformed holder and organs.
+/mob/living/on_destroy(force)
 	life_leave_z()
 	clear_body_effects(TRUE)
 	// The character's DNA outlives this body when the identity references it.
 	if(dna && identity()?.dna() == dna)
 		dna = null
-	QDEL_NULL(say_list)
-
-	for(var/datum/soul_link/S as anything in owned_soul_links)
+	for(var/datum/soul_link/S as anything in owned_soul_links?.Copy())
 		S.owner_died(FALSE)
 		qdel(S) // If the owner is destroy()'d, the soullink is destroy()'d.
-	owned_soul_links = null
-	for(var/datum/soul_link/S as anything in shared_soul_links)
+	for(var/datum/soul_link/S as anything in shared_soul_links?.Copy())
 		S.sharer_died(FALSE)
 		S.remove_soul_sharer(src) // If a sharer is destroy()'d, they are simply removed.
-	shared_soul_links = null
-
-	if(ai_brain)
-		ai_brain.holder = null
-		om_unhook(src, /datum/om/event/mob_statchange, ai_brain)
-		//legacy faction_friends list cleanup removed — the modern
-		// brain stores relationships as OM handles in personal[], which
-		// invalidate automatically when the referenced mob qdels.
-		QDEL_NULL(ai_brain)
 	if(nest) //Ew.
 		if(istype(nest, /obj/structure/prop/nest))
 			var/obj/structure/prop/nest/N = nest
@@ -66,9 +54,6 @@
 	if(tf_mob_holder)
 		set_tf_mob_holder(null)
 	QDEL_NULL_LIST(hud_list)
-	temp_language_sources = null
-	temp_languages = null
-
 	// Deleting a part detaches it, and the detach hook empties these caches
 	// (code/modules/body/parts/attach.dm). Copies: they shrink as we go.
 	for(var/OR in organs?.Copy())
@@ -79,17 +64,8 @@
 			qdel(OR)
 
 	GLOB.cultnet.updateVisibility(src, 0)
-
-	if(aiming)
-		qdel(aiming)
-		aiming = null
 	aimed.Cut()
-
-	QDEL_NULL(deaf_loop)
-	QDEL_NULL(firesoundloop)
-	// QDEL_NULL(stunnedloop)
-
-	. = ..()
+	..()
 
 //mob verbs are faster than object verbs. See mob/verb/examine.
 /mob/living/verb/pulled(atom/movable/AM as mob|obj in oview(1))
@@ -1074,20 +1050,13 @@ REF_BACK(/datum/character_setup_button, list("owner" = "character_setup_button")
 	if(owner.client)
 		create_mob_button(owner)
 
-// ALLOW(lifecycle): owned state datum (was a component) unhooks and detaches from its owner.
-/datum/character_setup_button/Destroy(force)
-	if(owner)
-		om_unhook(owner, /datum/om/event/mob_client_login, src)
+// owned state datum (was a component): its button leaves the owner's screen and HUD.
+/datum/character_setup_button/on_destroy(force)
 	if(screen_icon)
 		owner?.client?.screen -= screen_icon
-		om_unhook(screen_icon, /datum/om/event/click, src)
 		var/datum/hud/HUD = owner?.hud_used
 		LAZYREMOVE(HUD?.other_important, screen_icon)
-		QDEL_NULL(screen_icon)
-	if(owner?.character_setup_button == src)
-		owner.character_setup_button = null
-	owner = null
-	return ..()
+	..()
 
 /// Gives the mob its character setup HUD button if it has none.
 /mob/living/proc/add_character_setup_button()

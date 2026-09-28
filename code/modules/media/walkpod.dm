@@ -25,10 +25,10 @@
 	w_class = ITEMSIZE_COST_SMALL
 	slot_flags = SLOT_BELT
 
-// ALLOW(lifecycle): stops listening.
-/obj/item/walkpod/Destroy()
+// stops listening.
+/obj/item/walkpod/on_destroy(force)
 	remove_listener()
-	return ..()
+	..()
 
 // Icon
 /obj/item/walkpod/update_icon()

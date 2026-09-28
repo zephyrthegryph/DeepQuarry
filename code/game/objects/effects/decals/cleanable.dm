@@ -34,10 +34,10 @@ generic_filth = TRUE means when the decal is saved, it will be switched out for 
 		qdel(src)
 		return TRUE
 
-// ALLOW(lifecycle): persistent filth forgets this decal.
-/obj/effect/decal/cleanable/Destroy()
+// persistent filth forgets this decal.
+/obj/effect/decal/cleanable/lifecycle_dematerialize()
 	SSpersistence.forget_value(src, /datum/persistent/filth)
-	. = ..()
+	..()
 
 /obj/effect/decal/cleanable/update_icon()
 	// Overrides should not inheret from this, and instead replace it entirely to match this in some form.

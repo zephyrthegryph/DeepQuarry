@@ -101,10 +101,10 @@
 /obj/machinery/dna_scannernew/explosion_contents_severity(severity)
 	return dq_slot_blast_severity(src, severity)
 
-// ALLOW(lifecycle): the occupant slot is holder-resolved: go_out() ejects and cleans up the occupant.
-/obj/machinery/dna_scannernew/Destroy()
+// the occupant slot is holder-resolved: go_out() ejects and cleans up the occupant.
+/obj/machinery/dna_scannernew/on_destroy(force)
 	eject_occupant()
-	. = ..()
+	..()
 
 /obj/machinery/dna_scannernew/proc/set_occupant(mob/living/L)
 	SHOULD_NOT_OVERRIDE(TRUE)

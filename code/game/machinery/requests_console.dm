@@ -72,11 +72,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 
 	update_icon()
 
-// ALLOW(lifecycle): the last console of a department takes it off the request lists.
-/obj/machinery/requests_console/Destroy()
+// the last console of a department takes it off the request lists.
+/obj/machinery/requests_console/lifecycle_dematerialize()
 	var/lastDeptRC = 1
 	for (var/obj/machinery/requests_console/Console in REGISTRY_MEMBERS(REGISTRY_ALARM_CONSOLES))
-		if(Console != src && Console.department == department) // still registered until ..() dematerializes it
+		if(Console != src && Console.department == department)
 			lastDeptRC = 0
 			break
 	if(lastDeptRC)
@@ -86,7 +86,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 			GLOB.req_console_supplies -= department
 		if(departmentType & RC_INFO)
 			GLOB.req_console_information -= department
-	return ..()
+	..()
 
 /obj/machinery/requests_console/power_change()
 	..()

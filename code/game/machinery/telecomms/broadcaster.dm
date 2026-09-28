@@ -104,12 +104,12 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 	/* --- Do a snazzy animation! --- */
 	flick("broadcaster_send", src)
 
-// ALLOW(lifecycle): releases the global message-delay latch.
-/obj/machinery/telecomms/broadcaster/Destroy()
+// releases the global message-delay latch.
+/obj/machinery/telecomms/broadcaster/on_destroy(force)
 	// In case message_delay is left on 1, otherwise it won't reset the list and people can't say the same thing twice anymore.
 	if(GLOB.message_delay)
 		GLOB.message_delay = 0
-	. = ..()
+	..()
 
 /*
 	Basically just an empty shell for receiving and broadcasting radio messages. Not

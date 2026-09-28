@@ -16,9 +16,9 @@ REF_OWNED(/atom/movable/screen/movable/pic_in_pic/ai, list("aiEye", "highlighted
 // set_ai(null) in Destroy() takes the window off the AI.
 REF_HELD(/atom/movable/screen/movable/pic_in_pic/ai, "ai")
 
-// ALLOW(lifecycle): the AI loses this multicam window.
-/atom/movable/screen/movable/pic_in_pic/ai/Destroy()
-	. = ..()
+// the AI loses this multicam window.
+/atom/movable/screen/movable/pic_in_pic/ai/on_destroy(force)
+	..()
 	set_ai(null)
 
 /atom/movable/screen/movable/pic_in_pic/ai/Click()
@@ -201,10 +201,10 @@ GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 // so ownership stays a tree (tools/ci/ownership_cycle_lint.py).
 REF_BACK(/mob/observer/eye/aiEye/pic_in_pic, list("screen" = "aiEye"))
 
-// ALLOW(lifecycle): stops telegraphing to the cameras it watched.
-/mob/observer/eye/aiEye/pic_in_pic/Destroy()
+// stops telegraphing to the cameras it watched.
+/mob/observer/eye/aiEye/pic_in_pic/on_destroy(force)
 	disable_camera_telegraphing()
-	return ..()
+	..()
 
 //AI procs
 

@@ -19,15 +19,12 @@
 		/mob/living/simple_mob/vore/bigdragon
 		)	//There are some things we don't want to come through no matter what.
 
-// ALLOW(lifecycle): its paired gate closes.
-/obj/structure/redgate/Destroy()
+// its paired gate closes.
+/obj/structure/redgate/on_destroy(force)
 	if(target())
 		target().target_handle = null
 		target().toggle_portal()
-		target_handle = null
-		set_light(0)
-
-	return ..()
+	..()
 
 /obj/structure/redgate/proc/teleport(mob/M as mob)
 	var/keycheck = TRUE

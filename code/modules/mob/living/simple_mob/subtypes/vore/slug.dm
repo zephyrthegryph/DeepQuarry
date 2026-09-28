@@ -152,14 +152,12 @@
 			qdel(G) //Prevent glue layering
 */ //Not including this due to performance concerns but keeping as comments for reference.
 
-// ALLOW(lifecycle): its slug may lay more glue.
-/obj/effect/slug_glue/Destroy()
-	. = ..()
+// its slug may lay more glue.
+/obj/effect/slug_glue/on_destroy(force)
+	..()
 	var/mob/living/simple_mob/vore/slug/my_slug = om_resolve(owner_slug)
 	if(my_slug)
 		my_slug.slime_count--
-	owner_slug = null
-
 //This could probably be applied to spideweb code to make it work as intended again.
 /obj/effect/slug_glue/Uncross(atom/movable/AM, atom/newloc)
 	if(istype(AM, /mob/living/simple_mob/vore/slug))

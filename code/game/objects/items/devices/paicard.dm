@@ -54,11 +54,11 @@
 	setEmotion(16)
 
 REF_OWNED(/obj/item/paicard, list("radio", "multitool", "signaler", "screen_layer"))
-// ALLOW(lifecycle): the pAI dies with its card (no throwing friend pAIs into the singularity to respawn).
-/obj/item/paicard/Destroy()
+// the pAI dies with its card (no throwing friend pAIs into the singularity to respawn).
+/obj/item/paicard/on_destroy(force)
 	if(!QDELETED(pai))
 		pai.death(0)
-	return ..()
+	..()
 
 /// Old attack_ghost: a ghost loads itself into an empty card. An occupied card falls to the ghost's default.
 /obj/item/paicard/proc/paicard_observer_inhabit(mob/user, obj/item/held, datum/interaction/interaction)

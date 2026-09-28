@@ -88,14 +88,6 @@ REF_BACK(/datum/experiment_handler, list("owner" = "experiment_handler"))
 
 	join_registries()
 
-// ALLOW(lifecycle): owned state datum (was a component) unhooks and detaches from its owner.
-/datum/experiment_handler/Destroy()
-	om_unhook_all(src)
-	if(owner?.experiment_handler == src)
-		owner.experiment_handler = null
-	owner = null
-	return ..()
-
 REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 
 /**

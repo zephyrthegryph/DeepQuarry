@@ -180,30 +180,18 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	if(!mapload)
 		power_change()
 
-// ALLOW(lifecycle): the base machine: board and parts deleted, occupants put out.
-/obj/machinery/Destroy()
+// the base machine: board and parts deleted, occupants put out.
+/obj/machinery/on_destroy(force)
 	cancel_sleep_keys()
 	om_watch_disarm_all(src)
-	// Constructed machinery owns its installed board. Clear the typed reference
-	// immediately when destruction starts; otherwise the board spends an extra GC
-	// generation retained by an already-deleting machine (and reference tracking
-	// turns thousands of those harmless delays into multi-second world freezes).
-	if(circuit)
-		// circuit may still be a type path (roadmap C6, never materialized):
-		// nothing real to delete in that case.
-		if(!ispath(circuit) && circuit.loc == src && !QDELETED(circuit))
-			qdel(circuit)
-		circuit = null
-	if(contents) // The same for contents.
-		latent_materialize_all() // a walk needs real things (C5)
-		for(var/atom/A in contents) // ALLOW(latent): materialized above
-			if(ishuman(A))
-				var/mob/living/carbon/human/H = A
-				H.forceMove(loc)
-				H.reset_perspective()
-			else
-				qdel(A)
-	return ..()
+	// The installed board is REF_OWNED (phase 4 deletes it); every other leftover in the
+	// internals slot (SLOT_DROP_HOLDER) is deleted by the core /atom/movable Destroy().
+	// Only a human stuck in the internals slot is put out by hand: it needs its view
+	// reset, which no slot policy does.
+	for(var/mob/living/carbon/human/H in contents)
+		H.forceMove(loc)
+		H.reset_perspective()
+	..()
 
 /// One frame of DM-side work for a machine on the machine pipeline (machine_pipeline.dm,
 /// /datum/om/stage/machine/power/step): the same contract process() had on SSmachines' roster.

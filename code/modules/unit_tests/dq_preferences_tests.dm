@@ -15,10 +15,6 @@
 /datum/preferences/dq_test_stub/New()
 	return // skip the real New() chain entirely
 
-/datum/preferences/dq_test_stub/Destroy()
-	value_cache = null
-	return ..()
-
 
 // ---------------------------------------------------------------------------
 //   Tests

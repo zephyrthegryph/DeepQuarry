@@ -498,14 +498,6 @@ so as to remain in compliance with the most up-to-date laws."
 		return usr.client.Click(master, location, control, params)
 	..() // Pass through to click_vr
 
-// ALLOW(lifecycle): alerts are pooled per mob; reset and queued rather than collected.
-/atom/movable/screen/alert/Destroy()
-	..()
-	severity = 0
-	master_ref = null
-	screen_loc = ""
-	return QDEL_HINT_QUEUE
-
 /atom/movable/screen/alert/fat
 	name = "Full"
 	desc = "You overate! If you don't exercise soon, you might find yourself gaining weight."

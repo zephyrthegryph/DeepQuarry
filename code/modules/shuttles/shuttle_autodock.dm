@@ -43,15 +43,13 @@
 	if(landmark_transition_tag)
 		landmark_transition_handle = om_handle(SSshuttles.get_landmark(landmark_transition_tag))
 
-// ALLOW(lifecycle): its docking controllers are released.
-/datum/shuttle/autodock/Destroy()
+// its docking controllers are released.
+/datum/shuttle/autodock/on_destroy(force)
 	in_use = null
-	next_location_handle = null
 	set_active_docking_controller(null)
 	set_shuttle_docking_controller(null)
-	landmark_transition_handle = null
 
-	return ..()
+	..()
 
 /datum/shuttle/autodock/proc/set_docking_codes(code)
 	docking_codes = code

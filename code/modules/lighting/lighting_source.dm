@@ -54,24 +54,12 @@
 
 	update()
 
-// ALLOW(lifecycle): lighting engine: the source removes its light from the corners it lit.
-/datum/light_source/Destroy(force)
+// lighting engine: the source removes its light from the corners it lit.
+/datum/light_source/on_destroy(force)
 	remove_lum()
-	if (source_atom)
-		LAZYREMOVE(source_atom.light_sources, src)
-
-	if (top_atom)
-		LAZYREMOVE(top_atom.light_sources, src)
-
 	if (needs_update)
 		SSlighting.sources_queue -= src
-
-	top_atom = null
-	source_atom = null
-	source_turf = null
-	pixel_turf = null
-
-	return ..()
+	..()
 
 // Yes this doesn't align correctly on anything other than 4 width tabs.
 // If you want it to go switch everybody to elastic tab stops.

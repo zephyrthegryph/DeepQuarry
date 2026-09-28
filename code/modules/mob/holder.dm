@@ -101,8 +101,8 @@
 		schedule_cleanup_check()
 
 /// Dumps the mob if we still hold one, and if we are held by a mob clears us from its inventory.
-// ALLOW(lifecycle): the held mob is put down and its view reset.
-/obj/item/holder/Destroy()
+// the held mob is put down and its view reset.
+/obj/item/holder/on_destroy(force)
 	if(held_mob)
 		var/mob/cached_mob = held_mob
 		dump_mob()
@@ -110,7 +110,7 @@
 	if(ismob(loc))
 		var/mob/M = loc
 		M.drop_from_inventory(src, loc)
-	. = ..()
+	..()
 
 /// If the mob leaves the holder, or the holder lands on a turf or in a belly, clean us up: checked
 /// right after the move that did it (Exited(), Moved()), never polled.

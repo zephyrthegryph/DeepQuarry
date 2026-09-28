@@ -94,10 +94,10 @@
 		name = seed.display_name
 	return ..()
 
-// ALLOW(lifecycle): plants it masked become visible again.
-/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/Destroy()
+// plants it masked become visible again.
+/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/on_destroy(force)
 	// Check if we're masking a decal that needs to be visible again.
 	for(var/obj/effect/plant/plant in get_turf(src))
 		if(plant.invisibility == INVISIBILITY_MAXIMUM)
 			plant.invisibility = initial(plant.invisibility)
-	. = ..()
+	..()

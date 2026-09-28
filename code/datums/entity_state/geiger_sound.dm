@@ -45,14 +45,11 @@ REF_VAR(/obj/item/geiger, OWNED, /datum/geiger_sound, geiger_sound)
 
 	REMOVE_TRAIT(owner, TRAIT_BYPASS_EARLY_IRRADIATED_CHECK, REF(src))
 
-// ALLOW(lifecycle): owned state datum (was a component) unhooks and detaches from its owner.
-/datum/geiger_sound/Destroy(force)
-	detach()
-	if(!isnull(last_parent))
-		om_unhook(last_parent, /datum/om/event/before/in_range_of_irradiation, src)
+// owned state datum (was a component) unhooks and detaches from its owner.
+/datum/geiger_sound/lifecycle_prerelease()
+	..()
+	detach() // reads owner, which phase 4 nulls
 	last_parent = null
-	owner = null
-	return ..()
 
 /datum/geiger_sound/proc/on_pre_potential_irradiation(datum/source, datum/om/event/before/in_range_of_irradiation/event)
 	EVENT_HANDLER

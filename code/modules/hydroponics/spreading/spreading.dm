@@ -58,15 +58,14 @@ REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 	var/last_tick = 0
 	var/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/plant
 
-// ALLOW(lifecycle): neighbouring plants resume spreading.
-/obj/effect/plant/Destroy()
-	LAZYCLEARLIST(neighbors)
+// neighbouring plants resume spreading.
+/obj/effect/plant/on_destroy(force)
 	if(seed() && seed().get_trait(TRAIT_SPREAD)==2)
 		unsense_proximity(callback = TYPE_PROC_REF(/atom, HasProximity), center = get_turf(src))
 	GLOB.plant_service.remove_plant(src)
 	for(var/obj/effect/plant/neighbor in range(1,src))
 		GLOB.plant_service.add_plant(neighbor)
-	return ..()
+	..()
 
 /obj/effect/plant/single
 	spread_chance = 0

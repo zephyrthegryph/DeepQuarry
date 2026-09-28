@@ -351,9 +351,12 @@
 	dir = pick(GLOB.cardinals)
 	update_color()
 
-// ALLOW(lifecycle): a dying fire cools its tile and leaves its hot group.
-/obj/effect/hotspot/Destroy()
+// a dying fire cools its tile and leaves its hot group.
+/obj/effect/hotspot/lifecycle_dematerialize()
+	..()
 	SSair.hotspots -= src
+
+/obj/effect/hotspot/on_destroy(force)
 	var/turf/open/cur_turf = loc
 	if(istype(cur_turf))
 		cool_tile(cur_turf)
@@ -362,7 +365,7 @@
 		our_hot_group = null
 	if(istype(cur_turf) && cur_turf.active_hotspot == src)
 		cur_turf.active_hotspot = null
-	return ..()
+	..()
 
 /obj/effect/hotspot/Crossed(atom/movable/AM, oldloc)
 	. = ..()

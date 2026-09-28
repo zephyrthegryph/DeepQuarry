@@ -109,11 +109,11 @@ DECLARE_INTERACTIONS(/obj/item/supply_beacon, INTERACT_USE(null, PROC_REF(intera
 	target_drop_time = null
 	if(user) to_chat(user, span_notice("You deactivate the beacon."))
 
-// ALLOW(lifecycle): an active beacon deactivates.
-/obj/machinery/power/supply_beacon/Destroy()
+// an active beacon deactivates.
+/obj/machinery/power/supply_beacon/on_destroy(force)
 	if(use_power)
 		deactivate()
-	. = ..()
+	..()
 
 /obj/machinery/power/supply_beacon/machine_step()
 	if(expended)

@@ -343,10 +343,10 @@ GLOBAL_LIST_EMPTY(radial_menus)
 /datum/radial_menu/lifecycle_unbind()
 	hide()
 
-// ALLOW(lifecycle): a menu drops its choice lists, whose keys are the offered atoms.
-/datum/radial_menu/Destroy()
+// a menu drops its choice lists, whose keys are the offered atoms.
+/datum/radial_menu/on_destroy(force)
 	Reset()
-	. = ..()
+	..()
 
 /// The menu's slices, centre button, holder image and check callback are its own.
 REF_OWNED(/datum/radial_menu, list("close_button", "menu_holder", "custom_check_callback"))

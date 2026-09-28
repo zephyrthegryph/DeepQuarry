@@ -78,15 +78,15 @@
 	update_verbs()
 	. = ..()
 
-// ALLOW(lifecycle): its program is killed and hardware uninstalled.
-/obj/item/modular_computer/Destroy()
+// its program is killed and hardware uninstalled.
+/obj/item/modular_computer/on_destroy(force)
 	kill_program(1)
 	for(var/obj/item/computer_hardware/CH in src.get_all_components())
 		uninstall_component(null, CH)
 		qdel(CH)
 	if(paired_uavs)
 		paired_uavs.Cut()
-	return ..()
+	..()
 
 /obj/item/modular_computer/emag_act(remaining_charges, mob/user)
 	if(computer_emagged)

@@ -58,7 +58,7 @@ DECLARE_INTERACTIONS(/obj/item/mop_deploy, INTERACT_USE(null, PROC_REF(interacti
 /// Old attack_self.
 /obj/item/mop_deploy/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	user.drop_from_inventory(src)
-	om_qdel_after(src, 1)
+	expire(1)
 	return TRUE
 
 /// Goes away once it leaves its creator's hands: checked after it is made, dropped or moved
@@ -76,7 +76,7 @@ DECLARE_INTERACTIONS(/obj/item/mop_deploy, INTERACT_USE(null, PROC_REF(interacti
 			LAZYREMOVE(host.pinned, src)
 			LAZYREMOVE(host.embedded, src)
 			host.drop_from_inventory(src)
-		om_qdel_after(src, 1)
+		expire(1)
 
 /obj/item/mop_deploy/dropped(mob/user, equipping, slot)
 	. = ..()

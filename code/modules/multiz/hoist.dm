@@ -118,11 +118,11 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 
 REF_OWNED(/obj/structure/hoist, "source_hook")
 
-// ALLOW(lifecycle): whatever hangs from the hoist is released.
-/obj/structure/hoist/Destroy()
+// whatever hangs from the hoist is released.
+/obj/structure/hoist/on_destroy(force)
 	if(hoistee())
 		release_hoistee()
-	return ..()
+	..()
 
 /obj/structure/hoist/proc/check_consistency()
 	if (!hoistee())

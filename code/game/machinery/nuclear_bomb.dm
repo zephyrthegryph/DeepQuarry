@@ -504,13 +504,13 @@ GLOBAL_VAR(bomb_set)
 
 REGISTRY_MEMBERSHIP(/obj/item/disk/nuclear, REGISTRY_NUKE_DISKS)
 
-// ALLOW(lifecycle): the last disk respawns at a blob start.
-/obj/item/disk/nuclear/Destroy()
+// the last disk respawns at a blob start.
+/obj/item/disk/nuclear/on_destroy(force)
 	if(!REGISTRY_COUNT(REGISTRY_NUKE_DISKS) && GLOB.blobstart.len > 0)
 		var/obj/D = new /obj/item/disk/nuclear(pick(GLOB.blobstart))
 		message_admins("[src], the last authentication disk, has been destroyed. Spawning [D] at ([D.x], [D.y], [D.z]).")
 		log_game("[src], the last authentication disk, has been destroyed. Spawning [D] at ([D.x], [D.y], [D.z]).")
-	. = ..()
+	..()
 
 /obj/item/disk/nuclear/touch_map_edge()
 	qdel(src)

@@ -306,13 +306,12 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 
 	C.mob.throw_alert("open ticket", /atom/movable/screen/alert/open_ticket)
 
-// ALLOW(lifecycle): leaves the active, closed and resolved ticket lists.
-/datum/ticket/Destroy()
+// leaves the active, closed and resolved ticket lists.
+/datum/ticket/lifecycle_dematerialize()
+	..()
 	RemoveActive()
 	GLOB.tickets.closed_tickets -= src
 	GLOB.tickets.resolved_tickets -= src
-	handler_ref = null
-	return ..()
 
 /datum/ticket/proc/AddInteraction(formatted_message)
 	var/curinteraction = "[gameTimestamp()]: [formatted_message]"

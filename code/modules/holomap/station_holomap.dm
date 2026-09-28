@@ -155,16 +155,21 @@
 
 /obj/machinery/station_map/proc/on_watcher_deleted(datum/source, datum/om/event/qdeleting/event)
 	EVENT_HANDLER
-	stopWatching()
+	// watching_mob() already reads null for a watcher mid-delete: hand it over.
+	if(om_handle_is(watching_mob_handle, source))
+		stopWatching(source)
 
-/obj/machinery/station_map/proc/stopWatching()
+/// `watcher` defaults to watching_mob(); pass it for a watcher that is being deleted.
+/obj/machinery/station_map/proc/stopWatching(mob/watcher = watching_mob())
 	SHOULD_NOT_SLEEP(TRUE)
-	if(watching_mob())
-		if(watching_mob().client)
+	if(watcher)
+		if(watcher.client)
 			animate(holomap_datum.station_map, alpha = 0, time = 5, easing = LINEAR_EASING)
-			var/mob/M = watching_mob()
-			om_after(M, 5, /proc/remove_client_image, M, holomap_datum.station_map) //we give it time to fade out
-		om_unhook(watching_mob(), list(/datum/om/event/movable_attempted_move, /datum/om/event/qdeleting), src)
+			if(QDELETED(watcher))
+				watcher.client.images -= holomap_datum.station_map // no timer on a dying mob
+			else
+				om_after(watcher, 5, /proc/remove_client_image, watcher, holomap_datum.station_map) //we give it time to fade out
+		om_unhook(watcher, list(/datum/om/event/movable_attempted_move, /datum/om/event/qdeleting), src)
 		//GLOB.dir_set_event.unregister(watching_mob, src)
 	watching_mob_handle = null
 	update_use_power(USE_POWER_IDLE)

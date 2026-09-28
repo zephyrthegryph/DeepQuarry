@@ -15,10 +15,10 @@
 /obj/item/deadringer/Initialize(mapload)
 	. = ..()
 
-// ALLOW(lifecycle): an invisible wearer is revealed.
-/obj/item/deadringer/Destroy() //just in case some smartass tries to stay invisible by destroying the watch
+// an invisible wearer is revealed.
+/obj/item/deadringer/on_destroy(force) //just in case some smartass tries to stay invisible by destroying the watch
 	reveal()
-	. = ..()
+	..()
 
 /obj/item/deadringer/dropped(mob/user, equipping, slot)
 	if(equipping)

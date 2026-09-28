@@ -60,16 +60,19 @@ REF_OWNED_LIST(/atom/movable, "hose_connectors")
 		PERIODIC_START(src, PERIODIC_SLOW)
 	return TRUE
 
-REF_OWNED(/datum/hose_connector, list("my_hose", "reagents"))
-REF_BACK(/datum/hose_connector, list("carrier" = null))
+REF_OWNED(/datum/hose_connector, list("reagents"))
+// A hose is shared by its two connectors, so neither owns it: it lives while both
+// ends do, and a dying connector deletes it (the hose disconnects both ends).
+REF_BACK(/datum/hose_connector, list("carrier" = null, "my_hose" = null))
 
-// ALLOW(lifecycle): the carrier loses its disconnect verb.
-/datum/hose_connector/Destroy()
+// the carrier loses its disconnect verb (before phase 4 nulls carrier).
+/datum/hose_connector/lifecycle_prerelease()
+	..()
+	if(my_hose)
+		qdel(my_hose)
 	if(carrier)
 		carrier.verbs -= /atom/proc/disconnect_hose
 		LAZYREMOVE(carrier.hose_connectors, src)
-	om_unhook_all(src)
-	. = ..()
 
 /datum/hose_connector/proc/get_carrier()
 	RETURN_TYPE(/atom)

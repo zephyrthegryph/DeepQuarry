@@ -108,13 +108,15 @@ REF_BACK(/datum/transhuman/mind_record, list("mind_ref" = null))
 REF_OWNED(/datum/transhuman/body_record, "mydna")
 REF_BACK(/datum/transhuman/body_record, list("client_ref" = null, "mind_ref" = null))
 
-// ALLOW(lifecycle): records ask for a hard delete (machines hold them untracked).
-/datum/transhuman/body_record/Destroy()
+// Records ask for a hard delete: there is no easy way to clear references to this in REGISTRY_MEMBERS(REGISTRY_MACHINES) etc.
+/datum/transhuman/body_record
+	destroy_hint = QDEL_HINT_HARDDEL
+
+/datum/transhuman/body_record/on_destroy(force)
 	QDEL_NULL(mydna.dna)
 	limb_data.Cut()
 	organ_data.Cut()
 	..()
-	return QDEL_HINT_HARDDEL // For now at least there is no easy way to clear references to this in REGISTRY_MEMBERS(REGISTRY_MACHINES) etc.
 
 /datum/transhuman/body_record/proc/init_from_mob(mob/living/carbon/human/M, add_to_db = 0, ckeylock = 0, database_key)
 	ASSERT(!QDELETED(M))

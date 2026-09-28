@@ -49,15 +49,10 @@
 			if(!owned.len)
 				dq_clear_alt_appearances_component(owner())
 
-// ALLOW(lifecycle): it is removed from everyone who saw it.
-/datum/alternate_appearance/Destroy()
+// it is removed from everyone who saw it.
+/datum/alternate_appearance/on_destroy(force)
 	remove()
-	owner_handle = null
-	return ..()
-
-/atom/Destroy()
-	. = ..()
-	remove_all_alt_appearances()
+	..()
 
 /atom/proc/add_alt_appearance(key, img, list/displayTo = list())
 	if(!key || !img)

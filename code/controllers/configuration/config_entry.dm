@@ -29,10 +29,10 @@
 	default_protection = protection
 	set_default()
 
-// ALLOW(lifecycle): engine: leaves the config's entry table.
-/datum/config_entry/Destroy()
+// engine: leaves the config's entry table.
+/datum/config_entry/lifecycle_dematerialize()
+	..()
 	config.RemoveEntry(src)
-	return ..()
 
 /**
  * Returns the value of the configuration datum to its default, used for resetting a config value. Note this also sets the protection back to default.

@@ -36,10 +36,10 @@
 /obj/item/technomancer_core/Initialize(mapload)
 	. = ..()
 
-// ALLOW(lifecycle): its summons are dismissed with it.
-/obj/item/technomancer_core/Destroy()
+// its summons are dismissed with it.
+/obj/item/technomancer_core/on_destroy(force)
 	dismiss_all_summons()
-	return ..()
+	..()
 
 // Add the spell buttons to the HUD.
 /obj/item/technomancer_core/equipped(mob/user)

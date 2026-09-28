@@ -289,15 +289,14 @@
 
 	time_till_despawn = 60 //1 second, because gateway.
 
-// C8a: the occupant's a sealed slot (containment.md §10); the base Destroy()
-// spills it through the ledger's drop policy, so this just keeps the
-// pre-eject "let them fall asleep, not collapse" behaviour.
-// ALLOW(lifecycle): its sleeper is left lying down as the pod goes.
-/obj/machinery/cryopod/Destroy()
-	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
+// C8a: the occupant's a sealed slot (containment.md §10); phase 3 spills it
+// through the ledger's drop policy, so this (phase 2, while the slot still
+// holds them) keeps the pre-eject "let them fall asleep, not collapse" behaviour.
+/obj/machinery/cryopod/lifecycle_dematerialize()
+	var/mob/occupant = slot_item(OCCUPANT_SLOT_CRYOPOD)
 	if(occupant)
 		occupant.resting = 1
-	return ..()
+	..()
 
 /// Sealed: cryosleep is its own environment, same as before (a mob whose loc
 /// became the pod took no heat or damage path either way).

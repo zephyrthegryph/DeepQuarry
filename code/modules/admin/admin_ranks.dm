@@ -42,12 +42,12 @@ GLOBAL_PROTECT(protected_ranks)
 	if(init_edit_rights)
 		can_edit_rights = init_edit_rights
 
-// ALLOW(lifecycle): refuses deletion from advanced proc calls (permission elevation).
-/datum/admin_rank/Destroy()
-	if(IsAdminAdvancedProcCall())
-		alert_to_permissions_elevation_attempt(usr)
-		return QDEL_HINT_LETMELIVE
-	. = ..()
+// Refuses deletion from advanced proc calls (permission elevation).
+/datum/admin_rank/lifecycle_keep(force)
+	if(!IsAdminAdvancedProcCall())
+		return FALSE
+	alert_to_permissions_elevation_attempt(usr)
+	return TRUE
 
 /datum/admin_rank/vv_edit_var(var_name, var_value)
 	return FALSE

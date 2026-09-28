@@ -303,8 +303,8 @@
 
 //If there's an MMI in the robot, have it ejected when the mob goes away. --NEO
 //Improved /N
-// ALLOW(lifecycle): the MMI receives the borg's mind on the turf; shells revert; parts and hat drop.
-/mob/living/silicon/robot/Destroy()
+// the MMI receives the borg's mind on the turf; shells revert; parts and hat drop.
+/mob/living/silicon/robot/on_destroy(force)
 	for(var/ability_id in robot_granted_abilities)
 		revoke_ability(ability_id, src)
 	if(mmi)//Safety for when a cyborg gets dust()ed. Or there is no MMI inside.
@@ -332,27 +332,12 @@
 			QDEL_NULL(mmi)
 	clear_traitor_hud()
 	disconnect_from_ai(TRUE)
-	if(killswitch)
-		om_cancel_timer(src, killswitch)
-		killswitch = null
-	if(weapon_lock)
-		om_cancel_timer(src, weapon_lock)
-		weapon_lock = null
 	if(shell)
 		if(deployed)
 			undeploy()
 		revert_shell() // To get it out of the GLOB list.
 	set_cell(null)
-	QDEL_LIST(components)
-	if(module)
-		QDEL_NULL(module)
-	if(radio)
-		QDEL_NULL(radio)
-	if(camera)
-		QDEL_NULL(camera)
-	module_active = null
-
-	return ..()
+	..()
 
 /// Stat changes are events: equipment drops once, senses and sprite refresh once.
 /mob/living/silicon/robot/set_stat(new_stat)
@@ -1854,7 +1839,9 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 
 REF_OWNED(/mob/living/silicon/robot, list("robotact", "bolt", "communicator", "rbPDA", "hat_overlay", "inv1", "inv2", "inv3", "robot_modules_background", "ion_trail", "spark_system"))
 REF_SPILL(/mob/living/silicon/robot, "hat")
-// Destroy() still takes these apart in order: the MMI hands its mind on, the cell unhooks,
-// the module, radio and camera go after the AI link and shell are undone.
-REF_HELD(/mob/living/silicon/robot, list("mmi", "cell", "module", "radio", "camera", "connected_ai", "traitor_hud_client"))
+// on_destroy() still takes these apart in order: the MMI hands its mind on, the cell unhooks.
+// The module, radio, camera and components are deleted by phase 4, after the AI link and shell are undone.
+REF_HELD(/mob/living/silicon/robot, list("mmi", "cell", "connected_ai", "traitor_hud_client"))
+REF_OWNED(/mob/living/silicon/robot, list("module", "radio", "camera"))
+REF_OWNED_LIST(/mob/living/silicon/robot, "components")
 REF_STATIC(/mob/living/silicon/robot, "sprite_datum")

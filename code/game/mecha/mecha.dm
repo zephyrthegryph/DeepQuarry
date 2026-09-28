@@ -314,20 +314,20 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 REF_OWNED(/obj/mecha, "minihud")
 REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 
-// ALLOW(lifecycle): the mech leaves wreckage with salvage, or drops its equipment; pilot slot is holder-resolved.
-/obj/mecha/Destroy()
+// the mech leaves wreckage with salvage, or drops its equipment; pilot slot is holder-resolved.
+/obj/mecha/on_destroy(force)
 	src.go_out()
 	for(var/mob/M in slot_contents()) //Be Extra Sure
 		M.forceMove(get_turf(src))
 		M.loc.Entered(M)
 		if(M != src?.slot_item(MECHA_SLOT_PILOT))
 			step_rand(M)
+	// The cargo slot (SLOT_DROP_TRANSFER) already put the cargo on the turf in phase 3;
+	// it only scatters here.
 	for(var/atom/movable/A in src.cargo)
-		A.forceMove(get_turf(src))
-		var/turf/T = get_turf(A)
-		if(T)
-			T.Entered(A)
-		step_rand(A)
+		if(isturf(A.loc))
+			step_rand(A)
+	LAZYCLEARLIST(cargo)
 
 	if(loc)
 		loc.Exited(src)
@@ -385,7 +385,7 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 
 	GLOB.mech_destroyed_roundstat++
 
-	. = ..()
+	..()
 
 // The main process loop to replace the ancient global iterators.
 // It's a bit hardcoded but I don't see anyone else adding stuff to

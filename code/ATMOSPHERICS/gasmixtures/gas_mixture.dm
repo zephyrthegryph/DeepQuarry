@@ -81,13 +81,11 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 	. = ..()
 	vg_unregister_gasmixture_hook(src)
 
-// ALLOW(lifecycle): returns QDEL_HINT_IWILLGC (no reference-check queue for handles).
-/datum/gas_mixture/Destroy()
-	..()
-	// Gas mixtures are opaque handles with no post-Destroy cleanup dependency.
-	// Let BYOND collect them naturally instead of retaining tens of thousands of
-	// dead turf handles in SSgarbage's five-minute reference-check queue.
-	return QDEL_HINT_IWILLGC
+// Gas mixtures are opaque handles with no post-Destroy cleanup dependency.
+// Let BYOND collect them naturally instead of retaining tens of thousands of
+// dead turf handles in SSgarbage's five-minute reference-check queue.
+/datum/gas_mixture
+	destroy_hint = QDEL_HINT_IWILLGC
 
 //gas presence procs — the arena auto-manages gas presence, so the old
 //assert/add/garbage_collect family are no-ops kept for caller compatibility.

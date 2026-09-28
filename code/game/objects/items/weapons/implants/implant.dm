@@ -115,12 +115,11 @@ REGISTRY_MEMBERSHIP(/obj/item/implant/tracking, REGISTRY_TRACKING_IMPLANTS)
 /obj/item/implant/tracking/post_implant(mob/source)
 	PERIODIC_START(src, PERIODIC_SLOW)
 
-// ALLOW(lifecycle): leaves its limb's implant list.
-/obj/item/implant/tracking/Destroy()
+// leaves its limb's implant list.
+/obj/item/implant/tracking/on_destroy(force)
 	if(part)
 		LAZYREMOVE(part.implants, src)
-	part = imp_in_handle = null
-	return ..()
+	..()
 
 /obj/item/implant/tracking/periodic_step()
 	var/mob/living/implant_mob // Get implant's mob from our host organ
@@ -406,7 +405,7 @@ the implant may become unstable and either pre-maturely inject the subject or si
 	if(!src.reagents.total_volume)
 		to_chat(R, "You hear a faint click from your chest.")
 		playsound(R, 'sound/weapons/empty.ogg', 10, 1)
-		om_qdel_after(src, 0)
+		expire(0)
 	return
 
 /obj/item/implant/chem/emp_act(severity, recursive)

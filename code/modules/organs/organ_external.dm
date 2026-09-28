@@ -88,8 +88,8 @@ REF_OWNED(/obj/item/organ/external, list("mob_icon", "hud_damage_image"))
 REF_HELD(/obj/item/organ/external, "splinted")
 REF_BACK(/obj/item/organ/external, list("parent" = null, "applied_pressure" = null))
 
-// ALLOW(lifecycle): child limbs and internal organs go with it; it leaves its owner's organ tables.
-/obj/item/organ/external/Destroy()
+// child limbs and internal organs go with it; it leaves its owner's organ tables.
+/obj/item/organ/external/on_destroy(force)
 	// Child limbs and organs sit in this limb's part slots: the ledger deletes
 	// them (SLOT_DROP_DELETE, children first) and the detach hook clears the
 	// tree caches and the owner's (code/modules/body/parts/).
@@ -111,7 +111,7 @@ REF_BACK(/obj/item/organ/external, list("parent" = null, "applied_pressure" = nu
 	// clearing its part/imp_in and this organ's implants list. The real
 	// objects themselves are then deleted below, by drop_policy.
 
-	return ..()
+	..()
 
 /// An organ's implant site (OM relations step 2, doc/rewrite/containment.md
 /// §3): a keyed internal slot, replacing the old bare implanted_in relation

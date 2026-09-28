@@ -153,10 +153,10 @@ EXTEND_INTERACTIONS(/obj/effect/dummy/chameleon, \
 		step(src, direction)
 	return
 
-// ALLOW(lifecycle): the projector's disguise is disrupted.
-/obj/effect/dummy/chameleon/Destroy()
+// the projector's disguise is disrupted.
+/obj/effect/dummy/chameleon/lifecycle_prerelease()
+	..()
 	master?.disrupt(0)
-	. = ..()
 
 REF_OWNED(/obj/item/chameleon, list("active_dummy"))
 REF_PAIR(/obj/effect/dummy/chameleon, list("master" = "active_dummy"))

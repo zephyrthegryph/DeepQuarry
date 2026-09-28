@@ -34,12 +34,12 @@
 
 	max_integrity = 80
 
-// ALLOW(lifecycle): admins are told an emitter was deleted.
-/obj/machinery/power/emitter/Destroy()
+// admins are told an emitter was deleted.
+/obj/machinery/power/emitter/on_destroy(force)
 	message_admins("Emitter deleted at ([x],[y],[z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)")
 	log_game("EMITTER([x],[y],[z]) Destroyed/deleted.")
 	investigate_log(span_red("deleted") + " at ([x],[y],[z])","singulo")
-	. = ..()
+	..()
 
 /obj/machinery/power/emitter/declare_interactions(list/into)
 	into += list(

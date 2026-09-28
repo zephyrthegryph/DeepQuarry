@@ -62,11 +62,11 @@
 REF_OWNED(/obj/machinery/smartfridge, "soundloop")
 REF_OWNED_LIST(/obj/machinery/smartfridge, "item_records")
 
-// ALLOW(lifecycle): a persistent fridge is forgotten by persistence.
-/obj/machinery/smartfridge/Destroy()
+// a persistent fridge is forgotten by persistence.
+/obj/machinery/smartfridge/lifecycle_dematerialize()
 	if(persistent)
 		SSpersistence.forget_value(src, persistent)
-	return ..()
+	..()
 
 /obj/machinery/smartfridge/proc/accept_check(obj/item/O)
 	return FALSE
@@ -402,13 +402,11 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 		return 1
 	return 0
 
-// ALLOW(lifecycle): records shared with the upper unit must not be deleted with it.
-/obj/machinery/smartfridge/chemistry/chemvator/down/Destroy()
-	if(attached())
-		attached().attached_handle = null // clear the upper unit's back-reference to us
-	item_records = null // shared with the upper unit; don't let the base Destroy qdel its stored records
-	attached_handle = null
-	return ..()
+// records shared with the upper unit must not be deleted with it (the owned
+// item_records list is deleted when the links clear, right after this).
+/obj/machinery/smartfridge/chemistry/chemvator/down/on_destroy(force)
+	item_records = null // shared with the upper unit; don't let phase 4 qdel its stored records
+	..()
 
 /obj/machinery/smartfridge/chemistry/chemvator/down
 	name = "\improper Smart Chemavator - Lower"
@@ -435,3 +433,4 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 /// LC-refs: the attached this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/smartfridge/chemistry/chemvator/proc/attached() as /obj/machinery/smartfridge/chemistry/chemvator
 	return om_resolve(attached_handle)
+REF_BACK_HANDLE(/obj/machinery/smartfridge/chemistry/chemvator/down, list("attached_handle" = "attached_handle"))

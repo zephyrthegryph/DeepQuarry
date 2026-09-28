@@ -170,8 +170,8 @@
 	if(!LAZYLEN(active_modifiers))
 		active_modifiers = null
 
-// ALLOW(lifecycle): remaining stat modifiers are reverted.
-/datum/accessory_slot_registry/Destroy()
+// remaining stat modifiers are reverted.
+/datum/accessory_slot_registry/on_destroy(force)
 	// Revert all remaining modifiers to leave the world consistent.
 	if(LAZYLEN(active_modifiers))
 		for(var/key in active_modifiers)
@@ -179,9 +179,7 @@
 			for(var/datum/accessory_stat_modifier/mod in mods)
 				mod.revert(mod.target())
 				qdel(mod)
-	active_modifiers = null
-	slot_names = null
-	return ..()
+	..()
 
 /// Global singleton.  Self-initializes with built-in slot names on New().
 GLOBAL_DATUM_INIT(accessory_slot_registry, /datum/accessory_slot_registry, new)

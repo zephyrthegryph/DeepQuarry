@@ -42,14 +42,14 @@
 
 	..()
 
-// ALLOW(lifecycle): deletes only the stock still inside the machine (instances handed out stay).
-/datum/stored_item/Destroy()
+// deletes only the stock still inside the machine (instances handed out stay).
+/datum/stored_item/on_destroy(force)
 	for(var/atom/movable/product as anything in instances)
 		if(product.loc == stored)
 			qdel(product)
 	instances = null
 	stored = null
-	. = ..()
+	..()
 
 /datum/stored_item/proc/get_amount()
 	return amount + LAZYLEN(instances)

@@ -111,10 +111,10 @@
 
 REF_OWNED(/obj/item/mapping_unit, "extras_holder")
 
-// ALLOW(lifecycle): its map display is torn down.
-/obj/item/mapping_unit/Destroy()
+// its map display is torn down.
+/obj/item/mapping_unit/on_destroy(force)
 	last_run()
-	return ..()
+	..()
 
 /obj/item/mapping_unit/dropped(mob/user, equipping, slot)
 	..()

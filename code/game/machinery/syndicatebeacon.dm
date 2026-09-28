@@ -174,11 +174,11 @@
 	playsound(src, tool.usesound, 50, TRUE)
 	return ITEM_INTERACT_SUCCESS
 
-// ALLOW(lifecycle): an active beacon deactivates.
-/obj/machinery/power/singularity_beacon/Destroy()
+// an active beacon deactivates.
+/obj/machinery/power/singularity_beacon/on_destroy(force)
 	if(active)
 		Deactivate()
-	. = ..()
+	..()
 
 //stealth direct power usage
 /obj/machinery/power/singularity_beacon/machine_step()

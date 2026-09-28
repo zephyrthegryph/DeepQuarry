@@ -80,12 +80,11 @@
 	control_overlay = image('icons/obj/spells.dmi',"controlled")
 	return ..()
 
-// ALLOW(lifecycle): controlled mobs are released.
-/obj/item/spell/control/Destroy()
+// controlled mobs are released.
+/obj/item/spell/control/on_destroy(force)
 	for(var/mob/living/L in controlled_mobs)
 		deselect(L)
-	controlled_mobs = list()
-	return ..()
+	..()
 
 /obj/item/spell/control/on_use_cast(mob/living/user)
 	if(length(controlled_mobs) != 0)

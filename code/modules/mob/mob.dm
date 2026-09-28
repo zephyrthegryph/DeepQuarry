@@ -16,7 +16,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	registry_join(stat == DEAD ? REGISTRY_DEAD_MOBS : REGISTRY_LIVING_MOBS, src)
 
 
-/mob/Destroy()//This makes sure that mobs withGLOB.clients/keys are not just deleted from the game.
+/mob/on_destroy(force)//This makes sure that mobs withGLOB.clients/keys are not just deleted from the game.
 	publish_mob_chunk(src)
 	if(client)
 		stack_trace("Mob with client has been deleted.")
@@ -40,28 +40,15 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 	if(LAZYLEN(vore_organs))
 		QDEL_NULL_LIST(vore_organs)
-	if(vorePanel)
-		QDEL_NULL(vorePanel)
-
 	for(var/mob/observer/dead/M in src?.follower_list())
 		M.stop_following()
-	previewing_belly = null // from code/modules/vore/eating/mob_ch.dm
-	vore_selected = null // from code/modules/vore/eating/mob_vr
-	focus = null
-	LAssailant = null
-
 	motiontracker_unsubscribe(TRUE) // Force unsubscribe
-
-	if(mind)
-		if(mind.current == src)
-			mind.current = null
-		var/mob/living/original = om_resolve(mind.original_character)
-		if(original && original == src)
-			mind.original_character = null
-
-	QDEL_NULL(belly_overlay_tgui) // from belly_overlay_tgui.dm
-
-	. = ..()
+	if(mind?.current == src)
+		mind.current = null
+	// the mind forgets us as its original character.
+	if(mind && om_handle_is(mind.original_character, src))
+		mind.original_character = null
+	..()
 	update_client_z(null)
 	//return QDEL_HINT_HARDDEL_NOW
 
@@ -1184,14 +1171,8 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		exploit_record += exploitmsg
 		I.exploit_for = om_handle(src)
 
-// ALLOW(lifecycle): exploit add-ons forget the item (the exploited mob is a handle).
-/obj/item/Destroy(force, ...)
-	if(exploit_for)
-		var/mob/exploited = om_resolve(exploit_for)
-		exploited?.exploit_addons -= src
-		exploit_for = null
-	user_vars_remembered = null
-	. = ..()
+// exploit add-ons forget the item (the exploited mob is a handle).
+REF_BACKLIST_HANDLE(/obj/item, list("exploit_for" = "exploit_addons"))
 
 /client/proc/check_has_body_select()
 	return mob && mob.hud_used && istype(mob.zone_sel, /atom/movable/screen/zone_sel)

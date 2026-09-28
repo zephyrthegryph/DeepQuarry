@@ -117,11 +117,10 @@ DECLARE_INTERACTIONS(/obj/item/sticky_pad, \
 	pixel_x = 0
 	pixel_y = 0
 
-// ALLOW(lifecycle): persistence stops tracking it.
-/obj/item/paper/sticky/Destroy()
+// persistence stops tracking it.
+/obj/item/paper/sticky/lifecycle_dematerialize()
+	..()
 	reset_persistence_tracking()
-	om_unhook(src, /datum/om/event/movable_attempted_move, src)
-	. = ..()
 
 /obj/item/paper/sticky/update_icon()
 	if(icon_state != "scrap")

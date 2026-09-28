@@ -49,12 +49,12 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 	. = ..()
 	qdel(src)
 
-// ALLOW(lifecycle): a broken part takes the whole generator down.
-/obj/machinery/gravity_generator/part/Destroy()
+// a broken part takes the whole generator down.
+/obj/machinery/gravity_generator/part/on_destroy(force)
 	if(main_part())
 		qdel(main_part())
 	atom_break()
-	return ..()
+	..()
 
 //
 // Part generator which is mostly there for looks
@@ -148,18 +148,17 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 	update_list()
 	update_areas()
 
-// ALLOW(lifecycle): gravity goes off on its levels and its parts go with it.
-/obj/machinery/gravity_generator/main/Destroy() // If we somehow get deleted, remove all of our other parts.
+// gravity goes off on its levels and its parts go with it.
+/obj/machinery/gravity_generator/main/on_destroy(force) // If we somehow get deleted, remove all of our other parts.
 	investigate_log("was destroyed!", "gravity")
 	on = FALSE
 	update_list()
 	if(!gravity_in_level())
 		update_gravity(FALSE)
 	for(var/obj/machinery/gravity_generator/part/O in parts)
-		O.main_part_handle = null
 		if(!QDESTROYING(O))
 			qdel(O)
-	return ..()
+	..()
 
 /obj/machinery/gravity_generator/main/proc/setup_parts()
 	var/turf/our_turf = get_turf(src)

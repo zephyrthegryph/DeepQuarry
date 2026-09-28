@@ -28,13 +28,8 @@ ADMIN_VERB_AND_CONTEXT_MENU(debug_variables, (R_DEBUG|R_SERVER|R_ADMIN|R_SPAWN|R
 	..()
 	owner_handle = om_handle(owner_client)
 
-// ALLOW(lifecycle): clears the client's cached panel (clients aren't datums).
-/datum/view_variables_panel/Destroy(force, ...)
-	if(owner())
-		owner().dq_vv_panel = null
-	owner_handle = null
-	thing = null
-	return ..()
+// clears the client's cached panel (clients aren't datums).
+REF_BACK_HANDLE(/datum/view_variables_panel, list("owner_handle" = "dq_vv_panel"))
 
 /datum/view_variables_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_HOLDER)

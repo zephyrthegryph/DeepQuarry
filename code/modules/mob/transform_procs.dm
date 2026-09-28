@@ -142,7 +142,7 @@
 	O.add_ai_verbs()
 
 	O.rename_self("ai",1)
-	om_qdel_after(src, 0)	// Deleting now would end this proc before O is returned
+	expire(0)	// Deleting now would end this proc before O is returned
 	return O
 
 //human -> robot
@@ -192,7 +192,7 @@
 		O.custom_speech_bubble = B.read_preference(/datum/preference/text/human/custom_speech_bubble)
 
 
-	om_qdel_after(src, 0)	// Deleting now would end this proc before O is returned
+	expire(0)	// Deleting now would end this proc before O is returned
 	return O
 
 //human -> alien
@@ -274,7 +274,7 @@
 
 
 	to_chat(new_mob, "You suddenly feel more... animalistic.")
-	om_qdel_after(src, 0)
+	expire(0)
 	return
 
 /mob/proc/Animalize(mob/user)

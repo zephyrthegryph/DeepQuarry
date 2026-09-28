@@ -117,6 +117,14 @@
 	SHOULD_NOT_SLEEP(TRUE)
 	return
 
+/// The entity `E` is being destroyed. Runs in the destroy transaction's phase 4, before the
+/// declared links (REF_*) are cleared, so E's vars still read; on_stop follows in phase 5.
+/// Every attached behaviour gets it, started or not. The behaviour's destroy hook: put teardown
+/// here instead of a Destroy() override on the entity.
+/datum/om/behaviour/proc/on_entity_destroy(datum/E)
+	SHOULD_NOT_SLEEP(TRUE)
+	return
+
 /// Fallback for events whose type defines no typed handler.
 /datum/om/behaviour/proc/on_event(datum/E, datum/om/event/event)
 	SHOULD_NOT_SLEEP(TRUE)

@@ -58,13 +58,13 @@ GLOBAL_LIST_INIT(advance_cures, list(
 	..(process, D)
 	return
 
-// ALLOW(lifecycle): ends the strain's running traits and deletes the traits it owns.
-/datum/affliction/contagion/engineered/Destroy()
+// ends the strain's running traits and deletes the traits it owns.
+/datum/affliction/contagion/engineered/on_destroy(force)
 	if(s_processing)
 		for(var/datum/viral_trait/S in symptoms)
 			S.End(src)
 	QDEL_LIST(symptoms)
-	return ..()
+	..()
 
 /// Symptoms stop when the strain leaves its host.
 /datum/affliction/contagion/engineered/End()

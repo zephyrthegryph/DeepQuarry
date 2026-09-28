@@ -92,8 +92,8 @@
 	self.idle--
 
 //Dies with a variety of messages, a disgusting sound, then drops the control module, bones, blood, gibs, and a cloud of miasma.
-// ALLOW(lifecycle): the possessed suit collapses into remains and miasma.
-/mob/living/simple_mob/humanoid/possessed/Destroy()
+// the possessed suit collapses into remains and miasma.
+/mob/living/simple_mob/humanoid/possessed/on_destroy(force)
 	var/droploc = get_turf(src)
 	playsound(src, 'sound/effects/blobattack.ogg', 40, 1)
 	visible_message(span_critical(pick("The horrid screech of metal grating metal cuts through the air as the suit's interlocking joints grind and fold inwards upon itself. A putrid wash of decayed flesh spills forwards, staining the ground dark with the contents of the collapsing RIG's long expired pilot.",
@@ -122,7 +122,7 @@
 	S.set_up(R, 30, 0, droploc)
 	spawn(0)
 		S.start()*/
-	. = ..()
+	..()
 
 //What about if someone's in it? Well here you go.
 /mob/living/simple_mob/humanoid/possessed/Login()

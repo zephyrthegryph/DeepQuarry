@@ -36,10 +36,10 @@
 
 REF_OWNED_LIST(/obj/machinery/computer/cloning, "records")
 
-// ALLOW(lifecycle): its linked cloners are released.
-/obj/machinery/computer/cloning/Destroy()
+// its linked cloners are released.
+/obj/machinery/computer/cloning/on_destroy(force)
 	releasecloner()
-	return ..()
+	..()
 
 /obj/machinery/computer/cloning/machine_step()
 	if(!autoprocess)

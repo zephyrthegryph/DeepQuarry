@@ -54,7 +54,7 @@ REF_SPILL(/obj/machinery/power/fusion_core, "material_sample")
 	. = ..()
 	for(var/obj/machinery/computer/fusion_core_control/FCC in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		LAZYREMOVE(FCC.connected_devices, src)
-		if(FCC.cur_viewed_device() == src)
+		if(om_handle_is(FCC.cur_viewed_device_handle, src))
 			FCC.cur_viewed_device_handle = null
 
 /obj/machinery/power/fusion_core/proc/check_core_status()

@@ -135,6 +135,9 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 	// back-list memberships removed (L2, code/datums/lifecycle/links.dm).
 	tick = world.tick_usage
 	D.lifecycle_prerelease() // teardown that still reads the declared vars (links.dm)
+	D.on_destroy(force) // the type's destroy hook: back-vars, partners and handles still live
+	if(D.om_rec)
+		om_behaviours_on_destroy(D) // each attached behaviour's on_entity_destroy(E)
 	dq_lifecycle_clear_links(D)
 	dq_lifecycle_time(trash, LIFECYCLE_PHASE_LINKS, tick)
 	DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_LINKS done")
@@ -159,11 +162,15 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 	dq_lifecycle_time(trash, LIFECYCLE_PHASE_EFFECTS, tick)
 	DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_EFFECTS done")
 
-	// Phase 7: leftover Destroy(). Only real domain consequences should
-	// remain here once L4's mechanical sweeps land; today this is still
-	// almost every type's Destroy().
+	// Phase 7: the core Destroy() chain (the type's on_destroy() already ran
+	// at the start of phase 4, while its declared links still read) (/datum,
+	// /atom, /atom/movable, ... and the MC's controllers: the only Destroy()
+	// overrides tools/ci/lifecycle_counts_lint.py allows). A type's declared
+	// destroy_hint replaces the core's plain QDEL_HINT_QUEUE.
 	tick = world.tick_usage
 	var/hint = D.Destroy(force)
+	if(D.destroy_hint && hint == QDEL_HINT_QUEUE)
+		hint = D.destroy_hint
 	dq_lifecycle_time(trash, LIFECYCLE_PHASE_DESTROY, tick)
 	DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_DESTROY done")
 
@@ -202,6 +209,35 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 	#ifdef BENCHMARK_DEEP_PROFILE
 	benchmark_qdel_phase(id, TICK_USAGE_TO_MS(start_tick))
 	#endif
+
+// ---- Declared destroy behaviour ----
+
+/// The QDEL_HINT_* this type hands the garbage collector after a normal destroy
+/// (QDEL_HINT_IWILLGC for handle-like datums, QDEL_HINT_HARDDEL_NOW, ...). Set it
+/// on the type instead of overriding Destroy() to return a hint. A type default:
+/// no per-instance cost.
+/datum/var/destroy_hint = QDEL_HINT_QUEUE
+
+/// TRUE to refuse this qdel(): the object is left whole (checked before phase 0)
+/// and qdel() returns it to life. Singletons and pooled objects that only a forced
+/// qdel() may delete use LIFECYCLE_KEEP_UNLESS_FORCED(type); state-dependent
+/// refusal overrides this. Must not sleep or change state.
+/datum/proc/lifecycle_keep(force)
+	SHOULD_NOT_SLEEP(TRUE)
+	return FALSE
+
+/// The type's destroy hook, run at the start of phase 4, right after
+/// lifecycle_prerelease() and before the links clear: contents are resolved
+/// (phase 3), but REF_BACK/BACKLIST/PAIR vars, owned children and OM handles
+/// (om_handle_is) are all still live, so teardown can reach its owner and
+/// partners. The core Destroy() chain runs later, in phase 7. The place for domain consequences only:
+/// anything a REF_* declaration, lifecycle_unbind(), lifecycle_dematerialize(),
+/// lifecycle_prerelease() or destroy_effects() expresses goes there instead.
+/// Always call ..(). Returns nothing: the GC hint is destroy_hint.
+/// Behaviours get the same hook as /datum/om/behaviour/proc/on_entity_destroy(E).
+/datum/proc/on_destroy(force)
+	SHOULD_CALL_PARENT(TRUE)
+	return
 
 // ---- Phase 1: unbind (hook point) ----
 

@@ -45,11 +45,10 @@ REGISTRY_MEMBERSHIP(/datum/persistent_client, REGISTRY_PERSISTENT_CLIENTS)
 	GLOB.persistent_clients_by_ckey[ckey] = src
 	join_registries()
 
-// ALLOW(lifecycle): persistent clients refuse deletion.
-/datum/persistent_client/Destroy(force)
-	SHOULD_CALL_PARENT(FALSE)
-	. = QDEL_HINT_LETMELIVE
-	CRASH("Who the FUCK tried to delete a persistent client? Get your head checked you leadskull.")
+// Persistent clients refuse deletion.
+/datum/persistent_client/lifecycle_keep(force)
+	stack_trace("Something tried to delete a persistent client; refused.")
+	return TRUE
 
 /// Setter for the client var, updates any vars we have that might be dependent on client state
 /datum/persistent_client/proc/set_client(client/new_client)

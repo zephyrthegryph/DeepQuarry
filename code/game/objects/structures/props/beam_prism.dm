@@ -301,12 +301,11 @@ REF_BACKLIST(/obj/structure/prop/prism, list("remote_dial" = "my_turrets"))
 			LAZYOR(my_turrets, P)
 			P.remote_dial = src
 
-// ALLOW(lifecycle): its turrets forget the dial.
-/obj/structure/prop/prismcontrol/Destroy()
+// its turrets forget the dial.
+/obj/structure/prop/prismcontrol/on_destroy(force)
 	for(var/obj/structure/prop/prism/P in my_turrets)
 		P.remote_dial = null
-	my_turrets = list()
-	. = ..()
+	..()
 
 /// The second half of a two-stage turn.
 /obj/structure/prop/prism/proc/rotate_second_stage(rotate_degrees)

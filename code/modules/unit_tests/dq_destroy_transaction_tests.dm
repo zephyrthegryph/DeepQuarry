@@ -53,9 +53,9 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	var/static/datum/destroy_effects_data/dq_destroy_transaction_logging_effects/data = new
 	return data
 
-/obj/item/dq_destroy_transaction_phase_probe/Destroy()
+/obj/item/dq_destroy_transaction_phase_probe/on_destroy(force)
 	dq_destroy_transaction_log("destroy")
-	return ..()
+	..()
 
 /datum/om/relation/slot/dq_destroy_transaction_probe_main
 	holder = /obj/item/dq_destroy_transaction_phase_probe
@@ -80,9 +80,9 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 /// A REF_OWNED child: its own Destroy() logs "links" (phase 4 deletes it).
 /datum/dq_destroy_transaction_owned_child
 
-/datum/dq_destroy_transaction_owned_child/Destroy()
+/datum/dq_destroy_transaction_owned_child/on_destroy(force)
 	dq_destroy_transaction_log("links")
-	return ..()
+	..()
 
 /// destroy_effects() data whose apply() logs "effects" before doing the
 /// (harmless, since there's no turf work needed for this assertion) base work.
@@ -117,7 +117,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	var/list/log = GLOB.dq_destroy_transaction_log
 	// "contents" (the content probe's on_unslotted) is folded in among these
 	// via phase 3; check every phase we can hook fired, in the declared order.
-	var/list/expected = list("guard", "unbind", "dematerialize", "contents", "links", "effects", "destroy")
+	var/list/expected = list("guard", "unbind", "dematerialize", "contents", "destroy", "links", "effects")
 	TEST_ASSERT_EQUAL(jointext(log, ","), jointext(expected, ","), "every hookable phase fired, in doc/rewrite/lifecycle.md's order")
 	TEST_ASSERT(content.saw_destroying_flag, "the phase-3 removal carried LEDGER_MOVE_DESTROYING")
 	TEST_ASSERT_EQUAL(content.loc_when_unslotted, T, "loc was already the drop turf when on_unslotted fired -- no nullspace parking")
@@ -152,9 +152,9 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	name = "nesting inner"
 	w_class = ITEMSIZE_SMALL
 
-/obj/item/dq_destroy_transaction_nest_inner/Destroy()
+/obj/item/dq_destroy_transaction_nest_inner/on_destroy(force)
 	dq_destroy_transaction_log("inner-destroy")
-	return ..()
+	..()
 
 /datum/om/relation/slot/dq_destroy_transaction_nest_inner_slot
 	holder = /obj/item/dq_destroy_transaction_nest_inner
@@ -326,29 +326,37 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	TEST_ASSERT(QDELETED(B), "B, qdel'd re-entrantly from A's own qdeleting hook, is gone too")
 	TEST_ASSERT_NULL(A.partner, "A's own side is null (either its own phase 4, or B's phase 4 racing it, leaves no dangling ref)")
 
-// ---- Tests: scrub (phase 8) catches a leftover Destroy() re-set ----
+// ---- Tests: scrub (phase 8) catches a re-set after the links phase ----
 
 /datum/dq_destroy_transaction_scrub_fixture
 	var/datum/dq_destroy_transaction_pair_fixture/partner
+	var/reset_after_links = FALSE
 
 /datum/dq_destroy_transaction_scrub_fixture/declared_pair_vars()
 	var/static/list/vars = list("partner" = "partner")
 	return vars
 
-/datum/dq_destroy_transaction_scrub_fixture/Destroy()
-	// Phase 4 already nulled `partner` (and the partner's own side) by the
-	// time this runs (phase 7). Re-setting it here simulates a leftover
-	// Destroy() body that still assigns a declared pair/owned var by hand --
-	// phase 8 must null it again so nothing keeps this alive past its own death.
-	partner = new /datum/dq_destroy_transaction_pair_fixture
-	return ..()
+/// Re-sets the fixture's declared pair var from phase 6 (effects), after phase 4
+/// cleared it: only phase 8's scrub can null it again.
+/datum/destroy_effects_data/dq_destroy_transaction_scrub_reset
+
+/datum/destroy_effects_data/dq_destroy_transaction_scrub_reset/apply(datum/D)
+	var/datum/dq_destroy_transaction_scrub_fixture/fixture = D
+	fixture.partner = new /datum/dq_destroy_transaction_pair_fixture
+	fixture.reset_after_links = TRUE
+	return null
+
+/datum/dq_destroy_transaction_scrub_fixture/destroy_effects()
+	var/static/datum/destroy_effects_data/dq_destroy_transaction_scrub_reset/data = new
+	return data
 
 /datum/unit_test/dq_destroy_transaction_scrub_catches_leftover_reset
 
 /datum/unit_test/dq_destroy_transaction_scrub_catches_leftover_reset/Run()
 	var/datum/dq_destroy_transaction_scrub_fixture/fixture = allocate(/datum/dq_destroy_transaction_scrub_fixture)
 	qdel(fixture)
-	TEST_ASSERT_NULL(fixture.partner, "phase 8 nulled the declared pair var Destroy() (phase 7) re-set")
+	TEST_ASSERT(fixture.reset_after_links, "phase 6 re-set the pair var after phase 4 cleared it")
+	TEST_ASSERT_NULL(fixture.partner, "phase 8 nulled the declared pair var re-set after the links phase")
 
 // ---- Tests: mass delete, no leaks ----
 

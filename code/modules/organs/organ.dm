@@ -48,11 +48,12 @@
 	var/special_handling = FALSE
 
 REF_OWNED(/obj/item/organ, "data")
+REF_OWNED_LIST(/obj/item/organ, "detached_afflictions")
 REF_BACK(/obj/item/organ, list("owner" = null))
 REF_STATIC(/obj/item/organ, "assists_languages")
 
-// ALLOW(lifecycle): afflictions on the organ are cured; organ mods removed.
-/obj/item/organ/Destroy()
+// afflictions on the organ are cured; organ mods removed.
+/obj/item/organ/on_destroy(force)
 
 	handle_organ_mod_special(TRUE)
 	// Afflictions located on this organ die with it, attached or detached.
@@ -61,12 +62,7 @@ REF_STATIC(/obj/item/organ, "assists_languages")
 			A.cure()
 	// `owner` is derived: the detach hook clears it when this leaves its slot
 	// (code/modules/body/parts/attach.dm).
-	if(transplant_data) transplant_data.Cut()
-	if(autopsy_data)    autopsy_data.Cut()
-	if(trace_chemicals) trace_chemicals.Cut()
-	QDEL_LIST(detached_afflictions)
-
-	return ..()
+	..()
 
 /obj/item/organ/proc/update_health()
 	return

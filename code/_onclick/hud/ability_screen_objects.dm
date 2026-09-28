@@ -23,12 +23,8 @@
 
 REF_OWNED_LIST(/atom/movable/screen/movable/ability_master, "ability_objects")
 
-// ALLOW(lifecycle): the mob's ability_master var points back at us; a master deleted on its own clears it.
-/atom/movable/screen/movable/ability_master/Destroy()
-	var/mob/M = my_mob()
-	if(M?.ability_master == src)
-		M.ability_master = null
-	return ..()
+// the mob's ability_master var points back at us; a master deleted on its own clears it.
+REF_BACK_HANDLE(/atom/movable/screen/movable/ability_master, list("my_mob_handle" = "ability_master"))
 
 /atom/movable/screen/movable/ability_master/MouseDrop()
 	if(showing)
@@ -181,14 +177,14 @@ REF_OWNED_LIST(/atom/movable/screen/movable/ability_master, "ability_objects")
 
 //	var/icon/last_charged_icon
 
-// ALLOW(lifecycle): an ability leaves its master's list (the master owns the list; the ability can go first).
-/atom/movable/screen/ability/Destroy()
+// an ability leaves its master's list (the master owns the list; the ability can go first).
+/atom/movable/screen/ability/on_destroy(force)
 	var/atom/movable/screen/movable/ability_master/master = master_of()
 	if(master)
 		LAZYREMOVE(master.ability_objects, src)
 		if(!length(master.ability_objects))
 			master.update_icon()
-	return ..()
+	..()
 
 /atom/movable/screen/ability/update_icon()
 

@@ -18,4 +18,4 @@
 		animation.icon_state = "blank"
 		animation.master = target
 		flick(flick_anim, animation)
-	om_qdel_after(animation, max(sleeptime, 1.5 SECONDS))
+	animation.expire(max(sleeptime, 1.5 SECONDS))

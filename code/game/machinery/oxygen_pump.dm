@@ -26,8 +26,9 @@
 
 REF_OWNED(/obj/machinery/oxygen_pump, list("tank", "contained"))
 
-// ALLOW(lifecycle): the mask retracts from its breather.
-/obj/machinery/oxygen_pump/Destroy()
+// the mask retracts from its breather.
+/obj/machinery/oxygen_pump/lifecycle_prerelease()
+	..()
 	if(breather())
 		breather().internal = null
 		if(breather().internals)
@@ -35,8 +36,6 @@ REF_OWNED(/obj/machinery/oxygen_pump, list("tank", "contained"))
 		breather().remove_from_mob(contained)
 		breather().cozyloop.stop()
 		visible_message(span_notice("\The [contained] rapidly retracts just before /the [src] is destroyed!"))
-		breather_handle = null
-	return ..()
 
 /obj/machinery/oxygen_pump/MouseDrop(mob/living/carbon/human/target, src_location, over_location)
 	var/mob/living/user = usr

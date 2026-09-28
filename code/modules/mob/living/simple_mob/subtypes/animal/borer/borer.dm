@@ -93,14 +93,14 @@
 /mob/living/simple_mob/animal/borer/LateInitialize()
 	request_player()
 
-// ALLOW(lifecycle): a borer detaches from and leaves its host.
-/mob/living/simple_mob/animal/borer/Destroy()
+// a borer detaches from and leaves its host.
+/mob/living/simple_mob/animal/borer/on_destroy(force)
 	var/mob/living/carbon/human/host = src?.borer_host()
 	motiontracker_unsubscribe()
 	if(host)
 		detatch()
 		leave_host()
-	. = ..()
+	..()
 
 /datum/om/stage/life/special/animal/borer
 	of = /mob/living/simple_mob/animal/borer

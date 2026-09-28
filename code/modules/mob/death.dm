@@ -54,7 +54,7 @@
 		ghostize()
 
 	om_qdel_after(animation, 15)
-	om_qdel_after(src, 15)
+	expire(15)
 
 /mob/proc/ash(anim="dust-m")
 	death(1)
@@ -77,7 +77,7 @@
 		ghostize()
 
 	om_qdel_after(animation, 15)
-	om_qdel_after(src, 15)
+	expire(15)
 
 // --- The death pipeline ----------------------------------------------------------------------
 // death() is the one way a mob dies, and it is sealed: subtypes contribute through the hooks

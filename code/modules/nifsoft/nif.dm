@@ -120,12 +120,12 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 REF_OWNED(/obj/item/nif, "comm")
 REF_OWNED_LIST(/obj/item/nif, "nifsofts")
 
-// ALLOW(lifecycle): the NIF unregisters from its human.
-/obj/item/nif/Destroy()
+// the NIF unregisters from its human.
+/obj/item/nif/on_destroy(force)
 	if(human)
 		unregister_human()
 		human = null
-	return ..()
+	..()
 
 //Being implanted in some mob
 /obj/item/nif/proc/implant(mob/living/carbon/human/H)
@@ -765,4 +765,4 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 	//However, we currently don't need mid-round updating. Updates are done on death, round end, and exiting the round.
 	//addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(persist_nif_data), src), 20 SECONDS, TIMER_UNIQUE|TIMER_OVERRIDE|TIMER_DELETE_ME)
 
-REF_HELD(/mob/living/carbon/human, "nif")
+REF_OWNED(/mob/living/carbon/human, "nif")

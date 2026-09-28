@@ -14,11 +14,11 @@
 	// Structures shrug off a plain telekinetic grab or poke; ones that react declare an INTERACT_TK.
 	tk_reach = FALSE
 
-// ALLOW(lifecycle): the base structure: leaves its parts behind.
-/obj/structure/Destroy()
+// the base structure: leaves its parts behind.
+/obj/structure/on_destroy(force)
 	if(parts)
 		new parts(loc)
-	return ..()
+	..()
 
 /obj/structure/hand_gate(mob/user)
 	if(breakable)

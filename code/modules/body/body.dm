@@ -83,13 +83,12 @@ REF_OWNED(/mob/living, "body")
 REF_BACK(/datum/body, list("owner" = "body"))
 REF_OWNED_LIST(/datum/body, "supports")
 
-// ALLOW(lifecycle): each affliction is removed (symptoms end) before it is deleted.
-/datum/body/Destroy()
+// each affliction is removed (symptoms end) before it is deleted.
+/datum/body/on_destroy(force)
 	for(var/datum/affliction/A as anything in afflictions?.Copy())
 		remove_affliction(A)
 		qdel(A)
-	afflictions = null
-	return ..()
+	..()
 
 /// Mark `domains` (BODY_DIRTY_*) stale.
 /datum/body/proc/invalidate(domains)

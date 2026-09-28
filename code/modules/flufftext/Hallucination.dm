@@ -31,21 +31,16 @@ REF_BACK(/datum/hallucinations, list("our_human" = "hallucinations"))
 	our_human = H
 	make_timer()
 
-// ALLOW(lifecycle): a held hallucination item is removed.
-/datum/hallucinations/Destroy(force)
+// a held hallucination item is removed.
+/datum/hallucinations/on_destroy(force)
 	if(halitem.len)
 		remove_hallucination_item()
-	if(our_human?.hallucinations == src)
-		our_human.hallucinations = null
-	our_human = null
 	// Images are not datums: deleting one takes it off every client.images and nulls these vars.
 	if(halbody)
 		qdel(halbody)
 	if(halimage)
 		qdel(halimage)
-	halbody = null
-	halimage = null
-	. = ..()
+	..()
 
 /datum/hallucinations/proc/make_timer()
 	PROTECTED_PROC(TRUE)

@@ -506,10 +506,10 @@ REF_OWNED_LIST(/obj/effect/fusion_em_field, "particle_catchers")
 REF_PAIR(/obj/effect/fusion_em_field, list("owned_core" = "owned_field"))
 REF_PAIR(/obj/machinery/power/fusion_core, list("owned_field" = "owned_core"))
 
-// ALLOW(lifecycle): a collapsing field radiates everything it held.
-/obj/effect/fusion_em_field/Destroy()
+// a collapsing field radiates everything it held.
+/obj/effect/fusion_em_field/on_destroy(force)
 	RadiateAll()
-	. = ..()
+	..()
 
 /obj/effect/fusion_em_field/bullet_act(obj/item/projectile/Proj)
 	AddEnergy(Proj.damage)
@@ -613,7 +613,7 @@ REF_PAIR(/obj/machinery/power/fusion_core, list("owned_field" = "owned_core"))
 		turfs_in_range.Add(T)
 	for(var/loopcount = 1 to 10)
 		om_after(owned_core, 20 SECONDS, /proc/fusion_cascade_pulse, things_in_range) // the core's clock: the field is gone by then
-	Destroy()
+	qdel(src)
 	return
 
 /obj/effect/fusion_em_field/proc/QuantumFluxCascade() //spews hot phoron and oxygen in a radius around the RUST. Will probably set fire to things
@@ -633,7 +633,7 @@ REF_PAIR(/obj/machinery/power/fusion_core, list("owned_field" = "owned_core"))
 			TT.assume_air(plasma)
 			TT.hotspot_expose(plasma_temperature)
 			plasma = null
-	Destroy()
+	qdel(src)
 	return
 
 /obj/effect/fusion_em_field/proc/MagneticQuench() //standard hard shutdown. dumps hot oxygen/phoron into the core's area and releases an EMP in the area around the core.

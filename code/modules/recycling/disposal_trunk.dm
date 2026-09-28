@@ -11,12 +11,11 @@
 /obj/structure/disposalpipe/trunk/LateInitialize()
 	update()
 
-// ALLOW(lifecycle): its linked machine unlinks.
-/obj/structure/disposalpipe/trunk/Destroy()
+// its linked machine unlinks.
+/obj/structure/disposalpipe/trunk/on_destroy(force)
 	if(linked()) //Linked to something, better unlink.
 		OM_EMIT(linked(), /datum/om/event/disposal_unlink)
-		linked_handle = null
-	. = ..()
+	..()
 
 // Override attackby so we disallow trunkremoval when somethings ontop
 DECLARE_INTERACTIONS(/obj/structure/disposalpipe/trunk, INTERACT_ITEM(null, PROC_REF(interaction_item)))

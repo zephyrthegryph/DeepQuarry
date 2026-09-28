@@ -136,10 +136,10 @@
 	var/destroy_saw_component_parts = FALSE
 	var/destroy_saw_circuit = FALSE
 
-/obj/machinery/unit_test_destruction_salvage/Destroy()
+/obj/machinery/unit_test_destruction_salvage/on_destroy(force)
 	destroy_saw_component_parts = !isnull(component_parts)
 	destroy_saw_circuit = !isnull(circuit)
-	return ..()
+	..()
 
 /datum/unit_test/machinery_destruction_detaches_salvage
 

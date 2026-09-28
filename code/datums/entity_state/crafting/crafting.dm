@@ -5,12 +5,6 @@
 	if(ismob(owner))
 		om_hook(owner, /datum/om/event/mob_client_login, src, PROC_REF(on_owner_login))
 
-// ALLOW(lifecycle): owned state datum (was a component) unhooks and detaches from its owner.
-/datum/personal_crafting/Destroy()
-	om_unhook_all(src)
-	owner = null
-	return ..()
-
 /datum/personal_crafting/proc/on_owner_login(mob/user, datum/om/event/mob_client_login/event)
 	EVENT_HANDLER
 	create_mob_button(user, event.client)

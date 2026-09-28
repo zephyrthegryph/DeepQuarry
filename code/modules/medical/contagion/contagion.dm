@@ -107,18 +107,7 @@ REF_BACK(/datum/affliction/contagion, list("host" = null))
 /datum/affliction/contagion/New()
 	if(isnull(stage))
 		stage = 1
-	..(null)
-
-// ALLOW(lifecycle): parks the spread lane and drops the host view and strain data.
-/datum/affliction/contagion/Destroy()
-	PERIODIC_STOP(src)
-	cures = null
-	required_organs = null
-	strain_data = null
-	return ..()
-
-
-// --- Joining and leaving a body ----------------------------------------------------
+	..(null)// --- Joining and leaving a body ----------------------------------------------------
 
 /// Viable on the declared body plans and biologies (a strain carrying
 /// INFECT_SYNTHETICS also takes synthetic and nanoform bodies), and only on

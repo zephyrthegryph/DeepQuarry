@@ -27,19 +27,14 @@
 	update_icon()
 
 //Let's make sure we clean up our references and things if the crystal goes away (such as when it's digested)
-// ALLOW(lifecycle): the bound mob is unleashed and freed of its command.
-/obj/item/capture_crystal/Destroy()
+// the bound mob is unleashed and freed of its command.
+/obj/item/capture_crystal/on_destroy(force)
 	if(bound_mob)
 		if(bound_mob in contents)
 			unleash()
 		to_chat(bound_mob, span_notice("You feel like yourself again. You are no longer under the influence of \the [src]'s command."))
-		om_unhook(bound_mob, /datum/om/event/qdeleting, src)
 		bound_mob.capture_caught = FALSE
-		bound_mob = null
-	if(owner)
-		om_unhook(owner, /datum/om/event/qdeleting, src)
-		owner = null
-	return ..()
+	..()
 
 /obj/item/capture_crystal/examine(user)
 	. = ..()
@@ -139,7 +134,6 @@
 	else
 		M.visible_message("\The [src] flickers in \the [M]'s hand and emits a little tone.", "\The [src] flickers in your hand and emits a little tone.")
 		playsound(src, 'sound/effects/capture-crystal-out.ogg', 75, 1, -1)
-		om_unhook(owner, /datum/om/event/qdeleting, src)
 		owner = null
 
 //Let's make inviting ghosts be an option you can do instead of an automatic thing!

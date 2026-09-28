@@ -55,13 +55,12 @@
 // Destroy() drops the body out before letting go.
 REF_HELD(/mob/living/simple_mob/blob/spore, "infested")
 
-// ALLOW(lifecycle): the infested body falls out as the spore bursts.
-/mob/living/simple_mob/blob/spore/Destroy()
+// the infested body falls out as the spore bursts.
+/mob/living/simple_mob/blob/spore/on_destroy(force)
 	if(infested)
 		infested.forceMove(get_turf(src))
 		visible_message(span_warning("\The [infested] falls to the ground as the blob spore bursts."))
-		infested = null
-	return ..()
+	..()
 
 /mob/living/simple_mob/blob/spore
 	delete_on_death = TRUE

@@ -79,7 +79,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/balloon, INTERACT_ITEM(null, PROC_REF(interac
 		for(var/atom/A in get_turf(hit_atom))
 			src.reagents.touch(A)
 		src.icon_state = "burst"
-		om_qdel_after(src, 5)
+		expire(5)
 	return
 
 /obj/item/toy/balloon/update_icon()

@@ -69,12 +69,12 @@
 			M.injure(INJURY_BLUNT, original_int - get_integrity(), null, src)
 		M.reset_perspective() // Fixes a blackscreen flicker
 
-// ALLOW(lifecycle): the statue's mob is released unmuted and unregistered.
-/obj/structure/closet/statue/Destroy()
+// the statue's mob is released unmuted and unregistered.
+/obj/structure/closet/statue/on_destroy(force)
 	// Release the mob properly (unmuted, unregistered) before the base
 	// Destroy() spills the interior.
 	dump_contents()
-	return ..()
+	..()
 
 /// Go-go gadget stasis field: the encased mob can't be hurt while it's rock.
 /obj/structure/closet/statue/proc/stasis_block_injury(mob/living/source, datum/om/event/before/living_injure/event)

@@ -216,10 +216,10 @@
 	src.update_chassis_page()
 	return
 
-// ALLOW(lifecycle): equipment detaches from its mech.
-/obj/item/mecha_parts/mecha_equipment/Destroy()
+// equipment detaches from its mech.
+/obj/item/mecha_parts/mecha_equipment/on_destroy(force)
 	detach()
-	return ..()
+	..()
 
 /obj/item/mecha_parts/mecha_equipment/proc/detach(atom/moveto=null)
 	if(!chassis || !get_turf(chassis)) // don't detach components in nullspace

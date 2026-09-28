@@ -36,22 +36,14 @@
 	var/moving = 0
 	var/datum/gas_mixture/air_contents
 
-// C11: one slot for whoever's riding. Drop policy is left to this type's own
-// Destroy() below, which already spills its riders onto the turf before ..()
-// reaches the base Destroy()'s generic drop-policy pass.
+// C11: one slot for whoever's riding. Riders are spilled onto the pod's drop
+// location when it is destroyed (phase 3).
 /datum/om/relation/slot/transit_pod
 	holder = /obj/structure/transit_tube_pod
 	slot_id = CONTAINER_SLOT_TRANSIT_POD
 	name = "riders"
-	drop_policy = SLOT_DROP_HOLDER
+	drop_policy = SLOT_DROP_SPILL
 	exposure = SLOT_EXPOSURE_INTERNAL
-
-// ALLOW(lifecycle): passengers are let out.
-/obj/structure/transit_tube_pod/Destroy()
-	for(var/atom/movable/AM in slot_contents(CONTAINER_SLOT_TRANSIT_POD))
-		AM.forceMove(get_turf(src))
-
-	. = ..()
 
 // When destroyed by explosions, properly handle contents.
 /obj/structure/transit_tube_pod/explosion_contents_severity(severity)

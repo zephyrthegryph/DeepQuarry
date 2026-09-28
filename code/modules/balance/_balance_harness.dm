@@ -42,9 +42,9 @@
 	/// Everything this scenario spawned, deleted by cleanup().
 	var/list/spawned
 
-/datum/balance_scenario/Destroy() // ALLOW(lifecycle): the scenario owns what it spawned; cleanup() removes it.
+/datum/balance_scenario/on_destroy(force) // the scenario owns what it spawned; cleanup() removes it.
 	cleanup()
-	return ..()
+	..()
 
 /// The scenario body.
 /datum/balance_scenario/proc/Run()

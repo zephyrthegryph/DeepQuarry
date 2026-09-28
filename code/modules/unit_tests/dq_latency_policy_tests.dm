@@ -295,9 +295,4 @@
 		return FALSE
 	return TRUE
 
-/datum/unit_test/dq_latency_fuzz/Destroy()
-	for(var/datum/D as anything in made)
-		if(!QDELETED(D))
-			qdel(D)
-	made = null
-	return ..()
+REF_OWNED_LIST(/datum/unit_test/dq_latency_fuzz, "made")

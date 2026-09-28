@@ -14,8 +14,8 @@
 	var/spore_delay = 0
 	var/spore_cooldown = 8 SECONDS
 
-// ALLOW(lifecycle): its spores lose their factory or nest.
-/obj/structure/blob/factory/Destroy()
+// its spores lose their factory or nest.
+/obj/structure/blob/factory/on_destroy(force)
 	for(var/mob/living/L in spores)
 		var/mob/living/simple_mob/blob/spore/spore = L
 		if(istype(spore) && spore.factory == src)
@@ -23,7 +23,7 @@
 		else
 			spore.nest = null
 	spores = null
-	return ..()
+	..()
 
 /obj/structure/blob/factory/pulsed()
 	. = ..()

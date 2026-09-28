@@ -611,12 +611,14 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 				B.on_native(E, arg)
 			if(OM_HOOK_KEYED)
 				B.on_keyed_deadline(E, arg)
+			if(OM_HOOK_DESTROY)
+				B.on_entity_destroy(E)
 	catch(var/exception/e)
 		failed = TRUE
 		report_caught(e, "[B.name] hook [kind]: [e] ([e.file]:[e.line])")
 		stat_inc(B.id, OM_STAT_ERRORS)
 	if(B.holds)
-		if(!failed && kind != OM_HOOK_STOP && !rec.torn_down)
+		if(!failed && kind != OM_HOOK_STOP && kind != OM_HOOK_DESTROY && !rec.torn_down)
 			om_reconcile_holds(rec, B.id, cur_epoch)
 		ctx_rec = prev_rec
 		ctx_bid = prev_bid

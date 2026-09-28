@@ -159,8 +159,8 @@
 		else
 			embed_chance = max(5, round(force/(w_class*3)))
 
-// ALLOW(lifecycle): the base item: leaves its machine's parts list, its wearer's inventory and its granted actions.
-/obj/item/Destroy()
+// the base item: leaves its machine's parts list, its wearer's inventory and its granted actions.
+/obj/item/on_destroy(force)
 	// Machine components are normally located inside their owner. Detach the
 	// owner's strong bookkeeping reference before qdel continues so a component
 	// queued independently (upgrade, explosion, or bulk teardown) cannot become a
@@ -169,9 +169,6 @@
 		var/obj/machinery/owner = loc
 		if(owner.component_parts)
 			owner.component_parts -= src
-	d_stage_overlay = null
-	d_stage_overlay_key = null
-	exploit_for = null
 	if(ismob(loc))
 		var/mob/m = loc
 		m.drop_from_inventory(src)
@@ -185,7 +182,7 @@
 	for(var/datum/action/action as anything in actions)
 		remove_item_action(action)
 
-	return ..()
+	..()
 
 /obj/item/click_ctrl(mob/user)
 	SHOULD_NOT_OVERRIDE(TRUE)

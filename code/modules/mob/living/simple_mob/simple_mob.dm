@@ -220,12 +220,12 @@
 
 REF_OWNED(/mob/living/simple_mob, list("myid", "mob_radio"))
 
-// ALLOW(lifecycle): eye glow comes off and belly contents are released.
-/mob/living/simple_mob/Destroy()
+// eye glow comes off and belly contents are released.
+/mob/living/simple_mob/on_destroy(force)
 	if(has_eye_glow)
 		remove_eyes()
 	release_vore_contents()
-	return ..()
+	..()
 
 //Client attached
 /mob/living/simple_mob/Login()

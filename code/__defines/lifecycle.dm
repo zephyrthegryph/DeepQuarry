@@ -40,6 +40,12 @@
 #define REF_PAIR(PATH, PAIRS) ##PATH/declared_pair_vars() { return lifecycle_merge_assoc(..(), PAIRS); }
 /// Back-lists, our var (the owner) -> the owner's list var we sit in: removed in phase 4.
 #define REF_BACKLIST(PATH, LISTS) ##PATH/declared_backlist_vars() { return lifecycle_merge_assoc(..(), LISTS); }
+/// Membership in a partner's list, where our var names the partner by OM handle:
+/// list("our_handle_var" = "their_list_var"), or a list of their list vars. Phase 4 removes us (or our handle) from it.
+#define REF_BACKLIST_HANDLE(PATH, LISTS) ##PATH/declared_backlist_handle_vars() { return lifecycle_merge_assoc(..(), LISTS); }
+/// A partner we name by OM handle whose var names us back (by reference or handle):
+/// list("our_handle_var" = "their_var"). Phase 4 nulls their var if it still names us.
+#define REF_BACK_HANDLE(PATH, BACKS) ##PATH/declared_back_handle_vars() { return lifecycle_merge_assoc(..(), BACKS); }
 
 /// Back-references, our var -> the var on the referenced object that points at
 /// us (or null): the non-owning side of an owner/child pair. Phase 4 nulls
@@ -124,3 +130,9 @@
 /// First line of a pooled type's procs: crashes when the object was released
 /// (poisoned) or is sitting in the pool, catching use after release.
 #define POOL_ASSERT_LIVE(D) if((D).pool_state != POOL_STATE_TAKEN) { pool_use_after_release(D); }
+
+/// PATH refuses qdel() unless forced (singletons, registries, pooled objects):
+/// the object is left untouched. See /datum/proc/lifecycle_keep().
+#define LIFECYCLE_KEEP_UNLESS_FORCED(PATH) ##PATH/lifecycle_keep(force) { return !force; }
+/// PATH refuses every qdel(), forced or not.
+#define LIFECYCLE_KEEP_ALWAYS(PATH) ##PATH/lifecycle_keep(force) { return TRUE; }

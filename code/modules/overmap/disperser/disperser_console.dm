@@ -30,10 +30,10 @@
 	link_parts()
 	reset_calibration()
 
-// ALLOW(lifecycle): releases its linked parts.
-/obj/machinery/computer/ship/disperser/Destroy()
+// releases its linked parts.
+/obj/machinery/computer/ship/disperser/on_destroy(force)
 	release_links()
-	. = ..()
+	..()
 
 /obj/machinery/computer/ship/disperser/proc/link_parts()
 	if(is_valid_setup())

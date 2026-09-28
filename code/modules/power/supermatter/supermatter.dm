@@ -132,8 +132,8 @@
 
 REF_OWNED(/obj/machinery/power/supermatter, "soundloop")
 
-// ALLOW(lifecycle): an undelaminated deletion is reported; contract telemetry ends.
-/obj/machinery/power/supermatter/Destroy()
+// an undelaminated deletion is reported; contract telemetry ends.
+/obj/machinery/power/supermatter/on_destroy(force)
 	if(!delamination_delete)
 		log_game("SUPERMATTER([x],[y],[z]) deleted outside its delamination path. Power:[power], Oxygen:[oxygen], Damage:[damage], Integrity:[get_integrity()], QDEL source:[datum_flags]")
 		message_admins("WARNING: A supermatter at ([x],[y],[z]) was deleted without completing its delamination path. Check game and runtime logs.")
@@ -146,7 +146,7 @@ REF_OWNED(/obj/machinery/power/supermatter, "soundloop")
 			"metrics" = list("eer" = -1, "integrity" = 0),
 			"detail" = "Supermatter telemetry ended",
 		), "supermatter-destroyed:[REF(src)]:[world.time]", src)
-	return ..()
+	..()
 
 /obj/machinery/power/supermatter/proc/get_status()
 	var/turf/T = get_turf(src)

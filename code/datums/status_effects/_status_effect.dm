@@ -83,15 +83,17 @@
 	return TRUE
 
 REF_OWNED(/datum/status_effect, "particle_effect")
+/// The mob it is on; phase 4 takes it out of the mob's status_effects.
+REF_BACKLIST(/datum/status_effect, list("owner" = "status_effects"))
 
-// ALLOW(lifecycle): the effect leaves its mob: alert cleared, on_remove() run.
-/datum/status_effect/Destroy()
+// the effect leaves its mob: alert cleared, on_remove() run.
+/datum/status_effect/on_destroy(force)
 	if(owner)
 		linked_alert = null
 		owner.clear_alert(id)
 		LAZYREMOVE(owner.status_effects, src)
 		on_remove()
-	return ..()
+	..()
 
 /// Updates the status effect alert's maptext (if possible)
 /datum/status_effect/proc/update_shown_duration()

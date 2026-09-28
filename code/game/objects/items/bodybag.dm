@@ -129,7 +129,7 @@ EXTEND_INTERACTIONS(/obj/structure/closet/body_bag, INTERACT_ITEM(null, PROC_REF
 		if(contents.len || has_latent())	return 0 // ALLOW(latent): latent entries checked
 		visible_message("[usr] folds up the [src.name]")
 		var/folded = new item_path(get_turf(src))
-		om_qdel_after(src, 0)
+		expire(0)
 		return folded
 
 /obj/structure/closet/body_bag/relaymove(mob/user,direction)

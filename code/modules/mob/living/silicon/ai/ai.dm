@@ -250,12 +250,12 @@ REF_HELD(/mob/living/silicon/ai, list("camera", "hardware", "hack", "master_mult
 // GLOB.default_ai_icon or one of the shared icon sets (a custom one is only ever held here).
 REF_STATIC(/mob/living/silicon/ai, "selected_sprite")
 
-// ALLOW(lifecycle): the AI's eye goes with it.
-/mob/living/silicon/ai/Destroy()
+// the AI's eye goes with it.
+/mob/living/silicon/ai/on_destroy(force)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	QDEL_NULL(eyeobj)
 	destroy_eyeobj()
-	return ..()
+	..()
 
 /mob/living/silicon/ai/get_status_tab_items()
 	. = ..()

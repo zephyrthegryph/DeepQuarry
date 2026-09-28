@@ -208,9 +208,21 @@ REF_OWNED(/datum/generated_room_fragment_placement, "fragment")
 	for(var/atom/movable/contained in furnishing)
 		register_owned_furnishing_atom(contained)
 
-/// The areas are owned values (deleted in phase 4); their turfs revert to space first.
+/// The areas are owned values (deleted in phase 4); their turfs revert to space first,
+/// as do the transit/maintenance areas' (named by handle, deleted here).
 /datum/generated_station_materialization/lifecycle_prerelease()
+	qdel_handle(entry_handle)
 	var/area/space/space_area = generated_station_space_area()
+	if(transit_area())
+		var/list/owned_transit_turfs = transit_area().contents.Copy()
+		for(var/turf/T in owned_transit_turfs)
+			ChangeArea(T, space_area)
+	qdel_handle(transit_area_handle)
+	if(maintenance_area())
+		var/list/owned_maintenance_turfs = maintenance_area().contents.Copy()
+		for(var/turf/T in owned_maintenance_turfs)
+			ChangeArea(T, space_area)
+	qdel_handle(maintenance_area_handle)
 	for(var/list/by_id in list(department_areas, module_areas))
 		for(var/id in by_id)
 			var/area/generated_station/A = by_id[id]
@@ -219,32 +231,6 @@ REF_OWNED(/datum/generated_room_fragment_placement, "fragment")
 			var/list/owned_turfs = A.contents.Copy()
 			for(var/turf/T in owned_turfs)
 				ChangeArea(T, space_area)
-	return ..()
-
-// ALLOW(lifecycle): its transit/maintenance turfs revert to space and its built atoms go with it.
-/datum/generated_station_materialization/Destroy()
-	qdel_handle(entry_handle); entry_handle = null
-	var/area/space/space_area = generated_station_space_area()
-	if(transit_area())
-		var/list/owned_transit_turfs = transit_area().contents.Copy()
-		for(var/turf/T in owned_transit_turfs)
-			ChangeArea(T, space_area)
-	qdel_handle(transit_area_handle); transit_area_handle = null
-	if(maintenance_area())
-		var/list/owned_maintenance_turfs = maintenance_area().contents.Copy()
-		for(var/turf/T in owned_maintenance_turfs)
-			ChangeArea(T, space_area)
-	qdel_handle(maintenance_area_handle); maintenance_area_handle = null
-	QDEL_LIST(modules)
-	QDEL_LIST(room_solutions)
-	QDEL_LIST(control_landmarks)
-	QDEL_LIST(service_endpoints)
-	QDEL_LIST(service_routes)
-	QDEL_LIST(doors)
-	QDEL_LIST(infrastructure)
-	degradation_events = null
-	QDEL_NULL(tile_plan)
-	QDEL_NULL(service_validation)
 	return ..()
 
 /// Converts planner-local coordinates into station turfs. This pass deliberately
@@ -1575,7 +1561,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 	maintenance_area()?.power_change()
 
 REF_OWNED(/datum/generated_station_materialization, list("tile_plan", "service_validation"))
-REF_OWNED_LIST(/datum/generated_station_materialization, "owned_furnishing_atoms")
+REF_OWNED_LIST(/datum/generated_station_materialization, list("owned_furnishing_atoms", "modules", "room_solutions", "control_landmarks", "service_endpoints", "service_routes", "doors", "infrastructure"))
 REF_OWNED_VALUES(/datum/generated_station_materialization, list("department_areas", "module_areas"))
 REF_WEAK_LIST(/datum/generated_station_materialization, "furnishings")
 

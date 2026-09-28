@@ -151,18 +151,15 @@ REF_OWNED(/datum/flight_vessel, "active_plan")
 		generation_state = FLIGHT_GENERATION_QUEUED
 		generation_stage = "Awaiting departure"
 
-// ALLOW(lifecycle): its vessel forgets it and its leases are released.
-/datum/flight_plan/Destroy()
+// its leases are released.
+/datum/flight_plan/on_destroy(force)
 	release_leases(state != FLIGHT_PLAN_ARRIVED)
-	origin_handle = null
-	destination_handle = null
-	arrival_port_handle = null
-	return ..()
+	..()
 
 /datum/flight_plan/proc/release_leases(release_assignment = FALSE)
 	if(destination())
 		LAZYREMOVE(destination().active_plans, src)
-	if(arrival_port()?.reserved_by() == src)
+	if(om_handle_is(arrival_port()?.reserved_by_handle, src))
 		arrival_port().reserved_by_handle = null
 	if(release_assignment && destination()?.expedition()?.assigned_flight_vessel() == vessel)
 		destination().expedition().assigned_flight_vessel_handle = null

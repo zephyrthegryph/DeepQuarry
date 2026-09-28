@@ -24,15 +24,13 @@ REF_BACK(/datum/connect_containers, list("listener" = null))
 	src.connections = connections
 	set_tracked(tracked)
 
-// ALLOW(lifecycle): owned state datum (was a component) unhooks and detaches from its owner.
-/datum/connect_containers/Destroy()
-	if(tracked())
-		om_unhook(tracked(), list(/datum/om/event/moved, /datum/om/event/qdeleting), src)
-		unregister_hooks(tracked())
-	om_unhook_all(src)
-	listener = null
-	tracked_handle = null
-	return ..()
+// owned state datum (was a component) unhooks and detaches from its owner.
+// The listener's hooks on the containers go before phase 4 nulls listener; our own hooks go with our record.
+/datum/connect_containers/lifecycle_prerelease()
+	..()
+	var/atom/movable/T = tracked()
+	if(T)
+		unregister_hooks(T)
 
 /// Was the dupe check of AddComponent: same connections, maybe a new target.
 /// Returns FALSE when `new_connections` differ from ours (the caller needs another instance).

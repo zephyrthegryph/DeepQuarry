@@ -32,10 +32,10 @@
 
 REF_SPILL(/obj/machinery/computer/telescience, "inserted_gps")
 
-// ALLOW(lifecycle): its crystals are ejected.
-/obj/machinery/computer/telescience/Destroy()
+// its crystals are ejected.
+/obj/machinery/computer/telescience/on_destroy(force)
 	eject()
-	return ..()
+	..()
 
 /obj/machinery/computer/telescience/examine(mob/user)
 	. = ..()

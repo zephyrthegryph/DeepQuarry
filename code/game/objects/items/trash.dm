@@ -18,10 +18,10 @@
 	if(!mapload || !CONFIG_GET(flag/persistence_ignore_mapload))
 		SSpersistence.track_value(src, /datum/persistent/filth/trash)
 
-// ALLOW(lifecycle): persistent trash forgets this item.
-/obj/item/trash/Destroy()
+// persistent trash forgets this item.
+/obj/item/trash/lifecycle_dematerialize()
 	SSpersistence.forget_value(src, /datum/persistent/filth/trash)
-	. = ..()
+	..()
 
 /obj/item/trash/raisins
 	name = "\improper 4no raisins"

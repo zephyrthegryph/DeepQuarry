@@ -54,6 +54,18 @@
 /datum/proc/declared_backlist_vars()
 	return null
 
+/// Assoc: our var holding an OM HANDLE to the owner -> the owner's list var
+/// that holds us (REF_BACKLIST_HANDLE). Phase 4 resolves the handle and removes
+/// us (or our handle) from that list; the handle var itself is left (text).
+/datum/proc/declared_backlist_handle_vars()
+	return null
+
+/// Assoc: our var holding an OM HANDLE to a partner -> the partner's var that
+/// names us back (REF_BACK_HANDLE). Phase 4 resolves the handle and nulls the
+/// partner's var if it still names us, by reference or by handle.
+/datum/proc/declared_back_handle_vars()
+	return null
+
 /// Names of `src`'s vars holding one inserted thing (a beaker, a card, a
 /// charging cell) that goes back to the room when src is destroyed: phase 3
 /// moves it to src's drop location if it is still inside src. The one-thing
@@ -158,6 +170,8 @@
 			"owned_values" = D.declared_owned_value_vars(),
 			"pair" = D.declared_pair_vars(),
 			"backlist" = D.declared_backlist_vars(),
+			"backlist_handle" = D.declared_backlist_handle_vars(),
+			"back_handle" = D.declared_back_handle_vars(),
 			"spill" = D.declared_spill_vars(),
 			"spill_list" = D.declared_spill_list_vars(),
 			"held" = D.declared_held_vars(),
@@ -332,6 +346,46 @@
 			var/list_var = backlist[our_var]
 			var/list/L = owner.vars[list_var]
 			L?.Remove(D)
+	var/list/backlist_handle = table["backlist_handle"]
+	for(var/our_var in backlist_handle)
+		var/datum/owner = om_resolve(D.vars[our_var])
+		if(!owner || (batch && batch.doomed[owner]))
+			continue
+		var/list_vars = backlist_handle[our_var]
+		var/h = om_handle_of(D)
+		for(var/list_var in lifecycle_backlist_handle_lists(owner, list_vars))
+			var/list/L = owner.vars[list_var]
+			if(L)
+				L.Remove(D)
+				if(h)
+					L.Remove(h)
+	var/list/back_handle = table["back_handle"]
+	for(var/our_var in back_handle)
+		var/datum/partner = om_resolve(D.vars[our_var])
+		if(!partner || (batch && batch.doomed[partner]))
+			continue
+		var/their_var = back_handle[our_var]
+		if(!(their_var in partner.vars))
+			continue
+		var/theirs = partner.vars[their_var]
+		if(theirs == D || (istext(theirs) && om_handle_is(theirs, D)))
+			partner.vars[their_var] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
+
+
+/// The partner's list var names a REF_BACKLIST_HANDLE value picks for `owner`:
+/// a name, a list of names, or list(/partner/type = name or names) keyed by the
+/// partner's type (the first type `owner` is).
+/proc/lifecycle_backlist_handle_lists(datum/owner, list_vars)
+	if(!islist(list_vars))
+		return list(list_vars)
+	var/list/choices = list_vars
+	if(length(choices) && ispath(choices[1]))
+		for(var/partner_type in choices)
+			if(istype(owner, partner_type))
+				var/picked = choices[partner_type]
+				return islist(picked) ? picked : list(picked)
+		return list()
+	return choices
 
 /// Nulls whatever a declared owned/pair var still points to, without
 /// deleting anything (phase 8: the owned children are already gone by now;

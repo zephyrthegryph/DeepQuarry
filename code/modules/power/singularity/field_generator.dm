@@ -181,10 +181,10 @@
 		return 0
 	return ..()
 
-// ALLOW(lifecycle): its field comes down.
-/obj/machinery/field_generator/Destroy()
+// its field comes down.
+/obj/machinery/field_generator/on_destroy(force)
 	src.cleanup()
-	. = ..()
+	..()
 
 /obj/machinery/field_generator/proc/turn_off()
 	active = 0

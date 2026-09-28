@@ -106,12 +106,12 @@ would spawn and follow the beaker, even if it is carried or thrown.
 		T.hotspot_expose(1000,100)
 	expire(5 SECONDS)
 
-// ALLOW(lifecycle): a dying spark can still light its tile.
-/obj/effect/effect/sparks/Destroy()
+// a dying spark can still light its tile.
+/obj/effect/effect/sparks/on_destroy(force)
 	var/turf/T = src.loc
 	if (istype(T, /turf))
 		T.hotspot_expose(1000,100)
-	return ..()
+	..()
 
 /obj/effect/effect/sparks/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()

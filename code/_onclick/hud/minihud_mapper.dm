@@ -7,11 +7,11 @@
 	screenobjs = list(new /atom/movable/screen/movable/mapper_holder(null, owner))
 	..()
 
-// ALLOW(lifecycle): the mapping unit points at its hud datum; the hud going clears those vars.
-/datum/mini_hud/mapper/Destroy()
+// the mapping unit points at its hud datum; the hud going clears those vars.
+/datum/mini_hud/mapper/on_destroy(force)
 	owner()?.hud_item = null
 	owner()?.hud_datum = null
-	return ..()
+	..()
 
 /// LC-refs: the mapping unit this hud shows -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/mini_hud/mapper/proc/owner() as /obj/item/mapping_unit

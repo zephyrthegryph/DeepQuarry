@@ -82,14 +82,14 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 
 	make_climbable(/datum/om/behaviour/climbable/table)
 
-// ALLOW(lifecycle): neighbouring tables re-smooth without it.
-/obj/structure/table/Destroy()
+// neighbouring tables re-smooth without it.
+/obj/structure/table/on_destroy(force)
 	material_static = null
 	reinforced_static = null
 	update_connections(1) // Update tables around us to ignore us (material=null forces no connections)
 	for(var/obj/structure/table/T in oview(src, 1))
 		T.update_icon()
-	. = ..()
+	..()
 
 /// Old attackby (tables.dm): carpet or plate the table.
 /obj/structure/table/proc/interaction_surface(mob/user, obj/item/W, datum/interaction/interaction)

@@ -490,19 +490,8 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	cleanup_beam_segments()
 	return ..()
 
-// ALLOW(lifecycle): its casing forgets it.
-/obj/item/projectile/Destroy()
-	if(impacted_mobs)
-		if(LAZYLEN(impacted_mobs))
-			LAZYCLEARLIST(impacted_mobs)
-		impacted_mobs = null
-
-	if(my_case())
-		if(my_case().BB == src)
-			my_case().BB = null
-		my_case_handle = null
-
-	return ..()
+// its casing forgets it.
+REF_BACK_HANDLE(/obj/item/projectile, list("my_case_handle" = "BB"))
 
 /obj/item/projectile/proc/cleanup_beam_segments()
 	QDEL_LIST_ASSOC(beam_segments)

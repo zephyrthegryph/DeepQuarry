@@ -133,7 +133,7 @@
 	if(isbelly(loc))
 		return
 	playsound(src,'sound/voice/succlet_shriek.ogg', 100, 1)
-	om_qdel_after(src, 25)
+	expire(25)
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/succlet, INTERACT_ITEM(null, PROC_REF(succlet_interaction_item)))
 

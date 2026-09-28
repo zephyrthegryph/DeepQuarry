@@ -92,12 +92,12 @@
 	bleed_timer += initial_damage
 	sync()
 
-// ALLOW(lifecycle): its limb recomputes integrity.
-/datum/affliction/wound/Destroy()
+// its limb recomputes integrity.
+/datum/affliction/wound/on_destroy(force)
 	var/obj/item/organ/external/E = location
 	if(istype(E))
 		E.integrity_dirty = TRUE
-	return ..()
+	..()
 
 /datum/affliction/wound/on_added()
 	. = ..()

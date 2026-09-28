@@ -87,12 +87,12 @@
 	. = ..()
 	base_turf = world.turf
 
-// ALLOW(lifecycle): its ship forgets its landmark.
-/obj/effect/shuttle_landmark/ship/Destroy()
+// its ship forgets its landmark.
+/obj/effect/shuttle_landmark/ship/on_destroy(force)
 	var/obj/effect/overmap/visitable/ship/landable/ship = get_overmap_sector(z)
 	if(istype(ship) && ship.landmark == src)
 		ship.landmark = null
-	. = ..()
+	..()
 
 /obj/effect/shuttle_landmark/ship/is_valid(datum/shuttle/shuttle)
 	return (isnull(loc) || ..()) // If it doesn't exist yet, its clear

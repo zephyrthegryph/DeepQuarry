@@ -111,6 +111,15 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 	var/id = D.om_hid
 	return id ? "[id]:[GLOB.om_handle_gens[id]]" : null
 
+/// TRUE if handle `h` names `D`, even while `D` is being deleted (until phase 5
+/// releases its slot). A handle accessor (`owner()` = om_resolve(owner_handle))
+/// reads null once its target is QDELETED, so `owner() == src` is FALSE inside
+/// src's own teardown: compare with om_handle_is(owner_handle, src) there.
+/proc/om_handle_is(h, datum/D)
+	if(!h || !D)
+		return FALSE
+	return h == om_handle_of(D)
+
 /// The datum a handle names, or null if it has been deleted (whatever now uses its id).
 /proc/om_resolve(h)
 	if(!istext(h))

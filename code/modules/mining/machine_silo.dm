@@ -33,17 +33,17 @@
 		GLOB.ore_silo_default = src
 	// register_context()
 
-// ALLOW(lifecycle): connected machines disconnect; the default silo clears.
-/obj/machinery/ore_silo/Destroy()
+// the default silo clears.
+/obj/machinery/ore_silo/lifecycle_dematerialize()
+	..()
 	if(GLOB.ore_silo_default == src)
 		GLOB.ore_silo_default = null
 
+// connected machines disconnect.
+/obj/machinery/ore_silo/on_destroy(force)
 	for(var/datum/remote_materials/mats as anything in ore_connected_machines)
 		mats.disconnect()
-
-	ore_connected_machines = null
-
-	return ..()
+	..()
 
 /obj/machinery/ore_silo/examine(mob/user)
 	. = ..()

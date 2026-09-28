@@ -20,15 +20,17 @@ GLOBAL_LIST_EMPTY(client_only_images_expiring)
 	C.images += src
 	LAZYADD(clients, om_handle(C))
 
-// ALLOW(lifecycle): comes off every client it was shown to (clients aren't datums).
-/image/client_only/Destroy(force)
-	. = ..()
-	GLOB.client_only_images_expiring -= src
+// comes off every client it was shown to (clients aren't datums).
+/image/client_only/on_destroy(force)
+	..()
 	for(var/CW in clients)
 		var/client/C = om_resolve(CW)
 		if(C)
 			C.images -= src
-	LAZYCLEARLIST(clients)
+
+/image/client_only/lifecycle_dematerialize()
+	..()
+	GLOB.client_only_images_expiring -= src
 
 // Mostly for motion echos, but someone will probably find another use for it... So parent type gets it instead!
 /image/client_only/proc/place_from_root(turf/At)

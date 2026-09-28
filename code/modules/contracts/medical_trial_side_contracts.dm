@@ -50,15 +50,10 @@ REF_BACK(/datum/contract_document, list("holder" = "contract_document"))
 		"evidence_ids" = list(evidence_id),
 	), "document-created:[evidence_id]", holder)
 
-// ALLOW(lifecycle): releases its evidence id.
-/datum/contract_document/Destroy()
+// releases its evidence id.
+/datum/contract_document/on_destroy(force)
 	SScontracts?.release_evidence(evidence_id)
-	evidence_id = null
-	payload = null
-	if(holder?.contract_document == src)
-		holder.contract_document = null
-	holder = null
-	return ..()
+	..()
 
 /proc/create_contract_document(atom/location, document_name, document_info, contract_id, document_kind, destination, list/payload)
 	var/obj/item/paper/document = new(location)

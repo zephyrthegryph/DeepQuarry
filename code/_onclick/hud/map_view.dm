@@ -17,11 +17,11 @@ INITIALIZE_IMMEDIATE(/atom/movable/screen/map_view_tg)
 
 REF_OWNED_LIST(/atom/movable/screen/map_view_tg, "popup_plane_masters")
 
-// ALLOW(lifecycle): hides itself from every client still viewing it (client refs are handles).
-/atom/movable/screen/map_view_tg/Destroy()
+// hides itself from every client still viewing it (client refs are handles).
+/atom/movable/screen/map_view_tg/on_destroy(force)
 	for(var/client_ref in viewing_clients)
 		hide_from_client(om_resolve(client_ref))
-	return ..()
+	..()
 
 /atom/movable/screen/map_view_tg/proc/generate_view(map_key)
 	// Map keys have to start and end with an A-Z character,

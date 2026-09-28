@@ -120,10 +120,10 @@
 		for(var/mob/mob in area)
 			selected_weather.hear_sounds(mob, FALSE)
 
-// ALLOW(lifecycle): clears the weather it caused.
-/obj/effect/anomaly/weather/Destroy()
+// clears the weather it caused.
+/obj/effect/anomaly/weather/on_destroy(force)
 	clear_weather()
-	. = ..()
+	..()
 
 /obj/effect/anomaly/weather/proc/update_reagent(reagent)
 	selected_weather.update_reagent(reagent)

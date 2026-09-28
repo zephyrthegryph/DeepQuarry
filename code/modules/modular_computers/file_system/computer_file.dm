@@ -31,17 +31,16 @@ GLOBAL_VAR_INIT(file_uid, 0)
 	if(islist(md))
 		metadata = md.Copy()
 
-// ALLOW(lifecycle): leaves its drive; a running program is killed.
-/datum/computer_file/Destroy()
-	if(!holder())
-		return ..()
-
-	holder().remove_file(src)
-	// holder.holder is the computer that has drive installed. If we are Destroy()ing program that's currently running kill it.
-	if(holder().holder2() && holder().holder2().active_program() == src)
-		holder().holder2().kill_program(1)
-	holder_handle = null
-	return ..()
+// leaves its drive; a running program is killed.
+/datum/computer_file/on_destroy(force)
+	if(holder())
+		holder().remove_file(src)
+		// holder.holder is the computer that has drive installed. If we are deleting the program that's currently running kill it.
+		var/obj/item/modular_computer/computer = holder().holder2()
+		if(computer && om_handle_is(computer.active_program_handle, src))
+			computer.active_program_handle = null // active_program() no longer resolves us
+			computer.kill_program(1)
+	..()
 
 // Returns independent copy of this file.
 /datum/computer_file/proc/clone(rename = 0)

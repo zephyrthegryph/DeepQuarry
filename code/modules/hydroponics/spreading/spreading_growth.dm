@@ -142,7 +142,7 @@
 		for(var/obj/effect/plant/neighbor in check_turf.contents)
 			LAZYOR(neighbor.neighbors, check_turf)
 			GLOB.plant_service.add_plant(neighbor)
-	om_qdel_after(src, 1)
+	expire(1)
 
 #undef NEIGHBOR_REFRESH_TIME
 

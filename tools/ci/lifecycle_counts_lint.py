@@ -1,21 +1,23 @@
-"""Destroy()-override and qdel()-count lints (roadmap L4, doc/rewrite/lifecycle.md
-section 1 and section 8's plan).
+"""Destroy()-override ban and qdel()-count lint (roadmap L4 and completion plan
+section 3.5, doc/rewrite/lifecycle.md).
 
-The destroy transaction (L1-L3) is meant to shrink both of these over time:
-
-    Destroy() overrides   ~1,190 at the plan's baseline. Target: >= 85% removed;
-                          the ~120-180 that remain are real domain consequences
-                          and say why with `// ALLOW(lifecycle): <reason>` on
-                          the override line (or the comment line before it).
+    Destroy() overrides   banned outright outside CORE_DESTROY_OWNERS (the core
+                          chain /datum, /atom, /atom/movable, /client, and the
+                          MC's /datum/controller tree). A type's teardown is a
+                          declaration (REF_*), a phase hook (lifecycle_unbind(),
+                          lifecycle_dematerialize(), lifecycle_prerelease(),
+                          destroy_effects()), its destroy hook on_destroy(), a
+                          behaviour's on_entity_destroy(E), destroy_hint for the GC
+                          hint, or lifecycle_keep() / LIFECYCLE_KEEP_UNLESS_FORCED
+                          to refuse deletion. No ALLOW escape; unit tests included.
     qdel( call sites      ~3,070 at the plan's baseline (1,241 of them qdel(src)).
                           Target: about half replaced by the verbs in
                           code/datums/lifecycle/verbs.dm (consume(), replace_with(),
                           expire(), slot_clear()/ledger_empty(), delete_on_death).
 
-Both counts are ratcheted: tools/ci/lifecycle_counts_baseline.txt holds the
-ceilings, which may fall, never rise. A Destroy() override or qdel( site carrying
-`// ALLOW(lifecycle): <reason>` (tools/ci/allow_annotations.py) doesn't count at
-all -- it has already justified itself, which is the point.
+The qdel( count is ratcheted: tools/ci/lifecycle_counts_baseline.txt holds the
+ceiling, which may fall, never rise. A qdel( site carrying
+`// ALLOW(lifecycle): <reason>` (tools/ci/allow_annotations.py) doesn't count.
 
 The ceiling stops new hand-rolled Destroy()s and qdel() sites from accumulating
 while L4's conversion agents pay down the existing total; it does not by itself
@@ -38,14 +40,16 @@ from allow_annotations import allowed, check_ceilings, read_baseline, write_base
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 BASELINE = os.path.join(ROOT, "tools", "ci", "lifecycle_counts_baseline.txt")
 
-# A Destroy() override: `/type/path/Destroy(` at the start of a line (after
-# whitespace), never `/datum/Destroy` or `/atom/movable/Destroy` etc. --
-# those base definitions *are* the transaction's phase 7 call site, not an
-# "override" in the sense this lint (and the plan's count) means.
+# A Destroy() override: `/type/path/Destroy(` at the start of a line.
 DESTROY_OVERRIDE = re.compile(r"^/[\w/]+/Destroy\s*\(")
-BASE_DESTROY_OWNERS = {
-    "/datum", "/atom", "/atom/movable", "/obj", "/mob", "/turf", "/area",
-}
+# The core Destroy() chain phase 7 calls after on_destroy(). Nothing else may
+# override Destroy(). `/datum/proc` is /datum's own definition.
+CORE_DESTROY_OWNERS = {"/datum/proc", "/datum", "/atom", "/atom/movable", "/client"}
+CORE_DESTROY_PREFIXES = ("/datum/controller",)
+
+
+def core_destroy_owner(owner):
+    return owner in CORE_DESTROY_OWNERS or owner.startswith(CORE_DESTROY_PREFIXES)
 QDEL_CALL = re.compile(r"(?<![\w.])qdel\s*\(")
 EXEMPT_FILES = {
     # The engine itself: qdel() can't count its own call to Destroy(), and
@@ -69,8 +73,7 @@ def owner_of(header):
 
 def scan_file(path):
     rel = os.path.relpath(path, ROOT).replace(os.sep, "/")
-    if "/unit_tests/" in rel:
-        return rel, [], []
+    tests = "/unit_tests/" in rel
     with open(path, encoding="utf-8", errors="replace") as handle:
         raw = handle.read()
     lines = code_only(raw).split("\n")
@@ -81,9 +84,9 @@ def scan_file(path):
         text = raw.strip()
         m = DESTROY_OVERRIDE.match(text)
         kept = allowed(raw_lines, no, "lifecycle")
-        if m and owner_of(text[: text.index("(")]) not in BASE_DESTROY_OWNERS and not kept:
+        if m and not core_destroy_owner(owner_of(text[: text.index("(")])):
             destroys.append((rel, no, text[: text.index("(") + 1]))
-        if rel not in EXEMPT_FILES and not rel.startswith(EXEMPT_DIRS) and not kept:
+        if not tests and rel not in EXEMPT_FILES and not rel.startswith(EXEMPT_DIRS) and not kept:
             for _ in QDEL_CALL.finditer(text):
                 qdels.append((rel, no, "qdel("))
     return rel, destroys, qdels
@@ -92,7 +95,9 @@ def scan_file(path):
 def scan():
     destroy_counts, qdel_counts = {}, {}
     destroy_sites, qdel_sites = [], []
-    for path in glob.glob(os.path.join(ROOT, "code", "**", "*.dm"), recursive=True):
+    paths = glob.glob(os.path.join(ROOT, "code", "**", "*.dm"), recursive=True)
+    paths += glob.glob(os.path.join(ROOT, "maps", "**", "*.dm"), recursive=True)
+    for path in paths:
         rel, destroys, qdels = scan_file(path)
         if destroys:
             destroy_counts[rel] = len(destroys)
@@ -106,12 +111,12 @@ def scan():
 def main(argv):
     destroy_counts, destroy_sites, qdel_counts, qdel_sites = scan()
     destroy_total, qdel_total = sum(destroy_counts.values()), sum(qdel_counts.values())
-    counts = {"destroy": destroy_total, "qdel": qdel_total}
+    counts = {"qdel": qdel_total}
     if "--update" in argv:
         write_baseline(BASELINE, [
-            "Destroy()-override and qdel()-count ceilings (roadmap L4, doc/rewrite/lifecycle.md",
-            "sec 1, sec 8). tools/ci/lifecycle_counts_lint.py fails when a count rises above its",
-            "line. A site with `// ALLOW(lifecycle): <reason>` doesn't count at all.",
+            "qdel()-count ceiling (roadmap L4, doc/rewrite/lifecycle.md sec 1, sec 8).",
+            "tools/ci/lifecycle_counts_lint.py fails when it rises above its line (Destroy()",
+            "overrides are banned outright). A site with `// ALLOW(lifecycle): <reason>` doesn't count.",
             "Lower after a sweep: `python tools/ci/lifecycle_counts_lint.py --update`.",
         ], counts)
         print("lifecycle counts baseline: %d Destroy() overrides, %d qdel( sites" % (destroy_total, qdel_total))
@@ -124,12 +129,16 @@ def main(argv):
         print("total: %d unjustified Destroy() overrides in %d files, %d qdel( sites in %d files"
               % (destroy_total, len(destroy_counts), qdel_total, len(qdel_counts)))
         return 0
+    for rel, number, what in destroy_sites:
+        print("%s:%d: %s -- Destroy() overrides are banned outside the core chain; use REF_* "
+              "declarations, a phase hook, on_destroy(), destroy_hint or lifecycle_keep() "
+              "(code/datums/lifecycle/transaction.dm)" % (rel, number, what))
     failed = check_ceilings(
         "lifecycle", counts, read_baseline(BASELINE),
         "Remove a new Destroy() or fold it into a declared relationship/policy (L1-L3); replace a new "
         "qdel( with consume()/replace_with()/expire()/slot_clear()/ledger_empty()/delete_on_death "
         "(code/datums/lifecycle/verbs.dm).")
-    return 1 if failed else 0
+    return 1 if failed or destroy_sites else 0
 
 
 if __name__ == "__main__":

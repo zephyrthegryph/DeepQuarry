@@ -298,8 +298,8 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 	plane_holder.set_vis(VIS_SOULCATCHER, TRUE)
 	identifying_gender = client.prefs.read_preference(/datum/preference/choiced/gender/identifying)
 
-// ALLOW(lifecycle): the soulcatcher is told the mind unloaded.
-/mob/living/carbon/brain/caught_soul/Destroy()
+// the soulcatcher is told the mind unloaded.
+/mob/living/carbon/brain/caught_soul/on_destroy(force)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(soulcatcher())
 		soulcatcher().notify_into("Mind unloaded: [name]")
@@ -309,7 +309,7 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 		reenter_soulcatcher()
 	container = null
 	nif_handle = null
-	return ..()
+	..()
 
 /datum/om/stage/life/type_pre/carbon/brain/caught_soul
 	of = /mob/living/carbon/brain/caught_soul

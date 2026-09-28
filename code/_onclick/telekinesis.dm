@@ -132,7 +132,7 @@ DECLARE_INTERACTIONS(/obj/item/tk_grab, INTERACT_USE(null, PROC_REF(interaction_
 	O.icon = 'icons/effects/effects.dmi'
 	O.icon_state = "nothing"
 	flick("empdisable",O)
-	om_qdel_after(O, 5)
+	O.expire(5)
 	return
 
 /obj/item/tk_grab/update_icon()

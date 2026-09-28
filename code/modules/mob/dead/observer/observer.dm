@@ -528,14 +528,14 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 
 REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 
-// ALLOW(lifecycle): a ghost leaves the ghost visualnet and its chunks; one with a client is re-ghosted.
-/mob/observer/dead/Destroy()
-	if(exonet)
-		exonet.remove_address()
-		QDEL_NULL(exonet)
-	QDEL_NULL(dq_exonet_log_panel_cache)
+// its exonet address is released before phase 4 deletes the owned exonet.
+/mob/observer/dead/on_destroy(force)
+	exonet?.remove_address()
+	..()
+
+// a ghost leaves the ghost visualnet and its chunks; one with a client is re-ghosted.
+/mob/observer/dead/on_destroy(force)
 	visualnet.addVisibility(src, src.client)
-	visualnet = null
 	stop_following()
 	for(var/datum/chunk/ghost/ghost_chunks in visibleChunks)
 		ghost_chunks.remove(src)
@@ -544,7 +544,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 		ghostize()
 	if(key)
 		key = null
-	return ..()
+	..()
 
 /mob/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()

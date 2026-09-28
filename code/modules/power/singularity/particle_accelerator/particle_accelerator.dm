@@ -76,12 +76,12 @@ So, hopefully this is helpful if any more icons are to be added/changed/wonderin
 	make_climbable()
 	make_rotatable()
 
-// ALLOW(lifecycle): its control box rescans its parts.
-/obj/structure/particle_accelerator/Destroy()
+// its control box rescans its parts.
+/obj/structure/particle_accelerator/on_destroy(force)
 	construction_state = 0
 	if(master())
 		master().part_scan()
-	. = ..()
+	..()
 
 /obj/structure/particle_accelerator/end_cap
 	name = "Alpha Particle Generation Array"

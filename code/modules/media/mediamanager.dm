@@ -131,11 +131,6 @@
 	media_window?.close()
 	return ..()
 
-// ALLOW(lifecycle): drops its owner and last target.
-/datum/media_manager/Destroy()
-	owner_handle = null
-	return ..()
-
 /datum/media_manager/tgui_state(mob/user)
 	return GLOB.tgui_always_state
 

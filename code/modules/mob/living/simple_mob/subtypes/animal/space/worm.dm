@@ -192,15 +192,14 @@
 		return TRUE
 	return ..()
 
-// ALLOW(lifecycle): a destroyed chunk empties its stomach and kills the back half.
-/mob/living/simple_mob/animal/space/space_worm/Destroy() // If a chunk is destroyed, kill the back half.
+// a destroyed chunk empties its stomach and kills the back half.
+/mob/living/simple_mob/animal/space/space_worm/on_destroy(force) // If a chunk is destroyed, kill the back half.
 	DumpStomach()
 	if(previous)
 		previous.Detach(1)
 	if(next)
 		next.previous = null
-		next = null
-	. = ..()
+	..()
 
 /mob/living/simple_mob/animal/space/space_worm/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()

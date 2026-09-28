@@ -47,10 +47,10 @@
 	if(start_damaged)
 		update_integrity(round(max_integrity * integrity_danger_mod))
 
-// ALLOW(lifecycle): a component detaches from its mech.
-/obj/item/mecha_parts/component/Destroy()
+// a component detaches from its mech.
+/obj/item/mecha_parts/component/on_destroy(force)
 	detach()
-	return ..()
+	..()
 
 // Damage code.
 

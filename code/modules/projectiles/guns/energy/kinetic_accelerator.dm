@@ -151,21 +151,21 @@
 	holds_charge = TRUE
 	unique_frequency = TRUE
 
-// ALLOW(lifecycle): its modkits are uninstalled.
-/obj/item/gun/energy/kinetic_accelerator/cyborg/Destroy()
+// its modkits are uninstalled.
+/obj/item/gun/energy/kinetic_accelerator/cyborg/on_destroy(force)
 	for(var/obj/item/borg/upgrade/modkit/M in modkits)
 		M.uninstall(src)
-	return ..()
+	..()
 
 /obj/item/gun/energy/kinetic_accelerator/premiumka/cyborg
 	holds_charge = TRUE
 	unique_frequency = TRUE
 
-// ALLOW(lifecycle): its modkits are uninstalled.
-/obj/item/gun/energy/kinetic_accelerator/premiumka/cyborg/Destroy()
+// its modkits are uninstalled.
+/obj/item/gun/energy/kinetic_accelerator/premiumka/cyborg/on_destroy(force)
 	for(var/obj/item/borg/upgrade/modkit/M in modkits)
 		M.uninstall(src)
-	return ..()
+	..()
 
 /obj/item/gun/energy/kinetic_accelerator/minebot
 	// trigger_guard = TRIGGER_GUARD_ALLOW_ALL

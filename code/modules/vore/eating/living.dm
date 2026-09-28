@@ -1449,24 +1449,18 @@ REF_BACK(/datum/vore_panel_button, list("owner" = "vore_panel_button"))
 	if(!owner.vorePanel)
 		owner.vorePanel = new(owner)
 
-// ALLOW(lifecycle): owned state datum (was a component) unhooks and detaches from its owner.
-/datum/vore_panel_button/Destroy(force)
+// takes the panel verb and panel back from its owner. Hooks, the screen icon
+// (owned; it leaves client screens in its own teardown) and the owner <->
+// vore_panel_button pair are core work.
+/datum/vore_panel_button/on_destroy(force)
 	var/mob/living/M = owner
-	if(M)
-		om_unhook(M, /datum/om/event/mob_client_login, src)
 	if(screen_icon)
-		M?.client?.screen -= screen_icon
-		om_unhook(screen_icon, /datum/om/event/click, src)
 		var/datum/hud/HUD = M?.hud_used
 		LAZYREMOVE(HUD?.other_important, screen_icon)
-		QDEL_NULL(screen_icon)
 	if(M)
 		remove_verb(M, /mob/proc/insidePanel)
 		QDEL_NULL(M.vorePanel)
-		if(M.vore_panel_button == src)
-			M.vore_panel_button = null
-	owner = null
-	return ..()
+	..()
 
 /// Gives the mob its vore panel HUD button if it has none.
 /mob/living/proc/add_vore_panel_button()
