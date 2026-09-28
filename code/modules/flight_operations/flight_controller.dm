@@ -1,9 +1,7 @@
 SUBSYSTEM_DEF(flight_operations)
 	name = "Flight Operations"
-	wait = 1 SECOND
-	priority = FIRE_PRIORITY_DEFAULT
+	flags = SS_NO_FIRE // plans: /datum/om/behaviour/world/feature/flight_operations (1 s)
 	dependencies = list(/datum/controller/subsystem/shuttles)
-	runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
 	var/list/destinations = list()
 	var/list/destination_by_target = list()
 	var/list/vessels = list()
@@ -367,7 +365,7 @@ SUBSYSTEM_DEF(flight_operations)
 	plans[plan.id] = plan
 	return plan
 
-/datum/controller/subsystem/flight_operations/fire(resumed = FALSE)
+/datum/controller/subsystem/flight_operations/lane_step(resumed)
 	if(!resumed)
 		sync_vessel_destinations()
 		current_run = plans.Copy()
@@ -379,8 +377,9 @@ SUBSYSTEM_DEF(flight_operations)
 			plans -= id
 			continue
 		process_plan(plan)
-		if(MC_TICK_CHECK)
-			return
+		if(TICK_CHECK)
+			return FALSE
+	return TRUE
 
 /datum/controller/subsystem/flight_operations/proc/process_plan(datum/flight_plan/plan)
 	if(plan.state == FLIGHT_PLAN_FAILED)

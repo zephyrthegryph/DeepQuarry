@@ -2,12 +2,9 @@
 
 // Controls the emergency shuttle
 SUBSYSTEM_DEF(emergency_shuttle)
-	can_fire = FALSE
 	name = "Emergency Shuttle"
-	wait =  1 SECOND
-	runlevels = RUNLEVEL_GAME
 	init_stage = INITSTAGE_LAST
-	flags = SS_KEEP_TIMING
+	flags = SS_NO_FIRE // countdown: /datum/om/behaviour/world/feature/emergency_shuttle (1 s)
 
 	var/datum/shuttle/autodock/ferry/emergency/shuttle // Set in shuttle_emergency.dm TODO - is it really?
 	var/list/escape_pods = list()
@@ -33,13 +30,13 @@ SUBSYSTEM_DEF(emergency_shuttle)
 	emergency_shuttle_recalled = new()
 	return SS_INIT_SUCCESS
 
-/datum/controller/subsystem/emergency_shuttle/fire(resumed)
+/datum/controller/subsystem/emergency_shuttle/lane_step(resumed)
 	if(!resumed)
 		if(!wait_for_launch)
-			return
+			return TRUE
 
 		if(evac && auto_recall && world.time >= auto_recall_time)
-			recall()
+			INVOKE_ASYNC(src, PROC_REF(recall))
 		if(world.time >= launch_time)	//time to launch the shuttle
 			stop_launch_countdown()
 
@@ -48,18 +45,19 @@ SUBSYSTEM_DEF(emergency_shuttle)
 				current_run = escape_pods.Copy()
 
 			if(autopilot)
-				shuttle.launch(src)
+				INVOKE_ASYNC(shuttle, TYPE_PROC_REF(/datum/shuttle/autodock, launch), src)
 
 	while(length(current_run))
-		if(MC_TICK_CHECK)
-			return
+		if(TICK_CHECK)
+			return FALSE
 		var/escape_pod = current_run[length(current_run)]
 		current_run.len--
 		var/datum/shuttle/autodock/ferry/escape_pod/pod = escape_pods[escape_pod]
 		if(!istype(pod, /datum/shuttle/autodock/ferry/escape_pod))
 			continue
 		if(!pod.arming_controller() || pod.arming_controller().armed)
-			pod.launch(src)
+			INVOKE_ASYNC(pod, TYPE_PROC_REF(/datum/shuttle/autodock, launch), src)
+	return TRUE
 
 //called when the shuttle has arrived.
 
@@ -91,12 +89,9 @@ SUBSYSTEM_DEF(emergency_shuttle)
 /datum/controller/subsystem/emergency_shuttle/proc/set_launch_countdown(seconds)
 	wait_for_launch = TRUE
 	launch_time = world.time + (seconds * 10)
-	can_fire = TRUE
-	next_fire = world.time + wait
 	om_changed(SSemergency_shuttle, CHANGE_SHUTTLE_SCHEDULE)
 
 /datum/controller/subsystem/emergency_shuttle/proc/stop_launch_countdown()
-	can_fire = FALSE
 	wait_for_launch = FALSE
 	om_changed(SSemergency_shuttle, CHANGE_SHUTTLE_SCHEDULE)
 

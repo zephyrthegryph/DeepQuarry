@@ -347,7 +347,7 @@
 	site.deployed_at = world.time - EXP_DEPLOY_GRACE - 1
 	site.last_occupied = world.time - EXP_AUTO_RELEASE_GRACE - 1
 	SSexpedition.sites["assignment-lifecycle-test"] = site
-	SSexpedition.fire()
+	SSexpedition.lane_step()
 	TEST_ASSERT(SSexpedition.sites["assignment-lifecycle-test"] == site, "An empty active site was released while its incomplete assignment was still held by the shuttle console")
 	SSexpedition.sites -= "assignment-lifecycle-test"
 

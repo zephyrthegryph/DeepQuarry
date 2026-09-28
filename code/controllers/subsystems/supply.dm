@@ -8,10 +8,8 @@
 //Computers are in /code/game/machinery/computer/supply.dm
 SUBSYSTEM_DEF(supply)
 	name = "Supply"
-	wait = 20 SECONDS
-	priority = FIRE_PRIORITY_SUPPLY
 	//Initializes at default time
-	flags = SS_NO_TICK_CHECK
+	flags = SS_NO_FIRE // market + payroll: /datum/om/behaviour/world/feature/supply (20 s)
 
 	var/points_per_slip = 2
 	var/points_per_money = 0.02 // Legacy export values convert at 1 point = 50 Thalers.
@@ -76,16 +74,17 @@ SUBSYSTEM_DEF(supply)
 	currency_sources.Cut()
 	currency_sinks.Cut()
 
-/datum/controller/subsystem/supply/fire(resumed)
+/datum/controller/subsystem/supply/lane_step(resumed)
 	process_cargo_market()
 	if(world.time < next_payroll)
-		return
+		return TRUE
 	next_payroll = world.time + 15 MINUTES
 	var/completed_service_period = service_accounting_period
 	var/list/funded_allocations = run_department_budget_cycle()
 	run_department_payroll()
 	publish_budget_cycle_settlement(funded_allocations, completed_service_period)
 	settle_service_contract_period(completed_service_period)
+	return TRUE
 
 /datum/controller/subsystem/supply/proc/run_department_budget_cycle()
 	var/list/funded_allocations = list()

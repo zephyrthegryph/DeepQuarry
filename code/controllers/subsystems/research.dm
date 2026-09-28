@@ -1,8 +1,9 @@
 
 SUBSYSTEM_DEF(research)
 	name = "Research"
-	// priority = FIRE_PRIORITY_RESEARCH
-	wait = 10
+	flags = SS_NO_FIRE // income: /datum/om/behaviour/world/feature/research
+	/// Income period; must match the lane's `every`.
+	var/income_interval = 1 SECOND
 	// dependencies = list(
 	// 	/datum/controller/subsystem/processing/station,
 	// )
@@ -148,7 +149,7 @@ SUBSYSTEM_DEF(research)
 	error_node = new
 	return SS_INIT_SUCCESS
 
-/datum/controller/subsystem/research/fire()
+/datum/controller/subsystem/research/lane_step(resumed)
 	for(var/datum/techweb/techweb_list as anything in techwebs)
 		if(!techweb_list.should_generate_points)
 			continue
@@ -174,6 +175,7 @@ SUBSYSTEM_DEF(research)
 				var/datum/techweb_node/node = SSresearch.techweb_node_by_id(node_id)
 				if(node.is_free(techweb_list)) // Automatically research all free nodes in queue if any
 					techweb_list.research_node(node)
+	return TRUE
 
 /datum/controller/subsystem/research/proc/autosort_categories()
 	for(var/i in techweb_nodes)

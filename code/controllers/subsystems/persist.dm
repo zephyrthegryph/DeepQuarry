@@ -5,24 +5,23 @@
 
 SUBSYSTEM_DEF(persist)
 	name = "Persist"
-	priority = 20
-	wait = 15 MINUTES
-	flags = SS_BACKGROUND|SS_NO_INIT|SS_KEEP_TIMING
-	runlevels = RUNLEVEL_GAME|RUNLEVEL_POSTGAME
+	flags = SS_NO_INIT | SS_NO_FIRE // accrual: /datum/om/behaviour/world/feature/persist
+	/// Accrual period; must match the lane's `every`.
+	var/accrual_interval = 15 MINUTES
 	var/list/currentrun = list()
 	var/list/query_stack = list()
 
-/datum/controller/subsystem/persist/fire(resumed = FALSE)
-	update_department_hours(resumed)
+/datum/controller/subsystem/persist/lane_step(resumed)
+	return update_department_hours(resumed)
 
 // Do PTO Accruals
 /datum/controller/subsystem/persist/proc/update_department_hours(resumed = FALSE)
 	if(!CONFIG_GET(flag/time_off))
-		return
+		return TRUE
 
 	if(!SSdbcore.IsConnected())
 		src.currentrun.Cut()
-		return
+		return TRUE
 	if(!resumed)
 		src.currentrun = REGISTRY_COPY(REGISTRY_HUMANS)
 		src.currentrun += REGISTRY_COPY(REGISTRY_SILICONS)
@@ -33,14 +32,14 @@ SUBSYSTEM_DEF(persist)
 	while (length(currentrun))
 		var/mob/M = currentrun[length(currentrun)]
 		currentrun.len--
-		if (QDELETED(M) || !istype(M) || !M.mind || !M.client || TICKS2DS(M.client.inactivity) > wait)
+		if (QDELETED(M) || !istype(M) || !M.mind || !M.client || TICKS2DS(M.client.inactivity) > accrual_interval)
 			continue
 
 		// Try and detect job and department of mob
 		var/datum/job/J = detect_job(M)
 		if(!istype(J) || !J.pto_type || !J.timeoff_factor)
-			if (MC_TICK_CHECK)
-				return
+			if (TICK_CHECK)
+				return FALSE
 			continue
 
 		var/department_earning = J.pto_type
@@ -52,13 +51,13 @@ SUBSYSTEM_DEF(persist)
 				if(C?.module?.pto_type)
 					department_earning = C.module.pto_type
 			if(department_earning == PTO_CYBORG)
-				if (MC_TICK_CHECK)
-					return
+				if (TICK_CHECK)
+					return FALSE
 				continue
 
 		// Update client whatever
 		var/client/C = M.client
-		var/wait_in_hours = wait / (1 HOUR)
+		var/wait_in_hours = accrual_interval / (1 HOUR)
 		var/pto_factored = wait_in_hours * J.timeoff_factor
 		if(J.playtime_only)
 			pto_factored = 0
@@ -94,12 +93,13 @@ SUBSYSTEM_DEF(persist)
 		)
 		query_stack += list(entry)
 
-		if (MC_TICK_CHECK)
-			return
+		if (TICK_CHECK)
+			return FALSE
 
 	if(length(query_stack))
 		SSdbcore.mass_insert_io(null, format_table_name("vr_player_hours"), query_stack.Copy(), "ON DUPLICATE KEY UPDATE hours = VALUES(hours), total_hours = VALUES(total_hours)") // om_io: returns at once
 		query_stack.Cut()
+	return TRUE
 
 
 // This proc tries to find the job datum of an arbitrary mob.

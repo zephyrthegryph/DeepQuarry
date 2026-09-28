@@ -1,14 +1,12 @@
 SUBSYSTEM_DEF(lobby_monitor)
 	name = "Lobby Art"
 	init_stage = INITSTAGE_EARLY
-	flags = SS_NO_INIT
-	wait = 2 SECONDS
-	runlevels = ALL
+	flags = SS_NO_INIT | SS_NO_FIRE // watchdog: /datum/om/behaviour/world/feature/lobby_monitor (2 s)
 
-	/// The clients who we've waited a [wait] duration to start working. If they haven't, we reboot them
+	/// The clients who we've waited a lane interval to start working. If they haven't, we reboot them
 	var/to_reinitialize = list()
 
-/datum/controller/subsystem/lobby_monitor/fire(resumed)
+/datum/controller/subsystem/lobby_monitor/lane_step(resumed)
 	var/list/new_players = REGISTRY_MEMBERS(REGISTRY_NEW_PLAYERS)
 
 	for(var/mob/new_player/player as anything in to_reinitialize)
@@ -37,6 +35,7 @@ SUBSYSTEM_DEF(lobby_monitor)
 		initialize_queue += player
 
 	to_reinitialize = initialize_queue
+	return TRUE
 
 /datum/controller/subsystem/lobby_monitor/proc/do_reinit(mob/new_player/player)
 	var/datum/tgui/ui = SStgui.get_open_ui(player, player)

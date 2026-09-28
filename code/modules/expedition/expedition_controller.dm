@@ -70,8 +70,7 @@
 
 SUBSYSTEM_DEF(expedition)
 	name = "Expedition"
-	wait = 2 SECONDS
-	priority = FIRE_PRIORITY_DEFAULT
+	flags = SS_NO_FIRE // lifecycle poll: /datum/om/behaviour/world/feature/expedition (2 s)
 	/// "[z]" -> /datum/expedition_site for every live site.
 	var/list/sites = list()
 	/// Wiped z-levels available for reuse.
@@ -241,7 +240,7 @@ SUBSYSTEM_DEF(expedition)
 	plan.generation_state = FLIGHT_GENERATION_READY
 	plan.generation_stage = "Landing zone ready"
 
-/datum/controller/subsystem/expedition/fire(resumed = FALSE)
+/datum/controller/subsystem/expedition/lane_step(resumed)
 	for(var/key in sites.Copy())
 		var/datum/expedition_site/site = sites[key]
 		if(!istype(site))
@@ -270,13 +269,14 @@ SUBSYSTEM_DEF(expedition)
 			if(site.has_active_assignment() && site.status != EXP_STATUS_COMPLETE)
 				continue
 			// Never release within the deploy grace window: crew may still be in the
-			// bluespace-travel gap (0 on-z players) between fire() and arrival.
+			// bluespace-travel gap (0 on-z players) between lane_step() and arrival.
 			if(site.deployed_at && (world.time - site.deployed_at) <= EXP_DEPLOY_GRACE)
 				continue
 			if((world.time - site.last_occupied) > EXP_AUTO_RELEASE_GRACE)
 				release_site(site, "unoccupied after deployment")
 		else if(site.status == EXP_STATUS_READY && !site.has_active_assignment() && (world.time - site.generated_at) > 5 MINUTES)
 			release_site(site, "unassigned before deployment")
+	return TRUE
 
 // ---- Generation -----------------------------------------------------------
 

@@ -1,15 +1,13 @@
 SUBSYSTEM_DEF(vote)
 	name = "Vote"
-	wait = 10
-	priority = FIRE_PRIORITY_VOTE
-	runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
-	flags = SS_KEEP_TIMING | SS_NO_INIT
+	flags = SS_NO_INIT | SS_NO_FIRE // countdown: /datum/om/behaviour/world/feature/vote (1 s)
 
 	var/datum/vote/active_vote
 
-/datum/controller/subsystem/vote/fire()
+/datum/controller/subsystem/vote/lane_step(resumed)
 	if(active_vote)
 		active_vote.tick()
+	return TRUE
 
 /datum/controller/subsystem/vote/proc/start_vote(datum/vote/V)
 	active_vote = V

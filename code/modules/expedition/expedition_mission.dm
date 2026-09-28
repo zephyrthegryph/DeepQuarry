@@ -3,7 +3,7 @@
 // A mission is a bundle of /datum/expedition_objective (see expedition_objective.dm)
 // bound to one /datum/expedition_site. The completion system:
 //   * populate(site)       builds the objectives and spawns their content.
-//   * check_completion()   polled by SSexpedition.fire(): advances each
+//   * check_completion()   polled by SSexpedition.lane_step(): advances each
 //                          objective, fails on a deadline or a party wipe, and
 //                          returns TRUE once every REQUIRED objective is done.
 //   * on_complete()        pays the base reward plus a bonus for each optional
@@ -74,7 +74,7 @@ REF_OWNED_LIST(/datum/expedition_mission, "objectives")
 			return FALSE
 	return TRUE
 
-// Polled by SSexpedition.fire(). Returns TRUE when all required objectives are
+// Polled by SSexpedition.lane_step(). Returns TRUE when all required objectives are
 // done; flips state to FAILED on a deadline or a total party wipe.
 /datum/expedition_mission/proc/check_completion()
 	if(state == EXP_MISSION_COMPLETE)

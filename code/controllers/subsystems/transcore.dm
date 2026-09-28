@@ -8,16 +8,13 @@
 
 SUBSYSTEM_DEF(transcore)
 	name = "Transcore"
-	priority = 20
-	wait = 3 MINUTES
-	flags = SS_BACKGROUND
-	runlevels = RUNLEVEL_GAME
+	flags = SS_NO_FIRE // scan: /datum/om/behaviour/world/feature/transcore (3 min)
 	dependencies = list(
 		/datum/controller/subsystem/mapping
 	)
 
 	// THINGS
-	var/overdue_time = 6 MINUTES			// Has to be a multiple of wait var, or else will just round up anyway.
+	var/overdue_time = 6 MINUTES			// Has to be a multiple of the lane's 3 minute cadence, or else will just round up anyway.
 
 	var/current_step = SSTRANSCORE_IMPLANTS
 
@@ -40,11 +37,25 @@ SUBSYSTEM_DEF(transcore)
 		databases[db.key] = db
 	return SS_INIT_SUCCESS
 
-/datum/controller/subsystem/transcore/fire(resumed = 0)
-	var/timer = TICK_USAGE
-
-	INTERNAL_PROCESS_STEP(SSTRANSCORE_IMPLANTS,TRUE,process_implants,cost_implants,SSTRANSCORE_BACKUPS)
-	INTERNAL_PROCESS_STEP(SSTRANSCORE_BACKUPS,FALSE,process_backups,cost_backups,SSTRANSCORE_IMPLANTS)
+/datum/controller/subsystem/transcore/lane_step(resumed)
+	var/timer
+	if(!resumed)
+		current_step = SSTRANSCORE_IMPLANTS
+	if(current_step == SSTRANSCORE_IMPLANTS)
+		timer = TICK_USAGE
+		var/done = process_implants(resumed)
+		cost_implants = MC_AVERAGE(cost_implants, TICK_DELTA_TO_MS(TICK_USAGE - timer))
+		if(!done)
+			return FALSE
+		resumed = FALSE
+		current_step = SSTRANSCORE_BACKUPS
+	timer = TICK_USAGE
+	var/backups_done = process_backups(resumed)
+	cost_backups = MC_AVERAGE(cost_backups, TICK_DELTA_TO_MS(TICK_USAGE - timer))
+	if(!backups_done)
+		return FALSE
+	current_step = SSTRANSCORE_IMPLANTS
+	return TRUE
 
 /datum/controller/subsystem/transcore/proc/process_implants(resumed = 0)
 	if (!resumed)
@@ -83,8 +94,9 @@ SUBSYSTEM_DEF(transcore)
 			else if(H.vr_link && H.vr_link.mind)
 				db.m_backup(H.vr_link.mind,H.nif)
 
-		if(MC_TICK_CHECK)
-			return
+		if(TICK_CHECK)
+			return FALSE
+	return TRUE
 
 /datum/controller/subsystem/transcore/proc/process_backups(resumed = 0)
 	if (!resumed)
@@ -117,8 +129,9 @@ SUBSYSTEM_DEF(transcore)
 		else
 			curr_MR.dead_state = MR_DEAD
 
-		if(MC_TICK_CHECK)
-			return
+		if(TICK_CHECK)
+			return FALSE
+	return TRUE
 
 /datum/controller/subsystem/transcore/stat_entry(msg)
 	msg = "$:{"
