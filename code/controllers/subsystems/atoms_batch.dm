@@ -39,6 +39,10 @@
 	var/yields = 0
 	var/closed = FALSE
 
+// Links between open frames; nothing here owns what it names.
+DECLARE_REF(/datum/materialize_batch, "owner", DROP, null)
+DECLARE_REF(/datum/materialize_batch, "previous", DROP, null)
+
 /datum/materialize_batch/New(source, datum/materialize_batch/running)
 	src.source = source
 	previous = running
@@ -56,6 +60,9 @@
 	var/tmp/datum/callback/batch_yield_probe
 	/// Every frame that opened, in order, when a test is recording (else null).
 	var/list/batch_trace
+
+DECLARE_REF(/datum/controller/subsystem/atoms, "active_batch", DROP, null)
+DECLARE_REF(/datum/controller/subsystem/atoms, "batch_yield_probe", DROP, null)
 
 /// Opens a frame for one InitializeAtoms() call and makes it the active one.
 /datum/controller/subsystem/atoms/proc/batch_open(source)
