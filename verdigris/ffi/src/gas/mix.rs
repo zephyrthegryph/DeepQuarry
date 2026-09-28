@@ -245,10 +245,48 @@ fn with_mixes<T>(f: impl FnOnce(&mut Mixes) -> T) -> T {
     MIXES.with_borrow_mut(f)
 }
 
-/// Drops every mixture and watch (`crate::world::build`: a rebuilt world
-/// starts with none).
-pub(crate) fn reset() {
-    MIXES.with_borrow_mut(|m| *m = Mixes::default());
+/// Drops every watch but keeps the main-owned slots (`crate::world::build`).
+///
+/// Main mixtures are owned by their DM datums, not by the world: atoms of a
+/// compiled-in map are created before `/world/New()` and allocate slots
+/// (a machine's `internal = new()`), and the init/cleanup/configure calls in
+/// `/world/New()` rebuild the world after that. Wiping the slab there left
+/// those datums holding a dangling handle, or one that aliased a later
+/// mixture. The world's watch ports go with the world, so the mirrors and
+/// watch tables are rebuilt; the DM watch objects are reset with it.
+/// Slots of datums that no longer exist (a previous round in the same
+/// process) are freed by [`retain`].
+pub(crate) fn reset_watches() {
+    MIXES.with_borrow_mut(|m| {
+        let fresh = Mixes::default();
+        m.probes = fresh.probes;
+        m.reactor = fresh.reactor;
+        m.deps = fresh.deps;
+        m.watched = fresh.watched;
+        m.cells = fresh.cells;
+        m.dirty = fresh.dirty;
+    });
+}
+
+/// Frees every live main slot not in `keep`, returning how many were freed.
+/// `/world/New()` passes the handles of every `/datum/gas_mixture` that
+/// exists, so the slots of a previous round's datums (the library outlives a
+/// world reboot) are reclaimed while the compiled-in map's mixtures, and the
+/// gas they hold, survive.
+pub fn retain(keep: &std::collections::HashSet<u32>) -> usize {
+    let stale: Vec<u32> = with_mixes(|m| {
+        m.slots
+            .iter()
+            .enumerate()
+            .filter(|(_, s)| s.live)
+            .filter_map(|(i, _)| u32::try_from(i).ok())
+            .filter(|i| !keep.contains(i))
+            .collect()
+    });
+    for &i in &stale {
+        free(i);
+    }
+    stale.len()
 }
 
 /// Allocates a main-owned slot.
@@ -846,6 +884,39 @@ mod tests {
         m.set_moles(GAS_OXYGEN, moles);
         m.set_temperature(293.15);
         m
+    }
+
+    #[test]
+    fn a_world_rebuild_keeps_main_mixtures_and_their_gas() {
+        with_world(|_| Ok(())).unwrap();
+        let slot = alloc(tank(42.0)).unwrap();
+        crate::world::reset().unwrap();
+        crate::world::configure_for_test(8, 8, 2).unwrap();
+        let mix = load(MixRef::Main(slot)).expect("slot survives the rebuild");
+        assert!((mix.get_moles(GAS_OXYGEN) - 42.0).abs() < 1e-4);
+        let other = alloc(tank(1.0)).unwrap();
+        assert_ne!(other, slot, "a live slot is not handed out again");
+        free(other);
+        free(slot);
+    }
+
+    #[test]
+    fn retain_frees_only_the_slots_left_out() {
+        with_world(|_| Ok(())).unwrap();
+        let (a, b) = (alloc(tank(5.0)).unwrap(), alloc(tank(6.0)).unwrap());
+        let keep: std::collections::HashSet<u32> = [a].into_iter().collect();
+        let (live_before, _) = counts();
+        let freed = retain(&keep);
+        assert!(freed >= 1);
+        assert!(load(MixRef::Main(a)).is_some());
+        assert_eq!(counts().0, live_before - freed);
+        let reused = alloc(tank(1.0)).unwrap();
+        assert!(
+            load(MixRef::Main(a)).is_some_and(|m| (m.get_moles(GAS_OXYGEN) - 5.0).abs() < 1e-4)
+        );
+        let _ = b;
+        free(reused);
+        free(a);
     }
 
     #[test]

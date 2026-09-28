@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "8859f31d0908b2b6"
+#define VERDIGRIS_ABI "809787cfafb47a2b"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -680,6 +680,15 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:fuel_amount_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, temp)
+
+/// Frees every main-owned slot whose datum is not in `mixtures` (a list of
+/// every live `/datum/gas_mixture`); `/world/New()` calls it once. Returns
+/// the number of slots freed. See [`mix::retain`].
+// /proc/gas_retain_mixtures (verdigris/ffi/src/gas/binds.rs)
+/proc/vg_gas_retain_mixtures(mixtures)
+	var/static/__f = load_ext(VERDIGRIS, "byond:gas_retain_mixtures_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(mixtures)
 
 /// `list(frames, 0, 0, 0, 0, 0, 0, 0, last frame µs, command backlog,
 /// overlay entries, view age, frames skipped, removal shortfall (mol), 0, 0,

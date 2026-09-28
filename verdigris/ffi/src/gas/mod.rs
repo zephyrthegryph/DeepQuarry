@@ -322,10 +322,12 @@ pub(crate) fn register(b: &mut WorldBuilder) -> FieldKey<TurfGas> {
 }
 
 /// Keeps the field key and installs the gas bridges once the world is built
-/// (`crate::world::build`): a rebuilt world starts with no mixtures.
+/// (`crate::world::build`): a rebuilt world starts with no gas watches; the
+/// main-owned mixtures belong to their DM datums and survive it
+/// ([`mix::reset_watches`]).
 pub(crate) fn install(key: FieldKey<TurfGas>) {
     TURF.with(|t| t.set(Some(key)));
-    mix::reset();
+    mix::reset_watches();
 }
 
 pub(crate) fn turf_key() -> Result<FieldKey<TurfGas>> {

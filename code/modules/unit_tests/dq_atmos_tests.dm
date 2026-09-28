@@ -65,6 +65,37 @@
 	log_test("Verdigris loaded: [version] | features: [features]")
 
 
+/// A gas mixture world/New() makes (test builds only) before it brings Verdigris
+/// up and rebuilds the Rust world, standing in for a compiled-in map atom's
+/// mixture (the algae farm's `internal`), which is created at the same point.
+GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
+
+/proc/dq_make_preboot_gas_probe()
+	var/datum/gas_mixture/probe = new(CELL_VOLUME)
+	probe.adjust_gas(GAS_O2, 42)
+	probe.set_temperature(T20C)
+	return probe
+
+/// Regression: rebuilding the Rust world in world/New() must keep the gas of a
+/// mixture allocated before it. The world rebuild used to wipe the main slab, so
+/// the datum's handle dangled ("no gas mixture behind handle N") or aliased a
+/// later mixture, and a re-register gave it a fresh, empty slot.
+/datum/unit_test/dq_preboot_gas_mixture_keeps_its_moles
+
+/datum/unit_test/dq_preboot_gas_mixture_keeps_its_moles/Run()
+	var/datum/gas_mixture/probe = GLOB.dq_preboot_gas_probe
+	TEST_ASSERT_NOTNULL(probe, "the pre-boot probe mixture was never made")
+	TEST_ASSERT_NOTNULL(probe._extools_pointer_gasmixture, "the pre-boot probe has no gas handle")
+	var/moles = probe.get_moles(GAS_O2)
+	TEST_ASSERT(abs(moles - 42) < 0.01, "a mixture made before world/New() lost its gas across the Rust world rebuild: [moles] mol O2, expected 42")
+	TEST_ASSERT(abs(probe.return_temperature() - T20C) < 0.1, "the pre-boot probe's temperature was lost: [probe.return_temperature()] K")
+	// Its slot is still its own: a new mixture gets a different handle.
+	var/datum/gas_mixture/other = new(CELL_VOLUME)
+	TEST_ASSERT(other._extools_pointer_gasmixture != probe._extools_pointer_gasmixture, "a new mixture was handed the pre-boot probe's live slot")
+	other.adjust_gas(GAS_O2, 7)
+	TEST_ASSERT(abs(probe.get_moles(GAS_O2) - 42) < 0.01, "writing a new mixture changed the pre-boot probe")
+	qdel(other)
+
 /// Vertical atmos gate: a SOLID floor must NOT let air cross a z-boundary through
 /// itself, but an openspace (/turf/simulated/open) tile MUST. Regression for the
 /// zAirIn/zAirOut stubs (were blanket `return TRUE`), which made every stacked-deck

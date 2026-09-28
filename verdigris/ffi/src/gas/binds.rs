@@ -92,6 +92,22 @@ fn register_gasmixture_hook(mut src: ByondValue) -> Result<ByondValue> {
     Ok(ByondValue::null())
 }
 
+/// Frees every main-owned slot whose datum is not in `mixtures` (a list of
+/// every live `/datum/gas_mixture`); `/world/New()` calls it once. Returns
+/// the number of slots freed. See [`mix::retain`].
+#[auxmacros::bind("/proc/gas_retain_mixtures")]
+fn gas_retain_mixtures(mixtures: ByondValue) -> Result<ByondValue> {
+    let keep: std::collections::HashSet<u32> = mixtures
+        .iter()?
+        .filter_map(|(m, _)| match MixRef::of(&m) {
+            Ok(MixRef::Main(slot)) => Some(slot),
+            _ => None,
+        })
+        .collect();
+    #[allow(clippy::cast_precision_loss)]
+    Ok((mix::retain(&keep) as f32).into())
+}
+
 /// Frees a mixture's main-owned slot. Turf and pipe gas outlive their datums
 /// (the cell and the region own it).
 #[auxmacros::bind("/datum/gas_mixture/proc/__gasmixture_unregister")]

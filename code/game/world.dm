@@ -147,6 +147,11 @@ GLOBAL_VAR(restart_counter)
 	// cleanup so the panic hook catches any failure inside cleanup itself. A DLL
 	// built from a different bind set than this DM build fails here, loudly,
 	// instead of misrouting arguments later.
+#ifdef UNIT_TESTS
+	// A mixture that exists before the Rust world is rebuilt below, like a
+	// compiled-in map atom's; dq_preboot_gas_mixture_keeps_its_moles checks it.
+	GLOB.dq_preboot_gas_probe = dq_make_preboot_gas_probe()
+#endif
 	var/verdigris_abi = vg_verdigris_init(VERDIGRIS_ABI)
 	if(verdigris_abi != VERDIGRIS_ABI)
 		var/abi_error = "FATAL: verdigris library ABI [verdigris_abi || "(none)"] does not match the DM build's VERDIGRIS_ABI [VERDIGRIS_ABI]. Rebuild verdigris.dll and the DM from the same tree (tools/build/build.sh)."
@@ -157,17 +162,18 @@ GLOBAL_VAR(restart_counter)
 	vg_verdigris_cleanup()
 	vg_heat_reset()
 	vg_configure_world(world.maxx, world.maxy, world.maxz)
-	// Compiled-map atoms are created before world/New(); any gas mixture they
-	// made (e.g. a machine's `internal = new()`) was allocated in the arena the
-	// init/cleanup/configure above just wiped. Give each a fresh slot, or its
-	// handle dangles ("no gas mixture behind handle N") or aliases a later one.
-	var/rehomed_mixtures = 0
-	for(var/datum/gas_mixture/stale_mix)
-		if(isnull(stale_mix._extools_pointer_gasmixture))
-			continue
-		vg_register_gasmixture_hook(stale_mix)
-		rehomed_mixtures++
-	log_world("Verdigris: re-registered [rehomed_mixtures] gas mixture(s) created before world start")
+	// Compiled-map atoms and global initializers run before world/New(), and
+	// any gas mixture they made (a machine's `internal = new()`) already holds
+	// a main-owned slot. The init/cleanup/configure calls above rebuild the
+	// Rust world but keep those slots and their gas (gas/mix.rs reset_watches).
+	// What they can't know is which slots still have a datum: the library
+	// outlives a world reboot, so free every slot no live mixture names.
+	var/list/live_mixtures = list()
+	for(var/datum/gas_mixture/live_mix)
+		if(!isnull(live_mix._extools_pointer_gasmixture))
+			live_mixtures += live_mix
+	var/freed_mixtures = vg_gas_retain_mixtures(live_mixtures)
+	log_world("Verdigris: kept [length(live_mixtures)] gas mixture(s) created before world start, freed [freed_mixtures] stale slot(s)")
 	log_world("Verdigris loaded: [vg_verdigris_version()] | features: [vg_verdigris_features()]")
 #ifdef BENCHMARK
 	benchmark_rust_mark("world: New (globals and compiled map loaded)")
