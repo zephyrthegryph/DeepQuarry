@@ -481,7 +481,7 @@
 	irradiate_organ(self, damage * rad_mod * RADIATION_SPEED_COEFFICIENT, "Radiation Induced Cancerous Growth")
 
 /datum/om/stage/life/radiation/carbon/human/proc/radiation_vomit(mob/living/carbon/human/self)
-	INVOKE_ASYNC(self, TYPE_PROC_REF(/mob/living, vomit))
+	self.vomit() // vomit() schedules the retch itself (om_after); it doesn't sleep.
 
 /datum/om/stage/life/radiation/carbon/human/proc/radiation_seizure(mob/living/carbon/human/self)
 	to_chat(self, span_critical("You have a seizure!"))
