@@ -112,15 +112,6 @@ DECLARE_INTERACTIONS(/obj/structure/expedition_demo_target, INTERACT_ITEM(null, 
 		return INTERACTION_HANDLED_PASS
 	return FALSE
 
-/obj/structure/expedition_demo_target/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			deal_damage(DAMAGE_BLAST, max_integrity)
-		if(2.0)
-			deal_damage(DAMAGE_BLAST, 80, flags = DAMAGE_PACKET_SILENT)
-		if(3.0)
-			deal_damage(DAMAGE_BLAST, 30, flags = DAMAGE_PACKET_SILENT)
-
 /obj/structure/expedition_demo_target/attack_generic(mob/user, damage)
 	user.setClickCooldown(user.get_attack_speed())
 	if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)

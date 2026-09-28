@@ -41,7 +41,7 @@
 		if(protection < 1)
 			var/heat_factor = abs(protection - 1)
 			temp_change *= heat_factor
-			H.bodytemperature = min(H.bodytemperature + temp_change, temp_cap)
+			H.adjust_bodytemperature(temp_change, max_temp = temp_cap)
 
 	turf_check:
 		for(var/turf/simulated/T in nearby_things)

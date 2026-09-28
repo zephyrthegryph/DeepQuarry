@@ -99,7 +99,7 @@
 	H.phobias = 0
 	H.weight_gain = 0
 	H.weight_loss = 0
-	H.bodytemperature = H.species.body_temperature || H.bodytemperature
+	H.set_bodytemperature(H.species.body_temperature || H.bodytemperature)
 	var/list/stages = list(
 		/datum/om/stage/life/medical,
 		/datum/om/stage/life/npc,

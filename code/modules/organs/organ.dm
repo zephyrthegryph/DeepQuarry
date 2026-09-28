@@ -273,7 +273,7 @@
 		//owner.bodytemperature += between(0, (fever_temperature - T20C)/BODYTEMP_COLD_DIVISOR + 1, fever_temperature - owner.bodytemperature)
 		var/fever_temperature = owner?.species.heat_discomfort_level * 1.10 //Heat discomfort level plus 10%
 		if(owner?.bodytemperature < fever_temperature)
-			owner?.bodytemperature += min(0.2,(fever_temperature - owner?.bodytemperature) / 10) //Will usually climb by 0.2, else 10% of the difference if less
+			owner?.adjust_bodytemperature(min(0.2,(fever_temperature - owner?.bodytemperature) / 10)) //Will usually climb by 0.2, else 10% of the difference if less
 
 	//Level two qualifies for further processing effects
 	if (germ_level >= INFECTION_LEVEL_TWO)
@@ -696,7 +696,7 @@ DECLARE_INTERACTIONS(/obj/item/organ, \
 // Shared heat output from robotic body parts, used by machine organs that run hot.
 /obj/item/organ/proc/apply_robobody_heat()
 	if(owner && owner.is_alive())
-		owner.bodytemperature += round(owner.robobody_count * 0.25, 0.1)
+		owner.adjust_bodytemperature(round(owner.robobody_count * 0.25, 0.1))
 
 /obj/item/organ/proc/check_verb_compatability()		// Used for determining if an organ should give or remove its verbs. I.E., FBP part in a human, no verbs. If true, keep or add.
 	if(owner)

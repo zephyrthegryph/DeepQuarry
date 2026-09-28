@@ -21,15 +21,13 @@
 	var/produced_power
 	var/energy_to_raise = 32
 	var/energy_to_lower = -20
+	resistance_flags = BOMB_PROOF
 
 /obj/singularity/energy_ball/Initialize(mapload, starting_energy = 50, is_miniball = FALSE)
 	. = ..()
 	miniball = is_miniball
 	if(!miniball)
 		set_light(10, 7, "#EEEEFF")
-
-/obj/singularity/energy_ball/ex_act(severity, target)
-	return
 
 // ALLOW(lifecycle): its orbiting mini-balls go with it.
 /obj/singularity/energy_ball/Destroy()

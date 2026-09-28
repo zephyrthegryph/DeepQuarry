@@ -920,7 +920,7 @@
 			if(temp_adj < BODYTEMP_COOLING_MAX)
 				temp_adj = BODYTEMP_COOLING_MAX
 
-			self.bodytemperature += temp_adj
+			self.adjust_bodytemperature(temp_adj)
 
 		else
 			self.clear_alert("temp")
@@ -1024,7 +1024,7 @@
 			//Thermal radiation into space
 			var/heat_loss = HUMAN_EXPOSED_SURFACE_AREA * STEFAN_BOLTZMANN_CONSTANT * ((self.bodytemperature - TCMB)**4)
 			var/temperature_loss = heat_loss/HUMAN_HEAT_CAPACITY
-			self.bodytemperature -= temperature_loss
+			self.adjust_bodytemperature(-(temperature_loss))
 	else
 		var/loc_temp = T0C
 		if(istype(self.loc, /obj/mecha))
@@ -1061,7 +1061,7 @@
 
 		//Use heat transfer as proportional to the gas density. However, we only care about the relative density vs standard 101 kPa/20 C air. Therefore we can use mole ratios
 		var/relative_density = environment.total_moles() / MOLES_CELLSTANDARD // XGM var → LINDA proc
-		self.bodytemperature += between(BODYTEMP_COOLING_MAX, temp_adj*relative_density, BODYTEMP_HEATING_MAX)
+		self.adjust_bodytemperature(between(BODYTEMP_COOLING_MAX, temp_adj*relative_density, BODYTEMP_HEATING_MAX))
 
 	if(isbelly(self.loc) && self.allowtemp)
 		var/obj/belly/b = self.loc
@@ -1209,17 +1209,17 @@
 /datum/om/stage/life/thermoregulation/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	// We produce heat naturally.
 	if (self.species.passive_temp_gain)
-		self.bodytemperature += self.species.passive_temp_gain
+		self.adjust_bodytemperature(self.species.passive_temp_gain)
 	if (self.species.body_temperature == null)
 		return //this species doesn't have metabolic thermoregulation
 
 	// FBPs will overheat when alive, prosthetic limbs are fine.
 	if(self.stat != DEAD && self.robobody_count)
 		if(!self.nif || !self.nif.flag_check(NIF_O_HEATSINKS,NIF_FLAGS_OTHER))
-			self.bodytemperature += round(self.robobody_count*1.15)
+			self.adjust_bodytemperature(round(self.robobody_count*1.15))
 		var/obj/item/organ/internal/robotic/heatsink/HS = self.internal_organs_by_name[O_HEATSINK]
 		if(!HS || HS.is_broken()) // However, NIF Heatsinks will not compensate for a core FBP component (your heatsink) being lost.
-			self.bodytemperature += round(self.robobody_count*0.5)
+			self.adjust_bodytemperature(round(self.robobody_count*0.5))
 
 	var/body_temperature_difference = self.species.body_temperature - self.bodytemperature
 
@@ -1234,16 +1234,16 @@
 			self.adjust_nutrition(-2)
 		var/recovery_amt = max((body_temperature_difference / BODYTEMP_AUTORECOVERY_DIVISOR), BODYTEMP_AUTORECOVERY_MINIMUM)
 		//to_world("Cold. Difference = [body_temperature_difference]. Recovering [recovery_amt]")
-		self.bodytemperature += recovery_amt
+		self.adjust_bodytemperature(recovery_amt)
 	else if(self.species.cold_level_1 <= self.bodytemperature && self.bodytemperature <= self.species.heat_level_1)
 		var/recovery_amt = body_temperature_difference / BODYTEMP_AUTORECOVERY_DIVISOR
 		//to_world("Norm. Difference = [body_temperature_difference]. Recovering [recovery_amt]")
-		self.bodytemperature += recovery_amt
+		self.adjust_bodytemperature(recovery_amt)
 	else if(self.bodytemperature > self.species.heat_level_1) //360.15 is 310.15 + 50, the temperature where you start to feel effects.
 		//We totally need a sweat system cause it totally makes sense...~
 		var/recovery_amt = min((body_temperature_difference / BODYTEMP_AUTORECOVERY_DIVISOR), -BODYTEMP_AUTORECOVERY_MINIMUM)	//We're dealing with negative numbers
 		//to_world("Hot. Difference = [body_temperature_difference]. Recovering [recovery_amt]")
-		self.bodytemperature += recovery_amt
+		self.adjust_bodytemperature(recovery_amt)
 
 	//This proc returns a number made up of the flags for body parts which you are protected on. (such as HEAD, UPPER_TORSO, LOWER_TORSO, etc. See setup.dm for the full list)
 //Read from the body's worn protection cache (code/modules/body/worn_protection.dm), not by scanning the slots.

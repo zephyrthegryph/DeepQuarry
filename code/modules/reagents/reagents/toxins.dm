@@ -443,7 +443,7 @@
 
 	if(prob(0.1))
 		M.visible_message("[M] wheezes.", "You wheeze sharply... it's cold.")
-		M.bodytemperature = max(M.bodytemperature - 10 * TEMPERATURE_DAMAGE_COEFFICIENT, T0C - 10)
+		M.adjust_bodytemperature(-(10 * TEMPERATURE_DAMAGE_COEFFICIENT), min_temp = T0C - 10)
 
 // ALLOW(lifecycle): its mob wakes from fake death.
 /datum/reagent/lichpowder/Destroy()

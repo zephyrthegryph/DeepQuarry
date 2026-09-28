@@ -79,6 +79,10 @@
 	coretype = /obj/item/slime_extract/dark_purple
 	reagent_injected = REAGENT_ID_PHORON
 
+/mob/living/simple_mob/slime/feral/dark_purple
+	fire_reaction = FIRE_REACTION_TRIGGER
+	fire_trigger_proc = TYPE_PROC_REF(/mob/living/simple_mob/slime/feral/dark_purple, ignite)
+
 /mob/living/simple_mob/slime/feral/dark_purple/proc/ignite()
 	visible_message(span_critical("\The [src] erupts in an inferno!"))
 	for(var/turf/simulated/target_turf in view(2, src))
@@ -88,10 +92,6 @@
 
 /mob/living/simple_mob/slime/feral/dark_purple/ex_act(severity)
 	log_and_message_admins("[src] ignited due to a chain reaction with an explosion.")
-	ignite()
-
-/mob/living/simple_mob/slime/feral/dark_purple/fire_act(temperature, volume)
-	log_and_message_admins("[src] ignited due to exposure to fire.")
 	ignite()
 
 /mob/living/simple_mob/slime/feral/dark_purple/bullet_act(obj/item/projectile/P, def_zone)

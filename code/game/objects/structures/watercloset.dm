@@ -688,7 +688,7 @@ REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
 			if(iscarbon(L))
 				L.adjust_bodytemperature(-80, temperature)
 			*/
-			L.bodytemperature = max(L.bodytemperature - 80, temperature)
+			L.adjust_bodytemperature(-(80), min_temp = temperature)
 			if(ishuman(L))
 				var/mob/living/carbon/human/H = L
 				if(temperature <= H.species.cold_level_1)
@@ -700,7 +700,7 @@ REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
 			if(iscarbon(L))
 				L.adjust_bodytemperature(35, 0, temperature)
 			*/
-			L.bodytemperature = min(L.bodytemperature + 35, temperature)
+			L.adjust_bodytemperature(35, max_temp = temperature)
 			if(ishuman(L))
 				var/mob/living/carbon/human/H = L
 				if(temperature >= H.species.heat_level_1)
@@ -711,10 +711,10 @@ REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
 				L.injure(INJURY_BURN, 5, null, src)
 		else
 			if(L.bodytemperature < 288) // 15C
-				L.bodytemperature = min(L.bodytemperature + 10, SHOWER_TEMP_NORMAL)
+				L.adjust_bodytemperature(10, max_temp = SHOWER_TEMP_NORMAL)
 				//L.adjust_bodytemperature(10)
 			if(L.bodytemperature > 298) // 25C
-				L.bodytemperature = max(L.bodytemperature - 10, SHOWER_TEMP_NORMAL)
+				L.adjust_bodytemperature(-(10), min_temp = SHOWER_TEMP_NORMAL)
 				//L.adjust_bodytemperature(-10)
 
 /obj/effect/mist

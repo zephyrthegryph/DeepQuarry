@@ -88,5 +88,5 @@
 	..()
 
 /datum/affliction/contagion/fleshy_spread/proc/fever(mob/living/M)
-	M.bodytemperature = min(M.bodytemperature + (2 * stage), BODYTEMP_HEAT_DAMAGE_LIMIT - 1)
+	M.adjust_bodytemperature((2 * stage), max_temp = BODYTEMP_HEAT_DAMAGE_LIMIT - 1)
 	return TRUE

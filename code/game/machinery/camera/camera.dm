@@ -43,6 +43,8 @@
 	var/client_huds = null
 
 /obj/machinery/camera/Initialize(mapload)
+	if(invuln)
+		resistance_flags |= BOMB_PROOF
 	om_hook(src, list(/datum/om/event/machinery_power_lost, /datum/om/event/machinery_power_restored), src, PROC_REF(on_power_signal))
 	set_wires(new /datum/wires/camera(src))
 	assembly = new(src)
@@ -151,14 +153,8 @@ REF_OWNED(/obj/machinery/camera, "assembly")
 			update_coverage()
 			schedule_camera_timer()
 
-/obj/machinery/camera/ex_act(severity)
-	if(src.invuln)
-		return
-
-	return ..()
-
 /obj/machinery/camera/blob_act(obj/structure/blob/B)
-	if((stat & BROKEN) || invuln)
+	if((stat & BROKEN) || (resistance_flags & BOMB_PROOF))
 		return
 	deal_damage(DAMAGE_BLUNT, max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, source = B)
 

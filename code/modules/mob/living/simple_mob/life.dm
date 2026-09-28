@@ -175,7 +175,7 @@
 
 	var/env_temperature = environment.return_temperature()
 	if( abs(env_temperature - self.bodytemperature) > self.temperature_range )
-		self.bodytemperature += ((env_temperature - self.bodytemperature) / 5)
+		self.adjust_bodytemperature(((env_temperature - self.bodytemperature) / 5))
 
 	// Accumulate (|=) failures across gas blocks so an earlier failing gas
 	// isn't masked by a later passing one.

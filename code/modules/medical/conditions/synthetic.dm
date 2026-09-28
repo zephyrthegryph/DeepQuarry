@@ -43,7 +43,7 @@
 	..()
 	if(QDELETED(src) || !owner)
 		return
-	owner.bodytemperature += 1.5 * severity / AFFLICTION_SEVERITY_TERMINAL
+	owner.adjust_bodytemperature(1.5 * severity / AFFLICTION_SEVERITY_TERMINAL)
 
 // --- Thermal runaway ------------------------------------------------------------
 /datum/affliction/synthetic/thermal_runaway

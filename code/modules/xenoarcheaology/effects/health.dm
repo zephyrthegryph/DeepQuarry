@@ -44,7 +44,7 @@
 					H.adjust_nutrition(50 * weakness)
 					H.mend(TREAT_NEURAL_REPAIR, 25 * weakness)
 					H.radiation -= min(H.radiation, 25 * weakness)
-					H.bodytemperature = initial(H.bodytemperature)
+					H.set_bodytemperature(initial(H.bodytemperature))
 					H.fixblood()
 				mend_all(C, 25 * weakness, FALSE)
 				C.regenerate_icons()

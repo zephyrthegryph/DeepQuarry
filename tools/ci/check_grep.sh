@@ -428,6 +428,56 @@ if $grep -n '\b(M|mod|modifier)\.(slowdown|haste|evasion|accuracy|siemens_coeffi
 	FAILED=1
 fi;
 
+part "heat: direct bodytemperature writes (H2)"
+# Body temperature is tracked state: heat a mob with add_heat(joules),
+# adjust_bodytemperature(kelvin) or set_bodytemperature(kelvin)
+# (code/modules/heat/heat_mobs.dm), which wake the Life stages that read it.
+if $grep -n '(^|[^A-Za-z0-9_])bodytemperature\s*([-+*/]?=[^=]|\+\+|--)' "${code_files[@]}" 	| $grep -v '^code/modules/heat/heat_mobs\.dm:' 	| $grep -v ':\s*//|var/'; then
+	echo
+	echo -e "${RED}ERROR: bodytemperature written directly. Use add_heat(), adjust_bodytemperature() or set_bodytemperature().${NC}"
+	FAILED=1
+fi;
+
+part "heat: ratchet on fire_act() overrides (H3)"
+# Heat behaviour is declared: thermal properties, temperature thresholds and
+# heat rules (code/datums/rules/declarations.dm) on the heat node that
+# /obj/fire_act() heats. Don't add a per-type fire_act() override; declare a
+# rule. Remaining: /atom, /obj, /turf/simulated (declared burn()), /mob/living
+# (declared fire_reaction) and two unit-test probes. This count may only go down.
+fire_act_max=6
+fire_act_count=$($grep -c '^/[A-Za-z0-9_/]*/fire_act\(' "${code_files[@]}" | awk -F: '{s += $NF} END {print s + 0}')
+if [ "$fire_act_count" -gt "$fire_act_max" ]; then
+	echo
+	echo -e "${RED}ERROR: $fire_act_count fire_act() overrides (ratchet: $fire_act_max). Declare a heat rule (code/datums/rules/declarations.dm) or a temperature threshold instead.${NC}"
+	FAILED=1
+fi;
+
+part "damage: ratchet on non-turf ex_act() overrides (D5)"
+# Explosions reach objects as a blast packet from /obj/ex_act() (receive_explosion():
+# a fraction of max_integrity, then armour). Tune max_integrity, armour or
+# resistance_flags = BOMB_PROOF instead of a severity ladder. Remaining overrides
+# carry orthogonal effects (spawning, detonating, draining) or separate pools
+# (blobs, plants, shields, modular computers, mobs). This count may only go down.
+ex_act_max=64
+ex_act_count=$($grep -c '^/(atom|obj|mob|area)[A-Za-z0-9_/]*/ex_act\(' "${code_files[@]}" | awk -F: '{s += $NF} END {print s + 0}')
+if [ "$ex_act_count" -gt "$ex_act_max" ]; then
+	echo
+	echo -e "${RED}ERROR: $ex_act_count non-turf ex_act() overrides (ratchet: $ex_act_max). Let the blast packet land (max_integrity, armour, BOMB_PROOF); keep only orthogonal effects and chain to ..().${NC}"
+	FAILED=1
+fi;
+
+part "damage: ratchet on atom_break()/set_broken() overrides (D4)"
+# Breaking is declared: integrity_failure, broken_icon_state, and the base
+# /obj/machinery break (BROKEN, signal, icon). Override only for genuinely
+# unique behaviour. This count may only go down.
+atom_break_max=18
+atom_break_count=$($grep -c '^/[A-Za-z0-9_/]*/(atom_break|set_broken)\(' "${code_files[@]}" | awk -F: '{s += $NF} END {print s + 0}')
+if [ "$atom_break_count" -gt "$atom_break_max" ]; then
+	echo
+	echo -e "${RED}ERROR: $atom_break_count atom_break()/set_broken() overrides (ratchet: $atom_break_max). Declare integrity_failure / broken_icon_state instead.${NC}"
+	FAILED=1
+fi;
+
 part "weapon vocabulary: injury kinds, not damage types"
 # Weapons, projectiles, blobs, unarmed and animal attacks declare what they
 # inflict as INJURY_* kinds (`injury_kind`, or an `injury_kinds` alist for a

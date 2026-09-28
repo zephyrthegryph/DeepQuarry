@@ -21,6 +21,7 @@
 	of = /mob/living/carbon
 
 /mob/living/carbon
+	fire_heats_body = TRUE
 	/// Biological time (om_clock_now(CLOCK_BIO), ds) of the germs stage's last roll, or null
 	/// before the first. Not 0: a biology clock can legitimately read 0 (stopped from the start).
 	var/germs_rolled_at
@@ -65,7 +66,7 @@ REF_OWNED(/mob/living/carbon, list("ingested", "touching", "cozyloop", "bloodstr
 			adjust_nutrition(-DEFAULT_HUNGER_FACTOR / 10)
 
 	if((src.has_mutation(FAT)) && src.m_intent == I_RUN && src.bodytemperature <= 360)
-		src.bodytemperature += 2
+		src.adjust_bodytemperature(2)
 
 	// Moving around increases germ_level faster
 	if(germ_level < GERM_LEVEL_MOVE_CAP && prob(8))
@@ -350,13 +351,6 @@ REF_OWNED(/mob/living/carbon, list("ingested", "touching", "cozyloop", "bloodstr
 	dna = newDNA
 
 // ++++ROCKDTBEN++++ MOB PROCS //END
-
-/mob/living/carbon/fire_act(exposed_temperature, exposed_volume)
-	if(is_incorporeal())
-		return
-	..()
-	var/temp_inc = max(min(BODYTEMP_HEATING_MAX*(1-get_heat_protection()), exposed_temperature - bodytemperature), 0)
-	bodytemperature += temp_inc
 
 /mob/living/carbon/can_use_hands()
 	if(get_equipped_item(SLOT_ID_HANDCUFFED))

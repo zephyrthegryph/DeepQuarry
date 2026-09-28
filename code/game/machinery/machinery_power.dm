@@ -49,6 +49,7 @@
 		OM_EMIT(src, /datum/om/event/machinery_power_lost)
 	else
 		OM_EMIT(src, /datum/om/event/machinery_power_restored)
+	update_heat_output()
 	return TRUE
 
 // Get the amount of power this machine will consume each cycle.  Override by experts only!

@@ -4,6 +4,9 @@
 	/// Types with several kinds of debris override debris_entries().
 	var/debris_type
 	var/debris_amount = 1
+	/// Icon state shown while broken (integrity at or below integrity_failure).
+	/// atom_break() applies it and atom_fix() restores the initial icon_state.
+	var/broken_icon_state
 
 /// An explicit exposure to fire (lava, a flamethrower, a bonfire, a lighter):
 /// a pulse of heat into the object's heat node. Ignition, melting, overheating
@@ -34,6 +37,17 @@
 	if(..())
 		return
 	receive_explosion(severity)
+
+/// Declarative break look: types set broken_icon_state instead of overriding.
+/obj/atom_break(damage_flag)
+	. = ..()
+	if(broken_icon_state)
+		icon_state = broken_icon_state
+
+/obj/atom_fix()
+	. = ..()
+	if(broken_icon_state)
+		icon_state = initial(icon_state)
 
 /// EMP adapter: an ionic packet from the shared ladder. Only types with an
 /// emp_integrity_factor lose integrity to it.

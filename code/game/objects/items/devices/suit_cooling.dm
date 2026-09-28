@@ -66,7 +66,7 @@ REF_OWNED(/obj/item/suit_cooling_unit, "cell")
 
 	var/charge_usage = (temp_adj/max_cooling)*charge_consumption
 
-	H.bodytemperature -= temp_adj*efficiency
+	H.adjust_bodytemperature(-(temp_adj*efficiency))
 
 	cell.use(charge_usage)
 

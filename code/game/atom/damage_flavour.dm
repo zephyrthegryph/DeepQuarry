@@ -5,6 +5,10 @@
 /atom
 	/// What light damage looks like on this type, as a plural noun ("cracks", "scrapes and dents").
 	var/damage_wear = "scrapes and dents"
+	/// TRUE: announce to onlookers when integrity drops into a worse damage band
+	/// (3/4, 1/2, 1/4), with the band's generated line. Replaces the per-type
+	/// hand-written threshold messages.
+	var/announce_damage_bands = FALSE
 
 /// The examine line for `band` (DAMAGE_BAND_*), or null for none.
 /atom/proc/damage_flavour_text(band)
@@ -20,6 +24,35 @@
 			return span_danger("[they] [look] about to fall apart!")
 	return null
 
+/// The line onlookers see when this atom drops into `band`.
+/atom/proc/damage_band_announcement(band)
+	switch(band)
+		if(DAMAGE_BAND_LIGHT)
+			return "\The [src] starts to show [damage_wear]!"
+		if(DAMAGE_BAND_MODERATE)
+			return "\The [src] looks seriously damaged!"
+		if(DAMAGE_BAND_HEAVY)
+			return "\The [src] looks like it's about to break!"
+	return null
+
+/// Announces a drop into a worse damage band between two integrity values.
+/// Called from on_update_integrity() for types that set announce_damage_bands.
+/atom/proc/announce_damage_band(old_value, new_value)
+	if(new_value <= 0 || new_value >= old_value || max_integrity <= 0)
+		return
+	var/new_band = dq_damage_band_at(new_value / max_integrity)
+	if(new_band > dq_damage_band_at(old_value / max_integrity))
+		visible_message(damage_band_announcement(new_band))
+
+/// The damage band (DAMAGE_BAND_*) for an integrity ratio, read against the
+/// declared flavour rules' levels.
+/proc/dq_damage_band_at(ratio)
+	. = DAMAGE_BAND_NONE
+	for(var/datum/rule/rule as anything in dq_damage_flavour_rules())
+		var/datum/rule_trigger/trigger = rule.triggers[1]
+		if(ratio < trigger.value && rule.band > .)
+			. = rule.band
+
 /// The damage band `A` is in, read against the declared flavour rules' levels.
 /// For atoms no rule binding keeps (turfs, objects that never materialized).
 /proc/dq_damage_band_for(atom/A)
@@ -27,12 +60,7 @@
 		return DAMAGE_BAND_NONE
 	if(A.damage_band)
 		return A.damage_band
-	var/ratio = A.get_integrity() / A.max_integrity
-	. = DAMAGE_BAND_NONE
-	for(var/datum/rule/rule as anything in dq_damage_flavour_rules())
-		var/datum/rule_trigger/trigger = rule.triggers[1]
-		if(ratio < trigger.value && rule.band > .)
-			. = rule.band
+	return dq_damage_band_at(A.get_integrity() / A.max_integrity)
 
 /// The compiled damage-flavour rules.
 /proc/dq_damage_flavour_rules()

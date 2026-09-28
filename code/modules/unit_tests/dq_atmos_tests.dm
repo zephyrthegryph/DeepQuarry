@@ -5440,7 +5440,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 	// Force the mob into the cryo cell's occupant slot.
 	H.move_into(C, OCCUPANT_SLOT_CRYO)
-	H.bodytemperature = T20C // warm starting body temp
+	H.set_bodytemperature(T20C) // warm starting body temp
 	var/initial_bodytemp = H.bodytemperature
 	C.on = TRUE
 

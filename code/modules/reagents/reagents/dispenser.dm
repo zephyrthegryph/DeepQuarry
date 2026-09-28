@@ -174,7 +174,7 @@
 		if(druggy != 0)
 			M.status_at_least(EFFECT_DRUGGED, druggy*3)
 
-		M.bodytemperature = drink_temperature_step(M.bodytemperature, targ_temp, adj_temp) // B12
+		M.set_bodytemperature(drink_temperature_step(M.bodytemperature, targ_temp, adj_temp)) // B12
 
 		if(halluci)
 			M.status_at_least(EFFECT_HALLUCINATING, halluci*3)
@@ -217,7 +217,7 @@
 		if(halluci)
 			M.status_at_least(EFFECT_HALLUCINATING, halluci)
 
-		M.bodytemperature = drink_temperature_step(M.bodytemperature, targ_temp, adj_temp) // B12
+		M.set_bodytemperature(drink_temperature_step(M.bodytemperature, targ_temp, adj_temp)) // B12
 
 /datum/reagent/ethanol/touch_obj(obj/O)
 	..()

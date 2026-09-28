@@ -172,6 +172,10 @@
 			/mob/living/simple_mob/slime/xenobio/ruby
 		)
 
+/mob/living/simple_mob/slime/xenobio/dark_purple
+	fire_reaction = FIRE_REACTION_TRIGGER
+	fire_trigger_proc = TYPE_PROC_REF(/mob/living/simple_mob/slime/xenobio/dark_purple, ignite)
+
 /mob/living/simple_mob/slime/xenobio/dark_purple/proc/ignite()
 	visible_message(span_critical("\The [src] erupts in an inferno!"))
 	for(var/turf/simulated/target_turf in view(2, src))
@@ -181,10 +185,6 @@
 
 /mob/living/simple_mob/slime/xenobio/dark_purple/ex_act(severity)
 	log_and_message_admins("ignited due to a chain reaction with an explosion.", src)
-	ignite()
-
-/mob/living/simple_mob/slime/xenobio/dark_purple/fire_act(temperature, volume)
-	log_and_message_admins("ignited due to exposure to fire.", src)
 	ignite()
 
 /mob/living/simple_mob/slime/xenobio/dark_purple/bullet_act(obj/item/projectile/P, def_zone)
@@ -646,6 +646,11 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/xenobio/dark_purple, INTERACT_I
 		/mob/living/simple_mob/slime/xenobio/red
 	)
 
+/mob/living/simple_mob/slime/xenobio/oil
+	fire_reaction = FIRE_REACTION_TRIGGER
+	fire_trigger_proc = TYPE_PROC_REF(/mob/living/simple_mob/slime/xenobio/oil, explode)
+	fire_trigger_verb = "exploded"
+
 /mob/living/simple_mob/slime/xenobio/oil/proc/explode()
 	if(stat != DEAD)
 		explosion(src.loc, 0, 2, 4) // A bit weaker since the suicide charger tended to gib the poor sod being targeted.
@@ -676,10 +681,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/xenobio/dark_purple, INTERACT_I
 
 /mob/living/simple_mob/slime/xenobio/oil/ex_act(severity)
 	log_and_message_admins("exploded due to a chain reaction with another explosion.", src)
-	explode()
-
-/mob/living/simple_mob/slime/xenobio/oil/fire_act(temperature, volume)
-	log_and_message_admins("exploded due to exposure to fire.", src)
 	explode()
 
 /mob/living/simple_mob/slime/xenobio/oil/bullet_act(obj/item/projectile/P, def_zone)
