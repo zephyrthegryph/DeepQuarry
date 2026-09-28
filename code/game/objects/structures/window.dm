@@ -1,4 +1,5 @@
 /obj/structure/window
+	announce_damage_bands = TRUE
 	damage_wear = "cracks"
 	name = "window"
 	desc = "A window."
@@ -52,19 +53,7 @@
 // Crack visuals / warnings as integrity drops past thresholds.
 /obj/structure/window/on_update_integrity(old_value, new_value)
 	. = ..()
-	integrity_message(old_value, new_value)
 	update_icon()
-
-// Overridable per-subtype damage-threshold flavour text.
-/obj/structure/window/proc/integrity_message(old_value, new_value)
-	if(new_value <= 0)
-		return
-	if(new_value < max_integrity / 4 && old_value >= max_integrity / 4)
-		visible_message("[src] looks like it's about to shatter!")
-	else if(new_value < max_integrity / 2 && old_value >= max_integrity / 2)
-		visible_message("[src] looks seriously damaged!")
-	else if(new_value < max_integrity * 3/4 && old_value >= max_integrity * 3/4)
-		visible_message("Cracks begin to appear in [src]!")
 
 /obj/structure/window/atom_destruction(damage_flag)
 	shatter()

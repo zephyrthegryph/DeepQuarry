@@ -61,16 +61,6 @@ EXTEND_INTERACTIONS(/obj/structure/window/maintenance_panel, INTERACT_ITEM(null,
 	else
 		playsound(src, 'sound/effects/grillehit.ogg', 75, 1)
 
-/obj/structure/window/maintenance_panel/integrity_message(old_value, new_value)
-	if(new_value <= 0)
-		return
-	if(new_value < max_integrity / 4 && old_value >= max_integrity / 4)
-		visible_message("\the [src] is about to break free!")
-	else if(new_value < max_integrity / 2 && old_value >= max_integrity / 2)
-		visible_message("\the [src] looks seriously damaged!")
-	else if(new_value < max_integrity * 3/4 && old_value >= max_integrity * 3/4)
-		visible_message("\the [src] looks like it's taking damage!")
-
 /obj/structure/window/maintenance_panel/shatter(display_message = 1)
 	playsound(src, pick(list('sound/effects/metalscrape1.ogg','sound/effects/metalscrape2.ogg','sound/effects/metalscrape3.ogg')), 70, 1)
 	if(display_message)

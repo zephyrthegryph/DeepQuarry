@@ -1,4 +1,5 @@
 /obj/machinery/door
+	announce_damage_bands = TRUE
 	name = "Door"
 	desc = "It opens and closes."
 	icon = 'icons/obj/doors/doorint.dmi'
@@ -415,16 +416,8 @@
 	open()
 	operating = -1
 
-// Damage-state flavour text as integrity drops.
 /obj/machinery/door/on_update_integrity(old_value, new_value)
 	. = ..()
-	if(new_value > 0)
-		if(new_value < max_integrity / 4 && old_value >= max_integrity / 4)
-			visible_message("\The [src] looks like it's about to break!" )
-		else if(new_value < max_integrity / 2 && old_value >= max_integrity / 2)
-			visible_message("\The [src] looks seriously damaged!" )
-		else if(new_value < max_integrity * 3/4 && old_value >= max_integrity * 3/4)
-			visible_message("\The [src] shows signs of damage!" )
 	update_icon()
 
 /obj/machinery/door/atom_break(damage_flag)

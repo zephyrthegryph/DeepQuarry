@@ -52,19 +52,12 @@ DECLARE_INTERACTIONS(/obj/structure/musician, INTERACT_HAND_UNGATED(null, PROC_R
 	icon_state = "minimoog"
 	anchored = TRUE
 	density = TRUE
-	var/broken_icon_state = "pianobroken"
+	broken_icon_state = "pianobroken"
+	integrity_failure = 0.25
 
 /obj/structure/musician/piano/Initialize(mapload)
 	. = ..()
 	make_climbable()
-
-/** FIXME: We do not have atom_break implemented yet
-/obj/structure/musician/piano/atom_break(damage_flag)
-	. = ..()
-	if(!broken)
-		broken = TRUE
-		icon_state = broken_icon_state
-*/
 
 /obj/structure/musician/piano/unanchored
 	anchored = FALSE

@@ -133,7 +133,6 @@
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
 	flags = WALL_ITEM
 	integrity_failure = 0.5
-	var/isbroken = 0  //1 if someone banged it with something heavy
 	var/ispowered = 1 //starts powered, changes with power_change()
 	//var/list/datum/feed_channel/channel_list = list() //This list will contain the names of the feed channels. Each name will refer to a data region where the messages of the feed channels are stored.
 	//OBSOLETE: We're now using a global news network
@@ -185,9 +184,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 
 /obj/machinery/newscaster/update_icon()
 	cut_overlays()
-	if(!ispowered || isbroken)
+	if(!ispowered || (stat & BROKEN))
 		icon_state = "newscaster_off"
-		if(isbroken) //If the thing is smashed, add crack overlay on top of the unpowered sprite.
+		if(stat & BROKEN) //If the thing is smashed, add crack overlay on top of the unpowered sprite.
 			add_overlay("crack3")
 		set_light(0)
 		set_light_on(FALSE)
@@ -215,7 +214,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	return
 
 /obj/machinery/newscaster/power_change()
-	if(isbroken) //Broken shit can't be powered.
+	if(stat & BROKEN) //Broken shit can't be powered.
 		return
 	..()
 	if(!(stat & NOPOWER))
@@ -224,18 +223,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	else
 		om_after(src, rand(0, 15), PROC_REF(lose_power))
 
-/obj/machinery/newscaster/atom_break(damage_flag)
-	. = ..()
-	isbroken = TRUE
-	update_icon()
-
-/obj/machinery/newscaster/atom_fix()
-	. = ..()
-	isbroken = FALSE
-	update_icon()
-
 /obj/machinery/newscaster/tgui_status(mob/user)
-	if(!ispowered || isbroken)
+	if(!ispowered || (stat & BROKEN))
 		return STATUS_CLOSE
 	. = ..()
 
@@ -253,7 +242,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	effect = /obj/machinery/newscaster/proc/interaction_open
 
 /obj/machinery/newscaster/proc/interaction_open(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!ispowered || isbroken)
+	if(!ispowered || (stat & BROKEN))
 		return TRUE
 
 	if(!node())
