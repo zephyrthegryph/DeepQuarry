@@ -125,9 +125,13 @@
 		failure_reason = materializer.last_failure_details || phase
 		materialization = null
 		return null
-	materialization = materializer.result
+	var/datum/generated_station_materialization/done = materializer.result
+	// Hand-off: the materializer owns its result (REF_OWNED) only while building it, so
+	// deleting the materializer afterwards must not delete the station it built.
+	materializer.result = null
+	materialization = done
 	checkpoint("Station materialization complete", 62)
-	return materialization
+	return done
 
 /datum/generated_station_materialization_job/proc/finish_async()
 	var/datum/generated_station_materialization/result = end_run()
