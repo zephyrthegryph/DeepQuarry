@@ -102,6 +102,7 @@
 EXTEND_INTERACTIONS(/turf/simulated/wall, \
 	INTERACT_ITEM(null, PROC_REF(wall_item)), \
 	INTERACT_HAND_UNGATED("Touch", PROC_REF(wall_hand)), \
+	INTERACT_ALT("Graffiti", PROC_REF(wall_graffiti_alt)), \
 )
 
 /// Old attack_hand: touch the wall (a hulk smashes it). The turf's own touch never follows.
