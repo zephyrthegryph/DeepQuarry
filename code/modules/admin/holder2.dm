@@ -26,6 +26,8 @@ GLOBAL_PROTECT(href_token)
 
 	/// Link from the database pointing to the admin's feedback forum
 	var/cached_feedback_link
+	/// The om_io job fetching cached_feedback_link, while one is in flight.
+	var/feedback_link_pending = 0
 
 	var/deadmined
 
@@ -152,24 +154,23 @@ GLOBAL_PROTECT(href_token)
 	if (!SSdbcore.IsConnected())
 		return FALSE
 
-	var/datum/db_query/feedback_query = SSdbcore.NewQuery("SELECT feedback FROM [format_table_name("admin")] WHERE ckey = :ckey", list("ckey" = owner.ckey))
+	// Not known yet: ask (om_io, nothing waits). The answer fills the cache for the next call.
+	if(!feedback_link_pending)
+		feedback_link_pending = om_io(src, /datum/om/io/sql, "SELECT feedback FROM [format_table_name("admin")] WHERE ckey = :ckey", list("ckey" = owner?.ckey), PROC_REF(feedback_link_arrived))
+	return null
 
-	if(!feedback_query.Execute())
-		log_sql("Error retrieving feedback link for [src]")
-		qdel(feedback_query)
-		return FALSE
-
-	if(!feedback_query.NextRow())
-		qdel(feedback_query)
-		return FALSE // no feedback link exists
-
-	cached_feedback_link = feedback_query.item[1] || NO_FEEDBACK_LINK
-	qdel(feedback_query)
-
-	if (cached_feedback_link == NO_FEEDBACK_LINK) // Because we don't want to send fake clickable links.
-		return null
-
-	return cached_feedback_link
+/// om_io() callback: caches the admin's feedback link (or that there is none).
+/datum/admins/proc/feedback_link_arrived(list/result, error)
+	feedback_link_pending = 0
+	if(error)
+		log_sql("Error retrieving feedback link for [src]: [error]")
+		return
+	var/list/rows = result["rows"]
+	if(!length(rows))
+		cached_feedback_link = NO_FEEDBACK_LINK
+		return
+	var/list/row = rows[1]
+	cached_feedback_link = row[1] || NO_FEEDBACK_LINK
 
 /datum/admins/proc/check_for_rights(rights_required)
 	if(rights_required && !(rights_required & rank_flags()))

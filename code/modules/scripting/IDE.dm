@@ -1,5 +1,10 @@
 /client/verb/tcssave()
 	set hidden = 1
+	// The code is read from the client (a winget round trip): DX-exec answers tcssave_code().
+	dx_winget(src, src, "tcscode", "text", PROC_REF(tcssave_code))
+
+/// dx_winget() callback for the tcssave verb: re-checks the machine, then acts on the code.
+/client/proc/tcssave_code(tcscode)
 	var/obj/machine = mob.get_current_machine()
 	if(machine || issilicon(mob))
 		if((istype(machine, /obj/machinery/computer/telecomms/traffic) && (machine in view(1, mob))) || issilicon(mob))
@@ -9,7 +14,6 @@
 
 			if(Machine.SelectedServer)
 				var/obj/machinery/telecomms/server/Server = Machine.SelectedServer
-				var/tcscode=winget(src, "tcscode", "text")
 				var/msg="[mob.name] is adding script to server [Server]: [tcscode]"
 				log_world("## MISC [msg]")
 				message_admins("[mob.name] has uploaded a NTLS script to [Machine.SelectedServer] ([mob.x],[mob.y],[mob.z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[mob.x];Y=[mob.y];Z=[mob.z]'>JMP</a>)")
@@ -28,6 +32,11 @@
 
 /client/verb/tcscompile()
 	set hidden = 1
+	// The code is read from the client (a winget round trip): DX-exec answers tcscompile_code().
+	dx_winget(src, src, "tcscode", "text", PROC_REF(tcscompile_code))
+
+/// dx_winget() callback for the tcscompile verb: re-checks the machine, then acts on the code.
+/client/proc/tcscompile_code(code)
 	var/obj/machine = mob.get_current_machine()
 	if(machine || issilicon(mob))
 		if((istype(machine, /obj/machinery/computer/telecomms/traffic) && (machine in view(1, mob))) || (issilicon(mob) && istype(machine, /obj/machinery/computer/telecomms/traffic) ))
@@ -37,7 +46,7 @@
 
 			if(Machine.SelectedServer)
 				var/obj/machinery/telecomms/server/Server = Machine.SelectedServer
-				Server.setcode( winget(src, "tcscode", "text") ) // save code first
+				Server.setcode(code) // save code first
 				var/list/compileerrors = Server.compile() // then compile the code!
 
 				// Output all the compile-time errors
@@ -80,6 +89,11 @@
 
 /client/verb/tcsrun()
 	set hidden = 1
+	// The code is read from the client (a winget round trip): DX-exec answers tcsrun_code().
+	dx_winget(src, src, "tcscode", "text", PROC_REF(tcsrun_code))
+
+/// dx_winget() callback for the tcsrun verb: re-checks the machine, then acts on the code.
+/client/proc/tcsrun_code(code)
 	var/obj/machine = mob.get_current_machine()
 	if(machine || issilicon(mob))
 		if((istype(machine, /obj/machinery/computer/telecomms/traffic) && (machine in view(1, mob))) || (issilicon(mob) && istype(machine, /obj/machinery/computer/telecomms/traffic) ))
@@ -89,7 +103,7 @@
 
 			if(Machine.SelectedServer)
 				var/obj/machinery/telecomms/server/Server = Machine.SelectedServer
-				Server.setcode( winget(src, "tcscode", "text") ) // save code first
+				Server.setcode(code) // save code first
 				var/list/compileerrors = Server.compile() // then compile the code!
 
 				// Output all the compile-time errors
@@ -147,12 +161,17 @@
 
 /client/verb/exittcs()
 	set hidden = 1
+	// The code is read from the client (a winget round trip): DX-exec answers exittcs_code().
+	dx_winget(src, src, "tcscode", "text", PROC_REF(exittcs_code))
+
+/// dx_winget() callback for the exittcs verb: re-checks the machine, then acts on the code.
+/client/proc/exittcs_code(code)
 	var/obj/machine = mob.get_current_machine()
 	if(machine || issilicon(mob))
 		if((istype(machine, /obj/machinery/computer/telecomms/traffic) && (machine in view(1, mob))) || (issilicon(mob) && istype(machine, /obj/machinery/computer/telecomms/traffic) ))
 			var/obj/machinery/computer/telecomms/traffic/Machine = machine
 			if(Machine.editingcode == mob)
-				Machine.storedcode = "[winget(mob, "tcscode", "text")]"
+				Machine.storedcode = "[code]"
 				Machine.editingcode = null
 			else
 				if(mob in Machine.viewingcode)

@@ -436,3 +436,7 @@
 #define PROMPT_ADMIN(rights) list(CHECK(/datum/om/check/admin_rights, rights))
 /// Returned by an om_prompt_sequence() step proc: end the sequence here (on_done does not run).
 #define PROMPT_STOP "om_prompt_stop"
+
+/// Thrown by flow_execute() (flow_io.dm) to unwind a prompt flow whose query is in flight;
+/// prompt_flow() catches it.
+#define OM_FLOW_PENDING "om_flow_pending"

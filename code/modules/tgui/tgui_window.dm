@@ -462,7 +462,12 @@
 /datum/tgui_window/proc/audit_prewarmed_hidden()
 	if(!client || locked || !prewarmed)
 		return
-	var/is_visible = winget(client, id, "is-visible")
+	dx_winget(src, client, id, "is-visible", PROC_REF(prewarmed_visibility_read))
+
+/// dx_winget() callback for audit_prewarmed_hidden(): re-checks, then hides a shown shell.
+/datum/tgui_window/proc/prewarmed_visibility_read(is_visible)
+	if(!client || locked || !prewarmed)
+		return
 	if(is_visible == "true")
 		log_tgui(client, "Prewarmed shell became visible; forcing it hidden.", window = src)
 		winshow(client, id, FALSE)
@@ -511,7 +516,7 @@
 				"files" = asset_generation.chunk_files,
 			))
 	if(type == "ready" && prewarmed && !locked)
-		INVOKE_ASYNC(src, PROC_REF(audit_prewarmed_hidden)) // S10b keeps: winget round-trip
+		audit_prewarmed_hidden()
 	// Pass message to UI that requested the lock
 	if(locked && locked_by)
 		var/prevent_default = locked_by.on_message(type, payload, href_list)

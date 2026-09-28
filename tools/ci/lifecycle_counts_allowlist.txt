@@ -4,7 +4,7 @@
 # files not listed may have none. A Destroy() override with a same-line or
 # line-before `// LIFECYCLE: <reason>` comment doesn't count at all.
 # `python tools/ci/lifecycle_counts_lint.py --update` rewrites this.
-# Destroy total: 2 in 2 files. qdel total: 2126 in 914 files.
+# Destroy total: 2 in 2 files. qdel total: 2058 in 907 files.
 [destroy]
 code/datums/om/prompt.dm 1
 code/modules/random_map/drop/supply.dm 1
@@ -27,7 +27,6 @@ code/_helpers/game.dm 1
 code/_helpers/icons.dm 4
 code/_helpers/icons/flatten.dm 5
 code/_helpers/legacy_tg_path.dm 1
-code/_helpers/logging/log_to_db.dm 2
 code/_helpers/refinery.dm 4
 code/_onclick/hud/ability_screen_objects.dm 1
 code/_onclick/hud/action/action.dm 2
@@ -52,7 +51,7 @@ code/controllers/subsystems/admin_verbs.dm 1
 code/controllers/subsystems/atoms.dm 2
 code/controllers/subsystems/communications.dm 2
 code/controllers/subsystems/contracts.dm 3
-code/controllers/subsystems/dbcore.dm 8
+code/controllers/subsystems/dbcore.dm 4
 code/controllers/subsystems/inactivity.dm 1
 code/controllers/subsystems/instruments.dm 1
 code/controllers/subsystems/internal_wiki.dm 2
@@ -119,6 +118,7 @@ code/datums/mind.dm 3
 code/datums/modules.dm 1
 code/datums/observation/helpers.dm 1
 code/datums/om/after_helpers.dm 1
+code/datums/om/flow_io.dm 2
 code/datums/om/native.dm 1
 code/datums/om/prompt.dm 10
 code/datums/om/relation.dm 2
@@ -142,7 +142,6 @@ code/datums/status_effects/_status_effect_helpers.dm 1
 code/datums/status_effects/debuffs/fire_stacks.dm 12
 code/datums/status_effects/grouped_effect.dm 1
 code/datums/vending/stored_item.dm 3
-code/defines/procs/statistics.dm 3
 code/game/antagonist/antagonist_equip.dm 1
 code/game/antagonist/antagonist_update.dm 3
 code/game/antagonist/station/rogue_ai.dm 1
@@ -186,7 +185,6 @@ code/game/gamemodes/technomancer/spells/reflect.dm 1
 code/game/gamemodes/technomancer/spells/spawner/destablize.dm 1
 code/game/gamemodes/technomancer/spells/spawner/pulsar.dm 1
 code/game/gamemodes/technomancer/spells/summon/summon.dm 1
-code/game/jobs/whitelist.dm 7
 code/game/machinery/OpTable.dm 1
 code/game/machinery/Sleeper.dm 1
 code/game/machinery/adv_med.dm 2
@@ -390,22 +388,19 @@ code/game/turfs/space/space.dm 6
 code/game/turfs/turf_changing.dm 2
 code/game/world.dm 1
 code/modules/admin/DB ban/ban_panle_ui.dm 2
-code/modules/admin/DB ban/functions.dm 9
-code/modules/admin/IsBanned.dm 2
+code/modules/admin/DB ban/functions.dm 5
 code/modules/admin/admin.dm 2
-code/modules/admin/admin_ranks.dm 9
+code/modules/admin/admin_ranks.dm 4
 code/modules/admin/admin_report_panel.dm 1
-code/modules/admin/admin_tools.dm 2
-code/modules/admin/admin_verbs.dm 2
-code/modules/admin/banjob.dm 2
+code/modules/admin/admin_verbs.dm 1
 code/modules/admin/economy_dashboard.dm 1
 code/modules/admin/edit_memory_panel.dm 2
 code/modules/admin/event_manager_panel.dm 1
 code/modules/admin/game_mode_panel.dm 1
 code/modules/admin/game_panel_panel.dm 1
-code/modules/admin/holder2.dm 4
+code/modules/admin/holder2.dm 1
 code/modules/admin/modify_robot.dm 15
-code/modules/admin/permissionedit.dm 25
+code/modules/admin/permissionedit.dm 10
 code/modules/admin/player_effects.dm 2
 code/modules/admin/player_notes.dm 1
 code/modules/admin/player_panel_tgui.dm 1
@@ -414,7 +409,6 @@ code/modules/admin/topic.dm 4
 code/modules/admin/verbs/BrokenInhands.dm 1
 code/modules/admin/verbs/SDQL2/SDQL_2.dm 4
 code/modules/admin/verbs/buildmode.dm 3
-code/modules/admin/verbs/check_customitem_activity.dm 2
 code/modules/admin/verbs/debug.dm 3
 code/modules/admin/verbs/event_triggers.dm 2
 code/modules/admin/verbs/mapping.dm 3
@@ -454,7 +448,7 @@ code/modules/casino/spawnergrenade.dm 2
 code/modules/catalogue/catalogue_data.dm 1
 code/modules/catalogue/cataloguer.dm 1
 code/modules/catalogue/cataloguer_visuals.dm 1
-code/modules/client/client procs.dm 17
+code/modules/client/client procs.dm 14
 code/modules/client/preferences/editors/species_picker.dm 1
 code/modules/clothing/accessories/accessory.dm 1
 code/modules/clothing/accessory_slot_registry.dm 2
@@ -557,7 +551,7 @@ code/modules/integrated_electronics/core/printer.dm 1
 code/modules/integrated_electronics/subtypes/input.dm 1
 code/modules/integrated_electronics/subtypes/power.dm 1
 code/modules/library/lib_items.dm 1
-code/modules/library/lib_machines.dm 7
+code/modules/library/lib_machines.dm 2
 code/modules/lighting/lighting_corner.dm 1
 code/modules/lighting/lighting_overlay.dm 2
 code/modules/lighting/lighting_source.dm 2
@@ -705,7 +699,7 @@ code/modules/mob/mob_transformation_simple.dm 1
 code/modules/mob/new_player/lobby_browser.dm 1
 code/modules/mob/new_player/logout.dm 1
 code/modules/mob/new_player/new_player.dm 4
-code/modules/mob/new_player/poll.dm 12
+code/modules/mob/new_player/poll.dm 9
 code/modules/mob/say.dm 2
 code/modules/mob/transform_procs.dm 10
 code/modules/modular_computers/computers/modular_computer/core.dm 1
@@ -752,7 +746,7 @@ code/modules/persistence/datum/persistence_datum.dm 1
 code/modules/persistence/effects/paper.dm 1
 code/modules/persistence/graffiti.dm 1
 code/modules/persistence/storage/smartfridge.dm 1
-code/modules/polls/poll_dialogs.dm 14
+code/modules/polls/poll_dialogs.dm 13
 code/modules/power/antimatter/containment_jar.dm 1
 code/modules/power/apc.dm 2
 code/modules/power/breaker_box.dm 2
@@ -824,7 +818,6 @@ code/modules/recycling/disposal_machines.dm 3
 code/modules/recycling/disposal_mail.dm 1
 code/modules/recycling/recycling.dm 3
 code/modules/recycling/v_garbosystem.dm 3
-code/modules/research/message_server.dm 2
 code/modules/research/tg/designs.dm 1
 code/modules/research/tg/experisci/experiment/types/scanning.dm 1
 code/modules/research/tg/machinery/destructive_analyzer.dm 1
@@ -860,7 +853,7 @@ code/modules/telesci/bscrystal.dm 1
 code/modules/telesci/bscyrstal.dm 1
 code/modules/telesci/hyper_pad.dm 1
 code/modules/tension/tension.dm 2
-code/modules/tgs_commands/vorestation.dm 16
+code/modules/tgs_commands/vorestation.dm 12
 code/modules/tgui/modules/admin/player_notes.dm 2
 code/modules/tgui/modules/admin_shuttle_controller.dm 1
 code/modules/tgui/modules/appearance_changer.dm 5

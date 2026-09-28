@@ -56,7 +56,7 @@ SUBSYSTEM_DEF(dbcore)
 	Connect()
 	if(IsConnected() && CONFIG_GET(flag/database_logging))
 		var/datum/db_query/query_truncate = NewQuery("TRUNCATE erro_dialog")
-		if(!query_truncate.Execute())
+		if(!query_truncate.Execute(async = FALSE)) // boot (allowlisted)
 			log_sql("ERROR TRYING TO CLEAR erro_dialog: "+query_truncate.ErrorMsg())
 		qdel(query_truncate)
 	return SS_INIT_SUCCESS
@@ -366,9 +366,9 @@ Arguments:
 	                 Expressions containing "?" are treated as placeholders; those without are
 	                 interpolated verbatim into the query.
 
-Returns the result of Execute() / warn_execute(): TRUE on success, FALSE on error.
+mass_insert_io() runs it on the I/O lane; on_done gets the outcome.
 */
-/// Builds MassInsert()'s statement: list(sql, arguments), or null for no rows.
+/// Builds a mass insert's statement: list(sql, arguments), or null for no rows.
 /datum/controller/subsystem/dbcore/proc/mass_insert_sql(table, list/rows, duplicate_key = FALSE, ignore_errors = FALSE, special_columns = null)
 	if (!table || !rows || !istype(rows))
 		return null
@@ -422,18 +422,7 @@ Returns the result of Execute() / warn_execute(): TRUE on success, FALSE on erro
 
 	return list(query_parts.Join(), arguments)
 
-/datum/controller/subsystem/dbcore/proc/MassInsert(table, list/rows, duplicate_key = FALSE, ignore_errors = FALSE, warn = FALSE, async = TRUE, special_columns = null)
-	var/list/statement = mass_insert_sql(table, rows, duplicate_key, ignore_errors, special_columns)
-	if(!statement)
-		return
-	var/datum/db_query/Query = NewQuery(statement[1], statement[2])
-	if (warn)
-		. = Query.warn_execute(async)
-	else
-		. = Query.Execute(async)
-	qdel(Query)
-
-/// MassInsert() on the I/O lane: returns at once. `on_done` (optional) runs on E as
+/// A mass insert (mass_insert_sql()) on the I/O lane: returns at once. `on_done` (optional) runs on E as
 /// on_done(result, error, context...) like any om_io() callback; without it a failure is logged.
 /datum/controller/subsystem/dbcore/proc/mass_insert_io(datum/E, table, list/rows, duplicate_key = FALSE, ignore_errors = FALSE, special_columns = null, on_done = null, ...)
 	var/list/statement = mass_insert_sql(table, rows, duplicate_key, ignore_errors, special_columns)
@@ -502,47 +491,46 @@ Returns the result of Execute() / warn_execute(): TRUE on success, FALSE on erro
 	if(!.)
 		to_chat(usr, span_danger("A SQL error occurred during this operation, check the server logs."))
 
+/// Runs the query. async = TRUE (the default) is for prompt flows only (flow_io.dm): inside a
+/// running flow it starts the query as an om_io job and unwinds the flow, and the flow's re-run
+/// returns the stored result. Before the MC runs (boot) it blocks. Anywhere else it is an
+/// error: use om_io(E, /datum/om/io/sql, ...) with a callback. async = FALSE blocks and is
+/// for boot and shutdown only.
 /datum/db_query/proc/Execute(async = TRUE, log_error = TRUE)
 	Activity("Execute")
 	if(status == DB_QUERY_STARTED)
 		CRASH("Attempted to start a new query while waiting on the old one")
 
+	if(async && GLOB.prompt_flow)
+		return flow_execute()
+
 	if(!SSdbcore.IsConnected())
 		last_error = "No connection!"
 		return FALSE
 
-	var/start_time
-	if(!async)
-		start_time = REALTIMEOFDAY
+	if(async)
+		if(MC_RUNNING(SSdbcore.init_stage))
+			last_error = "Execute(async) outside a prompt flow"
+			stack_trace("Execute(async = TRUE) outside a prompt flow: [sql]. Use om_io() or run the caller as a prompt_flow().")
+			return FALSE
+		async = FALSE // boot: nothing else is running yet
+
+	var/start_time = REALTIMEOFDAY
 	Close()
 	status = DB_QUERY_STARTED
-	if(async)
-		if(!MC_RUNNING(SSdbcore.init_stage))
-			SSdbcore.run_query_sync(src)
-		else
-			SSdbcore.queue_query(src)
-		sync()
-	else
-		var/job_result_str = rustg_sql_query_blocking(connection, sql, json_encode(arguments))
-		store_data(json_decode(job_result_str))
+	var/job_result_str = rustg_sql_query_blocking(connection, sql, json_encode(arguments))
+	store_data(json_decode(job_result_str))
 
 	. = (status != DB_QUERY_BROKEN)
 	var/timed_out = !. && findtext(last_error, "Operation timed out")
 	if(!. && log_error)
 		log_sql("[last_error] | Query used: [sql] | Arguments: [json_encode(arguments)]")
-	if(!async && timed_out)
+	if(timed_out)
 		log_sql("Query execution started at [start_time]")
 		log_sql("Query execution ended at [REALTIMEOFDAY]")
 		log_sql("Slow query timeout detected.")
 		log_sql("Query used: [sql]")
 		slow_query_check()
-
-/// Sleeps until execution of the query has finished. Only Execute(async = TRUE) calls this,
-/// for the remaining callers that read results inline (admin panels and verbs, login,
-/// polls, library). New code uses om_io(E, /datum/om/io/sql, ...) and never waits.
-/datum/db_query/proc/sync()
-	while(status < DB_QUERY_FINISHED)
-		stoplag() // S10b keeps: legacy inline-result SQL wait (admin/login/UI callers not yet on om_io)
 
 /datum/db_query/process(seconds_per_tick)
 	if(status >= DB_QUERY_FINISHED)

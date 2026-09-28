@@ -143,20 +143,8 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 			to_chat(src, span_warning("Sorry, that link doesn't appear to be valid. Please try again."))
 			return
 
-		var/datum/db_query/query = SSdbcore.NewQuery("UPDATE erro_player SET discord_id = :discord_id WHERE ckey = :ckey", list("discord_id" = their_id, "ckey" = ckey))
-		if(query.Execute())
-			to_chat(src, span_notice("Registration complete! Thank you for taking the time to register your Discord ID."))
-			log_and_message_admins("[ckey] has registered their Discord ID. Their Discord snowflake ID is: [their_id]", src)
-			admin_chat_message(message = "[ckey] has registered their Discord ID. Their Discord is: <@[their_id]>", color = "#4eff22")
-			notes_add(ckey, "Discord ID: [their_id]")
-			var/port = CONFIG_GET(number/register_server_port)
-			if(port)
-				// Designed to be used with `tools/registration`
-				om_http_get("http://127.0.0.1:[port]?member=[url_encode(json_encode(their_id))]")
-		else
-			to_chat(src, span_warning("There was an error registering your Discord ID in the database. Contact an administrator."))
-			log_and_message_admins("[ckey] failed to register their Discord ID. Their Discord snowflake ID is: [their_id]. Is the database connected?", src)
-		qdel(query)
+		// om_io: the player hears back when the database answers.
+		om_io(null, /datum/om/io/sql, "UPDATE erro_player SET discord_id = :discord_id WHERE ckey = :ckey", list("discord_id" = their_id, "ckey" = ckey), GLOBAL_PROC_REF(discord_registration_done), ckey, their_id)
 		return
 	if(href_list["reload_statbrowser"])
 		stat_panel.reinitialize()
@@ -339,7 +327,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	)
 	om_after(src, 30 SECONDS, PROC_REF(check_panel_loaded))
 
-	INVOKE_ASYNC(src, PROC_REF(acquire_dpi)) // S10b keeps: winget round-trip
+	acquire_dpi()
 
 	tgui_panel.initialize()
 
@@ -353,8 +341,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	connection_realtime = world.realtime
 	connection_timeofday = world.timeofday
 
-	if(!winexists(src, "asset_cache_browser")) // The client is using a custom skin, tell them.
-		to_chat(src, span_warning("Unable to access asset cache browser, if you are using a custom skin file, please allow DS to download the updated version, if you are not, then make a bug report. This is not a critical issue but can cause issues with resource downloading, as it is impossible to know when extra resources arrived to you."))
+	dx_winexists(src, src, "asset_cache_browser", PROC_REF(asset_browser_checked)) // a client round trip
 
 	if(holder)
 		add_admin_verbs()
@@ -363,7 +350,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 
 	winset(src, null, "command=\".configure graphics-hwmode on\"")
 
-	log_client_to_db()
+	start_login_gate()
 
 	send_resources()
 
@@ -371,22 +358,6 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		void = new()
 	screen += void
 
-	if(CONFIG_GET(flag/paranoia_logging))
-		var/alert = FALSE // start.
-		if(isnum(player_age) && player_age == 0)
-			log_and_message_admins("PARANOIA: [key_name(src)] has connected here for the first time.")
-			alert = TRUE
-		if(isnum(account_age) && account_age <= 2)
-			log_and_message_admins("PARANOIA: [key_name(src)] has a very new BYOND account ([account_age] days).")
-			alert = TRUE
-		if(alert)
-			for(var/client/X in GLOB.admins)
-				if(!check_rights_for(X, R_HOLDER))
-					continue
-				if(X.prefs?.read_preference(/datum/preference/toggle/holder/play_adminhelp_ping))
-					X << 'sound/voice/bcriminal.ogg' // back to beepsky
-				window_flash(X)
-		// end.
 	attempt_auto_fit_viewport()
 	fully_created = TRUE
 	SStgui.reconcile_client_windows(src)
@@ -434,38 +405,104 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	..()
 	return QDEL_HINT_HARDDEL_NOW
 
-// here because it's similar to below
+// ---------------------------------------------------------------- the login gate
+//
+// A connecting client is held (login_pending) until its login checks have answered: the
+// database ban check (world/IsBanned() can't wait on a query, so it runs here), the player
+// record, the BYOND join date and the IP reputation lookups. Nothing waits: the checks run as
+// a prompt flow on the client (flow_io.dm) and each answer re-runs them. While held, the lobby
+// refuses to join or observe (login_hold_refuses()); the client is then admitted
+// (login_admit()) or disconnected. A client that reconnects into a body it already has keeps
+// it meanwhile, but is disconnected all the same if the ban check says so. If the answers
+// never come (the I/O lane abandons a job after five minutes, or a check errors),
+// LOGIN_GATE_TIMEOUT admits the client, as a failed check always has: the gate fails open.
 
-// Returns null if no DB connection can be established, or -1 if the requested key was not found in the database
+#define LOGIN_GATE_TIMEOUT (90 SECONDS)
 
-/proc/get_player_age(key)
-	if(!SSdbcore.IsConnected())
-		return null
+/// TRUE while the login checks are outstanding.
+/client/var/login_pending = FALSE
 
-	var/datum/db_query/query = SSdbcore.NewQuery("SELECT datediff(Now(),firstseen) as age FROM erro_player WHERE ckey = :ckey", list("ckey" = ckey(key)))
-	query.Execute()
+/// Holds the client and starts its login checks. Called once, from client/New().
+/client/proc/start_login_gate()
+	login_pending = TRUE
+	log_access("Login gate: holding [key_name(src)] for its login checks")
+	om_after_realtime(LOGIN_GATE_TIMEOUT, GLOBAL_PROC_REF(login_gate_timeout), ckey, computer_id)
+	log_client_to_db()
 
-	var/player_age = -1
-	if(query.NextRow())
-		player_age = text2num(query.item[1])
+/// A gate still closed after LOGIN_GATE_TIMEOUT fails open.
+/proc/login_gate_timeout(ckey, computer_id)
+	var/client/C = GLOB.directory[ckey]
+	if(!C || !C.login_pending || C.computer_id != computer_id)
+		return
+	log_access("Login gate: checks for [key_name(C)] did not answer in [LOGIN_GATE_TIMEOUT / 10]s; admitting")
+	message_admins("Login checks for [key_name_admin(C)] did not answer in time; they were admitted unchecked.")
+	C.login_admit()
 
-	qdel(query)
-	return player_age
+/// Opens the gate: the client may join or observe.
+/client/proc/login_admit()
+	if(!login_pending)
+		return
+	login_pending = FALSE
+	log_access("Login gate: admitted [key_name(src)]")
+	if(CONFIG_GET(flag/paranoia_logging))
+		var/alert = FALSE // start.
+		if(isnum(player_age) && player_age == 0)
+			log_and_message_admins("PARANOIA: [key_name(src)] has connected here for the first time.")
+			alert = TRUE
+		if(isnum(account_age) && account_age <= 2)
+			log_and_message_admins("PARANOIA: [key_name(src)] has a very new BYOND account ([account_age] days).")
+			alert = TRUE
+		if(alert)
+			for(var/client/X in GLOB.admins)
+				if(!check_rights_for(X, R_HOLDER))
+					continue
+				if(X.prefs?.read_preference(/datum/preference/toggle/holder/play_adminhelp_ping))
+					X << 'sound/voice/bcriminal.ogg' // back to beepsky
+				window_flash(X)
+		// end.
+	if(isnewplayer(mob))
+		to_chat(src, span_notice("Your connection has been verified."))
 
+/// Lobby actions (join, observe, ready) call this: TRUE, and it says why, while the client is held.
+/client/proc/login_hold_refuses()
+	if(!login_pending)
+		return FALSE
+	to_chat(src, span_warning("Your connection is still being verified. Please wait a moment and try again."))
+	return TRUE
+
+/// The login checks, run as a prompt flow on the client: every read and lookup re-runs it when
+/// it answers, and the writes go out at the end. Admits the client when it finishes, or
+/// disconnects it (bans, the panic bunker, IP reputation).
 /client/proc/log_client_to_db()
-
-	if ( IsGuestKey(src.key) )
+	if(!GLOB.prompt_flow)
+		return prompt_flow(src, PROC_REF(log_client_to_db), args)
+	if(IsGuestKey(src.key) || !SSdbcore.IsConnected())
+		if(!IsGuestKey(src.key) && !CONFIG_GET(flag/ban_legacy_system))
+			var/msg = "Ban database connection failure. Key [ckey] not checked"
+			log_world(msg)
+			message_admins(msg)
+		login_admit()
 		return
+	if(!login_checks())
+		return // disconnected
+	login_admit()
 
-	if(!SSdbcore.IsConnected())
-		return
-
+/// The body of log_client_to_db()'s flow. FALSE if the client was disconnected.
+/client/proc/login_checks()
 	var/sql_ckey = src.ckey
+
+	if(!CONFIG_GET(flag/ban_legacy_system) && !(ckey in GLOB.admin_datums))
+		var/list/ban = login_ban_check()
+		if(ban)
+			log_suspicious_login("Failed Login: [key] [computer_id] [address] - Banned [ban["reason"]]")
+			message_admins(span_blue("Failed Login: [key] id:[computer_id] ip:[address] - Banned [ban["reason"]]"))
+			disconnect_with_message("You have been banned.[ban["desc"]]")
+			return FALSE
 
 	var/datum/db_query/query = SSdbcore.NewQuery("SELECT id, datediff(Now(),firstseen) as age FROM erro_player WHERE ckey = :ckey", list("ckey" = sql_ckey))
 	if(!query.Execute())
 		qdel(query)
-		return
+		return TRUE
 	var/sql_id = 0
 	player_age = 0	// New players won't have an entry so knowing we have a connection we set this to zero to be updated if their is a record.
 	while(query.NextRow())
@@ -475,20 +512,19 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 
 	qdel(query)
 	account_join_date = findJoinDate()
-	if(account_join_date && SSdbcore.IsConnected())
+	if(account_join_date)
 		var/datum/db_query/query_datediff = SSdbcore.NewQuery("SELECT DATEDIFF(Now(), :join_date)", list("join_date" = account_join_date))
 		if(!query_datediff.Execute())
-			qdel(query)
-			return
+			qdel(query_datediff)
+			return TRUE
 		if(query_datediff.NextRow())
 			account_age = text2num(query_datediff.item[1])
 		qdel(query_datediff)
 
 	var/datum/db_query/query_ip = SSdbcore.NewQuery("SELECT ckey FROM erro_player WHERE ip = :ip", list("ip" = address))
 	if(!query_ip.Execute())
-		qdel(query)
-		return
-	query_ip.Execute()
+		qdel(query_ip)
+		return TRUE
 	related_accounts_ip = ""
 	while(query_ip.NextRow())
 		related_accounts_ip += "[query_ip.item[1]], "
@@ -497,9 +533,8 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 
 	var/datum/db_query/query_cid = SSdbcore.NewQuery("SELECT ckey FROM erro_player WHERE computerid = :computerid", list("computerid" = computer_id))
 	if(!query_cid.Execute())
-		qdel(query)
-		return
-	query_cid.Execute()
+		qdel(query_cid)
+		return TRUE
 	related_accounts_cid = ""
 	while(query_cid.NextRow())
 		related_accounts_cid += "[query_cid.item[1]], "
@@ -511,7 +546,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		if(istext(sql_id))
 			sql_id = text2num(sql_id)
 		if(!isnum(sql_id))
-			return
+			return TRUE
 
 	var/admin_rank = "Player"
 	if(src.holder)
@@ -529,7 +564,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 			log_admin_private("Failed Login: [key] - New account attempting to connect during panic bunker")
 			message_admins(span_adminnotice("Failed Login: [key] - New account attempting to connect during panic bunker"))
 			disconnect_with_message("Sorry but the server is currently not accepting connections from never before seen players.")
-			return 0
+			return FALSE
 
 	// IP Reputation Check
 	if(CONFIG_GET(flag/ip_reputation))
@@ -547,10 +582,10 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 				//Take action if required
 				if(CONFIG_GET(flag/ipr_block_bad_ips) && CONFIG_GET(flag/ipr_allow_existing)) //We allow players of an age, but you don't meet it
 					disconnect_with_message("Sorry, we only allow VPN/Proxy/Tor usage for players who have spent at least [CONFIG_GET(number/ipr_minimum_age)] days on the server. If you are unable to use the internet without your VPN/Proxy/Tor, please contact an admin out-of-game to let them know so we can accommodate this.")
-					return 0
+					return FALSE
 				else if(CONFIG_GET(flag/ipr_block_bad_ips)) //We don't allow players of any particular age
 					disconnect_with_message("Sorry, we do not accept connections from users via VPN/Proxy/Tor connections. If you believe this is in error, contact an admin out-of-game.")
-					return 0
+					return FALSE
 		else
 			log_admin("Couldn't perform IP check on [key] with [address]")
 
@@ -560,32 +595,103 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 			department_hours[query_hours.item[1]] = text2num(query_hours.item[2])
 			play_hours[query_hours.item[1]] = text2num(query_hours.item[3])
 	else
-		var/error_message = query_hours.ErrorMsg() // Need this out here since the spawn below will split the stack and who knows what'll happen by the time it runs
+		var/error_message = query_hours.ErrorMsg()
 		log_sql("Error loading play hours for [ckey]: [error_message]")
 		tgui_alert_async(src, "The query to load your existing playtime failed. Screenshot this, give the screenshot to a developer, and reconnect, otherwise you may lose any recorded play hours (which may limit access to jobs). ERROR: [error_message]", "PROBLEMS!!")
 	qdel(query_hours)
+
+	// The writes: nothing reads them back, so they go out without holding the gate.
 	if(sql_id)
 		//Player already identified previously, we need to just update the 'lastseen', 'ip' and 'computer_id' variables
-		var/datum/db_query/query_update = SSdbcore.NewQuery("UPDATE erro_player SET lastseen = Now(), ip = :ip, computerid = :computerid, lastadminrank = :admin_rank WHERE id = :id", list("ip" = sql_ip, "computerid" = sql_computerid, "admin_rank" = sql_admin_rank, "id" = sql_id))
-		query_update.Execute()
-		qdel(query_update)
+		om_sql_write("UPDATE erro_player SET lastseen = Now(), ip = :ip, computerid = :computerid, lastadminrank = :admin_rank WHERE id = :id", list("ip" = sql_ip, "computerid" = sql_computerid, "admin_rank" = sql_admin_rank, "id" = sql_id))
 	else
 		//New player!! Need to insert all the stuff
-		var/datum/db_query/query_insert = SSdbcore.NewQuery("INSERT INTO erro_player (id, ckey, firstseen, lastseen, ip, computerid, lastadminrank) VALUES (null, :ckey, Now(), Now(), :ip, :computerid, :admin_rank)", list("ckey" = sql_ckey, "ip" = sql_ip, "computerid" = sql_computerid, "admin_rank" = sql_admin_rank))
-		query_insert.Execute()
-		qdel(query_insert)
+		om_sql_write("INSERT INTO erro_player (id, ckey, firstseen, lastseen, ip, computerid, lastadminrank) VALUES (null, :ckey, Now(), Now(), :ip, :computerid, :admin_rank)", list("ckey" = sql_ckey, "ip" = sql_ip, "computerid" = sql_computerid, "admin_rank" = sql_admin_rank))
 
 	//Logging player access
 	var/serverip = "[world.internet_address]:[world.port]"
-	var/datum/db_query/query_accesslog = SSdbcore.NewQuery("INSERT INTO `erro_connection_log`(`id`,`datetime`,`serverip`,`ckey`,`ip`,`computerid`) VALUES(null,Now(),:serverip,:ckey,:ip,:computerid)", list("serverip" = serverip, "ckey" = sql_ckey, "ip" = sql_ip, "computerid" = sql_computerid))
-	query_accesslog.Execute()
-	qdel(query_accesslog)
+	om_sql_write("INSERT INTO `erro_connection_log`(`id`,`datetime`,`serverip`,`ckey`,`ip`,`computerid`) VALUES(null,Now(),:serverip,:ckey,:ip,:computerid)", list("serverip" = serverip, "ckey" = sql_ckey, "ip" = sql_ip, "computerid" = sql_computerid))
+	return TRUE
+
+/// The database ban check (moved here from world/IsBanned(), which can't wait on a query).
+/// Runs inside the login flow; returns list("reason", "desc") for a ban, else null.
+/client/proc/login_ban_check()
+	var/failedcid = 1
+	var/failedip = 1
+
+	var/ipquery = ""
+	var/cidquery = ""
+	var/list/ban_params = list("ckeytext" = ckey)
+	if(address)
+		failedip = 0
+		ipquery = " OR ip = :address "
+		ban_params["address"] = address
+
+	if(computer_id)
+		failedcid = 0
+		if(isnum(text2num(computer_id)))
+			cidquery = " OR computerid = :computer_id "
+			ban_params["computer_id"] = computer_id
+		else
+			log_world("Key [ckey] cid not checked. Non-Numeric: [computer_id]")
+			failedcid = 1
+
+	var/datum/db_query/query = SSdbcore.NewQuery("SELECT ckey, ip, computerid, a_ckey, reason, expiration_time, duration, bantime, bantype FROM erro_ban WHERE (ckey = :ckeytext [ipquery] [cidquery]) AND (bantype = 'PERMABAN'  OR (bantype = 'TEMPBAN' AND expiration_time > Now())) AND isnull(unbanned)", ban_params)
+	query.Execute()
+
+	while(query.NextRow())
+		var/pckey = query.item[1]
+		var/ackey = query.item[4]
+		var/reason = query.item[5]
+		var/expiration = query.item[6]
+		var/duration = query.item[7]
+		var/bantime = query.item[8]
+		var/bantype = query.item[9]
+
+		var/expires = ""
+		if(text2num(duration) > 0)
+			expires = " The ban is for [duration] minutes and expires on [expiration] (server time)."
+
+		var/desc = "\nReason: You, or another user of this computer or connection ([pckey]) is banned from playing here. The ban reason is:\n[reason]\nThis ban was applied by [ackey] on [bantime], [expires]"
+		qdel(query)
+		return list("reason" = "[bantype]", "desc" = "[desc]")
+	qdel(query)
+	if (failedcid)
+		message_admins("[key] has logged in with a blank computer id in the ban check.")
+	if (failedip)
+		message_admins("[key] has logged in with a blank ip in the ban check.")
+	return null
+
+#undef LOGIN_GATE_TIMEOUT
 
 #undef UPLOAD_LIMIT
 #undef MIN_CLIENT_VERSION
 
 //checks if a client is afk
 //3000 frames = 5 minutes
+/// om_io() callback for the Discord registration link.
+/proc/discord_registration_done(list/result, error, ckey, their_id)
+	var/client/C = GLOB.directory[ckey]
+	if(error)
+		if(C)
+			to_chat(C, span_warning("There was an error registering your Discord ID in the database. Contact an administrator."))
+		log_and_message_admins("[ckey] failed to register their Discord ID. Their Discord snowflake ID is: [their_id]. Is the database connected?", C)
+		return
+	if(C)
+		to_chat(C, span_notice("Registration complete! Thank you for taking the time to register your Discord ID."))
+	log_and_message_admins("[ckey] has registered their Discord ID. Their Discord snowflake ID is: [their_id]", C)
+	admin_chat_message(message = "[ckey] has registered their Discord ID. Their Discord is: <@[their_id]>", color = "#4eff22")
+	notes_add(ckey, "Discord ID: [their_id]")
+	var/port = CONFIG_GET(number/register_server_port)
+	if(port)
+		// Designed to be used with `tools/registration`
+		om_http_get("http://127.0.0.1:[port]?member=[url_encode(json_encode(their_id))]")
+
+/// dx_winexists() callback: a client on a custom skin is told why assets may misbehave.
+/client/proc/asset_browser_checked(control_type)
+	if(!control_type)
+		to_chat(src, span_warning("Unable to access asset cache browser, if you are using a custom skin file, please allow DS to download the updated version, if you are not, then make a bug report. This is not a critical issue but can cause issues with resource downloading, as it is impossible to know when extra resources arrived to you."))
+
 /client/proc/is_afk(duration=3000)
 	if(inactivity > duration)	return inactivity
 	return 0
@@ -637,12 +743,13 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	prefs.update_tgui_static_data(mob)
 	prefs.tgui_interact(mob)
 
+/// The BYOND account's join date, looked up inside the login flow (flow_http_get()).
 /client/proc/findJoinDate()
-	var/list/http = world.Export("http://byond.com/members/[ckey]?format=text")
-	if(!http)
+	var/list/http = flow_http_get("http://byond.com/members/[ckey]?format=text")
+	if(http["error"])
 		log_world("Failed to connect to byond age check for [ckey]")
 		return
-	var/F = file2text(http["CONTENT"])
+	var/F = http["body"]
 	if(F)
 		var/regex/R = regex("joined = \"(\\d{4}-\\d{2}-\\d{2})\"")
 		if(R.Find(F))
@@ -814,9 +921,13 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	SEND_SIGNAL(src, COMSIG_CLIENT_CLICK, object, location, control, params, usr)
 	. = ..()
 
-/// This grabs the DPI of the user per their skin
+/// This grabs the DPI of the user per their skin (a winget round trip, through DX-exec)
 /client/proc/acquire_dpi()
-	window_scaling = text2num(winget(src, null, "dpi"))
+	dx_winget(src, src, null, "dpi", PROC_REF(dpi_acquired))
+
+/// dx_winget() callback for acquire_dpi().
+/client/proc/dpi_acquired(dpi)
+	window_scaling = text2num(dpi)
 
 /client/proc/open_filter_editor(atom/in_atom)
 	if(check_rights_for(src, R_HOLDER))
@@ -874,19 +985,19 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		return -1
 
 	var/request = "https://check.getipintel.net/check.php?ip=[address]&contact=[CONFIG_GET(string/ipr_email)]"
-	var/http[] = world.Export(request)
+	var/list/http = flow_http_get(request) // inside the login flow
 
-	if(!http || !islist(http)) //If we couldn't check, the service might be down, fail-safe.
+	if(http["error"]) //If we couldn't check, the service might be down, fail-safe.
 		log_admin("Couldn't connect to getipintel.net to check [address] for [key]")
 		return -1
 
 	//429 is rate limit exceeded
-	if(text2num(http["STATUS"]) == 429)
+	if(text2num("[http["status"]]") == 429)
 		log_and_message_admins("getipintel.net reports HTTP status 429. IP reputation checking is now disabled. If you see this, let a developer know.")
 		CONFIG_SET(flag/ip_reputation, FALSE)
 		return -1
 
-	var/content = file2text(http["CONTENT"]) //world.Export actually returns a file object in CONTENT
+	var/content = http["body"]
 	var/score = text2num(content)
 	if(isnull(score))
 		return -1
@@ -928,13 +1039,13 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		return -1
 
 	var/request = "https://www.ipqualityscore.com/api/json/ip/[CONFIG_GET(string/ipqualityscore_apikey)]/[address]?strictness=1&fast=true&byond_key=[key]"
-	var/http[] = world.Export(request)
+	var/list/http = flow_http_get(request) // inside the login flow
 
-	if(!http || !islist(http)) //If we couldn't check, the service might be down, fail-safe.
+	if(http["error"]) //If we couldn't check, the service might be down, fail-safe.
 		log_admin("Couldn't connect to ipqualityscore.com to check [address] for [key]")
 		return -1
 
-	var/content = file2text(http["CONTENT"]) //world.Export actually returns a file object in CONTENT
+	var/content = http["body"]
 	var/response = json_decode(content)
 	if(isnull(response))
 		return -1

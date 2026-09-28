@@ -4,4 +4,4 @@
 	savefile_identifier = PREFERENCE_PLAYER
 
 /datum/preference/toggle/auto_fit_viewport/apply_to_client_updated(client/client, value)
-	INVOKE_ASYNC(client, /client/verb/fit_viewport) // S10b keeps: fit_viewport winget round-trip
+	client.fit_viewport() // its wingets go through DX-exec

@@ -100,28 +100,21 @@
 		if("search")
 			last_results = list()
 			if(SSdbcore.IsConnected())
-				var/datum/db_query/query
 				// category == "Any" means no category filter; both branches use
 				// LIKE parameters so user-supplied title/author cannot inject SQL.
+				// om_io: the results fill in when they arrive.
 				if(category == "Any")
-					query = SSdbcore.NewQuery(
+					om_sql_view(src, "search",
 						"SELECT author, title, category, id FROM library WHERE author LIKE :author_pat AND title LIKE :title_pat",
-						list("author_pat" = "%[author]%", "title_pat" = "%[title]%")
+						list("author_pat" = "%[author]%", "title_pat" = "%[title]%"),
+						PROC_REF(sql_rows_arrived)
 					)
 				else
-					query = SSdbcore.NewQuery(
+					om_sql_view(src, "search",
 						"SELECT author, title, category, id FROM library WHERE author LIKE :author_pat AND title LIKE :title_pat AND category = :category",
-						list("author_pat" = "%[author]%", "title_pat" = "%[title]%", "category" = category)
+						list("author_pat" = "%[author]%", "title_pat" = "%[title]%", "category" = category),
+						PROC_REF(sql_rows_arrived)
 					)
-				query.Execute()
-				while(query.NextRow())
-					last_results += list(list(
-						"author" = query.item[1],
-						"title" = query.item[2],
-						"category" = query.item[3],
-						"id" = "[query.item[4]]",
-					))
-				qdel(query)
 			SQLquery = null // cleared after search — no longer holds interpolated SQL
 			screenstate = 1
 			add_fingerprint(usr)
@@ -130,6 +123,18 @@
 			screenstate = 0
 			return TRUE
 
+
+/obj/machinery/librarypubliccomp/proc/sql_rows_arrived(list/result, error, key)
+	var/list/rows = om_sql_view_rows(result, error, key, src)
+	last_results = list()
+	for(var/list/row as anything in rows)
+		last_results += list(list(
+			"author" = row[1],
+			"title" = row[2],
+			"category" = row[3],
+			"id" = "[row[4]]",
+		))
+	SStgui.update_uis(src)
 
 /*
  * Library Computer
@@ -164,6 +169,8 @@
 	// TGUI: TRUE when the admin ghost view is active. Toggles the
 	// External Archive table to show Delete buttons.
 	var/is_admin_view = FALSE
+	/// The External Archive's rows (refresh_external(): they arrive after it is asked).
+	var/list/external_rows
 
 /obj/machinery/librarycomp/Initialize(mapload)
 	. = ..()
@@ -242,6 +249,19 @@
 		return GLOB.tgui_always_state
 	return ..()
 
+/// Fetches the External Archive listing (om_io); tgui_data shows it when it arrives.
+/obj/machinery/librarycomp/proc/refresh_external()
+	if(!SSdbcore.IsConnected())
+		return
+	// sortby is mapped to a fixed column literal at the query site, so ORDER BY
+	// can never be injected even if the whitelist in tgui_act is ever bypassed.
+	om_sql_view(src, "external", "SELECT id, author, title, category FROM library ORDER BY [safe_sortby_column()]", PROC_REF(sql_rows_arrived))
+
+/obj/machinery/librarycomp/proc/sql_rows_arrived(list/result, error, key)
+	var/list/rows = om_sql_view_rows(result, error, key, src)
+	external_rows = rows
+	SStgui.update_uis(src)
+
 /// Maps the stored sortby value to a fixed, known-safe SQL column literal.
 /// Defense-in-depth: even if a future writer sets `sortby` without the whitelist
 /// in the "sort" tgui_act branch, ORDER BY can never become injectable.
@@ -309,19 +329,14 @@
 			))
 	data["internal_archive"] = internal
 	var/list/external = list()
-	if((screenstate == 8 || is_admin_view) && SSdbcore.IsConnected())
-		// sortby is mapped to a fixed column literal at the query site, so ORDER BY
-		// can never be injected even if the whitelist in tgui_act is ever bypassed.
-		var/datum/db_query/query = SSdbcore.NewQuery("SELECT id, author, title, category FROM library ORDER BY [safe_sortby_column()]")
-		query.Execute()
-		while(query.NextRow())
+	if(screenstate == 8 || is_admin_view)
+		for(var/list/row as anything in external_rows)
 			external += list(list(
-				"id" = "[query.item[1]]",
-				"author" = query.item[2],
-				"title" = query.item[3],
-				"category" = query.item[4],
+				"id" = "[row[1]]",
+				"author" = row[2],
+				"title" = row[3],
+				"category" = row[4],
 			))
-		qdel(query)
 	data["external_archive"] = external
 	return data
 
@@ -332,6 +347,8 @@
 	switch(action)
 		if("switchscreen")
 			screenstate = text2num(params["screen"])
+			if(screenstate == 8)
+				refresh_external()
 			return TRUE
 		if("print_bible")
 			if(COOLDOWN_FINISHED(src, print_cooldown))
@@ -417,16 +434,11 @@
 			if(!SSdbcore.IsConnected())
 				tgui_alert_async(usr, "Connection to Archive has been severed. Aborting.")
 				return TRUE
-			var/datum/db_query/query = SSdbcore.NewQuery(
+			// om_io: the uploader hears back when the archive answers.
+			om_io(src, /datum/om/io/sql,
 				"INSERT INTO library (author, title, content, category) VALUES (:author, :title, :content, :category)",
-				list("author" = scanner.cache.author, "title" = scanner.cache.name, "content" = scanner.cache.dat, "category" = upload_category)
-			)
-			if(!query.Execute())
-				to_chat(usr, query.ErrorMsg())
-			else
-				log_game("[usr.name]/[usr.key] has uploaded the book titled [scanner.cache.name], [length(scanner.cache.dat)] signs")
-				tgui_alert_async(usr, "Upload Complete.")
-			qdel(query)
+				list("author" = scanner.cache.author, "title" = scanner.cache.name, "content" = scanner.cache.dat, "category" = upload_category),
+				PROC_REF(upload_done), usr.ckey, "[usr.name]/[usr.key] has uploaded the book titled [scanner.cache.name], [length(scanner.cache.dat)] signs")
 			return TRUE
 		if("targetid")
 			var/raw_id = params["id"]
@@ -442,25 +454,10 @@
 					V.show_message(span_infoplain(span_bold("[src]") + "'s monitor flashes, \"Printer unavailable. Please allow a short time before attempting to print.\""))
 				return TRUE
 			COOLDOWN_START(src, print_cooldown, 6)
-			var/datum/db_query/query = SSdbcore.NewQuery(
+			om_io(src, /datum/om/io/sql,
 				"SELECT id, author, title, content FROM library WHERE id = :id",
-				list("id" = numeric_id)
-			)
-			query.Execute()
-			while(query.NextRow())
-				var/book_author = query.item[2]
-				var/book_title = query.item[3]
-				var/content = query.item[4]
-				var/obj/item/book/B = new(src.loc)
-				B.name = "Book: [book_title]"
-				B.title = book_title
-				B.author = book_author
-				B.dat = content
-				B.icon_state = "book[rand(1,16)]"
-				B.item_state = B.icon_state
-				visible_message("[src]'s printer hums as it produces a completely bound book. How did it do that?")
-				break
-			qdel(query)
+				list("id" = numeric_id),
+				PROC_REF(print_book_arrived))
 			return TRUE
 		if("delid")
 			if(!check_rights(R_ADMIN))
@@ -473,13 +470,9 @@
 			if(!SSdbcore.IsConnected())
 				tgui_alert_async(usr, "Connection to Archive has been severed. Aborting.")
 				return TRUE
-			var/datum/db_query/query = SSdbcore.NewQuery(
-				"DELETE FROM library WHERE id = :id",
-				list("id" = numeric_id)
-			)
-			query.Execute()
+			om_sql_write("DELETE FROM library WHERE id = :id", list("id" = numeric_id))
 			log_admin("[usr.key] has deleted library book id=[numeric_id]")
-			qdel(query)
+			refresh_external()
 			return TRUE
 		if("orderbyid")
 			var/orderid = act_prompt(usr, action, params, ui, "k468", list("kind" = "number", "message" = "Enter your order:"))
@@ -492,6 +485,7 @@
 			var/field = params["field"]
 			if(field in list("author", "title", "category"))
 				sortby = field
+				refresh_external()
 			return TRUE
 		if("hardprint")
 			var/newpath = text2path(params["path"])
@@ -501,6 +495,33 @@
 			NewBook.name = "Book: [NewBook.name]"
 			return TRUE
 
+/// om_io() callback: tells the uploader how the upload went.
+/obj/machinery/librarycomp/proc/upload_done(list/result, error, uploader_ckey, log_line)
+	var/client/C = GLOB.directory[uploader_ckey]
+	if(error)
+		if(C)
+			to_chat(C, error)
+		return
+	log_game(log_line)
+	if(C)
+		tgui_alert_async(C.mob, "Upload Complete.")
+
+/// om_io() callback: prints the ordered book, if the archive had it.
+/obj/machinery/librarycomp/proc/print_book_arrived(list/result, error)
+	var/list/rows = result?["rows"]
+	if(!length(rows))
+		return
+	var/list/row = rows[1]
+	var/book_title = row[3]
+	var/obj/item/book/B = new(src.loc)
+	B.name = "Book: [book_title]"
+	B.title = book_title
+	B.author = row[2]
+	B.dat = row[4]
+	B.icon_state = "book[rand(1,16)]"
+	B.item_state = B.icon_state
+	visible_message("[src]'s printer hums as it produces a completely bound book. How did it do that?")
+
 // admin ghost view routes to LibraryComp.tsx with is_admin_view
 // set; non-admin ghosts fall through to default handling.
 /obj/machinery/librarycomp/attack_ghost(mob/user)
@@ -509,6 +530,7 @@
 	user.set_machine(src)
 	is_admin_view = TRUE
 	screenstate = 8
+	refresh_external()
 	tgui_interact(user)
 
 /obj/machinery/librarycomp/emag_act(remaining_charges, mob/user)

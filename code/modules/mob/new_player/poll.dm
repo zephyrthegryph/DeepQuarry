@@ -4,7 +4,10 @@
 // The DB-write helpers below (vote_on_poll, log_text_poll_reply,
 // vote_on_numval_poll) are still called from those datums.
 
+/// A prompt flow (flow_io.dm): each read re-runs it when it arrives; the write goes last.
 /mob/new_player/proc/handle_privacy_poll()
+	if(!GLOB.prompt_flow)
+		return prompt_flow(src, PROC_REF(handle_privacy_poll), args)
 	if(!SSdbcore.IsConnected())
 		return
 	var/voted = 0
@@ -49,7 +52,10 @@
 		poll_browser_dialog.selected_pollid = pollid
 	poll_browser_dialog.tgui_interact(src)
 
+/// A prompt flow (flow_io.dm): each read re-runs it when it arrives; the write goes last.
 /mob/new_player/proc/vote_on_poll(pollid = -1, optionid = -1, multichoice = 0)
+	if(!GLOB.prompt_flow)
+		return prompt_flow(src, PROC_REF(vote_on_poll), args)
 	if(pollid == -1 || optionid == -1)
 		return
 
@@ -112,15 +118,20 @@
 			adminrank = client.holder.rank_names()
 
 
-		var/datum/db_query/insert_query = SSdbcore.NewQuery("INSERT INTO erro_poll_vote (id ,datetime ,pollid ,optionid ,ckey ,ip ,adminrank) VALUES (null, Now(), :pollid, :optionid, :ckey, :ip, :adminrank)",
+		if(!client)
+			return
+		flow_sql("INSERT INTO erro_poll_vote (id ,datetime ,pollid ,optionid ,ckey ,ip ,adminrank) VALUES (null, Now(), :pollid, :optionid, :ckey, :ip, :adminrank)",
 			list("pollid" = pollid, "optionid" = optionid, "ckey" = src.ckey, "ip" = client.address, "adminrank" = adminrank))
-		insert_query.Execute()
 
 		to_chat(src, span_blue("Vote successful."))
-		qdel(insert_query)
+		if(poll_browser_dialog)
+			om_after(poll_browser_dialog, 1, TYPE_PROC_REF(/datum/poll_browser_dialog, load_poll_detail), pollid)
 
 
+/// A prompt flow (flow_io.dm): each read re-runs it when it arrives; the write goes last.
 /mob/new_player/proc/log_text_poll_reply(pollid = -1, replytext = "")
+	if(!GLOB.prompt_flow)
+		return prompt_flow(src, PROC_REF(log_text_poll_reply), args)
 	if(pollid == -1 || replytext == "")
 		return
 
@@ -170,15 +181,20 @@
 			to_chat(src, "The text you entered was blank, contained illegal characters or was too long. Please correct the text and submit again.")
 			return
 
-		var/datum/db_query/insert_query = SSdbcore.NewQuery("INSERT INTO erro_poll_textreply (id ,datetime ,pollid ,ckey ,ip ,replytext ,adminrank) VALUES (null, Now(), :pollid, :ckey, :ip, :replytext, :adminrank)",
+		if(!client)
+			return
+		flow_sql("INSERT INTO erro_poll_textreply (id ,datetime ,pollid ,ckey ,ip ,replytext ,adminrank) VALUES (null, Now(), :pollid, :ckey, :ip, :replytext, :adminrank)",
 			list("pollid" = pollid, "ckey" = src.ckey, "ip" = client.address, "replytext" = replytext, "adminrank" = adminrank))
-		insert_query.Execute()
 
 		to_chat(src, span_blue("Feedback logging successful."))
-		qdel(insert_query)
+		if(poll_browser_dialog)
+			om_after(poll_browser_dialog, 1, TYPE_PROC_REF(/datum/poll_browser_dialog, load_poll_detail), pollid)
 
 
+/// A prompt flow (flow_io.dm): each read re-runs it when it arrives; the write goes last.
 /mob/new_player/proc/vote_on_numval_poll(pollid = -1, optionid = -1, rating = null)
+	if(!GLOB.prompt_flow)
+		return prompt_flow(src, PROC_REF(vote_on_numval_poll), args)
 	if(pollid == -1 || optionid == -1)
 		return
 
@@ -232,10 +248,12 @@
 			adminrank = client.holder.rank_names()
 
 
-		var/datum/db_query/insert_query = SSdbcore.NewQuery("INSERT INTO erro_poll_vote (id ,datetime ,pollid ,optionid ,ckey ,ip ,adminrank, rating) VALUES (null, Now(), :pollid, :optionid, :ckey, :ip, :adminrank, :rating)",
+		if(!client)
+			return
+		flow_sql("INSERT INTO erro_poll_vote (id ,datetime ,pollid ,optionid ,ckey ,ip ,adminrank, rating) VALUES (null, Now(), :pollid, :optionid, :ckey, :ip, :adminrank, :rating)",
 			list("pollid" = pollid, "optionid" = optionid, "ckey" = src.ckey, "ip" = client.address, "adminrank" = adminrank, "rating" = rating))
-		insert_query.Execute()
 
 		to_chat(src, span_blue("Vote successful."))
-		qdel(insert_query)
+		if(poll_browser_dialog)
+			om_after(poll_browser_dialog, 1, TYPE_PROC_REF(/datum/poll_browser_dialog, load_poll_detail), pollid)
 

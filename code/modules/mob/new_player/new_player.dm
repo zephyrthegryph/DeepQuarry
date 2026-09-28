@@ -147,6 +147,8 @@ REF_OWNED(/mob/new_player, list("manifest_dialog", "late_choices_dialog", "priva
 /// Joins as `rank`. Vore and item spawnpoints ask questions first, and each answer runs this again,
 /// so every check below is re-made before the joiner spawns.
 /mob/new_player/proc/do_late_spawn(rank)
+	if(client?.login_hold_refuses())
+		return 0
 	if(spawning || QDELETED(src))
 		return 0
 	if(!SSticker || SSticker.current_state != GAME_STATE_PLAYING)

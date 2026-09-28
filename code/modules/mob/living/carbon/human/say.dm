@@ -13,10 +13,15 @@
 	return ..()
 
 /mob/living/carbon/human/proc/forcesay(list/append)
+	if(stat == CONSCIOUS && client)
+		// The typed text is read from the client (a round trip): DX-exec answers forcesay_text().
+		dx_winget(src, client, "input", "text", PROC_REF(forcesay_text), append)
+
+/// dx_winget() callback for forcesay(): blurts out what was being typed, if still conscious.
+/mob/living/carbon/human/proc/forcesay_text(temp, list/append)
 	if(stat == CONSCIOUS)
 		if(client)
 			var/virgin = 1	//has the text been modified yet?
-			var/temp = winget(client, "input", "text")
 			if(findtextEx(temp, "Say \"", 1, 7) && length(temp) > 5)	//case sensitive means
 
 				temp = replacetext(temp, ";", "")	//general radio

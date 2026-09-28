@@ -490,7 +490,7 @@ A framework in which gameplay code never sleeps doesn't need it. The rule is **n
 A task step is a proc that returns: `STEP_NEXT`, `STEP_REPEAT(d)`, `STEP_DONE` or `STEP_FAIL(reason)`. Cancelling a task is always safe because no proc is ever suspended inside it. `om_after` and task deadlines share the wheel with stage rewakes, so they get lanes, budgets, relevance and parking for free: a timer on a parked entity is due on its clock, not on the wall clock.
 
 **What stays.**
-- `sleep` remains only in the MC (master.dm, failsafe.dm), vendored TGS and `stoplag()` itself. Map and station generation runs as lane work (`om_lane_work()`: a slice proc resumed by cursor within the scheduler's budget); world hooks, client init and admin verb delays are `om_after` timers; NTSL `delay()` is a task step. External I/O (rust-g SQL and HTTP) is an `om_io` job (§4.12): the caller gets a callback, nothing waits. The one legacy wait left is `db_query/sync()` behind `Execute(async = TRUE)`, for admin panels, login gates and UI callers not yet moved to `om_io`. Admin prompt waits (tgui_input/alert) stay until S10.
+- `sleep` remains only in the MC (master.dm, failsafe.dm), vendored TGS and `stoplag()` itself. Map and station generation runs as lane work (`om_lane_work()`: a slice proc resumed by cursor within the scheduler's budget); world hooks, client init and admin verb delays are `om_after` timers; NTSL `delay()` is a task step. External I/O (rust-g SQL and HTTP) is an `om_io` job (§4.12): the caller gets a callback, nothing waits. There is no legacy wait: `db_query/sync()` is gone, and code that reads rows inline runs as a prompt flow (§4.12, "I/O in prompt flows"). BYOND's blocking built-ins (`winget`, `winexists`, `MeasureText`, `shell`) go through DX-exec (§4.12). Prompts are `om_prompt` (the `prompts` count is 0).
 - Timers with no entity owner (round events, client real-time) use a global owner entity on the same wheel.
 
 **Timer variants (S9: SStimer is deleted).** Every former `addtimer` flag has one replacement:
@@ -557,12 +557,48 @@ takes exactly its `arg_count` request args; the next arg is the callback (a proc
   (`sql_commit_feedback`, `sync_admins_with_db`). Capture what the later step needs as text and
   numbers, or as context args, which are held weakly.
 - **What stays synchronous.** Boot and MC-owned work that must finish before the world goes on:
-  `SSdbcore.Initialize`/`Connect`/`InitializeRound` (the round id), and `Shutdown` draining the
-  queue. These use `Execute(async = FALSE)` or `run_query_sync`. The legacy `Execute(async = TRUE)`
-  wait (`db_query/sync()`, allowlisted) serves callers that read rows inline and have not moved yet:
-  the admin panels (permissions, bans, polls), the login gates `log_client_to_db` and `IsBanned`,
-  and the library and TGS commands. The login-time `world.Export` calls in `client procs.dm`
-  (join date, IP reputation) also stay for now: they gate the login. New code uses `om_io`.
+  `SSdbcore.Initialize`/`Connect`/`InitializeRound` (the round id), the boot-time admin load
+  (`load_admins(initial = TRUE)`), and `Shutdown` draining the queue. These use
+  `Execute(async = FALSE)` (or `Execute()` before the MC runs, which blocks). Anywhere else
+  `Execute(async = TRUE)` outside a prompt flow is an error: it logs a stack trace and returns
+  FALSE. New code uses `om_io`.
+- **I/O in prompt flows** (`code/datums/om/flow_io.dm`). A prompt flow (`prompt_flow()`, the
+  entry re-runs on every answer) can read the database inline: inside a running flow,
+  `query.Execute()` starts the query as an `om_io` job and unwinds the flow (it throws
+  `OM_FLOW_PENDING`, which `prompt_flow()` catches); the answer re-runs the entry with the
+  same arguments and the same `Execute()` - keyed by its order in the run - returns the stored
+  rows, so `NextRow()`/`item` read as before. `flow_http_get(url)` does the same for HTTP,
+  `flow_sql(sql, args)` for a write the flow must see finish, and `flow_io_answer(kind,
+  request)` for any kind. The re-run is re-checked: a deleted datum asker, a client asker that
+  left, a user who logged out, or (with `rights`) a user who lost them drops it. Rules: reads
+  first, then act (chat and logs before a later read repeat on every re-run); writes nobody
+  reads back are `om_sql_write()` (fire-and-forget; its jobs are not ordered with other jobs).
+  The admin permission verbs, DB bans and job bans, polls, the TGS database commands
+  (`run_as_flow()`: a command that waited replies to its channel when it finishes) and the
+  login checks run this way.
+- **Panels** can't query inside `tgui_data`. `om_sql_view(E, key, sql, args, on_rows)` fetches
+  rows for E when the panel opens or its filters change; `on_rows(result, error, key)` on E
+  (`om_sql_view_rows()` gives the rows) keeps them, re-checking the viewer's rights, and pushes
+  an update. The permissions panel, ban
+  panel, player log viewer and library computers work this way.
+- **The login gate** (`client procs.dm`). `world/IsBanned()` must answer at once, so the
+  database ban check moved into `log_client_to_db()`, a prompt flow on the client that also
+  reads the player record, the BYOND join date and the IP reputation (`flow_http_get`). While
+  it runs the client is held (`client.login_pending`): the lobby refuses ready, late join,
+  observe and spawning (`login_hold_refuses()`). It then admits the client (`login_admit()`,
+  which also does the paranoia logging) or disconnects it (a ban, the panic bunker, bad IP
+  reputation). A gate that hasn't answered after 90 seconds fails open, as a failed check always
+  has. A client reconnecting into a body it has keeps it meanwhile, and is disconnected all the
+  same if the ban check says so.
+- **DX-exec** (`code/datums/om/dx_exec.dm`). `winget`, `winexists` and `client.MeasureText`
+  are round trips to a client, and `shell` waits on an OS process. Callers ask
+  `dx_winget(E, client, id, params, on_done, context...)`, `dx_winexists()`,
+  `dx_measure_text()`, `dx_shell()` or `dx_shelleo()` and get `on_done(result, context...)` on
+  E later; E and datum context args are held weakly, a client by its ckey. The built-in runs in
+  `dx_exec_run()`, the one `set waitfor` for them. `scheduler_lints.py` counts the built-ins
+  outside it (`blocking_builtins`, 0); the allowlist keeps the executor, `world.shelleo()`
+  (reached through `dx_shelleo()`, or by the MC at boot) and tgui's window setup `winexists`
+  calls.
 
 ## 5. Change tracking (section B)
 
@@ -930,7 +966,8 @@ counted total ratchets to 0.
 | Do something after a delay | `om_after(E, delay, proc, args...)` (§4.11) | `addtimer()`, `spawn()`, `sleep()` | `scheduler_lints.py` (`addtimer`, `spawn`, `sleep`) |
 | Take time over an action with state | a named task type, `om_task_start(/datum/om/task/timed/x, actor, target, params)` (§11) | `om_do_after()`/`use_tool()` carrying more than two args, `do_after()` | `api_lints.py` (`do_after_state`, `use_tool_state`), `scheduler_lints.py` (`do_after`) |
 | Ask a player | `om_prompt(E, user, spec, on_answer)` | `input()`, `alert()`, `tgui_input_*()`, `tgui_alert()` | `scheduler_lints.py` (`prompts`) |
-| Do I/O (SQL, HTTP) | `om_io(E, /datum/om/io/<kind>, args..., on_done)` with kind `sql` or `http` (§4.12); `om_sql_write()`, `om_http_get()` | `Execute()` waiting on rows, `world.Export()`, `set waitfor` / `INVOKE_ASYNC` around a query | `scheduler_lints.py` (`set_waitfor`, `invoke_async`, `stoplag`) |
+| Do I/O (SQL, HTTP) | `om_io(E, /datum/om/io/<kind>, args..., on_done)` with kind `sql` or `http` (§4.12); `om_sql_write()`, `om_http_get()`; inline reads inside a prompt flow; `om_sql_view()` for panels | `Execute()` outside a flow, `world.Export()`, `set waitfor` / `INVOKE_ASYNC` around a query | `scheduler_lints.py` (`set_waitfor`, `invoke_async`, `stoplag`) |
+| Read a client's window or text size, or run a process | DX-exec: `dx_winget()`, `dx_winexists()`, `dx_measure_text()`, `dx_shell()`, `dx_shelleo()` (§4.12) | `winget()`, `winexists()`, `MeasureText()`, `shell()` | `scheduler_lints.py` (`blocking_builtins`) |
 | Run slow work without blocking | nothing: gameplay procs don't sleep | `INVOKE_ASYNC`, `set waitfor`, `stoplag()` | `scheduler_lints.py` (`invoke_async`, `set_waitfor`, `stoplag`) |
 | Rate-limit something | `COOLDOWN_START()` / `COOLDOWN_FINISHED()` (a time compared) | `TIMER_COOLDOWN_START()`; a raw `world.time` compare against a hand-kept timestamp or deadline | `api_lints.py` (`timer_cooldown`), `cooldown_lint.py` |
 | Change a var that a stage, behaviour or watch reads | its declared field's setter, `E.set_x(v)` or `om_set(E, "x", v)` (§5.1) | `x = v`, `E.x = v`, `x |= v` on a declared field; `vars[name] = v` outside the reflection sites in `api_lints_allowlist.txt`; `om_set_var()` and friends | `api_lints.py` (`field_write`, `vars_write`, `vars_helpers`) |

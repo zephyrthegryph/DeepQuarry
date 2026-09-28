@@ -75,6 +75,8 @@
 			client.prefs.ShowChoices(src)
 			return TRUE
 		if("ready")
+			if(!ready && client?.login_hold_refuses()) // the login gate is still checking them
+				return TRUE
 			if(!SSticker || SSticker.current_state <= GAME_STATE_PREGAME)
 				ready = !ready
 			else
@@ -84,6 +86,8 @@
 			ViewManifest()
 			return TRUE
 		if("late_join")
+			if(client?.login_hold_refuses())
+				return TRUE
 			if(!SSticker || SSticker.current_state != GAME_STATE_PLAYING)
 				to_chat(usr, span_red("The round is either not ready, or has already finished..."))
 				return TRUE
@@ -99,6 +103,8 @@
 		if("observe")
 			if(QDELETED(src))
 				return FALSE
+			if(client?.login_hold_refuses())
+				return TRUE
 			if(!SSticker || SSticker.current_state == GAME_STATE_STARTUP)
 				to_chat(src, span_warning("The game is still setting up, please try again later."))
 				return TRUE

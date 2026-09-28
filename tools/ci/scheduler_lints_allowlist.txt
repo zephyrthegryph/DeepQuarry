@@ -10,14 +10,8 @@ del code/modules/admin/fix_player_notes_listing.dm 1  # savefile, not a datum
 del code/modules/admin/player_notes.dm 2  # savefile, not a datum
 del code/modules/client/client procs.dm 1  # client: disconnects the client
 del code/modules/admin/admin_verbs.dm 1  # client: kicks the client
-spawn code/game/world.dm 1  # world/New (world procs); the ToR ban update is blocking external I/O
-spawn code/game/gamemodes/cult/runes.dm 1  # waits on a prompt (tgui_alert; prompts, S10)
-spawn code/game/machinery/telecomms/traffic_control.dm 1  # update_ide() polls winget(), a blocking client round trip (client procs)
 spawn code/modules/admin/admin.dm 1  # admin verb (allowlist)
 spawn code/modules/admin/player_effects.dm 1  # admin verb (allowlist)
-spawn code/modules/admin/topic.dm 1  # admin topic; world.Export() is a blocking external call
-spawn code/modules/admin/ToRban.dm 1  # world.Export() is a blocking external call
-spawn code/modules/admin/verbs/adminpm.dm 1  # admin PM popup: tgui_input_text() sleeps (admin verb, prompts)
 spawn code/modules/admin/verbs/debug.dm 2  # admin verb (allowlist)
 spawn code/modules/admin/verbs/randomverbs.dm 2  # admin verb (allowlist)
 spawn code/modules/admin/verbs/secrets.dm 1  # admin verb (allowlist)
@@ -27,7 +21,6 @@ spawn code/modules/mob/living/simple_mob/simple_mob.dm 1  # animal_nom() sleeps 
 spawn code/modules/rogueminer/controller.dm 1  # clean_zone() sleeps between deletions (long loop: a lane with a budget, S10)
 spawn code/modules/tickets/procs.dm 3  # client verb cooldown (client procs)
 spawn code/modules/xenobio/items/slime_objects.dm 1  # tgui_alert() sleeps (prompts, S10)
-spawn code/_helpers/unsorted.dm 2  # tgui_input_text() sleeps (prompts, S10); world.Export() is a blocking external call
 sleep code/controllers/failsafe.dm 4  # MC
 sleep code/controllers/master.dm 8  # MC
 sleep code/modules/tgs/core/datum.dm 1  # vendored TGS
@@ -38,30 +31,22 @@ sleep code/modules/tgs/v5/bridge.dm 1  # vendored TGS
 sleep code/_helpers/time.dm 3  # stoplag() itself
 invoke_async code/controllers/subsystems/garbage.dm 3  # find_references is a long CHECK_TICK-yielding scan
 invoke_async code/controllers/subsystems/tgui.dm 1  # tgui process re-runs arbitrary tgui_interact overrides / asset sends
-invoke_async code/datums/chat_message.dm 1  # generate_image waits on client MeasureText
 invoke_async code/datums/components/crafting/crafting.dm 1  # tgui_interact may block on asset/window setup
 invoke_async code/datums/looping_sounds/sequence.dm 1  # sequence process_data may sleep (om_sleep_violation exemption)
-invoke_async code/game/gamemodes/game_mode.dm 1  # blocking SQL query
-invoke_async code/game/jobs/job/civilian_chaplain.dm 1  # callee prompts (tgui_input_text)
 invoke_async code/modules/admin/verbs/SDQL2/SDQL_2.dm 1  # SDQL Run is a long yielding query
 invoke_async code/modules/asset_cache/iconforge/batched_spritesheet.dm 1  # realize_spritesheets waits with UNTIL
 invoke_async code/modules/belly_overlay/belly_overlay_tgui.dm 1  # tgui open may block on asset/window setup
 invoke_async code/modules/benchmarks/scenarios.dm 1  # expedition generation yields; harness polls a deadline
-invoke_async code/modules/client/client procs.dm 1  # winget round-trip
 invoke_async code/modules/client/preferences/preview_async.dm 1  # polls rust-g preview jobs (blocking external I/O)
-invoke_async code/modules/client/preferences/types/game/auto_fit_viewport.dm 1  # fit_viewport winget round-trip
 invoke_async code/modules/client/preferences/types/game/ui.dm 1  # window reinitialize may block on asset/window setup
-invoke_async code/modules/client/verbs/ooc.dm 1  # fit_viewport winget round-trip
 invoke_async code/modules/keybindings/adapters.dm 1  # MouseDrop_T overrides may prompt/do_after
 invoke_async code/modules/material_science/material_diagnostics.dm 2  # tgui_interact may block on asset/window setup; callee prompts (tgui_input_list)
 invoke_async code/modules/mob/living/living.dm 1  # ShowChoices opens tgui (asset/window setup)
 invoke_async code/modules/nifsoft/nif_tgui.dm 1  # tgui_interact may block on asset/window setup
 invoke_async code/modules/research/tg/experisci/experiment/handlers/experiment_handler.dm 2  # tgui_interact may block on asset/window setup
-invoke_async code/modules/tgui/tgui_window.dm 1  # winget round-trip
 invoke_async code/modules/vore/eating/living.dm 1  # tgui_interact may block on asset/window setup
 stoplag code/controllers/master.dm 1  # MC code (map-load mutex)
 stoplag code/controllers/subsystems/atoms.dm 2  # runtime template loads yield between atoms (lane-work conversion pending)
-stoplag code/controllers/subsystems/dbcore.dm 1  # db_query/sync(): the legacy inline-result wait for admin panels, login gates (log_client_to_db, IsBanned) and UI callers not yet on om_io
 stoplag code/controllers/subsystems/pathfinder.dm 2  # mutex held across the search's CHECK_TICK yields
 stoplag code/modules/asset_cache/asset_cache_client.dm 1  # waits on the client's Topic round trip (external)
 stoplag code/modules/asset_cache/transports/asset_transport.dm 1  # paces browse_rsc sends to the client; browse_queue_flush waits on the client
@@ -96,4 +81,8 @@ set_waitfor code/modules/power/apc.dm 1  # update_nightshift() CHECK_TICKs over 
 set_waitfor code/modules/tgs/v5/topic.dm 1  # vendored TGS
 set_waitfor code/_helpers/chat.dm 2  # TGS chat bridge (blocking topic to TGS)
 set_waitfor code/__defines/tgs.dm 1  # vendored TGS API
-invoke_async code/modules/balloon_alert/balloon_alert.dm 1  # MeasureText is a client round trip
+set_waitfor code/datums/om/dx_exec.dm 1  # DX-exec: the one executor for BYOND's blocking built-ins (winget, winexists, MeasureText, shell)
+blocking_builtins code/datums/om/dx_exec.dm 4  # DX-exec itself: winget, winexists, MeasureText, shell run here and nowhere else
+blocking_builtins code/_helpers/shell.dm 2  # world.shelleo()'s shell(): reached through dx_shelleo(), or by the MC at boot (master.dm)
+blocking_builtins code/controllers/subsystems/tgui.dm 3  # tgui window setup/teardown winexists (tgui process is allowlisted: asset/window setup)
+blocking_builtins code/modules/tgui/tgui_window.dm 3  # tgui window initialize() winexists (asset/window setup, as the tgui INVOKE_ASYNC keeps)

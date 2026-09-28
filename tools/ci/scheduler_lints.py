@@ -17,6 +17,7 @@ outside the allowlist in sec 4.11 ("What stays").
     set_waitfor      set waitfor                   -> nothing
     weakref          weakref (any case)            -> relations, or OM handles (0: deleted)
     del              del(                          -> qdel and the lifecycle verbs
+    blocking_builtins  winget( winexists( .MeasureText( shell(   -> DX-exec (dx_exec.dm) callbacks
     lc_refs          undeclared object-typed instance vars and lists
 
 LC-refs: a var whose declared type is an object reference (tmp
@@ -63,6 +64,9 @@ PATTERNS = [
     ("set_waitfor", re.compile(r"\bset\s+waitfor\b")),
     ("weakref", re.compile(r"(?i)weakref")),
     ("del", re.compile(r"(?<![\w./])del\s*\(")),
+    # BYOND's blocking built-ins: client round trips and OS processes. Callers ask DX-exec
+    # (dx_winget(), dx_winexists(), dx_measure_text(), dx_shell(), dx_shelleo()) instead.
+    ("blocking_builtins", re.compile(r"(?<![\w./])(?:winget|winexists|shell)\s*\(|\.MeasureText\s*\(")),
 ]
 NAMES = [name for name, _ in PATTERNS] + ["lc_refs"]
 # Marks a blocking prompt the S10 allowlist keeps (file uploads, the tgui repair verb, ...).

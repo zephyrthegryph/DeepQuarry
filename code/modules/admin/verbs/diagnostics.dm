@@ -59,7 +59,7 @@ ADMIN_VERB(radio_report, R_DEBUG, "Radio report", "Displays a radio report.", AD
 
 ADMIN_VERB(reload_admins, R_SERVER, "Reload Admins", "Reloads admins from the file or database.", ADMIN_CATEGORY_DEBUG_SERVER)
 	message_admins("[user] manually reloaded admins")
-	load_admins()
+	reload_admins_async()
 	feedback_add_details("admin_verb","RLDA") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(print_jobban_old, R_ADMIN|R_MOD, "Print Jobban Log", "This spams all the active jobban entries for the current round to standard output.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
