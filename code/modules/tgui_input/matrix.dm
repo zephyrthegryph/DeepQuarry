@@ -79,7 +79,7 @@
 	/// The title of the TGUI window
 	var/title
 	/// The TGUI UI state that will be returned in ui_state(). Default: always_state
-	var/datum/tgui_state/state
+	var/state_handle
 	/// Internal var to remember if we only passed a path before
 	var/was_path
 
@@ -104,7 +104,7 @@
 	src.message = message
 	src.target = target
 	src.title = title
-	src.state = ui_state
+	src.state_handle = om_handle(ui_state)
 	src.was_path = was_path
 	src.matrix_only = matrix_only
 	if(matrix_only)
@@ -135,7 +135,7 @@
 	closed = TRUE
 
 /datum/tgui_input_colormatrix/tgui_state(mob/user)
-	return state
+	return state()
 
 /datum/tgui_input_colormatrix/tgui_static_data(mob/user)
 	var/list/data = list()
@@ -334,3 +334,7 @@
 			temp = "Matrix is too dark. (passed [passed] out of [minimum_matrix_tests] required tests. Minimum lightness: [minimum_matrix_lightness])."
 			return FALSE
 		return TRUE
+
+/// LC-refs: the state this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_input_colormatrix/proc/state() as /datum/tgui_state
+	return om_resolve(state_handle)

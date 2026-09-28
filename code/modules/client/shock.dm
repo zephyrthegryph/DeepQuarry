@@ -17,7 +17,7 @@
 // normal configuration UI!
 /datum/tgui_shock
 	/// The user who opened the window
-	var/client/client
+	var/client_handle
 	/// The modal window
 	var/datum/tgui_window/window
 
@@ -34,7 +34,7 @@
 // SHOCK.JS UI                          //
 //////////////////////////////////////////
 /datum/tgui_shock/New(client/client, id)
-	src.client = client
+	src.client_handle = om_handle(client)
 	window = new(client, id)
 	window.subscribe(src, PROC_REF(on_message))
 	window.is_browser = TRUE
@@ -151,3 +151,7 @@
 REF_OWNED(/client, "tgui_shocker")
 
 REF_OWNED(/datum/tgui_shock, "window")
+
+/// LC-refs: the client this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_shock/proc/client() as /client
+	return om_resolve(client_handle)

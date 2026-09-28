@@ -22,7 +22,7 @@
  */
 /datum/tgui_say
 	/// The user who opened the window
-	var/client/client
+	var/client_handle
 	/// Injury phrases to blurt out
 	var/static/list/hurt_phrases = list("GACK!", "GLORF!", "OOF!", "AUGH!", "OW!", "URGH!", "HRNK!")
 	/// Max message length
@@ -36,7 +36,7 @@
 
 /** Creates the new input window to exist in the background. */
 /datum/tgui_say/New(client/client, id)
-	src.client = client
+	src.client_handle = om_handle(client)
 	window = new(client, id)
 	winset(client, "tgui_say", "size=1,1;is-visible=0;")
 	window.subscribe(src, PROC_REF(on_message))
@@ -67,17 +67,17 @@
 /datum/tgui_say/proc/load()
 	window_open = FALSE
 
-	var/minimum_width = client?.prefs?.read_preference(/datum/preference/numeric/tgui_say_width) || 1
-	var/minimum_height = (client?.prefs?.read_preference(/datum/preference/numeric/tgui_say_height) || 1) * 20 + 10
-	winset(client, "tgui_say", "pos=410,400;is-visible=0;")
+	var/minimum_width = client()?.prefs?.read_preference(/datum/preference/numeric/tgui_say_width) || 1
+	var/minimum_height = (client()?.prefs?.read_preference(/datum/preference/numeric/tgui_say_height) || 1) * 20 + 10
+	winset(client(), "tgui_say", "pos=410,400;is-visible=0;")
 
 	window.send_message("props", list(
-		"lightMode" = client?.prefs?.read_preference(/datum/preference/toggle/tgui_say_light),
-		"scale" = client?.prefs?.read_preference(/datum/preference/toggle/ui_scale),
+		"lightMode" = client()?.prefs?.read_preference(/datum/preference/toggle/tgui_say_light),
+		"scale" = client()?.prefs?.read_preference(/datum/preference/toggle/ui_scale),
 		"minimumWidth" = minimum_width,
 		"minimumHeight" = minimum_height,
 		"maxLength" = max_length,
-		"spellcheck" = client?.prefs?.read_preference(/datum/preference/toggle/tgui_use_spellcheck)
+		"spellcheck" = client()?.prefs?.read_preference(/datum/preference/toggle/tgui_use_spellcheck)
 	))
 
 	stop_thinking()
@@ -143,9 +143,13 @@
 	if(type == "lenwarn")
 		var/mlen = payload["length"]
 		var/maxlen = payload["maxlength"]
-		to_chat(client, span_warning(span_bold("Warning") + ": Message with [mlen] exceeded the maximum length of [maxlen]."))
+		to_chat(client(), span_warning(span_bold("Warning") + ": Message with [mlen] exceeded the maximum length of [maxlen]."))
 	return FALSE
 
 REF_OWNED(/client, "tgui_say")
 
 REF_OWNED(/datum/tgui_say, "window")
+
+/// LC-refs: the client this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_say/proc/client() as /client
+	return om_resolve(client_handle)

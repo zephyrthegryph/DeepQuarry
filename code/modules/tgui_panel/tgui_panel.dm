@@ -8,7 +8,7 @@
  * Hosts tgchat and other nice features.
  */
 /datum/tgui_panel
-	var/client/client
+	var/client_handle
 	var/datum/tgui_window/window
 	var/broken = FALSE
 	var/initialized_at
@@ -17,7 +17,7 @@
 	var/static/admins_warned = FALSE
 
 /datum/tgui_panel/New(client/client, id)
-	src.client = client
+	src.client_handle = om_handle(client)
 	window = new(client, id)
 	window.subscribe(src, PROC_REF(on_message))
 
@@ -76,7 +76,7 @@
 /datum/tgui_panel/proc/on_message(type, payload)
 	if(type == "ready")
 		broken = FALSE
-		var/list/stored_rounds = CONFIG_GET(flag/chatlog_database_backend) ? vchatlog_get_recent_roundids(client.ckey) : null
+		var/list/stored_rounds = CONFIG_GET(flag/chatlog_database_backend) ? vchatlog_get_recent_roundids(client().ckey) : null
 		window.send_message("connected", list(
 			"round_id" = GLOB.round_id, // Sends the round ID to the chat, requires round IDs
 			"chatlog_db_backend" = CONFIG_GET(flag/chatlog_database_backend),
@@ -86,10 +86,10 @@
 		window.send_message("update", list(
 			"config" = list(
 				"client" = list(
-					"ckey" = client.ckey,
-					"chatlog_token" = client.chatlog_token,
-					"address" = client.address,
-					"computer_id" = client.computer_id,
+					"ckey" = client().ckey,
+					"chatlog_token" = client().chatlog_token,
+					"address" = client().address,
+					"computer_id" = client().computer_id,
 				),
 				"server" = list(
 					"round_id" = GLOB.round_id,
@@ -102,7 +102,7 @@
 		))
 		return TRUE
 	if(type == "audio/setAdminMusicVolume")
-		client.admin_music_volume = payload["volume"]
+		client().admin_music_volume = payload["volume"]
 		return TRUE
 
 	if(type == "audio/protected")
@@ -125,3 +125,7 @@
 	window.send_message("roundrestart")
 
 REF_OWNED(/datum/tgui_panel, "window")
+
+/// LC-refs: the client this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_panel/proc/client() as /client
+	return om_resolve(client_handle)

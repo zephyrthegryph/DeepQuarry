@@ -36,7 +36,7 @@
 	/// Timed refreshing state
 	var/refreshing = FALSE
 	/// Topic state used to determine status/interactability.
-	var/datum/tgui_state/state = null
+	var/state_handle
 	/// Rate limit client refreshes to prevent DoS.
 	COOLDOWN_DECLARE(refresh_cooldown)
 	/// The id of any ByondUi elements that we have opened
@@ -74,7 +74,7 @@
 	src.interface = interface
 	if(title)
 		src.title = title
-	src.state = src_object.tgui_state()
+	src.state_handle = om_handle(src_object.tgui_state())
 	src.parent_ui = parent_ui
 	if(parent_ui)
 		parent_ui.children += src
@@ -238,7 +238,7 @@
 	// Unset machine just to be sure.
 	user.unset_machine()
 
-	state = null
+	state_handle = null
 	if(parent_ui)
 		parent_ui.children -= src
 	parent_ui = null
@@ -275,7 +275,7 @@
  * required state datum/ui_state/state Next state
  */
 /datum/tgui/proc/set_state(datum/tgui_state/state)
-	src.state = state
+	src.state_handle = om_handle(state)
 
 /**
  * public
@@ -378,7 +378,7 @@
 			"observer" = isobserver(user),
 		),
 	)
-	var/data = custom_data || with_data && src_object().tgui_data(user, src, state)
+	var/data = custom_data || with_data && src_object().tgui_data(user, src, state())
 	#ifdef DEBUG
 	if(startup_profile)
 		startup_profile["dynamic_data_ms"] = rustg_time_milliseconds(startup_timer)
@@ -439,7 +439,7 @@
 /datum/tgui/proc/process_status()
 	var/prev_status = status
 	if(src_object())
-		status = src_object().tgui_status(user, state)
+		status = src_object().tgui_status(user, state())
 	if(parent_ui)
 		status = min(status, parent_ui.status)
 	return prev_status != status
@@ -460,7 +460,7 @@
 		log_tgui(user, "Action: [act_type] [href_list["payload"]], Window: [window().id], Source: [src_object()]")
 		#endif
 		process_status()
-		DEFAULT_QUEUE_OR_CALL_VERB(VERB_CALLBACK(src, PROC_REF(on_act_message), act_type, payload, state))
+		DEFAULT_QUEUE_OR_CALL_VERB(VERB_CALLBACK(src, PROC_REF(on_act_message), act_type, payload, state()))
 		return FALSE
 	switch(type)
 		if("ready")
@@ -520,3 +520,7 @@
 /// LC-refs: the window this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui/proc/window() as /datum/tgui_window
 	return om_resolve(window_handle)
+
+/// LC-refs: the state this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui/proc/state() as /datum/tgui_state
+	return om_resolve(state_handle)
