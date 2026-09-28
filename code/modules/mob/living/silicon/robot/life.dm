@@ -23,11 +23,6 @@
 		return ctx.abort()
 	self.used_power_this_tick = 0
 
-/datum/om/stage/life/modifiers/silicon/robot
-	order = LIFE_PHASE_INPUT + 10
-	of = /mob/living/silicon/robot
-	run_if = null
-
 /datum/om/stage/life/instability/silicon/robot
 	order = LIFE_PHASE_INPUT + 40
 	of = /mob/living/silicon/robot

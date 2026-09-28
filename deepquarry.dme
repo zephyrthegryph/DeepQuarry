@@ -5421,7 +5421,6 @@
 #include "code\modules\combat_ai\brain\public_api.dm"
 #include "code\modules\combat_ai\brain\scheduling.dm"
 #include "code\modules\combat_ai\integration\item_grants.dm"
-#include "code\modules\combat_ai\integration\modifier_grants.dm"
 #include "code\modules\combat_ai\integration\mob_living.dm"
 #include "code\modules\combat_ai\integration\damage_hooks.dm"
 #include "code\modules\combat_ai\integration\player_verbs.dm"

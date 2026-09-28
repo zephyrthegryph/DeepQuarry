@@ -16,10 +16,11 @@
 	cast_methods = CAST_MELEE
 	aspect = ASPECT_BIOMED
 	light_color = "#FF5C5C"
-	modifier_type = /datum/modifier/technomancer/purify
+	modifier_type = /datum/body_effect/technomancer/purify
 	modifier_duration = 10 SECONDS
 
-/datum/modifier/technomancer/purify
+/datum/body_effect/technomancer/purify
+	tick_interval = 2 SECONDS
 	name = "purify"
 	desc = "You feel rather clean and pure."
 	mob_overlay_state = "green_sparkles"
@@ -28,12 +29,12 @@
 	on_expired_text = span_notice("The sparkles have faded, although you feel healthier than before.")
 	stacks = MODIFIER_STACK_EXTEND
 
-/datum/modifier/technomancer/purify/tick()
-	if(!holder.mend(TREAT_ANTITOXIN, 4 * spell_power)) // Should heal roughly 120 damage over 1 minute, as tick() is run every 2 seconds.
-		expire() // No point existing if the spell can't heal.
+/datum/body_effect/technomancer/purify/on_tick(mob/living/L)
+	var/spell_power = spell_power_of(L)
+	if(!L.mend(TREAT_ANTITOXIN, 4 * spell_power)) // Should heal roughly 120 damage over 1 minute, as tick() is run every 2 seconds.
+		L.end_body_effect(type) // No point existing if the spell can't heal.
 		return
-	holder.adjust_instability(1)
-	if(origin)
-		var/mob/living/L = om_resolve(origin)
-		if(istype(L))
-			L.adjust_instability(1)
+	L.adjust_instability(1)
+	var/mob/living/caster = L.body_effect_origin(type)
+	if(istype(caster))
+		caster.adjust_instability(1)

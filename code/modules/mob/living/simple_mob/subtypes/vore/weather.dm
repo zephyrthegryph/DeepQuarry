@@ -252,7 +252,7 @@
 /mob/living/simple_mob/vore/boss_jellyfish/proc/summon_puddles(atom/A)
 	for(var/mob/living/L in view(src, 7))
 		if(L.stat != DEAD || !IIsAlly(L))
-			L.add_modifier(/datum/modifier/mmo_drop/jelly_fish, 3, src)
+			L.apply_body_effect(/datum/body_effect/mmo_drop/jelly_fish, 3, src)
 		if(chain_number > 0)
 			chain_number -= 1
 			if(prob(50))

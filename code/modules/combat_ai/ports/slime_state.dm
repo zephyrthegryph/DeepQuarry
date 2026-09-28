@@ -52,7 +52,7 @@
 			return
 		if(holder().untamable)
 			holder().say("Grrr...")
-			holder().add_modifier(/datum/modifier/berserk, 30 SECONDS)
+			holder().apply_body_effect(/datum/body_effect/berserk, 30 SECONDS)
 			enrage()
 		var/justified = is_justified_to_discipline()
 		if(holder().ai_brain)

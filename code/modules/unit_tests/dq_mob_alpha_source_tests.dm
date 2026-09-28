@@ -38,9 +38,9 @@
 
 	qdel(H)
 
-/// The same scenario, but driven through the real modifiers (ambush and
+/// The same scenario, but driven through the real body effects (ambush and
 /// underwater_stealth) instead of calling the alpha-source procs directly,
-/// to prove the modifiers themselves were actually converted.
+/// to prove the effects themselves were actually converted.
 /datum/unit_test/dq_ambush_and_underwater_stealth_modifiers_dont_clobber_each_other
 
 /datum/unit_test/dq_ambush_and_underwater_stealth_modifiers_dont_clobber_each_other/Run()
@@ -50,7 +50,7 @@
 	TEST_ASSERT(ambush_mod, "ambush modifier should have applied to a fresh human")
 	TEST_ASSERT(H.alpha == 30, "ambush should fade the wearer to alpha 30, got [H.alpha]")
 
-	var/datum/modifier/underwater_stealth/water_mod = H.add_modifier(/datum/modifier/underwater_stealth)
+	var/water_mod = H.apply_body_effect(/datum/body_effect/underwater_stealth)
 	TEST_ASSERT(water_mod, "underwater_stealth modifier should have applied on top of ambush")
 	var/expected_combined = round(255 * (30/255) * (50/255))
 	TEST_ASSERT(H.alpha == expected_combined, "both modifiers active should combine, expected [expected_combined], got [H.alpha]")
@@ -61,7 +61,7 @@
 	H.remove_body_effect(/datum/body_effect/ambush, silent = TRUE)
 	TEST_ASSERT(H.alpha == 50, "expiring ambush while underwater_stealth is still active should leave alpha at underwater_stealth's own value, got [H.alpha]")
 
-	H.remove_modifiers_of_type(/datum/modifier/underwater_stealth, silent = TRUE)
+	H.remove_body_effect(/datum/body_effect/underwater_stealth, silent = TRUE)
 	TEST_ASSERT(H.alpha == 255, "expiring the last active modifier should restore full opacity, got [H.alpha]")
 
 	qdel(H)

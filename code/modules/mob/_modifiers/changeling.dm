@@ -1,4 +1,6 @@
-/datum/modifier/changeling
+/datum/body_effect/changeling
+	stacks = MODIFIER_STACK_FORBID
+	tick_interval = 2 SECONDS
 	name = "changeling"
 	desc = "Changeling modifier."
 
@@ -14,37 +16,24 @@
 
 	var/exterior_modifier = FALSE	// Should we be checking the origin mob for chems?
 
-/datum/modifier/changeling/check_if_valid()
-	var/mob/living/L = null
-	if(exterior_modifier)
-		if(origin)
-			L = om_resolve(origin)
-		else
-			expire()
-			return
+/// The changeling paying for the effect: the mob itself, or whoever applied it (exterior_modifier).
+/datum/body_effect/changeling/proc/changeling_of(mob/living/L) as /mob/living
+	return exterior_modifier ? L.body_effect_origin(type) : L
 
-	if((!exterior_modifier && !holder.changeling_power(required_chems, 0, max_genetic_damage, max_stat)) || (exterior_modifier && L && !L.changeling_power(required_chems, 0, max_genetic_damage, max_stat)))
-		expire()
-	else
-		..()
+/datum/body_effect/changeling/on_check(mob/living/L)
+	var/mob/living/ling = changeling_of(L)
+	if(!ling || !ling.changeling_power(required_chems, 0, max_genetic_damage, max_stat))
+		L.end_body_effect(type)
 
-/datum/modifier/changeling/tick()
-	..()
+/datum/body_effect/changeling/on_tick(mob/living/L)
+	if(!use_chems)
+		return
+	var/mob/living/ling = changeling_of(L)
+	var/datum/changeling/comp = ling?.get_changeling_state()
+	if(comp)
+		comp.chem_charges = between(0, comp.chem_charges - chem_maintenance, comp.chem_storage)
 
-	if(use_chems)
-		var/mob/living/L = null
-
-		if(exterior_modifier)
-			L = om_resolve(origin)
-
-		else
-			L = holder
-		if(L)
-			var/datum/changeling/comp = L.get_changeling_state()
-			if(comp)
-				comp.chem_charges = between(0, comp.chem_charges - chem_maintenance, comp.chem_storage)
-
-/datum/modifier/changeling/thermal_sight
+/datum/body_effect/changeling/thermal_sight
 	name = "Thermal Adaptation"
 	desc = "Our eyes are capable of seeing into the infrared spectrum to accurately identify prey through walls."
 	factors = alist(BF_SIGHT_FLAGS = SEE_MOBS)
@@ -52,44 +41,14 @@
 	on_expired_text = span_alien("Your sight returns to what it once was.")
 	stacks = MODIFIER_STACK_EXTEND
 
-/datum/modifier/changeling/thermal_sight/check_if_valid()
-	var/mob/living/L = null
+/datum/body_effect/changeling/thermal_sight/on_check(mob/living/L)
+	var/mob/living/ling = changeling_of(L)
+	var/datum/changeling/changeling = ling?.changeling_power(0,0,100,CONSCIOUS)
+	if(!changeling?.thermal_sight)
+		L.end_body_effect(type)
 
-	if(exterior_modifier)
-		L = om_resolve(origin)
-
-	else
-		L = holder
-
-	if(!L)
-		expire()
-		return
-
-	var/datum/changeling/changeling = L.changeling_power(0,0,100,CONSCIOUS)
-
-	if(!changeling)
-		expire()
-		return
-
-	if(!changeling.thermal_sight)
-		expire()
-		return
-
-	..()
-
-/datum/modifier/changeling/thermal_sight/expire()
-	var/mob/living/L = null
-
-	if(exterior_modifier)
-		L = om_resolve(origin)
-
-	else
-		L = holder
-
-	if(L)
-		var/datum/changeling/changeling = L.changeling_power(0,0,100,CONSCIOUS)
-
-		if(changeling)
-			changeling.thermal_sight = FALSE
-
-	..()
+/datum/body_effect/changeling/thermal_sight/on_end(mob/living/L, expired)
+	var/mob/living/ling = changeling_of(L)
+	var/datum/changeling/changeling = ling?.changeling_power(0,0,100,CONSCIOUS)
+	if(changeling)
+		changeling.thermal_sight = FALSE

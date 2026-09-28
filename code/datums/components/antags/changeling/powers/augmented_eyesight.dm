@@ -25,8 +25,8 @@
 	if(active)
 		comp.chem_charges -= 5
 		to_chat(C, span_notice("We feel a minute twitch in our eyes, and a hidden layer to the world is revealed."))
-		C.add_modifier(/datum/modifier/changeling/thermal_sight, 0, src)
+		C.apply_body_effect(/datum/body_effect/changeling/thermal_sight, 0, src)
 	else
 		to_chat(C, span_notice("Our vision dulls."))
-		C.remove_modifiers_of_type(/datum/modifier/changeling/thermal_sight)
+		C.remove_body_effect(/datum/body_effect/changeling/thermal_sight)
 	return 1

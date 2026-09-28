@@ -32,7 +32,7 @@
 	var/generator_hit_cost = 100							// Power used when a special effect (such as a bullet being blocked) is performed! Could also be expanded to other things.
 	var/generator_active_cost = 10							// Power used when turned on.
 	var/damage_cost = 25									// 40 damage absorbed per 1000 charge.
-	var/modifier_type = /datum/modifier/shield_projection	// What type of modifier will it add? Used for variant modifiers!
+	var/modifier_type = /datum/body_effect/shield_projection	// What type of modifier will it add? Used for variant modifiers!
 
 	var/has_weapon = 1										// Backpack units generally have weapons.
 	var/shield_active = 0 									// If the shield gen is active.
@@ -238,14 +238,14 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 		if(shield_active)
 			shield_active = !shield_active //Deactivate the shield!
 			to_chat(user, span_warning("You deactive the shield!"))
-			user.remove_modifiers_of_type(/datum/modifier/shield_projection)
+			user.remove_body_effect(/datum/body_effect/shield_projection)
 			PERIODIC_STOP(src)
 			playsound(src, 'sound/weapons/saberoff.ogg', 50, 1) //Shield turning off! PLACEHOLDER
 		else
 			shield_active = !shield_active
 			to_chat(user, span_warning("You activate the shield!"))
-			user.remove_modifiers_of_type(/datum/modifier/shield_projection) //Just to make sure they aren't using two at once!
-			user.add_modifier(modifier_type)
+			user.remove_body_effect(/datum/body_effect/shield_projection) //Just to make sure they aren't using two at once!
+			user.apply_body_effect(modifier_type)
 			user.update_modifier_visuals() //Forces coloration to WORK.
 			PERIODIC_START(src, PERIODIC_SLOW) //Let's only bother draining power when we're being used!
 			playsound(src, 'sound/weapons/saberon.ogg', 50, 1) //Shield turning off! PLACEHOLDER
@@ -285,7 +285,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 		if(ishuman(loc)) //We on someone? Tell them it turned off.
 			var/mob/living/carbon/human/user = loc
 			to_chat(user, span_warning("The shield deactivates! An error message pops up on screen: 'Cell missing. Cell replacement required.'"))
-			user.remove_modifiers_of_type(/datum/modifier/shield_projection)
+			user.remove_body_effect(/datum/body_effect/shield_projection)
 		shield_active = 0
 		PERIODIC_STOP(src)
 		update_icon()
@@ -297,7 +297,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 			if(ishuman(loc)) //Deactivate the shield, first. You're not getting reduced damage...
 				var/mob/living/carbon/human/user = loc
 				to_chat(user, span_warning("The shield deactivates, an error message popping up on screen: 'Cell Reactor Critically damaged. Cell replacement required.'"))
-				user.remove_modifiers_of_type(/datum/modifier/shield_projection)
+				user.remove_body_effect(/datum/body_effect/shield_projection)
 
 			if(active_weapon) //Retract the gun. There's about to be no cell anymore.
 				reattach_gun()
@@ -318,7 +318,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 		if(ishuman(loc)) //We on someone? Tell them it turned off.
 			var/mob/living/carbon/human/user = loc
 			to_chat(user, span_warning("The shield deactivates, an error message popping up on screen: 'Cell out of charge.'"))
-			user.remove_modifiers_of_type(/datum/modifier/shield_projection)
+			user.remove_body_effect(/datum/body_effect/shield_projection)
 		PERIODIC_STOP(src)
 		update_icon()
 		playsound(src, 'sound/weapons/saberoff.ogg', 50, 1) //Shield turning off! PLACEHOLDER
@@ -436,7 +436,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 		icon_state = "shieldpack_basic"
 
 /obj/item/personal_shield_generator/belt/bruteburn //Example of a modified generator.
-	modifier_type = /datum/modifier/shield_projection/bruteburn
+	modifier_type = /datum/body_effect/shield_projection/bruteburn
 /obj/item/personal_shield_generator/belt/bruteburn/loaded //If mapped in, ONLY put loaded ones down.
 	bcell = /obj/item/cell/device/shield_generator
 
@@ -445,14 +445,14 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 	name = "PSG Variant-M"
 	desc = "A personal shield generator designed for mining and combat with hostile creatures. \
 	It has a warning on the back: 'Do NOT expose the shield to stun-based weaponry.'"
-	modifier_type = /datum/modifier/shield_projection/mining
+	modifier_type = /datum/body_effect/shield_projection/mining
 
 /obj/item/personal_shield_generator/belt/mining/loaded
 	bcell = /obj/item/cell/device/shield_generator
 
 /obj/item/personal_shield_generator/belt/mining/upgraded
 	upgraded = TRUE
-	modifier_type = /datum/modifier/shield_projection/mining/strong
+	modifier_type = /datum/body_effect/shield_projection/mining/strong
 
 /obj/item/personal_shield_generator/belt/mining/upgraded/loaded
 	bcell = /obj/item/cell/device/shield_generator
@@ -476,10 +476,10 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 	..()
 
 /obj/item/personal_shield_generator/belt/mining/proc/interaction_upgrade(mob/user, obj/item/borg/upgrade/shield_upgrade/W, datum/interaction/interaction)
-	if(modifier_type == /datum/modifier/shield_projection/mining/strong)
+	if(modifier_type == /datum/body_effect/shield_projection/mining/strong)
 		to_chat(user, span_warning("This shield generator is already upgraded!"))
 		return TRUE
-	modifier_type = /datum/modifier/shield_projection/mining/strong
+	modifier_type = /datum/body_effect/shield_projection/mining/strong
 	upgraded = TRUE
 	to_chat(user, span_notice("You upgrade the [src] with the [W]!"))
 	consume(W, user)
@@ -490,7 +490,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 /obj/item/personal_shield_generator/belt/security
 	name = "PSG Variant-S"
 	desc = "A personal shield generator designed for security."
-	modifier_type = /datum/modifier/shield_projection/security/weak
+	modifier_type = /datum/body_effect/shield_projection/security/weak
 
 /obj/item/personal_shield_generator/belt/security/loaded
 	bcell = /obj/item/cell/device/shield_generator
@@ -510,7 +510,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 	allows the user to get up from disabling strikes faster."
 	damage_cost = 5
 
-	modifier_type = /datum/modifier/shield_projection/melee_focus
+	modifier_type = /datum/body_effect/shield_projection/melee_focus
 
 /obj/item/personal_shield_generator/belt/melee/loaded
 	bcell = /obj/item/cell/device/shield_generator
@@ -522,7 +522,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 	desc = "A personal shield generator that creates a field that helps against biohazards \
 	for enhanceing melee potential. The shield makes its user resistant to toxic attacks, suffocating attacks, and DNA attacks"
 
-	modifier_type = /datum/modifier/shield_projection/biohazard
+	modifier_type = /datum/body_effect/shield_projection/biohazard
 
 /obj/item/personal_shield_generator/belt/medical/loaded
 	bcell = /obj/item/cell/device/shield_generator
@@ -531,7 +531,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 	name = "PSG Variant-P" 		//Not meant to be used in any serious capacity.
 	desc = "A personal shield generator that sacrifices long-term usability in exchange for a strong, short-lived shield projection, enabling the user to be nigh \
 	impervious for a second."
-	modifier_type = /datum/modifier/shield_projection/parry
+	modifier_type = /datum/body_effect/shield_projection/parry
 	generator_hit_cost = 0 //No cost for being hit.
 	damage_cost = 0//No cost for blocking effects.
 	generator_active_cost = 100 //However, it disables the tick immediately after being turned on.
@@ -541,7 +541,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 //Badmin belt
 /obj/item/personal_shield_generator/belt/adminbus
 	desc = DEVELOPER_WARNING_NAME + " You REALLY should not see this. If you do, you have either been blessed or are about to be the target of some sick prank."
-	modifier_type = /datum/modifier/shield_projection/admin
+	modifier_type = /datum/body_effect/shield_projection/admin
 	generator_hit_cost = 0
 	generator_active_cost = 0
 	shield_active = 0
@@ -554,13 +554,13 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 /obj/item/personal_shield_generator/security
 	name = "Backpack PSG Variant-S"
 	desc = "A personal shield generator designed for security. Comes with a built in defense pistol."
-	modifier_type = /datum/modifier/shield_projection/security
+	modifier_type = /datum/body_effect/shield_projection/security
 
 /obj/item/personal_shield_generator/security/loaded
 	bcell = /obj/item/cell/device/shield_generator/backpack
 
 /obj/item/personal_shield_generator/security/strong
-	modifier_type = /datum/modifier/shield_projection/security/strong
+	modifier_type = /datum/body_effect/shield_projection/security/strong
 
 /obj/item/personal_shield_generator/security/strong/loaded
 	bcell = /obj/item/cell/device/shield_generator/backpack

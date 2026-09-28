@@ -473,7 +473,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			if(Tar.has_stasis_from(null))
 				Tar.set_stasis(null, null)
 			else
-				Tar.set_stasis(/datum/modifier/stasis/total, null)
+				Tar.set_stasis(/datum/body_effect/stasis/total, null)
 
 		if("give_chem")
 			var/mob/living/carbon/human/Tar = target()

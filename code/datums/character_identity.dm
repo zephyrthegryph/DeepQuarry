@@ -29,8 +29,8 @@
 	var/list/languages
 	/// Flavour text by zone (the same list the embodying human examines with).
 	var/list/flavor_texts
-	/// Persistent traits: MODIFIER_GENETIC modifier types the character carries.
-	var/list/genetic_modifiers
+	/// Persistent traits: genetic body effect types the character carries.
+	var/list/genetic_effects
 	/// world.time the character's last body died (0 = alive).
 	var/time_of_death = 0
 
@@ -40,10 +40,10 @@
 		dna_handle = null
 	return dna()
 
-/// Does the character carry a persistent trait of `modifier_type` (or a subtype)?
-/datum/character_identity/proc/has_genetic_modifier(modifier_type)
-	for(var/path in genetic_modifiers)
-		if(ispath(path, modifier_type))
+/// Does the character carry a persistent trait of `effect_type` (or a subtype)?
+/datum/character_identity/proc/has_genetic_effect(effect_type)
+	for(var/path in genetic_effects)
+		if(ispath(path, effect_type))
 			return TRUE
 	return FALSE
 
@@ -94,9 +94,9 @@ REF_OWNED(/mob/living, "own_identity")
 	else
 		identity().languages = languages
 	if(!isSynthetic())
-		var/list/traits = identity().genetic_modifiers?.Copy()
-		for(var/modifier_type in traits)
-			add_modifier(modifier_type)
+		var/list/traits = identity().genetic_effects?.Copy()
+		for(var/effect_type in traits)
+			apply_body_effect(effect_type)
 
 /// Point this mob (and its mind) at `I` WITHOUT syncing body vars: a mind
 /// that temporarily controls another body (dominate prey, a mob transform, a
@@ -109,12 +109,12 @@ REF_OWNED(/mob/living, "own_identity")
 	if(mind)
 		mind.identity = I
 
-/// Add/remove bookkeeping for persistent traits (see modifiers.dm).
-/mob/living/proc/record_genetic_modifier(modifier_type, present)
+/// Add/remove bookkeeping for persistent traits (genetic body effects, body_effects.dm).
+/mob/living/proc/record_genetic_effect(effect_type, present)
 	if(present)
-		LAZYDISTINCTADD(identity().genetic_modifiers, modifier_type)
+		LAZYDISTINCTADD(identity().genetic_effects, effect_type)
 	else
-		LAZYREMOVE(identity().genetic_modifiers, modifier_type)
+		LAZYREMOVE(identity().genetic_effects, effect_type)
 
 // --- Mind side -----------------------------------------------------------------------
 
@@ -122,7 +122,7 @@ REF_OWNED(/mob/living, "own_identity")
 	/// The character this mind is. Adopted from the first living body it
 	/// enters and carried from then on. Null until then: a default `new` here
 	/// was bound over the body's identity on mind_initialize(), losing its
-	/// genetic modifiers (no_clone), notes and time of death (audit A10).
+	/// genetic effects (no_clone), notes and time of death (audit A10).
 	/// Read it through get_identity().
 	var/datum/character_identity/identity
 

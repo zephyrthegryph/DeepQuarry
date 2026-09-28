@@ -8,17 +8,17 @@
 	genomecost = 1
 	verbpath = /mob/proc/changeling_delayed_toxic_sting
 
-/datum/modifier/delayed_toxin_sting
+/datum/body_effect/delayed_toxin_sting
 	name = "delayed toxin injection"
 	hidden = TRUE
 	stacks = MODIFIER_STACK_FORBID
 	on_expired_text = span_danger("You feel a burning sensation flowing through your veins!")
 
-/datum/modifier/delayed_toxin_sting/on_expire()
-	holder.injure(INJURY_TOXIN, rand(20, 30))
+/datum/body_effect/delayed_toxin_sting/on_end(mob/living/L, expired)
+	L.injure(INJURY_TOXIN, rand(20, 30))
 
-/datum/modifier/delayed_toxin_sting/strong/on_expire()
-	holder.injure(INJURY_TOXIN, rand(40, 60))
+/datum/body_effect/delayed_toxin_sting/strong/on_end(mob/living/L, expired)
+	L.injure(INJURY_TOXIN, rand(40, 60))
 
 /mob/proc/changeling_delayed_toxic_sting()
 	set category = "Changeling"
@@ -30,12 +30,12 @@
 	if(!T)
 		return 0
 	add_attack_logs(src,T,"Delayed toxic sting (chagneling)")
-	var/type_to_give = /datum/modifier/delayed_toxin_sting
+	var/type_to_give = /datum/body_effect/delayed_toxin_sting
 	if(comp.recursive_enhancement)
-		type_to_give = /datum/modifier/delayed_toxin_sting/strong
+		type_to_give = /datum/body_effect/delayed_toxin_sting/strong
 		to_chat(src, span_notice("Our toxin will be extra potent, when it strikes."))
 
-	T.add_modifier(type_to_give, 2 MINUTES)
+	T.apply_body_effect(type_to_give, 2 MINUTES)
 
 
 	feedback_add_details("changeling_powers","DTS")

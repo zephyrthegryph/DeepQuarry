@@ -6086,7 +6086,7 @@
 		H.status_adjust(EFFECT_BLURRY, 20)
 		var/od_harm = min(removed * overdose_mod * round(3 + 3 * volume / overdose), 1)
 		H.injure_many(alist(INJURY_TOXIN = od_harm, INJURY_BURN = od_harm, INJURY_BLUNT = od_harm), source = src)
-		H.add_modifier(/datum/modifier/berserk, 2 SECONDS, suppress_failure = TRUE)
+		H.apply_body_effect(/datum/body_effect/berserk, 2 SECONDS, suppress_output = TRUE)
 
 
 ////////////////////////////////////////////////

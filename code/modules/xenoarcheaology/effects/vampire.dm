@@ -98,7 +98,7 @@
 
 		holder.Beam(L, icon_state = "drainbeam", time = 1 SECOND)
 
-		L.add_modifier(/datum/modifier/agonize, 5 SECONDS)
+		L.apply_body_effect(/datum/body_effect/agonize, 5 SECONDS)
 
 	if(charges >= 0.1)
 		if(prob(5))

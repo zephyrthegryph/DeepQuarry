@@ -191,14 +191,14 @@
 	var/datum/character_identity/I = M.identity
 	LAZYSET(I.flavor_texts, "general", "traveller flavour")
 	traveller.add_language(LANGUAGE_SIGN)
-	traveller.add_modifier(/datum/modifier/no_borg)
-	TEST_ASSERT(I.has_genetic_modifier(/datum/modifier/no_borg), "setup: the persistent trait is the character's")
+	traveller.apply_body_effect(/datum/body_effect/no_borg)
+	TEST_ASSERT(I.has_genetic_effect(/datum/body_effect/no_borg), "setup: the persistent trait is the character's")
 	var/name_before = I.real_name
 
 	var/datum/transhuman/body_record/BR = new(donor)
 	var/mob/living/carbon/human/sleeve = BR.produce_human_mob(run_loc_floor_bottom_left, FALSE, TRUE, "sleeve")
 	TEST_ASSERT_NOTEQUAL(LAZYACCESS(sleeve.flavor_texts, "general"), "donor flavour", "the body record carries no flavour text")
-	TEST_ASSERT(!sleeve.has_modifier_of_type(/datum/modifier/no_borg), "an empty sleeve has no persistent traits")
+	TEST_ASSERT(!sleeve.has_body_effect(/datum/body_effect/no_borg), "an empty sleeve has no persistent traits")
 
 	TEST_ASSERT(transfer_mind(M, sleeve, "unit test resleeve"), "the mind should move into the sleeve")
 	TEST_ASSERT_EQUAL(sleeve.identity(), I, "the sleeve reads the mind's identity")
@@ -206,7 +206,7 @@
 	TEST_ASSERT_EQUAL(LAZYACCESS(sleeve.flavor_texts, "general"), "traveller flavour", "the flavour text is the mind's")
 	TEST_ASSERT_EQUAL(sleeve.languages, I.languages, "the sleeve speaks the character's language list")
 	TEST_ASSERT(GLOB.all_languages[LANGUAGE_SIGN] in sleeve.languages, "the sleeve speaks the mind's languages")
-	TEST_ASSERT(sleeve.has_modifier_of_type(/datum/modifier/no_borg), "the mind's persistent trait reaches the sleeve")
+	TEST_ASSERT(sleeve.has_body_effect(/datum/body_effect/no_borg), "the mind's persistent trait reaches the sleeve")
 	TEST_ASSERT_EQUAL(I.real_name, name_before, "the character keeps its name")
 	TEST_ASSERT_EQUAL(sleeve.identity().ooc_notes, "notes of Traveller", "OOC notes follow the mind")
 	qdel(sleeve)

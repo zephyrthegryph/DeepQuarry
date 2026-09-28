@@ -22,12 +22,12 @@
 	if(!changeling)
 		return 0
 
-	var/modifier_to_use = /datum/modifier/berserk/changeling
+	var/modifier_to_use = /datum/body_effect/berserk/changeling
 	if(changeling.recursive_enhancement)
-		modifier_to_use = /datum/modifier/berserk/changeling/recursive
+		modifier_to_use = /datum/body_effect/berserk/changeling/recursive
 		to_chat(src, span_notice("We optimize our levels of anger, which will avoid excessive stress on ourselves."))
 
-	if(add_modifier(modifier_to_use, 30 SECONDS))
+	if(apply_body_effect(modifier_to_use, 30 SECONDS))
 		changeling.chem_charges -= 30
 
 	feedback_add_details("changeling_powers","EN")

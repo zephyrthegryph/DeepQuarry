@@ -430,27 +430,15 @@ if $grep -n '\b(mechanical_effects|vital_effects|od_boost|get_vital_effects)\b' 
 fi;
 
 part "body factors: no modifier numeric fields"
-# Every numeric modifier effect is a body factor in the modifier's `factors`.
+# Every numeric body effect is a body factor in the effect's `factors`.
 if $grep -n '\b(endurance_flat|endurance_percent|disable_duration_percent|incoming_[a-z]+_percent|outgoing_melee_damage_percent|bleeding_rate_percent|metabolism_percent|icon_scale_[xy]_percent|attack_speed_percent|accuracy_dispersion|pain_immunity|pulse_modifier|pulse_set_level|emp_modifier|explosion_modifier|[a-z]+_injury_resistance|[a-z]+_physical_resistance|[a-z]+_thermal_resistance)\b' "${code_files[@]}"; then
 	echo
-	echo -e "${RED}ERROR: a removed /datum/modifier numeric field is referenced. Declare it in the modifier's factors table and read factor(BF_X).${NC}"
+	echo -e "${RED}ERROR: a removed modifier numeric field is referenced. Declare it in the body effect's factors table and read factor(BF_X).${NC}"
 	FAILED=1
 fi;
 if $grep -n '\b(M|mod|modifier)\.(slowdown|haste|evasion|accuracy|siemens_coefficient|heat_protection|cold_protection|vision_flags|armor_percent)\b' "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: a modifier's slowdown/evasion/accuracy/... is read directly. Those are body factors: read factor(BF_X) on the holder.${NC}"
-	FAILED=1
-fi;
-
-part "modifiers: ratchet on /datum/modifier types (MED-5)"
-# Factor-only timed effects are body effects (code/modules/body/body_effects.dm: OM contributions
-# on the body clock); medically real conditions are afflictions. /datum/modifier is kept only for
-# effects with behaviour. This count may only go down: lower it when you convert one.
-modifier_type_max=165
-modifier_type_count=$($grep -c '^/datum/modifier(/[A-Za-z0-9_]+)*\s*(//.*)?$' "${code_files[@]}" | awk -F: '{s += $NF} END {print s + 0}')
-if [ "$modifier_type_count" -gt "$modifier_type_max" ]; then
-	echo
-	echo -e "${RED}ERROR: $modifier_type_count /datum/modifier types (ratchet: $modifier_type_max). A factor-only effect is a /datum/body_effect (apply_body_effect()); a medical condition is an affliction.${NC}"
 	FAILED=1
 fi;
 

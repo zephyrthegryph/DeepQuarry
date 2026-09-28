@@ -55,7 +55,8 @@
 
 
 ////////// Auras
-/datum/modifier/repair_aura //This aura does not apply modifiers to individuals in the area.
+/datum/body_effect/repair_aura //This aura does not apply effects to individuals in the area.
+	tick_interval = 2 SECONDS
 	name = "aura of repair (cult)"
 	desc = "You are emitting a field of strange energy, capable of repairing occult constructs."
 
@@ -65,11 +66,12 @@
 
 	mob_overlay_state = "cult_aura"
 
-/datum/modifier/repair_aura/tick()
-	for(var/mob/living/simple_mob/construct/T in view(4,holder))
+/datum/body_effect/repair_aura/on_tick(mob/living/L)
+	for(var/mob/living/simple_mob/construct/T in view(4,L))
 		T.occult_mend(rand(10,15), rand(10,15))
 
-/datum/modifier/agonize //This modifier is used in an aura spell.
+/datum/body_effect/agonize //This effect is used in an aura spell.
+	tick_interval = 2 SECONDS
 	name = "agonize"
 	desc = "Your body is wracked with pain."
 
@@ -80,15 +82,16 @@
 
 	mob_overlay_state = "red_electricity_constant"
 
-/datum/modifier/agonize/tick()
-	if(ishuman(holder))
-		var/mob/living/carbon/human/H = holder
+/datum/body_effect/agonize/on_tick(mob/living/L)
+	if(ishuman(L))
+		var/mob/living/carbon/human/H = L
 		H.apply_effect(20, AGONY)
 		if(prob(10))
 			to_chat(H, span_warning("Just make it stop!"))
 
 ////////// Target Modifier
-/datum/modifier/mend_occult
+/datum/body_effect/mend_occult
+	tick_interval = 2 SECONDS
 	name = "occult mending"
 	desc = "Your body is mending, though at what cost?"
 
@@ -99,16 +102,15 @@
 
 	mob_overlay_state = "red_electricity_constant"
 
-/datum/modifier/mend_occult/tick()
-	if(isliving(holder))
-		var/mob/living/L = holder
+/datum/body_effect/mend_occult/on_tick(mob/living/L)
+	if(isliving(L))
 		if(istype(L, /mob/living/simple_mob/construct))
 			L.occult_mend(rand(5,10), rand(5,10))
 		else
 			L.occult_mend(2, 2)
 
-		if(ishuman(holder))
-			var/mob/living/carbon/human/H = holder
+		if(ishuman(L))
+			var/mob/living/carbon/human/H = L
 
 			for(var/obj/item/organ/internal/O in H.internal_organs)
 				if(O.damage > 0) // Fix internal damage
@@ -134,7 +136,8 @@
 			if(prob(10))
 				to_chat(H, span_danger("It feels as though your body is being torn apart!"))
 
-/datum/modifier/gluttonyregeneration
+/datum/body_effect/gluttonyregeneration
+	tick_interval = 2 SECONDS
 	name = "gluttonous regeneration"
 	desc = "You are filled with an overwhelming hunger."
 	mob_overlay_state = "electricity"
@@ -143,7 +146,7 @@
 	on_expired_text = span_notice("The blaze of hunger inside you has been snuffed.")
 	stacks = MODIFIER_STACK_EXTEND
 
-/datum/modifier/gluttonyregeneration/can_apply(mob/living/L)
+/datum/body_effect/gluttonyregeneration/can_apply(mob/living/L)
 	if(L.stat == DEAD)
 		to_chat(L, span_warning("You can't be dead to consume."))
 		return FALSE
@@ -166,9 +169,9 @@
 
 	return ..()
 
-/datum/modifier/gluttonyregeneration/tick()
-	if(ishuman(holder))
-		var/mob/living/carbon/human/H = holder
+/datum/body_effect/gluttonyregeneration/on_tick(mob/living/L)
+	if(ishuman(L))
+		var/mob/living/carbon/human/H = L
 		var/starting_nutrition = H.nutrition
 		H.adjust_nutrition(-10)
 		var/healing_amount = starting_nutrition - H.nutrition //Anything above 9 nutrition will return 10. Anything below will give 0-9. Nutrition is capped at 0.

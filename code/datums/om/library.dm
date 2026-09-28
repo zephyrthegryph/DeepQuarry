@@ -259,12 +259,6 @@
 /datum/om/relation/uav_master
 	name = "UAV control"
 
-/// A stasis modifier -> what holds the mob in that stasis (a bag, pod or NIF).
-/// STASIS_SOURCE(modifier). Stasis applied without a source (admin) has no edge.
-/datum/om/relation/stasis_held_by
-	name = "stasis source"
-	source_single = TRUE
-
 /// consumer -> power source.
 /datum/om/relation/powered_by
 	name = "power source"

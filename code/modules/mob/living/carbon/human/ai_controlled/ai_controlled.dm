@@ -141,7 +141,7 @@
 /mob/living/carbon/human/ai_controlled/replicant/Initialize(mapload)
 	. = ..()
 	name = species.get_random_name(gender)
-	add_modifier(/datum/modifier/homeothermic, 0, null)
+	apply_body_effect(/datum/body_effect/homeothermic, 0, null)
 
 
 /mob/living/carbon/human/ai_controlled

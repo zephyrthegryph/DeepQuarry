@@ -563,9 +563,10 @@
 	for(var/mob/living/L in view(src, 2))
 		if(L.stat == DEAD || !IIsAlly(L))
 			continue
-		L.add_modifier(/datum/modifier/aura/slime_heal, null, src)
+		L.apply_body_effect(/datum/body_effect/aura/slime_heal, null, src)
 
-/datum/modifier/aura/slime_heal
+/datum/body_effect/aura/slime_heal
+	tick_interval = 2 SECONDS
 	name = "slime mending"
 	desc = "You feel somewhat gooey."
 	mob_overlay_state = "pink_sparkles"
@@ -575,26 +576,27 @@
 	on_created_text = span_warning("Twinkling spores of goo surround you.  It makes you feel healthier.")
 	on_expired_text = span_notice("The spores of goo have faded, although you feel much healthier than before.")
 
-/datum/modifier/aura/slime_heal/tick()
-	if(holder.stat == DEAD)
-		expire()
+/datum/body_effect/aura/slime_heal/on_tick(mob/living/L)
+	if(L.stat == DEAD)
+		L.end_body_effect(type)
+		return
 
-	if(ishuman(holder)) // Every limb, organic or robotic.
-		var/mob/living/carbon/human/H = holder
+	if(ishuman(L)) // Every limb, organic or robotic.
+		var/mob/living/carbon/human/H = L
 		for(var/obj/item/organ/external/E as anything in H.organs)
 			H.mend(TREAT_TISSUE_REPAIR, 1, E.organ_tag)
 			H.mend(TREAT_BURN_CARE, 1, E.organ_tag)
 			H.mend(TREAT_PLATING_REPAIR, 1, E.organ_tag)
 			H.mend(TREAT_WIRING_REPAIR, 1, E.organ_tag)
 	else
-		holder.mend(TREAT_TISSUE_REPAIR, 1)
-		holder.mend(TREAT_BURN_CARE, 1)
-		holder.mend(TREAT_PLATING_REPAIR, 1)
-		holder.mend(TREAT_WIRING_REPAIR, 1)
+		L.mend(TREAT_TISSUE_REPAIR, 1)
+		L.mend(TREAT_BURN_CARE, 1)
+		L.mend(TREAT_PLATING_REPAIR, 1)
+		L.mend(TREAT_WIRING_REPAIR, 1)
 
-	holder.mend(TREAT_ANTITOXIN, 2)
-	holder.mend(TREAT_OXYGENATION, 2)
-	holder.mend(TREAT_GENETIC_REPAIR, 1)
+	L.mend(TREAT_ANTITOXIN, 2)
+	L.mend(TREAT_OXYGENATION, 2)
+	L.mend(TREAT_GENETIC_REPAIR, 1)
 
 
 /mob/living/simple_mob/slime/xenobio/gold
@@ -739,7 +741,7 @@
 	for(var/mob/living/L in view(src, 2))
 		if(L.stat == DEAD || !IIsAlly(L))
 			continue
-		L.add_modifier(/datum/modifier/technomancer/haste, 5 SECONDS, src)
+		L.apply_body_effect(/datum/body_effect/technomancer/haste, 5 SECONDS, src)
 
 
 /mob/living/simple_mob/slime/xenobio/light_pink

@@ -479,7 +479,7 @@
 
 /datum/trait/negative/thick_digits/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	H.add_modifier(/datum/modifier/trait/thickdigits)
+	H.apply_body_effect(/datum/body_effect/trait/thickdigits)
 
 /datum/trait/negative/nodefib
 	name = "Unreviveable"
@@ -708,7 +708,7 @@
 
 /datum/trait/negative/faultwires/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	H.add_modifier(/datum/modifier/trait/empweakness)
+	H.apply_body_effect(/datum/body_effect/trait/empweakness)
 
 /datum/trait/negative/poorconstruction
 	name = "Poor Construction"
@@ -721,7 +721,7 @@
 
 /datum/trait/negative/poorconstruction/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	H.add_modifier(/datum/modifier/trait/majorempweakness)
+	H.apply_body_effect(/datum/body_effect/trait/majorempweakness)
 
 /datum/trait/negative/meltable
 	name = "Water Weakness"

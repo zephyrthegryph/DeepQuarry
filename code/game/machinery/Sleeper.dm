@@ -110,9 +110,9 @@ REF_PAIR(/obj/machinery/sleep_console, list("sleeper" = "console"))
 	var/max_chem = 20
 	var/initial_bin_rating = 1
 	var/obj/machinery/sleep_console/console
-	/// Stasis modifier (/datum/modifier/stasis/*) applied to the occupant, or null for none.
+	/// Stasis modifier (/datum/body_effect/stasis/*) applied to the occupant, or null for none.
 	var/stasis_level = null
-	var/static/list/stasis_choices = list("Complete (1%)" = /datum/modifier/stasis/complete, "Deep (10%)" = /datum/modifier/stasis/deep, "Moderate (20%)" = /datum/modifier/stasis/moderate, "Light (50%)" = /datum/modifier/stasis/light, "None (100%)" = null)
+	var/static/list/stasis_choices = list("Complete (1%)" = /datum/body_effect/stasis/complete, "Deep (10%)" = /datum/body_effect/stasis/deep, "Moderate (20%)" = /datum/body_effect/stasis/moderate, "Light (50%)" = /datum/body_effect/stasis/light, "None (100%)" = null)
 	var/controls_inside = FALSE
 	var/auto_eject_dead = FALSE
 
@@ -568,7 +568,7 @@ REF_PAIR(/obj/machinery/sleeper, list("console" = "sleeper"))
 /obj/machinery/sleeper/survival_pod
 	desc = "A limited functionality sleeper, all it can do is put patients into stasis. It lacks the medication and configuration of the larger units."
 	icon_state = "sleeper"
-	stasis_level = /datum/modifier/stasis/complete //Just one setting
+	stasis_level = /datum/body_effect/stasis/complete //Just one setting
 
 /obj/machinery/sleeper/survival_pod/Initialize(mapload)
 	. = ..()

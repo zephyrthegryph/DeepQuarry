@@ -47,11 +47,6 @@
 	else
 		effects = new()
 
-	for(var/datum/modifier/M in modifiers)
-		if(M.mob_overlay_state)
-			var/image/I = image("icon" = 'icons/mob/modifier_effects.dmi', "icon_state" = M.mob_overlay_state)
-			I.appearance_flags = RESET_COLOR // So colored mobs don't affect the overlay.
-			effects.add_overlay(I)
 	for(var/image/I as anything in body_effect_overlays(TRUE))
 		effects.add_overlay(I)
 

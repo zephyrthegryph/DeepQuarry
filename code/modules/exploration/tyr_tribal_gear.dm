@@ -287,7 +287,7 @@
 				target.adjust_fire_stacks(7)
 				target.ignite_mob()
 			if(I_DISARM)
-				user.add_modifier(/datum/modifier/technomancer/haste, 2 SECONDS)
+				user.apply_body_effect(/datum/body_effect/technomancer/haste, 2 SECONDS)
 			if(I_HURT)
 				target.apply_body_effect(/datum/body_effect/phase_armor, 5 SECONDS)
 

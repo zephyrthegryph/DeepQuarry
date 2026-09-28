@@ -122,17 +122,19 @@
 	stacks = MODIFIER_STACK_FORBID
 	factors = alist(BF_SLOWDOWN = -0.5, BF_EVASION = 20)
 
-/datum/modifier/astralcollect_regen
+/datum/body_effect/astralcollect_regen
+	stacks = MODIFIER_STACK_FORBID
+	tick_interval = 2 SECONDS
 	mob_overlay_state = "pink_sparkles"
 
-/datum/modifier/astralcollect_regen/tick()
-	holder.mend(TREAT_TISSUE_REPAIR, 8)
-	holder.mend(TREAT_BURN_CARE, 8)
-	holder.mend(TREAT_PLATING_REPAIR, 8)
-	holder.mend(TREAT_WIRING_REPAIR, 8)
-	holder.mend(TREAT_ANTITOXIN, 8)
-	holder.mend(TREAT_OXYGENATION, 8)
-	holder.mend(TREAT_GENETIC_REPAIR, 8)
+/datum/body_effect/astralcollect_regen/on_tick(mob/living/L)
+	L.mend(TREAT_TISSUE_REPAIR, 8)
+	L.mend(TREAT_BURN_CARE, 8)
+	L.mend(TREAT_PLATING_REPAIR, 8)
+	L.mend(TREAT_WIRING_REPAIR, 8)
+	L.mend(TREAT_ANTITOXIN, 8)
+	L.mend(TREAT_OXYGENATION, 8)
+	L.mend(TREAT_GENETIC_REPAIR, 8)
 
 /datum/body_effect/astralcollect_titan
 	stacks = MODIFIER_STACK_FORBID
@@ -153,7 +155,7 @@
 	mob_overlay_state = "blue_electricity_constant"
 	factors = alist(BF_INCOMING_PHYSICAL = 0.7)
 
-/datum/modifier/aura/astralcollect_church
+/datum/body_effect/aura/astralcollect_church
 	mob_overlay_state = "redspace_aura"
 	factors = alist(BF_INCOMING_PHYSICAL = 0.6, BF_INCOMING_THERMAL = 0.6)
 
@@ -163,7 +165,7 @@
 			apply_body_effect(/datum/body_effect/astralcollect_swift, null, src)
 			size_multiplier -= 0.4
 		if(2)
-			add_modifier(/datum/modifier/astralcollect_regen, null, src)
+			apply_body_effect(/datum/body_effect/astralcollect_regen, null, src)
 		if(3)
 			apply_body_effect(/datum/body_effect/astralcollect_titan, null, src)
 			size_multiplier += 0.5
@@ -372,7 +374,7 @@
 /mob/living/simple_mob/humanoid/astral_collective/body/dagger/do_special_attack(atom/A)
 	for(var/mob/living/L in orange(src, 7))
 		if(L.stat != DEAD && !IIsAlly(L))
-			L.add_modifier(/datum/modifier/mmo_drop/eclipse_dagger, 3, src)
+			L.apply_body_effect(/datum/body_effect/mmo_drop/eclipse_dagger, 3, src)
 
 /mob/living/simple_mob/humanoid/astral_collective/body/juggernaught
 	icon_state = "breaker"
@@ -486,4 +488,4 @@
 	for(var/mob/living/L in view(src, 5))
 		if(L.stat == DEAD || !IIsAlly(L))
 			continue
-		L.add_modifier(/datum/modifier/aura/astralcollect_church, null, src)
+		L.apply_body_effect(/datum/body_effect/aura/astralcollect_church, null, src)

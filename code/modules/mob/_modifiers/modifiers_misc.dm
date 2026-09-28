@@ -40,7 +40,8 @@ the artifact triggers the rage.
 
 */
 
-/datum/modifier/berserk
+/datum/body_effect/berserk
+	end_on_death = TRUE
 	name = "berserk"
 	desc = "You are filled with an overwhelming rage."
 	client_color = "#FF5555" // Make everything red!
@@ -66,54 +67,55 @@ the artifact triggers the rage.
 	// The less good stuff.
 
 	var/nutrition_cost = 150
-	var/exhaustion_duration = 2 MINUTES 	// How long the exhaustion modifier lasts after it expires. Set to 0 to not apply one.
-	var/last_shock_stage = 0
+	var/exhaustion_duration = 2 MINUTES 	// How long the exhaustion effect lasts after it expires. Set to 0 to not apply one.
+	// Per-application state: the shock stage suppressed while berserk.
 
 
 // For changelings.
-/datum/modifier/berserk/changeling
+/datum/body_effect/berserk/changeling
 	on_created_text = span_critical("We feel an intense and overwhelming rage overtake us as we go berserk!")
 	on_expired_text = span_notice("The blaze of rage inside us has ran out.")
 
 // For changelings who bought the Recursive Enhancement evolution.
-/datum/modifier/berserk/changeling/recursive
+/datum/body_effect/berserk/changeling/recursive
 	exhaustion_duration = 1 MINUTE
 	nutrition_cost = 75
 
 
-/datum/modifier/berserk/on_applied()
-	if(ishuman(holder)) // Most other mobs don't really use nutrition and can't get it back.
-		holder.adjust_nutrition(-nutrition_cost)
-	holder.visible_message(span_critical("\The [holder] descends into an all consuming rage!"))
+/datum/body_effect/berserk/on_start(mob/living/L)
+	if(ishuman(L)) // Most other mobs don't really use nutrition and can't get it back.
+		L.adjust_nutrition(-nutrition_cost)
+	L.visible_message(span_critical("\The [L] descends into an all consuming rage!"))
 
 	// End all stuns.
-	holder.status_set(EFFECT_PARALYZED, 0)
-	holder.status_set(EFFECT_STUNNED, 0)
-	holder.status_set(EFFECT_WEAKENED, 0)
-	holder.mend(TREAT_ANALGESIC, 200) // Rage drowns out the pain.
-	holder.lying = 0
-	holder.update_canmove()
+	L.status_set(EFFECT_PARALYZED, 0)
+	L.status_set(EFFECT_STUNNED, 0)
+	L.status_set(EFFECT_WEAKENED, 0)
+	L.mend(TREAT_ANALGESIC, 200) // Rage drowns out the pain.
+	L.lying = 0
+	L.update_canmove()
 
 	// Temporarily end pain.
-	if(ishuman(holder))
-		var/mob/living/carbon/human/H = holder
-		last_shock_stage = H.shock_stage
+	if(ishuman(L))
+		var/mob/living/carbon/human/H = L
+		L.set_body_effect_state(type, H.shock_stage)
 		H.shock_stage = 0
 
-/datum/modifier/berserk/on_expire()
-	if(exhaustion_duration > 0 && holder.stat != DEAD)
-		holder.apply_body_effect(/datum/body_effect/berserk_exhaustion, exhaustion_duration)
+/datum/body_effect/berserk/on_end(mob/living/L, expired)
+	var/last_shock_stage = L.body_effect_state(type) || 0
+	if(exhaustion_duration > 0 && L.stat != DEAD)
+		L.apply_body_effect(/datum/body_effect/berserk_exhaustion, exhaustion_duration)
 
 		if(prob(last_shock_stage))
-			to_chat(holder, span_warning("You pass out from the pain you were suppressing."))
-			holder.status_at_least(EFFECT_PARALYZED, 5)
-			holder.status_at_least(EFFECT_SLEEPING, 5)
+			to_chat(L, span_warning("You pass out from the pain you were suppressing."))
+			L.status_at_least(EFFECT_PARALYZED, 5)
+			L.status_at_least(EFFECT_SLEEPING, 5)
 
-		if(ishuman(holder))
-			var/mob/living/carbon/human/H = holder
+		if(ishuman(L))
+			var/mob/living/carbon/human/H = L
 			H.shock_stage = last_shock_stage
 
-/datum/modifier/berserk/can_apply(mob/living/L, suppress_failure = FALSE)
+/datum/body_effect/berserk/can_apply(mob/living/L, suppress_failure = FALSE)
 	if(L.stat)
 		if(!suppress_failure)
 			to_chat(L, span_warning("You can't be unconscious or dead to berserk."))
@@ -128,7 +130,7 @@ the artifact triggers the rage.
 		return FALSE // On cooldown.
 
 	if(L.isSynthetic())
-		L.add_modifier(/datum/modifier/berserk_synthetic, 30 SECONDS)
+		L.apply_body_effect(/datum/body_effect/berserk_synthetic, 30 SECONDS)
 		return FALSE // Borgs can get angry but their metal shell can't be pushed harder by just being mad. Same for Posibrains.
 
 	if(ishuman(L))
@@ -143,10 +145,6 @@ the artifact triggers the rage.
 		return FALSE // Too hungry to enrage.
 
 	return ..()
-
-/datum/modifier/berserk/tick()
-	if(holder.stat == DEAD)
-		expire(silent = TRUE)
 
 
 // Applied when berserk expires. Acts as a downside as well as the cooldown for berserk.
@@ -166,7 +164,7 @@ the artifact triggers the rage.
 
 // Synth version with no benefits due to a loss of focus inside a metal shell, which can't be pushed harder just be being mad.
 // Fortunately there is no exhaustion or nutrition cost.
-/datum/modifier/berserk_synthetic
+/datum/body_effect/berserk_synthetic
 	name = "recklessness"
 	desc = "You are filled with an overwhelming rage, however your metal shell prevents taking advantage of this."
 	client_color = "#FF0000" // Make everything red!
@@ -263,7 +261,8 @@ the artifact triggers the rage.
 
 
 // Temperature Normalizer.
-/datum/modifier/homeothermic
+/datum/body_effect/homeothermic
+	tick_interval = 2 SECONDS
 	name = "temperature resistance"
 	desc = "Your body normalizes to room temperature."
 
@@ -271,11 +270,12 @@ the artifact triggers the rage.
 	on_expired_text = span_notice("You feel.. still probably comfortable.")
 	stacks = MODIFIER_STACK_EXTEND
 
-/datum/modifier/homeothermic/tick()
+/datum/body_effect/homeothermic/on_tick(mob/living/L)
 	..()
-	holder.bodytemperature = round((holder.bodytemperature + T20C) / 2)
+	L.bodytemperature = round((L.bodytemperature + T20C) / 2)
 
-/datum/modifier/exothermic
+/datum/body_effect/exothermic
+	tick_interval = 2 SECONDS
 	name = "heat resistance"
 	desc = "Your body lowers to room temperature."
 
@@ -283,12 +283,13 @@ the artifact triggers the rage.
 	on_expired_text = span_notice("You feel.. still probably comfortable.")
 	stacks = MODIFIER_STACK_EXTEND
 
-/datum/modifier/exothermic/tick()
+/datum/body_effect/exothermic/on_tick(mob/living/L)
 	..()
-	if(holder.bodytemperature > T20C)
-		holder.bodytemperature = round((holder.bodytemperature + T20C) / 2)
+	if(L.bodytemperature > T20C)
+		L.bodytemperature = round((L.bodytemperature + T20C) / 2)
 
-/datum/modifier/endothermic
+/datum/body_effect/endothermic
+	tick_interval = 2 SECONDS
 	name = "cold resistance"
 	desc = "Your body rises to room temperature."
 
@@ -296,10 +297,10 @@ the artifact triggers the rage.
 	on_expired_text = span_notice("You feel.. still probably comfortable.")
 	stacks = MODIFIER_STACK_EXTEND
 
-/datum/modifier/endothermic/tick()
+/datum/body_effect/endothermic/on_tick(mob/living/L)
 	..()
-	if(holder.bodytemperature < T20C)
-		holder.bodytemperature = round((holder.bodytemperature + T20C) / 2)
+	if(L.bodytemperature < T20C)
+		L.bodytemperature = round((L.bodytemperature + T20C) / 2)
 
 // Nullifies EMP.
 /datum/body_effect/faraday
@@ -340,14 +341,16 @@ the artifact triggers the rage.
 		L.visible_message(span_alien("\The [L] collapses, the life draining from their body."))
 		L.death()
 
-/datum/modifier/outline_test
+/datum/body_effect/outline_test
+	stacks = MODIFIER_STACK_FORBID
+	tick_interval = 2 SECONDS
 	name = "Outline Test"
 	desc = "This only exists to prove filter effects work and gives an example of how to animate() the resulting filter object."
 
 	filter_parameters = list(type = "outline", size = 1, color = "#FFFFFF", flags = OUTLINE_SHARP)
 
-/datum/modifier/outline_test/tick()
-	animate(filter_instance, size = 3, time = 0.25 SECONDS)
+/datum/body_effect/outline_test/on_tick(mob/living/L)
+	animate(L.body_effect_filter(type), size = 3, time = 0.25 SECONDS)
 	animate(size = 1, 0.25 SECONDS)
 
 
@@ -380,23 +383,23 @@ the artifact triggers the rage.
 
 	factors = alist(BF_SLOWDOWN = 2)
 
-/datum/modifier/trait/thickdigits
+/datum/body_effect/trait/thickdigits
 	name = "Thick Digits"
 	desc = "Your hands cannot properly wield weapons."
 
-/datum/modifier/trait/empresist
+/datum/body_effect/trait/empresist
 	name = "Emp Resist"
 	desc = "You are resistant to EMPs."
 
-/datum/modifier/trait/empresistb
+/datum/body_effect/trait/empresistb
 	name = "Major Emp Resist"
 	desc = "You are resistant to EMPs."
 
-/datum/modifier/trait/empweakness
+/datum/body_effect/trait/empweakness
 	name = "Emp Weakness"
 	desc = "You are weak to EMPs."
 
-/datum/modifier/trait/majorempweakness
+/datum/body_effect/trait/majorempweakness
 	name = "Major Emp Weakness"
 	desc = "You are weak to EMPs."
 

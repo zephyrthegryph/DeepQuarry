@@ -5,7 +5,8 @@
 
 //See blood.dm. This makes your blood volume & raw blood volume set to 100%.
 //This means (as long as you have blood) you will not suffocate. Even with no heart or lungs.
-/datum/modifier/bloodpump
+/datum/body_effect/bloodpump
+	tick_interval = 2 SECONDS
 	name = "external blood pumping"
 	desc = "Your blood flows thanks to the wonderful power of science."
 
@@ -15,12 +16,13 @@
 
 	factors = alist(BF_PULSE_SET = PULSE_NORM)
 
-/datum/modifier/bloodpump/check_if_valid()
-	..()
-	if(holder.stat == DEAD)
-		src.expire()
+/datum/body_effect/bloodpump/on_check(mob/living/L)
+	if(L.stat == DEAD)
+		L.end_body_effect(type)
+		return
 
-/datum/modifier/bloodpump_corpse
+/datum/body_effect/bloodpump_corpse
+	tick_interval = 2 SECONDS
 	name = "forced blood pumping"
 	desc = "Your blood flows thanks to the wonderful power of science."
 
@@ -29,47 +31,37 @@
 	stacks = MODIFIER_STACK_EXTEND
 
 	factors = alist(BF_PULSE_SET = PULSE_SLOW)
-	var/mob/living/carbon/human/human_being_pumped
 
 //The meat and
-/datum/modifier/bloodpump_corpse/proc/process_blood()
-	holder.process_chemicals() // Circulates chemicals throughout the body.
-	if(human_being_pumped) //Specialty human procs.
+/datum/body_effect/bloodpump_corpse/proc/process_blood(mob/living/L)
+	L.process_chemicals() // Circulates chemicals throughout the body.
+	if(ishuman(L)) //Specialty human procs.
+		var/mob/living/carbon/human/human_being_pumped = L
 		human_being_pumped.process_organs() //Things like antibiotics will work. And since we're circulating, it makes infections get worse if we don't treat them!
 		om_stage_run_now(human_being_pumped, /datum/om/stage/life/heartbeat) //We can hear our own heart being pumped! This makes a pretty neat sound effect.
 
-/datum/modifier/bloodpump_corpse/on_applied()
-	if(ishuman(holder))
-		human_being_pumped = holder
-	return
-
-/datum/modifier/bloodpump_corpse/check_if_valid()
-	..()
-	if(holder.stat != DEAD)
-		src.expire()
-
-/datum/modifier/bloodpump_corpse/expire(silent)
-	human_being_pumped = null
-	..()
+/datum/body_effect/bloodpump_corpse/on_check(mob/living/L)
+	if(L.stat != DEAD)
+		L.end_body_effect(type)
 
 //This INTENTIONALLY only happens on DEAD people. Alive people are metabolizing already (and can be healed quicker through things like brute packs) meaning they don't need this extra assistance!
 //Why does it not make you bleed out? Because we'll let medical have a few benefits that don't come with innate downsides. It takes 2 seconds to resleeve someone. It takes a good amount of time to repair a corpse. Let's make the latter more appealing.
-/datum/modifier/bloodpump_corpse/tick()
+/datum/body_effect/bloodpump_corpse/on_tick(mob/living/L)
 	for(var/i in 1 to 5) //It's a controlled machine. 5 pumps per tick.
-		process_blood() // Circulates chemicals throughout the body.
+		process_blood(L) // Circulates chemicals throughout the body.
 /*
  * Modifiers caused by chemicals or organs specifically.
  */
 
-/datum/modifier/bloodpump_corpse/cpr
+/datum/body_effect/bloodpump_corpse/cpr
 	desc = "Your blood flows thanks to the wonderful power of CPR."
 	// No pulse. You're acting as their pulse.
 	factors = alist(BF_PULSE_SET = PULSE_NONE)
 
-/datum/modifier/bloodpump_corpse/cpr/tick()
+/datum/body_effect/bloodpump_corpse/cpr/on_tick(mob/living/L)
 	var/randomization = rand(4,7) //CPR isn't perfect. You get some randomization in there.
 	for(var/i in 1 to randomization)
-		process_blood()
+		process_blood(L)
 
 /datum/body_effect/cryogelled
 	name = "cryogelled"

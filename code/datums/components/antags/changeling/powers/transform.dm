@@ -52,12 +52,13 @@
 	UpdateAppearance()
 	changeling_update_languages(changeling.absorbed_languages)
 	if(chosen_dna.genMods)
-		var/mob/living/carbon/human/self = src
-		for(var/datum/modifier/mod in self.modifiers)
-			LAZYREMOVE(self.modifiers, mod.type)
-
-		for(var/datum/modifier/mod in chosen_dna.genMods)
-			LAZYADD(self.modifiers, mod.type)
+		// Take on the persistent traits (genetic body effects) of the chosen DNA.
+		var/mob/living/self = src
+		for(var/effect_type in self.body_effects().Copy())
+			if(body_effect_def(effect_type).genetic)
+				self.remove_body_effect(effect_type, TRUE)
+		for(var/effect_type in chosen_dna.genMods)
+			self.apply_body_effect(effect_type)
 	regenerate_icons()
 	if(isliving(src)) //Prevents organ rejection. Less intensive than adding a changeling check to blood_incompatible.
 		var/mob/living/owner = src

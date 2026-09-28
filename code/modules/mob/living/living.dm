@@ -11,10 +11,10 @@
 	else
 		return name
 
-// ALLOW(lifecycle): the base living mob: Life, modifiers, soul links, nest, transformed holder and organs.
+// ALLOW(lifecycle): the base living mob: Life, body effects, soul links, nest, transformed holder and organs.
 /mob/living/Destroy()
 	life_leave_z()
-	remove_all_modifiers(TRUE)
+	clear_body_effects(TRUE)
 	// The character's DNA outlives this body when the identity references it.
 	if(dna && identity()?.dna() == dna)
 		dna = null
@@ -768,12 +768,11 @@
 		return
 
 	var/list/colors_to_blend = list()
-	for(var/datum/modifier/M in modifiers)
-		if(!isnull(M.client_color))
-			if(islist(M.client_color)) //It's a color matrix! Forget it. Just use that one.
-				animate(client, color = M.client_color, time = 10)
-				return
-			colors_to_blend += M.client_color
+	for(var/effect_color in body_effect_client_colors())
+		if(islist(effect_color)) //It's a color matrix! Forget it. Just use that one.
+			animate(client, color = effect_color, time = 10)
+			return
+		colors_to_blend += effect_color
 
 	if(!colors_to_blend.len) // Modifiers take priority over passive area blending, to prevent changes on every area entered
 		var/location_grade = get_location_color_tint() // Area or weather!

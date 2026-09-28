@@ -420,12 +420,21 @@ accident or assume they work:
   vitals readouts, armour, conductivity, action blocks, … are `BF_*` factors with one combine
   rule each. Read them with `L.factor(BF_X)`. Sources declare static `alist` tables:
   affliction `factors` (scaled by severity; a stage's `"factors"` applies at full value),
-  reagent `factors` / `species_factors` (scaled by dose), modifier `factors`, species
+  reagent `factors` / `species_factors` (scaled by dose), body effect `factors`, species
   `factor_baseline`, trait/perk `factors`, form `factors`, item `worn_factors`. The body
   caches one flat list (null at baseline) and recomputes on `BODY_DIRTY_FACTORS`. There is
   no `chem_effects`/`add_chemical_effect`, no `mechanical_effects`/`vital_effects`/`od_boost`
   and no numeric modifier fields; `tools/ci/check_grep.sh` rejects them. Brief non-reagent
-  effects are short modifiers (`/datum/modifier/numbness`, `withdrawal_strain`, …).
+  effects are body effects (`/datum/body_effect/numbness`, `withdrawal_strain`, …).
+- **Body effects replace modifiers.** There is no `/datum/modifier` and no `add_modifier()`.
+  A named condition on a mob (a timed buff, a trait, a shield, an aura, berserk, a
+  technomancer mend) is a flyweight `/datum/body_effect` definition applied as an OM
+  contribution on the mob: `L.apply_body_effect(type, duration, origin)`,
+  `remove_body_effect()`, `has_body_effect()`. Per-tick work is `tick_interval` + `on_tick(L)`
+  (an `om_after` cadence on the mob's clock); per-application state lives on the mob
+  (`body_effect_state()`, `body_effect_origin()`, `set_body_effect_factors()`), never on the
+  shared definition. Stasis is per source: `set_stasis(level, source)`.
+  `code/modules/body/body_effects.dm` is the reference.
 - **World services (fold wave F1).** `SSmachines`, `SSmobs` and `SSplants` are gone. Their global
   state is a `/datum/world_service` singleton (`GLOB.machine_service`, `GLOB.mob_service`,
   `GLOB.plant_service`) and their world-level periodic work is a cadence behaviour on the OM

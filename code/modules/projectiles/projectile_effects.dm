@@ -84,7 +84,7 @@ REF_OWNED(/datum/projectile_effects, "turf_effect_callback")
 	var/mob/living/L = target
 	L.apply_effects(stun, weaken, paralyze, irradiate, stutter, eyeblur, drowsy, agony, blocked, incendiary, flammability)
 	if(modifier_type_to_apply)
-		L.add_modifier(modifier_type_to_apply, modifier_duration)
+		L.apply_body_effect(modifier_type_to_apply, modifier_duration)
 	return TRUE
 
 /// Apply turf-targeted effects (incendiary hotspot, etc.).

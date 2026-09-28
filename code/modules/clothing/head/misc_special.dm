@@ -314,7 +314,7 @@
 
 /obj/item/clothing/head/psy_crown/wrath/activate_ability(mob/living/wearer)
 	..()
-	wearer.add_modifier(/datum/modifier/berserk, 30 SECONDS)
+	wearer.apply_body_effect(/datum/body_effect/berserk, 30 SECONDS)
 
 /obj/item/clothing/head/psy_crown/gluttony
 	name = "green crown"
@@ -328,7 +328,7 @@
 
 /obj/item/clothing/head/psy_crown/gluttony/activate_ability(mob/living/wearer)
 	..()
-	wearer.add_modifier(/datum/modifier/gluttonyregeneration, 45 SECONDS)
+	wearer.apply_body_effect(/datum/body_effect/gluttonyregeneration, 45 SECONDS)
 
 /obj/item/clothing/head/cone
 	name = "warning cone"

@@ -382,7 +382,7 @@
 /// Seconds of Life per unit of the old poisoned modifier's damage_per_tick (one Life cycle).
 #define LINGERING_POISON_CYCLE (2 SECONDS)
 
-/// A lingering, self-resolving poisoning (the old /datum/modifier/poisoned): `per_cycle` toxin a
+/// A lingering, self-resolving poisoning (the old /datum/body_effect/poisoned): `per_cycle` toxin a
 /// Life cycle for about `duration`, dealt as one lingering_poison affliction dose. Poison
 /// protection scales it; the affliction's biology keeps it off synthetics.
 /mob/living/proc/lingering_poison(per_cycle, duration, atom/source, paralytic = FALSE)

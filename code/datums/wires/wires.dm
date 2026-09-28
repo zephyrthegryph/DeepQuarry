@@ -122,10 +122,7 @@
 
 	if(isliving(user))
 		var/mob/living/L = user
-		for(var/datum/modifier/M in L.modifiers)
-			if(!isnull(M.wire_colors_replace))
-				replace_colors = M.wire_colors_replace
-				break
+		replace_colors = L.body_effect_wire_colors()
 
 	var/list/wires_list = list()
 

@@ -115,7 +115,7 @@
 		if(SK.respite_activating)
 			return TRUE
 		var/area/current_area = get_area(H)
-		if((SK.in_dark_respite) || H.has_modifier_of_type(/datum/modifier/dark_respite) || current_area.flag_check(AREA_LIMIT_DARK_RESPITE))
+		if((SK.in_dark_respite) || H.has_body_effect(/datum/body_effect/dark_respite) || current_area.flag_check(AREA_LIMIT_DARK_RESPITE))
 			return
 		if(!LAZYLEN(GLOB.latejoin_thedark))
 			log_and_message_admins("[H] died outside of the dark but there were no valid floors to warp to")
@@ -176,13 +176,13 @@
 				if(!H.hud_used.hud_shown)
 					H.toggle_hud_vis()
 			H.stop_sound_channel(CHANNEL_PREYLOOP)
-			H.add_modifier(/datum/modifier/dark_respite, 10 MINUTES)
+			H.apply_body_effect(/datum/body_effect/dark_respite, 10 MINUTES)
 			H.muffled = FALSE
 			H.forced_psay = FALSE
 
 			om_after(H, 5 MINUTES, TYPE_PROC_REF(/mob/living, can_leave_dark))
 		else
-			H.add_modifier(/datum/modifier/dark_respite, 25 MINUTES)
+			H.apply_body_effect(/datum/body_effect/dark_respite, 25 MINUTES)
 
 			om_after(H, 1 SECOND, TYPE_PROC_REF(/mob/living, enter_the_dark))
 

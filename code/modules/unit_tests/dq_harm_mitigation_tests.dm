@@ -2,7 +2,8 @@
 // injure() runs one ordered pipeline and can explain it, object damage is
 // derived from the kind, and the pharmacology catalogue split keeps its data.
 
-/datum/modifier/dq_test_physical_half
+/datum/body_effect/dq_test_physical_half
+	stacks = MODIFIER_STACK_FORBID
 	name = "test physical resistance"
 	factors = alist(BF_INCOMING_PHYSICAL = 0.5)
 
@@ -147,12 +148,9 @@
 	var/obj/item/clothing/suit/armor/vest/vest = allocate(/obj/item/clothing/suit/armor/vest)
 	vest.set_armor(dq_armor(list("melee" = 40, "bullet" = 0, "laser" = 0, "energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0)))
 	TEST_ASSERT(H.equip_to_slot_if_possible(vest, slot_wear_suit, disable_warning = TRUE), "the vest should equip")
-	var/datum/modifier/shield_projection/bruteburn/weak/shield = H.add_modifier(/datum/modifier/shield_projection/bruteburn/weak)
-	TEST_ASSERT_NOTNULL(shield, "the shield modifier should apply")
 	var/obj/item/cell/cell = allocate(/obj/item/cell/high)
-	shield.energy_source = cell
-	shield.damage_cost = 1
-	H.add_modifier(/datum/modifier/dq_test_physical_half)
+	dq_equip_shield(H, /datum/body_effect/shield_projection/bruteburn/weak, cell)
+	H.apply_body_effect(/datum/body_effect/dq_test_physical_half)
 	om_hook(H, /datum/om/event/living_injury_explained, src, PROC_REF(on_explained))
 
 	var/applied = H.injure(INJURY_BLUNT, 40, BP_TORSO, flags = INJURE_ARMORED | INJURE_SILENT)

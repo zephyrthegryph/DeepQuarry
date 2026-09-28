@@ -21,7 +21,7 @@
 	TEST_ASSERT(H.apply_body_effect(/datum/body_effect/entangled, 4 SECONDS), "entangled should take hold")
 	TEST_ASSERT(H.has_body_effect(/datum/body_effect/entangled), "entangled should be on the mob")
 	TEST_ASSERT(dq_near(H.factor(BF_SLOWDOWN), base + 2), "entangled adds 2 slowdown, got [H.factor(BF_SLOWDOWN)] over [base]")
-	TEST_ASSERT(H.has_modifier_of_type(/datum/body_effect/entangled), "the modifier compatibility query must see body effects")
+	TEST_ASSERT(H.has_body_effect(/datum/body_effect/entangled), "the modifier compatibility query must see body effects")
 
 	var/datum/stasis_source = new
 	om_hold(H, EFFECT_CLOCK_BIO_INHIBIT, stasis_source, 1)

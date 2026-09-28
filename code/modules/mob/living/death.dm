@@ -23,6 +23,7 @@
 		S.owner_died(gibbed)
 	for(var/datum/soul_link/S as anything in shared_soul_links)
 		S.sharer_died(gibbed)
+	end_body_effects_on_death()
 
 /mob/living/play_death_sound(gibbed)
 	if(gibbed || isbelly(loc))

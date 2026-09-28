@@ -364,10 +364,10 @@ REF_OWNED(/obj/machinery/oxygen_pump, list("tank", "contained"))
 							H.mend(TREAT_OXYGENATION, rand(1,8))
 
 				if(H.stat == DEAD)
-					H.add_modifier(/datum/modifier/bloodpump_corpse, 6 SECONDS)
+					H.apply_body_effect(/datum/body_effect/bloodpump_corpse, 6 SECONDS)
 
 				else
-					H.add_modifier(/datum/modifier/bloodpump, 6 SECONDS)
+					H.apply_body_effect(/datum/body_effect/bloodpump, 6 SECONDS)
 					// A ventilator and circulatory pump: floors under the
 					// breathing drive and cardiac output while attached.
 					H.body?.add_support(src, BF_RESP_DRIVE, 1, 6 SECONDS)

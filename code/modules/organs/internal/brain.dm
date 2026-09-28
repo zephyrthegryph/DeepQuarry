@@ -197,7 +197,7 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 	var/datum/dna/source_dna = identity?.get_dna()
 	if(!source_dna)
 		return 0
-	if(identity.has_genetic_modifier(/datum/modifier/no_clone))	//Can't be revived. Probably won't happen...?
+	if(identity.has_genetic_effect(/datum/body_effect/no_clone))	//Can't be revived. Probably won't happen...?
 		return 0
 
 	var/mob/living/carbon/human/H = new /mob/living/carbon/human(get_turf(src), source_dna.species)
@@ -221,8 +221,8 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 			E = null
 	H.regenerate_icons()
 	host.release_mind(H, "promethean core revival")
-	for(var/modifier_type in identity.genetic_modifiers)
-		H.add_modifier(modifier_type)
+	for(var/effect_type in identity.genetic_effects)
+		H.apply_body_effect(effect_type)
 
 	OM_EMIT(H, /datum/om/event/human_dna_finalized)
 

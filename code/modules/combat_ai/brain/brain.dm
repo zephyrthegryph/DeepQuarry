@@ -233,11 +233,11 @@ REF_OWNED(/datum/ai_brain, "model")
 				effective_behaviors[btype] = I
 
 	// Modifier-granted (statuses, buffs).
-	for(var/datum/modifier/M in holder.modifiers)
-		var/list/granted = M.get_dq_granted_behaviors()
+	for(var/effect_type in holder.body_effects())
+		var/list/granted = body_effect_def(effect_type).get_dq_granted_behaviors()
 		if(granted)
 			for(var/btype as anything in granted)
-				effective_behaviors[btype] = M
+				effective_behaviors[btype] = holder
 
 	// Inject behaviors implied by legacy-compat flags so callers can flip
 	// brain.returns_home = TRUE on a mob even after spawn and have it work.

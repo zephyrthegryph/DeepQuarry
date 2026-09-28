@@ -1,30 +1,38 @@
-// Body effects: short factor-only effects as OM contributions (MED-5).
+// Body effects: everything that used to be a /datum/modifier (MED-5).
 //
-// A body effect is what a /datum/modifier used to be when all it did was carry a factor
-// table for a while (entangled, grievous wounds, numbness, cloning sickness, ...). There is
-// no datum per application:
+// A body effect is a named, usually temporary, condition on a mob: a factor table for a while
+// (entangled, grievous wounds, numbness, cloning sickness, ...), a persistent trait
+// (colourblindness, tall), or something that does work every few seconds while it lasts
+// (shields, auras, berserk, the technomancer's mends, horror symptoms). There is no datum per
+// application:
 //
 //   - The effect's DEFINITION is a flyweight /datum/body_effect subtype (one shared instance
-//     per type, body_effect_def()), declaring `factors`, texts and a stacking rule.
+//     per type, body_effect_def()), declaring `factors`, texts, a stacking rule and hooks.
+//     Definitions are shared: they never hold per-mob state.
 //   - An APPLICATION is one contribution to EFFECT_BODY_EFFECTS on the mob, keyed by the
 //     definition's type, held by the mob itself; its value is the number of stacks.
 //   - A timed application expires through om_after() on the mob's timer clock. For a living
 //     mob that is CLOCK_BIO, so stasis slows or stops the countdown and suspension pauses it
-//     (an entangled patient in a stasis bag is still entangled when they come out).
+//     (an entangled patient in a stasis bag is still entangled when they come out). A
+//     definition with `world_clock` counts real time instead (the global OM owner).
+//   - Per-tick work is an OM behaviour on the mob: a definition with `tick_interval` gets
+//     on_tick(L) on an om_after() cadence (same clock as its expiry) while it is on.
+//   - Per-application state (the origin, a synced item, a counter) lives on the mob, keyed by
+//     the definition's type: body_effect_origin(), body_effect_state()/set_body_effect_state().
+//     It is dropped when the last stack ends.
 //
 // The body reads the per-key value (type -> stacks) in recompute_factors(); a change of the
 // contribution invalidates the factors through /datum/om/effect/body_effects/on_changed().
 //
 // API (on /mob/living):
-//   apply_body_effect(type, duration, origin)  timed when duration > 0, held otherwise
+//   apply_body_effect(type, duration, origin, suppress)  timed when duration > 0, held otherwise
 //   remove_body_effect(type, silent)           ends every stack of `type` (and subtypes)
 //   has_body_effect(type)                      any stack of `type` or a subtype
-//   body_effect_remaining(type)                deciseconds of body time until the last stack ends
+//   body_effect_stacks(type)                   stacks of exactly `type`
+//   body_effect_remaining(type)                deciseconds until the last stack ends
+//   body_effect_origin(type)                   whoever applied it (resolved), or null
+//   body_effect_state(type) / set_body_effect_state(type, value)
 //   clear_body_effects(silent)                 ends everything (rejuvenate, Destroy)
-//
-// add_modifier()/has_modifier_of_type()/remove_*modifier*() forward /datum/body_effect paths
-// here, so generic "apply this type" hooks (projectile modifier_type_to_apply, modapply
-// reagents, species cloning_modifier) take either kind.
 
 /datum/body_effect
 	abstract_type = /datum/body_effect
@@ -45,6 +53,25 @@
 	var/effect_color
 	/// Use icons/mob/modifier_effects_vr.dmi for the overlay.
 	var/icon_override = FALSE
+	/// A persistent trait of the character: recorded on the identity, so it follows cloning.
+	var/genetic = FALSE
+	/// The client sees the world tinted this colour (or colour matrix) while the effect is on.
+	var/client_color
+	/// Wire colour replacement list while the effect is on (colourblindness).
+	var/list/wire_colors_replace
+	/// A filter added to the mob while the effect is on (a filter parameter list).
+	var/list/filter_parameters
+	var/filter_priority = 1
+	/// Deciseconds. When set, on_tick(L) runs this often (on the effect's clock) while it is on.
+	var/tick_interval = 0
+	/// Count duration and ticks in real time rather than the mob's (bio) clock. For effects
+	/// that must keep running while the body is in stasis (stasis itself).
+	var/world_clock = FALSE
+	/// Ends (silently) when the mob dies. Checked on each tick and on death.
+	var/end_on_death = FALSE
+	/// An aura: ends when its origin is gone or further than this many tiles away. Checked
+	/// every tick; set tick_interval with it.
+	var/aura_max_distance = 0
 
 /// Called once when the first stack takes hold. Definitions are shared: keep no state here.
 /datum/body_effect/proc/on_start(mob/living/L)
@@ -54,9 +81,27 @@
 /datum/body_effect/proc/on_end(mob/living/L, expired)
 	return
 
-/// Override for special admission rules (robots excluded, ...).
-/datum/body_effect/proc/can_apply(mob/living/L)
+/// Called every tick_interval while the effect is on, before on_tick(): the place to end the
+/// effect when its conditions are gone (the item was taken off, the mob left the area).
+/datum/body_effect/proc/on_check(mob/living/L)
+	return
+
+/// Called every tick_interval while the effect is on (after on_check(), if it is still on).
+/datum/body_effect/proc/on_tick(mob/living/L)
+	return
+
+/// Override for special admission rules (robots excluded, ...). `suppress_output`: the caller
+/// reapplies it repeatedly (a reagent), so failure messages would spam.
+/datum/body_effect/proc/can_apply(mob/living/L, suppress_output = FALSE)
 	return TRUE
+
+/// The overlay colour on `L` (effect_color unless the application sets its own).
+/datum/body_effect/proc/overlay_color(mob/living/L)
+	return effect_color
+
+/// Behaviour grants for the combat AI while the effect is on (a static list), or null.
+/datum/body_effect/proc/get_dq_granted_behaviors()
+	return null
 
 /datum/body_effect/proc/changes_icon_scale()
 	return factors && (!isnull(factors[BF_ICON_SCALE_X]) || !isnull(factors[BF_ICON_SCALE_Y]))
@@ -82,8 +127,17 @@
 		L.invalidate_factors()
 
 /mob/living
-	/// Body effect type -> list of om_after() timer ids, one per timed stack. Lazy.
+	/// Body effect type -> list of timer ids, one per timed stack. Lazy.
 	var/list/body_effect_timers
+	/// Body effect type -> the id of its pending tick timer. Lazy.
+	var/list/body_effect_tickers
+	/// Body effect type -> OM handle of whoever applied it. Lazy.
+	var/list/body_effect_origins
+	/// Body effect type -> per-application state (anything the definition keeps). Lazy.
+	var/list/body_effect_data
+	/// Body effect type -> the application's own factor table (a static alist, or null for
+	/// none), replacing the definition's `factors`. Lazy; a type absent here uses `factors`.
+	var/list/body_effect_factors
 
 /// type -> stacks for every body effect on the mob (read only; empty list when none).
 /mob/living/proc/body_effects()
@@ -101,17 +155,82 @@
 			return TRUE
 	return FALSE
 
-/// Deciseconds of this mob's body time until the last timed stack of `path` ends; 0 when none.
+/// The first active body effect type that is `path` or a subtype of it, or null.
+/mob/living/proc/body_effect_of_type(path)
+	for(var/key in body_effects())
+		if(ispath(key, path))
+			return key
+	return null
+
+/// Whoever applied body effect `path` (the mob itself when nobody else did), or null when it
+/// is gone or the effect is not on.
+/mob/living/proc/body_effect_origin(path)
+	return om_resolve(body_effect_origins?[path])
+
+/mob/living/proc/body_effect_state(path)
+	return body_effect_data?[path]
+
+/mob/living/proc/set_body_effect_state(path, value)
+	if(isnull(value))
+		if(body_effect_data)
+			body_effect_data -= path
+			UNSETEMPTY(body_effect_data)
+		return
+	LAZYSET(body_effect_data, path, value)
+
+/// Replaces the factor table of the running application of `path` (charge- or strength-dependent
+/// effects). Pass a static alist; null means no factors. Swapping between static tables keeps
+/// the recompute cheap: nothing changes when the same table is set again.
+/mob/living/proc/set_body_effect_factors(path, alist/new_factors)
+	if(!body_effect_stacks(path))
+		return
+	if(body_effect_factors && (path in body_effect_factors) && body_effect_factors[path] == new_factors)
+		return
+	LAZYSET(body_effect_factors, path, new_factors)
+	invalidate_factors()
+
+/// Goes back to the definition's `factors` for `path`.
+/mob/living/proc/reset_body_effect_factors(path)
+	if(!body_effect_factors || !(path in body_effect_factors))
+		return
+	body_effect_factors -= path
+	UNSETEMPTY(body_effect_factors)
+	invalidate_factors()
+
+/// A timer for body effect `path` on the definition's clock. Returns its id.
+/mob/living/proc/body_effect_after(datum/body_effect/def, delay, proc_ref, path)
+	if(def.world_clock)
+		return om_after(null, delay, GLOBAL_PROC_REF(body_effect_world_timer), src, proc_ref, path)
+	return om_after(src, delay, proc_ref, path)
+
+/mob/living/proc/body_effect_cancel(datum/body_effect/def, id)
+	om_cancel_timer(def.world_clock ? null : src, id)
+
+/mob/living/proc/body_effect_timer_left(datum/body_effect/def, id)
+	return om_timer_left(def.world_clock ? null : src, id) || 0
+
+/// A world-clock body effect timer firing (weak: dropped if the mob is gone).
+/proc/body_effect_world_timer(mob/living/L, proc_ref, path)
+	if(QDELETED(L))
+		return
+	call(L, proc_ref)(path)
+
+/// Deciseconds until the last timed stack of `path` ends; 0 when none.
 /mob/living/proc/body_effect_remaining(path)
 	. = 0
-	for(var/id in body_effect_timers?[path])
-		. = max(., om_timer_left(src, id) || 0)
-
-/// Applies body effect `path`. `duration` in deciseconds of body time; 0 or null holds it until
-/// removed. Returns TRUE when it took hold or was refreshed.
-/mob/living/proc/apply_body_effect(path, duration, mob/living/origin)
+	var/list/timers = body_effect_timers?[path]
+	if(!length(timers))
+		return
 	var/datum/body_effect/def = body_effect_def(path)
-	if(QDELETED(src) || !def.can_apply(src))
+	for(var/id in timers)
+		. = max(., body_effect_timer_left(def, id))
+
+/// Applies body effect `path`. `duration` in deciseconds of the effect's clock; 0 or null holds
+/// it until removed. `origin`: whoever caused it (defaults to the mob). Returns TRUE when it took
+/// hold or was refreshed.
+/mob/living/proc/apply_body_effect(path, duration, atom/origin, suppress_output = FALSE)
+	var/datum/body_effect/def = body_effect_def(path)
+	if(QDELETED(src))
 		return FALSE
 	var/current = body_effect_stacks(path)
 	var/list/timers = body_effect_timers?[path]
@@ -125,29 +244,70 @@
 				if(!duration)
 					// A held application replaces the countdown.
 					for(var/id in timers)
-						om_cancel_timer(src, id)
+						body_effect_cancel(def, id)
 					body_effect_timers -= path
 					return TRUE
 				if(body_effect_remaining(path) >= duration)
 					return TRUE
 				for(var/id in timers)
-					om_cancel_timer(src, id)
-				body_effect_timers[path] = list(om_after(src, duration, PROC_REF(body_effect_expired), path))
+					body_effect_cancel(def, id)
+				body_effect_timers[path] = list(body_effect_after(def, duration, PROC_REF(body_effect_expired), path))
 				return TRUE
+	else
+		// The origin is readable from can_apply() and on_start().
+		LAZYSET(body_effect_origins, path, om_handle(origin || src))
+		if(!def.can_apply(src, suppress_output) || QDELETED(src))
+			if(body_effect_origins && !body_effect_stacks(path))
+				body_effect_origins -= path
+				UNSETEMPTY(body_effect_origins)
+			return FALSE
 	var/stacks = (def.stacks == MODIFIER_STACK_ALLOWED) ? current + 1 : 1
 	om_hold(src, EFFECT_BODY_EFFECTS, src, stacks, path)
+	om_changed(src, CHANGE_MOB_CONDITIONS)
 	if(duration)
 		LAZYINITLIST(body_effect_timers)
-		LAZYADD(body_effect_timers[path], om_after(src, duration, PROC_REF(body_effect_expired), path))
+		LAZYADD(body_effect_timers[path], body_effect_after(def, duration, PROC_REF(body_effect_expired), path))
 	if(!current)
 		if(def.on_created_text)
 			to_chat(src, def.on_created_text)
+		if(def.genetic)
+			record_genetic_effect(path, TRUE)
 		if(def.changes_icon_scale())
 			update_transform()
 		if(def.mob_overlay_state)
 			update_modifier_visuals()
+		if(def.client_color)
+			update_client_color()
+		if(LAZYLEN(def.filter_parameters))
+			add_filter("body_effect:[path]", def.filter_priority, def.filter_parameters)
+		if(def.tick_interval)
+			LAZYSET(body_effect_tickers, path, body_effect_after(def, def.tick_interval, PROC_REF(body_effect_tick), path))
 		def.on_start(src)
 	return TRUE
+
+/// One tick of body effect `path`.
+/mob/living/proc/body_effect_tick(path)
+	if(body_effect_tickers)
+		body_effect_tickers -= path
+		UNSETEMPTY(body_effect_tickers)
+	if(!body_effect_stacks(path))
+		return
+	var/datum/body_effect/def = body_effect_def(path)
+	if(def.end_on_death && stat == DEAD)
+		end_body_effect(path, TRUE)
+		return
+	if(def.aura_max_distance)
+		var/atom/A = body_effect_origin(path)
+		if(!istype(A) || get_dist(src, A) > def.aura_max_distance)
+			end_body_effect(path, FALSE)
+			return
+	def.on_check(src)
+	if(QDELETED(src) || !body_effect_stacks(path))
+		return
+	def.on_tick(src)
+	if(QDELETED(src) || !body_effect_stacks(path) || body_effect_tickers?[path])
+		return
+	LAZYSET(body_effect_tickers, path, body_effect_after(def, def.tick_interval, PROC_REF(body_effect_tick), path))
 
 /// One timed stack of `path` ran out.
 /mob/living/proc/body_effect_expired(path)
@@ -171,38 +331,94 @@
 			end_body_effect(key, silent)
 			. = TRUE
 
+/// Ends one stack of `path` (or of the first subtype found); the effect ends with its last stack.
+/mob/living/proc/remove_body_effect_stack(path, silent = FALSE)
+	var/key = body_effect_of_type(path)
+	if(!key)
+		return FALSE
+	var/current = body_effect_stacks(key)
+	if(current <= 1)
+		end_body_effect(key, silent)
+		return TRUE
+	var/list/timers = body_effect_timers?[key]
+	if(length(timers))
+		body_effect_cancel(body_effect_def(key), timers[1])
+		timers.Cut(1, 2)
+	om_hold(src, EFFECT_BODY_EFFECTS, src, current - 1, key)
+	return TRUE
+
 /// `expired`: the last timed stack ran out (as opposed to removal or a cure).
 /mob/living/proc/end_body_effect(path, silent, expired = FALSE)
+	var/datum/body_effect/def = body_effect_def(path)
 	for(var/id in body_effect_timers?[path])
-		om_cancel_timer(src, id)
+		body_effect_cancel(def, id)
 	if(body_effect_timers)
 		body_effect_timers -= path
 		UNSETEMPTY(body_effect_timers)
+	var/ticker = body_effect_tickers?[path]
+	if(ticker)
+		body_effect_cancel(def, ticker)
+		body_effect_tickers -= path
+		UNSETEMPTY(body_effect_tickers)
 	if(!om_release(src, EFFECT_BODY_EFFECTS, src, path))
 		return
-	var/datum/body_effect/def = body_effect_def(path)
+	om_changed(src, CHANGE_MOB_CONDITIONS)
 	if(def.on_expired_text && !silent)
 		to_chat(src, def.on_expired_text)
+	// A persistent trait leaves the character only when deliberately removed from a living
+	// body, not when the body dies or is deleted.
+	if(def.genetic && !QDELETED(src) && stat != DEAD)
+		record_genetic_effect(path, FALSE)
+	if(!QDELETED(src))
+		def.on_end(src, expired)
+	if(body_effect_origins)
+		body_effect_origins -= path
+		UNSETEMPTY(body_effect_origins)
+	set_body_effect_state(path, null)
+	if(body_effect_factors)
+		body_effect_factors -= path
+		UNSETEMPTY(body_effect_factors)
 	if(QDELETED(src))
 		return
-	def.on_end(src, expired)
 	if(def.changes_icon_scale())
 		update_transform()
 	if(def.mob_overlay_state)
 		update_modifier_visuals()
+	if(def.client_color)
+		update_client_color()
+	if(LAZYLEN(def.filter_parameters))
+		remove_filter("body_effect:[path]")
 
 /mob/living/proc/clear_body_effects(silent = FALSE)
 	for(var/key in body_effects().Copy())
 		end_body_effect(key, silent)
 	body_effect_timers = null
+	body_effect_tickers = null
+
+/// Ends the effects that don't outlast death (end_on_death). Called from death().
+/mob/living/proc/end_body_effects_on_death()
+	for(var/key in body_effects().Copy())
+		var/datum/body_effect/def = body_effect_def(key)
+		if(def.end_on_death)
+			end_body_effect(key, TRUE)
+
+/// The filter a body effect added to the mob (for animate()), or null.
+/mob/living/proc/body_effect_filter(path)
+	return get_filter("body_effect:[path]")
 
 /// Accumulates every body effect's factors (per stack) into `acc`.
 /mob/living/proc/accumulate_body_effect_factors(list/acc)
 	var/list/active = body_effects()
 	for(var/path in active)
-		var/datum/body_effect/def = body_effect_def(path)
+		var/alist/table
+		if(body_effect_factors && (path in body_effect_factors))
+			table = body_effect_factors[path]
+		else
+			table = body_effect_def(path).factors
+		if(!table)
+			continue
 		for(var/i in 1 to active[path])
-			acc = body_factor_accumulate(acc, def.factors)
+			acc = body_factor_accumulate(acc, table)
 	return acc
 
 /// OOC listing lines ("name: factor lines") for visible body effects.
@@ -214,6 +430,22 @@
 			continue
 		. += "[def.name || path]: [jointext(body_factor_describe(def.factors), ", ")]"
 
+/// The wire colour replacement list of the first body effect that sets one, or null.
+/mob/living/proc/body_effect_wire_colors()
+	for(var/path in body_effects())
+		var/datum/body_effect/def = body_effect_def(path)
+		if(!isnull(def.wire_colors_replace))
+			return def.wire_colors_replace
+	return null
+
+/// Client colours of every body effect that sets one (a list; a matrix is one entry).
+/mob/living/proc/body_effect_client_colors()
+	. = list()
+	for(var/path in body_effects())
+		var/datum/body_effect/def = body_effect_def(path)
+		if(!isnull(def.client_color))
+			. += list(def.client_color)
+
 /// Overlay images for every body effect with a mob_overlay_state (update_modifier_visuals()).
 /mob/living/proc/body_effect_overlays(reset_color = FALSE)
 	. = null
@@ -222,7 +454,7 @@
 		if(!def.mob_overlay_state)
 			continue
 		var/image/I = image(icon = def.icon_override ? 'icons/mob/modifier_effects_vr.dmi' : 'icons/mob/modifier_effects.dmi', icon_state = def.mob_overlay_state)
-		I.color = def.effect_color
+		I.color = def.overlay_color(src)
 		if(reset_color)
 			I.appearance_flags = RESET_COLOR
 		LAZYADD(., I)

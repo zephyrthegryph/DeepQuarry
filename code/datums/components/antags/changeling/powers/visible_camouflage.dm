@@ -23,7 +23,7 @@
 		if(dq_get_cloaked(changeling))
 			dq_set_cloaked(changeling, FALSE)
 			return TRUE
-		if(H.has_modifier_of_type(/datum/modifier/changeling_camouflage)) //If they double-clicked the button while invis.
+		if(H.has_body_effect(/datum/body_effect/changeling_camouflage)) //If they double-clicked the button while invis.
 			to_chat(H, span_warning("We are already camouflaged!"))
 			return TRUE
 
@@ -38,57 +38,50 @@
 		dq_set_cloaked(changeling, TRUE)
 		if(changeling.recursive_enhancement)
 			to_chat(src, span_notice("We may move at our normal speed while hidden."))
-			H.add_modifier(/datum/modifier/changeling_camouflage/recursive, 0)
+			H.apply_body_effect(/datum/body_effect/changeling_camouflage/recursive, 0)
 		else
-			H.add_modifier(/datum/modifier/changeling_camouflage, 0)
+			H.apply_body_effect(/datum/body_effect/changeling_camouflage, 0)
 
-/datum/modifier/changeling_camouflage
+/datum/body_effect/changeling_camouflage
+	stacks = MODIFIER_STACK_FORBID
+	tick_interval = 2 SECONDS
 	name = "Camoflauge"
 	desc = "We are near-impossible to see."
 	var/must_walk = TRUE
-	var/comp_handle
-	var/old_regen_rate
+	// Per-application state: the changeling's chem recharge rate, suspended while camouflaged.
 
 
-/datum/modifier/changeling_camouflage/recursive
+/datum/body_effect/changeling_camouflage/recursive
 	must_walk = FALSE
 
-/datum/modifier/changeling_camouflage/can_apply(mob/living/L, suppress_failure = FALSE)
-	comp_handle = om_handle(L.get_changeling_state())
-	if(!comp())
-		return FALSE
+/datum/body_effect/changeling_camouflage/can_apply(mob/living/L, suppress_failure = FALSE)
+	return !!L.get_changeling_state()
 
-/datum/modifier/changeling_camouflage/on_applied()
-	comp_handle = om_handle(holder.get_changeling_state())
+/datum/body_effect/changeling_camouflage/on_start(mob/living/L)
+	var/datum/changeling/comp = L.get_changeling_state()
 	if(must_walk)
-		holder.set_m_intent(I_WALK)
-	old_regen_rate = comp().chem_recharge_rate
-	comp().chem_recharge_rate = 0
-	animate(holder,alpha = 255, alpha = 10, time = 10)
+		L.set_m_intent(I_WALK)
+	L.set_body_effect_state(type, comp.chem_recharge_rate)
+	comp.chem_recharge_rate = 0
+	animate(L,alpha = 255, alpha = 10, time = 10)
 
-/datum/modifier/changeling_camouflage/on_expire()
-	animate(holder,alpha = 10, alpha = 255, time = 10)
-	holder.invisibility = initial(holder.invisibility)
-	holder.visible_message(span_warning("[holder] suddenly fades in, seemingly from nowhere!"),
+/datum/body_effect/changeling_camouflage/on_end(mob/living/L, expired)
+	var/datum/changeling/comp = L.get_changeling_state()
+	animate(L,alpha = 10, alpha = 255, time = 10)
+	L.invisibility = initial(L.invisibility)
+	L.visible_message(span_warning("[L] suddenly fades in, seemingly from nowhere!"),
 	span_notice("We revert our camouflage, revealing ourselves."))
-	holder.set_m_intent(I_RUN)
-	dq_set_cloaked(comp(), FALSE)
-	comp().chem_recharge_rate = old_regen_rate
-	comp_handle = null
+	L.set_m_intent(I_RUN)
+	if(comp)
+		dq_set_cloaked(comp, FALSE)
+		comp.chem_recharge_rate = L.body_effect_state(type) || 0
 
-/datum/modifier/changeling_camouflage/tick()
-	if(holder.m_intent != I_WALK && must_walk) // Moving too fast uncloaks you.
-		expire(silent = TRUE)
-	if(!dq_get_cloaked(comp()))
-		expire(silent = TRUE)
-	if(holder.stat) // Dead or unconscious lings can't stay dq_get_cloaked(src).
-		expire(silent = TRUE)
-	if(holder.incapacitated(INCAPACITATION_DISABLED)) // Stunned lings also can't stay dq_get_cloaked(src).
-		expire(silent = TRUE)
-	if(comp().chem_recharge_rate != 0) //Without this, there is an exploit that can be done, if one buys engorged chem sacks while dq_get_cloaked(src).
-		old_regen_rate += comp().chem_recharge_rate
-		comp().chem_recharge_rate = 0
-
-/// LC-refs: the holder's changeling state -- an OM handle (om_handle()), so it reads null once that is deleted.
-/datum/modifier/changeling_camouflage/proc/comp() as /datum/changeling
-	return om_resolve(comp_handle)
+/datum/body_effect/changeling_camouflage/on_tick(mob/living/L)
+	var/datum/changeling/comp = L.get_changeling_state()
+	// Moving too fast, losing the cloak, being dead, unconscious or stunned uncloaks you.
+	if(!comp || (L.m_intent != I_WALK && must_walk) || !dq_get_cloaked(comp) || L.stat || L.incapacitated(INCAPACITATION_DISABLED))
+		L.end_body_effect(type, TRUE)
+		return
+	if(comp.chem_recharge_rate != 0) //Without this, there is an exploit that can be done, if one buys engorged chem sacks while cloaked.
+		L.set_body_effect_state(type, (L.body_effect_state(type) || 0) + comp.chem_recharge_rate)
+		comp.chem_recharge_rate = 0

@@ -1158,22 +1158,12 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	remove_layer(MODIFIER_EFFECTS_LAYER)
 
 	var/list/effect_overlays = body_effect_overlays()
-	if(!LAZYLEN(modifiers) && !effect_overlays)
-		return //No modifiers, no effects.
+	if(!effect_overlays)
+		return //No effects.
 
 	var/image/effects = new()
 	for(var/image/I as anything in effect_overlays)
 		effects.overlays += I
-	for(var/datum/modifier/M in modifiers)
-		if(M.mob_overlay_state)
-			if(M.icon_override) //Override for the modifer icon.
-				var/image/I = image(icon = 'icons/mob/modifier_effects_vr.dmi', icon_state = M.mob_overlay_state)
-				I.color = M.effect_color
-				effects.overlays += I // Leaving this as overlays +=
-			else
-				var/image/I = image(icon = 'icons/mob/modifier_effects.dmi', icon_state = M.mob_overlay_state)
-				I.color = M.effect_color
-				effects.overlays += I // Leaving this as overlays +=
 
 	overlays_standing[MODIFIER_EFFECTS_LAYER] = effects
 

@@ -80,12 +80,12 @@
 	generator_hit_cost = 0
 	generator_active_cost = 0
 	damage_cost = 0
-	modifier_type = /datum/modifier/shield_projection/magnet
+	modifier_type = /datum/body_effect/shield_projection/magnet
 
 /obj/item/personal_shield_generator/belt/fossiltank
 	name = "expirmental magnet generator belt"
 	desc = "A belt that will pull in minerals torwards you whilst bolstering your defense."
-	modifier_type = /datum/modifier/shield_projection/magnet/defense
+	modifier_type = /datum/body_effect/shield_projection/magnet/defense
 
 //props meant to be scanned/deconstructed by science, obtained via exploration
 /obj/item/prop/deconstructable

@@ -81,7 +81,7 @@
 /datum/reagent/proc/on_mob_life(mob/living/carbon/M, alien, datum/reagents/metabolism/location) // Currently, on_mob_life is called on carbons. Any interaction with non-carbon mobs (lube) will need to be done in touch_mob.
 	if(!istype(M))
 		return
-	if(!affects_dead && M.stat == DEAD && !M.has_modifier_of_type(/datum/modifier/bloodpump_corpse))
+	if(!affects_dead && M.stat == DEAD && !M.has_body_effect(/datum/body_effect/bloodpump_corpse))
 		return
 	if(M.isSynthetic() && (!M.synth_reag_processing || !affects_robots))
 		return

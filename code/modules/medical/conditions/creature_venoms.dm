@@ -121,7 +121,7 @@
 
 
 // --- Lingering poison (poison syringes, jellyfish whips, nightmare jelly, leeches) ------------
-// Was the /datum/modifier/poisoned damage-over-time (MED-5): a slow systemic toxin that fades on
+// Was the /datum/body_effect/poisoned damage-over-time (MED-5): a slow systemic toxin that fades on
 // its own over roughly its old duration and clears faster with antitoxin. Dealt through
 // /mob/living/proc/lingering_poison().
 /datum/affliction/venom/lingering_poison

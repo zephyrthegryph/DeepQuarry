@@ -171,8 +171,8 @@ EXTEND_INTERACTIONS(/obj/structure/closet/body_bag, INTERACT_ITEM(null, PROC_REF
 	var/used = 0
 	var/obj/item/tank/tank = null
 	var/tank_type = /obj/item/tank/stasis/oxygen
-	/// Stasis modifier (/datum/modifier/stasis/*) applied to whoever lies inside.
-	var/stasis_level = /datum/modifier/stasis/deep
+	/// Stasis modifier (/datum/body_effect/stasis/*) applied to whoever lies inside.
+	var/stasis_level = /datum/body_effect/stasis/deep
 	var/obj/item/reagent_containers/syringe/syringe
 
 /obj/structure/closet/body_bag/cryobag/Initialize(mapload)

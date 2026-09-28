@@ -1,35 +1,36 @@
 /mob/living/simple_mob/mechanical/mecha/eclipse/proc/summon_puddles(atom/A, next_cycle, puddle_item)
 	for(var/mob/living/L in orange(src, 14))
 		if(L.stat != DEAD && !IIsAlly(L))
-			L.add_modifier(puddle_item, 3, src)
+			L.apply_body_effect(puddle_item, 3, src)
 	attackcycle = next_cycle
 
-/datum/modifier/mmo_drop
+/datum/body_effect/mmo_drop
 	name = "Targeted"
 	on_created_text = span_notice("You feel like you're being targeted.")
 	stacks = MODIFIER_STACK_FORBID
 	var/puddleitem = /obj/effect/spider/spiderling/antling
 
-/datum/modifier/mmo_drop/on_expire()
-	if(holder.stat != DEAD)
-		var/turf/T = get_turf(holder)
+/datum/body_effect/mmo_drop/on_end(mob/living/L, expired)
+	if(L.stat != DEAD)
+		var/turf/T = get_turf(L)
 		new puddleitem(T)
 
-/datum/modifier/mmo_drop/lingering
+/datum/body_effect/mmo_drop/lingering
+	tick_interval = 2 SECONDS
 	var/dropchance = 50
 
-/datum/modifier/mmo_drop/lingering/tick()
-	if(holder.stat != DEAD && prob(dropchance))
-		var/turf/T = get_turf(holder)
+/datum/body_effect/mmo_drop/lingering/on_tick(mob/living/L)
+	if(L.stat != DEAD && prob(dropchance))
+		var/turf/T = get_turf(L)
 		new puddleitem(T)
 
-/datum/modifier/mmo_drop/jelly_fish
+/datum/body_effect/mmo_drop/jelly_fish
 	puddleitem = /obj/effect/ant_structure/trap
 
-/datum/modifier/mmo_drop/blade_boss_long
+/datum/body_effect/mmo_drop/blade_boss_long
 	puddleitem = /obj/item/grenade/shooter/auto_explode/blade_boss_long
 
-/datum/modifier/mmo_drop/blade_boss_short
+/datum/body_effect/mmo_drop/blade_boss_short
 	puddleitem = /obj/item/grenade/shooter/auto_explode/blade_boss_short
 
 /obj/item/grenade/shooter/auto_explode
@@ -47,7 +48,7 @@
 	spread_range = 2
 	projectile_types = list(/obj/item/projectile/energy/blood_bullet)
 
-/datum/modifier/mmo_drop/lingering/blood_flower
+/datum/body_effect/mmo_drop/lingering/blood_flower
 	puddleitem = /obj/item/grenade/shooter/auto_explode/blood_boss
 
 /obj/item/projectile/bullet/incendiary/dragonflame/occult
@@ -67,22 +68,22 @@
 	spread_range = 2
 	projectile_types = list(/obj/item/projectile/bullet/incendiary/dragonflame/occult)
 
-/datum/modifier/mmo_drop/occult_fireball
+/datum/body_effect/mmo_drop/occult_fireball
 	puddleitem = /obj/item/grenade/shooter/auto_explode/occult_fireball
 
 /obj/item/grenade/shooter/auto_explode/eclipse_iceball
 	spread_range = 2
 	projectile_types = list(/obj/item/projectile/energy/eclipse_boss/chillingwind)
 
-/datum/modifier/mmo_drop/eclipse_iceball
+/datum/body_effect/mmo_drop/eclipse_iceball
 	puddleitem = /obj/item/grenade/shooter/auto_explode/eclipse_iceball
 
-/datum/modifier/mmo_drop/metal_tomb
+/datum/body_effect/mmo_drop/metal_tomb
 	puddleitem = /obj/structure/foamedmetal
 
 /obj/item/grenade/shooter/auto_explode/eclipse_dagger
 	spread_range = 4
 	projectile_types = list(/obj/item/projectile/energy/astral_collective/dagger)
 
-/datum/modifier/mmo_drop/eclipse_dagger
+/datum/body_effect/mmo_drop/eclipse_dagger
 	puddleitem = /obj/item/grenade/shooter/auto_explode/eclipse_dagger

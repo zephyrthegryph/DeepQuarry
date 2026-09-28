@@ -27,7 +27,7 @@
 
 	factors = alist(BF_INCOMING_ALL = 0.9, BF_INCOMING_GENETIC = 0, BF_HEALING_RECEIVED = 0.5, BF_ENDURANCE_MULT = 1.5, BF_ICON_SCALE_X = 1.2, BF_ICON_SCALE_Y = 1.2)
 
-/datum/modifier/nervoushigh //meteroid
+/datum/body_effect/nervoushigh //meteroid
 	name = "Nervous High"
 	desc = "Your senses feel everything."
 
@@ -59,7 +59,8 @@
 
 	factors = alist(BF_DISABLE_DURATION = 0.2, BF_ENDURANCE_MULT = 1.3)
 
-/datum/modifier/life_cloak
+/datum/body_effect/life_cloak
+	tick_interval = 2 SECONDS
 	name = "Life Cloak"
 	desc = "Your body is protected from death."
 
@@ -67,24 +68,24 @@
 	on_expired_text = span_notice("Your body returns to normal.")
 	stacks = MODIFIER_STACK_EXTEND
 
-/datum/modifier/life_cloak/can_apply(mob/living/L, suppress_failure = FALSE)
+/datum/body_effect/life_cloak/can_apply(mob/living/L, suppress_failure = FALSE)
 	if(L.has_body_effect(/datum/body_effect/life_cloak_exhaustion))
 		return FALSE
 	return ..()
 
-/datum/modifier/life_cloak/tick()
-	if(holder.stat != DEAD)
-		holder.apply_body_effect(/datum/body_effect/life_cloak_exhaustion, 360 SECONDS)
+/datum/body_effect/life_cloak/on_tick(mob/living/L)
+	if(L.stat != DEAD)
+		L.apply_body_effect(/datum/body_effect/life_cloak_exhaustion, 360 SECONDS)
 		// A revival burst from a power, not a reagent: mend by mechanism,
 		// organic and synthetic alike.
-		holder.mend(TREAT_TISSUE_REPAIR, 150)
-		holder.mend(TREAT_PLATING_REPAIR, 150)
-		holder.mend(TREAT_BURN_CARE, 150)
-		holder.mend(TREAT_WIRING_REPAIR, 150)
-		holder.mend(TREAT_OXYGENATION, 200)
-		holder.set_stat(CONSCIOUS)
-		holder.failed_last_breath = 0
-		expire()
+		L.mend(TREAT_TISSUE_REPAIR, 150)
+		L.mend(TREAT_PLATING_REPAIR, 150)
+		L.mend(TREAT_BURN_CARE, 150)
+		L.mend(TREAT_WIRING_REPAIR, 150)
+		L.mend(TREAT_OXYGENATION, 200)
+		L.set_stat(CONSCIOUS)
+		L.failed_last_breath = 0
+		L.end_body_effect(type)
 
 /datum/body_effect/life_cloak_exhaustion
 	name = "Life Cloak Recovery"

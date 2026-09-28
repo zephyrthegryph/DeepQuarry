@@ -16,7 +16,7 @@
 	icon = 'icons/obj/robobag.dmi'
 	item_path = /obj/item/bodybag/cryobag/robobag
 	tank_type = /obj/item/tank/stasis/nitro_cryo
-	stasis_level = /datum/modifier/stasis/light	// Lower than the normal cryobag, because it's not made for meat that dies. It's made for robots and is freezing.
+	stasis_level = /datum/body_effect/stasis/light	// Lower than the normal cryobag, because it's not made for meat that dies. It's made for robots and is freezing.
 	var/obj/item/clothing/accessory/badge/corptag	// The tag on the bag.
 
 /obj/structure/closet/body_bag/cryobag/robobag/examine(mob/user)
@@ -75,7 +75,7 @@ EXTEND_INTERACTIONS(/obj/structure/closet/body_bag/cryobag/robobag, \
 			if(!H.treatment_demand(/datum/diagnostic_profile/robot_analyzer)?[TREAT_SYSTEM_RESTORE])	// We don't exactly care about the bag being 'used' when containing a synth, unless it's got work.
 				used = FALSE
 			else
-				H.add_modifier(/datum/modifier/fbp_debug/robobag)
+				H.apply_body_effect(/datum/body_effect/fbp_debug/robobag)
 
 /// Old attackby: while closed, scan the occupant or swap its corporate tag.
 /obj/structure/closet/body_bag/cryobag/robobag/proc/robobag_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
@@ -106,7 +106,8 @@ EXTEND_INTERACTIONS(/obj/structure/closet/body_bag/cryobag/robobag, \
 			return FALSE
 	return INTERACTION_HANDLED_PASS
 
-/datum/modifier/fbp_debug
+/datum/body_effect/fbp_debug
+	tick_interval = 2 SECONDS
 	name = "defragmenting"
 	desc = "Your software is being debugged."
 	mob_overlay_state = "signal_blue"
@@ -115,21 +116,21 @@ EXTEND_INTERACTIONS(/obj/structure/closet/body_bag/cryobag/robobag, \
 	on_expired_text = span_notice("Your mind is clear once more.")
 	stacks = MODIFIER_STACK_FORBID
 
-/datum/modifier/fbp_debug/tick()
-	if(holder.treatment_demand(/datum/diagnostic_profile/robot_analyzer)?[TREAT_SYSTEM_RESTORE])
-		holder.mend(TREAT_SYSTEM_RESTORE, rand(1,5))
+/datum/body_effect/fbp_debug/on_tick(mob/living/L)
+	if(L.treatment_demand(/datum/diagnostic_profile/robot_analyzer)?[TREAT_SYSTEM_RESTORE])
+		L.mend(TREAT_SYSTEM_RESTORE, rand(1,5))
 
-/datum/modifier/fbp_debug/can_apply(mob/living/L)
+/datum/body_effect/fbp_debug/can_apply(mob/living/L)
 	if(!L.isSynthetic())
 		return FALSE
 	return TRUE
 
-/datum/modifier/fbp_debug/check_if_valid()
+/datum/body_effect/fbp_debug/on_check(mob/living/L)
 	..()
-	if(!holder.treatment_demand(/datum/diagnostic_profile/robot_analyzer)?[TREAT_SYSTEM_RESTORE])
-		src.expire()
+	if(!L.treatment_demand(/datum/diagnostic_profile/robot_analyzer)?[TREAT_SYSTEM_RESTORE])
+		L.end_body_effect(type)
 
-/datum/modifier/fbp_debug/robobag/check_if_valid()
+/datum/body_effect/fbp_debug/robobag/on_check(mob/living/L)
 	..()
-	if(!istype(holder.loc, /obj/structure/closet/body_bag/cryobag/robobag))
-		src.expire()
+	if(!istype(L.loc, /obj/structure/closet/body_bag/cryobag/robobag))
+		L.end_body_effect(type)

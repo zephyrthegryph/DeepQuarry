@@ -95,7 +95,7 @@ DECLARE_INTERACTIONS(/obj/item/mmi, INTERACT_ITEM(null, PROC_REF(interaction_ite
 		if(!view)
 			to_chat(user, span_warning("You aren't sure where this brain came from, but you're pretty sure it's useless."))
 			return INTERACTION_HANDLED_PASS
-		if(view.identity().has_genetic_modifier(/datum/modifier/no_borg))	//Can't be shoved in an MMI.
+		if(view.identity().has_genetic_effect(/datum/body_effect/no_borg))	//Can't be shoved in an MMI.
 			to_chat(user, span_warning("\The [src] appears to reject this brain.  It is incompatible."))
 			return INTERACTION_HANDLED_PASS
 

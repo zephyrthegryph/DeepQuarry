@@ -89,20 +89,22 @@
 		set_glow_intensity(2)
 		set_glow_color("#FFFFFF")
 		set_glow_toggle(TRUE)
-		add_modifier(/datum/modifier/sparkle, null, src)
+		apply_body_effect(/datum/body_effect/sparkle, null, src)
 	else
 		set_glow_toggle(FALSE)
 
-/datum/modifier/sparkle
+/datum/body_effect/sparkle
+	stacks = MODIFIER_STACK_FORBID
+	tick_interval = 2 SECONDS
 	name = "sparkling"
 	desc = "You are sparkling, woo!"
 	mob_overlay_state = "cyan_sparkles"
 	on_created_text = span_notice("You begin to sparkle!")
 	on_expired_text = span_notice("Your sparkling fades away...")
 
-/datum/modifier/sparkle/tick()
-	if(!holder.glow_toggle || holder.stat)
-		expire()
+/datum/body_effect/sparkle/on_tick(mob/living/L)
+	if(!L.glow_toggle || L.stat)
+		L.end_body_effect(type)
 
 /mob/living/proc/healing_rainbows()
 	set name = "Firin Mah Lazor"

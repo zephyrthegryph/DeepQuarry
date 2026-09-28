@@ -33,8 +33,8 @@
 	if(is_bruised()) //They heal theirselves.
 		owner?.mend(TREAT_RESTORATION, 1, src)
 	//Get our spooky vision
-	if(!owner.has_modifier_of_type(/datum/modifier/redsight))
-		owner.add_modifier(/datum/modifier/redsight)
+	if(!owner.has_body_effect(/datum/body_effect/redsight))
+		owner.apply_body_effect(/datum/body_effect/redsight)
 	if(owner.life_tick % 60 == 0 && prob(5))
 		owner.drip(1)
 		to_chat(owner, span_cult("Your eyes tear up and blood drips down your face."))

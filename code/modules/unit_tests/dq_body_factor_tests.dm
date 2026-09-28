@@ -1,31 +1,46 @@
 // Body factors: the unified stat layer (code/modules/body/factors.dm).
 // Combine math, lazy storage, dirty recompute on every source kind, and the
-// consumers that read factors instead of walking modifier lists.
+// consumers that read factors instead of walking effect lists.
 
-/// A test-only modifier touching many consumers at once.
-/datum/modifier/dq_test_factors
+/// A test-only body effect touching many consumers at once.
+/datum/body_effect/dq_test_factors
+	stacks = MODIFIER_STACK_FORBID
 	name = "test factors"
 	factors = alist(BF_EVASION = 30, BF_ATTACK_SPEED = 0.5, BF_MELEE_DAMAGE = 1.5, BF_DISABLE_DURATION = 0.5, BF_INCOMING_PHYSICAL = 0.5, BF_ENDURANCE_FLAT = 10, BF_ARMOR(INJURY_BLUNT) = 25, BF_SIEMENS = 0.5, BF_ACCURACY = -40, BF_DISPERSION = 2)
 
-/datum/modifier/dq_test_slowdown
+/datum/body_effect/dq_test_slowdown
 	name = "test slowdown"
 	stacks = MODIFIER_STACK_ALLOWED
 	factors = alist(BF_SLOWDOWN = 2)
 
-/datum/modifier/dq_test_haste
+/datum/body_effect/dq_test_haste
+	stacks = MODIFIER_STACK_FORBID
 	name = "test haste"
 	factors = alist(BF_HASTE = 1)
 
-/datum/modifier/dq_test_healing
+/datum/body_effect/dq_test_healing
+	stacks = MODIFIER_STACK_FORBID
 	name = "test healing"
 	factors = alist(BF_HEALING_RECEIVED = 2)
 
-/datum/modifier/dq_test_pain_block
+/datum/body_effect/dq_test_pain_block
+	stacks = MODIFIER_STACK_FORBID
 	name = "test pain immunity"
 	factors = alist(BF_PAIN_IMMUNITY = 1, BF_ACTION_BLOCKS = ACTION_BLOCK_HOLD_LEFT)
 
 /datum/unit_test/proc/dq_near(a, b, epsilon = 0.001)
 	return abs(a - b) < epsilon
+
+/// Straps a shield generator with `cell` (costing 1 charge per point absorbed) to `H`'s back and
+/// raises shield `effect_type`. Returns the generator.
+/datum/unit_test/proc/dq_equip_shield(mob/living/carbon/human/H, effect_type, obj/item/cell/cell)
+	var/obj/item/personal_shield_generator/G = allocate(/obj/item/personal_shield_generator)
+	G.bcell = cell
+	G.damage_cost = 1
+	TEST_ASSERT(H.equip_to_slot_if_possible(G, slot_back, disable_warning = TRUE), "the shield generator should equip")
+	TEST_ASSERT(H.apply_body_effect(effect_type), "the shield should come up")
+	TEST_ASSERT(H.has_body_effect(effect_type), "the shield should stay up while its generator is worn")
+	return G
 
 
 /// The combine rules and the worked example from the design doc.
@@ -81,33 +96,38 @@
 	TEST_ASSERT_EQUAL(H.factor(BF_AIRWAY), 1, "an untouched multiplier reads its baseline")
 	TEST_ASSERT_EQUAL(H.factor(BF_PULSE_SET), -1, "an untouched max factor reads its baseline")
 
-	var/datum/modifier/M = H.add_modifier(/datum/modifier/dq_test_slowdown)
-	TEST_ASSERT(H.body.dirty & BODY_DIRTY_FACTORS, "adding a modifier with factors should mark the body dirty")
-	TEST_ASSERT_EQUAL(H.factor(BF_SLOWDOWN), 2, "the modifier's slowdown should apply")
+	TEST_ASSERT(H.apply_body_effect(/datum/body_effect/dq_test_slowdown), "the effect should apply")
+	TEST_ASSERT(H.body.dirty & BODY_DIRTY_FACTORS, "adding an effect with factors should mark the body dirty")
+	TEST_ASSERT_EQUAL(H.factor(BF_SLOWDOWN), 2, "the effect's slowdown should apply")
 	TEST_ASSERT_NOTNULL(H.body.factors, "a contributing source should allocate the list")
 
-	H.remove_specific_modifier(M, TRUE)
-	TEST_ASSERT_EQUAL(H.factor(BF_SLOWDOWN), 0, "removing the modifier should restore the baseline")
+	H.remove_body_effect(/datum/body_effect/dq_test_slowdown, TRUE)
+	TEST_ASSERT_EQUAL(H.factor(BF_SLOWDOWN), 0, "removing the effect should restore the baseline")
 	TEST_ASSERT_NULL(H.body.factors, "back at baseline, the list should be freed")
 
 
-/// Modifiers stack at full value; reading does no work when nothing changed.
+/// Body effects stack at full value; reading does no work when nothing changed.
 /datum/unit_test/dq_body_factor_modifier_recompute
 
 /datum/unit_test/dq_body_factor_modifier_recompute/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	H.add_modifier(/datum/modifier/dq_test_slowdown)
-	H.add_modifier(/datum/modifier/dq_test_slowdown)
-	TEST_ASSERT_EQUAL(H.factor(BF_SLOWDOWN), 4, "two stacked modifiers should add")
+	H.apply_body_effect(/datum/body_effect/dq_test_slowdown)
+	H.apply_body_effect(/datum/body_effect/dq_test_slowdown)
+	TEST_ASSERT_EQUAL(H.factor(BF_SLOWDOWN), 4, "two stacks should add")
 	TEST_ASSERT(!(H.body.dirty & BODY_DIRTY_FACTORS), "a read should leave the factors clean")
-	H.remove_modifiers_of_type(/datum/modifier/dq_test_slowdown, TRUE)
+	H.remove_body_effect(/datum/body_effect/dq_test_slowdown, TRUE)
 	TEST_ASSERT_EQUAL(H.factor(BF_SLOWDOWN), 0, "removing both should restore the baseline")
 
-	// set_factors() swaps a running modifier's table.
-	var/datum/modifier/M = H.add_modifier(/datum/modifier/dq_test_healing)
-	TEST_ASSERT_EQUAL(H.factor(BF_HEALING_RECEIVED), 2, "healing modifier should apply")
-	M.set_factors(alist(BF_HEALING_RECEIVED = 0.5))
-	TEST_ASSERT_EQUAL(H.factor(BF_HEALING_RECEIVED), 0.5, "set_factors should recompute the holder")
+	// set_body_effect_factors() swaps a running application's table.
+	H.apply_body_effect(/datum/body_effect/dq_test_healing)
+	TEST_ASSERT_EQUAL(H.factor(BF_HEALING_RECEIVED), 2, "healing effect should apply")
+	var/static/alist/halved = alist(BF_HEALING_RECEIVED = 0.5)
+	H.set_body_effect_factors(/datum/body_effect/dq_test_healing, halved)
+	TEST_ASSERT_EQUAL(H.factor(BF_HEALING_RECEIVED), 0.5, "set_body_effect_factors should recompute the mob")
+	H.reset_body_effect_factors(/datum/body_effect/dq_test_healing)
+	TEST_ASSERT_EQUAL(H.factor(BF_HEALING_RECEIVED), 2, "reset_body_effect_factors should restore the definition's table")
+	H.remove_body_effect(/datum/body_effect/dq_test_healing, TRUE)
+	TEST_ASSERT_EQUAL(H.factor(BF_HEALING_RECEIVED), 1, "ending the effect drops its table")
 
 
 /// Afflictions scale by severity and recompute only on a band crossing.
@@ -218,7 +238,7 @@
 	var/base_siemens = H.get_siemens_coefficient_organ(chest)
 	var/base_blunt = H.injure(INJURY_BLUNT, 4, BP_TORSO, flags = INJURE_SILENT)
 
-	H.add_modifier(/datum/modifier/dq_test_factors)
+	H.apply_body_effect(/datum/body_effect/dq_test_factors)
 	TEST_ASSERT_EQUAL(H.get_evasion(), base_evasion + 30, "evasion should read BF_EVASION")
 	TEST_ASSERT(dq_near(H.get_attack_speed(), base_attack * 0.5), "attack delay should read BF_ATTACK_SPEED")
 	TEST_ASSERT_EQUAL(H.get_endurance(), base_endurance + 10, "endurance should read BF_ENDURANCE_FLAT")
@@ -235,7 +255,7 @@
 	var/mob/living/simple_mob/S = allocate(/mob/living/simple_mob/animal/passive/mouse)
 	var/base_accuracy = S.calculate_accuracy()
 	var/base_dispersion = S.calculate_dispersion()
-	S.add_modifier(/datum/modifier/dq_test_factors)
+	S.apply_body_effect(/datum/body_effect/dq_test_factors)
 	TEST_ASSERT_EQUAL(S.calculate_accuracy(), base_accuracy - 40, "simple mob accuracy should read BF_ACCURACY")
 	TEST_ASSERT_EQUAL(S.calculate_dispersion(), base_dispersion + 2, "simple mob dispersion should read BF_DISPERSION")
 
@@ -246,11 +266,11 @@
 /datum/unit_test/dq_body_factor_movement/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/base = H.movement_delay()
-	H.add_modifier(/datum/modifier/dq_test_slowdown)
+	H.apply_body_effect(/datum/body_effect/dq_test_slowdown)
 	var/slowed = H.movement_delay()
 	TEST_ASSERT(dq_near(slowed - base, 2), "a slowdown factor of 2 should add 2 delay ([base] -> [slowed])")
 
-	H.add_modifier(/datum/modifier/dq_test_haste)
+	H.apply_body_effect(/datum/body_effect/dq_test_haste)
 	TEST_ASSERT(H.movement_delay() < base, "haste should ignore slowdown")
 
 
@@ -261,13 +281,13 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	H.injure(INJURY_BLUNT, 30, BP_TORSO, flags = INJURE_SILENT | INJURE_IGNORE_RESISTANCE)
 	var/plain = H.mend(TREAT_TISSUE_REPAIR, 2, BP_TORSO)
-	H.add_modifier(/datum/modifier/dq_test_healing)
+	H.apply_body_effect(/datum/body_effect/dq_test_healing)
 	var/boosted = H.mend(TREAT_TISSUE_REPAIR, 2, BP_TORSO)
 	TEST_ASSERT(plain > 0, "tissue repair should mend the bruised chest")
 	TEST_ASSERT(dq_near(boosted, plain * 2, 0.01), "doubled healing received should mend twice as much ([plain] -> [boosted])")
 
 	TEST_ASSERT(H.can_feel_pain(), "a human should feel pain")
-	H.add_modifier(/datum/modifier/dq_test_pain_block)
+	H.apply_body_effect(/datum/body_effect/dq_test_pain_block)
 	TEST_ASSERT(!H.can_feel_pain(), "pain immunity should read BF_PAIN_IMMUNITY")
 
 	var/obj/item/tool/wrench/W = allocate(/obj/item/tool/wrench)
@@ -281,11 +301,8 @@
 
 /datum/unit_test/dq_body_factor_energy_shield/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/datum/modifier/shield_projection/bruteburn/S = H.add_modifier(/datum/modifier/shield_projection/bruteburn)
-	TEST_ASSERT_NOTNULL(S, "the shield modifier should apply")
 	var/obj/item/cell/C = allocate(/obj/item/cell/high)
-	S.energy_source = C
-	S.damage_cost = 1
+	dq_equip_shield(H, /datum/body_effect/shield_projection/bruteburn, C)
 	TEST_ASSERT_EQUAL(H.injure(INJURY_BLUNT, 5, BP_TORSO, flags = INJURE_SILENT), 0, "a fully charged brute shield should absorb everything")
 	TEST_ASSERT(C.charge < C.maxcharge, "absorbing should drain the cell")
 	C.charge = 0

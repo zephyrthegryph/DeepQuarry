@@ -90,7 +90,7 @@
 	if(has_status(EFFECT_CONFUSED))
 		threat /= 2
 
-	if(has_modifier_of_type(/datum/modifier/berserk))
+	if(has_body_effect(/datum/body_effect/berserk))
 		threat *= 2
 
 	// Handle ability to harm.
@@ -131,7 +131,7 @@
 	if(has_status(EFFECT_CONFUSED))
 		threat /= 2
 
-	if(has_modifier_of_type(/datum/modifier/berserk))
+	if(has_body_effect(/datum/body_effect/berserk))
 		threat *= 2
 
 	return threat

@@ -41,12 +41,13 @@
 		return FALSE
 	SK.shadekin_adjust_energy(-50)
 	playsound(L, 'sound/effects/EMPulse.ogg', 75, 1)
-	add_modifier(/datum/modifier/shadekin/heal_boop, 1 MINUTE)
+	apply_body_effect(/datum/body_effect/shadekin/heal_boop, 1 MINUTE)
 	actor.visible_message(span_notice("\The [actor] gently places a hand on \the [src]..."))
 	actor.face_atom(src)
 	return TRUE
 
-/datum/modifier/shadekin/heal_boop
+/datum/body_effect/shadekin/heal_boop
+	tick_interval = 2 SECONDS
 	name = "Shadekin Regen"
 	desc = "You feel serene and well rested."
 	mob_overlay_state = "green_sparkles"
@@ -55,12 +56,12 @@
 	on_expired_text = span_notice("The sparkles have faded, although you feel much healthier than before.")
 	stacks = MODIFIER_STACK_EXTEND
 
-/datum/modifier/shadekin/heal_boop/tick()
-	var/mended = holder.mend(TREAT_TISSUE_REPAIR, 2)
-	mended += holder.mend(TREAT_BURN_CARE, 2)
-	mended += holder.mend(TREAT_ANTITOXIN, 2)
-	mended += holder.mend(TREAT_OXYGENATION, 2)
-	mended += holder.mend(TREAT_GENETIC_REPAIR, 2)
+/datum/body_effect/shadekin/heal_boop/on_tick(mob/living/L)
+	var/mended = L.mend(TREAT_TISSUE_REPAIR, 2)
+	mended += L.mend(TREAT_BURN_CARE, 2)
+	mended += L.mend(TREAT_ANTITOXIN, 2)
+	mended += L.mend(TREAT_OXYGENATION, 2)
+	mended += L.mend(TREAT_GENETIC_REPAIR, 2)
 	if(!mended) // No point existing if the spell can't heal.
-		expire()
+		L.end_body_effect(type)
 		return

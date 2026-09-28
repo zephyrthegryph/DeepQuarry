@@ -18,6 +18,6 @@
 /obj/item/spell/dispel/on_ranged_cast(atom/hit_atom, mob/living/user)
 	if(isliving(hit_atom) && within_range(hit_atom) && pay_energy(1000))
 		var/mob/living/target = hit_atom
-		target.remove_modifiers_of_type(/datum/modifier/technomancer)
+		target.remove_body_effect(/datum/body_effect/technomancer)
 	user.adjust_instability(10)
 	consume(src, user)

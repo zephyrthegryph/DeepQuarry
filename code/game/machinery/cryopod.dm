@@ -668,7 +668,7 @@
 	set_occupant(user)
 	if(isliving(user) && applies_stasis)
 		var/mob/living/L = user
-		L.set_stasis(/datum/modifier/stasis/total, src)
+		L.set_stasis(/datum/body_effect/stasis/total, src)
 	if(user?.buckled_to() && istype(user?.buckled_to(), /obj/structure/bed/chair/wheelchair))
 		var/atom/movable/_tmp_buck_6 = user?.buckled_to()
 		_tmp_buck_6.forceMove(user.loc)
@@ -770,7 +770,7 @@
 	time_entered = world.time
 	if(isliving(M) && applies_stasis)
 		var/mob/living/L = M
-		L.set_stasis(/datum/modifier/stasis/total, src)
+		L.set_stasis(/datum/body_effect/stasis/total, src)
 	if(M?.buckled_to() && istype(M?.buckled_to(), /obj/structure/bed/chair/wheelchair))
 		var/atom/movable/_tmp_buck_7 = M?.buckled_to()
 		_tmp_buck_7.forceMove(M.loc)

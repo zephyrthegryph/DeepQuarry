@@ -48,7 +48,7 @@
 	set desc = "Enrage and become vastly stronger for a period of time, however you will be weaker afterwards."
 	set category = "Abilities.Goose"
 
-	add_modifier(/datum/modifier/berserk, 30 SECONDS)
+	apply_body_effect(/datum/body_effect/berserk, 30 SECONDS)
 
 /datum/decl/mob_organ_names/goose
 	hit_zones = list("head", "chest", "left leg", "right leg", "left wing", "right wing", "neck")

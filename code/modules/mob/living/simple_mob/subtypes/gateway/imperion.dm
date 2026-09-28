@@ -474,7 +474,8 @@
 	apply_body_effect(/datum/body_effect/bossbuff, null, src) // Slime is always swole.
 	return ..()
 
-/datum/modifier/aura/despair
+/datum/body_effect/aura/despair
+	tick_interval = 2 SECONDS
 	name = "ruin"
 	mob_overlay_state = "cult_aura"
 
@@ -484,21 +485,22 @@
 	on_expired_text = span_notice("The ruin feeling is gone.")
 	stacks = MODIFIER_STACK_EXTEND
 
-/datum/modifier/aura/despair/tick()
-	if(holder.stat == DEAD)
-		expire()
+/datum/body_effect/aura/despair/on_tick(mob/living/L)
+	if(L.stat == DEAD)
+		L.end_body_effect(type)
+		return
 
-	if(ishuman(holder)) // Every limb withers, organic or robotic.
-		var/mob/living/carbon/human/H = holder
+	if(ishuman(L)) // Every limb withers, organic or robotic.
+		var/mob/living/carbon/human/H = L
 		for(var/obj/item/organ/external/E as anything in H.organs)
 			H.injure(INJURY_BLUNT, 0.1, E.organ_tag, flags = INJURE_SILENT)
 			H.injure(INJURY_BURN, 0.1, E.organ_tag, flags = INJURE_SILENT)
 	else
-		holder.injure(INJURY_BLUNT, 0.1, flags = INJURE_SILENT)
-		holder.injure(INJURY_BURN, 0.1, flags = INJURE_SILENT)
+		L.injure(INJURY_BLUNT, 0.1, flags = INJURE_SILENT)
+		L.injure(INJURY_BURN, 0.1, flags = INJURE_SILENT)
 
 /mob/living/simple_mob/mechanical/mecha/imperion/phase3/proc/heal_aura()
 	for(var/mob/living/L in view(src, 28))
 		if(L.stat == DEAD)
 			continue
-		L.add_modifier(/datum/modifier/aura/despair, null, src)
+		L.apply_body_effect(/datum/body_effect/aura/despair, null, src)

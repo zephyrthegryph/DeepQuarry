@@ -167,7 +167,7 @@
 
 /datum/decl/chemical_reaction/instant/slime/dark_liquidfire/on_reaction(datum/reagents/holder)
 	for(var/mob/living/L in range(1, holder.my_atom))
-		L.add_modifier(/datum/modifier/feysight, 10 MINUTES, src)
+		L.apply_body_effect(/datum/body_effect/feysight, 10 MINUTES, src)
 	..()
 
 /datum/decl/chemical_reaction/instant/slime/dark_deathblood
@@ -309,9 +309,9 @@
 	for(var/mob/living/L in view(src, 4))
 		if(L.stat == DEAD || !IIsAlly(L))
 			continue
-		L.add_modifier(/datum/modifier/aura/slime_healingtide, null, src)
+		L.apply_body_effect(/datum/body_effect/aura/slime_healingtide, null, src)
 
-/datum/modifier/aura/slime_healingtide
+/datum/body_effect/aura/slime_healingtide
 	name = "Aura Healing Tide"
 	desc = "You are filled with an overwhelming energy."
 
@@ -407,9 +407,9 @@
 	for(var/mob/living/L in view(src, 4))
 		if(L.stat == DEAD || !IIsAlly(L))
 			continue
-		L.add_modifier(/datum/modifier/aura/radiationhide, null, src)
+		L.apply_body_effect(/datum/body_effect/aura/radiationhide, null, src)
 
-/datum/modifier/aura/radiationhide
+/datum/body_effect/aura/radiationhide
 	name = "Radiation Hide"
 	desc = "Your body defensivly warps."
 
@@ -545,9 +545,10 @@
 	for(var/mob/living/carbon/L in view(src, 3))
 		if(L.stat == DEAD)
 			continue
-		L.add_modifier(/datum/modifier/aura/dreamarmor, null, src)
+		L.apply_body_effect(/datum/body_effect/aura/dreamarmor, null, src)
 
-/datum/modifier/aura/dreamarmor
+/datum/body_effect/aura/dreamarmor
+	tick_interval = 2 SECONDS
 	name = "dream armor"
 	desc = "You are highly resistant to damage."
 	stacks = MODIFIER_STACK_FORBID
@@ -555,18 +556,19 @@
 	mob_overlay_state = "cult_aura"
 	factors = alist(BF_INCOMING_ALL = 0.5)
 
-/datum/modifier/aura/dreamarmor/tick()
-	if(holder.stat == DEAD)
-		expire()
+/datum/body_effect/aura/dreamarmor/on_tick(mob/living/L)
+	if(L.stat == DEAD)
+		L.end_body_effect(type)
+		return
 
-	if(ishuman(holder)) // Every limb withers, organic or robotic.
-		var/mob/living/carbon/human/H = holder
+	if(ishuman(L)) // Every limb withers, organic or robotic.
+		var/mob/living/carbon/human/H = L
 		for(var/obj/item/organ/external/E as anything in H.organs)
 			H.injure(INJURY_BLUNT, 2, E.organ_tag, flags = INJURE_SILENT)
 			H.injure(INJURY_BURN, 2, E.organ_tag, flags = INJURE_SILENT)
 	else
-		holder.injure(INJURY_BLUNT, 5, flags = INJURE_SILENT)
-		holder.injure(INJURY_BURN, 5, flags = INJURE_SILENT)
+		L.injure(INJURY_BLUNT, 5, flags = INJURE_SILENT)
+		L.injure(INJURY_BURN, 5, flags = INJURE_SILENT)
 
 /obj/item/slime_extract/nightmare
 	name = "nightmare slime extract"
@@ -664,9 +666,9 @@
 	for(var/mob/living/L in view(src, 4))
 		if(L.stat == DEAD || !IIsAlly(L))
 			continue
-		L.add_modifier(/datum/modifier/aura/soothingsong, null, src)
+		L.apply_body_effect(/datum/body_effect/aura/soothingsong, null, src)
 
-/datum/modifier/aura/soothingsong
+/datum/body_effect/aura/soothingsong
 	name = "Soothing Song"
 	desc = "Your body is soothed."
 
@@ -703,7 +705,7 @@
 
 /datum/decl/chemical_reaction/instant/slime/soundphoron/on_reaction(datum/reagents/holder)
 	for(var/mob/living/L in range(1, holder.my_atom))
-		L.add_modifier(/datum/modifier/aura/soothingsong, 10 MINUTES, src)
+		L.apply_body_effect(/datum/body_effect/aura/soothingsong, 10 MINUTES, src)
 	..()
 
 /datum/decl/chemical_reaction/instant/slime/soundwater
