@@ -218,6 +218,42 @@ packet.release()   // or pool_release(packet)
   created, taken, released, double releases, poisoned, use-after-release and
   refused qdels per pooled type.
 
+### 4.2 Bookkeeping kinds: partners found through a path, back-lists, queues
+
+Some bookkeeping has no plain var of ours on either end: the partner is reached
+through a handle and then another handle, sits in our `loc`, or holds us in a
+list whose other side we keep. These kinds declare it, so no `on_destroy()` body
+is written for it (`code/__defines/lifecycle.dm`, `code/datums/lifecycle/links.dm`).
+They run in phase 4 after `on_destroy()`: partners and members first, before owned
+and held vars are cleared. Partners doomed in the same batch are skipped.
+
+| Declaration | Semantics | Replaces |
+|---|---|---|
+| `REF_BACK_HANDLE(var = their_var)` | our OM handle names a partner whose var names us (by reference or handle); that var is nulled | `owner()?.hud_used = null` |
+| `REF_BACK_VIA("path" = their)` | the partner is reached through a path of our vars, `"a"` or `"a.b.c"`. Each hop holds a reference or an OM handle, and the end may be a `/client`. `their` is a var name, a list of names, or `list(/partner/type = name)`, applied only when the partner is that type. A named list loses us and our handle; any other named var that names us is nulled. Our own vars are left alone | `master().cl().screen -= src`, `com()?.teleport_control.hub_handle = null`, `LAZYREMOVE(loc.implants, src)`, a machine's `component_parts -= src` |
+| `REF_LIST_BACK("our_list" = member_vars)` | the owner side of a back-list. Every member of our list (keys and assoc values, references or handles) has the named vars cleared the same way, then our list is dropped | `for(B in beacons) B.tele_hand_handle = null`, spawner nests, contract children, puzzle locks, a client-only image leaving each client's `images` |
+| `REF_DROP(var)` | the var is nulled. The target is not deleted, cut or told | scratch tables keyed by atoms (`/datum/state_context`), lists the object was handed and may share (reactive icons, reagent `data`) |
+| `REF_QUEUE_MEMBER(flag_var = /proc/getter)` | membership in a subsystem queue, or a global list that isn't an OM registry. When `flag_var` is set (or the key is `LIFECYCLE_QUEUE_ALWAYS`), src is removed from the list the global proc returns | `if(needs_update) SSlighting.corners_queue -= src` |
+
+```dm
+// Before
+/obj/effect/bmode/on_destroy(force)
+	if(master() && master().cl())
+		master().cl().screen -= src
+	..()
+
+// After
+REF_BACK_VIA(/obj/effect/bmode, list("master_handle.cl_handle" = "screen"))
+```
+
+What stays in `on_destroy()`:
+- **Ordering the framework can't give.** A status effect leaves its mob's list
+  before its `on_remove()` hook runs, but the destroy hook runs before the links clear.
+- **Membership changed through a domain proc** that does more than the list write:
+  `unset_control()`, `remove_tank()`, `detach()`, `deselect_AI_mob()`.
+- **State beside the reference.** A lighting corner also resets its turfs'
+  `lighting_corners_initialised`, and a body designer clears the console's selection.
+
 ## 5. Replacing qdel call sites
 
 | Verb | Replaces |
