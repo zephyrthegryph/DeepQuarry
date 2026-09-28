@@ -300,7 +300,7 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 			to_chat(usr, span_notice("You remove the ID from the [name]."))
 			playsound(src, 'sound/machines/id_swipe.ogg', 100, 1)
 		else
-			id.loc = get_turf(src)
+			id.forceMove(get_turf(src))
 		cut_overlay("pda-id")
 		id = null
 
@@ -314,7 +314,7 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 				to_chat(usr, span_notice("You remove \the [O] from \the [src]."))
 				cut_overlay("pda-pen")
 				return
-		O.loc = get_turf(src)
+		O.forceMove(get_turf(src))
 	else
 		to_chat(usr, span_notice("This PDA does not have a pen in it."))
 
@@ -402,14 +402,14 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 		else
 			var/obj/item/I = user.get_active_hand()
 			if (istype(I, /obj/item/card/id) && user.unEquip(I))
-				I.loc = src
+				I.forceMove(src)
 				id = I
 			return 1
 	else
 		var/obj/item/card/I = user.get_active_hand()
 		if (istype(I, /obj/item/card/id) && I:registered_name && user.unEquip(I))
 			var/obj/old_id = id
-			I.loc = src
+			I.forceMove(src)
 			id = I
 			user.put_in_hands(old_id)
 			return 1
@@ -421,7 +421,7 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 	if(istype(C, /obj/item/cartridge) && !cartridge)
 		cartridge = C
 		user.drop_item()
-		cartridge.loc = src
+		cartridge.forceMove(src)
 		cartridge.update_programs(src)
 		update_shortcuts()
 		to_chat(user, span_notice("You insert [cartridge] into [src]."))

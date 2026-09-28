@@ -43,7 +43,7 @@
 /// The jaunt ends: steam where the jaunter will come out.
 /datum/spell/targeted/ethereal_jaunt/proc/jaunt_resurface(mob/living/target, obj/effect/dummy/spell_jaunt/holder, atom/movable/overlay/animation)
 	var/mobloc = holder.last_valid_turf
-	animation.loc = mobloc
+	animation.forceMove(mobloc)
 	jaunt_steam(mobloc)
 	target.canmove = 0
 	holder.reappearing = 1

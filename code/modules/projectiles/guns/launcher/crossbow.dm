@@ -48,7 +48,7 @@
 	if(throwforce == 15) // The rod has been superheated - we don't want it to be useable when removed from the bow.
 		to_chat(user , "[src] shatters into a scattering of overstressed metal shards as it leaves the crossbow.")
 		var/obj/item/material/shard/shrapnel/S = new()
-		S.loc = get_turf(src)
+		S.forceMove(get_turf(src))
 		qdel(src)
 
 /obj/item/gun/launcher/crossbow
@@ -98,7 +98,7 @@
 	if(tension)
 		if(bolt)
 			user.visible_message("[user] relaxes the tension on [src]'s string and removes [bolt].","You relax the tension on [src]'s string and remove [bolt].")
-			bolt.loc = get_turf(src)
+			bolt.forceMove(get_turf(src))
 			var/obj/item/arrow/A = bolt
 			bolt = null
 			A.removed(user)
@@ -160,7 +160,7 @@
 /obj/item/gun/launcher/crossbow/screwdriver_act(mob/user, obj/item/tool)
 	if(cell)
 		var/obj/item/C = cell
-		C.loc = get_turf(user)
+		C.forceMove(get_turf(user))
 		to_chat(user, span_notice("You jimmy [cell] out of [src] with [tool]."))
 		playsound(src, tool.usesound, 50, 1)
 		cell = null
@@ -181,7 +181,7 @@
 			if (R.use(1))
 				bolt = new /obj/item/arrow/rod(src)
 				bolt.add_fingerprint(user)
-				bolt.loc = src
+				bolt.forceMove(src)
 				update_icon()
 				user.visible_message("[user] jams [bolt] into [src].","You jam [bolt] into [src].")
 				superheat_rod(user)
@@ -191,7 +191,7 @@
 		if(!cell)
 			user.drop_item()
 			cell = W
-			cell.loc = src
+			cell.forceMove(src)
 			to_chat(user, span_notice("You jam [cell] into [src] and wire it to the firing coil."))
 			superheat_rod(user)
 		else

@@ -94,7 +94,7 @@
 
 /obj/item/clothing/suit/space/rig/attack_hand(mob/living/M)
 	if(tacknife)
-		tacknife.loc = get_turf(src)
+		tacknife.forceMove(get_turf(src))
 		if(M.put_in_active_hand(tacknife))
 			to_chat(M, span_notice("You slide \the [tacknife] out of [src]."))
 			playsound(src, 'sound/weapons/flipblade.ogg', 40, 1)
@@ -109,7 +109,7 @@
 			return
 		M.drop_item()
 		tacknife = I
-		I.loc = src
+		I.forceMove(src)
 		to_chat(M, span_notice("You slide the [I] into [src]."))
 		playsound(src, 'sound/weapons/flipblade.ogg', 40, 1)
 		update_icon()

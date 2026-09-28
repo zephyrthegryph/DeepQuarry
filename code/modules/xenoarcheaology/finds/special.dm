@@ -80,7 +80,7 @@
 		var/obj/effect/decal/cleanable/blood/B = locate() in range(2,src)
 		if(B)
 			last_eat = world.time
-			B.loc = null
+			B.moveToNullspace()
 			if(istype(B, /obj/effect/decal/cleanable/blood/drip))
 				charges += 0.25
 			else
@@ -193,7 +193,7 @@
 	if(!mob_near(world.view, TRUE))
 		return sleep_until_mob_near(world.view, TRUE)
 	if(src.loc)
-		src.loc = get_turf(pick(orange(1,src)))
+		src.forceMove(get_turf(pick(orange(1,src))))
 		var/mob/living/carbon/M = locate() in src.loc
 		if(M)
 			playsound(src, pick('sound/hallucinations/behind_you1.ogg',\
@@ -214,7 +214,7 @@
 			M.visible_message(span_cult("[M]'s body glows bright red for a moment as glyphs spread across their form!")) //Let's try something fancy.
 			M.status_at_least(EFFECT_SLEEPING, rand(5, 10))
 
-			src.loc = null
+			src.moveToNullspace()
 	else
 		PERIODIC_STOP(src)
 		qdel(src) //Let's not just sit in nullspace forever, yeah?

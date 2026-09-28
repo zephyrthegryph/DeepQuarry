@@ -83,7 +83,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/rad_collector, REGISTRY_RAD_COLLECTORS)
 		return TRUE
 	user.drop_item()
 	src.P = W
-	W.loc = src
+	W.forceMove(src)
 	update_icons()
 	return TRUE
 
@@ -142,7 +142,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/rad_collector, REGISTRY_RAD_COLLECTORS)
 	var/obj/item/tank/phoron/Z = src.P
 	if (!Z)
 		return
-	Z.loc = get_turf(src)
+	Z.forceMove(get_turf(src))
 	Z.layer = initial(Z.layer)
 	src.P = null
 	if(active)

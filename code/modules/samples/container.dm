@@ -33,6 +33,6 @@
 			to_chat(user, span_notice("\The [src] is full!"))
 			return
 		else
-			S.loc = src
+			S.forceMove(src)
 			update_icon()
 			to_chat(user, span_notice("You scoop \the [S] into \the [src]."))

@@ -13,7 +13,7 @@ REGISTRY_MEMBERSHIP(/mob/new_player, REGISTRY_NEW_PLAYERS)
 		mind.active = 1
 		mind.current = src
 
-	loc = null
+	moveToNullspace()
 	sight |= SEE_TURFS
 
 	registry_join(REGISTRY_PLAYERS, src)

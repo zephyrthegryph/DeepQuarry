@@ -65,7 +65,7 @@
 		user.drop_from_inventory(C)
 		to_chat(user, span_notice("You add \the [C] to \the [src]."))
 
-	C.loc = src
+	C.forceMove(src)
 	cartridges[C.label] = C
 	cartridges = sortAssoc(cartridges)
 	SStgui.update_uis(src)
@@ -117,7 +117,7 @@
 
 	container =  RC
 	user.drop_from_inventory(RC)
-	RC.loc = src
+	RC.forceMove(src)
 	to_chat(user, span_notice("You set \the [RC] on \the [src]."))
 	return TRUE
 

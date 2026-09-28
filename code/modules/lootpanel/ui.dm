@@ -2,7 +2,7 @@
 /datum/lootpanel/proc/get_contents()
 	var/list/items = list()
 
-	for(var/datum/search_object/index as anything in contents)
+	for(var/datum/search_object/index as anything in searchables)
 		UNTYPED_LIST_ADD(items, list(
 			"icon_state" = index.icon_state,
 			"icon" = index.icon,
@@ -14,13 +14,13 @@
 	return items
 
 
-/// Clicks an object from the contents. Validates the object and the user
+/// Clicks an object from the searchables. Validates the object and the user
 /datum/lootpanel/proc/grab(mob/user, list/params)
 	var/ref = params["ref"]
 	if(isnull(ref))
 		return FALSE
 
-	var/datum/search_object/index = locate(ref) in contents
+	var/datum/search_object/index = locate(ref) in searchables
 	var/atom/thing = index?.item
 	if(QDELETED(index) || QDELETED(thing)) // Obj is gone
 		return FALSE

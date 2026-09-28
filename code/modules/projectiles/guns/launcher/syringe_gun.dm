@@ -25,7 +25,7 @@
 		syringe = I
 		to_chat(user, span_notice("You carefully insert [syringe] into [src]."))
 		user.remove_from_mob(syringe)
-		syringe.loc = src
+		syringe.forceMove(src)
 		sharp = TRUE
 		name = "syringe dart"
 		update_icon()
@@ -138,7 +138,7 @@
 			to_chat(user, span_warning("[src] is full!"))
 			return
 		user.remove_from_mob(C)
-		C.loc = src
+		C.forceMove(src)
 		LAZYADD(darts, C) //add to the end
 		user.visible_message("[user] inserts \a [C] into [src].", span_notice("You insert \a [C] into [src]."))
 	else

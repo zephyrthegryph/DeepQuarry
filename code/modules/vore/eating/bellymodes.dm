@@ -14,10 +14,10 @@
 			var/mob/living/silicon/ai/AI = owner
 			if(AI.holo && LAZYACCESS(AI.holo.masters, AI))
 				if(loc != LAZYACCESS(AI.holo.masters, AI))
-					loc = owner
+					forceMove(owner)
 		else
 			if(istype(owner))
-				loc = owner
+				forceMove(owner)
 			else
 				qdel(src)
 				return

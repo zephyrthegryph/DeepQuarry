@@ -341,7 +341,7 @@ vorestation edit end */
 			))
 		var/path = choice[1]
 		var/value = choice[2]
-		contents += new path()
+		new path(src)
 		lootvalue += value
 
 //putting the multi-object loot items as their own things
@@ -407,4 +407,4 @@ vorestation edit end */
 /obj/item/storage/backpack/sport/hyd/catchemall/Initialize(mapload) //gotta have your starter 'mon too (or an improved way to catch one)
 	. = ..()
 	var/path = pick(subtypesof(/obj/item/capture_crystal))
-	contents += new path()
+	new path(src)

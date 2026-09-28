@@ -72,7 +72,7 @@
 		if(!inserted_battery)
 			to_chat(user, span_blue("You insert the battery."))
 			user.drop_item()
-			I.loc = src
+			I.forceMove(src)
 			inserted_battery = I
 			UpdateSprite()
 	else

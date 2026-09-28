@@ -157,7 +157,7 @@
 		if(ishuman(user))
 			user.put_in_hands(wrapped)
 		else
-			wrapped.loc = get_turf(src)
+			wrapped.forceMove(get_turf(src))
 
 	consume(src, user)
 	return

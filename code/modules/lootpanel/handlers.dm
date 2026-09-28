@@ -1,12 +1,12 @@
-/// On contents change, either reset or update
+/// On searchables change, either reset or update
 /datum/lootpanel/proc/on_searchable_deleted(datum/search_object/source)
 	SIGNAL_HANDLER
 
-	contents -= source
+	searchables -= source
 	LAZYREMOVE(to_image, source)
 
 	var/datum/tgui/window = SStgui.get_open_ui(owner.mob, src)
-#if !defined(UNIT_TESTS) // we dont want to delete contents if we're testing
+#if !defined(UNIT_TESTS) // we dont want to delete searchables if we're testing
 	if(isnull(window))
 		reset_contents()
 		return

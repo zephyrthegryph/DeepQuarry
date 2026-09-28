@@ -337,7 +337,7 @@ GLOBAL_VAR_INIT(photo_count, 0)
 	return p
 
 /obj/item/camera/proc/printpicture(mob/user, obj/item/photo/p)
-	p.loc = user.loc
+	p.forceMove(user.loc)
 	if(!user.get_inactive_hand())
 		user.put_in_inactive_hand(p)
 

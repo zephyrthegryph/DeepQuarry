@@ -34,10 +34,8 @@
 /obj/item/fossil/skull/attackby(obj/item/W, mob/user)
 	if(istype(W,/obj/item/fossil/bone))
 		var/obj/o = new /obj/skeleton(get_turf(src))
-		var/a = new /obj/item/fossil/bone
-		var/b = new src.type
-		o.contents.Add(a)
-		o.contents.Add(b)
+		new /obj/item/fossil/bone(o)
+		new src.type(o)
 		consume(W, user)
 		consume(src, user)
 
@@ -60,7 +58,7 @@
 	if(istype(W,/obj/item/fossil/bone))
 		if(!bstate)
 			bnum++
-			src.contents.Add(new/obj/item/fossil/bone)
+			new /obj/item/fossil/bone(src)
 			consume(W, user)
 			if(bnum==breq)
 				icon_state = "skel"

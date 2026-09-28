@@ -76,7 +76,7 @@
 			else if (response == "Carbon-Copy")
 				P = new /obj/item/paper/carbon
 
-		P.loc = user.loc
+		P.forceMove(user.loc)
 		user.put_in_hands(P)
 		to_chat(user, span_notice("You take [P] out of the [src]."))
 	else
@@ -91,7 +91,7 @@
 		return
 
 	user.drop_item()
-	i.loc = src
+	i.forceMove(src)
 	to_chat(user, span_notice("You put [i] in [src]."))
 	LAZYADD(papers, i)
 	update_icon()

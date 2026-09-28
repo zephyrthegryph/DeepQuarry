@@ -389,7 +389,7 @@
 			s.set_up(3, 1, get_turf(owner))
 			s.start()
 			var/turf/picked = get_turf(pick(turfs))                      // Just in case...
-			owner.loc = picked                                          // And teleport them to the chosen location.
+			owner.forceMove(picked) // And teleport them to the chosen location.
 		cooldown = rand(cooldownmin,cooldownmax)
 
 

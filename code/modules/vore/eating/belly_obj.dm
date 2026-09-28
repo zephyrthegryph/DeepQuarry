@@ -657,7 +657,7 @@ REF_BACKLIST(/obj/belly, list("owner" = "vore_organs"))
 	if(M.tf_mob_holder && M.tf_mob_holder.loc == M)
 		M.return_player_to_tf_holder("digested in [src]")
 		om_unsuspend(M.tf_mob_holder, M.tf_mob_holder)
-		M.tf_mob_holder.loc = M.loc
+		M.tf_mob_holder.forceMove(M.loc)
 		M.tf_mob_holder.forceMove(M.loc)
 		QDEL_LIST_NULL(M.tf_mob_holder.vore_organs)
 		M.tf_mob_holder.vore_organs = list()
@@ -736,7 +736,7 @@ REF_BACKLIST(/obj/belly, list("owner" = "vore_organs"))
 			if((R.soulcatcher_pref_flags & SOULCATCHER_ALLOW_CAPTURE) && owner.soulgem && owner.soulgem.flag_check(SOULGEM_ACTIVE | NIF_SC_CATCHING_OTHERS, TRUE))
 				owner.soulgem.catch_mob(R, R.name)
 			else
-				R.mmi.loc = src
+				R.mmi.forceMove(src)
 				LAZYOR(items_preserved, R.mmi)
 				hasMMI = R.mmi
 				var/datum/component/mind_host/mmi_host = get_mind_host(hasMMI)

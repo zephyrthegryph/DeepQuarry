@@ -24,14 +24,14 @@
 	. = ..()
 	for(var/obj/item/I in loc)
 		if(istype(I, /obj/item/book))
-			I.loc = src
+			I.forceMove(src)
 	update_icon()
 	AddElement(/datum/element/climbable)
 
 /obj/structure/bookcase/attackby(obj/item/O, mob/user)
 	if(istype(O, /obj/item/book))
 		user.drop_item()
-		O.loc = src
+		O.forceMove(src)
 		update_icon()
 	else if(istype(O, /obj/item/pen))
 		var/_answer_k37 = rerun_prompt(user, "k37", list("kind" = "text", "message" = "What would you like to title this bookshelf?", "max_length" = MAX_NAME_LEN, "encode" = FALSE), TYPE_PROC_REF(/atom, attackby), args)
@@ -75,7 +75,7 @@
 				if(!user.get_active_hand())
 					user.put_in_hands(choice)
 			else
-				choice.loc = get_turf(src)
+				choice.forceMove(get_turf(src))
 			update_icon()
 
 /obj/structure/bookcase/explosion_contents_severity(severity)
@@ -106,7 +106,7 @@ Book Cart
 /obj/structure/bookcase/bookcart/attackby(obj/item/O as obj, mob/user)
 	if(istype(O, /obj/item/book))
 		user.drop_item()
-		O.loc = src
+		O.forceMove(src)
 		update_icon()
 	else
 		return
@@ -236,7 +236,7 @@ Book Cart End
 		if(!store)
 			if(W.w_class < ITEMSIZE_LARGE)
 				user.drop_item()
-				W.loc = src
+				W.forceMove(src)
 				store = W
 				to_chat(user, span_notice("You put [W] in [title]."))
 				return

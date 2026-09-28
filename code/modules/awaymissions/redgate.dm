@@ -227,7 +227,7 @@
 
 /obj/item/laserdome_flag/proc/flag_returned(mob/user)
 	user.drop_from_inventory(src)
-	src.loc = src.start_pos
+	src.forceMove(src.start_pos)
 	GLOB.global_announcer.autosay("[capitalize(laser_team)] flag returned by [user]!","Laserdome Announcer","Entertainment")
 
 /obj/item/laserdome_flag/attack_hand(mob/user as mob)
@@ -309,7 +309,7 @@
 		if(flag.laser_team != base_team)
 			GLOB.global_announcer.autosay("[user] captured the [capitalize(flag.laser_team)] flag for [capitalize(base_team)] team!","Laserdome Announcer","Entertainment")
 			user.drop_from_inventory(flag)
-			flag.loc = flag.start_pos	//teleport the captured flag back to its base location
+			flag.forceMove(flag.start_pos) //teleport the captured flag back to its base location
 			score++	//increment our score by 1!
 			if(score < score_limit)	//announce the current score and how many more captures are needed
 				GLOB.global_announcer.autosay("[num2text(score_limit-score)] captures remain until [capitalize(base_team)] team wins.","Laserdome Announcer","Entertainment")
@@ -320,7 +320,7 @@
 		else if(flag.laser_team == base_team)
 			GLOB.global_announcer.autosay("[capitalize(base_team)] flag returned!","Laserdome Announcer","Entertainment")
 			user.drop_from_inventory(flag)
-			flag.loc = src.loc			//place our flag neatly back on its pedestal
+			flag.forceMove(src.loc) //place our flag neatly back on its pedestal
 
 /obj/item/laserdome_hyperball
 	name = "\improper HYPERball"	//*always* refer to it as "the hyperball", not just "the ball". corporate insists.
@@ -450,7 +450,7 @@
 						GLOB.global_announcer.autosay("[user] dunked the HYPERball and scored an own goal! +Points |de-ducted!|+ [capitalize(goal_team)] team score is now: [HGB.score].","Laserdome Announcer","Entertainment")
 
 		user.drop_from_inventory(ball)
-		ball.loc = ball.start_pos	//teleport the ball back to the midfield
+		ball.forceMove(ball.start_pos) //teleport the ball back to the midfield
 		ball.icon_state = "[initial(ball.icon_state)]"
 		ball.item_state = "[initial(ball.item_state)]"
 		ball.update_icon()
@@ -482,7 +482,7 @@
 						HGB.score = max(0,HGB.score-range_dunk_points)
 						GLOB.global_announcer.autosay("[ball.last_holder] threw the HYPERball and scored an own goal! +Points |de-ducted!|+ [capitalize(goal_team)] team score is now: [HGB.score].","Laserdome Announcer","Entertainment")
 
-		ball.loc = ball.start_pos	//teleport the ball back to the midfield
+		ball.forceMove(ball.start_pos) //teleport the ball back to the midfield
 		ball.icon_state = "[initial(ball.icon_state)]"
 		ball.item_state = "[initial(ball.item_state)]"
 		ball.update_icon()

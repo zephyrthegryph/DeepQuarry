@@ -103,7 +103,7 @@ REF_OWNED(/obj/item/gun/projectile, "ammo_provider")
 				qdel(chambered)
 				return
 			else
-				chambered.loc = get_turf(src)
+				chambered.forceMove(get_turf(src))
 				playsound(src, "casing", 50, 1)
 		if(CYCLE_CASINGS) //cycle the casing back to the end.
 			if(ammo_magazine)
@@ -138,7 +138,7 @@ REF_OWNED(/obj/item/gun/projectile, "ammo_provider")
 			var/turf/T = get_turf(user)
 			if(T)
 				for(var/obj/item/ammo_casing/C in loaded)
-					C.loc = T
+					C.forceMove(T)
 					count++
 				loaded.Cut()
 			if(count)
@@ -181,7 +181,7 @@ REF_OWNED(/obj/item/gun/projectile, "ammo_provider")
 /obj/item/gun/projectile/afterattack(atom/A, mob/living/user)
 	..()
 	if(auto_eject && ammo_magazine && ammo_magazine.stored_ammo && !ammo_magazine.stored_ammo.len && !(manual_chamber && chambered && chambered.BB != null)) // Manual Chambering
-		ammo_magazine.loc = get_turf(src.loc)
+		ammo_magazine.forceMove(get_turf(src.loc))
 		user.visible_message(
 			"[ammo_magazine] falls out and clatters on the floor!",
 			span_notice("[ammo_magazine] falls out and clatters on the floor!")
@@ -590,7 +590,7 @@ REF_OWNED(/obj/item/gun/projectile, "ammo_provider")
 					to_chat(user, span_warning("This is an open bolt gun. Make sure you close the bolt before inserting a new magazine."))
 					return
 				user.remove_from_mob(AM)
-				AM.loc = src
+				AM.forceMove(src)
 				ammo_magazine = AM
 				user.visible_message("[user] inserts [AM] into [src].", span_notice("You insert [AM] into [src]."))
 				if(manual_chamber && CHECK_BITFIELD(auto_loading_type,CHAMBER_ON_RELOAD) && bolt_open && !chambered)
@@ -610,7 +610,7 @@ REF_OWNED(/obj/item/gun/projectile, "ammo_provider")
 					if(loaded.len >= max_shells)
 						break
 					if(C.caliber == caliber)
-						C.loc = src
+						C.forceMove(src)
 						loaded += C
 						AM.stored_ammo -= C //should probably go inside an ammo_magazine proc, but I guess less proc calls this way...
 						count++
@@ -652,7 +652,7 @@ REF_OWNED(/obj/item/gun/projectile, "ammo_provider")
 			return
 
 		user.remove_from_mob(C)
-		C.loc = src
+		C.forceMove(src)
 		loaded.Insert(1, C) //add to the head of the list
 		user.visible_message("[user] inserts \a [C] into [src].", span_notice("You insert \a [C] into [src]."))
 		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
@@ -705,7 +705,7 @@ REF_OWNED(/obj/item/gun/projectile, "ammo_provider")
 	chambered = C
 	user.hud_used.update_ammo_hud(user, src)
 	user.remove_from_mob(C)
-	C.loc = src
+	C.forceMove(src)
 	update_icon()
 
 /obj/item/gun/projectile/special_check(mob/user)

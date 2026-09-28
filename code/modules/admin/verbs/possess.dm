@@ -16,7 +16,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(possess, R_POSSESS, "Possess Obj", "Possess an objec
 	if(!user.mob.control_object) //If you're not already possessing something...
 		user.mob.name_archive = user.mob.real_name
 
-	user.mob.loc = O
+	user.mob.forceMove(O)
 	user.mob.real_name = O.name
 	user.mob.name = O.name
 	user.eye = O
@@ -31,7 +31,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(release, R_POSSESS, "Release Object", "Stop possessi
 			var/mob/living/carbon/human/H = user
 			H.name = H.get_visible_name()
 
-	user.mob.loc = O.loc // Appear where the object you were controlling is -- TLE
+	user.mob.forceMove(O.loc) // Appear where the object you were controlling is -- TLE
 	user.eye = user
 	user.mob.control_object = null
 	feedback_add_details("admin_verb","RO") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!

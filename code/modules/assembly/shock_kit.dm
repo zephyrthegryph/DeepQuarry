@@ -15,8 +15,8 @@ REF_OWNED(/obj/item/assembly/shock_kit, list("part1", "part2"))
 		var/turf/T = loc
 		if(ismob(T))
 			T = T.loc
-		part1.loc = T
-		part2.loc = T
+		part1.forceMove(T)
+		part2.forceMove(T)
 		part1.master = null
 		part2.master = null
 		part1 = null

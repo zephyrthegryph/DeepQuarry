@@ -214,5 +214,5 @@ REF_BACKLIST(/obj/aiming_overlay, list("aiming_at" = "aimed"))
 	aiming_with = null
 	aiming_at.aimed -= src
 	aiming_at = null
-	loc = null
+	moveToNullspace()
 	PERIODIC_STOP(src)

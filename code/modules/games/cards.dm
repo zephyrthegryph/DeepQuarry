@@ -465,7 +465,7 @@
 		H.update_icon()
 		src.update_icon()
 		usr.visible_message(span_notice("\The [usr] plays \the [discarding]."))
-		H.loc = get_turf(usr)
+		H.forceMove(get_turf(usr))
 		H.Move(get_step(usr,usr.dir))
 
 	if(!cards.len)

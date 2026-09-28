@@ -83,7 +83,7 @@ REF_OWNED(/obj/item/card/robot, "dummy_card")
 				if(calc_carry() + add >= max_carry)
 					break
 
-				I.loc = src
+				I.forceMove(src)
 				LAZYADD(carrying, I)
 				add_overlay(image("icon" = I.icon, "icon_state" = I.icon_state, "layer" = 30 + I.layer))
 				addedSomething = 1
@@ -115,7 +115,7 @@ REF_OWNED(/obj/item/card/robot, "dummy_card")
 		var droppedSomething = 0
 
 		for(var/obj/item/I in carrying)
-			I.loc = dropspot
+			I.forceMove(dropspot)
 			LAZYREMOVE(carrying, I)
 			droppedSomething = 1
 			if(!foundtable && isturf(dropspot))

@@ -142,7 +142,7 @@
 			return
 		to_chat(user, span_notice("You insert \the [A] into \the [src]."))
 		user.drop_item()
-		A.loc = src
+		A.forceMove(src)
 		attached_safety = A
 		safetycatch = 1
 		return

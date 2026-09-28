@@ -45,6 +45,6 @@
 /obj/machinery/giga_drill/proc/finish_drilling(turf/simulated/mineral/M)
 	if(get_turf(src) == drilling_turf && active)
 		M.GetDrilled()
-		src.loc = M
+		src.forceMove(M)
 	drilling_turf = null
 	anchored = FALSE

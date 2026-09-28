@@ -48,7 +48,7 @@
 
 	if(istype(W, /obj/item/paper) || istype(W, /obj/item/photo))
 		user.drop_item()
-		W.loc = src
+		W.forceMove(src)
 		if(istype(W, /obj/item/paper))
 			toppaper = W
 		to_chat(user, span_notice("You clip the [W] onto \the [src]."))
@@ -62,7 +62,7 @@
 
 /obj/item/clipboard/afterattack(turf/T as turf, mob/user)
 	for(var/obj/item/paper/P in turf_contents_of_type(T, /obj/item/paper))
-		P.loc = src
+		P.forceMove(src)
 		toppaper = P
 		update_icon()
 		to_chat(user, span_notice("You clip the [P] onto \the [src]."))
@@ -124,7 +124,7 @@
 	switch(action)
 		if("remove_pen")
 			if(haspen && haspen.loc == src)
-				haspen.loc = usr.loc
+				haspen.forceMove(usr.loc)
 				usr.put_in_hands(haspen)
 				haspen = null
 				update_icon()
@@ -134,7 +134,7 @@
 				var/obj/item/pen/W = usr.get_active_hand()
 				if(istype(W, /obj/item/pen))
 					usr.drop_item()
-					W.loc = src
+					W.forceMove(src)
 					haspen = W
 					to_chat(usr, span_notice("You slot the pen into \the [src]."))
 					update_icon()
@@ -151,7 +151,7 @@
 			return TRUE
 		if("remove")
 			if(istype(O, /obj/item/paper) || istype(O, /obj/item/photo))
-				O.loc = usr.loc
+				O.forceMove(usr.loc)
 				usr.put_in_hands(O)
 				if(O == toppaper)
 					toppaper = locate(/obj/item/paper) in src

@@ -178,8 +178,6 @@ why aren't these accessories?
 	var/obj/item/remote_scene_tool/RST2 = new secondary(loc = src)
 	RST.link_to(RST2)
 	RST2.link_to(RST)
-	contents += RST
-	contents += RST2
 	calibrate_size()
 
 /obj/item/remote_scene_tool/proc/getWearer()

@@ -234,5 +234,5 @@ GLOBAL_LIST_INIT(custom_items, load_custom_items())
 	if(M.equip_to_storage(newitem))
 		return newitem
 
-	newitem.loc = get_turf(M.loc)
+	newitem.forceMove(get_turf(M.loc))
 	return newitem

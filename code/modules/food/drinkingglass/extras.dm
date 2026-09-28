@@ -6,7 +6,7 @@
 		if(can_add_extra(GE))
 			LAZYADD(extras, GE)
 			user.remove_from_mob(GE)
-			GE.loc = src
+			GE.forceMove(src)
 			to_chat(user, span_notice("You add \the [GE] to \the [src]."))
 			update_icon()
 		else
@@ -20,7 +20,7 @@
 		user.remove_from_mob(FS)
 		FS.pixel_x = 0 // Reset its pixel offsets so the icons work!
 		FS.pixel_y = 0
-		FS.loc = src
+		FS.forceMove(src)
 		to_chat(user, span_notice("You add \the [FS] to \the [src]."))
 		update_icon()
 	else

@@ -167,7 +167,7 @@
 	if(operating || !occupant)
 		return
 	for(var/obj/O in src)
-		O.loc = src.loc
+		O.forceMove(src.loc)
 	slot_remove(occupant, get_turf(src))
 	update_icon()
 	return

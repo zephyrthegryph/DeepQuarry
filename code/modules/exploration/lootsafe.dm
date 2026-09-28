@@ -85,7 +85,7 @@
 			))
 		var/path = choice[1]
 		var/value = choice[2]
-		contents += new path()
+		new path(src)
 		lootvalue += value
 
 /obj/structure/closet/crate/secure/lootsafe/numberlock

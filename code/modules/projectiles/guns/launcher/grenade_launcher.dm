@@ -51,7 +51,7 @@
 			to_chat(user, span_warning("[src] is full."))
 			return
 		user.remove_from_mob(G)
-		G.loc = src
+		G.forceMove(src)
 		LAZYINITLIST(grenades); grenades.Insert(1, G) //add to the head of the list, so that it is loaded on the next pump
 		user.visible_message("[user] inserts \a [G] into [src].", span_notice("You insert \a [G] into [src]."))
 		return
@@ -114,7 +114,7 @@
 			to_chat(user, span_warning("[src] is already loaded."))
 			return
 		user.remove_from_mob(G)
-		G.loc = src
+		G.forceMove(src)
 		chambered = G
 		user.visible_message("[user] load \a [G] into [src].", span_notice("You load \a [G] into [src]."))
 		return

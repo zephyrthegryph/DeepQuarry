@@ -56,7 +56,7 @@
 		transfer_fingerprints_to(N)
 		transfer_fibres_to(N)
 		N.hailer = I
-		I.loc = N
+		I.forceMove(N)
 		if(!isturf(N.loc))
 			user.put_in_hands(N)
 		consume(src, user)

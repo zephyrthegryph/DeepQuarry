@@ -227,7 +227,7 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 			target.hud_used?.update_robot_modules_display(TRUE)
 			target.module.emag.Remove(rem_item)
 			target.module.modules.Remove(rem_item)
-			target.module.contents.Remove(rem_item)
+			rem_item.moveToNullspace()
 			target.hud_used?.update_robot_modules_display()
 			qdel(rem_item)
 			return TRUE
@@ -287,7 +287,7 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 				LAZYOR(target.module.supported_upgrades, new_upgrade)
 			if(!U.action(ui.user, target))
 				return FALSE
-			U.loc = target
+			U.forceMove(target)
 			target.hud_used?.update_robot_modules_display()
 			return TRUE
 		if("install_modkit")
@@ -329,7 +329,7 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 			var/obj/item/rem_tool = locate(params["tool"])
 			if(multibelt_holder.selected_item == rem_tool)
 				multibelt_holder.dropped() //Reset to original icon.
-			multibelt_holder.contents -= rem_tool
+			rem_tool.moveToNullspace()
 			multibelt_holder.cyborg_integrated_tools -= rem_tool.type
 			multibelt_holder.integrated_tools_by_name -= rem_tool.name
 			multibelt_holder.integrated_tool_images -= rem_tool.name

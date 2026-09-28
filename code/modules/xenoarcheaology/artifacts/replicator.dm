@@ -197,7 +197,7 @@
 		to_chat(user, span_notice("You cannot put \the [W] into the machine."))
 		return TRUE
 	user.drop_item()
-	W.loc = src
+	W.forceMove(src)
 	stored_materials.Add(W)
 	src.visible_message(span_notice(span_bold("\The [user]") + " inserts \the [W] into \the [src]."))
 	return TRUE
@@ -431,7 +431,7 @@
 					continue
 				inserted_human.drop_from_inventory(I)
 			//Now that we've dropped all the items they have, let's shove them back into the micro holder.
-	W.loc = src
+	W.forceMove(src)
 	stored_materials.Add(W)
 	src.visible_message(span_filter_notice(span_bold("\The [user]") + " inserts \the [W] into \the [src]."))
 	return TRUE
@@ -694,7 +694,7 @@
 					continue
 				inserted_human.drop_from_inventory(I)
 			//Now that we've dropped all the items they have, let's shove them back into the micro holder.
-	W.loc = src
+	W.forceMove(src)
 	stored_materials.Add(W)
 	src.visible_message(span_filter_notice(span_bold("\The [user]") + " inserts \the [W] into \the [src]."))
 	return TRUE

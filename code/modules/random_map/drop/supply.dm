@@ -20,7 +20,7 @@
 				var/atom/movable/A = new drop_type(T)
 				if(!istype(A, /mob))
 					if(!C) C = new(T)
-					C.contents |= A
+					A.forceMove(C)
 			return
 		else
 			drop_type = pick(GLOB.supply_drop)

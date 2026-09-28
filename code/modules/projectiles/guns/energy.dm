@@ -138,7 +138,7 @@
 		return
 	user.remove_from_mob(P)
 	power_supply = P
-	P.loc = src
+	P.forceMove(src)
 	user.visible_message("[user] inserts [P] into [src].", span_notice("You insert [P] into [src]."))
 	playsound(src, 'sound/weapons/flipblade.ogg', 50, 1)
 	update_icon()

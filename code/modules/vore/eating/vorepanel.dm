@@ -1278,7 +1278,7 @@
 						var/mob/living/silicon/robot/R = body_backup
 						R.revive()
 						mmi_host.release_mind(R, "reformed by [key_name(user)]")
-						MMI.loc = R
+						MMI.forceMove(R)
 						R.mmi = MMI
 						R.add_language(LANGUAGE_ROBOT_TALK)
 					else //reference /datum/surgical_step/organ/install_mmi/perform
@@ -1291,7 +1291,7 @@
 							holder = holdertmp
 						else
 							holder = new(body_backup, 1)
-						MMI.loc = holder
+						MMI.forceMove(holder)
 						holder.stored_mmi = MMI
 						holder.update_from_mmi()
 

@@ -113,7 +113,7 @@
 
 /obj/item/projectile/meteor/Bump(atom/A as mob|obj|turf|area)
 	if(A == firer)
-		loc = A.loc
+		forceMove(A.loc)
 		return
 
 	if(src)//Do not add to this if() statement, otherwise the meteor won't delete them

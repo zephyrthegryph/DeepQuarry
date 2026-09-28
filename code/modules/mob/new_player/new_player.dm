@@ -234,7 +234,7 @@ REF_OWNED(/mob/new_player, list("manifest_dialog", "late_choices_dialog", "priva
 	// Moving wheelchair if they have one
 	if(character?.buckled_to() && istype(character?.buckled_to(), /obj/structure/bed/chair/wheelchair))
 		var/atom/movable/_tmp_buck_32 = character?.buckled_to()
-		_tmp_buck_32.loc = character.loc
+		_tmp_buck_32.forceMove(character.loc)
 		var/atom/movable/_tmp_buck_33 = character?.buckled_to()
 		_tmp_buck_33.set_dir(character.dir)
 

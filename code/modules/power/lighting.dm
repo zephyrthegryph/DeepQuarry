@@ -607,7 +607,7 @@ REF_OWNED(/obj/machinery/light, "cell")
 	update_from_bulb(L)
 	latent_bulb = FALSE
 	installed_light = L
-	L.loc = src //Move it into the socket!
+	L.forceMove(src) //Move it into the socket!
 
 	on = powered() && !turned_off() // Do not instantly turn on lights if the area lightswitch is off
 	update()

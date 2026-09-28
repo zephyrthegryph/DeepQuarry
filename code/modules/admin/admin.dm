@@ -872,7 +872,7 @@ ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this mach
 
 	var/obj/item/rcvdcopy
 	rcvdcopy = destination.copy(P)
-	rcvdcopy.loc = null //hopefully this shouldn't cause trouble
+	rcvdcopy.moveToNullspace() //hopefully this shouldn't cause trouble
 	GLOB.adminfaxes += rcvdcopy
 
 

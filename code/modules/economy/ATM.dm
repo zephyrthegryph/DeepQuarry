@@ -59,7 +59,7 @@ REF_OWNED(/obj/machinery/atm, "spark_system")
 			number_incorrect_tries = 0
 
 	for(var/obj/item/spacecash/S in src)
-		S.loc = src.loc
+		S.forceMove(src.loc)
 		if(prob(50))
 			playsound(src, 'sound/items/polaroid1.ogg', 50, 1)
 		else
@@ -116,7 +116,7 @@ REF_OWNED(/obj/machinery/atm, "spark_system")
 	var/obj/item/card/id/idcard = held
 	if(!held_card)
 		user.drop_item()
-		idcard.loc = src
+		idcard.forceMove(src)
 		held_card = idcard
 		if(authenticated_account && held_card.associated_account_number != authenticated_account.account_number)
 			authenticated_account = null
@@ -478,7 +478,7 @@ REF_OWNED(/obj/machinery/atm, "spark_system")
 	if(!held_card)
 		return
 
-	held_card.loc = src.loc
+	held_card.forceMove(src.loc)
 	authenticated_account = null
 
 	if(ishuman(human_user) && !human_user.get_active_hand())

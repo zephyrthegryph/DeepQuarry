@@ -132,7 +132,7 @@
 			if(computer && computer.nano_printer) //This option should never be called if there is no printer
 				if(!mod_mode)
 					if(program.can_run(ui.user, 1))
-						var/contents = {"<h4>Access Report</h4>
+						var/report_text = {"<h4>Access Report</h4>
 									<u>Prepared By:</u> [user_id_card.registered_name ? user_id_card.registered_name : "Unknown"]<br>
 									<u>For:</u> [id_card.registered_name ? id_card.registered_name : "Unregistered"]<br>
 									<hr>
@@ -145,19 +145,19 @@
 						var/known_access_rights = SSaccess.get_access_ids(ACCESS_TYPE_STATION|ACCESS_TYPE_CENTCOM)
 						for(var/A in id_card.GetAccess())
 							if(A in known_access_rights)
-								contents += "  [SSaccess.get_access_desc(A)]"
+								report_text += "  [SSaccess.get_access_desc(A)]"
 
-						if(!computer.nano_printer.print_text(contents,"access report"))
+						if(!computer.nano_printer.print_text(report_text,"access report"))
 							to_chat(ui.user, span_notice("Hardware error: Printer was unable to print the file. It may be out of paper."))
 							return
 						else
 							computer.visible_message(span_bold("\The [computer]") + " prints out paper.")
 				else
-					var/contents = {"<h4>Crew Manifest</h4>
+					var/report_text = {"<h4>Crew Manifest</h4>
 									<br>
 									[GLOB.data_core ? GLOB.data_core.get_manifest(0) : ""]
 									"}
-					if(!computer.nano_printer.print_text(contents,text("crew manifest ([])", stationtime2text())))
+					if(!computer.nano_printer.print_text(report_text,text("crew manifest ([])", stationtime2text())))
 						to_chat(ui.user, span_notice("Hardware error: Printer was unable to print the file. It may be out of paper."))
 						return
 					else

@@ -418,7 +418,7 @@
 			to_chat(user, span_warning("You need a better grip to do that!"))
 			return
 		var/mob/grabbed = G?.grab_target()
-		grabbed.loc = src.loc
+		grabbed.forceMove(src.loc)
 		grabbed.status_at_least(EFFECT_WEAKENED, 5)
 		visible_message(span_warning("[G?.grab_assailant()] dunks [grabbed] into the [src]!"), 3)
 		consume(W, user)

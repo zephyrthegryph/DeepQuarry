@@ -71,7 +71,7 @@
 /obj/item/gun/energy/floragun/screwdriver_act(mob/user, obj/item/tool)
 	if(emitter)
 		to_chat(user, span_notice("You remove the [emitter.name] from the [src]."))
-		emitter.loc = get_turf(src.loc)
+		emitter.forceMove(get_turf(src.loc))
 		playsound(src, tool.usesound, 50, 1)
 		emitter = null
 	else
@@ -82,7 +82,7 @@
 	if(istype(W, /obj/item/stock_parts/micro_laser))
 		if(!emitter)
 			user.drop_item()
-			W.loc = src
+			W.forceMove(src)
 			emitter = W
 			to_chat(user, span_notice("You install a [emitter.name] in [src]."))
 		else

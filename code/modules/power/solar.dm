@@ -456,7 +456,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 		new /obj/item/material/shard(src.loc)
 		var/obj/item/circuitboard/solar_control/M = new /obj/item/circuitboard/solar_control(A)
 		for(var/obj/C in src)
-			C.loc = src.loc
+			C.forceMove(src.loc)
 		A.circuit = M
 		A.state = 3
 		A.icon_state = "computer_3"
@@ -467,7 +467,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 		var/obj/structure/frame/A = new /obj/structure/frame/computer(src.loc)
 		var/obj/item/circuitboard/solar_control/M = new /obj/item/circuitboard/solar_control(A)
 		for(var/obj/C in src)
-			C.loc = src.loc
+			C.forceMove(src.loc)
 		A.circuit = M
 		A.state = 4
 		A.icon_state = "computer_4"

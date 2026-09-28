@@ -72,7 +72,7 @@
 		var/obj/effect/decal/cleanable/blood/B = locate() in range(2,holder)
 		if(B)
 			last_eat = world.time
-			B.loc = null
+			B.moveToNullspace()
 			if(istype(B, /obj/effect/decal/cleanable/blood/drip))
 				charges += 0.25
 			else

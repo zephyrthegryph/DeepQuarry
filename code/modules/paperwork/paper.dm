@@ -569,7 +569,7 @@
 		var/obj/item/clipboard/CB = P
 		if(src.loc == user)
 			user.drop_from_inventory(src)
-		src.loc = CB
+		src.forceMove(CB)
 		CB.toppaper = src
 		CB.update_icon()
 		to_chat(user, span_notice("You clip the [src] onto \the [CB]."))
@@ -577,7 +577,7 @@
 	if(istype(P, /obj/item/folder))
 		if(src.loc == user)
 			user.drop_from_inventory(src)
-		src.loc = P
+		src.forceMove(P)
 		P.update_icon()
 		to_chat(user, span_notice("You tuck the [src] into \the [P]."))
 
@@ -614,12 +614,12 @@
 				h_user.drop_from_inventory(src)
 				h_user.put_in_hands(B)
 			else if (!istype(src.loc, /turf))
-				src.loc = get_turf(h_user)
+				src.forceMove(get_turf(h_user))
 				if(h_user.client)	h_user.client.screen -= src
 				h_user.put_in_hands(B)
 		to_chat(user, span_notice("You clip the [P.name] to [(src.name == "paper") ? "the paper" : src.name]."))
-		src.loc = B
-		P.loc = B
+		src.forceMove(B)
+		P.forceMove(B)
 
 		B.pages.Add(src)
 		B.pages.Add(P)

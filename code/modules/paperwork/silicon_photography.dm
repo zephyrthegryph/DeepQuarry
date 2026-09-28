@@ -18,7 +18,7 @@
 REF_OWNED_LIST(/obj/item/camera/siliconcam, "aipictures")
 
 /obj/item/camera/siliconcam/proc/injectaialbum(obj/item/photo/p, sufix = "") //stores image information to a list similar to that of the datacore
-	p.loc = src
+	p.forceMove(src)
 	photos_taken++
 	p.name = "Image [photos_taken][sufix]"
 	LAZYADD(aipictures, p)
