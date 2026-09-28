@@ -44,6 +44,26 @@
 #define FALTERED				0x200	/// If applied, the virus is faltered and will only spread by intentional injection.
 #define IMMUTABLE				0x400 	/// If applied, the virus will not mutate in any kind of way.
 
+// Contagion (disease) afflictions: code/modules/medical/contagion.
+/// Host immune response at which a curable contagion is cleared.
+#define CONTAGION_IMMUNITY_CLEAR 100
+/// Host immune response at which a contagion stops advancing and regresses.
+#define CONTAGION_IMMUNITY_CONTROL 50
+/// Immunity per tick at full natural regeneration (rest, nutrition): ~55 min to clear awake, half that asleep.
+#define CONTAGION_IMMUNE_BASE 0.06
+/// Immunity per tick at a standard dose of an antimicrobial (spaceacillin).
+#define CONTAGION_IMMUNE_ANTIMICROBIAL 0.15
+/// Extra immunity per tick while the host lies down (bed rest).
+#define CONTAGION_IMMUNE_BEDREST 0.04
+
+// Transmission routes (/datum/affliction_trigger/contagion/expose()).
+/// Breathed in: internals and breath-proof hosts are safe; a mask filters.
+#define CONTAGION_ROUTE_AIRBORNE "airborne"
+/// Skin contact on a body zone: the clothing covering it filters.
+#define CONTAGION_ROUTE_CONTACT "contact"
+/// Straight into the blood or gut (injection, ingestion): nothing filters.
+#define CONTAGION_ROUTE_BLOOD "blood"
+
 #define EXTRAPOLATOR_RESULT_DISEASES		"extrapolator_result_disease"
 #define EXTRAPOLATOR_RESULT_ACT_PRIORITY	"extrapolator_result_action_priority"
 #define EXTRAPOLATOR_ACT_PRIORITY_SPECIAL	"extrapolator_action_priority_special"
@@ -51,7 +71,7 @@
 #define EXTRAPOLATOR_ACT_ADD_DISEASES(target_list, diseases)\
 	do {\
 		var/_D = ##diseases;\
-		if ((islist(_D) && length(_D)) || istype(_D, /datum/disease)) {	\
+		if ((islist(_D) && length(_D)) || istype(_D, /datum/affliction/contagion)) {	\
 			LAZYORASSOCLIST(##target_list, EXTRAPOLATOR_RESULT_DISEASES, _D);\
 		}\
 	} while(0)
