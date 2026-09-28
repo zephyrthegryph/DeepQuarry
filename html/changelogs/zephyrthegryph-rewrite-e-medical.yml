@@ -1,0 +1,17 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Short factor-only status effects (entangled, grievous wounds, numbness, cloning sickness, and about sixty more) are body effects on the body clock: stasis now pauses their countdown."
+  - balance: "Poison syringes, jellyfish whips, nightmare jelly and leech bites cause a lingering poisoning that fades on its own and clears quickly with antitoxin."
+  - bugfix: "Curing doom with curea no longer kills the patient."
+  - bugfix: "Slow-addiction drugs (tramadol, oxycodone, alcohol, nicotine, coffee) no longer addict at the normal threshold."
+  - bugfix: "The advanced trauma kit spends one charge per wound, and the advanced burn kit refuses cut-open limbs."
+  - bugfix: "Syringes check injectability on humans too, and a near-empty syringe stab no longer transfers a negative amount."
+  - bugfix: "Claridyl side effects happen one at a time; Hannoa's sedation bands work and it clots and repairs tissue; Eden metabolises; Malish-Qualem and Talum-quem deal their toxins correctly; Lipostipo feeds instead of starving."
+  - bugfix: "Blood draws no longer relabel another donor's blood, and stock blood packs are human blood, incompatible with other species."
+  - bugfix: "Cold drinks cool you down instead of heating you; injected nutriment no longer feeds synthetics twice; species drug tables keep the drug's other effects."
+  - bugfix: "The decompression needle only vents a pneumothorax; deep bruising heals on its own; simple animals shake off poisons; respiratory arrest can't stack three times."
+  - bugfix: "Body scanner trends compare against the last printed scan, labels assisted organs correctly, and the defibrillator refuses a patient with no heart. Clamped incisions stop bleeding."
+  - bugfix: "Surgery book: retinal repair and necrotic resection include the bone access steps."
+  - bugfix: "Replacing a cyborg's cell no longer leaves the old one inside it."
+  - code_imp: "Medical, organ, blood, shock, heartbeat, thermoregulation and other life stages now sleep when there's nothing to do and wake on events."
