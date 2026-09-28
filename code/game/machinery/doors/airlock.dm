@@ -567,7 +567,7 @@ About the new airlock wires panel:
 /obj/machinery/door/airlock/proc/hack_finish(datum/om/task/airlock_ai_hack/T)
 	//bring up airlock dialog
 	aiHacking = 0
-	INPUT_ADAPTER(ai).interface(T.user, src)
+	actor_use(/datum/input_adapter/ai, T.user, src)
 	return STEP_DONE
 
 /obj/machinery/door/airlock/CanPass(atom/movable/mover, turf/target)

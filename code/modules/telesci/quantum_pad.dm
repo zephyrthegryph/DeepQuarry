@@ -179,7 +179,7 @@
 /// Old attack_ghost: ran the ghost default first, then drifts the ghost to the linked pad.
 /obj/machinery/power/quantumpad/proc/quantumpad_ghost_travel(mob/observer/dead/ghost, obj/item/held, datum/interaction/interaction)
 	. = TRUE
-	if(INPUT_ADAPTER(ghost).use_default(ghost, src))
+	if(actor_use_default(/datum/input_adapter/ghost, ghost, src))
 		return
 	if(!linked_pad && map_pad_link_id)
 		initMappedLink()

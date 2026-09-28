@@ -16,7 +16,6 @@
 	var/base_icon = 'icons/effects/blood.dmi'
 	var/basecolor="#A10808" // Color when wet.
 	var/synthblood = 0
-	var/list/datum/disease/viruses
 	var/amount = 5
 	generic_filth = TRUE
 	persistent = FALSE
@@ -262,7 +261,6 @@ EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/blood, \
 	icon_state = "mucus"
 	random_icon_states = list("mucus")
 
-	var/list/datum/disease/viruses
 	var/dry = 0 // Keeps the lag down
 	var/sampled = FALSE
 

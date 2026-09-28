@@ -1394,7 +1394,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	if(user != src || isnull(hat))
 		return FALSE
 
-	INPUT_ADAPTER(ai).interface(user, src)
+	actor_use(/datum/input_adapter/ai, user, src)
 	balloon_alert(user, "dropping hat...")
 	om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_robot_robot_done), done_args = list(user))
 	return TRUE

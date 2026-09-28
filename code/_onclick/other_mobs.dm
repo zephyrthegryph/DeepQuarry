@@ -80,7 +80,7 @@
 		else if(get_dist(src, A) > TK_MAXRANGE)
 			to_chat(src, TK_OUTRANGED_MESSAGE)
 		else
-			INPUT_ADAPTER(telekinesis).interface(src, A)
+			actor_use(/datum/input_adapter/telekinesis, src, A)
 	else if(spitting) //Only used by xenos right now, can be expanded.
 		Spit(A)
 

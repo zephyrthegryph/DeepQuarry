@@ -60,9 +60,9 @@
 
 /// Old attack_ghost: ran the ghost default first, then the primary pad's ghost Use.
 /obj/machinery/hyperpad/proc/hyperpad_ghost_use(mob/observer/dead/ghost, obj/item/held, datum/interaction/interaction)
-	INPUT_ADAPTER(ghost).use_default(ghost, src)
+	actor_use_default(/datum/input_adapter/ghost, ghost, src)
 	if(primary)
-		INPUT_ADAPTER(ghost).interface(ghost, primary)
+		actor_use(/datum/input_adapter/ghost, ghost, primary)
 	return TRUE
 
 /obj/machinery/hyperpad/centre/declare_interactions(list/into)

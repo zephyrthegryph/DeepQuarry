@@ -26,9 +26,9 @@
 // its own click table, then its interactions (INTERACT_SILICON) and silicon_use.
 
 /mob/living/silicon/ai/UnarmedAttack(atom/A)
-	INPUT_ADAPTER(ai).interface(src, A)
+	actor_use(/datum/input_adapter/ai, src, A)
 /mob/living/silicon/ai/RangedAttack(atom/A)
-	INPUT_ADAPTER(ai).interface(src, A)
+	actor_use(/datum/input_adapter/ai, src, A)
 
 /*
 	Since the AI handles shift, ctrl, and alt-click differently

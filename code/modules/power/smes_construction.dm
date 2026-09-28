@@ -137,7 +137,7 @@
 /// Cyborgs standing next to the SMES can also play with the wiring.
 /obj/machinery/power/smes/buildable/proc/smes_buildable_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(RCon)
-		INPUT_ADAPTER(ai).use_default(user, src)
+		actor_use_default(/datum/input_adapter/ai, user, src)
 	else // RCON wire cut
 		to_chat(user, span_warning("Connection error: Destination Unreachable."))
 

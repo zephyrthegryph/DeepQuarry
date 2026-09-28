@@ -28,6 +28,9 @@ def main():
     found = []
     for path in sorted((ROOT / 'code').rglob('*.dm')):
         rel = path.relative_to(ROOT).as_posix()
+        # Test fixtures record calls to the dispatchers themselves.
+        if rel.startswith('code/modules/unit_tests/'):
+            continue
         text = path.read_text(encoding='utf-8', errors='ignore')
         for m in HANDLER.finditer(text):
             name = '%s/%s' % (m.group(1), m.group(2))

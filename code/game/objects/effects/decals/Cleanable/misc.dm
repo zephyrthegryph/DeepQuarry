@@ -155,7 +155,6 @@ EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/ash, \
 	icon = 'icons/effects/blood.dmi'
 	icon_state = "vomit_1"
 	random_icon_states = list("vomit_1", "vomit_2", "vomit_3", "vomit_4")
-	var/list/datum/disease/viruses
 
 /obj/effect/decal/cleanable/vomit/old
 	name = "crusty dried vomit"

@@ -128,7 +128,9 @@
 
 /**
  * Declares a type's compact interaction specs: generates its get_interactions()
- * getter returning a proc-local `var/static/list` (allocated once, ever; AGENTS.md §3a).
+ * getter returning a proc-local `var/static/list` (allocated once, on first use; AGENTS.md §3a).
+ * It is built lazily rather than in the static's initializer: every static initializer runs in
+ * one world-init proc, which DM caps in size, and there are hundreds of these.
  *
  *   DECLARE_INTERACTIONS(/obj/item/binoculars, \
  *   	INTERACT_USE("Zoom", PROC_REF(zoom)), \
@@ -141,7 +143,10 @@
  * them, override declare_interactions() and use dq_interaction_from_spec() (§5a).
  */
 #define DECLARE_INTERACTIONS(T, specs...) ##T/get_interactions(){\
-	var/static/list/dq_interaction_specs = list(specs);\
+	var/static/list/dq_interaction_specs;\
+	if(!dq_interaction_specs){\
+		dq_interaction_specs = list(specs);\
+	}\
 	return dq_interaction_specs;\
 }
 
@@ -152,7 +157,10 @@
  * Use it on a subtype of a type that declares interactions of its own.
  */
 #define EXTEND_INTERACTIONS(T, specs...) ##T/declare_interactions(list/into){\
-	var/static/list/dq_interaction_specs = list(specs);\
+	var/static/list/dq_interaction_specs;\
+	if(!dq_interaction_specs){\
+		dq_interaction_specs = list(specs);\
+	}\
 	for(var/dq_spec in dq_interaction_specs){\
 		into += dq_interaction_from_spec(type, dq_spec);\
 	}\

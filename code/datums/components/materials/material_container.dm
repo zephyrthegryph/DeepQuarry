@@ -466,7 +466,7 @@
 	SIGNAL_HANDLER
 	// this is called both locally and from remote_materials
 
-	var/list/sheets = S.quick_empty()
+	var/list/sheets = S.stored_items() // was the quick_empty verb, which returned nothing
 	for(var/obj/item/stack/material/M as anything in sheets)
 		attempt_insert(user, M)
 

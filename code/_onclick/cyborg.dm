@@ -94,6 +94,6 @@
 
 // Not used by click code (the robot adapter handles Use); here for anything that calls them.
 /mob/living/silicon/robot/UnarmedAttack(atom/A)
-	INPUT_ADAPTER(robot).interface(src, A)
+	actor_use(/datum/input_adapter/robot, src, A)
 /mob/living/silicon/robot/RangedAttack(atom/A)
-	INPUT_ADAPTER(robot).interface(src, A)
+	actor_use(/datum/input_adapter/robot, src, A)

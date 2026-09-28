@@ -118,15 +118,25 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 	return
 
 /// What this kind of actor's Use does when no interaction answers.
-/datum/input_adapter/proc/use_default(mob/user, atom/target)
+/datum/input_adapter/proc/default_use(mob/user, atom/target)
 	return FALSE
+
+/// actor_use(/datum/input_adapter/ai, user, target): use_as() on that adapter's singleton.
+/proc/actor_use(adapter_type, mob/user, atom/target)
+	var/datum/input_adapter/adapter = GLOB.input_adapters[adapter_type]
+	return adapter.use_as(user, target)
+
+/// actor_use_default(/datum/input_adapter/ghost, user, target): that adapter's default Use.
+/proc/actor_use_default(adapter_type, mob/user, atom/target)
+	var/datum/input_adapter/adapter = GLOB.input_adapters[adapter_type]
+	return adapter.default_use(user, target)
 
 /// Use `target` as this kind of actor, for code that makes an actor use something directly
 /// (an AI hotkey, a pAI reaching through a cable): its interactions, then its default.
-/datum/input_adapter/proc/interface(mob/user, atom/target)
+/datum/input_adapter/proc/use_as(mob/user, atom/target)
 	if(use_interaction(user, target))
 		return TRUE
-	return use_default(user, target)
+	return default_use(user, target)
 
 /**
  * One Use run as a Disarm or Grab (use_attack_variant() has set the variant).
@@ -315,14 +325,14 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 		return
 	if(use_interaction(user, target))
 		return TRUE
-	use_default(user, target)
+	default_use(user, target)
 
 /**
  * A telekinetic Use no interaction answered: grab a loose object (an item on the floor,
  * or anything unanchored) with a telekinetic grab; otherwise poke it as an unarmed hand
  * would. Mobs, carried items and objects with `tk_reach = FALSE` are left alone.
  */
-/datum/input_adapter/telekinesis/use_default(mob/user, atom/target)
+/datum/input_adapter/telekinesis/default_use(mob/user, atom/target)
 	if(user.stat || ismob(target))
 		return FALSE
 	var/obj/O = target
@@ -356,10 +366,10 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 /datum/input_adapter/ghost/use(mob/user, atom/target, list/modifiers, params)
 	if(use_interaction(user, target))
 		return TRUE
-	use_default(user, target)
+	default_use(user, target)
 
 /// A ghost's Use when no observer interaction answers: an object's UI, to view; an inquisitive ghost examines.
-/datum/input_adapter/ghost/use_default(mob/observer/dead/user, atom/target)
+/datum/input_adapter/ghost/default_use(mob/observer/dead/user, atom/target)
 	if(isobj(target))
 		target.tgui_interact(user)
 	if(user.client?.inquisitive_ghost)
@@ -424,10 +434,10 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 	target.add_hiddenprint(user)
 	if(use_interaction(user, target))
 		return TRUE
-	use_default(user, target)
+	default_use(user, target)
 
 /// The AI's Use when no silicon interaction answers: what the type's `silicon_use` says.
-/datum/input_adapter/ai/use_default(mob/user, atom/target)
+/datum/input_adapter/ai/default_use(mob/user, atom/target)
 	if(target.silicon_use & SILICON_USE_HAND)
 		return target.attack_hand(user)
 	if(target.silicon_use & SILICON_USE_UI)
@@ -442,7 +452,7 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 
 /// A cyborg's empty-gripper Use when no interaction answers: a hand's Use where the type says so
 /// (or on something with a mob buckled to it, so anti-robot valves can't be worked around it), else like the AI.
-/datum/input_adapter/robot/use_default(mob/user, atom/target)
+/datum/input_adapter/robot/default_use(mob/user, atom/target)
 	if(target.silicon_use & ROBOT_USE_HAND)
 		return target.attack_hand(user)
 	if(target.silicon_use & ROBOT_USE_HAND_ADJACENT)
@@ -451,7 +461,7 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 		var/obj/O = target
 		if(O.has_buckled_mobs())
 			return O.attack_hand(user)
-	return INPUT_ADAPTER(ai).use_default(user, target)
+	return actor_use_default(/datum/input_adapter/ai, user, target)
 
 /// Cyborgs get everything but observer-only interactions, silicon-only ones included.
 /datum/input_adapter/robot/allows_interaction(mob/user, atom/target, datum/interaction/interaction)
@@ -496,7 +506,7 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 		A.add_hiddenprint(user)
 		if(use_interaction(user, A))
 			return TRUE
-		use_default(user, A)
+		default_use(user, A)
 		return
 	// buckled cannot prevent machine interlinking but stops arm movement
 	if(user?.buckled_to())

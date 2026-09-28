@@ -1437,7 +1437,7 @@ REF_SPILL_LIST(/obj/item/clothing, "contents")
 /// adjacent cyborg starts picking the hat up.
 /obj/item/clothing/head/proc/head_robot_pick_up(mob/living/silicon/robot/user, obj/item/held, datum/interaction/interaction)
 	if(!head_silicon_wear(user, held, interaction))
-		INPUT_ADAPTER(ai).use_default(user, src)
+		actor_use_default(/datum/input_adapter/ai, user, src)
 
 	if(!Adjacent(user))
 		return TRUE

@@ -12,7 +12,7 @@
 	var/redgate_restricted = FALSE
 
 /obj/structure/ghost_pod/ghost_activated/unified_hole/create_occupant(mob/observer/dead/user)
-	INPUT_ADAPTER(ghost).interface(user, src)
+	actor_use(/datum/input_adapter/ghost, user, src)
 
 // Overrides the standard ghost pod observer use for custom messages.
 /obj/structure/ghost_pod/ghost_activated/unified_hole/ghost_pod_observer_use(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
