@@ -141,7 +141,9 @@
 	O.on_overheat()
 
 /datum/om/behaviour/overheating/tick(obj/O, dt)
-	O.overheat_step(dt)
+	// The periodic lane this replaced passed its delta in deciseconds (10 per 1 s frame);
+	// keep that rate exactly.
+	O.overheat_step(dt * 10)
 
 /// TRUE while the object overheats.
 /obj/proc/is_overheating()

@@ -121,7 +121,9 @@ REF_OWNED(/obj, "burn_cool_watch")
 		om_detach(src, /datum/om/behaviour/burning)
 
 /datum/om/behaviour/burning/tick(obj/O, dt)
-	O.burning_step(dt)
+	// The periodic lane this replaced passed its delta in deciseconds (10 per 1 s frame);
+	// keep that rate exactly.
+	O.burning_step(dt * 10)
 
 /// One step of burning, `seconds_per_tick` long.
 /obj/proc/burning_step(seconds_per_tick)
