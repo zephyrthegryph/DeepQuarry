@@ -78,7 +78,7 @@
 	name = "Alert"
 	desc = "Something seems to have gone wrong with this alert, so report this bug please"
 	mouse_opacity = 1
-	TIMESTAMP_VAR(timeout) //If set to a number, this alert will clear itself after that many deciseconds
+	EXPIRY_DECLARE(timeout) //If set to a number, this alert will clear itself after that many deciseconds
 	var/severity = 0
 	var/alerttooltipstyle = ""
 	var/no_underlay // Don't underlay the UI style's blank template icon under this

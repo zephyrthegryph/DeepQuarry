@@ -4,7 +4,7 @@
 // Why isn't it you ask? Eh, baystation did it this way and its convenient to keep the files smaller I guess.
 /datum/shuttle/autodock
 	var/in_use = null	// Tells the controller whether this shuttle needs processing, also attempts to prevent double-use
-	TIMESTAMP_VAR(last_dock_attempt_time)
+	EXPIRY_DECLARE(last_dock_attempt_time)
 
 	var/docking_controller_tag = null // ID of the controller on the shuttle (If multiple, this is the default one)
 	var/datum/embedded_program/docking/shuttle_docking_controller // Controller on the shuttle (the one in use)

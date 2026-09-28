@@ -37,7 +37,7 @@
 	// Mechanical concerns.
 	var/health = 0             // Plant health.
 	var/lastproduce = 0        // Last time tray was harvested
-	TIMESTAMP_VAR(lastcycle) // Cycle timing/tracking var.
+	EXPIRY_DECLARE(lastcycle) // Cycle timing/tracking var.
 	var/cycledelay = 150       // Delay per cycle.
 	var/closed_system          // If set, the tray will attempt to take atmos from a pipe.
 	var/force_update           // Set this to bypass the cycle time check.

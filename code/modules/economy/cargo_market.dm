@@ -400,7 +400,7 @@ DECLARE_REF(/datum/cargo_market_bid, "profile", OWNED, null)
 	var/list/market_bids
 	var/list/market_transactions
 	var/next_market_id = 1
-	TIMESTAMP_VAR(next_market_refresh)
+	EXPIRY_DECLARE(next_market_refresh)
 	var/market_generation = 0
 
 /datum/world_service/supply/proc/initialize_cargo_market()

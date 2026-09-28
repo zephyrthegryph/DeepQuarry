@@ -11,7 +11,7 @@
 	length_lower_bound = 30 MINUTES
 	length_upper_bound = 1 HOUR
 	var/spam_debug = FALSE // If true, notices of the event sending spam go to `log_game()`.
-	TIMESTAMP_VAR(last_spam_time) // world.time of most recent spam.
+	EXPIRY_DECLARE(last_spam_time) // world.time of most recent spam.
 	var/next_spam_attempt_time = 0 // world.time of next attempt to try to spam.
 	var/give_up_after = 5 MINUTES
 	var/tmp/MS_handle

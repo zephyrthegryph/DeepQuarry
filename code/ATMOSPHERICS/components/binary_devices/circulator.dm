@@ -16,7 +16,7 @@
 	var/last_heat_capacity = 0
 	var/last_temperature = 0
 	var/last_pressure_delta = 0
-	TIMESTAMP_VAR(last_worldtime_transfer)
+	EXPIRY_DECLARE(last_worldtime_transfer)
 	var/last_stored_energy_transferred = 0
 	var/volume_capacity_used = 0
 	var/stored_energy = 0

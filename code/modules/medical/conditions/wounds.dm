@@ -66,7 +66,7 @@
 	var/salved = FALSE
 	var/disinfected = FALSE
 	/// world.time the wound was made.
-	TIMESTAMP_VAR(created)
+	EXPIRY_DECLARE(created)
 	/// Number of merged wounds of this type.
 	var/amount = 1
 	var/germ_level = 0

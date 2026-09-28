@@ -10,7 +10,7 @@
 	var/scan_num = 0
 	var/tmp/scanned_obj_handle
 	var/tmp/owned_scanner_handle
-	TIMESTAMP_VAR(scan_completion_time)
+	EXPIRY_DECLARE(scan_completion_time)
 	var/scan_duration = 50
 	var/tmp/scanned_object_handle
 	var/report_num = 0

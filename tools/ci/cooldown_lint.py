@@ -8,7 +8,7 @@ such as `if(world.time < last_use + delay)` or `if(next_use > world.time)`. Arit
 `world.time - start` (elapsed time) is not a compare and is not counted.
 
 Not a cooldown, recognised structurally (a compare is skipped when its line reads one of these):
-  * a var declared with TIMESTAMP_VAR(name) / TIMESTAMP_TMP_VAR(name) (code/__defines/cooldowns.dm):
+  * a var declared with EXPIRY_DECLARE(name) / EXPIRY_TMP_DECLARE(name) (code/__defines/sys_expiry.dm):
     a recorded time kept as data (an expiry, a schedule, a start stamp), collected by name;
   * a var named for a point in time rather than a rate: *_at, *_until, *_since, *deadline,
     *expires, *expires_at, *expiry, *timestamp, timeofdeath (TIME_NAME below);
@@ -48,7 +48,7 @@ COMPARE = re.compile(rf"(?<![\w.])world\.time\s*{CMP}|{CMP}\s*world\.time(?![\w]
 
 
 TIME_NAME = re.compile(r"\b\w*(?:_at|_until|_since|deadline|expires|expires_at|expiry|timestamp|timeofdeath)\b")
-DECL = re.compile(r"\bTIMESTAMP(?:_TMP)?_VAR\(\s*(\w+)\s*\)")
+DECL = re.compile(r"\b(?:STATIC_)?EXPIRY(?:_TMP)?_DECLARE\(\s*(\w+)\s*\)")
 DATA_SLOT = re.compile(r"\[\s*(?:\"\"|\d+)\s*\]")
 REAGENT_DATA = re.compile(r"(?<![\w.])data\b")
 CONST = r"\d+(?:\.\d+)?(?:\s+(?:SECONDS?|MINUTES?|HOURS?|DECISECONDS?))?"
@@ -60,7 +60,7 @@ def timestamp_names():
     for path in glob.glob(os.path.join(ROOT, "code", "**", "*.dm"), recursive=True):
         with open(path, encoding="utf-8", errors="ignore") as f:
             raw = f.read()
-        if "TIMESTAMP" in raw:
+        if "EXPIRY" in raw:
             names.update(m.group(1) for m in DECL.finditer(raw))
     names.discard("name")
     return names

@@ -16,7 +16,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/shuttle_control/specops, INTERACT_SI
 	var/specops_countdown_time = 600	//Length of the countdown when moving the shuttle
 
 	var/obj/item/radio/intercom/announcer = null
-	TIMESTAMP_VAR(reset_time) //the world.time at which the shuttle will be ready to move again.
+	EXPIRY_DECLARE(reset_time) //the world.time at which the shuttle will be ready to move again.
 	var/launch_prep = 0
 	var/cancel_countdown = 0
 	category = /datum/shuttle/autodock/ferry/specops

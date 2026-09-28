@@ -36,7 +36,7 @@ DECLARE_INTERACTIONS(/obj/item/supply_beacon, INTERACT_USE(null, PROC_REF(intera
 	layer = MOB_LAYER - 0.1
 	stat = 0
 
-	TIMESTAMP_VAR(target_drop_time)
+	EXPIRY_DECLARE(target_drop_time)
 	var/drop_delay = 450
 	var/expended
 	var/drop_type

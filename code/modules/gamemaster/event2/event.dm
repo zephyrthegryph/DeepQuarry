@@ -50,9 +50,9 @@ This allows for events that have their announcement happen after the end itself.
 	var/length_upper_bound = null
 
 	// Set automatically, don't touch.
-	TIMESTAMP_VAR(time_to_start)
-	TIMESTAMP_VAR(time_to_announce)
-	TIMESTAMP_VAR(time_to_end)
+	EXPIRY_DECLARE(time_to_start)
+	EXPIRY_DECLARE(time_to_announce)
+	EXPIRY_DECLARE(time_to_end)
 
 	// These are also set automatically, and are provided for events to know what RNG decided for the various durations.
 	var/start_delay = null

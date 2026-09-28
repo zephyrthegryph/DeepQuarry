@@ -54,7 +54,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 	var/spread_chance = 40
 	var/spread_distance = 3
 	var/evolve_chance = 2
-	TIMESTAMP_VAR(mature_time) //minimum maturation time
+	EXPIRY_DECLARE(mature_time) //minimum maturation time
 	COOLDOWN_DECLARE(neighbor_refresh_cooldown)
 	var/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/plant
 

@@ -2,7 +2,7 @@
 	var/severity = -1
 	var/delayed = 0
 	var/delay_modifier = 1
-	TIMESTAMP_VAR(next_event_time)
+	EXPIRY_DECLARE(next_event_time)
 	var/list/available_events
 	var/list/last_event_time
 	var/tmp/next_event_handle

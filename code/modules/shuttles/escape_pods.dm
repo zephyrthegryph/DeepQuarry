@@ -119,7 +119,7 @@
 /datum/embedded_program/docking/simple/escape_pod_berth
 	var/armed = 0
 	var/eject_delay = 10	//give latecomers some time to get out of the way if they don't make it onto the pod
-	TIMESTAMP_VAR(eject_time)
+	EXPIRY_DECLARE(eject_time)
 	var/closing = 0
 
 /datum/embedded_program/docking/simple/escape_pod_berth/proc/arm()

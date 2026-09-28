@@ -25,7 +25,7 @@
 	var/sim_canister_output = 10*ONE_ATMOSPHERE
 
 	var/simulating = 0
-	TIMESTAMP_VAR(simulation_started)
+	EXPIRY_DECLARE(simulation_started)
 	var/simulation_delay = 20 SECONDS
 
 	var/simulation_results

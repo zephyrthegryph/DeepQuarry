@@ -20,7 +20,7 @@ GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
 
 	var/points_per_slip = 2
 	var/points_per_money = 0.02 // Legacy export values convert at 1 point = 50 Thalers.
-	TIMESTAMP_VAR(next_payroll)
+	EXPIRY_DECLARE(next_payroll)
 	/// NanoTrasen's default contribution toward the station's projected gross payroll.
 	var/nt_salary_support = 0.75
 	/// Command-selected rule for dividing the projected station payroll pool.

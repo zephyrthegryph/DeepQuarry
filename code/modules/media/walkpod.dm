@@ -20,7 +20,7 @@
 	var/volume = 1
 
 	var/media_url = ""
-	TIMESTAMP_VAR(media_start_time)
+	EXPIRY_DECLARE(media_start_time)
 
 	var/obj/item/headpods/deployed_headpods
 

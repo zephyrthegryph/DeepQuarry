@@ -8,7 +8,7 @@
 	var/icon_state = "" //icon state of the main segments of the beam
 	var/beam_color = null // Color of the beam segments
 	var/max_distance = 0
-	TIMESTAMP_VAR(endtime)
+	EXPIRY_DECLARE(endtime)
 	var/sleep_time = 3
 	var/finished = 0
 	var/target_oldloc = null

@@ -296,7 +296,7 @@ DECLARE_INTERACTIONS(/obj/item/solar_assembly, \
 	var/targetdir = 0		// target angle in manual tracking (since it updates every game minute)
 	var/track = 0			// 0= off  1=timed  2=auto (tracker)
 	var/trackrate = 600		// 300-900 seconds
-	TIMESTAMP_VAR(nexttime) // time for a panel to rotate of 1° in manual tracking
+	EXPIRY_DECLARE(nexttime) // time for a panel to rotate of 1° in manual tracking
 	var/tmp/connected_tracker_handle
 	var/needs_panel_check	// Powernet has been updated, need to check if panels are still connected.
 	var/connected_power		// Sum of power supplied by connected panels.

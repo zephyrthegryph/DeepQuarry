@@ -11,7 +11,7 @@
 	var/tmp/current_location_handle	//Set current_location_tag, not this: New() resolves the tag into the landmark.
 	var/current_location_tag	// the tag it starts as; resolved into current_location at init
 
-	TIMESTAMP_TMP_VAR(arrive_time) //the time at which the shuttle arrives when long jumping
+	EXPIRY_TMP_DECLARE(arrive_time) //the time at which the shuttle arrives when long jumping
 	var/flags = SHUTTLE_FLAGS_NONE
 	var/process_state = IDLE_STATE // Used with SHUTTLE_FLAGS_PROCESS, as well as to store current state.
 	var/always_process = FALSE // Automated shuttles may need idle-state checks.

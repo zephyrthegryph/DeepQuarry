@@ -52,7 +52,7 @@
 	var/activated = 0
 	var/duration = 0
 	var/interval = 0
-	TIMESTAMP_VAR(time_end)
+	EXPIRY_DECLARE(time_end)
 	var/last_activation = 0
 	var/last_process = 0
 	var/tmp/inserted_battery_handle

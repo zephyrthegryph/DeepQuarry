@@ -2,7 +2,7 @@
 
 /datum/stockEvent
 	var/name = "event"
-	TIMESTAMP_VAR(next_phase)
+	EXPIRY_DECLARE(next_phase)
 	var/tmp/company_handle
 	var/current_title = "A company holding a pangalactic conference in the Seattle Conference Center, Seattle, Earth"
 	var/current_desc = "We will continue to monitor their stocks as the situation unfolds."

@@ -12,7 +12,7 @@
 	anchored = TRUE
 	buckle_lying = FALSE
 	var/burning = FALSE
-	TIMESTAMP_VAR(next_fuel_consumption) // world.time of when next item in fuel list gets eatten to sustain the fire.
+	EXPIRY_DECLARE(next_fuel_consumption) // world.time of when next item in fuel list gets eatten to sustain the fire.
 	var/grill = FALSE
 	var/datum/material/material
 	var/set_temperature = T0C + 30	//K
@@ -316,7 +316,7 @@
 	density = TRUE
 	anchored = TRUE
 	var/burning = FALSE
-	TIMESTAMP_VAR(next_fuel_consumption)
+	EXPIRY_DECLARE(next_fuel_consumption)
 	var/set_temperature = T0C + 20	//K
 	var/heating_power = 40000
 	resistance_flags = FIRE_PROOF

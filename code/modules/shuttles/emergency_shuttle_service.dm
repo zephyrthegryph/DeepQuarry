@@ -18,7 +18,7 @@ GLOBAL_DATUM_INIT(emergency_shuttle_service, /datum/world_service/emergency_shut
 	var/datum/shuttle/autodock/ferry/emergency/shuttle // Set in shuttle_emergency.dm TODO - is it really?
 	var/list/escape_pods = list()
 
-	TIMESTAMP_VAR(launch_time) //the time at which the shuttle will be launched
+	EXPIRY_DECLARE(launch_time) //the time at which the shuttle will be launched
 	var/auto_recall = FALSE		//if set, the shuttle will be auto-recalled
 	var/evac = FALSE			//1 = emergency evacuation, 0 = crew transfer
 	var/wait_for_launch = FALSE	//if the shuttle is waiting to launch

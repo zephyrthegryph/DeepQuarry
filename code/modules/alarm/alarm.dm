@@ -5,8 +5,8 @@
 	var/source_name = ""	// The name of the source should it be lost (for example a destroyed camera)
 	var/duration	= 0		// How long this source will be alarming, 0 for indefinetely.
 	var/severity 	= 1		// How severe the alarm from this source is.
-	TIMESTAMP_VAR(start_time) // When this source began alarming.
-	TIMESTAMP_VAR(end_time)		// Use to set when this trigger should clear, in case the source is lost.
+	EXPIRY_DECLARE(start_time) // When this source began alarming.
+	EXPIRY_DECLARE(end_time)		// Use to set when this trigger should clear, in case the source is lost.
 
 /datum/alarm_source/New(atom/source)
 	src.source = source
@@ -21,7 +21,7 @@
 	var/tmp/last_area_handle	//The last acquired area, used should origin be lost (for example a destroyed borg containing an alarming camera).
 	var/last_name	//The last acquired name, used should origin be lost
 	var/tmp/last_camera_area_handle	//The last area in which cameras where fetched, used to see if the camera list should be updated.
-	TIMESTAMP_VAR(end_time)//Used to set when this alarm should clear, in case the origin is lost.
+	EXPIRY_DECLARE(end_time)//Used to set when this alarm should clear, in case the origin is lost.
 	var/hidden = FALSE				//If this alarm can be seen from consoles or other things.
 
 /datum/alarm/New(atom/origin, atom/source, duration, severity, hidden)

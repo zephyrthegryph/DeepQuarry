@@ -9,7 +9,7 @@
 	light_color = "#0099ff"
 
 	var/temp_access = list() //to prevent agent cards stealing access as permanent
-	TIMESTAMP_VAR(expiration_time)
+	EXPIRY_DECLARE(expiration_time)
 	var/expired = 0
 	var/reason = "NOT SPECIFIED"
 	special_handling = TRUE

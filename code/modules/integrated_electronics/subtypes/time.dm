@@ -41,7 +41,7 @@
 	spawn_flags = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 	power_draw_per_use = 1
 	var/delay = 2 SECONDS
-	TIMESTAMP_VAR(next_fire)
+	EXPIRY_DECLARE(next_fire)
 	var/is_running = FALSE
 	// Power consumption scales based on how fast it ticks.
 	// This, plus the fact it ticks more often will increase consumption non-linearly,

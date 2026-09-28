@@ -12,7 +12,7 @@ GLOBAL_DATUM_INIT(mob_service, /datum/world_service/mobs, new)
 	lane = /datum/om/behaviour/world/mobs
 
 	var/list/death_list = list()
-	TIMESTAMP_VAR(profile_next_dump)
+	EXPIRY_DECLARE(profile_next_dump)
 	/// Pipeline counters at the last summary (parks, unparks, missed wakes), for the deltas.
 	var/list/last_counts = list(0, 0, 0)
 

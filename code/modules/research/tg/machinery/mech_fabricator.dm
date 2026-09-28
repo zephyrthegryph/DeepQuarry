@@ -22,7 +22,7 @@
 	var/process_queue = FALSE
 
 	/// World time when the build will finish.
-	TIMESTAMP_VAR(build_finish)
+	EXPIRY_DECLARE(build_finish)
 
 	/// World time when the build started.
 	var/build_start = 0

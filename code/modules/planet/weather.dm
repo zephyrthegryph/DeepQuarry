@@ -7,8 +7,8 @@
 	var/wind_speed = 0 // How fast or slow a mob can be due to wind acting on them.
 	var/list/allowed_weather_types // Assoc list of weather identifiers, containing the actual weather datum.
 	var/list/roundstart_weather_chances // Assoc list of weather identifiers and their odds of being picked to happen at roundstart.
-	TIMESTAMP_VAR(next_weather_shift) // world.time when the weather subsystem will advance the forecast.
-	TIMESTAMP_VAR(imminent_weather_shift) // world.time when weather will shift towards pre-set imminent weather type.
+	EXPIRY_DECLARE(next_weather_shift) // world.time when the weather subsystem will advance the forecast.
+	EXPIRY_DECLARE(imminent_weather_shift) // world.time when weather will shift towards pre-set imminent weather type.
 	// ALLOW(instance_list): d: build_forecast() always keeps it filled
 	var/list/forecast = list() // A list of what the weather will be in the future. This allows it to be pre-determined and planned around.
 

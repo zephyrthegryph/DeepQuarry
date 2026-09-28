@@ -12,7 +12,7 @@
 	var/active = FALSE // Code appendix.
 	var/tmp/target_handle	// this will be where the output objects are 'thrown' to.
 	var/mode = 0
-	TIMESTAMP_VAR(start_eject)
+	EXPIRY_DECLARE(start_eject)
 	var/eject_range = 3 //Did you know, in TGcode, it's a default of 2 tiles?
 
 /obj/structure/disposaloutlet/Initialize(mapload)

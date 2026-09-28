@@ -17,7 +17,7 @@
 
 	var/tmp/moving_upwards
 	var/tmp/busy_state									// Used for controller processing.
-	TIMESTAMP_TMP_VAR(next_process) // world.time process() should next do something
+	EXPIRY_TMP_DECLARE(next_process) // world.time process() should next do something
 
 /datum/turbolift/proc/emergency_stop()
 	cancel_pending_floors()
