@@ -340,7 +340,16 @@ function runDreamDaemonWithWatchdog(
       }
     }
 
-    child.on('exit', () => finish(false, 'exited', false));
+    child.on('exit', (code, signal) => {
+      if (!settled && !graceTimer) {
+        // Exited before the tests finished: record how, so a crash (e.g. an
+        // NTSTATUS such as 0xC0000005 / 0xC0000409) is distinguishable from
+        // a clean world shutdown.
+        const hex = code === null ? 'null' : `0x${(code >>> 0).toString(16).toUpperCase()}`;
+        Juke.logger.warn(`DreamDaemon exited before the run completed: code=${code} (${hex}) signal=${signal}`);
+      }
+      finish(false, 'exited', false);
+    });
     child.on('error', () => finish(false, 'spawn error', false));
   });
 }

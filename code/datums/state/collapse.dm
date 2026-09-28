@@ -211,7 +211,16 @@ GLOBAL_LIST_INIT(state_refscan_flat, list("vis_contents"))
 		else if(islist(key))
 			. += state_count_refs_in(key, node, depth + 1)
 		if(!flat && !isnum(key) && !islist(key))
-			var/assoc = L[key]
+			var/assoc
+			// Some built-in lists held in ordinary vars (appearance/overlay lists of an
+			// /image or a copied overlays list) have no associated values, and L[key]
+			// on them is a "bad index" runtime. Read those as flat; the sweep caught the
+			// runtime per atom but backed the atom off and logged it every pass.
+			try
+				assoc = L[key]
+			catch // ALLOW(silent_catch): a list with no associated values is expected here; it is read as flat
+				flat = TRUE
+				continue
 			if(!isnull(assoc))
 				. += state_count_refs_in(assoc, node, depth + 1)
 
