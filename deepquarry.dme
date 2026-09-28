@@ -173,6 +173,7 @@
 #include "code\__defines\objects.dm"
 #include "code\__defines\observer.dm"
 #include "code\__defines\om.dm"
+#include "code\__defines\om_event_flags.dm"
 #include "code\__defines\ores.dm"
 #include "code\__defines\organ_external.dm"
 #include "code\__defines\organ_internal.dm"

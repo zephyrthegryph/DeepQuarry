@@ -3,7 +3,6 @@
 
 // Spontaneous vore stuff.
 		///Something has special handling. Don't continue.
-	#define CANCEL_STUMBLED_INTO	(1<<0)
 		//Special handling. Cancel the fall chain.
 	#define COMSIG_CANCEL_FALL	(1<<0)
 		//Special handling. Cancel the hitby proc.

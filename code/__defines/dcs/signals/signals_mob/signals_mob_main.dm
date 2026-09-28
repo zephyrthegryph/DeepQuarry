@@ -1,5 +1,4 @@
 ///Called on /basic when updating its speed, from base of /mob/living/basic/update_basic_mob_varspeed(): ()
-#define POST_BASIC_MOB_UPDATE_VARSPEED "post_basic_mob_update_varspeed"
 ///from base of /mob/Login(): ()
 #define COMSIG_MOB_LOGIN "mob_login"
 ///from base of /mob/Logout(): ()
@@ -64,7 +63,5 @@
 
 ///from /mob/living/carbon/human/GetVoice(): (list/voice_data) - voice_data[1] contains the voice name
 #define COMSIG_HUMAN_GET_VOICE "human_get_voice"
-	#define COMPONENT_VOICE_CHANGED (1<<0)
 ///from /mob/living/carbon/human/GetAltName(): (list/name_data) - name_data[1] contains the alt name
 #define COMSIG_HUMAN_GET_ALT_NAME "human_get_alt_name"
-	#define COMPONENT_ALT_NAME_CHANGED (1<<0)

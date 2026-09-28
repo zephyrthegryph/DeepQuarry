@@ -13,7 +13,6 @@
 /// From /obj/item/shockpaddles/do_help, after the defib do_after is complete, but before any effects are applied: (mob/living/defibber, obj/item/shockpaddles/source)
 #define COMSIG_DEFIBRILLATOR_PRE_HELP_ZAP "carbon_being_defibbed"
 	/// Return to stop default defib handling
-	#define COMPONENT_DEFIB_STOP (1<<0)
 
 /// From /obj/item/shockpaddles/proc/do_success(): (obj/item/shockpaddles/source)
 #define COMSIG_DEFIBRILLATOR_SUCCESS "defib_success"
@@ -24,8 +23,6 @@
 
 /// From /datum/surgery/can_start(): (mob/source, datum/surgery/surgery, mob/living/patient)
 #define COMSIG_SURGERY_STARTING "surgery_starting"
-	#define COMPONENT_CANCEL_SURGERY (1<<0)
-	#define COMPONENT_FORCE_SURGERY (1<<1)
 
 /// From /datum/body/add_affliction() and remove_affliction(): (datum/affliction/affliction, added)
 #define COMSIG_BODY_AFFLICTIONS_CHANGED "body_afflictions_changed"
@@ -37,7 +34,6 @@
 #define COMSIG_AFFLICTION_SEVERITY_CHANGED "affliction_severity_changed"
 /// From base of /mob/living/proc/injure(), before mitigation: (kind, list/amount_ref, zone, atom/source, flags). amount_ref[1] may be modified.
 #define COMSIG_LIVING_INJURE "living_injure"
-	#define COMPONENT_CANCEL_INJURY (1<<0)
 /// From /mob/living/proc/injure(), mitigation stage 2 (energy shields), after armour: (kind, list/amount_ref, zone, atom/source, flags). Shields scale amount_ref[1].
 #define COMSIG_LIVING_SHIELD_INJURY "living_shield_injury"
 /// From /mob/living/proc/injure() once mitigation is done, when something listens or the injury trace is on:

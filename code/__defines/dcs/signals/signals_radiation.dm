@@ -5,12 +5,10 @@
 /// (datum/radiation_pulse_information/pulse_information, insulation_to_target)
 #define COMSIG_IN_RANGE_OF_IRRADIATION "in_range_of_irradiation"
 
-	#define CANCEL_IRRADIATION (1 << 0)
 
 	/// If this is flipped, then minimum exposure time will not be checked.
 	/// If it is not flipped, and the pulse information has a minimum exposure time, then
 	/// the countdown will begin.
-	#define SKIP_MINIMUM_EXPOSURE_TIME_CHECK (1 << 1)
 
 /// Fired when scanning something with a geiger counter.
 /// (mob/user, obj/item/geiger_counter/geiger_counter)

@@ -6,13 +6,10 @@
 #define COMSIG_MOVABLE_ATTEMPTED_MOVE "movable_attempted_move"
 ///from base of atom/movable/Moved(): (/atom)
 #define COMSIG_MOVABLE_PRE_MOVE "movable_pre_move"
-	#define COMPONENT_MOVABLE_BLOCK_PRE_MOVE (1<<0)
 ///from base of atom/movable/Moved(): (atom/old_loc, dir, forced, list/old_locs)
 #define COMSIG_MOVABLE_MOVED "movable_moved"
-	#define COMPONENT_BLOCK_CROSS (1<<0)
 ///from base of atom/movable/Bump(): (/atom)
 #define COMSIG_MOVABLE_BUMP "movable_bump"
-	#define COMPONENT_INTERCEPT_BUMPED (1<<0)
 ///from base of atom/movable/throw_impact() after confirming a hit: (/atom/hit_atom, /datum/thrownthing/throwingdatum)
 #define COMSIG_MOVABLE_IMPACT "movable_impact"
 ///from base of atom/movable/on_changed_z_level(): (turf/old_turf, turf/new_turf, same_z_layer)
@@ -24,9 +21,6 @@
 
 	// Used to access COMSIG_MOVABLE_SAY_QUOTE argslist
 	/// The index of args that corresponds to the actual message
-	#define MOVABLE_SAY_QUOTE_MESSAGE 1
-	#define MOVABLE_SAY_QUOTE_MESSAGE_SPANS 2
-	#define MOVABLE_SAY_QUOTE_MESSAGE_MODS 3
 
 
 

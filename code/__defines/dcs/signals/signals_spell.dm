@@ -4,11 +4,8 @@
 
 
 	/// Return to prevent the spell cast from continuing.
-	#define SPELL_CANCEL_CAST (1 << 0)
 	/// Return from before cast signals to prevent the spell from giving off sound or invocation.
-	#define SPELL_NO_FEEDBACK (1 << 1)
 	/// Return from before cast signals to prevent the spell from going on cooldown before aftercast.
-	#define SPELL_NO_IMMEDIATE_COOLDOWN (1 << 2)
 
 
 // Sent from /datum/action/cooldown/spell/after_cast() to the caster: (datum/action/cooldown/spell/spell, atom/cast_on)

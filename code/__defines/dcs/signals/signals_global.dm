@@ -15,7 +15,6 @@
 #define COMSIG_GLOB_MOB_DEATH "!mob_death"
 /// called by datum/cinematic/play() : (datum/cinematic/new_cinematic)
 #define COMSIG_GLOB_PLAY_CINEMATIC "!play_cinematic"
-	#define COMPONENT_GLOB_BLOCK_CINEMATIC (1<<0)
 
 
 // NON TG SPECIFIC SIGNALS:

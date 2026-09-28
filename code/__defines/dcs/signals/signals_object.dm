@@ -71,7 +71,6 @@
 
 // /obj/item signals for economy
 	/// Stops the export from adding the export information to the report, so you can handle it manually.
-	#define COMPONENT_STOP_EXPORT_REPORT (1<<0)
 
 
 // /obj/item/clothing signals
@@ -81,8 +80,6 @@
 
 // /obj/item/implant signals
 	//#define COMPONENT_STOP_IMPLANTING (1<<0) //The name makes sense for both
-	#define COMPONENT_DELETE_NEW_IMPLANT (1<<1)
-	#define COMPONENT_DELETE_OLD_IMPLANT (1<<2)
 
 
 	//This uses all return values of COMSIG_IMPLANT_OTHER

@@ -2,7 +2,6 @@
 //Food
 
 // Eating stuff
-	#define DESTROY_FOOD (1<<0)
 
 
 // Deep frying foods

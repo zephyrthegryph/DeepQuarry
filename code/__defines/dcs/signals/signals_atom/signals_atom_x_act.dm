@@ -4,7 +4,6 @@
 
 ///from the [EX_ACT] wrapper macro: (severity, target)
 #define COMSIG_ATOM_EX_ACT "atom_ex_act"
-	#define COMPONENT_IGNORE_EXPLOSION (1<<0)
 ///from base of atom/emp_act(severity): (severity). return EMP protection flags
 #define COMSIG_ATOM_PRE_EMP_ACT "atom_pre_emp_act"
 ///from base of atom/emp_act(severity): (severity, protection)
