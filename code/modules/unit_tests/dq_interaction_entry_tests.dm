@@ -241,7 +241,7 @@
 	var/list/actors = list(
 		"human" = allocate(/mob/living/carbon/human, T),
 		"robot" = allocate(/mob/living/silicon/robot, T),
-		"ai" = allocate(/mob/living/silicon/ai, T),
+		"ai" = allocate(/mob/living/silicon/ai, T, null, null, null, TRUE),
 		"ghost" = allocate(/mob/observer/dead, T),
 	)
 	var/list/actual = list()

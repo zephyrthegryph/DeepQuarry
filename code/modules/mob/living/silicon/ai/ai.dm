@@ -248,9 +248,13 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 REF_OWNED(/mob/living/silicon/ai, list("announcement", "psupply", "aiPDA", "aiCommunicator", "aiMulti", "aiRadio"))
 
 // ALLOW(lifecycle): the AI's eye goes with it.
+/// The eye goes before phase 6 tears down the active_eye relation that finds
+/// it: by Destroy() active_eye() is null and the eye was left on the turf.
+/mob/living/silicon/ai/lifecycle_unbind()
+	..()
+	destroy_eyeobj()
+
 /mob/living/silicon/ai/Destroy()
-	var/mob/observer/eye/eyeobj = src?.active_eye()
-	QDEL_NULL(eyeobj)
 	destroy_eyeobj()
 	return ..()
 

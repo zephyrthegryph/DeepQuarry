@@ -74,7 +74,7 @@ GLOBAL_LIST_EMPTY(dq_interact_cleanup_calls)
 
 /datum/unit_test/dq_cleanup_medical_ai_parity/Run()
 	var/turf/T = test_floor()
-	var/mob/living/silicon/ai/AI = allocate(/mob/living/silicon/ai, T)
+	var/mob/living/silicon/ai/AI = allocate(/mob/living/silicon/ai, T, null, null, null, TRUE)
 	AI.forceMove(T)
 	var/list/types = list(
 		/obj/machinery/sleep_console/dq_cleanup_probe,

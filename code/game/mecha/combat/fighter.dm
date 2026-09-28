@@ -218,7 +218,7 @@
 	consider_gravity(TRUE)
 
 /obj/mecha/combat/fighter/proc/start_hover()
-	if(!ion_trail.on) //We'll just use this to store if we're floating or not
+	if(ion_trail && !ion_trail.on) //We'll just use this to store if we're floating or not
 		ion_trail.start()
 		var/amplitude = 2 //maximum displacement from original position
 		var/period = 36 //time taken for the mob to go up >> down >> original position, in deciseconds. Should be multiple of 4
@@ -233,7 +233,7 @@
 		animate(pixel_y = old_y, time = quarter_period, easing = SINE_EASING | EASE_IN, loop = -1)			//back
 
 /obj/mecha/combat/fighter/proc/stop_hover()
-	if(ion_trail.on)
+	if(ion_trail?.on) // ion_trail is an owned child, already gone when Destroy() runs go_out()
 		ion_trail.stop()
 		animate(src, pixel_y = old_y, time = 5, easing = SINE_EASING | EASE_IN) //halt animation
 

@@ -263,7 +263,7 @@
 
 	var/mob/observer/dead/ghost = allocate(/mob/observer/dead, T)
 	TEST_ASSERT_EQUAL(dq_resolution_text(interactions_for(ghost, probe, null)), "|", "ghosts are offered nothing")
-	var/mob/living/silicon/ai/AI = allocate(/mob/living/silicon/ai, T)
+	var/mob/living/silicon/ai/AI = allocate(/mob/living/silicon/ai, T, null, null, null, TRUE)
 	AI.forceMove(T) // in sight of the probe (I3: the AI needs camera sight)
 	TEST_ASSERT_EQUAL(dq_resolution_text(interactions_for(AI, probe, null)), "dq_test_ghostly|", "the AI is offered only remote interactions")
 
@@ -368,7 +368,7 @@
 		"human" = allocate(/mob/living/carbon/human, T),
 		"robot" = allocate(/mob/living/silicon/robot, T),
 		"ghost" = allocate(/mob/observer/dead, T),
-		"ai" = allocate(/mob/living/silicon/ai, T),
+		"ai" = allocate(/mob/living/silicon/ai, T, null, null, null, TRUE),
 	)
 	var/list/held_items = list(
 		"none" = null,

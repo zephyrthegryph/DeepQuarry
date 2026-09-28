@@ -1352,6 +1352,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, \
 	. = ..()
 
 REF_SPILL_LIST(/obj/item/clothing, "contents")
+// Attached accessories are part of the garment: deleted with it, not spilled
+// (dq_lifecycle_spill_declared skips owned children held in contents).
+REF_OWNED_LIST(/obj/item/clothing, "accessories")
 
 // ALLOW(lifecycle): its integrated circuit goes with it.
 /obj/item/clothing/Destroy()
