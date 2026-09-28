@@ -227,8 +227,15 @@
 	var/neighbor_range = 1
 	/// Whether neighbour structures also re-run update_connections().
 	var/neighbor_reconnect = TRUE
+	/// Debris as list(type = count, ...), spawned with debris_type (declarative_lifecycle.md).
+	var/list/debris
+	/// Move whatever is still in the atom's contents to its drop location (was a hand
+	/// `for(var/atom/movable/A in contents) A.forceMove(loc)` in on_destroy()). Runs for every
+	/// atom, even when a batch merges the rest of the effects per turf. Slot policies (phase 3)
+	/// have already resolved slotted contents; this catches the rest.
+	var/drop_contents = FALSE
 
-/datum/destroy_effects_data/New(message, message_class, sound, sound_volume, debris_type, neighbor_type, neighbor_range, neighbor_reconnect)
+/datum/destroy_effects_data/New(message, message_class, sound, sound_volume, debris_type, neighbor_type, neighbor_range, neighbor_reconnect, list/debris, drop_contents)
 	if(!isnull(message))
 		src.message = message
 	if(!isnull(message_class))
@@ -245,6 +252,22 @@
 		src.neighbor_range = neighbor_range
 	if(!isnull(neighbor_reconnect))
 		src.neighbor_reconnect = neighbor_reconnect
+	if(!isnull(debris))
+		src.debris = debris
+	if(!isnull(drop_contents))
+		src.drop_contents = drop_contents
+
+/// Phase 6, per atom (before apply() and any batch merge): drop_contents.
+/datum/destroy_effects_data/proc/apply_per_atom(datum/D)
+	if(!drop_contents || !ismovable(D))
+		return
+	var/atom/movable/holder = D
+	var/atom/drop = holder.drop_location()
+	if(!drop || QDELETED(drop))
+		return
+	for(var/atom/movable/thing as anything in contents_of(holder).Copy())
+		if(!QDELETED(thing))
+			thing.forceMove(drop)
 
 /// Phase 6, while the atom is still on its turf. Returns the turf, which
 /// apply_after() gets once Destroy() has taken the atom off it.
@@ -261,6 +284,9 @@
 		playsound(T, sound, sound_volume, TRUE)
 	if(debris_type)
 		new debris_type(T)
+	for(var/path in debris)
+		for(var/i in 1 to max(1, debris[path]))
+			new path(T)
 	if(update_neighbors)
 		for(var/atom/movable/AM in contents_of(T))
 			AM.update_icon()

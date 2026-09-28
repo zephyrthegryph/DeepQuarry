@@ -1206,9 +1206,7 @@ EXTEND_INTERACTIONS(/obj/item/melee/fluffstuff, INTERACT_USE("Toggle", PROC_REF(
 	name = "flask of expensive alcohol"
 	desc = "A standard vacuum-flask filled with good and expensive drink."
 
-/obj/item/reagent_containers/food/drinks/flask/vacuumflask/fluff/viktor/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_PWINE, 60)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/flask/vacuumflask/fluff/viktor, null, list(REAGENT_ID_PWINE = 60))
 
 //RadiantAurora: Tiemli Kroto
 /obj/item/clothing/glasses/welding/tiemgogs
@@ -1315,10 +1313,7 @@ EXTEND_INTERACTIONS(/obj/item/rig/nikki, INTERACT_ITEM(null, PROC_REF(nikki_rig_
 	filling_states = list(15, 30, 50, 60, 80, 100)
 	volume = 60
 
-/obj/item/reagent_containers/food/drinks/glass2/fluff/claraflask/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_TEA, 40)
-	reagents.add_reagent(REAGENT_ID_MILK, 20)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/glass2/fluff/claraflask, null, list(REAGENT_ID_TEA = 40, REAGENT_ID_MILK = 20))
 
 /obj/item/reagent_containers/food/drinks/glass2/fluff/claraflask/update_icon()
 	..()
