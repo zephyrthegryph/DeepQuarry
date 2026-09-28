@@ -135,7 +135,9 @@ GLOBAL_LIST_EMPTY(dq_actor_calls)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, T)
 	var/mob/observer/dead/ghost = allocate(/mob/observer/dead, T)
-	var/mob/living/silicon/ai/AI = allocate(/mob/living/silicon/ai, T)
+	// safety = TRUE: without a brain an AI's Initialize() spawns an empty core and qdels itself
+	// (INITIALIZE_HINT_QDEL), so a click would be routed for an already-deleted mob.
+	var/mob/living/silicon/ai/AI = allocate(/mob/living/silicon/ai, T, null, null, null, TRUE)
 	AI.forceMove(T) // a new AI starts in nullspace, where it sees nothing
 
 	TEST_ASSERT_EQUAL(dq_actor_click(H, probe), "dq_actor_handless", "a human's empty-handed Use runs the tool-less interaction")
