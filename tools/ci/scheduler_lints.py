@@ -22,7 +22,10 @@ outside the allowlist in sec 4.11 ("What stays").
 LC-refs: a var whose declared type is an object reference (tmp
 included; static/global/const are not instance state) must be named by its
 type's declared_owned_vars(), declared_owned_list_vars(), declared_pair_vars(),
-declared_backlist_vars() or declared_cache_vars() in the same file. Relations
+declared_backlist_vars(), declared_cache_vars(), declared_def_vars() (REF_DEF)
+or declared_transient_vars() (REF_TRANSIENT, pooled types only) in the same file,
+or declared with REF_VAR. A var whose type is in DEF_TYPES (state_schema_lint.py)
+is an implicit REF_DEF. Relations
 and slots have no view field, and an OM handle is a text var, so neither is
 an object-typed var at all. Vars of task types (/datum/om/task/...) are task
 state, held by the task_holds relation, and don't count. Medical, body, organs, surgery and Life are
@@ -70,19 +73,8 @@ KEEP_MARK = "// S10 keeps:"
 
 UNSAVED_MODS = {"static", "global", "const"}
 ALL_MODS = {"tmp", "static", "global", "const", "final"}
-DECLARED_PROCS = (
-    "declared_owned_vars",
-    "declared_owned_list_vars",
-    "declared_owned_value_vars",
-    "declared_spill_vars",
-    "declared_spill_list_vars",
-    "declared_held_vars",
-    "declared_pair_vars",
-    "declared_backlist_vars",
-    "declared_cache_vars",
-)
-# REF_OWNED(/type, NAMES) and friends (code/__defines/lifecycle.dm): one-line declarations.
-REF_MACRO = re.compile(r"^REF_(?:OWNED_LIST|OWNED_VALUES|OWNED|SPILL_LIST|SPILL|HELD|PAIR|BACKLIST)\(\s*(/[\w/]+)\s*,(.*)\)\s*$")
+# The REF_* kinds, REF_VAR forms, pooled types and implicit REF_DEF types (ref_kinds.py).
+from ref_kinds import DECLARED_PROCS, REF_MACRO, is_def_type, is_pooled, ref_var_decl  # noqa: E402
 TYPE_HEADER = re.compile(r"^(/[A-Za-z_][\w/]*)\s*$")
 PROC_HEADER = re.compile(r"^(/[\w/]*?)/(proc/)?(" + "|".join(DECLARED_PROCS) + r")\s*\(")
 VAR_LINE = re.compile(r"^var((?:/[A-Za-z_]\w*)+)\s*(?:=|$)")
@@ -108,6 +100,7 @@ def split_var(segs):
 def lc_ref_sites(rel, raw_text, code_text):
     # Declared names come from string literals, so read them from the raw text.
     declared = {}
+    sites = []
     owner, body = None, []
     for raw in raw_text.split("\n"):
         if not raw.strip():
@@ -120,7 +113,14 @@ def lc_ref_sites(rel, raw_text, code_text):
                 owner, body = None, []
             m = REF_MACRO.match(stripped.rstrip())
             if m:
-                declared.setdefault(m.group(1), set()).update(STRING_LIT.findall(m.group(2)))
+                # REF_TRANSIENT counts only on pooled types (POOL_DECLARE).
+                if m.group(1) != "TRANSIENT" or is_pooled(m.group(2)):
+                    declared.setdefault(m.group(2), set()).update(STRING_LIT.findall(m.group(3)))
+                continue
+            decl = ref_var_decl(stripped.rstrip())
+            if decl:
+                if decl[1] == "TRANSIENT" and not is_pooled(decl[0]) and under(decl[2], REF_ROOTS):
+                    sites.append((rel, 0, "%s REF_VAR TRANSIENT %s on a type that isn't pooled" % (decl[0], decl[3])))
                 continue
             m = PROC_HEADER.match(stripped.rstrip())
             if m:
@@ -131,7 +131,6 @@ def lc_ref_sites(rel, raw_text, code_text):
         for line in body:
             declared.setdefault(owner, set()).update(STRING_LIT.findall(line))
 
-    sites = []
     cur_type = None
     for no, raw in enumerate(code_text.split("\n"), 1):
         if not raw.strip():
@@ -159,6 +158,9 @@ def lc_ref_sites(rel, raw_text, code_text):
         if mods & UNSAVED_MODS or not under(vtype, REF_ROOTS):
             continue
         if name in declared.get(owner_type, ()):
+            continue
+        # A frozen definition or registry object (DEF_TYPES): an implicit REF_DEF.
+        if is_def_type(vtype):
             continue
         # A task's vars are its state: every datum in them is held by the task_holds
         # relation, which clears the var and cancels the task when the datum is deleted.

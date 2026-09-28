@@ -6,5 +6,4 @@
 # they migrate. The lint fails on an entry that no longer matches anything.
 
 # Not membership.
-damage_packet_pool # object pool of reusable packets, not a set of live instances
 clients # /client is not a datum: no qdel, no registry hooks

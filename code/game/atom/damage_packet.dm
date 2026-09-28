@@ -7,14 +7,14 @@
 // kind to injure() through the agreed mapping, and injure() runs the one
 // mob mitigation pipeline (armour, shields, resistances, species).
 //
-// Packets are pooled: acquire one with damage_packet(), never new() one, and
-// release() it as soon as receive_damage() returns. Nothing may keep a
-// reference to a packet past its release.
-
-GLOBAL_LIST_EMPTY(damage_packet_pool)
+// Packets are pooled (code/datums/lifecycle/pool.dm): acquire one with
+// damage_packet(), never new() one, and release() it as soon as
+// receive_damage() returns. Nothing may keep a reference to a packet past its
+// release; release() resets every REF_TRANSIENT field below from the declaration.
 
 /datum/damage_packet
-	/// Amount per kind, indexed by DAMAGE_* (flat list of DAMAGE_KIND_COUNT numbers).
+	/// Amount per kind, indexed by DAMAGE_* (flat list of DAMAGE_KIND_COUNT
+	/// numbers). Zeroed when the packet is taken.
 	var/list/amounts
 	/// Armour penetration in armour points (injure()'s armor_pen).
 	var/penetration = 0
@@ -34,30 +34,21 @@ GLOBAL_LIST_EMPTY(damage_packet_pool)
 	/// matters (fire burns an object down, acid melts it). Null derives it per
 	/// kind from injury_armor_key(). Mobs ignore it: injure() looks armour up by kind.
 	var/armor_flag
-	/// TRUE while checked out of the pool.
-	var/in_use = FALSE
+
+POOL_DECLARE(/datum/damage_packet)
+REF_TRANSIENT(/datum/damage_packet, list("source", "attacker", "weapon", "zone", "penetration", "direction", "flags", "armor_flag"))
 
 /datum/damage_packet/New()
 	amounts = new /list(DAMAGE_KIND_COUNT)
 	for(var/i in 1 to DAMAGE_KIND_COUNT)
 		amounts[i] = 0
 
-// LIFECYCLE: packets are pooled; refuse deletion unless forced.
-/datum/damage_packet/Destroy(force)
-	if(!force)
-		return QDEL_HINT_LETMELIVE
-	return ..()
-
 /// Take a clean packet from the pool.
 /proc/damage_packet(atom/source, atom/attacker, atom/weapon, zone, flags = NONE, penetration = 0, direction = 0, armor_flag = null)
-	var/datum/damage_packet/packet
-	var/list/pool = GLOB.damage_packet_pool
-	if(length(pool))
-		packet = pool[length(pool)]
-		pool.len--
-	else
-		packet = new
-	packet.in_use = TRUE
+	var/datum/damage_packet/packet = pool_take(/datum/damage_packet)
+	var/list/amounts = packet.amounts
+	for(var/i in 1 to DAMAGE_KIND_COUNT)
+		amounts[i] = 0
 	packet.source = source
 	packet.attacker = attacker
 	packet.weapon = weapon
@@ -68,33 +59,20 @@ GLOBAL_LIST_EMPTY(damage_packet_pool)
 	packet.armor_flag = armor_flag
 	return packet
 
-/// Clear the packet and return it to the pool.
-/datum/damage_packet/proc/release()
-	if(!in_use)
-		CRASH("Released a damage packet twice.")
-	in_use = FALSE
-	for(var/i in 1 to DAMAGE_KIND_COUNT)
-		amounts[i] = 0
-	penetration = 0
-	zone = null
-	direction = 0
-	source = null
-	attacker = null
-	weapon = null
-	flags = NONE
-	armor_flag = null
-	GLOB.damage_packet_pool += src
-
 /datum/damage_packet/proc/add(kind, amount)
+	POOL_ASSERT_LIVE(src)
 	if(amount > 0 && kind >= 1 && kind <= DAMAGE_KIND_COUNT)
 		amounts[kind] += amount
 
+/// The sum of every kind's amount.
 /datum/damage_packet/proc/total()
+	POOL_ASSERT_LIVE(src)
 	. = 0
 	for(var/i in 1 to DAMAGE_KIND_COUNT)
 		. += amounts[i]
 
 /datum/damage_packet/proc/scale(multiplier)
+	POOL_ASSERT_LIVE(src)
 	for(var/i in 1 to DAMAGE_KIND_COUNT)
 		amounts[i] *= multiplier
 

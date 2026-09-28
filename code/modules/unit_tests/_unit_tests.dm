@@ -203,6 +203,7 @@
 #include "dq_damage_packet_tests.dm"
 #include "dq_explosion_batch_tests.dm"
 #include "dq_integrity_pool_tests.dm"
+#include "dq_pool_tests.dm"
 #include "dq_robot_machine_tests.dm"
 #include "dq_life_om_tests.dm"
 #include "dq_medical_damage_model_tests.dm"

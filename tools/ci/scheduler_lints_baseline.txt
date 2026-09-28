@@ -12,3 +12,5 @@ set_waitfor 0
 weakref 0
 del 0
 lc_refs 1706
+del 13
+lc_refs 1657

@@ -28,6 +28,8 @@
 	/// Personal account credited for the current print run's production bonus.
 	var/current_producer_account = 0
 
+REF_DEF(/obj/machinery/rnd/production, list("cached_designs"))
+
 /obj/machinery/rnd/production/Initialize(mapload)
 	print_sound = new(list(src), FALSE)
 	materials = AddComponent(

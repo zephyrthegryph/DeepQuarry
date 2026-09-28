@@ -608,3 +608,4 @@
 /datum/world_service/plants/plant_sprites # d: world service singleton (one instance in GLOB, was a subsystem)
 /datum/world_service/plants/product_descs # d: world service singleton (one instance in GLOB, was a subsystem)
 /datum/world_service/plants/seeds # d: world service singleton (one instance in GLOB, was a subsystem)
+/datum/object_pool/free # one pool per pooled type (a handful per round), always used as the free list

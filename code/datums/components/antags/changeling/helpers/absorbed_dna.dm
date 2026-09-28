@@ -1,11 +1,12 @@
 /datum/absorbed_dna
 	var/name
-	var/datum/dna/dna
 	var/speciesName
 	var/list/languages
 	var/identifying_gender
 	var/list/flavour_texts
 	var/list/genMods
+
+REF_VAR(/datum/absorbed_dna, OWNED, /datum/dna, dna)
 
 /datum/absorbed_dna/New(newName, newDNA, newSpecies, newLanguages, newIdentifying_Gender, list/newFlavour, list/newGenMods)
 	..()
@@ -17,4 +18,3 @@
 	flavour_texts = newFlavour ? newFlavour.Copy() : null
 	genMods = newGenMods ? newGenMods.Copy() : null
 
-REF_OWNED(/datum/absorbed_dna, "dna")

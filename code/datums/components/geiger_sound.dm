@@ -1,15 +1,14 @@
 /// Atoms with this component will play sounds depending on nearby radiation
 /datum/component/geiger_sound
-	var/datum/looping_sound/geiger/sound
-
 	var/last_parent = null
 	var/wall_mounted = FALSE
+
+/// The geiger loop, owned: deleted with the component.
+REF_VAR(/datum/component/geiger_sound, OWNED, /datum/looping_sound/geiger, sound)
 
 /datum/component/geiger_sound/Initialize(...)
 	if (!isatom(parent))
 		return COMPONENT_INCOMPATIBLE
-
-REF_OWNED(/datum/component/geiger_sound, "sound")
 
 /datum/component/geiger_sound/RegisterWithParent()
 	if(!wall_mounted)

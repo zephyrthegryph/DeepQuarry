@@ -21,9 +21,6 @@
 	/// Whether or not the machine is building the entire queue automagically.
 	var/process_queue = FALSE
 
-	/// The current design datum that the machine is building.
-	var/datum/design_techweb/being_built
-
 	/// World time when the build will finish.
 	var/build_finish = 0
 
@@ -59,6 +56,10 @@
 
 	/// Direction the produced items will drop (0 means on top of us)
 	var/drop_direction = SOUTH
+
+REF_DEF(/obj/machinery/mecha_part_fabricator_tg, list("queue", "cached_designs", "illegal_local_designs"))
+/// The current design datum that the machine is building.
+REF_VAR(/obj/machinery/mecha_part_fabricator_tg, DEF, /datum/design_techweb, being_built)
 
 /obj/machinery/mecha_part_fabricator_tg/Initialize(mapload)
 	print_sound = new(list(src), FALSE)

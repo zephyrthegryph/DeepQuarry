@@ -38,6 +38,13 @@ REF_ROOTS = ("/datum", "/atom", "/obj", "/mob", "/turf", "/area", "/image",
 # Types the serializer encodes by registry ID (code/datums/state/codecs.dm,
 # /datum/state_codec/registry). Keep in step with state_registry_id().
 REGISTRY_TYPES = ("/datum/material", "/datum/decl", "/decl", "/datum/species")
+# Frozen definition / registry types that are never deleted (REF_DEF,
+# doc/rewrite/lifecycle.md sec 4). A var whose declared type is under one of these
+# is an implicit REF_DEF: the declared-refs lints accept it with no declaration.
+# The one list; add a type only when no instance of it is ever qdel'd or made per
+# holder. /datum/species is left out on purpose: produceCopy() makes per-mob copies.
+DEF_TYPES = ("/datum/material", "/datum/decl", "/decl", "/datum/language",
+             "/datum/property_def")
 # Base types whose vars are reported by --report (the tmp hygiene pass).
 BASE_TYPES = ("/datum", "/atom", "/atom/movable", "/obj", "/obj/item",
               "/obj/machinery", "/mob")

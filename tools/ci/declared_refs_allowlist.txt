@@ -4,6 +4,7 @@
 # REF_OWNED_LIST/REF_PAIR/REF_BACKLIST (or make it tmp, or an OM handle) and
 # lower the count; `python tools/ci/declared_refs_lint.py --update` rewrites it.
 # Total: 1605 vars in 754 files.
+# Total: 1556 vars in 731 files.
 code/ATMOSPHERICS/atmospherics.dm 3
 code/ATMOSPHERICS/components/binary_devices/algae_generator.dm 1
 code/ATMOSPHERICS/components/binary_devices/binary_atmos_base.dm 4
@@ -89,7 +90,6 @@ code/datums/components/turfslip.dm 1
 code/datums/components/xenoqueen.dm 2
 code/datums/elements/topturfcrossed.dm 2
 code/datums/helper_datums/stack_end_detector.dm 1
-code/datums/hierarchy.dm 2
 code/datums/interactions/menu.dm 1
 code/datums/interactions/resolver.dm 3
 code/datums/looping_sounds/_looping_sound.dm 1
@@ -105,7 +105,7 @@ code/datums/om/registry.dm 6
 code/datums/om/scheduler.dm 2
 code/datums/om/watch.dm 4
 code/datums/progressbar.dm 4
-code/datums/properties/predicates.dm 6
+code/datums/properties/predicates.dm 2
 code/datums/proximity_monitor/proximity_monitor.dm 2
 code/datums/riding.dm 1
 code/datums/rules/rule.dm 5
@@ -113,8 +113,9 @@ code/datums/status_effects/_status_effect.dm 1
 code/datums/status_effects/debuffs/fire_stacks.dm 2
 code/datums/uplink/uplink_categories.dm 1
 code/datums/uplink/uplink_items.dm 4
+code/datums/tgs_event_handler.dm 1
+code/datums/uplink/uplink_items.dm 1
 code/datums/wires/wires.dm 1
-code/game/atom/damage_packet.dm 3
 code/game/atoms_movable.dm 2
 code/game/gamemodes/objective.dm 2
 code/game/gamemodes/technomancer/core_obj.dm 2
@@ -123,7 +124,6 @@ code/game/machinery/OpTable.dm 2
 code/game/machinery/autolathe.dm 1
 code/game/machinery/computer/Operating.dm 1
 code/game/machinery/computer/ai_core.dm 3
-code/game/machinery/doors/blast_door.dm 1
 code/game/machinery/doors/brigdoors.dm 1
 code/game/machinery/frame.dm 1
 code/game/machinery/hologram.dm 1
@@ -137,7 +137,6 @@ code/game/mecha/equipment/tools/syringe_gun.dm 4
 code/game/mecha/mecha.dm 22
 code/game/mecha/mecha_actions.dm 1
 code/game/objects/effects/anomalies/anomalies_dimensional.dm 1
-code/game/objects/effects/anomalies/anomalies_dimensional_themes.dm 1
 code/game/objects/effects/anomalies/anomalies_weather.dm 2
 code/game/objects/effects/anomalies/anomalies_weather_themes.dm 3
 code/game/objects/effects/effect_system.dm 1
@@ -146,25 +145,11 @@ code/game/objects/items/devices/paicard.dm 1
 code/game/objects/items/devices/spy_bug.dm 1
 code/game/objects/items/robot/robot_parts.dm 9
 code/game/objects/items/stacks/stack.dm 1
-code/game/objects/items/stacks/tiles/tile_types.dm 1
 code/game/objects/items/weapons/capture_crystal.dm 2
 code/game/objects/items/weapons/implants/implant.dm 1
-code/game/objects/items/weapons/material/material_armor.dm 1
-code/game/objects/items/weapons/material/material_weapons.dm 1
 code/game/objects/items/weapons/storage/storage.dm 2
-code/game/objects/structures/barricades.dm 1
-code/game/objects/structures/bonfire.dm 1
-code/game/objects/structures/crates_lockers/__closets.dm 1
 code/game/objects/structures/electricchair.dm 1
 code/game/objects/structures/gargoyle.dm 1
-code/game/objects/structures/girders.dm 2
-code/game/objects/structures/gravemarker.dm 1
-code/game/objects/structures/low_wall.dm 1
-code/game/objects/structures/simple_doors.dm 1
-code/game/objects/structures/stool_bed_chair_nest/bed.dm 2
-code/game/objects/structures/stool_bed_chair_nest/stools.dm 2
-code/game/turfs/simulated/floor.dm 1
-code/game/turfs/simulated/walls.dm 3
 code/modules/admin/DB ban/ban_panle_ui.dm 2
 code/modules/admin/admin_report_panel.dm 1
 code/modules/admin/edit_memory_panel.dm 1
@@ -199,7 +184,7 @@ code/modules/benchmarks/scenarios.dm 3
 code/modules/blob2/blobs/base_blob.dm 1
 code/modules/blob2/blobs/core.dm 3
 code/modules/blob2/core_chunk.dm 1
-code/modules/blob2/overmind/overmind.dm 3
+code/modules/blob2/overmind/overmind.dm 2
 code/modules/body/affliction.dm 3
 code/modules/body/body.dm 1
 code/modules/body/physiology.dm 3
@@ -243,7 +228,7 @@ code/modules/clothing/spacesuits/rig/rig_pieces.dm 1
 code/modules/clothing/spacesuits/rig/rig_power_system.dm 1
 code/modules/clothing/spacesuits/spacesuits.dm 1
 code/modules/clothing/spacesuits/void/void.dm 3
-code/modules/clothing/suits/reactive_armour_dimensional_themes.dm 4
+code/modules/clothing/suits/reactive_armour_dimensional_themes.dm 3
 code/modules/combat_ai/brain/brain.dm 5
 code/modules/combat_ai/brain/pathing.dm 1
 code/modules/combat_ai/brain/public_api.dm 1
@@ -376,12 +361,10 @@ code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/remote_scene_
 code/modules/makeup/nailpolish.dm 2
 code/modules/maps/map_template.dm 1
 code/modules/maps/reader.dm 1
-code/modules/material_science/material_ammunition.dm 2
 code/modules/material_science/material_machines.dm 2
-code/modules/material_science/material_service.dm 5
+code/modules/material_science/material_service.dm 3
 code/modules/materials/fifty_spawner.dm 1
 code/modules/materials/materials/stone.dm 1
-code/modules/materials/sheets/_sheets.dm 1
 code/modules/materials/sheets/organic/tanning/tanning_rack.dm 1
 code/modules/media/juke_remote.dm 2
 code/modules/media/media_machinery.dm 1
@@ -396,7 +379,6 @@ code/modules/mining/machine_silo.dm 2
 code/modules/mining/machinery/machine_processing.dm 4
 code/modules/mining/machinery/machine_stacking.dm 4
 code/modules/mining/machinery/machine_unloading.dm 2
-code/modules/mining/mine_items.dm 1
 code/modules/mining/mine_turfs.dm 3
 code/modules/mining/mineral_effect.dm 1
 code/modules/mining/ore.dm 1
@@ -436,7 +418,6 @@ code/modules/mob/living/carbon/human/species/station/protean/protean_form.dm 1
 code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm 1
 code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm 2
 code/modules/mob/living/carbon/human/species/station/traits/trait.dm 1
-code/modules/mob/living/default_language.dm 1
 code/modules/mob/living/inventory.dm 2
 code/modules/mob/living/life/living_systems.dm 1
 code/modules/mob/living/living.dm 1
@@ -515,7 +496,6 @@ code/modules/mob/new_player/new_player.dm 1
 code/modules/mob/new_player/news_panel.dm 3
 code/modules/mob/new_player/sprite_accessories_tail.dm 2
 code/modules/mob/new_player/sprite_accessories_taur.dm 2
-code/modules/mob/say.dm 1
 code/modules/modular_computers/NTNet/NTNRC/conversation.dm 1
 code/modules/modular_computers/NTNet/NTNet_relay.dm 2
 code/modules/modular_computers/NTNet/emails/email_message.dm 1
@@ -542,9 +522,9 @@ code/modules/nifsoft/software/13_soulcatcher.dm 3
 code/modules/nifsoft/software/14_commlink.dm 1
 code/modules/nifsoft/software/15_misc.dm 1
 code/modules/organs/internal/augment.dm 2
-code/modules/organs/internal/horror.dm 2
+code/modules/organs/internal/horror.dm 1
 code/modules/organs/internal/special/heart_anomalock.dm 1
-code/modules/organs/organ.dm 3
+code/modules/organs/organ.dm 2
 code/modules/organs/organ_external.dm 5
 code/modules/overmap/disperser/disperser_console.dm 3
 code/modules/overmap/overmap_object.dm 2
@@ -599,7 +579,7 @@ code/modules/projectiles/gun.dm 2
 code/modules/projectiles/guns/energy.dm 1
 code/modules/projectiles/guns/energy/bsharpoon.dm 1
 code/modules/projectiles/guns/energy/kinetic_accelerator.dm 1
-code/modules/projectiles/guns/energy/special.dm 2
+code/modules/projectiles/guns/energy/special.dm 1
 code/modules/projectiles/guns/launcher/confetti.dm 1
 code/modules/projectiles/guns/launcher/crossbow.dm 2
 code/modules/projectiles/guns/launcher/grenade_launcher.dm 1
@@ -609,7 +589,6 @@ code/modules/projectiles/guns/projectile.dm 2
 code/modules/projectiles/guns/projectile/sniper/collapsible_sniper.dm 3
 code/modules/projectiles/projectile.dm 9
 code/modules/projectiles/projectile/hook.dm 1
-code/modules/projectiles/projectile/special.dm 1
 code/modules/projectiles/targeting/targeting_overlay.dm 2
 code/modules/random_map/drop/supply.dm 1
 code/modules/reagents/Chemistry-Metabolism.dm 1
@@ -635,9 +614,9 @@ code/modules/research/tg/designs.dm 1
 code/modules/research/tg/disks.dm 1
 code/modules/research/tg/experisci/experiment/handlers/experiment_handler.dm 3
 code/modules/research/tg/experisci/experiment/types/scanning_machinery.dm 1
-code/modules/research/tg/machinery/_production.dm 2
+code/modules/research/tg/machinery/_production.dm 1
 code/modules/research/tg/machinery/destructive_analyzer.dm 1
-code/modules/research/tg/machinery/mech_fabricator.dm 7
+code/modules/research/tg/machinery/mech_fabricator.dm 3
 code/modules/research/tg/rdmachines.dm 1
 code/modules/research/tg/server_control.dm 1
 code/modules/research/tg/techwebs/_techweb.dm 5
@@ -682,7 +661,6 @@ code/modules/stockmarket/articles.dm 1
 code/modules/stockmarket/computer.dm 1
 code/modules/stockmarket/events.dm 2
 code/modules/stockmarket/stocks.dm 2
-code/modules/tables/tables.dm 2
 code/modules/telesci/hyper_pad.dm 2
 code/modules/telesci/quantum_pad.dm 1
 code/modules/telesci/telesci_computer.dm 3
@@ -723,7 +701,6 @@ code/modules/turbolift/turbolift_console.dm 1
 code/modules/turbolift/turbolift_door.dm 2
 code/modules/turbolift/turbolift_floor.dm 1
 code/modules/vehicles/Securitrain.dm 1
-code/modules/vehicles/boat.dm 2
 code/modules/vehicles/cargo_train.dm 1
 code/modules/vehicles/construction.dm 1
 code/modules/vehicles/janicart.dm 1
