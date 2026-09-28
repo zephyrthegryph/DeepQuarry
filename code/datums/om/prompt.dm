@@ -34,6 +34,7 @@
 //
 // E may be a /client (admin verbs); it is held by ckey. `user` may be a client too; the
 // continuation always gets the client's current mob.
+// New code asks with typed prompts, om_ask() (ask.dm); multi-step actions are flows (flow.dm).
 // Multi-question flows: om_prompt_chain(P, spec, on_answer) asks the same user about the
 // same E again, carrying P's data, target, requires and on_refused forward (P.put() adds to
 // the data). om_prompt_sequence() runs a
@@ -96,8 +97,9 @@
 	return value
 
 /// Asks `user` and calls `on_answer` with the answer later. Returns the prompt, or null if E
-/// or the user is gone or has no client (outside tests).
-/proc/om_prompt(datum/E, mob/user, list/spec, on_answer)
+/// or the user is gone or has no client (outside tests). `P`: a typed prompt (ask.dm) to show
+/// instead of a new plain one; new code asks with om_ask().
+/proc/om_prompt(datum/E, mob/user, list/spec, on_answer, datum/om/prompt/P)
 	if(isnull(E))
 		E = om_global_owner()
 	if(istype(user, /client))
@@ -109,7 +111,8 @@
 	var/uh = om_handle(user)
 	if(!eh || !uh)
 		return null
-	var/datum/om/prompt/P = new
+	if(!P)
+		P = new
 	P.entity_h = eh
 	P.user_h = uh
 	P.spec = spec || list()
@@ -322,6 +325,14 @@
 	var/mob/user = om_resolve(P.user_h)
 	if(!E || !user || !om_prompt_resolve_data(P))
 		return "gone"
+	if(P.kind_name && isnull(answer) && isnull(P.spec["cancel_answer"]))
+		// A typed prompt's cancel: om_ask_cancelled() restores its state.
+		if(P.spec["on_cancel"])
+			om_prompt_call(E, P.spec["on_cancel"], user, P)
+		return "no answer"
+	if(P.kind_name && !P.unpark())
+		P.refused("gone")
+		return "gone"
 	if(P.spec["kind"] == "typepath" && istext(answer))
 		// The typed part of a path: one match is the answer, several are picked from a list.
 		var/list/matches = om_prompt_typepaths(answer, P.spec["root"] || /atom)
@@ -347,9 +358,13 @@
 		var/datum/answered_datum = answer
 		if(QDELETED(answered_datum))
 			return "gone"
+	if(P.kind_name && !P.take_answer(answer))
+		// A typed prompt answered no (confirm): nothing to re-check.
+		P.declined()
+		return "declined"
 	var/reason = om_prompt_recheck(P, E, user)
 	if(!isnull(reason))
-		if(reason != "gone" && P.spec["on_refused"])
+		if((reason != "gone" || P.kind_name) && P.spec["on_refused"])
 			om_prompt_call(E, P.spec["on_refused"], user, reason, P)
 		return reason
 	om_prompt_call(E, P.on_answer, user, answer, P)
@@ -367,6 +382,8 @@
 		var/reason = om_why_not(check_spec, user, check_target)
 		if(!isnull(reason))
 			return reason
+	if(P.kind_name)
+		return P.typed_recheck(E, user)
 	return null
 
 

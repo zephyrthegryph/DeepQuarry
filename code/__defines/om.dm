@@ -457,3 +457,38 @@
 #define PROMPT_ADMIN(rights) list(CHECK(/datum/om/check/admin_rights, rights))
 /// Returned by an om_prompt_sequence() step proc: end the sequence here (on_done does not run).
 #define PROMPT_STOP "om_prompt_stop"
+
+// ---------------------------------------------------------------- named-argument launchers
+// DM rejects a named argument a proc doesn't declare, so these are macros: the named arguments
+// become a list keyed by var name, and the caller's src rides along (the receiver default).
+
+/// Starts a task (task.dm): om_task_start(/datum/om/task/timed/x, actor, target, var = value, ...).
+/// The target is optional (om_task_start(/datum/om/task/x, actor)).
+#define om_task_start(task, actor, rest...) om_task_begin(task, actor, list(rest), src)
+/// Asks `answerer` a typed prompt (ask.dm): om_ask(answerer, /datum/om/prompt/confirm/x, PROC_REF(cb), var = value, ...).
+/// `prompt` is a /datum/om/prompt/<kind> type or instance; cb runs on the caller's src with the prompt.
+#define om_ask(answerer, prompt, on_answer, params...) om_ask_begin(src, answerer, prompt, on_answer, list(params))
+/// Starts a flow (flow.dm): om_flow_start(/datum/om/flow/x, actor, target, var = value, ...).
+#define om_flow_start(flow, actor, target, params...) om_flow_begin(flow, actor, target, list(params))
+
+// ---------------------------------------------------------------- typed prompt re-checks (ask.dm)
+// The prompt's ask_flags: re-checked when the answer arrives, before the answer proc runs.
+// Roles: the answerer sees the window; the asker started it (default: the answerer); the
+// subject is what it's about (default: the receiver, when it is an atom).
+
+/// The answerer and the asker are alive.
+#define ASK_ALIVE (1<<0)
+/// The answerer and the asker are conscious.
+#define ASK_CONSCIOUS (1<<1)
+/// The answerer is next to the asker (next to the subject when they are the same mob).
+#define ASK_ADJACENT (1<<2)
+/// The subject is still in the asker's hands.
+#define ASK_HELD (1<<3)
+/// The subject is still somewhere on the asker (held, worn, in a bag).
+#define ASK_CARRIED (1<<4)
+/// Neither the answerer nor the asker is incapacitated.
+#define ASK_CAPABLE (1<<5)
+/// The subject is next to the answerer.
+#define ASK_NEAR_SUBJECT (1<<6)
+/// The common "someone offers you something" set: both alive, awake and adjacent.
+#define ASK_FACE_TO_FACE (ASK_CONSCIOUS | ASK_ADJACENT)

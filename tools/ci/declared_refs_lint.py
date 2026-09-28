@@ -244,6 +244,10 @@ def scan_file(path):
         # scheduler_lints.py's lc_refs).
         if cur_type == "/datum/om/task" or cur_type.startswith("/datum/om/task/"):
             continue
+        # Typed prompts and flows (ask.dm, flow.dm) hold their state vars as handles while they
+        # wait (park_state()), and a prompt's `flow` is the one strong ref keeping its flow alive.
+        if cur_type in ("/datum/om/prompt", "/datum/om/flow") or cur_type.startswith(("/datum/om/prompt/", "/datum/om/flow/")):
+            continue
         if allowed(source_lines, no, "declared_refs"):
             continue
         sites.append((rel, no, "%s var/%s/%s" % (cur_type, vtype.strip("/"), name)))

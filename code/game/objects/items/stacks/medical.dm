@@ -112,7 +112,7 @@
 	if(!W || (wound_limited_by_amount() && used == amount))
 		wound_treat_finish(H, user, affecting, used)
 		return
-	om_task_start(/datum/om/task/timed/medical_wound_treat, user, affecting, list("receiver" = src, "duration" = wound_treat_delay(W), "H" = H, "wounds" = wounds, "index" = index, "used" = used, "available" = available))
+	om_task_start(/datum/om/task/timed/medical_wound_treat, user, affecting, duration = wound_treat_delay(W), H = H, wounds = wounds, index = index, used = used, available = available)
 
 /obj/item/stack/medical/proc/wound_treat_interrupted(datum/om/task/timed/medical_wound_treat/task)
 	var/mob/living/carbon/human/H = task.H
@@ -319,7 +319,7 @@
 		else
 			user.balloon_alert_visible("\the [user] starts salving wounds on [M]'s [affecting.name].", \
 										"salving the wounds on [M]'s [affecting.name]." )
-			om_task_start(/datum/om/task/timed/ointment_attack, user, affecting, list("receiver" = src, "M" = M))
+			om_task_start(/datum/om/task/timed/ointment_attack, user, affecting, M = M)
 			return ITEM_INTERACT_SUCCESS
 
 /datum/om/task/timed/ointment_attack
@@ -409,7 +409,7 @@
 		else
 			user.balloon_alert_visible("\the [user] starts salving wounds on [M]'s [affecting.name].", \
 										"salving the wounds on [M]'s [affecting.name]." )
-			om_task_start(/datum/om/task/timed/ointment_attack2, user, affecting, list("receiver" = src, "M" = M, "H" = H))
+			om_task_start(/datum/om/task/timed/ointment_attack2, user, affecting, M = M, H = H)
 			return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_FAILURE
 
@@ -477,7 +477,7 @@
 				balloon_alert(user, "you can't apply a splint to the arm you're using!")
 				return ITEM_INTERACT_FAILURE
 			user.balloon_alert_visible("[user] starts to apply \the [src] to their [limb].", "applying \the [src] to your [limb].", "You hear something being wrapped.")
-		om_task_start(/datum/om/task/timed/splint_attack, user, affecting, list("receiver" = src, "M" = M, "limb" = limb))
+		om_task_start(/datum/om/task/timed/splint_attack, user, affecting, M = M, limb = limb)
 		return ITEM_INTERACT_FAILURE
 
 /datum/om/task/timed/splint_attack

@@ -693,7 +693,7 @@ BLIND     // can't see anything
 			to_chat(user, span_warning("You need to build a prescription from someone first! Use the kit on someone."))
 			return
 
-		om_do_after(user, 5 SECONDS, target, src, PROC_REF(prescribe_done), list(user, G))
+		om_task_start(/datum/om/task/timed/glasses_kit/prescribe, user, G, kit = src)
 
 	//We're getting a prescription
 	else if(ishuman(target))
@@ -703,21 +703,36 @@ BLIND     // can't see anything
 			return
 
 		T.visible_message("[user] begins making measurements for prescription lenses for [target].","[user] begins measuring your eyes. Hold still!")
-		om_do_after(user, 5 SECONDS, T, src, PROC_REF(measure_done), list(user, T))
+		om_task_start(/datum/om/task/timed/glasses_kit/measure, user, T, kit = src)
 
 	else
 		..()
 
-/obj/item/glasses_kit/proc/prescribe_done(mob/living/carbon/human/user, obj/item/clothing/glasses/G)
-	if(!scrip_loaded)
-		return
-	G.prescribe(user)
-	scrip_loaded = 0
+/// Five seconds with the kit on someone's eyes or on their glasses. The done procs are the
+/// task's own: they read the state (kit, actor, target) as their own vars.
+/datum/om/task/timed/glasses_kit
+	abstract_type = /datum/om/task/timed/glasses_kit
+	duration = 5 SECONDS
+	var/obj/item/glasses_kit/kit
 
-/obj/item/glasses_kit/proc/measure_done(mob/living/carbon/human/user, mob/living/carbon/human/T)
+/datum/om/task/timed/glasses_kit/prescribe
+	complete_proc = /datum/om/task/timed/glasses_kit/prescribe/proc/done
+
+/datum/om/task/timed/glasses_kit/prescribe/proc/done()
+	var/obj/item/clothing/glasses/G = target
+	if(!kit.scrip_loaded)
+		return
+	G.prescribe(actor)
+	kit.scrip_loaded = 0
+
+/datum/om/task/timed/glasses_kit/measure
+	complete_proc = /datum/om/task/timed/glasses_kit/measure/proc/done
+
+/datum/om/task/timed/glasses_kit/measure/proc/done()
+	var/mob/living/carbon/human/T = target
 	T.flash_eyes()
-	scrip_loaded = 1
-	T.visible_message("[user] finishes making prescription lenses for [T].",span_warning("Gah, that's bright!"))
+	kit.scrip_loaded = 1
+	T.visible_message("[actor] finishes making prescription lenses for [T].", span_warning("Gah, that's bright!"))
 
 /obj/item/clothing/glasses/sunglasses/sechud/tactical
 	item_flags = AIRTIGHT

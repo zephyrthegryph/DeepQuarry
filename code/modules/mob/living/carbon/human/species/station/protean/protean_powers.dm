@@ -132,13 +132,13 @@ REF_OWNED(/datum/protean_power, "button")
 
 /datum/protean_power/blobform/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
 	if(F.is_form(/datum/form/protean_blob))
-		om_task_start(/datum/om/task/timed/blobform_activate_blobform, H, H, list("receiver" = src, "F" = F))
+		om_task_start(/datum/om/task/timed/blobform_activate_blobform, H, H, F = F)
 		return
 	if(H.get_equipped_item(SLOT_ID_HANDCUFFED))
 		to_chat(H, span_warning("You can't do this while handcuffed!"))
 		return
 	to_chat(H, span_notice("You begin to disassociate your form."))
-	om_task_start(/datum/om/task/timed/blobform_activate_blobform2, H, H, list("receiver" = src, "F" = F))
+	om_task_start(/datum/om/task/timed/blobform_activate_blobform2, H, H, F = F)
 	return TRUE
 
 /datum/om/task/timed/blobform_activate_blobform
@@ -303,7 +303,7 @@ REF_OWNED(/datum/protean_power, "button")
 		return
 	F.set_form(/datum/form/protean_blob)
 	H.active_regen = TRUE
-	om_task_start(/datum/om/task/timed/reform_limb_regrow_limb_reform_limb, H, H, list("receiver" = src, "refactory" = refactory, "choice" = choice))
+	om_task_start(/datum/om/task/timed/reform_limb_regrow_limb_reform_limb, H, H, refactory = refactory, choice = choice)
 	H.active_regen = FALSE
 
 /datum/om/task/timed/reform_limb_regrow_limb_reform_limb
@@ -379,7 +379,7 @@ REF_OWNED(/datum/protean_power, "button")
 	var/oocnotes = ask.get("ooc")
 	to_chat(H, span_notify("You begin to reassemble. You will need to remain still."))
 	H.visible_message(span_notify("[H] rapidly contorts and shifts!"), span_danger("You begin to reassemble."))
-	om_task_start(/datum/om/task/timed/reform_body_activate_reform_body, H, H, list("receiver" = src, "flavour" = flavour, "oocnotes" = oocnotes))
+	om_task_start(/datum/om/task/timed/reform_body_activate_reform_body, H, H, flavour = flavour, oocnotes = oocnotes)
 
 /datum/om/task/timed/reform_body_activate_reform_body
 	duration = 4 SECONDS
@@ -444,7 +444,7 @@ REF_OWNED(/datum/protean_power, "button")
 		return
 	to_chat(H, span_notify("You begin to reassemble into [victim]. You will need to remain still."))
 	H.visible_message(span_notify("[H] rapidly contorts and shifts!"), span_danger("You begin to reassemble into [victim]."))
-	om_task_start(/datum/om/task/timed/copy_form_activate_copy_form, H, H, list("receiver" = src, "victim" = victim, "input" = input))
+	om_task_start(/datum/om/task/timed/copy_form_activate_copy_form, H, H, victim = victim, input = input)
 	return TRUE
 
 /datum/om/task/timed/copy_form_activate_copy_form

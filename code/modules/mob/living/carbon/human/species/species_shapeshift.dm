@@ -161,12 +161,22 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 
 	COOLDOWN_START(src, last_special, 50)
 
-	om_prompt(src, src, list("kind" = "list", "message" = "Please select a species to emulate.", "title" = "Shapeshifter Body", "choices" = species.get_valid_shapeshifter_forms(src), "requires" = PROMPT_CONSCIOUS), PROC_REF(shapeshifter_shape_chosen))
+	om_ask(src, /datum/om/prompt/choice/shapeshifter_form, PROC_REF(shapeshifter_shape_chosen), choices = species.get_valid_shapeshifter_forms(src))
 
-/mob/living/carbon/human/proc/shapeshifter_shape_chosen(mob/user, new_species, datum/om/prompt/ask)
-	if(!GLOB.all_species[new_species] || GLOB.wrapped_species_by_ref["\ref[src]"] == new_species || !(new_species in species.get_valid_shapeshifter_forms(src)))
-		return
-	shapeshifter_change_shape(new_species)
+/// Picking a form. Re-checked on the answer: still conscious, and the form is still one to take.
+/datum/om/prompt/choice/shapeshifter_form
+	title = "Shapeshifter Body"
+	message = "Please select a species to emulate."
+	ask_flags = ASK_CONSCIOUS
+
+/datum/om/prompt/choice/shapeshifter_form/valid()
+	var/mob/living/carbon/human/shifter = asker
+	if(!GLOB.all_species[choice] || GLOB.wrapped_species_by_ref["\ref[shifter]"] == choice || !(choice in shifter.species.get_valid_shapeshifter_forms(shifter)))
+		return "not a form to take"
+	return null
+
+/mob/living/carbon/human/proc/shapeshifter_shape_chosen(datum/om/prompt/choice/shapeshifter_form/ask)
+	shapeshifter_change_shape(ask.choice)
 
 /* moved to species_shapeshift_vr.dm
 /mob/living/carbon/human/proc/shapeshifter_change_shape(new_species = null)
@@ -188,10 +198,10 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 
 	COOLDOWN_START(src, last_special, 50)
 
-	om_prompt(src, src, list("kind" = "color", "message" = "Please select a new body color.", "title" = "Shapeshifter Colour", "default" = rgb(r_skin, g_skin, b_skin), "requires" = PROMPT_CONSCIOUS), PROC_REF(shapeshifter_colour_chosen))
+	om_ask(src, /datum/om/prompt/color, PROC_REF(shapeshifter_colour_chosen), title = "Shapeshifter Colour", message = "Please select a new body color.", default = rgb(r_skin, g_skin, b_skin), ask_flags = ASK_CONSCIOUS)
 
-/mob/living/carbon/human/proc/shapeshifter_colour_chosen(mob/user, new_skin, datum/om/prompt/ask)
-	shapeshifter_set_colour(new_skin)
+/mob/living/carbon/human/proc/shapeshifter_colour_chosen(datum/om/prompt/color/ask)
+	shapeshifter_set_colour(ask.picked_color)
 
 /mob/living/carbon/human/proc/shapeshifter_set_colour(new_skin)
 
@@ -443,12 +453,11 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 			pretty_ear_styles[instance.name] = path
 
 	// Handle style pick
-	om_prompt(src, src, list("kind" = "list", "message" = "Pick some ears!", "title" = "Character Preference", "choices" = pretty_ear_styles, "requires" = PROMPT_CONSCIOUS, "data" = list("styles" = pretty_ear_styles)), PROC_REF(shapeshifter_secondary_ears_chosen))
+	om_ask(src, /datum/om/prompt/choice, PROC_REF(shapeshifter_secondary_ears_chosen), title = "Character Preference", message = "Pick some ears!", choices = pretty_ear_styles, ask_flags = ASK_CONSCIOUS)
 
 /// Sets the style, then asks one colour per channel of it (a cancel keeps that channel) and the alpha.
-/mob/living/carbon/human/proc/shapeshifter_secondary_ears_chosen(mob/user, new_ear_style, datum/om/prompt/ask)
-	var/list/pretty_ear_styles = ask.get("styles")
-	ear_secondary_style = GLOB.ear_styles_list[pretty_ear_styles[new_ear_style]]
+/mob/living/carbon/human/proc/shapeshifter_secondary_ears_chosen(datum/om/prompt/choice/ask)
+	ear_secondary_style = GLOB.ear_styles_list[ask.choices[ask.choice]]
 	var/list/steps = list()
 	var/list/defaults = list()
 	if(ear_secondary_style)

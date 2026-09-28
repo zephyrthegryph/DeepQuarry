@@ -30,6 +30,12 @@ above it (tools/ci/allow_annotations.py) and is not counted. Most are at 0; the 
     raw_world_bind   a vg_world_* subscription or step bind outside code/datums/om/world_watch.dm:
                      subscribe with om_world_at/on_key/on_change/when/on_rate (sec 4.8)
     string_keys      a string passed to om_world_publish()/om_world_on_key(): keys are numbers
+    prompt_spec      om_prompt()/om_prompt_sequence()/om_prompt_chain() outside code/datums/om:
+                     the string-keyed spec list form. Ask with a typed prompt,
+                     om_ask(answerer, /datum/om/prompt/<kind>/x, PROC_REF(cb), var = value),
+                     and a multi-step action is a flow (/datum/om/flow/x)
+    task_params_list om_task_start() given a positional params list (list("key" = value)):
+                     name the task's vars instead, om_task_start(type, actor, target, key = value)
     reactor_api      SSreactor, on_react(), react_every() or a REACT_* macro: Rust
                      wakes are world watches on the OM scheduler (om_world_*, sec 4.8)
 
@@ -114,6 +120,26 @@ def use_tool_state(rel, text):
             yield line
 
 
+def _not_define(text, line):
+    return not text.split("\n")[line - 1].lstrip().startswith("#define")
+
+
+def prompt_spec(rel, text):
+    if rel.startswith("code/datums/om/"):
+        return
+    for name in ("om_prompt", "om_prompt_sequence", "om_prompt_chain"):
+        for line, _ in calls(text, name):
+            if _not_define(text, line):
+                yield line
+
+
+def task_params_list(rel, text):
+    for line, args in calls(text, "om_task_start"):
+        parts = split_args(args)
+        if len(parts) > 3 and not re.match(r"\w+\s*=(?!=)", parts[3]) and _not_define(text, line):
+            yield line
+
+
 def pattern(regex):
     compiled = re.compile(regex)
 
@@ -151,6 +177,8 @@ CHECKS = [
     ("field_write", field_write_lint.check),
     ("raw_world_bind", outside("code/datums/om/world_watch.dm", r"(?<![\w/])vg_world_(?:at|on_key|watch_\w+|rate_watch|step|clear|cancel)\s*\(")),
     ("string_keys", pattern(r"\bom_world_(?:publish|on_key)\([^)\n]*\"")),
+    ("prompt_spec", prompt_spec),
+    ("task_params_list", task_params_list),
     ("reactor_api", pattern(r"\b(?:SSreactor|on_react|react_every|react_sleep_violation|reactor_id|REACT_[A-Z_]+)\b")),
     ("raw_relation", outside("code/datums/om/", r"(?<![\w/.])om_(?:relation_of|source_of|related|related_to)\s*\(")),
 ]

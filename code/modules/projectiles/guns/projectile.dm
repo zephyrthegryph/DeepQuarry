@@ -515,7 +515,7 @@ REF_OWNED(/obj/item/gun/projectile, "ammo_provider")
 	H.make_rounds_real()
 	to_chat(user, span_notice("You start feeding rounds into \the [src]."))
 	if(can_feed_from(H))
-		om_task_start(/datum/om/task/timed/feed_rounds, user, src, list("receiver" = src, "handful" = H))
+		om_task_start(/datum/om/task/timed/feed_rounds, user, src, handful = H)
 		return
 	feed_done(H, user, 0)
 
@@ -629,10 +629,10 @@ REF_OWNED(/obj/item/gun/projectile, "ammo_provider")
 				if(!CHECK_BITFIELD(auto_loading_type,OPEN_BOLT))
 					if(!chambered)
 						if(bolt_open)
-							om_task_start(/datum/om/task/timed/projectile_chamber_round, user, src, list("receiver" = src, "duration" = 0.5 SECONDS, "C" = C, "message" = "[user] slides \the [C] into the [src]'s chamber."))
+							om_task_start(/datum/om/task/timed/projectile_chamber_round, user, src, duration = 0.5 SECONDS, C = C, message = "[user] slides \the [C] into the [src]'s chamber.")
 							return
 						else if(!(CHECK_BITFIELD(auto_loading_type,LOCK_OPEN_EMPTY) || (CHECK_BITFIELD(auto_loading_type,LOCK_MANUAL_LOCK))))
-							om_task_start(/datum/om/task/timed/projectile_chamber_round, user, src, list("receiver" = src, "duration" = 1.5 SECONDS, "C" = C, "message" = "[user] holds open \the [src]'s [bolt_name] and slides [C] into the chamber before letting the bolt close again."))
+							om_task_start(/datum/om/task/timed/projectile_chamber_round, user, src, duration = 1.5 SECONDS, C = C, message = "[user] holds open \the [src]'s [bolt_name] and slides [C] into the chamber before letting the bolt close again.")
 							return
 						else
 							to_chat(user,span_warning("Open the bolt first before chambering a round!"))

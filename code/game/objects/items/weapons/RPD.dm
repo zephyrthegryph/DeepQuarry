@@ -195,14 +195,14 @@ REF_OWNED(/obj/item/pipe_dispenser, list("spark_system", "tool"))
 				playsound(src, 'sound/machines/click.ogg', 50, 1)
 				if(istype(recipe(), /datum/pipe_recipe/meter))
 					to_chat(user, span_notice("You start building a meter..."))
-					om_task_start(/datum/om/task/timed/pipe_dispenser_afterattack, user, A, list("receiver" = src, "queued_piping_layer" = queued_piping_layer))
+					om_task_start(/datum/om/task/timed/pipe_dispenser_afterattack, user, A, queued_piping_layer = queued_piping_layer)
 				else if(istype(recipe(), /datum/pipe_recipe/air_sensor))
 					to_chat(user, span_notice("You start building an air sensor..."))
 					om_do_after(user, 2, target = A, receiver = src, on_done = PROC_REF(afterattack_timed_done3), done_args = list(A, user))
 				else if(istype(recipe(), /datum/pipe_recipe/pipe))
 					var/datum/pipe_recipe/pipe/R = recipe()
 					to_chat(user, span_notice("You start building a pipe..."))
-					om_task_start(/datum/om/task/timed/pipe_dispenser_afterattack2, user, A, list("receiver" = src, "queued_piping_layer" = queued_piping_layer, "queued_p_dir" = queued_p_dir, "queued_p_flipped" = queued_p_flipped, "R" = R))
+					om_task_start(/datum/om/task/timed/pipe_dispenser_afterattack2, user, A, queued_piping_layer = queued_piping_layer, queued_p_dir = queued_p_dir, queued_p_flipped = queued_p_flipped, R = R)
 
 			if(DISPOSALS_CATEGORY) //Making disposals pipes
 				var/datum/pipe_recipe/disposal/R = recipe()
@@ -214,7 +214,7 @@ REF_OWNED(/obj/item/pipe_dispenser, list("spark_system", "tool"))
 					return
 				to_chat(user, span_notice("You start building a disposals pipe..."))
 				playsound(src, 'sound/machines/click.ogg', 50, 1)
-				om_task_start(/datum/om/task/timed/pipe_dispenser_afterattack3, user, A, list("receiver" = src, "queued_p_dir" = queued_p_dir, "queued_p_flipped" = queued_p_flipped, "R" = R))
+				om_task_start(/datum/om/task/timed/pipe_dispenser_afterattack3, user, A, queued_p_dir = queued_p_dir, queued_p_flipped = queued_p_flipped, R = R)
 
 			else
 				return ..()

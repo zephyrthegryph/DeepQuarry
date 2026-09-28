@@ -52,7 +52,7 @@
 
 	add_fingerprint(user)
 
-	om_task_start(/datum/om/task/timed/detective_scanner_scan, user, src, list("receiver" = src, "A" = A))
+	om_task_start(/datum/om/task/timed/detective_scanner_scan, user, src, A = A)
 	return 0
 
 /datum/om/task/timed/detective_scanner_scan
@@ -117,7 +117,7 @@
 		to_chat(user,span_notice("Fibers/Materials detected.[reveal_fibers ? " Analysing..." : " Acquisition of fibers for H.R.F.S. analysis advised."]"))
 		flick("[icon_state]1",src)
 		if(reveal_fibers)
-			om_task_start(/datum/om/task/timed/forensic_scan, user, src, list("receiver" = src, "scanned" = A, "stage" = "fibers"))
+			om_task_start(/datum/om/task/timed/forensic_scan, user, src, scanned = A, stage = "fibers")
 			return
 	scan_blood(A, user)
 
@@ -157,7 +157,7 @@
 	if (A.forensic_data?.has_blooddna())
 		to_chat(user, span_notice("Blood detected.[reveal_blood ? " Analysing..." : " Acquisition of swab for H.R.F.S. analysis advised."]"))
 		if(reveal_blood)
-			om_task_start(/datum/om/task/timed/forensic_scan, user, src, list("receiver" = src, "scanned" = A, "stage" = "blood"))
+			om_task_start(/datum/om/task/timed/forensic_scan, user, src, scanned = A, stage = "blood")
 			return
 	scan_finish(A, user)
 

@@ -7,7 +7,7 @@
 		return
 
 	user.visible_message(span_notice("[user] starts inspecting [src?.grab_target()]'s [E.name] carefully."))
-	om_task_start(/datum/om/task/timed/grab_inspect_organ_grab, user, H, list("receiver" = src, "target_zone_arg" = target_zone, "E" = E))
+	om_task_start(/datum/om/task/timed/grab_inspect_organ_grab, user, H, target_zone_arg = target_zone, E = E)
 	return TRUE
 
 /obj/item/grab/proc/inspect_organ_grab_failed(datum/om/task/timed/grab_inspect_organ_grab/task)
@@ -38,7 +38,7 @@
 
 /obj/item/grab/proc/inspect_bones(mob/living/carbon/human/H, mob/user, target_zone, obj/item/organ/external/E)
 	to_chat(user, span_notice("Checking bones now..."))
-	om_task_start(/datum/om/task/timed/grab_inspect_bones, user, H, list("receiver" = src, "target_zone_arg" = target_zone, "E" = E))
+	om_task_start(/datum/om/task/timed/grab_inspect_bones, user, H, target_zone_arg = target_zone, E = E)
 
 /datum/om/task/timed/grab_inspect_bones
 	duration = 2 SECONDS
@@ -65,7 +65,7 @@
 		to_chat(user, span_notice("The [E.encased ? E.encased : "bones in the [E.name]"] seem to be fine."))
 
 	to_chat(user, span_notice("Checking skin now..."))
-	om_task_start(/datum/om/task/timed/grab_inspect_skin, user, H, list("receiver" = src, "target_zone_arg" = target_zone, "E" = E))
+	om_task_start(/datum/om/task/timed/grab_inspect_skin, user, H, target_zone_arg = target_zone, E = E)
 
 /obj/item/grab/proc/inspect_internal_failed(datum/om/task/timed/grab_inspect_internal/task)
 	var/mob/living/carbon/human/H = task.target
@@ -193,7 +193,7 @@
 	var/body_part = parse_zone(target_zone)
 	if(body_part == BP_GROIN || body_part == BP_TORSO || body_part == BP_HEAD)
 		to_chat(user, span_notice("Checking for internal injury now..."))
-		om_task_start(/datum/om/task/timed/grab_inspect_internal, user, H, list("receiver" = src, "body_part" = body_part, "E" = E))
+		om_task_start(/datum/om/task/timed/grab_inspect_internal, user, H, body_part = body_part, E = E)
 
 
 /obj/item/grab/proc/jointlock(mob/living/carbon/human/target, mob/attacker, target_zone)
