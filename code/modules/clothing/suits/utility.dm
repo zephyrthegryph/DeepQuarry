@@ -101,7 +101,7 @@
 
 /obj/item/clothing/head/radiation/Initialize(mapload)
 	. = ..()
-	AddElement(/datum/element/radiation_protected_clothing)
+	om_attach(src, /datum/om/behaviour/radiation_protected_clothing)
 
 /obj/item/clothing/suit/radiation
 	name = "Radiation suit"
@@ -122,7 +122,7 @@
 
 /obj/item/clothing/suit/radiation/Initialize(mapload)
 	. = ..()
-	AddElement(/datum/element/radiation_protected_clothing)
+	om_attach(src, /datum/om/behaviour/radiation_protected_clothing)
 
 /obj/item/clothing/suit/radiation/teshari
 	name = "Small radiation suit"

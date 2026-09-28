@@ -176,7 +176,7 @@
 	. = ..()
 	if(!holds_charge)
 		empty()
-	AddElement(/datum/element/conflict_checking, CONFLICT_ELEMENT_KA)
+	conflict_id = CONFLICT_ELEMENT_KA
 
 /obj/item/gun/energy/kinetic_accelerator/equipped(mob/user)
 	. = ..()

@@ -60,7 +60,7 @@
 
 /obj/item/kinetic_crusher/Initialize(mapload)
 	. = ..()
-	AddElement(/datum/element/conflict_checking, CONFLICT_ELEMENT_CRUSHER)
+	conflict_id = CONFLICT_ELEMENT_CRUSHER
 
 /obj/item/kinetic_crusher/emag_act()
 	. = ..()
