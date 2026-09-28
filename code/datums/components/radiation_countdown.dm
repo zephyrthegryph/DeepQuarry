@@ -25,7 +25,7 @@
 	start_deletion_timer()
 
 /datum/component/radiation_countdown/proc/start_deletion_timer()
-	addtimer(CALLBACK(src, PROC_REF(remove_self)), TIME_UNTIL_DELETION, TIMER_UNIQUE | TIMER_OVERRIDE)
+	om_after_replace(src, TIME_UNTIL_DELETION, PROC_REF(remove_self))
 
 /datum/component/radiation_countdown/proc/remove_self()
 //	if (!HAS_TRAIT(parent, TRAIT_IRRADIATED))

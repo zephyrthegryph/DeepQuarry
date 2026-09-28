@@ -68,38 +68,38 @@
 			attackcycle = 0
 			switch(use_stance())
 				if(I_HURT)
-					addtimer(CALLBACK(src, PROC_REF(bomb_lines), A, 2), 1.5 SECONDS, TIMER_DELETE_ME)
+					om_after(src, 1.5 SECONDS, PROC_REF(bomb_lines), A, 2)
 				if(I_GRAB)
-					addtimer(CALLBACK(src, PROC_REF(bomb_lines), A, 2), 1 SECOND, TIMER_DELETE_ME)
+					om_after(src, 1 SECOND, PROC_REF(bomb_lines), A, 2)
 				if(I_DISARM)
-					addtimer(CALLBACK(src, PROC_REF(bomb_chaos), A, 2), 0.75 SECONDS, TIMER_DELETE_ME)
+					om_after(src, 0.75 SECONDS, PROC_REF(bomb_chaos), A, 2)
 		if(2)
 			attackcycle = 0
 			switch(use_stance())
 				if(I_HURT)
-					addtimer(CALLBACK(src, PROC_REF(summon_puddles), A, 3, /datum/modifier/mmo_drop/blade_boss_long), 1.5 SECONDS, TIMER_DELETE_ME)
+					om_after(src, 1.5 SECONDS, PROC_REF(summon_puddles), A, 3, /datum/modifier/mmo_drop/blade_boss_long)
 				if(I_GRAB)
-					addtimer(CALLBACK(src, PROC_REF(summon_puddles), A, 3, /datum/modifier/mmo_drop/blade_boss_long), 1.5 SECONDS, TIMER_DELETE_ME)
+					om_after(src, 1.5 SECONDS, PROC_REF(summon_puddles), A, 3, /datum/modifier/mmo_drop/blade_boss_long)
 				if(I_DISARM)
-					addtimer(CALLBACK(src, PROC_REF(bomb_lines), A, 3), 0.75 SECONDS, TIMER_DELETE_ME)
+					om_after(src, 0.75 SECONDS, PROC_REF(bomb_lines), A, 3)
 		if(3)
 			attackcycle = 0
 			switch(use_stance())
 				if(I_HURT)
-					addtimer(CALLBACK(src, PROC_REF(cutoff), A, 4, 5, 10), 0.5 SECONDS, TIMER_DELETE_ME)
+					om_after(src, 0.5 SECONDS, PROC_REF(cutoff), A, 4, 5, 10)
 				if(I_GRAB)
-					addtimer(CALLBACK(src, PROC_REF(bomb_chaos), A, 3), 1.5 SECONDS, TIMER_DELETE_ME)
+					om_after(src, 1.5 SECONDS, PROC_REF(bomb_chaos), A, 3)
 				if(I_DISARM)
-					addtimer(CALLBACK(src, PROC_REF(summon_puddles), A, 4, /datum/modifier/mmo_drop/blade_boss_long), 1 SECOND, TIMER_DELETE_ME)
+					om_after(src, 1 SECOND, PROC_REF(summon_puddles), A, 4, /datum/modifier/mmo_drop/blade_boss_long)
 		if(4)
 			attackcycle = 0
 			switch(use_stance())
 				if(I_HURT)
-					addtimer(CALLBACK(src, PROC_REF(summon_puddles), A, 1, /datum/modifier/mmo_drop/blade_boss_short), 1.5 SECONDS, TIMER_DELETE_ME)
+					om_after(src, 1.5 SECONDS, PROC_REF(summon_puddles), A, 1, /datum/modifier/mmo_drop/blade_boss_short)
 				if(I_GRAB)
-					addtimer(CALLBACK(src, PROC_REF(summon_puddles), A, 1, /datum/modifier/mmo_drop/blade_boss_short), 1.5 SECONDS, TIMER_DELETE_ME)
+					om_after(src, 1.5 SECONDS, PROC_REF(summon_puddles), A, 1, /datum/modifier/mmo_drop/blade_boss_short)
 				if(I_DISARM)
-					addtimer(CALLBACK(src, PROC_REF(summon_puddles), A, 1, /datum/modifier/mmo_drop/blade_boss_short), 1 SECOND, TIMER_DELETE_ME)
+					om_after(src, 1 SECOND, PROC_REF(summon_puddles), A, 1, /datum/modifier/mmo_drop/blade_boss_short)
 
 //The eletrical boss
 //Has some issues since lighting damage causes stuns, so never dirrectly attacks you with lighting
@@ -117,29 +117,29 @@
 			attackcycle = 0
 			switch(use_stance())
 				if(I_HURT)
-					addtimer(CALLBACK(src, PROC_REF(cutoff), A, 2, 5, 10), 0.5 SECONDS, TIMER_DELETE_ME)
+					om_after(src, 0.5 SECONDS, PROC_REF(cutoff), A, 2, 5, 10)
 				if(I_GRAB)
-					addtimer(CALLBACK(src, PROC_REF(cross_spin), A, 2, 7), 0.5 SECONDS, TIMER_DELETE_ME)
+					om_after(src, 0.5 SECONDS, PROC_REF(cross_spin), A, 2, 7)
 				if(I_DISARM)
-					addtimer(CALLBACK(src, PROC_REF(quad_random_firing), A, 6, 2, 12), 0.5 SECONDS, TIMER_DELETE_ME)
+					om_after(src, 0.5 SECONDS, PROC_REF(quad_random_firing), A, 6, 2, 12)
 		if(2)
 			attackcycle = 0
 			switch(use_stance())
 				if(I_HURT)
-					addtimer(CALLBACK(src, PROC_REF(cutoff), A, 3, 5, 10), 0.5 SECONDS, TIMER_DELETE_ME)
+					om_after(src, 0.5 SECONDS, PROC_REF(cutoff), A, 3, 5, 10)
 				if(I_GRAB)
-					addtimer(CALLBACK(src, PROC_REF(dual_spin), A, 3, 7), 0.5 SECONDS, TIMER_DELETE_ME)
+					om_after(src, 0.5 SECONDS, PROC_REF(dual_spin), A, 3, 7)
 				if(I_DISARM)
-					addtimer(CALLBACK(src, PROC_REF(quad_random_firing), A, 6, 3, 9), 0.5 SECONDS, TIMER_DELETE_ME)
+					om_after(src, 0.5 SECONDS, PROC_REF(quad_random_firing), A, 6, 3, 9)
 		if(3)
 			attackcycle = 0
 			switch(use_stance())
 				if(I_HURT)
-					addtimer(CALLBACK(src, PROC_REF(cutoff_ulti), A, 1, 5, 10), 0.5 SECONDS, TIMER_DELETE_ME)
+					om_after(src, 0.5 SECONDS, PROC_REF(cutoff_ulti), A, 1, 5, 10)
 				if(I_GRAB)
-					addtimer(CALLBACK(src, PROC_REF(triple_lines), A, 1, 7), 0.5 SECONDS, TIMER_DELETE_ME)
+					om_after(src, 0.5 SECONDS, PROC_REF(triple_lines), A, 1, 7)
 				if(I_DISARM)
-					addtimer(CALLBACK(src, PROC_REF(quad_random_firing), A, 6, 1, 6), 0.5 SECONDS, TIMER_DELETE_ME)
+					om_after(src, 0.5 SECONDS, PROC_REF(quad_random_firing), A, 6, 1, 6)
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/ai_cores/ark_core
 	name = "master core"
@@ -153,57 +153,57 @@
 		if(1)
 			specialattackprojectile = /obj/item/projectile/energy/eclipse_boss/tyrjavelin
 			attackcycle = 0
-			addtimer(CALLBACK(src, PROC_REF(quad_random_firing), A, 6, 2, 6), 0.5 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 0.5 SECONDS, PROC_REF(quad_random_firing), A, 6, 2, 6)
 		if(2)
 			attackcycle = 0
-			addtimer(CALLBACK(src, PROC_REF(triple_lines), A, 3, 7), 0.5 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 0.5 SECONDS, PROC_REF(triple_lines), A, 3, 7)
 		if(3)
 			attackcycle = 0
-			addtimer(CALLBACK(src, PROC_REF(cutoff_ulti), A, 4, 5, 10), 0.5 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 0.5 SECONDS, PROC_REF(cutoff_ulti), A, 4, 5, 10)
 		if(4)
 			attackcycle = 0
-			addtimer(CALLBACK(src, PROC_REF(dual_spin), A, 5, 7), 0.5 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 0.5 SECONDS, PROC_REF(dual_spin), A, 5, 7)
 		if(5)
 			attackcycle = 0
-			addtimer(CALLBACK(src, PROC_REF(hole_in_wall), A, 6, 15), 0.5 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 0.5 SECONDS, PROC_REF(hole_in_wall), A, 6, 15)
 		if(6)
 			attackcycle = 0
-			addtimer(CALLBACK(src, PROC_REF(rising_star), A, 7, 12), 0.5 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 0.5 SECONDS, PROC_REF(rising_star), A, 7, 12)
 		if(7)
 			attackcycle = 0
-			addtimer(CALLBACK(src, PROC_REF(bullet_blossom), A, 8, 8), 0.5 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 0.5 SECONDS, PROC_REF(bullet_blossom), A, 8, 8)
 		if(8)
 			attackcycle = 0
-			addtimer(CALLBACK(src, PROC_REF(summon_puddles), A, 9, /datum/modifier/mmo_drop/blade_boss_short), 0.75 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 0.75 SECONDS, PROC_REF(summon_puddles), A, 9, /datum/modifier/mmo_drop/blade_boss_short)
 		if(9)
 			attackcycle = 0
-			addtimer(CALLBACK(src, PROC_REF(bomb_lines), A, 10), 0.75 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 0.75 SECONDS, PROC_REF(bomb_lines), A, 10)
 		if(10)
 			attackcycle = 0
-			addtimer(CALLBACK(src, PROC_REF(summon_puddles), A, 11, /datum/modifier/mmo_drop/blade_boss_long), 0.75 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 0.75 SECONDS, PROC_REF(summon_puddles), A, 11, /datum/modifier/mmo_drop/blade_boss_long)
 		if(11)
 			attackcycle = 0
-			addtimer(CALLBACK(src, PROC_REF(bomb_chaos), A, 12), 0.75 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 0.75 SECONDS, PROC_REF(bomb_chaos), A, 12)
 		if(12)
 			attackcycle = 0
-			addtimer(CALLBACK(src, PROC_REF(dual_spin), A, 13, 5), 0.5 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 0.5 SECONDS, PROC_REF(dual_spin), A, 13, 5)
 		if(13)
-			addtimer(CALLBACK(src, PROC_REF(summon_puddles), A, 2, /datum/modifier/mmo_drop/metal_tomb), 0.5 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 0.5 SECONDS, PROC_REF(summon_puddles), A, 2, /datum/modifier/mmo_drop/metal_tomb)
 			attackcycle = 0
 		if(14)
 			specialattackprojectile = /obj/item/projectile/beam/heavylaser
 			Beam(A, icon_state = "sat_beam", time = 13 SECONDS, maxdistance = INFINITY)
-			addtimer(CALLBACK(src, PROC_REF(gattlingfire), A, 15, 2, 25), 5.5 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 5.5 SECONDS, PROC_REF(gattlingfire), A, 15, 2, 25)
 			attackcycle = 0
 		if(15)
 			specialattackprojectile = /obj/item/projectile/arc/blue_energy/precusor
-			addtimer(CALLBACK(src, PROC_REF(vertical_double_laser), A, 16, 5), 0.5 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 0.5 SECONDS, PROC_REF(vertical_double_laser), A, 16, 5)
 			attackcycle = 0
 		if(16)
-			addtimer(CALLBACK(src, PROC_REF(checker_board), A, 17), 0.5 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 0.5 SECONDS, PROC_REF(checker_board), A, 17)
 			attackcycle = 0
 		if(17)
-			addtimer(CALLBACK(src, PROC_REF(chain_burst), A, 1, 8), 0.5 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 0.5 SECONDS, PROC_REF(chain_burst), A, 1, 8)
 			attackcycle = 0
 
 
@@ -260,16 +260,16 @@
 	rng_cycle = rand(1,4)
 	switch(attackcycle)
 		if(1)
-			addtimer(CALLBACK(src, PROC_REF(quad_random_firing), A, 20, rng_cycle, 20), 0.5 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 0.5 SECONDS, PROC_REF(quad_random_firing), A, 20, rng_cycle, 20)
 			attackcycle = 0
 		if(2)
-			addtimer(CALLBACK(src, PROC_REF(hole_in_wall), A, rng_cycle, 15), 0.5 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 0.5 SECONDS, PROC_REF(hole_in_wall), A, rng_cycle, 15)
 			attackcycle = 0
 		if(3)
-			addtimer(CALLBACK(src, PROC_REF(rising_star), A, rng_cycle, 15), 0.5 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 0.5 SECONDS, PROC_REF(rising_star), A, rng_cycle, 15)
 			attackcycle = 0
 		if(4)
-			addtimer(CALLBACK(src, PROC_REF(gattlingfire), A, rng_cycle, 8, 7), 0.5 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 0.5 SECONDS, PROC_REF(gattlingfire), A, rng_cycle, 8, 7)
 			attackcycle = 0
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/tankyboss/crystal_boss //immune to projectiles
@@ -317,4 +317,4 @@
 	return (..(P))
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/tankyboss/crystal_boss/do_special_attack(atom/A)
-	addtimer(CALLBACK(src, PROC_REF(bomb_chaos), A, 4), 0.5 SECONDS, TIMER_DELETE_ME)
+	om_after(src, 0.5 SECONDS, PROC_REF(bomb_chaos), A, 4)

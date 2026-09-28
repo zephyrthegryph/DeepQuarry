@@ -350,8 +350,8 @@
 				// INVOKE_ASYNC (Move itself has no /proc/ decl to reference, and INVOKE_ASYNC
 				// snapshots M so the loop variable can't be clobbered before it runs).
 				INVOKE_ASYNC(M, TYPE_PROC_REF(/mob, grab_chain_step), pre_move_loc, get_dir(M, pre_move_loc), total_delay)
-				addtimer(CALLBACK(M, TYPE_PROC_REF(/mob, clear_other_mobs)), 1 DECISECONDS, TIMER_STOPPABLE)
-				addtimer(CALLBACK(my_mob, TYPE_PROC_REF(/mob, clear_other_mobs)), 1 DECISECONDS, TIMER_STOPPABLE)
+				om_after(M, 1 DECISECONDS, TYPE_PROC_REF(/mob, clear_other_mobs))
+				om_after(my_mob, 1 DECISECONDS, TYPE_PROC_REF(/mob, clear_other_mobs))
 
 	// Update all the grabs!
 	for (var/obj/item/grab/G in my_mob)

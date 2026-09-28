@@ -66,7 +66,7 @@
 	if (timeout)
 		src.timeout = timeout
 		start_time = world.time
-		QDEL_IN(src, timeout)
+		om_qdel_after(src, timeout)
 
 /**
  * Waits for a user's response to the tgui_input_keycombo's prompt before returning. Returns early if

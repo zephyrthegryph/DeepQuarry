@@ -359,7 +359,7 @@ GLOBAL_LIST_INIT(master_filter_info, list(
 			in_atom.remove_filter("wibbly-[i]")
 			continue
 		animate(filter, x = 0, y = 0, size = 0, offset = 0, time = remove_duration)
-		addtimer(CALLBACK(in_atom, TYPE_PROC_REF(/datum, remove_filter), "wibbly-[i]"), remove_duration)
+		om_after(in_atom, remove_duration, TYPE_PROC_REF(/datum, remove_filter), "wibbly-[i]")
 
 /proc/convert_list_to_filter(list/list_filter)
 	var/list/arguments = list_filter.Copy()

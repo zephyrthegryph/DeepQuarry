@@ -476,7 +476,7 @@ SUBSYSTEM_DEF(ticker)
 	if(!delay)
 		delay = CONFIG_GET(number/round_end_countdown) SECONDS
 		if(delay >= 60 SECONDS)
-			countdown_timer = addtimer(CALLBACK(src, PROC_REF(announce_countdown), delay), 60 SECONDS)
+			countdown_timer = om_after(src, 60 SECONDS, PROC_REF(announce_countdown), delay)
 
 	var/skip_delay = check_rights()
 	if(delay_end && !skip_delay)
@@ -487,16 +487,16 @@ SUBSYSTEM_DEF(ticker)
 
 	var/start_wait = world.time
 	UNTIL(round_end_sound_sent || (world.time - start_wait) > (delay * 2)) //don't wait forever
-	reboot_timer = addtimer(CALLBACK(src, PROC_REF(reboot_callback), reason, end_string), delay - (world.time - start_wait), TIMER_STOPPABLE)
+	reboot_timer = om_after(src, delay - (world.time - start_wait), PROC_REF(reboot_callback), reason, end_string)
 
 /datum/controller/subsystem/ticker/proc/announce_countdown(remaining_time)
 	remaining_time -= 60 SECONDS
 	if(remaining_time > 60 SECONDS)
 		to_chat(world, span_boldannounce("Rebooting World in [DisplayTimeText(remaining_time)]."))
-		countdown_timer = addtimer(CALLBACK(src, PROC_REF(announce_countdown), remaining_time), 60 SECONDS)
+		countdown_timer = om_after(src, 60 SECONDS, PROC_REF(announce_countdown), remaining_time)
 		return
 	if(remaining_time <= 60 SECONDS && remaining_time > 0)
-		countdown_timer = addtimer(CALLBACK(src, PROC_REF(announce_countdown), remaining_time - 1 SECOND), remaining_time)
+		countdown_timer = om_after(src, remaining_time, PROC_REF(announce_countdown), remaining_time - 1 SECOND)
 		return
 	if(!delay_end)
 		to_chat(world, span_boldannounce("Rebooting World."))
@@ -520,10 +520,10 @@ SUBSYSTEM_DEF(ticker)
 		to_chat(user, span_warning("There is no pending reboot!"))
 		return FALSE
 	to_chat(world, span_boldannounce("An admin has delayed the round end."))
-	deltimer(reboot_timer)
+	om_cancel_timer(src, reboot_timer)
 	reboot_timer = null
 	if(countdown_timer)
-		deltimer(countdown_timer)
+		om_cancel_timer(src, countdown_timer)
 		countdown_timer = null
 	return TRUE
 
@@ -536,10 +536,10 @@ SUBSYSTEM_DEF(ticker)
 	delay_end = !delay_end
 
 	if(countdown_timer)
-		deltimer(countdown_timer)
+		om_cancel_timer(src, countdown_timer)
 		countdown_timer = null
 	if(reboot_timer)
-		deltimer(reboot_timer)
+		om_cancel_timer(src, reboot_timer)
 		reboot_timer = null
 	else
 		Reboot("World reboot after administrative delay.")

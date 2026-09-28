@@ -80,7 +80,7 @@ REF_OWNED(/datum/cogbar, "blank")
 
 	animate(cog, alpha = 0, time = COGBAR_ANIMATION_TIME)
 
-	QDEL_IN(src, COGBAR_ANIMATION_TIME)
+	om_qdel_after(src, COGBAR_ANIMATION_TIME)
 
 /// When the user is deleted, remove the cog
 /datum/cogbar/proc/on_user_delete(datum/source)

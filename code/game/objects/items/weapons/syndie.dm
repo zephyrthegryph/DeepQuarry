@@ -52,7 +52,7 @@
 	playsound(src, 'sound/weapons/armbomb.ogg', 75, 1)
 	for(var/mob/O in hearers(src, null))
 		O.show_message("[icon2html(src, O.client)] " + span_warning(" The [src.name] beeps!"))
-	addtimer(CALLBACK(src, PROC_REF(do_detonate)), 5 SECONDS, TIMER_DELETE_ME)
+	om_after(src, 5 SECONDS, PROC_REF(do_detonate))
 
 /obj/item/syndie/c4explosive/proc/do_detonate()
 	SHOULD_NOT_OVERRIDE(TRUE)

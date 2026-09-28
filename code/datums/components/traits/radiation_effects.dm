@@ -334,7 +334,7 @@
 		return
 
 	parent_movable.add_filter("rad_glow", 2, list("type" = "outline", "color" = "#39ff1430", "size" = 2))
-	addtimer(CALLBACK(src, PROC_REF(toony_glow_loop), parent_movable), rand(0.1 SECONDS, 1.9 SECONDS)) // Things should look uneven
+	om_after(src, rand(0.1 SECONDS, 1.9 SECONDS), PROC_REF(toony_glow_loop), parent_movable) // Things should look uneven
 
 /datum/component/radiation_effects/proc/toony_glow_loop(atom/movable/parent_movable)
 	var/filter = parent_movable.get_filter("rad_glow")

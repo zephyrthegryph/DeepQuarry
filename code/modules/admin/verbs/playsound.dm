@@ -1,3 +1,6 @@
+/// When the current internet sound ends (a COOLDOWN): one at a time, server-wide.
+GLOBAL_VAR_INIT(internet_sound_cooldown, 0)
+
 //world/proc/shelleo
 #define SHELLEO_ERRORLEVEL 1
 #define SHELLEO_STDOUT 2
@@ -187,7 +190,7 @@ ADMIN_VERB(play_server_sound, R_SOUNDS, "Play Server Sound", "Plays a sound from
 				else
 					C.tgui_panel?.stop_music()
 
-	S_TIMER_COOLDOWN_START(SStimer, COOLDOWN_INTERNET_SOUND, duration)
+	COOLDOWN_START(GLOB, internet_sound_cooldown, duration)
 
 	feedback_add_details("admin_verb", "Play Internet Sound")
 
@@ -197,8 +200,8 @@ ADMIN_VERB(play_web_sound, R_SOUNDS, "Play Internet Sound", "Plays a sound from 
 		to_chat(user, span_boldwarning("Youtube-dl was not configured, action unavailable"), confidential = TRUE) //Check config.txt for the INVOKE_YOUTUBEDL value
 		return
 
-	if(S_TIMER_COOLDOWN_TIMELEFT(SStimer, COOLDOWN_INTERNET_SOUND))
-		if(tgui_alert(user, "Someone else is already playing an Internet sound! It has [DisplayTimeText(S_TIMER_COOLDOWN_TIMELEFT(SStimer, COOLDOWN_INTERNET_SOUND), 1)] remaining. \
+	if(COOLDOWN_TIMELEFT(GLOB, internet_sound_cooldown))
+		if(tgui_alert(user, "Someone else is already playing an Internet sound! It has [DisplayTimeText(COOLDOWN_TIMELEFT(GLOB, internet_sound_cooldown), 1)] remaining. \
 		Would you like to override?", "Musicalis Interruptus", list("No","Yes")) != "Yes")
 			return
 
@@ -221,7 +224,7 @@ ADMIN_VERB(stop_sounds, R_SOUNDS, "Stop All Playing Sounds", "Stops all playing 
 		var/client/current_client = current_mob.client
 		current_client?.tgui_panel?.stop_music()
 
-	S_TIMER_COOLDOWN_RESET(SStimer, COOLDOWN_INTERNET_SOUND)
+	COOLDOWN_RESET(GLOB, internet_sound_cooldown)
 	feedback_add_details("admin_verb", "Stop All Playing Sounds")
 
 //world/proc/shelleo

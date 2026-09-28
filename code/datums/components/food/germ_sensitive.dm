@@ -61,7 +61,7 @@ GLOBAL_LIST_INIT(floor_diseases, list(
 /datum/component/germ_sensitive/proc/remove_timer()
 	if(!timer_id)
 		return
-	deltimer(timer_id)
+	om_cancel_timer(src, timer_id)
 	timer_id = null
 
 /datum/component/germ_sensitive/proc/handle_movement()
@@ -82,7 +82,7 @@ GLOBAL_LIST_INIT(floor_diseases, list(
 			return
 
 	// Exposed to bacteria, start countdown until becoming infected
-	timer_id = addtimer(CALLBACK(src, PROC_REF(expose_to_germs)), GERM_EXPOSURE_DELAY, TIMER_STOPPABLE | TIMER_UNIQUE)
+	timer_id = om_after_unique(src, GERM_EXPOSURE_DELAY, PROC_REF(expose_to_germs))
 
 /datum/component/germ_sensitive/proc/picked_up()
 	SIGNAL_HANDLER

@@ -93,7 +93,7 @@
 	LAZYINITLIST(brain.behavior_state)
 	if(!brain.behavior_state[type])
 		brain.behavior_state[type] = list("cooldown" = 0, "charges" = null)
-	brain.behavior_state[type]["dash_timer"] = addtimer(CALLBACK(src, PROC_REF(execute_dash), brain, target), windup, TIMER_STOPPABLE)
+	brain.behavior_state[type]["dash_timer"] = om_after(src, windup, PROC_REF(execute_dash), brain, target)
 	return DQ_BEHAVIOR_CONTINUE
 
 /datum/ai_behavior/charge_slam/stop(datum/ai_brain/brain, atom/target, atom/source, reason)
@@ -101,7 +101,7 @@
 	if(!QDELETED(brain))
 		var/list/state = LAZYACCESS(brain.behavior_state, type)
 		if(state && state["dash_timer"])
-			deltimer(state["dash_timer"])
+			om_cancel_timer(src, state["dash_timer"])
 			state["dash_timer"] = null
 	return ..()
 

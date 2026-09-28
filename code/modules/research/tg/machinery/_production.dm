@@ -118,7 +118,7 @@ REF_OWNED(/obj/machinery/rnd/production, "print_sound")
 
 	if(!techweb_updating) //so we batch these updates together
 		techweb_updating = TRUE
-		addtimer(CALLBACK(src, PROC_REF(update_designs)), 2 SECONDS)
+		om_after(src, 2 SECONDS, PROC_REF(update_designs))
 
 /**
  * Consumes power for the item inserted either into silo or local storage.
@@ -409,7 +409,7 @@ REF_OWNED(/obj/machinery/rnd/production, "print_sound")
 					target_location = get_turf(src)
 			else
 				target_location = get_turf(src)
-			addtimer(CALLBACK(src, PROC_REF(do_make_item), design, print_quantity, build_time_per_item, coefficient, charge_per_item, target_location, chosen_materials), build_time_per_item)
+			om_after(src, build_time_per_item, PROC_REF(do_make_item), design, print_quantity, build_time_per_item, coefficient, charge_per_item, target_location, chosen_materials)
 
 			return TRUE
 
@@ -495,7 +495,7 @@ REF_OWNED(/obj/machinery/rnd/production, "print_sound")
 	if(!items_remaining)
 		finalize_build()
 		return
-	addtimer(CALLBACK(src, PROC_REF(do_make_item), design, items_remaining, build_time_per_item, material_cost_coefficient, charge_per_item, target, chosen_materials), build_time_per_item)
+	om_after(src, build_time_per_item, PROC_REF(do_make_item), design, items_remaining, build_time_per_item, material_cost_coefficient, charge_per_item, target, chosen_materials)
 
 /// Resets the busy flag
 /// Called at the end of do_make_item's timer loop

@@ -97,7 +97,7 @@ REGISTRY_MEMBERSHIP(/obj/item/geiger, REGISTRY_GEIGER_COUNTERS)
 		return NONE
 
 	user.visible_message(span_notice("[user] scans [interacting_with] with [src]."), span_notice("You scan [interacting_with]'s radiation levels with [src]..."))
-	addtimer(CALLBACK(src, PROC_REF(scan), interacting_with, user), 20, TIMER_UNIQUE) // Let's not have spamming GetAllContents
+	om_after_unique(src, 20, PROC_REF(scan), interacting_with, user) // Let's not have spamming GetAllContents
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/geiger/equipped(mob/user, slot, initial)
@@ -119,7 +119,7 @@ REGISTRY_MEMBERSHIP(/obj/item/geiger, REGISTRY_GEIGER_COUNTERS)
 		insulation_deficit = round(insulation_to_target - pulse_information.threshold, 0.1)
 	else
 		insulation_deficit = null
-	addtimer(CALLBACK(src, PROC_REF(reset_perceived_danger)), TIME_WITHOUT_RADIATION_BEFORE_RESET, TIMER_UNIQUE | TIMER_OVERRIDE)
+	om_after_replace(src, TIME_WITHOUT_RADIATION_BEFORE_RESET, PROC_REF(reset_perceived_danger))
 
 	if (scanning)
 		update_icon()
@@ -193,11 +193,11 @@ REGISTRY_MEMBERSHIP(/obj/item/geiger, REGISTRY_GEIGER_COUNTERS)
 
 /obj/item/geiger/wall/attack_ai(mob/user as mob)
 	src.add_fingerprint(user)
-	addtimer(CALLBACK(src, PROC_REF(attack_self), user), 0)
+	om_after(src, 0, PROC_REF(attack_self), user)
 
 /obj/item/geiger/wall/attack_hand(mob/user as mob)
 	src.add_fingerprint(user)
-	addtimer(CALLBACK(src, PROC_REF(attack_self), user), 0)
+	om_after(src, 0, PROC_REF(attack_self), user)
 
 /obj/item/geiger/wall/north
 	pixel_y = 28

@@ -563,14 +563,14 @@ REF_OWNED(/obj/item/rcd/electric, "cell")
 		icon_state += "_short"
 	if (status == RCD_DECONSTRUCT)
 		icon_state += "_reverse"
-	addtimer(CALLBACK(src, PROC_REF(end_animation), status), delay)
+	om_after(src, delay, PROC_REF(end_animation), status)
 
 /obj/effect/constructing_effect/proc/end_animation(status)
 	if (status == RCD_DECONSTRUCT)
 		icon_state = "rcd_end_reverse"
 	else
 		icon_state = "rcd_end"
-	addtimer(CALLBACK(src, PROC_REF(end)), 15)
+	om_after(src, 15, PROC_REF(end))
 
 /obj/effect/constructing_effect/proc/end()
 	qdel(src)

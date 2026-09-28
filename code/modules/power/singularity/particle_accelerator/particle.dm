@@ -93,4 +93,4 @@
 		qdel(src)
 		return
 
-	addtimer(CALLBACK(src, PROC_REF(move), lag), lag)
+	om_after(src, lag, PROC_REF(move), lag)

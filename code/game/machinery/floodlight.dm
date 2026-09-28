@@ -37,7 +37,7 @@
 	if((cell.percent() < 10) && prob(5))
 		set_light_range(brightness_on/2)
 		set_light_power(brightness_on/4)
-		addtimer(CALLBACK(src, PROC_REF(flicker_restore)), 20, TIMER_DELETE_ME)
+		om_after(src, 20, PROC_REF(flicker_restore))
 
 /obj/machinery/floodlight/proc/flicker_restore()
 	if(on)

@@ -88,8 +88,8 @@
 	)
 
 	dq_add_z_update_image(src, balloon_alert) // register with DQ z-image tracker so balloons reposition across z-moves
-	addtimer(CALLBACK(balloon_alert.loc, PROC_REF(forget_balloon_alert), balloon_alert), BALLOON_TEXT_TOTAL_LIFETIME(length_mult))
-	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(remove_image_from_client), balloon_alert, viewer_client), BALLOON_TEXT_TOTAL_LIFETIME(length_mult))
+	om_after(balloon_alert.loc, BALLOON_TEXT_TOTAL_LIFETIME(length_mult), PROC_REF(forget_balloon_alert), balloon_alert)
+	om_after(null, BALLOON_TEXT_TOTAL_LIFETIME(length_mult), GLOBAL_PROC_REF(remove_image_from_client), balloon_alert, viewer_client)
 
 /atom/proc/forget_balloon_alert(image/balloon_alert)
 	dq_remove_z_update_image(src, balloon_alert) // paired teardown for dq_add_z_update_image above

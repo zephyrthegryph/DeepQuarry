@@ -99,12 +99,12 @@
 /// owned by this atom (an OM timer on src, not on the global qdel proc), so
 /// deleting it first cancels the timer instead of leaving a queued strong
 /// reference behind -- the hard-delete trap QDEL_IN() works around with a
-/// handle.
+/// handle. expire(null) only disarms (a ghost whose player came back).
 /atom/movable/proc/expire(after)
 	if(lifecycle_lifetime_timer)
 		om_cancel_timer(src, lifecycle_lifetime_timer)
 		lifecycle_lifetime_timer = null
-	if(QDELETED(src))
+	if(isnull(after) || QDELETED(src))
 		return
 	lifecycle_lifetime_timer = om_after(src, max(after, 0), PROC_REF(lifecycle_expire_now))
 

@@ -76,7 +76,7 @@
 	icon_state = "doorctrl1"
 	desiredstate = !desiredstate
 	trigger(user)
-	addtimer(CALLBACK(src, TYPE_PROC_REF(/atom, update_icon)), 1.5 SECONDS, TIMER_DELETE_ME|TIMER_UNIQUE)
+	om_after_unique(src, 1.5 SECONDS, TYPE_PROC_REF(/atom, update_icon))
 	return TRUE
 
 /obj/machinery/button/remote/proc/trigger()
@@ -220,14 +220,14 @@
 	for(var/obj/machinery/door/blast/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(M.id == id)
 			M.open()
-	addtimer(CALLBACK(src, PROC_REF(trigger_step_one)), 2 SECONDS, TIMER_DELETE_ME|TIMER_UNIQUE)
+	om_after_unique(src, 2 SECONDS, PROC_REF(trigger_step_one))
 
 /obj/machinery/button/remote/driver/proc/trigger_step_one()
 	PRIVATE_PROC(TRUE)
 	for(var/obj/machinery/mass_driver/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(M.id == id)
 			M.drive()
-	addtimer(CALLBACK(src, PROC_REF(trigger_step_two)), 5 SECONDS, TIMER_DELETE_ME|TIMER_UNIQUE)
+	om_after_unique(src, 5 SECONDS, PROC_REF(trigger_step_two))
 
 /obj/machinery/button/remote/driver/proc/trigger_step_two()
 	PRIVATE_PROC(TRUE)

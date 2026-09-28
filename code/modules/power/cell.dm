@@ -327,7 +327,7 @@
 		new /obj/effect/effect/sparks(T)
 	update_icon()
 	iterations--
-	addtimer(CALLBACK(src, PROC_REF(gradual_charge), iterations, multiplier, sparks, user), 1 SECOND, TIMER_DELETE_ME)
+	om_after(src, 1 SECOND, PROC_REF(gradual_charge), iterations, multiplier, sparks, user)
 
 /obj/item/cell/examine(mob/user)
 	. = ..()

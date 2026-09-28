@@ -29,7 +29,7 @@
 
 /obj/item/uplink/Initialize(mapload)
 	. = ..()
-	addtimer(CALLBACK(src, PROC_REF(next_offer)), offer_time) //It seems like only the /hidden type actually makes use of this...
+	om_after(src, offer_time, PROC_REF(next_offer)) //It seems like only the /hidden type actually makes use of this...
 
 /obj/item/uplink/get_item_cost(item_type, item_cost)
 	return (discount_item && (item_type == discount_item)) ? max(1, round(item_cost*discount_amount)) : item_cost
@@ -67,7 +67,7 @@
 	discount_amount = pick(90;0.9, 80;0.8, 70;0.7, 60;0.6, 50;0.5, 40;0.4, 30;0.3, 20;0.2, 10;0.1)
 	next_offer_time = world.time + offer_time
 	SStgui.update_uis(src)
-	addtimer(CALLBACK(src, PROC_REF(next_offer)), offer_time)
+	om_after(src, offer_time, PROC_REF(next_offer))
 
 // Toggles the uplink on and off. Normally this will bypass the item's normal functions and go to the uplink menu, if activated.
 /obj/item/uplink/hidden/proc/toggle()

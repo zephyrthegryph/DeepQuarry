@@ -44,7 +44,7 @@ SUBSYSTEM_DEF(statpanels)
 				global_data += "[ETA]"
 
 		if(SSticker.reboot_timer)
-			var/reboot_time = timeleft(SSticker.reboot_timer)
+			var/reboot_time = om_timer_left(SSticker, SSticker.reboot_timer)
 			if(reboot_time)
 				global_data += "Reboot: [DisplayTimeText(reboot_time, 1)]"
 		// admin must have delayed round end
@@ -195,7 +195,6 @@ SUBSYSTEM_DEF(statpanels)
 			"cpu" = world.cpu,
 			"instances" = length(world.contents),
 			"clients" = length(GLOB.clients),
-			"timers" = length(SStimer.timer_id_dict),
 			"tick_drift" = Master.tickdrift,
 			"sleep_delta" = Master.sleep_delta,
 			"queue_priority" = Master.queue_priority_count,

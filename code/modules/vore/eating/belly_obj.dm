@@ -1257,3 +1257,7 @@ REF_BACKLIST(/obj/belly, list("owner" = "vore_organs"))
 
 #undef MAX_ENTRY_MESSAAGES
 #undef ENTRY_MESSAGE_INTERVAL
+
+/// om_after() target: a temporary digest mode wears off.
+/obj/belly/proc/reset_digest_mode(mode)
+	digest_mode = mode

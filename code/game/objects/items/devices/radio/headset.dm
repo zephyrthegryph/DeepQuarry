@@ -176,7 +176,7 @@ REF_OWNED(/obj/item/radio/headset, list("keyslot1", "keyslot2"))
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(register)
 		if(!SSradio && initial_run)
-			addtimer(CALLBACK(src,PROC_REF(handle_finalize_recalculatechannels),setDescription, FALSE),3 SECONDS)
+			om_after(src, 3 SECONDS, PROC_REF(handle_finalize_recalculatechannels), setDescription, FALSE)
 			return
 		if(!SSradio && !initial_run)
 			name = "broken radio headset"

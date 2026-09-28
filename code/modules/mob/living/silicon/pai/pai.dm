@@ -469,7 +469,7 @@ REF_OWNED(/mob/living/silicon/pai, list("card", "pai_ui_chassis", "sradio", "com
 /// Fully heals a pai, used when a pai is repaired
 /mob/living/silicon/pai/proc/full_restore()
 	fully_heal()
-	addtimer(CALLBACK(src, PROC_REF(restore_delay_start)), 5 SECONDS, TIMER_DELETE_ME)
+	om_after(src, 5 SECONDS, PROC_REF(restore_delay_start))
 
 /mob/living/silicon/pai/proc/restore_delay_start()
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -477,7 +477,7 @@ REF_OWNED(/mob/living/silicon/pai, list("card", "pai_ui_chassis", "sradio", "com
 	card.setEmotion(16)
 	if(stat == DEAD)
 		return_from_death("pAI restored", card, REVIVE_IGNORE_WINDOW)
-	addtimer(CALLBACK(src, PROC_REF(restore_delay_end)), 1 SECONDS, TIMER_DELETE_ME)
+	om_after(src, 1 SECONDS, PROC_REF(restore_delay_end))
 
 /mob/living/silicon/pai/proc/restore_delay_end()
 	SHOULD_NOT_OVERRIDE(TRUE)

@@ -41,7 +41,7 @@
 			return
 
 	if(step_count > 0)
-		addtimer(CALLBACK(src, PROC_REF(step_process), target, step_count, delay, iteration), delay)
+		om_after(src, delay, PROC_REF(step_process), target, step_count, delay, iteration)
 		return
 	expire(1 SECOND)
 

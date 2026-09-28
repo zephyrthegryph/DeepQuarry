@@ -169,7 +169,7 @@
 	// raw `visibility`, so we don't clobber another source mid-flourish.
 	holder.apply_combined_alpha(0.1 SECONDS)
 	apply_wibbly_filters(holder, 0.5 SECONDS)
-	addtimer(CALLBACK(src, PROC_REF(remove_wibble), 0.1 SECOND), 0.5 SECONDS, TIMER_DELETE_ME) //Calling a proc with no arguments
+	om_after(src, 0.5 SECONDS, PROC_REF(remove_wibble), 0.1 SECOND) //Calling a proc with no arguments
 
 /datum/modifier/robot_cloak/proc/attacked_in_cloak()
 	SIGNAL_HANDLER

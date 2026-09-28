@@ -67,7 +67,6 @@ code/controllers/subsystems/internal_wiki.dm 1
 code/controllers/subsystems/supply.dm 1
 code/controllers/subsystems/tgui.dm 2
 code/controllers/subsystems/throwing.dm 4
-code/controllers/subsystems/timer.dm 1
 code/controllers/subsystems/transcore.dm 4
 code/datums/EPv2.dm 1
 code/datums/ai_laws.dm 6
@@ -155,7 +154,6 @@ code/datums/rules/rule.dm 5
 code/datums/soul_link.dm 2
 code/datums/status_effects/_status_effect.dm 1
 code/datums/status_effects/debuffs/fire_stacks.dm 2
-code/datums/tgs_event_handler.dm 1
 code/datums/uplink/uplink_categories.dm 1
 code/datums/uplink/uplink_items.dm 4
 code/datums/wires/wires.dm 1

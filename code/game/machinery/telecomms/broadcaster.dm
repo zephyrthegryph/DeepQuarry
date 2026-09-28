@@ -52,7 +52,7 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 
 		// simulate the network lag if necessary
 		if(signal.data["slow"] > 0)
-			addtimer(CALLBACK(src, PROC_REF(receive_information_delayed), signal), signal.data["slow"], TIMER_DELETE_ME)
+			om_after(src, signal.data["slow"], PROC_REF(receive_information_delayed), signal)
 			return
 		receive_information_delayed(signal)
 
@@ -172,7 +172,7 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 		signal.data["level"] = map_levels
 
 		if(signal.data["slow"] > 0)
-			addtimer(CALLBACK(src, PROC_REF(broadcast_signal), signal), signal.data["slow"], TIMER_DELETE_ME)
+			om_after(src, signal.data["slow"], PROC_REF(broadcast_signal), signal)
 
 /obj/machinery/telecomms/allinone/proc/broadcast_signal(datum/signal/signal)
 	/* ###### Broadcast a message using signal.data ###### */
@@ -226,7 +226,7 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 		//signal.data["level"] = using_map.contact_levels.Copy()
 
 		if(signal.data["slow"] > 0)
-			addtimer(CALLBACK(src, PROC_REF(broadcast_signal), signal), signal.data["slow"], TIMER_DELETE_ME)
+			om_after(src, signal.data["slow"], PROC_REF(broadcast_signal), signal)
 
 /obj/machinery/telecomms/allinone/antag/broadcast_signal(datum/signal/signal)
 	/* ###### Broadcast a message using signal.data ###### */
@@ -773,7 +773,7 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 		signal.data["compression"] = 0 // decompress since we're a processor
 
 		if(signal.data["slow"] > 0)
-			addtimer(CALLBACK(src, PROC_REF(broadcast_signal), signal), signal.data["slow"], TIMER_DELETE_ME)
+			om_after(src, signal.data["slow"], PROC_REF(broadcast_signal), signal)
 
 /obj/machinery/telecomms/broadcaster/proc/clear_recent_messages()
 	GLOB.message_delay = 0

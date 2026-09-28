@@ -164,31 +164,31 @@
 /mob/living/simple_mob/vore/boss_jellyfish/do_special_attack(atom/A)
 	if(nutrition > 500)
 		Beam(A, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)
-		addtimer(CALLBACK(src, PROC_REF(sniper_shot), A), 4 SECONDS, TIMER_DELETE_ME)
+		om_after(src, 4 SECONDS, PROC_REF(sniper_shot), A)
 	else if(vitality() < 0.25) //phase 4 where it teleports then chains 3 attacks
 		chain_number = 3
-		addtimer(CALLBACK(src, PROC_REF(astral_sea_warp), A), 3 SECONDS, TIMER_DELETE_ME)
+		om_after(src, 3 SECONDS, PROC_REF(astral_sea_warp), A)
 		icon_state = "jellyfish_blue"
 		icon_living = "jellyfish_blue"
 	else if(vitality() < 0.5) //teleports then chains 2 attacks
 		chain_number = 2
-		addtimer(CALLBACK(src, PROC_REF(astral_sea_warp), A), 3 SECONDS, TIMER_DELETE_ME)
+		om_after(src, 3 SECONDS, PROC_REF(astral_sea_warp), A)
 		icon_state = "jellyfish_blue"
 		icon_living = "jellyfish_blue"
 	else if(vitality() < 0.75) //teleports then attacks
 		chain_number = 1
 		icon_state = "jellyfish_blue"
 		icon_living = "jellyfish_blue"
-		addtimer(CALLBACK(src, PROC_REF(astral_sea_warp), A), 3 SECONDS, TIMER_DELETE_ME)
+		om_after(src, 3 SECONDS, PROC_REF(astral_sea_warp), A)
 	else //attacks once
 		if(prob(50))
 			icon_state = "jellyfish_yellow"
 			icon_living = "jellyfish_yellow"
-			addtimer(CALLBACK(src, PROC_REF(dash_attack), A), 4 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 4 SECONDS, PROC_REF(dash_attack), A)
 		else
 			icon_state = "jellyfish_red"
 			icon_living = "jellyfish_red"
-			addtimer(CALLBACK(src, PROC_REF(summon_puddles), A), 4 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 4 SECONDS, PROC_REF(summon_puddles), A)
 
 /mob/living/simple_mob/vore/boss_jellyfish/proc/dash_attack(atom/A) //spider dash attack
 	ai_busy_begin()
@@ -236,11 +236,11 @@
 		if(prob(50))
 			icon_state = "jellyfish_yellow"
 			icon_living = "jellyfish_yellow"
-			addtimer(CALLBACK(src, PROC_REF(dash_attack), A), 4 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 4 SECONDS, PROC_REF(dash_attack), A)
 		else
 			icon_state = "jellyfish_red"
 			icon_living = "jellyfish_red"
-			addtimer(CALLBACK(src, PROC_REF(summon_puddles), A), 4 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 4 SECONDS, PROC_REF(summon_puddles), A)
 	else
 		icon_state = "jellyfish"
 		icon_living = "jellyfish"
@@ -258,11 +258,11 @@
 			if(prob(50))
 				icon_state = "jellyfish_yellow"
 				icon_living = "jellyfish_yellow"
-				addtimer(CALLBACK(src, PROC_REF(dash_attack), A), 4 SECONDS, TIMER_DELETE_ME)
+				om_after(src, 4 SECONDS, PROC_REF(dash_attack), A)
 			else
 				icon_state = "jellyfish_red"
 				icon_living = "jellyfish_red"
-				addtimer(CALLBACK(src, PROC_REF(summon_puddles), A), 4 SECONDS, TIMER_DELETE_ME)
+				om_after(src, 4 SECONDS, PROC_REF(summon_puddles), A)
 		else
 			icon_state = "jellyfish"
 			icon_living = "jellyfish"
@@ -317,8 +317,8 @@
 		if(prob(50))
 			icon_state = "jellyfish_yellow"
 			icon_living = "jellyfish_yellow"
-			addtimer(CALLBACK(src, PROC_REF(dash_attack), target), 4 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 4 SECONDS, PROC_REF(dash_attack), target)
 		else
 			icon_state = "jellyfish_red"
 			icon_living = "jellyfish_red"
-			addtimer(CALLBACK(src, PROC_REF(summon_puddles), target), 4 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 4 SECONDS, PROC_REF(summon_puddles), target)

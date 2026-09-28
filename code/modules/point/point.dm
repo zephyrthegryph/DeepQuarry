@@ -47,7 +47,7 @@
 
 	add_overlay(thought_bubble)
 	dq_add_z_update_image(src, thought_bubble) // register with DQ z-image tracker so the point bubble follows z-moves
-	addtimer(CALLBACK(src, PROC_REF(clear_point_bubble), thought_bubble), POINT_TIME)
+	om_after(src, POINT_TIME, PROC_REF(clear_point_bubble), thought_bubble)
 
 /atom/movable/proc/clear_point_bubble(mutable_appearance/thought_bubble)
 	dq_remove_z_update_image(src, thought_bubble) // paired teardown for dq_add_z_update_image above

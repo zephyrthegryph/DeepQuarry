@@ -243,7 +243,7 @@ REF_OWNED(/obj/machinery/microwave, "soundloop")
 				to_chat(user, span_warning("\The [O] contains components unsuitable for cooking."))
 				return TRUE
 		// gotta let afterattack resolve
-		addtimer(CALLBACK(src, TYPE_PROC_REF(/datum, update_static_data_for_all_viewers)), 1 SECOND)
+		om_after(src, 1 SECOND, TYPE_PROC_REF(/datum, update_static_data_for_all_viewers))
 		return TRUE
 	return FALSE
 
@@ -434,7 +434,7 @@ REF_OWNED(/obj/machinery/microwave, "soundloop")
 		return
 
 	cycles--
-	addtimer(CALLBACK(src, PROC_REF(cook_loop), type, cycles, wait), wait)
+	om_after(src, wait, PROC_REF(cook_loop), type, cycles, wait)
 
 /obj/machinery/microwave/power_change()
 	. = ..()

@@ -110,7 +110,7 @@
 		D.fire()
 		charged = FALSE
 		update_icon()
-		addtimer(CALLBACK(src, PROC_REF(Recharge)), charge_time)
+		om_after(src, charge_time, PROC_REF(Recharge))
 		return
 	if(proximity_flag && isliving(target))
 		detonate(target, user)

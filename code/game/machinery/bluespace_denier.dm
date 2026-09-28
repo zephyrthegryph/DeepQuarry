@@ -17,7 +17,7 @@
 /obj/machinery/bluespace_denier/Initialize(mapload)
 	. = ..()
 	// if already anchored, setup the proxity check
-	timerid = addtimer(CALLBACK(src, PROC_REF(start_up)), 10 SECONDS, TIMER_STOPPABLE)
+	timerid = om_after(src, 10 SECONDS, PROC_REF(start_up))
 
 /obj/machinery/bluespace_denier/proc/start_up()
 	if(anchored)

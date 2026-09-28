@@ -169,7 +169,7 @@
 		to_chat(user, span_notice("You offer battle to [target.name]!"))
 		to_chat(target, span_notice(span_bold("[user.name] wants to battle with [user.p_their()] [name]!") + " " + span_italics("Attack them with a toy mech to initiate combat.")))
 		wants_to_battle = TRUE
-		addtimer(CALLBACK(src, PROC_REF(withdraw_offer), user), 6 SECONDS)
+		om_after(src, 6 SECONDS, PROC_REF(withdraw_offer), user)
 		return ITEM_INTERACT_SUCCESS
 
 	..()

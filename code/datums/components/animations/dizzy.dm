@@ -17,7 +17,7 @@ status starts and deletes it when it ends (the status row's on_start/on_end hook
 	owner = parent
 	was_resting = owner.resting
 	RegisterSignal(owner, COMSIG_MOB_DEATH, PROC_REF(mob_death))
-	addtimer(CALLBACK(src, PROC_REF(handle_tick)), 1, TIMER_DELETE_ME) // Needs to be a LOT faster than life ticks
+	om_after(src, 1, PROC_REF(handle_tick)) // Needs to be a LOT faster than life ticks
 
 /datum/component/dizzy_shake/proc/handle_tick()
 	if(QDELETED(parent))
@@ -35,7 +35,7 @@ status starts and deletes it when it ends (the status row's on_start/on_end hook
 		owner.client.pixel_x = amplitude * sin(0.008 * dizziness * world.time)
 		owner.client.pixel_y = amplitude * cos(0.008 * dizziness * world.time)
 
-	addtimer(CALLBACK(src, PROC_REF(handle_tick)), 1, TIMER_DELETE_ME)
+	om_after(src, 1, PROC_REF(handle_tick))
 
 /datum/component/dizzy_shake/proc/mob_death()
 	SIGNAL_HANDLER

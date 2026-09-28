@@ -189,7 +189,7 @@
 	if(leash_pet.absorbed)
 		clear_leash()
 		return
-	addtimer(CALLBACK(src, PROC_REF(after_master_move)), 0.2 SECONDS)
+	om_after(src, 0.2 SECONDS, PROC_REF(after_master_move))
 
 /obj/item/leash/proc/after_master_move()
 	//If the master moves, pull the pet in behind
@@ -241,7 +241,7 @@
 		return
 
 	//If the pet gets too far away, they get tugged back
-	addtimer(CALLBACK(src, PROC_REF(after_pet_move)), 0.3 SECONDS) //A short timer so the pet kind of bounces back after they make the step
+	om_after(src, 0.3 SECONDS, PROC_REF(after_pet_move)) //A short timer so the pet kind of bounces back after they make the step
 
 /obj/item/leash/proc/after_pet_move()
 	var/mob/living/leash_pet = src?.leash_pet()
@@ -259,7 +259,7 @@
 		clear_leash()
 		return
 	//Dropping procs any time the leash changes slots. So, we will wait a tick and see if the leash was actually dropped
-	addtimer(CALLBACK(src, PROC_REF(drop_effects), user), 0.1 SECONDS)
+	om_after(src, 0.1 SECONDS, PROC_REF(drop_effects), user)
 
 /obj/item/leash/proc/drop_effects(mob/user)
 	SIGNAL_HANDLER

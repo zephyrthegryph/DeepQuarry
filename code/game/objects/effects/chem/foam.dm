@@ -23,9 +23,9 @@
 	metal = ismetal
 	playsound(src, 'sound/effects/bubbles2.ogg', 80, 1, -3)
 	if(dries)
-		addtimer(CALLBACK(src, PROC_REF(post_spread)), 3 + metal * 3)
-		addtimer(CALLBACK(src, PROC_REF(pre_harden)), 12 SECONDS)
-		addtimer(CALLBACK(src, PROC_REF(harden)), 15 SECONDS)
+		om_after(src, 3 + metal * 3, PROC_REF(post_spread))
+		om_after(src, 12 SECONDS, PROC_REF(pre_harden))
+		om_after(src, 15 SECONDS, PROC_REF(harden))
 
 /obj/effect/effect/foam/proc/post_spread()
 	periodic_step()

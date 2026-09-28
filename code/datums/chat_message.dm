@@ -288,7 +288,7 @@ GLOBAL_LIST_EMPTY(runechat_image_cache)
 	animate(alpha = 0, time = CHAT_MESSAGE_EOL_FADE)
 
 	// Register with the runechat SS to handle destruction
-	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(qdel), src), lifespan + CHAT_MESSAGE_GRACE_PERIOD, TIMER_DELETE_ME, SSrunechat)
+	om_qdel_after(src, lifespan + CHAT_MESSAGE_GRACE_PERIOD)
 
 /datum/chatmessage/proc/unregister_qdel_self()  // this should only call owned_by if the client is destroyed
 	SIGNAL_HANDLER
@@ -314,7 +314,7 @@ GLOBAL_LIST_EMPTY(runechat_image_cache)
 		return
 	ending_life = TRUE
 	animate(message, alpha = 0, time = fadetime, flags = ANIMATION_PARALLEL)
-	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(qdel), src), fadetime, TIMER_DELETE_ME)
+	om_qdel_after(src, fadetime)
 
 /**
  * Creates a message overlay at a defined location for a given speaker

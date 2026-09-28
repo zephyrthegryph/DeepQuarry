@@ -181,6 +181,10 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 			return TRUE
 	return FALSE
 
+/// How many om_after() timers E has pending.
+/datum/om/scheduler/proc/timer_count(datum/E)
+	return length(E?.om_rec?.timers) / OM_TIMER_STRIDE
+
 /proc/om_timer_pending(datum/E, id)
 	var/list/T = (E || om_global_owner()).om_rec?.timers
 	for(var/i in 1 to length(T) step OM_TIMER_STRIDE)
@@ -335,3 +339,95 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 		catch(var/exception/e)
 			stack_trace("om timer [proc_ref] on [E]: [e]")
 	om_timers_reschedule(rec)
+
+// ---------------------------------------------------------------- keyed timers
+//
+// SStimer's TIMER_UNIQUE and TIMER_OVERRIDE, as the key they really were: the owner, the
+// proc and its arguments. No extra state: the owner's timer list is the index. These live on
+// the scheduler (base_proc_lint: no new global API taking a datum); call them through the
+// om_after_unique() / om_after_replace() / om_cancel_calls() / om_timer_count() macros.
+
+/// The position in rec.timers of a pending timer calling `proc_ref` with `call_args`, or 0.
+/datum/om/scheduler/proc/timer_find(datum/om/rec/rec, proc_ref, list/call_args)
+	var/list/T = rec?.timers
+	for(var/i in 1 to length(T) step OM_TIMER_STRIDE)
+		if(T[i + 2] != proc_ref)
+			continue
+		var/list/captured = T[i + 3]
+		if(length(captured) != length(call_args))
+			continue
+		var/same = TRUE
+		for(var/j in 1 to length(call_args))
+			var/arg = call_args[j]
+			if(captured[j] != arg && (!isdatum(arg) || captured[j] != om_handle(arg)))
+				same = FALSE
+				break
+		if(same)
+			return i
+	return 0
+
+/// om_after(), unless the same call (owner, proc, arguments) is already pending: then
+/// nothing, and the pending timer's id is returned. (Was TIMER_UNIQUE.)
+/datum/om/scheduler/proc/after_unique(datum/E, delay, proc_ref, ...)
+	if(isnull(E))
+		E = om_global_owner()
+	var/list/call_args = length(args) > 3 ? args.Copy(4) : list()
+	var/datum/om/rec/rec = om_rec_of(E)
+	var/i = timer_find(rec, proc_ref, call_args)
+	if(i)
+		return rec.timers[i]
+	return om_after(arglist(list(E, delay, proc_ref) + call_args))
+
+/// om_after(), replacing the same call if it is pending: the delay restarts. (Was
+/// TIMER_UNIQUE | TIMER_OVERRIDE.)
+/datum/om/scheduler/proc/after_replace(datum/E, delay, proc_ref, ...)
+	if(isnull(E))
+		E = om_global_owner()
+	var/list/call_args = length(args) > 3 ? args.Copy(4) : list()
+	var/datum/om/rec/rec = om_rec_of(E)
+	var/i = timer_find(rec, proc_ref, call_args)
+	if(i)
+		om_cancel_timer(E, rec.timers[i])
+	return om_after(arglist(list(E, delay, proc_ref) + call_args))
+
+/// Cancels every pending timer on E that calls `proc_ref`, whatever its arguments.
+/datum/om/scheduler/proc/cancel_calls(datum/E, proc_ref)
+	var/datum/om/rec/rec = E?.om_rec
+	var/list/T = rec?.timers
+	. = 0
+	for(var/i = length(T) - OM_TIMER_STRIDE + 1, i >= 1, i -= OM_TIMER_STRIDE)
+		if(T[i + 2] == proc_ref)
+			T.Cut(i, i + OM_TIMER_STRIDE)
+			.++
+	if(.)
+		if(!length(T))
+			rec.timers = null
+		om_timers_reschedule(rec)
+
+// ---------------------------------------------------------------- real time
+//
+// Client-facing delays (a flicked overlay, a UI fade) follow the wall clock, not game time,
+// which slows under time dilation. They go on the global owner. The wheel runs in game
+// time, so a real-time timer is due at a REALTIMEOFDAY, and re-arms for what is left when the
+// wheel fires it early. (Was TIMER_CLIENT_TIME.)
+
+/// Runs `proc` after `delay` deciseconds of real time, on the global owner. Arguments are
+/// captured weakly, as om_after() does. A global proc gets the arguments; a type proc runs on
+/// the first argument and gets the rest.
+/proc/om_after_realtime(delay, proc_ref, ...)
+	var/list/call_args = length(args) > 2 ? args.Copy(3) : list()
+	return om_after(arglist(list(null, delay, /proc/om_realtime_fire, REALTIMEOFDAY + max(delay, 0), proc_ref) + call_args))
+
+/proc/om_realtime_fire(due, proc_ref, ...)
+	var/list/call_args = length(args) > 2 ? args.Copy(3) : list()
+	var/left = due - REALTIMEOFDAY
+	if(left > 0)
+		om_after(arglist(list(null, left, /proc/om_realtime_fire, due, proc_ref) + call_args))
+		return
+	if(copytext("[proc_ref]", 1, 7) == "/proc/")
+		call(proc_ref)(arglist(call_args))
+	else if(length(call_args))
+		// A type proc: the first argument is the datum it runs on.
+		var/target = call_args[1]
+		if(target) // a client that has disconnected is null
+			call(target, proc_ref)(arglist(call_args.Copy(2)))

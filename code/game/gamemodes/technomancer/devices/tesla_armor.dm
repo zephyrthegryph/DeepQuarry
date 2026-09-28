@@ -44,7 +44,7 @@
 		//Deal with protecting our wearer now.
 		if(ready)
 			ready = 0
-			recharge_timer = addtimer(CALLBACK(src, PROC_REF(recharge_ready), user), cooldown_to_charge, TIMER_STOPPABLE)
+			recharge_timer = om_after(src, cooldown_to_charge, PROC_REF(recharge_ready), user)
 			visible_message(span_danger("\The [user]'s [src.name] blocks [attack_text]!"))
 			update_icon()
 			return 1

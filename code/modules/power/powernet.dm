@@ -135,8 +135,8 @@ REF_OWNED(/datum/powernet, "material_graph")
 	var/was_clear = problem <= 0
 	problem = TRUE
 	if(problem_timer)
-		deltimer(problem_timer)
-	problem_timer = addtimer(CALLBACK(src, PROC_REF(clear_warning)), max(duration_ticks, 1), TIMER_STOPPABLE)
+		om_cancel_timer(src, problem_timer)
+	problem_timer = om_after(src, max(duration_ticks, 1), PROC_REF(clear_warning))
 	if(was_clear)
 		om_changed(src, CHANGE_POWERNET_STATE)
 

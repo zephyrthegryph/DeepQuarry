@@ -201,7 +201,7 @@
 
 /datum/contract/covert_market_investigation/on_accepted(mob/living/user, atom/source)
 	. = ..()
-	addtimer(CALLBACK(SSsupply, TYPE_PROC_REF(/datum/controller/subsystem/supply, replay_market_audit_evidence), src), 1 DECISECONDS)
+	om_after(SSsupply, 1, TYPE_PROC_REF(/datum/controller/subsystem/supply, replay_market_audit_evidence), src)
 
 /datum/contract_definition/covert_market_investigation
 	id = "covert_market_investigation"
@@ -367,11 +367,11 @@
 		else
 			if(contract.closure_code == CONTRACT_CLOSE_FAILED)
 				record.contracts_failed++
-			addtimer(CALLBACK(src, PROC_REF(queue_agent_vetting), contract.owner_account_number, contract.agent_faction), CARGO_MARKET_AGENT_OFFER_DELAY)
+			om_after(src, CARGO_MARKET_AGENT_OFFER_DELAY, PROC_REF(queue_agent_vetting), contract.owner_account_number, contract.agent_faction)
 		return
 	if(contract.closure_code == CONTRACT_CLOSE_COMPLETED)
 		record.contracts_completed++
 	else if(contract.closure_code == CONTRACT_CLOSE_FAILED)
 		record.contracts_failed++
 	GLOB.station_faction_relations.refresh_agent_tier(record)
-	addtimer(CALLBACK(src, PROC_REF(queue_agent_offers), contract.owner_account_number, contract.agent_faction), CARGO_MARKET_AGENT_OFFER_DELAY)
+	om_after(src, CARGO_MARKET_AGENT_OFFER_DELAY, PROC_REF(queue_agent_offers), contract.owner_account_number, contract.agent_faction)

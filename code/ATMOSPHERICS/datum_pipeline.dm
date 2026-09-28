@@ -41,9 +41,6 @@
 /datum/pipeline/Destroy()
 	if(network?.rust_authoritative)
 		return QDEL_HINT_LETMELIVE
-	if(engineered_exposure_timer)
-		deltimer(engineered_exposure_timer)
-		engineered_exposure_timer = null
 	// Drop our backlink before invalidating the shared topology.  The network's
 	// Destroy() clears every other member and is deliberately re-entry safe.
 	var/list/old_memberships = network_memberships
@@ -83,7 +80,7 @@
 		if(!member.check_pressure(pressure))
 			break
 	if(needs_followup && !engineered_exposure_timer)
-		engineered_exposure_timer = addtimer(CALLBACK(src, PROC_REF(wake_engineered_exposure)), 5 SECONDS, TIMER_STOPPABLE)
+		engineered_exposure_timer = om_after(src, 5 SECONDS, PROC_REF(wake_engineered_exposure))
 
 /datum/pipeline/proc/wake_engineered_exposure()
 	engineered_exposure_timer = null

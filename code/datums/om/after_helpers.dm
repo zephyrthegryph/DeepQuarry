@@ -18,8 +18,11 @@
 
 /// Deletes `D` after `delay` deciseconds of its own clock. Null-safe.
 /proc/om_qdel_after(datum/D, delay)
-	if(D && !QDELETED(D))
-		return om_after(D, delay, /datum/proc/om_qdel_self)
+	if(!D || QDELETED(D))
+		return
+	if(!isdatum(D)) // an image or a list: nothing owns it, so the global owner does
+		return om_after(null, delay, /proc/qdel, D)
+	return om_after(D, delay, /datum/proc/om_qdel_self)
 
 /// Knocks the thing about: `steps` random steps, a few deciseconds apart.
 /atom/movable/proc/scatter_steps(steps)

@@ -409,3 +409,9 @@
 /// raises the field's declared channel, and does nothing when the value is unchanged. Returns
 /// TRUE on a change. tools/ci/api_lints.py (field_write) checks F is declared for T.
 #define OM_SETTER(T, F) T/proc/set_##F(value) { if(F == value) { return FALSE } else { F = value; om_changed(src, om_field_channel(src, #F)); return TRUE } }
+
+// Keyed and counted timers (timer.dm): scheduler procs, called as if they were globals.
+#define om_after_unique(args...) om_scheduler().after_unique(args)
+#define om_after_replace(args...) om_scheduler().after_replace(args)
+#define om_cancel_calls(E, proc_ref) om_scheduler().cancel_calls(E, proc_ref)
+#define om_timer_count(E) om_scheduler().timer_count(E)

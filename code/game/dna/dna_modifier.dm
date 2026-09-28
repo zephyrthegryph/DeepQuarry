@@ -359,7 +359,7 @@
 		connected = locate(/obj/machinery/dna_scannernew, get_step(src, dirfind))
 		if(connected)
 			break
-	VARSET_IN(src, injector_ready, TRUE, 25 SECONDS)
+	om_after(src, 25 SECONDS, PROC_REF(injector_cooldown_finish))
 
 /obj/machinery/computer/scan_consolenew/proc/all_dna_blocks(list/buffer)
 	var/list/arr = list()
@@ -521,7 +521,7 @@
 			irradiating = radiation_duration
 			var/lock_state = connected.locked
 			connected.locked = TRUE //lock it
-			addtimer(CALLBACK(src, PROC_REF(do_pulse), lock_state), radiation_duration SECONDS, TIMER_DELETE_ME)
+			om_after(src, radiation_duration SECONDS, PROC_REF(do_pulse), lock_state)
 			return TRUE
 		if("radiationDuration")
 			radiation_duration = clamp(text2num(params["value"]), 1, 20)
@@ -564,7 +564,7 @@
 			connected.locked = TRUE //lock it
 
 			//We call the do_irradiate proc here after radation_duration SECONDS
-			addtimer(CALLBACK(src, PROC_REF(do_irradiate), lock_state, block), radiation_duration SECONDS, TIMER_DELETE_ME)
+			om_after(src, radiation_duration SECONDS, PROC_REF(do_irradiate), lock_state, block)
 			return TRUE
 
 		if("ejectBeaker")
@@ -627,7 +627,7 @@
 					irradiating = 2
 					var/lock_state = connected.locked
 					connected.locked = 1//lock it
-					addtimer(CALLBACK(src, PROC_REF(do_transfer), lock_state, bufferId), 2 SECONDS, TIMER_DELETE_ME)
+					om_after(src, 2 SECONDS, PROC_REF(do_transfer), lock_state, bufferId)
 					return TRUE
 				if("createInjector")
 					if(!injector_ready)
@@ -694,7 +694,7 @@
 
 	// Cooldown
 	injector_ready = FALSE
-	addtimer(CALLBACK(src, PROC_REF(injector_cooldown_finish)), 5 SECONDS)
+	om_after(src, 5 SECONDS, PROC_REF(injector_cooldown_finish))
 
 	// Create it
 	var/datum/transhuman/body_record/buf = buffers[buffer_id] // Traitgenes Use bodyrecords

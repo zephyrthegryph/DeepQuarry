@@ -161,7 +161,7 @@
 		active_program.kill_program(forced)
 		active_program = null
 	var/mob/user = usr
-	addtimer(CALLBACK(src, PROC_REF(delayed_reopen_ui), user), 1, TIMER_DELETE_ME)
+	om_after(src, 1, PROC_REF(delayed_reopen_ui), user)
 	update_icon()
 
 /obj/item/modular_computer/proc/delayed_reopen_ui(mob/user)

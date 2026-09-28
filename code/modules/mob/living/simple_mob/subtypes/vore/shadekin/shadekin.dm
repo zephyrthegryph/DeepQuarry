@@ -273,10 +273,10 @@
 				toggle_hud_vis()
 		stop_sound_channel(CHANNEL_PREYLOOP)
 
-		addtimer(CALLBACK(src, PROC_REF(can_leave_dark)), 10 MINUTES, TIMER_DELETE_ME)
+		om_after(src, 10 MINUTES, PROC_REF(can_leave_dark))
 	else
-		addtimer(CALLBACK(src, PROC_REF(enter_the_dark)), 1 SECOND, TIMER_DELETE_ME)
-		addtimer(CALLBACK(src, PROC_REF(can_leave_dark)), 15 MINUTES, TIMER_DELETE_ME)
+		om_after(src, 1 SECOND, PROC_REF(enter_the_dark))
+		om_after(src, 15 MINUTES, PROC_REF(can_leave_dark))
 	return TRUE
 
 /// No retreat left: the kin fades out for good.

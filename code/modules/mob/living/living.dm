@@ -501,8 +501,12 @@
 	if(!lastpuke)
 		lastpuke = TRUE
 		to_chat(src, span_warning("You feel nauseous..."))
-		addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(to_chat), src, span_warning("You feel like you're about to throw up!")), 15 SECONDS)
-		addtimer(CALLBACK(src, PROC_REF(do_vomit), lost_nutrition, blood, stun, distance, message, toxic, purge), 25 SECONDS)
+		om_after(src, 15 SECONDS, TYPE_PROC_REF(/datum, om_chat), span_warning("You feel like you're about to throw up!"))
+		om_after(src, 25 SECONDS, PROC_REF(do_vomit), lost_nutrition, blood, stun, distance, message, toxic, purge)
+
+/// om_after() target: able to vomit again.
+/mob/living/proc/puke_recovered()
+	lastpuke = FALSE
 
 /mob/living/proc/do_vomit(lost_nutrition = 10, blood = FALSE, stun = 5, distance = 1, message = TRUE, toxic = VOMIT_TOXIC, purge = FALSE)
 
@@ -514,7 +518,7 @@
 		var/antiemetic = H.factor(BF_ANTIEMETIC)
 		if(antiemetic)
 			if(prob(min(90, antiemetic * 15)))
-				VARSET_IN(src, lastpuke, FALSE, rand(30 SECONDS, 2 MINUTES))
+				om_after(src, rand(30 SECONDS, 2 MINUTES), PROC_REF(puke_recovered))
 			return FALSE
 
 	if(nutrition < 100 && !blood)
@@ -598,7 +602,7 @@
 				T.add_vomit_floor(src, vomit_type, purge)
 			T = get_step(T, dir)
 
-	VARSET_IN(src, lastpuke, FALSE, 10 SECONDS)
+	om_after(src, 10 SECONDS, PROC_REF(puke_recovered))
 
 	return TRUE
 

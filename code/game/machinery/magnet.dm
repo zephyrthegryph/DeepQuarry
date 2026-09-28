@@ -171,7 +171,7 @@
 				step_towards(S, center)
 
 		use_power(electricity_level * 5)
-		addtimer(CALLBACK(src, PROC_REF(magnetic_process), TRUE), 13 - electricity_level, TIMER_DELETE_ME)
+		om_after(src, 13 - electricity_level, PROC_REF(magnetic_process), TRUE)
 
 	magnet_active = 0
 

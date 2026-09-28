@@ -93,7 +93,7 @@ REF_OWNED(/obj/machinery/oxygen_pump, list("tank", "contained"))
 			tank.forceMove(C)
 		breather = C
 		MACHINE_WAKE(src)
-		addtimer(CALLBACK(src, PROC_REF(attach_mask_finish)), 1)
+		om_after(src, 1, PROC_REF(attach_mask_finish))
 
 /obj/machinery/oxygen_pump/proc/attach_mask_finish()
 	if(!breather.internal && tank)
@@ -264,7 +264,7 @@ REF_OWNED(/obj/machinery/oxygen_pump, list("tank", "contained"))
 			tank.forceMove(C)
 		breather = C
 		MACHINE_WAKE(src)
-		addtimer(CALLBACK(src, PROC_REF(attach_mask_finish)), 1)
+		om_after(src, 1, PROC_REF(attach_mask_finish))
 
 /obj/machinery/oxygen_pump/anesthetic/attach_mask_finish()
 	if(!breather.internal && tank)
@@ -315,7 +315,7 @@ REF_OWNED(/obj/machinery/oxygen_pump, list("tank", "contained"))
 			tank.forceMove(C)
 		breather = C
 		MACHINE_WAKE(src)
-		addtimer(CALLBACK(src, PROC_REF(attach_mask_finish)), 1)
+		om_after(src, 1, PROC_REF(attach_mask_finish))
 
 /obj/machinery/oxygen_pump/mobile/anesthetic/attach_mask_finish()
 	if(!breather.internal && tank)

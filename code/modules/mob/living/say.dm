@@ -459,7 +459,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 	for(var/i in 1 to bloopers)
 		if(total_delay > BLOOPER_MAX_TIME)
 			break
-		addtimer(CALLBACK(src, PROC_REF(blooper), extrarange, volume, bloop_preference), total_delay)
+		om_after(src, total_delay, PROC_REF(blooper), extrarange, volume, bloop_preference)
 		total_delay += rand(\
 			DS2TICKS(BLOOPER_SPEED / BLOOPER_SPEED_BASELINE), \
 			DS2TICKS(BLOOPER_SPEED / BLOOPER_SPEED_BASELINE) + DS2TICKS(BLOOPER_SPEED / BLOOPER_SPEED_BASELINE)) TICKS

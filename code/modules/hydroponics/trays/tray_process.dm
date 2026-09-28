@@ -1,6 +1,6 @@
 /obj/machinery/portable_atmospherics/hydroponics/machine_step()
 	if(growth_timer)
-		deltimer(growth_timer)
+		om_cancel_timer(src, growth_timer)
 		growth_timer = null
 	if(frozen == 1)
 		return PROCESS_KILL

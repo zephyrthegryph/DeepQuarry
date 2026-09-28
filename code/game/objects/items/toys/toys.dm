@@ -1248,19 +1248,18 @@
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "eight-ball"
 	var/use_action = "shakes the ball"
-	var/cooldown = 0
+	COOLDOWN_DECLARE(cooldown)
 	var/list/possible_answers = list("Definitely.", "All signs point to yes.", "Most likely.", "Yes.", "Ask again later.", "Better not tell you now.", "Future unclear.", "Maybe.", "Doubtful.", "No.", "Don't count on it.", "Never.")
 
 /obj/item/toy/eight_ball/attack_self(mob/user)
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(!cooldown)
-		cooldown = TRUE
+	if(COOLDOWN_FINISHED(src, cooldown))
+		COOLDOWN_START(src, cooldown, 3 SECONDS)
 		var/answer = pick(possible_answers)
 		user.visible_message(span_notice("[user] focuses on their question and [use_action]..."))
 		user.visible_message(span_notice("The [src] says \"[answer]\""))
-		VARSET_IN(src, cooldown, FALSE, 3 SECONDS)
 		return
 
 /obj/item/toy/eight_ball/conch
@@ -1324,19 +1323,18 @@
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "owlprize"
 	w_class = ITEMSIZE_SMALL
-	var/cooldown = 0
+	COOLDOWN_DECLARE(cooldown)
 
 /obj/item/toy/owl/attack_self(mob/user)
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(!cooldown) //for the sanity of everyone
+	if(COOLDOWN_FINISHED(src, cooldown)) //for the sanity of everyone
 		var/message = pick("You won't get away this time, Griffin!", "Stop right there, criminal!", "Hoot! Hoot!", "I am the night!")
 		to_chat(user, span_notice("You pull the string on the [src]."))
 		//playsound(src, 'sound/misc/hoot.ogg', 25, 1)
 		visible_message(span_danger("[message]"))
-		cooldown = 1
-		VARSET_IN(src, cooldown, FALSE, 3 SECONDS)
+		COOLDOWN_START(src, cooldown, 3 SECONDS)
 
 /obj/item/toy/griffin
 	name = "griffin action figure"
@@ -1344,19 +1342,18 @@
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "griffinprize"
 	w_class = ITEMSIZE_SMALL
-	var/cooldown = 0
+	COOLDOWN_DECLARE(cooldown)
 
 /obj/item/toy/griffin/attack_self(mob/user)
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(!cooldown) //for the sanity of everyone
+	if(COOLDOWN_FINISHED(src, cooldown)) //for the sanity of everyone
 		var/message = pick("You can't stop me, Owl!", "My plan is flawless! The vault is mine!", "Caaaawwww!", "You will never catch me!")
 		to_chat(user, span_notice("You pull the string on the [src]."))
 		//playsound(src, 'sound/misc/caw.ogg', 25, 1)
 		visible_message(span_danger("[message]"))
-		cooldown = 1
-		VARSET_IN(src, cooldown, FALSE, 3 SECONDS)
+		COOLDOWN_START(src, cooldown, 3 SECONDS)
 
 //This should really be somewhere else but I don't know where. w/e
 
@@ -1834,10 +1831,9 @@
 		return ..()
 
 /obj/item/toy/plushie/marketable_pip/attack_self(mob/user as mob)
-	if(!cooldown)
+	if(COOLDOWN_FINISHED(src, cooldown))
 		playsound(user, 'sound/effects/whistle.ogg', 10, 0)
-		cooldown = TRUE
-		addtimer(VARSET_CALLBACK(src, cooldown, FALSE), 15 SECONDS, TIMER_DELETE_ME)
+		COOLDOWN_START(src, cooldown, 15 SECONDS)
 	return ..()
 /obj/item/toy/plushie/marketable_pip/proc/cooldownreset()
 	cooldown = 0
@@ -2023,7 +2019,7 @@
 		flick("[initial(icon_state)]2", src)
 		user.visible_message(span_disarm("[user] doesn't blind [M] with the toy flash!"))
 		cooldown = 1
-		addtimer(CALLBACK(src, PROC_REF(cooldownreset)), 50)
+		om_after(src, 50, PROC_REF(cooldownreset))
 		return ..()
 
 /obj/item/toy/flash/proc/cooldownreset()
@@ -2050,7 +2046,7 @@
 		playsound(src, 'sound/effects/explosionfar.ogg', 50, 0, 0)
 		for(var/mob/M in range(10, src)) // Checks range
 			if(!M.stat && !isAI(M)) // Checks to make sure whoever's getting shaken is alive/not the AI
-				addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(shake_camera), M, 2, 1), 0.2 SECONDS)
+				om_after(M, 0.2 SECONDS, GLOBAL_PROC_REF(shake_camera), M, 2, 1)
 	else
 		to_chat(user, span_warning("Nothing happens."))
 
@@ -2349,7 +2345,7 @@ REF_OWNED(/obj/item/toy/minigibber, "stored_minature")
 	s.set_up(5, 1, src)
 	s.start()
 	icon_state = "shoot"
-	VARSET_IN(src, icon_state, "[initial(icon_state)]", 5)
+	om_after(src, 5, TYPE_PROC_REF(/atom, set_icon_state), initial(icon_state))
 
 /*
  * Toy chainsaw
@@ -2373,7 +2369,7 @@ REF_OWNED(/obj/item/toy/minigibber, "stored_minature")
 	if(!cooldown)
 		playsound(user, 'sound/weapons/chainsaw_startup.ogg', 10, 0)
 		cooldown = 1
-		addtimer(CALLBACK(src, PROC_REF(cooldownreset)), 50)
+		om_after(src, 50, PROC_REF(cooldownreset))
 
 /obj/item/toy/chainsaw/proc/cooldownreset()
 	cooldown = 0
@@ -2773,7 +2769,7 @@ REF_OWNED(/obj/item/toy/minigibber, "stored_minature")
 	desc = "A soft plushie in the shape of a dragon. How ferocious!"
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "reddragon"
-	var/cooldown = FALSE
+	COOLDOWN_DECLARE(cooldown)
 	special_handling = TRUE
 
 /obj/item/toy/plushie/dragon/Initialize(mapload)
@@ -2785,7 +2781,7 @@ REF_OWNED(/obj/item/toy/minigibber, "stored_minature")
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(!cooldown)
+	if(COOLDOWN_FINISHED(src, cooldown))
 		switch(pokephrase)
 			if("Weh!")
 				playsound(user, 'sound/voice/weh.ogg', 20, 0)
@@ -2793,8 +2789,7 @@ REF_OWNED(/obj/item/toy/minigibber, "stored_minature")
 				playsound(user, 'sound/voice/merp.ogg', 20, 0)
 			else
 				playsound(user, 'sound/voice/roarbark.ogg', 20, 0)
-		cooldown = TRUE
-		addtimer(VARSET_CALLBACK(src, cooldown, FALSE), 5 SECONDS, TIMER_DELETE_ME)
+		COOLDOWN_START(src, cooldown, 5 SECONDS)
 	return ..()
 
 /obj/item/toy/plushie/dragon/green
@@ -2935,5 +2930,5 @@ REF_OWNED(/obj/item/toy/minigibber, "stored_minature")
 /obj/item/toy/nuke/proc/alarm_sequence()
 	icon_state = "nuketoy"
 	playsound(src, 'sound/machines/Alarm.ogg', 10, 0, 0)
-	VARSET_IN(src, icon_state, "nuketoycool", 135)
-	VARSET_IN(src, icon_state, "nuketoyidle", (135 + (cooldown - world.time)))
+	om_after(src, 135, TYPE_PROC_REF(/atom, set_icon_state), "nuketoycool")
+	om_after(src, 135 + (cooldown - world.time), TYPE_PROC_REF(/atom, set_icon_state), "nuketoyidle")

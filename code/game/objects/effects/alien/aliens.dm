@@ -277,6 +277,6 @@
 			visible_message(span_alium("[src.target] is struggling to withstand the acid!"))
 		if(0 to 1)
 			visible_message(span_alium("[src.target] begins to crumble under the acid!"))
-	addtimer(CALLBACK(src, PROC_REF(tick)), rand(150, 200))
+	om_after(src, rand(150, 200), PROC_REF(tick))
 
 //Xenomorph Effect egg removed, replaced with Structure Egg.

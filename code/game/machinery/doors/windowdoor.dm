@@ -60,13 +60,13 @@
 		if(istype(bot))
 			if(density && src.check_access(bot.botcard))
 				open()
-				addtimer(CALLBACK(src, PROC_REF(close)), 50)
+				om_after(src, 50, PROC_REF(close))
 		else if(istype(AM, /obj/mecha))
 			var/obj/mecha/mecha = AM
 			if(density)
 				if(mecha?.slot_item(MECHA_SLOT_PILOT) && src.allowed(mecha?.slot_item(MECHA_SLOT_PILOT)))
 					open()
-					addtimer(CALLBACK(src, PROC_REF(close)), 50)
+					om_after(src, 50, PROC_REF(close))
 		return
 	if (!( SSticker ))
 		return
@@ -74,7 +74,7 @@
 		return
 	if (density && allowed(AM))
 		open()
-		addtimer(CALLBACK(src, PROC_REF(close)), check_access(null)? 50 : 20)
+		om_after(src, check_access(null)? 50 : 20, PROC_REF(close))
 
 /obj/machinery/door/window/CanPass(atom/movable/mover, turf/target)
 	if(istype(mover) && mover.checkpass(PASSGLASS))
@@ -110,7 +110,7 @@
 		operating = 1
 	flick(text("[src.base_state]opening"), src)
 	playsound(src, 'sound/machines/door/windowdoor.ogg', 100, 1)
-	addtimer(CALLBACK(src, PROC_REF(finish_open)), 1 SECONDS, TIMER_DELETE_ME)
+	om_after(src, 1 SECONDS, PROC_REF(finish_open))
 
 /obj/machinery/door/window/proc/finish_open()
 	PRIVATE_PROC(TRUE)
@@ -135,7 +135,7 @@
 	update_icon()
 	explosion_resistance = initial(explosion_resistance)
 	update_nearby_tiles()
-	addtimer(CALLBACK(src, PROC_REF(finish_close)), 1 SECONDS, TIMER_DELETE_ME)
+	om_after(src, 1 SECONDS, PROC_REF(finish_close))
 
 /obj/machinery/door/window/proc/finish_close()
 	PRIVATE_PROC(TRUE)

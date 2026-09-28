@@ -5,7 +5,7 @@
 
 /image/client_only/electrify_notice/New(icon, loc, icon_state, layer, dir)
 	. = ..()
-	QDEL_IN(src, 1 SECOND)
+	om_after(null, 1 SECOND, GLOBAL_PROC_REF(qdel), src)
 
 /image/client_only/electrify_notice/place_from_root(turf/At)
 	. = ..()

@@ -134,7 +134,7 @@
 	if(istype(O,/obj/item/stack/material/supermatter))
 		var/obj/item/stack/material/supermatter/S = O
 		set_light(l_range = max(1, S.get_amount()/10), l_power = max(1, S.get_amount()/10), l_color = "#8A8A00")
-		addtimer(CALLBACK(src, PROC_REF(puny_protons)), 30 SECONDS)
+		om_after(src, 30 SECONDS, PROC_REF(puny_protons))
 	// end
 	return TRUE
 

@@ -257,7 +257,7 @@
 	. = ..()
 	var/delay = rand(0,15)
 	if(delay)
-		addtimer(CALLBACK(src, TYPE_PROC_REF(/atom, update_icon)), delay)
+		om_after(src, delay, TYPE_PROC_REF(/atom, update_icon))
 		return
 	update_icon()
 

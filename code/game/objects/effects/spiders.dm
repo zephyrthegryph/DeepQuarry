@@ -256,7 +256,7 @@
 			var/mob/living/simple_mob/animal/giant_spider/GS = new spawn_type(src.loc, src)
 			GS.faction = faction
 			if(stunted)
-				addtimer(CALLBACK(GS, TYPE_PROC_REF(/mob/living/simple_mob/animal/giant_spider, make_spiderling)), 2)
+				om_after(GS, 2, TYPE_PROC_REF(/mob/living/simple_mob/animal/giant_spider, make_spiderling))
 			replace_with(src, GS)
 
 /obj/effect/spider/spiderling/stunted

@@ -260,7 +260,7 @@
 		enabled = FALSE
 		updateTurrets()
 
-		addtimer(CALLBACK(src, PROC_REF(emp_reenable)), rand(60, 600), TIMER_DELETE_ME)
+		om_after(src, rand(60, 600), PROC_REF(emp_reenable))
 
 /obj/machinery/turretid/proc/emp_reenable()
 	if(!enabled)

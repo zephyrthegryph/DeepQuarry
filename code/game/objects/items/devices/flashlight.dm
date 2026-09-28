@@ -279,7 +279,7 @@ REF_OWNED(/obj/item/flashlight, "cell")
 	update_brightness()
 	if(!on) // Only play when the light turns off.
 		playsound(src, 'sound/effects/light_flicker.ogg', 50, 1)
-	addtimer(CALLBACK(src, PROC_REF(do_flicker), amount, flicker_color, original_color, original_on, OL, ++ticker), rand(5,15), TIMER_DELETE_ME)
+	om_after(src, rand(5,15), PROC_REF(do_flicker), amount, flicker_color, original_color, original_on, OL, ++ticker)
 
 /obj/item/flashlight/proc/finish_flicker(original_color, original_on, datum/component/overlay_lighting/OL)
 	set_light_color(original_color)

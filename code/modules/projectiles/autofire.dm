@@ -83,7 +83,7 @@
 		// Not ready yet (mid-burst or cooling down): wait exactly until it is.
 		delay = max(1, G.next_fire_time - world.time)
 
-	addtimer(CALLBACK(src, PROC_REF(autofire_tick)), delay, TIMER_DELETE_ME)
+	om_after(src, delay, PROC_REF(autofire_tick))
 
 // ---------------------------------------------------------------------------
 // Client mouse capture

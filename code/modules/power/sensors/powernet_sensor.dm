@@ -49,7 +49,7 @@
 // LIFECYCLE: power monitors refresh their sensor lists once it is gone.
 /obj/machinery/power/sensor/Destroy()
 	if(record_timer)
-		deltimer(record_timer)
+		om_cancel_timer(src, record_timer)
 		record_timer = null
 	. = ..()
 	// TODO - Switch power_monitor to register deletion events instead of this.
@@ -82,7 +82,7 @@
 		record()
 	if(!record_timer)
 		var/delay = powernet ? max(1, next_record - world.time) : record_interval
-		record_timer = addtimer(CALLBACK(src, PROC_REF(wake_for_record)), delay, TIMER_STOPPABLE)
+		record_timer = om_after(src, delay, PROC_REF(wake_for_record))
 	return PROCESS_KILL
 
 /obj/machinery/power/sensor/proc/wake_for_record()

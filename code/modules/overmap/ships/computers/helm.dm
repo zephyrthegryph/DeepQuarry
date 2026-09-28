@@ -15,6 +15,7 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 	name = "flight operations console"
 	icon_keyboard = "teleport_key"
 	icon_screen = "helm"
+	COOLDOWN_DECLARE(map_refresh_cd)
 	light_color = "#7faaff"
 	circuit = /obj/item/circuitboard/helm
 	var/autopilot = 0
@@ -98,7 +99,7 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 
 		ui = new(user, src, "OvermapHelm", "[linked.name] Helm Control") // 565, 545
 		ui.open()
-		addtimer(CALLBACK(src, PROC_REF(update_map)), 0.1 SECONDS)
+		om_after(src, 0.1 SECONDS, PROC_REF(update_map))
 
 /obj/machinery/computer/ship/helm/proc/update_map()
 	linked.update_screen()
@@ -169,11 +170,11 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 
 	switch(action)
 		if("update_camera_view")
-			if(TIMER_COOLDOWN_RUNNING(src, COOLDOWN_SHIP_REFRESH))
+			if(!COOLDOWN_FINISHED(src, map_refresh_cd))
 				to_chat(ui.user, span_warning("You cannot refresh the map so often."))
 				return
 			update_map()
-			TIMER_COOLDOWN_START(src, COOLDOWN_SHIP_REFRESH, 5 SECONDS)
+			COOLDOWN_START(src, map_refresh_cd, 5 SECONDS)
 			. = TRUE
 		if("add")
 			var/datum/computer_file/data/waypoint/R = new()

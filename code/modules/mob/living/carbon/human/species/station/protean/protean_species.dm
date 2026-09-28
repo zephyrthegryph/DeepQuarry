@@ -180,7 +180,7 @@
 		H.equip_to_slot_or_del(permit, slot_in_backpack)
 		H.equip_to_slot_or_del(metal_stack, slot_in_backpack)
 
-	addtimer(CALLBACK(src, PROC_REF(finish_survival_gear), H), 1) //Let their real nif load if they have one
+	om_after(src, 1, PROC_REF(finish_survival_gear), H) //Let their real nif load if they have one
 
 /datum/species/protean/proc/finish_survival_gear(mob/living/carbon/human/H)
 	if(QDELETED(H)) //Observing, mannequins, etc. can delete the human first.

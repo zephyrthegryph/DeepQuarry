@@ -146,7 +146,7 @@
 	locked = 1
 
 	eject_wait = 1
-	addtimer(CALLBACK(src, PROC_REF(clear_eject_wait), BR, clonemind), 30, TIMER_DELETE_ME)
+	om_after(src, 30, PROC_REF(clear_eject_wait), BR, clonemind)
 
 /obj/machinery/clonepod/proc/clear_eject_wait(datum/transhuman/body_record/BR, datum/mind/clonemind)
 	eject_wait = 0
@@ -463,7 +463,7 @@
 		mess = 1
 		update_icon()
 		occupant.ghostize()
-		QDEL_IN(occupant, 0.5 SECONDS)
+		occupant.expire(0.5 SECONDS)
 
 /obj/machinery/clonepod/relaymove(mob/user)
 	if(user.stat)

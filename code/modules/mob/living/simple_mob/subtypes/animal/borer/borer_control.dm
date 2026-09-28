@@ -16,7 +16,7 @@
 		return
 
 	to_chat(src, span_alien("You begin delicately adjusting your connection to the host brain..."))
-	addtimer(CALLBACK(src, PROC_REF(finish_bond_brain)), 100 + (host.injury_load(INJURY_CATEGORY_NEURAL) * 5), TIMER_DELETE_ME)
+	om_after(src, 100 + (host.injury_load(INJURY_CATEGORY_NEURAL) * 5), PROC_REF(finish_bond_brain))
 
 // This entire section is awful and a relic of ancient times. It needs to be replaced
 /mob/living/simple_mob/animal/borer/proc/finish_bond_brain()
@@ -95,7 +95,7 @@
 	if(!host.stat)
 		to_chat(host, span_danger("An odd, uncomfortable pressure begins to build inside your skull, behind your ear..."))
 
-	addtimer(CALLBACK(src, PROC_REF(finish_release_host)), 10 SECONDS, TIMER_DELETE_ME)
+	om_after(src, 10 SECONDS, PROC_REF(finish_release_host))
 
 /mob/living/simple_mob/animal/borer/proc/finish_release_host()
 	PRIVATE_PROC(TRUE)

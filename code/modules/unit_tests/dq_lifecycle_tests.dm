@@ -91,8 +91,14 @@ GLOBAL_VAR(dq_lifecycle_snapshot_var_keys)
 /// Running behaviour the object started on itself: timers and processing.
 /proc/dq_lifecycle_running(datum/D)
 	. = list()
-	if(length(D._active_timers))
-		. += "[length(D._active_timers)] timer(s)"
+	// An armed expire() is the object's own declared lifetime, not running behaviour.
+	var/timers = om_timer_count(D)
+	if(ismovable(D))
+		var/atom/movable/AM = D
+		if(AM.lifecycle_lifetime_timer && om_timer_pending(AM, AM.lifecycle_lifetime_timer))
+			timers--
+	if(timers > 0)
+		. += "[timers] timer(s)"
 	if(D.datum_flags & DF_ISPROCESSING)
 		. += "processing"
 

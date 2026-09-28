@@ -451,4 +451,4 @@ Example config:
 
 //Message admins when you can.
 /datum/controller/configuration/proc/DelayedMessageAdmins(text)
-	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(message_admins), text), 0)
+	om_after(null, 0, GLOBAL_PROC_REF(message_admins), text)

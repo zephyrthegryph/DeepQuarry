@@ -270,12 +270,12 @@ GLOBAL_VAR(restart_counter)
 	Master.sleep_offline_after_initializations = FALSE
 	SSticker.start_immediately = TRUE
 	CONFIG_SET(number/round_end_countdown, 0)
-	var/datum/callback/cb
+	var/after_start
 #ifdef UNIT_TESTS
 	dq_test_shard_init()
-	cb = CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(RunUnitTests))
+	after_start = GLOBAL_PROC_REF(RunUnitTests)
 #else
-	cb = VARSET_CALLBACK(SSticker, force_ending, ADMIN_FORCE_END_ROUND)
+	after_start = GLOBAL_PROC_REF(force_end_round)
 #endif
 	var/start_delay = 10 SECONDS
 #ifdef UNIT_TESTS
@@ -286,7 +286,11 @@ GLOBAL_VAR(restart_counter)
 	if(unit_test_is_focused_run())
 		start_delay = 2 SECONDS
 #endif
-	SSticker.OnRoundstart(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(_addtimer), cb, start_delay))
+	SSticker.OnRoundstart(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(om_after), null, start_delay, after_start))
+
+/// om_after() target: ends the round now (a test-harness run with no tests compiled in).
+/proc/force_end_round()
+	SSticker.force_ending = ADMIN_FORCE_END_ROUND
 
 /// Returns a list of data about the world state, don't clutter
 /world/proc/get_world_state_for_logging()
@@ -756,7 +760,7 @@ GLOBAL_LIST_EMPTY(world_next_tick_callbacks)
 
 // Called whenver world.tick_lag or world.fps are changed.
 /world/proc/on_tickrate_change()
-	SStimer?.reset_buckets()
+	return
 
 /proc/auxtools_stack_trace(msg)
 	CRASH(msg)

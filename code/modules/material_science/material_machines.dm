@@ -201,7 +201,7 @@ REF_OWNED(/obj/machinery/material_furnace, "chamber_air")
 		chamber_air.react()
 	set_light(3, 3, "#ff7b22")
 	visible_message(span_notice("[src] seals its chamber and begins heating the charge."))
-	firing_timer = addtimer(CALLBACK(src, PROC_REF(finish_firing)), 6 SECONDS, TIMER_STOPPABLE)
+	firing_timer = om_after(src, 6 SECONDS, PROC_REF(finish_firing))
 	return TRUE
 
 /// The old "Eject contents" object verb.

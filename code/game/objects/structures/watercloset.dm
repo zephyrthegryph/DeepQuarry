@@ -281,29 +281,34 @@
 			bowl_contents += L
 
 	if(!length(bowl_contents)) //Reduced recharge if nothing is being flushed
-		VARSET_IN(src, refilling, FALSE, 7.5 SECONDS)
-		VARSET_IN(src, panic_mult, initial(panic_mult), 7.5 SECONDS)
+		om_after(src, 7.5 SECONDS, PROC_REF(refill_done), TRUE)
 		return
 
 	begin_flush(bowl_contents[1], bowl_contents)
 	return
 
+/// om_after() target: the tank has refilled (and a dry flush also calms the panic lever).
+/obj/structure/toilet/proc/refill_done(reset_panic)
+	refilling = FALSE
+	if(reset_panic)
+		panic_mult = initial(panic_mult)
+
 ///Timer proc that takes the object given and begins the flush process. Makes the object spin.
 /obj/structure/toilet/proc/begin_flush(atom/movable/flushed, list/pick_list)
 	flushed.SpinAnimation(5,3)
-	addtimer(CALLBACK(src, PROC_REF(secondary_flush), flushed, pick_list), 0.2 SECONDS)
+	om_after(src, 0.2 SECONDS, PROC_REF(secondary_flush), flushed, pick_list)
 
 ///Timer proc that takes the object given and removes it from the list, beginning to spin the next object if there is one.
 /obj/structure/toilet/proc/secondary_flush(atom/movable/flushed, list/pick_list)
 	pick_list -= flushed
 
 	if(!length(pick_list)) //All flushed.
-		addtimer(CALLBACK(src, PROC_REF(tertiary_flush), flushed, TRUE), 1.5 SECONDS, TIMER_DELETE_ME)
+		om_after(src, 1.5 SECONDS, PROC_REF(tertiary_flush), flushed, TRUE)
 		return
-	addtimer(CALLBACK(src, PROC_REF(tertiary_flush), flushed, FALSE), 1.5 SECONDS, TIMER_DELETE_ME) //Put the object in the bin.
+	om_after(src, 1.5 SECONDS, PROC_REF(tertiary_flush), flushed, FALSE) //Put the object in the bin.
 
 	var/obj_to_be_flushed = pick_list[1]
-	addtimer(CALLBACK(src, PROC_REF(begin_flush), obj_to_be_flushed, pick_list), 0.2 SECONDS, TIMER_DELETE_ME)
+	om_after(src, 0.2 SECONDS, PROC_REF(begin_flush), obj_to_be_flushed, pick_list)
 
 ///Adds the object to the toilet's current_flush list.
 /obj/structure/toilet/proc/tertiary_flush(atom/movable/flushed, flush_completed)
@@ -312,8 +317,8 @@
 		LAZYADD(currently_held_objects, flushed)
 
 	if(flush_completed) //Flushed it all.
-		addtimer(CALLBACK(src, PROC_REF(flush_send), currently_held_objects), 1 SECOND, TIMER_DELETE_ME)
-		VARSET_IN(src, refilling, FALSE, 20 SECONDS)
+		om_after(src, 1 SECOND, PROC_REF(flush_send), currently_held_objects)
+		om_after(src, 20 SECONDS, PROC_REF(refill_done), FALSE)
 		return
 
 /obj/structure/toilet/proc/flush_send(list/to_send)
@@ -606,10 +611,10 @@ REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
 	// If there was already mist, and the shower was turned off (or made cold): remove the existing mist in 25 sec
 	var/obj/effect/mist/mist = locate_on(loc, /obj/effect/mist)
 	if(!mist && on && current_temperature != SHOWER_FREEZING)
-		addtimer(CALLBACK(src, PROC_REF(make_mist)), 5 SECONDS, TIMER_DELETE_ME)
+		om_after(src, 5 SECONDS, PROC_REF(make_mist))
 
 	if(mist && (!on || current_temperature == SHOWER_FREEZING))
-		addtimer(CALLBACK(src, PROC_REF(clear_mist)), 25 SECONDS, TIMER_DELETE_ME)
+		om_after(src, 25 SECONDS, PROC_REF(clear_mist))
 
 /obj/machinery/shower/proc/make_mist()
 	PRIVATE_PROC(TRUE)

@@ -196,7 +196,7 @@ REF_OWNED(/obj/machinery/power/supermatter, "soundloop")
 	exploded = 1
 	// Looping Alarms. We want to stop the alarm here.
 	if(stationcrystal) // Are we an on-station crystal?
-		addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(reset_sm_alarms)), 10 SECONDS, TIMER_STOPPABLE)
+		om_after(null, 10 SECONDS, GLOBAL_PROC_REF(reset_sm_alarms))
 
 	om_after(src, pull_time, PROC_REF(explode_effects))
 

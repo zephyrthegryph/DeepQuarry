@@ -32,6 +32,10 @@ GLOBAL_LIST_EMPTY(radial_menus)
 	if(parent)
 		icon_state = parent.radial_slice_icon
 
+/// om_after() target: hovering clicks, once the entry animation has played.
+/atom/movable/screen/radial/slice/proc/enable_hover_click()
+	click_on_hover = TRUE
+
 /atom/movable/screen/radial/slice/MouseEntered(location, control, params)
 	. = ..()
 	if(next_page || !parent)
@@ -202,7 +206,7 @@ GLOBAL_LIST_EMPTY(radial_menus)
 			if (!click_on_hover)
 				continue
 			if (anim)
-				addtimer(VARSET_CALLBACK(element, click_on_hover, TRUE), i * 0.5)
+				om_after(element, i * 0.5, TYPE_PROC_REF(/atom/movable/screen/radial/slice, enable_hover_click))
 			else
 				element.click_on_hover = TRUE
 

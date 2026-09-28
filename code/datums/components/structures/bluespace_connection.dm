@@ -53,10 +53,10 @@
 		var/obj/structure/closet/exit_closet = exit_point
 		exit_closet.visible_message(span_notice("\The [exit_closet] rumbles..."), span_notice("Something rumbles..."))
 		exit_closet.animate_shake()
-		addtimer(CALLBACK(exit_closet, TYPE_PROC_REF(/obj/structure/closet, open)), 1 SECONDS)
+		om_after(exit_closet, 1 SECONDS, TYPE_PROC_REF(/obj/structure/closet, open))
 
 	playsound(exit_point, exit_sound, 50, TRUE)
-	addtimer(CALLBACK(src, PROC_REF(exit_connection), exit_point, assigned_closet.contents), 1.3 SECONDS)
+	om_after(src, 1.3 SECONDS, PROC_REF(exit_connection), exit_point, assigned_closet.contents)
 
 /datum/component/bluespace_connection/proc/exit_connection(atom/exit_point, list/contents)
 	// Nope, must be closed.

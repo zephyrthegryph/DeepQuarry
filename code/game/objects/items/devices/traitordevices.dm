@@ -43,7 +43,7 @@ effective or pretty fucking useless.
 	var/list/affected = list()
 	for(var/mob/living/carbon/human/M in orange(10, user))
 		affected += M
-		addtimer(CALLBACK(src, PROC_REF(mind_batter_effect), M), 0)
+		om_after(src, 0, PROC_REF(mind_batter_effect), M)
 
 	add_attack_logs(user,affected,"Used a [name]")
 

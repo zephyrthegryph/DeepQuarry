@@ -169,7 +169,7 @@
 				dq_delayed_say(holder, "No... I'll keep following \the [leader]...", speaker)
 
 /proc/dq_delayed_say(mob/living/speaker, message, mob/listener)
-	addtimer(CALLBACK(speaker, TYPE_PROC_REF(/mob, say), message), rand(5, 15))
+	om_after(speaker, rand(5, 15), TYPE_PROC_REF(/mob, say), message)
 
 /proc/slime_obeys_squish(mob/living/simple_mob/slime/holder)
 	if(QDELETED(holder) || holder.stat >= UNCONSCIOUS)

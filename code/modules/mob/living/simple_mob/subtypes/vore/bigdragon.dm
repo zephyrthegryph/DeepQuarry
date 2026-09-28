@@ -717,7 +717,7 @@ I think I covered everything.
 		var/atom/movable/AM = am
 		if(AM == src || AM.anchored)
 			continue
-		addtimer(CALLBACK(src, PROC_REF(yeet), am), 1)
+		om_after(src, 1, PROC_REF(yeet), am)
 	playsound(src, "sound/weapons/punchmiss.ogg", 50, 1)
 
 //Split repulse into two parts so I can recycle this later
@@ -749,7 +749,7 @@ I think I covered everything.
 		ai_busy_begin()
 	do_windup_animation(A, charge_warmup)
 	//callbacks are more reliable than byond's process scheduler
-	chargetimer = addtimer(CALLBACK(src, PROC_REF(chargeend), A), charge_warmup, TIMER_STOPPABLE)
+	chargetimer = om_after(src, charge_warmup, PROC_REF(chargeend), A)
 
 
 /mob/living/simple_mob/vore/bigdragon/proc/chargeend(atom/A, explicit = 0, gentle = 0)
@@ -790,7 +790,7 @@ I think I covered everything.
 		ai_busy_begin()
 	flames = 1
 	build_icons()
-	firebreathtimer = addtimer(CALLBACK(src, PROC_REF(firebreathend), A), charge_warmup, TIMER_STOPPABLE)
+	firebreathtimer = om_after(src, charge_warmup, PROC_REF(firebreathend), A)
 	playsound(src, "sound/magic/Fireball.ogg", 50, 1)
 
 /mob/living/simple_mob/vore/bigdragon/proc/firebreathend(atom/A)
@@ -902,10 +902,10 @@ I think I covered everything.
 /mob/living/simple_mob/vore/bigdragon/proc/canceltimers()
 	//Cancel any charges or firebreaths winding up
 	if(firebreathtimer)
-		deltimer(firebreathtimer)
+		om_cancel_timer(src, firebreathtimer)
 		firebreathtimer = null
 	if(chargetimer)
-		deltimer(chargetimer)
+		om_cancel_timer(src, chargetimer)
 		chargetimer = null
 	//re-enable the AI
 	ai_busy_end()

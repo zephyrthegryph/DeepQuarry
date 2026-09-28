@@ -58,11 +58,7 @@
 #define QDELETED(X) (isnull(X) || QDELING(X))
 #define QDESTROYING(X) (!X || X.gc_destroyed == GC_CURRENTLY_BEING_QDELETED)
 
-// This is a bit hacky, we do it to avoid people relying on a return value for the macro
-// If you need that you should use QDEL_IN_STOPPABLE instead
-#define QDEL_IN(item, time) addtimer((time) > GC_FILTER_QUEUE ? CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(qdel_handle), om_handle(item)) : CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(qdel), item), time);
-#define QDEL_IN_STOPPABLE(item, time) addtimer((time) > GC_FILTER_QUEUE ? CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(qdel_handle), om_handle(item)) : CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(qdel), item), time, TIMER_STOPPABLE)
-#define QDEL_IN_CLIENT_TIME(item, time) addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(qdel), item), time, TIMER_STOPPABLE | TIMER_CLIENT_TIME)
+// Deleting later is a lifecycle verb: expire(delay) on an atom, om_qdel_after(D, delay) otherwise.
 #define QDEL_NULL(item) qdel(item); item = null
 #define QDEL_SWAP(item1, item2) if(item1) { qdel(item1) }; item1 = item2;
 #define QDEL_NULL_LIST QDEL_LIST_NULL
@@ -72,6 +68,5 @@
 // it — skipped members never run Destroy() and pin their holder against GC.
 #define QDEL_LIST_NULL(x) if(x) { for(var/y in x.Copy()) { qdel(y) } ; x = null }
 #define QDEL_LIST(L) if(L) { for(var/I in L.Copy()) qdel(I); L.Cut(); }
-#define QDEL_LIST_IN(L, time) addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(______qdel_list_wrapper), L), time, TIMER_STOPPABLE)
 #define QDEL_LIST_ASSOC(L) if(L) { for(var/I, V in L) { qdel(V); qdel(I); } L.Cut(); }
 #define QDEL_LIST_ASSOC_VAL(L) if(L) { for(var/I, V in L) qdel(V); L.Cut(); }

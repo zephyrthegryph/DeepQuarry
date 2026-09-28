@@ -60,7 +60,7 @@
 				last_worldtime_transfer = world.time
 				// The "running" overlay times out 5 s after the last transfer: one timer,
 				// re-armed per transfer, instead of a machine polling the clock.
-				addtimer(CALLBACK(src, PROC_REF(expire_transfer_display)), 5 SECONDS, TIMER_UNIQUE | TIMER_OVERRIDE)
+				om_after_replace(src, 5 SECONDS, PROC_REF(expire_transfer_display))
 		else
 			recent_moles_transferred = 0
 

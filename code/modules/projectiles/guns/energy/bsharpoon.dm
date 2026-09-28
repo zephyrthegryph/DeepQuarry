@@ -13,7 +13,7 @@
 
 
 	var/mode = 1  // 1 mode - teleport you to turf  0 mode teleport turf to you
-	var/firable = TRUE
+	COOLDOWN_DECLARE(firable)
 	var/transforming = 0
 	var/failure_chance = 15 // This can become negative with part tiers above 3, which helps offset penalties
 	var/obj/item/stock_parts/scanning_module/scanmod
@@ -77,12 +77,11 @@
 	if(transforming)
 		to_chat(user,span_warning("You can't fire while \the [src] transforming!"))
 		return
-	if(!firable)
+	if(!COOLDOWN_FINISHED(src, firable))
 		to_chat(user,span_warning("\The [src] is recharging..."))
 		return
 	if(is_jammed(A) || is_jammed(user))
-		firable = FALSE
-		VARSET_IN(src, firable, TRUE, 30 SECONDS)
+		COOLDOWN_START(src, firable, 30 SECONDS)
 		to_chat(user,span_warning("\The [src] shot fizzles due to interference!"))
 		playsound(src, 'sound/weapons/wave.ogg', 60, 1)
 		return
@@ -101,8 +100,7 @@
 		to_chat(user, span_warning("Harpoon fails to lock on the obstructed target!"))
 		return
 
-	firable = FALSE
-	VARSET_IN(src, firable, TRUE, 30 SECONDS)
+	COOLDOWN_START(src, firable, 30 SECONDS)
 	playsound(src, 'sound/weapons/wave.ogg', 60, 1)
 
 	user.visible_message(span_warning("[user] fires \the [src]!"),span_warning("You fire \the [src]!"))

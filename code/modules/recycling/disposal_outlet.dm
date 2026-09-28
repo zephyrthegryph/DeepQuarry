@@ -80,9 +80,9 @@
 	if((start_eject + 30) < world.time)
 		start_eject = world.time
 		playsound(src, 'sound/machines/warning-buzzer.ogg', 50, 0, 0)
-		addtimer(CALLBACK(src, PROC_REF(expel_contents), received_items, gas, TRUE), 2 SECONDS)
+		om_after(src, 2 SECONDS, PROC_REF(expel_contents), received_items, gas, TRUE)
 	else
-		addtimer(CALLBACK(src, PROC_REF(expel_contents), received_items, gas), 2 SECONDS)
+		om_after(src, 2 SECONDS, PROC_REF(expel_contents), received_items, gas)
 
 /obj/structure/disposaloutlet/proc/expel_contents(list/ejected_items, datum/gas_mixture/gas, playsound = FALSE)
 	if(playsound)

@@ -40,7 +40,7 @@
 		return
 
 	if(delay_to_try_again)
-		addtimer(CALLBACK(src, PROC_REF(trigger)), delay_to_try_again)
+		om_after(src, delay_to_try_again, PROC_REF(trigger))
 	UnregisterSignal(Q, COMSIG_GHOST_QUERY_COMPLETE)
 	QDEL_NULL(Q) //get rid of the query
 
@@ -92,13 +92,13 @@
 
 /obj/structure/ghost_pod/automatic/Initialize(mapload)
 	. = ..()
-	addtimer(CALLBACK(src, PROC_REF(trigger)), delay_to_self_open)
+	om_after(src, delay_to_self_open, PROC_REF(trigger))
 
 /obj/structure/ghost_pod/automatic/trigger(mob/user)
 	. = ..()
 	if(. == FALSE) // If we failed to get a volunteer, try again later if allowed to.
 		if(delay_to_try_again)
-			addtimer(CALLBACK(src, PROC_REF(trigger)), delay_to_try_again)
+			om_after(src, delay_to_try_again, PROC_REF(trigger))
 
 // This type is triggered by a ghost clicking on it, as opposed to a living player.  A ghost query type isn't needed.
 /obj/structure/ghost_pod/ghost_activated

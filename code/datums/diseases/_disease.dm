@@ -173,7 +173,7 @@ REGISTRY_MEMBERSHIP(/datum/disease, REGISTRY_ACTIVE_DISEASES)
 	if(!(disease_flags & CURABLE))
 		return
 	virus_modifiers |= HAS_TIMER
-	addtimer(CALLBACK(src, PROC_REF(check_natural_immunity)), (1 HOUR) + rand( -20 MINUTES, 30 MINUTES), TIMER_DELETE_ME)
+	om_after(src, (1 HOUR) + rand( -20 MINUTES, 30 MINUTES), PROC_REF(check_natural_immunity))
 
 /datum/disease/proc/check_natural_immunity()
 	if(!(disease_flags & CURABLE))
@@ -182,7 +182,7 @@ REGISTRY_MEMBERSHIP(/datum/disease, REGISTRY_ACTIVE_DISEASES)
 		virus_modifiers &= ~HAS_TIMER
 		cure()
 		return
-	addtimer(CALLBACK(src, PROC_REF(check_natural_immunity)), rand(5 MINUTES, 10 MINUTES), TIMER_DELETE_ME)
+	om_after(src, rand(5 MINUTES, 10 MINUTES), PROC_REF(check_natural_immunity))
 
 /datum/disease/proc/IsSame(datum/disease/D)
 	if(ispath(D))

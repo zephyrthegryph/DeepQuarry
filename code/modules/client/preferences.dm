@@ -13,7 +13,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	var/muted = 0
 	var/last_ip
 	var/last_id
-	var/saved_notification = FALSE
+	COOLDOWN_DECLARE(saved_notification)
 
 	//game-preferences
 	var/lastchangelog = "" // Saved changlog filesize to detect if there was a change //
@@ -194,7 +194,7 @@ REF_OWNED_LIST(/datum/preferences, "middleware")
 	dq_open_requested_at = REALTIMEOFDAY
 	tgui_interact(user)
 	if(!character_preview_b64)
-		addtimer(CALLBACK(src, TYPE_PROC_REF(/datum/preferences, update_preview_icon_lazy)), 0, TIMER_UNIQUE | TIMER_OVERRIDE)
+		om_after_replace(src, 0, TYPE_PROC_REF(/datum/preferences, update_preview_icon_lazy))
 
 // asset-based character preview. update_character_previews
 // flattens the mannequin (one frame per cardinal direction) plus the BG

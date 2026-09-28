@@ -25,7 +25,7 @@
 		var/new_delay = CLAMP(delay_input, 1, 1 HOUR)
 		delay = new_delay
 
-	addtimer(CALLBACK(src, PROC_REF(activate_pin), 2), delay)
+	om_after(src, delay, PROC_REF(activate_pin), 2)
 
 /obj/item/integrated_circuit/time/ticker
 	name = "ticker circuit"
@@ -66,7 +66,7 @@
 
 /obj/item/integrated_circuit/time/ticker/proc/tick()
 	if(is_running && check_power())
-		addtimer(CALLBACK(src, PROC_REF(tick)), delay)
+		om_after(src, delay, PROC_REF(tick))
 		if(world.time > next_fire)
 			next_fire = world.time + delay
 			activate_pin(1)

@@ -85,7 +85,7 @@ REF_SPILL_LIST(/obj/machinery/washing_machine, "washing")
 	visible_message("The washing machine starts a cycle.")
 	playsound(src, 'sound/items/washingmachine.ogg', 50, 1, 1)
 
-	addtimer(CALLBACK(src, PROC_REF(finish_wash), damage_modifier), 2 SECONDS)
+	om_after(src, 2 SECONDS, PROC_REF(finish_wash), damage_modifier)
 
 /obj/machinery/washing_machine/proc/finish_wash(damage_modifier)
 	for(var/atom/A in washing)

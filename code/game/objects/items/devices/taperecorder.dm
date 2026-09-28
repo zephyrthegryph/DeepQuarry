@@ -13,7 +13,7 @@
 	var/playing = 0.0
 	var/playsleepseconds = 0.0
 	var/obj/item/rectape/mytape = /obj/item/rectape/random
-	var/canprint = 1
+	COOLDOWN_DECLARE(canprint)
 	slot_flags = SLOT_BELT
 	throwforce = 2
 	throw_speed = 4
@@ -327,7 +327,7 @@ REF_OWNED(/obj/item/taperecorder, "mytape")
 	if(emagged)
 		to_chat(usr, span_warning("The tape recorder makes a scratchy noise."))
 		return
-	if(!canprint)
+	if(!COOLDOWN_FINISHED(src, canprint))
 		to_chat(usr, span_notice("The recorder can't print that fast!"))
 		return
 	if(recording || playing)
@@ -344,8 +344,7 @@ REF_OWNED(/obj/item/taperecorder, "mytape")
 		t1 += "[printedmessage]<BR>"
 	P.info = t1
 	P.name = "Transcript"
-	canprint = FALSE
-	VARSET_IN(src, canprint, TRUE, 30 SECONDS)
+	COOLDOWN_START(src, canprint, 30 SECONDS)
 
 
 /obj/item/taperecorder/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)

@@ -63,7 +63,7 @@
 
 	switch(action)
 		if("make_copy")
-			addtimer(CALLBACK(src, PROC_REF(copy_operation), ui.user), 0)
+			om_after(src, 0, PROC_REF(copy_operation), ui.user)
 			. = TRUE
 		if("remove")
 			if(copyitem)

@@ -73,4 +73,4 @@
 	appearance = MA
 
 	animate(src, color = null, time = 3 SECONDS)
-	VARSET_IN(src, icon_state, "origin", 3 SECONDS)
+	om_after(src, 3 SECONDS, TYPE_PROC_REF(/atom, set_icon_state), "origin")

@@ -162,7 +162,7 @@
 		if(M.id == id)
 			M.flash()
 
-	addtimer(CALLBACK(src, PROC_REF(finish_trigger)), 5 SECONDS, TIMER_DELETE_ME|TIMER_UNIQUE)
+	om_after_unique(src, 5 SECONDS, PROC_REF(finish_trigger))
 	return TRUE
 
 /obj/machinery/button/flasher/proc/finish_trigger()

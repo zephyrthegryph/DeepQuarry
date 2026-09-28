@@ -217,7 +217,7 @@
 			recharge_locked = TRUE
 
 	flick_overlay(I, showto, cooldown)
-	addtimer(CALLBACK(src, PROC_REF(reset_laser_icon)), cooldown)
+	om_after(src, cooldown, PROC_REF(reset_laser_icon))
 
 /obj/item/laser_pointer/proc/reset_laser_icon()
 	icon_state = initial(icon_state)

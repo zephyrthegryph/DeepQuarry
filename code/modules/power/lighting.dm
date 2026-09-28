@@ -836,7 +836,7 @@ REF_OWNED(/obj/machinery/light, "cell")
 		playsound(src, 'sound/effects/light_flicker.ogg', 50, 1)
 	if(remaining_flicks > 0)
 		remaining_flicks--
-		addtimer(CALLBACK(src, PROC_REF(do_flicker), remaining_flicks, flicker_color, original_color, original_color_ns), rand(5, 15), TIMER_DELETE_ME)
+		om_after(src, rand(5, 15), PROC_REF(do_flicker), remaining_flicks, flicker_color, original_color, original_color_ns)
 		return
 	//All this happens after our final flicker.
 	on = (status == LIGHT_OK)

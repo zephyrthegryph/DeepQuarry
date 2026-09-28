@@ -705,7 +705,7 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(!SSradio && initial_run)
-		addtimer(CALLBACK(src,PROC_REF(controller_check), FALSE),3 SECONDS)
+		om_after(src, 3 SECONDS, PROC_REF(controller_check), FALSE)
 		return
 	if(!SSradio && !initial_run)
 		name = "broken radio headset"

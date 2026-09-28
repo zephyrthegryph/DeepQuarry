@@ -385,7 +385,7 @@
 	// I hate /area
 	var/atom/movable/lies_to_children = src
 	lies_to_children.vis_contents += visual
-	QDEL_IN_CLIENT_TIME(visual, duration)
+	om_after_realtime(duration, GLOBAL_PROC_REF(qdel), visual)
 	return visual
 
 /area/flick_overlay_view_atom(mutable_appearance/display, duration)

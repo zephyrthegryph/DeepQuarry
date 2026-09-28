@@ -12,7 +12,7 @@
 	var/prev_lockcharge = lockcharge
 	SetLockdown(1)
 	anchored = TRUE
-	addtimer(CALLBACK(src, PROC_REF(transform_animation_sounds), 6, prev_lockcharge), 0.2 SECONDS)
+	om_after(src, 0.2 SECONDS, PROC_REF(transform_animation_sounds), 6, prev_lockcharge)
 
 /mob/living/silicon/robot/proc/transform_animation_sounds(recall, prev_lockcharge)
 	PRIVATE_PROC(TRUE)
@@ -20,7 +20,7 @@
 	if(recall > 0)
 		playsound(src, pick('sound/items/drill_use.ogg', 'sound/items/jaws_cut.ogg', 'sound/items/jaws_pry.ogg', 'sound/items/Welder.ogg', 'sound/items/Wirecutter.ogg', 'sound/items/Crowbar.ogg', 'sound/items/Ratchet.ogg'), 80, 1, -1)
 		recall--
-		addtimer(CALLBACK(src, PROC_REF(transform_animation_sounds), recall, prev_lockcharge), 0.8 SECONDS)
+		om_after(src, 0.8 SECONDS, PROC_REF(transform_animation_sounds), recall, prev_lockcharge)
 		return
 	transform_animation_end_lockdown(prev_lockcharge)
 

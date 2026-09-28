@@ -203,7 +203,7 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 		user.visible_message(span_notice("[user] pulls a sticky [H] free from \the [src]."), span_infoplain("You heft [H] free from \the [src]."))
 		LAZYSET(prey_excludes, H, world.time)
 		vore_selected.release_specific_contents(H)
-		addtimer(CALLBACK(src, PROC_REF(removeMobFromPreyExcludes), om_handle(H)), 1 MINUTES)
+		om_after(src, 1 MINUTES, PROC_REF(removeMobFromPreyExcludes), om_handle(H))
 	else
 		to_chat(user, span_notice("The victim slips from your grasp!"))
 

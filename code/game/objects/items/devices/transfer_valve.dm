@@ -8,7 +8,7 @@
 	var/obj/item/assembly/attached_device
 	var/mob/attacher = null
 	var/valve_open = 0
-	var/toggle = 1
+	COOLDOWN_DECLARE(toggle)
 
 /obj/item/transfer_valve/get_interactions()
 	var/static/list/L = list(
@@ -124,10 +124,9 @@
 		add_fingerprint(ui.user)
 
 /obj/item/transfer_valve/proc/process_activation(obj/item/D)
-	if(toggle)
-		toggle = FALSE
+	if(COOLDOWN_FINISHED(src, toggle))
+		COOLDOWN_START(src, toggle, 5 SECONDS)
 		toggle_valve()
-		VARSET_IN(src, toggle, TRUE, 5 SECONDS)
 
 /obj/item/transfer_valve/update_icon()
 	cut_overlays()

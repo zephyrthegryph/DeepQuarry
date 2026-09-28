@@ -122,7 +122,7 @@
 		V.perform_exit()
 
 	if(died_in_vr)
-		addtimer(CALLBACK(src, PROC_REF(cleanup_vr)), 3000, TIMER_DELETE_ME) //Delete the body after 5 minutes
+		om_after(src, 3000, PROC_REF(cleanup_vr)) //Delete the body after 5 minutes
 
 /mob/living/carbon/human/proc/cleanup_vr()
 	var/list/slots = list(slot_back,slot_handcuffed,slot_l_store,slot_r_store,slot_wear_mask,slot_l_hand,slot_r_hand,slot_wear_id,slot_glasses,slot_gloves,slot_head,slot_shoes,slot_belt,slot_wear_suit,slot_w_uniform,slot_s_store,slot_l_ear,slot_r_ear)

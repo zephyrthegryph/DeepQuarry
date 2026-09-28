@@ -44,7 +44,7 @@
 	if(do_lock)
 		lock()
 	if(delayed_status)
-		addtimer(CALLBACK(src, PROC_REF(check_completion)), 0.2 SECONDS)
+		om_after(src, 0.2 SECONDS, PROC_REF(check_completion))
 		return
 	var/completed_command = cur_command
 	if(command_completed(completed_command))
@@ -55,11 +55,11 @@
 	switch(command)
 		if("open")
 			open()
-			addtimer(CALLBACK(src, PROC_REF(check_completion)), anim_length_before_density + anim_length_before_finalize)
+			om_after(src, anim_length_before_density + anim_length_before_finalize, PROC_REF(check_completion))
 
 		if("close")
 			close()
-			addtimer(CALLBACK(src, PROC_REF(check_completion)), anim_length_before_density + anim_length_before_finalize)
+			om_after(src, anim_length_before_density + anim_length_before_finalize, PROC_REF(check_completion))
 
 		if("unlock")
 			unlock()
@@ -71,12 +71,12 @@
 		if("secure_open")
 			unlock()
 
-			addtimer(CALLBACK(src, PROC_REF(do_secure_open)), 0.2 SECONDS)
+			om_after(src, 0.2 SECONDS, PROC_REF(do_secure_open))
 
 		if("secure_close")
 			unlock()
 			close()
-			addtimer(CALLBACK(src, PROC_REF(check_completion), TRUE, 0.2 SECONDS), anim_length_before_density + anim_length_before_finalize)
+			om_after(src, anim_length_before_density + anim_length_before_finalize, PROC_REF(check_completion), TRUE, 0.2 SECONDS)
 
 		if("update")
 			check_completion(delayed_status = TRUE)
@@ -85,7 +85,7 @@
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	open()
-	addtimer(CALLBACK(src, PROC_REF(check_completion), TRUE), anim_length_before_density + anim_length_before_finalize)
+	om_after(src, anim_length_before_density + anim_length_before_finalize, PROC_REF(check_completion), TRUE)
 
 /obj/machinery/door/airlock/proc/command_completed(command)
 	switch(command)

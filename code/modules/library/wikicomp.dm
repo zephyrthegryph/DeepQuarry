@@ -185,7 +185,7 @@
 			if(!crash)
 				crash = TRUE
 				// crashes till it fixes itself
-				VARSET_IN(src, crash, FALSE, rand(1000, 4000))
+				om_after(src, rand(1000, 4000), PROC_REF(uncrash))
 			. = TRUE
 
 		if("print")
@@ -269,3 +269,7 @@
 /obj/machinery/librarywikicomp/personal
 	name = "personal datacore computer"
 	desc = "Have you Bingled THAT today?"
+
+/// om_after() target: the prank crash fixes itself.
+/obj/machinery/librarywikicomp/proc/uncrash()
+	crash = FALSE

@@ -45,11 +45,11 @@ BONUS
 		if(3, 4)
 			if(H.h_style != "Bald" && H.h_style != "Balding Hair")
 				to_chat(H, span_warning("Your hair starts to fall out in clumps..."))
-				addtimer(CALLBACK(src, PROC_REF(change_hair), H, null, "Balding Hair"), 5 SECONDS)
+				om_after(src, 5 SECONDS, PROC_REF(change_hair), H, null, "Balding Hair")
 		if(5)
 			if(H.h_style != "Shaved" && H.h_style != "Bald")
 				to_chat(H, span_warning("Your hair starts to fall out in clumps..."))
-				addtimer(CALLBACK(src, PROC_REF(change_hair), H, "Shaved", "Bald"), 5 SECONDS)
+				om_after(src, 5 SECONDS, PROC_REF(change_hair), H, "Shaved", "Bald")
 	return
 
 /datum/symptom/shedding/proc/change_hair(mob/living/carbon/human/H, f_style, h_style)

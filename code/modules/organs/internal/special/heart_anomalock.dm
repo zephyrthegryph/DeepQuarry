@@ -46,16 +46,16 @@ REF_OWNED(/obj/item/organ/internal/heart/machine/anomalock, "core")
 
 /obj/item/organ/internal/heart/machine/anomalock/proc/add_lightning_overlay(time_to_last = 10 SECONDS)
 	if(lightning_overlay)
-		lightning_timer = addtimer(CALLBACK(src, PROC_REF(clear_lightning_overlay), owner), time_to_last, (TIMER_UNIQUE|TIMER_OVERRIDE|TIMER_STOPPABLE|TIMER_DELETE_ME))
+		lightning_timer = om_after_replace(src, time_to_last, PROC_REF(clear_lightning_overlay), owner)
 		return
 	lightning_overlay = mutable_appearance(icon = 'icons/effects/effects.dmi', icon_state = "lightning")
 	owner.add_overlay(lightning_overlay)
-	lightning_timer = addtimer(CALLBACK(src, PROC_REF(clear_lightning_overlay), owner), time_to_last, (TIMER_UNIQUE|TIMER_OVERRIDE|TIMER_STOPPABLE|TIMER_DELETE_ME))
+	lightning_timer = om_after_replace(src, time_to_last, PROC_REF(clear_lightning_overlay), owner)
 
 /obj/item/organ/internal/heart/machine/anomalock/proc/clear_lightning_overlay(mob/organ_owner)
 	organ_owner?.cut_overlay(lightning_overlay)
 	if(lightning_timer)
-		deltimer(lightning_timer)
+		om_cancel_timer(src, lightning_timer)
 	lightning_overlay = null
 
 /obj/item/organ/internal/heart/machine/anomalock/proc/activate_survival(mob/living/carbon/organ_owner)
@@ -66,7 +66,7 @@ REF_OWNED(/obj/item/organ/internal/heart/machine/anomalock, "core")
 	organ_owner.add_modifier(/datum/modifier/voltaic_overdrive, 30 SECONDS)
 	add_lightning_overlay(30 SECONDS)
 	COOLDOWN_START(src, survival_cooldown, survival_cooldown_time)
-	addtimer(CALLBACK(src, PROC_REF(notify_cooldown), organ_owner), COOLDOWN_TIMELEFT(src, survival_cooldown))
+	om_after(src, COOLDOWN_TIMELEFT(src, survival_cooldown), PROC_REF(notify_cooldown), organ_owner)
 	return TRUE
 
 /obj/item/organ/internal/heart/machine/anomalock/proc/notify_cooldown(mob/living/carbon/organ_owner)

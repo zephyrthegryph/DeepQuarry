@@ -62,12 +62,12 @@
 				for(var/obj/machinery/alarm/AA in A.alarm_area)
 					AA.update_icon()
 				om_changed(A, CHANGE_MACHINE_SETTINGS)
-			addtimer(CALLBACK(src, PROC_REF(clear_short)), 20 MINUTES, TIMER_DELETE_ME)
+			om_after(src, 20 MINUTES, PROC_REF(clear_short))
 
 		if(WIRE_AI_CONTROL)
 			if(!A.aidisabled)
 				A.aidisabled = TRUE
-			addtimer(VARSET_CALLBACK(A, aidisabled, FALSE), 10 SECONDS, TIMER_DELETE_ME)
+			om_after(src, 10 SECONDS, PROC_REF(clear_ai_disabled))
 
 		if(WIRE_SYPHON)
 			if(A.mode == 1) // MODE_SCRUB
@@ -80,6 +80,11 @@
 			if(A.alarm_area.atmosalert(0, A))
 				A.post_alert(0)
 			A.update_icon()
+
+/datum/wires/alarm/proc/clear_ai_disabled()
+	var/obj/machinery/alarm/A = holder
+	if(A)
+		A.aidisabled = FALSE
 
 /datum/wires/alarm/proc/clear_short()
 	SHOULD_NOT_OVERRIDE(TRUE)

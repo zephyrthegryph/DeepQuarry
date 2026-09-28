@@ -236,4 +236,4 @@
 		return
 	user.visible_message(span_danger("Something beeps inside [target]'s [part.name]!"))
 	playsound(imp, 'sound/items/countdown.ogg', 75, 1, -3)
-	addtimer(CALLBACK(imp, TYPE_PROC_REF(/obj/item/implant, activate)), 2.5 SECONDS)
+	om_after(imp, 2.5 SECONDS, TYPE_PROC_REF(/obj/item/implant, activate))

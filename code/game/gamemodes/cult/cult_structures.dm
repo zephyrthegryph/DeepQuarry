@@ -150,7 +150,7 @@
 
 /obj/effect/gateway/active/Initialize(mapload)
 	. = ..()
-	addtimer(CALLBACK(src, PROC_REF(spawn_and_qdel)), rand(30, 60) SECONDS)
+	om_after(src, rand(30, 60) SECONDS, PROC_REF(spawn_and_qdel))
 
 /obj/effect/gateway/active/proc/spawn_and_qdel()
 	if(LAZYLEN(spawnable))

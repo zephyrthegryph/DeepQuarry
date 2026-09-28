@@ -129,11 +129,11 @@
 
 /mob/living/silicon/ai/proc/schedule_power_restore_step(step, delay)
 	cancel_power_restore()
-	power_restore_timer = addtimer(CALLBACK(src, PROC_REF(power_restore_step), step), delay, TIMER_STOPPABLE | TIMER_DELETE_ME)
+	power_restore_timer = om_after(src, delay, PROC_REF(power_restore_step), step)
 
 /mob/living/silicon/ai/proc/cancel_power_restore()
 	if(power_restore_timer)
-		deltimer(power_restore_timer)
+		om_cancel_timer(src, power_restore_timer)
 		power_restore_timer = null
 
 /// One step of the restore routine. Each step reschedules the next.

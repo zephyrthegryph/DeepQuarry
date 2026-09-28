@@ -59,7 +59,7 @@
 			L.throw_at(get_step(get_turf(src),get_turf(L)), 4, 1, src)
 			user.drop_item(src)
 			src.loc = null
-			addtimer(CALLBACK(src, PROC_REF(finish_apportation_grab), user, L), 1 SECOND)
+			om_after(src, 1 SECOND, PROC_REF(finish_apportation_grab), user, L)
 
 /obj/item/spell/apportation/proc/finish_apportation_grab(mob/living/user, mob/living/L)
 	if(!user.Adjacent(L))

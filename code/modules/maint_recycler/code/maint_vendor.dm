@@ -149,7 +149,7 @@ REF_OWNED_LIST(/obj/machinery/maint_vendor, "product_datums")
 /obj/machinery/maint_vendor/proc/set_screen_state(state, duration = 10)
 	if(!is_on) return
 	monitor_screen.icon_state = state
-	addtimer(CALLBACK(src, PROC_REF(reset_screen_state)), duration)
+	om_after(src, duration, PROC_REF(reset_screen_state))
 
 /obj/machinery/maint_vendor/proc/reset_screen_state()
 	if(!is_on)

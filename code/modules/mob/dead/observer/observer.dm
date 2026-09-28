@@ -41,7 +41,6 @@
 	/// If TRUE, the ghost can be interacted with by the corporeal world (ghost traps, photon pack, etc)
 	var/interact_with_world = TRUE
 	var/last_revive_notification = null // world.time of last notification, used to avoid spamming players from defibs or cloners.
-	var/cleanup_timer // Refernece to a timer that will delete this mob if no client returns
 	var/selecting_ghostrole = FALSE
 
 	invisibility = INVISIBILITY_OBSERVER
@@ -979,7 +978,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 		PP.cut_overlays()
 		PP.add_overlay("pai-ghostalert")
 		PP.alertUpdate()
-		addtimer(CALLBACK(PP, TYPE_PROC_REF(/obj/item/paicard, clear_invite_overlay)), 1 MINUTE, TIMER_DELETE_ME)
+		om_after(PP, 1 MINUTE, TYPE_PROC_REF(/obj/item/paicard, clear_invite_overlay))
 	return count
 
 /mob/observer/dead/speech_bubble_appearance()

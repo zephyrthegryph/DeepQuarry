@@ -3,46 +3,6 @@
 //! Lots of important stuff in here, make sure you have your brain switched on
 //! when editing this file
 
-//! ## Timing subsystem
-/**
- * Don't run if there is an identical unique timer active
- *
- * if the arguments to addtimer are the same as an existing timer, it doesn't create a new timer,
- * and returns the id of the existing timer
- */
-#define TIMER_UNIQUE (1<<0)
-
-///For unique timers: Replace the old timer rather then not start this one
-#define TIMER_OVERRIDE (1<<1)
-
-/**
- * Timing should be based on how timing progresses on clients, not the server.
- *
- * Tracking this is more expensive,
- * should only be used in conjunction with things that have to progress client side, such as
- * animate() or sound()
- */
-#define TIMER_CLIENT_TIME (1<<2)
-
-///Timer can be stopped using deltimer()
-#define TIMER_STOPPABLE (1<<3)
-
-///prevents distinguishing identical timers with the wait variable
-///
-///To be used with TIMER_UNIQUE
-#define TIMER_NO_HASH_WAIT (1<<4)
-
-///Loops the timer repeatedly until qdeleted
-///
-///In most cases you want a subsystem instead, so don't use this unless you have a good reason
-#define TIMER_LOOP (1<<5)
-
-///Delete the timer on parent datum Destroy() and when deltimer'd
-#define TIMER_DELETE_ME (1<<6)
-
-///Empty ID define
-#define TIMER_ID_NULL -1
-
 /// Used to trigger object removal from a processing list
 #define PROCESS_KILL 26
 
@@ -151,7 +111,6 @@
 #define FIRE_PRIORITY_OVERLAYS		500
 #define FIRE_PRIORITY_BEHAVIOURS	640
 #define FIRE_PRIORITY_VG			660
-#define FIRE_PRIORITY_TIMER			700
 #define FIRE_PRIORITY_SPEECH_CONTROLLER 900
 #define FIRE_PRIORITY_DELAYED_VERBS 950
 #define FIRE_PRIORITY_INPUT			1000 // This must always always be the max highest priority. Player input must never be lost.
@@ -185,16 +144,6 @@
 #define FORCE_END_ROUND 1
 /// For admin forcing roundend, can be used to distinguish the two
 #define ADMIN_FORCE_END_ROUND 2
-
-/**
-	Create a new timer and add it to the queue.
-	* Arguments:
-	* * callback the callback to call on timer finish
-	* * wait deciseconds to run the timer for
-	* * flags flags for this timer, see: code\__DEFINES\subsystems.dm
-	* * timer_subsystem the subsystem to insert this timer into
-*/
-#define addtimer(args...) _addtimer(args, file = __FILE__, line = __LINE__)
 
 // The change in the world's time from the subsystem's last fire in seconds.
 #define DELTA_WORLD_TIME(ss) ((world.time - ss.last_fire) * 0.1)

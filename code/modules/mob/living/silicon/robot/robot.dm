@@ -332,10 +332,10 @@
 	clear_traitor_hud()
 	disconnect_from_ai(TRUE)
 	if(killswitch)
-		deltimer(killswitch)
+		om_cancel_timer(src, killswitch)
 		killswitch = null
 	if(weapon_lock)
-		deltimer(weapon_lock)
+		om_cancel_timer(src, weapon_lock)
 		weapon_lock = null
 	if(shell)
 		if(deployed)
@@ -579,14 +579,14 @@
 /mob/living/silicon/robot/proc/start_killswitch(delay = ROBOT_KILLSWITCH_DELAY)
 	if(killswitch)
 		return FALSE
-	killswitch = addtimer(CALLBACK(src, PROC_REF(fire_killswitch)), delay, TIMER_STOPPABLE | TIMER_DELETE_ME)
+	killswitch = om_after(src, delay, PROC_REF(fire_killswitch))
 	log_game("ROBOT: killswitch armed on [key_name(src)] ([delay / (1 SECOND)]s).")
 	return TRUE
 
 /mob/living/silicon/robot/proc/cancel_killswitch()
 	if(!killswitch)
 		return FALSE
-	deltimer(killswitch)
+	om_cancel_timer(src, killswitch)
 	killswitch = null
 	return TRUE
 
@@ -596,13 +596,13 @@
 		return
 	to_chat(src, span_danger("Killswitch Activated"))
 	log_game("ROBOT: killswitch fired on [key_name(src)].")
-	addtimer(CALLBACK(src, TYPE_PROC_REF(/mob, gib)), 0.5 SECONDS, TIMER_DELETE_ME)
+	om_after(src, 0.5 SECONDS, TYPE_PROC_REF(/mob, gib))
 
 /// Lock the modules. Equipment drops once; activation is refused until the lock times out.
 /mob/living/silicon/robot/proc/start_weapon_lock(duration = ROBOT_WEAPON_LOCK_DELAY)
 	if(weapon_lock)
-		deltimer(weapon_lock)
-	weapon_lock = addtimer(CALLBACK(src, PROC_REF(end_weapon_lock)), duration, TIMER_STOPPABLE | TIMER_DELETE_ME)
+		om_cancel_timer(src, weapon_lock)
+	weapon_lock = om_after(src, duration, PROC_REF(end_weapon_lock))
 	uneq_all()
 	to_chat(src, span_danger("Weapon lock engaged."))
 
@@ -1641,7 +1641,7 @@
 	var/list/next_line = step < length(lines) ? lines[step + 1] : null
 	var/delay = next_line ? next_line[1] : 0
 	if(delay)
-		addtimer(CALLBACK(src, PROC_REF(play_subversion_sequence), operator_name, operator_their, step + 1), delay, TIMER_DELETE_ME)
+		om_after(src, delay, PROC_REF(play_subversion_sequence), operator_name, operator_their, step + 1)
 	else
 		play_subversion_sequence(operator_name, operator_their, step + 1)
 

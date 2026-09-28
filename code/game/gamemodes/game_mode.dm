@@ -282,14 +282,14 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 	antag.print_player_summary()
 
 /datum/game_mode/proc/finish_antag_goals()
-	addtimer(CALLBACK(src, PROC_REF(finish_completion_declatration)), 1 SECOND)
+	om_after(src, 1 SECOND, PROC_REF(finish_completion_declatration))
 
 /datum/game_mode/proc/declare_completion()
 	var/is_antag_mode = LAZYLEN(antag_templates)
 	check_victory()
 	if(is_antag_mode)
 		is_antag_mode += 2
-		addtimer(CALLBACK(src, PROC_REF(declare_antag_goals)), 1 SECOND)
+		om_after(src, 1 SECOND, PROC_REF(declare_antag_goals))
 	return is_antag_mode SECONDS
 
 /datum/game_mode/proc/finish_completion_declatration()

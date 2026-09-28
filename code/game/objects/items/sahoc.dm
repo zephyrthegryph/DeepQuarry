@@ -22,14 +22,14 @@
 		return TRUE
 	if(colorindex)
 		nonrandom()
-	addtimer(CALLBACK(src, PROC_REF(do_size_effect), capsuleowner), 10, TIMER_DELETE_ME)
+	om_after(src, 10, PROC_REF(do_size_effect), capsuleowner)
 
 /obj/item/buttonofnormal/throw_impact(atom/A, speed, mob/user)
 	..()
 	if(isliving(A))
 		if(colorindex)
 			nonrandom()
-		addtimer(CALLBACK(src, PROC_REF(do_size_effect), A), 5, TIMER_DELETE_ME)
+		om_after(src, 5, PROC_REF(do_size_effect), A)
 
 /obj/item/buttonofnormal/proc/do_size_effect(atom/A)
 	var/mob/living/capsulehit = A

@@ -140,10 +140,10 @@
 	// A previously-started Byond.winget() can finish after the immediate winset
 	// and briefly show the browser again. Reassert hidden after that async turn,
 	// but only if no newer hover has superseded this revision.
-	addtimer(CALLBACK(src, PROC_REF(ensure_hidden), hide_revision), 0.1 SECONDS)
+	om_after(src, 0.1 SECONDS, PROC_REF(ensure_hidden), hide_revision)
 	queueHide = showing ? TRUE : FALSE
 	if(queueHide)
-		addtimer(CALLBACK(src, PROC_REF(do_hide), hide_revision), 0.1 SECONDS)
+		om_after(src, 0.1 SECONDS, PROC_REF(do_hide), hide_revision)
 	else
 		do_hide(hide_revision)
 	return TRUE

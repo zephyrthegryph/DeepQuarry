@@ -81,7 +81,7 @@ REF_OWNED(/obj/item/antag_spawner, "sparks")
 	of your own. You also have a catalog, to purchase your own functions and equipment as you see fit.")))
 	to_chat(H, span_infoplain(span_bold("It would be wise to speak to your master, and learn what their plans are for today.")))
 
-	addtimer(CALLBACK(src, PROC_REF(finish_technomancer_spawn), H), 0.1 SECONDS)
+	om_after(src, 0.1 SECONDS, PROC_REF(finish_technomancer_spawn), H)
 
 /obj/item/antag_spawner/technomancer_apprentice/proc/finish_technomancer_spawn(mob/living/carbon/human/H)
 	GLOB.technomancers.add_antagonist(H.mind, 0, 1, 0, 0, 0)
@@ -129,7 +129,7 @@ REF_OWNED(/obj/item/antag_spawner, "sparks")
 
 	R.key = C.key
 
-	addtimer(CALLBACK(src, PROC_REF(finish_drone_spawn), R), 0.1 SECONDS)
+	om_after(src, 0.1 SECONDS, PROC_REF(finish_drone_spawn), R)
 
 /obj/item/antag_spawner/syndicate_drone/proc/finish_drone_spawn(mob/living/silicon/robot/R)
 	GLOB.mercs.add_antagonist(R.mind, FALSE, TRUE, FALSE, FALSE, FALSE)

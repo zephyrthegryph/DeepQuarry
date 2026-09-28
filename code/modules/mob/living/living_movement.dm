@@ -334,7 +334,7 @@ default behaviour is:
 			inertia_dir = 0
 			return
 
-		addtimer(CALLBACK(src, PROC_REF(handle_inertial_drift), loc), 0.5 SECONDS, TIMER_DELETE_ME)
+		om_after(src, 0.5 SECONDS, PROC_REF(handle_inertial_drift), loc)
 
 /mob/living/proc/handle_inertial_drift(locthen)
 	PRIVATE_PROC(TRUE)

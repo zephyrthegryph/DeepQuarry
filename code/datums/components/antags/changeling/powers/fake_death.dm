@@ -43,7 +43,7 @@
 	changeling.set_cooldown(FAKE_DEATH, resurrection_time)
 	changeling.is_reviving = TRUE
 	to_chat(C, span_notice("We will attempt to regenerate our form. This will take [(changeling.get_cooldown(FAKE_DEATH) - world.time)/600] minutes."))
-	addtimer(CALLBACK(src, PROC_REF(finish_changeling_revive)), resurrection_time, TIMER_DELETE_ME)
+	om_after(src, resurrection_time, PROC_REF(finish_changeling_revive))
 	feedback_add_details("changeling_powers","FD")
 	return 1
 

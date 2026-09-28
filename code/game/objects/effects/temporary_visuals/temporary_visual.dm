@@ -8,13 +8,12 @@
 	mouse_opacity = 0
 	var/duration = 10 //in deciseconds
 	var/randomdir = TRUE
-	var/timerid
 
 /obj/effect/temp_visual/Initialize(mapload)
 	. = ..()
 	if(randomdir)
 		dir = pick(list(NORTH, SOUTH, EAST, WEST))
-	timerid = QDEL_IN_STOPPABLE(src, duration)
+	expire(duration)
 
 /obj/effect/temp_visual/singularity_act()
 	return

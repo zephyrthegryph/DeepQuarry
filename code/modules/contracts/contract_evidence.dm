@@ -190,7 +190,7 @@
 	return result
 
 /datum/controller/subsystem/contracts/proc/schedule_contract_evidence_prune(contract_id)
-	addtimer(CALLBACK(src, PROC_REF(prune_contract_evidence), contract_id), CONTRACT_EVIDENCE_RETENTION)
+	om_after(src, CONTRACT_EVIDENCE_RETENTION, PROC_REF(prune_contract_evidence), contract_id)
 
 /datum/controller/subsystem/contracts/proc/prune_contract_evidence(contract_id)
 	for(var/evidence_id in evidence_by_id.Copy())

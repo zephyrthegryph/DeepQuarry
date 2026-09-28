@@ -337,7 +337,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		inline_js = file2text('html/statbrowser.js'),
 		inline_css = file2text('html/statbrowser.css'),
 	)
-	addtimer(CALLBACK(src, PROC_REF(check_panel_loaded)), 30 SECONDS)
+	om_after(src, 30 SECONDS, PROC_REF(check_panel_loaded))
 
 	INVOKE_ASYNC(src, PROC_REF(acquire_dpi))
 
@@ -609,7 +609,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 
 		//Precache the client with all other assets slowly, so as to not block other browse() calls
 		if (CONFIG_GET(flag/asset_simple_preload))
-			addtimer(CALLBACK(SSassets.transport, TYPE_PROC_REF(/datum/asset_transport, send_assets_slow), src, SSassets.transport.preload), 5 SECONDS)
+			om_after_realtime(5 SECONDS, TYPE_PROC_REF(/datum/asset_transport, send_assets_slow), SSassets.transport, src, SSassets.transport.preload)
 
 /mob/proc/MayRespawn()
 	return FALSE

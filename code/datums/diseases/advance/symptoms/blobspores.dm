@@ -96,7 +96,7 @@ BONUS
 		return
 	var/mob/living/M = A.affected_mob
 	M.visible_message(span_danger("[M] starts swelling grotesquely!"))
-	addtimer(CALLBACK(src, PROC_REF(pop), A, M), 10 SECONDS)
+	om_after(src, 10 SECONDS, PROC_REF(pop), A, M)
 
 /datum/symptom/blobspores/proc/pop(datum/disease/advance/A, mob/living/M)
 	if(!A || !M)

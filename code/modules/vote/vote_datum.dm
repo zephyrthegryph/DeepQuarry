@@ -15,7 +15,7 @@
 	var/is_custom = FALSE
 	// Choices available in the vote
 	var/list/choices
-	// Assoc list of [ckeys => choice] who have voted. We don't want to hold clients refs.___callbackvarset(list_or_datum, var_name, var_value)
+	// Assoc list of [ckeys => choice] who have voted. We don't want to hold clients refs.
 	var/list/voted
 	// For how long will it be up
 	var/vote_time = 60 SECONDS

@@ -634,7 +634,7 @@
 		"type" = message_type,
 		"count" = chunk_count,
 		"chunks" = list(),
-		"timeout" = addtimer(CALLBACK(src, PROC_REF(remove_oversized_payload), payload_id), 10 SECONDS, TIMER_UNIQUE|TIMER_OVERRIDE|TIMER_STOPPABLE)
+		"timeout" = om_after_replace(src, 10 SECONDS, PROC_REF(remove_oversized_payload), payload_id)
 	)
 
 /datum/tgui_window/proc/append_payload_chunk(payload_id, chunk)
@@ -644,7 +644,7 @@
 	var/list/chunks = payload["chunks"]
 	chunks += chunk
 	if(length(chunks) >= payload["count"])
-		deltimer(payload["timeout"])
+		om_cancel_timer(src, payload["timeout"])
 		var/message_type = payload["type"]
 		var/final_payload = chunks.Join()
 		remove_oversized_payload(payload_id)
@@ -653,7 +653,7 @@
 			return
 		on_message(message_type, json_decode(final_payload), list("type" = message_type, "payload" = final_payload, "tgui" = TRUE, "window_id" = id))
 	else
-		payload["timeout"] = addtimer(CALLBACK(src, PROC_REF(remove_oversized_payload), payload_id), 10 SECONDS, TIMER_UNIQUE|TIMER_OVERRIDE|TIMER_STOPPABLE)
+		payload["timeout"] = om_after_replace(src, 10 SECONDS, PROC_REF(remove_oversized_payload), payload_id)
 
 /datum/tgui_window/proc/remove_oversized_payload(payload_id)
 	LAZYREMOVE(oversized_payloads, payload_id)

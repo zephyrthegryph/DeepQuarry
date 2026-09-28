@@ -41,7 +41,7 @@
 /obj/effect/temporary_effect/pulse/proc/pulse_loop()
 
 	if(pulses_remaining > 0)
-		pulsetimer = addtimer(CALLBACK(src, PROC_REF(pulse_loop)), pulse_delay, TIMER_STOPPABLE)
+		pulsetimer = om_after(src, pulse_delay, PROC_REF(pulse_loop))
 		pulses_remaining--
 		on_pulse()
 	else

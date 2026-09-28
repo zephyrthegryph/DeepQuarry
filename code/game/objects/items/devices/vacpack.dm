@@ -204,7 +204,7 @@
 				if(suckanim)
 					if(vac_conga < 100)
 						vac_conga += 3
-					addtimer(CALLBACK(src, PROC_REF(prepare_sucking), F, user, target), 0.3 SECONDS + vac_conga)
+					om_after(src, 0.3 SECONDS + vac_conga, PROC_REF(prepare_sucking), F, user, target)
 				else if(is_allowed_suck(target, user, output_atom))
 					handle_consumption(F, user, auto_setting)
 			if(vac_conga > 0)
@@ -237,7 +237,7 @@
 			user.visible_message(span_filter_notice("[user] [suckverb]s up \the [target.name]."), span_notice("You [suckverb] up \the [target.name]..."))
 			if(suckanim)
 				I.SpinAnimation(5,1)
-			addtimer(CALLBACK(src, PROC_REF(handle_consumption), I, user, auto_setting), 0.5 SECONDS)
+			om_after(src, 0.5 SECONDS, PROC_REF(handle_consumption), I, user, auto_setting)
 			return
 
 	if(istype(target,/obj/effect/decal/cleanable))
@@ -263,7 +263,7 @@
 			user.visible_message(span_filter_notice("[user] [suckverb]s up \the [target.name]."), span_notice("You [suckverb] up \the [target.name]..."))
 			if(suckanim)
 				L.SpinAnimation(5,1)
-			addtimer(CALLBACK(src, PROC_REF(handle_consumption), L, user, auto_setting), 0.5 SECONDS)
+			om_after(src, 0.5 SECONDS, PROC_REF(handle_consumption), L, user, auto_setting)
 
 /obj/item/vac_attachment/proc/prepare_sucking(atom/movable/target, mob/user, turf/target_turf)
 	var/atom/movable/output_atom = om_resolve(output_dest)
@@ -278,7 +278,7 @@
 	if(!is_allowed_suck(target, user, output_atom)) //cancel if you're not allowed
 		return
 	target.SpinAnimation(5,1)
-	addtimer(CALLBACK(src, PROC_REF(handle_consumption), target, user, target_turf), 0.5 SECONDS)
+	om_after(src, 0.5 SECONDS, PROC_REF(handle_consumption), target, user, target_turf)
 
 /obj/item/vac_attachment/proc/handle_consumption(atom/movable/target, mob/user, auto_setting, turf/target_turf)
 	if(target_turf && target.loc != target_turf)

@@ -218,7 +218,7 @@ REF_OWNED(/obj/machinery/portable_atmospherics/hydroponics, "temp_chem_holder")
 /obj/machinery/portable_atmospherics/hydroponics/proc/schedule_growth_wake()
 	if(growth_timer || frozen == 1)
 		return
-	growth_timer = addtimer(CALLBACK(src, PROC_REF(wake_for_growth)), max(1, lastcycle + cycledelay - world.time), TIMER_STOPPABLE)
+	growth_timer = om_after(src, max(1, lastcycle + cycledelay - world.time), PROC_REF(wake_for_growth))
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/wake_for_growth()
 	growth_timer = null

@@ -53,7 +53,7 @@ REF_BACKLIST(/obj/machinery/rnd/server, list("stored_research" = "techweb_server
 	if (. & EMP_PROTECT_SELF)
 		return
 	stat |= EMPED
-	addtimer(CALLBACK(src, PROC_REF(fix_emp)), 60 SECONDS)
+	om_after(src, 60 SECONDS, PROC_REF(fix_emp))
 	refresh_working()
 
 /// Callback to un-emp the server afetr some time.

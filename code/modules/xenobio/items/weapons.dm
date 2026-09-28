@@ -108,7 +108,7 @@ REMOVAL
 	var/loadable_item = null
 	var/loaded_item = null
 	var/loadable_name = null
-	var/firable = TRUE
+	COOLDOWN_DECLARE(firable)
 /obj/item/xenobio/examine(mob/user)
 	. = ..()
 	if(loaded_item)
@@ -154,7 +154,7 @@ REMOVAL
 		//playsound(src, 'sound/weapons/wave.ogg', 60, 1)
 		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
 		return
-	if(!firable)
+	if(!COOLDOWN_FINISHED(src, firable))
 		return
 
 	playsound(src, 'sound/weapons/wave.ogg', 60, 1)
@@ -178,7 +178,7 @@ REMOVAL
 /obj/item/xenobio/monkey_gun/afterattack(atom/A, mob/user as mob)
 	..()
 
-	if(!firable)
+	if(!COOLDOWN_FINISHED(src, firable))
 		return
 
 	var/turf/T = get_turf(A)
@@ -195,8 +195,7 @@ REMOVAL
 		cube.loc = A
 		cube.Expand()
 		loaded_item = null
-		firable = FALSE
-		VARSET_IN(src, firable, TRUE, 2 SECONDS)
+		COOLDOWN_START(src, firable, 2 SECONDS)
 
 // Instead of bringing the slime to the grinder, lets bring the grinder to the slime! This will process slimes and monkies one at a time.
 /obj/item/slime_grinder

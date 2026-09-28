@@ -56,7 +56,7 @@
 	var/datum/effect/system/expl_particles/P = new/datum/effect/system/expl_particles()
 	P.set_up(10,location)
 	P.start()
-	addtimer(CALLBACK(src, PROC_REF(spread_smoke)), 0.5 SECONDS)
+	om_after(src, 0.5 SECONDS, PROC_REF(spread_smoke))
 
 /datum/effect/system/explosion/proc/spread_smoke()
 	PRIVATE_PROC(TRUE)

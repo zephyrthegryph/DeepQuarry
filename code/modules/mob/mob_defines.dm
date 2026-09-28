@@ -127,7 +127,7 @@
 	var/timeofdeath = 0.0//Living
 	/// What onlookers see when this mob dies ("\The [src] <death_message>"). See /mob/proc/get_death_message().
 	var/death_message = "seizes up and falls limp..."
-	var/cpr_time = 1.0//Carbon
+	COOLDOWN_DECLARE(cpr_time) //Carbon
 
 	var/bodytemperature = BODYTEMP_NORMAL
 	var/charges = 0.0

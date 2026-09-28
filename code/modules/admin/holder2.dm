@@ -46,14 +46,14 @@ GLOBAL_PROTECT(href_token)
 	if(IsAdminAdvancedProcCall())
 		alert_to_permissions_elevation_attempt(usr)
 		if (!target) //only del if this is a true creation (and not just a New() proc call), other wise trialmins/coders could abuse this to deadmin other admins
-			QDEL_IN(src, 0)
+			om_qdel_after(src, 0)
 			CRASH("Admin proc call creation of admin datum")
 		return
 	if(!ckey)
-		QDEL_IN(src, 0)
+		om_qdel_after(src, 0)
 		CRASH("Admin datum created without a ckey")
 	if(!istype(ranks))
-		QDEL_IN(src, 0)
+		om_qdel_after(src, 0)
 		CRASH("Admin datum created with invalid ranks: [ranks] ([json_encode(ranks)])")
 	target = ckey
 	name = "[ckey]'s admin datum ([join_admin_ranks(ranks)])"

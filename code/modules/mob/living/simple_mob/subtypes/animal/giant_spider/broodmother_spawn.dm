@@ -9,7 +9,7 @@
 /mob/living/simple_mob/animal/giant_spider/frost/broodling/Initialize(mapload)
 	. = ..()
 	adjust_scale(0.75)
-	addtimer(CALLBACK(src, PROC_REF(death)), 2 MINUTES)
+	om_after(src, 2 MINUTES, PROC_REF(death))
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/frost/broodling/replace_death(gibbed)
@@ -30,7 +30,7 @@
 /mob/living/simple_mob/animal/giant_spider/electric/broodling/Initialize(mapload)
 	. = ..()
 	adjust_scale(0.75)
-	addtimer(CALLBACK(src, PROC_REF(death)), 2 MINUTES)
+	om_after(src, 2 MINUTES, PROC_REF(death))
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/electric/broodling/replace_death(gibbed)
@@ -48,7 +48,7 @@
 /mob/living/simple_mob/animal/giant_spider/hunter/broodling/Initialize(mapload)
 	. = ..()
 	adjust_scale(0.75)
-	addtimer(CALLBACK(src, PROC_REF(death)), 2 MINUTES)
+	om_after(src, 2 MINUTES, PROC_REF(death))
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/hunter/broodling/replace_death(gibbed)
@@ -66,7 +66,7 @@
 /mob/living/simple_mob/animal/giant_spider/lurker/broodling/Initialize(mapload)
 	. = ..()
 	adjust_scale(0.75)
-	addtimer(CALLBACK(src, PROC_REF(death)), 2 MINUTES)
+	om_after(src, 2 MINUTES, PROC_REF(death))
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/lurker/broodling/replace_death(gibbed)
@@ -84,7 +84,7 @@
 /mob/living/simple_mob/animal/giant_spider/nurse/broodling/Initialize(mapload)
 	. = ..()
 	adjust_scale(0.75)
-	addtimer(CALLBACK(src, PROC_REF(death)), 2 MINUTES)
+	om_after(src, 2 MINUTES, PROC_REF(death))
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/nurse/broodling/replace_death(gibbed)
@@ -102,7 +102,7 @@
 /mob/living/simple_mob/animal/giant_spider/pepper/broodling/Initialize(mapload)
 	. = ..()
 	adjust_scale(0.75)
-	addtimer(CALLBACK(src, PROC_REF(death)), 2 MINUTES)
+	om_after(src, 2 MINUTES, PROC_REF(death))
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/pepper/broodling/replace_death(gibbed)
@@ -123,7 +123,7 @@
 /mob/living/simple_mob/animal/giant_spider/thermic/broodling/Initialize(mapload)
 	. = ..()
 	adjust_scale(0.75)
-	addtimer(CALLBACK(src, PROC_REF(death)), 2 MINUTES)
+	om_after(src, 2 MINUTES, PROC_REF(death))
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/thermic/broodling/replace_death(gibbed)
@@ -141,7 +141,7 @@
 /mob/living/simple_mob/animal/giant_spider/tunneler/broodling/Initialize(mapload)
 	. = ..()
 	adjust_scale(0.75)
-	addtimer(CALLBACK(src, PROC_REF(death)), 2 MINUTES)
+	om_after(src, 2 MINUTES, PROC_REF(death))
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/tunneler/broodling/replace_death(gibbed)
@@ -161,7 +161,7 @@
 /mob/living/simple_mob/animal/giant_spider/webslinger/broodling/Initialize(mapload)
 	. = ..()
 	adjust_scale(0.75)
-	addtimer(CALLBACK(src, PROC_REF(death)), 2 MINUTES)
+	om_after(src, 2 MINUTES, PROC_REF(death))
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/webslinger/broodling/replace_death(gibbed)
@@ -184,7 +184,7 @@
 /mob/living/simple_mob/animal/giant_spider/broodling/Initialize(mapload)
 	. = ..()
 	adjust_scale(0.75)
-	deathtimer = addtimer(CALLBACK(src, PROC_REF(death)), 2 MINUTES, TIMER_STOPPABLE)
+	deathtimer = om_after(src, 2 MINUTES, PROC_REF(death))
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/broodling/replace_death(gibbed)

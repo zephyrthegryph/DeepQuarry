@@ -113,7 +113,7 @@
 		return
 	stat |= EMPED
 	disable_field() //shutting dowwwwwwn
-	addtimer(CALLBACK(src, PROC_REF(emp_reboot)), rand(reboot_delay_min, reboot_delay_max), TIMER_DELETE_ME)
+	om_after(src, rand(reboot_delay_min, reboot_delay_max), PROC_REF(emp_reboot))
 
 /obj/machinery/atmospheric_field_generator/proc/emp_reboot()
 	stat &= ~EMPED
