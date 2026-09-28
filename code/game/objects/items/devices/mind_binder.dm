@@ -57,6 +57,33 @@
 	return
 
 // Handle placing a mind into a mob
+/obj/item/mindbinder/proc/self_bind_mob_confirmed(mob/user, choice, datum/om/prompt/ask)
+	var/mob/living/target = ask.get("target")
+	if(choice != "Continue" || target.ckey)
+		return
+	user.visible_message(span_warning("[user] presses [src] against [target]. The device beginning to let out a series of beeps!"),span_notice("You begin to bind yourself into [target]!"))
+	log_and_message_admins("attempted to bind themselves to \an [target] with a Mind Binder.", user)
+	om_do_after(user, 30 SECONDS, target = target, receiver = src, on_done = PROC_REF(bind_mob_timed_done), done_args = list(target, user))
+
+/obj/item/mindbinder/proc/self_bind_item_confirmed(mob/user, choice, datum/om/prompt/ask)
+	var/obj/item/item = ask.get("target")
+	if(choice != "Continue")
+		return
+	log_and_message_admins("attempted to bind themselves to \an [item] with a Mind Binder.", user)
+	user.visible_message(span_warning("[user] presses [src] against [item]. The device beginning to let out a series of beeps!"),span_notice("You begin to bind yourself into [item]!"))
+	om_do_after(user, 30 SECONDS, target = item, receiver = src, on_done = PROC_REF(bind_item_timed_done), done_args = list(item, user))
+
+/obj/item/mindbinder/proc/store_mob_confirmed(mob/user, choice, datum/om/prompt/ask)
+	var/mob/living/target = ask.get("target")
+	if(choice != "Continue" || possessed_voice.len != 0 || !user.Adjacent(target))
+		return
+	if(target.ckey && !target.client)
+		log_and_message_admins("attempted to take [key_name(target)]'s mind with a Mind Binder while they were SSD!", user)
+	else
+		log_and_message_admins("attempted to take [key_name(target)]'s mind with a Mind Binder.", user)
+	user.visible_message(span_warning("[user] presses [src] against [target]'s head. The device beginning to let out a series of beeps!"),span_notice("You begin to download [target]'s mind!"))
+	om_do_after(user, 30 SECONDS, target = target, receiver = src, on_done = PROC_REF(store_mob_timed_done), done_args = list(target, user))
+
 /obj/item/mindbinder/proc/bind_mob(mob/living/target)
 	if(possessed_voice.len == 0 && !self_bind)
 		to_chat(usr,span_warning("The device beeps a warning that it doesn't contain a mind to bind!"))
@@ -67,11 +94,7 @@
 		return
 
 	if(self_bind)
-		var/choice = tgui_alert(usr,"This will bind YOUR mind to the target! You may not be able to go back without help. Continue?","Confirmation",list("Continue","Cancel"))
-		if(!choice || choice == "Cancel") return
-		usr.visible_message(span_warning("[usr] presses [src] against [target]. The device beginning to let out a series of beeps!"),span_notice("You begin to bind yourself into [target]!"))
-		log_and_message_admins("attempted to bind themselves to \an [target] with a Mind Binder.")
-		om_do_after(usr, 30 SECONDS, target = target, receiver = src, on_done = PROC_REF(bind_mob_timed_done), done_args = list(target, usr))
+		om_prompt(src, usr, list("message" = "This will bind YOUR mind to the target! You may not be able to go back without help. Continue?", "title" = "Confirmation", "choices" = list("Continue","Cancel"), "target" = target, "requires" = PROMPT_ADJACENT, "data" = list("target" = target)), PROC_REF(self_bind_mob_confirmed))
 		return
 
 	usr.visible_message(span_warning("[usr] presses [src] against [target]. The device beginning to let out a series of beeps!"),span_notice("You begin to bind someone's mind into [target]!"))
@@ -120,11 +143,7 @@
 		return
 
 	if(self_bind)
-		var/choice = tgui_alert(usr,"This will bind YOUR mind to the target! You will not be able to go back without help. Continue?","Confirmation",list("Continue","Cancel"))
-		if(!choice || choice == "Cancel") return
-		log_and_message_admins("attempted to bind themselves to \an [item] with a Mind Binder.")
-		usr.visible_message(span_warning("[usr] presses [src] against [item]. The device beginning to let out a series of beeps!"),span_notice("You begin to bind yourself into [item]!"))
-		om_do_after(usr, 30 SECONDS, target = item, receiver = src, on_done = PROC_REF(bind_item_timed_done), done_args = list(item, usr))
+		om_prompt(src, usr, list("message" = "This will bind YOUR mind to the target! You will not be able to go back without help. Continue?", "title" = "Confirmation", "choices" = list("Continue","Cancel"), "target" = item, "requires" = PROMPT_ADJACENT, "data" = list("target" = item)), PROC_REF(self_bind_item_confirmed))
 		return
 
 	log_and_message_admins("attempted to bind [key_name(src.possessed_voice[1])] to \an [item] with a Mind Binder.")
@@ -156,14 +175,7 @@
 		to_chat(usr,span_warning("The device beeps a warning that the target isn't sentient."))
 		return
 
-	var/choice = tgui_alert(usr,"This will download the target's mind into the device. Once their mind is loaded you can then bind it into an item. This will result in the target being stuck until you put them back in their original body. Please make sure OOC prefs align! Continue?","Confirmation",list("Continue","Cancel"))
-	if(choice == "Continue" && usr.get_active_hand() == src && usr.Adjacent(target))
-		if(target.ckey && !target.client)
-			log_and_message_admins("attempted to take [key_name(target)]'s mind with a Mind Binder while they were SSD!")
-		else
-			log_and_message_admins("attempted to take [key_name(target)]'s mind with a Mind Binder.")
-		usr.visible_message(span_warning("[usr] presses [src] against [target]'s head. The device beginning to let out a series of beeps!"),span_notice("You begin to download [target]'s mind!"))
-		om_do_after(usr, 30 SECONDS, target = target, receiver = src, on_done = PROC_REF(store_mob_timed_done), done_args = list(target, usr))
+	om_prompt(src, usr, list("message" = "This will download the target's mind into the device. Once their mind is loaded you can then bind it into an item. This will result in the target being stuck until you put them back in their original body. Please make sure OOC prefs align! Continue?", "title" = "Confirmation", "choices" = list("Continue","Cancel"), "requires" = PROMPT_IN_HAND, "data" = list("target" = target)), PROC_REF(store_mob_confirmed))
 
 	update_icon()
 

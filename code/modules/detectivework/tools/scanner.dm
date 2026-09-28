@@ -239,7 +239,10 @@
 	set category = "Object"
 	set src in view(1)
 
-	if (tgui_alert(usr, "Are you sure you want to wipe all data from [src]?","Wipe Data",list("Yes","No")) == "Yes")
+	var/_answer_k217 = rerun_prompt(usr, "k217", list("message" = "Are you sure you want to wipe all data from [src]?", "title" = "Wipe Data", "choices" = list("Yes","No")), VERB_REF(wipe), args)
+	if(isnull(_answer_k217))
+		return
+	if (_answer_k217 == "Yes")
 		stored = list()
 		to_chat(usr, span_notice("Forensic data erase complete."))
 

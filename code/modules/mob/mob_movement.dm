@@ -390,19 +390,32 @@
 	set category = "OOC.Game Settings"
 	set name = "Set Incorporeal Speed"
 
-	var/input = tgui_input_number(usr, "Set an incorporeal movement delay between 0 (fastest) and 5 (slowest)", "Incorporeal movement speed", (0.5/world.tick_lag), 5, 0)
+	om_prompt(src, usr, list("kind" = "number", "message" = "Set an incorporeal movement delay between 0 (fastest) and 5 (slowest)", "title" = "Incorporeal movement speed", "default" = (0.5/world.tick_lag), "max" = 5, "min" = 0), /client/proc/incorporeal_speed_entered)
+
+/client/proc/incorporeal_speed_entered(mob/user, input, datum/om/prompt/ask)
 	incorporeal_speed = input * world.tick_lag
 
 ///Process_Incorpmove
 ///Called by client/Move()
 ///Allows mobs to run though walls
+/client/proc/leave_belly_cancelled(mob/user, datum/om/prompt/ask)
+	is_leaving_belly = FALSE
+
+/// Confirmed: the ghost moves out on the direction it pressed.
+/client/proc/leave_belly_answered(mob/user, answer, datum/om/prompt/ask)
+	if(answer != "Yes")
+		is_leaving_belly = FALSE
+		return
+	is_leaving_belly = 2
+	Process_Incorpmove(ask.get("dir"))
+
 /client/proc/Process_Incorpmove(direct)
 	if(isbelly(mob.loc) && isobserver(mob))
-		if(is_leaving_belly)
+		if(is_leaving_belly == TRUE)
 			return
-		is_leaving_belly = TRUE
-		if(tgui_alert(mob, "Do you want to leave your predator's belly?", "Leave belly?", list("Yes", "No")) != "Yes")
-			is_leaving_belly = FALSE
+		if(!is_leaving_belly)
+			is_leaving_belly = TRUE
+			om_prompt(src, mob, list("message" = "Do you want to leave your predator's belly?", "title" = "Leave belly?", "choices" = list("Yes", "No"), "on_cancel" = /client/proc/leave_belly_cancelled, "data" = list("dir" = direct)), /client/proc/leave_belly_answered)
 			return
 		is_leaving_belly = FALSE
 	if(isghosttrap(mob.loc))

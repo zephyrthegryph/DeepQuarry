@@ -19,7 +19,9 @@
 // SPECIAL BOARDS BELOW
 
 /obj/item/circuitboard/tesla_coil/multitool_act(mob/user, obj/item/I)
-	var/result = tgui_input_list(user, "What do you want to reconfigure the board to?", "Multitool-Circuitboard interface", list("Standard", "Relay", "Prism", "Amplifier", "Recaster", "Collector"))
+	var/result = rerun_prompt(user, "k22", list("kind" = "list", "message" = "What do you want to reconfigure the board to?", "title" = "Multitool-Circuitboard interface", "choices" = list("Standard", "Relay", "Prism", "Amplifier", "Recaster", "Collector")), TYPE_PROC_REF(/atom, multitool_act), args)
+	if(isnull(result))
+		return ITEM_INTERACT_BLOCKING
 	switch(result)
 		if("Standard")
 			name = T_BOARD("tesla coil")

@@ -46,7 +46,9 @@
 	switch(wire)
 		if(WIRE_AI_CONTROL) //pulse the AI wire to make the borg reselect an AI
 			if(!R.emagged)
-				R.connect_to_ai(select_active_ai(R))
+				var/mob/living/silicon/ai/picked = select_active_ai(R, src, PROC_REF(on_pulse), args)
+				if(picked)
+					R.connect_to_ai(picked)
 
 		if(WIRE_BORG_CAMERA)
 			if(!isnull(R.camera) && R.camera.can_use() && !R.scrambledcodes)

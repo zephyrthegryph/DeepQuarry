@@ -44,7 +44,7 @@ GLOBAL_DATUM_INIT(uplink, /datum/uplink, new)
 
 
 /datum/uplink_item/proc/buy(obj/item/uplink/U, mob/user)
-	var/extra_args = extra_args(user)
+	var/extra_args = extra_args(user, args)
 	if(!extra_args)
 		return
 
@@ -66,7 +66,8 @@ GLOBAL_DATUM_INIT(uplink, /datum/uplink, new)
 	return goods
 
 // Any additional arguments you wish to send to the get_goods
-/datum/uplink_item/proc/extra_args(mob/user)
+/// Anything the purchase needs asked first. Questions re-run buy() with `buy_args`; null while waiting.
+/datum/uplink_item/proc/extra_args(mob/user, list/buy_args)
 	return TRUE
 
 /datum/uplink_item/proc/can_buy(obj/item/uplink/U, telecrystals)

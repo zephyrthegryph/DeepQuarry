@@ -106,7 +106,10 @@ REF_OWNED(/obj/item/ammo_casing, "BB")
 	if(!BB)
 		to_chat(user, span_blue("There is no bullet in the casing to inscribe anything into."))
 		return ITEM_INTERACT_BLOCKING
-	var/label_text = sanitizeSafe(tgui_input_text(user, "Inscribe some text into \the [initial(BB.name)]", "Inscription", null, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
+	var/_answer_k91 = rerun_prompt(user, "k91", list("kind" = "text", "message" = "Inscribe some text into \the [initial(BB.name)]", "title" = "Inscription", "max_length" = MAX_NAME_LEN, "encode" = FALSE), TYPE_PROC_REF(/atom, screwdriver_act), args)
+	if(isnull(_answer_k91))
+		return ITEM_INTERACT_BLOCKING
+	var/label_text = sanitizeSafe(_answer_k91, MAX_NAME_LEN)
 	if(length(label_text) > 20)
 		to_chat(user, span_red("The inscription can be at most 20 characters long."))
 	else if(!label_text)

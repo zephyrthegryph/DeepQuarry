@@ -96,7 +96,9 @@
 		O.show_message(text("[icon2html(src, O.client)] *[ttone]*"))
 
 /obj/item/pda/proc/set_ringtone(mob/user)
-	var/t = tgui_input_text(user, "Please enter new ringtone", name, ttone)
+	var/t = rerun_prompt(user, "k99", list("kind" = "text", "message" = "Please enter new ringtone", "title" = name, "default" = ttone), PROC_REF(set_ringtone), args)
+	if(isnull(t))
+		return
 	if(in_range(src, user) && loc == user)
 		if(t)
 			if(hidden_uplink && hidden_uplink.check_trigger(user, lowertext(t), lowertext(lock_code)))

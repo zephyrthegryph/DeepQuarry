@@ -31,9 +31,14 @@
 	spawn(0) // S7 keeps: tgui_alert() sleeps (prompts, S10)
 		if(!C)
 			return
-		var/response = tgui_alert(C, "Someone is requesting a soul for a promethean. Would you like to play as one?", "Promethean request", list("Yes", "No", "Never for this round"))
+		var/response = rerun_prompt(C, "k34", list("message" = "Someone is requesting a soul for a promethean. Would you like to play as one?", "title" = "Promethean request", "choices" = list("Yes", "No", "Never for this round")), PROC_REF(question), args)
+		if(isnull(response))
+			return
 		if(response == "Yes")
-			response = tgui_alert(C, "Are you sure you want to play as a promethean?", "Promethean request", list("Yes", "No"))
+			var/_answer_k36 = rerun_prompt(C, "k36", list("message" = "Are you sure you want to play as a promethean?", "title" = "Promethean request", "choices" = list("Yes", "No")), PROC_REF(question), args)
+			if(isnull(_answer_k36))
+				return
+			response = _answer_k36
 		if(!C || 2 == searching)
 			return //handle logouts that happen whilst the alert is waiting for a response, and responses issued after a brain has been located.
 		if(response == "Yes")
@@ -59,7 +64,9 @@
 	S.set_species("Promethean")
 	S.shapeshifter_set_colour("#2398FF")
 	visible_message(span_warning("The monkey cube suddenly takes the shape of a humanoid!"))
-	var/newname = tgui_input_text(S, "You are a Promethean. Would you like to change your name to something else?", "Name change", null, MAX_NAME_LEN)
+	var/newname = rerun_prompt(S, "k62", list("kind" = "text", "message" = "You are a Promethean. Would you like to change your name to something else?", "title" = "Name change", "max_length" = MAX_NAME_LEN), PROC_REF(transfer_personality), args)
+	if(isnull(newname))
+		return
 	if(newname)
 		S.real_name = newname
 		S.name = S.real_name

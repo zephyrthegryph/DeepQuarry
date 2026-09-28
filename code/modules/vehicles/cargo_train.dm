@@ -481,14 +481,18 @@
 		return
 
 	if(W.has_tool_quality(TOOL_MULTITOOL))
-		var/new_paint = input(usr, "Please select paint color.", "Paint Color", paint_color) as color|null
+		var/new_paint = rerun_prompt(user, "paint", list("kind" = "color", "message" = "Please select paint color.", "title" = "Paint Color", "default" = paint_color), TYPE_PROC_REF(/atom, attackby), args)
+		if(isnull(new_paint))
+			return TRUE
 		if(new_paint)
 			paint_color = new_paint
 			update_icon()
 			return
 
 	if(istype(W, /obj/item/pen))
-		var/t = tgui_input_text(user, "What would you like the label to be?", text("[]", src.name), null, MAX_NAME_LEN)
+		var/t = rerun_prompt(user, "k491", list("kind" = "text", "message" = "What would you like the label to be?", "title" = text("[]", src.name), "max_length" = MAX_NAME_LEN), TYPE_PROC_REF(/atom, attackby), args)
+		if(isnull(t))
+			return TRUE
 		if (user.get_active_hand() != W)
 			return
 		if((!in_range(src, user) && src.loc != user))

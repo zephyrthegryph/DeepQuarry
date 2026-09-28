@@ -120,7 +120,9 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	var/type_to_use = tgui_input_list(user, "Please choose a type to use.","[src] type setting", list("string","number","ref", "null"))
+	var/type_to_use = rerun_prompt(user, "k123", list("kind" = "list", "message" = "Please choose a type to use.", "title" = "[src] type setting", "choices" = list("string","number","ref", "null")), PROC_REF(attack_self), args)
+	if(isnull(type_to_use))
+		return TRUE
 	if(!CanInteract(user, GLOB.tgui_physical_state))
 		return
 
@@ -128,14 +130,20 @@
 	switch(type_to_use)
 		if("string")
 			accepting_refs = 0
-			new_data = tgui_input_text(user, "Now type in a string.","[src] string writing", null, MAX_MESSAGE_LEN, encode = FALSE)
+			var/_answer_k131 = rerun_prompt(user, "k131", list("kind" = "text", "message" = "Now type in a string.", "title" = "[src] string writing", "max_length" = MAX_MESSAGE_LEN, "encode" = FALSE), PROC_REF(attack_self), args)
+			if(isnull(_answer_k131))
+				return TRUE
+			new_data = _answer_k131
 			new_data = sanitizeSafe(new_data, MAX_MESSAGE_LEN, 0, 0)
 			if(istext(new_data) && CanInteract(user, GLOB.tgui_physical_state))
 				data_to_write = new_data
 				to_chat(user, span_notice("You set \the [src]'s memory to \"[new_data]\"."))
 		if("number")
 			accepting_refs = 0
-			new_data = tgui_input_number(user, "Now type in a number.","[src] number writing", min_value=-INFINITY, round_value=FALSE)
+			var/_answer_k138 = rerun_prompt(user, "k138", list("kind" = "number", "message" = "Now type in a number.", "title" = "[src] number writing", "min" = -INFINITY, "round" = FALSE), PROC_REF(attack_self), args)
+			if(isnull(_answer_k138))
+				return TRUE
+			new_data = _answer_k138
 			if(isnum(new_data) && CanInteract(user, GLOB.tgui_physical_state))
 				data_to_write = new_data
 				to_chat(user, span_notice("You set \the [src]'s memory to [new_data]."))

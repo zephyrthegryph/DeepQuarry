@@ -72,7 +72,14 @@
 	if(!O.move_into(src, OCCUPANT_SLOT_TRANSPORTPOD))
 		return
 	update_icon()
-	if(tgui_alert(O, "Are you sure you're ready to launch?", "Transport Pod", list("Yes", "No")) == "Yes")
+	om_prompt(src, O, list("message" = "Are you sure you're ready to launch?", "title" = "Transport Pod", "choices" = list("Yes", "No"), "requires" = list(/datum/om/check/inside_target), "on_cancel" = PROC_REF(launch_declined)), PROC_REF(launch_answered))
+	return 1
+
+/obj/machinery/transportpod/proc/launch_declined(mob/living/carbon/human/O, datum/om/prompt/ask)
+	go_out()
+
+/obj/machinery/transportpod/proc/launch_answered(mob/living/carbon/human/O, answer, datum/om/prompt/ask)
+	if(answer == "Yes")
 		in_transit = 1
 		MACHINE_WAKE(src)
 		playsound(src, HYPERSPACE_WARMUP)

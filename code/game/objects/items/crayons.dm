@@ -42,34 +42,38 @@
 /obj/item/pen/crayon/afterattack(atom/target, mob/user, proximity, click_parameters)
 	if(!proximity) return
 	if(istype(target,/turf/simulated/floor))
-		var/drawtype = tgui_input_list(user, "Choose what you'd like to draw.", "Crayon scribbles", list("graffiti","rune","letter","arrow"))
-		if(!drawtype)
-			return
-		if(get_dist(target, user) > 1 || !(user.z == target.z))
-			return
-		switch(drawtype)
-			if("letter")
-				drawtype = tgui_input_list(user, "Choose the letter.", "Crayon scribbles", list("a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"))
-				if(!drawtype || get_dist(target, user) > 1 || !(user.z == target.z))
-					return
-				to_chat(user, "You start drawing a letter on the [target.name].")
-			if("graffiti")
-				drawtype = tgui_input_list(user, "Choose the graffiti.", "Crayon scribbles", list("amyjon","face","matt","revolution","engie","guy","end","dwarf","uboa"))
-				if(!drawtype || get_dist(target, user) > 1 || !(user.z == target.z))
-					return
-				to_chat(user, "You start drawing graffiti on the [target.name].")
-			if("rune")
-				drawtype = tgui_input_list(user, "Choose the rune.", "Crayon scribbles", list("rune1", "rune2", "rune3", "rune4", "rune5", "rune6"))
-				if(!drawtype || get_dist(target, user) > 1 || !(user.z == target.z))
-					return
-				to_chat(user, "You start drawing a rune on the [target.name].")
-			if("arrow")
-				drawtype = tgui_input_list(user, "Choose the arrow.", "Crayon scribbles", list("left", "right", "up", "down"))
-				if(!drawtype || get_dist(target, user) > 1 || !(user.z == target.z))
-					return
-				to_chat(user, "You start drawing an arrow on the [target.name].")
-		om_task_start(/datum/om/task/timed/crayon_draw, user, src, list("duration" = instant ? 0 : 5 SECONDS, "receiver" = src, "surface" = target, "drawtype" = drawtype, "click_parameters" = click_parameters))
+		om_prompt_sequence(src, user, list(
+			list("key" = "kind", "kind" = "list", "message" = "Choose what you'd like to draw.", "title" = "Crayon scribbles", "choices" = list("graffiti","rune","letter","arrow")),
+			PROC_REF(ask_drawing),
+		), PROC_REF(drawing_chosen), list("target" = target, "requires" = list(/datum/om/check/in_range, /datum/om/check/not_incapacitated), "data" = list("canvas" = target, "params" = click_parameters)))
 	return
+
+/obj/item/pen/crayon/proc/ask_drawing(mob/user, datum/om/prompt/ask)
+	switch(ask.get("kind"))
+		if("letter")
+			return list("key" = "drawtype", "kind" = "list", "message" = "Choose the letter.", "title" = "Crayon scribbles", "choices" = list("a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"))
+		if("graffiti")
+			return list("key" = "drawtype", "kind" = "list", "message" = "Choose the graffiti.", "title" = "Crayon scribbles", "choices" = list("amyjon","face","matt","revolution","engie","guy","end","dwarf","uboa"))
+		if("rune")
+			return list("key" = "drawtype", "kind" = "list", "message" = "Choose the rune.", "title" = "Crayon scribbles", "choices" = list("rune1", "rune2", "rune3", "rune4", "rune5", "rune6"))
+		if("arrow")
+			return list("key" = "drawtype", "kind" = "list", "message" = "Choose the arrow.", "title" = "Crayon scribbles", "choices" = list("left", "right", "up", "down"))
+
+/obj/item/pen/crayon/proc/drawing_chosen(mob/user, datum/om/prompt/ask)
+	var/atom/target = ask.get("canvas")
+	var/drawtype = ask.get("drawtype")
+	if(!drawtype)
+		return
+	switch(ask.get("kind"))
+		if("letter")
+			to_chat(user, "You start drawing a letter on the [target.name].")
+		if("graffiti")
+			to_chat(user, "You start drawing graffiti on the [target.name].")
+		if("rune")
+			to_chat(user, "You start drawing a rune on the [target.name].")
+		if("arrow")
+			to_chat(user, "You start drawing an arrow on the [target.name].")
+	om_task_start(/datum/om/task/timed/crayon_draw, user, src, list("duration" = instant ? 0 : 5 SECONDS, "receiver" = src, "surface" = target, "drawtype" = drawtype, "click_parameters" = ask.get("params")))
 
 /datum/om/task/timed/crayon_draw
 	complete_proc = /obj/item/pen/crayon/proc/draw_done

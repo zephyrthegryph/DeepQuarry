@@ -82,7 +82,9 @@ GLOBAL_VAR_INIT(warrant_uid, 0)
 		if("addwarrant")
 			. = TRUE
 			var/datum/data/record/warrant/W = new()
-			var/temp = tgui_alert(ui.user, "Do you want to create a search-, or an arrest warrant?", "Warrant Type", list("Search","Arrest","Cancel"))
+			var/temp = act_prompt(ui.user, action, params, ui, "k85", list("message" = "Do you want to create a search-, or an arrest warrant?", "title" = "Warrant Type", "choices" = list("Search","Arrest","Cancel")))
+			if(isnull(temp))
+				return
 			if(!temp)
 				return
 			if(tgui_status(ui.user, state) == STATUS_INTERACTIVE)
@@ -113,7 +115,9 @@ GLOBAL_VAR_INIT(warrant_uid, 0)
 			var/namelist = list()
 			for(var/datum/data/record/t in GLOB.data_core.general)
 				namelist += t.fields["name"]
-			var/new_name = tgui_input_list(ui.user, "Please input name:", "Name Choice", namelist)
+			var/new_name = act_prompt(ui.user, action, params, ui, "k116", list("kind" = "list", "message" = "Please input name:", "title" = "Name Choice", "choices" = namelist))
+			if(isnull(new_name))
+				return
 			if(tgui_status(ui.user, state) == STATUS_INTERACTIVE)
 				if (!new_name)
 					return
@@ -121,7 +125,9 @@ GLOBAL_VAR_INIT(warrant_uid, 0)
 
 		if("editwarrantnamecustom")
 			. = TRUE
-			var/new_name = tgui_input_text(ui.user, "Please input name", max_length = MAX_MESSAGE_LEN)
+			var/new_name = act_prompt(ui.user, action, params, ui, "k124", list("kind" = "text", "message" = "Please input name", "max_length" = MAX_MESSAGE_LEN))
+			if(isnull(new_name))
+				return
 			if(tgui_status(ui.user, state) == STATUS_INTERACTIVE)
 				if (!new_name)
 					return
@@ -131,7 +137,9 @@ GLOBAL_VAR_INIT(warrant_uid, 0)
 			. = TRUE
 			if(!activewarrant)
 				return
-			var/new_charges = tgui_input_text(ui.user, "Please input charges", "Charges", activewarrant.fields["charges"], max_length = MAX_MESSAGE_LEN)
+			var/new_charges = act_prompt(ui.user, action, params, ui, "k134", list("kind" = "text", "message" = "Please input charges", "title" = "Charges", "default" = activewarrant.fields["charges"], "max_length" = MAX_MESSAGE_LEN))
+			if(isnull(new_charges))
+				return
 			if(tgui_status(ui.user, state) == STATUS_INTERACTIVE)
 				if (!new_charges || !activewarrant)
 					return

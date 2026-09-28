@@ -187,22 +187,33 @@ GLOBAL_LIST_EMPTY(mob_hat_cache)
 	if(can_blitz)
 		choices["Blitz"] = "blitzshell"
 
-	var/shell_choice = tgui_input_list(src, "Select a shell. NOTE: You can only do this once during this drone-lifetime.", "Customize Shell", choices)
-	if(!shell_choice)
-		return
-
-	icon_state = choices[shell_choice]
-
 	// If you add more, datumize these. Having 'basically two' is not enough to make me bother though.
+	om_prompt_sequence(src, src, list(
+		list("key" = "shell", "kind" = "list", "message" = "Select a shell. NOTE: You can only do this once during this drone-lifetime.", "title" = "Customize Shell", "choices" = choices),
+		PROC_REF(ask_shell_eyes),
+		PROC_REF(ask_shell_plating),
+	), PROC_REF(shell_chosen), list("data" = list("shells" = choices)))
+
+/mob/living/silicon/robot/drone/proc/ask_shell_eyes(mob/user, datum/om/prompt/ask)
+	var/list/choices = ask.get("shells")
+	if(choices[ask.get("shell")] in list("repairbot", "maintbot"))
+		return list("key" = "eyes", "kind" = "list", "message" = "Select eye color:", "title" = "Eye Color", "choices" = list("blue", "red", "orange", "green", "violet"), "optional" = TRUE)
+
+/mob/living/silicon/robot/drone/proc/ask_shell_plating(mob/user, datum/om/prompt/ask)
+	var/list/choices = ask.get("shells")
+	if(choices[ask.get("shell")] == "maintbot")
+		return list("key" = "plating", "kind" = "list", "message" = "Select plating color:", "title" = "Eye Color", "choices" = list("blue", "red", "orange", "green", "brown"), "optional" = TRUE)
+
+/mob/living/silicon/robot/drone/proc/shell_chosen(mob/user, datum/om/prompt/ask)
+	if(!can_pick_shell)
+		return
+	var/list/choices = ask.get("shells")
+	icon_state = choices[ask.get("shell")]
 	shell_accessories = null
-	if(icon_state in list("repairbot", "maintbot"))
-		var/eye_color = tgui_input_list(src, "Select eye color:", "Eye Color", list("blue", "red", "orange", "green", "violet"))
-		if(eye_color)
-			LAZYADD(shell_accessories, "[icon_state]-eyes-[eye_color]")
-		if(icon_state == "maintbot")
-			var/armor_color = tgui_input_list(src, "Select plating color:", "Eye Color", list("blue", "red", "orange", "green", "brown"))
-			if(armor_color)
-				LAZYADD(shell_accessories, "[icon_state]-shell-[armor_color]")
+	if(ask.get("eyes"))
+		LAZYADD(shell_accessories, "[icon_state]-eyes-[ask.get("eyes")]")
+	if(ask.get("plating"))
+		LAZYADD(shell_accessories, "[icon_state]-shell-[ask.get("plating")]")
 
 	can_pick_shell = FALSE
 	update_icon()
@@ -330,15 +341,17 @@ GLOBAL_LIST_EMPTY(mob_hat_cache)
 				question(O.client)
 
 /mob/living/silicon/robot/drone/proc/question(client/C)
-	spawn(0) // S7 keeps: tgui_alert() sleeps (prompts, S10)
-		if(!C || jobban_isbanned(C,JOB_CYBORG))	return
-		var/response = tgui_alert(C, "Someone is attempting to reboot a maintenance drone. Would you like to play as one?", "Maintenance drone reboot", list("Yes", "No", "Never for this round"))
-		if(!C || ckey)
-			return
-		if(response == "Yes")
-			transfer_personality(C)
-		else if (response == "Never for this round")
-			C.prefs.update_preference_by_type(/datum/preference/numeric/human/be_special, C.prefs.read_preference(/datum/preference/numeric/human/be_special) ^ BE_PAI) // migrated
+	if(!C || jobban_isbanned(C,JOB_CYBORG))	return
+	om_prompt(src, C, list("message" = "Someone is attempting to reboot a maintenance drone. Would you like to play as one?", "title" = "Maintenance drone reboot", "choices" = list("Yes", "No", "Never for this round")), PROC_REF(question_answered))
+
+/mob/living/silicon/robot/drone/proc/question_answered(mob/user, response, datum/om/prompt/ask)
+	var/client/C = user.client
+	if(!C || ckey)
+		return
+	if(response == "Yes")
+		transfer_personality(C)
+	else if (response == "Never for this round")
+		C.prefs.update_preference_by_type(/datum/preference/numeric/human/be_special, C.prefs.read_preference(/datum/preference/numeric/human/be_special) ^ BE_PAI) // migrated
 
 /mob/living/silicon/robot/drone/proc/transfer_personality(client/player)
 

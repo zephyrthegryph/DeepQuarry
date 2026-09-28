@@ -94,8 +94,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 	return data
 
 /obj/machinery/pointdefense_control/multitool_act(mob/user, obj/item/tool)
-	var/new_ident = tgui_input_text(user, "Enter a new ident tag.", "[src]", id_tag, MAX_NAME_LEN)
-	if(new_ident && new_ident != id_tag && user.Adjacent(src) && CanInteract(user, GLOB.tgui_physical_state))
+	om_prompt(src, user, list("kind" = "text", "message" = "Enter a new ident tag.", "title" = "[src]", "default" = id_tag, "max_length" = MAX_NAME_LEN, "requires" = PROMPT_USABLE_BY("physical")), PROC_REF(ident_entered))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/pointdefense_control/proc/ident_entered(mob/user, new_ident, datum/om/prompt/ask)
+	if(new_ident && new_ident != id_tag && user.Adjacent(src))
 		for(var/obj/machinery/pointdefense_control/PC as anything in REGISTRY_MEMBERS(REGISTRY_POINTDEFENSE_CONTROLLERS))
 			if(PC != src && PC.id_tag == new_ident)
 				to_chat(user, span_warning("The [new_ident] network already has a controller."))
@@ -163,8 +166,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 			return PDC
 
 /obj/machinery/pointdefense/multitool_act(mob/user, obj/item/tool)
-	var/new_ident = tgui_input_text(user, "Enter a new ident tag.", "[src]", id_tag, MAX_NAME_LEN)
-	if(new_ident && new_ident != id_tag && user.Adjacent(src))
+	om_prompt(src, user, list("kind" = "text", "message" = "Enter a new ident tag.", "title" = "[src]", "default" = id_tag, "max_length" = MAX_NAME_LEN, "requires" = PROMPT_ADJACENT), PROC_REF(ident_entered))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/pointdefense/proc/ident_entered(mob/user, new_ident, datum/om/prompt/ask)
+	if(new_ident && new_ident != id_tag)
 		to_chat(user, span_notice("You register [src] with the [new_ident] network."))
 		id_tag = new_ident
 		return ITEM_INTERACT_SUCCESS

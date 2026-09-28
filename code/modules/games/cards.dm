@@ -145,7 +145,9 @@
 			players += player
 	//players -= usr
 
-	var/mob/living/M = tgui_input_list(usr, "Who do you wish to deal a card?", "Deal to whom?", players)
+	var/mob/living/M = rerun_prompt(usr, "k148", list("kind" = "list", "message" = "Who do you wish to deal a card?", "title" = "Deal to whom?", "choices" = players), VERB_REF(deal_card), args)
+	if(isnull(M))
+		return
 	if(!usr || !src || !M) return
 
 	deal_at(usr, M, 1)
@@ -169,10 +171,14 @@
 			players += player
 	//players -= usr
 	var/maxcards = max(min(cards.len,10),1)
-	var/dcard = tgui_input_number(usr, "How many card(s) do you wish to deal? You may deal up to [maxcards] cards.", null, null, maxcards)
+	var/dcard = rerun_prompt(usr, "k172", list("kind" = "number", "message" = "How many card(s) do you wish to deal? You may deal up to [maxcards] cards.", "max" = maxcards), VERB_REF(deal_card_multi), args)
+	if(isnull(dcard))
+		return
 	if(dcard > maxcards)
 		return
-	var/mob/living/M = tgui_input_list(usr, "Who do you wish to deal [dcard] card(s)?", "Deal to whom?", players)
+	var/mob/living/M = rerun_prompt(usr, "k175", list("kind" = "list", "message" = "Who do you wish to deal [dcard] card(s)?", "title" = "Deal to whom?", "choices" = players), VERB_REF(deal_card_multi), args)
+	if(isnull(M))
+		return
 	if(!usr || !src || !M) return
 
 	deal_at(usr, M, dcard)
@@ -225,7 +231,9 @@
 		for(var/i = 0, i < length(L), i++)
 			cards_to_choose += "[key] ([i+1])"
 
-	var/list/cards_to_draw = tgui_input_checkboxes(user, "Which cards do you want to retrieve?", "Choose your cards", cards_to_choose, 1)
+	var/list/cards_to_draw = rerun_prompt(user, "k228", list("kind" = "checkboxes", "message" = "Which cards do you want to retrieve?", "title" = "Choose your cards", "choices" = cards_to_choose, "min" = 1), VERB_REF(search_cards), args)
+	if(isnull(cards_to_draw))
+		return
 
 	if(!LAZYLEN(cards_to_draw))
 		user.visible_message(span_notice("\The [user] searches for specific cards in \the [src], but draws none."))
@@ -281,7 +289,9 @@
 		if(P.name != "Blank Card")
 			to_chat(user,span_notice("You cannot write on that card."))
 			return
-		var/cardtext = tgui_input_text(user, "What do you wish to write on the card?", "Card Editing", null, MAX_PAPER_MESSAGE_LEN)
+		var/cardtext = rerun_prompt(user, "k284", list("kind" = "text", "message" = "What do you wish to write on the card?", "title" = "Card Editing", "max_length" = MAX_PAPER_MESSAGE_LEN), TYPE_PROC_REF(/atom, attackby), args)
+		if(isnull(cardtext))
+			return TRUE
 		if(!cardtext)
 			return
 		P.name = cardtext
@@ -428,19 +438,24 @@
 
 	var/i
 	var/maxcards = min(cards.len,5) // Maximum of 5 cards at once
-	var/discards = tgui_input_number(usr, "How many cards do you want to discard? You may discard up to [maxcards] card(s)", null, null, maxcards, 0)
+	var/discards = rerun_prompt(usr, "k432", list("kind" = "number", "message" = "How many cards do you want to discard? You may discard up to [maxcards] card(s)", "max" = maxcards, "min" = 0), VERB_REF(discard), args)
+	if(isnull(discards))
+		return
 	if(discards > maxcards)
 		return
-	for	(i = 0;i < discards;i++)
+	// Every card is picked before any is played: each answer re-runs this verb.
+	var/list/picked = list()
+	for(i = 1, i <= discards, i++)
 		var/list/to_discard = list()
 		for(var/datum/playingcard/P in cards)
-			to_discard[P.name] = P
-		var/discarding = tgui_input_list(usr, "Which card do you wish to put down?", "Card Selection", to_discard)
-
+			if(!(P in picked))
+				to_discard[P.name] = P
+		var/discarding = rerun_prompt(usr, "card[i]", list("kind" = "list", "message" = "Which card do you wish to put down?", "title" = "Card Selection", "choices" = to_discard), VERB_REF(discard), args)
 		if(!discarding || !to_discard[discarding] || !usr || !src) return
+		picked += to_discard[discarding]
 
-		var/datum/playingcard/card = to_discard[discarding]
-		to_discard.Cut()
+	for(var/datum/playingcard/card as anything in picked)
+		var/discarding = card.name
 
 		var/obj/item/hand/H = new(src.loc)
 		H.cards += card
@@ -489,7 +504,9 @@
 	var/pickablecards = list()
 	for(var/datum/playingcard/P in cards)
 		pickablecards[P.name] = P
-	var/pickedcard = tgui_input_list(user, "Which card do you want to remove from the hand?", "Card Selection", pickablecards)
+	var/pickedcard = rerun_prompt(user, "k493", list("kind" = "list", "message" = "Which card do you want to remove from the hand?", "title" = "Card Selection", "choices" = pickablecards), VERB_REF(Removecard), args)
+	if(isnull(pickedcard))
+		return
 
 	if(!pickedcard || !pickablecards[pickedcard] || !user || !src) return
 

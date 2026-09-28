@@ -211,11 +211,16 @@ REF_OWNED(/obj/machinery/maint_recycler, list("hatch", "monitor_screen", "item_o
 			evil_act(O,user)
 			return TRUE
 
-	to_chat(user, span_notice("You put \the [O] into \the [src]'s processing compartment!"))
 	if(istype(O,/obj/item/holder))
 		var/obj/item/holder/h = O
 		var/mob/m = h.held_mob
-		if(mob_consent_check(m))
+		// The held mob is asked; their answer re-runs this interaction.
+		var/consent = mob_consent_check(m, PROC_REF(interaction_attackby), args)
+		if(isnull(consent))
+			to_chat(user, span_notice("You hold \the [O] over \the [src]'s processing compartment..."))
+			return TRUE
+		to_chat(user, span_notice("You put \the [O] into \the [src]'s processing compartment!"))
+		if(consent)
 			if(user in range(1,src))
 				user.drop_item() //mobs need to be properly handled, can't just move the holder into the thing
 				m.dir = SOUTH //the disposal bins do that and it simply doesn't work.
@@ -226,6 +231,7 @@ REF_OWNED(/obj/machinery/maint_recycler, list("hatch", "monitor_screen", "item_o
 		else
 			deny_act(O,user)
 	else
+		to_chat(user, span_notice("You put \the [O] into \the [src]'s processing compartment!"))
 		user.drop_item()
 		O.forceMove(src)
 		inserted_item = O
@@ -483,10 +489,12 @@ UTILITY PROCS
 	if(LAZYACCESS(granted_points, user.key)+potentialValue > point_cap) return FALSE
 	return TRUE
 
-/obj/machinery/maint_recycler/proc/mob_consent_check(mob/probable_victim)
+/// TRUE or FALSE, or null while the mob is being asked (their answer re-runs `proc_name` with `proc_args`).
+/obj/machinery/maint_recycler/proc/mob_consent_check(mob/probable_victim, proc_name, list/proc_args)
 	if(probable_victim.key)
 		if(probable_victim.client) //sanity check to make sure they are alright with getting squished to death
-			return (tgui_alert(probable_victim,"Do you want to be put in \The [src]? Industrial machinery is pretty damn deadly, you'll probably die. to death. A fine paste.", "Welcome to the Hydralulic Press Prompt", list("OSHA is for chumps", "what the fuck? get me outta here!")) == "OSHA is for chumps")
+			var/answer = rerun_prompt(probable_victim, "consent", list("message" = "Do you want to be put in \The [src]? Industrial machinery is pretty damn deadly, you'll probably die. to death. A fine paste.", "title" = "Welcome to the Hydralulic Press Prompt", "choices" = list("OSHA is for chumps", "what the fuck? get me outta here!"), "cancel_answer" = "what the fuck? get me outta here!"), proc_name, proc_args)
+			return isnull(answer) ? null : (answer == "OSHA is for chumps")
 		else return FALSE //no logged out users
 	else return TRUE //mindless mobs that've never felt the gentle touch of a client are fine
 

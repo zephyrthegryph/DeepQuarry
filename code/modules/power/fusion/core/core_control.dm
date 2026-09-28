@@ -38,7 +38,10 @@ REF_OWNED(/obj/machinery/computer/fusion_core_control, "monitor")
 	effect = /obj/machinery/computer/fusion_core_control/proc/interaction_multitool
 
 /obj/machinery/computer/fusion_core_control/proc/interaction_multitool(mob/user, obj/item/thing, datum/interaction/interaction)
-	var/new_ident = sanitize_text(tgui_input_text(user, "Enter a new ident tag.", "Core Control", monitor.core_tag))
+	var/_answer_k43 = rerun_prompt(user, "k43", list("kind" = "text", "message" = "Enter a new ident tag.", "title" = "Core Control", "default" = monitor.core_tag), PROC_REF(interaction_multitool), args)
+	if(isnull(_answer_k43))
+		return
+	var/new_ident = sanitize_text(_answer_k43)
 	if(new_ident && user.Adjacent(src))
 		monitor.core_tag = new_ident
 	return FALSE

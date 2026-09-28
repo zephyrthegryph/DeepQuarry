@@ -61,11 +61,13 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 				choices += H
 	// Subtargets
 	if(choices.len > 1)
-		var/mob/living/new_M = tgui_input_list(user, "Ambiguous target. Please validate target:", "Target Validation", choices, M)
-		if(!new_M || !M.Adjacent(user))
-			return ITEM_INTERACT_FAILURE
-		M = new_M
+		om_prompt(src, user, list("kind" = "list", "message" = "Ambiguous target. Please validate target:", "title" = "Target Validation", "choices" = choices, "default" = M, "target" = M, "requires" = PROMPT_ADJACENT), PROC_REF(scan_target_chosen))
+		return ITEM_INTERACT_SUCCESS
+	return scan_target_chosen(user, M)
 
+/obj/item/sleevemate/proc/scan_target_chosen(mob/living/user, mob/living/M, datum/om/prompt/ask)
+	if(ask && user.get_active_hand() != src)
+		return ITEM_INTERACT_FAILURE
 	if(isrobot(M))
 		var/mob/living/silicon/robot/R = M
 		var/obj/item/dogborg/sleeper/S = locate() in R.module.modules
@@ -89,8 +91,10 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 		to_chat(user,span_warning("No stored mind in \the [src]."))
 		return
 
-	var/choice = tgui_alert(user,"What would you like to do?","Stored: [stored_mind.name]",list("Delete","Backup","Cancel"))
-	if(!stored_mind || user.get_active_hand() != src)
+	om_prompt(src, user, list("message" = "What would you like to do?", "title" = "Stored: [stored_mind.name]", "choices" = list("Delete","Backup","Cancel"), "requires" = PROMPT_IN_HAND), PROC_REF(stored_mind_action))
+
+/obj/item/sleevemate/proc/stored_mind_action(mob/living/user, choice, datum/om/prompt/ask)
+	if(!stored_mind)
 		return
 	switch(choice)
 		if("Delete")
@@ -234,12 +238,7 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 			to_chat(usr,span_warning("There is already someone's mind stored inside"))
 			return
 
-		var/choice = tgui_alert(usr,"This will remove the target's mind from their body (and from the game as long as they're in the sleevemate). You can put them into a (mindless) body, a NIF, or back them up for normal resleeving, but you should probably have a plan in advance so you don't leave them unable to interact for too long. Continue?","Confirmation",list("Continue","Cancel"))
-		if(choice == "Continue" && usr.get_active_hand() == src && usr.Adjacent(target))
-
-			usr.visible_message(span_warning("[usr] begins downloading [target]'s mind!"),span_notice("You begin downloading [target]'s mind!"))
-			om_do_after(usr, 35 SECONDS, target = target, receiver = src, on_done = PROC_REF(Topic_timed_done3), done_args = list(target, usr))
-
+		om_prompt(src, usr, list("message" = "This will remove the target's mind from their body (and from the game as long as they're in the sleevemate). You can put them into a (mindless) body, a NIF, or back them up for normal resleeving, but you should probably have a plan in advance so you don't leave them unable to interact for too long. Continue?", "title" = "Confirmation", "choices" = list("Continue","Cancel"), "requires" = PROMPT_IN_HAND, "data" = list("target" = target)), PROC_REF(mindsteal_confirmed))
 		return
 
 	if(href_list["mindput"])
@@ -359,10 +358,21 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 	else
 		icon_state = initial(icon_state)
 
+/obj/item/sleevemate/proc/mindsteal_confirmed(mob/living/user, choice, datum/om/prompt/ask)
+	var/mob/living/target = ask.get("target")
+	if(choice != "Continue" || stored_mind || !user.Adjacent(target))
+		return
+	user.visible_message(span_warning("[user] begins downloading [target]'s mind!"),span_notice("You begin downloading [target]'s mind!"))
+	om_do_after(user, 35 SECONDS, target = target, receiver = src, on_done = PROC_REF(Topic_timed_done3), done_args = list(target, user))
+
 /obj/item/sleevemate/emag_act(remaining_charges, mob/user)
 	var/list/choices = list("Body Snatcher","Mind Binder")
-	var/choice = tgui_input_list(user, "How would you like to modify the [src]?", "", choices)
-	if(!choice || !(choice in choices)) return
+	om_prompt(src, user, list("kind" = "list", "message" = "How would you like to modify the [src]?", "title" = "", "choices" = choices, "requires" = PROMPT_ADJACENT), PROC_REF(hack_chosen))
+	return 1
+
+/obj/item/sleevemate/proc/hack_chosen(mob/user, choice, datum/om/prompt/ask)
+	if(!(choice in list("Body Snatcher","Mind Binder")))
+		return
 	to_chat(user,span_danger("You hack [src]!"))
 	var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
 	spark_system.set_up(5, 0, src.loc)

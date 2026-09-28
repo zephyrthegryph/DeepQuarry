@@ -98,19 +98,22 @@
 		to_chat(L, span_notice("[icon2html(src,L.client)] Message from [who]: <b>\"[text]\"</b> (<a href='byond://?src=\ref[src];action=Reply;target=\ref[candidate]'>Reply</a>)"))
 
 // This is the only Topic the communicators really uses
+/obj/item/communicator/proc/reply_entered(mob/user, message, datum/om/prompt/ask)
+	var/obj/item/communicator/comm = ask.get("comm")
+	if(!message || !comm.exonet)
+		return
+	exonet.send_message(comm.exonet.address, "text", message)
+	LAZYADD(im_list, list(list("address" = exonet.address, "to_address" = comm.exonet.address, "im" = message)))
+	user.log_talk("(COMM: [src]) sent \"[message]\" to [exonet.get_atom_from_address(comm.exonet.address)]", LOG_PDA)
+	to_chat(user, span_notice("[icon2html(src,user.client)] Sent message to [istype(comm, /obj/item/communicator) ? comm.owner : comm.name], <b>\"[message]\"</b> (<a href='byond://?src=\ref[src];action=Reply;target=\ref[exonet.get_atom_from_address(comm.exonet.address)]'>Reply</a>)"))
+
 /obj/item/communicator/Topic(href, href_list)
 	switch(href_list["action"])
 		if("Reply")
 			var/obj/item/communicator/comm = locate(href_list["target"])
 			if(!istype(comm) || !comm.exonet)
 				return
-			var/message = tgui_input_text(usr, "Enter your message below.", "Reply")
-
-			if(message)
-				exonet.send_message(comm.exonet.address, "text", message)
-				LAZYADD(im_list, list(list("address" = exonet.address, "to_address" = comm.exonet.address, "im" = message)))
-				usr.client.mob.log_talk("(COMM: [src]) sent \"[message]\" to [exonet.get_atom_from_address(comm.exonet.address)]", LOG_PDA)
-				to_chat(usr, span_notice("[icon2html(src,usr.client)] Sent message to [istype(comm, /obj/item/communicator) ? comm.owner : comm.name], <b>\"[message]\"</b> (<a href='byond://?src=\ref[src];action=Reply;target=\ref[exonet.get_atom_from_address(comm.exonet.address)]'>Reply</a>)"))
+			om_prompt(src, usr, list("kind" = "text", "message" = "Enter your message below.", "title" = "Reply", "requires" = PROMPT_USABLE, "data" = list("comm" = comm)), PROC_REF(reply_entered))
 
 // Verb: text_communicator()
 // Parameters: None
@@ -151,24 +154,28 @@
 		to_chat(src, span_danger("There are no available communicators, sorry."))
 		return
 
-	var/choice = tgui_input_list(src,"Send a text message to whom?", "Recipient Choice", choices)
-	if(choice)
-		var/obj/item/communicator/chosen_communicator = choice
-		var/mob/observer/dead/O = src
-		var/text_message = sanitize(tgui_input_text(src, "What do you want the message to say?", encode = FALSE, multiline = TRUE), MAX_MESSAGE_LEN, FALSE, FALSE, TRUE)
-		if(text_message && O.exonet)
-			O.exonet.send_message(chosen_communicator.exonet.address, "text", text_message)
+	om_prompt_sequence(src, src, list(
+		list("key" = "comm", "kind" = "list", "message" = "Send a text message to whom?", "title" = "Recipient Choice", "choices" = choices),
+		list("key" = "text", "kind" = "text", "message" = "What do you want the message to say?", "encode" = FALSE, "multiline" = TRUE),
+	), PROC_REF(ghost_text_written))
 
-			to_chat(src, span_notice("You have sent '[text_message]' to [chosen_communicator]."))
-			exonet_messages.Add(span_bold("To [chosen_communicator]:") + "<br>[text_message]")
-			log_talk("(DCOMM: [src]) sent \"[text_message]\" to [chosen_communicator]", LOG_PDA)
-			for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-				if(M.stat == DEAD && M.client?.prefs?.read_preference(/datum/preference/toggle/ghost_ears))
-					if(isnewplayer(M) || M.forbid_seeing_deadchat)
-						continue
-					if(M == src)
-						continue
-					M.show_message("Comm IM - [src] -> [chosen_communicator]: [text_message]")
+/mob/observer/dead/proc/ghost_text_written(mob/user, datum/om/prompt/ask)
+	var/obj/item/communicator/chosen_communicator = ask.get("comm")
+	var/mob/observer/dead/O = src
+	var/text_message = sanitize(ask.get("text"), MAX_MESSAGE_LEN, FALSE, FALSE, TRUE)
+	if(text_message && O.exonet && chosen_communicator.exonet)
+		O.exonet.send_message(chosen_communicator.exonet.address, "text", text_message)
+
+		to_chat(src, span_notice("You have sent '[text_message]' to [chosen_communicator]."))
+		exonet_messages.Add(span_bold("To [chosen_communicator]:") + "<br>[text_message]")
+		log_talk("(DCOMM: [src]) sent \"[text_message]\" to [chosen_communicator]", LOG_PDA)
+		for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
+			if(M.stat == DEAD && M.client?.prefs?.read_preference(/datum/preference/toggle/ghost_ears))
+				if(isnewplayer(M) || M.forbid_seeing_deadchat)
+					continue
+				if(M == src)
+					continue
+				M.show_message("Comm IM - [src] -> [chosen_communicator]: [text_message]")
 
 
 

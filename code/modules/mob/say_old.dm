@@ -1,90 +1,68 @@
 // Allows the usage of old style chat inputs even with TG Say enabled
+
+/// Asks for a chat line and hands it to `action` (a proc on the mob taking the message).
+/// `typing` shows the typing indicator while the window is open.
+/mob/proc/ask_chat_line(message, title, action, multiline = FALSE, typing = TRUE)
+	if(typing)
+		client?.start_thinking()
+		client?.start_typing()
+	om_prompt(src, src, list("kind" = "text", "message" = message, "title" = title, "multiline" = multiline, "encode" = FALSE, "on_cancel" = PROC_REF(chat_line_cancelled), "data" = list("action" = action)), PROC_REF(chat_line_entered))
+
+/mob/proc/chat_line_cancelled(mob/user, datum/om/prompt/ask)
+	client?.stop_thinking()
+
+/mob/proc/chat_line_entered(mob/user, message, datum/om/prompt/ask)
+	client?.stop_thinking()
+	if(message)
+		call(src, ask.get("action"))(message)
+
 /mob/verb/say_verb_old()
 	set name = "Say Old"
 	set category = "IC.Chat"
 
-	client?.start_thinking()
-	client?.start_typing()
-	var/message = tgui_input_text(src, "Speak to people in sight.\nType your message:", "Say", encode = FALSE)
-	client?.stop_thinking()
-
-	if(message)
-		say_verb(message)
+	ask_chat_line("Speak to people in sight.\nType your message:", "Say", /mob/verb/say_verb)
 
 /mob/verb/me_verb_old()
 	set name = "Me Old"
 	set category = "IC.Chat"
 	set desc = "Emote to nearby people (and your pred/prey)"
 
-	client?.start_thinking()
-	client?.start_typing()
-	var/message = tgui_input_text(src, "Emote to people in sight (and your pred/prey).\nType your message:", "Emote", multiline = TRUE, encode = FALSE)
-	client?.stop_thinking()
-
-	if(message)
-		me_verb(message)
+	ask_chat_line("Emote to people in sight (and your pred/prey).\nType your message:", "Emote", /mob/verb/me_verb, TRUE)
 
 /mob/verb/whisper_old()
 	set name = "Whisper Old"
 	set category = "IC.Subtle"
 
-	if(client?.prefs?.read_preference(/datum/preference/toggle/show_typing_indicator_subtle))
-		client?.start_thinking()
-		client?.start_typing()
-	var/message = tgui_input_text(src, "Speak to nearby people.\nType your message:", "Whisper", encode = FALSE)
-	client?.stop_thinking()
-
-	if(message)
-		whisper(message)
-
+	ask_chat_line("Speak to nearby people.\nType your message:", "Whisper", /mob/verb/whisper, FALSE, client?.prefs?.read_preference(/datum/preference/toggle/show_typing_indicator_subtle))
 
 /mob/verb/me_verb_subtle_old()
 	set name = "Subtle Old"
 	set category = "IC.Subtle"
 	set desc = "Emote to nearby people (and your pred/prey)"
 
-	if(client?.prefs?.read_preference(/datum/preference/toggle/show_typing_indicator_subtle))
-		client?.start_thinking()
-		client?.start_typing()
-	var/message = tgui_input_text(src, "Emote to nearby people (and your pred/prey).\nType your message:", "Subtle", multiline = TRUE, encode = FALSE)
-	client?.stop_thinking()
-
-	if(message)
-		me_verb_subtle(message)
+	ask_chat_line("Emote to nearby people (and your pred/prey).\nType your message:", "Subtle", /mob/verb/me_verb_subtle, TRUE, client?.prefs?.read_preference(/datum/preference/toggle/show_typing_indicator_subtle))
 
 /mob/verb/me_verb_subtle_custom_old()
 	set name = "Subtle (Custom) Old"
 	set category = "IC.Subtle"
 	set desc = "Emote to nearby people, with ability to choose which specific portion of people you wish to target."
 
-	var/message = tgui_input_text(src, "Emote to nearby people, with ability to choose which specific portion of people you wish to target.\nType your message:", "Subtle (Custom)", multiline = TRUE, encode = FALSE)
-
-	if(message)
-		me_verb_subtle_custom(message)
+	ask_chat_line("Emote to nearby people, with ability to choose which specific portion of people you wish to target.\nType your message:", "Subtle (Custom)", /mob/verb/me_verb_subtle_custom, TRUE, FALSE)
 
 /mob/verb/psay_old()
 	set name = "Psay Old"
 	set category = "IC.Subtle"
 
-	var/message = tgui_input_text(src, "Talk to people affected by complete absorbed or dominate predator/prey.\nType your message:", "Psay", encode = FALSE)
-
-	if(message)
-		psay(message)
+	ask_chat_line("Talk to people affected by complete absorbed or dominate predator/prey.\nType your message:", "Psay", /mob/verb/psay, FALSE, FALSE)
 
 /mob/verb/pme_old()
 	set name = "Pme Old"
 	set category = "IC.Subtle"
 
-	var/message = tgui_input_text(src, "Emote to people affected by complete absorbed or dominate predator/prey.\nType your message:", "Pme", encode = FALSE)
-
-	if(message)
-		pme(message)
+	ask_chat_line("Emote to people affected by complete absorbed or dominate predator/prey.\nType your message:", "Pme", /mob/verb/pme, FALSE, FALSE)
 
 /mob/living/verb/player_narrate_ch()
 	set name = "Narrate (Player) Old"
 	set category = "IC.Chat"
 
-	var/message = tgui_input_text(src, "Narrate an action or event! An alternative to emoting, for when your emote shouldn't start with your name!\nType your message:", "Narrate (Player)", encode = FALSE)
-
-	if(message)
-		player_narrate(message)
+	ask_chat_line("Narrate an action or event! An alternative to emoting, for when your emote shouldn't start with your name!\nType your message:", "Narrate (Player)", /mob/living/verb/player_narrate, FALSE, FALSE)

@@ -46,21 +46,27 @@
 		silk_reserve = min(silk_reserve + silk_generation_amount, silk_max_reserve)
 		owner.adjust_nutrition(-(nutrtion_per_silk*silk_generation_amount))
 
+/// Pick a recipe, then confirm it; "No" goes back to the list.
 /datum/component/weaver/proc/weave_item()
-	var/choice
-	var/datum/weaver_recipe/item/desired_result
-	var/finalized = "No"
+	if(!owner?.client)
+		return
+	om_prompt(src, owner, list("kind" = "list", "message" = "What would you like to weave?", "title" = "Weave Choice", "choices" = GLOB.all_weavable, "requires" = PROMPT_CONSCIOUS), PROC_REF(weave_choice_made))
 
-	while(finalized == "No" && owner.client)
-		choice = tgui_input_list(owner,"What would you like to weave?", "Weave Choice", GLOB.all_weavable)
-		desired_result = GLOB.all_weavable[choice]
-		if(!desired_result || !istype(desired_result))
-			return
+/datum/component/weaver/proc/weave_choice_made(mob/user, choice, datum/om/prompt/ask)
+	var/datum/weaver_recipe/item/desired_result = GLOB.all_weavable[choice]
+	if(!istype(desired_result))
+		return
+	om_prompt(src, owner, list("message" = "Are you sure you want to weave [desired_result.title]? It will cost you [desired_result.cost] silk.", "title" = "Confirmation", "choices" = list("Yes","No"), "requires" = PROMPT_CONSCIOUS, "data" = list("choice" = choice)), PROC_REF(weave_confirmed))
 
-		if(choice)
-			finalized = tgui_alert(owner, "Are you sure you want to weave [desired_result.title]? It will cost you [desired_result.cost] silk.","Confirmation",list("Yes","No"))
-
-	weave_check(desired_result.cost, desired_result.result_type)
+/datum/component/weaver/proc/weave_confirmed(mob/user, finalized, datum/om/prompt/ask)
+	if(finalized == "No")
+		weave_item()
+		return
+	if(finalized != "Yes")
+		return
+	var/datum/weaver_recipe/item/desired_result = GLOB.all_weavable[ask.get("choice")]
+	if(istype(desired_result))
+		weave_check(desired_result.cost, desired_result.result_type)
 
 //TGUI Weaver Panel
 /datum/component/weaver/tgui_interact(mob/user, datum/tgui/ui)

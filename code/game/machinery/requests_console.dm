@@ -164,27 +164,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 			if(reject_bad_text(params["write"]))
 				recipient = params["write"] //write contains the string of the receiving department's name
 
-				var/new_message = tgui_input_text(ui.user, "Write your message:", "Awaiting Input", "", MAX_MESSAGE_LEN)
-				if(new_message)
-					message = new_message
-					screen = RCS_MESSAUTH
-					switch(params["priority"])
-						if(1)
-							priority = 1
-						if(2)
-							priority = 2
-						else
-							priority = 0
-				else
-					reset_message(1)
+				om_prompt(src, ui.user, list("kind" = "text", "message" = "Write your message:", "title" = "Awaiting Input", "default" = "", "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_USABLE, "data" = list("priority" = params["priority"])), PROC_REF(message_written))
 				. = TRUE
 
 		if("writeAnnouncement")
-			var/new_message = tgui_input_text(ui.user, "Write your message:", "Awaiting Input", "", MAX_MESSAGE_LEN)
-			if(new_message)
-				message = new_message
-			else
-				reset_message(1)
+			om_prompt(src, ui.user, list("kind" = "text", "message" = "Write your message:", "title" = "Awaiting Input", "default" = "", "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_USABLE), PROC_REF(announcement_written))
 			. = TRUE
 
 		if("sendAnnouncement")
@@ -248,6 +232,31 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 			. = TRUE
 
 					//err... hacking code, which has no reason for existing... but anyway... it was once supposed to unlock priority 3 messaging on that console (EXTREME priority...), but the code for that was removed.
+
+/obj/machinery/requests_console/proc/message_written(mob/user, new_message, datum/om/prompt/ask)
+	var/list/params = list("priority" = ask.get("priority"))
+	SStgui.update_uis(src)
+	if(new_message)
+		message = new_message
+		screen = RCS_MESSAUTH
+		switch(params["priority"])
+			if(1)
+				priority = 1
+			if(2)
+				priority = 2
+			else
+				priority = 0
+	else
+		reset_message(1)
+	. = TRUE
+
+/obj/machinery/requests_console/proc/announcement_written(mob/user, new_message, datum/om/prompt/ask)
+	SStgui.update_uis(src)
+	if(new_message)
+		message = new_message
+	else
+		reset_message(1)
+	. = TRUE
 /obj/machinery/requests_console/proc/interaction_id(mob/user, obj/item/held, datum/interaction/interaction)
 	if(inoperable(MAINT))
 		return TRUE
@@ -276,7 +285,13 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 	return TRUE
 
 /obj/machinery/requests_console/multitool_act(mob/user, obj/item/tool)
-	var/input = tgui_input_text(user, "What Department ID would you like to give this request console?", "Multitool-Request Console Interface", department, MAX_MESSAGE_LEN)
+	om_prompt(src, user, list("kind" = "text", "message" = "What Department ID would you like to give this request console?", "title" = "Multitool-Request Console Interface", "default" = department, "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_ADJACENT, "on_cancel" = PROC_REF(department_not_entered)), PROC_REF(department_entered))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/requests_console/proc/department_not_entered(mob/user, datum/om/prompt/ask)
+	to_chat(user, "No input found. Please hang up and try your call again.")
+
+/obj/machinery/requests_console/proc/department_entered(mob/user, input, datum/om/prompt/ask)
 	if(!input)
 		to_chat(user, "No input found. Please hang up and try your call again.")
 		return ITEM_INTERACT_BLOCKING

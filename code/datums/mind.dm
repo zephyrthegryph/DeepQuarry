@@ -168,26 +168,17 @@
 		if(antag) antag.place_mob(src.current)
 
 	else if (href_list["role_edit"])
-		var/new_role = tgui_input_list(usr, "Select new role", "Assigned role", assigned_role, SSjob.occupations_by_name)
-		if (!new_role) return
-		assigned_role = new_role
+		om_prompt(src, usr, list("kind" = "list", "message" = "Select new role", "title" = "Assigned role", "default" = assigned_role, "choices" = SSjob.occupations_by_name, "requires" = PROMPT_ADMIN(R_ADMIN)), PROC_REF(role_edited))
 
 	else if (href_list["memory_edit"])
-		var/new_memo = tgui_input_text(usr, "Write new memory", "Memory", memory, MAX_MESSAGE_LEN, TRUE, prevent_enter = TRUE)
-		if (isnull(new_memo)) return
-		memory = new_memo
+		om_prompt(src, usr, list("kind" = "text", "message" = "Write new memory", "title" = "Memory", "default" = memory, "max_length" = MAX_MESSAGE_LEN, "multiline" = TRUE, "requires" = PROMPT_ADMIN(R_ADMIN)), PROC_REF(memory_edited))
+
 
 	else if (href_list["amb_edit"])
 		var/datum/mind/mind = locate(href_list["amb_edit"])
 		if(!mind)
 			return
-		var/new_ambition = tgui_input_text(usr, "Enter a new ambition", "Memory", mind.ambitions, MAX_MESSAGE_LEN, TRUE, prevent_enter = TRUE)
-		if(isnull(new_ambition))
-			return
-		if(mind)
-			mind.ambitions = new_ambition
-			to_chat(mind.current, span_warning("Your ambitions have been changed by higher powers, they are now: [mind.ambitions]"))
-		log_and_message_admins("made [key_name(mind.current)]'s ambitions be '[mind.ambitions]'.")
+		om_prompt(src, usr, list("kind" = "text", "message" = "Enter a new ambition", "title" = "Memory", "default" = mind.ambitions, "max_length" = MAX_MESSAGE_LEN, "multiline" = TRUE, "requires" = PROMPT_ADMIN(R_ADMIN), "data" = list("mind" = mind)), PROC_REF(ambition_edited))
 
 	else if (href_list["obj_edit"] || href_list["obj_add"])
 		var/datum/objective/objective
@@ -206,110 +197,12 @@
 				def_value = "custom"
 
 		var/list/choices = list("assassinate", "debrain", "protect", "prevent", "harm", "brig", "hijack", "escape", "survive", "steal", "mercenary", "capture", "absorb", "custom")
-		var/new_obj_type = tgui_input_list(usr, "Select objective type:", "Objective type", choices, def_value)
-		if (!new_obj_type) return
-
-		var/datum/objective/new_objective = null
-
-		switch (new_obj_type)
-			if ("assassinate","protect","debrain", "harm", "brig")
-				//To determine what to name the objective in explanation text.
-				var/objective_type_capital = uppertext(copytext(new_obj_type, 1,2))//Capitalize first letter.
-				var/objective_type_text = copytext(new_obj_type, 2)//Leave the rest of the text.
-				var/objective_type = "[objective_type_capital][objective_type_text]"//Add them together into a text string.
-
-				var/list/possible_targets = list("Free objective")
-				for(var/datum/mind/possible_target in SSticker.minds)
-					if ((possible_target != src) && ishuman(possible_target.current))
-						possible_targets += possible_target.current
-
-				var/mob/def_target = null
-				var/objective_list[] = list(/datum/objective/assassinate, /datum/objective/protect, /datum/objective/debrain)
-				if (objective&&(objective.type in objective_list) && objective.target)
-					def_target = objective.target.current
-
-				var/new_target = tgui_input_list(usr, "Select target:", "Objective target", possible_targets, def_target)
-				if (!new_target) return
-
-				var/objective_path = text2path("/datum/objective/[new_obj_type]")
-				var/mob/living/M = new_target
-				if (!istype(M) || !M.mind || new_target == "Free objective")
-					new_objective = new objective_path
-					new_objective.owner = src
-					new_objective:target = null
-					new_objective.explanation_text = "Free objective"
-				else
-					new_objective = new objective_path
-					new_objective.owner = src
-					new_objective:target = M.mind
-					new_objective.explanation_text = "[objective_type] [M.real_name], the [M.mind.special_role ? M.mind:special_role : M.mind:assigned_role]."
-
-			if ("prevent")
-				new_objective = new /datum/objective/block
-				new_objective.owner = src
-
-			if ("hijack")
-				new_objective = new /datum/objective/hijack
-				new_objective.owner = src
-
-			if ("escape")
-				new_objective = new /datum/objective/escape
-				new_objective.owner = src
-
-			if ("survive")
-				new_objective = new /datum/objective/survive
-				new_objective.owner = src
-
-			if ("mercenary")
-				new_objective = new /datum/objective/nuclear
-				new_objective.owner = src
-
-			if ("steal")
-				if (!istype(objective, /datum/objective/steal))
-					new_objective = new /datum/objective/steal
-					new_objective.owner = src
-				else
-					new_objective = objective
-				var/datum/objective/steal/steal = new_objective
-				if (!steal.select_target(usr))
-					return
-
-			if("capture","absorb", "vore")
-				var/def_num
-				if(objective&&objective.type==text2path("/datum/objective/[new_obj_type]"))
-					def_num = objective.target_amount
-
-				var/target_number = tgui_input_number(usr, "Input target number:", "Objective", def_num)
-				if (isnull(target_number))//Ordinarily, you wouldn't need isnull. In this case, the value may already exist.
-					return
-
-				switch(new_obj_type)
-					if("capture")
-						new_objective = new /datum/objective/capture
-						new_objective.explanation_text = "Accumulate [target_number] capture points."
-					if("absorb")
-						new_objective = new /datum/objective/absorb
-						new_objective.explanation_text = "Absorb [target_number] compatible genomes."
-					if("vore")
-						new_objective = new /datum/objective/vore
-						new_objective.explanation_text = "Devour [target_number] [target_number == 1 ? "person" : "people"]. What happens to them after you do that is irrelevant."
-				new_objective.owner = src
-				new_objective.target_amount = target_number
-
-			if ("custom")
-				var/expl = tgui_input_text(usr, "Custom objective:", "Objective", objective ? objective.explanation_text : "", MAX_MESSAGE_LEN)
-				if (!expl) return
-				new_objective = new /datum/objective
-				new_objective.owner = src
-				new_objective.explanation_text = expl
-
-		if (!new_objective) return
-
-		if (objective)
-			objectives -= objective
-			objectives.Insert(objective_pos, new_objective)
-		else
-			objectives += new_objective
+		om_prompt_sequence(src, usr, list(
+			list("key" = "type", "kind" = "list", "message" = "Select objective type:", "title" = "Objective type", "choices" = choices, "default" = def_value),
+			PROC_REF(objective_ask_detail),
+			PROC_REF(objective_ask_steal_type),
+			PROC_REF(objective_ask_steal_name),
+		), PROC_REF(objective_edited), list("requires" = PROMPT_ADMIN(R_ADMIN), "data" = list("objective" = objective, "pos" = objective_pos)))
 
 	else if (href_list["obj_delete"])
 		var/datum/objective/objective = locate(href_list["obj_delete"])
@@ -379,11 +272,7 @@
 			if("crystals")
 				if (check_rights_for(usr.client, R_FUN))
 				//	var/obj/item/uplink/hidden/suplink = find_syndicate_uplink() No longer needed, uses stored in mind
-					var/crystals
-					crystals = tcrystals
-					crystals = tgui_input_number(usr, "Amount of telecrystals for [key]", crystals)
-					if (!isnull(crystals))
-						tcrystals = crystals
+					om_prompt(src, usr, list("kind" = "number", "message" = "Amount of telecrystals for [key]", "default" = tcrystals, "requires" = PROMPT_ADMIN(R_FUN)), PROC_REF(telecrystals_set))
 
 	else if (href_list["obj_announce"])
 		var/obj_count = 1
@@ -392,6 +281,158 @@
 			to_chat(current, span_bold("Objective #[obj_count]") + ": [objective.explanation_text]")
 			obj_count++
 	edit_memory(usr)
+
+/datum/mind/proc/role_edited(mob/user, new_role, datum/om/prompt/ask)
+	assigned_role = new_role
+	edit_memory(user)
+
+/datum/mind/proc/memory_edited(mob/user, new_memo, datum/om/prompt/ask)
+	memory = new_memo
+	edit_memory(user)
+
+/datum/mind/proc/ambition_edited(mob/user, new_ambition, datum/om/prompt/ask)
+	var/datum/mind/mind = ask.get("mind")
+	if(mind)
+		mind.ambitions = new_ambition
+		to_chat(mind.current, span_warning("Your ambitions have been changed by higher powers, they are now: [mind.ambitions]"))
+	log_and_message_admins("made [key_name(mind.current)]'s ambitions be '[mind.ambitions]'.")
+
+/// The second question of the objective editor, which depends on the objective type.
+/datum/mind/proc/objective_ask_detail(mob/user, datum/om/prompt/ask)
+	var/datum/objective/objective = ask.get("objective")
+	var/new_obj_type = ask.get("type")
+	switch(new_obj_type)
+		if("assassinate","protect","debrain", "harm", "brig")
+			var/list/possible_targets = list("Free objective")
+			for(var/datum/mind/possible_target in SSticker.minds)
+				if ((possible_target != src) && ishuman(possible_target.current))
+					possible_targets += possible_target.current
+			var/mob/def_target = null
+			var/objective_list[] = list(/datum/objective/assassinate, /datum/objective/protect, /datum/objective/debrain)
+			if (objective&&(objective.type in objective_list) && objective.target)
+				def_target = objective.target.current
+			return list("key" = "detail", "kind" = "list", "message" = "Select target:", "title" = "Objective target", "choices" = possible_targets, "default" = def_target)
+		if("capture","absorb", "vore")
+			var/def_num
+			if(objective&&objective.type==text2path("/datum/objective/[new_obj_type]"))
+				def_num = objective.target_amount
+			return list("key" = "detail", "kind" = "number", "message" = "Input target number:", "title" = "Objective", "default" = def_num)
+		if("custom")
+			return list("key" = "detail", "kind" = "text", "message" = "Custom objective:", "title" = "Objective", "default" = objective ? objective.explanation_text : "", "max_length" = MAX_MESSAGE_LEN)
+		if("steal")
+			var/datum/objective/steal/S = new
+			var/list/possible_items_all = S.possible_items + S.possible_items_special + "custom"
+			qdel(S)
+			return list("key" = "detail", "kind" = "list", "message" = "Select target:", "title" = "Objective target", "choices" = possible_items_all)
+
+/datum/mind/proc/objective_ask_steal_type(mob/user, datum/om/prompt/ask)
+	if(ask.get("type") == "steal" && ask.get("detail") == "custom")
+		return list("key" = "steal_type", "kind" = "list", "message" = "Select type:", "title" = "Type", "choices" = typesof(/obj/item))
+
+/datum/mind/proc/objective_ask_steal_name(mob/user, datum/om/prompt/ask)
+	var/obj/item/custom_target = ask.get("steal_type")
+	if(ask.get("type") == "steal" && custom_target)
+		return list("key" = "steal_name", "kind" = "text", "message" = "Enter target name:", "title" = "Objective target", "default" = initial(custom_target.name), "max_length" = MAX_MESSAGE_LEN)
+
+/datum/mind/proc/objective_edited(mob/user, datum/om/prompt/ask)
+	objective_edit_apply(user, ask)
+	edit_memory(user)
+
+/datum/mind/proc/objective_edit_apply(mob/user, datum/om/prompt/ask)
+	var/datum/objective/objective = ask.get("objective")
+	var/objective_pos = ask.get("pos")
+	var/new_obj_type = ask.get("type")
+	var/datum/objective/new_objective = null
+
+	switch (new_obj_type)
+		if ("assassinate","protect","debrain", "harm", "brig")
+			//To determine what to name the objective in explanation text.
+			var/objective_type_capital = uppertext(copytext(new_obj_type, 1,2))//Capitalize first letter.
+			var/objective_type_text = copytext(new_obj_type, 2)//Leave the rest of the text.
+			var/objective_type = "[objective_type_capital][objective_type_text]"//Add them together into a text string.
+
+			var/new_target = ask.get("detail")
+			if (!new_target) return
+
+			var/objective_path = text2path("/datum/objective/[new_obj_type]")
+			var/mob/living/M = new_target
+			if (!istype(M) || !M.mind || new_target == "Free objective")
+				new_objective = new objective_path
+				new_objective.owner = src
+				new_objective:target = null
+				new_objective.explanation_text = "Free objective"
+			else
+				new_objective = new objective_path
+				new_objective.owner = src
+				new_objective:target = M.mind
+				new_objective.explanation_text = "[objective_type] [M.real_name], the [M.mind.special_role ? M.mind:special_role : M.mind:assigned_role]."
+
+		if ("prevent")
+			new_objective = new /datum/objective/block
+			new_objective.owner = src
+
+		if ("hijack")
+			new_objective = new /datum/objective/hijack
+			new_objective.owner = src
+
+		if ("escape")
+			new_objective = new /datum/objective/escape
+			new_objective.owner = src
+
+		if ("survive")
+			new_objective = new /datum/objective/survive
+			new_objective.owner = src
+
+		if ("mercenary")
+			new_objective = new /datum/objective/nuclear
+			new_objective.owner = src
+
+		if ("steal")
+			if (!istype(objective, /datum/objective/steal))
+				new_objective = new /datum/objective/steal
+				new_objective.owner = src
+			else
+				new_objective = objective
+			var/datum/objective/steal/steal = new_objective
+			if (!steal.apply_steal_choice(ask.get("detail"), ask.get("steal_type"), ask.get("steal_name")))
+				return
+
+		if("capture","absorb", "vore")
+			var/target_number = ask.get("detail")
+			if (isnull(target_number))//Ordinarily, you wouldn't need isnull. In this case, the value may already exist.
+				return
+
+			switch(new_obj_type)
+				if("capture")
+					new_objective = new /datum/objective/capture
+					new_objective.explanation_text = "Accumulate [target_number] capture points."
+				if("absorb")
+					new_objective = new /datum/objective/absorb
+					new_objective.explanation_text = "Absorb [target_number] compatible genomes."
+				if("vore")
+					new_objective = new /datum/objective/vore
+					new_objective.explanation_text = "Devour [target_number] [target_number == 1 ? "person" : "people"]. What happens to them after you do that is irrelevant."
+			new_objective.owner = src
+			new_objective.target_amount = target_number
+
+		if ("custom")
+			var/expl = ask.get("detail")
+			if (!expl) return
+			new_objective = new /datum/objective
+			new_objective.owner = src
+			new_objective.explanation_text = expl
+
+	if (!new_objective) return
+
+	if (objective)
+		objectives -= objective
+		objectives.Insert(objective_pos, new_objective)
+	else
+		objectives += new_objective
+
+/datum/mind/proc/telecrystals_set(mob/user, crystals, datum/om/prompt/ask)
+	tcrystals = crystals
+	edit_memory(user)
 
 /datum/mind/proc/find_syndicate_uplink()
 	var/list/L = current.get_contents()

@@ -5,6 +5,11 @@
 /mob/proc/audible_emote(act_desc)
 	custom_emote(AUDIBLE_MESSAGE, act_desc)
 
+/mob/proc/emote_dead_entered(mob/user, message, datum/om/prompt/ask)
+	message = sanitize_or_reflect(message, src) // Reflect too long messages, within reason
+	if(message)
+		emote_dead(message)
+
 /mob/proc/emote_dead(message)
 
 	if(client.prefs.muted & MUTE_DEADCHAT)
@@ -21,11 +26,10 @@
 			return
 
 
-	var/input
 	if(!message)
-		input = sanitize_or_reflect(tgui_input_text(src, "Choose an emote to display.", encode = FALSE), src) // Reflect too long messages, within reason
-	else
-		input = message
+		om_prompt(src, src, list("kind" = "text", "message" = "Choose an emote to display.", "encode" = FALSE), PROC_REF(emote_dead_entered))
+		return
+	var/input = message
 
 	input = encode_html_emphasis(input)
 

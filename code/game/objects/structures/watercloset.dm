@@ -73,6 +73,16 @@
 /obj/structure/toilet/update_icon()
 	icon_state = "[initial(icon_state)][open][cistern]"
 
+/obj/structure/toilet/proc/crystal_answered(mob/living/user, answer, datum/om/prompt/ask)
+	if(answer != "Take it!" || !teleplumb_crystal || !cistern)
+		to_chat(user, span_notice("You decide to leave it."))
+		return
+	user.put_in_hands(teleplumb_crystal)
+	to_chat(user, span_notice("You take \the [teleplumb_crystal]."))
+	teleplumb_crystal = null
+	teleplumb_dest_ref = null
+	desc = initial(desc)
+
 /obj/structure/toilet/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/entry_hand/toilet_hand,
@@ -105,14 +115,7 @@
 		if(!length(cistern_loot))
 			//You can take the bluespace crystal out if there's nothing else in the cistern.
 			if(teleplumb_crystal && ishuman(user)) //Only humans can grief the toilets
-				if(tgui_alert(user, "You see a glimmering crystal attached to parts of the toilet's components... Do you want to take it?", "Toilet Crystal", list("Take it!", "Leave it.")) == "Take it!")
-					user.put_in_hands(teleplumb_crystal)
-					to_chat(user, span_notice("You take \the [teleplumb_crystal]."))
-					teleplumb_crystal = null
-					teleplumb_dest_ref = null
-					desc = initial(desc)
-				else
-					to_chat(user, span_notice("You decide to leave it."))
+				om_prompt(src, user, list("message" = "You see a glimmering crystal attached to parts of the toilet's components... Do you want to take it?", "title" = "Toilet Crystal", "choices" = list("Take it!", "Leave it."), "requires" = PROMPT_ADJACENT), PROC_REF(crystal_answered))
 			to_chat(user, span_notice("The cistern is empty."))
 			return TRUE
 		var/obj/item/I = pick(cistern_loot)
@@ -581,11 +584,13 @@ REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
 
 /obj/machinery/shower/proc/interaction_set_temperature(mob/user, obj/item/held, datum/interaction/interaction)
 	var/list/temperature_settings = list(SHOWER_NORMAL, SHOWER_BOILING, SHOWER_FREEZING)
-	var/newtemp = tgui_input_list(user, "What setting would you like to set the temperature valve to?", "Water Temperature Valve", temperature_settings)
+	om_prompt(src, user, list("kind" = "list", "message" = "What setting would you like to set the temperature valve to?", "title" = "Water Temperature Valve", "choices" = temperature_settings, "requires" = PROMPT_ADJACENT), PROC_REF(temperature_chosen))
+	return TRUE
+
+/obj/machinery/shower/proc/temperature_chosen(mob/user, newtemp, datum/om/prompt/ask)
 	to_chat(user, span_notice("You begin to adjust the temperature..."))
 	om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_set_temperature_timed_done), done_args = list(user, newtemp))
 	handle_mist()
-	return TRUE
 
 /obj/machinery/shower/proc/interaction_set_temperature_timed_done(mob/user, newtemp)
 	current_temperature = newtemp
@@ -1275,25 +1280,27 @@ REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
 
 /obj/structure/biowaste_tank/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(contents.len)
-		var/atom/movable/choice = tgui_input_list(user, "It appears the machine has caught some items in the lost-and-found filter system. Would you like to eject something?", "Item Retrieval Console", contents)
-		if(choice)
-			if(!user.canmove || user.stat || user.restrained() || !in_range(loc, user))
-				return TRUE
-			if(choice == muffinmonster && muffinmonster.loc == src)
-				muffin_mode = !muffin_mode
-				if(muffin_mode)
-					muffinmonster.name = "Deactivate Muffin Monster"
-					for(var/atom/movable/C in contents)
-						if(C == muffinmonster)
-							continue
-						C.move_into(muffinmonster.vore_selected, BELLY_SLOT_INTERIOR)
-				else
-					muffinmonster.name = "Activate Muffin Monster"
-					muffinmonster.release_vore_contents(include_absorbed = TRUE, silent = TRUE)
-				return TRUE
-			else
-				choice.forceMove(get_turf(src))
+		om_prompt(src, user, list("kind" = "list", "message" = "It appears the machine has caught some items in the lost-and-found filter system. Would you like to eject something?", "title" = "Item Retrieval Console", "choices" = contents, "requires" = PROMPT_ADJACENT), PROC_REF(eject_chosen))
 	return TRUE
+
+/obj/structure/biowaste_tank/proc/eject_chosen(mob/user, atom/movable/choice, datum/om/prompt/ask)
+	if(choice.loc == src)
+		if(!user.canmove)
+			return
+		if(choice == muffinmonster && muffinmonster.loc == src)
+			muffin_mode = !muffin_mode
+			if(muffin_mode)
+				muffinmonster.name = "Deactivate Muffin Monster"
+				for(var/atom/movable/C in contents)
+					if(C == muffinmonster)
+						continue
+					C.move_into(muffinmonster.vore_selected, BELLY_SLOT_INTERIOR)
+			else
+				muffinmonster.name = "Activate Muffin Monster"
+				muffinmonster.release_vore_contents(include_absorbed = TRUE, silent = TRUE)
+			return
+		else
+			choice.forceMove(get_turf(src))
 
 /obj/structure/biowaste_tank/emag_act(remaining_charges, mob/user, emag_source)
 	if(muffinmonster && muffin_mode)

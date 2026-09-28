@@ -87,7 +87,10 @@
 	set category = "Object"
 	set src in usr
 
-	if (tgui_alert(usr, "Are you sure you want to empty that?", "Empty Bottle:", list("Yes", "No")) != "Yes")
+	var/_answer_a1 = rerun_prompt(usr, "a1", list("message" = "Are you sure you want to empty that?", "title" = "Empty Bottle:", "choices" = list("Yes", "No")), VERB_REF(empty), args)
+	if(isnull(_answer_a1))
+		return
+	if (_answer_a1 != "Yes")
 		return
 	if(isturf(usr.loc))
 		balloon_alert(usr, "emptied \the [src] onto the floor.")

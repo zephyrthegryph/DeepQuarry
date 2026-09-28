@@ -111,15 +111,40 @@
 	return L
 
 /obj/item/floor_painter/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/choice = tgui_alert(user, "Do you wish to change the decal type, paint direction, or paint colour?", "Modify What?", list("Decal","Direction","Colour","Cancel"))
-	if(choice == "Cancel")
-		return
-	else if(choice == "Decal")
-		choose_decal()
-	else if(choice == "Direction")
-		choose_direction()
-	else if(choice == "Colour")
-		choose_colour()
+	om_prompt(src, user, list("message" = "Do you wish to change the decal type, paint direction, or paint colour?", "title" = "Modify What?", "choices" = list("Decal","Direction","Colour","Cancel"), "requires" = PROMPT_HELD), PROC_REF(modify_chosen))
+
+/obj/item/floor_painter/proc/modify_chosen(mob/user, choice, datum/om/prompt/ask)
+	switch(choice)
+		if("Decal")
+			ask_decal(user)
+		if("Direction")
+			ask_direction(user)
+		if("Colour")
+			ask_colour(user)
+
+/obj/item/floor_painter/proc/ask_decal(mob/user)
+	om_prompt(src, user, list("kind" = "list", "message" = "Select a decal:", "title" = "Decal Choice", "choices" = decals, "requires" = PROMPT_HELD), PROC_REF(decal_chosen))
+
+/obj/item/floor_painter/proc/decal_chosen(mob/user, new_decal, datum/om/prompt/ask)
+	if(!isnull(decals[new_decal]))
+		decal = new_decal
+		to_chat(user, span_notice("You set \the [src] decal to '[decal]'."))
+
+/obj/item/floor_painter/proc/ask_direction(mob/user)
+	om_prompt(src, user, list("kind" = "list", "message" = "Select a direction:", "title" = "Direction Choice", "choices" = paint_dirs, "requires" = PROMPT_HELD), PROC_REF(direction_chosen))
+
+/obj/item/floor_painter/proc/direction_chosen(mob/user, new_dir, datum/om/prompt/ask)
+	if(!isnull(paint_dirs[new_dir]))
+		paint_dir = new_dir
+		to_chat(user, span_notice("You set \the [src] direction to '[paint_dir]'."))
+
+/obj/item/floor_painter/proc/ask_colour(mob/user)
+	om_prompt(src, user, list("kind" = "color", "message" = "Choose a colour.", "title" = name, "default" = paint_colour, "requires" = PROMPT_HELD), PROC_REF(colour_chosen))
+
+/obj/item/floor_painter/proc/colour_chosen(mob/user, new_colour, datum/om/prompt/ask)
+	if(new_colour && new_colour != paint_colour)
+		paint_colour = new_colour
+		to_chat(user, span_notice("You set \the [src] to paint with <font color='[paint_colour]'>a new colour</font>."))
 
 /obj/item/floor_painter/examine(mob/user)
 	. = ..()
@@ -133,10 +158,7 @@
 
 	if(usr.incapacitated())
 		return
-	var/new_colour = tgui_color_picker(usr, "Choose a colour.", name, paint_colour)
-	if(new_colour && new_colour != paint_colour)
-		paint_colour = new_colour
-		to_chat(usr, span_notice("You set \the [src] to paint with <font color='[paint_colour]'>a new colour</font>."))
+	ask_colour(usr)
 
 /obj/item/floor_painter/verb/choose_decal()
 	set name = "Choose Decal"
@@ -147,10 +169,7 @@
 	if(usr.incapacitated())
 		return
 
-	var/new_decal = tgui_input_list(usr, "Select a decal:", "Decal Choice", decals)
-	if(new_decal && !isnull(decals[new_decal]))
-		decal = new_decal
-		to_chat(usr, span_notice("You set \the [src] decal to '[decal]'."))
+	ask_decal(usr)
 
 /obj/item/floor_painter/verb/choose_direction()
 	set name = "Choose Direction"
@@ -161,7 +180,4 @@
 	if(usr.incapacitated())
 		return
 
-	var/new_dir = tgui_input_list(usr, "Select a direction:", "Direction Choice", paint_dirs)
-	if(new_dir && !isnull(paint_dirs[new_dir]))
-		paint_dir = new_dir
-		to_chat(usr, span_notice("You set \the [src] direction to '[paint_dir]'."))
+	ask_direction(usr)

@@ -109,9 +109,23 @@
 /obj/structure/ghost_pod/manual/lost_drone/dogborg			// name is just legacy now
 	remains_active = TRUE
 
+/obj/structure/ghost_pod/manual/lost_drone/dogborg
+	/// The law type the ghost picked ("Regular" or "Vore"), asked before the drone is made.
+	var/drone_laws
+
+/obj/structure/ghost_pod/manual/lost_drone/dogborg/proc/drone_type_cancelled(mob/M, datum/om/prompt/ask)
+	drone_type_chosen(M, "Regular", ask)
+
+/obj/structure/ghost_pod/manual/lost_drone/dogborg/proc/drone_type_chosen(mob/M, response, datum/om/prompt/ask)
+	drone_laws = response
+	create_occupant(M)
+
 /obj/structure/ghost_pod/manual/lost_drone/dogborg/create_occupant(mob/M)
-	var/response = tgui_alert(M, "What sort of laws do you wish to have as Lost Drone (they will still be random)", "Drone Type", list("Regular", "Vore"))
-	if(!(response == "Vore"))	// No response somehow or Regular
+	if(!drone_laws)
+		used = TRUE
+		om_prompt(src, M, list("message" = "What sort of laws do you wish to have as Lost Drone (they will still be random)", "title" = "Drone Type", "choices" = list("Regular", "Vore"), "on_cancel" = PROC_REF(drone_type_cancelled)), PROC_REF(drone_type_chosen))
+		return
+	if(!(drone_laws == "Vore"))	// Regular
 		return ..()
 	else
 		density = FALSE

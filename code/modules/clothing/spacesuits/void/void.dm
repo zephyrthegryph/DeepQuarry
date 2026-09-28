@@ -398,7 +398,9 @@
 		to_chat(user, span_warning("You cannot modify \the [src] while it is being worn."))
 		return ITEM_INTERACT_SUCCESS
 	if(hood || boots || tank)
-		var/choice = tgui_input_list(user, "What component would you like to remove?", "Remove Component", list(hood,boots,tank,cooler))
+		var/choice = rerun_prompt(user, "a1", list("kind" = "list", "message" = "What component would you like to remove?", "title" = "Remove Component", "choices" = list(hood,boots,tank,cooler)), TYPE_PROC_REF(/atom, screwdriver_act), args)
+		if(isnull(choice))
+			return ITEM_INTERACT_BLOCKING
 		if(!choice) return ITEM_INTERACT_SUCCESS
 
 		if(choice == tank)	//No, a switch doesn't work here. Sorry. ~Techhead
@@ -431,7 +433,9 @@
 		to_chat(user, span_warning("You cannot modify \the [src] while it is being worn."))
 		return ITEM_INTERACT_SUCCESS
 	if(boots || tank || cooler)
-		var/choice = tgui_input_list(user, "What component would you like to remove?", "Remove Component", list(boots,tank,cooler))
+		var/choice = rerun_prompt(user, "a2", list("kind" = "list", "message" = "What component would you like to remove?", "title" = "Remove Component", "choices" = list(boots,tank,cooler)), TYPE_PROC_REF(/atom, screwdriver_act), args)
+		if(isnull(choice))
+			return ITEM_INTERACT_BLOCKING
 		if(!choice) return ITEM_INTERACT_SUCCESS
 
 		if(choice == tank)	//No, a switch doesn't work here. Sorry. ~Techhead

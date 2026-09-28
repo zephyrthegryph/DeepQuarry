@@ -1,5 +1,7 @@
 ADMIN_VERB(change_human_appearance_admin, R_FUN, "Change Mob Appearance - Admin", "Allows you to change the mob appearance.", ADMIN_CATEGORY_EVENTS)
-	var/mob/living/carbon/human/target_human = tgui_input_list(user, "Select mob.", "Change Mob Appearance - Admin", REGISTRY_MEMBERS(REGISTRY_HUMANS))
+	var/mob/living/carbon/human/target_human = verb_prompt(user, "a1", list("kind" = "list", "message" = "Select mob.", "title" = "Change Mob Appearance - Admin", "choices" = REGISTRY_MEMBERS(REGISTRY_HUMANS)), args)
+	if(isnull(target_human))
+		return
 	if(!target_human)
 		return
 
@@ -8,14 +10,17 @@ ADMIN_VERB(change_human_appearance_admin, R_FUN, "Change Mob Appearance - Admin"
 	feedback_add_details("admin_verb","CHAA") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(change_human_appearance_self, R_FUN, "Change Mob Appearance - Self", "Allows the mob to change its appearance.", ADMIN_CATEGORY_EVENTS)
-	var/mob/living/carbon/human/human_target = tgui_input_list(user, "Select mob.", "Change Mob Appearance - Self", REGISTRY_MEMBERS(REGISTRY_HUMANS))
+	var/mob/living/carbon/human/human_target = verb_prompt(user, "a2", list("kind" = "list", "message" = "Select mob.", "title" = "Change Mob Appearance - Self", "choices" = REGISTRY_MEMBERS(REGISTRY_HUMANS)), args)
+	if(isnull(human_target))
+		return
 	if(!human_target)
 		return
 
 	if(!human_target.client)
 		to_chat(human_target, span_filter_warning("Only mobs with clients can alter their own appearance."))
 		return
-	switch(tgui_alert(user, "Do you wish for [human_target] to be allowed to select non-whitelisted races?","Alter Mob Appearance","Yes","No","Cancel"))
+	var/whitelist_answer = verb_prompt(user, "whitelist", list("message" = "Do you wish for [human_target] to be allowed to select non-whitelisted races?", "title" = "Alter Mob Appearance", "choices" = list("Yes","No","Cancel")), args)
+	switch(whitelist_answer)
 		if("Yes")
 			log_and_message_admins("has allowed [human_target] to change [human_target.p_their()] appearance, without whitelisting of races.")
 			human_target.change_appearance(APPEARANCE_ALL, human_target, check_species_whitelist = 0)
@@ -25,55 +30,76 @@ ADMIN_VERB(change_human_appearance_self, R_FUN, "Change Mob Appearance - Self", 
 	feedback_add_details("admin_verb","CMAS") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(editappear, R_FUN, "Edit Appearance", "Edit a human's apperance.", ADMIN_CATEGORY_FUN_EVENT_KIT)
-	var/mob/living/carbon/human/target_human = tgui_input_list(user, "Select mob.", "Edit Appearance", REGISTRY_MEMBERS(REGISTRY_HUMANS))
+	var/mob/living/carbon/human/target_human = verb_prompt(user, "a3", list("kind" = "list", "message" = "Select mob.", "title" = "Edit Appearance", "choices" = REGISTRY_MEMBERS(REGISTRY_HUMANS)), args)
+	if(isnull(target_human))
+		return
 
 	if(!ishuman(target_human))
 		to_chat(user, span_warning("You can only do this to humans!"))
 		return
-	if(tgui_alert(user, "Are you sure you wish to edit this mob's appearance? Skrell, Unathi, Tajaran can result in unintended consequences.","Danger!",list("Yes","No")) != "Yes")
+	var/_answer_a4 = verb_prompt(user, "a4", list("message" = "Are you sure you wish to edit this mob's appearance? Skrell, Unathi, Tajaran can result in unintended consequences.", "title" = "Danger!", "choices" = list("Yes","No")), args)
+	if(isnull(_answer_a4))
 		return
-	var/new_facial = tgui_color_picker(user, "Please select facial hair color.", "Character Generation")
+	if(_answer_a4 != "Yes")
+		return
+	var/new_facial = verb_prompt(user, "a5", list("kind" = "color", "message" = "Please select facial hair color.", "title" = "Character Generation"), args)
+	if(isnull(new_facial))
+		return
 	if(new_facial)
 		target_human.r_facial = hex2num(copytext(new_facial, 2, 4))
 		target_human.g_facial = hex2num(copytext(new_facial, 4, 6))
 		target_human.b_facial = hex2num(copytext(new_facial, 6, 8))
 
-	var/new_hair = tgui_color_picker(user, "Please select hair color.", "Character Generation")
+	var/new_hair = verb_prompt(user, "a6", list("kind" = "color", "message" = "Please select hair color.", "title" = "Character Generation"), args)
+	if(isnull(new_hair))
+		return
 	if(new_hair)
 		target_human.r_hair = hex2num(copytext(new_hair, 2, 4))
 		target_human.g_hair = hex2num(copytext(new_hair, 4, 6))
 		target_human.b_hair = hex2num(copytext(new_hair, 6, 8))
 
-	var/new_eyes = tgui_color_picker(user, "Please select eye color.", "Character Generation")
+	var/new_eyes = verb_prompt(user, "a7", list("kind" = "color", "message" = "Please select eye color.", "title" = "Character Generation"), args)
+	if(isnull(new_eyes))
+		return
 	if(new_eyes)
 		target_human.r_eyes = hex2num(copytext(new_eyes, 2, 4))
 		target_human.g_eyes = hex2num(copytext(new_eyes, 4, 6))
 		target_human.b_eyes = hex2num(copytext(new_eyes, 6, 8))
 		target_human.update_eyes()
 
-	var/new_skin = tgui_color_picker(user, "Please select body color. This is for Tajaran, Unathi, and Skrell only!", "Character Generation")
+	var/new_skin = verb_prompt(user, "a8", list("kind" = "color", "message" = "Please select body color. This is for Tajaran, Unathi, and Skrell only!", "title" = "Character Generation"), args)
+	if(isnull(new_skin))
+		return
 	if(new_skin)
 		target_human.r_skin = hex2num(copytext(new_skin, 2, 4))
 		target_human.g_skin = hex2num(copytext(new_skin, 4, 6))
 		target_human.b_skin = hex2num(copytext(new_skin, 6, 8))
 
-	var/new_tone = tgui_input_number(user, "Please select skin tone level: 1-220 (1=albino, 35=caucasian, 150=black, 220='very' black)", "Character Generation", null, 220, 1)
+	var/new_tone = verb_prompt(user, "a9", list("kind" = "number", "message" = "Please select skin tone level: 1-220 (1=albino, 35=caucasian, 150=black, 220='very' black)", "title" = "Character Generation", "max" = 220, "min" = 1), args)
+	if(isnull(new_tone))
+		return
 
 	if (new_tone)
 		target_human.s_tone = max(min(round(text2num(new_tone)), 220), 1)
 		target_human.s_tone =  -target_human.s_tone + 35
 
 	// hair
-	var/new_hstyle = tgui_input_list(user, "Select a hair style", "Grooming", GLOB.hair_styles_list)
+	var/new_hstyle = verb_prompt(user, "a10", list("kind" = "list", "message" = "Select a hair style", "title" = "Grooming", "choices" = GLOB.hair_styles_list), args)
+	if(isnull(new_hstyle))
+		return
 	if(new_hstyle)
 		target_human.h_style = new_hstyle
 
 	// facial hair
-	var/new_fstyle = tgui_input_list(user, "Select a facial hair style", "Grooming", GLOB.facial_hair_styles_list)
+	var/new_fstyle = verb_prompt(user, "a11", list("kind" = "list", "message" = "Select a facial hair style", "title" = "Grooming", "choices" = GLOB.facial_hair_styles_list), args)
+	if(isnull(new_fstyle))
+		return
 	if(new_fstyle)
 		target_human.f_style = new_fstyle
 
-	var/new_gender = tgui_alert(user, "Please select gender.", "Character Generation", list("Male", "Female", "Neuter"))
+	var/new_gender = verb_prompt(user, "a12", list("message" = "Please select gender.", "title" = "Character Generation", "choices" = list("Male", "Female", "Neuter")), args)
+	if(isnull(new_gender))
+		return
 	if (new_gender)
 		target_human.set_gender(new_gender)
 

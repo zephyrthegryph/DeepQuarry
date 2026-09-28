@@ -76,7 +76,7 @@ REF_PAIR(/obj/structure/ladder, list("target_down" = "target_up", "target_up" = 
 	if(!M.may_climb_ladders(src))
 		return
 
-	var/obj/structure/ladder/target_ladder = getTargetLadder(M)
+	var/obj/structure/ladder/target_ladder = getTargetLadder(M, TYPE_PROC_REF(/atom, attack_hand), args)
 	if(!target_ladder)
 		return
 	if(!(M.loc == loc) && !M.Move(get_turf(src)))
@@ -86,19 +86,21 @@ REF_PAIR(/obj/structure/ladder, list("target_down" = "target_up", "target_up" = 
 	climbLadder(M, target_ladder)
 
 /obj/structure/ladder/attack_ghost(mob/M)
-	var/target_ladder = getTargetLadder(M)
+	var/target_ladder = getTargetLadder(M, TYPE_PROC_REF(/atom, attack_ghost), args)
 	if(target_ladder)
 		M.forceMove(get_turf(target_ladder))
 
 /obj/structure/ladder
 	silicon_use = ROBOT_USE_HAND
 
-/obj/structure/ladder/proc/getTargetLadder(mob/M)
+/// The ladder to climb to. Asking up or down re-runs `caller_proc` with `caller_args` on the answer,
+/// and returns null meanwhile.
+/obj/structure/ladder/proc/getTargetLadder(mob/M, caller_proc, list/caller_args)
 	if((!target_up && !target_down) || (target_up && !istype(target_up.loc, /turf) || (target_down && !istype(target_down.loc,/turf))))
 		to_chat(M, span_notice("\The [src] is incomplete and can't be climbed."))
 		return
 	if(target_down && target_up)
-		var/direction = tgui_alert(M,"Do you want to go up or down?", "Ladder", list("Up", "Down", "Cancel"))
+		var/direction = rerun_prompt(M, "direction", list("message" = "Do you want to go up or down?", "title" = "Ladder", "choices" = list("Up", "Down", "Cancel")), caller_proc, caller_args)
 
 		if(!direction || direction == "Cancel")
 			return

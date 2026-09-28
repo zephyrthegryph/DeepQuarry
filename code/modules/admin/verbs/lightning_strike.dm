@@ -1,5 +1,7 @@
 ADMIN_VERB(admin_lightning_strike, R_FUN, "Lightning Strike", "Causes lightning to strike on your tile. This can be made to hurt things on or nearby it severely.", ADMIN_CATEGORY_FUN_DO_NOT)
-	var/result = tgui_alert(user, "Really strike your tile with lightning?", "Confirm Badmin" , list("No", "Yes (Cosmetic)", "Yes (Real)"))
+	var/result = verb_prompt(user, "a1", list("message" = "Really strike your tile with lightning?", "title" = "Confirm Badmin", "choices" = list("No", "Yes (Cosmetic)", "Yes (Real)")), args)
+	if(isnull(result))
+		return
 
 	if(!result || result == "No")
 		return

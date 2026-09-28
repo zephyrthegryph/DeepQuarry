@@ -11,12 +11,13 @@
 
 /// Tag yourself for delivery through the disposals system.
 /mob/living/silicon/robot/drone/proc/dq_do_set_mail_tag(mob/actor, obj/item/held, datum/interaction/ability/interaction)
-	var/new_tag = tgui_input_list(src, "Select the desired destination.", "Set Mail Tag", GLOB.tagger_locations)
+	om_prompt(src, src, list("kind" = "list", "message" = "Select the desired destination.", "title" = "Set Mail Tag", "choices" = GLOB.tagger_locations, "on_cancel" = PROC_REF(mail_tag_cleared)), PROC_REF(mail_tag_chosen))
+	return TRUE
 
-	if(!new_tag)
-		mail_destination = ""
-		return TRUE
+/mob/living/silicon/robot/drone/proc/mail_tag_cleared(mob/user, datum/om/prompt/ask)
+	mail_destination = ""
 
+/mob/living/silicon/robot/drone/proc/mail_tag_chosen(mob/user, new_tag, datum/om/prompt/ask)
 	to_chat(src, span_notice("You configure your internal beacon, tagging yourself for delivery to '[new_tag]'."))
 	mail_destination = new_tag
 

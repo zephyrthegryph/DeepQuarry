@@ -1,7 +1,9 @@
 
 ADMIN_VERB(capture_map, R_ADMIN, "Capture Map Part", "Usage: Capture-Map-Part target_x_cord target_y_cord target_z_cord range (captures part of a map originating from bottom left corner).", ADMIN_CATEGORY_SERVER_GAME)
 
-	var/pos_type = tgui_alert(user, "Do you want to use your current loc or a manual number input?", "Where?", list("Manual", "Location", "Cancel"))
+	var/pos_type = verb_prompt(user, "a1", list("message" = "Do you want to use your current loc or a manual number input?", "title" = "Where?", "choices" = list("Manual", "Location", "Cancel")), args)
+	if(isnull(pos_type))
+		return
 	if(!pos_type || pos_type == "Cancel")
 		return
 
@@ -13,11 +15,22 @@ ADMIN_VERB(capture_map, R_ADMIN, "Capture Map Part", "Usage: Capture-Map-Part ta
 		ty = user.mob.y
 		tz = user.mob.z
 	else
-		tx = tgui_input_number(user, "Select X location", "X Loc", 1, world.maxx, 1)
-		ty = tgui_input_number(user, "Select Y location", "Y Loc", 1, world.maxy, 1)
-		tz = tgui_input_number(user, "Select Z location", "Z Loc", 1, world.maxz, 1)
+		var/_answer_a2 = verb_prompt(user, "a2", list("kind" = "number", "message" = "Select X location", "title" = "X Loc", "default" = 1, "max" = world.maxx, "min" = 1), args)
+		if(isnull(_answer_a2))
+			return
+		tx = _answer_a2
+		var/_answer_a3 = verb_prompt(user, "a3", list("kind" = "number", "message" = "Select Y location", "title" = "Y Loc", "default" = 1, "max" = world.maxy, "min" = 1), args)
+		if(isnull(_answer_a3))
+			return
+		ty = _answer_a3
+		var/_answer_a4 = verb_prompt(user, "a4", list("kind" = "number", "message" = "Select Z location", "title" = "Z Loc", "default" = 1, "max" = world.maxz, "min" = 1), args)
+		if(isnull(_answer_a4))
+			return
+		tz = _answer_a4
 
-	var/range = tgui_input_number(user, "Select Range", "Range", 1, 32, 1)
+	var/range = verb_prompt(user, "a5", list("kind" = "number", "message" = "Select Range", "title" = "Range", "default" = 1, "max" = 32, "min" = 1), args)
+	if(isnull(range))
+		return
 
 	if(isnull(tx) || isnull(ty) || isnull(tz) || isnull(range))
 		to_chat(user, span_filter_notice("Capture Map Part, captures part of a map using camara like rendering."))
@@ -39,7 +52,9 @@ ADMIN_VERB(capture_map, R_ADMIN, "Capture Map Part", "Usage: Capture-Map-Part ta
 					turfstocapture.Add(T)
 				else
 					if(!hasasked)
-						var/answer = tgui_alert(user, "Capture includes non existant turf, Continue capture?","Continue capture?", list("No", "Yes"))
+						var/answer = verb_prompt(user, "a6", list("message" = "Capture includes non existant turf, Continue capture?", "title" = "Continue capture?", "choices" = list("No", "Yes")), args)
+						if(isnull(answer))
+							return
 						hasasked = TRUE
 						if(answer != "Yes")
 							return

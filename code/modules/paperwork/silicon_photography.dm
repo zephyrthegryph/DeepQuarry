@@ -45,7 +45,10 @@ REF_OWNED_LIST(/obj/item/camera/siliconcam, "aipictures")
 		return
 	for(var/obj/item/photo/t in cam.aipictures)
 		nametemp += t.name
-	find = tgui_input_list(user, "Select image (numbered in order taken)", "Picture Choice", nametemp)
+	var/_answer_k50 = rerun_prompt(user, "k50", list("kind" = "list", "message" = "Select image (numbered in order taken)", "title" = "Picture Choice", "choices" = nametemp), PROC_REF(selectpicture), args)
+	if(isnull(_answer_k50))
+		return
+	find = _answer_k50
 	if(!find)
 		return
 

@@ -103,7 +103,9 @@
 		"Collector",
 		)
 
-		var/modification_decision = tgui_input_list(user, "Which tesla do you wish to change it into?", "Tesla Selection", menu_list)
+		var/modification_decision = rerun_prompt(user, "k110", list("kind" = "list", "message" = "Which tesla do you wish to change it into?", "title" = "Tesla Selection", "choices" = menu_list), TYPE_PROC_REF(/atom, multitool_act), args)
+		if(isnull(modification_decision))
+			return ITEM_INTERACT_BLOCKING
 		if(!modification_decision)
 			return //They didn't select anything!
 		if(QDELETED(src) || QDELETED(W) || QDELETED(user) || get_dist(user, src) > W.reach)

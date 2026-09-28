@@ -26,7 +26,9 @@
 	var/A = null
 
 	if(!randomise_selection)
-		A = tgui_input_list(user, "Area to teleport to", "Teleport", GLOB.teleportlocs)
+		A = cast_prompt(user, "area", list("kind" = "list", "message" = "Area to teleport to", "title" = "Teleport", "choices" = GLOB.teleportlocs))
+		if(!A)
+			return list()
 	else
 		A = pick(GLOB.teleportlocs)
 

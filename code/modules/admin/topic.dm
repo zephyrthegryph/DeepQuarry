@@ -109,7 +109,9 @@
 		if(!check_rights(R_SERVER))	return
 
 		if (SSemergency_shuttle.wait_for_launch)
-			var/new_time_left = tgui_input_number(usr, "Enter new shuttle launch countdown (seconds):","Edit Shuttle Launch Time", SSemergency_shuttle.estimate_launch_time() )
+			var/new_time_left = topic_prompt(usr, href_list, "a1", list("kind" = "number", "message" = "Enter new shuttle launch countdown (seconds):", "title" = "Edit Shuttle Launch Time", "default" = SSemergency_shuttle.estimate_launch_time()))
+			if(isnull(new_time_left))
+				return
 
 			SSemergency_shuttle.launch_time = world.time + (new_time_left * 10)
 
@@ -117,7 +119,9 @@
 			message_admins(span_blue("[key_name_admin(usr)] edited the Emergency Shuttle's launch time to [new_time_left * 10]"), 1)
 		else if (SSemergency_shuttle.shuttle.has_arrive_time())
 
-			var/new_time_left = tgui_input_number(usr, "Enter new shuttle arrival time (seconds):","Edit Shuttle Arrival Time", SSemergency_shuttle.estimate_arrival_time() )
+			var/new_time_left = topic_prompt(usr, href_list, "a2", list("kind" = "number", "message" = "Enter new shuttle arrival time (seconds):", "title" = "Edit Shuttle Arrival Time", "default" = SSemergency_shuttle.estimate_arrival_time()))
+			if(isnull(new_time_left))
+				return
 			SSemergency_shuttle.shuttle.arrive_time = world.time + (new_time_left * 10)
 
 			log_admin("[key_name(usr)] edited the Emergency Shuttle's arrival time to [new_time_left]")
@@ -145,7 +149,10 @@
 			return
 
 		var/delmob = 0
-		switch(tgui_alert(usr, "Delete old mob?","Message",list("Yes","No","Cancel")))
+		var/_answer_a3 = topic_prompt(usr, href_list, "a3", list("message" = "Delete old mob?", "title" = "Message", "choices" = list("Yes","No","Cancel")))
+		if(isnull(_answer_a3))
+			return
+		switch(_answer_a3)
 			if("Cancel", null)	return
 			if("Yes")		delmob = 1
 
@@ -182,7 +189,10 @@
 		var/banfolder = href_list["unbanf"]
 		GLOB.banlist.cd = "/base/[banfolder]"
 		var/key = GLOB.banlist["key"]
-		if(tgui_alert(usr, "Are you sure you want to unban [key]?", "Confirmation", list("Yes", "No")) == "Yes")
+		var/_answer_a4 = topic_prompt(usr, href_list, "a4", list("message" = "Are you sure you want to unban [key]?", "title" = "Confirmation", "choices" = list("Yes", "No")))
+		if(isnull(_answer_a4))
+			return
+		if(_answer_a4 == "Yes")
 			if(RemoveBan(banfolder))
 				unbanpanel()
 			else
@@ -213,7 +223,10 @@
 
 		var/duration
 
-		switch(tgui_alert(usr, "Temporary Ban?","Temporary Ban",list("Yes","No")))
+		var/_answer_a5 = topic_prompt(usr, href_list, "a5", list("message" = "Temporary Ban?", "title" = "Temporary Ban", "choices" = list("Yes","No")))
+		if(isnull(_answer_a5))
+			return
+		switch(_answer_a5)
 			if(null)
 				return
 			if("Yes")
@@ -221,17 +234,26 @@
 				var/mins = 0
 				if(minutes > GLOB.c_minutes)
 					mins = minutes - GLOB.c_minutes
-				mins = tgui_input_number(usr,"How long (in minutes)? (Default: 1440)","Ban time",mins ? mins : 1440)
+				var/_answer_a6 = topic_prompt(usr, href_list, "a6", list("kind" = "number", "message" = "How long (in minutes)? (Default: 1440)", "title" = "Ban time", "default" = mins ? mins : 1440))
+				if(isnull(_answer_a6))
+					return
+				mins = _answer_a6
 				if(!mins)	return
 				mins = min(525599,mins)
 				minutes = GLOB.c_minutes + mins
 				duration = GetExp(minutes)
-				reason = tgui_input_text(usr,"Reason?","reason",reason2, MAX_MESSAGE_LEN)
+				var/_answer_a7 = topic_prompt(usr, href_list, "a7", list("kind" = "text", "message" = "Reason?", "title" = "reason", "default" = reason2, "max_length" = MAX_MESSAGE_LEN))
+				if(isnull(_answer_a7))
+					return
+				reason = _answer_a7
 				if(!reason)	return
 			if("No")
 				temp = 0
 				duration = "Perma"
-				reason = tgui_input_text(usr,"Reason?","reason",reason2, MAX_MESSAGE_LEN)
+				var/_answer_a8 = topic_prompt(usr, href_list, "a8", list("kind" = "text", "message" = "Reason?", "title" = "reason", "default" = reason2, "max_length" = MAX_MESSAGE_LEN))
+				if(isnull(_answer_a8))
+					return
+				reason = _answer_a8
 				if(!reason)	return
 
 		log_admin("[key_name(usr)] edited [banned_key]'s ban. Reason: [reason] Duration: [duration]")
@@ -366,7 +388,10 @@
 
 		//Banning comes first
 		if(notbannedlist.len) //at least 1 unbanned job exists in joblist so we have stuff to ban.
-			switch(tgui_alert(usr, "Temporary Ban?","Temporary Ban", list("Yes","No","Cancel")))
+			var/_answer_a9 = topic_prompt(usr, href_list, "a9", list("message" = "Temporary Ban?", "title" = "Temporary Ban", "choices" = list("Yes","No","Cancel")))
+			if(isnull(_answer_a9))
+				return
+			switch(_answer_a9)
 				if(null)
 					return
 				if("Yes")
@@ -376,13 +401,17 @@
 					if(CONFIG_GET(flag/ban_legacy_system))
 						to_chat(usr, span_filter_adminlog(span_warning("Your server is using the legacy banning system, which does not support temporary job bans. Consider upgrading. Aborting ban.")))
 						return
-					var/mins = tgui_input_number(usr,"How long (in minutes)?","Ban time",1440)
+					var/mins = topic_prompt(usr, href_list, "a10", list("kind" = "number", "message" = "How long (in minutes)?", "title" = "Ban time", "default" = 1440))
+					if(isnull(mins))
+						return
 					if(!mins)
 						return
 					if(check_rights(R_MOD, 0) && !check_rights(R_BAN, 0) && mins > CONFIG_GET(number/mod_job_tempban_max))
 						to_chat(usr, span_filter_adminlog(span_warning("Moderators can only job tempban up to [CONFIG_GET(number/mod_job_tempban_max)] minutes!")))
 						return
-					var/reason = tgui_input_text(usr,"Reason?","Please State Reason","", MAX_MESSAGE_LEN)
+					var/reason = topic_prompt(usr, href_list, "a11", list("kind" = "text", "message" = "Reason?", "title" = "Please State Reason", "max_length" = MAX_MESSAGE_LEN))
+					if(isnull(reason))
+						return
 					if(!reason)
 						return
 
@@ -407,7 +436,9 @@
 					return 1
 				if("No")
 					if(!check_rights(R_BAN))  return
-					var/reason = tgui_input_text(usr,"Reason?","Please State Reason","", MAX_MESSAGE_LEN)
+					var/reason = topic_prompt(usr, href_list, "a12", list("kind" = "text", "message" = "Reason?", "title" = "Please State Reason", "max_length" = MAX_MESSAGE_LEN))
+					if(isnull(reason))
+						return
 					if(reason)
 						var/msg
 						for(var/job in notbannedlist)
@@ -440,7 +471,10 @@
 			for(var/job in joblist)
 				var/reason = jobban_isbanned(M, job)
 				if(!reason) continue //skip if it isn't jobbanned anyway
-				switch(tgui_alert(usr, "Job: '[job]' Reason: '[reason]' Un-jobban?","Please Confirm",list("Yes","No")))
+				var/_answer_a13 = topic_prompt(usr, href_list, "unjob_[job]", list("message" = "Job: '[job]' Reason: '[reason]' Un-jobban?", "title" = "Please Confirm", "choices" = list("Yes","No")))
+				if(isnull(_answer_a13))
+					return
+				switch(_answer_a13)
 					if("Yes")
 						ban_unban_log_save("[key_name(usr)] unjobbanned [key_name(M)] from [job]")
 						log_admin("[key_name(usr)] unbanned [key_name(M)] from [job]")
@@ -464,7 +498,9 @@
 		if (ismob(M))
 			if(!check_if_greater_rights_than(M.client))
 				return
-			var/reason = tgui_input_text(usr, "Please enter reason.", "", "", MAX_MESSAGE_LEN, TRUE, prevent_enter = TRUE)
+			var/reason = topic_prompt(usr, href_list, "a14", list("kind" = "text", "message" = "Please enter reason.", "max_length" = MAX_MESSAGE_LEN, "multiline" = TRUE))
+			if(isnull(reason))
+				return
 			if(!reason)
 				return
 
@@ -480,7 +516,10 @@
 
 		var/t = href_list["removejobban"]
 		if(t)
-			if((tgui_alert(usr, "Do you want to unjobban [t]?","Unjobban confirmation", list("Yes", "No")) == "Yes") && t) //No more misclicks! Unless you do it twice.
+			var/_answer_a15 = topic_prompt(usr, href_list, "a15", list("message" = "Do you want to unjobban [t]?", "title" = "Unjobban confirmation", "choices" = list("Yes", "No")))
+			if(isnull(_answer_a15))
+				return
+			if((_answer_a15 == "Yes") && t) //No more misclicks! Unless you do it twice.
 				log_admin("[key_name(usr)] removed [t]")
 				message_admins(span_blue("[key_name_admin(usr)] removed [t]"), 1)
 				jobban_remove(t)
@@ -504,18 +543,25 @@
 
 		if(M.client && check_rights_for(M.client, R_HOLDER))	return	//admins cannot be banned. Even if they could, the ban doesn't affect them anyway
 
-		switch(tgui_alert(usr, "Temporary Ban?","Temporary Ban",list("Yes","No","Cancel")))
+		var/_answer_a16 = topic_prompt(usr, href_list, "a16", list("message" = "Temporary Ban?", "title" = "Temporary Ban", "choices" = list("Yes","No","Cancel")))
+		if(isnull(_answer_a16))
+			return
+		switch(_answer_a16)
 			if(null)
 				return
 			if("Yes")
-				var/mins = tgui_input_number(usr,"How long (in minutes)?","Ban time",1440)
+				var/mins = topic_prompt(usr, href_list, "a17", list("kind" = "number", "message" = "How long (in minutes)?", "title" = "Ban time", "default" = 1440))
+				if(isnull(mins))
+					return
 				if(!mins)
 					return
 				if(check_rights(R_MOD, 0) && !check_rights(R_BAN, 0) && mins > CONFIG_GET(number/mod_tempban_max))
 					to_chat(usr, span_warning("Moderators can only job tempban up to [CONFIG_GET(number/mod_tempban_max)] minutes!"))
 					return
 				if(mins >= 525600) mins = 525599
-				var/reason = tgui_input_text(usr,"Reason?","reason","Griefer", MAX_MESSAGE_LEN)
+				var/reason = topic_prompt(usr, href_list, "a18", list("kind" = "text", "message" = "Reason?", "title" = "reason", "default" = "Griefer", "max_length" = MAX_MESSAGE_LEN))
+				if(isnull(reason))
+					return
 				if(!reason)
 					return
 				AddBan(M.ckey, M.computer_id, reason, usr.ckey, 1, mins)
@@ -539,10 +585,15 @@
 				//qdel(M)	// See no reason why to delete mob. Important stuff can be lost. And ban can be lifted before round ends.
 			if("No")
 				if(!check_rights(R_BAN))   return
-				var/reason = tgui_input_text(usr,"Reason?","reason","Griefer", MAX_MESSAGE_LEN)
+				var/reason = topic_prompt(usr, href_list, "a19", list("kind" = "text", "message" = "Reason?", "title" = "reason", "default" = "Griefer", "max_length" = MAX_MESSAGE_LEN))
+				if(isnull(reason))
+					return
 				if(!reason)
 					return
-				switch(tgui_alert(usr,"IP ban?","IP Ban",list("Yes","No","Cancel")))
+				var/_answer_a20 = topic_prompt(usr, href_list, "a20", list("message" = "IP ban?", "title" = "IP Ban", "choices" = list("Yes","No","Cancel")))
+				if(isnull(_answer_a20))
+					return
+				switch(_answer_a20)
 					if("Cancel", null)	return
 					if("Yes")
 						AddBan(M.ckey, M.computer_id, reason, usr.ckey, 0, 0, M.lastKnownIP)
@@ -597,7 +648,9 @@
 		label_to_mode["Secret"] = "secret"
 		labels += "Random"
 		label_to_mode["Random"] = "random"
-		var/pick = tgui_input_list(usr, "What mode do you wish to play? (current: [GLOB.master_mode])", "Game Mode", labels)
+		var/pick = topic_prompt(usr, href_list, "a21", list("kind" = "list", "message" = "What mode do you wish to play? (current: [GLOB.master_mode])", "title" = "Game Mode", "choices" = labels))
+		if(isnull(pick))
+			return
 		if(!pick)
 			return
 		var/picked_mode = label_to_mode[pick]
@@ -620,7 +673,9 @@
 			label_to_mode[label] = mode
 		labels += "Random (default)"
 		label_to_mode["Random (default)"] = "secret"
-		var/pick = tgui_input_list(usr, "What game mode do you want to force secret to be? (current: [GLOB.secret_force_mode])", "Force Secret", labels)
+		var/pick = topic_prompt(usr, href_list, "a22", list("kind" = "list", "message" = "What game mode do you want to force secret to be? (current: [GLOB.secret_force_mode])", "title" = "Force Secret", "choices" = labels))
+		if(isnull(pick))
+			return
 		if(!pick)
 			return
 		var/picked_mode = label_to_mode[pick]
@@ -685,7 +740,10 @@
 			to_chat(usr, span_filter_adminlog("this can only be used on instances of type /mob"))
 			return
 
-		var/speech = tgui_input_text(usr, "What will [key_name(M)] say?.", "Force speech", "") // Don't need to sanitize, since it does that in say(), we also trust our admins.
+		var/_answer_a23 = topic_prompt(usr, href_list, "a23", list("kind" = "text", "message" = "What will [key_name(M)] say?.", "title" = "Force speech"))
+		if(isnull(_answer_a23))
+			return
+		var/speech = _answer_a23 // Don't need to sanitize, since it does that in say(), we also trust our admins.
 		if(!speech)	return
 		M.say(speech)
 		speech = sanitize(speech) // Nah, we don't trust them
@@ -695,7 +753,10 @@
 	else if(href_list["sendtoprison"])
 		if(!check_rights(R_ADMIN))	return
 
-		if(tgui_alert(usr, "Send to admin prison for the round?", "Message", list("Yes", "No")) != "Yes")
+		var/_answer_a24 = topic_prompt(usr, href_list, "a24", list("message" = "Send to admin prison for the round?", "title" = "Message", "choices" = list("Yes", "No")))
+		if(isnull(_answer_a24))
+			return
+		if(_answer_a24 != "Yes")
 			return
 
 		var/mob/M = locate(href_list["sendtoprison"])
@@ -744,7 +805,10 @@
 			to_chat(usr, span_filter_adminlog(span_warning("[M] doesn't seem to have an active client.")))
 			return
 
-		if(tgui_alert(usr, "Send [key_name(M)] back to Lobby?", "Message", list("Yes", "No")) != "Yes")
+		var/_answer_a25 = topic_prompt(usr, href_list, "a25", list("message" = "Send [key_name(M)] back to Lobby?", "title" = "Message", "choices" = list("Yes", "No")))
+		if(isnull(_answer_a25))
+			return
+		if(_answer_a25 != "Yes")
 			return
 
 		log_admin("[key_name(usr)] has sent [key_name(M)] back to the Lobby.")
@@ -757,7 +821,10 @@
 	else if(href_list["tdome1"])
 		if(!check_rights(R_FUN))	return
 
-		if(tgui_alert(usr, "Confirm?", "Message", list("Yes", "No")) != "Yes")
+		var/_answer_a26 = topic_prompt(usr, href_list, "a26", list("message" = "Confirm?", "title" = "Message", "choices" = list("Yes", "No")))
+		if(isnull(_answer_a26))
+			return
+		if(_answer_a26 != "Yes")
 			return
 
 		var/mob/M = locate(href_list["tdome1"])
@@ -781,7 +848,10 @@
 	else if(href_list["tdome2"])
 		if(!check_rights(R_FUN))	return
 
-		if(tgui_alert(usr, "Confirm?", "Message", list("Yes", "No")) != "Yes")
+		var/_answer_a27 = topic_prompt(usr, href_list, "a27", list("message" = "Confirm?", "title" = "Message", "choices" = list("Yes", "No")))
+		if(isnull(_answer_a27))
+			return
+		if(_answer_a27 != "Yes")
 			return
 
 		var/mob/M = locate(href_list["tdome2"])
@@ -805,7 +875,10 @@
 	else if(href_list["tdomeadmin"])
 		if(!check_rights(R_FUN))	return
 
-		if(tgui_alert(usr, "Confirm?", "Message", list("Yes", "No")) != "Yes")
+		var/_answer_a28 = topic_prompt(usr, href_list, "a28", list("message" = "Confirm?", "title" = "Message", "choices" = list("Yes", "No")))
+		if(isnull(_answer_a28))
+			return
+		if(_answer_a28 != "Yes")
 			return
 
 		var/mob/M = locate(href_list["tdomeadmin"])
@@ -826,7 +899,10 @@
 	else if(href_list["tdomeobserve"])
 		if(!check_rights(R_FUN))	return
 
-		if(tgui_alert(usr, "Confirm?", "Message", list("Yes", "No")) != "Yes")
+		var/_answer_a29 = topic_prompt(usr, href_list, "a29", list("message" = "Confirm?", "title" = "Message", "choices" = list("Yes", "No")))
+		if(isnull(_answer_a29))
+			return
+		if(_answer_a29 != "Yes")
 			return
 
 		var/mob/M = locate(href_list["tdomeobserve"])
@@ -1094,7 +1170,10 @@
 			to_chat(usr, span_filter_adminlog("This can only be used on instances of type /mob/living"))
 			return
 
-		if(tgui_alert(src.owner, "Are you sure you wish to hit [key_name(M)] with Blue Space Artillery?", "Confirm Firing?", list("Yes", "No")) != "Yes")
+		var/_answer_a30 = topic_prompt(src.owner, href_list, "a30", list("message" = "Are you sure you wish to hit [key_name(M)] with Blue Space Artillery?", "title" = "Confirm Firing?", "choices" = list("Yes", "No")))
+		if(isnull(_answer_a30))
+			return
+		if(_answer_a30 != "Yes")
 			return
 
 		bluespace_artillery(M,src)
@@ -1106,7 +1185,9 @@
 			return
 
 		if(L.can_centcom_reply())
-			var/input = tgui_input_text(src.owner, "Please enter a message to reply to [key_name(L)] via their headset.","Outgoing message from CentCom", "", MAX_MESSAGE_LEN)
+			var/input = topic_prompt(src.owner, href_list, "a31", list("kind" = "text", "message" = "Please enter a message to reply to [key_name(L)] via their headset.", "title" = "Outgoing message from CentCom", "max_length" = MAX_MESSAGE_LEN))
+			if(isnull(input))
+				return
 			if(!input)		return
 
 			to_chat(src.owner, span_filter_adminlog("You sent [input] to [L] via a secure channel."))
@@ -1131,7 +1212,9 @@
 			to_chat(usr, span_filter_adminlog("The person you are trying to contact is not wearing a headset"))
 			return
 
-		var/input = tgui_input_text(src.owner, "Please enter a message to reply to [key_name(H)] via their headset.","Outgoing message from a shadowy figure...", "", MAX_MESSAGE_LEN)
+		var/input = topic_prompt(src.owner, href_list, "a32", list("kind" = "text", "message" = "Please enter a message to reply to [key_name(H)] via their headset.", "title" = "Outgoing message from a shadowy figure...", "max_length" = MAX_MESSAGE_LEN))
+		if(isnull(input))
+			return
 		if(!input)	return
 
 		to_chat(src.owner, span_filter_adminlog("You sent [input] to [H] via a secure channel."))
@@ -1211,7 +1294,10 @@
 		if(!CONFIG_GET(flag/allow_admin_jump))
 			tgui_alert_async(usr, "Admin jumping disabled")
 			return
-		if(tgui_alert(usr, "Confirm?", "Message", list("Yes", "No")) != "Yes")
+		var/_answer_a33 = topic_prompt(usr, href_list, "a33", list("message" = "Confirm?", "title" = "Message", "choices" = list("Yes", "No")))
+		if(isnull(_answer_a33))
+			return
+		if(_answer_a33 != "Yes")
 			return
 
 		var/mob/M = locate(href_list["getmob"])
@@ -1236,7 +1322,9 @@
 			return
 
 		var/list/areachoices = return_sorted_areas()
-		var/choice = tgui_input_list(usr, "Pick an area:", "Send Mob", areachoices)
+		var/choice = topic_prompt(usr, href_list, "a34", list("kind" = "list", "message" = "Pick an area:", "title" = "Send Mob", "choices" = areachoices))
+		if(isnull(choice))
+			return
 		if(!choice)
 			return
 
@@ -1292,7 +1380,10 @@
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
 
 	else if(href_list["ac_set_channel_name"])
-		src.admincaster_feed_channel.channel_name = sanitizeSafe(tgui_input_text(usr, "Provide a Feed Channel Name", "Network Channel Handler", "", encode = FALSE))
+		var/_answer_a35 = topic_prompt(usr, href_list, "a35", list("kind" = "text", "message" = "Provide a Feed Channel Name", "title" = "Network Channel Handler", "encode" = FALSE))
+		if(isnull(_answer_a35))
+			return
+		src.admincaster_feed_channel.channel_name = sanitizeSafe(_answer_a35)
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
 
 	else if(href_list["ac_set_channel_lock"])
@@ -1308,7 +1399,9 @@
 		if(src.admincaster_feed_channel.channel_name == "" || src.admincaster_feed_channel.channel_name == "\[REDACTED\]" || check )
 			src.admincaster_screen=7
 		else
-			var/choice = tgui_alert(usr, "Please confirm Feed channel creation","Network Channel Handler",list("Confirm","Cancel"))
+			var/choice = topic_prompt(usr, href_list, "a36", list("message" = "Please confirm Feed channel creation", "title" = "Network Channel Handler", "choices" = list("Confirm","Cancel")))
+			if(isnull(choice))
+				return
 			if(choice=="Confirm")
 				GLOB.news_network.CreateFeedChannel(admincaster_feed_channel.channel_name, admincaster_signature, admincaster_feed_channel.locked, 1)
 				feedback_inc("newscaster_channels",1)                  //Adding channel to the global network
@@ -1320,15 +1413,24 @@
 		var/list/available_channels = list()
 		for(var/datum/feed_channel/F in GLOB.news_network.network_channels)
 			available_channels += F.channel_name
-		src.admincaster_feed_channel.channel_name = tgui_input_list(usr, "Choose receiving Feed Channel", "Network Channel Handler", available_channels)
+		var/_answer_a37 = topic_prompt(usr, href_list, "a37", list("kind" = "list", "message" = "Choose receiving Feed Channel", "title" = "Network Channel Handler", "choices" = available_channels))
+		if(isnull(_answer_a37))
+			return
+		src.admincaster_feed_channel.channel_name = _answer_a37
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
 
 	else if(href_list["ac_set_new_title"])
-		src.admincaster_feed_message.title = tgui_input_text(usr, "Enter the Feed title", "Network Channel Handler", "", MAX_MESSAGE_LEN)
+		var/_answer_a38 = topic_prompt(usr, href_list, "a38", list("kind" = "text", "message" = "Enter the Feed title", "title" = "Network Channel Handler", "max_length" = MAX_MESSAGE_LEN))
+		if(isnull(_answer_a38))
+			return
+		src.admincaster_feed_message.title = _answer_a38
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
 
 	else if(href_list["ac_set_new_message"])
-		src.admincaster_feed_message.body = tgui_input_text(usr, "Write your Feed story", "Network Channel Handler", "", MAX_MESSAGE_LEN, TRUE, prevent_enter = TRUE)
+		var/_answer_a39 = topic_prompt(usr, href_list, "a39", list("kind" = "text", "message" = "Write your Feed story", "title" = "Network Channel Handler", "max_length" = MAX_MESSAGE_LEN, "multiline" = TRUE))
+		if(isnull(_answer_a39))
+			return
+		src.admincaster_feed_message.body = _answer_a39
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
 
 	else if(href_list["ac_submit_new_message"])
@@ -1370,11 +1472,17 @@
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
 
 	else if(href_list["ac_set_wanted_name"])
-		src.admincaster_feed_message.author = tgui_input_text(usr, "Provide the name of the Wanted person", "Network Security Handler", "", MAX_MESSAGE_LEN)
+		var/_answer_a40 = topic_prompt(usr, href_list, "a40", list("kind" = "text", "message" = "Provide the name of the Wanted person", "title" = "Network Security Handler", "max_length" = MAX_MESSAGE_LEN))
+		if(isnull(_answer_a40))
+			return
+		src.admincaster_feed_message.author = _answer_a40
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
 
 	else if(href_list["ac_set_wanted_desc"])
-		src.admincaster_feed_message.body = tgui_input_text(usr, "Provide the a description of the Wanted person and any other details you deem important", "Network Security Handler", "", MAX_MESSAGE_LEN)
+		var/_answer_a41 = topic_prompt(usr, href_list, "a41", list("kind" = "text", "message" = "Provide the a description of the Wanted person and any other details you deem important", "title" = "Network Security Handler", "max_length" = MAX_MESSAGE_LEN))
+		if(isnull(_answer_a41))
+			return
+		src.admincaster_feed_message.body = _answer_a41
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
 
 	else if(href_list["ac_submit_wanted"])
@@ -1382,7 +1490,9 @@
 		if(src.admincaster_feed_message.author == "" || src.admincaster_feed_message.body == "")
 			src.admincaster_screen = 16
 		else
-			var/choice = tgui_alert(usr, "Please confirm Wanted Issue [(input_param==1) ? ("creation.") : ("edit.")]","Network Security Handler",list("Confirm","Cancel"))
+			var/choice = topic_prompt(usr, href_list, "a42", list("message" = "Please confirm Wanted Issue [(input_param==1) ? ("creation.") : ("edit.")]", "title" = "Network Security Handler", "choices" = list("Confirm","Cancel")))
+			if(isnull(choice))
+				return
 			if(choice=="Confirm")
 				if(input_param==1)          //If input_param == 1 we're submitting a new wanted issue. At 2 we're just editing an existing one. See the else below
 					var/datum/feed_message/WANTED = new /datum/feed_message
@@ -1404,7 +1514,9 @@
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
 
 	else if(href_list["ac_cancel_wanted"])
-		var/choice = tgui_alert(usr, "Please confirm Wanted Issue removal","Network Security Handler",list("Confirm","Cancel"))
+		var/choice = topic_prompt(usr, href_list, "a43", list("message" = "Please confirm Wanted Issue removal", "title" = "Network Security Handler", "choices" = list("Confirm","Cancel")))
+		if(isnull(choice))
+			return
 		if(choice=="Confirm")
 			GLOB.news_network.wanted_issue = null
 			for(var/obj/machinery/newscaster/NEWSCASTER in REGISTRY_MEMBERS(REGISTRY_CASTERS))
@@ -1479,7 +1591,10 @@
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
 
 	else if(href_list["ac_set_signature"])
-		src.admincaster_signature = tgui_input_text(usr, "Provide your desired signature", "Network Identity Handler", "", MAX_MESSAGE_LEN)
+		var/_answer_a44 = topic_prompt(usr, href_list, "a44", list("kind" = "text", "message" = "Provide your desired signature", "title" = "Network Identity Handler", "max_length" = MAX_MESSAGE_LEN))
+		if(isnull(_answer_a44))
+			return
+		src.admincaster_signature = _answer_a44
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
 
 	else if(href_list["populate_inactive_customitems"])

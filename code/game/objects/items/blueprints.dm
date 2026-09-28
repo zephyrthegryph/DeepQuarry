@@ -1,4 +1,6 @@
 #define BP_MAX_ROOM_SIZE 300
+/// Blueprint prompts: the creator is still standing where they started (the prompt's target turf) and able.
+#define BLUEPRINT_PROMPT_REQUIRES list(CHECK(/datum/om/check/in_range, 0), /datum/om/check/not_incapacitated)
 
 // WARNING: ESOTERIC BULLSHIT INSIDE OF THIS FILE.
 // This is a port of /tg/'s blueprints that also have Virgo modifications as well.
@@ -65,16 +67,8 @@
 			to_chat(user, span_notice("You add some more writing material to the [src] with the [blueprint]!"))
 			return
 		else if(blueprint.uses_charges && blueprint.charges) //Getting from another with limited charges.
-			var/to_add = tgui_input_number(user, "How many charges do you want to add to the [src]?", "[blueprint]", missing_charges, blueprint.charges)
-			if(!isnull(to_add) && blueprint.charges >= to_add)
-				to_chat(user, span_notice("You add some more writing material to the [src] with the [blueprint]!"))
-				blueprint.charges -= to_add
-				charges += to_add
-				return
-
-			else
-				to_chat(user, span_notice("You decide not to add any more material to the [src]"))
-				return
+			om_prompt(src, user, list("kind" = "number", "message" = "How many charges do you want to add to the [src]?", "title" = "[blueprint]", "default" = missing_charges, "max" = blueprint.charges, "target" = blueprint, "requires" = PROMPT_IN_HAND, "on_cancel" = PROC_REF(charges_not_added), "data" = list("from" = blueprint)), PROC_REF(add_charges))
+			return
 		else if(!blueprint.uses_charges || !blueprint.charges) // The item it's being hit by doesn't use charges OR doesn't have any charges.
 			to_chat(user, span_warning("You can't add find any suitable material to add from the [blueprint]!"))
 	else
@@ -122,11 +116,7 @@
 		if(in_use)
 			return
 		in_use = TRUE
-		var/area/A = create_area_whole(usr, src)
-		if(A?.flag_check(BLUE_SHIELDED))
-			to_chat(usr, span_warning("You cannot edit restricted areas."))
-			in_use = FALSE
-			return
+		create_area_whole(usr, src)
 		in_use = FALSE
 	updateUsrDialog(usr)
 
@@ -295,19 +285,35 @@
 			return message
 	return ""
 
+/obj/item/areaeditor/proc/add_charges(mob/user, to_add, datum/om/prompt/ask)
+	var/obj/item/areaeditor/blueprint = ask.get("from")
+	to_add = min(to_add, initial_charges - charges)
+	if(blueprint.charges >= to_add)
+		to_chat(user, span_notice("You add some more writing material to the [src] with the [blueprint]!"))
+		blueprint.charges -= to_add
+		charges += to_add
+	else
+		charges_not_added(user, ask)
+
+/obj/item/areaeditor/proc/charges_not_added(mob/user, datum/om/prompt/ask)
+	to_chat(user, span_notice("You decide not to add any more material to the [src]"))
+
 /obj/item/areaeditor/proc/edit_area()
 	var/area/A = get_area(usr)
+	om_prompt(src, usr, list("kind" = "text", "message" = "New area name", "title" = "Area Creation", "max_length" = MAX_NAME_LEN, "requires" = PROMPT_IN_HAND, "data" = list("area" = A)), PROC_REF(area_renamed))
+
+/obj/item/areaeditor/proc/area_renamed(mob/user, str, datum/om/prompt/ask)
+	var/area/A = ask.get("area")
 	var/prevname = "[A.name]"
-	var/str = tgui_input_text(usr, "New area name", "Area Creation", max_length = MAX_NAME_LEN)
 	if(!str || !length(str) || str==prevname) //cancel
 		return
 	if(length(str) > 50)
-		to_chat(usr, span_warning("The given name is too long. The area's name is unchanged."))
+		to_chat(user, span_warning("The given name is too long. The area's name is unchanged."))
 		return
 
 	rename_area(A, str)
 
-	to_chat(usr, span_notice("You rename the '[prevname]' to '[str]'."))
+	to_chat(user, span_notice("You rename the '[prevname]' to '[str]'."))
 	log_and_message_admins("has changed the area '[prevname]' title to '[str]'.")
 	A.update_areasize()
 	interact()
@@ -400,7 +406,6 @@
 		to_chat(creator, span_warning("The room you're in is too big. It is [length(turfs) >= BP_MAX_ROOM_SIZE *2 ? "more than 100" : ((length(turfs) / BP_MAX_ROOM_SIZE)-1)*100]% larger than allowed."))
 		return
 	var/list/areas = list("New Area" = /area)
-	var/annoy_admins = 0
 
 	for(var/i in 1 to length(turfs))
 		var/area/place = get_area(turfs[i])
@@ -410,31 +415,40 @@
 			continue // No expanding powerless rooms etc
 		areas[place.name] = place
 
-	var/area_choice = tgui_input_list(creator, "Choose an area to expand or make a new area", "Area Expansion", areas)
-	if(isnull(area_choice))
-		to_chat(creator, span_warning("No choice selected. No adjustments made."))
-		return
-	area_choice = areas[area_choice]
+	om_prompt(AO, creator, list("kind" = "list", "message" = "Choose an area to expand or make a new area", "title" = "Area Expansion", "choices" = areas, "target" = get_turf(creator), "requires" = BLUEPRINT_PROMPT_REQUIRES, "on_cancel" = GLOBAL_PROC_REF(create_area_cancelled), "data" = list("editor" = AO, "turfs" = turfs, "areas" = areas)), GLOBAL_PROC_REF(create_area_chosen))
 
-	var/area/newA
+/proc/create_area_cancelled(datum/E, mob/creator, datum/om/prompt/ask)
+	to_chat(creator, span_warning("No choice selected. No adjustments made."))
+
+/proc/create_area_chosen(datum/E, mob/creator, area_choice, datum/om/prompt/ask)
+	var/list/areas = ask.get("areas")
+	area_choice = areas[area_choice]
+	if(isarea(area_choice))
+		create_area_commit(creator, ask, area_choice)
+		return
+	om_prompt_chain(ask, list("kind" = "text", "message" = "New area name", "title" = "Blueprint Editing", "max_length" = MAX_NAME_LEN), GLOBAL_PROC_REF(create_area_named))
+
+/proc/create_area_named(datum/E, mob/creator, str, datum/om/prompt/ask)
+	if(!length(str)) //cancel
+		return
+	if(length(str) > 50)
+		to_chat(creator, span_warning("Name too long."))
+		return
+	for(var/area/A in world) //Check to make sure we're not making a duplicate name. Sanity.
+		if(A.name == str)
+			to_chat(creator, span_warning("An area in the world alreay has this name."))
+			return
 	var/area/oldA = get_area(get_turf(creator))
-	if(!isarea(area_choice))
-		var/str = tgui_input_text(creator, "New area name", "Blueprint Editing", max_length = MAX_NAME_LEN)
-		if(!str || !length(str)) //cancel
-			return
-		if(length(str) > 50)
-			to_chat(creator, span_warning("Name too long."))
-			return
-		for(var/area/A in world) //Check to make sure we're not making a duplicate name. Sanity.
-			if(A.name == str)
-				to_chat(creator, span_warning("An area in the world alreay has this name."))
-				return
-		annoy_admins = 1 //They just made a new area entirely.
-		newA = new area_choice
-		newA.setup(str)
-		newA.has_gravity = oldA.has_gravity
-	else
-		newA = area_choice
+	var/area/newA = new /area
+	newA.setup(str)
+	newA.has_gravity = oldA.has_gravity
+	create_area_commit(creator, ask, newA, TRUE)
+
+/// The blueprint's area expansion, once the creator has picked (and maybe named) the area.
+/proc/create_area_commit(mob/creator, datum/om/prompt/ask, area/newA, annoy_admins = FALSE)
+	var/obj/item/areaeditor/AO = ask.get("editor")
+	var/list/turfs = ask.get("turfs")
+	var/area/oldA = get_area(get_turf(creator))
 
 	for(var/i in 1 to length(turfs)) //Fix lighting. Praise the lord.
 		var/turf/thing = turfs[i]
@@ -452,8 +466,8 @@
 			AO.charges -= 1
 
 	var/list/zLevels = using_map.station_levels.Copy()
-	for(var/datum/planet/P in SSplanets.planets)
-		zLevels -= P.expected_z_levels
+	for(var/datum/planet/PL in SSplanets.planets)
+		zLevels -= PL.expected_z_levels
 	for(var/obj/machinery/gravity_generator/main/GG in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(GG.z in zLevels)
 			GG.update_areas()
@@ -490,9 +504,6 @@
 	var/list/turf/turfs = res
 
 	var/list/areas = list("New Area" = /area)	//The list of areas surrounding the user.
-	var/area/newA								//The new area
-	var/area/oldA = get_area(get_turf(creator))	//The old area (area currently standing in)
-	var/str										//What the new area is named.
 	var/can_make_new_area = 1					//If they can make a new area here or not.
 
 	var/list/nearby_turfs_to_check = detect_room(get_turf(creator), GLOB.area_or_turf_fail_types, BP_MAX_ROOM_SIZE*2) //Get the nearby areas.
@@ -516,42 +527,50 @@
 		areas[place.name] = place
 
 	//They can select an area they want to turn their current area into.
-	var/area_choice = tgui_input_list(creator, "What area do you want to turn the area YOU ARE CURRENTLY STANDING IN to? Or do you want to make a new area?", "Area Expansion", areas)
-	if(isnull(area_choice)) //They pressed cancel.
+	om_prompt(src, creator, list("kind" = "list", "message" = "What area do you want to turn the area YOU ARE CURRENTLY STANDING IN to? Or do you want to make a new area?", "title" = "Area Expansion", "choices" = areas, "target" = get_turf(creator), "requires" = BLUEPRINT_PROMPT_REQUIRES, "on_cancel" = PROC_REF(no_changes_made), "data" = list("turfs" = turfs, "areas" = areas, "can_make_new_area" = can_make_new_area)), PROC_REF(whole_area_chosen))
+
+/obj/item/areaeditor/proc/no_changes_made(mob/creator, datum/om/prompt/ask)
+	to_chat(creator, span_warning("No changes made."))
+
+/obj/item/areaeditor/proc/whole_area_chosen(mob/creator, area_choice, datum/om/prompt/ask)
+	var/list/areas = ask.get("areas")
+	area_choice = areas[area_choice]
+	var/area/oldA = get_area(get_turf(creator))
+	if(isarea(area_choice))
+		ask.put("area", area_choice)
+		om_prompt_chain(ask, list("message" = "Are you sure you want to change [oldA.name] into [area_choice]?", "title" = "READ CAREFULLY", "choices" = list("No", "Yes"), "on_cancel" = PROC_REF(no_changes_made)), PROC_REF(whole_area_confirmed))
+		return
+	if(!ask.get("can_make_new_area") && !can_override)
+		to_chat(creator, span_warning("Making a new area here would be meaningless. Renaming it would be a better option."))
+		return
+	om_prompt_chain(ask, list("kind" = "text", "message" = "New area name", "title" = "Blueprint Editing", "max_length" = MAX_NAME_LEN), PROC_REF(whole_area_named))
+
+/obj/item/areaeditor/proc/whole_area_named(mob/creator, str, datum/om/prompt/ask)
+	if(!length(str)) //cancel
+		return
+	if(length(str) > 50)
+		to_chat(creator, span_warning("Name too long."))
+		return
+	for(var/area/A in world) //Check to make sure we're not making a duplicate name. Sanity.
+		if(A.name == str)
+			to_chat(creator, span_warning("An area in the world alreay has this name."))
+			return
+	var/area/oldA = get_area(get_turf(creator))
+	ask.put("name", str)
+	om_prompt_chain(ask, list("message" = "Are you sure you want to change [oldA.name] into a new area named [str]?", "title" = "READ CAREFULLY", "choices" = list("No", "Yes"), "on_cancel" = PROC_REF(no_changes_made)), PROC_REF(whole_area_confirmed))
+
+/obj/item/areaeditor/proc/whole_area_confirmed(mob/creator, confirm, datum/om/prompt/ask)
+	if(confirm != "Yes")
 		to_chat(creator, span_warning("No changes made."))
 		return
-
-	area_choice = areas[area_choice]
-
-	if(!isarea(area_choice)) //They chose "New Area"
-		if(!can_make_new_area && !can_override)
-			to_chat(creator, span_warning("Making a new area here would be meaningless. Renaming it would be a better option."))
-			return
-		str = tgui_input_text(creator, "New area name", "Blueprint Editing", max_length = MAX_NAME_LEN)
-		if(!str || !length(str)) //cancel
-			return
-		if(length(str) > 50)
-			to_chat(creator, span_warning("Name too long."))
-			return
-		for(var/area/A in world) //Check to make sure we're not making a duplicate name. Sanity.
-			if(A.name == str)
-				to_chat(creator, span_warning("An area in the world alreay has this name."))
-				return
-
-		var/confirm = tgui_alert(creator, "Are you sure you want to change [oldA.name] into a new area named [str]?", "READ CAREFULLY", list("No", "Yes"))
-		if(confirm != "Yes")
-			to_chat(creator, span_warning("No changes made."))
-			return
-
-		newA = new area_choice
+	var/list/turf/turfs = ask.get("turfs")
+	var/area/oldA = get_area(get_turf(creator))
+	var/str = ask.get("name")
+	var/area/newA = ask.get("area")
+	if(str)
+		newA = new /area
 		newA.setup(str)
 		newA.has_gravity = oldA.has_gravity
-	else
-		var/confirm = tgui_alert(creator, "Are you sure you want to change [oldA.name] into [area_choice]?", "READ CAREFULLY", list("No", "Yes"))
-		if(confirm != "Yes")
-			to_chat(creator, span_warning("No changes made."))
-			return
-		newA = area_choice //They selected to turn the area they're standing on into the selected area.
 
 	if(str) //New area, new name.
 		newA.setup(str)
@@ -783,10 +802,6 @@
 				return
 	var/list/turf/turfs = res
 
-	var/area/newA								//The new area
-	var/area/oldA = get_area(get_turf(creator))	//The old area (area currently standing in)
-	var/str										//What the new area is named.
-
 	var/list/nearby_turfs_to_check = detect_room(get_turf(creator), GLOB.area_or_turf_fail_types, 70) //Get the nearby areas.
 
 	if(!nearby_turfs_to_check)
@@ -796,11 +811,13 @@
 		to_chat(creator, span_warning("The room you're in is too big. It can only be 70 tiles in size, excluding walls."))
 		return
 
-	//They can select an area they want to turn their current area into.
-	str = sanitizeSafe(tgui_input_text(creator, "What would you like to name the area?", "Area Name", null, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
-	if(isnull(str)) //They pressed cancel.
-		to_chat(creator, span_warning("No new area made. Cancelling."))
-		return
+	om_prompt(null, creator, list("kind" = "text", "message" = "What would you like to name the area?", "title" = "Area Name", "max_length" = MAX_NAME_LEN, "encode" = FALSE, "target" = get_turf(creator), "requires" = BLUEPRINT_PROMPT_REQUIRES, "on_cancel" = GLOBAL_PROC_REF(create_new_area_cancelled), "data" = list("turfs" = turfs)), GLOBAL_PROC_REF(create_new_area_named))
+
+/proc/create_new_area_cancelled(datum/E, mob/creator, datum/om/prompt/ask)
+	to_chat(creator, span_warning("No new area made. Cancelling."))
+
+/proc/create_new_area_named(datum/E, mob/creator, str, datum/om/prompt/ask)
+	str = sanitizeSafe(str, MAX_NAME_LEN)
 	if(!str || !length(str)) //sanity
 		to_chat(creator, span_warning("No new area made. Cancelling."))
 		return
@@ -811,7 +828,9 @@
 		if(A.name == str)
 			to_chat(creator, span_warning("An area in the world alreay has this name."))
 			return
-	newA = new /area
+	var/list/turf/turfs = ask.get("turfs")
+	var/area/oldA = get_area(get_turf(creator))
+	var/area/newA = new /area
 	newA.setup(str)
 	newA.has_gravity = oldA.has_gravity
 	newA.setup(str)
@@ -830,8 +849,8 @@
 	log_game("[key_name(creator, creator.client)] just made a new area called [newA.name]")
 
 	var/list/zLevels = using_map.station_levels.Copy()
-	for(var/datum/planet/P in SSplanets.planets)
-		zLevels -= P.expected_z_levels
+	for(var/datum/planet/PL in SSplanets.planets)
+		zLevels -= PL.expected_z_levels
 	for(var/obj/machinery/gravity_generator/main/GG in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(GG.z in zLevels)
 			GG.update_areas()

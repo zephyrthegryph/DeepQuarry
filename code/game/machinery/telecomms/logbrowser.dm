@@ -144,21 +144,24 @@
 			. = TRUE
 
 		if("network")
-			var/newnet = tgui_input_text(ui.user, "Which network do you want to view?", "Comm Monitor", network, 15)
-
-			if(newnet && ((ui.user in range(1, src)) || issilicon(ui.user)))
-				if(length(newnet) > 15)
-					set_temp("FAILED: NETWORK TAG STRING TOO LENGTHY", "bad")
-					return TRUE
-				network = newnet
-				servers = list()
-				set_temp("NEW NETWORK TAG SET IN ADDRESS \[[network]\]", "good")
-
+			om_prompt(src, ui.user, list("kind" = "text", "message" = "Which network do you want to view?", "title" = "Comm Monitor", "default" = network, "max_length" = 15, "requires" = PROMPT_USABLE), PROC_REF(network_entered))
 			. = TRUE
 
 		if("cleartemp")
 			temp = null
 			. = TRUE
+
+/obj/machinery/computer/telecomms/server/proc/network_entered(mob/user, newnet, datum/om/prompt/ask)
+	SStgui.update_uis(src)
+	if(newnet && ((user in range(1, src)) || issilicon(user)))
+		if(length(newnet) > 15)
+			set_temp("FAILED: NETWORK TAG STRING TOO LENGTHY", "bad")
+			return TRUE
+		network = newnet
+		servers = list()
+		set_temp("NEW NETWORK TAG SET IN ADDRESS \[[network]\]", "good")
+
+	. = TRUE
 
 /obj/machinery/computer/telecomms/server/emag_act(remaining_charges, mob/user)
 	if(!emagged)

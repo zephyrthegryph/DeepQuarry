@@ -295,23 +295,8 @@ REF_OWNED(/mob/living/silicon/pai, list("card", "pai_ui_chassis", "sradio", "com
 	var/obj/item/card/id/ID = W.GetID()
 	if(ID)
 		if (idaccessible == 1)
-			switch(tgui_alert(user, "Do you wish to add access to [src] or remove access from [src]?","Access Modify",list("Add Access","Remove Access", "Cancel")))
-				if("Add Access")
-					idcard.access |= ID.GetAccess()
-					to_chat(user, span_notice("You add the access from the [W] to [src]."))
-					to_chat(src, span_notice("\The [user] swipes the [W] over you. You copy the access codes."))
-					if(radio)
-						radio.recalculateChannels()
-					return
-				if("Remove Access")
-					idcard.access = list()
-					to_chat(user, span_notice("You remove the access from [src]."))
-					to_chat(src, span_warning("\The [user] swipes the [W] over you, removing access codes from you."))
-					if(radio)
-						radio.recalculateChannels()
-					return
-				if("Cancel", null)
-					return
+			om_prompt(src, user, list("message" = "Do you wish to add access to [src] or remove access from [src]?", "title" = "Access Modify", "choices" = list("Add Access","Remove Access", "Cancel"), "requires" = PROMPT_ADJACENT, "data" = list("card" = W)), PROC_REF(access_modify_chosen))
+			return
 		else if (istype(W, /obj/item/card/id) && idaccessible == 0)
 			to_chat(user, span_notice("[src] is not accepting access modifcations at this time."))
 			return
@@ -322,6 +307,25 @@ REF_OWNED(/mob/living/silicon/pai, list("card", "pai_ui_chassis", "sradio", "com
 		visible_message(span_warning("[user.name] bonks [src] harmlessly with [W]."))
 	om_after(src, 1, PROC_REF(close_up_unless_dead))
 	return
+
+/mob/living/silicon/pai/proc/access_modify_chosen(mob/user, choice, datum/om/prompt/ask)
+	var/obj/item/W = ask.get("card")
+	var/obj/item/card/id/ID = W.GetID()
+	if(!ID || idaccessible != 1 || !(W in user.get_all_held_items()))
+		return
+	switch(choice)
+		if("Add Access")
+			idcard.access |= ID.GetAccess()
+			to_chat(user, span_notice("You add the access from the [W] to [src]."))
+			to_chat(src, span_notice("\The [user] swipes the [W] over you. You copy the access codes."))
+		if("Remove Access")
+			idcard.access = list()
+			to_chat(user, span_notice("You remove the access from [src]."))
+			to_chat(src, span_warning("\The [user] swipes the [W] over you, removing access codes from you."))
+		else
+			return
+	if(radio)
+		radio.recalculateChannels()
 
 /mob/living/silicon/pai/attack_hand(mob/user as mob)
 	if(IS_HELPING(user))

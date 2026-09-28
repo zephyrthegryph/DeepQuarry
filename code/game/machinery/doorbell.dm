@@ -160,10 +160,13 @@
 /obj/machinery/button/doorbell/proc/interaction_rename(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	if(panel_open && istype(held, /obj/item/pen))
-		var/t = sanitizeSafe(tgui_input_text(user, "Enter the name for \the [src].", name, initial(name), MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
-		if(t && in_range(src, user))
-			name = t
+		om_prompt(src, user, list("kind" = "text", "message" = "Enter the name for \the [src].", "title" = name, "default" = initial(name), "max_length" = MAX_NAME_LEN, "encode" = FALSE, "requires" = PROMPT_ADJACENT), PROC_REF(doorbell_named))
 	return TRUE
+
+/obj/machinery/button/doorbell/proc/doorbell_named(mob/user, t, datum/om/prompt/ask)
+	t = sanitizeSafe(t, MAX_NAME_LEN)
+	if(t && panel_open)
+		name = t
 
 /obj/machinery/button/doorbell/multitool_act(mob/user, obj/item/tool)
 	if(!panel_open)

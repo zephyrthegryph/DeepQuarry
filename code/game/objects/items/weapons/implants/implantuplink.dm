@@ -12,9 +12,15 @@
 
 /obj/item/implant/uplink/post_implant(mob/source)
 	var/choices = list("blink", "blink_r", "eyebrow", "chuckle", "twitch", "frown", "nod", "blush", "giggle", "grin", "groan", "shrug", "smile", "pale", "sniff", "whimper", "wink")
-	activation_emote = tgui_input_list(usr, "Choose activation emote. If you cancel this, one will be picked at random.", "Implant Activation", choices)
-	if(!activation_emote)
-		activation_emote = pick(choices)
+	activation_emote = pick(choices)
+	announce_activation(source)
+	om_prompt(src, usr, list("kind" = "list", "message" = "Choose activation emote. If you cancel this, one will be picked at random.", "title" = "Implant Activation", "choices" = choices, "data" = list("source" = source)), PROC_REF(emote_chosen))
+
+/obj/item/implant/uplink/proc/emote_chosen(mob/user, emote, datum/om/prompt/ask)
+	activation_emote = emote
+	announce_activation(ask.get("source"))
+
+/obj/item/implant/uplink/proc/announce_activation(mob/source)
 	source.mind?.store_memory("Uplink implant can be activated by using the [src.activation_emote] emote, <B>say *[src.activation_emote]</B> to attempt to activate.", 0, 0)
 	to_chat(source, "The implanted uplink implant can be activated by using the [src.activation_emote] emote, <B>say *[src.activation_emote]</B> to attempt to activate.")
 

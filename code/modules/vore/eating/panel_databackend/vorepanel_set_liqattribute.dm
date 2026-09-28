@@ -1,7 +1,7 @@
 // liquid belly procs
 /datum/vore_look/proc/liq_set_attr(mob/user, params)
 	if(!host.vore_selected)
-		tgui_alert(user, "No belly selected to modify.")
+		tgui_alert_async(user, "No belly selected to modify.")
 		return FALSE
 
 	var/attr = params["attribute"]
@@ -40,7 +40,7 @@
 			var/new_name = params["val"]
 
 			if(length(new_name) > BELLIES_NAME_MAX || length(new_name) < BELLIES_NAME_MIN)
-				tgui_alert(user, "Entered name length invalid (must be longer than [BELLIES_NAME_MIN], no longer than [BELLIES_NAME_MAX]).","Error")
+				tgui_alert_async(user, "Entered name length invalid (must be longer than [BELLIES_NAME_MIN], no longer than [BELLIES_NAME_MAX]).","Error")
 				return FALSE
 
 			host.vore_selected.reagent_name = new_name
@@ -49,7 +49,7 @@
 			var/new_verb = params["val"]
 
 			if(length(new_verb) > BELLIES_NAME_MAX || length(new_verb) < BELLIES_NAME_MIN)
-				tgui_alert(user, "Entered verb length invalid (must be longer than [BELLIES_NAME_MIN], no longer than [BELLIES_NAME_MAX]).","Error")
+				tgui_alert_async(user, "Entered verb length invalid (must be longer than [BELLIES_NAME_MIN], no longer than [BELLIES_NAME_MAX]).","Error")
 				return FALSE
 
 			host.vore_selected.reagent_transfer_verb = new_verb

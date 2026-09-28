@@ -459,15 +459,21 @@
 /obj/machinery/atmospherics/unary/vent_pump/multitool_act(mob/user, obj/item/W)
 	var/list/options = list(
 		"ID Tag", "Frequency", "Direction", "-SAVE TO BUFFER-")
-	var/choice = tgui_input_list(user, "[src] has an ID of \"[id_tag]\" and a frequency of [frequency]. What would you like to change?", "[src] Config", options)
+	var/choice = rerun_prompt(user, "k471", list("kind" = "list", "message" = "[src] has an ID of \"[id_tag]\" and a frequency of [frequency]. What would you like to change?", "title" = "[src] Config", "choices" = options), TYPE_PROC_REF(/atom, multitool_act), args)
+	if(isnull(choice))
+		return ITEM_INTERACT_BLOCKING
 	switch(choice)
 		if("ID Tag")
-			var/new_id = tgui_input_text(user, "[src] has an ID of \"[id_tag]\". What would you like it to be?", "[src] ID", id_tag, 30)
+			var/new_id = rerun_prompt(user, "k474", list("kind" = "text", "message" = "[src] has an ID of \"[id_tag]\". What would you like it to be?", "title" = "[src] ID", "default" = id_tag, "max_length" = 30), TYPE_PROC_REF(/atom, multitool_act), args)
+			if(isnull(new_id))
+				return ITEM_INTERACT_BLOCKING
 			if(new_id)
 				id_tag = new_id
 
 		if("Frequency")
-			var/new_frequency = tgui_input_number(user, "[src] has a frequency of [frequency]. What would you like it to be? Note, 1439 will only hail Air Alarms for this device.", "[src] frequency", frequency, RADIO_HIGH_FREQ, RADIO_LOW_FREQ)
+			var/new_frequency = rerun_prompt(user, "k479", list("kind" = "number", "message" = "[src] has a frequency of [frequency]. What would you like it to be? Note, 1439 will only hail Air Alarms for this device.", "title" = "[src] frequency", "default" = frequency, "max" = RADIO_HIGH_FREQ, "min" = RADIO_LOW_FREQ), TYPE_PROC_REF(/atom, multitool_act), args)
+			if(isnull(new_frequency))
+				return ITEM_INTERACT_BLOCKING
 			if(new_frequency)
 				new_frequency = sanitize_frequency(new_frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
 				set_frequency(new_frequency)

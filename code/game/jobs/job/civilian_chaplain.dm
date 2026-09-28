@@ -56,11 +56,20 @@
 	if(!B || !I)
 		return
 
-	INVOKE_ASYNC(src, PROC_REF(religion_prompts), H, B, I)
+	religion_prompts(H, B, I)
 
 /datum/job/chaplain/proc/religion_prompts(mob/living/carbon/human/H, obj/item/storage/bible/B, obj/item/card/id/I)
+	om_prompt_sequence(H, H, list(
+		list("key" = "religion", "kind" = "text", "message" = "You are the crew services officer. Would you like to change your religion? Default is Unitarianism", "title" = "Name change", "default" = "Unitarianism", "max_length" = MAX_NAME_LEN),
+		list("key" = "deity", "kind" = "text", "message" = "Would you like to change your deity? Default is Hashem", "title" = "Name change", "default" = "Hashem", "max_length" = MAX_NAME_LEN),
+		list("key" = "title", "kind" = "text", "message" = "Would you like to change your title?", "title" = "Title Change", "default" = I.assignment, "max_length" = MAX_NAME_LEN),
+	), GLOBAL_PROC_REF(chaplain_religion_chosen), list("data" = list("bible" = B, "id" = I)))
+
+/proc/chaplain_religion_chosen(mob/living/carbon/human/H, mob/user, datum/om/prompt/ask)
+	var/obj/item/storage/bible/B = ask.get("bible")
+	var/obj/item/card/id/I = ask.get("id")
 	var/religion_name = "Unitarianism"
-	var/new_religion = tgui_input_text(H, "You are the crew services officer. Would you like to change your religion? Default is Unitarianism", "Name change", religion_name, MAX_NAME_LEN)
+	var/new_religion = ask.get("religion")
 	if(!new_religion)
 		new_religion = religion_name
 
@@ -101,12 +110,12 @@
 			B.name = "The Holy Book of [new_religion]"
 
 	var/deity_name = "Hashem"
-	var/new_deity = tgui_input_text(H, "Would you like to change your deity? Default is Hashem", "Name change", deity_name, MAX_NAME_LEN)
+	var/new_deity = ask.get("deity")
 
 	if((length(new_deity) == 0) || (new_deity == "Hashem"))
 		new_deity = deity_name
 
-	var/new_title = tgui_input_text(H, "Would you like to change your title?", "Title Change", I.assignment, MAX_NAME_LEN)
+	var/new_title = ask.get("title")
 
 	var/list/all_jobs = get_job_datums()
 

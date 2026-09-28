@@ -54,7 +54,9 @@
 		options.Add("Bloodstream")
 
 	// Choose destination
-	var/choice = tgui_alert(user, "Select where this hose connects.", "Hose Connection", options)
+	var/choice = rerun_prompt(user, "a1", list("message" = "Select where this hose connects.", "title" = "Hose Connection", "choices" = options), PROC_REF(inflation_setup), args)
+	if(isnull(choice))
+		return
 	if(!user.Adjacent(human_owner) || !choice)
 		to_chat(user,span_notice("You decide not to connect \the [human_owner] to the hose."))
 		return FALSE

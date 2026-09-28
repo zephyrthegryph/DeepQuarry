@@ -124,8 +124,11 @@
 		to_chat(src, span_warning("There is nobody next to you."))
 		return
 
-	var/mob/living/carbon/human/chosen_target = tgui_input_list(src, "Who do you wish to shoot rainbows at?", "Rainbow", targets)
-	if(!chosen_target)
+	om_prompt(src, src, list("kind" = "list", "message" = "Who do you wish to shoot rainbows at?", "title" = "Rainbow", "choices" = targets, "requires" = PROMPT_CONSCIOUS), PROC_REF(rainbow_target_chosen))
+	return TRUE
+
+/mob/living/proc/rainbow_target_chosen(mob/user, mob/living/carbon/human/chosen_target, datum/om/prompt/ask)
+	if(!Adjacent(chosen_target))
 		return
 
 	visible_message(span_warning("[src] begins chargin' their lazor!"))

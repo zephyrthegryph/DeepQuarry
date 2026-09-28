@@ -19,13 +19,16 @@
 
 	if(!check_rights_for(src, R_HOLDER))	return
 
-	var/choice = tgui_input_number(usr, "Which Z-level do you wish to set the base turf for?")
+	om_prompt_sequence(src, usr, list(
+		list("key" = "z", "kind" = "number", "message" = "Which Z-level do you wish to set the base turf for?"),
+		list("key" = "turf", "kind" = "list", "message" = "Please select a turf path (cancel to reset to /turf/space).", "title" = "Set Base Turf", "choices" = typesof(/turf)),
+	), /client/proc/set_base_turf_answered, list("requires" = PROMPT_ADMIN(R_HOLDER)))
+
+/client/proc/set_base_turf_answered(mob/user, datum/om/prompt/ask)
+	var/choice = ask.get("z")
 	if(!choice)
 		return
-
-	var/new_base_path = tgui_input_list(usr, "Please select a turf path (cancel to reset to /turf/space).", "Set Base Turf", typesof(/turf))
-	if(!new_base_path)
-		new_base_path = /turf/space
+	var/new_base_path = ask.get("turf") || /turf/space
 	using_map.base_turf_by_z["[choice]"] = new_base_path
-	message_admins("[key_name_admin(usr)] has set the base turf for z-level [choice] to [get_base_turf(choice)].")
-	log_admin("[key_name(usr)] has set the base turf for z-level [choice] to [get_base_turf(choice)].")
+	message_admins("[key_name_admin(user)] has set the base turf for z-level [choice] to [get_base_turf(choice)].")
+	log_admin("[key_name(user)] has set the base turf for z-level [choice] to [get_base_turf(choice)].")

@@ -289,7 +289,9 @@
 /obj/machinery/power/emitter/multitool_act(mob/user, obj/item/W)
 	if(!anomalous)
 		return ITEM_INTERACT_BLOCKING
-	var/chosen_particle = tgui_input_list(user, "Select particle type", "Particle Selection", ANOMALY_PARTICLE_ALL)
+	var/chosen_particle = rerun_prompt(user, "k282", list("kind" = "list", "message" = "Select particle type", "title" = "Particle Selection", "choices" = ANOMALY_PARTICLE_ALL), TYPE_PROC_REF(/atom, multitool_act), args)
+	if(isnull(chosen_particle))
+		return ITEM_INTERACT_BLOCKING
 	if(!chosen_particle)
 		return ITEM_INTERACT_BLOCKING
 	particle = chosen_particle

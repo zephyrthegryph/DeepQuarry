@@ -52,13 +52,8 @@
 			to_chat(H, span_notice("Exported style string is \" [S.export_string(src)] \". Use this to get the same style in the future with Import."))
 			return TRUE
 		if("Import")
-			var/text = sanitizeSafe(tgui_input_text(H, "Paste the style string you exported with Export.", "Style loading", "", 240, encode = FALSE), 256)
-			if(!text)
-				return FALSE
-			if(!S.import_string(src, H, text))
-				to_chat(H, span_warning("That style string doesn't fit the [S.name] style."))
-				return FALSE
-			return TRUE
+			om_prompt(src, H, list("kind" = "text", "message" = "Paste the style string you exported with Export.", "title" = "Style loading", "max_length" = 240, "encode" = FALSE, "requires" = PROMPT_CONSCIOUS, "data" = list("style" = S)), PROC_REF(style_string_entered))
+			return FALSE // The answer imports and wears the style.
 	var/layer_index = 0
 	for(var/i in 1 to length(S.layers))
 		var/datum/protean_blob_layer/L = S.layers[i]
@@ -85,3 +80,13 @@
 	colors[layer_index] = new_color
 	S.derive_states(states)
 	return TRUE
+
+/datum/form/protean_blob/proc/style_string_entered(mob/living/carbon/human/H, text, datum/om/prompt/ask)
+	var/datum/protean_blob_style/layered/S = ask.get("style")
+	text = sanitizeSafe(text, 256)
+	if(!text)
+		return
+	if(!S.import_string(src, H, text))
+		to_chat(H, span_warning("That style string doesn't fit the [S.name] style."))
+		return
+	set_style(S.id, H)

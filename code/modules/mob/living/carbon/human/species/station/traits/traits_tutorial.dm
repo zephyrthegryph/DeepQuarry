@@ -28,28 +28,20 @@ TGUI frontend path: tgui\packages\tgui\interfaces\TraitTutorial.tsx
 	set name = "Explain Custom Traits"
 	set desc = "Click this verb to obtain a detailed tutorial on your selected traits. "
 	set category = "Abilities.General"
-	var/datum/tgui_module/trait_tutorial_tgui/fancy_UI
-	if(!fancy_UI)
-		fancy_UI = new /datum/tgui_module/trait_tutorial_tgui/ //Preventing a bunch of instances being spawned all over the place. Hopefully
-
-
-
 	var/list/list_of_traits = species.traits
 	if(!LAZYLEN(list_of_traits)) //Although we shouldn't show up if no traits, leaving this in case someone loses theirs after (re)spawning.
 		to_chat(src, span_notice("You do not have any custom traits!"))
 		return //Dont want an empty TGUI panel and list by accident after all.
 
+	om_prompt(src, src, list("message" = "Would you like the tutorial text to be printed to chat?", "title" = "Choose preferred tutorial interface", "choices" = list("TGUI","To Chat", "Cancel")), PROC_REF(trait_tutorial_mode_chosen))
 
-	var/UI_choice = tgui_alert(src, "Would you like the tutorial text to be printed to chat?", "Choose preferred tutorial interface", list("TGUI","To Chat", "Cancel"))
-	if(!UI_choice || UI_choice == "Cancel")
-		return
-
-	//Initializing associative lists
+/// The tutorial's tables: names, then name -> category, description and guide.
+/mob/living/carbon/human/proc/trait_tutorial_tables()
 	var/trait_names = list() //List of keys
 	var/trait_category = list() // name:category
 	var/trait_desc = list() // name:desc
 	var/trait_tutorial = list() //name:tutorial
-	for(var/trait in list_of_traits)
+	for(var/trait in species.traits)
 		var/datum/trait/T = GLOB.all_traits[trait]
 		trait_names += T.name
 		trait_desc[T.name] = T.desc
@@ -61,16 +53,20 @@ TGUI frontend path: tgui\packages\tgui\interfaces\TraitTutorial.tsx
 				trait_category[T.name] = "Neutral Trait"
 			if(TRAIT_TYPE_POSITIVE)
 				trait_category[T.name] = "Positive Trait"
+	return list(trait_names, trait_category, trait_desc, trait_tutorial)
 
-
+/mob/living/carbon/human/proc/trait_tutorial_mode_chosen(mob/user, UI_choice, datum/om/prompt/ask)
+	var/list/tables = trait_tutorial_tables()
 	if(UI_choice == "To Chat")
-		var/to_chat_choice = tgui_input_list(src, "Please choose the trait to be explained", "Print to Chat", trait_names, null)
-		if(to_chat_choice)
-			to_chat(src,span_notice(span_bold("Name:") + " [to_chat_choice] \n " + span_bold("Category:")  + " [trait_category[to_chat_choice]] \n " + span_bold("Description:")  + " [trait_desc[to_chat_choice]] \n \
-			" + span_bold("Guide:")  + " \n [trait_tutorial[to_chat_choice]]"))
-
-
+		om_prompt(src, src, list("kind" = "list", "message" = "Please choose the trait to be explained", "title" = "Print to Chat", "choices" = tables[1]), PROC_REF(trait_tutorial_trait_chosen))
 	else if(UI_choice == "TGUI")
-
-		fancy_UI.set_vars(trait_names, trait_category, trait_desc, trait_tutorial)
+		var/datum/tgui_module/trait_tutorial_tgui/fancy_UI = new /datum/tgui_module/trait_tutorial_tgui/
+		fancy_UI.set_vars(tables[1], tables[2], tables[3], tables[4])
 		fancy_UI.tgui_interact(src)
+
+/mob/living/carbon/human/proc/trait_tutorial_trait_chosen(mob/user, to_chat_choice, datum/om/prompt/ask)
+	var/list/tables = trait_tutorial_tables()
+	var/list/trait_category = tables[2]
+	var/list/trait_desc = tables[3]
+	var/list/trait_tutorial = tables[4]
+	to_chat(src,span_notice(span_bold("Name:") + " [to_chat_choice] \n " + span_bold("Category:")  + " [trait_category[to_chat_choice]] \n " + span_bold("Description:")  + " [trait_desc[to_chat_choice]] \n " + span_bold("Guide:")  + " \n [trait_tutorial[to_chat_choice]]"))

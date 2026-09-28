@@ -39,22 +39,26 @@
 	if(warrants.len == 0)
 		to_chat(user,span_notice("There are no warrants available"))
 		return
-	var/temp
-	temp = tgui_input_list(user, "Which warrant would you like to load?", "Warrant Selection", warrants)
+	om_prompt(src, user, list("kind" = "list", "message" = "Which warrant would you like to load?", "title" = "Warrant Selection", "choices" = warrants, "requires" = PROMPT_HELD), PROC_REF(warrant_chosen))
+
+/obj/item/holowarrant/proc/warrant_chosen(mob/user, temp, datum/om/prompt/ask)
 	for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
 		if(W.fields["namewarrant"] == temp)
 			active = W
 	update_icon()
 
+/obj/item/holowarrant/proc/authorize_answered(mob/user, choice, datum/om/prompt/ask)
+	var/obj/item/card/id/I = ask.get("card")
+	if(choice == "Yes" && active == ask.get("warrant"))
+		active.fields["auth"] = "[I.registered_name] - [I.assignment ? I.assignment : "(Unknown)"]"
+	user.visible_message(span_notice("You swipe \the [I] through the [src]."), \
+			span_notice("[user] swipes \the [I] through the [src]."))
+
 /obj/item/holowarrant/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(active)
 		var/obj/item/card/id/I = W.GetIdCard()
 		if(I && (ACCESS_HOS in I.GetAccess()))
-			var/choice = tgui_alert(user, "Would you like to authorize this warrant?","Warrant authorization",list("Yes","No"))
-			if(choice == "Yes")
-				active.fields["auth"] = "[I.registered_name] - [I.assignment ? I.assignment : "(Unknown)"]"
-			user.visible_message(span_notice("You swipe \the [I] through the [src]."), \
-					span_notice("[user] swipes \the [I] through the [src]."))
+			om_prompt(src, user, list("message" = "Would you like to authorize this warrant?", "title" = "Warrant authorization", "choices" = list("Yes","No"), "target" = W, "requires" = PROMPT_IN_HAND, "data" = list("card" = I, "warrant" = active)), PROC_REF(authorize_answered))
 			return TRUE
 		to_chat(user, span_warning("You don't have the access to do this!"))
 		return TRUE

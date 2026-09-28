@@ -14,13 +14,17 @@ ADMIN_VERB(modify_server_news, R_SERVER|R_EVENT, "Modify Public News", "Modify t
 	if(F)
 		var/title = F["title"]
 		var/body = html2paper_markup(F["body"])
-		var/new_title = tgui_input_text(user, "Write a good title for the news update. Note: HTML is NOT supported.", "Write News", title, MAX_MESSAGE_LEN)
+		var/new_title = verb_prompt(user, "a1", list("kind" = "text", "message" = "Write a good title for the news update. Note: HTML is NOT supported.", "title" = "Write News", "default" = title, "max_length" = MAX_MESSAGE_LEN), args)
+		if(isnull(new_title))
+			return
 		if(!new_title)
 			return
-		var/new_body = tgui_input_text(user, "Write the body of the news update here. Note: HTML is NOT supported, however paper markup is supported.  \n\
+		var/new_body = verb_prompt(user, "body", list("kind" = "text", "message" = "Write the body of the news update here. Note: HTML is NOT supported, however paper markup is supported.  \n\
 		Hitting enter will automatically add a line break.  \n\
 		Valid markup includes: \[b\], \[i\], \[u\], \[large\], \[h1\], \[h2\], \[h3\]\ \[*\], \[hr\], \[small\], \[list\], \[table\], \[grid\], \
-		\[row\], \[cell\], \[logo\], \[talogo\], \[sglogo\].","Write News", body, MAX_MESSAGE_LEN, TRUE, prevent_enter = TRUE)
+		\[row\], \[cell\], \[logo\], \[talogo\], \[sglogo\].", "title" = "Write News", "default" = body, "max_length" = MAX_MESSAGE_LEN, "multiline" = TRUE), args)
+		if(isnull(new_body))
+			return
 
 		new_body = paper_markup2html(new_body)
 

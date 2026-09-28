@@ -23,13 +23,15 @@
 		to_chat(usr, "The hailer is fried. The tiny input screen just shows a waving ASCII penis.")
 		return
 
-	var/new_message = tgui_input_text(usr, "Please enter new message (leave blank to reset).", max_length = MAX_MESSAGE_LEN)
+	om_prompt(src, usr, list("kind" = "text", "message" = "Please enter new message (leave blank to reset).", "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_HELD), PROC_REF(message_entered))
+
+/obj/item/hailer/proc/message_entered(mob/user, new_message, datum/om/prompt/ask)
 	if(!new_message || new_message == "")
 		use_message = "Halt! Security!"
 	else
 		use_message = capitalize(new_message)
 
-	to_chat(usr, "You configure the hailer to shout \"[use_message]\".")
+	to_chat(user, "You configure the hailer to shout \"[use_message]\".")
 
 /obj/item/hailer/get_interactions()
 	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))

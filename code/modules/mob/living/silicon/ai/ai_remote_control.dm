@@ -1,7 +1,8 @@
 /mob/living/silicon/ai
 	var/mob/living/silicon/robot/deployed_shell = null //For shell control
 
-/mob/living/silicon/ai/proc/deploy_to_shell(mob/living/silicon/robot/target)
+/// `picked`: the target came from the shell list (don't ask again if it's no longer usable).
+/mob/living/silicon/ai/proc/deploy_to_shell(mob/living/silicon/robot/target, picked = FALSE)
 	if(!CONFIG_GET(flag/allow_ai_shells))
 		to_chat(src, span_warning("AI Shells are not allowed on this server. You shouldn't have this verb because of it, so consider making a bug report."))
 		return
@@ -37,9 +38,14 @@
 	if(!LAZYLEN(possible))
 		to_chat(src, span_warning("No usable AI shell beacons detected."))
 
-	if(!target || !(target in possible)) //If the AI is looking for a new shell, or its pre-selected shell is no longer valid
-		target = tgui_input_list(src, "Which body to control?", "Shell Choice", possible)
+	if(!picked && (!target || !(target in possible))) //If the AI is looking for a new shell, or its pre-selected shell is no longer valid
+		if(LAZYLEN(possible))
+			om_prompt(src, src, list("kind" = "list", "message" = "Which body to control?", "title" = "Shell Choice", "choices" = possible, "on_cancel" = PROC_REF(deploy_aborted)), PROC_REF(shell_picked))
+			return
+		target = null
 
+	if(!(target in possible))
+		target = null
 	if(!target || target.stat == DEAD || target.deployed || !(!target.connected_ai || (target.connected_ai == src) ) )
 		if(target)
 			to_chat(src, span_warning("It is no longer possible to deploy to \the [target]."))
@@ -62,6 +68,12 @@
 		src.copy_vore_prefs_to_mob(target)
 		teleop = target // So the AI 'hears' messages near its core.
 		target.post_deploy()
+
+/mob/living/silicon/ai/proc/deploy_aborted(mob/user, datum/om/prompt/ask)
+	to_chat(src, span_notice("Deployment aborted."))
+
+/mob/living/silicon/ai/proc/shell_picked(mob/user, mob/living/silicon/robot/target, datum/om/prompt/ask)
+	deploy_to_shell(target, TRUE)
 
 /mob/living/silicon/ai/proc/deploy_to_shell_act()
 	set category = "AI.Commands"

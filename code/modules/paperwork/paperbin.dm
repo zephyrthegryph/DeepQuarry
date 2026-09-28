@@ -49,7 +49,10 @@
 			return
 	var/response = ""
 	if(!length(papers) > 0)
-		response = tgui_alert(user, "Do you take regular paper, or Carbon copy paper?", "Paper type request", list("Regular", "Carbon-Copy", "Cancel"))
+		var/_answer_k52 = rerun_prompt(user, "k52", list("message" = "Do you take regular paper, or Carbon copy paper?", "title" = "Paper type request", "choices" = list("Regular", "Carbon-Copy", "Cancel")), TYPE_PROC_REF(/atom, attack_hand), args)
+		if(isnull(_answer_k52))
+			return TRUE
+		response = _answer_k52
 		if (response != "Regular" && response != "Carbon-Copy")
 			add_fingerprint(user)
 			return

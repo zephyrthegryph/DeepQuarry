@@ -154,7 +154,10 @@
 			to_chat(user, span_warning(" BUG:Assembly part missing, please report this!"))
 			return TRUE
 		if(istype(a_left,a_right.type))//If they are the same type it causes issues due to window code
-			switch(tgui_alert(usr, "Which side would you like to use?","Side",list("Left","Right")))
+			var/_answer_k143 = rerun_prompt(usr, "k143", list("message" = "Which side would you like to use?", "title" = "Side", "choices" = list("Left","Right")), PROC_REF(attack_self), args)
+			if(isnull(_answer_k143))
+				return TRUE
+			switch(_answer_k143)
 				if("Left")	a_left.attack_self(user)
 				if("Right")	a_right.attack_self(user)
 			return TRUE
@@ -243,7 +246,9 @@
 		if(tmr.timing)
 			to_chat(usr, span_notice("Clock is ticking already."))
 		else
-			var/ntime = tgui_input_number(usr, "Enter desired time in seconds", "Time", 5, 1000, 0)
+			var/ntime = rerun_prompt(usr, "k231", list("kind" = "number", "message" = "Enter desired time in seconds", "title" = "Time", "default" = 5, "max" = 1000, "min" = 0), VERB_REF(configure), args)
+			if(isnull(ntime))
+				return
 			if (ntime > 0 && ntime < 1000)
 				tmr.time = ntime
 				name = initial(name) + "([tmr.time] secs)"

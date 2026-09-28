@@ -78,7 +78,9 @@ REF_OWNED(/obj/machinery/appliance/mixer, "mixer_loop")
 				for (var/obj/item/I in CI.container)
 					menuoptions[I.name] = I
 
-		var/selection = tgui_input_list(user, "Which item would you like to remove? If you want to remove chemicals, use an empty beaker.", "Remove ingredients", menuoptions)
+		var/selection = rerun_prompt(user, "k86", list("kind" = "list", "message" = "Which item would you like to remove? If you want to remove chemicals, use an empty beaker.", "title" = "Remove ingredients", "choices" = menuoptions), PROC_REF(removal_menu), args)
+		if(isnull(selection))
+			return
 		if (selection)
 			var/obj/item/I = menuoptions[selection]
 			if (!user || !user.put_in_hands(I))

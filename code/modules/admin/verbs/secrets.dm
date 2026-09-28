@@ -125,7 +125,9 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 				registry_join(REGISTRY_PRISONWARPED, H)
 
 		if("night_shift_set")
-			var/val = tgui_alert(holder, "What do you want to set night shift to? This will override the automatic system until set to automatic again.", "Night Shift", list("On", "Off", "Automatic"))
+			var/val = act_prompt(holder, action, params, ui, "a1", list("message" = "What do you want to set night shift to? This will override the automatic system until set to automatic again.", "title" = "Night Shift", "choices" = list("On", "Off", "Automatic")))
+			if(isnull(val))
+				return
 			switch(val)
 				if("Automatic")
 					if(CONFIG_GET(flag/enable_night_shifts))
@@ -147,26 +149,38 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 			GLOB.borers.attempt_random_spawn()
 
 		if("jump_shuttle")
-			var/shuttle_tag = tgui_input_list(holder, "Which shuttle do you want to jump?", "Shuttle Choice", SSshuttles.shuttles)
+			var/shuttle_tag = act_prompt(holder, action, params, ui, "a2", list("kind" = "list", "message" = "Which shuttle do you want to jump?", "title" = "Shuttle Choice", "choices" = SSshuttles.shuttles))
+			if(isnull(shuttle_tag))
+				return
 			if (!shuttle_tag) return
 
 			var/datum/shuttle/S = SSshuttles.shuttles[shuttle_tag]
 
 			var/list/area_choices = return_areas()
-			var/origin_area = tgui_input_list(holder, "Which area is the shuttle at now? (MAKE SURE THIS IS CORRECT OR THINGS WILL BREAK)", "Area Choice", area_choices)
+			var/origin_area = act_prompt(holder, action, params, ui, "a3", list("kind" = "list", "message" = "Which area is the shuttle at now? (MAKE SURE THIS IS CORRECT OR THINGS WILL BREAK)", "title" = "Area Choice", "choices" = area_choices))
+			if(isnull(origin_area))
+				return
 			if (!origin_area) return
 
-			var/destination_area = tgui_input_list(holder, "Which area is the shuttle at now? (MAKE SURE THIS IS CORRECT OR THINGS WILL BREAK)", "Area Choice", area_choices)
+			var/destination_area = act_prompt(holder, action, params, ui, "a4", list("kind" = "list", "message" = "Which area is the shuttle at now? (MAKE SURE THIS IS CORRECT OR THINGS WILL BREAK)", "title" = "Area Choice", "choices" = area_choices))
+			if(isnull(destination_area))
+				return
 			if (!destination_area) return
 
-			var/long_jump = tgui_alert(holder, "Is there a transition area for this jump?","Transition?", list("Yes","No"))
+			var/long_jump = act_prompt(holder, action, params, ui, "a5", list("message" = "Is there a transition area for this jump?", "title" = "Transition?", "choices" = list("Yes","No")))
+			if(isnull(long_jump))
+				return
 			if(!long_jump)
 				return
 			if (long_jump == "Yes")
-				var/transition_area = tgui_input_list(holder, "Which area is the transition area? (MAKE SURE THIS IS CORRECT OR THINGS WILL BREAK)", "Area Choice", area_choices)
+				var/transition_area = act_prompt(holder, action, params, ui, "a6", list("kind" = "list", "message" = "Which area is the transition area? (MAKE SURE THIS IS CORRECT OR THINGS WILL BREAK)", "title" = "Area Choice", "choices" = area_choices))
+				if(isnull(transition_area))
+					return
 				if (!transition_area) return
 
-				var/move_duration = tgui_input_number(holder, "How many seconds will this jump take?")
+				var/move_duration = act_prompt(holder, action, params, ui, "a7", list("kind" = "number", "message" = "How many seconds will this jump take?"))
+				if(isnull(move_duration))
+					return
 
 				S.long_jump(area_choices[origin_area], area_choices[destination_area], area_choices[transition_area], move_duration)
 				message_admins(span_notice("[key_name_admin(holder)] has initiated a jump from [origin_area] to [destination_area] lasting [move_duration] seconds for the [shuttle_tag] shuttle"), 1)
@@ -182,7 +196,9 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 				if (istype(SSshuttles.shuttles[shuttle_tag], /datum/shuttle/autodock))
 					valid_shuttles += shuttle_tag
 
-			var/shuttle_tag = tgui_input_list(holder, "Which shuttle's launch do you want to force?", "Shuttle Choice", valid_shuttles)
+			var/shuttle_tag = act_prompt(holder, action, params, ui, "a8", list("kind" = "list", "message" = "Which shuttle's launch do you want to force?", "title" = "Shuttle Choice", "choices" = valid_shuttles))
+			if(isnull(shuttle_tag))
+				return
 			if (!shuttle_tag)
 				return
 
@@ -199,7 +215,9 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 				if (istype(SSshuttles.shuttles[shuttle_tag], /datum/shuttle/autodock))
 					valid_shuttles += shuttle_tag
 
-			var/shuttle_tag = tgui_input_list(holder, "Which shuttle do you want to launch?", "Shuttle Choice", valid_shuttles)
+			var/shuttle_tag = act_prompt(holder, action, params, ui, "a9", list("kind" = "list", "message" = "Which shuttle do you want to launch?", "title" = "Shuttle Choice", "choices" = valid_shuttles))
+			if(isnull(shuttle_tag))
+				return
 			if (!shuttle_tag)
 				return
 
@@ -211,16 +229,22 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 				tgui_alert_async(holder, "The [shuttle_tag] shuttle cannot be launched at this time. It's probably busy.")
 
 		if("move_shuttle")
-			var/confirm = tgui_alert(holder, "This command directly moves a shuttle from one area to another. DO NOT USE THIS UNLESS YOU ARE DEBUGGING A SHUTTLE AND YOU KNOW WHAT YOU ARE DOING.", "Are you sure?", list("Ok", "Cancel"))
+			var/confirm = act_prompt(holder, action, params, ui, "a10", list("message" = "This command directly moves a shuttle from one area to another. DO NOT USE THIS UNLESS YOU ARE DEBUGGING A SHUTTLE AND YOU KNOW WHAT YOU ARE DOING.", "title" = "Are you sure?", "choices" = list("Ok", "Cancel")))
+			if(isnull(confirm))
+				return
 			if (confirm != "Ok")
 				return
 
-			var/shuttle_tag = tgui_input_list(holder, "Which shuttle do you want to jump?", "Shuttle Choice", SSshuttles.shuttles)
+			var/shuttle_tag = act_prompt(holder, action, params, ui, "a11", list("kind" = "list", "message" = "Which shuttle do you want to jump?", "title" = "Shuttle Choice", "choices" = SSshuttles.shuttles))
+			if(isnull(shuttle_tag))
+				return
 			if (!shuttle_tag) return
 
 			var/datum/shuttle/S = SSshuttles.shuttles[shuttle_tag]
 
-			var/destination_tag = tgui_input_list(holder, "Which landmark do you want to jump to? (IF YOU GET THIS WRONG THINGS WILL BREAK)", "Landmark Choice", SSshuttles.registered_shuttle_landmarks)
+			var/destination_tag = act_prompt(holder, action, params, ui, "a12", list("kind" = "list", "message" = "Which landmark do you want to jump to? (IF YOU GET THIS WRONG THINGS WILL BREAK)", "title" = "Landmark Choice", "choices" = SSshuttles.registered_shuttle_landmarks))
+			if(isnull(destination_tag))
+				return
 			if (!destination_tag) return
 			var/destination_location = SSshuttles.get_landmark(destination_tag)
 			if (!destination_location) return
@@ -315,7 +339,9 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 		if("onlyone")
 			if(!is_funmin)
 				return
-			var/response = tgui_alert(usr,"Delay by 40 seconds?", "There can, in fact, only be one", list("Instant!", HIGHLANDER_DELAY_TEXT))
+			var/response = act_prompt(usr, action, params, ui, "a13", list("message" = "Delay by 40 seconds?", "title" = "There can, in fact, only be one", "choices" = list("Instant!", HIGHLANDER_DELAY_TEXT)))
+			if(isnull(response))
+				return
 			switch(response)
 				if("Instant!")
 					holder.only_one()
@@ -352,7 +378,9 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 				return
 			//SSblackbox.record_feedback("nested tally", "admin_secrets_fun_used", 1, list("Bomb Cap"))
 
-			var/new_cap = tgui_input_list(holder, "Select the max explosion range", "Change Bomb Cap", list(14, 16, 20, 28, 56, 128))
+			var/new_cap = act_prompt(holder, action, params, ui, "a14", list("kind" = "list", "message" = "Select the max explosion range", "title" = "Change Bomb Cap", "choices" = list(14, 16, 20, 28, 56, 128)))
+			if(isnull(new_cap))
+				return
 
 			if(new_cap)
 				GLOB.max_explosion_range = new_cap
@@ -368,7 +396,9 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 			//log_admin("[key_name(holder)] changed the bomb cap to [GLOB.MAX_EX_DEVESTATION_RANGE], [GLOB.MAX_EX_HEAVY_RANGE], [GLOB.MAX_EX_LIGHT_RANGE]")
 
 		if("alter_narsie")
-			var/choice = tgui_alert(holder, "How do you wish for Nar-Sie to interact with its surroundings?","NarChoice",list("CultStation13", "Nar-Singulo"))
+			var/choice = act_prompt(holder, action, params, ui, "a15", list("message" = "How do you wish for Nar-Sie to interact with its surroundings?", "title" = "NarChoice", "choices" = list("CultStation13", "Nar-Singulo")))
+			if(isnull(choice))
+				return
 			if(choice == "CultStation13")
 				log_and_message_admins("has set narsie's behaviour to \"CultStation13\".", holder)
 				GLOB.narsie_behaviour = choice
@@ -404,7 +434,9 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 				INVOKE_ASYNC(H, TYPE_PROC_REF(/mob/living/carbon/human, monkeyize))
 
 		if("supermatter_cascade")
-			var/choice = tgui_alert(holder, "You sure you want to destroy the universe and create a large explosion at your location? Misuse of this could result in removal of flags or hilarity.","WARNING!", list("NO TIME TO EXPLAIN", "Cancel"))
+			var/choice = act_prompt(holder, action, params, ui, "a16", list("message" = "You sure you want to destroy the universe and create a large explosion at your location? Misuse of this could result in removal of flags or hilarity.", "title" = "WARNING!", "choices" = list("NO TIME TO EXPLAIN", "Cancel")))
+			if(isnull(choice))
+				return
 			if(choice == "NO TIME TO EXPLAIN")
 				explosion(get_turf(holder.mob), 8, 16, 24, 32, 1)
 				SSturf_cascade.start_cascade(get_turf(holder.mob), /turf/unsimulated/wall/supermatter)
@@ -412,7 +444,9 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 				message_admins("[key_name_admin(holder)] has managed to destroy the universe with a supermatter cascade. Good job, [key_name_admin(holder)]")
 
 		if("summon_narsie")
-			var/choice = tgui_alert(holder, "You sure you want to end the round and summon Nar-Sie at your location? Misuse of this could result in removal of flags or hilarity.","WARNING!",list("PRAISE SATAN", "Cancel"))
+			var/choice = act_prompt(holder, action, params, ui, "a17", list("message" = "You sure you want to end the round and summon Nar-Sie at your location? Misuse of this could result in removal of flags or hilarity.", "title" = "WARNING!", "choices" = list("PRAISE SATAN", "Cancel")))
+			if(isnull(choice))
+				return
 			if(choice == "PRAISE SATAN")
 				new /obj/singularity/narsie/large(get_turf(holder))
 				log_and_message_admins("has summoned Nar-Sie and brought about a new realm of suffering.", holder)

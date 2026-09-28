@@ -135,7 +135,9 @@
 		current_mounts += "cell"
 	if(length(installed_modules))
 		current_mounts += "system module"
-	var/to_remove = tgui_input_list(user, "Which would you like to modify?", "Removal Choice", current_mounts)
+	var/to_remove = rerun_prompt(user, "a1", list("kind" = "list", "message" = "Which would you like to modify?", "title" = "Removal Choice", "choices" = current_mounts), TYPE_PROC_REF(/atom, screwdriver_act), args)
+	if(isnull(to_remove))
+		return ITEM_INTERACT_BLOCKING
 	if(!to_remove)
 		return ITEM_INTERACT_BLOCKING
 	if(ishuman(loc) && to_remove != "cell")
@@ -157,7 +159,9 @@
 	if(!length(possible_removals))
 		to_chat(user, "There are no installed modules to remove.")
 		return ITEM_INTERACT_BLOCKING
-	var/removal_choice = tgui_input_list(user, "Which module would you like to remove?", "Removal Choice", possible_removals)
+	var/removal_choice = rerun_prompt(user, "a2", list("kind" = "list", "message" = "Which module would you like to remove?", "title" = "Removal Choice", "choices" = possible_removals), TYPE_PROC_REF(/atom, screwdriver_act), args)
+	if(isnull(removal_choice))
+		return ITEM_INTERACT_BLOCKING
 	var/obj/item/rig_module/removed = possible_removals[removal_choice]
 	if(!removed)
 		return ITEM_INTERACT_BLOCKING

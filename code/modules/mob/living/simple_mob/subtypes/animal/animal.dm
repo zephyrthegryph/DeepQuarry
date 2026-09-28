@@ -34,7 +34,9 @@
 	set category = "IC.Settings"
 	set desc = "Set your flavour text."
 	set src = usr
-	var/new_flavour_text = (tgui_input_text(src, "Please describe yourself.", "Flavour Text", flavor_text, MAX_MESSAGE_LEN, TRUE))
-	if(length(new_flavour_text) && !QDELETED(src))
+	om_prompt(src, src, list("kind" = "text", "message" = "Please describe yourself.", "title" = "Flavour Text", "default" = flavor_text, "max_length" = MAX_MESSAGE_LEN, "multiline" = TRUE), PROC_REF(flavour_text_entered))
+
+/mob/living/simple_mob/animal/proc/flavour_text_entered(mob/user, new_flavour_text, datum/om/prompt/ask)
+	if(length(new_flavour_text))
 		flavor_text = new_flavour_text
 		to_chat(src, span_notice("Your flavour text has been updated."))

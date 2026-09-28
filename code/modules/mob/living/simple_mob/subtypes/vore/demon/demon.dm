@@ -168,10 +168,9 @@
 		to_chat(src, span_warning("There are no alternative apperances selectable!"))
 		return
 
-	var/alternate_selection = tgui_input_list(src, "Please select which alternate appearance you want to swap to.", "Variant Sprite", alt_demon_appearances)
-	if(!alternate_selection)
-		return
+	om_prompt(src, src, list("kind" = "list", "message" = "Please select which alternate appearance you want to swap to.", "title" = "Variant Sprite", "choices" = alt_demon_appearances), PROC_REF(alt_appearance_chosen))
 
+/mob/living/simple_mob/vore/demon/proc/alt_appearance_chosen(mob/user, alternate_selection, datum/om/prompt/ask)
 	alternate_selection = lowertext(alternate_selection)
 
 	//Change the all the icon info.

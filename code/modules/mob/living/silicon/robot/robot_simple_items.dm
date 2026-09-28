@@ -231,7 +231,9 @@
 	set name = "Change Colour"
 	set category = "Object"
 
-	var/selected_type = tgui_input_list(user, "Pick new colour.", "Cable Colour", GLOB.possible_cable_coil_colours)
+	om_prompt(src, user, list("kind" = "list", "message" = "Pick new colour.", "title" = "Cable Colour", "choices" = GLOB.possible_cable_coil_colours, "requires" = PROMPT_HELD), PROC_REF(cable_colour_chosen))
+
+/obj/item/stack/cable_coil/cyborg/proc/cable_colour_chosen(mob/user, selected_type, datum/om/prompt/ask)
 	set_cable_color(selected_type, user)
 	if(isrobotmultibelt(loc))
 		var/obj/item/robotic_multibelt/our_belt = loc

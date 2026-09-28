@@ -89,11 +89,13 @@
 
 /obj/item/spell/control/on_use_cast(mob/living/user)
 	if(length(controlled_mobs) != 0)
-		var/choice = tgui_alert(user,"Would you like to release control of the entities you are controlling? They won't be friendly to you anymore if you do this, so be careful.","Release Control?",list("No","Yes"))
-		if(choice == "Yes")
-			for(var/mob/living/L in controlled_mobs)
-				deselect(L)
-			to_chat(user, span_notice("You've released control of all entities you had in control."))
+		om_prompt(src, user, list("message" = "Would you like to release control of the entities you are controlling? They won't be friendly to you anymore if you do this, so be careful.", "title" = "Release Control?", "choices" = list("No","Yes"), "requires" = PROMPT_HELD), PROC_REF(release_control_answered))
+
+/obj/item/spell/control/proc/release_control_answered(mob/living/user, choice, datum/om/prompt/ask)
+	if(choice == "Yes")
+		for(var/mob/living/L in controlled_mobs)
+			deselect(L)
+		to_chat(user, span_notice("You've released control of all entities you had in control."))
 
 /obj/item/spell/control/on_ranged_cast(atom/hit_atom, mob/living/user)
 	if(isliving(hit_atom))

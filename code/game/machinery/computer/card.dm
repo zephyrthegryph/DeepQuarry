@@ -223,10 +223,7 @@
 			if(is_authenticated() && modify)
 				var/t1 = params["assign_target"]
 				if(t1 == "Custom")
-					var/temp_t = tgui_input_text(ui.user, "Enter a custom job assignment.","Assignment", "", 45)
-					//let custom jobs function as an impromptu alt title, mainly for sechuds
-					if(temp_t && modify)
-						modify.assignment = temp_t
+					om_prompt(src, ui.user, list("kind" = "text", "message" = "Enter a custom job assignment.", "title" = "Assignment", "default" = "", "max_length" = 45, "requires" = PROMPT_USABLE), PROC_REF(custom_assignment_entered))
 				else
 					var/list/access = list()
 					if(is_centcom())
@@ -278,6 +275,12 @@
 
 	if(modify)
 		modify.name = "[modify.registered_name]'s ID Card ([modify.assignment])"
+
+/obj/machinery/computer/card/proc/custom_assignment_entered(mob/user, temp_t, datum/om/prompt/ask)
+	//let custom jobs function as an impromptu alt title, mainly for sechuds
+	if(temp_t && modify && is_authenticated())
+		modify.assignment = temp_t
+		SStgui.update_uis(src)
 
 /obj/machinery/computer/card/centcom
 	name = "\improper CentCom ID card modification console"

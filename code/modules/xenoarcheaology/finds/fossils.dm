@@ -77,7 +77,10 @@
 		else
 			..()
 	else if(istype(W,/obj/item/pen))
-		plaque_contents = tgui_input_text(user, "What would you like to write on the plaque:","Skeleton plaque","", MAX_MESSAGE_LEN)
+		var/_answer_k80 = rerun_prompt(user, "k80", list("kind" = "text", "message" = "What would you like to write on the plaque:", "title" = "Skeleton plaque", "max_length" = MAX_MESSAGE_LEN), TYPE_PROC_REF(/atom, attackby), args)
+		if(isnull(_answer_k80))
+			return TRUE
+		plaque_contents = _answer_k80
 		user.visible_message("[user] writes something on the base of [src].","You relabel the plaque on the base of [icon2html(src,viewers(src))] [src].")
 		if(src.contents.Find(/obj/item/fossil/skull/horned))
 			src.desc = "A creature made of [src.contents.len-1] assorted bones and a horned skull. The plaque reads \'[plaque_contents]\'."

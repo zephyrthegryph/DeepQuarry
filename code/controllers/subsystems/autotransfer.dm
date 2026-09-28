@@ -30,8 +30,9 @@ SUBSYSTEM_DEF(transfer)
 		timerbuffer = timerbuffer + CONFIG_GET(number/vote_autotransfer_interval)
 
 /datum/controller/subsystem/transfer/proc/modify_hard_end(client/user)
-	var/new_shift_end = tgui_input_number(user, "Modify the shift end timer (Input in Minutes)", "Shift End", shift_hard_end / 600)
+	om_prompt(src, user, list("kind" = "number", "message" = "Modify the shift end timer (Input in Minutes)", "title" = "Shift End", "default" = shift_hard_end / 600, "requires" = PROMPT_ADMIN(R_ADMIN|R_EVENT|R_SERVER)), PROC_REF(hard_end_entered))
 
+/datum/controller/subsystem/transfer/proc/hard_end_entered(mob/user, new_shift_end, datum/om/prompt/ask)
 	if(!new_shift_end)
 		return
 

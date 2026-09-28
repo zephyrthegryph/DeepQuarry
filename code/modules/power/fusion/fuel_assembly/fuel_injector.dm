@@ -55,7 +55,9 @@ REF_SPILL(/obj/machinery/fusion_fuel_injector, "cur_assembly")
 	effect = /obj/machinery/fusion_fuel_injector/proc/interaction_fuel_injector_set_id
 
 /obj/machinery/fusion_fuel_injector/proc/interaction_fuel_injector_set_id(mob/user, obj/item/held, datum/interaction/interaction)
-	var/new_ident = tgui_input_text(user, "Enter a new ident tag.", "Fuel Injector", id_tag, MAX_NAME_LEN)
+	var/new_ident = rerun_prompt(user, "k62", list("kind" = "text", "message" = "Enter a new ident tag.", "title" = "Fuel Injector", "default" = id_tag, "max_length" = MAX_NAME_LEN), PROC_REF(interaction_fuel_injector_set_id), args)
+	if(isnull(new_ident))
+		return
 	if(new_ident && user.Adjacent(src))
 		id_tag = new_ident
 	return TRUE
@@ -71,7 +73,9 @@ REF_SPILL(/obj/machinery/fusion_fuel_injector, "cur_assembly")
 		to_chat(user, span_warning("Shut \the [src] off before playing with the fuel rod!"))
 		return TRUE
 	if(istype(held,/obj/item/fuel_assembly/blitz))
-		var/secondchance = tgui_alert(user, "Are you sure you want to put the blitz rod in the fuel injector? This definitely wasn't meant to be used like this, and could only end badly.","Confirm",list("Yes","No"))
+		var/secondchance = rerun_prompt(user, "k78", list("message" = "Are you sure you want to put the blitz rod in the fuel injector? This definitely wasn't meant to be used like this, and could only end badly.", "title" = "Confirm", "choices" = list("Yes","No")), PROC_REF(interaction_fuel_injector_insert_assembly), args)
+		if(isnull(secondchance))
+			return
 		if(!secondchance || secondchance=="No")
 			return TRUE
 	if(cur_assembly)

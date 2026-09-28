@@ -20,7 +20,9 @@
 		to_chat(usr, "Error: you are not an admin!")
 		return
 
-	var/response = tgui_input_list(usr, "Are you sure? This will start up the engine with selected gas as coolant.", "Engine setup", list("N2", "CO2", "PH", "Abort"))
+	var/response = rerun_prompt(usr, "k23", list("kind" = "list", "message" = "Are you sure? This will start up the engine with selected gas as coolant.", "title" = "Engine setup", "choices" = list("N2", "CO2", "PH", "Abort")), PROC_REF(setup_supermatter), args)
+	if(isnull(response))
+		return
 	if(!response || response == "Abort")
 		return
 

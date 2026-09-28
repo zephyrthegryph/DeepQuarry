@@ -59,38 +59,38 @@
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 
-		var/obj/item/organ/NewOrgan = new organ_to_implant()
+		var/list/choices = augment_choices(H)
+		if(length(choices) > 1)
+			om_prompt(src, usr, list("kind" = "list", "message" = "Choose augment location:", "title" = "Choose Location", "choices" = choices, "data" = list("patient" = H)), PROC_REF(augment_location_chosen))
+			return
+		install_augment(H, length(choices) ? choices[1] : null)
 
-		var/obj/item/organ/external/E = setup_augment_slots(H, NewOrgan)
-		to_chat(H, span_notice("You feel a tingling sensation in your [part]."))
-		// A ledger move into the limb; the attach hook does the rest. An
-		// incompatible augment is deleted below, which detaches it again.
-		if(istype(E) && !(H.internal_organs_by_name[NewOrgan.organ_tag]) && NewOrgan.replaced(H, E) && NewOrgan.check_verb_compatability())
-			om_after(H, rand(1 SECONDS, 30 SECONDS), TYPE_PROC_REF(/datum, om_chat), span_alien("You feel a pressure in your [E] as the tingling fades, the lump caused by the implant now gone."))
+/obj/item/implant/organ/limbaugment/proc/augment_location_chosen(mob/user, target_choice, datum/om/prompt/ask)
+	install_augment(ask.get("patient"), target_choice)
 
-			om_qdel_after(src, 1)
-
-		else
-			qdel(NewOrgan)
-			to_chat(H, span_warning("You feel a pinching sensation in your [part]. The implant remains."))
-
-/obj/item/implant/organ/limbaugment/proc/setup_augment_slots(mob/living/carbon/human/H, obj/item/organ/internal/augment/armmounted/I)
-	var/list/Choices = possible_targets.Copy()
-
+/obj/item/implant/organ/limbaugment/proc/augment_choices(mob/living/carbon/human/H)
+	. = possible_targets.Copy()
 	for(var/targ in possible_targets)
 		if(H.internal_organs_by_name[targ])
-			Choices -= targ
+			. -= targ
 
-	var/target_choice = null
-	if(Choices && Choices.len)
-		if(Choices.len == 1)
-			target_choice = Choices[1]
-		else
-			target_choice = tgui_input_list(usr, "Choose augment location:", "Choose Location", Choices)
+/obj/item/implant/organ/limbaugment/proc/install_augment(mob/living/carbon/human/H, target_choice)
+	var/obj/item/organ/NewOrgan = new organ_to_implant()
+
+	var/obj/item/organ/external/E = setup_augment_slots(H, NewOrgan, target_choice)
+	to_chat(H, span_notice("You feel a tingling sensation in your [part]."))
+	// A ledger move into the limb; the attach hook does the rest. An
+	// incompatible augment is deleted below, which detaches it again.
+	if(istype(E) && !(H.internal_organs_by_name[NewOrgan.organ_tag]) && NewOrgan.replaced(H, E) && NewOrgan.check_verb_compatability())
+		om_after(H, rand(1 SECONDS, 30 SECONDS), TYPE_PROC_REF(/datum, om_chat), span_alien("You feel a pressure in your [E] as the tingling fades, the lump caused by the implant now gone."))
+
+		om_qdel_after(src, 1)
 
 	else
-		return FALSE
+		qdel(NewOrgan)
+		to_chat(H, span_warning("You feel a pinching sensation in your [part]. The implant remains."))
 
+/obj/item/implant/organ/limbaugment/proc/setup_augment_slots(mob/living/carbon/human/H, obj/item/organ/internal/augment/armmounted/I, target_choice)
 	if(target_choice)
 		switch(target_choice)
 			if(O_AUG_R_HAND)

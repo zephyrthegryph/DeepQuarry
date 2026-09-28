@@ -232,53 +232,82 @@ ADMIN_VERB(generic_structure, R_SPAWN, "Spawn Generic Structure", "Spawn a custo
 
 	var/check_togglable
 
-	var/s_name = tgui_input_text(user, "Structure Name:", "Name")
-	var/s_desc = tgui_input_text(user, "Structure Description:", "Description")
-	var/check_anchored = tgui_alert(user, "Start anchored?", "anchored", list("Yes", "No", "Cancel"))
+	var/s_name = verb_prompt(user, "a1", list("kind" = "text", "message" = "Structure Name:", "title" = "Name"), args)
+	if(isnull(s_name))
+		return
+	var/s_desc = verb_prompt(user, "a2", list("kind" = "text", "message" = "Structure Description:", "title" = "Description"), args)
+	if(isnull(s_desc))
+		return
+	var/check_anchored = verb_prompt(user, "a3", list("message" = "Start anchored?", "title" = "anchored", "choices" = list("Yes", "No", "Cancel")), args)
+	if(isnull(check_anchored))
+		return
 	if(!check_anchored || check_anchored == "Cancel")
 		return
 	if(check_anchored == "No")
 		s_anchored = 0
 	if(check_anchored == "Yes")
 		s_anchored = 1
-	var/check_density = tgui_alert(user, "Start dense?", "density", list("Yes", "No", "Cancel"))
+	var/check_density = verb_prompt(user, "a4", list("message" = "Start dense?", "title" = "density", "choices" = list("Yes", "No", "Cancel")), args)
+	if(isnull(check_density))
+		return
 	if(!check_density || check_density == "Cancel")
 		return
 	if(check_density == "No")
 		s_density = 0
 	if(check_density == "Yes")
 		s_density = 1
-	var/check_wrenchable = tgui_alert(user, "Allow it to be fastened and unfastened with a wrench?", "wrenchable", list("Yes", "No", "Cancel"))
+	var/check_wrenchable = verb_prompt(user, "a5", list("message" = "Allow it to be fastened and unfastened with a wrench?", "title" = "wrenchable", "choices" = list("Yes", "No", "Cancel")), args)
+	if(isnull(check_wrenchable))
+		return
 	if(!check_wrenchable || check_wrenchable == "Cancel")
 		return
 	if(check_wrenchable == "No")
 		s_wrenchable = 0
 	if(check_wrenchable == "Yes")
 		s_wrenchable = 1
-	var/s_icon_state_off = tgui_input_list(user, "Choose starting icon state:", "icon_state_off", icon_state_options)
-	if(s_icon_state_off == "Upload Own Sprite")
-		s_icon = input(user, "Choose an image file to upload. Images that are not 32x32 will need to have their positions offset.","Upload Icon") as null|file
-	var/check_activatable = tgui_alert(user, "Allow it to be turned on?", "activatable", list("Yes", "No", "Cancel"))
+	var/s_icon_state_off = verb_prompt(user, "a6", list("kind" = "list", "message" = "Choose starting icon state:", "title" = "icon_state_off", "choices" = icon_state_options), args)
+	if(isnull(s_icon_state_off))
+		return
+	// Uploads (s_icon) are asked last: a file upload is a native dialog that waits.
+	var/check_activatable = verb_prompt(user, "a7", list("message" = "Allow it to be turned on?", "title" = "activatable", "choices" = list("Yes", "No", "Cancel")), args)
+	if(isnull(check_activatable))
+		return
 	if(!check_activatable || check_activatable == "Cancel")
 		return
 	if(check_activatable == "No")
 		s_activatable = 0
 	if(check_activatable == "Yes")
 		s_activatable = 1
-		s_text_activated = tgui_input_text(user, "Activation text:", "Activation Text")
-		check_togglable = tgui_alert(user, "Allow it to be turned back off again?", "togglable", list("Yes", "No", "Cancel"))
+		var/_answer_a8 = verb_prompt(user, "a8", list("kind" = "text", "message" = "Activation text:", "title" = "Activation Text"), args)
+		if(isnull(_answer_a8))
+			return
+		s_text_activated = _answer_a8
+		var/_answer_a9 = verb_prompt(user, "a9", list("message" = "Allow it to be turned back off again?", "title" = "togglable", "choices" = list("Yes", "No", "Cancel")), args)
+		if(isnull(_answer_a9))
+			return
+		check_togglable = _answer_a9
 		if(!check_togglable || check_togglable == "Cancel")
 			return
 		if(check_togglable == "No")
 			s_togglable = 0
 		if(check_togglable == "Yes")
-			s_text_deactivated = tgui_input_text(user, "Deactivation text:", "Deactivation Text")
+			var/_answer_a10 = verb_prompt(user, "a10", list("kind" = "text", "message" = "Deactivation text:", "title" = "Deactivation Text"), args)
+			if(isnull(_answer_a10))
+				return
+			s_text_deactivated = _answer_a10
 			s_togglable = 1
-		s_icon_state_on = tgui_input_list(user, "Choose activated icon state:", "icon_state_on", icon_state_options)
-		if(s_icon_state_on == "Upload Own Sprite")
-			s_icon2 = input(user, "Choose an image file to upload. Images that are not 32x32 will need to have their positions offset.","Upload Icon") as null|file
-		s_delay = tgui_input_number(user, "Do you want it to take time to put turn on? Choose a number of deciseconds to activate, or 0 for instant.", "Delay")
-		var/check_effect = tgui_alert(user, "Produce an effect on activation?", "Effect?", list("No", "Spark", "Flicker Lights", "Flash", "Spawn Item", "Fear", "Cancel"))
+		var/_answer_a11 = verb_prompt(user, "a11", list("kind" = "list", "message" = "Choose activated icon state:", "title" = "icon_state_on", "choices" = icon_state_options), args)
+		if(isnull(_answer_a11))
+			return
+		s_icon_state_on = _answer_a11
+		// Uploads (s_icon2) are asked last: a file upload is a native dialog that waits.
+		var/_answer_a12 = verb_prompt(user, "a12", list("kind" = "number", "message" = "Do you want it to take time to put turn on? Choose a number of deciseconds to activate, or 0 for instant.", "title" = "Delay"), args)
+		if(isnull(_answer_a12))
+			return
+		s_delay = _answer_a12
+		var/check_effect = verb_prompt(user, "a13", list("message" = "Produce an effect on activation?", "title" = "Effect?", "choices" = list("No", "Spark", "Flicker Lights", "Flash", "Spawn Item", "Fear", "Cancel")), args)
+		if(isnull(check_effect))
+			return
 		if(!check_effect || check_effect == "Cancel")
 			return
 		if(check_effect == "No")
@@ -291,14 +320,27 @@ ADMIN_VERB(generic_structure, R_SPAWN, "Spawn Generic Structure", "Spawn a custo
 			s_effect = 3
 		if(check_effect == "Spawn Item")
 			s_effect = 4
-			s_object = user.get_path_from_partial_text()
+			s_object = verb_prompt(user, "object", list("kind" = "typepath", "message" = "Enter full or partial typepath.", "title" = "Typepath"), args)
+			if(isnull(s_object))
+				return
 		if(check_effect == "Fear")
 			s_effect = 5
-		var/check_sound = tgui_alert(user, "Play a sound when turning on?", "Sound", list("Yes", "No", "Cancel"))
+		var/check_sound = verb_prompt(user, "a14", list("message" = "Play a sound when turning on?", "title" = "Sound", "choices" = list("Yes", "No", "Cancel")), args)
+		if(isnull(check_sound))
+			return
 		if(!check_sound || check_sound == "Cancel")
 			return
 		if(check_sound == "Yes")
-			s_sound = tgui_input_list(user, "Choose a sound to play on activation:", "Sound", sound_options)
+			var/_answer_a15 = verb_prompt(user, "a15", list("kind" = "list", "message" = "Choose a sound to play on activation:", "title" = "Sound", "choices" = sound_options), args)
+			if(isnull(_answer_a15))
+				return
+			s_sound = _answer_a15
+
+	// The uploads come last (allowlisted: a native file dialog, nothing to answer it asynchronously).
+	if(s_icon_state_off == "Upload Own Sprite")
+		s_icon = input(user, "Choose an image file to upload. Images that are not 32x32 will need to have their positions offset.","Upload Icon") as null|file // S10 keeps: file uploads need the BYOND file dialog
+	if(s_icon_state_on == "Upload Own Sprite")
+		s_icon2 = input(user, "Choose an image file to upload. Images that are not 32x32 will need to have their positions offset.","Upload Icon") as null|file // S10 keeps: file uploads need the BYOND file dialog
 
 	var/spawnloc = get_turf(user.mob)
 	var/obj/structure/generic_structure/P = new(spawnloc)
@@ -323,28 +365,3 @@ ADMIN_VERB(generic_structure, R_SPAWN, "Spawn Generic Structure", "Spawn a custo
 	if(s_icon)
 		P.icon = s_icon
 	P.update_icon()
-
-/client/proc/get_path_from_partial_text(default_path)
-	var/desired_path = tgui_input_text(src, "Enter full or partial typepath.","Typepath","[default_path]")
-
-	if(!desired_path) // If you don't give it anything it builds a list of every possible thing in the game and crashes your client.
-		return // And the main way for it to do that is to push the cancel button, which should just do nothing. :U
-
-	var/list/types = typesof(/atom)
-	var/list/matches = list()
-
-	for(var/path in types)
-		if(findtext("[path]", desired_path))
-			matches += path
-
-	if(matches.len==0)
-		tgui_alert_async(src, "No results found.  Sorry.")
-		return
-
-	var/result = null
-
-	if(matches.len==1)
-		result = matches[1]
-	else
-		result = tgui_input_list(src, "Select an atom type", "Spawn Atom", matches, strict_modern = TRUE)
-	return result

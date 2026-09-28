@@ -278,7 +278,10 @@
 			var/oldtext = html_decode(msg_body)
 			oldtext = replacetext(oldtext, "\[editorbr\]", "\n")
 
-			var/newtext = replacetext(tgui_input_text(ui.user, "Enter your message. You may use most tags from paper formatting", "Message Editor", oldtext, 20000, TRUE, prevent_enter = TRUE), "\n", "\[editorbr\]")
+			var/_answer_a1 = act_prompt(ui.user, action, params, ui, "a1", list("kind" = "text", "message" = "Enter your message. You may use most tags from paper formatting", "title" = "Message Editor", "default" = oldtext, "max_length" = 20000, "multiline" = TRUE))
+			if(isnull(_answer_a1))
+				return
+			var/newtext = replacetext(_answer_a1, "\n", "\[editorbr\]")
 			if(newtext)
 				msg_body = newtext
 			return 1
@@ -361,13 +364,19 @@
 			return 1
 
 		if("changepassword")
-			var/oldpassword = tgui_input_text(ui.user,"Please enter your old password:", "Password Change", null, 100)
+			var/oldpassword = act_prompt(ui.user, action, params, ui, "a2", list("kind" = "text", "message" = "Please enter your old password:", "title" = "Password Change", "max_length" = 100))
+			if(isnull(oldpassword))
+				return
 			if(!oldpassword)
 				return 1
-			var/newpassword1 = tgui_input_text(ui.user,"Please enter your new password:", "Password Change", null, 100)
+			var/newpassword1 = act_prompt(ui.user, action, params, ui, "a3", list("kind" = "text", "message" = "Please enter your new password:", "title" = "Password Change", "max_length" = 100))
+			if(isnull(newpassword1))
+				return
 			if(!newpassword1)
 				return 1
-			var/newpassword2 = tgui_input_text(ui.user,"Please re-enter your new password:", "Password Change", null, 100)
+			var/newpassword2 = act_prompt(ui.user, action, params, ui, "a4", list("kind" = "text", "message" = "Please re-enter your new password:", "title" = "Password Change", "max_length" = 100))
+			if(isnull(newpassword2))
+				return
 			if(!newpassword2)
 				return 1
 
@@ -398,7 +407,9 @@
 				error = "Error exporting file. Are you using a functional and NTOS-compliant device?"
 				return 1
 
-			var/filename = tgui_input_text(ui.user,"Please specify file name:", "Message export", null, 100)
+			var/filename = act_prompt(ui.user, action, params, ui, "a5", list("kind" = "text", "message" = "Please specify file name:", "title" = "Message export", "max_length" = 100))
+			if(isnull(filename))
+				return
 			if(!filename)
 				return 1
 
@@ -426,7 +437,9 @@
 				if(CF.unsendable)
 					continue
 				filenames.Add(CF.filename)
-			var/picked_file = tgui_input_list(ui.user, "Please pick a file to send as attachment (max 32GQ)", "Select Attachment", filenames)
+			var/picked_file = act_prompt(ui.user, action, params, ui, "a6", list("kind" = "list", "message" = "Please pick a file to send as attachment (max 32GQ)", "title" = "Select Attachment", "choices" = filenames))
+			if(isnull(picked_file))
+				return
 
 			if(!picked_file)
 				return 1

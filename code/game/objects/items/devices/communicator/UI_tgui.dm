@@ -316,6 +316,46 @@ REF_OWNED_LIST(/obj/item/communicator, "cam_plane_masters")
 // Proc: tgui-act()
 // Parameters: 4 (standard tgui_act arguments)
 // Description: Responds to UI button presses.
+/obj/item/communicator/proc/name_entered(mob/user, new_name, datum/om/prompt/ask)
+	new_name = sanitizeSafe(new_name)
+	if(new_name)
+		register_device(new_name)
+
+/obj/item/communicator/proc/ringtone_entered(mob/user, ringtone, datum/om/prompt/ask)
+	if(ringtone)
+		ttone = ringtone
+
+/obj/item/communicator/proc/note_cleared(mob/user, datum/om/prompt/ask)
+	note_entered(user, null, ask)
+
+/obj/item/communicator/proc/note_entered(mob/user, n, datum/om/prompt/ask)
+	n = sanitizeSafe(n, extra = 0)
+	if(n)
+		note = html_decode(n)
+		notehtml = note
+		note = replacetext(note, "\n", "<br>")
+	else
+		note = ""
+		notehtml = note
+
+/obj/item/communicator/proc/text_message_entered(mob/user, text, datum/om/prompt/ask)
+	var/their_address = ask.get("address")
+	text = sanitizeSafe(text)
+	if(!text || !get_connection_to_tcomms())
+		return
+	exonet.send_message(their_address, "text", text)
+	LAZYADD(im_list, list(list("address" = exonet.address, "to_address" = their_address, "im" = text)))
+	user.log_talk("(COMM: [src]) sent \"[text]\" to [exonet.get_atom_from_address(their_address)]", LOG_PDA)
+	var/obj/item/communicator/comm = exonet.get_atom_from_address(their_address)
+	to_chat(user, span_notice("[icon2html(src, user.client)] Sent message to [istype(comm, /obj/item/communicator) ? comm.owner : comm.name], <b>\"[text]\"</b> (<a href='byond://?src=\ref[src];action=Reply;target=\ref[exonet.get_atom_from_address(comm.exonet.address)]'>Reply</a>)"))
+	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
+		if(M.stat == DEAD && M.client?.prefs?.read_preference(/datum/preference/toggle/ghost_ears))
+			if(isnewplayer(M) || M.forbid_seeing_deadchat)
+				continue
+			if(exonet.get_atom_from_address(their_address) == M)
+				continue
+			M.show_message("Comm IM - [src] -> [exonet.get_atom_from_address(their_address)]: [text]")
+
 /obj/item/communicator/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	if(..())
 		return TRUE
@@ -324,9 +364,7 @@ REF_OWNED_LIST(/obj/item/communicator, "cam_plane_masters")
 	. = TRUE
 	switch(action)
 		if("rename")
-			var/new_name = sanitizeSafe(tgui_input_text(ui.user,"Please enter your name.","Communicator",ui.user.name, encode = FALSE))
-			if(new_name)
-				register_device(new_name)
+			om_prompt(src, ui.user, list("kind" = "text", "message" = "Please enter your name.", "title" = "Communicator", "default" = ui.user.name, "encode" = FALSE, "requires" = PROMPT_USABLE), PROC_REF(name_entered))
 
 		if("toggle_visibility")
 			switch(network_visibility)
@@ -343,9 +381,7 @@ REF_OWNED_LIST(/obj/item/communicator, "cam_plane_masters")
 			ringer = !ringer
 
 		if("set_ringer_tone")
-			var/ringtone = tgui_input_text(ui.user, "Set Ringer Tone", "Ringer")
-			if(ringtone)
-				ttone = ringtone
+			om_prompt(src, ui.user, list("kind" = "text", "message" = "Set Ringer Tone", "title" = "Ringer", "requires" = PROMPT_USABLE), PROC_REF(ringtone_entered))
 
 		if("selfie_mode")
 			selfie_mode = !selfie_mode
@@ -377,21 +413,7 @@ REF_OWNED_LIST(/obj/item/communicator, "cam_plane_masters")
 			if(!get_connection_to_tcomms())
 				to_chat(ui.user, span_danger("Error: Cannot connect to Exonet node."))
 				return FALSE
-			var/their_address = params["message"]
-			var/text = sanitizeSafe(tgui_input_text(ui.user,"Enter your message.","Text Message", encode = FALSE))
-			if(text)
-				exonet.send_message(their_address, "text", text)
-				LAZYADD(im_list, list(list("address" = exonet.address, "to_address" = their_address, "im" = text)))
-				ui.user.log_talk("(COMM: [src]) sent \"[text]\" to [exonet.get_atom_from_address(their_address)]", LOG_PDA)
-				var/obj/item/communicator/comm = exonet.get_atom_from_address(their_address)
-				to_chat(ui.user, span_notice("[icon2html(src, ui.user.client)] Sent message to [istype(comm, /obj/item/communicator) ? comm.owner : comm.name], <b>\"[text]\"</b> (<a href='byond://?src=\ref[src];action=Reply;target=\ref[exonet.get_atom_from_address(comm.exonet.address)]'>Reply</a>)"))
-				for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-					if(M.stat == DEAD && M.client?.prefs?.read_preference(/datum/preference/toggle/ghost_ears))
-						if(isnewplayer(M) || M.forbid_seeing_deadchat)
-							continue
-						if(exonet.get_atom_from_address(their_address) == M)
-							continue
-						M.show_message("Comm IM - [src] -> [exonet.get_atom_from_address(their_address)]: [text]")
+			om_prompt(src, ui.user, list("kind" = "text", "message" = "Enter your message.", "title" = "Text Message", "encode" = FALSE, "requires" = PROMPT_USABLE, "data" = list("address" = params["message"])), PROC_REF(text_message_entered))
 
 		if("disconnect")
 			var/name_to_disconnect = params["disconnect"]
@@ -428,15 +450,7 @@ REF_OWNED_LIST(/obj/item/communicator, "cam_plane_masters")
 			selected_tab = params["switch_tab"]
 
 		if("edit")
-			var/n = tgui_input_text(ui.user, "Please enter message", name, notehtml, multiline = TRUE, prevent_enter = TRUE)
-			n = sanitizeSafe(n, extra = 0)
-			if(n)
-				note = html_decode(n)
-				notehtml = note
-				note = replacetext(note, "\n", "<br>")
-			else
-				note = ""
-				notehtml = note
+			om_prompt(src, ui.user, list("kind" = "text", "message" = "Please enter message", "title" = name, "default" = notehtml, "multiline" = TRUE, "requires" = PROMPT_USABLE, "on_cancel" = PROC_REF(note_cleared)), PROC_REF(note_entered))
 
 		if("Light")
 			fon = !fon

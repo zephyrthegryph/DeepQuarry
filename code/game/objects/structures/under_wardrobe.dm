@@ -91,6 +91,14 @@
 	return ..()
 
 // Topic switch lifted into tgui_act with stable action names.
+/obj/structure/undies_wardrobe/proc/underwear_chosen(mob/living/carbon/human/H, datum/category_item/underwear/selected_underwear, datum/om/prompt/ask)
+	if(!istype(H))
+		return
+	var/category = ask.get("category")
+	LAZYSET(H.all_underwear, category, selected_underwear)
+	H.hide_underwear[category] = FALSE
+	H.update_underwear()
+
 /obj/structure/undies_wardrobe/tgui_act(action, list/params)
 	. = ..()
 	if(.)
@@ -108,11 +116,7 @@
 			var/datum/category_group/underwear/UWC = GLOB.global_underwear.categories_by_name[params["category"]]
 			if(!UWC)
 				return TRUE
-			var/datum/category_item/underwear/selected_underwear = tgui_input_list(H, "Choose underwear:", "Choose underwear", UWC.items, LAZYACCESS(H.all_underwear, UWC.name))
-			if(selected_underwear && CanUseTopic(H, GLOB.tgui_default_state))
-				LAZYSET(H.all_underwear, UWC.name, selected_underwear)
-				H.hide_underwear[UWC.name] = FALSE
-				changed = TRUE
+			om_prompt(src, H, list("kind" = "list", "message" = "Choose underwear:", "title" = "Choose underwear", "choices" = UWC.items, "default" = LAZYACCESS(H.all_underwear, UWC.name), "requires" = PROMPT_USABLE, "data" = list("category" = UWC.name)), PROC_REF(underwear_chosen))
 		if("tweak")
 			var/underwear = params["category"]
 			if(!(underwear in H.all_underwear))
@@ -120,11 +124,17 @@
 			var/datum/gear_tweak/gt = locate(params["tweak"])
 			if(!gt)
 				return TRUE
-			var/new_metadata = gt.get_metadata(usr, get_metadata(H, underwear, gt), "Wardrobe Underwear Selection")
-			if(!isnull(new_metadata))
-				set_metadata(H, underwear, gt, new_metadata)
-				H.hide_underwear[underwear] = FALSE
-				changed = TRUE
+			gt.ask_metadata(H, get_metadata(H, underwear, gt), null, "Wardrobe Underwear Selection", src, PROC_REF(underwear_tweak_answered), list("category" = underwear, "tweak" = gt), PROMPT_USABLE)
 	if(changed)
 		H.update_underwear()
 	return TRUE
+
+/obj/structure/undies_wardrobe/proc/underwear_tweak_answered(mob/living/carbon/human/H, new_metadata, datum/om/prompt/P)
+	var/underwear = P.get("category")
+	var/datum/gear_tweak/gt = P.get("tweak")
+	if(!istype(H) || !(underwear in H.all_underwear))
+		return
+	set_metadata(H, underwear, gt, new_metadata)
+	H.hide_underwear[underwear] = FALSE
+	H.update_underwear()
+	SStgui.update_uis(src)

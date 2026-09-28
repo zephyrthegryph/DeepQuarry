@@ -166,4 +166,7 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	given_name = sanitizeSafe(tgui_input_text(user, "What would you like to label the collar?", "Collar Labelling", null, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
+	var/_answer_k169 = rerun_prompt(user, "k169", list("kind" = "text", "message" = "What would you like to label the collar?", "title" = "Collar Labelling", "max_length" = MAX_NAME_LEN, "encode" = FALSE), PROC_REF(attack_self), args)
+	if(isnull(_answer_k169))
+		return TRUE
+	given_name = sanitizeSafe(_answer_k169, MAX_NAME_LEN)

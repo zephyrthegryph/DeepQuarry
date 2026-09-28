@@ -267,12 +267,19 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 			var/new_upgrade = text2path(params["upgrade"])
 			if(new_upgrade == /obj/item/borg/upgrade/utility/reset)
 				var/obj/item/borg/upgrade/utility/reset/rmodul = new_upgrade
-				if(tgui_alert(ui.user, "Are you sure that you want to install [initial(rmodul.name)] and reset the robot's module?","Confirm",list("Yes","No"))!="Yes")
+				var/sure = act_prompt(ui.user, action, params, ui, "reset", list("message" = "Are you sure that you want to install [initial(rmodul.name)] and reset the robot's module?", "title" = "Confirm", "choices" = list("Yes","No")))
+				if(sure != "Yes")
+					return FALSE
+			var/new_name
+			if(new_upgrade == /obj/item/borg/upgrade/utility/rename)
+				var/obj/item/borg/upgrade/utility/rename/renamer = new_upgrade
+				new_name = act_prompt(ui.user, action, params, ui, "name", list("kind" = "text", "message" = "Enter new robot name", "title" = "Robot Reclassification", "default" = initial(renamer.heldname), "max_length" = MAX_NAME_LEN, "encode" = FALSE))
+				if(isnull(new_name))
 					return FALSE
 			var/obj/item/borg/upgrade/U = new new_upgrade(null)
 			if(new_upgrade == /obj/item/borg/upgrade/utility/rename)
 				var/obj/item/borg/upgrade/utility/rename/UN = U
-				var/new_name = sanitizeSafe(tgui_input_text(ui.user, "Enter new robot name", "Robot Reclassification", UN.heldname, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
+				new_name = sanitizeSafe(new_name, MAX_NAME_LEN)
 				if(new_name)
 					UN.heldname = new_name
 				U = UN
@@ -483,7 +490,7 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 				target.lawsync()
 			return TRUE
 		if("change_supplied_law_position")
-			var/new_position = tgui_input_number(ui.user, "Enter new supplied law position between 1 and [MAX_SUPPLIED_LAW_NUMBER], inclusive. Inherent laws at the same index as a supplied law will not be stated.", "Law Position", supplied_law_position, MAX_SUPPLIED_LAW_NUMBER, 1)
+			var/new_position = act_prompt(ui.user, action, params, ui, "position", list("kind" = "number", "message" = "Enter new supplied law position between 1 and [MAX_SUPPLIED_LAW_NUMBER], inclusive. Inherent laws at the same index as a supplied law will not be stated.", "title" = "Law Position", "default" = supplied_law_position, "max" = MAX_SUPPLIED_LAW_NUMBER, "min" = 1))
 			if(isnum(new_position))
 				supplied_law_position = CLAMP(new_position, 1, MAX_SUPPLIED_LAW_NUMBER)
 				target.lawsync()
@@ -491,7 +498,7 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 		if("edit_law")
 			var/datum/ai_law/AL = locate(params["edit_law"]) in target.laws.all_laws()
 			if(AL)
-				var/new_law = tgui_input_text(ui.user, "Enter new law. Leaving the field blank will cancel the edit.", "Edit Law", AL.law, MAX_MESSAGE_LEN)
+				var/new_law = act_prompt(ui.user, action, params, ui, "law", list("kind" = "text", "message" = "Enter new law. Leaving the field blank will cancel the edit.", "title" = "Edit Law", "default" = AL.law, "max_length" = MAX_MESSAGE_LEN))
 				if(new_law && new_law != AL.law)
 					AL.law = new_law
 					target.lawsync()

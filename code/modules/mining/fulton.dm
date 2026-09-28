@@ -30,7 +30,10 @@
 	else
 		var/A
 
-		A = tgui_input_list(user, "Select a beacon to connect to", "Balloon Extraction Pack", possible_beacons)
+		var/_answer_k33 = rerun_prompt(user, "k33", list("kind" = "list", "message" = "Select a beacon to connect to", "title" = "Balloon Extraction Pack", "choices" = possible_beacons), PROC_REF(attack_self), args)
+		if(isnull(_answer_k33))
+			return TRUE
+		A = _answer_k33
 
 		if(!A)
 			return

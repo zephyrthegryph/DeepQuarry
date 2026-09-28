@@ -39,7 +39,9 @@
 	set name = "Set Valve Pressure"
 	set category = "Object"
 	set src in range(0)
-	var/N = tgui_input_list(usr, "Percentage of tank used per shot:","[src]", possible_pressure_amounts)
+	var/N = rerun_prompt(usr, "k42", list("kind" = "list", "message" = "Percentage of tank used per shot:", "title" = "[src]", "choices" = possible_pressure_amounts), VERB_REF(set_pressure), args)
+	if(isnull(N))
+		return
 	if (N)
 		pressure_setting = N
 		to_chat(usr, "You dial the pressure valve to [pressure_setting]%.")

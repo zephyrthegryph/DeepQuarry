@@ -105,7 +105,9 @@
 	set category = "Object"
 	set src in view(1)
 
-	var/genemask = tgui_input_list(usr, "Choose a gene to modify.", "Gene Choice", SSplants.plant_gene_datums)
+	var/genemask = rerun_prompt(usr, "k108", list("kind" = "list", "message" = "Choose a gene to modify.", "title" = "Gene Choice", "choices" = SSplants.plant_gene_datums), VERB_REF(select_gene), args)
+	if(isnull(genemask))
+		return
 
 	if(!genemask)
 		return

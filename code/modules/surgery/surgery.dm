@@ -218,7 +218,7 @@ GLOBAL_PROTECT(surgical_steps)
 		return null
 	if(length(choices) == 1)
 		return choices[choices[1]]
-	var/choice = tgui_input_list(user, "Which organ do you want to work on?", name, choices)
+	var/choice = tool.surgery_prompt(user, "target", list("kind" = "list", "message" = "Which organ do you want to work on?", "title" = name, "choices" = choices))
 	return choice ? choices[choice] : null
 
 /// Is the chosen target still valid after the step's delay?
@@ -388,18 +388,29 @@ GLOBAL_PROTECT(surgical_steps)
 	var/zone
 	var/cleanliness
 
-/// Picks the step to perform at `zone` (asking when there are several) and runs it.
+/// The arguments of the choose_surgical_step_for() call running now, so the questions its steps ask
+/// (target, confirmation) re-run it with the same arguments. Only set while it runs.
+GLOBAL_LIST_EMPTY(surgery_rerun_args)
+
+/// Asks a question for the surgery being chosen: every answer re-runs choose_surgical_step_for(),
+/// which asks the same questions again and gets the answers given so far. Null while waiting.
+/obj/item/proc/surgery_prompt(mob/living/user, key, list/spec)
+	return rerun_prompt(user, key, spec, PROC_REF(choose_surgical_step_for), GLOB.surgery_rerun_args)
+
+/// The focus task's completion: choose the step from the task's arguments.
 /obj/item/proc/choose_surgical_step(datum/om/task/timed/surgery_focus/task)
-	var/mob/living/user = task.actor
-	var/mob/living/carbon/human/target = task.target
-	var/zone = task.zone
-	var/cleanliness = task.cleanliness
+	choose_surgical_step_for(task.actor, task.target, task.zone, task.cleanliness)
+
+/// Picks the step to perform at `zone` (asking when there are several) and runs it. Takes plain
+/// arguments (not the task) so surgery_prompt() answers can re-run it after the task is gone.
+/obj/item/proc/choose_surgical_step_for(mob/living/user, mob/living/carbon/human/target, zone, cleanliness)
 	var/list/available = available_surgical_steps(user, target, zone, src)
 	if(!length(available))
 		return
+	GLOB.surgery_rerun_args = args.Copy()
 	var/datum/surgical_step/step
 	if(length(available) > 1)
-		var/choice = tgui_input_list(user, "Select which surgery step you wish to perform", "Surgery Select", available)
+		var/choice = surgery_prompt(user, "step", list("kind" = "list", "message" = "Select which surgery step you wish to perform", "title" = "Surgery Select", "choices" = available))
 		if(!choice)
 			return
 		step = available[choice]

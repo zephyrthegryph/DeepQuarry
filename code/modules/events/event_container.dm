@@ -118,14 +118,16 @@
 	log_game("Next event of severity [GLOB.severity_to_string[severity]] in [(next_event_time - world.time)/600] minutes.")
 
 /datum/event_container/proc/SelectEvent()
-	var/datum/event_meta/EM = tgui_input_list(usr, "Select an event to queue up.", "Event Selection", available_events)
-	if(!EM)
+	om_prompt(src, usr, list("kind" = "list", "message" = "Select an event to queue up.", "title" = "Event Selection", "choices" = available_events), PROC_REF(event_selected))
+
+/datum/event_container/proc/event_selected(mob/user, datum/event_meta/EM, datum/om/prompt/P)
+	if(!EM || !(EM in available_events))
 		return
 	if(next_event)
 		available_events += next_event
 	available_events -= EM
 	next_event = EM
-	return EM
+	log_and_message_admins("has queued the [GLOB.severity_to_string[severity]] event '[EM.name]'.", user)
 
 /datum/event_container/mundane
 	severity = EVENT_LEVEL_MUNDANE

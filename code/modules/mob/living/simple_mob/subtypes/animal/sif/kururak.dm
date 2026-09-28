@@ -157,8 +157,6 @@
 	tail_flash()
 
 /mob/living/simple_mob/animal/sif/kururak/proc/tail_flash(atom/A)
-	set waitfor = FALSE
-
 	if(stat)
 		to_chat(src, span_warning("You cannot move your tails in this state.."))
 		return
@@ -176,9 +174,18 @@
 		if(!choices.len)
 			choices["radial"] = get_turf(src)
 
-		A = tgui_input_list(src, "What do we wish to flash?", "Target Choice", choices)
+		// A cancel flashes everyone around, as the tails flare either way.
+		om_prompt(src, src, list("kind" = "list", "message" = "What do we wish to flash?", "title" = "Target Choice", "choices" = choices, "requires" = PROMPT_CONSCIOUS, "on_cancel" = PROC_REF(tail_flash_cancelled)), PROC_REF(tail_flash_chosen))
+		return
+	tail_flash_now(A)
 
+/mob/living/simple_mob/animal/sif/kururak/proc/tail_flash_cancelled(mob/user, datum/om/prompt/ask)
+	tail_flash_now(null)
 
+/mob/living/simple_mob/animal/sif/kururak/proc/tail_flash_chosen(mob/user, atom/A, datum/om/prompt/ask)
+	tail_flash_now(isatom(A) ? A : null)
+
+/mob/living/simple_mob/animal/sif/kururak/proc/tail_flash_now(atom/A)
 	visible_message(span_alien("\The [src] flares its tails!"))
 	if(isliving(A))
 		var/mob/living/L = A
@@ -242,6 +249,9 @@
 	last_strike_time = world.time
 	rending_strike()
 
+/mob/living/simple_mob/animal/sif/kururak/proc/rending_strike_chosen(mob/user, atom/A, datum/om/prompt/ask)
+	rending_strike(A)
+
 /mob/living/simple_mob/animal/sif/kururak/proc/rending_strike(atom/A)
 	if(stat)
 		to_chat(src, span_warning("You cannot strike in this state.."))
@@ -261,9 +271,10 @@
 			to_chat(src, span_warning("There are no viable targets within range..."))
 			return
 
-		A = tgui_input_list(src, "What do we wish to strike?", "Target Choice", choices)
+		om_prompt(src, src, list("kind" = "list", "message" = "What do we wish to strike?", "title" = "Target Choice", "choices" = choices, "requires" = PROMPT_CONSCIOUS), PROC_REF(rending_strike_chosen))
+		return
 
-	if(!A || !src) return
+	if(!A) return
 
 	if(!(src.Adjacent(A))) return
 

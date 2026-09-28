@@ -92,6 +92,10 @@
 				return 1
 	return 0
 
+/obj/item/robot_parts/robot_suit/proc/robot_named(mob/user, t, datum/om/prompt/ask)
+	if (t)
+		src.created_name = t
+
 /obj/item/robot_parts/robot_suit/attackby(obj/item/W as obj, mob/user as mob)
 	..()
 	if(istype(W, /obj/item/stack/material) && W.get_material_name() == MAT_STEEL && !l_arm && !r_arm && !l_leg && !r_leg && !chest && !head)
@@ -219,13 +223,7 @@
 			to_chat(user, span_warning("The MMI must go in after everything else!"))
 
 	if (istype(W, /obj/item/pen))
-		var/t = tgui_input_text(user, "Enter new robot name", src.name, src.created_name, MAX_NAME_LEN)
-		if (!t)
-			return
-		if (!in_range(src, user) && src.loc != user)
-			return
-
-		src.created_name = t
+		om_prompt(src, user, list("kind" = "text", "message" = "Enter new robot name", "title" = src.name, "default" = src.created_name, "max_length" = MAX_NAME_LEN, "requires" = PROMPT_ADJACENT), PROC_REF(robot_named))
 
 	return
 

@@ -60,7 +60,9 @@
 				GLOB.ntnet_global.setting_disabled = FALSE
 				return TRUE
 
-			var/response = tgui_alert(ui.user, "Really disable NTNet wireless? If your computer is connected wirelessly you won't be able to turn it back on! This will affect all connected wireless devices.", "NTNet shutdown", list("Yes", "No"))
+			var/response = act_prompt(ui.user, action, params, ui, "k63", list("message" = "Really disable NTNet wireless? If your computer is connected wirelessly you won't be able to turn it back on! This will affect all connected wireless devices.", "title" = "NTNet shutdown", "choices" = list("Yes", "No")))
+			if(isnull(response))
+				return
 			if(response == "Yes" && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
 				GLOB.ntnet_global.setting_disabled = TRUE
 			return TRUE
@@ -81,14 +83,18 @@
 		if("ban_nid")
 			if(!GLOB.ntnet_global)
 				return
-			var/nid = tgui_input_number(ui.user,"Enter NID of device which you want to block from the network:", "Enter NID")
+			var/nid = act_prompt(ui.user, action, params, ui, "k84", list("kind" = "number", "message" = "Enter NID of device which you want to block from the network:", "title" = "Enter NID"))
+			if(isnull(nid))
+				return
 			if(nid && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
 				LAZYOR(GLOB.ntnet_global.banned_nids, nid)
 			return TRUE
 		if("unban_nid")
 			if(!GLOB.ntnet_global)
 				return
-			var/nid = tgui_input_number(ui.user,"Enter NID of device which you want to unblock from the network:", "Enter NID")
+			var/nid = act_prompt(ui.user, action, params, ui, "k91", list("kind" = "number", "message" = "Enter NID of device which you want to unblock from the network:", "title" = "Enter NID"))
+			if(isnull(nid))
+				return
 			if(nid && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
 				LAZYREMOVE(GLOB.ntnet_global.banned_nids, nid)
 			return TRUE

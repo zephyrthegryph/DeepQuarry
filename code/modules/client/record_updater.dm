@@ -83,56 +83,52 @@ GLOBAL_VAR_INIT(client_record_update_lock, FALSE)
 			to_chat(M, span_warning("[user] attempted to update your [record_string] record, but your current character slot does not match your played slot. Please ensure your currently played character is selected in your Character Setup."))
 		return "Update syncronization failed (OOC: Player's current character slot does not match their played slot. They have been informed.)"
 
-	var/choice = tgui_alert(M, "Your [record_string] record has been updated from the a records console by [user]. Please review the changes made to your [record_string] record. Accepting these changes will SAVE your CURRENT character slot! If your new [record_string] record has errors, it is recomended to have it corrected IC instead of editing it yourself.", "Record Updated", list("Review Changes","DENY"))
-	if(!choice || choice == "DENY")
-		message_admins("[active.fields["name"]] refused [record_string] record update from [user] without review.")
-		if(COM && !QDELETED(COM))
-			COM.visible_message(span_notice("\The [COM] buzzes!"))
-			playsound(COM, 'sound/machines/deniedbeep.ogg', 50, 0)
-		return "Update syncronization failed (OOC: Player refused without review)"
+	// The owner reviews the change; client_record_update_answered() applies it.
+	om_prompt_sequence(null, M, list(
+		list("key" = "review", "message" = "Your [record_string] record has been updated from the a records console by [user]. Please review the changes made to your [record_string] record. Accepting these changes will SAVE your CURRENT character slot! If your new [record_string] record has errors, it is recomended to have it corrected IC instead of editing it yourself.", "title" = "Record Updated", "choices" = list("Review Changes","DENY"), "confirm" = "Review Changes", "on_stop" = GLOBAL_PROC_REF(client_record_update_refused)),
+		list("key" = "notes", "kind" = "text", "message" = "Please review [user]'s changes to your [record_string] record before confirming. Confirming will SAVE your CURRENT character slot! If your new [record_string] record major errors, it is recomended to have it corrected IC instead of editing it yourself.", "title" = "Character Preference", "default" = html_decode(active.fields["notes"]), "max_length" = MAX_RECORD_LENGTH, "multiline" = TRUE, "on_stop" = GLOBAL_PROC_REF(client_record_update_refused)),
+	), GLOBAL_PROC_REF(client_record_update_answered), list("data" = list("console" = REF(COM), "console_path" = console_path, "record" = active, "record_name" = active.fields["name"], "record_string" = record_string, "user" = "[user]")))
+	return "Update sent. Waiting for the record's owner to review it."
 
-	var/new_data = strip_html_simple(tgui_input_text(M,"Please review [user]'s changes to your [record_string] record before confirming. Confirming will SAVE your CURRENT character slot! If your new [record_string] record major errors, it is recomended to have it corrected IC instead of editing it yourself.","Character Preference", html_decode(active.fields["notes"]), MAX_RECORD_LENGTH, TRUE, prevent_enter = TRUE), MAX_RECORD_LENGTH)
+/proc/client_record_update_console_says(datum/om/prompt/P, message, sound)
+	var/obj/machinery/computer/COM = locate(P.get("console"))
+	if(istype(COM) && !QDELETED(COM))
+		COM.visible_message(span_notice("\The [COM] [message]!"))
+		playsound(COM, sound, 50, sound == 'sound/machines/ding.ogg')
+
+/proc/client_record_update_refused(datum/E, mob/M, datum/om/prompt/P)
+	message_admins("[P.get("record_name")] refused [P.get("record_string")] record update from [P.get("user")][isnull(P.get("review")) ? " without review" : " with review"].")
+	client_record_update_console_says(P, "buzzes", 'sound/machines/deniedbeep.ogg')
+
+/proc/client_record_update_answered(datum/E, mob/M, datum/om/prompt/P)
+	var/record_string = P.get("record_string")
+	var/datum/data/record/active = P.get("record")
+	var/new_data = strip_html_simple(P.get("notes"), MAX_RECORD_LENGTH)
 	if(!new_data)
-		message_admins("[active.fields["name"]] refused [record_string] record update from [user] with review.")
-		if(COM && !QDELETED(COM))
-			COM.visible_message(span_notice("\The [COM] buzzes!"))
-			playsound(COM, 'sound/machines/deniedbeep.ogg', 50, 0)
-		return "Update syncronization failed (OOC: Player refused with review)"
-	if(!M || !M.client || !P)
-		message_admins("[active.fields["name"]]'s [record_string] record could not be updated, player disconnected.")
-		if(COM && !QDELETED(COM))
-			COM.visible_message(span_notice("\The [COM] buzzes!"))
-			playsound(COM, 'sound/machines/deniedbeep.ogg', 50, 0)
-		return "Update syncronization failed (OOC: Player does not exist)"
+		client_record_update_refused(E, M, P)
+		return
+	var/datum/preferences/prefs = M?.client?.prefs
+	if(!prefs || prefs.default_slot != M.mind?.loaded_from_slot)
+		message_admins("[P.get("record_name")]'s [record_string] record could not be updated, player disconnected or changed slot.")
+		client_record_update_console_says(P, "buzzes", 'sound/machines/deniedbeep.ogg')
+		return
 
 	// Update records in the consoles, remember this can happen a while after a record is closed on the console... Use cached data.
-	switch(console_path)
+	switch(P.get("console_path"))
 		if(/obj/machinery/computer/med_data)
-			P.write_preference_by_type(/datum/preference/text/human/med_record, new_data)
-			if(active)
-				active.fields["notes"] = new_data
+			prefs.write_preference_by_type(/datum/preference/text/human/med_record, new_data)
 		if(/obj/machinery/computer/skills)
-			P.write_preference_by_type(/datum/preference/text/human/gen_record, new_data)
-			if(active)
-				active.fields["notes"] = new_data
+			prefs.write_preference_by_type(/datum/preference/text/human/gen_record, new_data)
 		if(/obj/machinery/computer/secure_data)
-			P.write_preference_by_type(/datum/preference/text/human/sec_record, new_data)
-			if(active)
-				active.fields["notes"] = new_data
+			prefs.write_preference_by_type(/datum/preference/text/human/sec_record, new_data)
+	active.fields["notes"] = new_data
 
 	// Update player record
-	P.save_preferences()
-	P.save_character()
-	if(M)
-		to_chat(M,span_notice("Your [record_string] record for [active.fields["name"]] has been updated."))
-	message_admins("[active.fields["name"]] accepted the [record_string] record update from [user].")
-
-		// ding!
-	if(COM && !QDELETED(COM))
-		COM.visible_message(span_notice("\The [COM] dings!"))
-		playsound(COM, 'sound/machines/ding.ogg', 50, 1)
-
-	return "Record syncronized."
+	prefs.save_preferences()
+	prefs.save_character()
+	to_chat(M,span_notice("Your [record_string] record for [active.fields["name"]] has been updated."))
+	message_admins("[active.fields["name"]] accepted the [record_string] record update from [P.get("user")].")
+	client_record_update_console_says(P, "dings", 'sound/machines/ding.ogg')
 
 /proc/client_record_update_unlock()
 	GLOB.client_record_update_lock = FALSE

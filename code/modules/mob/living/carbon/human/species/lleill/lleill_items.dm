@@ -144,10 +144,15 @@
 			to_chat(user, span_warning("There are no appropriate targets in range."))
 			return
 
-		var/mob/living/carbon/human/chosen_target = tgui_input_list(user, "Which target do you wish to create a homunculus of?", "homunculus", targets)
-		if(!chosen_target)
-			return
+		om_prompt(src, user, list("kind" = "list", "message" = "Which target do you wish to create a homunculus of?", "title" = "homunculus", "choices" = targets, "requires" = PROMPT_HELD), PROC_REF(homunculus_target_chosen))
+		return
+	if(homunculus)
+		om_prompt(src, user, list("message" = "What would you like to do with your homunculus?", "title" = "Actions", "choices" = list("Recall", "Speak Through", "Cancel"), "requires" = PROMPT_HELD), PROC_REF(homunculus_action_chosen))
 
+/obj/item/glamour_face/proc/homunculus_target_chosen(mob/user, mob/living/carbon/human/chosen_target, datum/om/prompt/ask)
+	if(homunculus)
+		return
+	if(chosen_target)
 		var/spawnloc = get_turf(user)
 		var/mob/living/simple_mob/homunculus/H = new(spawnloc)
 		H.name = chosen_target.name
@@ -158,21 +163,22 @@
 		H.resize(chosen_target.size_multiplier, ignore_prefs = TRUE)
 		homunculus = H
 		H.owner = src
+
+/obj/item/glamour_face/proc/homunculus_action_chosen(mob/user, h_action, datum/om/prompt/ask)
+	var/mob/living/simple_mob/homunculus/H = homunculus
+	if(!H)
 		return
-	if(homunculus)
-		var/mob/living/simple_mob/homunculus/H = homunculus
-		var/h_action = tgui_alert(user, "What would you like to do with your homunculus?", "Actions", list("Recall", "Speak Through", "Cancel"))
-		if(!h_action || h_action == "Cancel")
-			return
-		if(h_action == "Recall")
-			H.visible_message(span_infoplain(span_bold("\The [H]") + " returns to the face."))
-			qdel(H)
-			homunculus = 0
-			return
-		if(h_action == "Speak Through")
-			var/words_to_say = tgui_input_text(user, "What should the homunculus say:", "Speak Through")
-			H.say(words_to_say)
-			return
+	if(h_action == "Recall")
+		H.visible_message(span_infoplain(span_bold("\The [H]") + " returns to the face."))
+		qdel(H)
+		homunculus = 0
+		return
+	if(h_action == "Speak Through")
+		om_prompt(src, user, list("kind" = "text", "message" = "What should the homunculus say:", "title" = "Speak Through", "requires" = PROMPT_HELD), PROC_REF(homunculus_words_entered))
+
+/obj/item/glamour_face/proc/homunculus_words_entered(mob/user, words_to_say, datum/om/prompt/ask)
+	var/mob/living/simple_mob/homunculus/H = homunculus
+	H?.say(words_to_say)
 
 
 //Speaking Glamour (universal translator)
@@ -257,16 +263,17 @@
 	var/mob/living/carbon/human/L = connected_mob
 	if(!istype(L))
 		return
-	var/datum/species/lleill/LL = L.species
 
-	var/m_action
 	if(M == L)
-		m_action= tgui_alert(M, "Do you want to destroy the ring, or restore energy?", "Destroy ring", list("Yes", "No", "Restore Energy"))
+		om_prompt(src, M, list("message" = "Do you want to destroy the ring, or restore energy?", "title" = "Destroy ring", "choices" = list("Yes", "No", "Restore Energy"), "requires" = PROMPT_ADJACENT), PROC_REF(ring_action_chosen))
 	else
-		m_action= tgui_alert(M, "Do you want to destroy the ring, the owner of it may be aware that you have done this?", "Destroy ring", list("Yes", "No"))
+		om_prompt(src, M, list("message" = "Do you want to destroy the ring, the owner of it may be aware that you have done this?", "title" = "Destroy ring", "choices" = list("Yes", "No"), "requires" = PROMPT_ADJACENT), PROC_REF(ring_action_chosen))
 
-	if(!m_action || m_action == "No")
+/obj/structure/glamour_ring/proc/ring_action_chosen(mob/living/M, m_action, datum/om/prompt/ask)
+	var/mob/living/carbon/human/L = connected_mob
+	if(!istype(L) || m_action == "No")
 		return
+	var/datum/species/lleill/LL = L.species
 
 	if(m_action == "Yes")
 		to_chat(M, span_warning("You begin to break the lines of the glamour ring."))

@@ -1,3 +1,12 @@
+/mob/living/carbon/human/proc/strip_underwear_chosen(mob/user, datum/category_group/underwear/UWC, datum/om/prompt/ask)
+	var/datum/category_item/underwear/UWI = LAZYACCESS(all_underwear, UWC.name)
+	if(!UWI || UWI.name == "None")
+		to_chat(user, span_notice("\The [src] does not have [UWC.gender==PLURAL ? "[UWC.display_name]" : "a [UWC.display_name]"]."))
+		return
+	hide_underwear[UWC.name] = !hide_underwear[UWC.name]
+	update_underwear(1)
+	visible_message(span_danger("\The [user] [hide_underwear[UWC.name] ? "takes off" : "puts on"] \the [src]'s [UWC.display_name]."))
+
 /mob/living/carbon/human/proc/handle_strip(slot_to_strip,mob/living/user)
 
 	if(!slot_to_strip || !istype(user))
@@ -40,15 +49,7 @@
 			om_task_start(/datum/om/task/timed/human_handle_strip_human, user, src, list("receiver" = src, "duration" = HUMAN_STRIP_DELAY, "suit" = suit, "A" = A))
 			return
 		if("underwear")
-			var/datum/category_group/underwear/UWC = tgui_input_list(user, "Choose underwear. (Do not do this without OOC permission from the other player)", "Show/hide underwear", GLOB.global_underwear.categories)
-			if(!UWC) return
-			var/datum/category_item/underwear/UWI = LAZYACCESS(all_underwear, UWC.name)
-			if(!UWI || UWI.name == "None")
-				to_chat(user, span_notice("\The [src] does not have [UWC.gender==PLURAL ? "[UWC.display_name]" : "a [UWC.display_name]"]."))
-				return
-			hide_underwear[UWC.name] = !hide_underwear[UWC.name]
-			update_underwear(1)
-			visible_message(span_danger("\The [user] [hide_underwear[UWC.name] ? "takes off" : "puts on"] \the [src]'s [UWC.display_name]."))
+			om_prompt(src, user, list("kind" = "list", "message" = "Choose underwear. (Do not do this without OOC permission from the other player)", "title" = "Show/hide underwear", "choices" = GLOB.global_underwear.categories, "requires" = PROMPT_ADJACENT), PROC_REF(strip_underwear_chosen))
 			return
 
 	// Are we placing or stripping?

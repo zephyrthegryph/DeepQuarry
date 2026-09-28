@@ -110,9 +110,13 @@
 			removable_components[MC.name] = MC
 		else
 			to_chat(actor, span_notice("\The [mech] appears to be missing \the [slot]."))
-	var/remove = tgui_input_list(actor, "Which component do you want to pry out?", "Remove Component", removable_components)
-	if(!remove || mech.state != MECHA_CELL_OUT)
-		return TRUE
+	om_prompt(mech, actor, list("kind" = "list", "message" = "Which component do you want to pry out?", "title" = "Remove Component", "choices" = removable_components, "requires" = PROMPT_ADJACENT, "data" = list("components" = removable_components)), GLOBAL_PROC_REF(mecha_component_pry_chosen))
+	return TRUE
+
+/proc/mecha_component_pry_chosen(obj/mecha/mech, mob/actor, remove, datum/om/prompt/ask)
+	var/list/removable_components = ask.get("components")
+	if(mech.state != MECHA_CELL_OUT)
+		return
 	var/obj/item/mecha_parts/component/RmC = removable_components[remove]
 	RmC.detach()
 	return TRUE

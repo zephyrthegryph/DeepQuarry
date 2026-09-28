@@ -148,9 +148,13 @@
 	return TRUE
 
 /obj/item/leash/proc/attack_timed_done(mob/living/C, mob/living/user)
-	if(tgui_alert(C, "Would you like to be leased by [user]? You can OOC escape to escape", "Become Leashed",list("No","Yes")) != "Yes")
+	om_prompt(src, C, list("message" = "Would you like to be leased by [user]? You can OOC escape to escape", "title" = "Become Leashed", "choices" = list("No","Yes"), "target" = user, "requires" = PROMPT_ADJACENT, "data" = list("holder" = user)), PROC_REF(leash_accepted))
+
+/obj/item/leash/proc/leash_accepted(mob/living/C, answer, datum/om/prompt/ask)
+	var/mob/living/user = ask.get("holder")
+	if(answer != "Yes")
 		return ITEM_INTERACT_FAILURE
-	if(QDELETED(C) || QDELETED(user) || C?.leash_item())
+	if(QDELETED(C) || QDELETED(user) || loc != user || C?.leash_item())
 		return ITEM_INTERACT_FAILURE
 
 	// This leash may still be on someone else: that one ends here.

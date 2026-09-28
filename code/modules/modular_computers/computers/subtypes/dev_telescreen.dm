@@ -28,7 +28,9 @@
 		pixel_y = 0
 		to_chat(user, "You unsecure \the [src].")
 		return ITEM_INTERACT_SUCCESS
-	var/choice = tgui_input_list(user, "Where do you want to place \the [src]?", "Offset selection", list("North", "South", "West", "East", "This tile", "Cancel"))
+	var/choice = rerun_prompt(user, "k31", list("kind" = "list", "message" = "Where do you want to place \the [src]?", "title" = "Offset selection", "choices" = list("North", "South", "West", "East", "This tile", "Cancel")), TYPE_PROC_REF(/atom, crowbar_act), args)
+	if(isnull(choice))
+		return ITEM_INTERACT_BLOCKING
 	switch(choice)
 		if("North")
 			pixel_y = 32

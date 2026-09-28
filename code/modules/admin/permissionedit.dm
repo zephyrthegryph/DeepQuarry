@@ -18,7 +18,11 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 // edit_admin_permissions body relocated to code/modules/admin/permissions_panel.dm (structured TGUI).
 // The legacy 400-line HTML/asset-cache builder is gone; edit_rights_topic and topic.dm's editrightsbrowser* handlers still own the actions and call edit_admin_permissions() at the end to refresh — that now opens the structured panel.
 
+/// Runs as a prompt flow (flow_ask()): every question is asked before anything changes, and the
+/// answers re-run this proc, so the rights checks below run again when they arrive.
 /datum/admins/proc/edit_rights_topic(list/href_list)
+	if(!GLOB.prompt_flow)
+		return prompt_flow(src, PROC_REF(edit_rights_topic), args)
 	if(!check_rights(R_PERMISSIONS))
 		message_admins("[key_name_admin(usr)] attempted to edit admin permissions without sufficient rights.")
 		log_admin("[key_name(usr)] attempted to edit admin permissions without sufficient rights.")
@@ -59,7 +63,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 			to_chat(usr, span_danger("Unable to connect to database, changes are temporary only."), confidential = TRUE)
 			use_db = FALSE
 		else
-			use_db = tgui_alert(usr,"Permanent changes are saved to the database for future rounds, temporary changes will affect only the current round", "Permanent or Temporary?", list("Permanent", "Temporary", "Cancel"))
+			use_db = flow_ask(usr, "use_db", list("message" = "Permanent changes are saved to the database for future rounds, temporary changes will affect only the current round", "title" = "Permanent or Temporary?", "choices" = list("Permanent", "Temporary", "Cancel")))
 			if(isnull(use_db) || use_db == "Cancel")
 				return
 			if(use_db == "Permanent")
@@ -75,6 +79,17 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		return
 	switch(task)
 		if("add")
+			// Ask the key and the ranks first; nothing is added until both are answered.
+			if(!admin_ckey)
+				admin_key = flow_ask(usr, "admin_key", list("kind" = "text", "message" = "New admin's key", "title" = "Admin key"))
+				if(!ckey(admin_key))
+					return
+				if(ckey(admin_key) in (GLOB.admin_datums + GLOB.deadmins))
+					to_chat(usr, span_danger("[admin_key] is already an admin."), confidential = TRUE)
+					return
+			var/list/picked = pick_admin_ranks(use_db, null, legacy_only)
+			if(isnull(picked))
+				return
 			admin_ckey = add_admin(admin_ckey, admin_key, use_db)
 			if(!admin_ckey)
 				return
@@ -82,7 +97,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 			if(!admin_key) // Prevents failures in logging admin rank changes.
 				admin_key = admin_ckey
 
-			change_admin_rank(admin_ckey, admin_key, use_db, null, legacy_only)
+			change_admin_rank(admin_ckey, admin_key, use_db, null, legacy_only, picked)
 		if("remove")
 			remove_admin(admin_ckey, admin_key, use_db, target_admin_datum)
 		if("rank")
@@ -105,8 +120,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		return
 	if(admin_ckey)
 		. = admin_ckey
-	else
-		admin_key = input("New admin's key","Admin key") as text|null
+	else // A new admin: edit_rights_topic() asked for the key.
 		. = ckey(admin_key)
 	if(!.)
 		return FALSE
@@ -146,12 +160,16 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 	QDEL_NULL(query_add_admin_log)
 
 /datum/admins/proc/remove_admin(admin_ckey, admin_key, use_db, datum/admins/target_holder)
+	if(!GLOB.prompt_flow)
+		return prompt_flow(src, PROC_REF(remove_admin), args)
 	if(!check_rights(R_PERMISSIONS) || (use_db && !check_rights(R_DBRANKS)))
 		return
 	if(IsAdminAdvancedProcCall())
 		to_chat(usr, span_adminprefix("Admin Removal blocked: Advanced ProcCall detected."), confidential = TRUE)
 		return
-	if(tgui_alert(usr,"Are you sure you want to remove [admin_ckey]?", "Confirm Removal", list("Do it", "Cancel")) != "Do it")
+	if(flow_ask(usr, "remove_admin", list("message" = "Are you sure you want to remove [admin_ckey]?", "title" = "Confirm Removal", "choices" = list("Do it", "Cancel"))) != "Do it")
+		return
+	if(!(admin_ckey in (GLOB.admin_datums + GLOB.deadmins)) && !use_db)
 		return
 	GLOB.admin_datums -= admin_ckey
 	GLOB.deadmins -= admin_ckey
@@ -213,17 +231,10 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 
 #define RANK_DONE ":) I'm Done"
 
-/datum/admins/proc/change_admin_rank(admin_ckey, admin_key, use_db, datum/admins/target_holder, legacy_only)
-	if(!check_rights(R_PERMISSIONS) || (use_db && !check_rights(R_DBRANKS)))
-		return
-	if(IsAdminAdvancedProcCall())
-		to_chat(usr, span_adminprefix("Rank Modification blocked: Advanced ProcCall detected."), confidential = TRUE)
-		return
-
-	var/rank_type = RANK_SOURCE_TEMPORARY
-	if(use_db)
-		rank_type = RANK_SOURCE_DB
-
+/// Asks (flow_ask()) which ranks an admin gets, one pick per question, until RANK_DONE.
+/// Returns list("names" = picked rank names, "custom" = new custom rank names), or null while
+/// unanswered or cancelled. Creates nothing: change_admin_rank() makes the custom ranks.
+/datum/admins/proc/pick_admin_ranks(use_db, datum/admins/target_holder, legacy_only)
 	var/list/rank_names = list()
 	if(!use_db || (use_db && !legacy_only))
 		rank_names += "*New Rank*"
@@ -235,9 +246,11 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		rank_names[admin_rank.name] = admin_rank
 
 	var/list/new_rank_names = list()
-	var/list/custom_ranks = list()
+	var/list/custom_names = list()
+	var/step = 0
 
 	while (TRUE)
+		step++
 		var/list/display_rank_names = list(RANK_DONE)
 
 		if (new_rank_names.len > 0)
@@ -250,43 +263,74 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 			if (!(rank_name in display_rank_names))
 				display_rank_names += rank_name
 
-		var/next_rank = input("Please select a rank, or select [RANK_DONE] if you are finished.") as null|anything in display_rank_names
+		// Each pick is its own question: the flow replays the earlier picks from their answers.
+		var/next_rank = flow_ask(usr, "rank:[step]", list("kind" = "list", "message" = "Please select a rank, or select [RANK_DONE] if you are finished.", "title" = "Admin rank", "choices" = display_rank_names))
 
-		if (isnull(next_rank))
-			return
+		if (isnull(next_rank) || !(next_rank in display_rank_names))
+			return null
 
 		if (next_rank == RANK_DONE)
 			break
+
+		if (next_rank in new_rank_names)
+			new_rank_names -= next_rank
+			custom_names -= next_rank
+			continue
 
 		// They clicked "** SELECTED **" or something silly.
 		if (!(next_rank in rank_names))
 			continue
 
-		if (next_rank in new_rank_names)
-			new_rank_names -= next_rank
+		if (next_rank == "*New Rank*")
+			var/new_rank_name = flow_ask(usr, "new_rank:[step]", list("kind" = "text", "message" = "Please input a new rank", "title" = "New custom rank"))
+			if (!new_rank_name)
+				return null
+			if(!isnull(rank_names[new_rank_name]) || (new_rank_name in new_rank_names))
+				continue
+			custom_names += new_rank_name
+			new_rank_names += new_rank_name
 			continue
 
-		if (next_rank == "*New Rank*")
-			var/new_rank_name = input("Please input a new rank", "New custom rank") as text|null
-			if (!new_rank_name)
-				return
-
-			var/datum/admin_rank/custom_rank = rank_names[new_rank_name]
-			if(!isnull(custom_rank))
-				continue
-
-			if (target_holder)
-				custom_rank = new(new_rank_name, rank_type, target_holder.rank_flags())
-			else
-				custom_rank = new(new_rank_name, rank_type)
-
-			if(QDELETED(custom_rank))
-				continue
-			GLOB.admin_ranks += custom_rank
-			custom_ranks += custom_rank
-			new_rank_names += new_rank_name
-
 		new_rank_names += next_rank
+
+	return list("names" = new_rank_names, "custom" = custom_names)
+
+/// Sets an admin's ranks. `picked` is pick_admin_ranks()'s answer when the caller asked already;
+/// otherwise this runs as a prompt flow and asks.
+/datum/admins/proc/change_admin_rank(admin_ckey, admin_key, use_db, datum/admins/target_holder, legacy_only, list/picked)
+	if(!picked && !GLOB.prompt_flow)
+		return prompt_flow(src, PROC_REF(change_admin_rank), args)
+	if(!check_rights(R_PERMISSIONS) || (use_db && !check_rights(R_DBRANKS)))
+		return
+	if(IsAdminAdvancedProcCall())
+		to_chat(usr, span_adminprefix("Rank Modification blocked: Advanced ProcCall detected."), confidential = TRUE)
+		return
+
+	if(!picked)
+		picked = pick_admin_ranks(use_db, target_holder, legacy_only)
+		if(isnull(picked))
+			return
+
+	var/rank_type = RANK_SOURCE_TEMPORARY
+	if(use_db)
+		rank_type = RANK_SOURCE_DB
+
+	var/list/picked_names = picked["names"]
+	var/list/new_rank_names = picked_names.Copy()
+	var/list/custom_ranks = list()
+	for(var/new_rank_name in picked["custom"])
+		if(length(ranks_from_rank_name(new_rank_name)))
+			continue // Made meanwhile; the pick uses the existing one.
+		var/datum/admin_rank/custom_rank
+		if (target_holder)
+			custom_rank = new(new_rank_name, rank_type, target_holder.rank_flags())
+		else
+			custom_rank = new(new_rank_name, rank_type)
+		if(QDELETED(custom_rank))
+			new_rank_names -= new_rank_name
+			continue
+		GLOB.admin_ranks += custom_rank
+		custom_ranks += custom_rank
 
 	var/list/new_ranks = list()
 	for (var/datum/admin_rank/admin_rank as anything in GLOB.admin_ranks)
@@ -387,15 +431,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 	if(IsAdminAdvancedProcCall())
 		to_chat(usr, span_adminprefix("Rank Modification blocked: Advanced ProcCall detected."), confidential = TRUE)
 		return
-	var/new_flags = input_bitfield(
-		usr,
-		"Admin rights<br>This will affect only the current admin ([admin_ckey]), temporarily",
-		"admin_flags",
-		admin_holder.rank_flags(),
-		350,
-		590,
-		allowed_edit_field = usr.client.holder.can_edit_rights_flags(),
-	)
+	var/new_flags = flow_ask(usr, "admin_flags", list("kind" = "bitfield", "title" = "Admin rights of [admin_ckey] (this round only)", "bitfield" = "admin_flags", "default" = admin_holder.rank_flags(), "editable" = usr.client.holder.can_edit_rights_flags()))
 	if(isnull(new_flags))
 		return
 
@@ -431,6 +467,8 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 
 /// Polls usr for a new rank to add to either JUST this round, or the DB
 /datum/admins/proc/add_rank()
+	if(!GLOB.prompt_flow)
+		return prompt_flow(src, PROC_REF(add_rank), args)
 	if(!check_rights(R_PERMISSIONS))
 		to_chat(usr, span_adminprefix("You don't have the permissions for this."), confidential = TRUE)
 		return
@@ -441,7 +479,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		to_chat(usr, span_adminprefix("You are not allowed to add any rights."), confidential = TRUE)
 		return
 
-	var/new_rank_name = input("Please input a new rank", "New custom rank") as text|null
+	var/new_rank_name = flow_ask(usr, "rank_name", list("kind" = "text", "message" = "Please input a new rank", "title" = "New custom rank"))
 	if (!new_rank_name)
 		return
 
@@ -450,33 +488,15 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		to_chat(usr, span_adminprefix("A rank by this name already exists, sorry!."), confidential = TRUE)
 		return
 
-	var/rights = input_bitfield(
-		usr,
-		"New rights for [new_rank_name]",
-		"admin_flags",
-		NONE,
-		350,
-		590,
-		allowed_edit_field = usr.client.holder.can_edit_rights_flags(),
-	)
-	var/excluded_rights = input_bitfield(
-		usr,
-		"New excluded rights for [new_rank_name]",
-		"admin_flags",
-		NONE,
-		350,
-		590,
-		allowed_edit_field = usr.client.holder.can_edit_rights_flags(),
-	)
-	var/edit_rights = input_bitfield(
-		usr,
-		"New editing rights for [new_rank_name]",
-		"admin_flags",
-		NONE,
-		350,
-		590,
-		allowed_edit_field = usr.client.holder.can_edit_rights_flags(),
-	)
+	var/rights = flow_ask(usr, "rights", list("kind" = "bitfield", "title" = "New rights for [new_rank_name]", "bitfield" = "admin_flags", "default" = NONE, "editable" = usr.client.holder.can_edit_rights_flags()))
+	if(isnull(rights))
+		return
+	var/excluded_rights = flow_ask(usr, "excluded_rights", list("kind" = "bitfield", "title" = "New excluded rights for [new_rank_name]", "bitfield" = "admin_flags", "default" = NONE, "editable" = usr.client.holder.can_edit_rights_flags()))
+	if(isnull(excluded_rights))
+		return
+	var/edit_rights = flow_ask(usr, "edit_rights", list("kind" = "bitfield", "title" = "New editing rights for [new_rank_name]", "bitfield" = "admin_flags", "default" = NONE, "editable" = usr.client.holder.can_edit_rights_flags()))
+	if(isnull(edit_rights))
+		return
 
 	var/use_db = FALSE
 	if(check_rights(R_DBRANKS, FALSE))
@@ -484,7 +504,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 			to_chat(usr, span_danger("Unable to connect to database, changes are temporary only."), confidential = TRUE)
 			use_db = FALSE
 		else
-			var/use_db_response = tgui_alert(usr,"Permanent changes are saved to the database for future rounds, temporary changes will affect only the current round", "Permanent or Temporary?", list("Permanent", "Temporary", "Cancel"))
+			var/use_db_response = flow_ask(usr, "use_db", list("message" = "Permanent changes are saved to the database for future rounds, temporary changes will affect only the current round", "title" = "Permanent or Temporary?", "choices" = list("Permanent", "Temporary", "Cancel")))
 			if(isnull(use_db_response) || use_db_response == "Cancel")
 				return
 			if(use_db_response == "Permanent")
@@ -494,6 +514,9 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		if(QDELETED(usr))
 			return
 
+	if(length(ranks_from_rank_name(new_rank_name))) // Made while we were asking.
+		to_chat(usr, span_adminprefix("A rank by this name already exists, sorry!."), confidential = TRUE)
+		return
 	var/datum/admin_rank/custom_rank
 	if(use_db)
 		custom_rank = new(new_rank_name, RANK_SOURCE_DB, rights, excluded_rights, edit_rights)
@@ -549,6 +572,8 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 /datum/admins/proc/remove_rank(admin_rank)
 	if(!admin_rank)
 		return
+	if(!GLOB.prompt_flow)
+		return prompt_flow(src, PROC_REF(remove_rank), args)
 	if(!check_rights(R_PERMISSIONS))
 		message_admins("[key_name_admin(usr)] attempted to remove a rank without sufficient rights.")
 		log_admin("[key_name(usr)] attempted to remove a rank without sufficient rights.")
@@ -607,7 +632,8 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 			to_chat(usr, span_danger("Error: Rank deletion attempted while rank still used; Tell a coder, this shouldn't happen."), confidential = TRUE)
 			return
 
-	if(tgui_alert(usr,"Are you sure you want to remove [admin_rank]?", "Confirm Removal", list("Do it","Cancel")) != "Do it")
+	// Asked last, after every check above ran again on this answer's re-run.
+	if(flow_ask(usr, "remove_rank", list("message" = "Are you sure you want to remove [admin_rank]?", "title" = "Confirm Removal", "choices" = list("Do it", "Cancel"))) != "Do it")
 		return
 
 	var/m1 = "[key_name_admin(usr)] removed rank [admin_rank] [local_only_deletion ? "temporarially" : "permanently"]"
@@ -639,9 +665,13 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 	QDEL_NULL(query_remove_rank_log)
 
 /// Changes the flags on either a DB or local rank
+/// Edits one of the rank's flag sets per use (a prompt flow: both questions are asked, and every
+/// check re-run, before anything changes).
 /datum/admins/proc/change_rank(admin_rank)
 	if(!admin_rank)
 		return
+	if(!GLOB.prompt_flow)
+		return prompt_flow(src, PROC_REF(change_rank), args)
 	if(!check_rights(R_PERMISSIONS))
 		message_admins("[key_name_admin(usr)] attempted to edit rank permissions without sufficient rights.")
 		log_admin("[key_name(usr)] attempted to edit rank permissions without sufficient rights.")
@@ -727,8 +757,9 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		working_exclude_rights = target_rank.exclude_rights
 		working_can_edit_rights = target_rank.can_edit_rights
 
-	while(TRUE)
-		var/what_to_edit = tgui_input_list(usr, "What do you want to edit", "Rank Editing", list("Rights", "Excluded Rights", "Edit Rights", "Finished"))
+	// One edit per use: the flow re-runs this proc for each answer, so a loop would replay edits.
+	for(var/pass in 1 to 1)
+		var/what_to_edit = flow_ask(usr, "what", list("kind" = "list", "message" = "What do you want to edit", "title" = "Rank Editing", "choices" = list("Rights", "Excluded Rights", "Edit Rights", "Finished")))
 		var/existing_flags = NONE
 		var/pretty_name
 		switch(what_to_edit)
@@ -743,17 +774,8 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 				pretty_name = "editing rights"
 			else
 				return
-		var/new_flags = input_bitfield(
-			usr,
-			"Editing [target_rank.name] [what_to_edit]",
-			"admin_flags",
-			existing_flags,
-			350,
-			590,
-			allowed_edit_field = usr.client.holder.can_edit_rights_flags(),
-		)
+		var/new_flags = flow_ask(usr, "flags:[what_to_edit]", list("kind" = "bitfield", "title" = "Editing [target_rank.name] [what_to_edit]", "bitfield" = "admin_flags", "default" = existing_flags, "editable" = usr.client.holder.can_edit_rights_flags()))
 		if(isnull(new_flags))
-			to_chat(usr, span_adminprefix("Canceled editing rank."), confidential = TRUE)
 			return
 
 		// Gotta turn it off and on again

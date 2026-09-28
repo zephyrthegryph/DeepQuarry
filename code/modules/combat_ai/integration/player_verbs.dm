@@ -80,7 +80,8 @@
 		to_chat(src, span_warning("You have no combat moves ready right now."))
 		return
 
-	var/picked = tgui_input_list(src, "Pick a combat move:", "Combat Move", options)
+	// Answers re-run this verb, which asks again and checks everything again.
+	var/picked = rerun_prompt(src, "move", list("kind" = "list", "message" = "Pick a combat move:", "title" = "Combat Move", "choices" = options), TYPE_PROC_REF(/mob/living, dq_use_combat_move), list())
 	if(!picked || !options[picked])
 		return
 	var/list/sel = options[picked]
@@ -156,7 +157,7 @@
 			if(!length(candidates))
 				to_chat(user, span_warning("No valid targets in range."))
 				return null
-			var/picked_key = tgui_input_list(user, "Pick a target:", "Target", candidates)
+			var/picked_key = user.rerun_prompt(user, "target", list("kind" = "list", "message" = "Pick a target:", "title" = "Target", "choices" = candidates), TYPE_PROC_REF(/mob/living, dq_use_combat_move), list())
 			return picked_key ? candidates[picked_key] : null
 		if(DQ_TARGET_TURF)
 			// For turf-target behaviors (e.g. throw_grenade), let the AI's own
@@ -176,7 +177,7 @@
 			if(!length(candidates))
 				to_chat(user, span_warning("No valid items in range."))
 				return null
-			var/picked_key = tgui_input_list(user, "Pick an item:", "Target", candidates)
+			var/picked_key = user.rerun_prompt(user, "target", list("kind" = "list", "message" = "Pick an item:", "title" = "Target", "choices" = candidates), TYPE_PROC_REF(/mob/living, dq_use_combat_move), list())
 			return picked_key ? candidates[picked_key] : null
 	return null
 

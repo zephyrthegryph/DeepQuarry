@@ -94,8 +94,9 @@
 	set name = "Set Sex"
 	set desc = "Set what sprite set you use (male/female)"
 	set category = "Abilities.Settings"
-	var/newsex
-	newsex = tgui_input_list(src, "Please select a sex:", "Set Sex", list(FEMALE, MALE))
+	om_prompt(src, src, list("kind" = "list", "message" = "Please select a sex:", "title" = "Set Sex", "choices" = list(FEMALE, MALE)), PROC_REF(sex_chosen))
+
+/mob/living/simple_mob/vore/retaliate/lion/proc/sex_chosen(mob/user, newsex, datum/om/prompt/ask)
 	if(newsex == FEMALE)
 		icon_living = "lioness"
 		icon_dead = "lioness-dead"

@@ -59,18 +59,20 @@ REF_OWNED(/obj/structure/trash_pile, "mouse_nest")
 		var/mob/living/L = user
 		//They're in it, and want to get out.
 		if(L.loc == src)
-			var/choice = tgui_alert(user, "Do you want to exit \the [src]?","Un-Hide?",list("Exit","Stay"))
-			if(choice == "Exit")
-				if(L == hider)
-					hider = null
-				L.forceMove(get_turf(src))
+			om_prompt(src, user, list("message" = "Do you want to exit \the [src]?", "title" = "Un-Hide?", "choices" = list("Exit","Stay"), "requires" = list(/datum/om/check/inside_target)), PROC_REF(hide_answered))
 		else if(!hider)
-			var/choice = tgui_alert(user, "Do you want to hide in \the [src]?","Un-Hide?",list("Hide","Stay"))
-			if(choice == "Hide" && !hider) //Check again because PROMPT
-				L.forceMove(src)
-				hider = L
+			om_prompt(src, user, list("message" = "Do you want to hide in \the [src]?", "title" = "Un-Hide?", "choices" = list("Hide","Stay"), "requires" = PROMPT_ADJACENT), PROC_REF(hide_answered))
 	else
 		return ..()
+
+/obj/structure/trash_pile/proc/hide_answered(mob/living/L, choice, datum/om/prompt/ask)
+	if(choice == "Exit")
+		if(L == hider)
+			hider = null
+		L.forceMove(get_turf(src))
+	else if(choice == "Hide" && !hider) //Check again because PROMPT
+		L.forceMove(src)
+		hider = L
 
 /obj/structure/trash_pile/attack_ghost(mob/observer/user as mob)
 	if(CONFIG_GET(flag/disable_player_mice))
@@ -96,8 +98,10 @@ REF_OWNED(/obj/structure/trash_pile, "mouse_nest")
 		to_chat(user, span_warning("You may only spawn again as a mouse more than [CONFIG_GET(number/mouse_respawn_time)] minutes after your death. You have [timedifference_text] left."))
 		return
 
-	var/response = tgui_alert(user, "Are you -sure- you want to become a mouse?","Are you sure you want to squeek?",list("Squeek!","Nope!"))
-	if(response != "Squeek!") return  //Hit the wrong key...again.
+	om_prompt(src, user, list("message" = "Are you -sure- you want to become a mouse?", "title" = "Are you sure you want to squeek?", "choices" = list("Squeek!","Nope!"), "requires" = list(/datum/om/check/has_client)), PROC_REF(mouse_confirmed))
+
+/obj/structure/trash_pile/proc/mouse_confirmed(mob/observer/user, response, datum/om/prompt/ask)
+	if(response != "Squeek!" || !isobserver(user)) return  //Hit the wrong key...again.
 
 	var/mob/living/simple_mob/animal/passive/mouse/host
 	host = new /mob/living/simple_mob/animal/passive/mouse(get_turf(src))

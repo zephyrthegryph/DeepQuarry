@@ -197,11 +197,19 @@
 		to_chat(user, span_warning("You can't do that right now!"))
 		return
 
-	if(tgui_alert(user, "Are you sure you want to recolor your blade?", "Confirm Recolor", list("Yes", "No")) == "Yes")
-		var/energy_color_input = tgui_color_picker(user,"","Choose Energy Color",lcolor)
-		if(energy_color_input)
-			lcolor = sanitize_hexcolor(energy_color_input)
-		update_icon()
+	om_prompt_sequence(src, user, list(
+		list("key" = "sure", "message" = "Are you sure you want to recolor your blade?", "title" = "Confirm Recolor", "choices" = list("Yes", "No")),
+		PROC_REF(ask_blade_color),
+	), PROC_REF(blade_recolored), list("requires" = PROMPT_ADJACENT))
+
+/obj/item/toy/sword/proc/ask_blade_color(mob/user, datum/om/prompt/ask)
+	if(ask.get("sure") == "Yes")
+		return list("key" = "color", "kind" = "color", "message" = "", "title" = "Choose Energy Color", "default" = lcolor)
+
+/obj/item/toy/sword/proc/blade_recolored(mob/user, datum/om/prompt/ask)
+	if(ask.get("color"))
+		lcolor = sanitize_hexcolor(ask.get("color"))
+	update_icon()
 
 /obj/item/toy/sword/examine(mob/user)
 	. = ..()
@@ -874,9 +882,10 @@
 	if(!M.mind)
 		return 0
 
-	var/input = tgui_input_text(usr, "What do you want to name the plushie?", ,"", MAX_NAME_LEN)
+	om_prompt(src, M, list("kind" = "text", "message" = "What do you want to name the plushie?", "default" = "", "max_length" = MAX_NAME_LEN, "requires" = PROMPT_ADJACENT), PROC_REF(plushie_named))
 
-	if(src && input && !M.stat && in_range(M,src))
+/obj/item/toy/plushie/proc/plushie_named(mob/M, input, datum/om/prompt/ask)
+	if(input)
 		name = input
 		// Rename possessed voices too
 		for(var/mob/living/voice/V in possessed_voice)
@@ -1933,17 +1942,20 @@
 /obj/item/toy/rock/attackby(obj/item/I as obj, mob/living/user as mob, proximity)
 	if(!proximity) return
 	if(istype(I, /obj/item/pen))
-		var/drawtype = tgui_alert(user, "Choose what you'd like to draw.", "Faces", list("fred","roxie","rock","Cancel"))
-		switch(drawtype)
-			if("fred")
-				src.icon_state = "fred"
-				to_chat(user, "You draw a face on the rock.")
-			if("rock")
-				src.icon_state = "rock"
-				to_chat(user, "You wipe the plastic clean.")
-			if("roxie")
-				src.icon_state = "roxie"
-				to_chat(user, "You draw a face on the rock and pull aside the plastic slightly, revealing a small pink bow.")
+		om_prompt(src, user, list("message" = "Choose what you'd like to draw.", "title" = "Faces", "choices" = list("fred","roxie","rock","Cancel"), "target" = I, "requires" = PROMPT_IN_HAND), PROC_REF(face_chosen))
+	return
+
+/obj/item/toy/rock/proc/face_chosen(mob/living/user, drawtype, datum/om/prompt/ask)
+	switch(drawtype)
+		if("fred")
+			src.icon_state = "fred"
+			to_chat(user, "You draw a face on the rock.")
+		if("rock")
+			src.icon_state = "rock"
+			to_chat(user, "You wipe the plastic clean.")
+		if("roxie")
+			src.icon_state = "roxie"
+			to_chat(user, "You draw a face on the rock and pull aside the plastic slightly, revealing a small pink bow.")
 	return
 
 /*

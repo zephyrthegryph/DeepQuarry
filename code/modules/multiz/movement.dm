@@ -832,14 +832,16 @@
 				if(I.climbing_delay > climbing_delay_min)
 					climbing_delay_min = I.climbing_delay //We get the maximum possible speedup out of worn equipment
 		if(!permit_human)
-			var/sure = tgui_alert(H,"Are you sure you want to try without tools? It's VERY LIKELY \
-			you will fall and get hurt. More agile species might have better luck", "Second Thoughts", list("Bring it!", "Stay grounded"))
+			var/sure = rerun_prompt(H, "k824", list("message" = "Are you sure you want to try without tools? It's VERY LIKELY you will fall and get hurt. More agile species might have better luck", "title" = "Second Thoughts", "choices" = list("Bring it!", "Stay grounded")), PROC_REF(climb_wall), args)
+			if(isnull(sure))
+				return
 			if(!sure || sure == "Stay grounded") return
 			fall_chance = clamp(100 - H.species.agility, 40, 90) //This should be 80 for most species. Traceur would reduce to 10%, so clamping higher
 	//If not a human mob, must be simple or silicon. They got a var stored on their mob we can check
 	else if(!L.can_climb)
-		var/sure = tgui_alert(L,"Are you sure you want to try without tools? It's VERY LIKELY \
-			you will fall and get hurt. More agile species might have better luck", "Second Thoughts", list("Bring it!", "Stay grounded"))
+		var/sure = rerun_prompt(L, "k829", list("message" = "Are you sure you want to try without tools? It's VERY LIKELY you will fall and get hurt. More agile species might have better luck", "title" = "Second Thoughts", "choices" = list("Bring it!", "Stay grounded")), PROC_REF(climb_wall), args)
+		if(isnull(sure))
+			return
 		if(!sure || sure == "Stay grounded") return
 		if(isrobot(L))
 			fall_chance = 80 // Robots get no mercy
@@ -850,7 +852,9 @@
 	if(istype(L, /mob/living/simple_mob/vore/alienanimals/catslug))
 		var/obj/O = L.get_active_hand()
 		if(istype(O, /obj/item/material/twohanded/spear))
-			var/choice = tgui_alert(L, "Use your spear to climb faster? This will drop and break it!", "Scug Tactics", list("Yes!", "No"))
+			var/choice = rerun_prompt(L, "k840", list("message" = "Use your spear to climb faster? This will drop and break it!", "title" = "Scug Tactics", "choices" = list("Yes!", "No")), PROC_REF(climb_wall), args)
+			if(isnull(choice))
+				return
 			if(choice == "Yes!")
 				drop_our_held = TRUE
 				climbing_delay_min = 0.75
@@ -980,14 +984,16 @@
 				if(I.climbing_delay > climbing_delay_min)
 					climbing_delay_min = I.climbing_delay //We get the maximum possible speedup out of worn equipment
 		if(!permit_human)
-			var/sure = tgui_alert(H,"Are you sure you want to try without tools? It's VERY LIKELY \
-			you will fall and get hurt. More agile species might have better luck", "Second Thoughts", list("Bring it!", "Stay grounded"))
+			var/sure = rerun_prompt(H, "k951", list("message" = "Are you sure you want to try without tools? It's VERY LIKELY you will fall and get hurt. More agile species might have better luck", "title" = "Second Thoughts", "choices" = list("Bring it!", "Stay grounded")), VERB_REF(climb_down), args)
+			if(isnull(sure))
+				return
 			if(!sure || sure == "Stay grounded") return
 			fall_chance = clamp(100 - H.species.agility, 40, 90) //This should be 80 for most species. Traceur would reduce to 10%, so clamping higher
 	//If not a human mob, must be simple or silicon. They got a var stored on their mob we can check
 	else if(!src.can_climb)
-		var/sure = tgui_alert(src,"Are you sure you want to try without tools? It's VERY LIKELY \
-			you will fall and get hurt. More agile species might have better luck", "Second Thoughts", list("Bring it!", "Stay grounded"))
+		var/sure = rerun_prompt(src, "k956", list("message" = "Are you sure you want to try without tools? It's VERY LIKELY you will fall and get hurt. More agile species might have better luck", "title" = "Second Thoughts", "choices" = list("Bring it!", "Stay grounded")), VERB_REF(climb_down), args)
+		if(isnull(sure))
+			return
 		if(!sure || sure == "Stay grounded") return
 		if(isrobot(src))
 			fall_chance = 80 // Robots get no mercy

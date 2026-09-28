@@ -75,7 +75,7 @@ ADMIN_VERB(debug_controller, R_DEBUG, "Debug Controller", "Debug the various per
 	//Goon PS stuff, and other yet-to-be-subsystem things.
 	options["LEGACY: cameranet"] = GLOB.cameranet
 
-	var/pick = tgui_input_list(user, "Choose a controller to debug/view variables of.", "VV controller:", options)
+	var/pick = verb_prompt(user, "pick", list("kind" = "list", "message" = "Choose a controller to debug/view variables of.", "title" = "VV controller:", "choices" = options), args)
 	if(!pick)
 		return
 	var/datum/D = options[pick]

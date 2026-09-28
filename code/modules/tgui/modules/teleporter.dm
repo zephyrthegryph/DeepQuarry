@@ -59,7 +59,9 @@
 						areaindex[tmpname] = 1
 					L[tmpname] = I
 
-			var/desc = tgui_input_list(ui.user, "Please select a location to lock in.", "Locking Menu", L)
+			var/desc = act_prompt(ui.user, action, params, ui, "a1", list("kind" = "list", "message" = "Please select a location to lock in.", "title" = "Locking Menu", "choices" = L))
+			if(isnull(desc))
+				return
 			if(!desc)
 				return FALSE
 			if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)

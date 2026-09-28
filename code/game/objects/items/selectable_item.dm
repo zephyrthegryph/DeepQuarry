@@ -14,10 +14,14 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	tgui_alert(user, {"[preface_string]"}, preface_title)
-	var/chosen_item = tgui_input_list(user, selection_string, selection_title, item_options)
-	chosen_item = item_options[chosen_item]
-	if(!QDELETED(src) && chosen_item)
+	om_prompt_sequence(src, user, list(
+		list("key" = "preface", "message" = {"[preface_string]"}, "title" = preface_title),
+		list("key" = "item", "kind" = "list", "message" = selection_string, "title" = selection_title, "choices" = item_options),
+	), PROC_REF(item_selected), list("requires" = PROMPT_HELD))
+
+/obj/item/selectable_item/proc/item_selected(mob/user, datum/om/prompt/ask)
+	var/chosen_item = item_options[ask.get("item")]
+	if(chosen_item)
 		user.drop_item()
 		var/obj/item/result = new chosen_item(get_turf(user))
 		user.put_in_active_hand(result)

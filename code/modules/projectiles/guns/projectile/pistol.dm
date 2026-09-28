@@ -44,7 +44,10 @@
 		to_chat(M, span_notice("You don't feel cool enough to name this gun, chump."))
 		return 0
 
-	var/input = sanitizeSafe(tgui_input_text(M, "What do you want to name the gun?","Rename Gun" ,"",MAX_NAME_LEN, encode = FALSE))
+	var/_answer_k47 = rerun_prompt(M, "k47", list("kind" = "text", "message" = "What do you want to name the gun?", "title" = "Rename Gun", "max_length" = MAX_NAME_LEN, "encode" = FALSE), VERB_REF(rename_gun), args)
+	if(isnull(_answer_k47))
+		return
+	var/input = sanitizeSafe(_answer_k47)
 
 	if(src && input && !M.stat && in_range(M,src))
 		name = input
@@ -65,7 +68,9 @@
 	options["MarsTech P11 Spur (Dark)"] = "dark_colt"
 	options["MarsTech P11 Spur (Green)"] = "green_colt"
 	options["MarsTech P11 Spur (Blue)"] = "blue_colt"
-	var/choice = tgui_input_list(M,"Choose your sprite!","Resprite Gun", options)
+	var/choice = rerun_prompt(M, "k68", list("kind" = "list", "message" = "Choose your sprite!", "title" = "Resprite Gun", "choices" = options), VERB_REF(reskin_gun), args)
+	if(isnull(choice))
+		return
 	if(src && choice && !M.stat && in_range(M,src))
 		icon_state = options[choice]
 		unique_reskin = options[choice]

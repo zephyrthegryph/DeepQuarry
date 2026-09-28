@@ -62,7 +62,9 @@
 
 	switch(action)
 		if("species")
-			var/new_species = tgui_input_list(ui.user, "Select a new species", "Prosfab Species Selection", species_types)
+			var/new_species = act_prompt(ui.user, action, params, ui, "k65", list("kind" = "list", "message" = "Select a new species", "title" = "Prosfab Species Selection", "choices" = species_types))
+			if(isnull(new_species))
+				return
 			if(new_species && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
 				species = new_species
 			return TRUE
@@ -76,7 +78,9 @@
 					continue
 				new_manufacturers += A
 
-			var/new_manufacturer = tgui_input_list(ui.user, "Select a new manufacturer", "Prosfab Species Selection", new_manufacturers)
+			var/new_manufacturer = act_prompt(ui.user, action, params, ui, "k79", list("kind" = "list", "message" = "Select a new manufacturer", "title" = "Prosfab Species Selection", "choices" = new_manufacturers))
+			if(isnull(new_manufacturer))
+				return
 			if(new_manufacturer && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
 				manufacturer = new_manufacturer
 			return TRUE

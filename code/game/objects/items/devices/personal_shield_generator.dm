@@ -175,20 +175,8 @@ REF_OWNED(/obj/item/personal_shield_generator, list("active_weapon", "bcell"))
 		to_chat(user, span_notice("You cannot remove the cell from this device."))
 		return ITEM_INTERACT_BLOCKING
 	if(istype(bcell, /obj/item/cell/device/shield_generator))
-		var/choice = tgui_alert(user, "A popup appears on the device 'REMOVING THE INTERNAL CELL WILL DESTROY THE BATTERY. DO YOU WISH TO CONTINUE?'...Well, do you?", "Selection List", list("Cancel", "Remove"))
-		if(choice != "Remove")
-			return ITEM_INTERACT_BLOCKING
-		var/datum/effect/effect/system/spark_spread/sparks = new
-		sparks.set_up(5, 1, src)
-		sparks.start()
-		qdel(bcell)
-		bcell = null
-		if(active_weapon)
-			reattach_gun()
-			active_weapon.power_supply = null
-		to_chat(user, span_notice("You remove the cell from \the [src], destroying the battery."))
-		update_icon()
-		return ITEM_INTERACT_SUCCESS
+		om_prompt(src, user, list("message" = "A popup appears on the device 'REMOVING THE INTERNAL CELL WILL DESTROY THE BATTERY. DO YOU WISH TO CONTINUE?'...Well, do you?", "title" = "Selection List", "choices" = list("Cancel", "Remove"), "requires" = PROMPT_ADJACENT), PROC_REF(destroy_cell_answered))
+		return ITEM_INTERACT_BLOCKING
 	bcell.update_icon()
 	bcell.forceMove(get_turf(src))
 	bcell = null
@@ -199,12 +187,28 @@ REF_OWNED(/obj/item/personal_shield_generator, list("active_weapon", "bcell"))
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
+/obj/item/personal_shield_generator/proc/destroy_cell_answered(mob/user, choice, datum/om/prompt/ask)
+	if(choice != "Remove" || !istype(bcell, /obj/item/cell/device/shield_generator) || istype(bcell, /obj/item/cell/device/shield_generator/parry))
+		return
+	var/datum/effect/effect/system/spark_spread/sparks = new
+	sparks.set_up(5, 1, src)
+	sparks.start()
+	qdel(bcell)
+	bcell = null
+	if(active_weapon)
+		reattach_gun()
+		active_weapon.power_supply = null
+	to_chat(user, span_notice("You remove the cell from \the [src], destroying the battery."))
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
+
 /obj/item/personal_shield_generator/multitool_act(mob/user, obj/item/tool)
-	var/new_color = tgui_color_picker(user, "Choose a color to set the shield to!", "", effect_color)
+	om_prompt(src, user, list("kind" = "color", "message" = "Choose a color to set the shield to!", "title" = "", "default" = effect_color, "requires" = PROMPT_ADJACENT), PROC_REF(shield_color_chosen))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/personal_shield_generator/proc/shield_color_chosen(mob/user, new_color, datum/om/prompt/ask)
 	if(new_color)
 		effect_color = new_color
-		return ITEM_INTERACT_SUCCESS
-	return ITEM_INTERACT_BLOCKING
 
 // TODO: EMAG ACT
 // Perhaps make it so emagging the generator gives two options: One to rig the cell (stealthily) and one to disable the safeties (supercharge it)

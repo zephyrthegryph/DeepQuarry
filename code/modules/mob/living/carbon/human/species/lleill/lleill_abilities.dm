@@ -46,10 +46,10 @@
 
 	last_special = world.time + 50
 
-	var/new_species = null
-	new_species = tgui_input_list(src, "Please select a species to emulate.", "Shapeshifter Body", species.get_valid_shapeshifter_forms(src))
+	om_prompt(src, src, list("kind" = "list", "message" = "Please select a species to emulate.", "title" = "Shapeshifter Body", "choices" = species.get_valid_shapeshifter_forms(src), "requires" = PROMPT_CONSCIOUS), PROC_REF(lleill_shape_chosen))
 
-	if(!new_species || !GLOB.all_species[new_species] || GLOB.wrapped_species_by_ref["\ref[src]"] == new_species)
+/mob/living/carbon/human/proc/lleill_shape_chosen(mob/user, new_species, datum/om/prompt/ask)
+	if(!GLOB.all_species[new_species] || GLOB.wrapped_species_by_ref["\ref[src]"] == new_species || !(new_species in species.get_valid_shapeshifter_forms(src)))
 		return
 	lleill_change_shape(new_species)
 
@@ -73,9 +73,9 @@
 
 	last_special = world.time + 50
 
-	var/new_skin = tgui_color_picker(src, "Please select a new body color.", "Shapeshifter Colour", rgb(r_skin, g_skin, b_skin))
-	if(!new_skin)
-		return
+	om_prompt(src, src, list("kind" = "color", "message" = "Please select a new body color.", "title" = "Shapeshifter Colour", "default" = rgb(r_skin, g_skin, b_skin), "requires" = PROMPT_CONSCIOUS), PROC_REF(lleill_colour_chosen))
+
+/mob/living/carbon/human/proc/lleill_colour_chosen(mob/user, new_skin, datum/om/prompt/ask)
 	lleill_set_colour(new_skin)
 
 /mob/living/carbon/human/proc/lleill_set_colour(new_skin)
@@ -133,20 +133,21 @@
 		to_chat(src, span_warning("You have no item in your active hand."))
 		return
 
-	var/choice = tgui_input_list(src, "Choose a glamour to transmute the item into:", "Transmutation", transmute_list)
+	om_prompt(src, src, list("kind" = "list", "message" = "Choose a glamour to transmute the item into:", "title" = "Transmutation", "choices" = transmute_list, "requires" = PROMPT_CONSCIOUS, "data" = list("item" = I, "products" = transmute_list, "cost" = energy_cost)), PROC_REF(lleill_transmute_chosen))
 
-	if(!choice)
-		return
+/mob/living/carbon/human/proc/lleill_transmute_chosen(mob/user, choice, datum/om/prompt/ask)
+	var/list/transmute_list = ask.get("products")
+	var/obj/item/I = ask.get("item")
+	var/energy_cost = ask.get("cost")
 	var/obj/item/transmute_product = transmute_list[choice]
-
-
-	if(!get_active_hand(I))
+	if(get_active_hand() != I)
 		to_chat(src, span_warning("The item is no longer in your hands."))
 		return
-	else
-		visible_message(span_infoplain(span_bold("\The [src]") + " begins to change the form of \the [I]."))
-		om_task_start(/datum/om/task/timed/human_lleill_transmute_human, src, I, list("energy_cost" = energy_cost, "transmute_product" = transmute_product))
+	if(species.lleill_energy < energy_cost)
+		to_chat(src, span_warning("You do not have enough energy to do that! You currently have [species.lleill_energy] energy."))
 		return
+	visible_message(span_infoplain(span_bold("\The [src]") + " begins to change the form of \the [I]."))
+	om_task_start(/datum/om/task/timed/human_lleill_transmute_human, src, I, list("energy_cost" = energy_cost, "transmute_product" = transmute_product))
 
 /datum/om/task/timed/human_lleill_transmute_human
 	duration = 10 SECONDS
@@ -207,8 +208,12 @@
 	if(src?.buckled_to())
 		to_chat(src,span_warning("You can't do that when restrained."))
 
-	var/r_action = tgui_alert(src, "What would you like to do with your rings? You currently have [species.lleill_energy] energy remaining.", "Actions", list("Spawn New Ring ([energy_cost_spawn])", "Teleport to Ring ([energy_cost_tele])", "Cancel"))
-	if(!r_action || r_action == "Cancel")
+	om_prompt(src, src, list("message" = "What would you like to do with your rings? You currently have [species.lleill_energy] energy remaining.", "title" = "Actions", "choices" = list("Spawn New Ring ([energy_cost_spawn])", "Teleport to Ring ([energy_cost_tele])", "Cancel"), "requires" = PROMPT_CONSCIOUS, "data" = list("spawn" = energy_cost_spawn, "tele" = energy_cost_tele)), PROC_REF(lleill_ring_action_chosen))
+
+/mob/living/carbon/human/proc/lleill_ring_action_chosen(mob/user, r_action, datum/om/prompt/ask)
+	var/energy_cost_spawn = ask.get("spawn")
+	var/energy_cost_tele = ask.get("tele")
+	if(r_action == "Cancel")
 		return
 	if(findtext(r_action,"Spawn New Ring"))
 		if(species.lleill_energy < energy_cost_spawn)
@@ -223,40 +228,40 @@
 		if(!src.teleporters.len)
 			to_chat(src, span_warning("You need to place rings to teleport to them."))
 			return
-		else
-			var/obj/structure/glamour_ring/R = tgui_input_list(src, "Where do you wish to teleport?", "Teleport", src.teleporters)
+		om_prompt(src, src, list("kind" = "list", "message" = "Where do you wish to teleport?", "title" = "Teleport", "choices" = src.teleporters, "requires" = PROMPT_CONSCIOUS, "data" = list("tele" = energy_cost_tele)), PROC_REF(lleill_ring_teleport_chosen))
 
-			if(!R)
-				return
+/mob/living/carbon/human/proc/lleill_ring_teleport_chosen(mob/user, obj/structure/glamour_ring/R, datum/om/prompt/ask)
+	var/energy_cost_tele = ask.get("tele")
+	if(!(R in teleporters) || species.lleill_energy < energy_cost_tele)
+		return
+	var/datum/effect/effect/system/spark_spread/spk
+	spk = new(src)
 
-			var/datum/effect/effect/system/spark_spread/spk
-			spk = new(src)
+	var/T = get_turf(src)
+	spk.set_up(5, 0, src)
+	spk.attach(src)
+	playsound(T, "sparks", 50, 1)
+	anim(T,src,'icons/mob/mob.dmi',,"phaseout",,src.dir)
 
-			var/T = get_turf(src)
-			spk.set_up(5, 0, src)
-			spk.attach(src)
-			playsound(T, "sparks", 50, 1)
-			anim(T,src,'icons/mob/mob.dmi',,"phaseout",,src.dir)
+	var/S = get_turf(R)
+	src.forceMove(S)
+	species.lleill_energy -= energy_cost_tele
 
-			var/S = get_turf(R)
-			src.forceMove(S)
-			species.lleill_energy -= energy_cost_tele
+	spk.start()
+	playsound(S, 'sound/effects/phasein.ogg', 25, 1)
+	playsound(S, 'sound/effects/sparks2.ogg', 50, 1)
+	anim(S,src,'icons/mob/mob.dmi',,"phasein",,src.dir)
+	spk.set_up(5, 0, src)
+	spk.attach(src)
 
-			spk.start()
-			playsound(S, 'sound/effects/phasein.ogg', 25, 1)
-			playsound(S, 'sound/effects/sparks2.ogg', 50, 1)
-			anim(S,src,'icons/mob/mob.dmi',,"phasein",,src.dir)
-			spk.set_up(5, 0, src)
-			spk.attach(src)
-
-			//Would be fun to eat people standing on your ring...
-			if(can_be_drop_pred && vore_selected)
-				var/list/target_list = src.living_mobs(0)
-				if(target_list.len)
-					for(var/mob/living/M in target_list)
-						if(M.devourable && M.can_be_drop_prey)
-							vore_selected.nom_atom(M)
-							to_chat(M,span_vwarning("In a bright flash of white light, you suddenly find yourself trapped in \the [src]'s [vore_selected.get_belly_name()]!"))
+	//Would be fun to eat people standing on your ring...
+	if(can_be_drop_pred && vore_selected)
+		var/list/target_list = src.living_mobs(0)
+		if(target_list.len)
+			for(var/mob/living/M in target_list)
+				if(M.devourable && M.can_be_drop_prey)
+					vore_selected.nom_atom(M)
+					to_chat(M,span_vwarning("In a bright flash of white light, you suddenly find yourself trapped in \the [src]'s [vore_selected.get_belly_name()]!"))
 	species.update_lleill_hud(src)
 
 /datum/power/lleill/contact
@@ -299,19 +304,31 @@
 	if(!targets.len)
 		to_chat(src, span_warning("There is nobody next to you."))
 		return
-	var/mob/living/carbon/human/chosen_target = tgui_input_list(src, "Who do you wish to take energy from?", "Make contact", targets)
-	if(!chosen_target)
-		return
+	om_prompt_sequence(src, src, list(
+		list("key" = "target", "kind" = "list", "message" = "Who do you wish to take energy from?", "title" = "Make contact", "choices" = targets),
+		PROC_REF(lleill_contact_ask_type),
+		PROC_REF(lleill_contact_ask_custom),
+		PROC_REF(lleill_contact_ask_consent),
+	), PROC_REF(lleill_contact_answered), list("requires" = PROMPT_CONSCIOUS, "data" = list("options" = contact_options)))
 
-	var/contact_type = tgui_input_list(src, "How do you wish to make contact with \the [chosen_target]?", "Contact type", contact_options)
-	if(!contact_type)
-		return
+/mob/living/carbon/human/proc/lleill_contact_ask_type(mob/user, datum/om/prompt/ask)
+	return list("key" = "type", "kind" = "list", "message" = "How do you wish to make contact with \the [ask.get("target")]?", "title" = "Contact type", "choices" = ask.get("options"))
 
-	var/custom_text
-	if(contact_type == "Custom")
-		custom_text = tgui_input_text(src, "Write a description of how you make contact with \the [chosen_target], from a third person perspective.", "Custom contact")
+/mob/living/carbon/human/proc/lleill_contact_ask_custom(mob/user, datum/om/prompt/ask)
+	if(ask.get("type") == "Custom")
+		return list("key" = "custom", "kind" = "text", "message" = "Write a description of how you make contact with \the [ask.get("target")], from a third person perspective.", "title" = "Custom contact", "optional" = TRUE)
 
-	var/accepted = tgui_alert(chosen_target, "Do you accept the [contact_type] physical contact from \the [src]?", "Actions", list("Yes", "No"))
+/mob/living/carbon/human/proc/lleill_contact_ask_consent(mob/user, datum/om/prompt/ask)
+	return list("key" = "accepted", "user" = ask.get("target"), "requires" = list(), "message" = "Do you accept the [ask.get("type")] physical contact from \the [src]?", "title" = "Actions", "choices" = list("Yes", "No"), "on_stop" = PROC_REF(lleill_contact_refused))
+
+/mob/living/carbon/human/proc/lleill_contact_refused(mob/user, datum/om/prompt/ask)
+	to_chat(src, span_warning("\The [ask.get("target")] refuses the contact."))
+
+/mob/living/carbon/human/proc/lleill_contact_answered(mob/user, datum/om/prompt/ask)
+	var/mob/living/carbon/human/chosen_target = ask.get("target")
+	var/contact_type = ask.get("type")
+	var/custom_text = ask.get("custom")
+	var/accepted = ask.get("accepted")
 	if(get_dist(src,chosen_target) > 1)
 		to_chat(src, span_warning("You need to be standing next to [chosen_target]."))
 		return
@@ -482,11 +499,11 @@
 									"Unicorn" = /mob/living/simple_mob/vore/horse/unicorn/beastmode
 									)
 
-	var/chosen_beast = tgui_input_list(src, "Which form would you like to take?", "Choose Beast Form", beast_options)
+	om_prompt(src, src, list("kind" = "list", "message" = "Which form would you like to take?", "title" = "Choose Beast Form", "choices" = beast_options, "requires" = PROMPT_CONSCIOUS, "data" = list("options" = beast_options, "cost" = energy_cost)), PROC_REF(lleill_beast_chosen))
 
-	if(!chosen_beast)
-		return
-
+/mob/living/carbon/human/proc/lleill_beast_chosen(mob/user, chosen_beast, datum/om/prompt/ask)
+	var/list/beast_options = ask.get("options")
+	var/energy_cost = ask.get("cost")
 	if(species.lleill_energy < energy_cost)
 		to_chat(src, span_warning("You do not have enough energy to do that! You currently have [species.lleill_energy] energy."))
 		return
@@ -648,11 +665,11 @@
 									"Unicorn" = /mob/living/simple_mob/vore/horse/unicorn/beastmode
 									)
 
-	var/chosen_beast = tgui_input_list(src, "Which form would you like to take?", "Choose Beast Form", beast_options)
+	om_prompt(src, src, list("kind" = "list", "message" = "Which form would you like to take?", "title" = "Choose Beast Form", "choices" = beast_options, "requires" = PROMPT_CONSCIOUS, "data" = list("options" = beast_options, "cost" = energy_cost)), PROC_REF(hanner_beast_chosen))
 
-	if(!chosen_beast)
-		return
-
+/mob/living/carbon/human/proc/hanner_beast_chosen(mob/user, chosen_beast, datum/om/prompt/ask)
+	var/list/beast_options = ask.get("options")
+	var/energy_cost = ask.get("cost")
 	if(species.lleill_energy < energy_cost)
 		to_chat(src, span_warning("You do not have enough energy to do that! You currently have [species.lleill_energy] energy."))
 		return

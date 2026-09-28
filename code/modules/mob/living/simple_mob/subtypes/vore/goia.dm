@@ -492,8 +492,10 @@
 	set name = "Import style string"
 	set desc = "Import a string of text that was made using the import style verb to get back that style"
 	set category = "Abilities.Settings"
-	var/input_style
-	input_style = sanitizeSafe(tgui_input_text(src,"Paste the style string you exported with Export Style.", "Style loading","", 250))
+	om_prompt(src, src, list("kind" = "text", "message" = "Paste the style string you exported with Export Style.", "title" = "Style loading", "max_length" = 250), PROC_REF(import_style_entered))
+
+/mob/living/simple_mob/vore/zorgoia/proc/import_style_entered(mob/user, input_style, datum/om/prompt/ask)
+	input_style = sanitizeSafe(input_style)
 	if(input_style)
 		var/list/input_style_list = splittext(input_style, ";")
 		if((LAZYLEN(input_style_list) == 20) /* && (input_style_list[2] in main_styles) */ \

@@ -56,31 +56,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 				round_autoantag = !round_autoantag
 		message_admins("Admin [key_name_admin(usr)] toggled game mode option '[href_list["toggle"]]'.")
 	else if(href_list["set"])
-		var/choice = ""
-		switch(href_list["set"])
-			if("shuttle_delay")
-				choice = tgui_input_number(usr, "Enter a new shuttle delay multiplier", null, null, 20, 1)
-				if(!choice || choice < 1 || choice > 20)
-					return
-				shuttle_delay = choice
-			if("antag_scaling")
-				choice = tgui_input_number(usr, "Enter a new antagonist cap scaling coefficient.", null, null, 100, 0)
-				if(isnull(choice) || choice < 0 || choice > 100)
-					return
-				antag_scaling_coeff = choice
-			if("event_modifier_moderate")
-				choice = tgui_input_number(usr, "Enter a new moderate event time modifier.", null, null, 100, 0)
-				if(isnull(choice) || choice < 0 || choice > 100)
-					return
-				event_delay_mod_moderate = choice
-				refresh_event_modifiers()
-			if("event_modifier_severe")
-				choice = tgui_input_number(usr, "Enter a new moderate event time modifier.", null, null, 100, 0)
-				if(isnull(choice) || choice < 0 || choice > 100)
-					return
-				event_delay_mod_major = choice
-				refresh_event_modifiers()
-		message_admins("Admin [key_name_admin(usr)] set game mode option '[href_list["set"]]' to [choice].")
+		om_prompt(src, usr, list("kind" = "number", "message" = game_mode_option_prompt(href_list["set"]), "min" = 0, "max" = href_list["set"] == "shuttle_delay" ? 20 : 100, "requires" = PROMPT_ADMIN(R_ADMIN|R_SERVER), "data" = list("option" = href_list["set"])), PROC_REF(game_mode_option_entered))
 	else if(href_list["debug_antag"])
 		if(href_list["debug_antag"] == "self")
 			usr.client.debug_variables(src)
@@ -99,17 +75,49 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 			GLOB.additional_antag_types -= antag.id
 			message_admins("Admin [key_name_admin(usr)] removed [antag.role_text] template from game mode.")
 	else if(href_list["add_antag_type"])
-		var/choice = tgui_input_list(usr, "Which type do you wish to add?", "Select Antag Type", SSantag_job.all_antag_types)
-		if(!choice)
-			return
-		var/datum/antagonist/antag = SSantag_job.all_antag_types[choice]
-		if(antag)
-			if(!islist(SSticker.mode.antag_templates))
-				SSticker.mode.antag_templates = list()
-			SSticker.mode.antag_templates |= antag
-			message_admins("Admin [key_name_admin(usr)] added [antag.role_text] template to game mode.")
+		om_prompt(src, usr, list("kind" = "list", "message" = "Which type do you wish to add?", "title" = "Select Antag Type", "choices" = SSantag_job.all_antag_types, "requires" = PROMPT_ADMIN(R_ADMIN|R_SERVER)), PROC_REF(antag_type_added))
+		return
 
 	SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/show_game_mode)
+
+/datum/game_mode/proc/game_mode_option_prompt(option)
+	switch(option)
+		if("shuttle_delay")
+			return "Enter a new shuttle delay multiplier"
+		if("antag_scaling")
+			return "Enter a new antagonist cap scaling coefficient."
+		if("event_modifier_moderate", "event_modifier_severe")
+			return "Enter a new moderate event time modifier."
+
+/datum/game_mode/proc/game_mode_option_entered(mob/user, choice, datum/om/prompt/ask)
+	switch(ask.get("option"))
+		if("shuttle_delay")
+			if(!choice || choice < 1 || choice > 20)
+				return
+			shuttle_delay = choice
+		if("antag_scaling")
+			if(isnull(choice) || choice < 0 || choice > 100)
+				return
+			antag_scaling_coeff = choice
+		if("event_modifier_moderate")
+			if(isnull(choice) || choice < 0 || choice > 100)
+				return
+			event_delay_mod_moderate = choice
+			refresh_event_modifiers()
+		if("event_modifier_severe")
+			if(isnull(choice) || choice < 0 || choice > 100)
+				return
+			event_delay_mod_major = choice
+			refresh_event_modifiers()
+	message_admins("Admin [key_name_admin(user)] set game mode option '[ask.get("option")]' to [choice].")
+
+/datum/game_mode/proc/antag_type_added(mob/user, choice, datum/om/prompt/ask)
+	var/datum/antagonist/antag = SSantag_job.all_antag_types[choice]
+	if(antag)
+		if(!islist(SSticker.mode.antag_templates))
+			SSticker.mode.antag_templates = list()
+		SSticker.mode.antag_templates |= antag
+		message_admins("Admin [key_name_admin(user)] added [antag.role_text] template to game mode.")
 
 /datum/game_mode/proc/announce() //to be called when round starts
 	to_chat(world, span_world("The current game mode is [capitalize(name)]!"))

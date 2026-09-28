@@ -24,7 +24,10 @@
 		return FALSE
 	var/S
 	if(LAZYLEN(names) > 1)
-		S = tgui_input_list(src, "Select the target DNA:", "Target DNA", names)
+		var/_answer_a1 = rerun_prompt(src, "a1", list("kind" = "list", "message" = "Select the target DNA:", "title" = "Target DNA", "choices" = names), PROC_REF(changeling_transformation_sting), args)
+		if(isnull(_answer_a1))
+			return
+		S = _answer_a1
 	else
 		S = names[1]
 

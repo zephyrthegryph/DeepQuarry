@@ -1214,7 +1214,9 @@ REF_OWNED(/obj/item/clothing/suit, "hood")
 		if(value == sensor_mode)
 			default_choice = key
 			break
-	var/switchMode = tgui_input_list(user, "Select a sensor mode:", "Suit Sensor Mode", modes, default_choice)
+	var/switchMode = rerun_prompt(user, "a1", list("kind" = "list", "message" = "Select a sensor mode:", "title" = "Suit Sensor Mode", "choices" = modes, "default" = default_choice), PROC_REF(set_sensors), args)
+	if(isnull(switchMode))
+		return
 	if(get_dist(user, src) > 1)
 		to_chat(user, "You have moved too far away.")
 		return

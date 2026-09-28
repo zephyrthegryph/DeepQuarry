@@ -232,12 +232,17 @@ GLOBAL_LIST_EMPTY(Holiday) //Holidays are lists now, so we can have more than on
 ADMIN_VERB(Set_Holiday, R_SERVER, "Set Holiday", "Force-set the Holiday variable to make the game think it's a certain day.", ADMIN_CATEGORY_FUN_EVENT_KIT)
 	GLOB.Holiday = list()
 
-	var/H = tgui_input_text(user,"What holiday is it today?","Set Holiday")
-	if(!H)
+	om_prompt_sequence(user, user, list(
+		list("key" = "name", "kind" = "text", "message" = "What holiday is it today?", "title" = "Set Holiday"),
+		list("key" = "about", "kind" = "text", "message" = "Now explain what the holiday is about", "title" = "Set Holiday", "multiline" = TRUE),
+	), GLOBAL_PROC_REF(set_holiday_answered), list("requires" = PROMPT_ADMIN(R_SERVER)))
+
+/proc/set_holiday_answered(client/C, mob/user, datum/om/prompt/ask)
+	var/H = ask.get("name")
+	var/B = ask.get("about")
+	if(!H || !B)
 		return
-	var/B = tgui_input_text(user,"Now explain what the holiday is about","Set Holiday", multiline = TRUE, prevent_enter = TRUE)
-	if(!B)
-		return
+	GLOB.Holiday = list()
 
 	GLOB.Holiday[H] = B
 

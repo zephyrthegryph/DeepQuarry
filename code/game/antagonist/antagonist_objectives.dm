@@ -41,9 +41,13 @@
 		to_chat(src, span_warning("While you may perhaps have goals, this verb's meant to only be visible \
 		to antagonists.  Please make a bug report!"))
 		return
-	var/new_ambitions = tgui_input_text(src, "Write a short sentence of what your character hopes to accomplish \
+	om_prompt(src, src, list("kind" = "text", "message" = "Write a short sentence of what your character hopes to accomplish \
 	today as an antagonist.  Remember that this is purely optional.  It will be shown at the end of the \
-	round for everybody else.", "Ambitions", mind.ambitions, MAX_MESSAGE_LEN, TRUE)
+	round for everybody else.", "title" = "Ambitions", "default" = mind.ambitions, "max_length" = MAX_MESSAGE_LEN, "multiline" = TRUE), PROC_REF(ambitions_written))
+
+/mob/living/proc/ambitions_written(mob/user, new_ambitions, datum/om/prompt/ask)
+	if(!mind)
+		return
 	if(isnull(new_ambitions))
 		return
 	mind.ambitions = new_ambitions

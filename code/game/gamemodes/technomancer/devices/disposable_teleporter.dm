@@ -33,52 +33,54 @@
 		to_chat(user, span_danger("\The [src] has ran out of uses, and is now useless to you!"))
 		return
 	else
-		var/area_wanted = tgui_input_list(user, "Area to teleport to", "Teleportation", GLOB.teleportlocs)
-		if(!area_wanted)
-			return
-		var/area/A = GLOB.teleportlocs[area_wanted]
-		if(!A)
-			return
+		om_prompt(src, user, list("kind" = "list", "message" = "Area to teleport to", "title" = "Teleportation", "choices" = GLOB.teleportlocs, "requires" = PROMPT_HELD), PROC_REF(teleport_area_chosen))
 
-		if (user.stat || user.restrained())
-			return
+/obj/item/disposable_teleporter/proc/teleport_area_chosen(mob/user, area_wanted, datum/om/prompt/ask)
+	if(!uses)
+		return
+	var/area/A = GLOB.teleportlocs[area_wanted]
+	if(!A)
+		return
 
-		if(!((user == loc || (in_range(src, user) && istype(src.loc, /turf)))))
-			return
+	if (user.stat || user.restrained())
+		return
 
-		var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
-		sparks.set_up(5, 0, user.loc)
-		sparks.attach(user)
-		sparks.start()
+	if(!((user == loc || (in_range(src, user) && istype(src.loc, /turf)))))
+		return
 
-		if(user && user?.buckled_to())
-			var/atom/movable/_tmp_buck_4 = user?.buckled_to()
-			_tmp_buck_4.unbuckle_mob()
+	var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
+	sparks.set_up(5, 0, user.loc)
+	sparks.attach(user)
+	sparks.start()
 
-		var/list/targets = list()
+	if(user && user?.buckled_to())
+		var/atom/movable/_tmp_buck_4 = user?.buckled_to()
+		_tmp_buck_4.unbuckle_mob()
 
-		//Copypasta
-		valid_turfs:
-			for(var/turf/simulated/T in A.contents)
-				if(T.density || ismineralturf(T)) //Don't blink to vacuum or a wall
-					continue
-				for(var/atom/movable/stuff in T.contents)
-					if(stuff.density)
-						continue valid_turfs
-				targets.Add(T)
+	var/list/targets = list()
 
-		if(!targets.len)
-			to_chat(user, "\The [src] was unable to locate a suitable teleport destination, as all the possibilities \
-			were nonexistant or hazardous. Try a different area.")
-			return
-		var/turf/simulated/destination = null
+	//Copypasta
+	valid_turfs:
+		for(var/turf/simulated/T in A.contents)
+			if(T.density || ismineralturf(T)) //Don't blink to vacuum or a wall
+				continue
+			for(var/atom/movable/stuff in T.contents)
+				if(stuff.density)
+					continue valid_turfs
+			targets.Add(T)
 
-		destination = pick(targets)
+	if(!targets.len)
+		to_chat(user, "\The [src] was unable to locate a suitable teleport destination, as all the possibilities \
+		were nonexistant or hazardous. Try a different area.")
+		return
+	var/turf/simulated/destination = null
 
-		if(destination)
-			user.forceMove(destination)
-			to_chat(user, span_notice("You are teleported to \the [A]."))
-			uses--
-			if(uses <= 0)
-				to_chat(user, span_danger("\The [src] has ran out of uses, and disintegrates from your hands."))
-				consume(src, user)
+	destination = pick(targets)
+
+	if(destination)
+		user.forceMove(destination)
+		to_chat(user, span_notice("You are teleported to \the [A]."))
+		uses--
+		if(uses <= 0)
+			to_chat(user, span_danger("\The [src] has ran out of uses, and disintegrates from your hands."))
+			consume(src, user)

@@ -755,3 +755,22 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 /// TRUE while the machine sleeps on changes and has no step work.
 /obj/machinery/proc/asleep_on_keys()
 	return !isnull(react_sleep_tokens) && !step_active
+
+// ---------------------------------------------------------------- configuration prompts (om_prompt)
+
+/// Asks for a new radio frequency; frequency_entered() applies it through the machine's set_frequency().
+/obj/machinery/proc/ask_frequency(mob/user, current)
+	om_prompt(src, user, list("kind" = "number", "message" = "[src] has a frequency of [current]. What would you like it to be?", "title" = "[src] frequency", "default" = current, "max" = RADIO_HIGH_FREQ, "min" = RADIO_LOW_FREQ, "requires" = PROMPT_ADJACENT), PROC_REF(frequency_entered))
+
+/obj/machinery/proc/frequency_entered(mob/user, new_frequency, datum/om/prompt/ask)
+	if(!new_frequency || !hascall(src, "set_frequency"))
+		return
+	call(src, "set_frequency")(sanitize_frequency(new_frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ))
+
+/// Asks for a new value of a text var (a tag, a command); an empty answer keeps the old one.
+/obj/machinery/proc/ask_text_var(mob/user, var_name, message, title, max_length = MAX_NAME_LEN)
+	om_prompt(src, user, list("kind" = "text", "message" = message, "title" = title, "default" = vars[var_name], "max_length" = max_length, "requires" = PROMPT_ADJACENT, "data" = list("var" = var_name)), PROC_REF(text_var_entered))
+
+/obj/machinery/proc/text_var_entered(mob/user, value, datum/om/prompt/ask)
+	if(value)
+		vars[ask.get("var")] = value

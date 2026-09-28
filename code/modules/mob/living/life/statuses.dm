@@ -129,8 +129,17 @@
 	set name = "Sleep"
 	set category = "IC.Game"
 	var/asleep = sleeping_voluntarily()
-	if(!asleep && tgui_alert(src, "Are you sure you wish to go to sleep? You will snooze until you use the Sleep verb again.", "Sleepy Time", list("No", "Yes")) != "Yes")
+	if(!asleep)
+		om_prompt(src, src, list("message" = "Are you sure you wish to go to sleep? You will snooze until you use the Sleep verb again.", "title" = "Sleepy Time", "choices" = list("No", "Yes")), PROC_REF(sleep_confirmed))
 		return
+	toggle_voluntary_sleep()
+
+/mob/living/proc/sleep_confirmed(mob/user, answer, datum/om/prompt/ask)
+	if(answer == "Yes" && !sleeping_voluntarily())
+		toggle_voluntary_sleep()
+
+/mob/living/proc/toggle_voluntary_sleep()
+	var/asleep = sleeping_voluntarily()
 	asleep = !asleep
 	to_chat(src, span_notice("You are [asleep ? "now sleeping. Use the Sleep verb again to wake up" : "no longer sleeping"]."))
 	set_voluntary_sleep(asleep)

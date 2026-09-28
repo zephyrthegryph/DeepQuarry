@@ -84,7 +84,10 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	switch(tgui_alert(user, "Change Detonation Time or toggle Cascading?","Setting", list("Toggle Cascade", "Resonance Time")))
+	var/_answer_k87 = rerun_prompt(user, "k87", list("message" = "Change Detonation Time or toggle Cascading?", "title" = "Setting", "choices" = list("Toggle Cascade", "Resonance Time")), PROC_REF(attack_self), args)
+	if(isnull(_answer_k87))
+		return TRUE
+	switch(_answer_k87)
 		if("Resonance Time")
 			if(burst_time == 50)
 				burst_time = 30

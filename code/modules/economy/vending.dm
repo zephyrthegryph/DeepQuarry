@@ -381,10 +381,10 @@ REF_OWNED_LIST(/obj/machinery/vending, "product_records")
  * Takes payment for whatever is the currently_vending item. Returns 1 if
  * successful, 0 if failed
  */
-/obj/machinery/vending/proc/pay_with_card(obj/item/card/id/I, mob/M)
+/obj/machinery/vending/proc/pay_with_card(obj/item/card/id/I, mob/M, pin)
 	visible_message(span_info("[M] swipes a card through [src]."))
 	playsound(src, 'sound/machines/id_swipe.ogg', 50, 1)
-	if(!purchase_with_id_card(I, M, GLOB.vendor_account.owner_name, name, "Purchase of [currently_vending.item_name]", currently_vending.price, GLOB.vendor_account))
+	if(!purchase_with_id_card(I, M, GLOB.vendor_account.owner_name, name, "Purchase of [currently_vending.item_name]", currently_vending.price, GLOB.vendor_account, pin))
 		return FALSE
 	return 1
 
@@ -553,6 +553,15 @@ REF_OWNED_LIST(/obj/machinery/vending, "product_records")
 			if(!ishuman(ui.user))
 				return
 
+			// Card payments ask for the PIN first; the answer re-runs this action.
+			var/pin
+			if(!istype(ui.user.get_active_hand(), /obj/item/spacecash))
+				var/obj/item/card/id/pin_card = ui.user.GetIdCard()
+				if(istype(pin_card) && id_card_needs_pin(pin_card))
+					pin = act_prompt(ui.user, action, params, ui, "pin", list("kind" = "number", "message" = "Enter pin code", "title" = "Vendor transaction"))
+					if(isnull(pin))
+						return TRUE
+
 			vend_ready = FALSE // From this point onwards, vendor is locked to performing this transaction only, until it is resolved.
 
 			var/mob/living/carbon/human/H = ui.user
@@ -575,7 +584,7 @@ REF_OWNED_LIST(/obj/machinery/vending, "product_records")
 				var/obj/item/spacecash/ewallet/wallet = ui.user.get_active_hand()
 				paid = pay_with_ewallet(wallet, ui.user)
 			else if(istype(C, /obj/item/card))
-				paid = pay_with_card(C, ui.user)
+				paid = pay_with_card(C, ui.user, pin)
 			/*else if(ui.user.can_advanced_admin_interact())
 				to_chat(ui.user, span_notice("Vending object due to admin interaction."))
 				paid = TRUE*/

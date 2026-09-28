@@ -391,9 +391,12 @@ REGISTRY_MEMBERSHIP(/turf, REGISTRY_CLEANBOT_RESERVED_TURFS)
 		to_chat(vandal, span_warning("There's too much graffiti here to add more."))
 		return FALSE
 
-	var/message = tgui_input_text(vandal, "Enter a message to engrave.", "Graffiti", "", MAX_MESSAGE_LEN)
-	if(!message)
-		return FALSE
+	om_prompt(src, vandal, list("kind" = "text", "message" = "Enter a message to engrave.", "title" = "Graffiti", "default" = "", "max_length" = MAX_MESSAGE_LEN, "target" = tool, "requires" = PROMPT_IN_HAND, "data" = list("params" = click_parameters)), PROC_REF(graffiti_entered))
+	return TRUE
+
+/turf/proc/graffiti_entered(mob/vandal, message, datum/om/prompt/ask)
+	var/click_parameters = ask.get("params")
+	var/obj/item/tool = vandal.get_active_hand()
 
 	if(!vandal || vandal.incapacitated() || !Adjacent(vandal) || !tool.loc == vandal)
 		return FALSE

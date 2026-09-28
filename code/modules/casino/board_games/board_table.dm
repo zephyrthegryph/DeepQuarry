@@ -35,7 +35,9 @@ REF_OWNED(/obj/structure/casino_table/board_game, "game_ui")
 /obj/structure/casino_table/board_game/proc/pick_game(mob/user)
 	if(game_ui?.game_state != GAME_SETUP)
 		return
-	var/datum/board_game/new_game = tgui_input_list(user, "Pick the game to play", "Choose Game", possible_games)
+	var/datum/board_game/new_game = rerun_prompt(user, "k42", list("kind" = "list", "message" = "Pick the game to play", "title" = "Choose Game", "choices" = possible_games), PROC_REF(pick_game), args)
+	if(isnull(new_game))
+		return
 	if(!new_game)
 		return
 	new_game = possible_games[new_game]
@@ -72,7 +74,9 @@ REF_OWNED(/obj/structure/casino_table/board_game, "game_ui")
 				for(var/mob/living/prey in our_belly.contents)
 					if(prey.client)
 						possible_mobs += prey
-			var/mob/living/new_player = tgui_input_list(ui.user, "Invite a nearby player to the game.", "Invite Player", possible_mobs)
+			var/mob/living/new_player = act_prompt(ui.user, action, params, ui, "k83", list("kind" = "list", "message" = "Invite a nearby player to the game.", "title" = "Invite Player", "choices" = possible_mobs))
+			if(isnull(new_player))
+				return
 			if(!new_player)
 				return FALSE
 			tgui_interact(new_player)

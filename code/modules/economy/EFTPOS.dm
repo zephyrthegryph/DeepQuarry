@@ -134,15 +134,19 @@
 		..()
 
 // Topic switch lifted into tgui_act with stable action names.
-/obj/item/eftpos/tgui_act(action, list/params)
+/obj/item/eftpos/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	. = ..()
 	if(.)
 		return
 	switch(action)
 		if("change_code")
-			var/attempt_code = tgui_input_number(usr, "Re-enter the current EFTPOS access code", "Confirm old EFTPOS code")
+			var/attempt_code = act_prompt(usr, action, params, ui, "k147", list("kind" = "number", "message" = "Re-enter the current EFTPOS access code", "title" = "Confirm old EFTPOS code"))
+			if(isnull(attempt_code))
+				return
 			if(attempt_code == access_code)
-				var/trycode = tgui_input_number(usr, "Enter a new access code for this device (4-6 digits, numbers only)", "Enter new EFTPOS code", null, 999999, 1000)
+				var/trycode = act_prompt(usr, action, params, ui, "k149", list("kind" = "number", "message" = "Enter a new access code for this device (4-6 digits, numbers only)", "title" = "Enter new EFTPOS code", "max" = 999999, "min" = 1000))
+				if(isnull(trycode))
+					return
 				if(trycode >= 1000 && trycode <= 999999)
 					access_code = trycode
 				else
@@ -152,16 +156,25 @@
 				to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("Incorrect code entered."))
 			return TRUE
 		if("change_id")
-			var/attempt_code = tgui_input_number(usr, "Re-enter the current EFTPOS access code", "Confirm EFTPOS code")
+			var/attempt_code = act_prompt(usr, action, params, ui, "k159", list("kind" = "number", "message" = "Re-enter the current EFTPOS access code", "title" = "Confirm EFTPOS code"))
+			if(isnull(attempt_code))
+				return
 			if(attempt_code == access_code)
-				eftpos_name = tgui_input_text(usr, "Enter a new terminal ID for this device", "Enter new EFTPOS ID", max_length = MAX_NAME_LEN) + " EFTPOS scanner"
+				var/_answer_k161 = act_prompt(usr, action, params, ui, "k161", list("kind" = "text", "message" = "Enter a new terminal ID for this device", "title" = "Enter new EFTPOS ID", "max_length" = MAX_NAME_LEN))
+				if(isnull(_answer_k161))
+					return
+				eftpos_name = _answer_k161 + " EFTPOS scanner"
 				print_reference()
 			else
 				to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("Incorrect code entered."))
 			return TRUE
 		if("link_account")
-			var/attempt_account_num = tgui_input_number(usr, "Enter account number to pay EFTPOS charges into", "New account number")
-			var/attempt_pin = tgui_input_number(usr, "Enter pin code", "Account pin")
+			var/attempt_account_num = act_prompt(usr, action, params, ui, "k167", list("kind" = "number", "message" = "Enter account number to pay EFTPOS charges into", "title" = "New account number"))
+			if(isnull(attempt_account_num))
+				return
+			var/attempt_pin = act_prompt(usr, action, params, ui, "k168", list("kind" = "number", "message" = "Enter pin code", "title" = "Account pin"))
+			if(isnull(attempt_pin))
+				return
 			linked_account = attempt_account_access(attempt_account_num, attempt_pin, 1)
 			if(linked_account)
 				if(linked_account.suspended)
@@ -171,12 +184,16 @@
 				to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("Account not found."))
 			return TRUE
 		if("trans_purpose")
-			var/choice = tgui_input_text(usr, "Enter reason for EFTPOS transaction", "Transaction purpose", MAX_MESSAGE_LEN)
+			var/choice = act_prompt(usr, action, params, ui, "k178", list("kind" = "text", "message" = "Enter reason for EFTPOS transaction", "title" = "Transaction purpose", "max_length" = MAX_MESSAGE_LEN))
+			if(isnull(choice))
+				return
 			if(choice)
 				transaction_purpose = choice
 			return TRUE
 		if("trans_value")
-			var/try_num = tgui_input_number(usr, "Enter amount for EFTPOS transaction", "Transaction amount")
+			var/try_num = act_prompt(usr, action, params, ui, "k183", list("kind" = "number", "message" = "Enter amount for EFTPOS transaction", "title" = "Transaction amount"))
+			if(isnull(try_num))
+				return
 			if(!isnum(try_num) || try_num <= 0 || try_num > EFTPOS_MAX_TRANSACTION)
 				tgui_alert_async(usr, "That is not a valid amount!")
 			else
@@ -188,7 +205,9 @@
 					transaction_locked = 0
 					transaction_paid = 0
 				else
-					var/attempt_code = tgui_input_number(usr, "Enter EFTPOS access code", "Reset Transaction")
+					var/attempt_code = act_prompt(usr, action, params, ui, "k195", list("kind" = "number", "message" = "Enter EFTPOS access code", "title" = "Reset Transaction"))
+					if(isnull(attempt_code))
+						return
 					if(attempt_code == access_code)
 						transaction_locked = 0
 						transaction_paid = 0
@@ -237,7 +256,10 @@
 					var/attempt_pin = ""
 					var/datum/money_account/D = get_account(C.associated_account_number)
 					if(D.security_level)
-						attempt_pin = tgui_input_number(usr, "Enter pin code", "EFTPOS transaction")
+						var/_answer_k244 = rerun_prompt(usr, "k244", list("kind" = "number", "message" = "Enter pin code", "title" = "EFTPOS transaction"), PROC_REF(scan_card), args)
+						if(isnull(_answer_k244))
+							return
+						attempt_pin = _answer_k244
 						D = null
 						// Re-validate card presence/adjacency and transaction state after the sleep.
 						if(QDELETED(C) || QDELETED(src) || !swiper || !(C in swiper) || !swiper.Adjacent(src))

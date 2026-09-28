@@ -104,7 +104,9 @@
 		return
 	switch(action)
 		if("legacy")
-			var/choice = tgui_input_list(ui.user, "Which tickets do you want to list?", "Tickets", list("Active", "Closed", "Resolved"))
+			var/choice = act_prompt(ui.user, action, params, ui, "k107", list("kind" = "list", "message" = "Which tickets do you want to list?", "title" = "Tickets", "choices" = list("Active", "Closed", "Resolved")))
+			if(isnull(choice))
+				return
 			TicketListLegacy(ui.user, choice)
 			. = TRUE
 		if("new_ticket")
@@ -112,7 +114,10 @@
 			for(var/client/C in GLOB.clients)
 				ckeys += C.key
 
-			var/ckey = lowertext(tgui_input_list(ui.user, "Please select the ckey of the user.", "Select CKEY", ckeys))
+			var/_answer_k115 = act_prompt(ui.user, action, params, ui, "k115", list("kind" = "list", "message" = "Please select the ckey of the user.", "title" = "Select CKEY", "choices" = ckeys))
+			if(isnull(_answer_k115))
+				return
+			var/ckey = lowertext(_answer_k115)
 			if(!ckey)
 				return
 
@@ -125,18 +130,24 @@
 				to_chat(ui.user, span_warning("Ckey ([ckey]) not online."))
 				return
 
-			var/ticket_text = tgui_input_text(ui.user, "What should the initial text be?", "New Ticket")
+			var/ticket_text = act_prompt(ui.user, action, params, ui, "k128", list("kind" = "text", "message" = "What should the initial text be?", "title" = "New Ticket"))
+			if(isnull(ticket_text))
+				return
 			if(!ticket_text)
 				to_chat(ui.user, span_warning("Ticket message cannot be empty."))
 				return
 
-			var/level = tgui_alert(ui.user, "Is this ticket Admin-Level or Mentor-Level?", "Ticket Level", list("Admin", "Mentor"))
+			var/level = act_prompt(ui.user, action, params, ui, "k133", list("message" = "Is this ticket Admin-Level or Mentor-Level?", "title" = "Ticket Level", "choices" = list("Admin", "Mentor")))
+			if(isnull(level))
+				return
 			if(!level)
 				return
 
 			feedback_add_details("admin_verb","Admincreatedticket") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 			if(player.current_ticket)
-				var/input = tgui_alert(ui.user, "The player already has a ticket open. Is this for the same issue?","Duplicate?",list("Yes","No"))
+				var/input = act_prompt(ui.user, action, params, ui, "k139", list("message" = "The player already has a ticket open. Is this for the same issue?", "title" = "Duplicate?", "choices" = list("Yes","No")))
+				if(isnull(input))
+					return
 				if(!input)
 					return
 				if(input == "Yes")
@@ -192,7 +203,9 @@
 	if(..())
 		return
 
-	var/choice = tgui_input_list(user, "Which tickets do you want to list?", "Tickets", list("Active", "Closed", "Resolved"))
+	var/choice = rerun_prompt(user, "k195", list("kind" = "list", "message" = "Which tickets do you want to list?", "title" = "Tickets", "choices" = list("Active", "Closed", "Resolved")), PROC_REF(tgui_fallback), args)
+	if(isnull(choice))
+		return
 
 	TicketListLegacy(user, choice)
 

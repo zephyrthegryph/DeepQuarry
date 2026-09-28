@@ -525,7 +525,9 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 		w_class = ITEMSIZE_SMALL
 
 /obj/item/stack/cable_coil/multitool_act(mob/user, obj/item/W)
-	var/selected_type = tgui_input_list(user, "Pick new colour.", "Cable Colour", GLOB.possible_cable_coil_colours)
+	var/selected_type = rerun_prompt(user, "k530", list("kind" = "list", "message" = "Pick new colour.", "title" = "Cable Colour", "choices" = GLOB.possible_cable_coil_colours), TYPE_PROC_REF(/atom, multitool_act), args)
+	if(isnull(selected_type))
+		return ITEM_INTERACT_BLOCKING
 	set_cable_color(selected_type, user)
 	return ITEM_INTERACT_SUCCESS
 
@@ -881,7 +883,9 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 
 /obj/item/stack/cable_coil/alien/attack_hand(mob/user as mob)
 	if (user.get_inactive_hand() == src)
-		var/N = tgui_input_number(user, "How many units of wire do you want to take from [src]? You can only take up to [amount] at a time.", "Split stacks", 1, amount)
+		var/N = rerun_prompt(user, "k889", list("kind" = "number", "message" = "How many units of wire do you want to take from [src]? You can only take up to [amount] at a time.", "title" = "Split stacks", "default" = 1, "max" = amount), TYPE_PROC_REF(/atom, attack_hand), args)
+		if(isnull(N))
+			return TRUE
 		if(N && N <= amount)
 			var/obj/item/stack/cable_coil/CC = new/obj/item/stack/cable_coil(user.loc)
 			CC.amount = N

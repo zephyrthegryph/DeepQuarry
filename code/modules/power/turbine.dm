@@ -143,7 +143,9 @@
 	effect = /obj/machinery/compressor/proc/interaction_set_ident
 
 /obj/machinery/compressor/proc/interaction_set_ident(mob/user, obj/item/W, datum/interaction/interaction)
-	var/new_ident = tgui_input_text(user, "Enter a new ident tag.", name, comp_id, MAX_NAME_LEN)
+	var/new_ident = rerun_prompt(user, "k146", list("kind" = "text", "message" = "Enter a new ident tag.", "title" = name, "default" = comp_id, "max_length" = MAX_NAME_LEN), PROC_REF(interaction_set_ident), args)
+	if(isnull(new_ident))
+		return
 	if(new_ident && user.Adjacent(src))
 		comp_id = new_ident
 	return TRUE
@@ -379,7 +381,9 @@
 	effect = /obj/machinery/computer/turbine_computer/proc/interaction_set_ident
 
 /obj/machinery/computer/turbine_computer/proc/interaction_set_ident(mob/user, obj/item/W, datum/interaction/interaction)
-	var/new_ident = tgui_input_text(user, "Enter a new ident tag.", name, id, MAX_NAME_LEN)
+	var/new_ident = rerun_prompt(user, "k382", list("kind" = "text", "message" = "Enter a new ident tag.", "title" = name, "default" = id, "max_length" = MAX_NAME_LEN), PROC_REF(interaction_set_ident), args)
+	if(isnull(new_ident))
+		return
 	if(new_ident && user.Adjacent(src))
 		id = new_ident
 	return TRUE

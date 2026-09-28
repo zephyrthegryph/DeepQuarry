@@ -318,23 +318,33 @@
 	switch(action)
 		/* HELM */
 		if("add")
-			var/datum/computer_file/data/waypoint/R = new()
-			var/sec_name = tgui_input_text(ui.user, "Input navigation entry name", "New navigation entry", "Sector #[length(known_sectors)]", MAX_NAME_LEN)
+			var/sec_name = act_prompt(ui.user, action, params, ui, "a1", list("kind" = "text", "message" = "Input navigation entry name", "title" = "New navigation entry", "default" = "Sector #[length(known_sectors)]", "max_length" = MAX_NAME_LEN))
+			if(isnull(sec_name))
+				return
 			if(!sec_name)
 				sec_name = "Sector #[length(known_sectors)]"
-			R.fields["name"] = sec_name
 			if(sec_name in known_sectors)
 				to_chat(ui.user, span_warning("Sector with that name already exists, please input a different name."))
 				return TRUE
+			var/datum/computer_file/data/waypoint/R
 			switch(params["add"])
 				if("current")
+					R = new()
 					R.fields["x"] = linked.x
 					R.fields["y"] = linked.y
 				if("new")
-					var/newx = tgui_input_number(ui.user, "Input new entry x coordinate", "Coordinate input", linked.x, world.maxx, 1)
-					var/newy = tgui_input_number(ui.user, "Input new entry y coordinate", "Coordinate input", linked.y, world.maxy, 1)
+					var/newx = act_prompt(ui.user, action, params, ui, "a2", list("kind" = "number", "message" = "Input new entry x coordinate", "title" = "Coordinate input", "default" = linked.x, "max" = world.maxx, "min" = 1))
+					if(isnull(newx))
+						return
+					var/newy = act_prompt(ui.user, action, params, ui, "a3", list("kind" = "number", "message" = "Input new entry y coordinate", "title" = "Coordinate input", "default" = linked.y, "max" = world.maxy, "min" = 1))
+					if(isnull(newy))
+						return
+					R = new()
 					R.fields["x"] = CLAMP(newx, 1, world.maxx)
 					R.fields["y"] = CLAMP(newy, 1, world.maxy)
+			if(!R)
+				return TRUE
+			R.fields["name"] = sec_name
 			LAZYSET(known_sectors, sec_name, R)
 			. = TRUE
 
@@ -347,12 +357,16 @@
 
 		if("setcoord")
 			if(params["setx"])
-				var/newx = tgui_input_number(ui.user, "Input new destiniation x coordinate", "Coordinate input", dx, world.maxx, 1)
+				var/newx = act_prompt(ui.user, action, params, ui, "a4", list("kind" = "number", "message" = "Input new destiniation x coordinate", "title" = "Coordinate input", "default" = dx, "max" = world.maxx, "min" = 1))
+				if(isnull(newx))
+					return
 				if(newx)
 					dx = CLAMP(newx, 1, world.maxx)
 
 			if(params["sety"])
-				var/newy = tgui_input_number(ui.user, "Input new destiniation y coordinate", "Coordinate input", dy, world.maxy, 1)
+				var/newy = act_prompt(ui.user, action, params, ui, "a5", list("kind" = "number", "message" = "Input new destiniation y coordinate", "title" = "Coordinate input", "default" = dy, "max" = world.maxy, "min" = 1))
+				if(isnull(newy))
+					return
 				if(newy)
 					dy = CLAMP(newy, 1, world.maxy)
 			. = TRUE
@@ -368,13 +382,17 @@
 			. = TRUE
 
 		if("speedlimit")
-			var/newlimit = tgui_input_number(ui.user, "Input new speed limit for autopilot (0 to brake)", "Autopilot speed limit", speedlimit*1000, 100000)
+			var/newlimit = act_prompt(ui.user, action, params, ui, "a6", list("kind" = "number", "message" = "Input new speed limit for autopilot (0 to brake)", "title" = "Autopilot speed limit", "default" = speedlimit*1000, "max" = 100000))
+			if(isnull(newlimit))
+				return
 			if(newlimit)
 				speedlimit = CLAMP(newlimit/1000, 0, 100)
 			. = TRUE
 
 		if("accellimit")
-			var/newlimit = tgui_input_number(ui.user, "Input new acceleration limit", "Acceleration limit", accellimit*1000)
+			var/newlimit = act_prompt(ui.user, action, params, ui, "a7", list("kind" = "number", "message" = "Input new acceleration limit", "title" = "Acceleration limit", "default" = accellimit*1000))
+			if(isnull(newlimit))
+				return
 			if(newlimit)
 				accellimit = max(newlimit/1000, 0)
 			. = TRUE
@@ -420,7 +438,9 @@
 			. = TRUE
 
 		if("set_global_limit")
-			var/newlim = tgui_input_number(ui.user, "Input new thrust limit (0..100%)", "Thrust limit", linked.thrust_limit*100, 100, 0)
+			var/newlim = act_prompt(ui.user, action, params, ui, "a8", list("kind" = "number", "message" = "Input new thrust limit (0..100%)", "title" = "Thrust limit", "default" = linked.thrust_limit*100, "max" = 100, "min" = 0))
+			if(isnull(newlim))
+				return
 			linked.thrust_limit = clamp(newlim/100, 0, 1)
 			for(var/datum/ship_engine/E in linked.engines)
 				E.set_thrust_limit(linked.thrust_limit)
@@ -436,7 +456,9 @@
 			var/datum/ship_engine/E = locate(params["engine"])
 			if(!istype(E))
 				return TRUE
-			var/newlim = tgui_input_number(ui.user, "Input new thrust limit (0..100)", "Thrust limit", E.get_thrust_limit(), 100, 0)
+			var/newlim = act_prompt(ui.user, action, params, ui, "a9", list("kind" = "number", "message" = "Input new thrust limit (0..100)", "title" = "Thrust limit", "default" = E.get_thrust_limit(), "max" = 100, "min" = 0))
+			if(isnull(newlim))
+				return
 			var/limit = clamp(newlim/100, 0, 1)
 			E.set_thrust_limit(limit)
 			. = TRUE
@@ -457,7 +479,9 @@
 		/* END ENGINES */
 		/* SENSORS */
 		if("range")
-			var/nrange = tgui_input_number(ui.user, "Set new sensors range", "Sensor range", sensors.range, world.view, round_value = FALSE)
+			var/nrange = act_prompt(ui.user, action, params, ui, "a10", list("kind" = "number", "message" = "Set new sensors range", "title" = "Sensor range", "default" = sensors.range, "max" = world.view, "round" = FALSE))
+			if(isnull(nrange))
+				return
 			if(nrange)
 				sensors.set_range(CLAMP(nrange, 1, world.view))
 			. = TRUE

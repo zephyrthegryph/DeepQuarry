@@ -106,7 +106,9 @@
 			if(downloading || !loaded_article)
 				return
 
-			var/savename = tgui_input_text(ui.user, "Enter file name or leave blank to cancel:", "Save article", loaded_article.filename, "", MAX_MESSAGE_LEN)
+			var/savename = act_prompt(ui.user, action, params, ui, "k109", list("kind" = "text", "message" = "Enter file name or leave blank to cancel:", "title" = "Save article", "default" = loaded_article.filename, "max_length" = MAX_MESSAGE_LEN))
+			if(isnull(savename))
+				return
 			if(!savename)
 				return TRUE
 			var/obj/item/computer_hardware/hard_drive/HDD = computer.hard_drive

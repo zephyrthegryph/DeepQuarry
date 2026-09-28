@@ -21,19 +21,22 @@
 		to_chat(user, span_warning("\The [src] is not ready to print another ticket yet."))
 
 /obj/item/ticket_printer/proc/print_a_ticket(mob/user)
+	om_prompt_sequence(src, user, list(
+		list("key" = "name", "kind" = "text", "message" = "The Name of the person you are issuing the ticket to.", "title" = "Name", "max_length" = 100),
+		list("key" = "details", "kind" = "text", "message" = ticket_details_prompt(), "title" = "Ticket Details", "max_length" = 200),
+	), PROC_REF(ticket_written), list("requires" = PROMPT_HELD))
 
-	var/ticket_name = tgui_input_text(user, "The Name of the person you are issuing the ticket to.", "Name", max_length = 100)
-	if(length(ticket_name) > 100)
-		tgui_alert_async(user, "Entered name too long. 100 character limit.","Error")
+/obj/item/ticket_printer/proc/ticket_details_prompt()
+	return "What is the ticket for? Avoid entering personally identifiable information in this section. This information should not be used to harrass or otherwise make the person feel uncomfortable. (Max length: 200)"
+
+/obj/item/ticket_printer/proc/ticket_written(mob/user, datum/om/prompt/ask)
+	var/ticket_name = ask.get("name")
+	var/details = ask.get("details")
+	if(!ticket_name || !details)
 		return
-	if(!ticket_name)
-		return
-	var/details = tgui_input_text(user, "What is the ticket for? Avoid entering personally identifiable information in this section. This information should not be used to harrass or otherwise make the person feel uncomfortable. (Max length: 200)", "Ticket Details", max_length = 200)
-	if(length(details) > 200)
-		tgui_alert_async(user, "Entered details too long. 200 character limit.","Error")
-		return
-	if(!details)
-		return
+	print_ticket_paper(user, ticket_name, details)
+
+/obj/item/ticket_printer/proc/print_ticket_paper(mob/user, ticket_name, details)
 
 	var/turf/our_turf = get_turf(user)
 
@@ -71,20 +74,10 @@
 	icon = 'icons/obj/device.dmi'
 	icon_state = "train_ticket_printer"
 
-/obj/item/ticket_printer/train/print_a_ticket(mob/user)
+/obj/item/ticket_printer/train/ticket_details_prompt()
+	return "What is the ticket for? This could be anything like travel to a destination or permission to do something! This is not official and does not override any rules or authorities on the station."
 
-	var/ticket_name = tgui_input_text(user, "The Name of the person you are issuing the ticket to.", "Name", max_length = 100)
-	if(length(ticket_name) > 100)
-		tgui_alert_async(user, "Entered name too long. 100 character limit.","Error")
-		return
-	if(!ticket_name)
-		return
-	var/details = tgui_input_text(user, "What is the ticket for? This could be anything like travel to a destination or permission to do something! This is not official and does not override any rules or authorities on the station.", "Ticket Details", max_length = 200)
-	if(length(details) > 200)
-		tgui_alert_async(user, "Entered details too long. 200 character limit.","Error")
-		return
-	if(!details)
-		return
+/obj/item/ticket_printer/train/print_ticket_paper(mob/user, ticket_name, details)
 
 	var/turf/our_turf = get_turf(user)
 

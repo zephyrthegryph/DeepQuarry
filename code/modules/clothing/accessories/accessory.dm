@@ -782,7 +782,9 @@
 				icon_state = "collar_shk[on]"
 			. = TRUE
 		if("tag")
-			var/sanitized = tgui_input_text(ui.user, "Tag text?", "Set Tag", "", MAX_NAME_LEN, encode = TRUE)
+			var/sanitized = act_prompt(ui.user, action, params, ui, "a1", list("kind" = "text", "message" = "Tag text?", "title" = "Set Tag", "max_length" = MAX_NAME_LEN, "encode" = TRUE))
+			if(isnull(sanitized))
+				return
 			if(isnull(sanitized))
 				return
 
@@ -870,7 +872,10 @@
 			return
 		to_chat(user,span_notice("You adjust the [name]'s tag."))
 
-	var/str = copytext(reject_bad_text(tgui_input_text(user,"Tag text?","Set tag","",MAX_NAME_LEN)),1,MAX_NAME_LEN)
+	var/_answer_a1 = rerun_prompt(user, "a1", list("kind" = "text", "message" = "Tag text?", "title" = "Set tag", "max_length" = MAX_NAME_LEN), PROC_REF(attack_self), args)
+	if(isnull(_answer_a1))
+		return TRUE
+	var/str = copytext(reject_bad_text(_answer_a1),1,MAX_NAME_LEN)
 
 	if(!str || !length(str))
 		to_chat(user,span_notice("[name]'s tag set to be blank."))
@@ -907,7 +912,10 @@
 	if(!(istype(user.get_active_hand(),I)) || !(istype(user.get_inactive_hand(),src)) || (user.stat))
 		return
 
-	var/str = copytext(reject_bad_text(tgui_input_text(user,"Tag text?","Set tag","",MAX_NAME_LEN)),1,MAX_NAME_LEN)
+	var/_answer_a2 = rerun_prompt(user, "a2", list("kind" = "text", "message" = "Tag text?", "title" = "Set tag", "max_length" = MAX_NAME_LEN), PROC_REF(update_collartag), args)
+	if(isnull(_answer_a2))
+		return
+	var/str = copytext(reject_bad_text(_answer_a2),1,MAX_NAME_LEN)
 
 	if(!str || !length(str))
 		if(!writtenon)

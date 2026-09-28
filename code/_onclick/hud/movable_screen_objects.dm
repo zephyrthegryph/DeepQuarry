@@ -120,15 +120,15 @@
 	set category = "Debug"
 	set name = "Spawn Movable UI Object"
 
+	var/screen_l = client_prompt("where", list("kind" = "text", "message" = "Where on the screen? (Formatted as 'X,Y' e.g: '1,1' for bottom left)", "title" = "Spawn Movable UI Object"), PROC_REF(test_movable_UI), args)
+	if(!screen_l)
+		return
+
 	var/atom/movable/screen/movable/M = new()
 	M.name = "Movable UI Object"
 	M.icon_state = "block"
 	M.maptext = "Movable"
 	M.maptext_width = 64
-
-	var/screen_l = tgui_input_text(usr,"Where on the screen? (Formatted as 'X,Y' e.g: '1,1' for bottom left)","Spawn Movable UI Object")
-	if(!screen_l)
-		return
 
 	M.screen_loc = screen_l
 
@@ -139,15 +139,15 @@
 	set category = "Debug"
 	set name = "Spawn Snap UI Object"
 
+	var/screen_l = client_prompt("where", list("kind" = "text", "message" = "Where on the screen? (Formatted as 'X,Y' e.g: '1,1' for bottom left)", "title" = "Spawn Snap UI Object"), PROC_REF(test_snap_UI), args)
+	if(!screen_l)
+		return
+
 	var/atom/movable/screen/movable/snap/S = new()
 	S.name = "Snap UI Object"
 	S.icon_state = "block"
 	S.maptext = "Snap"
 	S.maptext_width = 64
-
-	var/screen_l = tgui_input_text(usr,"Where on the screen? (Formatted as 'X,Y' e.g: '1,1' for bottom left)","Spawn Snap UI Object")
-	if(!screen_l)
-		return
 
 	S.screen_loc = screen_l
 

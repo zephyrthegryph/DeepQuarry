@@ -22,7 +22,9 @@
 		to_chat(src, span_notice("We return our vocal glands to their original location."))
 		return
 
-	var/mimic_voice = tgui_input_text(src, "Enter a name to mimic.", "Mimic Voice", null, MAX_NAME_LEN)
+	var/mimic_voice = rerun_prompt(src, "a1", list("kind" = "text", "message" = "Enter a name to mimic.", "title" = "Mimic Voice", "max_length" = MAX_NAME_LEN), PROC_REF(changeling_mimicvoice), args)
+	if(isnull(mimic_voice))
+		return
 	if(!mimic_voice)
 		return
 

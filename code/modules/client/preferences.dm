@@ -281,9 +281,15 @@ REF_OWNED_LIST(/datum/preferences, "middleware")
 			open_load_dialog(usr)
 			return 1
 	else if(href_list["resetslot"])
-		if("Yes" != tgui_alert(usr, "This will reset the current slot. Continue?", "Reset current slot?", list("No", "Yes")))
+		var/_answer_k290 = topic_prompt(usr, href_list, "k290", list("message" = "This will reset the current slot. Continue?", "title" = "Reset current slot?", "choices" = list("No", "Yes")))
+		if(isnull(_answer_k290))
+			return
+		if("Yes" != _answer_k290)
 			return 0
-		if("Yes" != tgui_alert(usr, "Are you completely sure that you want to reset this character slot?", "Reset current slot?", list("No", "Yes")))
+		var/_answer_k292 = topic_prompt(usr, href_list, "k292", list("message" = "Are you completely sure that you want to reset this character slot?", "title" = "Reset current slot?", "choices" = list("No", "Yes")))
+		if(isnull(_answer_k292))
+			return
+		if("Yes" != _answer_k292)
 			return 0
 		reset_slot()
 		sanitize_preferences()
@@ -366,7 +372,9 @@ REF_OWNED_LIST(/datum/preferences, "middleware")
 		charlist["[name][nickname ? " ([nickname])" : ""]"] = i
 
 	selecting_slots = TRUE
-	var/choice = tgui_input_list(user, "Select a character to load:", "Load Slot", charlist, default)
+	var/choice = rerun_prompt(user, "k375", list("kind" = "list", "message" = "Select a character to load:", "title" = "Load Slot", "choices" = charlist, "default" = default), PROC_REF(open_load_dialog), args)
+	if(isnull(choice))
+		return
 	selecting_slots = FALSE
 	if(!choice)
 		return
@@ -407,7 +415,9 @@ REF_OWNED_LIST(/datum/preferences, "middleware")
 		charlist["[name][nickname ? " ([nickname])" : ""]"] = i
 
 	selecting_slots = TRUE
-	var/choice = tgui_input_list(user, "Select a character to COPY TO:", "Copy Slot", charlist)
+	var/choice = rerun_prompt(user, "k416", list("kind" = "list", "message" = "Select a character to COPY TO:", "title" = "Copy Slot", "choices" = charlist), PROC_REF(open_copy_dialog), args)
+	if(isnull(choice))
+		return
 	selecting_slots = FALSE
 	if(!choice)
 		return
@@ -417,7 +427,10 @@ REF_OWNED_LIST(/datum/preferences, "middleware")
 		log_world("## ERROR Player picked [choice] slot to copy to, but that wasn't one we sent.")
 		return
 
-	if(tgui_alert(user, "Are you sure you want to override slot [slotnum], [choice]'s savedata?", "Confirm Override", list("No", "Yes")) == "Yes")
+	var/_answer_k426 = rerun_prompt(user, "k426", list("message" = "Are you sure you want to override slot [slotnum], [choice]'s savedata?", "title" = "Confirm Override", "choices" = list("No", "Yes")), PROC_REF(open_copy_dialog), args)
+	if(isnull(_answer_k426))
+		return
+	if(_answer_k426 == "Yes")
 		overwrite_character(slotnum)
 		save_character(TRUE)
 		save_preferences()

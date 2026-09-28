@@ -153,61 +153,63 @@
 			drop.forceMove(T)
 
 ADMIN_VERB(call_drop_pod, R_FUN, "Call Drop Pod", "Call an immediate drop pod on your location.", ADMIN_CATEGORY_FUN_DROP_POD)
-	var/client/selected_player
-	var/mob/living/spawned_mob
-	var/list/spawned_mobs = list()
-
-	var/spawn_path = tgui_input_list(user, "Select a mob type.", "Drop Pod Selection", subtypesof(/mob/living))
-	if(!spawn_path)
+	// Everything is asked before anything is made: each answer re-runs this verb.
+	var/spawn_path = verb_prompt(user, "path", list("kind" = "list", "message" = "Select a mob type.", "title" = "Drop Pod Selection", "choices" = subtypesof(/mob/living)), args)
+	if(!ispath(spawn_path, /mob/living))
 		return
 
-	var/input = tgui_alert(user, "Do you wish the mob to have a player?","Assign Player?",list("No","Yes"))
+	var/input = verb_prompt(user, "player", list("message" = "Do you wish the mob to have a player?", "title" = "Assign Player?", "choices" = list("No","Yes")), args)
 	if(!input)
 		return
+	var/spawn_count = 0
+	var/client/selected_player
+	var/antag_type
 	if(input == "No")
-		var/spawn_count = tgui_input_number(user, "How many mobs do you wish the pod to contain?", "Drop Pod Selection", null, min_value=1)
-		if(spawn_count <= 0)
+		spawn_count = verb_prompt(user, "count", list("kind" = "number", "message" = "How many mobs do you wish the pod to contain?", "title" = "Drop Pod Selection", "min" = 1), args)
+		if(isnull(spawn_count) || spawn_count <= 0)
 			return
-		for(var/i=0;i<spawn_count;i++)
-			var/mob/living/M = new spawn_path()
-			M.tag = "awaiting drop"
-			spawned_mobs |= M
 	else
 		var/list/candidates = list()
 		for(var/client/player in GLOB.clients)
 			if(player.mob && isobserver(player.mob))
-				candidates |= player
+				candidates[player.ckey] = player
 
 		if(!candidates.len)
 			to_chat(user, "There are no candidates for a drop pod launch.")
 			return
 
 		// Get a player and a mob type.
-		selected_player = tgui_input_list(user, "Select a player.", "Drop Pod Selection", candidates)
+		var/player_ckey = verb_prompt(user, "ckey", list("kind" = "list", "message" = "Select a player.", "title" = "Drop Pod Selection", "choices" = candidates), args)
+		if(!player_ckey)
+			return
+		selected_player = candidates[player_ckey]
 		if(!selected_player)
+			to_chat(user, "That player is no longer a candidate.")
 			return
 
+		// Equip them, if they are human and it is desirable.
+		if(ispath(spawn_path, /mob/living/carbon/human))
+			antag_type = verb_prompt(user, "antag", list("kind" = "list", "message" = "Select an equipment template to use or cancel for nude.", "title" = "Drop Pod Selection", "choices" = SSantag_job.all_antag_types, "cancel_answer" = ""), args)
+			if(isnull(antag_type))
+				return
+
+	if(verb_prompt(user, "sure", list("message" = "Are you SURE you wish to deploy this drop pod? It will cause a sizable explosion and gib anyone underneath it.", "title" = "Danger!", "choices" = list("No","Yes")), args) != "Yes")
+		return
+
+	var/mob/living/spawned_mob
+	var/list/spawned_mobs = list()
+	if(selected_player)
 		// Spawn the mob in nullspace for now.
 		spawned_mob = new spawn_path()
 		spawned_mob.tag = "awaiting drop"
-
-		// Equip them, if they are human and it is desirable.
-		if(ishuman(spawned_mob))
-			var/antag_type = tgui_input_list(user, "Select an equipment template to use or cancel for nude.", SSantag_job.all_antag_types)
-			if(antag_type)
-				var/datum/antagonist/A = SSantag_job.all_antag_types[antag_type]
-				A.equip(spawned_mob)
-
-	if(tgui_alert(user, "Are you SURE you wish to deploy this drop pod? It will cause a sizable explosion and gib anyone underneath it.","Danger!",list("No","Yes")) != "Yes")
-		if(spawned_mob)
-			qdel(spawned_mob)
-		if(spawned_mobs.len)
-			for(var/mob/living/M in spawned_mobs)
-				spawned_mobs -= M
-				M.tag = null
-				qdel(M)
-			spawned_mobs.Cut()
-		return
+		if(antag_type)
+			var/datum/antagonist/A = SSantag_job.all_antag_types[antag_type]
+			A?.equip(spawned_mob)
+	else
+		for(var/i=0;i<spawn_count;i++)
+			var/mob/living/M = new spawn_path()
+			M.tag = "awaiting drop"
+			spawned_mobs |= M
 
 	// Chuck them into the pod.
 	var/automatic_pod

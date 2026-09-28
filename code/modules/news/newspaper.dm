@@ -105,7 +105,9 @@
 		if(scribble_page == curr_page)
 			to_chat(user, span_blue("There's already a scribble in this page... You wouldn't want to make things too cluttered, would you?"))
 		else
-			var/s = tgui_input_text(user, "Write something", "Newspaper", "", MAX_MESSAGE_LEN)
+			var/s = rerun_prompt(user, "k108", list("kind" = "text", "message" = "Write something", "title" = "Newspaper", "max_length" = MAX_MESSAGE_LEN), TYPE_PROC_REF(/atom, attackby), args)
+			if(isnull(s))
+				return TRUE
 			if(!s)
 				return
 			if(!in_range(src, user) && src.loc != user)

@@ -79,16 +79,12 @@
 		"Kal om neth — summon a soul stone" = "soulstone",
 		"Da A'ig Osk — summon a construct shell" = "construct",
 	)
-	var/picked_label = tgui_input_list(
-		usr,
-		"There are [uses] bloody runes on the parchment. Choose the chant to imbue into the fabric of reality.",
-		"Talisman",
-		rune_options,
-	)
-	if(!picked_label)
-		return
+	om_prompt(src, usr, list("kind" = "list", "message" = "There are [uses] bloody runes on the parchment. Choose the chant to imbue into the fabric of reality.", "title" = "Talisman", "choices" = rune_options, "requires" = PROMPT_HELD, "data" = list("options" = rune_options)), PROC_REF(talisman_chant_chosen))
+
+/obj/item/paper/talisman/proc/talisman_chant_chosen(mob/user, picked_label, datum/om/prompt/ask)
+	var/list/rune_options = ask.get("options")
 	var/rune = rune_options[picked_label]
-	if(rune)
+	if(rune && uses > 0)
 		Topic("rune=[rune]", list("rune" = rune))
 
 

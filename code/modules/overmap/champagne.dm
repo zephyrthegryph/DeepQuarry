@@ -27,7 +27,9 @@
 		return
 
 	user.visible_message(span_notice("[user] lifts [src] bottle over [comp]!"))
-	var/shuttle_name = tgui_input_text(user, "Choose a name for the shuttle", "New Shuttle Name")
+	var/shuttle_name = rerun_prompt(user, "k30", list("kind" = "text", "message" = "Choose a name for the shuttle", "title" = "New Shuttle Name"), PROC_REF(afterattack), args)
+	if(isnull(shuttle_name))
+		return TRUE
 	if(!shuttle_name || QDELETED(src) || QDELETED(comp) || comp.shuttle_tag || user.incapacitated())
 		return // After input() safety re-checks
 

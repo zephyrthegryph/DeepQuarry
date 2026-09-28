@@ -57,6 +57,8 @@ PATTERNS = [
     ("del", re.compile(r"(?<![\w./])del\s*\(")),
 ]
 NAMES = [name for name, _ in PATTERNS] + ["lc_refs"]
+# Marks a blocking prompt the S10 allowlist keeps (file uploads, the tgui repair verb, ...).
+KEEP_MARK = "// S10 keeps:"
 
 UNSAVED_MODS = {"static", "global", "const"}
 ALL_MODS = {"tmp", "static", "global", "const", "final"}
@@ -157,11 +159,15 @@ def scan():
         with open(path, encoding="utf-8", errors="replace") as handle:
             raw_text = handle.read()
         text = code_only(raw_text)
+        raw_lines = raw_text.split("\n")
         for no, line in enumerate(text.split("\n"), 1):
             if line.lstrip().startswith("#define"):
                 continue
             for name, pattern in PATTERNS:
                 for _ in pattern.finditer(line):
+                    # A prompt the S10 allowlist keeps says why on its line (sec 4.11).
+                    if name == "prompts" and KEEP_MARK in raw_lines[no - 1]:
+                        continue
                     sites[name].append((rel, no, name))
         sites["lc_refs"].extend(lc_ref_sites(rel, raw_text, text))
     return sites

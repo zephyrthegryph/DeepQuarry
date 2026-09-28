@@ -1,20 +1,31 @@
 ADMIN_VERB(admin_explosion, R_ADMIN|R_FUN, "Explosion", ADMIN_VERB_NO_DESCRIPTION, ADMIN_CATEGORY_HIDDEN, atom/orignator as obj|mob|turf)
-	var/devastation = tgui_input_number(user, "Range of total devastation. -1 to none", text("Input"), min_value=-1)
+	var/devastation = verb_prompt(user, "a1", list("kind" = "number", "message" = "Range of total devastation. -1 to none", "title" = text("Input"), "min" = -1), args)
+	if(isnull(devastation))
+		return
 	if(devastation == null)
 		return
-	var/heavy = tgui_input_number(user, "Range of heavy impact. -1 to none", text("Input"), min_value=-1)
+	var/heavy = verb_prompt(user, "a2", list("kind" = "number", "message" = "Range of heavy impact. -1 to none", "title" = text("Input"), "min" = -1), args)
+	if(isnull(heavy))
+		return
 	if(heavy == null)
 		return
-	var/light = tgui_input_number(user, "Range of light impact. -1 to none", text("Input"), min_value=-1)
+	var/light = verb_prompt(user, "a3", list("kind" = "number", "message" = "Range of light impact. -1 to none", "title" = text("Input"), "min" = -1), args)
+	if(isnull(light))
+		return
 	if(light == null)
 		return
-	var/flash = tgui_input_number(user, "Range of flash. -1 to none", text("Input"), min_value=-1)
+	var/flash = verb_prompt(user, "a4", list("kind" = "number", "message" = "Range of flash. -1 to none", "title" = text("Input"), "min" = -1), args)
+	if(isnull(flash))
+		return
 	if(flash == null)
 		return
 
 	if ((devastation != -1) || (heavy != -1) || (light != -1) || (flash != -1))
 		if ((devastation > 20) || (heavy > 20) || (light > 20))
-			if (tgui_alert(user, "Are you sure you want to do this? It will laaag.", "Confirmation", list("Yes", "No")) != "Yes")
+			var/_answer_a5 = verb_prompt(user, "a5", list("message" = "Are you sure you want to do this? It will laaag.", "title" = "Confirmation", "choices" = list("Yes", "No")), args)
+			if(isnull(_answer_a5))
+				return
+			if (_answer_a5 != "Yes")
 				return
 
 		explosion(orignator, devastation, heavy, light, flash)
@@ -23,16 +34,24 @@ ADMIN_VERB(admin_explosion, R_ADMIN|R_FUN, "Explosion", ADMIN_VERB_NO_DESCRIPTIO
 		feedback_add_details("admin_verb","EXPL") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(admin_emp, R_ADMIN|R_FUN, "EM Pulse", ADMIN_VERB_NO_DESCRIPTION, ADMIN_CATEGORY_HIDDEN, atom/orignator as obj|mob|turf)
-	var/heavy = tgui_input_number(user, "Range of heavy pulse.", text("Input"))
+	var/heavy = verb_prompt(user, "a6", list("kind" = "number", "message" = "Range of heavy pulse.", "title" = text("Input")), args)
+	if(isnull(heavy))
+		return
 	if(heavy == null)
 		return
-	var/med = tgui_input_number(user, "Range of medium pulse.", text("Input"))
+	var/med = verb_prompt(user, "a7", list("kind" = "number", "message" = "Range of medium pulse.", "title" = text("Input")), args)
+	if(isnull(med))
+		return
 	if(med == null)
 		return
-	var/light = tgui_input_number(user, "Range of light pulse.", text("Input"))
+	var/light = verb_prompt(user, "a8", list("kind" = "number", "message" = "Range of light pulse.", "title" = text("Input")), args)
+	if(isnull(light))
+		return
 	if(light == null)
 		return
-	var/long = tgui_input_number(user, "Range of long pulse.", text("Input"))
+	var/long = verb_prompt(user, "a9", list("kind" = "number", "message" = "Range of long pulse.", "title" = text("Input")), args)
+	if(isnull(long))
+		return
 	if(long == null)
 		return
 
@@ -43,7 +62,9 @@ ADMIN_VERB(admin_emp, R_ADMIN|R_FUN, "EM Pulse", ADMIN_VERB_NO_DESCRIPTION, ADMI
 		feedback_add_details("admin_verb","EMP") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(gib_them, (R_ADMIN|R_FUN), "Gib", ADMIN_VERB_NO_DESCRIPTION, ADMIN_CATEGORY_HIDDEN, mob/victim in REGISTRY_MEMBERS(REGISTRY_MOBS))
-	var/confirm = tgui_alert(user, "You sure?", "Confirm", list("Yes", "No"))
+	var/confirm = verb_prompt(user, "a10", list("message" = "You sure?", "title" = "Confirm", "choices" = list("Yes", "No")), args)
+	if(isnull(confirm))
+		return
 	if(confirm != "Yes")
 		return
 	//Due to the delay here its easy for something to have happened to the mob
@@ -61,7 +82,9 @@ ADMIN_VERB(gib_them, (R_ADMIN|R_FUN), "Gib", ADMIN_VERB_NO_DESCRIPTION, ADMIN_CA
 	feedback_add_details("admin_verb","GIB") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(gib_self, R_HOLDER, "Gibself", "Give yourself the same treatment you give others.", ADMIN_CATEGORY_FUN_DO_NOT)
-	var/confirm = tgui_alert(user, "You sure?", "Confirm", list("Yes", "No"))
+	var/confirm = verb_prompt(user, "a11", list("message" = "You sure?", "title" = "Confirm", "choices" = list("Yes", "No")), args)
+	if(isnull(confirm))
+		return
 	if(!confirm)
 		return
 	if(confirm == "Yes")

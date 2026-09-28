@@ -46,7 +46,9 @@
 	set name = "Set transfer amount"
 	set category = "Object"
 	set src in view(1)
-	var/N = tgui_input_list(usr, "Amount per transfer from this:","[src]", possible_transfer_amounts)
+	var/N = rerun_prompt(usr, "a1", list("kind" = "list", "message" = "Amount per transfer from this:", "title" = "[src]", "choices" = possible_transfer_amounts), VERB_REF(set_APTFT), args)
+	if(isnull(N))
+		return
 	if (N)
 		amount_per_transfer_from_this = N
 

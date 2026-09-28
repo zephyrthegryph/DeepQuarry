@@ -42,38 +42,41 @@
 	else
 		chargesa--
 		insistinga = 0
-		var/wish = tgui_input_list(user, "You want...","Wish", list("Power","Wealth","Immortality","To Kill","Peace"))
-		switch(wish)
-			if("Power")
-				to_chat(user, span_boldwarning("Your wish is granted, but at a terrible cost..."))
-				to_chat(user, span_warning("The Wish Granter punishes you for your selfishness, claiming your soul."))
-				if (!(user.has_mutation(LASER_EYES)))
-					user.add_mutation(LASER_EYES)
-					to_chat(user, span_notice("You feel pressure building behind your eyes."))
-				if (!(user.has_mutation(COLD_RESISTANCE)))
-					user.add_mutation(COLD_RESISTANCE)
-					to_chat(user, span_notice("Your body feels warm."))
-				if (!(user.has_mutation(XRAY)))
-					user.add_mutation(XRAY)
-					user.sight |= (SEE_MOBS|SEE_OBJS|SEE_TURFS)
-					user.see_in_dark = 8
-					user.see_invisible = SEE_INVISIBLE_LEVEL_TWO
-					to_chat(user, span_notice("The walls suddenly disappear."))
-			if("Wealth")
-				to_chat(user, span_boldwarning("Your wish is granted, but at a terrible cost..."))
-				to_chat(user, span_warning("The Wish Granter punishes you for your selfishness, claiming your soul."))
-				new /obj/structure/closet/syndicate/resources/everything(loc)
-			if("To Kill")
-				to_chat(user, span_boldwarning("Your wish is granted, but at a terrible cost..."))
-				to_chat(user, span_danger("The Wish Granter is outraged at your excessive wickedness, yet grants you your wish regardless. Someone will be killed soon."))
-				om_after(src, 100, PROC_REF(gib_wisher), user)
-			if("Peace")
-				to_chat(user, span_infoplain(span_bold("Whatever alien sentience that the Wish Granter possesses is satisfied with your wish. There is a distant wailing as the last of the Faithless begin to die, then silence.")))
-				to_chat(user, span_infoplain("You feel as if you just narrowly avoided a terrible fate..."))
-				for(var/mob/living/simple_mob/faithless/F in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
-					F.set_stat(DEAD)
-					F.icon_state = "faithless_dead"
+		om_prompt(src, user, list("kind" = "list", "message" = "You want...", "title" = "Wish", "choices" = list("Power","Wealth","Immortality","To Kill","Peace"), "requires" = PROMPT_ADJACENT), PROC_REF(wish_chosen))
+		return TRUE
 	return TRUE
+
+/obj/machinery/wish_granter/proc/wish_chosen(mob/living/carbon/human/user, wish, datum/om/prompt/ask)
+	switch(wish)
+		if("Power")
+			to_chat(user, span_boldwarning("Your wish is granted, but at a terrible cost..."))
+			to_chat(user, span_warning("The Wish Granter punishes you for your selfishness, claiming your soul."))
+			if (!(user.has_mutation(LASER_EYES)))
+				user.add_mutation(LASER_EYES)
+				to_chat(user, span_notice("You feel pressure building behind your eyes."))
+			if (!(user.has_mutation(COLD_RESISTANCE)))
+				user.add_mutation(COLD_RESISTANCE)
+				to_chat(user, span_notice("Your body feels warm."))
+			if (!(user.has_mutation(XRAY)))
+				user.add_mutation(XRAY)
+				user.sight |= (SEE_MOBS|SEE_OBJS|SEE_TURFS)
+				user.see_in_dark = 8
+				user.see_invisible = SEE_INVISIBLE_LEVEL_TWO
+				to_chat(user, span_notice("The walls suddenly disappear."))
+		if("Wealth")
+			to_chat(user, span_boldwarning("Your wish is granted, but at a terrible cost..."))
+			to_chat(user, span_warning("The Wish Granter punishes you for your selfishness, claiming your soul."))
+			new /obj/structure/closet/syndicate/resources/everything(loc)
+		if("To Kill")
+			to_chat(user, span_boldwarning("Your wish is granted, but at a terrible cost..."))
+			to_chat(user, span_danger("The Wish Granter is outraged at your excessive wickedness, yet grants you your wish regardless. Someone will be killed soon."))
+			om_after(src, 100, PROC_REF(gib_wisher), user)
+		if("Peace")
+			to_chat(user, span_infoplain(span_bold("Whatever alien sentience that the Wish Granter possesses is satisfied with your wish. There is a distant wailing as the last of the Faithless begin to die, then silence.")))
+			to_chat(user, span_infoplain("You feel as if you just narrowly avoided a terrible fate..."))
+			for(var/mob/living/simple_mob/faithless/F in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
+				F.set_stat(DEAD)
+				F.icon_state = "faithless_dead"
 
 /obj/machinery/wish_granter/proc/gib_wisher(mob/living/carbon/human/user)
 	if(user)

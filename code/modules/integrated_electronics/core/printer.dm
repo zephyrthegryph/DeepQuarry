@@ -269,7 +269,7 @@
 	if(!user || user.stat || user.restrained() || !Adjacent(user))
 		return
 
-	var/input_file = input(user, "Please choose a circuit JSON file to import.", "Import Circuit") as file
+	var/input_file = input(user, "Please choose a circuit JSON file to import.", "Import Circuit") as file // S10 keeps: file uploads need the BYOND file dialog
 	if(!input_file)
 		return
 

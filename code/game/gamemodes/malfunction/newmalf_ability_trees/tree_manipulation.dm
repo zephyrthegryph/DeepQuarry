@@ -71,8 +71,12 @@
 	if(!ability_prechecks(user, price))
 		return
 
-	var/action = tgui_input_list(user, "Select required action:", "Hack Camera", list("Reset", "Add X-Ray", "Add Motion Sensor", "Add EMP Shielding"))
-	if(!action || !target)
+	om_prompt(user, user, list("kind" = "list", "message" = "Select required action:", "title" = "Hack Camera", "choices" = list("Reset", "Add X-Ray", "Add Motion Sensor", "Add EMP Shielding"), "requires" = PROMPT_CONSCIOUS, "data" = list("camera" = target)), GLOBAL_PROC_REF(malf_hack_camera_chosen))
+
+/proc/malf_hack_camera_chosen(mob/living/silicon/ai/user, mob/answerer, action, datum/om/prompt/ask)
+	var/obj/machinery/camera/target = ask.get("camera")
+	var/price = 100
+	if(!ability_prechecks(user, price))
 		return
 
 	switch(action)
@@ -109,7 +113,6 @@
 				target.reset_wires()
 				to_chat(user, "EMP Shielding camera module enabled.")
 				return
-
 
 /datum/game_mode/malfunction/verb/emergency_forcefield(turf/T as turf in world)
 	set name = "Emergency Forcefield"

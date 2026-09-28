@@ -48,7 +48,9 @@
 		return
 
 	update_icon()
-	var/choice = tgui_alert(user, "What do you want to do with \the [src]?", "Multitool Menu", list("Switch Mode", "Clear Buffers", "Cancel"))
+	om_prompt(src, user, list("message" = "What do you want to do with \the [src]?", "title" = "Multitool Menu", "choices" = list("Switch Mode", "Clear Buffers", "Cancel"), "requires" = PROMPT_HELD), PROC_REF(menu_chosen))
+
+/obj/item/multitool/proc/menu_chosen(mob/living/user, choice, datum/om/prompt/ask)
 	switch(choice)
 		if("Clear Buffers")
 			to_chat(user,span_notice("You clear \the [src]'s memory."))

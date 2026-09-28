@@ -49,7 +49,9 @@
 	if(!ai_brain || !IIsAlly(usr))
 		to_chat(usr, span_warning("\The [src] does not respond to your input."))
 		return
-	var/setting = tgui_input_list(usr, "Toggle Swoopie Swooping Options", "Swoopie Options", list("Swoop Pests", "Swoop Trash"))
+	var/setting = rerun_prompt(usr, "k52", list("kind" = "list", "message" = "Toggle Swoopie Swooping Options", "title" = "Swoopie Options", "choices" = list("Swoop Pests", "Swoop Trash")), VERB_REF(change_settings), args)
+	if(isnull(setting))
+		return
 	switch(setting)
 		if("Swoop Pests")
 			swoop_pests = !swoop_pests

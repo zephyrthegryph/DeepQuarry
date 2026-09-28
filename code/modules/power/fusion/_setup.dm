@@ -20,7 +20,9 @@
 		to_chat(usr, "This map is not appropriate for this verb.")
 		return
 
-	var/response = tgui_alert(usr, "Are you sure?", "Engine setup", list("No", "Yes"))
+	var/response = rerun_prompt(usr, "k23", list("message" = "Are you sure?", "title" = "Engine setup", "choices" = list("No", "Yes")), PROC_REF(setup_fusion), args)
+	if(isnull(response))
+		return
 	if(response != "Yes")
 		return
 

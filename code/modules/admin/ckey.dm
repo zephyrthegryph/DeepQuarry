@@ -10,7 +10,9 @@
 	var/list/keys = list()
 	for(var/mob/playerMob in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		keys += playerMob.client
-	var/client/selection = tgui_input_list(usr, "Please, select a player!", "Set CKey", sortKey(keys))
+	var/client/selection = client_prompt("a1", list("kind" = "list", "message" = "Please, select a player!", "title" = "Set CKey", "choices" = sortKey(keys)), PROC_REF(SetCKey), args, 0)
+	if(isnull(selection))
+		return
 	if(!selection || !istype(selection))
 		return
 

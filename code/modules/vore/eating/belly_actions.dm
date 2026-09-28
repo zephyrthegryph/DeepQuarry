@@ -2,7 +2,10 @@
 	if(target.absorbed)
 		to_chat(user, span_vwarning("\The [target] is absorbed, and cannot presently be digested."))
 		return FALSE
-	if(tgui_alert(target, "\The [user] is attempting to instantly digest you. Is this something you are okay with happening to you?","Instant Digest", list("No", "Yes")) != "Yes")
+	var/_answer_a1 = rerun_prompt(target, "a1", list("message" = "\The [user] is attempting to instantly digest you. Is this something you are okay with happening to you?", "title" = "Instant Digest", "choices" = list("No", "Yes")), PROC_REF(instant_digest), args)
+	if(isnull(_answer_a1))
+		return
+	if(_answer_a1 != "Yes")
 		to_chat(user, span_vwarning("\The [target] declined your digest attempt."))
 		to_chat(target, span_vwarning("You declined the digest attempt."))
 		return FALSE
@@ -36,7 +39,10 @@
 	if(target.absorbed)
 		to_chat(user, span_vwarning("\The [target] is absorbed, and cannot presently be broken."))
 		return FALSE
-	if(tgui_alert(target, "\The [user] is attempting to break one of your bones. Is this something you are okay with happening to you?","Break Bones", list("No", "Yes")) != "Yes")
+	var/_answer_a2 = rerun_prompt(target, "a2", list("message" = "\The [user] is attempting to break one of your bones. Is this something you are okay with happening to you?", "title" = "Break Bones", "choices" = list("No", "Yes")), PROC_REF(instant_break_bone), args)
+	if(isnull(_answer_a2))
+		return
+	if(_answer_a2 != "Yes")
 		to_chat(user, span_vwarning("\The [target] declined your breaking bones attempt."))
 		to_chat(target, span_vwarning("You declined the breaking bones attempt."))
 		return FALSE
@@ -53,7 +59,10 @@
 	return TRUE
 
 /obj/belly/proc/instant_absorb(mob/user, mob/living/target)
-	if(tgui_alert(target, "\The [user] is attempting to instantly absorb you. Is this something you are okay with happening to you?","Instant Absorb", list("No", "Yes")) != "Yes")
+	var/_answer_a3 = rerun_prompt(target, "a3", list("message" = "\The [user] is attempting to instantly absorb you. Is this something you are okay with happening to you?", "title" = "Instant Absorb", "choices" = list("No", "Yes")), PROC_REF(instant_absorb), args)
+	if(isnull(_answer_a3))
+		return
+	if(_answer_a3 != "Yes")
 		to_chat(user, span_vwarning("\The [target] declined your absorb attempt."))
 		to_chat(target, span_vwarning("You declined the absorb attempt."))
 		return FALSE
@@ -69,7 +78,10 @@
 	return TRUE
 
 /obj/belly/proc/instant_knockout(mob/user, mob/living/target)
-	if(tgui_alert(target, "\The [user] is attempting to instantly make you unconscious, you will be unable until ejected from the pred. Is this something you are okay with happening to you?","Instant Knockout", list("No", "Yes")) != "Yes")
+	var/_answer_a4 = rerun_prompt(target, "a4", list("message" = "\The [user] is attempting to instantly make you unconscious, you will be unable until ejected from the pred. Is this something you are okay with happening to you?", "title" = "Instant Knockout", "choices" = list("No", "Yes")), PROC_REF(instant_knockout), args)
+	if(isnull(_answer_a4))
+		return
+	if(_answer_a4 != "Yes")
 		to_chat(user, span_vwarning("\The [target] declined your knockout attempt."))
 		to_chat(target, span_vwarning("You declined the knockout attempt."))
 		return FALSE

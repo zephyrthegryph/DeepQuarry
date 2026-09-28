@@ -16,7 +16,6 @@
 
 //override the standard attack_ghost proc for custom messages
 /obj/structure/ghost_pod/ghost_activated/unified_hole/attack_ghost(mob/observer/dead/user)
-	var/choice
 	if(jobban_isbanned(user, JOB_GHOSTROLES))
 		to_chat(user, span_warning("You cannot use this spawnpoint because you are banned from playing ghost roles."))
 		return
@@ -27,15 +26,19 @@
 		return
 
 	if(redgate_restricted)
-		choice = tgui_alert(user, "Which type of critter do you wish to spawn as? Note that this is a Redgate Spawner: if you choose the Lurker role you will not be able to leave through the redgate until another character grants you permission by clicking on the redgate with you nearby. Are you absolutely sure you wish to continue?", "Redgate Critter Spawner", list("Mob", "Morph", "Lurker", "Cancel"))
+		om_prompt(src, user, list("message" = "Which type of critter do you wish to spawn as? Note that this is a Redgate Spawner: if you choose the Lurker role you will not be able to leave through the redgate until another character grants you permission by clicking on the redgate with you nearby. Are you absolutely sure you wish to continue?", "title" = "Redgate Critter Spawner", "choices" = list("Mob", "Morph", "Lurker", "Cancel"), "requires" = list(/datum/om/check/has_client)), PROC_REF(critter_type_chosen))
 	else
-		choice = tgui_alert(user, "Which type of critter do you wish to spawn as?", "Critter Spawner", list("Mob", "Morph", "Lurker", "Cancel"))
+		om_prompt(src, user, list("message" = "Which type of critter do you wish to spawn as?", "title" = "Critter Spawner", "choices" = list("Mob", "Morph", "Lurker", "Cancel"), "requires" = list(/datum/om/check/has_client)), PROC_REF(critter_type_chosen))
 
+/obj/structure/ghost_pod/ghost_activated/unified_hole/proc/critter_type_chosen(mob/observer/dead/user, choice, datum/om/prompt/ask)
+	if(used)
+		return
 	switch(choice)
-		if(null, "Cancel")
+		if("Cancel")
 			return
 		if("Mob")
 			create_simplemob(user)
+			return
 		if("Morph")
 			create_morph(user)
 		if("Lurker")
@@ -49,27 +52,13 @@
 	registry_leave(REGISTRY_GHOST_PODS, src)
 
 /obj/structure/ghost_pod/ghost_activated/unified_hole/proc/create_simplemob(mob/M)
-	var/choice
-	var/finalized = FALSE
+	used = TRUE
 	registry_leave(REGISTRY_GHOST_PODS, src)
+	ask_maint_critter(M, "What type of critter do you want to play as?", "Critter Choice")
 
+/obj/structure/ghost_pod/ghost_activated/unified_hole/spawn_maint_critter(mob/M, choice)
 	if(needscharger)
 		new /obj/machinery/recharge_station/ghost_pod_recharger(src.loc)
-
-	while(!finalized && M.client)
-		choice = tgui_input_list(M, "What type of critter do you want to play as?", "Critter Choice", GLOB.maint_mob_pred_options)
-		if(!choice)	//We probably pushed the cancel button on the mob selection. Let's just put the ghost pod back in the list.
-			to_chat(M, span_notice("No mob selected, cancelling."))
-			reset_ghostpod()
-			return
-
-		if(choice)
-			finalized = tgui_alert(M, "Are you sure you want to play as [choice]?","Confirmation",list("No","Yes"))
-
-	if(!choice)	//If somehow we ended up here and we don't have a choice, let's just reset things!
-		reset_ghostpod()
-		return
-
 	var/mobtype = GLOB.maint_mob_pred_options[choice]
 	var/mob/living/simple_mob/newPred = new mobtype(get_turf(src))
 	qdel(newPred.ai_brain)
@@ -84,10 +73,7 @@
 	newPred.ckey = M.ckey
 	newPred.visible_message(span_warning("[newPred] emerges from somewhere!"))
 	log_and_message_admins("successfully used a Maintenance Critter spawner to spawn in as a [newPred].", newPred)
-	if(tgui_alert(newPred, "Do you want to load the vore bellies from your current slot?", "Load Bellies", list("Yes", "No")) == "Yes")
-		newPred.copy_from_prefs_vr()
-		if(LAZYLEN(newPred.vore_organs))
-			newPred.vore_selected = newPred.vore_organs[1]
+	newPred.offer_load_bellies()
 	replace_with(src, newPred)
 
 /obj/structure/ghost_pod/ghost_activated/unified_hole/proc/create_morph(mob/M)
@@ -106,10 +92,7 @@
 	newMorph.ckey = M.ckey
 	newMorph.visible_message(span_warning("A morph appears to crawl out of somewhere."))
 	log_and_message_admins("successfully used a Maintenance Critter spawner to spawn in as a Morph.", newMorph)
-	if(tgui_alert(newMorph, "Do you want to load the vore bellies from your current slot?", "Load Bellies", list("Yes", "No")) == "Yes")
-		newMorph.copy_from_prefs_vr()
-		if(LAZYLEN(newMorph.vore_organs))
-			newMorph.vore_selected = newMorph.vore_organs[1]
+	newMorph.offer_load_bellies()
 	qdel(src)
 
 /obj/structure/ghost_pod/ghost_activated/unified_hole/proc/create_lurker(mob/M)

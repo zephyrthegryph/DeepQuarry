@@ -41,32 +41,36 @@
 	add_fingerprint(ui.user)
 	switch(action)
 		if("Release")
-			var/amount = 0
 			if(params["amount"])
-				amount = params["amount"]
-			else
-				amount = tgui_input_number(ui.user, "How many items?", "How many items would you like to take out?", 1)
-
-			if(QDELETED(src) || QDELETED(ui.user) || !ui.user.Adjacent(src))
-				return FALSE
-
-			var/index = text2num(params["index"])
-			var/datum/stored_item/I = item_records[index]
-			var/count = I.get_amount()
-
-			// Sanity check, there are probably ways to press the button when it shouldn't be possible.
-			if(count > 0)
-				if((count - amount) < 0)
-					amount = count
-				mod_amount(I,-amount)
-				var/crystal_amount = min(240,amount)
-				while(crystal_amount > 0)
-					new /obj/item/stack/telecrystal(loc,crystal_amount)
-					amount -= crystal_amount
-					crystal_amount = min(240,amount)
-
+				release_crystals(ui.user, params["amount"], params["index"])
+				return TRUE
+			om_prompt(src, ui.user, list("kind" = "number", "message" = "How many items?", "title" = "How many items would you like to take out?", "default" = 1, "requires" = PROMPT_ADJACENT, "data" = list("index" = params["index"])), PROC_REF(crystal_amount_entered))
 			return TRUE
+
+/obj/machinery/smartfridge/tcrystal/proc/crystal_amount_entered(mob/user, amount, datum/om/prompt/ask)
+	release_crystals(user, amount, ask.get("index"))
 	return FALSE
+
+/obj/machinery/smartfridge/tcrystal/proc/release_crystals(mob/user, amount, index_param)
+	if(QDELETED(src) || QDELETED(user) || !user.Adjacent(src))
+		return FALSE
+
+	var/index = text2num(index_param)
+	var/datum/stored_item/I = item_records[index]
+	var/count = I.get_amount()
+
+	// Sanity check, there are probably ways to press the button when it shouldn't be possible.
+	if(count > 0)
+		if((count - amount) < 0)
+			amount = count
+		mod_amount(I,-amount)
+		var/crystal_amount = min(240,amount)
+		while(crystal_amount > 0)
+			new /obj/item/stack/telecrystal(loc,crystal_amount)
+			amount -= crystal_amount
+			crystal_amount = min(240,amount)
+
+	return TRUE
 
 /datum/stored_item/telecrystals
 	item_name = "Telecrystals"

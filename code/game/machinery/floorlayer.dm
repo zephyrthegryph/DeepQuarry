@@ -62,9 +62,10 @@
 	return TRUE
 
 /obj/machinery/floorlayer/wrench_act(mob/user, obj/item/tool)
-	var/selected_mode = tgui_input_list(user, "Choose work mode", "Mode", mode)
-	if(!selected_mode)
-		return ITEM_INTERACT_BLOCKING
+	om_prompt(src, user, list("kind" = "list", "message" = "Choose work mode", "title" = "Mode", "choices" = mode, "requires" = PROMPT_ADJACENT), PROC_REF(work_mode_chosen))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/floorlayer/proc/work_mode_chosen(mob/user, selected_mode, datum/om/prompt/ask)
 	mode[selected_mode] = !mode[selected_mode]
 	user.visible_message(span_notice("[user] has set \the [src] [selected_mode] mode [mode[selected_mode] ? "on" : "off"]."), span_notice("You set \the [src] [selected_mode] mode [mode[selected_mode] ? "on" : "off"]."))
 	return ITEM_INTERACT_SUCCESS
@@ -73,7 +74,12 @@
 	if(!length(contents))
 		to_chat(user, span_notice("\The [src] is empty."))
 		return ITEM_INTERACT_BLOCKING
-	var/obj/item/stack/tile/selected = tgui_input_list(user, "Choose remove tile type.", "Tiles", contents)
+	om_prompt(src, user, list("kind" = "list", "message" = "Choose remove tile type.", "title" = "Tiles", "choices" = contents, "requires" = PROMPT_ADJACENT), PROC_REF(tile_removal_chosen))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/floorlayer/proc/tile_removal_chosen(mob/user, obj/item/stack/tile/selected, datum/om/prompt/ask)
+	if(selected.loc != src)
+		return
 	if(selected)
 		to_chat(user, span_notice("You remove [selected] from \the [src]."))
 		selected.forceMove(loc)
@@ -81,8 +87,12 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/floorlayer/screwdriver_act(mob/user, obj/item/tool)
-	T = tgui_input_list(user, "Choose tile type.", "Tiles", contents)
+	om_prompt(src, user, list("kind" = "list", "message" = "Choose tile type.", "title" = "Tiles", "choices" = contents, "requires" = PROMPT_ADJACENT), PROC_REF(tile_type_chosen))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/floorlayer/proc/tile_type_chosen(mob/user, obj/item/stack/tile/selected, datum/om/prompt/ask)
+	if(selected.loc == src)
+		T = selected
 
 /obj/machinery/floorlayer/examine(mob/user)
 	. = ..()

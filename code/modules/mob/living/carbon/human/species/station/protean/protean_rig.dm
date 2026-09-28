@@ -405,17 +405,19 @@
 			to_chat(user, "There are no installed modules to remove.")
 			return ITEM_INTERACT_BLOCKING
 
-		var/removal_choice = tgui_input_list(user, "Which module would you like to remove?", "Removal Choice", possible_removals)
-		if(!removal_choice)
-			return ITEM_INTERACT_BLOCKING
-
-		var/obj/item/rig_module/removed = possible_removals[removal_choice]
-		to_chat(user, "You detach \the [removed] from \the [src].")
-		removed.forceMove(get_turf(src))
-		removed.removed()
-		LAZYREMOVE(installed_modules, removed)
-		update_icon()
+		om_prompt(src, user, list("kind" = "list", "message" = "Which module would you like to remove?", "title" = "Removal Choice", "choices" = possible_removals, "requires" = PROMPT_ADJACENT, "data" = list("modules" = possible_removals)), PROC_REF(module_removal_chosen))
 		return ITEM_INTERACT_SUCCESS
+
+/obj/item/rig/protean/proc/module_removal_chosen(mob/living/user, removal_choice, datum/om/prompt/ask)
+	var/list/possible_removals = ask.get("modules")
+	var/obj/item/rig_module/removed = possible_removals[removal_choice]
+	if(!(removed in installed_modules))
+		return
+	to_chat(user, "You detach \the [removed] from \the [src].")
+	removed.forceMove(get_turf(src))
+	removed.removed()
+	LAZYREMOVE(installed_modules, removed)
+	update_icon()
 
 /// Revival of a dormant core, one step per tool. Each step is a treatment
 /// mechanism the core_dormancy affliction answers to.

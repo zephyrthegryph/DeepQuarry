@@ -146,8 +146,9 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	var/response = tgui_alert(user, "Are you sure you want to release the royal spiderling right now? It appears ready to imprint the moment its born.", "Royal Spider Egg", list("Yes", "No"))
+	om_prompt(src, user, list("message" = "Are you sure you want to release the royal spiderling right now? It appears ready to imprint the moment its born.", "title" = "Royal Spider Egg", "choices" = list("Yes", "No"), "requires" = PROMPT_HELD), PROC_REF(release_confirmed))
 
+/obj/item/royal_spider_egg/proc/release_confirmed(mob/user, response, datum/om/prompt/ask)
 	if(response == "Yes")
 
 		var/turf/drop_loc = user.loc

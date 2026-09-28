@@ -4,7 +4,9 @@
 //	data = 0
 
 /datum/integrated_io/number/ask_for_pin_data(mob/user)
-	var/new_data = tgui_input_number(user, "Please type in a number.","[src] number writing")
+	var/new_data = rerun_prompt(user, "k7", list("kind" = "number", "message" = "Please type in a number.", "title" = "[src] number writing"), PROC_REF(ask_for_pin_data), args)
+	if(isnull(new_data))
+		return
 	if(isnum(new_data) && holder.check_interactivity(user) )
 		to_chat(user, span_notice("You input [new_data] into the pin."))
 		write_data_to_pin(new_data)

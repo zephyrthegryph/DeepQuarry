@@ -671,11 +671,8 @@
 			choice = show_radial_menu(src, src, options, radius = 90)
 			if(!choice || QDELETED(src) || src.incapacitated())
 				return 0
-			var/new_color = tgui_color_picker(src, "Pick body color:","Body Color", overlay_colors["Body"])
-			if(!new_color)
-				return 0
-			body_style = choice
-			overlay_colors["Body"] = new_color
+			om_prompt(src, src, list("kind" = "color", "message" = "Pick body color:", "title" = "Body Color", "default" = overlay_colors["Body"], "requires" = PROMPT_CONSCIOUS, "data" = list("part" = "Body", "var" = "body_style", "style" = choice)), PROC_REF(synx_part_color_chosen))
+			return FALSE
 		if("Horns")
 			options = horn_styles
 			for(var/option in options)
@@ -684,11 +681,8 @@
 			choice = show_radial_menu(src, src, options, radius = 90)
 			if(!choice || QDELETED(src) || src.incapacitated())
 				return 0
-			var/new_color = tgui_color_picker(src, "Pick horn color:","Horn Color", overlay_colors["Horns"])
-			if(!new_color)
-				return 0
-			horns = choice
-			overlay_colors["Horns"] = new_color
+			om_prompt(src, src, list("kind" = "color", "message" = "Pick horn color:", "title" = "Horn Color", "default" = overlay_colors["Horns"], "requires" = PROMPT_CONSCIOUS, "data" = list("part" = "Horns", "var" = "horns", "style" = choice)), PROC_REF(synx_part_color_chosen))
+			return FALSE
 		if("Marks")
 			options = marking_styles
 			for(var/option in options)
@@ -697,11 +691,8 @@
 			choice = show_radial_menu(src, src, options, radius = 90)
 			if(!choice || QDELETED(src) || src.incapacitated())
 				return 0
-			var/new_color = tgui_color_picker(src, "Pick marking color:","Marking Color", overlay_colors["Marks"])
-			if(!new_color)
-				return 0
-			markings = choice
-			overlay_colors["Marks"] = new_color
+			om_prompt(src, src, list("kind" = "color", "message" = "Pick marking color:", "title" = "Marking Color", "default" = overlay_colors["Marks"], "requires" = PROMPT_CONSCIOUS, "data" = list("part" = "Marks", "var" = "markings", "style" = choice)), PROC_REF(synx_part_color_chosen))
+			return FALSE
 		if("Eyes")
 			options = eye_styles
 			for(var/option in options)
@@ -710,13 +701,16 @@
 			choice = show_radial_menu(src, src, options, radius = 90)
 			if(!choice || QDELETED(src) || src.incapacitated())
 				return 0
-			var/new_color = tgui_color_picker(src, "Pick eye color:","Eye Color", overlay_colors["Eyes"])
-			if(!new_color)
-				return 0
-			eyes = choice
-			overlay_colors["Eyes"] = new_color
+			om_prompt(src, src, list("kind" = "color", "message" = "Pick eye color:", "title" = "Eye Color", "default" = overlay_colors["Eyes"], "requires" = PROMPT_CONSCIOUS, "data" = list("part" = "Eyes", "var" = "eyes", "style" = choice)), PROC_REF(synx_part_color_chosen))
+			return FALSE
 	if(.)
 		build_icons()
+
+/// The colour for a part picked in the customisation menu; the part's style is set with it.
+/mob/living/simple_mob/animal/synx/proc/synx_part_color_chosen(mob/user, new_color, datum/om/prompt/ask)
+	vars[ask.get("var")] = ask.get("style")
+	overlay_colors[ask.get("part")] = new_color
+	build_icons()
 
 ////////////////////////////////////////
 ////////////////PET VERSION/////////////
@@ -922,19 +916,22 @@
 	set name = "rename"
 	set desc = "Renames the synx"
 	set category = "DEBUG"
-	name = input(usr, "What would you like to change name to?", "Renaming", null)
+	om_prompt(src, usr, list("kind" = "text", "message" = "What would you like to change name to?", "title" = "Renaming", "data" = list("var" = "name")), PROC_REF(debug_var_entered))
 
 /mob/living/simple_mob/animal/synx/ai/pet/debug/proc/redesc()
 	set name = "redesc"
 	set desc = "Redescribes the synx"
 	set category = "DEBUG"
-	desc = input(usr, "What would you like to change desc to?", "Redescribing", null)
+	om_prompt(src, usr, list("kind" = "text", "message" = "What would you like to change desc to?", "title" = "Redescribing", "data" = list("var" = "desc")), PROC_REF(debug_var_entered))
 
 /mob/living/simple_mob/animal/synx/ai/pet/debug/proc/resprite()
 	set name = "resprite"
 	set desc = "Resprite the synx"
 	set category = "DEBUG"
-	icon_state = input(usr, "What would you like to change icon_state to?", "Respriting", null)
+	om_prompt(src, usr, list("kind" = "text", "message" = "What would you like to change icon_state to?", "title" = "Respriting", "data" = list("var" = "icon_state")), PROC_REF(debug_var_entered))
+
+/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/debug_var_entered(mob/user, value, datum/om/prompt/ask)
+	vars[ask.get("var")] = value
 
 /mob/living/simple_mob/animal/synx/ai/pet/debug/Initialize(mapload)
 	. = ..(mapload, TRUE)

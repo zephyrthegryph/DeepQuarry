@@ -50,7 +50,12 @@
 	else
 		. = VV_NULL
 
-/client/proc/vv_get_value(class, default_class, current_value, list/restricted_classes, list/extra_classes, list/classes, var_name)
+/// View Variables' value picker. Runs inside a prompt flow (flow_ask(), prompt_helpers.dm): each
+/// question returns null until its answer re-runs the flow's entry, so a null "class" means
+/// "cancelled or still asking" and the caller just returns. `key` keeps this pick's answers
+/// apart from the flow's other questions. `allow_finish`: closing the type list gives the class
+/// "finish" (ends a list being filled).
+/client/proc/vv_get_value(class, default_class, current_value, list/restricted_classes, list/extra_classes, list/classes, var_name, key = "value", allow_finish = FALSE)
 	. = list("class" = class, "value" = null)
 	if(!class)
 		if(!classes)
@@ -100,7 +105,12 @@
 		if(extra_classes)
 			classes += extra_classes
 
-		.["class"] = tgui_input_list(src, "What kind of data?", "Variable Type", classes, default_class)
+		var/list/class_spec = list("kind" = "list", "message" = "What kind of data?", "title" = "Variable Type", "choices" = classes, "default" = default_class)
+		if(allow_finish)
+			class_spec["cancel_answer"] = "finish"
+		.["class"] = flow_ask(mob, "[key]:class", class_spec)
+		if(.["class"] == "finish")
+			return
 		if(holder && holder.marked_datum && .["class"] == markstring)
 			.["class"] = VV_MARKED_DATUM
 
@@ -111,108 +121,100 @@
 
 	switch(.["class"])
 		if(VV_TEXT)
-			.["value"] = tgui_input_text(usr, "Enter new text:", "Text", current_value)
+			.["value"] = flow_ask(mob, "[key]:text", list("kind" = "text", "message" = "Enter new text:", "title" = "Text", "default" = current_value))
 			if(.["value"] == null)
 				.["class"] = null
 				return
 		if(VV_MESSAGE)
-			.["value"] = tgui_input_text(usr, "Enter new text:", "Text", current_value, multiline = TRUE)
+			.["value"] = flow_ask(mob, "[key]:text", list("kind" = "text", "message" = "Enter new text:", "title" = "Text", "default" = current_value, "multiline" = TRUE))
 			if(.["value"] == null)
 				.["class"] = null
 				return
 
 		if(VV_NUM)
-			.["value"] = tgui_input_number(usr, "Enter new number:", "Num", current_value, INFINITY, -INFINITY, round_value = FALSE)
+			.["value"] = flow_ask(mob, "[key]:num", list("kind" = "number", "message" = "Enter new number:", "title" = "Num", "default" = current_value, "max" = INFINITY, "min" = -INFINITY, "round" = FALSE))
 			if(.["value"] == null)
 				.["class"] = null
 				return
 
 		if(VV_BITFIELD)
-			.["value"] = input_bitfield(usr, "Editing bitfield: [var_name]", var_name, current_value)
+			.["value"] = flow_ask(mob, "[key]:bits", list("kind" = "bitfield", "title" = "Editing bitfield: [var_name]", "bitfield" = var_name, "default" = current_value))
 			if(.["value"] == null)
 				.["class"] = null
 				return
 
 		if(VV_ATOM_TYPE)
-			.["value"] = pick_closest_path(FALSE)
+			.["value"] = pick_closest_path(FALSE, key = "[key]:path")
 			if(.["value"] == null)
 				.["class"] = null
 				return
 
 		if(VV_DATUM_TYPE)
-			.["value"] = pick_closest_path(FALSE, get_fancy_list_of_datum_types())
+			.["value"] = pick_closest_path(FALSE, get_fancy_list_of_datum_types(), "[key]:path")
 			if(.["value"] == null)
 				.["class"] = null
 				return
 
 		if(VV_TYPE)
-			var/type = current_value
-			var/error = ""
-			do
-				type = tgui_input_text(usr, "Enter type:[error]", "Type", type)
-				if(!type)
-					break
-				type = text2path(type)
-				error = "\nType not found, Please try again"
-			while(!type)
+			var/type = vv_ask_type(current_value, key)
 			if(!type)
 				.["class"] = null
 				return
 			.["value"] = type
 
 		if(VV_ATOM_REFERENCE)
-			var/type = pick_closest_path(FALSE)
-			var/subtypes = vv_subtype_prompt(type)
+			var/type = pick_closest_path(FALSE, key = "[key]:path")
+			var/subtypes = vv_subtype_prompt(type, key)
 			if(subtypes == null)
 				.["class"] = null
 				return
 			var/list/things = vv_reference_list(type, subtypes)
-			var/value = tgui_input_list(usr, "Select reference:", "Reference", things, current_value)
-			if(!value)
+			var/value = flow_ask(mob, "[key]:ref", list("kind" = "list", "message" = "Select reference:", "title" = "Reference", "choices" = things, "default" = current_value))
+			if(!value || !things[value])
 				.["class"] = null
 				return
 			.["value"] = things[value]
 
 		if(VV_DATUM_REFERENCE)
-			var/type = pick_closest_path(FALSE, get_fancy_list_of_datum_types())
-			var/subtypes = vv_subtype_prompt(type)
+			var/type = pick_closest_path(FALSE, get_fancy_list_of_datum_types(), "[key]:path")
+			var/subtypes = vv_subtype_prompt(type, key)
 			if(subtypes == null)
 				.["class"] = null
 				return
 			var/list/things = vv_reference_list(type, subtypes)
-			var/value = tgui_input_list(usr, "Select reference:", "Reference", things, current_value)
-			if(!value)
+			var/value = flow_ask(mob, "[key]:ref", list("kind" = "list", "message" = "Select reference:", "title" = "Reference", "choices" = things, "default" = current_value))
+			if(!value || !things[value])
 				.["class"] = null
 				return
 			.["value"] = things[value]
 
 		if(VV_MOB_REFERENCE)
-			var/type = pick_closest_path(FALSE, make_types_fancy(typesof(/mob)))
-			var/subtypes = vv_subtype_prompt(type)
+			var/type = pick_closest_path(FALSE, make_types_fancy(typesof(/mob)), "[key]:path")
+			var/subtypes = vv_subtype_prompt(type, key)
 			if(subtypes == null)
 				.["class"] = null
 				return
 			var/list/things = vv_reference_list(type, subtypes)
-			var/value = tgui_input_list(usr, "Select reference:", "Reference", things, current_value)
-			if(!value)
+			var/value = flow_ask(mob, "[key]:ref", list("kind" = "list", "message" = "Select reference:", "title" = "Reference", "choices" = things, "default" = current_value))
+			if(!value || !things[value])
 				.["class"] = null
 				return
 			.["value"] = things[value]
 
 		if(VV_CLIENT)
-			.["value"] = tgui_input_list(usr, "Select reference:", "Reference", GLOB.clients, current_value)
+			.["value"] = flow_ask(mob, "[key]:client", list("kind" = "list", "message" = "Select reference:", "title" = "Reference", "choices" = GLOB.clients, "default" = current_value))
 			if(.["value"] == null)
 				.["class"] = null
 				return
 
 		if(VV_FILE)
-			.["value"] = input(usr, "Pick file:", "File") as null|file
+			.["value"] = input(usr, "Pick file:", "File") as null|file // S10 keeps: file uploads need the BYOND file dialog
 			if(.["value"] == null)
 				.["class"] = null
 				return
 
 		if(VV_ICON)
-			.["value"] = pick_and_customize_icon(pick_only=TRUE)
+			.["value"] = pick_and_customize_icon(mob, TRUE, "[key]:icon")
 			if(.["value"] == null)
 				.["class"] = null
 				return
@@ -229,15 +231,20 @@
 				return
 
 		if(VV_PROCCALL_RETVAL)
+			// The call runs when its questions are answered, and again if a later question of
+			// this flow is answered after it.
 			var/list/get_retval = list()
-			callproc_blocking(get_retval)
+			callproc_blocking(get_retval, "[key]:call")
+			if(!length(get_retval))
+				.["class"] = null
+				return
 			.["value"] = get_retval[1] //should have been set in proccall!
 			if(.["value"] == null)
 				.["class"] = null
 				return
 
 		if(VV_NEW_ATOM)
-			var/type = pick_closest_path(FALSE)
+			var/type = pick_closest_path(FALSE, key = "[key]:path")
 			if(!type)
 				.["class"] = null
 				return
@@ -247,7 +254,7 @@
 			.["value"] = newguy
 
 		if(VV_NEW_DATUM)
-			var/type = pick_closest_path(FALSE, get_fancy_list_of_datum_types())
+			var/type = pick_closest_path(FALSE, get_fancy_list_of_datum_types(), "[key]:path")
 			if(!type)
 				.["class"] = null
 				return
@@ -257,15 +264,7 @@
 			.["value"] = newguy
 
 		if(VV_NEW_TYPE)
-			var/type = current_value
-			var/error = ""
-			do
-				type = tgui_input_text(usr, "Enter type:[error]", "Type", type)
-				if(!type)
-					break
-				type = text2path(type)
-				error = "\nType not found, Please try again"
-			while(!type)
+			var/type = vv_ask_type(current_value, key)
 			if(!type)
 				.["class"] = null
 				return
@@ -279,39 +278,54 @@
 			.["type"] = /list
 			var/list/value = list()
 
-			var/expectation = alert("Would you like to populate the list", "Populate List?", "Yes", "No")
-			if(!expectation || expectation == "No")
+			var/expectation = flow_ask(mob, "[key]:populate", list("message" = "Would you like to populate the list", "title" = "Populate List?", "choices" = list("Yes", "No")))
+			if(isnull(expectation))
+				.["class"] = null
+				return
+			if(expectation == "No")
 				.["value"] = value
 				return .
 
-			var/list/insert = null
-			while(TRUE)
-				insert = vv_get_value(restricted_classes = list(VV_RESTORE_DEFAULT))
-				if(!insert["class"])
+			// One entry after another; closing the type list finishes the list.
+			for(var/i in 1 to 1000)
+				var/list/insert = vv_get_value(restricted_classes = list(VV_RESTORE_DEFAULT), key = "[key]:item[i]", allow_finish = TRUE)
+				if(insert["class"] == "finish")
 					break
+				if(!insert["class"])
+					.["class"] = null
+					return
 				value += LIST_VALUE_WRAP_LISTS(insert["value"])
 
 			.["value"] = value
 
 		if(VV_TEXT_LOCATE)
-			var/datum/D
-			do
-				var/ref = tgui_input_text(usr, "Enter reference:", "Reference")
-				if(!ref)
-					break
-				D = locate(ref)
-				if(!D)
-					tgui_alert(usr,"Invalid ref!")
-					continue
-			while(!D)
+			var/ref = flow_ask(mob, "[key]:locate", list("kind" = "text", "message" = "Enter reference:", "title" = "Reference"))
+			if(!ref)
+				.["class"] = null
+				return
+			var/datum/D = locate(ref)
+			if(!D)
+				tgui_alert_async(usr,"Invalid ref!")
+				.["class"] = null
+				return
 			.["type"] = D.type
 			.["value"] = D
 
 		if(VV_COLOR)
-			.["value"] = tgui_color_picker(src, "Enter new color:", "Color", current_value)
+			.["value"] = flow_ask(mob, "[key]:color", list("kind" = "color", "message" = "Enter new color:", "title" = "Color", "default" = current_value))
 			if(.["value"] == null)
 				.["class"] = null
 				return
 
 		if(VV_INFINITY)
 			.["value"] = INFINITY
+
+/// A type typed in by path; one that doesn't exist is refused (type it again from the start).
+/client/proc/vv_ask_type(current_value, key)
+	var/type = flow_ask(mob, "[key]:type", list("kind" = "text", "message" = "Enter type:", "title" = "Type", "default" = current_value))
+	if(!type)
+		return
+	type = text2path(type)
+	if(!type)
+		to_chat(src, span_warning("Type not found."), confidential = TRUE)
+	return type

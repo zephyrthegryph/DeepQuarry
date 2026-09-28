@@ -26,7 +26,12 @@
 
 	user.client?.start_thinking()
 	user.client?.start_typing()
-	var/message = tgui_input_text(user,"Choose a message to relay to those around you.", "", "", MAX_MESSAGE_LEN)
+	om_prompt(src, user, list("kind" = "text", "message" = "Choose a message to relay to those around you.", "title" = "", "default" = "", "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_HELD, "on_cancel" = PROC_REF(message_cancelled)), PROC_REF(message_entered))
+
+/obj/item/text_to_speech/proc/message_cancelled(mob/user, datum/om/prompt/ask)
+	user.client?.stop_thinking()
+
+/obj/item/text_to_speech/proc/message_entered(mob/user, message, datum/om/prompt/ask)
 	user.client?.stop_thinking()
 
 	if(message)

@@ -703,7 +703,9 @@
 			if (CI.container)
 				menuoptions[CI.container.label(menuoptions.len)] = CI
 
-		var/selection = tgui_input_list(user, "Which item would you like to remove?", "Remove ingredients", menuoptions)
+		var/selection = rerun_prompt(user, "k713", list("kind" = "list", "message" = "Which item would you like to remove?", "title" = "Remove ingredients", "choices" = menuoptions), PROC_REF(removal_menu), args)
+		if(isnull(selection))
+			return
 		if (selection)
 			var/datum/cooking_item/CI = menuoptions[selection]
 			eject(CI, user)

@@ -324,7 +324,9 @@
 		if(istype(target_item, /obj/item/stack) && precise_insertion)
 			var/atom/current_parent = parent
 			item_stack = target_item
-			var/requested_amount = tgui_input_number(user, "How much do you want to insert?", "Inserting [item_stack.singular_name]s", item_stack.amount, item_stack.amount)
+			var/requested_amount = rerun_prompt(user, "a1", list("kind" = "number", "message" = "How much do you want to insert?", "title" = "Inserting [item_stack.singular_name]s", "default" = item_stack.amount, "max" = item_stack.amount), PROC_REF(user_insert), args)
+			if(isnull(requested_amount))
+				return
 			if(!requested_amount || QDELETED(target_item) || QDELETED(user) || QDELETED(src))
 				continue
 			if(parent != current_parent || user.get_active_hand() != active_held)

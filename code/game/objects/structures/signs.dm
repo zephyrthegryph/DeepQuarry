@@ -35,27 +35,31 @@
 
 /obj/item/sign/screwdriver_act(mob/user, obj/item/tool)
 	if(isturf(user.loc))
-		var/direction = tgui_input_list(user, "In which direction?", "Select direction.", list("North", "East", "South", "West", "Cancel"))
-		if(direction == "Cancel") return
-		var/target_type = original_type || /obj/structure/sign
-		var/obj/structure/sign/S = new target_type(user.loc)
-		switch(direction)
-			if("North")
-				S.pixel_y = 32
-			if("East")
-				S.pixel_x = 32
-			if("South")
-				S.pixel_y = -32
-			if("West")
-				S.pixel_x = -32
-			else return
-		S.name = name
-		S.desc = desc
-		S.icon_state = sign_state
-		to_chat(user, "You fasten \the [S] with your [tool].")
-		qdel(src)
+		om_prompt(src, user, list("kind" = "list", "message" = "In which direction?", "title" = "Select direction.", "choices" = list("North", "East", "South", "West", "Cancel"), "target" = tool, "requires" = PROMPT_IN_HAND, "data" = list("tool" = tool)), PROC_REF(direction_chosen))
 		return TRUE
 	return ..()
+
+/obj/item/sign/proc/direction_chosen(mob/user, direction, datum/om/prompt/ask)
+	var/obj/item/tool = ask.get("tool")
+	if(direction == "Cancel" || !isturf(user.loc)) return
+	var/target_type = original_type || /obj/structure/sign
+	var/obj/structure/sign/S = new target_type(user.loc)
+	switch(direction)
+		if("North")
+			S.pixel_y = 32
+		if("East")
+			S.pixel_x = 32
+		if("South")
+			S.pixel_y = -32
+		if("West")
+			S.pixel_x = -32
+		else return
+	S.name = name
+	S.desc = desc
+	S.icon_state = sign_state
+	to_chat(user, "You fasten \the [S] with your [tool].")
+	qdel(src)
+	return TRUE
 
 /obj/structure/sign/scenery/map
 	name = "station map"
@@ -1649,9 +1653,11 @@ REF_PAIR(/obj/structure/sign/flag, list("linked_flag" = "linked_flag"))
 	effect = /obj/structure/sign/flag/proc/interaction_rip
 
 /obj/structure/sign/flag/proc/interaction_rip(mob/user, obj/item/held, datum/interaction/interaction)
-	if(tgui_alert(user, "Do you want to rip \the [src] from its place?","You think...",list("Yes","No")) == "Yes")
-		if(!Adjacent(user)) //Cannot bring up dialogue and walk away
-			return TRUE
+	om_prompt(src, user, list("message" = "Do you want to rip \the [src] from its place?", "title" = "You think...", "choices" = list("Yes","No"), "requires" = PROMPT_ADJACENT), PROC_REF(rip_answered))
+	return TRUE
+
+/obj/structure/sign/flag/proc/rip_answered(mob/user, answer, datum/om/prompt/ask)
+	if(answer == "Yes")
 		visible_message(span_warning("\The [user] rips \the [src] in a single, decisive motion!" ))
 		playsound(src.loc, 'sound/items/poster_ripped.ogg', 100, 1)
 		add_fingerprint(user)

@@ -45,11 +45,12 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	var/newtime = tgui_input_number(user, "Please set the timer.", "Timer", 10, 60000, 10)
-	if(user.get_active_hand() == src)
-		newtime = CLAMP(newtime, 10, 60000)
-		timer = newtime
-		to_chat(user, "Timer set for [timer] seconds.")
+	om_prompt(src, user, list("kind" = "number", "message" = "Please set the timer.", "title" = "Timer", "default" = 10, "max" = 60000, "min" = 10, "requires" = PROMPT_IN_HAND), PROC_REF(timer_set))
+
+/obj/item/plastique/proc/timer_set(mob/user, newtime, datum/om/prompt/ask)
+	newtime = CLAMP(newtime, 10, 60000)
+	timer = newtime
+	to_chat(user, "Timer set for [timer] seconds.")
 
 /obj/item/plastique/afterattack(atom/movable/target, mob/user, flag)
 	if (!flag)

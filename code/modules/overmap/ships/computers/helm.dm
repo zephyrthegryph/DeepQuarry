@@ -178,7 +178,9 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 			. = TRUE
 		if("add")
 			var/datum/computer_file/data/waypoint/R = new()
-			var/sec_name = tgui_input_text(ui.user, "Input navigation entry name", "New navigation entry", "Sector #[length(known_sectors)]", MAX_NAME_LEN)
+			var/sec_name = act_prompt(ui.user, action, params, ui, "k180", list("kind" = "text", "message" = "Input navigation entry name", "title" = "New navigation entry", "default" = "Sector #[length(known_sectors)]", "max_length" = MAX_NAME_LEN))
+			if(isnull(sec_name))
+				return
 			if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
 				return FALSE
 			if(!sec_name)
@@ -192,10 +194,14 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 					R.fields["x"] = linked.x
 					R.fields["y"] = linked.y
 				if("new")
-					var/newx = tgui_input_number(ui.user, "Input new entry x coordinate", "Coordinate input", linked.x, world.maxx, 1)
+					var/newx = act_prompt(ui.user, action, params, ui, "k194", list("kind" = "number", "message" = "Input new entry x coordinate", "title" = "Coordinate input", "default" = linked.x, "max" = world.maxx, "min" = 1))
+					if(isnull(newx))
+						return
 					if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
 						return TRUE
-					var/newy = tgui_input_number(ui.user, "Input new entry y coordinate", "Coordinate input", linked.y, world.maxy, 1)
+					var/newy = act_prompt(ui.user, action, params, ui, "k197", list("kind" = "number", "message" = "Input new entry y coordinate", "title" = "Coordinate input", "default" = linked.y, "max" = world.maxy, "min" = 1))
+					if(isnull(newy))
+						return
 					if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
 						return FALSE
 					R.fields["x"] = CLAMP(newx, 1, world.maxx)
@@ -212,14 +218,18 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 
 		if("setcoord")
 			if(params["setx"])
-				var/newx = tgui_input_number(ui.user, "Input new destiniation x coordinate", "Coordinate input", dx, world.maxx, 1)
+				var/newx = act_prompt(ui.user, action, params, ui, "k214", list("kind" = "number", "message" = "Input new destiniation x coordinate", "title" = "Coordinate input", "default" = dx, "max" = world.maxx, "min" = 1))
+				if(isnull(newx))
+					return
 				if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
 					return
 				if(newx)
 					dx = CLAMP(newx, 1, world.maxx)
 
 			if(params["sety"])
-				var/newy = tgui_input_number(ui.user, "Input new destiniation y coordinate", "Coordinate input", dy, world.maxy, 1)
+				var/newy = act_prompt(ui.user, action, params, ui, "k221", list("kind" = "number", "message" = "Input new destiniation y coordinate", "title" = "Coordinate input", "default" = dy, "max" = world.maxy, "min" = 1))
+				if(isnull(newy))
+					return
 				if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
 					return
 				if(newy)
@@ -237,13 +247,17 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 			. = TRUE
 
 		if("speedlimit")
-			var/newlimit = tgui_input_number(ui.user, "Input new speed limit for autopilot (0 to brake)", "Autopilot speed limit", speedlimit*1000, 100000, round_value = FALSE)
+			var/newlimit = act_prompt(ui.user, action, params, ui, "k239", list("kind" = "number", "message" = "Input new speed limit for autopilot (0 to brake)", "title" = "Autopilot speed limit", "default" = speedlimit*1000, "max" = 100000, "round" = FALSE))
+			if(isnull(newlimit))
+				return
 			if(newlimit)
 				speedlimit = CLAMP(newlimit/1000, 0, 100)
 			. = TRUE
 
 		if("accellimit")
-			var/newlimit = tgui_input_number(ui.user, "Input new acceleration limit", "Acceleration limit", accellimit*1000, round_value = FALSE)
+			var/newlimit = act_prompt(ui.user, action, params, ui, "k245", list("kind" = "number", "message" = "Input new acceleration limit", "title" = "Acceleration limit", "default" = accellimit*1000, "round" = FALSE))
+			if(isnull(newlimit))
+				return
 			if(newlimit)
 				accellimit = max(newlimit/1000, 0)
 			. = TRUE

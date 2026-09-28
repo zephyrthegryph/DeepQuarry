@@ -2,7 +2,9 @@
 	set category = "IC.Game"
 	set name = "Pray"
 
-	var/raw_msg = tgui_input_text(src, "Prayers are sent to staff but do not open tickets or go to Discord. If you have a technical difficulty or an event/spice idea/hook - please ahelp instead. Thank you!", "Pray", null, MAX_MESSAGE_LEN)
+	om_prompt(src, src, list("kind" = "text", "message" = "Prayers are sent to staff but do not open tickets or go to Discord. If you have a technical difficulty or an event/spice idea/hook - please ahelp instead. Thank you!", "title" = "Pray", "max_length" = MAX_MESSAGE_LEN), PROC_REF(prayer_entered))
+
+/mob/proc/prayer_entered(mob/user, raw_msg, datum/om/prompt/ask)
 	if(!raw_msg)	return
 
 	if(src.client)

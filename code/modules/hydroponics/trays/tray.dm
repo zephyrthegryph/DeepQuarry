@@ -172,7 +172,9 @@
 	var/datum/ghosttrap/plant/G = get_ghost_trap("living plant")
 	if(!G.assess_candidate(user))
 		return
-	var/response = tgui_alert(user, "Are you sure you want to harvest this [seed.display_name]?", "Living plant request", list("Yes", "No"))
+	var/response = rerun_prompt(user, "k175", list("message" = "Are you sure you want to harvest this [seed.display_name]?", "title" = "Living plant request", "choices" = list("Yes", "No")), TYPE_PROC_REF(/atom, attack_ghost), args)
+	if(isnull(response))
+		return
 	if(response == "Yes")
 		harvest()
 	return
@@ -493,7 +495,9 @@ REF_OWNED(/obj/machinery/portable_atmospherics/hydroponics, "temp_chem_holder")
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/interaction_set_light(mob/user, obj/item/held, datum/interaction/interaction)
 	if(ishuman(user) || isrobot(user))
-		var/new_light = tgui_input_list(user, "Specify a light level.", "Light Level", list(0,1,2,3,4,5,6,7,8,9,10))
+		var/new_light = rerun_prompt(user, "k502", list("kind" = "list", "message" = "Specify a light level.", "title" = "Light Level", "choices" = list(0,1,2,3,4,5,6,7,8,9,10)), PROC_REF(interaction_set_light), args)
+		if(isnull(new_light))
+			return
 		if(new_light)
 			tray_light = new_light
 			to_chat(user, span_filter_notice("You set the tray to a light level of [tray_light] lumens."))

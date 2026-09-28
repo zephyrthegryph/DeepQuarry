@@ -23,9 +23,15 @@
 				if("alert")
 					post_status("alert", params["alert"])
 				if("setmsg1")
-					message1 = tgui_input_text(ui.user,"Line 1", "Enter Message Text", message1, encode=TRUE)
+					var/_answer_k26 = act_prompt(ui.user, action, params, ui, "k26", list("kind" = "text", "message" = "Line 1", "title" = "Enter Message Text", "default" = message1, "encode" = TRUE))
+					if(isnull(_answer_k26))
+						return
+					message1 = _answer_k26
 				if("setmsg2")
-					message2 = tgui_input_text(ui.user, "Line 2", "Enter Message Text", message2, encode=TRUE)
+					var/_answer_k28 = act_prompt(ui.user, action, params, ui, "k28", list("kind" = "text", "message" = "Line 2", "title" = "Enter Message Text", "default" = message2, "encode" = TRUE))
+					if(isnull(_answer_k28))
+						return
+					message2 = _answer_k28
 				else
 					post_status(params["statdisp"])
 			return TRUE

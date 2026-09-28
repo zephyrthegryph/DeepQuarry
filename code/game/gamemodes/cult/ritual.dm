@@ -358,85 +358,90 @@ REF_OWNED(/obj/effect/rune, "blood_image")
 			tgui_alert_async(user, "The cloth of reality can't take that much of a strain. Remove some runes first!")
 			return
 		else
-			switch(tgui_alert(user, "You open the tome", "Tome", list("Read it","Scribe a rune","Cancel")))
-				if("Cancel", null)
-					return
-				if("Read it")
-					if(user.get_active_hand() != src)
-						return
-					// structured TGUI AdminReport.
-					dq_admin_report_html(user, "Arcane Tome", "[tomedat]")
-					return
-		if(user.get_active_hand() != src)
+			om_prompt(src, user, list("message" = "You open the tome", "title" = "Tome", "choices" = list("Read it","Scribe a rune","Cancel"), "requires" = PROMPT_IN_HAND), PROC_REF(tome_menu_chosen))
 			return
-
-		var/list/dictionary = list (
-			"convert" = list("join","blood","self"),
-			"wall" = list("destroy","travel","self"),
-			"blood boil" = list("destroy","see","blood"),
-			"blood drain" = list("travel","blood","self"),
-			"raise dead" = list("blood","join","hell"),
-			"summon narsie" = list("hell","join","self"),
-			"communicate" = list("self","other","technology"),
-			"emp" = list("destroy","see","technology"),
-			"manifest" = list("blood","see","travel"),
-			"summon tome" = list("see","blood","hell"),
-			"see invisible" = list("see","hell","join"),
-			"hide" = list("hide","see","blood"),
-			"reveal" = list("blood","see","hide"),
-			"astral journey" = list("hell","travel","self"),
-			"imbue" = list("hell","technology","join"),
-			"sacrifice" = list("hell","blood","join"),
-			"summon cultist" = list("join","other","self"),
-			"free cultist" = list("travel","technology","other"),
-			"deafen" = list("hide","other","see"),
-			"blind" = list("destroy","see","other"),
-			"stun" = list("join","hide","technology"),
-			"armor" = list("hell","destroy","other"),
-			"teleport" = list("travel","self"),
-			"teleport other" = list("travel","other")
-		)
-
-		var/list/english = list()
-
-		var/list/scribewords = list("none")
-
-		for (var/entry in words)
-			if (words[entry] != entry)
-				english += list(words[entry] = entry)
-
-		for (var/entry in dictionary)
-			var/list/required = dictionary[entry]
-			if (length(english&required) == required.len)
-				scribewords += entry
-
-		var/chosen_rune = null
-
-		if(user)
-			chosen_rune = input ("Choose a rune to scribe.") in scribewords
-			if (!chosen_rune)
-				return
-			if (chosen_rune == "none")
-				to_chat(user, span_notice("You decide against scribing a rune, perhaps you should take this time to study your notes."))
-				return
-			if (chosen_rune == "teleport")
-				dictionary[chosen_rune] += input ("Choose a destination word") in english
-			if (chosen_rune == "teleport other")
-				dictionary[chosen_rune] += input ("Choose a destination word") in english
-
-		if(user.get_active_hand() != src)
-			return
-
-		for (var/mob/V in viewers(src))
-			V.show_message(span_danger("\The [user] slices open a finger and begins to chant and paint symbols on the floor."), 3, span_danger("You hear chanting."), 2)
-		to_chat(user, span_danger("You slice open one of your fingers and begin drawing a rune on the floor whilst chanting the ritual that binds your life essence with the dark arcane energies flowing through the surrounding world."))
-		user.injure(INJURY_CUT, (rand(9)+1)/10, user.hand ? BP_L_HAND : BP_R_HAND, src) // 0.1 to 1.0 damage
-		var/list/required = dictionary[chosen_rune]
-		om_task_start(/datum/om/task/timed/tome_scribe, user, src, list("receiver" = src, "chosen_rune" = chosen_rune, "word1" = english[required[1]], "word2" = english[required[2]], "word3" = english[required[3]]))
-		return
 	else
 		to_chat(user, "The book seems full of illegible scribbles. Is this a joke?")
 		return
+
+/obj/item/book/tome/proc/tome_menu_chosen(mob/living/user, choice, datum/om/prompt/ask)
+	switch(choice)
+		if("Read it")
+			// structured TGUI AdminReport.
+			dq_admin_report_html(user, "Arcane Tome", "[tomedat]")
+		if("Scribe a rune")
+			tome_scribe(user)
+
+/obj/item/book/tome/proc/tome_scribe(mob/living/user)
+	if(user.get_active_hand() != src)
+		return
+
+	var/list/dictionary = list (
+		"convert" = list("join","blood","self"),
+		"wall" = list("destroy","travel","self"),
+		"blood boil" = list("destroy","see","blood"),
+		"blood drain" = list("travel","blood","self"),
+		"raise dead" = list("blood","join","hell"),
+		"summon narsie" = list("hell","join","self"),
+		"communicate" = list("self","other","technology"),
+		"emp" = list("destroy","see","technology"),
+		"manifest" = list("blood","see","travel"),
+		"summon tome" = list("see","blood","hell"),
+		"see invisible" = list("see","hell","join"),
+		"hide" = list("hide","see","blood"),
+		"reveal" = list("blood","see","hide"),
+		"astral journey" = list("hell","travel","self"),
+		"imbue" = list("hell","technology","join"),
+		"sacrifice" = list("hell","blood","join"),
+		"summon cultist" = list("join","other","self"),
+		"free cultist" = list("travel","technology","other"),
+		"deafen" = list("hide","other","see"),
+		"blind" = list("destroy","see","other"),
+		"stun" = list("join","hide","technology"),
+		"armor" = list("hell","destroy","other"),
+		"teleport" = list("travel","self"),
+		"teleport other" = list("travel","other")
+	)
+
+	var/list/english = list()
+
+	var/list/scribewords = list("none")
+
+	for (var/entry in words)
+		if (words[entry] != entry)
+			english += list(words[entry] = entry)
+
+	for (var/entry in dictionary)
+		var/list/required = dictionary[entry]
+		if (length(english&required) == required.len)
+			scribewords += entry
+
+	om_prompt_sequence(src, user, list(
+		list("key" = "rune", "kind" = "list", "message" = "Choose a rune to scribe.", "choices" = scribewords),
+		PROC_REF(tome_ask_destination),
+	), PROC_REF(tome_rune_chosen), list("requires" = PROMPT_IN_HAND, "data" = list("english" = english, "dictionary" = dictionary)))
+
+/obj/item/book/tome/proc/tome_ask_destination(mob/living/user, datum/om/prompt/ask)
+	if(ask.get("rune") == "teleport" || ask.get("rune") == "teleport other")
+		return list("key" = "destination", "kind" = "list", "message" = "Choose a destination word", "choices" = ask.get("english"))
+
+/obj/item/book/tome/proc/tome_rune_chosen(mob/living/user, datum/om/prompt/ask)
+	var/chosen_rune = ask.get("rune")
+	var/list/english = ask.get("english")
+	var/list/dictionary = ask.get("dictionary")
+	if (chosen_rune == "none")
+		to_chat(user, span_notice("You decide against scribing a rune, perhaps you should take this time to study your notes."))
+		return
+	if(ask.get("destination"))
+		dictionary[chosen_rune] += ask.get("destination")
+
+	for (var/mob/V in viewers(src))
+		V.show_message(span_danger("\The [user] slices open a finger and begins to chant and paint symbols on the floor."), 3, span_danger("You hear chanting."), 2)
+	to_chat(user, span_danger("You slice open one of your fingers and begin drawing a rune on the floor whilst chanting the ritual that binds your life essence with the dark arcane energies flowing through the surrounding world."))
+	user.injure(INJURY_CUT, (rand(9)+1)/10, user.hand ? BP_L_HAND : BP_R_HAND, src) // 0.1 to 1.0 damage
+	var/list/required = dictionary[chosen_rune]
+	om_task_start(/datum/om/task/timed/tome_scribe, user, src, list("receiver" = src, "chosen_rune" = chosen_rune, "word1" = english[required[1]], "word2" = english[required[2]], "word3" = english[required[3]]))
+	return
 
 /obj/item/book/tome/examine(mob/user)
 	. = ..()
@@ -461,170 +466,173 @@ REF_OWNED(/obj/effect/rune, "blood_image")
 	if(!GLOB.cultwords["travel"])
 		runerandom()
 	if(user)
-		var/r
 		if (!istype(user.loc,/turf))
 			to_chat(user, span_notice("You do not have enough space to write a proper rune."))
 		var/list/runes = list("teleport", "itemport", "tome", "armor", "convert", "tear in reality", "emp", "drain", "seer", "raise", "obscure", "reveal", "astral journey", "manifest", "imbue talisman", "sacrifice", "wall", "freedom", "cultsummon", "deafen", "blind", "bloodboil", "communicate", "stun")
-		r = tgui_input_list(user, "Choose a rune to scribe", "Rune Scribing", runes, timeout=30 SECONDS)
-		var/obj/effect/rune/R = new /obj/effect/rune
-		if(ishuman(user))
-			var/mob/living/carbon/human/H = user
-			R.add_blooddna(H.dna,H)
-		var/area/A = get_area(user)
-		log_and_message_admins("created \an [r] rune at \the [A.name] - [user.loc.x]-[user.loc.y]-[user.loc.z].")
-		switch(r)
-			if("teleport")
-				var/list/words = list("ire", "ego", "nahlizet", "certum", "veri", "jatkaa", "balaq", "mgar", "karazet", "geeri")
-				var/beacon
-				if(user)
-					beacon = tgui_input_list(user, "Select the last rune", "Rune Scribing", words, timeout=30 SECONDS)
-				R.word1=GLOB.cultwords["travel"]
-				R.word2=GLOB.cultwords["self"]
-				R.word3=beacon
-				R.loc = user.loc
-				R.check_icon()
-			if("itemport")
-				var/list/words = list("ire", "ego", "nahlizet", "certum", "veri", "jatkaa", "balaq", "mgar", "karazet", "geeri")
-				var/beacon
-				if(user)
-					beacon = tgui_input_list(user, "Select the last rune", "Rune Scribing", words, timeout=30 SECONDS)
-				R.word1=GLOB.cultwords["travel"]
-				R.word2=GLOB.cultwords["other"]
-				R.word3=beacon
-				R.loc = user.loc
-				R.check_icon()
-			if("tome")
-				R.word1=GLOB.cultwords["see"]
-				R.word2=GLOB.cultwords["blood"]
-				R.word3=GLOB.cultwords["hell"]
-				R.loc = user.loc
-				R.check_icon()
-			if("armor")
-				R.word1=GLOB.cultwords["hell"]
-				R.word2=GLOB.cultwords["destroy"]
-				R.word3=GLOB.cultwords["other"]
-				R.loc = user.loc
-				R.check_icon()
-			if("convert")
-				R.word1=GLOB.cultwords["join"]
-				R.word2=GLOB.cultwords["blood"]
-				R.word3=GLOB.cultwords["self"]
-				R.loc = user.loc
-				R.check_icon()
-			if("tear in reality")
-				R.word1=GLOB.cultwords["hell"]
-				R.word2=GLOB.cultwords["join"]
-				R.word3=GLOB.cultwords["self"]
-				R.loc = user.loc
-				R.check_icon()
-			if("emp")
-				R.word1=GLOB.cultwords["destroy"]
-				R.word2=GLOB.cultwords["see"]
-				R.word3=GLOB.cultwords["technology"]
-				R.loc = user.loc
-				R.check_icon()
-			if("drain")
-				R.word1=GLOB.cultwords["travel"]
-				R.word2=GLOB.cultwords["blood"]
-				R.word3=GLOB.cultwords["self"]
-				R.loc = user.loc
-				R.check_icon()
-			if("seer")
-				R.word1=GLOB.cultwords["see"]
-				R.word2=GLOB.cultwords["hell"]
-				R.word3=GLOB.cultwords["join"]
-				R.loc = user.loc
-				R.check_icon()
-			if("raise")
-				R.word1=GLOB.cultwords["blood"]
-				R.word2=GLOB.cultwords["join"]
-				R.word3=GLOB.cultwords["hell"]
-				R.loc = user.loc
-				R.check_icon()
-			if("obscure")
-				R.word1=GLOB.cultwords["hide"]
-				R.word2=GLOB.cultwords["see"]
-				R.word3=GLOB.cultwords["blood"]
-				R.loc = user.loc
-				R.check_icon()
-			if("astral journey")
-				R.word1=GLOB.cultwords["hell"]
-				R.word2=GLOB.cultwords["travel"]
-				R.word3=GLOB.cultwords["self"]
-				R.loc = user.loc
-				R.check_icon()
-			if("manifest")
-				R.word1=GLOB.cultwords["blood"]
-				R.word2=GLOB.cultwords["see"]
-				R.word3=GLOB.cultwords["travel"]
-				R.loc = user.loc
-				R.check_icon()
-			if("imbue talisman")
-				R.word1=GLOB.cultwords["hell"]
-				R.word2=GLOB.cultwords["technology"]
-				R.word3=GLOB.cultwords["join"]
-				R.loc = user.loc
-				R.check_icon()
-			if("sacrifice")
-				R.word1=GLOB.cultwords["hell"]
-				R.word2=GLOB.cultwords["blood"]
-				R.word3=GLOB.cultwords["join"]
-				R.loc = user.loc
-				R.check_icon()
-			if("reveal")
-				R.word1=GLOB.cultwords["blood"]
-				R.word2=GLOB.cultwords["see"]
-				R.word3=GLOB.cultwords["hide"]
-				R.loc = user.loc
-				R.check_icon()
-			if("wall")
-				R.word1=GLOB.cultwords["destroy"]
-				R.word2=GLOB.cultwords["travel"]
-				R.word3=GLOB.cultwords["self"]
-				R.loc = user.loc
-				R.check_icon()
-			if("freedom")
-				R.word1=GLOB.cultwords["travel"]
-				R.word2=GLOB.cultwords["technology"]
-				R.word3=GLOB.cultwords["other"]
-				R.loc = user.loc
-				R.check_icon()
-			if("cultsummon")
-				R.word1=GLOB.cultwords["join"]
-				R.word2=GLOB.cultwords["other"]
-				R.word3=GLOB.cultwords["self"]
-				R.loc = user.loc
-				R.check_icon()
-			if("deafen")
-				R.word1=GLOB.cultwords["hide"]
-				R.word2=GLOB.cultwords["other"]
-				R.word3=GLOB.cultwords["see"]
-				R.loc = user.loc
-				R.check_icon()
-			if("blind")
-				R.word1=GLOB.cultwords["destroy"]
-				R.word2=GLOB.cultwords["see"]
-				R.word3=GLOB.cultwords["other"]
-				R.loc = user.loc
-				R.check_icon()
-			if("bloodboil")
-				R.word1=GLOB.cultwords["destroy"]
-				R.word2=GLOB.cultwords["see"]
-				R.word3=GLOB.cultwords["blood"]
-				R.loc = user.loc
-				R.check_icon()
-			if("communicate")
-				R.word1=GLOB.cultwords["self"]
-				R.word2=GLOB.cultwords["other"]
-				R.word3=GLOB.cultwords["technology"]
-				R.loc = user.loc
-				R.check_icon()
-			if("stun")
-				R.word1=GLOB.cultwords["join"]
-				R.word2=GLOB.cultwords["hide"]
-				R.word3=GLOB.cultwords["technology"]
-				R.loc = user.loc
-				R.check_icon()
+		om_prompt_sequence(src, user, list(
+			list("key" = "rune", "kind" = "list", "message" = "Choose a rune to scribe", "title" = "Rune Scribing", "choices" = runes),
+			PROC_REF(imbued_ask_beacon),
+		), PROC_REF(imbued_rune_chosen), list("timeout" = 30 SECONDS))
+
+/obj/item/book/tome/imbued/proc/imbued_ask_beacon(mob/user, datum/om/prompt/ask)
+	if(ask.get("rune") == "teleport" || ask.get("rune") == "itemport")
+		return list("key" = "beacon", "kind" = "list", "message" = "Select the last rune", "title" = "Rune Scribing", "choices" = list("ire", "ego", "nahlizet", "certum", "veri", "jatkaa", "balaq", "mgar", "karazet", "geeri"))
+
+/obj/item/book/tome/imbued/proc/imbued_rune_chosen(mob/user, datum/om/prompt/ask)
+	var/r = ask.get("rune")
+	var/obj/effect/rune/R = new /obj/effect/rune
+	if(ishuman(user))
+		var/mob/living/carbon/human/H = user
+		R.add_blooddna(H.dna,H)
+	var/area/A = get_area(user)
+	log_and_message_admins("created \an [r] rune at \the [A.name] - [user.loc.x]-[user.loc.y]-[user.loc.z].")
+	switch(r)
+		if("teleport")
+			var/beacon = ask.get("beacon")
+			R.word1=GLOB.cultwords["travel"]
+			R.word2=GLOB.cultwords["self"]
+			R.word3=beacon
+			R.loc = user.loc
+			R.check_icon()
+		if("itemport")
+			var/beacon = ask.get("beacon")
+			R.word1=GLOB.cultwords["travel"]
+			R.word2=GLOB.cultwords["other"]
+			R.word3=beacon
+			R.loc = user.loc
+			R.check_icon()
+		if("tome")
+			R.word1=GLOB.cultwords["see"]
+			R.word2=GLOB.cultwords["blood"]
+			R.word3=GLOB.cultwords["hell"]
+			R.loc = user.loc
+			R.check_icon()
+		if("armor")
+			R.word1=GLOB.cultwords["hell"]
+			R.word2=GLOB.cultwords["destroy"]
+			R.word3=GLOB.cultwords["other"]
+			R.loc = user.loc
+			R.check_icon()
+		if("convert")
+			R.word1=GLOB.cultwords["join"]
+			R.word2=GLOB.cultwords["blood"]
+			R.word3=GLOB.cultwords["self"]
+			R.loc = user.loc
+			R.check_icon()
+		if("tear in reality")
+			R.word1=GLOB.cultwords["hell"]
+			R.word2=GLOB.cultwords["join"]
+			R.word3=GLOB.cultwords["self"]
+			R.loc = user.loc
+			R.check_icon()
+		if("emp")
+			R.word1=GLOB.cultwords["destroy"]
+			R.word2=GLOB.cultwords["see"]
+			R.word3=GLOB.cultwords["technology"]
+			R.loc = user.loc
+			R.check_icon()
+		if("drain")
+			R.word1=GLOB.cultwords["travel"]
+			R.word2=GLOB.cultwords["blood"]
+			R.word3=GLOB.cultwords["self"]
+			R.loc = user.loc
+			R.check_icon()
+		if("seer")
+			R.word1=GLOB.cultwords["see"]
+			R.word2=GLOB.cultwords["hell"]
+			R.word3=GLOB.cultwords["join"]
+			R.loc = user.loc
+			R.check_icon()
+		if("raise")
+			R.word1=GLOB.cultwords["blood"]
+			R.word2=GLOB.cultwords["join"]
+			R.word3=GLOB.cultwords["hell"]
+			R.loc = user.loc
+			R.check_icon()
+		if("obscure")
+			R.word1=GLOB.cultwords["hide"]
+			R.word2=GLOB.cultwords["see"]
+			R.word3=GLOB.cultwords["blood"]
+			R.loc = user.loc
+			R.check_icon()
+		if("astral journey")
+			R.word1=GLOB.cultwords["hell"]
+			R.word2=GLOB.cultwords["travel"]
+			R.word3=GLOB.cultwords["self"]
+			R.loc = user.loc
+			R.check_icon()
+		if("manifest")
+			R.word1=GLOB.cultwords["blood"]
+			R.word2=GLOB.cultwords["see"]
+			R.word3=GLOB.cultwords["travel"]
+			R.loc = user.loc
+			R.check_icon()
+		if("imbue talisman")
+			R.word1=GLOB.cultwords["hell"]
+			R.word2=GLOB.cultwords["technology"]
+			R.word3=GLOB.cultwords["join"]
+			R.loc = user.loc
+			R.check_icon()
+		if("sacrifice")
+			R.word1=GLOB.cultwords["hell"]
+			R.word2=GLOB.cultwords["blood"]
+			R.word3=GLOB.cultwords["join"]
+			R.loc = user.loc
+			R.check_icon()
+		if("reveal")
+			R.word1=GLOB.cultwords["blood"]
+			R.word2=GLOB.cultwords["see"]
+			R.word3=GLOB.cultwords["hide"]
+			R.loc = user.loc
+			R.check_icon()
+		if("wall")
+			R.word1=GLOB.cultwords["destroy"]
+			R.word2=GLOB.cultwords["travel"]
+			R.word3=GLOB.cultwords["self"]
+			R.loc = user.loc
+			R.check_icon()
+		if("freedom")
+			R.word1=GLOB.cultwords["travel"]
+			R.word2=GLOB.cultwords["technology"]
+			R.word3=GLOB.cultwords["other"]
+			R.loc = user.loc
+			R.check_icon()
+		if("cultsummon")
+			R.word1=GLOB.cultwords["join"]
+			R.word2=GLOB.cultwords["other"]
+			R.word3=GLOB.cultwords["self"]
+			R.loc = user.loc
+			R.check_icon()
+		if("deafen")
+			R.word1=GLOB.cultwords["hide"]
+			R.word2=GLOB.cultwords["other"]
+			R.word3=GLOB.cultwords["see"]
+			R.loc = user.loc
+			R.check_icon()
+		if("blind")
+			R.word1=GLOB.cultwords["destroy"]
+			R.word2=GLOB.cultwords["see"]
+			R.word3=GLOB.cultwords["other"]
+			R.loc = user.loc
+			R.check_icon()
+		if("bloodboil")
+			R.word1=GLOB.cultwords["destroy"]
+			R.word2=GLOB.cultwords["see"]
+			R.word3=GLOB.cultwords["blood"]
+			R.loc = user.loc
+			R.check_icon()
+		if("communicate")
+			R.word1=GLOB.cultwords["self"]
+			R.word2=GLOB.cultwords["other"]
+			R.word3=GLOB.cultwords["technology"]
+			R.loc = user.loc
+			R.check_icon()
+		if("stun")
+			R.word1=GLOB.cultwords["join"]
+			R.word2=GLOB.cultwords["hide"]
+			R.word3=GLOB.cultwords["technology"]
+			R.loc = user.loc
+			R.check_icon()
 
 /obj/effect/rune/wash(clean_types)
 	. = ..()

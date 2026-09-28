@@ -41,7 +41,10 @@
 	if(!M.mind)
 		return 0
 
-	var/input = sanitizeSafe(tgui_input_text(M, "Who do you want to dedicate the bracelet to?","Friendship Bracelet" ,"", MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
+	var/_answer_a1 = rerun_prompt(M, "a1", list("kind" = "text", "message" = "Who do you want to dedicate the bracelet to?", "title" = "Friendship Bracelet", "max_length" = MAX_NAME_LEN, "encode" = FALSE), VERB_REF(dedicate_bracelet), args)
+	if(isnull(_answer_a1))
+		return
+	var/input = sanitizeSafe(_answer_a1, MAX_NAME_LEN)
 
 	if(src && input && !M.stat && in_range(M,src))
 		desc = "A beautiful friendship bracelet in all the colors of the rainbow. It's dedicated to [input]."

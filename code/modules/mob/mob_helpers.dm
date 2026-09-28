@@ -778,10 +778,9 @@ GLOBAL_DATUM_INIT(backplane, /image, generate_backplane())
 	set category = "Preferences.Vore"
 	set desc = "Toggle the ability to see stomachs or not"
 
-	var/toggle
-	toggle = tgui_alert(src, "Would you like to see visible stomachs?", "Visible Tummy?", list("Yes", "No"))
-	if(!toggle)
-		return
+	om_prompt(src, src, list("message" = "Would you like to see visible stomachs?", "title" = "Visible Tummy?", "choices" = list("Yes", "No")), PROC_REF(stomach_vision_chosen))
+
+/mob/proc/stomach_vision_chosen(mob/user, toggle, datum/om/prompt/ask)
 	if(toggle =="Yes")
 		client?.prefs.write_preference_by_type(/datum/preference/toggle/tummy_sprites,TRUE) //Simple! Easy!
 		to_chat(src, "You can now see stomachs!")

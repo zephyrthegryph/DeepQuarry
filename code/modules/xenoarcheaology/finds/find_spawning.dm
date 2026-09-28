@@ -12,7 +12,11 @@
 		to_chat(usr, "You need to select a mob with a proper LOC to spawn a minor artifact!")
 		return
 
-	var/type_to_spawn = tgui_input_number(usr, "Desired type to spawn. Consult xenoarcheaology.dm for the spawn list", "Spawn Artifact", 0)
+	om_prompt(target, usr, list("kind" = "number", "message" = "Desired type to spawn. Consult xenoarcheaology.dm for the spawn list", "title" = "Spawn Artifact", "default" = 0), GLOBAL_PROC_REF(artifact_spawn_debug_chosen))
+
+/proc/artifact_spawn_debug_chosen(mob/target, mob/user, type_to_spawn, datum/om/prompt/ask)
+	if(isnull(type_to_spawn) || !target?.loc)
+		return
 	new /obj/item/archaeological_find(target.loc, type_to_spawn)
 
 /obj/item/archaeological_find/Initialize(mapload, new_item_type)

@@ -63,6 +63,10 @@
 	user.visible_message(span_warning("[user] successfully makes [src] disappear!"))
 	user.swallow_trash(src)
 
+/obj/item/pda/proc/eat_risk_confirmed(mob/living/user, confirm, datum/om/prompt/ask)
+	if(confirm == "Definitely")
+		om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(threat_eaten), done_args = list(user))
+
 /obj/item/pda/on_trash_eaten(mob/living/user)
 	if(!..())
 		return FALSE
@@ -77,9 +81,8 @@
 		else
 			user.visible_message(span_warning("[user] is threatening to make [src] disappear!"))
 			if(id)
-				var/confirm = tgui_alert(user, "The PDA you're holding contains a vulnerable ID card. Will you risk it?", "Confirmation", list("Definitely", "Cancel"))
-				if(confirm != "Definitely")
-					return FALSE
+				om_prompt(src, user, list("message" = "The PDA you're holding contains a vulnerable ID card. Will you risk it?", "title" = "Confirmation", "choices" = list("Definitely", "Cancel"), "requires" = PROMPT_HELD), PROC_REF(eat_risk_confirmed))
+				return FALSE
 			om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(threat_eaten), done_args = list(user))
 			return FALSE
 	return TRUE

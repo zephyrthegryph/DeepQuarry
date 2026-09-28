@@ -66,7 +66,10 @@
 		to_chat(M, span_notice("You don't feel cool enough to name this gun, chump."))
 		return 0
 
-	var/input = sanitizeSafe(tgui_input_text(M, "What do you want to name the gun?","Rename Revolver" ,"",MAX_NAME_LEN, encode = FALSE))
+	var/_answer_k69 = rerun_prompt(M, "k69", list("kind" = "text", "message" = "What do you want to name the gun?", "title" = "Rename Revolver", "max_length" = MAX_NAME_LEN, "encode" = FALSE), VERB_REF(rename_gun), args)
+	if(isnull(_answer_k69))
+		return
+	var/input = sanitizeSafe(_answer_k69)
 
 	if(src && input && !M.stat && in_range(M,src))
 		name = input
@@ -93,7 +96,10 @@
 		to_chat(M, span_notice("You don't feel cool enough to name this gun, chump."))
 		return 0
 
-	var/input = sanitizeSafe(tgui_input_text(M, "What do you want to name the gun?","Rename Revolver" ,"", MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
+	var/_answer_k96 = rerun_prompt(M, "k96", list("kind" = "text", "message" = "What do you want to name the gun?", "title" = "Rename Revolver", "max_length" = MAX_NAME_LEN, "encode" = FALSE), VERB_REF(rename_gun), args)
+	if(isnull(_answer_k96))
+		return
+	var/input = sanitizeSafe(_answer_k96, MAX_NAME_LEN)
 
 	if(src && input && !M.stat && in_range(M,src))
 		name = input
@@ -116,7 +122,9 @@
 	options["MarsTech Frontiersman Shadow"] = "detective_peacemaker_dark"
 	options["Jindal Duke"] = "detective_fitz"
 	options["H-H M1895"] = "nagant"
-	var/choice = tgui_input_list(M,"Choose your sprite!","Resprite Gun", options)
+	var/choice = rerun_prompt(M, "k119", list("kind" = "list", "message" = "Choose your sprite!", "title" = "Resprite Gun", "choices" = options), VERB_REF(reskin_gun), args)
+	if(isnull(choice))
+		return
 	if(src && choice && !M.stat && in_range(M,src))
 		icon_state = options[choice]
 		to_chat(M, "Your gun is now sprited as [choice]. Say hello to your new friend.")

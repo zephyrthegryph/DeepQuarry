@@ -67,14 +67,15 @@
 		to_chat(src, span_alium("Their plasma vessel is missing."))
 		return
 
-	var/amount = tgui_input_number(src, "Amount:", "Transfer Plasma to [M]")
-	if (amount)
-		amount = abs(round(amount))
-		if(check_alien_ability(amount,0,O_PLASMA))
-			M.gain_plasma(amount)
-			to_chat(M, span_alium("[src] has transfered [amount] plasma to you."))
-			to_chat(src, span_alium("You have transferred [amount] plasma to [M]."))
-	return
+	om_prompt(src, src, list("kind" = "number", "message" = "Amount:", "title" = "Transfer Plasma to [M]", "requires" = PROMPT_CONSCIOUS, "data" = list("target" = M)), PROC_REF(plasma_amount_chosen))
+
+/mob/living/carbon/human/proc/plasma_amount_chosen(mob/user, amount, datum/om/prompt/ask)
+	var/mob/living/carbon/human/M = ask.get("target")
+	amount = abs(round(amount))
+	if(amount && check_alien_ability(amount,0,O_PLASMA))
+		M.gain_plasma(amount)
+		to_chat(M, span_alium("[src] has transfered [amount] plasma to you."))
+		to_chat(src, span_alium("You have transferred [amount] plasma to [M]."))
 
 // Queen verbs.
 /mob/living/carbon/human/proc/lay_egg()
@@ -293,9 +294,9 @@
 			choices += M
 	choices -= src
 
-	var/mob/living/T = tgui_input_list(src, "Who do you wish to leap at?", "Target Choice", choices)
+	om_prompt(src, src, list("kind" = "list", "message" = "Who do you wish to leap at?", "title" = "Target Choice", "choices" = choices, "requires" = PROMPT_CONSCIOUS), PROC_REF(alien_leap_target_chosen))
 
-	if(!T || !src || src.stat) return
+/mob/living/carbon/human/proc/alien_leap_target_chosen(mob/user, mob/living/T, datum/om/prompt/ask)
 
 	if(get_dist(get_turf(T), get_turf(src)) > 4) return
 

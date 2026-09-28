@@ -171,9 +171,12 @@ REF_BACKLIST(/obj/machinery/door/firedoor, list("turbolift_floor" = "doors"))
 		if(A.firedoors_closed)
 			alarmed = 1
 
-	var/answer = tgui_alert(user, "Would you like to [density ? "open" : "close"] this [src.name]?[ alarmed && density ? "\nNote that by doing so, you acknowledge any damages from opening this\n[src.name] as being your own fault, and you will be held accountable under the law." : ""]",\
-	"\The [src]", list("Yes, [density ? "open" : "close"]", "No"))
-	if(!answer || answer == "No")
+	om_prompt(src, user, list("message" = "Would you like to [density ? "open" : "close"] this [src.name]?[ alarmed && density ? "\nNote that by doing so, you acknowledge any damages from opening this\n[src.name] as being your own fault, and you will be held accountable under the law." : ""]", "title" = "\The [src]", "choices" = list("Yes, [density ? "open" : "close"]", "No"), "data" = list("alarmed" = alarmed)), PROC_REF(firedoor_use_answered))
+	return TRUE
+
+/obj/machinery/door/firedoor/proc/firedoor_use_answered(mob/user, answer, datum/om/prompt/ask)
+	var/alarmed = ask.get("alarmed")
+	if(answer == "No")
 		return TRUE
 	if(user.incapacitated() || (get_dist(src, user) > 1 && !issilicon(user)))
 		to_chat(user, "Sorry, you must remain able bodied and close to \the [src] in order to use it.")

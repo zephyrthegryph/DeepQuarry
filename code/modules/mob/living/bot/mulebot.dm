@@ -116,15 +116,11 @@
 			. = TRUE
 
 		if("sethome")
-			var/new_dest
 			var/list/beaconlist = GetBeaconList()
 			if(beaconlist.len)
-				new_dest = tgui_input_list(ui.user, "Select new home tag", "Mulebot [suffix ? "([suffix])" : ""]", beaconlist)
+				om_prompt(src, ui.user, list("kind" = "list", "message" = "Select new home tag", "title" = "Mulebot [suffix ? "([suffix])" : ""]", "choices" = beaconlist, "requires" = PROMPT_USABLE, "data" = list("beacons" = beaconlist)), PROC_REF(home_tag_chosen))
 			else
 				tgui_alert_async(ui.user, "No destination beacons available.")
-			if(new_dest)
-				home = get_turf(beaconlist[new_dest])
-				homeName = new_dest
 			. = TRUE
 
 		if("unload")
@@ -143,6 +139,11 @@
 			safety = !safety
 			. = TRUE
 
+/mob/living/bot/mulebot/proc/home_tag_chosen(mob/user, new_dest, datum/om/prompt/ask)
+	var/list/beaconlist = ask.get("beacons")
+	home = get_turf(beaconlist[new_dest])
+	homeName = new_dest
+
 /mob/living/bot/mulebot/attackby(obj/item/O, mob/user)
 	..()
 	update_icons()
@@ -160,20 +161,21 @@
 			target = home
 			targetName = "Home"
 		if("SetD")
-			var/new_dest
 			var/list/beaconlist = GetBeaconList()
 			if(beaconlist.len)
-				new_dest = tgui_input_list(user, "Select new destination tag", "Mulebot [suffix ? "([suffix])" : ""]", beaconlist)
+				om_prompt(src, user, list("kind" = "list", "message" = "Select new destination tag", "title" = "Mulebot [suffix ? "([suffix])" : ""]", "choices" = beaconlist, "requires" = PROMPT_USABLE, "data" = list("beacons" = beaconlist)), PROC_REF(destination_tag_chosen))
 			else
 				tgui_alert_async(user, "No destination beacons available.")
-			if(new_dest)
-				resetTarget()
-				target = get_turf(beaconlist[new_dest])
-				targetName = new_dest
 		if("GoTD")
 			paused = 0
 		if("Stop")
 			paused = 1
+
+/mob/living/bot/mulebot/proc/destination_tag_chosen(mob/user, new_dest, datum/om/prompt/ask)
+	var/list/beaconlist = ask.get("beacons")
+	resetTarget()
+	target = get_turf(beaconlist[new_dest])
+	targetName = new_dest
 
 /mob/living/bot/mulebot/emag_act(remaining_charges, user)
 	locked = !locked

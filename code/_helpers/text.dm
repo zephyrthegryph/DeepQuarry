@@ -27,12 +27,6 @@ GLOBAL_LIST_INIT(alphabet_upper, list("A","B","C","D","E","F","G","H","I","J","K
 /*
  * Text sanitization
  */
-// Can be used almost the same way as normal input for text
-/proc/clean_input(Message, Title, Default, mob/user)
-	var/txt = input(user, Message, Title, Default) as text | null
-	if(txt)
-		return html_encode(txt)
-
 //Simply removes < and > and limits the length of the message
 /proc/strip_html_simple(t,limit=MAX_MESSAGE_LEN)
 	var/list/strip_chars = list("<",">")
@@ -576,7 +570,7 @@ GLOBAL_LIST_EMPTY(text_tag_cache)
  ** no_trim - Prevents the input from being trimmed if you intend to parse newlines or whitespace.
 */
 /proc/stripped_input(mob/user, message = "", title = "", default = "", max_length=MAX_MESSAGE_LEN, no_trim=FALSE)
-	var/user_input = input(user, message, title, default) as text|null
+	var/user_input = input(user, message, title, default) as text|null // S10 keeps: the blocking prompt API itself (the non-tgui fallback om_prompt never uses)
 	if(isnull(user_input)) // User pressed cancel
 		return
 	if(no_trim)
@@ -595,7 +589,7 @@ GLOBAL_LIST_EMPTY(text_tag_cache)
  ** no_trim - Prevents the input from being trimmed if you intend to parse newlines or whitespace.
 */
 /proc/stripped_multiline_input(mob/user, message = "", title = "", default = "", max_length=MAX_MESSAGE_LEN, no_trim=FALSE)
-	var/user_input = input(user, message, title, default) as message|null
+	var/user_input = input(user, message, title, default) as message|null // S10 keeps: the blocking prompt API itself (the non-tgui fallback om_prompt never uses)
 	if(isnull(user_input)) // User pressed cancel
 		return
 	if(no_trim)

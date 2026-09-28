@@ -116,19 +116,25 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	var/choice = tgui_alert(user, "What setting do you want to adjust?", "Firework Star", list("Color", "Shape", "Nothing"))
+	var/choice = rerun_prompt(user, "k119", list("message" = "What setting do you want to adjust?", "title" = "Firework Star", "choices" = list("Color", "Shape", "Nothing")), PROC_REF(attack_self), args)
+	if(isnull(choice))
+		return TRUE
 	if(src.loc != user)
 		return
 
 	if(choice == "Color")
-		var/color_choice = tgui_input_list(user, "What color would you like firework to be?", "Firework Star", firework_colors)
+		var/color_choice = rerun_prompt(user, "k124", list("kind" = "list", "message" = "What color would you like firework to be?", "title" = "Firework Star", "choices" = firework_colors), PROC_REF(attack_self), args)
+		if(isnull(color_choice))
+			return TRUE
 		if(src.loc != user)
 			return
 		if(color_choice)
 			current_color = color_choice
 
 	if(choice == "Shape")
-		var/shape_choice = tgui_input_list(user, "What shape would you like firework to be?", "Firework Star", firework_shapes)
+		var/shape_choice = rerun_prompt(user, "k131", list("kind" = "list", "message" = "What shape would you like firework to be?", "title" = "Firework Star", "choices" = firework_shapes), PROC_REF(attack_self), args)
+		if(isnull(shape_choice))
+			return TRUE
 		if(src.loc != user)
 			return
 		if(shape_choice)

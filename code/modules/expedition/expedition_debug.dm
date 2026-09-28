@@ -136,10 +136,11 @@
 		/datum/expedition_mission/restore,
 		/datum/expedition_mission/station_assault,
 	)
-	var/mission_type = input(usr, "Mission type?", "Expedition Mission") as null|anything in mission_types
+	// Answers re-run this verb.
+	var/mission_type = client_prompt("mission", list("kind" = "list", "message" = "Mission type?", "title" = "Expedition Mission", "choices" = mission_types), VERB_REF(generate_expedition_mission), args, R_DEBUG)
 	if(!mission_type)
 		return
-	var/diff = input(usr, "Difficulty?", "Expedition Mission") as null|anything in list(EXP_DIFF_LOW, EXP_DIFF_MED, EXP_DIFF_HIGH)
+	var/diff = client_prompt("difficulty", list("kind" = "list", "message" = "Difficulty?", "title" = "Expedition Mission", "choices" = list(EXP_DIFF_LOW, EXP_DIFF_MED, EXP_DIFF_HIGH)), VERB_REF(generate_expedition_mission), args, R_DEBUG)
 	if(isnull(diff))
 		return
 

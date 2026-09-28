@@ -70,7 +70,9 @@
 
 		else
 			in_use = TRUE // Prevent opening a million uis
-			var/choice = tgui_input_list(user, "Select a target hose connector.", "Socket Selection", available_sockets)
+			var/choice = rerun_prompt(user, "a1", list("kind" = "list", "message" = "Select a target hose connector.", "title" = "Socket Selection", "choices" = available_sockets), PROC_REF(afterattack), args)
+			if(isnull(choice))
+				return TRUE
 			in_use = FALSE
 
 			if(choice && user.Adjacent(target))

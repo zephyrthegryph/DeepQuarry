@@ -179,32 +179,55 @@ ADMIN_VERB(generic_item, R_SPAWN, "Spawn Generic Item", "Spawn a customisable it
 
 	var/check_togglable
 
-	var/s_name = tgui_input_text(user, "Item Name:", "Name")
-	var/s_desc = tgui_input_text(user, "Item Description:", "Description")
-	var/s_icon_state_off = tgui_input_list(user, "Choose starting icon state:", "icon_state_off", icon_state_options)
-	if(s_icon_state_off == "Upload Own Sprite")
-		s_icon = input(user, "Choose an image file to upload. Images that are not 32x32 will need to have their positions offset.","Upload Icon") as null|file
-	var/check_activatable = tgui_alert(user, "Allow it to be turned on?", "activatable", list("Yes", "No", "Cancel"))
+	var/s_name = verb_prompt(user, "a1", list("kind" = "text", "message" = "Item Name:", "title" = "Name"), args)
+	if(isnull(s_name))
+		return
+	var/s_desc = verb_prompt(user, "a2", list("kind" = "text", "message" = "Item Description:", "title" = "Description"), args)
+	if(isnull(s_desc))
+		return
+	var/s_icon_state_off = verb_prompt(user, "a3", list("kind" = "list", "message" = "Choose starting icon state:", "title" = "icon_state_off", "choices" = icon_state_options), args)
+	if(isnull(s_icon_state_off))
+		return
+	// Uploads (s_icon) are asked last: a file upload is a native dialog that waits.
+	var/check_activatable = verb_prompt(user, "a4", list("message" = "Allow it to be turned on?", "title" = "activatable", "choices" = list("Yes", "No", "Cancel")), args)
+	if(isnull(check_activatable))
+		return
 	if(!check_activatable || check_activatable == "Cancel")
 		return
 	if(check_activatable == "No")
 		s_activatable = 0
 	if(check_activatable == "Yes")
 		s_activatable = 1
-		s_text_activated = tgui_input_text(user, "Activation text:", "Activation Text")
-		check_togglable = tgui_alert(user, "Allow it to be turned back off again?", "togglable", list("Yes", "No", "Cancel"))
+		var/_answer_a5 = verb_prompt(user, "a5", list("kind" = "text", "message" = "Activation text:", "title" = "Activation Text"), args)
+		if(isnull(_answer_a5))
+			return
+		s_text_activated = _answer_a5
+		var/_answer_a6 = verb_prompt(user, "a6", list("message" = "Allow it to be turned back off again?", "title" = "togglable", "choices" = list("Yes", "No", "Cancel")), args)
+		if(isnull(_answer_a6))
+			return
+		check_togglable = _answer_a6
 		if(!check_togglable || check_togglable == "Cancel")
 			return
 		if(check_togglable == "No")
 			s_togglable = 0
 		if(check_togglable == "Yes")
-			s_text_deactivated = tgui_input_text(user, "Deactivation text:", "Deactivation Text")
+			var/_answer_a7 = verb_prompt(user, "a7", list("kind" = "text", "message" = "Deactivation text:", "title" = "Deactivation Text"), args)
+			if(isnull(_answer_a7))
+				return
+			s_text_deactivated = _answer_a7
 			s_togglable = 1
-		s_icon_state_on = tgui_input_list(user, "Choose activated icon state:", "icon_state_on", icon_state_options)
-		if(s_icon_state_on == "Upload Own Sprite")
-			s_icon2 = input(user, "Choose an image file to upload. Images that are not 32x32 will need to have their positions offset.","Upload Icon") as null|file
-		s_delay = tgui_input_number(user, "Do you want it to take time to put turn on? Choose a number of deciseconds to activate, or 0 for instant.", "Delay")
-		var/check_effect = tgui_alert(user, "Produce an effect on activation?", "Effect?", list("No", "Spark", "Flicker Lights", "Flash", "Spawn Item", "Cancel"))
+		var/_answer_a8 = verb_prompt(user, "a8", list("kind" = "list", "message" = "Choose activated icon state:", "title" = "icon_state_on", "choices" = icon_state_options), args)
+		if(isnull(_answer_a8))
+			return
+		s_icon_state_on = _answer_a8
+		// Uploads (s_icon2) are asked last: a file upload is a native dialog that waits.
+		var/_answer_a9 = verb_prompt(user, "a9", list("kind" = "number", "message" = "Do you want it to take time to put turn on? Choose a number of deciseconds to activate, or 0 for instant.", "title" = "Delay"), args)
+		if(isnull(_answer_a9))
+			return
+		s_delay = _answer_a9
+		var/check_effect = verb_prompt(user, "a10", list("message" = "Produce an effect on activation?", "title" = "Effect?", "choices" = list("No", "Spark", "Flicker Lights", "Flash", "Spawn Item", "Cancel")), args)
+		if(isnull(check_effect))
+			return
 		if(!check_effect || check_effect == "Cancel")
 			return
 		if(check_effect == "No")
@@ -217,12 +240,25 @@ ADMIN_VERB(generic_item, R_SPAWN, "Spawn Generic Item", "Spawn a customisable it
 			s_effect = 3
 		if(check_effect == "Spawn Item")
 			s_effect = 4
-			s_object = user.get_path_from_partial_text()
-		var/check_sound = tgui_alert(user, "Play a sound when turning on?", "Sound", list("Yes", "No", "Cancel"))
+			s_object = verb_prompt(user, "object", list("kind" = "typepath", "message" = "Enter full or partial typepath.", "title" = "Typepath"), args)
+			if(isnull(s_object))
+				return
+		var/check_sound = verb_prompt(user, "a11", list("message" = "Play a sound when turning on?", "title" = "Sound", "choices" = list("Yes", "No", "Cancel")), args)
+		if(isnull(check_sound))
+			return
 		if(!check_sound || check_sound == "Cancel")
 			return
 		if(check_sound == "Yes")
-			s_sound = tgui_input_list(user, "Choose a sound to play on activation:", "Sound", sound_options)
+			var/_answer_a12 = verb_prompt(user, "a12", list("kind" = "list", "message" = "Choose a sound to play on activation:", "title" = "Sound", "choices" = sound_options), args)
+			if(isnull(_answer_a12))
+				return
+			s_sound = _answer_a12
+
+	// The uploads come last (allowlisted: a native file dialog, nothing to answer it asynchronously).
+	if(s_icon_state_off == "Upload Own Sprite")
+		s_icon = input(user, "Choose an image file to upload. Images that are not 32x32 will need to have their positions offset.","Upload Icon") as null|file // S10 keeps: file uploads need the BYOND file dialog
+	if(s_icon_state_on == "Upload Own Sprite")
+		s_icon2 = input(user, "Choose an image file to upload. Images that are not 32x32 will need to have their positions offset.","Upload Icon") as null|file // S10 keeps: file uploads need the BYOND file dialog
 
 	var/spawnloc = get_turf(user.mob)
 	var/obj/item/generic_item/P = new(spawnloc)

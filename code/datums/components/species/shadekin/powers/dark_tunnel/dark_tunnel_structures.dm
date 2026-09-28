@@ -61,7 +61,9 @@ REGISTRY_MEMBERSHIP(/obj/structure/dark_portal/minion, REGISTRY_DARKPORTAL_MINIO
 			to_chat(user, span_warning("You can't use this while phase shifted!"))
 			return
 		if(locked != src)
-			var/confirm = tgui_alert(user, "This portal is currently open to [locked_name]. Change the portal destination?", "Change Portal Destination", list("Yes", "Cancel"))
+			var/confirm = rerun_prompt(user, "a1", list("message" = "This portal is currently open to [locked_name]. Change the portal destination?", "title" = "Change Portal Destination", "choices" = list("Yes", "Cancel")), TYPE_PROC_REF(/atom, attack_hand), args)
+			if(isnull(confirm))
+				return TRUE
 			if(!confirm || confirm == "Cancel")
 				return
 		var/list/L = list()
@@ -73,7 +75,9 @@ REGISTRY_MEMBERSHIP(/obj/structure/dark_portal/minion, REGISTRY_DARKPORTAL_MINIO
 		for(var/obj/structure/dark_portal/minion/M in REGISTRY_MEMBERS(REGISTRY_DARKPORTAL_MINIONS))
 			var/tmpname = "Dark Portal ([get_area(M)])"
 			L[tmpname] = M
-		var/desc = tgui_input_list(user, "Please select a hub portal to connect to.", "Portal Menu", L)
+		var/desc = rerun_prompt(user, "a2", list("kind" = "list", "message" = "Please select a hub portal to connect to.", "title" = "Portal Menu", "choices" = L), TYPE_PROC_REF(/atom, attack_hand), args)
+		if(isnull(desc))
+			return TRUE
 		if(!desc)
 			return
 		locked = L[desc]
@@ -148,7 +152,9 @@ REGISTRY_MEMBERSHIP(/obj/structure/dark_portal/minion, REGISTRY_DARKPORTAL_MINIO
 			to_chat(user, span_warning("You can't use this while phase shifted!"))
 			return FALSE
 		if(icon_state == "minion1")
-			var/confirm = tgui_alert(user, "This portal is currently open to [locked_name]. Close this portal to the dark?", "Close Portal", list("Yes", "Cancel"))
+			var/confirm = rerun_prompt(user, "a3", list("message" = "This portal is currently open to [locked_name]. Close this portal to the dark?", "title" = "Close Portal", "choices" = list("Yes", "Cancel")), TYPE_PROC_REF(/atom, attack_hand), args)
+			if(isnull(confirm))
+				return TRUE
 			if(!confirm || confirm == "Cancel")
 				return
 			if(confirm == "Yes")
@@ -171,7 +177,9 @@ REGISTRY_MEMBERSHIP(/obj/structure/dark_portal/minion, REGISTRY_DARKPORTAL_MINIO
 		var/list/L = list()
 		for(var/obj/structure/dark_portal/hub/H in REGISTRY_MEMBERS(REGISTRY_DARKPORTAL_HUBS))
 			L[H.name] = H
-		var/desc = tgui_input_list(user, "Please select a hub portal to connect to.", "Portal Menu", L)
+		var/desc = rerun_prompt(user, "a4", list("kind" = "list", "message" = "Please select a hub portal to connect to.", "title" = "Portal Menu", "choices" = L), TYPE_PROC_REF(/atom, attack_hand), args)
+		if(isnull(desc))
+			return TRUE
 		if(!desc)
 			return
 		locked = L[desc]

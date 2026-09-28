@@ -15,13 +15,20 @@
 	..()
 
 /obj/item/material/gravemarker/screwdriver_act(mob/user, obj/item/W)
-	var/carving_1 = sanitizeSafe(tgui_input_text(user, "Who is \the [src.name] for?", "Gravestone Naming", null, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
+	om_prompt_sequence(src, user, list(
+		list("key" = "name", "kind" = "text", "message" = "Who is \the [src.name] for?", "title" = "Gravestone Naming", "max_length" = MAX_NAME_LEN, "encode" = FALSE),
+		list("key" = "epitaph", "kind" = "text", "message" = "What message should \the [src.name] have?", "title" = "Epitaph Carving", "max_length" = MAX_NAME_LEN, "encode" = FALSE),
+	), PROC_REF(carvings_chosen), list("target" = W, "requires" = PROMPT_IN_HAND, "data" = list("tool" = W)))
+	return NONE
+
+/obj/item/material/gravemarker/proc/carvings_chosen(mob/user, datum/om/prompt/ask)
+	var/obj/item/W = ask.get("tool")
+	var/carving_1 = sanitizeSafe(ask.get("name"), MAX_NAME_LEN)
+	var/carving_2 = sanitizeSafe(ask.get("epitaph"), MAX_NAME_LEN)
 	if(carving_1)
 		use_tool(user, W, src, delay = material.hardness, quality = TOOL_SCREWDRIVER, message_self = "You start carving \the [src.name].", message_others = "[user] starts carving \the [src.name].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user, carving_1))
-	var/carving_2 = sanitizeSafe(tgui_input_text(user, "What message should \the [src.name] have?", "Epitaph Carving", null, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
 	if(carving_2)
 		use_tool(user, W, src, delay = material.hardness, quality = TOOL_SCREWDRIVER, message_self = "You start carving \the [src.name].", message_others = "[user] starts carving \the [src.name].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done2), done_args = list(user, carving_2))
-	return NONE
 
 /obj/item/material/gravemarker/proc/screwdriver_act_tool_done(mob/user, carving_1)
 	user.visible_message("[user] carves something into \the [src.name].", "You carve your message into \the [src.name].")

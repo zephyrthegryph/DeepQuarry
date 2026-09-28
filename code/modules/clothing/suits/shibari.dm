@@ -28,7 +28,10 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	rope_mode = tgui_input_list(user, "Which limbs would you like to restrain with the bindings?", "Shibari", list(SHIBARI_NONE, SHIBARI_ARMS, SHIBARI_LEGS, SHIBARI_BOTH))
+	var/_answer_a1 = rerun_prompt(user, "a1", list("kind" = "list", "message" = "Which limbs would you like to restrain with the bindings?", "title" = "Shibari", "choices" = list(SHIBARI_NONE, SHIBARI_ARMS, SHIBARI_LEGS, SHIBARI_BOTH)), PROC_REF(attack_self), args)
+	if(isnull(_answer_a1))
+		return TRUE
+	rope_mode = _answer_a1
 	if(!rope_mode)
 		rope_mode = SHIBARI_NONE
 	if(rope_mode == SHIBARI_BOTH)

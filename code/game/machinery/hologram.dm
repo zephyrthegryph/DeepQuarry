@@ -68,7 +68,11 @@ Possible to do for anyone motivated enough:
 /obj/machinery/hologram/holopad/proc/interaction_request(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction) //Carn: Hologram requests.
 	if(!istype(user))
 		return TRUE
-	if(tgui_alert(user,"Would you like to request an AI's presence?","Request AI",list("Yes","No")) == "Yes")
+	om_prompt(src, user, list("message" = "Would you like to request an AI's presence?", "title" = "Request AI", "choices" = list("Yes","No"), "requires" = PROMPT_ADJACENT), PROC_REF(ai_request_answered))
+	return TRUE
+
+/obj/machinery/hologram/holopad/proc/ai_request_answered(mob/living/carbon/human/user, answer, datum/om/prompt/ask)
+	if(answer == "Yes")
 		if(last_request + 200 < world.time) //don't spam the AI with requests you jerk!
 			last_request = world.time
 			to_chat(user, span_notice("You request an AI's presence."))
@@ -78,7 +82,6 @@ Possible to do for anyone motivated enough:
 				to_chat(AI, span_info("Your presence is requested at <a href='byond://?src=\ref[AI];jumptoholopad=\ref[src]'>\the [area]</a>."))
 		else
 			to_chat(user, span_notice("A request for AI presence was already sent recently."))
-	return TRUE
 
 /obj/machinery/hologram/holopad/attack_ai(mob/living/silicon/ai/user)
 	if(!istype(user))

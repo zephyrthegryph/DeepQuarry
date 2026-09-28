@@ -142,6 +142,13 @@ REF_OWNED(/mob/new_player, list("manifest_dialog", "late_choices_dialog", "priva
 /mob/new_player/proc/AttemptLateSpawn(rank)
 	if (src != usr)
 		return 0
+	return do_late_spawn(rank)
+
+/// Joins as `rank`. Vore and item spawnpoints ask questions first, and each answer runs this again,
+/// so every check below is re-made before the joiner spawns.
+/mob/new_player/proc/do_late_spawn(rank)
+	if(spawning || QDELETED(src))
+		return 0
 	if(!SSticker || SSticker.current_state != GAME_STATE_PLAYING)
 		to_chat(src, span_red("The round is either not ready, or has already finished..."))
 		return 0
@@ -156,7 +163,7 @@ REF_OWNED(/mob/new_player, list("manifest_dialog", "late_choices_dialog", "priva
 		return 0
 
 	//Find our spawning point.
-	var/list/join_props = SSjob.late_spawn(client, rank)
+	var/list/join_props = SSjob.late_spawn(client, rank, src)
 
 	if(!join_props)
 		return

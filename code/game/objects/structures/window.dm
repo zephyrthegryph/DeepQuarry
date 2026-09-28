@@ -530,6 +530,12 @@
 	// So, they should block stuff like lasers at that time.
 	return opacity
 
+/obj/structure/window/reinforced/polarized/proc/window_id_entered(mob/user, t, datum/om/prompt/ask)
+	t = sanitizeSafe(t, MAX_NAME_LEN)
+	if(t)
+		src.id = t
+		to_chat(user, span_notice("The new ID of \the [src] is '[id]'."))
+
 /// Overrides window's interaction_item(): a multitool programs the tint ID while unanchored.
 /obj/structure/window/reinforced/polarized/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	var/obj/item/multitool/MT = W.get_multitool()
@@ -543,11 +549,8 @@
 		// Otherwise fall back to asking them... and remind them what the current ID is.
 		if(id)
 			to_chat(user, "The window's current ID is [id].")
-		var/t = sanitizeSafe(tgui_input_text(user, "Enter the new ID for the window.", src.name, id, encode = FALSE), MAX_NAME_LEN)
-		if(t && in_range(src, user))
-			src.id = t
-			to_chat(user, span_notice("The new ID of \the [src] is '[id]'."))
-			return TRUE
+		om_prompt(src, user, list("kind" = "text", "message" = "Enter the new ID for the window.", "title" = src.name, "default" = id, "encode" = FALSE, "requires" = PROMPT_ADJACENT), PROC_REF(window_id_entered))
+		return TRUE
 	return ..()
 
 /obj/structure/window/reinforced/polarized/proc/toggle()
@@ -606,15 +609,23 @@
 /obj/machinery/button/windowtint/multitool_act(mob/user, obj/item/tool)
 	var/obj/item/multitool/multitool = tool
 	if(!id)
-		var/new_id = sanitizeSafe(tgui_input_text(user, "Enter an ID for \the [src].", name, null, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
-		if(new_id && in_range(src, user))
-			id = new_id
-			to_chat(user, span_notice("The new ID of \the [src] is '[id]'. To reset this, rebuild the control."))
-	if(id)
+		om_prompt(src, user, list("kind" = "text", "message" = "Enter an ID for \the [src].", "title" = name, "max_length" = MAX_NAME_LEN, "encode" = FALSE, "target" = tool, "requires" = PROMPT_IN_HAND), PROC_REF(button_id_entered))
+		return ITEM_INTERACT_SUCCESS
+	store_in_multitool(user, multitool)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/button/windowtint/proc/button_id_entered(mob/user, new_id, datum/om/prompt/ask)
+	new_id = sanitizeSafe(new_id, MAX_NAME_LEN)
+	if(new_id && !id && Adjacent(user))
+		id = new_id
+		to_chat(user, span_notice("The new ID of \the [src] is '[id]'. To reset this, rebuild the control."))
+		store_in_multitool(user, user.get_active_hand())
+
+/obj/machinery/button/windowtint/proc/store_in_multitool(mob/user, obj/item/multitool/multitool)
+	if(id && istype(multitool))
 		to_chat(user, span_notice("You store \the [src] ID ('[id]') in \the [multitool]'s buffer!"))
 		multitool.connectable = src
 		multitool.update_icon()
-	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/button/windowtint/wirecutter_act(mob/user, obj/item/tool)
 	if(!panel_open)

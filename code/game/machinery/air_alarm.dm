@@ -877,14 +877,7 @@ REF_OWNED(/obj/machinery/alarm, "soundloop")
 		var/list/selected = TLV["temperature"]
 		var/max_temperature = min(selected[3] - T0C, MAX_TEMPERATURE)
 		var/min_temperature = max(selected[2] - T0C, MIN_TEMPERATURE)
-		var/input_temperature = tgui_input_number(ui.user, "What temperature would you like the system to mantain? (Capped between [min_temperature] and [max_temperature]C)", "Thermostat Controls", target_temperature - T0C, max_temperature, min_temperature, round_value = FALSE)
-		if(isnum(input_temperature))
-			if(input_temperature > max_temperature || input_temperature < min_temperature)
-				to_chat(ui.user, "Temperature must be between [min_temperature]C and [max_temperature]C")
-			else
-				for(var/obj/machinery/alarm/AA in alarm_area.air_alarms)
-					AA.target_temperature = input_temperature + T0C
-					AA.invalidate_gas_dependencies()
+		om_prompt(src, ui.user, list("kind" = "number", "message" = "What temperature would you like the system to mantain? (Capped between [min_temperature] and [max_temperature]C)", "title" = "Thermostat Controls", "default" = target_temperature - T0C, "max" = max_temperature, "min" = min_temperature, "round" = FALSE, "requires" = PROMPT_USABLE_BY("default"), "data" = list("max" = max_temperature, "min" = min_temperature)), PROC_REF(thermostat_entered))
 		return TRUE
 
 	// Account for remote users here.
@@ -934,20 +927,8 @@ REF_OWNED(/obj/machinery/alarm, "soundloop")
 			var/env = params["env"]
 
 			var/name = params["var"]
-			var/value = tgui_input_number(ui.user, "New [name] for [env]:", name, TLV[env][name], min_value=-1, round_value = FALSE)
-			if(!isnull(value) && !..())
-				own_TLV()
-				if(value < 0)
-					TLV[env][name] = -1
-				else
-					TLV[env][name] = round(value, 0.01)
-				clamp_tlv_values(env, name)
-				// investigate_log(" treshold value for [env]:[name] was set to [value] by [key_name(ui.user)]",INVESTIGATE_ATMOS)
-				for(var/obj/machinery/alarm/AA in alarm_area.air_alarms)
-					AA.own_TLV()
-					AA.TLV[env][name] = TLV[env][name]
-					AA.invalidate_gas_dependencies()
-				. = TRUE
+			om_prompt(src, ui.user, list("kind" = "number", "message" = "New [name] for [env]:", "title" = name, "default" = TLV[env][name], "min" = -1, "round" = FALSE, "requires" = PROMPT_USABLE, "data" = list("env" = env, "var" = name)), PROC_REF(threshold_entered))
+			. = TRUE
 		if("mode")
 			mode = text2num(params["mode"])
 			// investigate_log("was turned to [get_mode_name(mode)] mode by [key_name(ui.user)]",INVESTIGATE_ATMOS)
@@ -962,6 +943,35 @@ REF_OWNED(/obj/machinery/alarm, "soundloop")
 			. = TRUE
 	for(var/obj/machinery/alarm/AA in alarm_area.air_alarms)
 		AA.update_icon()
+
+/obj/machinery/alarm/proc/thermostat_entered(mob/user, input_temperature, datum/om/prompt/ask)
+	var/max_temperature = ask.get("max")
+	var/min_temperature = ask.get("min")
+	if(isnum(input_temperature))
+		if(input_temperature > max_temperature || input_temperature < min_temperature)
+			to_chat(user, "Temperature must be between [min_temperature]C and [max_temperature]C")
+		else
+			for(var/obj/machinery/alarm/AA in alarm_area.air_alarms)
+				AA.target_temperature = input_temperature + T0C
+				AA.invalidate_gas_dependencies()
+	return TRUE
+
+/obj/machinery/alarm/proc/threshold_entered(mob/user, value, datum/om/prompt/ask)
+	var/env = ask.get("env")
+	var/name = ask.get("var")
+	if(!isnull(value))
+		own_TLV()
+		if(value < 0)
+			TLV[env][name] = -1
+		else
+			TLV[env][name] = round(value, 0.01)
+		clamp_tlv_values(env, name)
+		// investigate_log(" treshold value for [env]:[name] was set to [value] by [key_name(user)]",INVESTIGATE_ATMOS)
+		for(var/obj/machinery/alarm/AA in alarm_area.air_alarms)
+			AA.own_TLV()
+			AA.TLV[env][name] = TLV[env][name]
+			AA.invalidate_gas_dependencies()
+		. = TRUE
 
 // This big ol' mess just ensures that TLV always makes sense. If you set the max value below the min value,
 // it'll automatically update all the other values to keep it sane.

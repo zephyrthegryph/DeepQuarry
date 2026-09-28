@@ -263,17 +263,20 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 		if(named)
 			to_chat(user, span_notice("\The [name] already has a name!"))
 		else
-			var/tmp_name = sanitizeSafe(tgui_input_text(user, "Give \the [name] a name", "Name", null, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
-			if(named || !length(tmp_name)) // re-validate after the (sleeping) prompt
-				return
-			if(length(tmp_name) > 50)
-				to_chat(user, span_notice("The name can be at most 50 characters long."))
-			else
-				to_chat(user, span_notice("You name \the [name]. Meow!"))
-				name = tmp_name
-				named = TRUE
+			om_prompt(src, user, list("kind" = "text", "message" = "Give \the [name] a name", "title" = "Name", "max_length" = MAX_NAME_LEN, "encode" = FALSE, "requires" = PROMPT_ADJACENT), PROC_REF(cat_name_entered))
 	else
 		..()
+
+/mob/living/simple_mob/animal/passive/cat/proc/cat_name_entered(mob/user, tmp_name, datum/om/prompt/ask)
+	tmp_name = sanitizeSafe(tmp_name, MAX_NAME_LEN)
+	if(named || !length(tmp_name))
+		return
+	if(length(tmp_name) > 50)
+		to_chat(user, span_notice("The name can be at most 50 characters long."))
+	else
+		to_chat(user, span_notice("You name \the [name]. Meow!"))
+		name = tmp_name
+		named = TRUE
 
 /obj/item/cat_box
 	name = "faintly purring box"

@@ -125,58 +125,63 @@
 	target=null
 	location = null
 
-	switch(tgui_alert(usr, "Please select the mode you want to put the pinpointer in.", "Pinpointer Mode Select", list("Location", "Disk Recovery", "Other Signature")))
+	om_prompt(src, usr, list("message" = "Please select the mode you want to put the pinpointer in.", "title" = "Pinpointer Mode Select", "choices" = list("Location", "Disk Recovery", "Other Signature"), "requires" = PROMPT_HELD), PROC_REF(pinpointer_mode_chosen))
+
+/obj/item/pinpointer/advpinpointer/proc/pinpointer_mode_chosen(mob/user, choice, datum/om/prompt/ask)
+	switch(choice)
 		if("Location")
 			mode = 1
-
-			var/locationx = tgui_input_number(usr, "Please input the x coordinate to search for.", "Location?" , "")
-			if(!locationx || !(usr in view(1,src)))
-				return
-			var/locationy = tgui_input_number(usr, "Please input the y coordinate to search for.", "Location?" , "")
-			if(!locationy || !(usr in view(1,src)))
-				return
-
-			var/turf/Z = get_turf(src)
-
-			location = locate(locationx,locationy,Z.z)
-
-			to_chat(usr, "You set the pinpointer to locate [locationx],[locationy]")
-
-			return attack_self()
-
+			om_prompt_sequence(src, user, list(
+				list("key" = "x", "kind" = "number", "message" = "Please input the x coordinate to search for.", "title" = "Location?"),
+				list("key" = "y", "kind" = "number", "message" = "Please input the y coordinate to search for.", "title" = "Location?"),
+			), PROC_REF(pinpointer_location_chosen), list("requires" = list(CHECK(/datum/om/check/can_see, 1))))
 		if("Disk Recovery")
 			mode = 0
-			return attack_self()
-
+			attack_self(user)
 		if("Other Signature")
 			mode = 2
-			switch(tgui_alert(usr, "Search for item signature or DNA fragment?", "Signature Mode Select", list("Item", "DNA")))
+			om_prompt_chain(ask, list("message" = "Search for item signature or DNA fragment?", "title" = "Signature Mode Select", "choices" = list("Item", "DNA")), PROC_REF(pinpointer_signature_chosen))
 
-				if("Item")
-					var/static/datum/objective/steal/itemlist
-					if(!itemlist)
-						itemlist = new
-					var/targetitem = tgui_input_list(usr, "Select item to search for.", "Item Mode Select", itemlist.possible_items)
-					if(!targetitem)
-						return
-					target=locate(itemlist.possible_items[targetitem])
-					if(!target)
-						to_chat(usr, "Failed to locate [targetitem]!")
-						return
-					to_chat(usr, "You set the pinpointer to locate [targetitem]")
+/obj/item/pinpointer/advpinpointer/proc/pinpointer_location_chosen(mob/user, datum/om/prompt/ask)
+	var/locationx = ask.get("x")
+	var/locationy = ask.get("y")
+	if(!locationx || !locationy)
+		return
+	var/turf/Z = get_turf(src)
+	location = locate(locationx,locationy,Z.z)
+	to_chat(user, "You set the pinpointer to locate [locationx],[locationy]")
+	attack_self(user)
 
-				if("DNA")
-					var/DNAstring = tgui_input_text(usr, "Input DNA string to search for." , "Please Enter String." , "")
-					if(!DNAstring)
-						return
-					for(var/mob/living/carbon/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
-						if(!M.dna)
-							continue
-						if(M.dna.unique_enzymes == DNAstring)
-							target = M
-							break
+/obj/item/pinpointer/advpinpointer/proc/pinpointer_signature_chosen(mob/user, choice, datum/om/prompt/ask)
+	var/static/datum/objective/steal/itemlist
+	switch(choice)
+		if("Item")
+			if(!itemlist)
+				itemlist = new
+			om_prompt_chain(ask, list("kind" = "list", "message" = "Select item to search for.", "title" = "Item Mode Select", "choices" = itemlist.possible_items), PROC_REF(pinpointer_item_chosen))
+		if("DNA")
+			om_prompt_chain(ask, list("kind" = "text", "message" = "Input DNA string to search for.", "title" = "Please Enter String.", "default" = ""), PROC_REF(pinpointer_dna_entered))
 
-			return attack_self()
+/obj/item/pinpointer/advpinpointer/proc/pinpointer_item_chosen(mob/user, targetitem, datum/om/prompt/ask)
+	var/datum/objective/steal/itemlist = new
+	target = locate(itemlist.possible_items[targetitem])
+	qdel(itemlist)
+	if(!target)
+		to_chat(user, "Failed to locate [targetitem]!")
+		return
+	to_chat(user, "You set the pinpointer to locate [targetitem]")
+	attack_self(user)
+
+/obj/item/pinpointer/advpinpointer/proc/pinpointer_dna_entered(mob/user, DNAstring, datum/om/prompt/ask)
+	if(!DNAstring)
+		return
+	for(var/mob/living/carbon/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
+		if(!M.dna)
+			continue
+		if(M.dna.unique_enzymes == DNAstring)
+			target = M
+			break
+	attack_self(user)
 
 ///////////////////////
 //nuke op pinpointers//

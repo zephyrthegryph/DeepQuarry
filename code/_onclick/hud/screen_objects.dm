@@ -527,13 +527,17 @@
 		if("Show Camera List")
 			if(isAI(usr))
 				var/mob/living/silicon/ai/ai_user = usr
-				var/camera = tgui_input_list(ai_user, "Pick Camera:", "Camera Choice", ai_user.get_camera_list())
+				var/camera = rerun_prompt(ai_user, "k545", list("kind" = "list", "message" = "Pick Camera:", "title" = "Camera Choice", "choices" = ai_user.get_camera_list()), "Click" /* a built-in proc, which nameof cannot name */, args)
+				if(isnull(camera))
+					return
 				ai_user.ai_camera_list(camera)
 
 		if("Track With Camera")
 			if(isAI(usr))
 				var/mob/living/silicon/ai/ai_user = usr
-				var/target_name = tgui_input_list(ai_user, "Pick Mob:", "Mob Choice", ai_user.trackable_mobs())
+				var/target_name = rerun_prompt(ai_user, "k551", list("kind" = "list", "message" = "Pick Mob:", "title" = "Mob Choice", "choices" = ai_user.trackable_mobs()), "Click" /* a built-in proc, which nameof cannot name */, args)
+				if(isnull(target_name))
+					return
 				ai_user.ai_camera_track(target_name)
 
 		if("Toggle Camera Light")

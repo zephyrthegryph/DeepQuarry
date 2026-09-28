@@ -210,8 +210,9 @@
 	set name = "Set Mouse Colour"
 	set category = "Abilities.Mouse"
 	set desc = "Set the colour of your mouse."
-	var/new_mouse_colour = tgui_input_list(usr, "Set Mouse Colour", "Pick a colour", list("brown","gray","white","black"))
-	if(!new_mouse_colour) return
+	om_prompt(src, src, list("kind" = "list", "message" = "Set Mouse Colour", "title" = "Pick a colour", "choices" = list("brown","gray","white","black")), PROC_REF(mouse_colour_chosen))
+
+/mob/living/simple_mob/animal/passive/mouse/proc/mouse_colour_chosen(mob/user, new_mouse_colour, datum/om/prompt/ask)
 	icon_state = resting ? "mouse_[new_mouse_colour]_sleep" : "mouse_[new_mouse_colour]"
 	item_state = "mouse_[new_mouse_colour]"
 	icon_living = "mouse_[new_mouse_colour]"

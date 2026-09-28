@@ -76,7 +76,9 @@
 			A.tgui_interact(ui.user)
 
 		if("filter_player_notes")
-			var/input = tgui_input_text(ui.user, "Filter string (case-insensitive regex)", "Player notes filter")
+			var/input = act_prompt(ui.user, action, params, ui, "a1", list("kind" = "text", "message" = "Filter string (case-insensitive regex)", "title" = "Player notes filter"))
+			if(isnull(input))
+				return
 			current_filter = input
 
 		if("set_page")
@@ -137,7 +139,9 @@
 
 		if("add_player_info")
 			var/key = params["ckey"]
-			var/add = tgui_input_text(ui.user, "Write your comment below.", "Add Player Info", multiline = TRUE, prevent_enter = TRUE)
+			var/add = act_prompt(ui.user, action, params, ui, "a2", list("kind" = "text", "message" = "Write your comment below.", "title" = "Add Player Info", "multiline" = TRUE))
+			if(isnull(add))
+				return
 			if(!add)
 				return FALSE
 
@@ -198,7 +202,9 @@
 	PlayerNotesPageLegacy(1)
 
 /datum/admins/proc/PlayerNotesFilterLegacy()
-	var/filter = tgui_input_text(owner, "Filter string (case-insensitive regex)", "Player notes filter")
+	var/filter = rerun_prompt(owner, "a1", list("kind" = "text", "message" = "Filter string (case-insensitive regex)", "title" = "Player notes filter"), PROC_REF(PlayerNotesFilterLegacy), args)
+	if(isnull(filter))
+		return
 	PlayerNotesPageLegacy(1, filter)
 
 /datum/admins/proc/PlayerNotesPageLegacy(page, filter)
@@ -298,7 +304,9 @@
 
 	if(href_list["add_player_info_legacy"])
 		var/key = href_list["add_player_info_legacy"]
-		var/add = tgui_input_text(usr, "Add Player Info (Legacy)", max_length = MAX_MESSAGE_LEN, multiline=TRUE)
+		var/add = topic_prompt(usr, href_list, "a1", list("kind" = "text", "message" = "Add Player Info (Legacy)", "max_length" = MAX_MESSAGE_LEN, "multiline" = TRUE))
+		if(isnull(add))
+			return
 		if(!add) return
 
 		notes_add(key,add,usr)

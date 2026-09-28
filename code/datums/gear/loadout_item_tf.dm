@@ -21,19 +21,31 @@ GLOBAL_DATUM_INIT(gear_tweak_item_tf_spawn, /datum/gear_tweak/item_tf_spawn, new
 	.["state"] = "Not Enabled"
 	.["valid"] = list()
 
-/datum/gear_tweak/item_tf_spawn/get_metadata(user, list/metadata)
+/datum/gear_tweak/item_tf_spawn/metadata_steps(mob/user, list/metadata, datum/gear/gear, title = "Character Preference")
+	metadata = islist(metadata) ? metadata : get_default()
+	return list(
+		list("key" = "state", "kind" = "list", "message" = "Choose an entry.", "title" = title, "choices" = list("Not Enabled", "Anyone", "Only Specific Players"), "default" = metadata["state"]),
+		TYPE_PROC_REF(/datum/gear_tweak/item_tf_spawn, ask_valid_ckeys),
+	)
+
+/// Step proc (run with the tweak as the sequence owner): only specific players need a ckey list.
+/datum/gear_tweak/item_tf_spawn/proc/ask_valid_ckeys(mob/user, datum/om/prompt/P)
+	if(P.get("state") != "Only Specific Players")
+		return null
+	var/list/current = P.get("metadata")
+	return list("key" = "valid", "kind" = "text", "message" = "Input ckeys allowed to join on separate lines", "title" = "Allowed Players", "default" = islist(current) ? jointext(current["valid"], "\n") : "", "multiline" = TRUE)
+
+/datum/gear_tweak/item_tf_spawn/metadata_answered(datum/om/prompt/P, list/metadata)
+	var/entry = P.get("state")
+	if(!entry)
+		return null
+	metadata = islist(metadata) ? metadata : get_default()
 	. = get_default()
-	metadata = islist(metadata) ? metadata : .
-	var/entry = tgui_input_list(user, "Choose an entry.", "Character Preference", list("Not Enabled", "Anyone", "Only Specific Players"), metadata["state"])
-	if(entry)
-		.["state"] = entry
-		if(entry == "Only Specific Players")
-			var/ckey_input = tgui_input_text(user, "Input ckeys allowed to join on separate lines", "Allowed Players", jointext(metadata["valid"], "\n"), multiline = TRUE)
-			.["valid"] = splittext(lowertext(ckey_input), "\n")
-		else
-			.["valid"] = metadata["valid"]
+	.["state"] = entry
+	if(entry == "Only Specific Players")
+		.["valid"] = splittext(lowertext(P.get("valid")), "\n")
 	else
-		return metadata
+		.["valid"] = metadata["valid"]
 
 /datum/gear_tweak/item_tf_spawn/tweak_item(obj/item/I, metadata)
 	if(!islist(metadata))
@@ -67,8 +79,8 @@ GLOBAL_DATUM_INIT(gear_tweak_item_tf_spawn, /datum/gear_tweak/item_tf_spawn, new
 /datum/gear_tweak/simplemob_picker/get_default()
 	return simplemob_list[1]
 
-/datum/gear_tweak/simplemob_picker/get_metadata(user, metadata)
-	return tgui_input_list(user, "Choose a type.", "Character Preference", simplemob_list, metadata)
+/datum/gear_tweak/simplemob_picker/metadata_steps(mob/user, metadata, datum/gear/gear, title = "Character Preference")
+	return list(list("key" = "value", "kind" = "list", "message" = "Choose a type.", "title" = title, "choices" = simplemob_list, "default" = metadata))
 
 /datum/gear_tweak/simplemob_picker/tweak_item(obj/item/capture_crystal/I, metadata)
 	if(!(metadata in simplemob_list))

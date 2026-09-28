@@ -114,7 +114,10 @@
 		return
 
 	if(!message)
-		message = tgui_input_text(src, "Type a message to say.","Speak into Soulcatcher", multiline=TRUE, encode = FALSE)
+		var/_answer_a1 = rerun_prompt(src, "a1", list("kind" = "text", "message" = "Type a message to say.", "title" = "Speak into Soulcatcher", "multiline" = TRUE, "encode" = FALSE), PROC_REF(nsay_vore_act), args)
+		if(isnull(_answer_a1))
+			return
+		message = _answer_a1
 	if(message)
 		var/sane_message = sanitize(message)
 		gem.use_speech(sane_message, src)
@@ -145,7 +148,10 @@
 		return
 
 	if(!message)
-		message = tgui_input_text(src, "Type an action to perform.","Emote into Soulcatcher", multiline=TRUE, encode = FALSE)
+		var/_answer_a2 = rerun_prompt(src, "a2", list("kind" = "text", "message" = "Type an action to perform.", "title" = "Emote into Soulcatcher", "multiline" = TRUE, "encode" = FALSE), PROC_REF(nme_vore_act), args)
+		if(isnull(_answer_a2))
+			return
+		message = _answer_a2
 	if(message)
 		var/sane_message = sanitize(message)
 		gem.use_emote(sane_message, src)
@@ -209,7 +215,9 @@
 	set desc = "Speak to your Soulcatcher (circumventing SR speaking)."
 	set category = "Soulcatcher"
 
-	var/message = tgui_input_text(src, "Type a message to say.","Speak into Soulcatcher", "", MAX_MESSAGE_LEN, TRUE)
+	var/message = rerun_prompt(src, "a3", list("kind" = "text", "message" = "Type a message to say.", "title" = "Speak into Soulcatcher", "max_length" = MAX_MESSAGE_LEN, "multiline" = TRUE), VERB_REF(nsay_brain), args)
+	if(isnull(message))
+		return
 	if(message)
 		gem.use_speech(message, src)
 
@@ -218,7 +226,9 @@
 	set desc = "Emote to your Soulcatcher (circumventing SR speaking)."
 	set category = "Soulcatcher"
 
-	var/message = tgui_input_text(src, "Type an action to perform.","Emote into Soulcatcher", "", MAX_MESSAGE_LEN, TRUE)
+	var/message = rerun_prompt(src, "a4", list("kind" = "text", "message" = "Type an action to perform.", "title" = "Emote into Soulcatcher", "max_length" = MAX_MESSAGE_LEN, "multiline" = TRUE), VERB_REF(nme_brain), args)
+	if(isnull(message))
+		return
 	if(message)
 		gem.use_emote(message, src)
 
@@ -240,7 +250,9 @@
 	if(!valid_objects || !valid_objects.len)
 		return
 
-	var/obj/target = tgui_input_list(src, "Select where you want to store your own mind into.", "Mind Transfer Target", valid_objects)
+	var/obj/target = rerun_prompt(src, "a5", list("kind" = "list", "message" = "Select where you want to store your own mind into.", "title" = "Mind Transfer Target", "choices" = valid_objects), PROC_REF(transfer_self), args)
+	if(isnull(target))
+		return
 
 	gem.transfer_mob_selector(src, target)
 

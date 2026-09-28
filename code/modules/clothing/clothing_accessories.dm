@@ -133,8 +133,8 @@
 		return
 
 	// begin
-	if(iscarbon(usr))
-		var/mob/living/carbon/C = usr
+	if(iscarbon(user))
+		var/mob/living/carbon/C = user
 		if(C.get_equipped_item(SLOT_ID_HANDCUFFED))
 			to_chat(C, span_warning("You cannot remove accessories while handcuffed!"))
 			return
@@ -151,7 +151,10 @@
 		if(accessory_amount == 1)
 			A = accessories[1] // If there's only one accessory, just remove it without any additional prompts.
 		else
-			A = tgui_input_list(user, "Select an accessory to remove from \the [src]", "Accessory Choice", accessories)
+			var/_answer_a1 = rerun_prompt(user, "a1", list("kind" = "list", "message" = "Select an accessory to remove from \the [src]", "title" = "Accessory Choice", "choices" = accessories), PROC_REF(removetie_proc), args)
+			if(isnull(_answer_a1))
+				return
+			A = _answer_a1
 
 	if(A)
 		if(A.can_remove)

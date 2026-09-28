@@ -55,12 +55,14 @@
 	for(var/mob/living/R in oview(user.loc,1))
 		receivers += R
 
-	var/mob/living/T = tgui_input_list(user, "Choose who to give a present to.", "Give Present", mobs_in_view(1, user))
-	if(!T || !T.ckey)
+	om_prompt(src, user, list("kind" = "list", "message" = "Choose who to give a present to.", "title" = "Give Present", "choices" = mobs_in_view(1, user), "requires" = PROMPT_ADJACENT), PROC_REF(present_receiver_chosen))
+
+/obj/structure/event/santa_sack/proc/present_receiver_chosen(mob/user, mob/living/T, datum/om/prompt/ask)
+	if(!T.ckey)
 		return
 
 	if(LAZYACCESS(ckey_log, T.ckey))
-		to_chat(usr, span_warning("This one already got a present!"))
+		to_chat(user, span_warning("This one already got a present!"))
 		return
 
 	new /obj/item/a_gift/advanced(src.loc)

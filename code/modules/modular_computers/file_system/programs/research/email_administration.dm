@@ -93,7 +93,9 @@
 			if(!current_account)
 				return TRUE
 
-			var/newpass = tgui_input_text(ui.user,"Enter new password for account [current_account.login]", "Password", null, 100)
+			var/newpass = act_prompt(ui.user, action, params, ui, "k96", list("kind" = "text", "message" = "Enter new password for account [current_account.login]", "title" = "Password", "max_length" = 100))
+			if(isnull(newpass))
+				return
 			if(!newpass)
 				return TRUE
 			current_account.password = newpass
@@ -118,10 +120,14 @@
 			return TRUE
 
 		if("newaccount")
-			var/newdomain = tgui_input_list(ui.user,"Pick domain:", "Domain name", using_map.usable_email_tlds, MAX_MESSAGE_LEN)
+			var/newdomain = act_prompt(ui.user, action, params, ui, "k121", list("kind" = "list", "message" = "Pick domain:", "title" = "Domain name", "choices" = using_map.usable_email_tlds))
+			if(isnull(newdomain))
+				return
 			if(!newdomain)
 				return TRUE
-			var/newlogin = tgui_input_text(ui.user,"Pick account name (@[newdomain]):", "Account name", null, 100)
+			var/newlogin = act_prompt(ui.user, action, params, ui, "k124", list("kind" = "text", "message" = "Pick account name (@[newdomain]):", "title" = "Account name", "max_length" = 100))
+			if(isnull(newlogin))
+				return
 			if(!newlogin)
 				return TRUE
 

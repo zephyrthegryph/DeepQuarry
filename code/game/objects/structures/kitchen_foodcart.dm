@@ -42,17 +42,19 @@
 
 /obj/structure/foodcart/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(contents.len)
-		var/obj/item/reagent_containers/food/choice = tgui_input_list(user, "What would you like to grab from the cart?", "Grab Choice", contents)
-		if(choice)
-			if(!user.canmove || user.stat || user.restrained() || !in_range(loc, user))
-				return TRUE
-			if(ishuman(user))
-				if(!user.get_active_hand())
-					user.put_in_hands(choice)
-			else
-				choice.loc = get_turf(src)
-			update_icon()
+		om_prompt(src, user, list("kind" = "list", "message" = "What would you like to grab from the cart?", "title" = "Grab Choice", "choices" = contents, "requires" = PROMPT_ADJACENT), PROC_REF(food_chosen))
 	return TRUE
+
+/obj/structure/foodcart/proc/food_chosen(mob/user, obj/item/reagent_containers/food/choice, datum/om/prompt/ask)
+	if(choice.loc == src)
+		if(!user.canmove)
+			return
+		if(ishuman(user))
+			if(!user.get_active_hand())
+				user.put_in_hands(choice)
+		else
+			choice.loc = get_turf(src)
+		update_icon()
 
 /obj/structure/foodcart/update_icon()
 	if(contents.len < 5)

@@ -79,10 +79,16 @@
 		return
 
 	if(avatar)
-		if(tgui_alert(avatar, "Someone wants to remove you from virtual reality. Do you want to leave?", "Leave VR?", list("Yes", "No")) != "Yes")
-			return
+		om_prompt(src, avatar, list("message" = "Someone wants to remove you from virtual reality. Do you want to leave?", "title" = "Leave VR?", "choices" = list("Yes", "No")), PROC_REF(alien_leave_answered))
+		return
+	alien_exit()
 
+/obj/machinery/vr_sleeper/alien/proc/alien_leave_answered(mob/user, answer, datum/om/prompt/ask)
+	if(answer == "Yes" && user == avatar)
+		alien_exit()
 
+/obj/machinery/vr_sleeper/alien/proc/alien_exit()
+	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_VR_POD)
 	avatar?.exit_vr() //We don't poof! We're a actual, living entity that isn't restrained by VR zones!
 	if(!occupant) //This whole thing needs cleaned up later, but this works for now.
 		return
@@ -118,11 +124,18 @@
 
 	if(avatar && !occupant.stat)
 		to_chat(occupant,span_alien("\The [src] begins to [pick("whir","hum","pulse")] as a screen appears in front of you."))
-		if(tgui_alert(occupant, "This pod is already linked. Are you certain you wish to engage?", "Commmit?", list("Yes", "No")) != "Yes")
-			visible_message(span_alien("\The [src] pulses!"))
-			perform_exit()
-			return
+		om_prompt(src, occupant, list("message" = "This pod is already linked. Are you certain you wish to engage?", "title" = "Commmit?", "choices" = list("Yes", "No"), "requires" = list(/datum/om/check/inside_target)), PROC_REF(alien_engage_answered))
+		return
+	alien_engage(occupant)
 
+/obj/machinery/vr_sleeper/alien/proc/alien_engage_answered(mob/living/carbon/human/occupant, answer, datum/om/prompt/ask)
+	if(answer != "Yes")
+		visible_message(span_alien("\The [src] pulses!"))
+		perform_exit()
+		return
+	alien_engage(occupant)
+
+/obj/machinery/vr_sleeper/alien/proc/alien_engage(mob/living/carbon/human/occupant)
 	to_chat(occupant,span_alien("Your mind blurs as information bombards you."))
 
 	if(!avatar)
@@ -156,9 +169,7 @@
 
 		SEND_SIGNAL(avatar, COMSIG_HUMAN_DNA_FINALIZED)
 
-		var/newname = tgui_input_text(avatar, "Your mind feels foggy. You're certain your name is [occupant.real_name], but it could also be [avatar.name]. Would you like to change it to something else?", "Name change", null, MAX_NAME_LEN)
-		if (newname)
-			avatar.real_name = newname
+		om_prompt(src, avatar, list("kind" = "text", "message" = "Your mind feels foggy. You're certain your name is [occupant.real_name], but it could also be [avatar.name]. Would you like to change it to something else?", "title" = "Name change", "max_length" = MAX_NAME_LEN), PROC_REF(alien_avatar_renamed))
 
 		avatar.forceMove(T)
 		visible_message(span_alium("\The [src] [pick("gurgles", "churns", "sloshes")] before spitting out \the [avatar]!"))
@@ -166,11 +177,13 @@
 	else
 
 		// There's only one body per one of these pods, so let's be kind.
-		var/newname = tgui_input_text(avatar, "Your mind feels foggy. You're certain your name is [occupant.real_name], but it feels like it is [avatar.name]. Would you like to change it to something else?", "Name change", null, MAX_NAME_LEN)
-		if(newname)
-			avatar.real_name = newname
-			avatar.name = newname
+		om_prompt(src, avatar, list("kind" = "text", "message" = "Your mind feels foggy. You're certain your name is [occupant.real_name], but it feels like it is [avatar.name]. Would you like to change it to something else?", "title" = "Name change", "max_length" = MAX_NAME_LEN), PROC_REF(alien_avatar_renamed))
 		occupant.enter_vr(avatar)
+
+/obj/machinery/vr_sleeper/alien/proc/alien_avatar_renamed(mob/living/carbon/human/user, newname, datum/om/prompt/ask)
+	if(newname && user == avatar)
+		avatar.real_name = newname
+		avatar.name = newname
 
 
 /*

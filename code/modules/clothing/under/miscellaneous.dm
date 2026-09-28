@@ -1755,9 +1755,15 @@
 
 	var/new_size
 	if(H.has_large_resize_bounds())
-		new_size = tgui_input_number(H, "Put the desired size ([RESIZE_MINIMUM * 100]-[RESIZE_MAXIMUM * 100]%), or ([RESIZE_MINIMUM_DORMS * 100]-[RESIZE_MAXIMUM_DORMS * 100]%) in dormitory areas.", "Set Size", H.size_multiplier * 100, RESIZE_MAXIMUM_DORMS * 100, RESIZE_MINIMUM_DORMS * 100)
+		var/_answer_a1 = rerun_prompt(H, "a1", list("kind" = "number", "message" = "Put the desired size ([RESIZE_MINIMUM * 100]-[RESIZE_MAXIMUM * 100]%), or ([RESIZE_MINIMUM_DORMS * 100]-[RESIZE_MAXIMUM_DORMS * 100]%) in dormitory areas.", "title" = "Set Size", "default" = H.size_multiplier * 100, "max" = RESIZE_MAXIMUM_DORMS * 100, "min" = RESIZE_MINIMUM_DORMS * 100), PROC_REF(bluespace_size), args)
+		if(isnull(_answer_a1))
+			return
+		new_size = _answer_a1
 	else
-		new_size = tgui_input_number(H, "Put the desired size ([RESIZE_MINIMUM * 100]-[RESIZE_MAXIMUM * 100]%), or ([RESIZE_MINIMUM_DORMS * 100]-[RESIZE_MAXIMUM_DORMS * 100]%) in dormitory areas.", "Set Size", H.size_multiplier * 100, RESIZE_MAXIMUM * 100, RESIZE_MINIMUM * 100)
+		var/_answer_a2 = rerun_prompt(H, "a2", list("kind" = "number", "message" = "Put the desired size ([RESIZE_MINIMUM * 100]-[RESIZE_MAXIMUM * 100]%), or ([RESIZE_MINIMUM_DORMS * 100]-[RESIZE_MAXIMUM_DORMS * 100]%) in dormitory areas.", "title" = "Set Size", "default" = H.size_multiplier * 100, "max" = RESIZE_MAXIMUM * 100, "min" = RESIZE_MINIMUM * 100), PROC_REF(bluespace_size), args)
+		if(isnull(_answer_a2))
+			return
+		new_size = _answer_a2
 	if(!new_size)
 		return //cancelled
 
@@ -1903,9 +1909,15 @@
 
 	var/new_size
 	if(H.has_large_resize_bounds())
-		new_size = tgui_input_number(H, "Put the desired size ([RESIZE_MINIMUM * 100]-[RESIZE_MAXIMUM * 100]%), or ([RESIZE_MINIMUM_DORMS * 100]-[RESIZE_MAXIMUM_DORMS * 100]%) in dormitory areas.", "Set Size", H.size_multiplier * 100, RESIZE_MAXIMUM_DORMS * 100, RESIZE_MINIMUM_DORMS * 100)
+		var/_answer_a3 = rerun_prompt(H, "a3", list("kind" = "number", "message" = "Put the desired size ([RESIZE_MINIMUM * 100]-[RESIZE_MAXIMUM * 100]%), or ([RESIZE_MINIMUM_DORMS * 100]-[RESIZE_MAXIMUM_DORMS * 100]%) in dormitory areas.", "title" = "Set Size", "default" = H.size_multiplier * 100, "max" = RESIZE_MAXIMUM_DORMS * 100, "min" = RESIZE_MINIMUM_DORMS * 100), PROC_REF(bluespace_size), args)
+		if(isnull(_answer_a3))
+			return
+		new_size = _answer_a3
 	else
-		new_size = tgui_input_number(H, "Put the desired size ([RESIZE_MINIMUM * 100]-[RESIZE_MAXIMUM * 100]%), or ([RESIZE_MINIMUM_DORMS * 100]-[RESIZE_MAXIMUM_DORMS * 100]%) in dormitory areas.", "Set Size", H.size_multiplier * 100, RESIZE_MAXIMUM * 100, RESIZE_MINIMUM * 100)
+		var/_answer_a4 = rerun_prompt(H, "a4", list("kind" = "number", "message" = "Put the desired size ([RESIZE_MINIMUM * 100]-[RESIZE_MAXIMUM * 100]%), or ([RESIZE_MINIMUM_DORMS * 100]-[RESIZE_MAXIMUM_DORMS * 100]%) in dormitory areas.", "title" = "Set Size", "default" = H.size_multiplier * 100, "max" = RESIZE_MAXIMUM * 100, "min" = RESIZE_MINIMUM * 100), PROC_REF(bluespace_size), args)
+		if(isnull(_answer_a4))
+			return
+		new_size = _answer_a4
 
 	if(!new_size)
 		return

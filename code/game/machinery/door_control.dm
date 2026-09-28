@@ -254,10 +254,10 @@
 	effect = /obj/machinery/button/remote/proc/interaction_toggle
 
 /obj/machinery/button/remote/driver/multitool_act(mob/user, obj/item/tool)
-	var/new_id = tgui_input_number(user, "[src] has an id of \"[id]\". What would you like it to be?", "[src] ID]", id, 9999)
-	if(!Adjacent(user))
-		to_chat(user, span_warning("You need to be adjacent to the remote to change its id."))
-		return ITEM_INTERACT_BLOCKING
+	om_prompt(src, user, list("kind" = "number", "message" = "[src] has an id of \"[id]\". What would you like it to be?", "title" = "[src] ID]", "default" = id, "max" = 9999, "requires" = PROMPT_ADJACENT), PROC_REF(driver_id_entered))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/button/remote/driver/proc/driver_id_entered(mob/user, new_id, datum/om/prompt/ask)
 	if(new_id)
 		id = new_id
 	return ITEM_INTERACT_SUCCESS

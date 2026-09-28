@@ -15,11 +15,11 @@
 	desc = "Causes a falsified Command Update. Triggers immediately after supplying additional data."
 	item_cost = 20
 
-/datum/uplink_item/abstract/announcements/fake_centcom/extra_args(mob/user)
-	var/title = tgui_input_text(usr, "Enter your announcement title.", "Announcement Title", "", MAX_MESSAGE_LEN)
+/datum/uplink_item/abstract/announcements/fake_centcom/extra_args(mob/user, list/buy_args)
+	var/title = rerun_prompt(user, "title", list("kind" = "text", "message" = "Enter your announcement title.", "title" = "Announcement Title", "max_length" = MAX_MESSAGE_LEN), PROC_REF(buy), buy_args)
 	if(!title)
 		return
-	var/message = tgui_input_text(usr, "Enter your announcement message.", "Announcement Title", "", MAX_MESSAGE_LEN)
+	var/message = rerun_prompt(user, "message", list("kind" = "text", "message" = "Enter your announcement message.", "title" = "Announcement Title", "max_length" = MAX_MESSAGE_LEN), PROC_REF(buy), buy_args)
 	if(!message)
 		return
 	return list("title" = title, "message" = message)

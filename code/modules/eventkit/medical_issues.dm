@@ -191,7 +191,9 @@
 /mob/living/carbon/human/proc/custom_medical_issue(mob/user)
 	var/static/list/possible_symptoms = list("vomit", "temporary weakness", "permanent weakness", "temporary sleeping", "permanent sleeping", "jittery", "paralysed", "cough", "confusion", "None")
 
-	var/issue_name = tgui_input_text(user, "What would you like to call this medical issue?", "Name")
+	var/issue_name = rerun_prompt(user, "a1", list("kind" = "text", "message" = "What would you like to call this medical issue?", "title" = "Name"), PROC_REF(custom_medical_issue), args)
+	if(isnull(issue_name))
+		return
 	if(!issue_name)
 		return
 	issue_name = sanitize(issue_name)
@@ -200,11 +202,15 @@
 		organ_options |= E
 	for(var/obj/item/organ/I in internal_organs)
 		organ_options |= I
-	var/obj/item/organ/issue_organ = tgui_input_list(user, "Which organ should this issue be attached to?", "Affect organ", organ_options)
+	var/obj/item/organ/issue_organ = rerun_prompt(user, "a2", list("kind" = "list", "message" = "Which organ should this issue be attached to?", "title" = "Affect organ", "choices" = organ_options), PROC_REF(custom_medical_issue), args)
+	if(isnull(issue_organ))
+		return
 	if(!issue_organ)
 		return
 
-	var/damage = tgui_alert(user, "Should this apply damage?", "Damage", list("Yes", "No", "Cancel"))
+	var/damage = rerun_prompt(user, "a3", list("message" = "Should this apply damage?", "title" = "Damage", "choices" = list("Yes", "No", "Cancel")), PROC_REF(custom_medical_issue), args)
+	if(isnull(damage))
+		return
 	if(!damage || damage == "Cancel")
 		return
 	var/damage_organ
@@ -212,46 +218,74 @@
 	var/damage_max
 	var/damage_kind
 	if(damage == "Yes")
-		damage_organ = tgui_alert(user, "Should this damage the organ or body?", "Damage", list("Organ", "Body"))
+		var/_answer_a4 = rerun_prompt(user, "a4", list("message" = "Should this damage the organ or body?", "title" = "Damage", "choices" = list("Organ", "Body")), PROC_REF(custom_medical_issue), args)
+		if(isnull(_answer_a4))
+			return
+		damage_organ = _answer_a4
 		if(!damage_organ)
 			return
-		var/damage_value_pre = tgui_input_number(user, "How much damage should this apply per processing. Low values are recommended, automatically divided by 10.", "Damage", 1)
+		var/damage_value_pre = rerun_prompt(user, "a5", list("kind" = "number", "message" = "How much damage should this apply per processing. Low values are recommended, automatically divided by 10.", "title" = "Damage", "default" = 1), PROC_REF(custom_medical_issue), args)
+		if(isnull(damage_value_pre))
+			return
 		damage_value = max(0, damage_value_pre) / 10
-		damage_max = tgui_input_number(user, "What is the maximum amount of damage this issue can apply? It will not damage above this value.", "Damage", 300)
+		var/_answer_a6 = rerun_prompt(user, "a6", list("kind" = "number", "message" = "What is the maximum amount of damage this issue can apply? It will not damage above this value.", "title" = "Damage", "default" = 300), PROC_REF(custom_medical_issue), args)
+		if(isnull(_answer_a6))
+			return
+		damage_max = _answer_a6
 		if(damage_organ == "Body")
 			var/list/kinds = list()
 			for(var/kind in 1 to INJURY_KIND_COUNT)
 				kinds[injury_kind_name(kind)] = kind
-			var/kind_name = tgui_input_list(user, "What kind of harm should this do to the body?", "Damage", kinds, injury_kind_name(INJURY_BLUNT))
+			var/kind_name = rerun_prompt(user, "a7", list("kind" = "list", "message" = "What kind of harm should this do to the body?", "title" = "Damage", "choices" = kinds, "default" = injury_kind_name(INJURY_BLUNT)), PROC_REF(custom_medical_issue), args)
+			if(isnull(kind_name))
+				return
 			if(!kind_name)
 				return
 			damage_kind = kinds[kind_name]
 
-	var/cure_q = tgui_alert(user, "Should this be cured by a reagent, surgery or organ removal only? Note that organ removal will always be an option if it's not a vital body part.", "Cure", list("Reagent", "Surgery", "Removal", "Cancel"))
+	var/cure_q = rerun_prompt(user, "a8", list("message" = "Should this be cured by a reagent, surgery or organ removal only? Note that organ removal will always be an option if it's not a vital body part.", "title" = "Cure", "choices" = list("Reagent", "Surgery", "Removal", "Cancel")), PROC_REF(custom_medical_issue), args)
+	if(isnull(cure_q))
+		return
 	if(!cure_q || cure_q == "Cancel")
 		return
 	var/datum/reagent/cure_reagent_type
 	var/cure_surgery_name
 	if(cure_q == "Reagent")
-		cure_reagent_type = tgui_input_list(user, "Which reagent should be the cure?", "Cure", subtypesof(/datum/reagent))
+		var/_answer_a9 = rerun_prompt(user, "a9", list("kind" = "list", "message" = "Which reagent should be the cure?", "title" = "Cure", "choices" = subtypesof(/datum/reagent)), PROC_REF(custom_medical_issue), args)
+		if(isnull(_answer_a9))
+			return
+		cure_reagent_type = _answer_a9
 		if(!cure_reagent_type)
 			return
 	if(cure_q == "Surgery")
-		cure_surgery_name = tgui_input_list(user, "Which surgery step should cure it?", "Cure", istype(issue_organ, /obj/item/organ/internal) ? dq_custom_internal_surgeries() : dq_custom_external_surgeries())
+		var/_answer_a10 = rerun_prompt(user, "a10", list("kind" = "list", "message" = "Which surgery step should cure it?", "title" = "Cure", "choices" = istype(issue_organ, /obj/item/organ/internal) ? dq_custom_internal_surgeries() : dq_custom_external_surgeries()), PROC_REF(custom_medical_issue), args)
+		if(isnull(_answer_a10))
+			return
+		cure_surgery_name = _answer_a10
 		if(!cure_surgery_name)
 			return
 
-	var/symptom_text = tgui_input_text(user, "What text should be displayed to the affected patient about their symptoms?", "Symptoms")
-	var/symptom_affect = tgui_input_list(user, "What observable symptom should they display?", "Symptoms", possible_symptoms)
+	var/symptom_text = rerun_prompt(user, "a11", list("kind" = "text", "message" = "What text should be displayed to the affected patient about their symptoms?", "title" = "Symptoms"), PROC_REF(custom_medical_issue), args)
+	if(isnull(symptom_text))
+		return
+	var/symptom_affect = rerun_prompt(user, "a12", list("kind" = "list", "message" = "What observable symptom should they display?", "title" = "Symptoms", "choices" = possible_symptoms), PROC_REF(custom_medical_issue), args)
+	if(isnull(symptom_affect))
+		return
 	if(!symptom_affect)
 		return
 
-	var/scanner_show = tgui_alert(user, "Should this show on body scanners?", "Diagnosis", list("Yes", "No", "Cancel"))
+	var/scanner_show = rerun_prompt(user, "a13", list("message" = "Should this show on body scanners?", "title" = "Diagnosis", "choices" = list("Yes", "No", "Cancel")), PROC_REF(custom_medical_issue), args)
+	if(isnull(scanner_show))
+		return
 	if(!scanner_show || scanner_show == "Cancel")
 		return
 
-	var/scanner_strength = tgui_input_number(user, "What level of health analyser is needed to see this? 0 for standard, 1 for improved, 2 for advanced, 3 for phasic and 4 for impossible.", "Diagnosis", 0)
-	var/advscan_cure = tgui_input_number(user, "What level of health analyser is required to display the cure? 0 for standard, 1 for improved, 2 for advanced, 3 for phasic and 4 for impossible.", "Diagnosis", 0)
+	var/scanner_strength = rerun_prompt(user, "a14", list("kind" = "number", "message" = "What level of health analyser is needed to see this? 0 for standard, 1 for improved, 2 for advanced, 3 for phasic and 4 for impossible.", "title" = "Diagnosis", "default" = 0), PROC_REF(custom_medical_issue), args)
+	if(isnull(scanner_strength))
+		return
+	var/advscan_cure = rerun_prompt(user, "a15", list("kind" = "number", "message" = "What level of health analyser is required to display the cure? 0 for standard, 1 for improved, 2 for advanced, 3 for phasic and 4 for impossible.", "title" = "Diagnosis", "default" = 0), PROC_REF(custom_medical_issue), args)
+	if(isnull(advscan_cure))
+		return
 
 	// Every prompt above can sleep; the patient or organ may be gone now.
 	if(QDELETED(src) || !body || QDELETED(issue_organ) || issue_organ.owner != src)
@@ -301,7 +335,9 @@
 	if(!length(all_issues))
 		to_chat(user, "No custom medical issues found in [src]!")
 		return
-	var/broad = tgui_alert(user, "Would you like to clear all custom medical issues or a specific one?", "Damage", list("All", "One", "Cancel"))
+	var/broad = rerun_prompt(user, "a16", list("message" = "Would you like to clear all custom medical issues or a specific one?", "title" = "Damage", "choices" = list("All", "One", "Cancel")), PROC_REF(clear_medical_issue), args)
+	if(isnull(broad))
+		return
 	if(!broad || broad == "Cancel")
 		return
 
@@ -311,7 +347,9 @@
 			A.cure()
 		return
 
-	var/datum/affliction/custom/one_issue = tgui_input_list(user, "Which issue would you like to remove?", "Symptoms", all_issues)
+	var/datum/affliction/custom/one_issue = rerun_prompt(user, "a17", list("kind" = "list", "message" = "Which issue would you like to remove?", "title" = "Symptoms", "choices" = all_issues), PROC_REF(clear_medical_issue), args)
+	if(isnull(one_issue))
+		return
 	if(!one_issue || QDELETED(one_issue) || one_issue.owner != src)
 		return
 	to_chat(user, "[one_issue.name] removed from [one_issue.location] in [src].")

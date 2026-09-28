@@ -47,7 +47,9 @@
 	return L
 
 /obj/item/megaphone/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/message = tgui_input_text(user, "Shout a message?", "Megaphone", null, MAX_MESSAGE_LEN)
+	om_prompt(src, user, list("kind" = "text", "message" = "Shout a message?", "title" = "Megaphone", "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_HELD), PROC_REF(shout_entered))
+
+/obj/item/megaphone/proc/shout_entered(mob/user, message, datum/om/prompt/ask)
 	if(!message)
 		return
 	message = capitalize(message)
@@ -105,9 +107,10 @@
 	adjust_volume(usr)
 
 /obj/item/megaphone/super/proc/adjust_volume(mob/living/user)
-	var/new_volume = tgui_input_list(user, "Set Volume", "Set Volume", volume_options)
+	om_prompt(src, user, list("kind" = "list", "message" = "Set Volume", "title" = "Set Volume", "choices" = volume_options, "requires" = PROMPT_ADJACENT), PROC_REF(volume_chosen))
 
-	if(new_volume && Adjacent(user))
+/obj/item/megaphone/super/proc/volume_chosen(mob/living/user, new_volume, datum/om/prompt/ask)
+	if(new_volume)
 		broadcast_size = new_volume
 
 /obj/item/megaphone/super/verb/change_font()
@@ -118,9 +121,10 @@
 	adjust_font(usr)
 
 /obj/item/megaphone/super/proc/adjust_font(mob/living/user)
-	var/new_font = tgui_input_list(user, "Set Volume", "Set Volume", font_options)
+	om_prompt(src, user, list("kind" = "list", "message" = "Set Volume", "title" = "Set Volume", "choices" = font_options, "requires" = PROMPT_ADJACENT), PROC_REF(font_chosen))
 
-	if(new_font && Adjacent(user))
+/obj/item/megaphone/super/proc/font_chosen(mob/living/user, new_font, datum/om/prompt/ask)
+	if(new_font)
 		broadcast_font = new_font
 
 /obj/item/megaphone/super/verb/change_color()
@@ -131,9 +135,10 @@
 	adjust_color(usr)
 
 /obj/item/megaphone/super/proc/adjust_color(mob/living/user)
-	var/new_color = tgui_input_list(user, "Set Volume", "Set Volume", color_options)
+	om_prompt(src, user, list("kind" = "list", "message" = "Set Volume", "title" = "Set Volume", "choices" = color_options, "requires" = PROMPT_ADJACENT), PROC_REF(color_chosen))
 
-	if(new_color && Adjacent(user))
+/obj/item/megaphone/super/proc/color_chosen(mob/living/user, new_color, datum/om/prompt/ask)
+	if(new_color)
 		broadcast_color = new_color
 
 /obj/item/megaphone/super/do_broadcast(mob/living/user, message)

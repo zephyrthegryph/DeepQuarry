@@ -45,7 +45,14 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 	transfer_shell()
 
 
-/mob/living/silicon/robot/proc/transfer_shell(mob/living/silicon/robot/target)
+/// `picked`: the target came from the shell list (don't ask again if it's no longer usable).
+/mob/living/silicon/robot/proc/transfer_aborted(mob/user, datum/om/prompt/ask)
+	to_chat(src, span_notice("Deployment aborted."))
+
+/mob/living/silicon/robot/proc/transfer_shell_picked(mob/user, mob/living/silicon/robot/target, datum/om/prompt/ask)
+	transfer_shell(target, TRUE)
+
+/mob/living/silicon/robot/proc/transfer_shell(mob/living/silicon/robot/target, picked = FALSE)
 	var/mob/living/silicon/ai/AI = mainframe
 	//relay AI
 	if(!CONFIG_GET(flag/allow_ai_shells))
@@ -87,9 +94,11 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 	if(LAZYLEN(possible) < 2)
 		target = possible[1]
 
-	if(!target || !(target in possible)) //If the AI is looking for a new shell, or its pre-selected shell is no longer valid
-		target = tgui_input_list(src, "Which body to control?", "Shell Choice", possible)
-
+	if(!picked && (!target || !(target in possible))) //If the AI is looking for a new shell, or its pre-selected shell is no longer valid
+		om_prompt(src, src, list("kind" = "list", "message" = "Which body to control?", "title" = "Shell Choice", "choices" = possible, "on_cancel" = PROC_REF(transfer_aborted)), PROC_REF(transfer_shell_picked))
+		return
+	if(!(target in possible))
+		target = null
 
 	if(!target || target.stat == DEAD || target.deployed || !(!target.connected_ai || (target.connected_ai == AI) ) )
 		if(target)

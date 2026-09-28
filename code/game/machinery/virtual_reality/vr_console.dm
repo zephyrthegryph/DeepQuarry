@@ -245,10 +245,14 @@
 		return
 
 	if(avatar)
-		if(tgui_alert(avatar, "Someone wants to remove you from virtual reality. Do you want to leave?", "Leave VR?", list("Yes", "No")) != "Yes")
-			return
+		om_prompt(src, avatar, list("message" = "Someone wants to remove you from virtual reality. Do you want to leave?", "title" = "Leave VR?", "choices" = list("Yes", "No")), PROC_REF(leave_vr_answered))
+		return
 
 	perform_exit()
+
+/obj/machinery/vr_sleeper/proc/leave_vr_answered(mob/user, answer, datum/om/prompt/ask)
+	if(answer == "Yes" && user == avatar)
+		perform_exit()
 
 //The actual bulk of the exit code.
 /obj/machinery/vr_sleeper/proc/perform_exit()
@@ -290,86 +294,97 @@
 
 	avatar = occupant.vr_link
 	// If they've already enterred VR, and are reconnecting, prompt if they want a new body
-	if(avatar && tgui_alert(occupant, "You already have a [avatar.stat == DEAD ? "" : "deceased "]Virtual Reality avatar. Would you like to use it?", "New avatar", list("Yes", "No")) != "Yes")
-		// Delink the mob
-		if(!occupant) //We can walk out of this before we give a prompt...A TGUI state won't help here sadly.
-			return
-		occupant.vr_link = null
-		avatar = null
+	if(avatar)
+		om_prompt(src, occupant, list("message" = "You already have a [avatar.stat == DEAD ? "" : "deceased "]Virtual Reality avatar. Would you like to use it?", "title" = "New avatar", "choices" = list("Yes", "No"), "requires" = list(/datum/om/check/inside_target)), PROC_REF(vr_reuse_answered))
+		return
+	vr_choose_avatar(occupant)
 
-	if(!avatar)
-		// Get the desired spawn location to put the body
-		var/S = null
-		var/list/vr_landmarks = list()
-		for(var/obj/effect/landmark/virtual_reality/sloc in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
-			vr_landmarks += sloc.name
+/obj/machinery/vr_sleeper/proc/vr_reuse_answered(mob/living/carbon/human/occupant, answer, datum/om/prompt/ask)
+	if(answer == "Yes" && avatar)
+		vr_reenter(occupant)
+		return
+	// Delink the mob
+	occupant.vr_link = null
+	avatar = null
+	vr_choose_avatar(occupant)
 
-		S = tgui_input_list(occupant, "Please select a location to spawn your avatar at:", "Spawn location", vr_landmarks)
-		if(!S)
-			return 0
+/// Asks where the new avatar spawns and whether it is a creature; vr_avatar_chosen() makes it.
+/obj/machinery/vr_sleeper/proc/vr_choose_avatar(mob/living/carbon/human/occupant)
+	var/list/vr_landmarks = list()
+	for(var/obj/effect/landmark/virtual_reality/sloc in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
+		vr_landmarks += sloc.name
+	om_prompt_sequence(src, occupant, list(
+		list("key" = "location", "kind" = "list", "message" = "Please select a location to spawn your avatar at:", "title" = "Spawn location", "choices" = vr_landmarks),
+		list("key" = "as_mob", "message" = "Would you like to play as a different creature?", "title" = "Join as a mob?", "choices" = list("Yes", "No")),
+		PROC_REF(vr_ask_creature),
+	), PROC_REF(vr_avatar_chosen), list("requires" = list(/datum/om/check/inside_target)))
 
-		var/tf = null
-		if(tgui_alert(occupant, "Would you like to play as a different creature?", "Join as a mob?", list("Yes", "No")) == "Yes")
-			var/k = tgui_input_list(occupant, "Please select a creature:", "Mob list", GLOB.vr_mob_tf_options)
-			if(!k || !occupant) //Our occupant can walk out.
-				return 0
-			tf = GLOB.vr_mob_tf_options[k]
+/obj/machinery/vr_sleeper/proc/vr_ask_creature(mob/living/carbon/human/occupant, datum/om/prompt/ask)
+	if(ask.get("as_mob") == "Yes")
+		return list("key" = "creature", "kind" = "list", "message" = "Please select a creature:", "title" = "Mob list", "choices" = GLOB.vr_mob_tf_options)
 
-		for(var/obj/effect/landmark/virtual_reality/i in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
-			if(i.name == S)
-				S = i
-				break
+/obj/machinery/vr_sleeper/proc/vr_avatar_chosen(mob/living/carbon/human/occupant, datum/om/prompt/ask)
+	if(avatar)
+		return
+	var/S = ask.get("location")
+	var/tf = ask.get("creature") ? GLOB.vr_mob_tf_options[ask.get("creature")] : null
+	for(var/obj/effect/landmark/virtual_reality/i in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
+		if(i.name == S)
+			S = i
+			break
 
-		if(!perfect_replica)
-			avatar = new(S, "Virtual Reality Avatar")
-		else
-			avatar = new(src, occupant.species.name)
-
-		// If the user has a non-default (Human) bodyshape, make it match theirs.
-		if(occupant.species.name != "Promethean" && occupant.species.name != "Human" && mirror_first_occupant)
-			avatar.shapeshifter_change_shape(occupant.species.name)
-		avatar.forceMove(get_turf(S))			// Put the mob on the landmark, instead of inside it
-
-		occupant.enter_vr(avatar)
-		if(spawn_with_clothing)
-			SSjob.equip_rank(avatar,"Visitor", 1, FALSE)
-		add_verb(avatar,/mob/living/carbon/human/proc/perform_exit_vr)
-		add_verb(avatar,/mob/living/carbon/human/proc/vr_transform_into_mob)
-		add_verb(avatar,/mob/living/proc/set_size)
-		avatar.virtual_reality_mob = TRUE
-
-		//This handles all the 'We make it look like ourself' code.
-		//We do this BEFORE any mob tf so prefs  carry over properly!
-		if(perfect_replica)
-			avatar.species.create_organs(avatar) // Reset our organs/limbs.
-			avatar.restore_all_organs()
-			avatar.client.prefs.copy_to(avatar)
-			avatar.dna.ResetUIFrom(avatar)
-			avatar.sync_dna_traits(TRUE) // Traitgenes Sync traits to genetics if needed
-			avatar.sync_organ_dna()
-			avatar.initialize_vessel()
-
-		SEND_SIGNAL(avatar, COMSIG_HUMAN_DNA_FINALIZED)
-
-		if(tf)
-			var/mob/living/new_form = avatar.transform_into_mob(tf, TRUE) // No need to check prefs when the occupant already chose to transform.
-			if(isliving(new_form)) // Make sure the mob spawned properly.
-				add_verb(new_form,/mob/living/proc/vr_revert_mob_tf)
-				new_form.set_virtual_reality_mob(TRUE)
-
-		add_verb(avatar, /mob/living/carbon/human/proc/perform_exit_vr) //ahealing removes the prommie verbs and the VR verbs, giving it back
-		avatar.status_at_least(EFFECT_SLEEPING, 1)
-
-		// Prompt for username after they've enterred the body.
-		var/newname = tgui_input_text(avatar, "You are entering virtual reality. Your username is currently [src.name]. Would you like to change it to something else?", "Name change", null, MAX_NAME_LEN)
-		if(newname)
-			avatar.real_name = newname
-			avatar.name = newname
-
+	if(!perfect_replica)
+		avatar = new(S, "Virtual Reality Avatar")
 	else
-		// If TFed, revert TF. Easier than coding mind transfer stuff for edge cases.
-		if(avatar.tfed_into_mob_check())
-			var/mob/living/M = avatar
-			if(istype(M)) // Sanity check, though shouldn't be needed since this is already checked by the proc.
-				M.revert_mob_tf()
-		occupant.enter_vr(avatar)
+		avatar = new(src, occupant.species.name)
+
+	// If the user has a non-default (Human) bodyshape, make it match theirs.
+	if(occupant.species.name != "Promethean" && occupant.species.name != "Human" && mirror_first_occupant)
+		avatar.shapeshifter_change_shape(occupant.species.name)
+	avatar.forceMove(get_turf(S))			// Put the mob on the landmark, instead of inside it
+
+	occupant.enter_vr(avatar)
+	if(spawn_with_clothing)
+		SSjob.equip_rank(avatar,"Visitor", 1, FALSE)
+	add_verb(avatar,/mob/living/carbon/human/proc/perform_exit_vr)
+	add_verb(avatar,/mob/living/carbon/human/proc/vr_transform_into_mob)
+	add_verb(avatar,/mob/living/proc/set_size)
+	avatar.virtual_reality_mob = TRUE
+
+	//This handles all the 'We make it look like ourself' code.
+	//We do this BEFORE any mob tf so prefs  carry over properly!
+	if(perfect_replica)
+		avatar.species.create_organs(avatar) // Reset our organs/limbs.
+		avatar.restore_all_organs()
+		avatar.client.prefs.copy_to(avatar)
+		avatar.dna.ResetUIFrom(avatar)
+		avatar.sync_dna_traits(TRUE) // Traitgenes Sync traits to genetics if needed
+		avatar.sync_organ_dna()
+		avatar.initialize_vessel()
+
+	SEND_SIGNAL(avatar, COMSIG_HUMAN_DNA_FINALIZED)
+
+	if(tf)
+		var/mob/living/new_form = avatar.transform_into_mob(tf, TRUE) // No need to check prefs when the occupant already chose to transform.
+		if(isliving(new_form)) // Make sure the mob spawned properly.
+			add_verb(new_form,/mob/living/proc/vr_revert_mob_tf)
+			new_form.set_virtual_reality_mob(TRUE)
+
+	add_verb(avatar, /mob/living/carbon/human/proc/perform_exit_vr) //ahealing removes the prommie verbs and the VR verbs, giving it back
+	avatar.status_at_least(EFFECT_SLEEPING, 1)
+
+	// Prompt for username after they've enterred the body.
+	om_prompt(src, avatar, list("kind" = "text", "message" = "You are entering virtual reality. Your username is currently [src.name]. Would you like to change it to something else?", "title" = "Name change", "max_length" = MAX_NAME_LEN), PROC_REF(vr_avatar_named))
+
+/obj/machinery/vr_sleeper/proc/vr_avatar_named(mob/living/carbon/human/user, newname, datum/om/prompt/ask)
+	if(newname && user == avatar)
+		avatar.real_name = newname
+		avatar.name = newname
+
+/obj/machinery/vr_sleeper/proc/vr_reenter(mob/living/carbon/human/occupant)
+	// If TFed, revert TF. Easier than coding mind transfer stuff for edge cases.
+	if(avatar.tfed_into_mob_check())
+		var/mob/living/M = avatar
+		if(istype(M)) // Sanity check, though shouldn't be needed since this is already checked by the proc.
+			M.revert_mob_tf()
+	occupant.enter_vr(avatar)

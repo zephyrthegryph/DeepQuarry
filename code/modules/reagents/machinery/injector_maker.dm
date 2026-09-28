@@ -127,7 +127,9 @@
 	return held.get_material_name() == MAT_PLASTIC
 
 /obj/machinery/injector_maker/proc/interaction_add_plastic(mob/user, obj/item/stack/S, datum/interaction/interaction)
-	var/input_amount = tgui_input_number(user, "How many sheets would you like to add?", "Add plastic", 0, S.get_amount())
+	var/input_amount = rerun_prompt(user, "a1", list("kind" = "number", "message" = "How many sheets would you like to add?", "title" = "Add plastic", "default" = 0, "max" = S.get_amount()), PROC_REF(interaction_add_plastic), args)
+	if(isnull(input_amount))
+		return TRUE
 	if(input_amount == 0)
 		return TRUE
 	var/plastic_input = input_amount * value_plastic
@@ -160,7 +162,9 @@
 /obj/machinery/injector_maker/proc/interaction_drag_add_plastic(mob/user, obj/item/stack/material/plastic/plastic_stack, datum/interaction/interaction)
 	if(!isliving(user) || user.stat || !Adjacent(user) || !Adjacent(plastic_stack))
 		return TRUE
-	var/input_amount = tgui_input_number(user, "How many sheets would you like to add?", "Add plastic", 0, plastic_stack.get_amount())
+	var/input_amount = rerun_prompt(user, "a2", list("kind" = "number", "message" = "How many sheets would you like to add?", "title" = "Add plastic", "default" = 0, "max" = plastic_stack.get_amount()), PROC_REF(interaction_drag_add_plastic), args)
+	if(isnull(input_amount))
+		return TRUE
 	if(input_amount == 0)
 		return TRUE
 	if(!isliving(user) || user.stat || !Adjacent(user) || !Adjacent(plastic_stack))
@@ -231,7 +235,9 @@
 	if(user.incapacitated() || !beaker)
 		return
 
-	var/choice = tgui_input_list(user, "There are [src.count_small_injector] small and [src.count_large_injector]  large injectors left.", "Choose what to do", list("large injector", "small injector", "eject beaker", "cancel"))
+	var/choice = rerun_prompt(user, "a3", list("kind" = "list", "message" = "There are [src.count_small_injector] small and [src.count_large_injector]  large injectors left.", "title" = "Choose what to do", "choices" = list("large injector", "small injector", "eject beaker", "cancel")), TYPE_PROC_REF(/atom, interact), args)
+	if(isnull(choice))
+		return
 
 	switch(choice)
 		if("cancel")
@@ -246,7 +252,9 @@
 
 
 		if("small injector")
-			var/material = tgui_input_list(user, "Use autoinjector storage, or mold new injectors to fill?", "Choose Material", list("mold plastic", "use injectors"))
+			var/material = rerun_prompt(user, "a4", list("kind" = "list", "message" = "Use autoinjector storage, or mold new injectors to fill?", "title" = "Choose Material", "choices" = list("mold plastic", "use injectors")), TYPE_PROC_REF(/atom, interact), args)
+			if(isnull(material))
+				return
 			switch(material)
 				if("mold plastic")
 					if(src.count_plastic < cost_plastic_small)
@@ -259,7 +267,9 @@
 			if(!beaker.reagents.total_volume)
 				to_chat(user, span_warning("Chemical storage is empty!"))
 				return
-			var/injector_amount = tgui_input_number(user, "How many injectors would you like?", "Make small injectors", 0, 100)
+			var/injector_amount = rerun_prompt(user, "a5", list("kind" = "number", "message" = "How many injectors would you like?", "title" = "Make small injectors", "default" = 0, "max" = 100), TYPE_PROC_REF(/atom, interact), args)
+			if(isnull(injector_amount))
+				return
 			if(injector_amount > 0)
 				switch(material)
 					if("mold plastic")
@@ -271,13 +281,17 @@
 						if(src.count_small_injector < injector_amount)
 							to_chat(user, span_warning("Not enough autoinjectors! You only have [src.count_small_injector]"))
 							return
-				var/name = tgui_input_text(user, "Name Injector", "Naming", null, 32)
+				var/name = rerun_prompt(user, "a6", list("kind" = "text", "message" = "Name Injector", "title" = "Naming", "max_length" = 32), TYPE_PROC_REF(/atom, interact), args)
+				if(isnull(name))
+					return
 				make_injector("small injector", injector_amount, name, material, user)
 				update_icon()
 
 
 		if("large injector")
-			var/material = tgui_input_list(user, "Use autoinjector storage, or mold new injectors to fill?", "Choose Material", list("mold plastic", "use injectors"))
+			var/material = rerun_prompt(user, "a7", list("kind" = "list", "message" = "Use autoinjector storage, or mold new injectors to fill?", "title" = "Choose Material", "choices" = list("mold plastic", "use injectors")), TYPE_PROC_REF(/atom, interact), args)
+			if(isnull(material))
+				return
 			switch(material)
 				if("mold plastic")
 					if(src.count_plastic < cost_plastic_large)
@@ -290,7 +304,9 @@
 			if(!beaker.reagents.total_volume)
 				to_chat(user, span_warning("Chemical storage is empty!"))
 				return
-			var/injector_amount = tgui_input_number(user, "How many injectors would you like?", "Make large injectors", 0, 100)
+			var/injector_amount = rerun_prompt(user, "a8", list("kind" = "number", "message" = "How many injectors would you like?", "title" = "Make large injectors", "default" = 0, "max" = 100), TYPE_PROC_REF(/atom, interact), args)
+			if(isnull(injector_amount))
+				return
 			if(injector_amount > 0)
 				switch(material)
 					if("mold plastic")
@@ -302,7 +318,9 @@
 						if(src.count_large_injector < injector_amount)
 							to_chat(user, span_warning("Not enough autoinjectors! You only have [src.count_large_injector]"))
 							return
-				var/name = tgui_input_text(user, "Name Injector", "Naming", null, 32)
+				var/name = rerun_prompt(user, "a9", list("kind" = "text", "message" = "Name Injector", "title" = "Naming", "max_length" = 32), TYPE_PROC_REF(/atom, interact), args)
+				if(isnull(name))
+					return
 				make_injector("large injector", injector_amount, name, material,user)
 				update_icon()
 
@@ -318,7 +336,10 @@
 		if("large injector")
 			amount_per_injector = CLAMP(beaker.reagents.total_volume / amount, 0, 15)
 	if((size == "small injector" && amount_per_injector < 5) || size == "large injector" && amount_per_injector < 15)
-		proceed = tgui_alert(user, "Heads up! Less than max volume per injector!\n Making [amount] [size](s) filled with [amount_per_injector] total reagent volume each!","Proceed?",list("No","Yes"))
+		var/_answer_a10 = rerun_prompt(user, "a10", list("message" = "Heads up! Less than max volume per injector!\n Making [amount] [size](s) filled with [amount_per_injector] total reagent volume each!", "title" = "Proceed?", "choices" = list("No","Yes")), PROC_REF(make_injector), args)
+		if(isnull(_answer_a10))
+			return
+		proceed = _answer_a10
 	if(!proceed || proceed == "No" || !amount_per_injector)
 		return
 	for(var/i, i < amount, i++)

@@ -82,11 +82,13 @@
 				to_chat(ui.user, "Unauthorized Access.")
 			. = TRUE
 		if("warn")
-			var/warning = tgui_input_text(ui.user, "Message:", "Enter your message here!", "", MAX_MESSAGE_LEN)
-			if(!warning)
-				return
-			var/obj/item/implant/I = locate(params["imp"])
-			if(I && I.imp_in)
-				to_chat(I.imp_in, span_notice("You hear a voice in your head saying: '[warning]'"))
+			om_prompt(src, ui.user, list("kind" = "text", "message" = "Message:", "title" = "Enter your message here!", "default" = "", "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_USABLE, "data" = list("imp" = params["imp"])), PROC_REF(warning_entered))
 			. = TRUE
 	add_fingerprint(ui.user)
+
+/obj/machinery/computer/prisoner/proc/warning_entered(mob/user, warning, datum/om/prompt/ask)
+	var/list/params = list("imp" = ask.get("imp"))
+	var/obj/item/implant/I = locate(params["imp"])
+	if(I && I.imp_in)
+		to_chat(I.imp_in, span_notice("You hear a voice in your head saying: '[warning]'"))
+	SStgui.update_uis(src)

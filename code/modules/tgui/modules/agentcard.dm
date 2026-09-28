@@ -46,7 +46,9 @@
 			to_chat(ui.user, span_notice("Electronic warfare [S.electronic_warfare ? "enabled" : "disabled"]."))
 			. = TRUE
 		if("age")
-			var/new_age = tgui_input_number(ui.user,"What age would you like to put on this card?","Agent Card Age", S.age)
+			var/new_age = act_prompt(ui.user, action, params, ui, "a1", list("kind" = "number", "message" = "What age would you like to put on this card?", "title" = "Agent Card Age", "default" = S.age))
+			if(isnull(new_age))
+				return
 			if(!isnull(new_age) && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
 				if(new_age < 0)
 					S.age = initial(S.age)
@@ -55,7 +57,9 @@
 				to_chat(ui.user, span_notice("Age has been set to '[S.age]'."))
 				. = TRUE
 		if("appearance")
-			var/datum/card_state/choice = tgui_input_list(ui.user, "Select the appearance for this card.", "Agent Card Appearance", id_card_states())
+			var/datum/card_state/choice = act_prompt(ui.user, action, params, ui, "a2", list("kind" = "list", "message" = "Select the appearance for this card.", "title" = "Agent Card Appearance", "choices" = id_card_states()))
+			if(isnull(choice))
+				return
 			if(choice && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
 				S.icon_state = choice.icon_state
 				S.item_state = choice.item_state
@@ -64,7 +68,9 @@
 				to_chat(ui.user, span_notice("Appearance changed to [choice]."))
 				. = TRUE
 		if("assignment")
-			var/new_job = tgui_input_text(ui.user,"What assignment would you like to put on this card?\nChanging assignment will not grant or remove any access levels.","Agent Card Assignment", S.assignment, MAX_MESSAGE_LEN)
+			var/new_job = act_prompt(ui.user, action, params, ui, "a3", list("kind" = "text", "message" = "What assignment would you like to put on this card?\nChanging assignment will not grant or remove any access levels.", "title" = "Agent Card Assignment", "default" = S.assignment, "max_length" = MAX_MESSAGE_LEN))
+			if(isnull(new_job))
+				return
 			if(!isnull(new_job) && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
 				S.assignment = new_job
 				to_chat(ui.user, span_notice("Occupation changed to '[new_job]'."))
@@ -76,7 +82,9 @@
 				var/mob/living/carbon/human/H = ui.user
 				if(H.dna)
 					default = H.dna.b_type
-			var/new_blood_type = tgui_input_text(ui.user,"What blood type would you like to be written on this card?","Agent Card Blood Type",default, MAX_MESSAGE_LEN)
+			var/new_blood_type = act_prompt(ui.user, action, params, ui, "a4", list("kind" = "text", "message" = "What blood type would you like to be written on this card?", "title" = "Agent Card Blood Type", "default" = default, "max_length" = MAX_MESSAGE_LEN))
+			if(isnull(new_blood_type))
+				return
 			if(!isnull(new_blood_type) && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
 				S.blood_type = new_blood_type
 				to_chat(ui.user, span_notice("Blood type changed to '[new_blood_type]'."))
@@ -87,7 +95,9 @@
 				var/mob/living/carbon/human/H = ui.user
 				if(H.dna)
 					default = H.dna.unique_enzymes
-			var/new_dna_hash = tgui_input_text(ui.user,"What DNA hash would you like to be written on this card?","Agent Card DNA Hash",default, MAX_MESSAGE_LEN)
+			var/new_dna_hash = act_prompt(ui.user, action, params, ui, "a5", list("kind" = "text", "message" = "What DNA hash would you like to be written on this card?", "title" = "Agent Card DNA Hash", "default" = default, "max_length" = MAX_MESSAGE_LEN))
+			if(isnull(new_dna_hash))
+				return
 			if(!isnull(new_dna_hash) && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
 				S.dna_hash = new_dna_hash
 				to_chat(ui.user, span_notice("DNA hash changed to '[new_dna_hash]'."))
@@ -98,13 +108,18 @@
 				var/mob/living/carbon/human/H = ui.user
 				if(H.dna)
 					default = md5(H.dna.GetUniIdentity())
-			var/new_fingerprint_hash = tgui_input_text(ui.user,"What fingerprint hash would you like to be written on this card?","Agent Card Fingerprint Hash",default, MAX_MESSAGE_LEN)
+			var/new_fingerprint_hash = act_prompt(ui.user, action, params, ui, "a6", list("kind" = "text", "message" = "What fingerprint hash would you like to be written on this card?", "title" = "Agent Card Fingerprint Hash", "default" = default, "max_length" = MAX_MESSAGE_LEN))
+			if(isnull(new_fingerprint_hash))
+				return
 			if(!isnull(new_fingerprint_hash) && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
 				S.fingerprint_hash = new_fingerprint_hash
 				to_chat(ui.user, span_notice("Fingerprint hash changed to '[new_fingerprint_hash]'."))
 				. = TRUE
 		if("name")
-			var/new_name = sanitizeName(tgui_input_text(ui.user,"What name would you like to put on this card?","Agent Card Name", S.registered_name))
+			var/_answer_a7 = act_prompt(ui.user, action, params, ui, "a7", list("kind" = "text", "message" = "What name would you like to put on this card?", "title" = "Agent Card Name", "default" = S.registered_name))
+			if(isnull(_answer_a7))
+				return
+			var/new_name = sanitizeName(_answer_a7)
 			if(!isnull(new_name) && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
 				S.registered_name = new_name
 				S.update_name()
@@ -115,19 +130,26 @@
 			to_chat(ui.user, span_notice("Photo changed."))
 			. = TRUE
 		if("sex")
-			var/new_sex = tgui_input_text(ui.user,"What sex would you like to put on this card?","Agent Card Sex", S.sex, MAX_MESSAGE_LEN)
+			var/new_sex = act_prompt(ui.user, action, params, ui, "a8", list("kind" = "text", "message" = "What sex would you like to put on this card?", "title" = "Agent Card Sex", "default" = S.sex, "max_length" = MAX_MESSAGE_LEN))
+			if(isnull(new_sex))
+				return
 			if(!isnull(new_sex) && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
 				S.sex = new_sex
 				to_chat(ui.user, span_notice("Sex changed to '[new_sex]'."))
 				. = TRUE
 		if("species")
-			var/new_species = tgui_input_text(ui.user,"What species would you like to put on this card?","Agent Card Species", S.species, MAX_MESSAGE_LEN)
+			var/new_species = act_prompt(ui.user, action, params, ui, "a9", list("kind" = "text", "message" = "What species would you like to put on this card?", "title" = "Agent Card Species", "default" = S.species, "max_length" = MAX_MESSAGE_LEN))
+			if(isnull(new_species))
+				return
 			if(!isnull(new_species) && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
 				S.species = new_species
 				to_chat(ui.user, span_notice("Species changed to '[new_species]'."))
 				. = TRUE
 		if("factoryreset")
-			if(tgui_alert(ui.user, "This will factory reset the card, including access and owner. Continue?", "Factory Reset", list("No", "Yes")) == "Yes" && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
+			var/_answer_a10 = act_prompt(ui.user, action, params, ui, "a10", list("message" = "This will factory reset the card, including access and owner. Continue?", "title" = "Factory Reset", "choices" = list("No", "Yes")))
+			if(isnull(_answer_a10))
+				return
+			if(_answer_a10 == "Yes" && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
 				S.age = initial(S.age)
 				S.access = GLOB.syndicate_access.Copy()
 				S.assignment = initial(S.assignment)

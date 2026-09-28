@@ -116,69 +116,75 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 
 		our_options |= "Cancel"
 
-		var/choice = tgui_alert(user,"It's dark and gloomy in here. What would you like to do?","Tunnel",our_options)
-		switch(choice)
-			if("Exit")
-				if(user.loc != src)
-					to_chat(user, span_warning("You can't do that unless you're in \the [src]."))
-					return
-
-				user.forceMove(get_turf(src.loc))
-				user.cancel_camera()
-				user.visible_message(span_notice("\The [user] climbs out of \the [src]!"))
-				return
-			if("Move")
-				if(user.loc != src)
-					to_chat(user, span_warning("You can't do that unless you're in \the [src]."))
-					return
-
-				var/list/destinations = find_destinations()
-
-				if(!destinations.len)
-					to_chat(user, span_warning("There are no other tunnels connected to this one!"))
-					return
-				else if(destinations.len == 1 || random)
-					choice = pick(destinations)
-				else
-					choice = tgui_input_list(user, "Where would you like to go?", "Pick a tunnel", destinations)
-				if(!choice)
-					return
-				to_chat(user,span_notice("You begin moving..."))
-				om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(tunnel_interact_timed_done), done_args = list(user, choice))
-				return
-			if("Eat")
-				var/list/our_targets = list()
-				for(var/mob/living/L in src.contents)
-					if(L == user)
-						continue
-					our_targets |= L
-				if(!our_targets.len)
-					to_chat(user, span_warning("There is no one in here except for you!"))
-					return
-				var/mob/our_choice
-				if(our_targets.len == 1)
-					our_choice = pick(our_targets)
-				else
-					our_choice = tgui_input_list(user, "Who would you like to eat?", "Pick a target to eat", our_targets)
-				if(user.loc != src)
-					to_chat(user, span_warning("You are no longer inside \the [src], and so cannot eat \the [our_choice]."))
-					return
-				if(our_choice.loc != src)
-					to_chat(user, span_warning("\The [our_choice] is no longer inside \the [src], and so cannot be eaten."))
-					return
-				user.feed_grabbed_to_self(user,our_choice)
-				return
-			if("Cancel")
-				return
-
-	if(!can_enter(user))
-		user.visible_message(span_warning("\The [user] reaches into \the [src]. . ."),span_warning("You reach into \the [src]. . ."))
-		om_task_start(/datum/om/task/timed/micro_reach/tunnel, user, src, list("receiver" = src))
+		om_prompt(src, user, list("message" = "It's dark and gloomy in here. What would you like to do?", "title" = "Tunnel", "choices" = our_options, "requires" = list(/datum/om/check/inside_target)), PROC_REF(tunnel_action_chosen))
 		return
 
+	if(!can_enter(user))
+		if(may_choose_to_enter(user))
+			om_prompt(src, user, list("message" = "Would you like to enter the tunnel, or reach inside it?", "title" = "Enter or reach", "choices" = list("Enter","Reach"), "requires" = PROMPT_ADJACENT, "data" = list("dropped" = FALSE)), PROC_REF(enter_or_reach_chosen))
+			return
+		tunnel_reach(user)
+		return
+
+	tunnel_climb(user)
+	return TRUE
+
+/obj/structure/micro_tunnel/proc/tunnel_reach(mob/living/user)
+	user.visible_message(span_warning("\The [user] reaches into \the [src]. . ."),span_warning("You reach into \the [src]. . ."))
+	om_task_start(/datum/om/task/timed/micro_reach/tunnel, user, src, list("receiver" = src))
+
+/obj/structure/micro_tunnel/proc/tunnel_climb(mob/living/user)
 	user.visible_message(span_notice("\The [user] begins climbing into \the [src]!"))
 	om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(tunnel_interact_timed_done2), done_args = list(user), on_fail = PROC_REF(tunnel_interact_timed_failed2), fail_args = list(user))
-	return TRUE
+
+/obj/structure/micro_tunnel/proc/enter_or_reach_chosen(mob/living/user, choice, datum/om/prompt/ask)
+	if(ask.get("dropped"))
+		if(choice == "Enter")
+			mouse_drop_climb(user)
+		return
+	if(choice == "Enter")
+		tunnel_climb(user)
+	else
+		tunnel_reach(user)
+
+/obj/structure/micro_tunnel/proc/tunnel_action_chosen(mob/living/user, choice, datum/om/prompt/ask)
+	switch(choice)
+		if("Exit")
+			user.forceMove(get_turf(src.loc))
+			user.cancel_camera()
+			user.visible_message(span_notice("\The [user] climbs out of \the [src]!"))
+		if("Move")
+			var/list/destinations = find_destinations()
+			if(!destinations.len)
+				to_chat(user, span_warning("There are no other tunnels connected to this one!"))
+				return
+			if(destinations.len == 1 || random)
+				tunnel_move_chosen(user, pick(destinations), ask)
+				return
+			om_prompt_chain(ask, list("kind" = "list", "message" = "Where would you like to go?", "title" = "Pick a tunnel", "choices" = destinations), PROC_REF(tunnel_move_chosen))
+		if("Eat")
+			var/list/our_targets = list()
+			for(var/mob/living/L in src.contents)
+				if(L == user)
+					continue
+				our_targets |= L
+			if(!our_targets.len)
+				to_chat(user, span_warning("There is no one in here except for you!"))
+				return
+			if(our_targets.len == 1)
+				tunnel_eat_chosen(user, pick(our_targets), ask)
+				return
+			om_prompt_chain(ask, list("kind" = "list", "message" = "Who would you like to eat?", "title" = "Pick a target to eat", "choices" = our_targets), PROC_REF(tunnel_eat_chosen))
+
+/obj/structure/micro_tunnel/proc/tunnel_move_chosen(mob/living/user, choice, datum/om/prompt/ask)
+	to_chat(user,span_notice("You begin moving..."))
+	om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(tunnel_interact_timed_done), done_args = list(user, choice))
+
+/obj/structure/micro_tunnel/proc/tunnel_eat_chosen(mob/living/user, mob/our_choice, datum/om/prompt/ask)
+	if(our_choice.loc != src)
+		to_chat(user, span_warning("\The [our_choice] is no longer inside \the [src], and so cannot be eaten."))
+		return
+	user.feed_grabbed_to_self(user,our_choice)
 
 /obj/structure/micro_tunnel/proc/tunnel_interact_timed_done(mob/living/user, choice)
 	user.forceMove(choice)
@@ -236,11 +242,11 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 	if(user.mob_size <= MOB_TINY || user.get_effective_size(TRUE) <= micro_accepted_scale)
 		return TRUE
 
-	if(is_type_in_list(user, non_micro_types))
-		if(tgui_alert(user, "Would you like to enter the tunnel, or reach inside it?", "Enter or reach", list("Enter","Reach")) == "Enter")
-			return TRUE
-
 	return FALSE
+
+/// Big enough to reach in, but allowed to squeeze inside instead (they're asked which).
+/obj/structure/micro_tunnel/proc/may_choose_to_enter(mob/living/user)
+	return is_type_in_list(user, non_micro_types)
 
 /obj/structure/micro_tunnel/MouseDrop_T(mob/living/M, mob/living/user)
 	. = ..()
@@ -248,13 +254,16 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 		return
 
 	if(!can_enter(user))
+		if(may_choose_to_enter(user))
+			om_prompt(src, user, list("message" = "Would you like to enter the tunnel, or reach inside it?", "title" = "Enter or reach", "choices" = list("Enter","Reach"), "requires" = PROMPT_ADJACENT, "data" = list("dropped" = TRUE)), PROC_REF(enter_or_reach_chosen))
 		return
 
-	var/mob/living/k = M
+	mouse_drop_climb(M)
+	return TRUE
 
+/obj/structure/micro_tunnel/proc/mouse_drop_climb(mob/living/k)
 	k.visible_message(span_notice("\The [k] begins climbing into \the [src]!"))
 	om_do_after(k, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(MouseDrop_T_timed_done), done_args = list(k), on_fail = PROC_REF(MouseDrop_T_timed_failed), fail_args = list(k))
-	return TRUE
 
 /obj/structure/micro_tunnel/proc/MouseDrop_T_timed_done(mob/living/k)
 
@@ -300,6 +309,38 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 	if(micro_target)
 		verbs += /obj/proc/micro_interact
 
+/obj/proc/micro_action_chosen(mob/living/user, choice, datum/om/prompt/ask)
+	switch(choice)
+		if("Exit")
+			user.forceMove(get_turf(src.loc))
+			user.cancel_camera()
+			user.visible_message(span_notice("\The [user] climbs out of \the [src]!"))
+		if("Move")
+			var/list/destinations = list()
+			if(istype(src,/obj/structure/micro_tunnel))	//If we're in a tunnel let's also get the tunnel's destinations
+				var/obj/structure/micro_tunnel/t = src
+				destinations = t.find_destinations()
+			var/turf/myturf = get_turf(src.loc)
+			for(var/obj/o in range(1,myturf))
+				if(o == src)
+					continue
+				if(o.micro_target)
+					destinations |= o
+			if(!destinations.len)
+				to_chat(user, span_warning("There is nowhere to move to!"))
+				return
+			if(destinations.len == 1)
+				micro_move_chosen(user, pick(destinations), ask)
+				return
+			om_prompt_chain(ask, list("kind" = "list", "message" = "Where would you like to go?", "title" = "Pick a destination", "choices" = destinations), PROC_REF(micro_move_chosen))
+
+/obj/proc/micro_move_chosen(mob/living/user, choice, datum/om/prompt/ask)
+	var/list/contained_mobs = list()
+	for(var/mob/living/issamob in src.contents)
+		contained_mobs |= issamob
+	to_chat(user,span_notice("You begin moving..."))
+	om_task_start(/datum/om/task/timed/obj_micro_interact, user, src, list("receiver" = src, "contained_mobs" = contained_mobs, "choice" = choice))
+
 /obj/proc/micro_interact()
 	set name = "Micro Interact"
 	set desc = "Micros can enter, or move between objects with this! Non-micros can reach into objects to search for micros!"
@@ -315,49 +356,8 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 			contained_mobs |= issamob
 
 	if(usr.loc == src)
-		var/choice = tgui_alert(usr,"What would you like to do?","[src]",list("Exit", "Move", "Cancel"))
-		switch(choice)
-			if("Exit")
-				if(usr.loc != src)
-					to_chat(usr, span_warning("You can't do that unless you're in \the [src]."))
-					return
-
-				usr.forceMove(get_turf(src.loc))
-				usr.cancel_camera()
-				usr.visible_message(span_notice("\The [usr] climbs out of \the [src]!"))
-				return
-
-			if("Move")
-				if(usr.loc != src)
-					to_chat(usr, span_warning("You can't do that unless you're in \the [src]."))
-					return
-				var/list/destinations = list()
-				if(istype(src,/obj/structure/micro_tunnel))	//If we're in a tunnel let's also get the tunnel's destinations
-					var/obj/structure/micro_tunnel/t = src
-					destinations = t.find_destinations()
-				var/turf/myturf = get_turf(src.loc)
-				for(var/obj/o in range(1,myturf))
-					if(!istype(o,/obj))
-						continue
-					if(o == src)
-						continue
-					if(o.micro_target)
-						destinations |= o
-
-				if(!destinations.len)
-					to_chat(usr, span_warning("There is nowhere to move to!"))
-					return
-				else if(destinations.len == 1)
-					choice = pick(destinations)
-				else
-					choice = tgui_input_list(usr, "Where would you like to go?", "Pick a destination", destinations)
-				if(!choice)
-					return
-				to_chat(usr,span_notice("You begin moving..."))
-				om_task_start(/datum/om/task/timed/obj_micro_interact, usr, src, list("receiver" = src, "contained_mobs" = contained_mobs, "choice" = choice))
-				return
-			if("Cancel")
-				return
+		om_prompt(src, usr, list("message" = "What would you like to do?", "title" = "[src]", "choices" = list("Exit", "Move", "Cancel"), "requires" = list(/datum/om/check/inside_target)), PROC_REF(micro_action_chosen))
+		return
 
 	if(!(usr.mob_size <= MOB_TINY || usr.get_effective_size(TRUE) <= micro_accepted_scale))
 		usr.visible_message(span_warning("\The [usr] reaches into \the [src]. . ."),span_warning("You reach into \the [src]. . ."))

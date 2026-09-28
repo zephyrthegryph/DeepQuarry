@@ -29,11 +29,14 @@
 	if(!choices.len)
 		to_chat(src, span_notice("There are no viable targets within range..."))
 		return
-	var/mob/living/carbon/human/attack_target = choices[1]
 	if(choices.len > 1)
-		attack_target = tgui_input_list(src, "Who do you wish to dominate?", "Target Choice", choices)
+		om_prompt(src, src, list("kind" = "list", "message" = "Who do you wish to dominate?", "title" = "Target Choice", "choices" = choices, "requires" = PROMPT_CONSCIOUS), PROC_REF(knockout_target_chosen))
+		return
+	knockout_target_chosen(src, choices[1])
 
-	if(!attack_target || QDELETED(src))
+/mob/living/simple_mob/animal/borer/proc/knockout_target_chosen(mob/user, mob/living/carbon/human/attack_target, datum/om/prompt/ask)
+	var/attack_range = 5
+	if(world.time - used_dominate < 150 || src?.borer_host())
 		return
 	if(!(attack_target in view(attack_range,src)))
 		to_chat(src, span_warning("\The [attack_target] escaped your influence..."))
@@ -72,12 +75,14 @@
 		to_chat(src, span_warning("There are no viable hosts within range..."))
 		return
 
-	var/mob/living/carbon/human/infest_target = choices[1]
 	if(choices.len > 1)
-		infest_target = tgui_input_list(src, "Who do you wish to infest?", "Target Choice", choices)
-	if(QDELETED(infest_target) || QDELETED(src))
+		om_prompt(src, src, list("kind" = "list", "message" = "Who do you wish to infest?", "title" = "Target Choice", "choices" = choices, "requires" = PROMPT_CONSCIOUS), PROC_REF(infest_target_chosen))
 		return
-	infest_target(infest_target)
+	infest_target(choices[1])
+
+/mob/living/simple_mob/animal/borer/proc/infest_target_chosen(mob/user, mob/living/carbon/human/chosen, datum/om/prompt/ask)
+	if(!src?.borer_host() && Adjacent(chosen))
+		infest_target(chosen)
 
 /// Infests mob with borer.
 /mob/living/simple_mob/animal/borer/proc/infest_dislodged(mob/living/carbon/human/infest_target)
@@ -158,7 +163,6 @@
  * Releases chemicals from the borer into their host. Can be used as a standalone chemist in your head for an antag cooperating with their borer.
  */
 /mob/living/simple_mob/animal/borer/verb/secrete_chemicals()
-	var/mob/living/carbon/human/host = src?.borer_host()
 	set category = "Abilities.Borer"
 	set name = "Secrete Chemicals"
 	set desc = "Drain some chemicals into your host's bloodstream."
@@ -171,8 +175,12 @@
 		to_chat(src, span_warning("You cannot do that while in full control of a host."))
 		return
 
-	var/injection_choice = tgui_input_list(src, "Select a chemical to secrete.", "Chemicals", borer_chem_list)
-	host = src?.borer_host() // may have changed while choosing
+	om_prompt(src, src, list("kind" = "list", "message" = "Select a chemical to secrete.", "title" = "Chemicals", "choices" = borer_chem_list), PROC_REF(secrete_chemical_chosen))
+
+/mob/living/simple_mob/animal/borer/proc/secrete_chemical_chosen(mob/user, injection_choice, datum/om/prompt/ask)
+	var/mob/living/carbon/human/host = src?.borer_host() // may have changed while choosing
+	if(!host)
+		return
 	if(injection_choice == "Revive Dead Host")
 		if(!can_use_power_in_host())
 			return

@@ -27,11 +27,16 @@
 
 	src.visible_message(span_notice("\The [src] holds out \the [I] to \the [target]."), span_notice("You hold out \the [I] to \the [target], waiting for them to accept it."))
 
-	if(tgui_alert(target,"[src] wants to give you \a [I]. Will you accept it?","Item Offer",list("Yes","No")) != "Yes")
+	// The offer is answered by the target; the answer runs on us.
+	om_prompt(src, target, list("message" = "[src] wants to give you \a [I]. Will you accept it?", "title" = "Item Offer", "choices" = list("Yes","No"), "data" = list("item" = I)), PROC_REF(give_answered))
+
+/mob/living/proc/give_answered(mob/living/carbon/human/target, answer, datum/om/prompt/ask)
+	var/obj/item/I = ask.get("item")
+	if(answer != "Yes")
 		target.visible_message(span_notice("\The [src] tried to hand \the [I] to \the [target], but \the [target] didn't want it."))
 		return
-
-	if(!I) return
+	if(incapacitated() || target.incapacitated())
+		return
 
 	if(!Adjacent(target))
 		to_chat(src, span_warning("You need to stay in reaching distance while giving an object"))

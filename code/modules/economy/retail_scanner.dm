@@ -290,8 +290,11 @@ REGISTRY_MEMBERSHIP(/obj/item/retail_scanner, REGISTRY_TRANSACTION_DEVICES)
 	if(check_account())
 		var/datum/money_account/D = get_account(I.associated_account_number)
 		var/attempt_pin = ""
+		// Answers re-run this scan; they're keyed by the ticket revision, so a changed ticket asks again.
 		if(D && D.security_level)
-			attempt_pin = tgui_input_number(user, "Enter PIN", "Transaction")
+			attempt_pin = rerun_prompt(user, "pin[ticket_revision]:[transaction_amount]", list("kind" = "number", "message" = "Enter PIN", "title" = "Transaction"), PROC_REF(scan_card), args)
+			if(isnull(attempt_pin))
+				return
 			D = null
 		if(!service_checkout_confirmation_valid(src, user, snapshot_revision, ticket_revision, snapshot_amount, transaction_amount, snapshot_payer_account, I.associated_account_number, snapshot_provider, linked_account, snapshot_staff_account, service_staff_account_number))
 			return
@@ -307,7 +310,7 @@ REGISTRY_MEMBERSHIP(/obj/item/retail_scanner, REGISTRY_TRANSACTION_DEVICES)
 					var/list/quote = department_service_quote(D, DEPARTMENT_CIVILIAN, transaction_amount)
 					if(!quote || !user)
 						return
-					var/tip = service_tip_choice(user, D, quote, transaction_purpose)
+					var/tip = service_tip_choice(user, D, quote, transaction_purpose, src, PROC_REF(scan_card), args, "tip[ticket_revision]:[transaction_amount]")
 					if(isnull(tip) || !service_checkout_confirmation_valid(src, user, snapshot_revision, ticket_revision, snapshot_amount, transaction_amount, D.account_number, I.associated_account_number, snapshot_provider, linked_account, snapshot_staff_account, service_staff_account_number))
 						return
 					if(!complete_service_checkout(D, linked_account, transaction_amount, transaction_purpose, machine_id, item_list, price_list, service_staff_account_number, service_staff_name, tip, verified_sale_items))

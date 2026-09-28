@@ -70,7 +70,9 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	var/new_name = tgui_input_text(user, "Enter new robot name", "Robot Reclassification", heldname, MAX_NAME_LEN)
+	om_prompt(src, user, list("kind" = "text", "message" = "Enter new robot name", "title" = "Robot Reclassification", "default" = heldname, "max_length" = MAX_NAME_LEN, "requires" = PROMPT_HELD), PROC_REF(name_entered))
+
+/obj/item/borg/upgrade/utility/rename/proc/name_entered(mob/user, new_name, datum/om/prompt/ask)
 	if(new_name)
 		heldname = new_name
 

@@ -558,6 +558,29 @@
 			cost += existing.cost
 	return cost
 
+/// A gear tweak's new value: the item must still be equipped in the same loadout.
+/datum/preference_editor/loadout/proc/tweak_answered(mob/user, new_value, datum/om/prompt/P)
+	var/datum/preferences/preferences = P.get("preferences")
+	var/gear_name = P.get("gear")
+	var/tweak_idx = P.get("tweak")
+	var/loadout_key = P.get("slot")
+	var/datum/gear/G = GLOB.gear_datums[gear_name]
+	if(!preferences || !G || tweak_idx > length(G.gear_tweaks) || _current_slot(preferences) != loadout_key)
+		return
+	var/list/gear_list = preferences.read_preference(/datum/preference/gear_list) || list()
+	var/list/active = gear_list[loadout_key] || list()
+	if(!(gear_name in active))
+		return
+	var/list/item_meta = active[gear_name]
+	if(!islist(item_meta))
+		item_meta = list()
+	item_meta["[tweak_idx]"] = new_value
+	active[gear_name] = item_meta
+	gear_list[loadout_key] = active
+	preferences.update_preference_by_type(/datum/preference/gear_list, gear_list)
+	preferences.update_preview_icon()
+	SStgui.update_uis(preferences)
+
 /datum/preference_editor/loadout/handle_action(datum/preferences/preferences, action, list/params, mob/user)
 	// Lazy stale-slot migration: any action implies the user is actively editing, which
 	// is a fine moment to persist a slot fixup if their saved gear_slot points at a job
@@ -654,24 +677,9 @@
 			if(!islist(item_meta))
 				item_meta = list()
 			var/cur_value = item_meta["[tweak_idx]"]
-			// The matrix_recolor tweak needs the gear datum as a 3rd arg; others ignore.
-			var/new_value
-			try
-				if(istype(gt, /datum/gear_tweak/matrix_recolor))
-					new_value = gt.get_metadata(user, cur_value, G)
-				else
-					new_value = gt.get_metadata(user, cur_value)
-			catch(var/exception/e)
-				log_world("set_tweak: get_metadata THREW: [e?.name] @ [e?.file]:[e?.line]")
-				return PREF_UPDATE_REJECTED
-			if(isnull(new_value))
-				return PREF_UPDATE_UNCHANGED
-			item_meta["[tweak_idx]"] = new_value
-			active[gear_name] = item_meta
-			gear_list[loadout_key] = active
-			preferences.update_preference_by_type(/datum/preference/gear_list, gear_list)
-			preferences.update_preview_icon()
-			return PREF_UPDATE_ACCEPTED
+			// Asks, then tweak_answered() saves the new value.
+			gt.ask_metadata(user, cur_value, G, null, src, PROC_REF(tweak_answered), list("preferences" = preferences, "gear" = gear_name, "tweak" = tweak_idx, "slot" = loadout_key))
+			return PREF_UPDATE_UNCHANGED
 
 		if("set_tweak_value")
 			// direct write from React inline widget (text/dropdown/color/boolean).
@@ -834,15 +842,10 @@
 				item_meta = list()
 			var/list/cur_meta = item_meta["[tweak_idx]"]
 			var/list/cur_matrix = (islist(cur_meta) && cur_meta["mode"] == "matrix") ? cur_meta["value"] : null
-			var/list/new_matrix
-			try
-				new_matrix = tgui_input_colormatrix(user, "Pick a color matrix for this item", "Matrix Recolor", G.path, cur_matrix, TRUE)
-			catch(var/exception/e)
-				log_world("recolor_pick_matrix: tgui_input_colormatrix THREW: [e?.name] @ [e?.file]:[e?.line]")
-				return PREF_UPDATE_REJECTED
+			// The answer re-runs this action, so the item is checked again.
+			var/list/new_matrix = rerun_prompt(user, "matrix", list("kind" = "colormatrix", "message" = "Pick a color matrix for this item", "title" = "Matrix Recolor", "preview" = G.path, "default" = cur_matrix, "matrix_only" = TRUE), PROC_REF(handle_action), args)
 			if(!islist(new_matrix) || length(new_matrix) < 12)
 				return PREF_UPDATE_UNCHANGED
-			// tgui_input_colormatrix sleeps — re-verify prefs ownership.
 			if(!user?.client?.prefs || user.client.prefs != preferences)
 				return PREF_UPDATE_UNCHANGED
 			item_meta["[tweak_idx]"] = list("mode" = "matrix", "value" = new_matrix)
@@ -850,6 +853,7 @@
 			gear_list[loadout_key] = active
 			preferences.update_preference_by_type(/datum/preference/gear_list, gear_list)
 			preferences.update_preview_icon()
+			SStgui.update_uis(preferences)
 			return PREF_UPDATE_ACCEPTED
 
 		if("set_recolor")

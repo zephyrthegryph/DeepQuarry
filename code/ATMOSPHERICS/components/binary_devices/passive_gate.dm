@@ -228,7 +228,9 @@
 				if("max")
 					target_pressure = max_pressure_setting
 				if("set")
-					var/new_pressure = tgui_input_number(ui.user,"Enter new output pressure (0-[max_pressure_setting]kPa)","Pressure Control",src.target_pressure,max_pressure_setting,0)
+					var/new_pressure = act_prompt(ui.user, action, params, ui, "k236", list("kind" = "number", "message" = "Enter new output pressure (0-[max_pressure_setting]kPa)", "title" = "Pressure Control", "default" = src.target_pressure, "max" = max_pressure_setting, "min" = 0))
+					if(isnull(new_pressure))
+						return
 					src.target_pressure = between(0, new_pressure, max_pressure_setting)
 
 		if("set_flow_rate")
@@ -239,7 +241,9 @@
 				if("max")
 					set_flow_rate = air1.return_volume()
 				if("set")
-					var/new_flow_rate = tgui_input_number(ui.user,"Enter new flow rate limit (0-[air1.return_volume()]L/s)","Flow Rate Control",src.set_flow_rate,air1.return_volume(),0)
+					var/new_flow_rate = act_prompt(ui.user, action, params, ui, "k247", list("kind" = "number", "message" = "Enter new flow rate limit (0-[air1.return_volume()]L/s)", "title" = "Flow Rate Control", "default" = src.set_flow_rate, "max" = air1.return_volume(), "min" = 0))
+					if(isnull(new_flow_rate))
+						return
 					src.set_flow_rate = between(0, new_flow_rate, air1.return_volume())
 
 	update_icon()

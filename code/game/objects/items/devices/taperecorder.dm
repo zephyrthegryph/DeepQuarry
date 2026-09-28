@@ -418,17 +418,18 @@ REF_OWNED(/obj/item/taperecorder, "mytape")
 	LAZYADD(storedinfo, "*\[[time2text(used_capacity*10,"mm:ss")]\] [text]")
 
 
+/obj/item/rectape/proc/label_entered(mob/user, new_name, datum/om/prompt/ask)
+	new_name = sanitizeSafe(new_name)
+	if(new_name)
+		name = "tape - '[new_name]'"
+		to_chat(user, span_notice("You label the tape '[new_name]'."))
+	else
+		name = "tape"
+		to_chat(user, span_notice("You scratch off the label."))
+
 /obj/item/rectape/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(loc == user && !user.incapacitated())
-		var/new_name = tgui_input_text(user, "What would you like to label the tape?", "Tape labeling")
-		if(isnull(new_name)) return TRUE
-		new_name = sanitizeSafe(new_name)
-		if(new_name)
-			name = "tape - '[new_name]'"
-			to_chat(user, span_notice("You label the tape '[new_name]'."))
-		else
-			name = "tape"
-			to_chat(user, span_notice("You scratch off the label."))
+		om_prompt(src, user, list("kind" = "text", "message" = "What would you like to label the tape?", "title" = "Tape labeling", "requires" = PROMPT_HELD), PROC_REF(label_entered))
 	return TRUE
 
 /obj/item/rectape/screwdriver_act(mob/user, obj/item/tool)

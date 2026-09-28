@@ -13,7 +13,12 @@
 
 /datum/integrated_io/list/proc/add_to_list(mob/user, new_entry)
 	if(!new_entry && user)
-		new_entry = ask_for_data_type(user)
+		ask_for_data_type(user, on_value = PROC_REF(list_entry_chosen))
+		return
+	if(is_valid(new_entry))
+		Add(new_entry)
+
+/datum/integrated_io/list/proc/list_entry_chosen(mob/user, new_entry, datum/om/prompt/P)
 	if(is_valid(new_entry))
 		Add(new_entry)
 
@@ -40,7 +45,10 @@
 		to_chat(user, span_warning("The list is empty, there's nothing to remove."))
 		return
 	if(!target_entry)
-		target_entry = tgui_input_list(user, "Which piece of data do you want to remove?", "Remove", my_list)
+		var/_answer_k48 = rerun_prompt(user, "k48", list("kind" = "list", "message" = "Which piece of data do you want to remove?", "title" = "Remove", "choices" = my_list), PROC_REF(remove_from_list), args)
+		if(isnull(_answer_k48))
+			return
+		target_entry = _answer_k48
 	if(target_entry)
 		my_list.Remove(target_entry)
 
@@ -50,13 +58,26 @@
 		to_chat(user, span_warning("The list is empty, there's nothing to modify."))
 		return
 	if(!target_entry)
-		target_entry = tgui_input_list(user, "Which piece of data do you want to edit?", "Edit", my_list)
+		var/_answer_k58 = rerun_prompt(user, "k58", list("kind" = "list", "message" = "Which piece of data do you want to edit?", "title" = "Edit", "choices" = my_list), PROC_REF(edit_in_list), args)
+		if(isnull(_answer_k58))
+			return
+		target_entry = _answer_k58
 	if(target_entry)
-		var/edited_entry = ask_for_data_type(user, target_entry)
-		if(edited_entry)
-			var/idx = my_list.Find(target_entry)
-			if(idx)
-				my_list[idx] = edited_entry
+		ask_for_data_type(user, target_entry, on_value = PROC_REF(list_entry_edited), data = list("target" = target_entry))
+
+/// The entry is found again by value: it may have moved while they typed.
+/datum/integrated_io/list/proc/list_entry_edited(mob/user, edited_entry, datum/om/prompt/P)
+	var/list/my_list = data
+	if(!edited_entry)
+		return
+	var/position = P.get("position")
+	if(position)
+		if(position <= my_list.len && my_list[position] == P.get("target"))
+			my_list[position] = edited_entry
+		return
+	var/idx = my_list.Find(P.get("target"))
+	if(idx)
+		my_list[idx] = edited_entry
 
 /datum/integrated_io/list/proc/edit_in_list_by_position(mob/user, position)
 	var/list/my_list = data
@@ -67,9 +88,7 @@
 		return
 	var/target_entry = my_list[position]
 	if(target_entry)
-		var/edited_entry = ask_for_data_type(user, target_entry)
-		if(edited_entry)
-			my_list[position] = edited_entry
+		ask_for_data_type(user, target_entry, on_value = PROC_REF(list_entry_edited), data = list("target" = target_entry, "position" = position))
 
 /datum/integrated_io/list/proc/swap_inside_list(mob/user, first_target, second_target)
 	var/list/my_list = data
@@ -77,11 +96,17 @@
 		to_chat(user, span_warning("The list is empty, or too small to do any meaningful swapping."))
 		return
 	if(!first_target)
-		first_target = tgui_input_list(user, "Which piece of data do you want to swap? (1)", "Swap", my_list)
+		var/_answer_k93 = rerun_prompt(user, "k93", list("kind" = "list", "message" = "Which piece of data do you want to swap? (1)", "title" = "Swap", "choices" = my_list), PROC_REF(swap_inside_list), args)
+		if(isnull(_answer_k93))
+			return
+		first_target = _answer_k93
 
 	if(first_target)
 		if(!second_target)
-			second_target = tgui_input_list(user, "Which piece of data do you want to swap? (2)", "Swap", my_list - first_target)
+			var/_answer_k97 = rerun_prompt(user, "k97", list("kind" = "list", "message" = "Which piece of data do you want to swap? (2)", "title" = "Swap", "choices" = my_list - first_target), PROC_REF(swap_inside_list), args)
+			if(isnull(_answer_k97))
+				return
+			second_target = _answer_k97
 
 		if(second_target)
 			var/first_pos = my_list.Find(first_target)

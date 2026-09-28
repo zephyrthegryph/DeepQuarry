@@ -412,7 +412,10 @@
 								subtargets += H
 							if(subtargets.len)
 								var/oc_sanity = sleever.get_occupant()
-								override = tgui_input_list(ui.user,"Multiple bodies detected. Select target for resleeving of [active_mr.mindname] manually. Sleeving of primary body is unsafe with sub-contents, and is not listed.", "Resleeving Target", subtargets)
+								var/_answer_k417 = act_prompt(ui.user, action, params, ui, "k417", list("kind" = "list", "message" = "Multiple bodies detected. Select target for resleeving of [active_mr.mindname] manually. Sleeving of primary body is unsafe with sub-contents, and is not listed.", "title" = "Resleeving Target", "choices" = subtargets))
+								if(isnull(_answer_k417))
+									return
+								override = _answer_k417
 								if(!override || oc_sanity != sleever.get_occupant() || !(override in sleever.get_occupant()))
 									set_temp("Error: Target selection aborted.", "danger")
 									current_mr = null
@@ -426,7 +429,9 @@
 
 					//Body to sleeve into, but mind is in another living body.
 					if(active_mr.mind_ref.current && active_mr.mind_ref.current.stat < DEAD) //Mind is in a body already that's alive
-						var/answer = tgui_alert(active_mr.mind_ref.current,"Someone is attempting to restore a backup of your mind. Do you want to abandon this body, and move there? You MAY suffer memory loss! (Same rules as CMD apply)","Resleeving",list("No","Yes"))
+						var/answer = act_prompt(active_mr.mind_ref.current, action, params, ui, "k431", list("message" = "Someone is attempting to restore a backup of your mind. Do you want to abandon this body, and move there? You MAY suffer memory loss! (Same rules as CMD apply)", "title" = "Resleeving", "choices" = list("No","Yes")))
+						if(isnull(answer))
+							return
 
 						//They declined to be moved.
 						if(answer != "Yes")

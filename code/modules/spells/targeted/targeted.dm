@@ -61,7 +61,7 @@ Targeted spells have two useful flags: INCLUDEUSER and SELECTABLE. These are exp
 
 			if(possible_targets.len)
 				if(spell_flags & SELECTABLE) //if we are allowed to choose. see setup.dm for details
-					var/mob/temp_target = tgui_input_list(user, "Choose the target for the spell.", "Targeting", possible_targets)
+					var/mob/temp_target = cast_prompt(user, "target", list("kind" = "list", "message" = "Choose the target for the spell.", "title" = "Targeting", "choices" = possible_targets))
 					if(temp_target)
 						targets += temp_target
 				else
@@ -89,7 +89,9 @@ Targeted spells have two useful flags: INCLUDEUSER and SELECTABLE. These are exp
 			for(var/i = 1, i<=max_targets, i++)
 				if(!possible_targets.len)
 					break
-				var/mob/M = tgui_input_list(user, "Choose the target for the spell.", "Targeting", possible_targets)
+				var/mob/M = cast_prompt(user, "target[i]", list("kind" = "list", "message" = "Choose the target for the spell.", "title" = "Targeting", "choices" = possible_targets, "cancel_answer" = "")) // closing picks no more
+				if(isnull(M))
+					return list()
 				if(!M)
 					break
 				if(range != -2)

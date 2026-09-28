@@ -298,7 +298,10 @@
 	if(new_signature)
 		signature = new_signature
 	*/
-	signature = tgui_input_text(user, "Enter new signature. Leave blank for 'Anonymous'", "New Signature", signature, MAX_MESSAGE_LEN)
+	var/_answer_k301 = rerun_prompt(user, "k301", list("kind" = "text", "message" = "Enter new signature. Leave blank for 'Anonymous'", "title" = "New Signature", "default" = signature, "max_length" = MAX_MESSAGE_LEN), PROC_REF(attack_self), args)
+	if(isnull(_answer_k301))
+		return TRUE
+	signature = _answer_k301
 
 /obj/item/pen/proc/get_signature(mob/user)
 	return (user && user.real_name) ? user.real_name : "Anonymous"
@@ -311,7 +314,9 @@
 	set category = "Object"
 
 	var/list/possible_colours = list ("Yellow", "Green", "Pink", "Blue", "Orange", "Cyan", "Red", "Invisible", "Black")
-	var/selected_type = tgui_input_list(usr, "Pick new colour.", "Pen Colour", possible_colours)
+	var/selected_type = rerun_prompt(usr, "k314", list("kind" = "list", "message" = "Pick new colour.", "title" = "Pen Colour", "choices" = possible_colours), VERB_REF(set_colour), args)
+	if(isnull(selected_type))
+		return
 
 	if(selected_type)
 		switch(selected_type)

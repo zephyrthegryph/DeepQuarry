@@ -125,7 +125,7 @@
 	return ..()
 
 /obj/machinery/chemical_dispenser/screwdriver_act(mob/user, obj/item/tool)
-	var/label = tgui_input_list(user, "Which cartridge would you like to remove?", "Chemical Dispenser", cartridges)
+	var/label = rerun_prompt(user, "a1", list("kind" = "list", "message" = "Which cartridge would you like to remove?", "title" = "Chemical Dispenser", "choices" = cartridges), TYPE_PROC_REF(/atom, screwdriver_act), args)
 	if(!label)
 		return ITEM_INTERACT_BLOCKING
 	var/obj/item/reagent_containers/chem_disp_cartridge/cartridge = remove_cartridge(label)
@@ -239,15 +239,20 @@
 			. = TRUE
 
 		if("clear_recipes")
-			if(tgui_alert(ui.user, "Clear all recipes?", "Clear?", list("No", "Yes")) == "Yes")
+			var/_answer_a1 = act_prompt(ui.user, action, params, ui, "a1", list("message" = "Clear all recipes?", "title" = "Clear?", "choices" = list("No", "Yes")))
+			if(isnull(_answer_a1))
+				return
+			if(_answer_a1 == "Yes")
 				saved_recipes = list()
 			. = TRUE
 
 		if("save_recording")
-			var/name = tgui_input_text(ui.user, "What do you want to name this recipe?", "Recipe Name?", "Recipe Name", MAX_NAME_LEN)
+			var/name = act_prompt(ui.user, action, params, ui, "a2", list("kind" = "text", "message" = "What do you want to name this recipe?", "title" = "Recipe Name?", "default" = "Recipe Name", "max_length" = MAX_NAME_LEN))
+			if(isnull(name))
+				return
 			if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
 				return
-			if(LAZYACCESS(saved_recipes, name) && tgui_alert(ui.user, "\"[name]\" already exists, do you want to overwrite it?",, list("No", "Yes")) != "Yes")
+			if(LAZYACCESS(saved_recipes, name) && act_prompt(ui.user, action, params, ui, "a3", list("message" = "\"[name]\" already exists, do you want to overwrite it?", "choices" = list("No", "Yes"))) != "Yes")
 				return
 			if(name && recording_recipe)
 				for(var/list/L in recording_recipe)

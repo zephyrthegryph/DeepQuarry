@@ -132,7 +132,7 @@
 			var/pref_species = new_user.client.prefs.read_preference(/datum/preference/choiced/species)
 			var/datum/species/S = GLOB.all_species[pref_species]
 			if(!is_alien_whitelisted(new_user.client, S))
-				tgui_alert(new_user, "You are currently not whitelisted to play [pref_species].")
+				tgui_alert_async(new_user, "You are currently not whitelisted to play [pref_species].")
 				return 0
 
 			if(!(S.spawn_flags & SPECIES_CAN_JOIN))

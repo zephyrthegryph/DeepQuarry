@@ -42,42 +42,46 @@
 			to_chat(user, "The access level of [W:registered_name]\'s card is not high enough. ")
 			return TRUE
 
-		var/choice = tgui_alert(user, text("Would you like to (un)authorize a shortened launch time? [] authorization\s are still needed. Use abort to cancel all authorizations.", src.auth_need - src.authorized.len), "Shuttle Launch", list("Authorize", "Repeal", "Abort"))
-		if(SSemergency_shuttle.location() && user.get_active_hand() != W)
-			return TRUE
-		switch(choice)
-			if("Authorize")
-				src.authorized -= W:registered_name
-				src.authorized += W:registered_name
-				if (src.auth_need - src.authorized.len > 0)
-					message_admins("[key_name_admin(user)] has authorized early shuttle launch")
-					log_game("[user.ckey] has authorized early shuttle launch")
-					to_chat(world, span_boldnotice("Alert: [src.auth_need - src.authorized.len] authorizations needed until shuttle is launched early"))
-				else
-					message_admins("[key_name_admin(user)] has launched the shuttle")
-					log_game("[user.ckey] has launched the shuttle early")
-					to_chat(world, span_boldnotice("Alert: Shuttle launch time shortened to 10 seconds!"))
-					SSemergency_shuttle.set_launch_countdown(10)
-					src.authorized = list(  )
-
-			if("Repeal")
-				src.authorized -= W:registered_name
-				to_chat(world, span_boldnotice("Alert: [src.auth_need - src.authorized.len] authorizations needed until shuttle is launched early"))
-
-			if("Abort")
-				to_chat(world, span_boldnotice("All authorizations to shortening time for shuttle launch have been revoked!"))
-				src.authorized.len = 0
-				src.authorized = list(  )
+		om_prompt(src, user, list("message" = text("Would you like to (un)authorize a shortened launch time? [] authorization\s are still needed. Use abort to cancel all authorizations.", src.auth_need - src.authorized.len), "title" = "Shuttle Launch", "choices" = list("Authorize", "Repeal", "Abort"), "target" = W, "requires" = PROMPT_IN_HAND, "data" = list("card" = W)), PROC_REF(authorization_chosen))
+		return TRUE
 
 	else if (istype(W, /obj/item/card/emag) && !emagged)
-		var/choice = tgui_alert(user, "Would you like to launch the shuttle?", "Shuttle control", list("Launch", "Cancel"))
-
-		if(!emagged && !SSemergency_shuttle.location() && user.get_active_hand() == W)
-			switch(choice)
-				if("Launch")
-					to_chat(world, span_boldnotice("Alert: Shuttle launch time shortened to 10 seconds!"))
-					SSemergency_shuttle.set_launch_countdown(10)
-					emagged = 1
-				if("Cancel")
-					return TRUE
+		om_prompt(src, user, list("message" = "Would you like to launch the shuttle?", "title" = "Shuttle control", "choices" = list("Launch", "Cancel"), "target" = W, "requires" = PROMPT_IN_HAND), PROC_REF(emag_launch_chosen))
+		return TRUE
 	return TRUE
+
+/obj/machinery/computer/shuttle/proc/authorization_chosen(mob/user, choice, datum/om/prompt/ask)
+	var/obj/item/card/id/W = ask.get("card")
+	switch(choice)
+		if("Authorize")
+			src.authorized -= W:registered_name
+			src.authorized += W:registered_name
+			if (src.auth_need - src.authorized.len > 0)
+				message_admins("[key_name_admin(user)] has authorized early shuttle launch")
+				log_game("[user.ckey] has authorized early shuttle launch")
+				to_chat(world, span_boldnotice("Alert: [src.auth_need - src.authorized.len] authorizations needed until shuttle is launched early"))
+			else
+				message_admins("[key_name_admin(user)] has launched the shuttle")
+				log_game("[user.ckey] has launched the shuttle early")
+				to_chat(world, span_boldnotice("Alert: Shuttle launch time shortened to 10 seconds!"))
+				SSemergency_shuttle.set_launch_countdown(10)
+				src.authorized = list(  )
+
+		if("Repeal")
+			src.authorized -= W:registered_name
+			to_chat(world, span_boldnotice("Alert: [src.auth_need - src.authorized.len] authorizations needed until shuttle is launched early"))
+
+		if("Abort")
+			to_chat(world, span_boldnotice("All authorizations to shortening time for shuttle launch have been revoked!"))
+			src.authorized.len = 0
+			src.authorized = list(  )
+
+/obj/machinery/computer/shuttle/proc/emag_launch_chosen(mob/user, choice, datum/om/prompt/ask)
+	if(!emagged && !SSemergency_shuttle.location())
+		switch(choice)
+			if("Launch")
+				to_chat(world, span_boldnotice("Alert: Shuttle launch time shortened to 10 seconds!"))
+				SSemergency_shuttle.set_launch_countdown(10)
+				emagged = 1
+			if("Cancel")
+				return TRUE

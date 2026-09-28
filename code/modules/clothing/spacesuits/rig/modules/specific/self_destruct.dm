@@ -38,7 +38,10 @@ REF_OWNED(/obj/item/rig_module/self_destruct, "smoke")
 		engage(1)
 
 /obj/item/rig_module/self_destruct/engage(skip_check)
-	if(!skip_check && usr && tgui_alert(usr, "Are you sure you want to push that button?", "Self-destruct", list("No", "Yes")) != "Yes")
+	var/_answer_a1 = rerun_prompt(usr, "a1", list("message" = "Are you sure you want to push that button?", "title" = "Self-destruct", "choices" = list("No", "Yes")), PROC_REF(engage), args)
+	if(isnull(_answer_a1))
+		return
+	if(!skip_check && usr && _answer_a1 != "Yes")
 		return
 	if(holder && holder.wearer)
 		smoke.set_up(10, 0, holder.loc)

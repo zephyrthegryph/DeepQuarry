@@ -30,7 +30,10 @@
 	var/message = "Amputate [target]'s [part.name]? This cannot be undone."
 	if(part.vital)
 		message = "WARNING: [target]'s [part.name] is VITAL. Amputating it will KILL [target.p_them()]. Amputate anyway?"
-	if(tgui_alert(user, message, "Confirm Amputation", list("Amputate", "Cancel")) != "Amputate")
+	var/answer = tool.surgery_prompt(user, "amputate", list("message" = message, "title" = "Confirm Amputation", "choices" = list("Amputate", "Cancel")))
+	if(isnull(answer))
+		return FALSE
+	if(answer != "Amputate")
 		to_chat(user, span_warning("You reconsider performing an amputation..."))
 		return FALSE
 	// The alert may have waited a long time: check everything again.

@@ -152,12 +152,12 @@
 		"-SAVE TO BUFFER-" = "multitool"
 	)
 
-	var/answer = tgui_input_list(user, "[src] has an ID of \"[id_tag]\" and a frequency of [frequency]. What would you like to change?", "Options!", options)
+	om_prompt(src, user, list("kind" = "list", "message" = "[src] has an ID of \"[id_tag]\" and a frequency of [frequency]. What would you like to change?", "title" = "Options!", "choices" = options, "requires" = list(CHECK(/datum/om/check/can_see, 5)), "data" = list("options" = options, "tool" = tool)), PROC_REF(sensor_option_chosen))
+	return TRUE
 
-	if(!(src in view(5, user)))
-		return TRUE
-
-	if(answer in options) // Null will break us out
+/obj/machinery/air_sensor/proc/sensor_option_chosen(mob/user, answer, datum/om/prompt/ask)
+	var/list/options = ask.get("options")
+	if(answer in options)
 		invalidate_gas_dependencies()
 		switch(options[answer])
 			if(SENSOR_PRESSURE)
@@ -177,20 +177,18 @@
 			if(SENSOR_CH4)
 				output ^= SENSOR_CH4
 			if("frequency")
-				var/new_frequency = tgui_input_number(user, "[src] has a frequency of [frequency]. What would you like it to be?", "[src] frequency", frequency, RADIO_HIGH_FREQ, RADIO_LOW_FREQ)
-				if(new_frequency)
-					new_frequency = sanitize_frequency(new_frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
-					set_frequency(new_frequency)
+				ask_frequency(user, frequency)
 			if("multitool")
-				id_tag = tgui_input_text(user, "Please insert an ID tag for [src], example 'burn_chamber'.", "Set ID Tag", id_tag, MAX_NAME_LEN, FALSE)
-				if(!id_tag || !Adjacent(user))
-					return
+				om_prompt_chain(ask, list("kind" = "text", "message" = "Please insert an ID tag for [src], example 'burn_chamber'.", "title" = "Set ID Tag", "default" = id_tag, "max_length" = MAX_NAME_LEN, "requires" = PROMPT_ADJACENT), PROC_REF(sensor_tag_entered))
 
-				var/obj/item/multitool/M = tool
-				M.connectable = src
-				to_chat(user, span_notice("You save [src] into [M]'s buffer."))
-
-	return TRUE
+/obj/machinery/air_sensor/proc/sensor_tag_entered(mob/user, new_tag, datum/om/prompt/ask)
+	if(!new_tag)
+		return
+	id_tag = new_tag
+	var/obj/item/multitool/M = ask.get("tool")
+	if(istype(M) && M.loc == user)
+		M.connectable = src
+		to_chat(user, span_notice("You save [src] into [M]'s buffer."))
 #undef ONOFF_TOGGLE
 
 /obj/machinery/computer/general_air_control
@@ -250,29 +248,34 @@
 
 /obj/machinery/computer/general_air_control/multitool_act(mob/user, obj/item/W)
 	var/list/options = list("Sensors", "Frequency", "Cancel")
-	var/answer = tgui_input_list(user, "[src] has a frequency of [frequency]. What would you like to change?", "Options!", options)
-	. = TRUE
-	if(!answer || answer == "Cancel" || !Adjacent(user))
-		return
+	om_prompt(src, user, list("kind" = "list", "message" = "[src] has a frequency of [frequency]. What would you like to change?", "title" = "Options!", "choices" = options, "requires" = PROMPT_ADJACENT, "data" = list("tool" = W)), PROC_REF(control_option_chosen))
+	return TRUE
 
+/// The multitool menu: Inlet, Outlet, Sensors or Frequency.
+/obj/machinery/computer/general_air_control/proc/control_option_chosen(mob/user, answer, datum/om/prompt/ask)
+	var/obj/item/multitool/tool = ask.get("tool")
 	switch(answer)
+		if("Inlet")
+			configure_inlet(user, tool)
+		if("Outlet")
+			configure_outlet(user, tool)
 		if("Sensors")
-			configure_sensors(user, W)
-
+			configure_sensors(user, tool)
 		if("Frequency")
-			var/new_frequency = tgui_input_number(user, "[src] has a frequency of [frequency]. What would you like it to be?", "[src] frequency", frequency, RADIO_HIGH_FREQ, RADIO_LOW_FREQ)
-			if(new_frequency)
-				new_frequency = sanitize_frequency(new_frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
-				set_frequency(new_frequency)
+			ask_frequency(user, frequency)
 
+/obj/machinery/computer/general_air_control/proc/configure_inlet(mob/living/user, obj/item/multitool/tool)
+	return
+
+/obj/machinery/computer/general_air_control/proc/configure_outlet(mob/living/user, obj/item/multitool/tool)
 	return
 
 /obj/machinery/computer/general_air_control/proc/configure_sensors(mob/living/user, obj/item/multitool/tool)
 	to_chat(user, "CONFIGURE SENSOR FUNC")
-	var/choice = tgui_input_list(user, "Would you like to add or remove a sensor/meter?", "Configuration", list("Add", "Remove","Cancel"))
-	if( !choice || choice == "Cancel" || !Adjacent(user))
-		return
+	om_prompt(src, user, list("kind" = "list", "message" = "Would you like to add or remove a sensor/meter?", "title" = "Configuration", "choices" = list("Add", "Remove","Cancel"), "requires" = PROMPT_ADJACENT, "data" = list("tool" = tool)), PROC_REF(sensor_config_chosen))
 
+/obj/machinery/computer/general_air_control/proc/sensor_config_chosen(mob/living/user, choice, datum/om/prompt/ask)
+	var/obj/item/multitool/tool = ask.get("tool")
 	switch(choice)
 		if("Add")
 			// Device must be a meter or gas sensor.
@@ -280,37 +283,40 @@
 			if(!device || !(istype(device, /obj/machinery/meter)) && !(istype(device, /obj/machinery/air_sensor)))
 				to_chat(user, span_warning("Error: No device in multitool buffer, or incompatible device is not a sensor or meter."))
 				return
-
-			var/device_name = tgui_input_text(user, "Enter a name for the Sensor/Meter.", "Name")
-			if (!device_name || !Adjacent(user))
-				to_chat(user, span_warning("Error: No name was given for [tool.connectable]."))
-				return
-
-			if(istype(device, /obj/machinery/air_sensor))
-				var/obj/machinery/air_sensor/AS = device
-				LAZYSET(sensors, AS.id_tag, device_name)
-			else
-				var/obj/machinery/meter/M = device
-				LAZYSET(sensors, M.id, device_name)
-
-			to_chat(user, span_notice("You have added the [tool.connectable] to the [src] under the name [device_name]!"))
-
+			ask.put("device", device)
+			om_prompt_chain(ask, list("kind" = "text", "message" = "Enter a name for the Sensor/Meter.", "title" = "Name"), PROC_REF(sensor_named))
 		if("Remove")
 			// Creates an associative mapping of Names to Tags, from Tags to Names.
 			var/list/sensor_names = list()
 			for(var/tag in sensors)
 				sensor_names[LAZYACCESS(sensors, tag)] = tag
+			ask.put("names", sensor_names)
+			om_prompt_chain(ask, list("kind" = "list", "message" = "Select a sensor/meter to remove", "title" = "Sensor/Meter Removal", "choices" = sensor_names), PROC_REF(sensor_removal_chosen))
 
-			var/to_remove = tgui_input_list(user, "Select a sensor/meter to remove", "Sensor/Meter Removal", sensor_names)
-			if(!to_remove)
-				return
+/obj/machinery/computer/general_air_control/proc/sensor_named(mob/living/user, device_name, datum/om/prompt/ask)
+	var/obj/machinery/device = ask.get("device")
+	if(!device_name)
+		to_chat(user, span_warning("Error: No name was given for [device]."))
+		return
+	if(istype(device, /obj/machinery/air_sensor))
+		var/obj/machinery/air_sensor/AS = device
+		LAZYSET(sensors, AS.id_tag, device_name)
+	else
+		var/obj/machinery/meter/M = device
+		LAZYSET(sensors, M.id, device_name)
+	to_chat(user, span_notice("You have added the [device] to the [src] under the name [device_name]!"))
 
-			var/confirm = tgui_alert(user, "Are you sure you want to remove the sensor/meter '[to_remove]'?", "Warning", list("Yes", "No"))
-			if(confirm != "Yes" || !Adjacent(user))
-				return
+/obj/machinery/computer/general_air_control/proc/sensor_removal_chosen(mob/living/user, to_remove, datum/om/prompt/ask)
+	ask.put("remove", to_remove)
+	om_prompt_chain(ask, list("message" = "Are you sure you want to remove the sensor/meter '[to_remove]'?", "title" = "Warning", "choices" = list("Yes", "No")), PROC_REF(sensor_removal_confirmed))
 
-			LAZYREMOVE(sensors, sensor_names[to_remove])
-			to_chat(user, span_notice("Successfully removed sensor/meter with name [to_remove]"))
+/obj/machinery/computer/general_air_control/proc/sensor_removal_confirmed(mob/living/user, confirm, datum/om/prompt/ask)
+	if(confirm != "Yes")
+		return
+	var/list/sensor_names = ask.get("names")
+	var/to_remove = ask.get("remove")
+	LAZYREMOVE(sensors, sensor_names[to_remove])
+	to_chat(user, span_notice("Successfully removed sensor/meter with name [to_remove]"))
 
 /obj/machinery/computer/general_air_control/Initialize(mapload)
 	. = ..()
@@ -421,33 +427,14 @@
 /obj/machinery/computer/general_air_control/large_tank_control/multitool_act(mob/user, obj/item/W)
 	. = ITEM_INTERACT_SUCCESS
 	var/list/options =  list("Inlet", "Outlet", "Sensors", "Frequency", "Cancel")
-	var/choice = tgui_input_list(user, "[src] has a frequency of [frequency]. What would you like to change?", "Configuration", options)
-	if(!choice || choice == "Cancel" || !Adjacent(user))
-		return
-
-	switch(choice)
-		if ("Inlet")
-			configure_inlet(user, W)
-
-		if ("Outlet")
-			configure_outlet(user, W)
-
-		if ("Sensors")
-			configure_sensors(user, W)
-
-		if ("Frequency")
-			var/new_frequency = tgui_input_number(user, "[src] has a frequency of [frequency]. What would you like it to be?", "[src] frequency", frequency, RADIO_HIGH_FREQ, RADIO_LOW_FREQ)
-			if(new_frequency)
-				new_frequency = sanitize_frequency(new_frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
-				set_frequency(new_frequency)
-
+	om_prompt(src, user, list("kind" = "list", "message" = "[src] has a frequency of [frequency]. What would you like to change?", "title" = "Configuration", "choices" = options, "requires" = PROMPT_ADJACENT, "data" = list("tool" = W)), PROC_REF(control_option_chosen))
 	return TRUE
 
-/obj/machinery/computer/general_air_control/large_tank_control/proc/configure_outlet(mob/living/user, obj/item/multitool/tool)
-	var/choice = tgui_alert(user, "Would you like to set an outlet or clear it?", "Configuration", list("Set", "Clear", "Cancel"))
-	if(!choice || !Adjacent(user) || choice == "Cancel")
-		return
+/obj/machinery/computer/general_air_control/large_tank_control/configure_outlet(mob/living/user, obj/item/multitool/tool)
+	om_prompt(src, user, list("message" = "Would you like to set an outlet or clear it?", "title" = "Configuration", "choices" = list("Set", "Clear", "Cancel"), "requires" = PROMPT_ADJACENT, "data" = list("tool" = tool)), PROC_REF(outlet_choice_made))
 
+/obj/machinery/computer/general_air_control/large_tank_control/proc/outlet_choice_made(mob/living/user, choice, datum/om/prompt/ask)
+	var/obj/item/multitool/tool = ask.get("tool")
 	switch(choice)
 		if ("Set")
 			to_chat(user, span_notice("The buffer is [tool.connectable]"))
@@ -467,11 +454,11 @@
 			to_chat(user, span_notice("You have cleared the outlet!"))
 			return
 
-/obj/machinery/computer/general_air_control/large_tank_control/proc/configure_inlet(mob/living/user, obj/item/multitool/tool)
-	var/choice = tgui_alert(user, "Would you like to set an inlet or clear it?", "Configuration", list("Set", "Clear", "Cancel"))
-	if(!choice || !Adjacent(user) || choice == "Cancel")
-		return
+/obj/machinery/computer/general_air_control/large_tank_control/configure_inlet(mob/living/user, obj/item/multitool/tool)
+	om_prompt(src, user, list("message" = "Would you like to set an inlet or clear it?", "title" = "Configuration", "choices" = list("Set", "Clear", "Cancel"), "requires" = PROMPT_ADJACENT, "data" = list("tool" = tool)), PROC_REF(inlet_choice_made))
 
+/obj/machinery/computer/general_air_control/large_tank_control/proc/inlet_choice_made(mob/living/user, choice, datum/om/prompt/ask)
+	var/obj/item/multitool/tool = ask.get("tool")
 	switch(choice)
 		if ("Set")
 			if (!istype(tool.connectable, /obj/machinery/atmospherics/unary/outlet_injector))
@@ -592,33 +579,14 @@
 /obj/machinery/computer/general_air_control/supermatter_core/multitool_act(mob/user, obj/item/W)
 	. = ITEM_INTERACT_SUCCESS
 	var/list/options =  list("Inlet", "Outlet", "Sensors", "Frequency")
-	var/choice = tgui_input_list(user, "[src] has a frequency of [frequency]. What would you like to change?", "Configuration", options)
-	if(!choice || choice == "Cancel" || !Adjacent(user))
-		return
-
-	switch(choice)
-		if ("Inlet")
-			configure_inlet(user, W)
-
-		if ("Outlet")
-			configure_outlet(user, W)
-
-		if ("Sensors")
-			configure_sensors(user, W)
-
-		if ("Frequency")
-			var/new_frequency = tgui_input_number(user, "[src] has a frequency of [frequency]. What would you like it to be?", "[src] frequency", frequency, RADIO_HIGH_FREQ, RADIO_LOW_FREQ)
-			if(new_frequency)
-				new_frequency = sanitize_frequency(new_frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
-				set_frequency(new_frequency)
-
+	om_prompt(src, user, list("kind" = "list", "message" = "[src] has a frequency of [frequency]. What would you like to change?", "title" = "Configuration", "choices" = options, "requires" = PROMPT_ADJACENT, "data" = list("tool" = W)), PROC_REF(control_option_chosen))
 	return TRUE
 
-/obj/machinery/computer/general_air_control/supermatter_core/proc/configure_outlet(mob/living/user, obj/item/multitool/tool)
-	var/choice = tgui_alert(user, "Would you like to set an outlet or clear it?", "Configuration", list("Set", "Clear", "Cancel"))
-	if(!choice || !Adjacent(user) || choice == "Cancel")
-		return
+/obj/machinery/computer/general_air_control/supermatter_core/configure_outlet(mob/living/user, obj/item/multitool/tool)
+	om_prompt(src, user, list("message" = "Would you like to set an outlet or clear it?", "title" = "Configuration", "choices" = list("Set", "Clear", "Cancel"), "requires" = PROMPT_ADJACENT, "data" = list("tool" = tool)), PROC_REF(outlet_choice_made))
 
+/obj/machinery/computer/general_air_control/supermatter_core/proc/outlet_choice_made(mob/living/user, choice, datum/om/prompt/ask)
+	var/obj/item/multitool/tool = ask.get("tool")
 	switch(choice)
 		if ("Set")
 			if (!istype(tool.connectable, /obj/machinery/atmospherics/unary/vent_pump))
@@ -637,11 +605,11 @@
 			to_chat(user, span_notice("You have cleared the outlet!"))
 			return
 
-/obj/machinery/computer/general_air_control/supermatter_core/proc/configure_inlet(mob/living/user, obj/item/multitool/tool)
-	var/choice = tgui_alert(user, "Would you like to set an inlet or clear it?", "Configuration", list("Set", "Clear", "Cancel"))
-	if(!choice || !Adjacent(user) || choice == "Cancel")
-		return
+/obj/machinery/computer/general_air_control/supermatter_core/configure_inlet(mob/living/user, obj/item/multitool/tool)
+	om_prompt(src, user, list("message" = "Would you like to set an inlet or clear it?", "title" = "Configuration", "choices" = list("Set", "Clear", "Cancel"), "requires" = PROMPT_ADJACENT, "data" = list("tool" = tool)), PROC_REF(inlet_choice_made))
 
+/obj/machinery/computer/general_air_control/supermatter_core/proc/inlet_choice_made(mob/living/user, choice, datum/om/prompt/ask)
+	var/obj/item/multitool/tool = ask.get("tool")
 	switch(choice)
 		if ("Set")
 			to_chat(user, span_notice("The buffer is [tool.connectable]"))

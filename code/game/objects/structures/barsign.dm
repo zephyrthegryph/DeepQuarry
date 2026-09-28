@@ -37,6 +37,12 @@
 	)
 	..()
 
+/obj/structure/sign/double/barsign/proc/sign_chosen(mob/user, sign_type, datum/om/prompt/ask)
+	if(cult)
+		return
+	icon_state = sign_type
+	to_chat(user, span_notice("You change the barsign."))
+
 /// Old attackby: change the sign with an ID card that has bar access.
 /datum/interaction/entry_item/barsign_item
 	id = "barsign_item"
@@ -51,11 +57,7 @@
 	var/obj/item/card/id/card = I.GetID()
 	if(istype(card))
 		if(ACCESS_BAR in card.GetAccess())
-			var/sign_type = tgui_input_list(user, "What would you like to change the barsign to?", "Bar Sign Choice", get_valid_states(0))
-			if(!sign_type)
-				return TRUE
-			icon_state = sign_type
-			to_chat(user, span_notice("You change the barsign."))
+			om_prompt(src, user, list("kind" = "list", "message" = "What would you like to change the barsign to?", "title" = "Bar Sign Choice", "choices" = get_valid_states(0), "requires" = PROMPT_ADJACENT), PROC_REF(sign_chosen))
 		else
 			to_chat(user, span_warning("Access denied."))
 	return TRUE

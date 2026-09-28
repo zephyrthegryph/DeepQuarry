@@ -40,7 +40,9 @@ REGISTRY_MEMBERSHIP(/obj, REGISTRY_TECHNOMANCER_BELONGINGS)
 		if(L == user)
 			continue
 		mob_choices += L
-	var/choice = tgui_input_list(user, "Decide what or who to track.", "Tracking", (object_choices + mob_choices))
+	om_prompt(src, user, list("kind" = "list", "message" = "Decide what or who to track.", "title" = "Tracking", "choices" = (object_choices + mob_choices), "requires" = PROMPT_HELD), PROC_REF(track_target_chosen))
+
+/obj/item/spell/track/proc/track_target_chosen(mob/user, choice, datum/om/prompt/ask)
 	if(choice)
 		tracked = choice
 		tracking = 1

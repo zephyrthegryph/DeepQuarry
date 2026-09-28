@@ -244,12 +244,16 @@
 	return danger
 
 ADMIN_VERB(ReleaseVirus, R_SPAWN|R_EVENT, "Release Virus", "Release a pre-set virus.", ADMIN_CATEGORY_FUN_EVENT_KIT)
-	var/disease = tgui_input_list(user, "Choose virus", "Viruses", subtypesof(/datum/disease), subtypesof(/datum/disease))
+	var/disease = verb_prompt(user, "k247", list("kind" = "list", "message" = "Choose virus", "title" = "Viruses", "choices" = subtypesof(/datum/disease), "default" = subtypesof(/datum/disease)), args)
+	if(isnull(disease))
+		return
 
 	if(isnull(disease))
 		return FALSE
 
-	var/mob/living/carbon/human/H = tgui_input_list(user, "Choose infectee", "Characters", REGISTRY_MEMBERS(REGISTRY_HUMANS))
+	var/mob/living/carbon/human/H = verb_prompt(user, "k252", list("kind" = "list", "message" = "Choose infectee", "title" = "Characters", "choices" = REGISTRY_MEMBERS(REGISTRY_HUMANS)), args)
+	if(isnull(H))
+		return
 
 	if(isnull(H))
 		return FALSE

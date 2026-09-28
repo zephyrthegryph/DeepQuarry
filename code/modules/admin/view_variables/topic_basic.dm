@@ -28,7 +28,7 @@
 				cmd_mass_modify_object_variables(target, target_var)
 	if(check_rights(R_ADMIN, FALSE))
 		if(href_list[VV_HK_EXPOSE])
-			var/value = vv_get_value(VV_CLIENT)
+			var/value = vv_get_value(VV_CLIENT, key = "expose")
 			if (value["class"] != VV_CLIENT)
 				return
 			var/client/C = value["value"]
@@ -62,7 +62,7 @@
 		names += "---Elements---"
 		names += sortList(subtypesof(/datum/element), GLOBAL_PROC_REF(cmp_typepaths_asc))
 
-		var/result = tgui_input_list(usr, "Choose a component/element to add", "Add Component", names)
+		var/result = flow_ask(mob, "component:add", list("kind" = "list", "message" = "Choose a component/element to add", "title" = "Add Component", "choices" = names))
 		if(isnull(result))
 			return
 		if(!usr || result == "---Components---" || result == "---Elements---")
@@ -76,11 +76,11 @@
 		if(ispath(result, /datum/component))
 			var/datum/component/comp_path = result
 			if(initial(comp_path.dupe_mode) == COMPONENT_DUPE_SOURCES)
-				add_source = tgui_input_text(usr, "Enter a source for the component", "Add Component", "ADMIN-ABUSE")
+				add_source = flow_ask(mob, "component:source", list("kind" = "text", "message" = "Enter a source for the component", "title" = "Add Component", "default" = "ADMIN-ABUSE"))
 				if(isnull(add_source))
 					return
 
-		var/list/lst = get_callproc_args()
+		var/list/lst = get_callproc_args("component:args")
 		if(!lst)
 			return
 
@@ -106,7 +106,7 @@
 		names += "---Elements---"
 		// We have to list every element here because there is no way to know what element is on this object without doing some sort of hack.
 		names += sortList(subtypesof(/datum/element), GLOBAL_PROC_REF(cmp_typepaths_asc))
-		var/path = tgui_input_list(usr, "Choose a component/element to remove. All elements listed here may not be on the datum.", "Remove element", names)
+		var/path = flow_ask(mob, "component:remove", list("kind" = "list", "message" = "Choose a component/element to remove. All elements listed here may not be on the datum.", "title" = "Remove element", "choices" = names))
 		if(isnull(path))
 			return
 		if(!usr || path == "---Components---" || path == "---Elements---")
@@ -116,17 +116,18 @@
 			return
 		var/list/targets_to_remove_from = list(target)
 		if(mass_remove)
-			var/method = vv_subtype_prompt(target.type)
-			targets_to_remove_from = get_all_of_type(target.type, method)
-
-			if(alert(usr, "Are you sure you want to mass-delete [path] on [target.type]?", "Mass Remove Confirmation", "Yes", "No") == "No")
+			var/method = vv_subtype_prompt(target.type, "component")
+			if(isnull(method))
 				return
+			if(flow_ask(mob, "component:mass", list("message" = "Are you sure you want to mass-delete [path] on [target.type]?", "title" = "Mass Remove Confirmation", "choices" = list("Yes", "No"))) != "Yes")
+				return
+			targets_to_remove_from = get_all_of_type(target.type, method)
 
 		for(var/datum/target_to_remove_from as anything in targets_to_remove_from)
 			if(ispath(path, /datum/element))
-				var/list/lst = get_callproc_args()
+				var/list/lst = get_callproc_args("component:args")
 				if(!lst)
-					lst = list()
+					return
 				lst.Insert(1, path)
 				target_to_remove_from._RemoveElement(lst)
 			else

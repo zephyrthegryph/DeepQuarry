@@ -22,11 +22,15 @@
 			if(D.species && D.species.name == SPECIES_DIONA)
 				choices += C
 
-	var/mob/living/M = tgui_input_list(src, "Who do you wish to merge with?", "Merge Choice", choices)
-
-	if(!M)
+	if(!length(choices))
 		to_chat(src, "There is nothing nearby to merge with.")
-	else if(!do_merge(M))
+		return
+	om_prompt(src, src, list("kind" = "list", "message" = "Who do you wish to merge with?", "title" = "Merge Choice", "choices" = choices, "requires" = PROMPT_CONSCIOUS), PROC_REF(merge_target_chosen))
+
+/mob/living/carbon/alien/diona/proc/merge_target_chosen(mob/user, mob/living/M, datum/om/prompt/ask)
+	if(istype(loc, /mob/living/carbon))
+		return
+	if(!do_merge(M))
 		to_chat(src, "You fail to merge with \the [M]...")
 
 /mob/living/carbon/alien/diona/proc/do_merge(mob/living/carbon/human/H)

@@ -602,8 +602,13 @@ ADMIN_VERB(debug_apply_material_treatment, R_DEBUG, "Apply Material Treatment", 
 		if(!length(nearby_stock))
 			to_chat(operator, span_warning("Hold alloy sheets in your active hand or stand near a stack."))
 			return
-		stock = tgui_input_list(operator, "Choose nearby alloy sheets.", "Material Treatment", nearby_stock)
-	var/selection = tgui_input_list(operator, "Choose a treatment to apply at full test strength.", "Material Treatment", treatments)
+		var/_answer_k597 = verb_prompt(operator, "k597", list("kind" = "list", "message" = "Choose nearby alloy sheets.", "title" = "Material Treatment", "choices" = nearby_stock), args)
+		if(isnull(_answer_k597))
+			return
+		stock = _answer_k597
+	var/selection = verb_prompt(operator, "k598", list("kind" = "list", "message" = "Choose a treatment to apply at full test strength.", "title" = "Material Treatment", "choices" = treatments), args)
+	if(isnull(selection))
+		return
 	if(!selection || QDELETED(stock) || !operator.Adjacent(stock))
 		return
 	var/datum/material_batch/batch = stock.physical_batch()?.copy_batch()

@@ -74,7 +74,10 @@
 	set desc = "Changes your name."
 	set src = usr
 
-	var/new_name = sanitizeSafe(tgui_input_text(src, "Who would you like to be now?", "Communicator", src.client.prefs.read_preference(/datum/preference/name/real_name), MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
+	om_prompt(src, src, list("kind" = "text", "message" = "Who would you like to be now?", "title" = "Communicator", "default" = src.client.prefs.read_preference(/datum/preference/name/real_name), "max_length" = MAX_NAME_LEN, "encode" = FALSE), PROC_REF(voice_name_entered))
+
+/mob/living/voice/proc/voice_name_entered(mob/user, new_name, datum/om/prompt/ask)
+	new_name = sanitizeSafe(new_name, MAX_NAME_LEN)
 	if(new_name)
 		if(comm)
 			comm.visible_message(span_notice("[icon2html(comm,viewers(comm))] [src.name] has left, and now you see [new_name]."))

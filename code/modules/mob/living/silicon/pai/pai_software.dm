@@ -65,9 +65,11 @@
 	set desc = "Upload your personality to the cloud and wipe your software from the card. This is functionally equivalent to cryo or robotic storage, freeing up your job slot."
 
 	// Make sure people don't kill themselves accidentally
-	if(tgui_alert(src, "WARNING: This will immediately wipe your software and ghost you, removing your character from the round permanently (similar to cryo and robotic storage). Are you entirely sure you want to do this?", "Wipe Software", list("No", "Yes")) != "Yes")
-		return
+	om_prompt(src, src, list("message" = "WARNING: This will immediately wipe your software and ghost you, removing your character from the round permanently (similar to cryo and robotic storage). Are you entirely sure you want to do this?", "title" = "Wipe Software", "choices" = list("No", "Yes")), PROC_REF(wipe_software_confirmed))
 
+/mob/living/silicon/pai/proc/wipe_software_confirmed(mob/user, answer, datum/om/prompt/ask)
+	if(answer != "Yes")
+		return
 	close_up()
 	visible_message(span_filter_notice(span_bold("[src]") + " fades away from the screen, the pAI device goes silent."))
 	card.removePersonality()
@@ -94,15 +96,21 @@
 			if(!(ram >= our_soft.ram_cost))
 				to_chat(src, span_warning("Insufficient RAM for download. (Cost [our_soft.ram_cost] : [ram] Remaining)"))
 				return
-			if(tgui_alert(src, "Do you want to download [our_soft.name]? It costs [our_soft.ram_cost], and you have [ram] remaining.", "Download [our_soft.name]", list("Yes", "No")) == "Yes")
-				if(!(ram >= our_soft.ram_cost))
-					return
-				if(software[our_soft.id])
-					return
-				ram -= our_soft.ram_cost
-				software[our_soft.id] = our_soft
-				to_chat(src, span_notice("You downloaded [our_soft.name]. ([ram] RAM remaining.)"))
-				refresh_software_status()
+			om_prompt(src, src, list("message" = "Do you want to download [our_soft.name]? It costs [our_soft.ram_cost], and you have [ram] remaining.", "title" = "Download [our_soft.name]", "choices" = list("Yes", "No"), "data" = list("software" = thing)), PROC_REF(download_software_confirmed))
+			return
+
+/mob/living/silicon/pai/proc/download_software_confirmed(mob/user, answer, datum/om/prompt/ask)
+	var/datum/pai_software/our_soft = GLOB.pai_software_by_key[ask.get("software")]
+	if(answer != "Yes" || !our_soft)
+		return
+	if(!(ram >= our_soft.ram_cost))
+		return
+	if(software[our_soft.id])
+		return
+	ram -= our_soft.ram_cost
+	software[our_soft.id] = our_soft
+	to_chat(src, span_notice("You downloaded [our_soft.name]. ([ram] RAM remaining.)"))
+	refresh_software_status()
 
 //Procs for using the various UI buttons for your softwares
 /mob/living/silicon/pai/proc/directives()

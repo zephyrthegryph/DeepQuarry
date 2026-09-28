@@ -6,8 +6,9 @@
 	set desc = "Changes the range you will transmit your hive language to!"
 	set category = "IC.Settings"
 
-	var/option = tgui_alert(src, "What range?", "Adjust special language range", list("Global","This Z level","Local", "Subtle"))
+	om_prompt(src, src, list("message" = "What range?", "title" = "Adjust special language range", "choices" = list("Global","This Z level","Local", "Subtle")), PROC_REF(hive_range_chosen))
 
+/mob/proc/hive_range_chosen(mob/user, option, datum/om/prompt/ask)
 	switch(option)
 		if("Global")
 			hive_lang_range = 0

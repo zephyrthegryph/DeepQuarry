@@ -62,7 +62,9 @@
 			. = TRUE
 
 		if("set_global_limit")
-			var/newlim = tgui_input_number(ui.user, "Input new thrust limit (0..100%)", "Thrust limit", linked.thrust_limit*100, 100, 0, round_value = FALSE)
+			var/newlim = act_prompt(ui.user, action, params, ui, "k65", list("kind" = "number", "message" = "Input new thrust limit (0..100%)", "title" = "Thrust limit", "default" = linked.thrust_limit*100, "max" = 100, "min" = 0, "round" = FALSE))
+			if(isnull(newlim))
+				return
 			if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
 				return FALSE
 			linked.thrust_limit = clamp(newlim/100, 0, 1)
@@ -78,7 +80,9 @@
 
 		if("set_limit")
 			var/datum/ship_engine/E = locate(params["engine"])
-			var/newlim = tgui_input_number(ui.user, "Input new thrust limit (0..100)", "Thrust limit", E.get_thrust_limit(), 100, 0, round_value = FALSE)
+			var/newlim = act_prompt(ui.user, action, params, ui, "k81", list("kind" = "number", "message" = "Input new thrust limit (0..100)", "title" = "Thrust limit", "default" = E.get_thrust_limit(), "max" = 100, "min" = 0, "round" = FALSE))
+			if(isnull(newlim))
+				return
 			if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
 				return FALSE
 			var/limit = clamp(newlim/100, 0, 1)

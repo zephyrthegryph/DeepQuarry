@@ -130,7 +130,9 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	var/input = tgui_input_text(user, "Would you like to change the holoengraving on the ring?", "Name your spouse", "Bae", MAX_NAME_LEN)
+	var/input = rerun_prompt(user, "a1", list("kind" = "text", "message" = "Would you like to change the holoengraving on the ring?", "title" = "Name your spouse", "default" = "Bae", "max_length" = MAX_NAME_LEN), PROC_REF(attack_self), args)
+	if(isnull(input))
+		return TRUE
 	if(!input)
 		return
 	partnername = input

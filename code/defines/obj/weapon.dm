@@ -229,7 +229,9 @@
 		friendly_cameras.Add(C.c_tag)
 
 	in_use = TRUE
-	var/target = tgui_input_list(user, "Select the camera to observe", "Select Camera", friendly_cameras)
+	var/target = rerun_prompt(user, "k232", list("kind" = "list", "message" = "Select the camera to observe", "title" = "Select Camera", "choices" = friendly_cameras), PROC_REF(attack_self), args)
+	if(isnull(target))
+		return TRUE
 	in_use = FALSE
 
 	if (!target)

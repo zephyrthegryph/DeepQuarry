@@ -83,112 +83,117 @@ SUBSYSTEM_DEF(media_tracks)
 		/// CHOMPstation edit end
 
 /datum/controller/subsystem/media_tracks/proc/manual_track_add()
-	var/client/C = usr.client
 	if(!check_rights(R_DEBUG|R_FUN))
 		return
 
-	// Required
-	var/url = tgui_input_text(C, "REQUIRED: Provide URL for track, or paste JSON if you know what you're doing. See code comments.", "Track URL", multiline = TRUE)
+	om_prompt_sequence(src, usr, list(
+		list("key" = "url", "kind" = "text", "message" = "REQUIRED: Provide URL for track, or paste JSON if you know what you're doing. See code comments.", "title" = "Track URL", "multiline" = TRUE),
+		PROC_REF(manual_track_ask_title),
+		PROC_REF(manual_track_ask_duration),
+		PROC_REF(manual_track_ask_artist),
+		PROC_REF(manual_track_ask_genre),
+		PROC_REF(manual_track_ask_secret),
+		PROC_REF(manual_track_ask_lobby),
+		PROC_REF(manual_track_ask_casino),
+	), PROC_REF(manual_track_entered), list("requires" = PROMPT_ADMIN(R_DEBUG|R_FUN)))
+
+/// Pasted JSON skips the remaining questions.
+/datum/controller/subsystem/media_tracks/proc/manual_track_is_json(datum/om/prompt/ask)
+	var/url = ask.get("url")
+	if(!url)
+		return TRUE
+	var/json
+	try
+		json = json_decode(url)
+	catch
+	return islist(json)
+
+/datum/controller/subsystem/media_tracks/proc/manual_track_ask_title(mob/user, datum/om/prompt/ask)
+	if(manual_track_is_json(ask))
+		return PROMPT_STOP
+	return list("key" = "title", "kind" = "text", "message" = "REQUIRED: Provide title for track", "title" = "Track Title")
+
+/datum/controller/subsystem/media_tracks/proc/manual_track_ask_duration(mob/user, datum/om/prompt/ask)
+	if(!ask.get("title"))
+		return PROMPT_STOP
+	return list("key" = "duration", "kind" = "number", "message" = "REQUIRED: Provide duration for track (in deciseconds, aka seconds*10)", "title" = "Track Duration")
+
+/datum/controller/subsystem/media_tracks/proc/manual_track_ask_artist(mob/user, datum/om/prompt/ask)
+	if(!ask.get("duration"))
+		return PROMPT_STOP
+	return list("key" = "artist", "kind" = "text", "message" = "Optional: Provide artist for track", "title" = "Track Artist")
+
+/datum/controller/subsystem/media_tracks/proc/manual_track_ask_genre(mob/user, datum/om/prompt/ask)
+	return list("key" = "genre", "kind" = "text", "message" = "Optional: Provide genre for track (try to match an existing one)", "title" = "Track Genre")
+
+/datum/controller/subsystem/media_tracks/proc/manual_track_ask_secret(mob/user, datum/om/prompt/ask)
+	return list("key" = "secret", "message" = "Optional: Mark track as secret?", "title" = "Track Secret", "choices" = list("Yes", "Cancel", "No"), "abort" = "Cancel")
+
+/datum/controller/subsystem/media_tracks/proc/manual_track_ask_lobby(mob/user, datum/om/prompt/ask)
+	return list("key" = "lobby", "message" = "Optional: Mark track as lobby music?", "title" = "Track Lobby", "choices" = list("Yes", "Cancel", "No"), "abort" = "Cancel")
+
+/datum/controller/subsystem/media_tracks/proc/manual_track_ask_casino(mob/user, datum/om/prompt/ask)
+	return list("key" = "casino", "message" = "Optional: Mark track as casino music?", "title" = "Track Casino", "choices" = list("Yes", "Cancel", "No"), "abort" = "Cancel")
+
+/**
+ * Alternatively to using a series of inputs, you can use json and paste it in.
+ * The json base element needs to be an array, even if it's only one song, so wrap it in []
+ * The songs are json object literals inside the base array and use these keys:
+ * "url": the url for the song (REQUIRED) (text)
+ * "title": the title of the song (REQUIRED) (text)
+ * "duration": duration of song in 1/10ths of a second (seconds * 10) (REQUIRED) (number)
+ * "artist": artist of the song (text)
+ * "genre": artist of the song, REALLY try to match an existing one (text)
+ * "secret": only on hacked jukeboxes (true/false)
+ * "lobby": plays in the lobby (true/false)
+ * "casino": plays in the casino (true/false)
+ */
+/datum/controller/subsystem/media_tracks/proc/manual_track_entered(mob/user, datum/om/prompt/ask)
+	var/url = ask.get("url")
 	if(!url)
 		return
-
 	var/list/json
 	try
 		json = json_decode(url)
 	catch
 
-	/**
-	 * Alternatively to using a series of inputs, you can use json and paste it in.
-	 * The json base element needs to be an array, even if it's only one song, so wrap it in []
-	 * The songs are json object literals inside the base array and use these keys:
-	 * "url": the url for the song (REQUIRED) (text)
-	 * "title": the title of the song (REQUIRED) (text)
-	 * "duration": duration of song in 1/10ths of a second (seconds * 10) (REQUIRED) (number)
-	 * "artist": artist of the song (text)
-	 * "genre": artist of the song, REALLY try to match an existing one (text)
-	 * "secret": only on hacked jukeboxes (true/false)
-	 * "lobby": plays in the lobby (true/false)
-	 * "casino": plays in the casino (true/false) CHOMPstation casino
-	 */
-
 	if(islist(json))
 		for(var/song in json)
 			if(!islist(song))
-				to_chat(C, span_warning("Song appears to be malformed."))
+				to_chat(user, span_warning("Song appears to be malformed."))
 				continue
 			var/list/songdata = song
 			if(!songdata["url"] || !songdata["title"] || !songdata["duration"])
-				to_chat(C, span_warning("URL, Title, or Duration was missing from a song. Skipping."))
+				to_chat(user, span_warning("URL, Title, or Duration was missing from a song. Skipping."))
 				continue
-			var/datum/track/T = new(songdata["url"], songdata["title"], songdata["duration"], songdata["artist"], songdata["genre"], songdata["secret"], songdata["lobby"], songdata["casino"]) // included 'casino'
+			var/datum/track/T = new(songdata["url"], songdata["title"], songdata["duration"], songdata["artist"], songdata["genre"], songdata["secret"], songdata["lobby"], songdata["casino"])
 			all_tracks += T
 
-			report_progress("New media track added by [C]: [T.title]")
+			report_progress("New media track added by [user.client]: [T.title]")
 		sort_tracks()
 		return
 
-	var/title = tgui_input_text(C, "REQUIRED: Provide title for track", "Track Title")
-	if(!title)
+	var/title = ask.get("title")
+	var/duration = ask.get("duration")
+	if(!title || !duration)
 		return
-
-	var/duration = tgui_input_number(C, "REQUIRED: Provide duration for track (in deciseconds, aka seconds*10)", "Track Duration")
-	if(!duration)
-		return
-
-	// Optional
-	var/artist = tgui_input_text(C, "Optional: Provide artist for track", "Track Artist")
-	if(isnull(artist)) // Cancel rather than empty string
-		return
-
-	var/genre = tgui_input_text(C, "Optional: Provide genre for track (try to match an existing one)", "Track Genre")
-	if(isnull(genre)) // Cancel rather than empty string
-		return
-
-	var/secret = tgui_alert(C, "Optional: Mark track as secret?", "Track Secret", list("Yes", "Cancel", "No"))
-	if(!secret || secret == "Cancel")
-		return
-	else if(secret == "Yes")
-		secret = TRUE
-	else
-		secret = FALSE
-
-	var/lobby = tgui_alert(C, "Optional: Mark track as lobby music?", "Track Lobby", list("Yes", "Cancel", "No"))
-	if(!lobby || lobby == "Cancel")
-		return
-	else if(secret == "Yes")
-		secret = TRUE
-	else
-		secret = FALSE
-
-	/// CHOMPstation edit start: Jack - Injecting casino track into new jukebox subsystem
-	var/casino = tgui_alert(C, "Optional: Mark track as casino music?", "Track Casino", list("Yes", "Cancel", "No"))
-	if(casino == "Cancel")
-		return
-	else if(secret == "Yes")
-		secret = TRUE
-	else
-		secret = FALSE
-	/// CHOMPstation edit end
-
-	var/datum/track/T = new(url, title, duration, artist, genre)
-
-	T.secret = secret
-	T.lobby = lobby
-	/// CHOMPstation edit start: Jack - Injecting casino track into new jukebox subsystem
-	T.casino = casino
-	/// CHOMPstation edit end
+	var/datum/track/T = new(url, title, duration, ask.get("artist"), ask.get("genre"))
+	T.secret = ask.get("secret") == "Yes"
+	T.lobby = ask.get("lobby") == "Yes"
+	T.casino = ask.get("casino") == "Yes"
 
 	all_tracks += T
 
-	report_progress("New media track added by [C]: [title]")
+	report_progress("New media track added by [user.client]: [title]")
 	sort_tracks()
 
 /datum/controller/subsystem/media_tracks/proc/manual_track_remove()
-	var/client/C = usr.client
 	if(!check_rights(R_DEBUG|R_FUN))
 		return
 
-	var/track = tgui_input_text(C, "Input track title or URL to remove (must be exact)", "Remove Track")
+	om_prompt(src, usr, list("kind" = "text", "message" = "Input track title or URL to remove (must be exact)", "title" = "Remove Track", "requires" = PROMPT_ADMIN(R_DEBUG|R_FUN)), PROC_REF(manual_track_removal_entered))
+
+/datum/controller/subsystem/media_tracks/proc/manual_track_removal_entered(mob/user, track, datum/om/prompt/ask)
 	if(!track)
 		return
 
@@ -196,11 +201,11 @@ SUBSYSTEM_DEF(media_tracks)
 		if(T.title == track || T.url == track)
 			all_tracks -= T
 			qdel(T)
-			report_progress("Media track removed by [C]: [track]")
+			report_progress("Media track removed by [user.client]: [track]")
 			sort_tracks()
 			return
 
-	to_chat(C, span_warning("Couldn't find a track matching the specified parameters."))
+	to_chat(user, span_warning("Couldn't find a track matching the specified parameters."))
 
 /datum/controller/subsystem/media_tracks/proc/add_track(mob/user, new_url, new_title, new_duration, new_artist, new_genre, new_secret, new_lobby)
 	if(!check_rights(R_DEBUG|R_FUN))

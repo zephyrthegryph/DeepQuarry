@@ -183,7 +183,9 @@ REF_OWNED(/obj/machinery/reagent_refinery/furnace, "beaker")
 	else if(filter_reagent_id != "")
 		var/datum/reagent/R = SSchemistry.chemical_reagents[filter_reagent_id]
 		filter = "sintering [R.name]"
-	var/select = tgui_input_list(user, "Select chemical to sinter. It is currently [filter].", "Chemical Select", tgui_list)
+	var/select = rerun_prompt(user, "k188", list("kind" = "list", "message" = "Select chemical to sinter. It is currently [filter].", "title" = "Chemical Select", "choices" = tgui_list), PROC_REF(interaction_set_filter), args)
+	if(isnull(select))
+		return
 
 	if (user.stat || user.restrained())
 		return TRUE

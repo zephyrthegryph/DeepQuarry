@@ -492,7 +492,9 @@ ADMIN_VERB(AdminCreateVirus, R_SPAWN|R_EVENT, "Create Advanced Virus", "Create a
 	do
 		if(!user)
 			return
-		var/symptom = tgui_input_list(user, "Choose a symptom to add ([i] remaining)", "Choose a Symptom", symptoms)
+		var/symptom = verb_prompt(user, "k495", list("kind" = "list", "message" = "Choose a symptom to add ([i] remaining)", "title" = "Choose a Symptom", "choices" = symptoms), args)
+		if(isnull(symptom))
+			return
 		if(isnull(symptom))
 			return
 		else if(istext(symptom))
@@ -506,7 +508,9 @@ ADMIN_VERB(AdminCreateVirus, R_SPAWN|R_EVENT, "Create Advanced Virus", "Create a
 
 	if(length(D.symptoms) > 0)
 
-		var/new_name = tgui_input_text(user, "Name your new disease.", "New Name")
+		var/new_name = verb_prompt(user, "k509", list("kind" = "text", "message" = "Name your new disease.", "title" = "New Name"), args)
+		if(isnull(new_name))
+			return
 		if(!new_name)
 			return FALSE
 		D.AssignName(new_name)
@@ -515,7 +519,10 @@ ADMIN_VERB(AdminCreateVirus, R_SPAWN|R_EVENT, "Create Advanced Virus", "Create a
 		for(var/datum/disease/advance/AD in REGISTRY_MEMBERS(REGISTRY_ACTIVE_DISEASES))
 			AD.Refresh()
 
-		H = tgui_input_list(user, "Choose infectee", "Infectees", REGISTRY_MEMBERS(REGISTRY_HUMANS))
+		var/_answer_k518 = verb_prompt(user, "k518", list("kind" = "list", "message" = "Choose infectee", "title" = "Infectees", "choices" = REGISTRY_MEMBERS(REGISTRY_HUMANS)), args)
+		if(isnull(_answer_k518))
+			return
+		H = _answer_k518
 
 		if(isnull(H))
 			return FALSE

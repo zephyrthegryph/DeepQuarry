@@ -287,10 +287,12 @@
 		if(usr != src)
 			usr.put_in_active_hand(Vac)
 		else
-			var/mob/living/L = tgui_input_list(usr, "Borrow Vac-Pack for", "Swoopie", mobs_in_view(1, usr))
-			if(!L || L == usr)
-				return
-			L.put_in_active_hand(Vac)
+			om_prompt(src, src, list("kind" = "list", "message" = "Borrow Vac-Pack for", "title" = "Swoopie", "choices" = mobs_in_view(1, src)), PROC_REF(vac_borrower_chosen))
+
+/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/proc/vac_borrower_chosen(mob/user, mob/living/L, datum/om/prompt/ask)
+	if(L == src || !istype(Vac) || !Adjacent(L))
+		return
+	L.put_in_active_hand(Vac)
 
 // DQEdit - change_settings verb body moved to
 // modular_dq/.../ports/swoopie.dm where it toggles mob-side swoop_pests /

@@ -1,6 +1,8 @@
 //DO NOT ADD MORE TO THIS FILE.
 //Use vv_do_topic() for datums!
 /client/proc/view_var_Topic(href, href_list, hsrc)
+	if(!GLOB.prompt_flow) // its questions re-run it (prompt_flow(), prompt_helpers.dm)
+		return prompt_flow(src, PROC_REF(view_var_Topic), args)
 	if(!check_rights_for(src, R_VAREDIT) || !holder.CheckAdminHref(href, href_list))
 		return
 	var/target = GET_VV_TARGET
@@ -24,7 +26,8 @@
 			to_chat(usr, "This can only be used on instances of type /mob", confidential = TRUE)
 			return
 
-		var/new_name = stripped_input(usr,"What would you like to name this mob?","Input a name",M.real_name,MAX_NAME_LEN)
+		var/new_name = flow_ask(mob, "rename", list("kind" = "text", "message" = "What would you like to name this mob?", "title" = "Input a name", "default" = M.real_name, "max_length" = MAX_NAME_LEN))
+		new_name = trim(new_name, MAX_NAME_LEN)
 
 		// If the new name is something that would be restricted by IC chat filters,
 		// give the admin a warning but allow them to do it anyway if they want.
@@ -97,10 +100,10 @@
 			var/list/kinds = list()
 			for(var/kind in 1 to INJURY_KIND_COUNT)
 				kinds[injury_kind_name(kind)] = kind
-			var/picked = tgui_input_list(usr, "Enter the new injury kind for [editing]","Set Injury Kind", kinds, injury_kind_name(existing_val))
+			var/picked = flow_ask(mob, "tweak", list("kind" = "list", "message" = "Enter the new injury kind for [editing]", "title" = "Set Injury Kind", "choices" = kinds, "default" = injury_kind_name(existing_val)))
 			new_val = picked ? kinds[picked] : null
 		else
-			new_val = tgui_input_number(usr, "Enter the new value for [editing]'s [href_list["var_tweak"]]","Set [href_list["var_tweak"]]", existing_val)
+			new_val = flow_ask(mob, "tweak", list("kind" = "number", "message" = "Enter the new value for [editing]'s [href_list["var_tweak"]]", "title" = "Set [href_list["var_tweak"]]", "default" = existing_val, "min" = -INFINITY, "round" = FALSE))
 		if(isnull(new_val) || new_val == existing_val || QDELETED(editing) || !check_rights(R_VAREDIT))
 			return
 

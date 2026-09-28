@@ -36,9 +36,11 @@
 
 /obj/item/spell/summon/on_use_cast(mob/living/user)
 	if(length(summon_options))
-		var/choice = tgui_input_list(user, "Choose a creature to kidnap from somewhere!", "Summon", summon_options)
-		if(choice)
-			summoned_mob_type = LAZYACCESS(summon_options, choice)
+		om_prompt(src, user, list("kind" = "list", "message" = "Choose a creature to kidnap from somewhere!", "title" = "Summon", "choices" = summon_options, "requires" = PROMPT_HELD), PROC_REF(summon_choice_made))
+
+/obj/item/spell/summon/proc/summon_choice_made(mob/living/user, choice, datum/om/prompt/ask)
+	if(choice)
+		summoned_mob_type = LAZYACCESS(summon_options, choice)
 
 // Called when a new mob is summoned, override for special behaviour.
 /obj/item/spell/summon/proc/on_summon(mob/living/summoned)

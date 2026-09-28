@@ -428,10 +428,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 				set_temp("Error: Could not submit feed channel to network: A feed channel already exists under your name.", "danger", FALSE)
 				return TRUE
 
-			var/choice = tgui_alert(ui.user, "Please confirm Feed channel creation","Network Channel Handler",list("Confirm","Cancel"))
-			if(choice == "Confirm")
-				GLOB.news_network.CreateFeedChannel(channel_name, our_user, c_locked)
-				set_temp("Feed channel [channel_name] created successfully.", "success", FALSE)
+			om_prompt(src, ui.user, list("message" = "Please confirm Feed channel creation", "title" = "Network Channel Handler", "choices" = list("Confirm","Cancel"), "requires" = PROMPT_USABLE, "data" = list("author" = our_user, "channel" = channel_name, "locked" = c_locked)), PROC_REF(channel_creation_confirmed))
 			return TRUE
 
 		if("set_channel_receiving")
@@ -440,17 +437,15 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 			for(var/datum/feed_channel/F in GLOB.news_network.network_channels)
 				if((!F.locked || F.author == scanned_user) && !F.censored)
 					available_channels += F.channel_name
-			var/new_channel_name = tgui_input_list(ui.user, "Choose receiving Feed Channel", "Network Channel Handler", available_channels)
-			if(new_channel_name)
-				channel_name = new_channel_name
+			om_prompt(src, ui.user, list("kind" = "list", "message" = "Choose receiving Feed Channel", "title" = "Network Channel Handler", "choices" = available_channels, "requires" = PROMPT_USABLE), PROC_REF(receiving_channel_chosen))
 			return TRUE
 
 		if("set_new_message")
-			msg = sanitize(tgui_input_text(ui.user, "Write your Feed story", "Network Channel Handler","", MAX_MESSAGE_LEN, TRUE, encode = FALSE, prevent_enter = TRUE), MAX_MESSAGE_LEN, FALSE, FALSE, TRUE)
+			om_prompt(src, ui.user, list("kind" = "text", "message" = "Write your Feed story", "title" = "Network Channel Handler", "default" = "", "max_length" = MAX_MESSAGE_LEN, "multiline" = TRUE, "encode" = FALSE, "requires" = PROMPT_USABLE), PROC_REF(story_written))
 			return TRUE
 
 		if("set_new_title")
-			title = tgui_input_text(ui.user, "Enter your Feed title", "Network Channel Handler", "", MAX_KEYPAD_INPUT_LEN)
+			om_prompt(src, ui.user, list("kind" = "text", "message" = "Enter your Feed title", "title" = "Network Channel Handler", "default" = "", "max_length" = MAX_KEYPAD_INPUT_LEN, "requires" = PROMPT_USABLE), PROC_REF(title_written))
 			return TRUE
 
 		if("set_attachment")
@@ -505,30 +500,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 				set_temp("Error: Could not submit wanted issue to network: Author unverified.", "danger", FALSE)
 				return TRUE
 
-			var/choice = tgui_alert(ui.user, "Please confirm Wanted Issue change.", "Network Security Handler", list("Confirm", "Cancel"))
-			if(choice == "Confirm")
-				if(GLOB.news_network.wanted_issue)
-					if(GLOB.news_network.wanted_issue && GLOB.news_network.wanted_issue.is_admin_message)
-						tgui_alert_async(ui.user, "The wanted issue has been distributed by a [using_map.company_name] higherup. You cannot edit it.")
-						return
-					GLOB.news_network.wanted_issue.author = channel_name
-					GLOB.news_network.wanted_issue.body = msg
-					GLOB.news_network.wanted_issue.backup_author = scanned_user
-					if(photo_data)
-						GLOB.news_network.wanted_issue.img = photo_data.photo.img
-					set_temp("Wanted issue for [channel_name] successfully edited.", "success", FALSE)
-					return TRUE
-
-				var/datum/feed_message/WANTED = new /datum/feed_message
-				WANTED.author = channel_name
-				WANTED.body = msg
-				WANTED.backup_author = scanned_user //I know, a bit wacky
-				if(photo_data)
-					WANTED.img = photo_data.photo.img
-				GLOB.news_network.wanted_issue = WANTED
-				GLOB.news_network.alert_readers()
-				set_temp("Wanted issue for [channel_name] is now in Network Circulation.", "success", FALSE)
-				return TRUE
+			om_prompt(src, ui.user, list("message" = "Please confirm Wanted Issue change.", "title" = "Network Security Handler", "choices" = list("Confirm", "Cancel"), "requires" = PROMPT_USABLE, "data" = list("author" = our_user)), PROC_REF(wanted_change_confirmed))
+			return TRUE
 
 		if("cancel_wanted")
 			if(!securityCaster)
@@ -536,12 +509,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 			if(GLOB.news_network.wanted_issue.is_admin_message)
 				tgui_alert_async(ui.user, "The wanted issue has been distributed by a [using_map.company_name] higherup. You cannot take it down.")
 				return
-			var/choice = tgui_alert(ui.user, "Please confirm Wanted Issue removal","Network Security Handler",list("Confirm","Cancel"))
-			if(choice=="Confirm")
-				GLOB.news_network.wanted_issue = null
-				for(var/obj/machinery/newscaster/NEWSCASTER in REGISTRY_MEMBERS(REGISTRY_CASTERS))
-					NEWSCASTER.update_icon()
-				set_temp("Wanted issue taken down.", "success", FALSE)
+			om_prompt(src, ui.user, list("message" = "Please confirm Wanted Issue removal", "title" = "Network Security Handler", "choices" = list("Confirm","Cancel"), "requires" = PROMPT_USABLE), PROC_REF(wanted_removal_confirmed))
 			return TRUE
 
 		if("censor_channel_author")
@@ -611,6 +579,63 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 			var/datum/feed_channel/FC = locate(params["show_channel"])
 			viewing_channel = FC
 			return TRUE
+
+/obj/machinery/newscaster/proc/channel_creation_confirmed(mob/user, choice, datum/om/prompt/ask)
+	var/our_user = ask.get("author")
+	var/channel_name = ask.get("channel")
+	var/c_locked = ask.get("locked")
+	if(choice == "Confirm")
+		GLOB.news_network.CreateFeedChannel(channel_name, our_user, c_locked)
+		set_temp("Feed channel [channel_name] created successfully.", "success", FALSE)
+	return TRUE
+
+/obj/machinery/newscaster/proc/receiving_channel_chosen(mob/user, new_channel_name, datum/om/prompt/ask)
+	channel_name = new_channel_name
+	SStgui.update_uis(src)
+	if(new_channel_name)
+		channel_name = new_channel_name
+	return TRUE
+
+/obj/machinery/newscaster/proc/story_written(mob/user, text, datum/om/prompt/ask)
+	msg = sanitize(text, MAX_MESSAGE_LEN, FALSE, FALSE, TRUE)
+	SStgui.update_uis(src)
+
+/obj/machinery/newscaster/proc/title_written(mob/user, text, datum/om/prompt/ask)
+	title = text
+	SStgui.update_uis(src)
+
+/obj/machinery/newscaster/proc/wanted_change_confirmed(mob/user, choice, datum/om/prompt/ask)
+	if(choice == "Confirm")
+		if(GLOB.news_network.wanted_issue)
+			if(GLOB.news_network.wanted_issue && GLOB.news_network.wanted_issue.is_admin_message)
+				tgui_alert_async(user, "The wanted issue has been distributed by a [using_map.company_name] higherup. You cannot edit it.")
+				return
+			GLOB.news_network.wanted_issue.author = channel_name
+			GLOB.news_network.wanted_issue.body = msg
+			GLOB.news_network.wanted_issue.backup_author = scanned_user
+			if(photo_data)
+				GLOB.news_network.wanted_issue.img = photo_data.photo.img
+			set_temp("Wanted issue for [channel_name] successfully edited.", "success", FALSE)
+			return TRUE
+
+		var/datum/feed_message/WANTED = new /datum/feed_message
+		WANTED.author = channel_name
+		WANTED.body = msg
+		WANTED.backup_author = scanned_user //I know, a bit wacky
+		if(photo_data)
+			WANTED.img = photo_data.photo.img
+		GLOB.news_network.wanted_issue = WANTED
+		GLOB.news_network.alert_readers()
+		set_temp("Wanted issue for [channel_name] is now in Network Circulation.", "success", FALSE)
+		return TRUE
+
+/obj/machinery/newscaster/proc/wanted_removal_confirmed(mob/user, choice, datum/om/prompt/ask)
+	if(choice == "Confirm" && GLOB.news_network.wanted_issue && !GLOB.news_network.wanted_issue.is_admin_message)
+		GLOB.news_network.wanted_issue = null
+		for(var/obj/machinery/newscaster/NEWSCASTER in REGISTRY_MEMBERS(REGISTRY_CASTERS))
+			NEWSCASTER.update_icon()
+		set_temp("Wanted issue taken down.", "success", FALSE)
+	return TRUE
 
 /// Old attackby: any item used on the newscaster just forwarded to attack_hand().
 /datum/interaction/machine_item/newscaster_item_open

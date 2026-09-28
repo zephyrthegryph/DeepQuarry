@@ -13,14 +13,32 @@
 
 	smoke_amt = 1
 
+/// The rune (and last word) are asked here, before the cast charges.
+/datum/spell/rune_write
+	/// What choose_targets() asked for, read by cast().
+	var/picked_rune
+	var/picked_beacon
+
 /datum/spell/rune_write/choose_targets(mob/user = usr)
+	var/list/runes = list("Teleport", "Teleport Other", "Spawn a Tome", "Change Construct Type", "Convert", "EMP", "Drain Blood", "See Invisible", "Resurrect", "Hide Runes", "Reveal Runes", "Astral Journey", "Manifest a Ghost", "Imbue Talisman", "Sacrifice", "Wall", "Free Cultist", "Summon Cultist", "Deafen", "Blind", "BloodBoil", "Communicate", "Stun")
+	if(!GLOB.cultwords["travel"])
+		runerandom()
+	var/r = cast_prompt(user, "rune", list("kind" = "list", "message" = "Choose a rune to scribe", "title" = "Rune Scribing", "choices" = runes, "timeout" = 30 SECONDS))
+	if(!r)
+		return list()
+	var/beacon
+	if(r == "Teleport" || r == "Teleport Other")
+		beacon = cast_prompt(user, "beacon", list("kind" = "list", "message" = "Select the last rune", "title" = "Rune Scribing", "choices" = GLOB.rnwords, "timeout" = 30 SECONDS))
+		if(!beacon)
+			return list()
+	picked_rune = r
+	picked_beacon = beacon
 	return list(user)
 
 /datum/spell/rune_write/cast(null, mob/user = usr)
 	if(!GLOB.cultwords["travel"])
 		runerandom()
-	var/list/runes = list("Teleport", "Teleport Other", "Spawn a Tome", "Change Construct Type", "Convert", "EMP", "Drain Blood", "See Invisible", "Resurrect", "Hide Runes", "Reveal Runes", "Astral Journey", "Manifest a Ghost", "Imbue Talisman", "Sacrifice", "Wall", "Free Cultist", "Summon Cultist", "Deafen", "Blind", "BloodBoil", "Communicate", "Stun")
-	var/r = tgui_input_list(user, "Choose a rune to scribe", "Rune Scribing", runes, timeout=30 SECONDS)
+	var/r = picked_rune
 	var/obj/effect/rune/R = new /obj/effect/rune(user.loc)
 	if(istype(user.loc,/turf))
 		var/area/A = get_area(user)
@@ -28,18 +46,14 @@
 		switch(r)
 			if("Teleport")
 				if(cast_check(1))
-					var/beacon
-					if(user)
-						beacon = tgui_input_list(user, "Select the last rune", "Rune Scribing", GLOB.rnwords, timeout=30 SECONDS)
+					var/beacon = picked_beacon
 					R.word1=GLOB.cultwords["travel"]
 					R.word2=GLOB.cultwords["self"]
 					R.word3=beacon
 					R.check_icon()
 			if("Teleport Other")
 				if(cast_check(1))
-					var/beacon
-					if(user)
-						beacon = tgui_input_list(user, "Select the last rune", "Rune Scribing", GLOB.rnwords, timeout=30 SECONDS)
+					var/beacon = picked_beacon
 					R.word1=GLOB.cultwords["travel"]
 					R.word2=GLOB.cultwords["other"]
 					R.word3=beacon

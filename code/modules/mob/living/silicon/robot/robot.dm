@@ -986,8 +986,12 @@
 	if(!length(removable))
 		to_chat(user, span_filter_notice("There is nothing left to remove."))
 		return FALSE
-	var/choice = tgui_input_list(user, "Which component do you want to pry out?", "Remove Component", removable)
-	if(!choice || QDELETED(src) || !opened || cell || !Adjacent(user) || user.incapacitated())
+	om_prompt(src, user, list("kind" = "list", "message" = "Which component do you want to pry out?", "title" = "Remove Component", "choices" = removable, "requires" = PROMPT_ADJACENT, "data" = list("slots" = removable)), PROC_REF(pry_component_chosen))
+	return TRUE
+
+/mob/living/silicon/robot/proc/pry_component_chosen(mob/user, choice, datum/om/prompt/ask)
+	var/list/removable = ask.get("slots")
+	if(!opened || cell)
 		return FALSE
 	var/datum/robot_component/C = get_component(removable[choice])
 	if(!C || C.installed == ROBOT_PART_MISSING || !C.wrapped)
@@ -1169,20 +1173,22 @@
 
 /mob/living/silicon/robot/proc/grab_vore_interact(mob/living/carbon/human/H)
 	if(is_vore_predator(H) && H.devourable && src.feeding && src.devourable)
-		var/switchy = tgui_alert(H, "Do you wish to eat [src] or feed yourself to them?", "Feed or Eat",list("Nevermind!", "Eat","Feed"))
-		switch(switchy)
-			if("Eat")
-				feed_grabbed_to_self(H, src)
-			if("Feed")
-				H.feed_self_to_grabbed(H, src)
+		om_prompt(src, H, list("message" = "Do you wish to eat [src] or feed yourself to them?", "title" = "Feed or Eat", "choices" = list("Nevermind!", "Eat","Feed"), "requires" = PROMPT_ADJACENT), PROC_REF(grab_vore_chosen))
 		return
 	if(is_vore_predator(H) && src.devourable)
-		if(tgui_alert(H, "Do you wish to eat [src]?", "Eat?",list("Nevermind!", "Yes!")) == "Yes!")
-			feed_grabbed_to_self(H, src)
+		om_prompt(src, H, list("message" = "Do you wish to eat [src]?", "title" = "Eat?", "choices" = list("Nevermind!", "Eat"), "requires" = PROMPT_ADJACENT), PROC_REF(grab_vore_chosen))
 		return
 	if(H.devourable && src.feeding)
-		if(tgui_alert(H, "Do you wish to feed yourself to [src]?", "Feed?",list("Nevermind!", "Yes!")) == "Yes!")
-			H.feed_self_to_grabbed(H, src)
+		om_prompt(src, H, list("message" = "Do you wish to feed yourself to [src]?", "title" = "Feed?", "choices" = list("Nevermind!", "Feed"), "requires" = PROMPT_ADJACENT), PROC_REF(grab_vore_chosen))
+
+/mob/living/silicon/robot/proc/grab_vore_chosen(mob/living/carbon/human/H, switchy, datum/om/prompt/ask)
+	switch(switchy)
+		if("Eat")
+			if(is_vore_predator(H) && devourable)
+				feed_grabbed_to_self(H, src)
+		if("Feed")
+			if(H.devourable && feeding)
+				H.feed_self_to_grabbed(H, src)
 
 //Robots take half damage from basic attacks.
 /mob/living/silicon/robot/attack_generic(mob/user, damage, attack_message)
@@ -1691,10 +1697,13 @@
 		rest_style = "Default"
 		return
 
-	rest_style = tgui_alert(src, "Select resting pose", "Resting Pose", sprite_datum.rest_sprite_options)
-	if(!rest_style)
-		rest_style = "Default"
+	om_prompt(src, src, list("message" = "Select resting pose", "title" = "Resting Pose", "choices" = sprite_datum.rest_sprite_options, "on_cancel" = PROC_REF(rest_style_cancelled)), PROC_REF(rest_style_chosen))
 
+/mob/living/silicon/robot/proc/rest_style_cancelled(mob/user, datum/om/prompt/ask)
+	rest_style_chosen(user, "Default", ask)
+
+/mob/living/silicon/robot/proc/rest_style_chosen(mob/user, choice, datum/om/prompt/ask)
+	rest_style = choice
 	update_icon()
 
 /// Riding is provided by the belly component; without it the chassis can't be mounted.

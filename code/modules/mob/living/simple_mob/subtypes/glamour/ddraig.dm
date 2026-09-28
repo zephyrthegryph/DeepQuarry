@@ -316,11 +316,10 @@
 									"Goose" = /mob/living/simple_mob/animal/space/goose
 									)
 
-	var/chosen_beast = tgui_input_list(src, "Which form would you like to take?", "Choose Beast Form", beast_options)
+	om_prompt(src, src, list("kind" = "list", "message" = "Which form would you like to take?", "title" = "Choose Beast Form", "choices" = beast_options, "requires" = PROMPT_CONSCIOUS, "data" = list("options" = beast_options)), PROC_REF(polymorph_chosen))
 
-	if(!chosen_beast)
-		return
-
+/mob/living/proc/polymorph_chosen(mob/user, chosen_beast, datum/om/prompt/ask)
+	var/list/beast_options = ask.get("options")
 
 	var/mob/living/M = src
 	if(!istype(M))

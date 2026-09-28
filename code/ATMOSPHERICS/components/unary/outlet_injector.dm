@@ -190,20 +190,27 @@
 
 /obj/machinery/atmospherics/unary/outlet_injector/multitool_act(mob/user, obj/item/W)
 	var/list/options = list("Frequency", "ID Tag", "-SAVE TO BUFFER-", "Cancel")
-	var/answer = tgui_alert(user, "[src] has an ID of \"[id]\" and a frequency of [frequency]. What would you like to change?", "Options!", options)
+	var/answer = rerun_prompt(user, "k197", list("message" = "[src] has an ID of \"[id]\" and a frequency of [frequency]. What would you like to change?", "title" = "Options!", "choices" = options), TYPE_PROC_REF(/atom, multitool_act), args)
+	if(isnull(answer))
+		return ITEM_INTERACT_BLOCKING
 	if(!answer || answer == "Cancel" || !Adjacent(user))
 		return ITEM_INTERACT_BLOCKING
 
 	switch(answer)
 		if("Frequency")
-			var/new_frequency = tgui_input_number(user, "[src] has a frequency of [frequency]. What would you like it to be?", "[src] frequency", frequency, RADIO_HIGH_FREQ, RADIO_LOW_FREQ)
+			var/new_frequency = rerun_prompt(user, "k203", list("kind" = "number", "message" = "[src] has a frequency of [frequency]. What would you like it to be?", "title" = "[src] frequency", "default" = frequency, "max" = RADIO_HIGH_FREQ, "min" = RADIO_LOW_FREQ), TYPE_PROC_REF(/atom, multitool_act), args)
+			if(isnull(new_frequency))
+				return ITEM_INTERACT_BLOCKING
 			if(new_frequency)
 				new_frequency = sanitize_frequency(new_frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
 				set_frequency(new_frequency)
 				to_chat(user, span_notice("You set the [src]'s frequency to [frequency]."))
 
 		if("ID Tag")
-			id = tgui_input_text(user, "Please insert an ID tag for [src], example 'exhaust_port'.", "Set ID Tag", id, MAX_NAME_LEN)
+			var/_answer_k210 = rerun_prompt(user, "k210", list("kind" = "text", "message" = "Please insert an ID tag for [src], example 'exhaust_port'.", "title" = "Set ID Tag", "default" = id, "max_length" = MAX_NAME_LEN), TYPE_PROC_REF(/atom, multitool_act), args)
+			if(isnull(_answer_k210))
+				return ITEM_INTERACT_BLOCKING
+			id = _answer_k210
 			if(id)
 				to_chat(user, span_notice("You set the [src]'s ID Tag to \"[id]\"."))
 

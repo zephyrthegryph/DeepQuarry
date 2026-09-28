@@ -33,12 +33,16 @@
 /obj/structure/portal_event/attack_ghost(mob/observer/dead/user)
 	if(!target && check_rights_for(user?.client, R_HOLDER))
 		to_chat(user, span_notice("Selecting 'Portal Here' will create and link a portal at your location, while 'Target Here' will create an object that is only visible to ghosts which will act as the target, again at your location. Each option will give you the ability to change portal types, but for all options except 'Select Type' you only get one shot at it, so be sure to experiment with 'Select Type' first if you're not familiar with them."))
-		var/response = tgui_alert(user, "You appear to be staff. This portal has no exit point. If you want to make one, move to where you want it to go, and click the appropriate option, see chat for more info, otherwise click 'Cancel'", "Unbound Portal", list("Cancel","Portal Here","Target Here", "Select Type"))
+		var/response = rerun_prompt(user, "k36", list("message" = "You appear to be staff. This portal has no exit point. If you want to make one, move to where you want it to go, and click the appropriate option, see chat for more info, otherwise click 'Cancel'", "title" = "Unbound Portal", "choices" = list("Cancel","Portal Here","Target Here", "Select Type")), TYPE_PROC_REF(/atom, attack_ghost), args)
+		if(isnull(response))
+			return
 		if(response == "Portal Here")
 			target = new type(get_turf(user), src)
 			target.target = src
 			target.icon_state = icon_state
-			var/letsportal = tgui_alert(user, "Would you like to select a different portal type for these portals?", "Change portal", list("No","Yes"))
+			var/letsportal = rerun_prompt(user, "k41", list("message" = "Would you like to select a different portal type for these portals?", "title" = "Change portal", "choices" = list("No","Yes")), TYPE_PROC_REF(/atom, attack_ghost), args)
+			if(isnull(letsportal))
+				return
 			if(letsportal == "Yes")
 				var/portal_icon_selection = select_portal_subtype(user)
 				icon_state = portal_icon_selection
@@ -47,7 +51,9 @@
 			var/obj/structure/portal_target/newtarg = new(get_turf(user))
 			target = newtarg
 			newtarg.target = src
-			var/letsportal = tgui_alert(user, "Would you like to select a different portal type?", "Change portal", list("No","Yes"))
+			var/letsportal = rerun_prompt(user, "k50", list("message" = "Would you like to select a different portal type?", "title" = "Change portal", "choices" = list("No","Yes")), TYPE_PROC_REF(/atom, attack_ghost), args)
+			if(isnull(letsportal))
+				return
 			if(letsportal == "Yes")
 				user.forceMove(src)
 				icon_state = select_portal_subtype(user)
@@ -61,12 +67,16 @@
 	else return
 
 /obj/structure/portal_event/proc/select_portal_subtype(user)
-	var/portal_type = tgui_alert(user, "What kind of portal would you like it to be?", "Type Selection", list("Tech (Default)","Star","Weird Green","Pulsing"))
+	var/portal_type = rerun_prompt(user, "k64", list("message" = "What kind of portal would you like it to be?", "title" = "Type Selection", "choices" = list("Tech (Default)","Star","Weird Green","Pulsing")), PROC_REF(select_portal_subtype), args)
+	if(isnull(portal_type))
+		return
 	var/portal_icon_selection = "type-d-portal"
 	if(portal_type == "Tech (Default)")
 		portal_icon_selection = "type-d-portal"
 	if(portal_type == "Star")
-		var/portal_subtype = tgui_alert(user, "Which subtype would you prefer?", "Subtype Selection", list("Blue","Blue Pulse","Blue Unstable","Red","Red Unstable"))
+		var/portal_subtype = rerun_prompt(user, "k69", list("message" = "Which subtype would you prefer?", "title" = "Subtype Selection", "choices" = list("Blue","Blue Pulse","Blue Unstable","Red","Red Unstable")), PROC_REF(select_portal_subtype), args)
+		if(isnull(portal_subtype))
+			return
 		if(portal_subtype == "Blue")
 			portal_icon_selection = "type-a-blue-portal"
 		if(portal_subtype == "Blue Pulse")
@@ -80,7 +90,9 @@
 	if(portal_type == "Weird Green")
 		portal_icon_selection = "type-b-portal"
 	if(portal_type == "Pulsing")
-		var/portal_subtype = tgui_alert(user, "Which subtype would you prefer?", "Subtype Selection", list("Blue","Red","Blue/Red Mix", "Yellow", "White"))
+		var/portal_subtype = rerun_prompt(user, "k83", list("message" = "Which subtype would you prefer?", "title" = "Subtype Selection", "choices" = list("Blue","Red","Blue/Red Mix", "Yellow", "White")), PROC_REF(select_portal_subtype), args)
+		if(isnull(portal_subtype))
+			return
 		if(portal_subtype == "Blue")
 			portal_icon_selection = "type-c-blue-portal"
 		if(portal_subtype == "Red")

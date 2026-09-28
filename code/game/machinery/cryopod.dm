@@ -743,15 +743,16 @@
 		to_chat(user, span_warning("\The [src] is already occupied."))
 		return
 
-	var/willing = null //We don't want to allow people to be forced into despawning.
-
 	if(M.client)
-		if(tgui_alert(M,"Would you like to enter long-term storage?","Cryopod",list("Yes","No")) == "Yes")
-			if(!M || !M.Adjacent(src))
-				return
-			willing = 1
-	else
-		willing = 1
+		om_prompt(src, M, list("message" = "Would you like to enter long-term storage?", "title" = "Cryopod", "choices" = list("Yes","No"), "requires" = PROMPT_ADJACENT, "data" = list("loader" = user)), PROC_REF(storage_consent_answered))
+		return
+	finish_go_in(M, user, 1)
+
+/obj/machinery/cryopod/proc/storage_consent_answered(mob/M, answer, datum/om/prompt/ask)
+	if(answer == "Yes")
+		finish_go_in(M, ask.get("loader"), TRUE)
+
+/obj/machinery/cryopod/proc/finish_go_in(mob/M, mob/user, willing)
 
 	if(willing)
 		if(M == user)

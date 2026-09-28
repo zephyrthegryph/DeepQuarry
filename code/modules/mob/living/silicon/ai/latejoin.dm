@@ -9,9 +9,11 @@
 		return
 
 	// Guard against misclicks, this isn't the sort of thing we want happening accidentally
-	if(tgui_alert(src, "WARNING: This will immediately empty your core and ghost you, removing your character from the round permanently (similar to cryo and robotic storage). Are you entirely sure you want to do this?", "Store Core", list("No", "Yes")) != "Yes")
-		return
+	om_prompt(src, src, list("message" = "WARNING: This will immediately empty your core and ghost you, removing your character from the round permanently (similar to cryo and robotic storage). Are you entirely sure you want to do this?", "title" = "Store Core", "choices" = list("No", "Yes")), PROC_REF(store_core_confirmed))
 
+/mob/living/silicon/ai/proc/store_core_confirmed(mob/user, answer, datum/om/prompt/ask)
+	if(answer != "Yes")
+		return
 	// We warned you.
 	registry_join(REGISTRY_EMPTY_AI_CORES, new /obj/structure/AIcore/deactivated(loc))
 	GLOB.global_announcer.autosay("[src] has been moved to intelligence storage.", "Artificial Intelligence Oversight")

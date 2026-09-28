@@ -7,7 +7,9 @@ ADMIN_VERB_ONLY_CONTEXT_MENU(cmd_admin_check_player_logs, R_ADMIN|R_MOD, "Check 
 	log_view.tgui_interact(mob)
 
 ADMIN_VERB(persistent_client_logs, R_ADMIN|R_MOD, "Check Player Logs", "Displays the client logs of the selected ckey.", ADMIN_CATEGORY_LOGS)
-	var/mob/living/selected_key = tgui_input_list(user, "Select a ckey to check their logs", "Ckey", GLOB.persistent_clients_by_ckey)
+	var/mob/living/selected_key = verb_prompt(user, "a1", list("kind" = "list", "message" = "Select a ckey to check their logs", "title" = "Ckey", "choices" = GLOB.persistent_clients_by_ckey), args)
+	if(isnull(selected_key))
+		return
 	if(!selected_key)
 		return
 

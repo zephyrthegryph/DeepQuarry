@@ -86,7 +86,6 @@
 
 	var/new_x
 	var/new_y
-	var/new_z
 
 	if(x <= TRANSITIONEDGE)
 		what_edge = WEST
@@ -112,7 +111,25 @@
 	for(var/obj/effect/overmap/visitable/V in range(1, our_ship))
 		choices[V.name] = V
 
-	var/choice = tgui_input_list(usr, "Choose an overmap destination:", "Destination", choices)
+	om_prompt(src, occupant, list("kind" = "list", "message" = "Choose an overmap destination:", "title" = "Destination", "choices" = choices, "requires" = list(/datum/om/check/inside_target), "on_cancel" = PROC_REF(overmap_destination_cancelled), "data" = list("choices" = choices, "edge" = what_edge, "x" = this_x, "y" = this_y, "z" = this_z, "new_x" = new_x, "new_y" = new_y, "occupant" = this_occupant)), PROC_REF(overmap_destination_chosen))
+
+/obj/mecha/combat/fighter/proc/overmap_destination_cancelled(mob/user, datum/om/prompt/ask)
+	var/backwards = turn(ask.get("edge"), 180)
+	forceMove(get_step(src,backwards)) //Move them back a step, then.
+	set_dir(backwards)
+
+/obj/mecha/combat/fighter/proc/overmap_destination_chosen(mob/user, choice, datum/om/prompt/ask)
+	var/mob/living/carbon/occupant = SLOT_ITEM(src, MECHA_SLOT_PILOT)
+	var/obj/effect/overmap/visitable/our_ship = get_overmap_sector(z)
+	var/list/choices = ask.get("choices")
+	var/what_edge = ask.get("edge")
+	var/this_x = ask.get("x")
+	var/this_y = ask.get("y")
+	var/this_z = ask.get("z")
+	var/this_occupant = ask.get("occupant")
+	var/new_x = ask.get("new_x")
+	var/new_y = ask.get("new_y")
+	var/new_z
 	if(!choice)
 		var/backwards = turn(what_edge, 180)
 		forceMove(get_step(src,backwards)) //Move them back a step, then.
@@ -286,18 +303,30 @@
 
 /obj/mecha/combat/fighter/gunpod/attackby(obj/item/W as obj, mob/user as mob)
 	if(istype(W,/obj/item/multitool) && state == 1)
-		var/new_paint_location = tgui_input_list(user, "Please select a target zone.", "Paint Zone", list("Fore Stripe", "Aft Stripe", "CANCEL"))
-		if(new_paint_location && new_paint_location != "CANCEL")
-			var/new_paint_color = tgui_color_picker(user, "Please select a paint color.", "Paint Color", null)
-			if(new_paint_color)
-				switch(new_paint_location)
-					if("Fore Stripe")
-						stripe1_color = new_paint_color
-					if("Aft Stripe")
-						stripe2_color = new_paint_color
+		om_prompt_sequence(src, user, list(
+			list("key" = "zone", "kind" = "list", "message" = "Please select a target zone.", "title" = "Paint Zone", "choices" = list("Fore Stripe", "Aft Stripe", "CANCEL")),
+			PROC_REF(ask_stripe_color),
+		), PROC_REF(stripe_painted), list("target" = W, "requires" = PROMPT_IN_HAND))
+	else ..()
+
+/obj/mecha/combat/fighter/gunpod/proc/ask_stripe_color(mob/user, datum/om/prompt/ask)
+	if(ask.get("zone") != "CANCEL")
+		return list("key" = "color", "kind" = "color", "message" = "Please select a paint color.", "title" = "Paint Color")
+
+/obj/mecha/combat/fighter/gunpod/proc/stripe_painted(mob/user, datum/om/prompt/ask)
+	var/new_paint_location = ask.get("zone")
+	var/new_paint_color = ask.get("color")
+	if(state != 1)
+		return
+	if(new_paint_location && new_paint_location != "CANCEL")
+		if(new_paint_color)
+			switch(new_paint_location)
+				if("Fore Stripe")
+					stripe1_color = new_paint_color
+				if("Aft Stripe")
+					stripe2_color = new_paint_color
 
 		update_icon()
-	else ..()
 
 /obj/effect/decal/mecha_wreckage/gunpod
 	name = "Gunpod wreckage"

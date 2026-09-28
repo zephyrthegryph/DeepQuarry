@@ -41,7 +41,10 @@ REF_OWNED(/obj/machinery/computer/ship, "flight_operations_ui")
 	if(viewing_overmap(user))
 		user.reset_perspective()
 	// was an admin_log_show error popup; now a tgui_alert with a single Reconnect choice.
-	if(tgui_alert(user, "Unable to connect to [flavor].", "[src]", list("Reconnect", "Close")) == "Reconnect")
+	var/_answer_k47 = rerun_prompt(user, "k47", list("message" = "Unable to connect to [flavor].", "title" = "[src]", "choices" = list("Reconnect", "Close")), PROC_REF(display_reconnect_dialog), args)
+	if(isnull(_answer_k47))
+		return
+	if(_answer_k47 == "Reconnect")
 		if(sync_linked(user))
 			interface_interact(user)
 

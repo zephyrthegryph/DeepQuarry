@@ -215,29 +215,30 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	if(stat == DEAD && !forbid_seeing_deadchat)
 		announce_ghost_joinleave(ghostize(1))
 	else
-		var/response
 		if(check_rights_for(src.client, R_ADMIN|R_SERVER|R_MOD)) //No need to sanity check for client and holder here as that is part of check_rights
-			response = tgui_alert(src, "You have the ability to Admin-Ghost. The regular Ghost verb will announce your presence to dead chat. Both variants will allow you to return to your body using 'aghost'.\n\nWhat do you wish to do?", "Are you sure you want to ghost?", list("Admin Ghost", "Ghost", "Stay in body"))
-			if(response == "Admin Ghost")
-				if(!src.client)
-					return
-				SSadmin_verbs.dynamic_invoke_verb(client, /datum/admin_verb/admin_ghost)
+			om_prompt(src, src, list("message" = "You have the ability to Admin-Ghost. The regular Ghost verb will announce your presence to dead chat. Both variants will allow you to return to your body using 'aghost'.\n\nWhat do you wish to do?", "title" = "Are you sure you want to ghost?", "choices" = list("Admin Ghost", "Ghost", "Stay in body")), PROC_REF(ghost_choice_made))
 		else
-			response = tgui_alert(src, "Are you -sure- you want to ghost?\n(You are alive, or otherwise have the potential to become alive. Don't abuse ghost unless you are inside a cryopod or equivalent! You can't change your mind so choose wisely!)", "Are you sure you want to ghost?", list("Stay in body", "Ghost"))
-		if(response != "Ghost")
+			om_prompt(src, src, list("message" = "Are you -sure- you want to ghost?\n(You are alive, or otherwise have the potential to become alive. Don't abuse ghost unless you are inside a cryopod or equivalent! You can't change your mind so choose wisely!)", "title" = "Are you sure you want to ghost?", "choices" = list("Stay in body", "Ghost")), PROC_REF(ghost_choice_made))
+
+/mob/living/proc/ghost_choice_made(mob/user, response, datum/om/prompt/ask)
+	if(response == "Admin Ghost")
+		if(!src.client)
 			return
-		resting = 1
-		var/turf/location = get_turf(src)
-		var/special_role = check_special_role()
-		if(!istype(loc,/obj/machinery/cryopod))
-			log_and_message_admins("has ghosted outside cryo[special_role ? " as [special_role]" : ""]. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[location.x];Y=[location.y];Z=[location.z]'>JMP</a>)",src)
-		else if(special_role)
-			log_and_message_admins("has ghosted in cryo as [special_role]. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[location.x];Y=[location.y];Z=[location.z]'>JMP</a>)",src)
-		var/mob/observer/dead/ghost = ghostize(0)	// 0 parameter is so we can never re-enter our body, "Charlie, you can never come baaaack~" :3
-		if(ghost)
-			ghost.timeofdeath = world.time 	// Because the living mob won't have a time of death and we want the respawn timer to work properly.
-			ghost.set_respawn_timer()
-			announce_ghost_joinleave(ghost)
+		SSadmin_verbs.dynamic_invoke_verb(client, /datum/admin_verb/admin_ghost)
+	if(response != "Ghost")
+		return
+	resting = 1
+	var/turf/location = get_turf(src)
+	var/special_role = check_special_role()
+	if(!istype(loc,/obj/machinery/cryopod))
+		log_and_message_admins("has ghosted outside cryo[special_role ? " as [special_role]" : ""]. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[location.x];Y=[location.y];Z=[location.z]'>JMP</a>)",src)
+	else if(special_role)
+		log_and_message_admins("has ghosted in cryo as [special_role]. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[location.x];Y=[location.y];Z=[location.z]'>JMP</a>)",src)
+	var/mob/observer/dead/ghost = ghostize(0)	// 0 parameter is so we can never re-enter our body, "Charlie, you can never come baaaack~" :3
+	if(ghost)
+		ghost.timeofdeath = world.time 	// Because the living mob won't have a time of death and we want the respawn timer to work properly.
+		ghost.set_respawn_timer()
+		announce_ghost_joinleave(ghost)
 
 /mob/observer/dead/can_use_hands()	return 0
 /mob/observer/dead/is_active()		return 0
@@ -322,10 +323,18 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 		to_chat(src, span_filter_notice(span_red(span_bold("You have been banned from using this feature"))))
 		return
 	if(CONFIG_GET(flag/antag_hud_restricted) && !has_enabled_antagHUD && !check_rights_for(client, R_HOLDER))
-		var/response = tgui_alert(src, "If you turn this on, you will not be able to take any part in the round.","Are you sure you want to turn this feature on?",list("Yes","No"))
-		if(response != "Yes") return
-		can_reenter_corpse = FALSE
-		set_respawn_timer(-1) // Foreeeever
+		om_prompt(src, src, list("message" = "If you turn this on, you will not be able to take any part in the round.", "title" = "Are you sure you want to turn this feature on?", "choices" = list("Yes","No")), PROC_REF(antag_hud_confirmed))
+		return
+	toggle_antag_hud_now()
+
+/mob/observer/dead/proc/antag_hud_confirmed(mob/user, response, datum/om/prompt/ask)
+	if(response != "Yes")
+		return
+	can_reenter_corpse = FALSE
+	set_respawn_timer(-1) // Foreeeever
+	toggle_antag_hud_now()
+
+/mob/observer/dead/proc/toggle_antag_hud_now()
 	if(!has_enabled_antagHUD && !check_rights_for(client, R_HOLDER))
 		has_enabled_antagHUD = TRUE
 
@@ -375,9 +384,16 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	if(areaname)
 		A = return_sorted_areas()[areaname]
 	else
-		A = return_sorted_areas()[tgui_input_list(src,  "Select an area:", "Ghost Teleport", jumpable_areas())]
-		if(!A)
-			return
+		om_prompt(src, src, list("kind" = "list", "message" = "Select an area:", "title" = "Ghost Teleport", "choices" = jumpable_areas()), PROC_REF(dead_tele_chosen))
+		return
+	dead_tele_to(A)
+
+/mob/observer/dead/proc/dead_tele_chosen(mob/user, areaname, datum/om/prompt/ask)
+	dead_tele_to(return_sorted_areas()[areaname])
+
+/mob/observer/dead/proc/dead_tele_to(area/A)
+	if(!A)
+		return
 
 	if(!isobserver(src))
 		to_chat(src, "Not when you're not dead!")
@@ -395,22 +411,24 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 		to_chat(src, "Not when you're not dead!")
 		return
 
-	var/mob/M
-
 	if(!mobname)
 		var/list/possible_mobs = jumpable_mobs()
-		var/input = tgui_input_list(src, "Select a mob:", "Ghost Follow", possible_mobs)
-		if(!input)
-			return
-		M = possible_mobs[input]
-		if(!M)
-			return
+		om_prompt(src, src, list("kind" = "list", "message" = "Select a mob:", "title" = "Ghost Follow", "choices" = possible_mobs, "data" = list("mobs" = possible_mobs)), PROC_REF(follow_target_chosen))
+		return
+	follow_mob(jumpable_mobs()[mobname])
 
+/mob/observer/dead/proc/follow_target_chosen(mob/user, input, datum/om/prompt/ask)
+	var/list/possible_mobs = ask.get("mobs")
+	follow_mob(possible_mobs[input])
+
+/mob/observer/dead/proc/follow_mob(mob/M)
+	if(!M)
+		return
 	if(!isobserver(src))
 		to_chat(src, "Not when you're not dead!")
 		return
 
-	ManualFollow(M || jumpable_mobs()[mobname])
+	ManualFollow(M)
 
 /mob/observer/dead/forceMove(atom/destination, direction, movetime, just_spawned = FALSE) // pass movetime through
 	if(check_rights_for(client, R_HOLDER))
@@ -562,8 +580,11 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 		return
 
 	var/list/possible_mobs = jumpable_mobs()
-	var/input = tgui_input_list(src, "Select a mob:", "Ghost Jump", possible_mobs)
-	if(!input)
+	om_prompt(src, src, list("kind" = "list", "message" = "Select a mob:", "title" = "Ghost Jump", "choices" = possible_mobs, "data" = list("mobs" = possible_mobs)), PROC_REF(jump_target_chosen))
+
+/mob/observer/dead/proc/jump_target_chosen(mob/user, input, datum/om/prompt/ask)
+	var/list/possible_mobs = ask.get("mobs")
+	if(!isobserver(src)) //Make sure they're an observer!
 		return
 
 	var/target = possible_mobs[input]
@@ -680,9 +701,16 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 		to_chat(src, span_warning("There is no blood to use nearby."))
 		return
 
-	var/obj/effect/decal/cleanable/blood/choice = tgui_input_list(src, "What blood would you like to use?", "Blood Choice", choices)
+	om_prompt_sequence(src, src, list(
+		list("key" = "blood", "kind" = "list", "message" = "What blood would you like to use?", "title" = "Blood Choice", "choices" = choices),
+		list("key" = "direction", "kind" = "list", "message" = "Which way?", "title" = "Tile selection", "choices" = list("Here","North","South","East","West")),
+		list("key" = "message", "kind" = "text", "message" = "Write a message. It cannot be longer than 50 characters.", "title" = "Blood writing", "default" = "", "max_length" = 50),
+	), PROC_REF(bloody_doodle_written))
 
-	var/direction = tgui_input_list(src,"Which way?","Tile selection", list("Here","North","South","East","West"))
+/mob/observer/dead/proc/bloody_doodle_written(mob/user, datum/om/prompt/ask)
+	var/obj/effect/decal/cleanable/blood/choice = ask.get("blood")
+	var/direction = ask.get("direction")
+	var/message = ask.get("message")
 	var/turf/simulated/T = src.loc
 	if (direction != "Here")
 		T = get_step(T,text2dir(direction))
@@ -704,8 +732,6 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 		return
 
 	var/max_length = 50
-
-	var/message = tgui_input_text(src, "Write a message. It cannot be longer than [max_length] characters.","Blood writing", "", max_length)
 
 	if (message)
 
@@ -891,50 +917,52 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 		var/list/options = list()
 		for(var/mob/living/Ms in view(src))
 			options += Ms
-		var/mob/living/M = tgui_input_list(src, "Select who to whisper to:", "Whisper to?", options)
-		if(!M)
-			return 0
-		var/msg = tgui_input_text(src, "Message:", "Spectral Whisper", "", MAX_MESSAGE_LEN)
-		if(msg)
-			log_talk("(SPECWHISP to [key_name(M)]): [msg]", LOG_WHISPER)
-			to_chat(M, span_warning(" You hear a strange, unidentifiable voice in your head... [span_purple("[msg]")]"))
-			to_chat(src, span_warning(" You said: '[msg]' to [M]."))
-		else
-			return
+		om_prompt_sequence(src, src, list(
+			list("key" = "target", "kind" = "list", "message" = "Select who to whisper to:", "title" = "Whisper to?", "choices" = options),
+			list("key" = "message", "kind" = "text", "message" = "Message:", "title" = "Spectral Whisper", "default" = "", "max_length" = MAX_MESSAGE_LEN),
+		), PROC_REF(spectral_whisper_written))
 		return 1
 	else
 		to_chat(src, span_danger("You have not been pulled past the veil! You can not whisper to the living."))
+
+/mob/observer/dead/proc/spectral_whisper_written(mob/user, datum/om/prompt/ask)
+	var/mob/living/M = ask.get("target")
+	var/msg = ask.get("message")
+	if(!is_manifest)
+		return
+	if(msg)
+		log_talk("(SPECWHISP to [key_name(M)]): [msg]", LOG_WHISPER)
+		to_chat(M, span_warning(" You hear a strange, unidentifiable voice in your head... [span_purple("[msg]")]"))
+		to_chat(src, span_warning(" You said: '[msg]' to [M]."))
+	else
+		return
+	return 1
 
 /mob/observer/dead/verb/choose_ghost_sprite()
 	set category = "Ghost.Settings"
 	set name = "Choose Sprite"
 
-	var/choice
-	var/previous_state
-	var/finalized = "No"
+	var/previous_state = icon_state
+	om_prompt(src, src, list("kind" = "list", "message" = "What would you like to use for your ghost sprite?", "title" = "Ghost Sprite", "choices" = GLOB.possible_ghost_sprites, "data" = list("previous" = previous_state)), PROC_REF(ghost_sprite_chosen))
 
-	while(finalized == "No" && src.client)
-		choice = tgui_input_list(src, "What would you like to use for your ghost sprite?", "Ghost Sprite", GLOB.possible_ghost_sprites)
-		if(!choice)
-			return
+/mob/observer/dead/proc/ghost_sprite_chosen(mob/user, choice, datum/om/prompt/ask)
+	icon = 'icons/mob/ghost.dmi'
+	cut_overlays()
+	icon_state = GLOB.possible_ghost_sprites[choice]
+	ask.put("choice", choice)
+	om_prompt_chain(ask, list("message" = "Look at your sprite. Is this what you wish to use?", "title" = "Ghost Sprite", "choices" = list("No","Yes"), "on_cancel" = PROC_REF(ghost_sprite_rejected)), PROC_REF(ghost_sprite_confirmed))
 
-		if(choice)
-			icon = 'icons/mob/ghost.dmi'
-			cut_overlays()
+/mob/observer/dead/proc/ghost_sprite_rejected(mob/user, datum/om/prompt/ask)
+	icon_state = ask.get("previous")
 
-			if(icon_state && icon)
-				previous_state = icon_state
-
-			icon_state = GLOB.possible_ghost_sprites[choice]
-			finalized = tgui_alert(src, "Look at your sprite. Is this what you wish to use?","Ghost Sprite",list("No","Yes"))
-
-			ghost_sprite = GLOB.possible_ghost_sprites[choice]
-
-			if(ghost_sprite == "blank")
-				log_and_message_admins("[key_name(src)] has set their ghost sprite to invisible.", src)
-
-			if(!finalized || finalized == "No")
-				icon_state = previous_state
+/mob/observer/dead/proc/ghost_sprite_confirmed(mob/user, finalized, datum/om/prompt/ask)
+	if(finalized != "Yes")
+		icon_state = ask.get("previous")
+		om_prompt(src, src, list("kind" = "list", "message" = "What would you like to use for your ghost sprite?", "title" = "Ghost Sprite", "choices" = GLOB.possible_ghost_sprites, "data" = list("previous" = ask.get("previous"))), PROC_REF(ghost_sprite_chosen))
+		return
+	ghost_sprite = GLOB.possible_ghost_sprites[ask.get("choice")]
+	if(ghost_sprite == "blank")
+		log_and_message_admins("[key_name(src)] has set their ghost sprite to invisible.", src)
 
 /mob/observer/dead/is_blind()
 	return FALSE
@@ -962,8 +990,10 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 		to_chat(src,span_warning("You have 'Be pAI' disabled in your character prefs."))
 		return
 
-	var/choice = tgui_alert(src, "Would you like to submit yourself to the recruitment list too?", "Confirmation", list("No", "Yes"))
-	if(!choice || choice != "Yes")
+	om_prompt(src, src, list("message" = "Would you like to submit yourself to the recruitment list too?", "title" = "Confirmation", "choices" = list("No", "Yes")), PROC_REF(pai_alert_confirmed))
+
+/mob/observer/dead/proc/pai_alert_confirmed(mob/user, choice, datum/om/prompt/ask)
+	if(choice != "Yes")
 		return
 
 	to_chat(src,span_notice("Flashing the displays of [pai_card_ping()] unoccupied PAIs."))
@@ -1088,15 +1118,18 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	var/obj/machinery/transhuman/autoresleever/chosen_resleever = null
 	if(length(autoresleevers) > 1)
 		// Prompt user to choose which one they wanna go to
-		var/choice = tgui_input_list(src, "There are multiple auto-resleevers available! Choose one.", "Choose Auto-Resleever", autoresleevers)
-		if(!choice)
-			// well okay then :L
-			return
-		chosen_resleever = autoresleevers[choice]
+		om_prompt(src, src, list("kind" = "list", "message" = "There are multiple auto-resleevers available! Choose one.", "title" = "Choose Auto-Resleever", "choices" = autoresleevers, "data" = list("resleevers" = autoresleevers)), PROC_REF(autoresleever_chosen))
+		return
 	else
 		// If there's less than one, just choose whatever one is available (if any)
 		chosen_resleever = autoresleevers[pick(autoresleevers)]
+	go_to_autoresleever(chosen_resleever)
 
+/mob/observer/dead/proc/autoresleever_chosen(mob/user, choice, datum/om/prompt/ask)
+	var/list/autoresleevers = ask.get("resleevers")
+	go_to_autoresleever(autoresleevers[choice])
+
+/mob/observer/dead/proc/go_to_autoresleever(obj/machinery/transhuman/autoresleever/chosen_resleever)
 	if(!chosen_resleever)
 		to_chat(src, span_warning("There appears to be no auto-resleevers available."))
 		return

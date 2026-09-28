@@ -115,9 +115,15 @@
 			if(!isnewplayer(ui.user))
 				to_chat(ui.user, span_userdanger("You can't change your character slot while being in round."))
 				return FALSE
-			if("Yes" != tgui_alert(ui.user, "This will reset the current slot. Continue?", "Reset current slot?", list("No", "Yes")))
+			var/_answer_k119 = act_prompt(ui.user, action, params, ui, "k119", list("message" = "This will reset the current slot. Continue?", "title" = "Reset current slot?", "choices" = list("No", "Yes")))
+			if(isnull(_answer_k119))
+				return
+			if("Yes" != _answer_k119)
 				return FALSE
-			if("Yes" != tgui_alert(ui.user, "Are you completely sure that you want to reset this character slot?", "Reset current slot?", list("No", "Yes")))
+			var/_answer_k121 = act_prompt(ui.user, action, params, ui, "k121", list("message" = "Are you completely sure that you want to reset this character slot?", "title" = "Reset current slot?", "choices" = list("No", "Yes")))
+			if(isnull(_answer_k121))
+				return
+			if("Yes" != _answer_k121)
 				return FALSE
 			reset_slot()
 			sanitize_preferences()

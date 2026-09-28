@@ -23,7 +23,9 @@
 
 	feedback_add_details("admin_verb","Mentorhelp") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 	if(current_ticket)
-		var/input = tgui_alert(src, "You already have a ticket open. Is this for the same issue?","Duplicate?",list("Yes","No"))
+		var/input = rerun_prompt(src, "k26", list("message" = "You already have a ticket open. Is this for the same issue?", "title" = "Duplicate?", "choices" = list("Yes","No")), VERB_REF(mentorhelp), args)
+		if(isnull(input))
+			return
 		if(!input)
 			return
 		if(input == "Yes")
@@ -44,7 +46,10 @@
 ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor Ticket List", "Opens the list of mentor tickets", ADMIN_CATEGORY_MISC)
 	var/browse_to
 
-	switch(tgui_input_list(user, "Display which ticket list?", "List Choice", list("Active Tickets", "Resolved Tickets")))
+	var/_answer_k47 = verb_prompt(user, "k47", list("kind" = "list", "message" = "Display which ticket list?", "title" = "List Choice", "choices" = list("Active Tickets", "Resolved Tickets")), args)
+	if(isnull(_answer_k47))
+		return
+	switch(_answer_k47)
 		if("Active Tickets")
 			browse_to = AHELP_ACTIVE
 		if("Resolved Tickets")
@@ -69,11 +74,15 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 	set name = "Request help"
 	set hidden = 1
 
-	var/mhelp = tgui_alert(src, "Select the help you need.","Request for Help",list("Adminhelp","Mentorhelp"))
+	var/mhelp = rerun_prompt(src, "k72", list("message" = "Select the help you need.", "title" = "Request for Help", "choices" = list("Adminhelp","Mentorhelp")), VERB_REF(requesthelp), args)
+	if(isnull(mhelp))
+		return
 	if(!mhelp)
 		return
 
-	var/msg = tgui_input_text(src, "Input your request for help.", "Request for Help ([mhelp])", multiline = TRUE)
+	var/msg = rerun_prompt(src, "k76", list("kind" = "text", "message" = "Input your request for help.", "title" = "Request for Help ([mhelp])", "multiline" = TRUE), VERB_REF(requesthelp), args)
+	if(isnull(msg))
+		return
 	if(!msg)
 		return
 
@@ -104,7 +113,9 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 
 	feedback_add_details("admin_verb","Adminhelp") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 	if(current_ticket)
-		var/input = tgui_alert(src, "You already have a ticket open. Is this for the same issue?","Duplicate?",list("Yes","No"))
+		var/input = rerun_prompt(src, "k107", list("message" = "You already have a ticket open. Is this for the same issue?", "title" = "Duplicate?", "choices" = list("Yes","No")), VERB_REF(adminhelp), args)
+		if(isnull(input))
+			return
 		if(!input)
 			return
 		if(input == "Yes")
@@ -130,7 +141,10 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 
 	var/browse_to
 
-	switch(tgui_input_list(src, "Display which ticket list?", "List Choice", list("Active Tickets", "Closed Tickets", "Resolved Tickets")))
+	var/_answer_k133 = client_prompt("k133", list("kind" = "list", "message" = "Display which ticket list?", "title" = "List Choice", "choices" = list("Active Tickets", "Closed Tickets", "Resolved Tickets")), PROC_REF(cmd_admin_ticket_panel), args, 0)
+	if(isnull(_answer_k133))
+		return
+	switch(_answer_k133)
 		if("Active Tickets")
 			browse_to = AHELP_ACTIVE
 		if("Closed Tickets")
@@ -170,7 +184,10 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 		to_chat(src, span_danger("Error: You cannot request spice (muted from adminhelps)."))
 		return
 
-	if(tgui_alert(src, "Are you sure you want to request the admins spice things up for you? You accept the consequences if you do.","Spicy!",list("Yes","No")) == "Yes")
+	var/_answer_k176 = rerun_prompt(src, "k176", list("message" = "Are you sure you want to request the admins spice things up for you? You accept the consequences if you do.", "title" = "Spicy!", "choices" = list("Yes","No")), VERB_REF(adminspice), args)
+	if(isnull(_answer_k176))
+		return
+	if(_answer_k176 == "Yes")
 		message_admins("[ADMIN_FULLMONTY(src)] has requested the round be spiced up a little.")
 		to_chat(src, span_notice("You have requested some more spice in your round."))
 	else
@@ -205,7 +222,9 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 
 	if(T)
 		message_mentors(span_mentor_channel("[src] has started replying to [C]'s mentor help."))
-	var/msg = tgui_input_text(src,"Message:", "Private message to [C]", multiline = TRUE, encode = FALSE)
+	var/msg = client_prompt("k208", list("kind" = "text", "message" = "Message:", "title" = "Private message to [C]", "multiline" = TRUE, "encode" = FALSE), PROC_REF(cmd_mhelp_reply), args, 0)
+	if(isnull(msg))
+		return
 	if (!msg)
 		message_mentors(span_mentor_channel("[src] has cancelled their reply to [C]'s mentor help."))
 		return
@@ -238,7 +257,10 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 
 	//get message text, limit it's length.and clean/escape html
 	if(!msg)
-		msg = tgui_input_text(src, "Message:", "Mentor-PM to [whom]", multiline = TRUE, encode = FALSE)
+		var/_answer_k241 = client_prompt("k241", list("kind" = "text", "message" = "Message:", "title" = "Mentor-PM to [whom]", "multiline" = TRUE, "encode" = FALSE), PROC_REF(cmd_mentor_pm), args, 0)
+		if(isnull(_answer_k241))
+			return
+		msg = _answer_k241
 
 		if(!msg)
 			return

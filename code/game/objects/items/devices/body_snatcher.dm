@@ -12,6 +12,17 @@
 	drop_sound = 'sound/items/drop/device.ogg'
 	flags = NOBLUDGEON
 
+/obj/item/bodysnatcher/proc/swap_confirmed(mob/living/user, choice, datum/om/prompt/ask)
+	var/mob/living/M = ask.get("victim")
+	if(choice != "Continue" || !user.Adjacent(M) || M.stat == DEAD)
+		return
+	if(M.ckey && !M.client)
+		log_and_message_admins("attempted to body swap with [key_name(M)] while they were SSD!")
+	else
+		log_and_message_admins("attempted to body swap with [key_name(M)].")
+	user.visible_message(span_warning("[user] pushes the device up their forehead and [M]'s head, the device beginning to let out a series of light beeps!"),span_notice("You begin swap minds with [M]!"))
+	om_do_after(user, 35 SECONDS, target = M, receiver = src, on_done = PROC_REF(attack_timed_done), done_args = list(M, user))
+
 /obj/item/bodysnatcher/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(ishuman(M) || issilicon(M)) //Allows body swapping with humans, synths, and pAI's/borgs since they all have a mind.
@@ -37,15 +48,8 @@
 			to_chat(user,span_warning("A warning pops up on the device, informing you that [M] is dead, and, as such, the mind transfer can not be done."))
 			return ITEM_INTERACT_FAILURE
 
-		var/choice = tgui_alert(user,"This will swap your mind with the target's mind. This will result in them controlling your body, and you controlling their body. Continue?","Confirmation",list("Continue","Cancel"))
-		if(choice == "Continue" && user.get_active_hand() == src && user.Adjacent(M))
-			if(M.ckey && !M.client)
-				log_and_message_admins("attempted to body swap with [key_name(M)] while they were SSD!")
-			else
-				log_and_message_admins("attempted to body swap with [key_name(M)].")
-			user.visible_message(span_warning("[user] pushes the device up their forehead and [M]'s head, the device beginning to let out a series of light beeps!"),span_notice("You begin swap minds with [M]!"))
-			om_do_after(user, 35 SECONDS, target = M, receiver = src, on_done = PROC_REF(attack_timed_done), done_args = list(M, user))
-			return ITEM_INTERACT_BLOCKING
+		om_prompt(src, user, list("message" = "This will swap your mind with the target's mind. This will result in them controlling your body, and you controlling their body. Continue?", "title" = "Confirmation", "choices" = list("Continue","Cancel"), "requires" = PROMPT_IN_HAND, "data" = list("victim" = M)), PROC_REF(swap_confirmed))
+		return ITEM_INTERACT_BLOCKING
 
 	else
 		to_chat(user,span_warning(" A warning pops up on the LED display on the side of the device, informing you that the target is not able to have their mind swapped with!"))

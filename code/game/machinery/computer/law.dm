@@ -67,11 +67,12 @@
 		to_chat(user, "The upload computer is broken!")
 		return TRUE
 
-	src.current = select_active_ai(user)
-
-	if (!src.current)
+	if(!length(active_ais()))
 		to_chat(user, "No active AIs detected.")
-	else
+		return TRUE
+	var/mob/living/silicon/ai/picked = select_active_ai(user, src, PROC_REF(interaction_select_ai), args)
+	if(picked)
+		src.current = picked
 		to_chat(user, "[src.current.name] selected for law changes.")
 	return TRUE
 
@@ -120,11 +121,12 @@
 		to_chat(user, "The upload computer is broken!")
 		return TRUE
 
-	src.current = freeborg()
-
-	if (!src.current)
+	if(!length(free_borg_choices()))
 		to_chat(user, "No free cyborgs detected.")
-	else
+		return TRUE
+	var/mob/living/silicon/robot/picked = freeborg(user, src, PROC_REF(interaction_select_borg), args)
+	if(picked)
+		src.current = picked
 		to_chat(user, "[src.current.name] selected for law changes.")
 	return TRUE
 

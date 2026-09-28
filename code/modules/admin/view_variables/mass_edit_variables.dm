@@ -1,5 +1,7 @@
 /client/proc/cmd_mass_modify_object_variables(datum/target, var_name)
-	if(tgui_alert(src, "Are you sure you'd like to mass-modify every instance of the [var_name] variable? This can break everything if you do not know what you are doing.", "Slow down, chief!", list("Yes", "No"), 60 SECONDS) != "Yes")
+	if(!GLOB.prompt_flow) // its questions re-run it (prompt_flow(), prompt_helpers.dm)
+		return prompt_flow(src, PROC_REF(cmd_mass_modify_object_variables), args)
+	if(flow_ask(mob, "mass:sure", list("message" = "Are you sure you'd like to mass-modify every instance of the [var_name] variable? This can break everything if you do not know what you are doing.", "title" = "Slow down, chief!", "choices" = list("Yes", "No"), "timeout" = 60 SECONDS)) != "Yes")
 		return
 
 	if(!check_rights(R_VAREDIT))
@@ -8,7 +10,9 @@
 	/// if false get only the strict type, get all subtypes too otherwise
 	var/strict_type = FALSE
 	if(target?.type)
-		strict_type = vv_subtype_prompt(target.type)
+		strict_type = vv_subtype_prompt(target.type, "mass")
+		if(isnull(strict_type))
+			return
 
 	massmodify_variables(target, var_name, strict_type)
 	feedback_add_details("admin_verb","MVV") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
@@ -28,7 +32,7 @@
 
 		names = sortList(names)
 
-		variable = tgui_input_list(usr, "Which var?", "Var", names)
+		variable = flow_ask(mob, "mass:var", list("kind" = "list", "message" = "Which var?", "title" = "Var", "choices" = names))
 	else
 		variable = var_name
 
@@ -49,7 +53,7 @@
 	if(variable in GLOB.VVpixelmovement)
 		if(!check_rights(R_DEBUG))
 			return
-		var/prompt = tgui_alert(src, "Editing this var may irreparably break tile gliding for the rest of the round. THIS CAN'T BE UNDONE", "DANGER", list("ABORT ", "Continue", " ABORT"))
+		var/prompt = flow_ask(mob, "mass:gliding", list("message" = "Editing this var may irreparably break tile gliding for the rest of the round. THIS CAN'T BE UNDONE", "title" = "DANGER", "choices" = list("ABORT ", "Continue", " ABORT")))
 		if (prompt != "Continue")
 			return
 
@@ -77,7 +81,7 @@
 		if(dir_text)
 			to_chat(src, "If a direction, direction is: [dir_text]", confidential = TRUE)
 
-	var/value = vv_get_value(default_class = default)
+	var/value = vv_get_value(default_class = default, key = "mass:value")
 	var/new_value = value["value"]
 	var/class = value["class"]
 
@@ -111,11 +115,15 @@
 				CHECK_TICK
 
 		if(VV_TEXT)
-			var/list/varsvars = vv_parse_text(target, new_value)
+			var/list/varsvars = vv_parse_text(target, new_value, "mass")
+			if(isnull(varsvars))
+				return
 			var/pre_processing = new_value
 			var/unique
 			if (varsvars?.len)
-				unique = tgui_alert(src, "Process vars unique to each instance, or same for all?", "Variable Association", list("Unique", "Same"))
+				unique = flow_ask(mob, "mass:unique", list("message" = "Process vars unique to each instance, or same for all?", "title" = "Variable Association", "choices" = list("Unique", "Same")))
+				if(isnull(unique))
+					return
 				if(unique == "Unique")
 					unique = TRUE
 				else
@@ -142,8 +150,8 @@
 				CHECK_TICK
 
 		if (VV_NEW_TYPE)
-			var/many = tgui_alert(src, "Create only one [value["type"]] and assign each or a new one for each thing", "How Many", list("One", "Many", "Cancel"))
-			if (many == "Cancel")
+			var/many = flow_ask(mob, "mass:many", list("message" = "Create only one [value["type"]] and assign each or a new one for each thing", "title" = "How Many", "choices" = list("One", "Many", "Cancel")))
+			if (isnull(many) || many == "Cancel")
 				return
 			if (many == "Many")
 				many = TRUE

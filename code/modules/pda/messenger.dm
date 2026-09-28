@@ -124,7 +124,9 @@
 
 
 /datum/data/pda/app/messenger/proc/create_message(mob/living/U, obj/item/pda/P)
-	var/t = tgui_input_text(U, "Please enter message", name, null, MAX_MESSAGE_LEN)
+	var/t = rerun_prompt(U, "k127", list("kind" = "text", "message" = "Please enter message", "title" = name, "max_length" = MAX_MESSAGE_LEN), PROC_REF(create_message), args)
+	if(isnull(t))
+		return
 	if(!t)
 		return
 	t = readd_quotes(t)

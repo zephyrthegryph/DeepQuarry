@@ -38,14 +38,18 @@
 		return
 	if(href_list["cut"])
 		if(cable && cable.get_amount())
-			var/m = tgui_input_number(chassis?.slot_item(MECHA_SLOT_PILOT), "Please specify the length of cable to cut", "Cut cable", min(cable.get_amount(), 30))
-			m = min(m, cable.get_amount())
-			if(m)
-				use_cable(m)
-				new /obj/item/stack/cable_coil(get_turf(chassis), m)
+			om_prompt(src, chassis?.slot_item(MECHA_SLOT_PILOT), list("kind" = "number", "message" = "Please specify the length of cable to cut", "title" = "Cut cable", "default" = min(cable.get_amount(), 30), "target" = chassis, "requires" = list(/datum/om/check/inside_target)), PROC_REF(cable_length_entered))
 		else
 			occupant_message("There's no more cable on the reel.")
 	return
+
+/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/cable_length_entered(mob/user, m, datum/om/prompt/ask)
+	if(!cable)
+		return
+	m = min(m, cable.get_amount())
+	if(m)
+		use_cable(m)
+		new /obj/item/stack/cable_coil(get_turf(chassis), m)
 
 /obj/item/mecha_parts/mecha_equipment/tool/cable_layer/get_equip_info()
 	var/output = ..()

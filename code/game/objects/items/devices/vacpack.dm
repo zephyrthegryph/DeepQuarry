@@ -34,50 +34,51 @@
 	return L
 
 /obj/item/vac_attachment/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/set_input = null
 	if(!om_resolve(output_dest))
-		set_input = "output destination"
-	if(!set_input)
-		set_input = tgui_input_list(user, "Set your [suckverb] attachment's power level or output mode.", "Vac Settings", vac_settings)
-	if(set_input)
-		if(set_input == "output destination")
-			if(vac_owner && user != vac_owner)
-				to_chat(user, span_warning("Only designated owner can change this setting."))
-				return
-			var/vac_options = list("Vore Belly", "Trash Bag") //Dont show option for borg belly if the user isnt even a borg. QOL!
-			if(isrobot(user))
-				vac_options = list("Vore Belly", "Borg Belly", "Trash Bag")
-			var/set_output = tgui_input_list(user, "Set your [suckverb] attachment's connection port", "Vac Settings", vac_options)
-			switch(set_output)
-				if("Borg Belly")
-					if(isrobot(user))
-						var/mob/living/silicon/robot/R = user
-						var/obj/item/robot_module/M = R.module
-						for(var/obj/item/dogborg/sleeper/S in M.modules)
-							if(istype(S))
-								output_dest = om_handle(S)
-								return
-					to_chat(user, span_warning("Borg belly not found."))
-				if("Trash Bag")
-					if(isrobot(user))
-						var/mob/living/silicon/robot/R = user
-						var/obj/item/robot_module/M = R.module
-						for(var/obj/item/storage/bag/trash/T in M.modules)
-							if(istype(T))
-								output_dest = om_handle(T)
-								return
-					for(var/obj/item/storage/bag/trash/T in user.contents)
-						if(istype(T))
-							output_dest = om_handle(T)
-							return
-					to_chat(user, span_warning("Trash bag not found."))
-				if("Vore Belly")
-					if(user.vore_selected)
-						output_dest = om_handle(user.vore_selected)
+		setting_chosen(user, "output destination")
+		return
+	om_prompt(src, user, list("kind" = "list", "message" = "Set your [suckverb] attachment's power level or output mode.", "title" = "Vac Settings", "choices" = vac_settings, "requires" = PROMPT_HELD), PROC_REF(setting_chosen))
+
+/obj/item/vac_attachment/proc/setting_chosen(mob/user, set_input, datum/om/prompt/ask)
+	if(set_input == "output destination")
+		if(vac_owner && user != vac_owner)
+			to_chat(user, span_warning("Only designated owner can change this setting."))
 			return
-		else
-			vac_power = vac_settings[set_input]
-			icon_state = "sucker-[vac_power]"
+		var/vac_options = list("Vore Belly", "Trash Bag") //Dont show option for borg belly if the user isnt even a borg. QOL!
+		if(isrobot(user))
+			vac_options = list("Vore Belly", "Borg Belly", "Trash Bag")
+		om_prompt(src, user, list("kind" = "list", "message" = "Set your [suckverb] attachment's connection port", "title" = "Vac Settings", "choices" = vac_options, "requires" = PROMPT_HELD), PROC_REF(output_chosen))
+		return
+	vac_power = vac_settings[set_input]
+	icon_state = "sucker-[vac_power]"
+
+/obj/item/vac_attachment/proc/output_chosen(mob/user, set_output, datum/om/prompt/ask)
+	switch(set_output)
+		if("Borg Belly")
+			if(isrobot(user))
+				var/mob/living/silicon/robot/R = user
+				var/obj/item/robot_module/M = R.module
+				for(var/obj/item/dogborg/sleeper/S in M.modules)
+					if(istype(S))
+						output_dest = om_handle(S)
+						return
+			to_chat(user, span_warning("Borg belly not found."))
+		if("Trash Bag")
+			if(isrobot(user))
+				var/mob/living/silicon/robot/R = user
+				var/obj/item/robot_module/M = R.module
+				for(var/obj/item/storage/bag/trash/T in M.modules)
+					if(istype(T))
+						output_dest = om_handle(T)
+						return
+			for(var/obj/item/storage/bag/trash/T in user.contents)
+				if(istype(T))
+					output_dest = om_handle(T)
+					return
+			to_chat(user, span_warning("Trash bag not found."))
+		if("Vore Belly")
+			if(user.vore_selected)
+				output_dest = om_handle(user.vore_selected)
 
 /obj/item/vac_attachment/afterattack(atom/target, mob/living/user, proximity)
 	if(vac_power < 1)
@@ -355,10 +356,9 @@
 	set desc = "Toggle Vac-Pack sprite visibility"
 	set category = "Object"
 
-	var/choice = tgui_input_list(usr, "Vac-Pack Visibility Options", "Vac-Pack Visibility Options", list("Show Pack", "Show Tube", "Hidden"))
-	if(!choice)
-		return
+	om_prompt(src, usr, list("kind" = "list", "message" = "Vac-Pack Visibility Options", "title" = "Vac-Pack Visibility Options", "choices" = list("Show Pack", "Show Tube", "Hidden"), "requires" = PROMPT_HELD), PROC_REF(visibility_chosen))
 
+/obj/item/vac_attachment/proc/visibility_chosen(mob/user, choice, datum/om/prompt/ask)
 	switch(choice)
 		if("Show Pack")
 			item_state = "sucker"
@@ -366,8 +366,8 @@
 			item_state = "sucker_nobag"
 		if("Hidden")
 			item_state = null
-	usr.update_inv_r_hand()
-	usr.update_inv_l_hand()
+	user.update_inv_r_hand()
+	user.update_inv_l_hand()
 
 /obj/item/storage/Entered(atom/movable/thing, atom/OldLoc) //Holder the mob so they don't get stuck in trashbags etc.
 	. = ..()

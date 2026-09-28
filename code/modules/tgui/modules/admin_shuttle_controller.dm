@@ -70,7 +70,9 @@
 			var/datum/shuttle/S = locate(params["ref"])
 			if(istype(S, /datum/shuttle/autodock/multi))
 				var/datum/shuttle/autodock/multi/shuttle = S
-				var/dest_key = tgui_input_list(ui.user, "Choose shuttle destination", "Shuttle Destination", shuttle.get_destinations())
+				var/dest_key = act_prompt(ui.user, action, params, ui, "a1", list("kind" = "list", "message" = "Choose shuttle destination", "title" = "Shuttle Destination", "choices" = shuttle.get_destinations()))
+				if(isnull(dest_key))
+					return
 				if(dest_key)
 					shuttle.set_destination(dest_key, ui.user)
 					shuttle.launch(src)
@@ -81,13 +83,19 @@
 				if(!LAZYLEN(possible_d))
 					to_chat(ui.user, span_warning("There are no possible destinations for [shuttle] ([shuttle.type])"))
 					return FALSE
-				D = tgui_input_list(ui.user, "Choose shuttle destination", "Shuttle Destination", possible_d)
+				var/_answer_a2 = act_prompt(ui.user, action, params, ui, "a2", list("kind" = "list", "message" = "Choose shuttle destination", "title" = "Shuttle Destination", "choices" = possible_d))
+				if(isnull(_answer_a2))
+					return
+				D = _answer_a2
 				if(D)
 					shuttle.set_destination(possible_d[D])
 					shuttle.launch()
 			else if(istype(S, /datum/shuttle/autodock))
 				var/datum/shuttle/autodock/shuttle = S
-				if(tgui_alert(ui.user, "Are you sure you want to launch [shuttle]?", "Launching Shuttle", list("Yes", "No")) == "Yes")
+				var/_answer_a3 = act_prompt(ui.user, action, params, ui, "a3", list("message" = "Are you sure you want to launch [shuttle]?", "title" = "Launching Shuttle", "choices" = list("Yes", "No")))
+				if(isnull(_answer_a3))
+					return
+				if(_answer_a3 == "Yes")
 					shuttle.launch(src)
 			else
 				to_chat(ui.user, span_notice("The shuttle control panel isn't quite sure how to move [S] ([S?.type])."))

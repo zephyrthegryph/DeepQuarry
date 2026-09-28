@@ -1,19 +1,14 @@
 ADMIN_VERB(spawn_tanktransferbomb, R_SPAWN, "Instant TTV", "Spawn a tank transfer valve bomb.", ADMIN_CATEGORY_DEBUG_GAME)
 	var/obj/effect/spawner/newbomb/proto = /obj/effect/spawner/newbomb/radio/custom
 
-	var/p = tgui_input_number(user, "Enter phoron amount (mol):","Phoron", initial(proto.phoron_amt))
-	if(isnull(p))
-		return
+	om_prompt_sequence(user, user, list(
+		list("key" = "p", "kind" = "number", "message" = "Enter phoron amount (mol):", "title" = "Phoron", "default" = initial(proto.phoron_amt)),
+		list("key" = "o", "kind" = "number", "message" = "Enter oxygen amount (mol):", "title" = "Oxygen", "default" = initial(proto.oxygen_amt)),
+		list("key" = "c", "kind" = "number", "message" = "Enter carbon dioxide amount (mol):", "title" = "Carbon Dioxide", "default" = initial(proto.carbon_amt)),
+	), GLOBAL_PROC_REF(spawn_tanktransferbomb_answered), list("requires" = PROMPT_ADMIN(R_SPAWN)))
 
-	var/o = tgui_input_number(user, "Enter oxygen amount (mol):","Oxygen", initial(proto.oxygen_amt))
-	if(isnull(o))
-		return
-
-	var/c = tgui_input_number(user, "Enter carbon dioxide amount (mol):","Carbon Dioxide", initial(proto.carbon_amt))
-	if(isnull(c))
-		return
-
-	new /obj/effect/spawner/newbomb/radio/custom(get_turf(user.mob), p, o, c)
+/proc/spawn_tanktransferbomb_answered(client/C, mob/user, datum/om/prompt/ask)
+	new /obj/effect/spawner/newbomb/radio/custom(get_turf(user), ask.get("p"), ask.get("o"), ask.get("c"))
 
 /obj/effect/spawner/newbomb
 	name = "TTV bomb"

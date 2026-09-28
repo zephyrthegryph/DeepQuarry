@@ -57,7 +57,9 @@ REF_OWNED(/obj/machinery/computer/gyrotron_control, "monitor")
 
 /obj/machinery/computer/gyrotron_control/proc/interaction_set_ident(mob/user, obj/item/W, datum/interaction/interaction)
 	if(W.has_tool_quality(TOOL_MULTITOOL))
-		var/new_ident = tgui_input_text(user, "Enter a new ident tag.", "Gyrotron Control", monitor.gyro_tag, MAX_NAME_LEN)
+		var/new_ident = rerun_prompt(user, "k62", list("kind" = "text", "message" = "Enter a new ident tag.", "title" = "Gyrotron Control", "default" = monitor.gyro_tag, "max_length" = MAX_NAME_LEN), PROC_REF(interaction_set_ident), args)
+		if(isnull(new_ident))
+			return
 		if(new_ident && user.Adjacent(src))
 			monitor.gyro_tag = new_ident
 	return FALSE

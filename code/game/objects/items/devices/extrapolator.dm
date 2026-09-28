@@ -118,28 +118,32 @@
 		if(!length(diseases))
 			var/list/atom/targets = find_valid_targets(user, target)
 			var/target_amt = length(targets)
-			if(target_amt)
-				target = target_amt > 1 ? tgui_input_list(user, "Select object to analyze", "Viral Extrapolation", targets, default = targets[1]) : targets[1]
-			if(target)
-				result = target.extrapolator_act(user, src, dry_run = TRUE)
-				diseases = result && result[EXTRAPOLATOR_RESULT_DISEASES]
-		if(!target)
-			return
-		if(!length(diseases))
-			if(scan)
-				to_chat(user, span_notice("[icon2html(src, user)] \The [src] fails to return any data."))
-			else
-				to_chat(user, span_notice("[icon2html(src, user)] \The [src]'s probe detects no diseases."))
-			return
-		if(EXTRAPOLATOR_ACT_CHECK(result, EXTRAPOLATOR_ACT_PRIORITY_SPECIAL))
-			// extrapolator_act did some sort of special behavior, we don't need to do anything further
-			return
-		if(scan)
-			scan(user, target)
-		else
-			extrapolate(user, target)
+			if(target_amt > 1)
+				om_prompt(src, user, list("kind" = "list", "message" = "Select object to analyze", "title" = "Viral Extrapolation", "choices" = targets, "default" = targets[1], "requires" = PROMPT_HELD), PROC_REF(analyze_target_chosen))
+				return
+			target = target_amt ? targets[1] : null
+		analyze_target_chosen(user, target)
 	else
 		to_chat(user, span_warning("The extrapolator has no scanner installed!"))
+
+/obj/item/extrapolator/proc/analyze_target_chosen(mob/user, atom/target, datum/om/prompt/ask)
+	var/list/result = target?.extrapolator_act(user, src, dry_run = TRUE)
+	var/list/diseases = result && result[EXTRAPOLATOR_RESULT_DISEASES]
+	if(!target)
+		return
+	if(!length(diseases))
+		if(scan)
+			to_chat(user, span_notice("[icon2html(src, user)] \The [src] fails to return any data."))
+		else
+			to_chat(user, span_notice("[icon2html(src, user)] \The [src]'s probe detects no diseases."))
+		return
+	if(EXTRAPOLATOR_ACT_CHECK(result, EXTRAPOLATOR_ACT_PRIORITY_SPECIAL))
+		// extrapolator_act did some sort of special behavior, we don't need to do anything further
+		return
+	if(scan)
+		scan(user, target)
+	else
+		extrapolate(user, target)
 
 /obj/item/extrapolator/proc/find_valid_targets(mob/living/user, atom/target)
 	. = list()
@@ -198,16 +202,19 @@
 	if(!length(diseases))
 		to_chat(user, span_warning("[icon2html(src, user)] There are no valid diseases to make a culture from."))
 		return
-	var/datum/disease/advance/target_disease = length(diseases) > 1 ? tgui_input_list(user, "Select disease to extract", "Viral Extraction", diseases, default = diseases[1]) : diseases[1]
-	if(!target_disease)
-		return
-	using = TRUE
-	var/choice = tgui_alert(user, "What would you like to isolate?", "Isolate", list("Symptom", "Disease"))
-	if(choice == "Symptom")
-		. = isolate_symptom(user, target, target_disease)
+	om_prompt_sequence(src, user, list(
+		length(diseases) > 1 ? list("key" = "disease", "kind" = "list", "message" = "Select disease to extract", "title" = "Viral Extraction", "choices" = diseases, "default" = diseases[1]) : null,
+		list("key" = "what", "message" = "What would you like to isolate?", "title" = "Isolate", "choices" = list("Symptom", "Disease")),
+	), PROC_REF(isolation_chosen), list("requires" = PROMPT_HELD, "data" = list("target" = target, "disease" = diseases[1])))
+	return TRUE
+
+/obj/item/extrapolator/proc/isolation_chosen(mob/living/user, datum/om/prompt/ask)
+	var/atom/target = ask.get("target")
+	var/datum/disease/advance/target_disease = ask.get("disease")
+	if(ask.get("what") == "Symptom")
+		isolate_symptom(user, target, target_disease)
 	else
-		. = isolate_disease(user, target, target_disease)
-	using = FALSE
+		isolate_disease(user, target, target_disease)
 
 /obj/item/extrapolator/proc/isolate_symptom(mob/living/user, atom/target, datum/disease/advance/target_disease)
 	. = FALSE
@@ -219,9 +226,14 @@
 	if(!length(symptoms))
 		to_chat(user, span_warning("[icon2html(src, user)] There are no symptoms that could be isolated.."))
 		return
-	var/datum/symptom/chosen = length(symptoms) > 1 ? tgui_input_list(user, "Select symptom to isolate", "Symptom Extraction", symptoms, default = symptoms[1]) : symptoms[1]
-	if(!chosen)
-		return
+	if(length(symptoms) > 1)
+		om_prompt(src, user, list("kind" = "list", "message" = "Select symptom to isolate", "title" = "Symptom Extraction", "choices" = symptoms, "default" = symptoms[1], "requires" = PROMPT_HELD, "data" = list("target" = target)), PROC_REF(symptom_chosen))
+		return TRUE
+	return symptom_chosen(user, symptoms[1], null, target)
+
+/obj/item/extrapolator/proc/symptom_chosen(mob/living/user, datum/symptom/chosen, datum/om/prompt/ask, atom/target)
+	if(ask)
+		target = ask.get("target")
 	user.visible_message(span_notice("[user] slots [target] into [src], which begins to whir and beep!"), span_notice("[icon2html(src, user)] You begin isolating " + span_bold("[chosen.name]") + " from [target]..."),)
 	var/datum/disease/advance/symptom_holder = new
 	symptom_holder.name = chosen.name

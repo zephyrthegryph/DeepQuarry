@@ -72,12 +72,7 @@
 // so this graph covers the same steps end to end for a directly-placed one.
 /obj/item/secbot_assembly/ed209_assembly/slime/attackby(obj/item/W, mob/user)
 	if(istype(W, /obj/item/pen))
-		var/t = sanitizeSafe(tgui_input_text(user, "Enter new robot name", name, created_name, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
-		if(!t)
-			return
-		if(!in_range(src, user) && src.loc != user)
-			return
-		created_name = t
+		ask_name_var(user)
 
 /datum/construction_graph/secbot_assembly/ed209_slime
 	id = "ed209_assembly_slime"

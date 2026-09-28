@@ -264,7 +264,9 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	var/newlaws = tgui_input_text(user, "Please Input Laws", "Compliance Laws", laws, 2048, TRUE, prevent_enter = TRUE)
+	var/newlaws = rerun_prompt(user, "k271", list("kind" = "text", "message" = "Please Input Laws", "title" = "Compliance Laws", "default" = laws, "max_length" = 2048, "multiline" = TRUE), PROC_REF(attack_self), args)
+	if(isnull(newlaws))
+		return TRUE
 	if(newlaws)
 		to_chat(user,span_filter_notice("You set the laws to: <br>" + span_notice("[newlaws]")))
 		laws = newlaws
