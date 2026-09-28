@@ -71,7 +71,7 @@
 		// on every fast tick. A moved goal or a map change retries at once.
 		if(next_path_attempt_at && world.time < next_path_attempt_at \
 			&& path_goal && get_dist(path_goal, target_turf) <= path_recompute_tolerance \
-			&& path_navigation_revision == SSai.navigation_revision)
+			&& path_navigation_revision == GLOB.ai_navigation_revision)
 			return FALSE
 		cached_path = dq_pathfind(holder, target_turf, get_to)
 		path_goal = target_turf

@@ -141,7 +141,7 @@
 	update_icon()
 
 /obj/item/spell/unrestricted/run_checks()
-	if(owner)
+	if(owner_ref())
 		if(COOLDOWN_FINISHED(src, castcheck_cooldown)) //Are they a cultist or a construct, and has the cooldown time passed?
 			COOLDOWN_START(src, castcheck_cooldown, cooldown)
 			return 1

@@ -447,8 +447,8 @@
 	return
 
 /obj/item/spell/construct/run_checks()
-	if(owner)
-		if((iscultist(owner) || istype(owner, /mob/living/simple_mob/construct)) && (COOLDOWN_FINISHED(src, castcheck_cooldown))) //Are they a cultist or a construct, and has the cooldown time passed?
+	if(owner_ref())
+		if((iscultist(owner_ref()) || istype(owner_ref(), /mob/living/simple_mob/construct)) && (COOLDOWN_FINISHED(src, castcheck_cooldown))) //Are they a cultist or a construct, and has the cooldown time passed?
 			COOLDOWN_START(src, castcheck_cooldown, cooldown)
 			return 1
 	return 0
