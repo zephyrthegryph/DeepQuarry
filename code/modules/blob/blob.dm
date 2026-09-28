@@ -135,7 +135,13 @@
 		return 0
 	return blob_damage(P.damage, damage_type)
 
-/obj/effect/blob/attackby(obj/item/W, mob/user)
+EXTEND_INTERACTIONS(/obj/effect/blob, \
+	INTERACT_ITEM(null, PROC_REF(interaction_hit_blob)), \
+)
+
+/// Old attackby: any item hits the blob (afterattack still follows, as before).
+/obj/effect/blob/proc/interaction_hit_blob(mob/user, obj/item/held, datum/interaction/interaction)
+	var/obj/item/W = held
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	playsound(src, 'sound/effects/attackblob.ogg', 50, 1)
 	visible_message(span_danger("\The [src] has been attacked with \the [W][(user ? " by [user]." : ".")]"))
@@ -144,6 +150,7 @@
 		playsound(src, W.usesound, 100, 1)
 	if(damage_type == BRUTE || damage_type == BURN)
 		blob_damage(W.force, damage_type)
+	return INTERACTION_HANDLED_PASS
 
 /obj/effect/blob/core
 	name = "blob core"

@@ -1037,9 +1037,14 @@ DECLARE_INTERACTIONS(/obj/structure/control_pod, INTERACT_HAND(null, PROC_REF(in
 	icon_state = "nose"
 	anchored = TRUE
 
-/obj/effect/dog_nose/attack_hand(mob/living/user)
-	. = ..()
+EXTEND_INTERACTIONS(/obj/effect/dog_nose, \
+	INTERACT_HAND("Boop", PROC_REF(interaction_boop_snoot)), \
+)
+
+/// Old attack_hand.
+/obj/effect/dog_nose/proc/interaction_boop_snoot(mob/living/user, obj/item/held, datum/interaction/interaction)
 	user.visible_message(span_notice("\The [user] boops the snoot."),span_notice("You boop the snoot."),runemessage = "boop")
+	return TRUE
 
 /obj/effect/dog_nose/Crossed(atom/movable/AM as mob|obj)
 	. = ..()
@@ -1100,9 +1105,14 @@ DECLARE_INTERACTIONS(/obj/structure/control_pod, INTERACT_HAND(null, PROC_REF(in
 	. = ..()
 	lets_go(AM)
 
-/obj/effect/dog_teleporter/attack_hand(mob/living/user)
-	. = ..()
+EXTEND_INTERACTIONS(/obj/effect/dog_teleporter, \
+	INTERACT_HAND(null, PROC_REF(interaction_dog_teleport)), \
+)
+
+/// Old attack_hand: touching it sends you through.
+/obj/effect/dog_teleporter/proc/interaction_dog_teleport(mob/living/user, obj/item/held, datum/interaction/interaction)
 	lets_go(user)
+	return TRUE
 
 /obj/effect/dog_teleporter/attack_generic(mob/user)
 	. = ..()

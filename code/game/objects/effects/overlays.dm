@@ -66,11 +66,15 @@
 	plane = TURF_PLANE
 
 // Todo: Add a version that gradually reaccumulates over time by means of alpha transparency. -Spades
-/obj/effect/overlay/snow/attackby(obj/item/W as obj, mob/user as mob)
-	if (istype(W, /obj/item/shovel))
-		user.visible_message(span_notice("[user] begins to shovel away \the [src]."))
-		om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
-		return
+EXTEND_INTERACTIONS(/obj/effect/overlay/snow, \
+	INTERACT_INSERT(/obj/item/shovel, PROC_REF(interaction_shovel_snow), "Shovel"), \
+)
+
+/// Old attackby: shovel the snow away.
+/obj/effect/overlay/snow/proc/interaction_shovel_snow(mob/user, obj/item/held, datum/interaction/interaction)
+	user.visible_message(span_notice("[user] begins to shovel away \the [src]."))
+	om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
+	return INTERACTION_HANDLED_PASS
 
 /obj/effect/overlay/snow/proc/attackby_timed_done(mob/user)
 	to_chat(user, span_notice("You have finished shoveling!"))

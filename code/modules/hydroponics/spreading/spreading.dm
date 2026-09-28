@@ -10,14 +10,22 @@
 	density = FALSE
 	color = DEAD_PLANT_COLOUR
 
-/obj/effect/dead_plant/attack_hand()
-	qdel(src)
+EXTEND_INTERACTIONS(/obj/effect/dead_plant, \
+	INTERACT_HAND(null, PROC_REF(interaction_clear_dead_plant)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_clear_dead_plant_item)), \
+)
 
-/obj/effect/dead_plant/attackby()
-	..()
-	for(var/obj/effect/plant/neighbor in range(1))
+/// Old attack_hand: a touch clears the dead plant away.
+/obj/effect/dead_plant/proc/interaction_clear_dead_plant(mob/user, obj/item/held, datum/interaction/interaction)
+	qdel(src)
+	return TRUE
+
+/// Old attackby: any item clears it and lets the neighbouring vines regrow (the item's normal handling still follows).
+/obj/effect/dead_plant/proc/interaction_clear_dead_plant_item(mob/user, obj/item/held, datum/interaction/interaction)
+	for(var/obj/effect/plant/neighbor in range(1, src))
 		neighbor.update_neighbors()
 	qdel(src)
+	return INTERACTION_HANDLED_PASS
 
 /obj/effect/plant
 	name = "plant"
@@ -216,17 +224,26 @@
 	floor = 1
 	return 1
 
-/obj/effect/plant/attackby(obj/item/W, mob/user)
+EXTEND_INTERACTIONS(/obj/effect/plant, \
+	INTERACT_ITEM(null, PROC_REF(interaction_hit_plant)), \
+	INTERACT_HAND(null, PROC_REF(interaction_touch_plant)), \
+)
 
-	user.setClickCooldown(user.get_attack_speed(W))
+/// Old attackby: a scalpel takes a sample, anything else hacks at the plant. The item's normal handling still follows.
+/obj/effect/plant/proc/interaction_hit_plant(mob/user, obj/item/held, datum/interaction/interaction)
+	user.setClickCooldown(user.get_attack_speed(held))
 	SSplants.add_plant(src)
 
-	if(istype(W, /obj/item/surgical/scalpel))
+	if(istype(held, /obj/item/surgical/scalpel))
 		take_plant_sample(user)
-	else
-		..()
-		if(W.force)
-			health -= W.force
+	else if(held.force)
+		health -= held.force
+	return INTERACTION_HANDLED_PASS
+
+/// Old attack_hand: pull free whoever the plant has entangled.
+/obj/effect/plant/proc/interaction_touch_plant(mob/user, obj/item/held, datum/interaction/interaction)
+	manual_unbuckle(user)
+	return TRUE
 
 /obj/effect/plant/proc/take_plant_sample(mob/user)
 	if(sampled)

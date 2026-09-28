@@ -9,7 +9,13 @@
 	max_integrity = 10
 
 //similar to weeds, but only barfed out by nurses manually
-/obj/effect/spider/attackby(obj/item/W, mob/user)
+EXTEND_INTERACTIONS(/obj/effect/spider, \
+	INTERACT_ITEM(null, PROC_REF(interaction_hit_web)), \
+)
+
+/// Old attackby: any item hits the web (afterattack still follows, as before).
+/obj/effect/spider/proc/interaction_hit_web(mob/user, obj/item/held, datum/interaction/interaction)
+	var/obj/item/W = held
 	user.setClickCooldown(user.get_attack_speed(W))
 
 	if(LAZYLEN(W.attack_verb))
@@ -18,6 +24,7 @@
 		visible_message(span_warning("\The [src] has been attacked with \the [W][(user ? " by [user]." : ".")]"))
 
 	receive_weapon_hit(W, user, W.force / 4)
+	return INTERACTION_HANDLED_PASS
 
 /obj/effect/spider/welder_act(mob/user, obj/item/tool)
 	var/obj/item/weldingtool/welder = tool.get_welder()
@@ -29,7 +36,13 @@
 	take_damage(15, BRUTE, MELEE, sound_effect = FALSE)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/effect/spider/spiderling/attack_hand(mob/living/user)
+EXTEND_INTERACTIONS(/obj/effect/spider/spiderling, \
+	INTERACT_HAND("Stomp", PROC_REF(interaction_stomp_spiderling)), \
+)
+
+/// Old attack_hand: try to stomp the spiderling.
+/obj/effect/spider/spiderling/proc/interaction_stomp_spiderling(mob/living/user, obj/item/held, datum/interaction/interaction)
+	. = TRUE
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	user.do_attack_animation(src)
 	if(prob(20))

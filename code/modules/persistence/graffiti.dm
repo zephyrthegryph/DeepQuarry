@@ -40,21 +40,27 @@
 	. = ..()
 	. += "\n It reads \"[message]\"."
 
-/obj/effect/decal/writing/attackby(obj/item/thing, mob/user)
-	if(thing.sharp)
+EXTEND_INTERACTIONS(/obj/effect/decal/writing, \
+	INTERACT_ITEM("Engrave", PROC_REF(interaction_engrave_graffiti)), \
+)
 
-		if(jobban_isbanned(user, JOB_GRAFFITI))
-			to_chat(user, span_warning("You are banned from leaving persistent information across rounds."))
-			return
+/// Old attackby: a sharp item carves more into the graffiti.
+/obj/effect/decal/writing/proc/interaction_engrave_graffiti(mob/user, obj/item/held, datum/interaction/interaction)
+	var/obj/item/thing = held
+	if(!thing.sharp)
+		return FALSE
 
-		var/_message = rerun_prompt(user, "k49", list("kind" = "text", "message" = "Enter an additional message to engrave.", "title" = "Graffiti", "max_length" = MAX_MESSAGE_LEN), TYPE_PROC_REF(/atom, attackby), args)
-		if(isnull(_message))
-			return TRUE
-		if(_message && loc && user && !user.incapacitated() && user.Adjacent(loc) && thing.loc == user)
-			user.visible_message(span_warning("\The [user] begins carving something into \the [loc]."))
-			om_do_after(user, max(2 SECONDS, length(_message)), src, src, PROC_REF(carve_done), list(user, _message))
-	else
-		. = ..()
+	if(jobban_isbanned(user, JOB_GRAFFITI))
+		to_chat(user, span_warning("You are banned from leaving persistent information across rounds."))
+		return INTERACTION_HANDLED_PASS
+
+	var/_message = rerun_prompt(user, "k49", list("kind" = "text", "message" = "Enter an additional message to engrave.", "title" = "Graffiti", "max_length" = MAX_MESSAGE_LEN), PROC_REF(interaction_engrave_graffiti), args)
+	if(isnull(_message))
+		return TRUE
+	if(_message && loc && user && !user.incapacitated() && user.Adjacent(loc) && thing.loc == user)
+		user.visible_message(span_warning("\The [user] begins carving something into \the [loc]."))
+		om_do_after(user, max(2 SECONDS, length(_message)), src, src, PROC_REF(carve_done), list(user, _message))
+	return INTERACTION_HANDLED_PASS
 
 /obj/effect/decal/writing/proc/carve_done(mob/user, _message)
 	if(!loc)

@@ -15,11 +15,16 @@
 	var/win_path = /obj/structure/window/basic
 	var/activated
 
-/obj/effect/wingrille_spawn/attack_hand()
-	attack_generic()
+EXTEND_INTERACTIONS(/obj/effect/wingrille_spawn, \
+	INTERACT_HAND(null, PROC_REF(interaction_effect_activate_spawner)), \
+	INTERACT_OBSERVER(null, PROC_REF(interaction_effect_activate_spawner)), \
+)
 
-/obj/effect/wingrille_spawn/attack_ghost()
+/// Old attack_hand/attack_ghost of the mapping spawners (window spawner, plated catwalk):
+/// any touch, even a ghost's, makes them spawn now (their attack_generic() activates them).
+/obj/effect/proc/interaction_effect_activate_spawner(mob/user, obj/item/held, datum/interaction/interaction)
 	attack_generic()
+	return TRUE
 
 /obj/effect/wingrille_spawn/attack_generic()
 	activate()

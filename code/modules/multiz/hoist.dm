@@ -30,21 +30,29 @@ DECLARE_INTERACTIONS(/obj/item/hoist_kit, INTERACT_USE(null, PROC_REF(interactio
 	description_info = "Click and drag someone (or any object) to this to attach them to the clamp. If you are within reach, when you click and drag this to a turf adjacent to you, it will move the attached object there and release it."
 	plane = ABOVE_MOB_PLANE
 
-/obj/effect/hoist_hook/attack_hand(mob/living/user)
-	return // This has to be overridden so that it works properly.
+EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hoist_hook_touch)), \
+	INTERACT_DRAG("Attach", PROC_REF(interaction_hoist_hook_attach)), \
+)
 
-/obj/effect/hoist_hook/MouseDrop_T(atom/movable/AM,mob/user)
+/// Old attack_hand: a bare touch does nothing, not even unbuckling the hoistee (that goes through the hoist).
+/obj/effect/hoist_hook/proc/interaction_hoist_hook_touch(mob/user, obj/item/held, datum/interaction/interaction)
+	return TRUE
+
+/// Old MouseDrop_T: clamp the dragged thing onto the hook. Replaces the buckle drag.
+/obj/effect/hoist_hook/proc/interaction_hoist_hook_attach(mob/user, atom/movable/AM, datum/interaction/interaction)
 	if (use_check(user, 0))
-		return
+		return TRUE
 
-	if (!AM.simulated || AM.anchored)
+	if (!istype(AM) || !AM.simulated || AM.anchored)
 		to_chat(user, span_notice("You can't do that."))
-		return
+		return TRUE
 	if (source_hoist.hoistee)
 		to_chat(user, span_notice("\The [source_hoist.hoistee] is already attached to \the [src]!"))
-		return
+		return TRUE
 	source_hoist.attach_hoistee(AM)
 	user.visible_message(span_danger("[user] attaches \the [AM] to \the [src]."), span_danger("You attach \the [AM] to \the [src]."), span_danger("You hear something clamp into place."))
+	return TRUE
 
 /obj/structure/hoist/proc/attach_hoistee(atom/movable/AM)
 	if (get_turf(AM) != get_turf(source_hook))

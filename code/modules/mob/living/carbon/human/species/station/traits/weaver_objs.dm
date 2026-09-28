@@ -11,12 +11,20 @@
 	qdel(src)
 	return
 
-/obj/effect/weaversilk/attackby(obj/item/W, mob/user)
+EXTEND_INTERACTIONS(/obj/effect/weaversilk, \
+	INTERACT_ITEM(null, PROC_REF(interaction_hit_weaversilk)), \
+	INTERACT_HAND_HOSTILE("Tear down", PROC_REF(interaction_tear_weaversilk)), \
+)
+
+/// Old attackby: any real hit tears the silk (afterattack still follows, as before).
+/obj/effect/weaversilk/proc/interaction_hit_weaversilk(mob/user, obj/item/held, datum/interaction/interaction)
+	var/obj/item/W = held
 	user.setClickCooldown(user.get_attack_speed(W))
 
 	if(W.force)
 		visible_message(span_warning("\The [src] has been [LAZYLEN(W.attack_verb) ? pick(W.attack_verb) : "attacked"] with \the [W][(user ? " by [user]." : ".")]"))
 		qdel(src)
+	return INTERACTION_HANDLED_PASS
 
 /obj/effect/weaversilk/bullet_act(obj/item/projectile/Proj)
 	..()
@@ -33,11 +41,11 @@
 	if(damage)
 		qdel(src)
 
-/obj/effect/weaversilk/attack_hand(mob/user as mob)
-	..()
-	if(IS_HARMING(user))
-		to_chat(user,span_warning("You easily tear down [name]."))
-		qdel(src)
+/// Old attack_hand on harm intent: tear the silk down by hand.
+/obj/effect/weaversilk/proc/interaction_tear_weaversilk(mob/user, obj/item/held, datum/interaction/interaction)
+	to_chat(user,span_warning("You easily tear down [name]."))
+	qdel(src)
+	return TRUE
 
 /obj/effect/weaversilk/floor
 	var/possible_icon_states = list("floorweb1", "floorweb2", "floorweb3", "floorweb4", "floorweb5", "floorweb6", "floorweb7", "floorweb8")
@@ -124,8 +132,13 @@ EXTEND_INTERACTIONS(/obj/structure/bed/double/weaversilk_nest, \
 	..()
 
 
-/obj/effect/weaversilk/trap/MouseDrop_T(atom/movable/AM,mob/user)
-	return
+EXTEND_INTERACTIONS(/obj/effect/weaversilk/trap, \
+	INTERACT_DRAG(null, PROC_REF(interaction_trap_refuse_drag)), \
+)
+
+/// Old MouseDrop_T: nothing can be buckled into the trap by dragging.
+/obj/effect/weaversilk/trap/proc/interaction_trap_refuse_drag(mob/user, atom/movable/dropping, datum/interaction/interaction)
+	return TRUE
 
 // Items
 

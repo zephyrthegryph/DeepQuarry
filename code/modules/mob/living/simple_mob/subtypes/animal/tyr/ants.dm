@@ -427,7 +427,13 @@ ANT STRUCTURES
 	density = FALSE
 	max_integrity = 15 //1 thwack with sword, 2 with spear
 
-/obj/effect/ant_structure/attackby(obj/item/W, mob/user)
+EXTEND_INTERACTIONS(/obj/effect/ant_structure, \
+	INTERACT_ITEM(null, PROC_REF(interaction_hit_ant_structure)), \
+)
+
+/// Old attackby: any item hits the structure, welders burn it (afterattack still follows, as before).
+/obj/effect/ant_structure/proc/interaction_hit_ant_structure(mob/user, obj/item/held, datum/interaction/interaction)
+	var/obj/item/W = held
 	user.setClickCooldown(user.get_attack_speed(W))
 
 	if(LAZYLEN(W.attack_verb))
@@ -445,6 +451,7 @@ ANT STRUCTURES
 			playsound(src, W.usesound, 100, 1)
 
 	take_damage(damage, BRUTE, MELEE, sound_effect = FALSE)
+	return INTERACTION_HANDLED_PASS
 
 
 /obj/effect/ant_structure/proc/die()

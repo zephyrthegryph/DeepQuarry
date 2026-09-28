@@ -85,18 +85,29 @@ REF_OWNED(/obj/effect/rune, "blood_image")
 	if(iscultist(user))
 		. += "This spell circle reads: <i>[word1] [word2] [word3]</i>."
 
-/obj/effect/rune/attackby(obj/I, mob/user)
-	if(istype(I, /obj/item/book/tome) && iscultist(user))
-		to_chat(user, "You retrace your steps, carefully undoing the lines of the rune.")
-		qdel(src)
-		return
-	else if(istype(I, /obj/item/nullrod))
-		to_chat(user, span_notice("You disrupt the vile magic with the deadening field of the null rod!"))
-		qdel(src)
-		return
-	return
+EXTEND_INTERACTIONS(/obj/effect/rune, \
+	INTERACT_INSERT(/obj/item/book/tome, PROC_REF(interaction_erase_rune), "Erase rune"), \
+	INTERACT_INSERT(/obj/item/nullrod, PROC_REF(interaction_nullrod_rune), "Disrupt rune"), \
+	INTERACT_HAND("Invoke", PROC_REF(interaction_invoke_rune)), \
+)
 
-/obj/effect/rune/attack_hand(mob/living/user)
+/// Old attackby: a cultist's tome undoes the rune.
+/obj/effect/rune/proc/interaction_erase_rune(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!iscultist(user))
+		return INTERACTION_HANDLED_PASS
+	to_chat(user, "You retrace your steps, carefully undoing the lines of the rune.")
+	qdel(src)
+	return INTERACTION_HANDLED_PASS
+
+/// Old attackby: a null rod disrupts the rune.
+/obj/effect/rune/proc/interaction_nullrod_rune(mob/user, obj/item/held, datum/interaction/interaction)
+	to_chat(user, span_notice("You disrupt the vile magic with the deadening field of the null rod!"))
+	qdel(src)
+	return INTERACTION_HANDLED_PASS
+
+/// Old attack_hand: speak the rune's words.
+/obj/effect/rune/proc/interaction_invoke_rune(mob/living/user, obj/item/held, datum/interaction/interaction)
+	. = TRUE
 	if(!iscultist(user))
 		to_chat(user, "You can't mouth the arcane scratchings without fumbling over them.")
 		return

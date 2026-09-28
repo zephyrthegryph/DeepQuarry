@@ -168,7 +168,14 @@
 		if(prob(max(10, 60 - (5 * nearby_weeds.len))))
 			W.periodic_step()
 
-/obj/effect/alien/weeds/attackby(obj/item/W, mob/user)
+EXTEND_INTERACTIONS(/obj/effect/alien/weeds, \
+	INTERACT_ITEM(null, PROC_REF(interaction_hit_weeds)), \
+	INTERACT_HAND(null, PROC_REF(interaction_touch_weeds)), \
+)
+
+/// Old attackby: any item hits the weeds (afterattack still follows, as before).
+/obj/effect/alien/weeds/proc/interaction_hit_weeds(mob/user, obj/item/held, datum/interaction/interaction)
+	var/obj/item/W = held
 	user.setClickCooldown(user.get_attack_speed(W))
 	if(LAZYLEN(W.attack_verb))
 		visible_message(span_danger("\The [src] have been [pick(W.attack_verb)] with \the [W][(user ? " by [user]." : ".")]"))
@@ -178,6 +185,7 @@
 	var/damage = W.force / 4.0
 
 	take_damage(damage, BRUTE, MELEE, sound_effect = FALSE)
+	return INTERACTION_HANDLED_PASS
 
 /obj/effect/alien/weeds/welder_act(mob/user, obj/item/tool)
 	var/obj/item/weldingtool/welder = tool.get_welder()
@@ -190,22 +198,23 @@
 	return ITEM_INTERACT_SUCCESS
 
 // start - Smaller-ranged nodes for Xenomorph Hybrids, node/weed deletion.
-/obj/effect/alien/weeds/attack_hand(mob/user as mob)
-	usr.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	if (usr.has_mutation(HULK))
-		visible_message(span_warning("[usr] destroys the [name]!"))
+/// Old attack_hand: hulks tear the weeds up; hivenode carriers melt them on harm intent.
+/obj/effect/alien/weeds/proc/interaction_touch_weeds(mob/user, obj/item/held, datum/interaction/interaction)
+	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
+	if(user.has_mutation(HULK))
+		visible_message(span_warning("[user] destroys the [name]!"))
 		take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
 	else
 
 		// Aliens can get straight through these.
-		if(istype(usr,/mob/living/carbon))
+		if(istype(user,/mob/living/carbon))
 			if(IS_HARMING(user))
-				var/mob/living/carbon/M = usr
+				var/mob/living/carbon/M = user
 				if(locate(/obj/item/organ/internal/xenos/hivenode) in M.internal_organs)
-					visible_message (span_warning("[usr] strokes the [name] and it melts away!"), 1)
+					visible_message (span_warning("[user] strokes the [name] and it melts away!"), 1)
 					take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
-					return
-	return
+					return TRUE
+	return TRUE
 
 /obj/effect/alien/weeds/node/weak
 	light_range = 2

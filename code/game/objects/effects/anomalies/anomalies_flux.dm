@@ -32,13 +32,15 @@
 /obj/effect/anomaly/flux/Bumped(atom/movable/AM)
 	mobShock(AM)
 
-/obj/effect/anomaly/flux/attack_hand(mob/living/user)
-	mobShock(user)
-	. = ..()
+EXTEND_INTERACTIONS(/obj/effect/anomaly/flux, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_flux_shock)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_flux_shock)), \
+)
 
-/obj/effect/anomaly/flux/attackby(obj/item/I, mob/user)
+/// Old attack_hand and attackby: touching the flux anomaly, bare or with an item, shocks you; the touch carries on.
+/obj/effect/anomaly/flux/proc/interaction_flux_shock(mob/user, obj/item/held, datum/interaction/interaction)
 	mobShock(user)
-	. = ..()
+	return FALSE
 
 /obj/effect/anomaly/flux/proc/mobShock(mob/living/M)
 	if(canshock && istype(M) && !M.is_incorporeal())

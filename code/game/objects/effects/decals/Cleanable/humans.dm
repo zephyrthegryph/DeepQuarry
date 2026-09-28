@@ -125,8 +125,13 @@
 	color = adjust_brightness(color, -50)
 	amount = 0
 
-/obj/effect/decal/cleanable/blood/attack_hand(mob/living/carbon/human/user)
-	..()
+EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/blood, \
+	INTERACT_HAND(null, PROC_REF(interaction_touch_blood)), \
+)
+
+/// Old attack_hand: bare hands pick up some of the blood (and any touch-spread disease).
+/obj/effect/decal/cleanable/blood/proc/interaction_touch_blood(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
+	. = TRUE
 	if (amount && istype(user))
 		add_fingerprint(user)
 
@@ -277,16 +282,22 @@
 				continue
 			perp.ContractDisease(D, BP_R_FOOT)
 
-/obj/effect/decal/cleanable/mucus/attack_hand(mob/living/carbon/human/perp)
+EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/mucus, \
+	INTERACT_HAND(null, PROC_REF(interaction_touch_contagion)), \
+)
+
+/// Old mucus/vomit attack_hand: touching it can pass on its contagious diseases.
+/obj/effect/decal/cleanable/proc/interaction_touch_contagion(mob/living/carbon/human/perp, obj/item/held, datum/interaction/interaction)
 	if(perp.is_incorporeal())
-		return
+		return TRUE
 	if(!istype(perp))
-		return
+		return TRUE
 	if(viruses)
 		for(var/datum/disease/D in viruses)
 			if(D.spread_flags & (DISEASE_SPREAD_SPECIAL | DISEASE_SPREAD_NON_CONTAGIOUS))
 				continue
 			perp.ContractDisease(D, BP_R_HAND)
+	return TRUE
 
 /obj/effect/decal/cleanable/vomit/Crossed(mob/living/carbon/human/perp)
 	if(perp.is_incorporeal())
@@ -299,16 +310,9 @@
 				continue
 			perp.ContractDisease(D, BP_R_FOOT)
 
-/obj/effect/decal/cleanable/vomit/attack_hand(mob/living/carbon/human/perp)
-	if(perp.is_incorporeal())
-		return
-	if(!istype(perp))
-		return
-	if(viruses)
-		for(var/datum/disease/D in viruses)
-			if(D.spread_flags & (DISEASE_SPREAD_SPECIAL | DISEASE_SPREAD_NON_CONTAGIOUS))
-				continue
-			perp.ContractDisease(D, BP_R_HAND)
+EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/vomit, \
+	INTERACT_HAND(null, PROC_REF(interaction_touch_contagion)), \
+)
 
 /obj/effect/decal/cleanable/mucus/extrapolator_act(mob/living/user, obj/item/extrapolator/extrapolator, dry_run)
 	. = ..()

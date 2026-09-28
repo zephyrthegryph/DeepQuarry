@@ -33,11 +33,16 @@ REGISTRY_MEMBERSHIP(/obj/effect/portal, REGISTRY_PORTALS)
 	teleport(AM)
 	return
 
-/obj/effect/portal/attack_hand(mob/user as mob)
+EXTEND_INTERACTIONS(/obj/effect/portal, \
+	INTERACT_HAND("Enter", PROC_REF(interaction_enter_portal)), \
+)
+
+/// Old attack_hand: step through the portal.
+/obj/effect/portal/proc/interaction_enter_portal(mob/user, obj/item/held, datum/interaction/interaction)
 	if(istype(user) && !(isliving(user)))
-		return	//do not send ghosts, zshadows, ai eyes, etc
+		return TRUE	//do not send ghosts, zshadows, ai eyes, etc
 	teleport(user)
-	return
+	return TRUE
 
 /obj/effect/portal/Initialize(mapload)
 	. = ..()
