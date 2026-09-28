@@ -190,11 +190,13 @@
 /datum/unit_test/dq_p1_b12_cold_drink_cools
 
 /datum/unit_test/dq_p1_b12_cold_drink_cools/Run()
-	var/cooled = drink_temperature_step(320, 310, -5)
-	TEST_ASSERT(cooled < 320, "a cold drink must cool a hot body, got [cooled]")
-	TEST_ASSERT(cooled >= 310, "and not past the target")
-	TEST_ASSERT_EQUAL(drink_temperature_step(305, 310, -5), 305, "a cold drink doesn't touch a body already below the target")
-	TEST_ASSERT(drink_temperature_step(300, 310, 5) > 300, "a warm drink still warms a cold body")
+	var/target = BODYTEMP_NORMAL
+	var/hot = target + 10
+	var/cooled = drink_temperature_step(hot, target, -5)
+	TEST_ASSERT(cooled < hot, "a cold drink must cool a hot body, got [cooled]")
+	TEST_ASSERT(cooled >= target, "and not past the target")
+	TEST_ASSERT_EQUAL(drink_temperature_step(target - 5, target, -5), target - 5, "a cold drink doesn't touch a body already below the target")
+	TEST_ASSERT(drink_temperature_step(target - 10, target, 5) > target - 10, "a warm drink still warms a cold body")
 
 /// C4/D2: the decompression needle vents only a pneumothorax.
 /datum/unit_test/dq_p1_c4_needle_targets_chest
