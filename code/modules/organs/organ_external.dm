@@ -320,11 +320,20 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 				user.visible_message(span_danger(span_bold("[user]") + " rejuvinates formerly necrotic tissue on [src] with [W]!"))
 				germ_level = 0
 				status &= ~ORGAN_DEAD
-				damage = 0 //Fix the damage on it as well.
+				clear_necrosis() // the dead-tissue afflictions go too (audit D12)
 				PERIODIC_START(src, PERIODIC_SLOW) //Dead limbs stop processing, so we restart the process.
 				stage-- //Go back to stage 2
 				return INTERACTION_HANDLED_PASS
 	return FALSE
+
+/// Remove the dead-tissue afflictions on this limb, attached or loose (bioregeneration).
+/obj/item/organ/external/proc/clear_necrosis()
+	for(var/datum/affliction/tissue_necrosis/N in afflictions_here())
+		if(N.body)
+			N.body.remove_affliction(N)
+		LAZYREMOVE(detached_afflictions, N)
+		qdel(N)
+	integrity_dirty = TRUE
 
 /obj/item/organ/external/proc/is_dislocated()
 	if(dislocated > 0)
