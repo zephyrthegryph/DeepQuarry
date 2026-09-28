@@ -2,12 +2,12 @@
 /datum/cinematic/nuke
 	/// If set, this is the summary screen that pops up after the nuke is done.
 	var/after_nuke_summary_state
-
+	intro_time = 3.5 SECONDS
 
 /datum/cinematic/nuke/play_cinematic()
 	flick("intro_nuke", screen)
 	// The intro runs its course, then the blast (om_after(), no sleep: S10b).
-	om_after(src, 3.5 SECONDS, PROC_REF(play_nuke_blast))
+	om_after(src, intro_time, PROC_REF(play_nuke_blast))
 
 /// The second half of the nuke cinematic, after the intro animation.
 /datum/cinematic/nuke/proc/play_nuke_blast()
@@ -56,6 +56,7 @@
 /// The syndicate nuclear bomb was activated, but just missed the station by a whole z-level!
 /datum/cinematic/nuke/far_explosion
 	cleanup_time = 0 SECONDS
+	intro_time = 0
 
 /datum/cinematic/nuke/far_explosion/play_cinematic()
 	// This one has no intro sequence.

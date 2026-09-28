@@ -112,17 +112,22 @@
 		return
 
 	if(SSticker)
-		play_cinematic(/datum/cinematic/malf)
+		var/datum/cinematic/malf/malf_type = /datum/cinematic/malf
+		play_cinematic(malf_type, world)
+		// The station dies at the blast, once the intro has played (it slept through it before S10b).
+		om_after(null, initial(malf_type.intro_time), GLOBAL_PROC_REF(malf_station_blast))
 
-		// FIXME: Probably a better way
-		for(var/mob/living/M in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
-			switch(M.z)
-				if(0)	//inside a crate or something
-					var/turf/T = get_turf(M)
-					if(T && (T.z in using_map.station_levels))				//we don't use M.death(0) because it calls a for(/mob) loop and
-						M.set_stat(DEAD)
-				if(1)	//on a z-level 1 turf.
+/// The doomsday blast, after its cinematic's intro: kills the station.
+/proc/malf_station_blast()
+	// FIXME: Probably a better way
+	for(var/mob/living/M in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
+		switch(M.z)
+			if(0)	//inside a crate or something
+				var/turf/T = get_turf(M)
+				if(T && (T.z in using_map.station_levels))				//we don't use M.death(0) because it calls a for(/mob) loop and
 					M.set_stat(DEAD)
+			if(1)	//on a z-level 1 turf.
+				M.set_stat(DEAD)
 
-		if(SSticker.mode)
-			SSticker.mode.station_was_nuked = 1
+	if(SSticker?.mode)
+		SSticker.mode.station_was_nuked = 1
