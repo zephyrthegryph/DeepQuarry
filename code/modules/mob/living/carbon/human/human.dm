@@ -1432,6 +1432,8 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 		body = new body_type(src)
 		// The slot set is keyed by body plan.
 		rebuild_slot_ledger()
+		// So is the Life plan (physiology applies by body plan).
+		recompose_life()
 
 	species.handle_post_spawn(src)
 

@@ -297,9 +297,16 @@ REF_BACK(/datum/affliction, list("body" = null, "owner" = null, "location" = nul
 
 /// Detached tick (organ out of a body): severity drifts, nothing else.
 /datum/affliction/proc/tick_offline()
-	if(progression_rate <= 0)
+	var/rate = current_rate()
+	if(rate <= 0)
 		return
-	set_severity(severity + AFFLICTION_BASE_PROGRESSION * progression_rate)
+	set_severity(severity + AFFLICTION_BASE_PROGRESSION * rate)
+
+/// This tick's drift rate. Base: progression_rate. Subtypes whose drift depends on the body's
+/// state (a support, a leak, a vented chest) derive it here instead of rewriting
+/// progression_rate from tick().
+/datum/affliction/proc/current_rate()
+	return progression_rate
 
 /// The shared continuous-treatment loop: direct reagent pairings
 /// (cured_by / worsened_by) and treatment tags (treated_by /
@@ -339,7 +346,7 @@ REF_BACK(/datum/affliction, list("body" = null, "owner" = null, "location" = nul
 /// progression_rate plus this tick's continuous treatment, snowballing with
 /// severity. Wounds and lesions override (damage is their state).
 /datum/affliction/proc/progress()
-	var/rate = progression_rate
+	var/rate = current_rate()
 	if(!rate && simple_clearance_rate && istype(body, /datum/body/simple))
 		rate = simple_clearance_rate
 	var/drift = AFFLICTION_BASE_PROGRESSION * rate

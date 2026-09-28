@@ -328,6 +328,9 @@
 	max_symptoms = 2
 	// Severe stage-3 burns crash the body's ability to hold fluid
 	// balance: stage 3 lowers BF_CIRCULATION.
+	/// total_burn()'s per-tick cache.
+	var/tmp/burn_cache = 0
+	var/tmp/burn_cache_time = -1
 
 /datum/affliction/burn_shock/New()
 	..()
@@ -377,20 +380,27 @@
 	)
 	return S
 
+/// Total limb burn on the owner. tick() walks the limbs (`fresh`) and the damage_scaling() its
+/// progress calls in the same world tick reuses that sum.
+/datum/affliction/burn_shock/proc/total_burn(fresh = FALSE)
+	if(!fresh && burn_cache_time == world.time)
+		return burn_cache
+	burn_cache_time = world.time
+	burn_cache = 0
+	var/mob/living/carbon/human/H = owner
+	if(istype(H))
+		for(var/obj/item/organ/external/E in H.organs)
+			burn_cache += E.get_burn()
+	return burn_cache
+
 /datum/affliction/burn_shock/tick()
-	// Burn_shock computes its stage from cumulative burn damage on the
-	// owner each tick (the metric isn't a simple mob scalar; it walks
-	// every external organ).
-	if(owner && istype(owner, /mob/living/carbon/human))
-		var/mob/living/carbon/human/H = owner
-		var/total_burn = 0
-		if(H.organs)
-			for(var/obj/item/organ/external/E in H.organs)
-				total_burn += E.get_burn()
+	// The stage follows cumulative burn damage on the owner (not a simple mob scalar).
+	if(ishuman(owner))
+		var/total = total_burn(TRUE)
 		var/new_stage
-		if(total_burn >= 120)
+		if(total >= 120)
 			new_stage = "Stage 3"
-		else if(total_burn >= 60)
+		else if(total >= 60)
 			new_stage = "Stage 2"
 		else
 			new_stage = "Stage 1"
@@ -402,13 +412,8 @@
 // runs the shock harder. 30 total burn damage ≈ baseline, 150 = ×3.
 /datum/affliction/burn_shock/damage_scaling()
 	. = 1.0
-	if(owner && istype(owner, /mob/living/carbon/human))
-		var/mob/living/carbon/human/H = owner
-		var/total_burn = 0
-		if(H.organs)
-			for(var/obj/item/organ/external/E in H.organs)
-				total_burn += E.get_burn()
-		. *= dq_damage_scale(total_burn, 20, 150, 0.6, 3.0)
+	if(ishuman(owner))
+		. *= dq_damage_scale(total_burn(), 20, 150, 0.6, 3.0)
 
 // --- Infection ---
 
