@@ -13,7 +13,7 @@ GLOBAL_LIST_EMPTY(client_only_images_expiring)
 
 /// Deletes this image after `delay`, keeping it alive until then.
 /image/client_only/proc/expire_in(delay)
-	GLOB.client_only_images_expiring += src
+	GLOB.client_only_images_expiring += src // ALLOW(registry): /image is not a datum (no registry hooks) and joins only once it starts expiring
 	om_after(null, delay, GLOBAL_PROC_REF(qdel), src)
 
 /image/client_only/proc/append_client(client/C)

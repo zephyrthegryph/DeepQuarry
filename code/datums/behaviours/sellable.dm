@@ -70,12 +70,14 @@
 		EC.contents = list("error" = sell_error)
 		return FALSE
 
-	EC.contents[++EC.contents.len] = list(
+	// The export's rows list (a plain list var on the export datum, not atom contents).
+	var/list/rows = EC.contents
+	rows[++rows.len] = list(
 		"object" = "\proper[source.name]",
 		"value" = calculate_sell_value(source),
 		"quantity" = calculate_sell_quantity(source)
 	)
-	var/list/export_row = EC.contents[EC.contents.len]
+	var/list/export_row = rows[rows.len]
 	GLOB.supply_service.apply_market_demand(source, EC, export_row)
 	EC.value += export_row["value"]
 	if(EC.sales_ledger_valid && source.economic_department == EC.sales_department)

@@ -102,10 +102,10 @@ DECLARE_INTERACTIONS(/obj/item/shield/riot, INTERACT_ITEM(null, PROC_REF(interac
 /// Old attackby.
 /obj/item/shield/riot/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/melee/baton))
-		if(cooldown < world.time - 25)
+		if(COOLDOWN_FINISHED(src, cooldown))
 			user.visible_message(span_warning("[user] bashes [src] with [W]!"))
 			playsound(src, 'sound/effects/shieldbash.ogg', 50, 1)
-			cooldown = world.time
+			COOLDOWN_START(src, cooldown, 2.5 SECONDS)
 	else
 		return FALSE
 	return INTERACTION_HANDLED_PASS
@@ -371,10 +371,10 @@ EXTEND_INTERACTIONS(/obj/item/shield/riot/explorer, \
 /// Old attackby.
 /obj/item/shield/riot/explorer/proc/explorer_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/material/knife/machete))
-		if(cooldown < world.time - 25)
+		if(COOLDOWN_FINISHED(src, cooldown))
 			user.visible_message(span_warning("[user] bashes [src] with [W]!"))
 			playsound(src, 'sound/effects/shieldbash.ogg', 50, 1)
-			cooldown = world.time
+			COOLDOWN_START(src, cooldown, 2.5 SECONDS)
 	else
 		return FALSE
 	return INTERACTION_HANDLED_PASS

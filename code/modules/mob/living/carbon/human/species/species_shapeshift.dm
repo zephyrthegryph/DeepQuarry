@@ -482,7 +482,6 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 /// Applies an accessory pick: `style_path` (null: none), `colors` ("c1"/"c2"/"c3" -> "#rrggbb" or
 /// empty to keep) and `alpha` (empty to keep).
 /mob/living/carbon/human/proc/shapeshifter_accessory_chosen(kind, style_path, list/colors, alpha)
-	var/list/I = shapeshifter_accessory_info(kind)
 	var/list/source = shapeshifter_accessory_styles(kind)
 	var/datum/sprite_accessory/style = source[style_path]
 	switch(kind)
@@ -492,19 +491,14 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 			tail_style = style
 		if("wings")
 			wing_style = style
-	var/p = I["prefix"]
 	var/list/suffixes = list("c1" = "", "c2" = "2", "c3" = "3")
 	for(var/key in suffixes)
 		var/new_color = colors[key]
 		if(!new_color)
 			continue
-		var/list/new_color_rgb_list = hex2rgb(new_color)
-		var/suffix = suffixes[key]
-		vars["r_[p][suffix]"] = new_color_rgb_list[1]
-		vars["g_[p][suffix]"] = new_color_rgb_list[2]
-		vars["b_[p][suffix]"] = new_color_rgb_list[3]
+		set_accessory_color(kind, suffixes[key], hex2rgb(new_color))
 	if(alpha)
-		vars["a_[p]"] = clamp(alpha, 0, 255)
+		set_accessory_alpha(kind, clamp(alpha, 0, 255))
 	switch(kind)
 		if("ears")
 			update_hair() //Includes Virgo ears
@@ -791,3 +785,38 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	if (client?.prefs)
 		client.prefs.vanity_copy_to(src, FALSE, flavour, oocnotes, FALSE)
 		visible_message(span_notify("[src] adopts a new form!"), span_danger("You have reformed."))
+
+/// Sets one colour channel set of an ears/tail/wings accessory. `slot` is "" / "2" / "3"; `rgb` is a hex2rgb() list.
+/mob/living/carbon/human/proc/set_accessory_color(kind, slot, list/rgb)
+	var/r = rgb[1]
+	var/g = rgb[2]
+	var/b = rgb[3]
+	switch("[kind][slot]")
+		if("ears")
+			r_ears = r; g_ears = g; b_ears = b
+		if("ears2")
+			r_ears2 = r; g_ears2 = g; b_ears2 = b
+		if("ears3")
+			r_ears3 = r; g_ears3 = g; b_ears3 = b
+		if("tail")
+			r_tail = r; g_tail = g; b_tail = b
+		if("tail2")
+			r_tail2 = r; g_tail2 = g; b_tail2 = b
+		if("tail3")
+			r_tail3 = r; g_tail3 = g; b_tail3 = b
+		if("wings")
+			r_wing = r; g_wing = g; b_wing = b
+		if("wings2")
+			r_wing2 = r; g_wing2 = g; b_wing2 = b
+		if("wings3")
+			r_wing3 = r; g_wing3 = g; b_wing3 = b
+
+/// Sets an ears/tail/wings accessory's alpha.
+/mob/living/carbon/human/proc/set_accessory_alpha(kind, alpha)
+	switch(kind)
+		if("ears")
+			a_ears = alpha
+		if("tail")
+			a_tail = alpha
+		if("wings")
+			a_wing = alpha

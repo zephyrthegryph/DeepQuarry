@@ -298,10 +298,10 @@ DECLARE_INTERACTIONS(/obj/item/toy/bosunwhistle, INTERACT_USE(null, PROC_REF(int
 
 /// Old attack_self.
 /obj/item/toy/bosunwhistle/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(cooldown < world.time - 35)
+	if(COOLDOWN_FINISHED(src, cooldown))
 		to_chat(user, span_notice("You blow on [src], creating an ear-splitting noise!"))
 		playsound(src, 'sound/misc/boatswain.ogg', 20, 1)
-		cooldown = world.time
+		COOLDOWN_START(src, cooldown, 3.5 SECONDS)
 	return TRUE
 
 /*
