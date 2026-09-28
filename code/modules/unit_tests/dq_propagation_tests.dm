@@ -8,14 +8,14 @@
 	mouse.radiation = 0
 	return mouse
 
-/// Runs SSradiation until every queued pulse has been applied.
+/// Runs the radiation service until every queued pulse has been applied.
 /datum/unit_test/proc/rad_drain()
 	var/rounds = 0
-	while(length(SSradiation.processing) && rounds++ < 200)
-		SSradiation.fire(FALSE)
-		if(length(SSradiation.processing))
+	while(length(GLOB.radiation_service.processing) && rounds++ < 200)
+		GLOB.radiation_service.run_step()
+		if(length(GLOB.radiation_service.processing))
 			stoplag()
-	TEST_ASSERT(!length(SSradiation.processing), "radiation pulses should drain")
+	TEST_ASSERT(!length(GLOB.radiation_service.processing), "radiation pulses should drain")
 
 /// Five open turfs in a row, west to east, on an empty z-level of their own
 /// (made once and shared by these tests; world.maxz cannot shrink).
@@ -149,13 +149,13 @@
 /datum/unit_test/dq_radiation_shielding_tracks_changes/Run()
 	var/list/row = rad_row()
 	var/obj/item/stack/material/steel/shield = allocate(/obj/item/stack/material/steel, row[1])
-	SSradiation.flush_shielding()
+	GLOB.radiation_service.flush_shielding()
 	shield.set_rad_insulation(shield.rad_insulation)
-	TEST_ASSERT(!SSradiation.dirty_turfs[row[1]], "setting the same insulation should not mark the turf")
+	TEST_ASSERT(!GLOB.radiation_service.dirty_turfs[row[1]], "setting the same insulation should not mark the turf")
 	shield.set_rad_insulation(0.5)
-	TEST_ASSERT(SSradiation.dirty_turfs[row[1]], "changing insulation should mark the turf")
-	SSradiation.flush_shielding()
+	TEST_ASSERT(GLOB.radiation_service.dirty_turfs[row[1]], "changing insulation should mark the turf")
+	GLOB.radiation_service.flush_shielding()
 	shield.forceMove(row[2])
-	TEST_ASSERT(SSradiation.dirty_turfs[row[1]] && SSradiation.dirty_turfs[row[2]], "moving an insulating object should mark both turfs")
-	SSradiation.flush_shielding()
-	TEST_ASSERT(!length(SSradiation.dirty_turfs), "a flush should clear the dirty turfs")
+	TEST_ASSERT(GLOB.radiation_service.dirty_turfs[row[1]] && GLOB.radiation_service.dirty_turfs[row[2]], "moving an insulating object should mark both turfs")
+	GLOB.radiation_service.flush_shielding()
+	TEST_ASSERT(!length(GLOB.radiation_service.dirty_turfs), "a flush should clear the dirty turfs")

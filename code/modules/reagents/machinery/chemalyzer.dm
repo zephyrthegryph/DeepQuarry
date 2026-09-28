@@ -109,7 +109,7 @@
 	var/list/reagents_sent = list()
 	var/obj/item/reagent_containers/glass/beaker/large/beaker_path = /obj/item/reagent_containers/glass/beaker/large
 	for(var/ID in found_reagents)
-		var/datum/reagent/R = SSchemistry.chemical_reagents[ID]
+		var/datum/reagent/R = chemistry_service().chemical_reagents[ID]
 		if(!R)
 			continue
 		var/list/subdata = list()

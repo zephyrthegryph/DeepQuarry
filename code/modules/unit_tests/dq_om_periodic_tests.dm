@@ -318,7 +318,7 @@
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
-/// Random events (was SSevents' fire loop): an active event steps on the slow lane until it is
+/// Random events (was SSevents' fire loop, now the event service): an active event steps on the slow lane until it is
 /// killed; the event containers keep the random-event clock there.
 /datum/unit_test/dq_om_events_on_lanes
 
@@ -328,9 +328,9 @@
 	TEST_ASSERT(E.periodic_pipe == PERIODIC_SLOW, "a new event is not on the slow lane")
 	E.kill()
 	TEST_ASSERT(!PERIODIC_RUNNING(E), "a killed event kept its lane")
-	SSevents.finished_events -= E
+	GLOB.event_service.finished_events -= E
 	for(var/i = EVENT_LEVEL_MUNDANE to EVENT_LEVEL_MAJOR)
-		var/datum/event_container/EC = SSevents.event_containers[i]
+		var/datum/event_container/EC = GLOB.event_service.event_containers[i]
 		TEST_ASSERT(EC.periodic_pipe == PERIODIC_SLOW, "event container [i] is not keeping its clock")
 
 /// Shuttles (was SSshuttles' fire loop): a shuttle with work is on the slow lane, an idle one is not.

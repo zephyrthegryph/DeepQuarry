@@ -6,9 +6,6 @@ GLOBAL_DATUM_INIT(plant_service, /datum/world_service/plants, new)
 
 /datum/world_service/plants
 	name = "Plants"
-	/// TRUE once setup() has built the seed and gene tables.
-	var/initialized = FALSE
-
 	var/list/product_descs = list()					// Stores generated fruit descs.
 	var/list/seeds = list()							// All seed data stored here.
 	var/list/gene_tag_masks = list()				// Gene obfuscation for delicious trial and error goodness.

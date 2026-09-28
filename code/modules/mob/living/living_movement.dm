@@ -277,7 +277,7 @@ default behaviour is:
 		life_update_relevance()
 	handle_footstep(loc)
 	if(!forced && movetime /* && !is_incorporeal()*/)
-		SSmotiontracker?.ping(src) // Incase of before init "turf enter gravity" this is ?, unfortunately.
+		GLOB.motiontracker_service?.ping(src) // ? in case this runs before GLOB is set up (turf enter gravity).
 	if(is_shifted)
 		is_shifted = FALSE
 		pixel_x = default_pixel_x

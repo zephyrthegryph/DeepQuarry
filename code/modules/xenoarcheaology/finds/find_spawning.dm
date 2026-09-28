@@ -629,7 +629,7 @@
 			item_type = new_item.name
 			var/additional_chems = 5 //5 random chems added to the syringe! 15u of RANDOM stuff! (I tried to keep this 30, but this was...Horribly bugged. There is no icon_state for 16-30, so the icon was invisible when filled.)
 			for(var/x=1;x<=additional_chems;x++)
-				var/new_chem = pick(SSchemistry.chemical_reagents)
+				var/new_chem = pick(chemistry_service().chemical_reagents)
 				var/list/currently_banned_chems = list()
 				currently_banned_chems += GLOB.obtainable_chemical_blacklist
 				if(new_chem in currently_banned_chems)

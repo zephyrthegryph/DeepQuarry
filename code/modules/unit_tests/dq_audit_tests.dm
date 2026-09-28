@@ -183,12 +183,12 @@
 		"burncard" = "trauma chem variant; OD presentation TBD",
 	)
 
-	TEST_ASSERT_NOTNULL(SSchemistry?.chemical_reagents, "chemistry subsystem / reagent list not initialized")
-	TEST_ASSERT(length(SSchemistry.chemical_reagents) > 0, "chemistry reagent list is empty")
+	TEST_ASSERT_NOTNULL(chemistry_service().chemical_reagents, "chemistry service / reagent list not initialized")
+	TEST_ASSERT(length(chemistry_service().chemical_reagents) > 0, "chemistry reagent list is empty")
 
 	var/list/failures = list()
 	for(var/id in medical_reagents)
-		var/datum/reagent/R = SSchemistry.chemical_reagents[id]
+		var/datum/reagent/R = chemistry_service().chemical_reagents[id]
 		if(!R || !R.overdose)
 			continue
 		if(has_od_condition[id])

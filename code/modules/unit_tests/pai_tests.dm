@@ -14,8 +14,8 @@
 /datum/unit_test/pai_sprites_shall_be_valid/Run()
 	var/failed = FALSE
 	var/list/used_names = list()
-	for(var/sprite_key in SSpai.get_chassis_list())
-		var/datum/pai_sprite/sprite = SSpai.chassis_data(sprite_key)
+	for(var/sprite_key in GLOB.pai_service.get_chassis_list())
+		var/datum/pai_sprite/sprite = GLOB.pai_service.chassis_data(sprite_key)
 		if(sprite.sprite_icon == null)
 			continue
 

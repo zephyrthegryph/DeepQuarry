@@ -52,7 +52,7 @@ code/controllers/subsystems/communications.dm 2
 code/controllers/subsystems/contracts.dm 3
 code/controllers/subsystems/dbcore.dm 5
 code/controllers/subsystems/inactivity.dm 1
-code/controllers/subsystems/instruments.dm 1
+code/modules/instruments/instrument_service.dm 1
 code/controllers/subsystems/internal_wiki.dm 2
 code/controllers/subsystems/job.dm 1
 code/controllers/subsystems/media_tracks.dm 2
@@ -60,6 +60,7 @@ code/controllers/subsystems/pois.dm 2
 code/controllers/subsystems/robot_sprites.dm 2
 code/controllers/subsystems/supply.dm 6
 code/controllers/subsystems/throwing.dm 1
+code/datums/thrownthing.dm 2
 code/controllers/subsystems/ticker.dm 3
 code/controllers/subsystems/transcore.dm 1
 code/controllers/subsystems/vis_overlays.dm 1

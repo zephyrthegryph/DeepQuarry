@@ -47,8 +47,8 @@
 	data["can_switch_instrument"] = (length(allowed_instrument_ids) > 1)
 	data["possible_instruments"] = list()
 	for(var/instrument in allowed_instrument_ids)
-		UNTYPED_LIST_ADD(data["possible_instruments"], list("name" = SSinstruments.instrument_data[instrument], "id" = instrument))
-	data["sustain_modes"] = SSinstruments.note_sustain_modes
+		UNTYPED_LIST_ADD(data["possible_instruments"], list("name" = instrument_service().instrument_data[instrument], "id" = instrument))
+	data["sustain_modes"] = instrument_service().note_sustain_modes
 	data["max_repeats"] = max_repeats
 	data["min_volume"] = min_volume
 	data["max_volume"] = max_volume
@@ -153,7 +153,7 @@
 		//MODE STUFF
 		if("set_sustain_mode")
 			var/new_mode = params["new_mode"]
-			if(isnull(new_mode) || !(new_mode in SSinstruments.note_sustain_modes))
+			if(isnull(new_mode) || !(new_mode in instrument_service().note_sustain_modes))
 				return FALSE
 			sustain_mode = new_mode
 			return TRUE

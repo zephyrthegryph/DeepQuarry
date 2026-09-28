@@ -2,7 +2,7 @@
 // on toggle-on and unconditionally remove that same list on toggle-off,
 // regardless of whether the pai already knew any of them natively. Since
 // /datum/pai_software/translator is a single GLOBAL_LIST_EMPTY(pai_software_by_key)
-// singleton shared by every pAI (see code/controllers/subsystems/pai.dm), any
+// singleton shared by every pAI (see code/modules/mob/living/silicon/pai/pai_service.dm), any
 // per-instance state would itself have been a cross-pai clobber, so the fix
 // tracks exactly which languages the translator granted on the pai mob
 // itself (translator_added_languages) and only removes those.

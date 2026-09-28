@@ -161,16 +161,18 @@
 
 	endedAt = world.time
 	if(!external_use)
-		SSevents.event_complete(src)
+		GLOB.event_service.event_complete(src)
 
 //Called during building of skybox to get overlays
 /datum/event/proc/get_skybox_image()
 	return
 
+REGISTRY_MEMBERSHIP(/datum/event, REGISTRY_ACTIVE_EVENTS)
+
 /datum/event/New(datum/event_meta/EM, external_use = FALSE)
 	// event needs to be responsible for this, as stuff like APLUs currently make their own events for curious reasons
 	if(!external_use)
-		SSevents.active_events += src
+		registry_join(REGISTRY_ACTIVE_EVENTS, src)
 		PERIODIC_START(src, PERIODIC_SLOW)
 
 		event_meta = EM

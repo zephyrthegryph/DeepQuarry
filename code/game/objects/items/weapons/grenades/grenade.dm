@@ -75,7 +75,7 @@
 	var/turf/T = get_turf(src)
 	if(T)
 		T.hotspot_expose(700,125)
-		SSmotiontracker.ping(src,100)
+		GLOB.motiontracker_service.ping(src,100)
 
 /obj/item/grenade/screwdriver_act(mob/user, obj/item/tool)
 	switch(det_time)

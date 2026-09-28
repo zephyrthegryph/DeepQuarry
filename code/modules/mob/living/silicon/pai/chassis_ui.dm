@@ -17,7 +17,7 @@
 	var/list/data = ..()
 	var/list/available_sprites = list()
 	var/mob/living/silicon/pai/pai_host = host
-	for(var/key, value in SSpai.get_chassis_list())
+	for(var/key, value in GLOB.pai_service.get_chassis_list())
 		var/datum/pai_sprite/current_sprite = value
 		var/model_type = "def"
 		if(istype(current_sprite, /datum/pai_sprite/large))
@@ -35,7 +35,7 @@
 	var/mob/living/silicon/pai/pai_host = host
 	data["pai_color"] = selected_color ? selected_color : pai_host.eye_color
 
-	var/datum/pai_sprite/sprite_datum = SSpai.chassis_data(selected_chassis || pai_host.chassis_name)
+	var/datum/pai_sprite/sprite_datum = GLOB.pai_service.chassis_data(selected_chassis || pai_host.chassis_name)
 	if(sprite_datum)
 		var/datum/asset/spritesheet_batched/pai_icons/spritesheet = get_asset_datum(/datum/asset/spritesheet_batched/pai_icons)
 		data["pai_chassis"] = sprite_datum.name
@@ -53,7 +53,7 @@
 	switch(action)
 		if("pick_icon")
 			var/new_chassis = params["value"]
-			if(new_chassis && (new_chassis in SSpai.get_chassis_list()))
+			if(new_chassis && (new_chassis in GLOB.pai_service.get_chassis_list()))
 				selected_chassis = new_chassis
 			return TRUE
 		if("confirm")

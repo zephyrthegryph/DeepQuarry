@@ -26,7 +26,7 @@
 	return max(ONE_ATMOSPHERE, effective_strength * max(wall_thickness_mm, 0.1) / max(radius_mm, 1) * fracture_factor * ONE_ATMOSPHERE)
 
 /datum/material/proc/material_corrosion_rate(reagent_id, temperature = T20C)
-	var/datum/reagent/chemical = SSchemistry.chemical_reagents[reagent_id]
+	var/datum/reagent/chemical = chemistry_service().chemical_reagents[reagent_id]
 	var/aggression = chemical?.material_corrosivity || 0
 	var/temperature_factor = max(0.25, 1 + (temperature - T20C) / 300)
 	return max(0, aggression * temperature_factor * (100 - corrosion_resistance) / 100)

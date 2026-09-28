@@ -13,7 +13,7 @@
 		process_tick = 15
 		. = 0
 		for(var/id in dispense_reagents)
-			var/datum/reagent/R = SSchemistry.chemical_reagents[id]
+			var/datum/reagent/R = chemistry_service().chemical_reagents[id]
 			if(!R)
 				stack_trace("[src] at [x],[y],[z] failed to find reagent '[id]'!")
 				LAZYREMOVE(dispense_reagents, id)
@@ -33,7 +33,7 @@
 	if(!_recharge_reagents)
 		return FALSE
 	for(var/id in dispense_reagents)
-		var/datum/reagent/R = SSchemistry.chemical_reagents[id]
+		var/datum/reagent/R = chemistry_service().chemical_reagents[id]
 		var/obj/item/reagent_containers/chem_disp_cartridge/C = R ? cartridges[R.name] : null
 		if(C && C.reagents.total_volume < C.reagents.maximum_volume)
 			return TRUE

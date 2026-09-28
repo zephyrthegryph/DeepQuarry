@@ -24,9 +24,9 @@ code/controllers/master.dm 1
 code/controllers/subsystems/explosions.dm 2
 code/controllers/subsystems/job.dm 6
 code/controllers/subsystems/pois.dm 1
-code/controllers/subsystems/radiation.dm 1
+code/modules/radiation/radiation_service.dm 1
 code/controllers/subsystems/supply.dm 3
-code/controllers/subsystems/throwing.dm 1
+code/datums/thrownthing.dm 1
 code/controllers/subsystems/ticker.dm 1
 code/datums/beam.dm 2
 code/datums/components/antags/changeling/powers/bioelectrogenesis.dm 2

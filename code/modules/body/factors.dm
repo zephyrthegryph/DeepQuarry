@@ -294,7 +294,7 @@
 	if(!reagent_volumes)
 		return acc
 	for(var/reagent_id in reagent_volumes)
-		var/datum/reagent/R = SSchemistry.chemical_reagents[reagent_id]
+		var/datum/reagent/R = chemistry_service().chemical_reagents[reagent_id]
 		if(!R)
 			continue
 		var/alist/table = R.get_factors(owner)

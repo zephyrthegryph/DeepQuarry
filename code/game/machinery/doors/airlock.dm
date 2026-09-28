@@ -1043,7 +1043,7 @@ About the new airlock wires panel:
 			if(T && T.z == get_z(src))
 				M.playsound_local(get_turf(src), sound, volume, 1, null, 0, TRUE, sound(sound), volume_channel = VOLUME_CHANNEL_DOORS)
 
-	SSmotiontracker.ping(src,100)
+	GLOB.motiontracker_service.ping(src,100)
 
 	if(closeOther() != null && istype(closeOther(), /obj/machinery/door/airlock/) && !closeOther().density)
 		closeOther().close()
@@ -1191,7 +1191,7 @@ About the new airlock wires panel:
 			if(T && T.z == get_z(src))
 				M.playsound_local(get_turf(src), sound, volume, 1, null, 0, TRUE, sound(sound), volume_channel = VOLUME_CHANNEL_DOORS)
 
-	SSmotiontracker.ping(src,100)
+	GLOB.motiontracker_service.ping(src,100)
 
 	for(var/turf/turf in locs)
 		var/obj/structure/window/killthis = (locate(/obj/structure/window) in turf)

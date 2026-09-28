@@ -108,7 +108,7 @@
 	else if(filter_reagent_id == "-2")
 		filter = "filtering out everything"
 	else if(filter_reagent_id != "")
-		var/datum/reagent/R = SSchemistry.chemical_reagents[filter_reagent_id]
+		var/datum/reagent/R = chemistry_service().chemical_reagents[filter_reagent_id]
 		filter = "filtering [R.name]"
 	var/select = rerun_prompt(user, "k113", list("kind" = "list", "message" = "Select chemical to filter. It is currently [filter].", "title" = "Chemical Select", "choices" = tgui_list), PROC_REF(set_filter), args)
 	if(isnull(select))
@@ -151,7 +151,7 @@
 	else if(filter_reagent_id == "-2")
 		filter = "filtering out everything"
 	else if(filter_reagent_id != "")
-		var/datum/reagent/R = SSchemistry.chemical_reagents[filter_reagent_id]
+		var/datum/reagent/R = chemistry_service().chemical_reagents[filter_reagent_id]
 		filter = "filtering [R.name]"
 	. += "The meter shows [reagents.total_volume]u / [reagents.maximum_volume]u. It is currently [filter]. At a rate of [amount_per_transfer_from_this]u."
 	tutorial(REFINERY_TUTORIAL_INPUT|REFINERY_TUTORIAL_FILTER, .)

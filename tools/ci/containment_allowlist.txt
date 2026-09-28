@@ -5,6 +5,30 @@
 # `python tools/ci/containment_lint.py --update` rewrites it.
 # Total: 58 sites in 33 files.
 code/_helpers/unsorted.dm 2
+# Total: 586 sites in 277 files.
+code/_helpers/refinery.dm 1
+code/_helpers/turfs.dm 2
+code/_helpers/unsorted.dm 7
+code/_onclick/hud/screen_objects.dm 12
+code/_onclick/observer.dm 2
+code/_onclick/telekinesis.dm 1
+code/game/objects/mail_service.dm 1
+code/datums/components/antags/changeling/powers/lesser_form.dm 1
+code/datums/components/structures/bluespace_connection.dm 1
+code/datums/gear/loadout_shoes.dm 1
+code/datums/locations/locations.dm 1
+code/datums/locations/nyx.dm 2
+code/datums/locations/qerrvallis.dm 2
+code/datums/locations/s_randarr.dm 5
+code/datums/locations/sol.dm 1
+code/datums/locations/tau_ceti.dm 1
+code/datums/locations/uueoa_esa.dm 1
+code/datums/locations/vir.dm 3
+code/datums/om/check_library.dm 1
+code/datums/outfits/costumes/halloween.dm 3
+code/datums/outfits/horror_killers.dm 5
+code/game/antagonist/outsider/raider.dm 2
+code/game/antagonist/station/cultist.dm 1
 code/game/area/areas.dm 1
 code/game/atoms_movable.dm 5
 code/game/gamemodes/cult/cultify/mob.dm 2

@@ -18,10 +18,12 @@
 //   /datum/om/pipeline/periodic/second   every 1 s   (SSprocessing, SSburning) periodic_step(10)
 //   /datum/om/pipeline/periodic/fast     every 0.2 s (SSfastprocess)           periodic_step(2)
 //   /datum/om/pipeline/periodic/plants   every 7.5 s (SSplants' vines)          periodic_step(75)
+//   /datum/om/pipeline/periodic/reflectors every 0.5 s (SSreflector; machine clock) periodic_step(5)
+//   /datum/om/pipeline/periodic/loot_icons every 0.5 s (SSlooting)            periodic_step(5)
 // Also on the slow lane now: alarm handlers, random events and their containers, working
 // shuttles, the game mode and planets (their subsystems schedule nothing any more).
 // Declared continuous lanes (each says why it must tick at frame rate):
-//   /datum/om/pipeline/periodic/continuous/projectiles, .../instruments, .../status_effects,
+//   /datum/om/pipeline/periodic/continuous/projectiles, .../throwing, .../instruments, .../status_effects,
 //   .../tab_items
 
 /// The pipeline `E` is started on (a /datum/om/pipeline/periodic type), or null when it has no
@@ -91,6 +93,25 @@
 	delta = 75
 	stages = list(/datum/om/stage/periodic/plants)
 
+/// Reflectors (was SSreflector, 0.5 s): a reflector re-fires the beams it caught. It starts when
+/// it catches one (redirect_projectile()) and parks once it has fired. Clocked, so stasis and
+/// machine-clock effects pause it.
+/datum/om/pipeline/periodic/reflectors
+	name = "periodic (reflectors, 0.5 s)"
+	every = 0.5 SECONDS
+	delta = 5
+	clock = CLOCK_MACHINE
+	stages = list(/datum/om/stage/periodic/reflectors)
+
+/// Loot panel icon generation (was SSlooting, 0.5 s): a panel with icons left to draw starts here and
+/// parks when its queue is empty. Lobby included, like the subsystem.
+/datum/om/pipeline/periodic/loot_icons
+	name = "periodic (loot icons, 0.5 s)"
+	runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
+	every = 0.5 SECONDS
+	delta = 5
+	stages = list(/datum/om/stage/periodic/loot_icons)
+
 /datum/om/pipeline/periodic/fast
 	name = "periodic (0.2 s)"
 	every = 2
@@ -108,6 +129,14 @@
 	every = 0.1 // below one tick: every tick
 	delta = 1
 	stages = list(/datum/om/stage/periodic/projectiles)
+
+/datum/om/pipeline/periodic/continuous/throwing
+	name = "continuous: throwing"
+	continuous_why = "a thrown atom moves `speed` tiles per server tick; a coarser cadence changes its flight and hit timing"
+	runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
+	every = 0.1 // below one tick: every tick
+	delta = 1
+	stages = list(/datum/om/stage/periodic/throwing)
 
 /datum/om/pipeline/periodic/continuous/instruments
 	name = "continuous: instruments"
@@ -165,6 +194,15 @@
 
 /datum/om/stage/periodic/projectiles
 	pipeline = /datum/om/pipeline/periodic/continuous/projectiles
+
+/datum/om/stage/periodic/throwing
+	pipeline = /datum/om/pipeline/periodic/continuous/throwing
+
+/datum/om/stage/periodic/reflectors
+	pipeline = /datum/om/pipeline/periodic/reflectors
+
+/datum/om/stage/periodic/loot_icons
+	pipeline = /datum/om/pipeline/periodic/loot_icons
 
 /datum/om/stage/periodic/instruments
 	pipeline = /datum/om/pipeline/periodic/continuous/instruments

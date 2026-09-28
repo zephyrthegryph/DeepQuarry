@@ -8,7 +8,7 @@
 	var/area/area_source = turf_source.loc
 
 	//allocate a channel if necessary now so its the same for everyone
-	channel = channel || SSsounds.random_available_channel()
+	channel = channel || sound_service().random_available_channel()
 
 	var/maxdistance = (world.view + extrarange) * 2 // 3 to 2
 	var/source_z = turf_source.z
@@ -41,7 +41,7 @@
 			if(!S)
 				S = sound(get_sfx(soundin))
 			hearer.playsound_local(turf_source, soundin, vol, vary, frequency, falloff, is_global, channel, pressure_affected, S, preference, volume_channel, T)
-			SSmotiontracker.ping(source,vol) // Nearly everything pings this, the quieter the less likely
+			GLOB.motiontracker_service.ping(source,vol) // Nearly everything pings this, the quieter the less likely
 
 /// TRUE if any player could hear a playsound() from `turf_source` within `max_distance`.
 /// Mirrors playsound()'s listener rules, minus soundproofing and walls.
@@ -85,7 +85,7 @@
 		S = sound(get_sfx(soundin))
 
 	S.wait = 0 //No queue
-	S.channel = channel || SSsounds.random_available_channel()
+	S.channel = channel || sound_service().random_available_channel()
 
 	// I'm not sure if you can modify S.volume, but I'd rather not try to find out what
 	// horrible things lurk in BYOND's internals, so we're just gonna do vol *=

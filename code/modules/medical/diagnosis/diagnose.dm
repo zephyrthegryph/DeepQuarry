@@ -198,7 +198,7 @@
 		return null
 	var/best_score = 0
 	for(var/candidate in candidates)
-		var/datum/reagent/R = istype(candidate, /datum/reagent) ? candidate : SSchemistry.chemical_reagents[candidate]
+		var/datum/reagent/R = istype(candidate, /datum/reagent) ? candidate : chemistry_service().chemical_reagents[candidate]
 		if(!R)
 			continue
 		if(patient?.reagents?.has_reagent(R.id))

@@ -194,7 +194,7 @@
 	//End of the calculation.
 
 	if(contamination && living_guy.radiation > contamination_threshold)
-		//SSradiation.radiate(living_guy, rads * contamination_strength * rad_removal_mod)
+		//GLOB.radiation_service.radiate(living_guy, rads * contamination_strength * rad_removal_mod)
 		radiation_pulse(
 			living_guy,
 			max_range = 2,

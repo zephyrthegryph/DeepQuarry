@@ -268,7 +268,7 @@ REF_PAIR(/obj/machinery/sleeper, list("console" = "sleeper"))
 
 	var/chemicals[0]
 	for(var/re in available_chemicals)
-		var/datum/reagent/temp = SSchemistry.chemical_reagents[re]
+		var/datum/reagent/temp = chemistry_service().chemical_reagents[re]
 		if(temp)
 			var/reagent_amount = 0
 			var/pretty_amount

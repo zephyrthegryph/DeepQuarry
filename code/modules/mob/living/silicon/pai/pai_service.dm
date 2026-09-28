@@ -1,20 +1,25 @@
 #define PAI_DELAY_TIME 1 MINUTE
 
 ////////////////////////////////
-//// Pai join and management subsystem
+//// pAI join and management world service (fold wave F3; was SSpai)
 ////////////////////////////////
-SUBSYSTEM_DEF(pai)
+// The software and chassis tables are set up by SSatoms.Initialize() (the subsystem's atoms
+// dependency). The candidate list is refreshed from the observers every 4 s by
+// /datum/om/behaviour/world/pai on the OM global owner (code/datums/om/world_lanes.dm).
+GLOBAL_DATUM_INIT(pai_service, /datum/world_service/pai, new)
+
+/datum/world_service/pai
 	name = "Pai"
-	wait = 4 SECONDS
-	dependencies = list(
-		/datum/controller/subsystem/atoms
-	)
+	lane = /datum/om/behaviour/world/pai
 	VAR_PRIVATE/list/datum/pai_sprite/pai_chassis_sprites = list()
 	VAR_PRIVATE/list/current_run = list()
 	VAR_PRIVATE/list/pai_ghosts = list()
 	VAR_PRIVATE/list/asked = list()
 
-/datum/controller/subsystem/pai/Initialize()
+/datum/world_service/pai/initialize()
+	if(initialized)
+		return
+	initialized = TRUE
 	// Get all software setup
 	for(var/type in subtypesof(/datum/pai_software))
 		var/datum/pai_software/P = new type()
@@ -28,20 +33,19 @@ SUBSYSTEM_DEF(pai)
 			continue
 		pai_chassis_sprites[initial(sprite.name)] = new sprite()
 
-	return SS_INIT_SUCCESS
+	log_world("pAI service initialized: [length(GLOB.pai_software_by_key)] software, [length(pai_chassis_sprites)] chassis.")
 
-/datum/controller/subsystem/pai/stat_entry(msg)
-	msg = "C:[length(pai_ghosts)]"
-	return ..()
+/datum/world_service/pai/stat_line()
+	return "C:[length(pai_ghosts)]"
 
-/datum/controller/subsystem/pai/fire(resumed)
+/datum/world_service/pai/service_step(resumed)
 	if(!resumed)
 		pai_ghosts.Cut()
 		current_run = REGISTRY_COPY(REGISTRY_OBSERVERS)
 
 	while(length(current_run))
-		if(MC_TICK_CHECK)
-			return
+		if(TICK_CHECK)
+			return FALSE
 
 		var/mob/observer/ghost = current_run[length(current_run)]
 		current_run.len--
@@ -50,20 +54,21 @@ SUBSYSTEM_DEF(pai)
 
 		// Create candidate
 		pai_ghosts[REF(ghost)] = om_handle(ghost)
+	return TRUE
 
-/datum/controller/subsystem/pai/proc/get_chassis_list()
+/datum/world_service/pai/proc/get_chassis_list()
 	RETURN_TYPE(/list/datum/pai_sprite)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	return pai_chassis_sprites
 
-/datum/controller/subsystem/pai/proc/chassis_data(id_name)
+/datum/world_service/pai/proc/chassis_data(id_name)
 	RETURN_TYPE(/datum/pai_sprite)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(!(id_name in pai_chassis_sprites))
 		return pai_chassis_sprites[PAI_DEFAULT_CHASSIS]
 	return pai_chassis_sprites[id_name]
 
-/datum/controller/subsystem/pai/proc/invite_valid(mob/user)
+/datum/world_service/pai/proc/invite_valid(mob/user)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(!user.client?.prefs || !user.ckey)
 		return FALSE
@@ -81,27 +86,26 @@ SUBSYSTEM_DEF(pai)
 		return FALSE
 	return TRUE
 
-/datum/controller/subsystem/pai/proc/check_is_delayed(ghost_ref)
+/datum/world_service/pai/proc/check_is_delayed(ghost_ref)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(ghost_ref in asked)
 		if(world.time < asked[ghost_ref] + PAI_DELAY_TIME)
 			return TRUE
 	return FALSE
 
-/datum/controller/subsystem/pai/proc/check_is_already_pai(check_ckey)
+/datum/world_service/pai/proc/check_is_already_pai(check_ckey)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	return (check_ckey in GLOB.paikeys)
 
-/datum/controller/subsystem/pai/proc/get_ghost_from_ref(ghost_ref)
+/datum/world_service/pai/proc/get_ghost_from_ref(ghost_ref)
 	RETURN_TYPE(/mob/observer)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	PRIVATE_PROC(TRUE)
 	if(!ghost_ref)
 		return null
 	var/WF = pai_ghosts[ghost_ref]
 	return om_resolve(WF)
 
-/datum/controller/subsystem/pai/proc/get_invite_list_data()
+/datum/world_service/pai/proc/get_invite_list_data()
 	RETURN_TYPE(/list)
 	SHOULD_NOT_OVERRIDE(TRUE)
 
@@ -114,7 +118,7 @@ SUBSYSTEM_DEF(pai)
 		var/datum/preferences/pref = ghost.client.prefs
 		var/datum/asset/spritesheet_batched/pai_icons/spritesheet = get_asset_datum(/datum/asset/spritesheet_batched/pai_icons)
 		var/chassis = pref.read_preference(/datum/preference/text/pai_chassis)
-		var/datum/pai_sprite/sprite_datum = SSpai.chassis_data(chassis)
+		var/datum/pai_sprite/sprite_datum = GLOB.pai_service.chassis_data(chassis)
 		var/css_class = sanitize_css_class_name("[sprite_datum.type]")
 		UNTYPED_LIST_ADD(data, list(
 				"ref" = REF(ghost),
@@ -130,7 +134,7 @@ SUBSYSTEM_DEF(pai)
 			))
 	return data
 
-/datum/controller/subsystem/pai/proc/get_detailed_invite_data(ghost_ref)
+/datum/world_service/pai/proc/get_detailed_invite_data(ghost_ref)
 	RETURN_TYPE(/list)
 	SHOULD_NOT_OVERRIDE(TRUE)
 
@@ -145,7 +149,7 @@ SUBSYSTEM_DEF(pai)
 	var/datum/preferences/pref = ghost.client.prefs
 	var/datum/asset/spritesheet_batched/pai_icons/spritesheet = get_asset_datum(/datum/asset/spritesheet_batched/pai_icons)
 	var/chassis = pref.read_preference(/datum/preference/text/pai_chassis)
-	var/datum/pai_sprite/sprite_datum = SSpai.chassis_data(chassis)
+	var/datum/pai_sprite/sprite_datum = GLOB.pai_service.chassis_data(chassis)
 	var/css_class = sanitize_css_class_name("[sprite_datum.type]")
 	return list(
 			"ref" = ghost_ref,
@@ -165,7 +169,7 @@ SUBSYSTEM_DEF(pai)
 			"sprite_datum_size" = spritesheet.icon_size_id(css_class + "S"), // just get the south icon's size, the rest will be the same
 		)
 
-/datum/controller/subsystem/pai/proc/invite_ghost(mob/inquirer, ghost_ref, obj/item/paicard/card)
+/datum/world_service/pai/proc/invite_ghost(mob/inquirer, ghost_ref, obj/item/paicard/card)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	// Is our card legal to inhabit?
 	if(QDELETED(card) || card.pai || card.is_damage_critical())
@@ -198,13 +202,13 @@ SUBSYSTEM_DEF(pai)
 /proc/pai_invite_answered(obj/item/paicard/card, mob/observer/ghost, response, datum/om/prompt/ask)
 	var/mob/inquirer = ask.get("inquirer")
 	var/client/target = ghost?.client
-	if(!response || !target || !isobserver(ghost) || SSpai.get_ghost_from_ref(ask.get("ghost_ref")) != ghost)
+	if(!response || !target || !isobserver(ghost) || GLOB.pai_service.get_ghost_from_ref(ask.get("ghost_ref")) != ghost)
 		return // Nice try smartass
 	if(!inquirer)
 		return
-	SSpai.pai_invite_answer(inquirer, ghost, card, response, target)
+	GLOB.pai_service.pai_invite_answer(inquirer, ghost, card, response, target)
 
-/datum/controller/subsystem/pai/proc/pai_invite_answer(mob/inquirer, mob/observer/ghost, obj/item/paicard/card, response, client/target)
+/datum/world_service/pai/proc/pai_invite_answer(mob/inquirer, mob/observer/ghost, obj/item/paicard/card, response, client/target)
 	if(check_is_already_pai(target.ckey))
 		to_chat(inquirer, span_warning("This pAI has already been downloaded."))
 		return
@@ -218,15 +222,15 @@ SUBSYSTEM_DEF(pai)
 			to_chat(inquirer, span_info("[new_pai] has accepted your pAI request!"))
 			return
 		if("Never for this round")
-			SSpai.block_pai_invites(REF(ghost))
+			GLOB.pai_service.block_pai_invites(REF(ghost))
 
 	to_chat(inquirer, span_warning("The pAI denied the request."))
 
-/datum/controller/subsystem/pai/proc/block_pai_invites(ghost_ref)
+/datum/world_service/pai/proc/block_pai_invites(ghost_ref)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	asked[ghost_ref] = world.time + 99 HOURS // We never want to be asked again
 
-/datum/controller/subsystem/pai/proc/clear_pai_block_delay(ghost_ref)
+/datum/world_service/pai/proc/clear_pai_block_delay(ghost_ref)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	asked -= ghost_ref
 

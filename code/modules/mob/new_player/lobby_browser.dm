@@ -121,9 +121,6 @@
 			client.changes()
 			return TRUE
 		if("keyboard")
-			if(!SSsounds.initialized)
-				return
-
 			playsound_local(ui.user, get_sfx("keyboard"), vol = 20)
 			return TRUE
 		if("start_immediately")
@@ -175,8 +172,8 @@
 		qdel(src)
 
 		// pAI notify if we have be pAI invite on
-		SSpai.clear_pai_block_delay(REF(observer)) // Reset invite cooldown if we cancelled all invites for the round
-		if(SSpai.invite_valid(observer))
+		GLOB.pai_service.clear_pai_block_delay(REF(observer)) // Reset invite cooldown if we cancelled all invites for the round
+		if(GLOB.pai_service.invite_valid(observer))
 			observer.pai_card_ping()
 
 	return TRUE

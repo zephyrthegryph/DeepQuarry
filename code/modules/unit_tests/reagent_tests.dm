@@ -68,21 +68,21 @@
 
 		if(CR.required_reagents && length(CR.required_reagents))
 			for(var/RR in CR.required_reagents)
-				TEST_ASSERT(SSchemistry.chemical_reagents[RR], "[CR.type]: Reagents - chemical reaction had invalid required reagent ID \"[RR]\".")
+				TEST_ASSERT(chemistry_service().chemical_reagents[RR], "[CR.type]: Reagents - chemical reaction had invalid required reagent ID \"[RR]\".")
 				TEST_ASSERT(LAZYACCESS(CR.required_reagents, RR) > 0, "[CR.type]: Reagents - chemical reaction had invalid required reagent amount or in invalid format \"[LAZYACCESS(CR.required_reagents, RR)]\".")
 
 		if(CR.catalysts && length(CR.catalysts))
 			for(var/RR in CR.catalysts)
-				TEST_ASSERT(SSchemistry.chemical_reagents[RR], "[CR.type]: Reagents - chemical reaction had invalid required reagent ID \"[RR]\".")
+				TEST_ASSERT(chemistry_service().chemical_reagents[RR], "[CR.type]: Reagents - chemical reaction had invalid required reagent ID \"[RR]\".")
 				TEST_ASSERT(LAZYACCESS(CR.catalysts, RR) > 0, "[CR.type]: Reagents - chemical reaction had invalid catalysts amount or in invalid format \"[LAZYACCESS(CR.catalysts, RR)]\".")
 
 		if(CR.inhibitors && length(CR.inhibitors))
 			for(var/RR in CR.inhibitors)
-				TEST_ASSERT(SSchemistry.chemical_reagents[RR], "[CR.type]: Reagents - chemical reaction had invalid required reagent ID \"[RR]\".")
+				TEST_ASSERT(chemistry_service().chemical_reagents[RR], "[CR.type]: Reagents - chemical reaction had invalid required reagent ID \"[RR]\".")
 				TEST_ASSERT(LAZYACCESS(CR.inhibitors, RR) > 0, "[CR.type]: Reagents - chemical reaction had invalid inhibitors amount or in invalid format \"[LAZYACCESS(CR.inhibitors, RR)]\".")
 
 		if(CR.result)
-			TEST_ASSERT(SSchemistry.chemical_reagents[CR.result], "[CR.type]: Reagents - chemical reaction had invalid result reagent ID \"[CR.result]\".")
+			TEST_ASSERT(chemistry_service().chemical_reagents[CR.result], "[CR.type]: Reagents - chemical reaction had invalid result reagent ID \"[CR.result]\".")
 
 /// Test that makes sure that prefilled reagent containers have valid reagents
 /datum/unit_test/prefilled_reagent_containers_shall_have_valid_reagents
@@ -94,7 +94,7 @@
 
 		if(R.prefill && R.prefill.len)
 			for(var/ID in R.prefill)
-				TEST_ASSERT(SSchemistry.chemical_reagents[ID], "[RC]: Reagents - reagent prefill had invalid reagent ID \"[ID]\".")
+				TEST_ASSERT(chemistry_service().chemical_reagents[ID], "[RC]: Reagents - reagent prefill had invalid reagent ID \"[ID]\".")
 
 		qdel(R)
 
@@ -102,7 +102,7 @@
 		var/obj/item/reagent_containers/chem_disp_cartridge/D = new DC(container)
 
 		if(D.spawn_reagent)
-			TEST_ASSERT(SSchemistry.chemical_reagents[D.spawn_reagent], "[DC]: Reagents - chemical dispenser cartridge had invalid reagent ID \"[D.spawn_reagent]\".")
+			TEST_ASSERT(chemistry_service().chemical_reagents[D.spawn_reagent], "[DC]: Reagents - chemical dispenser cartridge had invalid reagent ID \"[D.spawn_reagent]\".")
 
 		qdel(D)
 
@@ -271,7 +271,7 @@
 			continue
 
 		for(var/reg_id in results)
-			TEST_ASSERT(SSchemistry.chemical_reagents[reg_id], "[grind]: Reagents - Grinding result had invalid reagent id \"[reg_id]\".")
+			TEST_ASSERT(chemistry_service().chemical_reagents[reg_id], "[grind]: Reagents - Grinding result had invalid reagent id \"[reg_id]\".")
 
 #undef RESULT_REACTION_FAILED
 #undef RESULT_REACTION_SUCCESS

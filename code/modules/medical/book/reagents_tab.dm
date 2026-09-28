@@ -9,7 +9,7 @@
 //     `caused_by_chems` entries)
 //   - the overdose condition (if any) — caused_by_chems with subcategory
 //     "Overdose"
-//   - the recipe(s) that produce it (SSchemistry registry)
+//   - the recipe(s) that produce it (chemistry service)
 //   - a clinical category for grouping in the left-pane index
 
 /obj/item/book/dq_medical_reference/proc/_dq_book_reagents()
@@ -116,7 +116,7 @@
 		entry["side_effects"]    = _dq_reagent_side_effects_for(id, chem_caused)
 		entry["interactions"]    = _dq_reagent_interactions_for(id, chem_caused)
 		// The reagent's own body factors, documented straight from its table.
-		var/datum/reagent/R = SSchemistry?.chemical_reagents?[id]
+		var/datum/reagent/R = chemistry_service().chemical_reagents?[id]
 		entry["effects"]         = body_factor_describe(R?.factors, " at a standard dose")
 		out += list(entry)
 	return out
@@ -131,9 +131,9 @@
 /// can a chemist make with it? Same source data, opposite direction.
 /proc/_dq_build_used_in_index()
 	var/list/out = list()
-	if(!SSchemistry?.chemical_reactions)
+	if(!chemistry_service().chemical_reactions)
 		return out
-	for(var/datum/decl/chemical_reaction/CR in SSchemistry.chemical_reactions)
+	for(var/datum/decl/chemical_reaction/CR in chemistry_service().chemical_reactions)
 		if(CR.wiki_flag & WIKI_SPOILER)
 			continue
 		var/result = CR.result
@@ -160,17 +160,17 @@
 /// Recipe(s) that produce this reagent. Returns a list of entries —
 /// most reagents have one recipe but a few have multiple paths.
 /proc/_dq_reagent_recipe(reagent_id)
-	if(!SSchemistry?.chemical_reactions_by_product)
+	if(!chemistry_service().chemical_reactions_by_product)
 		return null
-	var/list/reactions = SSchemistry.chemical_reactions_by_product[reagent_id]
+	var/list/reactions = chemistry_service().chemical_reactions_by_product[reagent_id]
 	var/list/out = list()
 	if(length(reactions))
 		for(var/datum/decl/chemical_reaction/CR in reactions)
 			if(CR.wiki_flag & WIKI_SPOILER)
 				continue
 			out += list(_dq_reagent_recipe_entry(CR))
-	if(SSchemistry.distilled_reactions_by_product)
-		var/list/distilled = SSchemistry.distilled_reactions_by_product[reagent_id]
+	if(chemistry_service().distilled_reactions_by_product)
+		var/list/distilled = chemistry_service().distilled_reactions_by_product[reagent_id]
 		if(length(distilled))
 			for(var/datum/decl/chemical_reaction/distilling/CR in distilled)
 				if(CR.wiki_flag & WIKI_SPOILER)
@@ -255,9 +255,9 @@
 		return entry
 	// Fall back to the bare upstream OD threshold so the encyclopedia
 	// at least flags "this reagent has a dangerous threshold".
-	if(!SSchemistry?.chemical_reagents)
+	if(!chemistry_service().chemical_reagents)
 		return null
-	var/datum/reagent/R = SSchemistry.chemical_reagents[reagent_id]
+	var/datum/reagent/R = chemistry_service().chemical_reagents[reagent_id]
 	if(!R?.overdose)
 		return null
 	return list("threshold" = R.overdose)

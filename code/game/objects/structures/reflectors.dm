@@ -39,8 +39,6 @@
 	if(admin)
 		can_rotate = FALSE
 
-	SSreflector.processing += src
-
 /obj/structure/reflector/examine(mob/user)
 	. = ..()
 	if(finished)
@@ -50,6 +48,15 @@
 				. += span_notice("Alt-click to adjust its direction.")
 			else
 				. += span_notice("Use screwdriver to unlock the rotation.")
+
+/// Re-fires what it caught, on the reflector lane (PERIODIC_REFLECTORS, 0.5 s; was SSreflector).
+/// It starts when it catches a beam and parks once it has fired.
+/obj/structure/reflector/periodic_step(delta)
+	if(bullet_act_in_progress) // a hit is mid-resolution: fire on the next step instead of waiting here
+		return
+	Fire()
+	if(!LAZYLEN(has_projectiles))
+		return PROCESS_KILL
 
 /obj/structure/reflector/proc/Fire()
 	UNTIL(!bullet_act_in_progress)
@@ -75,6 +82,7 @@
 
 /obj/structure/reflector/proc/redirect_projectile(obj/item/projectile/P,pangle)
 	LAZYSET(has_projectiles, P, pangle)
+	PERIODIC_START(src, PERIODIC_REFLECTORS)
 	qdel(P)
 
 /obj/structure/reflector/set_dir(new_dir)

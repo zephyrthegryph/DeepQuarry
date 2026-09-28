@@ -647,7 +647,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 
 	var/turf/t = get_turf(src)
 	if(t)
-		var/rads = SSradiation.get_rads_at_turf(t)
+		var/rads = GLOB.radiation_service.get_rads_at_turf(t)
 		to_chat(src, span_notice("Radiation level: [rads ? rads : "0"] Bq."))
 */
 /mob/observer/dead/verb/view_manfiest()

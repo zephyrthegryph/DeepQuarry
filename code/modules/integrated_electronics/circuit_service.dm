@@ -1,14 +1,15 @@
-//
-// This is for custom circuits, mostly the initialization of global properties about them.
-// Might make this also process them in the future if its better to do that than using the obj ticker.
-//
-SUBSYSTEM_DEF(circuit)
-	name = "Circuit"
-	flags = SS_NO_FIRE
+// The circuit world service (fold wave F3; was SScircuit): the integrated circuit component and
+// assembly tables and the fabricator recipe list. It has no periodic work, so it is a lazy service,
+// built on first use through circuit_service().
+GLOBAL_DATUM_INIT(circuit_service, /datum/world_service/circuit, new)
 
-	dependencies = list(
-		/datum/controller/subsystem/atoms
-	)
+/// The circuit service, initialized on first use.
+/proc/circuit_service() as /datum/world_service/circuit
+	RETURN_TYPE(/datum/world_service/circuit)
+	return LAZY_SERVICE(circuit_service)
+
+/datum/world_service/circuit
+	name = "Circuit"
 
 	var/list/all_components = list()								// Associative list of [component_name]:[component_path] pairs
 	var/list/cached_components = list()								// Associative list of [component_path]:[component] pairs
@@ -18,14 +19,15 @@ SUBSYSTEM_DEF(circuit)
 	var/list/circuit_fabricator_recipe_list = list()				// Associative list of [category_name]:[list_of_circuit_paths] pairs
 //	var/cost_multiplier = MINERAL_MATERIAL_AMOUNT / 10 // Each circuit cost unit is 200cm3
 
-/datum/controller/subsystem/circuit/Recover()
-	flags |= SS_NO_INIT // Make extra sure we don't initialize twice.
-
-/datum/controller/subsystem/circuit/Initialize()
+/datum/world_service/circuit/initialize()
+	initialized = TRUE
 	circuits_init()
-	return SS_INIT_SUCCESS
+	log_world("Circuit service initialized: [length(all_components)] components, [length(all_assemblies)] assemblies.")
 
-/datum/controller/subsystem/circuit/proc/circuits_init()
+/datum/world_service/circuit/stat_line()
+	return "Components: [length(all_components)] | Assemblies: [length(all_assemblies)]"
+
+/datum/world_service/circuit/proc/circuits_init()
 	//Cached lists for free performance
 	for(var/obj/item/integrated_circuit/IC as anything in typesof(/obj/item/integrated_circuit))
 		var/path = IC

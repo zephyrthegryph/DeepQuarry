@@ -9,34 +9,29 @@
 #define PROCEDURAL_LOWER 5			//These are high as the generation of them can could be laggy if spammed. This ONLY happens if the entire Z level has been depleted of large artifacts.
 #define PROCEDURAL_UPPER 10			//It's easier to just go 'Here's more artifacts to dig up' and give xenoarch more to do.
 
-//
-// Xenoarch subsystem handles initialization of Xenoarcheaology artifacts and digsites.
-//
-SUBSYSTEM_DEF(xenoarch)
+// The xenoarchaeology world service (fold wave F3; was SSxenoarch): places digsites and large
+// artifacts on the initialized map, and generates more when a z-level runs out. It has no periodic
+// work. It needs the map's mineral turfs initialized, so SSatoms.Initialize() calls initialize()
+// once the map load finishes (the slot the subsystem's atoms dependency gave it).
+GLOBAL_DATUM_INIT(xenoarch_service, /datum/world_service/xenoarch, new)
+
+/datum/world_service/xenoarch
 	name = "Xenoarch"
-	flags = SS_NO_FIRE
-	dependencies = list(
-		/datum/controller/subsystem/atoms
-	)
 	var/list/artifact_spawning_turfs = list()
 	var/list/digsite_spawning_turfs = list()
 
-/datum/controller/subsystem/xenoarch/Initialize()
+/datum/world_service/xenoarch/initialize()
+	if(initialized)
+		return
+	initialized = TRUE
+	var/started = REALTIMEOFDAY
 	SetupXenoarch()
-	return SS_INIT_SUCCESS
+	log_world("Xenoarch service initialized: [length(digsite_spawning_turfs)] digsites, [length(artifact_spawning_turfs)] large artifacts in [(REALTIMEOFDAY - started) / 10]s.")
 
-/datum/controller/subsystem/xenoarch/Recover()
-	if (istype(SSxenoarch.artifact_spawning_turfs))
-		artifact_spawning_turfs = SSxenoarch.artifact_spawning_turfs
-	if (istype(SSxenoarch.digsite_spawning_turfs))
-		digsite_spawning_turfs = SSxenoarch.digsite_spawning_turfs
+/datum/world_service/xenoarch/stat_line()
+	return "Digsites: [length(digsite_spawning_turfs)] | Artifacts: [length(artifact_spawning_turfs)]"
 
-/datum/controller/subsystem/xenoarch/stat_entry(msg)
-	if (!GLOB.Debug2)
-		return // Only show up in stat panel if debugging is enabled.
-	return ..()
-
-/datum/controller/subsystem/xenoarch/proc/SetupXenoarch()
+/datum/world_service/xenoarch/proc/SetupXenoarch()
 	for(var/turf/simulated/mineral/M in world) //This selects every mineral turf in the world
 		if(!M.density) //Checks to see if it's a mineral wall
 			continue
@@ -120,7 +115,7 @@ SUBSYSTEM_DEF(xenoarch)
 		artifact_turf.artifact_find = new()
 
 /// This is the proc that is used when a Z level runs out of artifacts. This means you have 'completed' your job and now you get bonus goodies to keep you occupied.
-/datum/controller/subsystem/xenoarch/proc/continual_generation(mob/living/user)
+/datum/world_service/xenoarch/proc/continual_generation(mob/living/user)
 
 	/// So, to preface this, I had to do a lot of testing with this to ensure it wouldn't cause mass lag and that it properly functioned.
 	/// At first, I tried to make it scan mineral in the user's Z. There's not really any preexisting functionality for this that I could find, so that was a negative.

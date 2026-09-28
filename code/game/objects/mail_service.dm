@@ -1,15 +1,21 @@
-SUBSYSTEM_DEF(mail)
+// The mail world service (fold wave F3; was SSmail): mail accrues every 60 s on
+// /datum/om/behaviour/world/mail (code/datums/om/world_lanes.dm) and the supply shuttle delivers it.
+GLOBAL_DATUM_INIT(mail_service, /datum/world_service/mail, new)
+
+/datum/world_service/mail
 	name = "Mail"
-	wait = 60 SECONDS
-	priority = FIRE_PRIORITY_SUPPLY
-	flags = SS_NO_TICK_CHECK | SS_NO_INIT
+	lane = /datum/om/behaviour/world/mail
 	var/mail_waiting = 0					// Pending mail
 	var/mail_per_process = 0.55				// Mail to be generated
 	var/admin_mail = list()					// Mail added by Spawn Mail
 	var/list/banned_jobs = list(JOB_OUTSIDER,JOB_ANOMALY,JOB_VR,JOB_MAINT_LURKER,JOB_TALON_CAPTAIN,JOB_TALON_DOCTOR,JOB_TALON_ENGINEER,JOB_TALON_GUARD,JOB_TALON_PILOT,JOB_TALON_MINER) // Jobs that can't receive mail
 
-/datum/controller/subsystem/mail/fire()
+/datum/world_service/mail/service_step(resumed)
 	mail_waiting += mail_per_process
+	return TRUE
+
+/datum/world_service/mail/stat_line()
+	return "Waiting: [round(mail_waiting, 0.01)] | Admin: [length(admin_mail)]"
 
 /*	Generates a box of mail. Depending on the time that has passed between shuttles being called, it will send more or less mail and dependant on a small random number to simulate inflation
 	Whenever the cargo shuttle gets sent back to the station, it will add the mail crate if there's any mail to be sent to the station.
@@ -17,7 +23,7 @@ SUBSYSTEM_DEF(mail)
 	Only alive, active and NT employeers should be getting mail.
 */
 
-/datum/controller/subsystem/mail/proc/create_mail()
+/datum/world_service/mail/proc/create_mail()
 	// Spawn crate
 	var/obj/structure/closet/crate/mail/mailcrate = new(pick(SSsupply.get_clear_turfs()))
 	// Collect recipients

@@ -5,6 +5,7 @@
 # lower the count; `python tools/ci/declared_refs_lint.py --update` rewrites it.
 # Total: 1605 vars in 754 files.
 # Total: 1556 vars in 731 files.
+# Total: 2568 vars in 1162 files.
 code/ATMOSPHERICS/atmospherics.dm 3
 code/ATMOSPHERICS/components/binary_devices/algae_generator.dm 1
 code/ATMOSPHERICS/components/binary_devices/binary_atmos_base.dm 4
@@ -36,6 +37,38 @@ code/ATMOSPHERICS/pipes/manifold4w.dm 2
 code/ATMOSPHERICS/pipes/pipe_base.dm 3
 code/ATMOSPHERICS/rust_pipenets.dm 1
 code/ATMOSPHERICS/tg_infra_compat.dm 1
+code/__defines/tgs.dm 9
+code/_helpers/graphs/astar.dm 2
+code/_helpers/legacy_tg_path.dm 9
+code/_helpers/pathfinding/astar.dm 2
+code/_helpers/pathfinding/common.dm 4
+code/_helpers/pathfinding/jps.dm 2
+code/_onclick/hud/ability_screen_objects.dm 4
+code/_onclick/hud/action/action.dm 2
+code/_onclick/hud/action/action_group.dm 3
+code/_onclick/hud/action/action_item_overlay.dm 2
+code/_onclick/hud/action/action_screen_objects.dm 6
+code/_onclick/hud/hud.dm 31
+code/_onclick/hud/minihud.dm 1
+code/_onclick/hud/minihud_mapper.dm 1
+code/_onclick/hud/minihud_rigmech.dm 10
+code/_onclick/hud/picture_in_picture.dm 7
+code/_onclick/hud/popups.dm 1
+code/_onclick/hud/radial.dm 7
+code/_onclick/hud/radial_persistent.dm 1
+code/_onclick/hud/screen_objects.dm 15
+code/_onclick/hud/skybox.dm 1
+code/_onclick/hud/spell_screen_objects.dm 5
+code/_onclick/telekinesis.dm 2
+code/controllers/controller.dm 1
+code/controllers/master.dm 3
+code/controllers/subsystem.dm 2
+code/controllers/subsystems/communications.dm 1
+code/controllers/subsystems/dbcore.dm 2
+code/controllers/subsystems/internal_wiki.dm 1
+code/controllers/subsystems/supply.dm 1
+code/controllers/subsystems/tgui.dm 2
+code/controllers/subsystems/transcore.dm 4
 code/datums/EPv2.dm 1
 code/datums/ai_laws.dm 6
 code/datums/beam.dm 4
@@ -111,6 +144,7 @@ code/datums/riding.dm 1
 code/datums/rules/rule.dm 5
 code/datums/status_effects/_status_effect.dm 1
 code/datums/status_effects/debuffs/fire_stacks.dm 2
+code/datums/thrownthing.dm 4
 code/datums/uplink/uplink_categories.dm 1
 code/datums/uplink/uplink_items.dm 4
 code/datums/tgs_event_handler.dm 1
@@ -273,6 +307,7 @@ code/modules/events/electrified_door.dm 1
 code/modules/events/event.dm 3
 code/modules/events/event_container.dm 1
 code/modules/events/event_manager.dm 1
+code/modules/events/event_service.dm 3
 code/modules/events/meteor_strike.dm 1
 code/modules/events/money_hacker.dm 1
 code/modules/events/money_spam.dm 2
@@ -326,6 +361,8 @@ code/modules/hydroponics/spreading/spreading.dm 3
 code/modules/hydroponics/trays/tray.dm 7
 code/modules/identification/identification.dm 1
 code/modules/instruments/instrument_data/_instrument_data.dm 1
+code/modules/instruments/instrument_service.dm 1
+code/modules/instruments/items.dm 1
 code/modules/instruments/songs/_song.dm 3
 code/modules/integrated_electronics/_defines.dm 1
 code/modules/integrated_electronics/core/assemblies.dm 3
@@ -590,6 +627,10 @@ code/modules/projectiles/guns/projectile/sniper/collapsible_sniper.dm 3
 code/modules/projectiles/projectile.dm 9
 code/modules/projectiles/projectile/hook.dm 1
 code/modules/projectiles/targeting/targeting_overlay.dm 2
+code/modules/projectiles/projectile/special.dm 1
+code/modules/projectiles/projectile_effects.dm 1
+code/modules/projectiles/targeting/targeting_overlay.dm 3
+code/modules/radiation/radiation_service.dm 2
 code/modules/random_map/drop/supply.dm 1
 code/modules/reagents/Chemistry-Metabolism.dm 1
 code/modules/reagents/machinery/bunsen_burner.dm 1

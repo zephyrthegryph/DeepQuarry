@@ -43,6 +43,7 @@
 
 // Registry ids. Keep them sorted.
 #define REGISTRY_ACTIVE_DISEASES "active_diseases"
+#define REGISTRY_ACTIVE_EVENTS "active_events"
 #define REGISTRY_AIS "ai_list"
 #define REGISTRY_AI_CORES_DEACTIVATED "all_deactivated_AI_cores"
 #define REGISTRY_AI_SHELLS "available_ai_shells"
@@ -148,6 +149,7 @@
 #define REGISTRY_SINGULARITIES "all_singularities"
 #define REGISTRY_SMES "smeses"
 #define REGISTRY_SOLARGRUBS "existing_solargrubs"
+#define REGISTRY_SONGS "songs"
 #define REGISTRY_SOLAR_CONTROLS "solars_list"
 #define REGISTRY_TECHNOMANCER_BELONGINGS "technomancer_belongings"
 #define REGISTRY_TELECOMMS "telecomms_list"

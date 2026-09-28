@@ -316,7 +316,7 @@ GLOBAL_LIST_INIT(advance_cures, list(
 	else
 		var/res = clamp(resistance - (length(symptoms) / 2), 1, length(GLOB.advance_cures))
 		cures = list(pick(GLOB.advance_cures[res]))
-		var/datum/reagent/cure_reag = SSchemistry.chemical_reagents[cures[1]]
+		var/datum/reagent/cure_reag = chemistry_service().chemical_reagents[cures[1]]
 		if(!cure_reag) // Something went terribly wrong, return to sippy
 			cure_reag = /datum/reagent/water
 		cure_text = cure_reag.name

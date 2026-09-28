@@ -283,7 +283,7 @@ REF_OWNED(/obj/item/dogborg/sleeper, list("ore_bag", "med_analyzer"))
 	var/mob/living/silicon/robot/robot_user = user
 	var/list/robot_chems = list()
 	for(var/re in injection_chems)
-		var/datum/reagent/possible_reagent = SSchemistry.chemical_reagents[re]
+		var/datum/reagent/possible_reagent = chemistry_service().chemical_reagents[re]
 		UNTYPED_LIST_ADD(robot_chems, list("id" = possible_reagent.id, "name" = possible_reagent.name))
 
 	data["name"] = name
@@ -422,7 +422,7 @@ REF_OWNED(/obj/item/dogborg/sleeper, list("ore_bag", "med_analyzer"))
 				patient.reagents.add_reagent(chem, inject_amount)
 				drain(SLEEPER_INJECT_COST)
 			var/units = round(patient.reagents.get_reagent_amount(chem))
-			to_chat(hound, span_notice("Injecting [units] unit\s of [SSchemistry.chemical_reagents[chem]] into occupant.")) //If they were immersed, the reagents wouldn't leave with them.
+			to_chat(hound, span_notice("Injecting [units] unit\s of [chemistry_service().chemical_reagents[chem]] into occupant.")) //If they were immersed, the reagents wouldn't leave with them.
 
 /// The belly light: busy (red) while cleaning, crowded or holding the dead;
 /// green with a living patient. The robot only redraws when it changes.

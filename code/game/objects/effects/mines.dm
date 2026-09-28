@@ -148,7 +148,7 @@ REF_OWNED(/obj/effect/mine, "trap")
 		domutcheck(M,null)
 		M.UpdateAppearance()
 	visible_message("\The [src.name] flashes violently before disintegrating!")
-	SSmotiontracker.ping(src,100)
+	GLOB.motiontracker_service.ping(src,100)
 	qdel(src)
 
 /obj/effect/mine/stun
@@ -164,7 +164,7 @@ REF_OWNED(/obj/effect/mine, "trap")
 	if(istype(M))
 		M.status_at_least(EFFECT_STUNNED, 30)
 	visible_message("\The [src.name] flashes violently before disintegrating!")
-	SSmotiontracker.ping(src,100)
+	GLOB.motiontracker_service.ping(src,100)
 	qdel(src)
 
 /obj/effect/mine/n2o
@@ -178,7 +178,7 @@ REF_OWNED(/obj/effect/mine, "trap")
 		if(!target.blocks_air)
 			target.assume_gas(GAS_N2O, 30)
 	visible_message("\The [src.name] detonates!")
-	SSmotiontracker.ping(src,100)
+	GLOB.motiontracker_service.ping(src,100)
 	qdel(src)
 
 /obj/effect/mine/phoron
@@ -193,7 +193,7 @@ REF_OWNED(/obj/effect/mine, "trap")
 			target.assume_gas(GAS_PHORON, 30)
 			target.hotspot_expose(1000, CELL_VOLUME)
 	visible_message("\The [src.name] detonates!")
-	SSmotiontracker.ping(src,100)
+	GLOB.motiontracker_service.ping(src,100)
 	qdel(src)
 
 /obj/effect/mine/kick
@@ -232,7 +232,7 @@ REF_OWNED(/obj/effect/mine, "trap")
 		return
 	src.fragmentate(O, num_fragments, spread_range, fragment_types) //only 20 weak fragments because you're stepping directly on it
 	visible_message("\The [src.name] detonates!")
-	SSmotiontracker.ping(src,100)
+	GLOB.motiontracker_service.ping(src,100)
 	qdel(src)
 
 /obj/effect/mine/training	//Name and Desc commented out so it's possible to trick people with the training mines
@@ -261,7 +261,7 @@ REF_OWNED(/obj/effect/mine, "trap")
 	s.set_up(3, 1, src)
 	s.start()
 	visible_message("\The [src.name] flashes violently before disintegrating!")
-	SSmotiontracker.ping(src,100)
+	GLOB.motiontracker_service.ping(src,100)
 	empulse(loc, 2, 4, 7, 10, 1) // As strong as an EMP grenade
 	qdel(src)
 
@@ -282,7 +282,7 @@ REF_OWNED(/obj/effect/mine, "trap")
 		M.adjust_fire_stacks(5)
 		M.fire_act()
 	visible_message("\The [src.name] bursts into flames!")
-	SSmotiontracker.ping(src,100)
+	GLOB.motiontracker_service.ping(src,100)
 	qdel(src)
 
 /obj/effect/mine/stripping
@@ -299,7 +299,7 @@ REF_OWNED(/obj/effect/mine, "trap")
 		for(var/obj/item/content_item in M)
 			M.drop_from_inventory(content_item)
 	visible_message("\The [src.name] explodes, stripping [M]!")
-	SSmotiontracker.ping(src,100)
+	GLOB.motiontracker_service.ping(src,100)
 	qdel(src)
 
 /obj/effect/mine/gadget
@@ -320,7 +320,7 @@ REF_OWNED(/obj/effect/mine, "trap")
 	else
 		explosion(loc, 0, 0, 2, 2)
 		visible_message("\The [src.name] detonates!")
-	SSmotiontracker.ping(src,100)
+	GLOB.motiontracker_service.ping(src,100)
 
 	qdel(s)
 	qdel(src)

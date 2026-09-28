@@ -76,9 +76,9 @@
 	if(clear_channels)
 		LAZYCLEARLIST(channels_playing)
 		LAZYCLEARLIST(channels_idle)
-		SSinstruments.current_instrument_channels -= using_sound_channels
+		instrument_service().current_instrument_channels -= using_sound_channels
 		using_sound_channels = 0
-		SSsounds.free_datum_channels(src)
+		sound_service().free_datum_channels(src)
 
 /**
  * Stops all sounds we are responsible for in a given person. Only works in synthesized mode.
@@ -88,7 +88,7 @@
 		M.stop_sound_channel(text2num(channel))
 
 /**
- * Pops a channel we have reserved so we don't have to release and re-request them from SSsounds every time we play a note. This is faster.
+ * Pops a channel we have reserved so we don't have to release and re-request them from the sound service every time we play a note. This is faster.
  */
 /datum/song/proc/pop_channel()
 	if(length(channels_idle)) //just pop one off of here if we have one available
@@ -97,7 +97,7 @@
 		return
 	if(using_sound_channels >= max_sound_channels)
 		return
-	. = SSinstruments.reserve_instrument_channel(src)
+	. = instrument_service().reserve_instrument_channel(src)
 	if(!isnull(.))
 		using_sound_channels++
 

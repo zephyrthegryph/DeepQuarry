@@ -1,47 +1,12 @@
 #define MAX_THROWING_DIST 1280 // 5 z-levels on default width
 #define MAX_TICKS_TO_MAKE_UP 3 //how many missed ticks will we attempt to make up for this run.
 
-SUBSYSTEM_DEF(throwing)
-	name = "Throwing"
-	priority = FIRE_PRIORITY_THROWING
-	wait = 1
-	flags = SS_NO_INIT|SS_KEEP_TIMING|SS_TICKER
-	runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
-
-	var/list/currentrun
-	var/list/processing = list()
-
-/datum/controller/subsystem/throwing/stat_entry(msg)
-	msg = "P:[length(processing)]"
-	return ..()
-
-/datum/controller/subsystem/throwing/fire(resumed = 0)
-	if (!resumed)
-		src.currentrun = processing.Copy()
-
-	//cache for sanic speed (lists are references anyways)
-	var/list/currentrun = src.currentrun
-
-	while(length(currentrun))
-		var/atom/movable/AM = currentrun[length(currentrun)]
-		var/datum/thrownthing/TT = currentrun[AM]
-		currentrun.len--
-		if (QDELETED(AM) || QDELETED(TT))
-			processing -= AM
-			if (MC_TICK_CHECK)
-				return
-			continue
-
-		TT.tick()
-
-		if (MC_TICK_CHECK)
-			return
-
-	currentrun = null
+// A throw in flight (fold wave F3; SSthrowing is gone). Each /datum/thrownthing runs on the
+// continuous throwing lane (PERIODIC_THROWING, code/datums/om/periodic.dm): throw_at() starts it,
+// periodic_step() moves it once per server tick, and it parks when it lands (finalize() deletes it).
 
 /// A throw in flight -> the movable being thrown (which holds it as `throwing`). Read with
-/// throw_subject(). Deleting the movable deletes the throw; the unlink takes the movable out of
-/// SSthrowing and clears its `throwing`.
+/// throw_subject(). Deleting the movable deletes the throw; the unlink clears its `throwing`.
 /datum/om/relation/throw_of
 	name = "throw"
 	source_single = TRUE
@@ -51,8 +16,6 @@ SUBSYSTEM_DEF(throwing)
 /datum/om/relation/throw_of/on_unlink(datum/thrownthing/source, atom/movable/target, datum/om/edge/edge)
 	SHOULD_NOT_SLEEP(TRUE)
 	source.UnregisterSignal(target, COMSIG_LIVING_TURF_COLLISION)
-	SSthrowing.processing -= target
-	SSthrowing.currentrun -= target
 	if(target.throwing == source)
 		target.throwing = null
 
@@ -150,6 +113,19 @@ SUBSYSTEM_DEF(throwing)
 
 REF_OWNED(/datum/thrownthing, list("callback"))
 
+/// Phase 2: the throw leaves the throwing lane (the throw_of unlink clears the movable's `throwing`).
+/datum/thrownthing/lifecycle_dematerialize()
+	. = ..()
+	PERIODIC_STOP(src)
+
+/// One server tick of flight on the throwing lane (was SSthrowing.fire()).
+/datum/thrownthing/periodic_step(delta)
+	if(QDELETED(src) || QDELETED(throw_subject()))
+		return PROCESS_KILL
+	tick()
+	if(QDELETED(src))
+		return PROCESS_KILL
+
 /// Returns the thrower, or null
 /datum/thrownthing/proc/get_thrower()
 	. = om_resolve(thrower)
@@ -177,7 +153,7 @@ REF_OWNED(/datum/thrownthing, list("callback"))
 
 	//calculate how many tiles to move, making up for any missed ticks.
 	var/turf/target_turf = om_resolve(src.target_turf)
-	var/tilestomove = CEILING(min(((((world.time+world.tick_lag) - start_time + delayed_time) * speed) - (dist_travelled ? dist_travelled : -1)), speed*MAX_TICKS_TO_MAKE_UP) * (world.tick_lag * SSthrowing.wait), 1)
+	var/tilestomove = CEILING(min(((((world.time+world.tick_lag) - start_time + delayed_time) * speed) - (dist_travelled ? dist_travelled : -1)), speed*MAX_TICKS_TO_MAKE_UP) * world.tick_lag, 1) // one lane step per server tick (SSthrowing.wait was 1 tick)
 	while (tilestomove-- > 0)
 		if ((dist_travelled >= maxrange || AM.loc == target_turf) && (A && A.get_gravity()))
 			finalize()

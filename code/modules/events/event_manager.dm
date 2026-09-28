@@ -1,5 +1,5 @@
 //The UI portion. Should probably be made its own thing/made into a NanoUI thing later.
-/datum/controller/subsystem/events
+/datum/world_service/events
 	var/window_x = 700
 	var/window_y = 600
 	var/report_at_round_end = 0
@@ -9,7 +9,7 @@
 	var/row_options3 = " width='150px'"
 	var/datum/event_container/selected_event_container = null
 
-/datum/controller/subsystem/events/proc/Interact(mob/living/user)
+/datum/world_service/events/proc/Interact(mob/living/user)
 	// structured TGUI Event Manager panel (see
 	// code/modules/admin/event_manager_panel.dm). Re-uses
 	// the per-subsystem panel datum so the Topic-handler fall-through
@@ -20,7 +20,7 @@
 	tgui_event_manager_panel.tgui_interact(user)
 	SStgui.update_uis(tgui_event_manager_panel)
 
-/datum/controller/subsystem/events/proc/GetInteractWindow()
+/datum/world_service/events/proc/GetInteractWindow()
 	var/html = "<A align='right' href='byond://?src=\ref[src];refresh=1'>Refresh</A>"
 	html += "<A align='right' href='byond://?src=\ref[src];pause_all=[!CONFIG_GET(flag/allow_random_events)]'>Pause All - [CONFIG_GET(flag/allow_random_events) ? "Pause" : "Resume"]</A>"
 
@@ -111,7 +111,7 @@
 		html += "Estimated times, affected by process scheduler delays."
 		html += "<table[table_options]>"
 		html += "<tr><td[row_options1]>Severity</td><td[row_options2]>Name</td><td[row_options1]>Ends At</td><td[row_options1]>Ends In</td><td[row_options3]>Stop</td></tr>"
-		for(var/datum/event/E in active_events)
+		for(var/datum/event/E in active_events())
 			if(!E.event_meta)
 				continue
 			var/datum/event_meta/EM = E.event_meta
@@ -129,7 +129,7 @@
 
 	return html
 
-/datum/controller/subsystem/events/Topic(href, href_list)
+/datum/world_service/events/Topic(href, href_list)
 	if(..())
 		return
 
@@ -240,12 +240,12 @@
 
 	Interact(usr)
 
-ADMIN_VERB(forceEvent, R_DEBUG, "Trigger Event (Debug Only)", "Immediately triggers an event.", ADMIN_CATEGORY_DEBUG_DANGEROUS, type in SSevents.allEvents)
+ADMIN_VERB(forceEvent, R_DEBUG, "Trigger Event (Debug Only)", "Immediately triggers an event.", ADMIN_CATEGORY_DEBUG_DANGEROUS, type in GLOB.event_service.allEvents)
 	if(!ispath(type))
 		return
 	new type(new /datum/event_meta(EVENT_LEVEL_MAJOR))
 	message_admins("[key_name_admin(user)] has triggered an event. ([type])")
 
 ADMIN_VERB(event_manager_panel, R_ADMIN|R_EVENT, "Event Manager Panel", "Opens the event manager panel.", ADMIN_CATEGORY_EVENTS)
-	SSevents.Interact(user)
+	GLOB.event_service.Interact(user)
 	feedback_add_details("admin_verb","EMP") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!

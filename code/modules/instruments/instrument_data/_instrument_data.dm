@@ -3,8 +3,8 @@
  */
 /proc/get_allowed_instrument_ids()
 	. = list()
-	for(var/id in SSinstruments.instrument_data)
-		var/datum/instrument/I = SSinstruments.instrument_data[id]
+	for(var/id in instrument_service().instrument_data)
+		var/datum/instrument/I = instrument_service().instrument_data[id]
 		if(!I.admin_only)
 			. += I.id
 
@@ -13,7 +13,7 @@
  *
  * Instrument datums hold the data for any given instrument, as well as data on how to play it and what bounds there are to playing it.
  *
- * The datums themselves are kept in SSinstruments in a list by their unique ID. The reason it uses ID instead of typepath is to support the runtime creation of instruments.
+ * The datums themselves are kept in the instrument service in a list by their unique ID. The reason it uses ID instead of typepath is to support the runtime creation of instruments.
  * Since songs cache them while playing, there isn't realistic issues regarding performance from accessing.
  */
 /datum/instrument
@@ -68,9 +68,9 @@
 		return length(samples)
 	return (length(samples) >= 128)
 
-// LIFECYCLE: songs using it drop it; leaves SSinstruments.
+// LIFECYCLE: songs using it drop it; leaves instrument_service().
 /datum/instrument/Destroy()
-	SSinstruments.instrument_data -= id
+	instrument_service().instrument_data -= id
 	for(var/i in songs_using)
 		var/datum/song/S = i
 		S.set_instrument(null)

@@ -1,11 +1,17 @@
 #define DATUMLESS "NO_DATUM"
 
-SUBSYSTEM_DEF(sounds)
+// The sound world service (fold wave F3; was SSsounds): sound channel reservations and the talk
+// sound table. It has no periodic work, so it is a lazy service, set up on first use through
+// sound_service().
+GLOBAL_DATUM_INIT(sound_service, /datum/world_service/sounds, new)
+
+/// The sound service, initialized on first use.
+/proc/sound_service() as /datum/world_service/sounds
+	RETURN_TYPE(/datum/world_service/sounds)
+	return LAZY_SERVICE(sound_service)
+
+/datum/world_service/sounds
 	name = "Sounds"
-	flags = SS_NO_FIRE
-	dependencies = list(
-		/datum/controller/subsystem/mapping
-	)
 	var/static/using_channels_max = CHANNEL_HIGHEST_AVAILABLE //BYOND max channels
 	/// Amount of channels to reserve for random usage rather than reservations being allowed to reserve all channels. Also a nice safeguard for when someone screws up.
 	var/static/random_channels_min = 50
@@ -27,12 +33,16 @@ SUBSYSTEM_DEF(sounds)
 	/// Assoc list of character speaking sounds, contains lists of sounds per key for use with pick()
 	var/talk_sound_map = list()
 
-/datum/controller/subsystem/sounds/Initialize()
+/datum/world_service/sounds/initialize()
+	initialized = TRUE
 	setup_available_channels()
 	create_talk_sound_map()
-	return SS_INIT_SUCCESS
+	log_world("Sound service initialized: [length(channel_list)] channels, [length(talk_sound_map)] talk sound sets.")
 
-/datum/controller/subsystem/sounds/proc/setup_available_channels()
+/datum/world_service/sounds/stat_line()
+	return "Reserved: [length(reserved_channels)] | Left: [available_channels_left()]"
+
+/datum/world_service/sounds/proc/setup_available_channels()
 	channel_list = list()
 	reserved_channels = list()
 	using_channels = list()
@@ -43,7 +53,7 @@ SUBSYSTEM_DEF(sounds)
 	channel_reserve_high = length(channel_list)
 
 /// Removes a channel from using list.
-/datum/controller/subsystem/sounds/proc/free_sound_channel(channel)
+/datum/world_service/sounds/proc/free_sound_channel(channel)
 	var/text_channel = num2text(channel)
 	var/using = using_channels[text_channel]
 	using_channels -= text_channel
@@ -54,7 +64,7 @@ SUBSYSTEM_DEF(sounds)
 	free_channel(channel)
 
 /// Frees all the channels a datum is using.
-/datum/controller/subsystem/sounds/proc/free_datum_channels(datum/D)
+/datum/world_service/sounds/proc/free_datum_channels(datum/D)
 	var/list/L = using_channels_by_datum[D]
 	if(!L)
 		return
@@ -64,11 +74,11 @@ SUBSYSTEM_DEF(sounds)
 	using_channels_by_datum -= D
 
 /// Frees all datumless channels
-/datum/controller/subsystem/sounds/proc/free_datumless_channels()
+/datum/world_service/sounds/proc/free_datumless_channels()
 	free_datum_channels(DATUMLESS)
 
 /// NO AUTOMATIC CLEANUP - If you use this, you better manually free it later! Returns an integer for channel.
-/datum/controller/subsystem/sounds/proc/reserve_sound_channel_datumless()
+/datum/world_service/sounds/proc/reserve_sound_channel_datumless()
 	. = reserve_channel()
 	if(!.) //oh no..
 		return FALSE
@@ -78,7 +88,7 @@ SUBSYSTEM_DEF(sounds)
 	using_channels_by_datum[DATUMLESS] += .
 
 /// Reserves a channel for a datum. Automatic cleanup only when the datum is deleted. Returns an integer for channel.
-/datum/controller/subsystem/sounds/proc/reserve_sound_channel(datum/D)
+/datum/world_service/sounds/proc/reserve_sound_channel(datum/D)
 	if(!D) //i don't like typechecks but someone will fuck it up
 		CRASH("Attempted to reserve sound channel without datum using the managed proc.")
 	.= reserve_channel()
@@ -92,7 +102,7 @@ SUBSYSTEM_DEF(sounds)
 /**
  * Reserves a channel and updates the datastructure. Private proc.
  */
-/datum/controller/subsystem/sounds/proc/reserve_channel()
+/datum/world_service/sounds/proc/reserve_channel()
 	PRIVATE_PROC(TRUE)
 	if(channel_reserve_high <= random_channels_min) // out of channels
 		return
@@ -103,7 +113,7 @@ SUBSYSTEM_DEF(sounds)
 /**
  * Frees a channel and updates the datastructure. Private proc.
  */
-/datum/controller/subsystem/sounds/proc/free_channel(number)
+/datum/world_service/sounds/proc/free_channel(number)
 	PRIVATE_PROC(TRUE)
 	var/text_channel = num2text(number)
 	var/index = reserved_channels[text_channel]
@@ -122,7 +132,7 @@ SUBSYSTEM_DEF(sounds)
 	reserved_channels[text_reserved] = index
 
 /// Random available channel, returns text.
-/datum/controller/subsystem/sounds/proc/random_available_channel_text()
+/datum/world_service/sounds/proc/random_available_channel_text()
 	if(!length(channel_list))
 		return
 	if(channel_random_low > channel_reserve_high)
@@ -130,7 +140,7 @@ SUBSYSTEM_DEF(sounds)
 	. = "[channel_list[channel_random_low++]]"
 
 /// Random available channel, returns number
-/datum/controller/subsystem/sounds/proc/random_available_channel()
+/datum/world_service/sounds/proc/random_available_channel()
 	if(!length(channel_list))
 		return
 	if(channel_random_low > channel_reserve_high)
@@ -138,11 +148,11 @@ SUBSYSTEM_DEF(sounds)
 	. = channel_list[channel_random_low++]
 
 /// How many channels we have left.
-/datum/controller/subsystem/sounds/proc/available_channels_left()
+/datum/world_service/sounds/proc/available_channels_left()
 	return length(channel_list) - random_channels_min
 
 /// Init talking sound lists
-/datum/controller/subsystem/sounds/proc/create_talk_sound_map()
+/datum/world_service/sounds/proc/create_talk_sound_map()
 	talk_sound_map["beep-boop"] = DEFAULT_TALK_SOUNDS // first is DEFAULT
 	talk_sound_map["goon speak 1"] =list('sound/talksounds/goon/speak_1.ogg', 'sound/talksounds/goon/speak_1_ask.ogg', 'sound/talksounds/goon/speak_1_exclaim.ogg')
 	talk_sound_map["goon speak 2"] = list('sound/talksounds/goon/speak_2.ogg', 'sound/talksounds/goon/speak_2_ask.ogg', 'sound/talksounds/goon/speak_2_exclaim.ogg')

@@ -5,6 +5,7 @@
 # a registry, or key it by OM handle, and lower the count with --update.
 # Total: 265 writes in 121 files.
 # Total: 261 writes in 121 files.
+# Total: 606 writes in 145 files.
 code/ATMOSPHERICS/components/omni_devices/filter.dm 1
 code/ATMOSPHERICS/components/omni_devices/mixer.dm 1
 code/ATMOSPHERICS/components/omni_devices/omni_base.dm 1
@@ -45,6 +46,8 @@ code/game/objects/items/weapons/chewables.dm 1
 code/game/objects/items/weapons/material/kitchen.dm 1
 code/game/objects/items/weapons/storage/ore_bag.dm 1
 code/game/objects/structures/props/nest.dm 1
+code/game/sound_service.dm 1
+code/modules/alarm/alarm_handler.dm 1
 code/modules/assembly/infrared.dm 1
 code/modules/asset_cache/asset_list.dm 1
 code/modules/benchmarks/_benchmark.dm 1
@@ -59,6 +62,7 @@ code/modules/economy/cargo_market.dm 6
 code/modules/economy/trader.dm 1
 code/modules/entopics/alternate_appearance.dm 1
 code/modules/error_handler/error_viewer.dm 1
+code/modules/events/event_service.dm 1
 code/modules/expedition/expedition_objective.dm 8
 code/modules/expedition/expedition_site.dm 1
 code/modules/gamemaster/event2/events/everyone/electrical_fault.dm 1
@@ -70,10 +74,15 @@ code/modules/generated_station/generated_station_materializer.dm 5
 code/modules/generated_station/generated_station_runtime.dm 2
 code/modules/generated_station/generated_station_simulation.dm 1
 code/modules/generated_station/generated_station_tile_plan.dm 3
+code/modules/generated_station/generated_station_simulation.dm 2
+code/modules/generated_station/generated_station_tile_plan.dm 4
+code/modules/generated_station/generated_station_types.dm 1
 code/modules/hydroponics/plant_service.dm 3
 code/modules/hydroponics/seed_storage.dm 2
 code/modules/instruments/instrument_data/_instrument_data.dm 4
+code/modules/instruments/instrument_service.dm 1
 code/modules/instruments/songs/_song.dm 1
+code/modules/integrated_electronics/circuit_service.dm 2
 code/modules/lighting/lighting_source.dm 2
 code/modules/logging/log_holder.dm 2
 code/modules/looking_glass/lg_imageholder.dm 1
@@ -107,6 +116,8 @@ code/modules/projectiles/ammunition.dm 1
 code/modules/projectiles/guns/projectile.dm 2
 code/modules/projectiles/projectile.dm 2
 code/modules/reagents/holder/holder.dm 3
+code/modules/reagents/chemistry_service.dm 2
+code/modules/reagents/holder/holder.dm 5
 code/modules/reagents/machinery/dispenser/chem_synthesizer.dm 1
 code/modules/reagents/machinery/dispenser/dispenser2.dm 1
 code/modules/recycling/conveyor2.dm 2
