@@ -1,0 +1,8 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Diseases are now medical afflictions: they show on scanners like other conditions, with stage, spread and cure hints."
+  - rscadd: "Your immune system fights diseases: rest, sleep, food and antimicrobials help you shake off an infection, which leaves you immune to that strain."
+  - rscadd: "Virus-immune species carry diseases without symptoms and can still pass them on."
+  - balance: "Diseases present symptoms (fever, cough, nausea...) that medics can read before the disease itself is identified; undiscovered diseases show only on the body scanner."
+  - admin: "Added the Debug Contagions verb."

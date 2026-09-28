@@ -220,10 +220,6 @@
 			D.add_finding(new /datum/diagnosis_finding("no brain activity", DIAG_FINDING_CONDITION, DIAG_BAND_CRITICAL))
 		if(H.has_mutation(HUSK))
 			D.add_finding(new /datum/diagnosis_finding("anatomical structure lost", DIAG_FINDING_CONDITION, DIAG_BAND_CRITICAL))
-		for(var/datum/disease/virus in H.GetViruses())
-			if(virus.visibility_flags & (HIDDEN_SCANNER | HIDDEN_PANDEMIC))
-				continue
-			D.add_finding(new /datum/diagnosis_finding("[virus.form] in the blood", DIAG_FINDING_CONDITION, DIAG_BAND_MODERATE))
 	if((P.vitals & VITALS_BP) || instrument)
 		if(H.vessel && H.species?.blood_volume && H.should_have_organ(O_HEART))
 			D.blood_percent = round(H.vessel.get_reagent_amount(REAGENT_ID_BLOOD) / H.species.blood_volume * 100)

@@ -392,6 +392,47 @@ treatment tag's biology says what it can treat; a body part's biology decides
 the default injury response. That is the whole synthetic/organic system — no
 `isSynthetic()` branches at call sites.
 
+### Contagions (infectious disease)
+
+`code/modules/medical/contagion/` replaces the old `/datum/disease` system
+(`code/datums/diseases`, `_MobProcs.dm`, the `diseases` life stage, the mob
+`viruses`/`resistances` lists). A disease is `/datum/affliction/contagion`, a
+systemic humanoid affliction:
+
+| Old | New |
+|---|---|
+| `stage` / `max_stages` / `stage_prob` | numeric `stage`; severity mirrors it (`100 * stage / max_stages`), so pain, consciousness, symptom bands and `factors` follow the course |
+| `stage_act()` | per-type hook called from `progress()`; `symptom_pool` and `factors` carry the presentation (signs a medic sees before naming the cause) |
+| `cures` / `cure_chance` | `cures` reagent ids read from the treatment snapshot (`NEEDS_ALL_CURES` honoured); present, each tick rolls `cure_chance` to regress or cure |
+| natural-immunity timer | `immunity`, the host immune response, fed by `treated_by` (`TREAT_REGENERATION`: rest, sleep, nutrition; `TREAT_ANTIMICROBIAL`) plus bed rest, scaled by `immunogenicity`. At `CONTAGION_IMMUNITY_CONTROL` the disease stops advancing and regresses; at `CONTAGION_IMMUNITY_CLEAR` a curable one resolves |
+| visibility / `DISCOVERED` | `perceived_by()`: hidden strains never, undiscovered ones only on `PRESENT_LAB`, discovered ones on internal analyzers; `diagnostic_name()` shows stage or carrier state, `diagnostic_hint()` the spread and cure |
+| `viable_mobtypes`, `required_organs`, `INFECT_SYNTHETICS` | `body_plans` / `biology` in `can_afflict()` (a strain with `INFECT_SYNTHETICS` also accepts synthetic and nanoform biology) plus the required organs; losing one ends the disease |
+| `affected_mob` | the owning body (`owner`); `host` is the typed humanoid view while attached |
+| `resistances` | `body.contagion_immunities`, keyed by `GetDiseaseID()` |
+| `spread()` / `ContractDisease()` / `AirborneContractDisease()` | `/datum/affliction_trigger/contagion` (`transmission.dm`): `expose(target, D, route, zone)` with routes `CONTAGION_ROUTE_AIRBORNE` (internals, breath-proof hosts, masks), `_CONTACT` (clothing on the zone) and `_BLOOD` (unfiltered) |
+
+Outcomes: immune clearance (lasting immunity), reagent cure, asymptomatic
+carrier (virus-immune species spread without suffering), surgical (an organ's
+removal ends it), or a terminal stage. `TREAT_RESTORATION` cures outright.
+
+Airborne shedding and the course of a `SPREAD_DEAD` strain in a corpse run
+on a parkable periodic lane: `update_spread_lane()` starts the contagion on
+`PERIODIC_SLOW` when it joins a body, its host dies, or an engineered strain
+refreshes, and `periodic_step()` parks it once it can neither shed nor act.
+Contact and blood routes are event driven (touch, bump, decals, reagents,
+syringes). Carriers outside a body (blood data, decals, syringes, cultures)
+hold detached copies (`Copy()`, `contagion_copies()`), never a body's own
+affliction.
+
+Engineered strains (`/datum/affliction/contagion/engineered`, the old advance
+diseases) keep their composition: `symptoms` is a list of `/datum/viral_trait`
+(the old `/datum/symptom`), the strain's variant data; stats, spread, cure and
+id derive from it (`Refresh()`), and resistance lowers `immunogenicity`.
+The mob API is `get_contagions()`, `has_contagion()`, `force_contagion()`
+(direct), `expose_contagion()` (contact, protection applies),
+`can_contract_contagion()`, `contagion_threat()`, `has_known_contagion()`.
+Admin: "Release Virus", "Create Advanced Virus", "Debug Contagions".
+
 ## 7. Species & modifiers
 
 - Species `injury_mods` (flat list indexed by `INJURY_*`) replaces
@@ -447,6 +488,9 @@ the default injury response. That is the whole synthetic/organic system — no
 | `/datum/medical_issue/condition` | `/datum/affliction` |
 | `/datum/dq_cause` | `/datum/affliction_trigger` |
 | `/datum/medical_symptom` | `/datum/affliction_symptom` |
+| `/datum/disease` | `/datum/affliction/contagion` |
+| `/datum/disease/advance`, `/datum/symptom` | `/datum/affliction/contagion/engineered`, `/datum/viral_trait` |
+| `ForceContractDisease()` / `ContractDisease()` / `GetViruses()` / `HasDisease()` | `force_contagion()` / `expose_contagion()` / `get_contagions()` / `has_contagion()` |
 
 ## 10. Physiology: ventilation, oxygenation, perfusion, oxygen debt
 

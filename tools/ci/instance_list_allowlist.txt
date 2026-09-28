@@ -85,8 +85,7 @@
 /datum/design_techweb/category # d: every design is in a category (singletons)
 /datum/dimension_theme/replace_floors # d: edited in place per instance (1 writers)
 /datum/dimension_theme/replace_objs # c: read-only per-subtype constant table (8 subtype overrides); a getter would share it, not worth it on a rare type
-/datum/disease/advance/symptoms # d: every advanced disease has symptoms
-/datum/disease/cures # d: every disease defines its cures
+/datum/affliction/contagion/engineered/symptoms # d: every engineered strain has traits
 /datum/dna/SE # d: fixed-size DNA block list, always filled
 /datum/dna/UI # d: fixed-size DNA block list, always filled
 /datum/element/footstep_override/occupied_turfs # d: element singleton; nested per-turf lists edited in place
@@ -188,9 +187,9 @@
 /datum/stockMarket/stocks # d: stock market singleton state
 /datum/supply_pack/contains # d: one per supply pack singleton; every pack has contents
 /datum/supply_pack/manifest # d: one per supply pack singleton, built from contains
-/datum/symptom/bodies # d: reset with initial() in severityset(); few symptom datums
-/datum/symptom/prefixes # d: reset with initial() in severityset(); few symptom datums
-/datum/symptom/suffixes # d: reset with initial() in severityset(); few symptom datums
+/datum/viral_trait/bodies # d: reset with initial() in severityset(); few symptom datums
+/datum/viral_trait/prefixes # d: reset with initial() in severityset(); few symptom datums
+/datum/viral_trait/suffixes # d: reset with initial() in severityset(); few symptom datums
 /datum/talking_atom/heard_words # d: speech memory of a talking item, filled as it hears
 /datum/tgui/children # d: tgui window tree; many call sites
 /datum/tgui_module/atmos_control/monitored_alarms # d: UI module state, filled on open

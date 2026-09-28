@@ -43,7 +43,7 @@
 
 	var/body_color //brown, gray, white and black, leave blank for random
 
-	var/list/datum/disease/rat_diseases
+	var/list/datum/affliction/contagion/rat_diseases
 
 	can_be_drop_prey = TRUE
 	can_be_drop_pred = FALSE
@@ -90,7 +90,7 @@
 
 	if(prob(40))
 		LAZYINITLIST(rat_diseases)
-		rat_diseases += new /datum/disease/advance/random(rand(1, 5), 9, 1, infected = src)
+		rat_diseases += new /datum/affliction/contagion/engineered/random(rand(1, 5), 9, 1, infected = src)
 
 /mob/living/simple_mob/animal/passive/mouse/extrapolator_act(mob/living/user, obj/item/extrapolator/extrapolator, dry_run = FALSE)
 	. = ..()
@@ -231,14 +231,14 @@
 	. = ..()
 	name = initial(name)
 	desc = initial(desc)
-	rat_diseases += new /datum/disease/advance/random(2, 2, 1, infected = src)
+	rat_diseases += new /datum/affliction/contagion/engineered/random(2, 2, 1, infected = src)
 
 /mob/living/simple_mob/animal/passive/mouse/white/virology/Crossed(atom/movable/AM)
 	. = ..()
 
 	if(isliving(AM) && !isnull(rat_diseases) && prob(20))
 		var/mob/living/L = AM
-		L.ContractDisease(pick(rat_diseases), BP_R_FOOT)
+		L.expose_contagion(pick(rat_diseases), BP_R_FOOT)
 
 // === merged from mouse_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/living/simple_mob/animal/passive/mouse

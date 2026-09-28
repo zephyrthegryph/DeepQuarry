@@ -569,7 +569,7 @@ SUBSYSTEM_DEF(internal_wiki)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	// viruses or diseases
-	for(var/datum/disease/D as anything in subtypesof(/datum/disease))
+	for(var/datum/affliction/contagion/D as anything in subtypesof(/datum/affliction/contagion))
 		if(initial(D.name) == DEVELOPER_WARNING_NAME)
 			continue
 		if(initial(D.visibility_flags) & HIDDEN_PANDEMIC)
@@ -1402,7 +1402,7 @@ SUBSYSTEM_DEF(internal_wiki)
 
 // VIRUSES
 /////////////////////////////////////////////
-/datum/internal_wiki/page/virus/assemble(datum/disease/D)
+/datum/internal_wiki/page/virus/assemble(datum/affliction/contagion/D)
 	title = initial(D.name)
 	data["title"] = title
 	data["description"] = initial(D.desc)

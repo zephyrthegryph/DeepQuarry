@@ -271,8 +271,6 @@
 
 	var/tmp/list/datum/action/actions
 
-	VAR_PROTECTED/list/viruses
-	VAR_PROTECTED/list/resistances
 
 	var/custom_footstep = FOOTSTEP_MOB_SHOE
 	var/vent_crawl_time = 4.5 SECONDS // Time to animate entering a vent

@@ -1,0 +1,56 @@
+/datum/viral_trait/light
+	name = "Photosensitive muscle condensation"
+	desc = "The virus will cause muscles to contract when exposed to light, resulting in lowered speed, but increased durability. Muscles will become more malleable in the darkness, resulting in the host moving faster, but being more easily bruised."
+	stealth = 0
+	resistance = 2
+	stage_speed = -3
+	transmission = 0
+	level = 8
+	threat = -2
+	var/currenthealthmodifier
+	threshold_descs = list(
+		"Stealth 3" = "The virus causes a wider disparity between light and dark."
+	)
+
+	prefixes = list("Photo", "Light ")
+	bodies = list("Cramp")
+
+/datum/viral_trait/light/severityset(datum/affliction/contagion/engineered/A)
+	. = ..()
+	if(A.stealth >= 3)
+		threat -= 1
+
+/datum/viral_trait/light/Start(datum/affliction/contagion/engineered/A)
+	if(!..())
+		return
+	if(A.stealth >= 3)
+		power = 2
+
+/datum/viral_trait/light/Activate(datum/affliction/contagion/engineered/A)
+	if(!..())
+		return
+	var/mob/living/carbon/human/H = A.host
+	if(H.stat >= DEAD)
+		return
+	var/realpower = power
+	var/healthchange = min(1 * realpower, (10 * realpower) - currenthealthmodifier)
+	if(isturf(H.loc))
+		var/turf/T = H.loc
+		var/light_amount = min(1, T.get_lumcount()) - 0.5
+		if(light_amount < 0.5)
+			realpower = power * -1
+			healthchange = max(1 * realpower, (10 * realpower) - currenthealthmodifier)
+			if(prob(5))
+				to_chat(H, span_warning(pick("You feel vulnerable.", "Your limbs feel loose and limber.", "The dark makes you feel realxed.")))
+		else if(prob(5))
+			to_chat(H, span_warning(pick("Your muscles feel tight.", "You feel lethargic.", "Your muscles feel hard and tough.")))
+	if(A.stage >= 5)
+		currenthealthmodifier += healthchange
+		H.endurance += healthchange
+
+/datum/viral_trait/light/End(datum/affliction/contagion/engineered/A)
+	. = ..()
+	var/mob/living/carbon/human/H = A.host
+	if(!H)
+		return
+	H.endurance -= currenthealthmodifier

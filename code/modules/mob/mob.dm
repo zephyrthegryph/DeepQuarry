@@ -43,7 +43,6 @@ REF_PAIR(/mob, list("ability_master" = "my_mob"))
 	QDEL_NULL(hud_used)
 	for(var/key in alerts) //clear out alerts
 		clear_alert(key)
-	QDEL_NULL_LIST(viruses)
 	if(src?.pulling_target())
 		stop_pulling() //TG does this on atom/movable but our stop_pulling proc is here so whatever
 

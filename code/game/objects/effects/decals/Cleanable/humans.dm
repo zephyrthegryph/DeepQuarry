@@ -16,7 +16,7 @@
 	var/base_icon = 'icons/effects/blood.dmi'
 	var/basecolor="#A10808" // Color when wet.
 	var/synthblood = 0
-	var/list/datum/disease/viruses
+	var/list/datum/affliction/contagion/viruses
 	var/amount = 5
 	generic_filth = TRUE
 	persistent = FALSE
@@ -113,9 +113,9 @@
 		W.bloodiness = 4
 
 	if(viruses)
-		for(var/datum/disease/D in viruses)
+		for(var/datum/affliction/contagion/D in viruses)
 			if(D.IsSpreadByTouch())
-				perp.ContractDisease(D, BP_R_FOOT)
+				perp.expose_contagion(D, BP_R_FOOT)
 
 	amount--
 
@@ -142,9 +142,9 @@
 		add_verb(user, /mob/living/carbon/human/proc/bloody_doodle)
 
 	if(viruses)
-		for(var/datum/disease/D in viruses)
+		for(var/datum/affliction/contagion/D in viruses)
 			if(D.IsSpreadByTouch())
-				user.ContractDisease(D, BP_R_HAND)
+				user.expose_contagion(D, BP_R_HAND)
 
 /obj/effect/decal/cleanable/blood/splatter
 		random_icon_states = list("mgibbl1", "mgibbl2", "mgibbl3", "mgibbl4", "mgibbl5")
@@ -257,14 +257,14 @@
 	icon_state = "mucus"
 	random_icon_states = list("mucus")
 
-	var/list/datum/disease/viruses
+	var/list/datum/affliction/contagion/viruses
 	var/dry = 0 // Keeps the lag down
 	var/sampled = FALSE
 
 //This version should be used for admin spawns and pre-mapped virus vectors (e.g. in PoIs), this version does not dry
 /obj/effect/decal/cleanable/mucus/mapped/Initialize(mapload)
 	. = ..()
-	LAZYOR(viruses, new /datum/disease/advance/random(rand(3, 6), 9, 4, infected = src))
+	LAZYOR(viruses, new /datum/affliction/contagion/engineered/random(rand(3, 6), 9, 4, infected = src))
 
 /obj/effect/decal/cleanable/mucus/Crossed(mob/living/carbon/human/perp)
 	if(perp.is_incorporeal())
@@ -272,10 +272,10 @@
 	if(!istype(perp))
 		return
 	if(viruses)
-		for(var/datum/disease/D in viruses)
+		for(var/datum/affliction/contagion/D in viruses)
 			if(D.spread_flags & (DISEASE_SPREAD_SPECIAL | DISEASE_SPREAD_NON_CONTAGIOUS))
 				continue
-			perp.ContractDisease(D, BP_R_FOOT)
+			perp.expose_contagion(D, BP_R_FOOT)
 
 /obj/effect/decal/cleanable/mucus/attack_hand(mob/living/carbon/human/perp)
 	if(perp.is_incorporeal())
@@ -283,10 +283,10 @@
 	if(!istype(perp))
 		return
 	if(viruses)
-		for(var/datum/disease/D in viruses)
+		for(var/datum/affliction/contagion/D in viruses)
 			if(D.spread_flags & (DISEASE_SPREAD_SPECIAL | DISEASE_SPREAD_NON_CONTAGIOUS))
 				continue
-			perp.ContractDisease(D, BP_R_HAND)
+			perp.expose_contagion(D, BP_R_HAND)
 
 /obj/effect/decal/cleanable/vomit/Crossed(mob/living/carbon/human/perp)
 	if(perp.is_incorporeal())
@@ -294,10 +294,10 @@
 	if(!istype(perp))
 		return
 	if(viruses)
-		for(var/datum/disease/D in viruses)
+		for(var/datum/affliction/contagion/D in viruses)
 			if(D.spread_flags & (DISEASE_SPREAD_SPECIAL | DISEASE_SPREAD_NON_CONTAGIOUS))
 				continue
-			perp.ContractDisease(D, BP_R_FOOT)
+			perp.expose_contagion(D, BP_R_FOOT)
 
 /obj/effect/decal/cleanable/vomit/attack_hand(mob/living/carbon/human/perp)
 	if(perp.is_incorporeal())
@@ -305,10 +305,10 @@
 	if(!istype(perp))
 		return
 	if(viruses)
-		for(var/datum/disease/D in viruses)
+		for(var/datum/affliction/contagion/D in viruses)
 			if(D.spread_flags & (DISEASE_SPREAD_SPECIAL | DISEASE_SPREAD_NON_CONTAGIOUS))
 				continue
-			perp.ContractDisease(D, BP_R_HAND)
+			perp.expose_contagion(D, BP_R_HAND)
 
 /obj/effect/decal/cleanable/mucus/extrapolator_act(mob/living/user, obj/item/extrapolator/extrapolator, dry_run)
 	. = ..()
