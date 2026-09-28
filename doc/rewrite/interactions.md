@@ -213,6 +213,16 @@ DECLARE_INTERACTIONS(/obj/item/communicator, INTERACT_ALT("Remove ID", PROC_REF(
 
 A plain `get_interactions()` override is for a type with no compact-declaring ancestor of its own (the common case: most items aren't subtypes of something that also uses the compact form).
 
+**`EXTEND_INTERACTIONS(type, specs...)`** generates that `declare_interactions()` override: the type's own specs first, then `..()`, so inherited interactions follow the way an override chain fell through to its parent. Use it on any type whose ancestor declares interactions in any form: an ancestor's full-form `declare_interactions()` adds its entries before `..()`, so a subtype's `get_interactions()` getter would otherwise run *after* them.
+
+**More shapes** (all in `code/__defines/interactions.dm`):
+- `INTERACT_HAND_UNGATED` - an old `attack_hand` that never called `..()`: it runs ahead of `hand_gate()` (no signal, no unbuckling, no structure smash first).
+- `INTERACT_DRAG` - an old `MouseDrop_T`; `held` is the dragged atom.
+- `INTERACT_SELF` - an old `attack_self` that fell through with `return ..()`: its FALSE moves on to the next self-use candidate, unlike `INTERACT_USE`.
+- `INTERACT_ITEM_HOSTILE`, `INTERACT_INSERT_HOSTILE`, `INTERACT_HAND_HOSTILE` (and `_PEACEFUL`) - replace an `IS_HARMING()`/`IS_HELPING()` gate. The stance is an `offered_when` clause (`REQ_HARMING`/`REQ_HELPING`), so in the other stance the interaction isn't meant and the input falls through; hostile ones carry `INTERACTION_TAG_HOSTILE` for the resolver's combat-mode ranking. Full-form interactions set `offered_when = list(REQ_HARMING)` and `tags = list(INTERACTION_TAG_HOSTILE)` for the same.
+
+**Effect results.** An item or drag effect that returns `INTERACTION_HANDLED_PASS` handled the input without using it up, as an old `attackby` that returned nothing: the item's afterattack still follows. `dq_interaction_click_params(user)` gives an item or drag effect the click parameters (precise placement). A self-use needs no hand when `attack_self()` dispatched it (action buttons, anchored items: `REQ_SELF_USE_REACH`). An item's post-pickup reaction (an old `attack_hand` that ran `..()` first) is `/obj/item/after_attack_hand()`, not an interaction. Inside an effect, a `rerun_prompt()` re-calls the effect (`PROC_REF(effect), args`), never the old handler: the argument order differs.
+
 **When to reach for the full form instead:** a menu that asks the player which of several things to do, an interaction whose display name or requirement varies with target state (`display_name()`/`applies_to()` overrides), one that needs the tool cost pipeline (`tool`/`duration`), or one two types must NOT share despite an identical-looking spec (interning is opt-out by writing distinct effect procs, even trivially different ones).
 
 ## 6. Where interactions come from
@@ -353,6 +363,11 @@ The resolver shows the next steps, and examine explains them ("Next: weld the fr
 - `attackby`, `attack_hand`, `attack_self`, `click_alt`, `MouseDrop_T` and object verbs.
 - The domain's `description_info` strings are deleted.
 - Its interaction snapshot is recorded.
+
+**Progress** (handler overrides of `attackby`/`attack_hand`/`attack_self`/`click_alt`/`MouseDrop_T`; `tools/ci/i7_handler_lint.py` ratchets the counts, `check_grep.sh` bans them on fully converted domains):
+- machinery: converted, except files other work owns (medical, cooking, vore, resleeving).
+- structures: converted (154 to 14, the rest owned elsewhere: medical stand, resleeving, vore, test fixtures). Object verbs are not converted yet.
+- items: 910 to 428. What's left sits in hierarchies where a type keeps an override that needs a hand conversion (a parent call mid-body, a leading `..()` under an ancestor that handles the same input, extra click parameters), so its relatives stay legacy too.
 
 **Order within the plan**
 - The tool pipeline (I4) and construction graphs (I5) come first.

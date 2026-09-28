@@ -24,6 +24,7 @@ for lint in \
 	api_lints.py \
 	cooldown_lint.py \
 	base_proc_lint.py \
+	i7_handler_lint.py \
 	dcs_lints.py; do
 	echo "::group::$lint"
 	if ! "$PY" "tools/ci/$lint"; then

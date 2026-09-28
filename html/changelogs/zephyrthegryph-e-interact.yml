@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Most structure and item click, alt-click, drag and use-in-hand handlers are now interactions: they show up in examine, screentips and the interaction menu."
+  - qol: "Punching plushies, balloons and punching bags, banging on windows, tearing resin doors and slamming someone into a table happen in combat mode; outside it you hug, poke or knock."
+  - bugfix: "Items that refuse to be picked up (an active emergency beacon, for example) no longer get picked up anyway."
