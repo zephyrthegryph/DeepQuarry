@@ -132,10 +132,6 @@
 
 	setDir(pick(GLOB.cardinals))
 	air_update_turf(FALSE, FALSE)
-	var/static/list/loc_connections = list(
-		COMSIG_ATOM_ENTERED = PROC_REF(on_entered),
-	)
-	AddElement(/datum/element/connect_loc, loc_connections)
 
 	// fire_puff.ogg is a /tg/ asset CHOMP doesn't ship. Sound disabled until vendored.
 	if(COOLDOWN_FINISHED(our_turf, fire_puff_cooldown))
@@ -368,8 +364,12 @@
 		cur_turf.active_hotspot = null
 	return ..()
 
+/obj/effect/hotspot/Crossed(atom/movable/AM, oldloc)
+	. = ..()
+	on_entered(loc, AM, oldloc)
+
+/// Something entered our turf (was a connect_loc COMSIG_ATOM_ENTERED listener; now Crossed()).
 /obj/effect/hotspot/proc/on_entered(datum/source, atom/movable/arrived, atom/old_loc, list/atom/old_locs)
-	SIGNAL_HANDLER
 	if(cold_fire)
 		return
 	if(isliving(arrived))

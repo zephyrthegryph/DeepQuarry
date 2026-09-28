@@ -821,7 +821,6 @@
 #include "code\datums\diseases\advance\symptoms\youth.dm"
 #include "code\datums\elements\_element.dm"
 #include "code\datums\elements\allergy.dm"
-#include "code\datums\elements\connect_loc.dm"
 #include "code\datums\elements\footstep_override.dm"
 #include "code\datums\elements\godmode.dm"
 #include "code\datums\elements\topturfcrossed.dm"

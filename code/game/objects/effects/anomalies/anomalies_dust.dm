@@ -15,16 +15,16 @@
 
 /obj/effect/anomaly/dust/Initialize(mapload, new_lifespan, drops_core)
 	. = ..()
-	var/static/list/loc_connections = list(
-		COMSIG_ATOM_ENTERED = PROC_REF(on_entered)
-	)
-	AddElement(/datum/element/connect_loc, loc_connections)
 
 	animate(src, transform = matrix()*0.85, time = 3, loop = -1)
 	animate(transform = matrix(), time = 3, loop = -1)
 
+/obj/effect/anomaly/dust/Crossed(atom/movable/AM, oldloc)
+	. = ..()
+	on_entered(loc, AM)
+
+/// Something entered our turf (was a connect_loc COMSIG_ATOM_ENTERED listener; now Crossed()).
 /obj/effect/anomaly/dust/proc/on_entered(datum/source, atom/movable/AM)
-	SIGNAL_HANDLER
 	if(istype(AM, /turf/simulated/floor))
 		var/turf/simulated/floor/floor = AM
 		if(floor.can_dirty)

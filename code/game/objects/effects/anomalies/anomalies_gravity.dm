@@ -8,10 +8,6 @@
 
 /obj/effect/anomaly/grav/Initialize(mapload, new_lifespan)
 	. = ..()
-	var/static/list/loc_connections = list(
-		COMSIG_ATOM_ENTERED = PROC_REF(on_entered),
-	)
-	AddElement(/datum/element/connect_loc, loc_connections)
 	apply_wibbly_filters(src)
 
 /obj/effect/anomaly/grav/anomalyEffect(seconds_per_tick)
@@ -41,8 +37,12 @@
 		if(target && !target.stat && prob(object_launch_prob))
 			O.throw_at(target, 5, 10)
 
+/obj/effect/anomaly/grav/Crossed(atom/movable/AM, oldloc)
+	. = ..()
+	on_entered(loc, AM)
+
+/// Something entered our turf (was a connect_loc COMSIG_ATOM_ENTERED listener; now Crossed()).
 /obj/effect/anomaly/grav/proc/on_entered(datum/source, atom/movable/AM)
-	SIGNAL_HANDLER
 	gravShock(AM)
 
 /obj/effect/anomaly/grav/Bump(atom/A)
