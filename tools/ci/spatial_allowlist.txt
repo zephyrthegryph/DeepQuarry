@@ -47,7 +47,7 @@ code/datums/components/traits/weaver.dm 2
 code/datums/diseases/_MobProcs.dm 2
 code/datums/diseases/_disease.dm 2
 code/datums/diseases/advance/symptoms/sneeze.dm 1
-code/datums/elements/sellable.dm 3
+code/datums/behaviours/sellable.dm 3
 code/datums/gear/loadout_shoes.dm 1
 code/datums/ghost_spawn_options.dm 6
 code/datums/helper_datums/teleport.dm 1

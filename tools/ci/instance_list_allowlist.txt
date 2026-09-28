@@ -58,7 +58,6 @@
 /datum/codex_tree/history # d: codex browser history, filled as pages are opened; one per codex item
 /datum/component/antag/changeling/absorbed_dna # d: changeling state; starts with the changeling's own DNA
 /datum/component/antag/changeling/changeling_cooldowns # d: edited in place per instance (1 writers)
-/datum/component/bluespace_connection/connections # d: the component exists because of its connections
 /datum/component/connect_range/turfs # d: the component's tracked turf set; always populated while attached
 /datum/component/personal_crafting/categories # d: edited in place per instance (2 writers)
 /datum/component/reactive_icon_update/triggering_mobs # d: edited in place per instance (1 writers)

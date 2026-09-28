@@ -115,7 +115,6 @@
 	SHOULD_NOT_SLEEP(TRUE)
 	if(!istype(source) || !istype(target))
 		return
-	var/forced = pending_forced
 	source.facing_dir = null
 	source.set_dir(target.buckle_dir ? target.buckle_dir : target.dir)
 	source.update_canmove()

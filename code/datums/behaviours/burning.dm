@@ -28,11 +28,13 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 	/// Fuel left, J.
 	var/burn_fuel = 0
 	/// The heat watch that puts the fire out when the object cools.
-	var/datum/native_watch/heat/burn_cool_watch
+	var/tmp/datum/native_watch/heat/burn_cool_watch
 	/// Why the fire went out (BURN_ENDED_*), for tests and examine.
 	var/burn_ended_by
 
-REF_OWNED(/obj, "burn_cool_watch")
+/obj/declared_owned_vars()
+	. = ..()
+	. = (. || list()) + "burn_cool_watch"
 
 /// TRUE while this object burns.
 /obj/proc/is_burning()

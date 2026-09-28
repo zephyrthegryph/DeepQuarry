@@ -39,7 +39,7 @@
 	var/turf/T = AM.loc
 	if(!isturf(T))
 		return
-	for(var/atom/movable/other in T)
+	for(var/atom/movable/other in turf_contents_of_type(T, /atom/movable))
 		if(other == AM || !is_swarmer(other))
 			continue
 		pair(AM, other)

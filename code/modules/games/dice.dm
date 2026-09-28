@@ -275,8 +275,11 @@
 	..()
 	if(result == 1)
 		to_chat(user, span_cult("You feel extraordinarily unlucky..."))
+		var/mob/living/cursed_user = user
+		if(!istype(cursed_user))
+			return FALSE
 		if(evil)
-			user.add_omen(incidents_left = 1, luck_mod = 1, damage_mod = 1, evil = TRUE, safe_disposals = FALSE, vorish = TRUE)
+			cursed_user.add_omen(incidents_left = 1, luck_mod = 1, damage_mod = 1, evil = TRUE, safe_disposals = FALSE, vorish = TRUE)
 
 		else
-			user.add_omen(incidents_left = 1, luck_mod = 0.3, damage_mod = 1, evil = FALSE, safe_disposals = FALSE, vorish = TRUE)
+			cursed_user.add_omen(incidents_left = 1, luck_mod = 0.3, damage_mod = 1, evil = FALSE, safe_disposals = FALSE, vorish = TRUE)
