@@ -18,6 +18,11 @@ first-use accessor. This lint ratchets four counts:
                         SSatoms.InitAtom() flags a turf whose type table
                         needs no work as materialized without calling
                         on_materialize(), so a turf override would be skipped.
+    table_init_overrides
+                        Initialize()/LateInitialize() overrides on a type that
+                        inherits `init_from_table = TRUE` (atom_type_table.dm).
+                        Ceiling 0: InitAtom() skips Initialize() for such a
+                        type, so the override must set it back to FALSE.
 
 A line or override carrying `// ALLOW(init): <reason>` does not count
 (tools/ci/allow_annotations.py). The counts live in
@@ -60,6 +65,43 @@ def dm_files():
                     yield os.path.join(base, name)
 
 
+TYPE_BLOCK = re.compile(r"^(/[\w/]+)\s*(//.*)?$")
+TABLE_FLAG = re.compile(r"^\s+init_from_table\s*=\s*(TRUE|FALSE|1|0)\b")
+
+
+def table_init_violations(files):
+    """Overrides whose type inherits init_from_table = TRUE, as (rel, line) pairs."""
+    flags = {}
+    headers = []
+    for rel, lines in files:
+        block = None
+        for number, line in enumerate(lines, 1):
+            head = TYPE_BLOCK.match(line)
+            if head and "(" not in line:
+                block = head.group(1)
+                continue
+            if line and not line[0].isspace():
+                block = None
+            flag = TABLE_FLAG.match(line)
+            if flag and block:
+                flags[block] = flag.group(1) in ("TRUE", "1")
+            header = INIT_HEADER.match(line) or LATE_HEADER.match(line)
+            if header and not allowed(lines, number, "init"):
+                headers.append((rel, number, header.group(1)))
+    found = []
+    for rel, number, path in headers:
+        parts = path.split("/")
+        for cut in range(len(parts), 1, -1):
+            ancestor = "/".join(parts[:cut])
+            if ancestor in flags:
+                # The type that turns the flag on keeps its Initialize() as the fallback
+                # (a colour or extra New() args) and mirrors it in table_initialize().
+                if flags[ancestor] and cut != len(parts):
+                    found.append((rel, number))
+                break
+    return found
+
+
 def scan(lines):
     sites = {"initialize": [], "late_initialize": [], "unreasoned": [], "world_reads": [], "turf_on_materialize": []}
     in_init = False
@@ -90,13 +132,19 @@ def scan(lines):
 def main():
     totals = {"initialize": 0, "late_initialize": 0, "unreasoned": 0, "world_reads": 0, "turf_on_materialize": 0}
     where = []
+    files = []
     for path in dm_files():
         rel = os.path.relpath(path, ROOT).replace("\\", "/")
+        lines = read(path)
+        files.append((rel, lines))
         if rel.startswith(EXEMPT_PREFIXES):
             continue
-        for kind, numbers in scan(read(path)).items():
+        for kind, numbers in scan(lines).items():
             totals[kind] += len(numbers)
             where.extend((rel, n, kind) for n in numbers)
+    violations = table_init_violations(files)
+    totals["table_init_overrides"] = len(violations)
+    where.extend((rel, n, "table_init_overrides") for rel, n in violations)
     if "--update" in sys.argv:
         write_baseline(BASELINE, [
             "Initialize() ratchet (tools/ci/init_lint.py, doc/rewrite/init_and_turfs.md sec 3.6).",

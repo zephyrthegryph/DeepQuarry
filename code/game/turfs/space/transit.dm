@@ -1,6 +1,7 @@
 /turf/space/transit
 	can_build_into_floor = FALSE
 	var/pushdirection // push things that get caught in the transit tile this direction
+	init_from_table = FALSE
 
 //Overwrite because we dont want people building rods in space.
 // Old attackby: no building rods in transit space.

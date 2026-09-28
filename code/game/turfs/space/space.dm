@@ -18,14 +18,25 @@
 	var/keep_sprite = FALSE
 	var/edge = FALSE //If we're an edge
 	var/forced_dirs = 0 //Force this one to pretend it's an overedge turf
+	init_from_table = TRUE
 
 /turf/space/Initialize(mapload)
+	space_appearance()
+	return ..()
+
+/turf/space/table_initialize()
+	space_appearance()
+	..()
+
+/// Starlight and the edge/dust sprite, picked from the turf's position.
+/turf/space/proc/space_appearance()
+	PRIVATE_PROC(TRUE)
 	if(CONFIG_GET(number/starlight))
 		update_starlight()
 
 	//Sprite stuff only beyond here
 	if(keep_sprite)
-		return ..()
+		return
 
 	//We might be an edge
 	if(y == world.maxy || forced_dirs & NORTH)
@@ -47,8 +58,6 @@
 			appearance = dust_by_index[dust + 1]
 		else
 			appearance = skybox_service().dust_cache["[dust]"]
-
-	return ..()
 
 /turf/space/proc/toggle_transit(direction)
 	if(edge) //Not a great way to do this yet. Maybe we'll come up with one. We could pre-make sprites... or tile the overlay over it?

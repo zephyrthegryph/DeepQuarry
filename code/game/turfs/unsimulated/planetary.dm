@@ -17,6 +17,7 @@
 	phoron = 0
 	temperature = T20C
 	skip_init = FALSE
+	init_from_table = FALSE
 
 /turf/unsimulated/wall/planetary/Initialize(mapload)
 	. = ..()

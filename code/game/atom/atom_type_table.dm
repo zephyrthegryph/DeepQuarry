@@ -42,3 +42,21 @@
 		bits |= TYPE_TABLE_HAS_OM
 	rows[thing.type] = bits
 	return bits
+
+// Initialize-free types (sec 3.1). A type with no per-instance Initialize() state sets
+// init_from_table; SSatoms.InitAtom() then calls table_initialize() in place of the whole
+// Initialize() chain (and its arglist). table_initialize() applies the type's facts with the
+// fewest writes it can. Space (~310 k turfs on Southern Cross) and plain unsimulated turfs use it.
+// A subtype that overrides Initialize() must set init_from_table = FALSE, or the override would
+// never run: tools/ci/init_lint.py counts violations (`table_init_overrides`, ceiling 0).
+/atom
+	/// Type-table fact: no per-instance Initialize() state; InitAtom() calls table_initialize().
+	var/init_from_table = FALSE
+
+/// What /atom/Initialize() does, for an init_from_table type. Overrides must not call Initialize().
+/atom/proc/table_initialize()
+	SHOULD_CALL_PARENT(TRUE)
+	flags |= ATOM_INITIALIZED
+	flags_1 |= INITIALIZED_1
+	if(uses_integrity)
+		atom_integrity = max_integrity
