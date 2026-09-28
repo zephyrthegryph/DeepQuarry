@@ -13,7 +13,7 @@
 	circuit = /obj/item/circuitboard/miningdrill
 	var/braces_needed = 2
 	var/total_brace_tier = 0
-	var/list/obj/machinery/mining/brace/supports
+	var/list/supports	// OM handles of the connected braces (om_resolve_all())
 	var/supported = 0
 	var/active = 0
 	var/list/resource_field
@@ -383,20 +383,21 @@ REF_OWNED(/obj/machinery/mining/drill, list("faultreporter", "cell"))
 	supported = 0
 	total_brace_tier = 0
 
-	if((!supports || !length(supports)) && initial(anchored) == 0)
+	var/list/braces = om_resolve_all(supports)
+	if(!length(braces) && initial(anchored) == 0)
 		icon_state = "mining_drill"
 		anchored = FALSE
 		active = 0
 	else
 		anchored = TRUE
 
-	if(supports)
-		if(length(supports) >= braces_needed)
+	if(length(braces))
+		if(length(braces) >= braces_needed)
 			supported = 1
-		else for(var/obj/machinery/mining/brace/check in supports)
+		else for(var/obj/machinery/mining/brace/check in braces)
 			if(check.brace_tier >= 3)
 				supported = 1
-		for(var/obj/machinery/mining/brace/check in supports)
+		for(var/obj/machinery/mining/brace/check in braces)
 			total_brace_tier += check.brace_tier
 
 	update_icon()
@@ -555,7 +556,7 @@ REF_OWNED(/obj/machinery/mining/drill, list("faultreporter", "cell"))
 
 	icon_state = "mining_brace_active"
 
-	LAZYADD(connected().supports, src)
+	LAZYADD(connected().supports, om_handle(src))
 	connected().check_supports()
 
 /obj/machinery/mining/brace/proc/disconnect()
@@ -566,7 +567,7 @@ REF_OWNED(/obj/machinery/mining/drill, list("faultreporter", "cell"))
 
 	icon_state = "mining_brace"
 
-	LAZYREMOVE(connected().supports, src)
+	LAZYREMOVE(connected().supports, om_handle_of(src))
 	connected().check_supports()
 	connected_handle = null
 

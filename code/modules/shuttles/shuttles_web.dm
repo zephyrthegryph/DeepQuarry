@@ -20,7 +20,7 @@
 	var/autopilot_first_delay = null // If your want your shuttle to stay for a different amount of time for the first time, set this.
 	var/can_rename = TRUE // Lets the pilot rename the shuttle. Only available once.
 	category = /datum/shuttle/autodock/web_shuttle
-	var/list/obj/item/clothing/head/pilot/helmets
+	var/list/helmets	// OM handles of the registered pilot helmets
 
 /datum/shuttle/autodock/web_shuttle/New()
 	web_master = new web_master_type(src)
@@ -114,15 +114,16 @@ REF_OWNED(/datum/shuttle/autodock/web_shuttle, "web_master")
 				web_master.process_autopath()
 
 /datum/shuttle/autodock/web_shuttle/proc/update_helmets()
-	for(var/obj/item/clothing/head/pilot/H as anything in helmets)
-		if(QDELETED(H))
-			helmets -= H
+	for(var/h in helmets.Copy())
+		var/obj/item/clothing/head/pilot/H = om_resolve(h)
+		if(!H)
+			helmets -= h
 			continue
 		if(!H.shuttle_comp() || !(get_area(H) in shuttle_area))
 			H.shuttle_comp_handle = null
 			H.audible_message(span_warning("\The [H] pings as it loses it's connection with the ship."), runemessage = "ping")
 			H.update_hud("discon")
-			helmets -= H
+			helmets -= h
 		else
 			H.update_hud(moving_status)
 
@@ -219,7 +220,7 @@ REF_OWNED(/datum/shuttle/autodock/web_shuttle, "web_master")
 /obj/machinery/computer/shuttle_control/web/proc/interaction_register_helmet(mob/user, obj/item/clothing/head/pilot/H, datum/interaction/interaction)
 	var/datum/shuttle/autodock/web_shuttle/shuttle = SSshuttles.shuttles[shuttle_tag]
 	H.shuttle_comp_handle = om_handle(src)
-	shuttle.helmets |= H
+	shuttle.helmets |= om_handle(H)
 	to_chat(user, span_notice("You register the helmet with the ship's console."))
 	shuttle.update_helmets()
 	return TRUE

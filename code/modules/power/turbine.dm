@@ -64,7 +64,7 @@
 	icon_screen = "turbinecomp"
 	circuit = /obj/item/circuitboard/turbine_control
 	var/tmp/compressor_handle
-	var/list/obj/machinery/door/blast/doors
+	var/list/doors	// OM handles of the vent doors (om_resolve_all())
 	var/id = 0
 	var/door_status = 0
 
@@ -359,7 +359,7 @@
 	LAZYINITLIST(doors)
 	for(var/obj/machinery/door/blast/P in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(P.id == id) //This will never work because the ID on the blast doors is a number while the ID on the turbine (if set mid-round) is a string.
-			doors += P
+			doors += om_handle(P)
 
 /obj/machinery/computer/turbine_computer/declare_interactions(list/into)
 	into += list(
@@ -439,7 +439,7 @@
 			. = TRUE
 		if("doors")
 			door_status = !door_status
-			for(var/obj/machinery/door/blast/D in src.doors)
+			for(var/obj/machinery/door/blast/D in om_resolve_all(src.doors))
 				if (door_status)
 					D.close()
 				else
