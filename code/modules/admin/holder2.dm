@@ -18,7 +18,10 @@ GLOBAL_PROTECT(href_token)
 
 	var/admincaster_screen = 0	//See newscaster.dm under machinery for a full description
 	var/datum/feed_message/admincaster_feed_message = new /datum/feed_message   //These two will act as holders.
-	var/datum/feed_channel/admincaster_feed_channel = new /datum/feed_channel
+	/// The admin newscaster's working channel: a network channel picked into admincaster_feed_channel_handle,
+	/// or while none is picked its own scratch channel (admincaster_feed_channel() reads either).
+	var/tmp/admincaster_feed_channel_handle
+	var/datum/feed_channel/admincaster_scratch_channel = new /datum/feed_channel
 	var/admincaster_signature	//What you'll sign the newsfeeds as
 
 	/// Code security critcal token used for authorizing href topic calls
@@ -287,7 +290,7 @@ you will have to do something like if(client.rights & R_ADMIN) yourself.
 /proc/HrefTokenFormField(forceGlobal = FALSE)
 	return "<input type='hidden' name='admin_token' value='[RawHrefToken(forceGlobal)]'>"
 
-REF_OWNED(/datum/admins, list("admincaster_feed_message", "filteriffic", "particle_test", "whitelist_editor", "spawn_menu", "spawn_panel", "access_view_menu"))
+REF_OWNED(/datum/admins, list("admincaster_feed_message", "filteriffic", "particle_test", "whitelist_editor", "spawn_menu", "spawn_panel", "access_view_menu", "admincaster_scratch_channel"))
 
 /// LC-refs: the marked_datum this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/admins/proc/marked_datum() as /datum
@@ -296,3 +299,7 @@ REF_OWNED(/datum/admins, list("admincaster_feed_message", "filteriffic", "partic
 /// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/admins/proc/owner() as /client
 	return om_resolve(owner_handle)
+
+/// LC-refs: the channel the admin newscaster is working on -- a picked network channel (an OM handle) or the scratch one.
+/datum/admins/proc/admincaster_feed_channel() as /datum/feed_channel
+	return om_resolve(admincaster_feed_channel_handle) || admincaster_scratch_channel
