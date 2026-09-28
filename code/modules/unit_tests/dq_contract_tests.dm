@@ -244,7 +244,11 @@
 	sleep(2)
 	TEST_ASSERT_EQUAL(requirement.progress, 0, "an auxiliary-filter state change did not cancel sustained evidence")
 	emit_contract_event("dq_machine_measurement", list("contract_id" = contract.id, "machine_id" = "reactor-A", "contributor_account" = 103, "metrics" = list("output" = 600, "integrity" = 95)), "reactor-A-high-2")
-	sleep(2)
+	// The duration elapses on a scheduled timer; under full-suite load the timer
+	// subsystem can run a few ticks late, so wait (bounded) rather than sleep(2).
+	var/deadline = world.time + 5 SECONDS
+	while(contract.state != CONTRACT_COMPLETED && world.time < deadline)
+		sleep(world.tick_lag)
 	TEST_ASSERT_EQUAL(contract.state, CONTRACT_COMPLETED, "continuous qualifying evidence did not complete after its duration")
 	qdel(contract)
 

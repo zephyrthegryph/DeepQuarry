@@ -157,6 +157,17 @@ GLOBAL_VAR(restart_counter)
 	vg_verdigris_cleanup()
 	vg_heat_reset()
 	vg_configure_world(world.maxx, world.maxy, world.maxz)
+	// Compiled-map atoms are created before world/New(); any gas mixture they
+	// made (e.g. a machine's `internal = new()`) was allocated in the arena the
+	// init/cleanup/configure above just wiped. Give each a fresh slot, or its
+	// handle dangles ("no gas mixture behind handle N") or aliases a later one.
+	var/rehomed_mixtures = 0
+	for(var/datum/gas_mixture/stale_mix)
+		if(isnull(stale_mix._extools_pointer_gasmixture))
+			continue
+		vg_register_gasmixture_hook(stale_mix)
+		rehomed_mixtures++
+	log_world("Verdigris: re-registered [rehomed_mixtures] gas mixture(s) created before world start")
 	log_world("Verdigris loaded: [vg_verdigris_version()] | features: [vg_verdigris_features()]")
 #ifdef BENCHMARK
 	benchmark_rust_mark("world: New (globals and compiled map loaded)")

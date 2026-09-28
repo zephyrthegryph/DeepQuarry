@@ -41,6 +41,9 @@
 	/// This is deliberately separate from visible paper text so fax receivers can
 	/// validate a genuine scan without trusting player-editable markup.
 	var/list/medical_scan_evidence
+	/// The registered evidence id this sheet carries and retains while it exists
+	/// (a scan printout, a signed form). Released when the paper is destroyed.
+	var/carried_evidence_id
 	/// Machine-readable freight routing attached by a crate ledger. Visible text
 	/// remains ordinary editable paper; this signed payload is invalidated if the
 	/// paper or sealed cargo changes.
@@ -897,3 +900,13 @@ DECLARE_INTERACTIONS(/obj/item/paper, \
 
 	else
 		to_chat(user, span_red("You must hold \the [P] steady to burn \the [src]."))
+
+/obj/item/paper/on_destroy(force)
+	release_carried_evidence()
+	..()
+
+/// Drops this sheet's hold on its carried evidence id.
+/obj/item/paper/proc/release_carried_evidence()
+	if(carried_evidence_id)
+		SScontracts?.release_evidence(carried_evidence_id)
+		carried_evidence_id = null

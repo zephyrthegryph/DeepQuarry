@@ -760,7 +760,9 @@ if $grep '\.proc/' "${code_x_515[@]}" ; then
 fi;
 
 part "var in proc args"
-if grep -P '^/[\w/]\S+\(.*(var/|, ?var/.*).*\)' "${code_files[@]}"; then
+# An argument (first, or after a comma) starting with var/ -- not a proc or
+# type name that merely contains "var/" (name_var_entered(.../name_var/ask)).
+if grep -P '^/[\w/][^(\s]*\((?:[^)]*,\s*)?var/.*\)' "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: changed files contains proc argument starting with 'var'.${NC}"
 	FAILED=1
@@ -909,8 +911,16 @@ if [ "$pcre2_support" -eq 1 ]; then
 		FAILED=1
 	fi;
 else
-	echo -e "${RED}ERROR: ripgrep was built without PCRE2 support, so the PCRE2-only checks (section \"regexes requiring PCRE2\") cannot run. Install a pcre2-capable ripgrep (the bundled tools/install_ripgrep.sh does this) and re-run.${NC}"
-	FAILED=1
+	# The section uses ripgrep-only features (-U multiline, --glob), so neither
+	# a PCRE2-less ripgrep nor the GNU grep fallback can run it. CI always has a
+	# PCRE2 ripgrep and treats this as a failure; locally it is an explicit,
+	# environment-only skip so the rest of the script still gates.
+	if [ -n "${CI:-}" ]; then
+		echo -e "${RED}ERROR: no PCRE2-capable ripgrep, so the PCRE2-only checks (section \"regexes requiring PCRE2\") cannot run. Install one (cargo install ripgrep --features pcre2) and re-run.${NC}"
+		FAILED=1
+	else
+		echo -e "${BLUE}SKIPPED (environment): no PCRE2-capable ripgrep on PATH, so the section \"regexes requiring PCRE2\" did not run. CI runs it; install one (cargo install ripgrep --features pcre2) to run it locally.${NC}"
+	fi
 fi;
 
 if [ $FAILED = 0 ]; then

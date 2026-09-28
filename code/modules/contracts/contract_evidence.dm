@@ -198,20 +198,6 @@
 		if(evidence.consumed_by == contract_id || evidence.payload?["contract_id"] == contract_id)
 			unregister_evidence(evidence)
 
-/obj/item/paper
-	/// The contract evidence id this paper carries and retains (was the contract_evidence_carrier component).
-	var/carried_evidence_id
-
-// releases its carried evidence id.
-/obj/item/paper/on_destroy(force)
-	release_carried_evidence()
-	..()
-
-/obj/item/paper/proc/release_carried_evidence()
-	if(carried_evidence_id)
-		SScontracts?.release_evidence(carried_evidence_id)
-		carried_evidence_id = null
-
 /obj/item/paper/proc/attach_contract_evidence(evidence_id)
 	if(!evidence_id)
 		return FALSE
