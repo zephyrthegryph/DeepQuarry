@@ -168,9 +168,15 @@ avoid code duplication. This includes items that may sometimes act as a standard
 		throw error
 	dq_interaction_set_click_params(user, saved_params)
 	if(answered)
-		return (INTERACTION_TRY_PASS in outcome) ? FALSE : answered.consumes_input
-	if(SEND_SIGNAL(src, COMSIG_ATOM_ATTACKBY, W, user, click_parameters) & COMPONENT_CANCEL_ATTACK_CHAIN)
+		if(!(INTERACTION_TRY_PASS in outcome))
+			return answered.consumes_input
+	else if(SEND_SIGNAL(src, COMSIG_ATOM_ATTACKBY, W, user, click_parameters) & COMPONENT_CANCEL_ATTACK_CHAIN)
 		return TRUE
+	return attackby_default(W, user)
+
+/// Used with an item that no interaction used up (none answered, or one handled it and passed).
+/// Returns TRUE when it used the input. Items let a pickup-mode bag collect them (items.dm).
+/atom/proc/attackby_default(obj/item/W, mob/user)
 	return FALSE
 
 /mob/living/attackby(obj/item/I, mob/user, attack_modifier, click_parameters)

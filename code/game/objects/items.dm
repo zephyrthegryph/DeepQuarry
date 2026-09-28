@@ -319,20 +319,13 @@
 				size = "enormous"
 	return ..(user, "", "It is \a [size] item.")
 
-/obj/item/attack_hand(mob/living/user as mob)
-	if (!user) return
-	// A gate or a converted hand interaction (I7) answered the touch: no pickup, as the old override's early return.
-	if(..())
-		return TRUE
-	return hand_pickup(user)
-
 /**
  * An empty-hand touch that no interaction answered: pick the item up (or use it, when
  * anchored). Reactions to being picked up by hand override it as `. = ..()` then their
  * own work, as the old `attack_hand() { . = ..(); ... }` overrides did: they are not
  * interactions of their own.
  */
-/obj/item/proc/hand_pickup(mob/living/user)
+/obj/item/hand_pickup(mob/living/user)
 	if(anchored) // Start
 		if(hascall(src, "attack_self"))
 			return src.attack_self(user)
@@ -393,12 +386,10 @@
 		R.activate_module(src)
 		R.hud_used.update_robot_modules_display()
 
-/obj/item/attackby(obj/item/W as obj, mob/user as mob)
-	. = ..()
-	// A converted item interaction (I7) answered: nothing else, as the old override's early return.
-	if(.)
-		return
+/// Used with an item nothing else took: a pickup-mode bag collects this item.
+/obj/item/attackby_default(obj/item/W, mob/user)
 	storage_gather_by(W, user)
+	return FALSE
 
 /// A pickup-mode storage used on this item collects it (or its whole tile). TRUE when W was such a storage.
 /obj/item/proc/storage_gather_by(obj/item/W, mob/user)

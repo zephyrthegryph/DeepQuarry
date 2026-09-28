@@ -34,7 +34,15 @@
  * Returns TRUE when a gate stopped the touch or an interaction answered it.
  */
 /atom/proc/attack_hand(mob/user as mob)
-	return run_interaction_entry(user, src, null, INTERACTION_ENTRY_HAND, null, TRUE) ? TRUE : FALSE
+	if(!user)
+		return FALSE
+	if(run_interaction_entry(user, src, null, INTERACTION_ENTRY_HAND, null, TRUE))
+		return TRUE
+	return hand_pickup(user)
+
+/// An empty-hand touch that no gate stopped and no interaction answered. Items are picked up (items.dm).
+/atom/proc/hand_pickup(mob/living/user)
+	return FALSE
 
 /**
  * What a touch passes through before the type's own hand interactions: signal
