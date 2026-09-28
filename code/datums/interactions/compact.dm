@@ -79,7 +79,7 @@
 	// every subtype that inherits it unchanged (the assembly hierarchy's shared
 	// assembly_self spec) - and distinct for two types that each build their own
 	// list (aicard vs bodysnatcher), even if the content looks similar.
-	var/static/list/cache = list()
+	var/static/list/cache = list() // ALLOW(cache): keyed by spec list identity; lists are not valid CACHED keys
 	var/datum/interaction/generic/cached_by_ref = cache[spec]
 	if(cached_by_ref)
 		return cached_by_ref

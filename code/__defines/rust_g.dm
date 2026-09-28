@@ -411,7 +411,7 @@
 
 /// Provided a static RSC file path or a raw text file path, returns the duration of the file in deciseconds as a float.
 /proc/rustg_sound_length(file_path)
-	var/static/list/sound_cache
+	var/static/list/sound_cache // ALLOW(cache): error results must not be cached (CRASH path)
 	if(isnull(sound_cache))
 		sound_cache = list()
 

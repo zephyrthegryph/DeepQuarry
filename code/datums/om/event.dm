@@ -18,6 +18,9 @@
 #define OM_VETO_DEPTH_MAX 8
 
 /proc/om_emit(datum/E, datum/om/event/event)
+	// Shared caches (code/datums/shared_cache) clear on world events of their policy type.
+	if(shared_cache_event_types && E == GLOB.om_world && shared_cache_event_types[event.type])
+		shared_cache_on_event(event.type)
 	var/datum/om/rec/rec = E?.om_rec
 	if(!rec || rec.torn_down)
 		return null
@@ -152,6 +155,8 @@
 /// hot paths (movement, examine) test this before allocating the event, so entities
 /// with no interested behaviour pay a lookup.
 /proc/om_wants(datum/E, path)
+	if(shared_cache_event_types && E == GLOB.om_world && shared_cache_event_types[path])
+		return TRUE
 	var/datum/om/rec/rec = E?.om_rec
 	if(!rec || rec.torn_down)
 		return FALSE

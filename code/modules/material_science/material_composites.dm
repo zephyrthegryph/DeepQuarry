@@ -31,26 +31,23 @@
 	var/temperature_factor = max(0.25, 1 + (temperature - T20C) / 300)
 	return max(0, aggression * temperature_factor * (100 - corrosion_resistance) / 100)
 
-/datum/material
-	/// Shared material facts (doc/rewrite/init_and_turfs.md sec 3.1): radiation transmission by
-	/// thickness, worked out once per material and thickness instead of once per wall, window,
-	/// girder, door and item. Lazy; cleared by material_facts_changed().
-	var/tmp/list/radiation_transmission_cache
-
-/// Radiation transmission through `thickness_mm` of this material. Cached per thickness: every
-/// instance of a structure asks the same question of the same (usually singleton) material.
+/// Radiation transmission through `thickness_mm` of this material. Shared per (material,
+/// thickness) (doc/rewrite/init_and_turfs.md sec 3.1): every wall, window, girder, door and item
+/// of a material asks the same question of the same (usually singleton) material.
 /datum/material/proc/material_radiation_transmission(thickness_mm)
-	var/key = "[thickness_mm]"
-	var/cached = LAZYACCESS(radiation_transmission_cache, key)
-	if(!isnull(cached))
-		return cached
-	var/attenuation = max(0, radiation_resistance + density / 8) * max(thickness_mm, 0) / 100
-	. = clamp(2.718281828 ** (-attenuation), 0, 1)
-	LAZYSET(radiation_transmission_cache, key, .)
+	return CACHED_KEY(material_radiation_transmission, "[ref(src)]|[thickness_mm]", src, thickness_mm)
 
-/// This material's physical vars changed after facts were read from it: drop the cached facts.
+/proc/build_material_radiation_transmission(datum/material/M, thickness_mm)
+	var/attenuation = max(0, M.radiation_resistance + M.density / 8) * max(thickness_mm, 0) / 100
+	return clamp(2.718281828 ** (-attenuation), 0, 1)
+
+DECLARE_SHARED_CACHE_EX(material_radiation_transmission, GLOBAL_PROC_REF(build_material_radiation_transmission), SC_EXPLICIT, 4096, 0)
+
+/// A material's physical vars changed after facts were read from it: drop the shared facts
+/// derived from materials (a version bump; changes are rare).
 /datum/material/proc/material_facts_changed()
-	radiation_transmission_cache = null
+	INVALIDATE_SHARED_CACHE(material_radiation_transmission)
+	INVALIDATE_SHARED_CACHE(wall_material_facts)
 
 /// Environmental load exerted by a gas mixture on an exposed material.  This
 /// is deliberately composition-based: no infrastructure class owns its own

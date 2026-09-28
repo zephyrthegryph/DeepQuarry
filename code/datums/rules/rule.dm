@@ -340,10 +340,11 @@
 
 /// The rules on `path`: a shared list, or null. Cached per type.
 /proc/dq_rules_for_type(path)
-	var/static/list/cache = list()
-	. = cache[path]
-	if(!isnull(.))
-		return . || null
+	return CACHED(rules_for_type, path) || null
+
+DECLARE_SHARED_CACHE(rules_for_type, GLOBAL_PROC_REF(build_rules_for_type), SC_NEVER)
+
+/proc/build_rules_for_type(path)
 	var/list/found
 	var/list/rules = dq_rules()
 	for(var/rule_path in rules)
@@ -351,22 +352,21 @@
 		if(!dq_rule_applies(rule, path))
 			continue
 		LAZYADD(found, rule)
-	cache[path] = found || FALSE
-	return found
+	return found || FALSE
 
 /// Whether every rule on `path` watches only its heat node: such objects
 /// subscribe when they first get a heat body (dq_rules_heat_body_created()).
 /proc/dq_rules_heat_deferred(path)
-	var/static/list/cache = list()
-	. = cache[path]
-	if(!isnull(.))
-		return .
+	return CACHED(rules_heat_deferred, path)
+
+DECLARE_SHARED_CACHE(rules_heat_deferred, GLOBAL_PROC_REF(build_rules_heat_deferred), SC_NEVER)
+
+/proc/build_rules_heat_deferred(path)
 	. = TRUE
 	for(var/datum/rule/rule as anything in dq_rules_for_type(path))
 		if(!rule.heat_only)
 			. = FALSE
 			break
-	cache[path] = .
 
 /proc/dq_rule_applies(datum/rule/rule, path)
 	for(var/root in rule.applies_to)
@@ -384,14 +384,14 @@
 
 /// RULE_REPLACES_* flags of the rules on `path`. Cached per type.
 /proc/dq_rules_replace_flags(path)
-	var/static/list/cache = list()
-	. = cache[path]
-	if(!isnull(.))
-		return .
+	return CACHED(rules_replace_flags, path)
+
+DECLARE_SHARED_CACHE(rules_replace_flags, GLOBAL_PROC_REF(build_rules_replace_flags), SC_NEVER)
+
+/proc/build_rules_replace_flags(path)
 	. = NONE
 	for(var/datum/rule/rule as anything in dq_rules_for_type(path))
 		. |= rule.replaces
-	cache[path] = .
 
 /// Boot validation: every declared rule compiles, and every applies_to is a type.
 /proc/dq_rules_validate()

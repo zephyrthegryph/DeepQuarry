@@ -219,14 +219,13 @@ Proc for attack log creation, because really why not
 
 	return humans
 
-/proc/cached_character_icon(mob/desired)
-	var/cachekey = "\ref[desired][desired.real_name]"
+DECLARE_SHARED_CACHE_EX(character_icons, GLOBAL_PROC_REF(build_character_icon), SC_NEVER, 512, 0)
 
-	if(GLOB.cached_character_icons[cachekey])
-		. = GLOB.cached_character_icons[cachekey]
-	else
-		. = getCompoundIcon(desired)
-		GLOB.cached_character_icons[cachekey] = .
+/proc/build_character_icon(mob/desired)
+	return getCompoundIcon(desired)
+
+/proc/cached_character_icon(mob/desired)
+	return CACHED_KEY(character_icons, "\ref[desired][desired.real_name]", desired)
 
 /proc/not_has_ooc_text(mob/user)
 	if (CONFIG_GET(flag/allow_metadata) && (!user.client?.prefs?.read_preference(/datum/preference/text/living/ooc_notes) || length(user.client.prefs.read_preference(/datum/preference/text/living/ooc_notes)) < 15))

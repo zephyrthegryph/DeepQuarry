@@ -168,6 +168,23 @@ services and the Rust world step. Scripts can read `om_diagnostics()`,
 `om_world_diagnostics()` and the profiler's `PERF_PROFILE` log lines. Tests use
 `om_test_begin()` / `scheduler_advance(seconds)` / `om_test_end()` (§4.9).
 
+## 11. Shared caches ([caching.md](caching.md))
+
+A value built from a key and shared by every caller (an overlay list per connection state,
+facts per material) is a declared cache, not a `var/static/list/cache`:
+
+```dm
+/proc/build_edge_overlays(key) ...
+DECLARE_SHARED_CACHE(edge_overlays, GLOBAL_PROC_REF(build_edge_overlays), SC_ON_EVENT(/datum/om/event/x))
+var/list/overlays = CACHED(edge_overlays, "[icon]-[dirs]")   // CACHED2/CACHED3, CACHED_INT
+```
+
+A hit costs what a static list lookup costs. Policies: `SC_NEVER`, `SC_ON_EVENT(path)` and
+`SC_ON_WORLD_CHANGE(bits)` (on `GLOB.om_world`), `SC_EXPLICIT` with
+`INVALIDATE_SHARED_CACHE(name)`. Returned lists are shared: never write into one (test builds
+runtime when you do). Stats are on the OM Profiler's Caches tab. `tools/ci/cache_lint.py`
+refuses new hand-rolled caches.
+
 ## Where to go next
 
 | Topic | Doc |

@@ -50,26 +50,20 @@
 /// and shared by every wall that has them (Southern Cross maps ~7 k walls of four materials).
 /// Read-only: a caller must not change the returned list.
 /turf/simulated/wall/proc/wall_material_facts(material_temperature)
-	var/static/list/facts_by_material = list()
-	var/list/by_reinf = facts_by_material[material]
-	if(!by_reinf)
-		by_reinf = list()
-		facts_by_material[material] = by_reinf
-	var/reinf_key = reinf_material || "none"
-	var/list/by_temperature = by_reinf[reinf_key]
-	if(!by_temperature)
-		by_temperature = list()
-		by_reinf[reinf_key] = by_temperature
 	var/temperature_key = num2text(material_temperature, 12)
-	var/list/facts = by_temperature[temperature_key]
-	if(facts)
-		return facts
+	return CACHED_KEY(wall_material_facts, "[ref(material)]|[reinf_material ? ref(reinf_material) : "none"]|[temperature_key]", src, material_temperature)
+
+/// Builds the shared facts for a wall's (material, reinforcement, temperature); cleared with the
+/// material facts (material_facts_changed()).
+/proc/build_wall_material_facts(turf/simulated/wall/W, material_temperature)
+	var/datum/material/material = W.material
+	var/datum/material/reinf_material = W.reinf_material
 	var/explosion = material.explosion_resistance
 	if(reinf_material && reinf_material.explosion_resistance > explosion)
 		explosion = reinf_material.explosion_resistance
 	var/conductance = material.material_thermal_conductance(2.5, 0.25, material_temperature)
-	facts = list(
-		material_integrity_cap(),
+	return list(
+		W.material_integrity_cap(),
 		explosion,
 		clamp(conductance / WALL_CONDUCTANCE_PER_TRANSFER_COEFFICIENT, 0.001, WALL_MAX_HEAT_TRANSFER_COEFFICIENT),
 		max(10000, material.density * material.specific_heat * 25),
@@ -77,8 +71,8 @@
 		reinf_material ? "reinforced [material.display_name] wall" : "[material.display_name] wall",
 		reinf_material ? "It seems to be a section of wall reinforced with [reinf_material.display_name] and plated with [material.display_name]." : "It seems to be a section of wall plated with [material.display_name].",
 	)
-	by_temperature[temperature_key] = facts
-	return facts
+
+DECLARE_SHARED_CACHE_EX(wall_material_facts, GLOBAL_PROC_REF(build_wall_material_facts), SC_EXPLICIT, 4096, 0)
 
 /turf/simulated/wall/proc/set_material(datum/material/newmaterial, datum/material/newrmaterial, datum/material/newgmaterial)
 	material = newmaterial
@@ -117,19 +111,13 @@
 	var/damage_fraction = wall_damage_fraction()
 	if(damage_fraction > 0)
 		damage_step = min(round(damage_fraction * damage_overlays.len) + 1, damage_overlays.len)
-	var/static/list/cache = list()
-	var/list/level = cache
-	for(var/key in list(wall_masks, material, reinf_material || "none", connections))
-		var/list/next = level[key]
-		if(!next)
-			next = list()
-			level[key] = next
-		level = next
-	var/state_key = "[construction_stage]-[damage_step]"
-	var/list/images = level[state_key]
-	if(images)
-		return images
-	images = list()
+	return CACHED_KEY(wall_overlay_sets, "[wall_masks]|[REF(material)]|[reinf_material ? REF(reinf_material) : "none"]|[connections.Join(",")]|[construction_stage]-[damage_step]", wall_masks, material, reinf_material, connections, construction_stage, damage_step ? damage_overlays[damage_step] : null)
+
+DECLARE_SHARED_CACHE_EX(wall_overlay_sets, GLOBAL_PROC_REF(build_wall_overlay_sets), SC_NEVER, 4096, 0)
+
+/// Builder for wall_overlay_sets. `damage_image` is the damage overlay for the state, or null.
+/proc/build_wall_overlay_sets(wall_masks, datum/material/material, datum/material/reinf_material, list/connections, construction_stage, image/damage_image)
+	var/list/images = list()
 	var/image/I
 	for(var/i = 1 to 4)
 		I = image(wall_masks, "[material.icon_base][connections[i]]", dir = 1<<(i-1))
@@ -155,9 +143,8 @@
 	var/image/texture = material.get_wall_texture()
 	if(texture)
 		images += texture
-	if(damage_step)
-		images += damage_overlays[damage_step]
-	level[state_key] = images
+	if(damage_image)
+		images += damage_image
 	return images
 
 /turf/simulated/wall/proc/generate_overlays()

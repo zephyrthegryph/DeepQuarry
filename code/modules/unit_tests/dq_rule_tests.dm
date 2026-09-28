@@ -255,7 +255,7 @@
 /// which dq_rule_thresholds does constantly, since many rules share a root
 /// like /obj or /atom/movable.
 /proc/dq_rule_declaring_types(datum/rule/rule, root)
-	var/static/list/cache = list()
+	var/static/list/cache = list() // ALLOW(cache): test-only helper memo, never shipped
 	var/list/by_root = cache[rule.type]
 	if(!by_root)
 		by_root = list()

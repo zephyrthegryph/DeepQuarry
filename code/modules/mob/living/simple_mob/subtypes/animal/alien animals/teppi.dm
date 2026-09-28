@@ -100,7 +100,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 	var/item_color
 	var/marking_type
 	var/horn_type
-	var/static/list/overlays_cache = list()
+	var/static/list/overlays_cache = list() // ALLOW(cache): multi-key overlay table filled inline from mob state
 	var/inherit_allergen = FALSE
 	var/inherit_colors = FALSE
 	var/teppi_wool = FALSE

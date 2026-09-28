@@ -8,12 +8,13 @@
 #define LIGHT_EMERGENCY_POWER_USE 0.2 //How much power emergency lights will consume per tick
 #define LIGHT_EMERGENCY_POWER_STEP 0.05
 
-GLOBAL_LIST_EMPTY(light_type_cache)
+DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_instance), SC_NEVER)
+
+/proc/build_light_type_instance(light_type)
+	return new light_type
+
 /proc/get_light_type_instance(light_type)
-	. = GLOB.light_type_cache[light_type]
-	if(!.)
-		. = new light_type
-		GLOB.light_type_cache[light_type] = .
+	return CACHED(light_type_instance, light_type)
 
 /obj/machinery/light_construct
 	name = "light fixture frame"

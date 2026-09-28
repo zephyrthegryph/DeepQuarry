@@ -476,13 +476,15 @@
 
 /// treatment_tags of a reagent type that isn't registered in the chemistry service
 /// (abstract intermediates). Instantiated once per type.
+DECLARE_SHARED_CACHE(proto_reagent_tags, GLOBAL_PROC_REF(build_proto_reagent_tags), SC_NEVER)
+
 /proc/dq_proto_reagent_tags(reagent_type)
-	var/static/list/cache = list()
-	if(!(reagent_type in cache))
-		var/datum/reagent/R = new reagent_type()
-		cache[reagent_type] = R.treatment_tags
-		qdel(R)
-	return cache[reagent_type]
+	return CACHED(proto_reagent_tags, reagent_type)
+
+/proc/build_proto_reagent_tags(reagent_type)
+	var/datum/reagent/R = new reagent_type()
+	. = R.treatment_tags
+	qdel(R)
 
 /// reagent ID -> potency for every reagent that provides `tag`.
 /proc/dq_reagents_providing(tag)

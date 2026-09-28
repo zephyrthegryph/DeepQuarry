@@ -337,7 +337,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	if(!ispath(path))
 		var/atom/instance = path
 		return instance?.vars[var_name]
-	var/static/list/cache = list()
+	var/static/list/cache = list() // ALLOW(cache): type-var probe; values can be shared type-default lists handed to callers that may mutate
 	var/cache_key = "[path]#[var_name]"
 	if(cache_key in cache)
 		return cache[cache_key]

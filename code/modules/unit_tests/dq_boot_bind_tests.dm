@@ -69,8 +69,8 @@
 
 /datum/unit_test/dq_boot_bind_appearance_caches/Run()
 	var/datum/decl/flooring/tiling/tiles = GET_DECL(/datum/decl/flooring/tiling)
-	var/list/edges = tiles.get_edge_overlays(NORTH | EAST, SOUTHWEST)
-	TEST_ASSERT(edges == tiles.get_edge_overlays(NORTH | EAST, SOUTHWEST), "one edge overlay list per flooring state")
+	var/list/edges = tiles.get_edge_overlays(NORTH | EAST, 1 << 3)
+	TEST_ASSERT(edges == tiles.get_edge_overlays(NORTH | EAST, 1 << 3), "one edge overlay list per flooring state")
 	TEST_ASSERT_EQUAL(length(edges), 4, "two edges, the NE outer corner and the SW inner corner")
 	TEST_ASSERT(edges != tiles.get_edge_overlays(NORTH, 0), "different states get different lists")
 
@@ -81,9 +81,10 @@
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)
 	var/expected = clamp(2.718281828 ** (-(max(0, steel.radiation_resistance + steel.density / 8) * 60 / 100)), 0, 1)
 	TEST_ASSERT(abs(steel.material_radiation_transmission(60) - expected) < 0.000001, "the cached transmission is the formula's")
-	TEST_ASSERT(!isnull(LAZYACCESS(steel.radiation_transmission_cache, "60")), "and is cached per thickness")
+	var/datum/shared_cache/rad = SHARED_CACHE(material_radiation_transmission)
+	TEST_ASSERT(rad.entry_count() > 0, "and is cached per thickness")
 	steel.material_facts_changed()
-	TEST_ASSERT(isnull(steel.radiation_transmission_cache), "material_facts_changed() drops the cache")
+	TEST_ASSERT_EQUAL(rad.entry_count(), 0, "material_facts_changed() drops the cache")
 
 /// A batched destroy disarms its material services' gas watches as one set.
 /datum/unit_test/dq_boot_bind_material_service_batch

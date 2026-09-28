@@ -100,7 +100,7 @@
 /// Stable catalog/settings request for the Rust geometry planner. DM type paths
 /// are deliberately resolved here and never cross the wire.
 /proc/generated_station_rust_catalog_request(seed, width, height, list/catalog_override, list/settings_override)
-	var/static/list/template_cache = list()
+	var/static/list/template_cache = list() // ALLOW(cache): template memo only filled on the no-override path, copied and mutated per call
 	var/cache_key = "[width]x[height]"
 	if(!islist(catalog_override) && !islist(settings_override) && template_cache[cache_key])
 		var/list/cached_request = template_cache[cache_key]

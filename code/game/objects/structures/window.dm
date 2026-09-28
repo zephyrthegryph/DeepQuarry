@@ -405,18 +405,19 @@
 /// window in that state. Read-only: callers pass it to add_overlay(), which copies.
 /obj/structure/window/proc/window_overlay_images(list/connections)
 	var/ratio = CEILING((get_integrity() / max_integrity) * 4, 1) * 25
-	var/static/list/cache = list()
-	var/key = "[icon]|[basestate]|[connections.Join(",")]|[ratio > 75 ? 100 : ratio]|[layer]"
-	var/list/images = cache[key]
-	if(images)
-		return images
-	images = list()
+	var/step = ratio > 75 ? 100 : ratio
+	return CACHED_KEY(window_overlay_sets, "[icon]|[basestate]|[connections.Join(",")]|[step]|[layer]", icon, basestate, connections, step, layer)
+
+DECLARE_SHARED_CACHE(window_overlay_sets, GLOBAL_PROC_REF(build_window_overlay_sets), SC_NEVER)
+
+/// Builder for window_overlay_sets.
+/proc/build_window_overlay_sets(icon, basestate, list/connections, ratio, layer)
+	var/list/images = list()
 	for(var/i = 1 to 4)
 		images += image(icon, "[basestate][connections[i]]", dir = 1<<(i-1))
 	// Damage overlays.
 	if(ratio <= 75)
 		images += image(icon, "damage[ratio]", layer = layer + 0.1)
-	cache[key] = images
 	return images
 
 /obj/structure/window/basic

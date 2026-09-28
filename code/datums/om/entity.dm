@@ -326,7 +326,7 @@
 	for(var/datum/om/task/T as anything in rec.tasks)
 		slow |= T.interrupt_on
 	rec.slow_mask = slow
-	rec.owner.om_listen = mask | slow | rec.table?.cache_mask
+	rec.owner.om_listen = mask | slow | rec.table?.cache_mask | (rec.owner == GLOB.om_world ? shared_cache_change_mask : 0)
 
 /// The mask other entities and behaviours observe (decides eager derived values).
 /proc/om_observed_mask(datum/om/rec/rec)
@@ -347,6 +347,8 @@
 		om_dispatch_change(E, bits)
 
 /proc/om_dispatch_change(datum/E, bits)
+	if((bits & shared_cache_change_mask) && E == GLOB.om_world)
+		shared_cache_on_world_change(bits)
 	var/datum/om/rec/rec = E.om_rec
 	if(!rec || rec.torn_down)
 		return

@@ -70,10 +70,10 @@
 /// spawn, no apply pipeline, no subsystem dependencies. The whole warm-up
 /// is millisecond-scale per species and runs synchronously at world init so
 /// the cache is ready before any prefs window can open.
-GLOBAL_LIST_EMPTY(dq_species_preview_cache)
+GLOBAL_LIST_EMPTY(dq_species_preview_cache) // ALLOW(cache): prewarmed preview store with synthetic keys written from several places
 
 GLOBAL_PROTECT(dq_species_preview_cache_warm_init)
-GLOBAL_LIST_INIT(dq_species_preview_cache_warm_init, dq_warm_species_preview_cache())
+GLOBAL_LIST_INIT(dq_species_preview_cache_warm_init, dq_warm_species_preview_cache()) // ALLOW(cache): warm-up initializer, not a cache
 
 /proc/dq_warm_species_preview_cache()
 	. = list()

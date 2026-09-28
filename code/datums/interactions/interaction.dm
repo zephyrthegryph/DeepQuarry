@@ -353,10 +353,12 @@ GLOBAL_LIST_INIT(interactions_by_type, init_interactions_by_type())
 
 /// The interactions this atom's type offers, as shared singletons. Cached per type.
 /proc/interaction_candidates(atom/target)
-	var/static/list/cache = list()
-	var/list/candidates = cache[target.type]
-	if(candidates)
-		return candidates
+	return CACHED_KEY(interaction_candidates, target.type, target)
+
+DECLARE_SHARED_CACHE(interaction_candidates, GLOBAL_PROC_REF(build_interaction_candidates), SC_NEVER)
+
+/proc/build_interaction_candidates(atom/target)
+	var/list/candidates
 	var/list/entries = list()
 	target.declare_interactions(entries)
 	candidates = list()
@@ -366,7 +368,6 @@ GLOBAL_LIST_INIT(interactions_by_type, init_interactions_by_type())
 			stack_trace("[target.type] declares [entry], which is not a registered interaction")
 			continue
 		candidates |= interaction
-	cache[target.type] = candidates
 	return candidates
 
 /// Called on the target after an interaction's effect ran: a player (or program) changed it. Types

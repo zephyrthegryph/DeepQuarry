@@ -949,13 +949,15 @@ DECLARE_REF(/datum/storage_hud, "backdrop", OWNED_LIST, null)
 // See inventory_sizes.dm for the defines.
 /// get_storage_cost() of a pristine `path`, from type data (latent entries).
 /proc/dq_type_storage_cost(path)
-	var/static/list/cache = list()
-	. = cache[path]
-	if(isnull(.))
-		var/obj/item/probe = new_unmaterialized(path, null)
-		. = probe.get_storage_cost()
-		qdel(probe)
-		cache[path] = .
+	return CACHED(type_storage_costs, path)
+
+DECLARE_SHARED_CACHE(type_storage_costs, GLOBAL_PROC_REF(build_type_storage_cost), SC_NEVER)
+
+/// Builder for type_storage_costs: probes a pristine instance of `path`.
+/proc/build_type_storage_cost(path)
+	var/obj/item/probe = new_unmaterialized(path, null)
+	. = probe.get_storage_cost()
+	qdel(probe)
 
 /obj/item/proc/get_storage_cost()
 	if (storage_cost)

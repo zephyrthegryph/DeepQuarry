@@ -898,14 +898,16 @@ Checks if a list has the same entries and values as an element of big.
 
 	return result
 
-GLOBAL_LIST_EMPTY(json_cache)
+DECLARE_SHARED_CACHE_EX(json_decoded, GLOBAL_PROC_REF(build_json_decoded), SC_NEVER, 1024, 0)
+
+/proc/build_json_decoded(json_to_decode)
+	return json_decode(json_to_decode)
+
 /proc/cached_json_decode(json_to_decode)
 	if(!json_to_decode || !length(json_to_decode))
 		return list()
 	try
-		if(isnull(GLOB.json_cache[json_to_decode]))
-			GLOB.json_cache[json_to_decode] = json_decode(json_to_decode)
-		. = GLOB.json_cache[json_to_decode]
+		. = CACHED(json_decoded, json_to_decode)
 	catch(var/exception/e)
 		log_runtime("Exception during JSON decoding ([json_to_decode]): [e]")
 		return list()

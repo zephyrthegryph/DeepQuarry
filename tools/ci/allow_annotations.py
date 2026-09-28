@@ -30,6 +30,7 @@ ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 # Every lint that reads the annotation, by the name the annotation uses.
 LINTS = {
     "api": "tools/ci/api_lints.py",
+    "cache": "tools/ci/cache_lint.py (hand-rolled shared caches outside DECLARE_SHARED_CACHE)",
     "check_grep": "tools/ci/check_grep.sh (same line only)",
     "containment": "tools/ci/containment_lint.py",
     "cooldown": "tools/ci/cooldown_lint.py",

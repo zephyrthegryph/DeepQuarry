@@ -114,13 +114,13 @@
 
 /// The canonical delta hash of a freshly made `path` with `variant`. Cached.
 /proc/dq_stock_pristine_hash(path, variant)
-	var/static/list/cache = list()
-	var/key = "[path]|[variant]"
-	if(key in cache)
-		return cache[key]
+	return CACHED2(stock_pristine_hash, path, variant)
+
+DECLARE_SHARED_CACHE(stock_pristine_hash, GLOBAL_PROC_REF(build_stock_pristine_hash), SC_NEVER)
+
+/proc/build_stock_pristine_hash(path, variant)
 	var/atom/movable/sample = spawn_with_variant(path, null, variant)
 	var/list/blob = dq_stock_blob(sample)
 	if(istype(sample) && !QDELETED(sample))
 		qdel(sample)
-	. = blob ? state_hash(blob) : null
-	cache[key] = .
+	return blob ? state_hash(blob) : null

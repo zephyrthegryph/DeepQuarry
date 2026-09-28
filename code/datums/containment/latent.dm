@@ -82,21 +82,23 @@ GLOBAL_VAR(latent_last_refusal)
 	return null
 
 /// Whether things of `path` may be latent: latent-safe (containment.md §4.4).
+DECLARE_SHARED_CACHE(latent_eligible, GLOBAL_PROC_REF(build_latent_eligible), SC_NEVER)
+
 /proc/dq_latent_eligible(path)
-	var/static/list/cache = list()
-	. = cache[path]
-	if(isnull(.))
-		var/atom/movable/typed = path
-		. = (ispath(path, /atom/movable) && initial(typed.latent_safe)) ? TRUE : FALSE
-		cache[path] = .
+	return CACHED(latent_eligible, path)
+
+/proc/build_latent_eligible(path)
+	var/atom/movable/typed = path
+	return (ispath(path, /atom/movable) && initial(typed.latent_safe)) ? TRUE : FALSE
 
 /// What one `path` adds to a holder's aggregates, from type data only: the
 /// ledger snapshot shape (measures, then tag words), or null. Cached.
+DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_snapshot), SC_NEVER)
+
 /proc/dq_latent_type_snapshot(path)
-	var/static/list/cache = list()
-	. = cache[path]
-	if(!isnull(.))
-		return . || null
+	return CACHED(latent_type_snapshot, path) || null
+
+/proc/build_latent_type_snapshot(path)
 	var/list/ids = dq_ledger_measure_ids()
 	var/count = length(ids)
 	var/words = dq_ledger_tag_words()
@@ -112,7 +114,6 @@ GLOBAL_VAR(latent_last_refusal)
 		if(tag_words[w])
 			snapshot[count + w] = tag_words[w]
 			any = TRUE
-	cache[path] = any ? snapshot : FALSE
 	return any ? snapshot : null
 
 /// A type snapshot for `n` of them: sums scale, products raise, the rest hold.

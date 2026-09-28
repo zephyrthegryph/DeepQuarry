@@ -35,9 +35,12 @@ GLOBAL_DATUM_INIT(no_ceiling_image, /image, new)
 			var/inner_corners = 0
 			if(flooring.flags & TURF_HAS_CORNERS)
 				//Like above but checking for NO similar bits rather than both similar bits.
-				for(var/corner_dir in GLOB.cornerdirs)
+				// One bit per GLOB.cornerdirs index: the diagonals share direction bits, so OR-ing
+				// the dirs themselves would turn NE|SW into all four corners.
+				for(var/i in 1 to length(GLOB.cornerdirs))
+					var/corner_dir = GLOB.cornerdirs[i]
 					if((has_border & corner_dir) == 0 && !flooring.test_link(src, get_step(src, corner_dir))) //Connected on both cardinals, but not the diagonal
-						inner_corners |= corner_dir
+						inner_corners |= (1 << (i - 1))
 			if(has_border || inner_corners)
 				add_overlay(flooring.get_edge_overlays(has_border, inner_corners))
 
@@ -84,12 +87,8 @@ GLOBAL_DATUM_INIT(no_ceiling_image, /image, new)
 		// Their icon_state is not our icon_state
 		// They don't forbid_turf_edge
 		if(istype(T) && T.edge_blending_priority && edge_blending_priority < T.edge_blending_priority && icon_state != T.icon_state && !T.forbid_turf_edge())
-			var/cache_key = "[T.get_edge_icon_state()]-[checkdir]" // Usually [icon_state]-[dirnum]
-			if(!GLOB.turf_edge_cache[cache_key])
-				var/image/I = image(icon = T.icon_edge, icon_state = "[T.get_edge_icon_state()]-edge", dir = checkdir, layer = ABOVE_TURF_LAYER) // icon_edge
-				I.plane = TURF_PLANE
-				GLOB.turf_edge_cache[cache_key] = I
-			add_overlay(GLOB.turf_edge_cache[cache_key])
+			var/edge_state = T.get_edge_icon_state()
+			add_overlay(CACHED_KEY(turf_edge_overlays, "[edge_state]-[checkdir]", T.icon_edge, edge_state, checkdir)) // Usually [icon_state]-[dirnum]
 
 // We will take this state and use it for a cache key, and append '-edge' to it to get the edge overlay (edges *from other turfs*, not our own internal edges)
 /turf/simulated/proc/get_edge_icon_state()

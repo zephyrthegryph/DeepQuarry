@@ -401,16 +401,17 @@
 		return null
 	if(!length(factors))
 		return over
-	var/static/list/merged_cache = list()
-	var/key = "[type]|[tag]"
-	var/alist/merged = merged_cache[key]
-	if(!merged)
-		merged = alist()
-		for(var/id in factors)
-			merged[id] = factors[id]
-		for(var/id in over)
-			merged[id] = over[id]
-		merged_cache[key] = merged
+	return CACHED_KEY(reagent_merged_species_factors, "[type]|[tag]", factors, over)
+
+DECLARE_SHARED_CACHE(reagent_merged_species_factors, GLOBAL_PROC_REF(build_reagent_merged_species_factors), SC_NEVER)
+
+/// A reagent type's factors overlaid with one species tag's overrides.
+/proc/build_reagent_merged_species_factors(alist/factors, alist/over)
+	var/alist/merged = alist()
+	for(var/id in factors)
+		merged[id] = factors[id]
+	for(var/id in over)
+		merged[id] = over[id]
 	return merged
 
 /// B2: the one gate for whether a reagent's own effects (treatment tags,

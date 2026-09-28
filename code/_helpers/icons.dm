@@ -388,7 +388,7 @@ GLOBAL_LIST_EMPTY(icon_state_lists)
 		return TRUE
 	return FALSE
 
-GLOBAL_LIST_EMPTY(cached_examine_icons)
+GLOBAL_LIST_EMPTY(cached_examine_icons) // ALLOW(cache): per-atom state with per-entry expiry
 /proc/set_cached_examine_icon(atom/A, icon/I, expiry = 12000)
 	GLOB.cached_examine_icons[om_handle(A)] = I
 	if(expiry)
@@ -777,7 +777,7 @@ GLOBAL_LIST_EMPTY(cached_examine_icons)
 /proc/icon2base64html(target, custom_classes = "")
 	if (!target)
 		return
-	var/static/list/bicon_cache = list()
+	var/static/list/bicon_cache = list() // ALLOW(cache): hot icon2html path, keys include refs of runtime icons
 	if (isicon(target))
 		var/icon/target_icon = target
 		var/icon_base64 = icon2base64(target_icon)

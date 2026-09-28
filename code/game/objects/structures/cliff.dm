@@ -1,4 +1,13 @@
-GLOBAL_LIST_EMPTY(cliff_icon_cache)
+DECLARE_SHARED_CACHE(cliff_overlays, GLOBAL_PROC_REF(build_cliff_overlay), SC_NEVER)
+
+/// Builder for cliff_overlays: the ground above a cliff, cut to the cliff's subtraction mask.
+/proc/build_cliff_overlay(cliff_icon, subtraction_icon_state, ground_icon, ground_state, ground_dir, layer)
+	var/icon/underlying_ground = icon(ground_icon, ground_state, ground_dir)
+	var/icon/subtract = icon(cliff_icon, subtraction_icon_state)
+	underlying_ground.Blend(subtract, ICON_SUBTRACT)
+	var/image/final = image(underlying_ground)
+	final.layer = layer
+	return final
 
 /*
 Cliffs give a visual illusion of depth by seperating two places while presenting a 'top' and 'bottom' side.
@@ -128,18 +137,7 @@ two tiles on initialization, and which way a cliff is facing may change during m
 	var/cache_string = "[icon_state]_[T.icon]_[T.icon_state]"
 	if(T && icon_exists(icon, subtraction_icon_state))
 		cut_overlays()
-		// If we've made the same icon before, just recycle it.
-		if(cache_string in GLOB.cliff_icon_cache)
-			add_overlay(GLOB.cliff_icon_cache[cache_string])
-
-		else // Otherwise make a new one, but only once.
-			var/icon/underlying_ground = icon(T.icon, T.icon_state, T.dir)
-			var/icon/subtract = icon(icon, subtraction_icon_state)
-			underlying_ground.Blend(subtract, ICON_SUBTRACT)
-			var/image/final = image(underlying_ground)
-			final.layer = src.layer - 0.2
-			GLOB.cliff_icon_cache[cache_string] = final
-			add_overlay(final)
+		add_overlay(CACHED_KEY(cliff_overlays, cache_string, icon, subtraction_icon_state, T.icon, T.icon_state, T.dir, layer - 0.2))
 
 // Movement-related code.
 

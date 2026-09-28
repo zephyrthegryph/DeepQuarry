@@ -376,7 +376,13 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/grown, \
 	icon = 'icons/obj/hydroponics_misc.dmi'
 	icon_state = ""
 
-GLOBAL_LIST_EMPTY(fruit_icon_cache)
+DECLARE_SHARED_CACHE_EX(fruit_icon, GLOBAL_PROC_REF(build_fruit_icon), SC_NEVER, 1024, 0)
+
+/// Builds a coloured fruit rind/slice overlay; the key keeps the historical rind-colour-only keying.
+/proc/build_fruit_icon(fruit_icon, fruit_state, fruit_colour)
+	var/image/I = image(fruit_icon, fruit_state)
+	I.color = fruit_colour
+	return I
 
 /obj/item/reagent_containers/food/snacks/fruit_slice/Initialize(mapload, datum/seed/S)
 	. = ..()
@@ -392,16 +398,8 @@ GLOBAL_LIST_EMPTY(fruit_icon_cache)
 	var/rind_colour = S.get_trait(TRAIT_PRODUCT_COLOUR)
 	var/flesh_colour = S.get_trait(TRAIT_FLESH_COLOUR)
 	if(!flesh_colour) flesh_colour = rind_colour
-	if(!GLOB.fruit_icon_cache["rind-[rind_colour]"])
-		var/image/I = image(icon,"fruit_rind")
-		I.color = rind_colour
-		GLOB.fruit_icon_cache["rind-[rind_colour]"] = I
-	add_overlay(GLOB.fruit_icon_cache["rind-[rind_colour]"])
-	if(!GLOB.fruit_icon_cache["slice-[rind_colour]"])
-		var/image/I = image(icon,"fruit_slice")
-		I.color = flesh_colour
-		GLOB.fruit_icon_cache["slice-[rind_colour]"] = I
-	add_overlay(GLOB.fruit_icon_cache["slice-[rind_colour]"])
+	add_overlay(CACHED_KEY(fruit_icon, "rind-[rind_colour]", icon, "fruit_rind", rind_colour))
+	add_overlay(CACHED_KEY(fruit_icon, "slice-[rind_colour]", icon, "fruit_slice", flesh_colour))
 
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/item/reagent_containers/food/snacks/grown/proc/seed() as /datum/seed

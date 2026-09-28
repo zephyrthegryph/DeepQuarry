@@ -1,4 +1,4 @@
-GLOBAL_LIST_EMPTY(table_icon_cache)
+DECLARE_SHARED_CACHE_EX(table_icon, GLOBAL_PROC_REF(build_table_icon), SC_NEVER, 2048, 0)
 
 /obj/structure/table
 	name = "table frame"
@@ -367,15 +367,14 @@ DECLARE_INTERACTIONS(/obj/structure/table, \
 
 /proc/get_table_image(icon/ticon,ticonstate,tdir,tcolor,talpha)
 	var/icon_cache_key = "\ref[ticon]-[ticonstate]-[tdir]-[tcolor]-[talpha]"
-	var/image/I = GLOB.table_icon_cache[icon_cache_key]
-	if(!I)
-		I = image(icon = ticon, icon_state = ticonstate, dir = tdir)
-		if(tcolor)
-			I.color = tcolor
-		if(talpha)
-			I.alpha = talpha
-		GLOB.table_icon_cache[icon_cache_key] = I
+	return CACHED_KEY(table_icon, icon_cache_key, ticon, ticonstate, tdir, tcolor, talpha)
 
+/proc/build_table_icon(icon/ticon, ticonstate, tdir, tcolor, talpha)
+	var/image/I = image(icon = ticon, icon_state = ticonstate, dir = tdir)
+	if(tcolor)
+		I.color = tcolor
+	if(talpha)
+		I.alpha = talpha
 	return I
 
 /obj/structure/table/update_icon()

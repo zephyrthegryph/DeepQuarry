@@ -1157,7 +1157,7 @@
 	var/datum/on_relation_cache
 
 /datum/om_test_entity/cached/declared_cache_vars()
-	var/static/list/caches = list(
+	var/static/list/caches = list( // ALLOW(cache): a constant per-type declaration table, not a keyed cache
 		"on_change_cache" = CACHE_ON_CHANGE(CHANGE_EXPLICIT),
 		"on_event_cache" = CACHE_ON_EVENT(/datum/om/event/test/sub),
 		"on_relation_cache" = CACHE_ON_RELATION(/datum/om/relation/test_link),

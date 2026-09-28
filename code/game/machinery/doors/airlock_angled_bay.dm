@@ -44,7 +44,7 @@
 
 	var/fill_type = FILL_NONE
 
-	var/static/list/angled_airlock_icon_cache = list()
+	var/static/list/angled_airlock_icon_cache = list() // ALLOW(cache): per-type icon composite built from many src vars across a long proc; conversion risky
 	/// Mandatory: The base door structure icon, very required.
 	var/base_icon
 

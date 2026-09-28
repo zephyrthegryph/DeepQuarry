@@ -226,34 +226,35 @@ GLOBAL_DATUM_INIT(gear_tweak_unified_recolor, /datum/gear_tweak/recolor, new)
 /// `icon_state == name` minus spaces — see how update_inv_w_uniform/etc. derive their
 /// state), falling back to the gear's main `icon_state` if a derived name yields nothing.
 /proc/dq_get_gear_palette(datum/gear/G)
-	var/static/list/cache = list()
 	if(!G || !G.path)
 		return list()
-	var/key = "[G.type]"
-	// `key in cache` correctly distinguishes "not yet scanned" from "scanned and empty";
-	// !cache[key] would re-scan icons that legitimately have no extractable palette
-	// (transparent-only, missing icon_state, etc.) on every UI poll.
-	if(!(key in cache))
-		var/atom/A = G.path
-		var/list/combined = list()
-		var/list/seen = list()
-		var/list/ground = dq_scan_icon_palette(initial(A.icon), initial(A.icon_state))
-		for(var/c in ground)
+	// The shared cache remembers falsy values too, so a type that legitimately has no
+	// extractable palette (transparent-only, missing icon_state, etc.) is scanned once,
+	// not on every UI poll. Values are shared: never write into the returned list.
+	return CACHED_KEY(gear_palette, G.type, G)
+
+DECLARE_SHARED_CACHE(gear_palette, GLOBAL_PROC_REF(build_gear_palette), SC_NEVER)
+
+/proc/build_gear_palette(datum/gear/G)
+	var/atom/A = G.path
+	var/list/combined = list()
+	var/list/seen = list()
+	var/list/ground = dq_scan_icon_palette(initial(A.icon), initial(A.icon_state))
+	for(var/c in ground)
+		if(!seen[c])
+			combined += c
+			seen[c] = TRUE
+	var/worn_icon = _dq_default_worn_icon_for_path(G.path)
+	if(worn_icon)
+		// Worn .dmi files key states off the item's icon_state (same string as the
+		// ground sheet uses). If the worn sheet doesn't expose that state, fall back
+		// to scanning the icon's first state (icon_state = null grabs frame-1 of the
+		// first state).
+		var/list/worn = dq_scan_icon_palette(worn_icon, initial(A.icon_state))
+		if(!length(worn))
+			worn = dq_scan_icon_palette(worn_icon, null)
+		for(var/c in worn)
 			if(!seen[c])
 				combined += c
 				seen[c] = TRUE
-		var/worn_icon = _dq_default_worn_icon_for_path(G.path)
-		if(worn_icon)
-			// Worn .dmi files key states off the item's icon_state (same string as the
-			// ground sheet uses). If the worn sheet doesn't expose that state, fall back
-			// to scanning the icon's first state (icon_state = null grabs frame-1 of the
-			// first state).
-			var/list/worn = dq_scan_icon_palette(worn_icon, initial(A.icon_state))
-			if(!length(worn))
-				worn = dq_scan_icon_palette(worn_icon, null)
-			for(var/c in worn)
-				if(!seen[c])
-					combined += c
-					seen[c] = TRUE
-		cache[key] = combined
-	return cache[key]
+	return combined

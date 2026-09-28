@@ -70,6 +70,19 @@ type Stage = {
   us_per_call: number;
 };
 
+type Cache = {
+  name: string;
+  hits: number | null;
+  misses: number;
+  hit_rate: number;
+  entries: number;
+  max_entries: number;
+  evictions: number;
+  invalidations: number;
+  kb: number;
+  policy: string;
+};
+
 type Data = {
   elapsed_s: number;
   last_run_ms: number;
@@ -80,6 +93,7 @@ type Data = {
   lanes: Lane[];
   stages: Stage[];
   services: Service[];
+  caches?: Cache[];
   world_step?: WorldStep;
 };
 
@@ -127,11 +141,15 @@ export const OmProfiler = (props) => {
           <Tabs.Tab selected={tab === 3} onClick={() => setTab(3)}>
             World services
           </Tabs.Tab>
+          <Tabs.Tab selected={tab === 4} onClick={() => setTab(4)}>
+            Caches
+          </Tabs.Tab>
         </Tabs>
         {tab === 0 && <LanesTab />}
         {tab === 1 && <BehavioursTab />}
         {tab === 2 && <StagesTab />}
         {tab === 3 && <ServicesTab />}
+        {tab === 4 && <CachesTab />}
       </Window.Content>
     </Window>
   );
@@ -336,5 +354,45 @@ const ServicesTab = (props) => {
         </Table>
       </Section>
     </>
+  );
+};
+
+const CachesTab = (props) => {
+  const { data } = useBackend<Data>();
+  const caches = [...(data.caches || [])].sort((a, b) => b.kb - a.kb);
+  return (
+    <Section title="Shared caches (DECLARE_SHARED_CACHE; hits need -DSHARED_CACHE_STATS in release)">
+      <Table>
+        <Table.Row header>
+          <Table.Cell>Cache</Table.Cell>
+          <Table.Cell>Policy</Table.Cell>
+          <Table.Cell textAlign="right">Hits</Table.Cell>
+          <Table.Cell textAlign="right">Misses</Table.Cell>
+          <Table.Cell textAlign="right">Hit %</Table.Cell>
+          <Table.Cell textAlign="right">Entries</Table.Cell>
+          <Table.Cell textAlign="right">Evicted</Table.Cell>
+          <Table.Cell textAlign="right">Cleared</Table.Cell>
+          <Table.Cell textAlign="right">~KB</Table.Cell>
+        </Table.Row>
+        {caches.map((c) => (
+          <Table.Row key={c.name}>
+            <Table.Cell>{c.name}</Table.Cell>
+            <Table.Cell>{c.policy}</Table.Cell>
+            <Table.Cell textAlign="right">{c.hits ?? '-'}</Table.Cell>
+            <Table.Cell textAlign="right">{c.misses}</Table.Cell>
+            <Table.Cell textAlign="right">
+              {c.hits === null ? '-' : c.hit_rate}
+            </Table.Cell>
+            <Table.Cell textAlign="right">
+              {c.entries}
+              {c.max_entries ? ` / ${c.max_entries}` : ''}
+            </Table.Cell>
+            <Table.Cell textAlign="right">{c.evictions}</Table.Cell>
+            <Table.Cell textAlign="right">{c.invalidations}</Table.Cell>
+            <Table.Cell textAlign="right">{c.kb}</Table.Cell>
+          </Table.Row>
+        ))}
+      </Table>
+    </Section>
   );
 };
