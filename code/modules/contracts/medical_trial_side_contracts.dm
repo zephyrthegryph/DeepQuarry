@@ -53,11 +53,6 @@ REF_BACK(/datum/contract_document, list("holder" = "contract_document"))
 // releases its evidence id.
 /datum/contract_document/on_destroy(force)
 	SScontracts?.release_evidence(evidence_id)
-	evidence_id = null
-	payload = null
-	if(holder?.contract_document == src)
-		holder.contract_document = null
-	holder = null
 	..()
 
 /proc/create_contract_document(atom/location, document_name, document_info, contract_id, document_kind, destination, list/payload)

@@ -23,9 +23,6 @@
 // its searched contents are reset.
 /datum/lootpanel/on_destroy(force)
 	reset_contents()
-	owner_handle = null
-	source_turf_handle = null
-
 	..()
 
 /datum/lootpanel/tgui_interact(mob/user, datum/tgui/ui)

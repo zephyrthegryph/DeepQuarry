@@ -74,9 +74,6 @@
 	for(var/i in om_resolve_all(songs_using))
 		var/datum/song/S = i
 		S.set_instrument(null)
-	real_samples = null
-	samples = null
-	songs_using = null
 	..()
 
 /**

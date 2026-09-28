@@ -37,7 +37,6 @@
 		if(stat != DEAD)	//If not dead.
 			death(1)	//Brains can die again. AND THEY SHOULD AHA HA HA HA HA HA
 		ghostize()		//Ghostize checks for key so nothing else is necessary.
-	container = null
 	..()
 
 /// A view names itself after the character it shows and reads the

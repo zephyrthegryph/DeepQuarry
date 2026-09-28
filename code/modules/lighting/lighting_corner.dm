@@ -183,8 +183,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lighting_corner)
 
 	for (var/datum/light_source/light_source as anything in affecting)
 		LAZYREMOVE(light_source.effect_str, src)
-	affecting = null
-
 	if (master_NE)
 		master_NE.lighting_corner_SW = null
 		master_NE.lighting_corners_initialised = FALSE

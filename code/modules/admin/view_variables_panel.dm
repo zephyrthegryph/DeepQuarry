@@ -32,8 +32,6 @@ ADMIN_VERB_AND_CONTEXT_MENU(debug_variables, (R_DEBUG|R_SERVER|R_ADMIN|R_SPAWN|R
 /datum/view_variables_panel/on_destroy(force)
 	if(owner())
 		owner().dq_vv_panel = null
-	owner_handle = null
-	thing = null
 	..()
 
 /datum/view_variables_panel/tgui_state(mob/user)

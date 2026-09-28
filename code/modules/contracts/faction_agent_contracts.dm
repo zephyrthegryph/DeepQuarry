@@ -40,13 +40,6 @@
 // releases its market reservation.
 /datum/contract/faction_agent/on_destroy(force)
 	GLOB.supply_service?.release_agent_contract_market(src)
-	market_reservation_ids = null
-	contact_name = null
-	contact_mode = null
-	contact_evidence_id = null
-	stakeholder_departments = null
-	contact_departments = null
-	discovery_detail = null
 	..()
 
 /datum/contract/faction_agent/on_accepted(mob/living/user, atom/source)

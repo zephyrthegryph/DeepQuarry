@@ -97,9 +97,6 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 			qdel(o)
 	if(nif)
 		QDEL_NULL(nif)
-
-	if(vessel)
-		QDEL_NULL(vessel)
 	..()
 
 /mob/living/carbon/human/get_status_tab_items()

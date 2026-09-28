@@ -114,15 +114,12 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 		update_icon()
 
 // leaves a core chunk; its overmind dies with it.
-/obj/structure/blob/core/on_destroy(force)
-	var/turf/T = get_turf(src)
-	new /obj/item/blobcore_chunk(T, overmind?.blob_type)
-
-	if(overmind)
-		overmind.blob_core_handle = null
-		qdel(overmind)
-	overmind = null
+// Prerelease: `overmind` is a declared back-list link, cleared in phase 4.
+/obj/structure/blob/core/lifecycle_prerelease()
 	..()
+	new /obj/item/blobcore_chunk(get_turf(src), overmind?.blob_type)
+	if(overmind)
+		qdel(overmind)
 
 /obj/structure/blob/core/update_icon()
 	cut_overlays()

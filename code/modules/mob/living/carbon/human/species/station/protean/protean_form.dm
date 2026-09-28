@@ -27,12 +27,10 @@
 		remove_verb(H, power_verbs)
 	return ..()
 
-// the protean's rig forgets its protean.
-/datum/forms/protean/on_destroy(force)
+// the protean's rig forgets its protean (prerelease: `owner` is a declared back link).
+/datum/forms/protean/lifecycle_prerelease()
 	if(rig && (!owner || rig.myprotean == owner))
 		rig.myprotean = null
-	// A handle-kind var is never cleaned by the lifecycle: drop it here.
-	rig = null
 	..()
 
 /datum/forms/protean/proc/blob_form()

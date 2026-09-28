@@ -253,8 +253,8 @@ REF_BACK(/datum/affliction/core_dormancy, list("held_mob" = null))
 	release()
 	return ..()
 
-// a dormant core is released.
-/datum/affliction/core_dormancy/on_destroy(force)
+// a dormant core is released (prerelease: `held_mob` is a declared back link).
+/datum/affliction/core_dormancy/lifecycle_prerelease()
 	release()
 	..()
 

@@ -88,15 +88,11 @@ REF_HELD(/datum/forms, "current")
 	REMOVE_TRAIT(H, TRAIT_FORM_HIDES_BODY, FORM_TRAIT)
 	H.holder_type = prior_holder_type
 
-// its form mobs are deleted after it detaches.
-/datum/forms/on_destroy(force)
+// its form mobs are deleted after it detaches (prerelease: `owner` is a declared
+// back link and the owned forms go in phase 4; detach() needs both).
+/datum/forms/lifecycle_prerelease()
 	if(owner)
-		detach() // Needs `current`, so before it is cleared.
-		if(owner.character_forms == src)
-			owner.character_forms = null
-	owner = null
-	current = null
-	form_overlays = null
+		detach()
 	..()
 
 /// Is the character wearing a form of this type (or a subtype)?

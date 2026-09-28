@@ -117,7 +117,6 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 /datum/permissions_panel/on_destroy(force)
 	if(holder())
 		holder().dq_permissions_panel = null
-	holder_handle = null
 	..()
 
 /datum/permissions_panel/tgui_state(mob/user)

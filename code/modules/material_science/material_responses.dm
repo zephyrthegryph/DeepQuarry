@@ -85,14 +85,11 @@ REF_BACK(/datum/material_response, list("parent" = "material_response"))
 	om_hook(parent, /datum/om/event/before/attackby, src, PROC_REF(on_attackby))
 	om_hook(parent, /datum/om/event/material_surgery, src, PROC_REF(on_surgery))
 
-// owned state datum (was a component) unhooks and detaches from its owner.
-/datum/material_response/on_destroy(force)
+// its owner leaves the radiovoltaic registry (prerelease: `parent` is a declared
+// back link; hooks and the back link itself are cleared in phase 4).
+/datum/material_response/lifecycle_prerelease()
 	if(parent)
 		registry_leave(REGISTRY_RADIOVOLTAIC_ITEMS, parent)
-		om_unhook(parent, null, src)
-		if(parent.material_response == src)
-			parent.material_response = null
-		parent = null
 	..()
 
 /datum/material_response/proc/material() as /datum/material

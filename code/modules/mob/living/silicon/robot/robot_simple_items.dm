@@ -78,9 +78,7 @@
 		integrated_tool_images[real_tool.name] = tool_image
 
 // its integrated tools (assoc values) go with it.
-/obj/item/robotic_multibelt/on_destroy(force)
-	QDEL_LIST_ASSOC_VAL(cyborg_integrated_tools)
-	..()
+REF_OWNED_VALUES(/obj/item/robotic_multibelt, "cyborg_integrated_tools")
 
 DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(interaction_self)))
 

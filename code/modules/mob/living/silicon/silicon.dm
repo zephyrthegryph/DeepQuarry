@@ -52,7 +52,6 @@ REF_STATIC(/mob/living/silicon, list("speech_synthesizer_langs", "queued_alarms"
 
 // leaves every alarm handler and its subsystems.
 /mob/living/silicon/on_destroy(force)
-	common_radio = null
 	for(var/datum/alarm_handler/AH in all_alarm_handlers())
 		AH.unregister_alarm(src)
 	..()

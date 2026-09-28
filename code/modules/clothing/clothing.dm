@@ -1351,17 +1351,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, \
 	sensor_mode = pick(0,1,2,3)
 	. = ..()
 
-REF_SPILL_LIST(/obj/item/clothing, "contents")
-
-// its integrated circuit goes with it.
-/obj/item/clothing/on_destroy(force)
-	if(IC)
-		IC.clothing_handle = null
-		action_circuit = null
-		QDEL_NULL(IC)
-	..()
-
-/obj/item/clothing/proc/handle_digitigrade(mob/user)
+REF_SPILL_LIST(/obj/item/clothing, "contents")/obj/item/clothing/proc/handle_digitigrade(mob/user)
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
 

@@ -62,7 +62,6 @@
 /obj/effect/bmode/on_destroy(force)
 	if(master() && master().cl())
 		master().cl().screen -= src
-	master_handle = null
 	..()
 
 /obj/effect/bmode/builddir

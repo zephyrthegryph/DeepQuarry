@@ -88,7 +88,6 @@ REF_OWNED_LIST(/datum/body, "supports")
 	for(var/datum/affliction/A as anything in afflictions?.Copy())
 		remove_affliction(A)
 		qdel(A)
-	afflictions = null
 	..()
 
 /// Mark `domains` (BODY_DIRTY_*) stale.

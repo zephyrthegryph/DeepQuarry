@@ -140,10 +140,10 @@
 
 REF_OWNED(/obj/item/rig, list("power_system", "spark_system", "boots", "chest", "helmet", "gloves", "mob_icon", "minihud", "component_registry"))
 
-// the suit pieces are torn down by the component registry first.
-/obj/item/rig/on_destroy(force)
+// the suit pieces are torn down by the component registry first (prerelease:
+// the registry is owned and deleted in phase 4).
+/obj/item/rig/lifecycle_prerelease()
 	component_registry?.destroy_pieces()
-	QDEL_NULL(component_registry)
 	..()
 
 /obj/item/rig/MouseDrop(obj/over_object)

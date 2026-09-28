@@ -332,12 +332,6 @@
 			QDEL_NULL(mmi)
 	clear_traitor_hud()
 	disconnect_from_ai(TRUE)
-	if(killswitch)
-		om_cancel_timer(src, killswitch)
-		killswitch = null
-	if(weapon_lock)
-		om_cancel_timer(src, weapon_lock)
-		weapon_lock = null
 	if(shell)
 		if(deployed)
 			undeploy()
@@ -350,8 +344,6 @@
 		QDEL_NULL(radio)
 	if(camera)
 		QDEL_NULL(camera)
-	module_active = null
-
 	..()
 
 /// Stat changes are events: equipment drops once, senses and sprite refresh once.

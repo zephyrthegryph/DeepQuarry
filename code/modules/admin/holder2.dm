@@ -76,12 +76,6 @@ GLOBAL_PROTECT(href_token)
 	alert_to_permissions_elevation_attempt(usr)
 	return TRUE
 
-// Its fax reply goes with it.
-/datum/admins/on_destroy(force)
-	if(faxreply)
-		qdel(faxreply)
-	..()
-
 /datum/admins/proc/activate()
 	if(IsAdminAdvancedProcCall())
 		alert_to_permissions_elevation_attempt(usr)

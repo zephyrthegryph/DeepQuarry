@@ -129,14 +129,7 @@
 // ALLOW(lifecycle): closes its media window before phase 4 deletes it (REF_OWNED).
 /datum/media_manager/lifecycle_unbind()
 	media_window?.close()
-	return ..()
-
-// drops its owner and last target.
-/datum/media_manager/on_destroy(force)
-	owner_handle = null
-	..()
-
-/datum/media_manager/tgui_state(mob/user)
+	return ..()/datum/media_manager/tgui_state(mob/user)
 	return GLOB.tgui_always_state
 
 /datum/media_manager/tgui_data(mob/user)

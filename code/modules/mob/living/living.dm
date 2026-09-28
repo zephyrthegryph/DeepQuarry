@@ -18,24 +18,12 @@
 	// The character's DNA outlives this body when the identity references it.
 	if(dna && identity()?.dna() == dna)
 		dna = null
-	QDEL_NULL(say_list)
-
-	for(var/datum/soul_link/S as anything in owned_soul_links)
+	for(var/datum/soul_link/S as anything in owned_soul_links?.Copy())
 		S.owner_died(FALSE)
 		qdel(S) // If the owner is destroy()'d, the soullink is destroy()'d.
-	owned_soul_links = null
-	for(var/datum/soul_link/S as anything in shared_soul_links)
+	for(var/datum/soul_link/S as anything in shared_soul_links?.Copy())
 		S.sharer_died(FALSE)
 		S.remove_soul_sharer(src) // If a sharer is destroy()'d, they are simply removed.
-	shared_soul_links = null
-
-	if(ai_brain)
-		ai_brain.holder = null
-		om_unhook(src, /datum/om/event/mob_statchange, ai_brain)
-		//legacy faction_friends list cleanup removed — the modern
-		// brain stores relationships as OM handles in personal[], which
-		// invalidate automatically when the referenced mob qdels.
-		QDEL_NULL(ai_brain)
 	if(nest) //Ew.
 		if(istype(nest, /obj/structure/prop/nest))
 			var/obj/structure/prop/nest/N = nest
@@ -66,9 +54,6 @@
 	if(tf_mob_holder)
 		set_tf_mob_holder(null)
 	QDEL_NULL_LIST(hud_list)
-	temp_language_sources = null
-	temp_languages = null
-
 	// Deleting a part detaches it, and the detach hook empties these caches
 	// (code/modules/body/parts/attach.dm). Copies: they shrink as we go.
 	for(var/OR in organs?.Copy())
@@ -79,16 +64,7 @@
 			qdel(OR)
 
 	GLOB.cultnet.updateVisibility(src, 0)
-
-	if(aiming)
-		qdel(aiming)
-		aiming = null
 	aimed.Cut()
-
-	QDEL_NULL(deaf_loop)
-	QDEL_NULL(firesoundloop)
-	// QDEL_NULL(stunnedloop)
-
 	..()
 
 //mob verbs are faster than object verbs. See mob/verb/examine.

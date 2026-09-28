@@ -52,7 +52,6 @@
 // it is removed from everyone who saw it.
 /datum/alternate_appearance/on_destroy(force)
 	remove()
-	owner_handle = null
 	..()
 
 /atom/on_destroy(force)

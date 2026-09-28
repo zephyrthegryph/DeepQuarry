@@ -124,7 +124,6 @@ REF_OWNED(/datum/contract_opportunity_signal, "filter")
 		var/list/facts = facts_by_signal[signal_id]
 		for(var/fact_key in facts)
 			qdel(facts[fact_key])
-	facts_by_signal = null
 	..()
 
 /datum/contract_opportunity_window/proc/prune(datum/contract_opportunity_rule/rule)

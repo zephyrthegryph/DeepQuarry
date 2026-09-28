@@ -29,11 +29,10 @@
 	in_space = FALSE
 	var/tmp/site_handle
 
-// its site forgets its sector.
-/obj/effect/overmap/visitable/sector/expedition/on_destroy(force)
-	if(site() && site().overmap_sector() == src)
+// its site forgets its sector (prerelease: our handle stops naming us in phase 5).
+/obj/effect/overmap/visitable/sector/expedition/lifecycle_prerelease()
+	if(site() && om_handle_is(site().overmap_sector_handle, src))
 		site().overmap_sector_handle = null
-	site_handle = null
 	..()
 
 /obj/effect/shuttle_landmark/automatic/clearing/expedition
@@ -56,7 +55,6 @@
 /obj/effect/shuttle_landmark/automatic/clearing/expedition/on_destroy(force)
 	if(site() && site().landing_waypoint == src)
 		site().landing_waypoint = null
-	site_handle = null
 	..()
 
 /obj/machinery/computer/shuttle_control/explore
@@ -66,9 +64,9 @@
 
 REF_OWNED(/obj/machinery/computer/shuttle_control/explore, "flight_operations_ui")
 
-// its expedition forgets its origin console.
-/obj/machinery/computer/shuttle_control/explore/on_destroy(force)
-	if(active_expedition()?.origin_console() == src)
+// its expedition forgets its origin console (prerelease: our handle stops naming us in phase 5).
+/obj/machinery/computer/shuttle_control/explore/lifecycle_prerelease()
+	if(om_handle_is(active_expedition()?.origin_console_handle, src))
 		active_expedition().origin_console_handle = null
 	..()
 

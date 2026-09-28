@@ -47,7 +47,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lighting_object)
 		affected_turf.lighting_object = null
 		affected_turf.set_luminosity(1)
 		affected_turf.underlays -= current_underlay
-	affected_turf = null
 	..()
 
 /datum/lighting_object/proc/update()

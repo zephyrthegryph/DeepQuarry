@@ -12,7 +12,6 @@
 /datum/keybind_editor/on_destroy(force)
 	if(owner()?.keybind_editor == src)
 		owner().keybind_editor = null
-	owner_handle = null
 	..()
 
 /client/var/tmp/datum/keybind_editor/keybind_editor

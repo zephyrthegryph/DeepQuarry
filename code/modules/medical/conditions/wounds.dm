@@ -93,7 +93,7 @@
 	sync()
 
 // its limb recomputes integrity.
-/datum/affliction/wound/on_destroy(force)
+/datum/affliction/wound/lifecycle_prerelease()
 	var/obj/item/organ/external/E = location
 	if(istype(E))
 		E.integrity_dirty = TRUE

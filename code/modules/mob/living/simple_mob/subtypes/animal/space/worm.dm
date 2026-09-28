@@ -199,7 +199,6 @@
 		previous.Detach(1)
 	if(next)
 		next.previous = null
-		next = null
 	..()
 
 /mob/living/simple_mob/animal/space/space_worm/Moved(atom/old_loc, direction, forced = FALSE)

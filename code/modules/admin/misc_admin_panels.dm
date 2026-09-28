@@ -297,12 +297,10 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 	target_handle = om_handle(target_mob)
 
 // leaves the per-admin panel index.
-/datum/jobban_panel/on_destroy(force)
+/datum/jobban_panel/lifecycle_dematerialize()
+	..()
 	if(holder() && target())
 		GLOB.dq_jobban_panels -= "[REF(holder())]-[REF(target())]"
-	holder_handle = null
-	target_handle = null
-	..()
 
 /datum/jobban_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN|R_MOD)

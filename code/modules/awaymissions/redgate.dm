@@ -24,9 +24,6 @@
 	if(target())
 		target().target_handle = null
 		target().toggle_portal()
-		target_handle = null
-		set_light(0)
-
 	..()
 
 /obj/structure/redgate/proc/teleport(mob/M as mob)

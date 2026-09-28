@@ -105,7 +105,6 @@
 		var/turf/T = get_turf(mate())
 		mate().visible_message(span_critical("\The [mate()] collapses into itself!"))
 		mate().mate_handle = null
-		mate_handle = null
 		explosion(T,1,3,7)
 
 	..()

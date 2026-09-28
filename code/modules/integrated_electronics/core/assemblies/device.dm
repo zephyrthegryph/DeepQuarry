@@ -93,7 +93,6 @@ EXTEND_INTERACTIONS(/obj/item/assembly/electronic_assembly, \
 /obj/item/electronic_assembly/device/on_destroy(force)
 	if(holder()?.EA == src)
 		holder().EA = null
-	holder_handle = null
 	..()
 
 /obj/item/electronic_assembly/device/check_interactivity(mob/user)

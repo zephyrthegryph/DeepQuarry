@@ -64,7 +64,6 @@
 // it is unregistered from its viewers.
 /datum/entopic/on_destroy(force)
 	unregister_entopic()
-	my_image = null //Bye!
 	..()
 
 /datum/entopic/proc/register_entopic()

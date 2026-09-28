@@ -34,8 +34,6 @@ D [1]/  ||
 // a pin disconnects from its linked pins.
 /datum/integrated_io/on_destroy(force)
 	disconnect()
-	data = null
-	holder_handle = null
 	..()
 
 /datum/integrated_io/tgui_host()

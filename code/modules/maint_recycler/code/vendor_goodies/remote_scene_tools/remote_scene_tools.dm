@@ -139,8 +139,6 @@ why aren't these accessories?
 	..()
 	if(linked())
 		linked().linked_handle = null //clear out the other side
-		linked_handle = null
-	om_unhook(src, /datum/om/event/atom_entering, src)
 	unregister_from_mob(worn_mob())
 
 /obj/item/remote_scene_tool/examine(mob/user)

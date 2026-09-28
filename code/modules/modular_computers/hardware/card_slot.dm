@@ -20,7 +20,6 @@ REF_HELD(/obj/item/modular_computer, list("processor_unit", "network_card", "har
 		holder2().vars[slot] = null // ALLOW(api): hardware slot cleared by name on removal
 	if(stored_card())
 		stored_card().forceMove(get_turf(holder2()))
-	holder2_handle = null
 	..()
 
 /// LC-refs: the stored_card this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.

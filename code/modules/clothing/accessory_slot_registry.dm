@@ -179,8 +179,6 @@
 			for(var/datum/accessory_stat_modifier/mod in mods)
 				mod.revert(mod.target())
 				qdel(mod)
-	active_modifiers = null
-	slot_names = null
 	..()
 
 /// Global singleton.  Self-initializes with built-in slot names on New().

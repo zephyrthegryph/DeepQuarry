@@ -158,8 +158,6 @@
 	var/mob/living/simple_mob/vore/slug/my_slug = om_resolve(owner_slug)
 	if(my_slug)
 		my_slug.slime_count--
-	owner_slug = null
-
 //This could probably be applied to spideweb code to make it work as intended again.
 /obj/effect/slug_glue/Uncross(atom/movable/AM, atom/newloc)
 	if(istype(AM, /mob/living/simple_mob/vore/slug))

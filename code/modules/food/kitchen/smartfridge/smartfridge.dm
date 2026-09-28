@@ -402,12 +402,12 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 		return 1
 	return 0
 
-// records shared with the upper unit must not be deleted with it.
-/obj/machinery/smartfridge/chemistry/chemvator/down/on_destroy(force)
+// records shared with the upper unit must not be deleted with it (prerelease:
+// the owned item_records list is deleted in phase 4).
+/obj/machinery/smartfridge/chemistry/chemvator/down/lifecycle_prerelease()
 	if(attached())
 		attached().attached_handle = null // clear the upper unit's back-reference to us
-	item_records = null // shared with the upper unit; don't let the base Destroy qdel its stored records
-	attached_handle = null
+	item_records = null // shared with the upper unit; don't let phase 4 qdel its stored records
 	..()
 
 /obj/machinery/smartfridge/chemistry/chemvator/down

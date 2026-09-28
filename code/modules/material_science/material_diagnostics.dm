@@ -320,8 +320,6 @@
 /obj/item/multitool/on_destroy(force)
 	if(engineering_evidence_id)
 		SScontracts?.release_evidence(engineering_evidence_id)
-	engineering_evidence_id = null
-	engineering_reading = null
 	..()
 
 /obj/machinery/photocopier/proc/print_engineering_reading(obj/item/multitool/tool, mob/user)

@@ -16,6 +16,13 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	registry_join(stat == DEAD ? REGISTRY_DEAD_MOBS : REGISTRY_LIVING_MOBS, src)
 
 
+/// The mind forgets us as its original character. Prerelease: om_handle_of(src)
+/// is null once phase 5 releases our handle, so the compare must run first.
+/mob/lifecycle_prerelease()
+	if(mind && om_handle_is(mind.original_character, src))
+		mind.original_character = null
+	..()
+
 /mob/on_destroy(force)//This makes sure that mobs withGLOB.clients/keys are not just deleted from the game.
 	publish_mob_chunk(src)
 	if(client)
@@ -40,27 +47,11 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 	if(LAZYLEN(vore_organs))
 		QDEL_NULL_LIST(vore_organs)
-	if(vorePanel)
-		QDEL_NULL(vorePanel)
-
 	for(var/mob/observer/dead/M in src?.follower_list())
 		M.stop_following()
-	previewing_belly = null // from code/modules/vore/eating/mob_ch.dm
-	vore_selected = null // from code/modules/vore/eating/mob_vr
-	focus = null
-	LAssailant = null
-
 	motiontracker_unsubscribe(TRUE) // Force unsubscribe
-
-	if(mind)
-		if(mind.current == src)
-			mind.current = null
-		var/mob/living/original = om_resolve(mind.original_character)
-		if(original && original == src)
-			mind.original_character = null
-
-	QDEL_NULL(belly_overlay_tgui) // from belly_overlay_tgui.dm
-
+	if(mind?.current == src)
+		mind.current = null
 	..()
 	update_client_z(null)
 	//return QDEL_HINT_HARDDEL_NOW
@@ -1189,8 +1180,6 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	if(exploit_for)
 		var/mob/exploited = om_resolve(exploit_for)
 		exploited?.exploit_addons -= src
-		exploit_for = null
-	user_vars_remembered = null
 	..()
 
 /client/proc/check_has_body_select()

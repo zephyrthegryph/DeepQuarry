@@ -782,8 +782,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 // the population cap counts it out.
 /mob/living/simple_mob/vore/alienanimals/teppi/on_destroy(force)
 	GLOB.teppi_count --
-	friend_zone = null
-	//legacy .leader reference removed (no equivalent on /datum/ai_brain).
 	..()
 
 /mob/living/simple_mob/vore/alienanimals/teppi/lay_down()

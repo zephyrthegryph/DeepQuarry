@@ -23,8 +23,6 @@
 /datum/belly_overlay_tgui/on_destroy(force)
 	if(owner()?.client)
 		winset(owner().client, "mapwindow.belly_overlay", "is-visible=false")
-	owner_handle = null
-	active_ui = null
 	..()
 
 /datum/belly_overlay_tgui/tgui_state(mob/user)

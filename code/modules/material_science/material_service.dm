@@ -223,14 +223,9 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 // unregisters diagnostics and its service behaviour; its owner forgets it.
 /datum/material_service/on_destroy(force)
 	unregister_diagnostics()
-	om_cancel_after(src, /datum/om/behaviour/material_service)
 	clear_watches()
 	if(owner()?.material_service == src)
 		owner().material_service = null
-	owner_handle = null
-	last_delivery_mixture = null
-	thermal_stock_static = null
-	electrical_stock_static = null
 	..()
 
 /datum/material_service/proc/schedule(delay = MATERIAL_SERVICE_INTERVAL)

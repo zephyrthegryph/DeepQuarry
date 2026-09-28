@@ -147,7 +147,6 @@
 // the looking glass unloads its program.
 /obj/machinery/computer/looking_glass/on_destroy(force)
 	unload_program()
-	my_area_handle = null
 	..()
 
 /obj/machinery/computer/looking_glass/ex_act(severity)

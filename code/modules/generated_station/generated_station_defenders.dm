@@ -20,12 +20,7 @@
 // its director unregisters the defender.
 /datum/generated_station_defender_agent/on_destroy(force)
 	if(defender())
-		om_unhook(defender(), list(/datum/om/event/dqai_damage_taken, /datum/om/event/mob_death), src)
 		runtime()?.director()?.unregister_defender(defender())
-	defender_handle = null
-	runtime_handle = null
-	home_handle = null
-	last_contact = null
 	..()
 
 /// A null or deleted defender must never read as "alive"; `defender?.stat < DEAD`
@@ -97,15 +92,11 @@
 	active_patrols = list()
 	director().defense_runtime_handle = om_handle(src)
 
-// its director forgets it; its defenders go with it.
-/datum/generated_station_defense_runtime/on_destroy(force)
-	if(director()?.defense_runtime() == src)
+// its director forgets it (prerelease: our handle stops naming us in phase 5);
+// its defenders go with it.
+/datum/generated_station_defense_runtime/lifecycle_prerelease()
+	if(om_handle_is(director()?.defense_runtime_handle, src))
 		director().defense_runtime_handle = null
-	squads_by_department = null
-	department_turfs = null
-	active_patrols = null
-	director_handle = null
-	site_handle = null
 	..()
 
 

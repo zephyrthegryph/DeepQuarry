@@ -60,7 +60,6 @@ REF_HELD(/mob/living/simple_mob/blob/spore, "infested")
 	if(infested)
 		infested.forceMove(get_turf(src))
 		visible_message(span_warning("\The [infested] falls to the ground as the blob spore bursts."))
-		infested = null
 	..()
 
 /mob/living/simple_mob/blob/spore
