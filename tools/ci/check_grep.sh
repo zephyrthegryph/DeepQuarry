@@ -343,36 +343,22 @@ if $grep -n '\ba_intent\b' "${code_files[@]}" | grep -vE "^($a_intent_allowlist)
 	FAILED=1
 fi;
 
-part "interactions: converted domains (I7)"
-# Converted domains' input handlers are interaction definitions (roadmap I7,
-# doc/rewrite/interactions.md section 13): no attackby, attack_hand, attack_self,
-# click_alt or MouseDrop_T overrides and no object verbs on their types, and no
-# hand-written description_info in their directories (examine text is generated).
-# The old procs are the entry points; declare interactions with an `entry` instead.
-# The allowlist holds files other work owns (the body rewrite's medical code,
-# cooking, vore) and test fixtures. It must not grow.
-i7_converted_types='/obj/machinery'
-i7_converted_dirs='code/game/machinery/|code/ATMOSPHERICS/|code/modules/power/'
-i7_allowlist='code/modules/unit_tests/|code/game/dna/dna_modifier\.dm|code/game/machinery/protean_reconstitutor\.dm|code/modules/resleeving/|code/modules/food/kitchen/|code/modules/vore/|code/modules/examine/descriptions/medical\.dm'
-if $grep -n "^($i7_converted_types)(/[A-Za-z0-9_]+)*/(attackby|attack_hand|attack_self|click_alt|MouseDrop_T|verb/[A-Za-z0-9_]+)\(" "${code_files[@]}" | grep -vE "^($i7_allowlist)"; then
+part "interactions: no legacy handlers or object verbs (I7)"
+# Every input is an interaction (roadmap I7, doc/rewrite/interactions.md section 13):
+# no type overrides attackby, attack_hand, attack_self, click_alt or MouseDrop_T (the
+# base dispatchers in code/_onclick/ are the only definitions), and object verbs are
+# INTERACT_VERB Menu entries. tools/ci/i7_handler_lint.py and actor_forwarding_lint.py
+# enforce the handlers and actor procs; this bans object verbs. The allowlist holds
+# verbs that are really a mob's own abilities, run through an item they carry.
+i7_verb_allowlist='code/game/mecha/equipment/tools/(passenger|sleeper)\.dm|code/game/objects/items/devices/communicator/integrated\.dm|code/modules/assembly/holder\.dm|code/modules/clothing/spacesuits/rig/modules/specific/ai_container\.dm|code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_module\.dm|code/modules/pda/ai\.dm'
+if $grep -n "^/(obj|turf)(/[A-Za-z0-9_]+)*/verb/[A-Za-z0-9_]+\(" "${code_files[@]}" | grep -vE "^(code/modules/unit_tests/|$i7_verb_allowlist):"; then
 	echo
-	echo -e "${RED}ERROR: converted domains take interactions, not handler overrides or object verbs. Declare an interaction with an entry (code/datums/interactions/entries.dm).${NC}"
+	echo -e "${RED}ERROR: object verbs are interactions now. Declare an INTERACT_VERB (code/__defines/interactions.dm) instead.${NC}"
 	FAILED=1
 fi;
-# Domains whose input handlers are converted but whose object verbs are not yet (I7
-# continues domain by domain): no attackby/attack_hand/attack_self/click_alt/MouseDrop_T
-# overrides on these types. Declare interactions with DECLARE_INTERACTIONS/EXTEND_INTERACTIONS
-# (code/__defines/interactions.dm) instead. The allowlist below must not grow.
-i7_handler_types='/obj/structure'
-i7_handler_allowlist=''
-if $grep -n "^($i7_handler_types)(/[A-Za-z0-9_]+)*/(attackby|attack_hand|attack_self|click_alt|MouseDrop_T)\(" "${code_files[@]}" | grep -vE "^($i7_allowlist)" | grep -vE "^($i7_handler_allowlist):"; then
+if $grep -n '^\s*description_info\s*=' "${code_files[@]}" | grep -E "^code/(game/machinery|ATMOSPHERICS|modules/power)/" | grep -vE "^code/game/machinery/protean_reconstitutor\.dm"; then
 	echo
-	echo -e "${RED}ERROR: converted domains take interactions, not attackby/attack_hand/attack_self/click_alt/MouseDrop_T overrides. Use DECLARE_INTERACTIONS or EXTEND_INTERACTIONS (code/__defines/interactions.dm).${NC}"
-	FAILED=1
-fi;
-if $grep -n '^\s*description_info\s*=' "${code_files[@]}" | grep -E "^($i7_converted_dirs)" | grep -vE "^($i7_allowlist)"; then
-	echo
-	echo -e "${RED}ERROR: description_info in a converted domain. Examine text is generated from the interactions.${NC}"
+	echo -e "${RED}ERROR: description_info in machinery. Examine text is generated from the interactions.${NC}"
 	FAILED=1
 fi;
 

@@ -364,10 +364,16 @@ The resolver shows the next steps, and examine explains them ("Next: weld the fr
 - The domain's `description_info` strings are deleted.
 - Its interaction snapshot is recorded.
 
-**Progress** (handler overrides of `attackby`/`attack_hand`/`attack_self`/`click_alt`/`MouseDrop_T`; `tools/ci/i7_handler_lint.py` ratchets the counts, `check_grep.sh` bans them on fully converted domains):
-- machinery: converted, except files other work owns (medical, cooking, vore, resleeving).
-- structures: converted (154 to 14, the rest owned elsewhere: medical stand, resleeving, vore, test fixtures). Object verbs are not converted yet.
-- items: 910 to 428. What's left sits in hierarchies where a type keeps an override that needs a hand conversion (a parent call mid-body, a leading `..()` under an ancestor that handles the same input, extra click parameters), so its relatives stay legacy too.
+**Done.** Every input on every type is an interaction; the entry procs are thin dispatchers.
+- No type overrides `attackby`, `attack_hand`, `attack_self`, `click_alt` or `MouseDrop_T`: the only definitions are the dispatchers in `code/_onclick/` (they run `run_interaction_entry()` and nothing else). `tools/ci/i7_handler_lint.py` bans any other.
+- No `attack_ai`, `attack_robot`, `attack_ghost` or `attack_tk` procs exist. Each actor's adapter (`code/modules/keybindings/adapters.dm`) runs the interactions it allows, then its `use_default()`: `silicon_use` for silicons (a cyborg also gets the hand's Use on an object with a mob buckled to it), the view UI or examine for ghosts, a grab or poke for telekinesis (`tk_reach`). Direct uses go through `INPUT_ADAPTER(x).interface(user, target)`. `tools/ci/actor_forwarding_lint.py` bans the procs.
+- Object verbs are `INTERACT_VERB` Menu entries (`REQ_IN_INVENTORY` for an old `set src in usr`); `verbs +=`/`-=` toggles became requirements. `check_grep.sh` bans object verbs except the few that are a mob's own abilities run through an item it carries (listed there).
+- **No fallbacks.** What a type does when nothing more specific answers is a *default* interaction (`INTERACT_HAND_DEFAULT`, `INTERACT_ITEM_DEFAULT`, `INTERACT_INSERT_DEFAULT`, `INTERACT_DRAG_DEFAULT`), sorted after every other interaction of the entry whichever type declared it:
+  - items: "Pick up" and "Collect" (a pickup-mode bag's `try_collect()`); a type that reacts to being picked up declares its own "Pick up" calling `interaction_pick_up()` first;
+  - living mobs: "Touch" (`unarmed_touch()`, extended per mob type by stance: help, disarm, grab, punch) and "Attack" (`hit_with_item()`: surgery, vore, the attack or phased swing; the attack signal is sent here);
+  - movables: "Buckle" (drag a mob on to buckle or climb; `drag_buckle = FALSE` on riding mobs and humans).
+- Actor-kind shapes: `INTERACT_SILICON` (old `attack_ai`, AI and cyborgs), `INTERACT_ROBOT` (old `attack_robot`, ranks above a same-type silicon one), `INTERACT_OBSERVER` (old `attack_ghost`), `INTERACT_TK` (old `attack_tk`). Resolver-native Use; a declining effect leaves the input to the adapter's default.
+- Shared behaviour moved into vars and shared effects where subtypes had copied it: `reaction_sound` (the horrors), `drag_buckle`, `plane_foldable`, `crumble_message`/`crumble_into` (remains), the appliance part replacement, the vehicle paint and train limiter-cable effects, the contagion touch, the spawner activation.
 
 **Order within the plan**
 - The tool pipeline (I4) and construction graphs (I5) come first.
@@ -384,5 +390,6 @@ The resolver shows the next steps, and examine explains them ("Next: weld the fr
 - No `a_intent` outside the allowlist (I6).
 - No forwarding `attack_ai`/`attack_robot`/`attack_ghost` overrides (I3).
 - No `*_act` that calls `attackby` (I4).
-- No new `attackby`, `attack_hand` or `attack_self` overrides in domains that have converted (I7).
+- No `attackby`, `attack_hand`, `attack_self`, `click_alt` or `MouseDrop_T` overrides anywhere, and no object verbs (I7).
+- No `attack_ai`/`attack_robot`/`attack_ghost`/`attack_tk` procs (I3).
 - No `description_info` in converted domains (I2).

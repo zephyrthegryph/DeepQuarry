@@ -1,0 +1,7 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Every click, touch, alt-click, drag, use-in-hand and right-click object verb in the game is now an interaction: all of them show up in examine, screentips and the interaction menu, including the AI's, cyborgs', ghosts' and telekinetic uses."
+  - rscadd: "Object verbs (adjust suit, eject, toggle, rename and so on) are in the right-click interaction menu instead of the verb popup."
+  - bugfix: "Contraband packages no longer hand out two items, guest passes no longer flash twice, blank envelopes can be sealed again, the plant analyzer opens its screen, and drawing a boot knife works."
+  - bugfix: "Fire axe cabinets can be opened and the axe taken from the right-click menu when standing next to them; AIs and cyborgs can switch floor lamps."

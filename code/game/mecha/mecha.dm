@@ -2086,14 +2086,6 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 	tgui_interact(src?.slot_item(MECHA_SLOT_PILOT))
 	return
 
-/*
-/obj/mecha/verb/force_eject()
-	set category = "Object"
-	set name = "Force Eject"
-	set src in view(5)
-	src.go_out()
-	return
-*/
 
 /// Old verb "Eject".
 /obj/mecha/proc/mecha_verb_eject(mob/user, obj/item/held, datum/interaction/interaction)
