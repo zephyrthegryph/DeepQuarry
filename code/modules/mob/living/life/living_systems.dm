@@ -432,7 +432,7 @@
 
 	//Ears
 	life_disability_hold(self, EFFECT_DEAFENED, "disability_deaf", self.sdisabilities & DEAF) //disabled-deaf, doesn't get better on its own
-	if(!(self.sdisabilities & DEAF) && self.ear_damage < 100)
+	if(!(self.sdisabilities & DEAF) && self.ear_damage > 0 && self.ear_damage < 100)
 		// ear damage heals slowly over time, unless it is over 100
 		self.adjustEarDamage(-0.05, 0)
 
@@ -595,6 +595,6 @@ OM_FIELD(/mob/living, glow_color, "#FFFFFF", CHANGE_MOB_CONDITIONS)
 OM_FIELD_TYPED(/mob/living, mob/living, tf_mob_holder, null, CHANGE_MOB_CONDITIONS)
 /// sdisabilities and ear_damage are /mob vars (every mob type writes them); Life reads them.
 OM_FIELD(/mob, sdisabilities, 0, CHANGE_MOB_STATUS)
-OM_FIELD(/mob, ear_damage, null, CHANGE_MOB_STATUS)
+OM_FIELD(/mob, ear_damage, 0, CHANGE_MOB_STATUS)
 /// Cult stuff.
 OM_FIELD(/mob/living/simple_mob, purge, 0, CHANGE_MOB_STATUS)

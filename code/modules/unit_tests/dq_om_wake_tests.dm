@@ -11,6 +11,9 @@
 /proc/om_wake_test(datum/D, datum/callback/change, ticks = 4)
 	om_trace(D)
 	om_test_ticks(ticks)
+	// Settle first: a wake already queued before the steady window (the test's own setup) lands
+	// on the scheduler's next pass, which a busy test world can push past `ticks`.
+	om_settle(D, ticks * 10)
 	var/before = om_traced_count(D)
 	om_test_ticks(ticks)
 	if(om_traced_count(D) != before)
@@ -29,6 +32,33 @@
 	if(after == before)
 		return "[D.type] did not wake after its input changed"
 	return null
+
+/// TRUE while `D` has a wake queued or pending delivery, or an om_after() timer already due
+/// (a spawn-time materialize_wakes(), say): work raised before now that hasn't landed yet.
+/proc/om_wakes_pending(datum/D)
+	var/datum/om/rec/rec = D.om_rec
+	if(!rec)
+		return FALSE
+	if(rec.queued)
+		return TRUE
+	for(var/bits in rec.att_pend)
+		if(bits)
+			return TRUE
+	var/list/T = rec.timers
+	if(length(T))
+		var/local = om_timer_local(rec)
+		for(var/i in 1 to length(T) step OM_TIMER_STRIDE)
+			if(T[i + 1] <= local)
+				return TRUE
+	return FALSE
+
+/// Waits (a tick at a time, up to `max_ticks`) until nothing raised for `D` is still in flight.
+/proc/om_settle(datum/D, max_ticks = 40)
+	for(var/i in 1 to max_ticks)
+		if(!om_wakes_pending(D))
+			return TRUE
+		om_test_ticks(1)
+	return FALSE
 
 /// Waits (a tick at a time, up to `max_ticks`) until `D` has been woken more than `count` times.
 /// Wakes ride the scheduler's lanes: a busy test world can take a few ticks longer.
@@ -253,3 +283,4 @@
 	TEST_ASSERT_EQUAL(length(players.wakes) >= 1, TRUE, "no wake recorded")
 
 #endif
+

@@ -116,6 +116,7 @@
 		"robot_pick_shell", "robot_set_mail_tag", "robot_eject_cargo", // dq_ability_tests.dm
 		"robot_nom", "robot_mount", "robot_toggle_module_1", "robot_toggle_module_2", "robot_toggle_module_3", // dq_ability_tests.dm
 		"ship_emote_beyond", // dq_interaction_ship_emote_beyond below
+		"unit_test_secondary_wrench", // interaction_tests.dm: the secondary-dispatch fixture
 		"stacking_console_use", // code/modules/mining/machinery/machine_stacking.dm: needs a linked machine on the map, excluded from dq_i7_bulk_capture.dm's snapshot
 		// I7: verb-category and drag/enter ids without an `entry`, so the snapshot-coverage
 		// check (which requires `entry`) never sees them even when a snapshot exists.

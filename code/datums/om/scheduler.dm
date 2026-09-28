@@ -836,8 +836,11 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	if(k)
 		var/wait = T[k + 1] + B.min_interval - t
 		if(wait > 0)
+			// Held behind the throttle deadline, not queued: kept out of pend_union, whose repeat
+			// short cut (om_dispatch_change()) assumes every interested behaviour already pends
+			// the bits. Counting these there made a later change skip behaviours that had
+			// already taken their wake (a stage raising mid-frame never woke the later stage).
 			rec.att_pend[i] |= bits
-			rec.pend_union |= bits
 			if(!om_deadline_pending(rec.owner, B, OM_DL_THROTTLE))
 				om_deadline(rec.owner, wait, B, OM_DL_THROTTLE)
 			return TRUE
