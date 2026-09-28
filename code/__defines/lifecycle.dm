@@ -43,6 +43,9 @@
 /// Membership in a partner's list, where our var names the partner by OM handle:
 /// list("our_handle_var" = "their_list_var"), or a list of their list vars. Phase 4 removes us (or our handle) from it.
 #define REF_BACKLIST_HANDLE(PATH, LISTS) ##PATH/declared_backlist_handle_vars() { return lifecycle_merge_assoc(..(), LISTS); }
+/// A partner we name by OM handle whose var names us back (by reference or handle):
+/// list("our_handle_var" = "their_var"). Phase 4 nulls their var if it still names us.
+#define REF_BACK_HANDLE(PATH, BACKS) ##PATH/declared_back_handle_vars() { return lifecycle_merge_assoc(..(), BACKS); }
 
 /// Back-references, our var -> the var on the referenced object that points at
 /// us (or null): the non-owning side of an owner/child pair. Phase 4 nulls

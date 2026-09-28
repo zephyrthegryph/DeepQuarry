@@ -60,6 +60,12 @@
 /datum/proc/declared_backlist_handle_vars()
 	return null
 
+/// Assoc: our var holding an OM HANDLE to a partner -> the partner's var that
+/// names us back (REF_BACK_HANDLE). Phase 4 resolves the handle and nulls the
+/// partner's var if it still names us, by reference or by handle.
+/datum/proc/declared_back_handle_vars()
+	return null
+
 /// Names of `src`'s vars holding one inserted thing (a beaker, a card, a
 /// charging cell) that goes back to the room when src is destroyed: phase 3
 /// moves it to src's drop location if it is still inside src. The one-thing
@@ -165,6 +171,7 @@
 			"pair" = D.declared_pair_vars(),
 			"backlist" = D.declared_backlist_vars(),
 			"backlist_handle" = D.declared_backlist_handle_vars(),
+			"back_handle" = D.declared_back_handle_vars(),
 			"spill" = D.declared_spill_vars(),
 			"spill_list" = D.declared_spill_list_vars(),
 			"held" = D.declared_held_vars(),
@@ -352,6 +359,18 @@
 				L.Remove(D)
 				if(h)
 					L.Remove(h)
+	var/list/back_handle = table["back_handle"]
+	for(var/our_var in back_handle)
+		var/datum/partner = om_resolve(D.vars[our_var])
+		if(!partner || (batch && batch.doomed[partner]))
+			continue
+		var/their_var = back_handle[our_var]
+		if(!(their_var in partner.vars))
+			continue
+		var/theirs = partner.vars[their_var]
+		if(theirs == D || (istext(theirs) && om_handle_is(theirs, D)))
+			partner.vars[their_var] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
+
 
 /// The partner's list var names a REF_BACKLIST_HANDLE value picks for `owner`:
 /// a name, a list of names, or list(/partner/type = name or names) keyed by the
