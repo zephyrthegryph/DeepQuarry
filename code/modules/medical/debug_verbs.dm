@@ -44,7 +44,7 @@ ADMIN_VERB(dq_apply_condition, R_DEBUG, "DQ Apply Medical Condition", "Apply a /
 	var/list/organ_options = list()
 	for(var/obj/item/organ/O as anything in target.organs)
 		organ_options["[O.name] (external)"] = O
-	for(var/obj/item/organ/O as anything in target.internal_organs)
+	for(var/obj/item/organ/O as anything in target.internal_organ_list())
 		organ_options["[O.name] (internal)"] = O
 	var/organ_key = verb_ask(user.mob, "k45", args, /datum/om/prompt/choice, message = "Which organ?", title = "DQ Medical", choices = organ_options)
 	if(isnull(organ_key))

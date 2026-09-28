@@ -503,7 +503,7 @@
 	// Parts left over outside the tree (loose after a refused placement).
 	for(var/obj/item/organ/stray as anything in H.organs?.Copy())
 		qdel(stray)
-	for(var/obj/item/organ/stray as anything in H.internal_organs?.Copy())
+	for(var/obj/item/organ/stray as anything in H.internal_organ_list())
 		qdel(stray)
 	H.bad_external_organs?.Cut()
 
@@ -539,7 +539,7 @@
 	// set butcherable meats from species
 	for(var/obj/item/organ/O in H.organs)
 		O.set_initial_meat()
-	for(var/obj/item/organ/O in H.internal_organs)
+	for(var/obj/item/organ/O in H.internal_organ_list())
 		O.set_initial_meat()
 
 /datum/species/proc/hug(mob/living/carbon/human/H, mob/living/target)

@@ -14,7 +14,7 @@
 	for (var/obj/item/organ/O in organs) //check their organs just in case they're being sneaky and somehow have organ damage but no health damage
 		if (O.is_damaged() || O.status)
 			return FALSE
-	for (var/obj/item/organ/O in internal_organs) //check their organs just in case they're being sneaky and somehow have organ damage but no health damage
+	for (var/obj/item/organ/O in internal_organ_list()) //check their organs just in case they're being sneaky and somehow have organ damage but no health damage
 		if (O.is_damaged() || O.status)
 			return FALSE
 	return TRUE
@@ -531,10 +531,11 @@
 
 //Any internal organ, if there are any
 /datum/om/flow/shred_limb/proc/ask_internal()
-	if(!length(T_ext.internal_organs))
+	var/list/T_organs = T_ext.held_organs()
+	if(!length(T_organs))
 		ask_belly()
 		return
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(internal_chosen), message = "Do you wish to severely damage an internal organ, as well? If not, click 'cancel'", choices = T_ext.internal_organs, cancel_answer = "", title = "Organ Choice", ask_flags = ASK_CONSCIOUS)
+	om_ask(actor, /datum/om/prompt/choice, PROC_REF(internal_chosen), message = "Do you wish to severely damage an internal organ, as well? If not, click 'cancel'", choices = T_organs, cancel_answer = "", title = "Organ Choice", ask_flags = ASK_CONSCIOUS)
 
 /datum/om/flow/shred_limb/proc/internal_chosen(datum/om/prompt/choice/ask)
 	T_int = ask.choice || null

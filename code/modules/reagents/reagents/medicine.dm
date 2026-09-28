@@ -232,7 +232,7 @@
 		M.vomit(1)
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		var/obj/item/organ/internal/liver/L = H.internal_organs_by_name[O_LIVER]
+		var/obj/item/organ/internal/liver/L = H.organ_in(O_LIVER)
 		if(istype(L) && L.is_robotic())
 			return
 		// Liver repair is carthatoline's TREAT_HEPATORENAL tag (body/treatment.dm).
@@ -242,7 +242,7 @@
 /datum/reagent/carthatoline/overdose(mob/living/carbon/M, alien, removed)
 	M.injure(INJURY_PAIN, 2, source = src)
 	var/mob/living/carbon/human/H = M
-	var/obj/item/organ/internal/stomach/st = H.internal_organs_by_name[O_STOMACH]
+	var/obj/item/organ/internal/stomach/st = H.organ_in(O_STOMACH)
 	if(st)
 		H.injure(INJURY_BLUNT, removed * 2, st, src, flags = INJURE_IGNORE_RESISTANCE) // Causes stomach contractions, makes sense for an overdose to make it much worse.
 
@@ -459,7 +459,7 @@
 
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
-			var/obj/item/organ/internal/liver/L = H.internal_organs_by_name[O_LIVER]
+			var/obj/item/organ/internal/liver/L = H.organ_in(O_LIVER)
 			if(istype(L) && prob(5))
 				if(L.is_robotic())
 					return
@@ -646,7 +646,7 @@
 	..()
 	if(prob(5)) // 1 in 20
 		var/mob/living/carbon/human/H = M
-		var/obj/item/organ/internal/heart/ht = H.internal_organs_by_name[O_HEART]
+		var/obj/item/organ/internal/heart/ht = H.organ_in(O_HEART)
 		if(ht)
 			H.injure(INJURY_BLUNT, 1, ht, src, flags = INJURE_IGNORE_RESISTANCE)
 		to_chat(M, span_warning("Huh... Is this what a heart attack feels like?"))
@@ -697,7 +697,7 @@
 	M.status_adjust(EFFECT_BLINDED, -5)
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		var/obj/item/organ/internal/eyes/E = H.internal_organs_by_name[O_EYES]
+		var/obj/item/organ/internal/eyes/E = H.organ_in(O_EYES)
 		if(istype(E))
 			if(E.is_robotic())
 				return
@@ -724,7 +724,7 @@
 /datum/reagent/peridaxon/affect_blood(mob/living/carbon/M, alien, removed)
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		for(var/obj/item/organ/internal/I in H.internal_organs)
+		for(var/obj/item/organ/internal/I in H.internal_organ_list())
 			if(I.is_robotic())
 				continue
 			if(I.damage > 0) // Repair is peridaxon's organ tags; the confusion is its side effect.
@@ -840,7 +840,7 @@
 		return
 	var/mob/living/carbon/human/H = M
 	var/list/targets = daxon_organs()
-	for(var/obj/item/organ/internal/I as anything in H.internal_organs)
+	for(var/obj/item/organ/internal/I as anything in H.internal_organ_list())
 		if(I.is_robotic() || !(I.organ_tag in targets))
 			continue
 		if(I.damage > 0)
@@ -1010,7 +1010,7 @@
 
 		var/list/organtotal = list()
 		organtotal |= H.organs
-		organtotal |= H.internal_organs
+		organtotal |= H.internal_organ_list()
 
 		for(var/obj/item/organ/I in organtotal)	// Don't mess with robot bits, they don't reject.
 			if(I.is_robotic())
@@ -1061,7 +1061,7 @@
 
 		var/list/organtotal = list()
 		organtotal |= H.organs
-		organtotal |= H.internal_organs
+		organtotal |= H.internal_organ_list()
 
 		for(var/obj/item/organ/I in organtotal)	// Don't mess with robot bits, they don't reject.
 			if(I.is_robotic())

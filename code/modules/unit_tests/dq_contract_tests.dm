@@ -562,7 +562,7 @@
 	for(var/index in 1 to 3)
 		var/mob/living/carbon/human/subject = new(run_loc_floor_bottom_left)
 		subject.real_name = "Trial Subject [index]"
-		var/obj/item/organ/host = subject.internal_organs_by_name[O_LUNGS]
+		var/obj/item/organ/host = subject.organ_in(O_LUNGS)
 		var/datum/affliction/pulmonary_contusion/condition = subject.body.afflict(/datum/affliction/pulmonary_contusion, host, 30)
 		TEST_ASSERT_NOTNULL(condition, "pulmonary contusion could not be afflicted")
 		TEST_ASSERT(trial.enroll(subject), "qualifying consenting subject could not be enrolled")
@@ -574,7 +574,7 @@
 		TEST_ASSERT(subject.medical_trial_marker_snapshot()[trial.id] > 0, "real trial medication did not leave its scanner-visible coded metabolite")
 		qdel(test_drug)
 		TEST_ASSERT(condition.severity < 30, "trial medication did not reduce authoritative respiratory-condition severity")
-		var/obj/item/organ/heart = subject.internal_organs_by_name[O_HEART]
+		var/obj/item/organ/heart = subject.organ_in(O_HEART)
 		var/found_adverse_condition = FALSE
 		var/datum/affliction/heart_damage/reaction = subject.body.find_affliction(/datum/affliction/heart_damage, heart)
 		found_adverse_condition = reaction && reaction.severity > 0 && length(reaction.active_symptoms)
@@ -674,7 +674,7 @@
 	var/mob/living/carbon/human/healthy = new(run_loc_floor_bottom_left)
 	var/mob/living/carbon/human/healthy_two = new(run_loc_floor_bottom_left)
 	var/mob/living/carbon/human/affected = new(run_loc_floor_bottom_left)
-	var/obj/item/organ/lungs = affected.internal_organs_by_name[O_LUNGS]
+	var/obj/item/organ/lungs = affected.organ_in(O_LUNGS)
 	var/datum/affliction/pulmonary_contusion/illness = affected.body.afflict(/datum/affliction/pulmonary_contusion, lungs, 30)
 	var/list/available_indications = medical_trial_qualifying_indications(list(healthy, affected), FALSE)
 	TEST_ASSERT("respiratory" in available_indications, "an actually present qualifying respiratory condition did not enable its indication")
@@ -748,7 +748,7 @@
 	TEST_ASSERT(preventative.record_challenge(preventative_subject, 5), "controlled challenge was rejected after prophylaxis")
 	preventative.apply_controlled_challenge(preventative_subject, 5)
 	var/found_challenge = FALSE
-	var/obj/item/organ/preventative_lungs = preventative_subject.internal_organs_by_name[O_LUNGS]
+	var/obj/item/organ/preventative_lungs = preventative_subject.organ_in(O_LUNGS)
 	var/datum/affliction/pulmonary_contusion/challenge = preventative_subject.body.find_affliction(/datum/affliction/pulmonary_contusion, preventative_lungs)
 	found_challenge = challenge && challenge.severity > 0
 	TEST_ASSERT(found_challenge, "preventative protocol did not produce an authoritative controlled condition")
@@ -775,7 +775,7 @@
 		var/datum/mind/mind = new("contract_availability_[index]")
 		mind.assigned_role = JOB_MEDICAL_DOCTOR
 		mind.transfer_to(subject)
-		var/obj/item/organ/lungs = subject.internal_organs_by_name[O_LUNGS]
+		var/obj/item/organ/lungs = subject.organ_in(O_LUNGS)
 		subject.body.afflict(/datum/affliction/pulmonary_contusion, lungs, 30)
 		SScontracts.watch_contract_subject(subject)
 		registry_join(REGISTRY_PLAYERS, subject)
@@ -908,7 +908,7 @@
 
 	var/mob/living/carbon/human/corpse = new(run_loc_floor_bottom_left)
 	corpse.death()
-	var/obj/item/organ/brain = corpse.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/brain = corpse.organ_in(O_BRAIN)
 	TEST_ASSERT(!medical_trial_corpse_irrecoverable(corpse), "fresh corpse was incorrectly eligible for irreversible transfer")
 	dq_test_set_organ_damage(brain, brain.max_damage)
 	TEST_ASSERT(medical_trial_corpse_irrecoverable(corpse), "100% brain-damaged corpse was rejected from irreversible transfer")
@@ -1047,7 +1047,7 @@
 	var/datum/mind/test_mind = new
 	test_mind.assigned_role = JOB_MEDICAL_DOCTOR
 	test_mind.transfer_to(subject)
-	var/obj/item/organ/lungs = subject.internal_organs_by_name[O_LUNGS]
+	var/obj/item/organ/lungs = subject.organ_in(O_LUNGS)
 	var/datum/affliction/pneumothorax/condition = subject.body.afflict(/datum/affliction/pneumothorax, lungs, 40)
 	SScontracts.consider_rare_medical_case(subject)
 	var/datum/contract/medical_case_report/report
@@ -1113,7 +1113,7 @@
 	var/datum/mind/subject_mind = new("rare_case_withdrawal_patient")
 	subject_mind.assigned_role = JOB_MEDICAL_DOCTOR
 	subject_mind.transfer_to(subject)
-	var/obj/item/organ/lungs = subject.internal_organs_by_name[O_LUNGS]
+	var/obj/item/organ/lungs = subject.organ_in(O_LUNGS)
 	var/datum/affliction/pneumothorax/condition = subject.body.afflict(/datum/affliction/pneumothorax, lungs, 40)
 	var/datum/contract_subject_identity/identity = SScontracts.subject_identity(subject)
 	var/datum/contract_definition/definition = SScontracts.definitions["medical_rare_case_report"]

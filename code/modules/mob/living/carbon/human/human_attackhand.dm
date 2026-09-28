@@ -624,14 +624,14 @@
 		if(return_from_death("CPR", reviver, REVIVE_UNCONSCIOUS) != TRUE)
 			return
 
-		var/obj/item/organ/internal/lungs/lungs = internal_organs_by_name[O_LUNGS]
+		var/obj/item/organ/internal/lungs/lungs = organ_in(O_LUNGS)
 		if(lungs)
 			emote("gasp")
 		status_at_least(EFFECT_WEAKENED, rand(10,25))
 		//SShaunting.influence(HAUNTING_RESLEEVE) // Used for the Haunting module downstream. Not implemented upstream.
 
 		// Same defib-window brain damage as a defibrillator (brain.revival_brain_damage()).
-		var/obj/item/organ/internal/brain/brain = internal_organs_by_name[O_BRAIN]
+		var/obj/item/organ/internal/brain/brain = organ_in(O_BRAIN)
 		if(should_have_organ(O_BRAIN) && istype(brain))
 			var/brain_damage = brain.revival_brain_damage(injury_load(INJURY_CATEGORY_NEURAL))
 			if(brain_damage > 0)

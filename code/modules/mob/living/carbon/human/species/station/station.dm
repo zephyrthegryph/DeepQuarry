@@ -662,7 +662,7 @@
 		H.species = GLOB.all_species[SPECIES_HUMAN] // This is hard-set to default the body to a normal FBP, without changing anything.
 		H.invalidate_factors()
 
-		for(var/obj/item/organ/internal/diona/Org in H.internal_organs) // Remove Nymph organs.
+		for(var/obj/item/organ/internal/diona/Org in H.internal_organ_list()) // Remove Nymph organs.
 			qdel(Org)
 
 		// Purge the diona verbs.
@@ -1935,7 +1935,7 @@
 
 	if(LINDA_GAS_AMT(environment, GAS_PHORON) > 0 || locate_on(T, /obj/effect/alien/weeds))
 		if(!regenerate(H))
-			var/obj/item/organ/internal/xenos/plasmavessel/P = H.internal_organs_by_name[O_PLASMA]
+			var/obj/item/organ/internal/xenos/plasmavessel/P = H.organ_in(O_PLASMA)
 			if(istype(P))
 				P.adjust_plasma(weeds_plasma_rate)
 	..()
@@ -1948,7 +1948,7 @@
 		mend_prob = 0 // No passive health regen without resting.
 
 	// First, heal internal organs.
-	for(var/obj/item/organ/internal/I in H.internal_organs)
+	for(var/obj/item/organ/internal/I in H.internal_organ_list())
 		if(I.damage > 0)
 			H.mend(TREAT_RESTORATION, heal_rate, I)
 			if (prob(5))
@@ -1994,7 +1994,7 @@
 	set name = "Check Plasma Reserves"
 	set category = "Abilities.Alien"
 
-	var/obj/item/organ/internal/xenos/plasmavessel/I = M.internal_organs_by_name[O_PLASMA]
+	var/obj/item/organ/internal/xenos/plasmavessel/I = M.organ_in(O_PLASMA)
 	if(!istype(I))
 		to_chat(src, span_alium("Our plasma vessel is missing!"))
 		return

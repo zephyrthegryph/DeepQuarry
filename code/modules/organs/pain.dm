@@ -104,7 +104,7 @@
 		self.custom_pain(msg, maxdam, prob(10))
 
 	// Damage to internal organs hurts a lot.
-	for(var/obj/item/organ/I in self.internal_organs)
+	for(var/obj/item/organ/I in self.internal_organ_list())
 		if((I.status & ORGAN_DEAD) || I.is_robotic()) continue
 		if(I.damage > 2) if(prob(2))
 			var/obj/item/organ/external/parent = self.get_organ(I.parent_organ)

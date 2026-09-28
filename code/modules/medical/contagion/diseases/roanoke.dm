@@ -24,7 +24,7 @@
 
 /// A random organ of the host (the old cached organ list held hard refs).
 /datum/affliction/contagion/roanoke/proc/pick_organ()
-	var/list/candidates = host.organs + host.internal_organs
+	var/list/candidates = host.organs + host.internal_organ_list()
 	return length(candidates) ? pick(candidates) : null
 /datum/affliction/contagion/roanoke/stage_act()
 	if(!..())

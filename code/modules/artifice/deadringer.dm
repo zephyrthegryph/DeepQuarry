@@ -146,7 +146,8 @@ DECLARE_INTERACTIONS(/obj/item/deadringer, INTERACT_USE(null, PROC_REF(interacti
 	corpse().injure(INJURY_BLUNT, H.injury_load(INJURY_CATEGORY_PHYSICAL), null, null, 0, null, INJURE_SILENT)
 	corpse().UpdateAppearance()
 	corpse().regenerate_icons()
-	QDEL_NULL_LIST(corpse().internal_organs)
+	var/list/corpse_organs = corpse().internal_organ_list()
+	QDEL_LIST(corpse_organs)
 
 // === merged from deadringer_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /// Watches its holder while armed and counts its cooldown; idle, it sleeps.

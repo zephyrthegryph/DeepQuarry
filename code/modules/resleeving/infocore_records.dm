@@ -180,7 +180,7 @@ DECLARE_REF(/datum/transhuman/body_record, "mind_ref", BACK, null)
 
 	//Internal organ status
 	for(var/org in organ_data)
-		var/obj/item/organ/I = M.internal_organs_by_name[org]
+		var/obj/item/organ/I = M.organ_in(org)
 
 		//Who knows? Missing lungs maybe on synths, etc.
 		if(!I)
@@ -298,7 +298,7 @@ DECLARE_REF(/datum/transhuman/body_record, "mind_ref", BACK, null)
 		var/status = organ_data[part]
 		if(status == null) continue //Species doesn't have organ? Child of missing part?
 
-		var/obj/item/organ/I = H.internal_organs_by_name[part]
+		var/obj/item/organ/I = H.organ_in(part)
 		if(!I) continue//Not an organ. Perhaps external conversion changed it already?
 
 		if(status == 0) //Normal organ

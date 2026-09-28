@@ -245,8 +245,8 @@ EXTEND_INTERACTIONS(/obj/machinery/protean_reconstitutor, \
 	P.name = "Unfinished Protean"
 	P.real_name = "Unfinished Protean"
 	var/list/organs = list()
-	for(var/organ in P.internal_organs_by_name)
-		organs += organ
+	for(var/obj/item/organ/present as anything in INTERNAL_ORGANS(P))
+		organs += present.organ_tag
 	materials_cache = null
 	if(!length(organs))
 		reconstitute_organs_done(P)
@@ -259,7 +259,7 @@ EXTEND_INTERACTIONS(/obj/machinery/protean_reconstitutor, \
 		processing_revive = FALSE
 		return
 	var/organ = organs[index]
-	var/obj/item/O = P.internal_organs_by_name[organ]
+	var/obj/item/O = P.organ_in(organ)
 	if(istype(O,/obj/item/organ/internal/nano/refactory))
 		src.visible_message(span_notice("\The [src] chirps, \"Initializing refactory...\""))
 		// Deleting the blank detaches it; the salvaged one takes its slot.
@@ -347,8 +347,7 @@ EXTEND_INTERACTIONS(/obj/machinery/protean_reconstitutor, \
 	//revive complete, now restore the cached mats (if we had any)
 	if(materials_cache)
 		src.visible_message(span_notice("\The [src] chirps, \"Reindexing archived refactory materials storage.\""))
-		for(var/organ in P.internal_organs_by_name)
-			var/obj/item/O = P.internal_organs_by_name[organ]
+		for(var/obj/item/O as anything in INTERNAL_ORGANS(P))
 			if(istype(O,/obj/item/organ/internal/nano/refactory))
 				var/obj/item/organ/internal/nano/refactory/RF = O
 				RF.materials = materials_cache.Copy()

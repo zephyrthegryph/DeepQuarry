@@ -228,7 +228,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory, INTERACT_HAND_UNGATED(null, PR
 							if(M.nutrition > 900)	//dead
 								message_holder2 = pick("Your listening is troubled by the occasional deep groan of their body.", "There is some moderate bubbling in the background.", "They seem to have a healthy metabolism as well.")
 
-							var/obj/item/organ/internal/heart/heart = LAZYACCESS(M.internal_organs_by_name, O_HEART)
+							var/obj/item/organ/internal/heart/heart = M.organ_in(O_HEART)
 							sound_strength = "hear"
 							sound = "no heartbeat"
 							if(heart)
@@ -261,7 +261,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory, INTERACT_HAND_UNGATED(null, PR
 										if(PULSE_THREADY)
 											sound = span_warning("an extremely rapid, thready, irregular heartbeat")
 
-							var/obj/item/organ/internal/lungs/L = LAZYACCESS(M.internal_organs_by_name, O_LUNGS)
+							var/obj/item/organ/internal/lungs/L = M.organ_in(O_LUNGS)
 							if(!L || M.losebreath)
 								sound += span_warning(" and no respiration")
 							else if(M.is_lung_ruptured() || M.oxygen_debt() > 50)
@@ -272,10 +272,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory, INTERACT_HAND_UNGATED(null, PR
 						//ORGANS INVENTORY: Appendix, Intestines, Kidneys, Liver, Spleen, Stomach.
 						//Of these, the Intestines, Stomach, Liver, and Kidneys make noise.
 						if(BP_GROIN)
-							var/obj/item/organ/internal/intestine/intestine = LAZYACCESS(M.internal_organs_by_name, O_INTESTINE)
-							var/obj/item/organ/internal/stomach/stomach = LAZYACCESS(M.internal_organs_by_name, O_STOMACH)
-							var/obj/item/organ/internal/kidneys/kidneys = LAZYACCESS(M.internal_organs_by_name, O_KIDNEYS)
-							var/obj/item/organ/internal/liver/liver = LAZYACCESS(M.internal_organs_by_name, O_LIVER)
+							var/obj/item/organ/internal/intestine/intestine = M.organ_in(O_INTESTINE)
+							var/obj/item/organ/internal/stomach/stomach = M.organ_in(O_STOMACH)
+							var/obj/item/organ/internal/kidneys/kidneys = M.organ_in(O_KIDNEYS)
+							var/obj/item/organ/internal/liver/liver = M.organ_in(O_LIVER)
 							sound_strength = "hear"
 							sound = span_warning("no gastric sounds,")
 							if(intestine)

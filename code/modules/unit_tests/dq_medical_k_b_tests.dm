@@ -64,7 +64,7 @@
 
 /datum/unit_test/dq_k_b_d25_organ_meat_from_organ/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/heart/O = H.internal_organs_by_name[O_HEART]
+	var/obj/item/organ/internal/heart/O = H.organ_in(O_HEART)
 	TEST_ASSERT_NOTNULL(O, "setup: the human has a heart")
 	O.robotic = ORGAN_ROBOT
 	O.meat_type = null

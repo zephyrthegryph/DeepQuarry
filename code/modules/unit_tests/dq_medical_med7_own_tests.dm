@@ -29,7 +29,7 @@
 
 /datum/unit_test/dq_med7_d10_defib_window/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/brain = H.organ_in(O_BRAIN)
 	TEST_ASSERT(istype(brain), "setup: the human needs a brain")
 	brain.reset_defib_window()
 	TEST_ASSERT_EQUAL(brain.defib_window_left(), CONFIG_GET(number/defib_timer) MINUTES, "a fresh brain has the whole configured window")
@@ -48,7 +48,7 @@
 
 /datum/unit_test/dq_med7_d10_defib_window_follows_death/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/brain = H.organ_in(O_BRAIN)
 	TEST_ASSERT(istype(brain), "setup: the human needs a brain")
 	brain.reset_defib_window()
 	TEST_ASSERT(!brain.defib_decaying, "a living owner's brain does not decay")
@@ -104,7 +104,7 @@
 
 /datum/unit_test/dq_med7_c24_quiet_teardown/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/liver = H.internal_organs_by_name[O_LIVER]
+	var/obj/item/organ/internal/liver = H.organ_in(O_LIVER)
 	var/datum/affliction/custom/A = H.body.afflict(/datum/affliction/custom, liver, 10)
 	TEST_ASSERT_NOTNULL(A, "setup: the affliction should land")
 	H.body.dirty = 0
@@ -131,7 +131,7 @@
 
 /datum/unit_test/dq_med7_d20_verb_compat_missing_parent/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/heart = H.internal_organs_by_name[O_HEART]
+	var/obj/item/organ/internal/heart = H.organ_in(O_HEART)
 	TEST_ASSERT_NOTNULL(heart, "setup: the human needs a heart")
 	var/old_parent = heart.parent_organ
 	heart.parent_organ = "no such limb"
@@ -152,14 +152,14 @@
 
 /datum/unit_test/dq_med7_p2k1_install_mmi_holder/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/brain = H.organ_in(O_BRAIN)
 	brain?.removed()
 	qdel(brain)
 	var/obj/item/mmi/M = allocate(/obj/item/mmi)
 	var/obj/item/organ/internal/mmi_holder/holder = install_mmi_holder(H, M)
 	TEST_ASSERT_NOTNULL(holder, "a holder is made")
 	TEST_ASSERT_EQUAL(M.loc, holder, "the MMI sits inside its holder")
-	TEST_ASSERT_EQUAL(H.internal_organs_by_name[O_BRAIN], holder, "the holder takes the brain slot")
+	TEST_ASSERT_EQUAL(H.organ_in(O_BRAIN), holder, "the holder takes the brain slot")
 
 /// D24: a limb's wound view is cached until a wound changes, and a rebuild replaces the list
 /// instead of mutating the one a caller may still be iterating.

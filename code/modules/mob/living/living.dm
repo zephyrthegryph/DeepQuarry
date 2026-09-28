@@ -57,7 +57,7 @@
 	for(var/OR in organs?.Copy())
 		if(isdatum(OR))
 			qdel(OR)
-	for(var/OR in internal_organs?.Copy())
+	for(var/OR in internal_organ_list())
 		if(isdatum(OR))
 			qdel(OR)
 
@@ -436,7 +436,7 @@
 	return 0
 
 /mob/living/carbon/drop_from_inventory(obj/item/W, atom/target = null)
-	return !(W in internal_organs) && ..()
+	return !has_internal_organ(W) && ..()
 
 /mob/living/proc/drop_both_hands()
 	if(get_equipped_item(SLOT_ID_HAND_L))
@@ -545,7 +545,7 @@
 	if(!blood && ishuman(src))
 		var/mob/living/carbon/human/H = src
 		if(!HAS_SYNTHETIC_BIOLOGY(H))
-			var/obj/item/organ/internal/liver/L = LAZYACCESS(H.internal_organs_by_name, O_LIVER)
+			var/obj/item/organ/internal/liver/L = H.organ_in(O_LIVER)
 			if(!L || L.is_broken())
 				blood = TRUE
 

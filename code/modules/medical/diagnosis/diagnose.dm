@@ -282,7 +282,7 @@
 /datum/body/humanoid/proc/diagnose_internal_organs(datum/diagnosis/D, datum/diagnostic_profile/P)
 	var/mob/living/carbon/human/H = owner
 	for(var/organ_tag in H.species.has_organ)
-		if(H.internal_organs_by_name[organ_tag])
+		if(H.organ_in(organ_tag))
 			continue
 		var/obj/item/organ/missing_type = H.species.has_organ[organ_tag]
 		LAZYADD(D.parts, list(list(
@@ -291,7 +291,7 @@
 			"band" = DIAG_BAND_CRITICAL,
 			"flags" = list("missing"),
 		)))
-	for(var/obj/item/organ/I as anything in H.internal_organs)
+	for(var/obj/item/organ/I as anything in H.internal_organ_list())
 		if(!(biology_of(I) & P.biology))
 			continue
 		var/list/flags = list()

@@ -462,9 +462,9 @@
 /datum/om/stage/life/radiation/carbon/human/proc/irradiate_organ(mob/living/carbon/human/self, amount, autopsy_label, organ_tag, flags = NONE)
 	var/obj/item/organ/internal/I
 	if(organ_tag)
-		I = self.internal_organs_by_name[organ_tag]
-	else if(self.internal_organs.len)
-		I = pick(self.internal_organs)
+		I = self.organ_in(organ_tag)
+	else if(length(self.internal_organ_list()))
+		I = pick(self.internal_organ_list())
 	if(!istype(I))
 		return null
 	I.add_autopsy_data(autopsy_label, amount)
@@ -473,7 +473,7 @@
 
 /// Organ damage or, rarely, a malignant growth.
 /datum/om/stage/life/radiation/carbon/human/proc/radiation_organ_mutation(mob/living/carbon/human/self, damage, rad_mod, malignant_spread_chance)
-	if(!self.internal_organs.len)
+	if(!length(self.internal_organ_list()))
 		return
 	if(prob(2))
 		self.random_malignant_organ(TRUE, FALSE, prob(malignant_spread_chance))
@@ -579,7 +579,7 @@
 	if(!(self.biology() & BIOLOGY_ORGANIC))
 		return
 	var/rads = self.accumulated_rads
-	if(self.internal_organs_by_name[O_EYES])
+	if(self.organ_in(O_EYES))
 		if(prob(5) && prob(rads * RADIATION_SPEED_COEFFICIENT))
 			to_chat(self, span_warning("Your eyes water."))
 			self.status_adjust(EFFECT_BLURRY, 5)
@@ -781,7 +781,7 @@
 /datum/om/stage/life/breathing/carbon/human/proc/suit_breath_sounds(mob/living/carbon/human/self, failed_inhale, failed_exhale)
 	if(!self.client || !self.internal)
 		return
-	var/obj/item/organ/internal/lungs/L = self.internal_organs_by_name[O_LUNGS]
+	var/obj/item/organ/internal/lungs/L = self.organ_in(O_LUNGS)
 	if(!L || L.is_robotic() || !is_below_sound_pressure(get_turf(self)))
 		return
 	if(!failed_inhale && COOLDOWN_FINISHED(self, breath_sound_cooldown)) // Were we able to inhale successfully? Play inhale.
@@ -1136,7 +1136,7 @@
 	if(self.stat != DEAD && self.robobody_count)
 		if(!self.nif || !self.nif.flag_check(NIF_O_HEATSINKS,NIF_FLAGS_OTHER))
 			self.adjust_bodytemperature(round(self.robobody_count*1.15))
-		var/obj/item/organ/internal/robotic/heatsink/HS = self.internal_organs_by_name[O_HEATSINK]
+		var/obj/item/organ/internal/robotic/heatsink/HS = self.organ_in(O_HEATSINK)
 		if(!HS || HS.is_broken()) // However, NIF Heatsinks will not compensate for a core FBP component (your heatsink) being lost.
 			self.adjust_bodytemperature(round(self.robobody_count*0.5))
 
@@ -1301,7 +1301,7 @@
 	if(self.species.get_ssd(self) && !self.client && !self.teleop)
 		return FALSE
 	if(self.species.vision_organ)
-		var/obj/item/organ/vision = self.internal_organs_by_name[self.species.vision_organ]
+		var/obj/item/organ/vision = self.organ_in(self.species.vision_organ)
 		if(!vision || vision.is_bruised())
 			return FALSE
 	return TRUE
@@ -1444,7 +1444,7 @@
 		self.status_set(EFFECT_BLURRY, 0)
 		self.clear_alert("blind")
 		return
-	var/obj/item/organ/vision = self.internal_organs_by_name[self.species.vision_organ]
+	var/obj/item/organ/vision = self.organ_in(self.species.vision_organ)
 	if(!vision || vision.is_broken())   // Vision organs cut out or broken? Permablind.
 		self.status_set(EFFECT_BLINDED, 1)
 		self.blinded = 1
@@ -2048,7 +2048,7 @@
 	var/modifier_set = self.factor(BF_PULSE_SET)
 	modifier_set = modifier_set < 0 ? null : round(modifier_set)
 
-	if(!self.internal_organs_by_name[O_HEART])
+	if(!self.organ_in(O_HEART))
 		temp = PULSE_NONE
 		if(!isnull(modifier_set))
 			temp = modifier_set
@@ -2060,13 +2060,13 @@
 			temp = modifier_set
 		return temp	//that's it, you're dead, nothing can influence your pulse, aside from outside means.
 
-	var/obj/item/organ/internal/heart/Pump = self.internal_organs_by_name[O_HEART]
+	var/obj/item/organ/internal/heart/Pump = self.organ_in(O_HEART)
 
 	// VF / asystole: the heart isn't moving blood (cardiac_arrhythmia).
 	if(!self.has_cardiac_output())
 		return isnull(modifier_set) ? PULSE_NONE : modifier_set
 
-	var/obj/item/organ/internal/Control = self.internal_organs_by_name[O_BRAIN] // any brain-slot occupant
+	var/obj/item/organ/internal/Control = self.organ_in(O_BRAIN) // any brain-slot occupant
 
 	if(Control)
 		brain_modifier = Control.get_control_efficiency()
@@ -2135,7 +2135,7 @@
 	if(self.pulse == PULSE_NONE)
 		return
 
-	var/obj/item/organ/internal/heart/H = self.internal_organs_by_name[O_HEART]
+	var/obj/item/organ/internal/heart/H = self.organ_in(O_HEART)
 
 	if(!H || (H.is_robotic()))
 		return

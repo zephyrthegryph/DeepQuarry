@@ -463,9 +463,9 @@
 		if("oxygen_debt_40")
 			H.add_oxygen_debt(40, "balance harness")
 		if("brain_30")
-			H.injure(INJURY_NEURAL, 30, H.internal_organs_by_name[O_BRAIN])
+			H.injure(INJURY_NEURAL, 30, H.organ_in(O_BRAIN))
 		if("heart_20")
-			H.injure(INJURY_BLUNT, 20, H.internal_organs_by_name[O_HEART])
+			H.injure(INJURY_BLUNT, 20, H.organ_in(O_HEART))
 		if("pain_60")
 			H.injure(INJURY_PAIN, 60)
 
@@ -483,10 +483,10 @@
 		if("oxygen_debt_40")
 			return H.oxygen_debt()
 		if("brain_30")
-			var/obj/item/organ/internal/brain/B = H.internal_organs_by_name[O_BRAIN]
+			var/obj/item/organ/internal/brain/B = H.organ_in(O_BRAIN)
 			return B ? B.damage : 0
 		if("heart_20")
-			var/obj/item/organ/internal/heart/heart = H.internal_organs_by_name[O_HEART]
+			var/obj/item/organ/internal/heart/heart = H.organ_in(O_HEART)
 			return heart ? heart.damage : 0
 		if("pain_60")
 			return H.current_pain()

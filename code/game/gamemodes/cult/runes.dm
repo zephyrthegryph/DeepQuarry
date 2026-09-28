@@ -293,7 +293,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 	user.mend(TREAT_TISSUE_REPAIR, 5)
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
-		for(var/obj/item/organ/internal/I in H.internal_organs)
+		for(var/obj/item/organ/internal/I in H.internal_organ_list())
 			if(I.damage > 0)
 				H.mend(TREAT_RESTORATION, 5, I)		//Heals 5 damage per organ per use
 			if(I.damage <= 5 && I.organ_tag == O_EYES)

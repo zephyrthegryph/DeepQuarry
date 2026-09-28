@@ -122,7 +122,7 @@
 
 	if(LINDA_GAS_AMT(environment, GAS_PHORON) > 0 || locate_on(T, /obj/effect/alien/weeds))
 		if(!regenerate(H))
-			var/obj/item/organ/internal/xenos/plasmavessel/P = H.internal_organs_by_name[O_PLASMA]
+			var/obj/item/organ/internal/xenos/plasmavessel/P = H.organ_in(O_PLASMA)
 			if(istype(P))
 				P.adjust_plasma(weeds_plasma_rate)
 	..()
@@ -145,7 +145,7 @@
 		return 1
 
 	//next internal organs
-	for(var/obj/item/organ/internal/I in H.internal_organs)
+	for(var/obj/item/organ/internal/I in H.internal_organ_list())
 		if(I.damage > 0)
 			H.mend(TREAT_RESTORATION, heal_rate, I)
 			if (prob(5))

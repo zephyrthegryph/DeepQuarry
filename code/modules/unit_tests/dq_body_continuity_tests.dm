@@ -25,7 +25,7 @@
 	var/list/parts
 	if(ishuman(L))
 		var/mob/living/carbon/human/H = L
-		parts = H.organs | H.internal_organs
+		parts = H.organs | H.internal_organ_list()
 	for(var/datum/affliction/A as anything in L.body.afflictions)
 		if(QDELETED(A))
 			return "[A.type] is deleted but still listed"
@@ -45,7 +45,7 @@
 /// affliction. Returns them as a list (wound, lesion, systemic).
 /proc/dq_test_injure_everywhere(mob/living/carbon/human/H)
 	H.injure(INJURY_CUT, 20, BP_L_ARM, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
-	var/obj/item/organ/internal/liver = H.internal_organs_by_name[O_LIVER]
+	var/obj/item/organ/internal/liver = H.organ_in(O_LIVER)
 	H.injure(INJURY_BLUNT, 20, liver, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	H.body.afflict(/datum/affliction/toxic_poisoning, null, 40)
 	var/obj/item/organ/external/arm = H.get_organ(BP_L_ARM)
@@ -101,7 +101,7 @@
 /datum/unit_test/dq_continuity_revive_rebuilds_organs/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/list/harm = dq_test_injure_everywhere(H)
-	var/obj/item/organ/old_liver = H.internal_organs_by_name[O_LIVER]
+	var/obj/item/organ/old_liver = H.organ_in(O_LIVER)
 	var/obj/item/organ/old_arm = H.get_organ(BP_L_ARM)
 	H.death()
 
@@ -183,7 +183,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/datum/transhuman/body_record/BR = new(H)
 	var/list/harm = dq_test_injure_everywhere(H)
-	var/obj/item/organ/old_liver = H.internal_organs_by_name[O_LIVER]
+	var/obj/item/organ/old_liver = H.organ_in(O_LIVER)
 	H.death()
 
 	BR.revive_xenochimera(H, TRUE, FALSE)
@@ -208,7 +208,7 @@
 	var/mob/living/carbon/human/H = new(pod)
 	var/datum/body/B = H.body
 	var/list/harm = dq_test_injure_everywhere(H)
-	var/obj/item/organ/liver = H.internal_organs_by_name[O_LIVER]
+	var/obj/item/organ/liver = H.organ_in(O_LIVER)
 	pod.set_occupant(H)
 
 	pod.despawn_occupant(H)
@@ -336,7 +336,7 @@
 /datum/unit_test/dq_continuity_brain_death_blocks_defib/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/shockpaddles/paddles = allocate(/obj/item/shockpaddles)
-	var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/brain = H.organ_in(O_BRAIN)
 	TEST_ASSERT_NOTNULL(brain, "no brain")
 	brain.reset_defib_window() // freshly dead
 	H.death()

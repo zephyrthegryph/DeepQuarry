@@ -3393,7 +3393,7 @@
 			M.injure(INJURY_TOXIN, 2 * removed, source = src)
 		if(dose > 60 && ishuman(M) && prob(5))
 			var/mob/living/carbon/human/H = M
-			var/obj/item/organ/internal/heart/L = H.internal_organs_by_name[O_HEART]
+			var/obj/item/organ/internal/heart/L = H.organ_in(O_HEART)
 			if (L && istype(L))
 				if(dose < 120)
 					H.injure(INJURY_TOXIN, 10 * removed, L, src, flags = INJURE_IGNORE_RESISTANCE)
@@ -4835,7 +4835,7 @@
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
 			if(H.species.has_organ[O_LIVER])
-				var/obj/item/organ/internal/L = H.internal_organs_by_name[O_LIVER]
+				var/obj/item/organ/internal/L = H.organ_in(O_LIVER)
 				if(!L)
 					return
 				var/adjust_liver = rand(-3, 2)
@@ -5884,7 +5884,7 @@
 	if(prob(1))
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
-			var/obj/item/organ/internal/eyes/E = H.internal_organs_by_name[O_EYES]
+			var/obj/item/organ/internal/eyes/E = H.organ_in(O_EYES)
 			if(istype(E))
 				if(E.is_robotic())
 					return
@@ -5901,7 +5901,7 @@
 	// Its trauma and burn repair is the treatment_tags profile.
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		for(var/obj/item/organ/internal/I in H.internal_organs)
+		for(var/obj/item/organ/internal/I in H.internal_organ_list())
 			if(I.is_robotic() || !(I.organ_tag in list(O_HEART)))
 				continue
 			if(I.damage < 100 && prob(10))

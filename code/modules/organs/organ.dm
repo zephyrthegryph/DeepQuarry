@@ -682,7 +682,7 @@ DECLARE_INTERACTIONS(/obj/item/organ, \
 	if(removed && organ_verbs)	// Do we share verbs with any other organs? Are they functioning?
 		var/list/all_organs = list()
 		all_organs |= owner.organs
-		all_organs |= owner.internal_organs
+		all_organs |= owner.internal_organ_list()
 
 		for(var/obj/item/organ/O in all_organs)
 			if(!(O.status & ORGAN_DEAD) && O.organ_verbs && O.check_verb_compatability())

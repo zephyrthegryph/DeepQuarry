@@ -620,7 +620,7 @@ DECLARE_REF(/obj/item, "loc", BACK_VIA, list(/obj/machinery = "component_parts")
 
 	if(istype(H))
 
-		var/obj/item/organ/internal/eyes/eyes = H.internal_organs_by_name[O_EYES]
+		var/obj/item/organ/internal/eyes/eyes = H.organ_in(O_EYES)
 
 		if(H != user)
 			for(var/mob/O in (viewers(M) - user - M))

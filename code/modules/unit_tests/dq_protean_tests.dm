@@ -157,7 +157,7 @@
 		TEST_ASSERT(!(treatment_tag_biology(tag) & BIOLOGY_NANOFORM), "[tag] must not reach nanites")
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human/protean)
 	for(var/organ_tag in list(O_ORCH, O_FACT))
-		var/obj/item/organ/internal/O = H.internal_organs_by_name[organ_tag]
+		var/obj/item/organ/internal/O = H.organ_in(organ_tag)
 		TEST_ASSERT_EQUAL(O.robotic, ORGAN_NANOFORM, "the [organ_tag] is a nanite organ")
 	var/datum/affliction/strain = H.body.afflict(/datum/affliction/nanite/form_strain, null, 30)
 	TEST_ASSERT_EQUAL(H.mend(TREAT_TISSUE_REPAIR, 100), 0, "tissue repair must not treat nanites")
@@ -198,7 +198,7 @@
 
 /datum/unit_test/dq_nanite_orchestrator_damage/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human/protean)
-	var/obj/item/organ/internal/nano/orchestrator/O = H.internal_organs_by_name[O_ORCH]
+	var/obj/item/organ/internal/nano/orchestrator/O = H.organ_in(O_ORCH)
 	H.injure(INJURY_BLUNT, 5, O, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	var/datum/affliction/A = H.body.find_affliction(/datum/affliction/nanite/orchestrator_damage, O)
 	TEST_ASSERT_NOTNULL(A, "a hit on the orchestrator should damage the swarm's control")

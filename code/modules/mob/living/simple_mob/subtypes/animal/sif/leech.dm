@@ -430,7 +430,7 @@
 		return
 
 	if(host && COOLDOWN_FINISHED(src, feeding_cooldown))
-		var/list/host_internal_organs = host.internal_organs
+		var/list/host_internal_organs = host.internal_organ_list()
 
 		for(var/obj/item/organ/internal/O in host_internal_organs)	// Remove organs with maximum damage.
 			if(O.damage >= O.max_damage)
@@ -463,7 +463,7 @@
 	if(docile || !host || !COOLDOWN_FINISHED(src, feeding_cooldown))
 		return
 	var/list/organs = list()
-	for(var/obj/item/organ/internal/O in host.internal_organs)
+	for(var/obj/item/organ/internal/O in host.internal_organ_list())
 		if(O.damage < O.max_damage)
 			organs += O
 	if(length(organs))

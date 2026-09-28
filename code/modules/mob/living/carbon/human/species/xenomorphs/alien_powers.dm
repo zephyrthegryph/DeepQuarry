@@ -11,7 +11,7 @@
 
 /mob/living/carbon/human/proc/gain_plasma(amount)
 
-	var/obj/item/organ/internal/xenos/plasmavessel/I = internal_organs_by_name[O_PLASMA]
+	var/obj/item/organ/internal/xenos/plasmavessel/I = organ_in(O_PLASMA)
 	if(!istype(I)) return
 
 	if(amount)
@@ -20,13 +20,13 @@
 
 /mob/living/carbon/human/proc/check_alien_ability(cost,needs_foundation,needs_organ)	//Returns 1 if the ability is clear for usage.
 
-	var/obj/item/organ/internal/xenos/plasmavessel/P = internal_organs_by_name[O_PLASMA]
+	var/obj/item/organ/internal/xenos/plasmavessel/P = organ_in(O_PLASMA)
 	if(!istype(P))
 		to_chat(src, span_danger("Your plasma vessel has been removed!"))
 		return
 
 	if(needs_organ)
-		var/obj/item/organ/internal/I = internal_organs_by_name[needs_organ]
+		var/obj/item/organ/internal/I = organ_in(needs_organ)
 		if(!I)
 			to_chat(src, span_danger("Your [needs_organ] has been removed!"))
 			return
@@ -62,7 +62,7 @@
 		to_chat(src, span_alium("You need to be closer."))
 		return
 
-	var/obj/item/organ/internal/xenos/plasmavessel/I = M.internal_organs_by_name[O_PLASMA]
+	var/obj/item/organ/internal/xenos/plasmavessel/I = M.organ_in(O_PLASMA)
 	if(!istype(I))
 		to_chat(src, span_alium("Their plasma vessel is missing."))
 		return

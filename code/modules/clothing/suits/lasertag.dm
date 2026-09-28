@@ -148,7 +148,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/lasertag, \
 				wearer.injure(INJURY_ELECTRIC, lasertag_max_health*50, BP_TORSO, src) // High-voltage electrical shock
 				if(ishuman(wearer))
 					var/mob/living/carbon/human/human_wearer = wearer
-					var/obj/item/organ/internal/heart/H = human_wearer.internal_organs_by_name[O_HEART]
+					var/obj/item/organ/internal/heart/H = human_wearer.organ_in(O_HEART)
 					if(H)
 						if(H.robotic)
 							H.break_organ()

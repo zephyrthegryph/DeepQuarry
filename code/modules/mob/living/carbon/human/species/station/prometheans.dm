@@ -362,7 +362,7 @@
 		if(healed <= 0)
 			continue
 		nutrition_cost += healed
-		var/obj/item/organ/internal/regennetwork/network = H.internal_organs_by_name[mechanisms[tag]]
+		var/obj/item/organ/internal/regennetwork/network = H.organ_in(mechanisms[tag])
 		if(network)
 			// Strain rises with the work done (bug 19: it never used to).
 			strain_negation += healed * max(0, 1 - network.get_strain_percent(healed))

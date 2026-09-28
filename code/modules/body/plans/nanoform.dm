@@ -98,7 +98,7 @@
 	if((category == INJURY_CATEGORY_PHYSICAL || category == INJURY_CATEGORY_THERMAL) && amount >= NANITE_COHESION_MIN_HIT)
 		afflict(/datum/affliction/nanite/cohesion_loss, null, amount * NANITE_COHESION_PER_POINT)
 	var/mob/living/carbon/human/H = owner
-	var/obj/item/organ/internal/nano/orchestrator/O = H.internal_organs_by_name?[O_ORCH]
+	var/obj/item/organ/internal/nano/orchestrator/O = H.organ_in(O_ORCH)
 	if(!istype(O))
 		return
 	var/control_damage = 0
@@ -141,7 +141,7 @@
 			continue
 		mend(TREAT_PLATING_REPAIR, E.get_trauma() + E.get_burn(), E)
 		mend(TREAT_WIRING_REPAIR, E.get_trauma() + E.get_burn(), E)
-	var/obj/item/organ/internal/nano/orchestrator/O = H.internal_organs_by_name?[O_ORCH]
+	var/obj/item/organ/internal/nano/orchestrator/O = H.organ_in(O_ORCH)
 	if(istype(O))
 		mend(TREAT_CALIBRATION, AFFLICTION_SEVERITY_TERMINAL, O)
 	var/datum/affliction/cohesion = find_affliction(/datum/affliction/nanite/cohesion_loss)
@@ -159,7 +159,7 @@
 	regrow_structure()
 	var/datum/affliction/cohesion = find_affliction(/datum/affliction/nanite/cohesion_loss)
 	cohesion?.cure()
-	var/obj/item/organ/internal/nano/orchestrator/O = H.internal_organs_by_name?[O_ORCH]
+	var/obj/item/organ/internal/nano/orchestrator/O = H.organ_in(O_ORCH)
 	if(istype(O))
 		mend(TREAT_CALIBRATION, AFFLICTION_SEVERITY_TERMINAL, O)
 	var/points = max(steel, 0) / NANOFORM_STEEL_PER_POINT
@@ -189,7 +189,7 @@
 		new_limb.sync_colour_to_human(H)
 		regrown++
 	for(var/organ_tag in H.species.has_organ)
-		if(H.internal_organs_by_name[organ_tag])
+		if(H.organ_in(organ_tag))
 			continue
 		var/organ_type = H.species.has_organ[organ_tag]
 		new organ_type(H, TRUE) // takes its place in its limb

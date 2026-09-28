@@ -125,7 +125,7 @@
 
 /datum/unit_test/dq_bodyscanner_custom_affliction_findings/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/liver = H.internal_organs_by_name[O_LIVER]
+	var/obj/item/organ/liver = H.organ_in(O_LIVER)
 	TEST_ASSERT_NOTNULL(liver, "test human has no liver")
 	var/datum/affliction/custom/A = H.body.afflict(/datum/affliction/custom, liver, 60)
 	TEST_ASSERT_NOTNULL(A, "custom affliction could not be afflicted")

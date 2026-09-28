@@ -136,8 +136,8 @@
 	physiology_test_run(revived, 3)
 	physiology_test_run(control, 3)
 	TEST_ASSERT(revived.oxygen_debt() < control.oxygen_debt(), "the grace should repay the debt faster ([revived.oxygen_debt()] vs [control.oxygen_debt()])")
-	var/obj/item/organ/internal/brain/revived_brain = revived.internal_organs_by_name[O_BRAIN]
-	var/obj/item/organ/internal/brain/control_brain = control.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/revived_brain = revived.organ_in(O_BRAIN)
+	var/obj/item/organ/internal/brain/control_brain = control.organ_in(O_BRAIN)
 	TEST_ASSERT_NULL(revived_brain.find_lesion(/datum/affliction/lesion/ischemic_injury), "a debt being repaid in the grace grows no ischemic lesion")
 	TEST_ASSERT_NOTNULL(control_brain.find_lesion(/datum/affliction/lesion/ischemic_injury), "outside the grace the repaying debt still harms the brain")
 

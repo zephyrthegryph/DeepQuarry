@@ -876,7 +876,7 @@
 /datum/trait/positive/nobreathe/apply(datum/species/S, mob/living/carbon/human/H)
 	..()
 	H.set_does_not_breathe(TRUE)
-	var/obj/item/organ/internal/breathy = H.internal_organs_by_name[O_LUNGS]
+	var/obj/item/organ/internal/breathy = H.organ_in(O_LUNGS)
 	if(!breathy)
 		return
 	qdel(breathy) // deleting it detaches it

@@ -129,7 +129,7 @@ DECLARE_REF(/obj/item/nif, "nifsofts", OWNED_LIST, null)
 
 //Being implanted in some mob
 /obj/item/nif/proc/implant(mob/living/carbon/human/H)
-	var/obj/item/organ/brain = H.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/brain = H.organ_in(O_BRAIN)
 	if(istype(brain))
 		should_be_in = brain.parent_organ
 
@@ -157,7 +157,7 @@ DECLARE_REF(/obj/item/nif, "nifsofts", OWNED_LIST, null)
 	if(istype(H))
 		var/obj/item/organ/external/parent
 		//Try to find their brain and put it near that
-		var/obj/item/organ/brain = H.internal_organs_by_name[O_BRAIN]
+		var/obj/item/organ/brain = H.organ_in(O_BRAIN)
 		if(istype(brain))
 			should_be_in = brain.parent_organ
 

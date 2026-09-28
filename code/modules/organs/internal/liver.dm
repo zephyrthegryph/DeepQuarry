@@ -17,7 +17,7 @@
 				apply_lesion_damage(0.2 * PROCESS_ACCURACY, /datum/affliction/lesion/toxic_injury, TRUE)
 			//Damaged one shares the fun
 			else
-				var/obj/item/organ/internal/O = pick(owner.internal_organs)
+				var/obj/item/organ/internal/O = pick(owner.internal_organ_list())
 				if(O)
 					O.apply_lesion_damage(0.2 * PROCESS_ACCURACY, /datum/affliction/lesion/toxic_injury, TRUE)
 

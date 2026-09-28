@@ -200,7 +200,7 @@
 	var/list/organ_options = list()
 	for(var/obj/item/organ/E in organs)
 		organ_options |= E
-	for(var/obj/item/organ/I in internal_organs)
+	for(var/obj/item/organ/I in internal_organ_list())
 		organ_options |= I
 	var/obj/item/organ/issue_organ = rerun_ask(user, "a2", PROC_REF(custom_medical_issue), args, /datum/om/prompt/choice, message = "Which organ should this issue be attached to?", title = "Affect organ", choices = organ_options)
 	if(isnull(issue_organ))

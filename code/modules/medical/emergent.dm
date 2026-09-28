@@ -352,7 +352,7 @@
 	// real-medicine ischemic sensitivity:
 	//   kidneys > liver > eyes > heart > lungs
 	for(var/tag in list(O_LIVER, O_KIDNEYS, O_HEART, O_EYES, O_LUNGS))
-		var/obj/item/organ/internal/O = internal_organs_by_name?[tag]
+		var/obj/item/organ/internal/O = organ_in(tag)
 		if(!O)
 			continue
 		if(O.is_robotic())
@@ -374,7 +374,7 @@
 	// is the path real medicine warns about: prolonged shock → gut
 	// translocation → systemic infection.
 	if(scale > 0)
-		var/obj/item/organ/internal/intestine/gut = internal_organs_by_name?[O_INTESTINE]
+		var/obj/item/organ/internal/intestine/gut = organ_in(O_INTESTINE)
 		if(gut && !gut.is_robotic())
 			gut.adjust_germ_level(round(1 + 3 * scale))
 
@@ -387,7 +387,5 @@
 	var/obj/item/organ/O = H.get_organ(tag)
 	if(O)
 		return O
-	if(H.internal_organs_by_name)
-		return H.internal_organs_by_name[tag]
-	return null
+	return H.organ_in(tag)
 

@@ -1,9 +1,9 @@
 // Part queries (doc/medical_frameworks.md §2.3, slice O2).
 //
 // The ledger's tree slots are the truth; these read it, or the hook-maintained
-// caches where a lookup must be O(1). O3 converts the ~400 direct reads of
-// organs_by_name / internal_organs_by_name / organs / internal_organs to these
-// and then drops the mob-side caches.
+// caches where a lookup must be O(1). O-slots deleted the internal organ caches
+// (the mob's organ list and by-name map, and each limb's organ list):
+// organ_in() and internal_organ_list() read the limbs' keyed organ slots.
 
 /// The attached external part tagged `tag` (BP_*), or null. O(1).
 /datum/body/proc/part(tag)
@@ -11,7 +11,7 @@
 
 /// The attached internal organ tagged `tag` (O_*), or null. O(1).
 /datum/body/proc/organ(tag)
-	return owner.internal_organs_by_name?[tag]
+	return owner.organ_in(tag)
 
 /// The root part (the torso) of this body's tree, or null for a body with no
 /// part tree.
@@ -62,3 +62,65 @@
 /// The internal organs this limb holds.
 /obj/item/organ/external/proc/held_organs()
 	return slot_contents(SLOT_ID_PART_ORGANS)
+
+// ---- Organ slots (O-slots, code/__defines/body_parts.dm) ----
+
+/// Whether this mob's plan hangs its parts from SLOT_ID_PART_ROOT (the root
+/// slot's declared holder, part_slots.dm). Without one, organs sit loose in
+/// SLOT_ID_BODY and belong to the mob there (attach.dm).
+/mob/living/proc/has_part_tree()
+	return istype(body, /datum/body/humanoid)
+
+/// The attached internal organ keyed `tag` (O_*), or null. A keyed ledger
+/// lookup in the limb that last held that tag (a learned, species-agnostic
+/// hint: layouts are data in has_organ / parent_organ), then in every other
+/// attached limb, since surgery and modifiers may relocate organs.
+/mob/living/proc/organ_in(tag)
+	if(isnull(tag))
+		return null
+	var/static/list/limb_hint = list()
+	var/hint = limb_hint[tag]
+	if(hint)
+		var/obj/item/organ/external/E = organs_by_name?[hint]
+		var/datum/ledger/EL = E?.ledger
+		var/obj/item/organ/found = EL?.slot_lookup(SLOT_ID_PART_ORGANS, tag)
+		if(found?.owner == src)
+			return found
+	for(var/obj/item/organ/external/E as anything in organs)
+		var/datum/ledger/EL = E.ledger
+		var/obj/item/organ/found = EL?.slot_lookup(SLOT_ID_PART_ORGANS, tag)
+		// owner: a subtree being released lets its organs go before its limbs.
+		if(found?.owner == src)
+			limb_hint[tag] = E.organ_tag
+			return found
+	if(has_part_tree())
+		return null
+	// No tree: loose organs in the interior slot.
+	var/datum/ledger/L = ledger
+	for(var/obj/item/organ/O in L?.slots[SLOT_ID_BODY])
+		if(O.organ_tag == tag && O.owner == src && !istype(O, /obj/item/organ/external))
+			return O
+	return null
+
+/// Every attached internal organ, as a fresh list (safe to change while
+/// iterating it): each attached limb's organ slot, limbs in attach order
+/// (parents first), then for a mob with no part tree its loose organs.
+/mob/living/proc/internal_organ_list()
+	RETURN_TYPE(/list)
+	. = list()
+	for(var/obj/item/organ/external/E as anything in organs)
+		var/datum/ledger/EL = E.ledger
+		for(var/obj/item/organ/O as anything in EL?.slots[SLOT_ID_PART_ORGANS])
+			if(O.owner == src)
+				. += O
+	if(has_part_tree())
+		return
+	var/datum/ledger/L = ledger
+	for(var/obj/item/organ/O in L?.slots[SLOT_ID_BODY])
+		if(O.owner == src && !istype(O, /obj/item/organ/external))
+			. += O
+
+/// Whether `thing` is one of this mob's attached internal organs.
+/mob/living/proc/has_internal_organ(atom/movable/thing)
+	var/obj/item/organ/O = thing
+	return istype(O) && !istype(O, /obj/item/organ/external) && O.owner == src

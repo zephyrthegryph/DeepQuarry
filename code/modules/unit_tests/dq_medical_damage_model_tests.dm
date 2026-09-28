@@ -224,16 +224,22 @@
 	TEST_ASSERT(chest.vital, "the chest should be a vital part")
 	// Heavy hits can spill half their brute into an organ the chest holds (at
 	// random below integrity, always above it), which makes the chest's own share
-	// nondeterministic. This test is about the part itself, so hold no organs in it.
-	var/list/held_organs = chest.internal_organs
-	chest.internal_organs = null
+	// nondeterministic. This test is about the part itself, so hold no organs in
+	// it: they move (still attached) into the head's keyed organ slot.
+	var/obj/item/organ/external/head = H.get_organ(BP_HEAD)
+	var/list/held_organs = chest.held_organs()
+	for(var/obj/item/organ/O as anything in held_organs)
+		O.move_into(head, SLOT_ID_PART_ORGANS)
+	TEST_ASSERT(!length(chest.held_organs()), "the chest's organs should have moved to the head")
 	H.injure(INJURY_BLUNT, chest.max_damage * (DQ_VITAL_PART_LETHAL_MULT - 0.5), BP_TORSO, flags = DQ_TEST_INJURE)
 	var/fraction = (chest.get_trauma() + chest.get_burn()) / chest.max_damage
 	TEST_ASSERT(fraction >= DQ_VITAL_PART_LETHAL_MULT - 0.6, "the chest should hold damage past its rated integrity (got [fraction]x)")
 	TEST_ASSERT(H.stat != DEAD, "a badly damaged but intact chest should not kill ([fraction]x integrity)")
 	H.injure(INJURY_BLUNT, chest.max_damage, BP_TORSO, flags = DQ_TEST_INJURE)
 	fraction = (chest.get_trauma() + chest.get_burn()) / chest.max_damage
-	chest.internal_organs = held_organs
+	for(var/obj/item/organ/O as anything in held_organs)
+		if(!QDELETED(O) && !QDELETED(chest))
+			O.move_into(chest, SLOT_ID_PART_ORGANS)
 	TEST_ASSERT(fraction >= DQ_VITAL_PART_LETHAL_MULT, "the chest should reach its lethal multiple (got [fraction]x)")
 	TEST_ASSERT_EQUAL(H.stat, DEAD, "a destroyed vital body part should kill ([fraction]x integrity)")
 
@@ -354,7 +360,7 @@
 
 /datum/unit_test/dq_medical_organ_detach_reattach_carries_afflictions/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/liver = H.internal_organs_by_name[O_LIVER]
+	var/obj/item/organ/internal/liver = H.organ_in(O_LIVER)
 	TEST_ASSERT_NOTNULL(liver, "no liver")
 	var/obj/item/organ/external/host_limb = H.get_organ(liver.parent_organ)
 	TEST_ASSERT_NOTNULL(host_limb, "no limb to hold the liver")
@@ -387,7 +393,7 @@
 /datum/unit_test/dq_medical_custom_affliction_runtime_config/Run()
 	TEST_ASSERT(!(/datum/affliction/custom in dq_catalogued_affliction_types()), "runtime-configured custom afflictions must not appear in the book")
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/lungs = H.internal_organs_by_name[O_LUNGS]
+	var/obj/item/organ/internal/lungs = H.organ_in(O_LUNGS)
 	var/datum/affliction/custom/A = H.body.afflict(/datum/affliction/custom, lungs, AFFLICTION_SEVERITY_TERMINAL)
 	TEST_ASSERT_NOTNULL(A, "custom affliction could not be afflicted")
 	A.name = "coughing sickness"
@@ -442,7 +448,7 @@
 	TEST_ASSERT(second != first, "a reagent change should rebuild the snapshot")
 	TEST_ASSERT(second[TREAT_BURN_CARE] > 0, "the rebuilt snapshot should see the new reagent")
 
-	var/obj/item/organ/internal/liver = H.internal_organs_by_name[O_LIVER]
+	var/obj/item/organ/internal/liver = H.organ_in(O_LIVER)
 	var/datum/affliction/custom/marker = H.body.afflict(/datum/affliction/custom, liver, 50)
 	TEST_ASSERT_NOTNULL(marker, "could not place an interference marker")
 	marker.interferes_with = list()

@@ -531,7 +531,7 @@ DECLARE_REF(/datum/contract_document, "holder", BACK, "contract_document")
 /proc/medical_trial_corpse_irrecoverable(mob/living/carbon/human/corpse)
 	if(!corpse || corpse.stat != DEAD)
 		return FALSE
-	var/obj/item/organ/brain = corpse.internal_organs_by_name?[O_BRAIN]
+	var/obj/item/organ/brain = corpse.organ_in(O_BRAIN)
 	return brain && brain.max_damage > 0 && brain.damage >= brain.max_damage
 
 /proc/contract_export_contents(atom/root)

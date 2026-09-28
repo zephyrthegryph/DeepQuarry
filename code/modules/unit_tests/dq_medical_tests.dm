@@ -15,7 +15,7 @@
 /datum/unit_test/dq_medical_dirty_domains_wake_exactly/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	H.body.dirty &= ~BODY_DIRTY_CONDITIONS
-	var/obj/item/organ/internal/heart = H.internal_organs_by_name[O_HEART]
+	var/obj/item/organ/internal/heart = H.organ_in(O_HEART)
 	TEST_ASSERT_NOTNULL(heart, "test human has no heart")
 	H.injure(INJURY_BLUNT, 1, heart, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	TEST_ASSERT(H.body.dirty & BODY_DIRTY_ORGANS, "organ damage did not invalidate organ conditions")
@@ -193,7 +193,7 @@
 /datum/unit_test/dq_medical_high_severity_damages_organ/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/organ/external/chest = H.get_organ(BP_TORSO)
-	var/obj/item/organ/internal/heart/heart = H.internal_organs_by_name[O_HEART]
+	var/obj/item/organ/internal/heart/heart = H.organ_in(O_HEART)
 	TEST_ASSERT_NOTNULL(heart, "test human has no heart")
 
 	var/datum/affliction/heart_damage/C = H.body.afflict(/datum/affliction/heart_damage, chest)
@@ -229,8 +229,8 @@
 	if(!O)
 		// Internal-organ tags (O_HEART, O_LUNGS, O_BRAIN, O_EYES, etc.)
 		// aren't returned by get_organ() — that one resolves external
-		// limbs only. Fall back to internal_organs_by_name.
-		O = H.internal_organs_by_name[organ_tag]
+		// limbs only. Fall back to the keyed organ slots (organ_in).
+		O = H.organ_in(organ_tag)
 	if(!O)
 		return null
 	return H.body.afflict(condition_type, O)
@@ -245,8 +245,8 @@
 
 /datum/unit_test/dq_medical_ischemia_damages_organs/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/liver = H.internal_organs_by_name[O_LIVER]
-	var/obj/item/organ/internal/kidneys = H.internal_organs_by_name[O_KIDNEYS]
+	var/obj/item/organ/internal/liver = H.organ_in(O_LIVER)
+	var/obj/item/organ/internal/kidneys = H.organ_in(O_KIDNEYS)
 	TEST_ASSERT_NOTNULL(liver, "no liver")
 	TEST_ASSERT_NOTNULL(kidneys, "no kidneys")
 
@@ -266,8 +266,8 @@
 
 /datum/unit_test/dq_medical_organ_failure_emergent/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/liver = H.internal_organs_by_name[O_LIVER]
-	var/obj/item/organ/internal/kidneys = H.internal_organs_by_name[O_KIDNEYS]
+	var/obj/item/organ/internal/liver = H.organ_in(O_LIVER)
+	var/obj/item/organ/internal/kidneys = H.organ_in(O_KIDNEYS)
 
 	dq_test_set_organ_damage(liver, liver.max_damage * 0.75)
 	dq_test_set_organ_damage(kidneys, kidneys.max_damage * 0.75)
@@ -379,7 +379,7 @@
 	TEST_ASSERT(saw_subdural, "second head hit didn't spawn subdural_hematoma")
 
 	// brain_damage Critical stage is damage-emergent at >80% brain damage.
-	var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/brain = H.organ_in(O_BRAIN)
 	TEST_ASSERT_NOTNULL(brain, "no brain organ")
 	dq_test_set_organ_damage(brain, brain.max_damage * 0.85)
 	H.dq_check_emergent_conditions()
@@ -413,7 +413,7 @@
 
 	// respiratory_failure is damage-emergent: drive lung damage past
 	// 70% and the emergent system should spawn it.
-	var/obj/item/organ/internal/lungs = H.internal_organs_by_name[O_LUNGS]
+	var/obj/item/organ/internal/lungs = H.organ_in(O_LUNGS)
 	TEST_ASSERT_NOTNULL(lungs, "no lungs organ")
 	dq_test_set_organ_damage(lungs, lungs.max_damage * 0.75)
 	H.dq_check_emergent_conditions()
@@ -704,7 +704,7 @@
 
 /datum/unit_test/dq_medical_emergent_auto_cures_when_organ_heals/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/lungs = H.internal_organs_by_name[O_LUNGS]
+	var/obj/item/organ/internal/lungs = H.organ_in(O_LUNGS)
 	// Spawn respiratory_failure by damaging lungs past 70%.
 	dq_test_set_organ_damage(lungs, lungs.max_damage * 0.8)
 	H.dq_check_emergent_conditions()
@@ -762,7 +762,7 @@
 
 /datum/unit_test/dq_medical_gut_translocation_during_ischemia/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/intestine = H.internal_organs_by_name[O_INTESTINE]
+	var/obj/item/organ/internal/intestine = H.organ_in(O_INTESTINE)
 	TEST_ASSERT_NOTNULL(intestine, "no intestine")
 	var/germ_before = intestine.germ_level
 	// Push the oxygen debt well past the ischemia threshold.
@@ -798,7 +798,7 @@
 	// at rad 150, since rad 300+ would be Severe.
 	H.radiation = 150
 	H.dq_check_metric_conditions()
-	var/obj/item/organ/internal/heart = H.internal_organs_by_name[O_HEART]
+	var/obj/item/organ/internal/heart = H.organ_in(O_HEART)
 	TEST_ASSERT_NOTNULL(heart, "no heart")
 	var/datum/affliction/acute_radiation/ar
 	for(var/datum/affliction/c in heart.afflictions_here())

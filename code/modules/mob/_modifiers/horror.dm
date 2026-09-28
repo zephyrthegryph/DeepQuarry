@@ -85,7 +85,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	//The mental effects.
 	unfortunate_soul.fear = min(100, unfortunate_soul.fear + 2) //Fear is increased by 1, but never above 100. You're in a scary place.
 	if(unfortunate_soul.life_tick % 20 == 0)
-		var/obj/item/organ/O = (length(unfortunate_soul.internal_organs) ? pick(unfortunate_soul.internal_organs) : null)
+		var/obj/item/organ/O = (length(unfortunate_soul.internal_organ_list()) ? pick(unfortunate_soul.internal_organ_list()) : null)
 		if(O) //If you don't have any internal organs, you know what? No spooky messages for you, freak.
 			var/spooky_message = pick("Join us...", "Stay with us...", "Stay forever...", "Don't leave us...", \
 			"Don't go...", "We can be as one...", "Become one with us...", \
@@ -105,43 +105,43 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 		var/organ_choice = pick("eyes", "heart", "lungs", "liver", "kidneys", "appendix", "voicebox", "spleen", "stomach", "intestine")
 		switch(organ_choice)
 			if("eyes")
-				var/obj/item/organ/internal/eyes/E = LAZYACCESS(unfortunate_soul.internal_organs_by_name, O_EYES)
+				var/obj/item/organ/internal/eyes/E = unfortunate_soul.organ_in(O_EYES)
 				if(E)
 					replace_eyes(unfortunate_soul, E)
 			if("heart")
-				var/obj/item/organ/internal/heart/H = LAZYACCESS(unfortunate_soul.internal_organs_by_name, O_HEART)
+				var/obj/item/organ/internal/heart/H = unfortunate_soul.organ_in(O_HEART)
 				if(H)
 					replace_heart(unfortunate_soul, H)
 			if("lungs")
-				var/obj/item/organ/internal/lungs/L = LAZYACCESS(unfortunate_soul.internal_organs_by_name, O_LUNGS)
+				var/obj/item/organ/internal/lungs/L = unfortunate_soul.organ_in(O_LUNGS)
 				if(L)
 					replace_lungs(unfortunate_soul, L)
 			if("liver")
-				var/obj/item/organ/internal/liver/L = LAZYACCESS(unfortunate_soul.internal_organs_by_name, O_LIVER)
+				var/obj/item/organ/internal/liver/L = unfortunate_soul.organ_in(O_LIVER)
 				if(L)
 					replace_liver(unfortunate_soul, L)
 			if("kidneys")
-				var/obj/item/organ/internal/kidneys/K = LAZYACCESS(unfortunate_soul.internal_organs_by_name, O_KIDNEYS)
+				var/obj/item/organ/internal/kidneys/K = unfortunate_soul.organ_in(O_KIDNEYS)
 				if(K)
 					replace_kidneys(unfortunate_soul, K)
 			if("appendix")
-				var/obj/item/organ/internal/appendix/A = LAZYACCESS(unfortunate_soul.internal_organs_by_name, O_APPENDIX)
+				var/obj/item/organ/internal/appendix/A = unfortunate_soul.organ_in(O_APPENDIX)
 				if(A)
 					replace_appendix(unfortunate_soul, A)
 			if("voicebox")
-				var/obj/item/organ/internal/voicebox/V = LAZYACCESS(unfortunate_soul.internal_organs_by_name, O_VOICE)
+				var/obj/item/organ/internal/voicebox/V = unfortunate_soul.organ_in(O_VOICE)
 				if(V)
 					replace_voicebox(unfortunate_soul, V)
 			if("spleen")
-				var/obj/item/organ/internal/spleen/S = LAZYACCESS(unfortunate_soul.internal_organs_by_name, O_SPLEEN)
+				var/obj/item/organ/internal/spleen/S = unfortunate_soul.organ_in(O_SPLEEN)
 				if(S)
 					replace_spleen(unfortunate_soul, S)
 			if("stomach")
-				var/obj/item/organ/internal/stomach/S = LAZYACCESS(unfortunate_soul.internal_organs_by_name, O_STOMACH)
+				var/obj/item/organ/internal/stomach/S = unfortunate_soul.organ_in(O_STOMACH)
 				if(S)
 					replace_stomach(unfortunate_soul, S)
 			if("intestine")
-				var/obj/item/organ/internal/intestine/E = LAZYACCESS(unfortunate_soul.internal_organs_by_name, O_INTESTINE)
+				var/obj/item/organ/internal/intestine/E = unfortunate_soul.organ_in(O_INTESTINE)
 				if(E)
 					replace_intestine(unfortunate_soul, E)
 
@@ -314,7 +314,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	if(L.stat)
 		to_chat(L, span_warning("You can't be unconscious or dead to see the unknown."))
 		return FALSE
-	var/obj/item/organ/internal/eyes/E = LAZYACCESS(L.internal_organs_by_name, O_EYES)
+	var/obj/item/organ/internal/eyes/E = L.organ_in(O_EYES)
 	if(E && istype(E, /obj/item/organ/internal/eyes/horror))
 		return ..()
 	return FALSE
@@ -325,7 +325,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 		L.end_body_effect(type, TRUE)
 		return
 	//We got eyes and they're special eyes?
-	var/obj/item/organ/internal/eyes/E = LAZYACCESS(L.internal_organs_by_name, O_EYES)
+	var/obj/item/organ/internal/eyes/E = L.organ_in(O_EYES)
 	if(!E)
 		L.end_body_effect(type, TRUE)
 	else if(!istype(E, /obj/item/organ/internal/eyes/horror))
@@ -392,8 +392,8 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	state.speech_name = pick("Lost Soul", "Rescued One", "The Embraced", "The Chosen", "The Unseen Horror", "Obedient Servant", "Willing Follower")
 
 	//SHUNT ALL THE IMPORTANT ORGANS TO THE CHEST!
-	var/obj/item/organ/internal/brain/brain = LAZYACCESS(unfortunate_soul.internal_organs_by_name, O_BRAIN)
-	var/obj/item/organ/internal/eyes/eyes = LAZYACCESS(unfortunate_soul.internal_organs_by_name, O_EYES)
+	var/obj/item/organ/internal/brain/brain = unfortunate_soul.organ_in(O_BRAIN)
+	var/obj/item/organ/internal/eyes/eyes = unfortunate_soul.organ_in(O_EYES)
 	var/obj/item/organ/external/chest/torso = unfortunate_soul.get_organ(BP_TORSO)
 	// Ledger moves from the head's organ slot into the torso's, within the body.
 	if(brain && torso && unfortunate_soul.should_have_organ(O_BRAIN))
@@ -503,12 +503,12 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	if(!COOLDOWN_FINISHED(state, heal_tick_cooldown_until))
 		return
 
-	var/obj/item/organ/internal/brain/brain = LAZYACCESS(unfortunate_soul.internal_organs_by_name, O_BRAIN)
+	var/obj/item/organ/internal/brain/brain = unfortunate_soul.organ_in(O_BRAIN)
 	if(unfortunate_soul.should_have_organ(O_BRAIN))
 		if(!brain) //Removed the brain? Can't do anything.
 			return
 
-	var/obj/item/organ/internal/heart/heart = LAZYACCESS(unfortunate_soul.internal_organs_by_name, O_HEART)
+	var/obj/item/organ/internal/heart/heart = unfortunate_soul.organ_in(O_HEART)
 	if(!heart)
 		return
 
@@ -539,7 +539,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	unfortunate_soul.mend(TREAT_NEURAL_REPAIR, 0.5)
 
 	//Handle our organs. We might not heal entirely before we come back, but that's fine. If we die again, we come back again.
-	for(var/obj/item/organ/internal/I in unfortunate_soul.internal_organs)
+	for(var/obj/item/organ/internal/I in unfortunate_soul.internal_organ_list())
 		I.periodic_step()
 		I.germ_level = max(0, I.germ_level - 25)
 		unfortunate_soul.mend(TREAT_RESTORATION, 2.5, I)

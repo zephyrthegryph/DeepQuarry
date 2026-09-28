@@ -10,12 +10,13 @@
 //
 // What the hooks derive, and who else may write it:
 //   organ.owner                      only adopt_part()/release_part()
-//   mob.organs, organs_by_name,      only adopt_part()/release_part(): derived
-//   mob.internal_organs,             caches of the ledger, kept until O3 turns
-//   mob.internal_organs_by_name      their readers into queries (queries.dm)
-//   limb.children, limb.parent,      only link_to_holder()/unlink_from_holder():
-//   limb.internal_organs             structural caches of the tree, kept
+//   mob.organs, organs_by_name       only adopt_part()/release_part(): derived
+//                                    caches of the ledger (external parts only)
+//   limb.children, limb.parent       only link_to_holder()/unlink_from_holder():
+//                                    structural caches of the tree, kept
 //                                    whether or not the tree has an owner
+// Internal organs have no cache at all (O-slots): the limb's keyed
+// SLOT_ID_PART_ORGANS slot is the record, read by organ_in() (queries.dm).
 // verify_body_tree() (verify.dm) recomputes all of it from the ledger.
 //
 // Destruction (O4 plugs in here). A deleted part leaves its holder's slot
@@ -126,10 +127,9 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 // ---- Structural caches ----
 
 /// Joined `holder`'s child or organ slot: record the edge in the tree caches.
+/// An internal organ's edge is its ledger entry alone.
 /obj/item/organ/proc/link_to_holder(atom/holder)
-	var/obj/item/organ/external/parent_limb = holder
-	if(istype(parent_limb))
-		LAZYOR(parent_limb.internal_organs, src)
+	return
 
 /obj/item/organ/external/link_to_holder(atom/holder)
 	var/obj/item/organ/external/parent_limb = holder
@@ -140,9 +140,7 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 
 /// Left `holder`'s child or organ slot.
 /obj/item/organ/proc/unlink_from_holder(atom/holder)
-	var/obj/item/organ/external/parent_limb = holder
-	if(istype(parent_limb))
-		LAZYREMOVE(parent_limb.internal_organs, src)
+	return
 
 /obj/item/organ/external/unlink_from_holder(atom/holder)
 	var/obj/item/organ/external/parent_limb = holder
@@ -174,13 +172,7 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 			M.organs_by_name = list()
 		M.organs |= part
 		M.organs_by_name[part.organ_tag] = part
-	else
-		if(!M.internal_organs)
-			M.internal_organs = list()
-		if(!M.internal_organs_by_name)
-			M.internal_organs_by_name = list()
-		M.internal_organs |= part
-		M.internal_organs_by_name[part.organ_tag] = part
+	// Internal organs: nothing to cache, the limb's keyed organ slot is the record.
 
 /// Removes `part` from `M`'s organ caches. A key another part now holds stays.
 /proc/dq_part_uncache(mob/living/M, obj/item/organ/part)
@@ -189,10 +181,6 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 		if(M.organs_by_name?[part.organ_tag] == part)
 			M.organs_by_name -= part.organ_tag
 		M.bad_external_organs?.Remove(part)
-	else
-		M.internal_organs?.Remove(part)
-		if(M.internal_organs_by_name?[part.organ_tag] == part)
-			M.internal_organs_by_name -= part.organ_tag
 
 /// `part` and every part below it, parents before children, read from the
 /// ledger's tree slots.

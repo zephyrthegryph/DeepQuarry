@@ -105,7 +105,7 @@
 	playsound(user, attack_sound, 25, 1, -1)
 
 /datum/unarmed_attack/proc/handle_eye_attack(mob/living/carbon/human/user, mob/living/carbon/human/target)
-	var/obj/item/organ/internal/eyes/eyes = target.internal_organs_by_name[O_EYES]
+	var/obj/item/organ/internal/eyes/eyes = target.organ_in(O_EYES)
 	if(eyes)
 		target.injure(INJURY_BLUNT, rand(3,4), eyes, user, flags = INJURE_SILENT)
 		user.visible_message(span_danger("[user] presses [p_their()] [eye_attack_text] into [target]'s [eyes.name]!"))

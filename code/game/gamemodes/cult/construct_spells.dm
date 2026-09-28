@@ -984,7 +984,7 @@
 		if(ishuman(L))
 			var/mob/living/carbon/human/H = L
 
-			for(var/obj/item/organ/internal/O in H.internal_organs)
+			for(var/obj/item/organ/internal/O in H.internal_organ_list())
 				if(O.damage > 0)
 					H.mend(TREAT_RESTORATION, 2, O)
 				if(O.damage <= 5 && O.organ_tag == O_EYES)

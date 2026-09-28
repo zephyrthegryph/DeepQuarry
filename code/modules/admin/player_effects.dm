@@ -358,7 +358,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			var/list/organs = list()
 			for(var/obj/item/organ/I in Tar.organs)
 				organs |= I
-			for(var/obj/item/organ/I in Tar.internal_organs)
+			for(var/obj/item/organ/I in Tar.internal_organ_list())
 				organs |= I
 			var/obj/item/organ/our_organ = act_ask(ui.user, action, params, ui, "a9", /datum/om/prompt/choice, message = "Choose an organ to damage:", title = "Organs", choices = organs)
 			if(isnull(our_organ))
@@ -388,7 +388,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			var/list/organs = list()
 			for(var/obj/item/organ/I in Tar.organs)
 				organs |= I
-			for(var/obj/item/organ/I in Tar.internal_organs)
+			for(var/obj/item/organ/I in Tar.internal_organ_list())
 				organs |= I
 			var/obj/item/organ/our_organ = act_ask(ui.user, action, params, ui, "a12", /datum/om/prompt/choice, message = "Choose an organ to become assisted:", title = "Organs", choices = organs)
 			if(isnull(our_organ))
@@ -404,7 +404,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			var/list/organs = list()
 			for(var/obj/item/organ/I in Tar.organs)
 				organs |= I
-			for(var/obj/item/organ/I in Tar.internal_organs)
+			for(var/obj/item/organ/I in Tar.internal_organ_list())
 				organs |= I
 			var/obj/item/organ/our_organ = act_ask(ui.user, action, params, ui, "a13", /datum/om/prompt/choice, message = "Choose an organ to become robotic:", title = "Organs", choices = organs)
 			if(isnull(our_organ))
@@ -420,7 +420,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			var/list/organs = list()
 			for(var/obj/item/organ/I in Tar.organs)
 				organs |= I
-			for(var/obj/item/organ/I in Tar.internal_organs)
+			for(var/obj/item/organ/I in Tar.internal_organ_list())
 				organs |= I
 			var/obj/item/organ/our_organ = act_ask(ui.user, action, params, ui, "a14", /datum/om/prompt/choice, message = "Choose an organ to heal:", title = "Organs", choices = organs)
 			if(isnull(our_organ))
@@ -448,7 +448,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			var/list/organs = list()
 			for(var/obj/item/organ/I in Tar.organs)
 				organs |= I
-			for(var/obj/item/organ/I in Tar.internal_organs)
+			for(var/obj/item/organ/I in Tar.internal_organ_list())
 				organs |= I
 			var/obj/item/organ/our_organ = act_ask(ui.user, action, params, ui, "a17", /datum/om/prompt/choice, message = "Choose an organ to damage:", title = "Organs", choices = organs)
 			if(isnull(our_organ))

@@ -22,7 +22,7 @@
 				owner.mend(TREAT_ANTITOXIN, 0.2) //The spleen takes damage but reduces toxins, up until it's broken.
 			//Damaged one shares the fun
 			else
-				var/obj/item/organ/internal/O = pick(owner.internal_organs)
+				var/obj/item/organ/internal/O = pick(owner.internal_organ_list())
 				if(O)
 					O.apply_lesion_damage(0.2 * spleen_tick, /datum/affliction/lesion/toxic_injury, TRUE)
 					owner.mend(TREAT_ANTITOXIN, 0.1) //Only half as effective.
@@ -31,8 +31,8 @@
 			var/obj/item/organ/external/OEx = pick(owner.organs)
 			OEx.adjust_germ_level(round(rand(0 * spleen_efficiency,-10 * spleen_efficiency)))
 
-			if(!src.is_bruised() && owner.internal_organs_by_name[O_BRAIN]) // If it isn't bruised, it helps with brain infections.
-				var/obj/item/organ/internal/brain/B = owner.internal_organs_by_name[O_BRAIN]
+			if(!src.is_bruised() && owner.organ_in(O_BRAIN)) // If it isn't bruised, it helps with brain infections.
+				var/obj/item/organ/internal/brain/B = owner.organ_in(O_BRAIN)
 				B.adjust_germ_level(round(rand(-3 * spleen_efficiency, -10 * spleen_efficiency)))
 
 
@@ -54,8 +54,8 @@
 		if(prob(1))
 			if(owner.injury_load(INJURY_CATEGORY_TOXIC) < owner.get_endurance() * 0.2 * spleen_efficiency)
 				owner.injure(INJURY_TOXIN, 2 * spleen_efficiency, flags = INJURE_SILENT)
-			else if(owner.internal_organs_by_name[O_BRAIN])
-				var/obj/item/organ/internal/brain/Brain = owner.internal_organs_by_name[O_BRAIN]
+			else if(owner.organ_in(O_BRAIN))
+				var/obj/item/organ/internal/brain/Brain = owner.organ_in(O_BRAIN)
 				Brain.adjust_germ_level(round(rand(5 * spleen_efficiency,20 * spleen_efficiency)))
 
 /obj/item/organ/internal/spleen/die()

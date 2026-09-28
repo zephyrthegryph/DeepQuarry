@@ -27,7 +27,7 @@
 	var/obj/item/organ/external/torso = H.get_organ(BP_TORSO)
 	var/obj/item/organ/external/arm = H.get_organ(BP_L_ARM)
 	var/obj/item/organ/external/hand = H.get_organ(BP_L_HAND)
-	var/obj/item/organ/internal/heart = H.internal_organs_by_name[O_HEART]
+	var/obj/item/organ/internal/heart = H.organ_in(O_HEART)
 	TEST_ASSERT_NOTNULL(torso, "no torso")
 	TEST_ASSERT_NOTNULL(hand, "no left hand")
 	TEST_ASSERT_EQUAL(H.slot_item(SLOT_ID_PART_ROOT), torso, "the torso is the mob's root part")
@@ -42,7 +42,7 @@
 	TEST_ASSERT_EQUAL(H.body.part(BP_L_HAND), hand, "body.part() finds the hand")
 	TEST_ASSERT_EQUAL(H.body.organ(O_HEART), heart, "body.organ() finds the heart")
 	TEST_ASSERT_EQUAL(length(H.body.parts()), length(H.organs), "parts() walks every limb")
-	TEST_ASSERT_EQUAL(length(H.body.organs()), length(H.internal_organs), "organs() walks every organ")
+	TEST_ASSERT_EQUAL(length(H.body.organs()), length(H.internal_organ_list()), "organs() walks every organ")
 	TEST_ASSERT_NULL(H.inventory_slot_id(torso), "the root part is not equipment")
 	dq_assert_body_tree(H, "fresh human")
 
@@ -143,14 +143,14 @@
 
 /datum/unit_test/dq_part_organ_remove_replace/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/liver = H.internal_organs_by_name[O_LIVER]
+	var/obj/item/organ/internal/liver = H.organ_in(O_LIVER)
 	var/obj/item/organ/external/host = liver.parent_part()
 	TEST_ASSERT_NOTNULL(host, "the liver sits in a limb")
 	TEST_ASSERT(liver.removed(), "removal succeeds")
 	TEST_ASSERT(isturf(liver.loc), "the liver lands under the patient")
 	TEST_ASSERT_NULL(liver.owner, "a removed liver has no owner")
-	TEST_ASSERT(!(liver in host.internal_organs), "the limb's cache dropped the liver")
-	TEST_ASSERT_NULL(H.internal_organs_by_name[O_LIVER], "the mob's cache dropped the liver")
+	TEST_ASSERT(!(liver in host.held_organs()), "the limb's organ slot dropped the liver")
+	TEST_ASSERT_NULL(H.organ_in(O_LIVER), "organ_in() no longer finds the liver")
 	dq_assert_body_tree(H, "after removing the liver")
 	dq_assert_detached(liver, "the removed liver")
 	TEST_ASSERT(liver.replaced(H, host), "replacement succeeds")
@@ -163,13 +163,13 @@
 
 /datum/unit_test/dq_part_keyed_slot_refuses_duplicates/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/heart = H.internal_organs_by_name[O_HEART]
+	var/obj/item/organ/internal/heart = H.organ_in(O_HEART)
 	var/obj/item/organ/external/host = heart.parent_part()
 	var/obj/item/organ/internal/heart/spare = allocate(/obj/item/organ/internal/heart)
 	TEST_ASSERT(dq_ledger_refusal(spare, host, SLOT_ID_PART_ORGANS), "a second heart is refused by the limb")
 	TEST_ASSERT(!spare.replaced(H, host), "replaced() reports the refusal")
 	TEST_ASSERT_NULL(spare.owner, "the refused heart stays unowned")
-	TEST_ASSERT_EQUAL(H.internal_organs_by_name[O_HEART], heart, "the cache keeps the real heart")
+	TEST_ASSERT_EQUAL(H.organ_in(O_HEART), heart, "the cache keeps the real heart")
 	var/obj/item/organ/external/hand = H.get_organ(BP_L_HAND)
 	TEST_ASSERT(dq_ledger_refusal(hand, H.get_organ(BP_R_ARM), SLOT_ID_PART_CHILD), "a left hand doesn't join onto a right arm")
 	dq_assert_body_tree(H, "after refused placements")
@@ -223,7 +223,7 @@
 
 /datum/unit_test/dq_part_reparent_within_body/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/brain = H.organ_in(O_BRAIN)
 	var/obj/item/organ/external/torso = H.get_organ(BP_TORSO)
 	brain.parent_organ = BP_TORSO
 	TEST_ASSERT(brain.place_into(torso, SLOT_ID_PART_ORGANS), "the brain moves to the torso")
@@ -251,15 +251,15 @@
 /datum/unit_test/dq_part_loose_organs_on_simple_mob/Run()
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse)
 	M.spawn_butchery_organs()
-	TEST_ASSERT(LAZYLEN(M.internal_organs), "the mouse has butchery organs")
-	for(var/obj/item/organ/O as anything in M.internal_organs)
+	TEST_ASSERT(length(INTERNAL_ORGANS(M)), "the mouse has butchery organs")
+	for(var/obj/item/organ/O as anything in M.internal_organ_list())
 		TEST_ASSERT_EQUAL(O.owner, M, "[O] belongs to the mouse")
 	dq_assert_body_tree(M, "a butchery animal")
-	var/obj/item/organ/heart = M.internal_organs_by_name[O_HEART]
+	var/obj/item/organ/heart = M.organ_in(O_HEART)
 	TEST_ASSERT(heart.removed(), "a loose organ can be removed")
 	own(heart)
 	TEST_ASSERT_NULL(heart.owner, "and has no owner after")
-	TEST_ASSERT_NULL(M.internal_organs_by_name[O_HEART], "the cache dropped it")
+	TEST_ASSERT_NULL(M.organ_in(O_HEART), "the cache dropped it")
 	dq_assert_body_tree(M, "a butchery animal after removal")
 
 /// Severing a hand drops the gloves the mob wore on it.
@@ -279,7 +279,7 @@
 
 /datum/unit_test/dq_part_mob_delete/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/list/parts = H.organs + H.internal_organs
+	var/list/parts = H.organs + H.internal_organ_list()
 	qdel(H)
 	for(var/obj/item/organ/O as anything in parts)
 		TEST_ASSERT(QDELETED(O), "[O] ([O.type]) is deleted with its mob")

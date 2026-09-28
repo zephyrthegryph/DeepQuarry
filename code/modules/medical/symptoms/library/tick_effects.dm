@@ -68,7 +68,7 @@
 	// severity_gate spawns heart_damage.
 	if(prob(5 * scale) && ishuman(M))
 		var/mob/living/carbon/human/H = M
-		var/obj/item/organ/internal/heart/heart = H.internal_organs_by_name[O_HEART]
+		var/obj/item/organ/internal/heart/heart = H.organ_in(O_HEART)
 		if(heart)
 			H.injure(INJURY_BLUNT, 0.4, heart, source, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 

@@ -83,7 +83,7 @@
 	if(!ishuman(owner))
 		return FALSE
 	var/mob/living/carbon/human/H = owner
-	var/obj/item/organ/O = locate_in_list(H.internal_organs, light_organ)
+	var/obj/item/organ/O = locate_in_list(H.internal_organ_list(), light_organ)
 	return O && !O.is_broken()
 
 /datum/trait_state/photosynth/proc/feed(light, boost)

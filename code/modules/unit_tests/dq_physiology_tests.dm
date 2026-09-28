@@ -30,7 +30,7 @@
 
 /datum/unit_test/dq_physiology_occluded_airway_to_brain_lesion/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/brain/B = H.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/B = H.organ_in(O_BRAIN)
 	TEST_ASSERT_NOTNULL(B, "the patient needs a brain")
 	var/datum/affliction/airway_obstruction/A = H.body.afflict(/datum/affliction/airway_obstruction)
 	TEST_ASSERT(A?.blocks_airway(), "a fresh obstruction should close the airway")

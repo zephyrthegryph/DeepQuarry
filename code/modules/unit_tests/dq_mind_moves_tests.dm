@@ -18,7 +18,7 @@
 /datum/unit_test/dq_mind_dead_brain_refuses_repair/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/brain = H.organ_in(O_BRAIN)
 	dq_test_injure_organ(H, brain, brain.max_damage, /datum/affliction/lesion/contusion)
 	TEST_ASSERT(brain.is_brain_dead(), "setup: a brain at 100% is brain dead")
 	var/datum/affliction/lesion/L = brain.find_lesion(/datum/affliction/lesion/contusion)
@@ -40,7 +40,7 @@
 /datum/unit_test/dq_mind_dead_brain_organ_stays_dead/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/brain = H.organ_in(O_BRAIN)
 	dq_test_injure_organ(H, brain, 30, /datum/affliction/lesion/contusion)
 	brain.status |= ORGAN_DEAD
 	TEST_ASSERT(brain.is_brain_dead(), "setup: a dead brain organ is brain dead")
@@ -60,7 +60,7 @@
 /datum/unit_test/dq_mind_damaged_brain_still_repairable/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/brain/brain = H.organ_in(O_BRAIN)
 	dq_test_injure_organ(H, brain, brain.max_damage - 1, /datum/affliction/lesion/contusion)
 	TEST_ASSERT(!brain.is_brain_dead(), "setup: a brain at 99% is not brain dead")
 

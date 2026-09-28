@@ -135,7 +135,7 @@
 	if(!HAS_SYNTHETIC_BIOLOGY(src))
 		return FBP_NONE
 	var/obj/item/organ/internal/brain/B
-	B = internal_organs_by_name[O_BRAIN]
+	B = organ_in(O_BRAIN)
 	if(B) // Incase we lost our brain for some reason, like if we got decapped.
 		if(istype(B, /obj/item/organ/internal/mmi_holder))
 			var/obj/item/organ/internal/mmi_holder/mmi_holder = B

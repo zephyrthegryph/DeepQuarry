@@ -276,7 +276,7 @@
 				if(ishuman(living_guy))
 					var/mob/living/carbon/human/human_guy = living_guy
 					if(human_guy.should_have_organ(O_HEART))
-						for(var/obj/item/organ/internal/heart/heart in human_guy.internal_organs)
+						for(var/obj/item/organ/internal/heart/heart in human_guy.internal_organ_list())
 							heart.bruise() //Closest thing we have to a heart attack.
 						to_chat(living_guy, span_boldwarning("You clutch at your heart!"))
 
@@ -335,7 +335,7 @@
 		if(ishuman(our_guy))
 			var/mob/living/carbon/human/human_guy = our_guy
 			if(human_guy.should_have_organ(O_BRAIN))
-				for(var/obj/item/organ/internal/brain/brain in human_guy.internal_organs)
+				for(var/obj/item/organ/internal/brain/brain in human_guy.internal_organ_list())
 					human_guy.injure(INJURY_NEURAL, 30 * omen_damage, brain, src) //60 damage kills.
 			if(human_guy.get_equipped_item(SLOT_ID_EYES) && human_guy.canUnEquip(human_guy.get_equipped_item(SLOT_ID_EYES)))
 				var/turf/T = get_turf(human_guy)
@@ -468,7 +468,7 @@
 	if(prob(3 * omen_luck))
 		var/mob/living/carbon/human/human_guy = unlucky_soul
 		if(human_guy.should_have_organ(O_HEART))
-			for(var/obj/item/organ/internal/heart/heart in human_guy.internal_organs)
+			for(var/obj/item/organ/internal/heart/heart in human_guy.internal_organ_list())
 				if(heart.robotic)
 					continue //Robotic hearts are immune to this.
 				human_guy.injure(INJURY_BLUNT, 10 * stun_amount * omen_damage, heart, src)

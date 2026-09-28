@@ -92,7 +92,7 @@ DECLARE_INTERACTIONS(/obj/item/paperplane, \
 			return
 		visible_message(span_danger("\The [src] hits [H] in the eye!"))
 		H.status_adjust(EFFECT_BLURRY, 10)
-		var/obj/item/organ/internal/eyes/E = H.internal_organs_by_name[O_EYES]
+		var/obj/item/organ/internal/eyes/E = H.organ_in(O_EYES)
 		if(E)
 			H.injure(INJURY_BLUNT, 2.5, E, src, flags = INJURE_SILENT)
 		H.emote("scream")

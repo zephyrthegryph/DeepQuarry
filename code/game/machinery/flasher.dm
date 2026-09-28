@@ -85,7 +85,7 @@ EXTEND_INTERACTIONS(/obj/machinery/flasher, INTERACT_SILICON("Flash", PROC_REF(f
 			if(H.eyecheck() > 0)
 				continue
 			flash_time *= H.species.flash_mod
-			var/obj/item/organ/internal/eyes/E = H.internal_organs_by_name[O_EYES]
+			var/obj/item/organ/internal/eyes/E = H.organ_in(O_EYES)
 			if(!E)
 				return
 			if(E.is_bruised() && prob(E.damage + 50))

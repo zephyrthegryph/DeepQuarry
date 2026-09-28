@@ -137,7 +137,7 @@ DECLARE_INTERACTIONS(/obj/item/flashlight, \
 
 			var/obj/item/organ/vision
 			if(H.species.vision_organ)
-				vision = H.internal_organs_by_name[H.species.vision_organ]
+				vision = H.organ_in(H.species.vision_organ)
 			if(!vision)
 				user.visible_message(span_infoplain(span_bold("\The [user]") + " directs [src] at [M]'s face."), \
 										span_notice("You direct [src] at [M]'s face."))

@@ -65,7 +65,7 @@
 		return FALSE
 
 	if(replaceorgans)
-		var/obj/item/organ/internal/O = pick(H.internal_organs)
+		var/obj/item/organ/internal/O = pick(H.internal_organ_list())
 		if(O.is_robotic())
 			return FALSE
 		switch(O.type)
