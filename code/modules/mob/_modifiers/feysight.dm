@@ -1,4 +1,5 @@
-/datum/modifier/feysight
+/datum/body_effect/feysight
+	tick_interval = 2 SECONDS
 	name = "feysight"
 	desc = "You are filled with an inner peace, and widened sight."
 	client_color = "#42e6ca"
@@ -9,19 +10,19 @@
 
 	factors = alist(BF_ACCURACY = -15, BF_DISPERSION = 1)
 
-/datum/modifier/feysight/on_applied()
-	holder.see_invisible = 60
-	holder.see_invisible_default = 60
-	holder.vis_enabled += VIS_GHOSTS
-	holder.recalculate_vis()
+/datum/body_effect/feysight/on_start(mob/living/L)
+	L.see_invisible = 60
+	L.see_invisible_default = 60
+	L.vis_enabled += VIS_GHOSTS
+	L.recalculate_vis()
 
-/datum/modifier/feysight/on_expire()
-	holder.see_invisible_default = initial(holder.see_invisible_default)
-	holder.see_invisible = holder.see_invisible_default
-	holder.vis_enabled -= VIS_GHOSTS
-	holder.recalculate_vis()
+/datum/body_effect/feysight/on_end(mob/living/L, expired)
+	L.see_invisible_default = initial(L.see_invisible_default)
+	L.see_invisible = L.see_invisible_default
+	L.vis_enabled -= VIS_GHOSTS
+	L.recalculate_vis()
 
-/datum/modifier/feysight/can_apply(mob/living/L)
+/datum/body_effect/feysight/can_apply(mob/living/L)
 	if(L.stat)
 		to_chat(L, span_warning("You can't be unconscious or dead to experience tranquility."))
 		return FALSE
@@ -37,9 +38,9 @@
 
 	return ..()
 
-/datum/modifier/feysight/tick()
+/datum/body_effect/feysight/on_tick(mob/living/L)
 	..()
 
-	if(ishuman(holder))
-		var/mob/living/carbon/human/H = holder
+	if(ishuman(L))
+		var/mob/living/carbon/human/H = L
 		H.status_set(EFFECT_DRUGGED, min(15, H.status_units(EFFECT_DRUGGED) + 4))

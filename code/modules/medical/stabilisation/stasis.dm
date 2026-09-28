@@ -1,11 +1,12 @@
 // Stasis: buying time by suspending life processes (doc/health_system_review.md §5.5).
 //
 // Every stasis source (stasis bags, sleepers, cryopods, the mech sleeper, NIF
-// emergency stasis, stasis cages, admin) is a /datum/modifier/stasis subtype that
-// contributes BF_STASIS, a 0..1 share of life processes suspended (max rule).
+// emergency stasis, stasis cages, admin) holds the mob at a /datum/body_effect/stasis level
+// (set_stasis(level, source)), which contributes BF_STASIS, a 0..1 share of life processes
+// suspended (max rule).
 //
 // Stasis is the biology clock (doc/rewrite/life_on_om.md §8). While applied, each stasis
-// modifier holds EFFECT_CLOCK_BIO_INHIBIT = its depth on the mob (the deepest wins), so the
+// source holds EFFECT_CLOCK_BIO_INHIBIT = its depth on the mob (the deepest wins), so the
 // mob's CLOCK_BIO rate is 1 - stasis. The body reads that rate in ONE place,
 // advance_stasis(), which the Life frame calls once at its start (/datum/om/frame/life/begin()).
 // It runs a fractional counter: each frame adds the rate, and the frame runs biology only when
@@ -58,85 +59,115 @@
 
 // --- Sources ---------------------------------------------------------------------
 
-/// A stasis field. Subtypes set the depth through BF_STASIS. Several sources
-/// may hold one mob at once (a bag inside a sleeper); the deepest wins.
-/datum/modifier/stasis
+/// A stasis depth. Subtypes set the depth through BF_STASIS. These are body effect definitions,
+/// but stasis is applied per SOURCE with set_stasis() (a bag inside a sleeper is two sources);
+/// the deepest wins. Applying one directly with apply_body_effect() also works (a sourceless
+/// hold keyed by its type).
+/datum/body_effect/stasis
 	name = "stasis"
 	desc = "Your bodily functions are slowed to a crawl."
 	hidden = TRUE
-	stacks = MODIFIER_STACK_ALLOWED
+	stacks = MODIFIER_STACK_FORBID
 	factors = alist(BF_STASIS = 0.5)
-	// What holds the mob in stasis (bag, pod, NIF) is STASIS_SOURCE(src), the
-	// stasis_held_by relation; null for stasis applied without a source (admin).
 
-/// Holds the biology clock back by this modifier's depth while it is applied. The hold's
-/// source is the modifier, so it also ends when the modifier is deleted.
-/datum/modifier/stasis/on_applied()
-	. = ..()
-	om_hold(holder, EFFECT_CLOCK_BIO_INHIBIT, src, stasis_depth())
-
-/datum/modifier/stasis/on_expire()
-	om_release(holder, EFFECT_CLOCK_BIO_INHIBIT, src)
-	return ..()
-
-/// This modifier's stasis depth (its BF_STASIS factor), 0..1.
-/datum/modifier/stasis/proc/stasis_depth()
+/// This level's stasis depth (its BF_STASIS factor), 0..1.
+/datum/body_effect/stasis/proc/stasis_depth()
 	return clamp(factors?[BF_STASIS] || 0, 0, 1)
 
+/datum/body_effect/stasis/on_start(mob/living/L)
+	om_hold(L, EFFECT_CLOCK_BIO_INHIBIT, L, stasis_depth(), type)
+
+/datum/body_effect/stasis/on_end(mob/living/L, expired)
+	om_release(L, EFFECT_CLOCK_BIO_INHIBIT, L, type)
+
 /// Life at half speed.
-/datum/modifier/stasis/light
+/datum/body_effect/stasis/light
 	name = "light stasis"
 	factors = alist(BF_STASIS = 0.5)
 
 /// Life at a fifth of normal speed.
-/datum/modifier/stasis/moderate
+/datum/body_effect/stasis/moderate
 	name = "moderate stasis"
 	factors = alist(BF_STASIS = 0.8)
 
 /// Life at a tenth of normal speed (stasis bags).
-/datum/modifier/stasis/deep
+/datum/body_effect/stasis/deep
 	name = "deep stasis"
 	factors = alist(BF_STASIS = 0.9)
 
 /// Life at a hundredth of normal speed.
-/datum/modifier/stasis/complete
+/datum/body_effect/stasis/complete
 	name = "complete stasis"
 	factors = alist(BF_STASIS = 0.99)
 
 /// Life stopped outright (cryopods, stasis cages, admin).
-/datum/modifier/stasis/total
+/datum/body_effect/stasis/total
 	name = "total stasis"
 	factors = alist(BF_STASIS = 1)
 
-/// Put this mob in stasis `stasis_type` (a /datum/modifier/stasis path) held by
+/// Key in stasis_sources for stasis applied without a source (admin).
+#define STASIS_NO_SOURCE "none"
+
+/mob/living
+	/// Stasis by source: the source's OM handle (STASIS_NO_SOURCE without one) -> the
+	/// /datum/body_effect/stasis level it holds the mob in. Each holds EFFECT_CLOCK_BIO_INHIBIT
+	/// at its depth, keyed by the same key. Lazy.
+	var/list/stasis_sources
+
+/// The stasis_sources key for `source`: the source's own entry, or for a null source the
+/// sourceless entry or one whose source has since been deleted.
+/mob/living/proc/stasis_key_of(datum/source)
+	if(source)
+		var/key = om_handle_of(source)
+		return (key && stasis_sources?[key]) ? key : null
+	if(stasis_sources?[STASIS_NO_SOURCE])
+		return STASIS_NO_SOURCE
+	for(var/key in stasis_sources)
+		if(key != STASIS_NO_SOURCE && !om_resolve(key))
+			return key // the source was deleted: it is sourceless now
+	return null
+
+/// Put this mob in stasis `stasis_type` (a /datum/body_effect/stasis path) held by
 /// `source`, replacing whatever stasis that source applied before. A null type
 /// releases the source's stasis. Other sources are untouched. Returns TRUE if
 /// anything changed.
 /mob/living/proc/set_stasis(stasis_type, datum/source)
-	if(stasis_type && !ispath(stasis_type, /datum/modifier/stasis))
-		stack_trace("set_stasis() given [stasis_type], not a /datum/modifier/stasis")
+	if(stasis_type && !ispath(stasis_type, /datum/body_effect/stasis))
+		stack_trace("set_stasis() given [stasis_type], not a /datum/body_effect/stasis")
 		return FALSE
-	var/datum/modifier/stasis/current = stasis_modifier_from(source)
-	if(current?.type == stasis_type)
+	var/key = stasis_key_of(source)
+	var/current = key ? stasis_sources[key] : null
+	if(current == stasis_type)
 		return FALSE
-	if(current)
-		remove_specific_modifier(current, TRUE)
-	var/datum/modifier/stasis/added
+	if(key)
+		om_release(src, EFFECT_CLOCK_BIO_INHIBIT, src, key)
+		stasis_sources -= key
+		UNSETEMPTY(stasis_sources)
 	if(stasis_type)
-		added = add_modifier(stasis_type, suppress_failure = TRUE)
-		if(added)
-			if(source)
-				om_link(added, source, /datum/om/relation/stasis_held_by)
-	log_game("STASIS: [key_name(src)] [current ? "left [current.name]" : ""][current && added ? " and " : ""][added ? "entered [added.name]" : ""] from [source ? "[source] ([source.type])" : "no source"] at [AREACOORD(src)]; BF_STASIS now [factor(BF_STASIS)].")
+		key = source ? om_handle(source) : STASIS_NO_SOURCE
+		var/datum/body_effect/stasis/level = body_effect_def(stasis_type)
+		LAZYSET(stasis_sources, key, stasis_type)
+		om_hold(src, EFFECT_CLOCK_BIO_INHIBIT, src, level.stasis_depth(), key)
+	invalidate_factors()
+	om_changed(src, CHANGE_MOB_CONDITIONS)
+	var/datum/body_effect/old_level = current ? body_effect_def(current) : null
+	var/datum/body_effect/new_level = stasis_type ? body_effect_def(stasis_type) : null
+	log_game("STASIS: [key_name(src)] [old_level ? "left [old_level.name]" : ""][old_level && new_level ? " and " : ""][new_level ? "entered [new_level.name]" : ""] from [source ? "[source] ([source.type])" : "no source"] at [AREACOORD(src)]; BF_STASIS now [factor(BF_STASIS)].")
 	return TRUE
 
-/// The stasis modifier `source` applied to this mob, or null. A null source
-/// matches stasis applied without one (admin).
-/mob/living/proc/stasis_modifier_from(datum/source)
-	for(var/datum/modifier/stasis/S in modifiers)
-		if(S?.stasis_source() == source)
-			return S
-	return null
+/// The stasis level `source` holds this mob in, or null. A null source matches stasis applied
+/// without one (admin), or whose source has been deleted.
+/mob/living/proc/stasis_type_from(datum/source)
+	var/key = stasis_key_of(source)
+	return key ? stasis_sources[key] : null
 
 /mob/living/proc/has_stasis_from(datum/source)
-	return stasis_modifier_from(source) ? TRUE : FALSE
+	return !!stasis_type_from(source)
+
+/// Accumulates the stasis levels held by sources (BF_STASIS, max rule) into `acc`.
+/mob/living/proc/accumulate_stasis_factors(list/acc)
+	for(var/key in stasis_sources)
+		acc = body_factor_accumulate(acc, body_effect_def(stasis_sources[key]).factors)
+	return acc
+
+#undef STASIS_NO_SOURCE

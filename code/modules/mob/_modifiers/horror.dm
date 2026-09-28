@@ -15,7 +15,8 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	/area/survivalpod/redspace // Redspace shelters effectively pull a bit of redspace into realspace, so
 ))
 
-/datum/modifier/redspace_drain
+/datum/body_effect/redspace_drain
+	tick_interval = 2 SECONDS
 	name = "redspace warp"
 	desc = "Your body is being slowly sapped of it's lifeforce, being used to fuel this hellish nightmare of a place."
 
@@ -25,54 +26,52 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	stacks = MODIFIER_STACK_EXTEND
 
 	//mob_overlay_state = "redspace_aura" //Let's be secretive~
-	var/mob/living/carbon/human/unfortunate_soul //The human target of our modifier.
 
-/datum/modifier/redspace_drain/can_apply(mob/living/L, suppress_output = TRUE)
+/datum/body_effect/redspace_drain/can_apply(mob/living/L, suppress_output = TRUE)
 	if(ishuman(L) && !L.isSynthetic() && L.lastarea && is_type_in_list(L.lastarea, GLOB.redspace_areas))
 		return TRUE
 	return FALSE
 
-/datum/modifier/redspace_drain/on_applied()
-	unfortunate_soul = holder
+/datum/body_effect/redspace_drain/on_start(mob/living/L)
+	var/mob/living/carbon/human/unfortunate_soul = L
 	to_chat(unfortunate_soul, span_cult("You feel as if your lifeforce is slowly being rended from your body."))
 	if(!unfortunate_soul.has_contagion(/datum/affliction/contagion/fleshy_spread))
 		var/datum/affliction/contagion/fleshy_spread/flesh_disease = new /datum/affliction/contagion/fleshy_spread()
 		unfortunate_soul.force_contagion(flesh_disease, BP_TORSO)
 	return
 
-/datum/modifier/redspace_drain/on_expire()
-	if(QDELETED(holder))
-		unfortunate_soul = null
-		return //Don't do anything if we got QDEL'd, such as if we were gibbed
+/datum/body_effect/redspace_drain/on_end(mob/living/L, expired)
+	var/mob/living/carbon/human/unfortunate_soul = L
 	if(unfortunate_soul.stat == DEAD) //Only care if we're dead.
-		handle_corpse()
+		handle_corpse(unfortunate_soul)
 		var/obj/effect/landmark/drop_point
 		drop_point = pick(REGISTRY_MEMBERS(REGISTRY_LATEJOIN)) //Can be changed to whatever exit list you want. By default, uses REGISTRY_MEMBERS(REGISTRY_LATEJOIN)
 		if(drop_point)
 			unfortunate_soul.forceMove(get_turf(drop_point))
 			unfortunate_soul.endurance = max(50, unfortunate_soul.endurance) //If they died, send them back with 50 endurance or their current endurance. Whatever's higher. We're evil, but not mean.
 		else
-			message_admins("Redspace Drain expired, but no drop point was found, leaving [unfortunate_soul] in limbo. This is a bug. Please report it with this info: redspace_drain/on_expire")
-	unfortunate_soul = null
+			message_admins("Redspace Drain expired, but no drop point was found, leaving [unfortunate_soul] in limbo. This is a bug. Please report it with this info: redspace_drain/on_end")
 
-/datum/modifier/redspace_drain/proc/handle_corpse()
+/datum/body_effect/redspace_drain/proc/handle_corpse(mob/living/carbon/human/unfortunate_soul)
 	return //Specialty stuff to do to a corpse other than teleport them.
 
-/datum/modifier/redspace_drain/check_if_valid() //We don't call parent. This doesn't wear off without set conditions.
-	if(holder.stat == DEAD)
-		expire(silent = TRUE)
-	else if(holder.lastarea && !is_type_in_list(holder.lastarea, GLOB.redspace_areas))
-		expire(silent = TRUE)
+/datum/body_effect/redspace_drain/on_check(mob/living/L) //We don't call parent. This doesn't wear off without set conditions.
+	if(L.stat == DEAD)
+		L.end_body_effect(type, TRUE)
+		return
+	else if(L.lastarea && !is_type_in_list(L.lastarea, GLOB.redspace_areas))
+		L.end_body_effect(type, TRUE)
 
-/datum/modifier/redspace_drain/tick()
-	if(isbelly(holder.loc)) //If you're eaten, let's hold off on doing anything spooky.
+/datum/body_effect/redspace_drain/on_tick(mob/living/L)
+	var/mob/living/carbon/human/unfortunate_soul = L
+	if(isbelly(L.loc)) //If you're eaten, let's hold off on doing anything spooky.
 		return
 
 	//The dangerous health effects.
 	unfortunate_soul.nutrition = max(0, unfortunate_soul.nutrition - 5) //Your nutrition is being sapped faster than usual.
 	if(unfortunate_soul.life_tick % 100 == 0)// Once every 100 ticks, we mutate some organs.
-		choose_organs()
-		become_drippy()
+		choose_organs(unfortunate_soul)
+		become_drippy(unfortunate_soul)
 		to_chat(unfortunate_soul, span_cult("You feel as if your organs are crawling around within your body."))
 
 	if(unfortunate_soul.life_tick % 5 == 0) //Once every 5 ticks, we chip away at them.
@@ -97,7 +96,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 		unfortunate_soul.status_set(EFFECT_STUTTERING, min(100, unfortunate_soul.status_units(EFFECT_STUTTERING) + 10)) //Stuttering is increased by 1, but never above 100. You're in a scary place.
 	return
 
-/datum/modifier/redspace_drain/proc/choose_organs(organs_to_replace)
+/datum/body_effect/redspace_drain/proc/choose_organs(mob/living/carbon/human/unfortunate_soul, organs_to_replace)
 	if(!organs_to_replace)
 		organs_to_replace = rand(2,3)
 	if(organs_to_replace <= 0) //Sanity
@@ -108,45 +107,45 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 			if("eyes")
 				var/obj/item/organ/internal/eyes/E = LAZYACCESS(unfortunate_soul.internal_organs_by_name, O_EYES)
 				if(E)
-					replace_eyes(E)
+					replace_eyes(unfortunate_soul, E)
 			if("heart")
 				var/obj/item/organ/internal/heart/H = LAZYACCESS(unfortunate_soul.internal_organs_by_name, O_HEART)
 				if(H)
-					replace_heart(H)
+					replace_heart(unfortunate_soul, H)
 			if("lungs")
 				var/obj/item/organ/internal/lungs/L = LAZYACCESS(unfortunate_soul.internal_organs_by_name, O_LUNGS)
 				if(L)
-					replace_lungs(L)
+					replace_lungs(unfortunate_soul, L)
 			if("liver")
 				var/obj/item/organ/internal/liver/L = LAZYACCESS(unfortunate_soul.internal_organs_by_name, O_LIVER)
 				if(L)
-					replace_liver(L)
+					replace_liver(unfortunate_soul, L)
 			if("kidneys")
 				var/obj/item/organ/internal/kidneys/K = LAZYACCESS(unfortunate_soul.internal_organs_by_name, O_KIDNEYS)
 				if(K)
-					replace_kidneys(K)
+					replace_kidneys(unfortunate_soul, K)
 			if("appendix")
 				var/obj/item/organ/internal/appendix/A = LAZYACCESS(unfortunate_soul.internal_organs_by_name, O_APPENDIX)
 				if(A)
-					replace_appendix(A)
+					replace_appendix(unfortunate_soul, A)
 			if("voicebox")
 				var/obj/item/organ/internal/voicebox/V = LAZYACCESS(unfortunate_soul.internal_organs_by_name, O_VOICE)
 				if(V)
-					replace_voicebox(V)
+					replace_voicebox(unfortunate_soul, V)
 			if("spleen")
 				var/obj/item/organ/internal/spleen/S = LAZYACCESS(unfortunate_soul.internal_organs_by_name, O_SPLEEN)
 				if(S)
-					replace_spleen(S)
+					replace_spleen(unfortunate_soul, S)
 			if("stomach")
 				var/obj/item/organ/internal/stomach/S = LAZYACCESS(unfortunate_soul.internal_organs_by_name, O_STOMACH)
 				if(S)
-					replace_stomach(S)
+					replace_stomach(unfortunate_soul, S)
 			if("intestine")
 				var/obj/item/organ/internal/intestine/E = LAZYACCESS(unfortunate_soul.internal_organs_by_name, O_INTESTINE)
 				if(E)
-					replace_intestine(E)
+					replace_intestine(unfortunate_soul, E)
 
-/datum/modifier/redspace_drain/proc/replace_eyes(obj/item/organ/internal/O)
+/datum/body_effect/redspace_drain/proc/replace_eyes(mob/living/carbon/human/unfortunate_soul, obj/item/organ/internal/O)
 	if(istype(O, /obj/item/organ/internal/eyes/horror))
 		return
 	var/organ_spot = O.parent_organ
@@ -157,7 +156,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	var/random_name = pick("pulsating", "quivering", "throbbing", "crawling", "oozing", "melting", "gushing", "dripping", "twitching", "slimy", "gooey")
 	new_organ.name = "[random_name] [initial(new_organ.name)]"
 
-/datum/modifier/redspace_drain/proc/replace_heart(obj/item/organ/internal/O)
+/datum/body_effect/redspace_drain/proc/replace_heart(mob/living/carbon/human/unfortunate_soul, obj/item/organ/internal/O)
 	if(istype(O, /obj/item/organ/internal/heart/horror))
 		return
 	var/organ_spot = O.parent_organ
@@ -168,7 +167,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	var/random_name = pick("pulsating", "quivering", "throbbing", "crawling", "oozing", "melting", "gushing", "dripping", "twitching", "slimy", "gooey")
 	new_organ.name = "[random_name] [initial(new_organ.name)]"
 
-/datum/modifier/redspace_drain/proc/replace_lungs(obj/item/organ/internal/O)
+/datum/body_effect/redspace_drain/proc/replace_lungs(mob/living/carbon/human/unfortunate_soul, obj/item/organ/internal/O)
 	if(istype(O, /obj/item/organ/internal/lungs/horror))
 		return
 	var/organ_spot = O.parent_organ
@@ -179,7 +178,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	var/random_name = pick("pulsating", "quivering", "throbbing", "crawling", "oozing", "melting", "gushing", "dripping", "twitching", "slimy", "gooey")
 	new_organ.name = "[random_name] [initial(new_organ.name)]"
 
-/datum/modifier/redspace_drain/proc/replace_liver(obj/item/organ/internal/O)
+/datum/body_effect/redspace_drain/proc/replace_liver(mob/living/carbon/human/unfortunate_soul, obj/item/organ/internal/O)
 	if(istype(O, /obj/item/organ/internal/liver/horror))
 		return
 	var/organ_spot = O.parent_organ
@@ -190,7 +189,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	var/random_name = pick("pulsating", "quivering", "throbbing", "crawling", "oozing", "melting", "gushing", "dripping", "twitching", "slimy", "gooey")
 	new_organ.name = "[random_name] [initial(new_organ.name)]"
 
-/datum/modifier/redspace_drain/proc/replace_kidneys(obj/item/organ/internal/O)
+/datum/body_effect/redspace_drain/proc/replace_kidneys(mob/living/carbon/human/unfortunate_soul, obj/item/organ/internal/O)
 	if(istype(O, /obj/item/organ/internal/kidneys/horror))
 		return
 	var/organ_spot = O.parent_organ
@@ -201,7 +200,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	var/random_name = pick("pulsating", "quivering", "throbbing", "crawling", "oozing", "melting", "gushing", "dripping", "twitching", "slimy", "gooey")
 	new_organ.name = "[random_name] [initial(new_organ.name)]"
 
-/datum/modifier/redspace_drain/proc/replace_appendix(obj/item/organ/internal/O)
+/datum/body_effect/redspace_drain/proc/replace_appendix(mob/living/carbon/human/unfortunate_soul, obj/item/organ/internal/O)
 	if(istype(O, /obj/item/organ/internal/appendix/horror))
 		return
 	var/organ_spot = O.parent_organ
@@ -212,7 +211,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	var/random_name = pick("pulsating", "quivering", "throbbing", "crawling", "oozing", "melting", "gushing", "dripping", "twitching", "slimy", "gooey")
 	new_organ.name = "[random_name] [initial(new_organ.name)]"
 
-/datum/modifier/redspace_drain/proc/replace_voicebox(obj/item/organ/internal/O)
+/datum/body_effect/redspace_drain/proc/replace_voicebox(mob/living/carbon/human/unfortunate_soul, obj/item/organ/internal/O)
 	if(istype(O, /obj/item/organ/internal/voicebox/horror))
 		return
 	var/organ_spot = O.parent_organ
@@ -223,7 +222,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	var/random_name = pick("pulsating", "quivering", "throbbing", "crawling", "oozing", "melting", "gushing", "dripping", "twitching", "slimy", "gooey")
 	new_organ.name = "[random_name] [initial(new_organ.name)]"
 
-/datum/modifier/redspace_drain/proc/replace_spleen(obj/item/organ/internal/O)
+/datum/body_effect/redspace_drain/proc/replace_spleen(mob/living/carbon/human/unfortunate_soul, obj/item/organ/internal/O)
 	if(istype(O, /obj/item/organ/internal/spleen/horror))
 		return
 	var/organ_spot = O.parent_organ
@@ -234,7 +233,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	var/random_name = pick("pulsating", "quivering", "throbbing", "crawling", "oozing", "melting", "gushing", "dripping", "twitching", "slimy", "gooey")
 	new_organ.name = "[random_name] [initial(new_organ.name)]"
 
-/datum/modifier/redspace_drain/proc/replace_stomach(obj/item/organ/internal/O)
+/datum/body_effect/redspace_drain/proc/replace_stomach(mob/living/carbon/human/unfortunate_soul, obj/item/organ/internal/O)
 	if(istype(O, /obj/item/organ/internal/stomach/horror))
 		return
 	var/organ_spot = O.parent_organ
@@ -245,7 +244,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	var/random_name = pick("pulsating", "quivering", "throbbing", "crawling", "oozing", "melting", "gushing", "dripping", "twitching", "slimy", "gooey")
 	new_organ.name = "[random_name] [initial(new_organ.name)]"
 
-/datum/modifier/redspace_drain/proc/replace_intestine(obj/item/organ/internal/O)
+/datum/body_effect/redspace_drain/proc/replace_intestine(mob/living/carbon/human/unfortunate_soul, obj/item/organ/internal/O)
 	if(istype(O, /obj/item/organ/internal/intestine/horror))
 		return
 	var/organ_spot = O.parent_organ
@@ -257,41 +256,40 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	new_organ.name = "[random_name] [initial(new_organ.name)]"
 
 ///Variant redspace drain ONLY used for the virus.
-/datum/modifier/redspace_drain/lesser
+/datum/body_effect/redspace_drain/lesser
+	tick_interval = 2 SECONDS
 	name = "redspace infection"
 	desc = "Your body is warping..."
 
 	on_created_text = null
 	on_expired_text = null
 
-/datum/modifier/redspace_drain/lesser/can_apply(mob/living/L, suppress_output = TRUE)
+/datum/body_effect/redspace_drain/lesser/can_apply(mob/living/L, suppress_output = TRUE)
 	if(ishuman(L) && !L.isSynthetic())
 		return TRUE
 	return FALSE
 
-/datum/modifier/redspace_drain/lesser/on_applied()
-	unfortunate_soul = holder
+/datum/body_effect/redspace_drain/lesser/on_start(mob/living/L)
 	return
 
-/datum/modifier/redspace_drain/lesser/on_expire()
-	unfortunate_soul = null
+/datum/body_effect/redspace_drain/lesser/on_end(mob/living/L, expired)
 	return
 
-/datum/modifier/redspace_drain/lesser/check_if_valid()
-	if(expire_at && expire_at < world.time)
-		src.expire()
-
-/datum/modifier/redspace_drain/lesser/tick()
+/datum/body_effect/redspace_drain/lesser/on_check(mob/living/L)
 	return
 
-/datum/modifier/redspace_drain/proc/become_drippy()
+/datum/body_effect/redspace_drain/lesser/on_tick(mob/living/L)
+	return
+
+/datum/body_effect/redspace_drain/proc/become_drippy(mob/living/carbon/human/unfortunate_soul)
 	if(!(unfortunate_soul.species.flags & NO_DNA)) //Doing it as such in case drippy is ever made NOT a trait gene.
 		var/datum/gene/trait/drippy_trait = get_gene_from_trait(/datum/trait/neutral/drippy)
 		unfortunate_soul.dna.SetSEState(drippy_trait.block, TRUE)
 		domutcheck(unfortunate_soul, null, GENE_ALWAYS_ACTIVATE)
 		unfortunate_soul.UpdateAppearance()
 
-/datum/modifier/redsight
+/datum/body_effect/redsight
+	tick_interval = 2 SECONDS
 	name = "redsight"
 	desc = "You can see into the unknown."
 	client_color = "#ce6161"
@@ -300,19 +298,19 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	on_expired_text = span_notice("Your sight returns to what it once was.")
 	stacks = MODIFIER_STACK_EXTEND
 
-/datum/modifier/redsight/on_applied()
-	holder.see_invisible = 60
-	holder.see_invisible_default = 60
-	holder.vis_enabled += VIS_GHOSTS
-	holder.recalculate_vis()
+/datum/body_effect/redsight/on_start(mob/living/L)
+	L.see_invisible = 60
+	L.see_invisible_default = 60
+	L.vis_enabled += VIS_GHOSTS
+	L.recalculate_vis()
 
-/datum/modifier/redsight/on_expire()
-	holder.see_invisible_default = initial(holder.see_invisible_default)
-	holder.see_invisible = holder.see_invisible_default
-	holder.vis_enabled -= VIS_GHOSTS
-	holder.recalculate_vis()
+/datum/body_effect/redsight/on_end(mob/living/L, expired)
+	L.see_invisible_default = initial(L.see_invisible_default)
+	L.see_invisible = L.see_invisible_default
+	L.vis_enabled -= VIS_GHOSTS
+	L.recalculate_vis()
 
-/datum/modifier/redsight/can_apply(mob/living/L)
+/datum/body_effect/redsight/can_apply(mob/living/L)
 	if(L.stat)
 		to_chat(L, span_warning("You can't be unconscious or dead to see the unknown."))
 		return FALSE
@@ -321,22 +319,22 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 		return ..()
 	return FALSE
 
-/datum/modifier/redsight/check_if_valid() //We don't call parent. This doesn't wear off without set conditions.
+/datum/body_effect/redsight/on_check(mob/living/L) //We don't call parent. This doesn't wear off without set conditions.
 	//Dead?
-	if(holder.stat == DEAD)
-		expire(silent = TRUE)
+	if(L.stat == DEAD)
+		L.end_body_effect(type, TRUE)
+		return
 	//We got eyes and they're special eyes?
-	var/obj/item/organ/internal/eyes/E = LAZYACCESS(holder.internal_organs_by_name, O_EYES)
+	var/obj/item/organ/internal/eyes/E = LAZYACCESS(L.internal_organs_by_name, O_EYES)
 	if(!E)
-		expire(silent = TRUE)
+		L.end_body_effect(type, TRUE)
 	else if(!istype(E, /obj/item/organ/internal/eyes/horror))
-		expire(silent = TRUE)
+		L.end_body_effect(type, TRUE)
 
-/datum/modifier/redsight/tick()
-	..()
 
 ///The PERMANENT debuff that redspace warp leaves you with.
-/datum/modifier/redspace_corruption
+/datum/body_effect/redspace_corruption
+	tick_interval = 2 SECONDS
 	name = "redspace corruption"
 	desc = "Your body has been permanently twisted."
 
@@ -345,14 +343,8 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 
 	stacks = MODIFIER_STACK_EXTEND
 
-	///Time since we last revived
-	var/time_since_revival = 0
-
 	///Cooldown on how often we can revive.
 	var/revival_cooldown = 60 SECONDS
-
-	///When did we last do a 'heal tick' ?
-	COOLDOWN_DECLARE(heal_tick_cooldown_until)
 
 	///How often do we do a 'heal tick' ?
 	var/heal_tick_cooldown = 5 SECONDS
@@ -363,32 +355,41 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	///What is the chance that we inject a paralyze a nearby crewmember that is standing too close to us?
 	var/injection_chance = 3
 
-	///If we have our flesh armor deployed or not.
-	var/armor_deployed = FALSE
-
-	///At what time did we deploy our armor?
-	var/armor_deployed_time = 0
-
 	///How long can we upkeep our armor?
 	var/armor_duration = 5 MINUTES
 
+/// Per-application state of redspace corruption (body_effect_state() on the corrupted mob).
+/datum/redspace_corruption_state
+	///Time since we last revived
+	var/time_since_revival = 0
+	///When did we last do a 'heal tick' ?
+	COOLDOWN_DECLARE(heal_tick_cooldown_until)
+	///If we have our flesh armor deployed or not.
+	var/armor_deployed = FALSE
+	///At what time did we deploy our armor?
+	var/armor_deployed_time = 0
 	///What is our hivemind name?
 	var/speech_name = "The Unseen Horror"
 
-	var/mob/living/carbon/human/unfortunate_soul //The human target of our modifier.
+/// The hivemind name of a corrupted mob, or null when it isn't corrupted.
+/mob/living/proc/redspace_speech_name()
+	var/datum/redspace_corruption_state/state = body_effect_state(/datum/body_effect/redspace_corruption)
+	return state?.speech_name
 
-/datum/modifier/redspace_corruption/can_apply(mob/living/L, suppress_output = TRUE)
+/datum/body_effect/redspace_corruption/can_apply(mob/living/L, suppress_output = TRUE)
 	if(ishuman(L) && !L.isSynthetic())
 		if(L.mind?.assigned_role == JOB_CHAPLAIN)
 			return FALSE
 		return TRUE
 	return FALSE
 
-/datum/modifier/redspace_corruption/on_applied()
-	unfortunate_soul = holder
+/datum/body_effect/redspace_corruption/on_start(mob/living/L)
+	var/mob/living/carbon/human/unfortunate_soul = L
+	var/datum/redspace_corruption_state/state = new
+	L.set_body_effect_state(type, state)
 	ADD_TRAIT(unfortunate_soul, TRAIT_REDSPACE_CORRUPTED, UNHOLY_TRAIT)
 	ADD_TRAIT(unfortunate_soul, UNIQUE_MINDSTRUCTURE, UNHOLY_TRAIT)
-	speech_name = pick("Lost Soul", "Rescued One", "The Embraced", "The Chosen", "The Unseen Horror", "Obedient Servant", "Willing Follower")
+	state.speech_name = pick("Lost Soul", "Rescued One", "The Embraced", "The Chosen", "The Unseen Horror", "Obedient Servant", "Willing Follower")
 
 	//SHUNT ALL THE IMPORTANT ORGANS TO THE CHEST!
 	var/obj/item/organ/internal/brain/brain = LAZYACCESS(unfortunate_soul.internal_organs_by_name, O_BRAIN)
@@ -411,12 +412,13 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 		ex_organ.encased = FALSE
 		ex_organ.cannot_gib = FALSE
 
-/datum/modifier/redspace_corruption/on_expire()
-	REMOVE_TRAIT(unfortunate_soul, TRAIT_REDSPACE_CORRUPTED, UNHOLY_TRAIT)
-	REMOVE_TRAIT(unfortunate_soul, UNIQUE_MINDSTRUCTURE, UNHOLY_TRAIT)
-	unfortunate_soul = null
+/datum/body_effect/redspace_corruption/on_end(mob/living/L, expired)
+	REMOVE_TRAIT(L, TRAIT_REDSPACE_CORRUPTED, UNHOLY_TRAIT)
+	REMOVE_TRAIT(L, UNIQUE_MINDSTRUCTURE, UNHOLY_TRAIT)
 
-/datum/modifier/redspace_corruption/tick()
+/datum/body_effect/redspace_corruption/on_tick(mob/living/L)
+	var/mob/living/carbon/human/unfortunate_soul = L
+	var/datum/redspace_corruption_state/state = L.body_effect_state(type)
 	//Handles resurrection and healing if dead.
 	var/bellied = FALSE
 	if(isbelly(unfortunate_soul.loc))
@@ -427,11 +429,11 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 			predator.force_contagion(flesh_disease, BP_TORSO)
 
 	if(unfortunate_soul.stat == DEAD)
-		handle_death()
+		handle_death(unfortunate_soul, state)
 		return
 
-	if(!armor_deployed && (unfortunate_soul.has_status(EFFECT_STUNNED) || unfortunate_soul.has_status(EFFECT_WEAKENED) || unfortunate_soul.has_status(EFFECT_PARALYZED) || unfortunate_soul.vitality() < 0.75))
-		if(assume_battle_stance())
+	if(!state.armor_deployed && (unfortunate_soul.has_status(EFFECT_STUNNED) || unfortunate_soul.has_status(EFFECT_WEAKENED) || unfortunate_soul.has_status(EFFECT_PARALYZED) || unfortunate_soul.vitality() < 0.75))
+		if(assume_battle_stance(unfortunate_soul, state))
 			unfortunate_soul.mend(TREAT_ANALGESIC, 200) //WAKE UP SAMURI
 			unfortunate_soul.reagents.add_reagent(REAGENT_ID_ADRENALINE, 5)
 			unfortunate_soul.reagents.add_reagent(REAGENT_ID_EPINEPHRINE, 5)
@@ -445,27 +447,27 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	if(bellied)
 		return
 
-	if(armor_deployed && ((armor_deployed_time + armor_duration) < world.time)) //Time ran out.
+	if(state.armor_deployed && ((state.armor_deployed_time + armor_duration) < world.time)) //Time ran out.
 
 		//Are we still in panic mode?
 		if(unfortunate_soul.has_status(EFFECT_STUNNED) || unfortunate_soul.has_status(EFFECT_WEAKENED) || unfortunate_soul.has_status(EFFECT_PARALYZED) || (unfortunate_soul.vitality() < 0.75))
 			return
 		else
-			equip_flesh_armor(/obj/item/clothing/suit/space/changeling/armored, /obj/item/clothing/head/helmet/space/changeling/armored, /obj/item/clothing/shoes/magboots/changeling/armored, /obj/item/clothing/gloves/combat/changeling)
-			armor_deployed = FALSE
+			equip_flesh_armor(unfortunate_soul, /obj/item/clothing/suit/space/changeling/armored, /obj/item/clothing/head/helmet/space/changeling/armored, /obj/item/clothing/shoes/magboots/changeling/armored, /obj/item/clothing/gloves/combat/changeling)
+			state.armor_deployed = FALSE
 		return
 	//Stuff that happens when we're ALIVE.
 	if(prob(blade_chance))
 		//If we have an open hand and we have people near us, unsheath an armblade and face them.
 		//This plays a BIG SCARY MESSAGE in chat and will make people panic.
 		if(!unfortunate_soul.hands_are_full())
-			if(attempt_armblade())
+			if(attempt_armblade(unfortunate_soul))
 				return
 	if(prob(injection_chance))
 		var/list_of_humans = list()
 		var/prick_message
 		for(var/mob/living/carbon/human/target in oview(1, unfortunate_soul.loc))
-			if(target.has_modifier_of_type(/datum/modifier/redspace_corruption)) //No cyclic injections!
+			if(target.has_body_effect(/datum/body_effect/redspace_corruption)) //No cyclic injections!
 				if(!prick_message)
 					to_chat(unfortunate_soul, span_warning("Your body stealthily injects [target] but they seem unaffected."))
 					to_chat(target, span_bolddanger("You feel a tiny prick."))
@@ -491,14 +493,14 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 
 	return
 
-/datum/modifier/redspace_corruption/proc/handle_death()
+/datum/body_effect/redspace_corruption/proc/handle_death(mob/living/carbon/human/unfortunate_soul, datum/redspace_corruption_state/state)
 
 	//Cooldown?
 
-	if(armor_deployed && (armor_deployed_time + (armor_duration * 2)) < world.time) //Takes longer for armor to undeploy when dead.
-		exit_battle_stance()
+	if(state.armor_deployed && (state.armor_deployed_time + (armor_duration * 2)) < world.time) //Takes longer for armor to undeploy when dead.
+		exit_battle_stance(unfortunate_soul, state)
 
-	if(!COOLDOWN_FINISHED(src, heal_tick_cooldown_until))
+	if(!COOLDOWN_FINISHED(state, heal_tick_cooldown_until))
 		return
 
 	var/obj/item/organ/internal/brain/brain = LAZYACCESS(unfortunate_soul.internal_organs_by_name, O_BRAIN)
@@ -549,10 +551,10 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 		if(limb.status & ORGAN_DEAD && (limb.damage < limb.is_broken()) && (limb.germ_level < INFECTION_LEVEL_ONE)) //If we have any dead organs, try to revive them.
 			limb.status = 0
 
-	COOLDOWN_START(src, heal_tick_cooldown_until, heal_tick_cooldown)
+	COOLDOWN_START(state, heal_tick_cooldown_until, heal_tick_cooldown)
 
 	//Big checks to see if there's a reason we CAN'T revive.
-	if(time_since_revival + revival_cooldown > world.time) //On cooldown.
+	if(state.time_since_revival + revival_cooldown > world.time) //On cooldown.
 		return
 	if(lethal_blood) //Blood volume is low enough we'd immediately die upon revival.
 		return
@@ -568,10 +570,10 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	//This won't get EVERYTHING, but if we end up reviving just to die shortly afterwards to heal up further, that's fine.
 
 	//Time to revive! This FORCIBLY grabs their mind and puts it back in.
-	revive()
+	revive(unfortunate_soul, state)
 	return
 
-/datum/modifier/redspace_corruption/proc/revive()
+/datum/body_effect/redspace_corruption/proc/revive(mob/living/carbon/human/unfortunate_soul, datum/redspace_corruption_state/state)
 	//Force us back into the body.
 	unfortunate_soul.grab_ghost(TRUE)
 
@@ -581,13 +583,13 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	//Awaken!
 	unfortunate_soul.emote("gasp")
 	unfortunate_soul.status_at_least(EFFECT_WEAKENED, rand(10,25))
-	time_since_revival = world.time
+	state.time_since_revival = world.time
 
 //Returns TRUE If we succeeded. FALSE if we failed.
-/datum/modifier/redspace_corruption/proc/attempt_armblade()
+/datum/body_effect/redspace_corruption/proc/attempt_armblade(mob/living/carbon/human/unfortunate_soul)
 	var/list_of_humans = list()
 	for(var/mob/living/carbon/human/target in oview(4, unfortunate_soul.loc))
-		if(target.has_modifier_of_type(/datum/modifier/redspace_corruption)) //Flesh knows flesh.
+		if(target.has_body_effect(/datum/body_effect/redspace_corruption)) //Flesh knows flesh.
 			continue
 		if(is_changeling(target))
 			continue
@@ -596,7 +598,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 		var/mob/person_to_stare_at_with_our_special_eyes = pick(list_of_humans)
 		if(!person_to_stare_at_with_our_special_eyes)
 			return FALSE
-		deploy_armblade()
+		deploy_armblade(unfortunate_soul)
 		unfortunate_soul.face_atom(person_to_stare_at_with_our_special_eyes)
 		if(get_dist(unfortunate_soul, person_to_stare_at_with_our_special_eyes.loc) > 1)
 			step_towards(unfortunate_soul, person_to_stare_at_with_our_special_eyes)
@@ -605,13 +607,13 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 		return TRUE
 	return FALSE
 
-/datum/modifier/redspace_corruption/proc/deploy_armblade()
+/datum/body_effect/redspace_corruption/proc/deploy_armblade(mob/living/carbon/human/unfortunate_soul)
 	var/obj/item/melee/changeling/arm_blade/blade = new /obj/item/melee/changeling/arm_blade(unfortunate_soul)
 	if(!unfortunate_soul.put_in_hands(blade))
 		qdel(blade) //failed, sad.
 
 //shamelessly stolen from changeling/armor.dm
-/datum/modifier/redspace_corruption/proc/equip_flesh_armor(armor_type, helmet_type, boot_type, glove_type)
+/datum/body_effect/redspace_corruption/proc/equip_flesh_armor(mob/living/carbon/human/unfortunate_soul, armor_type, helmet_type, boot_type, glove_type)
 
 	var/mob/living/carbon/human/M = unfortunate_soul
 
@@ -664,21 +666,21 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	return TRUE
 
 ///Equips armor and melee weapon. If we succeed, returns TRUE. FALSE if we fail.
-/datum/modifier/redspace_corruption/proc/assume_battle_stance()
-	if(equip_flesh_armor(/obj/item/clothing/suit/space/changeling/armored,/obj/item/clothing/head/helmet/space/changeling/armored,/obj/item/clothing/shoes/magboots/changeling/armored, /obj/item/clothing/gloves/combat/changeling))
+/datum/body_effect/redspace_corruption/proc/assume_battle_stance(mob/living/carbon/human/unfortunate_soul, datum/redspace_corruption_state/state)
+	if(equip_flesh_armor(unfortunate_soul, /obj/item/clothing/suit/space/changeling/armored,/obj/item/clothing/head/helmet/space/changeling/armored,/obj/item/clothing/shoes/magboots/changeling/armored, /obj/item/clothing/gloves/combat/changeling))
 		to_chat(unfortunate_soul, span_warning("Your flesh shifts and hardens into a protective armor!"))
-		armor_deployed = TRUE
-		armor_deployed_time = world.time
+		state.armor_deployed = TRUE
+		state.armor_deployed_time = world.time
 		unfortunate_soul.drop_l_hand()
 		unfortunate_soul.drop_r_hand()
-		deploy_armblade()
-		deploy_armblade()
+		deploy_armblade(unfortunate_soul)
+		deploy_armblade(unfortunate_soul)
 		return TRUE
 	return FALSE
 
-/datum/modifier/redspace_corruption/proc/exit_battle_stance()
-	if(armor_deployed)
-		equip_flesh_armor(/obj/item/clothing/suit/space/changeling/armored, /obj/item/clothing/head/helmet/space/changeling/armored, /obj/item/clothing/shoes/magboots/changeling/armored, /obj/item/clothing/gloves/combat/changeling)
-		armor_deployed = FALSE
+/datum/body_effect/redspace_corruption/proc/exit_battle_stance(mob/living/carbon/human/unfortunate_soul, datum/redspace_corruption_state/state)
+	if(state.armor_deployed)
+		equip_flesh_armor(unfortunate_soul, /obj/item/clothing/suit/space/changeling/armored, /obj/item/clothing/head/helmet/space/changeling/armored, /obj/item/clothing/shoes/magboots/changeling/armored, /obj/item/clothing/gloves/combat/changeling)
+		state.armor_deployed = FALSE
 		unfortunate_soul.drop_l_hand()
 		unfortunate_soul.drop_r_hand()

@@ -404,10 +404,6 @@
 /obj/item/uav/proc/uav_masters() as /list
 	return om_related_to(src, /datum/om/relation/uav_master)
 
-/// Was STASIS_SOURCE().
-/datum/modifier/proc/stasis_source() as /atom
-	return om_relation_of(src, /datum/om/relation/stasis_held_by)
-
 /// The mob holding grab item src (the grab lives in the assailant's hand), or null. Was GRAB_ASSAILANT().
 /obj/item/grab/proc/grab_assailant() as /mob/living/carbon/human
 	return ishuman(loc) ? loc : null
